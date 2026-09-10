@@ -252,10 +252,24 @@ export type SiteSectionLayout = {
   maxWidth: number | null
 }
 
-/** Tamanho de UMA caixa de texto: corpo da fonte e largura em % do bloco. */
+/**
+ * Tamanho e posição de UMA caixa de texto.
+ *
+ * `x`/`y` são DESLOCAMENTO, não coordenada absoluta: viram `left`/`top` de um
+ * elemento `position: relative`, que empurra a caixa sem tirar o espaço dela do
+ * fluxo — o parágrafo de baixo não sobe quando a manchete anda. Um `absolute`
+ * congelaria a caixa num ponto da tela do computador e a página deixaria de
+ * caber no celular de quem visita.
+ *
+ * ⚠️ As unidades são diferentes de propósito: X em % da largura do bloco (a
+ * mesma régua de `width`), porque é a largura que muda entre aparelhos; Y em
+ * pixels, porque a altura de um texto não acompanha a largura da janela.
+ */
 export type SiteTextStyle = {
   fontSize: number | null
   width: number | null
+  x: number | null
+  y: number | null
 }
 
 /**
@@ -272,6 +286,10 @@ export const SITE_SIZES = {
   HEIGHT_MAX: 2400,
   MAXW_MIN: 320,
   MAXW_MAX: 1920,
+  X_MIN: -100,
+  X_MAX: 100,
+  Y_MIN: -600,
+  Y_MAX: 600,
 } as const
 
 export function clampSize(value: number, min: number, max: number): number {

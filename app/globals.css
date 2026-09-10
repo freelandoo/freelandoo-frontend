@@ -688,6 +688,16 @@ body.camera-active { overflow: hidden; }
   outline-offset: 2px;
   background-color: rgba(242, 183, 5, 0.06);
 }
+/* A caixa SELECIONADA no construtor: ela pode ser arrastada para o lugar, e o
+   contorno é o que avisa isso — sem ele, "clicou e agora arrasta" seria uma
+   regra invisível. O cursor só vira de arraste DURANTE o gesto: fixá-lo em
+   `move` esconderia que ali também se digita. */
+.fl-site-box-selected { outline: 1px dashed rgba(242, 183, 5, 0.55); outline-offset: 6px; }
+.fl-site-box-moving { cursor: grabbing; }
+/* Enquanto a caixa anda, o navegador não pode ir pintando de azul o texto que
+   passa por baixo do dedo. */
+.fl-site-box-moving, .fl-site-box-moving * { user-select: none; }
+
 /* Placeholder do campo vazio: pseudo-elemento para não virar conteúdo real
    (texto de verdade dentro do nó seria salvo como se o usuário o tivesse
    digitado). */

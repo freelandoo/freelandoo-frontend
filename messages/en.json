@@ -6115,7 +6115,7 @@
     "backToCommunity": "Back to the community",
     "notFound": "Community not found.",
     "resizeSection": "Section size",
-    "resizeHint": "Click a text to reveal the corner dots and drag to resize it. On phones, pinch to zoom and tap the box.",
+    "resizeHint": "Click a text to select it, then drag to move it. Double-click (or pinch with two fingers on mobile) to bring up the corner handles, which change the size.",
     "sizeTitleText": "Text box",
     "sizeTitleSection": "Section",
     "sizeFont": "Font",
@@ -6185,7 +6185,12 @@
     "teamAddError": "We couldn't add this person.",
     "teamRemoveError": "We couldn't remove this person.",
     "publishLocked": "Publish site · Business Plan",
-    "publishNeedsPlan": "Publishing and sharing the site is part of the Business Plan."
+    "publishNeedsPlan": "Publishing and sharing the site is part of the Business Plan.",
+    "posX": "Horizontal",
+    "posY": "Vertical",
+    "sizeTitleMove": "Box position",
+    "modeMove": "Move (drag the box)",
+    "modeSize": "Resize (or double-click the box)"
   },
   "SiteBooking": {
     "back": "Back to site",

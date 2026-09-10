@@ -8,6 +8,7 @@
 // diferente do que viu.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { Maximize2, Move } from "lucide-react"
 import { SITE_SIZES, clampSize } from "@/types/community-site"
 import type {
   AboutData,
@@ -26,6 +27,7 @@ import type {
   TestimonialsData,
 } from "@/types/community-site"
 import {
+  EMPTY_BOX,
   SectionResizeDots,
   SiteStyleProvider,
   SiteStyleScope,
@@ -240,41 +242,92 @@ export function SiteCanvas({
 
     if (selection.type === "text") {
       const key = selection.key
-      const current = config.textStyles?.[key] || { fontSize: null, width: null }
+      const mode = selection.mode
+      // ⚠️ Spread e não `||`: site salvo ANTES da posição existir tem entradas
+      // com dois campos só, e `current.x` viria `undefined` — o painel
+      // escreveria "undefined%" onde deveria dizer "Auto".
+      const current: SiteTextStyle = { ...EMPTY_BOX, ...(config.textStyles?.[key] || {}) }
       const setStyle = (patch: Partial<SiteTextStyle>) => {
         const merged = { ...current, ...patch }
         const next = { ...(config.textStyles || {}) }
-        if (merged.fontSize === null && merged.width === null) delete next[key]
+        // ⚠️ Comparar com `null`, nunca por valor falsy: deslocamento ZERO é o
+        // líder pedindo a caixa de volta ao lugar, e lê-lo como ausência
+        // devolveria o deslocamento antigo no próximo carregamento.
+        if (
+          merged.fontSize === null &&
+          merged.width === null &&
+          merged.x === null &&
+          merged.y === null
+        )
+          delete next[key]
         else next[key] = merged
         onChange({ ...config, textStyles: next })
       }
-      const rows: SizeRow[] = [
-        {
-          label: t("sizeFont", "Fonte"),
-          value: current.fontSize,
-          fallback: () => measuredFontSize(key),
-          step: 2,
-          unit: "px",
-          onChange: (n) =>
-            setStyle({ fontSize: clampSize(n, SITE_SIZES.FONT_MIN, SITE_SIZES.FONT_MAX) }),
-        },
-        {
-          label: t("sizeWidth", "Largura"),
-          value: current.width,
-          fallback: () => 100,
-          step: 5,
-          unit: "%",
-          onChange: (n) =>
-            setStyle({ width: clampSize(n, SITE_SIZES.WIDTH_MIN, SITE_SIZES.WIDTH_MAX) }),
-        },
-      ]
+
+      // O painel mostra o que o MODO faz. Empilhar as quatro linhas de uma vez
+      // caberia no computador e estouraria a largura do celular, que é onde ele
+      // mais importa — lá a alça de 12px é gesto que dedo não acerta.
+      const rows: SizeRow[] =
+        mode === "move"
+          ? [
+              {
+                label: t("posX", "Horizontal"),
+                value: current.x,
+                fallback: () => 0,
+                step: 2,
+                unit: "%",
+                onChange: (n) => setStyle({ x: clampSize(n, SITE_SIZES.X_MIN, SITE_SIZES.X_MAX) }),
+              },
+              {
+                label: t("posY", "Vertical"),
+                value: current.y,
+                fallback: () => 0,
+                step: 8,
+                unit: "px",
+                onChange: (n) => setStyle({ y: clampSize(n, SITE_SIZES.Y_MIN, SITE_SIZES.Y_MAX) }),
+              },
+            ]
+          : [
+              {
+                label: t("sizeFont", "Fonte"),
+                value: current.fontSize,
+                fallback: () => measuredFontSize(key),
+                step: 2,
+                unit: "px",
+                onChange: (n) =>
+                  setStyle({ fontSize: clampSize(n, SITE_SIZES.FONT_MIN, SITE_SIZES.FONT_MAX) }),
+              },
+              {
+                label: t("sizeWidth", "Largura"),
+                value: current.width,
+                fallback: () => 100,
+                step: 5,
+                unit: "%",
+                onChange: (n) =>
+                  setStyle({ width: clampSize(n, SITE_SIZES.WIDTH_MIN, SITE_SIZES.WIDTH_MAX) }),
+              },
+            ]
+
       return {
-        title: t("sizeTitleText", "Caixa de texto"),
+        title:
+          mode === "move"
+            ? t("sizeTitleMove", "Posição da caixa")
+            : t("sizeTitleText", "Caixa de texto"),
         rows,
-        reset: () => {
-          const next = { ...(config.textStyles || {}) }
-          delete next[key]
-          onChange({ ...config, textStyles: next })
+        // O reset desfaz SÓ o que este modo mexe: "voltar o tamanho" não pode
+        // jogar de volta ao lugar uma caixa que o líder moveu de propósito.
+        reset: () =>
+          setStyle(
+            mode === "move" ? { x: null, y: null } : { fontSize: null, width: null }
+          ),
+        modeToggle: {
+          label:
+            mode === "move"
+              ? t("modeSize", "Dimensionar (ou dois cliques na caixa)")
+              : t("modeMove", "Mover (arraste a caixa)"),
+          icon: mode === "move" ? Maximize2 : Move,
+          onClick: () =>
+            setSelection({ type: "text", key, mode: mode === "move" ? "size" : "move" }),
         },
       }
     }
@@ -312,6 +365,10 @@ export function SiteCanvas({
       title: t("sizeTitleSection", "Seção"),
       rows,
       reset: () => patchLayout(section.id, { minHeight: null, maxWidth: null }),
+      // Seção não tem os dois modos: ela é empilhada, não deslocada. Declarado
+      // como ausente para os dois ramos terem a MESMA forma — sem isto o painel
+      // teria de saber qual dos dois recebeu.
+      modeToggle: undefined,
     }
   }, [editing, selection, config, sections, onChange, patchLayout, t])
 
@@ -503,6 +560,7 @@ export function SiteCanvas({
         closeLabel={t("sizeClose", "Fechar")}
         onReset={sizePanel.reset}
         onClose={() => setSelection(null)}
+        modeToggle={sizePanel.modeToggle}
       />
     )}
     </SiteStyleProvider>

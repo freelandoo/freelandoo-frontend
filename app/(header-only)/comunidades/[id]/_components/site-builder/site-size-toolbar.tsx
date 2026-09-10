@@ -7,7 +7,7 @@
 // e no computador ele também serve a quem prefere um número exato a um arraste
 // (e a quem navega por teclado, que não tem como arrastar coisa nenhuma).
 
-import { Minus, Plus, RotateCcw, X } from "lucide-react"
+import { Minus, Plus, RotateCcw, X, type LucideIcon } from "lucide-react"
 
 export type SizeRow = {
   label: string
@@ -28,6 +28,7 @@ export function SiteSizeToolbar({
   closeLabel,
   onReset,
   onClose,
+  modeToggle,
 }: {
   title: string
   rows: SizeRow[]
@@ -36,6 +37,14 @@ export function SiteSizeToolbar({
   closeLabel: string
   onReset: () => void
   onClose: () => void
+  /**
+   * Alterna mover ↔ dimensionar na caixa de texto.
+   *
+   * Existe porque os dois atalhos do gesto falham para alguém: o duplo-toque é
+   * impreciso no celular, e quem navega por teclado não dá duplo-clique nem
+   * pizca em coisa nenhuma. A seção não recebe este botão — ela só dimensiona.
+   */
+  modeToggle?: { label: string; icon: LucideIcon; onClick: () => void }
 }) {
   return (
     <div
@@ -75,6 +84,18 @@ export function SiteSizeToolbar({
           </button>
         </div>
       ))}
+
+      {modeToggle && (
+        <button
+          type="button"
+          onClick={modeToggle.onClick}
+          title={modeToggle.label}
+          aria-label={modeToggle.label}
+          className="grid h-9 w-9 place-items-center border-2 border-[#0B0B0D] bg-[#1D1810] text-[#F2B705]"
+        >
+          <modeToggle.icon className="h-4 w-4" />
+        </button>
+      )}
 
       <button
         type="button"

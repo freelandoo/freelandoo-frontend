@@ -9,10 +9,33 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { ImagePlus, Loader2, Move, Trash2 } from "lucide-react"
 import { SITE_OBJECT_POSITIONS, type SiteObjectPosition } from "@/types/community-site"
-import { ResizeDots, nextFontSize, nextWidth, useTextBox } from "./site-style-context"
+import {
+  ResizeDots,
+  domScale,
+  nextFontSize,
+  nextWidth,
+  useBoxMove,
+  usePinchResize,
+  useTextBox,
+} from "./site-style-context"
 
 /**
  * Texto editável no lugar (clica e digita).
+ *
+ * OS TRÊS GESTOS SOBRE A MESMA CAIXA, e por que eles não brigam:
+ *   • um clique  — pousa o cursor para digitar E seleciona a caixa (modo MOVER);
+ *     dali em diante, arrastar o corpo dela muda o LUGAR;
+ *   • dois cliques (ou a pizca de dois dedos) — liga o modo DIMENSIONAR, que é
+ *     quando as bolinhas dos cantos aparecem;
+ *   • as bolinhas — fonte no eixo vertical, largura no horizontal.
+ *
+ * ⚠️ O arraste só existe depois da seleção. No celular o site é quase todo
+ * texto: caixa arrastável ao primeiro toque roubaria a ROLAGEM da página, e a
+ * pessoa arrastaria a manchete tentando descer.
+ *
+ * ⚠️ E as bolinhas só existem no modo dimensionar. Desenhadas junto com o modo
+ * mover, o mesmo ponteiro serviria dois gestos e a caixa mudaria de tamanho
+ * quando a pessoa só queria movê-la de canto.
  *
  * POR QUE contentEditable NÃO-CONTROLADO: um `<div contentEditable>` controlado
  * por estado React reescreve o nó a cada tecla e o cursor pula para o começo.
@@ -59,7 +82,12 @@ export function InlineText({
 
   // Guarda o ponto de partida do arraste. Sem ele cada pointermove somaria
   // sobre o valor JÁ alterado e o texto dispararia para o teto.
-  const dragRef = useRef<{ font: number; width: number; parentW: number } | null>(null)
+  const dragRef = useRef<{
+    font: number
+    width: number
+    parentW: number
+    scale: number
+  } | null>(null)
 
   const onResize = useCallback(
     (delta: { dx: number; dy: number }, phase: "start" | "move") => {
@@ -78,18 +106,65 @@ export function InlineText({
             box.width ??
             Math.round((wrap.getBoundingClientRect().width / (parentW || 1)) * 100),
           parentW,
+          scale: domScale(wrap),
         }
         return
       }
       const d = dragRef.current
       if (!d) return
       box.setStyle({
-        fontSize: nextFontSize(d.font, delta.dy),
+        // ⚠️ O dedo anda em pixels de TELA e a fonte é gravada em pixels do
+        // DOCUMENTO: com a prancheta ampliada, arrastar sem descontar o zoom
+        // aumentaria a fonte no dobro do que a pessoa vê acontecer. A largura
+        // não precisa disso — é % de um bloco medido na mesma régua escalada.
+        fontSize: nextFontSize(d.font, delta.dy / d.scale),
         width: nextWidth(d.width, delta.dx, d.parentW),
       })
     },
     [box]
   )
+
+  const move = useBoxMove({
+    enabled: box.selected,
+    wrapRef,
+    x: box.x,
+    y: box.y,
+    setStyle: box.setStyle,
+  })
+
+  const toSizeMode = useCallback(() => box.selectMode("size"), [box])
+
+  const { onPointerDown: onMoveDown, ...moveRest } = move.handlers
+
+  /**
+   * ⚠️ A caixa é DONA do gesto, e o `stopPropagation` é o que garante isso: o
+   * fundo do site desfaz a seleção no pointerdown (é assim que se solta uma
+   * caixa), e sem parar aqui o mesmo toque acenderia e apagaria a seleção.
+   *
+   * Hoje isso não aparece porque o `focus` chega depois e reacende — mas é
+   * acidente de ordem de eventos, e ele não vale para o segundo clique (a caixa
+   * já está focada, e nenhum `focus` novo viria consertar).
+   */
+  const onBoxPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.stopPropagation()
+      box.select()
+      onMoveDown(e)
+    },
+    [box, onMoveDown]
+  )
+
+  // A pizca liga o modo dimensionar junto: sem isso a caixa cresceria com as
+  // bolinhas ainda escondidas e o painel de baixo continuaria oferecendo a
+  // posição, que não é o que os dedos acabaram de mexer.
+  usePinchResize({
+    enabled: box.selected,
+    wrapRef,
+    fontSize: box.fontSize,
+    width: box.width,
+    setStyle: box.setStyle,
+    onStart: toSizeMode,
+  })
 
   // useLayoutEffect: escrever o texto antes da pintura evita o flash de campo
   // vazio no primeiro render de cada seção.
@@ -147,9 +222,21 @@ export function InlineText({
   const textStyle: React.CSSProperties = box.fontSize
     ? { ...style, fontSize: `${box.fontSize}px` }
     : style || {}
-  const wrapStyle: React.CSSProperties | undefined = box.width
-    ? { display: "block", width: `${box.width}%`, maxWidth: "100%" }
-    : undefined
+  // O deslocamento vira `left`/`top` de um elemento `position: relative`: a
+  // caixa anda SEM levar o espaço dela junto, então o parágrafo de baixo não
+  // sobe quando a manchete vai para o lado. Um `absolute` congelaria a caixa
+  // num ponto da tela do computador e o site deixaria de caber no celular.
+  const placed = box.x !== null || box.y !== null
+  const wrapStyle: React.CSSProperties | undefined =
+    box.width !== null || placed
+      ? {
+          display: "block",
+          position: "relative",
+          ...(box.width !== null ? { width: `${box.width}%`, maxWidth: "100%" } : null),
+          ...(box.x !== null ? { left: `${box.x}%` } : null),
+          ...(box.y !== null ? { top: `${box.y}px` } : null),
+        }
+      : undefined
 
   if (!editing) {
     // Em LEITURA o placeholder não existe. Ele é uma dica de edição ("Manchete
@@ -196,15 +283,28 @@ export function InlineText({
   return (
     <span
       ref={wrapRef}
-      className="relative block"
-      style={wrapStyle}
+      className={`relative block ${box.selected ? "fl-site-box-selected" : ""} ${
+        move.dragging ? "fl-site-box-moving" : ""
+      }`}
+      style={{
+        ...wrapStyle,
+        // `touchAction: none` só na caixa SELECIONADA: é o que impede o
+        // navegador de ler o arraste como rolagem e engolir o gesto no meio.
+        // Ligado sempre, ele mataria a rolagem do construtor em cima de
+        // qualquer texto — que é quase toda a página.
+        ...(box.selected ? { touchAction: "none" } : null),
+      }}
+      {...moveRest}
       // Tocar em qualquer lugar da caixa seleciona: no celular a alça só
       // aparece depois da seleção, e exigir acertar o texto exato seria pedir
       // pontaria que dedo não tem.
-      onPointerDown={box.select}
+      onPointerDown={onBoxPointerDown}
+      // Dois cliques abrem as bolinhas. O gesto é o mesmo no celular (dois
+      // toques) e convive com a pizca, que leva ao mesmo modo.
+      onDoubleClick={toSizeMode}
     >
       {editable}
-      {box.selected && (
+      {box.mode === "size" && (
         <ResizeDots onResize={onResize} onCommit={() => (dragRef.current = null)} label={placeholder || "resize"} />
       )}
     </span>

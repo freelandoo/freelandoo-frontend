@@ -14,7 +14,15 @@
 // alça é montada e nenhum listener é registrado — a mesma regra do resto do
 // módulo.
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import {
   SITE_SIZES,
   clampSize,
@@ -22,9 +30,21 @@ import {
   type SiteTextStyle,
 } from "@/types/community-site"
 
-/** O que está selecionado agora. Um só por vez — duas seleções, duas alças. */
+/**
+ * O que está selecionado agora. Um só por vez — duas seleções, duas alças.
+ *
+ * A caixa de texto tem MODO, e é ele que separa os dois gestos que o líder faz
+ * sobre a mesma caixa: `move` (arrastar para o lugar) e `size` (as bolinhas dos
+ * cantos). Sem o modo, arrastar o corpo e arrastar o canto disputariam o mesmo
+ * ponteiro e a caixa mudaria de tamanho quando a pessoa só queria movê-la.
+ *
+ * A SEÇÃO não tem modo: ela é empilhada, não deslocada (ver o normalizador do
+ * backend), então para ela só existe dimensionar.
+ */
+export type SiteBoxMode = "move" | "size"
+
 export type SiteSelection =
-  | { type: "text"; key: string }
+  | { type: "text"; key: string; mode: SiteBoxMode }
   | { type: "section"; id: string }
   | null
 
@@ -48,6 +68,13 @@ type SiteStyleValue = {
 }
 
 const EMPTY_STYLES: Record<string, SiteTextStyle> = {}
+
+/** Caixa que nunca foi tocada: tudo em AUTO. */
+export const EMPTY_BOX: SiteTextStyle = { fontSize: null, width: null, x: null, y: null }
+
+function isAutoBox(box: SiteTextStyle): boolean {
+  return box.fontSize === null && box.width === null && box.x === null && box.y === null
+}
 
 const SiteStyleContext = createContext<SiteStyleValue>({
   editing: false,
@@ -84,13 +111,19 @@ export function SiteStyleProvider({
 
   const setTextStyle = useCallback(
     (key: string, patch: Partial<SiteTextStyle>) => {
-      const current = stylesRef.current[key] || { fontSize: null, width: null }
+      // Spread, pela mesma razão do painel: entrada gravada antes da posição
+      // existir chega com dois campos, e `undefined` não bate com o `=== null`
+      // que decide se a caixa voltou ao automático.
+      const current: SiteTextStyle = { ...EMPTY_BOX, ...(stylesRef.current[key] || {}) }
       const merged: SiteTextStyle = { ...current, ...patch }
       const next = { ...stylesRef.current }
       // Caixa que voltou para AUTO sai do mapa em vez de virar uma entrada de
-      // dois nulos: o backend a descartaria de qualquer jeito, e mantê-la aqui
-      // faria o teto de entradas ser gasto com nada.
-      if (merged.fontSize === null && merged.width === null) delete next[key]
+      // quatro nulos: o backend a descartaria de qualquer jeito, e mantê-la
+      // aqui faria o teto de entradas ser gasto com nada.
+      // ⚠️ A comparação é com `null`, nunca por valor falsy: deslocamento ZERO
+      // é o líder pedindo a caixa de volta ao lugar, e tratá-lo como ausência
+      // devolveria o deslocamento antigo no próximo carregamento.
+      if (isAutoBox(merged)) delete next[key]
       else next[key] = merged
       stylesRef.current = next
       onChangeStyles(next)
@@ -150,17 +183,35 @@ export function useTextBox(localKey: string | undefined) {
   const ctx = useContext(SiteStyleContext)
   const key = !localKey ? "" : ctx.scope ? `${ctx.scope}.${localKey}` : localKey
   const style = key ? ctx.styles[key] : undefined
-  const selected = !!key && ctx.selection?.type === "text" && ctx.selection.key === key
+  const mine = !!key && ctx.selection?.type === "text" && ctx.selection.key === key
+  const mode: SiteBoxMode | null =
+    mine && ctx.selection?.type === "text" ? ctx.selection.mode : null
+
+  const select = useCallback(
+    (next: SiteBoxMode) => {
+      if (key) ctx.select({ type: "text", key, mode: next })
+    },
+    [ctx, key]
+  )
 
   return {
     key,
     editing: ctx.editing,
     fontSize: style?.fontSize ?? null,
     width: style?.width ?? null,
-    selected,
+    x: style?.x ?? null,
+    y: style?.y ?? null,
+    selected: mine,
+    mode,
+    /**
+     * Primeiro toque: a caixa entra em MOVER. Tocar de novo numa caixa que já
+     * está selecionada NÃO a devolve para mover — senão o segundo clique
+     * desfaria o modo de dimensionar que o duplo-clique acabou de ligar.
+     */
     select: useCallback(() => {
-      if (key) ctx.select({ type: "text", key })
-    }, [ctx, key]),
+      if (!mine) select("move")
+    }, [mine, select]),
+    selectMode: select,
     setStyle: useCallback(
       (patch: Partial<SiteTextStyle>) => {
         if (key) ctx.setTextStyle(key, patch)
@@ -273,6 +324,252 @@ export function nextFontSize(base: number, dy: number) {
 export function nextWidth(base: number, dx: number, containerWidth: number) {
   const delta = containerWidth > 0 ? (dx / containerWidth) * 100 : 0
   return clampSize(base + delta, SITE_SIZES.WIDTH_MIN, SITE_SIZES.WIDTH_MAX)
+}
+
+export function nextX(base: number, dx: number, containerWidth: number) {
+  const delta = containerWidth > 0 ? (dx / containerWidth) * 100 : 0
+  return clampSize(base + delta, SITE_SIZES.X_MIN, SITE_SIZES.X_MAX)
+}
+
+export function nextY(base: number, dy: number) {
+  return clampSize(base + dy, SITE_SIZES.Y_MIN, SITE_SIZES.Y_MAX)
+}
+
+/**
+ * Quanto a prancheta esta ampliada AGORA.
+ *
+ * ⚠️ A prancheta do construtor tem zoom proprio (`transform: scale`), e e por
+ * isso que este numero precisa existir: `clientX` e `getBoundingClientRect()`
+ * vem em pixels de TELA, ja escalados, enquanto a fonte e o deslocamento
+ * vertical sao gravados em pixels do DOCUMENTO. Com zoom em 200%, arrastar dois
+ * centimetros valeria o dobro do que a pessoa ve acontecer.
+ *
+ * Sai da razao entre a caixa medida (escalada) e o layout dela (`offsetWidth`,
+ * que ignora `transform`) — assim nenhum componente precisa receber o zoom por
+ * prop de quatro niveis acima.
+ *
+ * O eixo X nao passa por aqui: ele e gravado em PORCENTAGEM do bloco, e o bloco
+ * e medido na mesma regua escalada do dedo — o zoom se cancela sozinho.
+ */
+export function domScale(el: HTMLElement | null): number {
+  if (!el) return 1
+  const layout = el.offsetWidth
+  if (!layout) return 1
+  const ratio = el.getBoundingClientRect().width / layout
+  return Number.isFinite(ratio) && ratio > 0.05 ? ratio : 1
+}
+
+/** Folga em pixels antes de um toque parado virar arraste. */
+const DRAG_THRESHOLD = 4
+
+/**
+ * Arrastar o CORPO da caixa para mudar o lugar dela.
+ *
+ * ⚠️ So vale para a caixa JA SELECIONADA, e isso nao e detalhe: no celular o
+ * site e quase todo texto, e uma caixa arrastavel ao primeiro toque roubaria a
+ * rolagem da pagina — a pessoa tentaria descer e ficaria arrastando a manchete.
+ * O primeiro toque seleciona (e o navegador rola normalmente); a partir dele a
+ * caixa responde ao arraste.
+ *
+ * ⚠️ O arraste so comeca depois de `DRAG_THRESHOLD` pixels. Sem essa folga um
+ * clique com a mao tremida viraria um deslocamento de um pixel e a caixa nunca
+ * mais estaria "no lugar" — e e ela que preserva o clique simples, que continua
+ * servindo para pousar o cursor e digitar.
+ */
+export function useBoxMove({
+  enabled,
+  wrapRef,
+  x,
+  y,
+  setStyle,
+}: {
+  enabled: boolean
+  wrapRef: React.RefObject<HTMLElement | null>
+  x: number | null
+  y: number | null
+  setStyle: (patch: Partial<SiteTextStyle>) => void
+}) {
+  const [dragging, setDragging] = useState(false)
+  const stateRef = useRef<{
+    px: number
+    py: number
+    x: number
+    y: number
+    parentW: number
+    scale: number
+    live: boolean
+    pointerId: number
+  } | null>(null)
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (!enabled) return
+      // Alca de canto e botoes do construtor tem dono: deixa-los borbulhar ate
+      // aqui faria redimensionar e mover ao mesmo tempo.
+      if ((e.target as HTMLElement).closest("[data-dot],button,a,input")) return
+      const wrap = wrapRef.current
+      if (!wrap) return
+      const parent = wrap.parentElement
+      const parentRect = parent ? parent.getBoundingClientRect() : null
+      stateRef.current = {
+        px: e.clientX,
+        py: e.clientY,
+        x: x ?? 0,
+        y: y ?? 0,
+        parentW: (parentRect ? parentRect.width : wrap.getBoundingClientRect().width) || 1,
+        scale: domScale(wrap),
+        live: false,
+        pointerId: e.pointerId,
+      }
+    },
+    [enabled, wrapRef, x, y]
+  )
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      const st = stateRef.current
+      if (!st || st.pointerId !== e.pointerId) return
+      const dx = e.clientX - st.px
+      const dy = e.clientY - st.py
+      if (!st.live) {
+        if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return
+        st.live = true
+        setDragging(true)
+        // O ponteiro sai de cima da caixa a toda hora durante um arraste; sem a
+        // captura o gesto morreria no meio, com a caixa a meio caminho.
+        try {
+          const host = e.currentTarget as HTMLElement
+          host.setPointerCapture(e.pointerId)
+        } catch {
+          // Ponteiro que ja sumiu (dedo levantado no mesmo quadro): o arraste
+          // segue pelos eventos que ainda chegam e o commit fecha do mesmo
+          // jeito. Falhar aqui nao pode derrubar o gesto.
+        }
+        // O pointerdown ja pousou o cursor dentro do texto e o navegador comecou
+        // a esticar uma selecao. Deixa-la de pe pintaria a manchete inteira de
+        // azul enquanto a pessoa arrasta.
+        const sel = window.getSelection()
+        if (sel) sel.removeAllRanges()
+      }
+      e.preventDefault()
+      setStyle({ x: nextX(st.x, dx, st.parentW), y: nextY(st.y, dy / st.scale) })
+    },
+    [setStyle]
+  )
+
+  const finish = useCallback((e: React.PointerEvent) => {
+    const st = stateRef.current
+    if (!st) return
+    stateRef.current = null
+    if (!st.live) return
+    setDragging(false)
+    try {
+      const host = e.currentTarget as HTMLElement
+      host.releasePointerCapture(st.pointerId)
+    } catch {
+      // Idem: a captura pode ja ter sido devolvida pelo proprio navegador.
+    }
+  }, [])
+
+  return {
+    dragging,
+    handlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: finish,
+      onPointerCancel: finish,
+    },
+  }
+}
+
+/**
+ * Pizca de dois dedos SOBRE a caixa: aumenta e diminui ela.
+ *
+ * ⚠️ A prancheta inteira ja responde a pizca com zoom (o construtor registra o
+ * dela no viewport). Quem decide de quem e o gesto e a CAIXA, aqui, parando a
+ * propagacao — assim existe um lugar so tomando essa decisao, em vez de o
+ * construtor ter de adivinhar o que esta debaixo dos dedos.
+ *
+ * ⚠️ Listener NATIVO com `passive: false`: o React registra `touchmove` como
+ * passivo, e em listener passivo o `preventDefault` e ignorado — o navegador
+ * daria o zoom dele por cima e a pagina inteira sairia do lugar.
+ */
+export function usePinchResize({
+  enabled,
+  wrapRef,
+  fontSize,
+  width,
+  setStyle,
+  onStart,
+}: {
+  enabled: boolean
+  wrapRef: React.RefObject<HTMLElement | null>
+  fontSize: number | null
+  width: number | null
+  setStyle: (patch: Partial<SiteTextStyle>) => void
+  onStart: () => void
+}) {
+  // O gesto e montado uma vez e vive varios quadros; sem o espelho ele leria
+  // para sempre o tamanho que a caixa tinha quando o componente nasceu.
+  const liveRef = useRef({ fontSize, width, setStyle, onStart, enabled })
+  useEffect(() => {
+    liveRef.current = { fontSize, width, setStyle, onStart, enabled }
+  }, [fontSize, width, setStyle, onStart, enabled])
+
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    let start: { dist: number; font: number; width: number } | null = null
+
+    const distance = (touches: TouchList) =>
+      Math.hypot(
+        touches[0].clientX - touches[1].clientX,
+        touches[0].clientY - touches[1].clientY
+      )
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (!liveRef.current.enabled || e.touches.length !== 2) return
+      e.stopPropagation()
+      const node = wrapRef.current
+      const text = (node ? node.querySelector<HTMLElement>("[data-style-key]") : null) || node
+      start = {
+        dist: distance(e.touches),
+        // Em AUTO o ponto de partida e o que a folha de estilo ja pinta:
+        // comecar de um numero fixo faria o texto SALTAR no primeiro milimetro.
+        font:
+          liveRef.current.fontSize ??
+          (text ? parseFloat(window.getComputedStyle(text).fontSize) || 16 : 16),
+        width: liveRef.current.width ?? 100,
+      }
+      liveRef.current.onStart()
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!start || e.touches.length !== 2) return
+      e.preventDefault()
+      e.stopPropagation()
+      const ratio = distance(e.touches) / (start.dist || 1)
+      liveRef.current.setStyle({
+        fontSize: clampSize(start.font * ratio, SITE_SIZES.FONT_MIN, SITE_SIZES.FONT_MAX),
+        width: clampSize(start.width * ratio, SITE_SIZES.WIDTH_MIN, SITE_SIZES.WIDTH_MAX),
+      })
+    }
+
+    const onTouchEnd = () => {
+      start = null
+    }
+
+    el.addEventListener("touchstart", onTouchStart, { passive: false })
+    el.addEventListener("touchmove", onTouchMove, { passive: false })
+    el.addEventListener("touchend", onTouchEnd)
+    el.addEventListener("touchcancel", onTouchEnd)
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart)
+      el.removeEventListener("touchmove", onTouchMove)
+      el.removeEventListener("touchend", onTouchEnd)
+      el.removeEventListener("touchcancel", onTouchEnd)
+    }
+  }, [wrapRef])
 }
 
 /** Largura padrão da coluna de conteúdo (`max-w-6xl` = 72rem). */

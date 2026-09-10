@@ -6095,7 +6095,7 @@
     "backToCommunity": "Volver a la comunidad",
     "notFound": "Comunidad no encontrada.",
     "resizeSection": "Tamaño de la sección",
-    "resizeHint": "Haz clic en un texto para ver los puntos de las esquinas y arrástralos para cambiar el tamaño. En el móvil, haz zoom con dos dedos y toca la caja.",
+    "resizeHint": "Haz clic en un texto para seleccionarlo y arrástralo para moverlo. Doble clic (o dos dedos, en el móvil) abre los tiradores de las esquinas, que cambian el tamaño.",
     "sizeTitleText": "Caja de texto",
     "sizeTitleSection": "Sección",
     "sizeFont": "Fuente",
@@ -6165,7 +6165,12 @@
     "teamAddError": "No fue posible añadir.",
     "teamRemoveError": "No fue posible quitar.",
     "publishLocked": "Publicar sitio · Plan Negocio",
-    "publishNeedsPlan": "Publicar y compartir el sitio es parte del Plan Negocio."
+    "publishNeedsPlan": "Publicar y compartir el sitio es parte del Plan Negocio.",
+    "posX": "Horizontal",
+    "posY": "Vertical",
+    "sizeTitleMove": "Posición de la caja",
+    "modeMove": "Mover (arrastra la caja)",
+    "modeSize": "Redimensionar (o doble clic en la caja)"
   },
   "SiteBooking": {
     "back": "Volver al sitio",
