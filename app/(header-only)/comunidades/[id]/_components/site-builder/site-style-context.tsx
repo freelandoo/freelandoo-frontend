@@ -579,6 +579,21 @@ export function usePinchResize({
 export const SITE_CONTENT_MAX_WIDTH = 1152
 
 /**
+ * Faixa que o construtor reserva no topo de cada seção para a barra dela.
+ *
+ * ⚠️ ELA NÃO PODE ENTRAR NA CONTA DA ALTURA, e este era o defeito que fazia a
+ * seção FUGIR do cursor. A altura escolhida é aplicada no conteúdo, mas era
+ * medida na moldura — que no construtor carrega esta faixa a mais. Arrastar a
+ * divisa 30px para cima pedia `altura − 30` e devolvia `altura + 26`: a seção
+ * CRESCIA ao ser apertada, e arrastes maiores encolhiam sempre 56px a menos do
+ * que a mão andou, dando a impressão de alça emperrada.
+ *
+ * O número gravado é o do SITE PUBLICADO; a faixa é somada de volta só na
+ * moldura do construtor, para o que se vê continuar batendo com o que sai.
+ */
+export const SECTION_EDIT_GAP = 56
+
+/**
  * Alças da SEÇÃO: arrastar para baixo estica a altura, para os lados alarga a
  * coluna de conteúdo.
  *
@@ -596,17 +611,23 @@ export function SectionResizeDots({
   label: string
 }) {
   const anchorRef = useRef<HTMLSpanElement | null>(null)
-  const dragRef = useRef<{ h: number; w: number } | null>(null)
+  const dragRef = useRef<{ h: number; w: number; scale: number } | null>(null)
 
   const onResize = useCallback(
     (delta: { dx: number; dy: number }, phase: "start" | "move") => {
       const host = anchorRef.current?.parentElement
       if (!host) return
       if (phase === "start") {
+        // ⚠️ A prancheta tem zoom próprio, e a medida vem em pixels de TELA
+        // enquanto a altura é gravada em pixels do DOCUMENTO: com a prancheta
+        // em 200% o arraste valia o dobro do que a mão andava. Mesma correção
+        // já paga no arraste da caixa de texto.
+        const scale = domScale(host)
         const rect = host.getBoundingClientRect()
         dragRef.current = {
-          h: layout.minHeight ?? Math.round(rect.height),
-          w: layout.maxWidth ?? Math.min(SITE_CONTENT_MAX_WIDTH, Math.round(rect.width)),
+          h: layout.minHeight ?? Math.round(rect.height / scale - SECTION_EDIT_GAP),
+          w: layout.maxWidth ?? Math.min(SITE_CONTENT_MAX_WIDTH, Math.round(rect.width / scale)),
+          scale,
         }
         return
       }
@@ -614,8 +635,16 @@ export function SectionResizeDots({
       if (!d) return
       onChange({
         ...layout,
-        minHeight: clampSize(d.h + delta.dy, SITE_SIZES.HEIGHT_MIN, SITE_SIZES.HEIGHT_MAX),
-        maxWidth: clampSize(d.w + delta.dx * 2, SITE_SIZES.MAXW_MIN, SITE_SIZES.MAXW_MAX),
+        minHeight: clampSize(
+          d.h + delta.dy / d.scale,
+          SITE_SIZES.HEIGHT_MIN,
+          SITE_SIZES.HEIGHT_MAX
+        ),
+        maxWidth: clampSize(
+          d.w + (delta.dx / d.scale) * 2,
+          SITE_SIZES.MAXW_MIN,
+          SITE_SIZES.MAXW_MAX
+        ),
       })
     },
     [layout, onChange]
@@ -642,15 +671,20 @@ export function SectionResizeDots({
  * coisa mais frequente que se faz num site montado — tinha de estar a um
  * arraste, no lugar onde o olho já está: a divisa entre uma seção e a seguinte.
  *
- * ⚠️ O RESPIRO CEDE ANTES DA ALTURA, e é isso que faz "diminuir" funcionar.
- * `minHeight` sozinho SÓ CRESCE: com o `py-16 md:py-24` do CSS de pé, pedir uma
- * altura menor que o conteúdo não mudava um pixel e a alça parecia quebrada.
- * Então a conta é: o quanto sobra além do conteúdo vira respiro (até o teto), e
- * `minHeight` só entra quando a pessoa pede MAIS do que o conteúdo ocupa.
+ * ⚠️ O ARRASTE MEXE NO RESPIRO E NA ALTURA AO MESMO TEMPO, porque quem manda
+ * na altura muda de seção para seção: no banner é o `min-h` da classe (86vh /
+ * tela cheia), que só sai de cena quando existe uma altura escolhida; nas
+ * outras é o conteúdo mais o `py-16 md:py-24` do CSS, que ignora um
+ * `min-height` menor que ele. Mexer só num dos dois deixa a alça inerte em
+ * metade do site — e foi o que aconteceu.
  *
  * ⚠️ A altura do conteúdo é medida UMA VEZ, no começo do arraste. Medida a cada
  * quadro, ela mudaria junto com o respiro que estamos aplicando e o gesto
  * entraria em realimentação — a seção fugiria do cursor.
+ *
+ * ⚠️ E ela é medida DESCONTANDO a faixa da barra do construtor
+ * (`SECTION_EDIT_GAP`): o número gravado vale para o site publicado, e medi-lo
+ * na moldura do editor fazia a seção crescer quando a pessoa pedia menos.
  */
 export function SectionHeightHandle({
   layout,
@@ -664,9 +698,14 @@ export function SectionHeightHandle({
   tone?: string
 }) {
   const ref = useRef<HTMLDivElement | null>(null)
-  const dragRef = useRef<{ y: number; height: number; content: number; scale: number } | null>(
-    null
-  )
+  const dragRef = useRef<{
+    y: number
+    height: number
+    content: number
+    scale: number
+    /** A seção já tinha altura escolhida quando o arraste começou. */
+    hadHeight: boolean
+  } | null>(null)
   const [dragging, setDragging] = useState(false)
 
   const begin = useCallback(
@@ -682,18 +721,27 @@ export function SectionHeightHandle({
         // Ponteiro que já sumiu: o arraste segue pelos eventos que chegarem.
       }
       const scale = domScale(host)
-      const height = host.getBoundingClientRect().height / scale
-      const pad = layout.padY ?? readPadY(host)
+      // Sem descontar a faixa da barra, o alvo do arraste e o número aplicado
+      // falariam de duas alturas diferentes (ver SECTION_EDIT_GAP).
+      const height = host.getBoundingClientRect().height / scale - SECTION_EDIT_GAP
+      // ⚠️ O respiro NÃO mora na moldura — mora na casca da seção, e a moldura
+      // não tem padding nenhum. Lido daqui, ele vinha ZERO: o piso de
+      // encolhimento era a altura inteira, e o primeiro arraste ou pulava os
+      // ~192px do respiro de uma vez, ou não movia um pixel (quando um
+      // `min-h` de classe segurava a seção). É o defeito que fazia a alça
+      // parecer morta.
+      const pad = layout.padY ?? readPadY(padHost(host))
       dragRef.current = {
         y: e.clientY,
         height,
         // Altura do conteúdo SEM o respiro: é o piso real de encolhimento.
         content: Math.max(0, height - pad * 2),
         scale,
+        hadHeight: layout.minHeight !== null && layout.minHeight !== undefined,
       }
       setDragging(true)
     },
-    [layout.padY]
+    [layout.padY, layout.minHeight]
   )
 
   const onMove = useCallback(
@@ -701,19 +749,30 @@ export function SectionHeightHandle({
       const d = dragRef.current
       if (!d) return
       e.preventDefault()
-      const target = d.height + (e.clientY - d.y) / d.scale
-      const pad = clampSize((target - d.content) / 2, SITE_SIZES.PADY_MIN, SITE_SIZES.PADY_MAX)
-      const natural = d.content + pad * 2
+      const dy = (e.clientY - d.y) / d.scale
+      // Folga contra a mão trêmula: um toque parado na divisa não é um pedido
+      // de altura, e sem ela o clique gravaria um número no documento.
+      if (Math.abs(dy) < DRAG_THRESHOLD && !d.hadHeight) return
+      const target = d.height + dy
+
+      // ═══ AS DUAS COISAS MUDAM JUNTAS, E É PRECISO QUE SEJA ASSIM ═══
+      //
+      // ⚠️ O RESPIRO sozinho não encolhe TUDO: no banner quem manda na altura é
+      // o `min-h` da classe (86vh / tela cheia), e apertar o respiro lá não
+      // move um pixel — a alça parecia quebrada exatamente na seção mais alta
+      // do site, que é a que mais se quer apertar.
+      //
+      // ⚠️ E a ALTURA sozinha não encolhe nada nas OUTRAS: lá quem ocupa o
+      // espaço é o conteúdo mais o `py-16 md:py-24` do CSS, e um
+      // `min-height` menor que isso é ignorado sem erro nenhum.
+      //
+      // Então o alvo do arraste vira as duas: o respiro que faria o conteúdo
+      // caber nele, e a altura pedida. Cada seção obedece pela metade que a
+      // governa, e o gesto acompanha o cursor nos dois casos.
       onChange({
         ...layout,
-        padY: pad,
-        // Só grava altura quando a pessoa pede MAIS do que o conteúdo com o
-        // respiro no teto — abaixo disso `minHeight` não teria efeito nenhum e
-        // guardá-lo deixaria um número morto no documento.
-        minHeight:
-          target > natural + 1
-            ? clampSize(target, SITE_SIZES.HEIGHT_MIN, SITE_SIZES.HEIGHT_MAX)
-            : null,
+        padY: clampSize((target - d.content) / 2, SITE_SIZES.PADY_MIN, SITE_SIZES.PADY_MAX),
+        minHeight: clampSize(target, SITE_SIZES.HEIGHT_MIN, SITE_SIZES.HEIGHT_MAX),
       })
     },
     [layout, onChange]
@@ -751,6 +810,20 @@ export function SectionHeightHandle({
   )
 }
 
+/**
+ * O elemento que carrega o RESPIRO da seção.
+ *
+ * ⚠️ Não é a moldura (a div do `data-section-id`): ela existe para segurar a
+ * faixa de fundo, a âncora e as alças, e nunca teve padding. Quem pinta o
+ * respiro é a casca — e no banner, que tem casca própria, é o div interno.
+ * Os dois carregam `data-site-pad`, e é por ele que se acha o certo: pela
+ * TAG não dava (o banner não usa `<section>`), e foi assim que a leitura
+ * errou nos dois lugares que perguntam isto.
+ */
+function padHost(el: HTMLElement): HTMLElement {
+  return el.querySelector<HTMLElement>("[data-site-pad]") || el
+}
+
 /** Respiro que o CSS está pintando agora — o ponto de partida em AUTO. */
 function readPadY(el: HTMLElement): number {
   const v = parseFloat(window.getComputedStyle(el).paddingTop)
@@ -776,15 +849,19 @@ export function measuredSectionHeight(id: string, fallback = 320): number {
   if (typeof document === "undefined") return fallback
   const el = document.querySelector<HTMLElement>(`[data-section-id="${CSS.escape(id)}"]`)
   if (!el) return fallback
-  return Math.round(el.getBoundingClientRect().height) || fallback
+  // Mesma régua da alça: o número é o do site publicado, sem a faixa da barra.
+  return Math.round(el.getBoundingClientRect().height - SECTION_EDIT_GAP) || fallback
 }
 
 /** E o respiro que o CSS pinta agora, para o painel partir do valor real. */
 export function measuredSectionPadY(id: string, fallback = 96): number {
   if (typeof document === "undefined") return fallback
   const el = document.querySelector<HTMLElement>(`[data-section-id="${CSS.escape(id)}"]`)
-  // O respiro mora na CASCA da seção, não na moldura que carrega o id.
-  const inner = el?.querySelector<HTMLElement>("section") || el
-  if (!inner) return fallback
-  return Math.round(readPadY(inner)) || fallback
+  if (!el) return fallback
+  // Mesma régua da alça: o respiro mora na casca, achada pelo marcador.
+  const pad = Math.round(readPadY(padHost(el)))
+  // ⚠️ `|| fallback` mandaria um respiro de ZERO de volta para o padrão, e o
+  // botão "−" do painel devolveria a seção ao respiro cheio em vez de mantê-la
+  // apertada. Zero é escolha do líder, não ausência.
+  return Number.isFinite(pad) ? pad : fallback
 }

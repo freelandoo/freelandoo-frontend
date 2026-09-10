@@ -60,6 +60,12 @@ export function SectionShell({
   return (
     <section
       className="px-5 py-16 md:px-10 md:py-24"
+      // ⚠️ MARCADOR DO RESPIRO. É por ele que a alça da linha divisória acha o
+      // elemento que carrega o padding — e não pela tag nem pela moldura, que
+      // não tem padding nenhum. Sem o marcador, a alça media o respiro como
+      // ZERO e o primeiro arraste pulava ~192px de uma vez (ou não fazia nada,
+      // quando um `min-h` de classe segurava a seção).
+      data-site-pad=""
       // O respiro escolhido na alça da linha divisória VENCE as classes — é ele
       // que deixa a seção encostar no conteúdo. `null` mantém o do CSS, que é
       // responsivo (py-16 no celular, py-24 no computador); um número fixo por

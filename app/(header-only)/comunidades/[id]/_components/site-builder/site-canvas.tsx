@@ -29,6 +29,7 @@ import type {
 import {
   EMPTY_BOX,
   EMPTY_LAYOUT,
+  SECTION_EDIT_GAP,
   SectionHeightHandle,
   SectionResizeDots,
   SiteStyleProvider,
@@ -69,6 +70,20 @@ import { PersonSection } from "./sections/person-section"
  * o título apareceria DUAS vezes.
  */
 const OWN_HEADER: SiteSectionKind[] = ["hero", "person"]
+
+/**
+ * Seções que ficam FORA da casca — e é uma só.
+ *
+ * ⚠️ Desenhar o próprio CABEÇALHO não é o mesmo que dispensar a CASCA, e
+ * confundir os dois deixou "quem está por trás" sem respiro, sem largura de
+ * coluna e — o que se vê — com as alças de tamanho INERTES: `padY` e
+ * `maxWidth` são aplicados pela casca, então numa seção que não passa por ela
+ * não há onde pousar o número que a alça grava.
+ *
+ * O banner é a única exceção legítima: ele tem padding, coluna e altura
+ * próprios (a foto ocupa a seção inteira, e o texto flutua sobre ela).
+ */
+const NO_SHELL: SiteSectionKind[] = ["hero"]
 
 /** Blocos que são um destaque no meio da página abrem centralizados. */
 const CENTERED_HEADER: SiteSectionKind[] = ["testimonials", "cta", "gallery"]
@@ -450,9 +465,10 @@ export function SiteCanvas({
         const body = renderSection(section)
 
         // Banner e "quem está por trás" desenham o próprio cabeçalho (um sobre
-        // a foto, o outro dentro da coluna de texto), então não passam pela
-        // SectionShell — que existe para padronizar o resto.
-        const content = OWN_HEADER.includes(section.kind) ? (
+        // a foto, o outro dentro da coluna de texto), então a casca entra com
+        // `hideHeader`. Só o banner dispensa a casca inteira — ele tem
+        // padding, coluna e altura próprios.
+        const content = NO_SHELL.includes(section.kind) ? (
           body
         ) : (
           <SectionShell
@@ -466,6 +482,9 @@ export function SiteCanvas({
             subtitlePlaceholder={t("sectionSubtitlePlaceholder", "Subtítulo (opcional)")}
             eyebrow={sectionLabel(section.kind, t)}
             align={CENTERED_HEADER.includes(section.kind) ? "center" : "left"}
+            // Quem desenha o próprio cabeçalho continua na casca — só esconde o
+            // dela, senão o título sairia duas vezes.
+            hideHeader={OWN_HEADER.includes(section.kind)}
           >
             {body}
           </SectionShell>
@@ -492,6 +511,14 @@ export function SiteCanvas({
             className="relative scroll-mt-20"
             style={{
               ...frameStyle,
+              // ⚠️ A altura gravada é a do site publicado. No construtor a
+              // moldura ainda carrega a faixa da barra da seção, então ela
+              // entra AQUI — e só aqui. Sem somar, pedir 400px devolveria uma
+              // seção de 456 e a alça pareceria não obedecer.
+              minHeight:
+                layout.minHeight === null || layout.minHeight === undefined
+                  ? undefined
+                  : layout.minHeight + SECTION_EDIT_GAP,
               outline: isResizing
                 ? "2px solid #5AC8FA"
                 : "1px dashed rgba(245,241,232,0.12)",
@@ -528,8 +555,10 @@ export function SiteCanvas({
                 }}
               />
             </div>
-            {/* Espaço para a barra não cobrir o conteúdo da seção. */}
-            <div className="pt-14">{content}</div>
+            {/* Espaço para a barra não cobrir o conteúdo da seção. O número
+                sai da MESMA constante que a conta de altura desconta — escrito
+                duas vezes, um ajuste de layout aqui faria a alça errar lá. */}
+            <div style={{ paddingTop: SECTION_EDIT_GAP }}>{content}</div>
             {isResizing && (
               <SectionResizeDots
                 layout={layout}

@@ -198,6 +198,8 @@ export function HeroBannerSection({
 
       <div
         className="relative w-full px-5 py-24 md:px-10"
+        // Mesmo marcador da casca comum: é aqui que o respiro do banner mora.
+        data-site-pad=""
         style={
           layout?.padY !== null && layout?.padY !== undefined
             ? { paddingTop: layout.padY, paddingBottom: layout.padY }

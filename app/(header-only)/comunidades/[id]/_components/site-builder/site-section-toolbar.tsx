@@ -55,6 +55,12 @@ export function SiteSectionToolbar({
     <div
       className="pointer-events-auto flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#15120E] p-1"
       style={{ boxShadow: "4px 4px 0 0 #0B0B0D" }}
+      // ⚠️ A barra é ferramenta, não é o site: um toque nela não pode chegar ao
+      // fundo, que desfaz a seleção. Sem isto o `pointerdown` apagava a seleção
+      // um instante ANTES do `click` do botão de tamanho — então o botão nunca
+      // DESLIGAVA (ele reacendia o que o próprio toque tinha apagado), e
+      // qualquer clique na barra derrubava as bolinhas já abertas.
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <span className="px-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
         {label}
