@@ -24,6 +24,15 @@ export interface RecorderOptions {
   path: RecordPath
   fps?: number
   videoBitrate?: number
+  /**
+   * ⚠️ "realtime" foi aprendido na CÂMERA AO VIVO, onde evita o "Encoding task
+   * failed" do Safari sob pressão de tempo real — e lá ele fica. Mas no Safari
+   * esse modo usa o encoder de baixa latência, que pode emitir chunks SEM o
+   * `decoderConfig`; sem ele o mp4-muxer não aprende o formato da trilha e o
+   * finalize estoura em "...decoderConfig.colorSpace". EXPORTAR ARQUIVO não tem
+   * pressão de tempo real, então o padrão aqui é "quality", que traz a config.
+   */
+  latencyMode?: "quality" | "realtime"
 }
 
 /**
@@ -67,7 +76,7 @@ function pickMediaRecorderMime(): { mimeType: string; blobType: string } {
 }
 
 export class StoryRecorder {
-  private opts: Required<Pick<RecorderOptions, "fps" | "videoBitrate">> & RecorderOptions
+  private opts: Required<Pick<RecorderOptions, "fps" | "videoBitrate" | "latencyMode">> & RecorderOptions
   private recording = false
   private startMs = 0
   private frameCount = 0
@@ -94,12 +103,14 @@ export class StoryRecorder {
   private captureStream: MediaStream | null = null
 
   constructor(options: RecorderOptions) {
-    this.opts = { fps: 30, videoBitrate: 4_000_000, ...options }
+    this.opts = { fps: 30, videoBitrate: 4_000_000, latencyMode: "quality", ...options }
   }
 
   get isRecording() { return this.recording }
   /** Frames de vídeo efetivamente enviados ao encoder (caminho webcodecs). */
   get encodedFrames() { return this.frameCount }
+  /** O mux já aprendeu o formato do vídeo? Sem isto não há arquivo possível. */
+  get hasDecoderConfig() { return this.sawDecoderConfig }
   private get frameIntervalMs() { return 1000 / this.opts.fps }
 
   async start(): Promise<void> {
@@ -125,7 +136,7 @@ export class StoryRecorder {
 
   // ─── WebCodecs ─────────────────────────────────────────────────────────────
   private async startWebCodecs() {
-    const { width, height, videoBitrate, fps, audioTrack } = this.opts
+    const { width, height, videoBitrate, fps, audioTrack, latencyMode } = this.opts
     const wantAudio = typeof window.AudioEncoder !== "undefined" && !!audioTrack
 
     // Áudio: cria o AudioContext PRIMEIRO e dá resume() (no iOS ele nasce
@@ -162,8 +173,18 @@ export class StoryRecorder {
         // "null is not an object (evaluating 't.info.decoderConfig.colorSpace')".
         // Contamos aqui para RECUSAR o finalize em vez de deixar quebrar.
         if (meta?.decoderConfig) this.sawDecoderConfig = true
-        this.outputChunks++
-        this.muxer?.addVideoChunk(chunk, meta)
+        // ⚠️ Chunk ANTES do decoderConfig é DESCARTADO: ele viraria sample de uma
+        // trilha sem formato declarado, que é exatamente o estado que faz o
+        // finalize quebrar. Nada se perde — sem config não há vídeo legível.
+        if (!this.sawDecoderConfig) return
+        // ⚠️ Este callback roda DENTRO do WebCodecs, fora do try/catch de quem
+        // publica: uma exceção aqui não seria capturada por ninguém. Vira estado.
+        try {
+          this.muxer?.addVideoChunk(chunk, meta)
+          this.outputChunks++
+        } catch (e) {
+          this.encodeError = e as Error
+        }
       },
       error: (e) => { this.encodeError = e as Error },
     })
@@ -173,8 +194,8 @@ export class StoryRecorder {
       height,
       bitrate: videoBitrate,
       framerate: fps,
-      avc: { format: "avc" },
-      latencyMode: "realtime", // crucial p/ Safari/iOS (evita "Encoding task failed")
+      avc: { format: "avc" }, // AVCC — é este formato que carrega a description
+      latencyMode,
     })
 
     if (audioCfg && audioTrack && this.audioCtx) {
@@ -318,7 +339,15 @@ export class StoryRecorder {
         throw new VideoCaptureError("no_chunks", "O codificador deste navegador não produziu vídeo.")
       }
       this.teardownAudio()
-      this.muxer?.finalize()
+      // ⚠️ ÚLTIMA LINHA DE DEFESA: nenhuma exceção do mux pode chegar crua ao
+      // usuário. Tipada, ela vira "tente o outro caminho" em vez de um texto
+      // como "null is not an object (...decoderConfig.colorSpace)" na tela.
+      try {
+        this.muxer?.finalize()
+      } catch (e) {
+        this.abortWebCodecs()
+        throw new VideoCaptureError("no_chunks", (e as Error)?.message || "Falha ao finalizar o vídeo.")
+      }
       const buffer = (this.muxer?.target as ArrayBufferTarget).buffer
       this.vEncoder?.close()
       this.aEncoder?.close()

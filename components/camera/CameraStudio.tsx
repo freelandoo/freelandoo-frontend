@@ -425,6 +425,10 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       width: TARGET_W,
       height: TARGET_H,
       path,
+      // Câmera AO VIVO: aqui há pressão de tempo real e o "realtime" é o que
+      // evita o "Encoding task failed" do Safari. O export do composer usa o
+      // padrão ("quality") — ver o comentário em RecorderOptions.latencyMode.
+      latencyMode: "realtime",
     })
     try {
       await rec.start()

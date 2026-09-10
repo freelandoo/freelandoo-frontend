@@ -162,11 +162,15 @@ async function composeVideoPass(p: ComposeParams, path: RecordPath): Promise<Com
         // de "Renderizando" pela duração inteira do clipe. Mede "nunca esteve
         // pronto" — e não `encodedFrames`, que só o webcodecs alimenta.
         const deadEarly = wallSec > 6 && !everReady
+        // Muitos frames já foram ao encoder e ele ainda não declarou o formato
+        // da trilha: não vai declarar. Desiste agora para tentar o outro caminho
+        // em vez de gastar o clipe inteiro para falhar no fim.
+        const noConfig = path === "webcodecs" && wallSec > 3 && rec.encodedFrames > 20 && !rec.hasDecoderConfig
         // No caminho webcodecs, nunca finaliza sem ter codificado ao menos 1
         // frame (evita decoderConfig null no mux). O mediarecorder captura via
         // captureStream e não usa encodedFrames, então só depende de reachedEnd.
         const hasFrames = path !== "webcodecs" || rec.encodedFrames > 0
-        if ((reachedEnd && hasFrames) || timedOut || deadEarly) { resolve(); return }
+        if ((reachedEnd && hasFrames) || timedOut || deadEarly || noConfig) { resolve(); return }
         raf = requestAnimationFrame(loop)
       }
       raf = requestAnimationFrame(loop)
