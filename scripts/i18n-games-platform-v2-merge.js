@@ -66,6 +66,93 @@ const NEW = {
   loadMore: ["Carregar mais", "Load more", "Cargar más"],
 };
 
+// ── G2: o ranking (cidade · estado · horas) ────────────────────────────────
+Object.assign(NEW, {
+  rankingTitle: ["Ranking", "Ranking", "Ranking"],
+  scopeCity: ["Minha cidade", "My city", "Mi ciudad"],
+  scopeState: ["Meu estado", "My state", "Mi estado"],
+  scopeHours: ["Horas jogadas", "Hours played", "Horas jugadas"],
+  rankingNoPlaceTitle: ["Diga em que cidade você está", "Tell us which city you are in", "Dinos en qué ciudad estás"],
+  rankingNoPlaceDesc: [
+    "A fila de games é por cidade e por estado. Complete a cidade no seu perfil para entrar nela.",
+    "The games ranking is by city and by state. Add your city to your profile to join it.",
+    "El ranking de games es por ciudad y por estado. Completa la ciudad en tu perfil para entrar.",
+  ],
+  rankingNoPlaceCta: ["Completar meu perfil", "Complete my profile", "Completar mi perfil"],
+  rankingEmptyTitle: ["A fila ainda está vazia por aqui", "The ranking is still empty here", "El ranking todavía está vacío aquí"],
+  rankingEmptyDesc: [
+    "Ninguém pontuou ainda neste recorte. Publique no Games: curtida, comentário e compartilhamento dos outros viram pontos — e o tempo que você passa por aqui também conta.",
+    "Nobody has scored in this scope yet. Publish in Games: other people's likes, comments and shares become points — and the time you spend here counts too.",
+    "Nadie ha puntuado todavía en este recorte. Publica en Games: los likes, comentarios y compartidos de los demás se vuelven puntos — y el tiempo que pasas aquí también cuenta.",
+  ],
+  rankingEmptyCta: ["Ir para o feed", "Go to the feed", "Ir al feed"],
+  rankingYou: ["Sua posição", "Your position", "Tu posición"],
+  rankingMinutes: ["min online", "min online", "min en línea"],
+  rankingLegend: ["Como pontua:", "How it scores:", "Cómo puntúa:"],
+  rankingLegendLike: ["curtida", "like", "me gusta"],
+  rankingLegendComment: ["comentário", "comment", "comentario"],
+  rankingLegendShare: ["compartilhamento", "share", "compartido"],
+  rankingLegendTime: ["{min} min no Games = 1 ponto", "{min} min in Games = 1 point", "{min} min en Games = 1 punto"],
+  rankingLegendSelf: [
+    "O que você mesmo curte no seu post não conta.",
+    "Liking your own post doesn't count.",
+    "Lo que tú mismo das me gusta en tu post no cuenta.",
+  ],
+  hoursLockedTitle: ["A Estante está desligada", "The Shelf is off", "La Estantería está apagada"],
+  hoursLockedDesc: [
+    "A fila de horas vem das plataformas conectadas (Steam), e a conexão está desligada no momento.",
+    "The hours ranking comes from connected platforms (Steam), and the connection is currently off.",
+    "El ranking de horas viene de las plataformas conectadas (Steam), y la conexión está apagada por ahora.",
+  ],
+  hoursEmptyTitle: ["Ninguém entrou na fila de horas ainda", "Nobody is in the hours ranking yet", "Nadie entró al ranking de horas todavía"],
+  hoursEmptyDesc: [
+    "Quem conecta a Steam com a estante pública entra aqui com as horas que a plataforma verifica.",
+    "Whoever connects Steam with a public shelf enters here with the hours the platform verifies.",
+    "Quien conecta Steam con la estantería pública entra aquí con las horas que la plataforma verifica.",
+  ],
+  hoursMeNone: [
+    "Você ainda não está na fila: conecte uma plataforma com a estante pública para entrar.",
+    "You are not in the ranking yet: connect a platform with a public shelf to join.",
+    "Todavía no estás en el ranking: conecta una plataforma con la estantería pública para entrar.",
+  ],
+  hoursGames: ["{n} jogos", "{n} games", "{n} juegos"],
+  hoursLabel: ["{h} h", "{h} h", "{h} h"],
+});
+
+// ── G3: o jogo atual e a vitrine de posts ──────────────────────────────────
+Object.assign(NEW, {
+  gameTitle: ["Jogo atual", "Now playing", "Juego actual"],
+  gameOfTitle: ["O jogo de {who}", "{who}'s game", "El juego de {who}"],
+  gameHint: [
+    "Vale só dentro do Games e aparece para quem visita o seu",
+    "Only lives inside Games and shows to whoever visits yours",
+    "Vale solo dentro de Games y aparece para quien visita el tuyo",
+  ],
+  gameReadOnly: ["O que essa pessoa está jogando", "What this person is playing", "Lo que esta persona está jugando"],
+  gameTitleLabel: ["Jogo", "Game", "Juego"],
+  gameTitlePlaceholder: ["O que você está jogando agora?", "What are you playing right now?", "¿Qué estás jugando ahora?"],
+  gamePlatformLabel: ["Plataforma", "Platform", "Plataforma"],
+  gamePlatformNone: ["Escolha…", "Choose…", "Elige…"],
+  gamertagLabel: ["Gamertag", "Gamertag", "Gamertag"],
+  gamertagPlaceholder: ["Seu nome nas plataformas", "Your name on the platforms", "Tu nombre en las plataformas"],
+  gameSave: ["Salvar", "Save", "Guardar"],
+  gameSaved: ["Jogo atual salvo.", "Now playing saved.", "Juego actual guardado."],
+  gameSaveError: ["Não deu para salvar.", "Couldn't save.", "No se pudo guardar."],
+  gameEmptyOther: ["{who} ainda não disse o que está jogando.", "{who} hasn't said what they're playing yet.", "{who} todavía no dijo qué está jugando."],
+  platformPc: ["PC", "PC", "PC"],
+  platformPlaystation: ["PlayStation", "PlayStation", "PlayStation"],
+  platformXbox: ["Xbox", "Xbox", "Xbox"],
+  platformNintendo: ["Nintendo", "Nintendo", "Nintendo"],
+  platformMobile: ["Celular", "Mobile", "Celular"],
+  platformRetro: ["Retrô", "Retro", "Retro"],
+  platformOther: ["Outra", "Other", "Otra"],
+  seeMine: ["Ver o meu games", "See my games", "Ver mi games"],
+  postsTitle: ["Posts de games", "Game posts", "Posts de games"],
+  postsTitleOf: ["Posts de {who}", "{who}'s posts", "Posts de {who}"],
+  postsEmptyMine: ["Você ainda não publicou nada no Games.", "You haven't published anything in Games yet.", "Todavía no publicaste nada en Games."],
+  postsEmptyOther: ["{who} ainda não publicou nada aqui.", "{who} hasn't published anything here yet.", "{who} todavía no publicó nada aquí."],
+});
+
 let touched = 0;
 
 LOCALES.forEach((locale, idx) => {
