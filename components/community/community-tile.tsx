@@ -5,7 +5,7 @@
 // Reusado em: aba "Comunidades" do enxame, /comunidades e a aba do /account.
 
 import Link from "next/link"
-import { Users, Trophy, Crown, Shield, Lock, Building2, MapPin, PawPrint, Car, Gamepad2, type LucideIcon } from "lucide-react"
+import { Users, Trophy, Crown, Shield, Lock, Building2, MapPin, PawPrint, Car, type LucideIcon } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
@@ -24,10 +24,10 @@ export type CommunityTileData = {
   privacy?: "public" | "private"
   monthly_cents?: number | null
   /** Modalidade (migs 196/210). Condomínio mostra bairro/cidade no lugar do
-   *  enxame; pet, carro e games mostram o ASSUNTO (raça, modelo, jogo), que é o
-   *  que eles têm no lugar do enxame — sem isso o card sairia com o rodapé
-   *  vazio, parecendo quebrado. */
-  kind?: "common" | "academy" | "condo" | "neighborhood" | "pet" | "car" | "games"
+   *  enxame; pet e carro mostram o ASSUNTO (raça, modelo), que é o que eles
+   *  têm no lugar do enxame — sem isso o card sairia com o rodapé vazio,
+   *  parecendo quebrado. */
+  kind?: "common" | "academy" | "condo" | "neighborhood" | "pet" | "car"
   subject_label?: string | null
   condo_neighborhood?: string | null
   municipio?: string | null
@@ -38,7 +38,6 @@ export type CommunityTileData = {
 const SUBJECT_ICON: Record<string, LucideIcon | undefined> = {
   pet: PawPrint,
   car: Car,
-  games: Gamepad2,
 }
 
 // Mesma paleta de accent da página da comunidade (detalhe recolorível).
@@ -66,8 +65,7 @@ export function CommunityTile({ community }: { community: CommunityTileData }) {
   const kindLabel =
     community.kind === "pet" ? t("kindPet", "Pet")
       : community.kind === "car" ? t("kindCar", "Carro")
-        : community.kind === "games" ? t("kindGames", "Games")
-          : null
+        : null
 
   return (
     <Link

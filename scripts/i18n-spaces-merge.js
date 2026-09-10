@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 // Merge idempotente das chaves do menu da foto de perfil e das modalidades
-// novas de comunidade (pet, carro, games — mig 210).
+// novas de comunidade (pet e carro — mig 210).
+//
+// ⚠️ AS CHAVES DE GAMES SAÍRAM DAQUI (2026-09-09), junto com o frontend daquele
+// ambiente. Elas foram apagadas dos três dicionários, e este merge é
+// fill-if-absent: deixá-las na tabela faria a próxima execução RESSUSCITAR o
+// que a limpeza tirou.
 //
 // Padrão da casa: fill-if-absent — nunca sobrescreve o que já está no dicionário.
 //
@@ -18,7 +23,6 @@ const SPACES = {
   newProfile: ["Novo perfil", "New profile", "Nuevo perfil"],
   myPet: ["Meu pet", "My pet", "Mi mascota"],
   myCar: ["Meu carro", "My car", "Mi coche"],
-  myGames: ["Meus games", "My games", "Mis juegos"],
   myAcademy: ["Minha academia", "My gym", "Mi gimnasio"],
   myCondo: ["Meu condomínio", "My building", "Mi condominio"],
   myStreet: ["Minha rua", "My street", "Mi calle"],
@@ -36,7 +40,6 @@ const SPACES = {
   // ── ações de "não tenho nenhum ainda" ───────────────────────────────────
   newPet: ["Novo pet", "New pet", "Nueva mascota"],
   newCar: ["Adicionar carro", "Add car", "Añadir coche"],
-  newGame: ["Novo jogo", "New game", "Nuevo juego"],
   newCondo: ["Cadastrar condomínio", "Register building", "Registrar condominio"],
   newCommunity: ["Criar comunidade", "Create community", "Crear comunidad"],
   findAcademy: ["Encontrar academia", "Find a gym", "Encontrar gimnasio"],
@@ -102,37 +105,13 @@ const SPACES = {
     "Abrir comunidad del coche",
   ],
 
-  // ── games ───────────────────────────────────────────────────────────────
-  newGameTitle: ["Meus games", "My games", "Mis juegos"],
-  newGameDesc: [
-    "Uma comunidade para o jogo que você joga — sua, com mural e seguidores.",
-    "A community for the game you play — yours, with a wall and followers.",
-    "Una comunidad para el juego que juegas — tuya, con muro y seguidores.",
-  ],
-  platformLabel: ["Plataforma", "Platform", "Plataforma"],
-  platform_pc: ["PC", "PC", "PC"],
-  platform_playstation: ["PlayStation", "PlayStation", "PlayStation"],
-  platform_xbox: ["Xbox", "Xbox", "Xbox"],
-  platform_nintendo: ["Nintendo", "Nintendo", "Nintendo"],
-  platform_mobile: ["Celular", "Mobile", "Móvil"],
-  platform_retro: ["Retrô", "Retro", "Retro"],
-  platform_outra: ["Outra", "Other", "Otra"],
-  gameTitleLabel: ["Jogo", "Game", "Juego"],
-  gameTitlePlaceholder: ["Ex.: Minecraft", "E.g.: Minecraft", "Ej.: Minecraft"],
-  gameTitleRequired: ["Informe o jogo.", "Tell us the game.", "Indica el juego."],
-  gamertagLabel: ["Seu nick (opcional)", "Your nickname (optional)", "Tu nick (opcional)"],
   communityNameOptional: [
     "Nome da comunidade (opcional)",
     "Community name (optional)",
     "Nombre de la comunidad (opcional)",
   ],
-  createGameCta: [
-    "Criar comunidade do jogo",
-    "Create game community",
-    "Crear comunidad del juego",
-  ],
 
-  // ── comum aos três modais ───────────────────────────────────────────────
+  // ── comum aos modais ────────────────────────────────────────────────────
   bioLabel: ["Descrição (opcional)", "Description (optional)", "Descripción (opcional)"],
 };
 
@@ -146,11 +125,9 @@ const SPACES = {
 const COMMUNITY = {
   kindPet: ["Pet", "Pet", "Mascota"],
   kindCar: ["Carro", "Car", "Coche"],
-  kindGames: ["Games", "Games", "Juegos"],
 
   subjectPetTitle: ["Sobre o pet", "About the pet", "Sobre la mascota"],
   subjectCarTitle: ["O carro", "The car", "El coche"],
-  subjectGameTitle: ["O jogo", "The game", "El juego"],
   speciesDog: ["Cachorro", "Dog", "Perro"],
   speciesCat: ["Gato", "Cat", "Gato"],
   speciesOther: ["Outro animal", "Other animal", "Otro animal"],
@@ -165,11 +142,6 @@ const COMMUNITY = {
   carBrandLabel: ["Marca", "Brand", "Marca"],
   carModelLabel: ["Modelo", "Model", "Modelo"],
   carPickBrandFirst: ["Escolha a marca", "Pick the brand first", "Elige la marca"],
-  gameTitleLabel: ["Jogo", "Game", "Juego"],
-  gamertagLabel: ["Seu nick", "Your nickname", "Tu nick"],
-  platformMobile: ["Celular", "Mobile", "Móvil"],
-  platformRetro: ["Retrô", "Retro", "Retro"],
-  platformOther: ["Outra", "Other", "Otra"],
 };
 
 // O rótulo do avatar na /account, que deixou de ser "trocar foto".

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
  * Os botões RETRÁTEIS do headcard — PEÇA ÚNICA das duas superfícies (o headcard
  * do /account e o `ProfileHeadCard` do perfil).
  *
- * São três, empilhados um em cima do outro atrás da foto: Games (roxo, o mais
+ * São três, empilhados um em cima do outro atrás da foto: Business (o mais
  * alto — sobe até por cima do banner da manifestação), Carteira (verde) e
  * Fitness (laranja). Fechados, só o ícone escapa pela direita da
  * foto; no hover ele espia um pouco mais para fora; no clique abre e mostra o
@@ -80,7 +80,7 @@ export type PillSpec = {
   bg: string
   bgHover: string
   href?: string
-  /** Destino resolvido na hora do clique (Games precisa criar-ou-abrir). */
+  /** Destino resolvido na hora do clique (o Business precisa criar-ou-abrir). */
   onOpen?: () => void
   /**
    * Marca o pill cujo destino já está no ar. Só escurece o corpo (a cor de
@@ -393,9 +393,9 @@ export function HeadcardPills({
       pills={pills}
       avatarPadClass={avatarPadClass}
       // CENTRADA NA FOTO. Antes a pilha era ancorada numa porcentagem com um
-      // deslocamento fixo (`48% - 2.5rem`), e o Games subia acima da borda de
+      // deslocamento fixo (`48% - 2.5rem`), e o pill do topo subia acima da borda de
       // cima da foto, caindo sobre o banner. O Alex pediu (2026-09-05) que a
-      // foto ALCANCE o Games: a foto cresceu para 2/3 e a pilha voltou ao
+      // foto ALCANCE o pill do topo: a foto cresceu para 2/3 e a pilha voltou ao
       // centro, então ela cabe inteira e volta a escapar SÓ pela direita — que
       // é a regra do desenho.
       //

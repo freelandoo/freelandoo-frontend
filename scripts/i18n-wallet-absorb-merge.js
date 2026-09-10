@@ -32,15 +32,13 @@ const ACCOUNT = {
     "Cambiar tu manifestación en la tienda",
   ],
   fitnessPill: ["Fitness", "Fitness", "Fitness"],
-  gamesPill: ["Games", "Games", "Games"],
+  // ⚠️ `gamesPill` e `openGamesAria` saíram daqui (2026-09-09), junto com o
+  // frontend da plataforma de games. Este merge é fill-if-absent: mantê-las na
+  // tabela faria a próxima execução ressuscitar o que a limpeza tirou.
+  //
   // Escoteiro: a chave já existia no /account (commit c924a2d) sem entrada em
   // nenhum dos três dicionários — en/es mostravam português em silêncio.
   browseByEnxame: ["Buscar por enxame", "Browse by swarm", "Buscar por enjambre"],
-  openGamesAria: [
-    "Abrir a comunidade dos meus games",
-    "Open my games community",
-    "Abrir la comunidad de mis juegos",
-  ],
 };
 
 const PROFILE = {

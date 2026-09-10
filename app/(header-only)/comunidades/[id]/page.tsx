@@ -25,8 +25,8 @@ import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 // A coluna retrátil dos números (membros, nível, XP, benchmark, destaque e
 // ranking). A peça é só a MECÂNICA — o que entra na coluna é desta página.
 import { RetractableColumn } from "@/components/tabloide"
-// A plataforma de games troca o conteúdo do dock global. Quem sabe que a rota é
-// games é ESTA página (a modalidade não está na URL), então é ela que declara.
+// A comunidade de NEGÓCIO troca o conteúdo do dock global. Quem sabe qual é a
+// modalidade é ESTA página (ela não está na URL), então é ela que declara.
 import { CommunityShellBeacon, onCommunityView } from "@/components/layout/community-shell"
 // A paleta editável do líder e o formatador de XP moram FORA desta página: o
 // ranking cheio (`[id]/ranking`) pinta o pódio com o MESMO accent, e uma cópia
@@ -69,10 +69,8 @@ const CondoResidence = dynamic(
  * As abas da comunidade.
  *
  * ⚠️ ERAM TRÊS: "shelf" (a estante da Steam, mig 220) saiu com a plataforma de
- * games (2026-09-09). O componente dela continua no repositório, em
- * `_components/gamer-shelf.tsx`, SEM CHAMADOR — órfão de propósito, guardado
- * para quando a estante ganhar casa própria. Ele não é importado por ninguém,
- * então não entra em bundle nenhum.
+ * games (2026-09-09), e o componente dela foi APAGADO junto quando o frontend
+ * daquele ambiente foi retirado inteiro.
  */
 type CommunityTab = "feed" | "members"
 // "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
@@ -114,15 +112,18 @@ type Community = {
   viewer_sub_status?: string | null
   // Modalidade (migs 196/205/210). Todas as modalidades renderizam nesta MESMA
   // casca; o que muda é quais seções aparecem e quem pode escrever.
-  // "finance" nunca abre por esta rota hoje (o Financeiro tem casca própria em
-  // /wallet), mas está na lista porque a REGRA de plataforma é a mesma das duas
-  // — deixá-lo de fora faria o predicado mentir no dia em que ele passasse aqui.
-  kind?: "common" | "academy" | "condo" | "neighborhood" | "pet" | "car" | "games" | "finance"
-  // Assunto das modalidades da mig 210: a raça do pet, o modelo do carro, o
-  // jogo. É o que dá identidade à página — sem ele o cabeçalho do "Rex" não
-  // diz que Rex é um vira-lata.
+  //
+  // ⚠️ "games" e "finance" NÃO estão na lista, e isso é decisão. As duas são
+  // PLATAFORMAS, não comunidades: o Financeiro tem casca própria em `/wallet`,
+  // e o frontend de games foi retirado inteiro (2026-09-09). A linha de games
+  // continua no banco, então quem abrir a URL antiga cai aqui pelo caminho
+  // GENÉRICO — uma comunidade sem líder e sem membros, que é o que ela é.
+  kind?: "common" | "academy" | "condo" | "neighborhood" | "pet" | "car"
+  // Assunto das modalidades da mig 210: a raça do pet, o modelo do carro. É o
+  // que dá identidade à página — sem ele o cabeçalho do "Rex" não diz que Rex
+  // é um vira-lata.
   subject?: {
-    kind: "pet" | "car" | "games"
+    kind: "pet" | "car"
     species?: string | null
     breed_label?: string | null
     is_mixed?: boolean
@@ -131,9 +132,6 @@ type Community = {
     model_code?: string | null
     brand_label?: string | null
     model_label?: string | null
-    platform?: string | null
-    game_title?: string | null
-    gamertag?: string | null
   } | null
   // Endereço do condomínio. SENSÍVEL: o backend só devolve rua/número/CEP
   // para morador confirmado ou administração (CondoRules é a fonte única) —
@@ -312,7 +310,8 @@ export default function CommunityDetailPage() {
   // Painel novo entra AQUI (no tipo) e na lista de pills abaixo — os dois lados
   // são a mesma decisão, e separá-los deixaria um botão sem painel.
   //
-  // ⚠️ ERAM TRÊS: o painel `game` saiu com a plataforma de games (2026-09-09).
+  // ⚠️ ERAM TRÊS: o painel `game` saiu com o frontend da plataforma de games
+  // (2026-09-09), e com ele o único painel que não falava de um GRUPO.
   type CommunityPanel = "profile" | "mural"
   const [panel, setPanel] = useState<CommunityPanel | null>(null)
 
@@ -329,50 +328,34 @@ export default function CommunityDetailPage() {
    * resto. Resultado: `myAvatar` era `undefined` para TODA conta, e a foto da
    * plataforma caía no boneco cinza sem erro nenhum aparecer.
    *
-   * ⚠️ É ISSO QUE FAZIA "UNS PUXAREM E OUTROS NÃO", e a assimetria tem duas
-   * metades: visitando o games de OUTRA pessoa a foto vinha do backend
-   * (`GameProfileService._card` devolve `u.avatar`, de `tb_user`) e aparecia;
-   * o SEU próprio games lia o localStorage vazio e não aparecia. Duas fontes
-   * para o mesmo rosto na mesma tela.
-   *
    * A fonte certa é a MESMA que `/account` e a Carteira já usam — `tb_user.avatar`,
    * que a mig 215 cravou como fonte única do rosto da pessoa. Aqui ela é lida
    * direto em vez de pelo `useMeProfile`, porque aquele hook EMPURRA PARA O
-   * LOGIN quando não há token: esta página é pública (o feed de games abre para
-   * visitante anônimo), e usá-lo trancaria a porta da plataforma inteira.
+   * LOGIN quando não há token: esta página abre para visitante anônimo, e
+   * usá-lo trancaria a porta de toda comunidade pública.
+   *
+   * ⚠️ SÓ NO NEGÓCIO. É o único lugar onde a foto de quem olha é a RESERVA da
+   * foto da comunidade; nas outras modalidades o rosto é do ASSUNTO, e quem
+   * abre um pet ou um condomínio não paga esta requisição.
    */
   const [myAvatar, setMyAvatar] = useState<string | null>(null)
   const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
 
-  // ─── PLATAFORMA × COMUNIDADE ────────────────────────────────────────────────
+  // ─── QUEM MANDA AQUI É O LÍDER ──────────────────────────────────────────────
   //
-  // Games (mig 232) e o Financeiro (mig 229) não são comunidades de ninguém:
-  // são PLATAFORMAS do site inteiro. Ninguém entra, ninguém lidera
-  // (`id_leader_user` é NULL de propósito) e quem edita nome, foto e CORES é o
-  // ADMIN DA PLATAFORMA — pedido do Alex (2026-09-09): "só o admin da
-  // plataforma pode alterar (...) e as cores só o admin pode alterar".
-  //
-  // ⚠️ E O QUE ESTÁ DENTRO DELA CONTINUA SENDO DE CADA UM: "o feed é da
-  // plataforma; a estante, o jogo atual e os posts são do perfil do usuário, a
-  // mesma coisa da carteira e da vaquinha". É por isso que existem DOIS
-  // predicados aqui e não um: `canAdminister` decide a casca (o que é da
-  // casa), e o que é da pessoa é gateado por estar logado.
+  // ⚠️ ESTA TELA NÃO SERVE MAIS NENHUMA PLATAFORMA, e por isso o predicado é
+  // um só. Havia um segundo (`isPlatformSpace`) porque games (mig 232) e o
+  // Financeiro (mig 229) não são comunidades de ninguém: ninguém entra,
+  // ninguém lidera (`id_leader_user` é NULL de propósito) e quem editava nome,
+  // foto e cores era o ADMIN DA PLATAFORMA. O Financeiro nunca passou por esta
+  // rota (ele tem casca própria em `/wallet`) e o frontend de games foi
+  // retirado inteiro (2026-09-09) — o ramo virou código que nada alcança, e
+  // código que nada alcança é o que apodrece sem ninguém ver.
   //
   // ⚠️ O ESPELHO ERRA PARA MENOS. Quem manda é o backend
   // (`CommunityService._assertCommunityAdmin`); aqui só se evita OFERECER o
   // que ele recusaria.
-  const isPlatformSpace = community?.kind === "games" || community?.kind === "finance"
-  // A leitura do admin é a MESMA das outras superfícies (UserDropside,
-  // ProfileSidebar, EditableImage). As duas metades dizem a MESMA coisa: o
-  // `is_admin` que o login guarda é o resultado de `AuthStorage.isAdmin`, que
-  // é o papel Administrator — o `roles` fica como leitura de payload antigo,
-  // e é por isso que o espelho bate com o guard do backend em vez de ser mais
-  // largo que ele.
-  const isPlatformAdmin = !!(
-    storedUser?.is_admin ||
-    storedUser?.roles?.some((r) => r.desc_role === "Administrator")
-  )
-  const canAdminister = isPlatformSpace ? isPlatformAdmin : isLeader
+  const canAdminister = isLeader
   const myMembership = useMemo(
     () => members.find((m) => m.id_user === currentUserId) || null,
     [members, currentUserId]
@@ -408,15 +391,10 @@ export default function CommunityDetailPage() {
     return null
   })()
   const isResident = !!community?.viewer_is_resident
-  // ⚠️ NA PLATAFORMA, PUBLICAR É DE QUEM ESTÁ LOGADO. Ela não tem membros, e
-  // `isMember` seria falso para todo mundo — o "+ Postar" sumiria da tela de
-  // um feed que é justamente comunitário. Quem confere de verdade é o backend
-  // (`linkFeedItem` isenta as plataformas da membresia).
-  const canPost = isCondo
-    ? isLeader || isResident
-    : isPlatformSpace
-      ? !!currentUserId
-      : isMember
+  // Quem publica é MEMBRO — no condomínio, MORADOR. O ramo de plataforma
+  // (publicar por estar logado) saiu junto com games: aqui só restam
+  // comunidades de verdade, e nelas a membresia é a porta.
+  const canPost = isCondo ? isLeader || isResident : isMember
 
   // ─── "Meu Site" (mig 212) ───────────────────────────────────────────────────
   // A flag `comunidade_site` é kill-switch de CONSTRUÇÃO: desligada, o líder
@@ -431,8 +409,8 @@ export default function CommunityDetailPage() {
   // `canBuildCommunitySite`, no `community-ui.ts`, porque a tela de ranking
   // também precisa da resposta para desenhar o globo do dock.
   // ⚠️ O predicado LÊ `community?.kind`, e NÃO `subjectKind`: aquele só carrega
-  // pet, carro e games (é o ASSUNTO editável da comunidade) e vale `null` para
-  // comum, condomínio e bairro. Com ele, condomínio e bairro cairiam no default
+  // pet e carro (é o ASSUNTO editável da comunidade) e vale `null` para comum,
+  // condomínio e bairro. Com ele, condomínio e bairro cairiam no default
   // "common" e ficariam com a aba Site de pé.
 
   // ⚠️ SÓ O LÍDER VÊ A ENTRADA DO SITE (pedido do Alex, 2026-09-08).
@@ -496,11 +474,9 @@ export default function CommunityDetailPage() {
     [showSiteEntry, t]
   )
 
-  // ─── Estante (mig 220) ──────────────────────────────────────────────────────
-  // ⚠️ A ABA "ESTANTE" SAIU DAQUI (2026-09-09). Ela só existia na modalidade
-  // games e mostrava a biblioteca conectada da Steam. O componente dela
-  // continua no repositório (`_components/gamer-shelf.tsx`), sem chamador —
-  // órfão de propósito, para quando a estante ganhar casa própria.
+  // ⚠️ A ABA "ESTANTE" (mig 220) SAIU DAQUI (2026-09-09). Ela só existia na
+  // modalidade games e mostrava a biblioteca conectada da Steam; o componente
+  // dela foi apagado junto com o resto do frontend daquele ambiente.
   const communityTabs = useMemo(
     () =>
       [
@@ -572,8 +548,8 @@ export default function CommunityDetailPage() {
   const accent = accentHex(accentDraft)
 
   // A SOMBRA DURA é a assinatura do tabloide — o deslocamento de 8px que faz o
-  // card parecer papel recortado. Dentro do ambiente games ela vira brilho de
-  // painel: mesma cor, sem o deslocamento. É o único lugar onde a pele precisa
+  // card parecer papel recortado. Dentro do ambiente de negócio ela vira brilho
+  // de painel: mesma cor, sem o deslocamento. É o único lugar onde a pele precisa
   // do JavaScript, porque estas duas sombras são `style` inline e CSS só as
   // alcançaria com !important sobre um seletor de atributo — frágil demais para
   // uma coisa que muda de valor a cada troca de paleta do líder.
@@ -607,20 +583,17 @@ export default function CommunityDetailPage() {
     ? t("residentToPost", "Confirme seu apartamento para publicar.")
     : t("joinToPost", "Entre na comunidade para publicar.")
 
-  // A pilha atrás da foto. São DOIS elencos na mesma mecânica: nas comunidades
-  // (comum, condomínio, bairro, pet e carro) são Perfil (azul), Mural (laranja)
-  // e Ranking (roxo); na PLATAFORMA DE GAMES são Jogo atual (laranja), Posts de
-  // games (verde) e Ranking (roxo). O que muda é a LISTA — a peça, a animação e
-  // a conta da altura são as mesmas, e é isso que impede uma das duas telas de
-  // perder um comportamento em silêncio.
+  // A pilha atrás da foto: Perfil (azul), Mural (laranja) e Ranking (roxo).
+  // A peça, a animação e a conta da altura são as mesmas das outras superfícies
+  // que montam `PillStack` — é isso que impede uma delas de perder um
+  // comportamento em silêncio.
   //
   // É de propósito que os pills de PAINEL não sejam blocos na página: o painel
   // é o mesmo para quem lê e para quem edita, então não há duas telas dizendo o
   // que a comunidade é, nem dois lugares mostrando o mesmo recado ou o mesmo
   // jogo atual.
   //
-  // A cor é FIXA nos dois elencos, e não a `accent`: o accent é editável (pelo
-  // líder na comunidade, pelo administrador na plataforma) e pode cair
+  // A cor é FIXA, e não a `accent`: o accent é editável pelo líder e pode cair
   // justamente no tom do botão, que sumiria dentro do próprio card. O pill é
   // peça de chrome, não conteúdo pintável.
   /**
@@ -634,10 +607,9 @@ export default function CommunityDetailPage() {
    * forma SÍNCRONA e bloqueia a thread — exatamente no quadro em que o spring
    * do pill está começando.
    *
-   * Passam por aqui o "Jogo atual" da plataforma de games e o Perfil/Mural
-   * das outras modalidades — os três abrem painel do mesmo jeito. Os pills que
-   * NAVEGAM (Posts de games, Ranking) não precisam disto: quem espera lá é o
-   * roteador, não esta árvore.
+   * Passam por aqui o Perfil e o Mural — os dois abrem painel do mesmo jeito.
+   * O Ranking não precisa disto: ele NAVEGA, e quem espera lá é o roteador,
+   * não esta árvore.
    *
    * `startTransition` marca a abertura como não-urgente: o React fatia esse
    * render e devolve a thread ao navegador entre os pedaços, então a animação
@@ -831,7 +803,7 @@ export default function CommunityDetailPage() {
 
   // A lista de enxames só desce para quem ESTÁ editando uma comunidade comum:
   // visitante não precisa dos 15 enxames para ler o mural, e as modalidades da
-  // mig 210 (pet/carro/games) e as territoriais não têm enxame nenhum.
+  // mig 210 (pet/carro) e as territoriais não têm enxame nenhum.
   useEffect(() => {
     if (!showAsLeaderEdit || (community?.kind ?? "common") !== "common") return
     if (enxames.length) return
@@ -1262,7 +1234,8 @@ export default function CommunityDetailPage() {
    * ⚠️ A FOTO DO HEADCARD É A DA PESSOA (pedido do Alex, 2026-09-09: "todas as
    * heads trazem a foto do perfil").
    *
-   * ⚠️ ERAM TRÊS REGIMES; sobraram DOIS, porque os outros dois eram de games.
+   * ⚠️ ERAM QUATRO REGIMES; sobraram DOIS, porque os outros dois eram de games
+   * e foram embora com o frontend daquele ambiente.
    * O que fica: a foto DA COMUNIDADE, com a do usuário como RESERVA **só no
    * NEGÓCIO** — lá o líder pode ter posto o logo da barbearia, e forçar a cara
    * dele apagaria a marca; o que a reserva resolve é o boneco cinza de quem
@@ -1288,9 +1261,9 @@ export default function CommunityDetailPage() {
     seasonOn && goal ? scoreLabel(goal.metric, row) : compact(row.score)
 
   return (
-    // A pele é uma CLASSE no container (`fl-games`/`fl-business`, em
-    // globals.css) e não uma troca de cores no arquivo: esta página é uma casca
-    // só para sete modalidades, e mexer nas cores aqui pintaria todas elas.
+    // A pele é uma CLASSE no container (`fl-business`, em globals.css) e não
+    // uma troca de cores no arquivo: esta página é uma casca só para todas as
+    // modalidades, e mexer nas cores aqui pintaria todas elas.
     // As variáveis do `style` só existem na de negócio, onde a cor é do líder.
     <div
       style={skinVars}
@@ -1299,17 +1272,17 @@ export default function CommunityDetailPage() {
       {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
           DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
           headcard cobrir a pilha de pills.
-          ⚠️ A variante `games` saiu com a plataforma (2026-09-09); o
-          componente segue servindo o negócio e o Financeiro. */}
+          ⚠️ A variante `games` foi APAGADA (2026-09-09); o componente serve o
+          negócio e o Financeiro. */}
       {/* O fundo do negócio, na cor que o líder escolheu —
           e SEM símbolo nenhum por cima (o cifrão é do Financeiro; "meu
           negócio" pode ser barbearia ou marcenaria, e um símbolo escolhido por
           nós estaria errado para quase todos). */}
       {isBusinessPlatform && <TechBackdrop variant="business" tint={bizTint} />}
       {/* Declara o ambiente para o dock global (não desenha nada).
-          "Meus negócios" (a comunidade `common`) é ambiente pelo mesmo motivo
-          que a plataforma de games: lá dentro a barra da Freelandoo dá lugar aos
-          controles do espaço, e a volta é a foto amarela.
+          "Meus negócios" (a comunidade `common`) é o único ambiente que
+          sobrou: lá dentro a barra da Freelandoo dá lugar aos controles do
+          espaço, e a volta é a foto amarela.
           ⚠️ O ambiente é do LUGAR, não de quem olha — quem visita também troca
           de barra, e é por isso que a porta de saída existe. O que depende de
           quem olha é só o item do Site (`showSiteEntry`, que some junto da
@@ -1392,8 +1365,8 @@ export default function CommunityDetailPage() {
                 {tx.enxame(null, community.enxame_name)}
               </span>
             )}
-            {/* Pet, carro e games não têm enxame (mig 210): o chip do lugar dele
-                é o ASSUNTO — raça, modelo, jogo. */}
+            {/* Pet e carro não têm enxame (mig 210): o chip do lugar dele é o
+                ASSUNTO — raça, modelo. */}
             {subjectChip && (
               <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
                 {subjectChip}
@@ -1442,22 +1415,17 @@ export default function CommunityDetailPage() {
               e a folga é confortável — mas ela veio de h-32 (128px), que já era
               o mínimo. PILL NOVO AQUI? Refazer esta conta. */}
           <div className="relative shrink-0">
-            {/* ⚠️ A PILHA VALE PARA TODAS AS MODALIDADES, GAMES INCLUSIVE, e o
-                que muda entre elas é só a LISTA (ver `communityPills`), nunca a
-                mecânica: em games são Jogo atual (laranja, abre painel), Posts
-                de games (verde, navega) e Ranking (roxo, navega); nas outras,
-                Perfil, Mural e Ranking.
+            {/* ⚠️ A PILHA VALE PARA TODAS AS MODALIDADES, e o que muda entre
+                elas é só a LISTA (ver `communityPills`), nunca a mecânica.
 
                 Não há gate de montagem aqui de propósito — `PillStack` já
                 devolve `null` com a lista vazia. Um `&&` neste ponto seria uma
                 SEGUNDA decisão sobre quais telas têm pilha, e a que ficasse
-                para trás apagaria botões que a lista continuou entregando (foi
-                o que aconteceu com os três de games entre 2026-09-09 e esta
-                reconstrução).
+                para trás apagaria botões que a lista continuou entregando.
 
-                ⚠️ O RANKING DE GAMES SÓ TEM ESTA PORTA: o dock de lá não o
-                lista, então tirar o pill deixa `/comunidades/<id>/ranking` no
-                ar e inalcançável. */}
+                ⚠️ O RANKING SÓ TEM ESTA PORTA no dock de negócios e aqui:
+                tirar o pill deixa `/comunidades/<id>/ranking` no ar e
+                inalcançável para as outras modalidades. */}
             <PillStack
               pills={communityPills}
               avatarPadClass="pl-32 md:pl-36"
@@ -1511,14 +1479,9 @@ export default function CommunityDetailPage() {
               />
             </div>
           )}
-          {/* ENTRAR não existe na plataforma de games: ninguém "entra" no
-              espaço de games de outra pessoa — visita.
-
-              ⚠️ SAIR, sim. Quem entrou ANTES desta mudança tem uma linha de
-              membresia que continua existindo no banco, e esconder o botão
-              junto com o de entrar trancaria a porta de saída — a única que
-              não pode existir (mesma regra do desconectar do WhatsApp e do
-              gamer). Por isso o gate deixa passar quem JÁ é membro. */}
+          {/* ⚠️ SAIR TEM QUE EXISTIR SEMPRE. Quem tem uma linha de membresia
+              precisa poder desfazê-la: porta de saída trancada é a única que
+              não pode existir (mesma regra do desconectar do WhatsApp). */}
           {!isLeader && (
             <div className="pb-1">
               {myMembership ? (
@@ -1640,12 +1603,12 @@ export default function CommunityDetailPage() {
             <div className="space-y-4 p-4 md:p-5">
               {/* ENXAME (mig 219). É este campo que substitui o formulário de
                   criação: a comunidade comum nasce vazia e o assunto dela é
-                  escolhido aqui, do mesmo jeito que pet/carro/games escolhem
-                  raça, modelo e jogo desde a mig 211. Escolhido, ele aparece
-                  fixado — para o líder e para quem visita.
+                  escolhido aqui, do mesmo jeito que pet e carro escolhem raça
+                  e modelo desde a mig 211. Escolhido, ele aparece fixado —
+                  para o líder e para quem visita.
 
-                  Pet, carro, games, bairro e condomínio não têm enxame: o chip
-                  do lugar dele é o ASSUNTO, que continua no banner. */}
+                  Pet, carro, bairro e condomínio não têm enxame: o chip do
+                  lugar dele é o ASSUNTO, que continua no banner. */}
               {(community.kind ?? "common") === "common" && (
                 <Block title={t("enxameTitle", "Enxame")} icon={<Hexagon className="h-4 w-4" />} accent={accent}>
                   {showAsLeaderEdit ? (
@@ -1848,15 +1811,11 @@ export default function CommunityDetailPage() {
           usam esta mesma casca. Bloco novo de número desta página entra AQUI
           DENTRO, nunca solto entre o headcard e o feed.
 
-          ⚠️ A PLATAFORMA DE GAMES FICOU ÓRFÃ DELA (2026-09-08). A gaveta
-          responde "que tamanho tem este GRUPO" — membros, nível, XP, posição
-          entre comunidades, destaque e ranking dos membros —, e ali dentro
-          não há grupo: a plataforma é uma por pessoa, ninguém entra. Os três
-          blocos que falam de gente já saíam; o que sobrava (nível, XP e um
-          benchmark que compara a plataforma com comunidades) media a régua
-          errada. O que games tem de fila é o RANKING da plataforma, atrás do
-          botão do mural. Guard aqui, e não dentro de cada bloco: por dentro,
-          o bloco novo que esquecesse da regra reacenderia a alça sozinho.
+          ⚠️ ELA RESPONDE "que tamanho tem este GRUPO" — membros, nível, XP,
+          posição entre comunidades, destaque e ranking dos membros. Um espaço
+          SEM grupo não a tem, e o guard fica aqui, no envelope, e não dentro de
+          cada bloco: por dentro, o bloco novo que esquecesse da regra
+          reacenderia a alça sozinho.
 
           A peça se desenha por PORTAL no <body>, então este lugar no JSX é só
           onde ela mora perto dos dados que lê — não é onde ela aparece. */}
@@ -2266,7 +2225,7 @@ export default function CommunityDetailPage() {
           // recusaria — quem decide continua sendo o backend, então errar para
           // mais neste lado esconde uma opção, nunca abre uma porta.
           communityExclusiveOnly={isPrivate || isCondo || community.kind === "neighborhood"}
-          // ⚠️ SEM PADRÃO EXCLUSIVO EM GAMES (mig 232). Ele existia porque o
+          // ⚠️ SEM PADRÃO EXCLUSIVO (mig 232). Ele existia porque o
           // espaço era de UMA pessoa: guardar ali dentro era o esperado. Numa
           // plataforma pública de todos, começar marcado em "só na comunidade"
           // tiraria do feed geral, sem ninguém pedir, tudo que se publica no

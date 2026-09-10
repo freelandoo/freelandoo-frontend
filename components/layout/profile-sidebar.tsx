@@ -61,11 +61,6 @@ const HIDDEN_ON_PATHS = [
   "/confirmar-email",
   "/activate",
   "/bem-vindo",
-  // O JOGO É TELA CHEIA E DEITADA. No celular esta toolbar é uma pílula fixa
-  // no rodapé CENTRAL — exatamente onde a build Godot desenha o botão de sair
-  // da partida (ver `jogo/scripts/ui/toque.gd`). Os dois no mesmo pixel: quem
-  // fosse sair da partida sairia do jogo, e vice-versa.
-  "/monsters",
 ]
 
 /**
@@ -76,13 +71,10 @@ const HIDDEN_ON_PATHS = [
  * um item novo não precise ser copiado em três lugares — o terceiro é sempre o
  * lugar de onde ele some quando alguém mexer só nos outros dois.
  *
- * ⚠️ O MONSTERS SAIU DAQUI (pedido do Alex, 2026-09-08) e NÃO voltou quando a
- * plataforma de games foi retirada do ar (2026-09-09). Ele chegou a ser
- * alcançável por dentro daquele ambiente — pill roxo → plataforma → item
- * "Game" do dock de lá —, e com o ambiente fora do ar a página `/monsters`
- * ficou ÓRFÃ de propósito: continua no ar para quem tem o endereço, sem porta
- * na navegação. Recolocá-la aqui daria ao jogo um degrau na barra da
- * plataforma inteira, que é o que o Alex tinha pedido para tirar.
+ * ⚠️ O MONSTERS SAIU DAQUI (pedido do Alex, 2026-09-08) e a página foi
+ * APAGADA em 2026-09-09, junto com o resto do frontend de games — ele só era
+ * alcançável por dentro daquele ambiente (pill roxo → plataforma → item "Game"
+ * do dock de lá).
  */
 const ITENS_COMUNS: SidebarItem[] = [
   { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
@@ -94,18 +86,17 @@ const ITENS_COMUNS: SidebarItem[] = [
 /**
  * O DOCK DENTRO DE "MEUS NEGÓCIOS" (a comunidade de modalidade `common`).
  *
- * Mesma ideia do de games: a barra da Freelandoo inteira daria saída lateral
- * para fora do ambiente sem dizer que está saindo, e a porta de volta é UMA — a
- * foto, que ali ganha o fundo amarelo.
+ * A barra da Freelandoo inteira daria saída lateral para fora do ambiente sem
+ * dizer que está saindo, e a porta de volta é UMA — a foto, que ali ganha o
+ * fundo amarelo.
  *
  * O conteúdo é o da PÁGINA: os três pills do headcard (Perfil, Mural, Ranking),
  * mais as duas abas (Membros e Feed). Pills e abas continuam existindo na tela;
  * o dock é um segundo caminho para as MESMAS coisas, não uma cópia delas — quem
  * de fato abre painel e troca aba é a página, que recebe o pedido.
  *
- * ⚠️ O RANKING NAVEGA, os outros não. Ele é uma página (`/ranking`), como
- * "Posts games" no dock de games; Perfil, Mural, Membros e Feed são estado da
- * mesma tela e por isso vão pelo `view`.
+ * ⚠️ O RANKING NAVEGA, os outros não. Ele é uma página (`/ranking`); Perfil,
+ * Mural, Membros e Feed são estado da mesma tela e por isso vão pelo `view`.
  *
  * ⚠️ O SITE É SÓ DO LÍDER e vem em AMARELO (`accent`), o mesmo contorno do item
  * de Administração da barra principal: ele leva ao CONSTRUTOR, e o construtor

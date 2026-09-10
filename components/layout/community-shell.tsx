@@ -3,10 +3,10 @@
 /**
  * O AMBIENTE DE COMUNIDADE — quem avisa o dock de que a barra de baixo mudou.
  *
- * Nasceu para a plataforma de GAMES e passou a servir também "Meus negócios"
- * (2026-09-08), que é a comunidade de modalidade `common`. Os dois são
- * AMBIENTES: lugares onde a barra da Freelandoo inteira dá lugar aos controles
- * daquele espaço.
+ * Nasceu para a plataforma de GAMES e passou a servir "Meus negócios"
+ * (2026-09-08), a comunidade de modalidade `common` — que hoje é o único
+ * AMBIENTE que sobrou: um lugar onde a barra da Freelandoo inteira dá lugar
+ * aos controles daquele espaço.
  *
  * ─── O PROBLEMA ──────────────────────────────────────────────────────────────
  *
@@ -41,7 +41,7 @@
  *
  * ─── A ARMADILHA DA TROCA DE PÁGINA ──────────────────────────────────────────
  *
- * Navegar de `/comunidades/<id>` para `/comunidades/<id>/posts` desmonta um
+ * Navegar de `/comunidades/<id>` para `/comunidades/<id>/ranking` desmonta um
  * beacon e monta outro, e a ordem entre as duas coisas não é garantida. Com uma
  * variável só, o cleanup do antigo apagaria o registro do novo e o dock voltaria
  * ao normal no meio do ambiente. Por isso o registro é um MAPA de instâncias
@@ -51,9 +51,10 @@
  *
  * Este módulo também ligava o relógio de presença da plataforma de games (mig
  * 226): quem sabia que a pessoa estava dentro do ambiente era este registro, o
- * mesmo que o dock lê. Com games fora do ar (2026-09-09) não há mais ranking
- * de atividade a alimentar por aqui, e "Meus negócios" — o ambiente que
- * sobrou — nunca bateu: ele troca o dock, mas não tem ranking próprio.
+ * mesmo que o dock lê. Com o frontend de games apagado (2026-09-09) não há
+ * mais ranking de atividade a alimentar por aqui, e "Meus negócios" — o
+ * ambiente que sobrou — nunca bateu: ele troca o dock, mas não tem ranking
+ * próprio.
  *
  * ⚠️ O RELÓGIO EM SI CONTINUA VIVO em `components/layout/platform-presence.ts`,
  * e é o FINANCEIRO quem o usa (mig 230). Ele nunca passou por aqui — a Carteira
@@ -121,9 +122,9 @@ export function onCommunityView(cb: (v: CommunityView) => void): () => void {
 /**
  * Os ambientes que trocam o dock.
  *
- * ⚠️ ERAM DOIS. `games` saiu quando a plataforma foi retirada do ar
- * (2026-09-09) — o tipo é uma união de um só membro de propósito, e não uma
- * string solta: ambiente novo entra AQUI e ganha o caso correspondente no
+ * ⚠️ ERAM DOIS. `games` foi APAGADO quando o frontend daquela plataforma saiu
+ * inteiro (2026-09-09) — o tipo é uma união de um só membro de propósito, e não
+ * uma string solta: ambiente novo entra AQUI e ganha o caso correspondente no
  * `ProfileSidebar`. Um kind sem lista deixaria a pessoa dentro do ambiente com
  * a barra da Freelandoo, que é justamente o que o ambiente troca.
  */

@@ -27,17 +27,18 @@ import { getToken } from "@/lib/auth"
  * daquele tipo vê a lista; quem não tem cai direto no fluxo de criar. Nenhuma
  * linha leva a uma tela vazia perguntando o que fazer.
  *
- * GAMES e ACADEMIA saíram daqui (decisão do Alex, 2026-09-04): cada um já tem
- * o próprio botão retrátil atrás da foto de perfil (`HeadcardPills`), e manter
- * a linha no menu seria a segunda porta para a mesma tela. "Meus filhos" entrou
+ * GAMES e ACADEMIA saíram daqui (decisão do Alex, 2026-09-04): cada um tinha o
+ * próprio botão retrátil atrás da foto de perfil (`HeadcardPills`), e manter a
+ * linha no menu seria a segunda porta para a mesma tela. "Meus filhos" entrou
  * no lugar delas — é o painel parental, que antes só se alcançava por um chip
- * perdido entre os badges do headcard.
+ * perdido entre os badges do headcard. (Games foi mais longe: em 2026-09-09 o
+ * frontend inteiro daquele ambiente foi apagado.)
  *
  * O visual é o mesmo do "+" do mural (publish-menu-button): itens EMPILHADOS,
  * um em cima do outro, fecha por clique fora e Esc.
  */
 
-type SpaceKind = "pet" | "car" | "games" | "condo" | "neighborhood" | "common"
+type SpaceKind = "pet" | "car" | "condo" | "neighborhood" | "common"
 
 type SpaceRow = {
   id_profile: string
@@ -49,21 +50,22 @@ type SpaceRow = {
 }
 
 /**
- * `GET /me/spaces` também devolve `academies`; o menu não lê nem uma nem outra
- * — as duas viraram botão retrátil do headcard.
+ * `GET /me/spaces` também devolve `academies`; o menu não lê nenhuma das duas —
+ * elas viraram botão retrátil do headcard.
  *
- * ⚠️ A CHAVE `games` CONTINUA NO TIPO porque a RESPOSTA segue trazendo o balde,
- * e o tipo espelha a resposta — tirá-la faria o `Record` mentir sobre o que
- * chega. Ele nasce vazio para todo mundo desde a mig 232 (games virou
- * plataforma e ninguém é membro dela) e, desde 2026-09-09, a plataforma saiu do
- * ar: não há mais pill roxo nem `/games/platform`. Não há o que abrir aqui.
+ * ⚠️ A CHAVE `games` SAIU DO TIPO (2026-09-09). A resposta do backend ainda
+ * traz o balde, e uma chave a mais no JSON é inofensiva em tempo de execução —
+ * o que não podia continuar é o tipo ANUNCIAR uma modalidade que este menu não
+ * tem como abrir. Ela nascia vazia para todo mundo desde a mig 232 (games virou
+ * plataforma e ninguém é membro dela) e o frontend daquele ambiente foi apagado
+ * inteiro.
  */
 type SpacesPayload = {
   spaces: Record<SpaceKind, SpaceRow[]>
 }
 
 const EMPTY: SpacesPayload = {
-  spaces: { pet: [], car: [], games: [], condo: [], neighborhood: [], common: [] },
+  spaces: { pet: [], car: [], condo: [], neighborhood: [], common: [] },
 }
 
 export function SpacesMenu({

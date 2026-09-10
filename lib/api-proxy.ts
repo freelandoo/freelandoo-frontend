@@ -5,7 +5,7 @@ import { getBackendApiUrl } from "@/lib/backend"
  * Encaminhamento simples para o backend, para os proxies que são só isso: passa
  * o Authorization adiante e devolve o JSON com o mesmo status.
  *
- * Existe porque as rotas de pet/carro/games (mig 210) são sete arquivos que
+ * Existe porque as rotas de pet/carro (mig 210) são vários arquivos que
  * fariam a MESMA coisa — e sete cópias da mesma função é como nasce a que
  * esquece de repassar o header.
  *

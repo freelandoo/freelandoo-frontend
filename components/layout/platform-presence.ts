@@ -5,18 +5,20 @@
  *
  * Nasceu dentro do `community-shell` (mig 226), servindo só a plataforma de
  * games, e saiu de lá quando o Alex pediu o ranking do Financeiro "com o mesmo
- * parâmetro do games — likes, comentários, tempo online apenas dentro da
- * plataforma financeira" (2026-09-08). São dois ambientes agora, e o relógio é
- * o mesmo mecanismo com dois destinos: escrito de novo do lado da Carteira, o
- * primeiro ajuste de teto, de intervalo ou de `resume` valeria num e não no
- * outro, e a divergência só apareceria como ranking torto semanas depois.
+ * parâmetro — likes, comentários, tempo online apenas dentro da plataforma
+ * financeira" (2026-09-08). Hoje o único destino é o Financeiro: o frontend de
+ * games foi apagado inteiro em 2026-09-09 e ninguém mais reivindica presença
+ * lá. O mecanismo continua sendo UM, porque escrever um segundo relógio do
+ * lado da Carteira faria o primeiro ajuste de teto, de intervalo ou de
+ * `resume` valer num e não no outro.
  *
  * ─── O QUE ESTA PONTA FAZ, E O QUE ELA NÃO FAZ ──────────────────────────────
  *
  * Ela só diz "ainda estou aqui". QUEM MEDE É O BANCO: o crédito sai do
- * intervalo desde a última batida, com teto por batida e por dia
- * (utils/gamesScore.js, do lado do servidor). Um cliente que dissesse quanto
- * tempo passou poderia dizer qualquer coisa.
+ * intervalo desde a última batida, com teto por batida e por dia (do lado do
+ * servidor, em `utils/gamesScore.js` — nome LEGADO, a régua serve o
+ * Financeiro). Um cliente que dissesse quanto tempo passou poderia dizer
+ * qualquer coisa.
  *
  * ⚠️ VAI DIRETO NO RAILWAY, nunca pelo proxy `/api/*` da Vercel. É chamada
  * recorrente, e cada passagem pelo proxy cobraria uma invocação por batida de
@@ -29,8 +31,8 @@
  * ─── POR QUE UM MAPA DE CLAIMS, E NÃO UM BOOLEANO ───────────────────────────
  *
  * Navegar entre duas telas do MESMO ambiente (de `/wallet` para
- * `/wallet/carteira`, de `/comunidades/<id>` para `/comunidades/<id>/posts`)
- * desmonta um componente e monta outro, e a ordem entre as duas coisas não é
+ * `/wallet/carteira`, por exemplo) desmonta um componente e monta outro, e a
+ * ordem entre as duas coisas não é
  * garantida. Com um booleano, o cleanup do que morreu apagaria o registro do
  * que acabou de nascer e o relógio pararia no meio do ambiente. Com o mapa, o
  * ambiente só acaba quando não sobra nenhum registro vivo.
@@ -48,10 +50,10 @@ import { getPublicBackendUrl } from "@/lib/backend-public"
 /**
  * Os ambientes que medem tempo. Espelho de PLATFORM_KINDS no backend.
  *
- * ⚠️ ERAM DOIS. `games` saiu quando a plataforma foi retirada do ar
- * (2026-09-09): ninguém mais chamava `claimPresence("games")`, e um kind no
- * mapa sem quem o peça é um endpoint anunciado que nada alcança. O backend
- * continua aceitando `/gamer/presence` — o que sumiu é a batida deste lado.
+ * ⚠️ ERAM DOIS. `games` saiu com o frontend daquela plataforma (2026-09-09):
+ * ninguém mais chamava `claimPresence("games")`, e um kind no mapa sem quem o
+ * peça é um endpoint anunciado que nada alcança. O backend continua aceitando
+ * `/gamer/presence` — o que sumiu é a batida deste lado.
  */
 export type PresenceKind = "finance"
 

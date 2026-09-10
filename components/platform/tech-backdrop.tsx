@@ -24,36 +24,38 @@
  * `background-position` numa camada `fixed` do tamanho da janela — isso é um
  * REPINTE DE TELA CHEIA a cada quadro, para sempre, e valia inclusive para
  * quem não tinha WebGPU nenhum. As duas coisas saíram juntas; ver a nota na
- * `.fl-games-bg`, em globals.css.
+ * `.fl-finance-bg`, em globals.css.
  *
  * O que fica é o que o Alex pediu: "deixar o fundo apenas como a textura, com
- * o tema da cor — games vai ser sempre roxo". Gradientes e uma grade fina, em
- * CSS, pintados UMA vez. Depois disso a camada é composta e rolar a página
- * custa zero aqui.
+ * o tema da cor". Gradientes e uma grade fina, em CSS, pintados UMA vez.
+ * Depois disso a camada é composta e rolar a página custa zero aqui.
  *
  * ⚠️ NÃO RESSUSCITAR MOVIMENTO NESTE FUNDO — nem canvas, nem `animation`, nem
  * biblioteca de animação. Se um dia o ambiente precisar de vida, ela tem que
  * caber num elemento pequeno (um selo, um chip), nunca numa camada do tamanho
  * da janela.
  *
- * ─── TRÊS AMBIENTES, UMA PEÇA ────────────────────────────────────────────────
+ * ─── DOIS AMBIENTES, UMA PEÇA ────────────────────────────────────────────────
  *
- * `games` é roxo, `finance` é verde e `business` é a cor que o LÍDER escolheu
- * (por isso ela vem de fora, em `tint`, da MESMA função que pinta a pele
- * `.fl-business` da página: duas fontes de cor fariam o fundo e os painéis
- * discordarem). O que muda é a classe — o desenho mora todo em globals.css,
- * junto das peles, para que uma cor nova entre num lugar só.
+ * `finance` é verde e `business` é a cor que o LÍDER escolheu (por isso ela vem
+ * de fora, em `tint`, da MESMA função que pinta a pele `.fl-business` da
+ * página: duas fontes de cor fariam o fundo e os painéis discordarem). O que
+ * muda é a classe — o desenho mora todo em globals.css, junto das peles, para
+ * que uma cor nova entre num lugar só.
+ *
+ * ⚠️ ERAM TRÊS. A variante `games` (roxa) foi APAGADA em 2026-09-09, junto com
+ * o frontend daquele ambiente — variante que ninguém monta é uma classe de CSS
+ * mantida viva por engano.
  *
  * ⚠️ A CAMADA DE CIFRÕES DO FINANCEIRO continua sendo CSS por cima
  * (`.fl-money-veil`), e não parte do fundo: ela é o símbolo do ambiente, e o
  * fundo é a cor dele.
  */
 
-export type BackdropVariant = "games" | "finance" | "business"
+export type BackdropVariant = "finance" | "business"
 
 /** O desenho de cada ambiente. Ver globals.css. */
 const BG_CLASS: Record<BackdropVariant, string> = {
-  games: "fl-games-bg",
   finance: "fl-finance-bg",
   business: "fl-business-bg",
 }
@@ -66,7 +68,7 @@ const BG_CLASS: Record<BackdropVariant, string> = {
  * depois que ele chegasse — a cor do ambiente piscando na entrada da tela.
  */
 export function TechBackdrop({
-  variant = "games",
+  variant = "finance",
   tint,
 }: {
   variant?: BackdropVariant

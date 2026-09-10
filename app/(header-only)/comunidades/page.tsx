@@ -14,7 +14,7 @@ type CommunityCard = CommunityTileData & {
   id_machine: number | null
 }
 
-type Kind = "" | "common" | "condo" | "pet" | "car" | "games"
+type Kind = "" | "common" | "condo" | "pet" | "car"
 
 const inputCls =
   "h-11 w-full rounded-xl border-2 border-[#F5F1E8]/10 bg-[#0B0B0D]/40 px-4 text-sm text-[#F5F1E8] placeholder:text-[#F5F1E8]/40 outline-none focus:border-[#F2B705]/60"
@@ -32,10 +32,13 @@ export default function CommunityListPage() {
   const condoOn = useFeature("condominio")
   const petOn = useFeature("pet")
   const carOn = useFeature("carro")
-  const gamesOn = useFeature("games")
   const [search, setSearch] = useState("")
   // Modalidade (migs 196/210): "" = todas. Condomínio é achado por nome OU
-  // endereço; pet, carro e games são achados por nome ou pelo assunto.
+  // endereço; pet e carro são achados por nome ou pelo assunto.
+  //
+  // ⚠️ GAMES SAIU DO FILTRO (2026-09-09) junto com o frontend daquele ambiente.
+  // A linha continua no banco, mas oferecer o chip seria oferecer um caminho
+  // até uma plataforma que já não tem tela.
   const [kind, setKind] = useState<Kind>("")
 
   /**
@@ -153,7 +156,6 @@ export default function CommunityListPage() {
               ["condo", t("kindCondo", "Condomínio"), condoOn],
               ["pet", t("kindPet", "Pet"), petOn],
               ["car", t("kindCar", "Carro"), carOn],
-              ["games", t("kindGames", "Games"), gamesOn],
             ] as [Kind, string, boolean][]
           )
             .filter(([, , on]) => on)

@@ -49,9 +49,9 @@ export function compact(n: number): string {
  * nenhuma comunidade mais". O site é vitrine comercial — catálogo de serviços,
  * agendamento, depoimentos, contato —, e isso é pergunta da comunidade de
  * NEGÓCIO (a `common`, a que o pill "Business" do headcard abre). A comunidade
- * do cachorro, a do modelo de carro, a da rua, a do prédio e a plataforma de
- * games não vendem nada, e uma aba "Site" nelas era porta pintada: abria um
- * construtor para montar uma página que ninguém ia procurar.
+ * do cachorro, a do modelo de carro, a da rua e a do prédio não vendem nada, e
+ * uma aba "Site" nelas era porta pintada: abria um construtor para montar uma
+ * página que ninguém ia procurar.
  *
  * ⚠️ ESTE É O ESPELHO. Quem decide de verdade é o backend
  * (`kindHasSite` em `utils/communitySite.js`), que recusa ler, salvar,
@@ -95,6 +95,8 @@ export function canBuildCommunitySite(opts: {
    ----------------------------------------------------------------------------
    Pedido do Alex (2026-09-09): "adapte essa página do meu negócio como as
    páginas games e financeiro, com WebGPU (...) preto, mas eu queria poder mudar
+   (⚠️ a página de games já não existe — o frontend dela foi apagado em
+   2026-09-09; a citação fica como registro do pedido)
    a cor do fundo também — hoje só dá pra mudar a cor dos detalhes".
 
    ⚠️ O WEBGPU DA CITAÇÃO NÃO EXISTE MAIS (2026-09-09): o shader de tela cheia
@@ -103,14 +105,13 @@ export function canBuildCommunitySite(opts: {
    continua sendo o mesmo par (canvas, glow), agora lido pelo CSS. Ver
    components/platform/tech-backdrop.tsx.
 
-   ⚠️ POR QUE NÃO UM TERCEIRO SKIN FIXO, COMO `.fl-games` E `.fl-finance`.
-   Aqueles dois pintam UM ambiente cada: o roxo é do games, o verde é do
-   Financeiro, e por isso podem ser 40 linhas de valores escritos à mão. Aqui a
-   cor é ESCOLHIDA por cada líder — um skin por cor seria a mesma lista copiada
-   oito vezes, e a nona cor pediria a nona cópia. Então a lista de classes
-   continua sendo UMA (a mesma dos outros dois ambientes, o que mantém a regra
-   de "cor de superfície nova entra em todas as listas"), só que apontando para
-   VARIÁVEIS que a página escreve no container.
+   ⚠️ POR QUE NÃO UM SKIN FIXO, COMO `.fl-finance`.
+   Aquele pinta UM ambiente só — o verde é do Financeiro —, e por isso pode ser
+   40 linhas de valores escritos à mão. Aqui a cor é ESCOLHIDA por cada líder:
+   um skin por cor seria a mesma lista copiada oito vezes, e a nona cor pediria
+   a nona cópia. Então a lista de classes continua sendo UMA (a mesma do outro
+   ambiente, o que mantém a regra de "cor de superfície nova entra em todas as
+   listas"), só que apontando para VARIÁVEIS que a página escreve no container.
 
    ⚠️ E POR QUE A RAMPA É DERIVADA, E NÃO DIGITADA POR COR. Cada preset diz
    duas coisas — o `canvas` (o fundo profundo) e o `glow` (a cor que acende
@@ -119,10 +120,11 @@ export function canBuildCommunitySite(opts: {
    das oito cores seriam 56 números para alguém manter em sincronia, e o dia em
    que a régua mudasse ela mudaria em uma cor só.
 
-   As proporções abaixo não foram inventadas: foram calibradas contra as duas
-   peles escritas à mão. Alimentando a função com o par (canvas, glow) do games
-   e do Financeiro, a rampa de superfícies (painel, interior, fundo, linha) e a
-   tinta saem a poucos pontos das cores que estão lá no CSS; só o apagado e a
+   As proporções abaixo não foram inventadas: foram calibradas contra as peles
+   escritas à mão. Alimentando a função com o par (canvas, glow) do Financeiro
+   (e, na época, o do games), a rampa de superfícies (painel, interior, fundo,
+   linha) e a tinta saem a poucos pontos das cores que estão lá no CSS; só o
+   apagado e a
    borda ficam na mesma família em vez de idênticos, porque aqueles dois foram
    escolhidos a olho e não são mistura pura de nada.
    ============================================================================ */
