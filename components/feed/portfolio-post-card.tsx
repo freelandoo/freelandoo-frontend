@@ -181,29 +181,71 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
       })
     }
 
+    /**
+     * ⚠️ O RELÓGIO SÓ EXISTE ENQUANTO O CARD ESTÁ EM CENA — e é isso que impede
+     * a página de ficar mais cara a cada "Carregar mais".
+     *
+     * Ele era um `setInterval` criado na montagem e destruído só no desmonte:
+     * ficava vivo com o card a vinte posições de distância, e vivo com a ABA
+     * ESCONDIDA. Como o feed nasce com 10 posts, nada é desmontado e cada
+     * "Carregar mais" soma outros 10, uma sessão comum chega a dezenas de
+     * timers acordando a thread principal de 5 em 5 segundos — todos para
+     * descobrir que não têm nada a fazer. O trabalho por tique é quase zero; o
+     * que custa é ACORDAR, e é o número de despertadores que cresce sem parar.
+     *
+     * Agora quem liga e desliga é a própria visibilidade: no máximo os dois ou
+     * três cards que cabem na tela têm relógio, independente de quantos posts
+     * já foram carregados. A contagem não muda de significado — o tique só
+     * somava segundos quando `visible` era verdadeiro, que é exatamente
+     * quando o relógio passa a existir.
+     */
+    let interval = 0
+
+    const stopClock = () => {
+      if (!interval) return
+      window.clearInterval(interval)
+      interval = 0
+    }
+
+    const startClock = () => {
+      if (interval || !visible || document.visibilityState !== "visible") return
+      interval = window.setInterval(() => {
+        pendingSeconds += 5
+        if (pendingSeconds >= 10) flush()
+      }, 5000)
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         visible = !!entry?.isIntersecting && entry.intersectionRatio >= 0.5
-        if (!visible) flush()
+        if (visible) {
+          startClock()
+        } else {
+          // Parar ANTES de esvaziar: o flush é quem manda os segundos embora, e
+          // um tique entre as duas linhas contaria um intervalo que já acabou.
+          stopClock()
+          flush()
+        }
       },
       { threshold: [0, 0.5, 1] }
     )
     observer.observe(node)
 
-    const interval = window.setInterval(() => {
-      if (visible && document.visibilityState === "visible") {
-        pendingSeconds += 5
-        if (pendingSeconds >= 10) flush()
-      }
-    }, 5000)
-
+    // Aba escondida não é tempo de leitura. Antes o relógio seguia correndo e
+    // era o corpo do tique que descartava o tempo; agora ele simplesmente para,
+    // e volta quando a pessoa volta — se o card ainda estiver em cena.
     const onVisibility = () => {
-      if (document.visibilityState !== "visible") flush()
+      if (document.visibilityState === "visible") {
+        startClock()
+      } else {
+        stopClock()
+        flush()
+      }
     }
     document.addEventListener("visibilitychange", onVisibility)
 
     return () => {
-      window.clearInterval(interval)
+      stopClock()
       document.removeEventListener("visibilitychange", onVisibility)
       observer.disconnect()
       flush()
