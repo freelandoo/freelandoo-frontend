@@ -6270,7 +6270,11 @@
     "postsEmptyMine": "Todavía no publicaste nada en Games.",
     "postsEmptyOther": "{who} todavía no publicó nada aquí.",
     "tabFeed": "Feed",
-    "tabShelf": "Estantería"
+    "tabShelf": "Estantería",
+    "shelfPill": "Estantería",
+    "shelfPillAria": "Tu estantería de juegos, traída de Steam",
+    "shelfTitle": "Estantería",
+    "shelfTitleOf": "Estantería de {who}"
   },
   "Gamer": {
     "connectFail": "No se pudo iniciar la conexión.",
@@ -6292,7 +6296,7 @@
     "disconnect": "Desconectar",
     "privateHelp": "En Steam, abre Perfil → Editar perfil → Configuración de privacidad y deja \"Detalles del juego\" como Público. Luego toca Actualizar aquí.",
     "introTitle": "Tu estante",
-    "intro": "Conecta una plataforma y tus juegos, horas y logros entran aquí solos, sin cargar nada a mano. Después solo escribe el @ de alguien para ver qué juegan en común.",
+    "intro": "Conecta tu cuenta de Steam y tus juegos, horas y logros entran aquí solos, sin registrar nada a mano. Después basta escribir el @ de alguien para ver qué juegan en común.",
     "connectCta": "Conectar {platform}",
     "statusPlanned": "Pronto",
     "statusUnconfigured": "Apagada",

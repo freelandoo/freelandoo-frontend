@@ -1,7 +1,7 @@
 "use client"
 
 // O HEADCARD DA PLATAFORMA DE GAMES — peça ÚNICA das telas de `/games` (a raiz,
-// que é o feed, e as páginas dos três botões retráteis).
+// que é o feed, e as páginas dos quatro botões retráteis).
 //
 // ⚠️ É A SILHUETA DO FINANCEIRO com a pele roxa (pedido do Alex, 2026-09-10:
 // "criar igual o financeiro, não uma comunidade, mas uma plataforma, nos moldes
@@ -15,32 +15,48 @@
 // rótulo e o SEGUNDO navega — fechado o botão mal escapa de trás da foto e
 // navegar no primeiro toque o tornaria armadilha.
 //
-// ⚠️ A PILHA TEM TRÊS LUGARES: 3 × 36 (h-9) + 2 × 6 (gap-1.5) = 120px, contra
-// uma foto de 192px (216 no md). PILL NOVO AQUI? Refazer esta conta antes.
+// ⚠️ A PILHA TEM QUATRO LUGARES: 4 × 36 (h-9) + 3 × 6 (gap-1.5) = 162px, contra
+// uma foto de 192px (216 no md) — a MESMA conta que a Carteira já fechou com
+// quatro pills. Um QUINTO não cabe (198px escapariam por cima e por baixo).
+// PILL NOVO AQUI? Refazer esta conta antes.
+//
+// ⚠️ A ESTANTE SÓ EXISTE COM `games_conexao` LIGADA — é a condição que o
+// backend impõe a /gamer/shelf. Com a flag desligada o pill some e a pilha
+// volta a ter três lugares; nada muda na conta, a foto cobre as duas.
+//
+// ⚠️ OS PILLS PESSOAIS LEVAM O `?de=` E O RANKING NÃO (regra da casa, ver
+// games-context): Jogo atual, Posts e Estante são a metade da PESSOA — sem o
+// contexto, apertá-los dentro do games de alguém abriria o recorte de quem
+// olha enquanto a tela ao redor mostra o dela. O ranking é a metade da CASA e
+// mede quem está olhando; levar o contexto prometeria um "ranking do fulano"
+// que não existe.
 //
 // ⚠️ A FOTO É A DE QUEM OLHA, com a foto da plataforma por cima (mig 233):
 // `override ?? perfil.avatar`, pelo MESMO hook da Carteira. O badge de câmera
 // troca SÓ a foto de games; "usar a minha foto de perfil" apaga o override.
 
 import Link from "next/link"
-import { ArrowLeft, Camera, Gamepad2, LayoutGrid, Loader2, Trophy, Undo2 } from "lucide-react"
+import { ArrowLeft, Camera, Gamepad2, LayoutGrid, Library, Loader2, Trophy, Undo2 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 import type { PerfilCompleto } from "@/lib/types/account"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { usePlatformPresence } from "@/components/layout/platform-presence"
 import { usePlatformAvatar } from "@/components/platform/use-platform-avatar"
 import { PURPLE, PURPLE_GLOW, initialsOf } from "./games-ui"
+import { withOwner, type GamesOwner } from "./games-context"
 
 /** Qual das telas está no ar (a raiz, que é o feed, não acende nenhum). */
-export type GamesPillKey = "game" | "posts" | "ranking"
+export type GamesPillKey = "game" | "posts" | "ranking" | "shelf"
 
-/** As rotas das três páginas, num lugar só. */
+/** As rotas das quatro páginas, num lugar só. */
 export const GAMES_ROUTES: Record<GamesPillKey, string> = {
   game: "/games/jogo",
   posts: "/games/posts",
   ranking: "/games/ranking",
+  shelf: "/games/estante",
 }
 
 export function GamesHeadcard({
@@ -49,17 +65,25 @@ export function GamesHeadcard({
   backHref = "/account",
   active = null,
   action = null,
+  owner = null,
 }: {
   perfil: PerfilCompleto | null
-  /** O nome da SALA (Games, Jogo atual, Posts, Ranking). */
+  /** O nome da SALA (Games, Jogo atual, Posts, Ranking, Estante). */
   title: string
   /** Para onde o "Voltar" leva: /account na raiz, /games nas páginas. */
   backHref?: string
   active?: GamesPillKey | null
   /** O canto de ação do headcard — na raiz, o "+" de publicar. */
   action?: ReactNode
+  /**
+   * O dono do contexto (`?de=@fulano`), quando a tela está nele. Os pills
+   * PESSOAIS o preservam ao navegar; o ranking nunca. `undefined` (ainda
+   * resolvendo) conta como "sem contexto" só para montar os links.
+   */
+  owner?: GamesOwner | null
 }) {
   const tr = useTranslations("Games")
+  const shelfOn = useFeature("games_conexao")
 
   /**
    * ⚠️ A BATIDA DE PRESENÇA DE GAMES mora AQUI (mig 226): este headcard é a
@@ -101,8 +125,8 @@ export function GamesHeadcard({
     if (!ok) toast.error(tr("platformPhotoError", "Não deu para trocar a foto. Tente de novo."))
   }, [resetPhoto, tr])
 
-  const pills = useMemo<PillSpec[]>(
-    () => [
+  const pills = useMemo<PillSpec[]>(() => {
+    const list: PillSpec[] = [
       // JOGO ATUAL é o primeiro e é LARANJA — o que a pessoa está jogando, a
       // metade pessoal do ambiente (mig 232: o jogo é da pessoa, não da casa).
       {
@@ -112,7 +136,7 @@ export function GamesHeadcard({
         ariaLabel: tr("gamePillAria", "O jogo que você está jogando agora"),
         bg: "#C2410C",
         bgHover: "#9A3412",
-        href: GAMES_ROUTES.game,
+        href: withOwner(GAMES_ROUTES.game, owner),
         active: active === "game",
       },
       // POSTS é VERDE (decisão do Alex, 2026-09-09) — a vitrine do que a
@@ -124,11 +148,11 @@ export function GamesHeadcard({
         ariaLabel: tr("postsPillAria", "Os seus posts publicados em games"),
         bg: "#15803D",
         bgHover: "#0F5F2E",
-        href: GAMES_ROUTES.posts,
+        href: withOwner(GAMES_ROUTES.posts, owner),
         active: active === "posts",
       },
       // RANKING é ROXO. Sem gate: quem não pontuou vê a fila dos outros e a
-      // frase do que fazer.
+      // frase do que fazer. NUNCA leva o `?de=` (é a metade da casa).
       {
         key: "ranking",
         icon: Trophy,
@@ -139,9 +163,27 @@ export function GamesHeadcard({
         href: GAMES_ROUTES.ranking,
         active: active === "ranking",
       },
-    ],
-    [active, tr]
-  )
+    ]
+    // ESTANTE é AMARELA (pedido do Alex, 2026-09-10) — a biblioteca da Steam
+    // da pessoa (mig 220). Era aba da raiz; virou sala própria porque a
+    // estante é conteúdo pessoal, como Posts, e conteúdo pessoal mora atrás
+    // da foto. O amarelo é o da casa (`#F2B705`), com tinta PRETA: sobre esse
+    // fundo o creme dos outros pills não se lê.
+    if (shelfOn) {
+      list.push({
+        key: "shelf",
+        icon: Library,
+        label: tr("shelfPill", "Estante"),
+        ariaLabel: tr("shelfPillAria", "A sua estante de jogos, trazida da Steam"),
+        bg: "#F2B705",
+        bgHover: "#D9A200",
+        fg: "#0B0B0D",
+        href: withOwner(GAMES_ROUTES.shelf, owner),
+        active: active === "shelf",
+      })
+    }
+    return list
+  }, [active, owner, shelfOn, tr])
 
   return (
     <>

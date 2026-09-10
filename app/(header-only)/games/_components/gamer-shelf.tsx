@@ -1,19 +1,30 @@
 // ⚠️ MUDOU DE CASA em 2026-09-10: era `comunidades/[id]/_components/gamer-shelf.tsx`
-// (apagada na demolição da comunidade de games) e agora é a aba Estante da
-// PLATAFORMA em /games. O componente é o mesmo, byte a byte abaixo desta nota;
-// quem o monta é `app/(header-only)/games/page.tsx`.
+// (apagada na demolição da comunidade de games), foi a aba Estante da raiz de
+// /games (slice G4) e agora é a SALA `/games/estante`, atrás do pill amarelo.
+// Quem o monta é `app/(header-only)/games/estante/page.tsx`.
 
 "use client"
 
 /**
- * A ESTANTE — aba "Estante" da comunidade de games (mig 220).
+ * A ESTANTE — a biblioteca da Steam da pessoa (mig 220).
  *
  * ─── O QUE ELA É, E O QUE ELA NÃO É ──────────────────────────────────────────
  *
- * A comunidade de games guarda UM título digitado à mão (`tb_community_game`).
- * Isto aqui é outra coisa: a biblioteca da PESSOA, trazida da plataforma que
- * ela conectou. As duas convivem — o espaço continua sendo sobre um jogo, e a
- * estante é o que o dono dele joga.
+ * O jogo atual (`/games/jogo`) é UM título digitado à mão. Isto aqui é outra
+ * coisa: a biblioteca da PESSOA, trazida da plataforma que ela conectou. As
+ * duas convivem — uma é o que ela diz que joga agora, a outra é o que a
+ * plataforma verifica que ela tem.
+ *
+ * ─── SÓ A STEAM (pedido do Alex, 2026-09-10: "deixe só a conexão com a steam,
+ * tire as outras") ───────────────────────────────────────────────────────────
+ *
+ * A grade de plataformas desenhava também Xbox, PlayStation e Nintendo,
+ * apagadas e com o motivo de não dar para conectar (o `roadmap` que o backend
+ * devolve em /gamer/providers). Saíram da TELA: três cartões que só explicam
+ * por que não funcionam pesam mais do que respondem. O backend continua
+ * devolvendo o `roadmap` — chave a mais no JSON é inofensiva, e o dia em que
+ * uma delas ganhar adaptador ela entra em `providers`, que é o que se desenha.
+ * O que aparece é a lista de PROVEDORES com adaptador — hoje, a Steam.
  *
  * ─── AS TRÊS REGRAS QUE ESTA TELA CARREGA ────────────────────────────────────
  *
@@ -28,7 +39,7 @@
  *    mudar — não um "falha ao sincronizar" que mandaria a pessoa caçar defeito.
  *
  * 3. HORA TEM DONO. Todo número vem com a plataforma escrita do lado, porque
- *    142h na Steam e 0h no Xbox não se somam nem se comparam.
+ *    142h na Steam e 0h em outra plataforma não se somam nem se comparam.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -53,8 +64,6 @@ type Provider = {
   status: "ready" | "unconfigured"
   account: Account | null
 }
-/** Plataforma sem adaptador, e o motivo. Ver gameProvider/index.js. */
-type Roadmap = { provider: string; label: string; status: "planned" | "unavailable"; reason: string }
 type Game = {
   id_game: string
   name: string
@@ -129,7 +138,6 @@ export function GamerShelf({
 }) {
   const t = useTranslations("Gamer")
   const [providers, setProviders] = useState<Provider[]>([])
-  const [roadmap, setRoadmap] = useState<Roadmap[]>([])
   const [games, setGames] = useState<Game[]>([])
   const [total, setTotal] = useState(0)
   const [totalMinutes, setTotalMinutes] = useState(0)
@@ -180,8 +188,9 @@ export function GamerShelf({
       }
       if (provRes) {
         const prov = await provRes.json().catch(() => null)
+        // Só `providers` (quem tem adaptador). O `roadmap` que vem junto —
+        // as plataformas que NÃO dá para conectar — é ignorado de propósito.
         if (provRes.ok && Array.isArray(prov?.providers)) setProviders(prov.providers)
-        if (provRes.ok && Array.isArray(prov?.roadmap)) setRoadmap(prov.roadmap)
       }
     } finally {
       setLoading(false)
@@ -264,30 +273,19 @@ export function GamerShelf({
 
   const connected = providers.filter((p) => p.account)
   const notConnected = providers.filter((p) => !p.account)
-  // A grade de plataformas é a MESMA lista, sempre: o que muda é o estado de
-  // cada uma. Era filtrar as indisponíveis que deixava a aba muda.
-  type GridItem = { key: string; label: string; state: "connect" | "unconfigured" | "planned" | "unavailable"; note: string }
-  const grid: GridItem[] = [
-    ...notConnected.map((p) => ({
-      key: p.provider,
-      label: p.label,
-      state: (p.available ? "connect" : "unconfigured") as GridItem["state"],
-      note: p.available
-        ? t("connectHint", "Traz seus jogos, horas e conquistas automaticamente")
-        : t("steamUnconfigured", "Ainda não ligada nesta instalação"),
-    })),
-    ...roadmap.map((r) => ({
-      key: r.provider,
-      label: r.label,
-      state: r.status as GridItem["state"],
-      note:
-        r.reason === "xboxReason"
-          ? t("xboxReason", "A API aberta é paga e não informa horas jogadas")
-          : r.reason === "playstationReason"
-            ? t("playstationReason", "A Sony não abre uma API pública")
-            : t("nintendoReason", "A Nintendo não abre uma API pública"),
-    })),
-  ]
+  // A lista de conectar é a dos provedores COM adaptador que ainda não estão
+  // conectados. Sem credencial na instalação (`available: false`) a plataforma
+  // continua aparecendo, apagada e com o motivo — sumir viraria a pergunta
+  // "cadê a Steam?", que se repete a cada pessoa nova.
+  type GridItem = { key: string; label: string; state: "connect" | "unconfigured"; note: string }
+  const grid: GridItem[] = notConnected.map((p) => ({
+    key: p.provider,
+    label: p.label,
+    state: p.available ? "connect" : "unconfigured",
+    note: p.available
+      ? t("connectHint", "Traz seus jogos, horas e conquistas automaticamente")
+      : t("steamUnconfigured", "Ainda não ligada nesta instalação"),
+  }))
 
   return (
     <div className="space-y-6">
@@ -365,16 +363,14 @@ export function GamerShelf({
                 </p>
               </div>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#F5F1E8]/80">
-                {t("intro", "Conecte uma plataforma e seus jogos, horas e conquistas entram aqui sozinhos, sem cadastrar nada na mão. Depois é só digitar o @ de alguém para ver o que vocês jogam em comum.")}
+                {t("intro", "Conecte a sua conta da Steam e seus jogos, horas e conquistas entram aqui sozinhos, sem cadastrar nada na mão. Depois é só digitar o @ de alguém para ver o que vocês jogam em comum.")}
               </p>
             </div>
           )}
 
-          {/* A GRADE APARECE INTEIRA, sempre. Plataforma que não dá para
-              conectar entra APAGADA e com o motivo escrito — sumir da tela ela
-              só viraria a pergunta "cadê o PlayStation?", que se repete a cada
-              pessoa nova. */}
-          <div className="grid gap-2 sm:grid-cols-2">
+          {/* Uma coluna só: com a Steam sozinha, a grade de duas deixava um
+              buraco do tamanho de um cartão ao lado dela. */}
+          <div className="grid gap-2">
             {grid.map((item) =>
               item.state === "connect" ? (
                 <button key={item.key} type="button" onClick={() => connect(item.key)} disabled={busy === item.key}
@@ -398,11 +394,7 @@ export function GamerShelf({
                     <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{item.note}</p>
                   </div>
                   <span className="shrink-0 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
-                    {item.state === "planned"
-                      ? t("statusPlanned", "Em breve")
-                      : item.state === "unconfigured"
-                        ? t("statusUnconfigured", "Desligada")
-                        : t("statusUnavailable", "Não dá")}
+                    {t("statusUnconfigured", "Desligada")}
                   </span>
                 </div>
               )

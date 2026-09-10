@@ -104,6 +104,7 @@ export default function GamesPostsPage() {
         title={visiting && owner ? tr("postsTitleOf", "Posts de {who}").replace("{who}", ownerLabel(owner)) : tr("postsTitle", "Posts de games")}
         backHref={withOwner("/games", owner)}
         active="posts"
+        owner={owner}
       />
 
       <section className="mx-auto mt-8 w-full max-w-5xl px-5 md:px-10">

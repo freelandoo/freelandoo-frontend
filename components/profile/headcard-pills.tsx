@@ -79,6 +79,12 @@ export type PillSpec = {
   /** Cor do corpo e do hover. */
   bg: string
   bgHover: string
+  /**
+   * Cor do texto e do ícone. O padrão é o creme da casa, que serve a todo pill
+   * escuro; um corpo CLARO (o amarelo da Estante em games) precisa de tinta
+   * preta, senão o rótulo some dentro do botão.
+   */
+  fg?: string
   href?: string
   /** Destino resolvido na hora do clique (o Business precisa criar-ou-abrir). */
   onOpen?: () => void
@@ -180,7 +186,7 @@ function Pill({
             }
           }}
           className={className}
-          style={{ background: baseBg }}
+          style={{ background: baseBg, color: spec.fg }}
           onMouseEnter={(e) => (e.currentTarget.style.background = spec.bgHover)}
           onMouseLeave={(e) => (e.currentTarget.style.background = baseBg)}
         >
@@ -194,7 +200,7 @@ function Pill({
           title={spec.ariaLabel}
           onClick={() => (open ? spec.onOpen?.() : onArm())}
           className={className}
-          style={{ background: baseBg }}
+          style={{ background: baseBg, color: spec.fg }}
           onMouseEnter={(e) => (e.currentTarget.style.background = spec.bgHover)}
           onMouseLeave={(e) => (e.currentTarget.style.background = baseBg)}
         >

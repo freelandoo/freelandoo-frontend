@@ -6290,7 +6290,11 @@
     "postsEmptyMine": "You haven't published anything in Games yet.",
     "postsEmptyOther": "{who} hasn't published anything here yet.",
     "tabFeed": "Feed",
-    "tabShelf": "Shelf"
+    "tabShelf": "Shelf",
+    "shelfPill": "Shelf",
+    "shelfPillAria": "Your game shelf, pulled from Steam",
+    "shelfTitle": "Shelf",
+    "shelfTitleOf": "{who}'s shelf"
   },
   "Gamer": {
     "connectFail": "Could not start the connection.",
@@ -6312,7 +6316,7 @@
     "disconnect": "Disconnect",
     "privateHelp": "On Steam, open Profile → Edit profile → Privacy settings and set \"Game details\" to Public. Then tap Refresh here.",
     "introTitle": "Your shelf",
-    "intro": "Connect a platform and your games, hours and achievements land here on their own, with nothing to fill in by hand. Then just type someone's @ to see what you both play.",
+    "intro": "Connect your Steam account and your games, hours and achievements show up here on their own, nothing to type in. Then just enter someone's @ to see what you both play.",
     "connectCta": "Connect {platform}",
     "statusPlanned": "Coming soon",
     "statusUnconfigured": "Off",

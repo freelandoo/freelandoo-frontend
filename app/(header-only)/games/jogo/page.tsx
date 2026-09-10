@@ -121,6 +121,7 @@ export default function GamesCurrentPage() {
         title={visiting && owner ? tr("gameOfTitle", "O jogo de {who}").replace("{who}", ownerLabel(owner)) : tr("gameTitle", "Jogo atual")}
         backHref={withOwner("/games", owner)}
         active="game"
+        owner={owner}
       />
 
       <section className="mx-auto mt-8 w-full max-w-3xl px-5 md:px-10">

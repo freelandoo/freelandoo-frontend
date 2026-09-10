@@ -18,13 +18,17 @@
 //
 // ⚠️ NINGUÉM ENTRA E NINGUÉM É DONO: não há Entrar, membros, mural do líder nem
 // edição de nome/foto. Todo usuário logado lê e publica.
+//
+// ⚠️ A RAIZ É SÓ O FEED. A Estante foi aba daqui (slice G4) e virou sala
+// própria em `/games/estante`, atrás do pill amarelo (2026-09-10): conteúdo
+// pessoal mora atrás da foto, como Posts e Jogo atual. Não recriar a barra de
+// abas — com uma opção só ela pediria um clique que não decide nada.
 
 import { useCallback, useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { AlertCircle, Library, Loader2, Newspaper } from "lucide-react"
+import { AlertCircle, Loader2 } from "lucide-react"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { getToken } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { PublishMenuButton, type PublishItem } from "@/components/composer/publish-menu-button"
@@ -50,14 +54,6 @@ const RecadoComposer = dynamic(
   () => import("@/components/composer/RecadoComposer").then((m) => m.RecadoComposer),
   { ssr: false }
 )
-// A ESTANTE (mig 220): a biblioteca da Steam de quem olha (ou de quem se
-// visita). Carregada por `dynamic` porque é a aba que a maioria das visitas
-// ao feed nunca abre — como o Mercado no Financeiro.
-const GamerShelf = dynamic(
-  () => import("./_components/gamer-shelf").then((m) => m.GamerShelf),
-  { ssr: false }
-)
-
 /** O card pede os filtros da vitrine; aqui o recorte já é a plataforma. */
 const FEED_FILTERS: FeedFilters = {
   id_machine: null,
@@ -68,20 +64,13 @@ const FEED_FILTERS: FeedFilters = {
 }
 
 type Platform = { id_profile: string; display_name: string | null; bio: string | null }
-type GamesTab = "feed" | "shelf"
 
 export default function GamesPage() {
   const tr = useTranslations("Games")
   const { perfil } = useMeProfile()
-  // A aba Estante só existe com a conexão de plataforma ligada — é a MESMA
-  // condição que o backend impõe a /gamer/shelf. Sem ela, um botão que abre
-  // uma aba vazia.
-  const shelfOn = useFeature("games_conexao")
-  // O contexto (`?de=@fulano`) só troca a metade PESSOAL: a estante. O feed
-  // continua o de todos.
+  // O contexto (`?de=@fulano`) não muda nada NESTA tela (o feed é de todos);
+  // ele só é lido para os pills pessoais do headcard o preservarem ao navegar.
   const { owner } = useGamesContext()
-
-  const [tab, setTab] = useState<GamesTab>("feed")
 
   const [platform, setPlatform] = useState<Platform | null>(null)
   const [loadingPlatform, setLoadingPlatform] = useState(true)
@@ -106,16 +95,6 @@ export default function GamesPage() {
     setPosts((prev) =>
       prev.map((p) => (p.post_id === pid ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p))
     )
-  }, [])
-
-  /**
-   * Deep-link da aba (`?aba=estante`), lido do WINDOW e UMA VEZ — pela razão
-   * de sempre: `useSearchParams` obriga Suspense e tira a rota do pré-render,
-   * e reler a cada render devolveria a pessoa à Estante ao trocar de aba.
-   */
-  useEffect(() => {
-    const aba = new URLSearchParams(window.location.search).get("aba")
-    if (aba === "estante") setTab("shelf")
   }, [])
 
   /** Qual é a plataforma. Uma chamada, uma vez — o id não muda (mig 232). */
@@ -186,19 +165,13 @@ export default function GamesPage() {
     setComposerOpen(true)
   }
 
-  const tabs: [GamesTab, string][] = shelfOn
-    ? [
-        ["feed", tr("tabFeed", "Feed")],
-        ["shelf", tr("tabShelf", "Estante")],
-      ]
-    : [["feed", tr("tabFeed", "Feed")]]
-
   return (
     <GamesShell>
       <GamesHeadcard
         perfil={perfil}
         title={tr("platformTitle", "Games")}
         backHref="/account"
+        owner={owner}
         action={
           <PublishMenuButton
             accent={PURPLE}
@@ -210,42 +183,7 @@ export default function GamesPage() {
       />
 
       <section className="mx-auto mt-8 w-full max-w-5xl px-5 md:px-10">
-        {/* As abas só aparecem quando há mais de uma: com a Estante desligada,
-            um par de botões com uma opção pediria um clique que não decide nada. */}
-        {tabs.length > 1 && (
-          <div className="mb-6 flex gap-1 border-b-2 border-[#F5F1E8]/15">
-            {tabs.map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setTab(key)}
-                className="-mb-0.5 flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]"
-                style={{
-                  borderBottom: tab === key ? `4px solid ${PURPLE}` : "4px solid transparent",
-                  opacity: tab === key ? 1 : 0.5,
-                }}
-              >
-                {key === "shelf" ? <Library className="h-3.5 w-3.5" /> : <Newspaper className="h-3.5 w-3.5" />}
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {tab === "shelf" && shelfOn ? (
-          owner === undefined ? (
-            <div className="flex items-center justify-center py-20 text-[#9A938A]">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : (
-            <GamerShelf
-              signedIn={!!perfil}
-              accent={PURPLE}
-              ownerUserId={owner?.id_user ?? null}
-              ownerName={owner ? owner.name || `@${owner.username}` : null}
-            />
-          )
-        ) : loadingPlatform || loadingPosts ? (
+        {loadingPlatform || loadingPosts ? (
           <div className="flex flex-col gap-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-40 animate-pulse border-2 border-[#F5F1E8]/10 bg-[#1D1810]" />
