@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
-import { DollarSign, Dumbbell, Star, type LucideIcon } from "lucide-react"
+import { DollarSign, Dumbbell, Gamepad2, Star, type LucideIcon } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -299,6 +299,8 @@ export function HeadcardPills({
   const fitnessPref = useUserFeature("fitness_academias")
   // Mesma preferência que escondia "Minha comunidade" no menu da foto.
   const communitiesOn = useUserFeature("communities")
+  // O kill-switch da plataforma de games (flag do admin, nasce ligada).
+  const gamesFlag = useFeature("games")
 
   /**
    * A COMUNIDADE DA PESSOA não tem URL fixa: quem já tem, entra na dela; quem
@@ -347,6 +349,41 @@ export function HeadcardPills({
     [going, router],
   )
 
+  /**
+   * ABRE A PLATAFORMA DE GAMES — uma só, do site inteiro (mig 232).
+   *
+   * ⚠️ VOLTOU EM 2026-09-09 a pedido do Alex ("coloca o pill dele roxo ali
+   * embaixo de academia"), depois de ter saído com a demolição do front de
+   * games (`a3b037f`/`edcb00f`). O que volta é a PORTA, não a tela: a
+   * plataforma abre hoje na casca genérica de comunidade, porque os módulos
+   * de games (estante, painel do jogo, pele roxa) não existem mais no front.
+   *
+   * ⚠️ UMA REQUISIÇÃO, e não duas: o backend faz get-or-create do singleton
+   * e devolve sempre a MESMA linha. Procurar em `/me/spaces` leria um balde
+   * que a mig 232 esvaziou de vez.
+   */
+  const openGamesPlatform = useCallback(async () => {
+    if (going) return
+    const token = getToken()
+    if (!token) return
+    setGoing("games")
+    try {
+      const res = await fetch("/api/games/platform", { headers: { Authorization: `Bearer ${token}` } })
+      const body = await res.json().catch(() => null)
+      if (res.ok && body?.community?.id_profile) {
+        router.push(`/comunidades/${body.community.id_profile}`)
+        return
+      }
+      // A recusa aqui é o kill-switch da flag `games`, e ela vem escrita.
+      // Engoli-la deixaria o pill parecendo quebrado.
+      if (body?.error) toast.error(body.error)
+    } catch {
+      /* silencioso: o pill continua aberto e a pessoa tenta de novo */
+    } finally {
+      setGoing(null)
+    }
+  }, [going, router])
+
   const pills: PillSpec[] = []
 
   // Business é o PRIMEIRO da pilha. Ele é a porta da comunidade da pessoa, que
@@ -385,6 +422,22 @@ export function HeadcardPills({
       bg: "#C2410C",
       bgHover: "#9A3412",
       href: "/fitness",
+    })
+  }
+
+  // GAMES É O ÚLTIMO, logo abaixo do Fitness — é onde o Alex o pediu
+  // (2026-09-09). Antes da demolição ele vinha em segundo; a posição nova é
+  // decisão dele, não resto. Com ele a pilha volta a ter QUATRO lugares, que é
+  // a conta que PILL_STACK_PX (162) sempre fez — a constante nunca desceu.
+  if (gamesFlag) {
+    pills.push({
+      key: "games",
+      icon: Gamepad2,
+      label: t("gamesPill", "Games"),
+      ariaLabel: t("openGamesPlatformAria", "Abrir a plataforma de games"),
+      bg: "#6D28D9",
+      bgHover: "#5B21B6",
+      onOpen: openGamesPlatform,
     })
   }
 

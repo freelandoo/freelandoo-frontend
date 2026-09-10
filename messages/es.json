@@ -1526,7 +1526,9 @@
     "buyProfile": "Comprar perfil",
     "mgmtBadgeAccount": "Tu cuenta",
     "mySocialsLabel": "Mis redes",
-    "businessPill": "Business"
+    "businessPill": "Business",
+    "gamesPill": "Games",
+    "openGamesPlatformAria": "Abrir la plataforma de games"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
