@@ -107,6 +107,7 @@ export function SiteCanvas({
   homeHref = null,
   pages = [],
   activePageSlug = null,
+  homeSections,
   communityId = null,
 }: {
   config: CommunitySiteConfig
@@ -153,6 +154,12 @@ export function SiteCanvas({
   pages?: SitePage[]
   /** A sub-página na tela, para ela não virar um link para si mesma. */
   activePageSlug?: string | null
+  /**
+   * As seções da HOME. Só precisa ser passado quando `config.sections` é a
+   * pilha de uma SUB-PÁGINA: é de onde a casca lê o contato (WhatsApp e redes),
+   * que vive na home e vale para o site inteiro. Ver `useSiteChromeInfo`.
+   */
+  homeSections?: SiteSection[]
   /** A comunidade — é dela que o cartão de chamada pergunta o próximo horário. */
   communityId?: string | null
 }) {
@@ -254,7 +261,7 @@ export function SiteCanvas({
     }),
     [pages, activePageSlug, pageBase, homeHref, t]
   )
-  const chrome = useSiteChromeInfo(config, editing, contentCtx, chromeNav)
+  const chrome = useSiteChromeInfo(config, editing, contentCtx, chromeNav, homeSections)
 
   /**
    * Faixa de fundo de cada seção.

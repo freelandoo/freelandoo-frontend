@@ -96,7 +96,22 @@ export function useSiteChromeInfo(
   config: CommunitySiteConfig,
   editing: boolean,
   ctx: SectionContentContext,
-  nav?: SiteChromeNav
+  nav?: SiteChromeNav,
+  /**
+   * As seções da HOME, quando a pilha na tela é de uma sub-página (mig 238).
+   *
+   * ⚠️ Sem isto a casca perde o CONTATO dentro de uma sub-página, e em
+   * silêncio: quem monta o canvas entrega `config` com `sections` trocadas
+   * pelas da página, e a seção de contato só existe na home — então
+   * `whatsapp` e `socials` saíam vazios, e as três peças que os leem (o
+   * botão da barra, as redes do rodapé e o botão FLUTUANTE) simplesmente não
+   * eram desenhadas. Justamente na página de cidade, que é a que responde em
+   * busca local e por onde o cliente chega.
+   *
+   * Vale só para o que é do SITE INTEIRO. As âncoras continuam saindo da
+   * página aberta — elas respondem "o que tem AQUI".
+   */
+  homeSections?: SiteSection[]
 ): SiteChromeInfo {
   return useMemo(() => {
     // A MESMA régua que a página usa para desenhar. O menu não pode oferecer
@@ -106,11 +121,20 @@ export function useSiteChromeInfo(
     const enabled = config.sections.filter(
       (s) => s.enabled && (editing || sectionHasContent(s, ctx))
     )
-    const contact = enabled.find(
+    // O que é do site inteiro sai da home; na home as duas listas são a mesma.
+    const shared = homeSections
+      ? homeSections.filter((s) => s.enabled && (editing || sectionHasContent(s, ctx)))
+      : enabled
+    const contact = shared.find(
       (s): s is Extract<SiteSection, { kind: "contact" }> => s.kind === "contact"
     )
-    const hero = enabled.find((s): s is Extract<SiteSection, { kind: "hero" }> => s.kind === "hero")
-    const firstSlide = hero?.data.slides[0]
+    // A ação é da PÁGINA quando ela tem banner próprio — ali o CTA é o daquele
+    // assunto. Sub-página sem banner cai no da home, em vez de ficar sem botão.
+    const heroOf = (list: SiteSection[]) =>
+      list.find((s): s is Extract<SiteSection, { kind: "hero" }> => s.kind === "hero")?.data
+        .slides[0]
+    const own = heroOf(enabled)
+    const firstSlide = own?.ctaText && own.ctaUrl ? own : heroOf(shared)
 
     // ⚠️ As SUB-PÁGINAS entram no menu, e sem isso a feature nasceria pela
     // metade: uma página criada não teria como ser alcançada — nem pelo
@@ -161,7 +185,7 @@ export function useSiteChromeInfo(
           ? { text: firstSlide.ctaText, url: firstSlide.ctaUrl }
           : null,
     }
-  }, [config, editing, ctx, nav])
+  }, [config, editing, ctx, nav, homeSections])
 }
 
 /** Link externo abre em aba nova; âncora e caminho interno, não. */

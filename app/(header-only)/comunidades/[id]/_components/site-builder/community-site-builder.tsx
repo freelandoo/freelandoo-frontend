@@ -853,6 +853,11 @@ export function CommunitySiteBuilder({
               // está mais aqui. Zoom e rolagem vivem fora, então nada se perde.
               key={activePageId || "home"}
               config={canvasConfig!}
+              // O documento cru: `canvasConfig` traz as seções da página
+              // ATIVA, e é da home que sai o contato da casca. Sem isto o
+              // líder editaria a sub-página sem o botão de WhatsApp que o
+              // visitante vê, e publicaria sem nunca ter visto a diferença.
+              homeSections={config.sections}
               editing={editing && isLeader}
               onChange={applyCanvasChange}
               onUpload={uploadImage}

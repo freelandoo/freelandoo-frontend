@@ -48,6 +48,9 @@ export function SitePageView({
       // A barra de navegação e o rodapé são derivados do documento (nome,
       // contato, menu), então passar só a página perderia a casca.
       config={{ ...config, sections: page.sections }}
+      // ⚠️ A casca lê o contato DAQUI. Sem isto, o botão de WhatsApp da barra
+      // e o flutuante somem da sub-página: a seção de contato mora na home.
+      homeSections={config.sections}
       onChange={() => {}}
       editing={false}
       t={t}
