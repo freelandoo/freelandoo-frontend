@@ -1530,7 +1530,10 @@
     "gamesPill": "Games",
     "openGamesPlatformAria": "Abrir a plataforma de games",
     "openShort": "Assistir este Curto",
-    "itemActions": "Ações do item"
+    "itemActions": "Ações do item",
+    "priceOnRequest": "Serviço por orçamento",
+    "priceOnRequestShort": "Sob orçamento",
+    "priceOnRequestHint": "Sem preço: o cliente vê “Pedir orçamento” e fala com você pelo WhatsApp. Não entra no agendamento com pagamento online."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -3336,7 +3339,8 @@
     "tools": "Ferramentas",
     "noRatings": "Sem avaliações",
     "servicesSettingsAria": "Configurar serviços e horários",
-    "itemActions": "Ações do item"
+    "itemActions": "Ações do item",
+    "priceOnRequest": "Sob orçamento"
   },
   "Bees": {
     "chat": "Chat",
@@ -4233,7 +4237,8 @@
     "rescheduleTitle": "Tudo bem!",
     "rescheduleDesc": "Avisamos o profissional que você precisa remarcar.",
     "bookedVia": "agendado pelo perfil {profile}",
-    "sharedAgendaHint": "Agenda única da conta: todos os seus perfis compartilham estes horários."
+    "sharedAgendaHint": "Agenda única da conta: todos os seus perfis compartilham estes horários.",
+    "priceOnRequest": "Sob orçamento"
   },
   "Mei": {
     "title": "MEI",
@@ -5670,7 +5675,10 @@
     "areaSectionNote": "Observação no rodapé da seção",
     "areaAdd": "Nova área",
     "areaRemove": "Remover área",
-    "areaEmpty": "Nenhuma área atendida ainda."
+    "areaEmpty": "Nenhuma área atendida ainda.",
+    "serviceQuoteBadge": "Sob orçamento",
+    "serviceQuoteCta": "Pedir orçamento",
+    "serviceQuoteMessage": "Olá! Vim pelo site e queria um orçamento para: {service}"
   },
   "SiteBooking": {
     "back": "Voltar ao site",

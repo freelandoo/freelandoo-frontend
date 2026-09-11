@@ -19,6 +19,12 @@ export interface ProfileService {
   description: string | null
   duration_minutes: number
   price_amount: number
+  /**
+   * "Sob orçamento" (mig 239): o valor só existe depois da visita. Com ele
+   * ligado o preço é zero e ignorado — o card não mostra valor e o serviço não
+   * entra no agendamento pago.
+   */
+  price_on_request?: boolean
   is_active?: boolean
   /** Capa do serviço, quando o backend enviar. */
   image_url?: string | null

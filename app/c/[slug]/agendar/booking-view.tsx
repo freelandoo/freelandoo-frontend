@@ -191,8 +191,14 @@ export function SiteBookingView({
   }, [professionals, service])
 
   const visibleServices = useMemo(() => {
-    if (!proId) return services
-    return services.filter((s) => s.provider_profile_id === proId)
+    // ⚠️ Serviço SOB ORÇAMENTO não entra aqui (mig 239): esta página cobra o
+    // sinal, e não há valor a cobrar antes da visita — o backend recusaria a
+    // reserva no último passo, depois de a pessoa ter escolhido dia e hora. O
+    // caminho dele é o botão de orçamento no card da vitrine, que abre o
+    // WhatsApp.
+    const bookable = services.filter((s) => s.price_on_request !== true)
+    if (!proId) return bookable
+    return bookable.filter((s) => s.provider_profile_id === proId)
   }, [services, proId])
 
   const today = useMemo(() => {
@@ -345,7 +351,10 @@ export function SiteBookingView({
               <h2 className="fl-display text-3xl leading-none md:text-4xl">
                 {t("serviceTitle", "Escolha o serviço")}
               </h2>
-              {services.length === 0 ? (
+              {/* `visibleServices` e não `services`: com tudo sob orçamento (ou
+                  com um profissional escolhido que não tem serviço), a lista
+                  filtrada fica vazia e a grade sairia em branco, sem dizer nada. */}
+              {visibleServices.length === 0 ? (
                 <p className="mt-4 text-sm" style={{ color: theme.textSecondary }}>
                   {t("noServices", "Ainda não há serviços cadastrados para agendar.")}
                 </p>

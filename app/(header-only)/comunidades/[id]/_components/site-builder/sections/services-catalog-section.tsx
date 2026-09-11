@@ -17,8 +17,9 @@
 // O que continua sendo do site é a APRESENTAÇÃO: quantas colunas, e o título e
 // o subtítulo da seção (que vivem na casca, não aqui).
 
-import { CalendarDays, Clock } from "lucide-react"
+import { CalendarDays, Clock, MessageCircle } from "lucide-react"
 import { useSiteRuntime } from "../site-runtime"
+import { whatsappHref } from "../site-chrome"
 import type { ServicesCatalogData, ShowcaseService, SiteColorTheme } from "@/types/community-site"
 
 const COLUMN_CLASS: Record<ServicesCatalogData["columns"], string> = {
@@ -62,6 +63,7 @@ export function ServicesCatalogSection({
   theme,
   services,
   providerHref,
+  whatsapp,
   locale,
   labels,
 }: {
@@ -77,12 +79,25 @@ export function ServicesCatalogSection({
    * ver o comentário do botão, abaixo.
    */
   providerHref: string | null
+  /**
+   * O WhatsApp do negócio — o MESMO da seção de contato, descido pela casca.
+   *
+   * Não é campo desta seção de propósito: um número próprio aqui seria a
+   * segunda verdade que a casca inteira existe para evitar (o líder troca o
+   * número no contato e o botão do card continua ligando para o antigo).
+   */
+  whatsapp: string
   locale: string
   labels: {
     columns: string
     cta: string
     /** Rótulo quando o clique abre o agendamento do próprio site. */
     book: string
+    /** Serviço sob orçamento: no lugar do preço e no lugar do botão. */
+    quoteBadge: string
+    quoteCta: string
+    /** Mensagem já escrita no WhatsApp. `{service}` vira o nome do serviço. */
+    quoteMessage: string
     empty: string
     emptyHint: string
     hourSuffix: string
@@ -142,11 +157,28 @@ export function ServicesCatalogSection({
               labels.hourSuffix,
               labels.minSuffix
             )
+            // ═══ SOB ORÇAMENTO NÃO AGENDA: ELE CONVERSA ═══
+            //
+            // O serviço sem preço não pode passar pelo agendamento, que cobra
+            // sinal — o backend recusa (mig 239) e o cliente descobriria isso
+            // três telas adiante. Então o card troca de destino: o botão vira
+            // "Pedir orçamento" e abre o WhatsApp do negócio já dizendo de qual
+            // serviço se trata, que é a informação que se perde quando a pessoa
+            // chega no chat de mãos vazias.
+            const quote = service.price_on_request === true
+            const quoteHref = quote ? whatsappHref(whatsapp) : ""
+            const quoteLink = quoteHref
+              ? `${quoteHref}?text=${encodeURIComponent(
+                  labels.quoteMessage.replace("{service}", service.name)
+                )}`
+              : ""
             // O serviço viaja na URL para a página de agendamento abrir já com
             // ele marcado — quem clicou no card já escolheu.
-            const ctaHref = bookingHref
-              ? `${bookingHref}?servico=${service.id_profile_service}`
-              : providerHref
+            const ctaHref = quote
+              ? quoteLink
+              : bookingHref
+                ? `${bookingHref}?servico=${service.id_profile_service}`
+                : providerHref
             return (
               <article
                 key={service.id_profile_service}
@@ -187,10 +219,19 @@ export function ServicesCatalogSection({
                   )}
 
                   <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-2">
-                    {price && (
-                      <span className="fl-display text-xl leading-none" style={{ color: theme.primary }}>
-                        {price}
+                    {quote ? (
+                      <span
+                        className="text-[11px] font-extrabold uppercase tracking-[0.12em]"
+                        style={{ color: theme.primary }}
+                      >
+                        {labels.quoteBadge}
                       </span>
+                    ) : (
+                      price && (
+                        <span className="fl-display text-xl leading-none" style={{ color: theme.primary }}>
+                          {price}
+                        </span>
+                      )
                     )}
                     {duration && (
                       <span className="inline-flex items-center gap-1">
@@ -230,19 +271,30 @@ export function ServicesCatalogSection({
                           className="block border-2 border-[#0B0B0D] px-4 py-2 text-center text-[11px] font-extrabold uppercase tracking-[0.12em]"
                           style={{ background: theme.primary, color: theme.background }}
                         >
-                          {bookingHref ? labels.book : labels.cta}
+                          {quote ? labels.quoteCta : bookingHref ? labels.book : labels.cta}
                         </span>
                       ) : (
                         <a
                           href={ctaHref}
-                          {...(bookingHref
+                          {...(bookingHref && !quote
                             ? {}
                             : { target: "_blank", rel: "noopener noreferrer" })}
                           className="flex items-center justify-center gap-1.5 border-2 border-[#0B0B0D] px-4 py-2 text-center text-[11px] font-extrabold uppercase tracking-[0.12em]"
-                          style={{ background: theme.primary, color: theme.background }}
+                          style={
+                            quote
+                              ? // Verde do WhatsApp: o botão diz para onde leva
+                                // antes de ser lido. Fora da paleta do site de
+                                // propósito — quem reconhece o canal é a cor.
+                                { background: "#1FAF52", color: "#04120A", borderColor: "#0B0B0D" }
+                              : { background: theme.primary, color: theme.background }
+                          }
                         >
-                          {bookingHref ? labels.book : labels.cta}
-                          <CalendarDays className="h-3 w-3 shrink-0" />
+                          {quote ? labels.quoteCta : bookingHref ? labels.book : labels.cta}
+                          {quote ? (
+                            <MessageCircle className="h-3.5 w-3.5 shrink-0" />
+                          ) : (
+                            <CalendarDays className="h-3 w-3 shrink-0" />
+                          )}
                         </a>
                       )}
                     </div>

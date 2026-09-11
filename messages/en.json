@@ -1530,7 +1530,10 @@
     "gamesPill": "Games",
     "openGamesPlatformAria": "Open the games platform",
     "openShort": "Watch this Short",
-    "itemActions": "Item actions"
+    "itemActions": "Item actions",
+    "priceOnRequest": "Quote-based service",
+    "priceOnRequestShort": "On request",
+    "priceOnRequestHint": "No price: the client sees “Request a quote” and reaches you on WhatsApp. It stays out of online paid booking."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -3922,7 +3925,8 @@
     "tools": "Tools",
     "noRatings": "No ratings",
     "servicesSettingsAria": "Configure services and hours",
-    "itemActions": "Item actions"
+    "itemActions": "Item actions",
+    "priceOnRequest": "On request"
   },
   "Bees": {
     "chat": "Chat",
@@ -4819,7 +4823,8 @@
     "rescheduleTitle": "No problem!",
     "rescheduleDesc": "We let the professional know you need to reschedule.",
     "bookedVia": "booked through the {profile} profile",
-    "sharedAgendaHint": "Single account agenda: all your profiles share these time slots."
+    "sharedAgendaHint": "Single account agenda: all your profiles share these time slots.",
+    "priceOnRequest": "On request"
   },
   "Mei": {
     "title": "MEI",
@@ -6256,7 +6261,10 @@
     "areaSectionNote": "Note at the bottom of the section",
     "areaAdd": "New area",
     "areaRemove": "Remove area",
-    "areaEmpty": "No service areas yet."
+    "areaEmpty": "No service areas yet.",
+    "serviceQuoteBadge": "On request",
+    "serviceQuoteCta": "Request a quote",
+    "serviceQuoteMessage": "Hi! I came from your website and I'd like a quote for: {service}"
   },
   "SiteBooking": {
     "back": "Back to site",

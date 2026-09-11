@@ -273,6 +273,10 @@ export function ProfilePublicServicesSection({
           <ul className="grid grid-cols-2 items-stretch gap-4 md:grid-cols-3">
           {visibleServices.map((s) => {
             const img = getServiceCoverUrl(s)
+            // Sob orçamento (mig 239): sem preço e sem agendar. O valor gravado
+            // é zero, e mostrá-lo aqui anunciaria "R$ 0,00" — de graça — num
+            // serviço que ainda vai ser orçado.
+            const quote = s.price_on_request === true
             const { integer, cents } = formatPriceParts(s.price_amount)
             const desc = s.description?.trim()
             // Co-autoria do clan: perfis anexados que dividem a venda.
@@ -355,12 +359,18 @@ export function ProfilePublicServicesSection({
 
                   <div className="mt-auto shrink-0">
                     <div className="mt-2 flex items-center justify-between gap-1.5">
-                      <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-[#0B0B0D] tabular-nums md:text-xl">
-                        R$ {integer}
-                        <span className="align-top text-[10px] font-semibold text-[#0B0B0D]/75 md:text-xs">,{cents}</span>
-                      </p>
+                      {quote ? (
+                        <p className="min-w-0 shrink text-[10px] font-bold uppercase leading-tight tracking-wider text-[#0B0B0D] md:text-xs">
+                          {t("priceOnRequest", "Sob orçamento")}
+                        </p>
+                      ) : (
+                        <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-[#0B0B0D] tabular-nums md:text-xl">
+                          R$ {integer}
+                          <span className="align-top text-[10px] font-semibold text-[#0B0B0D]/75 md:text-xs">,{cents}</span>
+                        </p>
+                      )}
 
-                      {allowPublicBooking ? (
+                      {allowPublicBooking && !quote ? (
                         <button
                           type="button"
                           className="fl-btn-gold shrink-0 rounded-full px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider md:px-3 md:text-[10px]"

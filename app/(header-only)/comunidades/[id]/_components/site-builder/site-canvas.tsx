@@ -707,11 +707,20 @@ export function SiteCanvas({
             theme={theme}
             services={services}
             providerHref={providerHref}
+            // O MESMO número da seção de contato que a barra e o botão
+            // flutuante já usam — a casca é a fonte única do canal.
+            whatsapp={chrome.whatsapp}
             locale={locale}
             labels={{
               columns: t("serviceColumns", "Colunas"),
               cta: t("serviceCta", "Quero este"),
               book: t("serviceBook", "Agendar"),
+              quoteBadge: t("serviceQuoteBadge", "Sob orçamento"),
+              quoteCta: t("serviceQuoteCta", "Pedir orçamento"),
+              quoteMessage: t(
+                "serviceQuoteMessage",
+                "Olá! Vim pelo site e queria um orçamento para: {service}"
+              ),
               empty: t("serviceEmpty", "Nenhum serviço cadastrado ainda."),
               emptyHint: t(
                 "serviceEmptyHint",

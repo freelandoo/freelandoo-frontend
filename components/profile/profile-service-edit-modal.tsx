@@ -105,6 +105,7 @@ export function ProfileServiceEditModal({
     description: "",
     duration_minutes: 60,
     price_reais: "0,00",
+    price_on_request: false,
     is_active: true,
     member_profile_ids: [] as string[],
     affiliates_allowed: false,
@@ -148,6 +149,7 @@ export function ProfileServiceEditModal({
       description: "",
       duration_minutes: 60,
       price_reais: "0,00",
+      price_on_request: false,
       is_active: true,
       member_profile_ids: [],
       affiliates_allowed: false,
@@ -162,6 +164,7 @@ export function ProfileServiceEditModal({
       description: service.description || "",
       duration_minutes: service.duration_minutes,
       price_reais: (service.price_amount / 100).toFixed(2).replace(".", ","),
+      price_on_request: service.price_on_request === true,
       is_active: service.is_active !== false,
       member_profile_ids: service.member_profile_ids || [],
       affiliates_allowed: service.affiliates_allowed ?? false,
@@ -171,6 +174,10 @@ export function ProfileServiceEditModal({
 
   useEffect(() => {
     if (!open || !service || !bookingFeesReady) return
+    // Sob orçamento não tem valor a recompor: o preço gravado é zero e a
+    // conta devolveria um líquido negativo, que apareceria no campo no
+    // instante em que alguém desmarcasse a caixa.
+    if (service.price_on_request === true) return
     const net = freelancerNetForEditForm(
       service.price_amount,
       bookingFees.stripe_fee_percent,
@@ -389,6 +396,7 @@ export function ProfileServiceEditModal({
   }
 
   async function saveService() {
+    const quote = serviceForm.price_on_request
     const price = parsePriceReais(serviceForm.price_reais)
     if (!serviceForm.name.trim()) {
       onError?.(t("enterServiceName", "Informe o nome do serviço"))
@@ -398,25 +406,30 @@ export function ProfileServiceEditModal({
       onError?.(t("invalidDuration", "Duração inválida"))
       return
     }
-    if (price < 0) {
+    // Sob orçamento: não há preço a validar nem taxa a somar — cobrar o campo
+    // aqui seria pedir justamente o número que o profissional disse não ter.
+    if (!quote && price < 0) {
       onError?.(t("invalidValue", "Valor inválido"))
       return
     }
-    if (!bookingFeesReady) {
+    if (!quote && !bookingFeesReady) {
       onError?.(t("loadingBookingFees", "Carregando taxas de agendamento. Tente novamente em instantes."))
       return
     }
-    const price_amount = clientTotalCentsFromFreelancerNet(
-      price,
-      bookingFees.stripe_fee_percent,
-      bookingFees.service_fee_cents,
-    )
+    const price_amount = quote
+      ? 0
+      : clientTotalCentsFromFreelancerNet(
+          price,
+          bookingFees.stripe_fee_percent,
+          bookingFees.service_fee_cents,
+        )
     setSaving(true)
     const body: Record<string, unknown> = {
       name: serviceForm.name.trim(),
       description: serviceForm.description.trim() || null,
       duration_minutes: serviceForm.duration_minutes,
       price_amount,
+      price_on_request: quote,
       is_active: serviceForm.is_active,
       affiliates_allowed: serviceForm.affiliates_allowed,
       affiliate_percent: serviceForm.affiliate_percent,
@@ -447,14 +460,19 @@ export function ProfileServiceEditModal({
   if (!open) return null
 
   return (
+    // ⚠️ O FUNDO NÃO FECHA O MODAL, e isso é decisão (2026-09-11).
+    //
+    // Cadastrar um serviço é um formulário longo — nome, descrição, duração,
+    // preço, fotos — e o clique fora acontece o tempo todo por acidente: ao
+    // buscar o mouse, ao rolar no celular, ao voltar de outra aba. Cada um
+    // deles jogava fora tudo o que tinha sido digitado, sem perguntar nada.
+    // Sair é uma decisão, então exige um gesto de saída: Cancelar ou o X.
     <div
       className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"
-      onClick={onClose}
       role="presentation"
     >
       <div
         className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="profile-service-edit-title"
@@ -513,15 +531,47 @@ export function ProfileServiceEditModal({
               <label className="fl-label">{t("priceYouWantLabel", "Valor que você quer receber (R$)")}</label>
               <input
                 type="text"
-                value={serviceForm.price_reais}
+                value={serviceForm.price_on_request ? "" : serviceForm.price_reais}
                 onChange={(e) => setServiceForm((f) => ({ ...f, price_reais: e.target.value }))}
-                placeholder="0,00"
-                className="fl-input font-mono"
+                placeholder={
+                  serviceForm.price_on_request
+                    ? t("priceOnRequestShort", "Sob orçamento")
+                    : "0,00"
+                }
+                disabled={serviceForm.price_on_request}
+                className="fl-input font-mono disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
           </div>
 
+          {/* Fica COLADA no preço porque é sobre ele: a caixa é o que dispensa
+              o campo de cima. Num bloco lá embaixo, junto de "Ativo", ela
+              pareceria mais uma opção de publicação e quem precisa dela
+              continuaria travado inventando um valor. */}
+          <label className="-mt-1 flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              checked={serviceForm.price_on_request}
+              onChange={(e) =>
+                setServiceForm((f) => ({ ...f, price_on_request: e.target.checked }))
+              }
+              className="mt-0.5 h-4 w-4 rounded border-[#0B0B0D]/40 text-[#E0A500] accent-[#E0A500]"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-[#0B0B0D]">
+                {t("priceOnRequest", "Serviço por orçamento")}
+              </span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-[#5b554b]">
+                {t(
+                  "priceOnRequestHint",
+                  "Sem preço: o cliente vê “Pedir orçamento” e fala com você pelo WhatsApp. Não entra no agendamento com pagamento online.",
+                )}
+              </span>
+            </span>
+          </label>
+
           {(() => {
+            if (serviceForm.price_on_request) return null
             const baseCents = parsePriceReais(serviceForm.price_reais)
             if (baseCents <= 0) return null
             const stripeFee = Math.round((baseCents * bookingFees.stripe_fee_percent) / 100)
@@ -614,7 +664,7 @@ export function ProfileServiceEditModal({
                   )
                 })}
               </div>
-              {pricePerMember !== null && effectiveCount > 0 && (
+              {!serviceForm.price_on_request && pricePerMember !== null && effectiveCount > 0 && (
                 <p className="mt-2 text-xs text-[#5b554b]">
                   {centsToReais(pricePerMember)}/{t("memberLower", "membro")}
                   {selectedCount === 0 && (
@@ -728,6 +778,10 @@ export function ProfileServiceEditModal({
             <span className="text-sm font-medium text-[#0B0B0D]">{t("activeVisibleToClients", "Ativo (visível para clientes)")}</span>
           </label>
 
+          {/* Comissão de afiliado é uma % do preço. Num serviço sob orçamento
+              não há preço nem venda pela plataforma, então o campo ofereceria
+              uma recompensa que nunca seria paga. */}
+          {!serviceForm.price_on_request && (
           <AffiliateOptInField
             variant="light"
             allowed={serviceForm.affiliates_allowed}
@@ -736,6 +790,7 @@ export function ProfileServiceEditModal({
             onPercentChange={(v) => setServiceForm((f) => ({ ...f, affiliate_percent: v }))}
             disabled={saving}
           />
+          )}
         </div>
         <div className="flex justify-end gap-2 border-t-2 border-[#0B0B0D]/15 p-6">
           <button
@@ -748,7 +803,7 @@ export function ProfileServiceEditModal({
           <button
             type="button"
             onClick={saveService}
-            disabled={saving || !bookingFeesReady}
+            disabled={saving || (!bookingFeesReady && !serviceForm.price_on_request)}
             className="fl-btn-gold inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
           >
             <Save className="h-4 w-4" />

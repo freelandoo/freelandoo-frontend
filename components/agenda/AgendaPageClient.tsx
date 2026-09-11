@@ -39,6 +39,8 @@ interface ProfileService {
   description: string | null
   duration_minutes: number
   price_amount: number
+  /** Sob orçamento (mig 239): preço zero e ignorado — mostrar valor aqui mentiria. */
+  price_on_request?: boolean
   is_active: boolean
   member_profile_ids?: string[]
 }
@@ -577,7 +579,11 @@ export default function AgendaPageClient({
                     const participantes = mids.length === 0
                       ? clanMembers
                       : mids.map(id => memberById.get(id)).filter(Boolean) as ClanMember[]
-                    const perMember = isClan && participantes.length > 0 ? s.price_amount / participantes.length : null
+                    const quote = s.price_on_request === true
+                    const perMember =
+                      !quote && isClan && participantes.length > 0
+                        ? s.price_amount / participantes.length
+                        : null
                     return (
                       <div key={s.id_profile_service}
                         className={cn(
@@ -592,7 +598,9 @@ export default function AgendaPageClient({
                           {s.description && <p className="mt-0.5 text-xs text-[#6B6457]">{s.description}</p>}
                           <div className="mt-2 flex flex-wrap gap-3 text-xs text-[#6B6457]">
                             <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{s.duration_minutes} {minLabel}</span>
-                            <span className="font-extrabold text-[#E0A500]">{centsToReais(s.price_amount)}</span>
+                            <span className="font-extrabold text-[#E0A500]">
+                              {quote ? t("priceOnRequest", "Sob orçamento") : centsToReais(s.price_amount)}
+                            </span>
                             {perMember !== null && (
                               <span className="text-[#6B6457]">
                                 {t("perMember", "{value}/membro").replace("{value}", centsToReais(perMember))}

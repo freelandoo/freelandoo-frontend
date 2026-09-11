@@ -1530,7 +1530,10 @@
     "gamesPill": "Games",
     "openGamesPlatformAria": "Abrir la plataforma de games",
     "openShort": "Ver este Corto",
-    "itemActions": "Acciones del elemento"
+    "itemActions": "Acciones del elemento",
+    "priceOnRequest": "Servicio por presupuesto",
+    "priceOnRequestShort": "A presupuestar",
+    "priceOnRequestHint": "Sin precio: el cliente ve “Pedir presupuesto” y te habla por WhatsApp. No entra en la reserva con pago en línea."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -3902,7 +3905,8 @@
     "tools": "Herramientas",
     "noRatings": "Sin valoraciones",
     "servicesSettingsAria": "Configurar servicios y horarios",
-    "itemActions": "Acciones del elemento"
+    "itemActions": "Acciones del elemento",
+    "priceOnRequest": "A presupuestar"
   },
   "Bees": {
     "chat": "Chat",
@@ -4799,7 +4803,8 @@
     "rescheduleTitle": "¡Sin problema!",
     "rescheduleDesc": "Avisamos al profesional que necesitas reprogramar.",
     "bookedVia": "agendado por el perfil {profile}",
-    "sharedAgendaHint": "Agenda única de la cuenta: todos tus perfiles comparten estos horarios."
+    "sharedAgendaHint": "Agenda única de la cuenta: todos tus perfiles comparten estos horarios.",
+    "priceOnRequest": "A presupuestar"
   },
   "Mei": {
     "title": "MEI",
@@ -6236,7 +6241,10 @@
     "areaSectionNote": "Nota al pie de la sección",
     "areaAdd": "Nueva área",
     "areaRemove": "Quitar área",
-    "areaEmpty": "Ninguna área atendida todavía."
+    "areaEmpty": "Ninguna área atendida todavía.",
+    "serviceQuoteBadge": "A presupuestar",
+    "serviceQuoteCta": "Pedir presupuesto",
+    "serviceQuoteMessage": "¡Hola! Vengo del sitio y quisiera un presupuesto para: {service}"
   },
   "SiteBooking": {
     "back": "Volver al sitio",

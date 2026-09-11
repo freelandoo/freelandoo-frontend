@@ -84,7 +84,13 @@ export function ServiceSelectionModal({
     weekday: "long", day: "2-digit", month: "long",
   })
 
-  const activeServices = services.filter(s => s.is_active !== false)
+  // Sob orçamento (mig 239) fica de fora: esta tela fecha um agendamento PAGO e
+  // o backend recusa esse serviço. Hoje ela só é aberta com o serviço já
+  // escolhido (e o botão de agendar não existe no card sob orçamento) — o
+  // filtro é a porta trancada para quando surgir um segundo chamador.
+  const activeServices = services.filter(
+    s => s.is_active !== false && s.price_on_request !== true
+  )
   const selected = activeServices.find(s => s.id_profile_service === selectedId) || null
   const isLocked = lockedServiceId != null
   const isLoggedIn = !!user

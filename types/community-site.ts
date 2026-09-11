@@ -92,7 +92,14 @@ export type ShowcaseService = {
   id_profile_service: number
   name: string
   description: string
+  /** `null` quando o serviço é sob orçamento — nunca zero (ver abaixo). */
   price_amount: number | null
+  /**
+   * Sob orçamento (mig 239): o card troca o preço por "Pedir orçamento" e o
+   * clique vai para o WhatsApp, não para o agendamento — não há o que cobrar
+   * antes da visita.
+   */
+  price_on_request?: boolean
   duration_minutes: number | null
   image_url: string | null
   /**
