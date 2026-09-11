@@ -96,7 +96,12 @@ export default function CommunitySitePage() {
           deixaria de ser um toque. `canBuildSite` é `isLeader` aqui: quem não é
           não passa da recusa que o próprio construtor escreve. */}
       {community && (
-        <CommunityShellBeacon communityId={community.id_profile} kind="business" canBuildSite={isLeader} />
+        <CommunityShellBeacon
+          communityId={community.id_profile}
+          kind="business"
+          canBuildSite={isLeader}
+          canSeeIndicators={isLeader}
+        />
       )}
       <div className="mx-auto w-full max-w-[1400px]">
         <PageBackLink

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Boxes, Crown, Globe, Hexagon, Home, Megaphone, MessageCircle, Trophy, UserRound, Users, type LucideIcon } from "lucide-react"
+import { BarChart3, Boxes, Crown, Globe, Hexagon, Home, Megaphone, MessageCircle, Trophy, UserRound, Users, type LucideIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -103,8 +103,16 @@ const ITENS_COMUNS: SidebarItem[] = [
  * recusa quem não é líder. Quem decide se ele aparece é a página
  * (`canBuildSite`), que é onde modalidade, papel e flag se encontram — repetir
  * a conta aqui daria duas respostas para "esta pessoa pode editar o site?".
+ *
+ * ⚠️ INDICADORES TAMBÉM É SÓ DO LÍDER, e por um predicado PRÓPRIO: ele mostra
+ * leads e faturamento, que não dependem da flag do site — desligar o construtor
+ * não pode apagar o painel de dinheiro do dono.
  */
-function buildBusinessItems(communityId: string, canBuildSite: boolean): SidebarItem[] {
+function buildBusinessItems(
+  communityId: string,
+  canBuildSite: boolean,
+  canSeeIndicators: boolean
+): SidebarItem[] {
   const root = `/comunidades/${communityId}`
   return [
     { href: `${root}?painel=perfil`, label: "Perfil", icon: UserRound, view: "profile", viewPath: root },
@@ -112,6 +120,16 @@ function buildBusinessItems(communityId: string, canBuildSite: boolean): Sidebar
     { href: `${root}/ranking`, label: "Ranking", icon: Trophy, activePath: `${root}/ranking` },
     { href: `${root}?aba=membros`, label: "Membros", icon: Users, view: "members", viewPath: root },
     { href: root, label: "Feed", icon: Home, activePath: root, view: "feed", viewPath: root },
+    ...(canSeeIndicators
+      ? ([
+          {
+            href: `${root}/indicadores`,
+            label: "Indicadores",
+            icon: BarChart3,
+            activePath: `${root}/indicadores`,
+          },
+        ] as SidebarItem[])
+      : []),
     ...(canBuildSite
       ? ([{ href: `${root}/site`, label: "Site", icon: Globe, activePath: `${root}/site`, accent: true }] as SidebarItem[])
       : []),
@@ -257,7 +275,7 @@ export function ProfileSidebar() {
   // caso, a pessoa entraria no ambiente e continuaria com a barra da Freelandoo
   // — que é exatamente o que o ambiente troca.
   const shellItems = (s: Shell): SidebarItem[] =>
-    buildBusinessItems(s.communityId, s.canBuildSite)
+    buildBusinessItems(s.communityId, s.canBuildSite, s.canSeeIndicators)
 
   const baseItems: SidebarItem[] = shell ? shellItems(shell) : bundle.items
   const items: SidebarItem[] = isAdmin

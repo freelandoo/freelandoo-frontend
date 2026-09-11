@@ -139,6 +139,13 @@ export type Shell = {
    * mistura modalidade, papel e flag, e mora na página (`canBuildSite`).
    */
   canBuildSite: boolean
+  /**
+   * Se quem está olhando vê os INDICADORES (mig 235) — ou seja, é o líder de um
+   * negócio. Predicado separado do de cima de propósito: `canBuildSite` embute
+   * a flag `comunidade_site`, e desligar o construtor não pode apagar do dock o
+   * painel de leads e faturamento, que não tem nada a ver com o site.
+   */
+  canSeeIndicators: boolean
 }
 
 /** Beacons vivos, por token de instância. O ambiente é o último a entrar. */
@@ -153,7 +160,8 @@ function same(a: Shell | null, b: Shell | null) {
   return (
     a.communityId === b.communityId &&
     a.kind === b.kind &&
-    a.canBuildSite === b.canBuildSite
+    a.canBuildSite === b.canBuildSite &&
+    a.canSeeIndicators === b.canSeeIndicators
   )
 }
 
@@ -195,19 +203,21 @@ export function CommunityShellBeacon({
   communityId,
   kind,
   canBuildSite = false,
+  canSeeIndicators = false,
 }: {
   communityId: string
   kind: ShellKind
   canBuildSite?: boolean
+  canSeeIndicators?: boolean
 }) {
   useEffect(() => {
     const id = ++token
-    mounted.set(id, { communityId, kind, canBuildSite })
+    mounted.set(id, { communityId, kind, canBuildSite, canSeeIndicators })
     recompute()
     return () => {
       mounted.delete(id)
       recompute()
     }
-  }, [communityId, kind, canBuildSite])
+  }, [communityId, kind, canBuildSite, canSeeIndicators])
   return null
 }

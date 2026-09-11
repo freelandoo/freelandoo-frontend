@@ -13,6 +13,7 @@
 
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { SiteCanvas } from "@/app/(header-only)/comunidades/[id]/_components/site-builder/site-canvas"
+import { SiteAnalytics } from "@/components/site/site-analytics"
 import type { CommunitySiteConfig, ShowcaseService } from "@/types/community-site"
 
 export function PublicSiteView({
@@ -39,20 +40,28 @@ export function PublicSiteView({
   const locale = useLocale()
 
   return (
-    <SiteCanvas
-      config={config}
-      editing={false}
-      services={services}
-      providerHref={providerHref}
-      bookingHref={bookingHref}
-      communityId={communityId}
-      locale={locale}
-      // Em leitura nada muda o documento. As duas funções existem só para
-      // satisfazer o contrato do canvas; recebê-las como no-op é mais honesto
-      // do que tornar as props opcionais e espalhar `?.` pelo componente.
-      onChange={() => {}}
-      onUpload={async () => null}
-      t={t}
-    />
+    <>
+      {/* O contador do painel de Indicadores (mig 235). Mora AQUI, e não no
+          canvas, porque o canvas também é o construtor: montado lá, o líder
+          inflaria o próprio painel a cada tarde de edição. Sendo o ponto comum
+          das duas páginas públicas (`/c/<slug>` e o domínio próprio), nenhuma
+          delas pode esquecer dele. */}
+      <SiteAnalytics communityId={communityId} bookingHref={bookingHref} />
+      <SiteCanvas
+        config={config}
+        editing={false}
+        services={services}
+        providerHref={providerHref}
+        bookingHref={bookingHref}
+        communityId={communityId}
+        locale={locale}
+        // Em leitura nada muda o documento. As duas funções existem só para
+        // satisfazer o contrato do canvas; recebê-las como no-op é mais honesto
+        // do que tornar as props opcionais e espalhar `?.` pelo componente.
+        onChange={() => {}}
+        onUpload={async () => null}
+        t={t}
+      />
+    </>
   )
 }

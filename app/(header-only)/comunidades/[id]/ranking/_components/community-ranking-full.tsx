@@ -184,9 +184,10 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   // mudança de regra — o globo apareceria numa e não na outra.
   const siteEnabled = useFeature("comunidade_site")
   const viewerId = getStoredUser()?.id_user ?? null
+  const isLeader = !!community?.id_leader_user && community.id_leader_user === viewerId
   const canBuildSite = canBuildCommunitySite({
     kind: community?.kind,
-    isLeader: !!community?.id_leader_user && community.id_leader_user === viewerId,
+    isLeader,
     siteEnabled,
   })
   // ⚠️ MESMO PREDICADO DA PÁGINA: é a plataforma de negócio que decide o
@@ -303,6 +304,7 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
           communityId={communityId}
           kind={shellKind}
           canBuildSite={canBuildSite}
+          canSeeIndicators={isLeader}
         />
       )}
       <div className="relative mx-auto max-w-4xl px-0 pt-6 md:px-6">

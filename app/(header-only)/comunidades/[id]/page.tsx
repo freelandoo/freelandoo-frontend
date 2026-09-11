@@ -466,6 +466,13 @@ export default function CommunityDetailPage() {
   // cor de fundo. Escrito de novo em cada um, o dia em que a régua mudasse
   // deixaria a página com a pele de um ambiente e a barra de outro.
   const isBusinessPlatform = (community?.kind ?? null) === "common"
+
+  // INDICADORES (mig 235): leads, funil do site e faturamento — só do LÍDER do
+  // negócio. Predicado PRÓPRIO e não `canBuildSite`: aquele embute a flag
+  // `comunidade_site`, e desligar o construtor não pode apagar o painel de
+  // dinheiro do dono. Segue o "ver como público" pela mesma razão do Site: ali
+  // a tela simula quem chega de fora, e quem chega de fora não vê isto.
+  const showIndicators = isBusinessPlatform && isLeader && edit
   // O Plano Negócio do LÍDER (mig 234). Fora do negócio (condomínio, bairro,
   // pet, carro) não há plano nenhum a cobrar, e as portas ficam abertas.
   const planActive = !!community?.business_plan?.members_enabled
@@ -665,6 +672,33 @@ export default function CommunityDetailPage() {
         onOpen: () => openPanel("mural"),
         active: panel === "mural",
       },
+      // O quarto é INDICADORES, e ele também NAVEGA — leads, funil do site e
+      // faturamento são quatro blocos de números e uma série de 90 dias, que
+      // não cabem embaixo do headcard sem empurrar o feed para longe.
+      //
+      // ⚠️ SÓ PARA O LÍDER DO NEGÓCIO, e ele some no "ver como público" (é a
+      // MESMA condição do Site, `showSiteEntry`): a tela mostra quanto o
+      // negócio faturou e quantas pessoas procuraram o dono. Aparecer para
+      // quem visita seria porta pintada — a rota recusa com 403.
+      //
+      // Verde-azulado porque a pilha já tem azul, laranja e roxo; o accent está
+      // fora de questão (é editável pelo líder e pode cair no tom do botão).
+      ...(showIndicators
+        ? ([
+            {
+              key: "indicators",
+              icon: BarChart3,
+              label: t("indPill", "Indicadores"),
+              ariaLabel: t(
+                "indPillAria",
+                "Abrir os indicadores do negócio: leads, site e faturamento"
+              ),
+              bg: "#0D9488",
+              bgHover: "#0F766E",
+              href: `/comunidades/${id}/indicadores`,
+            },
+          ] as PillSpec[])
+        : []),
       // O terceiro é o RANKING, e ele NAVEGA em vez de abrir painel: o pódio
       // com foto grande, a lista inteira e a temporada não cabem embaixo do
       // headcard sem empurrar o feed para longe outra vez — foi para tirar
@@ -684,7 +718,7 @@ export default function CommunityDetailPage() {
         href: `/comunidades/${id}/ranking`,
       },
     ]
-  }, [t, panel, id, openPanel])
+  }, [t, panel, id, openPanel, showIndicators])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -1352,6 +1386,7 @@ export default function CommunityDetailPage() {
           communityId={id}
           kind={shellKind}
           canBuildSite={showSiteEntry}
+          canSeeIndicators={showIndicators}
         />
       )}
       {/* Top bar */}
@@ -1480,11 +1515,13 @@ export default function CommunityDetailPage() {
               colorido nasce ao lado dela em vez de debaixo.
 
               E a foto tem que ser MAIOR QUE A PILHA, senão o pill de cima e o
-              de baixo escapam por cima e por baixo em vez de só pela direita:
-              com três pills a pilha mede 3 × 36 (h-9) + 2 × 6 (gap-1.5) =
-              120px. Com a proporção 2/3 a foto tem 192px de altura (216 no md)
-              e a folga é confortável — mas ela veio de h-32 (128px), que já era
-              o mínimo. PILL NOVO AQUI? Refazer esta conta. */}
+              de baixo escapam por cima e por baixo em vez de só pela direita.
+              Com QUATRO pills (Perfil, Mural, Indicadores e Ranking — o
+              terceiro só aparece para o líder do negócio) a pilha mede
+              4 × 36 (h-9) + 3 × 6 (gap-1.5) = 162px. Com a proporção 2/3 a
+              foto tem 192px de altura (216 no md), então ainda sobra folga —
+              mas ela é de 30px agora, e um QUINTO pill (198px) já escaparia.
+              PILL NOVO AQUI? Refazer esta conta. */}
           <div className="relative shrink-0">
             {/* ⚠️ A PILHA VALE PARA TODAS AS MODALIDADES, e o que muda entre
                 elas é só a LISTA (ver `communityPills`), nunca a mecânica.
