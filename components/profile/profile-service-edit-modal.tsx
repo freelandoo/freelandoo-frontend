@@ -740,7 +740,7 @@ export function ProfileServiceEditModal({
                         onDragOver={(e) => handleDragOver(e, idx)}
                         onDrop={() => handleDrop(idx)}
                         onDragEnd={handleDragEnd}
-                        className={`group relative aspect-square overflow-hidden rounded-lg border-2 transition-all ${
+                        className={`group relative aspect-[4/5] overflow-hidden rounded-lg border-2 transition-all ${
                           dragOverIdx === idx
                             ? "border-[#E0A500] ring-2 ring-[#E0A500]/30"
                             : "border-[#0B0B0D]/20"
@@ -777,7 +777,10 @@ export function ProfileServiceEditModal({
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-[#0B0B0D]/30 text-[#5b554b] transition-colors hover:border-[#E0A500] hover:text-[#E0A500] disabled:opacity-50"
+                        // Mesma proporção do card da vitrine e da moldura do
+                        // editor: a caixa pontilhada já mostra o formato que a
+                        // foto vai ter.
+                        className="flex aspect-[4/5] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-[#0B0B0D]/30 text-[#5b554b] transition-colors hover:border-[#E0A500] hover:text-[#E0A500] disabled:opacity-50"
                       >
                         {uploading ? (
                           <Loader2 className="h-5 w-5 animate-spin" />
