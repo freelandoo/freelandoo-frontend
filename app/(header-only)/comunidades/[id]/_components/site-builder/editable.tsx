@@ -536,6 +536,7 @@ export function EditableImage({
   removeLabel,
   /** Above-the-fold (primeiro slide do hero): sem lazy, para não piscar. */
   eager = false,
+  openRef,
 }: {
   url: string
   objectPosition: SiteObjectPosition
@@ -550,6 +551,16 @@ export function EditableImage({
   framingLabel: string
   removeLabel: string
   eager?: boolean
+  /**
+   * Abre o seletor de arquivo de FORA desta peça.
+   *
+   * ⚠️ Existe por causa do banner: lá a imagem é uma camada de fundo e o bloco
+   * de texto fica POR CIMA dela, cobrindo tanto o alvo grande de "clique para
+   * enviar uma imagem" quanto os três botõezinhos do canto. Quem precisa de um
+   * alvo que nada cobre chama daqui, em vez de montar um segundo `<input>` e
+   * duplicar o upload (com o estado de ocupado e o tratamento de erro junto).
+   */
+  openRef?: { current: (() => void) | null }
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [busy, setBusy] = useState(false)
@@ -568,6 +579,16 @@ export function EditableImage({
     },
     [onChange, onUpload]
   )
+
+  // Publica o gatilho para quem precisa de um alvo fora desta peça (o banner).
+  // Em leitura fica nulo: ali não há seletor de arquivo nenhum.
+  useEffect(() => {
+    if (!openRef) return
+    openRef.current = editing ? () => inputRef.current?.click() : null
+    return () => {
+      openRef.current = null
+    }
+  }, [openRef, editing])
 
   // Superfície interna de alto volume (galeria, catálogo): <img loading="lazy">
   // de propósito — a política de imagem da casa reserva next/image para as

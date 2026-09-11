@@ -12,8 +12,8 @@
 // espaço" leva ao bloco de baixo) e poupa o líder de descobrir e colar uma
 // âncora que ele nem sabe que existe. Com URL, a escolha dele vence.
 
-import { useCallback, useEffect, useState } from "react"
-import { ChevronDown, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { ChevronDown, ChevronLeft, ChevronRight, ImagePlus, Plus, Trash2 } from "lucide-react"
 import type { HeroData, HeroSlide, SiteColorTheme } from "@/types/community-site"
 import { newLocalId } from "@/types/community-site"
 import { BuilderButton, EditableImage, InlineButton, InlineText } from "../editable"
@@ -66,6 +66,10 @@ export function HeroBannerSection({
 }) {
   const slides = data.slides
   const [index, setIndex] = useState(0)
+  // Gatilho do seletor de arquivo da imagem de fundo. A peça que o guarda é o
+  // EditableImage, lá embaixo; quem precisa dele é o botão da barra, aqui em
+  // cima — ver o comentário na barra.
+  const openImage = useRef<(() => void) | null>(null)
   // O hero tem altura PRÓPRIA (short/medium/tall). Quando o líder puxa a alça
   // da seção, a altura escolhida por ele vence — e a classe sai de cena, senão
   // o `min-h` dela seguraria o banner acima do tamanho pedido.
@@ -169,6 +173,7 @@ export function HeroBannerSection({
           onChange={(patch) => patchSlide(current.id, patch)}
           onUpload={onUpload}
           editing={editing}
+          openRef={openImage}
           className="h-full w-full"
           alt={current.headline}
           label={labels.changeImage}
@@ -334,6 +339,21 @@ export function HeroBannerSection({
 
       {editing && (
         <div className="absolute right-3 top-3 z-10 flex flex-wrap items-center justify-end gap-1.5">
+          {/* ⚠️ A imagem do banner PRECISA de um alvo aqui em cima.
+              No banner ela é uma camada de FUNDO, e o bloco de texto fica por
+              cima dela ocupando a largura toda — cobrindo tanto o alvo grande
+              de "clique para enviar uma imagem" quanto os três botõezinhos que
+              aparecem no canto quando já existe imagem. Clicar no fundo não
+              fazia nada, e a tela prometia o contrário.
+              Esta barra é absolute com z-10, acima do conteúdo: é o único ponto
+              do banner que nada cobre. */}
+          <BuilderButton
+            onClick={() => openImage.current?.()}
+            icon={ImagePlus}
+            title={labels.changeImage}
+          >
+            {labels.changeImage}
+          </BuilderButton>
           <BuilderButton onClick={addSlide} icon={Plus} tone="accent" title={labels.addSlide}>
             {labels.addSlide}
           </BuilderButton>

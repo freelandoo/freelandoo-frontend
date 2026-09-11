@@ -819,7 +819,22 @@ export function CommunitySiteBuilder({
           o espaçador o site ampliado ficaria cortado sem barra de rolagem. */}
       <div
         ref={viewportRef}
-        className="w-full overflow-auto"
+        // ⚠️ `isolate` (isolation: isolate) — a prancheta cria um contexto de
+        // empilhamento PRÓPRIO, e é isso que impede o site desenhado dentro
+        // dela de passar por cima da interface do construtor.
+        //
+        // Sem ele a prancheta não criava contexto nenhum, então a barra do
+        // site (`z-40` lá dentro) subia até o contexto raiz e disputava de
+        // igual para igual com o trilho de edição, que também é `z-40` —
+        // empate resolvido pela ordem do DOM, e a prancheta vem depois. O
+        // resultado: a barra do site passava na frente do painel de Páginas,
+        // que é aberto DE DENTRO do trilho (o `z-50` dele não ajudava, porque
+        // um z-index só vale dentro do contexto em que está).
+        //
+        // Elevar o número do trilho resolveria só até o site ganhar uma peça
+        // com z-index maior. Confinar o site é a correção de raiz: os z-index
+        // que ele usa são dele, e nunca deveriam competir com os do construtor.
+        className="isolate w-full overflow-auto"
         style={frameWidth ? { background: "#0B0B0D", padding: "16px 8px" } : undefined}
       >
         <div
