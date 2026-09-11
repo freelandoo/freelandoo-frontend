@@ -114,6 +114,11 @@ export default async function CommunityDomainPage({ params }: Props) {
         // Caminho relativo: aqui o navegador está no domínio do cliente, e é
         // ele que o proxy traduz de volta para /dominio/<host>/agendar.
         bookingHref="/agendar"
+        // No domínio próprio o site é a raiz, e a sub-página responde em
+        // `/pagina/<endereço>` — o mesmo prefixo dos outros dois endereços,
+        // para o líder não ter que aprender duas formas de URL.
+        pageBase="/pagina"
+        homeHref="/"
         communityId={site.id_profile}
       />
       <footer className="border-t-2 border-[#0B0B0D] bg-[#0B0B0D] px-5 py-6 text-center md:px-10">

@@ -173,6 +173,8 @@ export const SITE_SECTION_KINDS = [
   "person",
   "gallery",
   "contact",
+  "faq",
+  "areas",
 ] as const
 export type SiteSectionKind = (typeof SITE_SECTION_KINDS)[number]
 
@@ -208,6 +210,19 @@ export type PersonData = {
   ctaUrl: string
 }
 export type GalleryData = { photos: PhotoItem[]; columns: 2 | 3 | 4 }
+
+export type FaqItem = { id: string; question: string; answer: string }
+export type FaqData = { items: FaqItem[] }
+
+export type AreaItem = {
+  id: string
+  name: string
+  uf: string
+  note: string
+  /** Destino do item. Token `pagina:<slug>`, `agendar`, ou link externo. */
+  url: string
+}
+export type AreasData = { items: AreaItem[]; columns: 2 | 3 | 4; note: string }
 export type ContactData = {
   address: string
   mapsUrl: string
@@ -231,6 +246,8 @@ export type SiteSection =
   | SiteSectionBase<"person", PersonData>
   | SiteSectionBase<"gallery", GalleryData>
   | SiteSectionBase<"contact", ContactData>
+  | SiteSectionBase<"faq", FaqData>
+  | SiteSectionBase<"areas", AreasData>
 
 type SiteSectionBase<K extends SiteSectionKind, D> = {
   id: string
@@ -316,6 +333,26 @@ export type SiteSectionDataFor<K extends SiteSectionKind> = Extract<
   { kind: K }
 >["data"]
 
+/**
+ * Sub-página do site: endereço próprio e a MESMA pilha de seções da home.
+ *
+ * `title` vai para a aba do navegador e para o resultado de busca; `subtitle` é
+ * a descrição. O `slug` é kebab-case e não pode ser `agendar` — o backend
+ * (utils/communitySite.js) descarta a página que desobedecer, em vez de
+ * recusar o save inteiro.
+ */
+export type SitePage = {
+  id: string
+  slug: string
+  title: string
+  subtitle: string
+  enabled: boolean
+  sections: SiteSection[]
+}
+
+/** Prefixo do link para outra página do próprio site: `pagina:<slug>`. */
+export const PAGE_LINK_PREFIX = "pagina:"
+
 export type CommunitySiteConfig = {
   siteName: string
   tagline: string
@@ -330,6 +367,11 @@ export type CommunitySiteConfig = {
    * Site antigo não tem o campo — por isso é opcional.
    */
   textStyles?: Record<string, SiteTextStyle>
+  /**
+   * Sub-páginas do site (mig 238). Ausente num documento antigo = site de uma
+   * página só, que é como ele sempre foi — por isso é opcional.
+   */
+  pages?: SitePage[]
   sections: SiteSection[]
 }
 
@@ -415,6 +457,10 @@ export function emptySectionData(kind: SiteSectionKind): SiteSection["data"] {
         hours: "",
         socials: [],
       } satisfies ContactData
+    case "faq":
+      return { items: [] } satisfies FaqData
+    case "areas":
+      return { items: [], columns: 3, note: "" } satisfies AreasData
   }
 }
 

@@ -86,14 +86,43 @@ function platformApexFor(host: string): string | null {
 const SITE_PAGES = new Set(["agendar"])
 
 /**
- * `/agendar` → `/agendar`; `/` → ""; qualquer outra coisa → `null`.
- * Só manipulação de string, como todo este arquivo.
+ * Prefixo das SUB-PÁGINAS que o líder cria no construtor (mig 238).
+ *
+ * ⚠️ EXISTE UM PREFIXO porque o slug é escolhido por quem edita, e este arquivo
+ * não pode consultar nada para saber quais existem. Sem prefixo, a única regra
+ * possível no subdomínio seria "reescreva tudo" — e ali a plataforma continua
+ * de pé: `padaria.freelandoo.com.br/feed` é o feed, `/api` é a API. Uma
+ * comunidade com uma página chamada "feed" passaria a sequestrar o produto.
+ *
+ * ⚠️ NÃO USAR `/p`: já é a página pública de post da plataforma.
+ *
+ * O preço é a URL um pouco mais longa (`/pagina/aguai` em vez de `/aguai`).
+ * Aceito: profundidade de caminho pesa pouco em busca, e o alternativo seria
+ * uma lista que só um I/O poderia montar.
+ */
+const SITE_PAGE_PREFIX = "pagina"
+
+/**
+ * `/agendar` → `/agendar`; `/pagina/aguai` → `/pagina/aguai`; `/` → "";
+ * qualquer outra coisa → `null`. Só manipulação de string, como todo este
+ * arquivo.
  */
 function sitePagePath(pathname: string): string | null {
   const clean = pathname.replace(/\/+$/, "")
   if (clean === "" || clean === "/") return ""
-  const first = clean.split("/")[1] || ""
-  return SITE_PAGES.has(first) ? `/${first}` : null
+  const parts = clean.split("/")
+  const first = parts[1] || ""
+  if (SITE_PAGES.has(first)) return `/${first}`
+  if (first === SITE_PAGE_PREFIX) {
+    const slug = parts[2] || ""
+    // O alfabeto é o mesmo que o backend aceita. Conferir aqui evita que um
+    // caminho torto vire um segmento de rota estranho — e um slug inválido não
+    // existe como página de ninguém, então cai no caminho de sempre.
+    if (parts.length === 3 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      return `/${SITE_PAGE_PREFIX}/${slug}`
+    }
+  }
+  return null
 }
 
 export function proxy(request: NextRequest) {

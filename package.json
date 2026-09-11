@@ -10,7 +10,8 @@
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
     "submit:indexnow": "node scripts/indexnow.mjs",
-    "bundle:report": "node scripts/bundle-baseline.mjs"
+    "bundle:report": "node scripts/bundle-baseline.mjs",
+    "check:site-pages": "node scripts/check-site-pages.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

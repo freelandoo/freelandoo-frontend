@@ -13,13 +13,16 @@ import { SITE_SIZES, clampSize } from "@/types/community-site"
 import type {
   AboutData,
   CommunitySiteConfig,
+  AreasData,
   ContactData,
+  FaqData,
   CtaData,
   GalleryData,
   HeroData,
   PersonData,
   ServicesCatalogData,
   ShowcaseService,
+  SitePage,
   SiteSection,
   SiteSectionKind,
   SiteSectionLayout,
@@ -61,6 +64,8 @@ import { GallerySection } from "./sections/gallery-section"
 import { ContactSection } from "./sections/contact-section"
 import { CtaSection } from "./sections/cta-section"
 import { PersonSection } from "./sections/person-section"
+import { FaqSection } from "./sections/faq-section"
+import { AreasSection } from "./sections/areas-section"
 
 /**
  * Seções que desenham o próprio cabeçalho.
@@ -98,6 +103,10 @@ export function SiteCanvas({
   providerHref = null,
   locale = "pt-BR",
   bookingHref = null,
+  pageBase = null,
+  homeHref = null,
+  pages = [],
+  activePageSlug = null,
   communityId = null,
 }: {
   config: CommunitySiteConfig
@@ -126,6 +135,24 @@ export function SiteCanvas({
    * levasse o líder para fora no meio da montagem seria uma armadilha.
    */
   bookingHref?: string | null
+  /** Onde vivem as sub-páginas deste site. Ver `site-runtime`. */
+  pageBase?: string | null
+  /**
+   * O caminho da home. É o item de volta do menu quando a pilha na tela é de uma
+   * sub-página — sem ele o visitante entra numa página e não sai.
+   *
+   * Explícito em vez de derivado de `pageBase`: recortar "/pagina" do fim dele
+   * funcionaria hoje e amarraria duas peças ao mesmo literal.
+   */
+  homeHref?: string | null
+  /**
+   * As sub-páginas do site (mig 238) — o canvas usa SÓ para montar o menu da
+   * barra e do rodapé. Ele não desenha página nenhuma além da que recebeu em
+   * `config.sections`: quem decide qual pilha está na tela é quem monta o canvas.
+   */
+  pages?: SitePage[]
+  /** A sub-página na tela, para ela não virar um link para si mesma. */
+  activePageSlug?: string | null
   /** A comunidade — é dela que o cartão de chamada pergunta o próximo horário. */
   communityId?: string | null
 }) {
@@ -214,7 +241,20 @@ export function SiteCanvas({
   // documento — nenhuma das três peças guarda texto próprio. O menu recebe o
   // mesmo contexto: link para uma seção que não vai ser desenhada é link para
   // lugar nenhum.
-  const chrome = useSiteChromeInfo(config, editing, contentCtx)
+  // ⚠️ Memoizado: `useSiteChromeInfo` guarda o resultado por referência, e um
+  // objeto literal aqui nasceria novo a cada render — o menu seria recalculado
+  // em toda tecla digitada no construtor.
+  const chromeNav = useMemo(
+    () => ({
+      pages,
+      activePageSlug,
+      pageBase,
+      homeHref,
+      homeLabel: t("navHome", "Início"),
+    }),
+    [pages, activePageSlug, pageBase, homeHref, t]
+  )
+  const chrome = useSiteChromeInfo(config, editing, contentCtx, chromeNav)
 
   /**
    * Faixa de fundo de cada seção.
@@ -405,7 +445,11 @@ export function SiteCanvas({
   }, [editing, selection, config, sections, onChange, patchLayout, t])
 
   return (
-    <SiteRuntimeProvider bookingHref={bookingHref} communityId={communityId}>
+    <SiteRuntimeProvider
+      bookingHref={bookingHref}
+      communityId={communityId}
+      pageBase={pageBase}
+    >
     <SiteStyleProvider
       editing={editing}
       styles={config.textStyles}
@@ -840,6 +884,43 @@ export function SiteCanvas({
               openMaps: t("contactOpenMaps", "Abrir no mapa"),
               talkWhatsapp: t("contactTalkWhatsapp", "Falar no WhatsApp"),
               empty: t("contactEmpty", "Sem informações de contato."),
+            }}
+          />
+        )
+
+      case "faq":
+        return (
+          <FaqSection
+            data={section.data}
+            onChange={(d: FaqData) => setData(d)}
+            editing={editing}
+            theme={theme}
+            labels={{
+              question: t("faqQuestion", "A pergunta que te fazem"),
+              answer: t("faqAnswer", "A resposta, do jeito que você explicaria"),
+              addItem: t("faqAdd", "Nova pergunta"),
+              removeItem: t("faqRemove", "Remover pergunta"),
+              empty: t("faqEmpty", "Nenhuma pergunta ainda."),
+            }}
+          />
+        )
+
+      case "areas":
+        return (
+          <AreasSection
+            data={section.data}
+            onChange={(d: AreasData) => setData(d)}
+            editing={editing}
+            theme={theme}
+            labels={{
+              name: t("areaName", "Cidade ou bairro"),
+              uf: t("areaUf", "UF"),
+              note: t("areaNote", "Detalhe do atendimento (opcional)"),
+              url: t("areaUrl", "Destino: pagina:<endereço>, agendar ou um link"),
+              sectionNote: t("areaSectionNote", "Observação no rodapé da seção"),
+              addItem: t("areaAdd", "Nova área"),
+              removeItem: t("areaRemove", "Remover área"),
+              empty: t("areaEmpty", "Nenhuma área atendida ainda."),
             }}
           />
         )

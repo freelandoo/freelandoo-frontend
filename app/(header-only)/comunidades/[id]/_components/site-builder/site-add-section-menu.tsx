@@ -7,7 +7,9 @@ import {
   BadgeCheck,
   Image as ImageIcon,
   LayoutPanelTop,
+  HelpCircle,
   MapPin,
+  MapPinned,
   MessageSquareQuote,
   ScrollText,
   Store,
@@ -25,6 +27,8 @@ const META: Record<SiteSectionKind, { icon: LucideIcon; labelKey: string; fallba
   person: { icon: UserRound, labelKey: "sectionPerson", fallback: "Quem está por trás" },
   gallery: { icon: ImageIcon, labelKey: "sectionGallery", fallback: "Galeria de fotos" },
   contact: { icon: MapPin, labelKey: "sectionContact", fallback: "Contato e localização" },
+  faq: { icon: HelpCircle, labelKey: "sectionFaq", fallback: "Perguntas frequentes" },
+  areas: { icon: MapPinned, labelKey: "sectionAreas", fallback: "Áreas atendidas" },
 }
 
 /** Rótulo de uma seção — usado também pela barra de ações do canvas. */

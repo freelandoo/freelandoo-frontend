@@ -115,6 +115,10 @@ export default async function CommunitySitePage({ params }: Props) {
           site.provider_profile_id ? `/freelancer/${site.provider_profile_id}` : null
         }
         bookingHref={`/c/${slug}/agendar`}
+        // Na plataforma (e no subdomínio, que reescreve para cá) a sub-página
+        // é `/c/<slug>/pagina/<endereço>`.
+        pageBase={`/c/${slug}/pagina`}
+        homeHref={`/c/${slug}`}
         communityId={site.id_profile}
       />
 

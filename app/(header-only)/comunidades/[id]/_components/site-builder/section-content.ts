@@ -76,6 +76,17 @@ export function sectionHasContent(
     case "about":
     case "person":
       return true
+
+    // Pergunta sem resposta escrita não é conteúdo — e um bloco "Perguntas
+    // frequentes" vazio é justamente o que faz o visitante achar que o site
+    // está pela metade.
+    case "faq":
+      return section.data.items.some((i) => i.question.trim() || i.answer.trim())
+
+    // Basta o nome da cidade: a observação é opcional de propósito (nem toda
+    // área atendida tem detalhe a dar).
+    case "areas":
+      return section.data.items.some((i) => i.name.trim())
   }
 }
 

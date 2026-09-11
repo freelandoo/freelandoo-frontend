@@ -23,6 +23,7 @@ import {
   Monitor,
   Palette,
   Plus,
+  Files,
   Search,
   Smartphone,
   Tablet,
@@ -43,6 +44,7 @@ import {
   type CommunitySiteResponse,
   type ShowcaseService,
   type SiteSection,
+  type SitePage,
   type SiteSectionKind,
   type SiteViewport,
 } from "@/types/community-site"
@@ -51,6 +53,13 @@ import { SiteAddSectionMenu } from "./site-add-section-menu"
 import { SiteColorPalettePicker } from "./site-color-palette-picker"
 import { SiteDomainsPanel } from "./site-domains-panel"
 import { SiteTeamPanel } from "./site-team-panel"
+import { SitePagesPanel } from "./site-pages-panel"
+import {
+  addSectionTo,
+  canvasConfigFor,
+  findActivePage,
+  writeCanvasChange,
+} from "./site-pages"
 
 /** Pausa do autosave. Longa o bastante para um parágrafo virar UM save. */
 const AUTOSAVE_MS = 1200
@@ -94,6 +103,14 @@ export function CommunitySiteBuilder({
   const [addOpen, setAddOpen] = useState(false)
   const [domainsOpen, setDomainsOpen] = useState(false)
   const [teamOpen, setTeamOpen] = useState(false)
+  const [pagesOpen, setPagesOpen] = useState(false)
+  /**
+   * Qual pilha de seções a prancheta está editando. `null` = a home.
+   *
+   * ⚠️ Guarda o ID, nunca o índice: apagar uma página reindexaria o array e a
+   * prancheta passaria a editar a vizinha, sem nada na tela dizer isso.
+   */
+  const [activePageId, setActivePageId] = useState<string | null>(null)
   // O modal do plano abre quando o backend recusa publicar com 402 — e o
   // cadeado no botão avisa antes do clique, lendo a assinatura de quem edita.
   const [planOpen, setPlanOpen] = useState(false)
@@ -277,6 +294,41 @@ export function CommunitySiteBuilder({
     [scheduleSave]
   )
 
+  // ─── Qual pilha de seções está na prancheta (mig 238) ─────────────────────
+  //
+  // A tradução entre "a pilha na prancheta" e "o documento" mora em
+  // `./site-pages`, fora daqui: ela tem um modo de falhar que não dá sintoma na
+  // hora (a edição de uma sub-página apagando a home), e função pura pode ser
+  // exercitada — ver `scripts/check-site-pages.mjs`.
+  const pages = useMemo<SitePage[]>(() => config?.pages || [], [config])
+
+  const activePage = useMemo(
+    () => findActivePage(pages, activePageId),
+    [pages, activePageId]
+  )
+
+  const canvasConfig = useMemo(
+    () => (config ? canvasConfigFor(config, activePage) : null),
+    [config, activePage]
+  )
+
+  const applyCanvasChange = useCallback(
+    (next: CommunitySiteConfig) => {
+      if (!config) return
+      applyChange(writeCanvasChange(config, activePageId, next))
+    },
+    [config, activePageId, applyChange]
+  )
+
+  /** Troca a lista de páginas preservando o resto do documento. */
+  const setPages = useCallback(
+    (next: SitePage[]) => {
+      if (!config) return
+      applyChange({ ...config, pages: next })
+    },
+    [config, applyChange]
+  )
+
   // ─── Upload de imagem ─────────────────────────────────────────────────────
   const uploadImage = useCallback(
     async (file: File): Promise<string | null> => {
@@ -352,9 +404,10 @@ export function CommunitySiteBuilder({
         subtitle: "",
         data: emptySectionData(kind),
       } as SiteSection
-      applyChange({ ...config, sections: [...config.sections, section] })
+      // Vai para a pilha ATIVA, não para a home.
+      applyChange(addSectionTo(config, activePageId, section))
     },
-    [config, applyChange]
+    [config, applyChange, activePageId]
   )
 
   // A pizca precisa de listener NATIVO com `passive: false`: o React registra
@@ -557,6 +610,50 @@ export function CommunitySiteBuilder({
             </button>
           </div>
 
+          {/* Páginas (mig 238).
+              ⚠️ FICA FORA DO `editing &&` de propósito: é por aqui que se VOLTA
+              para a home, e o rótulo é o único lugar da tela que diz qual página
+              está na prancheta. Escondido na pré-visualização, o líder que
+              estivesse numa sub-página ficaria sem saída e sem saber onde está. */}
+          {isLeader && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setPagesOpen((v) => !v)}
+                aria-expanded={pagesOpen}
+                aria-haspopup="menu"
+                className="flex max-w-[12rem] items-center gap-1.5 border-2 px-3 py-2 text-[10px] font-extrabold tracking-[0.12em] text-[#F5F1E8] uppercase"
+                style={{
+                  // Acesa quando a prancheta NÃO está na home: sem isso, editar
+                  // a página de Aguaí e a home pareceria a mesma coisa.
+                  borderColor: activePage ? accent : "#0B0B0D",
+                  background: activePage ? "#1D1810" : "#1D1810",
+                }}
+              >
+                <Files className="h-4 w-4 shrink-0" style={{ color: accent }} />
+                <span className="truncate">
+                  {activePage
+                    ? activePage.title || activePage.slug
+                    : t("pagesButton", "Páginas")}
+                </span>
+                {!activePage && pages.length > 0 && (
+                  <span className="shrink-0 text-[#9A938A]">{pages.length}</span>
+                )}
+              </button>
+              {pagesOpen && (
+                <SitePagesPanel
+                  pages={pages}
+                  activePageId={activePageId}
+                  onSelect={setActivePageId}
+                  onChange={setPages}
+                  onClose={() => setPagesOpen(false)}
+                  accent={accent}
+                  t={t}
+                />
+              )}
+            </div>
+          )}
+
           {editing && (
             <>
               <div className="relative">
@@ -750,9 +847,14 @@ export function CommunitySiteBuilder({
             }
           >
             <SiteCanvas
-              config={config}
+              // ⚠️ Remonta ao trocar de página. A seleção de seção e os estados
+              // de arraste do canvas guardam IDs da pilha que estava na tela; a
+              // barra de ações sobreviveria apontando para uma seção que não
+              // está mais aqui. Zoom e rolagem vivem fora, então nada se perde.
+              key={activePageId || "home"}
+              config={canvasConfig!}
               editing={editing && isLeader}
-              onChange={applyChange}
+              onChange={applyCanvasChange}
               onUpload={uploadImage}
               t={t}
               services={services}
@@ -778,6 +880,16 @@ export function CommunitySiteBuilder({
               // continua `null`, porque nesse momento a página de agendamento
               // realmente ainda não tem endereço.
               bookingHref={slug ? `/c/${slug}/agendar` : null}
+              // Onde as sub-páginas respondem. Pelo mesmo motivo do
+              // `bookingHref`: o endereço é o REAL, para a pré-visualização
+              // mostrar os links como o visitante os verá. Antes da primeira
+              // publicação não há slug, e aí não existe página para onde ir.
+              pageBase={slug ? `/c/${slug}/pagina` : null}
+              homeHref={slug ? `/c/${slug}` : null}
+              // Quem aparece no menu da barra — e, na sub-página, qual item não
+              // deve aparecer (um link para a página que já está aberta).
+              pages={pages}
+              activePageSlug={activePage?.slug || null}
             />
           </div>
         </div>

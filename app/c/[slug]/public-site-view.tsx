@@ -21,6 +21,8 @@ export function PublicSiteView({
   services = [],
   providerHref = null,
   bookingHref = null,
+  pageBase = null,
+  homeHref = null,
   communityId = null,
 }: {
   config: CommunitySiteConfig
@@ -33,6 +35,12 @@ export function PublicSiteView({
    * documento guarda só o token `agendar`.
    */
   bookingHref?: string | null
+  pageBase?: string | null
+  /**
+   * O caminho da home deste site. Vai para o menu como item de volta nas
+   * sub-páginas (mig 238).
+   */
+  homeHref?: string | null
   /** A comunidade, para o cartão de chamada perguntar o próximo horário livre. */
   communityId?: string | null
 }) {
@@ -53,6 +61,14 @@ export function PublicSiteView({
         services={services}
         providerHref={providerHref}
         bookingHref={bookingHref}
+        pageBase={pageBase}
+        homeHref={homeHref}
+        // O menu da barra lista as sub-páginas, e elas moram no documento. Sem
+        // isto a página criada no construtor ficaria sem porta: ninguém a
+        // alcançaria a não ser colando a URL.
+        pages={config.pages || []}
+        // Esta é a home, então nenhuma sub-página está aberta.
+        activePageSlug={null}
         communityId={communityId}
         locale={locale}
         // Em leitura nada muda o documento. As duas funções existem só para

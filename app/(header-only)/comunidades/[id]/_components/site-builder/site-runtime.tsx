@@ -30,20 +30,43 @@ import { createContext, useContext, useMemo } from "react"
 /** Espelho do `BOOKING_LINK` do backend — o valor gravado no documento. */
 export const BOOKING_LINK = "agendar"
 
+/** Espelho do `PAGE_LINK_PREFIX` do backend: `pagina:<slug>` (mig 238). */
+export const PAGE_LINK_PREFIX = "pagina:"
+
 type SiteRuntime = {
   /** `null` quando não há para onde agendar (construtor, site sem endereço). */
   bookingHref: string | null
   communityId: string | null
+  /**
+   * Onde as SUB-PÁGINAS deste site moram, sem barra no fim.
+   *
+   * Vazio ("") no subdomínio e no domínio próprio, onde a página é `/servicos`;
+   * `/c/<slug>` na plataforma, onde a mesma página é `/c/padaria/servicos`. É a
+   * razão de o documento guardar um token e não um caminho — o mesmo site
+   * responde nos três endereços.
+   *
+   * `null` no construtor: ali não existe página publicada para onde ir, e um
+   * link morto que parece vivo é pior que texto sem link.
+   */
+  pageBase: string | null
 }
 
-const Ctx = createContext<SiteRuntime>({ bookingHref: null, communityId: null })
+const Ctx = createContext<SiteRuntime>({
+  bookingHref: null,
+  communityId: null,
+  pageBase: null,
+})
 
 export function SiteRuntimeProvider({
   bookingHref,
   communityId,
+  pageBase,
   children,
 }: SiteRuntime & { children: React.ReactNode }) {
-  const value = useMemo(() => ({ bookingHref, communityId }), [bookingHref, communityId])
+  const value = useMemo(
+    () => ({ bookingHref, communityId, pageBase }),
+    [bookingHref, communityId, pageBase]
+  )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 
@@ -59,10 +82,18 @@ export function useSiteRuntime(): SiteRuntime {
  * `<a>` sem href é um botão morto que parece vivo.
  */
 export function useSiteHref(url: string): string | null {
-  const { bookingHref } = useSiteRuntime()
+  const { bookingHref, pageBase } = useSiteRuntime()
   const raw = (url || "").trim()
   if (!raw) return null
   if (raw === BOOKING_LINK) return bookingHref
+  if (raw.startsWith(PAGE_LINK_PREFIX)) {
+    // `pageBase` vazio é um valor legítimo (subdomínio: a página é `/servicos`),
+    // então a comparação é com null — `!pageBase` trataria a raiz como ausência
+    // e apagaria todo link interno justamente no endereço próprio do cliente.
+    if (pageBase === null) return null
+    const slug = raw.slice(PAGE_LINK_PREFIX.length)
+    return slug ? `${pageBase}/${slug}` : null
+  }
   return raw
 }
 

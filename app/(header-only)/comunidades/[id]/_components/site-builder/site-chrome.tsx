@@ -20,7 +20,12 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Menu, MessageCircle, X } from "lucide-react"
-import type { CommunitySiteConfig, SiteColorTheme, SiteSection } from "@/types/community-site"
+import type {
+  CommunitySiteConfig,
+  SiteColorTheme,
+  SitePage,
+  SiteSection,
+} from "@/types/community-site"
 import { sectionHasContent, type SectionContentContext } from "./section-content"
 import { InlineText } from "./editable"
 import { isExternalHref, useSiteHref } from "./site-runtime"
@@ -44,7 +49,14 @@ export function sectionAnchor(id: string): string {
 
 export type SiteChromeInfo = {
   /** Itens do menu: seções habilitadas que têm título. */
-  navItems: { id: string; label: string }[]
+  /**
+   * Itens do menu.
+   *
+   * `href` ausente = ÂNCORA para uma seção desta mesma página (o que o menu
+   * sempre foi). `href` presente = navegação de verdade, para outra página do
+   * site (mig 238) ou de volta para a home.
+   */
+  navItems: { id: string; label: string; href?: string }[]
   whatsapp: string
   socials: { id: string; label: string; url: string }[]
   /** Ação principal, herdada do primeiro banner. */
@@ -56,10 +68,35 @@ export type SiteChromeInfo = {
  * três peças (barra, rodapé, botão) leem exatamente a mesma coisa — e uma
  * leitura por peça é como elas começariam a divergir.
  */
+/**
+ * Quantas ÂNCORAS o menu mostra quando o site não tem sub-página. Mantido em 5
+ * para não mexer na barra de quem já publicou.
+ */
+const MAX_ANCHORS = 5
+/** E quantas sub-páginas. Acima disso a barra deixa de ser legível. */
+const MAX_NAV_PAGES = 4
+
+/**
+ * Navegação entre páginas do site (mig 238). Opcional: sem isso o menu é o de
+ * sempre, só com as âncoras da página atual.
+ */
+export type SiteChromeNav = {
+  pages: SitePage[]
+  /** A página aberta agora, para ela não virar um link para si mesma. */
+  activePageSlug: string | null
+  /** Onde as sub-páginas respondem. `null` = não há para onde ir. */
+  pageBase: string | null
+  /** O caminho de volta. `null` no construtor antes da primeira publicação. */
+  homeHref: string | null
+  /** Rótulo do item de volta — vem de quem tem o dicionário. */
+  homeLabel: string
+}
+
 export function useSiteChromeInfo(
   config: CommunitySiteConfig,
   editing: boolean,
-  ctx: SectionContentContext
+  ctx: SectionContentContext,
+  nav?: SiteChromeNav
 ): SiteChromeInfo {
   return useMemo(() => {
     // A MESMA régua que a página usa para desenhar. O menu não pode oferecer
@@ -75,12 +112,48 @@ export function useSiteChromeInfo(
     const hero = enabled.find((s): s is Extract<SiteSection, { kind: "hero" }> => s.kind === "hero")
     const firstSlide = hero?.data.slides[0]
 
+    // ⚠️ As SUB-PÁGINAS entram no menu, e sem isso a feature nasceria pela
+    // metade: uma página criada não teria como ser alcançada — nem pelo
+    // visitante nem pelo buscador, que descobre página por link. Página
+    // desligada fica de fora (é rascunho), e a página aberta também (seria um
+    // link para si mesma).
+    const navPages =
+      nav && nav.pageBase !== null
+        ? nav.pages
+            .filter((p) => p.enabled && p.slug !== nav.activePageSlug)
+            .slice(0, MAX_NAV_PAGES)
+            .map((p) => ({
+              id: `page:${p.id}`,
+              label: (p.title || p.slug).trim(),
+              href: `${nav.pageBase}/${p.slug}`,
+            }))
+        : []
+
+    // Dentro de uma sub-página, o primeiro item é a volta. Fora do teto de
+    // propósito: é o caminho mais usado de todos, e perdê-lo para dar lugar a
+    // uma âncora deixaria o visitante sem saída.
+    const homeItem =
+      nav && nav.activePageSlug && nav.homeHref
+        ? [{ id: "page:home", label: nav.homeLabel, href: nav.homeHref }]
+        : []
+
+    // As âncoras cedem espaço às páginas — destino vale mais que atalho —, mas
+    // nunca abaixo de duas: um site com muitas páginas continua precisando
+    // apontar o que tem na página que está aberta.
+    const anchorRoom = navPages.length
+      ? Math.max(2, MAX_ANCHORS - navPages.length)
+      : MAX_ANCHORS
+
     return {
       // O banner é o topo da página: ancorar nele seria um link para "aqui".
-      navItems: enabled
-        .filter((s) => s.kind !== "hero" && s.title.trim())
-        .slice(0, 5)
-        .map((s) => ({ id: s.id, label: s.title.trim() })),
+      navItems: [
+        ...homeItem,
+        ...enabled
+          .filter((s) => s.kind !== "hero" && s.title.trim())
+          .slice(0, anchorRoom)
+          .map((s) => ({ id: s.id, label: s.title.trim() })),
+        ...navPages,
+      ],
       whatsapp: contact?.data.whatsapp || "",
       socials: (contact?.data.socials || []).filter((s) => s.url),
       action:
@@ -88,7 +161,7 @@ export function useSiteChromeInfo(
           ? { text: firstSlide.ctaText, url: firstSlide.ctaUrl }
           : null,
     }
-  }, [config, editing, ctx])
+  }, [config, editing, ctx, nav])
 }
 
 /** Link externo abre em aba nova; âncora e caminho interno, não. */
@@ -167,7 +240,7 @@ export function SiteNav({
           {info.navItems.map((item) => (
             <a
               key={item.id}
-              href={`#${sectionAnchor(item.id)}`}
+              href={item.href || `#${sectionAnchor(item.id)}`}
               className="text-[11px] font-extrabold uppercase tracking-[0.14em] transition-opacity hover:opacity-70"
               style={{ color: theme.textSecondary }}
             >
@@ -229,7 +302,7 @@ export function SiteNav({
           {info.navItems.map((item) => (
             <a
               key={item.id}
-              href={`#${sectionAnchor(item.id)}`}
+              href={item.href || `#${sectionAnchor(item.id)}`}
               onClick={() => setOpen(false)}
               className="py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
               style={{ color: theme.textSecondary }}
@@ -325,7 +398,7 @@ export function SiteFooter({
               {info.navItems.map((item) => (
                 <a
                   key={item.id}
-                  href={`#${sectionAnchor(item.id)}`}
+                  href={item.href || `#${sectionAnchor(item.id)}`}
                   className="text-[11px] font-extrabold uppercase tracking-[0.12em] transition-opacity hover:opacity-70"
                   style={{ color: theme.textSecondary }}
                 >
