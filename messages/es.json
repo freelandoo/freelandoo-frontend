@@ -6248,7 +6248,11 @@
     "areaEmpty": "Ninguna área atendida todavía.",
     "serviceQuoteBadge": "A presupuestar",
     "serviceQuoteCta": "Pedir presupuesto",
-    "serviceQuoteMessage": "¡Hola! Vengo del sitio y quisiera un presupuesto para: {service}"
+    "serviceQuoteMessage": "¡Hola! Vengo del sitio y quisiera un presupuesto para: {service}",
+    "servicePerView": "Por pantalla",
+    "serviceNoPhoto": "Sin foto — agrégala en los ajustes del servicio",
+    "servicePrev": "Ver servicios anteriores",
+    "serviceNext": "Ver más servicios"
   },
   "SiteBooking": {
     "back": "Volver al sitio",

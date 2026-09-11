@@ -5682,7 +5682,11 @@
     "areaEmpty": "Nenhuma área atendida ainda.",
     "serviceQuoteBadge": "Sob orçamento",
     "serviceQuoteCta": "Pedir orçamento",
-    "serviceQuoteMessage": "Olá! Vim pelo site e queria um orçamento para: {service}"
+    "serviceQuoteMessage": "Olá! Vim pelo site e queria um orçamento para: {service}",
+    "servicePerView": "Por tela",
+    "serviceNoPhoto": "Sem foto — adicione no cadastro do serviço",
+    "servicePrev": "Ver serviços anteriores",
+    "serviceNext": "Ver mais serviços"
   },
   "SiteBooking": {
     "back": "Voltar ao site",

@@ -719,7 +719,7 @@ export function SiteCanvas({
             whatsapp={chrome.whatsapp}
             locale={locale}
             labels={{
-              columns: t("serviceColumns", "Colunas"),
+              perView: t("servicePerView", "Por tela"),
               cta: t("serviceCta", "Quero este"),
               book: t("serviceBook", "Agendar"),
               quoteBadge: t("serviceQuoteBadge", "Sob orçamento"),
@@ -733,6 +733,9 @@ export function SiteCanvas({
                 "serviceEmptyHint",
                 "Esta vitrine mostra os serviços do seu perfil. Cadastre em Meu perfil → Serviços e eles aparecem aqui."
               ),
+              noPhoto: t("serviceNoPhoto", "Sem foto — adicione no cadastro do serviço"),
+              prev: t("servicePrev", "Ver serviços anteriores"),
+              next: t("serviceNext", "Ver mais serviços"),
               hourSuffix: t("serviceHourSuffix", "h"),
               minSuffix: t("serviceMinSuffix", "min"),
             }}

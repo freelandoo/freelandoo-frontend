@@ -1,6 +1,7 @@
 "use client"
 
-// Vitrine de serviços: grade de cards com foto, nome, descrição, preço e duração.
+// Vitrine de serviços: UMA FILEIRA de cards com foto, nome, descrição, preço e
+// duração, com setas para alcançar os que não couberam na tela.
 //
 // ═══ O CONTEÚDO NÃO MORA NO SITE (2026-09-04, decisão do Alex) ═══
 //
@@ -12,20 +13,51 @@
 //
 // Por isso aqui não há nada editável dentro do card, nem em modo de edição: o
 // que o líder vê no construtor é exatamente o que sai publicado, porque é a
-// mesma consulta. Para mudar um serviço, muda-se o serviço.
+// mesma consulta. Para mudar um serviço, muda-se o serviço. Inclusive a FOTO:
+// ela é a mesma do card do perfil, e é lá que se troca.
 //
-// O que continua sendo do site é a APRESENTAÇÃO: quantas colunas, e o título e
-// o subtítulo da seção (que vivem na casca, não aqui).
+// O que continua sendo do site é a APRESENTAÇÃO: quantos cards cabem por tela,
+// e o título e o subtítulo da seção (que vivem na casca, não aqui).
+//
+// ═══ FILEIRA, E NÃO GRADE (2026-09-11, pedido do Alex) ═══
+//
+// A grade empilhava os serviços em duas, três linhas e comia a página inteira
+// antes de o visitante chegar em qualquer outra coisa — numa lista longa a
+// seção virava o site. O trilho horizontal mostra a primeira leva com uma
+// pista do próximo card e aceita seis ou vinte serviços sem mudar de forma. É
+// a mesma escolha já feita nos depoimentos.
+//
+// A rolagem é NATIVA (arrasto do dedo e roda do mouse já funcionam); as setas
+// existem porque no computador não há gesto de arrastar, e um trilho sem botão
+// esconde o que tem dentro de quem usa mouse.
 
-import { CalendarDays, Clock, MessageCircle } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ImageOff,
+  MessageCircle,
+} from "lucide-react"
 import { useSiteRuntime } from "../site-runtime"
 import { whatsappHref } from "../site-chrome"
 import type { ServicesCatalogData, ShowcaseService, SiteColorTheme } from "@/types/community-site"
 
-const COLUMN_CLASS: Record<ServicesCatalogData["columns"], string> = {
-  2: "sm:grid-cols-2",
-  3: "sm:grid-cols-2 lg:grid-cols-3",
-  4: "sm:grid-cols-2 lg:grid-cols-4",
+/**
+ * Largura do card por "quantos cabem por tela".
+ *
+ * O número que o líder escolhe governa o DESKTOP. Abaixo de `lg` o trilho fixa
+ * dois, e no celular um card de largura fixa: 240px num aparelho de 360 deixa
+ * a borda do próximo card aparecendo, e é essa pista que diz que o trilho anda
+ * para o lado — três cards espremidos numa tela de celular não dizem nada.
+ *
+ * A conta desconta os vãos: para N cards visíveis há N−1 `gap-5` (1.25rem).
+ */
+const RAIL_ITEM_CLASS: Record<ServicesCatalogData["columns"], string> = {
+  2: "sm:w-[calc((100%-1.25rem)/2)]",
+  3: "sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]",
+  4: "sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-3.75rem)/4)]",
 }
 
 /**
@@ -89,7 +121,8 @@ export function ServicesCatalogSection({
   whatsapp: string
   locale: string
   labels: {
-    columns: string
+    /** Quantos cards cabem por tela (o antigo "colunas"). */
+    perView: string
     cta: string
     /** Rótulo quando o clique abre o agendamento do próprio site. */
     book: string
@@ -100,6 +133,11 @@ export function ServicesCatalogSection({
     quoteMessage: string
     empty: string
     emptyHint: string
+    /** Instrução do construtor no lugar da foto que falta. */
+    noPhoto: string
+    /** Aria das setas do trilho. */
+    prev: string
+    next: string
     hourSuffix: string
     minSuffix: string
   }
@@ -111,12 +149,68 @@ export function ServicesCatalogSection({
 
   const { bookingHref } = useSiteRuntime()
 
+  const railRef = useRef<HTMLDivElement | null>(null)
+  // Começa sem seta nenhuma e o efeito acende as que têm destino. O sentido do
+  // erro importa: um quadro a mais sem seta ninguém vê, enquanto uma seta que
+  // aparece e some parece defeito.
+  const [reach, setReach] = useState({ prev: false, next: false })
+
+  const measure = useCallback(() => {
+    const el = railRef.current
+    if (!el) return
+    // A folga de 1px não é preciosismo: `scrollLeft` volta fracionário em tela
+    // com DPI não inteiro e com o zoom da prancheta, e a comparação exata
+    // deixaria a seta acesa no fim do trilho, apontando para lugar nenhum.
+    const max = el.scrollWidth - el.clientWidth
+    setReach({ prev: el.scrollLeft > 1, next: el.scrollLeft < max - 1 })
+  }, [])
+
+  useEffect(() => {
+    const el = railRef.current
+    // Sem card não há trilho — e são o número de cards e a largura escolhida
+    // que decidem se sobra algo escondido, por isso o efeito depende dos dois.
+    if (!el || services.length === 0 || !data.columns) return
+
+    measure()
+
+    // ResizeObserver, e não `window.resize`: no construtor a prancheta troca de
+    // largura (Desktop/Tablet/Celular) e recebe zoom SEM a janela mudar de
+    // tamanho. Sem observar o próprio trilho, a seta ficaria mentindo até
+    // alguém rolar.
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [measure, services.length, data.columns])
+
+  /** Anda ~90% do que está à vista: a sobra deixa uma pista do card anterior. */
+  const page = (dir: 1 | -1) => {
+    const el = railRef.current
+    if (!el) return
+    el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: "smooth" })
+  }
+
+  /**
+   * A seta é CONTROLE, não conteúdo do site.
+   *
+   * O fundo do canvas desfaz a seleção no `pointerdown`; sem parar o gesto
+   * aqui, o líder que seleciona a seção e clica na seta para ver o próximo
+   * serviço perde a seleção e o painel fecha na mão dele. Mesma regra da barra
+   * de ferramentas da seção.
+   */
+  const arrowStop = (e: React.PointerEvent) => e.stopPropagation()
+
+  const arrowStyle = {
+    background: theme.primary,
+    color: theme.background,
+    boxShadow: `3px 3px 0 0 ${theme.background}`,
+  }
+
   return (
     <>
       {editing && (
         <div className="mb-5 flex flex-wrap items-center gap-2">
           <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-            {labels.columns}
+            {labels.perView}
           </span>
           {([2, 3, 4] as const).map((n) => (
             <button
@@ -149,7 +243,13 @@ export function ServicesCatalogSection({
           </p>
         </div>
       ) : (
-        <div className={`grid grid-cols-1 gap-5 ${COLUMN_CLASS[data.columns]}`}>
+        <div className="relative">
+          <div
+            ref={railRef}
+            onScroll={measure}
+            className="flex snap-x snap-mandatory gap-5 overflow-x-auto overflow-y-hidden pb-3 pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{ msOverflowStyle: "none" }}
+          >
           {services.map((service) => {
             const price = formatPrice(service.price_amount, locale)
             const duration = formatDuration(
@@ -182,24 +282,54 @@ export function ServicesCatalogSection({
             return (
               <article
                 key={service.id_profile_service}
-                className="relative flex flex-col border-2 border-[#0B0B0D]"
+                className={`relative flex w-[15rem] shrink-0 snap-start flex-col border-2 border-[#0B0B0D] ${RAIL_ITEM_CLASS[data.columns]}`}
                 style={{ background: theme.surface, boxShadow: `4px 4px 0 0 ${theme.background}` }}
               >
-                {service.image_url && (
-                  <div className="aspect-[4/3] w-full overflow-hidden border-b-2 border-[#0B0B0D]">
-                    {/* <img> e não next/image: a foto vem do R2 e é conteúdo de
-                        alto volume — a política do projeto reserva a otimização
-                        da Vercel para superfícies de baixa cardinalidade. É a
-                        mesma escolha do `EditableImage` ao lado. */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* ═══ A FOTO É SEMPRE DESENHADA, TENHA OU NÃO IMAGEM ═══
+                    Em 4:5, a MESMA proporção do card da vitrine do perfil — é
+                    lá que a foto é enquadrada (o editor de zoom e arraste corta
+                    nessa moldura), e um recorte diferente aqui cortaria de novo
+                    o que a pessoa já tinha escolhido mostrar.
+                    A moldura fica de pé mesmo sem foto porque numa FILEIRA os
+                    cards dividem a linha: um sem imagem ao lado de um com
+                    imagem desalinharia nome, preço e botão de todos. */}
+                <div
+                  className="relative aspect-[4/5] w-full shrink-0 overflow-hidden border-b-2 border-[#0B0B0D]"
+                  style={{ background: theme.background }}
+                >
+                  {service.image_url ? (
+                    // <img> e não next/image: a foto vem do R2 e é conteúdo de
+                    // alto volume — a política do projeto reserva a otimização
+                    // da Vercel para superfícies de baixa cardinalidade. É a
+                    // mesma escolha do `EditableImage` ao lado.
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={service.image_url}
                       alt={service.name}
                       loading="lazy"
                       className="h-full w-full object-cover"
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-3 text-center">
+                      <ImageOff
+                        className="h-8 w-8 shrink-0"
+                        style={{ color: theme.primary, opacity: 0.45 }}
+                        aria-hidden
+                      />
+                      {/* A instrução é só do construtor: no site publicado a
+                          moldura vazia é discreta, e não um aviso de obra para
+                          o cliente do negócio ler. */}
+                      {editing && (
+                        <span
+                          className="text-[10px] font-bold leading-snug"
+                          style={{ color: theme.textSecondary }}
+                        >
+                          {labels.noPhoto}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex flex-1 flex-col gap-2 p-4">
                   <h3
@@ -303,6 +433,35 @@ export function ServicesCatalogSection({
               </article>
             )
           })}
+          </div>
+
+          {/* As setas só existem quando há para onde ir. A da esquerda nasce
+              escondida e aparece depois do primeiro avanço: sem ela, quem
+              rolasse ficaria só com o caminho de ida. */}
+          {reach.prev && (
+            <button
+              type="button"
+              onPointerDown={arrowStop}
+              onClick={() => page(-1)}
+              aria-label={labels.prev}
+              className="absolute left-1 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center border-2 border-[#0B0B0D]"
+              style={arrowStyle}
+            >
+              <ChevronLeft className="h-5 w-5" aria-hidden />
+            </button>
+          )}
+          {reach.next && (
+            <button
+              type="button"
+              onPointerDown={arrowStop}
+              onClick={() => page(1)}
+              aria-label={labels.next}
+              className="absolute right-1 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center border-2 border-[#0B0B0D]"
+              style={arrowStyle}
+            >
+              <ChevronRight className="h-5 w-5" aria-hidden />
+            </button>
+          )}
         </div>
       )}
     </>

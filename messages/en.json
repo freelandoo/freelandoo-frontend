@@ -6268,7 +6268,11 @@
     "areaEmpty": "No service areas yet.",
     "serviceQuoteBadge": "On request",
     "serviceQuoteCta": "Request a quote",
-    "serviceQuoteMessage": "Hi! I came from your website and I'd like a quote for: {service}"
+    "serviceQuoteMessage": "Hi! I came from your website and I'd like a quote for: {service}",
+    "servicePerView": "Per view",
+    "serviceNoPhoto": "No photo — add it in the service settings",
+    "servicePrev": "See previous services",
+    "serviceNext": "See more services"
   },
   "SiteBooking": {
     "back": "Back to site",
