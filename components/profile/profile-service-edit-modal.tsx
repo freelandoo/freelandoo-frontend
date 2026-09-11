@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { GripVertical, ImagePlus, Loader2, Save, Trash2, Users, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AffiliateOptInField } from "@/components/affiliate/affiliate-opt-in-field"
@@ -9,13 +10,20 @@ import {
   clientTotalCentsFromFreelancerNet,
   freelancerNetForEditForm,
 } from "@/lib/service-booking-price"
-import { compressImageToMaxSize } from "@/lib/media/image-processing"
+import type { ProcessedImage } from "@/lib/media/image-processing"
 import {
+  POST_IMAGE_ASPECT_RATIO,
   POST_IMAGE_MAX_SIZE_BYTES,
   POST_IMAGE_OUTPUT,
   validateImageFile,
   validateVideoFile,
 } from "@/lib/media/media-validation"
+// Carregado sob demanda: o editor de corte só entra em cena quando a pessoa
+// escolhe uma FOTO, e é o passo mais pesado desta tela.
+const MediaCropModal = dynamic(
+  () => import("@/components/media/media-crop-modal").then((m) => m.MediaCropModal),
+  { ssr: false }
+)
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface ServiceMedia {
@@ -123,6 +131,12 @@ export function ProfileServiceEditModal({
   const [mediaLoading, setMediaLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [deletingMedia, setDeletingMedia] = useState<number | null>(null)
+  // A foto escolhida esperando ser enquadrada, e para QUAL serviço ela é.
+  // O id fica guardado à parte porque o editor é assíncrono: a pessoa pode
+  // levar um tempo ajustando, e ler o service de novo no fim pendura o upload
+  // num serviço que pode não ser mais o da tela.
+  const [cropFile, setCropFile] = useState<File | null>(null)
+  const [cropFor, setCropFor] = useState<number | null>(null)
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -242,11 +256,56 @@ export function ProfileServiceEditModal({
 
   useEffect(() => {
     if (open && service) fetchMedia()
-    if (!open) setMediaList([])
+    if (!open) {
+      setMediaList([])
+      setCropFile(null)
+      setCropFor(null)
+    }
     // Disparar só na mudança de id_profile_service — fetchMedia é estável
     // e service como objeto inteiro não importa aqui.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, service?.id_profile_service])
+
+  /**
+   * Manda o arquivo JÁ PRONTO para o backend.
+   *
+   * Separado da escolha porque agora há dois caminhos até aqui: o vídeo, que
+   * vai direto, e a foto, que passa antes pelo editor de corte. Escrito duas
+   * vezes, o tratamento de erro divergiria na primeira mudança.
+   */
+  async function sendServiceFile(uploadFile: File, id_profile_service: number) {
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", uploadFile)
+      const res = await fetch(mediaUrl(id_profile_service), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
+      })
+      if (res.ok) {
+        const nextMedia = await fetchMedia()
+        onMediaChanged?.(id_profile_service, nextMedia)
+      } else {
+        const d = await res.json().catch(() => ({}))
+        onError?.(d.error || t("uploadFileError", "Erro ao enviar arquivo"))
+      }
+    } catch (err) {
+      onError?.(err instanceof Error ? err.message : t("uploadFileConnError", "Erro de conexão ao enviar arquivo"))
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  /** O editor devolveu a foto enquadrada: é ela que sobe. */
+  async function handleCropConfirm(image: ProcessedImage) {
+    const target = cropFor
+    setCropFile(null)
+    setCropFor(null)
+    // O editor cria uma URL de prévia que ninguém mais vai usar depois daqui.
+    URL.revokeObjectURL(image.previewUrl)
+    if (target) await sendServiceFile(image.file, target)
+  }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -270,42 +329,23 @@ export function ProfileServiceEditModal({
       return
     }
 
-    setUploading(true)
-    let previewUrlToRevoke: string | null = null
-    try {
-      let uploadFile = file
-      if (isImage) {
-        const processed = await compressImageToMaxSize(file, {
-          outputWidth: POST_IMAGE_OUTPUT.width,
-          outputHeight: POST_IMAGE_OUTPUT.height,
-          maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
-          mimeType: "image/webp",
-          errorMessage: t("photoMax3mb", "A foto do serviço precisa ter no máximo 3MB após otimização."),
-        })
-        uploadFile = processed.file
-        previewUrlToRevoke = processed.previewUrl
-      }
-
-      const fd = new FormData()
-      fd.append("file", uploadFile)
-      const res = await fetch(mediaUrl(service.id_profile_service), {
-        method: "POST",
-        headers: { Authorization: `Bearer ${getToken()}` },
-        body: fd,
-      })
-      if (res.ok) {
-        const nextMedia = await fetchMedia()
-        onMediaChanged?.(service.id_profile_service, nextMedia)
-      } else {
-        const d = await res.json().catch(() => ({}))
-        onError?.(d.error || t("uploadFileError", "Erro ao enviar arquivo"))
-      }
-    } catch (err) {
-      onError?.(err instanceof Error ? err.message : t("uploadFileConnError", "Erro de conexão ao enviar arquivo"))
-    } finally {
-      if (previewUrlToRevoke) URL.revokeObjectURL(previewUrlToRevoke)
-      setUploading(false)
+    // ⚠️ FOTO abre o EDITOR; ela não é mais enquadrada sozinha.
+    //
+    // O corte automático recortava o centro e pronto: quem escolhia uma foto
+    // deitada perdia as pontas e quem fotografou o trabalho de longe ficava com
+    // um pedaço do fundo. O card da vitrine é `aspect-[4/5]`, então alguém vai
+    // cortar de qualquer jeito — a escolha é entre a máquina cortar às cegas ou
+    // a pessoa enquadrar o que ela quer mostrar.
+    //
+    // O editor devolve a imagem JÁ no tamanho de saída e comprimida, então não
+    // há um segundo passo de compressão depois dele.
+    if (isImage) {
+      setCropFor(service.id_profile_service)
+      setCropFile(file)
+      return
     }
+
+    await sendServiceFile(file, service.id_profile_service)
   }
 
   async function handleDeleteMedia(mediaId: number) {
@@ -792,6 +832,28 @@ export function ProfileServiceEditModal({
           />
           )}
         </div>
+        {cropFile && (
+          <MediaCropModal
+            file={cropFile}
+            // A moldura do CARD da vitrine (aspect-[4/5]): é assim que o
+            // cliente vai ver a foto, e é por isso que ela é fixa aqui.
+            aspectRatio={POST_IMAGE_ASPECT_RATIO}
+            outputWidth={POST_IMAGE_OUTPUT.width}
+            outputHeight={POST_IMAGE_OUTPUT.height}
+            maxSizeMB={POST_IMAGE_MAX_SIZE_BYTES / (1024 * 1024)}
+            mediaType="service_image"
+            title={t("adjustServicePhotoTitle", "Ajustar foto do serviço")}
+            description={t(
+              "adjustServicePhotoDesc",
+              "Dê zoom e arraste para escolher o que aparece na vitrine."
+            )}
+            onCancel={() => {
+              setCropFile(null)
+              setCropFor(null)
+            }}
+            onConfirm={handleCropConfirm}
+          />
+        )}
         <div className="flex justify-end gap-2 border-t-2 border-[#0B0B0D]/15 p-6">
           <button
             type="button"

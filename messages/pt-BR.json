@@ -1533,7 +1533,9 @@
     "itemActions": "Ações do item",
     "priceOnRequest": "Serviço por orçamento",
     "priceOnRequestShort": "Sob orçamento",
-    "priceOnRequestHint": "Sem preço: o cliente vê “Pedir orçamento” e fala com você pelo WhatsApp. Não entra no agendamento com pagamento online."
+    "priceOnRequestHint": "Sem preço: o cliente vê “Pedir orçamento” e fala com você pelo WhatsApp. Não entra no agendamento com pagamento online.",
+    "adjustServicePhotoTitle": "Ajustar foto do serviço",
+    "adjustServicePhotoDesc": "Dê zoom e arraste para escolher o que aparece na vitrine."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -5376,7 +5378,9 @@
     "reset": "Resetar",
     "dragHint": "Arraste a imagem para escolher o enquadramento. O arquivo final será otimizado antes do envio.",
     "cancel": "Cancelar",
-    "apply": "Aplicar corte"
+    "apply": "Aplicar corte",
+    "labelService": "foto do serviço",
+    "serviceTooBig": "A foto do serviço precisa ter no máximo 3MB após otimização."
   },
   "Spaces": {
     "newProfile": "Novo perfil",

@@ -1533,7 +1533,9 @@
     "itemActions": "Item actions",
     "priceOnRequest": "Quote-based service",
     "priceOnRequestShort": "On request",
-    "priceOnRequestHint": "No price: the client sees “Request a quote” and reaches you on WhatsApp. It stays out of online paid booking."
+    "priceOnRequestHint": "No price: the client sees “Request a quote” and reaches you on WhatsApp. It stays out of online paid booking.",
+    "adjustServicePhotoTitle": "Adjust service photo",
+    "adjustServicePhotoDesc": "Zoom and drag to choose what shows up in your storefront."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -5962,7 +5964,9 @@
     "reset": "Reset",
     "dragHint": "Drag the image to choose the framing. The final file is optimized before upload.",
     "cancel": "Cancel",
-    "apply": "Apply crop"
+    "apply": "Apply crop",
+    "labelService": "service photo",
+    "serviceTooBig": "The service photo must be 3MB or less after optimization."
   },
   "Spaces": {
     "newProfile": "New profile",

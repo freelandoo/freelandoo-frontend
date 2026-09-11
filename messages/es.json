@@ -1533,7 +1533,9 @@
     "itemActions": "Acciones del elemento",
     "priceOnRequest": "Servicio por presupuesto",
     "priceOnRequestShort": "A presupuestar",
-    "priceOnRequestHint": "Sin precio: el cliente ve “Pedir presupuesto” y te habla por WhatsApp. No entra en la reserva con pago en línea."
+    "priceOnRequestHint": "Sin precio: el cliente ve “Pedir presupuesto” y te habla por WhatsApp. No entra en la reserva con pago en línea.",
+    "adjustServicePhotoTitle": "Ajustar foto del servicio",
+    "adjustServicePhotoDesc": "Haz zoom y arrastra para elegir lo que aparece en tu vitrina."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -5942,7 +5944,9 @@
     "reset": "Restablecer",
     "dragHint": "Arrastra la imagen para elegir el encuadre. El archivo final se optimiza antes del envío.",
     "cancel": "Cancelar",
-    "apply": "Aplicar recorte"
+    "apply": "Aplicar recorte",
+    "labelService": "foto del servicio",
+    "serviceTooBig": "La foto del servicio debe tener como máximo 3MB tras la optimización."
   },
   "Spaces": {
     "newProfile": "Nuevo perfil",

@@ -30,7 +30,14 @@ type MediaCropModalProps = {
   outputWidth: number
   outputHeight: number
   maxSizeMB: number
-  mediaType: "post_image" | "profile_avatar"
+  /**
+   * Decide DUAS coisas: se a moldura é escolhível e como o conteúdo é chamado
+   * na tela. Só `post_image` oferece 4:5 / 1:1 / 16:9 — a foto de perfil e a
+   * do serviço têm moldura fixa, porque quem as exibe corta numa proporção só
+   * (o card do serviço é `aspect-[4/5]`; deixar escolher 16:9 aqui entregaria
+   * uma imagem que a vitrine corta, que é o que este editor existe para evitar).
+   */
+  mediaType: "post_image" | "profile_avatar" | "service_image"
   title: string
   description: string
   onCancel: () => void
@@ -69,7 +76,9 @@ export function MediaCropModal({
   const label =
     mediaType === "profile_avatar"
       ? t("labelAvatar", "foto de perfil")
-      : t("labelPost", "imagem do post")
+      : mediaType === "service_image"
+        ? t("labelService", "foto do serviço")
+        : t("labelPost", "imagem do post")
   const maxSizeBytes = maxSizeMB * 1024 * 1024
 
   // Post aceita 3 orientações; avatar e imagem de site continuam com moldura
@@ -183,7 +192,9 @@ export function MediaCropModal({
           errorMessage:
             mediaType === "profile_avatar"
               ? t("avatarTooBig", "A foto de perfil precisa ter no máximo 2MB.")
-              : t("postTooBig", "A imagem do post precisa ter no máximo 3MB."),
+              : mediaType === "service_image"
+                ? t("serviceTooBig", "A foto do serviço precisa ter no máximo 3MB após otimização.")
+                : t("postTooBig", "A imagem do post precisa ter no máximo 3MB."),
         }
       )
       onConfirm(processed)
@@ -201,7 +212,14 @@ export function MediaCropModal({
   return (
     <Dialog open onOpenChange={(open) => !open && !processing && onCancel()}>
       <DialogContent
-        className="max-h-[92vh] gap-0 overflow-hidden border-white/10 bg-zinc-950 p-0 text-white shadow-2xl sm:max-w-[760px]"
+        // ⚠️ `z-[100]` porque este editor é um PASSO de quem o abriu, e quem o
+        // abre pode ser outro modal — o de cadastro de serviço é `z-[80]`.
+        // No padrão do Dialog o conteúdo é `z-50`, e ali ele abriria por trás
+        // de quem o chamou: a pessoa escolheria a foto e não veria nada
+        // acontecer. O véu do Radix continua em `z-50` (ele não aceita classe),
+        // então o modal de baixo segue visível atrás — o que preserva o
+        // contexto e não atrapalha, já que este painel é opaco.
+        className="z-[100] max-h-[92vh] gap-0 overflow-hidden border-white/10 bg-zinc-950 p-0 text-white shadow-2xl sm:max-w-[760px]"
         showCloseButton={!processing}
       >
         <DialogHeader className="border-b border-white/10 px-5 py-4">
