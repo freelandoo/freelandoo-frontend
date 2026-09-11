@@ -38,7 +38,7 @@ export default function FitnessWorkoutPage() {
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 text-center">
-            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F2B705]">{fmtDay}</p>
+            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#E0813F]">{fmtDay}</p>
             {!isToday && (
               <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F5F1E8]">
                 {t("today", "Hoje")} →

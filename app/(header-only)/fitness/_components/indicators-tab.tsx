@@ -39,7 +39,15 @@ type Indicators = {
   chart_14d: { date: string; kcal: number; water_ml: number }[]
 }
 
-const GOLD = "#F2B705"
+// ⚠️ NOME LEGADO: era o amarelo da casa e hoje é o laranja de TINTA do ambiente
+// (paleta cinza + laranja escuro, 2026-09-11). Aqui ele é sempre traço, ícone,
+// ponto ou barra fina SOBRE o painel cinza — por isso é o laranja CLARO da
+// família (`EMBER_GLOW`), e não o escuro de fundo: o escuro sumiria no painel.
+const GOLD = "#E0813F"
+// A escala do IMC é SEMÁFORO, não pele: ciano → verde → amarelo → laranja →
+// vermelho. "Sobrepeso" fica amarelo de propósito — em laranja ele encostaria
+// em "Obesidade I" (#ff8c2e) e os dois degraus deixariam de se distinguir.
+const BMI_WARN = "#F2B705"
 const CYAN = "#16c8e8"
 const MAGENTA = "#ff1f8e"
 const PANEL = "border-2 border-[#0B0B0D] bg-[#15120E]"
@@ -47,7 +55,7 @@ const PANEL = "border-2 border-[#0B0B0D] bg-[#15120E]"
 const BMI_CLASS: Record<string, [string, string, string]> = {
   underweight: ["bmiUnder", "Abaixo do peso", CYAN],
   normal: ["bmiNormal", "Peso normal", "#4fc95a"],
-  overweight: ["bmiOver", "Sobrepeso", GOLD],
+  overweight: ["bmiOver", "Sobrepeso", BMI_WARN],
   obese1: ["bmiOb1", "Obesidade I", "#ff8c2e"],
   obese2: ["bmiOb2", "Obesidade II", "#ff5a44"],
   obese3: ["bmiOb3", "Obesidade III", "#ff5a44"],

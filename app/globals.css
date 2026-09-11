@@ -818,54 +818,65 @@ body.camera-active { overflow: hidden; }
 }
 
 /* ============================================================================
-   PLATAFORMA FITNESS — a pele laranja (`.fl-fitness`)
+   PLATAFORMA FITNESS — a pele CINZA E LARANJA ESCURO (`.fl-fitness`)
    ----------------------------------------------------------------------------
-   Pedido do Alex (2026-09-10): "redesign no fitness (...) todo o visual
-   padrão, conforme o game e o financeiro". O `/fitness` ganhou a casca das
-   plataformas (banner, foto 2/3, pills atrás dela, seções de ponta a ponta) e
-   esta é a pele dele: brasa/laranja, o MESMO tom do pill de Fitness no
-   headcard do perfil (#C2410C).
+   Pedido do Alex (2026-09-11): "troque a paleta de cores da academia, todas as
+   páginas, para cinza e laranja escuro". A pele nasceu brasa/laranja quente em
+   2026-09-10 e agora a ESTRUTURA é cinza (canvas, painéis, tinta, grade) e o
+   LARANJA ESCURO é o acento (ação, divisórias, brilho do título).
 
    ⚠️ A LISTA ABAIXO É A MESMA DA `.fl-games`, da `.fl-finance` e da
-   `.fl-business`, com valores laranja: cor de superfície nova entra nas
-   QUATRO listas, senão o bloco novo nasce marrom no meio do laranja.
+   `.fl-business`, com valores cinza: cor de superfície nova entra nas QUATRO
+   listas, senão o bloco novo nasce marrom no meio do cinza.
 
-   O QUE NÃO MUDA: cantos retos, o amarelo #F2B705 (o botão de ação e a barra
-   das calorias) e o ciano da água (#16c8e8).
+   ⚠️ O CINZA É QUENTE (R>G>B), não neutro puro nem azulado — cinza frio ao lado
+   de laranja lê como duas famílias brigando; o quente lê como uma só.
+
+   ⚠️ O DOURADO #F2B705 NÃO É REESCRITO AQUI, de propósito: ele virou laranja
+   escuro nos PRÓPRIOS arquivos do ambiente (`#B4470F` em fundo/sombra,
+   `#E0813F` em tinta). Reescrevê-lo pela pele faria o código dizer "amarelo" e
+   a tela mostrar laranja — duas verdades para a mesma cor.
+
+   O QUE NÃO MUDA: cantos retos, o ciano da água (#16c8e8), as cores dos quatro
+   pills (cada uma identifica uma sala) e os semáforos de status
+   (verde/vermelho de pago, atrasado, erro) — aqueles são significado, não pele.
    ============================================================================ */
 
 /* Superfícies ------------------------------------------------------------- */
-.fl-fitness .bg-\[\#0b0804\]      { background-color: #150703; }
-.fl-fitness .bg-\[\#0b0804\]\/80  { background-color: rgba(21, 7, 3, 0.8); }
-.fl-fitness .bg-\[\#0F0C08\]      { background-color: rgba(28, 10, 4, 0.86); }
-.fl-fitness .bg-\[\#15120E\]      { background-color: rgba(48, 18, 8, 0.78); }
-.fl-fitness .bg-\[\#15120E\]\/95  { background-color: rgba(48, 18, 8, 0.95); }
-.fl-fitness .bg-\[\#15120E\]\/60  { background-color: rgba(48, 18, 8, 0.6); }
-.fl-fitness .bg-\[\#15120E\]\/40  { background-color: rgba(48, 18, 8, 0.4); }
-.fl-fitness .bg-\[\#1D1810\]      { background-color: rgba(72, 28, 12, 0.72); }
-.fl-fitness .bg-\[\#1D1810\]\/60  { background-color: rgba(72, 28, 12, 0.5); }
-.fl-fitness .bg-\[\#241d12\]      { background-color: rgba(96, 38, 16, 0.9); }
+.fl-fitness .bg-\[\#0b0804\]      { background-color: #141312; }
+.fl-fitness .bg-\[\#0b0804\]\/80  { background-color: rgba(20, 19, 18, 0.8); }
+.fl-fitness .bg-\[\#0F0C08\]      { background-color: rgba(26, 25, 24, 0.88); }
+.fl-fitness .bg-\[\#15120E\]      { background-color: rgba(38, 36, 34, 0.82); }
+.fl-fitness .bg-\[\#15120E\]\/95  { background-color: rgba(38, 36, 34, 0.96); }
+.fl-fitness .bg-\[\#15120E\]\/60  { background-color: rgba(38, 36, 34, 0.6); }
+.fl-fitness .bg-\[\#15120E\]\/40  { background-color: rgba(38, 36, 34, 0.4); }
+.fl-fitness .bg-\[\#1D1810\]      { background-color: rgba(52, 49, 46, 0.8); }
+.fl-fitness .bg-\[\#1D1810\]\/60  { background-color: rgba(52, 49, 46, 0.55); }
+.fl-fitness .bg-\[\#241d12\]      { background-color: rgba(68, 64, 60, 0.92); }
 
 /* Tinta ------------------------------------------------------------------- */
-.fl-fitness .text-\[\#F5F1E8\]     { color: #FFF3EA; }
-.fl-fitness .text-\[\#F5F1E8\]\/90 { color: rgba(255, 243, 234, 0.9); }
-.fl-fitness .text-\[\#F5F1E8\]\/85 { color: rgba(255, 243, 234, 0.85); }
-.fl-fitness .text-\[\#F5F1E8\]\/80 { color: rgba(255, 243, 234, 0.8); }
-.fl-fitness .text-\[\#F5F1E8\]\/70 { color: rgba(255, 243, 234, 0.7); }
-.fl-fitness .text-\[\#F5F1E8\]\/40 { color: rgba(255, 243, 234, 0.4); }
-.fl-fitness .text-\[\#F5F1E8\]\/30 { color: rgba(255, 243, 234, 0.3); }
-.fl-fitness .text-\[\#9A938A\]     { color: #D39A7E; }
-.fl-fitness .text-\[\#9A938A\]\/70 { color: rgba(211, 154, 126, 0.7); }
+.fl-fitness .text-\[\#F5F1E8\]     { color: #EFECE8; }
+.fl-fitness .text-\[\#F5F1E8\]\/90 { color: rgba(239, 236, 232, 0.9); }
+.fl-fitness .text-\[\#F5F1E8\]\/85 { color: rgba(239, 236, 232, 0.85); }
+.fl-fitness .text-\[\#F5F1E8\]\/80 { color: rgba(239, 236, 232, 0.8); }
+.fl-fitness .text-\[\#F5F1E8\]\/70 { color: rgba(239, 236, 232, 0.7); }
+.fl-fitness .text-\[\#F5F1E8\]\/40 { color: rgba(239, 236, 232, 0.4); }
+.fl-fitness .text-\[\#F5F1E8\]\/30 { color: rgba(239, 236, 232, 0.3); }
+.fl-fitness .text-\[\#9A938A\]     { color: #A09A93; }
+.fl-fitness .text-\[\#9A938A\]\/70 { color: rgba(160, 154, 147, 0.7); }
 
 /* Linhas ------------------------------------------------------------------ */
-.fl-fitness .border-\[\#0B0B0D\]      { border-color: #6E2A0F; }
-.fl-fitness .border-\[\#F5F1E8\]\/30  { border-color: rgba(251, 146, 60, 0.45); }
-.fl-fitness .border-\[\#F5F1E8\]\/25  { border-color: rgba(251, 146, 60, 0.4); }
-.fl-fitness .border-\[\#F5F1E8\]\/20  { border-color: rgba(251, 146, 60, 0.34); }
-.fl-fitness .border-\[\#F5F1E8\]\/15  { border-color: rgba(251, 146, 60, 0.28); }
-.fl-fitness .border-\[\#F5F1E8\]\/12  { border-color: rgba(251, 146, 60, 0.24); }
-.fl-fitness .border-\[\#F5F1E8\]\/10  { border-color: rgba(251, 146, 60, 0.2); }
-.fl-fitness .border-\[\#F5F1E8\]\/60  { border-color: rgba(251, 146, 60, 0.6); }
+/* A borda estrutural (2px em toda peça) é CINZA: em laranja ela desenharia a
+   tela inteira na cor de acento e não sobraria contraste para a ação. */
+.fl-fitness .border-\[\#0B0B0D\]      { border-color: #3B3733; }
+/* As divisórias secundárias é que levam o laranja escuro. */
+.fl-fitness .border-\[\#F5F1E8\]\/30  { border-color: rgba(180, 71, 15, 0.55); }
+.fl-fitness .border-\[\#F5F1E8\]\/25  { border-color: rgba(180, 71, 15, 0.48); }
+.fl-fitness .border-\[\#F5F1E8\]\/20  { border-color: rgba(180, 71, 15, 0.4); }
+.fl-fitness .border-\[\#F5F1E8\]\/15  { border-color: rgba(180, 71, 15, 0.32); }
+.fl-fitness .border-\[\#F5F1E8\]\/12  { border-color: rgba(180, 71, 15, 0.28); }
+.fl-fitness .border-\[\#F5F1E8\]\/10  { border-color: rgba(180, 71, 15, 0.24); }
+.fl-fitness .border-\[\#F5F1E8\]\/60  { border-color: rgba(180, 71, 15, 0.7); }
 
 /* O título zumbe como painel em vez de gritar como manchete — só em tinta
    clara, como nas outras três peles. */
@@ -874,24 +885,25 @@ body.camera-active { overflow: hidden; }
 }
 .fl-fitness .fl-display.text-\[\#F5F1E8\],
 .fl-fitness .fl-display.text-\[\#F1EDE2\] {
-  text-shadow: 0 0 24px rgba(249, 115, 22, 0.45);
+  text-shadow: 0 0 24px rgba(154, 52, 18, 0.6);
 }
 
 /* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
 .fl-fitness .-rotate-2,
 .fl-fitness .-rotate-3 { transform: none; }
 
-/* O FUNDO DE FITNESS — textura ESTÁTICA na cor do ambiente.
+/* O FUNDO DE FITNESS — textura ESTÁTICA na cor do ambiente: chão cinza, brasa
+   laranja escura nos cantos e a grade em cinza claro (era laranja).
    ⚠️ NÃO ANIMAR ESTE BLOCO (ver a nota da `.fl-finance-bg`). Já está na lista
    de camadas promovidas, logo acima. */
 .fl-fitness-bg {
-  background-color: #150703;
+  background-color: #141312;
   background-image:
-    radial-gradient(60% 45% at 22% 18%, rgba(194, 65, 12, 0.42), transparent 70%),
-    radial-gradient(50% 40% at 82% 30%, rgba(245, 158, 11, 0.20), transparent 72%),
-    radial-gradient(80% 55% at 50% 108%, rgba(251, 146, 60, 0.28), transparent 70%),
-    repeating-linear-gradient(to right, rgba(251, 146, 60, 0.07) 0 1px, transparent 1px 64px),
-    repeating-linear-gradient(to bottom, rgba(251, 146, 60, 0.05) 0 1px, transparent 1px 64px);
+    radial-gradient(60% 45% at 22% 18%, rgba(154, 52, 18, 0.40), transparent 70%),
+    radial-gradient(50% 40% at 82% 30%, rgba(124, 45, 18, 0.24), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(180, 71, 15, 0.22), transparent 70%),
+    repeating-linear-gradient(to right, rgba(190, 184, 176, 0.05) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(190, 184, 176, 0.04) 0 1px, transparent 1px 64px);
 }
 
 /* ============================================================================

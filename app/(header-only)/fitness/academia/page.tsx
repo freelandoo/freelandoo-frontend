@@ -97,16 +97,16 @@ export default function FitnessAcademyPage() {
               <div key={a.id_member} className={`${PANEL} p-4`} style={{ boxShadow: `8px 8px 0 0 ${PILL.academy.bg}` }}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <Link href={`/academias/${a.academy.slug}`} className="fl-display text-2xl leading-none text-[#F5F1E8] hover:text-[#F2B705]">
+                    <Link href={`/academias/${a.academy.slug}`} className="fl-display text-2xl leading-none text-[#F5F1E8] hover:text-[#E0813F]">
                       {a.academy.nome}
                     </Link>
                     <p className="mt-1 flex items-center gap-1 text-xs text-[#9A938A]">
-                      <BadgeCheck className="h-3.5 w-3.5 text-[#F2B705]" />
+                      <BadgeCheck className="h-3.5 w-3.5 text-[#E0813F]" />
                       {a.plan_name || t("gymNoPlan", "Sem plano informado")} · {a.membership_status}
                     </p>
                   </div>
                   <div className={`${INNER} px-3 py-1 text-center`}>
-                    <p className="fl-display text-3xl leading-none text-[#F2B705]">{a.frequency_days_30d}</p>
+                    <p className="fl-display text-3xl leading-none text-[#E0813F]">{a.frequency_days_30d}</p>
                     <p className="text-[10px] font-bold uppercase text-[#9A938A]">{t("gymFreq30", "dias / 30d")}</p>
                   </div>
                 </div>

@@ -152,7 +152,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
           <div>
             <ShieldAlert className="mx-auto h-10 w-10 text-[#9A938A]" />
             <p className="mt-4 text-sm text-[#9A938A]">{t("rankingError", "Erro ao carregar o ranking.")}</p>
-            <Link href={`/academias/${slug}`} className="mt-4 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#F2B705]">
+            <Link href={`/academias/${slug}`} className="mt-4 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#E0813F]">
               <ArrowLeft className="h-4 w-4" /> {academy?.nome || t("backToAcademy", "Voltar")}
             </Link>
           </div>
@@ -169,7 +169,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
       {/* Sem margem no celular (regra das cascas); texto fica com px-3. */}
       <div className="mx-auto max-w-4xl px-0 pt-6 md:px-10">
         {/* Voltar + nome */}
-        <Link href={`/academias/${slug}`} className="ml-3 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A] hover:text-[#F2B705] md:ml-0">
+        <Link href={`/academias/${slug}`} className="ml-3 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A] hover:text-[#E0813F] md:ml-0">
           <ArrowLeft className="h-3.5 w-3.5" /> {academy.nome}
         </Link>
 
@@ -187,7 +187,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
               onClick={() => setTab(id)}
               className={cn(
                 "border-2 border-[#0B0B0D] px-3 py-1 text-[11px] font-extrabold uppercase",
-                tab === id ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"
+                tab === id ? "bg-[#B4470F] text-[#F7F1EC]" : "bg-[#1D1810] text-[#9A938A]"
               )}
             >
               {t(key, fallback)}
@@ -198,7 +198,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
               onClick={() => setGoalsOpen(true)}
               title={t("goalsCta", "Metas")}
               aria-label={t("goalsCta", "Metas")}
-              className="ml-1 flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[11px] font-extrabold uppercase text-[#F2B705]"
+              className="ml-1 flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[11px] font-extrabold uppercase text-[#E0813F]"
             >
               <Settings2 className="h-3.5 w-3.5" />
               {t("goalsCta", "Metas")}
@@ -208,7 +208,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
 
         {/* Cabeçalho pódio */}
         <div className="mt-8 text-center">
-          <p className="fl-marker text-2xl text-[#F2B705]">
+          <p className="fl-marker text-2xl text-[#E0813F]">
             {season?.active
               ? `${t("seasonActiveLabel", "Temporada ativa")} · ${season.days_left} ${t("daysLeft", "dias restantes")}`
               : t("podiumEyebrow", "o topo do mês")}
@@ -242,15 +242,15 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={m.avatar_url} alt="" loading="lazy" className="h-10 w-10 shrink-0 border-2 border-[#0B0B0D] object-cover" />
                     ) : (
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#1D1810] fl-display text-sm text-[#F2B705]">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#1D1810] fl-display text-sm text-[#E0813F]">
                         {initials(m.nome || m.username)}
                       </span>
                     )}
                     <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#F1EDE2]">{m.nome || m.username || "—"}</span>
                     <div className="hidden h-2 w-32 border-2 border-[#0B0B0D] bg-[#1D1810] sm:block">
-                      <div className="h-full bg-[#F2B705]" style={{ width: `${pct}%` }} />
+                      <div className="h-full bg-[#B4470F]" style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="w-16 shrink-0 text-right fl-display text-xl text-[#E0A500]">
+                    <span className="w-16 shrink-0 text-right fl-display text-xl text-[#E0813F]">
                       {v}
                       <span className="text-[10px] font-bold text-[#6B6457]">/{target}</span>
                     </span>
@@ -265,7 +265,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
       {/* Modal metas (dono) */}
       {goalsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setGoalsOpen(false)}>
-          <div className="fl-sharp w-full max-w-sm border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }} onClick={(e) => e.stopPropagation()}>
+          <div className="fl-sharp w-full max-w-sm border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #B4470F" }} onClick={(e) => e.stopPropagation()}>
             <h3 className="border-b-2 border-[#0B0B0D] pb-2 text-lg font-black uppercase">{t("goalsModalTitle", "Metas mensais")}</h3>
             <label className="mt-4 block">
               <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("goalFreqLabel", "Frequência (dias no mês)")}</span>
@@ -282,7 +282,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
 
             {/* Temporada: janela fixa de 30/60/90 dias (mig 182) */}
             <div className="mt-4 border-t-2 border-[#0B0B0D] pt-3">
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F2B705]">{t("seasonTitle", "Temporada")}</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#E0813F]">{t("seasonTitle", "Temporada")}</p>
               <p className="mt-1 text-[11px] text-[#9A938A]">
                 {t("seasonHint", "Vale as metas por uma janela fixa a partir de hoje (como nas comunidades). Sem temporada, o ranking usa o mês.")}
               </p>
@@ -299,7 +299,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
                 <button
                   onClick={() => void saveGoals({ start_season: true })}
                   disabled={savingGoals}
-                  className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-extrabold uppercase text-[#0B0B0D] disabled:opacity-50"
+                  className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#B4470F] px-3 py-1.5 text-[11px] font-extrabold uppercase text-[#F7F1EC] disabled:opacity-50"
                 >
                   {savingGoals ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                   {season?.active ? t("seasonRestart", "Reiniciar temporada") : t("seasonStart", "Iniciar temporada")}
@@ -328,7 +328,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
               <button
                 onClick={() => void saveGoals()}
                 disabled={savingGoals}
-                className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase text-[#0B0B0D] disabled:opacity-50"
+                className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#B4470F] px-4 py-2 text-xs font-extrabold uppercase text-[#F7F1EC] disabled:opacity-50"
               >
                 {savingGoals && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t("goalsSubmit", "Salvar metas")}
@@ -360,7 +360,7 @@ function PodiumCol({
   const order = rank === 1 ? "order-2" : rank === 2 ? "order-1" : "order-3"
   const width = isFirst ? "w-[40%]" : "w-[30%]"
   const pedestalH = isFirst ? "h-14 md:h-36" : rank === 2 ? "h-10 md:h-24" : "h-8 md:h-16"
-  const frame = isFirst ? "#F2B705" : "#0B0B0D"
+  const frame = isFirst ? "#B4470F" : "#0B0B0D"
   const unitWord =
     unit === "freq" ? t("daysWord", "dias") : unit === "posts" ? t("rankTabPosts", "Posts") : t("rankTabShares", "Compart.")
 
@@ -369,14 +369,14 @@ function PodiumCol({
       <div className="relative w-full">
         {isFirst && (
           <>
-            <div className="absolute -inset-6 -z-10 rounded-full blur-3xl" style={{ background: "#F2B705", opacity: 0.25 }} />
-            <DoodleCrown className="absolute -top-7 left-1/2 z-20 h-8 w-12 -translate-x-1/2 text-[#F2B705] md:-top-11 md:h-11 md:w-16" />
+            <div className="absolute -inset-6 -z-10 rounded-full blur-3xl" style={{ background: "#B4470F", opacity: 0.3 }} />
+            <DoodleCrown className="absolute -top-7 left-1/2 z-20 h-8 w-12 -translate-x-1/2 text-[#E0813F] md:-top-11 md:h-11 md:w-16" />
           </>
         )}
         <span
           className={cn(
             "absolute -left-1.5 -top-1.5 z-20 flex h-6 w-6 rotate-[-6deg] items-center justify-center fl-display text-base md:h-12 md:w-12 md:text-3xl",
-            isFirst ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]"
+            isFirst ? "bg-[#B4470F] text-[#F7F1EC]" : "bg-[#0B0B0D] text-[#F1EDE2]"
           )}
         >
           {rank}
@@ -393,7 +393,7 @@ function PodiumCol({
               className={cn("w-full object-cover", isFirst ? "aspect-[4/5]" : "aspect-square")}
             />
           ) : (
-            <div className={cn("flex w-full items-center justify-center bg-[#1D1810] fl-display text-[#F2B705]", isFirst ? "aspect-[4/5] text-6xl" : "aspect-square text-5xl")}>
+            <div className={cn("flex w-full items-center justify-center bg-[#1D1810] fl-display text-[#E0813F]", isFirst ? "aspect-[4/5] text-6xl" : "aspect-square text-5xl")}>
               {initials(row.nome || row.username)}
             </div>
           )}
@@ -407,7 +407,7 @@ function PodiumCol({
           <h3 className={cn("fl-display mt-1.5 leading-none text-[#0B0B0D] md:mt-2", isFirst ? "text-sm md:text-4xl" : "text-xs md:text-3xl")}>
             {row.nome || row.username || "—"}
           </h3>
-          <div className="mt-1.5 fl-display leading-none text-[#E0A500] md:mt-2">
+          <div className="mt-1.5 fl-display leading-none text-[#E0813F] md:mt-2">
             <span className={isFirst ? "text-xl md:text-5xl" : "text-lg md:text-4xl"}>{value}</span>
           </div>
           <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#6B6457] md:text-[10px]">
@@ -418,8 +418,8 @@ function PodiumCol({
 
       {/* Pedestal */}
       <div className={cn("relative mt-3 flex w-[78%] items-center justify-center md:w-full", pedestalH)}>
-        <div className={cn("absolute inset-0", isFirst ? "bg-[#F2B705]" : "bg-[#0B0B0D]")} style={{ clipPath: "polygon(6% 0, 94% 0, 100% 100%, 0 100%)" }} />
-        <span className={cn("fl-display relative z-10 text-2xl md:text-7xl", isFirst ? "text-[#0B0B0D]/85" : "text-[#F1EDE2]/85")}>{rank}</span>
+        <div className={cn("absolute inset-0", isFirst ? "bg-[#B4470F]" : "bg-[#0B0B0D]")} style={{ clipPath: "polygon(6% 0, 94% 0, 100% 100%, 0 100%)" }} />
+        <span className={cn("fl-display relative z-10 text-2xl md:text-7xl", isFirst ? "text-[#F7F1EC]/85" : "text-[#F1EDE2]/85")}>{rank}</span>
       </div>
     </div>
   )

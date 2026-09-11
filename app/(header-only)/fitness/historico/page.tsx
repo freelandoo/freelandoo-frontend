@@ -135,7 +135,7 @@ export default function FitnessHistoryPage() {
             <div className="grid gap-3 md:grid-cols-2">
               <div className={`${PANEL} p-4`} style={{ boxShadow: `8px 8px 0 0 ${PILL.history.bg}` }}>
                 <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-                  <Ruler className="h-4 w-4 text-[#F2B705]" /> {t("measureTitle", "Peso & altura")}
+                  <Ruler className="h-4 w-4 text-[#E0813F]" /> {t("measureTitle", "Peso & altura")}
                 </p>
                 {latest ? (
                   <>
@@ -178,7 +178,7 @@ export default function FitnessHistoryPage() {
             {/* OS DIAS — um por linha; abre na raiz pelo `?dia=`. */}
             <section className="mt-8">
               <h2 className={`${H_SECTION} px-3 md:px-0`}>
-                <History className="h-4 w-4 text-[#F2B705]" /> {t("historyDaysTitle", "Os seus dias")}
+                <History className="h-4 w-4 text-[#E0813F]" /> {t("historyDaysTitle", "Os seus dias")}
               </h2>
               <p className="mt-1 px-3 text-[11px] text-[#9A938A] md:px-0">
                 {t("historyDaysHint", "Os dias em que você registrou comida ou água. Toque num dia para abri-lo.")}
@@ -214,7 +214,7 @@ export default function FitnessHistoryPage() {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-center gap-1.5 text-xs">
-                              <Flame className="h-3.5 w-3.5 shrink-0 text-[#F2B705]" />
+                              <Flame className="h-3.5 w-3.5 shrink-0 text-[#E0813F]" />
                               <span className="font-bold">{d.kcal}</span>
                               <span className="text-[#9A938A]">/ {history.goals.daily_kcal_goal} kcal</span>
                             </span>

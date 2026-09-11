@@ -388,7 +388,7 @@ export function TrainingGrid({
     <section className="mt-6 border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#0B0B0D] pb-3">
         <h2 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em]">
-          <ClipboardList className="h-4 w-4 text-[#F2B705]" />
+          <ClipboardList className="h-4 w-4 text-[#E0813F]" />
           {t("gridTitle", "Treinos por data")}
         </h2>
         <div className="flex items-center gap-2">
@@ -446,7 +446,7 @@ export function TrainingGrid({
                       <span className="flex items-center gap-1.5">
                         {r.active_plan_nome}
                         {r.active_plan_by_student && (
-                          <span className="shrink-0 border border-[#0B0B0D] bg-[#F2B705] px-1 py-0.5 text-[9px] font-black uppercase text-[#0B0B0D]">
+                          <span className="shrink-0 border border-[#0B0B0D] bg-[#B4470F] px-1 py-0.5 text-[9px] font-black uppercase text-[#F7F1EC]">
                             {t("byStudentBadge", "do aluno")}
                           </span>
                         )}
@@ -482,7 +482,7 @@ export function TrainingGrid({
       {/* Painel do aluno */}
       {(detail || detailLoading) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setDetail(null)}>
-          <div className="fl-sharp flex max-h-[92vh] w-full max-w-2xl flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }} onClick={(e) => e.stopPropagation()}>
+          <div className="fl-sharp flex max-h-[92vh] w-full max-w-2xl flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #B4470F" }} onClick={(e) => e.stopPropagation()}>
             {detailLoading || !detail ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="h-5 w-5 animate-spin opacity-50" />
@@ -500,7 +500,7 @@ export function TrainingGrid({
                 </div>
 
                 {/* Alterações do staff viram proposta: aviso permanente */}
-                <p className="mt-3 border-2 border-[#F2B705] bg-[#F2B705]/10 px-3 py-2 text-[11px] font-bold text-[#F2B705]">
+                <p className="mt-3 border-2 border-[#B4470F] bg-[#B4470F]/25 px-3 py-2 text-[11px] font-bold text-[#E0813F]">
                   {t("proposalNotice", "Peso, altura, limite de calorias e fichas só entram em vigor depois que o aluno confirmar no painel dele.")}
                 </p>
 
@@ -548,7 +548,7 @@ export function TrainingGrid({
                     <button
                       onClick={() => void saveMemberMeasurement()}
                       disabled={savingMeas}
-                      className="border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-black uppercase text-[#0B0B0D] disabled:opacity-50"
+                      className="border-2 border-[#0B0B0D] bg-[#B4470F] px-3 py-1.5 text-[11px] font-black uppercase text-[#F7F1EC] disabled:opacity-50"
                     >
                       {savingMeas ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("measureSubmit", "Salvar")}
                     </button>
@@ -582,7 +582,7 @@ export function TrainingGrid({
                     <button
                       onClick={() => void saveKcalGoal()}
                       disabled={savingKcal}
-                      className="border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-black uppercase text-[#0B0B0D] disabled:opacity-50"
+                      className="border-2 border-[#0B0B0D] bg-[#B4470F] px-3 py-1.5 text-[11px] font-black uppercase text-[#F7F1EC] disabled:opacity-50"
                     >
                       {savingKcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("kcalGoalSubmit", "Enviar")}
                     </button>
@@ -599,7 +599,7 @@ export function TrainingGrid({
                   <p className="flex items-center gap-1.5 text-xs font-black uppercase">
                     <Dumbbell className="h-4 w-4" /> {t("plansTitle", "Fichas de treino")}
                   </p>
-                  <button onClick={startCreate} className="flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-black uppercase text-black">
+                  <button onClick={startCreate} className="flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#B4470F] px-3 py-1.5 text-[11px] font-black uppercase text-[#F7F1EC]">
                     <Plus className="h-3.5 w-3.5" /> {t("newPlan", "Nova ficha")}
                   </button>
                 </div>
@@ -613,7 +613,7 @@ export function TrainingGrid({
                           <p className="flex flex-wrap items-center gap-1.5 font-black uppercase">
                             {p.nome}
                             {p.by_student && (
-                              <span className="border border-[#0B0B0D] bg-[#F2B705] px-1 py-0.5 text-[9px] font-black uppercase text-[#0B0B0D]">
+                              <span className="border border-[#0B0B0D] bg-[#B4470F] px-1 py-0.5 text-[9px] font-black uppercase text-[#F7F1EC]">
                                 {t("byStudentBadge", "do aluno")}
                               </span>
                             )}
@@ -648,7 +648,7 @@ export function TrainingGrid({
       {/* Editor de ficha */}
       {editorOpen && detail && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setEditorOpen(false)}>
-          <div className="fl-sharp flex max-h-[92vh] w-full max-w-3xl flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }} onClick={(e) => e.stopPropagation()}>
+          <div className="fl-sharp flex max-h-[92vh] w-full max-w-3xl flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #B4470F" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] pb-3">
               <h3 className="text-lg font-black uppercase">
                 {editingPlanId ? t("editPlanTitle", "Editar ficha") : t("newPlanTitle", "Nova ficha")} — {detail.member.member_name || t("memberFallback", "Aluno")}
@@ -661,7 +661,7 @@ export function TrainingGrid({
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="block">
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("planNameLabel", "Nome da ficha")}</span>
-                <input ref={planNameRef} autoFocus value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder={t("planNamePh", "Treino A")} className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none focus:border-[#F2B705]" />
+                <input ref={planNameRef} autoFocus value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder={t("planNamePh", "Treino A")} className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none focus:border-[#B4470F]" />
               </label>
               <label className="block">
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("planNotesLabel", "Observações")}</span>
@@ -722,7 +722,7 @@ export function TrainingGrid({
                 <button
                   key={value || "all"}
                   onClick={() => setMuscle(value)}
-                  className={`border border-[#0B0B0D] bg-[#15120E] px-2 py-0.5 text-[10px] font-black uppercase ${muscle === value ? "bg-[#F2B705] text-[#0B0B0D]" : "opacity-60"}`}
+                  className={`border border-[#0B0B0D] bg-[#15120E] px-2 py-0.5 text-[10px] font-black uppercase ${muscle === value ? "bg-[#B4470F] text-[#F7F1EC]" : "opacity-60"}`}
                 >
                   {t(key, fallback)}
                 </button>
@@ -762,7 +762,7 @@ export function TrainingGrid({
               <button
                 onClick={() => void savePlan()}
                 disabled={saving}
-                className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-black uppercase text-[#0B0B0D] disabled:opacity-50"
+                className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#B4470F] px-4 py-2 text-xs font-black uppercase text-[#F7F1EC] disabled:opacity-50"
               >
                 {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t("planSubmitProposal", "Enviar pro aluno")}

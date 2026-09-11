@@ -390,8 +390,11 @@ export function HeadcardPills({
       icon: Dumbbell,
       label: t("fitnessPill", "Fitness"),
       ariaLabel: t("fitnessAria", "Painel fitness: calorias, água, peso e treinos"),
-      bg: "#C2410C",
-      bgHover: "#9A3412",
+      // ⚠️ O LARANJA ESCURO É O DO AMBIENTE (`EMBER` em `fitness-ui.ts`): este
+      // pill é a PORTA do /fitness, e porta num tom e destino noutro faz
+      // procurar duas vezes. Mexeu na paleta do fitness, mexe aqui.
+      bg: "#9A3412",
+      bgHover: "#7C2D12",
       href: "/fitness",
     })
   }

@@ -497,7 +497,7 @@ export function FitnessView() {
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 text-center">
-            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F2B705]">{fmtDay}</p>
+            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#E0813F]">{fmtDay}</p>
             {!isToday && (
               <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F5F1E8]">
                 {t("today", "Hoje")} →
@@ -533,7 +533,7 @@ export function FitnessView() {
             <div className="mt-4 grid grid-cols-2 gap-3">
               <div className={`${PANEL} p-4`} style={{ boxShadow: `6px 6px 0 0 ${GOLD}` }}>
                 <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-                  <Flame className="h-4 w-4 text-[#F2B705]" /> {t("kcalTitle", "Calorias")}
+                  <Flame className="h-4 w-4 text-[#E0813F]" /> {t("kcalTitle", "Calorias")}
                 </p>
                 <p className="mt-2 fl-display text-4xl leading-none text-[#F5F1E8]">{Math.round(summary.totals.kcal)}</p>
                 <p className="mt-1 text-xs font-bold text-[#9A938A]">/ {summary.goals.daily_kcal_goal} kcal</p>
@@ -572,7 +572,7 @@ export function FitnessView() {
             {/* Diário de refeições */}
             <section className="mt-8">
               <h2 className={`${H_SECTION} px-3 md:px-0`}>
-                <Apple className="h-4 w-4 text-[#F2B705]" /> {t("diaryTitle", "Diário de refeições")}
+                <Apple className="h-4 w-4 text-[#E0813F]" /> {t("diaryTitle", "Diário de refeições")}
               </h2>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 {MEALS.map((meal) => {
@@ -593,7 +593,7 @@ export function FitnessView() {
                               setPicked(null)
                               setGrams("100")
                             }}
-                            className="border-2 border-[#0B0B0D] bg-[#F2B705] p-1 text-[#0B0B0D]"
+                            className="border-2 border-[#0B0B0D] bg-[#B4470F] p-1 text-[#F7F1EC]"
                             aria-label={t("addFood", "Adicionar alimento")}
                           >
                             <Plus className="h-3.5 w-3.5" />
@@ -608,7 +608,7 @@ export function FitnessView() {
                             <li key={l.id_log} className="flex items-center justify-between gap-2 border-b border-[#F5F1E8]/10 px-3 py-2 text-sm last:border-b-0">
                               <span className="min-w-0 flex-1 truncate">{l.food_nome}</span>
                               <span className="text-xs text-[#9A938A]">{Math.round(l.quantity_g)}g</span>
-                              <span className="text-xs font-bold text-[#F2B705]">{Math.round(l.kcal)} kcal</span>
+                              <span className="text-xs font-bold text-[#E0813F]">{Math.round(l.kcal)} kcal</span>
                               <button onClick={() => void removeLog(l.id_log)} aria-label={t("removeLog", "Remover")}>
                                 <Trash2 className="h-3.5 w-3.5 text-[#9A938A] hover:text-[#ff5a44]" />
                               </button>
@@ -656,7 +656,7 @@ export function FitnessView() {
               <>
                 <div className="flex items-center gap-2 border-b-2 border-[#0B0B0D] p-3">
                   {searching ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-[#F2B705]" />
+                    <Loader2 className="h-4 w-4 animate-spin text-[#E0813F]" />
                   ) : (
                     <Search className="h-4 w-4 text-[#9A938A]" />
                   )}
@@ -675,7 +675,7 @@ export function FitnessView() {
                     setBarcode("")
                     setScanOpen(true)
                   }}
-                  className="flex w-full items-center gap-2 border-b-2 border-[#0B0B0D] px-3 py-2.5 text-left text-xs font-extrabold uppercase tracking-[0.1em] text-[#F2B705] hover:bg-[#1D1810]"
+                  className="flex w-full items-center gap-2 border-b-2 border-[#0B0B0D] px-3 py-2.5 text-left text-xs font-extrabold uppercase tracking-[0.1em] text-[#E0813F] hover:bg-[#1D1810]"
                 >
                   <ScanBarcode className="h-4 w-4" />
                   {t("scanCta", "Escanear código de barras")}
@@ -739,7 +739,7 @@ export function FitnessView() {
                     className={`${INPUT} mt-1 text-lg font-black`}
                   />
                 </label>
-                <p className="mt-2 text-sm font-bold text-[#F2B705]">
+                <p className="mt-2 text-sm font-bold text-[#E0813F]">
                   = {Math.round((picked.kcal_100g * (Number(grams) || 0)) / 100)} kcal
                 </p>
                 <div className="mt-4 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-3">
@@ -784,7 +784,7 @@ export function FitnessView() {
                       </div>
                     )}
                     {camActive && (
-                      <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-3/4 -translate-x-1/2 -translate-y-1/2 border-2 border-[#F2B705]" />
+                      <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-3/4 -translate-x-1/2 -translate-y-1/2 border-2 border-[#B4470F]" />
                     )}
                   </div>
                   <form

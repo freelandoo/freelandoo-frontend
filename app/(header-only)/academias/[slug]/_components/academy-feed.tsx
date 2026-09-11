@@ -88,7 +88,7 @@ export function AcademyFeed({
   return (
     <section className="fl-sharp mt-6 border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
       <h2 className="flex items-center gap-2 border-b-2 border-[#0B0B0D] pb-2 text-xs font-extrabold uppercase tracking-[0.16em]">
-        <Megaphone className="h-4 w-4 text-[#F2B705]" />
+        <Megaphone className="h-4 w-4 text-[#E0813F]" />
         {t("feedTitle", "Mural da academia")}
       </h2>
 

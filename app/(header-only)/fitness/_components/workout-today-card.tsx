@@ -188,14 +188,14 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
     <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
       <div className="flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-          <Dumbbell className="h-4 w-4 text-[#F2B705]" /> {t("todayTitle", "Treino de hoje")}
+          <Dumbbell className="h-4 w-4 text-[#E0813F]" /> {t("todayTitle", "Treino de hoje")}
         </p>
         <button
           type="button"
           onClick={() => openEditor(null)}
           aria-label={t("newPlan", "Nova ficha")}
           title={t("newPlan", "Nova ficha")}
-          className="flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-0.5 text-[10px] font-black uppercase text-[#0B0B0D]"
+          className="flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#B4470F] px-2 py-0.5 text-[10px] font-black uppercase text-[#F7F1EC]"
         >
           <Plus className="h-3.5 w-3.5" /> {t("newPlan", "Nova ficha")}
         </button>
@@ -221,7 +221,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                 <button
                   key={p.id_plan}
                   onClick={() => setActive(i)}
-                  className={`border-2 border-[#0B0B0D] px-2 py-0.5 text-[10px] font-extrabold uppercase ${i === active ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
+                  className={`border-2 border-[#0B0B0D] px-2 py-0.5 text-[10px] font-extrabold uppercase ${i === active ? "bg-[#B4470F] text-[#F7F1EC]" : "bg-[#1D1810] text-[#9A938A]"}`}
                 >
                   {p.nome}
                 </button>
@@ -239,12 +239,12 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
           >
             <p className="flex items-center gap-1.5 text-base font-black">
               {plan.nome}
-              <Maximize2 className="h-4 w-4 shrink-0 text-[#F2B705]" />
+              <Maximize2 className="h-4 w-4 shrink-0 text-[#E0813F]" />
             </p>
             <p className="text-[10px] font-bold uppercase text-[#9A938A]">
               {t("daysOnPlan", "{n} dias com esta ficha").replace("{n}", String(plan.days_on_plan))}
               {" · "}
-              <span className={plan.by_student ? "text-[#F2B705]" : ""}>
+              <span className={plan.by_student ? "text-[#E0813F]" : ""}>
                 {plan.by_student ? t("ownPlanBadge", "Feita por você") : t("profPlanBadge", "Do professor")}
               </span>
             </p>
@@ -285,13 +285,13 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setExpanded(false)}>
           <div
             className="fl-sharp flex max-h-[92vh] w-full max-w-lg flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8]"
-            style={{ boxShadow: "8px 8px 0 0 #F2B705" }}
+            style={{ boxShadow: "8px 8px 0 0 #B4470F" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3 border-b-2 border-[#0B0B0D] p-5 pb-4">
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-                  <Dumbbell className="h-4 w-4 text-[#F2B705]" /> {t("todayTitle", "Treino de hoje")}
+                  <Dumbbell className="h-4 w-4 text-[#E0813F]" /> {t("todayTitle", "Treino de hoje")}
                 </p>
                 <h3 className="mt-1 text-2xl font-black uppercase leading-tight">{plan.nome}</h3>
                 <p className="text-[11px] font-bold uppercase text-[#9A938A]">
@@ -335,7 +335,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                     <button
                       key={p.id_plan}
                       onClick={() => setActive(i)}
-                      className={`border-2 border-[#0B0B0D] px-2.5 py-1 text-[11px] font-extrabold uppercase ${i === active ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
+                      className={`border-2 border-[#0B0B0D] px-2.5 py-1 text-[11px] font-extrabold uppercase ${i === active ? "bg-[#B4470F] text-[#F7F1EC]" : "bg-[#1D1810] text-[#9A938A]"}`}
                     >
                       {p.nome}
                     </button>
@@ -356,7 +356,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                   </p>
                   <div className="mt-1 h-2 border border-[#0B0B0D] bg-[#1D1810]">
                     <div
-                      className={doneCount === totalCount && totalCount > 0 ? "h-full bg-[#22C55E]" : "h-full bg-[#F2B705]"}
+                      className={doneCount === totalCount && totalCount > 0 ? "h-full bg-[#22C55E]" : "h-full bg-[#B4470F]"}
                       style={{ width: totalCount > 0 ? `${(doneCount / totalCount) * 100}%` : "0%" }}
                     />
                   </div>
@@ -386,7 +386,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                           </span>
                         </span>
                         {muscle && (
-                          <span className="shrink-0 border border-[#0B0B0D] bg-[#15120E] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#F2B705]">
+                          <span className="shrink-0 border border-[#0B0B0D] bg-[#15120E] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#E0813F]">
                             {t(muscle[0], muscle[1])}
                           </span>
                         )}

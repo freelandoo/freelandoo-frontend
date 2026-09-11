@@ -184,7 +184,7 @@ export function AcademyMembersView({ slug }: { slug: string }) {
 
   const tabBtn = (active: boolean) =>
     `relative inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] ${
-      active ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#F5F1E8] hover:bg-[#241d12]"
+      active ? "bg-[#B4470F] text-[#F7F1EC]" : "bg-[#1D1810] text-[#F5F1E8] hover:bg-[#241d12]"
     }`
 
   return (
@@ -245,7 +245,7 @@ export function AcademyMembersView({ slug }: { slug: string }) {
         {tab === "membros" ? (
           <section className={`${PANEL} mt-4 p-4`}>
             <h2 className={H_SECTION}>
-              <UserRound className="h-4 w-4 text-[#F2B705]" />
+              <UserRound className="h-4 w-4 text-[#E0813F]" />
               {t("membersTitle", "Membros vinculados")}
             </h2>
             {members.length === 0 ? (
@@ -272,7 +272,7 @@ export function AcademyMembersView({ slug }: { slug: string }) {
                           <td className="py-2 pr-3 font-bold">
                             {m.nome || m.username || m.member_name || "—"}
                             {m.is_professor && (
-                              <span className="ml-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-1 text-[10px] font-extrabold uppercase text-[#0B0B0D]">
+                              <span className="ml-2 border-2 border-[#0B0B0D] bg-[#B4470F] px-1 text-[10px] font-extrabold uppercase text-[#F7F1EC]">
                                 {t("professorBadge", "Prof")}
                               </span>
                             )}
@@ -293,7 +293,7 @@ export function AcademyMembersView({ slug }: { slug: string }) {
                             <td className="py-2">
                               <button
                                 onClick={() => void toggleProfessor(m)}
-                                className={`border-2 border-[#0B0B0D] px-2 py-1 text-[10px] font-extrabold uppercase ${m.is_professor ? "bg-[#1D1810] text-[#F5F1E8]" : "bg-[#F2B705] text-[#0B0B0D]"}`}
+                                className={`border-2 border-[#0B0B0D] px-2 py-1 text-[10px] font-extrabold uppercase ${m.is_professor ? "bg-[#1D1810] text-[#F5F1E8]" : "bg-[#B4470F] text-[#F7F1EC]"}`}
                               >
                                 {m.is_professor ? t("demoteCta", "Remover") : t("promoteCta", "Promover")}
                               </button>

@@ -1,7 +1,7 @@
 "use client"
 
-// A CASCA DA PLATAFORMA FITNESS — o canvas escuro, a pele laranja e a textura
-// de fundo que TODAS as telas de `/fitness` dividem.
+// A CASCA DA PLATAFORMA FITNESS — o canvas escuro, a pele CINZA + LARANJA
+// ESCURO e a textura de fundo que TODAS as telas de `/fitness` dividem.
 //
 // ⚠️ É a cópia de `games/_components/games-shell.tsx` (que por sua vez é a do
 // Financeiro) com a pele trocada, e ISSO É DELIBERADO — pedido do Alex
@@ -30,7 +30,8 @@ export function FitnessShell({ children }: { children: ReactNode }) {
 
   return (
     // `fl-root` mantém as variáveis da casa e `fl-fitness` é a PELE — ela
-    // reescreve, só aqui dentro, as cores de superfície da casca de plataforma.
+    // reescreve, só aqui dentro, as cores de superfície da casca de plataforma
+    // para o cinza do ambiente (o laranja escuro é o acento, ver `fitness-ui`).
     // `fl-sharp` porque os modais do painel são montados aqui dentro.
     <div className="fl-root fl-fitness fl-sharp relative min-h-[100dvh] overflow-x-clip bg-[#0b0804] pb-24 text-[#F5F1E8]">
       <TechBackdrop variant="fitness" />

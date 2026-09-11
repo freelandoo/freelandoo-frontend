@@ -148,7 +148,7 @@ export function WorkoutPlanEditor({
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4" onClick={onClose}>
       <div
         className="fl-sharp flex max-h-[92vh] w-full max-w-3xl flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]"
-        style={{ boxShadow: "8px 8px 0 0 #F2B705" }}
+        style={{ boxShadow: "8px 8px 0 0 #B4470F" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] pb-3">
@@ -170,7 +170,7 @@ export function WorkoutPlanEditor({
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder={t("planNamePh", "Treino A")}
-              className="mt-1 w-full border-2 border-[#F2B705] bg-[#1D1810] px-3 py-2 text-sm outline-none"
+              className="mt-1 w-full border-2 border-[#B4470F] bg-[#1D1810] px-3 py-2 text-sm outline-none"
             />
           </label>
           <label className="block">
@@ -180,7 +180,7 @@ export function WorkoutPlanEditor({
             <input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none focus:border-[#F2B705]"
+              className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none focus:border-[#B4470F]"
             />
           </label>
         </div>
@@ -284,7 +284,7 @@ export function WorkoutPlanEditor({
               key={value || "all"}
               onClick={() => setMuscle(value)}
               className={`border border-[#0B0B0D] px-2 py-0.5 text-[10px] font-black uppercase ${
-                muscle === value ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#15120E] opacity-60"
+                muscle === value ? "bg-[#B4470F] text-[#F7F1EC]" : "bg-[#15120E] opacity-60"
               }`}
             >
               {t(key, fallback)}
@@ -330,7 +330,7 @@ export function WorkoutPlanEditor({
           <button
             onClick={() => void save()}
             disabled={saving}
-            className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-black uppercase text-[#0B0B0D] disabled:opacity-50"
+            className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#B4470F] px-4 py-2 text-xs font-black uppercase text-[#F7F1EC] disabled:opacity-50"
           >
             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {t("planSubmit", "Salvar ficha")}

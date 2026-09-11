@@ -117,9 +117,9 @@ function AcademiesBody() {
             <div
               aria-hidden
               className="absolute inset-0"
-              style={{ background: "linear-gradient(180deg, transparent 40%, #150703cc 100%)" }}
+              style={{ background: "linear-gradient(180deg, transparent 40%, #141312cc 100%)" }}
             />
-            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
+            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#B4470F] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F7F1EC]">
               {t("eyebrow", "Fitness · Freelandoo")}
             </span>
             <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
@@ -247,7 +247,7 @@ function AcademyCard({ academy: a }: { academy: Academy }) {
         <div
           aria-hidden
           className="absolute inset-0"
-          style={{ background: "linear-gradient(180deg, transparent 40%, #150703cc 100%)" }}
+          style={{ background: "linear-gradient(180deg, transparent 40%, #141312cc 100%)" }}
         />
         {/* O chip do card diz a CIDADE — é o que separa uma academia da outra
             numa vitrine em que todas dividem o mesmo banner. */}
@@ -273,10 +273,10 @@ function AcademyCard({ academy: a }: { academy: Academy }) {
           )}
         </div>
         <div className="min-w-0 flex-1 pb-1">
-          <h2 className="fl-display text-3xl leading-[0.9] text-[#F5F1E8] transition-colors group-hover:text-[#F2B705] md:text-4xl">
+          <h2 className="fl-display text-3xl leading-[0.9] text-[#F5F1E8] transition-colors group-hover:text-[#E0813F] md:text-4xl">
             {a.nome}
           </h2>
-          <p className="mt-2 inline-flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#F2B705]">
+          <p className="mt-2 inline-flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#E0813F]">
             <Users className="h-3 w-3" />
             {String(a.member_count)} {t("membersSuffix", "vinculados")}
           </p>

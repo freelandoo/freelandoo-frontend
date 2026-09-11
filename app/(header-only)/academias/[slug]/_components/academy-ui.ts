@@ -3,8 +3,8 @@
 //
 // ⚠️ A ACADEMIA MORA DENTRO DO AMBIENTE FITNESS (pedido do Alex, 2026-09-10:
 // "ajuste a identidade visual das academias conforme o layout do fitness").
-// As cores de superfície, os botões, o banner desenhado e a sombra do headcard
-// são os do `fitness-ui` — REEXPORTADOS, e não copiados: com as constantes
+// As cores de superfície (cinza), os botões, o banner desenhado e a sombra do
+// headcard são os do `fitness-ui` — REEXPORTADOS, e não copiados: com as constantes
 // copiadas, mexer no tom do painel numa das telas deixaria a outra num tom
 // diferente sem nada quebrar. O que é SÓ da academia (o status da matrícula,
 // o tipo das fichas vencidas) fica aqui.

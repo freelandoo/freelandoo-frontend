@@ -54,7 +54,7 @@ function ProposalLine({ p }: { p: FitnessProposal }) {
       parts.push(`${t("propHeight", "Altura")}: ${Number(payload.height_cm).toFixed(0)} cm`)
     return (
       <div className="flex items-start gap-2">
-        <Ruler className="mt-0.5 h-4 w-4 shrink-0 text-[#F2B705]" />
+        <Ruler className="mt-0.5 h-4 w-4 shrink-0 text-[#E0813F]" />
         <p className="text-sm font-bold">{parts.join(" · ")}</p>
       </div>
     )
@@ -63,7 +63,7 @@ function ProposalLine({ p }: { p: FitnessProposal }) {
   if (p.kind === "kcal_goal") {
     return (
       <div className="flex items-start gap-2">
-        <Flame className="mt-0.5 h-4 w-4 shrink-0 text-[#F2B705]" />
+        <Flame className="mt-0.5 h-4 w-4 shrink-0 text-[#E0813F]" />
         <p className="text-sm font-bold">
           {t("propKcal", "Limite diário de calorias")}: {payload.daily_kcal_goal} kcal
         </p>
@@ -89,7 +89,7 @@ function ProposalLine({ p }: { p: FitnessProposal }) {
       : t("propPlanUpdate", 'Ficha "{name}" alterada').replace("{name}", payload.nome || payload.plan_nome || "")
   return (
     <div className="flex items-start gap-2">
-      <Dumbbell className="mt-0.5 h-4 w-4 shrink-0 text-[#F2B705]" />
+      <Dumbbell className="mt-0.5 h-4 w-4 shrink-0 text-[#E0813F]" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold">
           {title}
@@ -188,9 +188,9 @@ export function FitnessProposalsGate({ onApplied }: { onApplied: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }}>
+      <div className="fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #B4470F" }}>
         <div className="border-b-2 border-[#0B0B0D] p-4">
-          <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#F2B705]">
+          <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#E0813F]">
             <ClipboardCheck className="h-4 w-4" /> {t("propEyebrow", "Alteração do professor")}
           </p>
           <h2 className="mt-1 text-xl font-black uppercase leading-tight">
@@ -235,7 +235,7 @@ export function FitnessProposalsGate({ onApplied }: { onApplied: () => void }) {
             <button
               onClick={() => void resolve("accept")}
               disabled={resolving !== null}
-              className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] disabled:opacity-50"
+              className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#B4470F] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F7F1EC] disabled:opacity-50"
             >
               {resolving === "accept" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {t("propAccept", "Confirmar")}
