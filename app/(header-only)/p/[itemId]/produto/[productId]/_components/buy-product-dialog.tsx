@@ -235,7 +235,7 @@ export function BuyProductDialog({
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : t("payButton", "Pagar {total}").replace("{total}", formatBRL(total, locale))}
         </button>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">
-          {t("stripeRedirectNotice", "Você será redirecionado ao Stripe para concluir o pagamento.")}
+          {t("stripeRedirectNotice", "Você será redirecionado para concluir o pagamento com segurança.")}
         </p>
       </div>
     </div>

@@ -420,12 +420,12 @@ function SubscriptionCard({
       {/* Detalhes do reembolso */}
       {isRefunded && sub.stripe_refund_id && (
         <div className="space-y-2" style={{ filter: "none", opacity: 1 }}>
-          <CopyableId label="Stripe Refund ID" value={sub.stripe_refund_id} t={t} />
+          <CopyableId label="ID do reembolso" value={sub.stripe_refund_id} t={t} />
           {sub.stripe_charge_id && (
-            <CopyableId label="Stripe Charge ID" value={sub.stripe_charge_id} t={t} />
+            <CopyableId label="ID da cobrança" value={sub.stripe_charge_id} t={t} />
           )}
           <p className="text-[11px] text-[#9A938A] leading-relaxed pt-1">
-            {t("refundIdsNote", "Use estes IDs em qualquer suporte com a Stripe para rastrear o reembolso. O valor pode levar de 5 a 10 dias úteis para aparecer na fatura.")}
+            {t("refundIdsNote", "Use estes IDs em qualquer atendimento sobre o reembolso. O valor pode levar de 5 a 10 dias úteis para aparecer na fatura.")}
           </p>
         </div>
       )}

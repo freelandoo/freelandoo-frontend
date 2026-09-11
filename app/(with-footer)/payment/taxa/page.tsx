@@ -172,7 +172,7 @@ function TaxaPageInner() {
                   <div>
                     <p className="font-medium">{t("taxaPerk2Title", "Ativação imediata")}</p>
                     <p className="text-sm text-muted-foreground">
-                      {t("taxaPerk2Desc", "Confirmação via Stripe ativa o perfil automaticamente.")}
+                      {t("taxaPerk2Desc", "A confirmação do pagamento ativa o perfil automaticamente.")}
                     </p>
                   </div>
                 </div>
@@ -182,7 +182,7 @@ function TaxaPageInner() {
                   <div>
                     <p className="font-medium">{t("taxaPerk3Title", "Pagamento seguro")}</p>
                     <p className="text-sm text-muted-foreground">
-                      {t("taxaPerk3Desc", "Processado pelo Stripe com criptografia ponta a ponta.")}
+                      {t("taxaPerk3Desc", "Processado com criptografia ponta a ponta.")}
                     </p>
                   </div>
                 </div>
@@ -198,7 +198,7 @@ function TaxaPageInner() {
                   ? profile.is_clan
                     ? `${t("taxaClanLabel", "Clan")}: ${profile.display_name}${profile.machine_name ? ` · ${profile.machine_name}` : ""}`
                     : `${t("taxaProfileLabel", "Perfil")}: ${profile.display_name}${profile.category ? ` · ${profile.category}` : ""}`
-                  : t("taxaRedirectStripe", "Você será redirecionado ao Stripe para concluir")}
+                  : t("taxaRedirectStripe", "Você será redirecionado para concluir")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -229,7 +229,7 @@ function TaxaPageInner() {
                     onClick={handleCheckout}
                     disabled={isLoading || !profile || !!profile?.is_published}
                   >
-                    {isLoading ? t("taxaRedirecting", "Redirecionando...") : t("taxaPayWithStripe", "Pagar com Stripe")}
+                    {isLoading ? t("taxaRedirecting", "Redirecionando...") : t("taxaPayWithStripe", "Ir para o pagamento")}
                   </button>
 
                   <p className="text-xs text-center text-muted-foreground">

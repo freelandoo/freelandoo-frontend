@@ -348,7 +348,7 @@ function LojaPolensContent() {
                 {t("boosterDesc", "Leve um perfil direto ao nível 5 — mais alcance nos filtros por nível da vitrine e do feed.")}
               </p>
               <p className="mt-3 text-xs text-[#9A938A]">
-                {t("boosterPriceNote", "Pagamento único de {price} via Stripe.").replace("{price}", fmtBRL(1000, locale))}
+                {t("boosterPriceNote", "Pagamento único de {price}.").replace("{price}", fmtBRL(1000, locale))}
               </p>
             </div>
 
@@ -402,7 +402,7 @@ function LojaPolensContent() {
             />
           </div>
           <p className="text-xs text-[#9A938A]">
-            {t("securePaymentNote", "Pagamento seguro via Stripe. Os Poléns são creditados automaticamente após a confirmação.")}
+            {t("securePaymentNote", "Pagamento seguro. Os Poléns são creditados automaticamente após a confirmação.")}
           </p>
         </div>
 

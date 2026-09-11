@@ -3,7 +3,15 @@
 // Content-Security-Policy (enforce, F2.S2). Fontes mapeadas:
 //   - backend Railway (fetch direto p/ upload grande + socket.io em /realtime)
 //   - R2: pub-*.r2.dev (mídia pública) e *.r2.cloudflarestorage.com (PUT presigned)
-//   - AdSense/GTM + Google OAuth (GIS) + Stripe (checkout hosted; form-action)
+//   - AdSense/GTM + Google OAuth (GIS)
+//   - ⚠️ O STRIPE SAIU DAQUI (js.stripe.com no script-src/frame-src e
+//     checkout.stripe.com no form-action). O Stripe.js NUNCA foi carregado
+//     nesta aplicação — não há `loadStripe`, nem `@stripe/*` nas dependências,
+//     nem uma tag de script apontando para lá: eram três permissões de graça,
+//     sobrevivendo de um checkout que sempre foi por REDIRECIONAMENTO.
+//     E o redirecionamento não precisa de CSP: `window.location.href` não é
+//     submissão de formulário, então `form-action` nunca o governou — nem para
+//     o Stripe, nem para a fatura do Asaas. Por isso nada foi posto no lugar.
 //   - MediaPipe (wasm via jsdelivr + modelo via storage.googleapis.com)
 //   - `wss:` genérico no connect-src: LiveKit ainda sem domínio fixo em prod
 //     (env LIVEKIT_URL não setada) — ESTREITAR para o host real antes do enforce.
@@ -56,7 +64,7 @@ const cspReportOnly = [
   // 'unsafe-inline' por causa dos scripts inline do próprio Next (sem nonce) e
   // do bootstrap do Consent Mode; 'wasm-unsafe-eval' pro MediaPipe.
   // 'unsafe-eval' só em dev (source maps do next dev).
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : ""} https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://www.googletagmanager.com https://accounts.google.com https://js.stripe.com https://*.adtrafficquality.google https://vercel.live`,
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : ""} https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://www.googletagmanager.com https://accounts.google.com https://*.adtrafficquality.google https://vercel.live`,
   "style-src 'self' 'unsafe-inline'",
   // img-src largo (https:) de propósito: criativos do AdSense vêm de dezenas
   // de CDNs imprevisíveis. data:/blob: pros previews de upload e canvas.
@@ -65,10 +73,10 @@ const cspReportOnly = [
   "font-src 'self' data:",
   `connect-src 'self' ${BACKEND_PUBLIC} wss://freelandoo-backend-production.up.railway.app https://*.r2.cloudflarestorage.com ${R2_PUBLIC} https://*.r2.dev https://cdn.jsdelivr.net https://storage.googleapis.com https://accounts.google.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.adtrafficquality.google wss:${MONSTERS_API ? " " + MONSTERS_API : ""}`,
   "worker-src 'self' blob:",
-  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://js.stripe.com https://vercel.live${MONSTERS_JOGO ? " " + MONSTERS_JOGO : ""}`,
+  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://vercel.live${MONSTERS_JOGO ? " " + MONSTERS_JOGO : ""}`,
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self' https://checkout.stripe.com",
+  "form-action 'self'",
   "frame-ancestors 'none'",
 ].join("; ")
 

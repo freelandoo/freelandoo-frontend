@@ -820,7 +820,7 @@ export function ComoFuncionaClient() {
               { icon: Calendar, title: "Agendamentos pagos", text: "Agenda integrada com pagamento e repasse seguro ao profissional." },
               { icon: Video, title: "Feed, Bees e Stories", text: "Posts no feed, vídeos verticais 9:16 e stories de 24 horas dentro da rede." },
               { icon: MessageCircle, title: "Mensagens e Chat", text: "Conversas privadas com áudio e salas de chat ao vivo entre profissionais." },
-              { icon: Sparkles, title: "Manifestação", text: "Banner e tag de identidade no headcard do perfil, com pagamento via Stripe ou Poléns." },
+              { icon: Sparkles, title: "Manifestação", text: "Banner e tag de identidade no headcard do perfil, com pagamento em dinheiro ou Poléns." },
               { icon: Crown, title: "Premium", text: "Destaque pago do perfil na vitrine, por período e cidade definidos." },
               { icon: Coins, title: "Poléns", text: "Créditos virtuais para adquirir itens digitais dentro da plataforma." },
             ].map((card) => (

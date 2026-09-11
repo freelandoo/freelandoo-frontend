@@ -27,7 +27,7 @@ function SucessoContent() {
           <p className="fl-marker text-xl font-bold leading-none text-[#0B0B0D]/55">{t("eyebrowPayment", "Pagamento")}</p>
           <h1 className="fl-display mt-1 text-5xl leading-[0.9] text-[#0B0B0D] sm:text-6xl">{t("successHeading", "CONFIRMADO.")}</h1>
           <p className="mx-auto mt-5 max-w-md text-sm font-bold leading-relaxed text-[#5b554b]">
-            {t("successDescription", "Recebemos seu pagamento. Assim que o Stripe confirmar, seu perfil será ativado automaticamente nos classificados — em alguns segundos o status aparece em \"Minha conta\".")}
+            {t("successDescription", "Recebemos seu pagamento. Assim que ele for confirmado, seu perfil será ativado automaticamente nos classificados — em alguns segundos o status aparece em \"Minha conta\".")}
           </p>
           <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">
             <button type="button" onClick={() => router.push("/account")} className={TABLOID_ACTION_CLASSES}>
