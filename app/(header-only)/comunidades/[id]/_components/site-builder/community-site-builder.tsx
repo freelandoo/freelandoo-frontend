@@ -93,6 +93,15 @@ export function CommunitySiteBuilder({
   }, [])
 
   const [readyOpen, setReadyOpen] = useState(false)
+  /**
+   * O site é feito pela Freelandoo (mig 241)?
+   *
+   * ⚠️ Quando é, o construtor não edita nada: o documento de seções está vazio
+   * e o backend recusa a escrita. O que a tela faz é DIZER isso e apontar para
+   * o painel, em vez de oferecer botões que só devolvem 403.
+   */
+  const [managed, setManaged] = useState(false)
+
   const [loading, setLoading] = useState(true)
   const [locked, setLocked] = useState(false)
   const [missing, setMissing] = useState(false)
@@ -149,7 +158,22 @@ export function CommunitySiteBuilder({
     zoomRef.current = zoom
   }, [zoom])
 
+  /**
+   * Espelho de `managed` para o autosave.
+   *
+   * ⚠️ Ref e não dependência do `persist`: quem dispara a gravação é um timer
+   * montado ANTES da troca, e uma captura em closure leria o valor do dia em
+   * que foi montado. O caso real é este — o líder digita, abre o painel, aceita
+   * o site pronto, e o autosave pendente acorda 1,2s depois e bate no 403,
+   * escrevendo "não foi possível salvar" em cima de uma troca que deu certo.
+   */
+  const managedRef = useRef(false)
+  useEffect(() => {
+    managedRef.current = managed
+  }, [managed])
+
   const pendingRef = useRef<CommunitySiteConfig | null>(null)
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savingRef = useRef(false)
 
@@ -191,15 +215,22 @@ export function CommunitySiteBuilder({
           return
         }
         setLocked(!!data.locked)
+        setManaged(!!data.managed)
         setIsPublished(!!data.is_published)
         setSlug(data.slug || null)
+
         setServices(Array.isArray(data.services) ? data.services : [])
         setProviderProfileId(data.provider_profile_id || null)
         if (data.config) {
           setConfig(data.config)
           // Site que ainda não existe abre JÁ em edição para o líder: ele veio
           // aqui para construir, e um passo extra de "editar" só atrasaria.
-          if (isLeader && !data.exists) setEditing(true)
+          //
+          // ⚠️ Site gerenciado nunca abre em edição: lá o canvas está vazio, e
+          // entrar editando mostraria uma página em branco com ferramentas que
+          // o backend recusa.
+          if (isLeader && !data.exists && !data.managed) setEditing(true)
+
         } else {
           setMissing(true)
         }
@@ -224,6 +255,16 @@ export function CommunitySiteBuilder({
         pendingRef.current = next
         return
       }
+      // Site feito por nós não aceita escrita do cliente (mig 241). O timer
+      // pendente de antes da troca morre aqui, em silêncio — e em silêncio
+      // porque não há nada a dizer: o documento que ele ia gravar não é mais o
+      // que o endereço desenha.
+      if (managedRef.current) {
+        pendingRef.current = null
+        setSaveState("idle")
+        return
+      }
+
       savingRef.current = true
       setSaveState("saving")
       try {
@@ -548,8 +589,15 @@ export function CommunitySiteBuilder({
           style={{ boxShadow: "4px 4px 0 0 #0B0B0D" }}
         >
           {/* Editar × Ver: o mesmo canvas, com e sem a camada de edição. É a
-              prévia mais honesta possível — não há segunda árvore para divergir. */}
+              prévia mais honesta possível — não há segunda árvore para divergir.
+
+              ⚠️ SOME NO SITE GERENCIADO (mig 241): lá não há o que editar, e o
+              botão só levaria a um canvas vazio com ferramentas que o backend
+              recusa. Quem responde "o que é este site?" ali é a faixa logo
+              abaixo da barra. */}
+          {!managed && (
           <button
+
             type="button"
             onClick={() => {
               if (editing) flushSave()
@@ -564,6 +612,8 @@ export function CommunitySiteBuilder({
           >
             {editing ? t("modeEditing", "Editando") : t("modeViewing", "Visualizando")}
           </button>
+          )}
+
 
           <div className="flex items-center gap-1">
             {(
@@ -628,8 +678,13 @@ export function CommunitySiteBuilder({
               ⚠️ FICA FORA DO `editing &&` de propósito: é por aqui que se VOLTA
               para a home, e o rótulo é o único lugar da tela que diz qual página
               está na prancheta. Escondido na pré-visualização, o líder que
-              estivesse numa sub-página ficaria sem saída e sem saber onde está. */}
-          {isLeader && (
+              estivesse numa sub-página ficaria sem saída e sem saber onde está.
+
+              ⚠️ Mas SOME no site gerenciado: as páginas de lá são do tema, não
+              do canvas, e este painel criaria e apagaria páginas que ninguém
+              desenha. */}
+          {isLeader && !managed && (
+
             <div className="relative">
               <button
                 type="button"
@@ -693,7 +748,20 @@ export function CommunitySiteBuilder({
                   accent={accent}
                   isAdmin={isPlatformAdmin}
                   onClose={() => setReadyOpen(false)}
+                  /**
+                   * ⚠️ RECARREGA A PÁGINA, e não é preguiça: aceitar o site
+                   * pronto (ou devolvê-lo) muda a NATUREZA do construtor —
+                   * o documento, a vitrine, as páginas, o que pode ser
+                   * publicado e quem edita. Costurar cada um desses estados à
+                   * mão daria meia dúzia de setters que precisariam ficar em
+                   * sincronia com o backend para sempre, e o que esquecesse
+                   * deixaria a tela contando uma versão do site que não existe
+                   * mais. O recarregamento é a única leitura que não pode
+                   * divergir.
+                   */
+                  onManagedChange={() => window.location.reload()}
                   t={t}
+
                 />
               )}
             </div>
@@ -798,10 +866,18 @@ export function CommunitySiteBuilder({
             </div>
           )}
 
+          {/* ⚠️ Publicar some no site gerenciado: quem coloca no ar somos nós
+              (mig 241) e o backend recusa o cliente. Despublicar também sai
+              daqui — ele continua valendo no backend, mas oferecer só a metade
+              de saída de um site que a pessoa não pôs no ar diria que ela o
+              controla. Quem precisar tirar do ar hoje pede pelo suporte, que é
+              o mesmo canal de todo o resto deste site. */}
+          {!managed && (
           <button
             type="button"
             disabled={publishing}
             onClick={() => void togglePublish(!isPublished)}
+
             className="flex items-center gap-1.5 border-2 border-[#0B0B0D] px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.12em] disabled:opacity-60"
             style={
               isPublished
@@ -824,8 +900,30 @@ export function CommunitySiteBuilder({
                 ? t("publish", "Publicar site")
                 : t("publishLocked", "Publicar site · Plano Negócio")}
           </button>
+          )}
         </div>
       )}
+
+      {/* ── O site é feito pela Freelandoo (mig 241) ──────────────────────────
+          A faixa que explica por que a barra acima está quase vazia. Sem ela, o
+          líder abriria o construtor, não encontraria o botão de editar e não
+          teria nada na tela dizendo o motivo — o pior jeito de esconder uma
+          ferramenta. O caminho de volta está no painel "Site pronto". */}
+      {isLeader && managed && (
+        <div
+          className="mb-3 flex flex-wrap items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3"
+          style={{ boxShadow: `4px 4px 0 0 ${accent}` }}
+        >
+          <Sparkles className="h-4 w-4 shrink-0" style={{ color: accent }} />
+          <p className="flex-1 text-[11px] leading-snug text-[#F5F1E8]">
+            {t(
+              "managedNotice",
+              "Este site é feito e mantido pela Freelandoo. Peça as alterações pelo suporte que a gente aplica — e, se quiser voltar a montar o seu, é no botão Site pronto aqui em cima."
+            )}
+          </p>
+        </div>
+      )}
+
 
       <BusinessPlanModal
         open={planOpen}
@@ -840,7 +938,11 @@ export function CommunitySiteBuilder({
         </div>
       )}
 
-      {isLeader && !isPublished && (
+      {/* "Rascunho" é sobre o site que o LÍDER monta. Num site gerenciado quem
+          publica somos nós, e a frase mandaria ele procurar um botão que não
+          está mais na barra. */}
+      {isLeader && !isPublished && !managed && (
+
         <div className="mb-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
           {t("draftNotice", "Rascunho — só você enxerga este site até publicar.")}
         </div>

@@ -408,7 +408,18 @@ export type CommunitySiteResponse = {
    * onde apontar e sumiria da pré-visualização.
    */
   slug?: string | null
+  /**
+   * `true` = o site é feito e mantido pela Freelandoo (mig 241): o documento de
+   * seções não é mais o que o endereço desenha, e a escrita do cliente é
+   * recusada. O construtor lê isto para não oferecer uma edição que o backend
+   * vai negar — sem ele o sintoma é o autosave falhando enquanto a pessoa
+   * digita.
+   */
+  managed?: boolean
+  /** O tema autoral que desenha, quando gerenciado. `null` = canvas de seções. */
+  template?: string | null
 }
+
 
 export const DEFAULT_SITE_THEME: SiteColorTheme = {
   primary: "#f2b705",
