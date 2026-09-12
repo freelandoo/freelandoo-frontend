@@ -67,7 +67,40 @@ const REASON_LABEL: Record<string, string> = {
   other: "Outros",
 }
 
-const SESSION_KEY = "admin_alerts_token"
+/**
+ * ⚠️ A SUPRESSÃO É POR CONTEÚDO, NÃO POR LOGIN (2026-09-12).
+ *
+ * Era `sessionStorage["admin_alerts_token"] === token`: mostrado uma vez por
+ * token, por aba. Isso servia enquanto os alertas eram "problema a resolver"
+ * (post denunciado, afiliado atrasado) — dava para descobrir no próximo login.
+ *
+ * Parou de servir quando a FILA DE PEDIDOS DE SITE entrou aqui: pedido que
+ * chega no meio da sessão é venda esperando, e com o guard antigo ele não
+ * acordava nada — quem ficasse logado não via NUNCA. Foi exatamente o que
+ * aconteceu no primeiro teste do Alex.
+ *
+ * Agora guardamos a IMPRESSÃO DIGITAL do que já foi visto. Mudou o que está
+ * pendente → o modal volta. Não mudou → silêncio, por mais que se recarregue.
+ *
+ * localStorage e não sessionStorage: abrir uma aba nova não é pedir para ver
+ * o alerta de novo. E a chave leva o id do usuário — senão trocar de conta
+ * herdaria o "já vi" de outra pessoa.
+ */
+const SEEN_PREFIX = "admin_alerts_seen:"
+/** Throttle da BUSCA (a decisão de mostrar é da impressão digital). */
+const FETCH_KEY = "admin_alerts_fetched_at"
+const FETCH_TTL_MS = 5 * 60 * 1000
+
+/**
+ * O que está pendente AGORA, como string comparável.
+ *
+ * Leva os ids dos pedidos (ordenados) e não só a contagem: um pedido atendido
+ * e outro criado deixariam a contagem igual, e o novo nunca seria anunciado.
+ */
+function fingerprint(d: AlertSummary) {
+  const ids = (d.site_requests || []).map((r) => r.id_request).sort().join(",")
+  return `r${d.reported_posts_count}|a${d.urgent_affiliates_count}|s${ids}`
+}
 
 function brl(cents: number) {
   return ((cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
@@ -76,12 +109,24 @@ function brl(cents: number) {
 export function AdminAlerts() {
   const [data, setData] = useState<AlertSummary | null>(null)
   const [open, setOpen] = useState(false)
+  // A impressão digital do que está sendo mostrado — gravada só ao FECHAR.
+  // Gravá-la ao abrir faria um alerta fechado pelo F5 (sem a pessoa ler)
+  // contar como visto.
+  const [seen, setSeen] = useState<string | null>(null)
+  const [seenKey, setSeenKey] = useState<string | null>(null)
 
   useEffect(() => {
     const token = getToken()
     if (!token || typeof window === "undefined") return
-    // Já mostrado nesta sessão para este token? (mesmo login) → não repete.
-    if (sessionStorage.getItem(SESSION_KEY) === token) return
+    // Throttle da BUSCA, não da exibição: sem ele um F5 seguido de outro
+    // custaria uma requisição cada. Quem decide se aparece é a impressão
+    // digital, mais abaixo.
+    try {
+      const last = Number(sessionStorage.getItem(FETCH_KEY) || 0)
+      if (last && Date.now() - last < FETCH_TTL_MS) return
+    } catch {
+      /* private mode: segue e busca */
+    }
 
     let cancelled = false
     ;(async () => {
@@ -91,8 +136,13 @@ export function AdminAlerts() {
         const me = await meRes.json()
         const isAdmin =
           me.is_admin || me.roles?.some((r: { desc_role: string }) => r.desc_role === "Administrator")
-        // Marca a sessão independente do resultado: evita refetch a cada navegação.
-        sessionStorage.setItem(SESSION_KEY, token)
+        // Marca a BUSCA independente do resultado: evita refetch a cada
+        // navegação, inclusive para quem não é admin.
+        try {
+          sessionStorage.setItem(FETCH_KEY, String(Date.now()))
+        } catch {
+          /* private mode */
+        }
         if (!isAdmin) return
 
         const res = await fetch("/api/admin/alerts/summary", {
@@ -101,6 +151,19 @@ export function AdminAlerts() {
         if (!res.ok) return
         const summary: AlertSummary = await res.json()
         if (cancelled || !summary.has_alerts) return
+
+        // ⚠️ AQUI é que se decide aparecer. Igual ao que já foi dispensado →
+        // silêncio. Chegou coisa nova (um pedido de site, mais uma denúncia) →
+        // volta, sem precisar deslogar.
+        const fp = fingerprint(summary)
+        const seenKey = `${SEEN_PREFIX}${me.id_user || "me"}`
+        try {
+          if (localStorage.getItem(seenKey) === fp) return
+        } catch {
+          /* private mode: mostra */
+        }
+        setSeen(fp)
+        setSeenKey(seenKey)
         setData(summary)
         setOpen(true)
       } catch {
@@ -114,7 +177,16 @@ export function AdminAlerts() {
 
   if (!open || !data) return null
 
-  const close = () => setOpen(false)
+  const close = () => {
+    if (seenKey && seen) {
+      try {
+        localStorage.setItem(seenKey, seen)
+      } catch {
+        /* private mode: volta a aparecer, que é o lado seguro do erro */
+      }
+    }
+    setOpen(false)
+  }
 
   return (
     <div
