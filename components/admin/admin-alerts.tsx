@@ -14,7 +14,7 @@
  */
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { AlertTriangle, Flag, Coins, X, ArrowRight } from "lucide-react"
+import { AlertTriangle, Flag, Coins, X, ArrowRight, Sparkles } from "lucide-react"
 import { getToken } from "@/lib/auth"
 
 type ReportedPost = {
@@ -35,12 +35,24 @@ type UrgentAffiliate = {
   unpaid_count: number
   oldest_unpaid_at: string | null
 }
+/** Pedido de site pronto na fila (mig 243). */
+type SiteRequest = {
+  id_request: string
+  id_profile: string
+  note: string | null
+  created_at: string
+  community_name: string
+  requested_by_username: string | null
+  has_site: boolean
+}
 type AlertSummary = {
   reported_posts: ReportedPost[]
   reported_posts_count: number
   urgent_affiliates: UrgentAffiliate[]
   urgent_affiliates_count: number
   urgent_total_cents: number
+  site_requests: SiteRequest[]
+  site_requests_count: number
   has_alerts: boolean
 }
 
@@ -130,6 +142,11 @@ export function AdminAlerts() {
               {data.urgent_affiliates_count > 0 && (
                 <>{data.urgent_affiliates_count} afiliado{data.urgent_affiliates_count > 1 ? "s" : ""} urgente{data.urgent_affiliates_count > 1 ? "s" : ""}</>
               )}
+              {(data.reported_posts_count > 0 || data.urgent_affiliates_count > 0) &&
+                (data.site_requests_count ?? 0) > 0 && " · "}
+              {(data.site_requests_count ?? 0) > 0 && (
+                <>{data.site_requests_count} pedido{data.site_requests_count > 1 ? "s" : ""} de site</>
+              )}
             </p>
           </div>
           <button
@@ -143,6 +160,58 @@ export function AdminAlerts() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+          {/* ⚠️ PEDIDOS DE SITE VÊM PRIMEIRO (mig 243), e não é ordem alfabética:
+              os outros dois blocos são problema a resolver; este é venda
+              esperando. Embaixo de uma lista de 50 denúncias, o pedido de um
+              cliente viraria rodapé de uma tela que já rolou.
+
+              `?? 0` porque um backend anterior ao deploy não manda o campo — a
+              seção some em vez de quebrar o modal inteiro. */}
+          {(data.site_requests_count ?? 0) > 0 && (
+            <section>
+              <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
+                Pediram um site pronto
+              </div>
+              <ul className="space-y-1.5">
+                {(data.site_requests || []).slice(0, 6).map((r) => (
+                  <li
+                    key={r.id_request}
+                    className="rounded-lg border border-border bg-background/40 px-2.5 py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <p className="min-w-0 flex-1 truncate text-sm font-medium">{r.community_name}</p>
+                      {/* Quem nunca abriu o construtor não tem de onde converter
+                          — é a primeira coisa que se quer saber ao abrir o caso. */}
+                      <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
+                        {r.has_site ? "tem construtor" : "do zero"}
+                      </span>
+                    </div>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {r.requested_by_username ? `@${r.requested_by_username}` : "—"} ·{" "}
+                      {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                    </p>
+                    {r.note ? (
+                      <p className="mt-1 line-clamp-2 text-[11px] text-foreground/80">{r.note}</p>
+                    ) : null}
+                    <Link
+                      href={`/comunidades/${r.id_profile}/site`}
+                      onClick={close}
+                      className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-primary hover:underline"
+                    >
+                      Abrir o construtor <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {data.site_requests_count > 6 && (
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  +{data.site_requests_count - 6} outro{data.site_requests_count - 6 > 1 ? "s" : ""}…
+                </p>
+              )}
+            </section>
+          )}
+
           {/* Posts denunciados */}
           {data.reported_posts_count > 0 && (
             <section>

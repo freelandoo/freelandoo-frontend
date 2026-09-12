@@ -44,6 +44,16 @@ type Snapshot = { plan: BusinessPlan | null; subscription: BusinessPlanSubscript
 
 export const BUSINESS_GATE_SITE_SHARE = "site_share"
 export const BUSINESS_GATE_MEMBERS = "community_members"
+/**
+ * A chave do SITE PRONTO (mig 241). Só o plano `site-freelandoo` a carrega.
+ *
+ * ⚠️ NÃO é intercambiável com `site_share`, e a diferença morde onde menos se
+ * espera: as duas estão no plano do site, mas `site_share` está TAMBÉM no
+ * Negócio. Gateando o site gerenciado por `site_share`, o cadeado sumiria para
+ * quem só tem o Negócio — e essa pessoa apertaria Publicar para levar um 402 do
+ * backend, que gateia por esta aqui. O espelho tem que ser o mesmo guard.
+ */
+export const BUSINESS_GATE_MANAGED_SITE = "managed_site"
 
 const TTL_MS = 3 * 60 * 1000
 let cache: { at: number; token: string | null; data: Snapshot } | null = null

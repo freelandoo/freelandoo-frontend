@@ -52,6 +52,13 @@ type OfferRow = {
   created_by_username: string | null
 }
 
+type RequestRow = {
+  id_request: string
+  note: string | null
+  created_at: string
+  requested_by_username?: string | null
+}
+
 type ManagedState = {
   exists: boolean
   managed: boolean
@@ -60,6 +67,7 @@ type ManagedState = {
   is_published: boolean
   offer?: { id_offer: string; created_at: string } | null
   offers?: OfferRow[]
+  request?: RequestRow | null
   error?: string
 }
 
@@ -71,6 +79,8 @@ type ClientState = {
   slug: string | null
   current: OfferSummary | null
   offer: SiteOffer | null
+  /** O pedido que ESTE cliente já mandou e ainda não foi respondido (mig 243). */
+  request: { id_request: string; created_at: string } | null
   error?: string
 }
 
@@ -134,6 +144,7 @@ export function SiteReadyPanel({
   const [busy, setBusy] = useState<string | null>(null)
   const [erro, setErro] = useState("")
   const [swapOpen, setSwapOpen] = useState(false)
+  const [nota, setNota] = useState("")
 
   const admin = (path: string, init?: RequestInit) =>
     call(`/api/admin/managed-sites${path}`, init)
@@ -231,6 +242,26 @@ export function SiteReadyPanel({
     onManagedChange?.()
   }
 
+  /**
+   * O CLIENTE PEDE O SITE (mig 243).
+   *
+   * ⚠️ Não abre modal de confirmação, e é deliberado: pedir não muda nada no
+   * site dele — é o começo de uma conversa. Modal aqui transformaria um gesto
+   * barato numa decisão, que é o oposto do que a feature quer.
+   */
+  async function pedir() {
+    setBusy("pedir")
+    setErro("")
+    const r = await mine("/request", {
+      method: "POST",
+      body: JSON.stringify({ note: nota.trim() }),
+    })
+    setBusy(null)
+    if (r.error) return setErro(r.error)
+    setNota("")
+    await load()
+  }
+
   async function devolver() {
     setBusy("devolver")
     setErro("")
@@ -251,6 +282,16 @@ export function SiteReadyPanel({
       method: "PUT",
       body: JSON.stringify({ template: TEMPLATE, data: draft.data }),
     })
+    setBusy(null)
+    if (r.error) return setErro(r.error)
+    await load()
+  }
+
+  async function dispensarPedido() {
+    if (!state?.request) return
+    setBusy("dispensar")
+    setErro("")
+    const r = await admin(`/requests/${state.request.id_request}/dismiss`, { method: "POST" })
     setBusy(null)
     if (r.error) return setErro(r.error)
     await load()
@@ -428,8 +469,39 @@ export function SiteReadyPanel({
               {t("readySeeSwap", "Ver o site pronto")}
             </button>
           </>
-        ) : !isAdmin ? (
-          /* ── não há nada reservado: o que é o produto ───────────────────── */
+        ) : client.request ? (
+          /* ── o pedido já chegou até nós ──────────────────────────────────
+              Estado, e não silêncio: sem esta tela o cliente aperta "Pedir" e a
+              única coisa que muda é o botão sumir — e ele tenta de novo, ou
+              acha que não funcionou. */
+          <>
+            <p className="mb-3 flex items-start gap-2 text-[11px] leading-snug text-[#F5F1E8]">
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: accent }} />
+              {t(
+                "readyRequestedLead",
+                "O seu pedido chegou até a gente. Vamos montar o site e deixá-lo reservado aqui — você recebe o aviso neste mesmo botão."
+              )}
+            </p>
+            <div className="border-2 border-[#0B0B0D] bg-[#1D1810] p-3 text-[11px] leading-snug text-[#9A938A]">
+              {t("readyRequestedWhen", "Pedido em {d}").replace(
+                "{d}",
+                new Date(client.request.created_at).toLocaleDateString()
+              )}
+            </div>
+            <p className="mt-3 text-[11px] leading-snug text-[#9A938A]">
+              {t(
+                "readyRequestedHint",
+                "Nada muda no seu site enquanto isso — você continua editando normalmente."
+              )}
+            </p>
+          </>
+        ) : (
+          /* ── não há nada reservado: o que é o produto, e como pedir ────────
+              ⚠️ VALE TAMBÉM PARA O ADMINISTRADOR (antes era `!isAdmin`): quem
+              administra a plataforma também é dono de comunidade, e esconder
+              dele a tela que o cliente vê torna impossível conferir o fluxo sem
+              uma segunda conta. O painel da plataforma vem logo abaixo, com
+              cabeçalho próprio — as duas metades não se confundem. */
           <>
             <p className="mb-3 text-[11px] leading-snug text-[#9A938A]">
               {t(
@@ -441,15 +513,48 @@ export function SiteReadyPanel({
               <p className="text-xs leading-relaxed text-[#F5F1E8]">
                 {t(
                   "readyPitchBody",
-                  "O site pronto é montado e mantido pela gente a partir do que você já escreveu aqui. Enquanto ele estiver ligado, a edição fica com a Freelandoo — e desligar devolve o seu site do construtor exatamente como ele estava."
+                  "O site pronto é montado e mantido pela gente a partir do que você já escreveu aqui. Enquanto ele estiver ligado, quem escreve o conteúdo é a Freelandoo — publicar e o endereço continuam com você, e desligar devolve o seu site do construtor exatamente como ele estava."
                 )}
               </p>
             </div>
-            <p className="mt-3 text-[11px] leading-snug text-[#9A938A]">
-              {t("readyPitchHow", "Fale com a gente pelo suporte para pedir o seu.")}
+
+            {/* A nota é OPCIONAL de propósito: exigir texto transforma um
+                clique em formulário, e o pedido mais valioso é o que a pessoa
+                manda antes de saber o que quer. */}
+            <textarea
+              value={nota}
+              onChange={(e) => setNota(e.target.value)}
+              maxLength={2000}
+              rows={3}
+              placeholder={t(
+                "readyRequestNotePlaceholder",
+                "Quer contar alguma coisa? (opcional)"
+              )}
+              className="mt-3 w-full resize-none border-2 border-[#0B0B0D] bg-[#1D1810] p-2.5 text-[11px] leading-snug text-[#F5F1E8] placeholder:text-[#9A938A] focus:outline-none"
+            />
+
+            <button
+              type="button"
+              onClick={pedir}
+              disabled={!!busy}
+              className="mt-2 flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] px-3 py-2.5 text-[11px] font-extrabold tracking-[0.12em] uppercase disabled:opacity-50"
+              style={{ background: accent, color: "#0B0B0D" }}
+            >
+              {busy === "pedir" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {t("readyRequestCta", "Pedir o meu site")}
+            </button>
+            <p className="mt-2 text-[11px] leading-snug text-[#9A938A]">
+              {t(
+                "readyRequestHint",
+                "Pedir não muda nada no seu site nem cobra nada — a gente monta e você decide depois."
+              )}
             </p>
           </>
-        ) : null}
+        )}
 
         {/* ── o lado da PLATAFORMA ──────────────────────────────────────────── */}
         {isAdmin ? (
@@ -457,6 +562,43 @@ export function SiteReadyPanel({
             <p className="mb-2 text-[10px] font-extrabold tracking-[0.16em] text-[#9A938A] uppercase">
               {t("readyAdminSection", "Painel da plataforma")}
             </p>
+
+            {/* ⚠️ O PEDIDO DO CLIENTE VEM ANTES DE TUDO (mig 243): é ele que
+                explica POR QUE este caso está aberto, e traz o que a pessoa
+                escreveu. Embaixo da conversão ele viraria rodapé de uma tela
+                que já rolou. */}
+            {state?.request ? (
+              <div
+                className="mb-3 border-2 border-[#0B0B0D] bg-[#1D1810] p-3"
+                style={{ boxShadow: `4px 4px 0 0 ${accent}` }}
+              >
+                <p className="text-[10px] font-extrabold tracking-[0.14em] uppercase" style={{ color: accent }}>
+                  {t("readyRequestBadge", "O cliente pediu um site")}
+                </p>
+                <p className="mt-1 text-[11px] text-[#9A938A]">
+                  {new Date(state.request.created_at).toLocaleString()}
+                </p>
+                {state.request.note ? (
+                  <p className="mt-2 border-l-2 pl-2 text-[11px] leading-snug text-[#F5F1E8]" style={{ borderColor: accent }}>
+                    {state.request.note}
+                  </p>
+                ) : null}
+                {/* Reservar a oferta já fecha o pedido — este botão é para o
+                    que NÃO vira site (desistência, não fechou). Sem ele a fila
+                    só cresce, e fila que não esvazia se aprende a ignorar. */}
+                <button
+                  type="button"
+                  onClick={dispensarPedido}
+                  disabled={!!busy}
+                  className="mt-2 w-full border-2 border-[#0B0B0D] bg-transparent px-3 py-1.5 text-[10px] font-extrabold tracking-[0.12em] text-[#9A938A] uppercase hover:text-[#F5F1E8] disabled:opacity-50"
+                >
+                  {busy === "dispensar" ? (
+                    <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" />
+                  ) : null}
+                  {t("readyRequestDismiss", "Tirar da fila")}
+                </button>
+              </div>
+            ) : null}
 
             {!state ? (
               <p className="flex items-center gap-2 py-4 text-xs text-[#9A938A]">

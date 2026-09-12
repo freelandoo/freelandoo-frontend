@@ -193,7 +193,7 @@ export function SiteSwapModal({
                   ) + ` freelandoo.com.br/c/${slug}`
                 : t(
                     "swapNotLive",
-                    "O site ainda não está no ar. Depois da troca, a gente publica para você."
+                    "O site ainda não está no ar. Depois da troca, o botão Publicar fica com você — é você quem coloca no ar e escolhe o endereço."
                   )}
             </span>
           </li>
@@ -203,6 +203,19 @@ export function SiteSwapModal({
               {t(
                 "swapEditWarn",
                 "Enquanto o site pronto estiver ligado, quem edita é a Freelandoo. Você pede as alterações e a gente aplica."
+              )}
+            </span>
+          </li>
+          {/* ⚠️ O QUE ELE NÃO PERDE — e esta linha existe porque a anterior
+              acabou de dizer que a edição sai das mãos dele. Sem dizer o que
+              FICA, "a Freelandoo passa a cuidar do site" é lido como perder o
+              site inteiro, e o botão de aceitar fica mais caro do que é. */}
+          <li className="flex gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] p-2.5 text-[11px] leading-snug text-[#9A938A]">
+            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: accent }} />
+            <span>
+              {t(
+                "swapPublishKeep",
+                "Publicar, tirar do ar e escolher o endereço continuam sendo seus. O que passa para a gente é escrever o conteúdo."
               )}
             </span>
           </li>

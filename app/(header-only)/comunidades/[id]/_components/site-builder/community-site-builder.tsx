@@ -33,7 +33,7 @@ import {
 } from "lucide-react"
 // O Plano Negócio (mig 234): PUBLICAR é a porta paga do site — montar é livre.
 import { BusinessPlanModal } from "@/components/plans/business-plan-modal"
-import { BUSINESS_GATE_SITE_SHARE, useBusinessPlan } from "@/components/plans/use-business-plan"
+import { BUSINESS_GATE_SITE_SHARE, BUSINESS_GATE_MANAGED_SITE, useBusinessPlan } from "@/components/plans/use-business-plan"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getStoredUser, getToken } from "@/lib/auth"
 import {
@@ -148,7 +148,17 @@ export function CommunitySiteBuilder({
   // cadeado no botão avisa antes do clique, lendo a assinatura de quem edita.
   const [planOpen, setPlanOpen] = useState(false)
   const { subscription: planSub, isActive: planActive } = useBusinessPlan()
-  const canShareSite = planActive && !!planSub && planSub.features.includes(BUSINESS_GATE_SITE_SHARE)
+  /**
+   * Posso publicar?
+   *
+   * ⚠️ A CHAVE DEPENDE DA NATUREZA DO SITE, e é o espelho exato do guard do
+   * backend: site do construtor paga `site_share` (Plano Negócio); site feito
+   * por nós paga `managed_site`, que só o plano do site carrega. Usar
+   * `site_share` nos dois tiraria o cadeado de quem tem só o Negócio — e essa
+   * pessoa apertaria Publicar para levar um 402 que a tela jurava não existir.
+   */
+  const publishGate = managed ? BUSINESS_GATE_MANAGED_SITE : BUSINESS_GATE_SITE_SHARE
+  const canShareSite = planActive && !!planSub && planSub.features.includes(publishGate)
   // Zoom da prancheta. No celular ele vem da pizca de dois dedos; no
   // computador, dos botões. É zoom DA PRANCHETA, não do navegador: o do
   // navegador ampliaria a barra de ferramentas junto e tiraria o site da tela.
@@ -434,9 +444,19 @@ export function CommunitySiteBuilder({
           body: JSON.stringify({ published: next }),
         })
         const data = (await res.json()) as CommunitySiteResponse & { error?: string }
-        // 402 = fora do Plano Negócio (mig 234). Em vez de escrever o erro, abre
-        // a explicação com o botão de assinar — a recusa diz o que fazer.
+        // 402 = falta o plano. No site do CONSTRUTOR é o Negócio (mig 234) e o
+        // modal dele é a resposta certa: explica e vende.
+        //
+        // ⚠️ NO SITE GERENCIADO NÃO É. Ali a chave é `managed_site`, que só o
+        // plano do site carrega — abrir o modal do Negócio mandaria a pessoa
+        // assinar o plano errado, que devolveria o botão e MESMO ASSIM deixaria
+        // o site sair do ar no fim da carência. A recusa do backend já nomeia o
+        // plano certo, então quem fala aqui é ela.
         if (res.status === 402) {
+          if (managed) {
+            setError(data.error || t("publishError", "Não foi possível publicar."))
+            return
+          }
           setError(null)
           setPlanOpen(true)
           return
@@ -457,7 +477,7 @@ export function CommunitySiteBuilder({
         setPublishing(false)
       }
     },
-    [idProfile, authHeaders, flushSave, t]
+    [idProfile, authHeaders, flushSave, managed, t]
   )
 
   const addSection = useCallback(
@@ -898,13 +918,14 @@ export function CommunitySiteBuilder({
             </div>
           )}
 
-          {/* ⚠️ Publicar some no site gerenciado: quem coloca no ar somos nós
-              (mig 241) e o backend recusa o cliente. Despublicar também sai
-              daqui — ele continua valendo no backend, mas oferecer só a metade
-              de saída de um site que a pessoa não pôs no ar diria que ela o
-              controla. Quem precisar tirar do ar hoje pede pelo suporte, que é
-              o mesmo canal de todo o resto deste site. */}
-          {!managed && (
+          {/* ⚠️ PUBLICAR FICA, INCLUSIVE NO SITE GERENCIADO (decisão do Alex,
+              2026-09-12). Ele sumia aqui porque o backend recusava o cliente —
+              e a regra virou: o cliente aceita o site, publica quando quiser e
+              cunha o endereço dele. Quem segura o caso do fim da carência é o
+              GATE DE PLANO (`publishGate` acima), não a ausência do botão.
+
+              Editar e Páginas continuam sumindo: o que passou para a gente foi
+              escrever o conteúdo, não o controle do site. */}
           <button
             type="button"
             disabled={publishing}
@@ -930,9 +951,10 @@ export function CommunitySiteBuilder({
               ? t("unpublish", "Publicado · despublicar")
               : canShareSite
                 ? t("publish", "Publicar site")
-                : t("publishLocked", "Publicar site · Plano Negócio")}
+                : managed
+                  ? t("publishLockedManaged", "Publicar site · Plano do site")
+                  : t("publishLocked", "Publicar site · Plano Negócio")}
           </button>
-          )}
         </div>
       )}
 
@@ -948,9 +970,13 @@ export function CommunitySiteBuilder({
         >
           <Sparkles className="h-4 w-4 shrink-0" style={{ color: accent }} />
           <p className="flex-1 text-[11px] leading-snug text-[#F5F1E8]">
+            {/* ⚠️ SOBRESCRITA no dicionário (2026-09-12): a frase antiga dizia
+                que a barra estava vazia, e ela não está mais — Publicar e
+                Endereço voltaram. Dicionário vence fallback, então trocar só
+                este texto não mudaria nada na tela. */}
             {t(
               "managedNotice",
-              "Este site é feito e mantido pela Freelandoo. Peça as alterações pelo suporte que a gente aplica — e, se quiser voltar a montar o seu, é no botão Site pronto aqui em cima."
+              "Este site é feito e mantido pela Freelandoo: quem escreve o conteúdo somos nós. Publicar, tirar do ar e o endereço continuam com você. Peça as alterações pelo suporte — e, se quiser voltar a montar o seu, é no botão Site pronto aqui em cima."
             )}
           </p>
         </div>
@@ -970,10 +996,11 @@ export function CommunitySiteBuilder({
         </div>
       )}
 
-      {/* "Rascunho" é sobre o site que o LÍDER monta. Num site gerenciado quem
-          publica somos nós, e a frase mandaria ele procurar um botão que não
-          está mais na barra. */}
-      {isLeader && !isPublished && !managed && (
+      {/* ⚠️ VALE TAMBÉM NO SITE GERENCIADO desde que o Publicar voltou: o botão
+          está na barra de novo, então dizer "só você enxerga até publicar" volta
+          a apontar para algo que a pessoa pode fazer. Escondê-lo aqui deixaria
+          o líder sem saber por que o endereço dele não abre para ninguém. */}
+      {isLeader && !isPublished && (
 
         <div className="mb-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
           {t("draftNotice", "Rascunho — só você enxerga este site até publicar.")}
