@@ -101,6 +101,16 @@ export function CommunitySiteBuilder({
    * o painel, em vez de oferecer botões que só devolvem 403.
    */
   const [managed, setManaged] = useState(false)
+  /**
+   * Existe um site pronto reservado esperando este líder aceitar (mig 242)?
+   *
+   * ⚠️ É o que acende a bolinha no botão. Sem ela a oferta fica atrás de um
+   * botão que não muda de aparência, e quem não abrir o painel por conta
+   * própria nunca descobre que tem um site esperando — que foi exatamente o que
+   * aconteceu no primeiro teste desta feature.
+   */
+  const [hasOffer, setHasOffer] = useState(false)
+
 
   const [loading, setLoading] = useState(true)
   const [locked, setLocked] = useState(false)
@@ -216,6 +226,8 @@ export function CommunitySiteBuilder({
         }
         setLocked(!!data.locked)
         setManaged(!!data.managed)
+        setHasOffer(!!data.has_offer)
+
         setIsPublished(!!data.is_published)
         setSlug(data.slug || null)
 
@@ -737,11 +749,31 @@ export function CommunitySiteBuilder({
                 onClick={() => setReadyOpen((v) => !v)}
                 aria-expanded={readyOpen}
                 aria-haspopup="menu"
-                className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[10px] font-extrabold tracking-[0.12em] text-[#F5F1E8] uppercase"
+                /* Com um site esperando, o botão MUDA DE APARÊNCIA: a borda vem
+                   no accent e o rótulo em tinta cheia. A bolinha sozinha é fácil
+                   de não ver numa barra com dez botões — e este é o único aviso
+                   que a oferta tem. */
+                className="relative flex items-center gap-1.5 border-2 bg-[#1D1810] px-3 py-2 text-[10px] font-extrabold tracking-[0.12em] uppercase"
+                style={
+                  hasOffer
+                    ? { borderColor: accent, color: "#F5F1E8" }
+                    : { borderColor: "#0B0B0D", color: "#F5F1E8" }
+                }
               >
                 <Sparkles className="h-4 w-4 shrink-0" style={{ color: accent }} />
-                {t("readyButton", "Site pronto")}
+                {hasOffer ? t("readyButtonWaiting", "Site pronto · novo") : t("readyButton", "Site pronto")}
+                {/* A bolinha. `absolute` na quina, fora do fluxo, para não
+                    empurrar o rótulo e mudar a largura do botão quando ela
+                    aparece — a barra inteira reflui quando um item cresce. */}
+                {hasOffer && (
+                  <span
+                    aria-hidden
+                    className="absolute -top-1.5 -right-1.5 h-3 w-3 border-2 border-[#0B0B0D]"
+                    style={{ background: "#DC2626" }}
+                  />
+                )}
               </button>
+
               {readyOpen && (
                 <SiteReadyPanel
                   idProfile={idProfile}

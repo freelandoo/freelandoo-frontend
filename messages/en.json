@@ -6323,7 +6323,8 @@
     "readyAdminSection": "Platform panel",
     "readyReserve": "Reserve for the client to accept",
     "readyReservedLead": "Reserved for the client to accept. Their site only changes when they press the button.",
-    "readyWithdraw": "Withdraw the offer"
+    "readyWithdraw": "Withdraw the offer",
+    "readyButtonWaiting": "Ready-made site · new"
   },
   "SiteBooking": {
     "back": "Back to site",

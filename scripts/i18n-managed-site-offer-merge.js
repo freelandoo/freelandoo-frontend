@@ -31,6 +31,11 @@ const MERGE = {
       "{n} páginas · una por servicio y una por ciudad",
     ],
     readySeeSwap: ["Ver o site pronto", "See the ready-made site", "Ver el sitio listo"],
+    // O rótulo do botão QUANDO há algo esperando. Chave própria e não um
+    // sufixo colado no rótulo de sempre: em inglês e espanhol a palavra não
+    // entra no mesmo lugar da frase.
+    readyButtonWaiting: ["Site pronto · novo", "Ready-made site · new", "Sitio listo · nuevo"],
+
 
     // ─── o site já é feito por nós ─────────────────────────────────────────
     readyOnClient: [

@@ -6303,7 +6303,8 @@
     "readyAdminSection": "Panel de la plataforma",
     "readyReserve": "Reservar para que el cliente acepte",
     "readyReservedLead": "Reservado para que el cliente acepte. Su sitio solo cambia cuando él aprieta el botón.",
-    "readyWithdraw": "Retirar la oferta"
+    "readyWithdraw": "Retirar la oferta",
+    "readyButtonWaiting": "Sitio listo · nuevo"
   },
   "SiteBooking": {
     "back": "Volver al sitio",

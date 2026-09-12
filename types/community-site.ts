@@ -416,6 +416,14 @@ export type CommunitySiteResponse = {
    * digita.
    */
   managed?: boolean
+  /**
+   * `true` = existe um site pronto RESERVADO para esta comunidade, esperando o
+   * líder aceitar (mig 242). É o que acende a bolinha no botão "Site pronto" —
+   * a oferta não tem outra forma de se anunciar, e um site reservado que
+   * ninguém vê é o mesmo que site não reservado.
+   */
+  has_offer?: boolean
+
   /** O tema autoral que desenha, quando gerenciado. `null` = canvas de seções. */
   template?: string | null
 }
