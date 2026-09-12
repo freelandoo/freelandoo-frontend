@@ -26,6 +26,7 @@ import {
   Files,
   Search,
   Smartphone,
+  Sparkles,
   Tablet,
   Users,
   Upload,
@@ -34,7 +35,7 @@ import {
 import { BusinessPlanModal } from "@/components/plans/business-plan-modal"
 import { BUSINESS_GATE_SITE_SHARE, useBusinessPlan } from "@/components/plans/use-business-plan"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
-import { getToken } from "@/lib/auth"
+import { getStoredUser, getToken } from "@/lib/auth"
 import {
   DEFAULT_SITE_THEME,
   SITE_VIEWPORTS,
@@ -54,6 +55,7 @@ import { SiteColorPalettePicker } from "./site-color-palette-picker"
 import { SiteDomainsPanel } from "./site-domains-panel"
 import { SiteTeamPanel } from "./site-team-panel"
 import { SitePagesPanel } from "./site-pages-panel"
+import { SiteReadyPanel } from "./site-ready-panel"
 import {
   addSectionTo,
   canvasConfigFor,
@@ -79,6 +81,18 @@ export function CommunitySiteBuilder({
   const t = useTranslations("CommunitySite")
   const locale = useLocale()
 
+  // ⚠️ ADMIN DA PLATAFORMA, não líder da comunidade. É o mesmo predicado que o
+  // resto do site usa (o papel vem do banco no login), e ele decide só o que
+  // DESENHAR — quem recusa é o `roleMiddleware` das rotas de admin.
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false)
+  useEffect(() => {
+    const u = getStoredUser()
+    setIsPlatformAdmin(
+      !!u?.is_admin || !!u?.roles?.some((r) => r.desc_role === "Administrator")
+    )
+  }, [])
+
+  const [readyOpen, setReadyOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [locked, setLocked] = useState(false)
   const [missing, setMissing] = useState(false)
@@ -648,6 +662,37 @@ export function CommunitySiteBuilder({
                   onChange={setPages}
                   onClose={() => setPagesOpen(false)}
                   accent={accent}
+                  t={t}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Site pronto (mig 241) — o site desenhado pela Freelandoo.
+              ⚠️ FICA FORA DO `editing &&`, como o de Páginas: o que ele mostra
+              não é edição, é o ESTADO do site (em que tema está, se está no ar,
+              qual o endereço). Escondido na pré-visualização, a única tela que
+              responde "este site está no ar em quê?" sumiria justamente quando
+              se está olhando o resultado. */}
+          {isLeader && (
+            <div className="relative">
+              <button
+                type="button"
+                data-ready-trigger
+                onClick={() => setReadyOpen((v) => !v)}
+                aria-expanded={readyOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[10px] font-extrabold tracking-[0.12em] text-[#F5F1E8] uppercase"
+              >
+                <Sparkles className="h-4 w-4 shrink-0" style={{ color: accent }} />
+                {t("readyButton", "Site pronto")}
+              </button>
+              {readyOpen && (
+                <SiteReadyPanel
+                  idProfile={idProfile}
+                  accent={accent}
+                  isAdmin={isPlatformAdmin}
+                  onClose={() => setReadyOpen(false)}
                   t={t}
                 />
               )}
