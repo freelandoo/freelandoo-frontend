@@ -114,6 +114,28 @@ recorte de descendente `fixed` — o preço de perder essa aposta é **a barra d
 site do cliente sumir**. Sem recorte nenhum, reveals laterais abrem rolagem
 horizontal no celular antes de a animação rodar.
 
+### Elemento fixo na borda não é recortado por NADA
+
+Consequência direta da regra acima, e o defeito mais fácil de introduzir num site
+bonito: o recorte mora no **conteúdo**, mas a barra fixa, o botão flutuante e o
+fundo são **irmãos** dele. Nada os recorta. Qualquer coisa que os faça crescer
+lateralmente além da viewport abre **rolagem horizontal no documento inteiro** —
+e o sintoma aparece só no celular, só em algumas páginas, e não parece ter nada a
+ver com o botão.
+
+O caso já medido: um anel `animate-ping` (que é `transform: scale(2)`) num botão
+de 56px a 16px da borda. O anel chega a 112px, 28px para cada lado — 12px além da
+borda da tela, e o documento ganha **8px de rolagem horizontal**.
+
+**A saída é fazer o efeito em `box-shadow`** (ou `opacity`, ou `filter`): sombra é
+pintada fora da caixa e **não entra na região rolável** do documento. É o que o
+`oficina-local` faz — ver `WhatsappFab` em `chrome.tsx` e o keyframe
+`tplOficinaZapGlow`.
+
+Vale para qualquer coisa colada numa borda: `scale` de hover, anel pulsante,
+`translate-x` de entrada. Se o elemento é `fixed` e encosta na borda, **ele não
+pode crescer com transform**.
+
 ---
 
 ## 5. Imagens: `<img>`, não `next/image`
