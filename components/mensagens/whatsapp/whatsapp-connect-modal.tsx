@@ -5,6 +5,7 @@ import { Loader2, Smartphone } from "lucide-react"
 import { TabloidDialog } from "@/components/tabloide/TabloidDialog"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { WhatsappNumberForm } from "./whatsapp-number-form"
 import type { WhatsappStatusInfo } from "./use-whatsapp-inbox"
 
 /**
@@ -62,21 +63,37 @@ export function WhatsappConnectModal({
   onOpenChange,
   connected,
   number,
+  pairing,
   onStatus,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   connected: boolean
   number: string
+  /**
+   * Como esta pessoa conecta. Vem do BACKEND (capability do provedor) — a tela
+   * não adivinha, porque errar mostra QR para um provedor que não tem QR, e a
+   * caixa fica vazia para sempre. Ausente = backend antigo, cai no QR.
+   */
+  pairing?: "qr" | "number" | null
   onStatus: (info: Partial<WhatsappStatusInfo>) => void
 }) {
   const t = useTranslations("Whatsapp")
   const [qr, setQr] = useState<string | null>(null)
-  const [pairing, setPairing] = useState<string | null>(null)
+  // O código de pareamento alternativo da Evolution (quem não consegue ler o
+  // QR digita este código no celular). NÃO confundir com a prop `pairing`, que
+  // diz qual é o FLUXO de conexão.
+  const [pairingCode, setPairingCode] = useState<string | null>(null)
   const [error, setError] = useState("")
-  const [busy, setBusy] = useState(!connected)
+  const [busy, setBusy] = useState(false)
   const [paired, setPaired] = useState(connected)
   const alive = useRef(true)
+  // ⚠️ O caminho do QR tem DOIS temporizadores (renovar o código, detectar o
+  // pareamento). Eles existem porque lá há um evento externo — o dedo da pessoa
+  // no celular — que não passa por nós. No cadastro de número não há nada
+  // acontecendo fora da tela: quem avança é o clique. Deixá-los rodar seria
+  // pedir QR a um provedor que não tem QR, a cada 18 segundos, para sempre.
+  const usesQr = pairing !== "number"
 
   useEffect(() => {
     alive.current = true
@@ -105,13 +122,13 @@ export function WhatsappConnectModal({
         return
       }
       setQr(r.qr)
-      setPairing(r.pairing)
+      setPairingCode(r.pairing)
     },
     [onStatus, t]
   )
 
   useEffect(() => {
-    if (!open || paired) return
+    if (!open || paired || !usesQr) return
     let active = true
     setBusy(true)
     void (async () => {
@@ -121,20 +138,20 @@ export function WhatsappConnectModal({
     return () => {
       active = false
     }
-  }, [open, paired, apply])
+  }, [open, paired, apply, usesQr])
 
   // Renova o QR antes de ele expirar, enquanto ninguém pareou.
   useEffect(() => {
-    if (!open || paired || error) return
+    if (!open || paired || error || !usesQr) return
     const timer = setInterval(async () => {
       apply(await askQr())
     }, REFRESH_QR_MS)
     return () => clearInterval(timer)
-  }, [open, paired, error, apply])
+  }, [open, paired, error, apply, usesQr])
 
   // Detecta o pareamento sem depender de a pessoa clicar em nada.
   useEffect(() => {
-    if (!open || paired) return
+    if (!open || paired || !usesQr) return
     const timer = setInterval(async () => {
       try {
         const r = await fetch("/api/whatsapp/instance", { headers: authHeaders(), cache: "no-store" })
@@ -147,7 +164,7 @@ export function WhatsappConnectModal({
       }
     }, CHECK_STATUS_MS)
     return () => clearInterval(timer)
-  }, [open, paired, onStatus])
+  }, [open, paired, onStatus, usesQr])
 
   async function disconnect() {
     setBusy(true)
@@ -207,6 +224,19 @@ export function WhatsappConnectModal({
             {t("disconnect", "Desconectar aparelho")}
           </button>
         </div>
+      ) : !usesQr ? (
+        /*
+         * Cadastro de número — a Cloud API não tem QR. O formulário é peça
+         * própria porque não divide NADA com o caminho do QR: nem estado, nem
+         * temporizador, nem o botão de atualizar. Misturar os dois num
+         * componente só faria cada `if` novo ter que lembrar de dois mundos.
+         */
+        <WhatsappNumberForm
+          onConnected={(connectedNumber) => {
+            setPaired(true)
+            onStatus({ status: "connected", exists: true, number: connectedNumber })
+          }}
+        />
       ) : (
         <div className="px-5 py-5 text-center">
           <p className="text-xs text-[#6B6457]">
@@ -243,9 +273,9 @@ export function WhatsappConnectModal({
             {t("qrRenew", "O código se renova sozinho a cada 20 segundos.")}
           </p>
 
-          {pairing && (
+          {pairingCode && (
             <p className="mt-3 break-all text-xs text-[#6B6457]">
-              {t("pairingCode", "Código de pareamento")}: <span className="font-mono">{pairing}</span>
+              {t("pairingCode", "Código de pareamento")}: <span className="font-mono">{pairingCode}</span>
             </p>
           )}
 

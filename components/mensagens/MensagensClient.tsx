@@ -2218,6 +2218,10 @@ export default function MensagensClient() {
           onOpenChange={setWhatsappModalOpen}
           connected={whatsapp.info?.status === "connected"}
           number={whatsapp.info?.number || ""}
+          // Qual fluxo de conexão desenhar (QR × cadastro de número). Quem
+          // responde é o backend, pela capability do provedor — a tela não
+          // adivinha.
+          pairing={whatsapp.info?.pairing}
           onStatus={(patch) =>
             whatsapp.setInfo((prev) =>
               prev

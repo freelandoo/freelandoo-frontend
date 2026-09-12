@@ -46,6 +46,19 @@ export interface WhatsappStatusInfo {
   disconnect_reason?: "user" | "idle" | null
   /** Dias de inatividade que derrubam a sessão — o número vem do backend. */
   idle_days?: number
+  /**
+   * COMO esta pessoa conecta: lendo um QR (Evolution) ou cadastrando o número
+   * (Cloud API oficial).
+   *
+   * ⚠️ Quem responde é o BACKEND, pela capability do provedor — a tela não tem
+   * como adivinhar, e adivinhar errado é caro nos dois sentidos: desenhar QR
+   * para a Cloud API mostra uma caixa vazia para sempre (ela não tem QR), e
+   * pedir número para a Evolution manda a pessoa digitar algo que ninguém usa.
+   *
+   * Ausente = backend anterior a esta versão; o modal cai no QR, que é o que
+   * existia antes.
+   */
+  pairing?: "qr" | "number" | null
   unread?: number
 }
 
