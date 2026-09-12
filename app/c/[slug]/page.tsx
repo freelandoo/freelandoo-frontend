@@ -16,7 +16,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Lock } from "lucide-react"
-import { fetchPublicSiteBySlug } from "@/lib/community-site"
+import { fetchPublicSiteBySlug, platformTemplateLinks } from "@/lib/community-site"
+import { templateFor } from "@/components/site-templates/registry"
 import { PublicSiteView } from "./public-site-view"
 
 // ISR de 10 minutos.
@@ -40,6 +41,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const site = await fetchPublicSiteBySlug(slug)
   if (!site) return { title: "Site não encontrado" }
+
+  // Site gerenciado descreve a si mesmo: título, descrição e imagem saem do
+  // documento do tema, não do canvas de seções — que num site de tema é vazio.
+  const tpl = site.locked ? null : templateFor(site.template?.slug)
+  if (tpl && site.template) {
+    return tpl.metadata({
+      data: site.template.data,
+      links: platformTemplateLinks(site, slug),
+      page: null,
+    })
+  }
 
   const name = site.config?.siteName || site.community.display_name
   const description = site.config?.tagline || site.community.bio || undefined
@@ -77,6 +89,43 @@ export default async function CommunitySitePage({ params }: Props) {
   const { slug } = await params
   const site = await fetchPublicSiteBySlug(slug)
   if (!site) notFound()
+
+  // ⚠️ O TEMA VEM ANTES DO `!site.config`, e a ordem é a feature inteira: num
+  // site gerenciado o canvas de seções está VAZIO, então a checagem de baixo o
+  // trataria como site trancado e o cliente veria a caixa de cadeado no próprio
+  // domínio. O tema desenha a partir de `template.data`, não de `config`.
+  const tpl = site.locked ? null : templateFor(site.template?.slug)
+
+  // ⚠️ Tema que o backend conhece e este deploy do front ainda não: 404, nunca
+  // o ramo de baixo. Lá a tela diz "comunidade fechada" — uma explicação
+  // errada, que manda o cliente procurar o problema no lugar errado enquanto o
+  // front não sobe.
+  if (!tpl && site.template) notFound()
+
+  if (tpl && site.template) {
+    return (
+      <main className="fl-sharp min-h-[100dvh]">
+        <tpl.Site
+          data={site.template.data}
+          links={platformTemplateLinks(site, slug)}
+          page={null}
+        />
+
+        {/* O mesmo rodapé de origem do site do construtor, e pela mesma razão:
+            quem chega por um link solto não tem como saber onde está nem como
+            entrar na comunidade. Ele fica FORA do tema de propósito — é a
+            plataforma falando, não o site do cliente. */}
+        <footer className="border-t-2 border-[#0B0B0D] bg-[#0B0B0D] px-5 py-6 text-center md:px-10">
+          <Link
+            href={`/comunidades/${site.id_profile}`}
+            className="text-[10px] font-extrabold tracking-[0.16em] text-[#9A938A] uppercase hover:text-[#F2B705]"
+          >
+            {site.community.display_name} · feito com Freelandoo
+          </Link>
+        </footer>
+      </main>
+    )
+  }
 
   if (site.locked || !site.config) {
     return (

@@ -12,6 +12,7 @@ import type {
   ShowcaseService,
   SiteProfessional,
 } from "@/types/community-site"
+import type { SiteTemplate, TemplateLinks } from "@/types/site-template"
 
 /**
  * Revalidação do site público.
@@ -45,6 +46,16 @@ export type PublicSite = {
   professionals?: SiteProfessional[]
   /** Perfil onde os serviços são contratados (destino do botão do card). */
   provider_profile_id?: string | null
+  /**
+   * O site FEITO PELA FREELANDOO (mig 241), quando este é um.
+   *
+   * ⚠️ Presente, ele MANDA: a rota desenha o tema e ignora `config`, porque num
+   * site de tema o canvas de seções está vazio — abrir por ele daria uma página
+   * em branco no domínio do cliente, sem um único erro em lugar nenhum.
+   *
+   * Ausente (o caso de todo mundo) é o site do construtor, como sempre foi.
+   */
+  template?: SiteTemplate | null
 }
 
 /** `null` = não existe (ou não está publicado). Quem chama transforma em 404. */
@@ -82,5 +93,62 @@ export async function resolveHostToSlug(host: string): Promise<string | null> {
     return data.slug || null
   } catch {
     return null
+  }
+}
+
+// ─── Os endereços de um site gerenciado ──────────────────────────────────────
+//
+// ⚠️ UM LUGAR SÓ, e não uma cópia em cada rota. O mesmo site é servido em três
+// endereços, e o tema monta link, canônico e JSON-LD a partir disto: com quatro
+// cópias, a que ficasse para trás publicaria no domínio do cliente um canônico
+// apontando para a plataforma — sem erro, e desfazendo o SEO que a feature veio
+// buscar.
+
+/**
+ * A origem da plataforma.
+ *
+ * Espelha o `metadataBase` do layout raiz. Os dois têm que dizer a mesma coisa:
+ * um resolve os metadados relativos, o outro monta o `@id` absoluto do
+ * JSON-LD, e divergindo eles descreveriam dois sites.
+ */
+const PLATFORM_ORIGIN = "https://www.freelandoo.com.br"
+
+/**
+ * Agendar só é oferecido quando há o que agendar.
+ *
+ * A página de agendamento é montada a partir dos serviços CADASTRADOS. Sem
+ * nenhum, o botão levaria a um passo 1 vazio — e este tema serve muito negócio
+ * que trabalha sob orçamento, onde agendar online nunca foi o caminho.
+ */
+function bookingFor(site: PublicSite, href: string): string | null {
+  return (site.services?.length ?? 0) > 0 ? href : null
+}
+
+/** `freelandoo.com.br/c/<slug>` — vale também para o subdomínio, que reescreve para cá. */
+export function platformTemplateLinks(site: PublicSite, slug: string): TemplateLinks {
+  return {
+    origin: PLATFORM_ORIGIN,
+    communityId: site.id_profile,
+    home: `/c/${slug}`,
+    pageBase: `/c/${slug}/pagina`,
+    booking: bookingFor(site, `/c/${slug}/agendar`),
+  }
+}
+
+/**
+ * O domínio do cliente.
+ *
+ * Aqui o site é a RAIZ, e os caminhos são relativos: o navegador está no
+ * domínio dele, e é o proxy que traduz de volta para `/dominio/<host>/...`.
+ * Só a origem é absoluta, e é a DELE — é ela que o JSON-LD e o canônico
+ * declaram ao buscador.
+ */
+export function domainTemplateLinks(site: PublicSite, host: string): TemplateLinks {
+  return {
+    origin: `https://${host}`,
+    communityId: site.id_profile,
+    home: "/",
+    pageBase: "/pagina",
+    booking: bookingFor(site, "/agendar"),
   }
 }

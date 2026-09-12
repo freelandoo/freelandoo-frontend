@@ -13,7 +13,12 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Lock } from "lucide-react"
-import { fetchPublicSiteBySlug, resolveHostToSlug } from "@/lib/community-site"
+import {
+  domainTemplateLinks,
+  fetchPublicSiteBySlug,
+  resolveHostToSlug,
+} from "@/lib/community-site"
+import { templateFor } from "@/components/site-templates/registry"
 import { PublicSiteView } from "@/app/c/[slug]/public-site-view"
 
 // ISR de 10 minutos.
@@ -47,6 +52,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!found) return { title: "Site não encontrado" }
 
   const { site } = found
+
+  // Site gerenciado descreve a si mesmo — e aqui o canônico e o JSON-LD saem
+  // com a origem DO CLIENTE, que é o endereço que ele quer no buscador.
+  const tpl = site.locked ? null : templateFor(site.template?.slug)
+  if (tpl && site.template) {
+    return tpl.metadata({
+      data: site.template.data,
+      links: domainTemplateLinks(site, decodeURIComponent(host)),
+      page: null,
+    })
+  }
+
   const name = site.config?.siteName || site.community.display_name
   const description = site.config?.tagline || site.community.bio || undefined
   const heroImage = site.config?.sections
@@ -81,6 +98,38 @@ export default async function CommunityDomainPage({ params }: Props) {
   if (!found) notFound()
 
   const { site } = found
+
+  // ⚠️ ANTES do `!site.config`: num site gerenciado o canvas de seções está
+  // vazio, e a checagem de baixo o trataria como trancado — o cliente veria a
+  // caixa de cadeado no próprio domínio.
+  const tpl = site.locked ? null : templateFor(site.template?.slug)
+
+  // Tema desconhecido por este deploy: 404 em vez do ramo de baixo, que diria
+  // "comunidade fechada" — explicação errada no domínio do cliente.
+  if (!tpl && site.template) notFound()
+
+  if (tpl && site.template) {
+    return (
+      <main className="fl-sharp min-h-[100dvh]">
+        <tpl.Site
+          data={site.template.data}
+          links={domainTemplateLinks(site, decodeURIComponent(host))}
+          page={null}
+        />
+
+        <footer className="border-t-2 border-[#0B0B0D] bg-[#0B0B0D] px-5 py-6 text-center md:px-10">
+          {/* Link ABSOLUTO: estamos num domínio que não é o nosso, e um href
+              relativo apontaria para uma rota inexistente do cliente. */}
+          <a
+            href={`https://freelandoo.com.br/comunidades/${site.id_profile}`}
+            className="text-[10px] font-extrabold tracking-[0.16em] text-[#9A938A] uppercase hover:text-[#F2B705]"
+          >
+            {site.community.display_name} · feito com Freelandoo
+          </a>
+        </footer>
+      </main>
+    )
+  }
 
   if (site.locked || !site.config) {
     return (

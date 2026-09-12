@@ -1,0 +1,439 @@
+/* ============================================================
+   TEMA `oficina-local` — sistema visual
+   Preto profundo + grafite, lettering metálico (ouro/prata),
+   arcos concêntricos, vermelho-chama e azul-chama como acento.
+   ============================================================
+
+   ⚠️ TUDO AQUI É ESCOPADO EM `.tpl-oficina`, e isso não é preciosismo:
+   esta folha é carregada pela mesma aplicação que serve a Freelandoo
+   inteira. Uma regra solta (um `body`, um `*`, um `h2`) atravessaria o
+   produto todo — e o sintoma apareceria numa tela que ninguém relacionaria
+   ao site de um cliente.
+
+   ⚠️ E os nomes de token do projeto de origem (`bg-ink`, `text-gold`)
+   NÃO foram trazidos: eles viveriam no `@theme` global do Tailwind e
+   ficariam disponíveis no site inteiro. As classes usam valor arbitrário
+   (`bg-[#050506]`), que é como a casa já escreve. */
+
+.tpl-oficina {
+  --gold-core: #f3b73f;
+  --gold-hi: #ffe7a3;
+  --gold-lo: #b1780f;
+  --shell-x: 1.25rem;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --graphite: #101013;
+  --paper: #f6f6f7;
+
+  /* Confina o empilhamento do tema. Sem isto, um filho com z-index alto
+     (a barra fixa) disputaria com o que a plataforma tem no contexto raiz —
+     a mesma lição que o `isolate` da prancheta do construtor já pagou. */
+  isolation: isolate;
+  position: relative;
+  min-height: 100dvh;
+  background-color: #050506;
+  color: var(--paper);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  letter-spacing: 0.005em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Recorte do eixo X.
+
+   `clip` e não `hidden`: recorta sem criar um contêiner de rolagem (o que
+   quebraria `position: sticky`). Sem isto, os reveals laterais do GSAP — que
+   começam deslocados 28px em X — esticam o documento e abrem rolagem
+   horizontal no celular ANTES de a animação rodar. Medido no projeto de
+   origem: 398 > 390.
+
+   ⚠️ E ELE FICA NO CONTEÚDO, não no invólucro do tema — aqui isto DIVERGE do
+   projeto de origem de propósito. Lá a regra mora no `html`, que não é
+   contêiner de nada; aqui o invólucro é uma `<div>`, e barra fixa, botão
+   flutuante e fundo são filhos dela. Pôr o recorte no invólucro seria apostar
+   que nenhum navegador trata `overflow: clip` como recorte de descendente
+   `fixed` — e o preço de perder a aposta é a barra do site do cliente
+   sumir. O que rola é o que precisa do recorte; as três peças fixas ficam
+   fora dele. */
+.tpl-oficina > main,
+.tpl-oficina > footer {
+  overflow-x: clip;
+}
+
+@media (min-width: 768px) {
+  .tpl-oficina {
+    --shell-x: 2.5rem;
+  }
+}
+@media (min-width: 1280px) {
+  .tpl-oficina {
+    --shell-x: 3rem;
+  }
+}
+
+/* Cantos vivos — a regra permanente da casa, aplicada dentro do tema. */
+.tpl-oficina *,
+.tpl-oficina *::before,
+.tpl-oficina *::after {
+  border-radius: 0;
+}
+
+.tpl-oficina ::selection {
+  background: var(--gold-core);
+  color: #0a0a0c;
+}
+
+.tpl-oficina :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--gold-core);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-oficina *,
+  .tpl-oficina *::before,
+  .tpl-oficina *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------- tipografia ---------- */
+.tpl-oficina .fx-font-display {
+  font-family: var(--font-oficina-display), "Archivo", system-ui, sans-serif;
+}
+.tpl-oficina .fx-font-body {
+  font-family: var(--font-oficina-body), "Barlow", system-ui, sans-serif;
+}
+
+.tpl-oficina {
+  font-family: var(--font-oficina-body), "Barlow", system-ui, sans-serif;
+}
+
+.tpl-oficina .fx-display {
+  font-family: var(--font-oficina-display), "Archivo", system-ui, sans-serif;
+  font-weight: 800;
+  font-stretch: 88%;
+  letter-spacing: -0.02em;
+  line-height: 0.94;
+  text-transform: uppercase;
+}
+
+.tpl-oficina .fx-display-tight {
+  font-family: var(--font-oficina-display), "Archivo", system-ui, sans-serif;
+  font-weight: 900;
+  font-stretch: 80%;
+  letter-spacing: -0.025em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.tpl-oficina .fx-eyebrow {
+  font-family: var(--font-oficina-display), "Archivo", system-ui, sans-serif;
+  font-weight: 700;
+  font-stretch: 92%;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.6875rem;
+  color: var(--gold-core);
+}
+
+/* ---------- metálicos ----------
+   ⚠️ `background-clip: text` pinta SÓ dentro da caixa de fundo do elemento.
+   Com entrelinha menor que 1 (os títulos condensados usam 0.82–0.95), o TIL
+   do "Õ"/"Ã" fica ACIMA dessa caixa e simplesmente não é pintado — o logo
+   saía escrito "FOGOES". O padding estica a caixa de fundo para cima e a
+   margem negativa devolve o espaço: em elemento de bloco dá zero de layout,
+   e em span inline os dois são ignorados (só o fundo cresce). */
+.tpl-oficina .fx-gold,
+.tpl-oficina .fx-silver {
+  padding-top: 0.16em;
+  margin-top: -0.16em;
+}
+
+.tpl-oficina .fx-gold {
+  background: linear-gradient(
+    177deg,
+    #fff3cf 4%,
+    #ffd980 22%,
+    #f3b73f 44%,
+    #d9971f 58%,
+    #ffdf95 74%,
+    #c98a1c 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tpl-oficina .fx-silver {
+  background: linear-gradient(
+    177deg,
+    #ffffff 4%,
+    #eceef2 26%,
+    #b9bcc6 48%,
+    #8d909b 60%,
+    #f2f4f8 78%,
+    #a9acb6 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- filetes e molduras ---------- */
+.tpl-oficina .fx-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(243, 183, 63, 0.55) 18%,
+    rgba(243, 183, 63, 0.85) 50%,
+    rgba(243, 183, 63, 0.55) 82%,
+    transparent
+  );
+}
+
+.tpl-oficina .fx-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0) 42%),
+    var(--graphite);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+.tpl-oficina .fx-panel-hover {
+  transition: border-color 0.4s var(--ease-out-soft), transform 0.45s var(--ease-out-soft),
+    background-color 0.4s var(--ease-out-soft);
+}
+
+.tpl-oficina .fx-panel-hover:hover {
+  border-color: rgba(243, 183, 63, 0.42);
+  transform: translateY(-3px);
+}
+
+/* canto dourado (eco dos colchetes do banner) */
+.tpl-oficina .fx-bracket::before,
+.tpl-oficina .fx-bracket::after {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: rgba(243, 183, 63, 0.75);
+  border-style: solid;
+  opacity: 0;
+  transition: opacity 0.45s var(--ease-out-soft);
+  pointer-events: none;
+}
+.tpl-oficina .fx-bracket::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+.tpl-oficina .fx-bracket::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1px 1px 0;
+}
+.tpl-oficina .fx-bracket:hover::before,
+.tpl-oficina .fx-bracket:hover::after,
+.tpl-oficina .fx-bracket:focus-within::before,
+.tpl-oficina .fx-bracket:focus-within::after {
+  opacity: 1;
+}
+
+/* ---------- placa de serviço ----------
+   A proporção mora numa VARIÁVEL, e não em `style` inline, porque ela
+   precisa ser DESLIGADA quando a placa divide a linha com o texto.
+   Por quê: com `height:100%` vindo da célula do grid, o aspect-ratio passa a
+   calcular a LARGURA a partir da altura esticada e a placa transborda a
+   coluna — medido em 497px numa coluna de 340px, invadindo o texto. Item de
+   grid não é recortado pela coluna, então o estrago aparece como imagem por
+   cima da descrição. No empilhado (celular) a proporção É quem dá altura,
+   por isso ela só sai a partir do md. */
+.tpl-oficina .fx-art {
+  aspect-ratio: var(--art-ratio, 4 / 3);
+}
+
+@media (min-width: 768px) {
+  .tpl-oficina .fx-art-fill {
+    aspect-ratio: auto;
+    height: 100%;
+    width: 100%;
+  }
+}
+
+/* ---------- botões ---------- */
+.tpl-oficina .fx-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  font-family: var(--font-oficina-display), "Archivo", system-ui, sans-serif;
+  font-weight: 700;
+  font-stretch: 92%;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.8125rem;
+  padding: 1.0625rem 1.75rem;
+  min-height: 54px;
+  line-height: 1;
+  text-align: center;
+  transition: transform 0.3s var(--ease-out-soft), box-shadow 0.35s var(--ease-out-soft),
+    background-color 0.3s var(--ease-out-soft), border-color 0.3s var(--ease-out-soft),
+    color 0.3s var(--ease-out-soft);
+}
+
+.tpl-oficina .fx-btn:active {
+  transform: translateY(1px);
+}
+
+/* primário — chama (vermelho) com brasa dourada */
+.tpl-oficina .fx-btn-flame {
+  background: linear-gradient(168deg, #ef4023 0%, #d4271a 46%, #a81c0f 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 168, 120, 0.38);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 14px 34px -18px rgba(224, 48, 30, 0.85),
+    inset 0 1px 0 rgba(255, 220, 190, 0.28);
+}
+.tpl-oficina .fx-btn-flame:hover {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 18px 44px -16px rgba(224, 48, 30, 0.95),
+    0 0 0 1px rgba(243, 183, 63, 0.35), inset 0 1px 0 rgba(255, 220, 190, 0.35);
+  transform: translateY(-2px);
+}
+
+/* ouro sólido */
+.tpl-oficina .fx-btn-gold {
+  background: linear-gradient(168deg, #ffdd92 0%, #f3b73f 48%, #c98a1c 100%);
+  color: #14100a;
+  border: 1px solid rgba(255, 232, 172, 0.55);
+  box-shadow: 0 14px 34px -20px rgba(243, 183, 63, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.tpl-oficina .fx-btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 42px -18px rgba(243, 183, 63, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* contorno */
+.tpl-oficina .fx-btn-ghost {
+  background: rgba(255, 255, 255, 0.02);
+  color: #f6f6f7;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.tpl-oficina .fx-btn-ghost:hover {
+  border-color: rgba(243, 183, 63, 0.6);
+  color: #ffe7a3;
+  background: rgba(243, 183, 63, 0.06);
+  transform: translateY(-2px);
+}
+
+/* ---------- fundo: camada de reserva (sem WebGPU) ---------- */
+.tpl-oficina .fx-backdrop-css {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 85% at 50% -12%, rgba(243, 183, 63, 0.11), transparent 58%),
+    radial-gradient(80% 60% at 84% 8%, rgba(224, 48, 30, 0.08), transparent 62%),
+    radial-gradient(70% 55% at 8% 96%, rgba(47, 116, 232, 0.07), transparent 64%),
+    linear-gradient(180deg, #08080a 0%, #050506 42%, #08080a 100%);
+}
+
+/* Tudo que é conteúdo pinta ACIMA das duas camadas de fundo.
+   ⚠️ Z-index NEGATIVO seria o caminho curto e está errado aqui: `.tpl-oficina`
+   cria contexto de empilhamento (`isolation`), então um filho em -1 iria para
+   trás do fundo opaco do próprio wrapper e sumiria — no projeto de origem
+   funcionava porque o pai era o `body`. */
+.tpl-oficina .fx-layer {
+  position: relative;
+  z-index: 1;
+}
+
+/* arcos concêntricos do banner, em CSS */
+.tpl-oficina .fx-arcs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: repeating-radial-gradient(
+    circle at 50% 42%,
+    rgba(243, 183, 63, 0.075) 0px,
+    rgba(243, 183, 63, 0.075) 1px,
+    transparent 1px,
+    transparent 74px
+  );
+  mask-image: radial-gradient(closest-side, #000 42%, transparent 100%);
+  -webkit-mask-image: radial-gradient(closest-side, #000 42%, transparent 100%);
+}
+
+/* ruído fino de filme */
+.tpl-oficina .fx-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+}
+
+/* ---------- utilidades ---------- */
+.tpl-oficina .fx-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: var(--shell-x);
+}
+
+.tpl-oficina .fx-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.tpl-oficina .fx-sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -140%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.85s var(--ease-out-soft);
+  pointer-events: none;
+}
+.tpl-oficina .fx-sheen:hover::after {
+  left: 150%;
+}
+
+/* estado inicial dos blocos animados (o GSAP liga depois) */
+.tpl-oficina.js-reveal [data-reveal] {
+  opacity: 0;
+}
+
+/* skip link */
+.tpl-oficina .fx-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+}
+.tpl-oficina .fx-skip:focus {
+  left: 1rem;
+  top: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--gold-core);
+  color: #0a0a0c;
+  font-weight: 700;
+}
+
+/* Pulso do botão flutuante do WhatsApp.
+   Anima SOMENTE box-shadow: transform num elemento `fixed` escaparia da
+   viewport e abriria rolagem horizontal no celular. */
+@keyframes tplOficinaZapGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(47, 208, 106, 0.32);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(47, 208, 106, 0);
+  }
+}

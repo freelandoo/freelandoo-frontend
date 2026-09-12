@@ -9,7 +9,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { fetchPublicSiteBySlug } from "@/lib/community-site"
+import { fetchPublicSiteBySlug, platformTemplateLinks } from "@/lib/community-site"
+import { templateFor } from "@/components/site-templates/registry"
 import { SitePageView } from "./site-page-view"
 
 export const revalidate = 600
@@ -30,15 +31,37 @@ type Props = { params: Promise<{ slug: string; page: string }> }
  */
 async function load(slugParam: string, pageParam: string) {
   const site = await fetchPublicSiteBySlug(slugParam)
-  if (!site || site.locked || !site.config) return null
+  if (!site || site.locked) return null
+
+  // ⚠️ O TEMA É CONSULTADO ANTES DO CANVAS. Num site gerenciado `config` está
+  // vazio, então perguntar primeiro ao canvas devolveria "não existe" para toda
+  // sub-página — as dez páginas do cliente dariam 404 sem um único erro.
+  const tpl = templateFor(site.template?.slug)
+  if (tpl && site.template) {
+    const page = tpl.resolvePage(site.template.data, pageParam)
+    return page ? ({ kind: "template", site, tpl, data: site.template.data, page } as const) : null
+  }
+  // Tema que este deploy não conhece: nada a desenhar, e o canvas abaixo está
+  // vazio — cai no `null`, que a rota trata como página inexistente.
+  if (site.template) return null
+
+  if (!site.config) return null
   const page = site.config.pages?.find((p) => p.slug === pageParam && p.enabled)
-  return page ? { site, page } : null
+  return page ? ({ kind: "canvas", site, page } as const) : null
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, page: pageSlug } = await params
   const found = await load(slug, pageSlug)
   if (!found) return { title: "Página não encontrada" }
+
+  if (found.kind === "template") {
+    return found.tpl.metadata({
+      data: found.data,
+      links: platformTemplateLinks(found.site, slug),
+      page: found.page,
+    })
+  }
 
   const { site, page } = found
   const siteName = site.config?.siteName || site.community.display_name
@@ -65,6 +88,28 @@ export default async function CommunitySiteSubPage({ params }: Props) {
   const { slug, page: pageSlug } = await params
   const found = await load(slug, pageSlug)
   if (!found) notFound()
+
+  if (found.kind === "template") {
+    const Site = found.tpl.Site
+    return (
+      <main className="fl-sharp min-h-[100dvh]">
+        <Site
+          data={found.data}
+          links={platformTemplateLinks(found.site, slug)}
+          page={found.page}
+        />
+
+        <footer className="border-t-2 border-[#0B0B0D] bg-[#0B0B0D] px-5 py-6 text-center md:px-10">
+          <Link
+            href={`/comunidades/${found.site.id_profile}`}
+            className="text-[10px] font-extrabold tracking-[0.16em] text-[#9A938A] uppercase hover:text-[#F2B705]"
+          >
+            {found.site.community.display_name} · feito com Freelandoo
+          </Link>
+        </footer>
+      </main>
+    )
+  }
 
   const { site, page } = found
 
