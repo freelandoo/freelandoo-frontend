@@ -37,8 +37,31 @@ import {
 import { getToken } from "@/lib/auth"
 import { SiteSwapModal, type OfferSummary, type SiteOffer } from "./site-swap-modal"
 
-/** O tema que este painel sabe oferecer. Tema novo entra aqui e no backend. */
+/**
+ * O tema DE DADOS que este painel monta a partir do canvas do construtor.
+ * Tema novo desse tipo entra aqui e no backend.
+ */
 const TEMPLATE = "oficina-local"
+
+/**
+ * Temas AUTORAIS — o site inteiro mora no código do tema.
+ *
+ * ⚠️ ELES NÃO PASSAM PELO RASCUNHO. O fluxo acima converte o canvas do
+ * construtor em `data` para um tema de dados; num tema autoral não há `data`
+ * nenhum a montar (o `normalize` do backend devolve `{}`), e exigir rascunho
+ * deixaria o botão desabilitado para sempre, sem dizer por quê.
+ *
+ * ⚠️ ESTA LISTA É ESPELHO DO REGISTRO (`components/site-templates/registry.ts`
+ * e `src/utils/siteTemplates.js`). Um slug daqui que não exista lá é recusado
+ * pelo backend — em voz alta, e não em silêncio.
+ */
+const AUTORAIS: { slug: string; label: string; hint: string }[] = [
+  {
+    slug: "ricardo-fogoes",
+    label: "Ricardo Fogões",
+    hint: "15 páginas · conserto de fogões, Aguaí e região",
+  },
+]
 
 type Warning = { code: string; detail: string }
 
@@ -281,6 +304,24 @@ export function SiteReadyPanel({
     const r = await admin(`/${idProfile}/offer`, {
       method: "PUT",
       body: JSON.stringify({ template: TEMPLATE, data: draft.data }),
+    })
+    setBusy(null)
+    if (r.error) return setErro(r.error)
+    await load()
+  }
+
+  /**
+   * Reserva um tema autoral.
+   *
+   * Manda `data: {}` de propósito: o conteúdo é do código do tema, e mandar
+   * qualquer outra coisa seria gravar uma segunda verdade que nada lê.
+   */
+  async function reservarAutoral(slug: string) {
+    setBusy("reservar:" + slug)
+    setErro("")
+    const r = await admin(`/${idProfile}/offer`, {
+      method: "PUT",
+      body: JSON.stringify({ template: slug, data: {} }),
     })
     setBusy(null)
     if (r.error) return setErro(r.error)
@@ -786,6 +827,36 @@ export function SiteReadyPanel({
                     </p>
                   </>
                 )}
+
+                {/* ⚠️ FORA DO `draft`: tema autoral não tem rascunho a montar,
+                    e prendê-lo à conversão do canvas deixaria o botão morto. */}
+                {AUTORAIS.length > 0 ? (
+                  <div className="mt-4 border-t-2 border-[#0B0B0D] pt-3">
+                    <p className="text-[10px] font-extrabold tracking-[0.14em] text-[#9A938A] uppercase">
+                      {t("readyAuthored", "Site autoral pronto")}
+                    </p>
+                    {AUTORAIS.map((a) => (
+                      <button
+                        key={a.slug}
+                        type="button"
+                        onClick={() => reservarAutoral(a.slug)}
+                        disabled={!!busy}
+                        className="mt-2 flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] px-3 py-2.5 text-[11px] font-extrabold tracking-[0.12em] uppercase disabled:opacity-50"
+                        style={{ background: accent, color: "#0B0B0D" }}
+                      >
+                        {busy === "reservar:" + a.slug ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {a.label}
+                      </button>
+                    ))}
+                    <p className="mt-2 text-[11px] leading-snug text-[#9A938A]">
+                      {AUTORAIS.map((a) => a.hint).join(" · ")}
+                    </p>
+                  </div>
+                ) : null}
               </>
             )}
           </div>

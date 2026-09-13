@@ -1,0 +1,453 @@
+/* Tema `ricardo-fogoes` — a folha do site autoral.
+ *
+ * ⚠️ TUDO ESCOPADO EM `.tpl-ricardo`. No projeto de origem estas regras eram
+ * globais (lá era o site inteiro); aqui elas convivem com a Freelandoo, e uma
+ * regra solta atravessa o site todo — o sintoma apareceria numa tela que
+ * ninguém relacionaria ao site de um cliente.
+ *
+ * ⚠️ AS CORES DEIXARAM DE SER TOKENS DO TAILWIND (`@theme`) E VIRARAM
+ * VARIÁVEIS (`--rf-*`). `@theme` é GLOBAL por construção: declarado aqui,
+ * criaria utilitários `bg-sheet`/`text-chalk` para a plataforma inteira. Nos
+ * componentes a cor entra como valor arbitrário: `text-[var(--rf-chalk)]`.
+ *
+ * ⚠️ O `@keyframes crown` virou `tplRicardoCrown` — nome de keyframe também
+ * é global, e um `crown` genérico colidiria com qualquer outro do site.
+ *
+ * ⚠️ O `overflow-x: clip` segue no CONTEÚDO (`> main`, `> footer`), nunca no
+ * invólucro: barra fixa, botão flutuante e fundo são IRMÃOS deles, e alguns
+ * navegadores tratam `clip` como recorte de descendente `fixed` — o preço de
+ * perder essa aposta é a barra do site do cliente sumir.
+ */
+
+.tpl-ricardo {
+  /* superfícies — a rampa é cinza-azulada, nunca preta */
+  --rf-sheet-deep: #131518;
+  --rf-sheet: #1e2124;
+  --rf-sheet-up: #24282c;
+  --rf-sheet-hi: #2c3136;
+
+  /* traço */
+  --rf-line: #363d43;
+  --rf-line-mid: #4b545c;
+  --rf-line-hi: #6b767f;
+
+  /* tinta */
+  --rf-chalk: #e6e9eb;
+  --rf-chalk-dim: #99a3aa;
+  /* ⚠️ Medido, não escolhido a olho. A anotação (`.note`) é texto de 11px,
+  ou seja texto NORMAL para a régua de contraste — o tom anterior
+  (#6d767d) dava 3,50:1 sobre a prancha e reprovava em AA. Este dá
+  5,30:1 sobre `sheet` e 4,73:1 sobre `sheet-up`, que é o fundo mais
+  claro em que ele aparece. A hierarquia continua de pé porque a
+  anotação já é mono, caixa alta e espaçada — a cor não era o que a
+  separava do texto corrido. */
+  --rf-chalk-faint: #8b959d;
+
+  /* chama regulada */
+  --rf-flame: #1e6fe8;
+  --rf-flame-hi: #8fd3ff;
+  --rf-flame-deep: #123f85;
+
+  /* calor / defeito */
+  --rf-ember: #ff6b1a;
+  --rf-ember-deep: #b8430b;
+
+  --rf-display: var(--rf-anybody), "Arial Narrow", system-ui, sans-serif;
+  --rf-body: var(--rf-plex), system-ui, sans-serif;
+  --rf-mono: var(--rf-plex-mono), ui-monospace, monospace;
+
+  /* uma curva só no site inteiro — saída suave, sem elástico */
+  --rf-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tpl-ricardo {
+  color-scheme: dark;
+  /* margem da prancha: o conteúdo nunca encosta na borda do papel */
+  --sheet-pad: 1.25rem;
+  --datum: 1.25rem;
+}
+
+@media (min-width: 768px) {
+.tpl-ricardo {
+    --sheet-pad: 2.5rem;
+    --datum: 2.5rem;
+  }
+}
+
+/* Prancha não tem canto arredondado. A exceção é o traço: linha técnica
+   tem ponta redonda, e é ela que separa isto de um jornal. */
+.tpl-ricardo *,
+.tpl-ricardo *::before,
+.tpl-ricardo *::after {
+  border-radius: 0;
+}
+
+.tpl-ricardo {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  background: var(--rf-sheet);
+}
+
+.tpl-ricardo {
+  background: var(--rf-sheet);
+  color: var(--rf-chalk);
+  font-family: var(--rf-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ⚠️ O recorte do eixo X vai no CONTEÚDO, nunca no invólucro.
+   Barra fixa, botão flutuante e o canvas do fundo são IRMÃOS do main:
+   alguns navegadores tratam `clip` como recorte de descendente `fixed`, e
+   o preço de perder essa aposta é a barra do site sumir.
+   Sem recorte nenhum, os reveals laterais abrem rolagem horizontal no
+   celular ANTES de a animação rodar. */
+.tpl-ricardo > main,
+.tpl-ricardo > footer {
+  overflow-x: clip;
+}
+
+.tpl-ricardo ::selection {
+  background: var(--rf-flame);
+  color: #fff;
+}
+
+/* Foco visível e com a forma do resto: retângulo, não anel arredondado. */
+.tpl-ricardo :focus-visible {
+  outline: 2px solid var(--rf-flame-hi);
+  outline-offset: 3px;
+}
+
+/* ==========================================================================
+   TIPOGRAFIA
+   O display é variável em LARGURA. Isso não é enfeite: a manchete abre
+   larga no desktop e comprime no celular sem trocar de tamanho, que é
+   como uma peça de sinalização industrial se comporta de verdade.
+   ========================================================================== */
+.tpl-ricardo .d-xl,
+.tpl-ricardo .d-lg,
+.tpl-ricardo .d-md,
+.tpl-ricardo .d-sm {
+  font-family: var(--rf-display);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+}
+
+.tpl-ricardo .d-xl {
+  /* Teto em 6rem e não 7.5: a 7.5 a manchete do hero quebrava em QUATRO
+     linhas e empurrava o botão de WhatsApp para a beira da dobra num
+     laptop. Num site cujo trabalho é fazer o telefone tocar, manchete
+     maior que o botão é troca ruim. */
+  font-size: clamp(2.75rem, 8vw, 6rem);
+  font-stretch: 112%;
+}
+
+.tpl-ricardo .d-lg {
+  font-size: clamp(2rem, 5.5vw, 3.75rem);
+  font-stretch: 108%;
+}
+
+.tpl-ricardo .d-md {
+  font-size: clamp(1.5rem, 3.2vw, 2.25rem);
+  font-stretch: 105%;
+  line-height: 1;
+}
+
+.tpl-ricardo .d-sm {
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  font-stretch: 102%;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+.tpl-ricardo .d-xl {
+    font-stretch: 88%;
+  }
+}
+
+@media (max-width: 640px) {
+.tpl-ricardo .d-lg {
+    font-stretch: 94%;
+  }
+}
+
+/* Anotação: a fala da prancha. Cota, número de peça, referência de corte.
+   Só aparece ligada a um desenho ou a um dado técnico — nunca como
+   rótulo genérico em cima de um título. */
+.tpl-ricardo .note {
+  font-family: var(--rf-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--rf-chalk-faint);
+  text-transform: uppercase;
+}
+
+.tpl-ricardo .prose-sheet p {
+  max-width: 68ch;
+  color: var(--rf-chalk-dim);
+}
+
+.tpl-ricardo .prose-sheet p + p {
+  margin-top: 1.15rem;
+}
+
+.tpl-ricardo .prose-sheet strong {
+  color: var(--rf-chalk);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   DEVICES DE PRANCHA
+   Cada um carrega informação. Nenhum é decoração.
+   ========================================================================== */
+/* Datum: a vertical de referência. Todo conteúdo nasce alinhado nela. */
+.tpl-ricardo .datum {
+  position: relative;
+  padding-left: calc(var(--datum) + 1rem);
+}
+
+.tpl-ricardo .datum::before {
+  content: "";
+  position: absolute;
+  left: var(--datum);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--rf-line) 8%,
+    var(--rf-line) 92%,
+    transparent
+  );
+}
+
+/* Marca de seção: o tique que prende o título ao datum. */
+.tpl-ricardo .tick {
+  position: absolute;
+  left: calc(var(--datum) * -1 - 1rem);
+  top: 0.75em;
+  width: calc(var(--datum) + 0.5rem);
+  height: 1px;
+  background: var(--rf-line-mid);
+}
+
+/* Linha de cota: usada onde existe distância de verdade (km até a cidade). */
+.tpl-ricardo .dim {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--rf-chalk-faint);
+}
+
+.tpl-ricardo .dim::before,
+.tpl-ricardo .dim::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--rf-line);
+}
+
+/* Hachura: preenchimento de corte. Só no que representa material sólido. */
+.tpl-ricardo .hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--rf-line) 0 1px,
+    transparent 1px 7px
+  );
+}
+
+/* ==========================================================================
+   TRAÇO QUE SE DESENHA
+   O comprimento real de cada caminho é medido em JS (getTotalLength) e
+   escrito em --len. O CSS só interpola o offset.
+   ========================================================================== */
+.tpl-ricardo .draw path,
+.tpl-ricardo .draw line,
+.tpl-ricardo .draw circle,
+.tpl-ricardo .draw polyline,
+.tpl-ricardo .draw rect {
+  stroke-dasharray: var(--len, 1200);
+  stroke-dashoffset: var(--len, 1200);
+}
+
+.tpl-ricardo .draw.is-drawn path,
+.tpl-ricardo .draw.is-drawn line,
+.tpl-ricardo .draw.is-drawn circle,
+.tpl-ricardo .draw.is-drawn polyline,
+.tpl-ricardo .draw.is-drawn rect {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.4s var(--rf-ease) var(--delay, 0s);
+}
+
+/* ==========================================================================
+   REVEAL
+   UM gesto só no site inteiro: o conteúdo sobe 14px e aparece. Nada de
+   escala, nada de blur, nada por card. Reveal é resposta ao scroll da
+   pessoa, não animação de vitrine.
+   ========================================================================== */
+.tpl-ricardo .rise {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+}
+
+.tpl-ricardo .rise.is-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s var(--rf-ease) var(--delay, 0s),
+    transform 0.7s var(--rf-ease) var(--delay, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+.tpl-ricardo {
+    scroll-behavior: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+.tpl-ricardo *,
+.tpl-ricardo *::before,
+.tpl-ricardo *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+.tpl-ricardo .rise {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+.tpl-ricardo .draw path,
+.tpl-ricardo .draw line,
+.tpl-ricardo .draw circle,
+.tpl-ricardo .draw polyline,
+.tpl-ricardo .draw rect {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ==========================================================================
+   BOTÕES
+   Dois pesos: o que resolve agora (WhatsApp / ligar) e o que agenda.
+   O laranja NÃO é usado em botão — ele é reservado a calor e defeito.
+   ========================================================================== */
+.tpl-ricardo .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  font-family: var(--rf-display);
+  font-weight: 700;
+  font-stretch: 104%;
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.2s var(--rf-ease),
+    border-color 0.2s var(--rf-ease),
+    color 0.2s var(--rf-ease),
+    box-shadow 0.2s var(--rf-ease);
+}
+
+.tpl-ricardo .btn-primary {
+  background: var(--rf-flame);
+  color: #fff;
+  border-color: var(--rf-flame);
+}
+
+.tpl-ricardo .btn-primary:hover {
+  background: #1a60cc;
+  box-shadow: 0 0 0 3px rgb(30 111 232 / 0.22);
+}
+
+.tpl-ricardo .btn-ghost {
+  background: transparent;
+  color: var(--rf-chalk);
+  border-color: var(--rf-line-mid);
+}
+
+.tpl-ricardo .btn-ghost:hover {
+  border-color: var(--rf-line-hi);
+  background: var(--rf-sheet-up);
+}
+
+.tpl-ricardo .btn-wa {
+  background: var(--rf-sheet-up);
+  color: var(--rf-chalk);
+  border-color: var(--rf-line-mid);
+}
+
+.tpl-ricardo .btn-wa:hover {
+  border-color: #25d366;
+  color: #fff;
+  box-shadow: 0 0 0 3px rgb(37 211 102 / 0.16);
+}
+
+.tpl-ricardo a,
+.tpl-ricardo button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ==========================================================================
+   IGNIÇÃO
+   A coroa acende saída por saída e para. Roda UMA vez, no carregamento.
+   É a única animação do site que não responde a um gesto da pessoa.
+
+   ⚠️ O RITMO É O DA PEÇA, e o número que manda nele é o INTERVALO entre
+   duas saídas (`--i * 85ms`), não a duração de cada uma. A 42ms o anel
+   inteiro fechava em ~1s: o olho não acompanhava a chama dar a volta, via
+   só a coroa "piscar" acesa de uma vez — que é o mesmo que não animar.
+   A 85ms a volta leva ~2s e o último jato assenta perto dos 3,3s.
+
+   Quem mexer aqui mexe TAMBÉM na rampa `warm` do burner-flame.tsx: é ela
+   que traz a chama de GPU junto, e as duas têm que terminar por perto.
+   Descoladas, o envelope externo chega antes do cone interno acender —
+   fogo antes do bico, que é o contrário de como um queimador acende.
+
+   Sem filtro e sem brilho: 24 caminhos com drop-shadow animado obrigam o
+   compositor a rasterizar de novo a cada quadro, e o custo aparece como
+   rolagem travada no primeiro segundo da página — justamente quando o
+   navegador está medindo o LCP.
+   ========================================================================== */
+.tpl-ricardo .ignite path {
+  opacity: 0;
+  animation: tplRicardoCrown 0.9s var(--rf-ease) forwards;
+  animation-delay: calc(var(--i) * 85ms + 480ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+.tpl-ricardo .ignite path {
+    opacity: 0.82;
+    animation: none;
+  }
+}
+
+@keyframes tplRicardoCrown {
+  0% {
+    opacity: 0;
+    stroke-width: 1;
+  }
+  60% {
+    opacity: 1;
+    stroke-width: 5;
+  }
+  100% {
+    opacity: 0.82;
+    stroke-width: 4;
+  }
+}
+
+

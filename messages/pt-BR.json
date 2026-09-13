@@ -5748,7 +5748,8 @@
     "readyRequestBadge": "O cliente pediu um site",
     "readyRequestDismiss": "Tirar da fila",
     "publishLockedManaged": "Publicar site · Plano do site",
-    "swapPublishKeep": "Publicar, tirar do ar e escolher o endereço continuam sendo seus. O que passa para a gente é escrever o conteúdo."
+    "swapPublishKeep": "Publicar, tirar do ar e escolher o endereço continuam sendo seus. O que passa para a gente é escrever o conteúdo.",
+    "readyAuthored": "Site autoral pronto"
   },
   "SiteBooking": {
     "back": "Voltar ao site",

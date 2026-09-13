@@ -6334,7 +6334,8 @@
     "readyRequestBadge": "The client requested a site",
     "readyRequestDismiss": "Remove from queue",
     "publishLockedManaged": "Publish site · Site plan",
-    "swapPublishKeep": "Publishing, taking it down and choosing the address stay yours. What moves to us is writing the content."
+    "swapPublishKeep": "Publishing, taking it down and choosing the address stay yours. What moves to us is writing the content.",
+    "readyAuthored": "Ready authored site"
   },
   "SiteBooking": {
     "back": "Back to site",

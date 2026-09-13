@@ -32,6 +32,12 @@ import {
   resolveOficinaPage,
   type OficinaPage,
 } from "./oficina-local"
+import {
+  RicardoFogoesSite,
+  ricardoMetadata,
+  resolveRicardoPage,
+  type RicardoPage,
+} from "./ricardo-fogoes"
 
 /**
  * O que a rota entrega ao tema.
@@ -75,8 +81,25 @@ const OFICINA_LOCAL: TemplateEntry = {
     }),
 }
 
+/**
+ * Tema AUTORAL, escrito para UM cliente: todo o conteúdo mora no código dele.
+ *
+ * ⚠️ Ele ignora `data` de propósito — o documento é `{}` (o `normalize` do
+ * backend devolve vazio). Ligar qualquer entrada de dados aqui acrescentaria
+ * conteúdo que o cliente não aprovou.
+ */
+const RICARDO_FOGOES: TemplateEntry = {
+  slug: "ricardo-fogoes",
+  Site: ({ links, page }) =>
+    RicardoFogoesSite({ links, page: (page as RicardoPage | null) ?? null }),
+  resolvePage: (_data, slug) => resolveRicardoPage(slug),
+  metadata: ({ links, page }) =>
+    ricardoMetadata({ links, page: (page as RicardoPage | null) ?? null }),
+}
+
 const TEMPLATES: Record<string, TemplateEntry> = {
   "oficina-local": OFICINA_LOCAL,
+  "ricardo-fogoes": RICARDO_FOGOES,
 }
 
 /**

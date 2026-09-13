@@ -119,10 +119,21 @@ export type OficinaLocalData = {
  * discriminada por `slug` — e o registro de componentes é que decide quem
  * desenha, sem `if` espalhado pelas rotas.
  */
-export type SiteTemplate = {
-  slug: "oficina-local"
-  data: OficinaLocalData
-}
+export type SiteTemplate =
+  | {
+      slug: "oficina-local"
+      data: OficinaLocalData
+    }
+  /**
+   * Tema AUTORAL de um cliente: o conteúdo mora no código do tema, não no
+   * documento. `data` é `null` porque não há nada a gravar — e declarar
+   * assim é o que impede alguém de tentar alimentá-lo por fora achando que
+   * mudaria a página.
+   */
+  | {
+      slug: "ricardo-fogoes"
+      data: null
+    }
 
 /**
  * O endereço do site nos TRÊS lugares em que ele é servido.
