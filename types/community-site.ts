@@ -10,6 +10,8 @@
 // Ao criar uma seção nova: adicionar o kind em SITE_SECTION_KINDS, o tipo dos
 // dados em SiteSectionData e o normalizador correspondente no backend.
 
+import type { SiteTemplate } from "./site-template"
+
 export type SiteColorTheme = {
   primary: string
   background: string
@@ -424,8 +426,20 @@ export type CommunitySiteResponse = {
    */
   has_offer?: boolean
 
-  /** O tema autoral que desenha, quando gerenciado. `null` = canvas de seções. */
-  template?: string | null
+  /**
+   * O tema autoral que desenha, quando gerenciado. `null` = canvas de seções.
+   *
+   * ⚠️ É O OBJETO `{ slug, data }`, e não o slug solto — este tipo declarava
+   * `string` e o backend sempre devolveu o objeto (`toTemplate` em
+   * CommunitySiteService). A mentira era inofensiva enquanto ninguém lia o
+   * campo; no primeiro leitor ela vira `undefined` em tempo de execução com o
+   * typecheck passando, que é o pior jeito de errar.
+   *
+   * ⚠️ NÃO CONFUNDIR com o `template` do estado do painel de site pronto
+   * (`readyState`), que é o slug em string — endpoints diferentes, formas
+   * diferentes, de propósito: lá o painel só escreve o nome do tema na tela.
+   */
+  template?: SiteTemplate | null
 }
 
 

@@ -110,6 +110,14 @@ export function CommunitySiteBuilder({
    * aconteceu no primeiro teste desta feature.
    */
   const [hasOffer, setHasOffer] = useState(false)
+  /**
+   * O tema do site gerenciado.
+   *
+   * Guardado separado de `managed` porque as duas perguntas são diferentes:
+   * `managed` diz que a plataforma escreve o site, e o tema diz QUAL site é.
+   * Sem ele a prancheta sabe que não deve editar, mas não sabe o que desenhar.
+   */
+  const [templateSlug, setTemplateSlug] = useState<string | null>(null)
 
 
   const [loading, setLoading] = useState(true)
@@ -236,6 +244,7 @@ export function CommunitySiteBuilder({
         }
         setLocked(!!data.locked)
         setManaged(!!data.managed)
+        setTemplateSlug(data.template?.slug || null)
         setHasOffer(!!data.has_offer)
 
         setIsPublished(!!data.is_published)
@@ -1067,6 +1076,38 @@ export function CommunitySiteBuilder({
                   }
             }
           >
+            {managed && templateSlug ? (
+              /*
+                O SITE PRONTO É DESENHADO PELO TEMA, NÃO PELO CANVAS.
+                
+                ⚠️ Sem isto o líder que aceitava o site pronto continuava vendo
+                aqui o site ANTIGO dele — o canvas fica guardado de propósito,
+                e a prancheta seguia desenhando aquilo. Ele aceitava uma coisa
+                e via outra, sem nada na tela dizer que não era o que o público
+                veria.
+
+                ⚠️ EM <iframe>, E NÃO MONTADO AQUI DENTRO. O tema tem barra
+                `fixed`, botão flutuante e fundo de tela cheia; a prancheta usa
+                `transform` no zoom, e ancestral com transform deixa de ser a
+                janela para um filho `fixed` — as três peças iriam parar por
+                cima da barra de ferramentas. No iframe cada uma tem uma janela
+                de verdade, da largura do aparelho escolhido, e os reveals de
+                rolagem e a barra que gruda no topo se comportam como no site
+                publicado.
+
+                A altura é grande e fixa porque quem rola é o iframe: medir o
+                conteúdo de dentro exigiria postMessage, e o preço seria um
+                canal a mais para manter em sincronia por um número que o
+                próprio iframe já administra rolando.
+              */
+              <iframe
+                key={templateSlug}
+                src={`/site-preview/${idProfile}`}
+                title={t("managedPreview", "Pré-visualização do site pronto")}
+                className="w-full border-0 bg-[#0B0B0D]"
+                style={{ height: "calc(100vh - 180px)", minHeight: 520 }}
+              />
+            ) : (
             <SiteCanvas
               // ⚠️ Remonta ao trocar de página. A seleção de seção e os estados
               // de arraste do canvas guardam IDs da pilha que estava na tela; a
@@ -1117,6 +1158,7 @@ export function CommunitySiteBuilder({
               pages={pages}
               activePageSlug={activePage?.slug || null}
             />
+            )}
           </div>
         </div>
       </div>

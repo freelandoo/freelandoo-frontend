@@ -6335,7 +6335,8 @@
     "readyRequestDismiss": "Remove from queue",
     "publishLockedManaged": "Publish site · Site plan",
     "swapPublishKeep": "Publishing, taking it down and choosing the address stay yours. What moves to us is writing the content.",
-    "readyAuthored": "Ready authored site"
+    "readyAuthored": "Ready authored site",
+    "managedPreview": "Ready site preview"
   },
   "SiteBooking": {
     "back": "Back to site",
