@@ -99,8 +99,8 @@ fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
   let aa    = max(fwidth(f * bands) * 1.25, 1e-4);
   let iso   = 1.0 - smoothstep(0.0, aa, dist);
 
-  let base = vec3f(0.118, 0.129, 0.141);
-  let up   = vec3f(0.196, 0.220, 0.240);
+  let base = vec3f(0.082, 0.090, 0.102);
+  let up   = vec3f(0.161, 0.184, 0.204);
   var col  = mix(base, up, smoothstep(0.30, 0.88, f));
 
   col = col + vec3f(0.15, 0.19, 0.23) * iso * 0.44;
@@ -172,7 +172,7 @@ export default function ThermalField() {
             colorAttachments: [
               {
                 view: ctx.getCurrentTexture().createView(),
-                clearValue: { r: 0.118, g: 0.129, b: 0.141, a: 1 },
+                clearValue: { r: 0.082, g: 0.090, b: 0.102, a: 1 },
                 loadOp: "clear",
                 storeOp: "store",
               },
@@ -204,7 +204,7 @@ export default function ThermalField() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(120% 80% at 50% 100%, #22282e 0%, #1e2124 46%, #191c1f 100%)",
+            "radial-gradient(120% 80% at 50% 100%, #191f25 0%, #15171a 46%, #101316 100%)",
         }}
       />
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
@@ -213,7 +213,7 @@ export default function ThermalField() {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(to bottom, rgb(30 33 36 / 0.42), rgb(30 33 36 / 0.18) 42%, rgb(30 33 36 / 0.86))",
+            "linear-gradient(to bottom, rgb(21 23 26 / 0.42), rgb(21 23 26 / 0.18) 42%, rgb(21 23 26 / 0.86))",
         }}
       />
     </div>

@@ -43,7 +43,7 @@ export default function SiteHeader({ links }: { links: TemplateLinks }) {
     <header
       className="fixed inset-x-0 top-0 z-40 transition-colors duration-300"
       style={{
-        background: solid ? "rgb(25 28 31 / 0.92)" : "transparent",
+        background: solid ? "rgb(16 19 22 / 0.92)" : "transparent",
         backdropFilter: solid ? "blur(8px)" : undefined,
         borderBottom: `1px solid ${solid ? "var(--rf-line)" : "transparent"}`,
       }}
@@ -128,7 +128,7 @@ export default function SiteHeader({ links }: { links: TemplateLinks }) {
       {open ? (
         <nav
           className="border-t border-[var(--rf-line)] lg:hidden"
-          style={{ background: "rgb(25 28 31 / 0.98)" }}
+          style={{ background: "rgb(16 19 22 / 0.98)" }}
         >
           <ul className="px-[var(--sheet-pad)] py-2">
             {NAV.map((n) => (

@@ -21,10 +21,10 @@
 
 .tpl-ricardo {
   /* superfícies — a rampa é cinza-azulada, nunca preta */
-  --rf-sheet-deep: #131518;
-  --rf-sheet: #1e2124;
-  --rf-sheet-up: #24282c;
-  --rf-sheet-hi: #2c3136;
+  --rf-sheet-deep: #0c0e10;
+  --rf-sheet: #15171a;
+  --rf-sheet-up: #1b1e21;
+  --rf-sheet-hi: #22262a;
 
   /* traço */
   --rf-line: #363d43;
@@ -37,10 +37,10 @@
   /* ⚠️ Medido, não escolhido a olho. A anotação (`.note`) é texto de 11px,
   ou seja texto NORMAL para a régua de contraste — o tom anterior
   (#6d767d) dava 3,50:1 sobre a prancha e reprovava em AA. Este dá
-  5,30:1 sobre `sheet` e 4,73:1 sobre `sheet-up`, que é o fundo mais
-  claro em que ele aparece. A hierarquia continua de pé porque a
-  anotação já é mono, caixa alta e espaçada — a cor não era o que a
-  separava do texto corrido. */
+  5,89:1 sobre `sheet` e 5,49:1 sobre `sheet-up`, que é o fundo mais
+  claro em que ele aparece (medido de novo depois de a rampa escurecer).
+  A hierarquia continua de pé porque a anotação já é mono, caixa alta e
+  espaçada — a cor não era o que a separava do texto corrido. */
   --rf-chalk-faint: #8b959d;
 
   /* chama regulada */
