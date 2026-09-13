@@ -1552,9 +1552,13 @@ export default function PerfilPage() {
     perfil.statuses.some((s) =>
       String(s.desc_status || "").toLowerCase().includes("email")
     )
-  /* O perfil-conta na forma que o headcard entende. `is_paid/is_visible/
-     is_active` vão TRUE porque a conta não passa pelo gate de ativação — sem
-     isso o headcard ofereceria "Ative sua conta" para o próprio dono. */
+  /* O perfil-conta na forma que o headcard entende.
+     ⚠️ `is_user_account: true` é o que diz ao headcard para ISENTAR este perfil
+     do gate de ativação (ver lib/profile/activation). Antes daqui saíam
+     `is_paid/is_visible = true` forçados: funcionava, mas era uma MENTIRA local
+     — e por ser local, `/freelancer/<id>`, que é o MESMO perfil lido do
+     backend, seguia oferecendo "Ative sua conta" ao próprio dono. Agora as duas
+     telas concordam por construção. NÃO voltar a forçar `is_paid` aqui. */
   /* Const simples, não useMemo: este ponto fica DEPOIS dos returns de
      carregamento, e hook depois de early return quebra a ordem dos hooks.
      Nenhum efeito do headcard depende da identidade deste objeto — só de
@@ -1569,8 +1573,7 @@ export default function PerfilPage() {
       desc_category: ap?.category ?? null,
       estado: ap?.estado ?? perfil.estado ?? null,
       municipio: ap?.municipio ?? perfil.municipio ?? null,
-      is_paid: true,
-      is_visible: true,
+      is_user_account: true,
       is_active: true,
       username: perfil.username,
       manifestation: manifestation?.active

@@ -36,6 +36,7 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { HeadcardPills } from "@/components/profile/headcard-pills"
 import { ProfileSwitcher } from "@/components/profile/profile-switcher"
 import { useAccountTools } from "@/components/profile/account-tools"
+import { isAccountProfile, profileIsActivated } from "@/lib/profile/activation"
 
 const DataConnectionsModal = dynamic(
   () => import("@/components/account/DataConnectionsModal").then((m) => m.DataConnectionsModal),
@@ -72,6 +73,8 @@ interface ProfileLike {
   is_paid?: boolean
   is_visible?: boolean
   is_active?: boolean
+  /** Perfil-fantasma da conta (mig 052) — isento do gate de ativação. */
+  is_user_account?: boolean
   social_media?: ProfileSocialLink[] | null
   members_count?: number | null
   username?: string | null
@@ -437,15 +440,22 @@ export function ProfileHeadCard({
     }
   }, [profileId, entityType, followRefreshKey])
 
+  const isAccount = isAccountProfile(profile)
   const isPublished = !!(profile.is_paid && profile.is_visible && profile.is_active)
   const statusBadge = useMemo(() => {
     if (!isOwnProfile || !showStatusBadge) return null
+    // A conta NÃO tem ciclo de publicação: publicado/rascunho/não publicado é o
+    // ciclo do perfil VENDÁVEL. Ela nasce is_paid/is_visible FALSE (mig 052) e
+    // ainda assim é servida ao público (paridade S2), então a régua de cima
+    // responderia "não publicado" para sempre — sobre um perfil que está no ar.
+    // Sem badge, e não um badge verde: aqui não há pergunta a responder.
+    if (isAccount) return null
     if (isPublished)
       return { label: t("statusActive", "ativo"), className: "bg-[#16683f] text-[#ECFDF3]" }
     if (profile.is_paid && !profile.is_visible)
       return { label: t("statusDraftBadge", "rascunho"), className: "bg-[#0B0B0D] text-[#F1EDE2]" }
     return { label: t("statusUnpublished", "não publicado"), className: "bg-[#F2B705] text-[#1A1505]" }
-  }, [isOwnProfile, showStatusBadge, isPublished, profile.is_paid, profile.is_visible, t])
+  }, [isOwnProfile, showStatusBadge, isAccount, isPublished, profile.is_paid, profile.is_visible, t])
 
   const socials = (profile.social_media || []).filter((s) => s.is_active !== false)
   const avatarSrc = avatarOverride || profile.avatar_url || profile.user_avatar || undefined
@@ -937,7 +947,7 @@ export function ProfileHeadCard({
             )}
           </div>
 
-          {isOwnProfile && !profile.is_paid && (
+          {isOwnProfile && !profileIsActivated(profile) && (
             <Link
               href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`}
               className="fl-btn-gold mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full px-4 text-[12px] font-bold uppercase tracking-wider"

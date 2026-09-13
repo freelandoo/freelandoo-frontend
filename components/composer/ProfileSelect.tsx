@@ -17,6 +17,7 @@
 
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { profileIsActivated } from "@/lib/profile/activation"
 
 export interface ProfileLite {
   id_profile: string
@@ -41,7 +42,11 @@ export interface ProfileLite {
 // aconteceu (o post saiu, sumiu do feed geral e ninguém avisou). Errar para
 // mais deste lado esconde um perfil da lista; nunca abre uma porta.
 export function canProfilePublish(p: ProfileLite): boolean {
-  return p.is_user_account === true || p.is_clan === true || p.is_paid === true
+  // `profileIsActivated` já cobre conta-isenta + assinatura ativa; o clan entra
+  // por fora porque a regra dele é outra (criar um já exigiu assinatura). A
+  // isenção da conta mora num lugar só — duas cópias divergiriam no dia em que
+  // uma delas mudasse, e esta tela esconde perfil da lista de publicação.
+  return profileIsActivated(p) || p.is_clan === true
 }
 
 /**

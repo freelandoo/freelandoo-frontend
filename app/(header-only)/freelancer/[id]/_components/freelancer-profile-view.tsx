@@ -58,6 +58,7 @@ import { useActionConsent } from "@/hooks/use-action-consent"
 import { profileAllowsPublicBooking } from "@/lib/booking-public"
 import { RateProfile } from "@/components/profile/rate-profile"
 import { ProfileHeadCard } from "@/components/profile/profile-head-card"
+import { profileIsActivated } from "@/lib/profile/activation"
 import { ShareIconButton } from "@/components/share/share-icon-button"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -840,7 +841,7 @@ export default function FreelancerProfileView({
                   <Briefcase className="h-4 w-4" />
                   {t("menuService", "Serviço")}
                 </DropdownMenuItem>
-                {!isClan && !!profile.is_paid && coursesOn && (
+                {!isClan && profileIsActivated(profile) && coursesOn && (
                   <DropdownMenuItem
                     onSelect={() =>
                       window.dispatchEvent(
@@ -1023,7 +1024,7 @@ export default function FreelancerProfileView({
               profileId={profileId}
               isOwnProfile={isOwnProfile}
               isClan={isClan}
-              isPaid={!!profile.is_paid}
+              isPaid={profileIsActivated(profile)}
               openCreateTrigger={createCourseTrigger}
               clanMembers={isClan ? (members as ProfileServiceEditClanMember[]) : []}
             />
@@ -1817,7 +1818,10 @@ function ProfileCoursesTab({
   const creatingRef = useRef(false)
 
   // Cria um rascunho JÁ vinculado a este perfil e abre o editor. Só o dono de
-  // um perfil pago (não-clan) cria — o backend também exige is_paid.
+  // um perfil ATIVADO (não-clan) cria. `isPaid` chega de profileIsActivated, e
+  // não de `is_paid` cru: o backend isenta o perfil-conta desde a paridade
+  // user≡perfil (CoursesService), e o espelho aqui ainda cobrava assinatura —
+  // escondia a aba de quem o backend já deixava criar curso.
   const canCreate = isOwnProfile && !isClan && isPaid
   const createAndGo = useCallback(async () => {
     if (!canCreate || creatingRef.current) return
