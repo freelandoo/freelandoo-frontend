@@ -91,10 +91,40 @@ const securityHeaders = [
   { key: "Content-Security-Policy-Report-Only", value: cspReportOnly },
 ]
 
+// ⚠️ A PRÉ-VISUALIZAÇÃO DO SITE PRONTO PRECISA SER ENQUADRÁVEL — pela PRÓPRIA
+// origem, e por mais ninguém.
+//
+// O construtor mostra o site gerenciado dentro de um <iframe> (o tema tem barra
+// fixa, botão flutuante e fundo de tela cheia, e cada um precisa de uma janela
+// de verdade). Com o `X-Frame-Options: DENY` global, o navegador recusava o
+// quadro e a tela do cliente ficava com o aviso cinza "a conexão foi recusada"
+// — que parece site fora do ar, e não política de segurança.
+//
+// `SAMEORIGIN` (e `frame-ancestors 'self'`) mantém a proteção contra
+// clickjacking de fora: quem pode enquadrar é o nosso próprio domínio. A rota
+// só existe para o líder e desenha o site dele; enquadrada por terceiros não
+// entregaria nada que o site público já não entregue, mas o padrão continua
+// sendo negar — a exceção é UMA rota, declarada aqui e em nenhum outro lugar.
+const previewHeaders = securityHeaders.map((h) =>
+  h.key === "X-Frame-Options"
+    ? { ...h, value: "SAMEORIGIN" }
+    : h.key === "Content-Security-Policy-Report-Only"
+      ? { ...h, value: cspReportOnly.replace("frame-ancestors 'none'", "frame-ancestors 'self'") }
+      : h
+)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }]
+    return [
+      // ⚠️ TUDO, MENOS a pré-visualização. A exclusão é feita no PADRÃO (e não
+      // por uma segunda regra que sobrescreveria a primeira) porque duas
+      // entradas casando o mesmo caminho deixam a ordem decidir qual vale — e
+      // essa ordem não está escrita em lugar nenhum. Aqui cada caminho casa
+      // com exatamente uma regra.
+      { source: "/:path((?!site-preview).*)", headers: securityHeaders },
+      { source: "/site-preview/:path*", headers: previewHeaders },
+    ]
   },
   // Tree-shaking de barris grandes: framer-motion (29 arquivos) e date-fns não
   // são otimizados por padrão (lucide-react/@radix já são, mas listados por
