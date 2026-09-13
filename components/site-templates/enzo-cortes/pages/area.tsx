@@ -37,7 +37,7 @@ import {
 export default function AreaPage({ links, area }: Ctx & { area: Area }) {
   // A mensagem é a DO BAIRRO — quando não há agendamento, é ela que diz ao
   // Enzo de onde a pessoa está falando sem que ele precise perguntar.
-  const cta = bookingCta(links, area.waMessage);
+  const cta = bookingCta(links);
   // ⚠️ A página NÃO lista a si mesma nos vizinhos. Sem isso, cada página de
   // bairro teria um link para ela própria — que não leva a lugar nenhum e
   // ainda gasta um dos quatro lugares da lista.

@@ -24,7 +24,7 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
   const nav = navFor(links);
   // ⚠️ UM SÓ DECISOR para o botão da barra — ver `bookingCta`. Com serviço
   // reservável ele AGENDA; sem, cai no WhatsApp.
-  const cta = bookingCta(links, "Olá, Enzo! Queria marcar um horário.");
+  const cta = bookingCta(links);
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 24);

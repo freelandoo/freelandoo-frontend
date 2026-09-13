@@ -47,7 +47,7 @@ function Mapa() {
 }
 
 export default function ContatoPage({ links }: Ctx) {
-  const cta = bookingCta(links, "Olá, Enzo! Vi o site e queria marcar um horário.");
+  const cta = bookingCta(links);
   const trilha = [
     { name: "Início", path: links.home },
     { name: "Onde fica", path: pageHref(links, PAGE.contato) },

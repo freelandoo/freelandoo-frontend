@@ -50,7 +50,7 @@ const REGRAS = [
 ];
 
 export default function SobrePage({ links }: Ctx) {
-  const cta = bookingCta(links, "Olá, Enzo! Queria marcar um horário.");
+  const cta = bookingCta(links);
   const trilha = [
     { name: "Início", path: links.home },
     { name: "A barbearia", path: pageHref(links, PAGE.sobre) },

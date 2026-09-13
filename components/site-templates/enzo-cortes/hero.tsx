@@ -76,7 +76,7 @@ export default function Hero({ links }: { links: TemplateLinks }) {
   const destaques = HEADLINE.map((slug) => getService(slug)).filter(
     (s): s is NonNullable<typeof s> => !!s,
   );
-  const cta = bookingCta(links, "Olá, Enzo! Vi o site e queria marcar um horário.");
+  const cta = bookingCta(links);
 
   return (
     <section className="relative overflow-hidden pb-16 pt-24 md:pb-24 md:pt-32">

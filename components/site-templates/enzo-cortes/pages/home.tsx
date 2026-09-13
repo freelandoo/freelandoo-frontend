@@ -30,40 +30,30 @@ import { Btn, Container, FaqList, Note, Panel, Section, SectionHead } from "../u
  *  oferece (escolher, marcar, ir lá), não uma política de atendimento que
  *  ninguém informou.
  *
- *  ⚠️ VIROU FUNÇÃO DE `links` porque o PASSO 2 É O BOTÃO. Como constante, ele
- *  mandava "chame no WhatsApp" enquanto o CTA ao lado dizia "Agendar" — a
- *  mesma página dando duas instruções diferentes para o mesmo gesto. Quem
- *  decide é o MESMO campo do botão (`links.booking`), então os dois não têm
- *  como discordar. */
-function passosFor(temAgendamento: boolean) {
-  return [
+ *  ⚠️ O PASSO 2 É O BOTÃO, e por isso ele fala de AGENDAR e não de mandar
+ *  mensagem. Enquanto dizia "chame no WhatsApp", a mesma página dava duas
+ *  instruções diferentes para o mesmo gesto — o passo mandava escrever e o
+ *  botão ao lado marcava horário. Mexeu no CTA, mexe aqui. */
+const PASSOS = [
   {
     n: "01",
     title: "Escolha o serviço",
     text: "A tabela inteira está aqui em cima, com o valor de cada um e o que dá para pedir. Nenhum preço depende de pacote ou de ser a primeira vez.",
   },
-  temAgendamento
-    ? {
-        n: "02",
-        title: "Marque o horário",
-        text: "Escolha o dia e a hora na agenda e pronto: a cadeira fica reservada no seu nome. Dá para pagar na hora ou no balcão, no dia — no sábado isso faz diferença.",
-      }
-    : {
+  {
     n: "02",
-    title: "Chame no WhatsApp",
-    text: "Diga o que você quer fazer e quando pretende passar. É o jeito de garantir que a cadeira esteja livre quando você chegar — no sábado isso faz diferença.",
+    title: "Marque o horário",
+    text: "Escolha o dia e a hora na agenda e pronto: a cadeira fica reservada no seu nome. Dá para pagar na hora ou no balcão, no dia do atendimento — no sábado isso faz diferença.",
   },
   {
     n: "03",
     title: "Sente na cadeira",
     text: "O corte é combinado antes de a máquina ligar: altura da transição, acabamento, o que fica em cima. Sai dali o corte que dá para manter, não só o que fica bom na primeira hora.",
   },
-  ];
-}
+];
 
 export default function HomePage({ links }: Ctx) {
-  const cta = bookingCta(links, "Olá, Enzo! Queria marcar um horário.");
-  const passos = passosFor(!!links.booking);
+  const cta = bookingCta(links);
   const combinados = SERVICES.filter((s) => s.sumOf?.length);
 
   return (
@@ -142,7 +132,7 @@ export default function HomePage({ links }: Ctx) {
           <SectionHead eyebrow="Como funciona" title="Três passos, sem mistério" />
 
           <ol className="mx-auto mt-14 grid max-w-[60rem] gap-px sm:grid-cols-3" style={{ background: "var(--ec-line-soft)" }}>
-            {passos.map((p, i) => (
+            {PASSOS.map((p, i) => (
               <li
                 key={p.n}
                 className="p-8"

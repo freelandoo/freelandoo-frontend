@@ -143,7 +143,22 @@ export function navFor(links: TemplateLinks) {
 }
 
 /**
- * O CTA PRINCIPAL DO SITE — um lugar só decide se ele AGENDA ou manda mensagem.
+ * A AGENDA DESTE NEGÓCIO NA FREELANDOO.
+ *
+ * ⚠️ ELA EXISTE INDEPENDENTE DO SITE ESTAR PUBLICADO, e é isso que a torna o
+ * destino certo: a página de agendamento DO SITE (`/c/<slug>/agendar`) só passa
+ * a existir quando o site vai ao ar, porque ela é lida pelo endereço público.
+ * A agenda do perfil está de pé desde que há serviço cadastrado — e é a mesma
+ * agenda, os mesmos horários e o mesmo pagamento.
+ *
+ * É o perfil-conta do Enzo: a vitrine de serviços lê o roster (líder + equipe),
+ * e o líder entra por ele.
+ */
+export const FREELANDOO_AGENDA =
+  "https://www.freelandoo.com.br/freelancer/1b13008c-648a-4c96-8b14-bd9a8604dcb6";
+
+/**
+ * O CTA PRINCIPAL DO SITE — um lugar só, e ele SEMPRE agenda.
  *
  * ⚠️ ESCRITO À MÃO EM CADA PÁGINA, ELE DIVERGE. São OITO botões (barra, banner,
  * home, tabela de preços, página de serviço, página de bairro, sobre, contato),
@@ -151,23 +166,26 @@ export function navFor(links: TemplateLinks) {
  * conversão diferentes na mesma visita — e ninguém percebe, porque os dois
  * funcionam.
  *
- * ⚠️ `links.booking` É NULO QUANDO NÃO HÁ SERVIÇO RESERVÁVEL, e é isso que
- * torna a queda para o WhatsApp obrigatória, não um capricho. Quem decide é
- * `bookingFor` (em `lib/community-site.ts`, do lado da plataforma): sem
- * serviço com preço, a página de agendamento abriria o passo 1 VAZIO. Um botão
- * "Agendar" que leva a uma lista vazia é pior que um botão de WhatsApp — ele
- * gasta o clique de quem estava decidido.
+ * ⚠️ NÃO EXISTE QUEDA PARA O WHATSAPP AQUI, e é decisão do Alex (2026-09-13):
+ * "é só agendar, não tem nada de whatsapp, vai pra agenda da Freelandoo". O
+ * WhatsApp continua no site — mas só no botão verde flutuante do canto, que é
+ * conversa, não reserva.
  *
- * No projeto solto o campo é nulo por construção (não existe plataforma para
- * agendar), então lá todos os botões continuam sendo os de sempre. É a MESMA
- * função nas duas árvores, e é ela que mantém as duas honestas.
+ * ⚠️ O QUE MUDA É O DESTINO, NUNCA O RÓTULO. Com o site publicado, agendar é
+ * uma página DO PRÓPRIO SITE (`links.booking`) e a pessoa não sai dali. Sem
+ * publicar, esse endereço ainda não existe — e em vez de o botão mentir ou
+ * sumir, ele leva à agenda do perfil na Freelandoo, que é a MESMA agenda.
+ * Trocar o rótulo conforme o destino faria o site prometer coisas diferentes
+ * em dias diferentes para o mesmo gesto.
  */
 export function bookingCta(
-  links: TemplateLinks,
-  waMessage: string
+  links: TemplateLinks
 ): { href: string; label: string; external: boolean } {
-  if (links.booking) {
-    return { href: links.booking, label: "Agendar", external: false };
-  }
-  return { href: whatsappLink(waMessage), label: "Marcar no WhatsApp", external: true };
+  return {
+    href: links.booking || FREELANDOO_AGENDA,
+    label: "Agendar",
+    // Sem o site publicado o destino é OUTRO domínio (a Freelandoo): abre em
+    // aba nova para a pessoa não perder o site que estava lendo.
+    external: !links.booking,
+  };
 }

@@ -35,7 +35,7 @@ export default function ServicoPage({ links, service }: Ctx & { service: Service
   // A mensagem de reserva é a DO SERVIÇO — é ela que chega escrita quando não
   // há agendamento, e é o que faz o Enzo saber o que a pessoa quer sem
   // perguntar.
-  const cta = bookingCta(links, service.waMessage);
+  const cta = bookingCta(links);
   const url = `${links.origin}${pageHref(links, service.slug)}`;
   const economia = saving(service);
 

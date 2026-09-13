@@ -21,7 +21,6 @@
  * diferença entre informar e inventar.
  */
 
-import { whatsappLink } from "./business";
 
 export type Faq = { q: string; a: string };
 
@@ -438,7 +437,11 @@ export function saving(service: Service): number {
   return sum ? Math.max(0, sum - service.price) : 0;
 }
 
-/** Mensagem de WhatsApp padrão, quando a página não tem uma própria. */
-export const WA_DEFAULT = whatsappLink(
-  "Olá, Enzo! Vi o site e queria marcar um horário.",
-);
+// ⚠️ `WA_DEFAULT` FOI REMOVIDA (e não é resquício): ela era um link de WhatsApp
+// pronto, exportado, esperando um botão. Com o CTA do site sempre agendando
+// (`bookingCta`), ela seria a porta que devolve o botão antigo a quem a
+// encontrasse. O WhatsApp do site vive em UM lugar: o botão verde flutuante,
+// em `chrome.tsx`, com a mensagem dele.
+//
+// Os campos `waMessage` de cada serviço FICAM: são texto, não link, e é deles
+// que sai a frase se um dia o contato voltar a ser por mensagem.

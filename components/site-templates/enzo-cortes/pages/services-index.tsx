@@ -16,7 +16,7 @@ import { BreadcrumbLd } from "../schema";
 import { Breadcrumb, Btn, Container, Note, Section, SectionHead } from "../ui";
 
 export default function ServicosPage({ links }: Ctx) {
-  const cta = bookingCta(links, "Olá, Enzo! Vi a tabela no site e queria marcar.");
+  const cta = bookingCta(links);
   const trilha = [
     { name: "Início", path: links.home },
     { name: "Serviços e preços", path: pageHref(links, PAGE.servicos) },

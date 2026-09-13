@@ -218,7 +218,10 @@ export function getArea(slug: string): Area | undefined {
 export const BASE_AREA = AREAS.find((a) => a.isBase) ?? AREAS[0];
 
 // ⚠️ `areaWaLink` FOI REMOVIDA de propósito (e não é resquício): ela montava o
-// link de WhatsApp do bairro por fora, e com o CTA decidido em um lugar só
+// link de WhatsApp do bairro por fora, e com o CTA do site sempre agendando
 // (`bookingCta`, em `content/business`) ela seria a porta que devolve o botão
-// antigo a quem a encontrasse. A mensagem do bairro continua onde sempre
-// esteve — `area.waMessage` — e é ela que o decisor recebe.
+// antigo a quem a encontrasse.
+//
+// O campo `waMessage` de cada bairro FICA: é texto, não link. Nenhum botão o
+// lê hoje — ele é a frase pronta para o dia em que o contato por mensagem
+// voltar a ter um lugar.
