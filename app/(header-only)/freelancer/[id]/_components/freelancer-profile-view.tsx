@@ -139,6 +139,19 @@ import {
 } from "@/lib/media/media-validation"
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 
+/**
+ * Deep-link `?aba=` → aba do portfólio. Nome fora desta lista é IGNORADO (a
+ * aba fica como estava), nunca vira erro: o parâmetro chega de fora, de um
+ * link colado ou do botão de um site de cliente.
+ */
+const ABA_TO_TAB: Record<string, "feed" | "bees" | "services" | "courses" | "shop"> = {
+  portfolio: "feed",
+  curtos: "bees",
+  servicos: "services",
+  cursos: "courses",
+  loja: "shop",
+}
+
 export default function FreelancerProfileView({
   profileId,
   kind = "profile",
@@ -275,6 +288,8 @@ export default function FreelancerProfileView({
   const [createServiceTrigger, setCreateServiceTrigger] = useState(0)
   const [createCourseTrigger, setCreateCourseTrigger] = useState(0)
   const searchParams = useSearchParams()
+  const portfolioSectionRef = useRef<HTMLElement | null>(null)
+  const abaDeepLinkDone = useRef(false)
 
   const refetchPortfolio = async () => {
     try {
@@ -303,6 +318,37 @@ export default function FreelancerProfileView({
     const openRanking = searchParams?.get("ranking")
     if (openRanking) setShowRanking(true)
   }, [searchParams])
+
+  /**
+   * Deep-link: ?aba=servicos abre a aba de Serviços — e é por ele que o botão
+   * "Agendar" do site de um cliente chega ao agendamento.
+   *
+   * ⚠️ SEM ISTO O BOTÃO PARECE QUEBRADO, sem nada quebrar. A página nasce no
+   * Portfólio, e num perfil que ainda não publicou nada (uma barbearia recém
+   * cadastrada) o visitante cai numa grade VAZIA: a agenda existe, com serviço
+   * e horário, mas atrás de uma aba que ninguém disse para apertar.
+   *
+   * ⚠️ LIDO UMA VEZ. Relendo a cada mudança de `searchParams`, a aba voltaria
+   * para Serviços toda vez que a pessoa tentasse abrir outra, porque a
+   * querystring continua dizendo `?aba=servicos` (o endereço não muda).
+   *
+   * ⚠️ E SÓ DEPOIS DE CARREGAR: enquanto `loading` é verdadeiro a tela é a de
+   * espera e a seção nem está montada — rolar ali não acharia o alvo.
+   */
+  useEffect(() => {
+    if (abaDeepLinkDone.current || loading) return
+    const aba = searchParams?.get("aba")
+    if (!aba) return
+    abaDeepLinkDone.current = true
+    const tab = ABA_TO_TAB[aba]
+    if (!tab) return
+    setPortfolioTab(tab)
+    // Quem clicou em "Agendar" veio decidido: as abas ficam abaixo do headcard
+    // e no celular nascem fora da tela.
+    requestAnimationFrame(() => {
+      portfolioSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
+  }, [searchParams, loading])
 
   const closeRanking = () => {
     setShowRanking(false)
@@ -941,7 +987,7 @@ export default function FreelancerProfileView({
         </section>
 
         {/* PORTFOLIO SECTION — abas retangulares, grudadas no headcard */}
-        <section className="-mt-px mb-16">
+        <section ref={portfolioSectionRef} className="-mt-px mb-16">
           <div className="-mx-4 flex items-stretch justify-between border-b border-[#F5F1E8]/12 bg-[#1d1810]/50 md:mx-0">
             <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button

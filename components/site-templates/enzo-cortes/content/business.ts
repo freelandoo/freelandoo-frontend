@@ -153,9 +153,15 @@ export function navFor(links: TemplateLinks) {
  *
  * É o perfil-conta do Enzo: a vitrine de serviços lê o roster (líder + equipe),
  * e o líder entra por ele.
+ *
+ * ⚠️ O `?aba=servicos` NÃO É ENFEITE — sem ele o botão parece quebrado. A
+ * página do perfil nasce no Portfólio, e o do Enzo está VAZIO (ele nunca
+ * postou): quem apertava "Agendar" caía numa grade em branco, com a agenda
+ * montada e escondida atrás de uma aba que ninguém disse para apertar. Com o
+ * parâmetro ela abre nos serviços, cada um com o próprio "Agendar".
  */
 export const FREELANDOO_AGENDA =
-  "https://www.freelandoo.com.br/freelancer/1b13008c-648a-4c96-8b14-bd9a8604dcb6";
+  "https://www.freelandoo.com.br/freelancer/1b13008c-648a-4c96-8b14-bd9a8604dcb6?aba=servicos";
 
 /**
  * O CTA PRINCIPAL DO SITE — um lugar só, e ele SEMPRE agenda.
