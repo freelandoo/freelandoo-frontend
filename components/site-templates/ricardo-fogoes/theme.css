@@ -20,17 +20,25 @@
  */
 
 .tpl-ricardo {
-  /* Superfícies — quase preta por ESCOLHA do dono, e ainda assim cinza:
-  o matiz azulado (R<G<B) é o que impede a prancha de virar um buraco
-  neutro. ⚠️ OS DEGRAUS FORAM CALIBRADOS EM L*, NÃO SUBTRAINDO EM LINHA
-  RETA: perto do preto a percepção comprime, então o mesmo −9 de sRGB que
-  se enxerga num cinza médio aqui não se enxerga mais. Escurecer de novo
-  a olho encosta `sheet` em `sheet-up` e os painéis somem no fundo —
-  quem os segura passa a ser só `--rf-line`. */
-  --rf-sheet-deep: #010204;
-  --rf-sheet: #090b0e;
-  --rf-sheet-up: #101317;
-  --rf-sheet-hi: #181c21;
+  /* Superfícies — o fundo é PRETO PURO por escolha do dono (a rampa nasceu
+  cinza-azulada; foi escurecida em duas passadas até aqui).
+
+  ⚠️ `sheet-deep` E `sheet` SÃO O MESMO PRETO, e isso é consequência
+  honesta de escolher #000: não existe tom abaixo do fundo para `deep`
+  ocupar. Ele fica na lista porque é a variável que as seções mais fundas
+  chamam — apagá-la espalharia a decisão por N arquivos, e voltar atrás
+  deixaria de ser uma linha.
+
+  ⚠️ OS DOIS TONS DE CIMA NÃO PODEM IR JUNTO PARA O PRETO. São eles que
+  desenham painel e cartão; zerados, o layout inteiro passa a depender de
+  `--rf-line` e o site vira contorno sobre vazio. Eles guardam o matiz
+  azulado (R<G<B) e foram calibrados em L* (0 → 3,0 → 7,1), porque perto
+  do preto a percepção comprime e subtrair sRGB em linha reta colapsa a
+  rampa sem avisar. */
+  --rf-sheet-deep: #000000;
+  --rf-sheet: #000000;
+  --rf-sheet-up: #0a0b0d;
+  --rf-sheet-hi: #13161a;
 
   /* traço */
   --rf-line: #363d43;
@@ -43,7 +51,7 @@
   /* ⚠️ Medido, não escolhido a olho. A anotação (`.note`) é texto de 11px,
   ou seja texto NORMAL para a régua de contraste — o tom anterior
   (#6d767d) dava 3,50:1 sobre a prancha e reprovava em AA. Este dá
-  6,46:1 sobre `sheet` e 6,11:1 sobre `sheet-up`, que é o fundo mais
+  6,88:1 sobre `sheet` e 6,45:1 sobre `sheet-up`, que é o fundo mais
   claro em que ele aparece (medido de novo depois de a rampa escurecer).
   A hierarquia continua de pé porque a anotação já é mono, caixa alta e
   espaçada — a cor não era o que a separava do texto corrido. */
