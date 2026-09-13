@@ -105,12 +105,26 @@ export default function SitePreview() {
   const page = pageSlug ? entry.resolvePage(dados.template.data, pageSlug) : null
   if (pageSlug && !page) return <Aviso texto={`Esta página não existe: /pagina/${pageSlug}`} />
 
-  return entry.Site({
+  // ⚠️ O `as` AQUI É DELIBERADO E TEMPORÁRIO, e a cicatriz que o justifica é
+  // cara: `TemplateProps` está mudando noutra frente (a vitrine de serviços do
+  // tema `oficina-local`), e as duas versões do contrato são MUTUAMENTE
+  // EXCLUSIVAS — a que está COMMITADA não conhece `services` e recusa a chave;
+  // a que está no working tree a EXIGE. Sem o `as`, uma das duas árvores para
+  // de compilar, e foi exatamente isso que deixou a produção parada em dois
+  // deploys seguidos: o build local passava contra código não commitado.
+  //
+  // A lista vazia é o que torna o `as` seguro no runtime dos dois lados: o
+  // contrato novo recebe um array de verdade em vez de `undefined`, e o antigo
+  // simplesmente ignora a chave. Quando aquela frente entrar, isto vira
+  // `services: dados.services || []` sem o `as`.
+  const props = {
     data: dados.template.data,
     links,
     page,
-    services: dados.services || [],
-  })
+    services: [],
+  } as Parameters<typeof entry.Site>[0]
+
+  return entry.Site(props)
 }
 
 function Aviso({ texto }: { texto: string }) {
