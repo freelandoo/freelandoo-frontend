@@ -5550,9 +5550,9 @@
     "domainsLoadError": "Não foi possível carregar os domínios.",
     "domainActionError": "A ação não pôde ser concluída.",
     "domainPending": "Aguardando DNS",
-    "domainPendingHint": "Crie o registro TXT abaixo no painel do seu domínio e clique em Verificar.",
+    "domainPendingHint": "Falta criar os registros abaixo no painel do seu domínio.",
     "domainVerified": "Verificado",
-    "domainVerifiedHint": "Posse confirmada. O certificado de segurança está sendo emitido — isso pode levar alguns minutos.",
+    "domainVerifiedHint": "Posse confirmada. Agora falta o domínio apontar para cá — confira os registros abaixo.",
     "domainActive": "No ar",
     "domainActiveHint": "O site já responde neste domínio.",
     "domainError": "Com problema",
@@ -5757,7 +5757,12 @@
     "swapFinalWarn": "Esta escolha não tem volta: o construtor deste perfil fecha e o site passa a ser escrito por nós. Se um dia você quiser montar um site por conta própria, será em outro perfil.",
     "readySwapTheme": "Trocar o tema",
     "readySwapThemeHint": "Troca na hora, sem pedir nada ao cliente — é o site que a gente mantém.",
-    "readyThemeCurrent": "no ar agora"
+    "readyThemeCurrent": "no ar agora",
+    "dnsRecordsIntro": "Crie estes registros no painel do seu domínio e clique em Verificar.",
+    "dnsPurposeVerify": "Confirma que o domínio é seu",
+    "dnsPurposeRoute": "É este que coloca o site no ar",
+    "dnsPurposeOptional": "Opcional — faz o endereço com www funcionar também",
+    "dnsFullHost": "Nome completo:"
   },
   "SiteBooking": {
     "back": "Voltar ao site",

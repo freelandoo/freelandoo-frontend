@@ -6136,9 +6136,9 @@
     "domainsLoadError": "Could not load the domains.",
     "domainActionError": "The action could not be completed.",
     "domainPending": "Waiting for DNS",
-    "domainPendingHint": "Create the TXT record below in your domain panel, then click Verify.",
+    "domainPendingHint": "The records below still need to be created in your domain panel.",
     "domainVerified": "Verified",
-    "domainVerifiedHint": "Ownership confirmed. The security certificate is being issued — this can take a few minutes.",
+    "domainVerifiedHint": "Ownership confirmed. Now the domain still needs to point here — check the records below.",
     "domainActive": "Live",
     "domainActiveHint": "The site already responds on this domain.",
     "domainError": "Has a problem",
@@ -6343,7 +6343,12 @@
     "swapFinalWarn": "This choice is final: the builder closes for this profile and we take over writing the site. If you ever want to build a site yourself, it will be on another profile.",
     "readySwapTheme": "Change theme",
     "readySwapThemeHint": "Applies right away, nothing is asked of the client — this is the site we maintain.",
-    "readyThemeCurrent": "live now"
+    "readyThemeCurrent": "live now",
+    "dnsRecordsIntro": "Create these records in your domain panel and click Verify.",
+    "dnsPurposeVerify": "Confirms the domain is yours",
+    "dnsPurposeRoute": "This is the one that puts the site online",
+    "dnsPurposeOptional": "Optional — makes the www address work too",
+    "dnsFullHost": "Full name:"
   },
   "SiteBooking": {
     "back": "Back to site",

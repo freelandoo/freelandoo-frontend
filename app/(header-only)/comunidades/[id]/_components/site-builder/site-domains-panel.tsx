@@ -26,6 +26,25 @@ import { copyText } from "@/lib/clipboard"
 
 type DomainStatus = "pending" | "verified" | "active" | "error"
 
+/**
+ * Um registro de DNS pronto para colar no painel do registrador.
+ *
+ * ⚠️ VEM MONTADO DO BACKEND, e não é remontado aqui. O valor de rota é o que a
+ * Vercel respondeu naquele momento (o IP do ápice e o CNAME já mudaram, e o
+ * CNAME é específico da conta) — recalcular ou completar qualquer pedaço deste
+ * objeto na tela é como o painel volta a mandar o cliente apontar o domínio
+ * dele para o servidor de outra pessoa.
+ */
+type DnsRecord = {
+  purpose: "verify" | "route" | "optional"
+  type: string
+  /** Relativo à zona — é o que o campo "Nome/Host" dos painéis espera. */
+  name: string
+  /** O nome completo, para os poucos painéis que pedem o FQDN. */
+  host: string
+  value: string
+}
+
 type SiteDomain = {
   id_domain: number
   domain: string
@@ -36,6 +55,8 @@ type SiteDomain = {
   last_checked_at: string | null
   created_at: string
   verification: { host: string; type: string; value: string }
+  /** Opcional: backend anterior a esta mudança não manda. */
+  records?: DnsRecord[]
 }
 
 type ListResponse = {
@@ -79,6 +100,74 @@ function CopyField({ label, value }: { label: string; value: string }) {
       </button>
     </div>
   )
+}
+
+/**
+ * Uma linha de registro: o que ela SERVE em texto, e os dois campos que a
+ * pessoa realmente copia.
+ *
+ * O propósito vem escrito porque a diferença entre os registros não é óbvia
+ * para quem não mexe com DNS: um prova que o domínio é dela, o outro é o que
+ * de fato coloca o site no ar. Sem essa linha, alguém cria só o primeiro,
+ * verifica, e fica esperando um site que nunca vai responder.
+ */
+function DnsRecordRow({
+  record,
+  t,
+}: {
+  record: DnsRecord
+  t: (key: string, fallback: string) => string
+}) {
+  const purpose =
+    record.purpose === "verify"
+      ? t("dnsPurposeVerify", "Confirma que o domínio é seu")
+      : record.purpose === "optional"
+        ? t("dnsPurposeOptional", "Opcional — faz o endereço com www funcionar também")
+        : t("dnsPurposeRoute", "É este que coloca o site no ar")
+
+  return (
+    <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-2.5">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="shrink-0 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-1.5 py-0.5 font-mono text-[10px] font-extrabold text-[#F2B705]">
+          {record.type}
+        </span>
+        <span className="min-w-0 flex-1 text-[10px] leading-tight text-[#9A938A]">
+          {purpose}
+        </span>
+      </div>
+      <div className="flex flex-col gap-2">
+        <CopyField label={t("dnsHost", "Nome / Host")} value={record.name} />
+        <CopyField label={t("dnsValue", "Valor")} value={record.value} />
+      </div>
+      {/* O relativo resolve em quase todo painel; o completo fica à mão para
+          os que pedem o FQDN, sem competir com o campo que se copia. */}
+      {record.name !== record.host && (
+        <p className="mt-1.5 truncate font-mono text-[9px] text-[#6b655d]" title={record.host}>
+          {t("dnsFullHost", "Nome completo:")} {record.host}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Os registros a mostrar, com degradação para o formato antigo.
+ *
+ * O front pode subir antes do backend: nesse intervalo `records` não vem, e
+ * cair no `verification` mantém a tela útil (só o TXT, como era) em vez de
+ * mostrar um quadro vazio onde antes havia instrução.
+ */
+function recordsOf(d: SiteDomain): DnsRecord[] {
+  if (d.records?.length) return d.records
+  return [
+    {
+      purpose: "verify",
+      type: d.verification.type,
+      name: d.verification.host,
+      host: d.verification.host,
+      value: d.verification.value,
+    },
+  ]
 }
 
 export function SiteDomainsPanel({
@@ -372,12 +461,20 @@ export function SiteDomainsPanel({
                       {d.last_error || meta.hint}
                     </p>
 
-                    {/* O TXT some quando não há mais nada a fazer com ele. */}
-                    {d.status === "pending" && (
+                    {/* Fica de pé até o domínio estar no ar: enquanto não
+                        estiver, sempre há um registro faltando — e a pessoa
+                        precisa dele na mão, não numa frase genérica. */}
+                    {d.status !== "active" && (
                       <div className="mt-3 flex flex-col gap-2 border-t-2 border-[#0B0B0D] pt-3">
-                        <CopyField label={t("dnsType", "Tipo")} value={d.verification.type} />
-                        <CopyField label={t("dnsHost", "Nome / Host")} value={d.verification.host} />
-                        <CopyField label={t("dnsValue", "Valor")} value={d.verification.value} />
+                        <p className="text-[10px] leading-relaxed text-[#9A938A]">
+                          {t(
+                            "dnsRecordsIntro",
+                            "Crie estes registros no painel do seu domínio e clique em Verificar."
+                          )}
+                        </p>
+                        {recordsOf(d).map((r) => (
+                          <DnsRecordRow key={`${r.type}:${r.host}:${r.value}`} record={r} t={t} />
+                        ))}
                       </div>
                     )}
 
@@ -457,12 +554,18 @@ export function SiteDomainsPanel({
               </div>
             )}
 
-            <p className="mt-3 text-[10px] leading-relaxed text-[#9A938A]">
-              {t(
-                "domainDnsHelp",
-                "Depois de verificar, aponte o domínio para a Freelandoo no painel do seu registrador (registro A para o domínio raiz, ou CNAME para subdomínio)."
-              )}
-            </p>
+            {/* ⚠️ Esta frase só aparece quando NÃO temos o valor real para dar.
+                Com o provedor automatizado ligado, os registros de rota vêm
+                prontos acima — repetir a instrução genérica aqui faria a tela
+                dizer duas vezes a mesma coisa, uma delas sem o valor. */}
+            {data.provider === "manual" && (
+              <p className="mt-3 text-[10px] leading-relaxed text-[#9A938A]">
+                {t(
+                  "domainDnsHelp",
+                  "Depois de verificar, aponte o domínio para a Freelandoo no painel do seu registrador (registro A para o domínio raiz, ou CNAME para subdomínio)."
+                )}
+              </p>
+            )}
           </section>
         </>
       )}
