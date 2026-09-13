@@ -117,8 +117,8 @@ export default function ServicoPage({ links, service: s }: Ctx & { service: Serv
             className="absolute inset-0"
             style={{
               background: [
-                "linear-gradient(to right, rgb(21 23 26 / 0.94) 0%, rgb(21 23 26 / 0.88) 38%, rgb(21 23 26 / 0.55) 72%, rgb(21 23 26 / 0.70) 100%)",
-                "linear-gradient(to bottom, rgb(21 23 26 / 0.72) 0%, rgb(21 23 26 / 0.10) 30%, rgb(21 23 26 / 0.45) 78%, rgb(21 23 26 / 1) 100%)",
+                "linear-gradient(to right, rgb(9 11 14 / 0.94) 0%, rgb(9 11 14 / 0.88) 38%, rgb(9 11 14 / 0.55) 72%, rgb(9 11 14 / 0.70) 100%)",
+                "linear-gradient(to bottom, rgb(9 11 14 / 0.72) 0%, rgb(9 11 14 / 0.10) 30%, rgb(9 11 14 / 0.45) 78%, rgb(9 11 14 / 1) 100%)",
               ].join(","),
             }}
           />

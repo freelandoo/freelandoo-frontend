@@ -20,11 +20,17 @@
  */
 
 .tpl-ricardo {
-  /* superfícies — a rampa é cinza-azulada, nunca preta */
-  --rf-sheet-deep: #0c0e10;
-  --rf-sheet: #15171a;
-  --rf-sheet-up: #1b1e21;
-  --rf-sheet-hi: #22262a;
+  /* Superfícies — quase preta por ESCOLHA do dono, e ainda assim cinza:
+  o matiz azulado (R<G<B) é o que impede a prancha de virar um buraco
+  neutro. ⚠️ OS DEGRAUS FORAM CALIBRADOS EM L*, NÃO SUBTRAINDO EM LINHA
+  RETA: perto do preto a percepção comprime, então o mesmo −9 de sRGB que
+  se enxerga num cinza médio aqui não se enxerga mais. Escurecer de novo
+  a olho encosta `sheet` em `sheet-up` e os painéis somem no fundo —
+  quem os segura passa a ser só `--rf-line`. */
+  --rf-sheet-deep: #010204;
+  --rf-sheet: #090b0e;
+  --rf-sheet-up: #101317;
+  --rf-sheet-hi: #181c21;
 
   /* traço */
   --rf-line: #363d43;
@@ -37,7 +43,7 @@
   /* ⚠️ Medido, não escolhido a olho. A anotação (`.note`) é texto de 11px,
   ou seja texto NORMAL para a régua de contraste — o tom anterior
   (#6d767d) dava 3,50:1 sobre a prancha e reprovava em AA. Este dá
-  5,89:1 sobre `sheet` e 5,49:1 sobre `sheet-up`, que é o fundo mais
+  6,46:1 sobre `sheet` e 6,11:1 sobre `sheet-up`, que é o fundo mais
   claro em que ele aparece (medido de novo depois de a rampa escurecer).
   A hierarquia continua de pé porque a anotação já é mono, caixa alta e
   espaçada — a cor não era o que a separava do texto corrido. */
