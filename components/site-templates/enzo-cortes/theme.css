@@ -21,12 +21,13 @@
  * contra um geométrico (Jost). Isso é vocabulário déco — o mesmo de fachada
  * de barbearia dos anos 30 —, não "tema escuro com detalhe amarelo".
  *
- * ── SEM FOTOGRAFIA, E ISSO É DECISÃO ─────────────────────────────────────
- * Não existe uma única foto da barbearia do Enzo. Foto de banco de imagens
- * mostrando OUTRA barbearia é uma mentira sobre o lugar — a pessoa chega
- * esperando aquilo. Então o site é tipográfico por inteiro: o peso visual
- * vem do corpo do tipo, do fio dourado e do vazio. Quando houver foto real,
- * ela entra e o desenho aguenta (ver `hero.tsx`).
+ * ── UMA ARTE, NENHUMA FOTOGRAFIA — E ISSO CONTINUA SENDO DECISÃO ─────────
+ * O site abre com o banner do Enzo (logotipo + ilustração, ver `hero.tsx`),
+ * que é a única arte que existe. FOTO da barbearia continua não existindo,
+ * porque nenhuma foi informada — e foto de banco de imagens mostrando OUTRA
+ * barbearia é mentira sobre o lugar: a pessoa chega esperando aquilo. Do
+ * banner para baixo o peso visual segue vindo do corpo do tipo, do fio
+ * dourado e do vazio.
  */
 
 .tpl-enzo {
