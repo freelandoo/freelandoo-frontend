@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Check,
+  ExternalLink,
   Globe,
   Loader2,
   Lock,
@@ -611,6 +612,222 @@ export function CommunitySiteBuilder({
     )
   }
 
+  // ─── O SITE É NOSSO: aqui NÃO existe construtor ───────────────────────────
+  //
+  // ⚠️ ESTA TELA SUBSTITUI O CONSTRUTOR INTEIRO quando o site é gerenciado, e
+  // não é cosmética. Antes, quem aceitava ficava dentro de um EDITOR com as
+  // ferramentas desligadas e uma tarja explicando por quê — uma ferramenta
+  // fingindo que ainda é ferramenta. E ficou pior quando a prancheta passou a
+  // desenhar o tema: a pessoa via o próprio site dentro de um editor que não
+  // edita, com abas, zoom e "adicionar seção" que não valem para ele.
+  //
+  // ⚠️ MESMO ENDEREÇO, TELA DIFERENTE — e não uma rota nova, que foi o pedido
+  // original. Uma rota à parte duplicaria os guardas (é minha a comunidade? o
+  // plano está pago?) e o beacon que troca a barra lateral, e criaria DOIS
+  // redirecionamentos que precisam concordar para sempre: quem chega em /site
+  // com site gerenciado vai para lá, quem chega lá sem site gerenciado volta.
+  // No dia em que um dos dois errar, o cliente cai numa página em branco. Aqui
+  // quem decide é UMA coisa: `managed`.
+  //
+  // ⚠️ E NÃO HÁ "VOLTAR A EDITAR" (2026-09-12). O aceite é definitivo: quem
+  // quiser montar o próprio site abre OUTRO perfil. O backend recusa a
+  // devolução do cliente (410), então um botão aqui seria só um erro vermelho.
+  // A porta que continua existindo é a do ADMIN, dentro do painel Site pronto —
+  // e ela é a rede de segurança para o erro NOSSO, não o arrependimento dele.
+  if (managed) {
+    const liveHref = slug ? "/c/" + slug : null
+    return (
+      <div className="fl-sharp">
+        {isLeader && (
+          <div
+            className="sticky top-0 z-40 mb-4 flex flex-wrap items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] p-2"
+            style={{ boxShadow: "4px 4px 0 0 #0B0B0D" }}
+          >
+            <span className="flex items-center gap-1.5 px-2 text-[10px] font-extrabold tracking-[0.16em] text-[#9A938A] uppercase">
+              <Sparkles className="h-4 w-4" style={{ color: accent }} />
+              {t("managedScreenTitle", "O seu site")}
+            </span>
+
+            {/* Ver em cada aparelho é o único gesto que sobra — e é o mais
+                útil dos três que havia: quase todo visitante chega pelo
+                celular, e é lá que o dono quer conferir antes de divulgar. */}
+            <div className="flex items-center gap-1">
+              {(
+                [
+                  ["desktop", Monitor, t("viewportDesktop", "Desktop")],
+                  ["tablet", Tablet, t("viewportTablet", "Tablet")],
+                  ["mobile", Smartphone, t("viewportMobile", "Celular")],
+                ] as const
+              ).map(([key, Icon, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setViewport(key)}
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={viewport === key}
+                  className="grid h-9 w-9 place-items-center border-2 border-[#0B0B0D]"
+                  style={
+                    viewport === key
+                      ? { background: accent, color: "#0B0B0D" }
+                      : { background: "#1D1810", color: "#9A938A" }
+                  }
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
+
+            {/* ⚠️ O PAINEL "SITE PRONTO" FICA SÓ PARA O ADMIN daqui em diante.
+                Para o cliente não sobrou decisão nenhuma lá dentro: o endereço
+                está nesta tela, publicar está nesta barra e devolver não
+                existe mais. Para nós é onde se troca o tema e se conserta o
+                que apontamos errado — sem pedir nada a ele. */}
+            {isPlatformAdmin && (
+              <div className="relative">
+                <button
+                  type="button"
+                  data-ready-trigger
+                  onClick={() => setReadyOpen((v) => !v)}
+                  aria-expanded={readyOpen}
+                  aria-haspopup="menu"
+                  className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[10px] font-extrabold tracking-[0.12em] text-[#F5F1E8] uppercase"
+                >
+                  <Sparkles className="h-4 w-4 shrink-0" style={{ color: accent }} />
+                  {t("readyButton", "Site pronto")}
+                </button>
+                {readyOpen && (
+                  <SiteReadyPanel
+                    idProfile={idProfile}
+                    accent={accent}
+                    isAdmin={isPlatformAdmin}
+                    onClose={() => setReadyOpen(false)}
+                    onManagedChange={() => window.location.reload()}
+                    t={t}
+                  />
+                )}
+              </div>
+            )}
+
+            <span className="ml-auto" />
+
+            {isPublished && liveHref && (
+              <a
+                href={liveHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[10px] font-extrabold tracking-[0.12em] text-[#F5F1E8] uppercase"
+              >
+                <ExternalLink className="h-4 w-4" style={{ color: accent }} />
+                {t("managedOpenSite", "Abrir o site")}
+              </a>
+            )}
+
+            {isPublished && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setDomainsOpen((v) => !v)}
+                  aria-expanded={domainsOpen}
+                  className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[10px] font-extrabold tracking-[0.12em] text-[#F5F1E8] uppercase"
+                >
+                  <Globe className="h-4 w-4" style={{ color: accent }} />
+                  {t("domainsButton", "Endereço")}
+                </button>
+                {domainsOpen && (
+                  <SiteDomainsPanel
+                    idProfile={idProfile}
+                    accent={accent}
+                    onClose={() => setDomainsOpen(false)}
+                    t={t}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Publicar continua sendo DELE (decisão do Alex, 2026-09-12). Quem
+                segura o caso do fim da carência é o gate de plano, não a
+                ausência do botão — e a recusa do backend nomeia o plano certo
+                (managed_site), por isso aqui não abre o modal do Negócio. */}
+            <button
+              type="button"
+              disabled={publishing}
+              onClick={() => void togglePublish(!isPublished)}
+              className="flex items-center gap-1.5 border-2 border-[#0B0B0D] px-4 py-2 text-[10px] font-extrabold tracking-[0.12em] uppercase disabled:opacity-60"
+              style={
+                isPublished
+                  ? { background: "#1D1810", color: "#F5F1E8" }
+                  : { background: accent, color: "#0B0B0D" }
+              }
+            >
+              {publishing ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : isPublished ? (
+                <Globe className="h-3.5 w-3.5" />
+              ) : canShareSite ? (
+                <Upload className="h-3.5 w-3.5" />
+              ) : (
+                <Lock className="h-3.5 w-3.5" />
+              )}
+              {isPublished
+                ? t("unpublish", "Publicado · despublicar")
+                : canShareSite
+                  ? t("publish", "Publicar site")
+                  : t("publishLockedManaged", "Publicar site · Plano do site")}
+            </button>
+          </div>
+        )}
+
+        {isLeader && (
+          <div
+            className="mb-3 flex flex-wrap items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3"
+            style={{ boxShadow: "4px 4px 0 0 " + accent }}
+          >
+            <Sparkles className="h-4 w-4 shrink-0" style={{ color: accent }} />
+            <p className="flex-1 text-[11px] leading-snug text-[#F5F1E8]">
+              {t(
+                "managedScreenNotice",
+                "Este site é escrito e mantido pela Freelandoo. Publicar, tirar do ar e o endereço continuam com você; o conteúdo é com a gente — peça as alterações pelo suporte que a gente aplica."
+              )}
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-3 border-2 border-[#0B0B0D] bg-[#2a1410] px-4 py-2 text-xs font-extrabold tracking-[0.1em] text-[#ff8c7a] uppercase">
+            {error}
+          </div>
+        )}
+
+        {isLeader && !isPublished && (
+          <div className="mb-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-2 text-[10px] font-extrabold tracking-[0.12em] text-[#9A938A] uppercase">
+            {t("draftNotice", "Rascunho — só você enxerga este site até publicar.")}
+          </div>
+        )}
+
+        {/* O SITE, GRANDE — é ele o conteúdo desta página.
+            ⚠️ Em <iframe> pelo mesmo motivo de sempre: o tema tem barra fixa,
+            botão flutuante e fundo de tela cheia, e cada um deles precisa de
+            uma janela de verdade, da largura do aparelho escolhido. Montado
+            aqui dentro, os três iriam parar por cima da barra de cima. */}
+        <div
+          className="isolate w-full overflow-auto"
+          style={frameWidth ? { background: "#0B0B0D", padding: "16px 8px" } : undefined}
+        >
+          <div className="mx-auto" style={{ width: "100%", maxWidth: frameWidth || undefined }}>
+            <iframe
+              key={templateSlug || "managed"}
+              src={"/site-preview/" + idProfile}
+              title={t("managedPreview", "Pré-visualização do site pronto")}
+              className="w-full border-2 border-[#0B0B0D] bg-[#0B0B0D]"
+              style={{ height: "calc(100vh - 210px)", minHeight: 520 }}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (missing || !config) {
     return (
       <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center">
@@ -967,31 +1184,6 @@ export function CommunitySiteBuilder({
         </div>
       )}
 
-      {/* ── O site é feito pela Freelandoo (mig 241) ──────────────────────────
-          A faixa que explica por que a barra acima está quase vazia. Sem ela, o
-          líder abriria o construtor, não encontraria o botão de editar e não
-          teria nada na tela dizendo o motivo — o pior jeito de esconder uma
-          ferramenta. O caminho de volta está no painel "Site pronto". */}
-      {isLeader && managed && (
-        <div
-          className="mb-3 flex flex-wrap items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3"
-          style={{ boxShadow: `4px 4px 0 0 ${accent}` }}
-        >
-          <Sparkles className="h-4 w-4 shrink-0" style={{ color: accent }} />
-          <p className="flex-1 text-[11px] leading-snug text-[#F5F1E8]">
-            {/* ⚠️ SOBRESCRITA no dicionário (2026-09-12): a frase antiga dizia
-                que a barra estava vazia, e ela não está mais — Publicar e
-                Endereço voltaram. Dicionário vence fallback, então trocar só
-                este texto não mudaria nada na tela. */}
-            {t(
-              "managedNotice",
-              "Este site é feito e mantido pela Freelandoo: quem escreve o conteúdo somos nós. Publicar, tirar do ar e o endereço continuam com você. Peça as alterações pelo suporte — e, se quiser voltar a montar o seu, é no botão Site pronto aqui em cima."
-            )}
-          </p>
-        </div>
-      )}
-
-
       <BusinessPlanModal
         open={planOpen}
         onClose={() => setPlanOpen(false)}
@@ -1076,38 +1268,6 @@ export function CommunitySiteBuilder({
                   }
             }
           >
-            {managed && templateSlug ? (
-              /*
-                O SITE PRONTO É DESENHADO PELO TEMA, NÃO PELO CANVAS.
-                
-                ⚠️ Sem isto o líder que aceitava o site pronto continuava vendo
-                aqui o site ANTIGO dele — o canvas fica guardado de propósito,
-                e a prancheta seguia desenhando aquilo. Ele aceitava uma coisa
-                e via outra, sem nada na tela dizer que não era o que o público
-                veria.
-
-                ⚠️ EM <iframe>, E NÃO MONTADO AQUI DENTRO. O tema tem barra
-                `fixed`, botão flutuante e fundo de tela cheia; a prancheta usa
-                `transform` no zoom, e ancestral com transform deixa de ser a
-                janela para um filho `fixed` — as três peças iriam parar por
-                cima da barra de ferramentas. No iframe cada uma tem uma janela
-                de verdade, da largura do aparelho escolhido, e os reveals de
-                rolagem e a barra que gruda no topo se comportam como no site
-                publicado.
-
-                A altura é grande e fixa porque quem rola é o iframe: medir o
-                conteúdo de dentro exigiria postMessage, e o preço seria um
-                canal a mais para manter em sincronia por um número que o
-                próprio iframe já administra rolando.
-              */
-              <iframe
-                key={templateSlug}
-                src={`/site-preview/${idProfile}`}
-                title={t("managedPreview", "Pré-visualização do site pronto")}
-                className="w-full border-0 bg-[#0B0B0D]"
-                style={{ height: "calc(100vh - 180px)", minHeight: 520 }}
-              />
-            ) : (
             <SiteCanvas
               // ⚠️ Remonta ao trocar de página. A seleção de seção e os estados
               // de arraste do canvas guardam IDs da pilha que estava na tela; a
@@ -1158,7 +1318,6 @@ export function CommunitySiteBuilder({
               pages={pages}
               activePageSlug={activePage?.slug || null}
             />
-            )}
           </div>
         </div>
       </div>

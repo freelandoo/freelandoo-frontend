@@ -219,12 +219,17 @@ export function SiteSwapModal({
               )}
             </span>
           </li>
+          {/* ⚠️ A LINHA DO NÃO-TEM-VOLTA (2026-09-12). Ela substituiu a que
+              prometia o contrário ("dá para voltar a editá-lo quando quiser") —
+              e prometer o que não existe mais é o jeito mais rápido de virar
+              chamado no suporte. Ação irreversível é dita em voz alta ANTES do
+              botão, com o mesmo sinal de atenção do aviso da edição. */}
           <li className="flex gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] p-2.5 text-[11px] leading-snug text-[#9A938A]">
-            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: accent }} />
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#F2B705]" />
             <span>
               {t(
-                "swapKeepWarn",
-                "O site que você montou aqui não é apagado: ele fica guardado, e dá para voltar a editá-lo quando quiser."
+                "swapFinalWarn",
+                "Esta escolha não tem volta: o construtor deste perfil fecha e o site passa a ser escrito por nós. Se um dia você quiser montar um site por conta própria, será em outro perfil."
               )}
             </span>
           </li>

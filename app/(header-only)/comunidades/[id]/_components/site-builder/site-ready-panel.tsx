@@ -31,7 +31,6 @@ import {
   ExternalLink,
   Loader2,
   Sparkles,
-  Undo2,
   X,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
@@ -285,15 +284,11 @@ export function SiteReadyPanel({
     await load()
   }
 
-  async function devolver() {
-    setBusy("devolver")
-    setErro("")
-    const r = await mine("/release", { method: "POST" })
-    setBusy(null)
-    if (r.error) return setErro(r.error)
-    await load()
-    onManagedChange?.()
-  }
+  // ⚠️ NÃO EXISTE MAIS UM `devolver()` DO CLIENTE (2026-09-12). O aceite é
+  // definitivo e o backend responde 410 nessa porta — um botão aqui só
+  // produziria um erro vermelho na cara de quem clicasse. Quem devolve é o
+  // ADMIN (`devolverComoAdmin`, logo abaixo): aquilo é a rede de segurança
+  // para o erro NOSSO, não o arrependimento do cliente.
 
   // ─── a plataforma decide ──────────────────────────────────────────────────
 
@@ -326,6 +321,32 @@ export function SiteReadyPanel({
     setBusy(null)
     if (r.error) return setErro(r.error)
     await load()
+  }
+
+  /**
+   * TROCA O TEMA DE UM SITE JÁ ENTREGUE — sem oferta e sem novo aceite.
+   *
+   * ⚠️ É a porta que faltava, e a falta dela custou caro uma vez: o site do
+   * cliente ficou no tema errado e o único conserto era devolver ao construtor,
+   * retirar a oferta, reservar de novo e PEDIR QUE ELE ACEITASSE OUTRA VEZ —
+   * quatro passos, um deles do cliente, para arrumar um erro que foi nosso.
+   *
+   * Ela usa a porta de APLICAR (a mesma do "ligar agora"), nunca a de ofertar:
+   * o cliente já disse sim uma vez, e quem mantém o site somos nós. Pedir um
+   * aceite a cada correção de texto seria transformar manutenção em decisão.
+   */
+  async function trocarTema(slug: string) {
+    setBusy("trocar:" + slug)
+    setErro("")
+    const r = await admin(`/${idProfile}`, {
+      method: "PUT",
+      body: JSON.stringify({ template: slug, data: {} }),
+    })
+    setBusy(null)
+    if (r.error) return setErro(r.error)
+    await load()
+    // Recarrega: a prancheta desenha o tema, e ela precisa desenhar o NOVO.
+    onManagedChange?.()
   }
 
   async function dispensarPedido() {
@@ -451,29 +472,6 @@ export function SiteReadyPanel({
               {t(
                 "readyAskChanges",
                 "Para mudar qualquer coisa, é só pedir pelo suporte que a gente aplica."
-              )}
-            </p>
-
-            {/* ⚠️ A PORTA DE SAÍDA. Quem pôde aceitar tem que poder devolver —
-                senão um clique de curiosidade tira da pessoa a edição do próprio
-                site e a única saída vira o suporte. */}
-            <button
-              type="button"
-              onClick={devolver}
-              disabled={!!busy}
-              className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-transparent px-3 py-2 text-[11px] font-extrabold tracking-[0.12em] text-[#9A938A] uppercase hover:text-[#F5F1E8] disabled:opacity-50"
-            >
-              {busy === "devolver" ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Undo2 className="h-4 w-4" />
-              )}
-              {t("readyBackToBuilder", "Voltar a editar eu mesmo")}
-            </button>
-            <p className="mt-1.5 text-[11px] leading-snug text-[#9A938A]">
-              {t(
-                "readyBackHint",
-                "O seu site do construtor volta exatamente como estava, e o site pronto continua guardado — dá para ligá-lo de novo depois."
               )}
             </p>
           </>
@@ -687,6 +685,55 @@ export function SiteReadyPanel({
                     )}
                   </p>
                 </div>
+
+                {/* ⚠️ TROCAR DE TEMA, AQUI, COM O SITE JÁ LIGADO.
+                    Sem esta lista o conserto de um tema apontado errado exigia
+                    devolver → retirar → reservar → o cliente aceitar de novo.
+                    A troca é direta porque manter o site é o que a gente
+                    vendeu: o aceite dele foi sobre entregar a edição, não sobre
+                    cada texto que escrevermos depois. */}
+                <p className="mt-4 mb-2 text-[10px] font-extrabold tracking-[0.16em] text-[#9A938A] uppercase">
+                  {t("readySwapTheme", "Trocar o tema")}
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {AUTORAIS.map((a) => {
+                    const atual = state.template === a.slug
+                    return (
+                      <button
+                        key={a.slug}
+                        type="button"
+                        onClick={() => trocarTema(a.slug)}
+                        disabled={!!busy || atual}
+                        className="flex items-start gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-left disabled:opacity-50"
+                      >
+                        {busy === "trocar:" + a.slug ? (
+                          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+                        ) : (
+                          <Sparkles
+                            className="mt-0.5 h-4 w-4 shrink-0"
+                            style={{ color: atual ? "#9A938A" : accent }}
+                          />
+                        )}
+                        <span className="min-w-0">
+                          <span className="block text-[11px] font-extrabold tracking-[0.1em] text-[#F5F1E8] uppercase">
+                            {a.label}
+                            {atual ? " · " + t("readyThemeCurrent", "no ar agora") : ""}
+                          </span>
+                          <span className="block text-[11px] leading-snug text-[#9A938A]">
+                            {a.hint}
+                          </span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="mt-1.5 text-[11px] leading-snug text-[#9A938A]">
+                  {t(
+                    "readySwapThemeHint",
+                    "Troca na hora, sem pedir nada ao cliente — é o site que a gente mantém."
+                  )}
+                </p>
+
               </>
             ) : state.offer ? (
               /* ── reservado, esperando o cliente ──────────────────────────── */
