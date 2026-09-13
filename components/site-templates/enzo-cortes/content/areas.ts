@@ -28,7 +28,6 @@
  * mesma região, mesma via principal.
  */
 
-import { whatsappLink } from "./business";
 
 export type Faq = { q: string; a: string };
 
@@ -218,6 +217,8 @@ export function getArea(slug: string): Area | undefined {
 /** O bairro da casa. Usado no endereço e no JSON-LD. */
 export const BASE_AREA = AREAS.find((a) => a.isBase) ?? AREAS[0];
 
-export function areaWaLink(area: Area): string {
-  return whatsappLink(area.waMessage);
-}
+// ⚠️ `areaWaLink` FOI REMOVIDA de propósito (e não é resquício): ela montava o
+// link de WhatsApp do bairro por fora, e com o CTA decidido em um lugar só
+// (`bookingCta`, em `content/business`) ela seria a porta que devolve o botão
+// antigo a quem a encontrasse. A mensagem do bairro continua onde sempre
+// esteve — `area.waMessage` — e é ela que o decisor recebe.

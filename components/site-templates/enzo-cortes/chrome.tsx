@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from "react";
 
-import { ADDRESS_LINE, BUSINESS, TEL_HREF, navFor, whatsappLink } from "./content/business";
+import { ADDRESS_LINE, BUSINESS, TEL_HREF, bookingCta, navFor, whatsappLink } from "./content/business";
 import { AREAS } from "./content/areas";
 import { SERVICES } from "./content/services";
 import { DecoDivider, Monogram } from "./deco";
@@ -22,6 +22,9 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
   const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
   const nav = navFor(links);
+  // ⚠️ UM SÓ DECISOR para o botão da barra — ver `bookingCta`. Com serviço
+  // reservável ele AGENDA; sem, cai no WhatsApp.
+  const cta = bookingCta(links, "Olá, Enzo! Queria marcar um horário.");
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 24);
@@ -78,12 +81,11 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
 
         <div className="flex items-center gap-2">
           <a
-            href={whatsappLink("Olá, Enzo! Queria marcar um horário.")}
-            target="_blank"
-            rel="noopener"
+            href={cta.href}
+            {...(cta.external ? { target: "_blank", rel: "noopener" } : {})}
             className="btn btn-solid !px-4 !py-2.5 !text-[0.6875rem]"
           >
-            WhatsApp
+            {cta.label}
           </a>
 
           {/* O botão do menu só existe abaixo do md — acima dele a navegação

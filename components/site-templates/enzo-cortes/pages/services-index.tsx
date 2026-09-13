@@ -7,7 +7,7 @@
  * pessoa rolar até achar.
  */
 
-import { BUSINESS, whatsappLink } from "../content/business";
+import { BUSINESS, bookingCta } from "../content/business";
 import { SERVICES, saving, sumOfParts } from "../content/services";
 import { ServiceGlyph } from "../deco";
 import { PAGE, brl, pageHref, type Ctx } from "../lib";
@@ -16,6 +16,7 @@ import { BreadcrumbLd } from "../schema";
 import { Breadcrumb, Btn, Container, Note, Section, SectionHead } from "../ui";
 
 export default function ServicosPage({ links }: Ctx) {
+  const cta = bookingCta(links, "Olá, Enzo! Vi a tabela no site e queria marcar.");
   const trilha = [
     { name: "Início", path: links.home },
     { name: "Serviços e preços", path: pageHref(links, PAGE.servicos) },
@@ -105,8 +106,8 @@ export default function ServicosPage({ links }: Ctx) {
           </ul>
 
           <div className="mt-14 flex flex-wrap items-center justify-center gap-3" data-reveal="up">
-            <Btn href={whatsappLink("Olá, Enzo! Vi a tabela no site e queria marcar.")} external>
-              Marcar no WhatsApp
+            <Btn href={cta.href} external={cta.external}>
+              {cta.label}
             </Btn>
             <Btn href={pageHref(links, PAGE.contato)} variant="ghost">
               Onde fica

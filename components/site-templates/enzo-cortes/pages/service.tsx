@@ -13,7 +13,7 @@
  * escolher o errado — e o escolhido costuma ser o genérico.
  */
 
-import { BUSINESS, whatsappLink } from "../content/business";
+import { BUSINESS, bookingCta } from "../content/business";
 import { getService, saving, sumOfParts, type Service } from "../content/services";
 import { ServiceGlyph } from "../deco";
 import { PAGE, brl, pageHref, type Ctx } from "../lib";
@@ -32,6 +32,10 @@ import {
 } from "../ui";
 
 export default function ServicoPage({ links, service }: Ctx & { service: Service }) {
+  // A mensagem de reserva é a DO SERVIÇO — é ela que chega escrita quando não
+  // há agendamento, e é o que faz o Enzo saber o que a pessoa quer sem
+  // perguntar.
+  const cta = bookingCta(links, service.waMessage);
   const url = `${links.origin}${pageHref(links, service.slug)}`;
   const economia = saving(service);
 
@@ -100,8 +104,8 @@ export default function ServicoPage({ links, service }: Ctx & { service: Service
               ) : null}
 
               <div className="mt-7 flex flex-col gap-3">
-                <Btn href={whatsappLink(service.waMessage)} external>
-                  Marcar no WhatsApp
+                <Btn href={cta.href} external={cta.external}>
+                  {cta.label}
                 </Btn>
                 <Btn href={pageHref(links, PAGE.servicos)} variant="ghost">
                   Ver a tabela

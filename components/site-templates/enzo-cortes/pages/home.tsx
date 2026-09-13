@@ -16,7 +16,7 @@
  * dele é o link para a página do serviço.
  */
 
-import { BUSINESS, whatsappLink } from "../content/business";
+import { BUSINESS, bookingCta } from "../content/business";
 import { AREAS } from "../content/areas";
 import { SITE_FAQ } from "../content/faq";
 import { SERVICES, saving, sumOfParts } from "../content/services";
@@ -27,15 +27,28 @@ import PriceMenu from "../price-menu";
 import { Btn, Container, FaqList, Note, Panel, Section, SectionHead } from "../ui";
 
 /** Os três passos. Texto genérico de propósito — descrevem o que o SITE
- *  oferece (mandar mensagem, combinar, ir lá), não uma política de
- *  atendimento que ninguém informou. */
-const PASSOS = [
+ *  oferece (escolher, marcar, ir lá), não uma política de atendimento que
+ *  ninguém informou.
+ *
+ *  ⚠️ VIROU FUNÇÃO DE `links` porque o PASSO 2 É O BOTÃO. Como constante, ele
+ *  mandava "chame no WhatsApp" enquanto o CTA ao lado dizia "Agendar" — a
+ *  mesma página dando duas instruções diferentes para o mesmo gesto. Quem
+ *  decide é o MESMO campo do botão (`links.booking`), então os dois não têm
+ *  como discordar. */
+function passosFor(temAgendamento: boolean) {
+  return [
   {
     n: "01",
     title: "Escolha o serviço",
     text: "A tabela inteira está aqui em cima, com o valor de cada um e o que dá para pedir. Nenhum preço depende de pacote ou de ser a primeira vez.",
   },
-  {
+  temAgendamento
+    ? {
+        n: "02",
+        title: "Marque o horário",
+        text: "Escolha o dia e a hora na agenda e pronto: a cadeira fica reservada no seu nome. Dá para pagar na hora ou no balcão, no dia — no sábado isso faz diferença.",
+      }
+    : {
     n: "02",
     title: "Chame no WhatsApp",
     text: "Diga o que você quer fazer e quando pretende passar. É o jeito de garantir que a cadeira esteja livre quando você chegar — no sábado isso faz diferença.",
@@ -45,9 +58,12 @@ const PASSOS = [
     title: "Sente na cadeira",
     text: "O corte é combinado antes de a máquina ligar: altura da transição, acabamento, o que fica em cima. Sai dali o corte que dá para manter, não só o que fica bom na primeira hora.",
   },
-];
+  ];
+}
 
 export default function HomePage({ links }: Ctx) {
+  const cta = bookingCta(links, "Olá, Enzo! Queria marcar um horário.");
+  const passos = passosFor(!!links.booking);
   const combinados = SERVICES.filter((s) => s.sumOf?.length);
 
   return (
@@ -126,7 +142,7 @@ export default function HomePage({ links }: Ctx) {
           <SectionHead eyebrow="Como funciona" title="Três passos, sem mistério" />
 
           <ol className="mx-auto mt-14 grid max-w-[60rem] gap-px sm:grid-cols-3" style={{ background: "var(--ec-line-soft)" }}>
-            {PASSOS.map((p, i) => (
+            {passos.map((p, i) => (
               <li
                 key={p.n}
                 className="p-8"
@@ -151,8 +167,8 @@ export default function HomePage({ links }: Ctx) {
           </ol>
 
           <div className="mt-12 flex justify-center" data-reveal="up">
-            <Btn href={whatsappLink("Olá, Enzo! Queria marcar um horário.")} external>
-              Marcar no WhatsApp
+            <Btn href={cta.href} external={cta.external}>
+              {cta.label}
             </Btn>
           </div>
         </Container>

@@ -17,8 +17,8 @@
  * Por isso `context` é escrito à mão em cada bairro.
  */
 
-import { AREAS, areaWaLink, type Area } from "../content/areas";
-import { BUSINESS } from "../content/business";
+import { AREAS, type Area } from "../content/areas";
+import { BUSINESS, bookingCta } from "../content/business";
 import { SERVICES } from "../content/services";
 import { PAGE, brl, pageHref, type Ctx } from "../lib";
 import { BreadcrumbLd, FaqLd } from "../schema";
@@ -35,6 +35,9 @@ import {
 } from "../ui";
 
 export default function AreaPage({ links, area }: Ctx & { area: Area }) {
+  // A mensagem é a DO BAIRRO — quando não há agendamento, é ela que diz ao
+  // Enzo de onde a pessoa está falando sem que ele precise perguntar.
+  const cta = bookingCta(links, area.waMessage);
   // ⚠️ A página NÃO lista a si mesma nos vizinhos. Sem isso, cada página de
   // bairro teria um link para ela própria — que não leva a lugar nenhum e
   // ainda gasta um dos quatro lugares da lista.
@@ -101,8 +104,8 @@ export default function AreaPage({ links, area }: Ctx & { area: Area }) {
               </div>
 
               <div className="mt-6">
-                <Btn href={areaWaLink(area)} external className="w-full">
-                  Marcar no WhatsApp
+                <Btn href={cta.href} external={cta.external} className="w-full">
+                  {cta.label}
                 </Btn>
               </div>
             </Panel>

@@ -18,7 +18,7 @@
  * lugar nenhum.
  */
 
-import { ADDRESS_LINE, BUSINESS, whatsappLink } from "../content/business";
+import { ADDRESS_LINE, BUSINESS, bookingCta } from "../content/business";
 import { SERVICES } from "../content/services";
 import { DecoDivider, Monogram } from "../deco";
 import { PAGE, brl, pageHref, type Ctx } from "../lib";
@@ -50,6 +50,7 @@ const REGRAS = [
 ];
 
 export default function SobrePage({ links }: Ctx) {
+  const cta = bookingCta(links, "Olá, Enzo! Queria marcar um horário.");
   const trilha = [
     { name: "Início", path: links.home },
     { name: "A barbearia", path: pageHref(links, PAGE.sobre) },
@@ -147,8 +148,8 @@ export default function SobrePage({ links }: Ctx) {
                 negócio.
               </p>
               <div className="mt-8 flex flex-wrap gap-3" data-reveal="up" data-reveal-delay="0.08">
-                <Btn href={whatsappLink("Olá, Enzo! Queria marcar um horário.")} external>
-                  Marcar no WhatsApp
+                <Btn href={cta.href} external={cta.external}>
+                  {cta.label}
                 </Btn>
                 <Btn href={pageHref(links, PAGE.contato)} variant="ghost">
                   Como chegar

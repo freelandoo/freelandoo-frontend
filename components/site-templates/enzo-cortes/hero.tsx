@@ -54,7 +54,7 @@
  * elas precisam ser byte a byte iguais, como o resto do tema.
  */
 
-import { BUSINESS, whatsappLink } from "./content/business";
+import { BUSINESS, bookingCta } from "./content/business";
 import { getService } from "./content/services";
 import { DecoDivider, DecoSunburst } from "./deco";
 import { PAGE, brl, pageHref, type TemplateLinks } from "./lib";
@@ -76,6 +76,7 @@ export default function Hero({ links }: { links: TemplateLinks }) {
   const destaques = HEADLINE.map((slug) => getService(slug)).filter(
     (s): s is NonNullable<typeof s> => !!s,
   );
+  const cta = bookingCta(links, "Olá, Enzo! Vi o site e queria marcar um horário.");
 
   return (
     <section className="relative overflow-hidden pb-16 pt-24 md:pb-24 md:pt-32">
@@ -170,11 +171,8 @@ export default function Hero({ links }: { links: TemplateLinks }) {
               data-reveal="up"
               data-reveal-delay="0.24"
             >
-              <Btn
-                href={whatsappLink("Olá, Enzo! Vi o site e queria marcar um horário.")}
-                external
-              >
-                Marcar no WhatsApp
+              <Btn href={cta.href} external={cta.external}>
+                {cta.label}
               </Btn>
               <Btn href={pageHref(links, PAGE.servicos)} variant="ghost">
                 Ver a tabela inteira

@@ -11,7 +11,7 @@
  */
 
 import { AREAS } from "../content/areas";
-import { ADDRESS_LINE, BUSINESS, TEL_HREF, PHONE_IS_PLACEHOLDER, whatsappLink } from "../content/business";
+import { ADDRESS_LINE, BUSINESS, TEL_HREF, PHONE_IS_PLACEHOLDER, bookingCta } from "../content/business";
 import { PAGE, pageHref, type Ctx } from "../lib";
 import { BreadcrumbLd } from "../schema";
 import { Breadcrumb, Btn, Container, Note, Panel, Section, SectionHead } from "../ui";
@@ -47,6 +47,7 @@ function Mapa() {
 }
 
 export default function ContatoPage({ links }: Ctx) {
+  const cta = bookingCta(links, "Olá, Enzo! Vi o site e queria marcar um horário.");
   const trilha = [
     { name: "Início", path: links.home },
     { name: "Onde fica", path: pageHref(links, PAGE.contato) },
@@ -84,11 +85,8 @@ export default function ContatoPage({ links }: Ctx) {
                   garantir que a cadeira esteja livre quando você chegar.
                 </p>
                 <div className="mt-6 flex flex-col gap-3">
-                  <Btn
-                    href={whatsappLink("Olá, Enzo! Vi o site e queria marcar um horário.")}
-                    external
-                  >
-                    Falar no WhatsApp
+                  <Btn href={cta.href} external={cta.external}>
+                    {cta.label}
                   </Btn>
                   <Btn href={TEL_HREF} variant="ghost">
                     {BUSINESS.phoneDisplay}

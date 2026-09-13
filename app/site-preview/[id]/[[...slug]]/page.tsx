@@ -29,12 +29,16 @@ import { useParams } from "next/navigation"
 import { templateFor } from "@/components/site-templates/registry"
 import { getToken } from "@/lib/auth"
 import type { ShowcaseService } from "@/types/community-site"
+import { platformTemplateLinks, type PublicSite } from "@/lib/community-site"
 import type { SiteTemplate, TemplateLinks } from "@/types/site-template"
 
 type Resposta = {
   managed?: boolean
   template?: SiteTemplate | null
   services?: ShowcaseService[]
+  /** Publicado e com endereço — sem os dois, agendar não tem destino. */
+  is_published?: boolean
+  slug?: string | null
   error?: string
 }
 
@@ -83,6 +87,8 @@ export default function SitePreview() {
   if (!entry) return <Aviso texto={`Tema não encontrado neste deploy: ${dados.template.slug}`} />
 
   const base = `/site-preview/${idProfile}`
+  // Publicado E com endereço: é o par que decide se "Agendar" tem para onde ir.
+  const publicado = !!dados.is_published && !!dados.slug
   const links: TemplateLinks = {
     // ⚠️ VAZIO, e não `window.location.origin`: lido no render, ele vale ""
     // no servidor e o endereço no cliente, e o React reclama de hidratação —
@@ -97,9 +103,26 @@ export default function SitePreview() {
     communityId: "",
     home: base,
     pageBase: `${base}/pagina`,
-    // Agendar leva para fora do preview; deixá-lo ligado abriria a plataforma
-    // dentro do iframe. O botão existe no site de verdade.
-    booking: null,
+    // ⚠️ ERA SEMPRE `null` para o botão não abrir a plataforma dentro do
+    // iframe — e o preço disso é o preview MENTIR sobre o CTA: ele desenharia
+    // "Marcar no WhatsApp" enquanto o site no ar desenha "Agendar". Preview que
+    // mostra outro botão não está pré-visualizando nada.
+    //
+    // ⚠️ SÓ COM O SITE PUBLICADO, e não é cautela: `/c/<slug>/agendar` lê o
+    // site pelo SLUG, e a leitura pública recusa rascunho — com o site ainda
+    // não publicado o botão levaria a um 404. Enquanto isso ele cai no
+    // WhatsApp, que é o que o site no ar também faria sem serviço reservável.
+    //
+    // ⚠️ E QUEM DECIDE "tem serviço reservável?" É A MESMA FUNÇÃO DO SITE
+    // PUBLICADO (`platformTemplateLinks`), nunca uma cópia da regra aqui: o
+    // filtro é `price_on_request` e já mudou uma vez. Copiada, esta tela
+    // ofereceria "Agendar" no dia em que a regra apertasse do outro lado.
+    booking: publicado
+      ? platformTemplateLinks(
+          { id_profile: idProfile, services: dados.services ?? [] } as PublicSite,
+          String(dados.slug)
+        ).booking
+      : null,
   }
 
   const page = pageSlug ? entry.resolvePage(dados.template.data, pageSlug) : null

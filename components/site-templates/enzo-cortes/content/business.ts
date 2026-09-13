@@ -141,3 +141,33 @@ export function navFor(links: TemplateLinks) {
     { href: pageHref(links, PAGE.contato), label: "Onde fica" },
   ];
 }
+
+/**
+ * O CTA PRINCIPAL DO SITE — um lugar só decide se ele AGENDA ou manda mensagem.
+ *
+ * ⚠️ ESCRITO À MÃO EM CADA PÁGINA, ELE DIVERGE. São OITO botões (barra, banner,
+ * home, tabela de preços, página de serviço, página de bairro, sobre, contato),
+ * e no dia em que um deles ficasse para trás o site teria dois caminhos de
+ * conversão diferentes na mesma visita — e ninguém percebe, porque os dois
+ * funcionam.
+ *
+ * ⚠️ `links.booking` É NULO QUANDO NÃO HÁ SERVIÇO RESERVÁVEL, e é isso que
+ * torna a queda para o WhatsApp obrigatória, não um capricho. Quem decide é
+ * `bookingFor` (em `lib/community-site.ts`, do lado da plataforma): sem
+ * serviço com preço, a página de agendamento abriria o passo 1 VAZIO. Um botão
+ * "Agendar" que leva a uma lista vazia é pior que um botão de WhatsApp — ele
+ * gasta o clique de quem estava decidido.
+ *
+ * No projeto solto o campo é nulo por construção (não existe plataforma para
+ * agendar), então lá todos os botões continuam sendo os de sempre. É a MESMA
+ * função nas duas árvores, e é ela que mantém as duas honestas.
+ */
+export function bookingCta(
+  links: TemplateLinks,
+  waMessage: string
+): { href: string; label: string; external: boolean } {
+  if (links.booking) {
+    return { href: links.booking, label: "Agendar", external: false };
+  }
+  return { href: whatsappLink(waMessage), label: "Marcar no WhatsApp", external: true };
+}
