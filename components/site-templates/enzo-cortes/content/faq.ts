@@ -1,0 +1,46 @@
+/**
+ * O FAQ DA CASA — o da home, que é diferente dos FAQs de página.
+ *
+ * ⚠️ NENHUMA PERGUNTA SE REPETE ENTRE ESTE ARQUIVO E OS FAQS DOS SERVIÇOS
+ * OU DOS BAIRROS. Duas páginas marcando a MESMA pergunta em `FAQPage` é a
+ * forma mais fácil de transformar marcação válida em conteúdo duplicado —
+ * e o Google escolhe uma das duas para mostrar, que pode não ser a que
+ * interessa. Aqui ficam só as perguntas que são do NEGÓCIO (endereço,
+ * horário, formas de pagamento, como marcar); as de serviço ficam na página
+ * do serviço, e as de bairro na página do bairro.
+ *
+ * ⚠️ E NENHUMA RESPOSTA AFIRMA O QUE NÃO FOI INFORMADO. Não há pergunta
+ * sobre formas de pagamento, estacionamento, acessibilidade nem tempo de
+ * atendimento — nada disso foi dito, e FAQ é justamente onde a invenção
+ * fica mais convincente e mais perigosa, porque o Google publica a resposta
+ * direto no resultado de busca.
+ */
+
+import type { Faq } from "./services";
+
+export const SITE_FAQ: Faq[] = [
+  {
+    q: "Onde fica a Enzo Cortes?",
+    a: "Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo/SP, CEP 09854-740. É na região do Alvarenga, na zona sul do município.",
+  },
+  {
+    q: "Qual o horário de funcionamento?",
+    a: "De segunda a sábado, das 09h às 19h. Domingo não abre.",
+  },
+  {
+    q: "Quanto custa cortar o cabelo?",
+    a: "Corte R$ 40. Barba R$ 25. Sobrancelha R$ 15. Risco ou desenho a partir de R$ 5. Corte e barba juntos saem por R$ 60, e corte, barba e sobrancelha por R$ 70.",
+  },
+  {
+    q: "Vale mais a pena pagar o combinado?",
+    a: "Vale, e a conta é simples: corte e barba avulsos dariam R$ 65 e o combinado é R$ 60. Os três avulsos dariam R$ 80 e o combinado é R$ 70. A economia é de R$ 5 e R$ 10, respectivamente.",
+  },
+  {
+    q: "Preciso marcar horário?",
+    a: "Não é obrigatório. Mas mandar uma mensagem no WhatsApp antes de sair de casa evita chegar e encontrar a cadeira ocupada — e no sábado isso faz bastante diferença.",
+  },
+  {
+    q: "Atende quem não é do Jardim Pinheiros?",
+    a: "Atende quem chegar. A barbearia fica no Jardim Pinheiros, e boa parte de quem vem é dos bairros vizinhos da mesma região do Alvarenga, como Jardim Represa e Batistini.",
+  },
+];

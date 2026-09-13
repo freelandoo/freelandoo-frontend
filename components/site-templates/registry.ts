@@ -38,6 +38,12 @@ import {
   resolveRicardoPage,
   type RicardoPage,
 } from "./ricardo-fogoes"
+import {
+  EnzoCortesSite,
+  enzoMetadata,
+  resolveEnzoPage,
+  type EnzoPage,
+} from "./enzo-cortes"
 
 /**
  * O que a rota entrega ao tema.
@@ -97,9 +103,30 @@ const RICARDO_FOGOES: TemplateEntry = {
     ricardoMetadata({ links, page: (page as RicardoPage | null) ?? null }),
 }
 
+/**
+ * Tema AUTORAL, escrito para UM cliente: barbearia no Jardim Pinheiros, em
+ * São Bernardo do Campo.
+ *
+ * ⚠️ Ele ignora `data` de propósito, pela mesma razão do `ricardo-fogoes`: o
+ * documento é `{}` (o `normalize` do backend devolve vazio) e a tabela de
+ * preços que o site publica é a do CÓDIGO do tema. Alimentá-lo pelo documento
+ * poria duas tabelas de preço na mesma página — a escrita e a gravada —, que
+ * é a segunda verdade sobre preço que a vitrine do construtor já teve de
+ * desfazer uma vez (back `5782dd1`).
+ */
+const ENZO_CORTES: TemplateEntry = {
+  slug: "enzo-cortes",
+  Site: ({ links, page }) =>
+    EnzoCortesSite({ links, page: (page as EnzoPage | null) ?? null }),
+  resolvePage: (_data, slug) => resolveEnzoPage(slug),
+  metadata: ({ links, page }) =>
+    enzoMetadata({ links, page: (page as EnzoPage | null) ?? null }),
+}
+
 const TEMPLATES: Record<string, TemplateEntry> = {
   "oficina-local": OFICINA_LOCAL,
   "ricardo-fogoes": RICARDO_FOGOES,
+  "enzo-cortes": ENZO_CORTES,
 }
 
 /**

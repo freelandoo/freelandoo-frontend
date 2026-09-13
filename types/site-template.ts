@@ -134,6 +134,16 @@ export type SiteTemplate =
       slug: "ricardo-fogoes"
       data: null
     }
+  /**
+   * Tema AUTORAL de um cliente (barbearia, São Bernardo do Campo). Mesma
+   * natureza do `ricardo-fogoes`: todo o conteúdo — tabela de preços,
+   * serviços, bairros, FAQ — mora no código do tema, e por isso `data` é
+   * `null`. O `normalize` do backend devolve `{}` e nada é gravado.
+   */
+  | {
+      slug: "enzo-cortes"
+      data: null
+    }
 
 /**
  * O endereço do site nos TRÊS lugares em que ele é servido.
