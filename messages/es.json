@@ -6360,7 +6360,22 @@
     "min": "min",
     "prevMonth": "Mes anterior",
     "nextMonth": "Mes siguiente",
-    "pickTime": "Elige un horario"
+    "pickTime": "Elige un horario",
+    "payModeLabel": "Cómo prefieres pagar",
+    "payNowTitle": "Pagar ahora",
+    "payNowDesc": "Pagas la señal y el horario queda reservado al instante.",
+    "payOnSiteTitle": "Pagar en el local",
+    "payOnSiteDesc": "El horario queda agendado y pagas en la atención.",
+    "onSiteNote": "Al confirmar, el horario queda agendado y quien atiende recibe el aviso al instante. El pago se hace en la atención.",
+    "guestIntro": "No necesitas crear una cuenta. Solo necesitamos saber a quién se atenderá.",
+    "guestNameLabel": "Tu nombre",
+    "guestNamePlaceholder": "Nombre y apellido",
+    "guestEmailLabel": "Tu correo",
+    "guestNeeded": "Ingresa tu nombre y un correo válido para confirmar.",
+    "hasAccountPrefix": "¿Ya tienes cuenta en Freelandoo?",
+    "doneTitle": "Horario agendado",
+    "doneOnSiteNote": "Quien atiende ya fue avisado. El pago se hace en la atención.",
+    "doneBack": "Volver al sitio"
   },
   "Whatsapp": {
     "connectCta": "Conectar mi WhatsApp",

@@ -168,6 +168,34 @@ export function SiteBookingView({
   const [whatsapp, setWhatsapp] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // ⚠️ AGENDAR DEIXOU DE EXIGIR CONTA (mig 244). Num site de barbearia, pedir
+  // cadastro para marcar um corte é pedágio: a pessoa veio de uma busca, quer
+  // um horário, e criar conta numa plataforma que ela não conhece é a parte do
+  // fluxo onde ela desiste.
+  //
+  // ⚠️ `null` = AINDA NÃO SEI, e a distinção importa: o formulário de quem não
+  // tem conta só pode aparecer depois de o navegador responder, senão a tela
+  // pisca pedindo nome e e-mail para quem está logado. A leitura é em efeito
+  // porque `localStorage` não existe no servidor — lida no render, o HTML
+  // pré-renderizado discordaria do que o cliente desenha.
+  const [logged, setLogged] = useState<boolean | null>(null)
+  useEffect(() => {
+    setLogged(!!getToken())
+  }, [])
+  const [guestName, setGuestName] = useState("")
+  const [guestEmail, setGuestEmail] = useState("")
+
+  // "now" abre o checkout do sinal; "on_site" marca o horário e o dinheiro é
+  // combinado na cadeira. Nasce em "now" porque é o caminho que garante a
+  // reserva — o balcão depende da palavra dos dois lados.
+  const [payMode, setPayMode] = useState<"now" | "on_site">("now")
+
+  // ⚠️ A reserva de balcão NÃO TEM PARA ONDE REDIRECIONAR: não existe cobrança,
+  // então não existe checkout. O fim da linha é esta tela, e ela precisa DIZER
+  // que deu certo — senão a pessoa aperta de novo achando que não funcionou, e
+  // o horário seguinte também some da agenda de quem atende.
+  const [done, setDone] = useState<{ date: string; time: string } | null>(null)
   // Mês desenhado na grade (dia 1). Começa no mês de hoje.
   const [month, setMonth] = useState<Date>(() => {
     const n = new Date()
@@ -241,11 +269,23 @@ export function SiteBookingView({
     }
   }, [step, proId, date])
 
+  /**
+   * A régua do cadastro de quem não tem conta — ESPELHO da do backend.
+   *
+   * Ela não decide nada: quem recusa continua sendo o servidor. Serve para a
+   * pessoa saber ANTES de apertar, em vez de descobrir por um erro vermelho
+   * depois de ter escolhido serviço, dia e hora.
+   */
+  const guestReady =
+    guestName.trim().length >= 2 && /^[^s@]+@[^s@]+.[^s@]+$/.test(guestEmail.trim())
+
   const confirm = useCallback(async () => {
     if (!service || !proId || !time) return
     const token = getToken()
-    if (!token) {
-      setError(t("loginNeeded", "Entre na sua conta para confirmar o horário."))
+    // Sem conta, nome e e-mail são obrigatórios: é por eles que a confirmação
+    // chega e que quem atende sabe quem vai sentar na cadeira.
+    if (!token && !guestReady) {
+      setError(t("guestNeeded", "Informe o seu nome e um e-mail válido para confirmar."))
       return
     }
     setSending(true)
@@ -253,13 +293,25 @@ export function SiteBookingView({
     try {
       const res = await fetch(`/api/public/profile/${proId}/bookings`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          // ⚠️ O cabeçalho só vai quando existe. `Bearer null` é token
+          // inválido — o backend o ignoraria e seguiria anônimo, mas mandar
+          // lixo em cabeçalho de autorização é como um dia alguém aperta o
+          // gate errado olhando para o log.
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           booking_date: date,
           start_time: time,
           id_profile_service: service.id_profile_service,
           client_whatsapp: whatsapp || null,
           id_community: communityId,
+          payment_mode: payMode,
+          // Com sessão, nome e e-mail saem da CONTA, no servidor — mandá-los
+          // daqui seria oferecer a quem está logado um jeito de marcar em nome
+          // de outra pessoa.
+          ...(token ? {} : { client_name: guestName.trim(), client_email: guestEmail.trim() }),
         }),
       })
       const data = await res.json()
@@ -269,13 +321,31 @@ export function SiteBookingView({
         window.location.href = data.checkout_url
         return
       }
+      // Balcão: a reserva já está valendo e quem atende já foi avisado. Não há
+      // checkout para onde ir, então o "deu certo" é dito aqui.
+      if (res.ok && data.booking) {
+        setDone({ date, time })
+        return
+      }
       setError(data.error || t("bookError", "Não foi possível concluir o agendamento."))
     } catch {
       setError(t("bookError", "Não foi possível concluir o agendamento."))
     } finally {
       setSending(false)
     }
-  }, [service, proId, time, date, whatsapp, communityId, t])
+  }, [
+    service,
+    proId,
+    time,
+    date,
+    whatsapp,
+    communityId,
+    payMode,
+    guestReady,
+    guestName,
+    guestEmail,
+    t,
+  ])
 
   const canAdvance = step === "choose" ? !!service && !!proId : step === "when" ? !!time : true
 
@@ -691,6 +761,111 @@ export function SiteBookingView({
               )}
             </dl>
 
+            {/* ─── Como pagar ──────────────────────────────────────────────
+                ⚠️ OS DOIS CAMINHOS SÃO DIFERENTES EM NATUREZA, e o texto diz
+                qual é qual: pagar agora GARANTE o horário (o sinal é o que o
+                prende), enquanto o balcão é um acordo — a reserva vale, mas o
+                dinheiro é combinado na cadeira. Esconder essa diferença faria
+                a pessoa escolher no escuro. */}
+            <fieldset className="mt-6">
+              <legend
+                className="block text-[11px] font-extrabold uppercase tracking-[0.12em]"
+                style={{ color: theme.textSecondary }}
+              >
+                {t("payModeLabel", "Como você prefere pagar")}
+              </legend>
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                {([
+                  {
+                    key: "now" as const,
+                    title: t("payNowTitle", "Pagar agora"),
+                    desc: t("payNowDesc", "Você paga o sinal e o horário fica reservado na hora."),
+                  },
+                  {
+                    key: "on_site" as const,
+                    title: t("payOnSiteTitle", "Pagar no balcão"),
+                    desc: t("payOnSiteDesc", "O horário fica marcado e você paga no atendimento."),
+                  },
+                ]).map((opt) => {
+                  const active = payMode === opt.key
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setPayMode(opt.key)}
+                      aria-pressed={active}
+                      className="border-2 px-4 py-3 text-left"
+                      style={{
+                        background: active ? theme.primary : theme.surface,
+                        color: active ? theme.background : theme.textPrimary,
+                        borderColor: "#0B0B0D",
+                      }}
+                    >
+                      <span className="block text-sm font-extrabold uppercase tracking-[0.08em]">
+                        {opt.title}
+                      </span>
+                      <span className="mt-1 block text-xs leading-snug opacity-80">{opt.desc}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
+
+            {/* ─── Quem está agendando ─────────────────────────────────────
+                Só para quem não tem conta. Com sessão, nome e e-mail saem do
+                cadastro no servidor — e pedi-los de novo seria oferecer um
+                jeito de marcar em nome de outra pessoa. */}
+            {logged === false && (
+              <>
+                <p className="mt-6 text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
+                  {t("guestIntro", "Não precisa criar conta. Só precisamos saber quem vai ser atendido.")}
+                </p>
+
+                <label className="mt-6 block">
+                  <span
+                    className="block text-[11px] font-extrabold uppercase tracking-[0.12em]"
+                    style={{ color: theme.textSecondary }}
+                  >
+                    {t("guestNameLabel", "Seu nome")}
+                  </span>
+                  <input
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    autoComplete="name"
+                    placeholder={t("guestNamePlaceholder", "Nome e sobrenome")}
+                    className="mt-2 w-full border-2 px-3 py-3 text-sm outline-none"
+                    style={{
+                      background: theme.background,
+                      borderColor: "#0B0B0D",
+                      color: theme.textPrimary,
+                    }}
+                  />
+                </label>
+
+                <label className="mt-6 block">
+                  <span
+                    className="block text-[11px] font-extrabold uppercase tracking-[0.12em]"
+                    style={{ color: theme.textSecondary }}
+                  >
+                    {t("guestEmailLabel", "Seu e-mail")}
+                  </span>
+                  <input
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    placeholder="voce@email.com"
+                    className="mt-2 w-full border-2 px-3 py-3 text-sm outline-none"
+                    style={{
+                      background: theme.background,
+                      borderColor: "#0B0B0D",
+                      color: theme.textPrimary,
+                    }}
+                  />
+                </label>
+              </>
+            )}
             <label className="mt-6 block">
               <span
                 className="block text-[11px] font-extrabold uppercase tracking-[0.12em]"
@@ -713,23 +888,30 @@ export function SiteBookingView({
             </label>
 
             <p className="mt-4 text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
-              {t(
-                "depositNote",
-                "Ao confirmar, você paga o sinal que reserva o horário. O restante é combinado direto com quem atende."
-              )}
+              {payMode === "on_site"
+                ? t(
+                    "onSiteNote",
+                    "Ao confirmar, o horário fica marcado e quem atende é avisado na hora. O pagamento é feito no atendimento."
+                  )
+                : t(
+                    "depositNote",
+                    "Ao confirmar, você paga o sinal que reserva o horário. O restante é combinado direto com quem atende."
+                  )}
             </p>
 
-            {/* Domínio próprio: o login da Freelandoo não é alcançável ali, e a
-                sessão é por origem. Em vez de um erro sem saída, a pessoa
-                termina do lado da plataforma com a escolha já feita. */}
-            {platformBookingUrl && !getToken() && (
-              <a
-                href={platformBookingUrl}
-                className="mt-6 inline-block border-2 px-8 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
-                style={{ background: theme.primary, color: theme.background, borderColor: "#0B0B0D" }}
-              >
-                {t("finishOnPlatform", "Terminar na Freelandoo")}
-              </a>
+            {/* ⚠️ ISTO DEIXOU DE SER A ÚNICA SAÍDA e virou preferência.
+                Antes, no domínio próprio, quem não estava logado NÃO CONSEGUIA
+                agendar: o `/login` da Freelandoo não é alcançável ali e a
+                sessão é por origem. Agora agendar não exige conta — o que este
+                link preserva é só o que a conta dá a mais: a reserva aparecer
+                em "meus agendamentos" de quem já é da casa. */}
+            {platformBookingUrl && logged === false && (
+              <p className="mt-6 text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
+                {t("hasAccountPrefix", "Já tem conta na Freelandoo?")}{" "}
+                <a href={platformBookingUrl} className="underline" style={{ color: theme.primary }}>
+                  {t("finishOnPlatform", "Terminar na Freelandoo")}
+                </a>
+              </p>
             )}
           </section>
         )}
@@ -743,8 +925,46 @@ export function SiteBookingView({
           </p>
         )}
 
-        {/* ─── Navegação ─────────────────────────────────────────────────── */}
-        <div className="mt-10 flex items-center justify-between gap-4">
+        {/* ─── Balcão: o fim da linha é aqui ──────────────────────────────
+            Sem cobrança não há checkout para onde ir. Se a tela não disser que
+            deu certo, a pessoa aperta de novo — e o horário seguinte também
+            some da agenda de quem atende. */}
+        {done && (
+          <section
+            className="mt-8 border-2 p-6"
+            style={{ background: theme.surface, borderColor: theme.primary }}
+          >
+            <h2 className="fl-display text-2xl leading-none md:text-3xl">
+              {t("doneTitle", "Horário marcado")}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed" style={{ color: theme.textPrimary }}>
+              {new Intl.DateTimeFormat(locale, {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              }).format(new Date(`${done.date}T12:00:00`))}{" "}
+              · {done.time}
+            </p>
+            <p className="mt-3 text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
+              {t(
+                "doneOnSiteNote",
+                "Quem atende já foi avisado. O pagamento é feito no atendimento."
+              )}
+            </p>
+            <Link
+              href={homeHref}
+              className="mt-6 inline-block border-2 px-8 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
+              style={{ background: theme.primary, color: theme.background, borderColor: "#0B0B0D" }}
+            >
+              {t("doneBack", "Voltar ao site")}
+            </Link>
+          </section>
+        )}
+
+        {/* ─── Navegação ─────────────────────────────────────────────────
+            Some depois de a reserva de balcão ser feita: o "Voltar" levaria a
+            pessoa a escolher outro horário sobre uma reserva que já existe. */}
+        <div className={`mt-10 flex items-center justify-between gap-4${done ? " hidden" : ""}`}>
           <button
             type="button"
             onClick={() => setStep(step === "confirm" ? "when" : "choose")}

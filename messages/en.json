@@ -6380,7 +6380,22 @@
     "min": "min",
     "prevMonth": "Previous month",
     "nextMonth": "Next month",
-    "pickTime": "Pick a time"
+    "pickTime": "Pick a time",
+    "payModeLabel": "How would you like to pay",
+    "payNowTitle": "Pay now",
+    "payNowDesc": "You pay the deposit and the slot is booked right away.",
+    "payOnSiteTitle": "Pay on site",
+    "payOnSiteDesc": "The slot is booked and you pay at your appointment.",
+    "onSiteNote": "Once you confirm, the slot is booked and the professional is notified right away. Payment happens at your appointment.",
+    "guestIntro": "No account needed. We just need to know who's being served.",
+    "guestNameLabel": "Your name",
+    "guestNamePlaceholder": "First and last name",
+    "guestEmailLabel": "Your email",
+    "guestNeeded": "Enter your name and a valid email to confirm.",
+    "hasAccountPrefix": "Already have a Freelandoo account?",
+    "doneTitle": "You're booked",
+    "doneOnSiteNote": "The professional has been notified. Payment happens at your appointment.",
+    "doneBack": "Back to the site"
   },
   "Whatsapp": {
     "connectCta": "Connect my WhatsApp",
