@@ -31,19 +31,48 @@ export const BUSINESS = {
   subTagline: "Residencial e industrial · multimarcas",
   owner: "Ricardo",
 
-  phoneDisplay: "(19) 99495-7125",
-  phoneE164: "+5519994957125",
-  whatsappNumber: "5519994957125",
+  /**
+   * Os DOIS números do material do cliente, na ordem em que ele os publica.
+   *
+   * ⚠️ O WhatsApp é SEMPRE o de final 1992 (escolha do cliente): é ele que
+   * está em todo botão e link de conversa do site. `whatsappNumber` é campo
+   * PRÓPRIO, e não "o primeiro de `phones`", de propósito — reordenar a
+   * lista não pode mudar para onde a conversa vai, que é o único caminho
+   * deste site até uma pessoa de verdade.
+   */
+  phones: [
+    { display: "(19) 99352-9700", e164: "+5519993529700" },
+    { display: "(19) 92012-1992", e164: "+5519920121992" },
+  ],
 
-  street: "Rua Teófilo Fontes Rodrigues",
+  /**
+   * Atalho do número principal, para as superfícies que têm UM slot só (a
+   * barra do topo, o botão de ligar do par de CTAs). É o mesmo do WhatsApp
+   * para que, onde só cabe um número, ligar e conversar caiam no mesmo
+   * lugar. Onde cabem os dois, quem manda é `phones`.
+   */
+  phoneDisplay: "(19) 92012-1992",
+  phoneE164: "+5519920121992",
+  whatsappNumber: "5519920121992",
+
+  street: "Rua João Batista Miossi Miguel, 762",
+  neighborhood: "Parque das Laranjeiras I",
   city: "Aguaí",
   state: "SP",
   stateFull: "São Paulo",
-  postalCode: "13860-000",
+  postalCode: "13866-542",
   country: "BR",
 
-  /** Centro aproximado de Aguaí/SP. Geo de referência, não endereço exato. */
-  geo: { lat: -22.0578, lng: -46.9739 },
+  /**
+   * ⚠️ NÃO EXISTE `geo` AQUI, e a ausência é a parte honesta.
+   *
+   * Ninguém mediu a coordenada desta oficina. O que existia antes era o
+   * centro aproximado de Aguaí — tolerável enquanto o endereço era só o
+   * nome da rua, e ERRADO agora que ele tem número, bairro e CEP reais: o
+   * alfinete cairia a quilômetros da porta, contradizendo o endereço
+   * publicado logo acima. Sem `geo`, o Google geocodifica o `streetAddress`
+   * sozinho e acerta. Alfinete no lugar errado é pior que alfinete nenhum.
+   */
 
   hoursHuman: "Segunda a sexta, das 08h às 18h",
   hoursShort: "Seg–sex · 08h–18h",

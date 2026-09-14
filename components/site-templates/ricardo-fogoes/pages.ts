@@ -7,6 +7,7 @@
 
 import { CITIES, getCity, type City } from "./content/cities"
 import { SERVICES, getService, type Service } from "./content/services"
+import { BUSINESS } from "./content/business"
 import { PAGE } from "./lib"
 
 export type RicardoPage =
@@ -95,7 +96,7 @@ export function pageMeta(page: RicardoPage | null): { title: string; description
       }
     case "contato":
       return {
-        title: "Contato — Ricardo Fogões, Aguaí/SP | (19) 99495-7125",
+        title: `Contato — Ricardo Fogões, Aguaí/SP | ${BUSINESS.phoneDisplay}`,
         description:
           "Telefone, WhatsApp, endereço e horário do Ricardo Fogões em Aguaí/SP. Atendimento de segunda a sexta, das 08h às 18h, com hora marcada.",
       }

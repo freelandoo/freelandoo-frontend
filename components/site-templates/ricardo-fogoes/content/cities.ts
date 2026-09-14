@@ -1,3 +1,5 @@
+import { BUSINESS } from "./business";
+
 /**
  * Páginas de cidade.
  *
@@ -59,7 +61,7 @@ export const CITIES: City[] = [
       body: [
         "Estar na mesma cidade muda duas coisas concretas. A primeira é o encaixe: sem deslocamento entre municípios, uma chamada da manhã às vezes cabe na tarde do mesmo dia — dentro da agenda, sem promessa de urgência.",
         "A segunda é a peça. Quando o conserto depende de um item que não está na van, buscar e voltar é uma volta curta, e não um segundo dia de visita.",
-        "O endereço fica na Rua Teófilo Fontes Rodrigues. O atendimento é feito no local do cliente; a oficina recebe o que precisa de bancada, combinado antes.",
+        `O endereço fica na ${BUSINESS.street}, no ${BUSINESS.neighborhood}. O atendimento é feito no local do cliente; a oficina recebe o que precisa de bancada, combinado antes.`,
       ],
     },
     areas: [

@@ -143,9 +143,17 @@ export default function SiteHeader({ links }: { links: TemplateLinks }) {
               </li>
             ))}
             <li className="pt-3.5 pb-2">
-              <a href={TEL_HREF} className="d-sm block text-[var(--rf-flame-hi)]">
-                {BUSINESS.phoneDisplay}
-              </a>
+              {/* Na gaveta cabem os dois; na barra do topo, que é apertada,
+                  fica só o principal. */}
+              {BUSINESS.phones.map((p) => (
+                <a
+                  key={p.e164}
+                  href={`tel:${p.e164}`}
+                  className="d-sm block text-[var(--rf-flame-hi)]"
+                >
+                  {p.display}
+                </a>
+              ))}
               <span className="note mt-1 block">{BUSINESS.hoursShort}</span>
             </li>
           </ul>

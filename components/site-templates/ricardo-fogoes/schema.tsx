@@ -87,19 +87,19 @@ export function BusinessLd({ origin }: { origin: string }) {
         name: BUSINESS.name,
         description: `${BUSINESS.tagline} — ${BUSINESS.subTagline}.`,
         url: origin,
-        telephone: BUSINESS.phoneE164,
+        // Os dois números do cliente. `telephone` aceita lista, e omitir um
+        // deles esconderia do buscador metade dos caminhos de contato.
+        telephone: BUSINESS.phones.map((p) => p.e164),
         address: {
           "@type": "PostalAddress",
-          streetAddress: BUSINESS.street,
+          // Bairro entra no `streetAddress` porque PostalAddress não tem
+          // campo para ele — e é com o bairro que o endereço brasileiro
+          // vira geocodificável.
+          streetAddress: `${BUSINESS.street} — ${BUSINESS.neighborhood}`,
           addressLocality: BUSINESS.city,
           addressRegion: BUSINESS.state,
           postalCode: BUSINESS.postalCode,
           addressCountry: BUSINESS.country,
-        },
-        geo: {
-          "@type": "GeoCoordinates",
-          latitude: BUSINESS.geo.lat,
-          longitude: BUSINESS.geo.lng,
         },
         openingHoursSpecification: OPENING_HOURS,
         areaServed: CITY_NAMES.map((name) => ({ "@type": "City", name })),

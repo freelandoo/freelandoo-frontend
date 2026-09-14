@@ -10,7 +10,7 @@ import {
   Shell,
 } from "../ui";
 import { Reveal } from "../motion";
-import { BOOKING_URL, BUSINESS, TEL_HREF } from "../content/business";
+import { BOOKING_URL, BUSINESS } from "../content/business";
 import { CITIES } from "../content/cities";
 import { BreadcrumbLd } from "../schema";
 
@@ -49,15 +49,20 @@ export default function ContatoPage({ links }: Ctx) {
               <h2 className="d-md text-[var(--rf-chalk)]">Dados</h2>
               <dl className="mt-6 border-t border-[var(--rf-line)]">
                 <Row label="Telefone e WhatsApp">
-                  <a
-                    href={TEL_HREF}
-                    className="text-[var(--rf-chalk)] transition-colors hover:text-[var(--rf-flame-hi)]"
-                  >
-                    {BUSINESS.phoneDisplay}
-                  </a>
+                  {BUSINESS.phones.map((p) => (
+                    <a
+                      key={p.e164}
+                      href={`tel:${p.e164}`}
+                      className="block text-[var(--rf-chalk)] transition-colors hover:text-[var(--rf-flame-hi)]"
+                    >
+                      {p.display}
+                    </a>
+                  ))}
                 </Row>
                 <Row label="Endereço">
                   {BUSINESS.street}
+                  <br />
+                  {BUSINESS.neighborhood}
                   <br />
                   {BUSINESS.city}/{BUSINESS.state} · CEP {BUSINESS.postalCode}
                 </Row>

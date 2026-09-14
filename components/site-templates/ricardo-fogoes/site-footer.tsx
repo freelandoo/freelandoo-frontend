@@ -15,7 +15,7 @@
 
 import Link from "next/link";
 import BrandMark from "./draw/brand-mark";
-import { BUSINESS, navFor, TEL_HREF } from "./content/business";
+import { BUSINESS, navFor } from "./content/business";
 import type { TemplateLinks } from "@/types/site-template";
 import { PAGE, pageHref } from "./lib";
 import { CITIES } from "./content/cities";
@@ -130,15 +130,22 @@ export default function SiteFooter({ links }: { links: TemplateLinks }) {
             <Field label="Endereço" wide>
               {BUSINESS.street}
               <br />
+              {BUSINESS.neighborhood}
+              <br />
               {BUSINESS.city}/{BUSINESS.state} · CEP {BUSINESS.postalCode}
             </Field>
             <Field label="Telefone">
-              <a
-                href={TEL_HREF}
-                className="transition-colors hover:text-[var(--rf-flame-hi)]"
-              >
-                {BUSINESS.phoneDisplay}
-              </a>
+              {/* Os DOIS números. Aqui cabem os dois, então não há por que
+                  escolher um: quem procura o rodapé está atrás do dado. */}
+              {BUSINESS.phones.map((p) => (
+                <a
+                  key={p.e164}
+                  href={`tel:${p.e164}`}
+                  className="block transition-colors hover:text-[var(--rf-flame-hi)]"
+                >
+                  {p.display}
+                </a>
+              ))}
             </Field>
             <Field label="Atendimento">
               {BUSINESS.hoursShort}
