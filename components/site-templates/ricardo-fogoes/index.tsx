@@ -23,6 +23,7 @@ import type { Metadata } from "next"
 import { SiteAnalytics } from "@/components/site/site-analytics"
 import type { TemplateLinks } from "@/types/site-template"
 
+import bocaDeFogo from "./assets/boca-de-fogo.jpg"
 import { BUSINESS } from "./content/business"
 import Hero from "./hero"
 import { pageHref, type Ctx } from "./lib"
@@ -89,6 +90,36 @@ export type { RicardoPage }
  * em três origens, e um canônico fixo diria ao buscador que a página mora em
  * outro lugar — justamente o dado com que ele decide quem é o dono dela.
  */
+/**
+ * A imagem que aparece quando alguém cola o link no WhatsApp, no Facebook ou
+ * no X — a BOCA DE FOGO da hero, a mesma peça que a pessoa encontra ao abrir
+ * o site.
+ *
+ * ⚠️ SEM ISTO O CARTÃO SAI COM A MARCA DA FREELANDOO. Não existe "nenhuma
+ * imagem": faltando `images` aqui, o Next herda o OG padrão do layout da
+ * plataforma, e o link do cliente passa a ser compartilhado com o NOSSO logo
+ * em cima do nome dele. Era exatamente o que acontecia até aqui.
+ *
+ * ⚠️ A URL É ABSOLUTA E SAI DE `links.origin`, nunca relativa. Caminho
+ * relativo é resolvido contra o `metadataBase` da plataforma — o cartão do
+ * site do cliente sairia apontando para freelandoo.com.br, que é a mesma
+ * classe de erro que o canônico fixo. É o domínio DELE que tem que aparecer.
+ *
+ * ⚠️ O arquivo é uma TRANSCRIÇÃO do shader de `draw/burner-flame.tsx`, não um
+ * desenho parecido: mesmas constantes, mesma rampa de cor. Mexeu no shader e
+ * quiser o thumb junto, re-renderizar com `scripts/og-render.py` do projeto
+ * de desenho. Estático de propósito — cartão de compartilhamento é buscado
+ * por robô, que não roda WebGPU.
+ */
+function shareImage(links: TemplateLinks) {
+  return {
+    url: `${links.origin}${bocaDeFogo.src}`,
+    width: bocaDeFogo.width,
+    height: bocaDeFogo.height,
+    alt: `Boca de fogo com a chama azul — ${BUSINESS.name}`,
+  }
+}
+
 export function ricardoMetadata({
   links,
   page = null,
@@ -112,8 +143,14 @@ export function ricardoMetadata({
       url: path,
       siteName: BUSINESS.name,
       locale: "pt_BR",
+      images: [shareImage(links)],
     },
-    twitter: { card: "summary", title, description },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [shareImage(links).url],
+    },
   }
 }
 
