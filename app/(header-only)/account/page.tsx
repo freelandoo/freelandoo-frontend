@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import {
+  ALLOWED_IMAGE_TYPES,
   AVATAR_IMAGE_ASPECT_RATIO,
   AVATAR_IMAGE_MAX_SIZE_BYTES,
   AVATAR_IMAGE_OUTPUT,
@@ -171,9 +172,11 @@ export default function PerfilPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  // Modal amigável de "arquivo grande" (leva pra /comprimir). Guarda o rótulo
-  // do limite porque avatar e vídeo têm limites diferentes.
+  // Modal amigável de "arquivo grande". Guarda o rótulo do limite (avatar e
+  // vídeo têm limites diferentes) e o ARQUIVO, porque no caso da imagem o
+  // modal comprime ali mesmo em vez de mandar pra outra aba.
   const [oversizeLabel, setOversizeLabel] = useState<string | null>(null)
+  const [oversizeFile, setOversizeFile] = useState<File | null>(null)
   const imageRef = React.useRef<HTMLImageElement>(null)
   const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false)
   const [isNewProfileModalOpen, setIsNewProfileModalOpen] = useState(false)
@@ -815,22 +818,31 @@ export default function PerfilPage() {
     await uploadUserAvatarFile(image.file)
   }
 
+  // ⚠️ NÃO comparar o tamanho do arquivo ESCOLHIDO com o limite do RESULTADO
+  // (2MB). Quem entrega a foto de perfil é o cortador, que devolve 800×800 WebP
+  // já dentro do limite — e o backend comprime de novo por cima (aceita até
+  // 12MB de entrada). O gate antigo recusava foto de celular ANTES do editor
+  // que existe justamente para comprimi-la: a compressão nunca era alcançada.
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ""
-    if (file) {
-      if (file.size > AVATAR_IMAGE_MAX_SIZE_BYTES) {
+    if (!file) return
+
+    // Só o que o navegador não consegue nem abrir para cortar (o teto de
+    // ENTRADA do validateImageFile) vira modal — e lá o botão comprime.
+    const validation = validateImageFile(file, AVATAR_IMAGE_MAX_SIZE_BYTES)
+    if (!validation.ok) {
+      if (ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        setOversizeFile(file)
         setOversizeLabel(mbLabel(AVATAR_IMAGE_MAX_SIZE_BYTES))
-        return
-      }
-      const validation = validateImageFile(file, AVATAR_IMAGE_MAX_SIZE_BYTES)
-      if (!validation.ok) {
+      } else {
         alert(validation.error)
-        return
       }
-      setAvatarFile(file)
-      setIsUploadModalOpen(false)
+      return
     }
+
+    setAvatarFile(file)
+    setIsUploadModalOpen(false)
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -2725,7 +2737,22 @@ export default function PerfilPage() {
         <MuralModal open={muralOpen} onOpenChange={setMuralOpen} profileId={accountProfileId} />
       )}
 
-      <OversizeModal open={!!oversizeLabel} onClose={() => setOversizeLabel(null)} limitLabel={oversizeLabel || ""} />
+      <OversizeModal
+        open={!!oversizeLabel}
+        onClose={() => {
+          setOversizeLabel(null)
+          setOversizeFile(null)
+        }}
+        limitLabel={oversizeLabel || ""}
+        file={oversizeFile}
+        targetBytes={AVATAR_IMAGE_MAX_SIZE_BYTES}
+        onCompressed={(compressed) => {
+          setOversizeLabel(null)
+          setOversizeFile(null)
+          setAvatarFile(compressed)
+          setIsUploadModalOpen(false)
+        }}
+      />
 
     </div>
   )

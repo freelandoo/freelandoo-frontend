@@ -4318,7 +4318,9 @@
     "errVideoFormat": "Formato de vídeo não aceito. Envie MP4, WebM ou MOV.",
     "errVideoTooBig": "Vídeo grande demais (máx. 500MB).",
     "errVideoGeneric": "Não deu pra comprimir esse vídeo.",
-    "errLogin": "Entre na sua conta para comprimir vídeos."
+    "errLogin": "Entre na sua conta para comprimir vídeos.",
+    "compressNow": "Comprimir agora",
+    "oversizeBodyHere": "O limite aqui é {limit}. Dá pra deixar esse arquivo mais leve agora mesmo."
   },
   "Onboarding": {
     "title": "Falta completar seu cadastro",

@@ -46,6 +46,8 @@ export function ImageDropZone({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [oversize, setOversize] = useState(false)
+  // Guardado para o modal poder comprimir o arquivo que a pessoa já escolheu.
+  const [oversizeFile, setOversizeFile] = useState<File | null>(null)
 
   const validate = useCallback((file: File): string | null => {
     if (!ACCEPTED_MIMES.has(file.type.toLowerCase())) {
@@ -56,8 +58,9 @@ export function ImageDropZone({
 
   const handleFile = useCallback(
     async (file: File) => {
-      // Arquivo grande → modal amigável com atalho pra /comprimir.
+      // Arquivo grande → modal que comprime a imagem ali mesmo.
       if (file.size > MAX_BYTES) {
+        setOversizeFile(file)
         setOversize(true)
         return
       }
@@ -218,7 +221,21 @@ export function ImageDropZone({
         <p className="mt-2 text-xs font-medium text-red-300">{error}</p>
       )}
 
-      <OversizeModal open={oversize} onClose={() => setOversize(false)} limitLabel={UPLOAD_LIMITS.courseThumb.label} />
+      <OversizeModal
+        open={oversize}
+        onClose={() => {
+          setOversize(false)
+          setOversizeFile(null)
+        }}
+        limitLabel={UPLOAD_LIMITS.courseThumb.label}
+        file={oversizeFile}
+        targetBytes={MAX_BYTES}
+        onCompressed={(compressed) => {
+          setOversize(false)
+          setOversizeFile(null)
+          void handleFile(compressed)
+        }}
+      />
     </div>
   )
 }

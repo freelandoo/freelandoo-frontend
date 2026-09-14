@@ -4904,7 +4904,9 @@
     "errVideoFormat": "Unsupported video format. Use MP4, WebM or MOV.",
     "errVideoTooBig": "Video too large (max 500MB).",
     "errVideoGeneric": "Couldn't compress this video.",
-    "errLogin": "Sign in to compress videos."
+    "errLogin": "Sign in to compress videos.",
+    "compressNow": "Compress now",
+    "oversizeBodyHere": "The limit here is {limit}. We can make this file lighter right now."
   },
   "Onboarding": {
     "title": "Complete your sign-up",
