@@ -38,13 +38,13 @@
      A distinção que a troca ingênua erra, e que já custou uma entrega inteira
      na plataforma (a paleta do Fitness).
 
-       --el-sun       FUNDO **e** TINTA. Medido: 11,8:1 sobre `ink`, e os
-                      mesmos 11,8:1 com `ink` por cima. É o único que serve
+       --el-sun       FUNDO **e** TINTA. Medido: 12,4:1 sobre `ink`, e os
+                      mesmos 12,4:1 com `ink` por cima. É o único que serve
                       nos dois papéis — é o amarelo do botão cheio.
-       --el-sun-hi    TINTA sobre escuro (14,2:1). O amarelo de TEXTO:
+       --el-sun-hi    TINTA sobre escuro (14,3:1). O amarelo de TEXTO:
                       manchete, número, destaque. Como FUNDO exigiria tinta
                       quase preta e perderia o brilho.
-       --el-sun-deep  FIO, borda e sombra. 3,3:1 sobre `ink` — usar como
+       --el-sun-deep  FIO, borda e sombra. 3,5:1 sobre `ink` — usar como
                       texto some, e é por isso que ele nunca é tinta.
 
      ⚠️ Ao trocar um fundo por `--el-sun`, a tinta por cima TEM que virar
@@ -58,7 +58,7 @@
      amarelo denuncia que os dois não são da mesma família. */
   --el-cream: #f7f2e6;
   --el-cream-dim: #bbb2a1;
-  /* Medido, não escolhido a olho: 5,6:1 sobre `ink`. É a cor da anotação
+  /* Medido, não escolhido a olho: 5,5:1 sobre `ink`. É a cor da anotação
      pequena — texto NORMAL para a régua de contraste. Um tom abaixo disto
      reprova em AA e ninguém percebe até a auditoria. */
   --el-cream-faint: #8e8779;
@@ -69,11 +69,11 @@
   --el-paper: #fbf7ee;
   --el-paper-up: #f3ecdd;
   --el-paper-ink: #0c0a05;
-  /* 4,8:1 sobre `paper` — o limite de onde o texto secundário ainda passa. */
+  /* 5,5:1 sobre `paper` — folga confortável para o texto secundário. */
   --el-paper-dim: #6b6455;
   --el-paper-line: rgb(12 10 5 / 0.12);
   /* Sobre papel, o amarelo da marca é ilegível como TEXTO (1,5:1). O âmbar
-     escuro é o que substitui ele ali — 4,9:1, passa em AA. */
+     escuro é o que substitui ele ali — 6,3:1, passa em AA com folga. */
   --el-amber-ink: #7a5400;
 
   /* fios */

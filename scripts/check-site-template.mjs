@@ -306,6 +306,69 @@ console.log("\n# o espelho com o backend")
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// O ESPELHO DO TEMA AUTORAL `ecoluz` COM O RESUMO DO BACKEND
+//
+// ⚠️ O DEFEITO QUE ISTO PEGA É SILENCIOSO E CARO. O modal que o cliente lê
+// ANTES de aceitar a troca do site dele é montado por `summarizeEcoluz`, no
+// backend — uma lista ESCRITA À MÃO, porque num tema autoral o conteúdo mora
+// no código do front e o backend não o enxerga. Acrescentar uma página ao tema
+// e esquecer daquela lista faz o modal prometer um site com uma página a menos
+// (ou a mais), e a pessoa aceita uma coisa e recebe outra. Nada estoura.
+//
+// ⚠️ E O NAMESPACE DE ENDEREÇO É UM SÓ: serviços, áreas e páginas fixas
+// dividem `/pagina/<slug>`. Dois iguais fariam o endereço abrir um deles pela
+// ordem do array — invisível para quem escreveu. O tema já trava isso no
+// import (`assertNoSlugClash`), e aqui a trava é conferida de fora.
+{
+  console.log("\n# o espelho do tema `ecoluz` com o resumo do backend")
+
+  const ECO = path.join(root, "components", "site-templates", "ecoluz")
+  const read = (f) => fs.readFileSync(path.join(ECO, f), "utf8")
+
+  // Os slugs saem do FONTE, e não de um import: `content/services.ts` e
+  // `content/areas.ts` importam o tipo dos ícones, e transpilar a cadeia
+  // inteira para colher uma lista de strings seria caro sem ser mais verdade.
+  const slugsOf = (src) => [...src.matchAll(/^\s{4}slug: "([a-z0-9-]+)",$/gm)].map((m) => m[1])
+
+  const servicos = slugsOf(read("content/services.ts"))
+  const areas = slugsOf(read("content/areas.ts"))
+  const fixas = [...read("lib.ts").matchAll(/^\s{2}\w+: "([a-z0-9-]+)",$/gm)].map((m) => m[1])
+
+  check("o tema declara 5 serviços", servicos.length === 5)
+  check("o tema declara 4 áreas", areas.length === 4)
+  check("o tema declara 4 páginas fixas", fixas.length === 4)
+
+  const doTema = [...servicos, ...areas, ...fixas].sort()
+  check("nenhum endereço repetido — o namespace `/pagina` é UM só", new Set(doTema).size === doTema.length)
+
+  const BACK = path.join(root, "..", "..", "freelandoo-backend", "src", "utils", "siteTemplates.js")
+  const require_ = createRequire(import.meta.url)
+  const resumo = fs.existsSync(BACK) ? require_(BACK).summarizeTemplateData("ecoluz", {}) : null
+  if (!fs.existsSync(BACK)) console.log("  --  backend não está ao lado: espelho do resumo não conferido")
+  check("o backend sabe resumir o tema (sem isto o modal cai em 'Seu negócio · 1 página')", !!resumo)
+
+  const doResumo = (resumo?.pages || []).map((p) => p.slug).sort()
+  check(
+    "os endereços do tema batem com os do resumo que o cliente lê",
+    JSON.stringify(doTema) === JSON.stringify(doResumo)
+  )
+  if (JSON.stringify(doTema) !== JSON.stringify(doResumo)) {
+    console.log("      tema  :", doTema.join(", "))
+    console.log("      resumo:", doResumo.join(", "))
+  }
+
+  // A home entra na conta: dizer "13 páginas" e listar 14 faria o cliente
+  // procurar a que sobra.
+  check("counts.pages = páginas + 1 (a home)", resumo?.counts?.pages === doResumo.length + 1)
+
+  // Este site não publica preço em lugar nenhum — ver a nota no tema e no
+  // JSON-LD. Um preço aparecendo no resumo seria o primeiro sinal de que
+  // alguém ligou a vitrine do cadastro nele.
+  check("o resumo não carrega preço", !JSON.stringify(resumo).includes("price"))
+  check("hasPhoto é false, e é verdade: o site é tipográfico", resumo?.hasPhoto === false)
+}
+
 fs.rmSync(tmpdir, { recursive: true, force: true })
 
 console.log(`\n${pass} passaram, ${fails.length} falharam`)
