@@ -24,6 +24,8 @@ import { SiteAnalytics } from "@/components/site/site-analytics"
 import type { TemplateLinks } from "@/types/site-template"
 
 import bocaDeFogo from "./assets/boca-de-fogo.jpg"
+import icone32 from "./assets/icone-32.png"
+import icone180 from "./assets/icone-180.png"
 import { BUSINESS } from "./content/business"
 import Hero from "./hero"
 import { pageHref, type Ctx } from "./lib"
@@ -111,6 +113,41 @@ export type { RicardoPage }
  * de desenho. Estático de propósito — cartão de compartilhamento é buscado
  * por robô, que não roda WebGPU.
  */
+/**
+ * O ÍCONE DA ABA — a mesma boca de fogo, recortada quadrada.
+ *
+ * ⚠️ SEM ISTO A ABA DO CLIENTE MOSTRA A ABELHA DA FREELANDOO. O `icons` do
+ * layout raiz da plataforma aponta para `/icon.png`, e metadado é herdado:
+ * o site dele nascia com a nossa marca na aba, do mesmo jeito que nascia com
+ * ela no cartão de compartilhamento.
+ *
+ * ⚠️ AQUI FUNCIONA PORQUE O ÍCONE DA PLATAFORMA VEM DE `metadata.icons`, e
+ * não de `app/favicon.ico`. Metadado de segmento mais profundo SOBRESCREVE o
+ * do layout; a convenção de ARQUIVO venceria, e nenhum tema conseguiria ter
+ * ícone próprio. Se um dia alguém puser um `app/icon.png` na plataforma, é
+ * este bloco que para de valer — e a aba de todo cliente volta a ser a nossa.
+ *
+ * ⚠️ A TREMPE NÃO ENTRA no desenho do ícone (ver `scripts/og-icon.py`): as
+ * hastes são traço de 2px no viewBox de 600, viram ruído a 32px e somem a
+ * 16px deixando só sujeira. O que identifica a peça num quadrado pequeno é o
+ * ANEL AZUL.
+ *
+ * Dois tamanhos porque servem a coisas diferentes: 32 é a aba (é o que o
+ * navegador pede em tela comum e em retina), 180 é o atalho na tela inicial
+ * do iPhone e o favorito em tamanho grande. Um 512 foi descartado: pesava
+ * 193 KB em RGB, e quantizar para caber estourava banding no degradê.
+ */
+function siteIcons(links: TemplateLinks) {
+  const abs = (src: string) => `${links.origin}${src}`
+  return {
+    icon: [
+      { url: abs(icone32.src), type: "image/png", sizes: "32x32" },
+      { url: abs(icone180.src), type: "image/png", sizes: "180x180" },
+    ],
+    apple: [{ url: abs(icone180.src), sizes: "180x180" }],
+  }
+}
+
 function shareImage(links: TemplateLinks) {
   return {
     url: `${links.origin}${bocaDeFogo.src}`,
@@ -136,6 +173,7 @@ export function ricardoMetadata({
     title: { absolute: title },
     description,
     alternates: { canonical: path },
+    icons: siteIcons(links),
     openGraph: {
       title,
       description,
