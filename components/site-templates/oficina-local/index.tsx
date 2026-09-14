@@ -21,7 +21,7 @@ import { SiteFooter, SiteHeader, WhatsappFab } from "./chrome"
 import OficinaCityPage from "./city-page"
 import OficinaHome from "./home"
 import { pageHref, waLink, waMessageFor, type Ctx } from "./lib"
-import { resolveOficinaPage, type OficinaPage } from "./pages"
+import { oficinaPageSlugs, resolveOficinaPage, type OficinaPage } from "./pages"
 import {
   JsonLd,
   breadcrumbSchema,
@@ -59,7 +59,7 @@ const body = Barlow({
   display: "swap",
 })
 
-export { resolveOficinaPage }
+export { oficinaPageSlugs, resolveOficinaPage }
 export type { OficinaPage }
 
 /** O caminho desta página dentro do site — o que vira canônico e trilha. */
@@ -86,6 +86,16 @@ export function oficinaMetadata({
 }): Metadata {
   const b = data.business
   const path = pathFor(links, page)
+  // ⚠️ ABSOLUTO, COM A ORIGEM DESTA VISITA — nunca o caminho cru.
+  //
+  // Caminho relativo em `canonical` e em `og:url` é resolvido pelo Next contra
+  // o `metadataBase` do layout DA PLATAFORMA. No domínio do cliente isso fazia
+  // cada página declarar-se cópia de uma URL da freelandoo.com.br — e o
+  // buscador obedece a essa declaração: ele tira a página do cliente do índice
+  // e fica com a nossa. Foi o que manteve `ricardofogoes.com.br` inteiro fora
+  // do Google. O comentário acima já dizia "sai de `links`"; faltava sair
+  // INTEIRO, com a origem na frente.
+  const url = `${links.origin}${path}`
 
   const title = page
     ? page.kind === "service"
@@ -107,12 +117,12 @@ export function oficinaMetadata({
   return {
     title: { absolute: title },
     description: description || undefined,
-    alternates: { canonical: path },
+    alternates: { canonical: url },
     openGraph: {
       title,
       description: description || undefined,
       type: page ? "article" : "website",
-      url: path,
+      url,
       siteName: b.name || undefined,
       images: image ? [{ url: image }] : undefined,
     },

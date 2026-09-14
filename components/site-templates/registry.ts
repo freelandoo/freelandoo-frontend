@@ -29,18 +29,21 @@ import type { OficinaLocalData, SiteTemplate, TemplateLinks } from "@/types/site
 import {
   OficinaLocalSite,
   oficinaMetadata,
+  oficinaPageSlugs,
   resolveOficinaPage,
   type OficinaPage,
 } from "./oficina-local"
 import {
   RicardoFogoesSite,
   ricardoMetadata,
+  ricardoPageSlugs,
   resolveRicardoPage,
   type RicardoPage,
 } from "./ricardo-fogoes"
 import {
   EnzoCortesSite,
   enzoMetadata,
+  enzoPageSlugs,
   resolveEnzoPage,
   type EnzoPage,
 } from "./enzo-cortes"
@@ -68,6 +71,19 @@ export type TemplateEntry = {
   resolvePage: (data: unknown, slug: string) => unknown | null
   /** `<title>`, descrição, canônico e preview — o que o buscador lê. */
   metadata: (props: TemplateProps) => Metadata
+  /**
+   * Os endereços internos do site, sem a home — é o que o `app/sitemap.ts`
+   * publica no domínio do cliente.
+   *
+   * ⚠️ NASCE NO TEMA, e não numa lista à parte, pela mesma razão de
+   * `resolvePage`: os dois respondem sobre o MESMO conjunto de páginas. Numa
+   * segunda lista, a página nova entraria no site e ficaria fora do mapa — e o
+   * jeito de descobrir seria notar, meses depois, que ela nunca foi indexada.
+   *
+   * Recebe `data` porque num tema do construtor as páginas vêm do documento;
+   * nos temas autorais elas moram no código e o argumento é ignorado.
+   */
+  pageSlugs: (data: unknown) => string[]
 }
 
 const OFICINA_LOCAL: TemplateEntry = {
@@ -85,6 +101,7 @@ const OFICINA_LOCAL: TemplateEntry = {
       links,
       page: (page as OficinaPage | null) ?? null,
     }),
+  pageSlugs: (data) => oficinaPageSlugs(data as OficinaLocalData),
 }
 
 /**
@@ -101,6 +118,7 @@ const RICARDO_FOGOES: TemplateEntry = {
   resolvePage: (_data, slug) => resolveRicardoPage(slug),
   metadata: ({ links, page }) =>
     ricardoMetadata({ links, page: (page as RicardoPage | null) ?? null }),
+  pageSlugs: () => ricardoPageSlugs,
 }
 
 /**
@@ -121,6 +139,7 @@ const ENZO_CORTES: TemplateEntry = {
   resolvePage: (_data, slug) => resolveEnzoPage(slug),
   metadata: ({ links, page }) =>
     enzoMetadata({ links, page: (page as EnzoPage | null) ?? null }),
+  pageSlugs: () => enzoPageSlugs,
 }
 
 const TEMPLATES: Record<string, TemplateEntry> = {

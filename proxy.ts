@@ -30,20 +30,11 @@
 
 import { NextResponse, type NextRequest } from "next/server"
 
-/**
- * Domínios da própria plataforma. Um Host que termine em algum deles é tráfego
- * normal do produto; qualquer outro é candidato a domínio de comunidade.
- *
- * `vercel.app` entra porque os deploys de preview vivem lá e não podem ser
- * confundidos com domínio de cliente — sem isso, cada preview seria tratado
- * como um domínio desconhecido e o site inteiro viraria 404.
- */
-const PLATFORM_HOSTS = [
-  "freelandoo.com.br",
-  "freelandoo.com",
-  "vercel.app",
-  "localhost",
-]
+// A lista de domínios da plataforma e a limpeza do Host moram em
+// `lib/site-host.ts`: o robots.txt e o sitemap.xml precisam da MESMA
+// resposta que este arquivo, e as duas rotas não passam por aqui (o matcher
+// as exclui). Módulo puro, sem I/O — a regra deste arquivo continua inteira.
+import { cleanHost, platformApexFor } from "@/lib/site-host"
 
 /**
  * Subdomínios que NUNCA viram site de comunidade.
@@ -58,16 +49,6 @@ const RESERVED_SUBDOMAINS = new Set([
   "mail", "email", "smtp", "ns1", "ns2", "dns", "ws", "realtime",
   "dev", "staging", "test", "preview", "beta", "status", "docs", "blog",
 ])
-
-/** Host cru → nome de domínio (sem porta, minúsculo). */
-function cleanHost(raw: string | null): string {
-  if (!raw) return ""
-  return raw.split(":")[0].trim().toLowerCase().replace(/\.+$/, "")
-}
-
-function platformApexFor(host: string): string | null {
-  return PLATFORM_HOSTS.find((apex) => host === apex || host.endsWith(`.${apex}`)) || null
-}
 
 /**
  * As páginas PRÓPRIAS do site da comunidade, além da home.

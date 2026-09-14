@@ -1,5 +1,13 @@
 import type { MetadataRoute } from "next"
+import { headers } from "next/headers"
+import { templateFor } from "@/components/site-templates/registry"
 import { getBackendApiUrl } from "@/lib/backend"
+import {
+  domainTemplateLinks,
+  fetchPublicSiteBySlug,
+  resolveHostToSlug,
+} from "@/lib/community-site"
+import { cleanHost, isCommunityDomain } from "@/lib/site-host"
 import { buildProfileUrl, slugify } from "@/lib/slug"
 import { fetchBlogSlugs } from "@/lib/blog"
 
@@ -107,7 +115,65 @@ async function fetchProfilesPage(offset: number, limit: number): Promise<SearchP
   }
 }
 
+/**
+ * O mapa do site de UM cliente, servido no domínio dele.
+ *
+ * ⚠️ ESTE ARQUIVO RESPONDE TAMBÉM EM `ricardofogoes.com.br/sitemap.xml` — o
+ * `proxy.ts` exclui `sitemap.xml` do matcher, então o pedido chega aqui cru.
+ * Até esta correção ele devolvia o mapa da PLATAFORMA: 107 URLs de
+ * freelandoo.com.br e nenhuma do cliente. Submetido no Search Console do
+ * domínio dele, um mapa assim não indexa nada — toda URL é de outro domínio, e
+ * o buscador descarta as que não pertencem à propriedade.
+ *
+ * O sitemap da plataforma continua NÃO listando os sites dos clientes: eles não
+ * são páginas nossas, e anunciá-los dali diria ao buscador que o dono do
+ * conteúdo é a Freelandoo. O mapa de cada um mora no domínio de cada um.
+ */
+async function communitySitemap(host: string): Promise<MetadataRoute.Sitemap> {
+  const slug = await resolveHostToSlug(host)
+  if (!slug) return []
+  const site = await fetchPublicSiteBySlug(slug)
+  // Comunidade fechada não entra: o conteúdo dela não é público, e um mapa é
+  // justamente um convite para o robô entrar.
+  if (!site || site.locked) return []
+
+  const origin = `https://${host}`
+  const lastModified = site.updated_at || site.published_at || undefined
+
+  // ⚠️ AS PÁGINAS SAEM DE QUEM AS DESENHA. Num site de tema, do próprio tema
+  // (o documento é vazio); num site do construtor, do documento. Uma lista
+  // montada aqui divergiria da rota na primeira página nova — e o sintoma seria
+  // um 404 no mapa, ou uma página no ar que o buscador nunca encontra.
+  const pages = site.template
+    ? (templateFor(site.template.slug)?.pageSlugs(site.template.data) ?? [])
+    : (site.config?.pages ?? []).filter((page) => page.enabled).map((page) => page.slug)
+
+  const routes: MetadataRoute.Sitemap = [
+    { url: `${origin}/`, lastModified, changeFrequency: "weekly", priority: 1 },
+    ...pages.map((page) => ({
+      url: `${origin}/pagina/${page}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
+  ]
+
+  // A página de agendamento só existe quando há serviço reservável — a MESMA
+  // pergunta que decide o botão do site. Anunciá-la sempre poria no mapa um
+  // endereço que responde vazio.
+  const booking = domainTemplateLinks(site, host).booking
+  if (booking) {
+    routes.push({ url: `${origin}${booking}`, changeFrequency: "weekly", priority: 0.7 })
+  }
+
+  return routes
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Quem está perguntando? No domínio de um cliente o mapa é o DELE.
+  const host = cleanHost((await headers()).get("host"))
+  if (isCommunityDomain(host)) return communitySitemap(host)
+
   const now = new Date()
   const seen = new Set<string>()
   const routes: MetadataRoute.Sitemap = []

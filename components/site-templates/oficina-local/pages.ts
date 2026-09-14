@@ -17,6 +17,22 @@ export type OficinaPage =
   | { kind: "service"; service: TemplateService }
   | { kind: "city"; city: TemplateCity }
 
+/**
+ * Os endereços internos do site — o que entra no sitemap do domínio do cliente.
+ *
+ * ⚠️ MESMA ORDEM de `resolveOficinaPage` (serviço antes de cidade) e mesma
+ * fonte: o documento. Uma segunda lista, montada à mão, anunciaria ao buscador
+ * uma página que a rota responde com 404 — ou deixaria de fora a que ela
+ * responde, que é o jeito silencioso de um endereço nunca ser indexado.
+ */
+export function oficinaPageSlugs(data: OficinaLocalData | null | undefined): string[] {
+  if (!data) return []
+  return [
+    ...(data.services ?? []).map((s) => s.slug),
+    ...(data.cities ?? []).map((c) => c.slug),
+  ].filter(Boolean)
+}
+
 export function resolveOficinaPage(
   data: OficinaLocalData | null | undefined,
   slug: string

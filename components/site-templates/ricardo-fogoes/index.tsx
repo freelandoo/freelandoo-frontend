@@ -36,7 +36,7 @@ import ContatoPage from "./pages/contact"
 import HomePage from "./pages/home"
 import ServicoPage from "./pages/service"
 import ServicosPage from "./pages/services-index"
-import { pageMeta, pageSlug, resolveRicardoPage, type RicardoPage } from "./pages"
+import { PAGE_SLUGS, pageMeta, pageSlug, resolveRicardoPage, type RicardoPage } from "./pages"
 import { BusinessLd, WebSiteLd } from "./schema"
 import SiteFooter from "./site-footer"
 import SiteHeader from "./site-header"
@@ -78,7 +78,7 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 })
 
-export { resolveRicardoPage }
+export { PAGE_SLUGS as ricardoPageSlugs, resolveRicardoPage }
 export type { RicardoPage }
 
 /**
@@ -168,17 +168,28 @@ export function ricardoMetadata({
   const { title, description } = pageMeta(page)
   const slug = pageSlug(page)
   const path = slug ? pageHref(links, slug) : links.home
+  // ⚠️ ABSOLUTO, COM A ORIGEM DESTA VISITA — nunca o caminho cru.
+  //
+  // Caminho relativo em `canonical` e em `og:url` é resolvido pelo Next contra
+  // o `metadataBase` do layout DA PLATAFORMA. No domínio do cliente isso fazia
+  // cada página declarar-se cópia de uma URL da freelandoo.com.br — e o
+  // buscador obedece a essa declaração: ele tira a página do cliente do índice
+  // e fica com a nossa. Foi o que manteve `ricardofogoes.com.br` inteiro fora
+  // do Google. O comentário acima já dizia "sai de `links`"; faltava sair
+  // INTEIRO, com a origem na frente.
+  const url = `${links.origin}${path}`
+
 
   return {
     title: { absolute: title },
     description,
-    alternates: { canonical: path },
+    alternates: { canonical: url },
     icons: siteIcons(links),
     openGraph: {
       title,
       description,
       type: page ? "article" : "website",
-      url: path,
+      url,
       siteName: BUSINESS.name,
       locale: "pt_BR",
       images: [shareImage(links)],
