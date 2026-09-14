@@ -1,0 +1,363 @@
+/* Tema `ecoluz` — a folha do site autoral da EcoLuz Energia Solar.
+ *
+ * ⚠️ TUDO ESCOPADO EM `.tpl-ecoluz`. Este site é servido de dentro da
+ * aplicação da Freelandoo, onde estas regras convivem com a plataforma
+ * inteira. Uma regra solta atravessa o site todo — e o sintoma apareceria numa
+ * tela que ninguém relacionaria ao site de um cliente.
+ *
+ * ⚠️ AS CORES SÃO VARIÁVEIS (`--el-*`), NUNCA TOKENS DO TAILWIND (`@theme`).
+ * `@theme` é GLOBAL por construção: declarado aqui, criaria utilitários
+ * `bg-sun`/`text-ink` para a plataforma inteira. Nos componentes a cor entra
+ * como valor arbitrário: `text-[var(--el-sun-hi)]`.
+ *
+ * ⚠️ NOME DE KEYFRAME TAMBÉM É GLOBAL — por isso todos aqui são `tplEcoluz*`.
+ * Um `glow` genérico colidiria com qualquer outro do site.
+ *
+ * ── A DIREÇÃO: ENGENHARIA, NÃO "ECO" ──────────────────────────────────────
+ * O ramo inteiro se desenha igual: verde, folhinha, foto de painel azul com
+ * céu limpo. O problema é que isso comunica ecologia, e quem procura energia
+ * solar está decidindo sobre DINHEIRO e sobre uma obra no próprio telhado.
+ *
+ * A gramática aqui é outra: grade técnica, medida, número grande, fio fino e
+ * a LUZ como matéria — um halo quente que nasce do topo, como o sol nasce. O
+ * amarelo é o da marca (o mesmo do logotipo), e o preto é QUENTE (R>G>B):
+ * preto azulado ao lado de amarelo lê como duas famílias brigando, a mesma
+ * conta que a paleta do Fitness pagou ao trocar cinza frio por cinza quente.
+ */
+
+.tpl-ecoluz {
+  /* ── SUPERFÍCIES ESCURAS ────────────────────────────────────────────────
+     Rampa calibrada em L* (0 → 2 → 5 → 8): perto do preto a percepção
+     comprime, e subtrair sRGB em linha reta colapsa a rampa sem avisar. */
+  --el-ink-deep: #070603;
+  --el-ink: #0d0a05;
+  --el-ink-up: #17110a;
+  --el-ink-hi: #221a0e;
+
+  /* ── AMARELO: SÃO TRÊS, E A DIFERENÇA É O PAPEL ─────────────────────────
+     A distinção que a troca ingênua erra, e que já custou uma entrega inteira
+     na plataforma (a paleta do Fitness).
+
+       --el-sun       FUNDO **e** TINTA. Medido: 11,8:1 sobre `ink`, e os
+                      mesmos 11,8:1 com `ink` por cima. É o único que serve
+                      nos dois papéis — é o amarelo do botão cheio.
+       --el-sun-hi    TINTA sobre escuro (14,2:1). O amarelo de TEXTO:
+                      manchete, número, destaque. Como FUNDO exigiria tinta
+                      quase preta e perderia o brilho.
+       --el-sun-deep  FIO, borda e sombra. 3,3:1 sobre `ink` — usar como
+                      texto some, e é por isso que ele nunca é tinta.
+
+     ⚠️ Ao trocar um fundo por `--el-sun`, a tinta por cima TEM que virar
+     `--el-ink`. Trocado só o fundo, o rótulo some dentro do próprio botão. */
+  --el-sun: #ffc400;
+  --el-sun-hi: #ffd85c;
+  --el-sun-deep: #8a6000;
+
+  /* ── TINTA CLARA ────────────────────────────────────────────────────────
+     Creme quente, nunca branco puro: branco sobre preto vibra, e ao lado de
+     amarelo denuncia que os dois não são da mesma família. */
+  --el-cream: #f7f2e6;
+  --el-cream-dim: #bbb2a1;
+  /* Medido, não escolhido a olho: 5,6:1 sobre `ink`. É a cor da anotação
+     pequena — texto NORMAL para a régua de contraste. Um tom abaixo disto
+     reprova em AA e ninguém percebe até a auditoria. */
+  --el-cream-faint: #8e8779;
+
+  /* ── SUPERFÍCIE CLARA ───────────────────────────────────────────────────
+     O site alterna faixas escuras e claras: a escura é a promessa, a clara é
+     a explicação. Papel quente pela mesma razão do preto quente. */
+  --el-paper: #fbf7ee;
+  --el-paper-up: #f3ecdd;
+  --el-paper-ink: #0c0a05;
+  /* 4,8:1 sobre `paper` — o limite de onde o texto secundário ainda passa. */
+  --el-paper-dim: #6b6455;
+  --el-paper-line: rgb(12 10 5 / 0.12);
+  /* Sobre papel, o amarelo da marca é ilegível como TEXTO (1,5:1). O âmbar
+     escuro é o que substitui ele ali — 4,9:1, passa em AA. */
+  --el-amber-ink: #7a5400;
+
+  /* fios */
+  --el-line: rgb(138 96 0 / 0.34);
+  --el-line-soft: rgb(138 96 0 / 0.16);
+
+  /* ── TIPOGRAFIA ─────────────────────────────────────────────────────────
+     Os nomes (`--el-font-*`) são os que `index.tsx` declara. Dentro da
+     Freelandoo elas convivem com as variáveis da plataforma, e um `--font-*`
+     solto colidiria com as dela. */
+  --el-display: var(--el-font-display), "Arial Narrow", system-ui, sans-serif;
+  --el-body: var(--el-font-body), system-ui, -apple-system, sans-serif;
+
+  /* uma curva só no site inteiro — saída suave, sem elástico */
+  --el-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* margem da página: o conteúdo nunca encosta na borda */
+  --el-pad: 1.25rem;
+
+  position: relative;
+  background: var(--el-ink);
+  color: var(--el-cream);
+  font-family: var(--el-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (min-width: 768px) {
+  .tpl-ecoluz {
+    --el-pad: 2.5rem;
+  }
+}
+
+/* ⚠️ O RECORTE VAI NO CONTEÚDO, NÃO NO INVÓLUCRO.
+   A barra fixa, o botão flutuante e o fundo são FILHOS de `.tpl-ecoluz`, e
+   alguns navegadores tratam `clip` como recorte de descendente `fixed` — o
+   preço de perder essa aposta é a barra do site do cliente sumir. Sem recorte
+   nenhum, os reveals laterais abrem rolagem horizontal no celular antes de a
+   animação rodar. */
+.tpl-ecoluz > main,
+.tpl-ecoluz > footer {
+  overflow-x: clip;
+}
+
+/* ── O FUNDO ────────────────────────────────────────────────────────────────
+   ⚠️ PINTADO UMA VEZ, SEM ANIMAÇÃO. A plataforma pagou essa conta em
+   2026-09-09: o custo de uma camada animada do tamanho da janela é POR PIXEL,
+   e ela divide a GPU com o compositor — quem engasga é a rolagem inteira, e a
+   causa parece estar em qualquer outro lugar. Aqui são três gradientes e uma
+   grade, estáticos: depois do primeiro quadro, rolar custa zero. */
+.tpl-ecoluz__bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    /* o halo do sol, nascendo do topo */
+    radial-gradient(74rem 42rem at 62% -14%, rgb(255 196 0 / 0.16), transparent 62%),
+    radial-gradient(48rem 30rem at 10% 4%, rgb(255 138 0 / 0.07), transparent 66%),
+    /* a grade técnica: fio finíssimo, quase subliminar */
+    repeating-linear-gradient(
+      to right,
+      rgb(255 216 92 / 0.028) 0 1px,
+      transparent 1px 5.5rem
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgb(255 216 92 / 0.028) 0 1px,
+      transparent 1px 5.5rem
+    ),
+    var(--el-ink);
+}
+
+/* ── TIPOGRAFIA ─────────────────────────────────────────────────────────── */
+
+/* ⚠️ O EIXO `wdth` É O PONTO DA ESCOLHA DA FONTE — ver `index.tsx`. A
+   manchete sai EXPANDIDA, que é o que dá o ar de placa/engenharia; o
+   sobretítulo sai CONDENSADO. Sem o eixo declarado no `next/font`, os dois
+   saem na largura normal e o site perde a voz sem um único erro aparecer. */
+.tpl-ecoluz .display {
+  font-family: var(--el-display);
+  font-weight: 700;
+  font-stretch: 112%;
+  line-height: 0.94;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.tpl-ecoluz .eyebrow {
+  font-family: var(--el-display);
+  font-weight: 600;
+  font-stretch: 84%;
+  font-size: 0.75rem;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* O número grande — etapa, indicador, resultado da calculadora. */
+.tpl-ecoluz .numeral {
+  font-family: var(--el-display);
+  font-weight: 700;
+  font-stretch: 118%;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.tpl-ecoluz .prose-el p + p {
+  margin-top: 1rem;
+}
+
+/* ── BOTÕES ─────────────────────────────────────────────────────────────── */
+
+.tpl-ecoluz .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.95rem 1.6rem;
+  font-family: var(--el-display);
+  font-weight: 700;
+  font-stretch: 96%;
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.18s var(--el-ease),
+    color 0.18s var(--el-ease),
+    border-color 0.18s var(--el-ease),
+    box-shadow 0.18s var(--el-ease);
+}
+
+/* ⚠️ Fundo amarelo pede tinta `ink`. Ver a nota das três famílias acima. */
+.tpl-ecoluz .btn-solid {
+  background: var(--el-sun);
+  color: var(--el-ink);
+  box-shadow: 0 0 0 0 rgb(255 196 0 / 0.5);
+}
+.tpl-ecoluz .btn-solid:hover {
+  background: var(--el-sun-hi);
+  box-shadow: 0 0 2.2rem 0 rgb(255 196 0 / 0.28);
+}
+
+.tpl-ecoluz .btn-ghost {
+  background: transparent;
+  color: var(--el-cream);
+  border-color: var(--el-line);
+}
+.tpl-ecoluz .btn-ghost:hover {
+  border-color: var(--el-sun);
+  color: var(--el-sun-hi);
+}
+
+/* O botão sobre faixa clara: o amarelo vira âmbar para não sumir no papel. */
+.tpl-ecoluz .btn-paper {
+  background: var(--el-paper-ink);
+  color: var(--el-paper);
+}
+.tpl-ecoluz .btn-paper:hover {
+  background: var(--el-amber-ink);
+}
+
+/* ── FIOS E CARTÕES ─────────────────────────────────────────────────────── */
+
+.tpl-ecoluz .panel {
+  background: rgb(23 17 10 / 0.72);
+  border: 1px solid var(--el-line-soft);
+}
+
+.tpl-ecoluz .panel-paper {
+  background: var(--el-paper);
+  border: 1px solid var(--el-paper-line);
+  color: var(--el-paper-ink);
+}
+
+/* A régua: um fio que começa amarelo e se dissolve. Marca início de seção. */
+.tpl-ecoluz .rule {
+  height: 1px;
+  background: linear-gradient(to right, var(--el-sun), transparent);
+}
+
+/* ── MOVIMENTO ──────────────────────────────────────────────────────────────
+   ⚠️ O GATE É UM ATRIBUTO ESCRITO DURANTE O PARSE (ver `index.tsx`), e não um
+   efeito de React. Sem JavaScript o atributo nunca é escrito e a página
+   aparece INTEIRA — que é o que importa para quem tem JS bloqueado e para o
+   robô que não executa script. Num `useEffect` o conteúdo apareceria, sumiria
+   e voltaria animando. */
+.tpl-ecoluz[data-motion="on"] [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+}
+
+.tpl-ecoluz[data-motion="on"] [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s var(--el-ease),
+    transform 0.6s var(--el-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-ecoluz[data-motion="on"] [data-reveal],
+  .tpl-ecoluz[data-motion="on"] [data-reveal].is-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── O BOTÃO FLUTUANTE ──────────────────────────────────────────────────────
+   ⚠️ O PULSO É `box-shadow`, NUNCA `transform: scale`. Este botão é `fixed` e
+   encosta na borda — e elemento fixo na borda NÃO é recortado por nada (o
+   recorte mora em `> main`, que é irmão dele). Um anel em `scale` de 56px para
+   112px passa 12px além da borda da tela e abre rolagem horizontal no
+   documento inteiro; o sintoma aparece só no celular e não parece ter nada a
+   ver com o botão. Sombra é pintada fora da caixa e não entra na região
+   rolável. */
+@keyframes tplEcoluzFabPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgb(37 211 102 / 0.42), 0 10px 30px rgb(0 0 0 / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 0.75rem rgb(37 211 102 / 0), 0 10px 30px rgb(0 0 0 / 0.4);
+  }
+}
+
+.tpl-ecoluz .fab-zap {
+  animation: tplEcoluzFabPulse 2.8s var(--el-ease) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-ecoluz .fab-zap {
+    animation: none;
+  }
+}
+
+/* ── O CONTROLE DESLIZANTE DA CALCULADORA ───────────────────────────────────
+   `appearance: none` zera o desenho nativo; sem redesenhar o polegar depois
+   disso, ele SOME em WebKit — o controle continua funcionando e fica
+   invisível, que é o pior dos dois mundos. */
+.tpl-ecoluz .slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2.25rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tpl-ecoluz .slider::-webkit-slider-runnable-track {
+  height: 0.375rem;
+  background: linear-gradient(to right, var(--el-sun-deep), var(--el-sun));
+  border: 1px solid var(--el-line);
+}
+.tpl-ecoluz .slider::-moz-range-track {
+  height: 0.375rem;
+  background: linear-gradient(to right, var(--el-sun-deep), var(--el-sun));
+  border: 1px solid var(--el-line);
+}
+
+.tpl-ecoluz .slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: -0.6875rem;
+  background: var(--el-sun);
+  border: 2px solid var(--el-ink);
+  box-shadow: 0 0 0 1px var(--el-sun-deep);
+}
+.tpl-ecoluz .slider::-moz-range-thumb {
+  width: 1.5rem;
+  height: 1.5rem;
+  background: var(--el-sun);
+  border: 2px solid var(--el-ink);
+  box-shadow: 0 0 0 1px var(--el-sun-deep);
+}
+
+.tpl-ecoluz .slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--el-sun-hi);
+  outline-offset: 2px;
+}
+.tpl-ecoluz .slider:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--el-sun-hi);
+  outline-offset: 2px;
+}

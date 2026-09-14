@@ -144,6 +144,16 @@ export type SiteTemplate =
       slug: "enzo-cortes"
       data: null
     }
+  /**
+   * Tema AUTORAL de um cliente (energia solar, São Luís/MA). Mesma natureza
+   * dos dois acima: os cinco serviços, os quatro municípios atendidos e o FAQ
+   * moram no código do tema, e por isso `data` é `null`. O `normalize` do
+   * backend devolve `{}` e nada é gravado.
+   */
+  | {
+      slug: "ecoluz"
+      data: null
+    }
 
 /**
  * O endereço do site nos TRÊS lugares em que ele é servido.

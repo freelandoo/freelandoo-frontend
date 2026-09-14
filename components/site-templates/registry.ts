@@ -47,6 +47,13 @@ import {
   resolveEnzoPage,
   type EnzoPage,
 } from "./enzo-cortes"
+import {
+  EcoluzSite,
+  ecoluzMetadata,
+  ecoluzPageSlugs,
+  resolveEcoluzPage,
+  type EcoluzPage,
+} from "./ecoluz"
 
 /**
  * O que a rota entrega ao tema.
@@ -142,10 +149,36 @@ const ENZO_CORTES: TemplateEntry = {
   pageSlugs: () => enzoPageSlugs,
 }
 
+/**
+ * Tema AUTORAL, escrito para UM cliente: energia solar em São Luís, no
+ * Maranhão.
+ *
+ * ⚠️ Ele ignora `data` e `services` de propósito, pela mesma razão dos dois
+ * anteriores: o documento é `{}` (o `normalize` do backend devolve vazio) e
+ * todo o conteúdo — os cinco serviços, os quatro municípios, o FAQ — mora no
+ * código do tema.
+ *
+ * ⚠️ E LIGAR `services` AQUI SERIA PIOR QUE INÚTIL: a vitrine do cadastro
+ * desenha PREÇO, e este negócio não publica preço em lugar nenhum de
+ * propósito — sistema solar depende de consumo, telhado e arranjo, e um
+ * número na página seria chute publicado como fato. Ver a nota no JSON-LD
+ * (`schema.tsx`), que pela mesma razão não declara `priceRange`.
+ */
+const ECOLUZ: TemplateEntry = {
+  slug: "ecoluz",
+  Site: ({ links, page }) =>
+    EcoluzSite({ links, page: (page as EcoluzPage | null) ?? null }),
+  resolvePage: (_data, slug) => resolveEcoluzPage(slug),
+  metadata: ({ links, page }) =>
+    ecoluzMetadata({ links, page: (page as EcoluzPage | null) ?? null }),
+  pageSlugs: () => ecoluzPageSlugs,
+}
+
 const TEMPLATES: Record<string, TemplateEntry> = {
   "oficina-local": OFICINA_LOCAL,
   "ricardo-fogoes": RICARDO_FOGOES,
   "enzo-cortes": ENZO_CORTES,
+  ecoluz: ECOLUZ,
 }
 
 /**
