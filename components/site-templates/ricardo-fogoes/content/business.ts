@@ -74,9 +74,21 @@ export const BUSINESS = {
    * sozinho e acerta. Alfinete no lugar errado é pior que alfinete nenhum.
    */
 
-  hoursHuman: "Segunda a sexta, das 08h às 18h",
-  hoursShort: "Seg–sex · 08h–18h",
-  closedHuman: "Sábado e domingo: fechado",
+  hoursHuman: "Segunda a sábado, das 08h às 18h",
+  hoursShort: "Seg–sáb · 08h–18h",
+  closedHuman: "Domingo: fechado",
+
+  /**
+   * As duas formas que aparecem NO MEIO DE FRASE, em minúscula.
+   *
+   * ⚠️ EXISTEM PARA O HORÁRIO NÃO TER SEIS CÓPIAS SOLTAS PELO TEXTO. Antes
+   * desta linha ele estava escrito à mão na página de cidade, na de serviço,
+   * na home e na descrição do /contato — e é exatamente assim que uma troca
+   * de horário sobrevive em metade do site, sem erro nenhum. Foi o que
+   * aconteceu com o endereço antigo.
+   */
+  hoursDays: "de segunda a sábado",
+  hoursPhrase: "de segunda a sábado, das 08h às 18h",
   scheduling: "Atendimento com hora marcada",
 
   payments: ["Cartão de débito", "Cartão de crédito"] as const,
@@ -87,14 +99,14 @@ export const BUSINESS = {
  * Horário em formato Schema.org.
  *
  * ⚠️ Só existe porque o horário foi informado em formato inequívoco
- * (seg–sex, 08h–18h). Horário que chega como texto livre NÃO vira
+ * (seg–sáb, 08h–18h). Horário que chega como texto livre NÃO vira
  * openingHoursSpecification — adivinhar dia e hora publica horário
  * que ninguém escreveu.
  */
 export const OPENING_HOURS = [
   {
     "@type": "OpeningHoursSpecification",
-    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     opens: "08:00",
     closes: "18:00",
   },

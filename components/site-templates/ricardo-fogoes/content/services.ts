@@ -28,7 +28,7 @@ import imgLimpeza from "../assets/limpeza-de-fogoes.webp";
 import imgChapas from "../assets/manutencao-de-chapas.webp";
 import imgInstalacao from "../assets/instalacao-de-fogoes.webp";
 
-import { whatsappLink } from "./business";
+import { BUSINESS, whatsappLink } from "./business";
 
 export type Faq = { q: string; a: string };
 
@@ -231,7 +231,7 @@ export const SERVICES: Service[] = [
     faq: [
       {
         q: "Dá para atender fora do horário de funcionamento do restaurante?",
-        a: "O horário de atendimento é de segunda a sexta, das 08h às 18h, com hora marcada. Dentro dessa janela dá para combinar o melhor momento da cozinha — normalmente o intervalo entre almoço e jantar.",
+        a: `O horário de atendimento é ${BUSINESS.hoursPhrase}, com hora marcada. Dentro dessa janela dá para combinar o melhor momento da cozinha — normalmente o intervalo entre almoço e jantar.`,
       },
       {
         q: "A chama do meu fogão industrial está amarela e suja as panelas. É normal?",

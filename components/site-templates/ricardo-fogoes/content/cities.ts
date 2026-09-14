@@ -51,7 +51,7 @@ export const CITIES: City[] = [
     h1: "Conserto de fogões em Aguaí",
     metaTitle: "Conserto de Fogões em Aguaí/SP | Ricardo Fogões",
     metaDescription:
-      "Assistência de fogões em Aguaí: conserto, reforma, limpeza e instalação, residencial e industrial. Atendimento com hora marcada, de segunda a sexta.",
+      `Assistência de fogões em Aguaí: conserto, reforma, limpeza e instalação, residencial e industrial. Atendimento com hora marcada, ${BUSINESS.hoursDays}.`,
     intro: [
       "Aguaí é a base. O atendimento sai daqui, e é a cidade onde dá para encaixar a visita com menos antecedência.",
       "Residencial e industrial, multimarcas, com hora marcada.",
@@ -99,7 +99,7 @@ export const CITIES: City[] = [
       body: [
         "São João tem uma praça de alimentação viva e movimento de estudantes, o que significa muita cozinha ligada o dia inteiro. Fogão industrial e chapa nessas condições envelhecem por saturação, não por idade: o queimador satura de gordura muito antes do que saturaria numa casa.",
         "Ao mesmo tempo, boa parte das chamadas continua sendo residencial clássica — forno que não esquenta, boca que não acende.",
-        "Para o estabelecimento, o melhor horário costuma ser o intervalo entre almoço e jantar, e dá para combinar isso dentro da janela de segunda a sexta, das 08h às 18h.",
+        `Para o estabelecimento, o melhor horário costuma ser o intervalo entre almoço e jantar, e dá para combinar isso dentro da janela ${BUSINESS.hoursPhrase}.`,
       ],
     },
     areas: [

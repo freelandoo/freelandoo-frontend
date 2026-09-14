@@ -31,7 +31,7 @@ import { FaqLd } from "../schema";
 const HOME_FAQ = [
   {
     q: "Quais cidades o Ricardo Fogões atende?",
-    a: "Aguaí, onde fica a base, mais São João da Boa Vista, Casa Branca e Mogi Guaçu. O atendimento é marcado com hora, de segunda a sexta, das 08h às 18h.",
+    a: `Aguaí, onde fica a base, mais São João da Boa Vista, Casa Branca e Mogi Guaçu. O atendimento é marcado com hora, ${BUSINESS.hoursPhrase}.`,
   },
   {
     q: "Atende fogão residencial e industrial?",
@@ -260,7 +260,7 @@ export default function HomePage({ links }: Ctx) {
               },
               {
                 t: "A visita é marcada",
-                d: "Com hora, dentro de segunda a sexta, das 08h às 18h. Em Aguaí o encaixe é mais curto.",
+                d: `Com hora, dentro ${BUSINESS.hoursPhrase}. Em Aguaí o encaixe é mais curto.`,
               },
               {
                 t: "O defeito é identificado",

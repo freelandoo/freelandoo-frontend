@@ -98,7 +98,7 @@ export function pageMeta(page: RicardoPage | null): { title: string; description
       return {
         title: `Contato — Ricardo Fogões, Aguaí/SP | ${BUSINESS.phoneDisplay}`,
         description:
-          "Telefone, WhatsApp, endereço e horário do Ricardo Fogões em Aguaí/SP. Atendimento de segunda a sexta, das 08h às 18h, com hora marcada.",
+          `Telefone, WhatsApp, endereço e horário do Ricardo Fogões em Aguaí/SP. Atendimento ${BUSINESS.hoursPhrase}, com hora marcada.`,
       }
     case "sobre":
       return {
