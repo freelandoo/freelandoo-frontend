@@ -2,11 +2,7 @@ import type { MetadataRoute } from "next"
 import { headers } from "next/headers"
 import { templateFor } from "@/components/site-templates/registry"
 import { getBackendApiUrl } from "@/lib/backend"
-import {
-  domainTemplateLinks,
-  fetchPublicSiteBySlug,
-  resolveHostToSlug,
-} from "@/lib/community-site"
+import { fetchPublicSiteBySlug, resolveHostToSlug } from "@/lib/community-site"
 import { cleanHost, isCommunityDomain } from "@/lib/site-host"
 import { buildProfileUrl, slugify } from "@/lib/slug"
 import { fetchBlogSlugs } from "@/lib/blog"
@@ -158,13 +154,12 @@ async function communitySitemap(host: string): Promise<MetadataRoute.Sitemap> {
     })),
   ]
 
-  // A página de agendamento só existe quando há serviço reservável — a MESMA
-  // pergunta que decide o botão do site. Anunciá-la sempre poria no mapa um
-  // endereço que responde vazio.
-  const booking = domainTemplateLinks(site, host).booking
-  if (booking) {
-    routes.push({ url: `${origin}${booking}`, changeFrequency: "weekly", priority: 0.7 })
-  }
+  // ⚠️ `/agendar` FICA DE FORA, e não é esquecimento: aquela rota declara
+  // `robots: { index: false }` de propósito — é um formulário de três passos,
+  // não uma página de conteúdo. Sitemap é a lista do que se QUER indexado;
+  // listar uma URL noindex rende uma linha de "excluída por noindex" no Search
+  // Console para cada site, e gasta rastreamento num endereço que nunca vai
+  // aparecer em busca nenhuma.
 
   return routes
 }
