@@ -34,6 +34,7 @@ import ServicosPage from "./pages/services-index";
 import SobrePage from "./pages/about";
 import { PAGE_SLUGS, pageMeta, pageSlug, resolveEcoluzPage, type EcoluzPage } from "./pages";
 import ScrollMotion from "./scroll-motion";
+import SunIntro from "./intro";
 import { BreadcrumbLd, BusinessLd, FaqLd, ServiceLd, WebSiteLd } from "./schema";
 import "./theme.css";
 
@@ -226,6 +227,13 @@ export function EcoluzSite({
       <SiteFooter links={links} />
       <WhatsappFab />
       <ScrollMotion />
+
+      {/* ⚠️ A ABERTURA É O ÚLTIMO FILHO, E NÃO O PRIMEIRO. Ela precisa pintar
+          por cima de tudo (inclusive da barra fixa), e aqui quem vem depois no
+          DOM pinta por cima. Ela não existe no HTML do servidor de propósito:
+          assim o herói é o LCP, e o raio passa por cima de uma página que já
+          está lá. Ver a nota longa em `intro.tsx`. */}
+      <SunIntro />
 
       {/* O contador do painel de Indicadores — ver `analytics.tsx`. */}
       <SiteAnalytics communityId={links.communityId} bookingHref={links.booking} />

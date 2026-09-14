@@ -40,10 +40,30 @@ export function Section({
         ? "bg-[var(--el-ink-deep)]"
         : "";
 
+  // ⚠️ O HALO É LOCAL, E SÓ NAS FAIXAS ESCURAS.
+  //
+  // É daqui que vem a profundidade da rolagem — e é o que permite ter
+  // paralaxe SEM tocar na camada do tamanho da janela (`.tpl-ecoluz__bg`),
+  // que segue pintada uma vez e nunca animada. Este halo é recortado pela
+  // própria seção, então o custo é o da área dela, não o da tela.
+  //
+  // Numa faixa de papel ele seria uma mancha amarela no meio do branco, por
+  // isso `tone === "paper"` não recebe nenhum.
+  const glow = tone !== "paper";
+
   return (
     <section id={id} className={`relative py-20 md:py-28 ${bg} ${className}`}>
+      {glow ? (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <span className="el-glow" data-parallax="10" />
+        </div>
+      ) : null}
+
+      {/* ⚠️ `relative` AQUI NÃO É ENFEITE: o halo é posicionado e, sem isto, ele
+          pintaria POR CIMA do conteúdo da seção — elemento posicionado vence
+          conteúdo em fluxo na ordem de pintura, mesmo sem z-index. */}
       <div
-        className="mx-auto w-full max-w-[78rem]"
+        className="relative mx-auto w-full max-w-[78rem]"
         style={{ paddingInline: "var(--el-pad)" }}
       >
         {children}
@@ -89,6 +109,11 @@ export function SectionHead({
       }
     >
       <div data-reveal="up">
+        {/* ⚠️ A RÉGUA ABRE ANTES DO TEXTO, e é o gesto mais fiel à tese deste
+            site: ela não decora, ela MEDE. Sobre papel o amarelo da marca
+            some (1,5:1), então ali o fio vira âmbar — a mesma troca que o
+            texto de destaque já faz. */}
+        <div className={`rule mb-5 w-16 ${tone === "paper" ? "rule-ink" : ""}`} data-rule />
         {eyebrow ? <p className={`eyebrow mb-4 ${accent}`}>{eyebrow}</p> : null}
         <Tag
           className={`display text-[2.25rem] sm:text-[2.9rem] md:text-[3.4rem] ${
@@ -286,7 +311,7 @@ export function CtaBand({
         style={{ paddingInline: "var(--el-pad)" }}
       >
         <div data-reveal="up">
-          <div className="rule mb-7 w-24" />
+          <div className="rule mb-7 w-24" data-rule />
           <h2 className="display text-[2rem] text-[var(--el-cream)] sm:text-[2.5rem] md:text-[2.9rem]">
             {title}
           </h2>

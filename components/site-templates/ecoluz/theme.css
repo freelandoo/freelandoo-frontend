@@ -256,31 +256,48 @@
   background: linear-gradient(to right, var(--el-sun), transparent);
 }
 
+/* Sobre papel o amarelo da marca é ilegível (1,5:1) e o fio praticamente
+   some. O âmbar é a mesma troca que o texto de destaque já faz ali. */
+.tpl-ecoluz .rule-ink {
+  background: linear-gradient(to right, var(--el-amber-ink), transparent);
+}
+
 /* ── MOVIMENTO ──────────────────────────────────────────────────────────────
    ⚠️ O GATE É UM ATRIBUTO ESCRITO DURANTE O PARSE (ver `index.tsx`), e não um
    efeito de React. Sem JavaScript o atributo nunca é escrito e a página
    aparece INTEIRA — que é o que importa para quem tem JS bloqueado e para o
    robô que não executa script. Num `useEffect` o conteúdo apareceria, sumiria
-   e voltaria animando. */
+   e voltaria animando.
+
+   ⚠️ AQUI SÓ MORA O ESTADO ESCONDIDO. Quem anima é o GSAP
+   (`scroll-motion.tsx`), e o deslocamento de entrada é DELE — escrito também
+   aqui, os dois brigariam e o valor do CSS venceria no primeiro quadro, o que
+   aparece como um solavanco no começo de cada bloco. */
 .tpl-ecoluz[data-motion="on"] [data-reveal] {
   opacity: 0;
-  transform: translate3d(0, 18px, 0);
 }
 
-.tpl-ecoluz[data-motion="on"] [data-reveal].is-in {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 0.6s var(--el-ease),
-    transform 0.6s var(--el-ease);
+.tpl-ecoluz[data-motion="on"] [data-rule] {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.tpl-ecoluz[data-motion="on"] [data-line] {
+  /* O ponto de partida real é do GSAP; isto é só a garantia de que a linha
+     não pisca inteira caso o JavaScript demore. */
+  transform: translate3d(0, 108%, 0);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .tpl-ecoluz[data-motion="on"] [data-reveal],
-  .tpl-ecoluz[data-motion="on"] [data-reveal].is-in {
+  .tpl-ecoluz[data-motion="on"] [data-line] {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  .tpl-ecoluz[data-motion="on"] [data-rule] {
+    transform: none;
   }
 }
 
@@ -360,4 +377,485 @@
 .tpl-ecoluz .slider:focus-visible::-moz-range-thumb {
   outline: 2px solid var(--el-sun-hi);
   outline-offset: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A LUZ COMO MATÉRIA — a camada de movimento
+   ══════════════════════════════════════════════════════════════════════════
+   O `theme.css` acima escreve a tese em estática; daqui para baixo ela é
+   conjugada em três verbos, e todo gesto do site pertence a um deles:
+
+     a luz chega       a abertura, o halo das seções, a carga da simulação
+     a medida se       o filete que abre, a linha de progresso, a paralaxe
+       desenha
+     o número sobe     o contador (em `calculator.tsx`, que escreve no DOM)
+
+   ⚠️ A REGRA QUE GOVERNA ESTE ARQUIVO INTEIRO: só `transform`, `opacity`,
+   cor e sombra. Largura, altura, margem e padding são LAYOUT e custam o
+   documento inteiro por quadro — e o sintoma é a rolagem travada, que
+   ninguém relaciona com a animação. */
+
+/* ── A MANCHETE, LINHA A LINHA ──────────────────────────────────────────────
+   ⚠️ A MÁSCARA PRECISA DE FOLGA VERTICAL. O `leading-[0.95]` da manchete
+   aperta a caixa da linha até abaixo da altura do tipo, então um
+   `overflow: hidden` cru CORTA O DESCENDENTE — o "j" de "já" sai sem o rabo.
+   E o defeito aparece PARADO, depois de a animação terminar, então ninguém
+   o relaciona ao movimento.
+
+   O padding abre a máscara para baixo e a margem negativa devolve o espaço:
+   a soma é ZERO, então o espaçamento da manchete para o parágrafo seguinte
+   fica exatamente como estava. */
+.tpl-ecoluz .el-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.22em;
+  margin-bottom: -0.22em;
+}
+
+.tpl-ecoluz .el-line > [data-line] {
+  display: block;
+}
+
+/* ── OS HALOS LOCAIS ────────────────────────────────────────────────────────
+   ⚠️ ISTO É O QUE PERMITE TER PARALAXE SEM ANIMAR A CAMADA DO TAMANHO DA
+   JANELA. A `.tpl-ecoluz__bg` continua pintada uma vez e nunca animada — a
+   conta que a plataforma pagou em 2026-09-09 com o shader WebGPU: o custo é
+   POR PIXEL e divide a GPU com o compositor, então quem engasga é a rolagem
+   inteira e a causa parece estar em qualquer outro lugar.
+
+   Estes halos são recortados pela própria seção (o invólucro deles tem
+   `overflow: hidden`), então o custo é o da área da seção — e só enquanto ela
+   está em cena.
+
+   ⚠️ SEM `transform` PRÓPRIO. Eles são centrados por `left`/`width`, e não
+   por `translateX(-50%)`, porque o GSAP precisa ser o dono exclusivo do
+   transform: com um valor já lá, ele o lê em PIXELS e o congela, e a
+   centralização quebra ao redimensionar a janela. */
+.tpl-ecoluz .el-glow {
+  position: absolute;
+  left: -25%;
+  top: -22%;
+  width: 150%;
+  height: 144%;
+  background: radial-gradient(
+    50% 44% at 50% 30%,
+    rgb(255 196 0 / 0.085),
+    transparent 70%
+  );
+}
+
+.tpl-ecoluz .el-hero-glow {
+  position: absolute;
+  left: 6%;
+  top: -30%;
+  width: 116%;
+  height: 152%;
+  background: radial-gradient(
+    46% 40% at 50% 42%,
+    rgb(255 168 20 / 0.13),
+    transparent 68%
+  );
+}
+
+/* ── A LINHA DE PROGRESSO DA BARRA ──────────────────────────────────────────
+   ⚠️ ELA EXISTE PORQUE A BARRA NÃO CONDENSA. Encolher a altura do cabeçalho
+   ao rolar é o gesto óbvio do ramo e é exatamente o proibido: `height` é
+   layout, e sujá-lo a cada quadro trava a rolagem no lugar mais visível da
+   página. `scaleX` responde à mesma necessidade — dizer que a página está
+   andando — e é composto. Quem escreve o valor é `chrome.tsx`. */
+.tpl-ecoluz .el-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(
+    to right,
+    var(--el-sun-deep),
+    var(--el-sun) 55%,
+    var(--el-sun-hi)
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A SIMULAÇÃO CARREGA
+   ══════════════════════════════════════════════════════════════════════════
+   Uma variável só governa a seção — `--el-charge`, de 0 a 1, derivada da
+   posição do controle e escrita por `calculator.tsx` no elemento `.el-sim`.
+   Como número CONTÍNUO, e não como classe por faixa ("baixo", "médio",
+   "alto"), a seção acompanha o dedo em vez de pular em três degraus.
+
+   ⚠️ TUDO O QUE A CARGA MOVE É `opacity`, COR OU SOMBRA. É o que permite
+   isso acontecer a cada quadro de arraste sem engasgar a rolagem.
+
+   ⚠️ PARADA, A SEÇÃO NÃO CUSTA NADA: não há animação em curso enquanto
+   `data-charging` não está ligado — e ele só fica ligado enquanto a pessoa
+   está mexendo, mais 700ms. */
+.tpl-ecoluz .el-sim {
+  /* Valor de reserva: sem JavaScript o inline nunca é escrito, e sem isto
+     todo `calc()` abaixo viraria inválido e o painel sairia sem nada. */
+  --el-charge: 0;
+
+  /* ⚠️⚠️ O TOPO DA RAMPA — A COR PARA ONDE A SEÇÃO CAMINHA.
+     É UMA LINHA. Hoje é branco-quente, que é o que a luz faz de verdade ao
+     ganhar intensidade, e é a única rampa que este site já sabe falar (o
+     `theme.css` recusa verde de propósito: o ramo inteiro é verde e folhinha,
+     e quem está aqui decide sobre DINHEIRO e uma obra no próprio telhado; e
+     o verde desta tela já é o do botão do WhatsApp, a 56px de distância).
+     Para trocar, troque ESTE valor e mais nada. */
+  --el-charge-core: 255 245 214;
+}
+
+/* A grade técnica local — a mesma gramática do fundo do site, só que DENTRO
+   da seção, e acendendo com a carga. */
+.tpl-ecoluz .el-sim__grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: calc(0.22 + var(--el-charge) * 0.78);
+  background:
+    repeating-linear-gradient(
+      to right,
+      rgb(255 216 92 / 0.05) 0 1px,
+      transparent 1px 3rem
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgb(255 216 92 / 0.05) 0 1px,
+      transparent 1px 3rem
+    );
+}
+
+/* O halo do painel do resultado.
+   ⚠️ SÃO DUAS CAMADAS SUPERPOSTAS, e não uma cor interpolada. `color-mix()`
+   resolveria em uma linha e foi recusado pela mesma razão de sempre: num
+   navegador que não o conhece a cor vira INVÁLIDA e o bloco fica
+   transparente. Superpostas, a de baixo (amarelo da marca) segura o tom e a
+   de cima (o topo da rampa) só aparece conforme a carga sobe — o resultado
+   lê como a cor caminhando, e degrada para "só o amarelo" em vez de para
+   nada. */
+.tpl-ecoluz .el-sim__halo {
+  position: absolute;
+  inset: -22% -12% auto -12%;
+  height: 86%;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      48% 52% at 50% 28%,
+      rgb(var(--el-charge-core) / calc(var(--el-charge) * 0.15)),
+      transparent 70%
+    ),
+    radial-gradient(
+      58% 58% at 50% 24%,
+      rgb(255 196 0 / calc(0.04 + var(--el-charge) * 0.16)),
+      transparent 72%
+    );
+}
+
+/* A VARREDURA — o filete de luz que atravessa o painel enquanto o controle
+   está sendo movido. É o "efeito de energia": ele não decora um estado, ele
+   mostra que a conta está sendo refeita.
+
+   ⚠️ ELE VIVE DENTRO DE UM `overflow: hidden` E NÃO É `fixed`. Um filete
+   viajando de -120% a 340% da própria largura solto num elemento sem recorte
+   abriria rolagem horizontal no documento inteiro — o sintoma aparece só no
+   celular e não parece ter nada a ver com a animação. É a mesma armadilha do
+   botão flutuante. */
+.tpl-ecoluz .el-sim__sweep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 42%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgb(255 216 92 / 0.05) 34%,
+    rgb(var(--el-charge-core) / 0.17) 50%,
+    rgb(255 216 92 / 0.05) 66%,
+    transparent 100%
+  );
+}
+
+.tpl-ecoluz .el-sim[data-charging="true"] .el-sim__sweep {
+  will-change: transform, opacity;
+  animation: tplEcoluzSweep 1.15s linear infinite;
+}
+
+/* O numeral ganha voltagem. `text-shadow` e não `scale`: escalar texto força
+   uma nova rasterização do glifo a cada quadro e o número sai borrado. */
+.tpl-ecoluz .el-sim__bill,
+.tpl-ecoluz .el-sim__prize {
+  text-shadow: 0 0 calc(var(--el-charge) * 1.9rem)
+    rgb(255 196 0 / calc(var(--el-charge) * 0.5));
+}
+
+/* O controle esquenta junto.
+   ⚠️ SOMBRA, NUNCA `scale`: o polegar encosta na borda do trilho, e um anel
+   em escala escapa da caixa. Mesma conta do botão flutuante. */
+.tpl-ecoluz .el-sim .slider::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 1px var(--el-sun-deep),
+    0 0 calc(var(--el-charge) * 1.5rem) rgb(255 196 0 / calc(var(--el-charge) * 0.7));
+}
+.tpl-ecoluz .el-sim .slider::-moz-range-thumb {
+  box-shadow:
+    0 0 0 1px var(--el-sun-deep),
+    0 0 calc(var(--el-charge) * 1.5rem) rgb(255 196 0 / calc(var(--el-charge) * 0.7));
+}
+
+.tpl-ecoluz .el-sim .slider::-webkit-slider-runnable-track {
+  box-shadow: 0 0 calc(var(--el-charge) * 1.1rem)
+    rgb(255 196 0 / calc(var(--el-charge) * 0.4));
+}
+.tpl-ecoluz .el-sim .slider::-moz-range-track {
+  box-shadow: 0 0 calc(var(--el-charge) * 1.1rem)
+    rgb(255 196 0 / calc(var(--el-charge) * 0.4));
+}
+
+@keyframes tplEcoluzSweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(-120%, 0, 0);
+  }
+  14% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(340%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-ecoluz .el-sim[data-charging="true"] .el-sim__sweep {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A ABERTURA — o raio de sol
+   ══════════════════════════════════════════════════════════════════════════
+   Ver a nota longa em `intro.tsx`: por que ela não existe no HTML do
+   servidor, por que não tem fundo, e por que sai do DOM.
+
+   ⚠️ O BLEND VAI NO INVÓLUCRO, NÃO EM CADA PEÇA. `mix-blend-mode` numa peça
+   de dentro mistura com o backdrop do GRUPO — e como este invólucro é `fixed`
+   com `z-index`, ele é um grupo isolado: as peças blendariam entre si e o
+   conjunto pousaria opaco sobre a página. No invólucro, é o resultado inteiro
+   que se soma ao que está atrás, que é o que faz o texto do herói continuar
+   legível durante a passagem.
+
+   ⚠️ E O RECORTE É AQUI. As peças são `absolute` DENTRO deste `fixed` com
+   `overflow: hidden` — o raio viaja de -185% a +90% da própria largura, e
+   solto isso abriria rolagem horizontal no documento inteiro. */
+.tpl-ecoluz .el-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  animation: tplEcoluzIntroOut 0.45s var(--el-ease) 1.5s both;
+}
+
+.tpl-ecoluz .el-intro__ambient {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(130vw, 1100px);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle,
+    rgb(255 196 0 / 0.34) 0%,
+    rgb(255 164 20 / 0.2) 24%,
+    rgb(244 169 0 / 0.08) 48%,
+    transparent 72%
+  );
+  animation: tplEcoluzIntroAmbient 1.55s cubic-bezier(0.16, 0.84, 0.24, 1) both;
+}
+
+.tpl-ecoluz .el-intro__halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(58vw, 520px);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle,
+    rgb(255 247 190 / 0.62) 0%,
+    rgb(255 196 0 / 0.34) 18%,
+    rgb(244 169 0 / 0.16) 42%,
+    transparent 70%
+  );
+  animation: tplEcoluzIntroHalo 1.4s cubic-bezier(0.16, 0.84, 0.24, 1) 0.12s both;
+}
+
+.tpl-ecoluz .el-intro__logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(40vw, 190px);
+  height: auto;
+  color: var(--el-sun-hi);
+  animation: tplEcoluzIntroLogo 1.4s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+}
+
+/* ⚠️ O BLUR FICA SÓ ONDE ELE É A FORMA. Halo e ambiente saem de gradiente
+   macio, sem `filter`: desfoque é custo POR PIXEL e cai justamente no
+   primeiro segundo, junto da hidratação do React. No original as quatro
+   camadas tinham blur, uma delas de 34px sobre 1400px. */
+.tpl-ecoluz .el-intro__beam {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(82vw, 860px);
+  height: min(24vw, 230px);
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgb(255 205 90 / 0.08) 24%,
+    rgb(255 247 205 / 0.76) 48%,
+    rgb(255 255 255 / 0.95) 52%,
+    rgb(255 196 0 / 0.28) 63%,
+    transparent 100%
+  );
+  filter: blur(12px);
+  animation: tplEcoluzIntroBeam 1.3s cubic-bezier(0.25, 0.72, 0.2, 1) 0.1s both;
+}
+
+.tpl-ecoluz .el-intro__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(18vw, 150px);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle,
+    #ffffff 0%,
+    rgb(255 247 190 / 0.92) 12%,
+    rgb(255 196 0 / 0.6) 34%,
+    rgb(244 169 0 / 0.22) 56%,
+    transparent 72%
+  );
+  filter: blur(4px);
+  animation: tplEcoluzIntroCore 1.28s cubic-bezier(0.2, 0.78, 0.2, 1) 0.18s both;
+}
+
+@keyframes tplEcoluzIntroOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes tplEcoluzIntroAmbient {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) scale(0.5);
+  }
+  42% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0.22;
+    transform: translate3d(-50%, -50%, 0) scale(1.42);
+  }
+}
+
+@keyframes tplEcoluzIntroHalo {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) scale(0.55);
+  }
+  36% {
+    opacity: 0.68;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) scale(1.55);
+  }
+}
+
+@keyframes tplEcoluzIntroLogo {
+  0% {
+    opacity: 0.35;
+    transform: translate3d(-50%, -50%, 0) scale(0.92);
+  }
+  38% {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) scale(1.04);
+  }
+  100% {
+    opacity: 0.98;
+    transform: translate3d(-50%, -50%, 0) scale(1);
+  }
+}
+
+@keyframes tplEcoluzIntroBeam {
+  0% {
+    opacity: 0;
+    transform: translate3d(-185%, -50%, 0) rotate(-13deg);
+  }
+  18% {
+    opacity: 0.95;
+  }
+  42% {
+    opacity: 1;
+  }
+  74% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(90%, -50%, 0) rotate(-13deg);
+  }
+}
+
+@keyframes tplEcoluzIntroCore {
+  0% {
+    opacity: 0;
+    transform: translate3d(-180%, -50%, 0) scale(0.65);
+  }
+  35% {
+    opacity: 1;
+    transform: translate3d(-54%, -50%, 0) scale(1);
+  }
+  58% {
+    opacity: 0.86;
+    transform: translate3d(-42%, -50%, 0) scale(1.18);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(100%, -50%, 0) scale(0.9);
+  }
+}
+
+/* ⚠️ NO CELULAR A CONTA É OUTRA. A abertura cai no mesmo segundo em que o
+   React hidrata, e ali cada pixel desfocado disputa com isso. O ambiente sai
+   (ele é a maior camada e a que menos define a forma) e o raio afina o
+   desfoque — o gesto continua inteiro. */
+@media (max-width: 767px) {
+  .tpl-ecoluz .el-intro__ambient {
+    display: none;
+  }
+  .tpl-ecoluz .el-intro__beam {
+    filter: blur(8px);
+  }
+}
+
+/* Cinto e suspensório: `intro.tsx` já não monta nada com movimento reduzido.
+   Se um dia alguém montar, aqui ela não aparece. */
+@media (prefers-reduced-motion: reduce) {
+  .tpl-ecoluz .el-intro {
+    display: none;
+  }
 }

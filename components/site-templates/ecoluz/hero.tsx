@@ -20,8 +20,16 @@ import { PAGE, pageHref, type TemplateLinks } from "./lib";
 export default function Hero({ links }: { links: TemplateLinks }) {
   return (
     <section className="relative flex min-h-[86svh] items-center pb-16 pt-32 md:min-h-[92svh] md:pb-24 md:pt-40">
+      {/* ⚠️ O HALO DO BANNER É LOCAL E RECORTADO PELO PRÓPRIO BANNER — não é a
+          camada do tamanho da janela, que continua pintada uma vez e nunca
+          animada. É daqui que vem a profundidade quando a página começa a
+          rolar: ele anda mais devagar que o texto. */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <span className="el-hero-glow" data-parallax="14" />
+      </div>
+
       <div
-        className="mx-auto w-full max-w-[78rem]"
+        className="relative mx-auto w-full max-w-[78rem]"
         style={{ paddingInline: "var(--el-pad)" }}
       >
         <div className="grid items-end gap-12 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
@@ -32,21 +40,39 @@ export default function Hero({ links }: { links: TemplateLinks }) {
 
             {/* ⚠️ O H1 DA HOME SAI AQUI, e é o único da página. O
                 `SectionHead` das seções abaixo desenha `h2` por padrão
-                justamente para não haver um segundo. */}
+                justamente para não haver um segundo.
+
+                ⚠️ AS LINHAS SÃO QUEBRADAS À MÃO, e é isso que dispensa uma
+                biblioteca de recorte de texto: cada linha vira a própria
+                máscara (`.el-line`) e o interior sobe por baixo dela. Medir
+                linha em tempo de execução custaria um plugin inteiro para
+                descobrir o que aqui já está escrito.
+
+                ⚠️ A MÁSCARA PRECISA DE FOLGA VERTICAL. O `leading-[0.95]`
+                aperta a caixa da linha, e sem a folga do `.el-line` o "j" de
+                "já" sai com o rabo cortado — defeito que ninguém liga à
+                animação, porque ele aparece parado. */}
             <h1
               className="display mt-6 text-[2.75rem] leading-[0.95] text-[var(--el-cream)] sm:text-[3.75rem] md:text-[5rem] lg:text-[5.75rem]"
-              data-reveal="up"
-              data-reveal-delay="60"
+              data-reveal="lines"
             >
-              A conta de luz<br />
-              <span className="text-[var(--el-sun)]">já é o seu</span><br />
-              investimento.
+              <span className="el-line">
+                <span data-line>A conta de luz</span>
+              </span>
+              <span className="el-line">
+                <span data-line className="text-[var(--el-sun)]">
+                  já é o seu
+                </span>
+              </span>
+              <span className="el-line">
+                <span data-line>investimento.</span>
+              </span>
             </h1>
 
             <p
               className="mt-7 max-w-xl text-[1.0625rem] leading-relaxed text-[var(--el-cream-dim)] md:text-[1.1875rem]"
               data-reveal="up"
-              data-reveal-delay="120"
+              data-reveal-delay="240"
             >
               Ela só não volta para você. A EcoLuz projeta, instala e homologa
               sistemas de energia solar — conectados à rede ou off-grid, com
@@ -57,7 +83,7 @@ export default function Hero({ links }: { links: TemplateLinks }) {
             <div
               className="mt-9 flex flex-wrap gap-3"
               data-reveal="up"
-              data-reveal-delay="180"
+              data-reveal-delay="320"
             >
               <a
                 href={whatsappLink(WA_DEFAULT)}
@@ -75,11 +101,17 @@ export default function Hero({ links }: { links: TemplateLinks }) {
 
           {/* O bloco da marca: o monograma grande e as três frases que o site
               vai sustentar nas páginas de dentro. Não são números — números
-              aqui teriam que ser inventados. */}
+              aqui teriam que ser inventados.
+
+              ⚠️ ELE TEM REVEAL **E** PARALAXE, e os dois convivem: o reveal
+              anda em pixels (`y`) e a paralaxe em porcentagem (`yPercent`), que
+              o GSAP compõe no mesmo transform. Ver a nota em
+              `scroll-motion.tsx` sobre a limpeza que pula quem tem paralaxe. */}
           <aside
             className="panel p-7 md:p-8"
             data-reveal="up"
-            data-reveal-delay="240"
+            data-reveal-delay="400"
+            data-parallax="-5"
           >
             <Monogram className="h-12 w-12 text-[var(--el-sun)]" />
             <ul className="mt-6 grid gap-5">

@@ -9,7 +9,7 @@
  * que o buscador lê.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AREAS } from "./content/areas";
 import { ADDRESS_LINE, BUSINESS, MAIL_HREF, TEL_HREF, WA_DEFAULT, whatsappLink } from "./content/business";
@@ -39,13 +39,56 @@ function navFor(links: TemplateLinks) {
 export function SiteHeader({ links }: { links: TemplateLinks }) {
   const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
+  const progress = useRef<HTMLSpanElement | null>(null);
   const nav = navFor(links);
 
+  /**
+   * A barra e a LINHA DE PROGRESSO DE LEITURA, no mesmo ouvinte de rolagem.
+   *
+   * ⚠️ A LINHA É ESCRITA DIRETO NO DOM, nunca por estado do React: ela muda a
+   * cada quadro de rolagem, e por `setState` isso remontaria a barra inteira
+   * 60 vezes por segundo. `solid` continua sendo estado porque muda duas
+   * vezes na página toda — e o React ignora o `set` quando o valor é o mesmo.
+   *
+   * ⚠️ `scaleX` E NÃO `width`. Largura é LAYOUT: animada a cada quadro, custa
+   * o documento inteiro por quadro. `transform` é composto.
+   *
+   * ⚠️ E A BARRA NÃO CONDENSA. Encolher a altura do cabeçalho ao rolar seria
+   * o gesto óbvio e é exatamente o proibido — `height` é layout, e sujá-lo a
+   * cada quadro trava a rolagem justamente onde ela é mais visível. A linha de
+   * progresso resolve a mesma necessidade (dizer que a página está andando) e
+   * é de graça.
+   */
   useEffect(() => {
-    const onScroll = () => setSolid(window.scrollY > 24);
-    onScroll();
+    let frame = 0;
+
+    const read = () => {
+      frame = 0;
+      const y = window.scrollY;
+      setSolid(y > 24);
+
+      const el = progress.current;
+      if (!el) return;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      // Página que cabe na tela não tem progresso a mostrar — e a divisão por
+      // zero escreveria `NaN` no transform, que o navegador descarta em
+      // silêncio deixando a linha cheia.
+      const done = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
+      el.style.transform = `scaleX(${done})`;
+    };
+
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(read);
+    };
+
+    read();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   // Esc fecha o menu. Sem isto, quem abriu pelo teclado fica preso dentro
@@ -126,6 +169,11 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
           </button>
         </div>
       </div>
+
+      {/* A linha de progresso: filha direta da barra (que já é `fixed`, e
+          portanto elemento posicionado), então ela atravessa a tela de ponta a
+          ponta em vez de parar na coluna de conteúdo. */}
+      <span ref={progress} className="el-progress" aria-hidden="true" />
 
       {open ? (
         <nav
