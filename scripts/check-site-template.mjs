@@ -342,31 +342,40 @@ console.log("\n# o espelho com o backend")
   const doTema = [...servicos, ...areas, ...fixas].sort()
   check("nenhum endereço repetido — o namespace `/pagina` é UM só", new Set(doTema).size === doTema.length)
 
+  // ⚠️ SEM O BACKEND AO LADO, AS ASSERÇÕES DO ESPELHO SÃO PULADAS, não
+  // falhadas — mesma escolha do bloco acima. Este repositório é clonado
+  // sozinho (worktree de validação, CI do front), e um teste que fica
+  // vermelho por AUSÊNCIA DE AMBIENTE é um teste que as pessoas aprendem a
+  // ignorar — e aí ele para de proteger no dia em que falhar de verdade. O
+  // que é só do tema (as contagens e o namespace, acima) continua conferido.
   const BACK = path.join(root, "..", "..", "freelandoo-backend", "src", "utils", "siteTemplates.js")
-  const require_ = createRequire(import.meta.url)
-  const resumo = fs.existsSync(BACK) ? require_(BACK).summarizeTemplateData("ecoluz", {}) : null
-  if (!fs.existsSync(BACK)) console.log("  --  backend não está ao lado: espelho do resumo não conferido")
-  check("o backend sabe resumir o tema (sem isto o modal cai em 'Seu negócio · 1 página')", !!resumo)
+  if (!fs.existsSync(BACK)) {
+    console.log("  --  backend não está ao lado: o espelho do resumo não foi conferido")
+  } else {
+    const require_ = createRequire(import.meta.url)
+    const resumo = require_(BACK).summarizeTemplateData("ecoluz", {})
+    check("o backend sabe resumir o tema (sem isto o modal cai em 'Seu negócio · 1 página')", !!resumo)
 
-  const doResumo = (resumo?.pages || []).map((p) => p.slug).sort()
-  check(
-    "os endereços do tema batem com os do resumo que o cliente lê",
-    JSON.stringify(doTema) === JSON.stringify(doResumo)
-  )
-  if (JSON.stringify(doTema) !== JSON.stringify(doResumo)) {
-    console.log("      tema  :", doTema.join(", "))
-    console.log("      resumo:", doResumo.join(", "))
+    const doResumo = (resumo?.pages || []).map((p) => p.slug).sort()
+    check(
+      "os endereços do tema batem com os do resumo que o cliente lê",
+      JSON.stringify(doTema) === JSON.stringify(doResumo)
+    )
+    if (JSON.stringify(doTema) !== JSON.stringify(doResumo)) {
+      console.log("      tema  :", doTema.join(", "))
+      console.log("      resumo:", doResumo.join(", "))
+    }
+
+    // A home entra na conta: dizer "13 páginas" e listar 14 faria o cliente
+    // procurar a que sobra.
+    check("counts.pages = páginas + 1 (a home)", resumo?.counts?.pages === doResumo.length + 1)
+
+    // Este site não publica preço em lugar nenhum — ver a nota no tema e no
+    // JSON-LD. Um preço aparecendo no resumo seria o primeiro sinal de que
+    // alguém ligou a vitrine do cadastro nele.
+    check("o resumo não carrega preço", !JSON.stringify(resumo).includes("price"))
+    check("hasPhoto é false, e é verdade: o site é tipográfico", resumo?.hasPhoto === false)
   }
-
-  // A home entra na conta: dizer "13 páginas" e listar 14 faria o cliente
-  // procurar a que sobra.
-  check("counts.pages = páginas + 1 (a home)", resumo?.counts?.pages === doResumo.length + 1)
-
-  // Este site não publica preço em lugar nenhum — ver a nota no tema e no
-  // JSON-LD. Um preço aparecendo no resumo seria o primeiro sinal de que
-  // alguém ligou a vitrine do cadastro nele.
-  check("o resumo não carrega preço", !JSON.stringify(resumo).includes("price"))
-  check("hasPhoto é false, e é verdade: o site é tipográfico", resumo?.hasPhoto === false)
 }
 
 fs.rmSync(tmpdir, { recursive: true, force: true })
