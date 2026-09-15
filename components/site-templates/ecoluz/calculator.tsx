@@ -281,7 +281,11 @@ export default function SavingsCalculator({ ctaHref }: { ctaHref: string }) {
               Com um sistema bem dimensionado, até <strong className="font-semibold text-[var(--el-sun-hi)]">85%</strong>{" "}
               desse valor pode deixar de sair da sua conta:
             </p>
-            <p className="el-sim__prize numeral mt-3 text-[2rem] text-[var(--el-sun)] md:text-[2.5rem]">
+            {/* ⚠️ SEM CLASSE DE COR AQUI. Este é o número da ECONOMIA, e a cor
+                dele é a da rampa da carga — ela mora em `theme.css`, junto do
+                `--el-charge-core`. Escrita também aqui, trocar a rampa deixaria
+                o número na cor antiga. */}
+            <p className="el-sim__prize numeral mt-3 text-[2rem] md:text-[2.5rem]">
               <span ref={potentialRef}>{brl(potential)}</span>
             </p>
           </div>

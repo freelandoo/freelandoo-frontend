@@ -38,10 +38,12 @@ import { Monogram } from "./icons";
  * com a animação. É a mesma armadilha do botão flutuante, e o site original já
  * a resolvia assim.
  *
- * ⚠️ UMA VEZ POR SESSÃO. Sem isto ela tocaria a cada navegação interna — e
- * este site tem 14 páginas ligadas entre si. `sessionStorage` pode ESTOURAR
- * (janela anônima, cookies bloqueados), e aí a leitura falha: o `catch`
- * decide não tocar, porque repetir a abertura é pior que não tê-la.
+ * ⚠️ TOCA A CADA CARREGAMENTO — decisão do Alex (2026-09-15), corrigindo a
+ * primeira versão, que guardava um sinal em `sessionStorage` e por isso só
+ * aparecia na PRIMEIRA visita da sessão. O custo conhecido é que ela se repete
+ * ao navegar entre as 14 páginas do site; o que torna isso aceitável é que ela
+ * não bloqueia nada — não tem fundo, não trava a rolagem, não recebe toque e
+ * some sozinha. **Não reintroduzir a trava de sessão sem ele pedir.**
  *
  * ⚠️ `prefers-reduced-motion` NÃO MONTA NADA. Não é "animação mais curta" — é
  * ausência de animação.
@@ -52,7 +54,6 @@ import { Monogram } from "./icons";
  * salto de layout.
  */
 
-const KEY = "ecoluz:intro";
 /** O tempo da peça mais longa (1,55s) mais a saída. Ver `theme.css`. */
 const LIFETIME_MS = 2000;
 
@@ -61,16 +62,6 @@ export default function SunIntro() {
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    try {
-      if (sessionStorage.getItem(KEY)) return;
-      sessionStorage.setItem(KEY, "1");
-    } catch {
-      // Sem sessionStorage não há como saber se já tocou nesta visita, e uma
-      // abertura que se repete a cada clique é pior que abertura nenhuma.
-      return;
-    }
-
     setPlaying(true);
   }, []);
 

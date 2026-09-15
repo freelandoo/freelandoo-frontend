@@ -500,13 +500,23 @@
   --el-charge: 0;
 
   /* ⚠️⚠️ O TOPO DA RAMPA — A COR PARA ONDE A SEÇÃO CAMINHA.
-     É UMA LINHA. Hoje é branco-quente, que é o que a luz faz de verdade ao
-     ganhar intensidade, e é a única rampa que este site já sabe falar (o
-     `theme.css` recusa verde de propósito: o ramo inteiro é verde e folhinha,
-     e quem está aqui decide sobre DINHEIRO e uma obra no próprio telhado; e
-     o verde desta tela já é o do botão do WhatsApp, a 56px de distância).
-     Para trocar, troque ESTE valor e mais nada. */
-  --el-charge-core: 255 245 214;
+     É UMA LINHA, e é VERDE por decisão do Alex (2026-09-15), com o motivo
+     dele: **é economia**. A primeira versão ia a branco-quente, pela regra que
+     o topo deste arquivo escreve ("ENGENHARIA, NÃO 'ECO'") — mas aquela regra
+     é sobre a IDENTIDADE do site, e aqui o verde não está dizendo "ecologia":
+     está dizendo dinheiro que volta, que é a linguagem do medidor
+     bidirecional. A seção inteira é a única do site que fala de economia.
+
+     ⚠️ O CUSTO CONHECIDO, que fica anotado porque não some: o botão flutuante
+     do WhatsApp é `#25d366` e vive na mesma dobra. Este verde é de propósito
+     bem mais CLARO e luminoso que o dele — como brilho difuso a 20-30% de
+     opacidade ele lê como luz, não como um segundo botão. Se um dia os dois
+     se confundirem na tela, o ajuste é aqui.
+
+     ⚠️ E O ÂMBAR RECUA conforme isto sobe (ver `.el-sim__halo` e os numerais).
+     Sem isso as duas camadas SOMAM e o resultado sai amarelo-esverdeado — a
+     seção nunca chegaria a "ficar verde", que é o pedido. */
+  --el-charge-core: 134 245 170;
 }
 
 /* A grade técnica local — a mesma gramática do fundo do site, só que DENTRO
@@ -529,14 +539,17 @@
     );
 }
 
-/* O halo do painel do resultado.
+/* O halo do painel do resultado — a peça que faz a seção "ficar verde".
    ⚠️ SÃO DUAS CAMADAS SUPERPOSTAS, e não uma cor interpolada. `color-mix()`
    resolveria em uma linha e foi recusado pela mesma razão de sempre: num
    navegador que não o conhece a cor vira INVÁLIDA e o bloco fica
-   transparente. Superpostas, a de baixo (amarelo da marca) segura o tom e a
-   de cima (o topo da rampa) só aparece conforme a carga sobe — o resultado
-   lê como a cor caminhando, e degrada para "só o amarelo" em vez de para
-   nada. */
+   transparente. Superpostas, degrada para "só o amarelo" em vez de para nada.
+
+   ⚠️ E ELAS SE CRUZAM: o verde SOBE enquanto o âmbar RECUA. É isso que faz a
+   seção chegar a verde de verdade. Com as duas subindo juntas — que foi a
+   primeira versão — elas somam e o resultado trava num amarelo-esverdeado:
+   "quase verde" o tempo todo, nunca verde. Em repouso o painel continua
+   âmbar, que é a identidade do site; carregado, ele é a economia. */
 .tpl-ecoluz .el-sim__halo {
   position: absolute;
   inset: -22% -12% auto -12%;
@@ -544,13 +557,13 @@
   pointer-events: none;
   background:
     radial-gradient(
-      48% 52% at 50% 28%,
-      rgb(var(--el-charge-core) / calc(var(--el-charge) * 0.15)),
+      52% 56% at 50% 28%,
+      rgb(var(--el-charge-core) / calc(var(--el-charge) * 0.32)),
       transparent 70%
     ),
     radial-gradient(
       58% 58% at 50% 24%,
-      rgb(255 196 0 / calc(0.04 + var(--el-charge) * 0.16)),
+      rgb(255 196 0 / calc(0.05 + (1 - var(--el-charge)) * 0.13)),
       transparent 72%
     );
 }
@@ -575,9 +588,9 @@
   background: linear-gradient(
     100deg,
     transparent 0%,
-    rgb(255 216 92 / 0.05) 34%,
-    rgb(var(--el-charge-core) / 0.17) 50%,
-    rgb(255 216 92 / 0.05) 66%,
+    rgb(var(--el-charge-core) / 0.06) 34%,
+    rgb(var(--el-charge-core) / calc(0.14 + var(--el-charge) * 0.16)) 50%,
+    rgb(var(--el-charge-core) / 0.06) 66%,
     transparent 100%
   );
 }
@@ -587,12 +600,29 @@
   animation: tplEcoluzSweep 1.15s linear infinite;
 }
 
-/* O numeral ganha voltagem. `text-shadow` e não `scale`: escalar texto força
-   uma nova rasterização do glifo a cada quadro e o número sai borrado. */
-.tpl-ecoluz .el-sim__bill,
-.tpl-ecoluz .el-sim__prize {
+/* Os numerais ganham voltagem. `text-shadow` e não `scale`: escalar texto
+   força uma nova rasterização do glifo a cada quadro e o número sai borrado.
+
+   ⚠️ OS DOIS NÃO BRILHAM DA MESMA COR, e a diferença é o sentido de cada um:
+   o de cima é o que SAI da conta (custo → âmbar, o calor da tarifa), o de
+   baixo é o que pode DEIXAR de sair (economia → verde). É a linguagem do
+   medidor bidirecional, e é ela que sustenta o verde nesta seção. */
+.tpl-ecoluz .el-sim__bill {
   text-shadow: 0 0 calc(var(--el-charge) * 1.9rem)
     rgb(255 196 0 / calc(var(--el-charge) * 0.5));
+}
+
+/* ⚠️ A COR DO NUMERAL DA ECONOMIA MORA AQUI, e não numa classe do Tailwind no
+   JSX: ela é a MESMA variável da rampa. Declarada nos dois lugares, trocar a
+   rampa deixaria o número na cor antiga — e a seção ficaria verde com o
+   resultado amarelo no meio. Medido: 12,8:1 sobre `ink-hi`. */
+.tpl-ecoluz .el-sim__prize {
+  color: rgb(var(--el-charge-core));
+  text-shadow:
+    0 0 calc(0.4rem + var(--el-charge) * 1.2rem)
+      rgb(var(--el-charge-core) / calc(0.22 + var(--el-charge) * 0.5)),
+    0 0 calc(var(--el-charge) * 2.6rem)
+      rgb(var(--el-charge-core) / calc(var(--el-charge) * 0.32));
 }
 
 /* O controle esquenta junto.
