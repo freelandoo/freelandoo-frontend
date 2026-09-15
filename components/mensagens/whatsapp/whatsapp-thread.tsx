@@ -71,6 +71,24 @@ export function WhatsappThread({
   const active = conversations.find((c) => c.id_conversation === activeId) || null
   const connected = info?.status === "connected"
 
+  // ⚠️ O "agora" vive em ESTADO, não no corpo do render: ler o relógio ao
+  // desenhar torna a tela impura (o lint reprova) e, pior, congelaria a
+  // contagem — a janela fecharia sem a tela perceber. Um tique por minuto é
+  // suficiente para um prazo de 24h e não custa nada.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  const windowEndsAt = active?.service_window_expires_at
+    ? new Date(active.service_window_expires_at).getTime()
+    : null
+  // `null` = sem janela (Evolution, ou backend antigo) → nada muda.
+  const windowClosed = windowEndsAt !== null && windowEndsAt <= now
+  const minutesLeft = windowEndsAt === null ? null : Math.round((windowEndsAt - now) / 60000)
+  const windowEndingSoon = minutesLeft !== null && minutesLeft > 0 && minutesLeft <= 120
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" })
   }, [messages.length, activeId])
@@ -197,8 +215,34 @@ export function WhatsappThread({
       </div>
 
       <div className="border-t border-white/[0.07] bg-black/20 px-3 py-3">
-        {connected ? (
-          <div className="flex items-end gap-2">
+        {connected && windowClosed ? (
+          // A Meta recusa texto livre fora da janela. Campo que aceita o texto
+          // e falha no envio é pior que campo desabilitado — e a explicação
+          // precisa dizer que a saída não está na mão de quem atende.
+          <div className="border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2.5">
+            <p className="text-xs font-semibold text-amber-300/90">
+              {t("windowClosedTitle", "A janela de 24h desta conversa fechou")}
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-white/50">
+              {t(
+                "windowClosedHint",
+                "É uma regra do WhatsApp oficial: você só pode responder até 24h depois da última mensagem do cliente. Assim que ele escrever de novo, o campo volta sozinho."
+              )}
+            </p>
+          </div>
+        ) : connected ? (
+          <div className="flex flex-col gap-2">
+            {windowEndingSoon && (
+              <p className="text-[11px] text-amber-300/70">
+                {t("windowEndingSoon", "Esta conversa fecha para resposta em {time}.").replace(
+                  "{time}",
+                  minutesLeft !== null && minutesLeft >= 60
+                    ? t("hoursShort", "{n}h").replace("{n}", String(Math.floor(minutesLeft / 60)))
+                    : t("minutesShort", "{n} min").replace("{n}", String(minutesLeft ?? 0))
+                )}
+              </p>
+            )}
+            <div className="flex items-end gap-2">
             <textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -221,6 +265,7 @@ export function WhatsappThread({
             >
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </button>
+            </div>
           </div>
         ) : (
           // Sem sessão aberta o envio seria recusado pelo backend. Dizer isso

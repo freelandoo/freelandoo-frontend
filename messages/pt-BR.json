@@ -5877,7 +5877,12 @@
     "resend": "Reenviar código",
     "resendSent": "Enviamos um código novo.",
     "resendError": "Não foi possível reenviar o código.",
-    "changeNumber": "Usar outro número"
+    "changeNumber": "Usar outro número",
+    "windowClosedTitle": "A janela de 24h desta conversa fechou",
+    "windowClosedHint": "É uma regra do WhatsApp oficial: você só pode responder até 24h depois da última mensagem do cliente. Assim que ele escrever de novo, o campo volta sozinho.",
+    "windowEndingSoon": "Esta conversa fecha para resposta em {time}.",
+    "hoursShort": "{n}h",
+    "minutesShort": "{n} min"
   },
   "Games": {
     "back": "Voltar",

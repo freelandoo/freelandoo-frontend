@@ -6443,7 +6443,12 @@
     "resend": "Reenviar código",
     "resendSent": "Enviamos un código nuevo.",
     "resendError": "No fue posible reenviar el código.",
-    "changeNumber": "Usar otro número"
+    "changeNumber": "Usar otro número",
+    "windowClosedTitle": "La ventana de 24 h de esta conversación se cerró",
+    "windowClosedHint": "Es una regla oficial de WhatsApp: solo puedes responder hasta 24 h después del último mensaje del cliente. En cuanto vuelva a escribir, el campo se reactiva solo.",
+    "windowEndingSoon": "Esta conversación se cierra para respuestas en {time}.",
+    "hoursShort": "{n} h",
+    "minutesShort": "{n} min"
   },
   "Games": {
     "back": "Volver",

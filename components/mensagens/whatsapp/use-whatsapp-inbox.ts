@@ -71,6 +71,14 @@ export interface WhatsappConversation {
   unread_count: number
   last_message_at: string
   last_message_preview: string
+  /**
+   * A janela de 24h do WhatsApp oficial (Cloud API): fora dela a Meta recusa
+   * texto livre, e só o CLIENTE a reabre escrevendo de novo.
+   *
+   * `null` quando não se aplica — a Evolution não tem janela. Ausente = backend
+   * anterior a esta versão, e aí a tela se comporta como se comportava.
+   */
+  service_window_expires_at?: string | null
 }
 
 export interface WhatsappMessage {
@@ -258,12 +266,18 @@ export function useWhatsappInbox(enabled: boolean) {
               last_message_at: p.conversation?.last_message_at ?? known.last_message_at,
               unread_count:
                 isOpen || p.message?.direction === "out" ? 0 : (known.unread_count || 0) + 1,
+              // Mensagem que CHEGA reabre a janela de 24h. Sem atualizar aqui,
+              // a tela continuaria com o campo desabilitado depois que o
+              // cliente escreveu — e a pessoa só descobriria recarregando.
+              service_window_expires_at:
+                p.conversation?.service_window_expires_at ?? known.service_window_expires_at ?? null,
             }
           : {
               id_conversation: p.id_conversation,
               phone: p.conversation?.phone || "",
               phone_display: p.conversation?.phone_display || "",
               title: p.conversation?.title || p.conversation?.phone_display || "",
+              service_window_expires_at: p.conversation?.service_window_expires_at ?? null,
               is_group: !!p.conversation?.is_group,
               unread_count: isOpen ? 0 : 1,
               last_message_at: p.conversation?.last_message_at || new Date().toISOString(),
