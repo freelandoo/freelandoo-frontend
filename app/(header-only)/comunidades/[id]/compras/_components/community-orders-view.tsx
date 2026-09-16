@@ -58,6 +58,13 @@ type Order = {
 
 type Payout = {
   id_payout: number
+  /**
+   * ⚠️ O VÍNCULO É ESTE, e ele é UNIQUE na tabela (um repasse por pedido).
+   * Casar o repasse pelo TÍTULO erraria justamente no caso comum: o mesmo
+   * anúncio vendido duas vezes gera dois pedidos com o MESMO título (ele é
+   * snapshot), e a segunda venda mostraria a data de liberação da primeira.
+   */
+  id_order: number
   listing_title: string
   net_cents: number
   status: "aguardando" | "aprovado" | "pago" | "revertido"
@@ -299,9 +306,10 @@ export function CommunityOrdersView({ communityId }: { communityId: string }) {
             </div>
           ) : (
             list.map((o) => {
-              const payout = (data?.payouts || []).find(
-                (p) => p.listing_title === o.listing_title && tab === "sold"
-              )
+              const payout =
+                tab === "sold"
+                  ? (data?.payouts || []).find((p) => p.id_order === o.id_order)
+                  : undefined
               return (
                 <div key={o.id_order} className={CARD}>
                   <div className="flex flex-wrap items-start justify-between gap-2">
