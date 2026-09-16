@@ -2287,8 +2287,17 @@ export default function CommunityDetailPage() {
                       varredor concluir sozinho, e a disputa — que só vale
                       enquanto o repasse está preso — expiraria sem que ninguém
                       soubesse que ela existia. Página sem link é página que
-                      ninguém alcança. */}
-                  {sellEnabled && canPublishListing && (
+                      ninguém alcança.
+
+                      ⚠️ E A PORTA NÃO PASSA PELA FLAG, de propósito — só por
+                      ser morador. `vitrine_venda` barra COMPRAR, nunca
+                      CONCLUIR: gateando o link aqui, desligar o interruptor com
+                      pedidos em andamento tiraria de quem comprou o único
+                      caminho para confirmar o recebimento e para abrir
+                      contestação — ou seja, PRENDERIA dinheiro que já entrou,
+                      que é exatamente o que o kill-switch não pode fazer. A
+                      própria página também não tem gate, pela mesma razão. */}
+                  {canPublishListing && (
                     <div className="mb-4 flex justify-end">
                       <Link
                         href={`/comunidades/${id}/compras`}
