@@ -144,6 +144,11 @@ async function ensureSocket(): Promise<Socket | null> {
     // o socket não o repassa, e a caixa pareceria congelada.
     "whatsapp:message",
     "whatsapp:status",
+    // Delivery entre vizinhos (mig 248): o backend empurra quando um chamado
+    // abre, é aceito, entregue, confirmado ou devolvido. ⚠️ Evento que não
+    // estiver NESTA lista simplesmente não chega — o socket não o repassa —, e
+    // o quadro mostraria "aberto" um chamado que alguém já pegou até um F5.
+    "delivery:changed",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))

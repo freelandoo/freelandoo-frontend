@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
   ArrowLeft, Building2, Loader2, MapPin, Megaphone, Plus, ShieldCheck,
-  ShoppingBag, Trash2, Users, Vote, Wrench, Check, X, KeyRound, Car, Ticket,
+  Trash2, Users, Vote, Check, X, KeyRound, Car,
 } from "lucide-react"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
@@ -92,25 +92,6 @@ type Notice = {
   spot_code: string | null
   is_read: boolean
 }
-type Listing = {
-  id_listing: number
-  id_user: string
-  kind: "service" | "product"
-  title: string
-  description: string | null
-  price_cents: number | null
-  contact: string | null
-  status: "active" | "archived"
-  created_at: string
-  owner_username: string | null
-  owner_name: string | null
-}
-type QuotaBlock = { free: number; purchased: number; used: number; total: number; remaining: number }
-type Quota = {
-  quota: { service?: QuotaBlock; product?: QuotaBlock }
-  price_cents: number
-  price_polens: number
-}
 type PollOption = { id_option: number; label: string; votes?: number }
 type Poll = {
   id_poll: number
@@ -148,7 +129,10 @@ type Resident = {
   units?: { id_unit: number; number: string; block_name: string | null }[]
 }
 
-type Tab = "mural" | "services" | "products" | "polls" | "residents" | "admin"
+// ⚠️ "services"/"products" SAÍRAM daqui (2026-09-16): as duas vitrines viraram
+// ABAS de primeira classe da comunidade (ver community-listings.tsx). Deixá-las
+// também aqui faria publicar num lugar e não aparecer no outro.
+type Tab = "mural" | "polls" | "residents" | "admin"
 
 /* -------------------------------- helpers -------------------------------- */
 
@@ -189,9 +173,6 @@ export function CondoExtras({
   const [structure, setStructure] = useState<Structure | null>(null)
   const [notices, setNotices] = useState<Notice[]>([])
   const [unreadNotices, setUnreadNotices] = useState(0)
-  const [services, setServices] = useState<Listing[]>([])
-  const [products, setProducts] = useState<Listing[]>([])
-  const [quota, setQuota] = useState<Quota | null>(null)
   const [polls, setPolls] = useState<Poll[]>([])
   const [residents, setResidents] = useState<Resident[]>([])
 
@@ -200,10 +181,6 @@ export function CondoExtras({
   // mesma pergunta acabariam divergindo enquanto uma delas ainda carrega.
   const canSeeInside = isResident || isAdmin
 
-  const money = useCallback(
-    (cents: number) => (Number(cents || 0) / 100).toLocaleString(locale, { style: "currency", currency: "BRL" }),
-    [locale]
-  )
   const date = useCallback(
     (iso: string) => new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short" }),
     [locale]
@@ -234,24 +211,6 @@ export function CondoExtras({
     }
   }, [id])
 
-  const loadListings = useCallback(async () => {
-    try {
-      const [s, p, q] = await Promise.all([
-        fetch(`/api/condos/${id}/listings?kind=service`, { headers: authHeaders() }),
-        fetch(`/api/condos/${id}/listings?kind=product`, { headers: authHeaders() }),
-        fetch(`/api/condos/${id}/listings/quota`, { headers: authHeaders() }),
-      ])
-      const sd = await s.json()
-      const pd = await p.json()
-      const qd = await q.json()
-      if (s.ok) setServices(Array.isArray(sd.listings) ? sd.listings : [])
-      if (p.ok) setProducts(Array.isArray(pd.listings) ? pd.listings : [])
-      if (q.ok) setQuota(qd)
-    } catch {
-      /* silencioso */
-    }
-  }, [id])
-
   const loadPolls = useCallback(async () => {
     try {
       const res = await fetch(`/api/condos/${id}/polls`, { headers: authHeaders() })
@@ -276,10 +235,9 @@ export function CondoExtras({
   useEffect(() => {
     if (!canSeeInside) return
     loadNotices()
-    loadListings()
     loadPolls()
     loadResidents()
-  }, [canSeeInside, loadNotices, loadListings, loadPolls, loadResidents])
+  }, [canSeeInside, loadNotices, loadPolls, loadResidents])
 
   /* ------------------------------- vaga ----------------------------------- */
   // A reivindicação de APARTAMENTO saiu daqui (migs 205/206): virou a portaria
@@ -377,102 +335,6 @@ export function CondoExtras({
 
   /* -------------------------------- anúncios ------------------------------ */
 
-  const [listTitle, setListTitle] = useState("")
-  const [listDesc, setListDesc] = useState("")
-  const [listPrice, setListPrice] = useState("")
-  const [listContact, setListContact] = useState("")
-  const [needsSlotFor, setNeedsSlotFor] = useState<"service" | "product" | null>(null)
-
-  const currentKind: "service" | "product" = tab === "products" ? "product" : "service"
-  const currentQuota = quota?.quota?.[currentKind]
-
-  const submitListing = async () => {
-    if (!listTitle.trim()) return
-    setBusy(true)
-    setMsg(null)
-    setNeedsSlotFor(null)
-    try {
-      const res = await fetch(`/api/condos/${id}/listings`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          kind: currentKind,
-          title: listTitle.trim(),
-          description: listDesc.trim() || null,
-          contact: listContact.trim() || null,
-          price_cents: listPrice.trim() ? Math.round(Number(listPrice.replace(",", ".")) * 100) : null,
-        }),
-      })
-      const data = await res.json()
-      if (res.status === 402 || data.needs_slot) {
-        setNeedsSlotFor(currentKind)
-        setMsg(data.error || t("quotaReached", "Limite de anúncios ativos atingido."))
-        return
-      }
-      if (!res.ok) throw new Error(data.error || t("listingError", "Não foi possível publicar."))
-      setListTitle("")
-      setListDesc("")
-      setListPrice("")
-      setListContact("")
-      await loadListings()
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : t("listingError", "Não foi possível publicar."))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const archiveListing = async (idListing: number) => {
-    try {
-      await fetch(`/api/condos/${id}/listings/${idListing}/status`, {
-        method: "PATCH",
-        headers: authHeaders(),
-        body: JSON.stringify({ status: "archived" }),
-      })
-      await loadListings()
-    } catch {
-      /* silencioso */
-    }
-  }
-
-  const buySlotMoney = async (kind: "service" | "product") => {
-    setBusy(true)
-    try {
-      const res = await fetch(`/api/condos/${id}/listing-slots/checkout`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ kind, quantity: 1 }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.checkout_url) throw new Error(data.error || t("slotError", "Não foi possível iniciar o pagamento."))
-      window.location.href = data.checkout_url
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : t("slotError", "Não foi possível iniciar o pagamento."))
-      setBusy(false)
-    }
-  }
-
-  const buySlotPolens = async (kind: "service" | "product") => {
-    setBusy(true)
-    setMsg(null)
-    try {
-      const res = await fetch(`/api/condos/${id}/listing-slots/polens`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ kind, quantity: 1 }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t("slotError", "Não foi possível comprar a vaga."))
-      setMsg(t("slotBoughtPolens", "Vaga liberada."))
-      setNeedsSlotFor(null)
-      await loadListings()
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : t("slotError", "Não foi possível comprar a vaga."))
-    } finally {
-      setBusy(false)
-    }
-  }
-
   /* -------------------------------- enquetes ------------------------------ */
 
   const [pollQuestion, setPollQuestion] = useState("")
@@ -535,8 +397,6 @@ export function CondoExtras({
 
   const tabs: { key: Tab; label: string; icon: typeof Megaphone; badge?: number }[] = [
     { key: "mural", label: t("tabMural", "Mural"), icon: Megaphone, badge: unreadNotices },
-    { key: "services", label: t("tabServices", "Serviços"), icon: Wrench },
-    { key: "products", label: t("tabProducts", "Produtos"), icon: ShoppingBag },
     { key: "polls", label: t("tabPolls", "Enquetes"), icon: Vote },
     { key: "residents", label: t("tabResidents", "Moradores"), icon: Users },
     ...(isAdmin ? [{ key: "admin" as Tab, label: t("tabAdmin", "Administração"), icon: ShieldCheck }] : []),
@@ -674,85 +534,6 @@ export function CondoExtras({
                       </div>
                     </div>
                   ))
-                )}
-              </div>
-            )}
-
-            {/* SERVIÇOS / PRODUTOS */}
-            {(tab === "services" || tab === "products") && (
-              <div className="mt-5 space-y-4">
-                {currentQuota && (
-                  <div className="border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
-                    {t("quotaLine", "{used} de {total} anúncios ativos")
-                      .replace("{used}", String(currentQuota.used))
-                      .replace("{total}", String(currentQuota.total))}
-                    {currentQuota.purchased > 0 && (
-                      <> · {t("quotaPurchased", "{n} vaga(s) comprada(s)").replace("{n}", String(currentQuota.purchased))}</>
-                    )}
-                  </div>
-                )}
-
-                <div className={CARD}>
-                  <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-                    {currentKind === "service" ? t("newService", "Anunciar serviço") : t("newProduct", "Anunciar produto")}
-                  </p>
-                  <input className={`${INPUT} mt-3`} placeholder={t("listingTitlePlaceholder", "O que você oferece?")} value={listTitle} onChange={(e) => setListTitle(e.target.value)} />
-                  <textarea className={`${INPUT} mt-3 h-20 py-2`} placeholder={t("listingDescPlaceholder", "Detalhes (opcional)")} value={listDesc} onChange={(e) => setListDesc(e.target.value)} />
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <input className={INPUT} placeholder={t("listingPricePlaceholder", "Preço em R$ (opcional)")} value={listPrice} onChange={(e) => setListPrice(e.target.value)} />
-                    <input className={INPUT} placeholder={t("listingContactPlaceholder", "Como te chamar (opcional)")} value={listContact} onChange={(e) => setListContact(e.target.value)} />
-                  </div>
-                  <button type="button" className={`${BTN} mt-3`} disabled={busy || !listTitle.trim()} onClick={submitListing}>
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {t("publish", "Publicar")}
-                  </button>
-
-                  {needsSlotFor === currentKind && quota && (
-                    <div className="mt-4 border-2 border-[#F2B705]/40 bg-[#1D1810] p-3">
-                      <p className="flex items-center gap-2 text-sm font-bold text-[#F2B705]">
-                        <Ticket className="h-4 w-4" /> {t("slotTitle", "Vaga extra de anúncio")}
-                      </p>
-                      <p className="mt-1 text-xs text-[#9A938A]">
-                        {t("slotDesc", "Compre uma vaga para manter mais um anúncio ativo. A vaga é sua para sempre e volta a ficar livre quando você arquiva um anúncio.")}
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {quota.price_cents > 0 && (
-                          <button type="button" className={BTN} disabled={busy} onClick={() => buySlotMoney(currentKind)}>
-                            {money(quota.price_cents)}
-                          </button>
-                        )}
-                        {quota.price_polens > 0 && (
-                          <button type="button" className={BTN} disabled={busy} onClick={() => buySlotPolens(currentKind)}>
-                            {t("slotPolens", "{n} Poléns").replace("{n}", String(quota.price_polens))}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {(currentKind === "service" ? services : products).length === 0 ? (
-                  <p className="px-1 py-8 text-center text-sm text-[#9A938A]">{t("noListings", "Nada anunciado por aqui ainda.")}</p>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {(currentKind === "service" ? services : products).map((l) => (
-                      <div key={l.id_listing} className={CARD}>
-                        <p className="fl-display text-lg leading-tight">{l.title}</p>
-                        {l.description && <p className="mt-1 whitespace-pre-wrap text-sm text-[#F5F1E8]/80">{l.description}</p>}
-                        {l.price_cents != null && (
-                          <p className="mt-2 text-sm font-extrabold text-[#F2B705]">{money(l.price_cents)}</p>
-                        )}
-                        <p className="mt-2 text-[11px] text-[#9A938A]">
-                          @{l.owner_username}
-                          {l.contact ? ` · ${l.contact}` : ""}
-                        </p>
-                        {l.status === "active" && (
-                          <button type="button" className={`${BTN_GHOST} mt-3`} onClick={() => archiveListing(l.id_listing)}>
-                            <Trash2 className="h-3 w-3" /> {t("archive", "Arquivar")}
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
                 )}
               </div>
             )}

@@ -7,7 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
-  Lock, Globe, PawPrint, Car, UserRound,
+  Lock, Globe, PawPrint, Car, UserRound, Bike,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -77,7 +77,14 @@ const CondoResidence = dynamic(
  * games (2026-09-09), e o componente dela foi APAGADO junto quando o frontend
  * daquele ambiente foi retirado inteiro.
  */
-type CommunityTab = "feed" | "members"
+/**
+ * ⚠️ AS DUAS VITRINES ENTRARAM (2026-09-16) e só existem em condomínio e
+ * bairro. Elas já existiam desde a mig 198 — mas escondidas dentro do bloco de
+ * extras do condomínio, três níveis abaixo do que é o produto do lugar: o que o
+ * vizinho vende e o que ele faz. Aqui viram abas de primeira classe, e o bairro
+ * (que não tinha vitrine nenhuma) passa a ter as mesmas duas.
+ */
+type CommunityTab = "feed" | "services" | "products" | "members"
 // "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
 // `/comunidades/<id>/site`. Ele monta uma página inteira, e encaixá-la numa
 // aba embaixo do feed mostrava um site diferente do que ia ao ar. As duas
@@ -86,6 +93,13 @@ type CommunityTab = "feed" | "members"
 // Continuam existindo — o que morreu foi a TELA separada, não as features.
 const CondoExtras = dynamic(
   () => import("./_components/condo-extras").then((m) => m.CondoExtras),
+  { ssr: false }
+)
+
+// As duas VITRINES territoriais (mig 198), agora como abas. Carregadas sob
+// demanda: quem abre uma comunidade comum — a maioria — nunca baixa este chunk.
+const CommunityListings = dynamic(
+  () => import("./_components/community-listings").then((m) => m.CommunityListings),
   { ssr: false }
 )
 
@@ -380,6 +394,17 @@ export default function CommunityDetailPage() {
   // 205/206). Quem entrou e ainda não confirmou lê e não escreve.
   const isCondo = community?.kind === "condo"
   /**
+   * TERRITORIAL = condomínio ou bairro: os dois lugares onde MORAR, e não "ter
+   * entrado", é o que dá direito de escrever.
+   *
+   * ⚠️ O predicado é UM SÓ e é lido pelas abas de vitrine, pelo pill de
+   * Delivery e pelo gate de quem publica. Escrito solto em cada ponto, o que
+   * esquecesse do bairro deixaria a feature meio entregue — a vitrine abrindo
+   * no condomínio e faltando na rua, sem erro nenhum. É o espelho do
+   * `TERRITORIAL_KINDS` do backend (utils/territorialCommunity.js).
+   */
+  const isTerritorial = isCondo || community?.kind === "neighborhood"
+  /**
    * O ASSUNTO EDITÁVEL da comunidade (mig 210).
    *
    * ⚠️ ERAM TRÊS — `games` saiu quando a plataforma foi retirada do ar
@@ -408,6 +433,23 @@ export default function CommunityDetailPage() {
   // (publicar por estar logado) saiu junto com games: aqui só restam
   // comunidades de verdade, e nelas a membresia é a porta.
   const canPost = isCondo ? isLeader || isResident : isMember
+
+  /**
+   * Quem ANUNCIA na vitrine e quem CHAMA um delivery é o MORADOR — nas duas
+   * modalidades territoriais.
+   *
+   * ⚠️ NÃO É O `canPost` ACIMA, e a diferença não é preciosismo: no bairro
+   * `canPost` é a membresia (entrou na comunidade), enquanto o backend da
+   * vitrine e do delivery exige o vínculo RECONHECIDO pelos vizinhos. Reusar
+   * `canPost` aqui desenharia o formulário de anúncio para quem o servidor
+   * recusaria com 403 — a porta pintada de sempre, descoberta só depois de a
+   * pessoa escrever o anúncio inteiro.
+   *
+   * Este é o ESPELHO do guard `require: "resident"` do
+   * `utils/territorialCommunity.js`. Errar para menos aqui esconde um botão;
+   * errar para mais promete uma porta que não abre.
+   */
+  const canPublishListing = isTerritorial && (isLeader || isResident)
 
   // ─── "Meu Site" (mig 212) ───────────────────────────────────────────────────
   // A flag `comunidade_site` é kill-switch de CONSTRUÇÃO: desligada, o líder
@@ -501,13 +543,23 @@ export default function CommunityDetailPage() {
   // ⚠️ A ABA "ESTANTE" (mig 220) SAIU DAQUI (2026-09-09). Ela só existia na
   // modalidade games e mostrava a biblioteca conectada da Steam; o componente
   // dela foi apagado junto com o resto do frontend daquele ambiente.
+  // ⚠️ AS VITRINES SÓ EXISTEM EM COMUNIDADE TERRITORIAL. Numa comunidade comum
+  // (ou pet/carro) elas não fazem sentido — quem vende ali tem a Loja e o
+  // perfil —, e a rota do backend responde 404 para modalidade não territorial.
+  // Oferecer a aba mesmo assim seria porta pintada.
   const communityTabs = useMemo(
     () =>
       [
         ["feed", t("tabFeed", "Feed")],
+        ...(isTerritorial
+          ? ([
+              ["services", t("tabServices", "Serviços")],
+              ["products", t("tabProducts", "Produtos")],
+            ] as [CommunityTab, string][])
+          : []),
         ["members", t("tabMembers", "Membros")],
       ] as [CommunityTab, string][],
-    [t]
+    [t, isTerritorial]
   )
 
   // ─── DEEP-LINK DO DOCK ──────────────────────────────────────────────────────
@@ -528,9 +580,14 @@ export default function CommunityDetailPage() {
     const aba = sp.get("aba")
     const painel = sp.get("painel")
     if (aba === "membros") setTab("members")
+    // As vitrines só podem ser abertas por link onde elas existem: numa
+    // comunidade comum a aba não está na fila, e abrir uma aba que a fila não
+    // tem deixaria a tela mostrando algo que ninguém consegue fechar.
+    if (aba === "servicos" && isTerritorial) setTab("services")
+    if (aba === "produtos" && isTerritorial) setTab("products")
     if (painel === "perfil") setPanel("profile")
     if (painel === "mural") setPanel("mural")
-  }, [community])
+  }, [community, isTerritorial])
 
   // ─── O DOCK PEDINDO A VISTA (sem navegar) ───────────────────────────────────
   //
@@ -699,6 +756,40 @@ export default function CommunityDetailPage() {
             },
           ] as PillSpec[])
         : []),
+      // DELIVERY (mig 248) — só em comunidade TERRITORIAL, e ele NAVEGA: o
+      // quadro tem a lista de chamados, o formulário, as minhas corridas nas
+      // duas pontas e a carteira de quem entrega. Nada disso cabe embaixo do
+      // headcard sem empurrar o feed para longe.
+      //
+      // ⚠️ A CONTA DA PILHA FECHA, E É A ÚLTIMA VAGA. Os pills são `h-9` (36px)
+      // com `gap-1.5` (6px): 4 × 36 + 3 × 6 = **162px** contra uma foto de
+      // **192px** (w-32, proporção 2/3). Um QUINTO daria 198px e escaparia por
+      // cima e por baixo em vez de só pela direita. **Pill novo aqui? Refaça
+      // esta conta antes.**
+      //
+      // Não disputa espaço com "Indicadores": aquele é exclusivo da comunidade
+      // de NEGÓCIO (`common`), que nunca é territorial — as duas listas de
+      // quatro nunca coexistem.
+      //
+      // Vermelho-tijolo porque a pilha já tem azul, laranja e roxo; o accent
+      // está fora de questão (é editável pelo líder e pode cair no tom do
+      // próprio botão).
+      ...(isTerritorial
+        ? ([
+            {
+              key: "delivery",
+              icon: Bike,
+              label: t("delPill", "Delivery"),
+              ariaLabel: t(
+                "delPillAria",
+                "Abrir o delivery entre vizinhos: chamados de entrega da comunidade"
+              ),
+              bg: "#B91C1C",
+              bgHover: "#991B1B",
+              href: `/comunidades/${id}/delivery`,
+            },
+          ] as PillSpec[])
+        : []),
       // O terceiro é o RANKING, e ele NAVEGA em vez de abrir painel: o pódio
       // com foto grande, a lista inteira e a temporada não cabem embaixo do
       // headcard sem empurrar o feed para longe outra vez — foi para tirar
@@ -718,7 +809,7 @@ export default function CommunityDetailPage() {
         href: `/comunidades/${id}/ranking`,
       },
     ]
-  }, [t, panel, id, openPanel, showIndicators])
+  }, [t, panel, id, openPanel, showIndicators, isTerritorial])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -2163,7 +2254,21 @@ export default function CommunityDetailPage() {
             </div>
 
             <div className="mt-6">
-              {tab === "members" ? (
+              {/* AS VITRINES (mig 198). Só em comunidade territorial — a fila
+                  de abas já garante isso, mas o guard aqui é o que impede a
+                  tela de tentar desenhá-las quando um deep-link antigo pedir
+                  uma aba que a modalidade não tem. Quem publica é o MORADOR
+                  (`canPost` já resolve as duas modalidades); quem não é, lê. */}
+              {isTerritorial && (tab === "services" || tab === "products") ? (
+                <CommunityListings
+                  communityId={id}
+                  kind={tab === "services" ? "service" : "product"}
+                  accent={accent}
+                  canPublish={canPublishListing}
+                  isAdmin={canAdminister || !!community.viewer_is_admin}
+                  currentUserId={currentUserId}
+                />
+              ) : tab === "members" ? (
                 members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {ranked.map((m, i) => (
