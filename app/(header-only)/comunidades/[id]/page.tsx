@@ -467,6 +467,16 @@ export default function CommunityDetailPage() {
   // não pode esconder uma feature ligada.
   const sellEnabled = useFeature("vitrine_venda")
 
+  // ⚠️ O kill-switch do DELIVERY (mig 248). A descrição da própria flag promete
+  // que "desligar esconde a aba" — e sem esta leitura ela não escondia NADA: o
+  // pill continuava na pilha, o quadro abria, e só o backend recusava, com a
+  // tela parecendo quebrada em vez de desligada.
+  //
+  // Ele barra ABRIR CHAMADO, nunca CONCLUIR: chamado que já está no ar segue
+  // podendo ser aceito e confirmado — desligar o interruptor não pode prender
+  // dinheiro que já entrou.
+  const deliveryEnabled = useFeature("delivery_vizinho")
+
   // ⚠️ E SÓ A COMUNIDADE DE NEGÓCIO TEM SITE (decisão do Alex, 2026-09-07):
   // "só meus negócios tem site, o restante não tem, nenhuma comunidade mais".
   // Isso e as outras duas metades da régua (ser o líder e a flag) moram em
@@ -783,7 +793,7 @@ export default function CommunityDetailPage() {
       // Vermelho-tijolo porque a pilha já tem azul, laranja e roxo; o accent
       // está fora de questão (é editável pelo líder e pode cair no tom do
       // próprio botão).
-      ...(isTerritorial
+      ...(isTerritorial && deliveryEnabled
         ? ([
             {
               key: "delivery",
@@ -818,7 +828,7 @@ export default function CommunityDetailPage() {
         href: `/comunidades/${id}/ranking`,
       },
     ]
-  }, [t, panel, id, openPanel, showIndicators, isTerritorial])
+  }, [t, panel, id, openPanel, showIndicators, isTerritorial, deliveryEnabled])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),

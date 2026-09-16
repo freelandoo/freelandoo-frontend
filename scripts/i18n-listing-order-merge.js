@@ -53,6 +53,16 @@ const COMMUNITY = {
   ],
   buyNoDelivery: ["Eu busco", "I'll pick it up", "Yo lo busco"],
 
+  // ─── O kill-switch do delivery (mig 248) ─────────────────────────────────
+  // ⚠️ Desligado NAO e' erro: "nao deu para carregar" mandaria a pessoa tentar
+  // de novo para sempre. A flag `delivery_vizinho` promete na propria descricao
+  // que "desligar esconde a aba" — e ate' aqui ela nao escondia nada.
+  delDisabled: [
+    "O delivery entre vizinhos está desligado por enquanto.",
+    "Neighbor delivery is turned off for now.",
+    "El delivery entre vecinos está desactivado por ahora.",
+  ],
+
   // ─── A porta para "meus pedidos" ─────────────────────────────────────────
   myOrdersCta: [
     "Minhas compras e vendas",

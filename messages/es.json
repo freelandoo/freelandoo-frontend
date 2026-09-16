@@ -2857,7 +2857,8 @@
     "ordStatus_completed": "Concluido",
     "ordStatus_disputed": "En reclamación",
     "ordStatus_canceled": "Cancelado",
-    "ordStatus_refunded": "Reembolsado"
+    "ordStatus_refunded": "Reembolsado",
+    "delDisabled": "El delivery entre vecinos está desactivado por ahora."
   },
   "Careers": {
     "hero.badge": "Carreras",

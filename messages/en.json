@@ -2857,7 +2857,8 @@
     "ordStatus_completed": "Completed",
     "ordStatus_disputed": "Disputed",
     "ordStatus_canceled": "Canceled",
-    "ordStatus_refunded": "Refunded"
+    "ordStatus_refunded": "Refunded",
+    "delDisabled": "Neighbor delivery is turned off for now."
   },
   "Careers": {
     "hero.badge": "Careers",

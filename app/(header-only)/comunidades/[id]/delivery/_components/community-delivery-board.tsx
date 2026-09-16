@@ -42,6 +42,7 @@ import { PageBackLink } from "@/components/tabloide"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
 import { getToken, getStoredUser } from "@/lib/auth"
 import { onRealtime } from "@/lib/realtime"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { accentHex } from "../../_components/community-ui"
 
 type DeliveryType = {
@@ -117,6 +118,13 @@ function authHeaders(): Record<string, string> {
 export function CommunityDeliveryBoard({ communityId }: { communityId: string }) {
   const t = useTranslations("Community")
   const locale = useLocale()
+
+  // ⚠️ O GATE PRECISA ESTAR AQUI TAMBÉM, não só no pill. Esconder o botão não
+  // fecha a porta: o endereço continua sendo alcançável por link salvo, por
+  // histórico do navegador e pelo app instalado — e o quadro abriria normal,
+  // com o backend recusando cada gesto. `useFeature` falha ABERTO (`!== false`),
+  // então erro de rede na leitura das flags não esconde uma feature ligada.
+  const deliveryEnabled = useFeature("delivery_vizinho")
 
   const [community, setCommunity] = useState<Community | null>(null)
   const [board, setBoard] = useState<Board | null>(null)
@@ -266,6 +274,23 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0804]">
         <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
+      </div>
+    )
+  }
+  // Desligado NÃO é erro, e a tela diz isso: "não deu para carregar" mandaria a
+  // pessoa tentar de novo para sempre.
+  if (!deliveryEnabled) {
+    return (
+      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-[#F5F1E8]">
+        <div>
+          <ShieldAlert className="mx-auto h-10 w-10 text-[#9A938A]" />
+          <p className="mt-4 max-w-sm text-sm text-[#9A938A]">
+            {t("delDisabled", "O delivery entre vizinhos está desligado por enquanto.")}
+          </p>
+          <div className="mt-4 flex justify-center">
+            <PageBackLink href={`/comunidades/${communityId}`} />
+          </div>
+        </div>
       </div>
     )
   }
