@@ -7,7 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
-  Lock, Globe, PawPrint, Car, UserRound, Bike,
+  Lock, Globe, PawPrint, Car, UserRound, Bike, ShoppingBag,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -457,6 +457,15 @@ export default function CommunityDetailPage() {
   // para quem visita — desligar o interruptor segura o que ainda não nasceu,
   // não derruba o que está no ar. (Mesma regra do GET /me/spaces.)
   const siteEnabled = useFeature("comunidade_site")
+
+  // ⚠️ O kill-switch da VENDA na vitrine (mig 249). Ele esconde o botão
+  // "Comprar"; os pedidos em andamento continuam podendo ser concluídos, porque
+  // o gate do backend só barra COMPRAR — desligar o interruptor não pode
+  // prender dinheiro que já entrou.
+  //
+  // `useFeature` falha ABERTO (`!== false`): erro de rede na leitura das flags
+  // não pode esconder uma feature ligada.
+  const sellEnabled = useFeature("vitrine_venda")
 
   // ⚠️ E SÓ A COMUNIDADE DE NEGÓCIO TEM SITE (decisão do Alex, 2026-09-07):
   // "só meus negócios tem site, o restante não tem, nenhuma comunidade mais".
@@ -2260,6 +2269,26 @@ export default function CommunityDetailPage() {
                   uma aba que a modalidade não tem. Quem publica é o MORADOR
                   (`canPost` já resolve as duas modalidades); quem não é, lê. */}
               {isTerritorial && (tab === "services" || tab === "products") ? (
+                <>
+                  {/* ⚠️ A PORTA DE "MINHAS COMPRAS" MORA AQUI, e sem ela a
+                      venda não teria FIM: é naquela tela que quem comprou
+                      confirma o recebimento (ou contesta) e quem vendeu marca
+                      "entreguei". Sem um link, o dinheiro ficaria retido até o
+                      varredor concluir sozinho, e a disputa — que só vale
+                      enquanto o repasse está preso — expiraria sem que ninguém
+                      soubesse que ela existia. Página sem link é página que
+                      ninguém alcança. */}
+                  {sellEnabled && canPublishListing && (
+                    <div className="mb-4 flex justify-end">
+                      <Link
+                        href={`/comunidades/${id}/compras`}
+                        className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8]"
+                      >
+                        <ShoppingBag className="h-3.5 w-3.5" />
+                        {t("myOrdersCta", "Minhas compras e vendas")}
+                      </Link>
+                    </div>
+                  )}
                 <CommunityListings
                   communityId={id}
                   kind={tab === "services" ? "service" : "product"}
@@ -2267,7 +2296,12 @@ export default function CommunityDetailPage() {
                   canPublish={canPublishListing}
                   isAdmin={canAdminister || !!community.viewer_is_admin}
                   currentUserId={currentUserId}
+                  // ⚠️ COMPRAR EXIGE SER MORADOR, como anunciar: o backend
+                  // recusa quem está de fora, e o botão precisa concordar com
+                  // ele — senão é porta pintada.
+                  canBuy={sellEnabled && canPublishListing}
                 />
+                </>
               ) : tab === "members" ? (
                 members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">

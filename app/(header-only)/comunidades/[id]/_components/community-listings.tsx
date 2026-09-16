@@ -19,7 +19,8 @@
 // backend para o front em cache, não para código novo.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Loader2, Package, Plus, Ticket, Trash2, Wrench } from "lucide-react"
+import { createPortal } from "react-dom"
+import { Loader2, Package, Plus, ShoppingCart, Ticket, Trash2, Truck, Wrench, X } from "lucide-react"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 
@@ -48,6 +49,13 @@ type QuotaBlock = {
   total: number
   remaining: number
 }
+/** Os tipos de entrega que o add-on "+R$3" pode somar ao pedido. */
+type DeliveryOption = {
+  kind: string
+  label: string
+  price_cents: number
+}
+
 type QuotaPayload = {
   quota: Partial<Record<ListingKind, QuotaBlock>>
   price_cents: number
@@ -74,7 +82,7 @@ export function CommunityListings({
   canPublish,
   isAdmin,
   currentUserId,
-  onBuy,
+  canBuy,
 }: {
   communityId: string
   kind: ListingKind
@@ -84,10 +92,11 @@ export function CommunityListings({
   isAdmin: boolean
   currentUserId: string | null
   /**
-   * Abre o checkout vizinho-a-vizinho (sub-projeto 3). Ausente = a vitrine
-   * volta a ser só um mural com o contato do anunciante, que é como ela nasceu.
+   * Liga o checkout vizinho-a-vizinho (mig 249). Desligado — pela flag do
+   * Painel de Controle ou porque quem olha não é morador — a vitrine volta a
+   * ser o mural com o contato do anunciante, que é como ela nasceu.
    */
-  onBuy?: (listing: Listing) => void
+  canBuy?: boolean
 }) {
   const t = useTranslations("Community")
   const locale = useLocale()
@@ -104,6 +113,13 @@ export function CommunityListings({
   const [desc, setDesc] = useState("")
   const [price, setPrice] = useState("")
   const [contact, setContact] = useState("")
+
+  /* ── o checkout vizinho-a-vizinho (mig 249) ─────────────────────────────── */
+  const [buying, setBuying] = useState<Listing | null>(null)
+  const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([])
+  const [pickedDelivery, setPickedDelivery] = useState<string>("")
+  const [buyBusy, setBuyBusy] = useState(false)
+  const [buyMsg, setBuyMsg] = useState<string | null>(null)
 
   const money = useCallback(
     (cents: number) =>
@@ -232,6 +248,60 @@ export function CommunityListings({
       setBusy(false)
     }
   }
+
+  /**
+   * Abre o modal de compra e busca os tipos de entrega.
+   *
+   * ⚠️ OS PREÇOS DA ENTREGA VÊM DO BACKEND, da MESMA tabela admin-editável que
+   * o delivery usa. Escrever "R$3" aqui faria a vitrine cobrar três reais no
+   * dia em que o painel já dissesse quatro.
+   */
+  const openBuy = useCallback(
+    async (l: Listing) => {
+      setBuying(l)
+      setPickedDelivery("")
+      setBuyMsg(null)
+      try {
+        const res = await fetch(`/api/communities/${communityId}/deliveries`, {
+          headers: authHeaders(),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (res.ok && Array.isArray(data.types)) setDeliveryOptions(data.types)
+        else setDeliveryOptions([])
+      } catch {
+        // Sem a lista, o modal só não oferece o add-on — comprar continua de pé.
+        setDeliveryOptions([])
+      }
+    },
+    [communityId]
+  )
+
+  const confirmBuy = async () => {
+    if (!buying) return
+    setBuyBusy(true)
+    setBuyMsg(null)
+    try {
+      const res = await fetch(
+        `/api/communities/${communityId}/listings/${buying.id_listing}/checkout`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ delivery_kind: pickedDelivery || null }),
+        }
+      )
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.checkout_url) {
+        throw new Error(data.error || t("buyError", "Não foi possível iniciar o pagamento."))
+      }
+      window.location.href = data.checkout_url
+    } catch (err) {
+      setBuyMsg(err instanceof Error ? err.message : t("buyError", "Não foi possível iniciar o pagamento."))
+      setBuyBusy(false)
+    }
+  }
+
+  const chosenDelivery = deliveryOptions.find((d) => d.kind === pickedDelivery) || null
+  const buyTotal = (buying?.price_cents || 0) + (chosenDelivery?.price_cents || 0)
 
   const Icon = kind === "service" ? Wrench : Package
   const emptyText =
@@ -395,17 +465,18 @@ export function CommunityListings({
                   {l.contact ? ` · ${l.contact}` : ""}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {/* Comprar só existe quando há PREÇO e o anúncio é de outra
-                      pessoa: sem preço não há o que cobrar, e comprar de si
-                      mesmo é um pedido que nasce para ser cancelado. */}
-                  {onBuy && !mine && l.price_cents != null && l.price_cents > 0 && (
+                  {/* Comprar só existe quando há PREÇO e o anúncio é de OUTRA
+                      pessoa: sem preço não há o que cobrar (o anúncio é convite
+                      para conversar, e o backend recusa), e comprar de si mesmo
+                      é um pedido que nasce para ser cancelado. */}
+                  {canBuy && !mine && l.price_cents != null && l.price_cents > 0 && (
                     <button
                       type="button"
                       className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D]"
                       style={{ background: accent }}
-                      onClick={() => onBuy(l)}
+                      onClick={() => openBuy(l)}
                     >
-                      {t("listBuy", "Comprar")}
+                      <ShoppingCart className="h-3 w-3" /> {t("listBuy", "Comprar")}
                     </button>
                   )}
                   {(mine || isAdmin) && l.status === "active" && (
@@ -419,6 +490,131 @@ export function CommunityListings({
           })}
         </div>
       )}
+
+      {/* ⚠️ O MODAL VAI POR PORTAL NO BODY e é `z-[100]`. A página da
+          comunidade tem cards ROTACIONADOS, e ancestral com `transform` deixa
+          de ser a janela para um filho `fixed`: preso no fluxo, ele abriria
+          dentro de um card da vitrine. */}
+      {buying &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fl-sharp fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+            onClick={() => !buyBusy && setBuying(null)}
+          >
+            <div
+              className="w-full max-w-md border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                    {t("buyTitle", "Comprar do vizinho")}
+                  </p>
+                  <p className="fl-display mt-1 truncate text-2xl leading-tight">{buying.title}</p>
+                </div>
+                <button
+                  type="button"
+                  className="shrink-0 border-2 border-[#0B0B0D] bg-[#1D1810] p-1.5"
+                  onClick={() => !buyBusy && setBuying(null)}
+                  aria-label={t("listCancel", "Cancelar")}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <p className="mt-3 text-sm font-extrabold" style={{ color: accent }}>
+                {money(buying.price_cents || 0)}
+              </p>
+
+              {/* ── o add-on "+R$3" ─────────────────────────────────────────
+                  O Alex: "se precisar que alguém busque na recepção, ou leve do
+                  apartamento que vendeu ao que comprou, quem comprou pode pagar
+                  R$3 a mais e esses R$3 ficam disponíveis para alguém buscar". */}
+              {deliveryOptions.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                    {t("buyDeliveryTitle", "Precisa que alguém traga?")}
+                  </p>
+                  <p className="mt-1 text-[11px] text-[#9A938A]">
+                    {t(
+                      "buyDeliveryHint",
+                      "A gente soma ao seu pagamento e abre um chamado aqui na comunidade. Qualquer vizinho pode pegar e receber por isso."
+                    )}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPickedDelivery("")}
+                      className="border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em]"
+                      style={
+                        pickedDelivery === ""
+                          ? { background: accent, color: "#0B0B0D" }
+                          : { background: "#1D1810", color: "#F5F1E8" }
+                      }
+                    >
+                      {t("buyNoDelivery", "Eu busco")}
+                    </button>
+                    {deliveryOptions.map((d) => (
+                      <button
+                        key={d.kind}
+                        type="button"
+                        onClick={() => setPickedDelivery(d.kind)}
+                        className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em]"
+                        style={
+                          pickedDelivery === d.kind
+                            ? { background: accent, color: "#0B0B0D" }
+                            : { background: "#1D1810", color: "#F5F1E8" }
+                        }
+                      >
+                        <Truck className="h-3 w-3" /> {d.label} +{money(d.price_cents)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2">
+                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">
+                  {t("buyTotal", "Total")}
+                </p>
+                <p className="fl-display text-2xl leading-none" style={{ color: accent }}>
+                  {money(buyTotal)}
+                </p>
+              </div>
+
+              {/* A promessa que faz a pessoa clicar: o dinheiro fica retido. */}
+              <p className="mt-3 text-[11px] text-[#9A938A]">
+                {t(
+                  "buyHoldbackNote",
+                  "O pagamento fica retido até você confirmar que recebeu. Se algo der errado, dá para contestar."
+                )}
+              </p>
+
+              {buyMsg && (
+                <p className="mt-3 border-2 border-[#0B0B0D] bg-[#0B0B0D]/40 px-3 py-2 text-xs font-bold">
+                  {buyMsg}
+                </p>
+              )}
+
+              <button
+                type="button"
+                disabled={buyBusy}
+                onClick={confirmBuy}
+                className="mt-4 flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] px-4 py-3 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50"
+                style={{ background: accent }}
+              >
+                {buyBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShoppingCart className="h-4 w-4" />
+                )}
+                {t("buyCta", "Pagar {v}").replace("{v}", money(buyTotal))}
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

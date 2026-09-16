@@ -149,6 +149,12 @@ async function ensureSocket(): Promise<Socket | null> {
     // estiver NESTA lista simplesmente não chega — o socket não o repassa —, e
     // o quadro mostraria "aberto" um chamado que alguém já pegou até um F5.
     "delivery:changed",
+    // Venda na vitrine do vizinho (mig 249): o backend empurra quando o
+    // pagamento confirma, quando o vendedor marca "entreguei", quando quem
+    // comprou confirma ou contesta. ⚠️ MESMA regra das linhas acima — fora
+    // desta lista o evento nao chega, e a tela de compras mostraria "aguardando
+    // pagamento" um pedido que ja foi pago, ate alguem apertar F5.
+    "listing-order:changed",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))

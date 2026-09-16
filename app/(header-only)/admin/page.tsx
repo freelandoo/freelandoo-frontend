@@ -57,6 +57,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   // Moderação
   { section: "Moderação", hint: "admin-chat-mod", href: "/administracao/moderacao", icon: ShieldAlert, title: "Moderação", body: "Chat (fila/mute/ban), termos bloqueados e posts denunciados — tudo em abas." },
   { section: "Moderação", href: "/administracao/fraude", icon: Fingerprint, title: "Fraude", body: "Fila de cadastros suspeitos (IP em rajada, e-mail descartável, região do CPF), bloqueio de conta e destinos de repasse divergentes.", badge: "novo" },
+  { section: "Moderação", href: "/administracao/comercio-vizinho", icon: ShoppingBag, title: "Comércio entre vizinhos", body: "Preços do delivery, régua da venda na vitrine e a FILA DE DISPUTAS — enquanto uma disputa está aberta o repasse do vendedor fica congelado, e é aqui que ele se solta.", badge: "novo" },
 
   // Sistema & Dados
   { section: "Sistema & Dados", href: "/administracao/painel-de-controle", icon: Power, title: "Painel de Controle", body: "Chaves de liga/desliga por responsabilidade (ex.: Lojas / Produtos). Desligar esconde toda a superfície e bloqueia as rotas — sem apagar dados.", badge: "novo" },
