@@ -70,10 +70,14 @@ type Dispute = {
   community_name: string
 }
 
+/**
+ * Os TRÊS motivos que existem — os mesmos do `DISPUTE_REASONS` do service e do
+ * CHECK da mig 249. Listar um quarto aqui insinuaria um estado que o banco
+ * recusa. Motivo desconhecido cai no próprio valor, em vez de sumir.
+ */
 const REASON_LABEL: Record<string, string> = {
   not_received: "Não recebeu",
   not_as_described: "Diferente do anunciado",
-  damaged: "Chegou danificado",
   other: "Outro",
 }
 
