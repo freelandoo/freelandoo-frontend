@@ -4050,7 +4050,12 @@
     "residence_recognized": "Your residence was confirmed",
     "residence_contested": "A neighbor didn't recognize your residence",
     "residence_proof_requested": "Send proof of address",
-    "residence_ended": "Your link with the address was ended"
+    "residence_ended": "Your link with the address was ended",
+    "whatsappFlagged": "Meta flagged your WhatsApp number",
+    "whatsappDowngrade": "Your WhatsApp number quality has dropped",
+    "whatsappBanned": "Meta banned your WhatsApp number",
+    "whatsappRestricted": "Your WhatsApp number has restrictions",
+    "whatsappQuality": "There's a notice from Meta about your WhatsApp number"
   },
   "Payments": {
     "statusRefundedMale": "Refunded",
@@ -6468,7 +6473,11 @@
     "windowClosedHint": "It's an official WhatsApp rule: you can only reply within 24h of the customer's last message. As soon as they write again, the field comes back on its own.",
     "windowEndingSoon": "This conversation closes for replies in {time}.",
     "hoursShort": "{n}h",
-    "minutesShort": "{n} min"
+    "minutesShort": "{n} min",
+    "qualityBanned": "Meta banned this number. Support through here has stopped.",
+    "qualityRestricted": "Meta placed restrictions on this number.",
+    "qualityFlagged": "Meta flagged this number: customers have been blocking or reporting your messages.",
+    "qualityLow": "This number's quality has dropped. Avoid messaging people who didn't write first."
   },
   "Games": {
     "back": "Back",

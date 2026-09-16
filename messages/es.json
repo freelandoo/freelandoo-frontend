@@ -4030,7 +4030,12 @@
     "residence_recognized": "Tu residencia fue confirmada",
     "residence_contested": "Un vecino no reconoció tu residencia",
     "residence_proof_requested": "Envía un comprobante de domicilio",
-    "residence_ended": "Tu vínculo con la dirección fue terminado"
+    "residence_ended": "Tu vínculo con la dirección fue terminado",
+    "whatsappFlagged": "Meta marcó tu número de WhatsApp",
+    "whatsappDowngrade": "La calidad de tu número de WhatsApp bajó",
+    "whatsappBanned": "Meta bloqueó tu número de WhatsApp",
+    "whatsappRestricted": "Tu número de WhatsApp tiene restricciones",
+    "whatsappQuality": "Hay un aviso de Meta sobre tu número de WhatsApp"
   },
   "Payments": {
     "statusRefundedMale": "Reembolsado",
@@ -6448,7 +6453,11 @@
     "windowClosedHint": "Es una regla oficial de WhatsApp: solo puedes responder hasta 24 h después del último mensaje del cliente. En cuanto vuelva a escribir, el campo se reactiva solo.",
     "windowEndingSoon": "Esta conversación se cierra para respuestas en {time}.",
     "hoursShort": "{n} h",
-    "minutesShort": "{n} min"
+    "minutesShort": "{n} min",
+    "qualityBanned": "Meta bloqueó este número. La atención por aquí se detuvo.",
+    "qualityRestricted": "Meta puso restricciones en este número.",
+    "qualityFlagged": "Meta marcó este número: los clientes han estado bloqueando o denunciando los mensajes.",
+    "qualityLow": "La calidad de este número bajó. Evita escribir a quien no te escribió primero."
   },
   "Games": {
     "back": "Volver",

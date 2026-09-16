@@ -60,6 +60,22 @@ export function WhatsappList({
   // Caiu por inatividade: a tela DIZ o motivo. O provider de i18n não
   // interpola, então o número de dias entra por replace, como no resto da casa.
   const idleCut = !connected && info?.disconnect_reason === "idle"
+
+  // Qual apuro mostrar, se houver. A ORDEM é por gravidade: um número banido
+  // também está com rating ruim, e avisar do rating quando ele já foi bloqueado
+  // enterraria a única notícia que importa.
+  const numberStatus = String(info?.number_status || "").toUpperCase()
+  const rating = String(info?.quality_rating || "").toUpperCase()
+  const warnKind =
+    numberStatus === "BANNED"
+      ? "banned"
+      : numberStatus === "RESTRICTED"
+        ? "restricted"
+        : numberStatus === "FLAGGED"
+          ? "flagged"
+          : rating === "RED" || rating === "YELLOW"
+            ? "low"
+            : null
   const idleNotice = t(
     "idleDisconnected",
     "Desconectamos o seu WhatsApp porque a caixa ficou {days} dias sem uso. Nada foi perdido: reconecte para voltar a receber por aqui."
@@ -76,21 +92,41 @@ export function WhatsappList({
             )}
           </p>
         ) : connected ? (
-          <button
-            type="button"
-            onClick={onConnect}
-            className="flex w-full items-center gap-2 border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 text-left transition-colors hover:bg-emerald-500/15"
-          >
-            <span className="h-2 w-2 shrink-0 bg-emerald-400" />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
-                {t("connectedChip", "WhatsApp conectado")}
+          <>
+            {/*
+              W6 — a saúde do número, quando ela não está boa.
+              ⚠️ Só aparece em apuro: uma faixa permanente dizendo "está tudo
+              bem" vira paisagem, e no dia do problema ninguém a lê. E ausência
+              de medição (`null`) NÃO desenha nada — não sabemos, então não
+              afirmamos.
+            */}
+            {warnKind && (
+              <p className="mb-2 border-l-2 border-amber-400 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-200">
+                {warnKind === "banned"
+                  ? t("qualityBanned", "A Meta bloqueou este número. O atendimento por aqui parou.")
+                  : warnKind === "restricted"
+                    ? t("qualityRestricted", "A Meta colocou restrições neste número.")
+                    : warnKind === "flagged"
+                      ? t("qualityFlagged", "A Meta sinalizou este número: clientes andaram bloqueando ou denunciando as mensagens.")
+                      : t("qualityLow", "A qualidade deste número caiu. Evite mandar mensagem para quem não escreveu primeiro.")}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={onConnect}
+              className="flex w-full items-center gap-2 border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 text-left transition-colors hover:bg-emerald-500/15"
+            >
+              <span className="h-2 w-2 shrink-0 bg-emerald-400" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
+                  {t("connectedChip", "WhatsApp conectado")}
+                </span>
+                {info?.number && (
+                  <span className="block truncate text-[11px] text-white/50">{info.number}</span>
+                )}
               </span>
-              {info?.number && (
-                <span className="block truncate text-[11px] text-white/50">{info.number}</span>
-              )}
-            </span>
-          </button>
+            </button>
+          </>
         ) : (
           <>
             {idleCut && (

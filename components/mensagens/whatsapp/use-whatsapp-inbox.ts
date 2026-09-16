@@ -59,6 +59,15 @@ export interface WhatsappStatusInfo {
    * existia antes.
    */
   pairing?: "qr" | "number" | null
+  /**
+   * A saúde do número na Meta (W6): `GREEN` | `YELLOW` | `RED`, e o estado do
+   * número (`CONNECTED`, `FLAGGED`, `RESTRICTED`, `BANNED`).
+   *
+   * ⚠️ `null` é "ainda não sabemos", NUNCA "está tudo bem" — a tela não pode
+   * desenhar tranquilidade em cima de ausência de medição.
+   */
+  quality_rating?: string | null
+  number_status?: string | null
   unread?: number
 }
 

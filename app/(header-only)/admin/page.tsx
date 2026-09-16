@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, Radio, Fingerprint, type LucideIcon } from "lucide-react"
+import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, Radio, Fingerprint, MessageCircle, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -62,6 +62,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Sistema & Dados", href: "/administracao/painel-de-controle", icon: Power, title: "Painel de Controle", body: "Chaves de liga/desliga por responsabilidade (ex.: Lojas / Produtos). Desligar esconde toda a superfície e bloqueia as rotas — sem apagar dados.", badge: "novo" },
   { section: "Sistema & Dados", href: "/administracao/pagamentos", icon: Activity, title: "Pagamentos", body: "Saúde do webhook Stripe: eventos com falha (reprocessar), pagamentos pendentes presos por fluxo e reconciliação manual.", badge: "novo" },
   { section: "Sistema & Dados", href: "/administracao/atendimento-ia", icon: Bot, title: "Atendimento IA", body: "Planos do bot de atendimento (preço + limite de tokens/mês) e assinantes com estado do provisionamento.", badge: "novo" },
+  { section: "Sistema & Dados", href: "/administracao/whatsapp", icon: MessageCircle, title: "WhatsApp", body: "Qualidade dos números do portfólio: quem está verde, amarelo ou vermelho, quantas vagas restam no WABA e o botão de desligar quem degrada antes de travar o teto de todos.", badge: "novo" },
   { section: "Sistema & Dados", href: "/administracao/arquitetura", icon: Boxes, title: "Arquitetura", body: "Mapa vivo das funções do app: órfãos, status de git e logs de rota.", badge: "novo" },
   { section: "Sistema & Dados", href: "/administracao/tour", icon: Compass, title: "Tour de boas-vindas", body: "Liga/desliga o tour, define a audiência (todos / só admin) e o modo (1ª vez / toda vez). Útil enquanto edita o tour.", badge: "novo" },
 ]

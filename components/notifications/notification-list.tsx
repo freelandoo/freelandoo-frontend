@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch, Users, Gift, DollarSign, Clock, Building2 } from "lucide-react"
+import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, ShieldAlert, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch, Users, Gift, DollarSign, Clock, Building2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
@@ -135,6 +135,23 @@ function labelFor(item: NotificationItem, t: TFn) {
       return daysSuffix(t("premiumExpiring", "Seu destaque (Premium) está perto de expirar"), item.payload, t)
     case "manifestation_expiring":
       return daysSuffix(t("manifestationExpiring", "Sua Manifestação está perto de expirar"), item.payload, t)
+    case "whatsapp_quality_alert": {
+      // O texto é montado AQUI, e não no backend, porque a notificação guarda o
+      // evento CRU da Meta (`FLAGGED`, `ACCOUNT_RESTRICTION`) — frase gravada no
+      // banco nasceria em português para sempre. Evento que a Meta inventar
+      // depois cai na frase genérica em vez de aparecer em branco.
+      const p = item.payload as { event?: string; status?: string }
+      const event = String(p?.event || "").toUpperCase()
+      if (event === "FLAGGED")
+        return t("whatsappFlagged", "Seu número do WhatsApp foi sinalizado pela Meta")
+      if (event === "DOWNGRADE")
+        return t("whatsappDowngrade", "A qualidade do seu número do WhatsApp caiu")
+      if (String(p?.status || "").toUpperCase() === "BANNED")
+        return t("whatsappBanned", "Seu número do WhatsApp foi bloqueado pela Meta")
+      if (String(p?.status || "").toUpperCase() === "RESTRICTED")
+        return t("whatsappRestricted", "Seu número do WhatsApp está com restrições")
+      return t("whatsappQuality", "Há um aviso da Meta sobre o seu número do WhatsApp")
+    }
     case "like_received": return sub("likeReceived", "{who} curtiu seu portfólio")
     case "comment_received": return sub("commentReceived", "{who} comentou no seu portfólio")
     case "follow_received": return sub("followReceived", "{who} começou a seguir")
@@ -152,6 +169,7 @@ function labelFor(item: NotificationItem, t: TFn) {
 
 function iconFor(type: string) {
   switch (type) {
+    case "whatsapp_quality_alert": return <ShieldAlert className="h-3.5 w-3.5" />
     case "like_received": return <Heart className="h-3.5 w-3.5" />
     case "comment_received": return <MessageSquare className="h-3.5 w-3.5" />
     case "follow_received": return <UserPlus className="h-3.5 w-3.5" />
@@ -188,6 +206,9 @@ function hrefFor(item: NotificationItem): string {
       return item.actor?.username ? `/account` : "/account"
     case "message_received":
       return "/mensagens"
+    // A aba do WhatsApp é onde ele vê o estado do número e pode desconectar.
+    case "whatsapp_quality_alert":
+      return "/mensagens?tab=os&os=whatsapp"
     case "supervised_message_received": {
       const minorId = (item.payload as { minor_user_id?: string })?.minor_user_id
       return minorId ? `/account/parental/${minorId}/messages` : "/account/parental"
