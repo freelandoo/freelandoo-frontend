@@ -26,9 +26,10 @@ import { onRealtime } from "@/lib/realtime"
  * ─── PUSH, NÃO POLLING ──────────────────────────────────────────────────────
  *
  * A caixa se atualiza pelo socket (`whatsapp:message`, `whatsapp:status`), que
- * o backend emite ao processar o webhook. A ÚNICA exceção é o modal do QR, que
- * pergunta o status de tempos em tempos — ali existe um evento externo (o dedo
- * da pessoa no celular) que não passa por nós, e a espera dura segundos.
+ * o backend emite ao processar o webhook. **Zero temporizadores** — os dois que
+ * existiam eram do modal do QR e saíram com a Evolution (2026-09-16): ali havia
+ * um evento externo (o dedo da pessoa no celular lendo o código) que não passava
+ * por nós. No cadastro de número quem avança é o clique.
  */
 
 export type WhatsappStatus = "disconnected" | "connecting" | "connected"
@@ -39,24 +40,23 @@ export interface WhatsappStatusInfo {
   status: WhatsappStatus
   number: string
   /**
-   * Por que a sessão caiu: 'user' (a pessoa desligou) ou 'idle' (o sweeper
-   * desligou por inatividade). Sem isso, quem volta depois de um mês encontra
-   * o botão "Conectar" e conclui que o produto quebrou.
+   * Por que a sessão caiu. Hoje só existe 'user' — alguém desligou, aqui ou
+   * pelo painel de admin. O 'idle' era do sweeper da Evolution, que desligava
+   * sessão parada porque ela custava memória de pé; a Cloud API é stateless e
+   * não tem sessão para expirar.
+   *
+   * Desconectado silencioso é indistinguível de defeito: sem isto, quem volta
+   * encontra o botão "Conectar" e conclui que o produto quebrou.
    */
   disconnect_reason?: "user" | "idle" | null
-  /** Dias de inatividade que derrubam a sessão — o número vem do backend. */
-  idle_days?: number
   /**
-   * COMO esta pessoa conecta: lendo um QR (Evolution) ou cadastrando o número
-   * (Cloud API oficial).
+   * COMO esta pessoa conecta. Hoje é sempre "number": a Cloud API cadastra o
+   * número e confirma por código.
    *
-   * ⚠️ Quem responde é o BACKEND, pela capability do provedor — a tela não tem
-   * como adivinhar, e adivinhar errado é caro nos dois sentidos: desenhar QR
-   * para a Cloud API mostra uma caixa vazia para sempre (ela não tem QR), e
-   * pedir número para a Evolution manda a pessoa digitar algo que ninguém usa.
-   *
-   * Ausente = backend anterior a esta versão; o modal cai no QR, que é o que
-   * existia antes.
+   * ⚠️ O CAMPO FICA porque quem responde é o BACKEND, pela capability do
+   * provedor — no dia do provedor seguinte a tela passa a desenhar o caminho
+   * certo sem deploy do front. A tela nunca adivinha isso: adivinhar errado
+   * mostra uma caixa vazia para sempre.
    */
   pairing?: "qr" | "number" | null
   /**
@@ -84,7 +84,7 @@ export interface WhatsappConversation {
    * A janela de 24h do WhatsApp oficial (Cloud API): fora dela a Meta recusa
    * texto livre, e só o CLIENTE a reabre escrevendo de novo.
    *
-   * `null` quando não se aplica — a Evolution não tem janela. Ausente = backend
+   * `null` quando não se aplica. Ausente = backend
    * anterior a esta versão, e aí a tela se comporta como se comportava.
    */
   service_window_expires_at?: string | null

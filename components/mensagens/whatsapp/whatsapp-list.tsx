@@ -57,9 +57,6 @@ export function WhatsappList({
   // Sem ENV de Evolution não existe conexão possível nesta instalação: dizer
   // isso é melhor que oferecer um botão que só falha depois do clique.
   const unconfigured = info ? !info.configured : false
-  // Caiu por inatividade: a tela DIZ o motivo. O provider de i18n não
-  // interpola, então o número de dias entra por replace, como no resto da casa.
-  const idleCut = !connected && info?.disconnect_reason === "idle"
 
   // Qual apuro mostrar, se houver. A ORDEM é por gravidade: um número banido
   // também está com rating ruim, e avisar do rating quando ele já foi bloqueado
@@ -76,11 +73,6 @@ export function WhatsappList({
           : rating === "RED" || rating === "YELLOW"
             ? "low"
             : null
-  const idleNotice = t(
-    "idleDisconnected",
-    "Desconectamos o seu WhatsApp porque a caixa ficou {days} dias sem uso. Nada foi perdido: reconecte para voltar a receber por aqui."
-  ).replace("{days}", String(info?.idle_days ?? 30))
-
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-white/10 p-3">
@@ -128,21 +120,19 @@ export function WhatsappList({
             </button>
           </>
         ) : (
-          <>
-            {idleCut && (
-              <p className="mb-2 border-l-2 border-[#F2B705] bg-white/[0.03] px-3 py-2 text-[11px] leading-relaxed text-white/60">
-                {idleNotice}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={onConnect}
-              className="flex w-full items-center justify-center gap-2 bg-gradient-to-br from-yellow-400 to-amber-500 px-3 py-2.5 text-xs font-black uppercase tracking-wider text-black transition-transform hover:scale-[1.01]"
-            >
-              <Plug className="h-3.5 w-3.5" />
-              {idleCut ? t("reconnectCta", "Reconectar meu WhatsApp") : t("connectCta", "Conectar meu WhatsApp")}
-            </button>
-          </>
+          // ⚠️ Não há mais aviso de "desconectado por inatividade": ele era do
+          // sweeper da Evolution, que desligava sessão parada porque ela custava
+          // memória de pé. A Cloud API é stateless — ninguém é desconectado sem
+          // ter clicado. A chave `idleDisconnected` fica órfã no dicionário,
+          // padrão da casa.
+          <button
+            type="button"
+            onClick={onConnect}
+            className="flex w-full items-center justify-center gap-2 bg-gradient-to-br from-yellow-400 to-amber-500 px-3 py-2.5 text-xs font-black uppercase tracking-wider text-black transition-transform hover:scale-[1.01]"
+          >
+            <Plug className="h-3.5 w-3.5" />
+            {t("connectCta", "Conectar meu WhatsApp")}
+          </button>
         )}
       </div>
 
@@ -185,7 +175,7 @@ export function WhatsappList({
                   )
                 : t(
                     "emptyDisconnectedHint",
-                    "Leia o QR Code com o seu celular e atenda as suas conversas aqui dentro."
+                    "Conecte o seu número e atenda as suas conversas aqui dentro."
                   )}
             </p>
           </div>

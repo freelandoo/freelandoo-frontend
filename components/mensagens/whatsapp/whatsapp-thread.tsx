@@ -124,7 +124,7 @@ export function WhatsappThread({
             ? t("pickConversationHint", "As mensagens que chegarem no seu número aparecem aqui.")
             : t(
                 "connectHint",
-                "Conecte o seu número por QR Code e atenda as conversas do WhatsApp sem sair da Freelandoo."
+                "Conecte o seu número e atenda as conversas do WhatsApp sem sair da Freelandoo."
               )}
         </p>
         {!connected && info?.configured !== false && (
