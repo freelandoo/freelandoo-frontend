@@ -1535,7 +1535,9 @@
     "priceOnRequestShort": "On request",
     "priceOnRequestHint": "No price: the client sees “Request a quote” and reaches you on WhatsApp. It stays out of online paid booking.",
     "adjustServicePhotoTitle": "Adjust service photo",
-    "adjustServicePhotoDesc": "Zoom and drag to choose what shows up in your storefront."
+    "adjustServicePhotoDesc": "Zoom and drag to choose what shows up in your storefront.",
+    "aiAttendant": "AI attendant",
+    "aiAttendantAria": "AI attendant: what the platform should know to answer for you"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -6801,5 +6803,33 @@
     "close": "Close",
     "mute": "Mute",
     "unmute": "Unmute"
+  },
+  "AiAttendant": {
+    "title": "AI attendant",
+    "intro": "The platform answers for your business using what is already registered here (profiles, services, products, courses and site). What only you know — hours, warranty, price list, what you do not do — goes below.",
+    "loading": "Loading…",
+    "loadFail": "Could not load.",
+    "saveFail": "Could not save.",
+    "deleteFail": "Could not delete.",
+    "docsTitle": "Knowledge base",
+    "docsCount": "{n} documents · the AI reads {m}",
+    "docsEmpty": "Nothing here yet. The attendant already answers with what is registered in your account — whatever you write below goes along with it.",
+    "chars": "{n} characters",
+    "active": "AI reads it",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this document? This cannot be undone.",
+    "limitReached": "You reached the document limit. Delete one to add another.",
+    "newText": "Write a document",
+    "titlePlaceholder": "Title (e.g. Hours and payment methods)",
+    "contentPlaceholder": "Write it the way you would explain it to a customer at the counter.",
+    "add": "Add",
+    "newPdf": "Send a PDF",
+    "pdfHint": "Price list, catalogue, manual. The platform stores the TEXT of the file, not the file.",
+    "choosePdf": "Choose PDF",
+    "pdfFail": "Could not read this PDF.",
+    "pdfTruncated": "The PDF was large and only part of it was stored. Check the preview to see what the AI reads.",
+    "previewTitle": "What the AI reads",
+    "preview": "See the preview",
+    "previewHint": "This is exactly the text sent with every answer. If something is wrong here, the attendant will repeat the mistake."
   }
 }

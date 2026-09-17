@@ -2,6 +2,8 @@
 
 import type { LucideIcon } from "lucide-react"
 import { BarChart3, Bot, CalendarDays, Database, FolderCog } from "lucide-react"
+import { Sparkles } from "lucide-react"
+import { getStoredUser } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature, useUserFeatureStrict } from "@/components/feature-flags/UserFeaturesProvider"
@@ -55,6 +57,11 @@ export function useAccountTools({
   // a venda avulsa desligada — senão quem assina o plano não acha o bot que
   // pagou. Leitura ESTRITA: só quem assina tem a chave.
   const aiInPlan = useUserFeatureStrict("atendimento_ia")
+  // Atendente com IA (mig 253) — ver o comentário na montagem do item.
+  const aiAttendantOn = useFeature("atendimento_ai")
+  const storedUser = getStoredUser()
+  const isPlatformAdmin =
+    !!storedUser?.is_admin || !!storedUser?.roles?.some((r) => r.desc_role === "Administrator")
 
   const tools: AccountTool[] = [
     {
@@ -100,6 +107,32 @@ export function useAccountTools({
       label: t("atendimentoIa", "Atendimento IA"),
       ariaLabel: t("atendimentoIaAria", "Atendimento IA: bot que responde suas conversas"),
       href: "/account/atendimento-ia",
+    })
+  }
+
+  // Atendente com IA (mig 253): a base de conhecimento da CONTA — o que só o
+  // dono sabe (horário, garantia, tabela de preço) e que a plataforma não tem
+  // como deduzir do cadastro.
+  //
+  // ⚠️ NÃO É O "Atendimento IA" ACIMA. Aquele vende a assinatura de um bot de
+  // terceiro (mig 175); este é o atendente da própria plataforma. Os dois nomes
+  // se parecem e as duas portas convivem — juntá-las levaria o dono à tela
+  // errada, que é pior que não ter a porta.
+  //
+  // ⚠️ O PREDICADO É ESPELHO DO BACKEND (`requireAiAccess`), nunca a regra:
+  // hoje o acesso é só do administrador, enquanto o custo por conversa está
+  // sendo medido. Errar aqui esconde um botão; errar lá abriria a porta. No dia
+  // da abertura, isto vira a leitura da assinatura — e o backend muda junto.
+  if (aiAttendantOn && isPlatformAdmin) {
+    tools.push({
+      key: "ai-attendant",
+      icon: Sparkles,
+      label: t("aiAttendant", "Atendente com IA"),
+      ariaLabel: t(
+        "aiAttendantAria",
+        "Atendente com IA: o que a plataforma deve saber para responder por você"
+      ),
+      href: "/account/atendente",
     })
   }
 

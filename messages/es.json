@@ -1535,7 +1535,9 @@
     "priceOnRequestShort": "A presupuestar",
     "priceOnRequestHint": "Sin precio: el cliente ve “Pedir presupuesto” y te habla por WhatsApp. No entra en la reserva con pago en línea.",
     "adjustServicePhotoTitle": "Ajustar foto del servicio",
-    "adjustServicePhotoDesc": "Haz zoom y arrastra para elegir lo que aparece en tu vitrina."
+    "adjustServicePhotoDesc": "Haz zoom y arrastra para elegir lo que aparece en tu vitrina.",
+    "aiAttendant": "Asistente con IA",
+    "aiAttendantAria": "Asistente con IA: lo que la plataforma debe saber para responder por ti"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -6781,5 +6783,33 @@
     "close": "Cerrar",
     "mute": "Silenciar",
     "unmute": "Activar sonido"
+  },
+  "AiAttendant": {
+    "title": "Asistente con IA",
+    "intro": "La plataforma responde por tu negocio con lo que ya está registrado aquí (perfiles, servicios, productos, cursos y sitio). Lo que solo tú sabes — horario, garantía, lista de precios, lo que no haces — va abajo.",
+    "loading": "Cargando…",
+    "loadFail": "No pude cargar.",
+    "saveFail": "No pude guardar.",
+    "deleteFail": "No pude borrar.",
+    "docsTitle": "Base de conocimiento",
+    "docsCount": "{n} documentos · la IA lee {m}",
+    "docsEmpty": "Nada aquí todavía. El asistente ya responde con lo que está registrado en tu cuenta — lo que escribas abajo se suma a eso.",
+    "chars": "{n} caracteres",
+    "active": "La IA lo lee",
+    "delete": "Borrar",
+    "deleteConfirm": "¿Borrar este documento? No se puede deshacer.",
+    "limitReached": "Llegaste al límite de documentos. Borra alguno para agregar otro.",
+    "newText": "Escribir un documento",
+    "titlePlaceholder": "Título (ej.: Horario y formas de pago)",
+    "contentPlaceholder": "Escríbelo como se lo explicarías a un cliente en el mostrador.",
+    "add": "Agregar",
+    "newPdf": "Enviar un PDF",
+    "pdfHint": "Lista de precios, catálogo, manual. La plataforma guarda el TEXTO del archivo, no el archivo.",
+    "choosePdf": "Elegir PDF",
+    "pdfFail": "No pude leer este PDF.",
+    "pdfTruncated": "El PDF era grande y solo entró una parte. Revisa la vista previa para ver lo que la IA lee.",
+    "previewTitle": "Lo que la IA lee",
+    "preview": "Ver la vista previa",
+    "previewHint": "Es exactamente el texto que va con cada respuesta. Si algo está mal aquí, el asistente repetirá el error."
   }
 }
