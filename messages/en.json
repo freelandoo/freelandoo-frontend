@@ -2858,7 +2858,10 @@
     "ordStatus_disputed": "Disputed",
     "ordStatus_canceled": "Canceled",
     "ordStatus_refunded": "Refunded",
-    "delDisabled": "Neighbor delivery is turned off for now."
+    "delDisabled": "Neighbor delivery is turned off for now.",
+    "condoPanelTitle": "The building",
+    "condoPillAria": "The building: front desk, floor plan, notices, polls and residents",
+    "condoPillDot": "Confirm your apartment"
   },
   "Careers": {
     "hero.badge": "Careers",

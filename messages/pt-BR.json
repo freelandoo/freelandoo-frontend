@@ -2845,7 +2845,10 @@
     "ordStatus_disputed": "Em contestação",
     "ordStatus_canceled": "Cancelado",
     "ordStatus_refunded": "Estornado",
-    "delDisabled": "O delivery entre vizinhos está desligado por enquanto."
+    "delDisabled": "O delivery entre vizinhos está desligado por enquanto.",
+    "condoPanelTitle": "O prédio",
+    "condoPillAria": "O prédio: portaria, planta, avisos, enquetes e moradores",
+    "condoPillDot": "Confirme seu apartamento"
   },
   "Careers": {
     "hero.badge": "Carreiras",

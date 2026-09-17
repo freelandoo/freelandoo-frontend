@@ -2858,7 +2858,10 @@
     "ordStatus_disputed": "En reclamación",
     "ordStatus_canceled": "Cancelado",
     "ordStatus_refunded": "Reembolsado",
-    "delDisabled": "El delivery entre vecinos está desactivado por ahora."
+    "delDisabled": "El delivery entre vecinos está desactivado por ahora.",
+    "condoPanelTitle": "El edificio",
+    "condoPillAria": "El edificio: portería, plano, avisos, encuestas y residentes",
+    "condoPillDot": "Confirme su apartamento"
   },
   "Careers": {
     "hero.badge": "Carreras",

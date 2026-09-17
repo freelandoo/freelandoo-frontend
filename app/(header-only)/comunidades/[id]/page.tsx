@@ -7,7 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
-  Lock, Globe, PawPrint, Car, UserRound, Bike, ShoppingBag,
+  Lock, Globe, PawPrint, Car, UserRound, Bike, ShoppingBag, Building2,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -738,15 +738,41 @@ export default function CommunityDetailPage() {
         onOpen: () => openPanel("profile"),
         active: panel === "profile",
       },
+      // MURAL — e, no CONDOMÍNIO, a porta do PRÉDIO inteiro: portaria,
+      // planta, disputas, avisos, enquetes, moradores e administração moram
+      // dentro deste painel (decisão do Alex: "quero tudo isso dentro do pill
+      // mural"), e o corpo da página começa direto no feed e nas vitrines.
+      //
+      // ⚠️ A BOLINHA NÃO É ENFEITE. Com a portaria dentro do painel, quem
+      // chega ao prédio e ainda não confirmou apartamento não vê NADA na
+      // página dizendo que há o que fazer — e sem confirmar ele não publica,
+      // não vota e não vê os vizinhos. O aviso é o único sinal que sobra de
+      // que existe uma porta atrás do botão, e ele sai sozinho quando a
+      // pessoa vira moradora.
+      //
+      // ⚠️ O SINAL SAI DO QUE A PÁGINA JÁ CARREGOU (`viewer_is_resident`):
+      // zero requisição nova por causa de um quadrado de 8px. Revisão de
+      // família e disputa aberta NÃO acendem a bolinha hoje — as duas só são
+      // conhecidas pelo `/plant`, que o painel busca ao ABRIR. Cobrir esses
+      // dois casos exige o `getById` do backend devolvendo a pendência junto
+      // do resto.
       {
         key: "mural",
         icon: Megaphone,
         label: t("muralPill", "Mural"),
-        ariaLabel: t("muralPillAria", "Mural do líder: recados da comunidade"),
+        ariaLabel: isCondo
+          ? t("condoPillAria", "O prédio: portaria, planta, avisos, enquetes e moradores")
+          : t("muralPillAria", "Mural do líder: recados da comunidade"),
         bg: "#C2410C",
         bgHover: "#9A3412",
         onOpen: () => openPanel("mural"),
         active: panel === "mural",
+        ...(isCondo && !isResident
+          ? {
+              dot: true,
+              dotLabel: t("condoPillDot", "Confirme seu apartamento"),
+            }
+          : {}),
       },
       // O quarto é INDICADORES, e ele também NAVEGA — leads, funil do site e
       // faturamento são quatro blocos de números e uma série de 90 dias, que
@@ -828,7 +854,7 @@ export default function CommunityDetailPage() {
         href: `/comunidades/${id}/ranking`,
       },
     ]
-  }, [t, panel, id, openPanel, showIndicators, isTerritorial, deliveryEnabled])
+  }, [t, panel, id, openPanel, showIndicators, isTerritorial, deliveryEnabled, isCondo, isResident])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -1787,7 +1813,9 @@ export default function CommunityDetailPage() {
             <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               <span className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
                 {panel === "mural"
-                  ? <><Megaphone className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("muralTitle", "Mural do líder")}</>
+                  ? isCondo
+                    ? <><Building2 className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("condoPanelTitle", "O prédio")}</>
+                    : <><Megaphone className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("muralTitle", "Mural do líder")}</>
                   : <><UserRound className="h-4 w-4" style={{ color: "#60A5FA" }} /> {t("profilePanelTitle", "Perfil da comunidade")}</>}
               </span>
               <div className="flex items-center gap-2">
@@ -1808,16 +1836,65 @@ export default function CommunityDetailPage() {
               </div>
             </div>
 
-            {/* MURAL — o recado do líder. Continua PRIVADO: só membro lê, só o
-                líder escreve. A recusa é dita em voz alta em vez de o painel
-                abrir vazio — botão que abre o nada parece quebrado. */}
+            {/* O PAINEL DO MURAL — e, no condomínio, o prédio inteiro. As duas
+                metades estão comentadas uma a uma lá dentro. */}
             {panel === "mural" && (
-              <div className="p-4 md:p-5">
-                {!isMember ? (
-                  <p className="text-sm text-[#9A938A]">{t("muralMembersOnly", "Só quem é da comunidade lê o mural.")}</p>
-                ) : (
+              <div className="space-y-6 p-4 md:p-5">
+                {/* O PRÉDIO (migs 205/206) — portaria, família × disputa,
+                    planta e veredito (CondoResidence), mais o quadro de
+                    avisos, as enquetes, os moradores e a administração
+                    (CondoExtras). Tudo isso morava no corpo da página, entre o
+                    headcard e o feed; agora o corpo começa direto nas abas e o
+                    prédio mora aqui dentro.
+
+                    ⚠️ NÃO PASSA PELO GUARD DE MEMBRESIA de baixo, e é isso
+                    que mantém a entrada do condomínio de pé: ninguém "entra"
+                    num prédio pelo botão de participar (o join recusa
+                    condomínio com 409) — entra escolhendo o apartamento na
+                    planta, que é justamente o que a portaria desenha. Sob o
+                    `!isMember` ela responderia "só quem é da comunidade lê o
+                    mural" para quem chegou para virar morador.
+
+                    Cada peça traz o próprio guard: o CondoExtras devolve
+                    `null` para quem não é morador nem síndico, e o
+                    CondoResidence escolhe entre portaria, disputa e "meu
+                    apartamento" pelo que o `/plant` responde. */}
+                {isCondo && (
                   <>
-                    {showAsLeaderEdit && (
+                    <CondoResidence communityId={id} onResidencyChange={loadAll} />
+                    <CondoExtras
+                      communityId={id}
+                      isAdmin={canAdminister || !!community.viewer_is_admin}
+                      isResident={isResident}
+                      onReload={loadAll}
+                    />
+                  </>
+                )}
+
+                {/* MURAL DO LÍDER — o recado da comunidade. Continua PRIVADO:
+                    só membro lê, só o líder escreve. A recusa é dita em voz
+                    alta em vez de o painel abrir vazio: botão que abre o nada
+                    parece quebrado.
+
+                    ⚠️ NO CONDOMÍNIO ELE VIRA HISTÓRICO e só aparece quando já
+                    existe recado. Quem manda ali é o quadro de AVISOS do
+                    prédio (a aba Mural do CondoExtras), que sabe endereçar um
+                    apartamento ou uma vaga, fixar e marcar lido. Dois murais
+                    VIVOS no mesmo painel seriam duas verdades sobre o mesmo
+                    recado — o síndico escreveria num e a vizinhança leria o
+                    outro. O que já foi publicado não some (e o síndico ainda
+                    apaga, em modo de edição); o que não existe não ganha um
+                    segundo compositor. */}
+                {!isCondo && !isMember ? (
+                  <p className="text-sm text-[#9A938A]">{t("muralMembersOnly", "Só quem é da comunidade lê o mural.")}</p>
+                ) : !isCondo || announcements.length > 0 ? (
+                  <div className={isCondo ? "border-t-2 border-[#F5F1E8]/10 pt-4" : ""}>
+                    {isCondo && (
+                      <p className="mb-3 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                        <Megaphone className="h-3.5 w-3.5" /> {t("muralTitle", "Mural do líder")}
+                      </p>
+                    )}
+                    {showAsLeaderEdit && !isCondo && (
                       <div className="mb-3 space-y-2 border-b border-[#F5F1E8]/10 pb-3">
                         <textarea value={annBody} maxLength={1000} rows={2} onChange={(e) => setAnnBody(e.target.value)} placeholder={t("muralPlaceholder", "Escreva um recado para a comunidade...")}
                           className="w-full bg-transparent text-sm text-[#F5F1E8] outline-none placeholder:text-[#9A938A]/70" />
@@ -1848,8 +1925,8 @@ export default function CommunityDetailPage() {
                         ))}
                       </div>
                     )}
-                  </>
-                )}
+                  </div>
+                ) : null}
               </div>
             )}
 
@@ -2159,19 +2236,13 @@ export default function CommunityDetailPage() {
           feed ocupa a largura inteira. */}
       <div className="relative z-10 mx-auto mt-8 max-w-5xl px-0 md:px-10">
         <div className="space-y-6">
-          {/* Condomínio (migs 205/206): portaria, família × disputa, planta e
-              veredito. Mesma casca — muda o que aparece dentro dela. */}
-          {isCondo && (
-            <>
-              <CondoResidence communityId={id} onResidencyChange={loadAll} />
-              <CondoExtras
-                communityId={id}
-                isAdmin={canAdminister || !!community.viewer_is_admin}
-                isResident={isResident}
-                onReload={loadAll}
-              />
-            </>
-          )}
+          {/* ⚠️ O CONDOMÍNIO NÃO MORA MAIS AQUI. Portaria, planta, disputas,
+              avisos, enquetes, moradores e administração foram para dentro do
+              painel do pill MURAL, atrás da foto (decisão do Alex): o corpo da
+              página começa direto nas abas — feed e as duas vitrines —, que é
+              o que todo mundo vem ver. Ver `CondoResidence`/`CondoExtras` lá
+              em cima; montá-los aqui de novo daria duas telas desenhando a
+              mesma planta. */}
           {/* O ASSUNTO da comunidade (mig 210/211): raça do pet, modelo do
               carro, jogo. Fica aqui, no modo de edição, e não num modal de
               cadastro — a comunidade nasce vazia e é batizada dentro de si
