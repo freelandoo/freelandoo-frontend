@@ -174,7 +174,7 @@ export default function AtivacaoAdminPage() {
           <CardHeader>
             <CardTitle className="text-lg">Configuração atual</CardTitle>
             <CardDescription>
-              O valor é cobrado uma única vez por perfil via Stripe. Alterações aqui afetam novas ativações.
+              O valor é cobrado uma única vez por perfil, pelo gateway de pagamento. Alterações aqui afetam novas ativações.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -202,13 +202,13 @@ export default function AtivacaoAdminPage() {
                     </Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Stripe Price ID</span>
+                    <span className="text-muted-foreground">Price ID (coluna legada)</span>
                     <span className="font-mono text-xs break-all">
                       {current?.stripe_price_id ?? "não configurado"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Stripe Product ID</span>
+                    <span className="text-muted-foreground">Product ID (coluna legada)</span>
                     <span className="font-mono text-xs break-all">
                       {current?.stripe_product_id ?? "não configurado"}
                     </span>

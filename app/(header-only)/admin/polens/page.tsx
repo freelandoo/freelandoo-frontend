@@ -67,7 +67,7 @@ export default function AdminPolensPage() {
           <CardHeader>
             <CardTitle>Cadastro de produtos</CardTitle>
             <CardDescription>
-              Pacotes de Poléns vendidos via Stripe. Aparecem na Loja de Polén do usuário.
+              Pacotes de Poléns vendidos pelo gateway de pagamento. Aparecem na Loja de Polén do usuário.
             </CardDescription>
           </CardHeader>
           <CardContent>

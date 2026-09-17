@@ -3,7 +3,7 @@
 /**
  * Painel de Pagamentos (admin) — saúde do fluxo de dinheiro (projeto PayDebug).
  * Três blocos: eventos de webhook (failed/pending/done) com reprocessar,
- * pendentes "presos" por fluxo, e reconciliação manual contra o Stripe.
+ * pendentes "presos" por fluxo, e reconciliação manual contra o gateway.
  * Estilo dark utilitário (padrão admin) — pt-only como as demais telas admin.
  */
 import { useCallback, useEffect, useState } from "react"
@@ -112,7 +112,7 @@ export default function PagamentosAdminPage() {
           <Wallet className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Painel de Pagamentos</h1>
-            <p className="text-sm text-muted-foreground">Saúde do webhook · pendentes presos · reconciliação com o Stripe</p>
+            <p className="text-sm text-muted-foreground">Saúde do webhook · pendentes presos · reconciliação com o gateway</p>
           </div>
         </div>
 
@@ -284,7 +284,7 @@ function StuckSection() {
           <button onClick={reconcile} disabled={reconciling}
             className="flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/20 disabled:opacity-50">
             {reconciling ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-            Reconciliar com o Stripe
+            Reconciliar com o gateway
           </button>
         </div>
       </div>

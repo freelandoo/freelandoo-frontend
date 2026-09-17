@@ -111,7 +111,7 @@ export default function TaxasAgendamentoPage() {
     setFeedback(null)
     try {
       const pct = parseFloat(stripePercent.replace(",", "."))
-      if (!Number.isFinite(pct) || pct < 0 || pct > 100) throw new Error("Taxa Stripe deve ser entre 0 e 100")
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) throw new Error("Taxa do gateway deve ser entre 0 e 100")
       const feeReais = parseFloat(serviceFeeReais.replace(/\./g, "").replace(",", "."))
       if (!Number.isFinite(feeReais) || feeReais < 0) throw new Error("Taxa de serviço inválida")
       const updated = await api<{ settings: FeeSettings }>("/api/admin/booking-fees", {
@@ -157,7 +157,7 @@ export default function TaxasAgendamentoPage() {
           <div>
             <h1 className="text-2xl font-bold">Taxas de Agendamento</h1>
             <p className="text-sm text-muted-foreground">
-              Configure a taxa Stripe (%) e a taxa de serviço da plataforma (valor fixo).
+              Configure a taxa do gateway (%) e a taxa de serviço da plataforma (valor fixo).
             </p>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default function TaxasAgendamentoPage() {
                   {current && (
                     <div className="rounded-md border p-4 bg-muted/30 text-sm space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Taxa Stripe atual</span>
+                        <span className="text-muted-foreground">Taxa do gateway atual</span>
                         <span className="font-medium">{Number(current.stripe_fee_percent).toFixed(2)}%</span>
                       </div>
                       <div className="flex justify-between">
@@ -272,7 +272,7 @@ export default function TaxasAgendamentoPage() {
                   <span className="font-medium text-foreground">{preview.fmt(preview.base)}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Taxa Stripe ({feePercent.toFixed(2)}%)</span>
+                  <span className="text-muted-foreground">Taxa do gateway ({feePercent.toFixed(2)}%)</span>
                   <span className="text-yellow-500">+ {preview.fmt(preview.stripe)}</span>
                 </div>
                 <div className="flex justify-between text-xs">

@@ -332,7 +332,7 @@ function GovernanceTab() {
 
     const serviceFixed = parseCents(form.service_fee_fixed_reais) ?? 0
     const procPct = Number(form.processor_fee_percent_fallback)
-    if (!Number.isFinite(procPct) || procPct < 0 || procPct >= 100) { setError("Taxa Stripe fallback (%) inválida"); return }
+    if (!Number.isFinite(procPct) || procPct < 0 || procPct >= 100) { setError("Taxa do gateway fallback (%) inválida"); return }
     const procFixed = parseCents(form.processor_fee_fixed_reais) ?? 0
 
     const minCents = form.service_fee_min_reais ? parseCents(form.service_fee_min_reais) : null
@@ -422,12 +422,12 @@ function GovernanceTab() {
             </div>
           </div>
           <p className="mt-2 text-[10px] text-muted-foreground">
-            Modelo Stripe: cobramos <span className="font-mono">{form.service_fee_percent}%</span> + <span className="font-mono">{form.service_fee_fixed_reais.replace(",", ".")}</span> sobre o que o vendedor recebe.
+            Modelo de taxa: cobramos <span className="font-mono">{form.service_fee_percent}%</span> + <span className="font-mono">{form.service_fee_fixed_reais.replace(",", ".")}</span> sobre o que o vendedor recebe.
           </p>
         </section>
 
         <section className="rounded-xl border border-border bg-card/40 p-4">
-          <h3 className="mb-3 text-sm font-semibold">Taxa da maquininha (Stripe)</h3>
+          <h3 className="mb-3 text-sm font-semibold">Taxa da maquininha (gateway)</h3>
           <div className="mb-3">
             <label className="mb-1 block text-xs text-muted-foreground">Modo</label>
             <select
@@ -435,7 +435,7 @@ function GovernanceTab() {
               onChange={(e) => setForm((f) => ({ ...f, processor_fee_mode: e.target.value as "auto_stripe" | "manual" }))}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             >
-              <option value="auto_stripe">Automático (usa fee real do Stripe via webhook)</option>
+              <option value="auto_stripe">Automático (usa a tarifa real apurada no gateway)</option>
               <option value="manual">Manual (sempre usa o fallback abaixo)</option>
             </select>
           </div>
@@ -460,8 +460,8 @@ function GovernanceTab() {
             </div>
           </div>
           <p className="mt-2 text-[10px] text-muted-foreground">
-            No modo automático, no webhook <span className="font-mono">charge.succeeded</span> o Freelandoo lê o valor real que a Stripe cobrou
-            (<span className="font-mono">balance_transaction.fee</span>) e substitui o estimado no pedido. O vendedor sempre recebe o valor cravado;
+            No modo automático, quando o pagamento é confirmado o Freelandoo apura a tarifa REAL cobrada pelo gateway
+            e substitui a estimativa no pedido. O vendedor sempre recebe o valor cravado;
             a diferença entre estimado e real é absorvida pela plataforma.
           </p>
         </section>
@@ -496,7 +496,7 @@ function GovernanceTab() {
           <div className="mt-4 space-y-2 text-xs">
             <Row label="Vendedor recebe" value={brl(preview.seller_amount_cents)} />
             <Row label="Taxa de serviço" value={brl(preview.service_fee_cents)} muted />
-            <Row label="Taxa Stripe (est.)" value={brl(preview.processor_fee_cents)} muted />
+            <Row label="Taxa do gateway (est.)" value={brl(preview.processor_fee_cents)} muted />
             <div className="my-2 border-t border-border" />
             <Row label="Comprador paga" value={brl(preview.display_price_cents)} bold />
             <p className="mt-3 text-[10px] text-muted-foreground">
