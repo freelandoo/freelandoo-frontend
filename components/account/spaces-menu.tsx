@@ -276,7 +276,7 @@ export function SpacesMenu({
     {
       key: "neighborhood",
       icon: Signpost,
-      label: t("myStreet", "Minha rua"),
+      label: t("myStreet", "Meu bairro"),
       enabled: neighborhoodFlag,
       rows: data.spaces.neighborhood.map((r) => ({
         id: r.id_profile,

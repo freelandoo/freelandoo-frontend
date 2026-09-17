@@ -25,7 +25,7 @@ const SPACES = {
   myCar: ["Meu carro", "My car", "Mi coche"],
   myAcademy: ["Minha academia", "My gym", "Mi gimnasio"],
   myCondo: ["Meu condomínio", "My building", "Mi condominio"],
-  myStreet: ["Minha rua", "My street", "Mi calle"],
+  myStreet: ["Meu bairro", "My neighborhood", "Mi barrio"],
   myCommunity: ["Minha comunidade", "My community", "Mi comunidad"],
   viewBees: ["Ver seus bees", "View your bees", "Ver tus bees"],
   loading: ["Carregando...", "Loading...", "Cargando..."],
