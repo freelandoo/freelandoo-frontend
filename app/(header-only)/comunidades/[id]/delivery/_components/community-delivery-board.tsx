@@ -21,9 +21,11 @@
  * vizinho paga", para a conta ficar inteira na mesma linha.
  *
  * ⚠️ NENHUM NÚMERO DE TARIFA É ESCRITO AQUI. A mesma corrida de R$3 rende
- * R$2,49 no Stripe (o que roda hoje) e R$1,01 no Asaas (o escolhido, hoje
- * desligado). Cravar qualquer um dos dois criaria uma tela que fica errada no
- * dia do switch, sem ninguém perceber.
+ * R$2,49 no Stripe e quase os R$3 inteiros no Mercado Pago, cuja tarifa é
+ * PERCENTUAL em vez de fixa. Cravar qualquer um dos dois criaria uma tela que
+ * fica errada no dia do switch, sem ninguém perceber — e o switch já
+ * aconteceu uma vez (o Asaas chegou a ser o escolhido e saiu inteiro na mig
+ * 250, sem nunca ter cobrado um real).
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react"
