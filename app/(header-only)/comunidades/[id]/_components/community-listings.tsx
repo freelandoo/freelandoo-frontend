@@ -37,17 +37,27 @@ export type Listing = {
   image_url: string | null
   status: "active" | "archived"
   created_at: string
+  /** Ate quando a mensalidade esta paga. `null` = rascunho, nunca pago. */
+  paid_until: string | null
+  /** O backend ja resolve `status ativo E dentro da vigencia` — nao refazer a
+      conta aqui: duas respostas para "esta no ar?" divergem na primeira
+      mudanca de regra, e o vizinho veria um estado e o dono outro. */
+  is_live: boolean
+  /** Assinatura no cartao. `null` = pago por Pix/Polens, sem recorrencia. */
+  subscription_ref: string | null
+  subscription_status: "active" | "past_due" | "canceled" | null
   owner_username: string | null
   owner_name: string | null
   owner_avatar: string | null
 }
 
 type QuotaBlock = {
+  /** Anuncios do morador que estao NO AR (pagos e vigentes). */
+  live: number
+  /** Escritos e parados: rascunho nunca pago ou mensalidade vencida. */
+  unpaid: number
+  /** Cortesia opcional. Hoje vale 0 — a vitrine cobra desde o primeiro. */
   free: number
-  purchased: number
-  used: number
-  total: number
-  remaining: number
 }
 /** Os tipos de entrega que o add-on "+R$3" pode somar ao pedido. */
 type DeliveryOption = {
@@ -58,8 +68,9 @@ type DeliveryOption = {
 
 type QuotaPayload = {
   quota: Partial<Record<ListingKind, QuotaBlock>>
-  price_cents: number
-  price_polens: number
+  /** Mensalidade do anuncio (mig 252). */
+  monthly_cents: number
+  monthly_polens: number
 }
 
 const CARD = "border-2 border-[#0B0B0D] bg-[#15120E] p-4"
@@ -102,11 +113,14 @@ export function CommunityListings({
   const locale = useLocale()
 
   const [items, setItems] = useState<Listing[]>([])
+  /** Os anuncios do PROPRIO dono, inclusive os parados (rascunho/vencido). */
+  const [mine, setMine] = useState<Listing[]>([])
+  /** O anuncio que esta esperando pagamento, com a escolha cartao x Pix. */
+  const [paying, setPaying] = useState<Listing | null>(null)
   const [quota, setQuota] = useState<QuotaPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
-  const [needsSlot, setNeedsSlot] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
 
   const [title, setTitle] = useState("")
@@ -130,22 +144,36 @@ export function CommunityListings({
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [l, q] = await Promise.all([
+      // ⚠️ DUAS LISTAS, E ELAS RESPONDEM PERGUNTAS DIFERENTES: a publica so
+      // traz o que esta PAGO (e o que os vizinhos veem), e a `mine=1` traz
+      // tambem os rascunhos e vencidos do proprio dono — sem ela, o anuncio
+      // que ele acabou de escrever sumiria da tela e ele nao teria por onde
+      // pagar.
+      const [l, q, m] = await Promise.all([
         fetch(`/api/communities/${communityId}/listings?kind=${kind}`, { headers: authHeaders() }),
         fetch(`/api/communities/${communityId}/listings/quota?kind=${kind}`, {
           headers: authHeaders(),
         }),
+        canPublish
+          ? fetch(`/api/communities/${communityId}/listings?kind=${kind}&mine=1`, {
+              headers: authHeaders(),
+            })
+          : Promise.resolve(null),
       ])
       const ld = await l.json()
       const qd = await q.json()
       if (l.ok) setItems(Array.isArray(ld.listings) ? ld.listings : [])
       if (q.ok) setQuota(qd)
+      if (m && m.ok) {
+        const md = await m.json()
+        setMine(Array.isArray(md.listings) ? md.listings : [])
+      }
     } catch {
       /* silencioso: o estado vazio já diz que não há nada para mostrar */
     } finally {
       setLoading(false)
     }
-  }, [communityId, kind])
+  }, [communityId, kind, canPublish])
 
   useEffect(() => {
     load()
@@ -153,11 +181,23 @@ export function CommunityListings({
 
   const myQuota = quota?.quota?.[kind] || null
 
+  /**
+   * Os anuncios do dono que NAO estao na vitrine: rascunho nunca pago ou
+   * mensalidade vencida.
+   *
+   * ⚠️ Quem decide e o `is_live` do backend, nunca uma conta de data feita
+   * aqui: o relogio do navegador pode estar errado, e duas respostas para
+   * "esta no ar?" divergiriam entre o que o dono ve e o que o vizinho ve.
+   */
+  const parados = useMemo(
+    () => mine.filter((l) => l.status === "active" && !l.is_live),
+    [mine]
+  )
+
   const submit = async () => {
     if (!title.trim()) return
     setBusy(true)
     setMsg(null)
-    setNeedsSlot(false)
     try {
       const res = await fetch(`/api/communities/${communityId}/listings`, {
         method: "POST",
@@ -173,13 +213,6 @@ export function CommunityListings({
         }),
       })
       const data = await res.json()
-      // 402 = cota estourada. O backend devolve o preço junto, então a oferta
-      // da vaga extra aparece no mesmo lugar em que a recusa foi lida.
-      if (res.status === 402 || data.needs_slot) {
-        setNeedsSlot(true)
-        setMsg(data.error || t("listQuotaReached", "Limite de anúncios ativos atingido."))
-        return
-      }
       if (!res.ok) throw new Error(data.error || t("listError", "Não foi possível publicar."))
       setTitle("")
       setDesc("")
@@ -187,6 +220,10 @@ export function CommunityListings({
       setContact("")
       setFormOpen(false)
       await load()
+      // ⚠️ O ANUNCIO NASCE FORA DA VITRINE. Sem abrir o pagamento aqui, a
+      // pessoa apertaria "Publicar", veria a tela se fechar e NADA apareceria
+      // para os vizinhos — sem erro nenhum, que e o pior jeito de cobrar.
+      if (data.needs_payment && data.listing) setPaying(data.listing as Listing)
     } catch (err) {
       setMsg(err instanceof Error ? err.message : t("listError", "Não foi possível publicar."))
     } finally {
@@ -207,43 +244,76 @@ export function CommunityListings({
     }
   }
 
-  const buySlotMoney = async () => {
+  /**
+   * Poe o anuncio no ar.
+   *
+   * ⚠️ `card` cria uma ASSINATURA que renova sozinha; `pix` compra UM MES e
+   * a renovacao volta a ser um gesto da pessoa. Recorrencia em Pix nao existe
+   * no Mercado Pago — e por isso que os dois nao sao a mesma coisa com um
+   * icone diferente.
+   */
+  const payListing = async (l: Listing, method: "card" | "pix") => {
     setBusy(true)
+    setMsg(null)
     try {
-      const res = await fetch(`/api/communities/${communityId}/listing-slots/checkout`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ kind, quantity: 1 }),
-      })
+      const res = await fetch(
+        `/api/communities/${communityId}/listings/${l.id_listing}/billing/checkout`,
+        { method: "POST", headers: authHeaders(), body: JSON.stringify({ method }) }
+      )
       const data = await res.json()
       if (!res.ok || !data.checkout_url) {
-        throw new Error(data.error || t("listSlotError", "Não foi possível iniciar o pagamento."))
+        throw new Error(data.error || t("listBillError", "Não foi possível iniciar o pagamento."))
       }
       window.location.href = data.checkout_url
     } catch (err) {
       setMsg(
-        err instanceof Error ? err.message : t("listSlotError", "Não foi possível iniciar o pagamento.")
+        err instanceof Error ? err.message : t("listBillError", "Não foi possível iniciar o pagamento.")
       )
       setBusy(false)
     }
   }
 
-  const buySlotPolens = async () => {
+  const payListingPolens = async (l: Listing) => {
     setBusy(true)
     setMsg(null)
     try {
-      const res = await fetch(`/api/communities/${communityId}/listing-slots/polens`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ kind, quantity: 1 }),
-      })
+      const res = await fetch(
+        `/api/communities/${communityId}/listings/${l.id_listing}/billing/polens`,
+        { method: "POST", headers: authHeaders(), body: JSON.stringify({ months: 1 }) }
+      )
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t("listSlotError", "Não foi possível comprar a vaga."))
-      setMsg(t("listSlotBought", "Vaga liberada."))
-      setNeedsSlot(false)
+      if (!res.ok) throw new Error(data.error || t("listBillError", "Não foi possível pagar o anúncio."))
+      setMsg(t("listBillPaid", "Anúncio no ar."))
+      setPaying(null)
       await load()
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : t("listSlotError", "Não foi possível comprar a vaga."))
+      setMsg(err instanceof Error ? err.message : t("listBillError", "Não foi possível pagar o anúncio."))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /**
+   * Solta a renovacao automatica.
+   *
+   * ⚠️ NAO TIRA O ANUNCIO DO AR — o mes ja pago e de quem pagou, e o texto
+   * do botao diz isso. Prometer "cancelar" e tirar na hora seria cobrar o mes
+   * e entregar meio.
+   */
+  const cancelBilling = async (l: Listing) => {
+    setBusy(true)
+    setMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${communityId}/listings/${l.id_listing}/billing`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("listBillError", "Não foi possível cancelar."))
+      setMsg(data.message || t("listBillCanceled", "Renovação cancelada."))
+      await load()
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : t("listBillError", "Não foi possível cancelar."))
     } finally {
       setBusy(false)
     }
@@ -376,39 +446,32 @@ export function CommunityListings({
               </button>
             </div>
 
-            {needsSlot && quota && (
-              <div className="mt-4 border-2 border-[#F2B705]/40 bg-[#1D1810] p-3">
-                <p className="flex items-center gap-2 text-sm font-bold text-[#F2B705]">
-                  <Ticket className="h-4 w-4" /> {t("listSlotTitle", "Vaga extra de anúncio")}
-                </p>
-                <p className="mt-1 text-xs text-[#9A938A]">
-                  {t(
-                    "listSlotDesc",
-                    "Compre uma vaga para manter mais um anúncio ativo. A vaga é sua para sempre e volta a ficar livre quando você arquiva um anúncio."
-                  )}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {quota.price_cents > 0 && (
-                    <button type="button" className={BTN_GHOST} disabled={busy} onClick={buySlotMoney}>
-                      {money(quota.price_cents)}
-                    </button>
-                  )}
-                  {quota.price_polens > 0 && (
-                    <button type="button" className={BTN_GHOST} disabled={busy} onClick={buySlotPolens}>
-                      {t("listSlotPolens", "{n} Poléns").replace("{n}", String(quota.price_polens))}
-                    </button>
-                  )}
-                </div>
-              </div>
+            {quota && (
+              <p className="mt-3 flex items-center gap-2 text-[11px] text-[#9A938A]">
+                <Ticket className="h-3.5 w-3.5 shrink-0" style={{ color: accent }} />
+                {t("listBillHint", "Publicar custa {price} por mês por anúncio.").replace(
+                  "{price}",
+                  money(quota.monthly_cents)
+                )}
+              </p>
             )}
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-3">
+            {/* ⚠️ O CONTADOR "0 de 2" MORREU COM A COTA (mig 252): nao ha teto,
+                entao um "X de Y" nao tem Y. O que a pessoa precisa saber agora
+                e quantos dos anuncios DELA estao no ar e quantos estao parados
+                esperando pagamento. */}
             <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
               {myQuota
-                ? t("listQuotaLine", "{used} de {total} anúncios ativos")
-                    .replace("{used}", String(myQuota.used))
-                    .replace("{total}", String(myQuota.total))
+                ? t("listLiveLine", "{n} no ar").replace("{n}", String(myQuota.live)) +
+                  (myQuota.unpaid > 0
+                    ? " · " +
+                      t("listUnpaidLine", "{n} esperando pagamento").replace(
+                        "{n}",
+                        String(myQuota.unpaid)
+                      )
+                    : "")
                 : header}
             </p>
             <button
@@ -427,6 +490,56 @@ export function CommunityListings({
         </p>
       )}
 
+      {/* ⚠️ OS ANUNCIOS PARADOS PRECISAM DE UMA PORTA, e ela nao pode ser a
+          vitrine: la eles nao aparecem (e o que "a vitrine cobra" significa).
+          Sem este bloco, quem escreveu um anuncio e nao pagou nao teria como
+          voltar a ele — o texto ficaria preso no banco, invisivel ate para o
+          dono, e a cobranca pareceria ter engolido o trabalho dele. */}
+      {canPublish && parados.length > 0 && (
+        <div className="border-2 border-[#F2B705]/40 bg-[#1D1810] p-4">
+          <p className="flex items-center gap-2 text-sm font-bold text-[#F2B705]">
+            <Ticket className="h-4 w-4" />{" "}
+            {t("listParkedTitle", "Seus anúncios fora do ar")}
+          </p>
+          <p className="mt-1 text-xs text-[#9A938A]">
+            {t(
+              "listParkedDesc",
+              "Eles estão guardados e ninguém os vê. Pague a mensalidade para voltarem à vitrine."
+            )}
+          </p>
+          <div className="mt-3 space-y-2">
+            {parados.map((l) => (
+              <div
+                key={l.id_listing}
+                className="flex flex-wrap items-center justify-between gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-2"
+              >
+                <span className="min-w-0 truncate text-sm text-[#F5F1E8]">{l.title}</span>
+                <span className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D]"
+                    style={{ background: accent }}
+                    disabled={busy}
+                    onClick={() => setPaying(l)}
+                  >
+                    {t("listBillPay", "Pôr no ar")}
+                  </button>
+                  <button
+                    type="button"
+                    className={BTN_GHOST}
+                    disabled={busy}
+                    onClick={() => archive(l.id_listing)}
+                    aria-label={t("listArchive", "Arquivar")}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
@@ -439,7 +552,10 @@ export function CommunityListings({
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {items.map((l) => {
-            const mine = !!currentUserId && String(l.id_user) === String(currentUserId)
+            // ⚠️ `souDono`, e nao `mine`: `mine` agora e o ESTADO com a lista do
+            // proprio dono. Reusar o nome aqui sombrearia a lista inteira e a
+            // secao de anuncios parados leria o booleano de uma linha.
+            const souDono = !!currentUserId && String(l.id_user) === String(currentUserId)
             return (
               <div key={l.id_listing} className={CARD}>
                 {l.image_url && (
@@ -464,12 +580,20 @@ export function CommunityListings({
                   @{l.owner_username}
                   {l.contact ? ` · ${l.contact}` : ""}
                 </p>
+                {souDono && l.paid_until && (
+                  <p className="mt-1 text-[11px] text-[#9A938A]">
+                    {(l.subscription_ref && l.subscription_status === "active"
+                      ? t("listBillRenews", "Renova em {date}")
+                      : t("listBillUntil", "No ar até {date}")
+                    ).replace("{date}", new Date(l.paid_until).toLocaleDateString(locale))}
+                  </p>
+                )}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {/* Comprar só existe quando há PREÇO e o anúncio é de OUTRA
                       pessoa: sem preço não há o que cobrar (o anúncio é convite
                       para conversar, e o backend recusa), e comprar de si mesmo
                       é um pedido que nasce para ser cancelado. */}
-                  {canBuy && !mine && l.price_cents != null && l.price_cents > 0 && (
+                  {canBuy && !souDono && l.price_cents != null && l.price_cents > 0 && (
                     <button
                       type="button"
                       className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D]"
@@ -479,9 +603,22 @@ export function CommunityListings({
                       <ShoppingCart className="h-3 w-3" /> {t("listBuy", "Comprar")}
                     </button>
                   )}
-                  {(mine || isAdmin) && l.status === "active" && (
+                  {(souDono || isAdmin) && l.status === "active" && (
                     <button type="button" className={BTN_GHOST} onClick={() => archive(l.id_listing)}>
                       <Trash2 className="h-3 w-3" /> {t("listArchive", "Arquivar")}
+                    </button>
+                  )}
+                  {/* ⚠️ SO O DONO VE A COBRANCA. Ate quando esta pago e se ha
+                      assinatura viva sao assunto dele — o vizinho so precisa
+                      saber que o anuncio existe. */}
+                  {souDono && l.subscription_ref && l.subscription_status === "active" && (
+                    <button
+                      type="button"
+                      className={BTN_GHOST}
+                      disabled={busy}
+                      onClick={() => cancelBilling(l)}
+                    >
+                      {t("listBillCancel", "Cancelar renovação")}
                     </button>
                   )}
                 </div>
@@ -490,6 +627,103 @@ export function CommunityListings({
           })}
         </div>
       )}
+
+      {/* ⚠️ ESTE MODAL TAMBEM VAI POR PORTAL, pelo mesmo motivo do de compra:
+          a pagina tem cards ROTACIONADOS, e ancestral com `transform` deixa de
+          ser a janela para um filho `fixed` — preso no fluxo ele abriria
+          DENTRO de um card. */}
+      {paying &&
+        quota &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fl-sharp fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+            onClick={() => !busy && setPaying(null)}
+          >
+            <div
+              className="w-full max-w-md border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                    {t("listBillTitle", "Pôr o anúncio no ar")}
+                  </p>
+                  <p className="fl-display mt-1 truncate text-2xl leading-tight">{paying.title}</p>
+                </div>
+                <button
+                  type="button"
+                  className="shrink-0 border-2 border-[#0B0B0D] bg-[#1D1810] p-1.5"
+                  onClick={() => !busy && setPaying(null)}
+                  aria-label={t("listCancel", "Cancelar")}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <p className="mt-4 text-sm text-[#F5F1E8]/80">
+                {t("listBillPrice", "{price} por mês enquanto o anúncio estiver na vitrine.").replace(
+                  "{price}",
+                  money(quota.monthly_cents)
+                )}
+              </p>
+
+              {/* ⚠️ O CARTAO VEM PRIMEIRO E CHEIO: e o unico que renova sozinho,
+                  e e o caminho que o Alex pediu como natural. O Pix fica ao
+                  lado, apagado, para quem nao tem cartao. */}
+              <div className="mt-4 space-y-2">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] px-4 py-3 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50"
+                  style={{ background: accent }}
+                  disabled={busy}
+                  onClick={() => payListing(paying, "card")}
+                >
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {t("listBillCard", "Assinar no cartão")}
+                </button>
+                <p className="text-[11px] text-[#9A938A]">
+                  {t("listBillCardHint", "Renova sozinho todo mês. Dá para cancelar quando quiser.")}
+                </p>
+
+                <button
+                  type="button"
+                  className={BTN_GHOST + " w-full justify-center py-2.5"}
+                  disabled={busy}
+                  onClick={() => payListing(paying, "pix")}
+                >
+                  {t("listBillPix", "Pagar um mês no Pix")}
+                </button>
+                {/* ⚠️ O AVISO NAO E DETALHE: no Pix nao existe recorrencia, entao
+                    a pessoa PRECISA saber que vai ter que voltar — descobrir
+                    isso quando o anuncio sumir e a pior hora. */}
+                <p className="text-[11px] text-[#9A938A]">
+                  {t(
+                    "listBillPixHint",
+                    "Vale 30 dias. Como o Pix não tem cobrança automática, você renova quando quiser continuar."
+                  )}
+                </p>
+
+                {quota.monthly_polens > 0 && (
+                  <button
+                    type="button"
+                    className={BTN_GHOST + " w-full justify-center py-2.5"}
+                    disabled={busy}
+                    onClick={() => payListingPolens(paying)}
+                  >
+                    {t("listBillPolens", "Usar {n} Poléns").replace(
+                      "{n}",
+                      String(quota.monthly_polens)
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {msg && <p className="mt-3 text-xs text-[#F2B705]">{msg}</p>}
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* ⚠️ O MODAL VAI POR PORTAL NO BODY e é `z-[100]`. A página da
           comunidade tem cards ROTACIONADOS, e ancestral com `transform` deixa
