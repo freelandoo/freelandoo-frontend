@@ -40,6 +40,17 @@ import { getToken } from "@/lib/auth"
 
 type SpaceKind = "pet" | "car" | "condo" | "neighborhood" | "common"
 
+/**
+ * Modalidades de UM só por pessoa (decisão do Alex, 2026-09-17): *"só pode uma
+ * de condomínio, e uma de rua, somente o pet pode ter mais de uma"*.
+ *
+ * ⚠️ ESPELHO, NÃO REGRA. Quem recusa é o backend (`utils/spaceCaps` — as três
+ * portas do condomínio, as duas do bairro e o botão genérico de entrar); aqui
+ * só se decide o que OFERECER. Errar para mais deste lado esconde um botão;
+ * errar do outro abriria a porta. Mexeu numa lista, confira a outra.
+ */
+const SINGLE_SPACE_KINDS: SpaceKind[] = ["condo", "neighborhood", "car"]
+
 type SpaceRow = {
   id_profile: string
   display_name: string
@@ -210,6 +221,15 @@ export function SpacesMenu({
     createLabel: string
   }
 
+  /**
+   * Nas modalidades de um só, o item do menu deixa de ser uma LISTA e vira
+   * porta: quem não tem, cria; quem tem, abre. Sem isso o submenu abriria com
+   * uma linha e um "+" que o backend recusa — botão que só falha depois do
+   * clique é pior que botão nenhum.
+   */
+  const isSingle = (kind: SpaceKind) => SINGLE_SPACE_KINDS.includes(kind)
+  const canCreateMore = (item: Item) => !isSingle(item.key) || item.rows.length === 0
+
   const items: Item[] = [
     {
       key: "pet",
@@ -319,15 +339,21 @@ export function SpacesMenu({
                   </span>
                 </button>
               ))}
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => current.create()}
-                className={itemCls}
-                style={{ background: "#241d12" }}
-              >
-                <Plus className="h-4 w-4 shrink-0 text-[#F2B705]" /> {current.createLabel}
-              </button>
+              {/* O "+" some quando a modalidade é de um só e a pessoa já tem o
+                  dela. Ele continua aqui para o pet — e para o caso legado de
+                  quem já tinha dois de algo antes do teto existir, que segue
+                  vendo os dois e não ganha um terceiro. */}
+              {canCreateMore(current) && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => current.create()}
+                  className={itemCls}
+                  style={{ background: "#241d12" }}
+                >
+                  <Plus className="h-4 w-4 shrink-0 text-[#F2B705]" /> {current.createLabel}
+                </button>
+              )}
               {createError && (
                 <p className="px-2 py-1 text-[11px] font-semibold normal-case tracking-normal text-[#ff7a6a]">
                   {createError}
@@ -390,6 +416,13 @@ export function SpacesMenu({
                     type="button"
                     role="menuitem"
                     onClick={() => {
+                      // Um só e já tem: abre direto. O submenu existiria para
+                      // escolher entre uma opção e um "+" que não vale — dois
+                      // cliques para chegar onde o primeiro já chegava.
+                      if (isSingle(item.key) && item.rows.length === 1) {
+                        go(item.rows[0].href)
+                        return
+                      }
                       if (item.rows.length > 0) {
                         setView(item.key)
                         return
@@ -401,7 +434,9 @@ export function SpacesMenu({
                   >
                     <item.icon className="h-4 w-4 shrink-0 text-[#F2B705]" />
                     <span className="flex-1">{item.label}</span>
-                    {item.rows.length > 0 && (
+                    {/* Contador só onde ele diz alguma coisa: num item de um só
+                        ele seria sempre "1". */}
+                    {item.rows.length > 0 && !isSingle(item.key) && (
                       <span className="text-[10px] font-extrabold tabular-nums text-[#F2B705]">
                         {item.rows.length}
                       </span>
