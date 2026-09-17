@@ -198,6 +198,12 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     { key: "vitrine", label: tAcc("featureVitrine", "Vitrine"), icon: Store },
   ]
 
+  // A Loja de Funções só se oferece quando existe função à venda que a conta
+  // ainda não tem. Função fora da venda (is_for_sale = FALSE) volta do backend
+  // como POSSUÍDA — então, com a loja desligada, o CTA some sozinho em vez de
+  // levar a uma vitrine vazia, e volta sozinho no dia em que algo for à venda.
+  const hasFunctionsToBuy = featureRows.some((f) => !featOwned(f.key))
+
   const renderActionLink = (a: Action) => {
     const Icon = a.icon
     const hintId: HintId | undefined =
@@ -444,20 +450,22 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                       "As funções da sua conta ficam sempre ativas.",
                     )}
                   </p>
-                  {/* Loja de Funções — compre novas funções pra conta */}
-                  <Link
-                    href="/funcoes"
-                    onClick={onClose}
-                    className="group mx-3 mb-1 flex items-center gap-2.5 border border-amber-400/40 bg-amber-400/[0.06] px-3 py-2 text-[12.5px] font-semibold text-amber-300 transition hover:bg-amber-400/[0.14]"
-                  >
-                    <ShoppingBag className="h-3.5 w-3.5 shrink-0" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{tAcc("functionsStoreCta", "Loja de Funções")}</span>
-                      <span className="block text-[10.5px] font-normal leading-snug text-amber-200/60">
-                        {tAcc("functionsStoreHint", "Compre novas funções pra sua conta.")}
+                  {/* Loja de Funções — só quando há função à venda que a conta não tem. */}
+                  {hasFunctionsToBuy && (
+                    <Link
+                      href="/funcoes"
+                      onClick={onClose}
+                      className="group mx-3 mb-1 flex items-center gap-2.5 border border-amber-400/40 bg-amber-400/[0.06] px-3 py-2 text-[12.5px] font-semibold text-amber-300 transition hover:bg-amber-400/[0.14]"
+                    >
+                      <ShoppingBag className="h-3.5 w-3.5 shrink-0" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{tAcc("functionsStoreCta", "Loja de Funções")}</span>
+                        <span className="block text-[10.5px] font-normal leading-snug text-amber-200/60">
+                          {tAcc("functionsStoreHint", "Compre novas funções pra sua conta.")}
+                        </span>
                       </span>
-                    </span>
-                  </Link>
+                    </Link>
+                  )}
                 </div>
               )}
             </li>
