@@ -4,7 +4,7 @@ import { templateFor } from "@/components/site-templates/registry"
 import { getBackendApiUrl } from "@/lib/backend"
 import { fetchPublicSiteBySlug, resolveHostToSlug } from "@/lib/community-site"
 import { cleanHost, isCommunityDomain } from "@/lib/site-host"
-import { buildProfileUrl, slugify } from "@/lib/slug"
+import { buildProfileUrl } from "@/lib/slug"
 import { fetchBlogSlugs } from "@/lib/blog"
 
 const BASE_URL = "https://www.freelandoo.com.br"
@@ -27,10 +27,6 @@ interface SearchProfile {
   sub_profile_slug: string | null
   municipio: string | null
   is_clan: boolean
-}
-
-interface MachineEntry {
-  slug: string
 }
 
 const STATIC_ROUTES: MetadataRoute.Sitemap = [
@@ -62,34 +58,6 @@ const STATIC_ROUTES: MetadataRoute.Sitemap = [
   { url: `${BASE_URL}/minors-policy`, changeFrequency: "yearly", priority: 0.3 },
   { url: `${BASE_URL}/advertising-policy`, changeFrequency: "yearly", priority: 0.3 },
 ]
-
-async function fetchMachines(): Promise<MachineEntry[]> {
-  try {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 5000)
-    const res = await fetch(`${getBackendApiUrl()}/enxames`, {
-      next: { revalidate: 3600 },
-      signal: controller.signal,
-    }).finally(() => clearTimeout(timer))
-    if (!res.ok) return []
-    const body = await res.json()
-    const list = Array.isArray(body)
-      ? body
-      : Array.isArray(body?.enxames)
-        ? body.enxames
-        : []
-    return list
-      .filter(
-        (m: unknown): m is MachineEntry =>
-          !!m &&
-          typeof (m as MachineEntry).slug === "string" &&
-          (m as MachineEntry).slug.length > 0
-      )
-      .map((m: MachineEntry) => ({ slug: m.slug }))
-  } catch {
-    return []
-  }
-}
 
 async function fetchProfilesPage(offset: number, limit: number): Promise<SearchProfile[]> {
   try {
@@ -181,14 +149,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   for (const r of STATIC_ROUTES) push(r)
 
-  // Enxames — uma página de pouso por enxame é página de funil.
-  for (const m of await fetchMachines()) {
-    push({
-      url: `${BASE_URL}/enxame/${m.slug}`,
-      changeFrequency: "daily",
-      priority: 0.85,
-    })
-  }
+  // ⚠️ NÃO listar /enxame/<slug>: aquela rota é só um redirect 307 para
+  // /search?from=… e o /search já está no sitemap. Sitemap que anuncia desvio
+  // gasta orçamento de rastreio e faz o Google ver o site como inacabado.
 
   // Posts do blog — camada de conteúdo editorial (SEO).
   for (const b of await fetchBlogSlugs()) {
@@ -202,7 +165,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Perfis e clans públicos via /search.
   const limit = 50
-  const cityProfPairs = new Set<string>()
   for (let offset = 0, page = 0; page < 200; offset += limit, page++) {
     const list = await fetchProfilesPage(offset, limit)
     if (list.length === 0) break
@@ -243,20 +205,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       })
 
-      const citySlug = slugify(p.municipio) || "brasil"
-      cityProfPairs.add(`${p.profession_slug}/${citySlug}`)
     }
 
     if (list.length < limit) break
   }
 
-  for (const pair of cityProfPairs) {
-    push({
-      url: `${BASE_URL}/${pair}`,
-      changeFrequency: "weekly",
-      priority: 0.6,
-    })
-  }
+  // ⚠️ NÃO listar /<profissão>/<cidade>: essa rota NÃO EXISTE — o app só tem
+  // /[profession]/[city]/[handle]. O sitemap anunciava 18 dessas e todas
+  // respondiam 404 ao Google.
+  //
+  // E criá-las seria pior que removê-las: 17 dos 18 pares têm UM perfil só,
+  // então nasceriam 18 páginas com um profissional cada — doorway pages, que
+  // o Google penaliza. A página de cidade volta a fazer sentido quando houver
+  // densidade real de profissionais por cidade.
 
   return routes
 }
