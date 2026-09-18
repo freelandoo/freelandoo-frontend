@@ -1,45 +1,73 @@
 // A HOME.
 //
-// A ordem das seções é a ordem da decisão de quem chega: o problema (a conta
-// que já está sendo paga) → o que muda → quanto custa esperar → o que existe →
-// como funciona → onde → as dúvidas.
+// ⚠️ A ORDEM DAS SEÇÕES É A DO BRIEF DO CLIENTE (14/09), numerada por ele de 1
+// a 14, e foi seguida à risca. Ela já é a ordem da decisão de quem chega: a
+// promessa → a prova → por que nós → o que serve para mim → como funciona →
+// quanto dá → o que já fizemos → como pagar → quem somos → onde → o que dizem
+// → as dúvidas → me reconheço → o próximo passo.
 //
-// ⚠️ A CALCULADORA VEM ANTES DOS SERVIÇOS de propósito. Quem chega ainda não
-// sabe se quer on-grid ou off-grid — sabe que a conta está cara. O número da
-// própria conta é o que faz a pessoa continuar rolando; a escolha do serviço é
-// a pergunta seguinte, não a primeira.
+// ⚠️ ISTO MUDOU UMA DECISÃO ANTERIOR, e a nota velha foi apagada porque
+// passou a mentir: a calculadora vinha ANTES dos serviços, com o argumento de
+// que quem chega sabe da conta e não sabe da tecnologia. O argumento continua
+// certo, mas deixou de precisar da posição — o PRIMEIRO botão da abertura é
+// "Quero saber quanto posso economizar" e aponta para `#economia`, então a
+// calculadora está a um clique do topo, independente de onde ela esteja na
+// pilha.
+//
+// ⚠️ SEÇÃO SEM DADO NÃO APARECE. `StatsBand`, `ProjectsSection` e
+// `ReviewsSection` devolvem `null` enquanto o cliente não entregar números,
+// fotos e avaliações. É de propósito, e é a regra que impede a falha
+// irreversível deste trabalho — ver `content/company.ts`.
 
 import SavingsCalculator from "../calculator";
-import { AREAS } from "../content/areas";
 import { WA_DEFAULT, whatsappLink } from "../content/business";
-import { SERVICES } from "../content/services";
-import { BENEFITS, FAQ, STEPS } from "../content/site";
-import Hero from "../hero";
-import { Icon } from "../icons";
-import { PAGE, pageHref, type Ctx } from "../lib";
+import { DIFFERENTIALS, FAQ, STEPS } from "../content/site";
+import {
+  AboutSection,
+  FinancingSection,
+  LoadsSection,
+  ProjectsSection,
+  ReviewsSection,
+  SegmentsSection,
+  StatsBand,
+  UnitsSection,
+} from "../home-blocks";
+import { type Ctx } from "../lib";
+import Opening from "../opening";
 import { CtaBand, FaqList, FeatureCard, Section, SectionHead } from "../ui";
+
+/** A mensagem de quem chega pela calculadora, já com um número na cabeça. */
+const WA_ANALISE =
+  "Olá! Simulei no site da EcoLuz e quero uma análise personalizada da minha conta de luz.";
 
 export default function HomePage({ links }: Ctx) {
   return (
     <>
-      <Hero links={links} />
+      {/* § 1 — A abertura em três atos, sobre o vídeo arrastado pela rolagem. */}
+      <Opening links={links} />
 
-      {/* ── O QUE MUDA ──────────────────────────────────────────────────── */}
-      <Section id="beneficios" tone="paper">
+      {/* § 2 — Os números. Invisível até o cliente levantá-los. */}
+      <StatsBand />
+
+      {/* ── § 3 — POR QUE ESCOLHER A ECOLUZ ─────────────────────────────── */}
+      <Section id="diferenciais" tone="paper">
         <SectionHead
           tone="paper"
-          eyebrow="Mais que uma conta menor"
-          title="O que muda quando o sistema entra em operação."
-          lead="Energia solar boa não aparece só no telhado. Ela aparece na conta, na previsibilidade e em ter alguém por perto quando alguma coisa muda."
+          eyebrow="Por que escolher a EcoLuz"
+          title="O que a gente entrega além do equipamento."
+          lead="Painel e inversor qualquer um vende. O que separa um sistema que funciona de um que dá dor de cabeça é o que acontece antes e depois da entrega da caixa."
         />
 
-        <div className="mt-14 grid gap-px sm:grid-cols-2 lg:grid-cols-3" style={{ background: "var(--el-paper-line)" }}>
-          {BENEFITS.map((b, i) => (
+        <div
+          className="mt-14 grid gap-px sm:grid-cols-2 lg:grid-cols-3"
+          style={{ background: "var(--el-paper-line)" }}
+        >
+          {DIFFERENTIALS.map((d, i) => (
             <FeatureCard
-              key={b.title}
-              icon={b.icon}
-              title={b.title}
-              text={b.text}
+              key={d.title}
+              icon={d.icon}
+              title={d.title}
+              text={d.text}
               tone="paper"
               delay={i * 60}
             />
@@ -47,82 +75,22 @@ export default function HomePage({ links }: Ctx) {
         </div>
       </Section>
 
-      {/* ── A CALCULADORA ───────────────────────────────────────────────── */}
-      <Section id="economia">
-        <SectionHead
-          eyebrow="Quanto custa esperar"
-          title="A conta que você já paga, projetada em dez anos."
-          lead="Não é uma promessa nossa: é a sua conta multiplicada pelo tempo. Arraste até o seu valor médio e veja o tamanho do número."
-        />
-        <div className="mt-12" data-reveal="scale">
-          <SavingsCalculator ctaHref={whatsappLink(WA_DEFAULT)} />
-        </div>
-      </Section>
+      {/* § 4 — Nossas soluções, recortadas por público. */}
+      <SegmentsSection links={links} />
 
-      {/* ── OS SERVIÇOS ─────────────────────────────────────────────────── */}
-      <Section id="solucoes" tone="deep">
-        <SectionHead
-          eyebrow="O que a EcoLuz faz"
-          title="Do projeto à ampliação, com e sem bateria."
-          lead="Cinco frentes, e cada uma resolve uma pergunta diferente. Se ainda não está claro qual é a sua, comece pela conversa — é de graça e é rápido."
-        />
-
-        <div className="mt-14 grid gap-px sm:grid-cols-2 lg:grid-cols-3" style={{ background: "var(--el-line-soft)" }}>
-          {SERVICES.map((s, i) => (
-            <a
-              key={s.slug}
-              href={pageHref(links, s.slug)}
-              className="group flex flex-col bg-[var(--el-ink)] p-7 transition-colors hover:bg-[var(--el-ink-up)]"
-              data-reveal="up"
-              data-reveal-delay={i * 60}
-            >
-              <span className="text-[var(--el-sun)]">
-                <Icon name={s.icon} className="h-7 w-7" />
-              </span>
-              <p className="eyebrow mt-6 text-[var(--el-cream-faint)]">{s.eyebrow}</p>
-              <h3 className="display mt-2 text-[1.375rem] text-[var(--el-cream)] transition-colors group-hover:text-[var(--el-sun-hi)]">
-                {s.label}
-              </h3>
-              <p className="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-[var(--el-cream-dim)]">
-                {s.card}
-              </p>
-              <span className="mt-6 inline-flex items-center gap-2 text-[0.8125rem] uppercase tracking-[0.14em] text-[var(--el-sun-hi)]">
-                Ver detalhes <span aria-hidden="true">→</span>
-              </span>
-            </a>
-          ))}
-
-          {/* O sexto lugar da grade: o convite, no lugar de um card vazio. */}
-          <div className="flex flex-col justify-between bg-[var(--el-ink-up)] p-7" data-reveal="up" data-reveal-delay="300">
-            <p className="display text-[1.375rem] leading-snug text-[var(--el-cream)]">
-              Não sabe qual é o seu caso?
-            </p>
-            <p className="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-[var(--el-cream-dim)]">
-              Mande uma foto da sua conta de luz. Em geral ela já responde
-              metade das perguntas.
-            </p>
-            <a
-              href={whatsappLink(WA_DEFAULT)}
-              target="_blank"
-              rel="noopener"
-              className="btn btn-solid mt-6"
-            >
-              Mandar a minha conta
-            </a>
-          </div>
-        </div>
-      </Section>
-
-      {/* ── COMO FUNCIONA ───────────────────────────────────────────────── */}
+      {/* ── § 5 — COMO FUNCIONA ─────────────────────────────────────────── */}
       <Section id="como-funciona" tone="paper">
         <SectionHead
           tone="paper"
           eyebrow="Como funciona"
           title="Da primeira conversa ao acompanhamento."
-          lead="Seis etapas, e você sabe em qual delas o seu projeto está. A parte que costuma travar — a homologação — é conduzida pela EcoLuz."
+          lead="Seis etapas, e você sabe em qual delas o seu projeto está. A EcoLuz não vende equipamento: entrega uma solução completa, incluindo a parte que costuma travar — a homologação."
         />
 
-        <ol className="mt-14 grid gap-px sm:grid-cols-2 lg:grid-cols-3" style={{ background: "var(--el-paper-line)" }}>
+        <ol
+          className="mt-14 grid gap-px sm:grid-cols-2 lg:grid-cols-3"
+          style={{ background: "var(--el-paper-line)" }}
+        >
           {STEPS.map((s, i) => (
             <li
               key={s.n}
@@ -140,49 +108,58 @@ export default function HomePage({ links }: Ctx) {
         </ol>
       </Section>
 
-      {/* ── ONDE ────────────────────────────────────────────────────────── */}
-      <Section id="areas">
+      {/* ── § 6 — SIMULAÇÃO DE ECONOMIA ─────────────────────────────────── */}
+      <Section id="economia">
         <SectionHead
-          eyebrow="Onde a EcoLuz atende"
-          title="Os quatro municípios da Ilha do Maranhão."
-          lead="A loja fica no Turu, em São Luís. Daqui o atendimento cobre a ilha inteira — e cada lugar tem a sua particularidade técnica."
+          eyebrow="Quanto você poderia economizar"
+          title="A conta que você já paga, projetada em dez anos."
+          lead="Não é uma promessa nossa: é a sua conta multiplicada pelo tempo. Arraste até o seu valor médio e veja o tamanho do número."
         />
-
-        <div className="mt-14 grid gap-px sm:grid-cols-2 lg:grid-cols-4" style={{ background: "var(--el-line-soft)" }}>
-          {AREAS.map((a, i) => (
-            <a
-              key={a.slug}
-              href={pageHref(links, a.slug)}
-              className="group flex flex-col bg-[var(--el-ink)] p-7 transition-colors hover:bg-[var(--el-ink-up)]"
-              data-reveal="up"
-              data-reveal-delay={i * 60}
-            >
-              <h3 className="display text-[1.25rem] text-[var(--el-cream)] transition-colors group-hover:text-[var(--el-sun-hi)]">
-                {a.name}
-              </h3>
-              <p className="eyebrow mt-1.5 text-[var(--el-sun)]">
-                {a.isBase ? "Nossa base" : a.uf}
-              </p>
-              <p className="mt-4 flex-1 text-[0.9375rem] leading-relaxed text-[var(--el-cream-dim)]">
-                {a.card}
-              </p>
-            </a>
-          ))}
+        <div className="mt-12" data-reveal="scale">
+          <SavingsCalculator ctaHref={whatsappLink(WA_ANALISE)} />
         </div>
 
-        <p className="mt-8 text-[0.9375rem] text-[var(--el-cream-faint)]" data-reveal="fade">
-          Projeto fora da ilha?{" "}
+        {/* ⚠️ A RESSALVA É PEDIDO EXPLÍCITO DO CLIENTE ("importante colocar uma
+            observação de que a estimativa não substitui o dimensionamento").
+            Ela fica VISÍVEL, embaixo do número grande — em letra miúda no
+            rodapé ela existiria só para nos proteger, e não para informar quem
+            está decidindo. */}
+        <p
+          className="mt-8 max-w-2xl text-[0.875rem] leading-relaxed text-[var(--el-cream-faint)]"
+          data-reveal="fade"
+        >
+          A simulação é uma estimativa inicial e não substitui o dimensionamento
+          do projeto: o resultado real depende do seu consumo mês a mês, da
+          tarifa vigente, da localização e das características da unidade
+          consumidora.{" "}
           <a
-            href={pageHref(links, PAGE.areas)}
+            href={whatsappLink(WA_ANALISE)}
+            target="_blank"
+            rel="noopener"
             className="text-[var(--el-sun-hi)] underline underline-offset-4"
           >
-            Veja como funciona
+            Quero uma análise personalizada
           </a>
           .
         </p>
       </Section>
 
-      {/* ── FAQ ─────────────────────────────────────────────────────────── */}
+      {/* § 7 — Projetos realizados. Invisível até as fotos reais chegarem. */}
+      <ProjectsSection />
+
+      {/* § 8 — Financiamento. */}
+      <FinancingSection />
+
+      {/* § 9 — Conheça a EcoLuz. */}
+      <AboutSection links={links} />
+
+      {/* § 10 — Onde estamos + até onde atendemos. */}
+      <UnitsSection links={links} />
+
+      {/* § 11 — Avaliações. Invisível até virem as reais, do Google. */}
+      <ReviewsSection />
+
+      {/* ── § 12 — PERGUNTAS FREQUENTES ─────────────────────────────────── */}
       <Section id="duvidas" tone="paper">
         <SectionHead
           tone="paper"
@@ -195,10 +172,15 @@ export default function HomePage({ links }: Ctx) {
         </div>
       </Section>
 
+      {/* § 13 — O que cabe na sua conta. */}
+      <LoadsSection />
+
+      {/* ── § 14 — CHAMADA FINAL ────────────────────────────────────────── */}
       <CtaBand
-        title="Comece pela sua conta de luz."
-        text="Mande uma foto dela no WhatsApp. A análise é gratuita e é o que transforma a conversa sobre energia solar em número."
+        title="Vamos transformar sua conta de energia em economia?"
+        text="Fale com um especialista da EcoLuz e descubra qual solução faz sentido para o seu consumo. Mande uma foto da sua conta de luz: em geral ela já responde metade das perguntas."
         href={whatsappLink(WA_DEFAULT)}
+        label="Falar com a EcoLuz"
       />
     </>
   );

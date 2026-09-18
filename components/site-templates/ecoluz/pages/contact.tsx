@@ -21,7 +21,7 @@ import {
   WA_DEFAULT,
   whatsappLink,
 } from "../content/business";
-import { TEAM } from "../content/site";
+import { TEAM } from "../content/company";
 import { Icon } from "../icons";
 import { type Ctx } from "../lib";
 import { CtaBand, Section, SectionHead } from "../ui";

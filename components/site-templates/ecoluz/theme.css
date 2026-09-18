@@ -889,3 +889,320 @@
     display: none;
   }
 }
+
+/* ══ A ABERTURA EM TRÊS ATOS ═══════════════════════════════════════════════
+   O palco da home: um fundo contínuo (o vídeo arrastado pela rolagem, quando
+   houver) e três blocos de texto que se cruzam por cima dele.
+
+   ⚠️ SÃO DOIS LAYOUTS NO MESMO MARCAÇÃO, e o gate é `data-scrub`, escrito pelo
+   `opening-motion.tsx` só quando ele vai mesmo governar a rolagem:
+
+     sem o atributo → três blocos EMPILHADOS, em fluxo normal. É o que o robô
+                      lê, o que aparece sem JavaScript e o que a preferência de
+                      movimento reduzido recebe. Conteúdo, nunca tela vazia.
+
+     com o atributo → o invólucro ganha três telas de altura, o miolo gruda no
+                      topo e os três atos dividem UMA célula de grade, com a
+                      opacidade governada pela posição da rolagem.
+
+   ⚠️ A ALTURA ESTÁ NUMA VARIÁVEL. Ela é o compasso da abertura inteira: ela
+   decide quanto se rola por ato e, junto com o número de quadros, a fluidez do
+   vídeo. Espalhada pelas regras, afinar o ritmo viraria caça a três números.
+
+   ⚠️ `svh` E NÃO `vh`. `vh` é a altura com a barra do navegador ESCONDIDA: no
+   celular a abertura nasceria mais alta que a tela e o primeiro ato já entraria
+   cortado, endireitando-se sozinho na primeira rolagem. `svh` é a altura
+   estável, e é a mesma unidade que o resto deste tema já usa. */
+.tpl-ecoluz {
+  --el-open-span: 300svh;
+}
+
+@media (max-width: 767px) {
+  .tpl-ecoluz {
+    /* Três telas cheias de rolagem com o polegar é muito. O vídeo continua
+       inteiro — o que encurta é o caminho até ele terminar. */
+    --el-open-span: 250svh;
+  }
+}
+
+.tpl-ecoluz .el-open {
+  position: relative;
+}
+
+.tpl-ecoluz .el-open__sticky {
+  position: relative;
+}
+
+/* Sem vídeo, nem canvas nem véu existem: `display: none` em vez de
+   transparente, para não deixar duas camadas de tela cheia em composição sem
+   nada para mostrar. */
+.tpl-ecoluz .el-open__canvas,
+.tpl-ecoluz .el-open__veil {
+  display: none;
+}
+
+.tpl-ecoluz .el-open__acts {
+  position: relative;
+  margin-inline: auto;
+  width: 100%;
+  max-width: 78rem;
+  padding-inline: var(--el-pad);
+  display: grid;
+  gap: 5rem;
+  /* O respiro de cima paga a barra fixa, que é transparente no topo da página
+     e passaria por cima do sobretítulo do primeiro ato. */
+  padding-block: 8.5rem 4rem;
+}
+
+.tpl-ecoluz .el-open__act {
+  max-width: 46rem;
+}
+
+/* ── O PALCO, quando o motor assume ────────────────────────────────────── */
+
+.tpl-ecoluz .el-open[data-scrub="on"] {
+  height: var(--el-open-span);
+}
+
+/* ⚠️ ESTE `sticky` DEPENDE DE `main` NÃO SER UM CONTÊINER DE ROLAGEM, e a
+   distinção é fina o bastante para morder em silêncio.
+
+   `.tpl-ecoluz > main` tem `overflow-x: clip` (ver o topo deste arquivo). Isso
+   é seguro: `clip` NÃO cria contêiner de rolagem, e o eixo vertical continua
+   `visible`, então o palco gruda na JANELA, que é o que se quer. Trocar aquele
+   `clip` por `overflow-x: hidden` quebraria isto — com `hidden` num eixo, o
+   outro passa a computar `auto`, `main` vira contêiner de rolagem e o palco
+   passaria a grudar NELE, que é do tamanho do documento: na prática ele
+   rolaria embora e a abertura viraria duas telas vazias.
+
+   O sintoma não aparece em erro nenhum, e quem mexer no recorte horizontal não
+   vai imaginar que mexeu na abertura. Ao tocar em `overflow` de `main`,
+   conferir a home rolando. */
+.tpl-ecoluz .el-open[data-scrub="on"] .el-open__sticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+/* ⚠️ OS TRÊS ATOS DIVIDEM UMA CÉLULA SÓ. É o que permite o cruzamento sem
+   posicionamento absoluto — e sem absoluto a altura do palco continua sendo
+   decidida pelo ato mais alto, que é o que mantém tudo centrado em qualquer
+   tamanho de tela. */
+.tpl-ecoluz .el-open[data-scrub="on"] .el-open__acts {
+  grid-template-areas: "act";
+  align-items: center;
+  height: 100%;
+  gap: 0;
+  padding-block: 5.5rem 3.5rem;
+}
+
+.tpl-ecoluz .el-open[data-scrub="on"] .el-open__act {
+  grid-area: act;
+  align-self: center;
+  /* ⚠️ `will-change` FIXO, e aqui isso é correto: os três atos mudam opacidade
+     e transform a cada quadro de rolagem durante toda a abertura. É o caso que
+     a propriedade existe para atender — diferente dos blocos do resto da
+     página, onde ela é limpa depois da entrada justamente para não deixar
+     camada de composição residente. */
+  will-change: opacity, transform;
+}
+
+/* ── O VÍDEO ───────────────────────────────────────────────────────────── */
+
+.tpl-ecoluz .el-open[data-frames="on"] .el-open__canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ⚠️ O VÉU É O QUE TORNA O TEXTO LEGÍVEL SOBRE QUALQUER QUADRO. A sequência é
+   de uma obra real — céu claro, telhado ao sol, parede branca —, e creme sobre
+   céu é ilegível. Ele é mais dado à esquerda, que é onde o texto vive, e
+   escurece topo e base: o topo paga a barra fixa, a base costura a passagem
+   para a seção seguinte. */
+.tpl-ecoluz .el-open[data-frames="on"] .el-open__veil {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to right,
+      rgb(7 6 3 / 0.93) 0%,
+      rgb(7 6 3 / 0.82) 34%,
+      rgb(7 6 3 / 0.42) 72%,
+      rgb(7 6 3 / 0.24) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(7 6 3 / 0.7) 0%,
+      rgb(7 6 3 / 0.1) 26%,
+      rgb(7 6 3 / 0.12) 60%,
+      rgb(7 6 3 / 0.82) 100%
+    );
+}
+
+/* ── A TIPOGRAFIA DOS ATOS ─────────────────────────────────────────────── */
+
+.tpl-ecoluz .el-open__title {
+  margin-top: 1.5rem;
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
+  line-height: 0.95;
+  color: var(--el-cream);
+}
+
+.tpl-ecoluz .el-open__title--tight {
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+}
+
+.tpl-ecoluz .el-open__lead {
+  margin-top: 1.75rem;
+  max-width: 38rem;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--el-cream-dim);
+}
+
+@media (min-width: 768px) {
+  .tpl-ecoluz .el-open__lead {
+    font-size: 1.1875rem;
+  }
+}
+
+.tpl-ecoluz .el-open__cta {
+  margin-top: 2.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tpl-ecoluz .el-open__marks {
+  margin-top: 2.25rem;
+  display: grid;
+  gap: 0.9rem;
+  max-width: 34rem;
+}
+
+.tpl-ecoluz .el-open__marks li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--el-sun);
+  color: var(--el-cream);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.tpl-ecoluz .el-open__marks .numeral {
+  font-size: 0.8125rem;
+  color: var(--el-sun);
+}
+
+/* ── A DICA DE ROLAGEM ─────────────────────────────────────────────────────
+   Ela existe porque a abertura tem três telas: sem ela, a primeira parece a
+   página inteira e quem não rola nunca descobre que há mais. Some junto com o
+   primeiro ato, então não fica pedindo o que a pessoa já fez. */
+.tpl-ecoluz .el-open__hint {
+  margin-top: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-family: var(--el-display);
+  font-stretch: 84%;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--el-cream-faint);
+}
+
+.tpl-ecoluz .el-open__hint-rail {
+  position: relative;
+  display: block;
+  width: 3.25rem;
+  height: 1px;
+  overflow: hidden;
+  background: var(--el-line);
+}
+
+/* ⚠️ O PONTO CORRE EM `transform`, NUNCA EM `left`. Ele é minúsculo, mas roda
+   em laço infinito: em `left` seriam sessenta recálculos de layout por segundo
+   para sempre, no elemento que fica na tela mais tempo do site inteiro. */
+.tpl-ecoluz[data-motion="on"] .el-open__hint-rail::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 42%;
+  background: var(--el-sun);
+  animation: tplEcoluzHintRun 2.6s var(--el-ease) infinite;
+}
+
+@keyframes tplEcoluzHintRun {
+  0% {
+    transform: translate3d(-120%, 0, 0);
+  }
+  55%,
+  100% {
+    transform: translate3d(260%, 0, 0);
+  }
+}
+
+/* ── A MANCHETE, LINHA A LINHA ─────────────────────────────────────────────
+   ⚠️ A MÁSCARA É PRÓPRIA (`el-open-line`) E NÃO A `el-line` DO RESTO DO SITE.
+   Aquela anda de mãos dadas com `[data-line]`, que o CSS esconde a 108% e só o
+   GSAP vai buscar — e o GSAP só trata quem estiver dentro de um
+   `[data-reveal="lines"]`, que aqui não existe de propósito (a opacidade dos
+   atos é da rolagem). Reusá-la deixaria o `<h1>` do site invisível para
+   sempre, sem um único erro aparecer.
+
+   ⚠️ A FOLGA VERTICAL NÃO É ENFEITE. `line-height: 0.95` aperta a caixa da
+   linha até abaixo da altura do tipo, e um `overflow: hidden` cru CORTA O
+   DESCENDENTE — o "g" de "energia" sai sem o rabo. O padding abre a máscara
+   para baixo e a margem negativa devolve o espaço: a soma é ZERO, então o
+   espaçamento para o parágrafo seguinte fica exatamente como estava. */
+.tpl-ecoluz .el-open-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.22em;
+  margin-bottom: -0.22em;
+}
+
+.tpl-ecoluz .el-open-line > [data-open-line] {
+  display: block;
+}
+
+/* A entrada é do CSS e não do JavaScript: ela roda no primeiro quadro, junto
+   com a abertura de luz (`intro.tsx`), e não depende de nada ter carregado. */
+.tpl-ecoluz[data-motion="on"] .el-open-line > [data-open-line] {
+  animation: tplEcoluzOpenLine 1.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.tpl-ecoluz[data-motion="on"] .el-open-line:nth-child(2) > [data-open-line] {
+  animation-delay: 0.09s;
+}
+
+@keyframes tplEcoluzOpenLine {
+  from {
+    transform: translate3d(0, 108%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-ecoluz[data-motion="on"] .el-open-line > [data-open-line] {
+    animation: none;
+    transform: none;
+  }
+
+  .tpl-ecoluz[data-motion="on"] .el-open__hint-rail::after {
+    animation: none;
+    transform: none;
+  }
+}

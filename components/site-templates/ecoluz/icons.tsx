@@ -26,7 +26,16 @@ export type IconName =
   | "shield"
   | "leaf"
   | "sun"
-  | "bolt";
+  | "bolt"
+  // Os diferenciais da empresa (§ "Por que escolher a EcoLuz").
+  | "team"
+  | "support"
+  | "pin"
+  // As situações de consumo (§ "O que cabe na sua conta").
+  | "snow"
+  | "shower"
+  | "pool"
+  | "grain";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   home: (
@@ -89,6 +98,58 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   bolt: <path d="M13 2.5 4.5 13.5H11l-1 8 8.5-11H12z" />,
+  team: (
+    <>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3.5 19.8a5.5 5.5 0 0 1 11 0" />
+      <path d="M16.2 5.4a3.2 3.2 0 0 1 0 5.2" />
+      <path d="M17.4 14.2a5.5 5.5 0 0 1 3.1 5.6" />
+    </>
+  ),
+  support: (
+    <>
+      <path d="M4.5 13.5v-1.5a7.5 7.5 0 0 1 15 0v1.5" />
+      <rect x="2.5" y="12.5" width="4" height="6" rx="1.5" />
+      <rect x="17.5" y="12.5" width="4" height="6" rx="1.5" />
+      <path d="M19.5 18.5a3 3 0 0 1-3 3h-3" />
+    </>
+  ),
+  pin: (
+    <>
+      <path d="M12 21.5s7-6.2 7-11.1a7 7 0 1 0-14 0c0 4.9 7 11.1 7 11.1Z" />
+      <circle cx="12" cy="10.4" r="2.5" />
+    </>
+  ),
+  snow: (
+    <>
+      <path d="M12 2.5v19M3.8 7.2l16.4 9.6M20.2 7.2 3.8 16.8" />
+      <path d="M12 6.4 9.9 4.3M12 6.4l2.1-2.1M12 17.6l-2.1 2.1M12 17.6l2.1 2.1" />
+    </>
+  ),
+  shower: (
+    <>
+      <path d="M4.5 20.5V7.2a2.9 2.9 0 0 1 5.8 0v1.3" />
+      <path d="M7.8 10.5h12l-3 3.6h-6z" />
+      <path d="M12 17.4v1.6M15 16.8v2.2M18 17.4v1.6" />
+    </>
+  ),
+  pool: (
+    <>
+      <path d="M2.5 17c1.7 0 1.7 1.6 3.4 1.6S7.6 17 9.3 17s1.7 1.6 3.4 1.6S14.4 17 16.1 17s1.7 1.6 3.4 1.6" />
+      <path d="M8 14.5V5.6a2.1 2.1 0 0 1 4.2 0" />
+      <path d="M14.5 14.5V5.6a2.1 2.1 0 0 1 4.2 0" />
+      <path d="M8 9.8h6.5" />
+    </>
+  ),
+  grain: (
+    <>
+      <path d="M12 21.5V10" />
+      <path d="M12 10c0-3 2-5.1 4.6-5.6C16.1 7 14.6 9.4 12 10Z" />
+      <path d="M12 10C12 7 10 4.9 7.4 4.4 7.9 7 9.4 9.4 12 10Z" />
+      <path d="M12 16c0-2.4 1.7-4.1 3.9-4.5-.4 2.1-1.7 4.1-3.9 4.5Z" />
+      <path d="M12 16c0-2.4-1.7-4.1-3.9-4.5.4 2.1 1.7 4.1 3.9 4.5Z" />
+    </>
+  ),
 };
 
 export function Icon({
