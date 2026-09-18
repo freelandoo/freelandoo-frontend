@@ -164,6 +164,24 @@ export type Review = {
   text: string;
   /** De 1 a 5, como está publicado. */
   stars: number;
+  /**
+   * A foto de quem avaliou, em `public/sites/ecoluz/avaliacoes/`.
+   *
+   * ⚠️ NÃO DÁ PARA PUXAR DO GOOGLE POR CÓDIGO: a página do perfil só entrega
+   * a casca JavaScript para quem não é navegador, então o endereço da imagem
+   * não está ao alcance de nenhum script daqui. Ela precisa ser salva à mão.
+   *
+   * ⚠️ E O ENDEREÇO DO GOOGLE NÃO SERVE COMO FONTE. Um `<img>` apontando para
+   * `lh3.googleusercontent.com` passa na CSP da plataforma, mas é um arquivo
+   * de terceiro que muda quando a pessoa troca a foto do perfil e some quando
+   * ela apaga a conta — e o dia em que sumir, o card do site do cliente fica
+   * com o ícone de imagem quebrada, sem erro nenhum em lugar nenhum.
+   *
+   * Vazio é um estado LEGÍTIMO, não uma pendência: o card desenha a INICIAL
+   * do nome num disco, que é exatamente o que o próprio Google faz com quem
+   * não tem foto (é o caso do Matheus no perfil da EcoLuz hoje).
+   */
+  photo?: string;
 };
 
 /**

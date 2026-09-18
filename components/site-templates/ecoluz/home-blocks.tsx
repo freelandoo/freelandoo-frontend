@@ -390,12 +390,35 @@ export function UnitsSection({ links }: { links: TemplateLinks }) {
 
 /* ══════════════════ § 11 — AVALIAÇÕES ═══════════════════════════════════ */
 
-function Stars({ n }: { n: number }) {
+/**
+ * As cinco estrelas.
+ *
+ * ⚠️ O BRILHO É `drop-shadow`, E NÃO `box-shadow`. O alvo é o DESENHO do SVG;
+ * uma sombra de caixa acenderia o retângulo em volta das cinco, que é outra
+ * coisa e fica feia. A regra mora no `theme.css` (`.el-stars`), junto do resto
+ * da luz do tema.
+ *
+ * ⚠️ E O `aria-label` FICA NO PARÁGRAFO, com as estrelas `aria-hidden`: quem
+ * usa leitor de tela ouve "5 de 5 estrelas" uma vez, não cinco desenhos.
+ */
+function Stars({
+  n,
+  size = "sm",
+  className = "",
+}: {
+  n: number;
+  size?: "sm" | "lg";
+  className?: string;
+}) {
   const full = Math.max(0, Math.min(5, Math.round(n)));
+  const box = size === "lg" ? "h-7 w-7" : "h-4 w-4";
   return (
-    <p className="flex gap-1 text-[var(--el-sun)]" aria-label={`${full} de 5 estrelas`}>
+    <p
+      className={`el-stars flex text-[var(--el-sun)] ${size === "lg" ? "gap-1.5" : "gap-1"} ${className}`}
+      aria-label={`${full} de 5 estrelas`}
+    >
       {Array.from({ length: 5 }, (_, i) => (
-        <svg key={i} viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" focusable="false">
+        <svg key={i} viewBox="0 0 24 24" className={box} aria-hidden="true" focusable="false">
           <path
             d="m12 3.5 2.6 5.5 5.9.8-4.3 4.2 1 6-5.2-2.9-5.2 2.9 1-6L3.5 9.8l5.9-.8z"
             fill={i < full ? "currentColor" : "none"}
@@ -409,8 +432,68 @@ function Stars({ n }: { n: number }) {
   );
 }
 
+/**
+ * O retrato de quem avaliou — a foto quando ela existe, a inicial quando não.
+ *
+ * ⚠️ `data-avatar` NÃO É DECORAÇÃO, É O QUE MANTÉM O DISCO REDONDO. O site
+ * publicado é servido dentro de `.fl-sharp`, a regra da plataforma que zera
+ * TODO `border-radius` com `!important` (decisão do Alex: nada de cantos
+ * arredondados). As duas únicas exceções são `img.rounded-full` e
+ * `[data-avatar]` — um círculo não é um canto. Sem o marcador, a inicial sai
+ * num quadrado e ninguém entende por quê, porque a classe está lá.
+ *
+ * ⚠️ O `alt` É VAZIO DE PROPÓSITO. O nome está escrito ao lado, em texto; um
+ * alt com o nome faria o leitor de tela dizer a mesma pessoa duas vezes.
+ */
+function ReviewAvatar({ name, photo }: { name: string; photo?: string }) {
+  if (photo) {
+    // ⚠️ `next/image` PELA MESMA RAZÃO DAS FOTOS DE OBRA (ver `ProjectsSection`):
+    // são arquivos NOSSOS, em `public/`, e são dois — cardinalidade baixa, sem
+    // `remotePatterns` para o otimizador recusar em tempo de execução.
+    //
+    // ⚠️ E O `rounded-full` PRECISA CAIR NO <img>, que é onde ele cai: a
+    // exceção da `.fl-sharp` é `img[class*="rounded-full"]`. Num invólucro,
+    // o disco sairia quadrado.
+    return (
+      <Image
+        src={photo}
+        alt=""
+        width={52}
+        height={52}
+        className="shrink-0 rounded-full object-cover"
+        style={{ height: "3.25rem", width: "3.25rem" }}
+      />
+    );
+  }
+
+  const initial = name.trim().charAt(0).toUpperCase();
+  return (
+    <span
+      data-avatar
+      aria-hidden="true"
+      className="display flex shrink-0 items-center justify-center rounded-full border border-[var(--el-line-soft)] bg-[var(--el-ink-hi)] text-[1.25rem] text-[var(--el-sun)]"
+      style={{ height: "3.25rem", width: "3.25rem" }}
+    >
+      {initial}
+    </span>
+  );
+}
+
 export function ReviewsSection() {
   if (!REVIEWS.length) return null;
+
+  // ⚠️ A NOTA É DERIVADA DA LISTA, NUNCA DIGITADA. Um "5,0" escrito à mão vira
+  // mentira em silêncio no dia em que chegar a primeira avaliação de quatro
+  // estrelas — e ninguém vai lembrar de voltar aqui para corrigir. Derivada,
+  // ela acompanha sozinha.
+  //
+  // ⚠️ O RÓTULO "N avaliações no Google" SÓ É VERDADE ENQUANTO A LISTA FOR O
+  // PERFIL INTEIRO, que é o caso hoje (são duas lá e duas aqui). No dia em que
+  // esta lista virar um RECORTE — as melhores, as mais recentes —, ele passa a
+  // afirmar um total que não é o do Google e precisa mudar junto.
+  const average = REVIEWS.reduce((sum, r) => sum + r.stars, 0) / REVIEWS.length;
+  const averageLabel = average.toFixed(1).replace(".", ",");
+  const countLabel = `${REVIEWS.length} ${REVIEWS.length === 1 ? "avaliação" : "avaliações"} no Google`;
 
   return (
     <Section id="avaliacoes">
@@ -419,6 +502,19 @@ export function ReviewsSection() {
         title="Quem já escolheu a EcoLuz, recomenda."
         lead="As avaliações abaixo foram publicadas por clientes no perfil da empresa no Google. Estão aqui como foram escritas."
       />
+
+      {/* ── O SELO DA NOTA ───────────────────────────────────────────────
+          O pedido foi "dar ênfase nas estrelas, deixar as estrelas
+          chamativas". A ênfase que funciona não é só aumentar o ícone dentro
+          do card: é tirar a nota de dentro dele e transformá-la na PRIMEIRA
+          coisa que a seção diz. */}
+      <div className="mt-12 flex flex-wrap items-center gap-x-7 gap-y-4" data-reveal="up">
+        <span className="numeral el-rating text-[3.5rem] text-[var(--el-sun)]">{averageLabel}</span>
+        <div>
+          <Stars n={average} size="lg" />
+          <p className="mt-2.5 text-[0.9375rem] text-[var(--el-cream-faint)]">{countLabel}</p>
+        </div>
+      </div>
 
       {/* ⚠️ A TERCEIRA COLUNA SÓ EXISTE COM TRÊS AVALIAÇÕES. O fundo deste
           bloco é a linha divisória e cada card a cobre — então célula VAZIA
@@ -437,11 +533,26 @@ export function ReviewsSection() {
             data-reveal="up"
             data-reveal-delay={i * 60}
           >
-            <Stars n={r.stars} />
-            <p className="mt-5 flex-1 text-[0.9375rem] leading-relaxed text-[var(--el-cream-dim)]">
+            {/* ⚠️ O NOME SUBIU PARA O TOPO, junto do retrato. Ele era um
+                rodapé porque o card não tinha rosto; com o retrato ali, nome
+                embaixo separaria a pessoa da própria cara. */}
+            <header className="flex items-center gap-4">
+              <ReviewAvatar name={r.name} photo={r.photo} />
+              <div className="min-w-0">
+                <p className="display text-[1.0625rem] leading-tight text-[var(--el-cream)]">
+                  {r.name}
+                </p>
+                <p className="eyebrow mt-1.5 text-[var(--el-cream-faint)]">Avaliação no Google</p>
+              </div>
+            </header>
+
+            <Stars n={r.stars} size="lg" className="mt-6" />
+
+            {/* O texto cresceu junto: card com estrela grande e citação miúda
+                fica com a decoração maior que o conteúdo. */}
+            <p className="mt-4 flex-1 text-[1.0625rem] leading-relaxed text-[var(--el-cream-dim)]">
               {r.text}
             </p>
-            <footer className="display mt-6 text-[1rem] text-[var(--el-cream)]">{r.name}</footer>
           </blockquote>
         ))}
       </div>

@@ -444,6 +444,33 @@
   );
 }
 
+/* ── AS ESTRELAS DA AVALIAÇÃO ───────────────────────────────────────────────
+   Pedido do cliente: "dar ênfase nas estrelas, deixar as estrelas chamativas".
+   O TAMANHO é decisão do componente (`size="lg"`); aqui mora só a LUZ, que é
+   a tese do tema aplicada ao único lugar da página onde outra pessoa está
+   falando bem da empresa.
+
+   ⚠️ `drop-shadow` E NÃO `box-shadow`: o alvo é o desenho do SVG. Uma sombra
+   de caixa acenderia o retângulo em volta das cinco estrelas — um halo
+   quadrado atrás de um ícone de estrela, que é o efeito que ninguém quer.
+
+   ⚠️ CUSTO ANOTADO: `filter` promove o elemento a camada de composição. São
+   duas linhas de cinco ícones numa seção, não uma camada do tamanho da
+   janela — a regra do tema (nada de filtro ou animação numa camada de tela
+   cheia, a conta paga em 2026-09-09) continua inteira. */
+.tpl-ecoluz .el-stars {
+  filter: drop-shadow(0 0 0.5rem rgb(255 196 0 / 0.4));
+}
+
+/* A nota grande do selo. Mesmo gesto dos numerais da simulação: a voltagem
+   vem do `text-shadow`, nunca de `scale` — escalar texto borra o desenho da
+   letra, e a Archivo tem a largura como eixo, não a espessura. */
+.tpl-ecoluz .el-rating {
+  text-shadow:
+    0 0 1.6rem rgb(255 196 0 / 0.3),
+    0 0 0.4rem rgb(255 196 0 / 0.22);
+}
+
 .tpl-ecoluz .el-hero-glow {
   position: absolute;
   left: 6%;
