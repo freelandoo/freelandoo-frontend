@@ -184,7 +184,21 @@ export type Review = {
  * O caminho honesto e que funciona é o de baixo: mostrar as avaliações reais
  * na página e mandar quem quiser conferir para o perfil do Google.
  */
-export const REVIEWS: Review[] = [];
+export const REVIEWS: Review[] = [
+  {
+    name: "Fernando Santos",
+    text: "A melhor do Maranhão",
+    stars: 5,
+  },
+  {
+    // ⚠️ TRANSCRITA COMO ESTÁ PUBLICADA, sem a vírgula que faltaria depois de
+    // "Maranhão". Corrigir a pontuação de uma avaliação é reescrever a fala de
+    // outra pessoa — e quem clicar em "Ver todas no Google" vai comparar.
+    name: "Matheus Phelipe",
+    text: "Melhor empresa de energia solar do Maranhão entrega rápida e confiável",
+    stars: 5,
+  },
+];
 
 /**
  * ⚠️ O LINK DO PERFIL DO GOOGLE PRECISA VIR DO CLIENTE. É o botão "ver todas"
@@ -194,7 +208,7 @@ export const REVIEWS: Review[] = [];
  * Pegar em: Google Maps → perfil da EcoLuz → Compartilhar → Copiar link.
  * Vazio: o botão não é desenhado.
  */
-export const REVIEWS_URL = "";
+export const REVIEWS_URL = "https://share.google/jPG9ePtwpyh4h1vtp";
 
 /* ══════════════════ O TIME QUE ATENDE ═══════════════════════════════════ */
 

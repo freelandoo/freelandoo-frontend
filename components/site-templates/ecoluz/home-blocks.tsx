@@ -420,8 +420,14 @@ export function ReviewsSection() {
         lead="As avaliações abaixo foram publicadas por clientes no perfil da empresa no Google. Estão aqui como foram escritas."
       />
 
+      {/* ⚠️ A TERCEIRA COLUNA SÓ EXISTE COM TRÊS AVALIAÇÕES. O fundo deste
+          bloco é a linha divisória e cada card a cobre — então célula VAZIA
+          não fica vazia: vira um retângulo da cor da linha, que lê como
+          defeito. Hoje são duas. */}
       <div
-        className="mt-14 grid gap-px sm:grid-cols-2 lg:grid-cols-3"
+        className={`mt-14 grid gap-px sm:grid-cols-2 ${
+          REVIEWS.length >= 3 ? "lg:grid-cols-3" : ""
+        }`}
         style={{ background: "var(--el-line-soft)" }}
       >
         {REVIEWS.map((r, i) => (
