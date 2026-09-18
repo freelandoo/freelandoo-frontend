@@ -8,7 +8,21 @@
 //  - /api/*, cross-origin e métodos não-GET: passam direto (nunca cacheados).
 //
 // Bump CACHE_VERSION ao mudar a lista de precache ou a lógica abaixo.
-const CACHE_VERSION = "fl-v1"
+//
+// ⚠️ fl-v2 (2026-09-17) — O BUMP É O CONSERTO, NÃO A ARRUMAÇÃO. Até aqui
+// `isImmutableStatic` casava QUALQUER imagem da origem pela extensão, e a
+// estratégia é cache-first SEM revalidação: o arquivo entrava no cache na
+// primeira visita e ficava lá para sempre. Como o caminho de uma imagem de
+// conteúdo não muda quando o conteúdo muda, isso CONGELAVA a imagem para quem
+// já tinha visitado — e o sintoma é o pior possível, porque o servidor está
+// certo, os cabeçalhos estão certos e mesmo assim a pessoa vê o arquivo velho.
+// Mordeu de verdade: os 120 quadros da abertura do site da EcoLuz ficaram
+// presos, e quatro trocas de vídeo seguidas não apareceram para quem tinha
+// aberto a página uma vez.
+//
+// O `activate` apaga todo cache cujo nome não comece pela versão atual, então
+// trocar este número é o que limpa o que ficou preso nos navegadores.
+const CACHE_VERSION = "fl-v2"
 const STATIC_CACHE = `${CACHE_VERSION}-static`
 const PRECACHE = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png"]
 
@@ -27,12 +41,17 @@ self.addEventListener("activate", (event) => {
   )
 })
 
+// ⚠️ SÓ ENTRA AQUI O QUE É IMUTÁVEL DE VERDADE, ou seja: o que muda de ENDEREÇO
+// quando muda de conteúdo. `/_next/static/` tem o hash do conteúdo no nome e
+// `/icons/` são os ícones do PWA, que já vão no precache.
+//
+// ⚠️ NÃO VOLTAR A CASAR POR EXTENSÃO. Uma imagem de conteúdo (`/sites/...`, um
+// banner, um arquivo do `public/`) mora num caminho ESTÁVEL: cache-first ali
+// significa "a primeira versão que a pessoa viu é a única que ela verá". O
+// resto agora cai na rede e obedece ao ETag, que é exatamente o trabalho do
+// cache HTTP — e ele sabe revalidar, coisa que este SW não faz.
 function isImmutableStatic(url) {
-  return (
-    url.pathname.startsWith("/_next/static/") ||
-    url.pathname.startsWith("/icons/") ||
-    /\.(?:png|jpg|jpeg|svg|webp|ico|woff2?)$/.test(url.pathname)
-  )
+  return url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")
 }
 
 self.addEventListener("fetch", (event) => {

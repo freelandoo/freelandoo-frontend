@@ -40,6 +40,7 @@
  */
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -224,6 +225,17 @@ const FIELDS = [
     pattern: /seconds:\s*[\d.]+\s*as number,/,
     value: `seconds: ${Number(seconds.toFixed(2))} as number,`,
   },
+  // ⚠️ O TERCEIRO É O QUE FAZ O VÍDEO NOVO APARECER PARA QUEM JÁ VISITOU. Os
+  // quadros têm sempre o mesmo nome (`0001.webp`), e para todo cache do caminho
+  // dois arquivos com o mesmo endereço são o mesmo arquivo. Esta assinatura vai
+  // na querystring de cada quadro e troca o endereço inteiro quando o vídeo
+  // troca. É HASH DO ARQUIVO e não da duração, porque dois cortes podem durar o
+  // mesmo tanto — já aconteceu aqui.
+  {
+    name: "version",
+    pattern: /version:\s*"[^"]*"\s*as string,/,
+    value: `version: "${createHash("md5").update(readFileSync(video)).digest("hex").slice(0, 8)}" as string,`,
+  },
 ];
 
 let next = src;
@@ -237,7 +249,11 @@ for (const field of FIELDS) {
 }
 writeFileSync(CONTRACT, next, "utf8");
 
-console.log(`gravado em content/frames.ts → count: ${count} · seconds: ${seconds.toFixed(2)}`);
+const gravado = next.match(/version:\s*"([^"]*)"/);
+console.log(
+  `gravado em content/frames.ts → count: ${count} · seconds: ${seconds.toFixed(2)}` +
+    (gravado ? ` · version: ${gravado[1]}` : ""),
+);
 
 /* ⚠️ AS DEIXAS NÃO SÃO REESCRITAS — ELAS SÃO CONFERIDAS. Onde o texto troca é
    decisão editorial (o cliente pediu "aos 3,25s"), e um script não tem como

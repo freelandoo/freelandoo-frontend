@@ -59,6 +59,26 @@ export const OPENING = {
    */
   seconds: 22.55 as number,
 
+  /**
+   * A ASSINATURA DO VÍDEO — oito dígitos do hash do arquivo que gerou estes
+   * quadros. Ela vai na querystring de cada quadro (`?v=…`).
+   *
+   * ⚠️ ELA EXISTE PORQUE O CAMINHO DO QUADRO NÃO MUDA QUANDO O VÍDEO MUDA.
+   * `0001.webp` é `0001.webp` no primeiro corte e no quinto — e para todo cache
+   * do caminho (navegador, service worker, CDN, proxy de empresa) dois arquivos
+   * com o mesmo endereço são o mesmo arquivo. Sem isto, trocar o vídeo publica
+   * bytes novos que quem já visitou o site NUNCA vê, e o sintoma é cruel: o
+   * servidor está certo, os cabeçalhos estão certos, e a pessoa vê o antigo.
+   * Aconteceu quatro vezes seguidas com esta abertura.
+   *
+   * ⚠️ É HASH DO ARQUIVO, NÃO A DURAÇÃO. Dois cortes diferentes podem ter a
+   * mesma duração — aconteceu aqui, num arquivo que foi só renomeado — e aí a
+   * duração como versão não trocaria endereço nenhum.
+   *
+   * String vazia = sem versão; o endereço sai limpo, como antes.
+   */
+  version: "fdcfa4b8" as string,
+
   /** A pasta dentro de `public/`, sem barra no fim. */
   dir: "/sites/ecoluz/abertura",
 
@@ -84,7 +104,13 @@ export const NARROW_MAX_PX = 820;
 /** O caminho de um quadro. `i` é base zero; o arquivo é base um. */
 export function frameSrc(i: number, set: FrameSet): string {
   const n = String(i + 1).padStart(OPENING.pad, "0");
-  return `${OPENING.dir}/${set === "narrow" ? "w900" : "w1600"}/${n}.${OPENING.ext}`;
+  const dir = set === "narrow" ? "w900" : "w1600";
+  // ⚠️ A VERSÃO VAI NA QUERYSTRING, E ELA FAZ PARTE DA CHAVE DE CACHE em todos
+  // os caches que importam — o do navegador, o do service worker e o da borda.
+  // É isso que torna o quadro do vídeo novo um ENDEREÇO NOVO, sem renomear cento
+  // e vinte arquivos nem inventar pasta por versão.
+  const v = OPENING.version ? `?v=${OPENING.version}` : "";
+  return `${OPENING.dir}/${dir}/${n}.${OPENING.ext}${v}`;
 }
 
 /** Existe vídeo para arrastar? */
