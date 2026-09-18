@@ -933,11 +933,9 @@
   position: relative;
 }
 
-/* Sem vídeo, nem canvas nem véu existem: `display: none` em vez de
-   transparente, para não deixar duas camadas de tela cheia em composição sem
-   nada para mostrar. */
-.tpl-ecoluz .el-open__canvas,
-.tpl-ecoluz .el-open__veil {
+/* Sem vídeo o canvas não existe: `display: none` em vez de transparente, para
+   não deixar uma camada de tela cheia em composição sem nada para mostrar. */
+.tpl-ecoluz .el-open__canvas {
   display: none;
 }
 
@@ -1020,30 +1018,67 @@
   height: 100%;
 }
 
-/* ⚠️ O VÉU É O QUE TORNA O TEXTO LEGÍVEL SOBRE QUALQUER QUADRO. A sequência é
-   de uma obra real — céu claro, telhado ao sol, parede branca —, e creme sobre
-   céu é ilegível. Ele é mais dado à esquerda, que é onde o texto vive, e
-   escurece topo e base: o topo paga a barra fixa, a base costura a passagem
-   para a seção seguinte. */
-.tpl-ecoluz .el-open[data-frames="on"] .el-open__veil {
-  display: block;
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(
-      to right,
-      rgb(7 6 3 / 0.93) 0%,
-      rgb(7 6 3 / 0.82) 34%,
-      rgb(7 6 3 / 0.42) 72%,
-      rgb(7 6 3 / 0.24) 100%
-    ),
-    linear-gradient(
-      to bottom,
-      rgb(7 6 3 / 0.7) 0%,
-      rgb(7 6 3 / 0.1) 26%,
-      rgb(7 6 3 / 0.12) 60%,
-      rgb(7 6 3 / 0.82) 100%
-    );
+/* ══ A LEGIBILIDADE SEM VÉU ════════════════════════════════════════════════
+   Havia aqui um véu — uma camada escura de tela cheia por cima do vídeo — e
+   ele SAIU por decisão do Alex (2026-09-17): "deixe sem véu, coloque só drop
+   shadow nas fontes". Quem sustenta o texto agora é a sombra dele próprio.
+
+   ⚠️ O QUE O VÉU FAZIA NÃO ERA ENFEITE, E O NÚMERO ESTÁ MEDIDO. O canto onde o
+   texto vive (metade esquerda, faixa central) foi medido nos 120 quadros:
+   luma MÉDIA 133 de 255, 89 quadros acima de 120, PICO 172 — o mergulho na
+   atmosfera, por volta de 7,1s, que é dourado e quase branco. Creme
+   (`--el-cream`, #f7f2e6) sobre 172 dá ~2:1 de contraste. A manchete sobrevive
+   porque é gigante e a sombra lhe dá borda; o PARÁGRAFO de 17px fica abaixo da
+   régua da WCAG e é o primeiro a sofrer. Está escrito aqui para que a volta
+   atrás seja UMA regra, e não uma redescoberta.
+
+   ⚠️ A SOMBRA É `text-shadow` HERDADA PELO ATO INTEIRO, e isso é de propósito:
+   ela é uma propriedade herdável, então uma declaração alcança sobretítulo,
+   manchete, parágrafo, marcas, rótulos de botão e a dica de rolagem. Escrita
+   seletor a seletor, o elemento novo nasceria sem sombra — invisível sobre o
+   céu, sem erro nenhum aparecer.
+
+   ⚠️ SÃO QUATRO CAMADAS, E AS DUAS PRIMEIRAS SÃO O QUE REALMENTE FUNCIONA. O
+   borrão largo sozinho só suja o fundo; quem devolve a leitura é o halo curto
+   e quase opaco colado no glifo, que age como contorno. As duas largas fazem o
+   bloco descolar da imagem.
+
+   ⚠️ E ELA SÓ EXISTE COM VÍDEO (`[data-frames="on"]`). Sobre o fundo escuro do
+   tema — que é o que aparece sem JavaScript, com economia de dados ligada ou
+   se os quadros sumirem do `public/` — ela não teria nada a combater e só
+   engrossaria o tipo. */
+.tpl-ecoluz .el-open[data-frames="on"] .el-open__act {
+  text-shadow:
+    0 0 1px rgb(7 6 3 / 0.95),
+    0 0 3px rgb(7 6 3 / 0.8),
+    0 1px 3px rgb(7 6 3 / 0.86),
+    0 3px 12px rgb(7 6 3 / 0.66),
+    0 10px 38px rgb(7 6 3 / 0.5);
+}
+
+/* ⚠️ O BOTÃO CHEIO É A EXCEÇÃO: ele é âmbar com tinta ESCURA por cima, e uma
+   sombra escura sob tinta escura não separa nada — só borra o rótulo dentro do
+   próprio botão. Ele já tem fundo opaco, então não precisa de sombra nenhuma. */
+.tpl-ecoluz .el-open[data-frames="on"] .el-open__act .btn-solid {
+  text-shadow: none;
+}
+
+/* ⚠️ O MONOGRAMA É SVG, E `text-shadow` NÃO O ALCANÇA. Ele é a assinatura do
+   ato 3 e sumiria sobre o telhado ao sol. `drop-shadow` segue o desenho do
+   traço, diferente de `box-shadow`, que sombrearia a caixa quadrada em volta. */
+.tpl-ecoluz .el-open[data-frames="on"] .el-open__act svg {
+  filter:
+    drop-shadow(0 1px 2px rgb(7 6 3 / 0.85))
+    drop-shadow(0 6px 22px rgb(7 6 3 / 0.5));
+}
+
+/* ⚠️ E A DICA DE ROLAGEM TEM UM FIO, QUE NÃO É TEXTO. O traço de 1px e o ponto
+   que corre dentro dele são fundo, não glifo — sem esta sombra eles somem
+   sobre o céu claro justamente no primeiro ato, que é onde a dica existe para
+   dizer que a página continua. */
+.tpl-ecoluz .el-open[data-frames="on"] .el-open__hint-rail,
+.tpl-ecoluz .el-open[data-frames="on"] .el-open__hint-rail::after {
+  box-shadow: 0 1px 3px rgb(7 6 3 / 0.7);
 }
 
 /* ── A TIPOGRAFIA DOS ATOS ─────────────────────────────────────────────── */

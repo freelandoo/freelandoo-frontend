@@ -59,10 +59,18 @@ export default function Opening({ links }: { links: TemplateLinks }) {
             pessoas. */}
         <canvas className="el-open__canvas" data-open-canvas aria-hidden="true" />
 
-        {/* O véu só existe quando há vídeo: sobre o fundo escuro do tema ele
-            seria uma camada a mais sem nada para escurecer. É ele que garante
-            o contraste do texto contra um quadro claro (céu, telhado ao sol). */}
-        <div className="el-open__veil" aria-hidden="true" />
+        {/* ⚠️ NÃO EXISTE MAIS VÉU AQUI, E FOI DECISÃO DO ALEX (2026-09-17):
+            "deixe sem véu, coloque só drop shadow nas fontes". A camada que
+            escurecia o quadro saiu e quem sustenta a legibilidade agora é a
+            SOMBRA DO PRÓPRIO TEXTO, no `theme.css`.
+
+            ⚠️ E ISSO TEM UM NÚMERO ATRÁS. O canto onde o texto vive foi medido
+            nos 120 quadros: luma média 133 de 255, com 89 quadros acima de 120
+            e pico de 172. Creme (#f7f2e6) sobre 172 dá ~2:1 de contraste — a
+            sombra resgata a manchete, que é enorme, e NÃO resgata o parágrafo
+            de 17px pela régua da WCAG. Se um dia a legibilidade voltar a ser
+            problema, o conserto é o véu de volta (uma regra no `theme.css`),
+            não uma segunda camada nova aqui. */}
 
         <div className="el-open__acts">
           {/* ── ATO 1 — A CONTA ─────────────────────────────────────────── */}

@@ -57,7 +57,7 @@ export const OPENING = {
    * parado desloca TODAS as deixas de uma vez — o texto passa a trocar no
    * lugar errado da imagem, sem erro nenhum aparecer.
    */
-  seconds: 9.15 as number,
+  seconds: 17.25 as number,
 
   /** A pasta dentro de `public/`, sem barra no fim. */
   dir: "/sites/ecoluz/abertura",
@@ -110,9 +110,11 @@ export function hasFrames(): boolean {
 /**
  * EM QUE SEGUNDO DO VÍDEO CADA ATO ASSUME O PALCO.
  *
- * Hoje: o ato 1 vive no espaço (sol e Terra), o ato 2 atravessa a atmosfera e
- * chega ao bairro, e o ato 3 nasce quando os painéis aparecem no telhado — que
- * é exatamente do que ele fala.
+ * Hoje: o ato 1 vive no espaço (sol e Terra) e entrega AOS 7,07s, no quadro em
+ * que a Terra começa a se desmanchar no mergulho — foi o Alex quem escolheu
+ * este segundo. O ato 2 atravessa a atmosfera, as nuvens e o litoral e chega ao
+ * bairro. O ato 3 nasce aos 12,4s, quando o técnico entra em quadro no telhado
+ * — que é exatamente do que ele fala.
  *
  * ⚠️ A LISTA PRECISA TER UM NÚMERO POR ATO do `opening.tsx`, começar em 0,
  * subir sempre e caber dentro de `OPENING.seconds`. Fora disso o motor
@@ -120,7 +122,7 @@ export function hasFrames(): boolean {
  * comportamento antigo, e por isso a falha é feia mas nunca quebra a home.
  * Ato novo lá em cima = deixa nova aqui.
  */
-export const ACT_CUES: number[] = [0, 3.25, 6.1];
+export const ACT_CUES: number[] = [0, 7.07, 12.4];
 
 /**
  * Quanto tempo de VÍDEO dura a travessia de um ato para o outro.
