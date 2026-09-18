@@ -2,7 +2,13 @@
 
 import { useEffect } from "react";
 
-import { NARROW_MAX_PX, OPENING, frameSrc, type FrameSet } from "./content/frames";
+import {
+  NARROW_MAX_PX,
+  OPENING,
+  actWindows,
+  frameSrc,
+  type FrameSet,
+} from "./content/frames";
 
 /**
  * O MOTOR DA ABERTURA — um laço de `requestAnimationFrame`, e mais nada.
@@ -193,10 +199,18 @@ export default function OpeningMotion() {
     /* ── O LAÇO ───────────────────────────────────────────────────────────
        Uma leitura de posição, três atos e (se houver) um quadro. */
 
+    // ⚠️ AS JANELAS SAEM DO VÍDEO, NÃO DE UMA DIVISÃO IGUAL. Cada ato tem um
+    // pedaço do plano contínuo que lhe pertence (`ACT_CUES`, em segundos, no
+    // contrato dos quadros): o texto troca quando a IMAGEM troca. São
+    // calculadas UMA vez — elas não mudam com a rolagem, e recalculá-las a
+    // cada quadro seria a conta mais cara deste laço sem trocar um pixel.
+    //
+    // ⚠️ E ELAS PODEM TER LARGURAS DIFERENTES — foi por isso que `FADE_IN` e
+    // `FADE_OUT` saíram daqui. Como constantes, eram fração da janela: a mesma
+    // travessia durava mais no ato longo e menos no curto. Agora cada janela
+    // traz a própria `fade`, derivada de um tempo de VÍDEO fixo.
     const total = acts.length;
-    const span = 1 / total;
-    const FADE_IN = 0.22;
-    const FADE_OUT = 0.78;
+    const windows = actWindows(total);
     const lastOpacity = new Array<number>(total).fill(-1);
 
     function tick() {
@@ -208,7 +222,9 @@ export default function OpeningMotion() {
       const progress = travel > 0 ? Math.min(1, Math.max(0, -rect.top / travel)) : 0;
 
       for (let i = 0; i < total; i += 1) {
-        const local = (progress - i * span) / span;
+        const win = windows[i];
+        const width = win.end - win.start;
+        const local = width > 0 ? (progress - win.start) / width : 0;
         let opacity: number;
 
         if (local < 0) {
@@ -219,10 +235,10 @@ export default function OpeningMotion() {
           // Depois da vez. O último não apaga — se apagasse, a passagem para a
           // seção seguinte seria uma tela vazia.
           opacity = i === total - 1 ? 1 : 0;
-        } else if (i > 0 && local < FADE_IN) {
-          opacity = local / FADE_IN;
-        } else if (i < total - 1 && local > FADE_OUT) {
-          opacity = (1 - local) / (1 - FADE_OUT);
+        } else if (i > 0 && win.fade > 0 && local < win.fade) {
+          opacity = local / win.fade;
+        } else if (i < total - 1 && win.fade > 0 && local > 1 - win.fade) {
+          opacity = (1 - local) / win.fade;
         } else {
           opacity = 1;
         }

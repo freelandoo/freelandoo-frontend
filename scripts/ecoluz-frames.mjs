@@ -8,8 +8,12 @@
  *
  * Ele corta o vídeo em N quadros igualmente espaçados, grava DOIS conjuntos
  * (um largo e um estreito) em `public/sites/ecoluz/abertura/` e ajusta o
- * `count` de `components/site-templates/ecoluz/content/frames.ts`. Depois
- * disso a abertura passa a mostrar o vídeo sozinha — não há mais nada a fazer.
+ * `count` e o `seconds` de `components/site-templates/ecoluz/content/frames.ts`.
+ * Depois disso a abertura passa a mostrar o vídeo sozinha.
+ *
+ * ⚠️ O QUE ELE NÃO MEXE É NAS DEIXAS (`ACT_CUES`), e é de propósito: em que
+ * segundo o texto troca é decisão editorial, não medição. Ele só CONFERE se as
+ * deixas antigas ainda cabem no vídeo novo e avisa quando não cabem.
  *
  * ═══ AS DECISÕES QUE ESTÃO AQUI DENTRO ═════════════════════════════════════
  *
@@ -207,14 +211,53 @@ if (!write) {
 }
 
 const src = readFileSync(CONTRACT, "utf8");
-const pattern = /count:\s*\d+\s*as number,/;
-if (!pattern.test(src)) {
-  console.error(`\nERRO: não achei o campo \`count\` em ${CONTRACT}.`);
-  console.error(`Ajuste à mão: count: ${count} as number,`);
-  process.exit(1);
-}
-writeFileSync(CONTRACT, src.replace(pattern, `count: ${count} as number,`), "utf8");
 
-console.log(`gravado em content/frames.ts → count: ${count}`);
+// ⚠️ SÃO DOIS NÚMEROS, E O SEGUNDO É O QUE NINGUÉM LEMBRA DE ATUALIZAR.
+// `count` só decide a fluidez; `seconds` é a RÉGUA DAS DEIXAS — é por ele que
+// "o texto troca aos 3,25s" vira posição de rolagem. Gravado um e esquecido o
+// outro, a abertura fica bonita e o texto troca no lugar errado da imagem, sem
+// erro nenhum aparecer.
+const FIELDS = [
+  { name: "count", pattern: /count:\s*\d+\s*as number,/, value: `count: ${count} as number,` },
+  {
+    name: "seconds",
+    pattern: /seconds:\s*[\d.]+\s*as number,/,
+    value: `seconds: ${Number(seconds.toFixed(2))} as number,`,
+  },
+];
+
+let next = src;
+for (const field of FIELDS) {
+  if (!field.pattern.test(next)) {
+    console.error(`\nERRO: não achei o campo \`${field.name}\` em ${CONTRACT}.`);
+    console.error(`Ajuste à mão: ${field.value}`);
+    process.exit(1);
+  }
+  next = next.replace(field.pattern, field.value);
+}
+writeFileSync(CONTRACT, next, "utf8");
+
+console.log(`gravado em content/frames.ts → count: ${count} · seconds: ${seconds.toFixed(2)}`);
+
+/* ⚠️ AS DEIXAS NÃO SÃO REESCRITAS — ELAS SÃO CONFERIDAS. Onde o texto troca é
+   decisão editorial (o cliente pediu "aos 3,25s"), e um script não tem como
+   adivinhá-la para um vídeo novo. O que ele PODE fazer é gritar quando a
+   decisão antiga deixou de caber na duração nova — que é o único jeito de isso
+   aparecer antes de alguém abrir a home. */
+const cuesSrc = (src.match(/export const ACT_CUES: number\[\] = \[([^\]]*)\]/) || [])[1];
+if (cuesSrc) {
+  const cues = cuesSrc.split(",").map((s) => Number(s.trim())).filter((n) => Number.isFinite(n));
+  const fora = cues.filter((t) => t >= seconds);
+  if (fora.length) {
+    console.warn(
+      `\n⚠️  ATENÇÃO: ${fora.length} deixa(s) de ACT_CUES caem fora do vídeo novo ` +
+        `(${fora.join("s, ")}s ≥ ${seconds.toFixed(2)}s).`,
+    );
+    console.warn("   O motor vai DESCARTAR as deixas e repartir a rolagem em partes iguais.");
+    console.warn("   Reveja ACT_CUES em content/frames.ts antes de publicar.");
+  } else {
+    console.log(`deixas conferidas: ${cues.join("s, ")}s — todas dentro do vídeo.`);
+  }
+}
 console.log("\nA abertura já mostra o vídeo. Falta commitar os quadros:");
 console.log("  git add public/sites/ecoluz/abertura components/site-templates/ecoluz/content/frames.ts");
