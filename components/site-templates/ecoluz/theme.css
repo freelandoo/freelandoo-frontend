@@ -933,9 +933,11 @@
   position: relative;
 }
 
-/* Sem vídeo o canvas não existe: `display: none` em vez de transparente, para
-   não deixar uma camada de tela cheia em composição sem nada para mostrar. */
-.tpl-ecoluz .el-open__canvas {
+/* Sem vídeo, nem canvas nem véu existem: `display: none` em vez de
+   transparente, para não deixar duas camadas de tela cheia em composição sem
+   nada para mostrar. */
+.tpl-ecoluz .el-open__canvas,
+.tpl-ecoluz .el-open__veil {
   display: none;
 }
 
@@ -1018,19 +1020,33 @@
   height: 100%;
 }
 
-/* ══ A LEGIBILIDADE SEM VÉU ════════════════════════════════════════════════
-   Havia aqui um véu — uma camada escura de tela cheia por cima do vídeo — e
-   ele SAIU por decisão do Alex (2026-09-17): "deixe sem véu, coloque só drop
-   shadow nas fontes". Quem sustenta o texto agora é a sombra dele próprio.
+/* ══ O VÉU DE CANTO E A SOMBRA DO TEXTO ════════════════════════════════════
+   Duas camadas, e cada uma cobre o que a outra não alcança.
 
-   ⚠️ O QUE O VÉU FAZIA NÃO ERA ENFEITE, E O NÚMERO ESTÁ MEDIDO. O canto onde o
-   texto vive (metade esquerda, faixa central) foi medido nos 120 quadros:
-   luma MÉDIA 133 de 255, 89 quadros acima de 120, PICO 172 — o mergulho na
-   atmosfera, por volta de 7,1s, que é dourado e quase branco. Creme
-   (`--el-cream`, #f7f2e6) sobre 172 dá ~2:1 de contraste. A manchete sobrevive
-   porque é gigante e a sombra lhe dá borda; o PARÁGRAFO de 17px fica abaixo da
-   régua da WCAG e é o primeiro a sofrer. Está escrito aqui para que a volta
-   atrás seja UMA regra, e não uma redescoberta.
+   ⚠️ O VÉU É UM CANTO, E ESSA É A DIFERENÇA PARA O QUE HAVIA ANTES. A versão
+   original escurecia a tela inteira de forma homogênea e apagava a fotografia
+   junto com o problema. Esta é uma elipse preta ancorada FORA da tela, à
+   esquerda — ela cobre a coluna de texto e solta a metade direita, que é onde
+   o telhado, o sol e o técnico aparecem. É o molde do anexo que o Alex mandou.
+
+   ⚠️ O NÚMERO QUE OBRIGA O VÉU A EXISTIR. O canto onde o texto vive foi medido
+   nos 120 quadros: luma MÉDIA 133 de 255, 89 quadros acima de 120, PICO 172 —
+   o mergulho na atmosfera, dourado e quase branco. Creme (`--el-cream`,
+   #f7f2e6) sobre 172 dá ~2:1 de contraste, e nem a sombra mais pesada leva um
+   parágrafo de 17px até a régua da WCAG sobre isso. Quem resolve é escurecer o
+   fundo; a sombra sozinha só resgata a manchete, que é gigante.
+
+   ⚠️ A GEOMETRIA ESTÁ EM VARIÁVEIS PORQUE ELA MUDA NO CELULAR. Lá o texto
+   ocupa a largura inteira, então uma elipse estreita à esquerda deixaria a
+   ponta direita de cada linha sobre o céu claro. Em variáveis, o celular
+   redeclara DOIS valores; escrito por extenso duas vezes, o ajuste de um lado
+   não chegaria ao outro e o defeito apareceria só no aparelho de quem visita.
+
+   ⚠️ E A SOMBRA DO TEXTO FICOU, mesmo com o véu de volta. Sobre o preto do
+   canto uma sombra preta é INVISÍVEL e não custa nada; ela trabalha
+   exatamente onde o véu se desfaz — a ponta das linhas longas no monitor
+   largo e a metade direita do parágrafo no celular. As duas juntas são cinto e
+   suspensório de propósito: tirar uma reabre um buraco que a outra não cobre.
 
    ⚠️ A SOMBRA É `text-shadow` HERDADA PELO ATO INTEIRO, e isso é de propósito:
    ela é uma propriedade herdável, então uma declaração alcança sobretítulo,
@@ -1043,10 +1059,50 @@
    e quase opaco colado no glifo, que age como contorno. As duas largas fazem o
    bloco descolar da imagem.
 
-   ⚠️ E ELA SÓ EXISTE COM VÍDEO (`[data-frames="on"]`). Sobre o fundo escuro do
-   tema — que é o que aparece sem JavaScript, com economia de dados ligada ou
-   se os quadros sumirem do `public/` — ela não teria nada a combater e só
-   engrossaria o tipo. */
+   ⚠️ E AS DUAS SÓ EXISTEM COM VÍDEO (`[data-frames="on"]`). Sobre o fundo
+   escuro do tema — que é o que aparece sem JavaScript, com economia de dados
+   ligada ou se os quadros sumirem do `public/` — o véu seria uma camada de
+   tela cheia sem nada para escurecer e a sombra só engrossaria o tipo. */
+.tpl-ecoluz .el-open[data-frames="on"] .el-open__veil {
+  /* O canto: tamanho e ancoragem da elipse. Redeclarados no celular. */
+  --el-veil-size: 116% 120%;
+  --el-veil-at: -8% 60%;
+
+  display: block;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      var(--el-veil-size) at var(--el-veil-at),
+      rgb(7 6 3 / 0.96) 0%,
+      rgb(7 6 3 / 0.93) 20%,
+      rgb(7 6 3 / 0.76) 40%,
+      rgb(7 6 3 / 0.4) 60%,
+      rgb(7 6 3 / 0.12) 78%,
+      rgb(7 6 3 / 0) 92%
+    ),
+    /* A faixa de cima paga a barra fixa, que é transparente no topo da página e
+       passaria por cima do sobretítulo do primeiro ato. */
+    linear-gradient(
+      to bottom,
+      rgb(7 6 3 / 0.72) 0%,
+      rgb(7 6 3 / 0.14) 20%,
+      rgb(7 6 3 / 0) 36%
+    ),
+    /* A de baixo costura a passagem para a seção seguinte, que é escura. */
+    linear-gradient(to top, rgb(7 6 3 / 0.74) 0%, rgb(7 6 3 / 0.1) 26%, rgb(7 6 3 / 0) 42%);
+}
+
+/* ⚠️ NO CELULAR O CANTO VIRA QUASE UMA MARÉ. O texto ali ocupa a tela inteira,
+   então a elipse precisa ser larga o bastante para alcançar a borda direita —
+   senão o fim de cada linha cai no céu claro e só a sombra a segura. */
+@media (max-width: 767px) {
+  .tpl-ecoluz .el-open[data-frames="on"] .el-open__veil {
+    --el-veil-size: 170% 108%;
+    --el-veil-at: 0% 56%;
+  }
+}
+
 .tpl-ecoluz .el-open[data-frames="on"] .el-open__act {
   text-shadow:
     0 0 1px rgb(7 6 3 / 0.95),

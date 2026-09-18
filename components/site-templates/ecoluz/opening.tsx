@@ -59,18 +59,20 @@ export default function Opening({ links }: { links: TemplateLinks }) {
             pessoas. */}
         <canvas className="el-open__canvas" data-open-canvas aria-hidden="true" />
 
-        {/* ⚠️ NÃO EXISTE MAIS VÉU AQUI, E FOI DECISÃO DO ALEX (2026-09-17):
-            "deixe sem véu, coloque só drop shadow nas fontes". A camada que
-            escurecia o quadro saiu e quem sustenta a legibilidade agora é a
-            SOMBRA DO PRÓPRIO TEXTO, no `theme.css`.
+        {/* ⚠️ O VÉU É UM CANTO, NÃO UMA CAMADA SOBRE A IMAGEM INTEIRA. Ele
+            saiu por decisão do Alex ("deixe sem véu, coloque só drop shadow") e
+            voltou no pedido seguinte, no molde do anexo que ele mandou: preto
+            ancorado à ESQUERDA, onde o texto vive, soltando a metade direita
+            para a fotografia aparecer. É o contrário do que havia antes, que
+            escurecia a tela toda de forma homogênea.
 
-            ⚠️ E ISSO TEM UM NÚMERO ATRÁS. O canto onde o texto vive foi medido
-            nos 120 quadros: luma média 133 de 255, com 89 quadros acima de 120
-            e pico de 172. Creme (#f7f2e6) sobre 172 dá ~2:1 de contraste — a
-            sombra resgata a manchete, que é enorme, e NÃO resgata o parágrafo
-            de 17px pela régua da WCAG. Se um dia a legibilidade voltar a ser
-            problema, o conserto é o véu de volta (uma regra no `theme.css`),
-            não uma segunda camada nova aqui. */}
+            ⚠️ E A SOMBRA DO TEXTO FICOU. Ela não é redundante: sobre o preto do
+            canto uma sombra preta é INVISÍVEL e não custa nada, e é ela que
+            segura o texto justamente onde o véu se desfaz — a ponta das linhas
+            longas no monitor largo e a metade direita do parágrafo no celular,
+            onde o texto ocupa a tela inteira e o canto não alcança. Tirar uma
+            das duas reabre um buraco que a outra não cobre. */}
+        <div className="el-open__veil" aria-hidden="true" />
 
         <div className="el-open__acts">
           {/* ── ATO 1 — A CONTA ─────────────────────────────────────────── */}

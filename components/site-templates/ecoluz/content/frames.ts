@@ -57,7 +57,7 @@ export const OPENING = {
    * parado desloca TODAS as deixas de uma vez — o texto passa a trocar no
    * lugar errado da imagem, sem erro nenhum aparecer.
    */
-  seconds: 17.25 as number,
+  seconds: 19.74 as number,
 
   /** A pasta dentro de `public/`, sem barra no fim. */
   dir: "/sites/ecoluz/abertura",
@@ -110,11 +110,18 @@ export function hasFrames(): boolean {
 /**
  * EM QUE SEGUNDO DO VÍDEO CADA ATO ASSUME O PALCO.
  *
- * Hoje: o ato 1 vive no espaço (sol e Terra) e entrega AOS 7,07s, no quadro em
- * que a Terra começa a se desmanchar no mergulho — foi o Alex quem escolheu
- * este segundo. O ato 2 atravessa a atmosfera, as nuvens e o litoral e chega ao
- * bairro. O ato 3 nasce aos 12,4s, quando o técnico entra em quadro no telhado
- * — que é exatamente do que ele fala.
+ * Hoje: o ato 1 vive no espaço (sol e Terra) e entrega no quadro em que a Terra
+ * começa a se desmanchar no mergulho. O ato 2 atravessa a atmosfera, as nuvens
+ * e o litoral. O ato 3 nasce quando o bairro entra em quadro e vai até o
+ * técnico no telhado — que é exatamente do que ele fala.
+ *
+ * ⚠️ ELAS SÃO PONTOS DA IMAGEM, E POR ISSO MUDAM QUANDO O VÍDEO MUDA — NÃO SÃO
+ * proporção da rolagem e NÃO se escalonam por regra de três. O Alex escolheu
+ * "3,25s" no corte de 9,15s e "7,07s" no de 17,25s, e as duas vezes o que ele
+ * apontou foi o MESMO instante: a Terra se desmanchando. Neste corte de 19,74s
+ * aquele instante foi para 9,65s — o tempo novo entrou no meio, alongando o
+ * plano da Terra. Vídeo novo = reconferir os cortes quadro a quadro, nunca
+ * multiplicar os segundos antigos pela razão das durações.
  *
  * ⚠️ A LISTA PRECISA TER UM NÚMERO POR ATO do `opening.tsx`, começar em 0,
  * subir sempre e caber dentro de `OPENING.seconds`. Fora disso o motor
@@ -122,7 +129,7 @@ export function hasFrames(): boolean {
  * comportamento antigo, e por isso a falha é feia mas nunca quebra a home.
  * Ato novo lá em cima = deixa nova aqui.
  */
-export const ACT_CUES: number[] = [0, 7.07, 12.4];
+export const ACT_CUES: number[] = [0, 9.65, 14.3];
 
 /**
  * Quanto tempo de VÍDEO dura a travessia de um ato para o outro.
