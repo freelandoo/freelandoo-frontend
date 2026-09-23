@@ -6260,7 +6260,7 @@
     "anyCategory": "Qualquer categoria",
     "uf": "Estado",
     "city": "Cidade",
-    "cityPlaceholder": "São Bernardo do Campo",
+    "cityPlaceholder": "digite a cidade",
     "term": "Nome (opcional)",
     "termPlaceholder": "parte do nome",
     "search": "Buscar",
@@ -6399,6 +6399,10 @@
     "cat_grafica": "Gráficas e comunicação visual",
     "cat_floricultura": "Floriculturas",
     "cat_lavanderia": "Lavanderias",
-    "cat_agencia_marketing": "Agências e marketing"
+    "cat_agencia_marketing": "Agências e marketing",
+    "noResultsFiltered": "Nenhuma passa nos filtros",
+    "noResultsFilteredText": "Esta cidade já tem {n} empresas na base — os filtros marcados é que não deixaram nenhuma passar.",
+    "noResultsNeedsCnpj": "Capital social e data de abertura vêm do CNPJ: só existem depois de enriquecer a empresa.",
+    "clearFilters": "Limpar filtros"
   }
 }

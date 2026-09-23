@@ -98,6 +98,10 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
   const [minYears, setMinYears] = useState("")
   const [rows, setRows] = useState<Company[]>([])
   const [total, setTotal] = useState(0)
+  // ⚠️ QUANTAS EXISTEM NA CIDADE, ANTES DOS FILTROS. É o que separa "esta
+  // cidade nunca foi varrida" de "os filtros cortaram tudo" — duas situações
+  // que pedem ações OPOSTAS e que a tela tratava como a mesma.
+  const [baseTotal, setBaseTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [suggestDiscovery, setSuggestDiscovery] = useState(false)
   const [searching, setSearching] = useState(false)
@@ -228,6 +232,11 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
         }
         setRows(data.rows || [])
         setTotal(data.total || 0)
+        // Backend anterior a esta mudança não manda `base_total`: cair no
+        // total filtrado devolve o comportamento antigo em vez de quebrar.
+        setBaseTotal(
+          typeof data.base_total === "number" ? data.base_total : data.total || 0
+        )
         setPage(data.page || 1)
         setSuggestDiscovery(!!data.suggest_discovery)
         setSearched(true)
@@ -238,6 +247,42 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
     },
     [api, auth, category, channels, city, minCapital, minYears, t, term, uf]
   )
+
+  /**
+   * Existe algum refino ligado?
+   *
+   * ⚠️ CATEGORIA, ESTADO E CIDADE **NÃO** CONTAM AQUI. Eles são o recorte da
+   * busca (o que a descoberta varre), não refino: limpá-los deixaria a tela
+   * sem saber o que procurar.
+   */
+  const hasFilters = useMemo(
+    () =>
+      Object.values(channels).some(Boolean) ||
+      !!minCapital ||
+      !!minYears ||
+      !!term.trim(),
+    [channels, minCapital, minYears, term]
+  )
+
+  // ⚠️ LIMPAR E BUSCAR SÃO UM GESTO SÓ, e por isso passam por um ref em vez
+  // de um `runSearch()` na sequência: chamada logo após os `setState`, a busca
+  // sairia com os filtros ANTIGOS (o estado só vale no render seguinte) e a
+  // tela continuaria vazia — exatamente o que o botão existe para desfazer.
+  const refetchAfterClear = useRef(false)
+
+  const clearFilters = useCallback(() => {
+    refetchAfterClear.current = true
+    setChannels({})
+    setMinCapital("")
+    setMinYears("")
+    setTerm("")
+  }, [])
+
+  useEffect(() => {
+    if (!refetchAfterClear.current) return
+    refetchAfterClear.current = false
+    void runSearch(1)
+  }, [channels, minCapital, minYears, term, runSearch])
 
   // O poll relê a busca com os MESMOS filtros; guardá-la num ref evita que o
   // intervalo se recrie a cada tecla digitada num campo de filtro.
@@ -571,7 +616,11 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
               <input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder={t("cityPlaceholder", "São Bernardo do Campo")}
+                /* ⚠️ O PLACEHOLDER NÃO PODE SER UMA CIDADE DE VERDADE. Era
+                   "São Bernardo do Campo", e placeholder com cara de valor faz
+                   a tela parecer preenchida quando o campo está vazio — daí
+                   "Procurar mais" não fazia nada e a busca saía sem cidade. */
+                placeholder={t("cityPlaceholder", "digite a cidade")}
                 className={INPUT}
               />
             </label>
@@ -654,13 +703,17 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
               {t("search", "Buscar")}
             </button>
 
-            {/* ⚠️ "PROCURAR MAIS" SÓ APARECE COM CATEGORIA, ESTADO E CIDADE:
-                sem os três não há o que varrer, e o botão sempre voltaria
-                "payload incompleto". */}
+            {/* ⚠️ ELE NÃO SE DESABILITA POR FALTA DE CATEGORIA/ESTADO/CIDADE,
+                e isso é correção: desabilitado, o clique não produzia NADA —
+                nem varredura nem explicação. E o campo de cidade tem como
+                placeholder o nome de uma cidade de verdade, então a tela
+                parecia preenchida quando não estava. Agora o clique sempre
+                responde: `requestDiscovery` diz o que falta. Regra da casa —
+                botão que recusa em silêncio é pior que botão que explica. */}
             {discoverOn && (
               <button
                 type="button"
-                disabled={busy === "discover" || !category || !uf || !city.trim()}
+                disabled={busy === "discover"}
                 onClick={() => void requestDiscovery()}
                 className={cn(
                   "inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] disabled:opacity-40",
@@ -809,16 +862,54 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
             </div>
           )}
 
+          {/* ⚠️ DOIS VAZIOS DIFERENTES, E ELES PEDEM AÇÕES OPOSTAS. "A cidade
+              não foi varrida" se resolve com "Procurar mais"; "os filtros
+              cortaram tudo" se resolve limpando filtro — e varrer de novo ali
+              gasta uma varredura do Overpass sem mudar nada. Mostrar a
+              primeira mensagem nos dois casos era mandar a pessoa fazer a
+              única coisa que não resolve. */}
           {searched && !openList && rows.length === 0 && (
             <div className={cn("mt-2 px-6 py-12 text-center", PANEL)}>
-              <p className="fl-display text-xl text-[#F5F1E8]">
-                {t("noResults", "Nada por aqui ainda")}
-              </p>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-[#9A938A]">
-                {discoverOn
-                  ? t("noResultsDiscover", "Aperte “Procurar mais” para varrer essa cidade.")
-                  : t("noResultsOff", "A busca por empresas novas está indisponível no momento.")}
-              </p>
+              {baseTotal > 0 && hasFilters ? (
+                <>
+                  <p className="fl-display text-xl text-[#F5F1E8]">
+                    {t("noResultsFiltered", "Nenhuma passa nos filtros")}
+                  </p>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-[#9A938A]">
+                    {t(
+                      "noResultsFilteredText",
+                      "Esta cidade já tem {n} empresas na base — os filtros marcados é que não deixaram nenhuma passar."
+                    ).replace("{n}", String(baseTotal))}
+                  </p>
+                  {(minCapital || minYears) && (
+                    <p className="mx-auto mt-2 max-w-md text-xs text-[#9A938A]">
+                      {t(
+                        "noResultsNeedsCnpj",
+                        "Capital social e data de abertura vêm do CNPJ: só existem depois de enriquecer a empresa."
+                      )}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="mt-4 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]"
+                    style={{ background: accent }}
+                  >
+                    {t("clearFilters", "Limpar filtros")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="fl-display text-xl text-[#F5F1E8]">
+                    {t("noResults", "Nada por aqui ainda")}
+                  </p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm text-[#9A938A]">
+                    {discoverOn
+                      ? t("noResultsDiscover", "Aperte “Procurar mais” para varrer essa cidade.")
+                      : t("noResultsOff", "A busca por empresas novas está indisponível no momento.")}
+                  </p>
+                </>
+              )}
             </div>
           )}
 

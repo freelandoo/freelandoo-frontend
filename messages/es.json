@@ -6826,7 +6826,7 @@
     "anyCategory": "Cualquier categoría",
     "uf": "Estado",
     "city": "Ciudad",
-    "cityPlaceholder": "São Bernardo do Campo",
+    "cityPlaceholder": "escribe la ciudad",
     "term": "Nombre (opcional)",
     "termPlaceholder": "parte del nombre",
     "search": "Buscar",
@@ -6965,6 +6965,10 @@
     "cat_grafica": "Imprentas y rotulación",
     "cat_floricultura": "Floristerías",
     "cat_lavanderia": "Lavanderías",
-    "cat_agencia_marketing": "Agencias y marketing"
+    "cat_agencia_marketing": "Agencias y marketing",
+    "noResultsFiltered": "Ninguna pasa en los filtros",
+    "noResultsFilteredText": "Esta ciudad ya tiene {n} empresas en la base — son los filtros marcados los que no dejaron pasar ninguna.",
+    "noResultsNeedsCnpj": "Capital social y fecha de apertura vienen del CNPJ: solo existen después de enriquecer la empresa.",
+    "clearFilters": "Limpiar filtros"
   }
 }

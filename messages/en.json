@@ -6846,7 +6846,7 @@
     "anyCategory": "Any category",
     "uf": "State",
     "city": "City",
-    "cityPlaceholder": "São Bernardo do Campo",
+    "cityPlaceholder": "type the city",
     "term": "Name (optional)",
     "termPlaceholder": "part of the name",
     "search": "Search",
@@ -6985,6 +6985,10 @@
     "cat_grafica": "Print shops and signage",
     "cat_floricultura": "Florists",
     "cat_lavanderia": "Laundries",
-    "cat_agencia_marketing": "Agencies and marketing"
+    "cat_agencia_marketing": "Agencies and marketing",
+    "noResultsFiltered": "None match your filters",
+    "noResultsFilteredText": "This city already has {n} companies in the base — it's the filters you picked that let none through.",
+    "noResultsNeedsCnpj": "Share capital and opening date come from the CNPJ record: they only exist after enriching the company.",
+    "clearFilters": "Clear filters"
   }
 }
