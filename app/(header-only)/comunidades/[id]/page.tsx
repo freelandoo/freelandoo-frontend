@@ -29,7 +29,6 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 // A coluna retrátil dos números (membros, nível, XP, benchmark, destaque e
 // ranking). A peça é só a MECÂNICA — o que entra na coluna é desta página.
-import { RetractableColumn } from "@/components/tabloide"
 // A comunidade de NEGÓCIO troca o conteúdo do dock global. Quem sabe qual é a
 // modalidade é ESTA página (ela não está na URL), então é ela que declara.
 import { CommunityShellBeacon, onCommunityView } from "@/components/layout/community-shell"
@@ -84,7 +83,11 @@ const CondoResidence = dynamic(
  * vizinho vende e o que ele faz. Aqui viram abas de primeira classe, e o bairro
  * (que não tinha vitrine nenhuma) passa a ter as mesmas duas.
  */
-type CommunityTab = "feed" | "services" | "products" | "members"
+// ⚠️ "members" SAIU DA UNIÃO (2026-09-23). Ele virou aba DENTRO do painel do
+// pill Comunidade (`PanelTab`), e nada mais chama `setTab("members")`. Um
+// membro de união que ninguém produz é uma porta que só espera alguém religá-la
+// — e aí a página teria duas listas de membros de novo.
+type CommunityTab = "feed" | "services" | "products"
 // "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
 // `/comunidades/<id>/site`. Ele monta uma página inteira, e encaixá-la numa
 // aba embaixo do feed mostrava um site diferente do que ia ao ar. As duas
@@ -339,8 +342,21 @@ export default function CommunityDetailPage() {
   //
   // ⚠️ ERAM TRÊS: o painel `game` saiu com o frontend da plataforma de games
   // (2026-09-09), e com ele o único painel que não falava de um GRUPO.
-  type CommunityPanel = "profile" | "mural"
+  //
+  // ⚠️ ELES VIRARAM UM SÓ (pedido do Alex, 2026-09-23): *"esses 3 pills viram
+  // um pill só (...) os 3 viram um pill comunidade"*. Perfil, Mural e Ranking
+  // eram três botões respondendo à MESMA pergunta — "o que é este grupo" — e
+  // ocupavam três das quatro vagas da pilha, sem deixar espaço para o que é
+  // ferramenta de trabalho (Leads). Agora existe UM painel com abas dentro:
+  // Perfil · Mural · Membros · Números.
+  //
+  // Painel novo entra AQUI (no tipo) e na lista de pills abaixo — os dois lados
+  // são a mesma decisão, e separá-los deixaria um botão sem painel.
+  type CommunityPanel = "community"
+  /** Qual aba do painel único está aberta. */
+  type PanelTab = "profile" | "mural" | "members" | "stats"
   const [panel, setPanel] = useState<CommunityPanel | null>(null)
+  const [panelTab, setPanelTab] = useState<PanelTab>("profile")
 
   const storedUser = getStoredUser()
   const currentUserId = storedUser?.id_user ?? null
@@ -476,6 +492,9 @@ export default function CommunityDetailPage() {
   // podendo ser aceito e confirmado — desligar o interruptor não pode prender
   // dinheiro que já entrou.
   const deliveryEnabled = useFeature("delivery_vizinho")
+  // Kill-switch da prospecção (mig 254). Desligada, o pill some e as rotas
+  // fecham — as listas já salvas continuam no banco.
+  const prospectEnabled = useFeature("prospeccao")
 
   // ⚠️ E SÓ A COMUNIDADE DE NEGÓCIO TEM SITE (decisão do Alex, 2026-09-07):
   // "só meus negócios tem site, o restante não tem, nenhuma comunidade mais".
@@ -534,6 +553,17 @@ export default function CommunityDetailPage() {
   // dinheiro do dono. Segue o "ver como público" pela mesma razão do Site: ali
   // a tela simula quem chega de fora, e quem chega de fora não vê isto.
   const showIndicators = isBusinessPlatform && isLeader && edit
+  // LEADS (mig 254) — ferramenta comercial do dono do negócio.
+  //
+  // ⚠️ PREDICADO PRÓPRIO, e não reuso do `showIndicators`: aquele exige o modo
+  // de EDIÇÃO (`edit`) porque os Indicadores mostram faturamento e o "ver como
+  // público" simula quem chega de fora. A prospecção não é sobre a comunidade,
+  // é sobre o mercado — escondê-la no preview faria o líder perder a porta de
+  // trabalho ao conferir como a página aparece para os outros.
+  //
+  // ⚠️ É ESPELHO do `_assertBusiness` do backend: só `common`, só o líder, e a
+  // flag por cima. Errar aqui esconde um botão; errar lá abre a porta.
+  const showLeads = isBusinessPlatform && isLeader && prospectEnabled
   // O Plano Negócio do LÍDER (mig 234). Fora do negócio (condomínio, bairro,
   // pet, carro) não há plano nenhum a cobrar, e as portas ficam abertas.
   const planActive = !!community?.business_plan?.members_enabled
@@ -576,7 +606,9 @@ export default function CommunityDetailPage() {
               ["products", t("tabProducts", "Produtos")],
             ] as [CommunityTab, string][])
           : []),
-        ["members", t("tabMembers", "Membros")],
+        // ⚠️ "Membros" SAIU DAQUI (2026-09-23): virou aba DENTRO do painel do
+        // pill Comunidade, junto de Perfil, Mural e Números. Deixá-la nos dois
+        // lugares daria duas telas listando os mesmos membros.
       ] as [CommunityTab, string][],
     [t, isTerritorial]
   )
@@ -598,14 +630,26 @@ export default function CommunityDetailPage() {
     const sp = new URLSearchParams(window.location.search)
     const aba = sp.get("aba")
     const painel = sp.get("painel")
-    if (aba === "membros") setTab("members")
+    // ⚠️ `?aba=membros` CONTINUA VALENDO, e agora abre o PAINEL. O endereço
+    // está em links salvos e em notificações antigas; mudá-lo para um `?painel=`
+    // novo deixaria todos eles caindo numa aba que não existe mais.
+    if (aba === "membros") {
+      setPanel("community")
+      setPanelTab("members")
+    }
     // As vitrines só podem ser abertas por link onde elas existem: numa
     // comunidade comum a aba não está na fila, e abrir uma aba que a fila não
     // tem deixaria a tela mostrando algo que ninguém consegue fechar.
     if (aba === "servicos" && isTerritorial) setTab("services")
     if (aba === "produtos" && isTerritorial) setTab("products")
-    if (painel === "perfil") setPanel("profile")
-    if (painel === "mural") setPanel("mural")
+    if (painel === "perfil") {
+      setPanel("community")
+      setPanelTab("profile")
+    }
+    if (painel === "mural") {
+      setPanel("community")
+      setPanelTab("mural")
+    }
   }, [community, isTerritorial])
 
   // ─── O DOCK PEDINDO A VISTA (sem navegar) ───────────────────────────────────
@@ -622,20 +666,26 @@ export default function CommunityDetailPage() {
   // tempo.
   useEffect(() => {
     return onCommunityView((view) => {
+      // ⚠️ "Membros" VIROU ABA DO PAINEL. O item do dock continua se chamando
+      // `members` de propósito: renomeá-lo obrigaria a mexer no
+      // `community-shell` e no `ProfileSidebar` para trocar um rótulo interno
+      // que ninguém lê — e um dos dois ficaria para trás.
       if (view === "members") {
-        setPanel(null)
-        setTab("members")
+        setPanel("community")
+        setPanelTab("members")
         return
       }
       // Os dois PAINÉIS dos pills. Abrir (e não alternar): o pill alterna porque
       // o dedo está em cima dele; no dock, "Perfil" que às vezes fecha o Perfil
       // seria um botão com dois significados.
       if (view === "profile") {
-        setPanel("profile")
+        setPanel("community")
+        setPanelTab("profile")
         return
       }
       if (view === "mural") {
-        setPanel("mural")
+        setPanel("community")
+        setPanelTab("mural")
         return
       }
       // "Feed" é a volta: fecha o painel aberto E devolve a aba. Fechar só um
@@ -722,51 +772,59 @@ export default function CommunityDetailPage() {
    * requisição e acende um "indo...", e adiar aquilo esconderia o retorno do
    * clique em vez de suavizá-lo.
    */
-  const openPanel = useCallback((key: CommunityPanel) => {
-    startTransition(() => setPanel((p) => (p === key ? null : key)))
-  }, [])
+  /**
+   * Abre o painel numa aba. Apertar a MESMA aba que já está aberta fecha — é o
+   * gesto que o pill tinha quando eram três botões, e tirá-lo faria o único
+   * pill virar um botão que só abre.
+   */
+  const openPanel = useCallback((tab: PanelTab) => {
+    startTransition(() => {
+      setPanel((p) => (p === "community" && panelTab === tab ? null : "community"))
+      setPanelTab(tab)
+    })
+  }, [panelTab])
 
   const communityPills: PillSpec[] = useMemo(() => {
     return [
+      // ─── COMUNIDADE ────────────────────────────────────────────────────────
+      //
+      // ⚠️ ERAM TRÊS PILLS (Perfil azul, Mural laranja, Ranking roxo) e viraram
+      // UM (decisão do Alex, 2026-09-23). Os três respondiam à mesma pergunta —
+      // "o que é este grupo e quem está nele" — e ocupavam três das quatro vagas
+      // da pilha. A vaga que sobrou é a que o LEADS ocupa: a pilha passou a ter
+      // uma porta para o que a comunidade É e outra para o que ela FAZ.
+      //
+      // ⚠️ O RANKING VIROU ABA, MAS A PÁGINA CHEIA CONTINUA EXISTINDO. Dentro
+      // de "Números" ficam os cinco primeiros e o link para `/ranking` — o
+      // pódio com foto grande e a lista inteira nunca couberam embaixo do
+      // headcard, e foi para tirar caixa do meio da página que os painéis
+      // nasceram.
+      //
+      // ⚠️ A ABA MEMBROS VEIO DO CORPO DA PÁGINA, e com ela a fila de abas
+      // perdeu um item. Manter as duas portas (a aba lá embaixo e a aba aqui)
+      // seria duas telas listando os mesmos membros — e é assim que uma delas
+      // deixa de acompanhar a outra.
+      //
+      // ⚠️ A BOLINHA NÃO É ENFEITE. No CONDOMÍNIO este pill é a porta do
+      // PRÉDIO (portaria, planta, disputas, avisos, enquetes, moradores): quem
+      // chega e ainda não confirmou apartamento não vê NADA na página dizendo
+      // que há o que fazer — e sem confirmar ele não publica, não vota e não vê
+      // os vizinhos. O sinal sai do que a página JÁ carregou
+      // (`viewer_is_resident`): zero requisição nova por um quadrado de 8px.
       {
-        key: "profile",
-        icon: UserRound,
-        label: t("profilePill", "Perfil"),
-        ariaLabel: t("profilePillAria", "Perfil da comunidade: enxame, privacidade, temporada e sobre"),
+        key: "community",
+        icon: Users,
+        label: t("communityPill", "Comunidade"),
+        ariaLabel: isCondo
+          ? t("condoPillAria", "O prédio: portaria, planta, avisos, enquetes e moradores")
+          : t(
+              "communityPillAria",
+              "A comunidade: perfil, mural do líder, membros e números"
+            ),
         bg: "#1D4ED8",
         bgHover: "#1E3A8A",
         onOpen: () => openPanel("profile"),
-        active: panel === "profile",
-      },
-      // MURAL — e, no CONDOMÍNIO, a porta do PRÉDIO inteiro: portaria,
-      // planta, disputas, avisos, enquetes, moradores e administração moram
-      // dentro deste painel (decisão do Alex: "quero tudo isso dentro do pill
-      // mural"), e o corpo da página começa direto no feed e nas vitrines.
-      //
-      // ⚠️ A BOLINHA NÃO É ENFEITE. Com a portaria dentro do painel, quem
-      // chega ao prédio e ainda não confirmou apartamento não vê NADA na
-      // página dizendo que há o que fazer — e sem confirmar ele não publica,
-      // não vota e não vê os vizinhos. O aviso é o único sinal que sobra de
-      // que existe uma porta atrás do botão, e ele sai sozinho quando a
-      // pessoa vira moradora.
-      //
-      // ⚠️ O SINAL SAI DO QUE A PÁGINA JÁ CARREGOU (`viewer_is_resident`):
-      // zero requisição nova por causa de um quadrado de 8px. Revisão de
-      // família e disputa aberta NÃO acendem a bolinha hoje — as duas só são
-      // conhecidas pelo `/plant`, que o painel busca ao ABRIR. Cobrir esses
-      // dois casos exige o `getById` do backend devolvendo a pendência junto
-      // do resto.
-      {
-        key: "mural",
-        icon: Megaphone,
-        label: t("muralPill", "Mural"),
-        ariaLabel: isCondo
-          ? t("condoPillAria", "O prédio: portaria, planta, avisos, enquetes e moradores")
-          : t("muralPillAria", "Mural do líder: recados da comunidade"),
-        bg: "#C2410C",
-        bgHover: "#9A3412",
-        onOpen: () => openPanel("mural"),
-        active: panel === "mural",
+        active: panel === "community",
         ...(isCondo && !isResident
           ? {
               dot: true,
@@ -774,17 +832,44 @@ export default function CommunityDetailPage() {
             }
           : {}),
       },
-      // O quarto é INDICADORES, e ele também NAVEGA — leads, funil do site e
-      // faturamento são quatro blocos de números e uma série de 90 dias, que
-      // não cabem embaixo do headcard sem empurrar o feed para longe.
+      // ─── LEADS (mig 254) ───────────────────────────────────────────────────
+      //
+      // A prospecção. NAVEGA em vez de abrir painel, pela mesma régua dos
+      // Indicadores: busca, filtros, grade de resultados, listas salvas e a
+      // ficha da empresa não cabem embaixo do headcard.
+      //
+      // ⚠️ SÓ NA COMUNIDADE DE NEGÓCIO E SÓ PARA O LÍDER — é o ESPELHO do
+      // `_assertBusiness` do backend (a rota recusa o resto com 403). Errar
+      // deste lado esconde um botão; errar do outro abriria a porta. A
+      // comunidade do cachorro, a do modelo de carro, a da rua e a do prédio
+      // não vendem para ninguém: um pill "Leads" ali seria porta pintada.
+      //
+      // Verde-esmeralda porque a pilha já tem azul e teal: o accent está fora
+      // de questão (é editável pelo líder e pode cair no tom do próprio botão).
+      ...(showLeads
+        ? ([
+            {
+              key: "leads",
+              icon: Building2,
+              label: t("leadsPill", "Leads"),
+              ariaLabel: t(
+                "leadsPillAria",
+                "Encontrar clientes: empresas por categoria e cidade"
+              ),
+              bg: "#047857",
+              bgHover: "#065F46",
+              href: `/comunidades/${id}/leads`,
+            },
+          ] as PillSpec[])
+        : []),
+      // O terceiro é INDICADORES, e ele também NAVEGA — leads do WhatsApp e da
+      // O.S., funil do site e faturamento são quatro blocos de números e uma
+      // série de 90 dias.
       //
       // ⚠️ SÓ PARA O LÍDER DO NEGÓCIO, e ele some no "ver como público" (é a
       // MESMA condição do Site, `showSiteEntry`): a tela mostra quanto o
-      // negócio faturou e quantas pessoas procuraram o dono. Aparecer para
-      // quem visita seria porta pintada — a rota recusa com 403.
-      //
-      // Verde-azulado porque a pilha já tem azul, laranja e roxo; o accent está
-      // fora de questão (é editável pelo líder e pode cair no tom do botão).
+      // negócio faturou. Aparecer para quem visita seria porta pintada — a
+      // rota recusa com 403.
       ...(showIndicators
         ? ([
             {
@@ -801,24 +886,19 @@ export default function CommunityDetailPage() {
             },
           ] as PillSpec[])
         : []),
-      // DELIVERY (mig 248) — só em comunidade TERRITORIAL, e ele NAVEGA: o
-      // quadro tem a lista de chamados, o formulário, as minhas corridas nas
-      // duas pontas e a carteira de quem entrega. Nada disso cabe embaixo do
-      // headcard sem empurrar o feed para longe.
+      // DELIVERY (mig 248) — só em comunidade TERRITORIAL, e ele NAVEGA.
       //
-      // ⚠️ A CONTA DA PILHA FECHA, E É A ÚLTIMA VAGA. Os pills são `h-9` (36px)
-      // com `gap-1.5` (6px): 4 × 36 + 3 × 6 = **162px** contra uma foto de
-      // **192px** (w-32, proporção 2/3). Um QUINTO daria 198px e escaparia por
-      // cima e por baixo em vez de só pela direita. **Pill novo aqui? Refaça
-      // esta conta antes.**
+      // ⚠️ A CONTA DA PILHA CONTINUA FECHANDO, E FOI REFEITA COM O MERGE. Os
+      // pills são `h-9` (36px) com `gap-1.5` (6px), e a foto do headcard tem
+      // **192px** (w-32, proporção 2/3). Hoje o máximo que coexiste são
+      // QUATRO: no negócio, Comunidade + Leads + Indicadores = 3 × 36 + 2 × 6 =
+      // **120px**; no territorial, Comunidade + Delivery = **78px**. Um QUINTO
+      // daria 198px e escaparia por cima e por baixo em vez de só pela direita.
+      // **Pill novo aqui? Refaça esta conta antes.**
       //
-      // Não disputa espaço com "Indicadores": aquele é exclusivo da comunidade
-      // de NEGÓCIO (`common`), que nunca é territorial — as duas listas de
-      // quatro nunca coexistem.
-      //
-      // Vermelho-tijolo porque a pilha já tem azul, laranja e roxo; o accent
-      // está fora de questão (é editável pelo líder e pode cair no tom do
-      // próprio botão).
+      // Delivery não disputa espaço com Leads nem com Indicadores: aqueles dois
+      // são exclusivos da comunidade de NEGÓCIO (`common`), que nunca é
+      // territorial — as listas nunca coexistem.
       ...(isTerritorial && deliveryEnabled
         ? ([
             {
@@ -835,26 +915,8 @@ export default function CommunityDetailPage() {
             },
           ] as PillSpec[])
         : []),
-      // O terceiro é o RANKING, e ele NAVEGA em vez de abrir painel: o pódio
-      // com foto grande, a lista inteira e a temporada não cabem embaixo do
-      // headcard sem empurrar o feed para longe outra vez — foi para tirar
-      // caixa do meio da página que os painéis nasceram. A gaveta dos números
-      // continua mostrando os cinco primeiros; quem quer a tabela toda vai
-      // para a página, que é uma tela só, servida por todas as modalidades.
-      {
-        key: "ranking",
-        icon: Trophy,
-        label: t("rankingPill", "Ranking"),
-        ariaLabel: t("rankingPillAria", "Abrir o ranking completo da comunidade"),
-        // Roxo porque a pilha já tem azul e laranja: um tom dourado ficaria
-        // colado no laranja do Mural, e o accent está fora de questão (é
-        // editável pelo líder e pode cair no tom do próprio botão).
-        bg: "#7E22CE",
-        bgHover: "#6B21A8",
-        href: `/comunidades/${id}/ranking`,
-      },
     ]
-  }, [t, panel, id, openPanel, showIndicators, isTerritorial, deliveryEnabled, isCondo, isResident])
+  }, [t, panel, id, openPanel, showIndicators, showLeads, isTerritorial, deliveryEnabled, isCondo, isResident])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -1809,15 +1871,40 @@ export default function CommunityDetailPage() {
           crescer. */}
       {panel && (
         <section className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
-          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow(panel === "mural" ? "#C2410C" : "#1D4ED8", 6) }}>
-            <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
-              <span className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
-                {panel === "mural"
-                  ? isCondo
-                    ? <><Building2 className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("condoPanelTitle", "O prédio")}</>
-                    : <><Megaphone className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("muralTitle", "Mural do líder")}</>
-                  : <><UserRound className="h-4 w-4" style={{ color: "#60A5FA" }} /> {t("profilePanelTitle", "Perfil da comunidade")}</>}
-              </span>
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow("#1D4ED8", 6) }}>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
+              {/* AS QUATRO ABAS do painel único. Elas substituem os três pills
+                  que existiam antes — e por isso carregam os MESMOS ícones e as
+                  MESMAS cores que cada um deles tinha: quem já conhecia a
+                  pilha reconhece o que era o quê sem precisar reaprender.
+
+                  ⚠️ "Membros" só aparece onde ela DIZ algo: no condomínio a
+                  lista de vizinhos mora no próprio painel do prédio (com a
+                  regra de morador), e numa comunidade privada o backend recusa
+                  a lista para quem está de fora. */}
+              <div className="flex flex-wrap items-center gap-1">
+                {([
+                  ["profile", UserRound, "#60A5FA", t("profilePill", "Perfil")],
+                  ["mural", Megaphone, "#FB923C",
+                    isCondo ? t("condoPanelTitle", "O prédio") : t("muralPill", "Mural")],
+                  ...(isCondo ? [] : [["members", Users, "#F472B6", t("tabMembers", "Membros")] as const]),
+                  ["stats", BarChart3, "#A78BFA", t("panelStats", "Números")],
+                ] as [PanelTab, typeof UserRound, string, string][]).map(([key, Icon, color, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setPanelTab(key)}
+                    className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]"
+                    style={{
+                      background: panelTab === key ? "#15120E" : "transparent",
+                      color: panelTab === key ? "#F5F1E8" : "#9A938A",
+                      borderColor: panelTab === key ? color : "#0B0B0D",
+                    }}
+                  >
+                    <Icon className="h-3.5 w-3.5" style={{ color }} /> {label}
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center gap-2">
                 {/* O líder abre o painel no modo em que a página está. Se ele
                     estiver vendo como público, o atalho liga a edição aqui
@@ -1838,7 +1925,7 @@ export default function CommunityDetailPage() {
 
             {/* O PAINEL DO MURAL — e, no condomínio, o prédio inteiro. As duas
                 metades estão comentadas uma a uma lá dentro. */}
-            {panel === "mural" && (
+            {panelTab === "mural" && (
               <div className="space-y-6 p-4 md:p-5">
                 {/* O PRÉDIO (migs 205/206) — portaria, família × disputa,
                     planta e veredito (CondoResidence), mais o quadro de
@@ -1931,7 +2018,7 @@ export default function CommunityDetailPage() {
             )}
 
 
-            {panel === "profile" && (
+            {panelTab === "profile" && (
             <div className="space-y-4 p-4 md:p-5">
               {/* ENXAME (mig 219). É este campo que substitui o formulário de
                   criação: a comunidade comum nasce vazia e o assunto dela é
@@ -2120,46 +2207,53 @@ export default function CommunityDetailPage() {
               </Block>
             </div>
             )}
-          </div>
-        </section>
-      )}
 
-      {actionMsg && (
-        <div className="relative z-10 mx-auto mt-4 max-w-5xl px-0 md:px-10">
-          <p className="inline-block border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-xs font-bold text-[#F5F1E8]">{actionMsg}</p>
-        </div>
-      )}
+            {/* ─── MEMBROS ────────────────────────────────────────────────────
+                Veio da fila de abas do corpo da página. A lista de quem está
+                no grupo é uma resposta sobre O GRUPO — a mesma pergunta que
+                Perfil, Mural e Números respondem —, e por isso ela mora aqui e
+                não entre o feed e as vitrines.
 
-      {/* OS NÚMEROS DA COMUNIDADE — UMA coluna, num SIDEBAR (2026-09-06).
+                ⚠️ A ORDEM É A MESMA DA ABA ANTIGA (`ranked`, por XP): trocar a
+                ordenação junto com a mudança de lugar faria parecer que o
+                merge mexeu em quem está na frente. */}
+            {panelTab === "members" && (
+              <div className="p-4 md:p-5">
 
-          Eram dois lugares: a fita de três KPIs (membros, nível, XP) empurrando
-          o feed para baixo e a barra lateral (benchmark, destaque, ranking) que
-          no celular virava um rodapé depois do último post. Agora é uma coluna
-          só, enfileirada nesta ordem, e ela não ocupa lugar nenhum na página:
-          o que fica no ar é a PONTINHA DA SETA na borda direita, e quem aperta
-          recebe a gaveta inteira — no celular e no computador.
+                members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {ranked.map((m, i) => (
+                      <div key={m.id_user} className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E] p-3">
+                        <span className="fl-display text-xl leading-none text-[#F5F1E8]/30">{i + 1}</span>
+                        <div className="h-12 w-12 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={m.top_profile_avatar || "/placeholder-user.jpg"} alt={m.top_profile_name || m.user_name || ""} className="h-full w-full object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate fl-display text-base leading-tight text-[#F5F1E8]">{m.top_profile_name || m.user_name}</p>
+                          <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                            {m.role === "leader" ? <><Crown className="h-3 w-3" style={{ color: accent }} /> {t("roleLeader", "Líder")}</> :
+                             m.role === "vice" ? <><Shield className="h-3 w-3" style={{ color: accent }} /> {t("roleVice", "Vice-líder")}</> :
+                             t("roleMember", "Membro")} · {compact(m.top_profile_xp)} XP
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+              </div>
+            )}
 
-          Vale para TODA comunidade — comum, condomínio, bairro, pet e carro
-          usam esta mesma casca. Bloco novo de número desta página entra AQUI
-          DENTRO, nunca solto entre o headcard e o feed.
+            {/* ─── NÚMEROS ────────────────────────────────────────────────────
+                O conteúdo exato da gaveta retrátil que existia na borda
+                direita: KPIs, benchmark, destaque e os cinco primeiros do
+                ranking, com o link para o pódio inteiro.
 
-          ⚠️ ELA RESPONDE "que tamanho tem este GRUPO" — membros, nível, XP,
-          posição entre comunidades, destaque e ranking dos membros. Um espaço
-          SEM grupo não a tem, e o guard fica aqui, no envelope, e não dentro de
-          cada bloco: por dentro, o bloco novo que esquecesse da regra
-          reacenderia a alça sozinho.
-
-          A peça se desenha por PORTAL no <body>, então este lugar no JSX é só
-          onde ela mora perto dos dados que lê — não é onde ela aparece. */}
-      <RetractableColumn
-        title={t("statsTitle", "Números da comunidade")}
-        ariaLabel={t("statsAria", "Números da comunidade: membros, nível, XP, benchmark, destaque e ranking")}
-        closeLabel={t("panelClose", "Fechar")}
-        icon={<BarChart3 className="h-4 w-4" />}
-        accent={accent}
-        skinClass={isBusinessPlatform ? "fl-business" : undefined}
-        skinVars={skinVars}
-      >
+                ⚠️ O GUARD "ESTE ESPAÇO TEM GRUPO?" ERA DO ENVELOPE DA GAVETA e
+                continua sendo do envelope — agora é este `panelTab`. Por
+                dentro, o bloco novo que esquecesse da regra reacenderia a aba
+                sozinho. */}
+            {panelTab === "stats" && (
+              <div className="space-y-4 p-4 md:p-5">
         <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
         <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />
         <Kpi icon={<Sparkles className="h-4 w-4" />} label="XP" value={community.xp_total != null ? compact(community.xp_total) : "—"} accent={accent} />
@@ -2229,7 +2323,29 @@ export default function CommunityDetailPage() {
             </Link>
           </Block>
         )}
-      </RetractableColumn>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {actionMsg && (
+        <div className="relative z-10 mx-auto mt-4 max-w-5xl px-0 md:px-10">
+          <p className="inline-block border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-xs font-bold text-[#F5F1E8]">{actionMsg}</p>
+        </div>
+      )}
+
+      {/* ⚠️ A GAVETA DOS NÚMEROS SAIU DAQUI (2026-09-23).
+
+          Ela era um SIDEBAR com a pontinha da seta na borda direita, e
+          respondia exatamente o que a aba "Números" do painel responde agora:
+          membros, nível, XP, benchmark, destaque e os cinco primeiros do
+          ranking. Com o merge dos três pills num só, manter as duas seria duas
+          portas para os mesmos números — e é assim que uma delas deixa de
+          acompanhar a outra.
+
+          Bloco novo de número desta página entra na ABA `stats` do painel,
+          nunca solto entre o headcard e o feed. */}
 
       {/* CONTEÚDO — uma coluna só: o que era a barra lateral (benchmark,
           destaque, ranking) subiu para a coluna retrátil dos números, então o
@@ -2392,28 +2508,6 @@ export default function CommunityDetailPage() {
                   canBuy={sellEnabled && canPublishListing}
                 />
                 </>
-              ) : tab === "members" ? (
-                members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {ranked.map((m, i) => (
-                      <div key={m.id_user} className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E] p-3">
-                        <span className="fl-display text-xl leading-none text-[#F5F1E8]/30">{i + 1}</span>
-                        <div className="h-12 w-12 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={m.top_profile_avatar || "/placeholder-user.jpg"} alt={m.top_profile_name || m.user_name || ""} className="h-full w-full object-cover" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate fl-display text-base leading-tight text-[#F5F1E8]">{m.top_profile_name || m.user_name}</p>
-                          <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
-                            {m.role === "leader" ? <><Crown className="h-3 w-3" style={{ color: accent }} /> {t("roleLeader", "Líder")}</> :
-                             m.role === "vice" ? <><Shield className="h-3 w-3" style={{ color: accent }} /> {t("roleVice", "Vice-líder")}</> :
-                             t("roleMember", "Membro")} · {compact(m.top_profile_xp)} XP
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )
               ) : feedLocked ? (
                 <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center">
                   <Lock className="mx-auto h-10 w-10" style={{ color: accent }} />
