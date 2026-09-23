@@ -6403,6 +6403,9 @@
     "noResultsFiltered": "Nenhuma passa nos filtros",
     "noResultsFilteredText": "Esta cidade já tem {n} empresas na base — os filtros marcados é que não deixaram nenhuma passar.",
     "noResultsNeedsCnpj": "Capital social e data de abertura vêm do CNPJ: só existem depois de enriquecer a empresa.",
-    "clearFilters": "Limpar filtros"
+    "clearFilters": "Limpar filtros",
+    "cityNeedsUf": "escolha o estado primeiro",
+    "cityLoading": "carregando cidades…",
+    "cityNoMatch": "nenhuma cidade com esse nome"
   }
 }

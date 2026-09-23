@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils"
 import { CommunityShellBeacon } from "@/components/layout/community-shell"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { TechBackdrop } from "@/components/platform/tech-backdrop"
+import { CityPicker } from "@/components/forms/city-picker"
 import {
   accentHex, backdropTint, canBuildCommunitySite, platformSkinVars,
 } from "../../_components/community-ui"
@@ -601,7 +602,18 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
               <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
                 {t("uf", "Estado")}
               </span>
-              <select value={uf} onChange={(e) => setUf(e.target.value)} className={INPUT}>
+              {/* ⚠️ TROCAR O ESTADO LIMPA A CIDADE. Sem isto, escolher SP →
+                  "Campinas" → trocar para RJ deixaria o filtro pedindo uma
+                  cidade que não existe naquele estado: busca vazia, e nada na
+                  tela explicando por quê. */}
+              <select
+                value={uf}
+                onChange={(e) => {
+                  setUf(e.target.value)
+                  setCity("")
+                }}
+                className={INPUT}
+              >
                 <option value="">—</option>
                 {UFS.map((u) => (
                   <option key={u} value={u}>{u}</option>
@@ -613,15 +625,26 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
               <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
                 {t("city", "Cidade")}
               </span>
-              <input
+              {/* ⚠️ TEXTO LIVRE NÃO CASA COM TABELA, e era essa a causa de uma
+                  busca voltar vazia sem explicação: "sao bernardo" e "São
+                  Bernardo do Campo" são a mesma cidade para uma pessoa e coisas
+                  diferentes para um WHERE. O seletor só devolve município que
+                  existe, na grafia do IBGE — que é a MESMA fonte que a base
+                  fria usou para carimbar a cidade de cada empresa.
+
+                  ⚠️ O PLACEHOLDER NÃO PODE SER UMA CIDADE DE VERDADE. Era
+                  "São Bernardo do Campo", e placeholder com cara de valor faz
+                  a tela parecer preenchida quando o campo está vazio — daí
+                  "Procurar mais" não fazia nada e a busca saía sem cidade. */}
+              <CityPicker
+                uf={uf}
                 value={city}
-                onChange={(e) => setCity(e.target.value)}
-                /* ⚠️ O PLACEHOLDER NÃO PODE SER UMA CIDADE DE VERDADE. Era
-                   "São Bernardo do Campo", e placeholder com cara de valor faz
-                   a tela parecer preenchida quando o campo está vazio — daí
-                   "Procurar mais" não fazia nada e a busca saía sem cidade. */
-                placeholder={t("cityPlaceholder", "digite a cidade")}
+                onChange={setCity}
                 className={INPUT}
+                placeholder={t("cityPlaceholder", "digite a cidade")}
+                disabledHint={t("cityNeedsUf", "escolha o estado primeiro")}
+                loadingLabel={t("cityLoading", "carregando cidades…")}
+                emptyLabel={t("cityNoMatch", "nenhuma cidade com esse nome")}
               />
             </label>
 

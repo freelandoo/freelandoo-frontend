@@ -6989,6 +6989,9 @@
     "noResultsFiltered": "None match your filters",
     "noResultsFilteredText": "This city already has {n} companies in the base — it's the filters you picked that let none through.",
     "noResultsNeedsCnpj": "Share capital and opening date come from the CNPJ record: they only exist after enriching the company.",
-    "clearFilters": "Clear filters"
+    "clearFilters": "Clear filters",
+    "cityNeedsUf": "pick the state first",
+    "cityLoading": "loading cities…",
+    "cityNoMatch": "no city by that name"
   }
 }
