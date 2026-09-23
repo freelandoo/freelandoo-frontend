@@ -72,9 +72,12 @@ const CHANNEL_FILTERS = [
   { key: "has_email", labelKey: "fEmail", fallback: "Com e-mail" },
   { key: "has_website", labelKey: "fSite", fallback: "Com site" },
   { key: "has_instagram", labelKey: "fInsta", fallback: "Com Instagram" },
-  { key: "has_cnpj", labelKey: "fCnpj", fallback: "Com CNPJ" },
-  { key: "only_active", labelKey: "fActive", fallback: "Empresa ativa" },
-  { key: "headquarters", labelKey: "fHq", fallback: "Só matriz" },
+  // ⚠️ OS CINCO FILTROS DE CNPJ SAÍRAM (com CNPJ, empresa ativa, só matriz,
+  // capital social, aberta há X anos). Eles dependiam do enriquecimento pela
+  // Receita, que nunca rodou: a base tem `com_cnpj = 0` em TODAS as linhas.
+  // Um filtro que nunca tem dado é pior do que filtro nenhum — a pessoa
+  // marca, a busca zera, e a conclusão natural é que a ferramenta não
+  // funciona. Voltam junto com a Receita, não antes dela.
 ] as const
 
 type ChannelKey = (typeof CHANNEL_FILTERS)[number]["key"]
@@ -95,8 +98,7 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
   const [city, setCity] = useState("")
   const [term, setTerm] = useState("")
   const [channels, setChannels] = useState<Record<string, boolean>>({})
-  const [minCapital, setMinCapital] = useState("")
-  const [minYears, setMinYears] = useState("")
+
   const [rows, setRows] = useState<Company[]>([])
   const [total, setTotal] = useState(0)
   // ⚠️ QUANTAS EXISTEM NA CIDADE, ANTES DOS FILTROS. É o que separa "esta
@@ -214,14 +216,7 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
         if (city.trim()) qs.set("city", city.trim())
         if (term.trim()) qs.set("q", term.trim())
         for (const [k, v] of Object.entries(channels)) if (v) qs.set(k, "1")
-        if (minCapital) qs.set("min_capital_cents", String(Math.round(Number(minCapital) * 100)))
-        if (minYears) {
-          // "aberta há mais de N anos" vira uma data-limite: é o que a coluna
-          // `opened_at` sabe comparar.
-          const d = new Date()
-          d.setFullYear(d.getFullYear() - Number(minYears))
-          qs.set("opened_before", d.toISOString().slice(0, 10))
-        }
+
         qs.set("page", String(goToPage))
 
         const headers = auth()
@@ -246,7 +241,7 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
         setSearching(false)
       }
     },
-    [api, auth, category, channels, city, minCapital, minYears, t, term, uf]
+    [api, auth, category, channels, city, t, term, uf]
   )
 
   /**
@@ -258,11 +253,8 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
    */
   const hasFilters = useMemo(
     () =>
-      Object.values(channels).some(Boolean) ||
-      !!minCapital ||
-      !!minYears ||
-      !!term.trim(),
-    [channels, minCapital, minYears, term]
+      Object.values(channels).some(Boolean) || !!term.trim(),
+    [channels, term]
   )
 
   // ⚠️ LIMPAR E BUSCAR SÃO UM GESTO SÓ, e por isso passam por um ref em vez
@@ -274,8 +266,6 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
   const clearFilters = useCallback(() => {
     refetchAfterClear.current = true
     setChannels({})
-    setMinCapital("")
-    setMinYears("")
     setTerm("")
   }, [])
 
@@ -283,7 +273,7 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
     if (!refetchAfterClear.current) return
     refetchAfterClear.current = false
     void runSearch(1)
-  }, [channels, minCapital, minYears, term, runSearch])
+  }, [channels, term, runSearch])
 
   // O poll relê a busca com os MESMOS filtros; guardá-la num ref evita que o
   // intervalo se recrie a cada tecla digitada num campo de filtro.
@@ -687,32 +677,6 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
             })}
           </div>
 
-          <div className="grid gap-2 px-3 pb-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
-                {t("minCapital", "Capital social mínimo (R$)")}
-              </span>
-              <input
-                value={minCapital}
-                onChange={(e) => setMinCapital(e.target.value.replace(/\D/g, ""))}
-                inputMode="numeric"
-                placeholder="50000"
-                className={INPUT}
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
-                {t("minYears", "Aberta há mais de (anos)")}
-              </span>
-              <input
-                value={minYears}
-                onChange={(e) => setMinYears(e.target.value.replace(/\D/g, "").slice(0, 2))}
-                inputMode="numeric"
-                placeholder="2"
-                className={INPUT}
-              />
-            </label>
-          </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t-2 border-[#0B0B0D] p-3">
             <button
@@ -904,14 +868,7 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
                       "Esta cidade já tem {n} empresas na base — os filtros marcados é que não deixaram nenhuma passar."
                     ).replace("{n}", String(baseTotal))}
                   </p>
-                  {(minCapital || minYears) && (
-                    <p className="mx-auto mt-2 max-w-md text-xs text-[#9A938A]">
-                      {t(
-                        "noResultsNeedsCnpj",
-                        "Capital social e data de abertura vêm do CNPJ: só existem depois de enriquecer a empresa."
-                      )}
-                    </p>
-                  )}
+
                   <button
                     type="button"
                     onClick={clearFilters}
