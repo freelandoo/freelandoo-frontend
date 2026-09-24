@@ -52,7 +52,7 @@
  * fundo é a cor dele.
  */
 
-export type BackdropVariant = "games" | "finance" | "business" | "fitness"
+export type BackdropVariant = "games" | "finance" | "business" | "fitness" | "pet"
 
 /** O desenho de cada ambiente. Ver globals.css.
  *  `fitness` (laranja) entrou em 2026-09-10 com o redesign do `/fitness`
@@ -62,6 +62,8 @@ const BG_CLASS: Record<BackdropVariant, string> = {
   finance: "fl-finance-bg",
   business: "fl-business-bg",
   fitness: "fl-fitness-bg",
+  // `pet` (bege e laranja) entrou em 2026-09-24: a única variante CLARA.
+  pet: "fl-pet-bg",
 }
 
 /**
@@ -99,6 +101,9 @@ export function TechBackdrop({
       {/* O SÍMBOLO DE DINHEIRO do ambiente financeiro (pedido do Alex: "no fundo
           algum símbolo de dinheiro"). Estático, como o resto. */}
       {variant === "finance" && <div className="fl-money-veil absolute inset-0" />}
+      {/* PATINHAS E OSSOS do "Meu pet" — mesma ideia dos cifrões: estampa
+          estática, pintada junto da camada do fundo. */}
+      {variant === "pet" && <div className="fl-paw-veil absolute inset-0" />}
     </div>
   )
 }

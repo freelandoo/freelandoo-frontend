@@ -54,6 +54,15 @@ const PortfolioPostCard = dynamic(
 // quatro divs de CSS — um chunk à parte só faria a cor do ambiente piscar na
 // entrada da tela. Ver components/platform/tech-backdrop.tsx.
 import { TechBackdrop } from "@/components/platform/tech-backdrop"
+
+/** Espelho, para `style` inline, dos valores da pele `.fl-pet` (globals.css). */
+const PET_INLINE: Record<string, string> = {
+  "#15120E": "#FFF8EC",
+  "#1D1810": "#F0DBBA",
+  "#F5F1E8": "#3B2414",
+  "#9A938A": "#7A5A3C",
+  "#0B0B0D": "#A85A24",
+}
 const CommentsPanel = dynamic(
   () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
   { ssr: false }
@@ -546,6 +555,13 @@ export default function CommunityDetailPage() {
   // cor de fundo. Escrito de novo em cada um, o dia em que a régua mudasse
   // deixaria a página com a pele de um ambiente e a barra de outro.
   const isBusinessPlatform = (community?.kind ?? null) === "common"
+  // MEU PET — pele fixa BEGE E LARANJA com patinhas e ossos no fundo (Alex,
+  // 2026-09-24). Mesma mecânica das plataformas (classe no container +
+  // TechBackdrop + sombra de brilho), mas NÃO troca o dock: pet continua sendo
+  // uma comunidade, e a barra da Freelandoo fica. ⚠️ É a ÚNICA pele CLARA —
+  // ela inverte a tinta (claro → marrom); ver `.fl-pet` em globals.css.
+  const isPetPlatform = (community?.kind ?? null) === "pet"
+  const isSkinned = isBusinessPlatform || isPetPlatform
 
   // INDICADORES (mig 235): leads, funil do site e faturamento — só do LÍDER do
   // negócio. Predicado PRÓPRIO e não `canBuildSite`: aquele embute a flag
@@ -705,10 +721,17 @@ export default function CommunityDetailPage() {
   // uma coisa que muda de valor a cada troca de paleta do líder.
   const surfaceShadow = useCallback(
     (color: string, px: number) =>
-      isBusinessPlatform
+      isSkinned
         ? `0 0 0 1px ${color}66, 0 18px 48px -18px ${color}`
         : `${px}px ${px}px 0 0 ${color}`,
-    [isBusinessPlatform]
+    [isSkinned]
+  )
+  // As poucas cores escritas em `style` inline (a pele de classe não as
+  // alcança). No pet, as superfícies escuras viram bege e a tinta, marrom —
+  // os MESMOS valores de `.fl-pet`. Tinta sobre o accent NÃO passa por aqui.
+  const skinHex = useCallback(
+    (hex: string) => (isPetPlatform ? PET_INLINE[hex] ?? hex : hex),
+    [isPetPlatform]
   )
 
   const showAsLeaderEdit = canAdminister && edit
@@ -1577,7 +1600,7 @@ export default function CommunityDetailPage() {
     // As variáveis do `style` só existem na de negócio, onde a cor é do líder.
     <div
       style={skinVars}
-      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
+      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
     >
       {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
           DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
@@ -1589,6 +1612,7 @@ export default function CommunityDetailPage() {
           negócio" pode ser barbearia ou marcenaria, e um símbolo escolhido por
           nós estaria errado para quase todos). */}
       {isBusinessPlatform && <TechBackdrop variant="business" tint={bizTint} />}
+      {isPetPlatform && <TechBackdrop variant="pet" />}
       {isBusinessPlatform && (
         <BusinessPlanModal
           open={planOpen}
@@ -1688,7 +1712,7 @@ export default function CommunityDetailPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
             )}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, #0b0804cc 100%)` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : "#0b0804cc"} 100%)` }} />
             {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
             {community.enxame_name && (
               <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
@@ -1922,9 +1946,9 @@ export default function CommunityDetailPage() {
                     onClick={() => setPanelTab(key)}
                     className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]"
                     style={{
-                      background: panelTab === key ? "#15120E" : "transparent",
-                      color: panelTab === key ? "#F5F1E8" : "#9A938A",
-                      borderColor: panelTab === key ? color : "#0B0B0D",
+                      background: panelTab === key ? skinHex("#15120E") : "transparent",
+                      color: skinHex(panelTab === key ? "#F5F1E8" : "#9A938A"),
+                      borderColor: panelTab === key ? color : skinHex("#0B0B0D"),
                     }}
                   >
                     <Icon className="h-3.5 w-3.5" style={{ color }} /> {label}
@@ -2096,7 +2120,7 @@ export default function CommunityDetailPage() {
                       ] as const).map(([key, label, icon]) => (
                         <button key={key} type="button" onClick={() => setPrivacyDraft(key)}
                           className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
-                          style={privacyDraft === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
+                          style={privacyDraft === key ? { background: accent, color: "#0B0B0D" } : { background: skinHex("#1D1810"), color: skinHex("#9A938A") }}>
                           {icon} {label}
                         </button>
                       ))}
@@ -2401,7 +2425,7 @@ export default function CommunityDetailPage() {
                     <button key={key} type="button"
                       onClick={() => setPetDraft((d) => ({ ...d, species: key, breed_slug: "" }))}
                       className="border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
-                      style={petDraft.species === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
+                      style={petDraft.species === key ? { background: accent, color: "#0B0B0D" } : { background: skinHex("#1D1810"), color: skinHex("#9A938A") }}>
                       {label}
                     </button>
                   ))}
