@@ -1241,9 +1241,11 @@ body.camera-active { overflow: hidden; }
    ⚠️ Pele ESCURA, como games/fitness: a tinta clara continua clara. A lista é
    a MESMA das peles escuras — cor de superfície nova entra aqui também.
 
-   O amarelo #F2B705 de FUNDO vira VERMELHO #DC2626 (é o "vermelho e preto"):
-   a tinta preta por cima fica em 4,8:1, legível. O amarelo como TINTA vira
-   vermelho claro, que é o que lê sobre o preto.
+   DUAS CORES (2026-09-24, 2ª passada): o vermelho vivo #DC2626 virou
+   PASTEL #F28B82 como cor principal (fundo de ação, tinta de destaque — com
+   tinta preta por cima fica em ~7,6:1) e o VERMELHO ESCURO #991B1B é a
+   segunda cor da paleta: divisórias, brilho do título e as rodas do fundo.
+   O fundo de luz vinho e a borda estrutural quase preta não mudaram.
    ============================================================================ */
 
 /* Superfícies ------------------------------------------------------------- */
@@ -1258,7 +1260,7 @@ body.camera-active { overflow: hidden; }
 .fl-car .bg-\[\#1D1810\]\/60  { background-color: rgba(44, 14, 17, 0.55); }
 .fl-car .bg-\[\#241d12\]      { background-color: rgba(66, 18, 22, 0.92); }
 .fl-car .hover\:bg-\[\#241d12\]:hover { background-color: rgba(66, 18, 22, 0.92); }
-.fl-car .bg-\[\#F2B705\]      { background-color: #DC2626; }
+.fl-car .bg-\[\#F2B705\]      { background-color: #F28B82; }
 
 /* Tinta ------------------------------------------------------------------- */
 .fl-car .text-\[\#F5F1E8\]     { color: #F3E9E8; }
@@ -1270,28 +1272,30 @@ body.camera-active { overflow: hidden; }
 .fl-car .text-\[\#F5F1E8\]\/30 { color: rgba(243, 233, 232, 0.3); }
 .fl-car .text-\[\#9A938A\]     { color: #B8928F; }
 .fl-car .text-\[\#9A938A\]\/70 { color: rgba(184, 146, 143, 0.7); }
-.fl-car .text-\[\#F2B705\]     { color: #F87171; }
-.fl-car .text-\[\#E0A500\]     { color: #F87171; }
+.fl-car .text-\[\#F2B705\]     { color: #F28B82; }
+.fl-car .text-\[\#E0A500\]     { color: #F28B82; }
 
 /* Linhas ------------------------------------------------------------------ */
 /* A borda estrutural é vinho quase preto; o vermelho vivo fica para as
    divisórias e a ação — vermelho em toda peça apagaria o botão. */
 .fl-car .border-\[\#0B0B0D\]      { border-color: #3A1216; }
-.fl-car .border-\[\#F2B705\]      { border-color: #DC2626; }
-.fl-car .border-\[\#F5F1E8\]\/30  { border-color: rgba(220, 38, 38, 0.5); }
-.fl-car .border-\[\#F5F1E8\]\/25  { border-color: rgba(220, 38, 38, 0.44); }
-.fl-car .border-\[\#F5F1E8\]\/20  { border-color: rgba(220, 38, 38, 0.36); }
-.fl-car .border-\[\#F5F1E8\]\/15  { border-color: rgba(220, 38, 38, 0.3); }
-.fl-car .border-\[\#F5F1E8\]\/12  { border-color: rgba(220, 38, 38, 0.26); }
-.fl-car .border-\[\#F5F1E8\]\/10  { border-color: rgba(220, 38, 38, 0.22); }
-.fl-car .border-\[\#F5F1E8\]\/60  { border-color: rgba(220, 38, 38, 0.66); }
+.fl-car .border-\[\#F2B705\]      { border-color: #F28B82; }
+/* As divisórias são a SEGUNDA cor (vermelho escuro), mais opacas que antes:
+   o escuro some mais fácil sobre o preto do que o vivo sumia. */
+.fl-car .border-\[\#F5F1E8\]\/30  { border-color: rgba(153, 27, 27, 0.85); }
+.fl-car .border-\[\#F5F1E8\]\/25  { border-color: rgba(153, 27, 27, 0.78); }
+.fl-car .border-\[\#F5F1E8\]\/20  { border-color: rgba(153, 27, 27, 0.7); }
+.fl-car .border-\[\#F5F1E8\]\/15  { border-color: rgba(153, 27, 27, 0.62); }
+.fl-car .border-\[\#F5F1E8\]\/12  { border-color: rgba(153, 27, 27, 0.55); }
+.fl-car .border-\[\#F5F1E8\]\/10  { border-color: rgba(153, 27, 27, 0.48); }
+.fl-car .border-\[\#F5F1E8\]\/60  { border-color: rgba(153, 27, 27, 1); }
 
 .fl-car .fl-display {
   letter-spacing: 0.02em;
 }
 .fl-car .fl-display.text-\[\#F5F1E8\],
 .fl-car .fl-display.text-\[\#F1EDE2\] {
-  text-shadow: 0 0 24px rgba(220, 38, 38, 0.5);
+  text-shadow: 0 0 24px rgba(153, 27, 27, 0.9);
 }
 
 /* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
@@ -1313,7 +1317,7 @@ body.camera-active { overflow: hidden; }
 
 /* RODAS — marca d'água estática, como os cifrões e as patinhas. */
 .fl-wheel-veil {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cg transform='translate(62 64) rotate(10)' stroke-opacity='0.16' fill-opacity='0.16'%3E%3Ccircle r='30' fill='none' stroke='%23DC2626' stroke-width='6'/%3E%3Ccircle r='21' fill='none' stroke='%23DC2626' stroke-width='2'/%3E%3Cg fill='%23DC2626'%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(288)'/%3E%3Ccircle r='4.8'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(206 118) rotate(40)' stroke-opacity='0.12' fill-opacity='0.12'%3E%3Ccircle r='20' fill='none' stroke='%23DC2626' stroke-width='4'/%3E%3Ccircle r='14' fill='none' stroke='%23DC2626' stroke-width='2'/%3E%3Cg fill='%23DC2626'%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(288)'/%3E%3Ccircle r='3.2'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(96 210) rotate(-15)' stroke-opacity='0.13' fill-opacity='0.13'%3E%3Ccircle r='22' fill='none' stroke='%23DC2626' stroke-width='4.4'/%3E%3Ccircle r='15.399999999999999' fill='none' stroke='%23DC2626' stroke-width='2'/%3E%3Cg fill='%23DC2626'%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(288)'/%3E%3Ccircle r='3.52'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(226 238) rotate(25)' stroke-opacity='0.1' fill-opacity='0.1'%3E%3Ccircle r='13' fill='none' stroke='%23DC2626' stroke-width='2.6'/%3E%3Ccircle r='9.1' fill='none' stroke='%23DC2626' stroke-width='2'/%3E%3Cg fill='%23DC2626'%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(288)'/%3E%3Ccircle r='2.08'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(170 30) rotate(5)' stroke-opacity='0.09' fill-opacity='0.09'%3E%3Ccircle r='11' fill='none' stroke='%23DC2626' stroke-width='2.2'/%3E%3Ccircle r='7.699999999999999' fill='none' stroke='%23DC2626' stroke-width='2'/%3E%3Cg fill='%23DC2626'%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(288)'/%3E%3Ccircle r='1.76'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cg transform='translate(62 64) rotate(10)' stroke-opacity='0.29' fill-opacity='0.29'%3E%3Ccircle r='30' fill='none' stroke='%23991B1B' stroke-width='6'/%3E%3Ccircle r='21' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(288)'/%3E%3Ccircle r='4.8'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(206 118) rotate(40)' stroke-opacity='0.22' fill-opacity='0.22'%3E%3Ccircle r='20' fill='none' stroke='%23991B1B' stroke-width='4'/%3E%3Ccircle r='14' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(288)'/%3E%3Ccircle r='3.2'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(96 210) rotate(-15)' stroke-opacity='0.23' fill-opacity='0.23'%3E%3Ccircle r='22' fill='none' stroke='%23991B1B' stroke-width='4.4'/%3E%3Ccircle r='15.399999999999999' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(288)'/%3E%3Ccircle r='3.52'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(226 238) rotate(25)' stroke-opacity='0.18' fill-opacity='0.18'%3E%3Ccircle r='13' fill='none' stroke='%23991B1B' stroke-width='2.6'/%3E%3Ccircle r='9.1' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(288)'/%3E%3Ccircle r='2.08'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(170 30) rotate(5)' stroke-opacity='0.16' fill-opacity='0.16'%3E%3Ccircle r='11' fill='none' stroke='%23991B1B' stroke-width='2.2'/%3E%3Ccircle r='7.699999999999999' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(288)'/%3E%3Ccircle r='1.76'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* ============================================================================

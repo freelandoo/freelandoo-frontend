@@ -27,8 +27,14 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   { key: "red", labelKey: "accentRed", fallback: "Vermelho", hex: "#ff5a44" },
   { key: "orange", labelKey: "accentOrange", fallback: "Laranja", hex: "#ff8c2e" },
   { key: "gray", labelKey: "accentGray", fallback: "Cinza", hex: "#b8b1a6" },
-  // O vermelho da pele `.fl-car` (2026-09-24) — o "red" acima é tomate claro.
-  { key: "crimson", labelKey: "accentCrimson", fallback: "Vermelho escuro", hex: "#DC2626" },
+  // O vermelho da pele `.fl-car`. Nasceu vermelho vivo (#DC2626) e virou
+  // PASTEL no mesmo dia (pedido do Alex: "um vermelho mais pastel, claro, e um
+  // vermelho escuro como segunda cor de paleta"). ⚠️ A CHAVE FICA `crimson`:
+  // ela está gravada no `community_theme` de quem já escolheu, e trocá-la
+  // devolveria essas comunidades ao padrão. O vermelho ESCURO é a segunda cor
+  // da pele (linhas, brilho, rodas) e não entra aqui: como fundo de botão, com
+  // tinta preta por cima, ele seria ilegível.
+  { key: "crimson", labelKey: "accentCrimson", fallback: "Vermelho pastel", hex: "#F28B82" },
 ]
 
 /**
