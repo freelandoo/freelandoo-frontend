@@ -814,9 +814,13 @@ body.camera-active { overflow: hidden; }
 .fl-fitness-bg,
 .fl-pet-bg,
 .fl-car-bg {
-  transform: translateZ(0);
-  will-change: transform;
-  backface-visibility: hidden;
+  background-color: #2A0A0D;
+  background-image:
+    radial-gradient(60% 45% at 20% 14%, rgba(242, 139, 130, 0.32), transparent 70%),
+    radial-gradient(50% 40% at 86% 30%, rgba(242, 139, 130, 0.2), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(242, 139, 130, 0.24), transparent 70%),
+    repeating-linear-gradient(to right, rgba(242, 139, 130, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(242, 139, 130, 0.05) 0 1px, transparent 1px 64px);
 }
 
 /* ============================================================================
@@ -1241,26 +1245,29 @@ body.camera-active { overflow: hidden; }
    ⚠️ Pele ESCURA, como games/fitness: a tinta clara continua clara. A lista é
    a MESMA das peles escuras — cor de superfície nova entra aqui também.
 
-   DUAS CORES (2026-09-24, 2ª passada): o vermelho vivo #DC2626 virou
-   PASTEL #F28B82 como cor principal (fundo de ação, tinta de destaque — com
-   tinta preta por cima fica em ~7,6:1) e o VERMELHO ESCURO #991B1B é a
-   segunda cor da paleta: divisórias, brilho do título e as rodas do fundo.
-   O fundo de luz vinho e a borda estrutural quase preta não mudaram.
+   3ª PASSADA (2026-09-24), nas palavras do Alex: "o preto vira mais vermelho
+   escuro (...) o fundo pastel, os painéis mais cinza (...) os botões e tudo
+   mais é cinza claro". Então:
+     • o PRETO virou VERMELHO ESCURO (canvas #2A0A0D, bordas #5A1418);
+     • o FUNDO acende em VERMELHO PASTEL #F28B82 (luz e rodas);
+     • os PAINÉIS são CINZA grafite (a tinta clara continua legível);
+     • BOTÕES e destaques são CINZA CLARO #D6D3D1, tinta preta por cima;
+     • o vermelho escuro #991B1B segue nas divisórias.
    ============================================================================ */
 
 /* Superfícies ------------------------------------------------------------- */
-.fl-car .bg-\[\#0b0804\]      { background-color: #0C0506; }
-.fl-car .bg-\[\#0b0804\]\/80  { background-color: rgba(12, 5, 6, 0.8); }
-.fl-car .bg-\[\#0F0C08\]      { background-color: rgba(18, 7, 8, 0.88); }
-.fl-car .bg-\[\#15120E\]      { background-color: rgba(28, 10, 12, 0.82); }
-.fl-car .bg-\[\#15120E\]\/95  { background-color: rgba(28, 10, 12, 0.95); }
-.fl-car .bg-\[\#15120E\]\/60  { background-color: rgba(28, 10, 12, 0.6); }
-.fl-car .bg-\[\#15120E\]\/40  { background-color: rgba(28, 10, 12, 0.4); }
-.fl-car .bg-\[\#1D1810\]      { background-color: rgba(44, 14, 17, 0.78); }
-.fl-car .bg-\[\#1D1810\]\/60  { background-color: rgba(44, 14, 17, 0.55); }
-.fl-car .bg-\[\#241d12\]      { background-color: rgba(66, 18, 22, 0.92); }
-.fl-car .hover\:bg-\[\#241d12\]:hover { background-color: rgba(66, 18, 22, 0.92); }
-.fl-car .bg-\[\#F2B705\]      { background-color: #F28B82; }
+.fl-car .bg-\[\#0b0804\]      { background-color: #2A0A0D; }
+.fl-car .bg-\[\#0b0804\]\/80  { background-color: rgba(42, 10, 13, 0.8); }
+.fl-car .bg-\[\#0F0C08\]      { background-color: rgba(38, 36, 38, 0.9); }
+.fl-car .bg-\[\#15120E\]      { background-color: rgba(50, 47, 49, 0.88); }
+.fl-car .bg-\[\#15120E\]\/95  { background-color: rgba(50, 47, 49, 0.95); }
+.fl-car .bg-\[\#15120E\]\/60  { background-color: rgba(50, 47, 49, 0.6); }
+.fl-car .bg-\[\#15120E\]\/40  { background-color: rgba(50, 47, 49, 0.4); }
+.fl-car .bg-\[\#1D1810\]      { background-color: rgba(68, 64, 66, 0.85); }
+.fl-car .bg-\[\#1D1810\]\/60  { background-color: rgba(68, 64, 66, 0.6); }
+.fl-car .bg-\[\#241d12\]      { background-color: rgba(88, 83, 85, 0.92); }
+.fl-car .hover\:bg-\[\#241d12\]:hover { background-color: rgba(88, 83, 85, 0.92); }
+.fl-car .bg-\[\#F2B705\]      { background-color: #D6D3D1; }
 
 /* Tinta ------------------------------------------------------------------- */
 .fl-car .text-\[\#F5F1E8\]     { color: #F3E9E8; }
@@ -1270,16 +1277,16 @@ body.camera-active { overflow: hidden; }
 .fl-car .text-\[\#F5F1E8\]\/70 { color: rgba(243, 233, 232, 0.7); }
 .fl-car .text-\[\#F5F1E8\]\/40 { color: rgba(243, 233, 232, 0.4); }
 .fl-car .text-\[\#F5F1E8\]\/30 { color: rgba(243, 233, 232, 0.3); }
-.fl-car .text-\[\#9A938A\]     { color: #B8928F; }
-.fl-car .text-\[\#9A938A\]\/70 { color: rgba(184, 146, 143, 0.7); }
-.fl-car .text-\[\#F2B705\]     { color: #F28B82; }
-.fl-car .text-\[\#E0A500\]     { color: #F28B82; }
+.fl-car .text-\[\#9A938A\]     { color: #B9B3B4; }
+.fl-car .text-\[\#9A938A\]\/70 { color: rgba(185, 179, 180, 0.7); }
+.fl-car .text-\[\#F2B705\]     { color: #D6D3D1; }
+.fl-car .text-\[\#E0A500\]     { color: #D6D3D1; }
 
 /* Linhas ------------------------------------------------------------------ */
 /* A borda estrutural é vinho quase preto; o vermelho vivo fica para as
    divisórias e a ação — vermelho em toda peça apagaria o botão. */
-.fl-car .border-\[\#0B0B0D\]      { border-color: #3A1216; }
-.fl-car .border-\[\#F2B705\]      { border-color: #F28B82; }
+.fl-car .border-\[\#0B0B0D\]      { border-color: #5A1418; }
+.fl-car .border-\[\#F2B705\]      { border-color: #D6D3D1; }
 /* As divisórias são a SEGUNDA cor (vermelho escuro), mais opacas que antes:
    o escuro some mais fácil sobre o preto do que o vivo sumia. */
 .fl-car .border-\[\#F5F1E8\]\/30  { border-color: rgba(153, 27, 27, 0.85); }
@@ -1295,7 +1302,7 @@ body.camera-active { overflow: hidden; }
 }
 .fl-car .fl-display.text-\[\#F5F1E8\],
 .fl-car .fl-display.text-\[\#F1EDE2\] {
-  text-shadow: 0 0 24px rgba(153, 27, 27, 0.9);
+  text-shadow: 0 0 24px rgba(242, 139, 130, 0.55);
 }
 
 /* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
@@ -1317,7 +1324,7 @@ body.camera-active { overflow: hidden; }
 
 /* RODAS — marca d'água estática, como os cifrões e as patinhas. */
 .fl-wheel-veil {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cg transform='translate(62 64) rotate(10)' stroke-opacity='0.29' fill-opacity='0.29'%3E%3Ccircle r='30' fill='none' stroke='%23991B1B' stroke-width='6'/%3E%3Ccircle r='21' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(288)'/%3E%3Ccircle r='4.8'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(206 118) rotate(40)' stroke-opacity='0.22' fill-opacity='0.22'%3E%3Ccircle r='20' fill='none' stroke='%23991B1B' stroke-width='4'/%3E%3Ccircle r='14' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(288)'/%3E%3Ccircle r='3.2'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(96 210) rotate(-15)' stroke-opacity='0.23' fill-opacity='0.23'%3E%3Ccircle r='22' fill='none' stroke='%23991B1B' stroke-width='4.4'/%3E%3Ccircle r='15.399999999999999' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(288)'/%3E%3Ccircle r='3.52'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(226 238) rotate(25)' stroke-opacity='0.18' fill-opacity='0.18'%3E%3Ccircle r='13' fill='none' stroke='%23991B1B' stroke-width='2.6'/%3E%3Ccircle r='9.1' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(288)'/%3E%3Ccircle r='2.08'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(170 30) rotate(5)' stroke-opacity='0.16' fill-opacity='0.16'%3E%3Ccircle r='11' fill='none' stroke='%23991B1B' stroke-width='2.2'/%3E%3Ccircle r='7.699999999999999' fill='none' stroke='%23991B1B' stroke-width='2'/%3E%3Cg fill='%23991B1B'%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(288)'/%3E%3Ccircle r='1.76'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cg transform='translate(62 64) rotate(10)' stroke-opacity='0.16' fill-opacity='0.16'%3E%3Ccircle r='30' fill='none' stroke='%23F28B82' stroke-width='6'/%3E%3Ccircle r='21' fill='none' stroke='%23F28B82' stroke-width='2'/%3E%3Cg fill='%23F28B82'%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-18.6' width='4.4' height='18.6' transform='rotate(288)'/%3E%3Ccircle r='4.8'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(206 118) rotate(40)' stroke-opacity='0.12' fill-opacity='0.12'%3E%3Ccircle r='20' fill='none' stroke='%23F28B82' stroke-width='4'/%3E%3Ccircle r='14' fill='none' stroke='%23F28B82' stroke-width='2'/%3E%3Cg fill='%23F28B82'%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-12.4' width='4.4' height='12.4' transform='rotate(288)'/%3E%3Ccircle r='3.2'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(96 210) rotate(-15)' stroke-opacity='0.13' fill-opacity='0.13'%3E%3Ccircle r='22' fill='none' stroke='%23F28B82' stroke-width='4.4'/%3E%3Ccircle r='15.399999999999999' fill='none' stroke='%23F28B82' stroke-width='2'/%3E%3Cg fill='%23F28B82'%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-13.64' width='4.4' height='13.64' transform='rotate(288)'/%3E%3Ccircle r='3.52'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(226 238) rotate(25)' stroke-opacity='0.10' fill-opacity='0.10'%3E%3Ccircle r='13' fill='none' stroke='%23F28B82' stroke-width='2.6'/%3E%3Ccircle r='9.1' fill='none' stroke='%23F28B82' stroke-width='2'/%3E%3Cg fill='%23F28B82'%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-8.06' width='4.4' height='8.06' transform='rotate(288)'/%3E%3Ccircle r='2.08'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(170 30) rotate(5)' stroke-opacity='0.09' fill-opacity='0.09'%3E%3Ccircle r='11' fill='none' stroke='%23F28B82' stroke-width='2.2'/%3E%3Ccircle r='7.699999999999999' fill='none' stroke='%23F28B82' stroke-width='2'/%3E%3Cg fill='%23F28B82'%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(0)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(72)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(144)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(216)'/%3E%3Crect x='-2.2' y='-6.82' width='4.4' height='6.82' transform='rotate(288)'/%3E%3Ccircle r='1.76'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* ============================================================================

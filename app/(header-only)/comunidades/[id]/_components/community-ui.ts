@@ -35,6 +35,9 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   // da pele (linhas, brilho, rodas) e não entra aqui: como fundo de botão, com
   // tinta preta por cima, ele seria ilegível.
   { key: "crimson", labelKey: "accentCrimson", fallback: "Vermelho pastel", hex: "#F28B82" },
+  // O acento PADRÃO do carro desde a 3ª passada (2026-09-24): "os botões e
+  // tudo mais é cinza claro". Diferente do `gray` acima, que é cinza quente.
+  { key: "silver", labelKey: "accentSilver", fallback: "Cinza claro", hex: "#D6D3D1" },
 ]
 
 /**
@@ -45,7 +48,7 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
  * seletor continua mandando: isto é só o PADRÃO.
  */
 export function defaultAccentFor(kind: string | null | undefined): string {
-  if (kind === "car") return "crimson"
+  if (kind === "car") return "silver"
   if (kind === "pet") return "orange"
   return "gold"
 }

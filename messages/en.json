@@ -2905,7 +2905,8 @@
     "carModelHint": "Pick the make and model: that's how the “Same car as mine” filter finds people with the same car.",
     "carPickModelFirst": "Pick the make and model.",
     "subjectSave": "Save",
-    "subjectNotSet": "The owner hasn't filled this in yet."
+    "subjectNotSet": "The owner hasn't filled this in yet.",
+    "accentSilver": "Light gray"
   },
   "Careers": {
     "hero.badge": "Careers",

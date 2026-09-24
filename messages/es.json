@@ -2905,7 +2905,8 @@
     "carModelHint": "Elige la marca y el modelo: así el filtro “Mismo auto que el mío” encuentra a quien tiene el mismo auto.",
     "carPickModelFirst": "Elige la marca y el modelo.",
     "subjectSave": "Guardar",
-    "subjectNotSet": "El dueño aún no lo informó."
+    "subjectNotSet": "El dueño aún no lo informó.",
+    "accentSilver": "Gris claro"
   },
   "Careers": {
     "hero.badge": "Carreras",
