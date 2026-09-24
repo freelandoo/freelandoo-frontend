@@ -27,11 +27,27 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   { key: "red", labelKey: "accentRed", fallback: "Vermelho", hex: "#ff5a44" },
   { key: "orange", labelKey: "accentOrange", fallback: "Laranja", hex: "#ff8c2e" },
   { key: "gray", labelKey: "accentGray", fallback: "Cinza", hex: "#b8b1a6" },
+  // O vermelho da pele `.fl-car` (2026-09-24) — o "red" acima é tomate claro.
+  { key: "crimson", labelKey: "accentCrimson", fallback: "Vermelho escuro", hex: "#DC2626" },
 ]
 
-/** Chave desconhecida (ou ausente) cai no dourado, que é o padrão da casa. */
-export function accentHex(a: string | null | undefined): string {
-  return ACCENTS.find((x) => x.key === a)?.hex || ACCENTS[0].hex
+/**
+ * A cor de destaque de quem NUNCA escolheu uma. Modalidade com pele própria
+ * nasce na cor dela — senão o dourado da casa (escrito em `style` inline, que
+ * a pele não alcança) pintaria o botão de postar e a borda do headcard de
+ * amarelo no meio do vermelho do carro ou do bege do pet. Quem escolhe no
+ * seletor continua mandando: isto é só o PADRÃO.
+ */
+export function defaultAccentFor(kind: string | null | undefined): string {
+  if (kind === "car") return "crimson"
+  if (kind === "pet") return "orange"
+  return "gold"
+}
+
+/** Chave desconhecida (ou ausente) cai no padrão da modalidade (dourado, em geral). */
+export function accentHex(a: string | null | undefined, kind?: string | null): string {
+  const key = a || defaultAccentFor(kind)
+  return ACCENTS.find((x) => x.key === key)?.hex || ACCENTS[0].hex
 }
 
 /** 1.234 → "1.2k". Usado no XP dos membros nas duas telas. */

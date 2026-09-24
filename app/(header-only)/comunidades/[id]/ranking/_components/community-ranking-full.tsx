@@ -177,7 +177,7 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
     void load()
   }, [load])
 
-  const accent = accentHex(community?.community_theme?.accent)
+  const accent = accentHex(community?.community_theme?.accent, community?.kind)
   // ─── O AMBIENTE (o dock global lê isto pelo beacon lá embaixo) ────────────
   // A régua do Site é a MESMA da página da comunidade, importada e não copiada:
   // são duas telas do mesmo espaço, e duas cópias divergiriam na primeira
@@ -195,6 +195,10 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   // cor — o pódio é outra sala do mesmo espaço, e chegar nele com outro fundo
   // faria a comunidade trocar de cara ao andar dois metros.
   const isBusiness = (community?.kind ?? null) === "common"
+  // O ranking é a OUTRA sala da comunidade: o carro chega aqui com a mesma
+  // pele vermelha da página dele (a do pet ainda não — o bege exige inverter a
+  // tinta `#F1EDE2` desta tela, que a lista `.fl-pet` deixa de fora).
+  const isCar = (community?.kind ?? null) === "car"
 
   // ⚠️ SÓ O NEGÓCIO TROCA O DOCK — é o único ambiente que sobrou depois que a
   // plataforma de games saiu do ar (2026-09-09).
@@ -291,10 +295,12 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
       style={skinVars}
       className={cn(
         "fl-root relative min-h-[100dvh] overflow-x-clip bg-[#0b0804] pb-24 text-[#F1EDE2]",
-        isBusiness && "fl-business"
+        isBusiness && "fl-business",
+        isCar && "fl-car"
       )}
     >
       {isBusiness && <TechBackdrop variant="business" tint={bizTint} />}
+      {isCar && <TechBackdrop variant="car" />}
       {/* ⚠️ ESTA TELA TAMBÉM É O AMBIENTE. O "Ranking" do dock de negócios leva
           para uma página irmã: sem o beacon aqui, o dock voltaria a ser o da
           Freelandoo no meio do ambiente e a pessoa perderia os controles do

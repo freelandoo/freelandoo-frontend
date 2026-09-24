@@ -2890,7 +2890,8 @@
     "panelStats": "Numbers",
     "leadsPill": "Leads",
     "leadsPillAria": "Find customers: companies by category and city",
-    "sitePillAria": "Open the business website builder"
+    "sitePillAria": "Open the business website builder",
+    "accentCrimson": "Dark red"
   },
   "Careers": {
     "hero.badge": "Careers",

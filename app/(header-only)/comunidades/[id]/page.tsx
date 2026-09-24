@@ -38,6 +38,7 @@ import { CommunityShellBeacon, onCommunityView } from "@/components/layout/commu
 import {
   ACCENTS,
   accentHex,
+  defaultAccentFor,
   BACKDROPS,
   backdropTint,
   canBuildCommunitySite,
@@ -1068,7 +1069,8 @@ export default function CommunityDetailPage() {
       if (!seeded.current) {
         setNameDraft(c.display_name)
         setBioDraft(c.bio || "")
-        setAccentDraft(c.community_theme?.accent || "gold")
+        // Sem cor escolhida, cada modalidade nasce na cor da pele dela.
+        setAccentDraft(c.community_theme?.accent || defaultAccentFor(c.kind))
         // Ausente = preto, que é o padrão da plataforma de negócio. Comunidade
         // que nunca escolheu nasce preta, e não com a cor da última que passou.
         setBgDraft(c.community_theme?.background || "black")
@@ -1381,7 +1383,7 @@ export default function CommunityDetailPage() {
       // separadas, mudar só o fundo não gravaria nada (a comparação era só do
       // accent) e o líder veria a cor voltar sozinha no próximo F5.
       const themeChanged =
-        (community.community_theme?.accent || "gold") !== accentDraft ||
+        (community.community_theme?.accent || defaultAccentFor(community.kind)) !== accentDraft ||
         (community.community_theme?.background || "black") !== bgDraft
       if (themeChanged) {
         const tRes = await fetch(`/api/communities/${id}/theme`, {
