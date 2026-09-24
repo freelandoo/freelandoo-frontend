@@ -38,6 +38,10 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   // O acento PADRÃO do carro desde a 3ª passada (2026-09-24): "os botões e
   // tudo mais é cinza claro". Diferente do `gray` acima, que é cinza quente.
   { key: "silver", labelKey: "accentSilver", fallback: "Cinza claro", hex: "#D6D3D1" },
+  // O VERMELHO DE PISTA — acento PADRÃO do carro desde a 4ª passada
+  // (2026-09-24, "mais automobilístico, mais velocidade"). #FF2A1F e não o
+  // #E10600 da F1: com tinta preta por cima dá 5,4:1 (o da F1 dá 4,2:1).
+  { key: "racing", labelKey: "accentRacing", fallback: "Vermelho de pista", hex: "#FF2A1F" },
 ]
 
 /**
@@ -48,7 +52,7 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
  * seletor continua mandando: isto é só o PADRÃO.
  */
 export function defaultAccentFor(kind: string | null | undefined): string {
-  if (kind === "car") return "silver"
+  if (kind === "car") return "racing"
   if (kind === "pet") return "orange"
   return "gold"
 }

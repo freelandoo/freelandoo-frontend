@@ -64,7 +64,7 @@ const BG_CLASS: Record<BackdropVariant, string> = {
   fitness: "fl-fitness-bg",
   // `pet` (bege e laranja) entrou em 2026-09-24: a única variante CLARA.
   pet: "fl-pet-bg",
-  // `car` (vermelho escuro e preto) entrou em 2026-09-24, com rodas.
+  // `car` entrou em 2026-09-24; virou PISTA (carbono + vermelho) na 4ª passada.
   car: "fl-car-bg",
 }
 
@@ -106,8 +106,16 @@ export function TechBackdrop({
       {/* PATINHAS E OSSOS do "Meu pet" — mesma ideia dos cifrões: estampa
           estática, pintada junto da camada do fundo. */}
       {variant === "pet" && <div className="fl-paw-veil absolute inset-0" />}
-      {/* RODAS do "Meu carro" — estampa estática, como as patinhas. */}
-      {variant === "car" && <div className="fl-wheel-veil absolute inset-0" />}
+      {/* PISTA do "Meu carro" (4ª passada, 2026-09-24): luz de freio, linhas
+          de velocidade e o conta-giros gigante sobre a fibra de carbono.
+          Tudo estático, pintado junto da camada do fundo. */}
+      {variant === "car" && (
+        <>
+          <div className="fl-car-glow absolute inset-0" />
+          <div className="fl-speed-veil absolute inset-0" />
+          <div className="fl-tacho-veil absolute inset-0" />
+        </>
+      )}
     </div>
   )
 }

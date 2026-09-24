@@ -1776,6 +1776,9 @@ export default function CommunityDetailPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
             )}
+            {/* Pintura de corrida do carro: listras + faixa quadriculada. Com
+                foto de capa as listras recuam para o canto. */}
+            {isCarPlatform && <div aria-hidden data-photo={bannerSrc ? "true" : "false"} className="fl-car-livery pointer-events-none absolute inset-0" />}
             <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : "#0b0804cc"} 100%)` }} />
             {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
             {community.enxame_name && (
@@ -1796,7 +1799,7 @@ export default function CommunityDetailPage() {
                 {monthlyCents > 0 && <span style={{ color: accent }}>· {fmtBRL(monthlyCents)}/{t("perMonthShort", "mês")}</span>}
               </span>
             )}
-            <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
+            <span className="fl-car-gauge absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
               <span className="text-[8px] font-bold uppercase text-[#9A938A]">{t("level", "Nível")}</span>
               <span className="fl-display text-2xl leading-none" style={{ color: accent }}>{community.xp_level ?? "—"}</span>
             </span>
@@ -2705,7 +2708,7 @@ export default function CommunityDetailPage() {
                             type="button"
                             aria-pressed={on}
                             onClick={() => setCarScope(sc)}
-                            className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
+                            className="fl-car-chip border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
                             style={on ? { background: accent, color: "#0B0B0D" } : { background: "#15120E", color: "#F5F1E8" }}
                           >
                             {sc === "all"
