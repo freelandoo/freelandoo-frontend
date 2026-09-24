@@ -6992,6 +6992,9 @@
     "clearFilters": "Clear filters",
     "cityNeedsUf": "pick the state first",
     "cityLoading": "loading cities…",
-    "cityNoMatch": "no city by that name"
+    "cityNoMatch": "no city by that name",
+    "refresh": "Refresh",
+    "refreshResults": "Refresh results",
+    "noResultsLoading": "First search for this category? The base may be loading right now — refresh in a few seconds."
   }
 }

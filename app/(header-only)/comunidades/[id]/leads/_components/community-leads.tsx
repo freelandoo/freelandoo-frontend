@@ -829,9 +829,30 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
               {openList.name} · {listRows.length}
             </p>
           ) : searched ? (
-            <p className="px-3 text-xs font-bold uppercase tracking-[0.12em] text-[#9A938A]">
-              {t("resultCount", "{n} empresas").replace("{n}", String(total))}
-            </p>
+            // ⚠️ O RECARREGAR EXISTE PORQUE A BASE ENCHE DEPOIS DA BUSCA. A
+            // primeira busca de uma categoria dispara o carregamento dela em
+            // segundo plano e devolve o que a base tem AGORA (às vezes zero);
+            // segundos depois ela já está cheia. Sem este botão, a única forma
+            // de ver o resultado era apertar "Buscar" de novo sem saber por quê.
+            <div className="flex items-center justify-between gap-3 px-3">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9A938A]">
+                {t("resultCount", "{n} empresas").replace("{n}", String(total))}
+              </p>
+              <button
+                type="button"
+                onClick={() => void runSearch(page)}
+                disabled={searching}
+                aria-label={t("refreshResults", "Atualizar resultados")}
+                title={t("refreshResults", "Atualizar resultados")}
+                className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-2.5 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] disabled:opacity-60"
+              >
+                <RefreshCw
+                  className={cn("h-3.5 w-3.5", searching && "animate-spin")}
+                  style={{ color: accent }}
+                />
+                {t("refresh", "Atualizar")}
+              </button>
+            </div>
           ) : null}
 
           {!searched && !openList && (
@@ -888,6 +909,22 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
                       ? t("noResultsDiscover", "Aperte “Procurar mais” para varrer essa cidade.")
                       : t("noResultsOff", "A busca por empresas novas está indisponível no momento.")}
                   </p>
+                  <p className="mx-auto mt-2 max-w-sm text-xs text-[#9A938A]">
+                    {t(
+                      "noResultsLoading",
+                      "Primeira busca desta categoria? A base pode estar sendo carregada agora — atualize em alguns segundos."
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void runSearch(page)}
+                    disabled={searching}
+                    className="mt-4 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-60"
+                    style={{ background: accent }}
+                  >
+                    <RefreshCw className={cn("h-4 w-4", searching && "animate-spin")} />
+                    {t("refresh", "Atualizar")}
+                  </button>
                 </>
               )}
             </div>

@@ -6972,6 +6972,9 @@
     "clearFilters": "Limpiar filtros",
     "cityNeedsUf": "elige el estado primero",
     "cityLoading": "cargando ciudades…",
-    "cityNoMatch": "ninguna ciudad con ese nombre"
+    "cityNoMatch": "ninguna ciudad con ese nombre",
+    "refresh": "Actualizar",
+    "refreshResults": "Actualizar resultados",
+    "noResultsLoading": "¿Primera búsqueda de esta categoría? La base puede estar cargándose ahora — actualiza en unos segundos."
   }
 }
