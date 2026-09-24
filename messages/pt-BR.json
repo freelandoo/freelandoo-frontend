@@ -1537,7 +1537,9 @@
     "adjustServicePhotoTitle": "Ajustar foto do serviço",
     "adjustServicePhotoDesc": "Dê zoom e arraste para escolher o que aparece na vitrine.",
     "aiAttendant": "Atendente com IA",
-    "aiAttendantAria": "Atendente com IA: o que a plataforma deve saber para responder por você"
+    "aiAttendantAria": "Atendente com IA: o que a plataforma deve saber para responder por você",
+    "parentalLinkedCount": "{n} vinculados",
+    "parentalSubtitlePlay": "Os seus pequenos jogadores num lugar só: vincule, libere o que pode e acompanhe as conversas."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

@@ -3,11 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { PageShell, TabloidPageIntro } from "@/components/tabloide"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import {
@@ -18,7 +15,12 @@ import {
   Check,
   AlertCircle,
   MessageSquare,
+  Gamepad2,
+  KeyRound,
+  ShieldCheck,
+  Users,
 } from "lucide-react"
+import { DressIcon, PARENTAL, ParentalBackdrop, PixelHeart } from "./_components/parental-art"
 
 type InviteStatus = "active" | "used" | "revoked" | "expired"
 type SupervisedStatus = "active" | "suspended" | "revoked"
@@ -328,285 +330,331 @@ export default function ParentalPage() {
     }
   }
 
+  const P = PARENTAL
+  const panelStyle = { boxShadow: `8px 8px 0 0 ${P.ink}` }
+  const stickerShadow = { filter: `drop-shadow(3px 3px 0 ${P.ink})` }
+  const btnPrimary =
+    "inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#FFB300] px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:bg-[#FFD166] disabled:opacity-60"
+  const btnGhost =
+    "inline-flex items-center gap-1.5 border-2 border-[#06262A] bg-[#0A3638] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#FFF6E0] transition hover:border-[#FFB300] disabled:opacity-50"
+  const checkboxSkin =
+    "border-[#FFB300] data-[state=checked]:bg-[#FFB300] data-[state=checked]:text-[#0B0B0D]"
+
   return (
-    <PageShell rail className="tabloid-account-page">
-      <main className="relative z-10 mx-auto max-w-3xl px-4 py-10">
-        <TabloidPageIntro
-          eyebrow={t("parentalEyebrow", "Supervisão")}
-          title="PARENTAL."
-          subtitle={t("parentalSubtitle", "Contas supervisionadas vinculadas à sua conta, com permissões e mensagens em ritmo de jornal.")}
-          back={
-            <button
-              type="button"
-              onClick={() => router.push("/account")}
-              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t("back", "Voltar")}
-            </button>
-          }
-          className="mb-8"
-        />
+    // ⚠️ A casca é PRÓPRIA (não o PageShell): o fundo amarelo-laranja é a pele
+    // desta página, e o papel creme do kit o cobriria. `md:pl-[80px]` é a calha
+    // da ProfileSidebar que o `rail` do PageShell reservava.
+    <div className="fl-root fl-sharp relative min-h-[100dvh] overflow-x-clip pb-24 font-sans text-[#FFF6E0] md:pl-[80px]">
+      <ParentalBackdrop />
 
-        {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-[6px] border-2 border-red-500/30 bg-red-500/5 p-3 text-sm font-bold text-red-500">
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
+      <div className="relative z-10">
+        {/* Top bar — a saída à esquerda, como no Games. */}
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-3 pt-6 md:px-4">
+          <button
+            type="button"
+            onClick={() => router.push("/account")}
+            className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#0F4C4F] px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-[#FFF6E0] shadow-[3px_3px_0_0_#0B0B0D] transition hover:bg-[#0A3638]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t("back", "Voltar")}
+          </button>
+          <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#FFF6E0] px-3 py-1.5 text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
+            <PixelHeart className="h-3.5 w-4" />
+            <span className="text-[11px] font-black uppercase tracking-[0.2em]">
+              {t("parentalLinkedCount", "{n} vinculados").replace("{n}", String(minors.length))}
+            </span>
+          </span>
+        </div>
 
-        {/* Gerar código */}
-        <Card className="fl-card mb-6 rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
-          <CardHeader>
-            <CardTitle className="text-lg">{t("guardianCodeTitle", "Código do responsável")}</CardTitle>
-            <CardDescription className="text-[#5b554b]">
-              {t("guardianCodeDesc", "Gere um código e envie ao menor. Ele usa o código no cadastro para vincular a conta a você.")}
-              <br />
-              <span className="text-xs">{t("guardianCodeValidity", "Cada código vale 24h e pode ser usado uma única vez.")}</span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button onClick={handleGenerate} disabled={generating}>
-              <Plus className="mr-2 h-4 w-4" />
-              {generating ? t("generating", "Gerando...") : t("generateCode", "Gerar código")}
-            </Button>
-
-            {activeInvites.length === 0 && !loading && (
-              <p className="text-sm text-muted-foreground">{t("noActiveCodes", "Nenhum código ativo no momento.")}</p>
-            )}
-
-            {activeInvites.length > 0 && (
-              <div className="space-y-2">
-                {activeInvites.map((inv) => {
-                  const expiresIn = Math.max(
-                    0,
-                    Math.round((new Date(inv.expires_at).getTime() - Date.now()) / (60 * 60 * 1000))
-                  )
-                  return (
-                    <div
-                      key={inv.id_invite}
-                      className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/[0.05] p-3"
-                    >
-                      <code className="rounded bg-black/40 px-2 py-1 font-mono text-sm tracking-widest text-amber-300">
-                        {inv.code}
-                      </code>
-                      <span className="text-xs text-muted-foreground">
-                        {t("expiresIn", "Expira em")} {expiresIn}h
-                      </span>
-                      <div className="ml-auto flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopy(inv.code)}
-                          aria-label={t("copy", "Copiar")}
-                        >
-                          {copiedCode === inv.code ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRevoke(inv.id_invite)}
-                          aria-label={t("revoke", "Revogar")}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })}
+        {/* HEADCARD — a silhueta do Games: banner largo, chip num canto, selo no outro, título gigante. */}
+        <header className="relative mx-auto mt-4 max-w-3xl px-0 md:px-4">
+          <div
+            className="relative overflow-hidden border-2 border-[#0B0B0D]"
+            style={{
+              boxShadow: `8px 8px 0 0 ${P.ink}`,
+              background: `linear-gradient(135deg, ${P.teal} 0%, ${P.tealDeep} 60%, ${P.tealLine} 100%)`,
+            }}
+          >
+            <div
+              aria-hidden
+              className="absolute inset-0 opacity-30"
+              style={{
+                backgroundImage: `linear-gradient(${P.mint}33 1px, transparent 1px), linear-gradient(90deg, ${P.mint}33 1px, transparent 1px)`,
+                backgroundSize: "22px 22px",
+              }}
+            />
+            <div className="relative flex min-h-[220px] flex-col justify-between gap-6 p-4 md:min-h-[250px] md:p-6">
+              <div className="flex items-start justify-between gap-3">
+                <span className="inline-flex -rotate-2 items-center gap-2 border-2 border-[#0B0B0D] bg-[#FFB300] px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
+                  <Gamepad2 className="h-4 w-4" />
+                  {t("parentalEyebrow", "Supervisão")}
+                </span>
+                <span className="grid h-14 w-14 rotate-6 place-items-center border-2 border-[#0B0B0D] bg-[#FF4F9A] shadow-[3px_3px_0_0_#0B0B0D]">
+                  <ShieldCheck className="h-7 w-7 text-[#FFF6E0]" />
+                </span>
               </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Lista de menores */}
-        <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
-          <CardHeader>
-            <CardTitle className="text-lg">{t("linkedChildrenTitle", "Filhos vinculados")}</CardTitle>
-            <CardDescription className="text-[#5b554b]">
+              {/* As figurinhas do banner: vestidinho, controle e vestidinho. */}
+              <div aria-hidden className="pointer-events-none absolute bottom-3 right-3 flex items-end gap-1 md:right-8 md:gap-2">
+                <DressIcon className="h-14 w-14 -rotate-6 md:h-24 md:w-24" style={stickerShadow} />
+                <Gamepad2 className="h-10 w-10 rotate-12 text-[#FFB300] md:h-16 md:w-16" strokeWidth={2.2} style={stickerShadow} />
+                <DressIcon className="h-10 w-10 rotate-6 md:h-16 md:w-16" color={P.mint} style={stickerShadow} />
+              </div>
+
+              <div className="relative max-w-[62%] md:max-w-[70%]">
+                <h1
+                  className="fl-display text-5xl leading-[0.85] text-[#FFB300] sm:text-6xl md:text-7xl"
+                  style={{ textShadow: `4px 4px 0 ${P.ink}` }}
+                >
+                  PARENTAL
+                </h1>
+                <p className="mt-3 max-w-md text-sm font-bold text-[#FFF6E0]/90">
+                  {t("parentalSubtitlePlay", "Os seus pequenos jogadores num lugar só: vincule, libere o que pode e acompanhe as conversas.")}
+                </p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto mt-8 max-w-3xl space-y-6 px-0 md:px-4">
+          {error && (
+            <div className="flex items-start gap-2 border-2 border-[#0B0B0D] bg-[#FFF6E0] p-3 text-sm font-bold text-red-600 shadow-[4px_4px_0_0_#0B0B0D]">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Gerar código */}
+          <section className="relative border-2 border-[#0B0B0D] bg-[#0F4C4F] p-5" style={panelStyle}>
+            <PixelHeart className="absolute -right-2 -top-3 h-7 w-8 rotate-12" />
+            <h2 className="fl-display flex items-center gap-2 text-2xl text-[#FFB300]">
+              <KeyRound className="h-5 w-5" />
+              {t("guardianCodeTitle", "Código do responsável")}
+            </h2>
+            <p className="mt-2 text-sm font-semibold text-[#FFF6E0]/85">
+              {t("guardianCodeDesc", "Gere um código e envie ao menor. Ele usa o código no cadastro para vincular a conta a você.")}
+            </p>
+            <p className="mt-1 text-xs font-bold text-[#3FE0C5]">
+              {t("guardianCodeValidity", "Cada código vale 24h e pode ser usado uma única vez.")}
+            </p>
+
+            <div className="mt-4 space-y-3">
+              <button type="button" onClick={handleGenerate} disabled={generating} className={btnPrimary}>
+                <Plus className="h-4 w-4" />
+                {generating ? t("generating", "Gerando...") : t("generateCode", "Gerar código")}
+              </button>
+
+              {activeInvites.length === 0 && !loading && (
+                <p className="text-sm font-semibold text-[#FFF6E0]/60">{t("noActiveCodes", "Nenhum código ativo no momento.")}</p>
+              )}
+
+              {activeInvites.map((inv) => {
+                const expiresIn = Math.max(
+                  0,
+                  Math.round((new Date(inv.expires_at).getTime() - Date.now()) / (60 * 60 * 1000))
+                )
+                return (
+                  <div key={inv.id_invite} className="flex flex-wrap items-center gap-3 border-2 border-[#0B0B0D] bg-[#0A3638] p-3">
+                    <code className="border-2 border-[#0B0B0D] bg-[#FFB300] px-3 py-1 font-mono text-lg font-black tracking-[0.3em] text-[#0B0B0D]">
+                      {inv.code}
+                    </code>
+                    <span className="text-xs font-bold text-[#3FE0C5]">
+                      {t("expiresIn", "Expira em")} {expiresIn}h
+                    </span>
+                    <div className="ml-auto flex gap-2">
+                      <button type="button" onClick={() => handleCopy(inv.code)} aria-label={t("copy", "Copiar")} className={btnGhost}>
+                        {copiedCode === inv.code ? <Check className="h-4 w-4 text-[#3FE0C5]" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                      <button type="button" onClick={() => handleRevoke(inv.id_invite)} aria-label={t("revoke", "Revogar")} className={btnGhost}>
+                        <Trash2 className="h-4 w-4 text-[#FF4F9A]" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* Lista de menores */}
+          <section className="relative border-2 border-[#0B0B0D] bg-[#0F4C4F] p-5" style={panelStyle}>
+            <DressIcon className="absolute -right-3 -top-5 h-12 w-12 rotate-12" style={stickerShadow} />
+            <h2 className="fl-display flex items-center gap-2 text-2xl text-[#FFB300]">
+              <Users className="h-5 w-5" />
+              {t("linkedChildrenTitle", "Filhos vinculados")}
+            </h2>
+            <p className="mt-2 text-sm font-semibold text-[#FFF6E0]/85">
               {minors.length === 0
                 ? t("linkedChildrenEmptyDesc", "Quando o menor usar o seu código no cadastro, ele aparecerá aqui.")
                 : t("linkedChildrenDesc", "Toque em um menor para abrir permissões e enxames liberados.")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {loading && (
-              <p className="text-sm text-muted-foreground">{t("loading", "Carregando...")}</p>
-            )}
+            </p>
 
-            {!loading && minors.length === 0 && (
-              <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground">
-                {t("noChildrenYet", "Nenhum filho vinculado ainda.")}
-              </div>
-            )}
+            <div className="mt-4 space-y-3">
+              {loading && <p className="text-sm font-semibold text-[#FFF6E0]/60">{t("loading", "Carregando...")}</p>}
 
-            {minors.map((minor) => {
-              const expanded = expandedMinorId === minor.minor_user_id
-              const saving = savingMinorId === minor.minor_user_id
-              const allowedMachineIds = new Set(
-                minor.machines.filter((m) => m.allowed).map((m) => m.id_machine)
-              )
-              return (
-                <div
-                  key={minor.minor_user_id}
-                  className="rounded-lg border border-white/10 bg-zinc-950/40"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setExpandedMinorId(expanded ? null : minor.minor_user_id)}
-                    className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-white/[0.03]"
-                  >
-                    <Avatar className="h-10 w-10">
-                      {minor.minor_avatar && <AvatarImage src={minor.minor_avatar} />}
-                      <AvatarFallback>
-                        {(minor.minor_nome || "M").slice(0, 1).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">{minor.minor_nome}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        @{minor.minor_username || "—"}
-                      </p>
-                    </div>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${
-                        minor.status === "active"
-                          ? "bg-green-500/15 text-green-400"
-                          : minor.status === "suspended"
-                            ? "bg-yellow-500/15 text-yellow-400"
-                            : "bg-red-500/15 text-red-400"
-                      }`}
-                    >
-                      {minor.status === "active"
-                        ? t("supStatusActive", "ativo")
-                        : minor.status === "suspended"
-                          ? t("supStatusSuspended", "suspenso")
-                          : t("supStatusRevoked", "revogado")}
-                    </span>
-                  </button>
-
-                  {expanded && (
-                    <div className="space-y-5 border-t border-white/5 p-4">
-                      {/* Status controls */}
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          variant={minor.status === "active" ? "default" : "outline"}
-                          disabled={saving || minor.status === "active"}
-                          onClick={() => setStatus(minor, "active")}
-                        >
-                          {t("activate", "Ativar")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={minor.status === "suspended" ? "default" : "outline"}
-                          disabled={saving || minor.status === "suspended"}
-                          onClick={() => setStatus(minor, "suspended")}
-                        >
-                          {t("suspend", "Suspender")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={saving || minor.status === "revoked"}
-                          onClick={() => setStatus(minor, "revoked")}
-                          className="text-red-500 hover:text-red-400"
-                        >
-                          {t("revoke", "Revogar")}
-                        </Button>
-                        <Link
-                          href={`/account/parental/${minor.minor_user_id}/messages`}
-                          className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                        >
-                          <MessageSquare className="h-3 w-3" />
-                          {t("messagesOf", "Mensagens de")} {minor.minor_nome.split(" ")[0]}
-                        </Link>
-                      </div>
-
-                      {/* Permissões */}
-                      {minor.permissions ? (
-                        <div className="space-y-4">
-                          {PERMISSION_GROUPS.map((group) => (
-                            <div key={group.titleKey} className="space-y-2">
-                              <div>
-                                <p className="text-sm font-medium text-white">{t(group.titleKey, group.title)}</p>
-                                <p className="text-xs text-muted-foreground">{t(group.descKey, group.description)}</p>
-                              </div>
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                {group.items.map((item) => {
-                                  const isHard = !!group.hard
-                                  return (
-                                    <label
-                                      key={item.key}
-                                      className={`flex items-center gap-2 rounded-md border border-white/5 p-2 text-sm ${
-                                        isHard ? "opacity-60" : "hover:bg-white/[0.03] cursor-pointer"
-                                      }`}
-                                    >
-                                      <Checkbox
-                                        checked={!!minor.permissions?.[item.key]}
-                                        disabled={isHard || saving}
-                                        onCheckedChange={() => togglePermission(minor, item.key)}
-                                      />
-                                      <div className="min-w-0 flex-1">
-                                        <span className="text-white/90">{t(item.labelKey, item.label)}</span>
-                                        {item.hint && item.hintKey && (
-                                          <span className="ml-1 text-[10px] text-muted-foreground">
-                                            ({t(item.hintKey, item.hint)})
-                                          </span>
-                                        )}
-                                      </div>
-                                    </label>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">{t("permissionsUnavailable", "Permissões não disponíveis.")}</p>
-                      )}
-
-                      {/* Enxames */}
-                      <div className="space-y-2">
-                        <div>
-                          <p className="text-sm font-medium text-white">{t("allowedSwarms", "Enxames liberados")}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("allowedSwarmsDesc", "Marque os enxames que o menor pode usar. Sem marcação = bloqueado.")}
-                          </p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                          {machines.map((m) => {
-                            const allowed = allowedMachineIds.has(m.id_machine)
-                            return (
-                              <label
-                                key={m.id_machine}
-                                className="flex items-center gap-2 rounded-md border border-white/5 p-2 text-sm hover:bg-white/[0.03] cursor-pointer"
-                              >
-                                <Checkbox
-                                  checked={allowed}
-                                  disabled={saving}
-                                  onCheckedChange={(v) =>
-                                    toggleMachine(minor, m, v === true)
-                                  }
-                                />
-                                <span className="text-white/90">{tx.enxame(m.slug, m.name)}</span>
-                              </label>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+              {!loading && minors.length === 0 && (
+                <div className="flex flex-col items-center gap-3 border-2 border-dashed border-[#3FE0C5]/60 bg-[#0A3638] p-8 text-center">
+                  <div aria-hidden className="flex items-end gap-3">
+                    <Gamepad2 className="h-10 w-10 -rotate-12 text-[#FFB300]" />
+                    <DressIcon className="h-12 w-12" />
+                    <PixelHeart className="h-7 w-8" color={P.mint} />
+                  </div>
+                  <p className="text-sm font-bold text-[#FFF6E0]/75">{t("noChildrenYet", "Nenhum filho vinculado ainda.")}</p>
                 </div>
-              )
-            })}
-          </CardContent>
-        </Card>
-      </main>
-    </PageShell>
+              )}
+
+              {minors.map((minor) => {
+                const expanded = expandedMinorId === minor.minor_user_id
+                const saving = savingMinorId === minor.minor_user_id
+                const allowedMachineIds = new Set(minor.machines.filter((m) => m.allowed).map((m) => m.id_machine))
+                const statusClass =
+                  minor.status === "active"
+                    ? "bg-[#3FE0C5] text-[#0B0B0D]"
+                    : minor.status === "suspended"
+                      ? "bg-[#FFB300] text-[#0B0B0D]"
+                      : "bg-[#FF4F9A] text-[#FFF6E0]"
+                return (
+                  <div key={minor.minor_user_id} className="border-2 border-[#0B0B0D] bg-[#0A3638]">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedMinorId(expanded ? null : minor.minor_user_id)}
+                      className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-[#06262A]"
+                    >
+                      <Avatar className="h-11 w-11 border-2 border-[#FFB300]">
+                        {minor.minor_avatar && <AvatarImage src={minor.minor_avatar} />}
+                        <AvatarFallback className="bg-[#FF4F9A] font-black text-[#FFF6E0]">
+                          {(minor.minor_nome || "M").slice(0, 1).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-black text-[#FFF6E0]">{minor.minor_nome}</p>
+                        <p className="truncate text-xs font-bold text-[#3FE0C5]">@{minor.minor_username || "—"}</p>
+                      </div>
+                      <span className={`border-2 border-[#0B0B0D] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${statusClass}`}>
+                        {minor.status === "active"
+                          ? t("supStatusActive", "ativo")
+                          : minor.status === "suspended"
+                            ? t("supStatusSuspended", "suspenso")
+                            : t("supStatusRevoked", "revogado")}
+                      </span>
+                    </button>
+
+                    {expanded && (
+                      <div className="space-y-5 border-t-2 border-[#0B0B0D] p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            className={btnGhost}
+                            disabled={saving || minor.status === "active"}
+                            onClick={() => setStatus(minor, "active")}
+                          >
+                            {t("activate", "Ativar")}
+                          </button>
+                          <button
+                            type="button"
+                            className={btnGhost}
+                            disabled={saving || minor.status === "suspended"}
+                            onClick={() => setStatus(minor, "suspended")}
+                          >
+                            {t("suspend", "Suspender")}
+                          </button>
+                          <button
+                            type="button"
+                            className={`${btnGhost} text-[#FF4F9A]`}
+                            disabled={saving || minor.status === "revoked"}
+                            onClick={() => setStatus(minor, "revoked")}
+                          >
+                            {t("revoke", "Revogar")}
+                          </button>
+                          <Link
+                            href={`/account/parental/${minor.minor_user_id}/messages`}
+                            className="ml-auto inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#FFB300] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]"
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            {t("messagesOf", "Mensagens de")} {minor.minor_nome.split(" ")[0]}
+                          </Link>
+                        </div>
+
+                        {minor.permissions ? (
+                          <div className="space-y-4">
+                            {PERMISSION_GROUPS.map((group) => (
+                              <div key={group.titleKey} className="space-y-2">
+                                <div>
+                                  <p className="text-sm font-black uppercase tracking-[0.08em] text-[#FFB300]">
+                                    {t(group.titleKey, group.title)}
+                                  </p>
+                                  <p className="text-xs font-semibold text-[#FFF6E0]/65">{t(group.descKey, group.description)}</p>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                  {group.items.map((item) => {
+                                    const isHard = !!group.hard
+                                    return (
+                                      <label
+                                        key={item.key}
+                                        className={`flex items-center gap-2 border-2 border-[#06262A] bg-[#0F4C4F] p-2 text-sm ${
+                                          isHard ? "opacity-55" : "cursor-pointer hover:border-[#FFB300]"
+                                        }`}
+                                      >
+                                        <Checkbox
+                                          checked={!!minor.permissions?.[item.key]}
+                                          disabled={isHard || saving}
+                                          onCheckedChange={() => togglePermission(minor, item.key)}
+                                          className={checkboxSkin}
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                          <span className="font-semibold text-[#FFF6E0]">{t(item.labelKey, item.label)}</span>
+                                          {item.hint && item.hintKey && (
+                                            <span className="ml-1 text-[10px] text-[#3FE0C5]">({t(item.hintKey, item.hint)})</span>
+                                          )}
+                                        </div>
+                                      </label>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-[#FFF6E0]/60">{t("permissionsUnavailable", "Permissões não disponíveis.")}</p>
+                        )}
+
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-sm font-black uppercase tracking-[0.08em] text-[#FFB300]">
+                              {t("allowedSwarms", "Enxames liberados")}
+                            </p>
+                            <p className="text-xs font-semibold text-[#FFF6E0]/65">
+                              {t("allowedSwarmsDesc", "Marque os enxames que o menor pode usar. Sem marcação = bloqueado.")}
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                            {machines.map((m) => {
+                              const allowed = allowedMachineIds.has(m.id_machine)
+                              return (
+                                <label
+                                  key={m.id_machine}
+                                  className="flex cursor-pointer items-center gap-2 border-2 border-[#06262A] bg-[#0F4C4F] p-2 text-sm hover:border-[#FFB300]"
+                                >
+                                  <Checkbox
+                                    checked={allowed}
+                                    disabled={saving}
+                                    onCheckedChange={(v) => toggleMachine(minor, m, v === true)}
+                                    className={checkboxSkin}
+                                  />
+                                  <span className="font-semibold text-[#FFF6E0]">{tx.enxame(m.slug, m.name)}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
   )
 }

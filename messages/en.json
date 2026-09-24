@@ -1537,7 +1537,9 @@
     "adjustServicePhotoTitle": "Adjust service photo",
     "adjustServicePhotoDesc": "Zoom and drag to choose what shows up in your storefront.",
     "aiAttendant": "AI attendant",
-    "aiAttendantAria": "AI attendant: what the platform should know to answer for you"
+    "aiAttendantAria": "AI attendant: what the platform should know to answer for you",
+    "parentalLinkedCount": "{n} linked",
+    "parentalSubtitlePlay": "Your little players in one place: link them, unlock what's allowed and follow their conversations."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
