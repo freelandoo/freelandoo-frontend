@@ -2285,8 +2285,7 @@ export default function CommunityDetailPage() {
                 merge mexeu em quem está na frente. */}
             {panelTab === "members" && (
               <div className="p-4 md:p-5">
-
-                members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
+                {members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {ranked.map((m, i) => (
                       <div key={m.id_user} className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E] p-3">
@@ -2306,6 +2305,7 @@ export default function CommunityDetailPage() {
                       </div>
                     ))}
                   </div>
+                )}
               </div>
             )}
 
