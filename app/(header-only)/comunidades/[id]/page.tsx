@@ -64,6 +64,15 @@ const PET_INLINE: Record<string, string> = {
   "#9A938A": "#7A5A3C",
   "#0B0B0D": "#A85A24",
 }
+/** Espelho, para `style` inline, dos valores da pele `.fl-car` (globals.css) —
+ *  clara desde a 5ª passada (capa de jogo de corrida). */
+const CAR_INLINE: Record<string, string> = {
+  "#15120E": "#FFFFFF",
+  "#1D1810": "#ECEAE6",
+  "#F5F1E8": "#111113",
+  "#9A938A": "#55555C",
+  "#0B0B0D": "#111113",
+}
 const CommentsPanel = dynamic(
   () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
   { ssr: false }
@@ -577,8 +586,9 @@ export default function CommunityDetailPage() {
   // uma comunidade, e a barra da Freelandoo fica. ⚠️ É a ÚNICA pele CLARA —
   // ela inverte a tinta (claro → marrom); ver `.fl-pet` em globals.css.
   const isPetPlatform = (community?.kind ?? null) === "pet"
-  // MEU CARRO — pele fixa VERMELHO ESCURO E PRETO com rodas no fundo (Alex,
-  // 2026-09-24). Escura, como games/fitness: não precisa do `skinHex`.
+  // MEU CARRO — pele de CAPA DE JOGO DE CORRIDA (Alex, 2026-09-24, 5ª passada):
+  // papel, cidade vermelha e asfalto. ⚠️ Virou a SEGUNDA pele CLARA: passa pelo
+  // `skinHex` (CAR_INLINE), como o pet.
   const isCarPlatform = (community?.kind ?? null) === "car"
   const isSkinned = isBusinessPlatform || isPetPlatform || isCarPlatform
 
@@ -740,17 +750,22 @@ export default function CommunityDetailPage() {
   // uma coisa que muda de valor a cada troca de paleta do líder.
   const surfaceShadow = useCallback(
     (color: string, px: number) =>
-      isSkinned
-        ? `0 0 0 1px ${color}66, 0 18px 48px -18px ${color}`
-        : `${px}px ${px}px 0 0 ${color}`,
-    [isSkinned]
+      // O carro (capa de jogo, papel branco) volta ao traço duro — PRETO, como
+      // o contorno da capa; brilho difuso sobre o branco leria como borrão.
+      isCarPlatform
+        ? `${px}px ${px}px 0 0 #111113`
+        : isSkinned
+          ? `0 0 0 1px ${color}66, 0 18px 48px -18px ${color}`
+          : `${px}px ${px}px 0 0 ${color}`,
+    [isSkinned, isCarPlatform]
   )
   // As poucas cores escritas em `style` inline (a pele de classe não as
   // alcança). No pet, as superfícies escuras viram bege e a tinta, marrom —
   // os MESMOS valores de `.fl-pet`. Tinta sobre o accent NÃO passa por aqui.
   const skinHex = useCallback(
-    (hex: string) => (isPetPlatform ? PET_INLINE[hex] ?? hex : hex),
-    [isPetPlatform]
+    (hex: string) =>
+      isPetPlatform ? PET_INLINE[hex] ?? hex : isCarPlatform ? CAR_INLINE[hex] ?? hex : hex,
+    [isPetPlatform, isCarPlatform]
   )
 
   const showAsLeaderEdit = canAdminister && edit
@@ -1779,7 +1794,7 @@ export default function CommunityDetailPage() {
             {/* Pintura de corrida do carro: listras + faixa quadriculada. Com
                 foto de capa as listras recuam para o canto. */}
             {isCarPlatform && <div aria-hidden data-photo={bannerSrc ? "true" : "false"} className="fl-car-livery pointer-events-none absolute inset-0" />}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : "#0b0804cc"} 100%)` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCarPlatform ? "#F4F2EE00" : "#0b0804cc"} 100%)` }} />
             {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
             {community.enxame_name && (
               <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
