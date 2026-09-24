@@ -42,14 +42,15 @@ type SpaceKind = "pet" | "car" | "condo" | "neighborhood" | "common"
 
 /**
  * Modalidades de UM só por pessoa (decisão do Alex, 2026-09-17): *"só pode uma
- * de condomínio, e uma de rua, somente o pet pode ter mais de uma"*.
+ * de condomínio, e uma de rua, somente o pet pode ter mais de uma"*. O carro
+ * saiu da lista na mig 259 (2026-09-24): "um ou mais, estilo o meu pet".
  *
  * ⚠️ ESPELHO, NÃO REGRA. Quem recusa é o backend (`utils/spaceCaps` — as três
  * portas do condomínio, as duas do bairro e o botão genérico de entrar); aqui
  * só se decide o que OFERECER. Errar para mais deste lado esconde um botão;
  * errar do outro abriria a porta. Mexeu numa lista, confira a outra.
  */
-const SINGLE_SPACE_KINDS: SpaceKind[] = ["condo", "neighborhood", "car"]
+const SINGLE_SPACE_KINDS: SpaceKind[] = ["condo", "neighborhood"]
 
 type SpaceRow = {
   id_profile: string

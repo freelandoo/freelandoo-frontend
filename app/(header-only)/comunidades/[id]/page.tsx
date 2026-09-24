@@ -281,6 +281,12 @@ export default function CommunityDetailPage() {
   const [bees, setBees] = useState<CommunityBee[]>([])
   const [postsCursor, setPostsCursor] = useState<string | null>(null)
   const [postsHasMore, setPostsHasMore] = useState(false)
+  // FEED DE CARROS (mig 259): na página de um carro o feed junta os posts de
+  // TODOS os carros do site, ou só os de quem tem o mesmo modelo que um dos
+  // seus. Quem recorta é o backend (`scope`); aqui só se escolhe e se lê o
+  // aviso de quando não há "meu modelo" para comparar.
+  const [carScope, setCarScope] = useState<"all" | "same_model">("all")
+  const [needsCarModel, setNeedsCarModel] = useState(false)
   const [loadingPosts, setLoadingPosts] = useState(true)
   const [loadingMorePosts, setLoadingMorePosts] = useState(false)
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
@@ -1031,6 +1037,9 @@ export default function CommunityDetailPage() {
     try {
       const sp = new URLSearchParams({ limit: "10" })
       if (!reset && cursor) sp.set("cursor", cursor)
+      // Fora do carro o backend ignora o parâmetro — mandá-lo só no "mesmo
+      // modelo" mantém a URL das outras modalidades idêntica à de sempre.
+      if (carScope === "same_model") sp.set("scope", "same_model")
       const token = getToken()
       const r = await fetch(`/api/communities/${id}/feed-posts?${sp.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -1041,10 +1050,11 @@ export default function CommunityDetailPage() {
       setPosts((prev) => (reset ? items : [...prev, ...items]))
       setPostsCursor(d.next_cursor || null)
       setPostsHasMore(!!d.has_more)
+      setNeedsCarModel(!!d.needs_car_model)
     } finally {
       if (reset) setLoadingPosts(false); else setLoadingMorePosts(false)
     }
-  }, [id])
+  }, [id, carScope])
 
   const loadAll = useCallback(async () => {
     if (!id) return
@@ -1423,8 +1433,8 @@ export default function CommunityDetailPage() {
           })
           const sData = await sRes.json()
           if (!sRes.ok) {
-            // 409 = esse modelo já tem comunidade. O erro aponta qual, para a
-            // pessoa poder ir até ela em vez de ficar tentando.
+            // Desde a mig 259 o modelo do carro não colide mais com ninguém;
+            // `existing_community` fica para quem ainda devolver o apontamento.
             throw new Error(
               sData.existing_community
                 ? `${sData.error} (${sData.existing_community.display_name})`
@@ -2601,9 +2611,36 @@ export default function CommunityDetailPage() {
                     </div>
                   )}
 
+                  {/* O recorte do feed de carros (mig 259) — só existe na página de carro. */}
+                  {isCarPlatform && (
+                    <div role="group" aria-label={t("carFeedScopeAria", "Filtrar o feed de carros")} className="flex gap-2">
+                      {(["all", "same_model"] as const).map((sc) => {
+                        const on = carScope === sc
+                        return (
+                          <button
+                            key={sc}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() => setCarScope(sc)}
+                            className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
+                            style={on ? { background: accent, color: "#0B0B0D" } : { background: "#15120E", color: "#F5F1E8" }}
+                          >
+                            {sc === "all"
+                              ? t("carFeedAll", "Todos os carros")
+                              : t("carFeedSameModel", "Mesmo carro que o meu")}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+
                   {/* Feed unificado (posts + bees + recados) — cards padrão do Freelandoo */}
                   {loadingPosts ? (
                     <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" /></div>
+                  ) : posts.length === 0 && isCarPlatform && needsCarModel ? (
+                    // "Mesmo carro que o meu" sem nenhum carro com modelo: a
+                    // lista vazia tem conserto, e a tela diz qual é.
+                    <Empty text={t("carFeedNeedsModel", "Escolha o modelo de um dos seus carros para ver quem tem o mesmo.")} />
                   ) : posts.length === 0 ? (
                     // FEED VAZIO: o convite ocupa o lugar da caixa "ainda não
                     // há publicações" em vez de ficar ao lado dela — a caixa

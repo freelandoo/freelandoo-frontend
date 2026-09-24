@@ -2891,7 +2891,11 @@
     "leadsPill": "Leads",
     "leadsPillAria": "Encontrar clientes: empresas por categoría y ciudad",
     "sitePillAria": "Abrir el constructor del sitio del negocio",
-    "accentCrimson": "Rojo oscuro"
+    "accentCrimson": "Rojo oscuro",
+    "carFeedScopeAria": "Filtrar el feed de autos",
+    "carFeedAll": "Todos los autos",
+    "carFeedSameModel": "Mismo auto que el mío",
+    "carFeedNeedsModel": "Elige el modelo de uno de tus autos para ver quién tiene el mismo."
   },
   "Careers": {
     "hero.badge": "Carreras",

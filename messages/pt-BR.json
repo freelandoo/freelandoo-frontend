@@ -2878,7 +2878,11 @@
     "leadsPill": "Leads",
     "leadsPillAria": "Encontrar clientes: empresas por categoria e cidade",
     "sitePillAria": "Abrir o construtor do site do negócio",
-    "accentCrimson": "Vermelho escuro"
+    "accentCrimson": "Vermelho escuro",
+    "carFeedScopeAria": "Filtrar o feed de carros",
+    "carFeedAll": "Todos os carros",
+    "carFeedSameModel": "Mesmo carro que o meu",
+    "carFeedNeedsModel": "Escolha o modelo de um dos seus carros para ver quem tem o mesmo."
   },
   "Careers": {
     "hero.badge": "Carreiras",
