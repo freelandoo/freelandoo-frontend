@@ -368,7 +368,10 @@ export default function CommunityDetailPage() {
   //
   // Painel novo entra AQUI (no tipo) e na lista de pills abaixo — os dois lados
   // são a mesma decisão, e separá-los deixaria um botão sem painel.
-  type CommunityPanel = "community"
+  //
+  // O ASSUNTO (pet/carro) virou o SEGUNDO painel em 2026-09-24 (pedido do
+  // Alex: "o carro, o pet, tudo isso vira pill em sua comunidade, laranja").
+  type CommunityPanel = "community" | "subject"
   /** Qual aba do painel único está aberta. */
   type PanelTab = "profile" | "mural" | "members" | "stats"
   const [panel, setPanel] = useState<CommunityPanel | null>(null)
@@ -460,6 +463,12 @@ export default function CommunityDetailPage() {
     }
     return null
   })()
+  // ⚠️ O ASSUNTO SAIU DO MODO DE EDIÇÃO e foi para o pill laranja (Meu carro
+  // / Meu pet). Quem edita é o DONO com o painel aberto — as listas de marca,
+  // modelo e raça só são baixadas nesse momento: um visitante não precisa de
+  // 300 modelos de carro para ler o mural.
+  const editingSubject = isLeader && panel === "subject" && !!subjectKind
+  const [savingSubject, setSavingSubject] = useState(false)
   const isResident = !!community?.viewer_is_resident
   // Quem publica é MEMBRO — no condomínio, MORADOR. O ramo de plataforma
   // (publicar por estar logado) saiu junto com games: aqui só restam
@@ -865,6 +874,33 @@ export default function CommunityDetailPage() {
             }
           : {}),
       },
+      // ─── MEU CARRO / MEU PET (2026-09-24) ──────────────────────────────────
+      //
+      // O assunto da comunidade era um bloco no corpo da página, só no modo de
+      // edição. Virou pill LARANJA: o painel dele lê o assunto para quem visita
+      // e o edita para o dono. Nunca coexiste com Leads/Indicadores/Site
+      // (negócio) nem com Delivery (territorial): a pilha de pet e carro fica
+      // em DOIS — 2 × 36 + 6 = 78px contra a foto de 192px.
+      ...(subjectKind
+        ? ([
+            {
+              key: "subject",
+              icon: subjectKind === "car" ? Car : PawPrint,
+              label:
+                subjectKind === "car"
+                  ? isLeader ? t("subjectPillMyCar", "Meu carro") : t("subjectPillCar", "O carro")
+                  : isLeader ? t("subjectPillMyPet", "Meu pet") : t("subjectPillPet", "O pet"),
+              ariaLabel:
+                subjectKind === "car"
+                  ? t("subjectPillCarAria", "Abrir a marca e o modelo do carro")
+                  : t("subjectPillPetAria", "Abrir a espécie e a raça do pet"),
+              bg: "#C2410C",
+              bgHover: "#9A3412",
+              onOpen: () => setPanel((p) => (p === "subject" ? null : "subject")),
+              active: panel === "subject",
+            },
+          ] as PillSpec[])
+        : []),
       // ─── LEADS (mig 254) ───────────────────────────────────────────────────
       //
       // A prospecção. NAVEGA em vez de abrir painel, pela mesma régua dos
@@ -975,7 +1011,7 @@ export default function CommunityDetailPage() {
           ] as PillSpec[])
         : []),
     ]
-  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident])
+  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -1190,7 +1226,7 @@ export default function CommunityDetailPage() {
   }, [isBusinessPlatform])
 
   useEffect(() => {
-    if (!showAsLeaderEdit || subjectKind !== "pet") return
+    if (!editingSubject || subjectKind !== "pet") return
     const token = getToken()
     if (!token) return
     const species = petDraft.species || "dog"
@@ -1198,20 +1234,20 @@ export default function CommunityDetailPage() {
       .then((r) => r.json())
       .then((d) => setBreeds(Array.isArray(d.breeds) ? d.breeds : []))
       .catch(() => setBreeds([]))
-  }, [showAsLeaderEdit, subjectKind, petDraft.species])
+  }, [editingSubject, subjectKind, petDraft.species])
 
   useEffect(() => {
-    if (!showAsLeaderEdit || subjectKind !== "car") return
+    if (!editingSubject || subjectKind !== "car") return
     const token = getToken()
     if (!token) return
     fetch("/api/cars/brands", { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((d) => setCarBrands(Array.isArray(d.brands) ? d.brands : []))
       .catch(() => setCarBrands([]))
-  }, [showAsLeaderEdit, subjectKind])
+  }, [editingSubject, subjectKind])
 
   useEffect(() => {
-    if (!showAsLeaderEdit || subjectKind !== "car" || !carDraft.brand_code) {
+    if (!editingSubject || subjectKind !== "car" || !carDraft.brand_code) {
       setCarModels([])
       return
     }
@@ -1223,7 +1259,7 @@ export default function CommunityDetailPage() {
       .then((r) => r.json())
       .then((d) => setCarModels(Array.isArray(d.models) ? d.models : []))
       .catch(() => setCarModels([]))
-  }, [showAsLeaderEdit, subjectKind, carDraft.brand_code])
+  }, [editingSubject, subjectKind, carDraft.brand_code])
 
   // Comunidade privada: cria o checkout da assinatura mensal e redireciona.
   const startMembershipCheckout = useCallback(async () => {
@@ -1405,50 +1441,62 @@ export default function CommunityDetailPage() {
         const tData = await tRes.json()
         if (!tRes.ok) throw new Error(tData.error || t("saveError", "Não foi possível salvar."))
       }
-      // Assunto (pet/carro): vai junto do Salvar, e não num botão só dele —
-      // para quem edita, nome, foto e raça são a mesma tarefa.
-      if (subjectKind) {
-        const base = subjectKind === "pet" ? "pets" : "cars"
-        const body =
-          subjectKind === "pet"
-            ? {
-                species: petDraft.species || null,
-                breed_slug: petDraft.breed_slug || null,
-                breed_label: petDraft.breed_label || null,
-                birth_year: petDraft.birth_year || null,
-              }
-            : {
-                  brand_code: carDraft.brand_code || null,
-                  brand_label: carBrands.find((b) => b.code === carDraft.brand_code)?.label || null,
-                  model_code: carDraft.model_code || null,
-                  model_label: carModels.find((m) => m.code === carDraft.model_code)?.label || null,
-                }
-        // Carro sem modelo escolhido ainda: não manda nada em vez de tomar 400.
-        const skip = subjectKind === "car" && (!carDraft.brand_code || !carDraft.model_code)
-        if (!skip) {
-          const sRes = await fetch(`/api/${base}/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify(body),
-          })
-          const sData = await sRes.json()
-          if (!sRes.ok) {
-            // Desde a mig 259 o modelo do carro não colide mais com ninguém;
-            // `existing_community` fica para quem ainda devolver o apontamento.
-            throw new Error(
-              sData.existing_community
-                ? `${sData.error} (${sData.existing_community.display_name})`
-                : sData.error || t("saveError", "Não foi possível salvar."),
-            )
-          }
-        }
-      }
       setActionMsg(t("profileSaved", "Alterações salvas!"))
       await loadAll()
       setTimeout(() => setActionMsg(null), 2500)
     } catch (err) {
       setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
     } finally { setSaving(false) }
+  }
+
+  // O ASSUNTO (pet/carro) tem Salvar PRÓPRIO desde que virou pill: o Salvar
+  // de cima é do modo de edição da página, e o painel abre fora dele.
+  const saveSubject = async () => {
+    if (!subjectKind) return
+    const token = getToken()
+    if (!token) return
+    setSavingSubject(true); setActionMsg(null)
+    try {
+      const base = subjectKind === "pet" ? "pets" : "cars"
+      const body =
+        subjectKind === "pet"
+          ? {
+              species: petDraft.species || null,
+              breed_slug: petDraft.breed_slug || null,
+              breed_label: petDraft.breed_label || null,
+              birth_year: petDraft.birth_year || null,
+            }
+          : {
+              brand_code: carDraft.brand_code || null,
+              brand_label: carBrands.find((b) => b.code === carDraft.brand_code)?.label || null,
+              model_code: carDraft.model_code || null,
+              model_label: carModels.find((m) => m.code === carDraft.model_code)?.label || null,
+            }
+      // Carro sem modelo escolhido: diz o que falta em vez de tomar 400.
+      if (subjectKind === "car" && (!carDraft.brand_code || !carDraft.model_code)) {
+        throw new Error(t("carPickModelFirst", "Escolha a marca e o modelo."))
+      }
+      const sRes = await fetch(`/api/${base}/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      })
+      const sData = await sRes.json()
+      if (!sRes.ok) {
+        // Desde a mig 259 o modelo do carro não colide mais com ninguém;
+        // `existing_community` fica para quem ainda devolver o apontamento.
+        throw new Error(
+          sData.existing_community
+            ? `${sData.error} (${sData.existing_community.display_name})`
+            : sData.error || t("saveError", "Não foi possível salvar."),
+        )
+      }
+      setActionMsg(t("profileSaved", "Alterações salvas!"))
+      await loadAll()
+      setTimeout(() => setActionMsg(null), 2500)
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setSavingSubject(false) }
   }
 
   // Temporada (meta)
@@ -1935,7 +1983,7 @@ export default function CommunityDetailPage() {
           A moldura é COMPARTILHADA e só a cor e o título mudam por painel — é o
           que mantém os dois com a mesma cara conforme a lista de botões
           crescer. */}
-      {panel && (
+      {panel === "community" && (
         <section className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
           <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow("#1D4ED8", 6) }}>
             <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
@@ -2395,6 +2443,111 @@ export default function CommunityDetailPage() {
         </section>
       )}
 
+      {/* O PAINEL DO ASSUNTO (pet/carro) — o pill laranja. Moldura igual à do
+          painel da comunidade, na cor do pill. O dono edita; quem visita lê. */}
+      {panel === "subject" && subjectKind && (
+        <section className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow("#C2410C", 6) }}>
+            <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
+              <span className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]">
+                {subjectKind === "car"
+                  ? <Car className="h-4 w-4" style={{ color: "#FB923C" }} />
+                  : <PawPrint className="h-4 w-4" style={{ color: "#FB923C" }} />}
+                {subjectKind === "car"
+                  ? isLeader ? t("subjectPillMyCar", "Meu carro") : t("subjectPillCar", "O carro")
+                  : isLeader ? t("subjectPillMyPet", "Meu pet") : t("subjectPillPet", "O pet")}
+              </span>
+              <button type="button" onClick={() => setPanel(null)} aria-label={t("panelClose", "Fechar")}
+                className="border-2 border-[#0B0B0D] bg-[#15120E] p-1 text-[#9A938A] transition hover:text-[#F5F1E8]">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-4 p-4 md:p-5">
+              {isLeader ? (
+                <>
+                  {subjectKind === "pet" ? (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {([
+                          ["dog", t("speciesDog", "Cachorro")],
+                          ["cat", t("speciesCat", "Gato")],
+                          ["other", t("speciesOther", "Outro animal")],
+                        ] as const).map(([key, label]) => (
+                          <button key={key} type="button"
+                            onClick={() => setPetDraft((d) => ({ ...d, species: key, breed_slug: "" }))}
+                            className="border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
+                            style={petDraft.species === key ? { background: accent, color: "#0B0B0D" } : { background: skinHex("#1D1810"), color: skinHex("#9A938A") }}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("breedLabel", "Raça")}</span>
+                        <select value={petDraft.breed_slug}
+                          onChange={(e) => {
+                            const slug = e.target.value
+                            const found = breeds.find((b) => b.slug === slug)
+                            setPetDraft((d) => ({ ...d, breed_slug: slug, breed_label: found ? found.label : d.breed_label }))
+                          }}
+                          className={selectCls}>
+                          <option value="">{petDraft.breed_label || t("breedUnknown", "Não sei / não informar")}</option>
+                          {breeds.map((b) => (
+                            <option key={b.id_breed} value={b.slug}>{b.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("birthYearLabel", "Ano de nascimento")}</span>
+                        <input value={petDraft.birth_year} inputMode="numeric" placeholder="2021"
+                          onChange={(e) => setPetDraft((d) => ({ ...d, birth_year: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                          className={selectCls} />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs leading-snug text-[#9A938A]">
+                        {t("carModelHint", "Escolha a marca e o modelo: é por eles que o filtro “Mesmo carro que o meu” encontra quem tem o mesmo carro.")}
+                      </p>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("carBrandLabel", "Marca")}</span>
+                        <select value={carDraft.brand_code}
+                          onChange={(e) => setCarDraft({ brand_code: e.target.value, model_code: "" })}
+                          className={selectCls}>
+                          <option value="">—</option>
+                          {carBrands.map((b) => (
+                            <option key={b.code} value={b.code}>{b.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("carModelLabel", "Modelo")}</span>
+                        <select value={carDraft.model_code} disabled={!carDraft.brand_code}
+                          onChange={(e) => setCarDraft((d) => ({ ...d, model_code: e.target.value }))}
+                          className={selectCls}>
+                          <option value="">{carDraft.brand_code ? "—" : t("carPickBrandFirst", "Escolha a marca")}</option>
+                          {carModels.map((m) => (
+                            <option key={m.code} value={m.code}>{m.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  )}
+                  <button type="button" onClick={saveSubject} disabled={savingSubject}
+                    className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-5 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D] disabled:opacity-60"
+                    style={{ background: accent }}>
+                    {savingSubject ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {t("subjectSave", "Salvar")}
+                  </button>
+                </>
+              ) : (
+                <p className="fl-display text-2xl leading-tight text-[#F5F1E8]">
+                  {subjectChip || t("subjectNotSet", "O dono ainda não informou.")}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {actionMsg && (
         <div className="relative z-10 mx-auto mt-4 max-w-5xl px-0 md:px-10">
           <p className="inline-block border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-xs font-bold text-[#F5F1E8]">{actionMsg}</p>
@@ -2429,79 +2582,9 @@ export default function CommunityDetailPage() {
               carro, jogo. Fica aqui, no modo de edição, e não num modal de
               cadastro — a comunidade nasce vazia e é batizada dentro de si
               mesma (decisão do Alex: "já entra numa página pronta editável"). */}
-          {showAsLeaderEdit && subjectKind === "pet" && (
-            <Block title={t("subjectPetTitle", "Sobre o pet")} icon={<PawPrint className="h-4 w-4" />} accent={accent}>
-              <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {([
-                    ["dog", t("speciesDog", "Cachorro")],
-                    ["cat", t("speciesCat", "Gato")],
-                    ["other", t("speciesOther", "Outro animal")],
-                  ] as const).map(([key, label]) => (
-                    <button key={key} type="button"
-                      onClick={() => setPetDraft((d) => ({ ...d, species: key, breed_slug: "" }))}
-                      className="border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
-                      style={petDraft.species === key ? { background: accent, color: "#0B0B0D" } : { background: skinHex("#1D1810"), color: skinHex("#9A938A") }}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <label className="block">
-                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("breedLabel", "Raça")}</span>
-                  <select value={petDraft.breed_slug}
-                    onChange={(e) => {
-                      const slug = e.target.value
-                      const found = breeds.find((b) => b.slug === slug)
-                      setPetDraft((d) => ({ ...d, breed_slug: slug, breed_label: found ? found.label : d.breed_label }))
-                    }}
-                    className={selectCls}>
-                    <option value="">{petDraft.breed_label || t("breedUnknown", "Não sei / não informar")}</option>
-                    {breeds.map((b) => (
-                      <option key={b.id_breed} value={b.slug}>{b.label}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("birthYearLabel", "Ano de nascimento")}</span>
-                  <input value={petDraft.birth_year} inputMode="numeric" placeholder="2021"
-                    onChange={(e) => setPetDraft((d) => ({ ...d, birth_year: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                    className={selectCls} />
-                </label>
-              </div>
-            </Block>
-          )}
-
-          {showAsLeaderEdit && subjectKind === "car" && (
-            <Block title={t("subjectCarTitle", "O carro")} icon={<Car className="h-4 w-4" />} accent={accent}>
-              <div className="space-y-3">
-                <p className="text-xs leading-snug text-[#9A938A]">
-                  {t("carUniqueHint", "Existe uma única comunidade por modelo. Se o modelo já tiver dono, o site avisa e leva você até ela.")}
-                </p>
-                <label className="block">
-                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("carBrandLabel", "Marca")}</span>
-                  <select value={carDraft.brand_code}
-                    onChange={(e) => setCarDraft({ brand_code: e.target.value, model_code: "" })}
-                    className={selectCls}>
-                    <option value="">—</option>
-                    {carBrands.map((b) => (
-                      <option key={b.code} value={b.code}>{b.label}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("carModelLabel", "Modelo")}</span>
-                  <select value={carDraft.model_code} disabled={!carDraft.brand_code}
-                    onChange={(e) => setCarDraft((d) => ({ ...d, model_code: e.target.value }))}
-                    className={selectCls}>
-                    <option value="">{carDraft.brand_code ? "—" : t("carPickBrandFirst", "Escolha a marca")}</option>
-                    {carModels.map((m) => (
-                      <option key={m.code} value={m.code}>{m.label}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            </Block>
-          )}
+          {/* O ASSUNTO (raça do pet, modelo do carro) SAIU DAQUI em 2026-09-24:
+              virou o pill laranja do headcard ("Meu carro" / "Meu pet"). Não
+              recolocar — seriam duas portas para o mesmo formulário. */}
 
           {/* Tabs */}
           <div ref={tabsRef} className="scroll-mt-4">

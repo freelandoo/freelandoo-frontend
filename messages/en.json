@@ -2895,7 +2895,17 @@
     "carFeedScopeAria": "Filter the car feed",
     "carFeedAll": "All cars",
     "carFeedSameModel": "Same car as mine",
-    "carFeedNeedsModel": "Pick the model of one of your cars to see who has the same one."
+    "carFeedNeedsModel": "Pick the model of one of your cars to see who has the same one.",
+    "subjectPillMyCar": "My car",
+    "subjectPillCar": "The car",
+    "subjectPillMyPet": "My pet",
+    "subjectPillPet": "The pet",
+    "subjectPillCarAria": "Open the car's make and model",
+    "subjectPillPetAria": "Open the pet's species and breed",
+    "carModelHint": "Pick the make and model: that's how the “Same car as mine” filter finds people with the same car.",
+    "carPickModelFirst": "Pick the make and model.",
+    "subjectSave": "Save",
+    "subjectNotSet": "The owner hasn't filled this in yet."
   },
   "Careers": {
     "hero.badge": "Careers",

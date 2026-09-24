@@ -25,6 +25,22 @@ const COMMUNITY = {
     "Pick the model of one of your cars to see who has the same one.",
     "Elige el modelo de uno de tus autos para ver quién tiene el mismo.",
   ],
+
+  // O assunto (pet/carro) virou o pill LARANJA do headcard (2026-09-24).
+  subjectPillMyCar: ["Meu carro", "My car", "Mi auto"],
+  subjectPillCar: ["O carro", "The car", "El auto"],
+  subjectPillMyPet: ["Meu pet", "My pet", "Mi mascota"],
+  subjectPillPet: ["O pet", "The pet", "La mascota"],
+  subjectPillCarAria: ["Abrir a marca e o modelo do carro", "Open the car's make and model", "Abrir la marca y el modelo del auto"],
+  subjectPillPetAria: ["Abrir a espécie e a raça do pet", "Open the pet's species and breed", "Abrir la especie y la raza de la mascota"],
+  carModelHint: [
+    "Escolha a marca e o modelo: é por eles que o filtro “Mesmo carro que o meu” encontra quem tem o mesmo carro.",
+    "Pick the make and model: that's how the “Same car as mine” filter finds people with the same car.",
+    "Elige la marca y el modelo: así el filtro “Mismo auto que el mío” encuentra a quien tiene el mismo auto.",
+  ],
+  carPickModelFirst: ["Escolha a marca e o modelo.", "Pick the make and model.", "Elige la marca y el modelo."],
+  subjectSave: ["Salvar", "Save", "Guardar"],
+  subjectNotSet: ["O dono ainda não informou.", "The owner hasn't filled this in yet.", "El dueño aún no lo informó."],
 };
 
 const NAMESPACES = { Community: COMMUNITY };

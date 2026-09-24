@@ -2895,7 +2895,17 @@
     "carFeedScopeAria": "Filtrar el feed de autos",
     "carFeedAll": "Todos los autos",
     "carFeedSameModel": "Mismo auto que el mío",
-    "carFeedNeedsModel": "Elige el modelo de uno de tus autos para ver quién tiene el mismo."
+    "carFeedNeedsModel": "Elige el modelo de uno de tus autos para ver quién tiene el mismo.",
+    "subjectPillMyCar": "Mi auto",
+    "subjectPillCar": "El auto",
+    "subjectPillMyPet": "Mi mascota",
+    "subjectPillPet": "La mascota",
+    "subjectPillCarAria": "Abrir la marca y el modelo del auto",
+    "subjectPillPetAria": "Abrir la especie y la raza de la mascota",
+    "carModelHint": "Elige la marca y el modelo: así el filtro “Mismo auto que el mío” encuentra a quien tiene el mismo auto.",
+    "carPickModelFirst": "Elige la marca y el modelo.",
+    "subjectSave": "Guardar",
+    "subjectNotSet": "El dueño aún no lo informó."
   },
   "Careers": {
     "hero.badge": "Carreras",
