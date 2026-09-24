@@ -331,12 +331,12 @@ export default function ParentalPage() {
   }
 
   const P = PARENTAL
-  const panelStyle = { boxShadow: `8px 8px 0 0 ${P.ink}` }
+  const panelStyle = { boxShadow: `0 0 34px rgba(255, 150, 0, 0.16), 8px 8px 0 0 rgba(3, 26, 28, 0.95)` }
   const stickerShadow = { filter: `drop-shadow(3px 3px 0 ${P.ink})` }
   const btnPrimary =
     "inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#FFB300] px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:bg-[#FFD166] disabled:opacity-60"
   const btnGhost =
-    "inline-flex items-center gap-1.5 border-2 border-[#06262A] bg-[#0A3638] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#FFF6E0] transition hover:border-[#FFB300] disabled:opacity-50"
+    "inline-flex items-center gap-1.5 border border-[#3FE0C5]/25 bg-[#062224]/70 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#FFF6E0] transition hover:border-[#FFB300] disabled:opacity-50"
   const checkboxSkin =
     "border-[#FFB300] data-[state=checked]:bg-[#FFB300] data-[state=checked]:text-[#0B0B0D]"
 
@@ -353,12 +353,12 @@ export default function ParentalPage() {
           <button
             type="button"
             onClick={() => router.push("/account")}
-            className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#0F4C4F] px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-[#FFF6E0] shadow-[3px_3px_0_0_#0B0B0D] transition hover:bg-[#0A3638]"
+            className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-[#FFB300]/80 transition hover:text-[#FFB300]"
           >
             <ArrowLeft className="h-4 w-4" />
             {t("back", "Voltar")}
           </button>
-          <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#FFF6E0] px-3 py-1.5 text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
+          <span className="inline-flex items-center gap-2 border border-[#FFB300]/40 bg-[#062224]/80 px-3 py-1.5 text-[#FFF6E0]">
             <PixelHeart className="h-3.5 w-4" />
             <span className="text-[11px] font-black uppercase tracking-[0.2em]">
               {t("parentalLinkedCount", "{n} vinculados").replace("{n}", String(minors.length))}
@@ -369,33 +369,33 @@ export default function ParentalPage() {
         {/* HEADCARD — a silhueta do Games: banner largo, chip num canto, selo no outro, título gigante. */}
         <header className="relative mx-auto mt-4 max-w-3xl px-0 md:px-4">
           <div
-            className="relative overflow-hidden border-2 border-[#0B0B0D]"
+            className="relative overflow-hidden border border-[#FFB300]/35"
             style={{
-              boxShadow: `8px 8px 0 0 ${P.ink}`,
-              background: `linear-gradient(135deg, ${P.teal} 0%, ${P.tealDeep} 60%, ${P.tealLine} 100%)`,
+              boxShadow: `0 0 40px rgba(255, 150, 0, 0.25), 8px 8px 0 0 rgba(3, 26, 28, 0.95)`,
+              background: `radial-gradient(70% 90% at 12% 0%, rgba(255, 170, 0, 0.42), transparent 65%), radial-gradient(60% 80% at 100% 100%, rgba(63, 224, 197, 0.22), transparent 70%), linear-gradient(135deg, ${P.teal} 0%, ${P.tealDeep} 55%, ${P.tealLine} 100%)`,
             }}
           >
             <div
               aria-hidden
               className="absolute inset-0 opacity-30"
               style={{
-                backgroundImage: `linear-gradient(${P.mint}33 1px, transparent 1px), linear-gradient(90deg, ${P.mint}33 1px, transparent 1px)`,
+                backgroundImage: `linear-gradient(${P.sun}1f 1px, transparent 1px), linear-gradient(90deg, ${P.sun}1f 1px, transparent 1px)`,
                 backgroundSize: "22px 22px",
               }}
             />
             <div className="relative flex min-h-[220px] flex-col justify-between gap-6 p-4 md:min-h-[250px] md:p-6">
               <div className="flex items-start justify-between gap-3">
-                <span className="inline-flex -rotate-2 items-center gap-2 border-2 border-[#0B0B0D] bg-[#FFB300] px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
+                <span className="inline-flex -rotate-2 items-center gap-2 bg-[#FFB300] px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#0B0B0D] shadow-[0_0_18px_rgba(255,170,0,0.55)]">
                   <Gamepad2 className="h-4 w-4" />
                   {t("parentalEyebrow", "Supervisão")}
                 </span>
-                <span className="grid h-14 w-14 rotate-6 place-items-center border-2 border-[#0B0B0D] bg-[#FF4F9A] shadow-[3px_3px_0_0_#0B0B0D]">
-                  <ShieldCheck className="h-7 w-7 text-[#FFF6E0]" />
+                <span className="grid h-14 w-14 place-items-center border border-[#FFB300]/40 bg-[#062224]/80 shadow-[0_0_18px_rgba(255,79,154,0.35)]">
+                  <ShieldCheck className="h-7 w-7 text-[#FF4F9A]" />
                 </span>
               </div>
 
               {/* As figurinhas do banner: vestidinho, controle e vestidinho. */}
-              <div aria-hidden className="pointer-events-none absolute bottom-3 right-3 flex items-end gap-1 md:right-8 md:gap-2">
+              <div aria-hidden className="pointer-events-none absolute bottom-3 right-3 flex items-end gap-1 opacity-90 md:right-8 md:gap-2">
                 <DressIcon className="h-14 w-14 -rotate-6 md:h-24 md:w-24" style={stickerShadow} />
                 <Gamepad2 className="h-10 w-10 rotate-12 text-[#FFB300] md:h-16 md:w-16" strokeWidth={2.2} style={stickerShadow} />
                 <DressIcon className="h-10 w-10 rotate-6 md:h-16 md:w-16" color={P.mint} style={stickerShadow} />
@@ -404,7 +404,7 @@ export default function ParentalPage() {
               <div className="relative max-w-[62%] md:max-w-[70%]">
                 <h1
                   className="fl-display text-5xl leading-[0.85] text-[#FFB300] sm:text-6xl md:text-7xl"
-                  style={{ textShadow: `4px 4px 0 ${P.ink}` }}
+                  style={{ textShadow: `0 0 28px rgba(255, 170, 0, 0.55), 0 0 2px rgba(255, 150, 0, 0.8)` }}
                 >
                   PARENTAL
                 </h1>
@@ -425,9 +425,9 @@ export default function ParentalPage() {
           )}
 
           {/* Gerar código */}
-          <section className="relative border-2 border-[#0B0B0D] bg-[#0F4C4F] p-5" style={panelStyle}>
+          <section className="relative border border-[#FFB300]/30 bg-[#0B3336]/70 p-5" style={panelStyle}>
             <PixelHeart className="absolute -right-2 -top-3 h-7 w-8 rotate-12" />
-            <h2 className="fl-display flex items-center gap-2 text-2xl text-[#FFB300]">
+            <h2 className="fl-display flex items-center gap-2 text-2xl text-[#FFB300] [text-shadow:0_0_18px_rgba(255,170,0,0.45)]">
               <KeyRound className="h-5 w-5" />
               {t("guardianCodeTitle", "Código do responsável")}
             </h2>
@@ -454,7 +454,7 @@ export default function ParentalPage() {
                   Math.round((new Date(inv.expires_at).getTime() - Date.now()) / (60 * 60 * 1000))
                 )
                 return (
-                  <div key={inv.id_invite} className="flex flex-wrap items-center gap-3 border-2 border-[#0B0B0D] bg-[#0A3638] p-3">
+                  <div key={inv.id_invite} className="flex flex-wrap items-center gap-3 border-2 border-[#0B0B0D] bg-[#062224]/70 p-3">
                     <code className="border-2 border-[#0B0B0D] bg-[#FFB300] px-3 py-1 font-mono text-lg font-black tracking-[0.3em] text-[#0B0B0D]">
                       {inv.code}
                     </code>
@@ -476,9 +476,9 @@ export default function ParentalPage() {
           </section>
 
           {/* Lista de menores */}
-          <section className="relative border-2 border-[#0B0B0D] bg-[#0F4C4F] p-5" style={panelStyle}>
+          <section className="relative border border-[#FFB300]/30 bg-[#0B3336]/70 p-5" style={panelStyle}>
             <DressIcon className="absolute -right-3 -top-5 h-12 w-12 rotate-12" style={stickerShadow} />
-            <h2 className="fl-display flex items-center gap-2 text-2xl text-[#FFB300]">
+            <h2 className="fl-display flex items-center gap-2 text-2xl text-[#FFB300] [text-shadow:0_0_18px_rgba(255,170,0,0.45)]">
               <Users className="h-5 w-5" />
               {t("linkedChildrenTitle", "Filhos vinculados")}
             </h2>
@@ -492,7 +492,7 @@ export default function ParentalPage() {
               {loading && <p className="text-sm font-semibold text-[#FFF6E0]/60">{t("loading", "Carregando...")}</p>}
 
               {!loading && minors.length === 0 && (
-                <div className="flex flex-col items-center gap-3 border-2 border-dashed border-[#3FE0C5]/60 bg-[#0A3638] p-8 text-center">
+                <div className="flex flex-col items-center gap-3 border-2 border-dashed border-[#3FE0C5]/60 bg-[#062224]/70 p-8 text-center">
                   <div aria-hidden className="flex items-end gap-3">
                     <Gamepad2 className="h-10 w-10 -rotate-12 text-[#FFB300]" />
                     <DressIcon className="h-12 w-12" />
@@ -513,11 +513,11 @@ export default function ParentalPage() {
                       ? "bg-[#FFB300] text-[#0B0B0D]"
                       : "bg-[#FF4F9A] text-[#FFF6E0]"
                 return (
-                  <div key={minor.minor_user_id} className="border-2 border-[#0B0B0D] bg-[#0A3638]">
+                  <div key={minor.minor_user_id} className="border border-[#3FE0C5]/20 bg-[#062224]/70">
                     <button
                       type="button"
                       onClick={() => setExpandedMinorId(expanded ? null : minor.minor_user_id)}
-                      className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-[#06262A]"
+                      className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-[#FFB300]/[0.06]"
                     >
                       <Avatar className="h-11 w-11 border-2 border-[#FFB300]">
                         {minor.minor_avatar && <AvatarImage src={minor.minor_avatar} />}
@@ -539,7 +539,7 @@ export default function ParentalPage() {
                     </button>
 
                     {expanded && (
-                      <div className="space-y-5 border-t-2 border-[#0B0B0D] p-4">
+                      <div className="space-y-5 border-t border-[#3FE0C5]/20 p-4">
                         <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
@@ -590,7 +590,7 @@ export default function ParentalPage() {
                                     return (
                                       <label
                                         key={item.key}
-                                        className={`flex items-center gap-2 border-2 border-[#06262A] bg-[#0F4C4F] p-2 text-sm ${
+                                        className={`flex items-center gap-2 border border-[#3FE0C5]/20 bg-[#0B3336]/60 p-2 text-sm ${
                                           isHard ? "opacity-55" : "cursor-pointer hover:border-[#FFB300]"
                                         }`}
                                       >
@@ -632,7 +632,7 @@ export default function ParentalPage() {
                               return (
                                 <label
                                   key={m.id_machine}
-                                  className="flex cursor-pointer items-center gap-2 border-2 border-[#06262A] bg-[#0F4C4F] p-2 text-sm hover:border-[#FFB300]"
+                                  className="flex cursor-pointer items-center gap-2 border border-[#3FE0C5]/20 bg-[#0B3336]/60 p-2 text-sm hover:border-[#FFB300]"
                                 >
                                   <Checkbox
                                     checked={allowed}

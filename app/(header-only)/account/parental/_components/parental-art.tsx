@@ -1,9 +1,9 @@
 "use client"
 
-// A PELE DA SUPERVISÃO PARENTAL — amarelo forte quase laranja no fundo e
-// turquesa escuro nos painéis (pedido do Alex, 2026-09-24: "deixe como a
-// games, mas coloque elementos, deixe vibrante, elementos de games e
-// vestidinhos de meninas").
+// A PELE DA SUPERVISÃO PARENTAL — luz âmbar/laranja sobre turquesa escuro, na
+// receita do Financeiro (gradiente, iluminação, opacidade — Alex, 2026-09-24:
+// "deixe como a games, com elementos de games e vestidinhos de meninas" e,
+// depois, "quero como essa página [o Financeiro]: gradiente, iluminação, opacidade").
 //
 // ⚠️ É A SILHUETA DO GAMES (banner largo, chip num canto, selo no outro,
 // título gigante), mas SEM pills nem foto: aqui não há salas para navegar —
@@ -90,65 +90,89 @@ type Sticker = { top: string; left: string; size: number; rot: number; node: Rea
 function stickers(): Sticker[] {
   const P = PARENTAL
   const lu = (Icon: typeof Star, color: string) => (
-    <Icon className="h-full w-full" strokeWidth={2.4} style={{ color }} />
+    <Icon className="h-full w-full" strokeWidth={2.2} style={{ color }} />
   )
-  return [
-    { top: "6%", left: "4%", size: 64, rot: -14, node: <DressIcon className="h-full w-full" /> },
-    { top: "14%", left: "88%", size: 58, rot: 12, node: lu(Gamepad2, P.tealDeep) },
-    { top: "34%", left: "2%", size: 40, rot: 0, node: <PixelHeart className="h-full w-full" /> },
-    { top: "46%", left: "92%", size: 70, rot: -8, node: <DressIcon className="h-full w-full" color={P.mint} /> },
-    { top: "62%", left: "6%", size: 52, rot: 18, node: lu(Crown, P.pink) },
-    { top: "74%", left: "84%", size: 44, rot: 0, node: <PixelHeart className="h-full w-full" color={P.tealDeep} /> },
-    { top: "86%", left: "12%", size: 60, rot: -20, node: lu(Gamepad2, P.pink) },
-    { top: "90%", left: "70%", size: 56, rot: 10, node: <DressIcon className="h-full w-full" color={P.cream} trim={P.pink} /> },
-    { top: "24%", left: "22%", size: 26, rot: 0, node: lu(Sparkles, P.cream) },
-    { top: "56%", left: "78%", size: 30, rot: 20, node: lu(Star, P.cream) },
-    { top: "80%", left: "44%", size: 24, rot: 0, node: lu(Heart, P.tealDeep) },
-    { top: "4%", left: "58%", size: 28, rot: -12, node: lu(Star, P.tealDeep) },
+  // Uma grade solta de "marcas d'água", como os cifrões do Financeiro: poucas
+  // cores (âmbar, laranja, menta, rosa) e opacidade baixa, aplicada na camada.
+  const cycle = [
+    (c: string) => <DressIcon className="h-full w-full" color={c} trim={P.cream} />,
+    (c: string) => lu(Gamepad2, c),
+    (c: string) => <PixelHeart className="h-full w-full" color={c} />,
+    (c: string) => lu(Crown, c),
+    (c: string) => lu(Star, c),
+    (c: string) => <DressIcon className="h-full w-full" color={c} trim={P.cream} />,
+    (c: string) => lu(Sparkles, c),
+    (c: string) => lu(Heart, c),
   ]
+  const colors = [P.sun, P.sunDeep, P.mint, P.pink]
+  const out: Sticker[] = []
+  const rows = 7
+  const cols = 6
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + c
+      const shift = r % 2 ? 8 : 0
+      out.push({
+        top: `${4 + r * 14}%`,
+        left: `${2 + c * 17 + shift}%`,
+        size: i % 3 === 0 ? 46 : i % 3 === 1 ? 30 : 22,
+        rot: ((i * 37) % 40) - 20,
+        node: cycle[i % cycle.length](colors[(i + r) % colors.length]),
+      })
+    }
+  }
+  return out
 }
 
-/** O fundo: amarelo-laranja com um raio de sol, bolinhas de meio-tom e as
- *  figurinhas. Pintado uma vez. */
+/** O fundo — a receita do Financeiro com a paleta daqui: canvas turquesa
+ *  escuro, focos de luz âmbar/laranja, grade fina e as figurinhas como marca
+ *  d'água. Pintado UMA vez e promovido à própria camada de composição (a
+ *  mesma nota da `.fl-finance-bg`: sem isso os gradientes seriam repintados a
+ *  cada quadro de rolagem). */
 export function ParentalBackdrop() {
   const P = PARENTAL
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 overflow-hidden"
+      style={{ transform: "translateZ(0)", willChange: "transform" }}
+    >
       <div
         className="absolute inset-0"
         style={{
-          background: `radial-gradient(120% 80% at 50% 0%, ${P.sun} 0%, ${P.sunDeep} 70%, #F27200 100%)`,
+          backgroundColor: "#041A1C",
+          backgroundImage: [
+            "radial-gradient(60% 45% at 18% 14%, rgba(255, 170, 0, 0.42), transparent 70%)",
+            "radial-gradient(52% 42% at 86% 26%, rgba(255, 120, 0, 0.26), transparent 72%)",
+            "radial-gradient(70% 50% at 70% 72%, rgba(15, 76, 79, 0.55), transparent 72%)",
+            "radial-gradient(80% 55% at 50% 108%, rgba(255, 150, 0, 0.30), transparent 70%)",
+            "repeating-linear-gradient(to right, rgba(255, 179, 0, 0.06) 0 1px, transparent 1px 64px)",
+            "repeating-linear-gradient(to bottom, rgba(63, 224, 197, 0.05) 0 1px, transparent 1px 64px)",
+          ].join(", "),
         }}
       />
+      <div className="absolute inset-0 opacity-[0.13]">
+        {stickers().map((s, i) => (
+          <span
+            key={i}
+            className="absolute"
+            style={{
+              top: s.top,
+              left: s.left,
+              width: s.size,
+              height: s.size,
+              transform: `rotate(${s.rot}deg)`,
+            }}
+          >
+            {s.node}
+          </span>
+        ))}
+      </div>
+      {/* Vinheta: escurece as bordas para o centro "acender", como no Financeiro. */}
       <div
-        className="absolute inset-0 opacity-25"
-        style={{
-          backgroundImage: `radial-gradient(${P.tealDeep} 1.2px, transparent 1.6px)`,
-          backgroundSize: "18px 18px",
-        }}
+        className="absolute inset-0"
+        style={{ background: "radial-gradient(120% 90% at 50% 30%, transparent 55%, rgba(2, 14, 15, 0.7) 100%)" }}
       />
-      <div
-        className="absolute inset-0 opacity-[0.12]"
-        style={{
-          backgroundImage: `repeating-conic-gradient(from 0deg at 50% -10%, ${P.cream} 0deg 6deg, transparent 6deg 18deg)`,
-        }}
-      />
-      {stickers().map((s, i) => (
-        <span
-          key={i}
-          className="absolute hidden sm:block"
-          style={{
-            top: s.top,
-            left: s.left,
-            width: s.size,
-            height: s.size,
-            transform: `rotate(${s.rot}deg)`,
-            filter: `drop-shadow(3px 3px 0 ${P.ink})`,
-          }}
-        >
-          {s.node}
-        </span>
-      ))}
     </div>
   )
 }
