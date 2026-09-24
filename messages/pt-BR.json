@@ -2874,7 +2874,8 @@
     "communityPillAria": "A comunidade: perfil, mural do líder, membros e números",
     "panelStats": "Números",
     "leadsPill": "Leads",
-    "leadsPillAria": "Encontrar clientes: empresas por categoria e cidade"
+    "leadsPillAria": "Encontrar clientes: empresas por categoria e cidade",
+    "sitePillAria": "Abrir o construtor do site do negócio"
   },
   "Careers": {
     "hero.badge": "Carreiras",

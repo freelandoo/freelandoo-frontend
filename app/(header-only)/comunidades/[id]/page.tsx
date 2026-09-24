@@ -886,6 +886,32 @@ export default function CommunityDetailPage() {
             },
           ] as PillSpec[])
         : []),
+      // ─── SITE ──────────────────────────────────────────────────────────────
+      //
+      // Era uma ABA na fila do feed e virou pill (pedido do Alex, 2026-09-24).
+      // Já era LINK e não aba de verdade — levava ao construtor, que é uma
+      // página inteira —, então a fila mostrava uma "aba" que tirava a pessoa
+      // da tela. Aqui ela fica junto das outras portas de trabalho do dono.
+      //
+      // ⚠️ MESMA CONDIÇÃO DE ANTES (`showSiteEntry`): só o líder, só onde há
+      // site (negócio) e some no "ver como público". A aba SAIU da fila —
+      // manter as duas seriam duas portas para o mesmo construtor.
+      //
+      // ⚠️ A PILHA DO NEGÓCIO CHEGA A QUATRO: 4 × 36 + 3 × 6 = 162px contra a
+      // foto de 192px. Cabe, mas um QUINTO (198px) já escaparia.
+      ...(showSiteEntry
+        ? ([
+            {
+              key: "site",
+              icon: Globe,
+              label: t("tabSite", "Site"),
+              ariaLabel: t("sitePillAria", "Abrir o construtor do site do negócio"),
+              bg: "#DB2777",
+              bgHover: "#BE185D",
+              href: sitePath,
+            },
+          ] as PillSpec[])
+        : []),
       // DELIVERY (mig 248) — só em comunidade TERRITORIAL, e ele NAVEGA.
       //
       // ⚠️ A CONTA DA PILHA CONTINUA FECHANDO, E FOI REFEITA COM O MERGE. Os
@@ -916,7 +942,7 @@ export default function CommunityDetailPage() {
           ] as PillSpec[])
         : []),
     ]
-  }, [t, panel, id, openPanel, showIndicators, showLeads, isTerritorial, deliveryEnabled, isCondo, isResident])
+  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -2446,17 +2472,9 @@ export default function CommunityDetailPage() {
                   {label}
                 </button>
               ))}
-              {/* "Site" fica na fila das abas porque é ali que se procura por
-                  ele — mas é LINK, não aba: o site abre na página dele. Manter
-                  as duas coisas (aba e página) daria duas experiências do mesmo
-                  site, e a de dentro da caixa é a que mente sobre o resultado. */}
-              {showSiteEntry && (
-                <Link href={sitePath} className="-mb-0.5 flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8] opacity-50 hover:opacity-100"
-                  style={{ borderBottom: "4px solid transparent" }}>
-                  <Globe className="h-3.5 w-3.5" style={{ color: accent }} />
-                  {t("tabSite", "Site")}
-                </Link>
-              )}
+              {/* O "Site" SAIU DAQUI e virou o pill rosa do headcard (ver
+                  `communityPills`). Não recolocar: seriam duas portas para o
+                  mesmo construtor. */}
             </div>
 
             <div className="mt-6">
