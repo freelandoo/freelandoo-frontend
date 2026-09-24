@@ -561,7 +561,10 @@ export default function CommunityDetailPage() {
   // uma comunidade, e a barra da Freelandoo fica. ⚠️ É a ÚNICA pele CLARA —
   // ela inverte a tinta (claro → marrom); ver `.fl-pet` em globals.css.
   const isPetPlatform = (community?.kind ?? null) === "pet"
-  const isSkinned = isBusinessPlatform || isPetPlatform
+  // MEU CARRO — pele fixa VERMELHO ESCURO E PRETO com rodas no fundo (Alex,
+  // 2026-09-24). Escura, como games/fitness: não precisa do `skinHex`.
+  const isCarPlatform = (community?.kind ?? null) === "car"
+  const isSkinned = isBusinessPlatform || isPetPlatform || isCarPlatform
 
   // INDICADORES (mig 235): leads, funil do site e faturamento — só do LÍDER do
   // negócio. Predicado PRÓPRIO e não `canBuildSite`: aquele embute a flag
@@ -1600,7 +1603,7 @@ export default function CommunityDetailPage() {
     // As variáveis do `style` só existem na de negócio, onde a cor é do líder.
     <div
       style={skinVars}
-      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
+      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${isCarPlatform ? "fl-car" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
     >
       {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
           DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
@@ -1613,6 +1616,7 @@ export default function CommunityDetailPage() {
           nós estaria errado para quase todos). */}
       {isBusinessPlatform && <TechBackdrop variant="business" tint={bizTint} />}
       {isPetPlatform && <TechBackdrop variant="pet" />}
+      {isCarPlatform && <TechBackdrop variant="car" />}
       {isBusinessPlatform && (
         <BusinessPlanModal
           open={planOpen}
