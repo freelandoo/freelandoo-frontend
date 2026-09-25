@@ -1,6 +1,6 @@
 // O OBJETO DE IDENTIDADE: uma lâmina estilizada em 3D, feita de CSS.
 //
-// Três planos em profundidade (`translateZ`) com metal escovado e o fio verde
+// Três planos em profundidade (`translateZ`) com metal escovado e o fio dourado
 // no meio — o suficiente para ler como objeto girando, sem canvas nenhum. Um
 // Three.js inteiro para um prisma que gira seria centenas de KB para o que
 // quatro divs e `preserve-3d` fazem de graça, e o briefing pede "a solução

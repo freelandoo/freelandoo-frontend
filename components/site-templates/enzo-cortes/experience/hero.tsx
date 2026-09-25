@@ -17,7 +17,7 @@
 //
 // ⚠️ A ARTE É A OFICIAL (logotipo + ilustração do Enzo), e ela é a ÚNICA
 // imagem que existe. Não há foto da barbearia; nada de banco de imagens. Ela
-// entra dessaturada, em metal, com o verde por cima (`.art-duo`), para o
+// entra dessaturada, em metal, com o dourado por cima (`.art-duo`), para o
 // dourado dela não brigar com a paleta nova.
 
 import { BUSINESS, bookingCta } from "../content/business";

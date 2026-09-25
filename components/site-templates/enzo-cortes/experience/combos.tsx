@@ -149,7 +149,7 @@ export default function Combos({ links }: { links: TemplateLinks }) {
 
               {/* O RESULTADO */}
               <div data-result className="relative" data-tilt>
-                <div className="chamfer relative border border-[var(--ec-line-volt)] bg-[linear-gradient(160deg,rgb(199_255_65/0.08),transparent_45%),var(--ec-ink-up)] p-7 md:p-9">
+                <div className="chamfer relative border border-[var(--ec-line-volt)] bg-[linear-gradient(160deg,rgb(227_185_79/0.08),transparent_45%),var(--ec-ink-up)] p-7 md:p-9">
                   <span className="mono text-[0.6875rem] uppercase text-[var(--ec-volt)]">
                     Combinado {String(idx + 1).padStart(2, "0")}
                   </span>

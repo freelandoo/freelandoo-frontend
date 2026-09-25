@@ -52,7 +52,7 @@ struct U { a: vec4f, b: vec4f };
   let band = uv.x * 0.8 + uv.y * 0.35 - fract(t * 0.04) * 2.2 + 0.4;
   let sweep = exp(-band * band * 60.0) * 0.06;
 
-  let volt = vec3f(0.78, 1.0, 0.255);
+  let volt = vec3f(0.89, 0.725, 0.31);
   let metal = vec3f(0.68, 0.70, 0.71);
   let col = volt * (wide * 0.13 + core * 0.22 + grid * 0.18) + metal * sweep;
   let a = clamp(max(col.r, max(col.g, col.b)), 0.0, 1.0);

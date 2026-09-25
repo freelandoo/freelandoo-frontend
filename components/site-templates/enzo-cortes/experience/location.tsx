@@ -140,9 +140,9 @@ export default function Location({ links }: { links: TemplateLinks }) {
                 <path d="M-10 190 C 90 170, 170 210, 410 150" stroke="rgb(173 178 180 / 0.35)" strokeWidth="10" fill="none" />
                 <path d="M130 -10 L 175 310" stroke="rgb(173 178 180 / 0.22)" strokeWidth="6" fill="none" />
                 <path d="M290 -10 C 270 100, 320 200, 300 310" stroke="rgb(173 178 180 / 0.18)" strokeWidth="4" fill="none" />
-                <circle cx="220" cy="178" r="34" fill="rgb(199 255 65 / 0.1)" />
-                <circle cx="220" cy="178" r="9" fill="#c7ff41" />
-                <line x1="220" y1="178" x2="220" y2="96" stroke="#c7ff41" strokeWidth="1" />
+                <circle cx="220" cy="178" r="34" fill="rgb(227 185 79 / 0.1)" />
+                <circle cx="220" cy="178" r="9" fill="#e3b94f" />
+                <line x1="220" y1="178" x2="220" y2="96" stroke="#e3b94f" strokeWidth="1" />
                 <text x="228" y="100" fill="#f3f2ee" fontSize="11" fontFamily="monospace">
                   AV. VITÓRIA, 144
                 </text>

@@ -256,7 +256,7 @@ export function FloatingActions({ links }: { links: TemplateLinks }) {
         href={cta.href}
         {...(cta.external ? { target: "_blank", rel: "noopener" } : {})}
         tabIndex={shown ? 0 : -1}
-        className="btn btn-solid !min-h-[48px] !px-5 shadow-[0_12px_32px_-8px_rgb(199_255_65/0.45)] lg:!hidden"
+        className="btn btn-solid !min-h-[48px] !px-5 shadow-[0_12px_32px_-8px_rgb(227_185_79/0.45)] lg:!hidden"
       >
         {cta.label}
       </a>

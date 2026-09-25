@@ -13,10 +13,10 @@
  * ⚠️ NOME DE KEYFRAME TAMBÉM É GLOBAL. Por isso todos aqui são `tplEnzo*`.
  *
  * ── A DIREÇÃO (2026-09-25) ───────────────────────────────────────────────
- * Saiu o art déco preto-e-dourado; entrou uma barbearia urbana lida como
+ * Saiu o art déco; entrou uma barbearia urbana lida como
  * design industrial: preto profundo, grafite, metal escovado, branco
- * editorial e UM verde elétrico que só aparece onde há ação ou preço. O
- * verde é a cor da interação — espalhado, ele deixa de dizer "clique aqui".
+ * editorial e UM dourado que só aparece onde há ação ou preço. O
+ * dourado é a cor da interação — espalhado, ele deixa de dizer "clique aqui".
  *
  * ⚠️ CANTOS CONTINUAM RETOS. A regra permanente da casa (nada de
  * `border-radius`) vale também aqui; o "arredondado criterioso" do briefing
@@ -38,18 +38,18 @@
   --ec-metal: #adb2b4;
   --ec-metal-dim: #7f868a;
 
-  /* ── O VERDE: SÃO DOIS, E A DIFERENÇA É O PAPEL ─────────────────────────
+  /* ── O DOURADO: SÃO DOIS, E A DIFERENÇA É O PAPEL ─────────────────────────
        --ec-volt       FUNDO e TINTA. 16,4:1 sobre `ink`, e `ink` por cima
                        dele dá o mesmo número. É o botão cheio e o preço.
        --ec-volt-deep  FIO e numeral GRANDE (4,0:1 — só passa como texto
                        grande, ≥24px). Como texto pequeno ele reprova. */
-  --ec-volt: #c7ff41;
-  --ec-volt-deep: #5e7a1e;
+  --ec-volt: #e3b94f;
+  --ec-volt-deep: #8a6a1f;
 
   /* fios */
   --ec-line: rgb(173 178 180 / 0.24);
   --ec-line-soft: rgb(173 178 180 / 0.11);
-  --ec-line-volt: rgb(199 255 65 / 0.4);
+  --ec-line-volt: rgb(227 185 79 / 0.4);
 
   --ec-display: var(--ec-font-display), "Impact", "Arial Narrow", sans-serif;
   --ec-body: var(--ec-font-body), system-ui, -apple-system, sans-serif;
@@ -105,7 +105,7 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(90% 60% at 80% -10%, rgb(199 255 65 / 0.05), transparent 60%),
+    radial-gradient(90% 60% at 80% -10%, rgb(227 185 79 / 0.05), transparent 60%),
     linear-gradient(90deg, rgb(173 178 180 / 0.035) 1px, transparent 1px) 0 0 / calc(100% / 12) 100%,
     linear-gradient(180deg, var(--ec-ink-deep), var(--ec-ink) 40%);
 }
@@ -255,7 +255,7 @@
 
 .tpl-enzo .btn-solid:hover {
   background: var(--ec-paper);
-  box-shadow: 0 0 0 4px rgb(199 255 65 / 0.18);
+  box-shadow: 0 0 0 4px rgb(227 185 79 / 0.18);
 }
 
 .tpl-enzo .btn-ghost {
@@ -381,14 +381,14 @@
   height: 60vmax;
   margin: -30vmax 0 0 -30vmax;
   pointer-events: none;
-  background: radial-gradient(closest-side, rgb(199 255 65 / 0.12), rgb(199 255 65 / 0.03) 55%, transparent 70%);
+  background: radial-gradient(closest-side, rgb(227 185 79 / 0.12), rgb(227 185 79 / 0.03) 55%, transparent 70%);
   transform: translate3d(70vw, 30vh, 0);
   will-change: transform;
 }
 
-/* A arte oficial entra em metal: dessaturada, com o verde por cima em
+/* A arte oficial entra em metal: dessaturada, com o dourado por cima em
    `multiply`/`screen`. A marca continua legível; o dourado dela deixa de
-   brigar com o verde da interface. */
+   brigar com o dourado da interface. */
 /* ⚠️ SEM `position` aqui: esta folha fica FORA das camadas do Tailwind, e
    regra fora de camada vence utilitário — um `position: relative` aqui
    anularia o `md:absolute` do hero. Posição é do JSX. */
@@ -405,7 +405,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgb(199 255 65 / 0.22), transparent 55%);
+  background: linear-gradient(135deg, rgb(227 185 79 / 0.22), transparent 55%);
   mix-blend-mode: screen;
   pointer-events: none;
 }
@@ -546,8 +546,8 @@
 .tpl-enzo .wheel-card.is-active {
   border-color: var(--ec-line-volt);
   box-shadow:
-    inset 0 1px 0 rgb(199 255 65 / 0.35),
-    0 30px 80px -30px rgb(199 255 65 / 0.25);
+    inset 0 1px 0 rgb(227 185 79 / 0.35),
+    0 30px 80px -30px rgb(227 185 79 / 0.25);
 }
 
 .tpl-enzo .wheel-card .wheel-price {
