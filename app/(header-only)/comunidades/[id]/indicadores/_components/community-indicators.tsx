@@ -151,7 +151,7 @@ export function CommunityIndicators({ communityId }: { communityId: string }) {
     void load()
   }, [load])
 
-  const accent = accentHex(community?.community_theme?.accent)
+  const accent = accentHex(community?.community_theme?.accent, community?.kind)
   const isBusiness = (community?.kind ?? null) === "common"
   const shellKind: "business" | null = isBusiness ? "business" : null
   const bgKey = community?.community_theme?.background

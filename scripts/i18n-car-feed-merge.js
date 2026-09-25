@@ -44,6 +44,8 @@ const COMMUNITY = {
   accentSilver: ["Cinza claro", "Light gray", "Gris claro"],
   // O acento travado do pet (bege e marrom).
   accentBrown: ["Marrom", "Brown", "Marrón"],
+  // O acento travado do condomínio (estilo gamers em cinza).
+  accentGraphite: ["Grafite", "Graphite", "Grafito"],
   subjectNotSet: ["O dono ainda não informou.", "The owner hasn't filled this in yet.", "El dueño aún no lo informó."],
 };
 

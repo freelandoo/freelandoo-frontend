@@ -894,8 +894,8 @@ export default function CommunityDetailPage() {
               "A comunidade: perfil, mural do líder, membros e números"
             ),
         // O pet é só bege e marrom (Alex, 2026-09-24): os pills também.
-        bg: isPetPlatform ? "#6B4423" : "#1D4ED8",
-        bgHover: isPetPlatform ? "#4A2F1A" : "#1E3A8A",
+        bg: isPetPlatform ? "#6B4423" : isCondoSkin ? "#3F3F46" : "#1D4ED8",
+        bgHover: isPetPlatform ? "#4A2F1A" : isCondoSkin ? "#27272A" : "#1E3A8A",
         onOpen: () => openPanel("profile"),
         active: panel === "community",
         ...(isCondo && !isResident
@@ -1035,14 +1035,15 @@ export default function CommunityDetailPage() {
                 "delPillAria",
                 "Abrir o delivery entre vizinhos: chamados de entrega da comunidade"
               ),
-              bg: "#B91C1C",
-              bgHover: "#991B1B",
+              // No condomínio (estilo gamers em cinza) o delivery também é cinza.
+              bg: isCondoSkin ? "#71717A" : "#B91C1C",
+              bgHover: isCondoSkin ? "#52525B" : "#991B1B",
               href: `/comunidades/${id}/delivery`,
             },
           ] as PillSpec[])
         : []),
     ]
-  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader, isPetPlatform])
+  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader, isPetPlatform, isCondoSkin])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -2020,7 +2021,7 @@ export default function CommunityDetailPage() {
           crescer. */}
       {panel === "community" && (
         <section className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
-          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow(isPetPlatform ? "#6B4423" : "#1D4ED8", 6) }}>
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow(isPetPlatform ? "#6B4423" : isCondoSkin ? "#3F3F46" : "#1D4ED8", 6) }}>
             <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               {/* AS QUATRO ABAS do painel único. Elas substituem os três pills
                   que existiam antes — e por isso carregam os MESMOS ícones e as

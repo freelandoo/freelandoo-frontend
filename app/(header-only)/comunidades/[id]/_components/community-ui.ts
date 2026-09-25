@@ -40,6 +40,9 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   // O marrom-tan do pet (2026-09-24, "somente bege e marrom"). Tinta preta
   // por cima dá ~5:1. É o acento TRAVADO do pet (ver `lockedAccentFor`).
   { key: "brown", labelKey: "accentBrown", fallback: "Marrom", hex: "#A97C50" },
+  // O cinza do condomínio no ESTILO GAMERS (2026-09-24): tinta preta por
+  // cima dá ~6:1. Acento TRAVADO do condomínio.
+  { key: "graphite", labelKey: "accentGraphite", fallback: "Grafite", hex: "#8E8E96" },
   { key: "silver", labelKey: "accentSilver", fallback: "Cinza claro", hex: "#D6D3D1" },
 ]
 
@@ -57,12 +60,18 @@ export function defaultAccentFor(kind: string | null | undefined): string {
 }
 
 /**
- * Modalidade com a cor TRAVADA — o líder não escolhe (o seletor de Cores some).
- * Pet: "sem opção de trocar cores, somente bege e marrom" (Alex, 2026-09-24).
- * Vale também para quem já tinha escolhido outra cor: ela é ignorada.
+ * ESTILO GAMERS — o nome que o Alex deu (2026-09-24) ao modelo do games e do
+ * Financeiro: pele FIXA, SEM paleta para o líder trocar cores. Modalidade com
+ * a cor TRAVADA aqui não mostra o seletor de Cores, e a cor que já estivesse
+ * salva é ignorada.
+ *   • pet → bege e marrom ("sem opção de trocar cores, somente bege e marrom");
+ *   • condo → tons de cinza ("faça esse tons de cinza no estilo games").
+ * ⚠️ Modalidade nova no estilo gamers entra AQUI (e ganha a pele em
+ * globals.css); sem esta linha o seletor de Cores continua aparecendo.
  */
 export function lockedAccentFor(kind: string | null | undefined): string | null {
   if (kind === "pet") return "brown"
+  if (kind === "condo") return "graphite"
   return null
 }
 

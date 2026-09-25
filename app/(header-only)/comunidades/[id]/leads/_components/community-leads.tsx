@@ -475,7 +475,7 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
   }, [category, city, listRows, openList, rows])
 
   // ─── CASCA ─────────────────────────────────────────────────────────────────
-  const accent = accentHex(community?.community_theme?.accent)
+  const accent = accentHex(community?.community_theme?.accent, community?.kind)
   const isBusiness = (community?.kind ?? null) === "common"
   const bgKey = community?.community_theme?.background
   const skinVars = useMemo(

@@ -2907,7 +2907,8 @@
     "subjectSave": "Guardar",
     "subjectNotSet": "El dueño aún no lo informó.",
     "accentSilver": "Gris claro",
-    "accentBrown": "Marrón"
+    "accentBrown": "Marrón",
+    "accentGraphite": "Grafito"
   },
   "Careers": {
     "hero.badge": "Carreras",

@@ -197,7 +197,7 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
     })
   }, [load])
 
-  const accent = accentHex(community?.community_theme?.accent)
+  const accent = accentHex(community?.community_theme?.accent, community?.kind)
   // `board?.types || []` cria um array NOVO a cada render, e um `useMemo` que
   // depende dele recalcularia sempre — o memo viraria enfeite. Memoizado aqui,
   // a identidade só muda quando o quadro muda.

@@ -89,6 +89,8 @@ type Community = {
   id_profile: string
   display_name: string
   community_theme: { accent?: string } | null
+  // A modalidade decide a cor TRAVADA do estilo gamers (lockedAccentFor).
+  kind?: string | null
 }
 
 const CARD = "border-2 border-[#0B0B0D] bg-[#15120E] p-4"
@@ -165,7 +167,7 @@ export function CommunityOrdersView({ communityId }: { communityId: string }) {
     })
   }, [load])
 
-  const accent = accentHex(community?.community_theme?.accent)
+  const accent = accentHex(community?.community_theme?.accent, community?.kind)
 
   const act = useCallback(
     async (id: number, path: string, body?: unknown) => {

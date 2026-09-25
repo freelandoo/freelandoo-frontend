@@ -1373,8 +1373,14 @@ body.camera-active { overflow: hidden; }
 .fl-condo .placeholder\:text-\[\#9A938A\]\/70::placeholder { color: rgba(82, 82, 91, 0.7); }
 .fl-condo .text-\[\#C9C2B6\]     { color: #52525B; }
 /* Amarelo como TINTA vira âmbar escuro — no cinza claro, o amarelo some. */
-.fl-condo .text-\[\#F2B705\]     { color: #8A6400; }
-.fl-condo .text-\[\#E0A500\]     { color: #8A6400; }
+.fl-condo .text-\[\#F2B705\]     { color: #3F3F46; }
+.fl-condo .text-\[\#E0A500\]     { color: #3F3F46; }
+
+/* ESTILO GAMERS em cinza (2026-09-24, "faça esse tons de cinza no estilo
+   games"): o AMARELO sai do condomínio. Botão cinza (o acento travado
+   `graphite` pinta o que é style inline), borda e tinta em cinza escuro. */
+.fl-condo .bg-\[\#F2B705\]      { background-color: #8E8E96; }
+.fl-condo .border-\[\#F2B705\]  { border-color: #52525B; }
 
 /* Linhas ------------------------------------------------------------------ */
 .fl-condo .border-\[\#0B0B0D\]      { border-color: #A1A1AA; }

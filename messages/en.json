@@ -2907,7 +2907,8 @@
     "subjectSave": "Save",
     "subjectNotSet": "The owner hasn't filled this in yet.",
     "accentSilver": "Light gray",
-    "accentBrown": "Brown"
+    "accentBrown": "Brown",
+    "accentGraphite": "Graphite"
   },
   "Careers": {
     "hero.badge": "Careers",
