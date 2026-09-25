@@ -48,7 +48,7 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   // o que era dourado vira este azul claro. Tinta preta por cima dá ~11:1.
   // Acento TRAVADO do bairro.
   { key: "azure", labelKey: "accentAzure", fallback: "Azul", hex: "#8ACEF5" },
-  { key: "silver", labelKey: "accentSilver", fallback: "Cinza claro", hex: "#D6D3D1" },
+  { key: "silver", labelKey: "accentSilver", fallback: "Cinza claro", hex: "#D4D4D8" },
 ]
 
 /**
@@ -71,7 +71,11 @@ export function defaultAccentFor(kind: string | null | undefined): string {
  * salva é ignorada.
  *   • pet → bege e marrom ("sem opção de trocar cores, somente bege e marrom");
  *   • condo → tons de cinza ("faça esse tons de cinza no estilo games");
- *   • neighborhood → tons de azul, sem amarelo ("sempre é uma cor só").
+ *   • neighborhood → tons de azul, sem amarelo ("sempre é uma cor só");
+ *   • common (meu negócio) → preto com tons de cinza ("o estilo games, mas
+ *     preto, preto com tons de cinza", 2026-09-25). O seletor de Fundo some
+ *     junto, porque mora no mesmo bloco — e `backdropTint` passou a ignorar a
+ *     chave salva (ver lá).
  * ⚠️ Modalidade nova no estilo gamers entra AQUI (e ganha a pele em
  * globals.css); sem esta linha o seletor de Cores continua aparecendo.
  */
@@ -79,6 +83,7 @@ export function lockedAccentFor(kind: string | null | undefined): string | null 
   if (kind === "pet") return "brown"
   if (kind === "condo") return "graphite"
   if (kind === "neighborhood") return "azure"
+  if (kind === "common") return "silver"
   return null
 }
 
@@ -193,7 +198,10 @@ export const BACKDROPS: {
 }[] = [
   // O padrão pedido. Cinza-aço no lugar de um cinza puro: névoa e linhas
   // cinza-neutras sobre preto leem como fumaça, e o aço as mantém vivas.
-  { key: "black", labelKey: "bgBlack", fallback: "Preto", canvas: "#08090B", glow: "#8E97A5" },
+  // ⚠️ Virou CINZA NEUTRO em 2026-09-25 (era cinza-aço #8E97A5): o negócio
+  // entrou no estilo gamers "preto com tons de cinza", e o azulado do aço
+  // puxava a pele para azul-noite.
+  { key: "black", labelKey: "bgBlack", fallback: "Preto", canvas: "#08080A", glow: "#A1A1AA" },
   { key: "navy", labelKey: "bgNavy", fallback: "Azul-noite", canvas: "#060B18", glow: "#3B82F6" },
   { key: "cyan", labelKey: "bgCyan", fallback: "Ciano", canvas: "#04121A", glow: "#22D3EE" },
   { key: "green", labelKey: "bgGreen", fallback: "Verde", canvas: "#05140F", glow: "#16B79A" },
@@ -204,9 +212,15 @@ export const BACKDROPS: {
   { key: "brown", labelKey: "bgBrown", fallback: "Marrom", canvas: "#0B0804", glow: "#B08948" },
 ]
 
-/** Chave desconhecida (ou ausente) cai no PRETO, que é o padrão pedido. */
-export function backdropTint(key: string | null | undefined): { canvas: string; glow: string } {
-  const b = BACKDROPS.find((x) => x.key === key) || BACKDROPS[0]
+/**
+ * ⚠️ TRAVADO NO PRETO desde 2026-09-25: o negócio (única modalidade com esta
+ * pele) virou estilo gamers em preto e cinza, SEM escolha de fundo. A chave
+ * salva no `community_theme` é IGNORADA de propósito — quem escolheu vinho
+ * antes não pode ficar com uma pele que o seletor nem mostra mais. A lista
+ * `BACKDROPS` fica para o dia de destravar: é trocar o corpo desta função.
+ */
+export function backdropTint(_key?: string | null): { canvas: string; glow: string } {
+  const b = BACKDROPS[0]
   return { canvas: b.canvas, glow: b.glow }
 }
 
