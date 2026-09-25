@@ -43,6 +43,11 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   // O cinza do condomínio no ESTILO GAMERS (2026-09-24): tinta preta por
   // cima dá ~6:1. Acento TRAVADO do condomínio.
   { key: "graphite", labelKey: "accentGraphite", fallback: "Grafite", hex: "#8E8E96" },
+  // O azul do bairro no ESTILO GAMERS (2026-09-24, "no games são tons de
+  // roxo, sempre é uma cor só, tons desse azul"): o amarelo sai do bairro e
+  // o que era dourado vira este azul claro. Tinta preta por cima dá ~11:1.
+  // Acento TRAVADO do bairro.
+  { key: "azure", labelKey: "accentAzure", fallback: "Azul", hex: "#8ACEF5" },
   { key: "silver", labelKey: "accentSilver", fallback: "Cinza claro", hex: "#D6D3D1" },
 ]
 
@@ -66,14 +71,14 @@ export function defaultAccentFor(kind: string | null | undefined): string {
  * salva é ignorada.
  *   • pet → bege e marrom ("sem opção de trocar cores, somente bege e marrom");
  *   • condo → tons de cinza ("faça esse tons de cinza no estilo games");
- *   • neighborhood → azul, com o amarelo da casa ("estilo games nessa cor").
+ *   • neighborhood → tons de azul, sem amarelo ("sempre é uma cor só").
  * ⚠️ Modalidade nova no estilo gamers entra AQUI (e ganha a pele em
  * globals.css); sem esta linha o seletor de Cores continua aparecendo.
  */
 export function lockedAccentFor(kind: string | null | undefined): string | null {
   if (kind === "pet") return "brown"
   if (kind === "condo") return "graphite"
-  if (kind === "neighborhood") return "gold"
+  if (kind === "neighborhood") return "azure"
   return null
 }
 

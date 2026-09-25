@@ -1427,8 +1427,10 @@ body.camera-active { overflow: hidden; }
    pele deixou de ser CLARA (a rampa azul-clara com tinta marinho saiu) e
    virou a `.fl-games` com o roxo trocado pelos tons do anexo: o fundo é o
    próprio azul, os painéis são azul-marinho translúcidos por cima dele e a
-   tinta é CLARA. Cor TRAVADA (`lockedAccentFor` → gold): sem seletor de Cores,
-   como no games; o amarelo #F2B705 fica, é ele que diz "isto é a Freelandoo".
+   tinta é CLARA. Cor TRAVADA (`lockedAccentFor` → azure): sem seletor de
+   Cores, como no games. E SEM AMARELO — "no games são tons de roxo, sempre é
+   uma cor só": o dourado das classes vira o azul claro #8ACEF5 (o mesmo do
+   acento `azure`, que pinta o que é `style` inline).
 
    ⚠️ Pele ESCURA na tinta: cor de superfície nova na página de comunidade
    entra aqui também. As cores em `style` inline passam pelo `HOOD_INLINE`
@@ -1467,6 +1469,17 @@ body.camera-active { overflow: hidden; }
 .fl-hood .text-\[\#9A938A\]\/70 { color: rgba(185, 218, 243, 0.75); }
 .fl-hood .placeholder\:text-\[\#9A938A\]\/70::placeholder { color: rgba(185, 218, 243, 0.6); }
 .fl-hood .text-\[\#C9C2B6\]     { color: #B9DAF3; }
+
+/* ESTILO GAMERS em azul: o amarelo sai do bairro. */
+.fl-hood .bg-\[\#F2B705\]      { background-color: #8ACEF5; }
+.fl-hood .bg-\[\#F2B705\]\/20  { background-color: rgba(138, 206, 245, 0.2); }
+.fl-hood .text-\[\#F2B705\]    { color: #8ACEF5; }
+.fl-hood .text-\[\#E0A500\]    { color: #8ACEF5; }
+.fl-hood .border-\[\#F2B705\]  { border-color: #8ACEF5; }
+.fl-hood .border-\[\#F2B705\]\/40 { border-color: rgba(138, 206, 245, 0.4); }
+.fl-hood .hover\:border-\[\#F2B705\]:hover { border-color: #8ACEF5; }
+.fl-hood .focus\:border-\[\#F2B705\]:focus { border-color: #8ACEF5; }
+.fl-hood .focus\:border-\[\#F2B705\]\/60:focus { border-color: rgba(138, 206, 245, 0.6); }
 
 /* Linhas ------------------------------------------------------------------ */
 .fl-hood .border-\[\#0B0B0D\]      { border-color: #0B3358; }

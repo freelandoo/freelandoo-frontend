@@ -2908,7 +2908,8 @@
     "subjectNotSet": "El dueño aún no lo informó.",
     "accentSilver": "Gris claro",
     "accentBrown": "Marrón",
-    "accentGraphite": "Grafito"
+    "accentGraphite": "Grafito",
+    "accentAzure": "Azul"
   },
   "Careers": {
     "hero.badge": "Carreras",
