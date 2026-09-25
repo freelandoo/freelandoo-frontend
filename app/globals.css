@@ -1091,18 +1091,6 @@ body.camera-active { overflow: hidden; }
 .fl-business .border-\[\#F5F1E8\]\/10  { border-color: rgba(var(--fl-skin-edge-rgb), 0.2); }
 .fl-business .border-\[\#F5F1E8\]\/60  { border-color: rgba(var(--fl-skin-edge-rgb), 0.6); }
 
-/* ESTILO GAMERS em preto e cinza (Alex, 2026-09-25: "o estilo games, mas
-   preto, preto com tons de cinza"). Como no bairro, o amarelo sai do
-   ambiente: o dourado das classes vira o cinza claro #D4D4D8 (o mesmo do
-   acento `silver`, travado em `lockedAccentFor`, que pinta o `style` inline).
-   ⚠️ Os pills atrás da foto NÃO passam por aqui — são coloridos em todas as
-   comunidades. */
-.fl-business .bg-\[\#F2B705\]      { background-color: #D4D4D8; }
-.fl-business .text-\[\#F2B705\]    { color: #D4D4D8; }
-.fl-business .text-\[\#E0A500\]    { color: #A1A1AA; }
-.fl-business .border-\[\#F2B705\]  { border-color: #D4D4D8; }
-.fl-business .focus\:border-\[\#F2B705\]:focus { border-color: #D4D4D8; }
-
 /* O título zumbe como painel em vez de gritar como manchete — mesma decisão
    dos outros dois ambientes, com o brilho na cor escolhida pelo líder. */
 .fl-business .fl-display {

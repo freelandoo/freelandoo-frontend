@@ -72,8 +72,9 @@ export function defaultAccentFor(kind: string | null | undefined): string {
  *   • pet → bege e marrom ("sem opção de trocar cores, somente bege e marrom");
  *   • condo → tons de cinza ("faça esse tons de cinza no estilo games");
  *   • neighborhood → tons de azul, sem amarelo ("sempre é uma cor só");
- *   • common (meu negócio) → preto com tons de cinza ("o estilo games, mas
- *     preto, preto com tons de cinza", 2026-09-25). O seletor de Fundo some
+ *   • common (meu negócio) → o games em AMARELO QUENTE (2026-09-25: foi preto
+ *     e cinza na 1ª passada; depois "e se trocar preto por amarelo quente como
+ *     o pill de estante do games?"). O seletor de Fundo some
  *     junto, porque mora no mesmo bloco — e `backdropTint` passou a ignorar a
  *     chave salva (ver lá).
  * ⚠️ Modalidade nova no estilo gamers entra AQUI (e ganha a pele em
@@ -83,7 +84,7 @@ export function lockedAccentFor(kind: string | null | undefined): string | null 
   if (kind === "pet") return "brown"
   if (kind === "condo") return "graphite"
   if (kind === "neighborhood") return "azure"
-  if (kind === "common") return "silver"
+  if (kind === "common") return "gold"
   return null
 }
 
@@ -215,14 +216,16 @@ export const BACKDROPS: {
 ]
 
 /**
- * ⚠️ TRAVADO NO PRETO desde 2026-09-25: o negócio (única modalidade com esta
- * pele) virou estilo gamers em preto e cinza, SEM escolha de fundo. A chave
+ * ⚠️ TRAVADO desde 2026-09-25: o negócio (única modalidade com esta pele)
+ * virou estilo gamers, SEM escolha de fundo. A chave
  * salva no `community_theme` é IGNORADA de propósito — quem escolheu vinho
  * antes não pode ficar com uma pele que o seletor nem mostra mais. A lista
  * `BACKDROPS` fica para o dia de destravar: é trocar o corpo desta função.
  */
 export function backdropTint(_key?: string | null): { canvas: string; glow: string } {
-  const b = BACKDROPS[0]
+  // Travado no ÂMBAR (fundo escuro quente + luz #F2B705, a cor do pill da
+  // Estante do games) desde a 2ª passada de 2026-09-25.
+  const b = BACKDROPS.find((x) => x.key === "amber") || BACKDROPS[0]
   return { canvas: b.canvas, glow: b.glow }
 }
 
