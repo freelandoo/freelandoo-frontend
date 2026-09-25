@@ -150,10 +150,12 @@ type Indicators = {
 }
 
 // ── a paleta SÓLIDA (ver o cabeçalho) ─────────────────────────────────────
-const PANEL =
-  "border-2 border-[rgba(var(--fl-skin-edge-rgb,245,241,232),0.4)] bg-[rgb(var(--fl-skin-panel-rgb,21,18,14))]"
-const TILE =
-  "border-2 border-[rgba(var(--fl-skin-edge-rgb,245,241,232),0.28)] bg-[rgb(var(--fl-skin-inner-rgb,29,24,16))]"
+// UMA cor só para painel e card, e ESCURA (Alex, 2026-09-25): o fundo do
+// ambiente com 4% da cor de brilho. Card e painel se separam pela borda,
+// não por um segundo tom.
+const SURFACE = "bg-[rgb(var(--fl-skin-soft-rgb,15,12,8))]"
+const PANEL = cn("border-2 border-[rgba(var(--fl-skin-edge-rgb,245,241,232),0.4)]", SURFACE)
+const TILE = cn("border-2 border-[rgba(var(--fl-skin-edge-rgb,245,241,232),0.28)]", SURFACE)
 const INK = "text-[rgb(var(--fl-skin-ink-rgb,245,241,232))]"
 const SUB = "text-[rgba(var(--fl-skin-ink-rgb,245,241,232),0.72)]"
 const LABEL = cn("text-[10px] font-extrabold uppercase tracking-[0.14em]", SUB)
@@ -309,6 +311,9 @@ export function CommunityIndicators({ communityId }: { communityId: string }) {
       style={skinVars}
       className={cn(
         "fl-root fl-sharp relative min-h-[100dvh] overflow-x-clip bg-[#0b0804] pb-24 text-[#F1EDE2]",
+        // Sem o brilho que a pele põe atrás do fl-display: aqui é número de
+        // dinheiro, e o halo deixava o valor borrado.
+        "fl-ind-flat",
         isBusiness && "fl-business"
       )}
     >

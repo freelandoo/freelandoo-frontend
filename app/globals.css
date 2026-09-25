@@ -1097,6 +1097,10 @@ body.camera-active { overflow: hidden; }
   letter-spacing: 0.02em;
   text-shadow: 0 0 24px rgba(var(--fl-skin-glow-rgb), 0.5);
 }
+/* Indicadores do negócio (2026-09-25): número de dinheiro SEM o halo — o
+   brilho deixava o valor borrado. Mais específico que a regra acima de
+   propósito (duas classes no ancestral). */
+.fl-business.fl-ind-flat .fl-display { text-shadow: none; }
 
 /* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
 .fl-business .-rotate-2,
