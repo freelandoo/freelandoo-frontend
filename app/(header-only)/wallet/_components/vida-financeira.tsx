@@ -27,6 +27,8 @@ type Rec = "recurring" | "oneoff"
 type Entry = {
   id: number; direction: Dir; recurrence: Rec; title: string; category: string | null
   amount_cents: number; entry_date: string | null; due_day: number | null; active: boolean
+  // mig 261: o lançamento declarou ser de um negócio → entra no lucro dos Indicadores dele.
+  id_business_profile?: string | null
 }
 type MonthData = {
   ym: number
@@ -473,7 +475,14 @@ function Group({ title, entries, accent, onDelete, tr, locale }: { title: string
           <div key={e.id} className="group flex items-center gap-2 border border-[#0B0B0D]/25 bg-white/70 px-2.5 py-1.5">
             <span className="h-2 w-2 shrink-0" style={{ background: accent }} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-[#0B0B0D]">{e.title}</p>
+              <p className="flex items-center gap-1.5 truncate text-xs font-bold text-[#0B0B0D]">
+                <span className="truncate">{e.title}</span>
+                {e.id_business_profile && (
+                  <span className="shrink-0 border border-[#0B0B0D] bg-[#F2B705] px-1 text-[9px] font-extrabold uppercase tracking-wide">
+                    {tr("bizTag", "Negócio")}
+                  </span>
+                )}
+              </p>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6B6457]">{fmtDay(e, tr)}</p>
             </div>
             <span className="shrink-0 text-xs font-black tabular-nums text-[#0B0B0D]">{brl(e.amount_cents, locale)}</span>
@@ -545,6 +554,21 @@ function EntryModal({
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState("")
   const amountRef = useRef<HTMLInputElement | null>(null)
+  // Os negócios que a pessoa lidera (mig 261). Vazio = "pessoal", que é o que
+  // todo lançamento era antes — e o seletor nem aparece para quem não tem negócio.
+  const [businesses, setBusinesses] = useState<{ id_profile: string; display_name: string }[]>([])
+  const [biz, setBiz] = useState("")
+
+  useEffect(() => {
+    const t = token()
+    if (!t) return
+    let alive = true
+    clientFetchWithTimeout("/api/me/wallet/finance/businesses", { headers: { Authorization: `Bearer ${t}` } }, 8000)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d?.businesses) setBusinesses(d.businesses) })
+      .catch(() => { /* o seletor é acessório */ })
+    return () => { alive = false }
+  }, [])
 
   const heading = isIn
     ? recurrence === "recurring" ? tr("fixedIncome", "Ganho fixo") : tr("addIncome", "Incluir ganho")
@@ -598,6 +622,7 @@ function EntryModal({
     try {
       const body: Record<string, unknown> = {
         direction, recurrence, title: title.trim(), category: title.trim(), amount_cents,
+        id_business_profile: biz || null,
       }
       if (recurrence === "recurring") { body.due_day = Number(dueDay) || 1; body.ym = ym }
       else body.entry_date = date
@@ -726,6 +751,25 @@ function EntryModal({
             </label>
           )}
         </div>
+
+        {businesses.length > 0 && (
+          <label className="mt-3 flex flex-col gap-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">{tr("bizLabel", "De qual negócio é?")}</span>
+            <select
+              value={biz}
+              onChange={(e) => setBiz(e.target.value)}
+              className="border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm font-bold text-[#0B0B0D] outline-none"
+            >
+              <option value="">{tr("bizPersonal", "Pessoal (não é de negócio)")}</option>
+              {businesses.map((b) => (
+                <option key={b.id_profile} value={b.id_profile}>{b.display_name}</option>
+              ))}
+            </select>
+            <span className="text-[10px] text-[#6B6457]">
+              {tr("bizHint", "Marcado com um negócio, entra no lucro dos Indicadores dele.")}
+            </span>
+          </label>
+        )}
 
         {err && <p className="mt-3 text-xs font-bold text-[#C0392B]">{err}</p>}
 
