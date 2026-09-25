@@ -75,7 +75,10 @@ export function brl(reais: number): string {
   return reais.toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    // Centavos só quando existem: a tabela é em reais inteiros ("R$ 40"), mas
+    // o preço vem do cadastro (`content/prices.ts`) e um R$ 42,50 lá não
+    // pode virar R$ 43 aqui.
+    minimumFractionDigits: Number.isInteger(reais) ? 0 : 2,
+    maximumFractionDigits: Number.isInteger(reais) ? 0 : 2,
   });
 }

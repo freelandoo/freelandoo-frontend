@@ -22,6 +22,8 @@
  */
 
 
+import { livePriced } from "./prices";
+
 export type Faq = { q: string; a: string };
 
 /** O desenho que representa o serviço. Ver `deco.tsx`. */
@@ -64,14 +66,17 @@ export type Service = {
   related: string[];
 };
 
-export const SERVICES: Service[] = [
+// Os textos abaixo trazem o preço como MARCADOR (`{corte}`, `{cb:eco}`…) e o
+// campo `price` é só o valor de reserva: quem manda é o cadastro. Ver
+// `prices.ts`. Texto novo com preço usa marcador, nunca o número.
+const RAW_SERVICES: Service[] = [
   {
     slug: "corte-de-cabelo",
     label: "Corte",
     h1: "Corte de cabelo masculino no Jardim Pinheiros",
-    metaTitle: "Corte de Cabelo Masculino R$ 40 — Jd. Pinheiros, SBC | Enzo Cortes",
+    metaTitle: "Corte de Cabelo Masculino {corte} — Jd. Pinheiros, SBC | Enzo Cortes",
     metaDescription:
-      "Corte masculino por R$ 40 na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Degradê, social, máquina ou tesoura. Seg a sáb, 09h às 19h.",
+      "Corte masculino por {corte} na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Degradê, social, máquina ou tesoura. Seg a sáb, 09h às 19h.",
     eyebrow: "Serviço 01",
     cardText: "Degradê, social, na máquina ou na tesoura — o acabamento é combinado na cadeira.",
     art: "scissors",
@@ -84,7 +89,7 @@ export const SERVICES: Service[] = [
     covers: {
       title: "O que dá para pedir",
       body: [
-        "A lista abaixo é do que se conversa antes de começar. Nada aqui é cobrado à parte: o corte é R$ 40, com ou sem acabamento mais trabalhoso.",
+        "A lista abaixo é do que se conversa antes de começar. Nada aqui é cobrado à parte: o corte é {corte}, com ou sem acabamento mais trabalhoso.",
       ],
       items: [
         {
@@ -108,7 +113,7 @@ export const SERVICES: Service[] = [
     faq: [
       {
         q: "Quanto custa o corte de cabelo?",
-        a: "R$ 40. É o valor do corte avulso. Se você também vai fazer a barba, o combinado dos dois sai por R$ 60 em vez de R$ 65.",
+        a: "{corte}. É o valor do corte avulso. Se você também vai fazer a barba, o combinado dos dois sai por {cb} em vez de {cb:soma}.",
       },
       {
         q: "Dá para fazer sem marcar?",
@@ -130,9 +135,9 @@ export const SERVICES: Service[] = [
     slug: "barba",
     label: "Barba",
     h1: "Barba feita e alinhada em São Bernardo do Campo",
-    metaTitle: "Barba R$ 25 — Barbearia no Jd. Pinheiros, SBC | Enzo Cortes",
+    metaTitle: "Barba {barba} — Barbearia no Jd. Pinheiros, SBC | Enzo Cortes",
     metaDescription:
-      "Barba por R$ 25 na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Desenho, alinhamento e acabamento. Seg a sáb, 09h às 19h.",
+      "Barba por {barba} na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Desenho, alinhamento e acabamento. Seg a sáb, 09h às 19h.",
     eyebrow: "Serviço 02",
     cardText: "Desenho, alinhamento e acabamento — do aparado curto ao contorno de barba cheia.",
     art: "razor",
@@ -145,7 +150,7 @@ export const SERVICES: Service[] = [
     covers: {
       title: "O que dá para pedir",
       body: [
-        "Por R$ 25, avulso. Quem faz junto com o corte paga R$ 60 pelos dois, em vez de R$ 65.",
+        "Por {barba}, avulso. Quem faz junto com o corte paga {cb} pelos dois, em vez de {cb:soma}.",
       ],
       items: [
         {
@@ -169,7 +174,7 @@ export const SERVICES: Service[] = [
     faq: [
       {
         q: "Quanto custa fazer a barba?",
-        a: "R$ 25 avulso. Com o corte de cabelo junto, os dois saem por R$ 60 — R$ 5 a menos do que pagando separado.",
+        a: "{barba} avulso. Com o corte de cabelo junto, os dois saem por {cb} — {cb:eco} a menos do que pagando separado.",
       },
       {
         q: "Faz barba de quem está deixando crescer?",
@@ -187,9 +192,9 @@ export const SERVICES: Service[] = [
     slug: "sobrancelha",
     label: "Sobrancelha",
     h1: "Sobrancelha masculina no Jardim Pinheiros",
-    metaTitle: "Sobrancelha Masculina R$ 15 — Jd. Pinheiros, SBC | Enzo Cortes",
+    metaTitle: "Sobrancelha Masculina {sobrancelha} — Jd. Pinheiros, SBC | Enzo Cortes",
     metaDescription:
-      "Sobrancelha masculina por R$ 15 na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Limpeza e alinhamento discretos. Seg a sáb, 09h às 19h.",
+      "Sobrancelha masculina por {sobrancelha} na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Limpeza e alinhamento discretos. Seg a sáb, 09h às 19h.",
     eyebrow: "Serviço 03",
     cardText: "Limpeza e alinhamento sem tirar o traço masculino — e entra no combinado completo.",
     art: "brow",
@@ -197,12 +202,12 @@ export const SERVICES: Service[] = [
     waMessage: "Olá, Enzo! Queria fazer a sobrancelha.",
     intro: [
       "Sobrancelha masculina é serviço de subtração: o objetivo é tirar o que está fora do desenho, não criar um desenho novo. O que se limpa é o meio, o excesso abaixo da linha e os fios que fogem por cima — mantendo a espessura e o formato que já existem.",
-      "É o serviço mais rápido e mais barato da casa, e o que mais muda o rosto por R$ 15. Quem nunca fez costuma pedir o mais discreto possível na primeira vez, e isso é exatamente o que se faz: dá para tirar mais depois, não dá para colocar de volta.",
+      "É o serviço mais rápido e mais barato da casa, e o que mais muda o rosto por {sobrancelha}. Quem nunca fez costuma pedir o mais discreto possível na primeira vez, e isso é exatamente o que se faz: dá para tirar mais depois, não dá para colocar de volta.",
     ],
     covers: {
       title: "O que dá para pedir",
       body: [
-        "R$ 15 avulso. Junto com corte e barba, os três saem por R$ 70 em vez de R$ 80.",
+        "{sobrancelha} avulso. Junto com corte e barba, os três saem por {cbs} em vez de {cbs:soma}.",
       ],
       items: [
         {
@@ -222,7 +227,7 @@ export const SERVICES: Service[] = [
     faq: [
       {
         q: "Quanto custa a sobrancelha?",
-        a: "R$ 15 avulso. No combinado com corte e barba, os três saem por R$ 70.",
+        a: "{sobrancelha} avulso. No combinado com corte e barba, os três saem por {cbs}.",
       },
       {
         q: "Vai ficar com cara de sobrancelha feita?",
@@ -239,10 +244,10 @@ export const SERVICES: Service[] = [
   {
     slug: "risco-e-desenho",
     label: "Risco / desenho",
-    h1: "Risco e desenho no cabelo — a partir de R$ 5",
-    metaTitle: "Risco e Desenho no Cabelo a partir de R$ 5 — SBC | Enzo Cortes",
+    h1: "Risco e desenho no cabelo — a partir de {risco}",
+    metaTitle: "Risco e Desenho no Cabelo a partir de {risco} — SBC | Enzo Cortes",
     metaDescription:
-      "Risco simples a partir de R$ 5 e desenhos na navalha na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Seg a sáb, 09h às 19h.",
+      "Risco simples a partir de {risco} e desenhos na navalha na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Seg a sáb, 09h às 19h.",
     eyebrow: "Serviço 04",
     cardText: "Do risco reto de um traço ao desenho trabalhado — o preço acompanha o tamanho.",
     art: "liner",
@@ -250,17 +255,17 @@ export const SERVICES: Service[] = [
     priceFrom: true,
     waMessage: "Olá, Enzo! Queria fazer um risco/desenho no corte.",
     intro: [
-      "O risco é o acabamento que transforma um corte comum em um corte com assinatura. Pode ser um traço só, reto, na lateral — o pedido mais frequente, e o que custa R$ 5 — ou um desenho maior, com curvas e mais de uma linha, feito na navalha.",
-      "É por isso que o preço deste serviço começa em R$ 5 em vez de ser fechado: um traço é um traço, e um desenho de cinco linhas é outro trabalho. O valor é combinado antes de começar, olhando o que você quer — nunca depois, na hora de pagar.",
+      "O risco é o acabamento que transforma um corte comum em um corte com assinatura. Pode ser um traço só, reto, na lateral — o pedido mais frequente, e o que custa {risco} — ou um desenho maior, com curvas e mais de uma linha, feito na navalha.",
+      "É por isso que o preço deste serviço começa em {risco} em vez de ser fechado: um traço é um traço, e um desenho de cinco linhas é outro trabalho. O valor é combinado antes de começar, olhando o que você quer — nunca depois, na hora de pagar.",
     ],
     covers: {
       title: "Como o preço é definido",
       body: [
-        "O piso é R$ 5, e é o preço do risco simples. Daí para cima, o que muda é o tempo na navalha.",
+        "O piso é {risco}, e é o preço do risco simples. Daí para cima, o que muda é o tempo na navalha.",
       ],
       items: [
         {
-          title: "Risco simples — R$ 5",
+          title: "Risco simples — {risco}",
           text: "Um traço reto, geralmente na lateral ou marcando a divisão do cabelo. É o acréscimo mais barato que se pode fazer num corte.",
         },
         {
@@ -275,8 +280,8 @@ export const SERVICES: Service[] = [
     },
     faq: [
       {
-        q: "Por que o preço é 'a partir de' R$ 5?",
-        a: "Porque o trabalho varia muito: um risco reto de um traço é rápido, e um desenho com várias linhas leva bem mais tempo na navalha. O R$ 5 é o piso — o valor do seu é combinado antes de começar, nunca depois.",
+        q: "Por que o preço é 'a partir de' {risco}?",
+        a: "Porque o trabalho varia muito: um risco reto de um traço é rápido, e um desenho com várias linhas leva bem mais tempo na navalha. O {risco} é o piso — o valor do seu é combinado antes de começar, nunca depois.",
       },
       {
         q: "Posso levar uma foto do desenho que eu quero?",
@@ -284,7 +289,7 @@ export const SERVICES: Service[] = [
       },
       {
         q: "O risco é cobrado junto com o corte?",
-        a: "É um acréscimo ao corte, não substitui. O corte é R$ 40 e o risco entra por cima, a partir de R$ 5.",
+        a: "É um acréscimo ao corte, não substitui. O corte é {corte} e o risco entra por cima, a partir de {risco}.",
       },
       {
         q: "Quanto tempo o desenho dura?",
@@ -297,12 +302,12 @@ export const SERVICES: Service[] = [
   {
     slug: "corte-e-barba",
     label: "Corte + barba",
-    h1: "Corte e barba no mesmo atendimento — R$ 60",
-    metaTitle: "Corte e Barba R$ 60 — Barbearia no Jd. Pinheiros, SBC | Enzo Cortes",
+    h1: "Corte e barba no mesmo atendimento — {cb}",
+    metaTitle: "Corte e Barba {cb} — Barbearia no Jd. Pinheiros, SBC | Enzo Cortes",
     metaDescription:
-      "Corte e barba por R$ 60 (avulsos custariam R$ 65) na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Seg a sáb, 09h às 19h.",
+      "Corte e barba por {cb} (avulsos custariam {cb:soma}) na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Seg a sáb, 09h às 19h.",
     eyebrow: "Combinado",
-    cardText: "Os dois no mesmo dia por R$ 60 — R$ 5 a menos do que pagando separado.",
+    cardText: "Os dois no mesmo dia por {cb} — {cb:eco} a menos do que pagando separado.",
     art: "duo",
     price: 60,
     sumOf: ["corte-de-cabelo", "barba"],
@@ -334,15 +339,15 @@ export const SERVICES: Service[] = [
     faq: [
       {
         q: "Quanto custa corte e barba juntos?",
-        a: "R$ 60. Avulsos seriam R$ 40 mais R$ 25, ou seja R$ 65 — o combinado economiza R$ 5.",
+        a: "{cb}. Avulsos seriam {corte} mais {barba}, ou seja {cb:soma} — o combinado economiza {cb:eco}.",
       },
       {
-        q: "Preciso fazer os dois no mesmo dia para pagar R$ 60?",
+        q: "Preciso fazer os dois no mesmo dia para pagar {cb}?",
         a: "Sim, o valor é do atendimento combinado. Em dias separados, cada serviço vale o preço avulso dele.",
       },
       {
         q: "Dá para incluir a sobrancelha também?",
-        a: "Dá, e aí é o combinado completo: corte, barba e sobrancelha por R$ 70, em vez dos R$ 80 que os três custariam avulsos.",
+        a: "Dá, e aí é o combinado completo: corte, barba e sobrancelha por {cbs}, em vez dos {cbs:soma} que os três custariam avulsos.",
       },
     ],
     related: ["corte-barba-e-sobrancelha", "corte-de-cabelo", "barba"],
@@ -351,18 +356,18 @@ export const SERVICES: Service[] = [
   {
     slug: "corte-barba-e-sobrancelha",
     label: "Corte + barba + sobrancelha",
-    h1: "Corte, barba e sobrancelha — o combinado completo por R$ 70",
-    metaTitle: "Corte, Barba e Sobrancelha R$ 70 — Jd. Pinheiros, SBC | Enzo Cortes",
+    h1: "Corte, barba e sobrancelha — o combinado completo por {cbs}",
+    metaTitle: "Corte, Barba e Sobrancelha {cbs} — Jd. Pinheiros, SBC | Enzo Cortes",
     metaDescription:
-      "Corte, barba e sobrancelha por R$ 70 (avulsos custariam R$ 80) na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Seg a sáb, 09h às 19h.",
+      "Corte, barba e sobrancelha por {cbs} (avulsos custariam {cbs:soma}) na Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo. Seg a sáb, 09h às 19h.",
     eyebrow: "Combinado completo",
-    cardText: "Os três de uma vez por R$ 70 — R$ 10 a menos do que avulsos. É o maior desconto da tabela.",
+    cardText: "Os três de uma vez por {cbs} — {cbs:eco} a menos do que avulsos. É o maior desconto da tabela.",
     art: "trio",
     price: 70,
     sumOf: ["corte-de-cabelo", "barba", "sobrancelha"],
     waMessage: "Olá, Enzo! Queria marcar corte, barba e sobrancelha.",
     intro: [
-      "É o atendimento inteiro: cabelo, barba e sobrancelha resolvidos de uma vez, com os três acabamentos decididos olhando o rosto ao mesmo tempo. Também é o maior desconto da tabela — R$ 10 abaixo da soma dos avulsos, contra R$ 5 do combinado de dois.",
+      "É o atendimento inteiro: cabelo, barba e sobrancelha resolvidos de uma vez, com os três acabamentos decididos olhando o rosto ao mesmo tempo. Também é o maior desconto da tabela — {cbs:eco} abaixo da soma dos avulsos, contra {cb:eco} do combinado de dois.",
       "Vale especialmente antes de data marcada: casamento, formatura, entrevista, foto. Não porque seja um pacote especial, mas porque é o único jeito de garantir que os três serviços terminem no mesmo ponto, sem um estar com três semanas a mais que o outro.",
     ],
     covers: {
@@ -372,40 +377,42 @@ export const SERVICES: Service[] = [
       ],
       items: [
         {
-          title: "Corte — R$ 40 avulso",
+          title: "Corte — {corte} avulso",
           text: "Transição, método, contorno e comprimento do topo.",
         },
         {
-          title: "Barba — R$ 25 avulsa",
+          title: "Barba — {barba} avulsa",
           text: "Pescoço, bochecha, comprimento e bigode.",
         },
         {
-          title: "Sobrancelha — R$ 15 avulsa",
+          title: "Sobrancelha — {sobrancelha} avulsa",
           text: "Limpeza no grau que você pedir, mantendo espessura e formato.",
         },
         {
           title: "A conta",
-          text: "Somados, R$ 80. No combinado, R$ 70.",
+          text: "Somados, {cbs:soma}. No combinado, {cbs}.",
         },
       ],
     },
     faq: [
       {
         q: "Quanto custa corte, barba e sobrancelha?",
-        a: "R$ 70 no combinado. Avulsos seriam R$ 40 + R$ 25 + R$ 15 = R$ 80, então a economia é de R$ 10.",
+        a: "{cbs} no combinado. Avulsos seriam {corte} + {barba} + {sobrancelha} = {cbs:soma}, então a economia é de {cbs:eco}.",
       },
       {
         q: "É o combinado com maior desconto?",
-        a: "É. O de corte e barba economiza R$ 5; este economiza R$ 10.",
+        a: "É. O de corte e barba economiza {cb:eco}; este economiza {cbs:eco}.",
       },
       {
         q: "Posso incluir um risco?",
-        a: "Pode. O risco é um acréscimo ao corte, a partir de R$ 5, e o valor é combinado antes de começar.",
+        a: "Pode. O risco é um acréscimo ao corte, a partir de {risco}, e o valor é combinado antes de começar.",
       },
     ],
     related: ["corte-e-barba", "sobrancelha", "risco-e-desenho"],
   },
 ];
+
+export const SERVICES: Service[] = RAW_SERVICES.map((s) => livePriced(s, s.slug));
 
 export const SERVICE_SLUGS = SERVICES.map((s) => s.slug);
 

@@ -16,9 +16,11 @@
  * direto no resultado de busca.
  */
 
+import { livePriced } from "./prices";
 import type { Faq } from "./services";
 
-export const SITE_FAQ: Faq[] = [
+// Os preços das respostas são MARCADORES resolvidos pelo cadastro — ver `prices.ts`.
+const RAW_FAQ: Faq[] = [
   {
     q: "Onde fica a Enzo Cortes?",
     a: "Av. Vitória, 144 — Jardim Pinheiros, São Bernardo do Campo/SP, CEP 09854-740. É na região do Alvarenga, na zona sul do município.",
@@ -29,11 +31,11 @@ export const SITE_FAQ: Faq[] = [
   },
   {
     q: "Quanto custa cortar o cabelo?",
-    a: "Corte R$ 40. Barba R$ 25. Sobrancelha R$ 15. Risco ou desenho a partir de R$ 5. Corte e barba juntos saem por R$ 60, e corte, barba e sobrancelha por R$ 70.",
+    a: "Corte {corte}. Barba {barba}. Sobrancelha {sobrancelha}. Risco ou desenho a partir de {risco}. Corte e barba juntos saem por {cb}, e corte, barba e sobrancelha por {cbs}.",
   },
   {
     q: "Vale mais a pena pagar o combinado?",
-    a: "Vale, e a conta é simples: corte e barba avulsos dariam R$ 65 e o combinado é R$ 60. Os três avulsos dariam R$ 80 e o combinado é R$ 70. A economia é de R$ 5 e R$ 10, respectivamente.",
+    a: "Vale, e a conta é simples: corte e barba avulsos dariam {cb:soma} e o combinado é {cb}. Os três avulsos dariam {cbs:soma} e o combinado é {cbs}. A economia é de {cb:eco} e {cbs:eco}, respectivamente.",
   },
   {
     q: "Preciso marcar horário?",
@@ -44,3 +46,5 @@ export const SITE_FAQ: Faq[] = [
     a: "Atende quem chegar. A barbearia fica no Jardim Pinheiros, e boa parte de quem vem é dos bairros vizinhos da mesma região do Alvarenga, como Jardim Represa e Batistini.",
   },
 ];
+
+export const SITE_FAQ: Faq[] = RAW_FAQ.map((f) => livePriced(f));

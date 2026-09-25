@@ -14,7 +14,7 @@
  *    depoimento nenhum — e não terá inventado.
  *
  * 2. `priceRange` SÓ PORQUE OS PREÇOS SÃO REAIS, e ele é CALCULADO da tabela
- *    (ver `PRICE_RANGE`), nunca digitado. A regra proíbe `priceRange`
+ *    (ver `priceRange`), nunca digitado. A regra proíbe `priceRange`
  *    CHUTADO; aqui o menor e o maior valor saem dos mesmos números que a
  *    página mostra, então o dado estruturado e o visível não podem divergir.
  *
@@ -93,10 +93,13 @@ export function businessId(origin: string) {
  * divergência entre o dado estruturado e o que está na tela é exatamente o
  * que o Google trata como sinal de site não confiável.
  */
-const PRICE_RANGE = (() => {
+// ⚠️ FUNÇÃO, E NÃO CONSTANTE DE MÓDULO: o preço vem do cadastro
+// (`content/prices.ts`) e só chega na hora de desenhar. Calculada no import,
+// a faixa congelaria nos valores originais.
+function priceRange(): string {
   const valores = SERVICES.map((s) => s.price);
   return `R$${Math.min(...valores)}-R$${Math.max(...valores)}`;
-})();
+}
 
 /**
  * O catálogo de serviços com PREÇO — o que este site tem e a maioria não.
@@ -145,7 +148,7 @@ export function BusinessLd({ origin }: { origin: string }) {
         description: `${BUSINESS.tagline} no ${BUSINESS.neighborhood}, ${BUSINESS.city}. ${BUSINESS.subTagline}.`,
         url: origin,
         telephone: BUSINESS.phoneE164,
-        priceRange: PRICE_RANGE,
+        priceRange: priceRange(),
         currenciesAccepted: "BRL",
         address: {
           "@type": "PostalAddress",

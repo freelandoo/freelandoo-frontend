@@ -77,7 +77,7 @@ export type TemplateEntry = {
   /** Endereço → página, ou `null` quando ela não existe (a rota dá 404). */
   resolvePage: (data: unknown, slug: string) => unknown | null
   /** `<title>`, descrição, canônico e preview — o que o buscador lê. */
-  metadata: (props: TemplateProps) => Metadata
+  metadata: (props: TemplateProps) => Metadata | Promise<Metadata>
   /**
    * Os endereços internos do site, sem a home — é o que o `app/sitemap.ts`
    * publica no domínio do cliente.
@@ -138,6 +138,12 @@ const RICARDO_FOGOES: TemplateEntry = {
  * poria duas tabelas de preço na mesma página — a escrita e a gravada —, que
  * é a segunda verdade sobre preço que a vitrine do construtor já teve de
  * desfazer uma vez (back `5782dd1`).
+ *
+ * ⚠️ ATUALIZADO EM 2026-09-25: os PREÇOS deste site passaram a vir do
+ * cadastro de serviços do Enzo ("caso altere lá, altera no site"). Continua
+ * sem `services` e sem `data`: o tema lê o cadastro sozinho, pelo ID de cada
+ * serviço, e troca só o número — texto e layout seguem os do código. Ver
+ * `enzo-cortes/content/prices.ts`. Por isso `metadata` pode devolver Promise.
  */
 const ENZO_CORTES: TemplateEntry = {
   slug: "enzo-cortes",

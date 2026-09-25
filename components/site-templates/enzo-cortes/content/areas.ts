@@ -29,6 +29,8 @@
  */
 
 
+import { livePriced } from "./prices";
+
 export type Faq = { q: string; a: string };
 
 export type Area = {
@@ -52,7 +54,8 @@ export type Area = {
   waMessage: string;
 };
 
-export const AREAS: Area[] = [
+// Os preços dos textos são MARCADORES resolvidos pelo cadastro — ver `prices.ts`.
+const RAW_AREAS: Area[] = [
   {
     slug: "jardim-pinheiros",
     name: "Jardim Pinheiros",
@@ -61,7 +64,7 @@ export const AREAS: Area[] = [
     h1: "Barbearia no Jardim Pinheiros, São Bernardo do Campo",
     metaTitle: "Barbearia no Jardim Pinheiros — Av. Vitória, 144 | Enzo Cortes",
     metaDescription:
-      "Barbearia no Jardim Pinheiros, São Bernardo do Campo: Av. Vitória, 144. Corte R$ 40, barba R$ 25, sobrancelha R$ 15. Seg a sáb, 09h às 19h.",
+      "Barbearia no Jardim Pinheiros, São Bernardo do Campo: Av. Vitória, 144. Corte {corte}, barba {barba}, sobrancelha {sobrancelha}. Seg a sáb, 09h às 19h.",
     eyebrow: "Onde a barbearia fica",
     cardText: "O endereço da casa: Av. Vitória, 144. É aqui que tudo acontece.",
     intro: [
@@ -99,7 +102,7 @@ export const AREAS: Area[] = [
     h1: "Barbearia na região do Alvarenga — São Bernardo do Campo",
     metaTitle: "Barbearia no Alvarenga, São Bernardo do Campo | Enzo Cortes",
     metaDescription:
-      "Barbearia na região do Alvarenga, em São Bernardo do Campo: Av. Vitória, 144, Jd. Pinheiros. Corte R$ 40, corte e barba R$ 60. Seg a sáb, 09h às 19h.",
+      "Barbearia na região do Alvarenga, em São Bernardo do Campo: Av. Vitória, 144, Jd. Pinheiros. Corte {corte}, corte e barba {cb}. Seg a sáb, 09h às 19h.",
     eyebrow: "Região",
     cardText: "A região a que o Jardim Pinheiros pertence — a segunda mais populosa de São Bernardo.",
     intro: [
@@ -124,7 +127,7 @@ export const AREAS: Area[] = [
       },
       {
         q: "Quanto custa um corte?",
-        a: "Corte R$ 40, barba R$ 25 e sobrancelha R$ 15. Corte e barba juntos saem por R$ 60, e os três por R$ 70.",
+        a: "Corte {corte}, barba {barba} e sobrancelha {sobrancelha}. Corte e barba juntos saem por {cb}, e os três por {cbs}.",
       },
     ],
     waMessage: "Olá, Enzo! Sou aqui do Alvarenga e queria marcar um horário.",
@@ -137,7 +140,7 @@ export const AREAS: Area[] = [
     h1: "Barbearia perto do Jardim Represa, em São Bernardo",
     metaTitle: "Barbearia perto do Jardim Represa, SBC | Enzo Cortes",
     metaDescription:
-      "Barbearia na mesma região do Jardim Represa, em São Bernardo do Campo: Av. Vitória, 144, Jd. Pinheiros. Corte R$ 40. Seg a sáb, 09h às 19h.",
+      "Barbearia na mesma região do Jardim Represa, em São Bernardo do Campo: Av. Vitória, 144, Jd. Pinheiros. Corte {corte}. Seg a sáb, 09h às 19h.",
     eyebrow: "Bairro vizinho",
     cardText: "Mesma região do Alvarenga — sem precisar atravessar a cidade para cortar o cabelo.",
     intro: [
@@ -162,7 +165,7 @@ export const AREAS: Area[] = [
       },
       {
         q: "Quanto custa corte e barba?",
-        a: "R$ 60 os dois no mesmo atendimento. Avulsos seriam R$ 65.",
+        a: "{cb} os dois no mesmo atendimento. Avulsos seriam {cb:soma}.",
       },
     ],
     waMessage: "Olá, Enzo! Sou do Jardim Represa e queria marcar um horário.",
@@ -175,7 +178,7 @@ export const AREAS: Area[] = [
     h1: "Barbearia perto do Batistini, São Bernardo do Campo",
     metaTitle: "Barbearia perto do Batistini, SBC | Enzo Cortes",
     metaDescription:
-      "Barbearia na mesma região do Batistini, em São Bernardo do Campo: Av. Vitória, 144, Jd. Pinheiros. Corte R$ 40, combinado R$ 70. Seg a sáb, 09h às 19h.",
+      "Barbearia na mesma região do Batistini, em São Bernardo do Campo: Av. Vitória, 144, Jd. Pinheiros. Corte {corte}, combinado {cbs}. Seg a sáb, 09h às 19h.",
     eyebrow: "Bairro vizinho",
     cardText: "Também na região do Alvarenga — o corte resolvido do lado de casa.",
     intro: [
@@ -185,7 +188,7 @@ export const AREAS: Area[] = [
     context: {
       title: "O que você encontra aqui",
       body: [
-        "A tabela inteira está publicada, o que é a coisa mais útil que um site de barbearia pode fazer por quem está decidindo: corte R$ 40, barba R$ 25, sobrancelha R$ 15, risco a partir de R$ 5. Corte e barba juntos, R$ 60. Os três, R$ 70.",
+        "A tabela inteira está publicada, o que é a coisa mais útil que um site de barbearia pode fazer por quem está decidindo: corte {corte}, barba {barba}, sobrancelha {sobrancelha}, risco a partir de {risco}. Corte e barba juntos, {cb}. Os três, {cbs}.",
         "Nenhum desses valores depende de pacote, fidelidade ou primeira visita. É o preço, e ele está aqui justamente para você não precisar ligar para perguntar.",
       ],
     },
@@ -200,12 +203,14 @@ export const AREAS: Area[] = [
       },
       {
         q: "Qual o combinado mais em conta?",
-        a: "Corte, barba e sobrancelha por R$ 70 — avulsos dariam R$ 80, então é o maior desconto da tabela.",
+        a: "Corte, barba e sobrancelha por {cbs} — avulsos dariam {cbs:soma}, então é o maior desconto da tabela.",
       },
     ],
     waMessage: "Olá, Enzo! Sou do Batistini e queria marcar um horário.",
   },
 ];
+
+export const AREAS: Area[] = RAW_AREAS.map((a) => livePriced(a));
 
 export const AREA_SLUGS = AREAS.map((a) => a.slug);
 export const AREA_NAMES = AREAS.map((a) => a.name);

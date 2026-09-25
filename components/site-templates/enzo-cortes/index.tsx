@@ -21,9 +21,13 @@
 
 import { Big_Shoulders, Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 
 import { SiteAnalytics } from "./analytics";
 import { BUSINESS } from "./content/business";
+import { loadLivePrices } from "./content/live-prices";
+import { setLivePrices } from "./content/prices";
+import { LivePrices } from "./live-prices-client";
 import { FloatingActions, SiteFooter, SiteHeader } from "./chrome";
 import { pageHref, type TemplateLinks } from "./lib";
 import AreaPage from "./pages/area";
@@ -84,14 +88,17 @@ export type { EnzoPage };
  * em três origens, e um canônico fixo diria ao buscador que a página mora em
  * outro lugar — justamente o dado com que ele decide quem é o dono dela.
  */
-export function enzoMetadata({
+export async function enzoMetadata({
   links,
   page = null,
 }: {
   data?: unknown;
   links: TemplateLinks;
   page?: EnzoPage | null;
-}): Metadata {
+}): Promise<Metadata> {
+  // O título e a descrição têm preço dentro ("Corte R$ 40"): sem ler o
+  // cadastro ANTES, o resultado do Google anunciaria o valor antigo.
+  setLivePrices(await loadLivePrices());
   const { title, description } = pageMeta(page);
   const slug = pageSlug(page);
   const path = slug ? pageHref(links, slug) : links.home;
@@ -127,14 +134,39 @@ export function enzoMetadata({
  * O site inteiro: casca, conteúdo e dados estruturados.
  *
  * `page` nulo é a home.
+ *
+ * ⚠️ TUDO PASSA PELO `PriceGate`: é ele que lê os preços do CADASTRO antes de
+ * qualquer peça desenhar um número (ver `content/prices.ts`). A porta fica
+ * síncrona porque o registro a chama como função.
  */
-export function EnzoCortesSite({
-  links,
-  page = null,
-}: {
+export function EnzoCortesSite(props: {
   data?: unknown;
   links: TemplateLinks;
   page?: EnzoPage | null;
+}) {
+  return (
+    <PriceGate>
+      <EnzoCortesContent links={props.links} page={props.page ?? null} />
+    </PriceGate>
+  );
+}
+
+/**
+ * Lê o cadastro e grava os preços nos DOIS lados: aqui (componentes de
+ * servidor) e na ponte de cliente. Os filhos só renderizam depois.
+ */
+async function PriceGate({ children }: { children: ReactNode }) {
+  const prices = await loadLivePrices();
+  setLivePrices(prices);
+  return <LivePrices prices={prices}>{children}</LivePrices>;
+}
+
+function EnzoCortesContent({
+  links,
+  page,
+}: {
+  links: TemplateLinks;
+  page: EnzoPage | null;
 }) {
   const ctx = { links };
 

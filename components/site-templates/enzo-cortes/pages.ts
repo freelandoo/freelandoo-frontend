@@ -7,6 +7,7 @@
 
 import { AREAS, getArea, type Area } from "./content/areas";
 import { SERVICES, getService, type Service } from "./content/services";
+import { fillPrices } from "./content/prices";
 import { PAGE } from "./lib";
 
 export type EnzoPage =
@@ -68,13 +69,23 @@ export function resolveEnzoPage(slug: string): EnzoPage | null {
   return null;
 }
 
-/** Título e descrição de cada página — o que o buscador lê. */
+/**
+ * Título e descrição de cada página — o que o buscador lê.
+ *
+ * Os preços do texto são MARCADORES resolvidos aqui (ver `content/prices.ts`):
+ * é o que mantém o título do Google igual ao card depois de um reajuste.
+ */
 export function pageMeta(page: EnzoPage | null): { title: string; description: string } {
+  const m = rawPageMeta(page);
+  return { title: fillPrices(m.title), description: fillPrices(m.description) };
+}
+
+function rawPageMeta(page: EnzoPage | null): { title: string; description: string } {
   if (!page) {
     return {
       title: "Enzo Cortes — Barbearia no Jardim Pinheiros, São Bernardo do Campo",
       description:
-        "Barbearia na Av. Vitória, 144 — Jd. Pinheiros, SBC. Corte R$ 40, barba R$ 25, sobrancelha R$ 15. Corte e barba R$ 60. Seg a sáb, 09h às 19h.",
+        "Barbearia na Av. Vitória, 144 — Jd. Pinheiros, SBC. Corte {corte}, barba {barba}, sobrancelha {sobrancelha}. Corte e barba {cb}. Seg a sáb, 09h às 19h.",
     };
   }
   switch (page.kind) {
@@ -86,7 +97,7 @@ export function pageMeta(page: EnzoPage | null): { title: string; description: s
       return {
         title: "Serviços e Preços — Barbearia Enzo Cortes, SBC",
         description:
-          "A tabela inteira: corte R$ 40, barba R$ 25, sobrancelha R$ 15, risco a partir de R$ 5, corte e barba R$ 60, os três por R$ 70. Jd. Pinheiros, São Bernardo.",
+          "A tabela inteira: corte {corte}, barba {barba}, sobrancelha {sobrancelha}, risco a partir de {risco}, corte e barba {cb}, os três por {cbs}. Jd. Pinheiros, São Bernardo.",
       };
     case "sobre":
       return {
