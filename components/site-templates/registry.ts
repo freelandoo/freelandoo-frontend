@@ -147,8 +147,14 @@ const RICARDO_FOGOES: TemplateEntry = {
  */
 const ENZO_CORTES: TemplateEntry = {
   slug: "enzo-cortes",
-  Site: ({ links, page }) =>
-    EnzoCortesSite({ links, page: (page as EnzoPage | null) ?? null }),
+  // ⚠️ `livePrices` TEM QUE PASSAR POR AQUI: é o caminho da pré-visualização
+  // (cliente), e sem ele o tema cai no PriceGate async — React #482.
+  Site: (props) =>
+    EnzoCortesSite({
+      links: props.links,
+      page: (props.page as EnzoPage | null) ?? null,
+      livePrices: (props as { livePrices?: Record<string, number> }).livePrices,
+    }),
   resolvePage: (_data, slug) => resolveEnzoPage(slug),
   metadata: ({ links, page }) =>
     enzoMetadata({ links, page: (page as EnzoPage | null) ?? null }),
