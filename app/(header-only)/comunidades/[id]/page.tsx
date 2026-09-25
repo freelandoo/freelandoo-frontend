@@ -64,6 +64,14 @@ const PET_INLINE: Record<string, string> = {
   "#9A938A": "#7A5A3C",
   "#0B0B0D": "#A85A24",
 }
+/** Espelho, para `style` inline, dos valores da pele `.fl-hood` (globals.css). */
+const HOOD_INLINE: Record<string, string> = {
+  "#15120E": "#F8FBFF",
+  "#1D1810": "#BFDBFE",
+  "#F5F1E8": "#0F1E3A",
+  "#9A938A": "#35507A",
+  "#0B0B0D": "#8FB2E0",
+}
 /** Espelho, para `style` inline, dos valores da pele `.fl-condo` (globals.css). */
 const CONDO_INLINE: Record<string, string> = {
   "#15120E": "#FAFAFA",
@@ -592,7 +600,10 @@ export default function CommunityDetailPage() {
   // o games mas cinza claro"). ⚠️ Pele CLARA como a do pet: passa pelo
   // `skinHex` (CONDO_INLINE). Não troca o dock.
   const isCondoSkin = isCondo
-  const isSkinned = isBusinessPlatform || isPetPlatform || isCarPlatform || isCondoSkin
+  // BAIRRO — a mesma pele em AZUL CLARO (Alex, 2026-09-24). Clara também:
+  // passa pelo `skinHex` (HOOD_INLINE). Não troca o dock.
+  const isHoodSkin = (community?.kind ?? null) === "neighborhood"
+  const isSkinned = isBusinessPlatform || isPetPlatform || isCarPlatform || isCondoSkin || isHoodSkin
 
   // INDICADORES (mig 235): leads, funil do site e faturamento — só do LÍDER do
   // negócio. Predicado PRÓPRIO e não `canBuildSite`: aquele embute a flag
@@ -762,8 +773,14 @@ export default function CommunityDetailPage() {
   // os MESMOS valores de `.fl-pet`. Tinta sobre o accent NÃO passa por aqui.
   const skinHex = useCallback(
     (hex: string) =>
-      isPetPlatform ? PET_INLINE[hex] ?? hex : isCondoSkin ? CONDO_INLINE[hex] ?? hex : hex,
-    [isPetPlatform, isCondoSkin]
+      isPetPlatform
+        ? PET_INLINE[hex] ?? hex
+        : isCondoSkin
+          ? CONDO_INLINE[hex] ?? hex
+          : isHoodSkin
+            ? HOOD_INLINE[hex] ?? hex
+            : hex,
+    [isPetPlatform, isCondoSkin, isHoodSkin]
   )
 
   const showAsLeaderEdit = canAdminister && edit
@@ -1676,7 +1693,7 @@ export default function CommunityDetailPage() {
     // As variáveis do `style` só existem na de negócio, onde a cor é do líder.
     <div
       style={skinVars}
-      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${isCarPlatform ? "fl-car" : ""} ${isCondoSkin ? "fl-condo" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
+      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${isCarPlatform ? "fl-car" : ""} ${isCondoSkin ? "fl-condo" : ""} ${isHoodSkin ? "fl-hood" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
     >
       {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
           DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
@@ -1691,6 +1708,7 @@ export default function CommunityDetailPage() {
       {isPetPlatform && <TechBackdrop variant="pet" />}
       {isCarPlatform && <TechBackdrop variant="car" />}
       {isCondoSkin && <TechBackdrop variant="condo" />}
+      {isHoodSkin && <TechBackdrop variant="hood" />}
       {isBusinessPlatform && (
         <BusinessPlanModal
           open={planOpen}
@@ -1790,7 +1808,7 @@ export default function CommunityDetailPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
             )}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCondoSkin ? "#E4E4E7cc" : "#0b0804cc"} 100%)` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCondoSkin ? "#E4E4E7cc" : isHoodSkin ? "#DBEAFEcc" : "#0b0804cc"} 100%)` }} />
             {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
             {community.enxame_name && (
               <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
