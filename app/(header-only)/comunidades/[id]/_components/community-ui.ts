@@ -200,8 +200,10 @@ export const BACKDROPS: {
   // cinza-neutras sobre preto leem como fumaça, e o aço as mantém vivas.
   // ⚠️ Virou CINZA NEUTRO em 2026-09-25 (era cinza-aço #8E97A5): o negócio
   // entrou no estilo gamers "preto com tons de cinza", e o azulado do aço
-  // puxava a pele para azul-noite.
-  { key: "black", labelKey: "bgBlack", fallback: "Preto", canvas: "#08080A", glow: "#A1A1AA" },
+  // puxava a pele para azul-noite. E o brilho é quase BRANCO: cinza médio
+  // em baixa opacidade sobre preto some (1ª passada, "não ficou legal");
+  // o games brilha porque a luz é forte, e no cinza a luz forte é o branco.
+  { key: "black", labelKey: "bgBlack", fallback: "Preto", canvas: "#060607", glow: "#E4E4E7" },
   { key: "navy", labelKey: "bgNavy", fallback: "Azul-noite", canvas: "#060B18", glow: "#3B82F6" },
   { key: "cyan", labelKey: "bgCyan", fallback: "Ciano", canvas: "#04121A", glow: "#22D3EE" },
   { key: "green", labelKey: "bgGreen", fallback: "Verde", canvas: "#05140F", glow: "#16B79A" },
@@ -272,7 +274,10 @@ export function platformSkinVars(bgKey: string | null | undefined): Record<strin
     "--fl-skin-deep-rgb": triple(mixRgb(C, G, 0.31)),
     "--fl-skin-line": toHex(mixRgb(C, G, 0.36)),
     "--fl-skin-ink-rgb": triple(mixRgb(W, G, 0.15)),
-    "--fl-skin-muted-rgb": triple(mixRgb(G, W, 0.24)),
+    // ⚠️ O apagado DESCE para o fundo (era subir para o branco): com o brilho
+    // quase branco do preto travado (2026-09-25), subir deixava o rótulo
+    // secundário igual à tinta e a hierarquia sumia. Dá ~#A1A1A3.
+    "--fl-skin-muted-rgb": triple(mixRgb(G, C, 0.3)),
     "--fl-skin-edge-rgb": triple(mixRgb(G, W, 0.16)),
     "--fl-skin-glow": glow,
     "--fl-skin-glow-rgb": triple(G),
