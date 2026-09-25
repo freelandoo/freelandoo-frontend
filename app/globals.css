@@ -1407,7 +1407,8 @@ body.camera-active { overflow: hidden; }
 /* ============================================================================
    BAIRRO — a pele de GAMES em AZUL CLARO (`.fl-hood`)
    ----------------------------------------------------------------------------
-   Alex (2026-09-24), olhando o bairro "João de Barro": "azul claro, esse".
+   Alex (2026-09-24), olhando o bairro "João de Barro": "azul claro, esse" e,
+   em seguida, "azul claro, mas não tão claro" — a rampa desceu um degrau.
    É a `.fl-condo` (games em tom claro) com o cinza trocado por azul claro —
    mesma lista, mesmas regras: pele CLARA, tinta invertida (azul-marinho),
    cor inline pelo espelho `HOOD_INLINE` da página, amarelo de FUNDO intacto
@@ -1416,18 +1417,18 @@ body.camera-active { overflow: hidden; }
    ============================================================================ */
 
 /* Superfícies ------------------------------------------------------------- */
-.fl-hood .bg-\[\#0b0804\]      { background-color: #DBEAFE; }
-.fl-hood .bg-\[\#0b0804\]\/80  { background-color: rgba(219, 234, 254, 0.85); }
-.fl-hood .bg-\[\#0F0C08\]      { background-color: rgba(239, 246, 255, 0.94); }
-.fl-hood .bg-\[\#15120E\]      { background-color: rgba(248, 251, 255, 0.9); }
-.fl-hood .bg-\[\#15120E\]\/95  { background-color: rgba(248, 251, 255, 0.97); }
-.fl-hood .bg-\[\#15120E\]\/60  { background-color: rgba(248, 251, 255, 0.7); }
-.fl-hood .bg-\[\#15120E\]\/40  { background-color: rgba(248, 251, 255, 0.55); }
-.fl-hood .bg-\[\#1D1810\]      { background-color: rgba(191, 219, 254, 0.9); }
-.fl-hood .bg-\[\#1D1810\]\/60  { background-color: rgba(191, 219, 254, 0.6); }
-.fl-hood .bg-\[\#241d12\]      { background-color: rgba(165, 200, 245, 0.95); }
-.fl-hood .hover\:bg-\[\#241d12\]:hover { background-color: rgba(165, 200, 245, 0.95); }
-.fl-hood .hover\:bg-\[\#1D1810\]:hover { background-color: rgba(191, 219, 254, 0.9); }
+.fl-hood .bg-\[\#0b0804\]      { background-color: #9EC5F2; }
+.fl-hood .bg-\[\#0b0804\]\/80  { background-color: rgba(158, 197, 242, 0.85); }
+.fl-hood .bg-\[\#0F0C08\]      { background-color: rgba(222, 236, 252, 0.94); }
+.fl-hood .bg-\[\#15120E\]      { background-color: rgba(234, 243, 254, 0.9); }
+.fl-hood .bg-\[\#15120E\]\/95  { background-color: rgba(234, 243, 254, 0.97); }
+.fl-hood .bg-\[\#15120E\]\/60  { background-color: rgba(234, 243, 254, 0.7); }
+.fl-hood .bg-\[\#15120E\]\/40  { background-color: rgba(234, 243, 254, 0.55); }
+.fl-hood .bg-\[\#1D1810\]      { background-color: rgba(176, 207, 244, 0.9); }
+.fl-hood .bg-\[\#1D1810\]\/60  { background-color: rgba(176, 207, 244, 0.6); }
+.fl-hood .bg-\[\#241d12\]      { background-color: rgba(150, 190, 238, 0.95); }
+.fl-hood .hover\:bg-\[\#241d12\]:hover { background-color: rgba(150, 190, 238, 0.95); }
+.fl-hood .hover\:bg-\[\#1D1810\]:hover { background-color: rgba(176, 207, 244, 0.9); }
 .fl-hood .bg-\[\#F5F1E8\]\/10  { background-color: rgba(15, 30, 58, 0.06); }
 .fl-hood .bg-\[\#F5F1E8\]\/5   { background-color: rgba(15, 30, 58, 0.035); }
 .fl-hood .hover\:bg-\[\#F5F1E8\]\/10:hover { background-color: rgba(15, 30, 58, 0.07); }
@@ -1445,25 +1446,25 @@ body.camera-active { overflow: hidden; }
 .fl-hood .hover\:text-\[\#F5F1E8\]:hover { color: #0F1E3A; }
 .fl-hood .placeholder\:text-\[\#F5F1E8\]\/35::placeholder { color: rgba(15, 30, 58, 0.42); }
 /* O apagado: 5,2:1 sobre o cinza mais escuro da rampa. */
-.fl-hood .text-\[\#9A938A\]     { color: #35507A; }
-.fl-hood .text-\[\#9A938A\]\/70 { color: rgba(53, 80, 122, 0.8); }
-.fl-hood .placeholder\:text-\[\#9A938A\]\/70::placeholder { color: rgba(53, 80, 122, 0.7); }
-.fl-hood .text-\[\#C9C2B6\]     { color: #35507A; }
+.fl-hood .text-\[\#9A938A\]     { color: #26406A; }
+.fl-hood .text-\[\#9A938A\]\/70 { color: rgba(38, 64, 106, 0.8); }
+.fl-hood .placeholder\:text-\[\#9A938A\]\/70::placeholder { color: rgba(38, 64, 106, 0.7); }
+.fl-hood .text-\[\#C9C2B6\]     { color: #26406A; }
 /* Amarelo como TINTA vira âmbar escuro — no cinza claro, o amarelo some. */
 .fl-hood .text-\[\#F2B705\]     { color: #8A6400; }
 .fl-hood .text-\[\#E0A500\]     { color: #8A6400; }
 
 /* Linhas ------------------------------------------------------------------ */
-.fl-hood .border-\[\#0B0B0D\]      { border-color: #8FB2E0; }
-.fl-hood .border-\[\#F5F1E8\]      { border-color: #8FB2E0; }
-.fl-hood .border-\[\#F5F1E8\]\/30  { border-color: rgba(53, 80, 122, 0.45); }
-.fl-hood .border-\[\#F5F1E8\]\/25  { border-color: rgba(53, 80, 122, 0.4); }
-.fl-hood .border-\[\#F5F1E8\]\/20  { border-color: rgba(53, 80, 122, 0.34); }
-.fl-hood .border-\[\#F5F1E8\]\/15  { border-color: rgba(53, 80, 122, 0.28); }
-.fl-hood .border-\[\#F5F1E8\]\/12  { border-color: rgba(53, 80, 122, 0.24); }
-.fl-hood .border-\[\#F5F1E8\]\/10  { border-color: rgba(53, 80, 122, 0.2); }
-.fl-hood .border-\[\#F5F1E8\]\/60  { border-color: rgba(53, 80, 122, 0.6); }
-.fl-hood .hover\:border-\[\#F5F1E8\]\/60:hover { border-color: rgba(53, 80, 122, 0.6); }
+.fl-hood .border-\[\#0B0B0D\]      { border-color: #5F8CC8; }
+.fl-hood .border-\[\#F5F1E8\]      { border-color: #5F8CC8; }
+.fl-hood .border-\[\#F5F1E8\]\/30  { border-color: rgba(38, 64, 106, 0.45); }
+.fl-hood .border-\[\#F5F1E8\]\/25  { border-color: rgba(38, 64, 106, 0.4); }
+.fl-hood .border-\[\#F5F1E8\]\/20  { border-color: rgba(38, 64, 106, 0.34); }
+.fl-hood .border-\[\#F5F1E8\]\/15  { border-color: rgba(38, 64, 106, 0.28); }
+.fl-hood .border-\[\#F5F1E8\]\/12  { border-color: rgba(38, 64, 106, 0.24); }
+.fl-hood .border-\[\#F5F1E8\]\/10  { border-color: rgba(38, 64, 106, 0.2); }
+.fl-hood .border-\[\#F5F1E8\]\/60  { border-color: rgba(38, 64, 106, 0.6); }
+.fl-hood .hover\:border-\[\#F5F1E8\]\/60:hover { border-color: rgba(38, 64, 106, 0.6); }
 
 /* O título "zumbe" como no games — aqui um halo claro atrás da tinta escura. */
 .fl-hood .fl-display {
@@ -1481,13 +1482,13 @@ body.camera-active { overflow: hidden; }
    ⚠️ NÃO ANIMAR (ver a nota da `.fl-finance-bg`). Está na lista de camadas
    promovidas. */
 .fl-hood-bg {
-  background-color: #DBEAFE;
+  background-color: #9EC5F2;
   background-image:
     radial-gradient(60% 45% at 22% 18%, rgba(255, 255, 255, 0.8), transparent 70%),
-    radial-gradient(50% 40% at 82% 30%, rgba(239, 246, 255, 0.7), transparent 72%),
-    radial-gradient(80% 55% at 50% 108%, rgba(96, 165, 250, 0.35), transparent 70%),
-    repeating-linear-gradient(to right, rgba(30, 64, 120, 0.07) 0 1px, transparent 1px 64px),
-    repeating-linear-gradient(to bottom, rgba(30, 64, 120, 0.05) 0 1px, transparent 1px 64px);
+    radial-gradient(50% 40% at 82% 30%, rgba(222, 236, 252, 0.7), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(59, 130, 246, 0.35), transparent 70%),
+    repeating-linear-gradient(to right, rgba(20, 50, 100, 0.09) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(20, 50, 100, 0.07) 0 1px, transparent 1px 64px);
 }
 
 /* ============================================================================

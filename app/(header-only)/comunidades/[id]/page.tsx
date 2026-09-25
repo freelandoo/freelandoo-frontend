@@ -66,11 +66,11 @@ const PET_INLINE: Record<string, string> = {
 }
 /** Espelho, para `style` inline, dos valores da pele `.fl-hood` (globals.css). */
 const HOOD_INLINE: Record<string, string> = {
-  "#15120E": "#F8FBFF",
-  "#1D1810": "#BFDBFE",
+  "#15120E": "#EAF3FE",
+  "#1D1810": "#B0CFF4",
   "#F5F1E8": "#0F1E3A",
-  "#9A938A": "#35507A",
-  "#0B0B0D": "#8FB2E0",
+  "#9A938A": "#26406A",
+  "#0B0B0D": "#5F8CC8",
 }
 /** Espelho, para `style` inline, dos valores da pele `.fl-condo` (globals.css). */
 const CONDO_INLINE: Record<string, string> = {
@@ -1808,7 +1808,7 @@ export default function CommunityDetailPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
             )}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCondoSkin ? "#E4E4E7cc" : isHoodSkin ? "#DBEAFEcc" : "#0b0804cc"} 100%)` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCondoSkin ? "#E4E4E7cc" : isHoodSkin ? "#9EC5F2cc" : "#0b0804cc"} 100%)` }} />
             {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
             {community.enxame_name && (
               <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
