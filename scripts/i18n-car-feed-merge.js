@@ -42,8 +42,6 @@ const COMMUNITY = {
   subjectSave: ["Salvar", "Save", "Guardar"],
   // O acento padrão do carro (cinza claro), 3ª passada da paleta.
   accentSilver: ["Cinza claro", "Light gray", "Gris claro"],
-  // O acento padrão do carro na 4ª passada (pista).
-  accentRacing: ["Vermelho de pista", "Racing red", "Rojo de pista"],
   subjectNotSet: ["O dono ainda não informou.", "The owner hasn't filled this in yet.", "El dueño aún no lo informó."],
 };
 

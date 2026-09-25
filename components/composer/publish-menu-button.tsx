@@ -159,7 +159,6 @@ export function PublishMenuButton({
           if (!open) setSide(resolveSide(wrapRef.current, align))
           setOpen((v) => !v)
         }}
-        data-publish-variant={variant}
         className={buttonClass}
         style={{ background: accent, boxShadow: variant === "bar" ? "3px 3px 0 0 #0B0B0D" : "4px 4px 0 0 #0B0B0D" }}
       >

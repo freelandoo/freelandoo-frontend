@@ -64,7 +64,7 @@ const BG_CLASS: Record<BackdropVariant, string> = {
   fitness: "fl-fitness-bg",
   // `pet` (bege e laranja) entrou em 2026-09-24: a única variante CLARA.
   pet: "fl-pet-bg",
-  // `car` entrou em 2026-09-24; virou CAPA DE JOGO (papel, cidade vermelha, asfalto) na 5ª passada — a segunda pele CLARA.
+  // `car` entrou em 2026-09-24; é o fundo de games em VERMELHO, sem estampa.
   car: "fl-car-bg",
 }
 
@@ -106,15 +106,6 @@ export function TechBackdrop({
       {/* PATINHAS E OSSOS do "Meu pet" — mesma ideia dos cifrões: estampa
           estática, pintada junto da camada do fundo. */}
       {variant === "pet" && <div className="fl-paw-veil absolute inset-0" />}
-      {/* "Meu carro" como CAPA DE JOGO DE CORRIDA (5ª passada, 2026-09-24):
-          cidade vermelha e asfalto com marcas de pneu no pé da tela, e o grão
-          do papel por cima. Tudo estático, pintado junto da camada do fundo. */}
-      {variant === "car" && (
-        <>
-          <div className="fl-city-veil absolute inset-0" />
-          <div className="fl-grain-veil absolute inset-0" />
-        </>
-      )}
     </div>
   )
 }

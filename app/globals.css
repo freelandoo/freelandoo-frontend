@@ -1230,204 +1230,79 @@ body.camera-active { overflow: hidden; }
 }
 
 /* ============================================================================
-   MEU CARRO — a pele de CAPA DE JOGO DE CORRIDA (`.fl-car`)
+   MEU CARRO — a pele de GAMES em VERMELHO (`.fl-car`)
    ----------------------------------------------------------------------------
-   5ª passada (Alex, 2026-09-24), mostrando a capa de "Need for Speed: Most
-   Wanted" (2012): "eu quero algo assim". A capa é PAPEL BRANCO gasto, uma
-   CIDADE VERMELHA de prédios com janelas, o ASFALTO PRETO em curva com MARCAS
-   DE PNEU brancas, e o título VERMELHO em itálico. É o que esta pele desenha.
+   Alex (2026-09-24), depois de duas passadas recusadas (fibra de carbono com
+   conta-giros; capa de jogo de corrida em papel branco): "reverta tudo, deixa
+   igual o games só que vermelho". Então esta lista é a `.fl-games` linha por
+   linha, com o roxo trocado por vermelho — mesma escuridão, mesma grade no
+   fundo, mesmo brilho no título, sem estampa nenhuma por cima.
 
-   ⚠️ VIROU PELE CLARA, como a `.fl-pet` — e isso muda a regra da lista: a
-   tinta `#F5F1E8` vira PRETA, o amarelo usado como tinta vira vermelho, e cor
-   de superfície nova na página que não entrar aqui nasce bloco ESCURO com
-   tinta já preta por cima (ilegível). As cores escritas em `style` inline
-   passam pelo espelho `CAR_INLINE` da página, com os MESMOS valores daqui.
+   ⚠️ NÃO REINVENTAR O VISUAL DO CARRO sem pedido: as rodas, o vinho com
+   pastel, o carbono e a capa de jogo já foram tentados e desfeitos.
 
-   ⚠️ `text-[#F1EDE2]` FICA DE FORA DE PROPÓSITO (rótulo dos pills sobre a
-   cor do próprio pill), como na `.fl-pet`.
+   O QUE NÃO MUDA (como no games): cantos retos e o amarelo #F2B705 — é ele
+   que marca o botão de publicar e diz "isto é a Freelandoo".
 
-   A PALETA:
-     • PAPEL #F4F2EE com grão — o canvas;
-     • BRANCO — painéis, com borda PRETA #111113 (o traço duro da capa);
-     • VERMELHO DE CAPA #D7141A — título e divisórias (5,3:1 sobre o papel);
-     • VERMELHO DE AÇÃO #FF2A1F — botões (acento `racing`), tinta preta por
-       cima (5,4:1);
-     • PRETO #111113 — tinta e asfalto.
-
-   OS ELEMENTOS (todos ESTÁTICOS — nada anima em camada do tamanho da janela):
-     • fundo: grão de papel + cidade vermelha + asfalto com pneus no pé da
-       tela (desenhos em public/textures/car/, gerados por script);
-     • banner: a mesma cena em faixa larga (`.fl-car-livery`);
-     • título vermelho em itálico com sombra preta;
-     • nível = mostrador com escala e faixa vermelha (`.fl-car-gauge`);
-     • filtros em paralelogramo (`.fl-car-chip`);
-     • POSTAR com bandeira quadriculada nas pontas.
+   ⚠️ Pele ESCURA: cor de superfície nova na página de comunidade entra aqui
+   também, como nas outras peles.
    ============================================================================ */
 
 /* Superfícies ------------------------------------------------------------- */
-.fl-car .bg-\[\#0b0804\]      { background-color: #F4F2EE; }
-.fl-car .bg-\[\#0b0804\]\/80  { background-color: rgba(244, 242, 238, 0.88); }
-.fl-car .bg-\[\#0F0C08\]      { background-color: rgba(255, 255, 255, 0.96); }
-.fl-car .bg-\[\#15120E\]      { background-color: rgba(255, 255, 255, 0.95); }
-.fl-car .bg-\[\#15120E\]\/95  { background-color: rgba(255, 255, 255, 0.98); }
-.fl-car .bg-\[\#15120E\]\/60  { background-color: rgba(255, 255, 255, 0.75); }
-.fl-car .bg-\[\#15120E\]\/40  { background-color: rgba(255, 255, 255, 0.6); }
-.fl-car .bg-\[\#1D1810\]      { background-color: rgba(236, 234, 230, 0.95); }
-.fl-car .bg-\[\#1D1810\]\/60  { background-color: rgba(236, 234, 230, 0.7); }
-.fl-car .bg-\[\#241d12\]      { background-color: rgba(222, 219, 214, 0.97); }
-.fl-car .hover\:bg-\[\#241d12\]:hover { background-color: rgba(222, 219, 214, 0.97); }
-.fl-car .hover\:bg-\[\#1D1810\]:hover { background-color: rgba(236, 234, 230, 0.95); }
-.fl-car .bg-\[\#F5F1E8\]\/10  { background-color: rgba(17, 17, 19, 0.06); }
-.fl-car .bg-\[\#F5F1E8\]\/5   { background-color: rgba(17, 17, 19, 0.035); }
-.fl-car .hover\:bg-\[\#F5F1E8\]\/10:hover { background-color: rgba(17, 17, 19, 0.07); }
-.fl-car .bg-\[\#F2B705\]      { background-color: #FF2A1F; }
+.fl-car .bg-\[\#0b0804\]      { background-color: #16060a; }
+.fl-car .bg-\[\#0b0804\]\/80  { background-color: rgba(22, 6, 10, 0.8); }
+.fl-car .bg-\[\#0F0C08\]      { background-color: rgba(32, 8, 14, 0.86); }
+.fl-car .bg-\[\#15120E\]      { background-color: rgba(51, 15, 22, 0.78); }
+.fl-car .bg-\[\#15120E\]\/95  { background-color: rgba(51, 15, 22, 0.95); }
+.fl-car .bg-\[\#15120E\]\/60  { background-color: rgba(51, 15, 22, 0.6); }
+.fl-car .bg-\[\#15120E\]\/40  { background-color: rgba(51, 15, 22, 0.4); }
+.fl-car .bg-\[\#1D1810\]      { background-color: rgba(76, 23, 33, 0.72); }
+.fl-car .bg-\[\#241d12\]      { background-color: rgba(106, 33, 45, 0.9); }
 
-/* Tinta — invertida: o claro vira PRETO ---------------------------------- */
-.fl-car .text-\[\#F5F1E8\]     { color: #111113; }
-.fl-car .text-\[\#F5F1E8\]\/90 { color: rgba(17, 17, 19, 0.9); }
-.fl-car .text-\[\#F5F1E8\]\/85 { color: rgba(17, 17, 19, 0.85); }
-.fl-car .text-\[\#F5F1E8\]\/80 { color: rgba(17, 17, 19, 0.8); }
-.fl-car .text-\[\#F5F1E8\]\/70 { color: rgba(17, 17, 19, 0.72); }
-.fl-car .text-\[\#F5F1E8\]\/40 { color: rgba(17, 17, 19, 0.45); }
-.fl-car .text-\[\#F5F1E8\]\/30 { color: rgba(17, 17, 19, 0.35); }
-.fl-car .hover\:text-\[\#F5F1E8\]:hover { color: #111113; }
-/* O apagado: 5,8:1 sobre o cinza mais escuro da rampa. */
-.fl-car .text-\[\#9A938A\]     { color: #55555C; }
-.fl-car .text-\[\#9A938A\]\/70 { color: rgba(85, 85, 92, 0.8); }
-.fl-car .placeholder\:text-\[\#9A938A\]\/70::placeholder { color: rgba(85, 85, 92, 0.7); }
-.fl-car .text-\[\#C9C2B6\]     { color: #55555C; }
-/* Amarelo como TINTA vira o vermelho da capa — no papel, o amarelo some. */
-.fl-car .text-\[\#F2B705\]     { color: #D7141A; }
-.fl-car .text-\[\#E0A500\]     { color: #D7141A; }
+/* Tinta ------------------------------------------------------------------- */
+.fl-car .text-\[\#F5F1E8\]     { color: #FFE9E7; }
+.fl-car .text-\[\#F5F1E8\]\/90 { color: rgba(255, 233, 231, 0.9); }
+.fl-car .text-\[\#F5F1E8\]\/85 { color: rgba(255, 233, 231, 0.85); }
+.fl-car .text-\[\#F5F1E8\]\/80 { color: rgba(255, 233, 231, 0.8); }
+.fl-car .text-\[\#F5F1E8\]\/70 { color: rgba(255, 233, 231, 0.7); }
+.fl-car .text-\[\#F5F1E8\]\/40 { color: rgba(255, 233, 231, 0.4); }
+.fl-car .text-\[\#F5F1E8\]\/30 { color: rgba(255, 233, 231, 0.3); }
+.fl-car .text-\[\#9A938A\]     { color: #D49A94; }
+.fl-car .text-\[\#9A938A\]\/70 { color: rgba(212, 154, 148, 0.7); }
 
 /* Linhas ------------------------------------------------------------------ */
-/* O traço estrutural é PRETO, como o contorno duro da capa. */
-.fl-car .border-\[\#0B0B0D\]      { border-color: #111113; }
-.fl-car .border-\[\#F5F1E8\]      { border-color: #111113; }
-.fl-car .border-\[\#F2B705\]      { border-color: #D7141A; }
-.fl-car .border-\[\#F5F1E8\]\/30  { border-color: rgba(215, 20, 26, 0.7); }
-.fl-car .border-\[\#F5F1E8\]\/25  { border-color: rgba(215, 20, 26, 0.6); }
-.fl-car .border-\[\#F5F1E8\]\/20  { border-color: rgba(215, 20, 26, 0.5); }
-.fl-car .border-\[\#F5F1E8\]\/15  { border-color: rgba(215, 20, 26, 0.42); }
-.fl-car .border-\[\#F5F1E8\]\/12  { border-color: rgba(215, 20, 26, 0.36); }
-.fl-car .border-\[\#F5F1E8\]\/10  { border-color: rgba(215, 20, 26, 0.3); }
-.fl-car .border-\[\#F5F1E8\]\/60  { border-color: rgba(215, 20, 26, 0.9); }
-.fl-car .hover\:border-\[\#F5F1E8\]\/60:hover { border-color: rgba(215, 20, 26, 0.9); }
+.fl-car .border-\[\#0B0B0D\]      { border-color: #70242E; }
+.fl-car .border-\[\#F5F1E8\]\/30  { border-color: rgba(250, 139, 139, 0.45); }
+.fl-car .border-\[\#F5F1E8\]\/25  { border-color: rgba(250, 139, 139, 0.4); }
+.fl-car .border-\[\#F5F1E8\]\/20  { border-color: rgba(250, 139, 139, 0.34); }
+.fl-car .border-\[\#F5F1E8\]\/15  { border-color: rgba(250, 139, 139, 0.28); }
+.fl-car .border-\[\#F5F1E8\]\/12  { border-color: rgba(250, 139, 139, 0.24); }
+.fl-car .border-\[\#F5F1E8\]\/10  { border-color: rgba(250, 139, 139, 0.2); }
+.fl-car .border-\[\#F5F1E8\]\/60  { border-color: rgba(250, 139, 139, 0.6); }
 
-/* Tipografia — itálico de velocidade em todo título. `oblique` e não `skewX`:
-   transform mexeria na caixa; o oblíquo só inclina o desenho das letras. */
 .fl-car .fl-display {
-  letter-spacing: 0.01em;
-  font-style: oblique 10deg;
+  letter-spacing: 0.02em;
 }
-/* O NOME no headcard é o "MOST WANTED" da capa: vermelho, com sombra preta. */
-.fl-car h1.fl-display.text-\[\#F5F1E8\] {
-  color: #D7141A;
-  text-shadow: 3px 3px 0 #111113;
+.fl-car .fl-display.text-\[\#F5F1E8\],
+.fl-car .fl-display.text-\[\#F1EDE2\] {
+  text-shadow: 0 0 24px rgba(239, 68, 68, 0.45);
 }
 
-/* A tarja inclinada do tabloide vira a do carro: cortada em diagonal. */
+/* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
 .fl-car .-rotate-2,
-.fl-car .-rotate-3 { transform: skewX(-12deg); }
+.fl-car .-rotate-3 { transform: none; }
 
-/* O FUNDO — papel, cidade vermelha e o asfalto com pneus no pé da tela.
-   ⚠️ NÃO ANIMAR (ver a nota da `.fl-finance-bg`). Está na lista de camadas
-   promovidas: rasterizado UMA vez e só composto. */
+/* O FUNDO — o da `.fl-games-bg` em vermelho. ⚠️ NÃO ANIMAR (ver a nota da
+   `.fl-finance-bg`). Está na lista de camadas promovidas. */
 .fl-car-bg {
-  background-color: #F4F2EE;
+  background-color: #16060a;
   background-image:
-    radial-gradient(60% 40% at 15% 10%, rgba(215, 20, 26, 0.08), transparent 70%),
-    radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(17, 17, 19, 0.12) 100%);
+    radial-gradient(60% 45% at 22% 18%, rgba(185, 28, 28, 0.42), transparent 70%),
+    radial-gradient(50% 40% at 82% 30%, rgba(234, 88, 12, 0.22), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(239, 68, 68, 0.30), transparent 70%),
+    repeating-linear-gradient(to right, rgba(250, 139, 139, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(250, 139, 139, 0.05) 0 1px, transparent 1px 64px);
 }
-/* A cena: cidade + asfalto, ancorada no pé da tela e ocupando ~metade dela. Ela
-   fica atrás do conteúdo, que é branco e opaco. */
-.fl-city-veil {
-  background-image: url("/textures/car/city-road.svg");
-  background-repeat: no-repeat;
-  background-position: center bottom;
-  background-size: 100% 48vh;
-  opacity: 0.88;
-}
-/* O grão do papel gasto, por cima de tudo do fundo. */
-.fl-grain-veil {
-  background-image: url("/textures/car/paper-grain.svg");
-  background-size: 300px 300px;
-  mix-blend-mode: multiply;
-  opacity: 0.28;
-}
-
-/* BANNER — a cena da capa em faixa larga. Com foto de capa, sobra só a faixa
-   de asfalto com a marca de pneu no pé. */
-.fl-car-livery {
-  background: url("/textures/car/banner-scene.svg") right center / cover no-repeat, #F4F2EE;
-}
-.fl-car-livery[data-photo="true"] {
-  background: none;
-}
-.fl-car-livery[data-photo="true"]::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 18px;
-  background:
-    repeating-linear-gradient(90deg, #F4F2EE 0 12px, transparent 12px 18px) left 0 top 3px / 100% 5px no-repeat,
-    repeating-linear-gradient(90deg, transparent 0 8px, #F4F2EE 8px 20px, transparent 20px 24px) left 0 top 10px / 100% 5px no-repeat,
-    #111113;
-}
-
-/* NÍVEL = mostrador: a escala corre no pé da caixa, com a faixa vermelha. */
-.fl-car .fl-car-gauge {
-  padding-bottom: 8px;
-  background-image: linear-gradient(180deg, rgba(215, 20, 26, 0.08), transparent 65%);
-}
-.fl-car .fl-car-gauge::after {
-  content: "";
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: 4px;
-  height: 5px;
-  background:
-    linear-gradient(90deg, transparent 70%, #D7141A 70%) 0 0 / 100% 100% no-repeat,
-    repeating-linear-gradient(90deg, rgba(17, 17, 19, 0.7) 0 1px, transparent 1px 5px);
-}
-
-/* Filtros em paralelogramo. `clip-path` recorta a borda nas pontas, e é de
-   propósito: o corte inclinado É o desenho. */
-.fl-car .fl-car-chip {
-  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  padding-left: 1.1rem;
-  padding-right: 1.1rem;
-  font-style: italic;
-}
-
-/* O convite grande de postar: bandeira quadriculada nas duas pontas e linhas
-   de velocidade atrás do "+". O fundo é o accent (style inline), por isso o
-   desenho vem por pseudo-elemento. */
-.fl-car [data-publish-variant="block"] {
-  position: relative;
-  overflow: hidden;
-}
-.fl-car [data-publish-variant="block"] > * { position: relative; z-index: 1; }
-.fl-car [data-publish-variant="block"]::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(172deg, transparent 0 18px, rgba(17, 17, 19, 0.14) 18px 20px);
-}
-.fl-car [data-publish-variant="block"]::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-conic-gradient(#111113 0 25%, #F4F2EE 0 50%) left top / 16px 16px repeat-y,
-    repeating-conic-gradient(#111113 0 25%, #F4F2EE 0 50%) right top / 16px 16px repeat-y;
-  -webkit-mask: linear-gradient(90deg, #000 0 16px, transparent 16px calc(100% - 16px), #000 calc(100% - 16px));
-  mask: linear-gradient(90deg, #000 0 16px, transparent 16px calc(100% - 16px), #000 calc(100% - 16px));
-}
-.fl-car [data-publish-variant="block"] .fl-display { color: #111113; text-shadow: none; }
 
 /* ============================================================================
    O CARD DO FEED EM LISTA — o que está fora da tela não custa nada

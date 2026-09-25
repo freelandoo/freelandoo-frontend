@@ -2906,8 +2906,7 @@
     "carPickModelFirst": "Pick the make and model.",
     "subjectSave": "Save",
     "subjectNotSet": "The owner hasn't filled this in yet.",
-    "accentSilver": "Light gray",
-    "accentRacing": "Racing red"
+    "accentSilver": "Light gray"
   },
   "Careers": {
     "hero.badge": "Careers",

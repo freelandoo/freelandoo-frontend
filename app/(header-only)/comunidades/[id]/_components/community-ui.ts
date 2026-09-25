@@ -35,13 +35,9 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   // da pele (linhas, brilho, rodas) e não entra aqui: como fundo de botão, com
   // tinta preta por cima, ele seria ilegível.
   { key: "crimson", labelKey: "accentCrimson", fallback: "Vermelho pastel", hex: "#F28B82" },
-  // O acento PADRÃO do carro desde a 3ª passada (2026-09-24): "os botões e
-  // tudo mais é cinza claro". Diferente do `gray` acima, que é cinza quente.
+  // Foi o acento padrão do carro na 3ª passada; hoje o padrão é o `red` (o carro
+  // virou a pele de games em vermelho). Fica como opção em Cores.
   { key: "silver", labelKey: "accentSilver", fallback: "Cinza claro", hex: "#D6D3D1" },
-  // O VERMELHO DE PISTA — acento PADRÃO do carro desde a 4ª passada
-  // (2026-09-24, "mais automobilístico, mais velocidade"). #FF2A1F e não o
-  // #E10600 da F1: com tinta preta por cima dá 5,4:1 (o da F1 dá 4,2:1).
-  { key: "racing", labelKey: "accentRacing", fallback: "Vermelho de pista", hex: "#FF2A1F" },
 ]
 
 /**
@@ -52,7 +48,7 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
  * seletor continua mandando: isto é só o PADRÃO.
  */
 export function defaultAccentFor(kind: string | null | undefined): string {
-  if (kind === "car") return "racing"
+  if (kind === "car") return "red"
   if (kind === "pet") return "orange"
   return "gold"
 }
