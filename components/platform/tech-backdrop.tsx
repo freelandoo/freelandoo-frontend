@@ -52,7 +52,7 @@
  * fundo é a cor dele.
  */
 
-export type BackdropVariant = "games" | "finance" | "business" | "fitness" | "pet" | "car"
+export type BackdropVariant = "games" | "finance" | "business" | "fitness" | "pet" | "car" | "condo"
 
 /** O desenho de cada ambiente. Ver globals.css.
  *  `fitness` (laranja) entrou em 2026-09-10 com o redesign do `/fitness`
@@ -66,6 +66,8 @@ const BG_CLASS: Record<BackdropVariant, string> = {
   pet: "fl-pet-bg",
   // `car` entrou em 2026-09-24; é o fundo de games em VERMELHO, sem estampa.
   car: "fl-car-bg",
+  // `condo` (cinza claro, a grade do games) entrou em 2026-09-24.
+  condo: "fl-condo-bg",
 }
 
 /**

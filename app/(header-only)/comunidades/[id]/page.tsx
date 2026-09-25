@@ -64,6 +64,14 @@ const PET_INLINE: Record<string, string> = {
   "#9A938A": "#7A5A3C",
   "#0B0B0D": "#A85A24",
 }
+/** Espelho, para `style` inline, dos valores da pele `.fl-condo` (globals.css). */
+const CONDO_INLINE: Record<string, string> = {
+  "#15120E": "#FAFAFA",
+  "#1D1810": "#D4D4D8",
+  "#F5F1E8": "#18181B",
+  "#9A938A": "#52525B",
+  "#0B0B0D": "#A1A1AA",
+}
 const CommentsPanel = dynamic(
   () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
   { ssr: false }
@@ -580,7 +588,11 @@ export default function CommunityDetailPage() {
   // MEU CARRO — pele fixa VERMELHO ESCURO E PRETO com rodas no fundo (Alex,
   // 2026-09-24). Escura, como games/fitness: não precisa do `skinHex`.
   const isCarPlatform = (community?.kind ?? null) === "car"
-  const isSkinned = isBusinessPlatform || isPetPlatform || isCarPlatform
+  // CONDOMÍNIO — a pele de games em CINZA CLARO (Alex, 2026-09-24: "deixe como
+  // o games mas cinza claro"). ⚠️ Pele CLARA como a do pet: passa pelo
+  // `skinHex` (CONDO_INLINE). Não troca o dock.
+  const isCondoSkin = isCondo
+  const isSkinned = isBusinessPlatform || isPetPlatform || isCarPlatform || isCondoSkin
 
   // INDICADORES (mig 235): leads, funil do site e faturamento — só do LÍDER do
   // negócio. Predicado PRÓPRIO e não `canBuildSite`: aquele embute a flag
@@ -749,8 +761,9 @@ export default function CommunityDetailPage() {
   // alcança). No pet, as superfícies escuras viram bege e a tinta, marrom —
   // os MESMOS valores de `.fl-pet`. Tinta sobre o accent NÃO passa por aqui.
   const skinHex = useCallback(
-    (hex: string) => (isPetPlatform ? PET_INLINE[hex] ?? hex : hex),
-    [isPetPlatform]
+    (hex: string) =>
+      isPetPlatform ? PET_INLINE[hex] ?? hex : isCondoSkin ? CONDO_INLINE[hex] ?? hex : hex,
+    [isPetPlatform, isCondoSkin]
   )
 
   const showAsLeaderEdit = canAdminister && edit
@@ -1663,7 +1676,7 @@ export default function CommunityDetailPage() {
     // As variáveis do `style` só existem na de negócio, onde a cor é do líder.
     <div
       style={skinVars}
-      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${isCarPlatform ? "fl-car" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
+      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${isCarPlatform ? "fl-car" : ""} ${isCondoSkin ? "fl-condo" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
     >
       {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
           DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
@@ -1677,6 +1690,7 @@ export default function CommunityDetailPage() {
       {isBusinessPlatform && <TechBackdrop variant="business" tint={bizTint} />}
       {isPetPlatform && <TechBackdrop variant="pet" />}
       {isCarPlatform && <TechBackdrop variant="car" />}
+      {isCondoSkin && <TechBackdrop variant="condo" />}
       {isBusinessPlatform && (
         <BusinessPlanModal
           open={planOpen}
@@ -1776,7 +1790,7 @@ export default function CommunityDetailPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
             )}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : "#0b0804cc"} 100%)` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCondoSkin ? "#E4E4E7cc" : "#0b0804cc"} 100%)` }} />
             {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
             {community.enxame_name && (
               <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">

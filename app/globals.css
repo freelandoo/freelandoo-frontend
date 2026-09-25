@@ -813,7 +813,8 @@ body.camera-active { overflow: hidden; }
 .fl-business-bg,
 .fl-fitness-bg,
 .fl-pet-bg,
-.fl-car-bg {
+.fl-car-bg,
+.fl-condo-bg {
   transform: translateZ(0);
   will-change: transform;
   backface-visibility: hidden;
@@ -1302,6 +1303,104 @@ body.camera-active { overflow: hidden; }
     radial-gradient(80% 55% at 50% 108%, rgba(239, 68, 68, 0.30), transparent 70%),
     repeating-linear-gradient(to right, rgba(250, 139, 139, 0.07) 0 1px, transparent 1px 64px),
     repeating-linear-gradient(to bottom, rgba(250, 139, 139, 0.05) 0 1px, transparent 1px 64px);
+}
+
+/* ============================================================================
+   CONDOMÍNIO — a pele de GAMES em CINZA CLARO (`.fl-condo`)
+   ----------------------------------------------------------------------------
+   Alex (2026-09-24), olhando o "Residencial": "deixe como o games mas cinza
+   claro". Mesma mecânica do games (classe no container, TechBackdrop com a
+   grade e as luzes, título com brilho, sombra de brilho nas peças), com a
+   paleta em cinza claro.
+
+   ⚠️ É PELE CLARA, como a `.fl-pet`: a tinta `#F5F1E8` vira cinza quase preto,
+   e a lista cobre as mesmas classes da do pet (mais as que as seções do
+   condomínio e as vitrines usam). Cor de superfície nova na página que não
+   entrar aqui nasce bloco ESCURO com tinta já escura por cima — ilegível. As
+   cores escritas em `style` inline passam pelo espelho `CONDO_INLINE` da
+   página, com os MESMOS valores daqui.
+
+   ⚠️ `text-[#F1EDE2]` FICA DE FORA DE PROPÓSITO (rótulo dos pills sobre a cor
+   do próprio pill), como na `.fl-pet`.
+
+   O QUE NÃO MUDA (como no games): cantos retos e o amarelo #F2B705 de FUNDO —
+   é ele que marca o botão de publicar. Como TINTA o amarelo some no cinza
+   claro, então ali ele vira um âmbar escuro.
+   ============================================================================ */
+
+/* Superfícies ------------------------------------------------------------- */
+.fl-condo .bg-\[\#0b0804\]      { background-color: #E4E4E7; }
+.fl-condo .bg-\[\#0b0804\]\/80  { background-color: rgba(228, 228, 231, 0.85); }
+.fl-condo .bg-\[\#0F0C08\]      { background-color: rgba(244, 244, 245, 0.94); }
+.fl-condo .bg-\[\#15120E\]      { background-color: rgba(250, 250, 250, 0.9); }
+.fl-condo .bg-\[\#15120E\]\/95  { background-color: rgba(250, 250, 250, 0.97); }
+.fl-condo .bg-\[\#15120E\]\/60  { background-color: rgba(250, 250, 250, 0.7); }
+.fl-condo .bg-\[\#15120E\]\/40  { background-color: rgba(250, 250, 250, 0.55); }
+.fl-condo .bg-\[\#1D1810\]      { background-color: rgba(212, 212, 216, 0.9); }
+.fl-condo .bg-\[\#1D1810\]\/60  { background-color: rgba(212, 212, 216, 0.6); }
+.fl-condo .bg-\[\#241d12\]      { background-color: rgba(196, 196, 202, 0.95); }
+.fl-condo .hover\:bg-\[\#241d12\]:hover { background-color: rgba(196, 196, 202, 0.95); }
+.fl-condo .hover\:bg-\[\#1D1810\]:hover { background-color: rgba(212, 212, 216, 0.9); }
+.fl-condo .bg-\[\#F5F1E8\]\/10  { background-color: rgba(24, 24, 27, 0.06); }
+.fl-condo .bg-\[\#F5F1E8\]\/5   { background-color: rgba(24, 24, 27, 0.035); }
+.fl-condo .hover\:bg-\[\#F5F1E8\]\/10:hover { background-color: rgba(24, 24, 27, 0.07); }
+.fl-condo .bg-\[\#0B0B0D\]\/40  { background-color: rgba(24, 24, 27, 0.12); }
+
+/* Tinta — invertida: o claro vira cinza quase preto ---------------------- */
+.fl-condo .text-\[\#F5F1E8\]     { color: #18181B; }
+.fl-condo .text-\[\#F5F1E8\]\/90 { color: rgba(24, 24, 27, 0.9); }
+.fl-condo .text-\[\#F5F1E8\]\/85 { color: rgba(24, 24, 27, 0.85); }
+.fl-condo .text-\[\#F5F1E8\]\/80 { color: rgba(24, 24, 27, 0.8); }
+.fl-condo .text-\[\#F5F1E8\]\/70 { color: rgba(24, 24, 27, 0.72); }
+.fl-condo .text-\[\#F5F1E8\]\/40 { color: rgba(24, 24, 27, 0.45); }
+.fl-condo .text-\[\#F5F1E8\]\/35 { color: rgba(24, 24, 27, 0.42); }
+.fl-condo .text-\[\#F5F1E8\]\/30 { color: rgba(24, 24, 27, 0.38); }
+.fl-condo .hover\:text-\[\#F5F1E8\]:hover { color: #18181B; }
+.fl-condo .placeholder\:text-\[\#F5F1E8\]\/35::placeholder { color: rgba(24, 24, 27, 0.42); }
+/* O apagado: 5,2:1 sobre o cinza mais escuro da rampa. */
+.fl-condo .text-\[\#9A938A\]     { color: #52525B; }
+.fl-condo .text-\[\#9A938A\]\/70 { color: rgba(82, 82, 91, 0.8); }
+.fl-condo .placeholder\:text-\[\#9A938A\]\/70::placeholder { color: rgba(82, 82, 91, 0.7); }
+.fl-condo .text-\[\#C9C2B6\]     { color: #52525B; }
+/* Amarelo como TINTA vira âmbar escuro — no cinza claro, o amarelo some. */
+.fl-condo .text-\[\#F2B705\]     { color: #8A6400; }
+.fl-condo .text-\[\#E0A500\]     { color: #8A6400; }
+
+/* Linhas ------------------------------------------------------------------ */
+.fl-condo .border-\[\#0B0B0D\]      { border-color: #A1A1AA; }
+.fl-condo .border-\[\#F5F1E8\]      { border-color: #A1A1AA; }
+.fl-condo .border-\[\#F5F1E8\]\/30  { border-color: rgba(82, 82, 91, 0.45); }
+.fl-condo .border-\[\#F5F1E8\]\/25  { border-color: rgba(82, 82, 91, 0.4); }
+.fl-condo .border-\[\#F5F1E8\]\/20  { border-color: rgba(82, 82, 91, 0.34); }
+.fl-condo .border-\[\#F5F1E8\]\/15  { border-color: rgba(82, 82, 91, 0.28); }
+.fl-condo .border-\[\#F5F1E8\]\/12  { border-color: rgba(82, 82, 91, 0.24); }
+.fl-condo .border-\[\#F5F1E8\]\/10  { border-color: rgba(82, 82, 91, 0.2); }
+.fl-condo .border-\[\#F5F1E8\]\/60  { border-color: rgba(82, 82, 91, 0.6); }
+.fl-condo .hover\:border-\[\#F5F1E8\]\/60:hover { border-color: rgba(82, 82, 91, 0.6); }
+
+/* O título "zumbe" como no games — aqui um halo claro atrás da tinta escura. */
+.fl-condo .fl-display {
+  letter-spacing: 0.02em;
+}
+.fl-condo .fl-display.text-\[\#F5F1E8\] {
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.9), 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+/* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
+.fl-condo .-rotate-2,
+.fl-condo .-rotate-3 { transform: none; }
+
+/* O FUNDO — o da `.fl-games-bg` em cinza claro: luzes brancas e a grade fina.
+   ⚠️ NÃO ANIMAR (ver a nota da `.fl-finance-bg`). Está na lista de camadas
+   promovidas. */
+.fl-condo-bg {
+  background-color: #E4E4E7;
+  background-image:
+    radial-gradient(60% 45% at 22% 18%, rgba(255, 255, 255, 0.85), transparent 70%),
+    radial-gradient(50% 40% at 82% 30%, rgba(244, 244, 245, 0.7), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(161, 161, 170, 0.35), transparent 70%),
+    repeating-linear-gradient(to right, rgba(63, 63, 70, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(63, 63, 70, 0.05) 0 1px, transparent 1px 64px);
 }
 
 /* ============================================================================
