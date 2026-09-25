@@ -21,6 +21,21 @@ const DIR = path.join(__dirname, "..", "messages");
 const SPACES = {
   // ── menu ────────────────────────────────────────────────────────────────
   newProfile: ["Novo perfil", "New profile", "Nuevo perfil"],
+  // Gerenciar pills — o acesso rápido do perfil (mig 260).
+  qpBusiness: ["Business", "Business", "Business"],
+  qpWallet: ["Carteira", "Wallet", "Cartera"],
+  qpFitness: ["Fitness", "Fitness", "Fitness"],
+  qpGames: ["Games", "Games", "Juegos"],
+  managePills: ["Gerenciar pills", "Manage pills", "Gestionar pills"],
+  managePillsHint: [
+    "Escolha até {max} para o acesso rápido atrás da sua foto.",
+    "Pick up to {max} for quick access behind your photo.",
+    "Elige hasta {max} para el acceso rápido detrás de tu foto.",
+  ],
+  pillsSaved: ["Acesso rápido salvo.", "Quick access saved.", "Acceso rápido guardado."],
+  pillsSaveError: ["Não foi possível salvar.", "Could not save.", "No se pudo guardar."],
+  saving: ["Salvando...", "Saving...", "Guardando..."],
+  save: ["Salvar", "Save", "Guardar"],
   myPet: ["Meu pet", "My pet", "Mi mascota"],
   myCar: ["Meu carro", "My car", "Mi coche"],
   myAcademy: ["Minha academia", "My gym", "Mi gimnasio"],

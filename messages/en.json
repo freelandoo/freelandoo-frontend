@@ -6184,7 +6184,17 @@
     "createCarCta": "Open car community",
     "communityNameOptional": "Community name (optional)",
     "bioLabel": "Description (optional)",
-    "myChildren": "My children"
+    "myChildren": "My children",
+    "qpBusiness": "Business",
+    "qpWallet": "Wallet",
+    "qpFitness": "Fitness",
+    "qpGames": "Games",
+    "managePills": "Manage pills",
+    "managePillsHint": "Pick up to {max} for quick access behind your photo.",
+    "pillsSaved": "Quick access saved.",
+    "pillsSaveError": "Could not save.",
+    "saving": "Saving...",
+    "save": "Save"
   },
   "CommunitySite": {
     "modeEditing": "Editing",

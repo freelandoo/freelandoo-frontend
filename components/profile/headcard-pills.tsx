@@ -4,10 +4,16 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
-import { DollarSign, Dumbbell, Gamepad2, Star, type LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
-import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
+import {
+  DEFAULT_QUICK_PILLS,
+  QUICK_ENTRIES,
+  QUICK_PILL_MAX,
+  useQuickAvailability,
+  useQuickPills,
+  type QuickKey,
+} from "@/components/profile/quick-access"
 import { toast } from "sonner"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
@@ -291,38 +297,30 @@ export function HeadcardPills({
   className?: string
 }) {
   const t = useTranslations("Account")
+  const ts = useTranslations("Spaces")
   const router = useRouter()
   const [going, setGoing] = useState<string | null>(null)
 
-  // A Carteira é NATIVA (saiu da Loja de Funções na mig 216): ninguém compra. O
-  // que ainda pode escondê-la é só a preferência da seção "Funções" do menu
-  // lateral — `useUserFeature` devolve `owned && pref`, e com a função fora da
-  // venda `owned` é sempre true.
-  const walletOn = useUserFeature("wallet")
-  // Flag global do admin E preferência do usuário em consts SEPARADAS: um `&&`
-  // inline deixaria a segunda chamada de hook condicional (rules-of-hooks).
-  const academyFlag = useFeature("fitness_academias")
-  const fitnessPref = useUserFeature("fitness_academias")
-  // Mesma preferência que escondia "Minha comunidade" no menu da foto.
-  const communitiesOn = useUserFeature("communities")
-  // O kill-switch da plataforma de games (flag do admin, nasce ligada).
-  const gamesFlag = useFeature("games")
+  // O ACESSO RÁPIDO É ESCOLHA DA PESSOA (mig 260, "Gerenciar pills" no menu da
+  // foto). `null` = nunca escolheu → a pilha de sempre. As cores saem do MESMO
+  // catálogo que pinta as linhas do menu (components/profile/quick-access.ts).
+  const available = useQuickAvailability()
+  const { pills: chosen } = useQuickPills()
 
   /**
-   * A COMUNIDADE DA PESSOA não tem URL fixa: quem já tem, entra na dela; quem
-   * não tem, ganha uma vazia e cai na página já editável — MESMA regra do menu
-   * dos espaços (a comunidade nasce sem formulário; o assunto se escolhe no
-   * headcard dela).
+   * OS ESPAÇOS NÃO TÊM URL FIXA: quem já tem, entra no seu; quem não tem, ganha
+   * um vazio e cai na página já editável — MESMA regra do menu dos espaços (a
+   * comunidade nasce sem formulário; o assunto se escolhe no headcard dela).
+   * Com mais de um (pet, carro), o pill abre o primeiro da lista.
    *
-   * ⚠️ GAMES DEIXOU DE PASSAR POR AQUI (mig 232). Ele virou PLATAFORMA do site
-   * inteiro: não há "a de cada um" para procurar, e a busca em `/me/spaces`
-   * seria uma requisição para ler um balde que nunca mais enche.
+   * ⚠️ GAMES NÃO PASSA POR AQUI (mig 232): ele é PLATAFORMA, com URL fixa.
    */
   const openSpace = useCallback(
-    async (key: string, spaceKey: "common", createPath: string) => {
+    async (key: QuickKey) => {
       if (going) return
       const token = getToken()
       if (!token) return
+      const spaceKey = key === "business" ? "common" : key
       setGoing(key)
       try {
         const res = await fetch("/api/me/spaces", { headers: { Authorization: `Bearer ${token}` } })
@@ -332,6 +330,10 @@ export function HeadcardPills({
           router.push(`/comunidades/${mine}`)
           return
         }
+        // Condomínio e bairro se cadastram por tela própria (endereço, CEP).
+        if (key === "condo") return router.push("/comunidades/criar?tipo=condo")
+        if (key === "neighborhood") return router.push("/bairro")
+        const createPath = key === "pet" ? "/api/pets" : key === "car" ? "/api/cars" : "/api/communities"
         const created = await fetch(createPath, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -343,8 +345,7 @@ export function HeadcardPills({
           return
         }
         // A comunidade comum é a única que pode ser RECUSADA (teto, nível).
-        // Engolir o erro deixaria o pill parecendo quebrado — no menu dos
-        // espaços essa recusa aparecia escrita; aqui não há onde escrevê-la.
+        // Engolir o erro deixaria o pill parecendo quebrado.
         if (body?.error) toast.error(body.error)
       } catch {
         /* silencioso: o pill continua aberto e a pessoa tenta de novo */
@@ -355,70 +356,52 @@ export function HeadcardPills({
     [going, router],
   )
 
-  const pills: PillSpec[] = []
-
-  // Business é o PRIMEIRO da pilha. Ele é a porta da comunidade da pessoa, que
-  // SAIU do menu da foto de perfil (pedido do Alex, 2026-09-05) — lá ela era um
-  // item entre pet, carro, condomínio e rua; aqui ela tem botão próprio.
-  if (communitiesOn) {
-    pills.push({
-      key: "business",
-      icon: Star,
-      label: t("businessPill", "Business"),
-      ariaLabel: t("openCommunityAria", "Abrir minha comunidade"),
-      bg: "#BE185D",
-      bgHover: "#9F1239",
-      onOpen: () => openSpace("business", "common", "/api/communities"),
-    })
+  // Rótulos e arias dos quatro pills que já existiam continuam no ns Account
+  // (as chaves estão nos três dicionários); os espaços usam o ns Spaces, o
+  // mesmo das linhas do menu.
+  const labelOf = (k: QuickKey): { label: string; aria: string } => {
+    switch (k) {
+      case "business":
+        return { label: t("businessPill", "Business"), aria: t("openCommunityAria", "Abrir minha comunidade") }
+      case "wallet":
+        return { label: t("walletPill", "Carteira"), aria: t("openWallet", "Abrir minha Carteira") }
+      case "fitness":
+        return { label: t("fitnessPill", "Fitness"), aria: t("fitnessAria", "Painel fitness: calorias, água, peso e treinos") }
+      case "games":
+        return { label: t("gamesPill", "Games"), aria: t("openGamesPlatformAria", "Abrir a plataforma de games") }
+      default: {
+        const e = QUICK_ENTRIES[k]
+        const label = ts(e.labelKey, e.fallback)
+        return { label, aria: label }
+      }
+    }
   }
 
-  if (walletOn) {
-    pills.push({
-      key: "wallet",
-      icon: DollarSign,
-      label: t("walletPill", "Carteira"),
-      ariaLabel: t("openWallet", "Abrir minha Carteira"),
-      bg: "#15803D",
-      bgHover: "#166F36",
-      href: "/wallet",
-    })
+  const HREF: Partial<Record<QuickKey, string>> = {
+    wallet: "/wallet",
+    fitness: "/fitness",
+    games: "/games",
+    children: "/account/parental",
   }
 
-  if (academyFlag && fitnessPref) {
-    pills.push({
-      key: "fitness",
-      icon: Dumbbell,
-      label: t("fitnessPill", "Fitness"),
-      ariaLabel: t("fitnessAria", "Painel fitness: calorias, água, peso e treinos"),
-      // ⚠️ O LARANJA ESCURO É O DO AMBIENTE (`EMBER` em `fitness-ui.ts`): este
-      // pill é a PORTA do /fitness, e porta num tom e destino noutro faz
-      // procurar duas vezes. Mexeu na paleta do fitness, mexe aqui.
-      bg: "#9A3412",
-      bgHover: "#7C2D12",
-      href: "/fitness",
+  const pills: PillSpec[] = (chosen ?? DEFAULT_QUICK_PILLS)
+    .filter((k) => available[k])
+    .slice(0, QUICK_PILL_MAX)
+    .map((k) => {
+      const e = QUICK_ENTRIES[k]
+      const { label, aria } = labelOf(k)
+      const href = HREF[k]
+      return {
+        key: k,
+        icon: e.icon,
+        label,
+        ariaLabel: aria,
+        bg: e.bg,
+        bgHover: e.bgHover,
+        fg: e.fg,
+        ...(href ? { href } : { onOpen: () => openSpace(k) }),
+      }
     })
-  }
-
-  // GAMES É O ÚLTIMO, logo abaixo do Fitness — é onde o Alex o pediu
-  // (2026-09-09). Com ele a pilha volta a ter QUATRO lugares, que é a conta que
-  // PILL_STACK_PX (162) sempre fez — a constante nunca desceu.
-  //
-  // ⚠️ ELE NAVEGA PARA `/games`, A PLATAFORMA (2026-09-10), e NÃO para
-  // `/comunidades/<id>`: aquela era a página de comunidade que o Alex mandou
-  // demolir — a de 2.700 linhas por baixo da qual os pills travavam. A
-  // plataforma nova tem a casca do Financeiro. Como o Financeiro, é `href`:
-  // o clique entrega a tela ao roteador e nada mais acontece naquele quadro.
-  if (gamesFlag) {
-    pills.push({
-      key: "games",
-      icon: Gamepad2,
-      label: t("gamesPill", "Games"),
-      ariaLabel: t("openGamesPlatformAria", "Abrir a plataforma de games"),
-      bg: "#6D28D9",
-      bgHover: "#5B21B6",
-      href: "/games",
-    })
-  }
 
   return (
     <PillStack

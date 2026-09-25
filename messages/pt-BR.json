@@ -5598,7 +5598,17 @@
     "createCarCta": "Abrir comunidade do carro",
     "communityNameOptional": "Nome da comunidade (opcional)",
     "bioLabel": "Descrição (opcional)",
-    "myChildren": "Meus filhos"
+    "myChildren": "Meus filhos",
+    "qpBusiness": "Business",
+    "qpWallet": "Carteira",
+    "qpFitness": "Fitness",
+    "qpGames": "Games",
+    "managePills": "Gerenciar pills",
+    "managePillsHint": "Escolha até {max} para o acesso rápido atrás da sua foto.",
+    "pillsSaved": "Acesso rápido salvo.",
+    "pillsSaveError": "Não foi possível salvar.",
+    "saving": "Salvando...",
+    "save": "Salvar"
   },
   "CommunitySite": {
     "modeEditing": "Editando",
