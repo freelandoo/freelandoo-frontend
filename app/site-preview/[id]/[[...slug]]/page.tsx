@@ -27,6 +27,7 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 
 import { templateFor } from "@/components/site-templates/registry"
+import { pricesFromServices } from "@/components/site-templates/enzo-cortes/content/prices"
 import { getToken } from "@/lib/auth"
 import type { ShowcaseService } from "@/types/community-site"
 import { platformTemplateLinks, type PublicSite } from "@/lib/community-site"
@@ -145,6 +146,12 @@ export default function SitePreview() {
     links,
     page,
     services: [],
+    // ⚠️ OS PREÇOS VÃO PRONTOS, e sem isso o preview do `enzo-cortes` nunca
+    // aparece: aquele tema lê o cadastro num componente ASYNC de servidor, e
+    // aqui é cliente — o React suspende para sempre e o iframe fica em
+    // "Carregando…". Os serviços já vieram nesta resposta; o tema que não
+    // conhece a chave simplesmente a ignora.
+    livePrices: pricesFromServices(dados.services ?? []),
   } as Parameters<typeof entry.Site>[0]
 
   return entry.Site(props)

@@ -64,6 +64,32 @@ const PARTS: Partial<Record<PriceSlug, PriceSlug[]>> = {
   "corte-barba-e-sobrancelha": ["corte-de-cabelo", "barba", "sobrancelha"],
 };
 
+/** Uma linha de serviço cadastrado — da rota de serviços ou da do site. */
+export type CadastroService = {
+  id_profile_service: number | string;
+  price_amount: number | null;
+  price_on_request?: boolean;
+  is_active?: boolean;
+};
+
+/**
+ * A REGRA de ler o cadastro, num lugar só: o servidor (`loadLivePrices`) e a
+ * pré-visualização do construtor (que já recebe os serviços e é de CLIENTE)
+ * chegam ao mesmo mapa. Escrita duas vezes, o preview mostraria um preço e o
+ * site no ar outro.
+ */
+export function pricesFromServices(list: readonly CadastroService[]): PriceMap {
+  const map: PriceMap = {};
+  for (const s of list) {
+    const slug = CADASTRO_ID[String(s.id_profile_service)];
+    if (!slug || s.is_active === false || s.price_on_request) continue;
+    const cents = Number(s.price_amount);
+    if (!Number.isFinite(cents) || cents <= 0) continue;
+    map[slug] = cents / 100;
+  }
+  return map;
+}
+
 let live: PriceMap = {};
 
 export function setLivePrices(map: PriceMap): void {

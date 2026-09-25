@@ -26,7 +26,7 @@ import type { ReactNode } from "react";
 import { SiteAnalytics } from "./analytics";
 import { BUSINESS } from "./content/business";
 import { loadLivePrices } from "./content/live-prices";
-import { setLivePrices } from "./content/prices";
+import { setLivePrices, type PriceMap } from "./content/prices";
 import { LivePrices } from "./live-prices-client";
 import { FloatingActions, SiteFooter, SiteHeader } from "./chrome";
 import { pageHref, type TemplateLinks } from "./lib";
@@ -143,7 +143,22 @@ export function EnzoCortesSite(props: {
   data?: unknown;
   links: TemplateLinks;
   page?: EnzoPage | null;
+  /**
+   * Preços JÁ lidos por quem monta. É o caminho da pré-visualização do
+   * construtor, que é componente de CLIENTE: lá o `PriceGate` (async, de
+   * servidor) nunca resolve — React no navegador suspende um componente async
+   * para sempre, e o iframe ficava eternamente em "Carregando…".
+   */
+  livePrices?: PriceMap;
 }) {
+  if (props.livePrices) {
+    setLivePrices(props.livePrices);
+    return (
+      <LivePrices prices={props.livePrices}>
+        <EnzoCortesContent links={props.links} page={props.page ?? null} />
+      </LivePrices>
+    );
+  }
   return (
     <PriceGate>
       <EnzoCortesContent links={props.links} page={props.page ?? null} />

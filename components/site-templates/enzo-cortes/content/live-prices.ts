@@ -15,17 +15,15 @@
 
 import { getBackendApiUrl } from "@/lib/backend";
 
-import { CADASTRO_ID, PRICE_PROFILE_ID, type PriceMap } from "./prices";
+import {
+  PRICE_PROFILE_ID,
+  pricesFromServices,
+  type CadastroService,
+  type PriceMap,
+} from "./prices";
 
 /** Mesmo intervalo do ISR do site: o preço novo chega em até 10 minutos. */
 const REVALIDATE_SECONDS = 600;
-
-type CadastroService = {
-  id_profile_service: number | string;
-  price_amount: number | null;
-  price_on_request?: boolean;
-  is_active?: boolean;
-};
 
 export async function loadLivePrices(): Promise<PriceMap> {
   try {
@@ -35,15 +33,7 @@ export async function loadLivePrices(): Promise<PriceMap> {
     );
     if (!res.ok) return {};
     const body = (await res.json()) as { services?: CadastroService[] };
-    const map: PriceMap = {};
-    for (const s of body.services ?? []) {
-      const slug = CADASTRO_ID[String(s.id_profile_service)];
-      if (!slug || s.is_active === false || s.price_on_request) continue;
-      const cents = Number(s.price_amount);
-      if (!Number.isFinite(cents) || cents <= 0) continue;
-      map[slug] = cents / 100;
-    }
-    return map;
+    return pricesFromServices(body.services ?? []);
   } catch {
     return {};
   }
