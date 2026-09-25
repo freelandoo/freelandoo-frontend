@@ -343,7 +343,6 @@ export default function CadastroPage() {
       payload.id_category = selectedCategoryId
       payload.display_name = profileData.display_name.trim()
       payload.bio = profileData.bio.trim() || null
-      payload.avatar_url = profileData.avatar_url.trim() || null
       payload.estado = profileData.estado
       payload.id_region = Number(profileData.id_region)
     }
@@ -913,18 +912,6 @@ export default function CadastroPage() {
                   value={profileData.bio}
                   onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                   className="fl-input resize-none"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="avatar_url" className="fl-label">{t("avatarUrlOptional", "URL do avatar (opcional)")}</label>
-                <input
-                  id="avatar_url"
-                  type="url"
-                  className="fl-input"
-                  placeholder="https://..."
-                  value={profileData.avatar_url}
-                  onChange={(e) => setProfileData({ ...profileData, avatar_url: e.target.value })}
                 />
               </div>
 

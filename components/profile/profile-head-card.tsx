@@ -459,13 +459,22 @@ export function ProfileHeadCard({
 
   const socials = (profile.social_media || []).filter((s) => s.is_active !== false)
   const avatarSrc = avatarOverride || profile.avatar_url || profile.user_avatar || undefined
+  // Foto que não carrega (link apagado no R2, ou algo que nunca foi imagem) cai
+  // nas iniciais — o texto alternativo quebrado no card parece site com defeito.
+  const [brokenAvatar, setBrokenAvatar] = useState<string | null>(null)
+  const showAvatar = !!avatarSrc && avatarSrc !== brokenAvatar
   const displayName = profile.display_name || t("noName", "Sem nome")
   // Trocar a foto pelo clique nela só sobra quando ninguém tomou esse clique.
   const canUploadAvatar = isOwnProfile && !onAvatarClick
 
-  const avatarImage = avatarSrc ? (
+  const avatarImage = showAvatar ? (
     /* eslint-disable-next-line @next/next/no-img-element */
-    <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
+    <img
+      src={avatarSrc}
+      alt={displayName}
+      className="h-full w-full object-cover"
+      onError={() => setBrokenAvatar(avatarSrc ?? null)}
+    />
   ) : (
     <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
       {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
