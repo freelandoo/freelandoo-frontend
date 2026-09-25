@@ -81,12 +81,12 @@ export default function AreaPage({ links, area }: Ctx & { area: Area }) {
                   <li key={s.slug} className="flex items-baseline justify-between gap-3">
                     <a
                       href={pageHref(links, s.slug)}
-                      className="text-[0.9375rem] text-[var(--ec-cream-dim)] transition-colors hover:text-[var(--ec-gold-hi)]"
+                      className="text-[0.9375rem] text-[var(--ec-metal)] transition-colors hover:text-[var(--ec-volt)]"
                     >
                       {s.label}
                     </a>
                     <span className="leader" aria-hidden="true" />
-                    <span className="tnum shrink-0 text-[0.9375rem] text-[var(--ec-gold-hi)]">
+                    <span className="tnum shrink-0 text-[0.9375rem] text-[var(--ec-volt)]">
                       {s.priceFrom ? "a partir de " : ""}
                       {brl(s.price)}
                     </span>
@@ -95,7 +95,7 @@ export default function AreaPage({ links, area }: Ctx & { area: Area }) {
               </ul>
 
               <div className="mt-7 border-t border-[var(--ec-line-soft)] pt-6">
-                <address className="not-italic text-[0.875rem] leading-relaxed text-[var(--ec-cream-dim)]">
+                <address className="not-italic text-[0.875rem] leading-relaxed text-[var(--ec-metal)]">
                   {BUSINESS.street}
                   <br />
                   {BUSINESS.neighborhood} · {BUSINESS.city}/{BUSINESS.state}
@@ -139,10 +139,10 @@ export default function AreaPage({ links, area }: Ctx & { area: Area }) {
                 data-reveal-delay={i * 0.07}
               >
                 <a href={pageHref(links, v.slug)} className="group block p-7">
-                  <h3 className="text-[1.0625rem] font-semibold text-[var(--ec-cream)] transition-colors group-hover:text-[var(--ec-gold-hi)]">
+                  <h3 className="text-[1.0625rem] font-semibold text-[var(--ec-paper)] transition-colors group-hover:text-[var(--ec-volt)]">
                     {v.name}
                   </h3>
-                  <p className="mt-2 text-[0.875rem] leading-relaxed text-[var(--ec-cream-dim)]">
+                  <p className="mt-2 text-[0.875rem] leading-relaxed text-[var(--ec-metal)]">
                     {v.cardText}
                   </p>
                 </a>

@@ -19,12 +19,12 @@
 // ignorado de propósito, porque não existe outro cliente para quem este site
 // sirva com outro texto.
 
-import { Bodoni_Moda, Jost } from "next/font/google";
+import { Big_Shoulders, Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 
 import { SiteAnalytics } from "./analytics";
 import { BUSINESS } from "./content/business";
-import { SiteFooter, SiteHeader, WhatsappFab } from "./chrome";
+import { FloatingActions, SiteFooter, SiteHeader } from "./chrome";
 import { pageHref, type TemplateLinks } from "./lib";
 import AreaPage from "./pages/area";
 import ContatoPage from "./pages/contact";
@@ -33,46 +33,40 @@ import ServicoPage from "./pages/service";
 import ServicosPage from "./pages/services-index";
 import SobrePage from "./pages/about";
 import { PAGE_SLUGS, pageMeta, pageSlug, resolveEnzoPage, type EnzoPage } from "./pages";
-import ScrollMotion from "./scroll-motion";
+import Motion from "./experience/motion";
 import { BusinessLd, WebSiteLd } from "./schema";
 import "./theme.css";
 
 /**
- * O display: Bodoni Moda, um didone de altíssimo contraste.
+ * O display: Big Shoulders, uma grotesca CONDENSADA e pesada (800).
  *
- * ⚠️ `axes: ["opsz"]` NÃO É DETALHE. Bodoni é uma família de TAMANHO ÓPTICO:
- * no corpo grande as hastes finas precisam afinar e o contraste abrir; no
- * corpo pequeno, o contrário, ou as finas somem na tela. Sem declarar o eixo,
- * o mesmo desenho sai em todos os corpos — e o sintoma é a manchete parecendo
- * "quebradiça" e o preço pequeno parecendo apagado, sem erro nenhum.
- *
- * ⚠️ E O ITÁLICO É CARREGADO DE PROPÓSITO: ele é a voz editorial do site (o
- * "Cortes" da marca, a numeração das listas, os destaques). Sem declará-lo, o
- * navegador SINTETIZA a inclinação — e Bodoni sintetizado é um itálico
- * falso, que num didone fica visivelmente errado.
+ * É a voz "industrial" do briefing: condensada, ela aguenta os títulos
+ * gigantes sem estourar a largura do celular — "CORTES" a 800 cabe em ~90vw
+ * no corpo em que outra display já quebraria linha.
  *
  * ⚠️ OS NOMES DAS VARIÁVEIS (`--ec-font-*`) SÃO OS QUE `theme.css` ESPERA.
  * Dentro da Freelandoo elas convivem com as da plataforma, e um `--font-*`
  * solto colidiria com o dela.
  */
-const bodoni = Bodoni_Moda({
+const display = Big_Shoulders({
   subsets: ["latin"],
-  axes: ["opsz"],
-  style: ["normal", "italic"],
+  weight: ["700", "800"],
   variable: "--ec-font-display",
   display: "swap",
 });
 
-/**
- * O texto: Jost, um geométrico derivado da Futura.
- *
- * A escolha é de época, não de gosto: Futura é de 1927 e é a companheira
- * natural de um didone num layout déco. Uma grotesca neutra ao lado de Bodoni
- * lê como "serif de revista + interface de app" — duas épocas na mesma página.
- */
-const jost = Jost({
+/** O texto: Geist — legível em corpo pequeno, neutra ao lado da display. */
+const body = Geist({
   subsets: ["latin"],
   variable: "--ec-font-body",
+  display: "swap",
+});
+
+/** A "régua": numeração, rótulos e coordenadas da precisão. */
+const mono = Geist_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--ec-font-mono",
   display: "swap",
 });
 
@@ -145,7 +139,7 @@ export function EnzoCortesSite({
   const ctx = { links };
 
   return (
-    <div className={`tpl-enzo ${bodoni.variable} ${jost.variable}`}>
+    <div className={`tpl-enzo ${display.variable} ${body.variable} ${mono.variable}`}>
       {/* ⚠️ O GATE DO MOVIMENTO, escrito durante o PARSE do HTML.
           Ele marca o próprio elemento pai — `document.currentScript` é o
           <script> que está executando, e o pai dele é a div do tema.
@@ -176,7 +170,7 @@ export function EnzoCortesSite({
 
       <a
         href="#conteudo"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:bg-[var(--ec-gold)] focus:px-4 focus:py-2 focus:text-[var(--ec-ink)]"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:bg-[var(--ec-volt)] focus:px-4 focus:py-2 focus:text-[var(--ec-ink)]"
       >
         Ir para o conteúdo
       </a>
@@ -200,8 +194,8 @@ export function EnzoCortesSite({
       </main>
 
       <SiteFooter links={links} />
-      <WhatsappFab />
-      <ScrollMotion />
+      <FloatingActions links={links} />
+      <Motion />
 
       {/* O contador do painel de Indicadores. Ver `analytics.tsx` — é a única
           peça que difere entre este projeto e o tema dentro da Freelandoo. */}

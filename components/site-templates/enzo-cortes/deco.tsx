@@ -65,7 +65,7 @@ export function Monogram({ className = "", width = 1.2 }: GlyphProps) {
  * O filete com losango ao centro — o divisor de seção.
  *
  * As duas metades carregam `data-rule`, então elas se abrem da esquerda para
- * a direita quando entram em cena (ver `scroll-motion.tsx`). O losango do
+ * a direita quando entram em cena (ver `experience/motion.tsx`). O losango do
  * meio não anima: ele é o ponto fixo em torno do qual as réguas abrem.
  */
 export function DecoDivider({ className = "" }: { className?: string }) {
@@ -76,8 +76,8 @@ export function DecoDivider({ className = "" }: { className?: string }) {
         className="h-px w-full max-w-[10rem] flex-1 bg-[var(--ec-line)]"
       />
       <svg viewBox="0 0 24 12" width="18" height="9" fill="none" className="shrink-0">
-        <path d="M12 1 22 6 12 11 2 6Z" stroke="var(--ec-gold)" strokeWidth="1" />
-        <path d="M12 4 16 6 12 8 8 6Z" fill="var(--ec-gold)" />
+        <path d="M12 1 22 6 12 11 2 6Z" stroke="var(--ec-volt)" strokeWidth="1" />
+        <path d="M12 4 16 6 12 8 8 6Z" fill="var(--ec-volt)" />
       </svg>
       <span
         data-rule
@@ -116,13 +116,13 @@ export function DecoSunburst({ className = "" }: { className?: string }) {
           y1="200"
           x2={r.x.toFixed(1)}
           y2={r.y.toFixed(1)}
-          stroke="var(--ec-gold-deep)"
+          stroke="var(--ec-volt-deep)"
           strokeWidth="1"
           opacity={i === 6 ? 0.55 : 0.28}
         />
       ))}
-      <path d="M20 200a180 180 0 0 1 360 0" stroke="var(--ec-gold-deep)" strokeWidth="1" opacity="0.3" />
-      <path d="M70 200a130 130 0 0 1 260 0" stroke="var(--ec-gold-deep)" strokeWidth="1" opacity="0.2" />
+      <path d="M20 200a180 180 0 0 1 360 0" stroke="var(--ec-volt-deep)" strokeWidth="1" opacity="0.3" />
+      <path d="M70 200a130 130 0 0 1 260 0" stroke="var(--ec-volt-deep)" strokeWidth="1" opacity="0.2" />
     </svg>
   );
 }

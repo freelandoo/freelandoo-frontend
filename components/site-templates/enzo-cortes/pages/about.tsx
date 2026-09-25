@@ -71,17 +71,17 @@ export default function SobrePage({ links }: Ctx) {
                 COMPILA e é descartado em silêncio — o elemento simplesmente
                 nunca anima, sem erro nenhum. */}
             <div data-reveal="scale">
-              <Monogram className="h-14 w-14 text-[var(--ec-gold)]" />
+              <Monogram className="h-14 w-14 text-[var(--ec-volt)]" />
             </div>
             <p className="eyebrow mt-7" data-reveal="up">
               A barbearia
             </p>
             <h1
-              className="display mt-5 text-[clamp(2rem,7vw,4rem)] text-[var(--ec-cream)]"
+              className="display mt-5 text-[clamp(2rem,7vw,4rem)] text-[var(--ec-paper)]"
               data-reveal="up"
             >
               Uma cadeira no{" "}
-              <span className="display-italic text-[var(--ec-gold-hi)]">
+              <span className="display-italic text-[var(--ec-volt)]">
                 {BUSINESS.neighborhood}
               </span>
             </h1>
@@ -115,15 +115,15 @@ export default function SobrePage({ links }: Ctx) {
                 data-reveal-delay={Math.min(i * 0.07, 0.24)}
               >
                 <span
-                  className="display-italic block text-[2rem] leading-none text-[var(--ec-gold-deep)]"
+                  className="display-italic block text-[2rem] leading-none text-[var(--ec-volt-deep)]"
                   aria-hidden="true"
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h2 className="mt-4 text-[1.125rem] font-semibold text-[var(--ec-cream)]">
+                <h2 className="mt-4 text-[1.125rem] font-semibold text-[var(--ec-paper)]">
                   {r.title}
                 </h2>
-                <p className="mt-3 text-[0.9375rem] leading-relaxed text-[var(--ec-cream-dim)]">
+                <p className="mt-3 text-[0.9375rem] leading-relaxed text-[var(--ec-metal)]">
                   {r.text}
                 </p>
               </li>
@@ -139,7 +139,7 @@ export default function SobrePage({ links }: Ctx) {
             <div>
               <SectionHead align="left" eyebrow="O essencial" title="Endereço, horário e tabela" />
               <p
-                className="mt-8 text-[1.0625rem] leading-relaxed text-[var(--ec-cream-dim)]"
+                className="mt-8 text-[1.0625rem] leading-relaxed text-[var(--ec-metal)]"
                 data-reveal="up"
               >
                 Três informações, e elas são as mesmas em todas as páginas deste
@@ -160,25 +160,25 @@ export default function SobrePage({ links }: Ctx) {
             <Panel className="p-8" data-reveal="up" data-reveal-delay="0.1">
               <h2 className="eyebrow">Enzo Cortes</h2>
               <address className="not-italic">
-                <p className="mt-4 text-[1.125rem] text-[var(--ec-cream)]">{BUSINESS.street}</p>
-                <p className="mt-1 text-[0.9375rem] text-[var(--ec-cream-dim)]">
+                <p className="mt-4 text-[1.125rem] text-[var(--ec-paper)]">{BUSINESS.street}</p>
+                <p className="mt-1 text-[0.9375rem] text-[var(--ec-metal)]">
                   {BUSINESS.neighborhood} · {BUSINESS.city}/{BUSINESS.state} ·{" "}
                   {BUSINESS.postalCode}
                 </p>
               </address>
 
-              <p className="mt-6 text-[0.9375rem] text-[var(--ec-cream-dim)]">
+              <p className="mt-6 text-[0.9375rem] text-[var(--ec-metal)]">
                 {BUSINESS.hoursHuman}
                 <br />
-                <span className="text-[var(--ec-cream-faint)]">{BUSINESS.closedHuman}</span>
+                <span className="text-[var(--ec-metal-dim)]">{BUSINESS.closedHuman}</span>
               </p>
 
               <ul className="mt-6 space-y-2 border-t border-[var(--ec-line-soft)] pt-6">
                 {SERVICES.map((s) => (
                   <li key={s.slug} className="flex items-baseline justify-between gap-3">
-                    <span className="text-[0.875rem] text-[var(--ec-cream-dim)]">{s.label}</span>
+                    <span className="text-[0.875rem] text-[var(--ec-metal)]">{s.label}</span>
                     <span className="leader" aria-hidden="true" />
-                    <span className="tnum shrink-0 text-[0.875rem] text-[var(--ec-gold-hi)]">
+                    <span className="tnum shrink-0 text-[0.875rem] text-[var(--ec-volt)]">
                       {s.priceFrom ? "a partir de " : ""}
                       {brl(s.price)}
                     </span>

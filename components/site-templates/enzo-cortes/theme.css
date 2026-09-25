@@ -1,88 +1,61 @@
-/* Tema `enzo-cortes` — a folha do site autoral.
+/* Tema `enzo-cortes` — "PRECISION IN MOTION".
  *
- * ⚠️ TUDO ESCOPADO EM `.tpl-enzo`. Este site vai ser servido de dentro da
- * aplicação da Freelandoo, onde estas regras convivem com a plataforma
- * inteira. Uma regra solta atravessa o site todo — e o sintoma apareceria
- * numa tela que ninguém relacionaria ao site de um cliente.
+ * ⚠️ TUDO ESCOPADO EM `.tpl-enzo`. Este site é servido de dentro da aplicação
+ * da Freelandoo, onde estas regras convivem com a plataforma inteira. Uma
+ * regra solta atravessa o site todo — e o sintoma apareceria numa tela que
+ * ninguém relacionaria ao site de um cliente.
  *
  * ⚠️ AS CORES SÃO VARIÁVEIS (`--ec-*`), NUNCA TOKENS DO TAILWIND (`@theme`).
- * `@theme` é GLOBAL por construção: declarado aqui, criaria utilitários
- * `bg-ink`/`text-gold` para a plataforma inteira. Nos componentes a cor entra
- * como valor arbitrário: `text-[var(--ec-gold-hi)]`.
+ * `@theme` é GLOBAL por construção: declarado aqui, criaria utilitários para
+ * a plataforma inteira. Nos componentes a cor entra como valor arbitrário:
+ * `text-[var(--ec-volt)]`.
  *
- * ⚠️ NOME DE KEYFRAME TAMBÉM É GLOBAL. Por isso todos aqui são
- * `tplEnzo*` — um `shine` genérico colidiria com qualquer outro do site.
+ * ⚠️ NOME DE KEYFRAME TAMBÉM É GLOBAL. Por isso todos aqui são `tplEnzo*`.
  *
- * ── A DIREÇÃO: ART DÉCO DE BARBEARIA ─────────────────────────────────────
- * Preto e dourado é o par que o ramo inteiro usa, e é por isso que quase
- * todo site de barbearia premium se parece. O que separa este dos outros
- * não é a cor, é a GRAMÁTICA: moldura de fio dourado com cantos chanfrados,
- * simetria, numeração em itálico e um serif de altíssimo contraste (Bodoni)
- * contra um geométrico (Jost). Isso é vocabulário déco — o mesmo de fachada
- * de barbearia dos anos 30 —, não "tema escuro com detalhe amarelo".
+ * ── A DIREÇÃO (2026-09-25) ───────────────────────────────────────────────
+ * Saiu o art déco preto-e-dourado; entrou uma barbearia urbana lida como
+ * design industrial: preto profundo, grafite, metal escovado, branco
+ * editorial e UM verde elétrico que só aparece onde há ação ou preço. O
+ * verde é a cor da interação — espalhado, ele deixa de dizer "clique aqui".
  *
- * ── UMA ARTE, NENHUMA FOTOGRAFIA — E ISSO CONTINUA SENDO DECISÃO ─────────
- * O site abre com o banner do Enzo (logotipo + ilustração, ver `hero.tsx`),
- * que é a única arte que existe. FOTO da barbearia continua não existindo,
- * porque nenhuma foi informada — e foto de banco de imagens mostrando OUTRA
- * barbearia é mentira sobre o lugar: a pessoa chega esperando aquilo. Do
- * banner para baixo o peso visual segue vindo do corpo do tipo, do fio
- * dourado e do vazio.
+ * ⚠️ CANTOS CONTINUAM RETOS. A regra permanente da casa (nada de
+ * `border-radius`) vale também aqui; o "arredondado criterioso" do briefing
+ * foi trocado por chanfro de `clip-path` nos cards.
  */
 
 .tpl-enzo {
-  /* ── SUPERFÍCIES ────────────────────────────────────────────────────────
-     Pretos QUENTES (R>G>B). Não é capricho: preto azulado ao lado de
-     dourado lê como duas famílias brigando — a mesma conta que a paleta do
-     Fitness pagou ao trocar cinza frio por cinza quente ao lado do laranja.
-     A rampa foi calibrada em L* (0 → 2,5 → 5,5 → 9,0), porque perto do
-     preto a percepção comprime e subtrair sRGB em linha reta colapsa a
-     rampa sem avisar. */
-  --ec-ink-deep: #050403;
-  --ec-ink: #0a0806;
-  --ec-ink-up: #14100b;
-  --ec-ink-hi: #1e1811;
+  /* ── SUPERFÍCIES ──────────────────────────────────────────────────────── */
+  --ec-ink-deep: #050606;
+  --ec-ink: #090a0b;
+  --ec-ink-up: #111315;
+  --ec-graphite: #181b1d;
+  --ec-ink-hi: #22262a;
 
-  /* ── DOURADO: SÃO TRÊS, E A DIFERENÇA É O PAPEL ─────────────────────────
-     Esta distinção é a que a troca ingênua erra, e ela já custou uma
-     entrega inteira na plataforma (a paleta do Fitness).
+  /* ── TINTA ────────────────────────────────────────────────────────────────
+     Medido sobre `--ec-ink`: paper 18,1:1 · metal 9,4:1 · metal-dim 5,4:1.
+     `metal-dim` é o piso de texto NORMAL (AA pede 4,5:1). */
+  --ec-paper: #f3f2ee;
+  --ec-metal: #adb2b4;
+  --ec-metal-dim: #7f868a;
 
-       --ec-gold      FUNDO e TINTA. Medido: 8,3:1 sobre `ink` e 8,3:1 com
-                      `ink` por cima. É o único que serve nos dois papéis, e
-                      é por isso que ele é o dourado do botão cheio.
-       --ec-gold-hi   TINTA sobre escuro (13,0:1). É o dourado de TEXTO —
-                      manchete, preço, número. Como FUNDO ele exigiria tinta
-                      quase preta e perderia o brilho.
-       --ec-gold-deep FIO, borda e sombra. Escuro demais para texto sobre
-                      `ink` (2,6:1) — usar como tinta some.
-
-     ⚠️ Ao trocar um fundo por `--ec-gold`, a tinta por cima TEM que virar
-     `--ec-ink`. Trocado só o fundo, o rótulo some dentro do próprio botão. */
-  --ec-gold: #c8a24a;
-  --ec-gold-hi: #e8ce8a;
-  --ec-gold-deep: #8a6a24;
-
-  /* ── TINTA ──────────────────────────────────────────────────────────────
-     Creme quente, nunca branco puro: branco sobre preto vibra, e ao lado de
-     dourado denuncia que os dois não são da mesma família. */
-  --ec-cream: #f2ede3;
-  --ec-cream-dim: #b8ae9e;
-  /* Medido, não escolhido a olho: 5,4:1 sobre `ink`. É a cor da anotação
-     pequena, ou seja texto NORMAL para a régua de contraste — um tom abaixo
-     disto reprova em AA e ninguém percebe até a auditoria. */
-  --ec-cream-faint: #8c8376;
+  /* ── O VERDE: SÃO DOIS, E A DIFERENÇA É O PAPEL ─────────────────────────
+       --ec-volt       FUNDO e TINTA. 16,4:1 sobre `ink`, e `ink` por cima
+                       dele dá o mesmo número. É o botão cheio e o preço.
+       --ec-volt-deep  FIO e numeral GRANDE (4,0:1 — só passa como texto
+                       grande, ≥24px). Como texto pequeno ele reprova. */
+  --ec-volt: #c7ff41;
+  --ec-volt-deep: #5e7a1e;
 
   /* fios */
-  --ec-line: rgb(138 106 36 / 0.38);
-  --ec-line-soft: rgb(138 106 36 / 0.18);
+  --ec-line: rgb(173 178 180 / 0.24);
+  --ec-line-soft: rgb(173 178 180 / 0.11);
+  --ec-line-volt: rgb(199 255 65 / 0.4);
 
-  --ec-display: var(--ec-font-display), "Didot", "Times New Roman", serif;
+  --ec-display: var(--ec-font-display), "Impact", "Arial Narrow", sans-serif;
   --ec-body: var(--ec-font-body), system-ui, -apple-system, sans-serif;
+  --ec-mono: var(--ec-font-mono), ui-monospace, "SFMono-Regular", monospace;
 
-  /* uma curva só no site inteiro — saída suave, sem elástico */
   --ec-ease: cubic-bezier(0.22, 1, 0.36, 1);
-
-  /* margem da página: o conteúdo nunca encosta na borda */
   --ec-pad: 1.25rem;
 }
 
@@ -95,108 +68,111 @@
 .tpl-enzo {
   color-scheme: dark;
   background: var(--ec-ink);
-  color: var(--ec-cream);
+  color: var(--ec-paper);
   font-family: var(--ec-body);
   font-size: 1rem;
-  line-height: 1.7;
-  scroll-behavior: smooth;
+  line-height: 1.65;
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Déco não tem canto arredondado — e a casa também não (regra permanente do
-   projeto: nada de `border-radius` na UI). O chanfro dos cantos, quando
-   existe, é feito com `clip-path`, que é reto por natureza. */
 .tpl-enzo *,
 .tpl-enzo *::before,
 .tpl-enzo *::after {
   border-radius: 0;
 }
 
-/* ⚠️ O RECORTE DO EIXO X VAI NO CONTEÚDO, NUNCA NO INVÓLUCRO.
-   A barra fixa, o botão flutuante e o fundo são IRMÃOS do main: alguns
-   navegadores tratam `clip` como recorte de descendente `fixed`, e o preço
-   de perder essa aposta é a barra do site do cliente sumir.
-   Sem recorte nenhum, os reveals laterais abrem rolagem horizontal no
-   celular ANTES de a animação rodar. */
+/* ⚠️ O RECORTE DO EIXO X VAI NO CONTEÚDO, NUNCA NO INVÓLUCRO. A barra fixa e
+   os botões flutuantes são IRMÃOS do main: pôr o recorte no invólucro seria
+   apostar que nenhum navegador recorta descendente `fixed`. */
 .tpl-enzo > main,
 .tpl-enzo > footer {
   overflow-x: clip;
 }
 
-/* ⚠️ FOLGA PARA A BARRA FIXA.
-   A barra tem ~4,5rem e é `fixed`. Sem isto, um link para `#precos` ou
-   `#onde` para a rolagem com o título da seção DEBAIXO da barra — a pessoa
-   clica, a página pula e o que ela queria ver está coberto. O sintoma parece
-   "o link foi para o lugar errado", e o lugar está certo. */
 .tpl-enzo [id] {
-  scroll-margin-top: 5.5rem;
+  scroll-margin-top: 5rem;
 }
 
 /* ── FUNDO ────────────────────────────────────────────────────────────────
-   Gradiente em CSS, PINTADO UMA VEZ. Nada de shader nem de
-   `background-position` animado numa camada do tamanho da janela: o custo
-   desse tipo de efeito é POR PIXEL e ele divide a GPU com o compositor —
-   quem engasga é a rolagem inteira, e a causa parece estar em qualquer
-   outro lugar. A plataforma pagou essa conta em 2026-09-09 e a regra ficou. */
+   Pintado UMA vez, sem animação: camada do tamanho da janela nunca se move
+   (a conta que a plataforma pagou em 2026-09-09). A grade editorial é um
+   gradiente repetido, não um SVG. */
 .tpl-enzo__bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgb(200 162 74 / 0.10), transparent 60%),
-    radial-gradient(90% 60% at 50% 110%, rgb(138 106 36 / 0.07), transparent 65%),
-    linear-gradient(180deg, var(--ec-ink-deep), var(--ec-ink) 30%, var(--ec-ink));
+    radial-gradient(90% 60% at 80% -10%, rgb(199 255 65 / 0.05), transparent 60%),
+    linear-gradient(90deg, rgb(173 178 180 / 0.035) 1px, transparent 1px) 0 0 / calc(100% / 12) 100%,
+    linear-gradient(180deg, var(--ec-ink-deep), var(--ec-ink) 40%);
 }
 
-/* ── TIPOGRAFIA ───────────────────────────────────────────────────────── */
+/* ── TIPOGRAFIA ───────────────────────────────────────────────────────────
+   ⚠️ ESTA FOLHA NÃO ESTÁ EM `@layer`, e regra fora de camada VENCE qualquer
+   utilitário do Tailwind (que mora em `@layer utilities`). Então: nada de
+   `display`, `position` ou `line-height` numa classe daqui que o JSX precise
+   sobrescrever — ou o utilitário do JSX (`lg:hidden`, `leading-*`) perde em
+   silêncio. Onde for inevitável, o JSX usa `!`. */
 
 .tpl-enzo .display {
   font-family: var(--ec-display);
-  font-weight: 500;
-  line-height: 0.94;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
+/* O antigo itálico do Bodoni. Big Shoulders não tem itálico — sintetizado
+   ficaria torto —, então o destaque passa a ser só COR. */
 .tpl-enzo .display-italic {
   font-family: var(--ec-display);
-  font-style: italic;
-  font-weight: 400;
+  font-style: normal;
+  font-weight: 800;
 }
 
-/* O rótulo pequeno em versalete espaçado — a voz "de fachada" do déco. */
 .tpl-enzo .eyebrow {
-  font-family: var(--ec-body);
+  font-family: var(--ec-mono);
   font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: 0.34em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--ec-gold);
+  color: var(--ec-volt);
 }
 
-/* Numeral tabular: é o que faz a coluna de preços alinhar a vírgula. Sem
-   isto, "R$ 5" e "R$ 40" desencontram e a tabela parece torta. */
+.tpl-enzo .mono {
+  font-family: var(--ec-mono);
+  letter-spacing: 0.08em;
+}
+
 .tpl-enzo .tnum {
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* ── MOLDURA DÉCO ─────────────────────────────────────────────────────────
-   Fio dourado com os quatro cantos chanfrados. O chanfro é `clip-path` no
-   pseudo-elemento, não uma imagem: escala em qualquer tamanho e não pesa. */
+/* Numeral vazado — o "01" gigante dos cards e dos passos. */
+.tpl-enzo .outline-num {
+  font-family: var(--ec-display);
+  font-weight: 800;
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--ec-line);
+}
+
+/* ── MOLDURA ──────────────────────────────────────────────────────────── */
 .tpl-enzo .deco-frame {
   position: relative;
-  border: 1px solid var(--ec-line);
+  border: 1px solid var(--ec-line-soft);
 }
 
 .tpl-enzo .deco-frame::before,
 .tpl-enzo .deco-frame::after {
   content: "";
   position: absolute;
-  width: 14px;
-  height: 14px;
-  border-color: var(--ec-gold);
+  width: 12px;
+  height: 12px;
+  border-color: var(--ec-volt);
   border-style: solid;
   pointer-events: none;
 }
@@ -213,11 +189,12 @@
   border-width: 0 1px 1px 0;
 }
 
-/* ── O CARDÁPIO DE PREÇOS ─────────────────────────────────────────────────
-   A linha pontilhada entre o nome e o preço é a convenção de cardápio, e
-   ela é o que faz a tabela ser LIDA em vez de escaneada. É um
-   `repeating-linear-gradient` num span que cresce — não um `border-bottom
-   dotted`, que não alinha com a base do texto. */
+/* Chanfro: o canto "trabalhado" do briefing, feito reto. */
+.tpl-enzo .chamfer {
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+
+/* ── CARDÁPIO ─────────────────────────────────────────────────────────── */
 .tpl-enzo .leader {
   flex: 1 1 auto;
   min-width: 1.5rem;
@@ -227,40 +204,9 @@
   background-image: radial-gradient(circle, var(--ec-line) 1px, transparent 1px);
   background-size: 6px 1px;
   background-repeat: repeat-x;
-  background-position: 0 0;
 }
 
-/* ── REVEAL ───────────────────────────────────────────────────────────────
-   Só `transform` e `opacity`: as duas coisas que o navegador COMPÕE sem
-   recalcular layout nem repintar. Animar largura ou altura numa página com
-   muito conteúdo custa o documento inteiro por quadro. */
-.tpl-enzo .rise {
-  opacity: 0;
-  transform: translate3d(0, 14px, 0);
-  transition:
-    opacity 0.7s var(--ec-ease) var(--delay, 0s),
-    transform 0.7s var(--ec-ease) var(--delay, 0s);
-  will-change: opacity, transform;
-}
-
-.tpl-enzo .rise.is-in {
-  opacity: 1;
-  transform: none;
-  will-change: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tpl-enzo .rise {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-}
-
-/* ── TRAÇO QUE SE DESENHA ─────────────────────────────────────────────────
-   O comprimento é MEDIDO em JS (`getTotalLength`) e entra como `--len`.
-   Um dasharray fixo grande "funciona" no traço curto e deixa o traço longo
-   entrando pela metade — e isso não aparece em revisão, só no desenho torto. */
+/* ── TRAÇO QUE SE DESENHA ─────────────────────────────────────────────── */
 .tpl-enzo .draw path,
 .tpl-enzo .draw line,
 .tpl-enzo .draw circle,
@@ -279,93 +225,71 @@
   stroke-dashoffset: 0;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .tpl-enzo .draw path,
-  .tpl-enzo .draw line,
-  .tpl-enzo .draw circle,
-  .tpl-enzo .draw polyline,
-  .tpl-enzo .draw rect {
-    stroke-dashoffset: 0;
-    transition: none;
-  }
-}
-
 /* ── BOTÕES ───────────────────────────────────────────────────────────────
-   O cheio usa `--ec-gold` de FUNDO com `--ec-ink` de tinta — o par medido
-   em 8,3:1. O vazado usa `--ec-gold-hi` de tinta sobre o escuro (13,0:1). */
+   Resposta IMEDIATA: a transição é de cor, 150ms. O deslocamento magnético é
+   escrito por JS em `transform` do invólucro, e nunca atrasa o clique. */
 .tpl-enzo .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
+  min-height: 48px;
   padding: 0.9rem 1.6rem;
-  font-family: var(--ec-body);
-  font-size: 0.8125rem;
+  font-family: var(--ec-mono);
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   line-height: 1;
   transition:
-    background-color 0.25s var(--ec-ease),
-    color 0.25s var(--ec-ease),
-    box-shadow 0.25s var(--ec-ease);
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.2s ease;
 }
 
 .tpl-enzo .btn-solid {
-  background: var(--ec-gold);
+  background: var(--ec-volt);
   color: var(--ec-ink);
-  box-shadow: 0 0 0 0 rgb(200 162 74 / 0);
 }
 
 .tpl-enzo .btn-solid:hover {
-  background: var(--ec-gold-hi);
-  box-shadow: 0 0 0 4px rgb(200 162 74 / 0.16);
+  background: var(--ec-paper);
+  box-shadow: 0 0 0 4px rgb(199 255 65 / 0.18);
 }
 
 .tpl-enzo .btn-ghost {
   border: 1px solid var(--ec-line);
-  color: var(--ec-gold-hi);
+  color: var(--ec-paper);
 }
 
 .tpl-enzo .btn-ghost:hover {
-  border-color: var(--ec-gold);
-  box-shadow: 0 0 0 4px rgb(200 162 74 / 0.10);
+  border-color: var(--ec-volt);
+  color: var(--ec-volt);
 }
 
-/* ── FOCO VISÍVEL ─────────────────────────────────────────────────────────
-   Obrigatório e dourado: sobre preto, o anel padrão do navegador quase
-   some. Quem navega por teclado precisa ver onde está. */
 .tpl-enzo a:focus-visible,
-.tpl-enzo button:focus-visible {
-  outline: 2px solid var(--ec-gold-hi);
+.tpl-enzo button:focus-visible,
+.tpl-enzo summary:focus-visible,
+.tpl-enzo [tabindex]:focus-visible {
+  outline: 2px solid var(--ec-volt);
   outline-offset: 3px;
 }
 
-/* ── LINKS DE TEXTO ──────────────────────────────────────────────────── */
 .tpl-enzo .prose a {
-  color: var(--ec-gold-hi);
+  color: var(--ec-volt);
   text-decoration: underline;
   text-underline-offset: 0.22em;
   text-decoration-thickness: 1px;
-  text-decoration-color: var(--ec-line);
+  text-decoration-color: var(--ec-line-volt);
 }
 
-.tpl-enzo .prose a:hover {
-  text-decoration-color: var(--ec-gold);
-}
-
-/* ── O GATE DO MOVIMENTO ──────────────────────────────────────────────────
-   O bloco só nasce escondido quando o atributo existe, e quem o escreve é
-   um script INLINE que roda durante o parse (ver `index.tsx`) — antes da
-   primeira pintura, então não há piscada.
-
-   ⚠️ SEM JAVASCRIPT O ATRIBUTO NUNCA APARECE e a página fica visível por
-   inteiro. Esconder incondicionalmente no CSS seria a troca clássica:
-   ganha-se a animação e perde-se a página para quem tem JS bloqueado — e
-   para o robô que renderiza sem executar script. */
+/* ── GATE DO MOVIMENTO ────────────────────────────────────────────────────
+   Quem escreve `data-motion="on"` é um script INLINE (ver `index.tsx`), que
+   roda durante o parse. Sem JavaScript o atributo nunca aparece e a página
+   fica inteira à vista — para quem tem JS bloqueado e para o robô. */
 .tpl-enzo[data-motion="on"] [data-reveal] {
   opacity: 0;
-  will-change: opacity, transform;
 }
 
 .tpl-enzo[data-motion="on"] [data-rule] {
@@ -376,9 +300,432 @@
 @media (prefers-reduced-motion: reduce) {
   .tpl-enzo[data-motion="on"] [data-reveal] {
     opacity: 1;
-    will-change: auto;
   }
   .tpl-enzo[data-motion="on"] [data-rule] {
     transform: none;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HERO
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-enzo .hero-word {
+  display: block;
+  font-family: var(--ec-display);
+  font-weight: 800;
+  line-height: 0.78;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+/* Cada letra mora numa janela: a máscara é o `overflow: hidden` do pai e a
+   letra sobe de dentro dela. Folga vertical para o recorte não comer a base. */
+.tpl-enzo .hero-mask {
+  display: inline-block;
+  overflow: hidden;
+  padding-bottom: 0.04em;
+  margin-bottom: -0.04em;
+  vertical-align: top;
+}
+
+.tpl-enzo .hero-glyph {
+  display: inline-block;
+  will-change: transform;
+}
+
+.tpl-enzo[data-motion="on"] .hero-glyph {
+  animation: tplEnzoRise 0.95s var(--ec-ease) both;
+  animation-delay: calc(var(--i, 0) * 45ms + 60ms);
+}
+
+@keyframes tplEnzoRise {
+  from {
+    transform: translate3d(0, 105%, 0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.tpl-enzo[data-motion="on"] .hero-in {
+  animation: tplEnzoFade 0.9s var(--ec-ease) both;
+  animation-delay: var(--d, 0.4s);
+}
+
+@keyframes tplEnzoFade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-enzo[data-motion="on"] .hero-glyph,
+  .tpl-enzo[data-motion="on"] .hero-in {
+    animation: none;
+  }
+}
+
+/* A luz que segue o cursor. Um div pequeno movido por `transform` — o
+   gradiente é pintado uma vez e depois só composto. */
+.tpl-enzo .hero-light {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 60vmax;
+  height: 60vmax;
+  margin: -30vmax 0 0 -30vmax;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgb(199 255 65 / 0.12), rgb(199 255 65 / 0.03) 55%, transparent 70%);
+  transform: translate3d(70vw, 30vh, 0);
+  will-change: transform;
+}
+
+/* A arte oficial entra em metal: dessaturada, com o verde por cima em
+   `multiply`/`screen`. A marca continua legível; o dourado dela deixa de
+   brigar com o verde da interface. */
+/* ⚠️ SEM `position` aqui: esta folha fica FORA das camadas do Tailwind, e
+   regra fora de camada vence utilitário — um `position: relative` aqui
+   anularia o `md:absolute` do hero. Posição é do JSX. */
+.tpl-enzo .art-duo {
+  overflow: hidden;
+  background: var(--ec-graphite);
+}
+
+.tpl-enzo .art-duo img {
+  filter: grayscale(1) contrast(1.12) brightness(0.9);
+}
+
+.tpl-enzo .art-duo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgb(199 255 65 / 0.22), transparent 55%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.tpl-enzo .scroll-cue span {
+  display: block;
+  width: 1px;
+  height: 48px;
+  background: linear-gradient(var(--ec-volt), transparent);
+  transform-origin: top;
+  animation: tplEnzoCue 1.8s var(--ec-ease) infinite;
+}
+
+@keyframes tplEnzoCue {
+  0% {
+    transform: scaleY(0);
+    opacity: 1;
+  }
+  70% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-enzo .scroll-cue span {
+    animation: none;
+  }
+}
+
+/* ── LÂMINA 3D (CSS puro, sem canvas) ─────────────────────────────────── */
+.tpl-enzo .blade-stage {
+  perspective: 900px;
+}
+
+.tpl-enzo .blade {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  animation: tplEnzoSpin 18s linear infinite;
+}
+
+.tpl-enzo .blade-face {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+  background: linear-gradient(115deg, #2a2f33 0%, #8d9396 38%, #e9ebe8 50%, #6c7275 62%, #1c2023 100%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+.tpl-enzo .blade-face.edge {
+  background: linear-gradient(115deg, transparent 0 46%, var(--ec-volt) 49% 51%, transparent 54%);
+  opacity: 0.9;
+}
+
+@keyframes tplEnzoSpin {
+  from {
+    transform: rotateY(0deg) rotateX(8deg);
+  }
+  to {
+    transform: rotateY(360deg) rotateX(8deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-enzo .blade {
+    animation: none;
+    transform: rotateY(-28deg) rotateX(8deg);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RODA DE SERVIÇOS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Modo padrão (celular, movimento reduzido e sem JS): trilho horizontal com
+   snap. É ROLAGEM NATIVA — o dedo vertical continua rolando a página. */
+.tpl-enzo .wheel-section {
+  padding-block: 5rem;
+}
+
+/* ⚠️ `minmax(0, 1fr)` e `min-width: 0`: item de grid tem largura mínima
+   automática = o conteúdo, e o trilho se esticaria até a soma dos seis
+   cards — deixando de rolar, sem erro nenhum. */
+.tpl-enzo .wheel-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+}
+
+.tpl-enzo .wheel-layout > * {
+  min-width: 0;
+}
+
+.tpl-enzo .wheel-panel {
+  padding-inline: var(--ec-pad);
+}
+
+.tpl-enzo .wheel-track {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--ec-pad);
+  padding: 1.5rem var(--ec-pad) 2rem;
+  scrollbar-width: none;
+  perspective: 1200px;
+}
+
+.tpl-enzo .wheel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.tpl-enzo .wheel-list {
+  display: flex;
+  gap: 1rem;
+}
+
+.tpl-enzo .wheel-card {
+  position: relative;
+  flex: 0 0 min(82vw, 22rem);
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  min-height: 27rem;
+  padding: 1.75rem;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.05), transparent 40%),
+    var(--ec-graphite);
+  border: 1px solid var(--ec-line-soft);
+  transform-origin: center center;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tpl-enzo .wheel-card.is-active {
+  border-color: var(--ec-line-volt);
+  box-shadow:
+    inset 0 1px 0 rgb(199 255 65 / 0.35),
+    0 30px 80px -30px rgb(199 255 65 / 0.25);
+}
+
+.tpl-enzo .wheel-card .wheel-price {
+  display: inline-block;
+}
+
+.tpl-enzo .wheel-card.is-active .wheel-price {
+  animation: tplEnzoPrice 0.6s var(--ec-ease) both;
+}
+
+@keyframes tplEnzoPrice {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 40%, 0);
+    letter-spacing: 0.08em;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.tpl-enzo .wheel-shade {
+  position: absolute;
+  inset: 0;
+  background: var(--ec-ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Modo roda (desktop com movimento): a classe `is-wheel` é posta pelo JS
+   ANTES de criar o gatilho do pin. As posições dos cards são escritas por JS
+   em `transform`; aqui só se troca o trilho pelo palco. */
+.tpl-enzo .wheel-section.is-wheel {
+  height: 100svh;
+  padding-block: 0;
+  overflow: hidden;
+}
+
+.tpl-enzo .is-wheel .wheel-layout {
+  height: 100%;
+  grid-template-columns: minmax(18rem, 26rem) 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  padding-inline: var(--ec-pad);
+}
+
+.tpl-enzo .is-wheel .wheel-panel {
+  padding-inline: 0;
+}
+
+.tpl-enzo .is-wheel .wheel-stage {
+  height: 100%;
+  cursor: grab;
+}
+
+.tpl-enzo .is-wheel .wheel-stage:active {
+  cursor: grabbing;
+}
+
+.tpl-enzo .is-wheel .wheel-track {
+  position: relative;
+  height: 100%;
+  overflow: visible;
+  padding: 0;
+  perspective: 1800px;
+  scroll-snap-type: none;
+}
+
+.tpl-enzo .is-wheel .wheel-list {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  transform-style: preserve-3d;
+}
+
+.tpl-enzo .is-wheel .wheel-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 23rem;
+  min-height: 30rem;
+  margin: -15rem 0 0 -11.5rem;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-enzo .wheel-card.is-active .wheel-price {
+    animation: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MENU DO CELULAR
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-enzo .menu-sheet {
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 0.5s var(--ec-ease), visibility 0s linear 0.5s;
+  visibility: hidden;
+}
+
+.tpl-enzo .menu-sheet.is-open {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 0.5s var(--ec-ease);
+  visibility: visible;
+}
+
+.tpl-enzo .menu-sheet li {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  transition: opacity 0.4s ease, transform 0.5s var(--ec-ease);
+}
+
+.tpl-enzo .menu-sheet.is-open li {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(var(--i, 0) * 50ms + 120ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-enzo .menu-sheet,
+  .tpl-enzo .menu-sheet.is-open,
+  .tpl-enzo .menu-sheet li {
+    transition: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMO FUNCIONA — a cena só existe com a classe `is-scene` (posta por JS)
+   ══════════════════════════════════════════════════════════════════════════ */
+.tpl-enzo .journey-scene-only {
+  display: none;
+}
+
+.tpl-enzo .is-scene .journey-scene-only {
+  display: block;
+}
+
+.tpl-enzo .is-scene .journey-noscene {
+  display: none;
+}
+
+.tpl-enzo .is-scene .journey-stage {
+  height: 100svh;
+  padding-block: 0;
+}
+
+.tpl-enzo .is-scene .journey-list {
+  display: block;
+  height: 22rem;
+}
+
+.tpl-enzo .is-scene .journey-step {
+  position: absolute;
+  inset: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMBINADOS — a pilha só existe com `combo-scene` (posta por JS)
+   ══════════════════════════════════════════════════════════════════════════ */
+.tpl-enzo .combo-scene .combo-parts {
+  position: relative;
+  height: 22rem;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.tpl-enzo .combo-scene .combo-part {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11rem;
+  height: 14rem;
+  margin: -7rem 0 0 -5.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }

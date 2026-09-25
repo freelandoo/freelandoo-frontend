@@ -3,7 +3,7 @@
  *
  * Tudo aqui é componente de SERVIDOR (nenhum tem estado nem gesto). O que
  * tem gesto — a barra que encolhe, o botão flutuante, o movimento — mora em
- * `chrome.tsx` e `scroll-motion.tsx`, marcados com `"use client"`.
+ * `chrome.tsx` e `experience/motion.tsx`, marcados com `"use client"`.
  *
  * ⚠️ A COLUNA DE TEXTO TEM TETO DE LARGURA, e não é preferência: linha de
  * texto corrido com mais de ~75 caracteres faz o olho perder a volta ao
@@ -88,11 +88,11 @@ export function SectionHead({
       data-reveal="up"
     >
       {eyebrow ? <p className="eyebrow mb-5">{eyebrow}</p> : null}
-      <Tag className="display text-[clamp(2rem,6vw,3.5rem)] text-[var(--ec-cream)]">
+      <Tag className="display text-[clamp(2rem,6vw,3.5rem)] text-[var(--ec-paper)]">
         {title}
       </Tag>
       {lead ? (
-        <p className="mt-6 text-[1.0625rem] leading-relaxed text-[var(--ec-cream-dim)]">
+        <p className="mt-6 text-[1.0625rem] leading-relaxed text-[var(--ec-metal)]">
           {lead}
         </p>
       ) : null}
@@ -114,7 +114,7 @@ export function Prose({
       {body.map((p, i) => (
         <p
           key={i}
-          className="text-[1.0625rem] leading-[1.75] text-[var(--ec-cream-dim)]"
+          className="text-[1.0625rem] leading-[1.75] text-[var(--ec-metal)]"
           data-reveal="up"
           data-reveal-delay={Math.min(i * 0.06, 0.18)}
         >
@@ -214,15 +214,15 @@ export function TitledList({
           data-reveal-delay={Math.min(i * 0.07, 0.28)}
         >
           <span
-            className="display-italic block text-[1.75rem] leading-none text-[var(--ec-gold-deep)]"
+            className="display-italic block text-[1.75rem] leading-none text-[var(--ec-volt-deep)]"
             aria-hidden="true"
           >
             {String(i + 1).padStart(2, "0")}
           </span>
-          <h3 className="mt-3 text-[1.0625rem] font-semibold text-[var(--ec-cream)]">
+          <h3 className="mt-3 text-[1.0625rem] font-semibold text-[var(--ec-paper)]">
             {it.title}
           </h3>
-          <p className="mt-2 text-[0.9375rem] leading-relaxed text-[var(--ec-cream-dim)]">
+          <p className="mt-2 text-[0.9375rem] leading-relaxed text-[var(--ec-metal)]">
             {it.text}
           </p>
         </li>
@@ -253,8 +253,8 @@ export function FaqList({ items }: { items: readonly { q: string; a: string }[] 
           data-reveal="up"
           data-reveal-delay={Math.min(i * 0.05, 0.2)}
         >
-          <summary className="flex cursor-pointer list-none items-start gap-4 py-5 text-[1.0625rem] font-medium text-[var(--ec-cream)] marker:content-['']">
-            {/* ⚠️ `--ec-gold`, e NÃO `--ec-gold-deep` como nos outros numerais
+          <summary className="flex cursor-pointer list-none items-start gap-4 py-5 text-[1.0625rem] font-medium text-[var(--ec-paper)] marker:content-['']">
+            {/* ⚠️ `--ec-volt`, e NÃO `--ec-volt-deep` como nos outros numerais
                 do site. Medido: o dourado profundo dá 3,99:1 sobre o fundo, e
                 este numeral tem 18px — texto NORMAL para a régua de contraste,
                 que exige 4,5:1. Os outros numerais (28px, 32px, 40px) contam
@@ -262,14 +262,14 @@ export function FaqList({ items }: { items: readonly { q: string; a: string }[] 
                 tom profundo. Mesma cor em corpos diferentes é exatamente como
                 um deles reprova sem ninguém notar. */}
             <span
-              className="display-italic mt-0.5 shrink-0 text-[1.125rem] text-[var(--ec-gold)]"
+              className="display-italic mt-0.5 shrink-0 text-[1.125rem] text-[var(--ec-volt)]"
               aria-hidden="true"
             >
               {String(i + 1).padStart(2, "0")}
             </span>
             <span className="flex-1">{f.q}</span>
             <span
-              className="mt-1 shrink-0 text-[var(--ec-gold)] transition-transform duration-300 group-open:rotate-45"
+              className="mt-1 shrink-0 text-[var(--ec-volt)] transition-transform duration-300 group-open:rotate-45"
               aria-hidden="true"
             >
               <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.4">
@@ -277,7 +277,7 @@ export function FaqList({ items }: { items: readonly { q: string; a: string }[] 
               </svg>
             </span>
           </summary>
-          <p className="prose pb-6 pl-10 pr-8 text-[0.9375rem] leading-relaxed text-[var(--ec-cream-dim)]">
+          <p className="prose pb-6 pl-10 pr-8 text-[0.9375rem] leading-relaxed text-[var(--ec-metal)]">
             {f.a}
           </p>
         </details>
@@ -289,7 +289,7 @@ export function FaqList({ items }: { items: readonly { q: string; a: string }[] 
 /** A anotação pequena — endereço no rodapé de um bloco, aviso de preço. */
 export function Note({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <p className={`text-[0.8125rem] leading-relaxed text-[var(--ec-cream-faint)] ${className}`}>
+    <p className={`text-[0.8125rem] leading-relaxed text-[var(--ec-metal-dim)] ${className}`}>
       {children}
     </p>
   );
@@ -319,19 +319,19 @@ export function Breadcrumb({ trail }: { trail: { name: string; path: string }[] 
           return (
             <li key={t.path} className="flex items-center gap-2">
               {last ? (
-                <span aria-current="page" className="text-[var(--ec-cream-faint)]">
+                <span aria-current="page" className="text-[var(--ec-metal-dim)]">
                   {t.name}
                 </span>
               ) : (
                 <a
                   href={t.path}
-                  className="text-[var(--ec-gold)] transition-colors hover:text-[var(--ec-gold-hi)]"
+                  className="text-[var(--ec-volt)] transition-colors hover:text-[var(--ec-volt)]"
                 >
                   {t.name}
                 </a>
               )}
               {last ? null : (
-                <span className="text-[var(--ec-gold-deep)]" aria-hidden="true">
+                <span className="text-[var(--ec-volt-deep)]" aria-hidden="true">
                   /
                 </span>
               )}

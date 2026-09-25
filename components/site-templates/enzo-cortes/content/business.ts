@@ -135,10 +135,16 @@ export function whatsappLink(message: string): string {
  * no topo de `lib.ts`.
  */
 export function navFor(links: TemplateLinks) {
+  // As cenas da home são âncoras DA HOME: fora dela o link leva de volta para
+  // lá (`${links.home}#...`), em vez de procurar a âncora numa página que não
+  // a tem. "A barbearia" continua sendo página própria.
+  const home = links.home;
   return [
-    { href: pageHref(links, PAGE.servicos), label: "Serviços e preços" },
+    { href: `${home}#servicos`, label: "Serviços" },
+    { href: `${home}#combinados`, label: "Combinados" },
+    { href: `${home}#como-funciona`, label: "Como funciona" },
+    { href: `${home}#onde`, label: "Onde fica" },
     { href: pageHref(links, PAGE.sobre), label: "A barbearia" },
-    { href: pageHref(links, PAGE.contato), label: "Onde fica" },
   ];
 }
 

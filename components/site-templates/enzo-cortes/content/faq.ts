@@ -37,7 +37,7 @@ export const SITE_FAQ: Faq[] = [
   },
   {
     q: "Preciso marcar horário?",
-    a: "Não é obrigatório. Mas mandar uma mensagem no WhatsApp antes de sair de casa evita chegar e encontrar a cadeira ocupada — e no sábado isso faz bastante diferença.",
+    a: "Não é obrigatório. Mas marcar pela agenda do site antes de sair de casa evita chegar e encontrar a cadeira ocupada — e no sábado isso faz bastante diferença.",
   },
   {
     q: "Atende quem não é do Jardim Pinheiros?",

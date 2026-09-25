@@ -76,30 +76,30 @@ export default function ServicoPage({ links, service }: Ctx & { service: Service
                 abaixo dele no celular — é a primeira coisa que a pessoa
                 procura ao abrir uma página de serviço. */}
             <Panel className="p-8" tone="deep" data-reveal="up" data-reveal-delay="0.1">
-              <span className="text-[var(--ec-gold-deep)]" aria-hidden="true">
+              <span className="text-[var(--ec-volt-deep)]" aria-hidden="true">
                 <ServiceGlyph name={service.art} className="h-10 w-10" />
               </span>
 
               {service.priceFrom ? (
-                <span className="mt-6 block text-[0.6875rem] uppercase tracking-[0.2em] text-[var(--ec-cream-faint)]">
+                <span className="mt-6 block text-[0.6875rem] uppercase tracking-[0.2em] text-[var(--ec-metal-dim)]">
                   a partir de
                 </span>
               ) : null}
-              <span className="display tnum mt-1 block text-[3.5rem] leading-none text-[var(--ec-gold-hi)]">
+              <span className="display tnum mt-1 block text-[3.5rem] leading-none text-[var(--ec-volt)]">
                 {brl(service.price)}
               </span>
-              <span className="mt-2 block text-[0.875rem] text-[var(--ec-cream-dim)]">
+              <span className="mt-2 block text-[0.875rem] text-[var(--ec-metal)]">
                 {service.label}
               </span>
 
               {economia > 0 ? (
-                <p className="mt-5 border-t border-[var(--ec-line-soft)] pt-5 text-[0.875rem] text-[var(--ec-cream-dim)]">
+                <p className="mt-5 border-t border-[var(--ec-line-soft)] pt-5 text-[0.875rem] text-[var(--ec-metal)]">
                   Avulsos dariam{" "}
-                  <span className="tnum text-[var(--ec-cream-faint)] line-through">
+                  <span className="tnum text-[var(--ec-metal-dim)] line-through">
                     {brl(sumOfParts(service))}
                   </span>
                   . Economia de{" "}
-                  <span className="tnum text-[var(--ec-gold)]">{brl(economia)}</span>.
+                  <span className="tnum text-[var(--ec-volt)]">{brl(economia)}</span>.
                 </p>
               ) : null}
 
@@ -155,13 +155,13 @@ export default function ServicoPage({ links, service }: Ctx & { service: Service
                   data-reveal-delay={i * 0.07}
                 >
                   <a href={pageHref(links, r.slug)} className="group block p-7">
-                    <span className="text-[var(--ec-gold-deep)] transition-colors group-hover:text-[var(--ec-gold)]" aria-hidden="true">
+                    <span className="text-[var(--ec-volt-deep)] transition-colors group-hover:text-[var(--ec-volt)]" aria-hidden="true">
                       <ServiceGlyph name={r.art} className="h-8 w-8" />
                     </span>
-                    <h3 className="mt-4 text-[1.0625rem] font-semibold text-[var(--ec-cream)] transition-colors group-hover:text-[var(--ec-gold-hi)]">
+                    <h3 className="mt-4 text-[1.0625rem] font-semibold text-[var(--ec-paper)] transition-colors group-hover:text-[var(--ec-volt)]">
                       {r.label}
                     </h3>
-                    <span className="display tnum mt-2 block text-[1.5rem] leading-none text-[var(--ec-gold-hi)]">
+                    <span className="display tnum mt-2 block text-[1.5rem] leading-none text-[var(--ec-volt)]">
                       {r.priceFrom ? "a partir de " : ""}
                       {brl(r.price)}
                     </span>

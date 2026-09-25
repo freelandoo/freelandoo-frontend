@@ -67,7 +67,7 @@ export default function ContatoPage({ links }: Ctx) {
               title={
                 <>
                   {BUSINESS.street},{" "}
-                  <span className="display-italic text-[var(--ec-gold-hi)]">
+                  <span className="display-italic text-[var(--ec-volt)]">
                     {BUSINESS.neighborhood}
                   </span>
                 </>
@@ -80,7 +80,7 @@ export default function ContatoPage({ links }: Ctx) {
             <div className="space-y-6">
               <Panel className="p-8" data-reveal="up">
                 <h2 className="eyebrow">Marcar</h2>
-                <p className="mt-4 text-[0.9375rem] leading-relaxed text-[var(--ec-cream-dim)]">
+                <p className="mt-4 text-[0.9375rem] leading-relaxed text-[var(--ec-metal)]">
                   Diga o que quer fazer e quando pretende passar. É o jeito de
                   garantir que a cadeira esteja livre quando você chegar.
                 </p>
@@ -109,12 +109,12 @@ export default function ContatoPage({ links }: Ctx) {
                 <h2 className="eyebrow">Horário</h2>
                 <dl className="mt-4 space-y-2 text-[0.9375rem]">
                   <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-[var(--ec-cream-dim)]">Segunda a sábado</dt>
-                    <dd className="tnum text-[var(--ec-gold-hi)]">09h — 19h</dd>
+                    <dt className="text-[var(--ec-metal)]">Segunda a sábado</dt>
+                    <dd className="tnum text-[var(--ec-volt)]">09h — 19h</dd>
                   </div>
                   <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-[var(--ec-cream-dim)]">Domingo</dt>
-                    <dd className="text-[var(--ec-cream-faint)]">Fechado</dd>
+                    <dt className="text-[var(--ec-metal)]">Domingo</dt>
+                    <dd className="text-[var(--ec-metal-dim)]">Fechado</dd>
                   </div>
                 </dl>
               </Panel>
@@ -126,10 +126,10 @@ export default function ContatoPage({ links }: Ctx) {
                     <li key={a.slug} style={{ background: "var(--ec-ink-up)" }}>
                       <a
                         href={pageHref(links, a.slug)}
-                        className="flex items-center justify-between px-4 py-3 text-[0.9375rem] text-[var(--ec-cream)] transition-colors hover:text-[var(--ec-gold-hi)]"
+                        className="flex items-center justify-between px-4 py-3 text-[0.9375rem] text-[var(--ec-paper)] transition-colors hover:text-[var(--ec-volt)]"
                       >
                         <span>{a.name}</span>
-                        <span className="text-[var(--ec-gold-deep)]" aria-hidden="true">
+                        <span className="text-[var(--ec-volt-deep)]" aria-hidden="true">
                           →
                         </span>
                       </a>
@@ -144,8 +144,8 @@ export default function ContatoPage({ links }: Ctx) {
               <Panel className="p-8" data-reveal="up" data-reveal-delay="0.08">
                 <h2 className="eyebrow">Endereço</h2>
                 <address className="not-italic">
-                  <p className="mt-4 text-[1.25rem] text-[var(--ec-cream)]">{BUSINESS.street}</p>
-                  <p className="mt-1 text-[0.9375rem] text-[var(--ec-cream-dim)]">
+                  <p className="mt-4 text-[1.25rem] text-[var(--ec-paper)]">{BUSINESS.street}</p>
+                  <p className="mt-1 text-[0.9375rem] text-[var(--ec-metal)]">
                     {BUSINESS.neighborhood}
                     <br />
                     {BUSINESS.city} — {BUSINESS.stateFull}

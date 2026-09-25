@@ -38,16 +38,16 @@ function Row({ service, links }: { service: Service; links: TemplateLinks }) {
       >
         <span className="flex min-w-0 flex-1 items-baseline gap-3">
           <span
-            className="shrink-0 self-center text-[var(--ec-gold-deep)] transition-colors duration-200 group-hover:text-[var(--ec-gold)]"
+            className="shrink-0 self-center text-[var(--ec-volt-deep)] transition-colors duration-200 group-hover:text-[var(--ec-volt)]"
             aria-hidden="true"
           >
             <ServiceGlyph name={service.art} className="h-6 w-6" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[1.0625rem] font-medium text-[var(--ec-cream)] transition-colors duration-200 group-hover:text-[var(--ec-gold-hi)]">
+            <span className="block text-[1.0625rem] font-medium text-[var(--ec-paper)] transition-colors duration-200 group-hover:text-[var(--ec-volt)]">
               {service.label}
             </span>
-            <span className="mt-0.5 block text-[0.8125rem] leading-snug text-[var(--ec-cream-faint)]">
+            <span className="mt-0.5 block text-[0.8125rem] leading-snug text-[var(--ec-metal-dim)]">
               {service.cardText}
             </span>
           </span>
@@ -59,15 +59,15 @@ function Row({ service, links }: { service: Service; links: TemplateLinks }) {
 
         <span className="shrink-0 pl-4 text-right">
           {service.priceFrom ? (
-            <span className="mb-0.5 block text-[0.6875rem] uppercase tracking-[0.18em] text-[var(--ec-cream-faint)]">
+            <span className="mb-0.5 block text-[0.6875rem] uppercase tracking-[0.18em] text-[var(--ec-metal-dim)]">
               a partir de
             </span>
           ) : null}
-          <span className="display tnum block text-[1.75rem] leading-none text-[var(--ec-gold-hi)]">
+          <span className="display tnum block text-[1.75rem] leading-none text-[var(--ec-volt)]">
             {brl(service.price)}
           </span>
           {economia > 0 ? (
-            <span className="mt-1 block text-[0.75rem] text-[var(--ec-gold)]">
+            <span className="mt-1 block text-[0.75rem] text-[var(--ec-volt)]">
               economiza {brl(economia)}
             </span>
           ) : null}

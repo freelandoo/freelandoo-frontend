@@ -36,7 +36,7 @@ export default function ServicosPage({ links }: Ctx) {
               title={
                 <>
                   Tudo o que a casa faz,{" "}
-                  <span className="display-italic text-[var(--ec-gold-hi)]">com valor</span>
+                  <span className="display-italic text-[var(--ec-volt)]">com valor</span>
                 </>
               }
               lead={`Seis serviços, quatro avulsos e dois combinados. Nenhum valor depende de pacote, fidelidade ou de ser a primeira vez. ${BUSINESS.hoursHuman}.`}
@@ -70,31 +70,31 @@ export default function ServicosPage({ links }: Ctx) {
                 >
                   <a href={pageHref(links, s.slug)} className="group flex h-full flex-col p-8">
                     <span
-                      className="text-[var(--ec-gold-deep)] transition-colors group-hover:text-[var(--ec-gold)]"
+                      className="text-[var(--ec-volt-deep)] transition-colors group-hover:text-[var(--ec-volt)]"
                       aria-hidden="true"
                     >
                       <ServiceGlyph name={s.art} className="h-9 w-9" />
                     </span>
 
-                    <h3 className="display mt-5 text-[1.375rem] text-[var(--ec-cream)] transition-colors group-hover:text-[var(--ec-gold-hi)]">
+                    <h3 className="display mt-5 text-[1.375rem] text-[var(--ec-paper)] transition-colors group-hover:text-[var(--ec-volt)]">
                       {s.label}
                     </h3>
 
-                    <p className="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-[var(--ec-cream-dim)]">
+                    <p className="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-[var(--ec-metal)]">
                       {s.cardText}
                     </p>
 
                     <div className="mt-6 border-t border-[var(--ec-line-soft)] pt-5">
                       {s.priceFrom ? (
-                        <span className="block text-[0.6875rem] uppercase tracking-[0.18em] text-[var(--ec-cream-faint)]">
+                        <span className="block text-[0.6875rem] uppercase tracking-[0.18em] text-[var(--ec-metal-dim)]">
                           a partir de
                         </span>
                       ) : null}
-                      <span className="display tnum block text-[2rem] leading-none text-[var(--ec-gold-hi)]">
+                      <span className="display tnum block text-[2rem] leading-none text-[var(--ec-volt)]">
                         {brl(s.price)}
                       </span>
                       {economia > 0 ? (
-                        <span className="mt-2 block text-[0.8125rem] text-[var(--ec-gold)]">
+                        <span className="mt-2 block text-[0.8125rem] text-[var(--ec-volt)]">
                           {brl(sumOfParts(s))} avulsos — economiza {brl(economia)}
                         </span>
                       ) : null}
