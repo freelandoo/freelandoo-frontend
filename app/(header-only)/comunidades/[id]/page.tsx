@@ -303,8 +303,11 @@ export default function CommunityDetailPage() {
   // TODOS os carros do site, ou só os de quem tem o mesmo modelo que um dos
   // seus. Quem recorta é o backend (`scope`); aqui só se escolhe e se lê o
   // aviso de quando não há "meu modelo" para comparar.
-  const [carScope, setCarScope] = useState<"all" | "same_model">("all")
-  const [needsCarModel, setNeedsCarModel] = useState(false)
+  // PET (mig 262) usa o MESMO recorte com a raça: "same" vira `same_model` no
+  // carro e `same_breed` no pet. Um estado só, porque a página é de um ou do
+  // outro — nunca dos dois.
+  const [subjectScope, setSubjectScope] = useState<"all" | "same">("all")
+  const [needsSubjectMatch, setNeedsSubjectMatch] = useState(false)
   const [loadingPosts, setLoadingPosts] = useState(true)
   const [loadingMorePosts, setLoadingMorePosts] = useState(false)
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
@@ -577,6 +580,17 @@ export default function CommunityDetailPage() {
   // MEU CARRO — pele fixa VERMELHO ESCURO E PRETO com rodas no fundo (Alex,
   // 2026-09-24). Escura, como games/fitness: não precisa do `skinHex`.
   const isCarPlatform = (community?.kind ?? null) === "car"
+  // ⚠️ PLATAFORMA DE ASSUNTO (decisão do Alex, 2026-09-25): pet e carro NÃO
+  // são comunidade — o feed é público de todo mundo e não há membro. Este é o
+  // predicado ÚNICO do que some por isso (aba Membros, Números, temporada,
+  // privacidade, mural do líder e o botão Entrar). Espalhado como
+  // `kind === "pet"`, o lugar que esquecesse voltaria a oferecer a porta — e o
+  // backend a recusa com 409 desde a mig 262.
+  const isSubjectPlatform = isPetPlatform || isCarPlatform
+  // Numa plataforma de assunto o painel tem UMA aba (Perfil). Links antigos
+  // (`?aba=membros`, `?painel=mural`) e o dock caem nela em vez de abrir uma
+  // aba que a tela não desenha.
+  const shownTab: PanelTab = isSubjectPlatform ? "profile" : panelTab
   // CONDOMÍNIO — a pele de games em CINZA CLARO (Alex, 2026-09-24: "deixe como
   // o games mas cinza claro"). ⚠️ Pele CLARA como a do pet: passa pelo
   // `skinHex` (CONDO_INLINE). Não troca o dock.
@@ -868,8 +882,10 @@ export default function CommunityDetailPage() {
       {
         key: "community",
         icon: Users,
-        label: t("communityPill", "Comunidade"),
-        ariaLabel: isCondo
+        label: isSubjectPlatform ? t("profilePill", "Perfil") : t("communityPill", "Comunidade"),
+        ariaLabel: isSubjectPlatform
+          ? t("subjectProfilePillAria", "O perfil: nome e texto sobre ele")
+          : isCondo
           ? t("condoPillAria", "O prédio: portaria, planta, avisos, enquetes e moradores")
           : t(
               "communityPillAria",
@@ -1025,7 +1041,7 @@ export default function CommunityDetailPage() {
           ] as PillSpec[])
         : []),
     ]
-  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader])
+  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader, isSubjectPlatform])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -1089,7 +1105,8 @@ export default function CommunityDetailPage() {
       if (!reset && cursor) sp.set("cursor", cursor)
       // Fora do carro o backend ignora o parâmetro — mandá-lo só no "mesmo
       // modelo" mantém a URL das outras modalidades idêntica à de sempre.
-      if (carScope === "same_model") sp.set("scope", "same_model")
+      if (subjectScope === "same" && community?.kind === "car") sp.set("scope", "same_model")
+      if (subjectScope === "same" && community?.kind === "pet") sp.set("scope", "same_breed")
       const token = getToken()
       const r = await fetch(`/api/communities/${id}/feed-posts?${sp.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -1100,11 +1117,11 @@ export default function CommunityDetailPage() {
       setPosts((prev) => (reset ? items : [...prev, ...items]))
       setPostsCursor(d.next_cursor || null)
       setPostsHasMore(!!d.has_more)
-      setNeedsCarModel(!!d.needs_car_model)
+      setNeedsSubjectMatch(!!d.needs_car_model || !!d.needs_pet_breed)
     } finally {
       if (reset) setLoadingPosts(false); else setLoadingMorePosts(false)
     }
-  }, [id, carScope])
+  }, [id, subjectScope, community?.kind])
 
   const loadAll = useCallback(async () => {
     if (!id) return
@@ -1929,6 +1946,12 @@ export default function CommunityDetailPage() {
                     {busy ? t("leaving", "Saindo...") : t("leave", "Sair")}
                   </button>
                 ) : null
+              ) : isSubjectPlatform ? (
+                // PLATAFORMA (pet/carro, mig 262): ninguém entra — o feed já é
+                // de todo mundo. O backend recusa o join com 409; um "Entrar"
+                // aqui só produziria a recusa. SAIR continua acima para quem
+                // tinha membresia de antes.
+                null
               ) : isCondo ? (
                 // Condomínio não tem visitante: o backend recusa o join
                 // genérico (409). A porta é escolher o apartamento na planta,
@@ -1985,7 +2008,14 @@ export default function CommunityDetailPage() {
                   regra de morador), e numa comunidade privada o backend recusa
                   a lista para quem está de fora. */}
               <div className="flex flex-wrap items-center gap-1">
-                {([
+                {/* Plataforma de assunto (pet/carro): só o Perfil — sem membro
+                    não há Mural do líder, lista de Membros nem Números. */}
+                {isSubjectPlatform ? (
+                  <span className="inline-flex items-center gap-1.5 border-2 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]"
+                    style={{ background: skinHex("#15120E"), color: skinHex("#F5F1E8"), borderColor: "#60A5FA" }}>
+                    <UserRound className="h-3.5 w-3.5" style={{ color: "#60A5FA" }} /> {t("profilePill", "Perfil")}
+                  </span>
+                ) : ([
                   ["profile", UserRound, "#60A5FA", t("profilePill", "Perfil")],
                   ["mural", Megaphone, "#FB923C",
                     isCondo ? t("condoPanelTitle", "O prédio") : t("muralPill", "Mural")],
@@ -2027,7 +2057,7 @@ export default function CommunityDetailPage() {
 
             {/* O PAINEL DO MURAL — e, no condomínio, o prédio inteiro. As duas
                 metades estão comentadas uma a uma lá dentro. */}
-            {panelTab === "mural" && (
+            {shownTab === "mural" && (
               <div className="space-y-6 p-4 md:p-5">
                 {/* O PRÉDIO (migs 205/206) — portaria, família × disputa,
                     planta e veredito (CondoResidence), mais o quadro de
@@ -2120,7 +2150,7 @@ export default function CommunityDetailPage() {
             )}
 
 
-            {panelTab === "profile" && (
+            {shownTab === "profile" && (
             <div className="space-y-4 p-4 md:p-5">
               {/* ENXAME (mig 219). É este campo que substitui o formulário de
                   criação: a comunidade comum nasce vazia e o assunto dela é
@@ -2162,6 +2192,9 @@ export default function CommunityDetailPage() {
               {/* PRIVACIDADE. Quem visita vê só o que vale para ele — se entra
                   de graça ou se entrar custa assinatura —, nunca os controles
                   nem o resumo financeiro do líder. */}
+              {/* Plataforma de assunto (pet/carro): sem privacidade paga nem
+                  temporada — as duas existem para quem tem MEMBROS. */}
+              {!isSubjectPlatform && (
               <Block title={t("privacyTitle", "Privacidade")} icon={<Lock className="h-4 w-4" />} accent={accent}>
                 {showAsLeaderEdit ? (
                   <>
@@ -2219,9 +2252,12 @@ export default function CommunityDetailPage() {
                 )}
               </Block>
 
+              )}
+
               {/* TEMPORADA (a meta com prazo, ranking e prêmio). Quem visita vê
                   a que está valendo — ou que não há nenhuma; só o líder abre o
                   formulário. */}
+              {!isSubjectPlatform && (
               <Block title={t("goalTitle", "Temporada da comunidade")} icon={<Target className="h-4 w-4" />} accent={accent}>
                 {goalFormOpen && showAsLeaderEdit ? (
                   <div className="space-y-2">
@@ -2295,6 +2331,8 @@ export default function CommunityDetailPage() {
                 )}
               </Block>
 
+              )}
+
               {/* SOBRE A COMUNIDADE — o texto do líder. Quem visita lê; só o
                   líder escreve, e no MESMO Salvar do nome e das cores. */}
               <Block title={t("profileSection", "Perfil")} icon={<ScrollText className="h-4 w-4" />} accent={accent}>
@@ -2319,7 +2357,7 @@ export default function CommunityDetailPage() {
                 ⚠️ A ORDEM É A MESMA DA ABA ANTIGA (`ranked`, por XP): trocar a
                 ordenação junto com a mudança de lugar faria parecer que o
                 merge mexeu em quem está na frente. */}
-            {panelTab === "members" && (
+            {shownTab === "members" && (
               <div className="p-4 md:p-5">
                 {members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -2354,7 +2392,7 @@ export default function CommunityDetailPage() {
                 continua sendo do envelope — agora é este `panelTab`. Por
                 dentro, o bloco novo que esquecesse da regra reacenderia a aba
                 sozinho. */}
-            {panelTab === "stats" && (
+            {shownTab === "stats" && (
               <div className="space-y-4 p-4 md:p-5">
         <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
         <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />
@@ -2682,23 +2720,29 @@ export default function CommunityDetailPage() {
                     </div>
                   )}
 
-                  {/* O recorte do feed de carros (mig 259) — só existe na página de carro. */}
-                  {isCarPlatform && (
-                    <div role="group" aria-label={t("carFeedScopeAria", "Filtrar o feed de carros")} className="flex gap-2">
-                      {(["all", "same_model"] as const).map((sc) => {
-                        const on = carScope === sc
+                  {/* O recorte do feed das plataformas de assunto (migs 259 e
+                      262) — carro por modelo, pet por raça. UM componente para
+                      os dois: só os rótulos mudam. */}
+                  {isSubjectPlatform && (
+                    <div role="group" aria-label={isCarPlatform ? t("carFeedScopeAria", "Filtrar o feed de carros") : t("petFeedScopeAria", "Filtrar o feed de pets")} className="flex flex-wrap gap-2">
+                      {(["all", "same"] as const).map((sc) => {
+                        const on = subjectScope === sc
                         return (
                           <button
                             key={sc}
                             type="button"
                             aria-pressed={on}
-                            onClick={() => setCarScope(sc)}
+                            onClick={() => setSubjectScope(sc)}
                             className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
                             style={on ? { background: accent, color: "#0B0B0D" } : { background: "#15120E", color: "#F5F1E8" }}
                           >
-                            {sc === "all"
-                              ? t("carFeedAll", "Todos os carros")
-                              : t("carFeedSameModel", "Mesmo carro que o meu")}
+                            {isCarPlatform
+                              ? sc === "all"
+                                ? t("carFeedAll", "Todos os carros")
+                                : t("carFeedSameModel", "Mesmo carro que o meu")
+                              : sc === "all"
+                                ? t("petFeedAll", "Todos os pets")
+                                : t("petFeedSameBreed", "Mesmo pet que o meu")}
                           </button>
                         )
                       })}
@@ -2708,10 +2752,12 @@ export default function CommunityDetailPage() {
                   {/* Feed unificado (posts + bees + recados) — cards padrão do Freelandoo */}
                   {loadingPosts ? (
                     <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" /></div>
-                  ) : posts.length === 0 && isCarPlatform && needsCarModel ? (
-                    // "Mesmo carro que o meu" sem nenhum carro com modelo: a
-                    // lista vazia tem conserto, e a tela diz qual é.
-                    <Empty text={t("carFeedNeedsModel", "Escolha o modelo de um dos seus carros para ver quem tem o mesmo.")} />
+                  ) : posts.length === 0 && isSubjectPlatform && needsSubjectMatch ? (
+                    // "O mesmo que o meu" sem nenhum carro com modelo / pet com
+                    // raça: a lista vazia tem conserto, e a tela diz qual é.
+                    <Empty text={isCarPlatform
+                      ? t("carFeedNeedsModel", "Escolha o modelo de um dos seus carros para ver quem tem o mesmo.")
+                      : t("petFeedNeedsBreed", "Escolha a raça de um dos seus pets (no botão Meu pet) para ver quem tem a mesma.")} />
                   ) : posts.length === 0 ? (
                     // FEED VAZIO: o convite ocupa o lugar da caixa "ainda não
                     // há publicações" em vez de ficar ao lado dela — a caixa

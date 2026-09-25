@@ -2979,7 +2979,12 @@
     "indEntryCancel": "Cancel",
     "indEntryErrName": "Enter a description.",
     "indEntryErrAmount": "Enter a valid amount.",
-    "indEntryErrSave": "Couldn't save right now."
+    "indEntryErrSave": "Couldn't save right now.",
+    "subjectProfilePillAria": "The profile: name and description",
+    "petFeedScopeAria": "Filter the pets feed",
+    "petFeedAll": "All pets",
+    "petFeedSameBreed": "Same pet as mine",
+    "petFeedNeedsBreed": "Pick the breed of one of your pets (in the My pet button) to see who has the same."
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -6812,7 +6817,15 @@
     "shelfPill": "Shelf",
     "shelfPillAria": "Your game shelf, pulled from Steam",
     "shelfTitle": "Shelf",
-    "shelfTitleOf": "{who}'s shelf"
+    "shelfTitleOf": "{who}'s shelf",
+    "feedScopeAria": "Filter the games feed",
+    "feedScopeAll": "Everyone",
+    "feedScopeSameGame": "Playing the same as me",
+    "sameGameNeedsTitle": "You haven't said what you're playing yet.",
+    "sameGameNeedsDesc": "Pick your current game to see who plays the same.",
+    "sameGameNeedsCta": "Pick my game",
+    "sameGameEmptyTitle": "Nobody playing the same as you has posted yet.",
+    "sameGameEmptyDesc": "When someone with the same current game posts, it shows up here."
   },
   "Gamer": {
     "connectFail": "Could not start the connection.",

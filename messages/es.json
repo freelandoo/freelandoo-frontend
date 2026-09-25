@@ -2979,7 +2979,12 @@
     "indEntryCancel": "Cancelar",
     "indEntryErrName": "Ingresa una descripción.",
     "indEntryErrAmount": "Ingresa un valor válido.",
-    "indEntryErrSave": "No se pudo guardar ahora."
+    "indEntryErrSave": "No se pudo guardar ahora.",
+    "subjectProfilePillAria": "El perfil: nombre y descripción",
+    "petFeedScopeAria": "Filtrar el feed de mascotas",
+    "petFeedAll": "Todas las mascotas",
+    "petFeedSameBreed": "Misma mascota que la mía",
+    "petFeedNeedsBreed": "Elige la raza de una de tus mascotas (en el botón Mi mascota) para ver quién tiene la misma."
   },
   "Careers": {
     "hero.badge": "Carreras",
@@ -6792,7 +6797,15 @@
     "shelfPill": "Estantería",
     "shelfPillAria": "Tu estantería de juegos, traída de Steam",
     "shelfTitle": "Estantería",
-    "shelfTitleOf": "Estantería de {who}"
+    "shelfTitleOf": "Estantería de {who}",
+    "feedScopeAria": "Filtrar el feed de games",
+    "feedScopeAll": "Todos",
+    "feedScopeSameGame": "Jugando lo mismo que yo",
+    "sameGameNeedsTitle": "Aún no dijiste a qué estás jugando.",
+    "sameGameNeedsDesc": "Elige tu juego actual para ver quién juega lo mismo.",
+    "sameGameNeedsCta": "Elegir mi juego",
+    "sameGameEmptyTitle": "Nadie que juega lo mismo que tú ha publicado.",
+    "sameGameEmptyDesc": "Cuando alguien con el mismo juego actual publique, aparecerá aquí."
   },
   "Gamer": {
     "connectFail": "No se pudo iniciar la conexión.",

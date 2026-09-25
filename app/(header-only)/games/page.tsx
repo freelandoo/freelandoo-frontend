@@ -26,7 +26,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { AlertCircle, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { AlertCircle, Gamepad2, Loader2 } from "lucide-react"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
@@ -81,6 +82,11 @@ export default function GamesPage() {
   const [hasMore, setHasMore] = useState(false)
   const [loadingPosts, setLoadingPosts] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  // "Jogando o mesmo que eu" (mig 262): o backend recorta o MESMO feed pelos
+  // autores cujo jogo atual bate com o de quem olha. Sem jogo declarado ele
+  // devolve `needs_current_game`, e a tela diz o que fazer.
+  const [scope, setScope] = useState<"all" | "same_game">("all")
+  const [needsGame, setNeedsGame] = useState(false)
 
   const [composerOpen, setComposerOpen] = useState(false)
   const [composerKind, setComposerKind] = useState<"post" | "bee" | "story">("post")
@@ -127,6 +133,7 @@ export default function GamesPage() {
       try {
         const sp = new URLSearchParams({ limit: "10" })
         if (!reset && next) sp.set("cursor", next)
+        if (scope === "same_game") sp.set("scope", "same_game")
         const token = getToken()
         const r = await fetch(`/api/communities/${platform.id_profile}/feed-posts?${sp.toString()}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -137,12 +144,13 @@ export default function GamesPage() {
         setPosts((prev) => (reset ? items : [...prev, ...items]))
         setCursor(d.next_cursor || null)
         setHasMore(!!d.has_more)
+        setNeedsGame(!!d.needs_current_game)
       } finally {
         if (reset) setLoadingPosts(false)
         else setLoadingMore(false)
       }
     },
-    [platform?.id_profile]
+    [platform?.id_profile, scope]
   )
 
   useEffect(() => {
@@ -183,6 +191,23 @@ export default function GamesPage() {
       />
 
       <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
+        <div role="group" aria-label={tr("feedScopeAria", "Filtrar o feed de games")} className="mb-3 flex flex-wrap gap-2">
+          {(["all", "same_game"] as const).map((sc) => {
+            const on = scope === sc
+            return (
+              <button
+                key={sc}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setScope(sc)}
+                className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
+                style={on ? { background: PURPLE, color: "#F5F1E8" } : { background: "#15120E", color: "#F5F1E8" }}
+              >
+                {sc === "all" ? tr("feedScopeAll", "Todos") : tr("feedScopeSameGame", "Jogando o mesmo que eu")}
+              </button>
+            )
+          })}
+        </div>
         {loadingPlatform || loadingPosts ? (
           <div className="flex flex-col gap-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -195,6 +220,24 @@ export default function GamesPage() {
             title={tr("loadFailedTitle", "Não deu pra carregar.")}
             desc={error}
             accent={PURPLE}
+          />
+        ) : posts.length === 0 && scope === "same_game" ? (
+          // O recorte vazio tem dois motivos, e só um tem conserto na mão de
+          // quem olha: declarar o jogo atual.
+          <StateBox
+            icon={<Gamepad2 className="h-6 w-6" />}
+            title={needsGame
+              ? tr("sameGameNeedsTitle", "Você ainda não disse o que está jogando.")
+              : tr("sameGameEmptyTitle", "Ninguém publicou jogando o mesmo que você.")}
+            desc={needsGame
+              ? tr("sameGameNeedsDesc", "Escolha o seu jogo atual para ver quem joga o mesmo.")
+              : tr("sameGameEmptyDesc", "Quando alguém com o mesmo jogo atual publicar, aparece aqui.")}
+            accent={PURPLE}
+            action={needsGame ? (
+              <Link href="/games/jogo" className="inline-flex border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]" style={{ background: PURPLE, color: "#F5F1E8" }}>
+                {tr("sameGameNeedsCta", "Escolher meu jogo")}
+              </Link>
+            ) : undefined}
           />
         ) : posts.length === 0 ? (
           // Feed vazio: o botão GRANDE ocupa o lugar do aviso — a caixa de
