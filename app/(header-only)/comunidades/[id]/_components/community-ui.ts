@@ -37,6 +37,9 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   { key: "crimson", labelKey: "accentCrimson", fallback: "Vermelho pastel", hex: "#F28B82" },
   // Foi o acento padrão do carro na 3ª passada; hoje o padrão é o `red` (o carro
   // virou a pele de games em vermelho). Fica como opção em Cores.
+  // O marrom-tan do pet (2026-09-24, "somente bege e marrom"). Tinta preta
+  // por cima dá ~5:1. É o acento TRAVADO do pet (ver `lockedAccentFor`).
+  { key: "brown", labelKey: "accentBrown", fallback: "Marrom", hex: "#A97C50" },
   { key: "silver", labelKey: "accentSilver", fallback: "Cinza claro", hex: "#D6D3D1" },
 ]
 
@@ -49,13 +52,23 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
  */
 export function defaultAccentFor(kind: string | null | undefined): string {
   if (kind === "car") return "red"
-  if (kind === "pet") return "orange"
+  if (kind === "pet") return "brown"
   return "gold"
+}
+
+/**
+ * Modalidade com a cor TRAVADA — o líder não escolhe (o seletor de Cores some).
+ * Pet: "sem opção de trocar cores, somente bege e marrom" (Alex, 2026-09-24).
+ * Vale também para quem já tinha escolhido outra cor: ela é ignorada.
+ */
+export function lockedAccentFor(kind: string | null | undefined): string | null {
+  if (kind === "pet") return "brown"
+  return null
 }
 
 /** Chave desconhecida (ou ausente) cai no padrão da modalidade (dourado, em geral). */
 export function accentHex(a: string | null | undefined, kind?: string | null): string {
-  const key = a || defaultAccentFor(kind)
+  const key = lockedAccentFor(kind) || a || defaultAccentFor(kind)
   return ACCENTS.find((x) => x.key === key)?.hex || ACCENTS[0].hex
 }
 

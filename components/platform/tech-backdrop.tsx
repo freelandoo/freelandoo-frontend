@@ -62,7 +62,7 @@ const BG_CLASS: Record<BackdropVariant, string> = {
   finance: "fl-finance-bg",
   business: "fl-business-bg",
   fitness: "fl-fitness-bg",
-  // `pet` (bege e laranja) entrou em 2026-09-24: a única variante CLARA.
+  // `pet` (bege e marrom, a grade do games, sem estampa) entrou em 2026-09-24.
   pet: "fl-pet-bg",
   // `car` entrou em 2026-09-24; é o fundo de games em VERMELHO, sem estampa.
   car: "fl-car-bg",
@@ -107,9 +107,6 @@ export function TechBackdrop({
       {/* O SÍMBOLO DE DINHEIRO do ambiente financeiro (pedido do Alex: "no fundo
           algum símbolo de dinheiro"). Estático, como o resto. */}
       {variant === "finance" && <div className="fl-money-veil absolute inset-0" />}
-      {/* PATINHAS E OSSOS do "Meu pet" — mesma ideia dos cifrões: estampa
-          estática, pintada junto da camada do fundo. */}
-      {variant === "pet" && <div className="fl-paw-veil absolute inset-0" />}
     </div>
   )
 }

@@ -38,7 +38,7 @@ import { CommunityShellBeacon, onCommunityView } from "@/components/layout/commu
 import {
   ACCENTS,
   accentHex,
-  defaultAccentFor,
+  defaultAccentFor, lockedAccentFor,
   BACKDROPS,
   backdropTint,
   canBuildCommunitySite,
@@ -893,8 +893,9 @@ export default function CommunityDetailPage() {
               "communityPillAria",
               "A comunidade: perfil, mural do líder, membros e números"
             ),
-        bg: "#1D4ED8",
-        bgHover: "#1E3A8A",
+        // O pet é só bege e marrom (Alex, 2026-09-24): os pills também.
+        bg: isPetPlatform ? "#6B4423" : "#1D4ED8",
+        bgHover: isPetPlatform ? "#4A2F1A" : "#1E3A8A",
         onOpen: () => openPanel("profile"),
         active: panel === "community",
         ...(isCondo && !isResident
@@ -924,8 +925,8 @@ export default function CommunityDetailPage() {
                 subjectKind === "car"
                   ? t("subjectPillCarAria", "Abrir a marca e o modelo do carro")
                   : t("subjectPillPetAria", "Abrir a espécie e a raça do pet"),
-              bg: "#C2410C",
-              bgHover: "#9A3412",
+              bg: isPetPlatform ? "#A97C50" : "#C2410C",
+              bgHover: isPetPlatform ? "#8A6440" : "#9A3412",
               onOpen: () => setPanel((p) => (p === "subject" ? null : "subject")),
               active: panel === "subject",
             },
@@ -1041,7 +1042,7 @@ export default function CommunityDetailPage() {
           ] as PillSpec[])
         : []),
     ]
-  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader])
+  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader, isPetPlatform])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -1146,7 +1147,8 @@ export default function CommunityDetailPage() {
         setNameDraft(c.display_name)
         setBioDraft(c.bio || "")
         // Sem cor escolhida, cada modalidade nasce na cor da pele dela.
-        setAccentDraft(c.community_theme?.accent || defaultAccentFor(c.kind))
+        // Cor TRAVADA (pet) vence o que estiver salvo: ali não há seletor.
+        setAccentDraft(lockedAccentFor(c.kind) || c.community_theme?.accent || defaultAccentFor(c.kind))
         // Ausente = preto, que é o padrão da plataforma de negócio. Comunidade
         // que nunca escolheu nasce preta, e não com a cor da última que passou.
         setBgDraft(c.community_theme?.background || "black")
@@ -1459,7 +1461,7 @@ export default function CommunityDetailPage() {
       // separadas, mudar só o fundo não gravaria nada (a comparação era só do
       // accent) e o líder veria a cor voltar sozinha no próximo F5.
       const themeChanged =
-        (community.community_theme?.accent || defaultAccentFor(community.kind)) !== accentDraft ||
+        (lockedAccentFor(community.kind) || community.community_theme?.accent || defaultAccentFor(community.kind)) !== accentDraft ||
         (community.community_theme?.background || "black") !== bgDraft
       if (themeChanged) {
         const tRes = await fetch(`/api/communities/${id}/theme`, {
@@ -1745,7 +1747,8 @@ export default function CommunityDetailPage() {
         </Link>
         {canAdminister && (
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {edit && (
+            {/* O pet tem a cor TRAVADA (bege e marrom): sem seletor de Cores. */}
+            {edit && !lockedAccentFor(community.kind) && (
               <div className="inline-flex flex-wrap items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-2.5 py-1.5">
                 <Palette className="h-4 w-4" style={{ color: accent }} />
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]">{t("colorsLabel", "Cores")}</span>
@@ -2017,7 +2020,7 @@ export default function CommunityDetailPage() {
           crescer. */}
       {panel === "community" && (
         <section className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
-          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow("#1D4ED8", 6) }}>
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow(isPetPlatform ? "#6B4423" : "#1D4ED8", 6) }}>
             <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               {/* AS QUATRO ABAS do painel único. Elas substituem os três pills
                   que existiam antes — e por isso carregam os MESMOS ícones e as
@@ -2479,7 +2482,7 @@ export default function CommunityDetailPage() {
           painel da comunidade, na cor do pill. O dono edita; quem visita lê. */}
       {panel === "subject" && subjectKind && (
         <section className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
-          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow("#C2410C", 6) }}>
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow(isPetPlatform ? "#A97C50" : "#C2410C", 6) }}>
             <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               <span className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]">
                 {subjectKind === "car"

@@ -2906,7 +2906,8 @@
     "carPickModelFirst": "Elige la marca y el modelo.",
     "subjectSave": "Guardar",
     "subjectNotSet": "El dueño aún no lo informó.",
-    "accentSilver": "Gris claro"
+    "accentSilver": "Gris claro",
+    "accentBrown": "Marrón"
   },
   "Careers": {
     "hero.badge": "Carreras",

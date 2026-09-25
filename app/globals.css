@@ -1118,7 +1118,15 @@ body.camera-active { overflow: hidden; }
 }
 
 /* ============================================================================
-   MEU PET — a pele BEGE E LARANJA (`.fl-pet`)
+   MEU PET — a pele BEGE E MARROM (`.fl-pet`)
+   ----------------------------------------------------------------------------
+   2ª passada (Alex, 2026-09-24): "copie as bibliotecas de games, sem opção
+   de trocar cores, e deixe somente bege e marrom, estilo o games e
+   financeiro". Saíram o LARANJA (virou marrom-tan #A97C50 nos botões e
+   marrom nas linhas) e a estampa de patinhas; o fundo é a grade + luzes do
+   games em bege. A cor de destaque do pet é TRAVADA em `brown`
+   (`lockedAccentFor` em community-ui.ts) e o seletor de Cores some.
+   ⚠️ Os comentários abaixo que falam de laranja são da 1ª passada.
    ----------------------------------------------------------------------------
    Pedido do Alex (2026-09-24): "o meu pet fica bege com laranja, com elementos
    de patinhas, ossos de cachorro (...) use as bibliotecas do financeiro,
@@ -1162,7 +1170,7 @@ body.camera-active { overflow: hidden; }
 .fl-pet .bg-\[\#F5F1E8\]\/10  { background-color: rgba(59, 36, 20, 0.07); }
 .fl-pet .bg-\[\#F5F1E8\]\/5   { background-color: rgba(59, 36, 20, 0.04); }
 .fl-pet .hover\:bg-\[\#F5F1E8\]\/10:hover { background-color: rgba(59, 36, 20, 0.08); }
-.fl-pet .bg-\[\#F2B705\]      { background-color: #F28C28; }
+.fl-pet .bg-\[\#F2B705\]      { background-color: #A97C50; }
 
 /* Tinta — invertida: o claro vira marrom chocolate ----------------------- */
 .fl-pet .text-\[\#F5F1E8\]     { color: #3B2414; }
@@ -1179,23 +1187,23 @@ body.camera-active { overflow: hidden; }
 .fl-pet .placeholder\:text-\[\#9A938A\]\/70::placeholder { color: rgba(122, 90, 60, 0.7); }
 .fl-pet .text-\[\#C9C2B6\]     { color: #7A5A3C; }
 /* Amarelo como TINTA vira laranja escuro — no bege, o amarelo some. */
-.fl-pet .text-\[\#F2B705\]     { color: #B4500C; }
-.fl-pet .text-\[\#E0A500\]     { color: #B4500C; }
+.fl-pet .text-\[\#F2B705\]     { color: #6B4423; }
+.fl-pet .text-\[\#E0A500\]     { color: #6B4423; }
 
 /* Linhas ------------------------------------------------------------------ */
 /* A borda estrutural é marrom-laranja queimado: laranja vivo em toda peça
    gritaria mais alto que o botão de ação. */
-.fl-pet .border-\[\#0B0B0D\]      { border-color: #A85A24; }
-.fl-pet .border-\[\#F5F1E8\]      { border-color: #A85A24; }
-.fl-pet .border-\[\#F2B705\]      { border-color: #F28C28; }
-.fl-pet .border-\[\#F5F1E8\]\/30  { border-color: rgba(217, 104, 26, 0.5); }
-.fl-pet .border-\[\#F5F1E8\]\/25  { border-color: rgba(217, 104, 26, 0.44); }
-.fl-pet .border-\[\#F5F1E8\]\/20  { border-color: rgba(217, 104, 26, 0.38); }
-.fl-pet .border-\[\#F5F1E8\]\/15  { border-color: rgba(217, 104, 26, 0.3); }
-.fl-pet .border-\[\#F5F1E8\]\/12  { border-color: rgba(217, 104, 26, 0.26); }
-.fl-pet .border-\[\#F5F1E8\]\/10  { border-color: rgba(217, 104, 26, 0.22); }
-.fl-pet .border-\[\#F5F1E8\]\/60  { border-color: rgba(217, 104, 26, 0.7); }
-.fl-pet .hover\:border-\[\#F5F1E8\]\/60:hover { border-color: rgba(217, 104, 26, 0.7); }
+.fl-pet .border-\[\#0B0B0D\]      { border-color: #9C7A58; }
+.fl-pet .border-\[\#F5F1E8\]      { border-color: #9C7A58; }
+.fl-pet .border-\[\#F2B705\]      { border-color: #A97C50; }
+.fl-pet .border-\[\#F5F1E8\]\/30  { border-color: rgba(120, 84, 52, 0.5); }
+.fl-pet .border-\[\#F5F1E8\]\/25  { border-color: rgba(120, 84, 52, 0.44); }
+.fl-pet .border-\[\#F5F1E8\]\/20  { border-color: rgba(120, 84, 52, 0.38); }
+.fl-pet .border-\[\#F5F1E8\]\/15  { border-color: rgba(120, 84, 52, 0.3); }
+.fl-pet .border-\[\#F5F1E8\]\/12  { border-color: rgba(120, 84, 52, 0.26); }
+.fl-pet .border-\[\#F5F1E8\]\/10  { border-color: rgba(120, 84, 52, 0.22); }
+.fl-pet .border-\[\#F5F1E8\]\/60  { border-color: rgba(120, 84, 52, 0.7); }
+.fl-pet .hover\:border-\[\#F5F1E8\]\/60:hover { border-color: rgba(120, 84, 52, 0.7); }
 
 /* O título ganha um brilho laranja baixo — em tinta escura um halo difuso
    leria como borrão, então aqui é uma sombra curta e firme. */
@@ -1203,7 +1211,7 @@ body.camera-active { overflow: hidden; }
   letter-spacing: 0.02em;
 }
 .fl-pet .fl-display.text-\[\#F5F1E8\] {
-  text-shadow: 0 2px 0 rgba(242, 140, 40, 0.35);
+  text-shadow: 0 0 24px rgba(255, 248, 236, 0.9), 0 0 2px rgba(255, 248, 236, 0.8);
 }
 
 /* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
@@ -1216,19 +1224,11 @@ body.camera-active { overflow: hidden; }
 .fl-pet-bg {
   background-color: #F3E4C9;
   background-image:
-    radial-gradient(60% 45% at 20% 14%, rgba(242, 140, 40, 0.30), transparent 70%),
-    radial-gradient(50% 40% at 86% 30%, rgba(255, 196, 120, 0.34), transparent 72%),
-    radial-gradient(80% 55% at 50% 108%, rgba(217, 104, 26, 0.22), transparent 70%),
-    repeating-linear-gradient(to right, rgba(168, 90, 36, 0.05) 0 1px, transparent 1px 64px),
-    repeating-linear-gradient(to bottom, rgba(168, 90, 36, 0.04) 0 1px, transparent 1px 64px);
-}
-
-/* PATINHAS E OSSOS — marca d'água estática, como os cifrões do Financeiro.
-   Mora no CSS, filha da camada promovida do fundo: é pintada junto dela, uma
-   vez. Laranja a 9–16%: tem que ser lida como estampa, nunca competir com o
-   texto que passa por cima. */
-.fl-paw-veil {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cg fill='%23D9681A'%3E%3Cg transform='translate(46 52) rotate(-22) scale(1.15)' fill-opacity='0.16'%3E%3Cellipse cx='0' cy='9' rx='12' ry='10'/%3E%3Ccircle cx='-13' cy='-7' r='5'/%3E%3Ccircle cx='-4.5' cy='-14' r='5'/%3E%3Ccircle cx='5.5' cy='-14' r='5'/%3E%3Ccircle cx='14' cy='-7' r='5'/%3E%3C/g%3E%3Cg transform='translate(182 44) rotate(28) scale(1)' fill-opacity='0.13'%3E%3Crect x='-17' y='-4' width='34' height='8'/%3E%3Ccircle cx='-18' cy='-5' r='6'/%3E%3Ccircle cx='-18' cy='5' r='6'/%3E%3Ccircle cx='18' cy='-5' r='6'/%3E%3Ccircle cx='18' cy='5' r='6'/%3E%3C/g%3E%3Cg transform='translate(212 150) rotate(18) scale(0.8)' fill-opacity='0.12'%3E%3Cellipse cx='0' cy='9' rx='12' ry='10'/%3E%3Ccircle cx='-13' cy='-7' r='5'/%3E%3Ccircle cx='-4.5' cy='-14' r='5'/%3E%3Ccircle cx='5.5' cy='-14' r='5'/%3E%3Ccircle cx='14' cy='-7' r='5'/%3E%3C/g%3E%3Cg transform='translate(70 170) rotate(-35) scale(0.85)' fill-opacity='0.12'%3E%3Crect x='-17' y='-4' width='34' height='8'/%3E%3Ccircle cx='-18' cy='-5' r='6'/%3E%3Ccircle cx='-18' cy='5' r='6'/%3E%3Ccircle cx='18' cy='-5' r='6'/%3E%3Ccircle cx='18' cy='5' r='6'/%3E%3C/g%3E%3Cg transform='translate(140 226) rotate(-8) scale(0.95)' fill-opacity='0.14'%3E%3Cellipse cx='0' cy='9' rx='12' ry='10'/%3E%3Ccircle cx='-13' cy='-7' r='5'/%3E%3Ccircle cx='-4.5' cy='-14' r='5'/%3E%3Ccircle cx='5.5' cy='-14' r='5'/%3E%3Ccircle cx='14' cy='-7' r='5'/%3E%3C/g%3E%3Cg transform='translate(118 110) rotate(30) scale(0.6)' fill-opacity='0.09'%3E%3Cellipse cx='0' cy='9' rx='12' ry='10'/%3E%3Ccircle cx='-13' cy='-7' r='5'/%3E%3Ccircle cx='-4.5' cy='-14' r='5'/%3E%3Ccircle cx='5.5' cy='-14' r='5'/%3E%3Ccircle cx='14' cy='-7' r='5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    radial-gradient(60% 45% at 22% 18%, rgba(255, 250, 240, 0.85), transparent 70%),
+    radial-gradient(50% 40% at 82% 30%, rgba(250, 238, 216, 0.7), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(160, 120, 80, 0.3), transparent 70%),
+    repeating-linear-gradient(to right, rgba(107, 68, 35, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(107, 68, 35, 0.05) 0 1px, transparent 1px 64px);
 }
 
 /* ============================================================================
