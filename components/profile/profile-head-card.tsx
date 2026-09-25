@@ -33,7 +33,7 @@ import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
-import { HeadcardPills } from "@/components/profile/headcard-pills"
+import { HeadcardPills, VisitorHeadcardPills } from "@/components/profile/headcard-pills"
 import { ProfileSwitcher } from "@/components/profile/profile-switcher"
 import { useAccountTools } from "@/components/profile/account-tools"
 import { isAccountProfile, profileIsActivated } from "@/lib/profile/activation"
@@ -609,14 +609,14 @@ export function ProfileHeadCard({
                   do clan, que é entidade coletiva e mantém menu próprio.
                   O padding casa com a LARGURA DO AVATAR — mexeu numa, mexe na
                   outra (ver components/profile/headcard-pills.tsx). */}
-              {/* ⚠️ SÓ NO PRÓPRIO PERFIL. Havia um caminho para o perfil
-                  ALHEIO, que mostrava uma pilha de um item — o pill de Games,
-                  o único que fazia sentido ali. Com a plataforma fora do ar,
-                  o que resta (Business, Carteira, Fitness) é tudo da CONTA de
-                  quem olha: pendurado na foto de outra pessoa, diria que é
-                  dela. */}
               {entityType !== "clan" && isOwnProfile && (
                 <HeadcardPills avatarPadClass="pl-32 md:pl-36" />
+              )}
+              {/* PERFIL ALHEIO (decisão do Alex, 2026-09-25): Business, Pet,
+                  Carro e Games DELA — lista fechada no próprio componente.
+                  O resto da pilha continua só do dono. */}
+              {entityType !== "clan" && !isOwnProfile && profile.username && (
+                <VisitorHeadcardPills handle={profile.username} avatarPadClass="pl-32 md:pl-36" />
               )}
               {/* Wrapper da LARGURA DA FOTO: é ele que ancora o "+" do
                   troca-perfil na quina de baixo, e é nele que mora a rotação —

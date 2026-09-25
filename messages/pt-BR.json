@@ -5682,7 +5682,13 @@
     "pillsSaved": "Acesso rápido salvo.",
     "pillsSaveError": "Não foi possível salvar.",
     "saving": "Salvando...",
-    "save": "Salvar"
+    "save": "Salvar",
+    "visitorPet": "Pet",
+    "visitorCar": "Carro",
+    "visitorBusinessAria": "Abrir o negócio de {who}",
+    "visitorPetAria": "Abrir o pet de {who}",
+    "visitorCarAria": "Abrir o carro de {who}",
+    "visitorGamesAria": "Abrir o games de {who}"
   },
   "CommunitySite": {
     "modeEditing": "Editando",

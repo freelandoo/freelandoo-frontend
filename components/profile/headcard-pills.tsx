@@ -16,6 +16,8 @@ import {
 } from "@/components/profile/quick-access"
 import { toast } from "sonner"
 import { getToken } from "@/lib/auth"
+import { getPublicBackendUrl } from "@/lib/backend-public"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { cn } from "@/lib/utils"
 
 /**
@@ -280,14 +282,11 @@ export function PillStack({
 }
 
 /**
- * ⚠️ A PILHA É DO DONO, e desde que a plataforma de games saiu do ar ela só
- * existe para ele. O preset tinha uma prop `visitorOf` que, no perfil alheio,
- * reduzia a pilha a UM pill — o de Games, o único que fazia sentido ali,
- * porque a plataforma não era de ninguém e o que estava dentro dela era de
- * cada um. Sem games, todos os pills restantes (Business, Carteira, Fitness)
- * abrem coisas da CONTA de quem olha, e pendurados na foto de outra pessoa
- * diriam que são dela — então no perfil alheio não há pilha nenhuma, e a prop
- * saiu junto em vez de ficar como um parâmetro que ninguém alimenta.
+ * ⚠️ A PILHA DO DONO: o acesso rápido que ele escolheu (Business, Carteira,
+ * Fitness, Games, espaços, filhos). No perfil ALHEIO quem monta é
+ * `VisitorHeadcardPills` (fim do arquivo), com uma lista FECHADA do que é
+ * público — Carteira, Fitness e o resto abrem coisas da CONTA de quem olha e,
+ * pendurados na foto de outra pessoa, diriam que são dela.
  */
 export function HeadcardPills({
   avatarPadClass = "pl-28 md:pl-32",
@@ -420,6 +419,87 @@ export function HeadcardPills({
       //
       // A coluna do avatar tem a altura da FOTO (as estrelas saíram dela em
       // 2026-09-05), então 50% da coluna é 50% da foto.
+      className={cn("absolute left-0 top-1/2 -translate-y-1/2", className)}
+    />
+  )
+}
+
+type VisitorSpace = { id_profile: string; display_name: string | null } | null
+type VisitorSpaces = { business: VisitorSpace; pet: VisitorSpace; car: VisitorSpace }
+
+/**
+ * OS PILLS DO VISITANTE — o que aparece atrás da foto de OUTRA pessoa.
+ *
+ * Decisão do Alex (2026-09-25): no perfil alheio o visitante vê Business,
+ * Pet, Carro e Games DELA; Carteira, Fitness, condomínio, rua e filhos são só
+ * do dono. É uma lista FECHADA de propósito — pill novo do dono NÃO aparece
+ * para o visitante até alguém decidir que ele é público.
+ *
+ * Negócio, pet e carro só existem se a pessoa LIDERA um (a porta anônima
+ * `GET /public/users/:handle/spaces` responde isso). Games sempre existe (a
+ * plataforma é de todos) e abre o RECORTE dela: `/games?de=@handle`.
+ */
+export function VisitorHeadcardPills({
+  handle,
+  avatarPadClass = "pl-28 md:pl-32",
+  className,
+}: {
+  handle: string
+  avatarPadClass?: string
+  className?: string
+}) {
+  const t = useTranslations("Account")
+  const ts = useTranslations("Spaces")
+  const gamesOn = useFeature("games")
+  const [spaces, setSpaces] = useState<VisitorSpaces | null>(null)
+
+  useEffect(() => {
+    if (!handle) return
+    let alive = true
+    fetch(`${getPublicBackendUrl()}/public/users/${encodeURIComponent(handle)}/spaces`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive) setSpaces(d?.spaces ?? null)
+      })
+      .catch(() => {
+        /* sem resposta = só o Games; o perfil não quebra por causa do pill */
+      })
+    return () => {
+      alive = false
+    }
+  }, [handle])
+
+  const who = `@${handle}`
+  const pills: PillSpec[] = []
+  const push = (k: QuickKey, label: string, aria: string, href: string) => {
+    const e = QUICK_ENTRIES[k]
+    pills.push({ key: k, icon: e.icon, label, ariaLabel: aria, bg: e.bg, bgHover: e.bgHover, fg: e.fg, href })
+  }
+  if (spaces?.business) {
+    push("business", t("businessPill", "Business"),
+      ts("visitorBusinessAria", "Abrir o negócio de {who}").replace("{who}", who),
+      `/comunidades/${spaces.business.id_profile}`)
+  }
+  if (gamesOn) {
+    push("games", t("gamesPill", "Games"),
+      ts("visitorGamesAria", "Abrir o games de {who}").replace("{who}", who),
+      `/games?de=${encodeURIComponent(handle)}`)
+  }
+  if (spaces?.pet) {
+    push("pet", ts("visitorPet", "Pet"),
+      ts("visitorPetAria", "Abrir o pet de {who}").replace("{who}", who),
+      `/comunidades/${spaces.pet.id_profile}`)
+  }
+  if (spaces?.car) {
+    push("car", ts("visitorCar", "Carro"),
+      ts("visitorCarAria", "Abrir o carro de {who}").replace("{who}", who),
+      `/comunidades/${spaces.car.id_profile}`)
+  }
+
+  return (
+    <PillStack
+      pills={pills}
+      avatarPadClass={avatarPadClass}
       className={cn("absolute left-0 top-1/2 -translate-y-1/2", className)}
     />
   )

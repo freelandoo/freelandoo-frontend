@@ -143,6 +143,8 @@ type Community = {
   display_name: string
   bio: string | null
   avatar_url: string | null
+  /** A foto de perfil do líder (tb_user.avatar) — é ela que o headcard mostra. */
+  leader_avatar?: string | null
   banner_url: string | null
   enxame_name: string | null
   // O enxame da comunidade comum agora é EDITÁVEL na página (mig 219), então o
@@ -396,27 +398,6 @@ export default function CommunityDetailPage() {
   const storedUser = getStoredUser()
   const currentUserId = storedUser?.id_user ?? null
 
-  /**
-   * ⚠️ A FOTO DE QUEM OLHA VEM DE `/users/me`, NUNCA DO `localStorage`.
-   *
-   * Ela era lida de `storedUser.avatar` — e esse campo NÃO EXISTE: o payload do
-   * login não devolve avatar em nenhum dos dois caminhos (senha e Google), e
-   * nunca devolveu (conferido com `git log -S` em `AuthService`). O único outro
-   * escritor da chave é o `/bem-vindo`, que só carimba o tour preservando o
-   * resto. Resultado: `myAvatar` era `undefined` para TODA conta, e a foto da
-   * plataforma caía no boneco cinza sem erro nenhum aparecer.
-   *
-   * A fonte certa é a MESMA que `/account` e a Carteira já usam — `tb_user.avatar`,
-   * que a mig 215 cravou como fonte única do rosto da pessoa. Aqui ela é lida
-   * direto em vez de pelo `useMeProfile`, porque aquele hook EMPURRA PARA O
-   * LOGIN quando não há token: esta página abre para visitante anônimo, e
-   * usá-lo trancaria a porta de toda comunidade pública.
-   *
-   * ⚠️ SÓ NO NEGÓCIO. É o único lugar onde a foto de quem olha é a RESERVA da
-   * foto da comunidade; nas outras modalidades o rosto é do ASSUNTO, e quem
-   * abre um pet ou um condomínio não paga esta requisição.
-   */
-  const [myAvatar, setMyAvatar] = useState<string | null>(null)
   const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
 
   // ─── QUEM MANDA AQUI É O LÍDER ──────────────────────────────────────────────
@@ -1230,35 +1211,6 @@ export default function CommunityDetailPage() {
    * plataforma abre no recorte de quem olha. Uma tela de erro aqui trocaria um
    * contexto perdido por uma parede — e a plataforma continua inteira sem ele.
    */
-  /**
-   * O rosto de quem olha — hoje só a comunidade de NEGÓCIO o usa, como RESERVA
-   * de quem nunca subiu logo. Quem abre um condomínio, um bairro ou o perfil de
-   * um pet não paga a requisição: lá a foto é do ASSUNTO.
-   *
-   * ⚠️ ELE VEM DE `/users/me`, e não do `localStorage`. O objeto que o login
-   * grava não tem `avatar` — nunca teve, em nenhum dos dois caminhos (senha e
-   * Google) —, então ler dali devolvia `undefined` para toda conta e a foto
-   * caía no boneco cinza sem erro nenhum aparecer. A fonte é `tb_user.avatar`,
-   * a mesma que `/account` e a Carteira usam desde a mig 215.
-   *
-   * Lido direto e NÃO pelo `useMeProfile`: aquele hook empurra para o login sem
-   * token, e esta página é pública.
-   */
-  useEffect(() => {
-    if (!isBusinessPlatform) return
-    const token = getToken()
-    if (!token) { setMyAvatar(null); return }
-    let alive = true
-    fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!alive) return
-        setMyAvatar(data?.avatar || null)
-      })
-      .catch(() => {})
-    return () => { alive = false }
-  }, [isBusinessPlatform])
-
   useEffect(() => {
     if (!editingSubject || subjectKind !== "pet") return
     const token = getToken()
@@ -1661,23 +1613,22 @@ export default function CommunityDetailPage() {
 
   const bannerSrc = bannerPreview || community.banner_url
   /**
-   * ⚠️ A FOTO DO HEADCARD É A DA PESSOA (pedido do Alex, 2026-09-09: "todas as
-   * heads trazem a foto do perfil").
+   * ⚠️ A FOTO DO HEADCARD É A DO DONO (decisão do Alex, 2026-09-25): "todas
+   * as comunidades têm que ter a mesma foto do perfil". É `tb_user.avatar` do
+   * LÍDER (`leader_avatar`, vindo do getById) — a mesma do /account, fonte
+   * única da mig 215 —, e por isso é a MESMA para quem olha e para quem é dono.
    *
-   * ⚠️ ERAM QUATRO REGIMES; sobraram DOIS, porque os outros dois eram de games
-   * e foram embora com o frontend daquele ambiente.
-   * O que fica: a foto DA COMUNIDADE, com a do usuário como RESERVA **só no
-   * NEGÓCIO** — lá o líder pode ter posto o logo da barbearia, e forçar a cara
-   * dele apagaria a marca; o que a reserva resolve é o boneco cinza de quem
-   * nunca subiu imagem. Em pet, carro, condomínio e bairro NÃO há reserva: ali
-   * a foto é do ASSUNTO, e pôr a cara do dono no perfil do cachorro afirmaria
-   * que o cachorro é ele.
+   * Antes o negócio sem logo caía na foto de QUEM OLHAVA: o visitante via a
+   * própria cara no negócio de outra pessoa.
    *
-   * O BANNER e as CORES ficam de fora: são a identidade do ambiente, e
-   * trocá-los por pessoa faria a plataforma parecer sete plataformas.
+   * A foto própria da comunidade só aparece quando o líder não tem foto de
+   * perfil — e é só nesse caso que o "Trocar foto" do headcard aparece, senão
+   * ele trocaria uma imagem que ninguém vê.
+   *
+   * O BANNER e as CORES continuam da comunidade.
    */
   const avatarSrc =
-    avatarPreview || community.avatar_url || (isBusinessPlatform ? myAvatar : null)
+    avatarPreview || community.leader_avatar || community.avatar_url || null
 
   // Ranking exibido: o da temporada (por métrica) quando há meta; senão XP absoluto.
   const seasonOn = !!goal
@@ -1900,7 +1851,7 @@ export default function CommunityDetailPage() {
                   é o do assunto (o cachorro, o carro) ou a marca do negócio. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
-              {showAsLeaderEdit && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
+              {showAsLeaderEdit && !community.leader_avatar && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
             </div>
           </div>
           {/* ⚠️ NO CELULAR O NOME DESCE PARA BAIXO DA FOTO (pedido do Alex,

@@ -6268,7 +6268,13 @@
     "pillsSaved": "Quick access saved.",
     "pillsSaveError": "Could not save.",
     "saving": "Saving...",
-    "save": "Save"
+    "save": "Save",
+    "visitorPet": "Pet",
+    "visitorCar": "Car",
+    "visitorBusinessAria": "Open {who}'s business",
+    "visitorPetAria": "Open {who}'s pet",
+    "visitorCarAria": "Open {who}'s car",
+    "visitorGamesAria": "Open {who}'s games"
   },
   "CommunitySite": {
     "modeEditing": "Editing",

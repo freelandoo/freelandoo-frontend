@@ -95,7 +95,12 @@ export function GamesHeadcard({
 
   const { override: photoOverride, busy: photoBusy, upload: uploadPhoto, reset: resetPhoto } =
     usePlatformAvatar("games")
-  const avatarSrc = photoOverride ?? perfil?.avatar ?? null
+  // ⚠️ NO GAMES DE OUTRA PESSOA (`?de=@fulano`) A FOTO É DELA (decisão do
+  // Alex, 2026-09-25): `owner.avatar_url` já vem do backend com o override de
+  // games dela aplicado (`_cardFor`). Sem contexto, a sua. E o badge de câmera
+  // só existe na sua — ele troca a SUA foto de games.
+  const avatarSrc = owner ? owner.avatar_url ?? null : photoOverride ?? perfil?.avatar ?? null
+  const avatarName = owner ? owner.name || owner.username : perfil?.nome
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [photoMenuOpen, setPhotoMenuOpen] = useState(false)
 
@@ -195,10 +200,10 @@ export function GamesHeadcard({
         >
           <ArrowLeft className="h-4 w-4" /> {tr("back", "Voltar")}
         </Link>
-        {perfil?.username && (
+        {(owner?.username || perfil?.username) && (
           <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-[#F5F1E8]">
             <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: PURPLE_GLOW }} />
-            <span className="text-[11px] font-extrabold uppercase tracking-[0.2em]">@{perfil.username}</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.2em]">@{owner?.username || perfil?.username}</span>
           </span>
         )}
       </div>
@@ -272,7 +277,7 @@ export function GamesHeadcard({
                 <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
               ) : (
                 <span className="grid h-full w-full place-items-center fl-display text-4xl text-[#F5F1E8]/40">
-                  {initialsOf(perfil?.nome)}
+                  {initialsOf(avatarName)}
                 </span>
               )}
             </div>
@@ -281,7 +286,7 @@ export function GamesHeadcard({
                 nunca a de perfil. Fora da caixa da foto (overflow-hidden). Sem
                 override abre o seletor direto; com override abre o menu com o
                 CAMINHO DE VOLTA. */}
-            {perfil && (
+            {perfil && !owner && (
               <>
                 <button
                   type="button"
