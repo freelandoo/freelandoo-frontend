@@ -65,13 +65,15 @@ export function defaultAccentFor(kind: string | null | undefined): string {
  * a cor TRAVADA aqui não mostra o seletor de Cores, e a cor que já estivesse
  * salva é ignorada.
  *   • pet → bege e marrom ("sem opção de trocar cores, somente bege e marrom");
- *   • condo → tons de cinza ("faça esse tons de cinza no estilo games").
+ *   • condo → tons de cinza ("faça esse tons de cinza no estilo games");
+ *   • neighborhood → azul, com o amarelo da casa ("estilo games nessa cor").
  * ⚠️ Modalidade nova no estilo gamers entra AQUI (e ganha a pele em
  * globals.css); sem esta linha o seletor de Cores continua aparecendo.
  */
 export function lockedAccentFor(kind: string | null | undefined): string | null {
   if (kind === "pet") return "brown"
   if (kind === "condo") return "graphite"
+  if (kind === "neighborhood") return "gold"
   return null
 }
 

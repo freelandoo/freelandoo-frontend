@@ -66,11 +66,11 @@ const PET_INLINE: Record<string, string> = {
 }
 /** Espelho, para `style` inline, dos valores da pele `.fl-hood` (globals.css). */
 const HOOD_INLINE: Record<string, string> = {
-  "#15120E": "#EAF3FE",
-  "#1D1810": "#B0CFF4",
-  "#F5F1E8": "#0F1E3A",
-  "#9A938A": "#26406A",
-  "#0B0B0D": "#5F8CC8",
+  "#15120E": "#0E3A63",
+  "#1D1810": "#154B7D",
+  "#F5F1E8": "#F0F8FF",
+  "#9A938A": "#B9DAF3",
+  "#0B0B0D": "#0B3358",
 }
 /** Espelho, para `style` inline, dos valores da pele `.fl-condo` (globals.css). */
 const CONDO_INLINE: Record<string, string> = {
@@ -600,8 +600,9 @@ export default function CommunityDetailPage() {
   // o games mas cinza claro"). ⚠️ Pele CLARA como a do pet: passa pelo
   // `skinHex` (CONDO_INLINE). Não troca o dock.
   const isCondoSkin = isCondo
-  // BAIRRO — a mesma pele em AZUL CLARO (Alex, 2026-09-24). Clara também:
-  // passa pelo `skinHex` (HOOD_INLINE). Não troca o dock.
+  // BAIRRO — o ESTILO GAMES nos tons de azul do anexo (Alex, 2026-09-24):
+  // tinta clara sobre fundo azul, cor travada. As cores inline passam pelo
+  // `skinHex` (HOOD_INLINE). Não troca o dock.
   const isHoodSkin = (community?.kind ?? null) === "neighborhood"
   const isSkinned = isBusinessPlatform || isPetPlatform || isCarPlatform || isCondoSkin || isHoodSkin
 
@@ -1812,7 +1813,7 @@ export default function CommunityDetailPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
             )}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCondoSkin ? "#E4E4E7cc" : isHoodSkin ? "#9EC5F2cc" : "#0b0804cc"} 100%)` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCondoSkin ? "#E4E4E7cc" : isHoodSkin ? "#2982CCcc" : "#0b0804cc"} 100%)` }} />
             {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
             {community.enxame_name && (
               <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
