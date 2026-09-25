@@ -1231,6 +1231,15 @@ body.camera-active { overflow: hidden; }
     repeating-linear-gradient(to bottom, rgba(107, 68, 35, 0.05) 0 1px, transparent 1px 64px);
 }
 
+/* PATINHAS E OSSOS — marca d'água estática, como os cifrões do Financeiro.
+   Voltaram a pedido do Alex (2026-09-24, "deixe as patinhas e os ossos de
+   cachorro no fundo") depois da passada bege e marrom — agora em MARROM
+   (#8A6440), não mais laranja. Mora no CSS, filha da camada promovida do
+   fundo: pintada junto dela, uma vez. ⚠️ NÃO ANIMAR. */
+.fl-paw-veil {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cg fill='%238A6440'%3E%3Cg transform='translate(46 52) rotate(-22) scale(1.15)' fill-opacity='0.16'%3E%3Cellipse cx='0' cy='9' rx='12' ry='10'/%3E%3Ccircle cx='-13' cy='-7' r='5'/%3E%3Ccircle cx='-4.5' cy='-14' r='5'/%3E%3Ccircle cx='5.5' cy='-14' r='5'/%3E%3Ccircle cx='14' cy='-7' r='5'/%3E%3C/g%3E%3Cg transform='translate(182 44) rotate(28) scale(1)' fill-opacity='0.13'%3E%3Crect x='-17' y='-4' width='34' height='8'/%3E%3Ccircle cx='-18' cy='-5' r='6'/%3E%3Ccircle cx='-18' cy='5' r='6'/%3E%3Ccircle cx='18' cy='-5' r='6'/%3E%3Ccircle cx='18' cy='5' r='6'/%3E%3C/g%3E%3Cg transform='translate(212 150) rotate(18) scale(0.8)' fill-opacity='0.12'%3E%3Cellipse cx='0' cy='9' rx='12' ry='10'/%3E%3Ccircle cx='-13' cy='-7' r='5'/%3E%3Ccircle cx='-4.5' cy='-14' r='5'/%3E%3Ccircle cx='5.5' cy='-14' r='5'/%3E%3Ccircle cx='14' cy='-7' r='5'/%3E%3C/g%3E%3Cg transform='translate(70 170) rotate(-35) scale(0.85)' fill-opacity='0.12'%3E%3Crect x='-17' y='-4' width='34' height='8'/%3E%3Ccircle cx='-18' cy='-5' r='6'/%3E%3Ccircle cx='-18' cy='5' r='6'/%3E%3Ccircle cx='18' cy='-5' r='6'/%3E%3Ccircle cx='18' cy='5' r='6'/%3E%3C/g%3E%3Cg transform='translate(140 226) rotate(-8) scale(0.95)' fill-opacity='0.14'%3E%3Cellipse cx='0' cy='9' rx='12' ry='10'/%3E%3Ccircle cx='-13' cy='-7' r='5'/%3E%3Ccircle cx='-4.5' cy='-14' r='5'/%3E%3Ccircle cx='5.5' cy='-14' r='5'/%3E%3Ccircle cx='14' cy='-7' r='5'/%3E%3C/g%3E%3Cg transform='translate(118 110) rotate(30) scale(0.6)' fill-opacity='0.09'%3E%3Cellipse cx='0' cy='9' rx='12' ry='10'/%3E%3Ccircle cx='-13' cy='-7' r='5'/%3E%3Ccircle cx='-4.5' cy='-14' r='5'/%3E%3Ccircle cx='5.5' cy='-14' r='5'/%3E%3Ccircle cx='14' cy='-7' r='5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
 /* ============================================================================
    MEU CARRO — a pele de GAMES em VERMELHO (`.fl-car`)
    ----------------------------------------------------------------------------

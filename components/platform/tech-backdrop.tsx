@@ -107,6 +107,9 @@ export function TechBackdrop({
       {/* O SÍMBOLO DE DINHEIRO do ambiente financeiro (pedido do Alex: "no fundo
           algum símbolo de dinheiro"). Estático, como o resto. */}
       {variant === "finance" && <div className="fl-money-veil absolute inset-0" />}
+      {/* PATINHAS E OSSOS do "Meu pet", em marrom — estampa estática.
+          Pintada junto da camada do fundo. */}
+      {variant === "pet" && <div className="fl-paw-veil absolute inset-0" />}
     </div>
   )
 }
