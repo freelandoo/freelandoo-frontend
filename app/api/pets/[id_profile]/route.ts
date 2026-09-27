@@ -8,3 +8,9 @@ export async function PATCH(request: Request, ctx: Ctx) {
   const { id_profile } = await ctx.params
   return forwardToBackend(request, "PATCH", `/pets/${encodeURIComponent(id_profile)}`)
 }
+
+// Excluir (lixeira do modal "Meus pets"/"Meus carros").
+export async function DELETE(request: Request, ctx: Ctx) {
+  const { id_profile } = await ctx.params
+  return forwardToBackend(request, "DELETE", `/pets/${encodeURIComponent(id_profile)}`)
+}

@@ -1539,7 +1539,14 @@
     "aiAttendant": "Atendente com IA",
     "aiAttendantAria": "Atendente com IA: o que a plataforma deve saber para responder por você",
     "parentalLinkedCount": "{n} vinculados",
-    "parentalSubtitlePlay": "Os seus pequenos jogadores num lugar só: vincule, libere o que pode e acompanhe as conversas."
+    "parentalSubtitlePlay": "Os seus pequenos jogadores num lugar só: vincule, libere o que pode e acompanhe as conversas.",
+    "deleteDisclaimer": "Esta ação é definitiva e não tem volta. A Freelandoo não se responsabiliza por nada que se perca com a exclusão — conteúdo, contatos, vendas ou alcance.",
+    "deleteAccept": "Entendo que não tem volta e isento a Freelandoo de qualquer responsabilidade.",
+    "deleteConfirm": "Excluir definitivamente",
+    "deleteCancel": "Cancelar",
+    "deleteProfileTrash": "Excluir {name}",
+    "deleteProfileTitle": "Excluir perfil",
+    "deleteProfileBody": "O perfil \"{name}\" será excluído, com os posts, serviços, produtos e seguidores dele."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -2987,7 +2994,17 @@
     "petSwitchHint": "Toque num pet para abrir, ou adicione outro.",
     "carSwitchHint": "Toque num carro para abrir, ou adicione outro.",
     "subjectSwitchError": "Não deu para carregar a lista.",
-    "subjectSwitchRetry": "Tentar de novo"
+    "subjectSwitchRetry": "Tentar de novo",
+    "deleteDisclaimer": "Esta ação é definitiva e não tem volta. A Freelandoo não se responsabiliza por nada que se perca com a exclusão — conteúdo, contatos, vendas ou alcance.",
+    "deleteAccept": "Entendo que não tem volta e isento a Freelandoo de qualquer responsabilidade.",
+    "deleteConfirm": "Excluir definitivamente",
+    "deleteCancel": "Cancelar",
+    "deleteSubjectTrash": "Excluir {name}",
+    "deletePetTitle": "Excluir pet",
+    "deleteCarTitle": "Excluir carro",
+    "deletePetBody": "\"{name}\" será excluído e o feed dele deixa de existir. Seus posts continuam no seu perfil.",
+    "deleteCarBody": "\"{name}\" será excluído e o feed dele deixa de existir. Seus posts continuam no seu perfil.",
+    "deleteSubjectError": "Não foi possível excluir."
   },
   "Careers": {
     "hero.badge": "Carreiras",

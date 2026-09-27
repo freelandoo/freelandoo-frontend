@@ -101,6 +101,31 @@ export function SubjectSwitcher({
     }
   }
 
+  /** Exclui o pet/carro; se era o aberto, cai no próximo que sobrou (ou na conta). */
+  const remove = async (card: SwitcherCard) => {
+    const token = getToken()
+    if (!token) return t("deleteSubjectError", "Não foi possível excluir.")
+    try {
+      const res = await fetch(`/api/${kind === "pet" ? "pets" : "cars"}/${card.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        return data?.error || t("deleteSubjectError", "Não foi possível excluir.")
+      }
+      const rest = (items || []).filter((i) => i.id !== card.id)
+      setItems(rest)
+      if (String(card.id) === String(currentId)) {
+        setOpen(false)
+        router.push(rest[0] ? `/comunidades/${rest[0].id}` : "/account")
+      }
+      return null
+    } catch {
+      return t("deleteSubjectError", "Não foi possível excluir.")
+    }
+  }
+
   const title = kind === "pet" ? t("myPets", "Meus pets") : t("myCars", "Meus carros")
 
   return (
@@ -142,6 +167,22 @@ export function SubjectSwitcher({
         onCreate={() => void create()}
         creating={creating}
         unnamedLabel={kind === "pet" ? t("kindPet", "Pet") : t("kindCar", "Carro")}
+        onDelete={remove}
+        deleteCopy={{
+          trashLabel: t("deleteSubjectTrash", "Excluir {name}"),
+          title: kind === "pet" ? t("deletePetTitle", "Excluir pet") : t("deleteCarTitle", "Excluir carro"),
+          body:
+            kind === "pet"
+              ? t("deletePetBody", "\"{name}\" será excluído e o feed dele deixa de existir. Seus posts continuam no seu perfil.")
+              : t("deleteCarBody", "\"{name}\" será excluído e o feed dele deixa de existir. Seus posts continuam no seu perfil."),
+          disclaimer: t(
+            "deleteDisclaimer",
+            "Esta ação é definitiva e não tem volta. A Freelandoo não se responsabiliza por nada que se perca com a exclusão — conteúdo, contatos, vendas ou alcance.",
+          ),
+          acceptLabel: t("deleteAccept", "Entendo que não tem volta e isento a Freelandoo de qualquer responsabilidade."),
+          confirmLabel: t("deleteConfirm", "Excluir definitivamente"),
+          cancelLabel: t("deleteCancel", "Cancelar"),
+        }}
       />
     </>
   )

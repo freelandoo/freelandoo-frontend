@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import { Loader2, Plus } from "lucide-react"
+import { AlertTriangle, Loader2, Plus, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /**
@@ -23,6 +23,21 @@ export type SwitcherCard = {
   id: string
   name: string
   avatar_url: string | null
+  /** Sem lixeira neste card (o perfil que é a conta não se apaga). */
+  undeletable?: boolean
+}
+
+/** Textos da exclusão — vêm traduzidos de quem monta o modal. */
+export type SwitcherDeleteCopy = {
+  /** aria/title da lixeira; `{name}` é trocado pelo nome do card. */
+  trashLabel: string
+  title: string
+  /** `{name}` é trocado pelo nome do card. */
+  body: string
+  disclaimer: string
+  acceptLabel: string
+  confirmLabel: string
+  cancelLabel: string
 }
 
 /** Moldura da foto do headcard: papel creme, contorno de tinta e sombra dura,
@@ -58,6 +73,8 @@ export function CardSwitcherModal({
   onCreate,
   creating = false,
   unnamedLabel,
+  onDelete,
+  deleteCopy,
 }: {
   open: boolean
   onClose: () => void
@@ -77,19 +94,62 @@ export function CardSwitcherModal({
   onCreate: () => void
   creating?: boolean
   unnamedLabel: string
+  /**
+   * Lixeira em cada card (pedido do Alex, 2026-09-27). Ausente = sem lixeira.
+   * Devolve o erro a mostrar, ou null quando excluiu.
+   */
+  onDelete?: (item: SwitcherCard) => Promise<string | null>
+  deleteCopy?: SwitcherDeleteCopy
 }) {
   // O portal só existe no cliente.
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
+  // A confirmação de exclusão: o card alvo, o aceite e o estado da chamada.
+  const [confirming, setConfirming] = useState<SwitcherCard | null>(null)
+  const [accepted, setAccepted] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const closeConfirm = () => {
+    if (deleting) return
+    setConfirming(null)
+    setAccepted(false)
+    setDeleteError(null)
+  }
+
+  const runDelete = async () => {
+    if (!confirming || !onDelete || !accepted || deleting) return
+    setDeleting(true)
+    setDeleteError(null)
+    const err = await onDelete(confirming)
+    setDeleting(false)
+    if (err) {
+      setDeleteError(err)
+      return
+    }
+    setConfirming(null)
+    setAccepted(false)
+  }
+
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
+      if (e.key !== "Escape") return
+      // Esc fecha primeiro a confirmação, depois o modal.
+      if (confirming) {
+        if (!deleting) {
+          setConfirming(null)
+          setAccepted(false)
+          setDeleteError(null)
+        }
+        return
+      }
+      onClose()
     }
     document.addEventListener("keydown", onKeyDown)
     return () => document.removeEventListener("keydown", onKeyDown)
-  }, [open, onClose])
+  }, [open, onClose, confirming, deleting])
 
   if (!open || !mounted) return null
 
@@ -138,13 +198,31 @@ export function CardSwitcherModal({
           <div className="grid grid-cols-3 gap-3">
             {(items || []).map((item) => {
               const isCurrent = currentId ? String(item.id) === String(currentId) : false
+              const canTrash = !!onDelete && !!deleteCopy && !item.undeletable
               return (
+                <div key={item.id} className="relative">
+                {/* A lixeira é IRMÃ do card, não filha: botão dentro de botão
+                    não existe em HTML, e o clique nela não pode abrir o item. */}
+                {canTrash && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirming(item)
+                      setAccepted(false)
+                      setDeleteError(null)
+                    }}
+                    aria-label={deleteCopy.trashLabel.replace("{name}", item.name)}
+                    title={deleteCopy.trashLabel.replace("{name}", item.name)}
+                    className="absolute -right-1 -top-1 z-10 inline-flex h-7 w-7 items-center justify-center border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#8a1f1f] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#8a1f1f] hover:text-[#F1EDE2]"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
                 <button
-                  key={item.id}
                   type="button"
                   onClick={() => onPick(item)}
                   aria-current={isCurrent ? "true" : undefined}
-                  className="group flex flex-col items-center gap-1.5 text-center"
+                  className="group flex w-full flex-col items-center gap-1.5 text-center"
                 >
                   <span
                     className={cn(
@@ -164,6 +242,7 @@ export function CardSwitcherModal({
                     {item.name || unnamedLabel}
                   </span>
                 </button>
+                </div>
               )
             })}
 
@@ -192,6 +271,64 @@ export function CardSwitcherModal({
           </div>
         )}
       </div>
+
+      {/* CONFIRMAÇÃO DE EXCLUSÃO: por cima do modal, com o aceite explícito de
+          que não tem volta e de que a plataforma não responde pelo que se
+          perde — o botão só acende depois da caixa marcada. */}
+      {confirming && deleteCopy && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-[#0B0B0D]/85 p-4"
+          role="alertdialog"
+          aria-modal="true"
+          aria-label={deleteCopy.title}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeConfirm()
+          }}
+        >
+          <div className="w-full max-w-sm border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 shadow-[8px_8px_0_0_#8a1f1f]">
+            <div className="mb-3 flex items-center gap-2 text-[#8a1f1f]">
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <h3 className="fl-display text-2xl leading-none">{deleteCopy.title}</h3>
+            </div>
+            <p className="mb-3 text-sm font-semibold text-[#0B0B0D]">
+              {deleteCopy.body.replace("{name}", confirming.name || unnamedLabel)}
+            </p>
+            <p className="mb-4 border-2 border-[#8a1f1f] bg-[#8a1f1f]/10 p-3 text-xs font-semibold leading-snug text-[#5b1414]">
+              {deleteCopy.disclaimer}
+            </p>
+            <label className="mb-4 flex cursor-pointer items-start gap-2 text-xs font-bold text-[#0B0B0D]">
+              <input
+                type="checkbox"
+                checked={accepted}
+                onChange={(e) => setAccepted(e.target.checked)}
+                disabled={deleting}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[#8a1f1f]"
+              />
+              <span>{deleteCopy.acceptLabel}</span>
+            </label>
+            {deleteError && <p className="mb-3 text-xs font-bold text-[#8a1f1f]">{deleteError}</p>}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeConfirm}
+                disabled={deleting}
+                className="border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#0B0B0D] hover:bg-[#F2B705] disabled:opacity-60"
+              >
+                {deleteCopy.cancelLabel}
+              </button>
+              <button
+                type="button"
+                onClick={() => void runDelete()}
+                disabled={!accepted || deleting}
+                className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#8a1f1f] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#F1EDE2] disabled:opacity-40"
+              >
+                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                {deleteCopy.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 

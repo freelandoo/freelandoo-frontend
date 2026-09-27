@@ -1539,7 +1539,14 @@
     "aiAttendant": "Asistente con IA",
     "aiAttendantAria": "Asistente con IA: lo que la plataforma debe saber para responder por ti",
     "parentalLinkedCount": "{n} vinculados",
-    "parentalSubtitlePlay": "Tus pequeños jugadores en un solo lugar: vincúlalos, libera lo permitido y sigue sus conversaciones."
+    "parentalSubtitlePlay": "Tus pequeños jugadores en un solo lugar: vincúlalos, libera lo permitido y sigue sus conversaciones.",
+    "deleteDisclaimer": "Esta acción es definitiva y no tiene vuelta atrás. Freelandoo no se responsabiliza por nada que se pierda con la eliminación — contenido, contactos, ventas o alcance.",
+    "deleteAccept": "Entiendo que no tiene vuelta atrás y eximo a Freelandoo de cualquier responsabilidad.",
+    "deleteConfirm": "Eliminar definitivamente",
+    "deleteCancel": "Cancelar",
+    "deleteProfileTrash": "Eliminar {name}",
+    "deleteProfileTitle": "Eliminar perfil",
+    "deleteProfileBody": "El perfil \"{name}\" será eliminado, con sus publicaciones, servicios, productos y seguidores."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -3000,7 +3007,17 @@
     "petSwitchHint": "Toca una mascota para abrirla, o agrega otra.",
     "carSwitchHint": "Toca un auto para abrirlo, o agrega otro.",
     "subjectSwitchError": "No se pudo cargar la lista.",
-    "subjectSwitchRetry": "Intentar de nuevo"
+    "subjectSwitchRetry": "Intentar de nuevo",
+    "deleteDisclaimer": "Esta acción es definitiva y no tiene vuelta atrás. Freelandoo no se responsabiliza por nada que se pierda con la eliminación — contenido, contactos, ventas o alcance.",
+    "deleteAccept": "Entiendo que no tiene vuelta atrás y eximo a Freelandoo de cualquier responsabilidad.",
+    "deleteConfirm": "Eliminar definitivamente",
+    "deleteCancel": "Cancelar",
+    "deleteSubjectTrash": "Eliminar {name}",
+    "deletePetTitle": "Eliminar mascota",
+    "deleteCarTitle": "Eliminar auto",
+    "deletePetBody": "\"{name}\" será eliminado y su feed dejará de existir. Tus publicaciones siguen en tu perfil.",
+    "deleteCarBody": "\"{name}\" será eliminado y su feed dejará de existir. Tus publicaciones siguen en tu perfil.",
+    "deleteSubjectError": "No se pudo eliminar."
   },
   "Careers": {
     "hero.badge": "Carreras",

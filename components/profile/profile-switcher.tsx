@@ -130,6 +130,30 @@ export function ProfileSwitcher({
     router.push("/account?novoPerfil=1")
   }
 
+  /** Exclui o perfil e tira o card da lista; se era o aberto, volta à conta. */
+  const removeProfile = async (card: { id: string }) => {
+    const token = getToken()
+    if (!token) return t("deleteProfileError", "Não foi possível excluir o perfil.")
+    try {
+      const res = await fetch(`/api/profile/${card.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        return data?.error || t("deleteProfileError", "Não foi possível excluir o perfil.")
+      }
+      setProfiles((list) => (list ? list.filter((p) => p.id_profile !== card.id) : list))
+      if (currentProfileId && String(currentProfileId) === String(card.id)) {
+        setOpen(false)
+        router.push("/account")
+      }
+      return null
+    } catch {
+      return t("deleteProfileError", "Não foi possível excluir o perfil.")
+    }
+  }
+
   const label = t("switchProfile", "Meus perfis")
 
   return (
@@ -158,7 +182,17 @@ export function ProfileSwitcher({
         title={label}
         hint={t("switchProfileHint", "Toque num perfil para abrir. Todos valem o mesmo.")}
         closeLabel={t("close", "Fechar")}
-        items={profiles ? profiles.map((p) => ({ id: p.id_profile, name: p.display_name, avatar_url: p.avatar_url })) : null}
+        items={
+          profiles
+            ? profiles.map((p) => ({
+                id: p.id_profile,
+                name: p.display_name,
+                avatar_url: p.avatar_url,
+                // O perfil que é a conta não se apaga (o backend recusa).
+                undeletable: !!p.is_user_account,
+              }))
+            : null
+        }
         currentId={currentProfileId}
         loading={loading}
         error={failed ? t("switchProfileError", "Não deu para carregar seus perfis.") : null}
@@ -171,6 +205,19 @@ export function ProfileSwitcher({
         createLabel={t("buyProfile", "Comprar perfil")}
         onCreate={create}
         unnamedLabel={t("unnamedProfile", "Perfil sem nome")}
+        onDelete={removeProfile}
+        deleteCopy={{
+          trashLabel: t("deleteProfileTrash", "Excluir {name}"),
+          title: t("deleteProfileTitle", "Excluir perfil"),
+          body: t("deleteProfileBody", "O perfil \"{name}\" será excluído, com os posts, serviços, produtos e seguidores dele."),
+          disclaimer: t(
+            "deleteDisclaimer",
+            "Esta ação é definitiva e não tem volta. A Freelandoo não se responsabiliza por nada que se perca com a exclusão — conteúdo, contatos, vendas ou alcance.",
+          ),
+          acceptLabel: t("deleteAccept", "Entendo que não tem volta e isento a Freelandoo de qualquer responsabilidade."),
+          confirmLabel: t("deleteConfirm", "Excluir definitivamente"),
+          cancelLabel: t("deleteCancel", "Cancelar"),
+        }}
       />
     </>
   )

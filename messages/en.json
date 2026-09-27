@@ -1539,7 +1539,14 @@
     "aiAttendant": "AI attendant",
     "aiAttendantAria": "AI attendant: what the platform should know to answer for you",
     "parentalLinkedCount": "{n} linked",
-    "parentalSubtitlePlay": "Your little players in one place: link them, unlock what's allowed and follow their conversations."
+    "parentalSubtitlePlay": "Your little players in one place: link them, unlock what's allowed and follow their conversations.",
+    "deleteDisclaimer": "This action is permanent and cannot be undone. Freelandoo is not responsible for anything lost with the deletion — content, contacts, sales or reach.",
+    "deleteAccept": "I understand this cannot be undone and release Freelandoo from any responsibility.",
+    "deleteConfirm": "Delete permanently",
+    "deleteCancel": "Cancel",
+    "deleteProfileTrash": "Delete {name}",
+    "deleteProfileTitle": "Delete profile",
+    "deleteProfileBody": "The profile \"{name}\" will be deleted, along with its posts, services, products and followers."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -3000,7 +3007,17 @@
     "petSwitchHint": "Tap a pet to open it, or add another.",
     "carSwitchHint": "Tap a car to open it, or add another.",
     "subjectSwitchError": "Couldn't load the list.",
-    "subjectSwitchRetry": "Try again"
+    "subjectSwitchRetry": "Try again",
+    "deleteDisclaimer": "This action is permanent and cannot be undone. Freelandoo is not responsible for anything lost with the deletion — content, contacts, sales or reach.",
+    "deleteAccept": "I understand this cannot be undone and release Freelandoo from any responsibility.",
+    "deleteConfirm": "Delete permanently",
+    "deleteCancel": "Cancel",
+    "deleteSubjectTrash": "Delete {name}",
+    "deletePetTitle": "Delete pet",
+    "deleteCarTitle": "Delete car",
+    "deletePetBody": "\"{name}\" will be deleted and its feed will no longer exist. Your posts stay on your profile.",
+    "deleteCarBody": "\"{name}\" will be deleted and its feed will no longer exist. Your posts stay on your profile.",
+    "deleteSubjectError": "Couldn't delete it."
   },
   "Careers": {
     "hero.badge": "Careers",
