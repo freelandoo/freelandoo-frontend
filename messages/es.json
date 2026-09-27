@@ -3017,7 +3017,8 @@
     "deleteCarTitle": "Eliminar auto",
     "deletePetBody": "\"{name}\" será eliminado y su feed dejará de existir. Tus publicaciones siguen en tu perfil.",
     "deleteCarBody": "\"{name}\" será eliminado y su feed dejará de existir. Tus publicaciones siguen en tu perfil.",
-    "deleteSubjectError": "No se pudo eliminar."
+    "deleteSubjectError": "No se pudo eliminar.",
+    "accentScarlet": "Rojo claro"
   },
   "Careers": {
     "hero.badge": "Carreras",

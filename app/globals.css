@@ -1263,60 +1263,68 @@ body.camera-active { overflow: hidden; }
    também, como nas outras peles.
    ============================================================================ */
 
+/* ⚠️ 2026-09-27 — O FUNDO DEIXOU DE SER PRETO. Alex: "sem o preto do fundo, o
+   preto do fundo fica como um brilho, um gradiente, a mesma coisa do games,
+   que é roxo, só que o meu carro é vermelho". A base agora É vermelha (vinho
+   aceso) e o escuro virou vinheta nas bordas; painéis, linhas e tinta subiram
+   um tom junto, e a cor é TRAVADA (`lockedAccentFor("car") = "scarlet"`). */
+
 /* Superfícies ------------------------------------------------------------- */
-.fl-car .bg-\[\#0b0804\]      { background-color: #16060a; }
-.fl-car .bg-\[\#0b0804\]\/80  { background-color: rgba(22, 6, 10, 0.8); }
-.fl-car .bg-\[\#0F0C08\]      { background-color: rgba(32, 8, 14, 0.86); }
-.fl-car .bg-\[\#15120E\]      { background-color: rgba(51, 15, 22, 0.78); }
-.fl-car .bg-\[\#15120E\]\/95  { background-color: rgba(51, 15, 22, 0.95); }
-.fl-car .bg-\[\#15120E\]\/60  { background-color: rgba(51, 15, 22, 0.6); }
-.fl-car .bg-\[\#15120E\]\/40  { background-color: rgba(51, 15, 22, 0.4); }
-.fl-car .bg-\[\#1D1810\]      { background-color: rgba(76, 23, 33, 0.72); }
-.fl-car .bg-\[\#241d12\]      { background-color: rgba(106, 33, 45, 0.9); }
+.fl-car .bg-\[\#0b0804\]      { background-color: #4A0F16; }
+.fl-car .bg-\[\#0b0804\]\/80  { background-color: rgba(74, 15, 22, 0.85); }
+.fl-car .bg-\[\#0F0C08\]      { background-color: rgba(48, 9, 15, 0.86); }
+.fl-car .bg-\[\#15120E\]      { background-color: rgba(62, 12, 20, 0.74); }
+.fl-car .bg-\[\#15120E\]\/95  { background-color: rgba(62, 12, 20, 0.95); }
+.fl-car .bg-\[\#15120E\]\/60  { background-color: rgba(62, 12, 20, 0.6); }
+.fl-car .bg-\[\#15120E\]\/40  { background-color: rgba(62, 12, 20, 0.4); }
+.fl-car .bg-\[\#1D1810\]      { background-color: rgba(98, 24, 35, 0.72); }
+.fl-car .bg-\[\#241d12\]      { background-color: rgba(128, 32, 45, 0.9); }
 
 /* Tinta ------------------------------------------------------------------- */
-.fl-car .text-\[\#F5F1E8\]     { color: #FFE9E7; }
-.fl-car .text-\[\#F5F1E8\]\/90 { color: rgba(255, 233, 231, 0.9); }
-.fl-car .text-\[\#F5F1E8\]\/85 { color: rgba(255, 233, 231, 0.85); }
-.fl-car .text-\[\#F5F1E8\]\/80 { color: rgba(255, 233, 231, 0.8); }
-.fl-car .text-\[\#F5F1E8\]\/70 { color: rgba(255, 233, 231, 0.7); }
-.fl-car .text-\[\#F5F1E8\]\/40 { color: rgba(255, 233, 231, 0.4); }
-.fl-car .text-\[\#F5F1E8\]\/30 { color: rgba(255, 233, 231, 0.3); }
-.fl-car .text-\[\#9A938A\]     { color: #D49A94; }
-.fl-car .text-\[\#9A938A\]\/70 { color: rgba(212, 154, 148, 0.7); }
+.fl-car .text-\[\#F5F1E8\]     { color: #FFEDEA; }
+.fl-car .text-\[\#F5F1E8\]\/90 { color: rgba(255, 237, 234, 0.9); }
+.fl-car .text-\[\#F5F1E8\]\/85 { color: rgba(255, 237, 234, 0.85); }
+.fl-car .text-\[\#F5F1E8\]\/80 { color: rgba(255, 237, 234, 0.8); }
+.fl-car .text-\[\#F5F1E8\]\/70 { color: rgba(255, 237, 234, 0.7); }
+.fl-car .text-\[\#F5F1E8\]\/40 { color: rgba(255, 237, 234, 0.4); }
+.fl-car .text-\[\#F5F1E8\]\/30 { color: rgba(255, 237, 234, 0.3); }
+.fl-car .text-\[\#9A938A\]     { color: #F0B3AB; }
+.fl-car .text-\[\#9A938A\]\/70 { color: rgba(240, 179, 171, 0.7); }
 
 /* Linhas ------------------------------------------------------------------ */
-.fl-car .border-\[\#0B0B0D\]      { border-color: #70242E; }
-.fl-car .border-\[\#F5F1E8\]\/30  { border-color: rgba(250, 139, 139, 0.45); }
-.fl-car .border-\[\#F5F1E8\]\/25  { border-color: rgba(250, 139, 139, 0.4); }
-.fl-car .border-\[\#F5F1E8\]\/20  { border-color: rgba(250, 139, 139, 0.34); }
-.fl-car .border-\[\#F5F1E8\]\/15  { border-color: rgba(250, 139, 139, 0.28); }
-.fl-car .border-\[\#F5F1E8\]\/12  { border-color: rgba(250, 139, 139, 0.24); }
-.fl-car .border-\[\#F5F1E8\]\/10  { border-color: rgba(250, 139, 139, 0.2); }
-.fl-car .border-\[\#F5F1E8\]\/60  { border-color: rgba(250, 139, 139, 0.6); }
+.fl-car .border-\[\#0B0B0D\]      { border-color: #8E2C38; }
+.fl-car .border-\[\#F5F1E8\]\/30  { border-color: rgba(255, 150, 140, 0.5); }
+.fl-car .border-\[\#F5F1E8\]\/25  { border-color: rgba(255, 150, 140, 0.45); }
+.fl-car .border-\[\#F5F1E8\]\/20  { border-color: rgba(255, 150, 140, 0.38); }
+.fl-car .border-\[\#F5F1E8\]\/15  { border-color: rgba(255, 150, 140, 0.32); }
+.fl-car .border-\[\#F5F1E8\]\/12  { border-color: rgba(255, 150, 140, 0.28); }
+.fl-car .border-\[\#F5F1E8\]\/10  { border-color: rgba(255, 150, 140, 0.24); }
+.fl-car .border-\[\#F5F1E8\]\/60  { border-color: rgba(255, 150, 140, 0.65); }
 
 .fl-car .fl-display {
   letter-spacing: 0.02em;
 }
 .fl-car .fl-display.text-\[\#F5F1E8\],
 .fl-car .fl-display.text-\[\#F1EDE2\] {
-  text-shadow: 0 0 24px rgba(239, 68, 68, 0.45);
+  text-shadow: 0 0 24px rgba(255, 122, 102, 0.5);
 }
 
 /* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
 .fl-car .-rotate-2,
 .fl-car .-rotate-3 { transform: none; }
 
-/* O FUNDO — o da `.fl-games-bg` em vermelho. ⚠️ NÃO ANIMAR (ver a nota da
+/* O FUNDO — vermelho aceso no centro, o ESCURO só como vinheta nas bordas
+   (é o que o roxo do games faz). ⚠️ NÃO ANIMAR (ver a nota da
    `.fl-finance-bg`). Está na lista de camadas promovidas. */
 .fl-car-bg {
-  background-color: #16060a;
+  background-color: #4A0F16;
   background-image:
-    radial-gradient(60% 45% at 22% 18%, rgba(185, 28, 28, 0.42), transparent 70%),
-    radial-gradient(50% 40% at 82% 30%, rgba(234, 88, 12, 0.22), transparent 72%),
-    radial-gradient(80% 55% at 50% 108%, rgba(239, 68, 68, 0.30), transparent 70%),
-    repeating-linear-gradient(to right, rgba(250, 139, 139, 0.07) 0 1px, transparent 1px 64px),
-    repeating-linear-gradient(to bottom, rgba(250, 139, 139, 0.05) 0 1px, transparent 1px 64px);
+    radial-gradient(70% 60% at 50% 38%, rgba(214, 52, 52, 0.62), transparent 72%),
+    radial-gradient(45% 35% at 18% 14%, rgba(255, 122, 102, 0.30), transparent 70%),
+    radial-gradient(40% 32% at 84% 26%, rgba(255, 140, 90, 0.18), transparent 72%),
+    radial-gradient(130% 95% at 50% 50%, transparent 55%, rgba(18, 3, 6, 0.6) 100%),
+    repeating-linear-gradient(to right, rgba(255, 170, 160, 0.08) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(255, 170, 160, 0.06) 0 1px, transparent 1px 64px);
 }
 
 /* ============================================================================

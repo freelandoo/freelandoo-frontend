@@ -49,6 +49,10 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
   // Acento TRAVADO do bairro.
   { key: "azure", labelKey: "accentAzure", fallback: "Azul", hex: "#8ACEF5" },
   { key: "silver", labelKey: "accentSilver", fallback: "Cinza claro", hex: "#D4D4D8" },
+  // O vermelho do carro no ESTILO GAMERS (2026-09-27, "sem alteração de cores
+  // e um vermelho um tom mais claro"): um passo acima do `red` (#ff5a44).
+  // Tinta preta por cima dá ~7:1. Acento TRAVADO do carro.
+  { key: "scarlet", labelKey: "accentScarlet", fallback: "Vermelho claro", hex: "#FF7A66" },
 ]
 
 /**
@@ -59,7 +63,7 @@ export const ACCENTS: { key: string; labelKey: string; fallback: string; hex: st
  * seletor continua mandando: isto é só o PADRÃO.
  */
 export function defaultAccentFor(kind: string | null | undefined): string {
-  if (kind === "car") return "red"
+  if (kind === "car") return "scarlet"
   if (kind === "pet") return "brown"
   return "gold"
 }
@@ -70,6 +74,8 @@ export function defaultAccentFor(kind: string | null | undefined): string {
  * a cor TRAVADA aqui não mostra o seletor de Cores, e a cor que já estivesse
  * salva é ignorada.
  *   • pet → bege e marrom ("sem opção de trocar cores, somente bege e marrom");
+ *   • car → o games em VERMELHO, um tom mais claro (2026-09-27, "estilo a
+ *     comunidade games, sem alteração de cores");
  *   • condo → tons de cinza ("faça esse tons de cinza no estilo games");
  *   • neighborhood → tons de azul, sem amarelo ("sempre é uma cor só");
  *   • common (meu negócio) → o games em AMARELO QUENTE (2026-09-25: foi preto
@@ -82,6 +88,7 @@ export function defaultAccentFor(kind: string | null | undefined): string {
  */
 export function lockedAccentFor(kind: string | null | undefined): string | null {
   if (kind === "pet") return "brown"
+  if (kind === "car") return "scarlet"
   if (kind === "condo") return "graphite"
   if (kind === "neighborhood") return "azure"
   if (kind === "common") return "gold"

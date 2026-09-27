@@ -3004,7 +3004,8 @@
     "deleteCarTitle": "Excluir carro",
     "deletePetBody": "\"{name}\" será excluído e o feed dele deixa de existir. Seus posts continuam no seu perfil.",
     "deleteCarBody": "\"{name}\" será excluído e o feed dele deixa de existir. Seus posts continuam no seu perfil.",
-    "deleteSubjectError": "Não foi possível excluir."
+    "deleteSubjectError": "Não foi possível excluir.",
+    "accentScarlet": "Vermelho claro"
   },
   "Careers": {
     "hero.badge": "Carreiras",

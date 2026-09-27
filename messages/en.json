@@ -3017,7 +3017,8 @@
     "deleteCarTitle": "Delete car",
     "deletePetBody": "\"{name}\" will be deleted and its feed will no longer exist. Your posts stay on your profile.",
     "deleteCarBody": "\"{name}\" will be deleted and its feed will no longer exist. Your posts stay on your profile.",
-    "deleteSubjectError": "Couldn't delete it."
+    "deleteSubjectError": "Couldn't delete it.",
+    "accentScarlet": "Light red"
   },
   "Careers": {
     "hero.badge": "Careers",
