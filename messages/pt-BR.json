@@ -2979,7 +2979,15 @@
     "photoResetError": "Não foi possível voltar à foto do perfil.",
     "addAnotherPet": "Adicionar outro pet",
     "addAnotherCar": "Adicionar outro carro",
-    "addSubjectError": "Não foi possível adicionar agora."
+    "addSubjectError": "Não foi possível adicionar agora.",
+    "myPets": "Meus pets",
+    "myCars": "Meus carros",
+    "close": "Fechar",
+    "subjectSwitchEyebrow": "Seus espaços",
+    "petSwitchHint": "Toque num pet para abrir, ou adicione outro.",
+    "carSwitchHint": "Toque num carro para abrir, ou adicione outro.",
+    "subjectSwitchError": "Não deu para carregar a lista.",
+    "subjectSwitchRetry": "Tentar de novo"
   },
   "Careers": {
     "hero.badge": "Carreiras",

@@ -41,6 +41,23 @@ const NEW_COMMUNITY = {
     "Couldn't add it right now.",
     "No se pudo agregar ahora.",
   ],
+  // O "+" do pet/carro abre o mesmo modal do "Meus perfis" (2026-09-27).
+  myPets: ["Meus pets", "My pets", "Mis mascotas"],
+  myCars: ["Meus carros", "My cars", "Mis autos"],
+  close: ["Fechar", "Close", "Cerrar"],
+  subjectSwitchEyebrow: ["Seus espaços", "Your spaces", "Tus espacios"],
+  petSwitchHint: [
+    "Toque num pet para abrir, ou adicione outro.",
+    "Tap a pet to open it, or add another.",
+    "Toca una mascota para abrirla, o agrega otra.",
+  ],
+  carSwitchHint: [
+    "Toque num carro para abrir, ou adicione outro.",
+    "Tap a car to open it, or add another.",
+    "Toca un auto para abrirlo, o agrega otro.",
+  ],
+  subjectSwitchError: ["Não deu para carregar a lista.", "Couldn't load the list.", "No se pudo cargar la lista."],
+  subjectSwitchRetry: ["Tentar de novo", "Try again", "Intentar de nuevo"],
 };
 
 let totalAdded = 0;

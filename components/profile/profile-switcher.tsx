@@ -1,12 +1,12 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
-import { Loader2, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
+import { CardSwitcherModal } from "@/components/profile/card-switcher-modal"
 
 /**
  * O troca-perfil do headcard — PEÇA ÚNICA das duas superfícies (o headcard do
@@ -30,6 +30,9 @@ import { cn } from "@/lib/utils"
  * dentro dela, recebe `onCreateProfile` e chama esse modal direto; fora dela,
  * navega para /account?novoPerfil=1 e a página abre o mesmo modal ao carregar.
  * Duplicar o formulário aqui criaria a segunda porta para a mesma ação.
+ *
+ * O MODAL é a peça `CardSwitcherModal` (2026-09-27), a mesma do "Meus pets" /
+ * "Meus carros" da comunidade.
  *
  * ⚠️ O MODAL VAI POR PORTAL, e não é preciosismo: o gatilho mora dentro do
  * wrapper da foto, que é rotacionado (-3deg). Um ancestral com `transform` vira
@@ -58,22 +61,6 @@ type MeResponse = {
     deleted_at?: string | null
   }>
 }
-
-function initials(name: string | null | undefined) {
-  if (!name) return "?"
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() || "")
-    .join("")
-}
-
-/** Moldura da foto do headcard: papel creme, contorno de tinta e sombra dura.
- *  A proporção acompanha a do headcard (2/3 desde 2026-09-05) — estes cards
- *  SÃO a foto de cada perfil, e num formato diferente deixariam de ser. */
-const CARD_FRAME =
-  "relative flex aspect-[2/3] w-full items-center justify-center overflow-hidden border-4 border-[#F1EDE2] ring-2 ring-[#0B0B0D] shadow-[5px_5px_0_0_#F2B705]"
 
 export function ProfileSwitcher({
   currentProfileId,
@@ -128,15 +115,6 @@ export function ProfileSwitcher({
     if (open) void load()
   }, [open, load])
 
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false)
-    }
-    document.addEventListener("keydown", onKeyDown)
-    return () => document.removeEventListener("keydown", onKeyDown)
-  }, [open])
-
   const go = (profile: SwitcherProfile) => {
     setOpen(false)
     // O perfil-conta é o que a /account desenha; os outros têm página própria.
@@ -153,126 +131,6 @@ export function ProfileSwitcher({
   }
 
   const label = t("switchProfile", "Meus perfis")
-
-  // O portal só existe no cliente; no primeiro render (SSR/hidratação) não há
-  // `document`, então o modal entra depois que o componente monta.
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-
-  const overlay = (
-    <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#0B0B0D]/80 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label={label}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false)
-          }}
-        >
-          <div className="w-full max-w-md border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 shadow-[8px_8px_0_0_#0B0B0D]">
-            <div className="mb-1 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6B6457]">
-                  {t("switchProfileEyebrow", "Sua conta")}
-                </p>
-                <h2 className="fl-display text-2xl leading-none text-[#0B0B0D]">{label}</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="border-2 border-[#0B0B0D] bg-[#F1EDE2] px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#0B0B0D] transition hover:bg-[#F2B705]"
-              >
-                {t("close", "Fechar")}
-              </button>
-            </div>
-            <p className="mb-4 text-sm font-semibold text-[#5b554b]">
-              {t("switchProfileHint", "Toque num perfil para abrir. Todos valem o mesmo.")}
-            </p>
-
-            {loading && profiles === null ? (
-              <div className="flex items-center justify-center py-10 text-[#5b554b]">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
-            ) : failed && profiles === null ? (
-              <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <p className="text-sm font-bold text-[#8a1f1f]">
-                  {t("switchProfileError", "Não deu para carregar seus perfis.")}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void load()}
-                  className="border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#0B0B0D]"
-                >
-                  {t("switchProfileRetry", "Tentar de novo")}
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-3">
-                {(profiles || []).map((profile) => {
-                  const isCurrent = currentProfileId
-                    ? String(profile.id_profile) === String(currentProfileId)
-                    : false
-                  return (
-                    <button
-                      key={profile.id_profile}
-                      type="button"
-                      onClick={() => go(profile)}
-                      aria-current={isCurrent ? "true" : undefined}
-                      className="group flex flex-col items-center gap-1.5 text-center"
-                    >
-                      <span
-                        className={cn(
-                          CARD_FRAME,
-                          "-rotate-3 bg-[#F2B705]/15 transition-transform duration-200 group-hover:rotate-0",
-                          isCurrent && "ring-4 ring-[#F2B705]",
-                        )}
-                      >
-                        {profile.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={profile.avatar_url}
-                            alt={profile.display_name}
-                            loading="lazy"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xl font-black text-[#0B0B0D]">
-                            {initials(profile.display_name)}
-                          </span>
-                        )}
-                      </span>
-                      <span className="line-clamp-2 text-[11px] font-bold leading-tight text-[#0B0B0D]">
-                        {profile.display_name || t("unnamedProfile", "Perfil sem nome")}
-                      </span>
-                    </button>
-                  )
-                })}
-
-                {/* Comprar mais um: card branco com o "+" preto, do tamanho da
-                    foto de perfil — ele É um lugar vazio esperando a foto do
-                    perfil novo. */}
-                <button
-                  type="button"
-                  onClick={create}
-                  className="group flex flex-col items-center gap-1.5 text-center"
-                >
-                  <span
-                    className={cn(
-                      CARD_FRAME,
-                      "-rotate-3 border-dashed bg-white transition-transform duration-200 group-hover:rotate-0",
-                    )}
-                  >
-                    <Plus className="h-8 w-8 text-[#0B0B0D]" strokeWidth={3} />
-                  </span>
-                  <span className="text-[11px] font-bold leading-tight text-[#0B0B0D]">
-                    {t("buyProfile", "Comprar perfil")}
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
-    </div>
-  )
 
   return (
     <>
@@ -293,7 +151,27 @@ export function ProfileSwitcher({
         <Plus className="h-4 w-4" strokeWidth={3} />
       </button>
 
-      {open && mounted && createPortal(overlay, document.body)}
+      <CardSwitcherModal
+        open={open}
+        onClose={() => setOpen(false)}
+        eyebrow={t("switchProfileEyebrow", "Sua conta")}
+        title={label}
+        hint={t("switchProfileHint", "Toque num perfil para abrir. Todos valem o mesmo.")}
+        closeLabel={t("close", "Fechar")}
+        items={profiles ? profiles.map((p) => ({ id: p.id_profile, name: p.display_name, avatar_url: p.avatar_url })) : null}
+        currentId={currentProfileId}
+        loading={loading}
+        error={failed ? t("switchProfileError", "Não deu para carregar seus perfis.") : null}
+        retryLabel={t("switchProfileRetry", "Tentar de novo")}
+        onRetry={() => void load()}
+        onPick={(card) => {
+          const profile = (profiles || []).find((p) => p.id_profile === card.id)
+          if (profile) go(profile)
+        }}
+        createLabel={t("buyProfile", "Comprar perfil")}
+        onCreate={create}
+        unnamedLabel={t("unnamedProfile", "Perfil sem nome")}
+      />
     </>
   )
 }

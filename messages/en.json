@@ -2992,7 +2992,15 @@
     "photoResetError": "Couldn't switch back to your profile photo.",
     "addAnotherPet": "Add another pet",
     "addAnotherCar": "Add another car",
-    "addSubjectError": "Couldn't add it right now."
+    "addSubjectError": "Couldn't add it right now.",
+    "myPets": "My pets",
+    "myCars": "My cars",
+    "close": "Close",
+    "subjectSwitchEyebrow": "Your spaces",
+    "petSwitchHint": "Tap a pet to open it, or add another.",
+    "carSwitchHint": "Tap a car to open it, or add another.",
+    "subjectSwitchError": "Couldn't load the list.",
+    "subjectSwitchRetry": "Try again"
   },
   "Careers": {
     "hero.badge": "Careers",

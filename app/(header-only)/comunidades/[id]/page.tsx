@@ -17,6 +17,7 @@ import { getToken, getStoredUser } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { PublishMenuButton, type PublishItem } from "@/components/composer/publish-menu-button"
 import { InviteShareButton } from "@/components/community/invite-share-button"
+import { SubjectSwitcher } from "@/components/community/subject-switcher"
 import { toast } from "sonner"
 // O Plano Negócio (mig 234): o modal com os "prints" e o botão de assinar. É
 // dele que dependem o aviãozinho (convidar membro) e o "Entrar" do visitante.
@@ -350,7 +351,6 @@ export default function CommunityDetailPage() {
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [photoResetting, setPhotoResetting] = useState(false)
-  const [addingSubject, setAddingSubject] = useState(false)
   const seeded = useRef(false)
   const autoEdited = useRef(false)
 
@@ -1429,33 +1429,6 @@ export default function CommunityDetailPage() {
     }
   }
 
-  /**
-   * Cria OUTRO pet/carro vazio e abre a página dele, já editável — mesmo
-   * caminho de rascunho do menu da foto (corpo vazio, mig 219).
-   */
-  const addAnotherSubject = async () => {
-    const token = getToken()
-    if (!token || !subjectKind || addingSubject) return
-    setAddingSubject(true); setActionMsg(null)
-    try {
-      const res = await fetch(subjectKind === "pet" ? "/api/pets" : "/api/cars", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: "{}",
-      })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok || !json?.community?.id_profile) {
-        setActionMsg(json?.error || t("addSubjectError", "Não foi possível adicionar agora."))
-        return
-      }
-      router.push(`/comunidades/${json.community.id_profile}`)
-    } catch {
-      setActionMsg(t("addSubjectError", "Não foi possível adicionar agora."))
-    } finally {
-      setAddingSubject(false)
-    }
-  }
-
   const saveAll = async () => {
     const token = getToken()
     if (!token || !community) return
@@ -1936,20 +1909,11 @@ export default function CommunityDetailPage() {
               />
             )}
             {/* PET E CARRO: o "+" na foto é a ÚNICA porta de adicionar outro
-                (decisão do Alex, 2026-09-27). O menu da foto de perfil só abre
-                o pet/carro padrão — "você só pode adicionar um perfil dentro
-                daquela comunidade pelo +". */}
+                (decisão do Alex, 2026-09-27) e se comporta como o "+" do
+                perfil principal — abre "Meus pets" / "Meus carros" com os que
+                a pessoa já tem e o card de adicionar. */}
             {showAsLeaderEdit && isLeader && subjectKind && (
-              <button
-                type="button"
-                onClick={addAnotherSubject}
-                disabled={addingSubject}
-                aria-label={subjectKind === "car" ? t("addAnotherCar", "Adicionar outro carro") : t("addAnotherPet", "Adicionar outro pet")}
-                title={subjectKind === "car" ? t("addAnotherCar", "Adicionar outro carro") : t("addAnotherPet", "Adicionar outro pet")}
-                className="absolute -right-2 -top-2 z-20 inline-flex h-8 w-8 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F5F1E8] disabled:opacity-60"
-              >
-                {addingSubject ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              </button>
+              <SubjectSwitcher kind={subjectKind} currentId={community.id_profile} fallbackAvatar={community.leader_avatar ?? null} />
             )}
           </div>
           {/* ⚠️ NO CELULAR O NOME DESCE PARA BAIXO DA FOTO (pedido do Alex,
