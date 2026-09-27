@@ -63,13 +63,15 @@ export const QUICK_ENTRIES: Record<QuickKey, QuickEntry> = {
   // O laranja escuro do ambiente fitness (`EMBER` em fitness-ui.ts).
   fitness: { key: "fitness", icon: Dumbbell, labelKey: "qpFitness", fallback: "Fitness", bg: "#9A3412", bgHover: "#7C2D12", fg: CREAM },
   games: { key: "games", icon: Gamepad2, labelKey: "qpGames", fallback: "Games", bg: "#6D28D9", bgHover: "#5B21B6", fg: CREAM },
-  // Bege CLARO com tinta marrom (Alex, 2026-09-27: "meu pet com a cor de fundo
-  // clara") — o fundo claro da pele do pet, não o marrom-tan do acento.
-  pet: { key: "pet", icon: PawPrint, labelKey: "myPet", fallback: "Meu pet", bg: "#EAD7B7", bgHover: "#DDC49C", fg: "#4A3320" },
+  // O marrom-tan travado da pele do pet (`brown` em community-ui.ts). ⚠️ No
+  // MENU da foto a linha é bege claro (override em spaces-menu.tsx) — o pill
+  // atrás da foto fica neste tom (Alex, 2026-09-27: "não altera a cor dos pills").
+  pet: { key: "pet", icon: PawPrint, labelKey: "myPet", fallback: "Meu pet", bg: "#A97C50", bgHover: "#8A6440", fg: INK },
   // O vermelho da pele `.fl-car`.
   car: { key: "car", icon: Car, labelKey: "myCar", fallback: "Meu carro", bg: "#B91C1C", bgHover: "#991B1B", fg: CREAM },
-  // Cinza BEM clarinho (Alex, 2026-09-27) — o fundo claro da pele do condomínio.
-  condo: { key: "condo", icon: Building2, labelKey: "myCondo", fallback: "Meu condomínio", bg: "#E4E4E7", bgHover: "#D4D4D8", fg: INK },
+  // O grafite travado do condomínio. No MENU da foto a linha é cinza clarinho
+  // (override em spaces-menu.tsx); o pill fica neste tom.
+  condo: { key: "condo", icon: Building2, labelKey: "myCondo", fallback: "Meu condomínio", bg: "#8E8E96", bgHover: "#71717A", fg: INK },
   // O azul do anexo do bairro (`.fl-hood`).
   neighborhood: { key: "neighborhood", icon: Signpost, labelKey: "myStreet", fallback: "Meu bairro", bg: "#2982CC", bgHover: "#1F6DB0", fg: CREAM },
   // O verde-petróleo do painel parental.

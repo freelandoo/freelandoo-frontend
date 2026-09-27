@@ -41,8 +41,21 @@ const swatchStyle = (c: Swatch): CSSProperties =>
 // rosa do anel neon do avatar.
 const PROFILE_SWATCH: Swatch = { bg: "#F2B705", bgHover: "#D9A300", fg: "#0B0B0D" }
 const BEES_SWATCH: Swatch = { bg: "#DB2777", bgHover: "#BE185D", fg: "#F1EDE2" }
-const NEUTRAL_SWATCH: Swatch = { bg: "#1D1810", bgHover: "#241d12", fg: "#F5F1E8" }
-const swatchOfKind = (k: SpaceKind): Swatch => QUICK_ENTRIES[k === "common" ? "business" : k]
+// O painel é PAPEL CREME, o mesmo tema do modal "Meus perfis" (Alex,
+// 2026-09-27). A linha neutra acompanha: branca com tinta preta.
+const NEUTRAL_SWATCH: Swatch = { bg: "#FFFFFF", bgHover: "#F2B705", fg: "#0B0B0D" }
+/**
+ * Linhas do MENU que ficam CLARAS (Alex, 2026-09-27: "meu pet com a cor de
+ * fundo clara e meu condomínio com cinza bem clarinho"). É override SÓ do menu:
+ * o pill atrás da foto continua na cor do catálogo ("não altera a cor dos
+ * pills"), e é por isso que ele não mora em QUICK_ENTRIES.
+ */
+const MENU_ROW_OVERRIDE: Partial<Record<SpaceKind, Swatch>> = {
+  pet: { bg: "#EAD7B7", bgHover: "#DDC49C", fg: "#4A3320" },
+  condo: { bg: "#E4E4E7", bgHover: "#D4D4D8", fg: "#0B0B0D" },
+}
+const swatchOfKind = (k: SpaceKind): Swatch =>
+  MENU_ROW_OVERRIDE[k] || QUICK_ENTRIES[k === "common" ? "business" : k]
 
 /**
  * O menu que abre ao apertar a foto de perfil (decisão do Alex, 2026-08-30).
@@ -341,19 +354,19 @@ export function SpacesMenu({
           // contadores e a bio inteira do headcard. `max-w` porque no celular a
           // coluna do avatar deixa pouco espaço à direita — o menu encolhe em vez
           // de vazar da tela (o <main> tem overflow-x-hidden e cortaria).
-          className="absolute left-full top-0 z-50 ml-3 flex w-56 max-w-[calc(100vw-8.5rem)] flex-col border-2 border-[#0B0B0D] bg-[#15120E] p-2"
-          style={{ boxShadow: "4px 4px 0 0 #0B0B0D" }}
+          className="absolute left-full top-0 z-50 ml-3 flex w-56 max-w-[calc(100vw-8.5rem)] flex-col border-2 border-[#0B0B0D] bg-[#F1EDE2] p-2"
+          style={{ boxShadow: "8px 8px 0 0 #0B0B0D" }}
         >
           {view === "pills" ? (
             <>
               <button
                 type="button"
                 onClick={() => setView(null)}
-                className="mb-1 flex w-full items-center gap-2 px-1 py-1 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A] hover:text-[#F5F1E8]"
+                className="mb-1 flex w-full items-center gap-2 px-1 py-1 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457] hover:text-[#0B0B0D]"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> {t("managePills", "Gerenciar pills")}
               </button>
-              <p className="mb-2 px-1 text-[11px] font-semibold leading-snug text-[#9A938A]">
+              <p className="mb-2 px-1 text-[11px] font-semibold leading-snug text-[#5b554b]">
                 {t("managePillsHint", "Escolha até {max} para o acesso rápido atrás da sua foto.").replace(
                   "{max}",
                   String(QUICK_PILL_MAX),
@@ -383,7 +396,7 @@ export function SpacesMenu({
                 )
               })}
               <div className="mt-1 flex items-center justify-between gap-2 px-1">
-                <span className="text-[10px] font-extrabold tabular-nums text-[#9A938A]">
+                <span className="text-[10px] font-extrabold tabular-nums text-[#5b554b]">
                   {pillDraft.length}/{QUICK_PILL_MAX}
                 </span>
                 <button
@@ -395,7 +408,7 @@ export function SpacesMenu({
                   {savingPills ? t("saving", "Salvando...") : t("save", "Salvar")}
                 </button>
               </div>
-              {pillsMsg && <p className="px-1 pt-1 text-[11px] font-semibold text-[#9A938A]">{pillsMsg}</p>}
+              {pillsMsg && <p className="px-1 pt-1 text-[11px] font-semibold text-[#5b554b]">{pillsMsg}</p>}
             </>
           ) : (
             <>
@@ -482,7 +495,7 @@ export function SpacesMenu({
                 ))}
 
               {createError && (
-                <p className="px-2 py-1 text-[11px] font-semibold normal-case tracking-normal text-[#ff7a6a]">
+                <p className="px-2 py-1 text-[11px] font-semibold normal-case tracking-normal text-[#8a1f1f]">
                   {createError}
                 </p>
               )}
@@ -496,11 +509,11 @@ export function SpacesMenu({
                 className={itemCls}
                 style={swatchStyle(NEUTRAL_SWATCH)}
               >
-                <LayoutList className="h-4 w-4 shrink-0 text-[#F2B705]" /> {t("managePills", "Gerenciar pills")}
+                <LayoutList className="h-4 w-4 shrink-0" /> {t("managePills", "Gerenciar pills")}
               </button>
 
               {loading && (
-                <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9A938A]">
+                <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#5b554b]">
                   {t("loading", "Carregando...")}
                 </span>
               )}
