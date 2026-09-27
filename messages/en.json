@@ -2984,7 +2984,15 @@
     "petFeedScopeAria": "Filter the pets feed",
     "petFeedAll": "All pets",
     "petFeedSameBreed": "Same pet as mine",
-    "petFeedNeedsBreed": "Pick the breed of one of your pets (in the My pet button) to see who has the same."
+    "petFeedNeedsBreed": "Pick the breed of one of your pets (in the My pet button) to see who has the same.",
+    "changePhotoHere": "Change the photo for this community only",
+    "changePhotoAgain": "Change photo",
+    "usePhotoOfProfile": "Use my profile photo",
+    "photoOnlyHereHint": "The change applies here only. Your other communities keep your profile photo.",
+    "photoResetError": "Couldn't switch back to your profile photo.",
+    "addAnotherPet": "Add another pet",
+    "addAnotherCar": "Add another car",
+    "addSubjectError": "Couldn't add it right now."
   },
   "Careers": {
     "hero.badge": "Careers",

@@ -9,7 +9,6 @@ import {
   Check,
   LayoutList,
   PawPrint,
-  Plus,
   Signpost,
   Sparkles,
   UserRound,
@@ -49,9 +48,11 @@ const swatchOfKind = (k: SpaceKind): Swatch => QUICK_ENTRIES[k === "common" ? "b
  * O menu que abre ao apertar a foto de perfil (decisão do Alex, 2026-08-30).
  *
  * Ele responde uma pergunta só: "o que é meu?". Cada linha é uma modalidade —
- * pet, carro, condomínio, rua (bairro) e comunidade temática. Quem JÁ tem
- * daquele tipo vê a lista; quem não tem cai direto no fluxo de criar. Nenhuma
- * linha leva a uma tela vazia perguntando o que fazer.
+ * pet, carro, condomínio e rua (bairro). Cada linha é uma PORTA (decisão do
+ * Alex, 2026-09-27): quem já tem abre o espaço PADRÃO daquele tipo; quem não
+ * tem cai direto no fluxo de criar. Não existe mais submenu com a lista e o
+ * "Adicionar": o segundo pet ou carro nasce pelo "+" na foto da própria
+ * comunidade — "você só pode adicionar um perfil dentro daquela comunidade".
  *
  * GAMES e ACADEMIA saíram daqui (decisão do Alex, 2026-09-04): cada um tinha o
  * próprio botão retrátil atrás da foto de perfil (`HeadcardPills`), e manter a
@@ -65,18 +66,6 @@ const swatchOfKind = (k: SpaceKind): Swatch => QUICK_ENTRIES[k === "common" ? "b
  */
 
 type SpaceKind = "pet" | "car" | "condo" | "neighborhood" | "common"
-
-/**
- * Modalidades de UM só por pessoa (decisão do Alex, 2026-09-17): *"só pode uma
- * de condomínio, e uma de rua, somente o pet pode ter mais de uma"*. O carro
- * saiu da lista na mig 259 (2026-09-24): "um ou mais, estilo o meu pet".
- *
- * ⚠️ ESPELHO, NÃO REGRA. Quem recusa é o backend (`utils/spaceCaps` — as três
- * portas do condomínio, as duas do bairro e o botão genérico de entrar); aqui
- * só se decide o que OFERECER. Errar para mais deste lado esconde um botão;
- * errar do outro abriria a porta. Mexeu numa lista, confira a outra.
- */
-const SINGLE_SPACE_KINDS: SpaceKind[] = ["condo", "neighborhood"]
 
 type SpaceRow = {
   id_profile: string
@@ -141,8 +130,10 @@ export function SpacesMenu({
 
   const [data, setData] = useState<SpacesPayload>(EMPTY)
   const [loading, setLoading] = useState(false)
-  // `"pills"` é o gerenciador do acesso rápido (mig 260).
-  const [view, setView] = useState<SpaceKind | "pills" | null>(null)
+  // A lista desta abertura já chegou? Sem ela, "não tenho nenhum" é palpite.
+  const [loaded, setLoaded] = useState(false)
+  // `"pills"` é o gerenciador do acesso rápido (mig 260) — a única subtela.
+  const [view, setView] = useState<"pills" | null>(null)
   const available = useQuickAvailability()
   const { pills: chosenPills, save: savePills } = useQuickPills()
   const [pillDraft, setPillDraft] = useState<QuickKey[]>([])
@@ -207,12 +198,14 @@ export function SpacesMenu({
       /* menu continua utilizável: sem dados ele oferece criar */
     } finally {
       setLoading(false)
+      setLoaded(true)
     }
   }, [])
 
   useEffect(() => {
     if (!open) return
     setView(null)
+    setLoaded(false)
     setCreateError(null)
     load()
   }, [open, load])
@@ -251,17 +244,7 @@ export function SpacesMenu({
     rows: { id: string; name: string; subtitle: string | null; href: string }[]
     /** O que acontece quando a pessoa ainda não tem nenhum daquele tipo. */
     create: () => void
-    createLabel: string
   }
-
-  /**
-   * Nas modalidades de um só, o item do menu deixa de ser uma LISTA e vira
-   * porta: quem não tem, cria; quem tem, abre. Sem isso o submenu abriria com
-   * uma linha e um "+" que o backend recusa — botão que só falha depois do
-   * clique é pior que botão nenhum.
-   */
-  const isSingle = (kind: SpaceKind) => SINGLE_SPACE_KINDS.includes(kind)
-  const canCreateMore = (item: Item) => !isSingle(item.key) || item.rows.length === 0
 
   const items: Item[] = [
     {
@@ -276,7 +259,6 @@ export function SpacesMenu({
         href: `/comunidades/${r.id_profile}`,
       })),
       create: () => createAndOpen("pet"),
-      createLabel: t("newPet", "Novo pet"),
     },
     {
       key: "car",
@@ -290,7 +272,6 @@ export function SpacesMenu({
         href: `/comunidades/${r.id_profile}`,
       })),
       create: () => createAndOpen("car"),
-      createLabel: t("newCar", "Adicionar carro"),
     },
     {
       key: "condo",
@@ -304,7 +285,6 @@ export function SpacesMenu({
         href: `/comunidades/${r.id_profile}`,
       })),
       create: () => go("/comunidades/criar?tipo=condo"),
-      createLabel: t("newCondo", "Cadastrar condomínio"),
     },
     {
       key: "neighborhood",
@@ -318,7 +298,6 @@ export function SpacesMenu({
         href: `/comunidades/${r.id_profile}`,
       })),
       create: () => go("/bairro"),
-      createLabel: t("findStreet", "Encontrar meu bairro"),
     },
     /* "Minha comunidade" SAIU daqui em 2026-09-05 (pedido do Alex): virou o pill
        "Business" da pilha do headcard (components/profile/headcard-pills.tsx),
@@ -326,8 +305,6 @@ export function SpacesMenu({
        lugares seriam duas portas para a mesma ação — e o `createAndOpen` daqui
        ficou só com pet e carro. */
   ]
-
-  const current = view && view !== "pills" ? items.find((i) => i.key === view) || null : null
 
   // O que o gerenciador oferece: o que a conta pode usar agora. Menor
   // supervisionado não tem "Meus filhos" (ver `isMinor`).
@@ -420,56 +397,6 @@ export function SpacesMenu({
               </div>
               {pillsMsg && <p className="px-1 pt-1 text-[11px] font-semibold text-[#9A938A]">{pillsMsg}</p>}
             </>
-          ) : current ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setView(null)}
-                className="mb-1 flex w-full items-center gap-2 px-1 py-1 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A] hover:text-[#F5F1E8]"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" /> {current.label}
-              </button>
-              {current.rows.map((row) => (
-                <button
-                  key={row.id}
-                  type="button"
-                  role="menuitem"
-                  onClick={() => go(row.href)}
-                  className={itemCls}
-                  style={swatchStyle(swatchOfKind(current.key))}
-                >
-                  <current.icon className="h-4 w-4 shrink-0" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate normal-case tracking-normal">{row.name}</span>
-                    {row.subtitle && (
-                      <span className="block truncate text-[10px] font-semibold normal-case tracking-normal opacity-75">
-                        {row.subtitle}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              ))}
-              {/* O "+" some quando a modalidade é de um só e a pessoa já tem o
-                  dela. Ele continua aqui para o pet — e para o caso legado de
-                  quem já tinha dois de algo antes do teto existir, que segue
-                  vendo os dois e não ganha um terceiro. */}
-              {canCreateMore(current) && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => current.create()}
-                  className={itemCls}
-                  style={swatchStyle(NEUTRAL_SWATCH)}
-                >
-                  <Plus className="h-4 w-4 shrink-0 text-[#F2B705]" /> {current.createLabel}
-                </button>
-              )}
-              {createError && (
-                <p className="px-2 py-1 text-[11px] font-semibold normal-case tracking-normal text-[#ff7a6a]">
-                  {createError}
-                </p>
-              )}
-            </>
           ) : (
             <>
               {/* Com o anel de bee aceso o avatar deixou de ser o atalho para os
@@ -529,34 +456,36 @@ export function SpacesMenu({
                     type="button"
                     role="menuitem"
                     onClick={() => {
-                      // Um só e já tem: abre direto. O submenu existiria para
-                      // escolher entre uma opção e um "+" que não vale — dois
-                      // cliques para chegar onde o primeiro já chegava.
-                      if (isSingle(item.key) && item.rows.length === 1) {
+                      // Já tem: abre o PADRÃO — o primeiro da lista, que o
+                      // backend ordena com o que a pessoa lidera na frente e,
+                      // entre eles, o mais antigo. Outro pet/carro se adiciona
+                      // pelo "+" na foto da comunidade, não daqui.
+                      if (item.rows.length > 0) {
                         go(item.rows[0].href)
                         return
                       }
-                      if (item.rows.length > 0) {
-                        setView(item.key)
-                        return
-                      }
-                      onClose()
+                      // Sem `onClose()` aqui: criar pet/carro é assíncrono e
+                      // pode ser RECUSADO — o menu fecha sozinho no sucesso e
+                      // fica aberto para mostrar o motivo da recusa.
                       item.create()
                     }}
-                    className={itemCls}
+                    // ⚠️ Enquanto a lista não chegou, "não tenho nenhum" ainda
+                    // não é verdade: o clique criaria um SEGUNDO pet para quem
+                    // já tem um. Espera a resposta.
+                    disabled={loading || !loaded || !!creating}
+                    className={`${itemCls} disabled:opacity-60`}
                     style={swatchStyle(swatchOfKind(item.key))}
                   >
                     <item.icon className="h-4 w-4 shrink-0" />
                     <span className="flex-1">{item.label}</span>
-                    {/* Contador só onde ele diz alguma coisa: num item de um só
-                        ele seria sempre "1". */}
-                    {item.rows.length > 0 && !isSingle(item.key) && (
-                      <span className="text-[10px] font-extrabold tabular-nums">
-                        {item.rows.length}
-                      </span>
-                    )}
                   </button>
                 ))}
+
+              {createError && (
+                <p className="px-2 py-1 text-[11px] font-semibold normal-case tracking-normal text-[#ff7a6a]">
+                  {createError}
+                </p>
+              )}
 
               {/* O acesso rápido: quais destes (e dos pills de sempre) ficam
                   atrás da foto. */}

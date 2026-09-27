@@ -2971,7 +2971,15 @@
     "petFeedScopeAria": "Filtrar o feed de pets",
     "petFeedAll": "Todos os pets",
     "petFeedSameBreed": "Mesmo pet que o meu",
-    "petFeedNeedsBreed": "Escolha a raça de um dos seus pets (no botão Meu pet) para ver quem tem a mesma."
+    "petFeedNeedsBreed": "Escolha a raça de um dos seus pets (no botão Meu pet) para ver quem tem a mesma.",
+    "changePhotoHere": "Trocar a foto só nesta comunidade",
+    "changePhotoAgain": "Trocar foto",
+    "usePhotoOfProfile": "Usar a foto do meu perfil",
+    "photoOnlyHereHint": "A troca vale só aqui. Nas outras comunidades continua a foto do seu perfil.",
+    "photoResetError": "Não foi possível voltar à foto do perfil.",
+    "addAnotherPet": "Adicionar outro pet",
+    "addAnotherCar": "Adicionar outro carro",
+    "addSubjectError": "Não foi possível adicionar agora."
   },
   "Careers": {
     "hero.badge": "Carreiras",

@@ -8,6 +8,7 @@ import {
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
   Lock, Globe, PawPrint, Car, UserRound, Bike, ShoppingBag, Building2,
+  Camera,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -348,6 +349,8 @@ export default function CommunityDetailPage() {
   const [uploading, setUploading] = useState<"banner" | "avatar" | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [photoResetting, setPhotoResetting] = useState(false)
+  const [addingSubject, setAddingSubject] = useState(false)
   const seeded = useRef(false)
   const autoEdited = useRef(false)
 
@@ -1407,6 +1410,52 @@ export default function CommunityDetailPage() {
     }
   }
 
+  /** Volta a herdar a foto de perfil do dono (apaga só a foto desta comunidade). */
+  const resetAvatar = async () => {
+    const token = getToken()
+    if (!token || photoResetting) return
+    setPhotoResetting(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/avatar`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || t("photoResetError", "Não foi possível voltar à foto do perfil."))
+      }
+      await loadAll()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("photoResetError", "Não foi possível voltar à foto do perfil."))
+    } finally {
+      setPhotoResetting(false)
+    }
+  }
+
+  /**
+   * Cria OUTRO pet/carro vazio e abre a página dele, já editável — mesmo
+   * caminho de rascunho do menu da foto (corpo vazio, mig 219).
+   */
+  const addAnotherSubject = async () => {
+    const token = getToken()
+    if (!token || !subjectKind || addingSubject) return
+    setAddingSubject(true); setActionMsg(null)
+    try {
+      const res = await fetch(subjectKind === "pet" ? "/api/pets" : "/api/cars", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: "{}",
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.community?.id_profile) {
+        setActionMsg(json?.error || t("addSubjectError", "Não foi possível adicionar agora."))
+        return
+      }
+      router.push(`/comunidades/${json.community.id_profile}`)
+    } catch {
+      setActionMsg(t("addSubjectError", "Não foi possível adicionar agora."))
+    } finally {
+      setAddingSubject(false)
+    }
+  }
+
   const saveAll = async () => {
     const token = getToken()
     if (!token || !community) return
@@ -1630,22 +1679,22 @@ export default function CommunityDetailPage() {
 
   const bannerSrc = bannerPreview || community.banner_url
   /**
-   * ⚠️ A FOTO DO HEADCARD É A DO DONO (decisão do Alex, 2026-09-25): "todas
-   * as comunidades têm que ter a mesma foto do perfil". É `tb_user.avatar` do
-   * LÍDER (`leader_avatar`, vindo do getById) — a mesma do /account, fonte
-   * única da mig 215 —, e por isso é a MESMA para quem olha e para quem é dono.
+   * ⚠️ A FOTO DO HEADCARD HERDA A DO DONO (decisão do Alex, 2026-09-25): é
+   * `tb_user.avatar` do LÍDER (`leader_avatar`, vindo do getById) — a mesma do
+   * /account, fonte única da mig 215 —, e por isso é a MESMA para quem olha e
+   * para quem é dono. Antes o negócio sem logo caía na foto de QUEM OLHAVA: o
+   * visitante via a própria cara no negócio de outra pessoa.
    *
-   * Antes o negócio sem logo caía na foto de QUEM OLHAVA: o visitante via a
-   * própria cara no negócio de outra pessoa.
-   *
-   * A foto própria da comunidade só aparece quando o líder não tem foto de
-   * perfil — e é só nesse caso que o "Trocar foto" do headcard aparece, senão
-   * ele trocaria uma imagem que ninguém vê.
+   * ⚠️ E A FOTO DA COMUNIDADE É OVERRIDE (2026-09-27): *"se não trocar
+   * permanece a do perfil principal, se trocar só troca na comunidade
+   * específica"*. `avatar_url` preenchido vence; NULL = herda. Voltar a herdar
+   * é APAGAR a foto própria (DELETE), nunca gravar a do dono por cima — senão
+   * trocar a foto de perfil depois deixaria esta comunidade para trás.
    *
    * O BANNER e as CORES continuam da comunidade.
    */
   const avatarSrc =
-    avatarPreview || community.leader_avatar || community.avatar_url || null
+    avatarPreview || community.avatar_url || community.leader_avatar || null
 
   // Ranking exibido: o da temporada (por métrica) quando há meta; senão XP absoluto.
   const seasonOn = !!goal
@@ -1868,8 +1917,40 @@ export default function CommunityDetailPage() {
                   é o do assunto (o cachorro, o carro) ou a marca do negócio. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
-              {showAsLeaderEdit && !community.leader_avatar && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
+              {uploading === "avatar" && (
+                <div className="absolute inset-0 grid place-items-center bg-black/50 text-white">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              )}
             </div>
+            {/* FORA da caixa da foto, que é `overflow-hidden` e recortaria os
+                dois botões na borda. Só no modo de edição do dono: no "ver
+                como público" eles somem, como tudo que é de quem edita. */}
+            {showAsLeaderEdit && (
+              <PhotoOverrideBadge
+                hasOwnPhoto={!!community.avatar_url}
+                busy={uploading === "avatar" || photoResetting}
+                onFile={(f) => uploadImage("avatar", f)}
+                onReset={resetAvatar}
+                t={t}
+              />
+            )}
+            {/* PET E CARRO: o "+" na foto é a ÚNICA porta de adicionar outro
+                (decisão do Alex, 2026-09-27). O menu da foto de perfil só abre
+                o pet/carro padrão — "você só pode adicionar um perfil dentro
+                daquela comunidade pelo +". */}
+            {showAsLeaderEdit && isLeader && subjectKind && (
+              <button
+                type="button"
+                onClick={addAnotherSubject}
+                disabled={addingSubject}
+                aria-label={subjectKind === "car" ? t("addAnotherCar", "Adicionar outro carro") : t("addAnotherPet", "Adicionar outro pet")}
+                title={subjectKind === "car" ? t("addAnotherCar", "Adicionar outro carro") : t("addAnotherPet", "Adicionar outro pet")}
+                className="absolute -right-2 -top-2 z-20 inline-flex h-8 w-8 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F5F1E8] disabled:opacity-60"
+              >
+                {addingSubject ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              </button>
+            )}
           </div>
           {/* ⚠️ NO CELULAR O NOME DESCE PARA BAIXO DA FOTO (pedido do Alex,
               2026-09-10: "nada sobreponha os nomes no mobile"). Ao lado dela,
@@ -2914,6 +2995,59 @@ export default function CommunityDetailPage() {
         />
       )}
     </div>
+  )
+}
+
+/**
+ * A câmera embaixo da foto da comunidade (pedido do Alex, 2026-09-27): troca a
+ * foto SÓ desta comunidade. Sem foto própria, o clique abre o seletor direto;
+ * com foto própria, abre as duas saídas — trocar de novo ou voltar a herdar a
+ * foto de perfil. Mesmo desenho do badge da foto nas plataformas.
+ */
+function PhotoOverrideBadge({
+  hasOwnPhoto, busy, onFile, onReset, t,
+}: {
+  hasOwnPhoto: boolean
+  busy: boolean
+  onFile: (f: File) => void
+  onReset: () => void
+  t: (key: string, fallback: string) => string
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  const [open, setOpen] = useState(false)
+  const label = t("changePhotoHere", "Trocar a foto só nesta comunidade")
+  return (
+    <>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => (hasOwnPhoto ? setOpen((v) => !v) : ref.current?.click())}
+        aria-label={label}
+        title={label}
+        className="absolute -bottom-2 -right-2 z-20 inline-flex h-8 w-8 items-center justify-center border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] disabled:opacity-60"
+      >
+        <Camera className="h-4 w-4" />
+      </button>
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = "" }} />
+      {open && (
+        <>
+          <div aria-hidden className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div role="menu" className="absolute left-full top-full z-50 -mt-6 ml-2 flex w-56 max-w-[calc(100vw-10rem)] flex-col border-2 border-[#0B0B0D] bg-[#15120E] p-2" style={{ boxShadow: "4px 4px 0 0 #0B0B0D" }}>
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); ref.current?.click() }}
+              className="mb-1 flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-left text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+              <Camera className="h-4 w-4 shrink-0 text-[#F2B705]" /> {t("changePhotoAgain", "Trocar foto")}
+            </button>
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); onReset() }}
+              className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-left text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+              <UserRound className="h-4 w-4 shrink-0 text-[#F2B705]" /> {t("usePhotoOfProfile", "Usar a foto do meu perfil")}
+            </button>
+            <p className="px-1 pt-2 text-[10px] font-semibold leading-snug text-[#9A938A]">
+              {t("photoOnlyHereHint", "A troca vale só aqui. Nas outras comunidades continua a foto do seu perfil.")}
+            </p>
+          </div>
+        </>
+      )}
+    </>
   )
 }
 
