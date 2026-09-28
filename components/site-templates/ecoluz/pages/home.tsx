@@ -21,7 +21,7 @@
 
 import SavingsCalculator from "../calculator";
 import { WA_DEFAULT, whatsappLink } from "../content/business";
-import { DIFFERENTIALS, FAQ, STEPS } from "../content/site";
+import { DIFFERENTIALS, FAQ } from "../content/site";
 import {
   AboutSection,
   FinancingSection,
@@ -34,6 +34,7 @@ import {
 import { type Ctx } from "../lib";
 import EnergyFlow from "../energy-flow";
 import Opening from "../opening";
+import { EnergyPipeline, HomologationFlow } from "../process-scenes";
 import SolutionsOrbit from "../solutions-orbit";
 import SystemComparator from "../system-comparator";
 import { CtaBand, FaqList, FeatureCard, Section, SectionHead } from "../ui";
@@ -89,35 +90,11 @@ export default function HomePage({ links }: Ctx) {
           de quem se reconheceu num deles ("e eu preciso de bateria?"). */}
       <SystemComparator links={links} />
 
-      {/* ── § 5 — COMO FUNCIONA ─────────────────────────────────────────── */}
-      <Section id="como-funciona" tone="paper">
-        <SectionHead
-          tone="paper"
-          eyebrow="Como funciona"
-          title="Da primeira conversa ao acompanhamento."
-          lead="Seis etapas, e você sabe em qual delas o seu projeto está. A EcoLuz não vende equipamento: entrega uma solução completa, incluindo a parte que costuma travar — a homologação."
-        />
+      {/* § 5 — Como funciona: as seis etapas numa linha que acende. */}
+      <EnergyPipeline />
 
-        <ol
-          className="mt-14 grid gap-px sm:grid-cols-2 lg:grid-cols-3"
-          style={{ background: "var(--el-paper-line)" }}
-        >
-          {STEPS.map((s, i) => (
-            <li
-              key={s.n}
-              className="bg-[var(--el-paper)] p-7"
-              data-reveal="up"
-              data-reveal-delay={i * 60}
-            >
-              <span className="numeral text-[2.25rem] text-[var(--el-amber-ink)]">{s.n}</span>
-              <h3 className="display mt-3 text-[1.125rem] text-[var(--el-paper-ink)]">{s.title}</h3>
-              <p className="mt-2 text-[0.9375rem] leading-relaxed text-[var(--el-paper-dim)]">
-                {s.text}
-              </p>
-            </li>
-          ))}
-        </ol>
-      </Section>
+      {/* A etapa que mais trava, em destaque próprio. */}
+      <HomologationFlow />
 
       {/* ── § 6 — SIMULAÇÃO DE ECONOMIA ─────────────────────────────────── */}
       <Section id="economia">

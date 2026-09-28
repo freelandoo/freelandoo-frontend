@@ -730,3 +730,228 @@
   stroke-width: 2.4;
   stroke-linecap: round;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   O PIPELINE (sobre papel)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-ecoluz .el-pipe {
+  /* Sem JavaScript a linha nasce cheia. */
+  --pipe: 1;
+}
+
+.tpl-ecoluz .el-pipe__phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  color: var(--el-amber-ink);
+}
+.tpl-ecoluz .el-pipe__phases span + span::before {
+  content: "→";
+  margin-right: 0.75rem;
+  color: var(--el-paper-dim);
+}
+
+.tpl-ecoluz .el-pipe__list {
+  position: relative;
+  display: grid;
+}
+
+.tpl-ecoluz .el-pipe__rail,
+.tpl-ecoluz .el-pipe__fill {
+  position: absolute;
+  pointer-events: none;
+}
+.tpl-ecoluz .el-pipe__rail {
+  background: var(--el-paper-line);
+}
+/* A luz sobre papel é ÂMBAR — o amarelo da marca some no branco (1,5:1). */
+.tpl-ecoluz .el-pipe__fill {
+  background: linear-gradient(var(--el-amber-ink), var(--el-sun));
+  box-shadow: 0 0 0.9rem rgb(255 170 0 / 0.45);
+}
+
+.tpl-ecoluz .el-pipe__step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  /* ⚠️ Sem isto a grade de fora estica o item e as linhas `auto` de DENTRO
+     dividem a sobra: o título de uma linha desce mais que o de duas, e os
+     seis textos começam em alturas diferentes. */
+  align-content: start;
+  gap: 1.25rem;
+  padding-bottom: 2.25rem;
+}
+
+.tpl-ecoluz .el-pipe__node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  background: var(--el-paper-ink);
+  color: var(--el-sun);
+  font-size: 1.0625rem;
+  box-shadow: 0 0 1.1rem rgb(255 170 0 / 0.35);
+  transition:
+    background-color 0.4s var(--el-ease),
+    color 0.4s var(--el-ease),
+    box-shadow 0.4s var(--el-ease);
+}
+
+.tpl-ecoluz .el-pipe__body {
+  transition: opacity 0.4s var(--el-ease);
+}
+
+.tpl-ecoluz .el-pipe[data-live] .el-pipe__step:not([data-lit]) .el-pipe__node {
+  background: var(--el-paper);
+  color: var(--el-paper-dim);
+  box-shadow: inset 0 0 0 1px var(--el-paper-line);
+}
+.tpl-ecoluz .el-pipe[data-live] .el-pipe__step:not([data-lit]) .el-pipe__body {
+  opacity: 0.45;
+}
+
+/* ── celular: vertical ─────────────────────────────────────────────────── */
+.tpl-ecoluz .el-pipe__rail,
+.tpl-ecoluz .el-pipe__fill {
+  left: calc(1.5rem - 1px);
+  top: 1.5rem;
+  bottom: 3.75rem;
+  width: 2px;
+}
+.tpl-ecoluz .el-pipe__fill {
+  transform: scaleY(var(--pipe));
+  transform-origin: top center;
+}
+
+/* ── computador: horizontal ────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-pipe__list {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .tpl-ecoluz .el-pipe__step {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0 1.5rem 0 0;
+  }
+  .tpl-ecoluz .el-pipe__rail,
+  .tpl-ecoluz .el-pipe__fill {
+    top: calc(1.5rem - 1px);
+    left: 1.5rem;
+    /* do centro do primeiro nó ao centro do último: o último está no começo
+       da sexta coluna, então sobra 1/6 da largura menos meio nó */
+    right: calc(100% / 6 - 1.5rem);
+    bottom: auto;
+    width: auto;
+    height: 2px;
+  }
+  .tpl-ecoluz .el-pipe__fill {
+    transform: scaleX(var(--pipe));
+    transform-origin: left center;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A HOMOLOGAÇÃO
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-ecoluz .el-homo__list {
+  display: grid;
+  gap: 1px;
+  background: var(--el-line-soft);
+}
+@media (min-width: 640px) {
+  .tpl-ecoluz .el-homo__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-homo__list {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.tpl-ecoluz .el-homo__step {
+  position: relative;
+  padding: 1.5rem 1.25rem 1.75rem;
+  background: var(--el-ink);
+  transition: background-color 0.4s var(--el-ease);
+}
+
+/* A barra no pé de cada passo: o "progresso" do estado. */
+.tpl-ecoluz .el-homo__step::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgb(var(--el-volt));
+  transform: scaleX(1);
+  transform-origin: left center;
+  transition: transform 0.5s var(--el-ease);
+}
+
+.tpl-ecoluz .el-homo__chip {
+  padding: 0.35rem 0.55rem;
+  font-family: var(--el-display);
+  font-weight: 700;
+  font-stretch: 90%;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--el-ink);
+  background: rgb(var(--el-volt));
+  transition:
+    background-color 0.3s var(--el-ease),
+    color 0.3s var(--el-ease);
+}
+
+/* Os estados, escritos pelo script. Sem ele, todos nascem aprovados. */
+.tpl-ecoluz .el-homo[data-live] .el-homo__step[data-state="0"] .el-homo__chip {
+  background: transparent;
+  color: var(--el-cream-faint);
+  box-shadow: inset 0 0 0 1px var(--el-line);
+}
+.tpl-ecoluz .el-homo[data-live] .el-homo__step[data-state="1"] .el-homo__chip {
+  background: var(--el-sun);
+  color: var(--el-ink);
+}
+.tpl-ecoluz .el-homo[data-live] .el-homo__step[data-state="0"]::after {
+  transform: scaleX(0);
+}
+.tpl-ecoluz .el-homo[data-live] .el-homo__step[data-state="1"]::after {
+  transform: scaleX(0.5);
+  background: var(--el-sun);
+}
+
+/* "Gerando": o último passo pulsa, porque é o único que continua acontecendo
+   depois do fim. O pulso é `opacity` num elemento pequeno. */
+.tpl-ecoluz .el-homo__step[data-state="3"] {
+  background: rgb(var(--el-volt) / 0.08);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tpl-ecoluz .el-homo__step[data-state="3"] .el-homo__chip {
+    animation: tplEcoluzGen 1.4s ease-in-out infinite;
+  }
+}
+@keyframes tplEcoluzGen {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-ecoluz .el-pipe__node,
+  .tpl-ecoluz .el-pipe__body,
+  .tpl-ecoluz .el-homo__step,
+  .tpl-ecoluz .el-homo__step::after,
+  .tpl-ecoluz .el-homo__chip {
+    transition: none;
+  }
+}
