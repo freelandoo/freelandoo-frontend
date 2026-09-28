@@ -3075,7 +3075,9 @@
     "delModalRaised": "Oferta maior · {c}",
     "delModalOffer": "Oferta",
     "delModalSeeBoard": "Ver no quadro",
-    "delModalLater": "Agora não"
+    "delModalLater": "Agora não",
+    "delPlatformFee": "· {v} ficam com a Freelandoo",
+    "listBillToPlatform": "A mensalidade é paga à Freelandoo, não ao líder da comunidade."
   },
   "Careers": {
     "hero.badge": "Carreiras",

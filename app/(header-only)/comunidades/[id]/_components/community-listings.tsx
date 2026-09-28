@@ -708,6 +708,12 @@ export function CommunityListings({
                   money(quota.monthly_cents)
                 )}
               </p>
+              {/* A mensalidade é da plataforma, não do síndico nem do líder
+                  (decisão do Alex, 2026-09-28) — dito aqui porque é a pergunta
+                  que o morador faz antes de pagar. */}
+              <p className="mt-1 text-[11px] text-[#9A938A]">
+                {t("listBillToPlatform", "A mensalidade é paga à Freelandoo, não ao líder da comunidade.")}
+              </p>
 
               {/* ⚠️ O CARTAO VEM PRIMEIRO E CHEIO: e o unico que renova sozinho,
                   e e o caminho que o Alex pediu como natural. O Pix fica ao

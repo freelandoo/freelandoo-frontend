@@ -88,7 +88,9 @@ type Delivery = {
   min_price_cents: number | null
   negotiable: boolean
   /** O líquido pelo valor ATUAL — a oferta pode ter subido desde a abertura. */
-  courier_preview?: { net_cents: number } | null
+  courier_preview?: { net_cents: number; platform_fee_cents?: number } | null
+  /** Mig 267: a parte da Freelandoo congelada no aceite. */
+  platform_fee_cents?: number
   /** Só para quem PEDIU: as contrapropostas pendentes. */
   proposals?: Proposal[]
   /** Só para o vizinho: a proposta DELE, se houver. */
@@ -719,6 +721,19 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
                         money(d.price_cents)
                       )}
                     </span>
+                    {(() => {
+                      // Mig 267: 3% da corrida ficam com a Freelandoo, e a tela
+                      // diz isso junto do líquido — nunca na carteira depois.
+                      const fee = d.platform_fee_cents || d.courier_preview?.platform_fee_cents || 0
+                      return fee > 0 ? (
+                        <span className="ml-2 text-[11px] font-bold text-[#9A938A]">
+                          {t("delPlatformFee", "· {v} ficam com a Freelandoo").replace(
+                            "{v}",
+                            money(fee)
+                          )}
+                        </span>
+                      ) : null
+                    })()}
                   </p>
 
                   {d.status === "open" && (

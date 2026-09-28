@@ -3088,7 +3088,9 @@
     "delModalRaised": "Higher offer · {c}",
     "delModalOffer": "Offer",
     "delModalSeeBoard": "See on the board",
-    "delModalLater": "Not now"
+    "delModalLater": "Not now",
+    "delPlatformFee": "· {v} goes to Freelandoo",
+    "listBillToPlatform": "The monthly fee is paid to Freelandoo, not to the community leader."
   },
   "Careers": {
     "hero.badge": "Careers",

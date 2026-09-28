@@ -63,6 +63,7 @@ type ListingSettings = {
   platform_fee_percent: number
   holdback_days: number
   confirm_days: number
+  delivery_fee_percent?: number
   is_active: boolean
 } | null
 
@@ -142,6 +143,7 @@ export default function ComercioVizinhoPage() {
      "salvar" seja um gesto explícito, e não cada tecla digitada. */
   const [draftTypes, setDraftTypes] = useState<Record<string, DeliveryType>>({})
   const [feeCents, setFeeCents] = useState("0,00")
+  const [deliveryFeePercent, setDeliveryFeePercent] = useState("3")
   const [feePercent, setFeePercent] = useState("0")
   const [holdbackDays, setHoldbackDays] = useState("8")
   const [confirmDays, setConfirmDays] = useState("7")
@@ -194,6 +196,7 @@ export default function ComercioVizinhoPage() {
       if (s.listing_settings) {
         setFeeCents((s.listing_settings.platform_fee_cents / 100).toFixed(2).replace(".", ","))
         setFeePercent(String(s.listing_settings.platform_fee_percent))
+        setDeliveryFeePercent(String(s.listing_settings.delivery_fee_percent ?? 3))
         setHoldbackDays(String(s.listing_settings.holdback_days))
         setConfirmDays(String(s.listing_settings.confirm_days))
         setListingActive(s.listing_settings.is_active)
@@ -277,6 +280,9 @@ export default function ComercioVizinhoPage() {
       if (!Number.isFinite(cents) || cents < 0) throw new Error("Taxa fixa inválida")
       const pct = parseFloat(feePercent.replace(",", "."))
       if (!Number.isFinite(pct) || pct < 0 || pct > 99) throw new Error("Percentual entre 0 e 99")
+      const dpct = parseFloat(deliveryFeePercent.replace(",", "."))
+      if (!Number.isFinite(dpct) || dpct < 0 || dpct > 50)
+        throw new Error("Taxa do delivery entre 0 e 50")
       const hold = parseInt(holdbackDays, 10)
       if (!Number.isFinite(hold) || hold < 0 || hold > 60) throw new Error("Retenção entre 0 e 60")
       const conf = parseInt(confirmDays, 10)
@@ -292,6 +298,7 @@ export default function ComercioVizinhoPage() {
             platform_fee_percent: pct,
             holdback_days: hold,
             confirm_days: conf,
+            delivery_fee_percent: dpct,
             is_active: listingActive,
           }),
         }
@@ -643,6 +650,15 @@ export default function ComercioVizinhoPage() {
                 <TabloidInput value={feePercent} onChange={(e) => setFeePercent(e.target.value)} />
               </TabloidField>
               <TabloidField
+                label="Freelandoo no delivery (%)"
+                hint="Parte da plataforma em cada corrida entre vizinhos (padrão 3%). Sai de quem entrega, como a tarifa do gateway; quem pede paga o preço publicado. Vale para corridas aceitas daqui em diante."
+              >
+                <TabloidInput
+                  value={deliveryFeePercent}
+                  onChange={(e) => setDeliveryFeePercent(e.target.value)}
+                />
+              </TabloidField>
+              <TabloidField
                 label="Retenção / holdback (dias)"
                 hint="Existe por causa do CDC (arrependimento em compra remota). Diferente do delivery, que é entrega em mãos e não tem retenção."
               >
@@ -670,7 +686,7 @@ export default function ComercioVizinhoPage() {
                 checked={listingActive}
                 onChange={(e) => setListingActive(e.target.checked)}
               />
-              Cobrar taxa da plataforma (desmarcado = sem taxa)
+              Cobrar taxa da plataforma na venda e no delivery (desmarcado = sem taxa)
             </label>
 
             <button
@@ -686,6 +702,7 @@ export default function ComercioVizinhoPage() {
             {listing && (
               <p className="mt-3 text-[11px] text-[#9A938A]">
                 Valendo agora: {brl(listing.platform_fee_cents)} + {listing.platform_fee_percent}% ·
+                delivery {listing.delivery_fee_percent ?? 3}% ·
                 retenção de {listing.holdback_days} dia(s) · confirmação em {listing.confirm_days}{" "}
                 dia(s) · {listing.is_active ? "taxa ativa" : "taxa desligada"}
               </p>
