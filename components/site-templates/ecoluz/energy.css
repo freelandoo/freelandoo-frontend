@@ -1326,3 +1326,323 @@
   margin-top: 1.25rem;
   min-height: 9.5rem;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   O SCANNER DE CARGAS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-ecoluz .el-scan__grid {
+  display: grid;
+  gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-scan__grid {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 2.5rem;
+  }
+}
+
+.tpl-ecoluz .el-scan__list {
+  display: grid;
+  gap: 1px;
+  align-content: start;
+  /* ⚠️ Sem isto a grade de fora estica a lista até a altura do painel, e o
+     fundo dela (que é o FIO) aparece como um bloco vazio embaixo do último
+     item. */
+  align-self: start;
+  background: var(--el-line-soft);
+}
+@media (max-width: 1023px) {
+  .tpl-ecoluz .el-scan__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.tpl-ecoluz .el-scan__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  background: var(--el-ink);
+  text-align: left;
+  font-size: 0.9375rem;
+  color: var(--el-cream-dim);
+  transition:
+    background-color 0.18s var(--el-ease),
+    color 0.18s var(--el-ease);
+}
+.tpl-ecoluz .el-scan__item:hover {
+  color: var(--el-cream);
+}
+.tpl-ecoluz .el-scan__item[aria-selected="true"] {
+  background: var(--el-ink-hi);
+  color: var(--el-cream);
+  box-shadow: inset 3px 0 0 var(--el-sun);
+}
+.tpl-ecoluz .el-scan__item:focus-visible {
+  outline: 2px solid var(--el-sun);
+  outline-offset: -2px;
+}
+.tpl-ecoluz .el-scan__item-icon {
+  color: var(--el-sun);
+  flex: none;
+}
+.tpl-ecoluz .el-scan__arrow {
+  margin-left: auto;
+  color: var(--el-sun);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 0.18s var(--el-ease),
+    transform 0.18s var(--el-ease);
+}
+.tpl-ecoluz .el-scan__item[aria-selected="true"] .el-scan__arrow {
+  opacity: 1;
+  transform: none;
+}
+@media (max-width: 1023px) {
+  .tpl-ecoluz .el-scan__arrow {
+    display: none;
+  }
+}
+
+.tpl-ecoluz .el-scan__screen {
+  position: relative;
+  overflow: hidden;
+  min-height: 22rem;
+  padding: 2rem;
+  background:
+    repeating-linear-gradient(to right, rgb(255 216 92 / 0.04) 0 1px, transparent 1px 2.5rem),
+    repeating-linear-gradient(to bottom, rgb(255 216 92 / 0.04) 0 1px, transparent 1px 2.5rem),
+    var(--el-ink-up);
+  border: 1px solid var(--el-line-soft);
+}
+@media (min-width: 768px) {
+  .tpl-ecoluz .el-scan__screen {
+    padding: 2.75rem;
+  }
+}
+
+/* Os cantos de mira: quatro esquadros desenhados com gradientes, sem markup a
+   mais. */
+.tpl-ecoluz .el-scan__corners {
+  position: absolute;
+  inset: 0.9rem;
+  pointer-events: none;
+  --c: var(--el-sun);
+  --l: 1.4rem;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--l) 2px,
+    linear-gradient(var(--c), var(--c)) top left / 2px var(--l),
+    linear-gradient(var(--c), var(--c)) top right / var(--l) 2px,
+    linear-gradient(var(--c), var(--c)) top right / 2px var(--l),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--l) 2px,
+    linear-gradient(var(--c), var(--c)) bottom left / 2px var(--l),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--l) 2px,
+    linear-gradient(var(--c), var(--c)) bottom right / 2px var(--l);
+  background-repeat: no-repeat;
+  opacity: 0.8;
+}
+
+/* A linha de varredura: uma passada a cada troca de carga (a chave do React
+   remonta o elemento e a animação recomeça). Uma passada, não um laço. */
+.tpl-ecoluz .el-scan__beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 5rem;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(var(--el-volt) / 0.1) 70%,
+    rgb(var(--el-volt) / 0.55) 98%,
+    transparent
+  );
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tpl-ecoluz .el-scan__beam {
+    animation: tplEcoluzScan 1.1s var(--el-ease) 1;
+  }
+}
+@keyframes tplEcoluzScan {
+  0% {
+    opacity: 1;
+    transform: translateY(-5rem);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(26rem);
+  }
+}
+
+.tpl-ecoluz .el-scan__panel {
+  position: relative;
+}
+.tpl-ecoluz .el-scan__big {
+  display: block;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 1.75rem 0 1.25rem;
+  color: var(--el-sun);
+  filter: drop-shadow(0 0 0.8rem rgb(255 196 0 / 0.35));
+}
+@media (min-width: 768px) {
+  .tpl-ecoluz .el-scan__big {
+    width: 6rem;
+    height: 6rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   O FINANCIAMENTO — "em até 120×"
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-ecoluz .el-fin__mark {
+  display: flex;
+  flex-direction: column;
+}
+.tpl-ecoluz .el-fin__num {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: clamp(7rem, 22vw, 14rem);
+  line-height: 0.82;
+  color: var(--el-paper-ink);
+  letter-spacing: -0.04em;
+}
+.tpl-ecoluz .el-fin__x {
+  color: var(--el-amber-ink);
+  font-size: 0.55em;
+  margin-left: 0.04em;
+}
+.tpl-ecoluz .el-fin__caption {
+  margin-top: 1rem;
+  max-width: 22rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--el-paper-dim);
+}
+
+/* As parcelas desenhadas como módulos: 24 células, a fileira de um painel.
+   É o fecho visual da ideia "a conta vira investimento" — o mesmo motivo de
+   célula que aparece no fluxo de energia e nos cartões das soluções. */
+.tpl-ecoluz .el-fin__cells {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 1.75rem;
+  max-width: 26rem;
+  /* O `skewX` empurra o canto de baixo para a esquerda — sem a margem ele
+     passa da borda do conteúdo no celular. */
+  margin-left: 0.5rem;
+  transform: skewX(-12deg);
+}
+.tpl-ecoluz .el-fin__cells span {
+  display: block;
+  aspect-ratio: 4 / 3;
+  background: var(--el-paper-ink);
+}
+.tpl-ecoluz .el-fin__cells span:nth-child(3n + 1) {
+  background: var(--el-amber-ink);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   O FECHO — o sol nascendo atrás da chamada final
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-ecoluz .el-cta-sun__art {
+  position: absolute;
+  left: 50%;
+  bottom: -62%;
+  width: min(72rem, 170vw);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .tpl-ecoluz .el-cta-sun__art {
+    left: 72%;
+    bottom: -78%;
+  }
+}
+.tpl-ecoluz .el-cta-sun__disc {
+  position: absolute;
+  inset: 22%;
+  background: radial-gradient(
+    circle,
+    rgb(255 214 90 / 0.5) 0%,
+    rgb(255 176 0 / 0.22) 32%,
+    rgb(255 150 0 / 0.07) 55%,
+    transparent 70%
+  );
+}
+/* Os anéis: arcos finos concêntricos, a "medida" do tema aplicada ao sol. */
+.tpl-ecoluz .el-cta-sun__rings {
+  position: absolute;
+  inset: 0;
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0 2.4rem,
+    rgb(255 216 92 / 0.07) 2.4rem calc(2.4rem + 1px)
+  );
+  mask-image: radial-gradient(circle, #000 30%, transparent 68%);
+}
+/* O disco e os anéis são radiais: o gradiente já é redondo, então nenhum
+   deles precisa de `border-radius` — e a `.fl-sharp` da plataforma zeraria
+   de qualquer jeito. */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   O PONTO DE ENERGIA (cursor, só no computador)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-ecoluz .el-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 70;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s var(--el-ease);
+  will-change: transform;
+}
+.tpl-ecoluz .el-cursor[data-on] {
+  opacity: 1;
+}
+/* ⚠️ O PONTO É UM CÍRCULO FEITO DE GRADIENTE, NÃO DE `border-radius`. A
+   `.fl-sharp` da plataforma zera todo raio com `!important` (nada de cantos
+   arredondados), e as exceções dela são avatar e `img.rounded-full`. Um
+   gradiente radial é redondo por natureza e não depende de exceção nenhuma. */
+.tpl-ecoluz .el-cursor span {
+  position: absolute;
+  left: -14px;
+  top: -14px;
+  width: 28px;
+  height: 28px;
+  background: radial-gradient(
+    circle,
+    #fff3b8 0 3.5px,
+    rgb(255 196 0 / 0.85) 5px,
+    rgb(255 170 0 / 0.25) 8px,
+    transparent 14px
+  );
+  transition:
+    transform 0.2s var(--el-ease),
+    opacity 0.2s var(--el-ease);
+}
+.tpl-ecoluz .el-cursor[data-hot] span {
+  transform: scale(2.2);
+  opacity: 0.55;
+}
+@media (pointer: coarse), (hover: none) {
+  .tpl-ecoluz .el-cursor {
+    display: none;
+  }
+}

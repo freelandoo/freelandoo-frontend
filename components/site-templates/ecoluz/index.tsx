@@ -33,6 +33,7 @@ import ServicoPage from "./pages/service";
 import ServicosPage from "./pages/services-index";
 import SobrePage from "./pages/about";
 import { PAGE_SLUGS, pageMeta, pageSlug, resolveEcoluzPage, type EcoluzPage } from "./pages";
+import EnergyCursor from "./energy-cursor";
 import ScrollMotion from "./scroll-motion";
 import SunIntro from "./intro";
 import { BreadcrumbLd, BusinessLd, FaqLd, ServiceLd, WebSiteLd } from "./schema";
@@ -236,6 +237,7 @@ export function EcoluzSite({
       <SiteFooter links={links} />
       <WhatsappFab />
       <ScrollMotion />
+      <EnergyCursor />
 
       {/* ⚠️ A ABERTURA É O ÚLTIMO FILHO, E NÃO O PRIMEIRO. Ela precisa pintar
           por cima de tudo (inclusive da barra fixa), e aqui quem vem depois no

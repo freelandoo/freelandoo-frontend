@@ -508,11 +508,16 @@
   pointer-events: none;
   transform: scaleX(0);
   transform-origin: left center;
+  /* ⚠️ A linha termina VERDE: ao fim da página o "circuito" se fecha na cor da
+     energia que volta — a mesma jornada sol → crédito que o fluxo do topo
+     desenha. Como a barra é `scaleX` de um gradiente fixo, o verde só aparece
+     quando a leitura chega perto do fim. */
   background: linear-gradient(
     to right,
     var(--el-sun-deep),
-    var(--el-sun) 55%,
-    var(--el-sun-hi)
+    var(--el-sun) 45%,
+    var(--el-sun-hi) 78%,
+    rgb(var(--el-volt))
   );
 }
 

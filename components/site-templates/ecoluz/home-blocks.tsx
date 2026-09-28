@@ -24,7 +24,7 @@ import {
   UNITS,
   UNITS_NOTE,
 } from "./content/company";
-import { FINANCING, LOADS, LOADS_NOTE } from "./content/offer";
+import { FINANCING } from "./content/offer";
 import CoverageMap from "./coverage-map";
 import { Icon } from "./icons";
 import { PAGE, pageHref, type TemplateLinks } from "./lib";
@@ -136,42 +136,68 @@ export function ProjectsSection() {
 export function FinancingSection() {
   return (
     <Section id="financiamento" tone="paper">
-      <SectionHead tone="paper" eyebrow={FINANCING.eyebrow} title={FINANCING.title} lead={FINANCING.lead} />
+      {/* ⚠️ O PRAZO É O ELEMENTO GIGANTE, E NÃO UMA PARCELA. "Até 120x" é
+          verdade para todo mundo (é o teto das linhas); qualquer valor de
+          parcela seria o número que faz a pessoa se sentir enganada quando a
+          proposta real chega — ver a nota em `content/offer.ts`. */}
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
+        {/* ⚠️ O NÚMERO GIGANTE É O PRIMEIRO PONTO DO CONTEÚDO, desenhado — e a
+            lista ao lado começa do SEGUNDO. Os dois juntos repetiriam "em até
+            120x" a um palmo de distância. A frase do ponto vira a legenda do
+            número, porque é ela que diz que o prazo real sai da análise. */}
+        <div className="el-fin__mark" data-reveal="scale">
+          <span className="eyebrow text-[var(--el-amber-ink)]" aria-hidden="true">Em até</span>
+          <span className="el-fin__num numeral" aria-hidden="true">
+            120<span className="el-fin__x">×</span>
+          </span>
+          <span className="sr-only">{FINANCING.points[0].title}.</span>
+          <p className="el-fin__caption">{FINANCING.points[0].text}</p>
+          <span className="el-fin__cells" aria-hidden="true">
+            {Array.from({ length: 24 }, (_, k) => (
+              <span key={k} />
+            ))}
+          </span>
+        </div>
 
-      <div className="mt-14 grid gap-px sm:grid-cols-3" style={{ background: "var(--el-paper-line)" }}>
-        {FINANCING.points.map((p, i) => (
-          <div
-            key={p.title}
-            className="bg-[var(--el-paper)] p-7"
-            data-reveal="up"
-            data-reveal-delay={i * 60}
-          >
-            <span className="text-[var(--el-amber-ink)]">
-              <Icon name={p.icon} className="h-7 w-7" />
-            </span>
-            <h3 className="display mt-5 text-[1.25rem] text-[var(--el-paper-ink)]">{p.title}</h3>
-            <p className="mt-2 text-[0.9375rem] leading-relaxed text-[var(--el-paper-dim)]">
-              {p.text}
+        <div>
+          <SectionHead tone="paper" align="stack" eyebrow={FINANCING.eyebrow} title={FINANCING.title} />
+          <p className="mt-6 text-[1.0625rem] leading-relaxed text-[var(--el-paper-dim)]" data-reveal="up">
+            {FINANCING.lead}
+          </p>
+
+          <ul className="mt-8 grid gap-px" style={{ background: "var(--el-paper-line)" }}>
+            {FINANCING.points.slice(1).map((p, i) => (
+              <li
+                key={p.title}
+                className="flex gap-5 bg-[var(--el-paper)] py-5"
+                data-reveal="up"
+                data-reveal-delay={i * 60}
+              >
+                <span className="mt-0.5 text-[var(--el-amber-ink)]">
+                  <Icon name={p.icon} className="h-6 w-6" />
+                </span>
+                <span>
+                  <span className="display block text-[1.125rem] text-[var(--el-paper-ink)]">{p.title}</span>
+                  <span className="mt-1 block text-[0.9375rem] leading-relaxed text-[var(--el-paper-dim)]">
+                    {p.text}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-8 flex flex-wrap items-center gap-6" data-reveal="up">
+            <a href={whatsappLink(FINANCING.wa)} target="_blank" rel="noopener" className="btn btn-paper">
+              {FINANCING.cta}
+            </a>
+            {/* ⚠️ A RESSALVA FICA AO LADO DO BOTÃO, EM CORPO LEGÍVEL — não em
+                rodapé nem em letra miúda. Quem lê "até 120x" e clica precisa
+                saber, no mesmo olhar, que a aprovação não é nossa. */}
+            <p className="max-w-md text-[0.8125rem] leading-relaxed text-[var(--el-paper-dim)]">
+              {FINANCING.note}
             </p>
           </div>
-        ))}
-      </div>
-
-      <div className="mt-10 flex flex-wrap items-center gap-6" data-reveal="up">
-        <a
-          href={whatsappLink(FINANCING.wa)}
-          target="_blank"
-          rel="noopener"
-          className="btn btn-paper"
-        >
-          {FINANCING.cta}
-        </a>
-        {/* ⚠️ A RESSALVA FICA AO LADO DO BOTÃO, EM CORPO LEGÍVEL — não em
-            rodapé nem em letra miúda. Quem lê "até 120x" e clica precisa saber,
-            no mesmo olhar, que a aprovação não é nossa. */}
-        <p className="max-w-md text-[0.8125rem] leading-relaxed text-[var(--el-paper-dim)]">
-          {FINANCING.note}
-        </p>
+        </div>
       </div>
     </Section>
   );
@@ -532,45 +558,5 @@ export function ReviewsSection() {
   );
 }
 
-/* ══════════════════ § 13 — O QUE CABE NA SUA CONTA ══════════════════════ */
-
-export function LoadsSection() {
-  return (
-    <Section id="consumo">
-      <SectionHead
-        eyebrow="Identifique o seu caso"
-        title="O que cabe na sua conta de energia?"
-        lead="Quase toda conta alta tem um ou dois responsáveis. Reconhecer o seu é o primeiro passo — é ele que define o tamanho do sistema."
-      />
-
-      <div
-        className="mt-14 grid gap-px sm:grid-cols-2 lg:grid-cols-3"
-        style={{ background: "var(--el-line-soft)" }}
-      >
-        {LOADS.map((l, i) => (
-          <div
-            key={l.label}
-            className="bg-[var(--el-ink)] p-7"
-            data-reveal="up"
-            data-reveal-delay={i * 50}
-          >
-            <span className="text-[var(--el-sun)]">
-              <Icon name={l.icon} className="h-7 w-7" />
-            </span>
-            <h3 className="display mt-5 text-[1.1875rem] text-[var(--el-cream)]">{l.label}</h3>
-            <p className="mt-2 text-[0.9375rem] leading-relaxed text-[var(--el-cream-dim)]">
-              {l.text}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <p
-        className="mt-10 max-w-2xl text-[1.0625rem] leading-relaxed text-[var(--el-cream)]"
-        data-reveal="fade"
-      >
-        {LOADS_NOTE}
-      </p>
-    </Section>
-  );
-}
+/* § 13 — O QUE CABE NA SUA CONTA mudou de casa: é `energy-scanner.tsx`, de
+   cliente, porque escolher a carga é gesto. */

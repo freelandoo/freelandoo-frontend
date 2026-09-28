@@ -20,12 +20,11 @@
 // irreversível deste trabalho — ver `content/company.ts`.
 
 import SavingsCalculator from "../calculator";
-import { WA_DEFAULT, whatsappLink } from "../content/business";
+import { whatsappLink } from "../content/business";
 import { DIFFERENTIALS, FAQ } from "../content/site";
 import {
   AboutSection,
   FinancingSection,
-  LoadsSection,
   ProjectsSection,
   ReviewsSection,
   StatsBand,
@@ -33,11 +32,16 @@ import {
 } from "../home-blocks";
 import { type Ctx } from "../lib";
 import EnergyFlow from "../energy-flow";
+import EnergyScanner from "../energy-scanner";
 import Opening from "../opening";
 import { EnergyPipeline, HomologationFlow } from "../process-scenes";
 import SolutionsOrbit from "../solutions-orbit";
 import SystemComparator from "../system-comparator";
 import { CtaBand, FaqList, FeatureCard, Section, SectionHead } from "../ui";
+
+/** A mensagem do fecho: quem aperta já vai mandar a conta. */
+const WA_CONTA =
+  "Olá! Vim pelo site da EcoLuz e quero mandar a minha conta de luz para análise.";
 
 /** A mensagem de quem chega pela calculadora, já com um número na cabeça. */
 const WA_ANALISE =
@@ -160,15 +164,24 @@ export default function HomePage({ links }: Ctx) {
         </div>
       </Section>
 
-      {/* § 13 — O que cabe na sua conta. */}
-      <LoadsSection />
+      {/* § 13 — O que cabe na sua conta: o scanner de cargas. */}
+      <EnergyScanner />
 
-      {/* ── § 14 — CHAMADA FINAL ────────────────────────────────────────── */}
+      {/* ── § 14 — CHAMADA FINAL ────────────────────────────────────────
+          O fecho volta à luz da abertura. O botão pede a CONTA — é a peça que
+          responde metade das perguntas antes da primeira conversa. */}
       <CtaBand
-        title="Vamos transformar sua conta de energia em economia?"
-        text="Fale com um especialista da EcoLuz e descubra qual solução faz sentido para o seu consumo. Mande uma foto da sua conta de luz: em geral ela já responde metade das perguntas."
-        href={whatsappLink(WA_DEFAULT)}
-        label="Falar com a EcoLuz"
+        sun
+        title={
+          <>
+            O sol já está aí.
+            <br />
+            <span className="text-[var(--el-sun)]">Falta colocar ele para trabalhar.</span>
+          </>
+        }
+        text="Mande uma foto da sua conta de luz para um especialista da EcoLuz. Em geral ela já responde metade das perguntas — e a análise do seu consumo é o primeiro passo do projeto."
+        href={whatsappLink(WA_CONTA)}
+        label="Analisar minha conta"
       />
     </>
   );

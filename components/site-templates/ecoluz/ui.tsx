@@ -252,13 +252,27 @@ export function FaqList({
           data-reveal-delay={i * 40}
         >
           <summary
-            className={`flex cursor-pointer list-none items-start justify-between gap-6 px-1 py-5 text-[1rem] font-medium transition-colors ${
+            className={`flex cursor-pointer list-none items-start justify-between gap-6 px-1 py-5 text-[1rem] font-medium transition-colors md:text-[1.0625rem] ${
               paper
                 ? "text-[var(--el-paper-ink)] hover:text-[var(--el-amber-ink)]"
                 : "text-[var(--el-cream)] hover:text-[var(--el-sun-hi)]"
             }`}
           >
-            {item.q}
+            {/* O número grande à esquerda: dez perguntas lidas como uma
+                sequência, não como uma pilha. `aria-hidden` porque o leitor de
+                tela já anuncia a posição do item — lido, o número seria dito
+                duas vezes. */}
+            <span className="flex items-baseline gap-4 md:gap-6">
+              <span
+                aria-hidden="true"
+                className={`numeral w-8 shrink-0 text-[1.125rem] md:w-10 md:text-[1.375rem] ${
+                  paper ? "text-[var(--el-amber-ink)]" : "text-[var(--el-sun)]"
+                }`}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span>{item.q}</span>
+            </span>
             <span
               aria-hidden="true"
               className={`mt-1 shrink-0 transition-transform duration-200 group-open:rotate-45 ${
@@ -271,7 +285,7 @@ export function FaqList({
             </span>
           </summary>
           <p
-            className={`px-1 pb-6 pr-10 text-[0.9375rem] leading-relaxed ${
+            className={`pb-6 pl-[3.25rem] pr-10 text-[0.9375rem] leading-relaxed md:pl-[4.25rem] ${
               paper ? "text-[var(--el-paper-dim)]" : "text-[var(--el-cream-dim)]"
             }`}
           >
@@ -298,21 +312,42 @@ export function CtaBand({
   text,
   href,
   label = "Chamar no WhatsApp",
+  sun = false,
 }: {
-  title: string;
+  title: ReactNode;
   text: string;
   href: string;
   label?: string;
+  /**
+   * O fecho da HOME: o sol nascendo atrás da chamada, a mesma luz com que a
+   * abertura começa — a página termina onde começou. As outras treze páginas
+   * ficam com a faixa sóbria, porque lá a chamada é um passo, não um final.
+   */
+  sun?: boolean;
 }) {
   return (
-    <section className="relative border-t border-[var(--el-line-soft)] bg-[var(--el-ink-deep)] py-20 md:py-24">
+    <section
+      className={`relative overflow-hidden border-t border-[var(--el-line-soft)] bg-[var(--el-ink-deep)] ${
+        sun ? "el-cta-sun py-28 md:py-40" : "py-20 md:py-24"
+      }`}
+    >
+      {sun ? (
+        <div className="el-cta-sun__art" aria-hidden="true">
+          <span className="el-cta-sun__disc" />
+          <span className="el-cta-sun__rings" />
+        </div>
+      ) : null}
       <div
         className="mx-auto grid w-full max-w-[78rem] gap-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
         style={{ paddingInline: "var(--el-pad)" }}
       >
         <div data-reveal="up">
           <div className="rule mb-7 w-24" data-rule />
-          <h2 className="display text-[2rem] text-[var(--el-cream)] sm:text-[2.5rem] md:text-[2.9rem]">
+          <h2
+            className={`display text-[var(--el-cream)] ${
+              sun ? "text-[2.5rem] sm:text-[3.4rem] md:text-[4.6rem]" : "text-[2rem] sm:text-[2.5rem] md:text-[2.9rem]"
+            }`}
+          >
             {title}
           </h2>
           <p className="mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-[var(--el-cream-dim)]">
