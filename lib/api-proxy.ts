@@ -15,7 +15,7 @@ import { getBackendApiUrl } from "@/lib/backend"
  */
 export async function forwardToBackend(
   request: Request,
-  method: "GET" | "POST" | "PATCH" | "DELETE",
+  method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE",
   path: string,
   { requireAuth = true }: { requireAuth?: boolean } = {},
 ) {
@@ -33,7 +33,7 @@ export async function forwardToBackend(
       ...(auth ? { Authorization: auth } : {}),
     },
   }
-  if (method === "POST" || method === "PATCH") {
+  if (method === "POST" || method === "PATCH" || method === "PUT") {
     const text = await request.text()
     if (text) init.body = text
   }

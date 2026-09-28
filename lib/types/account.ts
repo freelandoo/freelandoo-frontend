@@ -89,6 +89,8 @@ export interface PerfilCompleto {
   ativo?: boolean
   premium?: boolean
   taxa_paga?: boolean
+  /** Selo verificado (mig 268): pagou ou é admin. Decide o backend. */
+  is_verified?: boolean
   redes_sociais?: RedeSocial[]
   account_profile?: AccountProfileInfo | null
   media?: MediaItem[]

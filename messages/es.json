@@ -1550,7 +1550,9 @@
     "aiAttendantAriaV2": "Asistente de IA: responde tu WhatsApp y tus mensajes — gratis para 2 personas por día",
     "pickupWithSeller": "Retiro con el vendedor",
     "pickupCombine": "Acordarlo en la conversación",
-    "pickupOnlyInfo": "Toda venta en la Tienda se retira contigo, sin envío. El comprador paga por Freelandoo y, en cuanto se confirma el pago, abrimos una conversación entre ustedes para acordar dónde y cuándo."
+    "pickupOnlyInfo": "Toda venta en la Tienda se retira contigo, sin envío. El comprador paga por Freelandoo y, en cuanto se confirma el pago, abrimos una conversación entre ustedes para acordar dónde y cuándo.",
+    "verifiedTool": "Sello verificado",
+    "verifiedToolAria": "Sello verificado: suscríbete por R$9,90 al mes"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -7280,5 +7282,33 @@
     "refresh": "Actualizar",
     "refreshResults": "Actualizar resultados",
     "noResultsLoading": "¿Primera búsqueda de esta categoría? La base puede estar cargándose ahora — actualiza en unos segundos."
+  },
+  "Verified": {
+    "badgeLabel": "Perfil verificado",
+    "title": "Sello verificado",
+    "intro": "Un sello que brilla junto a tu nombre en el perfil, en el feed y en la búsqueda — para que quien llegue sepa que hay una persona real detrás de la cuenta.",
+    "loadError": "No se pudo cargar.",
+    "processing": "Pago recibido — el sello aparece en cuanto se confirme.",
+    "payError": "No se pudo iniciar el pago.",
+    "cancelConfirm": "¿Cancelar la renovación? El sello sigue hasta el final del período pagado.",
+    "canceled": "Renovación cancelada.",
+    "cancelError": "No se pudo cancelar.",
+    "confirming": "Confirmando el pago…",
+    "loading": "Cargando…",
+    "activeTitle": "Tu sello está activo",
+    "byAdmin": "Administras Freelandoo, así que el sello viene con la cuenta — sin cargo.",
+    "renewsOn": "Se renueva solo el {date}.",
+    "activeUntil": "Activo hasta el {date}.",
+    "pastDue": "El último cobro no pasó. El sello sigue hasta la fecha de arriba; revisa tu tarjeta.",
+    "cancel": "Cancelar renovación",
+    "renewCard": "Renovar cada mes con tarjeta",
+    "notForSale": "El sello verificado no está a la venta ahora.",
+    "perMonth": "/mes",
+    "perk1": "El sello aparece en todos tus perfiles.",
+    "perk2": "En el perfil, en el feed y en la búsqueda.",
+    "perk3": "Cancela cuando quieras — el sello sigue hasta el final del mes pagado.",
+    "payCard": "Suscribirse con tarjeta",
+    "payCardHint": "Se renueva solo cada mes. Puedes cancelar cuando quieras.",
+    "payPix": "Pagar un mes con Pix"
   }
 }

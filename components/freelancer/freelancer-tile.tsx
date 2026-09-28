@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { CheckCircle2, Crown } from "lucide-react"
 import { MACHINES } from "@/components/home/machines/tokens"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
+import { VerifiedBadge } from "@/components/profile/verified-badge"
 import { buildProfileUrl } from "@/lib/slug"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { cn } from "@/lib/utils"
@@ -41,6 +42,8 @@ interface Creator {
   is_clan?: boolean
   members_count?: number | null
   is_premium?: boolean
+  /** Selo verificado do dono (mig 268): pagou ou é admin. */
+  is_verified?: boolean
 }
 
 interface FreelancerTileProps {
@@ -153,6 +156,7 @@ export function FreelancerTile({ creator, featured = false }: FreelancerTileProp
           <h3 className="line-clamp-1 text-sm font-bold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.75)]">
             {name}
           </h3>
+          {creator.is_verified && !creator.is_clan && <VerifiedBadge size="sm" />}
           <MachineTop10Crown
             profileId={creator.id_profile}
             accentColor={accent}

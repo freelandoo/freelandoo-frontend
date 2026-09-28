@@ -61,6 +61,8 @@ export interface FreelancerProfile {
   is_paid?: boolean
   /** Perfil-fantasma da conta (mig 052) — isento do gate de ativação. */
   is_user_account?: boolean
+  /** Selo verificado do dono (mig 268): pagou ou é admin. */
+  is_verified?: boolean
   is_published?: boolean
   deleted_at?: string | null
   created_at: string

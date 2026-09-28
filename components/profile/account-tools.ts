@@ -1,7 +1,7 @@
 "use client"
 
 import type { LucideIcon } from "lucide-react"
-import { BarChart3, Bot, CalendarDays, Database, FolderCog } from "lucide-react"
+import { BadgeCheck, BarChart3, Bot, CalendarDays, Database, FolderCog } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -51,6 +51,7 @@ export function useAccountTools({
   const agendaPrefOn = useUserFeature("agenda")
   const dataApiOn = useFeature("data_api")
   const aiAttendantOn = useFeature("atendimento_ai")
+  const verifiedSaleOn = useFeature("selo_verificado")
 
   const tools: AccountTool[] = [
     {
@@ -103,6 +104,18 @@ export function useAccountTools({
         "Atendente com IA: responde seu WhatsApp e suas mensagens — grátis para 2 pessoas por dia"
       ),
       href: "/account/atendente",
+    })
+  }
+
+  // Selo verificado (mig 268). A porta some só se a VENDA estiver desligada —
+  // quem já assina continua chegando na página pela URL para cancelar.
+  if (verifiedSaleOn) {
+    tools.push({
+      key: "verified",
+      icon: BadgeCheck,
+      label: t("verifiedTool", "Selo verificado"),
+      ariaLabel: t("verifiedToolAria", "Selo verificado: assine por R$9,90 por mês"),
+      href: "/verificado",
     })
   }
 

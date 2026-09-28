@@ -52,6 +52,8 @@ export interface FeedPost {
   profile_name: string | null
   avatar_url: string | null
   username: string | null
+  /** Selo verificado do dono (mig 268): pagou ou é admin. */
+  is_verified?: boolean
   is_clan: boolean
   sub_profile_slug: string | null
   machine: FeedMachine | null
@@ -154,6 +156,8 @@ export interface BeeItem {
   profile_name: string | null
   avatar_url: string | null
   username: string | null
+  /** Selo verificado do dono (mig 268): pagou ou é admin. */
+  is_verified?: boolean
   is_clan: boolean
   sub_profile_slug: string | null
   machine: FeedMachine | null

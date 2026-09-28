@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { ReportPostDialog } from "./report-post-dialog"
 import { HeatRing, type HeatTier } from "./heat-ring"
+import { VerifiedBadge } from "@/components/profile/verified-badge"
 import { MarkdownText } from "@/components/ui/markdown-text"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -127,6 +128,9 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
   // Posição no engajamento do dia (views+likes+comentários+salvos): líder acende
   // laranja/dourado, quem está até 10% dele acende laranja/vermelho. É por POST,
   // não por perfil — o mesmo perfil aparece sem anel nos outros cards.
+  // Selo verificado (mig 268). Clan é coletivo: o selo diria que o grupo foi
+  // verificado, então não aparece nele.
+  const showVerified = !!post.is_verified && !post.is_clan
   const hotTier: HeatTier | null =
     post.hot_tier === "leader" || post.hot_tier === "rising" ? post.hot_tier : null
   const isHot = hotTier !== null
@@ -511,8 +515,9 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
               </div>
             </div>
             <div className="min-w-0 flex-1">
-              <span className="fl-display block truncate text-base leading-none text-[#F5F1E8]">
-                {post.profile_name || post.username || t("profileLabel", "Perfil")}
+              <span className="fl-display flex min-w-0 items-center gap-1.5 text-base leading-none text-[#F5F1E8]">
+                <span className="truncate">{post.profile_name || post.username || t("profileLabel", "Perfil")}</span>
+                {showVerified && <VerifiedBadge size="sm" />}
               </span>
               <p className="truncate text-[11px] font-semibold text-[#9A938A]">
                 {post.published_at && timeAgo(post.published_at, t)}
@@ -605,6 +610,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
                 <span className="truncate text-sm font-semibold text-white">
                   {post.profile_name || post.username || t("profileLabel", "Perfil")}
                 </span>
+                {showVerified && <VerifiedBadge size="sm" />}
                 <MachineTop10Crown profileId={post.profile_id} accentColor={machineColor} iconClassName="h-4 w-4" />
                 {post.is_clan && (
                   <Badge
@@ -680,6 +686,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
                 <span className="fl-display truncate text-lg leading-none text-[#F5F1E8]">
                   {post.profile_name || post.username || t("profileLabel", "Perfil")}
                 </span>
+                {showVerified && <VerifiedBadge size="sm" />}
                 <MachineTop10Crown profileId={post.profile_id} accentColor="#F2B705" iconClassName="h-4 w-4" />
                 {post.is_clan && (
                   <span className="-rotate-2 border border-[#0B0B0D] bg-[#F2B705] px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]">

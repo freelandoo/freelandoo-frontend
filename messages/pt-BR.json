@@ -1550,7 +1550,9 @@
     "aiAttendantAriaV2": "Atendente com IA: responde seu WhatsApp e suas mensagens — grátis para 2 pessoas por dia",
     "pickupWithSeller": "Retirada com o vendedor",
     "pickupCombine": "Combinar na conversa",
-    "pickupOnlyInfo": "Toda venda na Loja é retirada com você, sem frete. O comprador paga pela Freelandoo e, assim que o pagamento cai, abrimos uma conversa entre vocês para combinar onde e quando retirar."
+    "pickupOnlyInfo": "Toda venda na Loja é retirada com você, sem frete. O comprador paga pela Freelandoo e, assim que o pagamento cai, abrimos uma conversa entre vocês para combinar onde e quando retirar.",
+    "verifiedTool": "Selo verificado",
+    "verifiedToolAria": "Selo verificado: assine por R$9,90 por mês"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -6714,5 +6716,33 @@
     "refresh": "Atualizar",
     "refreshResults": "Atualizar resultados",
     "noResultsLoading": "Primeira busca desta categoria? A base pode estar sendo carregada agora — atualize em alguns segundos."
+  },
+  "Verified": {
+    "badgeLabel": "Perfil verificado",
+    "title": "Selo verificado",
+    "intro": "Um selo que brilha ao lado do seu nome no perfil, no feed e na vitrine — para quem chega saber que tem gente de verdade por trás da conta.",
+    "loadError": "Não foi possível carregar.",
+    "processing": "Pagamento recebido — o selo aparece assim que ele for confirmado.",
+    "payError": "Não foi possível iniciar o pagamento.",
+    "cancelConfirm": "Cancelar a renovação? O selo continua até o fim do período pago.",
+    "canceled": "Renovação cancelada.",
+    "cancelError": "Não foi possível cancelar.",
+    "confirming": "Confirmando o pagamento…",
+    "loading": "Carregando…",
+    "activeTitle": "Seu selo está ativo",
+    "byAdmin": "Você administra a Freelandoo, então o selo já vem com a conta — sem cobrança.",
+    "renewsOn": "Renova sozinho em {date}.",
+    "activeUntil": "Ativo até {date}.",
+    "pastDue": "A última cobrança não passou. O selo fica até a data acima; confira o cartão.",
+    "cancel": "Cancelar renovação",
+    "renewCard": "Renovar no cartão todo mês",
+    "notForSale": "O selo verificado não está à venda agora.",
+    "perMonth": "/mês",
+    "perk1": "O selo aparece em todos os seus perfis.",
+    "perk2": "No perfil, no feed e na vitrine de busca.",
+    "perk3": "Cancele quando quiser — o selo fica até o fim do mês pago.",
+    "payCard": "Assinar no cartão",
+    "payCardHint": "Renova sozinho todo mês. Dá para cancelar quando quiser.",
+    "payPix": "Pagar um mês no Pix"
   }
 }

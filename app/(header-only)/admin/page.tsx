@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, Radio, Fingerprint, MessageCircle, type LucideIcon } from "lucide-react"
+import { BadgeCheck, Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, Radio, Fingerprint, MessageCircle, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -42,6 +42,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
 
   // Configurações de monetização — definem preço/taxa (não são extrato financeiro)
   { section: "Configurações de monetização", hint: "admin-anuidade", href: "/administracao/monetizacao", icon: Wallet, title: "Configurações de monetização", body: "Ativação, Agendamento, Poléns, Premium, Manifestação e Cupons — preços, taxas e descontos em abas." },
+  { section: "Configurações de monetização", href: "/administracao/selo", icon: BadgeCheck, title: "Selo verificado", body: "Preço da assinatura mensal do selo (R$9,90) e se ele está à venda. Admins já têm o selo pelo papel.", badge: "novo" },
 
   // Catálogo & Vitrine
   { section: "Catálogo & Vitrine", hint: "admin-enxames", href: "/administracao/enxames", icon: Sparkles, title: "Controle de Enxames", body: "Ativar/desativar enxames, cores e profissões." },

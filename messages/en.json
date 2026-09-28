@@ -1550,7 +1550,9 @@
     "aiAttendantAriaV2": "AI assistant: answers your WhatsApp and messages — free for 2 people a day",
     "pickupWithSeller": "Pickup with the seller",
     "pickupCombine": "Arrange it in the chat",
-    "pickupOnlyInfo": "Every Store sale is picked up from you, with no shipping. The buyer pays through Freelandoo and, once the payment clears, we open a conversation between you to agree on where and when."
+    "pickupOnlyInfo": "Every Store sale is picked up from you, with no shipping. The buyer pays through Freelandoo and, once the payment clears, we open a conversation between you to agree on where and when.",
+    "verifiedTool": "Verified badge",
+    "verifiedToolAria": "Verified badge: subscribe for R$9.90 a month"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -7300,5 +7302,33 @@
     "refresh": "Refresh",
     "refreshResults": "Refresh results",
     "noResultsLoading": "First search for this category? The base may be loading right now — refresh in a few seconds."
+  },
+  "Verified": {
+    "badgeLabel": "Verified profile",
+    "title": "Verified badge",
+    "intro": "A badge that glows next to your name on your profile, in the feed and in search — so visitors know there's a real person behind the account.",
+    "loadError": "Could not load.",
+    "processing": "Payment received — the badge shows up as soon as it's confirmed.",
+    "payError": "Could not start the payment.",
+    "cancelConfirm": "Cancel the renewal? The badge stays until the end of the paid period.",
+    "canceled": "Renewal canceled.",
+    "cancelError": "Could not cancel.",
+    "confirming": "Confirming the payment…",
+    "loading": "Loading…",
+    "activeTitle": "Your badge is active",
+    "byAdmin": "You administer Freelandoo, so the badge comes with the account — no charge.",
+    "renewsOn": "Renews automatically on {date}.",
+    "activeUntil": "Active until {date}.",
+    "pastDue": "The last charge didn't go through. The badge stays until the date above; check your card.",
+    "cancel": "Cancel renewal",
+    "renewCard": "Renew monthly on card",
+    "notForSale": "The verified badge isn't for sale right now.",
+    "perMonth": "/month",
+    "perk1": "The badge shows on all your profiles.",
+    "perk2": "On your profile, in the feed and in search.",
+    "perk3": "Cancel anytime — the badge stays until the end of the paid month.",
+    "payCard": "Subscribe with card",
+    "payCardHint": "Renews automatically every month. Cancel anytime.",
+    "payPix": "Pay one month with Pix"
   }
 }

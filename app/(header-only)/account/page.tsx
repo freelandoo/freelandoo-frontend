@@ -1587,6 +1587,7 @@ export default function PerfilPage() {
       municipio: ap?.municipio ?? perfil.municipio ?? null,
       is_user_account: true,
       is_active: true,
+      is_verified: !!perfil.is_verified,
       username: perfil.username,
       manifestation: manifestation?.active
         ? { banner_url: manifestation.active.banner_url, tag_label: manifestation.active.tag_label }

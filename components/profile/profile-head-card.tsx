@@ -36,6 +36,7 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { HeadcardPills, VisitorHeadcardPills } from "@/components/profile/headcard-pills"
 import { ProfileSwitcher } from "@/components/profile/profile-switcher"
 import { useAccountTools } from "@/components/profile/account-tools"
+import { VerifiedBadge } from "@/components/profile/verified-badge"
 import { isAccountProfile, profileIsActivated } from "@/lib/profile/activation"
 
 const DataConnectionsModal = dynamic(
@@ -75,6 +76,8 @@ interface ProfileLike {
   is_active?: boolean
   /** Perfil-fantasma da conta (mig 052) — isento do gate de ativação. */
   is_user_account?: boolean
+  /** Selo verificado do dono (mig 268): pagou ou é admin. Decide o backend. */
+  is_verified?: boolean
   social_media?: ProfileSocialLink[] | null
   members_count?: number | null
   username?: string | null
@@ -781,7 +784,11 @@ export function ProfileHeadCard({
 
           {/* Nome pequeno — o nome grande vive no header retrátil, igual ao
               @username do /account (esqueleto unificado user≡perfil). */}
-          <p className="mt-3 text-sm font-medium text-[#5b554b]">{displayName}</p>
+          <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-[#5b554b]">
+            <span className="min-w-0 truncate">{displayName}</span>
+            {/* Selo verificado (mig 268). Clan é coletivo: não leva selo. */}
+            {profile.is_verified && !isClan && <VerifiedBadge size="sm" />}
+          </p>
 
           {profile.bio && (
             <MarkdownText className="mt-4 max-w-2xl break-words text-[13px] leading-relaxed text-[#2b2b2e] md:text-sm">
