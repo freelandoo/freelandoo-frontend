@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import { DoodleCrown } from "@/components/home/landing/primitives"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { AnimatedNumber } from "./ranking-ui"
+import { VerifiedBadge } from "@/components/profile/verified-badge"
 import { RankingSocialActions, emptySummary, type RankingSocialSummary } from "./ranking-social"
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
@@ -41,6 +42,8 @@ export type PodiumRow = {
   level?: number | null
   is_clan?: boolean
   is_community?: boolean
+  /** Selo verificado (mig 268) — vem pronto do backend. */
+  is_verified?: boolean
   members_count?: number | null
 }
 
@@ -132,6 +135,9 @@ function PodiumColumn({
           <Link href={rowHref(row)} className="block">
             <h3 className={cn("fl-display mt-1.5 leading-none text-[#0B0B0D] hover:text-[#9a7400] md:mt-2", isFirst ? "text-sm md:text-4xl" : "text-xs md:text-3xl")}>
               {row.display_name}
+              {row.is_verified && !row.is_clan && !row.is_community && (
+                <VerifiedBadge size={isFirst ? "md" : "sm"} className="ml-1.5 -translate-y-0.5" />
+              )}
             </h3>
           </Link>
           <p className="truncate text-[9px] font-semibold text-[#6B6457] md:text-[11px]">{tag}</p>

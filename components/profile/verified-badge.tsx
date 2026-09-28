@@ -14,6 +14,9 @@
 // recalcule a regra aqui.
 //
 // Sem cantos arredondados (regra do tabloide): o selo é um quadrado.
+//
+// O MIOLO É AZUL, não preto (Alex, 2026-09-28): o azul do pill do bairro
+// (`QUICK_ENTRIES.neighborhood`, #2982CC), com o check branco.
 
 import { BadgeCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -53,8 +56,8 @@ export function VerifiedBadge({ size = "md", className }: VerifiedBadgeProps) {
         <span className="fl-heat-spin absolute -inset-[120%] block" style={{ background: GLOW }} />
       </span>
       {/* miolo */}
-      <span className="relative flex h-[calc(100%-3px)] w-[calc(100%-3px)] items-center justify-center bg-[#0B0B0D]">
-        <BadgeCheck className={cn(s.icon, "text-[#F2B705]")} strokeWidth={2.6} />
+      <span className="relative flex h-[calc(100%-3px)] w-[calc(100%-3px)] items-center justify-center bg-[#2982CC]">
+        <BadgeCheck className={cn(s.icon, "text-white")} strokeWidth={2.6} />
       </span>
     </span>
   )

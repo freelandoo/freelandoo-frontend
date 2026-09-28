@@ -49,6 +49,7 @@ import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 import { RankingPodium } from "./ranking-podium"
+import { VerifiedBadge } from "@/components/profile/verified-badge"
 import { AnimatedNumber } from "./ranking-ui"
 import {
   RankingSocialActions,
@@ -82,6 +83,8 @@ type RankingRow = {
   likes_count: number | null
   is_clan?: boolean
   is_community?: boolean
+  /** Selo verificado (mig 268) — vem pronto do backend. */
+  is_verified?: boolean
   entity_type?: "profile" | "clan" | "community"
   enxame_name?: string | null
   xp_total?: number | null
@@ -674,6 +677,7 @@ function RankingRowCard({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="fl-display truncate text-xl leading-none text-[#0B0B0D] md:text-2xl">{row.display_name}</h4>
+          {row.is_verified && !row.is_clan && !row.is_community && <VerifiedBadge size="sm" />}
           <span className={cn("hidden -rotate-1 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em] sm:inline-block", row.is_clan || row.is_community ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]")}>
             {row.is_community ? t("badgeCommunity", "Comunidade") : row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil")}
           </span>
