@@ -177,6 +177,48 @@ export function Icon({
 }
 
 /**
+ * O mesmo ícone, para ser posto DENTRO de outro SVG (os diagramas).
+ *
+ * ⚠️ `foreignObject` com o `<Icon>` de sempre dentro funcionaria no Chrome e é
+ * frágil no Safari (tamanho e posição variam com o zoom). Um `<svg>` aninhado
+ * com `x`/`y`/`width`/`height` é o jeito nativo de encaixar um desenho de
+ * 24×24 numa prancha maior.
+ */
+export function IconAt({
+  name,
+  x,
+  y,
+  size,
+  className,
+}: {
+  name: IconName;
+  x: number;
+  y: number;
+  size: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      x={x}
+      y={y}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {PATHS[name]}
+    </svg>
+  );
+}
+
+/**
  * A MARCA, desenhada — um sol sobre a curva do telhado.
  *
  * ⚠️ É SVG e não a PNG do logo de propósito: ela aparece na barra fixa, no

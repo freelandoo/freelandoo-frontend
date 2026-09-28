@@ -35,6 +35,7 @@ import { type Ctx } from "../lib";
 import EnergyFlow from "../energy-flow";
 import Opening from "../opening";
 import SolutionsOrbit from "../solutions-orbit";
+import SystemComparator from "../system-comparator";
 import { CtaBand, FaqList, FeatureCard, Section, SectionHead } from "../ui";
 
 /** A mensagem de quem chega pela calculadora, já com um número na cabeça. */
@@ -82,6 +83,11 @@ export default function HomePage({ links }: Ctx) {
 
       {/* § 4 — Nossas soluções, recortadas por público — em órbita. */}
       <SolutionsOrbit links={links} />
+
+      {/* On-grid, off-grid e híbrido, desenhados: a pergunta é para onde vai o
+          que sobra. Vem logo depois dos segmentos porque é a dúvida seguinte
+          de quem se reconheceu num deles ("e eu preciso de bateria?"). */}
+      <SystemComparator links={links} />
 
       {/* ── § 5 — COMO FUNCIONA ─────────────────────────────────────────── */}
       <Section id="como-funciona" tone="paper">

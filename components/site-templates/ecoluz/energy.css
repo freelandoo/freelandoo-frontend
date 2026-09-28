@@ -212,7 +212,13 @@
   font-size: 13px;
   letter-spacing: 0.2em;
   text-anchor: middle;
-  fill: var(--el-cream-dim);
+  fill: var(--el-cream-dim);  /* ⚠️ O HALO DA COR DA PRANCHA: um fio que passe atrás do rótulo some sob
+     ele, em vez de riscar a palavra. É o que deixa as posições dos nós
+     livres — sem isto, cada topologia precisaria desviar dos próprios rótulos. */
+  paint-order: stroke;
+  stroke: #0d0a05;
+  stroke-width: 7px;
+  stroke-linejoin: round;
 }
 .tpl-ecoluz .el-flow__tag--volt {
   fill: rgb(var(--el-volt));
@@ -557,4 +563,170 @@
 .tpl-ecoluz .el-orbit__dot:focus-visible {
   outline: 2px solid var(--el-sun);
   outline-offset: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COM REDE, SEM REDE OU OS DOIS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-ecoluz .el-sys__grid {
+  display: grid;
+  grid-template-areas:
+    "tabs"
+    "fig"
+    "panel";
+  gap: 1.5rem;
+}
+.tpl-ecoluz .el-sys__tabs-area {
+  grid-area: tabs;
+}
+.tpl-ecoluz .el-sys__fig {
+  grid-area: fig;
+}
+.tpl-ecoluz .el-sys__panels {
+  grid-area: panel;
+}
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-sys__grid {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "tabs fig"
+      "panel fig";
+    column-gap: 4rem;
+    row-gap: 0;
+    align-items: start;
+  }
+}
+
+.tpl-ecoluz .el-sys__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--el-line);
+}
+
+.tpl-ecoluz .el-sys__tab {
+  padding: 0.95rem 0.5rem;
+  font-family: var(--el-display);
+  font-weight: 700;
+  font-stretch: 96%;
+  font-size: 0.8125rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--el-cream-dim);
+  transition:
+    background-color 0.18s var(--el-ease),
+    color 0.18s var(--el-ease);
+}
+.tpl-ecoluz .el-sys__tab + .el-sys__tab {
+  border-left: 1px solid var(--el-line);
+}
+.tpl-ecoluz .el-sys__tab:hover {
+  color: var(--el-sun-hi);
+}
+/* ⚠️ A aba escolhida tem fundo amarelo, então a tinta é `ink` — a regra das
+   três famílias de amarelo do `theme.css`. */
+.tpl-ecoluz .el-sys__tab[aria-selected="true"] {
+  background: var(--el-sun);
+  color: var(--el-ink);
+}
+.tpl-ecoluz .el-sys__tab:focus-visible {
+  outline: 2px solid var(--el-sun-hi);
+  outline-offset: 2px;
+}
+
+.tpl-ecoluz .el-sys__panel {
+  padding-top: 0.5rem;
+}
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-sys__panel {
+    padding-top: 2rem;
+  }
+}
+
+.tpl-ecoluz .el-sys__fig {
+  margin: 0;
+  padding: 1.25rem;
+  background: rgb(13 10 5 / 0.72);
+  border: 1px solid var(--el-line-soft);
+}
+
+.tpl-ecoluz .el-sys__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.tpl-ecoluz .el-sys__paper line {
+  stroke: rgb(255 216 92 / 0.05);
+  stroke-width: 1;
+}
+
+.tpl-ecoluz .el-sys__edge {
+  stroke: var(--el-sun);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 4 7;
+  filter: drop-shadow(0 0 4px rgb(255 196 0 / 0.55));
+}
+.tpl-ecoluz .el-sys__edge--volt {
+  stroke: rgb(var(--el-volt));
+  filter: drop-shadow(0 0 4px rgb(var(--el-volt) / 0.55));
+}
+
+/* O fluxo corre nas ligações. Com movimento reduzido, os traços ficam parados
+   — a topologia continua dizendo o que precisa dizer. */
+@media (prefers-reduced-motion: no-preference) {
+  .tpl-ecoluz .el-sys__edge {
+    animation: tplEcoluzSysFlow 0.8s linear infinite;
+  }
+}
+@keyframes tplEcoluzSysFlow {
+  to {
+    stroke-dashoffset: -11;
+  }
+}
+
+.tpl-ecoluz .el-sys__box {
+  fill: #140f07;
+  stroke: rgb(255 216 92 / 0.55);
+  stroke-width: 1.5;
+}
+.tpl-ecoluz .el-sys__node--sun .el-sys__box {
+  fill: rgb(255 196 0 / 0.14);
+  stroke: var(--el-sun);
+}
+.tpl-ecoluz .el-sys__node--battery .el-sys__box {
+  stroke: rgb(var(--el-volt));
+}
+.tpl-ecoluz .el-sys__icon {
+  color: var(--el-sun-hi);
+}
+.tpl-ecoluz .el-sys__node--battery .el-sys__icon {
+  color: rgb(var(--el-volt));
+}
+
+.tpl-ecoluz .el-sys__label {
+  font-family: var(--el-display);
+  font-weight: 600;
+  font-stretch: 84%;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-anchor: middle;
+  fill: var(--el-cream-dim);  /* ⚠️ O HALO DA COR DA PRANCHA: um fio que passe atrás do rótulo some sob
+     ele, em vez de riscar a palavra. É o que deixa as posições dos nós
+     livres — sem isto, cada topologia precisaria desviar dos próprios rótulos. */
+  paint-order: stroke;
+  stroke: #0d0a05;
+  stroke-width: 7px;
+  stroke-linejoin: round;
+}
+
+/* O corte da rede, no off-grid: um X no lugar onde a ligação estaria. */
+.tpl-ecoluz .el-sys__cut path {
+  fill: none;
+  stroke: var(--el-cream-faint);
+  stroke-width: 2.4;
+  stroke-linecap: round;
 }
