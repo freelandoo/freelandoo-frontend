@@ -1,7 +1,7 @@
 "use client"
 
 import type { LucideIcon } from "lucide-react"
-import { BadgeCheck, BarChart3, Bot, CalendarDays, Database, FolderCog } from "lucide-react"
+import { BadgeCheck, BarChart3, Bot, CalendarDays, Database, FolderCog, TrendingUp } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -52,6 +52,7 @@ export function useAccountTools({
   const dataApiOn = useFeature("data_api")
   const aiAttendantOn = useFeature("atendimento_ai")
   const verifiedSaleOn = useFeature("selo_verificado")
+  const marketReportOn = useFeature("mercado_local")
 
   const tools: AccountTool[] = [
     {
@@ -116,6 +117,18 @@ export function useAccountTools({
       label: t("verifiedTool", "Selo verificado"),
       ariaLabel: t("verifiedToolAria", "Selo verificado: assine por R$9,90 por mês"),
       href: "/verificado",
+    })
+  }
+
+  // Relatório de mercado local: quanto se cobra na cidade, na região, no
+  // estado e na comunidade, a partir dos preços cadastrados na plataforma.
+  if (marketReportOn) {
+    tools.push({
+      key: "market",
+      icon: TrendingUp,
+      label: t("marketTool", "Mercado local"),
+      ariaLabel: t("marketToolAria", "Mercado local: quanto se cobra na sua região"),
+      href: "/mercado-local",
     })
   }
 
