@@ -44,6 +44,7 @@ import {
   newLocalId,
   type CommunitySiteConfig,
   type CommunitySiteResponse,
+  type ShowcaseProduct,
   type ShowcaseService,
   type SiteSection,
   type SitePage,
@@ -130,6 +131,8 @@ export function CommunitySiteBuilder({
   // entrasse nele, o autosave a gravaria de volta no JSONB e recriaria a cópia
   // de preço que esta mudança veio justamente eliminar.
   const [services, setServices] = useState<ShowcaseService[]>([])
+  // A loja do perfil (mig 263): chega na MESMA resposta que os serviços.
+  const [products, setProducts] = useState<ShowcaseProduct[]>([])
   const [providerProfileId, setProviderProfileId] = useState<string | null>(null)
   // Endereço reservado do site. Ele existe a partir da PRIMEIRA publicação e é
   // o que dá destino ao botão de agendar dentro do construtor — ver
@@ -224,6 +227,7 @@ export function CommunitySiteBuilder({
       .then((data) => {
         if (data.error) return
         setServices(Array.isArray(data.services) ? data.services : [])
+        setProducts(Array.isArray(data.products) ? data.products : [])
         setProviderProfileId(data.provider_profile_id || null)
       })
       .catch(() => {
@@ -252,6 +256,7 @@ export function CommunitySiteBuilder({
         setSlug(data.slug || null)
 
         setServices(Array.isArray(data.services) ? data.services : [])
+        setProducts(Array.isArray(data.products) ? data.products : [])
         setProviderProfileId(data.provider_profile_id || null)
         if (data.config) {
           setConfig(data.config)
@@ -1179,7 +1184,7 @@ export function CommunitySiteBuilder({
                 ? t("publish", "Publicar site")
                 : managed
                   ? t("publishLockedManaged", "Publicar site · Plano do site")
-                  : t("publishLocked", "Publicar site · Plano Negócio")}
+                  : t("publishLockedSite", "Publicar site · Plano Site")}
           </button>
         </div>
       )}
@@ -1285,6 +1290,7 @@ export function CommunitySiteBuilder({
               onUpload={uploadImage}
               t={t}
               services={services}
+              products={products}
               providerHref={
                 providerProfileId ? `/freelancer/${providerProfileId}` : null
               }

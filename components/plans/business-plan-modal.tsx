@@ -1,5 +1,11 @@
 "use client"
 
+// ⚠️ DESDE A MIG 263 ESTE É O MODAL DO **PLANO SITE** (R$49/ano). O Plano
+// Negócio acabou: negócio, membros, agenda e WhatsApp são grátis, e o
+// atendente de IA tem camada grátis própria. O que se paga aqui é PUBLICAR o
+// site e ligar o domínio. O nome do componente fica (dois chamadores), e o
+// histórico abaixo conta de onde ele veio.
+//
 // O MODAL DO PLANO NEGÓCIO (mig 234) — a explicação com "prints" e o botão de
 // assinar. Pedido do Alex (2026-09-10): "um modal com prints explicando: crie
 // seu negócio, faça um site para você e ainda tenha um atendente de IA para
@@ -25,6 +31,7 @@
 // onde o Stripe devolve a pessoa depois de pagar.
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Bot, Check, Crown, Globe, Loader2, Lock, MessageCircle, Send, Store, X } from "lucide-react"
 import { toast } from "sonner"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
@@ -111,7 +118,33 @@ function PrintSite({ t }: { t: (k: string, f: string) => string }) {
   )
 }
 
-function PrintAi({ t }: { t: (k: string, f: string) => string }) {
+function PrintPublish({ t }: { t: (k: string, f: string) => string }) {
+  return (
+    <div aria-hidden className="relative flex h-40 w-full flex-col overflow-hidden border-2 border-[#0B0B0D] bg-[#0b0804]">
+      <div className="flex items-center gap-1.5 border-b-2 border-[#0B0B0D] bg-[#15120E] px-2 py-1">
+        <span className="h-1.5 w-1.5 bg-[#ff5f57]" /><span className="h-1.5 w-1.5 bg-[#febc2e]" /><span className="h-1.5 w-1.5 bg-[#28c840]" />
+        <span className="ml-1 flex-1 truncate border border-[#0B0B0D] bg-[#0b0804] px-1.5 py-0.5 text-[6px] font-bold text-[#F5F1E8]">
+          <Globe className="mr-1 inline h-2 w-2 text-[#22C55E]" />{t("mockDomain", "www.meunegocio.com.br")}
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 p-2">
+        <span className="border-2 border-[#0B0B0D] bg-[#22C55E] px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#0B0B0D]" style={{ boxShadow: "2px 2px 0 0 #0B0B0D" }}>
+          {t("mockLive", "No ar")}
+        </span>
+        <p className="fl-display text-center text-[15px] leading-none text-[#F5F1E8]">{t("mockBizName", "Meu negócio")}</p>
+        <div className="flex gap-1">
+          <span className="border border-[#0B0B0D] bg-[#1D1810] px-1.5 py-0.5 text-[6px] font-black uppercase text-[#F2B705]">{t("mockServices", "Serviços")}</span>
+          <span className="border border-[#0B0B0D] bg-[#1D1810] px-1.5 py-0.5 text-[6px] font-black uppercase text-[#F2B705]">{t("mockStore", "Loja")}</span>
+          <span className="border border-[#0B0B0D] bg-[#1D1810] px-1.5 py-0.5 text-[6px] font-black uppercase text-[#F2B705]">{t("mockBook", "Agendar")}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Fora do modal desde a mig 263: o atendente de IA virou produto próprio,
+// com camada grátis, e deixou de ser um passo deste plano.
+export function PrintAi({ t }: { t: (k: string, f: string) => string }) {
   return (
     <div aria-hidden className="relative flex h-40 w-full flex-col overflow-hidden border-2 border-[#0B0B0D] bg-[#0b0804]">
       <div className="flex items-center gap-1.5 border-b-2 border-[#0B0B0D] bg-[#15120E] px-2 py-1 text-[7px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8]">
@@ -173,9 +206,10 @@ export function BusinessPlanModal({
 
   if (!open) return null
 
-  const priceCents = plan?.price_cents ?? 5000
+  const priceCents = plan?.price_cents ?? 4900
   const price = money(priceCents, locale)
-  const perMonth = t("perMonth", "/mês")
+  const yearly = (plan?.billing_interval_months ?? 12) === 12
+  const perMonth = yearly ? t("perYear", "/ano") : t("perMonth", "/mês")
 
   const onSubscribe = async () => {
     setBusy("subscribe")
@@ -190,7 +224,7 @@ export function BusinessPlanModal({
   }
 
   const onCancel = async () => {
-    if (!window.confirm(t("cancelConfirm", "Cancelar o Plano Negócio? Você continua com tudo até o fim do período já pago."))) return
+    if (!window.confirm(t("cancelConfirmSite", "Cancelar o Plano Site? O site continua no ar até o fim do período já pago."))) return
     setBusy("cancel")
     const r = await cancel()
     setBusy(null)
@@ -203,7 +237,7 @@ export function BusinessPlanModal({
       key: "biz",
       icon: Store,
       title: t("step1Title", "Crie seu negócio"),
-      text: t("step1Text", "Sua página com feed, foto, cores e identidade — pronta em um clique. De graça."),
+      text: t("step1TextV2", "Sua página com feed, membros, agenda e WhatsApp — pronta em um clique. De graça."),
       print: <PrintBusiness t={t} />,
       free: true,
     },
@@ -211,25 +245,25 @@ export function BusinessPlanModal({
       key: "site",
       icon: Globe,
       title: t("step2Title", "Faça o seu site"),
-      text: t("step2Text", "Monte o site do negócio no construtor visual. Com o plano, publique e compartilhe com endereço próprio."),
+      text: t("step2TextV2", "Monte o site no construtor visual. Os seus serviços e a sua loja entram sozinhos e se atualizam quando você mexe neles."),
       print: <PrintSite t={t} />,
-      free: false,
+      free: true,
     },
     {
-      key: "ai",
-      icon: Bot,
-      title: t("step3Title", "Atendente de IA"),
-      text: t("step3Text", "Um atendente que responde o WhatsApp da sua empresa e as suas mensagens da Freelandoo, sabendo seus serviços e preços."),
-      print: <PrintAi t={t} />,
+      key: "publish",
+      icon: Globe,
+      title: t("step3TitleSite", "Publique"),
+      text: t("step3TextSite", "Coloque o site no ar com o endereço da Freelandoo ou com o seu próprio domínio."),
+      print: <PrintPublish t={t} />,
       free: false,
     },
   ]
 
   const included = [
-    t("inc1", "Aceitar membros no seu negócio"),
-    t("inc2", "Publicar e compartilhar o site"),
-    t("inc3", "Atendente de IA no WhatsApp e nas mensagens"),
-    t("inc4", "WhatsApp da empresa dentro da Freelandoo"),
+    t("incSite1", "Publicar e compartilhar o site"),
+    t("incSite2", "Ligar o seu domínio próprio"),
+    t("incSite3", "Seções de Serviços e Loja sempre atualizadas"),
+    t("incSite4", "Um pagamento por ano, sem mensalidade"),
   ]
 
   return (
@@ -238,7 +272,7 @@ export function BusinessPlanModal({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={t("title", "Plano Negócio")}
+      aria-label={t("titleSite", "Plano Site")}
     >
       <div
         className="fl-root fl-sharp flex max-h-[94vh] w-full max-w-3xl flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8]"
@@ -251,7 +285,7 @@ export function BusinessPlanModal({
             <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9A938A]">
               <Crown className="h-3.5 w-3.5" style={{ color: accent }} /> {t("eyebrow", "Freelandoo · para o seu negócio")}
             </p>
-            <h2 className="fl-display mt-1 text-3xl leading-none sm:text-4xl">{t("title", "Plano Negócio")}</h2>
+            <h2 className="fl-display mt-1 text-3xl leading-none sm:text-4xl">{t("titleSite", "Plano Site")}</h2>
             <p className="fl-display mt-2 text-2xl leading-none" style={{ color: accent }}>
               {price}
               <span className="ml-1 text-sm font-bold text-[#9A938A]">{perMonth}</span>
@@ -269,7 +303,7 @@ export function BusinessPlanModal({
 
         <div className="px-5 py-5">
           <p className="text-sm font-semibold leading-relaxed text-[#F5F1E8]">
-            {t("pitch", "Crie seu negócio, faça um site para você e ainda tenha um atendente de IA para atender seu WhatsApp e as suas mensagens da Freelandoo.")}
+            {t("pitchSite", "Crie seu negócio e monte o site de graça. Com um pagamento por ano, ele vai para o ar com o seu endereço.")}
           </p>
 
           {/* os três prints */}
@@ -300,7 +334,7 @@ export function BusinessPlanModal({
           {/* o que o plano libera */}
           <div className="mt-5 border-2 border-[#0B0B0D] bg-[#0b0804] p-4">
             <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">
-              {t("freeNote", "Criar o negócio e montar o site é de graça. O plano libera o que vem depois:")}
+              {t("freeNoteSite", "Negócio, membros, agenda, WhatsApp e o construtor são de graça. O plano libera:")}
             </p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {included.map((line) => (
@@ -312,6 +346,21 @@ export function BusinessPlanModal({
                 </li>
               ))}
             </ul>
+            {/* O atendente virou produto próprio (mig 263). A linha aponta a
+                camada grátis em vez de sumir com ele — quem conhecia o "tenha
+                um atendente de IA" do plano antigo precisa saber onde ele foi. */}
+            <Link
+              href="/account/atendente"
+              className="mt-4 flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-2 text-xs font-bold text-[#F5F1E8] hover:bg-[#1D1810]"
+            >
+              <Bot className="h-4 w-4 shrink-0" style={{ color: accent }} />
+              <span className="min-w-0 flex-1">
+                {t("aiFreeLine", "Atendente de IA no WhatsApp e nas mensagens: grátis para 2 pessoas por dia.")}
+              </span>
+              <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-[0.12em]" style={{ color: accent }}>
+                {t("aiFreeCta", "Conectar")}
+              </span>
+            </Link>
           </div>
         </div>
 
@@ -333,7 +382,9 @@ export function BusinessPlanModal({
                     ? t("pastDue", "Pagamento pendente — atualize o cartão para continuar.")
                     : subscription.current_period_end
                       ? t("activeUntil", "Renova em {date}").replace("{date}", new Date(subscription.current_period_end).toLocaleDateString(locale))
-                      : t("activeNoDate", "Cobrança mensal ativa.")}
+                      : yearly
+                        ? t("activeNoDateYear", "Cobrança anual ativa.")
+                        : t("activeNoDate", "Cobrança mensal ativa.")}
                 </p>
               </div>
               <button
@@ -358,7 +409,9 @@ export function BusinessPlanModal({
                 {busy === "subscribe" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crown className="h-4 w-4" />}
                 {busy === "subscribe"
                   ? t("ctaLoading", "Abrindo pagamento…")
-                  : t("cta", "Assinar por {price}/mês").replace("{price}", price)}
+                  : yearly
+                    ? t("ctaYear", "Assinar por {price}/ano").replace("{price}", price)
+                    : t("cta", "Assinar por {price}/mês").replace("{price}", price)}
               </button>
             </div>
           )}

@@ -1546,7 +1546,8 @@
     "deleteCancel": "Cancelar",
     "deleteProfileTrash": "Eliminar {name}",
     "deleteProfileTitle": "Eliminar perfil",
-    "deleteProfileBody": "El perfil \"{name}\" será eliminado, con sus publicaciones, servicios, productos y seguidores."
+    "deleteProfileBody": "El perfil \"{name}\" será eliminado, con sus publicaciones, servicios, productos y seguidores.",
+    "aiAttendantAriaV2": "Asistente de IA: responde tu WhatsApp y tus mensajes — gratis para 2 personas por día"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -3018,7 +3019,9 @@
     "deletePetBody": "\"{name}\" será eliminado y su feed dejará de existir. Tus publicaciones siguen en tu perfil.",
     "deleteCarBody": "\"{name}\" será eliminado y su feed dejará de existir. Tus publicaciones siguen en tu perfil.",
     "deleteSubjectError": "No se pudo eliminar.",
-    "accentScarlet": "Rojo claro"
+    "accentScarlet": "Rojo claro",
+    "planButtonSite": "Plan Sitio",
+    "inviteLockedAriaV2": "Invitar personas"
   },
   "Careers": {
     "hero.badge": "Carreras",
@@ -4308,7 +4311,9 @@
     "whatsappDowngrade": "La calidad de tu número de WhatsApp bajó",
     "whatsappBanned": "Meta bloqueó tu número de WhatsApp",
     "whatsappRestricted": "Tu número de WhatsApp tiene restricciones",
-    "whatsappQuality": "Hay un aviso de Meta sobre tu número de WhatsApp"
+    "whatsappQuality": "Hay un aviso de Meta sobre tu número de WhatsApp",
+    "aiQuotaFree": "Tu asistente de IA ya atendió a las 2 personas gratis de hoy — suscríbete para que siga",
+    "aiQuotaPaid": "Se acabó la cuota de respuestas de tu asistente de IA"
   },
   "Payments": {
     "statusRefundedMale": "Reembolsado",
@@ -6628,7 +6633,24 @@
     "dnsPurposeVerify": "Confirma que el dominio es tuyo",
     "dnsPurposeRoute": "Este es el que pone el sitio en línea",
     "dnsPurposeOptional": "Opcional — hace que la dirección con www también funcione",
-    "dnsFullHost": "Nombre completo:"
+    "dnsFullHost": "Nombre completo:",
+    "publishLockedSite": "Publicar sitio · Plan Sitio",
+    "sectionStore": "Tienda",
+    "storePerRow": "Por fila",
+    "storeCta": "Comprar",
+    "storeSoldOut": "Agotado",
+    "storeEmpty": "Aún no hay productos en tu tienda.",
+    "storeEmptyHint": "Esta sección muestra los productos de la Tienda de tu perfil. Regístralos en Mi perfil → Tienda y aparecen aquí.",
+    "storeNoPhoto": "Sin foto — agrégala en el registro del producto",
+    "readyPitchLeadAutoral": "Además del constructor, que es tuyo, existe el sitio a medida: diseñado y escrito por los agentes de Freelandoo, con una página por servicio y una por ciudad atendida — que es lo que responde en la búsqueda local.",
+    "readyPitchBodyAutoral": "Armamos y mantenemos el sitio a partir de lo que ya escribiste aquí. Cuando esté listo, aceptas el cambio y Freelandoo pasa a mantenerlo — publicar y la dirección siguen contigo.",
+    "readyPriceSetup": "Creación",
+    "readyPriceSetupNote": "una vez, al pedir",
+    "readyPriceMonthly": "Mantenimiento",
+    "readyPriceMonthlyNote": "cuando el sitio salga al aire",
+    "perMonthShort": "/mes",
+    "readyRequestCtaPaid": "Pedir mi sitio · {price}",
+    "readyRequestHintPaid": "La creación se paga ahora y el pedido entra en la fila de los agentes en cuanto se acredita el pago. Nada cambia en tu sitio hasta que aceptes el nuevo."
   },
   "SiteBooking": {
     "back": "Volver al sitio",
@@ -6941,7 +6963,29 @@
     "mockFreelandoo": "Mensajes Freelandoo",
     "mockChatIn": "¡Hola! ¿Tienen horario hoy?",
     "mockChatOut": "Tenemos a las 15h y a las 17h. ¿Quieres que lo agende?",
-    "mockChatIn2": "¡A las 15h, por favor!"
+    "mockChatIn2": "¡A las 15h, por favor!",
+    "titleSite": "Plan Sitio",
+    "perYear": "/año",
+    "pitchSite": "Crea tu negocio y arma el sitio gratis. Con un pago al año, sale al aire con tu propia dirección.",
+    "step1TextV2": "Tu página con feed, miembros, agenda y WhatsApp — lista en un clic. Gratis.",
+    "step2TextV2": "Arma el sitio en el constructor visual. Tus servicios y tu tienda entran solos y se actualizan cuando los cambias.",
+    "step3TitleSite": "Publica",
+    "step3TextSite": "Pon el sitio al aire con la dirección de Freelandoo o con tu propio dominio.",
+    "freeNoteSite": "Negocio, miembros, agenda, WhatsApp y el constructor son gratis. El plan libera:",
+    "incSite1": "Publicar y compartir el sitio",
+    "incSite2": "Conectar tu propio dominio",
+    "incSite3": "Secciones de Servicios y Tienda siempre actualizadas",
+    "incSite4": "Un pago al año, sin mensualidad",
+    "aiFreeLine": "Asistente de IA en WhatsApp y mensajes: gratis para 2 personas por día.",
+    "aiFreeCta": "Conectar",
+    "activeNoDateYear": "Cobro anual activo.",
+    "ctaYear": "Suscribirse por {price}/año",
+    "cancelConfirmSite": "¿Cancelar el Plan Sitio? El sitio sigue al aire hasta el fin del período pagado.",
+    "successToastSite": "¡Plan Sitio activo! Tu sitio ya puede publicarse.",
+    "mockDomain": "www.minegocio.com",
+    "mockLive": "Al aire",
+    "mockServices": "Servicios",
+    "mockStore": "Tienda"
   },
   "Shorts": {
     "close": "Cerrar",
@@ -6974,7 +7018,26 @@
     "pdfTruncated": "El PDF era grande y solo entró una parte. Revisa la vista previa para ver lo que la IA lee.",
     "previewTitle": "Lo que la IA lee",
     "preview": "Ver la vista previa",
-    "previewHint": "Es exactamente el texto que va con cada respuesta. Si algo está mal aquí, el asistente repetirá el error."
+    "previewHint": "Es exactamente el texto que va con cada respuesta. Si algo está mal aquí, el asistente repetirá el error.",
+    "quotaFreeEyebrow": "Nivel gratis",
+    "quotaPaidEyebrow": "Plan {name}",
+    "quotaFreeLine": "{used} de {limit} personas atendidas hoy",
+    "quotaPaidLine": "{used} de {limit} respuestas en este ciclo",
+    "quotaFreeHint": "Gratis, el asistente conversa con hasta 2 personas por día. Quien ya fue atendido hoy sigue siendo atendido.",
+    "quotaPaidHint": "Cada respuesta del asistente cuenta una vez, en WhatsApp y en los mensajes de Freelandoo.",
+    "quotaFreeOut": "Se acabó el límite gratis de hoy: el asistente se detuvo y vuelve mañana. Suscríbete a un plan para que siga respondiendo.",
+    "quotaPaidOut": "Se acabó la cuota del plan: el asistente se detuvo hasta el próximo ciclo. Cambia a un plan mayor si necesitas más respuestas.",
+    "perMonth": "/mes",
+    "planReplies": "{n} respuestas por mes",
+    "planSubscribe": "Suscribirse",
+    "planCancel": "Cancelar plan",
+    "planCanceling": "Cancelando…",
+    "planCancelConfirm": "¿Cancelar el plan? El asistente vuelve al nivel gratis (2 personas por día).",
+    "planCanceled": "Plan cancelado.",
+    "planCancelError": "No fue posible cancelar ahora.",
+    "planCheckoutError": "No fue posible abrir el pago.",
+    "planSuccess": "¡Plan activo! El asistente vuelve a responder.",
+    "planCanceledCheckout": "Pago cancelado — no se te cobró."
   },
   "Leads": {
     "title": "Encuentra clientes",

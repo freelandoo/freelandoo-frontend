@@ -14,11 +14,12 @@
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { SiteCanvas } from "@/app/(header-only)/comunidades/[id]/_components/site-builder/site-canvas"
 import { SiteAnalytics } from "@/components/site/site-analytics"
-import type { CommunitySiteConfig, ShowcaseService } from "@/types/community-site"
+import type { CommunitySiteConfig, ShowcaseProduct, ShowcaseService } from "@/types/community-site"
 
 export function PublicSiteView({
   config,
   services = [],
+  products = [],
   providerHref = null,
   bookingHref = null,
   pageBase = null,
@@ -27,6 +28,8 @@ export function PublicSiteView({
 }: {
   config: CommunitySiteConfig
   services?: ShowcaseService[]
+  /** Os produtos da Loja do líder (mig 263). */
+  products?: ShowcaseProduct[]
   /** Perfil onde os serviços da vitrine são contratados. */
   providerHref?: string | null
   /**
@@ -59,6 +62,7 @@ export function PublicSiteView({
         config={config}
         editing={false}
         services={services}
+        products={products}
         providerHref={providerHref}
         bookingHref={bookingHref}
         pageBase={pageBase}

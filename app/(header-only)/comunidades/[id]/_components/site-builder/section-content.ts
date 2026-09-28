@@ -30,6 +30,8 @@ import type { SiteSection } from "@/types/community-site"
  */
 export type SectionContentContext = {
   serviceCount: number
+  /** Produtos ativos da Loja do líder (mig 263). */
+  productCount: number
 }
 
 export function sectionHasContent(
@@ -46,6 +48,10 @@ export function sectionHasContent(
     // vitrine sem nada para vender.
     case "services_catalog":
       return ctx.serviceCount > 0
+
+    // Mesma regra: zero produto ativo = loja sem nada para vender.
+    case "store_catalog":
+      return ctx.productCount > 0
 
     case "gallery":
       return section.data.photos.length > 0

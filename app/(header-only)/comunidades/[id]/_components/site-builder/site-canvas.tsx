@@ -21,7 +21,9 @@ import type {
   HeroData,
   PersonData,
   ServicesCatalogData,
+  ShowcaseProduct,
   ShowcaseService,
+  StoreCatalogData,
   SitePage,
   SiteSection,
   SiteSectionKind,
@@ -58,6 +60,7 @@ import { SiteRuntimeProvider } from "./site-runtime"
 import { SectionShell } from "./sections/section-shell"
 import { HeroBannerSection } from "./sections/hero-banner-section"
 import { ServicesCatalogSection } from "./sections/services-catalog-section"
+import { StoreCatalogSection } from "./sections/store-catalog-section"
 import { AboutSection } from "./sections/about-section"
 import { TestimonialsSection } from "./sections/testimonials-section"
 import { GallerySection } from "./sections/gallery-section"
@@ -100,6 +103,7 @@ export function SiteCanvas({
   onUpload,
   t,
   services = [],
+  products = [],
   providerHref = null,
   locale = "pt-BR",
   bookingHref = null,
@@ -125,6 +129,8 @@ export function SiteCanvas({
    * seção some em leitura e vira instrução em edição.
    */
   services?: ShowcaseService[]
+  /** Os produtos da Loja do líder (mig 263). Mesma regra dos serviços. */
+  products?: ShowcaseProduct[]
   providerHref?: string | null
   locale?: string
   /**
@@ -238,7 +244,10 @@ export function SiteCanvas({
   // fica de fora, não só o miolo. O cabeçalho de três degraus é desenhado pela
   // casca, por fora da seção: se o corte fosse feito lá dentro, sobraria na
   // página um "O QUE OFERECEMOS" anunciando o vazio.
-  const contentCtx = useMemo(() => ({ serviceCount: services.length }), [services])
+  const contentCtx = useMemo(
+    () => ({ serviceCount: services.length, productCount: products.length }),
+    [services, products]
+  )
   const visible = useMemo(
     () => visibleSections(sections, editing, contentCtx),
     [sections, editing, contentCtx]
@@ -738,6 +747,29 @@ export function SiteCanvas({
               next: t("serviceNext", "Ver mais serviços"),
               hourSuffix: t("serviceHourSuffix", "h"),
               minSuffix: t("serviceMinSuffix", "min"),
+            }}
+          />
+        )
+
+      case "store_catalog":
+        return (
+          <StoreCatalogSection
+            data={section.data}
+            onChange={(d: StoreCatalogData) => setData(d)}
+            editing={editing}
+            theme={theme}
+            products={products}
+            locale={locale}
+            labels={{
+              perRow: t("storePerRow", "Por linha"),
+              cta: t("storeCta", "Comprar"),
+              soldOut: t("storeSoldOut", "Esgotado"),
+              empty: t("storeEmpty", "Nenhum produto na sua loja ainda."),
+              emptyHint: t(
+                "storeEmptyHint",
+                "Esta seção mostra os produtos da Loja do seu perfil. Cadastre em Meu perfil → Loja e eles aparecem aqui."
+              ),
+              noPhoto: t("storeNoPhoto", "Sem foto — adicione no cadastro do produto"),
             }}
           />
         )

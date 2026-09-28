@@ -1546,7 +1546,8 @@
     "deleteCancel": "Cancel",
     "deleteProfileTrash": "Delete {name}",
     "deleteProfileTitle": "Delete profile",
-    "deleteProfileBody": "The profile \"{name}\" will be deleted, along with its posts, services, products and followers."
+    "deleteProfileBody": "The profile \"{name}\" will be deleted, along with its posts, services, products and followers.",
+    "aiAttendantAriaV2": "AI assistant: answers your WhatsApp and messages — free for 2 people a day"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -3018,7 +3019,9 @@
     "deletePetBody": "\"{name}\" will be deleted and its feed will no longer exist. Your posts stay on your profile.",
     "deleteCarBody": "\"{name}\" will be deleted and its feed will no longer exist. Your posts stay on your profile.",
     "deleteSubjectError": "Couldn't delete it.",
-    "accentScarlet": "Light red"
+    "accentScarlet": "Light red",
+    "planButtonSite": "Site Plan",
+    "inviteLockedAriaV2": "Invite people"
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -4328,7 +4331,9 @@
     "whatsappDowngrade": "Your WhatsApp number quality has dropped",
     "whatsappBanned": "Meta banned your WhatsApp number",
     "whatsappRestricted": "Your WhatsApp number has restrictions",
-    "whatsappQuality": "There's a notice from Meta about your WhatsApp number"
+    "whatsappQuality": "There's a notice from Meta about your WhatsApp number",
+    "aiQuotaFree": "Your AI assistant already served today's 2 free people — subscribe to keep it going",
+    "aiQuotaPaid": "Your AI assistant's reply quota is used up"
   },
   "Payments": {
     "statusRefundedMale": "Refunded",
@@ -6648,7 +6653,24 @@
     "dnsPurposeVerify": "Confirms the domain is yours",
     "dnsPurposeRoute": "This is the one that puts the site online",
     "dnsPurposeOptional": "Optional — makes the www address work too",
-    "dnsFullHost": "Full name:"
+    "dnsFullHost": "Full name:",
+    "publishLockedSite": "Publish site · Site Plan",
+    "sectionStore": "Store",
+    "storePerRow": "Per row",
+    "storeCta": "Buy",
+    "storeSoldOut": "Sold out",
+    "storeEmpty": "No products in your store yet.",
+    "storeEmptyHint": "This section shows the products from your profile's Store. Add them in My profile → Store and they show up here.",
+    "storeNoPhoto": "No photo — add one in the product listing",
+    "readyPitchLeadAutoral": "Besides the builder, which is yours, there's the custom site: designed and written by Freelandoo's agents, made to measure, with one page per service and one per city served — which is what ranks in local search.",
+    "readyPitchBodyAutoral": "We build and maintain the site from what you've already written here. When it's ready, you accept the switch and Freelandoo maintains it from then on — publishing and the address stay with you.",
+    "readyPriceSetup": "Setup",
+    "readyPriceSetupNote": "once, when you order",
+    "readyPriceMonthly": "Maintenance",
+    "readyPriceMonthlyNote": "once the site goes live",
+    "perMonthShort": "/mo",
+    "readyRequestCtaPaid": "Order my site · {price}",
+    "readyRequestHintPaid": "Setup is paid now, and the order joins the agents' queue as soon as the payment clears. Nothing changes on your site until you accept the new one."
   },
   "SiteBooking": {
     "back": "Back to site",
@@ -6961,7 +6983,29 @@
     "mockFreelandoo": "Freelandoo messages",
     "mockChatIn": "Hi! Do you have a slot today?",
     "mockChatOut": "We have 3pm and 5pm. Want me to book it?",
-    "mockChatIn2": "3pm, please!"
+    "mockChatIn2": "3pm, please!",
+    "titleSite": "Site Plan",
+    "perYear": "/year",
+    "pitchSite": "Create your business and build the site for free. With one payment a year, it goes live at your own address.",
+    "step1TextV2": "Your page with feed, members, scheduling and WhatsApp — ready in one click. Free.",
+    "step2TextV2": "Build the site in the visual builder. Your services and your store come in on their own and update when you change them.",
+    "step3TitleSite": "Publish",
+    "step3TextSite": "Put the site live with a Freelandoo address or your own domain.",
+    "freeNoteSite": "Business, members, scheduling, WhatsApp and the builder are free. The plan unlocks:",
+    "incSite1": "Publish and share the site",
+    "incSite2": "Connect your own domain",
+    "incSite3": "Services and Store sections always up to date",
+    "incSite4": "One payment a year, no monthly fee",
+    "aiFreeLine": "AI assistant on WhatsApp and messages: free for 2 people a day.",
+    "aiFreeCta": "Connect",
+    "activeNoDateYear": "Yearly billing active.",
+    "ctaYear": "Subscribe for {price}/year",
+    "cancelConfirmSite": "Cancel the Site Plan? The site stays live until the end of the paid period.",
+    "successToastSite": "Site Plan active! Your site can now be published.",
+    "mockDomain": "www.mybusiness.com",
+    "mockLive": "Live",
+    "mockServices": "Services",
+    "mockStore": "Store"
   },
   "Shorts": {
     "close": "Close",
@@ -6994,7 +7038,26 @@
     "pdfTruncated": "The PDF was large and only part of it was stored. Check the preview to see what the AI reads.",
     "previewTitle": "What the AI reads",
     "preview": "See the preview",
-    "previewHint": "This is exactly the text sent with every answer. If something is wrong here, the attendant will repeat the mistake."
+    "previewHint": "This is exactly the text sent with every answer. If something is wrong here, the attendant will repeat the mistake.",
+    "quotaFreeEyebrow": "Free tier",
+    "quotaPaidEyebrow": "{name} plan",
+    "quotaFreeLine": "{used} of {limit} people served today",
+    "quotaPaidLine": "{used} of {limit} replies this cycle",
+    "quotaFreeHint": "For free, the assistant talks to up to 2 people a day. Whoever was already served today keeps being served.",
+    "quotaPaidHint": "Each assistant reply counts once, on WhatsApp and in Freelandoo messages.",
+    "quotaFreeOut": "Today's free limit is used up: the assistant stopped and comes back tomorrow. Subscribe to a plan to keep it answering.",
+    "quotaPaidOut": "The plan's quota is used up: the assistant stopped until the next cycle. Switch to a bigger plan if you need more replies.",
+    "perMonth": "/mo",
+    "planReplies": "{n} replies per month",
+    "planSubscribe": "Subscribe",
+    "planCancel": "Cancel plan",
+    "planCanceling": "Canceling…",
+    "planCancelConfirm": "Cancel the plan? The assistant goes back to the free tier (2 people a day).",
+    "planCanceled": "Plan canceled.",
+    "planCancelError": "Couldn't cancel right now.",
+    "planCheckoutError": "Couldn't open the payment.",
+    "planSuccess": "Plan active! The assistant is answering again.",
+    "planCanceledCheckout": "Payment canceled — you weren't charged."
   },
   "Leads": {
     "title": "Find customers",

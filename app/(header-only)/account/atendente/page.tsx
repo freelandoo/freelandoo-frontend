@@ -40,6 +40,7 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import { PageBackLink } from "@/components/tabloide/PageBackLink"
+import { AiQuotaPlans } from "@/components/ai/ai-quota-plans"
 
 type Doc = {
   id_knowledge: string
@@ -220,6 +221,10 @@ export default function AtendenteKnowledgePage() {
             )}
           </p>
         </header>
+
+        {/* A cota e os planos (mig 263) vêm antes da base: é a primeira coisa
+            que decide se o atendente está respondendo agora. */}
+        <AiQuotaPlans />
 
         {erro && (
           <div className="mb-4 border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">

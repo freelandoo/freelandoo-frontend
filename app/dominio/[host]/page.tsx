@@ -155,6 +155,7 @@ export default async function CommunityDomainPage({ params }: Props) {
       <PublicSiteView
         config={site.config}
         services={site.services || []}
+        products={site.products || []}
         // O botão do card leva ao perfil do prestador, que é onde moram agenda,
         // sinal e pagamento — este site não tem como concluir uma contratação.
         providerHref={

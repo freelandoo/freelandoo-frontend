@@ -90,6 +90,20 @@ export type SiteIcon = (typeof SITE_ICONS)[number]
  *
  * Preço em CENTAVOS: quem formata é o front, que sabe o idioma de quem lê.
  */
+/**
+ * Um produto da Loja do líder, como o site o mostra (mig 263). Projeção
+ * enxuta do backend: `price_cents` já é o que o COMPRADOR paga.
+ */
+export type ShowcaseProduct = {
+  id_profile_product: number
+  name: string
+  description: string
+  price_cents: number
+  in_stock: boolean
+  image_url: string | null
+  provider_profile_id: string
+}
+
 export type ShowcaseService = {
   id_profile_service: number
   name: string
@@ -176,6 +190,8 @@ export type SocialLink = {
 export const SITE_SECTION_KINDS = [
   "hero",
   "services_catalog",
+  // A loja do perfil (mig 263): os produtos da Loja do líder.
+  "store_catalog",
   "about",
   "testimonials",
   "cta",
@@ -194,6 +210,8 @@ export type HeroData = {
 }
 /** Só apresentação — o conteúdo são os serviços cadastrados (ShowcaseService). */
 export type ServicesCatalogData = { columns: 2 | 3 | 4 }
+/** Só apresentação — o conteúdo são os produtos da Loja (ShowcaseProduct). */
+export type StoreCatalogData = { columns: 2 | 3 | 4 }
 export type AboutData = { body: string; highlights: HighlightItem[]; photos: PhotoItem[] }
 export type TestimonialsData = { items: TestimonialItem[] }
 /**
@@ -249,6 +267,7 @@ export type ContactData = {
 export type SiteSection =
   | SiteSectionBase<"hero", HeroData>
   | SiteSectionBase<"services_catalog", ServicesCatalogData>
+  | SiteSectionBase<"store_catalog", StoreCatalogData>
   | SiteSectionBase<"about", AboutData>
   | SiteSectionBase<"testimonials", TestimonialsData>
   | SiteSectionBase<"cta", CtaData>
@@ -401,6 +420,8 @@ export type CommunitySiteResponse = {
    * que vai ser publicado.
    */
   services?: ShowcaseService[]
+  /** Os produtos da Loja do líder (mig 263) — mesma regra dos serviços. */
+  products?: ShowcaseProduct[]
   professionals?: SiteProfessional[]
   provider_profile_id?: string | null
   /**
@@ -471,6 +492,8 @@ export function emptySectionData(kind: SiteSectionKind): SiteSection["data"] {
       return { slides: [], autoplay: true, height: "tall" } satisfies HeroData
     case "services_catalog":
       return { columns: 3 } satisfies ServicesCatalogData
+    case "store_catalog":
+      return { columns: 3 } satisfies StoreCatalogData
     case "about":
       return { body: "", highlights: [], photos: [] } satisfies AboutData
     case "testimonials":

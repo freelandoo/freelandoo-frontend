@@ -1314,7 +1314,7 @@ export default function CommunityDetailPage() {
     const st = sp.get("plano")
     if (!st) return
     if (st === "sucesso") {
-      toast.success(tPlan("successToast", "Plano Negócio ativo! Seu negócio já aceita membros e o site pode ser publicado."))
+      toast.success(tPlan("successToastSite", "Plano Site ativo! O seu site já pode ser publicado."))
       const timer = setTimeout(() => { void loadAll() }, 4000)
       window.history.replaceState({}, "", window.location.pathname)
       return () => clearTimeout(timer)
@@ -1774,7 +1774,7 @@ export default function CommunityDetailPage() {
               <button type="button" onClick={() => setPlanOpen(true)}
                 className={`inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] ${planActive ? "bg-[#15120E] text-[#F5F1E8]" : "bg-[#F2B705] text-[#0B0B0D]"}`}>
                 <Crown className="h-4 w-4" style={planActive ? { color: "#22C55E" } : undefined} />
-                {planActive ? t("planActiveButton", "Plano ativo") : t("planButton", "Plano Negócio")}
+                {planActive ? t("planActiveButton", "Plano ativo") : t("planButtonSite", "Plano Site")}
               </button>
             )}
             <button type="button" onClick={() => setEdit((e) => !e)}
@@ -1957,7 +1957,7 @@ export default function CommunityDetailPage() {
                 name={community.display_name}
                 accent={accent}
                 locked={!membersEnabled}
-                lockedLabel={t("inviteLockedAria", "Convidar pessoas — faz parte do Plano Negócio")}
+                lockedLabel={t("inviteLockedAriaV2", "Convidar pessoas")}
                 onLockedClick={() => setPlanOpen(true)}
               />
             </div>

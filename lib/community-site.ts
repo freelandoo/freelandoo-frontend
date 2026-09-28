@@ -9,6 +9,7 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import type {
   CommunitySiteConfig,
+  ShowcaseProduct,
   ShowcaseService,
   SiteProfessional,
 } from "@/types/community-site"
@@ -38,6 +39,8 @@ export type PublicSite = {
    * SITE_REVALIDATE_SECONDS, sem republicar.
    */
   services?: ShowcaseService[]
+  /** Os produtos da Loja do líder (mig 263). Mesma regra dos serviços. */
+  products?: ShowcaseProduct[]
   /**
    * Quem atende (mig 221): o líder e a equipe promovida. É a lista da página de
    * agendamento — e, com uma pessoa só, ela some da tela em vez de virar uma

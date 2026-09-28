@@ -12,6 +12,7 @@ import {
   MapPinned,
   MessageSquareQuote,
   ScrollText,
+  ShoppingBag,
   Store,
   UserRound,
 } from "lucide-react"
@@ -21,6 +22,7 @@ import { SITE_SECTION_KINDS, type SiteSectionKind } from "@/types/community-site
 const META: Record<SiteSectionKind, { icon: LucideIcon; labelKey: string; fallback: string }> = {
   hero: { icon: LayoutPanelTop, labelKey: "sectionHero", fallback: "Banner principal" },
   services_catalog: { icon: Store, labelKey: "sectionServices", fallback: "Catálogo de serviços" },
+  store_catalog: { icon: ShoppingBag, labelKey: "sectionStore", fallback: "Loja" },
   about: { icon: ScrollText, labelKey: "sectionAbout", fallback: "Sobre nós" },
   testimonials: { icon: MessageSquareQuote, labelKey: "sectionTestimonials", fallback: "Depoimentos" },
   cta: { icon: BadgeCheck, labelKey: "sectionCta", fallback: "Chamada" },

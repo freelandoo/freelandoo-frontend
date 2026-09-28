@@ -113,6 +113,7 @@ export default async function CustomDomainSubPage({ params }: Props) {
         config={site.config!}
         page={page}
         services={site.services || []}
+        products={site.products || []}
         providerHref={
           site.provider_profile_id ? `/freelancer/${site.provider_profile_id}` : null
         }

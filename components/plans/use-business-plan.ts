@@ -28,6 +28,9 @@ export type BusinessPlan = {
   tagline: string | null
   description: string | null
   price_cents: number
+  /** 1 = mensal, 12 = anual (mig 263 — o Plano Site é anual). */
+  billing_interval_months?: number
+  setup_fee_cents?: number
   features: string[]
 }
 
@@ -36,6 +39,7 @@ export type BusinessPlanSubscription = {
   plan_name: string
   status: "active" | "past_due" | "pending" | "canceled"
   price_cents: number
+  billing_interval_months?: number
   features: string[]
   current_period_end: string | null
 }

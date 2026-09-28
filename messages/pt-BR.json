@@ -1546,7 +1546,8 @@
     "deleteCancel": "Cancelar",
     "deleteProfileTrash": "Excluir {name}",
     "deleteProfileTitle": "Excluir perfil",
-    "deleteProfileBody": "O perfil \"{name}\" será excluído, com os posts, serviços, produtos e seguidores dele."
+    "deleteProfileBody": "O perfil \"{name}\" será excluído, com os posts, serviços, produtos e seguidores dele.",
+    "aiAttendantAriaV2": "Atendente com IA: responde seu WhatsApp e suas mensagens — grátis para 2 pessoas por dia"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -3005,7 +3006,9 @@
     "deletePetBody": "\"{name}\" será excluído e o feed dele deixa de existir. Seus posts continuam no seu perfil.",
     "deleteCarBody": "\"{name}\" será excluído e o feed dele deixa de existir. Seus posts continuam no seu perfil.",
     "deleteSubjectError": "Não foi possível excluir.",
-    "accentScarlet": "Vermelho claro"
+    "accentScarlet": "Vermelho claro",
+    "planButtonSite": "Plano Site",
+    "inviteLockedAriaV2": "Convidar pessoas"
   },
   "Careers": {
     "hero.badge": "Carreiras",
@@ -3742,7 +3745,9 @@
     "whatsappDowngrade": "A qualidade do seu número do WhatsApp caiu",
     "whatsappBanned": "Seu número do WhatsApp foi bloqueado pela Meta",
     "whatsappRestricted": "Seu número do WhatsApp está com restrições",
-    "whatsappQuality": "Há um aviso da Meta sobre o seu número do WhatsApp"
+    "whatsappQuality": "Há um aviso da Meta sobre o seu número do WhatsApp",
+    "aiQuotaFree": "Seu atendente de IA já atendeu as 2 pessoas grátis de hoje — assine para ele continuar",
+    "aiQuotaPaid": "A cota de respostas do seu atendente de IA acabou"
   },
   "Payments": {
     "statusRefundedMale": "Reembolsado",
@@ -6062,7 +6067,24 @@
     "dnsPurposeVerify": "Confirma que o domínio é seu",
     "dnsPurposeRoute": "É este que coloca o site no ar",
     "dnsPurposeOptional": "Opcional — faz o endereço com www funcionar também",
-    "dnsFullHost": "Nome completo:"
+    "dnsFullHost": "Nome completo:",
+    "publishLockedSite": "Publicar site · Plano Site",
+    "sectionStore": "Loja",
+    "storePerRow": "Por linha",
+    "storeCta": "Comprar",
+    "storeSoldOut": "Esgotado",
+    "storeEmpty": "Nenhum produto na sua loja ainda.",
+    "storeEmptyHint": "Esta seção mostra os produtos da Loja do seu perfil. Cadastre em Meu perfil → Loja e eles aparecem aqui.",
+    "storeNoPhoto": "Sem foto — adicione no cadastro do produto",
+    "readyPitchLeadAutoral": "Além do construtor, que é seu, existe o site autoral: desenhado e escrito pelos agentes da Freelandoo, sob medida, com uma página por serviço e uma por cidade atendida — que é o que responde em busca local.",
+    "readyPitchBodyAutoral": "A gente monta e mantém o site a partir do que você já escreveu aqui. Quando ele estiver pronto, você aceita a troca e ele passa a ser mantido pela Freelandoo — publicar e o endereço continuam com você.",
+    "readyPriceSetup": "Criação",
+    "readyPriceSetupNote": "uma vez, ao pedir",
+    "readyPriceMonthly": "Manutenção",
+    "readyPriceMonthlyNote": "quando o site entrar no ar",
+    "perMonthShort": "/mês",
+    "readyRequestCtaPaid": "Pedir o meu site · {price}",
+    "readyRequestHintPaid": "A criação é paga agora e o pedido entra na fila dos agentes assim que o pagamento cai. Nada muda no seu site até você aceitar o novo."
   },
   "SiteBooking": {
     "back": "Voltar ao site",
@@ -6375,7 +6397,29 @@
     "mockFreelandoo": "Mensagens Freelandoo",
     "mockChatIn": "Oi! Vocês têm horário hoje?",
     "mockChatOut": "Temos às 15h e às 17h. Quer que eu agende?",
-    "mockChatIn2": "15h, por favor!"
+    "mockChatIn2": "15h, por favor!",
+    "titleSite": "Plano Site",
+    "perYear": "/ano",
+    "pitchSite": "Crie seu negócio e monte o site de graça. Com um pagamento por ano, ele vai para o ar com o seu endereço.",
+    "step1TextV2": "Sua página com feed, membros, agenda e WhatsApp — pronta em um clique. De graça.",
+    "step2TextV2": "Monte o site no construtor visual. Os seus serviços e a sua loja entram sozinhos e se atualizam quando você mexe neles.",
+    "step3TitleSite": "Publique",
+    "step3TextSite": "Coloque o site no ar com o endereço da Freelandoo ou com o seu próprio domínio.",
+    "freeNoteSite": "Negócio, membros, agenda, WhatsApp e o construtor são de graça. O plano libera:",
+    "incSite1": "Publicar e compartilhar o site",
+    "incSite2": "Ligar o seu domínio próprio",
+    "incSite3": "Seções de Serviços e Loja sempre atualizadas",
+    "incSite4": "Um pagamento por ano, sem mensalidade",
+    "aiFreeLine": "Atendente de IA no WhatsApp e nas mensagens: grátis para 2 pessoas por dia.",
+    "aiFreeCta": "Conectar",
+    "activeNoDateYear": "Cobrança anual ativa.",
+    "ctaYear": "Assinar por {price}/ano",
+    "cancelConfirmSite": "Cancelar o Plano Site? O site continua no ar até o fim do período já pago.",
+    "successToastSite": "Plano Site ativo! O seu site já pode ser publicado.",
+    "mockDomain": "www.meunegocio.com.br",
+    "mockLive": "No ar",
+    "mockServices": "Serviços",
+    "mockStore": "Loja"
   },
   "Shorts": {
     "close": "Fechar",
@@ -6408,7 +6452,26 @@
     "pdfTruncated": "O PDF era grande e só uma parte dele entrou. Confira na prévia o que a IA está lendo.",
     "previewTitle": "O que a IA lê",
     "preview": "Ver a prévia",
-    "previewHint": "É exatamente o texto que vai junto de cada resposta. Se algo estiver errado aqui, o atendente vai repetir o erro."
+    "previewHint": "É exatamente o texto que vai junto de cada resposta. Se algo estiver errado aqui, o atendente vai repetir o erro.",
+    "quotaFreeEyebrow": "Camada grátis",
+    "quotaPaidEyebrow": "Plano {name}",
+    "quotaFreeLine": "{used} de {limit} pessoas atendidas hoje",
+    "quotaPaidLine": "{used} de {limit} respostas neste ciclo",
+    "quotaFreeHint": "De graça, o atendente conversa com até 2 pessoas por dia. Quem já foi atendido hoje continua sendo atendido.",
+    "quotaPaidHint": "Cada resposta do atendente conta uma vez, no WhatsApp e nas mensagens da Freelandoo.",
+    "quotaFreeOut": "O limite grátis de hoje acabou: o atendente parou e volta amanhã. Assine um plano para ele continuar respondendo.",
+    "quotaPaidOut": "A cota do plano acabou: o atendente parou até o próximo ciclo. Troque para um plano maior se precisar de mais respostas.",
+    "perMonth": "/mês",
+    "planReplies": "{n} respostas por mês",
+    "planSubscribe": "Assinar",
+    "planCancel": "Cancelar plano",
+    "planCanceling": "Cancelando…",
+    "planCancelConfirm": "Cancelar o plano? O atendente volta para a camada grátis (2 pessoas por dia).",
+    "planCanceled": "Plano cancelado.",
+    "planCancelError": "Não foi possível cancelar agora.",
+    "planCheckoutError": "Não foi possível abrir o pagamento.",
+    "planSuccess": "Plano ativo! O atendente volta a responder.",
+    "planCanceledCheckout": "Pagamento cancelado — você não foi cobrado."
   },
   "Leads": {
     "title": "Encontre clientes",

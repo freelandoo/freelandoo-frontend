@@ -2,11 +2,9 @@
 
 import type { LucideIcon } from "lucide-react"
 import { BarChart3, Bot, CalendarDays, Database, FolderCog } from "lucide-react"
-import { Sparkles } from "lucide-react"
-import { getStoredUser } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
-import { useUserFeature, useUserFeatureStrict } from "@/components/feature-flags/UserFeaturesProvider"
+import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 
 /**
  * FONTE ÚNICA das ferramentas da CONTA (Métricas, Gerenciar, Agenda,
@@ -52,16 +50,7 @@ export function useAccountTools({
   // agenda não tem kill-switch de admin hoje.
   const agendaPrefOn = useUserFeature("agenda")
   const dataApiOn = useFeature("data_api")
-  const atendimentoIaOn = useFeature("atendimento_ia_venda")
-  // O atendente INCLUÍDO no Plano Negócio (mig 234) precisa de porta mesmo com
-  // a venda avulsa desligada — senão quem assina o plano não acha o bot que
-  // pagou. Leitura ESTRITA: só quem assina tem a chave.
-  const aiInPlan = useUserFeatureStrict("atendimento_ia")
-  // Atendente com IA (mig 253) — ver o comentário na montagem do item.
   const aiAttendantOn = useFeature("atendimento_ai")
-  const storedUser = getStoredUser()
-  const isPlatformAdmin =
-    !!storedUser?.is_admin || !!storedUser?.roles?.some((r) => r.desc_role === "Administrator")
 
   const tools: AccountTool[] = [
     {
@@ -100,37 +89,18 @@ export function useAccountTools({
     })
   }
 
-  if (atendimentoIaOn || aiInPlan) {
-    tools.push({
-      key: "ia",
-      icon: Bot,
-      label: t("atendimentoIa", "Atendimento IA"),
-      ariaLabel: t("atendimentoIaAria", "Atendimento IA: bot que responde suas conversas"),
-      href: "/account/atendimento-ia",
-    })
-  }
-
-  // Atendente com IA (mig 253): a base de conhecimento da CONTA — o que só o
-  // dono sabe (horário, garantia, tabela de preço) e que a plataforma não tem
-  // como deduzir do cadastro.
-  //
-  // ⚠️ NÃO É O "Atendimento IA" ACIMA. Aquele vende a assinatura de um bot de
-  // terceiro (mig 175); este é o atendente da própria plataforma. Os dois nomes
-  // se parecem e as duas portas convivem — juntá-las levaria o dono à tela
-  // errada, que é pior que não ter a porta.
-  //
-  // ⚠️ O PREDICADO É ESPELHO DO BACKEND (`requireAiAccess`), nunca a regra:
-  // hoje o acesso é só do administrador, enquanto o custo por conversa está
-  // sendo medido. Errar aqui esconde um botão; errar lá abriria a porta. No dia
-  // da abertura, isto vira a leitura da assinatura — e o backend muda junto.
-  if (aiAttendantOn && isPlatformAdmin) {
+  // UMA porta para o atendente (mig 263). Havia duas — "Atendimento IA" (a
+  // venda do bot externo) e "Atendente com IA" (só do admin) — e as duas
+  // viraram a mesma coisa: o atendente da plataforma, aberto a todos com
+  // camada grátis, e os planos de resposta comprados na mesma tela.
+  if (aiAttendantOn) {
     tools.push({
       key: "ai-attendant",
-      icon: Sparkles,
+      icon: Bot,
       label: t("aiAttendant", "Atendente com IA"),
       ariaLabel: t(
-        "aiAttendantAria",
-        "Atendente com IA: o que a plataforma deve saber para responder por você"
+        "aiAttendantAriaV2",
+        "Atendente com IA: responde seu WhatsApp e suas mensagens — grátis para 2 pessoas por dia"
       ),
       href: "/account/atendente",
     })

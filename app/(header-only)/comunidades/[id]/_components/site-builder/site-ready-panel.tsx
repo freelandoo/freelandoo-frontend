@@ -103,7 +103,17 @@ type ClientState = {
   offer: SiteOffer | null
   /** O pedido que ESTE cliente já mandou e ainda não foi respondido (mig 243). */
   request: { id_request: string; created_at: string } | null
+  /**
+   * O preço do site autoral (mig 263): criação cobrada no pedido + mensalidade.
+   * Vem do plano no backend — a mesma fonte que o pedido cobra —, para o botão
+   * dizer quanto custa ANTES do clique.
+   */
+  pricing?: { setup_cents: number; monthly_cents: number } | null
   error?: string
+}
+
+function brl(cents: number) {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
 }
 
 type Draft = {
@@ -278,8 +288,18 @@ export function SiteReadyPanel({
       method: "POST",
       body: JSON.stringify({ note: nota.trim() }),
     })
+    if (r.error) {
+      setBusy(null)
+      return setErro(r.error)
+    }
+    // O pedido é pago (mig 263): a criação é cobrada agora, e o pedido só
+    // entra na nossa fila quando o pagamento cai. A página vai para o checkout
+    // e volta aqui com `?pedido=sucesso`.
+    if (r.checkout_url) {
+      window.location.assign(r.checkout_url)
+      return
+    }
     setBusy(null)
-    if (r.error) return setErro(r.error)
     setNota("")
     await load()
   }
@@ -544,15 +564,38 @@ export function SiteReadyPanel({
           <>
             <p className="mb-3 text-[11px] leading-snug text-[#9A938A]">
               {t(
-                "readyPitchLead",
-                "Além do construtor, que é seu, existe o site pronto: desenhado pela Freelandoo, com uma página por serviço e uma por cidade atendida — que é o que responde em busca local."
+                "readyPitchLeadAutoral",
+                "Além do construtor, que é seu, existe o site autoral: desenhado e escrito pelos agentes da Freelandoo, sob medida, com uma página por serviço e uma por cidade atendida — que é o que responde em busca local."
               )}
             </p>
+            {client?.pricing ? (
+              <div className="mb-3 flex items-stretch gap-2">
+                <div className="flex-1 border-2 border-[#0B0B0D] bg-[#1D1810] p-2.5">
+                  <p className="text-[10px] font-extrabold tracking-[0.14em] text-[#9A938A] uppercase">
+                    {t("readyPriceSetup", "Criação")}
+                  </p>
+                  <p className="fl-display mt-0.5 text-xl leading-none" style={{ color: accent }}>
+                    {brl(client.pricing.setup_cents)}
+                  </p>
+                  <p className="mt-1 text-[10px] text-[#9A938A]">{t("readyPriceSetupNote", "uma vez, ao pedir")}</p>
+                </div>
+                <div className="flex-1 border-2 border-[#0B0B0D] bg-[#1D1810] p-2.5">
+                  <p className="text-[10px] font-extrabold tracking-[0.14em] text-[#9A938A] uppercase">
+                    {t("readyPriceMonthly", "Manutenção")}
+                  </p>
+                  <p className="fl-display mt-0.5 text-xl leading-none" style={{ color: accent }}>
+                    {brl(client.pricing.monthly_cents)}
+                    <span className="ml-0.5 text-xs font-bold text-[#9A938A]">{t("perMonthShort", "/mês")}</span>
+                  </p>
+                  <p className="mt-1 text-[10px] text-[#9A938A]">{t("readyPriceMonthlyNote", "quando o site entrar no ar")}</p>
+                </div>
+              </div>
+            ) : null}
             <div className="border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
               <p className="text-xs leading-relaxed text-[#F5F1E8]">
                 {t(
-                  "readyPitchBody",
-                  "O site pronto é montado e mantido pela gente a partir do que você já escreveu aqui. Enquanto ele estiver ligado, quem escreve o conteúdo é a Freelandoo — publicar e o endereço continuam com você, e desligar devolve o seu site do construtor exatamente como ele estava."
+                  "readyPitchBodyAutoral",
+                  "A gente monta e mantém o site a partir do que você já escreveu aqui. Quando ele estiver pronto, você aceita a troca e ele passa a ser mantido pela Freelandoo — publicar e o endereço continuam com você."
                 )}
               </p>
             </div>
@@ -584,13 +627,20 @@ export function SiteReadyPanel({
               ) : (
                 <Sparkles className="h-4 w-4" />
               )}
-              {t("readyRequestCta", "Pedir o meu site")}
+              {client?.pricing && client.pricing.setup_cents > 0
+                ? t("readyRequestCtaPaid", "Pedir o meu site · {price}").replace("{price}", brl(client.pricing.setup_cents))
+                : t("readyRequestCta", "Pedir o meu site")}
             </button>
             <p className="mt-2 text-[11px] leading-snug text-[#9A938A]">
-              {t(
-                "readyRequestHint",
-                "Pedir não muda nada no seu site nem cobra nada — a gente monta e você decide depois."
-              )}
+              {client?.pricing && client.pricing.setup_cents > 0
+                ? t(
+                    "readyRequestHintPaid",
+                    "A criação é paga agora e o pedido entra na fila dos agentes assim que o pagamento cai. Nada muda no seu site até você aceitar o novo."
+                  )
+                : t(
+                    "readyRequestHint",
+                    "Pedir não muda nada no seu site nem cobra nada — a gente monta e você decide depois."
+                  )}
             </p>
           </>
         )}

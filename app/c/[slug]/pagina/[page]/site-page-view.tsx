@@ -14,12 +14,13 @@
 
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { SiteCanvas } from "@/app/(header-only)/comunidades/[id]/_components/site-builder/site-canvas"
-import type { CommunitySiteConfig, ShowcaseService, SitePage } from "@/types/community-site"
+import type { CommunitySiteConfig, ShowcaseProduct, ShowcaseService, SitePage } from "@/types/community-site"
 
 export function SitePageView({
   config,
   page,
   services,
+  products,
   providerHref = null,
   bookingHref = null,
   pageBase = null,
@@ -29,6 +30,8 @@ export function SitePageView({
   config: CommunitySiteConfig
   page: SitePage
   services?: ShowcaseService[]
+  /** Os produtos da Loja do líder (mig 263). */
+  products?: ShowcaseProduct[]
   providerHref?: string | null
   bookingHref?: string | null
   pageBase?: string | null
@@ -56,6 +59,7 @@ export function SitePageView({
       t={t}
       locale={locale}
       services={services}
+      products={products}
       providerHref={providerHref}
       bookingHref={bookingHref}
       pageBase={pageBase}
