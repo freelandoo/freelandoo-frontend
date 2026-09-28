@@ -6,6 +6,10 @@ const path = require("path")
 const dir = path.join(__dirname, "..", "messages")
 
 const NS = {
+  Community: {
+    listSlotFree: ["Espaço livre", "Free spot", "Espacio libre"],
+    listSlotRent: ["Alugue por 1 mês", "Rent it for 1 month", "Alquílalo por 1 mes"],
+  },
   Vaquinha: {
     sponsorCardNote: [
       "Pagamento recorrente no cartão de crédito: o valor é cobrado automaticamente todo mês, até você cancelar.",

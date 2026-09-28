@@ -20,7 +20,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { createPortal } from "react-dom"
-import { Loader2, Package, Plus, ShoppingCart, Ticket, Trash2, Truck, Wrench, X } from "lucide-react"
+import { ImageOff, Loader2, Package, Plus, ShoppingCart, Ticket, Trash2, Truck, Wrench, X } from "lucide-react"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 
@@ -74,6 +74,23 @@ type QuotaPayload = {
 }
 
 const CARD = "border-2 border-[#0B0B0D] bg-[#15120E] p-4"
+
+/**
+ * A vitrine é uma GRADE de lugares, não uma lista (Alex, 2026-09-27): os
+ * anúncios pagos ocupam os primeiros e o resto aparece VAGO, sem foto, com o
+ * preço do mês no lugar do preço. É o que mostra ao morador que há espaço para
+ * ele — uma lista curta só diria "ninguém anuncia aqui".
+ *
+ * 12 lugares no mínimo; lotou, abre mais uma fileira (sempre sobra ao menos um
+ * vago, senão a porta de alugar some justamente quando a vitrine faz sucesso).
+ */
+const MIN_SLOTS = 12
+const SLOTS_PER_ROW = 3
+
+function slotCount(filled: number): number {
+  if (filled < MIN_SLOTS) return MIN_SLOTS
+  return Math.ceil((filled + 1) / SLOTS_PER_ROW) * SLOTS_PER_ROW
+}
 const INPUT =
   "h-10 w-full border-2 border-[#0B0B0D] bg-[#0B0B0D]/40 px-3 text-sm text-[#F5F1E8] placeholder:text-[#F5F1E8]/35 outline-none focus:border-[#F2B705]/60"
 const BTN_GHOST =
@@ -118,6 +135,8 @@ export function CommunityListings({
   /** O anuncio que esta esperando pagamento, com a escolha cartao x Pix. */
   const [paying, setPaying] = useState<Listing | null>(null)
   const [quota, setQuota] = useState<QuotaPayload | null>(null)
+  /** Preço do mês vindo da própria listagem — é o que o espaço vago anuncia. */
+  const [listPrice, setListPrice] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
@@ -162,7 +181,10 @@ export function CommunityListings({
       ])
       const ld = await l.json()
       const qd = await q.json()
-      if (l.ok) setItems(Array.isArray(ld.listings) ? ld.listings : [])
+      if (l.ok) {
+        setItems(Array.isArray(ld.listings) ? ld.listings : [])
+        if (typeof ld.monthly_cents === "number") setListPrice(ld.monthly_cents)
+      }
       if (q.ok) setQuota(qd)
       if (m && m.ok) {
         const md = await m.json()
@@ -388,7 +410,7 @@ export function CommunityListings({
   )
 
   return (
-    <div className="space-y-4">
+    <div id={`vitrine-${kind}`} className="space-y-4">
       {msg && (
         <p className="border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-2 text-xs font-bold text-[#F5F1E8]">
           {msg}
@@ -544,13 +566,14 @@ export function CommunityListings({
         <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
         </div>
-      ) : items.length === 0 ? (
-        <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center">
-          <Icon className="mx-auto h-10 w-10" style={{ color: accent }} />
-          <p className="mt-4 text-sm text-[#9A938A]">{emptyText}</p>
-        </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <>
+        {items.length === 0 && (
+          <p className="flex items-center gap-2 text-xs text-[#9A938A]">
+            <Icon className="h-4 w-4 shrink-0" style={{ color: accent }} /> {emptyText}
+          </p>
+        )}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {items.map((l) => {
             // ⚠️ `souDono`, e nao `mine`: `mine` agora e o ESTADO com a lista do
             // proprio dono. Reusar o nome aqui sombrearia a lista inteira e a
@@ -625,7 +648,25 @@ export function CommunityListings({
               </div>
             )
           })}
+          {Array.from({ length: slotCount(items.length) - items.length }, (_, n) => (
+            <VacantSlot
+              key={`vago-${n}`}
+              accent={accent}
+              price={listPrice ?? quota?.monthly_cents ?? null}
+              money={money}
+              canPublish={canPublish}
+              onRent={() => {
+                setFormOpen(true)
+                // O formulário mora no topo DESTA vitrine, não da página.
+                document.getElementById(`vitrine-${kind}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }}
+              onBlocked={() =>
+                setMsg(t("listResidentToPublish", "Confirme seu endereço para anunciar aqui."))
+              }
+            />
+          ))}
         </div>
+        </>
       )}
 
       {/* ⚠️ ESTE MODAL TAMBEM VAI POR PORTAL, pelo mesmo motivo do de compra:
@@ -850,5 +891,52 @@ export function CommunityListings({
           document.body
         )}
     </div>
+  )
+}
+
+/**
+ * Um lugar VAGO da vitrine: sem foto, sem título de anúncio, e no lugar do
+ * preço o que custa ocupá-lo. O clique abre o mesmo formulário de "Anunciar"
+ * — alugar o espaço É publicar um anúncio, não uma compra à parte.
+ */
+function VacantSlot({
+  accent,
+  price,
+  money,
+  canPublish,
+  onRent,
+  onBlocked,
+}: {
+  accent: string
+  price: number | null
+  money: (cents: number) => string
+  canPublish: boolean
+  onRent: () => void
+  onBlocked: () => void
+}) {
+  const t = useTranslations("Community")
+  return (
+    <button
+      type="button"
+      onClick={canPublish ? onRent : onBlocked}
+      className="flex flex-col border-2 border-dashed border-[#F5F1E8]/20 bg-[#15120E]/60 p-3 text-left transition hover:border-[#F5F1E8]/45"
+    >
+      <span className="flex aspect-[4/3] w-full items-center justify-center border-2 border-[#0B0B0D] bg-[#0B0B0D]/40">
+        <ImageOff className="h-6 w-6 text-[#F5F1E8]/20" />
+      </span>
+      <span className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+        {t("listSlotFree", "Espaço livre")}
+      </span>
+      <span className="mt-auto pt-2">
+        {price != null && (
+          <span className="block text-sm font-extrabold" style={{ color: accent }}>
+            {money(price)}
+          </span>
+        )}
+        <span className="block text-[11px] text-[#F5F1E8]/70">
+          {t("listSlotRent", "Alugue por 1 mês")}
+        </span>
+      </span>
+    </button>
   )
 }

@@ -3031,7 +3031,9 @@
     "extraSpaceExpiredTitle": "Pagamento não concluído",
     "extraSpaceExpired": "Nada foi cobrado. Você pode tentar de novo pelo \"+\" da foto.",
     "extraSpaceErrorTitle": "Não encontramos este pagamento",
-    "extraSpaceError": "Se você pagou, o espaço aparece no menu da sua foto de perfil assim que o pagamento cair."
+    "extraSpaceError": "Se você pagou, o espaço aparece no menu da sua foto de perfil assim que o pagamento cair.",
+    "listSlotFree": "Espaço livre",
+    "listSlotRent": "Alugue por 1 mês"
   },
   "Careers": {
     "hero.badge": "Carreiras",

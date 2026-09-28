@@ -3044,7 +3044,9 @@
     "extraSpaceExpiredTitle": "Payment not completed",
     "extraSpaceExpired": "Nothing was charged. You can try again from the photo's \"+\".",
     "extraSpaceErrorTitle": "We couldn't find this payment",
-    "extraSpaceError": "If you paid, the space shows up in your profile photo menu as soon as the payment clears."
+    "extraSpaceError": "If you paid, the space shows up in your profile photo menu as soon as the payment clears.",
+    "listSlotFree": "Free spot",
+    "listSlotRent": "Rent it for 1 month"
   },
   "Careers": {
     "hero.badge": "Careers",
