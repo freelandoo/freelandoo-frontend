@@ -483,6 +483,16 @@
   line-height: 0.9;
   text-wrap: balance;
 }
+/* ⚠️ `text-wrap: balance` é ATALHO de `text-wrap-mode` + `text-wrap-style`: ele
+   volta o modo para `wrap` e, por esta regra ser SEM camada, vence o
+   `white-space: nowrap` do `truncate` do Tailwind (que mora em @layer
+   utilities). O resultado era o nome do feed quebrando palavra por palavra,
+   cada uma com reticências ("JOAO / VIC... / BIS..."). Título que pede
+   `truncate` fica numa linha só e esconde o resto. */
+.fl-display.truncate, .fl-headline.truncate {
+  white-space: nowrap;
+  text-wrap: nowrap;
+}
 /* Manuscrito (rabiscos/notas) */
 .fl-marker { font-family: var(--font-caveat), "Comic Sans MS", cursive; }
 
