@@ -5429,7 +5429,10 @@
     "sponsorSince": "Supporting since",
     "recentPayments": "Recent support",
     "bolsaEndedHint": "This fund is no longer accepting sponsorships.",
-    "kindCurto": "Short"
+    "kindCurto": "Short",
+    "sponsorCardNote": "Recurring credit card payment: the amount is charged automatically every month until you cancel.",
+    "sponsorPayCard": "Subscribe with card",
+    "sponsorCardChip": "Card"
   },
   "ApiConnections": {
     "title": "Connect support tool",

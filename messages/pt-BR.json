@@ -4843,7 +4843,10 @@
     "sponsorSince": "Apoia desde",
     "recentPayments": "Apoios recentes",
     "bolsaEndedHint": "Esta bolsa não está mais recebendo patrocínios.",
-    "kindCurto": "Curto"
+    "kindCurto": "Curto",
+    "sponsorCardNote": "Pagamento recorrente no cartão de crédito: o valor é cobrado automaticamente todo mês, até você cancelar.",
+    "sponsorPayCard": "Assinar no cartão",
+    "sponsorCardChip": "Cartão"
   },
   "ApiConnections": {
     "title": "Conectar atendimento",

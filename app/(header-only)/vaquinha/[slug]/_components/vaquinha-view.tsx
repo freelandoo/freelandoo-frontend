@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { HeartHandshake, Loader2, Users, Clock, Target, Square, ArrowLeft, ImageIcon, Clapperboard, Type, Trash2, Plus, UploadCloud, Repeat, Award, XCircle } from "lucide-react"
+import { HeartHandshake, Loader2, Users, Clock, Target, Square, ArrowLeft, ImageIcon, Clapperboard, Type, Trash2, Plus, UploadCloud, Repeat, Award, XCircle, CreditCard } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -669,6 +669,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
                   className="mt-5 inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-sm font-black uppercase tracking-wide text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
                 >
                   <Repeat className="h-4 w-4" /> {t("sponsorCta", "Patrocinar mensalmente")}
+                  <span className="inline-flex items-center gap-1 border border-[#0B0B0D] bg-white/60 px-1.5 py-0.5 text-[10px]"><CreditCard className="h-3 w-3" /> {t("sponsorCardChip", "Cartão")}</span>
                 </button>
               ) : null
             ) : (
@@ -870,6 +871,13 @@ export function VaquinhaView({ slug }: { slug: string }) {
             <p className="mt-1 text-xs text-[#0B0B0D]/60">
               {t("sponsorMonthlyNote", "Cobrança recorrente todo mês. Cancele quando quiser.")} · {t("minLabel", "Mínimo")}: {money(minCents)}
             </p>
+            {/* O patrocínio é uma ASSINATURA no cartão (preapproval do gateway):
+                Pix não se repete sozinho, então dizer o meio antes do clique
+                evita a pessoa chegar no checkout procurando o Pix. */}
+            <div className="mt-3 flex items-start gap-2 border-2 border-[#0B0B0D] bg-white p-2.5 text-xs font-semibold">
+              <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#16a34a]" />
+              <span>{t("sponsorCardNote", "Pagamento recorrente no cartão de crédito: o valor é cobrado automaticamente todo mês, até você cancelar.")}</span>
+            </div>
 
             <div className="mt-4 grid grid-cols-3 gap-2">
               {PRESETS.map((p) => (
@@ -918,8 +926,8 @@ export function VaquinhaView({ slug }: { slug: string }) {
                 disabled={submitting}
                 className="flex-[2] inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#16a34a] px-3 py-2.5 text-sm font-black uppercase tracking-wide text-white shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60"
               >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Repeat className="h-4 w-4" />}
-                {t("continueToPay", "Ir para o pagamento")}
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                {t("sponsorPayCard", "Assinar no cartão")}
               </button>
             </div>
           </div>

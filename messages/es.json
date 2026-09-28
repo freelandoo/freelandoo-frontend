@@ -5409,7 +5409,10 @@
     "sponsorSince": "Apoya desde",
     "recentPayments": "Apoyos recientes",
     "bolsaEndedHint": "Esta beca ya no recibe patrocinios.",
-    "kindCurto": "Corto"
+    "kindCurto": "Corto",
+    "sponsorCardNote": "Pago recurrente con tarjeta de crédito: el monto se cobra automáticamente cada mes hasta que canceles.",
+    "sponsorPayCard": "Suscribirse con tarjeta",
+    "sponsorCardChip": "Tarjeta"
   },
   "ApiConnections": {
     "title": "Conectar atención",
