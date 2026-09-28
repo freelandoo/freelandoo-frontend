@@ -76,6 +76,15 @@
      escuro é o que substitui ele ali — 6,3:1, passa em AA com folga. */
   --el-amber-ink: #7a5400;
 
+  /* ── O VERDE DA ENERGIA QUE VOLTA ───────────────────────────────────────
+     Tripla `r g b` (lida como `rgb(var(--el-volt) / alfa)`), UMA só para o
+     site inteiro: crédito, excedente, economia. Nasceu como o topo da rampa
+     da simulação (decisão do Alex, 2026-09-15: "é economia, ficar no
+     verde") e subiu para cá quando as cenas do fluxo de energia passaram a
+     precisar da mesma cor — dois verdes na mesma página lêem como duas
+     marcas. Ele nunca é a identidade: é sempre o que VOLTA. */
+  --el-volt: 134 245 170;
+
   /* fios */
   --el-line: rgb(138 96 0 / 0.34);
   --el-line-soft: rgb(138 96 0 / 0.16);
@@ -543,7 +552,7 @@
      ⚠️ E O ÂMBAR RECUA conforme isto sobe (ver `.el-sim__halo` e os numerais).
      Sem isso as duas camadas SOMAM e o resultado sai amarelo-esverdeado — a
      seção nunca chegaria a "ficar verde", que é o pedido. */
-  --el-charge-core: 134 245 170;
+  --el-charge-core: var(--el-volt);
 }
 
 /* A grade técnica local — a mesma gramática do fundo do site, só que DENTRO

@@ -33,6 +33,7 @@ import {
   UnitsSection,
 } from "../home-blocks";
 import { type Ctx } from "../lib";
+import EnergyFlow from "../energy-flow";
 import Opening from "../opening";
 import { CtaBand, FaqList, FeatureCard, Section, SectionHead } from "../ui";
 
@@ -45,6 +46,10 @@ export default function HomePage({ links }: Ctx) {
     <>
       {/* § 1 — A abertura em três atos, sobre o vídeo arrastado pela rolagem. */}
       <Opening links={links} />
+
+      {/* A ponte da abertura para o resto: o conceito do site inteiro (sol →
+          geração → consumo → rede → crédito) desenhado uma vez. */}
+      <EnergyFlow />
 
       {/* § 2 — Os números. Invisível até o cliente levantá-los. */}
       <StatsBand />

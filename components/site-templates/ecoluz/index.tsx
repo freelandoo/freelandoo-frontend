@@ -37,6 +37,7 @@ import ScrollMotion from "./scroll-motion";
 import SunIntro from "./intro";
 import { BreadcrumbLd, BusinessLd, FaqLd, ServiceLd, WebSiteLd } from "./schema";
 import "./theme.css";
+import "./energy.css";
 
 /**
  * O display: Archivo, uma grotesca de largura variável.
@@ -157,7 +158,15 @@ export function EcoluzSite({
         : [{ name: pageMeta(page).title.split(" | ")[0], href: pageHref(links, slug as string) }];
 
   return (
-    <div className={`tpl-ecoluz ${archivo.variable} ${interTight.variable}`}>
+    // ⚠️ `suppressHydrationWarning` É POR CAUSA DO SCRIPT LOGO ABAIXO, e só
+    // dele: ele escreve `data-motion` neste elemento durante o PARSE, antes
+    // de o React hidratar — então o atributo existe no DOM e não no HTML que
+    // o React esperava, e o console acusava divergência em toda visita. A
+    // supressão vale só para os atributos DESTE elemento, não para os filhos.
+    <div
+      className={`tpl-ecoluz ${archivo.variable} ${interTight.variable}`}
+      suppressHydrationWarning
+    >
       {/* ⚠️ O GATE DO MOVIMENTO, escrito durante o PARSE do HTML.
           Ele marca o próprio elemento pai — `document.currentScript` é o
           <script> que está executando, e o pai dele é a div do tema.

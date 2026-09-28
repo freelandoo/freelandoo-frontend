@@ -1,0 +1,298 @@
+/* Tema `ecoluz` — AS CENAS DA ENERGIA EM MOVIMENTO.
+ *
+ * O `theme.css` guarda a pele do site (cores, tipo, botões, abertura,
+ * simulação). Esta folha guarda as peças que MOSTRAM o produto: o fluxo sol →
+ * crédito, a órbita das soluções, o comparador de sistemas, o pipeline, a
+ * homologação, o mapa, o scanner de consumo e o cursor. Separadas porque são
+ * outro assunto — e porque um arquivo de 2.000 linhas é aquele em que ninguém
+ * mais acha a regra que está quebrando a tela.
+ *
+ * ⚠️ AS MESMAS REGRAS DO `theme.css` VALEM AQUI, SEM EXCEÇÃO:
+ *   - tudo escopado em `.tpl-ecoluz` (a plataforma inteira convive com isto);
+ *   - keyframes com prefixo `tplEcoluz` (nome de keyframe é global);
+ *   - o que anima é `transform`, `opacity` e traço de SVG pequeno — nunca
+ *     layout, nunca uma camada do tamanho da janela;
+ *   - `prefers-reduced-motion` apaga o movimento, não o conteúdo.
+ *
+ * ⚠️ E O VERDE É UM SÓ. `--el-volt` (definido no `theme.css`, junto das
+ * outras cores) é a cor da energia que VOLTA: crédito, excedente, economia. É
+ * o mesmo verde que a simulação usa desde 2026-09-15 — dois verdes na mesma
+ * página lêem como duas marcas.
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMO A ENERGIA ANDA
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tpl-ecoluz .el-flow__grid {
+  display: grid;
+  gap: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-flow__grid {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    gap: 4rem;
+    align-items: start;
+  }
+  /* No computador a figura vai para a DIREITA — a leitura começa pelo texto. */
+  .tpl-ecoluz .el-flow__fig {
+    order: 2;
+  }
+}
+
+/* ⚠️ A FIGURA É PRESA POR CSS (`sticky`), NÃO POR SCRIPT. É o que faz ela
+   funcionar sem JavaScript e sem pagar nada por quadro: o navegador compõe a
+   posição sozinho. O fundo opaco existe porque, no celular, o texto rola POR
+   BAIXO dela. */
+.tpl-ecoluz .el-flow__fig {
+  position: sticky;
+  top: 4.25rem;
+  z-index: 2;
+  margin: 0;
+  padding-block: 0.75rem;
+  background: var(--el-ink-deep);
+  border-bottom: 1px solid var(--el-line-soft);
+}
+
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-flow__fig {
+    top: 7rem;
+    padding: 1.5rem;
+    background: rgb(13 10 5 / 0.72);
+    border: 1px solid var(--el-line-soft);
+  }
+}
+
+.tpl-ecoluz .el-flow__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* No celular a figura presa não pode passar de um terço e pouco da tela —
+     mais que isso e o texto não tem onde ser lido. */
+  max-height: 38svh;
+  overflow: visible;
+}
+
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-flow__svg {
+    max-height: none;
+  }
+}
+
+.tpl-ecoluz .el-flow__readout {
+  margin-top: 0.5rem;
+  color: var(--el-sun);
+}
+
+/* Os seis momentos. No computador cada um ocupa uma boa altura de tela — é o
+   que dá tempo de a linha andar enquanto o texto é lido. */
+.tpl-ecoluz .el-flow__steps {
+  display: grid;
+}
+
+.tpl-ecoluz .el-flow__step {
+  padding-block: 2.25rem;
+  border-top: 1px solid var(--el-line-soft);
+  transition: opacity 0.45s var(--el-ease);
+}
+
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-flow__step {
+    min-height: 56vh;
+    padding-block: 3rem;
+  }
+  .tpl-ecoluz .el-flow__step:last-child {
+    min-height: 40vh;
+  }
+}
+
+.tpl-ecoluz .el-flow[data-live] .el-flow__step:not([data-active]) {
+  opacity: 0.34;
+}
+
+/* ── O DESENHO ──────────────────────────────────────────────────────────── */
+
+.tpl-ecoluz .el-flow__paper line {
+  stroke: rgb(255 216 92 / 0.06);
+  stroke-width: 1;
+}
+
+.tpl-ecoluz .el-flow__rail {
+  fill: none;
+  stroke: rgb(255 216 92 / 0.14);
+  stroke-width: 2;
+  stroke-dasharray: 3 6;
+}
+
+/* A luz que se desenha. `pathLength="1"` no markup: o traço inteiro mede 1,
+   e o laço escreve o `dashoffset` de 1 (apagado) a 0 (desenhado). O markup
+   nasce em 0 — desenhado —, que é o estado sem JavaScript. */
+.tpl-ecoluz .el-flow__seg {
+  fill: none;
+  stroke: var(--el-sun);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 5px rgb(255 196 0 / 0.75));
+}
+
+/* As partículas: aparecem só depois de o trecho estar inteiro desenhado. */
+.tpl-ecoluz .el-flow__spark {
+  fill: none;
+  stroke: #fffbe6;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 0.035 0.14;
+  opacity: 0;
+  transition: opacity 0.4s var(--el-ease);
+}
+
+.tpl-ecoluz .el-flow[data-live]:not([data-still]) .el-flow__wire[data-full] .el-flow__spark {
+  opacity: 0.9;
+  animation: tplEcoluzSpark 0.9s linear infinite;
+}
+
+@keyframes tplEcoluzSpark {
+  to {
+    stroke-dashoffset: -0.175;
+  }
+}
+
+/* A rede: fio tracejado até a torre. Acende junto com o medidor. */
+.tpl-ecoluz .el-flow__grid-line path {
+  fill: none;
+  stroke: rgb(255 216 92 / 0.28);
+  stroke-width: 1.6;
+}
+.tpl-ecoluz .el-flow__grid-line path:first-child {
+  stroke-dasharray: 4 5;
+}
+
+/* ⚠️ NO MOMENTO "REDE" O EXCEDENTE SAI PARA A TORRE — e é isso que a imagem
+   precisa dizer. O fio da rede acende a partir do 5º momento e, com o
+   movimento ligado, os traços correm do medidor para a torre. ⚠️ O
+   `dashoffset` é NEGATIVO de propósito: positivo empurra o padrão para o
+   INÍCIO do caminho, e o fluxo andaria da torre para o medidor — a imagem
+   diria que a rede está mandando energia, o contrário do que o texto diz. Sem JavaScript `data-stage` não existe e o fio
+   fica aceso de uma vez, como o resto do diagrama. */
+.tpl-ecoluz .el-flow:not([data-live]) .el-flow__grid-line path,
+.tpl-ecoluz .el-flow[data-stage="4"] .el-flow__grid-line path,
+.tpl-ecoluz .el-flow[data-stage="5"] .el-flow__grid-line path {
+  stroke: var(--el-sun);
+}
+.tpl-ecoluz .el-flow[data-stage="4"]:not([data-still]) .el-flow__grid-line path:first-child,
+.tpl-ecoluz .el-flow[data-stage="5"]:not([data-still]) .el-flow__grid-line path:first-child {
+  animation: tplEcoluzOutflow 0.6s linear infinite;
+}
+
+@keyframes tplEcoluzOutflow {
+  to {
+    stroke-dashoffset: -9;
+  }
+}
+
+/* ── OS NÓS ──────────────────────────────────────────────────────────────
+   Acesos por padrão (sem JavaScript o diagrama nasce completo); com o laço
+   ligado, só o que a leitura já alcançou fica aceso. */
+
+.tpl-ecoluz .el-flow__node {
+  transition: opacity 0.5s var(--el-ease);
+}
+
+.tpl-ecoluz .el-flow[data-live] .el-flow__node:not([data-lit]) {
+  opacity: 0.28;
+}
+
+.tpl-ecoluz .el-flow__tag {
+  font-family: var(--el-display);
+  font-weight: 600;
+  font-stretch: 84%;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-anchor: middle;
+  fill: var(--el-cream-dim);
+}
+.tpl-ecoluz .el-flow__tag--volt {
+  fill: rgb(var(--el-volt));
+}
+
+.tpl-ecoluz .el-flow__sun {
+  fill: var(--el-sun);
+}
+.tpl-ecoluz .el-flow__sun-halo {
+  opacity: 0.55;
+}
+.tpl-ecoluz .el-flow__rays line {
+  stroke: var(--el-sun);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.tpl-ecoluz .el-flow__panel {
+  fill: #0a1320;
+  stroke: rgb(255 216 92 / 0.45);
+  stroke-width: 1.4;
+}
+.tpl-ecoluz .el-flow__cell {
+  fill: #12233a;
+}
+/* As células acendem em cascata: o atraso de cada uma sai do markup (coluna +
+   linha), então a luz "anda" pelo módulo em vez de acender tudo de uma vez. */
+.tpl-ecoluz .el-flow__cell-lit {
+  fill: rgb(255 214 90 / 0.78);
+  opacity: 1;
+  transition: opacity 0.5s var(--el-ease);
+}
+.tpl-ecoluz .el-flow[data-live] .el-flow__node:not([data-lit]) .el-flow__cell-lit,
+.tpl-ecoluz .el-flow[data-live][data-stage="0"] .el-flow__cell-lit {
+  opacity: 0;
+}
+
+/* A faixa de luz varrendo os módulos, andando com a leitura. `--sweep` vai de
+   0 a 1 enquanto a linha sai do sol; em 1 ela já passou do quadro. */
+.tpl-ecoluz .el-flow__sweep {
+  transform: translateX(calc(var(--sweep, 1) * 270px));
+  transform-box: view-box;
+}
+
+.tpl-ecoluz .el-flow__box {
+  fill: #140f07;
+  stroke: rgb(255 216 92 / 0.55);
+  stroke-width: 1.6;
+}
+.tpl-ecoluz .el-flow__glyph {
+  fill: none;
+  stroke: var(--el-sun-hi);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tpl-ecoluz .el-flow__led {
+  fill: rgb(var(--el-volt));
+}
+.tpl-ecoluz .el-flow__window {
+  fill: rgb(255 214 90 / 0.85);
+}
+.tpl-ecoluz .el-flow__door {
+  fill: #2a2012;
+}
+
+/* O crédito enche junto com o último momento. `scaleX` a partir da esquerda:
+   composição, nunca largura. */
+.tpl-ecoluz .el-flow__credit {
+  fill: rgb(var(--el-volt) / 0.85);
+  transform: scaleX(var(--credit, 1));
+  transform-origin: 156px 0;
+  transform-box: view-box;
+  filter: drop-shadow(0 0 6px rgb(var(--el-volt) / 0.6));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-ecoluz .el-flow__step,
+  .tpl-ecoluz .el-flow__node,
+  .tpl-ecoluz .el-flow__cell-lit {
+    transition: none;
+  }
+}
