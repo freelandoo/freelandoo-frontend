@@ -28,13 +28,13 @@ import {
   LoadsSection,
   ProjectsSection,
   ReviewsSection,
-  SegmentsSection,
   StatsBand,
   UnitsSection,
 } from "../home-blocks";
 import { type Ctx } from "../lib";
 import EnergyFlow from "../energy-flow";
 import Opening from "../opening";
+import SolutionsOrbit from "../solutions-orbit";
 import { CtaBand, FaqList, FeatureCard, Section, SectionHead } from "../ui";
 
 /** A mensagem de quem chega pela calculadora, já com um número na cabeça. */
@@ -80,8 +80,8 @@ export default function HomePage({ links }: Ctx) {
         </div>
       </Section>
 
-      {/* § 4 — Nossas soluções, recortadas por público. */}
-      <SegmentsSection links={links} />
+      {/* § 4 — Nossas soluções, recortadas por público — em órbita. */}
+      <SolutionsOrbit links={links} />
 
       {/* ── § 5 — COMO FUNCIONA ─────────────────────────────────────────── */}
       <Section id="como-funciona" tone="paper">

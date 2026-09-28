@@ -296,3 +296,265 @@
     transition: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   AS QUATRO FRENTES, EM ÓRBITA
+   ══════════════════════════════════════════════════════════════════════════
+   Três formas do MESMO markup (ver `solutions-orbit.tsx`):
+     base                    → celular: deslizar com snap; ≥1024: grade 2×2
+     [data-orbit="on"]       → a órbita, com o palco preso (só ≥1024, com
+                               movimento — quem liga é o script) */
+
+.tpl-ecoluz .el-orbit__track {
+  padding-bottom: 5rem;
+}
+
+.tpl-ecoluz .el-orbit__stage {
+  position: relative;
+  margin-top: 3.5rem;
+}
+
+.tpl-ecoluz .el-orbit__core,
+.tpl-ecoluz .el-orbit__hud {
+  display: none;
+}
+
+/* ── celular: deslizar ─────────────────────────────────────────────────── */
+.tpl-ecoluz .el-orbit__ring {
+  display: flex;
+  gap: 0.875rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-inline: var(--el-pad);
+  scroll-padding-inline: var(--el-pad);
+  scrollbar-width: none;
+}
+.tpl-ecoluz .el-orbit__ring::-webkit-scrollbar {
+  display: none;
+}
+
+.tpl-ecoluz .el-orbit__slot {
+  flex: none;
+  width: min(84vw, 22rem);
+  scroll-snap-align: start;
+}
+
+.tpl-ecoluz .el-orbit__card {
+  position: relative;
+  display: block;
+  height: 100%;
+  padding: 1.75rem;
+  background: var(--el-ink);
+  border: 1px solid var(--el-line-soft);
+  transition:
+    border-color 0.2s var(--el-ease),
+    box-shadow 0.2s var(--el-ease);
+}
+.tpl-ecoluz .el-orbit__card:hover,
+.tpl-ecoluz .el-orbit__card:focus-visible {
+  border-color: var(--el-sun-deep);
+}
+.tpl-ecoluz .el-orbit__card:focus-visible {
+  outline: 2px solid var(--el-sun);
+  outline-offset: 3px;
+}
+
+/* A sombra que apaga os cartões de trás. Vive DENTRO do cartão e é só
+   `opacity` — nada de `filter: blur`, que repintaria quatro cartões grandes a
+   cada quadro de rolagem. */
+.tpl-ecoluz .el-orbit__shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--el-ink-deep);
+  opacity: calc(var(--away, 0) * 0.7);
+  z-index: 1;
+}
+
+.tpl-ecoluz .el-orbit__card > div {
+  z-index: 0;
+}
+
+.tpl-ecoluz .el-orbit__glyph {
+  width: 5.5rem;
+  height: auto;
+}
+.tpl-ecoluz .el-orbit__glyph-on {
+  fill: var(--el-sun);
+}
+.tpl-ecoluz .el-orbit__glyph-off {
+  fill: none;
+  stroke: rgb(255 216 92 / 0.22);
+  stroke-width: 1;
+}
+
+.tpl-ecoluz .el-orbit__swipe {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: -3.25rem;
+  padding: 0 var(--el-pad) 4rem;
+  color: var(--el-cream-faint);
+}
+.tpl-ecoluz .el-orbit__swipe span {
+  color: var(--el-sun);
+}
+
+/* ── computador sem órbita (movimento reduzido): a grade ───────────────── */
+@media (min-width: 1024px) {
+  .tpl-ecoluz .el-orbit__swipe {
+    display: none;
+  }
+  .tpl-ecoluz .el-orbit__track {
+    padding-bottom: 7rem;
+  }
+  .tpl-ecoluz .el-orbit__ring {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    overflow: visible;
+    max-width: 78rem;
+    margin-inline: auto;
+    padding: 0;
+    background: var(--el-line-soft);
+    /* o padding lateral da página vira margem aqui, para o fio de 1px não
+       encostar na borda da tela */
+    width: calc(100% - var(--el-pad) * 2);
+  }
+  .tpl-ecoluz .el-orbit__slot {
+    width: auto;
+  }
+  .tpl-ecoluz .el-orbit__card {
+    border: 0;
+  }
+}
+
+/* ── a órbita ──────────────────────────────────────────────────────────── */
+.tpl-ecoluz .el-orbit[data-orbit="on"] .el-orbit__track {
+  height: 360vh;
+  padding-bottom: 0;
+}
+
+.tpl-ecoluz .el-orbit[data-orbit="on"] .el-orbit__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  margin-top: 0;
+  overflow: hidden;
+  perspective: 1900px;
+  perspective-origin: 50% 46%;
+}
+
+.tpl-ecoluz .el-orbit[data-orbit="on"] .el-orbit__ring {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  background: none;
+  transform-style: preserve-3d;
+}
+
+/* Cada vaga é um PONTO no centro do palco; o cartão pendura nele e o script
+   o leva para a órbita. */
+.tpl-ecoluz .el-orbit[data-orbit="on"] .el-orbit__slot {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+
+.tpl-ecoluz .el-orbit[data-orbit="on"] .el-orbit__card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 25rem;
+  height: auto;
+  border: 1px solid var(--el-line-soft);
+  /* OPACO de propósito — ver a nota da opacidade em `solutions-orbit.tsx`. */
+  background: #110d07;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.tpl-ecoluz .el-orbit[data-orbit="on"] .el-orbit__card[data-front] {
+  border-color: var(--el-sun-deep);
+  box-shadow:
+    0 0 0 1px rgb(255 196 0 / 0.14),
+    0 2.5rem 6rem -2rem rgb(255 170 0 / 0.28);
+}
+
+.tpl-ecoluz .el-orbit[data-orbit="on"] .el-orbit__core {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 60rem;
+  height: 24rem;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.tpl-ecoluz .el-orbit__core-glow {
+  position: absolute;
+  inset: -40% -10%;
+  background: radial-gradient(
+    34% 40% at 50% 50%,
+    rgb(255 196 0 / 0.2),
+    rgb(255 150 0 / 0.06) 55%,
+    transparent 72%
+  );
+}
+
+.tpl-ecoluz .el-orbit__path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.tpl-ecoluz .el-orbit__path ellipse {
+  fill: none;
+  stroke: rgb(255 216 92 / 0.2);
+  stroke-width: 0.6;
+  stroke-dasharray: 2 5;
+}
+
+.tpl-ecoluz .el-orbit__core-sun {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5rem;
+  height: 5rem;
+  margin: -2.5rem 0 0 -2.5rem;
+  background: radial-gradient(circle, #fff3b8 0%, var(--el-sun) 38%, rgb(255 196 0 / 0) 70%);
+  border-radius: 999px;
+}
+
+.tpl-ecoluz .el-orbit[data-orbit="on"] .el-orbit__hud {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  position: absolute;
+  left: 50%;
+  bottom: 2.5rem;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+
+.tpl-ecoluz .el-orbit__dot {
+  width: 2rem;
+  height: 1.25rem;
+  background: linear-gradient(var(--el-line), var(--el-line)) center / 100% 3px no-repeat;
+  transition: background-size 0.2s var(--el-ease);
+}
+.tpl-ecoluz .el-orbit__dot[aria-current="true"] {
+  background-image: linear-gradient(var(--el-sun), var(--el-sun));
+}
+.tpl-ecoluz .el-orbit__dot:focus-visible {
+  outline: 2px solid var(--el-sun);
+  outline-offset: 2px;
+}

@@ -31,6 +31,20 @@ export type Segment = {
   page?: string;
   /** A mensagem com que a conversa abre, para os que ainda não têm página. */
   wa?: string;
+  /**
+   * Três pontos curtos, para o cartão da órbita.
+   *
+   * ⚠️ ELES SÃO O `text` DESDOBRADO, NÃO AFIRMAÇÃO NOVA. Cada ponto já está
+   * dito na frase de cima — o cartão só os separa para serem lidos de relance.
+   * Ponto que não estiver na frase não entra aqui: seria o cartão prometendo
+   * o que a descrição não sustenta.
+   */
+  points: string[];
+  /**
+   * Quantas fileiras de células o desenho do cartão tem (1 a 4). É só a
+   * ESCALA visual do segmento — da casa ao projeto grande —, nunca potência.
+   */
+  scale: 1 | 2 | 3 | 4;
 };
 
 export const SEGMENTS: Segment[] = [
@@ -39,24 +53,32 @@ export const SEGMENTS: Segment[] = [
     label: "Residencial",
     text: "Casas que querem reduzir a conta de luz. O sistema é dimensionado pelo consumo da família e instalado na cobertura existente, com acabamento elétrico organizado.",
     page: "energia-solar-residencial",
+    points: ["Dimensionado pelo consumo da família", "Na cobertura que já existe", "Acabamento elétrico organizado"],
+    scale: 1,
   },
   {
     icon: "building",
     label: "Comercial",
     text: "Comércio, clínica, restaurante, escritório. Onde a energia é custo fixo alto, previsibilidade vale tanto quanto economia — e o retorno costuma ser mais rápido que no residencial.",
     page: "energia-solar-para-empresas",
+    points: ["Comércio, clínica, restaurante, escritório", "Custo fixo mais previsível", "Retorno costuma ser mais rápido"],
+    scale: 2,
   },
   {
     icon: "grain",
     label: "Rural",
     text: "Sítios, chácaras e produção no campo, inclusive onde a rede é frágil ou não chega. É aqui que o sistema com baterias deixa de ser luxo e passa a ser o que mantém bomba, câmara fria e casa funcionando.",
     wa: "Olá! Vim pelo site da EcoLuz e quero energia solar para uma propriedade rural.",
+    points: ["Sítios, chácaras e produção", "Onde a rede é frágil ou não chega", "Sistemas com bateria"],
+    scale: 3,
   },
   {
     icon: "bolt",
     label: "Projetos de maior porte",
     text: "Indústria, agronegócio e múltiplas unidades consumidoras. Projetos em que a conta de energia é uma linha relevante do orçamento e o dimensionamento precisa ser feito sobre o histórico inteiro.",
     wa: "Olá! Vim pelo site da EcoLuz e quero avaliar um projeto de maior porte.",
+    points: ["Indústria e agronegócio", "Múltiplas unidades consumidoras", "Dimensionado sobre o histórico inteiro"],
+    scale: 4,
   },
 ];
 

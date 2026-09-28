@@ -24,7 +24,7 @@ import {
   UNITS,
   UNITS_NOTE,
 } from "./content/company";
-import { FINANCING, LOADS, LOADS_NOTE, SEGMENTS } from "./content/offer";
+import { FINANCING, LOADS, LOADS_NOTE } from "./content/offer";
 import { Icon } from "./icons";
 import { PAGE, pageHref, type TemplateLinks } from "./lib";
 import { Section, SectionHead } from "./ui";
@@ -66,58 +66,9 @@ export function StatsBand() {
   );
 }
 
-/* ══════════════════ § 4 — NOSSAS SOLUÇÕES ═══════════════════════════════ */
-
-export function SegmentsSection({ links }: { links: TemplateLinks }) {
-  return (
-    <Section id="solucoes" tone="deep">
-      <SectionHead
-        eyebrow="Nossas soluções"
-        title="Quatro frentes, e cada uma resolve um problema diferente."
-        lead="O recorte aqui é por quem pergunta, não por tecnologia: casa, comércio, campo ou um consumo grande o bastante para ser linha de orçamento. A escolha entre com bateria e sem vem depois, na análise."
-      />
-
-      <div
-        className="mt-14 grid gap-px sm:grid-cols-2"
-        style={{ background: "var(--el-line-soft)" }}
-      >
-        {SEGMENTS.map((seg, i) => {
-          // ⚠️ O DESTINO SAI DO CONTEÚDO, NÃO DE UM `if` AQUI. Rural e maior
-          // porte ainda não têm página própria e vão para a conversa; quando
-          // ganharem, basta trocar `wa` por `page` em `content/offer.ts` e este
-          // bloco continua igual.
-          const href = seg.page ? pageHref(links, seg.page) : whatsappLink(seg.wa ?? WA_DEFAULT);
-          const external = !seg.page;
-
-          return (
-            <a
-              key={seg.label}
-              href={href}
-              {...(external ? { target: "_blank", rel: "noopener" } : {})}
-              className="group flex flex-col bg-[var(--el-ink)] p-7 transition-colors hover:bg-[var(--el-ink-up)] md:p-8"
-              data-reveal="up"
-              data-reveal-delay={i * 60}
-            >
-              <span className="text-[var(--el-sun)]">
-                <Icon name={seg.icon} className="h-8 w-8" />
-              </span>
-              <h3 className="display mt-6 text-[1.5rem] text-[var(--el-cream)] transition-colors group-hover:text-[var(--el-sun-hi)]">
-                {seg.label}
-              </h3>
-              <p className="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-[var(--el-cream-dim)]">
-                {seg.text}
-              </p>
-              <span className="mt-6 inline-flex items-center gap-2 text-[0.8125rem] uppercase tracking-[0.14em] text-[var(--el-sun-hi)]">
-                {seg.page ? "Ver detalhes" : "Falar sobre esse caso"}{" "}
-                <span aria-hidden="true">→</span>
-              </span>
-            </a>
-          );
-        })}
-      </div>
-    </Section>
-  );
-}
+/* § 4 — NOSSAS SOLUÇÕES mudou de casa: é `solutions-orbit.tsx`, de cliente,
+   porque a órbita tem gesto. A grade 2×2 que morava aqui é a forma dela sem
+   JavaScript — o markup é o mesmo, então não existe segunda versão. */
 
 /* ══════════════════ § 7 — PROJETOS REALIZADOS ═══════════════════════════ */
 
