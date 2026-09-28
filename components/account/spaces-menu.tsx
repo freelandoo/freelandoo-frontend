@@ -44,18 +44,8 @@ const BEES_SWATCH: Swatch = { bg: "#DB2777", bgHover: "#BE185D", fg: "#F1EDE2" }
 // O painel é PAPEL CREME, o mesmo tema do modal "Meus perfis" (Alex,
 // 2026-09-27). A linha neutra acompanha: branca com tinta preta.
 const NEUTRAL_SWATCH: Swatch = { bg: "#FFFFFF", bgHover: "#F2B705", fg: "#0B0B0D" }
-/**
- * Linhas do MENU que ficam CLARAS (Alex, 2026-09-27: "meu pet com a cor de
- * fundo clara e meu condomínio com cinza bem clarinho"). É override SÓ do menu:
- * o pill atrás da foto continua na cor do catálogo ("não altera a cor dos
- * pills"), e é por isso que ele não mora em QUICK_ENTRIES.
- */
-const MENU_ROW_OVERRIDE: Partial<Record<SpaceKind, Swatch>> = {
-  pet: { bg: "#EAD7B7", bgHover: "#DDC49C", fg: "#4A3320" },
-  condo: { bg: "#E4E4E7", bgHover: "#D4D4D8", fg: "#0B0B0D" },
-}
 const swatchOfKind = (k: SpaceKind): Swatch =>
-  MENU_ROW_OVERRIDE[k] || QUICK_ENTRIES[k === "common" ? "business" : k]
+  QUICK_ENTRIES[k === "common" ? "business" : k]
 
 /**
  * O menu que abre ao apertar a foto de perfil (decisão do Alex, 2026-08-30).
