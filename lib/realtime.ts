@@ -149,6 +149,9 @@ async function ensureSocket(): Promise<Socket | null> {
     // estiver NESTA lista simplesmente não chega — o socket não o repassa —, e
     // o quadro mostraria "aberto" um chamado que alguém já pegou até um F5.
     "delivery:changed",
+    // Mig 266: o modal "fulano quer enviar/receber" para todos os membros.
+    // Fora desta lista ele nunca aparece — e ninguém saberia do chamado.
+    "delivery:broadcast",
     // Venda na vitrine do vizinho (mig 249): o backend empurra quando o
     // pagamento confirma, quando o vendedor marca "entreguei", quando quem
     // comprou confirma ou contesta. ⚠️ MESMA regra das linhas acima — fora

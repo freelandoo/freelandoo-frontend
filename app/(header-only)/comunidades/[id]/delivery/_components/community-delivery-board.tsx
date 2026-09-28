@@ -30,9 +30,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
   Bike,
   Check,
   Clock,
+  HandCoins,
   Loader2,
   PackageCheck,
   Plus,
@@ -40,6 +43,7 @@ import {
   Truck,
   X,
 } from "lucide-react"
+import { deliveryBandLabel, deliveryDirectionLabel } from "@/components/community/delivery-labels"
 import { PageBackLink } from "@/components/tabloide"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
 import { getToken, getStoredUser } from "@/lib/auth"
@@ -58,8 +62,37 @@ type DeliveryType = {
   net_cents: number
 }
 
+/** Faixa de peso (mig 266): o piso vem do backend, nunca escrito aqui. */
+type WeightBand = {
+  band: string
+  label: string
+  min_cents: number
+  negotiable: boolean
+  net_cents: number
+}
+
+type Proposal = {
+  id_proposal: number
+  id_courier: string
+  amount_cents: number
+  note: string | null
+  courier_username: string | null
+  courier_name: string | null
+}
+
 type Delivery = {
   id_delivery: number
+  /** Mig 266. NULL = chamado antigo por tipo (ou o add-on da vitrine). */
+  direction: "send" | "receive" | null
+  weight_band: string | null
+  min_price_cents: number | null
+  negotiable: boolean
+  /** O líquido pelo valor ATUAL — a oferta pode ter subido desde a abertura. */
+  courier_preview?: { net_cents: number } | null
+  /** Só para quem PEDIU: as contrapropostas pendentes. */
+  proposals?: Proposal[]
+  /** Só para o vizinho: a proposta DELE, se houver. */
+  my_proposal?: Proposal | null
   id_requester: string
   id_courier: string | null
   kind: string
@@ -88,6 +121,7 @@ type Delivery = {
 
 type Board = {
   types: DeliveryType[]
+  bands: WeightBand[]
   deliveries: Delivery[]
   viewer: {
     id_user: string
@@ -137,7 +171,13 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
   const [tab, setTab] = useState<"open" | "mine">("open")
 
   const [formOpen, setFormOpen] = useState(false)
-  const [kind, setKind] = useState<string>("")
+  const [direction, setDirection] = useState<"send" | "receive" | "">("")
+  const [band, setBand] = useState<string>("")
+  /** A oferta em reais, como a pessoa digita. Nasce no piso da faixa. */
+  const [offer, setOffer] = useState("")
+  /** O card com o campo de "oferecer mais" / "propor" aberto. */
+  const [editing, setEditing] = useState<{ id: number; mode: "raise" | "propose" } | null>(null)
+  const [editValue, setEditValue] = useState("")
   const [note, setNote] = useState("")
   const [pickup, setPickup] = useState("")
   const [dropoff, setDropoff] = useState("")
@@ -202,7 +242,12 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
   // depende dele recalcularia sempre — o memo viraria enfeite. Memoizado aqui,
   // a identidade só muda quando o quadro muda.
   const types = useMemo(() => board?.types || [], [board])
-  const chosen = useMemo(() => types.find((x) => x.kind === kind) || null, [types, kind])
+  const bands = useMemo(() => board?.bands || [], [board])
+  const chosen = useMemo(() => bands.find((x) => x.band === band) || null, [bands, band])
+  /** Reais digitados → centavos. Vírgula ou ponto, os dois valem. */
+  const toCents = (v: string) => Math.round(Number(String(v).replace(",", ".")) * 100)
+  const offerCents = toCents(offer)
+  const offerOk = !!chosen && Number.isFinite(offerCents) && offerCents >= chosen.min_cents
 
   const act = useCallback(
     async (id: number, path: string, okMsg: string) => {
@@ -229,7 +274,7 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
   )
 
   const openCall = async () => {
-    if (!kind) return
+    if (!direction || !chosen || !offerOk) return
     setBusy("new")
     setMsg(null)
     try {
@@ -237,7 +282,9 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({
-          kind,
+          direction,
+          weight_band: chosen.band,
+          price_cents: offerCents,
           note: note.trim() || null,
           pickup: pickup.trim() || null,
           dropoff: dropoff.trim() || null,
@@ -248,11 +295,59 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
       setNote("")
       setPickup("")
       setDropoff("")
-      setKind("")
+      setDirection("")
+      setBand("")
+      setOffer("")
       setFormOpen(false)
       await load()
     } catch (err) {
       setMsg(err instanceof Error ? err.message : t("delOpenError", "Não deu para abrir o chamado."))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  /** Subir a oferta (quem pediu) ou fazer contraproposta (vizinho). */
+  const sendValue = async (d: Delivery) => {
+    if (!editing) return
+    const cents = toCents(editValue)
+    if (!Number.isFinite(cents) || cents <= 0) return
+    setBusy(d.id_delivery)
+    setMsg(null)
+    try {
+      const path = editing.mode === "raise" ? "offer" : "proposals"
+      const res = await fetch(`/api/communities/${communityId}/deliveries/${d.id_delivery}/${path}`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(
+          editing.mode === "raise" ? { price_cents: cents } : { amount_cents: cents }
+        ),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || t("delActionError", "Não deu certo."))
+      setMsg(
+        editing.mode === "raise"
+          ? t("delOfferRaised", "Oferta aumentada. Os vizinhos foram avisados de novo.")
+          : t("delProposalSent", "Proposta enviada. Quem pediu vai escolher.")
+      )
+      setEditing(null)
+      setEditValue("")
+      await load()
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : t("delActionError", "Não deu certo."))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const withdrawProposal = async (d: Delivery) => {
+    setBusy(d.id_delivery)
+    try {
+      await fetch(`/api/communities/${communityId}/deliveries/${d.id_delivery}/proposals/mine`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      })
+      await load()
     } finally {
       setBusy(null)
     }
@@ -394,33 +489,96 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
               <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
                 {t("delNewTitle", "Chamar alguém")}
               </p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {types.map((ty) => {
-                  const on = ty.kind === kind
+              {/* 1. Enviar ou receber — é o que o vizinho lê primeiro no modal. */}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {(
+                  [
+                    ["send", ArrowUpFromLine, t("delDirSend", "Quero enviar")],
+                    ["receive", ArrowDownToLine, t("delDirReceive", "Quero receber")],
+                  ] as const
+                ).map(([key, Ic, label]) => {
+                  const on = direction === key
                   return (
                     <button
-                      key={ty.kind}
+                      key={key}
                       type="button"
-                      onClick={() => setKind(ty.kind)}
-                      className="border-2 border-[#0B0B0D] px-3 py-2 text-left"
-                      style={{
-                        background: on ? accent : "#1D1810",
-                        color: on ? "#0B0B0D" : "#F5F1E8",
+                      onClick={() => setDirection(key)}
+                      className="flex items-center gap-2 border-2 border-[#0B0B0D] px-3 py-2 text-left text-xs font-extrabold uppercase tracking-[0.1em]"
+                      style={{ background: on ? accent : "#1D1810", color: on ? "#0B0B0D" : "#F5F1E8" }}
+                    >
+                      <Ic className="h-4 w-4 shrink-0" /> {label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* 2. O peso define o MÍNIMO. O piso vem do backend. */}
+              <p className="mt-4 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                {t("delWeightTitle", "Quanto pesa?")}
+              </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                {bands.map((b) => {
+                  const on = b.band === band
+                  return (
+                    <button
+                      key={b.band}
+                      type="button"
+                      onClick={() => {
+                        setBand(b.band)
+                        setOffer((b.min_cents / 100).toFixed(2).replace(".", ","))
                       }}
+                      className="border-2 border-[#0B0B0D] px-3 py-2 text-left"
+                      style={{ background: on ? accent : "#1D1810", color: on ? "#0B0B0D" : "#F5F1E8" }}
                     >
                       <span className="block text-xs font-extrabold uppercase tracking-[0.1em]">
-                        {ty.label}
+                        {deliveryBandLabel(t, b.band, b.label)}
                       </span>
                       <span
                         className="mt-0.5 block text-[11px] font-bold"
                         style={{ color: on ? "#0B0B0D" : "#9A938A" }}
                       >
-                        {t("delYouPay", "Você paga {v}").replace("{v}", money(ty.price_cents))}
+                        {b.negotiable
+                          ? t("delBandNegotiable", "A partir de {v} · negociável").replace("{v}", money(b.min_cents))
+                          : t("delBandFrom", "Mínimo {v}").replace("{v}", money(b.min_cents))}
                       </span>
                     </button>
                   )
                 })}
               </div>
+
+              {/* 3. A oferta: nasce no mínimo e pode subir. */}
+              {chosen && (
+                <div className="mt-4">
+                  <label className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                    {t("delOfferLabel", "Quanto você oferece (R$)")}
+                  </label>
+                  <input
+                    className={`${INPUT} mt-2`}
+                    inputMode="decimal"
+                    value={offer}
+                    onChange={(e) => setOffer(e.target.value)}
+                  />
+                  <p className="mt-1 text-[11px] text-[#9A938A]">
+                    {chosen.negotiable
+                      ? t(
+                          "delOfferHintNegotiable",
+                          "Acima de 10 kg os vizinhos podem aceitar sua oferta ou propor outro valor. Você escolhe."
+                        )
+                      : t(
+                          "delOfferHint",
+                          "Mínimo de {v} para esse peso. Se ninguém aceitar, você pode oferecer mais depois."
+                        ).replace("{v}", money(chosen.min_cents))}
+                  </p>
+                  {!offerOk && (
+                    <p className="mt-1 text-[11px] font-bold text-[#FF7A66]">
+                      {t("delOfferTooLow", "A oferta precisa ser de pelo menos {v}.").replace(
+                        "{v}",
+                        money(chosen.min_cents)
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <input
                 className={`${INPUT} mt-3`}
@@ -453,7 +611,7 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  disabled={busy === "new" || !kind}
+                  disabled={busy === "new" || !direction || !offerOk}
                   onClick={openCall}
                   className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50"
                   style={{ background: accent }}
@@ -525,7 +683,9 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="fl-display text-lg leading-tight text-[#F5F1E8]">
-                        {ty?.label || d.kind}
+                        {d.weight_band
+                          ? `${deliveryDirectionLabel(t, d.direction, "card")} · ${deliveryBandLabel(t, d.weight_band)}`
+                          : ty?.label || d.kind}
                       </p>
                       <p className="mt-0.5 text-[11px] text-[#9A938A]">
                         @{d.requester_username}
@@ -551,7 +711,7 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
                   <p className="mt-3 text-sm font-extrabold" style={{ color: accent }}>
                     {t("delYouGet", "Você recebe {v}").replace(
                       "{v}",
-                      money(d.courier_cents || ty?.net_cents || 0)
+                      money(d.courier_cents || d.courier_preview?.net_cents || ty?.net_cents || 0)
                     )}
                     <span className="ml-2 text-[11px] font-bold text-[#9A938A]">
                       {t("delNeighborPays", "· o vizinho paga {v}").replace(
@@ -594,7 +754,11 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
                         ) : (
                           <Bike className="h-3 w-3" />
                         )}
-                        {t("delAcceptCta", "Eu busco")}
+                        {d.direction === "send"
+                          ? t("delAcceptTake", "Eu levo")
+                          : d.direction === "receive"
+                            ? t("delAcceptFetch", "Eu busco")
+                            : t("delAcceptCta", "Eu busco")}
                       </button>
                     )}
 
@@ -608,6 +772,35 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
                         }
                       >
                         <X className="h-3 w-3" /> {t("delCancelCta", "Cancelar")}
+                      </button>
+                    )}
+
+                    {/* Quem pediu pode SUBIR a oferta enquanto ninguém pegou. */}
+                    {d.status === "open" && mineAsRequester && d.weight_band && (
+                      <button
+                        type="button"
+                        className={BTN_GHOST}
+                        onClick={() => {
+                          setEditing({ id: d.id_delivery, mode: "raise" })
+                          setEditValue(((d.price_cents + 100) / 100).toFixed(2).replace(".", ","))
+                        }}
+                      >
+                        <HandCoins className="h-3 w-3" /> {t("delRaiseCta", "Oferecer mais")}
+                      </button>
+                    )}
+
+                    {/* Acima de 10 kg o vizinho pode propor outro valor. */}
+                    {d.status === "open" && !mineAsRequester && d.negotiable && !d.my_proposal && (
+                      <button
+                        type="button"
+                        className={BTN_GHOST}
+                        disabled={blocked}
+                        onClick={() => {
+                          setEditing({ id: d.id_delivery, mode: "propose" })
+                          setEditValue((d.price_cents / 100).toFixed(2).replace(".", ","))
+                        }}
+                      >
+                        <HandCoins className="h-3 w-3" /> {t("delProposeCta", "Propor outro valor")}
                       </button>
                     )}
 
@@ -669,6 +862,88 @@ export function CommunityDeliveryBoard({ communityId }: { communityId: string })
                       </button>
                     )}
                   </div>
+
+                  {editing?.id === d.id_delivery && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <input
+                        className={`${INPUT} max-w-[10rem]`}
+                        inputMode="decimal"
+                        autoFocus
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        aria-label={
+                          editing.mode === "raise"
+                            ? t("delRaiseCta", "Oferecer mais")
+                            : t("delProposeCta", "Propor outro valor")
+                        }
+                      />
+                      <button
+                        type="button"
+                        disabled={busy === d.id_delivery}
+                        onClick={() => sendValue(d)}
+                        className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] disabled:opacity-50"
+                        style={{ background: accent }}
+                      >
+                        {busy === d.id_delivery ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        {editing.mode === "raise" ? t("delRaiseSend", "Aumentar") : t("delProposeSend", "Enviar proposta")}
+                      </button>
+                      <button type="button" className={BTN_GHOST} onClick={() => setEditing(null)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* A minha contraproposta, e a porta para retirá-la. */}
+                  {d.status === "open" && d.my_proposal && (
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2">
+                      <span className="text-[11px] font-bold text-[#F5F1E8]">
+                        {t("delMyProposal", "Sua proposta: {v}").replace("{v}", money(d.my_proposal.amount_cents))}
+                      </span>
+                      <button
+                        type="button"
+                        className={BTN_GHOST}
+                        disabled={busy === d.id_delivery}
+                        onClick={() => withdrawProposal(d)}
+                      >
+                        {t("delWithdrawProposal", "Retirar")}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Quem pediu vê as propostas e escolhe uma. */}
+                  {d.status === "open" && mineAsRequester && (d.proposals || []).length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                        {t("delProposalsTitle", "Propostas dos vizinhos")}
+                      </p>
+                      {(d.proposals || []).map((pr) => (
+                        <div
+                          key={pr.id_proposal}
+                          className="flex flex-wrap items-center justify-between gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2"
+                        >
+                          <span className="min-w-0 text-[12px] text-[#F5F1E8]">
+                            <b>@{pr.courier_username}</b> · {money(pr.amount_cents)}
+                            {pr.note ? <span className="text-[#9A938A]"> · {pr.note}</span> : null}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={busy === d.id_delivery}
+                            onClick={() =>
+                              act(
+                                d.id_delivery,
+                                `proposals/${pr.id_proposal}/accept`,
+                                t("delProposalAccepted", "Proposta aceita. Pague para a corrida começar.")
+                              )
+                            }
+                            className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D]"
+                            style={{ background: accent }}
+                          >
+                            <Check className="h-3 w-3" /> {t("delProposalAccept", "Aceitar")}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* O entregador precisa SABER que o vizinho ainda não pagou —
                       senão ele entrega e descobre depois que não há repasse. */}

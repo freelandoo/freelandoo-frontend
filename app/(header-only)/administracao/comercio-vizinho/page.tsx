@@ -48,6 +48,15 @@ type DeliveryType = {
   is_active: boolean
 }
 
+/** Mig 266: o piso de cada faixa de peso do delivery. */
+type WeightBand = {
+  band: string
+  label: string
+  min_cents: number
+  negotiable: boolean
+  is_active: boolean
+}
+
 type ListingSettings = {
   id: number
   platform_fee_cents: number
@@ -123,6 +132,9 @@ export default function ComercioVizinhoPage() {
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
 
   const [types, setTypes] = useState<DeliveryType[]>([])
+  const [bands, setBands] = useState<WeightBand[]>([])
+  const [draftBands, setDraftBands] = useState<Record<string, WeightBand>>({})
+  const [savingBand, setSavingBand] = useState<string | null>(null)
   const [listing, setListing] = useState<ListingSettings>(null)
   const [disputes, setDisputes] = useState<Dispute[]>([])
 
@@ -165,12 +177,18 @@ export default function ComercioVizinhoPage() {
     setLoading(true)
     try {
       const [s, d] = await Promise.all([
-        api<{ delivery_types: DeliveryType[]; listing_settings: ListingSettings }>(
+        api<{
+          delivery_types: DeliveryType[]
+          listing_settings: ListingSettings
+          weight_bands?: WeightBand[]
+        }>(
           "/api/admin/community-commerce/settings"
         ),
         api<{ disputes: Dispute[] }>("/api/admin/community-commerce/disputes"),
       ])
       setTypes(s.delivery_types || [])
+      setBands(s.weight_bands || [])
+      setDraftBands(Object.fromEntries((s.weight_bands || []).map((b) => [b.band, { ...b }])))
       setDraftTypes(Object.fromEntries((s.delivery_types || []).map((t) => [t.kind, { ...t }])))
       setListing(s.listing_settings)
       if (s.listing_settings) {
@@ -219,6 +237,35 @@ export default function ComercioVizinhoPage() {
       setFeedback({ ok: false, msg: err instanceof Error ? err.message : "Erro ao salvar" })
     } finally {
       setSavingKind(null)
+    }
+  }
+
+  async function saveBand(band: string) {
+    const d = draftBands[band]
+    if (!d) return
+    setSavingBand(band)
+    setFeedback(null)
+    try {
+      if (!Number.isFinite(d.min_cents) || d.min_cents < 0) throw new Error("Valor inválido")
+      const r = await api<{ weight_band: WeightBand }>(
+        `/api/admin/community-commerce/weight-bands/${band}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            label: d.label,
+            min_cents: d.min_cents,
+            negotiable: d.negotiable,
+            is_active: d.is_active,
+          }),
+        }
+      )
+      setBands((prev) => prev.map((b) => (b.band === band ? r.weight_band : b)))
+      setDraftBands((p) => ({ ...p, [band]: { ...r.weight_band } }))
+      setFeedback({ ok: true, msg: `"${r.weight_band.label}" salvo.` })
+    } catch (err) {
+      setFeedback({ ok: false, msg: err instanceof Error ? err.message : "Erro ao salvar" })
+    } finally {
+      setSavingBand(null)
     }
   }
 
@@ -401,11 +448,92 @@ export default function ComercioVizinhoPage() {
             )}
           </section>
 
+          {/* ── DELIVERY: os pisos por peso (mig 266) ───────────────────────── */}
+          <section className={PANEL}>
+            <h2 className="fl-display flex items-center gap-2 text-xl leading-none">
+              <Truck className="h-5 w-5" /> Delivery por peso — valores mínimos
+            </h2>
+            <p className="mt-2 text-xs text-[#9A938A]">
+              Quem pede escolhe enviar ou receber, a faixa de peso e quanto oferece — nunca menos
+              que o mínimo da faixa. Negociável = os vizinhos podem fazer contraproposta. O mínimo
+              é congelado no chamado: mexer aqui só vale para os próximos.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {bands.length === 0 ? (
+                <p className="text-sm text-[#9A938A]">Nenhuma faixa cadastrada.</p>
+              ) : (
+                bands.map((b) => {
+                  const d = draftBands[b.band] || b
+                  const dirty =
+                    d.label !== b.label ||
+                    d.min_cents !== b.min_cents ||
+                    d.negotiable !== b.negotiable ||
+                    d.is_active !== b.is_active
+                  const set = (patch: Partial<WeightBand>) =>
+                    setDraftBands((p) => ({ ...p, [b.band]: { ...d, ...patch } }))
+                  return (
+                    <div key={b.band} className={INNER}>
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs uppercase text-[#9A938A]">{b.band}</span>
+                        <span className="flex items-center gap-3 text-sm">
+                          <label className="flex items-center gap-1.5">
+                            <input
+                              type="checkbox"
+                              checked={d.negotiable}
+                              onChange={(e) => set({ negotiable: e.target.checked })}
+                            />
+                            Negociável
+                          </label>
+                          <label className="flex items-center gap-1.5">
+                            <input
+                              type="checkbox"
+                              checked={d.is_active}
+                              onChange={(e) => set({ is_active: e.target.checked })}
+                            />
+                            Ativa
+                          </label>
+                        </span>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <TabloidField label="Nome na tela">
+                          <TabloidInput value={d.label} onChange={(e) => set({ label: e.target.value })} />
+                        </TabloidField>
+                        <TabloidField label="Mínimo (R$)">
+                          <TabloidInput
+                            value={(d.min_cents / 100).toFixed(2).replace(".", ",")}
+                            onChange={(e) => {
+                              const c = reaisToCents(e.target.value)
+                              set({ min_cents: Number.isFinite(c) ? c : 0 })
+                            }}
+                          />
+                        </TabloidField>
+                      </div>
+                      <button
+                        type="button"
+                        className={`${TABLOID_ACTION_CLASSES} mt-3`}
+                        disabled={!dirty || savingBand === b.band}
+                        onClick={() => saveBand(b.band)}
+                      >
+                        {savingBand === b.band ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        Salvar
+                      </button>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </section>
+
           {/* ── DELIVERY: a tabela de preços ───────────────────────────────── */}
           <section className={PANEL}>
             <h2 className="fl-display flex items-center gap-2 text-xl leading-none">
-              <Truck className="h-5 w-5" /> Delivery entre vizinhos
+              <Truck className="h-5 w-5" /> Delivery por tipo (prazos e add-on da vitrine)
             </h2>
+            <p className="mt-2 text-xs text-[#9A938A]">
+              Desde a mig 266 o chamado aberto no quadro é por peso (acima). Esta tabela segue
+              valendo para os PRAZOS (expiração e confirmação) e para o add-on de entrega da venda
+              na vitrine.
+            </p>
             <p className="mt-2 text-xs text-[#9A938A]">
               O preço que quem pede paga. Quem entrega absorve a tarifa do gateway, então o líquido
               depende de quem cobra hoje — a tela de quem entrega mostra o líquido, nunca este

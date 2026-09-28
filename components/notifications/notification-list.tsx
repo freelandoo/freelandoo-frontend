@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, ShieldAlert, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch, Users, Gift, DollarSign, Clock, Building2, Bot } from "lucide-react"
+import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, ShieldAlert, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch, Users, Gift, DollarSign, Clock, Building2, Bot, Truck } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
@@ -58,6 +58,13 @@ const PERM_KEYS: Record<string, [string, string]> = {
 
 function moneySuffix(payload: Record<string, unknown>): string {
   const cents = Number((payload as { amount_cents?: number })?.amount_cents)
+  if (!Number.isFinite(cents) || cents <= 0) return ""
+  return ` · R$ ${(cents / 100).toFixed(2).replace(".", ",")}`
+}
+
+/** O delivery grava `price_cents` (não `amount_cents`) no payload. */
+function priceSuffix(payload: Record<string, unknown>): string {
+  const cents = Number((payload as { price_cents?: number })?.price_cents)
   if (!Number.isFinite(cents) || cents <= 0) return ""
   return ` · R$ ${(cents / 100).toFixed(2).replace(".", ",")}`
 }
@@ -160,6 +167,22 @@ function labelFor(item: NotificationItem, t: TFn) {
         ? t("aiQuotaPaid", "A cota de respostas do seu atendente de IA acabou")
         : t("aiQuotaFree", "Seu atendente de IA já atendeu as 2 pessoas grátis de hoje — assine para ele continuar")
     }
+    // Delivery entre vizinhos (migs 248/266). O payload leva `price_cents` e o
+    // nome da comunidade; a frase é montada aqui (o site fala três idiomas).
+    // Até 2026-09-27 estes seis tipos caíam no `default` e o sino mostrava só
+    // o nome de quem agiu, sem dizer o quê.
+    case "delivery_opened":
+      return sub("deliveryOpened", "{who} abriu um delivery na sua comunidade") + priceSuffix(item.payload)
+    case "delivery_accepted":
+      return sub("deliveryAccepted", "{who} aceitou o seu delivery — pague para a corrida começar")
+    case "delivery_delivered":
+      return sub("deliveryDelivered", "{who} marcou o seu delivery como entregue — confirme o recebimento")
+    case "delivery_confirmed":
+      return t("deliveryConfirmed", "Entrega confirmada — o valor foi para a sua carteira") + priceSuffix(item.payload)
+    case "delivery_canceled":
+      return t("deliveryCanceled", "Quem ia levar o seu delivery desistiu — o chamado voltou a ficar aberto")
+    case "delivery_proposal":
+      return sub("deliveryProposal", "{who} fez uma proposta no seu delivery") + priceSuffix(item.payload)
     case "like_received": return sub("likeReceived", "{who} curtiu seu portfólio")
     case "comment_received": return sub("commentReceived", "{who} comentou no seu portfólio")
     case "follow_received": return sub("followReceived", "{who} começou a seguir")
@@ -179,6 +202,12 @@ function iconFor(type: string) {
   switch (type) {
     case "whatsapp_quality_alert": return <ShieldAlert className="h-3.5 w-3.5" />
     case "ai_quota_reached": return <Bot className="h-3.5 w-3.5" />
+    case "delivery_opened":
+    case "delivery_accepted":
+    case "delivery_delivered":
+    case "delivery_confirmed":
+    case "delivery_canceled":
+    case "delivery_proposal": return <Truck className="h-3.5 w-3.5" />
     case "like_received": return <Heart className="h-3.5 w-3.5" />
     case "comment_received": return <MessageSquare className="h-3.5 w-3.5" />
     case "follow_received": return <UserPlus className="h-3.5 w-3.5" />
@@ -248,6 +277,15 @@ function hrefFor(item: NotificationItem): string {
       // Sem id não há comunidade a abrir, e a vitrine `/comunidades` está órfã
       // desde 2026-09-08: cair nela seria dar de volta a porta que foi tirada.
       return item.entity_id ? `/comunidades/${item.entity_id}` : "/account"
+    // O entity_id do delivery é a COMUNIDADE (o id da corrida vai no payload).
+    case "delivery_opened":
+    case "delivery_accepted":
+    case "delivery_delivered":
+    case "delivery_canceled":
+    case "delivery_proposal":
+      return item.entity_id ? `/comunidades/${item.entity_id}/delivery` : "/account"
+    case "delivery_confirmed":
+      return "/wallet"
     case "affiliate_commission_released":
       return "/wallet"
     case "subscription_expiring":

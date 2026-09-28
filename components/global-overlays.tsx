@@ -25,6 +25,12 @@ const CondoPollModal = dynamic(
   () => import("@/components/condo/condo-poll-modal").then((m) => m.CondoPollModal),
   { ssr: false }
 )
+// Delivery entre vizinhos (mig 266): o modal que chega a todos os membros
+// quando alguém abre um chamado.
+const DeliveryBroadcastModal = dynamic(
+  () => import("@/components/community/delivery-broadcast-modal").then((m) => m.DeliveryBroadcastModal),
+  { ssr: false }
+)
 const InstallPrompt = dynamic(
   () => import("@/components/pwa/install-prompt").then((m) => m.InstallPrompt),
   { ssr: false }
@@ -41,6 +47,7 @@ export function GlobalOverlays() {
       <AdminAlerts />
       <CommunityVoteModal />
       <CondoPollModal />
+      <DeliveryBroadcastModal />
       <InstallPrompt />
       <PullToRefresh />
     </>
