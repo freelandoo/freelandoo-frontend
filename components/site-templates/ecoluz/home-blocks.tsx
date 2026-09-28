@@ -25,6 +25,7 @@ import {
   UNITS_NOTE,
 } from "./content/company";
 import { FINANCING, LOADS, LOADS_NOTE } from "./content/offer";
+import CoverageMap from "./coverage-map";
 import { Icon } from "./icons";
 import { PAGE, pageHref, type TemplateLinks } from "./lib";
 import { Section, SectionHead } from "./ui";
@@ -282,6 +283,11 @@ export function UnitsSection({ links }: { links: TemplateLinks }) {
             ) : null}
           </div>
         ))}
+      </div>
+
+      {/* ── O mapa: o estado, a ilha ampliada e as cidades ─────────────── */}
+      <div className="mt-14" data-reveal="up">
+        <CoverageMap links={links} />
       </div>
 
       {/* ── Até onde a EcoLuz vai ─────────────────────────────────────── */}
