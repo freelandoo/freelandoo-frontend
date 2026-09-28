@@ -214,6 +214,12 @@ export default function SavingsCalculator({ ctaHref }: { ctaHref: string }) {
             Sua conta de luz hoje
           </label>
 
+          {/* O MEDIDOR. Decoração que lê a mesma `--el-charge` do resto da
+              seção — o arco enche pelo CSS, sem estado e sem laço. O controle
+              de verdade continua sendo o `<input type="range">` logo abaixo:
+              é ele que o teclado e o leitor de tela operam. */}
+          <EnergyDial />
+
           <p className="mt-5 flex items-baseline gap-2">
             <span className="display text-[1.125rem] text-[var(--el-cream-faint)]">R$</span>
             {/* ⚠️ ESTE NÚMERO NÃO É CONTADO: ele é o valor do controle que a
@@ -301,6 +307,113 @@ export default function SavingsCalculator({ ctaHref }: { ctaHref: string }) {
             tarifa e do imóvel.
           </p>
         </div>
+      </div>
+
+      {/* ── OS 120 MESES ───────────────────────────────────────────────── */}
+      <TenYears bill={bill} armed={armed} />
+    </div>
+  );
+}
+
+/**
+ * O medidor: um arco de 240° que enche com a conta.
+ *
+ * ⚠️ `pathLength="1"` no arco e o `dashoffset` vem do CSS, calculado sobre a
+ * `--el-charge` que o pai já escreve. Nenhum estado, nenhum efeito — arrastar
+ * o controle mexe numa variável só, e o arco, o halo e os numerais seguem.
+ */
+function EnergyDial() {
+  // Arco de 240°, de 150° a 390° (o "sorriso" aberto para baixo de um mostrador).
+  const r = 42;
+  const a0 = (150 * Math.PI) / 180;
+  const a1 = (390 * Math.PI) / 180;
+  const p = (a: number) => `${(50 + r * Math.cos(a)).toFixed(2)} ${(50 + r * Math.sin(a)).toFixed(2)}`;
+  const d = `M ${p(a0)} A ${r} ${r} 0 1 1 ${p(a1)}`;
+  return (
+    <svg viewBox="0 0 100 86" className="el-dial" aria-hidden="true" focusable="false">
+      {Array.from({ length: 13 }, (_, i) => {
+        const a = a0 + ((a1 - a0) * i) / 12;
+        return (
+          <line
+            key={i}
+            x1={50 + (r + 5) * Math.cos(a)}
+            y1={50 + (r + 5) * Math.sin(a)}
+            x2={50 + (r + (i % 3 === 0 ? 10 : 7.5)) * Math.cos(a)}
+            y2={50 + (r + (i % 3 === 0 ? 10 : 7.5)) * Math.sin(a)}
+            className="el-dial__tick"
+          />
+        );
+      })}
+      <path d={d} className="el-dial__track" />
+      <path d={d} className="el-dial__fill" pathLength={1} />
+      <text x="50" y="56" className="el-dial__kwh">
+        CONTA
+      </text>
+    </svg>
+  );
+}
+
+/**
+ * A MATRIZ DOS 120 MESES — dez anos de conta, um quadrado por mês.
+ *
+ * O número grande do painel ("R$ 78.000") é abstrato demais para a cabeça de
+ * quem lê. Cento e vinte quadrados é concreto: é a conta chegando todo mês,
+ * durante dez anos. A ALTURA de cada quadrado acompanha a conta arrastada, e
+ * dentro dele o verde é a parte que um sistema bem dimensionado pode tirar da
+ * conta (ATÉ 85%) e o âmbar a que continua — disponibilidade e tributos.
+ *
+ * ⚠️ A PROPORÇÃO VERDE/ÂMBAR É A MESMA DA FRASE DO PAINEL, E É UM TETO. O
+ * desenho não pode dizer mais do que o texto: "até 85%" vira no máximo 85% de
+ * verde, nunca o quadrado inteiro.
+ *
+ * ⚠️ O ACUMULADO POR ANO É A MESMA CONTA DO PAINEL (conta × 12 × ano), sem
+ * reajuste — os dois números não podem discordar na mesma tela.
+ *
+ * ⚠️ PARA QUEM NÃO VÊ A GRADE: a tabela tem uma descrição em texto e os
+ * acumulados por ano são texto de verdade. Os 120 quadrados são `aria-hidden`
+ * — lidos um a um, seriam 120 anúncios de "mês" sem informação nenhuma.
+ */
+function TenYears({ bill, armed }: { bill: number; armed: boolean }) {
+  return (
+    <div className="el-years lg:col-span-2" data-armed={armed ? "true" : undefined}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow text-[var(--el-sun)]">120 meses de conta</p>
+          <p className="mt-2 max-w-xl text-[0.9375rem] leading-relaxed text-[var(--el-cream-dim)]">
+            Cada quadrado é um mês pagando {brl(bill)}. Dez anos, cento e vinte
+            contas.
+          </p>
+        </div>
+        <p className="flex flex-wrap gap-x-5 gap-y-2 text-[0.8125rem] text-[var(--el-cream-dim)]">
+          <span className="inline-flex items-center gap-2">
+            <span aria-hidden="true" className="el-years__key el-years__key--save" />
+            Pode deixar de sair (até 85%)
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span aria-hidden="true" className="el-years__key el-years__key--stay" />
+            Continua na conta
+          </span>
+        </p>
+      </div>
+
+      <div className="el-years__grid mt-6">
+        {Array.from({ length: YEARS }, (_, y) => (
+          <div key={y} className="el-years__row">
+            <span className="el-years__year eyebrow">Ano {String(y + 1).padStart(2, "0")}</span>
+            <span className="el-years__cells" aria-hidden="true">
+              {Array.from({ length: 12 }, (_, m) => (
+                <span
+                  key={m}
+                  className="el-years__cell"
+                  style={{ transitionDelay: `${(y * 12 + m) * 9}ms` }}
+                >
+                  <span className="el-years__bar" />
+                </span>
+              ))}
+            </span>
+            <span className="el-years__sum numeral">{brl(bill * 12 * (y + 1))}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

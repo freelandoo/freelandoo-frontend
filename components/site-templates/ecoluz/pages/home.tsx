@@ -100,8 +100,8 @@ export default function HomePage({ links }: Ctx) {
       <Section id="economia">
         <SectionHead
           eyebrow="Quanto você poderia economizar"
-          title="A conta que você já paga, projetada em dez anos."
-          lead="Não é uma promessa nossa: é a sua conta multiplicada pelo tempo. Arraste até o seu valor médio e veja o tamanho do número."
+          title="Quanto da sua conta está indo embora?"
+          lead="Não é uma promessa nossa: é a sua conta multiplicada pelo tempo. Arraste até o seu valor médio e veja o tamanho do número — e os cento e vinte meses que ele representa."
         />
         <div className="mt-12" data-reveal="scale">
           <SavingsCalculator ctaHref={whatsappLink(WA_ANALISE)} />

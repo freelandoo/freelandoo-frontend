@@ -955,3 +955,177 @@
     transition: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A SIMULAÇÃO — o medidor e os 120 meses
+   ══════════════════════════════════════════════════════════════════════════
+   As duas peças leem a `--el-charge` que `calculator.tsx` já escreve no
+   `.el-sim`. Nenhuma tem estado próprio de movimento: arrastar o controle
+   muda UMA variável e o arco, as barras e o halo seguem. */
+
+.tpl-ecoluz .el-dial {
+  position: absolute;
+  top: -0.75rem;
+  right: -0.25rem;
+  width: 6.5rem;
+  height: auto;
+  overflow: visible;
+}
+@media (min-width: 768px) {
+  .tpl-ecoluz .el-dial {
+    width: 8rem;
+  }
+}
+
+.tpl-ecoluz .el-dial__tick {
+  stroke: rgb(255 216 92 / 0.28);
+  stroke-width: 1.2;
+}
+.tpl-ecoluz .el-dial__track {
+  fill: none;
+  stroke: rgb(255 216 92 / 0.12);
+  stroke-width: 6;
+}
+.tpl-ecoluz .el-dial__fill {
+  fill: none;
+  stroke: var(--el-sun);
+  stroke-width: 6;
+  stroke-dasharray: 1;
+  /* De 4% a 100%: com a conta mínima o arco não some — um mostrador vazio
+     parece desligado, não "conta baixa". */
+  stroke-dashoffset: calc(1 - (0.04 + var(--el-charge) * 0.96));
+  filter: drop-shadow(0 0 3px rgb(255 196 0 / 0.7));
+  transition: stroke-dashoffset 0.12s linear;
+}
+.tpl-ecoluz .el-dial__kwh {
+  font-family: var(--el-display);
+  font-weight: 600;
+  font-stretch: 84%;
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  text-anchor: middle;
+  fill: var(--el-cream-faint);
+}
+
+/* ── os 120 meses ──────────────────────────────────────────────────────── */
+
+.tpl-ecoluz .el-years {
+  padding: 1.75rem;
+  background: var(--el-ink-up);
+}
+@media (min-width: 768px) {
+  .tpl-ecoluz .el-years {
+    padding: 2.5rem;
+  }
+}
+/* O conteúdo da matriz tem a largura dela, centrado no painel — com a grade
+   limitada e o painel ocupando a largura inteira, alinhar à esquerda deixava
+   meia faixa vazia à direita. */
+.tpl-ecoluz .el-years > * {
+  max-width: 54rem;
+  margin-inline: auto;
+}
+
+.tpl-ecoluz .el-years__key {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.tpl-ecoluz .el-years__key--save {
+  background: rgb(var(--el-volt));
+}
+.tpl-ecoluz .el-years__key--stay {
+  background: var(--el-sun-deep);
+}
+
+.tpl-ecoluz .el-years__grid {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tpl-ecoluz .el-years__row {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr) 5.6rem;
+  align-items: end;
+  gap: 0.75rem;
+}
+@media (min-width: 768px) {
+  .tpl-ecoluz .el-years__row {
+    /* ⚠️ A grade dos meses tem TETO de largura: esticada até 70rem, cada mês
+       vira uma faixa de 70×32px e a matriz lê como listras, não como cento e
+       vinte contas. O acumulado fica encostado nela, não na borda. */
+    grid-template-columns: 4.5rem minmax(0, 1fr) 8rem;
+    gap: 1.25rem;
+  }
+}
+
+.tpl-ecoluz .el-years__year {
+  color: var(--el-cream-faint);
+  font-size: 0.625rem;
+  padding-bottom: 0.1rem;
+}
+
+.tpl-ecoluz .el-years__cells {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3px;
+  height: 1.6rem;
+}
+@media (min-width: 768px) {
+  .tpl-ecoluz .el-years__cells {
+    gap: 5px;
+    height: 2.1rem;
+  }
+}
+
+/* O quadrado é o "espaço" de um mês; a barra dentro dele é a conta. */
+.tpl-ecoluz .el-years__cell {
+  position: relative;
+  display: block;
+  background: rgb(255 216 92 / 0.05);
+  overflow: hidden;
+}
+
+/* ⚠️ A ALTURA É `scaleY`, NÃO `height`: 120 barras mudando de altura a cada
+   quadro de arraste seriam 120 relayouts. Escala é composição.
+   A barra tem duas cores num gradiente com parada DURA: verde embaixo (os até
+   85%), âmbar em cima (o que continua). */
+.tpl-ecoluz .el-years__bar {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgb(var(--el-volt) / 0.9) 0 85%,
+    var(--el-sun-deep) 85% 100%
+  );
+  transform: scaleY(calc(0.14 + var(--el-charge) * 0.86));
+  transform-origin: bottom center;
+}
+
+/* A entrada: os meses acendem um a um quando a seção é vista (o atraso de
+   cada um sai do markup). Antes disso ficam apagados — só com o movimento
+   ligado; sem ele, nascem acesos. */
+@media (prefers-reduced-motion: no-preference) {
+  .tpl-ecoluz[data-motion="on"] .el-years__bar {
+    opacity: 0;
+    transition: opacity 0.3s var(--el-ease);
+    transition-delay: inherit;
+  }
+  .tpl-ecoluz[data-motion="on"] .el-years[data-armed] .el-years__bar {
+    opacity: 1;
+  }
+}
+
+.tpl-ecoluz .el-years__sum {
+  font-size: 0.8125rem;
+  text-align: right;
+  color: var(--el-cream-dim);
+}
+@media (min-width: 768px) {
+  .tpl-ecoluz .el-years__sum {
+    font-size: 1rem;
+  }
+}
+.tpl-ecoluz .el-years__row:last-child .el-years__sum {
+  color: var(--el-sun-hi);
+}
