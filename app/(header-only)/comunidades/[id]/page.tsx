@@ -115,7 +115,7 @@ const CondoResidence = dynamic(
 // pill Comunidade (`PanelTab`), e nada mais chama `setTab("members")`. Um
 // membro de união que ninguém produz é uma porta que só espera alguém religá-la
 // — e aí a página teria duas listas de membros de novo.
-type CommunityTab = "feed" | "services" | "products"
+type CommunityTab = "feed" | "services" | "products" | "shop"
 // "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
 // `/comunidades/<id>/site`. Ele monta uma página inteira, e encaixá-la numa
 // aba embaixo do feed mostrava um site diferente do que ia ao ar. As duas
@@ -129,6 +129,14 @@ const CondoExtras = dynamic(
 
 // As duas VITRINES territoriais (mig 198), agora como abas. Carregadas sob
 // demanda: quem abre uma comunidade comum — a maioria — nunca baixa este chunk.
+const ProfileOwnerProductsSection = dynamic(
+  () => import("@/components/profile/profile-owner-products-section").then((m) => m.ProfileOwnerProductsSection),
+  { ssr: false }
+)
+const ProfilePublicProductsSection = dynamic(
+  () => import("@/components/profile/profile-public-products-section").then((m) => m.ProfilePublicProductsSection),
+  { ssr: false }
+)
 const CommunityListings = dynamic(
   () => import("./_components/community-listings").then((m) => m.CommunityListings),
   { ssr: false }
@@ -147,6 +155,8 @@ type Community = {
   avatar_url: string | null
   /** A foto de perfil do líder (tb_user.avatar) — é ela que o headcard mostra. */
   leader_avatar?: string | null
+  /** Perfil-conta do líder: é a LOJA dele que a aba Produtos do negócio mostra. */
+  leader_store_profile_id?: string | null
   banner_url: string | null
   enxame_name: string | null
   // O enxame da comunidade comum agora é EDITÁVEL na página (mig 219), então o
@@ -663,11 +673,18 @@ export default function CommunityDetailPage() {
               ["products", t("tabProducts", "Produtos")],
             ] as [CommunityTab, string][])
           : []),
+        // A LOJA DO DONO (2026-09-27): só a comunidade de NEGÓCIO tem, e só o
+        // líder vende nela — são os produtos do perfil-conta dele, o mesmo
+        // catálogo do site. `shop` e não `products`: aquela é a vitrine
+        // mensal entre vizinhos, com outra regra de quem publica.
+        ...(isBusinessPlatform
+          ? ([["shop", t("tabProducts", "Produtos")]] as [CommunityTab, string][])
+          : []),
         // ⚠️ "Membros" SAIU DAQUI (2026-09-23): virou aba DENTRO do painel do
         // pill Comunidade, junto de Perfil, Mural e Números. Deixá-la nos dois
         // lugares daria duas telas listando os mesmos membros.
       ] as [CommunityTab, string][],
-    [t, isTerritorial]
+    [t, isTerritorial, isBusinessPlatform]
   )
 
   // ─── DEEP-LINK DO DOCK ──────────────────────────────────────────────────────
@@ -699,6 +716,7 @@ export default function CommunityDetailPage() {
     // tem deixaria a tela mostrando algo que ninguém consegue fechar.
     if (aba === "servicos" && isTerritorial) setTab("services")
     if (aba === "produtos" && isTerritorial) setTab("products")
+    if (aba === "produtos" && isBusinessPlatform) setTab("shop")
     if (painel === "perfil") {
       setPanel("community")
       setPanelTab("profile")
@@ -707,7 +725,7 @@ export default function CommunityDetailPage() {
       setPanel("community")
       setPanelTab("mural")
     }
-  }, [community, isTerritorial])
+  }, [community, isTerritorial, isBusinessPlatform])
 
   // ─── O DOCK PEDINDO A VISTA (sem navegar) ───────────────────────────────────
   //
@@ -2720,6 +2738,26 @@ export default function CommunityDetailPage() {
                   canBuy={sellEnabled && canPublishListing}
                 />
                 </>
+              ) : isBusinessPlatform && tab === "shop" ? (
+                community.leader_store_profile_id ? (
+                  // O líder GERENCIA (cadastrar, editar, pausar) e todo o
+                  // resto COMPRA. Retirada com o vendedor é regra da Loja
+                  // (mig 264), então não há frete a escolher aqui.
+                  <div className="fl-sharp">
+                    {isLeader ? (
+                      <ProfileOwnerProductsSection profileId={community.leader_store_profile_id} />
+                    ) : (
+                      <ProfilePublicProductsSection profileId={community.leader_store_profile_id} />
+                    )}
+                  </div>
+                ) : (
+                  <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center">
+                    <ShoppingBag className="mx-auto h-10 w-10" style={{ color: accent }} />
+                    <p className="mt-4 text-sm text-[#9A938A]">
+                      {t("shopEmpty", "Este negócio ainda não tem produtos à venda.")}
+                    </p>
+                  </div>
+                )
               ) : feedLocked ? (
                 <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center">
                   <Lock className="mx-auto h-10 w-10" style={{ color: accent }} />

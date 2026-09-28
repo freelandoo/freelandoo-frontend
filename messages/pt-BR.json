@@ -3033,7 +3033,8 @@
     "extraSpaceErrorTitle": "Não encontramos este pagamento",
     "extraSpaceError": "Se você pagou, o espaço aparece no menu da sua foto de perfil assim que o pagamento cair.",
     "listSlotFree": "Espaço livre",
-    "listSlotRent": "Alugue por 1 mês"
+    "listSlotRent": "Alugue por 1 mês",
+    "shopEmpty": "Este negócio ainda não tem produtos à venda."
   },
   "Careers": {
     "hero.badge": "Carreiras",

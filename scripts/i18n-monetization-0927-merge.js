@@ -9,6 +9,11 @@ const NS = {
   Community: {
     listSlotFree: ["Espaço livre", "Free spot", "Espacio libre"],
     listSlotRent: ["Alugue por 1 mês", "Rent it for 1 month", "Alquílalo por 1 mes"],
+    shopEmpty: [
+      "Este negócio ainda não tem produtos à venda.",
+      "This business has no products for sale yet.",
+      "Este negocio aún no tiene productos a la venta.",
+    ],
   },
   Vaquinha: {
     sponsorCardNote: [
