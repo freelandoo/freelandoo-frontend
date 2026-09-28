@@ -21,7 +21,7 @@ const categories = [
 const faqs = [
   { q: "Como criar minha conta?", a: "Você pode criar sua conta informando seus dados básicos ou usando as opções de login disponíveis. Depois disso, poderá acessar sua área e configurar seu perfil." },
   { q: "Como ativar meu perfil profissional?", a: "Para aparecer na vitrine pública da Freelandoo, o profissional precisa configurar seu perfil e concluir a ativação. A ativação acontece após a confirmação do pagamento." },
-  { q: "Quanto custa anunciar na Freelandoo?", a: "A ativação do perfil profissional custa R$ 300 em pagamento único." },
+  { q: "Quanto custa anunciar na Freelandoo?", a: "Seu primeiro perfil é grátis. Cada perfil adicional — inclusive pet e carro — custa R$ 9,99 em pagamento único." },
   { q: "A Freelandoo cobra comissão sobre serviços fechados?", a: "Não. A Freelandoo não cobra comissão sobre os serviços negociados diretamente entre cliente e profissional." },
   { q: "Como funcionam os enxames?", a: "Os enxames organizam profissionais por intenção. Em vez de navegar por categorias soltas, o usuário escolhe um enxame, como Marketing, Tecnologia, Construção, Saúde, Beleza e Bem-estar, Pets ou Eventos." },
   { q: "Como escolher minha profissão?", a: "Sua profissão deve estar ligada ao enxame principal do seu perfil. Isso ajuda a plataforma a mostrar seu perfil para buscas mais compatíveis." },

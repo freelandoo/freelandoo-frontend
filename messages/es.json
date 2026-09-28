@@ -1547,7 +1547,10 @@
     "deleteProfileTrash": "Eliminar {name}",
     "deleteProfileTitle": "Eliminar perfil",
     "deleteProfileBody": "El perfil \"{name}\" será eliminado, con sus publicaciones, servicios, productos y seguidores.",
-    "aiAttendantAriaV2": "Asistente de IA: responde tu WhatsApp y tus mensajes — gratis para 2 personas por día"
+    "aiAttendantAriaV2": "Asistente de IA: responde tu WhatsApp y tus mensajes — gratis para 2 personas por día",
+    "pickupWithSeller": "Retiro con el vendedor",
+    "pickupCombine": "Acordarlo en la conversación",
+    "pickupOnlyInfo": "Toda venta en la Tienda se retira contigo, sin envío. El comprador paga por Freelandoo y, en cuanto se confirma el pago, abrimos una conversación entre ustedes para acordar dónde y cuándo."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -2286,7 +2289,12 @@
     "talkToSeller": "Hablar con el vendedor",
     "documentPlaceholder": "CPF o CNPJ",
     "documentHint": "Necesario para emitir la etiqueta de envío.",
-    "documentRequired": "Ingresa un CPF o CNPJ válido para el envío"
+    "documentRequired": "Ingresa un CPF o CNPJ válido para el envío",
+    "pickupNotice": "Retiro con el vendedor. Tras el pago abrimos una conversación entre ustedes para acordar dónde y cuándo retirarlo.",
+    "pickupLineLabel": "Retiro",
+    "pickupFree": "sin envío",
+    "pickupContactTitle": "Tus datos (opcional: usamos los de tu cuenta)",
+    "pickupOnlyDesc": "Sin envío: pagas por Freelandoo y, en cuanto se confirme el pago, abrimos una conversación con el vendedor para acordar dónde y cuándo retirarlo."
   },
   "Checkout": {
     "loadCheckoutError": "Error al cargar checkout",
@@ -2380,7 +2388,7 @@
     "included.title": "Qué recibes al anunciar",
     "included.note": "Freelandoo organiza tu presencia para que los clientes entiendan mejor quién eres, qué haces y cómo hablar contigo.",
     "activation.title": "Una activación única y simple",
-    "activation.description": "La activación de Freelandoo cuesta R$ 300 en pago único. Ese valor mantiene tu perfil activo en la plataforma y permite que participe en la vitrina pública, de acuerdo con las reglas y categorías disponibles.",
+    "activation.description": "Tu primer perfil es gratis. Cada perfil adicional — incluidas mascotas y coches — cuesta R$ 9,99 en un pago único y aparece en la vitrina pública, según las reglas y categorías disponibles.",
     "activation.payment": "pago único",
     "activation.cta": "Suscribirme y activar perfil",
     "activation.notice": "La activación aumenta tu exposición dentro de la plataforma, pero no garantiza contratación. La negociación, valores, plazos y entregas se tratan directamente entre cliente y profesional.",
@@ -2417,9 +2425,9 @@
     "hero.primaryCta": "Suscribirme y activar perfil",
     "hero.secondaryCta": "Anunciar servicios",
     "plan.title": "Activación del perfil Freelandoo",
-    "plan.name": "Perfil profesional activado",
+    "plan.name": "Perfil adicional",
     "plan.payment": "pago único",
-    "plan.description": "Mantén tu perfil activo en la plataforma y aparece en la vitrina pública de Freelandoo.",
+    "plan.description": "Tu primer perfil es gratis. Cada perfil extra — incluidas mascotas y coches — cuesta R$ 9,99, una sola vez.",
     "plan.cta": "Activar ahora",
     "commission.title": "Pagas la activación. El servicio cerrado es tuyo.",
     "commission.description": "Freelandoo no cobra comisión sobre los servicios que cierres con clientes. La plataforma funciona como una vitrina de divulgación y conexión. Después del contacto, la negociación ocurre directamente entre tú y el cliente.",
@@ -3021,7 +3029,22 @@
     "deleteSubjectError": "No se pudo eliminar.",
     "accentScarlet": "Rojo claro",
     "planButtonSite": "Plan Sitio",
-    "inviteLockedAriaV2": "Invitar personas"
+    "inviteLockedAriaV2": "Invitar personas",
+    "extraPetEyebrow": "Mascota adicional",
+    "extraCarEyebrow": "Coche adicional",
+    "extraSpaceOnce": "Pago único, de por vida",
+    "extraPetBody": "Tu primera mascota es gratis. Para añadir otra son {price}, una sola vez: la nueva mascota se crea en cuanto se confirme el pago.",
+    "extraCarBody": "Tu primer coche es gratis. Para añadir otro son {price}, una sola vez: el nuevo coche se crea en cuanto se confirme el pago.",
+    "extraSpacePay": "Pagar {price}",
+    "extraSpaceNotNow": "Ahora no",
+    "extraSpacePayError": "No se pudo abrir el pago ahora.",
+    "extraSpaceWaitingTitle": "Confirmando el pago",
+    "extraSpaceWaiting": "En cuanto se confirme el pago, abrimos la nueva página para que la edites.",
+    "extraSpaceSlow": "Está tardando más de lo normal. Si pagaste por Pix puede tardar unos minutos: en cuanto se confirme, el espacio aparece en el menú de tu foto de perfil.",
+    "extraSpaceExpiredTitle": "Pago no completado",
+    "extraSpaceExpired": "No se cobró nada. Puedes intentarlo de nuevo desde el \"+\" de la foto.",
+    "extraSpaceErrorTitle": "No encontramos este pago",
+    "extraSpaceError": "Si pagaste, el espacio aparece en el menú de tu foto de perfil en cuanto se confirme el pago."
   },
   "Careers": {
     "hero.badge": "Carreras",
@@ -4389,7 +4412,11 @@
     "clientPaid": "El cliente pagó",
     "fee": "tarifa",
     "itemSingular": "ítem",
-    "itemPlural": "ítems"
+    "itemPlural": "ítems",
+    "pickupMark": "Marcar como retirado",
+    "pickupDone": "Retirado",
+    "pickupChat": "Acordar retiro",
+    "pickupMarkError": "No se pudo marcar el retiro ahora."
   },
   "Wallet": {
     "kindStore": "Tienda",

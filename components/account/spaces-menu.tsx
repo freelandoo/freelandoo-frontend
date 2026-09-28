@@ -18,6 +18,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { getToken } from "@/lib/auth"
+import { ExtraSpaceOffer, readExtraSpaceOffer, type ExtraSpaceOfferState } from "@/components/community/extra-space-offer"
 import {
   DEFAULT_QUICK_PILLS,
   QUICK_ENTRIES,
@@ -147,6 +148,9 @@ export function SpacesMenu({
   // comunidades, nível mínimo). Antes o formulário explicava o motivo; sem ele,
   // engolir o erro deixaria o item do menu parecendo quebrado.
   const [createError, setCreateError] = useState<string | null>(null)
+  // Pet/carro adicional (mig 264): vive fora do `open`, porque o menu fecha
+  // ao abrir a oferta e ela precisa continuar na tela.
+  const [extraOffer, setExtraOffer] = useState<ExtraSpaceOfferState>(null)
 
   /**
    * Cria a comunidade VAZIA e abre a página dela.
@@ -174,6 +178,12 @@ export function SpacesMenu({
         body: "{}",
       })
       const json = await res.json()
+      const extra = readExtraSpaceOffer(res.status, json)
+      if (extra) {
+        onClose()
+        setExtraOffer(extra)
+        return
+      }
       if (!res.ok || !json?.community?.id_profile) {
         setCreateError(json?.error || t("createError", "Não foi possível criar."))
         return
@@ -511,6 +521,7 @@ export function SpacesMenu({
           )}
         </div>
       )}
+      <ExtraSpaceOffer offer={extraOffer} onClose={() => setExtraOffer(null)} />
     </div>
   )
 }

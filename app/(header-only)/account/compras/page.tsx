@@ -30,7 +30,9 @@ interface Order {
   shipping_carrier: string | null
   tracking_code: string | null
   status: "pending" | "paid" | "shipped" | "delivered" | "canceled" | "refunded"
-  destination_zipcode: string
+  destination_zipcode: string | null
+  /** Retirada com o vendedor (mig 264): sem frete, sem CEP, sem rastreio. */
+  delivery_mode?: "shipping" | "local_pickup" | null
   paid_at: string | null
   shipped_at: string | null
   delivered_at: string | null
@@ -157,9 +159,18 @@ export default function ComprasPage() {
                     <p className="mt-1 truncate text-xs text-[#5b554b]">
                       {t("sellerLabel", "Vendedor")}: {o.seller_display_name || o.seller_username || "-"} · {t("orderLabel", "pedido")} #{o.id_order}
                     </p>
-                    <p className="mt-1 text-xs text-[#5b554b]">
-                      {o.shipping_carrier ? `${o.shipping_carrier} · ${o.shipping_service_name}` : "-"} · CEP {o.destination_zipcode}
-                    </p>
+                    {o.delivery_mode === "local_pickup" ? (
+                      <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-[#5b554b]">
+                        {t("pickupWithSeller", "Retirada com o vendedor")}
+                        <Link href="/mensagens" className="font-bold text-[#0B0B0D] underline underline-offset-2">
+                          {t("pickupCombine", "Combinar na conversa")}
+                        </Link>
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-[#5b554b]">
+                        {o.shipping_carrier ? `${o.shipping_carrier} · ${o.shipping_service_name}` : "-"} · CEP {o.destination_zipcode}
+                      </p>
+                    )}
                     {o.tracking_code && (
                       <p className="mt-1 flex items-center gap-1 text-xs font-bold text-[#075985]">
                         <Truck className="h-3.5 w-3.5" aria-hidden />
@@ -173,7 +184,9 @@ export default function ComprasPage() {
 
                   <div className="shrink-0 text-left md:text-right">
                     <p className="text-base font-black tabular-nums text-[var(--fl-ink)] md:text-lg">{formatBRL(o.total_cents)}</p>
-                    <p className="text-[11px] text-[#5b554b]">{formatBRL(o.unit_price_cents)} + {t("shippingWord", "frete")} {formatBRL(o.shipping_cents)}</p>
+                    {o.delivery_mode !== "local_pickup" && (
+                      <p className="text-[11px] text-[#5b554b]">{formatBRL(o.unit_price_cents)} + {t("shippingWord", "frete")} {formatBRL(o.shipping_cents)}</p>
+                    )}
                   </div>
                 </li>
               )

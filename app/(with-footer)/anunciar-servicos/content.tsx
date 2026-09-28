@@ -150,10 +150,10 @@ export function AnunciarServicosContent() {
             {t("activation.title", "Uma ativação única simples")}
           </h2>
           <p className="text-[#9A938A] mb-10 leading-relaxed" data-reveal>
-            {t("activation.description", "A ativação da Freelandoo custa R$ 300 em pagamento único. Esse valor mantém seu perfil ativo na plataforma e permite que ele participe da vitrine pública, de acordo com as regras e categorias disponíveis.")}
+            {t("activation.description", "Seu primeiro perfil é grátis. Cada perfil adicional — inclusive pet e carro — custa R$ 9,99 em pagamento único e participa da vitrine pública, de acordo com as regras e categorias disponíveis.")}
           </p>
           <div className="bg-[#1D1810] border border-[#F2B705]/20 rounded-2xl p-8 shadow-[0_0_50px_rgba(242,196,9,0.06)] mb-6" data-reveal>
-            <div className="text-5xl font-bold text-[#F2B705] mb-1">R$ 300</div>
+            <div className="text-5xl font-bold text-[#F2B705] mb-1">R$ 9,99</div>
             <div className="text-[#9A938A] mb-8 text-sm">{t("activation.payment", "pagamento único")}</div>
             <div className="space-y-3 text-left mb-8" data-stagger>
               {["Sem comissão por serviço fechado", "Contato direto entre cliente e profissional", "Perfil ativo após a ativação"].map((item, i) => (

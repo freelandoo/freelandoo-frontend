@@ -4,7 +4,7 @@ import { PrecosContent } from "./content"
 export const metadata: Metadata = {
   title: "Preços — Freelandoo",
   description:
-    "Ativação única de R$ 300 para profissionais. Perfil profissional ativo, vitrine pública e contato direto. Sem comissão por serviço fechado.",
+    "Primeiro perfil grátis; cada perfil adicional por R$ 9,99 em pagamento único. Vitrine pública e contato direto. Sem comissão por serviço fechado.",
 }
 
 export default function PrecosPage() {

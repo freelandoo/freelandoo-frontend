@@ -16,10 +16,10 @@ const sections = [
   {
     title: "2. Valor e forma de pagamento",
     items: [
-      "A ativação custa R$ 300,00 (trezentos reais), em pagamento único.",
+      "O primeiro perfil da conta é gratuito. Cada perfil adicional — inclusive os perfis de pet e de carro — custa R$ 9,99 (nove reais e noventa e nove centavos), em pagamento único.",
       "A ativação é vitalícia para o perfil profissional ativado e não possui renovação nem cobrança recorrente.",
       "Cada perfil profissional exige a sua própria ativação.",
-      "O pagamento é processado exclusivamente pela Stripe.",
+      "O pagamento é processado pelo intermediador de pagamentos da plataforma (Mercado Pago).",
     ],
   },
   {

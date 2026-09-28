@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { CardSwitcherModal, type SwitcherCard } from "@/components/profile/card-switcher-modal"
+import { ExtraSpaceOffer, readExtraSpaceOffer, type ExtraSpaceOfferState } from "@/components/community/extra-space-offer"
 
 /**
  * O "+" da foto do PET e do CARRO (pedido do Alex, 2026-09-27): *"precisa ter o
@@ -48,6 +49,8 @@ export function SubjectSwitcher({
   const [loading, setLoading] = useState(false)
   const [failed, setFailed] = useState(false)
   const [creating, setCreating] = useState(false)
+  // Pet/carro adicional (mig 264): a recusa do backend vira oferta de pagamento.
+  const [offer, setOffer] = useState<ExtraSpaceOfferState>(null)
 
   const load = useCallback(async () => {
     const token = getToken()
@@ -88,6 +91,12 @@ export function SubjectSwitcher({
         body: "{}",
       })
       const json = await res.json().catch(() => ({}))
+      const extra = readExtraSpaceOffer(res.status, json)
+      if (extra) {
+        setOpen(false)
+        setOffer(extra)
+        return
+      }
       if (!res.ok || !json?.community?.id_profile) {
         toast.error(json?.error || t("addSubjectError", "Não foi possível adicionar agora."))
         return
@@ -184,6 +193,7 @@ export function SubjectSwitcher({
           cancelLabel: t("deleteCancel", "Cancelar"),
         }}
       />
+      <ExtraSpaceOffer offer={offer} onClose={() => setOffer(null)} />
     </>
   )
 }

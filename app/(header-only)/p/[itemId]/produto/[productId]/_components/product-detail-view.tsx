@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, MapPin, MessageCircle, Package, ShoppingCart, Store, Truck } from "lucide-react"
+import { useEffect, useState } from "react"
+import { ChevronLeft, ChevronRight, Loader2, MessageCircle, Package, ShoppingCart, Store } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { BuyProductDialog } from "./buy-product-dialog"
@@ -32,42 +32,12 @@ interface Product {
   is_active: boolean
   media: Media[]
   delivery_mode?: "shipping" | "local_pickup"
-}
-
-interface ShippingOption {
-  service_id: number | string
-  service_name: string
-  carrier: string
-  carrier_picture: string | null
-  price_cents: number
-  delivery_days_min: number | null
-  delivery_days_max: number | null
-}
-
-interface ShippingResponse {
-  origin_zipcode: string | null
-  destination_zipcode: string
-  destination_address: {
-    cep: string
-    logradouro: string
-    bairro: string
-    localidade: string
-    uf: string
-  } | null
-  options: ShippingOption[]
-  mode?: "shipping" | "local_pickup"
-  exceeded_limits?: boolean
-  exceeded_reasons?: Array<"sum" | "side" | "weight">
+  /** Preço que o COMPRADOR paga (preço do vendedor + taxas) — é o que o checkout cobra. */
+  pricing?: { display_price_cents?: number } | null
 }
 
 function formatBRL(cents: number, locale: string) {
   return (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
-}
-
-function maskCep(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 8)
-  if (digits.length <= 5) return digits
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`
 }
 
 export function ProductDetailView({ profileId, productId }: { profileId: string; productId: string }) {
@@ -84,11 +54,6 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [activeMedia, setActiveMedia] = useState(0)
 
-  const [cepInput, setCepInput] = useState("")
-  const [shipping, setShipping] = useState<ShippingResponse | null>(null)
-  const [shippingState, setShippingState] = useState<"idle" | "loading" | "loaded" | "error">("idle")
-  const [shippingError, setShippingError] = useState<string | null>(null)
-  const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null)
 
   const [buyOpen, setBuyOpen] = useState(false)
 
@@ -118,39 +83,6 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
     return () => { cancelled = true }
   }, [profileId, productId, t])
 
-  const calcShipping = useCallback(async () => {
-    const digits = cepInput.replace(/\D/g, "")
-    if (digits.length !== 8) {
-      setShippingError(t("invalidCepError", "CEP inválido (8 dígitos)"))
-      return
-    }
-    setShippingError(null)
-    setShippingState("loading")
-    try {
-      const res = await fetch(`/api/public/profile/${profileId}/products/${productId}/shipping`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destination_zipcode: digits }),
-      })
-      const d = await res.json()
-      if (!res.ok) {
-        setShippingError(d?.error || t("shippingCalculateUnavailable", "Não foi possível calcular o frete"))
-        setShippingState("error")
-        return
-      }
-      setShipping(d as ShippingResponse)
-      setSelectedShippingId(d.options?.[0] ? String(d.options[0].service_id) : null)
-      setShippingState("loaded")
-    } catch {
-      setShippingError(t("shippingCalculateError", "Erro ao calcular frete"))
-      setShippingState("error")
-    }
-  }, [profileId, productId, cepInput, t])
-
-  const selectedOption = useMemo(() => {
-    if (!shipping || !selectedShippingId) return null
-    return shipping.options.find((o) => String(o.service_id) === selectedShippingId) || null
-  }, [shipping, selectedShippingId])
 
   if (!storeOn) return null
 
@@ -182,6 +114,9 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
   const media = product.media || []
   const cover = media[activeMedia]
   const description = product.description?.trim() || ""
+  // O checkout cobra o preço de comprador; mostrar o do vendedor aqui faria a
+  // página anunciar um valor e o pagamento cobrar outro.
+  const buyerPrice = Number(product.pricing?.display_price_cents) || product.price_amount
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 md:px-6 md:pt-10">
@@ -254,7 +189,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
         <div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{product.name}</h1>
           <p className="mt-3 text-3xl font-bold tabular-nums md:text-4xl">
-            {formatBRL(product.price_amount, locale)}
+            {formatBRL(buyerPrice, locale)}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             {outOfStock ? (
@@ -270,143 +205,47 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
             </div>
           )}
 
-          {/* Modo de entrega: retirada no local vs envio por transportadora */}
-          {product.delivery_mode === "local_pickup" ? (
-            <div className="mt-8 rounded-2xl border border-border bg-card/40 p-4">
-              <h2 className="flex items-center gap-2 text-sm font-semibold">
-                <Store className="h-4 w-4" aria-hidden /> {t("localPickupTitle", "Retirada combinada com o vendedor")}
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t("localPickupDesc", "Este produto não usa frete por transportadora. Combine a entrega ou retirada diretamente com o vendedor antes de pagar.")}
-              </p>
-            </div>
-          ) : shipping?.exceeded_limits ? (
-            <div className="mt-8 rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-200">
-                <AlertTriangle className="h-4 w-4" aria-hidden /> {t("exceededLimitsTitle", "Excedeu o limite das transportadoras")}
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {shipping.exceeded_reasons?.includes("weight")
-                  ? t("exceededWeight", "Este produto pesa mais que o aceito por SEDEX/PAC/Jadlog (carga pesada). ")
-                  : t("exceededSize", "As dimensões deste produto passam do limite aceito por SEDEX/PAC/Jadlog. ")}
-                {t("exceededLimitsCta", "Combine retirada ou frete dedicado direto com o vendedor.")}
-              </p>
-            </div>
-          ) : (
-          /* Frete */
-          <div className="mt-8 rounded-2xl border border-border bg-card/40 p-4">
+          {/* SÓ RETIRADA (mig 264): a Loja voltou sem frete. Quem compra paga
+              aqui e combina a retirada com o vendedor na conversa que abre
+              sozinha depois do pagamento. */}
+          <div className="mt-8 border-2 border-[#0B0B0D] bg-[#F2B705]/15 p-4">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
-              <Truck className="h-4 w-4" aria-hidden /> {t("calculateShippingTitle", "Calcular frete")}
+              <Store className="h-4 w-4" aria-hidden /> {t("localPickupTitle", "Retirada combinada com o vendedor")}
             </h2>
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="00000-000"
-                value={cepInput}
-                onChange={(e) => setCepInput(maskCep(e.target.value))}
-                onKeyDown={(e) => { if (e.key === "Enter") calcShipping() }}
-                className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-                maxLength={9}
-              />
-              <button
-                type="button"
-                onClick={calcShipping}
-                disabled={shippingState === "loading"}
-                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
-              >
-                {shippingState === "loading" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : t("calculateButton", "Calcular")}
-              </button>
-            </div>
-            {shippingError && (
-              <p className="mt-2 text-xs text-rose-400">{shippingError}</p>
-            )}
-
-            {shippingState === "loaded" && shipping && (
-              <div className="mt-4">
-                {shipping.destination_address && (
-                  <p className="mb-3 flex items-center gap-1 text-xs text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5" aria-hidden />
-                    {shipping.destination_address.localidade}/{shipping.destination_address.uf}
-                  </p>
-                )}
-                {shipping.options.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">{t("noShippingOptions", "Nenhuma opção de frete disponível para este CEP.")}</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {shipping.options.map((opt) => {
-                      const id = String(opt.service_id)
-                      const selected = id === selectedShippingId
-                      return (
-                        <li key={id}>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedShippingId(id)}
-                            className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition ${
-                              selected ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground/40"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <input type="radio" readOnly checked={selected} className="accent-primary" />
-                              <div>
-                                <p className="font-semibold">{opt.carrier} · {opt.service_name}</p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  {opt.delivery_days_min && opt.delivery_days_max
-                                    ? t("deliveryRange", "Entrega em {min}–{max} dias úteis")
-                                        .replace("{min}", String(opt.delivery_days_min))
-                                        .replace("{max}", String(opt.delivery_days_max))
-                                    : t("deliveryToConfirm", "Prazo a confirmar")}
-                                </p>
-                              </div>
-                            </div>
-                            <span className="font-semibold tabular-nums">{formatBRL(opt.price_cents, locale)}</span>
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </div>
-            )}
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t(
+                "pickupOnlyDesc",
+                "Sem frete: você paga pela Freelandoo e, assim que o pagamento cair, abrimos uma conversa com o vendedor para combinar onde e quando retirar.",
+              )}
+            </p>
           </div>
-          )}
 
-          {(product.delivery_mode === "local_pickup" || shipping?.exceeded_limits) ? (
-            <Link
-              href={`/mensagens?with=${encodeURIComponent(profileId)}`}
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-            >
-              <MessageCircle className="h-4 w-4" aria-hidden />
-              {t("talkToSeller", "Falar com vendedor")}
-            </Link>
-          ) : (
           <button
             type="button"
             onClick={() => setBuyOpen(true)}
-            disabled={outOfStock || !selectedOption}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={outOfStock}
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-6 py-3 text-sm font-bold uppercase tracking-wider text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ShoppingCart className="h-4 w-4" aria-hidden />
             {outOfStock
               ? t("outOfStock", "Esgotado")
-              : selectedOption
-                ? t("buyWithTotal", "Comprar — {total}").replace("{total}", formatBRL(product.price_amount + selectedOption.price_cents, locale))
-                : t("selectShippingButton", "Selecione o frete")}
+              : t("buyWithTotal", "Comprar — {total}").replace("{total}", formatBRL(buyerPrice, locale))}
           </button>
-          )}
+          <Link
+            href={`/mensagens?with=${encodeURIComponent(profileId)}`}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] px-6 py-3 text-sm font-semibold transition hover:bg-[#0B0B0D]/5"
+          >
+            <MessageCircle className="h-4 w-4" aria-hidden />
+            {t("talkToSeller", "Falar com vendedor")}
+          </Link>
         </div>
       </div>
 
-      {selectedOption && shipping && (
-        <BuyProductDialog
-          open={buyOpen}
-          onClose={() => setBuyOpen(false)}
-          product={product}
-          shipping={selectedOption}
-          destinationZipcode={shipping.destination_zipcode}
-          destinationAddress={shipping.destination_address}
-        />
-      )}
+      <BuyProductDialog
+        open={buyOpen}
+        onClose={() => setBuyOpen(false)}
+        product={{ ...product, price_amount: buyerPrice }}
+      />
     </main>
   )
 }

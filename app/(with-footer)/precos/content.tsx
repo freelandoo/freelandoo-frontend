@@ -26,7 +26,7 @@ const noCommission = [
 
 const faqs = [
   { q: "A Freelandoo cobra comissão?", a: "Não. A Freelandoo não cobra comissão sobre serviços fechados diretamente entre clientes e profissionais." },
-  { q: "O valor é mensal ou recorrente?", a: "Não. A ativação do perfil profissional custa R$ 300 em pagamento único." },
+  { q: "O valor é mensal ou recorrente?", a: "Não. Seu primeiro perfil é grátis; cada perfil adicional — inclusive pet e carro — custa R$ 9,99 em pagamento único." },
   { q: "Posso solicitar reembolso?", a: "Sim. O reembolso integral pode ser solicitado em até 7 dias corridos após o pagamento." },
   { q: "O pagamento ativa meu perfil automaticamente?", a: "A ativação depende da confirmação do pagamento. Após aprovação, o perfil pode ficar ativo conforme as regras da plataforma." },
   { q: "Tenho garantia de clientes?", a: "Não. A Freelandoo aumenta sua exposição, mas não garante contratação." },
@@ -94,11 +94,11 @@ export function PrecosContent() {
           </h2>
           <div className="max-w-md mx-auto bg-[#1D1810] border border-[#F2B705]/20 rounded-2xl p-8 shadow-[0_0_60px_rgba(242,196,9,0.08)]" data-reveal>
             <div className="text-center mb-8">
-              <div className="font-semibold text-[#F5F1E8] mb-1">{t("plan.name", "Perfil profissional ativado")}</div>
-              <div className="text-5xl font-bold text-[#F2B705] mt-4 mb-1">R$ 300</div>
+              <div className="font-semibold text-[#F5F1E8] mb-1">{t("plan.name", "Perfil adicional")}</div>
+              <div className="text-5xl font-bold text-[#F2B705] mt-4 mb-1">R$ 9,99</div>
               <div className="text-sm text-[#9A938A]">{t("plan.payment", "pagamento único")}</div>
               <p className="mt-4 text-sm text-[#9A938A] leading-relaxed">
-                {t("plan.description", "Mantenha seu perfil ativo na plataforma e apareça na vitrine pública da Freelandoo.")}
+                {t("plan.description", "Seu primeiro perfil é grátis. Cada perfil a mais — inclusive pet e carro — custa R$ 9,99, uma vez só.")}
               </p>
             </div>
             <div className="space-y-3 mb-8" data-stagger>

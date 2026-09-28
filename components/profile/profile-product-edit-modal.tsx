@@ -47,6 +47,10 @@ import {
   validateVideoFile,
 } from "@/lib/media/media-validation"
 
+// SÓ RETIRADA (mig 264): a Loja voltou sem frete. O caminho de envio fica
+// escrito (volta trocando esta constante, junto do PICKUP_ONLY do backend).
+const SHIPPING_ENABLED = false
+
 export interface ProfileProduct {
   id_profile_product: number
   id_profile: string
@@ -249,7 +253,7 @@ export function ProfileProductEditModal({
     id_product_category: "" as string,
     affiliates_allowed: false,
     affiliate_percent: null as number | null,
-    delivery_mode: "shipping" as "shipping" | "local_pickup",
+    delivery_mode: "local_pickup" as "shipping" | "local_pickup",
   })
   const [attrs, setAttrs] = useState<ProductAttributes>({})
   const [saving, setSaving] = useState(false)
@@ -314,7 +318,7 @@ export function ProfileProductEditModal({
       id_product_category: "",
       affiliates_allowed: false,
       affiliate_percent: null,
-      delivery_mode: "shipping",
+      delivery_mode: "local_pickup",
     })
     setAttrs({})
     setForceCustomBox(false)
@@ -343,7 +347,8 @@ export function ProfileProductEditModal({
       id_product_category: product.id_product_category != null ? String(product.id_product_category) : "",
       affiliates_allowed: product.affiliates_allowed ?? false,
       affiliate_percent: product.affiliate_percent ?? null,
-      delivery_mode: product.delivery_mode === "local_pickup" ? "local_pickup" : "shipping",
+      // SÓ RETIRADA (mig 264): o backend grava local_pickup de qualquer jeito.
+      delivery_mode: SHIPPING_ENABLED && product.delivery_mode === "shipping" ? "shipping" : "local_pickup",
     })
     setAttrs(product.attributes && typeof product.attributes === "object" ? product.attributes : {})
     setForceCustomBox(
@@ -981,6 +986,7 @@ export function ProfileProductEditModal({
                   active={form.delivery_mode === "local_pickup"}
                   onClick={() => setForm((f) => ({ ...f, delivery_mode: "local_pickup" }))}
                 />
+                {SHIPPING_ENABLED && (
                 <OptionChip
                   label={t("shipWithFreight", "📦 Enviar com frete")}
                   active={form.delivery_mode === "shipping"}
@@ -992,11 +998,12 @@ export function ProfileProductEditModal({
                     }
                   }}
                 />
+                )}
               </div>
 
               {form.delivery_mode === "local_pickup" ? (
                 <div className="rounded-lg border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3 text-xs text-[#5b554b]">
-                  {t("noCarrierFreightInfo", "Sem frete por transportadora. O comprador vai ver o botão \"Falar com vendedor\" no produto, que abre uma conversa direta com você no Mensagens.")}
+                  {t("pickupOnlyInfo", "Toda venda na Loja é retirada com você, sem frete. O comprador paga pela Freelandoo e, assim que o pagamento cai, abrimos uma conversa entre vocês para combinar onde e quando retirar.")}
                 </div>
               ) : (
                 <>

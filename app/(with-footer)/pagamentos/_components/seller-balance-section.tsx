@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Loader2, Store, Clock, CheckCircle2, RotateCcw, Printer, Truck, AlertTriangle } from "lucide-react"
+import Link from "next/link"
+import { Loader2, Store, Clock, CheckCircle2, RotateCcw, Printer, Truck, AlertTriangle, MessageCircle, PackageCheck } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 type TFn = (key: string, fallback?: string) => string
@@ -21,6 +22,8 @@ interface BalanceItem {
   reverted_at: string | null
   product_name: string
   order_status: string
+  /** Retirada (mig 264) não tem etiqueta: o vendedor marca quando o comprador buscou. */
+  delivery_mode?: "shipping" | "local_pickup" | null
   order_total_cents: number
   buyer_name: string | null
   order_created_at: string
@@ -72,6 +75,29 @@ export function SellerBalanceSection() {
   const [summary, setSummary] = useState<BalanceSummary | null>(null)
   const [state, setState] = useState<"loading" | "loaded" | "hidden" | "error">("loading")
   const [labelBusy, setLabelBusy] = useState<number | null>(null)
+  const [pickupBusy, setPickupBusy] = useState<number | null>(null)
+
+  async function markPickedUp(id_order: number) {
+    const token = getToken()
+    if (!token) return
+    setPickupBusy(id_order)
+    try {
+      const res = await fetch(`/api/me/orders/${id_order}/picked-up`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setItems((prev) => prev.map((it) => (it.id_order === id_order ? { ...it, order_status: "delivered" } : it)))
+      } else {
+        alert(d?.error || t("pickupMarkError", "Não foi possível marcar a retirada agora."))
+      }
+    } catch {
+      alert(t("pickupMarkError", "Não foi possível marcar a retirada agora."))
+    } finally {
+      setPickupBusy(null)
+    }
+  }
 
   async function openLabel(id_order: number) {
     const token = getToken()
@@ -141,7 +167,7 @@ export function SellerBalanceSection() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl border border-[#2A2218] bg-[#1D1810] p-5"
+      className="border border-[#2A2218] bg-[#1D1810] p-5"
     >
       <header className="mb-4 flex items-center gap-2">
         <Store className="h-4 w-4 text-[#F2B705]" aria-hidden />
@@ -168,7 +194,7 @@ export function SellerBalanceSection() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate text-sm font-medium text-[#F5F1E8]">{b.product_name}</p>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cfg.bg} ${cfg.border} ${cfg.color}`}>
+                  <span className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cfg.bg} ${cfg.border} ${cfg.color}`}>
                     <Icon className="h-3 w-3" aria-hidden /> {t(cfg.labelKey, cfg.label)}
                   </span>
                 </div>
@@ -196,12 +222,39 @@ export function SellerBalanceSection() {
                     <AlertTriangle className="h-3 w-3" aria-hidden /> {t("labelPending", "Etiqueta pendente")} · {b.label_purchase_error.slice(0, 80)}
                   </p>
                 )}
+                {b.delivery_mode === "local_pickup" ? (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {b.order_status === "delivered" ? (
+                    <span className="inline-flex items-center gap-1 border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-500">
+                      <PackageCheck className="h-3 w-3" aria-hidden /> {t("pickupDone", "Retirado")}
+                    </span>
+                  ) : b.order_status === "paid" ? (
+                    <button
+                      type="button"
+                      onClick={() => markPickedUp(b.id_order)}
+                      disabled={pickupBusy === b.id_order}
+                      className="inline-flex items-center gap-1 border border-[#F2B705]/40 bg-[#F2B705]/10 px-3 py-1 text-[11px] font-semibold text-[#F2B705] transition hover:bg-[#F2B705]/20 disabled:opacity-50"
+                    >
+                      {pickupBusy === b.id_order
+                        ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                        : <PackageCheck className="h-3 w-3" aria-hidden />}
+                      {t("pickupMark", "Marcar como retirado")}
+                    </button>
+                  ) : null}
+                  <Link
+                    href="/mensagens"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#9A938A] hover:text-[#F5F1E8]"
+                  >
+                    <MessageCircle className="h-3 w-3" aria-hidden /> {t("pickupChat", "Combinar retirada")}
+                  </Link>
+                </div>
+                ) : (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => openLabel(b.id_order)}
                     disabled={labelBusy === b.id_order}
-                    className="inline-flex items-center gap-1 rounded-full border border-[#F2B705]/40 bg-[#F2B705]/10 px-3 py-1 text-[11px] font-semibold text-[#F2B705] transition hover:bg-[#F2B705]/20 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 border border-[#F2B705]/40 bg-[#F2B705]/10 px-3 py-1 text-[11px] font-semibold text-[#F2B705] transition hover:bg-[#F2B705]/20 disabled:opacity-50"
                   >
                     {labelBusy === b.id_order
                       ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
@@ -214,11 +267,14 @@ export function SellerBalanceSection() {
                     </span>
                   )}
                 </div>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold tabular-nums text-[#F5F1E8]">{formatBRL(b.net_cents, locale)}</p>
                 <p className="text-[11px] text-[#9A938A]">{t("gross", "Bruto")} {formatBRL(b.gross_cents, locale)}</p>
-                <p className="text-[10px] text-[#9A938A]">({t("shipping", "frete")} {formatBRL(b.shipping_cents, locale)} {t("withheld", "retido")})</p>
+                {b.delivery_mode !== "local_pickup" && (
+                  <p className="text-[10px] text-[#9A938A]">({t("shipping", "frete")} {formatBRL(b.shipping_cents, locale)} {t("withheld", "retido")})</p>
+                )}
               </div>
             </li>
           )
@@ -245,7 +301,7 @@ function SummaryTile({
     muted:   "border-[#2A2218] bg-[#2A2218]/30 text-[#9A938A]",
   }[tone]
   return (
-    <div className={`rounded-xl border px-3 py-2 ${toneClass}`}>
+    <div className={`border px-3 py-2 ${toneClass}`}>
       <p className="text-[10px] font-semibold uppercase tracking-wide opacity-80">{label}</p>
       <p className="mt-1 text-base font-bold tabular-nums">{formatBRL(value, locale)}</p>
       <p className="text-[10px] opacity-70">{count} {count === 1 ? t("saleSingular", "venda") : t("salePlural", "vendas")}</p>
