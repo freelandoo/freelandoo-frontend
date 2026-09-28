@@ -93,6 +93,17 @@ export const DEFAULT_QUICK_PILLS: QuickKey[] = ["business", "wallet", "fitness",
  */
 export const QUICK_PILL_MAX = 4
 
+/**
+ * O OLHO (mig 270): quais pills o VISITANTE vê atrás da sua foto. Espelho de
+ * `PUBLIC_PILL_KEYS` no backend — quem aplica é a porta anônima
+ * `/public/users/:handle/spaces`, que nem devolve o espaço escondido. Carteira,
+ * condomínio, bairro e filhos não entram: são só do dono.
+ */
+export const PUBLIC_PILL_KEYS: QuickKey[] = ["business", "games", "pet", "car", "fitness"]
+
+/** Quem nunca mexeu no olho: só o negócio aparece para o público. */
+export const DEFAULT_PUBLIC_PILLS: QuickKey[] = ["business"]
+
 /** Quais chaves a conta PODE usar agora (flags do admin e posse). */
 export function useQuickAvailability(): Record<QuickKey, boolean> {
   // Hooks em consts separadas: `&&` inline deixaria a segunda chamada
@@ -125,6 +136,9 @@ export function useQuickAvailability(): Record<QuickKey, boolean> {
 const LS_KEY = "fl_quick_pills"
 const EVENT = "fl:quick-pills"
 let memo: QuickKey[] | null | undefined
+// O olho não precisa de cache local: ele só é lido pelo gerenciador, que
+// busca ao abrir.
+let publicMemo: QuickKey[] | undefined
 
 function readLocal(): QuickKey[] | null | undefined {
   try {
@@ -144,6 +158,11 @@ function writeLocal(v: QuickKey[] | null) {
   }
 }
 
+function sanitizePublic(v: unknown): QuickKey[] {
+  if (!Array.isArray(v)) return [...DEFAULT_PUBLIC_PILLS]
+  return PUBLIC_PILL_KEYS.filter((k) => v.includes(k))
+}
+
 function sanitize(v: unknown): QuickKey[] | null {
   if (!Array.isArray(v)) return null
   const out: QuickKey[] = []
@@ -161,9 +180,12 @@ function sanitize(v: unknown): QuickKey[] | null {
  */
 export function useQuickPills(): {
   pills: QuickKey[] | null
-  save: (next: QuickKey[]) => Promise<boolean>
+  /** O olho (mig 270), já resolvido: sem escolha = só business. */
+  publicPills: QuickKey[]
+  save: (next: QuickKey[], nextPublic?: QuickKey[]) => Promise<boolean>
 } {
   const [pills, setPills] = useState<QuickKey[] | null>(() => (memo === undefined ? null : memo))
+  const [publicPills, setPublicPills] = useState<QuickKey[]>(() => publicMemo ?? DEFAULT_PUBLIC_PILLS)
 
   useEffect(() => {
     if (memo === undefined) {
@@ -183,27 +205,33 @@ export function useQuickPills(): {
           memo = v
           writeLocal(v)
           setPills(v)
+          publicMemo = sanitizePublic(j.public_pills)
+          setPublicPills(publicMemo)
         })
         .catch(() => {})
     }
-    const onChange = () => setPills(memo === undefined ? null : memo)
+    const onChange = () => {
+      setPills(memo === undefined ? null : memo)
+      if (publicMemo) setPublicPills(publicMemo)
+    }
     window.addEventListener(EVENT, onChange)
     return () => window.removeEventListener(EVENT, onChange)
   }, [])
 
-  const save = useCallback(async (next: QuickKey[]) => {
+  const save = useCallback(async (next: QuickKey[], nextPublic?: QuickKey[]) => {
     const token = getToken()
     if (!token) return false
     try {
       const r = await fetch(`${getPublicBackendUrl()}/users/me/quick-pills`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ pills: next }),
+        body: JSON.stringify(nextPublic ? { pills: next, public_pills: nextPublic } : { pills: next }),
       })
       if (!r.ok) return false
       const j = await r.json()
       memo = sanitize(j.pills) ?? []
       writeLocal(memo)
+      if (j.public_pills !== undefined) publicMemo = sanitizePublic(j.public_pills)
       window.dispatchEvent(new Event(EVENT))
       return true
     } catch {
@@ -211,5 +239,5 @@ export function useQuickPills(): {
     }
   }, [])
 
-  return { pills, save }
+  return { pills, publicPills, save }
 }

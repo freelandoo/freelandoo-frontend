@@ -7,6 +7,8 @@ import {
   Building2,
   Car,
   Check,
+  Eye,
+  EyeOff,
   LayoutList,
   PawPrint,
   Signpost,
@@ -21,6 +23,7 @@ import { getToken } from "@/lib/auth"
 import { ExtraSpaceOffer, readExtraSpaceOffer, type ExtraSpaceOfferState } from "@/components/community/extra-space-offer"
 import {
   DEFAULT_QUICK_PILLS,
+  PUBLIC_PILL_KEYS,
   QUICK_ENTRIES,
   QUICK_ORDER,
   QUICK_PILL_MAX,
@@ -139,8 +142,11 @@ export function SpacesMenu({
   // `"pills"` é o gerenciador do acesso rápido (mig 260) — a única subtela.
   const [view, setView] = useState<"pills" | null>(null)
   const available = useQuickAvailability()
-  const { pills: chosenPills, save: savePills } = useQuickPills()
+  const { pills: chosenPills, publicPills, save: savePills } = useQuickPills()
   const [pillDraft, setPillDraft] = useState<QuickKey[]>([])
+  // O olho (mig 270): o que o VISITANTE vê. Independente da escolha do acesso
+  // rápido — um pill pode ficar atrás da SUA foto e escondido de quem visita.
+  const [publicDraft, setPublicDraft] = useState<QuickKey[]>([])
   const [savingPills, setSavingPills] = useState(false)
   const [pillsMsg, setPillsMsg] = useState<string | null>(null)
   const [creating, setCreating] = useState<"pet" | "car" | null>(null)
@@ -325,6 +331,7 @@ export function SpacesMenu({
 
   const openPillManager = () => {
     setPillDraft((chosenPills ?? DEFAULT_QUICK_PILLS).filter((k) => pillOptions.includes(k)))
+    setPublicDraft(publicPills)
     setPillsMsg(null)
     setView("pills")
   }
@@ -334,9 +341,14 @@ export function SpacesMenu({
     setPillDraft((d) => (d.includes(k) ? d.filter((x) => x !== k) : d.length >= QUICK_PILL_MAX ? d : [...d, k]))
   }
 
+  const togglePublic = (k: QuickKey) => {
+    setPillsMsg(null)
+    setPublicDraft((d) => (d.includes(k) ? d.filter((x) => x !== k) : [...d, k]))
+  }
+
   const submitPills = async () => {
     setSavingPills(true)
-    const ok = await savePills(pillDraft)
+    const ok = await savePills(pillDraft, publicDraft)
     setSavingPills(false)
     setPillsMsg(ok ? t("pillsSaved", "Acesso rápido salvo.") : t("pillsSaveError", "Não foi possível salvar."))
   }
@@ -370,29 +382,54 @@ export function SpacesMenu({
                 {t("managePillsHint", "Escolha até {max} para o acesso rápido atrás da sua foto.").replace(
                   "{max}",
                   String(QUICK_PILL_MAX),
-                )}
+                )}{" "}
+                {t("managePillsEyeHint", "O olho decide o que aparece para quem visita o seu perfil.")}
               </p>
               {pillOptions.map((k) => {
                 const e = QUICK_ENTRIES[k]
                 const on = pillDraft.includes(k)
                 const full = !on && pillDraft.length >= QUICK_PILL_MAX
+                const hasEye = PUBLIC_PILL_KEYS.includes(k)
+                const isPublic = publicDraft.includes(k)
+                const label = t(e.labelKey, e.fallback)
                 return (
-                  <button
-                    key={k}
-                    type="button"
-                    role="menuitemcheckbox"
-                    aria-checked={on}
-                    disabled={full}
-                    onClick={() => togglePill(k)}
-                    className={`${itemCls} disabled:opacity-40 ${on ? "" : "opacity-60"}`}
-                    style={swatchStyle(e)}
-                  >
-                    <e.icon className="h-4 w-4 shrink-0" />
-                    <span className="flex-1">{t(e.labelKey, e.fallback)}</span>
-                    <span className="grid h-4 w-4 place-items-center border-2 border-current">
-                      {on && <Check className="h-3 w-3" />}
-                    </span>
-                  </button>
+                  // Olho e seleção são IRMÃOS, não um dentro do outro: botão
+                  // dentro de botão não existe em HTML.
+                  <div key={k} className="mb-1 flex items-stretch gap-1 last:mb-0">
+                    <button
+                      type="button"
+                      role="menuitemcheckbox"
+                      aria-checked={on}
+                      disabled={full}
+                      onClick={() => togglePill(k)}
+                      className={`${itemCls} mb-0 flex-1 disabled:opacity-40 ${on ? "" : "opacity-60"}`}
+                      style={swatchStyle(e)}
+                    >
+                      <e.icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1">{label}</span>
+                      <span className="grid h-4 w-4 place-items-center border-2 border-current">
+                        {on && <Check className="h-3 w-3" />}
+                      </span>
+                    </button>
+                    {hasEye && (
+                      <button
+                        type="button"
+                        role="menuitemcheckbox"
+                        aria-checked={isPublic}
+                        onClick={() => togglePublic(k)}
+                        aria-label={(isPublic
+                          ? t("pillPublicOnAria", "{pill} aparece para quem visita. Esconder")
+                          : t("pillPublicOffAria", "{pill} está escondido de quem visita. Mostrar")
+                        ).replace("{pill}", label)}
+                        title={isPublic ? t("pillPublicOn", "Visível ao público") : t("pillPublicOff", "Só você vê")}
+                        className={`grid w-9 shrink-0 place-items-center border-2 border-[#0B0B0D] ${
+                          isPublic ? "bg-[#0B0B0D] text-[#F2B705]" : "bg-white text-[#6B6457] hover:bg-[#F2B705] hover:text-[#0B0B0D]"
+                        }`}
+                      >
+                        {isPublic ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </button>
+                    )}
+                  </div>
                 )
               })}
               <div className="mt-1 flex items-center justify-between gap-2 px-1">

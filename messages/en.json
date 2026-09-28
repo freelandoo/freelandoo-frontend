@@ -6404,7 +6404,14 @@
     "visitorBusinessAria": "Open {who}'s business",
     "visitorPetAria": "Open {who}'s pet",
     "visitorCarAria": "Open {who}'s car",
-    "visitorGamesAria": "Open {who}'s games"
+    "visitorGamesAria": "Open {who}'s games",
+    "managePillsEyeHint": "The eye decides what visitors to your profile can see.",
+    "pillPublicOn": "Visible to the public",
+    "pillPublicOff": "Only you see it",
+    "pillPublicOnAria": "{pill} is shown to visitors. Hide",
+    "pillPublicOffAria": "{pill} is hidden from visitors. Show",
+    "visitorFitness": "Fitness",
+    "visitorFitnessAria": "Open {who}'s gym"
   },
   "CommunitySite": {
     "modeEditing": "Editing",

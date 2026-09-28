@@ -34,6 +34,26 @@ const SPACES = {
   ],
   pillsSaved: ["Acesso rápido salvo.", "Quick access saved.", "Acceso rápido guardado."],
   pillsSaveError: ["Não foi possível salvar.", "Could not save.", "No se pudo guardar."],
+  // O olho (mig 270): o que o visitante vê atrás da foto.
+  managePillsEyeHint: [
+    "O olho decide o que aparece para quem visita o seu perfil.",
+    "The eye decides what visitors to your profile can see.",
+    "El ojo decide qué ven quienes visitan tu perfil.",
+  ],
+  pillPublicOn: ["Visível ao público", "Visible to the public", "Visible al público"],
+  pillPublicOff: ["Só você vê", "Only you see it", "Solo tú lo ves"],
+  pillPublicOnAria: [
+    "{pill} aparece para quem visita. Esconder",
+    "{pill} is shown to visitors. Hide",
+    "{pill} se muestra a los visitantes. Ocultar",
+  ],
+  pillPublicOffAria: [
+    "{pill} está escondido de quem visita. Mostrar",
+    "{pill} is hidden from visitors. Show",
+    "{pill} está oculto para los visitantes. Mostrar",
+  ],
+  visitorFitness: ["Fitness", "Fitness", "Fitness"],
+  visitorFitnessAria: ["Abrir a academia de {who}", "Open {who}'s gym", "Abrir el gimnasio de {who}"],
   saving: ["Salvando...", "Saving...", "Guardando..."],
   save: ["Salvar", "Save", "Guardar"],
   myPet: ["Meu pet", "My pet", "Mi mascota"],

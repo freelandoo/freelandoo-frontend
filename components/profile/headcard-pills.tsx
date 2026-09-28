@@ -425,19 +425,27 @@ export function HeadcardPills({
 }
 
 type VisitorSpace = { id_profile: string; display_name: string | null } | null
-type VisitorSpaces = { business: VisitorSpace; pet: VisitorSpace; car: VisitorSpace }
+type VisitorSpaces = {
+  business: VisitorSpace
+  pet: VisitorSpace
+  car: VisitorSpace
+  /** O olho do dono (mig 270) deixou o games dele público? */
+  games?: boolean
+  /** A academia dele, quando o olho do fitness está aberto. */
+  fitness?: { slug: string; display_name: string } | null
+}
 
 /**
  * OS PILLS DO VISITANTE — o que aparece atrás da foto de OUTRA pessoa.
  *
- * Decisão do Alex (2026-09-25): no perfil alheio o visitante vê Business,
- * Pet, Carro e Games DELA; Carteira, Fitness, condomínio, rua e filhos são só
- * do dono. É uma lista FECHADA de propósito — pill novo do dono NÃO aparece
- * para o visitante até alguém decidir que ele é público.
+ * Quem decide é o DONO, pelo olho do "Gerenciar pills" (mig 270): Business,
+ * Games, Pet, Carro e Fitness nascem escondidos, menos o Business. O filtro
+ * mora no BACKEND (`GET /public/users/:handle/spaces` nem devolve o espaço
+ * escondido); aqui só se desenha o que veio. Carteira, condomínio, rua e
+ * filhos nunca são públicos.
  *
- * Negócio, pet e carro só existem se a pessoa LIDERA um (a porta anônima
- * `GET /public/users/:handle/spaces` responde isso). Games sempre existe (a
- * plataforma é de todos) e abre o RECORTE dela: `/games?de=@handle`.
+ * Games abre o RECORTE da pessoa (`/games?de=@handle`); Fitness abre a
+ * academia dela — sem academia, não há pill.
  */
 export function VisitorHeadcardPills({
   handle,
@@ -451,6 +459,7 @@ export function VisitorHeadcardPills({
   const t = useTranslations("Account")
   const ts = useTranslations("Spaces")
   const gamesOn = useFeature("games")
+  const fitnessOn = useFeature("fitness_academias")
   const [spaces, setSpaces] = useState<VisitorSpaces | null>(null)
 
   useEffect(() => {
@@ -480,7 +489,9 @@ export function VisitorHeadcardPills({
       ts("visitorBusinessAria", "Abrir o negócio de {who}").replace("{who}", who),
       `/comunidades/${spaces.business.id_profile}`)
   }
-  if (gamesOn) {
+  // `=== true`: backend anterior à mig 270 não manda o campo, e na dúvida o
+  // games fica escondido — era exatamente o "games para todo mundo" a corrigir.
+  if (gamesOn && spaces?.games === true) {
     push("games", t("gamesPill", "Games"),
       ts("visitorGamesAria", "Abrir o games de {who}").replace("{who}", who),
       `/games?de=${encodeURIComponent(handle)}`)
@@ -494,6 +505,11 @@ export function VisitorHeadcardPills({
     push("car", ts("visitorCar", "Carro"),
       ts("visitorCarAria", "Abrir o carro de {who}").replace("{who}", who),
       `/comunidades/${spaces.car.id_profile}`)
+  }
+  if (fitnessOn && spaces?.fitness?.slug) {
+    push("fitness", ts("visitorFitness", "Fitness"),
+      ts("visitorFitnessAria", "Abrir a academia de {who}").replace("{who}", who),
+      `/academias/${encodeURIComponent(spaces.fitness.slug)}`)
   }
 
   return (

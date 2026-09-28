@@ -5818,7 +5818,14 @@
     "visitorBusinessAria": "Abrir o negócio de {who}",
     "visitorPetAria": "Abrir o pet de {who}",
     "visitorCarAria": "Abrir o carro de {who}",
-    "visitorGamesAria": "Abrir o games de {who}"
+    "visitorGamesAria": "Abrir o games de {who}",
+    "managePillsEyeHint": "O olho decide o que aparece para quem visita o seu perfil.",
+    "pillPublicOn": "Visível ao público",
+    "pillPublicOff": "Só você vê",
+    "pillPublicOnAria": "{pill} aparece para quem visita. Esconder",
+    "pillPublicOffAria": "{pill} está escondido de quem visita. Mostrar",
+    "visitorFitness": "Fitness",
+    "visitorFitnessAria": "Abrir a academia de {who}"
   },
   "CommunitySite": {
     "modeEditing": "Editando",
