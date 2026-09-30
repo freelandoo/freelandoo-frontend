@@ -3,9 +3,11 @@
 // `wallet-ui.tsx`, do `community-ui.ts` e do `academy-ui.ts`). Tela nova de
 // fitness importa daqui.
 //
-// ⚠️ A PALETA É A DE GAMES EM LARANJA (Alex, 2026-09-30): cada roxo do
-// `games-ui.ts` girado para laranja com a mesma luz e saturação. Antes era
-// "cinza + laranja escuro" (2026-09-11); o que segue sobre os papéis vale igual.
+// ⚠️ A PALETA É A DE GAMES EM LARANJA (Alex, 2026-09-30): fundo quase PRETO e
+// laranja VIVO nas luzes, botões e linhas — do jeito que o games faz com o roxo.
+// ⚠️ NÃO escurecer o laranja para fazer superfície: laranja escuro vira MARROM
+// (foi a 1ª tentativa, recusada). O contraponto do ciano do games é o rosa-
+// vermelho (#E11D48) nas luzes do fundo.
 // O CINZA é a estrutura e mora na pele `.fl-fitness` (globals.css), que
 // reescreve as classes de superfície; o LARANJA ESCURO é o acento e mora
 // AQUI, porque estas constantes entram em `style` inline (boxShadow, barra de
@@ -22,18 +24,18 @@
 // por superfície faria procurar duas vezes. Mexeu aqui, mexe lá.
 
 /** Laranja escuro de AÇÃO/superfície — aceita tinta clara por cima. */
-export const EMBER = "#D96F28"
+export const EMBER = "#EA580C"
 /** O mais fundo da família — hover de botão, sombra. */
-export const EMBER_DEEP = "#B65D21"
+export const EMBER_DEEP = "#C2410C"
 /** Laranja de TINTA e TRAÇO — o único da família legível sobre o cinza. */
-export const EMBER_GLOW = "#FAB78B"
+export const EMBER_GLOW = "#FB923C"
 /**
  * ⚠️ NOME LEGADO: era o amarelo #F2B705 e hoje é o laranja escuro de ação.
  * O nome ficou porque é importado em ~40 lugares e um rename seria só ruído —
  * mesma disciplina de `tb_machine` e `tb_games_presence` no backend.
  * Ele é sempre FUNDO, SOMBRA ou BARRA; para cor de texto use `EMBER_GLOW`.
  */
-export const GOLD = "#B4470F"
+export const GOLD = "#EA580C"
 export const CYAN = "#16c8e8"
 export const INK = "#0B0B0D"
 
@@ -45,14 +47,14 @@ export const INK = "#0B0B0D"
  * A brasa é laranja escura; a grade é cinza (era laranja).
  */
 export const BANNER_LAYERS = [
-  "radial-gradient(70% 120% at 18% 0%, rgba(217, 111, 40, 0.40), transparent 65%)",
-  "radial-gradient(60% 120% at 88% 10%, rgba(144, 31, 14, 0.28), transparent 68%)",
-  "repeating-linear-gradient(to right, rgba(250, 183, 139, 0.10) 0 1px, transparent 1px 40px)",
-  "repeating-linear-gradient(to bottom, rgba(250, 183, 139, 0.07) 0 1px, transparent 1px 40px)",
+  "radial-gradient(70% 120% at 18% 0%, rgba(234, 88, 12, 0.48), transparent 65%)",
+  "radial-gradient(60% 120% at 88% 10%, rgba(225, 29, 72, 0.30), transparent 68%)",
+  "repeating-linear-gradient(to right, rgba(251, 146, 60, 0.10) 0 1px, transparent 1px 40px)",
+  "repeating-linear-gradient(to bottom, rgba(251, 146, 60, 0.07) 0 1px, transparent 1px 40px)",
 ].join(",")
 
 /** A sombra do headcard: brasa laranja escura + a sombra dura em cinza. */
-export const HEADCARD_SHADOW = "0 0 30px rgba(246, 154, 92, 0.25), 8px 8px 0 0 rgba(112, 66, 36, 0.9)"
+export const HEADCARD_SHADOW = "0 0 30px rgba(249, 115, 22, 0.28), 8px 8px 0 0 rgba(124, 45, 18, 0.9)"
 
 /**
  * As cores dos quatro pills atrás da foto (pedido do Alex, 2026-09-10).
@@ -75,7 +77,7 @@ export const INNER = "border-2 border-[#0B0B0D] bg-[#1D1810]"
 // ⚠️ O botão de ação: fundo laranja escuro exige TINTA CLARA. Era amarelo com
 // texto quase-preto; mantido assim, o rótulo sumiria dentro do próprio botão.
 export const BTN_GOLD =
-  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#B4470F] text-[#F7F1EC] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
+  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#EA580C] text-[#F7F1EC] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
 export const BTN_DARK =
   "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] text-[#F5F1E8] font-extrabold uppercase tracking-[0.12em] hover:bg-[#241d12] disabled:opacity-50"
 export const H_SECTION = "flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]"

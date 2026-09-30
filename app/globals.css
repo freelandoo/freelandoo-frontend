@@ -852,61 +852,66 @@ body.camera-active { overflow: hidden; }
    ============================================================================ */
 
 /* Superfícies ------------------------------------------------------------- */
-.fl-fitness .bg-\[\#0b0804\]      { background-color: #160c06; }
-.fl-fitness .bg-\[\#0b0804\]\/80  { background-color: rgba(22, 12, 6, 0.8); }
-.fl-fitness .bg-\[\#0F0C08\]      { background-color: rgba(32, 18, 8, 0.86); }
-.fl-fitness .bg-\[\#15120E\]      { background-color: rgba(51, 29, 15, 0.78); }
-.fl-fitness .bg-\[\#15120E\]\/95  { background-color: rgba(51, 29, 15, 0.95); }
-.fl-fitness .bg-\[\#15120E\]\/60  { background-color: rgba(51, 29, 15, 0.6); }
-.fl-fitness .bg-\[\#15120E\]\/40  { background-color: rgba(51, 29, 15, 0.4); }
-.fl-fitness .bg-\[\#1D1810\]      { background-color: rgba(76, 44, 23, 0.72); }
-.fl-fitness .bg-\[\#1D1810\]\/60  { background-color: rgba(76, 44, 23, 0.5); }
-.fl-fitness .bg-\[\#241d12\]      { background-color: rgba(106, 62, 33, 0.9); }
+/* Quase preto com um toque quente, como o #0a0616 do games é quase preto com
+   um toque roxo. ⚠️ Laranja escurecido vira MARROM — a superfície tem que ser
+   ESCURA E POUCO SATURADA; a cor forte fica nas luzes, linhas e botões. */
+.fl-fitness .bg-\[\#0b0804\]      { background-color: #0c0503; }
+.fl-fitness .bg-\[\#0b0804\]\/80  { background-color: rgba(12, 5, 3, 0.8); }
+.fl-fitness .bg-\[\#0F0C08\]      { background-color: rgba(18, 7, 4, 0.86); }
+.fl-fitness .bg-\[\#15120E\]      { background-color: rgba(28, 10, 6, 0.8); }
+.fl-fitness .bg-\[\#15120E\]\/95  { background-color: rgba(28, 10, 6, 0.95); }
+.fl-fitness .bg-\[\#15120E\]\/60  { background-color: rgba(28, 10, 6, 0.6); }
+.fl-fitness .bg-\[\#15120E\]\/40  { background-color: rgba(28, 10, 6, 0.4); }
+.fl-fitness .bg-\[\#1D1810\]      { background-color: rgba(52, 17, 8, 0.72); }
+.fl-fitness .bg-\[\#1D1810\]\/60  { background-color: rgba(52, 17, 8, 0.5); }
+.fl-fitness .bg-\[\#241d12\]      { background-color: rgba(84, 26, 10, 0.9); }
 
 /* Tinta ------------------------------------------------------------------- */
-.fl-fitness .text-\[\#F5F1E8\]     { color: #FFF1E7; }
-.fl-fitness .text-\[\#F5F1E8\]\/90 { color: rgba(255, 241, 231, 0.9); }
-.fl-fitness .text-\[\#F5F1E8\]\/85 { color: rgba(255, 241, 231, 0.85); }
-.fl-fitness .text-\[\#F5F1E8\]\/80 { color: rgba(255, 241, 231, 0.8); }
-.fl-fitness .text-\[\#F5F1E8\]\/70 { color: rgba(255, 241, 231, 0.7); }
-.fl-fitness .text-\[\#F5F1E8\]\/40 { color: rgba(255, 241, 231, 0.4); }
-.fl-fitness .text-\[\#F5F1E8\]\/30 { color: rgba(255, 241, 231, 0.3); }
-.fl-fitness .text-\[\#9A938A\]     { color: #D4AB8F; }
-.fl-fitness .text-\[\#9A938A\]\/70 { color: rgba(212, 171, 143, 0.7); }
+.fl-fitness .text-\[\#F5F1E8\]     { color: #FFF1E6; }
+.fl-fitness .text-\[\#F5F1E8\]\/90 { color: rgba(255, 241, 230, 0.9); }
+.fl-fitness .text-\[\#F5F1E8\]\/85 { color: rgba(255, 241, 230, 0.85); }
+.fl-fitness .text-\[\#F5F1E8\]\/80 { color: rgba(255, 241, 230, 0.8); }
+.fl-fitness .text-\[\#F5F1E8\]\/70 { color: rgba(255, 241, 230, 0.7); }
+.fl-fitness .text-\[\#F5F1E8\]\/40 { color: rgba(255, 241, 230, 0.4); }
+.fl-fitness .text-\[\#F5F1E8\]\/30 { color: rgba(255, 241, 230, 0.3); }
+.fl-fitness .text-\[\#9A938A\]     { color: #F4A574; }
+.fl-fitness .text-\[\#9A938A\]\/70 { color: rgba(244, 165, 116, 0.7); }
 
 /* Linhas ------------------------------------------------------------------ */
-.fl-fitness .border-\[\#0B0B0D\]      { border-color: #704224; }
-.fl-fitness .border-\[\#F5F1E8\]\/30  { border-color: rgba(250, 183, 139, 0.45); }
-.fl-fitness .border-\[\#F5F1E8\]\/25  { border-color: rgba(250, 183, 139, 0.4); }
-.fl-fitness .border-\[\#F5F1E8\]\/20  { border-color: rgba(250, 183, 139, 0.34); }
-.fl-fitness .border-\[\#F5F1E8\]\/15  { border-color: rgba(250, 183, 139, 0.28); }
-.fl-fitness .border-\[\#F5F1E8\]\/12  { border-color: rgba(250, 183, 139, 0.24); }
-.fl-fitness .border-\[\#F5F1E8\]\/10  { border-color: rgba(250, 183, 139, 0.2); }
-.fl-fitness .border-\[\#F5F1E8\]\/60  { border-color: rgba(250, 183, 139, 0.6); }
+.fl-fitness .border-\[\#0B0B0D\]      { border-color: #9A3412; }
+.fl-fitness .border-\[\#F5F1E8\]\/30  { border-color: rgba(251, 146, 60, 0.45); }
+.fl-fitness .border-\[\#F5F1E8\]\/25  { border-color: rgba(251, 146, 60, 0.4); }
+.fl-fitness .border-\[\#F5F1E8\]\/20  { border-color: rgba(251, 146, 60, 0.34); }
+.fl-fitness .border-\[\#F5F1E8\]\/15  { border-color: rgba(251, 146, 60, 0.28); }
+.fl-fitness .border-\[\#F5F1E8\]\/12  { border-color: rgba(251, 146, 60, 0.24); }
+.fl-fitness .border-\[\#F5F1E8\]\/10  { border-color: rgba(251, 146, 60, 0.2); }
+.fl-fitness .border-\[\#F5F1E8\]\/60  { border-color: rgba(251, 146, 60, 0.6); }
 
 .fl-fitness .fl-display {
   letter-spacing: 0.02em;
 }
 .fl-fitness .fl-display.text-\[\#F5F1E8\],
 .fl-fitness .fl-display.text-\[\#F1EDE2\] {
-  text-shadow: 0 0 24px rgba(246, 154, 92, 0.45);
+  text-shadow: 0 0 24px rgba(249, 115, 22, 0.55);
 }
 
 /* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
 .fl-fitness .-rotate-2,
 .fl-fitness .-rotate-3 { transform: none; }
 
-/* O FUNDO DE FITNESS — o `.fl-games-bg` em laranja: as mesmas três luzes e a
-   mesma grade. ⚠️ NÃO ANIMAR (ver a nota da `.fl-finance-bg`). Já está na
-   lista de camadas promovidas, logo acima. */
+/* O FUNDO DE FITNESS — o `.fl-games-bg` em laranja: quase preto, luz laranja
+   viva no alto à esquerda, ROSA-VERMELHO à direita (onde o games põe o ciano
+   — é o contraponto quente que combina com o laranja) e brasa embaixo.
+   ⚠️ NÃO ANIMAR (ver a nota da `.fl-finance-bg`). Está na lista de camadas
+   promovidas, logo acima. */
 .fl-fitness-bg {
-  background-color: #160c06;
+  background-color: #0c0503;
   background-image:
-    radial-gradient(60% 45% at 22% 18%, rgba(217, 111, 40, 0.42), transparent 70%),
-    radial-gradient(50% 40% at 82% 30%, rgba(144, 31, 14, 0.28), transparent 72%),
-    radial-gradient(80% 55% at 50% 108%, rgba(246, 154, 92, 0.30), transparent 70%),
-    repeating-linear-gradient(to right, rgba(250, 183, 139, 0.07) 0 1px, transparent 1px 64px),
-    repeating-linear-gradient(to bottom, rgba(250, 183, 139, 0.05) 0 1px, transparent 1px 64px);
+    radial-gradient(60% 45% at 22% 18%, rgba(234, 88, 12, 0.45), transparent 70%),
+    radial-gradient(50% 40% at 82% 30%, rgba(225, 29, 72, 0.30), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(249, 115, 22, 0.32), transparent 70%),
+    repeating-linear-gradient(to right, rgba(251, 146, 60, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(251, 146, 60, 0.05) 0 1px, transparent 1px 64px);
 }
 
 /* ============================================================================

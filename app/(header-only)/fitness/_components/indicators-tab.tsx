@@ -43,7 +43,7 @@ type Indicators = {
 // (paleta cinza + laranja escuro, 2026-09-11). Aqui ele é sempre traço, ícone,
 // ponto ou barra fina SOBRE o painel cinza — por isso é o laranja CLARO da
 // família (`EMBER_GLOW`), e não o escuro de fundo: o escuro sumiria no painel.
-const GOLD = "#E0813F"
+const GOLD = "#FB923C"
 // A escala do IMC é SEMÁFORO, não pele: ciano → verde → amarelo → laranja →
 // vermelho. "Sobrepeso" fica amarelo de propósito — em laranja ele encostaria
 // em "Obesidade I" (#ff8c2e) e os dois degraus deixariam de se distinguir.

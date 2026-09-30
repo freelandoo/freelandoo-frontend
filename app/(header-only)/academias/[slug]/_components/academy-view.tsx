@@ -486,10 +486,10 @@ export function AcademyView({ slug }: { slug: string }) {
             <div
               aria-hidden
               className="absolute inset-0"
-              style={{ background: "linear-gradient(180deg, transparent 40%, #160c06cc 100%)" }}
+              style={{ background: "linear-gradient(180deg, transparent 40%, #0c0503cc 100%)" }}
             />
             {/* O CHIP diz o que a academia é; o chip da cidade vem embaixo. */}
-            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#B4470F] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F7F1EC]">
+            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#EA580C] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F7F1EC]">
               {t("chipAcademy", "Academia parceira")}
             </span>
             {academy.cidade && (
@@ -563,7 +563,7 @@ export function AcademyView({ slug }: { slug: string }) {
                 title={t("messageCta", "Enviar mensagem")}
                 className={`${BTN_DARK} h-9 w-9 shrink-0`}
               >
-                <MessageCircle className="h-4 w-4 text-[#E0813F]" />
+                <MessageCircle className="h-4 w-4 text-[#FB923C]" />
               </Link>
             )}
             {/* Publicar no mural: mesmo "+" amarelo das comunidades, no
@@ -597,7 +597,7 @@ export function AcademyView({ slug }: { slug: string }) {
         <section className="mt-6">
           {ms ? (
             <div className={`${PANEL} p-4`}>
-              <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#E0813F]">
+              <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#FB923C]">
                 <BadgeCheck className="h-4 w-4" />
                 {statusMeta ? t(statusMeta[0], statusMeta[1]) : ms.membership_status}
               </p>
@@ -646,7 +646,7 @@ export function AcademyView({ slug }: { slug: string }) {
           onOpen={() => void loadRanking()}
         >
           <div className={`${PANEL} flex items-center gap-3 px-4 py-3`}>
-            <Users className="h-4 w-4 shrink-0 text-[#E0813F]" />
+            <Users className="h-4 w-4 shrink-0 text-[#FB923C]" />
             <span className="flex-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9A938A]">
               {t("membersSuffix", "vinculados")}
             </span>
@@ -656,7 +656,7 @@ export function AcademyView({ slug }: { slug: string }) {
           {/* Professores — a lista que era um modal do "+". */}
           <div className={`${PANEL} p-4`}>
             <h2 className={`${H_SECTION} border-b-2 border-[#0B0B0D] pb-2`}>
-              <GraduationCap className="h-4 w-4 text-[#E0813F]" />
+              <GraduationCap className="h-4 w-4 text-[#FB923C]" />
               {t("professorsTitle", "Professores")}
             </h2>
             {academy.professors.length === 0 ? (
@@ -671,7 +671,7 @@ export function AcademyView({ slug }: { slug: string }) {
                     {prof.id_profile && (
                       <Link
                         href={`/freelancer/${prof.id_profile}`}
-                        className="shrink-0 border-2 border-[#0B0B0D] bg-[#B4470F] px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#F7F1EC] hover:-translate-y-0.5"
+                        className="shrink-0 border-2 border-[#0B0B0D] bg-[#EA580C] px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#F7F1EC] hover:-translate-y-0.5"
                       >
                         {t("professorViewProfile", "Ver perfil")}
                       </Link>
@@ -687,7 +687,7 @@ export function AcademyView({ slug }: { slug: string }) {
           {topOfMonth && (
             <div className={`${PANEL} p-4`}>
               <h2 className={`${H_SECTION} border-b-2 border-[#0B0B0D] pb-2`}>
-                <Star className="h-4 w-4 text-[#E0813F]" />
+                <Star className="h-4 w-4 text-[#FB923C]" />
                 {t("spotlightTitle", "Destaque")}
               </h2>
               <div className="mt-3 flex items-center gap-3">
@@ -712,7 +712,7 @@ export function AcademyView({ slug }: { slug: string }) {
               métricas) continuam na página do ranking. */}
           <div className={`${PANEL} p-4`}>
             <h2 className={`${H_SECTION} border-b-2 border-[#0B0B0D] pb-2`}>
-              <Trophy className="h-4 w-4 text-[#E0813F]" />
+              <Trophy className="h-4 w-4 text-[#FB923C]" />
               {t("rankingTitle", "Ranking do mês")}
             </h2>
             {rankingState === "loading" ? (
@@ -737,7 +737,7 @@ export function AcademyView({ slug }: { slug: string }) {
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">
                       {m.nome || m.username || "—"}
                     </span>
-                    <span className="shrink-0 text-[11px] font-extrabold text-[#E0813F]">
+                    <span className="shrink-0 text-[11px] font-extrabold text-[#FB923C]">
                       {t("rankFreqDays", "{n} dias").replace("{n}", String(m.freq_days))}
                     </span>
                   </li>
@@ -754,7 +754,7 @@ export function AcademyView({ slug }: { slug: string }) {
         {academy.is_owner && (
           <section className={`${PANEL} mt-6 p-4`}>
             <h2 className={H_SECTION}>
-              <PlugZap className="h-4 w-4 text-[#E0813F]" />
+              <PlugZap className="h-4 w-4 text-[#FB923C]" />
               {t("ownerPanelTitle", "Gestão — conexão com o software da academia")}
             </h2>
             <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
