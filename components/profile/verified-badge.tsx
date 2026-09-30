@@ -3,7 +3,7 @@
 // O SELO VERIFICADO (mig 268) — peça única de todas as telas que mostram o nome
 // de alguém (cabeçalho do perfil, card do feed, vitrine, ranking).
 //
-// Desenho (Alex, 2026-09-28): uma ROSETA em 3D (azul, verde e branco), SEM fundo, com um
+// Desenho (Alex, 2026-09-28): uma ROSETA em 3D (rosa, laranja e amarelo — Alex, 2026-09-30), SEM fundo, com um
 // check branco grande saltando para fora dela. O que brilha é a PRÓPRIA forma
 // — o mesmo gradiente cônico girando do anel de "em alta" (`.fl-heat-spin`,
 // que já respeita prefers-reduced-motion), agora preenchendo a roseta inteira
@@ -22,9 +22,9 @@ import type { CSSProperties } from "react"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
-// Azul, verde e branco (Alex, 2026-09-28) — o brilho que gira pela roseta.
+// Rosa e laranja, com o brilho em amarelo (Alex, 2026-09-30; era azul/verde/branco).
 const GLOW =
-  "conic-gradient(from 0deg, #1E6FD9, #38BDF8 55deg, #FFFFFF 80deg, #4ADE80 115deg, #16A34A 170deg, #0E4FA8 250deg, #1E6FD9 360deg)"
+  "conic-gradient(from 0deg, #DB2777, #F472B6 55deg, #FDE047 80deg, #FB923C 115deg, #EA580C 170deg, #BE185D 250deg, #DB2777 360deg)"
 
 // A roseta (12 ondas), no mesmo viewBox 24×24 do lucide.
 const ROSETTE =
@@ -70,7 +70,7 @@ export function VerifiedBadge({ size = "md", className }: VerifiedBadgeProps) {
           className="absolute inset-0 block"
           style={{
             background:
-              "radial-gradient(circle at 30% 26%, rgba(255,255,255,0.55), rgba(255,255,255,0) 46%), radial-gradient(circle at 74% 80%, rgba(5,30,70,0.45), rgba(5,30,70,0) 55%)",
+              "radial-gradient(circle at 30% 26%, rgba(253,224,71,0.5), rgba(253,224,71,0) 46%), radial-gradient(circle at 74% 80%, rgba(80,10,30,0.45), rgba(80,10,30,0) 55%)",
           }}
         />
       </span>
@@ -80,7 +80,7 @@ export function VerifiedBadge({ size = "md", className }: VerifiedBadgeProps) {
         aria-hidden
         viewBox="0 0 24 24"
         className="pointer-events-none absolute -right-[18%] -top-[26%] h-[108%] w-[108%]"
-        style={{ filter: "drop-shadow(1px 1.5px 0 rgba(5,30,70,0.55))" }}
+        style={{ filter: "drop-shadow(1px 1.5px 0 rgba(80,10,30,0.55))" }}
       >
         <path
           d="M5 12.5l4.6 4.6L20 6.5"

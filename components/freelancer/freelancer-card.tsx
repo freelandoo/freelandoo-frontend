@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { CheckCircle2, Crown, Instagram, Youtube, Plus } from "lucide-react"
+import { Crown, Instagram, Youtube, Plus } from "lucide-react"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { useRouter } from "next/navigation"
 import { MACHINES } from "@/components/home/machines/tokens"
@@ -242,10 +242,6 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
               profileId={creator.id_profile}
               accentColor={colors?.accent}
               iconClassName="h-4 w-4"
-            />
-            <CheckCircle2
-              className="h-4 w-4 shrink-0"
-              style={{ color: colors?.accent || "var(--primary)" }}
             />
           </div>
           {creator.bio && (

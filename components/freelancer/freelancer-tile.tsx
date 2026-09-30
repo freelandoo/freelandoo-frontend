@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { CheckCircle2, Crown } from "lucide-react"
+import { Crown } from "lucide-react"
 import { MACHINES } from "@/components/home/machines/tokens"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { VerifiedBadge } from "@/components/profile/verified-badge"
@@ -162,7 +162,6 @@ export function FreelancerTile({ creator, featured = false }: FreelancerTileProp
             accentColor={accent}
             iconClassName="h-3.5 w-3.5"
           />
-          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" style={{ color: accent }} />
         </div>
         <p
           className="line-clamp-1 text-[11px] font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]"
