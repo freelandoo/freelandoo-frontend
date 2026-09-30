@@ -14,7 +14,7 @@ import { FitnessShell } from "../_components/fitness-shell"
 import { FitnessHeadcard } from "../_components/fitness-headcard"
 import { FitnessProposalsGate } from "../_components/proposals-modal"
 import { WorkoutTodayCard } from "../_components/workout-today-card"
-import { BTN_DARK, PANEL, PILL, shiftDate, todayIso } from "../_components/fitness-ui"
+import { BAR_SOLID, BTN_ON_BAR, PILL, shiftDate, todayIso } from "../_components/fitness-ui"
 
 export default function FitnessWorkoutPage() {
   const t = useTranslations("Fitness")
@@ -33,19 +33,19 @@ export default function FitnessWorkoutPage() {
       <FitnessHeadcard perfil={perfil} title={t("workoutTitle", "Treino")} backHref="/fitness" active="workout" />
 
       <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
-        <div className={`${PANEL} flex items-center justify-between gap-2 px-2 py-2`}>
-          <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_DARK} p-2`} aria-label={t("prevDay", "Dia anterior")}>
+        <div className={`${BAR_SOLID} flex items-center justify-between gap-2 px-2 py-2`}>
+          <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_ON_BAR} p-2`} aria-label={t("prevDay", "Dia anterior")}>
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 text-center">
-            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#FB923C]">{fmtDay}</p>
+            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">{fmtDay}</p>
             {!isToday && (
-              <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F5F1E8]">
+              <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#0B0B0D]/70 hover:text-[#0B0B0D]">
                 {t("today", "Hoje")} →
               </button>
             )}
           </div>
-          <button onClick={() => setDate((d) => shiftDate(d, 1))} className={`${BTN_DARK} p-2`} aria-label={t("nextDay", "Próximo dia")}>
+          <button onClick={() => setDate((d) => shiftDate(d, 1))} className={`${BTN_ON_BAR} p-2`} aria-label={t("nextDay", "Próximo dia")}>
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>

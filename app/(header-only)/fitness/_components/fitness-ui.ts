@@ -80,6 +80,13 @@ export const BTN_GOLD =
   "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#EA580C] text-[#F7F1EC] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
 export const BTN_DARK =
   "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] text-[#F5F1E8] font-extrabold uppercase tracking-[0.12em] hover:bg-[#241d12] disabled:opacity-50"
+// ⚠️ A FAIXA SÓLIDA (Alex, 2026-09-30: "como em games, com uma cor sólida"):
+// barra de data e cabeçalho de card são LARANJA CHEIO com tinta preta, como a
+// barra roxa "Publicar no games". Faixa nova do ambiente usa estas duas.
+export const BAR_SOLID = "border-2 border-[#0B0B0D] bg-[#EA580C] text-[#0B0B0D]"
+// Botão em cima da faixa: preto com o ícone laranja claro.
+export const BTN_ON_BAR =
+  "inline-flex items-center justify-center border-2 border-[#0B0B0D] bg-[#0B0B0D] text-[#FB923C] hover:bg-[#1c0a06] disabled:opacity-50"
 export const H_SECTION = "flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]"
 export const INPUT =
   "w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F5F1E8] outline-none placeholder:text-[#9A938A]"

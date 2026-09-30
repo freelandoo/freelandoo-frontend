@@ -38,7 +38,9 @@ import { FitnessShell } from "./fitness-shell"
 import { FitnessHeadcard } from "./fitness-headcard"
 import { FitnessProposalsGate } from "./proposals-modal"
 import {
+  BAR_SOLID,
   BTN_DARK,
+  BTN_ON_BAR,
   BTN_GOLD,
   CYAN,
   EMBER,
@@ -492,19 +494,19 @@ export function FitnessView() {
 
       <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
         {/* A DATA: o dia que a tela mostra. */}
-        <div className={`${PANEL} flex items-center justify-between gap-2 px-2 py-2`}>
-          <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_DARK} p-2`} aria-label={t("prevDay", "Dia anterior")}>
+        <div className={`${BAR_SOLID} flex items-center justify-between gap-2 px-2 py-2`}>
+          <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_ON_BAR} p-2`} aria-label={t("prevDay", "Dia anterior")}>
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 text-center">
-            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#FB923C]">{fmtDay}</p>
+            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">{fmtDay}</p>
             {!isToday && (
-              <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F5F1E8]">
+              <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#0B0B0D]/70 hover:text-[#0B0B0D]">
                 {t("today", "Hoje")} →
               </button>
             )}
           </div>
-          <button onClick={() => setDate((d) => shiftDate(d, 1))} className={`${BTN_DARK} p-2`} aria-label={t("nextDay", "Próximo dia")}>
+          <button onClick={() => setDate((d) => shiftDate(d, 1))} className={`${BTN_ON_BAR} p-2`} aria-label={t("nextDay", "Próximo dia")}>
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -580,10 +582,10 @@ export function FitnessView() {
                   const mealKcal = logs.reduce((acc, l) => acc + l.kcal, 0)
                   return (
                     <div key={meal.id} className={PANEL}>
-                      <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2">
+                      <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#EA580C] px-3 py-2 text-[#0B0B0D]">
                         <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]">{t(meal.key, meal.fallback)}</p>
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-bold text-[#9A938A]">{Math.round(mealKcal)} kcal</span>
+                          <span className="text-[11px] font-bold text-[#0B0B0D]/70">{Math.round(mealKcal)} kcal</span>
                           <button
                             onClick={() => {
                               setSearchOpen(meal.id)
@@ -593,7 +595,7 @@ export function FitnessView() {
                               setPicked(null)
                               setGrams("100")
                             }}
-                            className="border-2 border-[#0B0B0D] bg-[#EA580C] p-1 text-[#F7F1EC]"
+                            className="border-2 border-[#0B0B0D] bg-[#0B0B0D] p-1 text-[#FB923C] hover:bg-[#1c0a06]"
                             aria-label={t("addFood", "Adicionar alimento")}
                           >
                             <Plus className="h-3.5 w-3.5" />
