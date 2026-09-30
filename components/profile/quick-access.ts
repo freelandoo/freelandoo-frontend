@@ -60,8 +60,9 @@ const INK = "#0B0B0D"
 export const QUICK_ENTRIES: Record<QuickKey, QuickEntry> = {
   business: { key: "business", icon: Star, labelKey: "qpBusiness", fallback: "Business", bg: "#BE185D", bgHover: "#9F1239", fg: CREAM },
   wallet: { key: "wallet", icon: DollarSign, labelKey: "qpWallet", fallback: "Carteira", bg: "#15803D", bgHover: "#166F36", fg: CREAM },
-  // O laranja escuro do ambiente fitness (`EMBER` em fitness-ui.ts).
-  fitness: { key: "fitness", icon: Dumbbell, labelKey: "qpFitness", fallback: "Fitness", bg: "#9A3412", bgHover: "#7C2D12", fg: CREAM },
+  // Laranja vivo e claro (Alex, 2026-09-30) — mais intenso que o `EMBER` do
+  // ambiente, para não sumir ao lado do vinho da pilha.
+  fitness: { key: "fitness", icon: Dumbbell, labelKey: "qpFitness", fallback: "Fitness", bg: "#F97316", bgHover: "#EA580C", fg: CREAM },
   games: { key: "games", icon: Gamepad2, labelKey: "qpGames", fallback: "Games", bg: "#6D28D9", bgHover: "#5B21B6", fg: CREAM },
   // Bege claro com tinta marrom — a MESMA cor da linha "Meu pet" no menu da
   // foto (Alex, 2026-09-27: pill e linha do menu na mesma cor). Um lugar só.
