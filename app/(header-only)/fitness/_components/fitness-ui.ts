@@ -3,8 +3,9 @@
 // `wallet-ui.tsx`, do `community-ui.ts` e do `academy-ui.ts`). Tela nova de
 // fitness importa daqui.
 //
-// ⚠️ A PALETA É CINZA + LARANJA ESCURO (pedido do Alex, 2026-09-11: "troque a
-// paleta de cores da academia, todas as páginas, para cinza e laranja escuro").
+// ⚠️ A PALETA É A DE GAMES EM LARANJA (Alex, 2026-09-30): cada roxo do
+// `games-ui.ts` girado para laranja com a mesma luz e saturação. Antes era
+// "cinza + laranja escuro" (2026-09-11); o que segue sobre os papéis vale igual.
 // O CINZA é a estrutura e mora na pele `.fl-fitness` (globals.css), que
 // reescreve as classes de superfície; o LARANJA ESCURO é o acento e mora
 // AQUI, porque estas constantes entram em `style` inline (boxShadow, barra de
@@ -21,11 +22,11 @@
 // por superfície faria procurar duas vezes. Mexeu aqui, mexe lá.
 
 /** Laranja escuro de AÇÃO/superfície — aceita tinta clara por cima. */
-export const EMBER = "#9A3412"
+export const EMBER = "#D96F28"
 /** O mais fundo da família — hover de botão, sombra. */
-export const EMBER_DEEP = "#7C2D12"
+export const EMBER_DEEP = "#B65D21"
 /** Laranja de TINTA e TRAÇO — o único da família legível sobre o cinza. */
-export const EMBER_GLOW = "#D9773B"
+export const EMBER_GLOW = "#FAB78B"
 /**
  * ⚠️ NOME LEGADO: era o amarelo #F2B705 e hoje é o laranja escuro de ação.
  * O nome ficou porque é importado em ~40 lugares e um rename seria só ruído —
@@ -44,14 +45,14 @@ export const INK = "#0B0B0D"
  * A brasa é laranja escura; a grade é cinza (era laranja).
  */
 export const BANNER_LAYERS = [
-  "radial-gradient(70% 120% at 18% 0%, rgba(154, 52, 18, 0.52), transparent 65%)",
-  "radial-gradient(60% 120% at 88% 10%, rgba(124, 45, 18, 0.30), transparent 68%)",
-  "repeating-linear-gradient(to right, rgba(198, 192, 184, 0.08) 0 1px, transparent 1px 40px)",
-  "repeating-linear-gradient(to bottom, rgba(198, 192, 184, 0.06) 0 1px, transparent 1px 40px)",
+  "radial-gradient(70% 120% at 18% 0%, rgba(217, 111, 40, 0.40), transparent 65%)",
+  "radial-gradient(60% 120% at 88% 10%, rgba(144, 31, 14, 0.28), transparent 68%)",
+  "repeating-linear-gradient(to right, rgba(250, 183, 139, 0.10) 0 1px, transparent 1px 40px)",
+  "repeating-linear-gradient(to bottom, rgba(250, 183, 139, 0.07) 0 1px, transparent 1px 40px)",
 ].join(",")
 
 /** A sombra do headcard: brasa laranja escura + a sombra dura em cinza. */
-export const HEADCARD_SHADOW = "0 0 30px rgba(154, 52, 18, 0.32), 8px 8px 0 0 rgba(66, 62, 58, 0.95)"
+export const HEADCARD_SHADOW = "0 0 30px rgba(246, 154, 92, 0.25), 8px 8px 0 0 rgba(112, 66, 36, 0.9)"
 
 /**
  * As cores dos quatro pills atrás da foto (pedido do Alex, 2026-09-10).
@@ -61,7 +62,7 @@ export const HEADCARD_SHADOW = "0 0 30px rgba(154, 52, 18, 0.32), 8px 8px 0 0 rg
  * Só o primeiro acompanha o ambiente, porque ele É o laranja do ambiente.
  */
 export const PILL = {
-  academy: { bg: "#9A3412", hover: "#7C2D12" }, // laranja escuro — Minha academia
+  academy: { bg: "#F97316", hover: "#EA580C" }, // laranja escuro — Minha academia
   workout: { bg: "#DB2777", hover: "#BE185D" }, // rosa — Treino
   history: { bg: "#0D9488", hover: "#0F766E" }, // turquesa (teal) — Histórico
   indicators: { bg: "#0891B2", hover: "#0E7490" }, // turquesa (cyan) — Indicadores

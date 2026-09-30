@@ -486,7 +486,7 @@ export function AcademyView({ slug }: { slug: string }) {
             <div
               aria-hidden
               className="absolute inset-0"
-              style={{ background: "linear-gradient(180deg, transparent 40%, #141312cc 100%)" }}
+              style={{ background: "linear-gradient(180deg, transparent 40%, #160c06cc 100%)" }}
             />
             {/* O CHIP diz o que a academia é; o chip da cidade vem embaixo. */}
             <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#B4470F] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F7F1EC]">
