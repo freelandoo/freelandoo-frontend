@@ -119,7 +119,7 @@ function AcademiesBody() {
               className="absolute inset-0"
               style={{ background: "linear-gradient(180deg, transparent 40%, #0c0503cc 100%)" }}
             />
-            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#EA580C] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F7F1EC]">
+            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
               {t("eyebrow", "Fitness · Freelandoo")}
             </span>
             <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">

@@ -156,7 +156,7 @@ export default function FitnessHistoryPage() {
               </div>
 
               <div className={PANEL}>
-                <div className="border-b-2 border-[#0B0B0D] bg-[#EA580C] px-3 py-2 text-[#0B0B0D]">
+                <div className="border-b-2 border-[#0B0B0D] bg-[#FF8C2B] px-3 py-2 text-[#0B0B0D]">
                   <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]">{t("historyMeasuresTitle", "Medições")}</p>
                 </div>
                 {measurements.length === 0 ? (

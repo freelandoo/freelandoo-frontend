@@ -582,7 +582,7 @@ export function FitnessView() {
                   const mealKcal = logs.reduce((acc, l) => acc + l.kcal, 0)
                   return (
                     <div key={meal.id} className={PANEL}>
-                      <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#EA580C] px-3 py-2 text-[#0B0B0D]">
+                      <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#FF8C2B] px-3 py-2 text-[#0B0B0D]">
                         <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]">{t(meal.key, meal.fallback)}</p>
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] font-bold text-[#0B0B0D]/70">{Math.round(mealKcal)} kcal</span>
@@ -786,7 +786,7 @@ export function FitnessView() {
                       </div>
                     )}
                     {camActive && (
-                      <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-3/4 -translate-x-1/2 -translate-y-1/2 border-2 border-[#EA580C]" />
+                      <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-3/4 -translate-x-1/2 -translate-y-1/2 border-2 border-[#FF8C2B]" />
                     )}
                   </div>
                   <form

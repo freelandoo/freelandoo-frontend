@@ -187,7 +187,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
               onClick={() => setTab(id)}
               className={cn(
                 "border-2 border-[#0B0B0D] px-3 py-1 text-[11px] font-extrabold uppercase",
-                tab === id ? "bg-[#EA580C] text-[#F7F1EC]" : "bg-[#1D1810] text-[#9A938A]"
+                tab === id ? "bg-[#FF8C2B] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"
               )}
             >
               {t(key, fallback)}
@@ -248,7 +248,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
                     )}
                     <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#F1EDE2]">{m.nome || m.username || "—"}</span>
                     <div className="hidden h-2 w-32 border-2 border-[#0B0B0D] bg-[#1D1810] sm:block">
-                      <div className="h-full bg-[#EA580C]" style={{ width: `${pct}%` }} />
+                      <div className="h-full bg-[#FF8C2B]" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="w-16 shrink-0 text-right fl-display text-xl text-[#FB923C]">
                       {v}
@@ -265,7 +265,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
       {/* Modal metas (dono) */}
       {goalsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setGoalsOpen(false)}>
-          <div className="fl-sharp w-full max-w-sm border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #EA580C" }} onClick={(e) => e.stopPropagation()}>
+          <div className="fl-sharp w-full max-w-sm border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #FF8C2B" }} onClick={(e) => e.stopPropagation()}>
             <h3 className="border-b-2 border-[#0B0B0D] pb-2 text-lg font-black uppercase">{t("goalsModalTitle", "Metas mensais")}</h3>
             <label className="mt-4 block">
               <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("goalFreqLabel", "Frequência (dias no mês)")}</span>
@@ -299,7 +299,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
                 <button
                   onClick={() => void saveGoals({ start_season: true })}
                   disabled={savingGoals}
-                  className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#EA580C] px-3 py-1.5 text-[11px] font-extrabold uppercase text-[#F7F1EC] disabled:opacity-50"
+                  className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-3 py-1.5 text-[11px] font-extrabold uppercase text-[#0B0B0D] disabled:opacity-50"
                 >
                   {savingGoals ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                   {season?.active ? t("seasonRestart", "Reiniciar temporada") : t("seasonStart", "Iniciar temporada")}
@@ -328,7 +328,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
               <button
                 onClick={() => void saveGoals()}
                 disabled={savingGoals}
-                className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#EA580C] px-4 py-2 text-xs font-extrabold uppercase text-[#F7F1EC] disabled:opacity-50"
+                className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-4 py-2 text-xs font-extrabold uppercase text-[#0B0B0D] disabled:opacity-50"
               >
                 {savingGoals && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t("goalsSubmit", "Salvar metas")}
@@ -360,7 +360,7 @@ function PodiumCol({
   const order = rank === 1 ? "order-2" : rank === 2 ? "order-1" : "order-3"
   const width = isFirst ? "w-[40%]" : "w-[30%]"
   const pedestalH = isFirst ? "h-14 md:h-36" : rank === 2 ? "h-10 md:h-24" : "h-8 md:h-16"
-  const frame = isFirst ? "#EA580C" : "#0B0B0D"
+  const frame = isFirst ? "#FF8C2B" : "#0B0B0D"
   const unitWord =
     unit === "freq" ? t("daysWord", "dias") : unit === "posts" ? t("rankTabPosts", "Posts") : t("rankTabShares", "Compart.")
 
@@ -369,14 +369,14 @@ function PodiumCol({
       <div className="relative w-full">
         {isFirst && (
           <>
-            <div className="absolute -inset-6 -z-10 rounded-full blur-3xl" style={{ background: "#EA580C", opacity: 0.3 }} />
+            <div className="absolute -inset-6 -z-10 rounded-full blur-3xl" style={{ background: "#FF8C2B", opacity: 0.3 }} />
             <DoodleCrown className="absolute -top-7 left-1/2 z-20 h-8 w-12 -translate-x-1/2 text-[#FB923C] md:-top-11 md:h-11 md:w-16" />
           </>
         )}
         <span
           className={cn(
             "absolute -left-1.5 -top-1.5 z-20 flex h-6 w-6 rotate-[-6deg] items-center justify-center fl-display text-base md:h-12 md:w-12 md:text-3xl",
-            isFirst ? "bg-[#EA580C] text-[#F7F1EC]" : "bg-[#0B0B0D] text-[#F1EDE2]"
+            isFirst ? "bg-[#FF8C2B] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]"
           )}
         >
           {rank}
@@ -418,8 +418,8 @@ function PodiumCol({
 
       {/* Pedestal */}
       <div className={cn("relative mt-3 flex w-[78%] items-center justify-center md:w-full", pedestalH)}>
-        <div className={cn("absolute inset-0", isFirst ? "bg-[#EA580C]" : "bg-[#0B0B0D]")} style={{ clipPath: "polygon(6% 0, 94% 0, 100% 100%, 0 100%)" }} />
-        <span className={cn("fl-display relative z-10 text-2xl md:text-7xl", isFirst ? "text-[#F7F1EC]/85" : "text-[#F1EDE2]/85")}>{rank}</span>
+        <div className={cn("absolute inset-0", isFirst ? "bg-[#FF8C2B]" : "bg-[#0B0B0D]")} style={{ clipPath: "polygon(6% 0, 94% 0, 100% 100%, 0 100%)" }} />
+        <span className={cn("fl-display relative z-10 text-2xl md:text-7xl", isFirst ? "text-[#0B0B0D]/85" : "text-[#F1EDE2]/85")}>{rank}</span>
       </div>
     </div>
   )

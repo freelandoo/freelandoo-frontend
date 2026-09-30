@@ -24,7 +24,7 @@
 // por superfície faria procurar duas vezes. Mexeu aqui, mexe lá.
 
 /** Laranja escuro de AÇÃO/superfície — aceita tinta clara por cima. */
-export const EMBER = "#EA580C"
+export const EMBER = "#FF8C2B"
 /** O mais fundo da família — hover de botão, sombra. */
 export const EMBER_DEEP = "#C2410C"
 /** Laranja de TINTA e TRAÇO — o único da família legível sobre o cinza. */
@@ -35,7 +35,7 @@ export const EMBER_GLOW = "#FB923C"
  * mesma disciplina de `tb_machine` e `tb_games_presence` no backend.
  * Ele é sempre FUNDO, SOMBRA ou BARRA; para cor de texto use `EMBER_GLOW`.
  */
-export const GOLD = "#EA580C"
+export const GOLD = "#FF8C2B"
 export const CYAN = "#16c8e8"
 export const INK = "#0B0B0D"
 
@@ -64,7 +64,7 @@ export const HEADCARD_SHADOW = "0 0 30px rgba(249, 115, 22, 0.28), 8px 8px 0 0 r
  * Só o primeiro acompanha o ambiente, porque ele É o laranja do ambiente.
  */
 export const PILL = {
-  academy: { bg: "#F97316", hover: "#EA580C" }, // laranja escuro — Minha academia
+  academy: { bg: "#F97316", hover: "#FF8C2B" }, // laranja escuro — Minha academia
   workout: { bg: "#DB2777", hover: "#BE185D" }, // rosa — Treino
   history: { bg: "#0D9488", hover: "#0F766E" }, // turquesa (teal) — Histórico
   indicators: { bg: "#0891B2", hover: "#0E7490" }, // turquesa (cyan) — Indicadores
@@ -77,13 +77,13 @@ export const INNER = "border-2 border-[#0B0B0D] bg-[#1D1810]"
 // ⚠️ O botão de ação: fundo laranja escuro exige TINTA CLARA. Era amarelo com
 // texto quase-preto; mantido assim, o rótulo sumiria dentro do próprio botão.
 export const BTN_GOLD =
-  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#EA580C] text-[#F7F1EC] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
+  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#FF8C2B] text-[#0B0B0D] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
 export const BTN_DARK =
   "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] text-[#F5F1E8] font-extrabold uppercase tracking-[0.12em] hover:bg-[#241d12] disabled:opacity-50"
 // ⚠️ A FAIXA SÓLIDA (Alex, 2026-09-30: "como em games, com uma cor sólida"):
 // barra de data e cabeçalho de card são LARANJA CHEIO com tinta preta, como a
 // barra roxa "Publicar no games". Faixa nova do ambiente usa estas duas.
-export const BAR_SOLID = "border-2 border-[#0B0B0D] bg-[#EA580C] text-[#0B0B0D]"
+export const BAR_SOLID = "border-2 border-[#0B0B0D] bg-[#FF8C2B] text-[#0B0B0D]"
 // Botão em cima da faixa: preto com o ícone laranja claro.
 export const BTN_ON_BAR =
   "inline-flex items-center justify-center border-2 border-[#0B0B0D] bg-[#0B0B0D] text-[#FB923C] hover:bg-[#1c0a06] disabled:opacity-50"

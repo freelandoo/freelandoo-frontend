@@ -152,7 +152,7 @@ export function FitnessHeadcard({
               style={{ background: "linear-gradient(180deg, transparent 40%, #0c0503cc 100%)" }}
             />
             {/* O CHIP diz o AMBIENTE, o título diz a SALA. */}
-            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#EA580C] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F7F1EC]">
+            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
               {tr("platformTitle", "Fitness")}
             </span>
             {/* O selo do canto oposto: a assinatura do ambiente, sem número. */}

@@ -188,7 +188,7 @@ export function FitnessProposalsGate({ onApplied }: { onApplied: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #EA580C" }}>
+      <div className="fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #FF8C2B" }}>
         <div className="border-b-2 border-[#0B0B0D] p-4">
           <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FB923C]">
             <ClipboardCheck className="h-4 w-4" /> {t("propEyebrow", "Alteração do professor")}
@@ -235,7 +235,7 @@ export function FitnessProposalsGate({ onApplied }: { onApplied: () => void }) {
             <button
               onClick={() => void resolve("accept")}
               disabled={resolving !== null}
-              className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#EA580C] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F7F1EC] disabled:opacity-50"
+              className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] disabled:opacity-50"
             >
               {resolving === "accept" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {t("propAccept", "Confirmar")}

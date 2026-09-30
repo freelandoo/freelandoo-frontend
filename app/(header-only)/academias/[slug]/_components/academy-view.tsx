@@ -489,7 +489,7 @@ export function AcademyView({ slug }: { slug: string }) {
               style={{ background: "linear-gradient(180deg, transparent 40%, #0c0503cc 100%)" }}
             />
             {/* O CHIP diz o que a academia é; o chip da cidade vem embaixo. */}
-            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#EA580C] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F7F1EC]">
+            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
               {t("chipAcademy", "Academia parceira")}
             </span>
             {academy.cidade && (
@@ -671,7 +671,7 @@ export function AcademyView({ slug }: { slug: string }) {
                     {prof.id_profile && (
                       <Link
                         href={`/freelancer/${prof.id_profile}`}
-                        className="shrink-0 border-2 border-[#0B0B0D] bg-[#EA580C] px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#F7F1EC] hover:-translate-y-0.5"
+                        className="shrink-0 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] hover:-translate-y-0.5"
                       >
                         {t("professorViewProfile", "Ver perfil")}
                       </Link>

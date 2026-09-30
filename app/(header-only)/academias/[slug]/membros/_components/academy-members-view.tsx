@@ -184,7 +184,7 @@ export function AcademyMembersView({ slug }: { slug: string }) {
 
   const tabBtn = (active: boolean) =>
     `relative inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] ${
-      active ? "bg-[#EA580C] text-[#F7F1EC]" : "bg-[#1D1810] text-[#F5F1E8] hover:bg-[#241d12]"
+      active ? "bg-[#FF8C2B] text-[#0B0B0D]" : "bg-[#1D1810] text-[#F5F1E8] hover:bg-[#241d12]"
     }`
 
   return (
@@ -272,7 +272,7 @@ export function AcademyMembersView({ slug }: { slug: string }) {
                           <td className="py-2 pr-3 font-bold">
                             {m.nome || m.username || m.member_name || "—"}
                             {m.is_professor && (
-                              <span className="ml-2 border-2 border-[#0B0B0D] bg-[#EA580C] px-1 text-[10px] font-extrabold uppercase text-[#F7F1EC]">
+                              <span className="ml-2 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-1 text-[10px] font-extrabold uppercase text-[#0B0B0D]">
                                 {t("professorBadge", "Prof")}
                               </span>
                             )}
@@ -293,7 +293,7 @@ export function AcademyMembersView({ slug }: { slug: string }) {
                             <td className="py-2">
                               <button
                                 onClick={() => void toggleProfessor(m)}
-                                className={`border-2 border-[#0B0B0D] px-2 py-1 text-[10px] font-extrabold uppercase ${m.is_professor ? "bg-[#1D1810] text-[#F5F1E8]" : "bg-[#EA580C] text-[#F7F1EC]"}`}
+                                className={`border-2 border-[#0B0B0D] px-2 py-1 text-[10px] font-extrabold uppercase ${m.is_professor ? "bg-[#1D1810] text-[#F5F1E8]" : "bg-[#FF8C2B] text-[#0B0B0D]"}`}
                               >
                                 {m.is_professor ? t("demoteCta", "Remover") : t("promoteCta", "Promover")}
                               </button>

@@ -195,7 +195,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
           onClick={() => openEditor(null)}
           aria-label={t("newPlan", "Nova ficha")}
           title={t("newPlan", "Nova ficha")}
-          className="flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#EA580C] px-2 py-0.5 text-[10px] font-black uppercase text-[#F7F1EC]"
+          className="flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-2 py-0.5 text-[10px] font-black uppercase text-[#0B0B0D]"
         >
           <Plus className="h-3.5 w-3.5" /> {t("newPlan", "Nova ficha")}
         </button>
@@ -221,7 +221,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                 <button
                   key={p.id_plan}
                   onClick={() => setActive(i)}
-                  className={`border-2 border-[#0B0B0D] px-2 py-0.5 text-[10px] font-extrabold uppercase ${i === active ? "bg-[#EA580C] text-[#F7F1EC]" : "bg-[#1D1810] text-[#9A938A]"}`}
+                  className={`border-2 border-[#0B0B0D] px-2 py-0.5 text-[10px] font-extrabold uppercase ${i === active ? "bg-[#FF8C2B] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
                 >
                   {p.nome}
                 </button>
@@ -285,7 +285,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setExpanded(false)}>
           <div
             className="fl-sharp flex max-h-[92vh] w-full max-w-lg flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8]"
-            style={{ boxShadow: "8px 8px 0 0 #EA580C" }}
+            style={{ boxShadow: "8px 8px 0 0 #FF8C2B" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3 border-b-2 border-[#0B0B0D] p-5 pb-4">
@@ -335,7 +335,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                     <button
                       key={p.id_plan}
                       onClick={() => setActive(i)}
-                      className={`border-2 border-[#0B0B0D] px-2.5 py-1 text-[11px] font-extrabold uppercase ${i === active ? "bg-[#EA580C] text-[#F7F1EC]" : "bg-[#1D1810] text-[#9A938A]"}`}
+                      className={`border-2 border-[#0B0B0D] px-2.5 py-1 text-[11px] font-extrabold uppercase ${i === active ? "bg-[#FF8C2B] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
                     >
                       {p.nome}
                     </button>
@@ -356,7 +356,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                   </p>
                   <div className="mt-1 h-2 border border-[#0B0B0D] bg-[#1D1810]">
                     <div
-                      className={doneCount === totalCount && totalCount > 0 ? "h-full bg-[#22C55E]" : "h-full bg-[#EA580C]"}
+                      className={doneCount === totalCount && totalCount > 0 ? "h-full bg-[#22C55E]" : "h-full bg-[#FF8C2B]"}
                       style={{ width: totalCount > 0 ? `${(doneCount / totalCount) * 100}%` : "0%" }}
                     />
                   </div>
