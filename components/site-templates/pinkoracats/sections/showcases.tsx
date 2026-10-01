@@ -103,24 +103,6 @@ export function Hero({
   )
 }
 
-// ─── 03 STATEMENT ─────────────────────────────────────────────────────────
-
-export function Statement() {
-  return (
-    <section className="pk-statement" aria-label="Manifesto">
-      <p className="pk-statement__line" data-reveal="clip">
-        Not your
-      </p>
-      <p className="pk-statement__line pk-statement__line--hot" data-reveal="clip">
-        basic nails.
-      </p>
-      <p className="pk-statement__note" data-reveal="up">
-        Cada set é pensado como objeto: formato, acabamento e luz decididos antes da primeira camada.
-      </p>
-    </section>
-  )
-}
-
 // ─── 07 COLLECTION PORTALS ────────────────────────────────────────────────
 
 export function Portal({ links, c, index }: { links: TemplateLinks; c: Collection; index: number }) {

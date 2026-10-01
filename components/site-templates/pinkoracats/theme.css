@@ -169,7 +169,6 @@
 .tpl-pinkora .pk-display,
 .tpl-pinkora .pk-display span,
 .tpl-pinkora .pk-display em,
-.tpl-pinkora .pk-statement__line,
 .tpl-pinkora .pk-nav__logo,
 .tpl-pinkora .pk-nav__logo span,
 .tpl-pinkora .pk-orbit__name,
@@ -661,28 +660,6 @@
 }
 .tpl-pinkora .pk-orbit__price { font-size: 18px; font-weight: 600; }
 .tpl-pinkora .pk-orbit__arrows { display: flex; gap: 6px; }
-
-/* ─── 03 STATEMENT ──────────────────────────────────────────────────────── */
-
-.tpl-pinkora .pk-statement { padding: 120px var(--gutter); text-align: center; }
-.tpl-pinkora .pk-statement__line {
-  margin: 0;
-  font-family: var(--pk-font-display);
-  font-weight: 800;
-  font-size: clamp(2.8rem, 11vw, 11rem);
-  line-height: 0.86;
-  letter-spacing: -0.05em;
-  text-transform: uppercase;
-}
-.tpl-pinkora .pk-statement__line--hot {
-  font-family: var(--pk-font-serif);
-  font-style: italic;
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: -0.03em;
-  color: var(--pk-hot);
-}
-.tpl-pinkora .pk-statement__note { max-width: 46ch; margin: 28px auto 0; color: var(--pk-mute); }
 
 /* ─── LEQUE DE FORMATOS (no herói) ──────────────────────────────────────── */
 
