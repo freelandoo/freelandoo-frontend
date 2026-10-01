@@ -60,9 +60,6 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
               {drop.name}
             </a>
           ) : null}
-          <a className="pk-nav__link" href={`${links.home}#colecoes`}>
-            Coleções
-          </a>
           <SearchButton />
         </nav>
         <div className="pk-nav__right">

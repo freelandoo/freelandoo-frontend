@@ -131,25 +131,6 @@ export function Portal({ links, c, index }: { links: TemplateLinks; c: Collectio
   )
 }
 
-export function CollectionPortals({ links, collections }: { links: TemplateLinks; collections: Collection[] }) {
-  return (
-    <section id="colecoes" className="pk-portals" aria-labelledby="pk-portals-title">
-      <div className="pk-section-head">
-        <p className="pk-eyebrow">03 — Coleções</p>
-        <h2 id="pk-portals-title" className="pk-display pk-display--md">
-          Enter a<br />
-          collection
-        </h2>
-      </div>
-      <div className="pk-portals__grid">
-        {collections.map((c, i) => (
-          <Portal key={c.slug} links={links} c={c} index={i} />
-        ))}
-      </div>
-    </section>
-  )
-}
-
 // ─── 08 HORIZONTAL RUNWAY ─────────────────────────────────────────────────
 
 const RUNWAY_SHAPE = ["is-tall", "is-wide", "is-tilt", "is-tall", "is-round", "is-wide"]

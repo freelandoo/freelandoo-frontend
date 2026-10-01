@@ -139,7 +139,7 @@ export function CollectionPage({
           <span className="pk-portal__fx" aria-hidden="true" />
         </div>
         <div className="pk-colhero__copy">
-          <Crumbs links={links} trail={[{ name: "Coleções", href: `${links.home}#colecoes` }, { name: collection.name }]} />
+          <Crumbs links={links} trail={[{ name: "Loja", href: pageHref(links, "loja") }, { name: collection.name }]} />
           <p className="pk-eyebrow">{collection.kicker}</p>
           <h1 className="pk-display pk-display--xl" data-reveal="clip">
             {collection.name}
