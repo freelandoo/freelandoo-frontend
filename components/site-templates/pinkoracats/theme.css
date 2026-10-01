@@ -923,7 +923,7 @@
   line-height: 0.82;
   letter-spacing: -0.06em;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(29, 30, 34, 0.32);
+  -webkit-text-stroke: 1px var(--pk-hot);
 }
 .tpl-pinkora .pk-footer__grid { display: grid; gap: 28px; }
 .tpl-pinkora .pk-footer__lead { max-width: 38ch; color: var(--pk-mute); margin: 0; }
