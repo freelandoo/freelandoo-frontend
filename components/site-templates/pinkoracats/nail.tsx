@@ -15,6 +15,10 @@ const PATHS: Record<NailShape, string> = {
   stiletto: "M30 2 C40 30 56 60 56 92 L56 130 Q56 136 50 136 L10 136 Q4 136 4 130 L4 92 C4 60 20 30 30 2Z",
   coffin: "M14 6 L46 6 L56 90 L56 130 Q56 136 50 136 L10 136 Q4 136 4 130 L4 90 Z",
   square: "M9 6 L51 6 Q56 6 56 11 L56 130 Q56 136 50 136 L10 136 Q4 136 4 130 L4 11 Q4 6 9 6Z",
+  // duck: a ponta ABRE, mais larga que a base
+  duck: "M2 8 Q30 2 58 8 L50 92 L50 130 Q50 136 44 136 L16 136 Q10 136 10 130 L10 92 Z",
+  // garra: ponta fina que curva para o lado
+  claw: "M48 2 C34 22 56 54 56 92 L56 130 Q56 136 50 136 L10 136 Q4 136 4 130 L4 92 C4 50 28 20 48 2Z",
 }
 
 export function Nail({

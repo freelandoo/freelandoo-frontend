@@ -25,7 +25,7 @@ export type PlaceholderVariant =
   | "editorial-white"
   | "transparent-glass"
 
-export type NailShape = "almond" | "coffin" | "stiletto" | "square"
+export type NailShape = "almond" | "coffin" | "stiletto" | "square" | "duck" | "claw"
 
 export type MediaConfig = {
   /** `cover` recorta; `contain` preserva a peça inteira (ideal para PNG sem fundo). */
@@ -51,6 +51,11 @@ export type Product = {
   bestSeller: boolean
   variant: PlaceholderVariant
   shape: NailShape
+  /**
+   * O formato DECLARADO pela dona (linha "Formato …" da descrição) — é ele
+   * que decide a categoria. `shape` acima é só o desenho do placeholder.
+   */
+  form?: import("./shapes").ShapeSlug | null
   /** Cores do desenho do placeholder (unha): base e detalhe. */
   tint: [string, string]
   media?: MediaConfig

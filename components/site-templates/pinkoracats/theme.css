@@ -3,14 +3,16 @@
  *
  * ⚠️ TUDO ESCOPADO EM `.tpl-pinkora`: o site roda dentro da aplicação da
  * Freelandoo, e uma regra solta atravessaria a plataforma inteira.
- * ⚠️ BRANCO + VERMELHO METÁLICO + PRATA (paleta de 2026-09-30, pedido do Alex).
+ * ⚠️ BRANCO + GRAFITE + PRATA, COM O VERMELHO SÓ DE ACENTO (2026-09-30,
+ * pedido do Alex: primeiro a tipografia foi vermelho metálico, depois ele
+ * pediu o texto em "cinza bem escuro"). O vermelho ficou em botões, barra de
+ * aviso, contador do Case, hover e cursor.
  * Os NOMES das variáveis são legado do tema escuro e agora mentem de propósito
  * (renomear 130 usos só mudaria nome): `--pk-black` é o FUNDO branco e a tinta
  * sobre o vermelho; `--pk-paper` é a TINTA vermelha do texto.
- * ⚠️ O vermelho CLARO (#ff9aa0) não aguenta texto corrido no branco (2,3:1):
- * ele mora só como brilho do degradê `--pk-metal`, nos títulos grandes.
- * Texto corrido usa `--pk-paper` (6,3:1). Nas seções prata (`.pk-silver`) o
- * vermelho escurece um degrau para continuar passando em AA.
+ * `--pk-metal` é grafite metálico (o brilho é uma faixa estreita) e mora só
+ * nos títulos grandes. Nas seções prata (`.pk-silver`) a tinta escurece um
+ * degrau para continuar passando em AA.
  * ⚠️ SEM CANTOS ARREDONDADOS NA UI (regra da casa). As formas curvas que
  * existem aqui são OBJETOS (a unha, a cápsula), não botões nem cards.
  * ⚠️ MOVIMENTO SÓ EM `transform`/`opacity`, e o fundo da janela é pintado
@@ -23,14 +25,14 @@
   --pk-black: #ffffff;   /* fundo (e tinta sobre o vermelho) */
   --pk-ink: #f5f5f7;     /* superfície: mídia, Case, quick view */
   --pk-ink-2: #e6e7ea;
-  --pk-paper: #b8202f;   /* tinta do texto — 6,3:1 no branco */
+  --pk-paper: #1d1e22;   /* tinta do texto — grafite, 16:1 no branco */
   --pk-hot: #d42f42;     /* acento — 4,9:1 no branco */
-  --pk-soft: #c8283a;    /* sobrelinha — 5,5:1 */
+  --pk-soft: #4a4c52;    /* sobrelinha — 8,4:1 */
   --pk-silver: #6b6d73;
-  --pk-line: rgba(184, 32, 47, 0.18);
-  --pk-mute: #b8404e;    /* 5,4:1 */
-  /* vermelho claro metálico: o brilho (#ff9aa0) é uma faixa estreita */
-  --pk-metal: linear-gradient(176deg, #e8505d 0%, #c8283a 34%, #ff9aa0 49%, #d43a4b 58%, #a81f2e 100%);
+  --pk-line: rgba(29, 30, 34, 0.14);
+  --pk-mute: #55575d;    /* 7,3:1 */
+  /* grafite metálico: o brilho (#8a8d94) é uma faixa estreita */
+  --pk-metal: linear-gradient(176deg, #3c3e44 0%, #1b1c20 34%, #8a8d94 49%, #2c2d32 58%, #111215 100%);
   /* prata metálico */
   --pk-silver-bg: linear-gradient(180deg, #f3f4f6 0%, #e2e3e6 42%, #f5f6f8 54%, #d9dadd 100%);
 
@@ -111,14 +113,13 @@
 
 /* ─── seções prata ─────────────────────────────────────────────────────── */
 
-/* Uma classe só, e ela também escurece o vermelho: no prata o #b8404e cai
-   para 4,0:1 e reprovaria. */
+/* Uma classe só, e ela também escurece a tinta um degrau sobre o prata. */
 .tpl-pinkora .pk-silver {
   background: var(--pk-silver-bg);
-  --pk-paper: #a81f2e;
-  --pk-mute: #9e2a37;
-  --pk-soft: #a81f2e;
-  --pk-line: rgba(120, 22, 34, 0.2);
+  --pk-paper: #17181b;
+  --pk-mute: #44464c;
+  --pk-soft: #3a3c42;
+  --pk-line: rgba(20, 20, 24, 0.18);
 }
 
 /* ─── tipografia ─────────────────────────────────────────────────────────── */
@@ -263,13 +264,13 @@
   inset: 0 0 auto 0;
   z-index: 60;
   background: var(--pk-silver-bg);
-  border-bottom: 1px solid rgba(120, 22, 34, 0.14);
-  --pk-paper: #a81f2e;
-  --pk-mute: #9e2a37;
-  --pk-line: rgba(120, 22, 34, 0.2);
+  border-bottom: 1px solid rgba(20, 20, 24, 0.12);
+  --pk-paper: #17181b;
+  --pk-mute: #44464c;
+  --pk-line: rgba(20, 20, 24, 0.18);
   transition: transform var(--motion-standard) var(--ease-out), background var(--motion-standard);
 }
-.tpl-pinkora .pk-nav.is-solid { box-shadow: 0 10px 24px -18px rgba(120, 22, 34, 0.35); }
+.tpl-pinkora .pk-nav.is-solid { box-shadow: 0 10px 24px -18px rgba(20, 20, 24, 0.35); }
 /* Recolher = ENCOLHER, nunca sumir: o Case mora nesta barra e o carrinho
    tem que estar sempre a um toque (no celular não existe outro caminho). */
 .tpl-pinkora .pk-nav.is-hidden .pk-nav__notice { display: none; }
@@ -375,7 +376,7 @@
   background: var(--pk-ink);
   transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition: transform 600ms var(--ease-out);
-  box-shadow: 0 24px 40px -18px rgba(120, 22, 34, 0.28);
+  box-shadow: 0 24px 40px -18px rgba(20, 20, 24, 0.22);
 }
 .tpl-pinkora .pk-media__img {
   position: absolute;
@@ -543,7 +544,7 @@
   transform: translateY(-6px);
   transition: opacity var(--motion-standard) var(--ease-out), transform var(--motion-standard) var(--ease-out);
 }
-.tpl-pinkora .pk-card__cta { color: var(--pk-hot); white-space: nowrap; font-weight: 600; }
+.tpl-pinkora .pk-card__cta { color: var(--pk-paper); white-space: nowrap; font-weight: 600; }
 .tpl-pinkora .pk-card:hover .pk-card__reveal,
 .tpl-pinkora .pk-card:focus-within .pk-card__reveal { opacity: 1; transform: none; }
 .tpl-pinkora .pk-card__actions {
@@ -573,7 +574,9 @@
   position: relative;
   min-height: 100svh;
   display: grid;
-  grid-template-columns: 1fr;
+  /* minmax(0,…): com 1fr puro a coluna cresce até o título gigante e passa
+     da largura do celular */
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 24px;
   padding: 130px var(--gutter) 60px;
@@ -591,46 +594,9 @@
   text-transform: uppercase;
   color: var(--pk-mute);
 }
-.tpl-pinkora .pk-stage {
-  position: relative;
-  height: clamp(380px, 62vh, 760px);
-  perspective: 1400px;
-}
-.tpl-pinkora .pk-stage__frame { position: absolute; }
-.tpl-pinkora .pk-stage__tilt { width: 100%; }
-.tpl-pinkora .pk-stage__f1 { left: 18%; top: 6%; width: 46%; z-index: 3; }
-.tpl-pinkora .pk-stage__f2 { left: 0; top: 34%; width: 30%; z-index: 2; }
-.tpl-pinkora .pk-stage__f3 { right: 0; top: 0; width: 30%; z-index: 1; }
-.tpl-pinkora .pk-stage__f4 { right: 6%; bottom: 0; width: 26%; z-index: 4; }
-.tpl-pinkora .pk-stage__ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 78%;
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  border: 1px solid rgba(184, 32, 47, 0.22);
-  border-radius: 50%;
-}
-.tpl-pinkora .pk-stage__capsule {
-  position: absolute;
-  border-radius: 999px;
-  background: linear-gradient(160deg, #f7f7f7, #6f6f6f 40%, #e6e6e6 60%, #4d4d4d);
-  box-shadow: 0 20px 40px -10px rgba(120, 22, 34, 0.3);
-}
-.tpl-pinkora .pk-stage__capsule--a { width: 14%; height: 5%; left: 4%; top: 14%; rotate: -24deg; }
-.tpl-pinkora .pk-stage__capsule--b {
-  width: 9%;
-  height: 22%;
-  right: 34%;
-  bottom: 4%;
-  rotate: 18deg;
-  background: linear-gradient(160deg, #ffd3d6, #d42f42 50%, #6a1220);
-}
 @media (min-width: 1024px) {
   .tpl-pinkora .pk-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 110px; }
   .tpl-pinkora .pk-hero .pk-display--xl { font-size: clamp(3.6rem, 7.8vw, 9rem); }
-  .tpl-pinkora .pk-stage { height: min(78vh, 800px); }
 }
 
 /* ─── 02 ORBIT ──────────────────────────────────────────────────────────── */
@@ -718,68 +684,79 @@
 }
 .tpl-pinkora .pk-statement__note { max-width: 46ch; margin: 28px auto 0; color: var(--pk-mute); }
 
-/* ─── 04 WALL ───────────────────────────────────────────────────────────── */
+/* ─── LEQUE DE FORMATOS (no herói) ──────────────────────────────────────── */
 
-.tpl-pinkora .pk-wall { position: relative; padding: 80px var(--gutter) 120px; }
-.tpl-pinkora .pk-wall__title {
-  position: absolute;
-  left: var(--gutter);
-  right: var(--gutter);
-  top: 34%;
-  z-index: 0;
-  text-align: center;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(184, 32, 47, 0.26);
-  font-size: clamp(3.4rem, 15vw, 15rem);
-  pointer-events: none;
-}
-/* título vazado: o preenchimento metálico do .pk-display não pode valer aqui */
-.tpl-pinkora .pk-wall__title,
-.tpl-pinkora .pk-wall__title span {
-  background: none;
-}
-.tpl-pinkora .pk-wall__grid {
+/* Fica SEMPRE aberto: no herói não há rolagem para abri-lo, e um leque
+   fechado esconderia as categorias, que são a porta do catálogo. */
+.tpl-pinkora .pk-shapes {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
+  min-width: 0;
+  padding-top: 40px;
+  overflow-x: clip;
 }
-.tpl-pinkora .pk-wall__item:nth-child(even) { margin-top: 60px; }
-@media (min-width: 900px) {
-  .tpl-pinkora .pk-wall__grid { grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: start; }
-  .tpl-pinkora .pk-wall__item:nth-child(even) { margin-top: 0; }
-  .tpl-pinkora .pk-wall__w1 { grid-column: 1 / span 3; margin-top: 40px; }
-  .tpl-pinkora .pk-wall__w2 { grid-column: 5 / span 4; margin-top: 160px; }
-  .tpl-pinkora .pk-wall__w3 { grid-column: 10 / span 2; }
-  .tpl-pinkora .pk-wall__w4 { grid-column: 2 / span 2; margin-top: -40px; }
-  .tpl-pinkora .pk-wall__w5 { grid-column: 9 / span 3; margin-top: -120px; rotate: 3deg; }
-  .tpl-pinkora .pk-wall__w6 { grid-column: 4 / span 3; margin-top: -60px; rotate: -2deg; }
+.tpl-pinkora .pk-fan__deck--hero,
+.tpl-pinkora[data-motion="on"] .pk-fan__deck--hero {
+  --open: 1;
+  height: clamp(300px, 52vh, 540px);
 }
-
-/* ─── 05 SPOTLIGHT ──────────────────────────────────────────────────────── */
-
-.tpl-pinkora .pk-spot {
-  display: grid;
-  gap: 32px;
-  padding: 100px var(--gutter);
-  border-top: 1px solid var(--pk-line);
+.tpl-pinkora .pk-fan__deck--hero .pk-fan__item {
+  width: clamp(48px, 14vw, 116px);
+  transform-origin: 50% 210%;
+  transform: translateX(-50%) rotate(calc((var(--i) - var(--mid)) * 11deg));
 }
-.tpl-pinkora .pk-spot__lead { max-width: 44ch; color: var(--pk-mute); margin: 24px 0 0; }
-.tpl-pinkora .pk-spot__details { margin: 18px 0 0; padding: 0; list-style: none; font-size: 14px; }
-.tpl-pinkora .pk-spot__details li { padding: 8px 0; border-bottom: 1px solid var(--pk-line); }
-.tpl-pinkora .pk-spot__price { margin: 24px 0 16px; font-size: 28px; font-weight: 600; }
-.tpl-pinkora .pk-spot__cta { display: flex; flex-wrap: wrap; gap: 10px; }
-@media (min-width: 1024px) {
-  .tpl-pinkora .pk-spot { grid-template-columns: 1.1fr 0.9fr; align-items: start; }
-  .tpl-pinkora .pk-spot__media { position: sticky; top: 100px; }
-  .tpl-pinkora .pk-spot__copy { padding-top: 12vh; }
+.tpl-pinkora .pk-shapes__list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
 }
+@media (max-width: 639px) {
+  .tpl-pinkora .pk-shapes { padding-top: 0; }
+  .tpl-pinkora .pk-fan__deck--hero { height: clamp(220px, 36vh, 300px); }
+  .tpl-pinkora .pk-fan__deck--hero .pk-shapes__name { display: none; }
+}
+@media (min-width: 640px) {
+  .tpl-pinkora .pk-fan__deck--hero .pk-fan__item {
+    transform: translateX(-50%) rotate(calc((var(--i) - var(--mid)) * 13deg));
+  }
+  .tpl-pinkora .pk-shapes__list { display: none; }
+}
+.tpl-pinkora .pk-shapes__name {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  translate: -50% -10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pk-paper);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--pk-line);
+  transition: background var(--motion-fast), color var(--motion-fast);
+}
+.tpl-pinkora .pk-shapes__name small {
+  font-size: 10px;
+  color: var(--pk-hot);
+}
+.tpl-pinkora .pk-fan__link:hover .pk-shapes__name,
+.tpl-pinkora .pk-fan__link:focus-visible .pk-shapes__name {
+  background: var(--pk-hot);
+  color: #fff;
+}
+.tpl-pinkora .pk-fan__link:hover .pk-shapes__name small,
+.tpl-pinkora .pk-fan__link:focus-visible .pk-shapes__name small { color: #fff; }
 
-/* ─── 06 FAN ────────────────────────────────────────────────────────────── */
 
-.tpl-pinkora .pk-fan { padding: 100px var(--gutter) 40px; text-align: center; overflow: hidden; }
-.tpl-pinkora .pk-fan__head { margin-bottom: 30px; }
 .tpl-pinkora .pk-fan__deck {
   --open: 1;
   position: relative;
@@ -805,7 +782,7 @@
   display: block;
   transition: translate 500ms var(--ease-out);
 }
-.tpl-pinkora .pk-fan__nail { width: 100%; height: auto; display: block; filter: drop-shadow(0 20px 20px rgba(120, 22, 34, 0.3)); }
+.tpl-pinkora .pk-fan__nail { width: 100%; height: auto; display: block; filter: drop-shadow(0 20px 20px rgba(20, 20, 24, 0.28)); }
 .tpl-pinkora .pk-fan__link:hover,
 .tpl-pinkora .pk-fan__link:focus-visible { translate: 0 -18%; }
 .tpl-pinkora .pk-fan__label {
@@ -861,7 +838,7 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: #ffffff;
-  text-shadow: 0 1px 8px rgba(120, 22, 34, 0.85);
+  text-shadow: 0 1px 8px rgba(20, 20, 24, 0.85);
 }
 .tpl-pinkora .pk-portal--paper .pk-portal__kicker { color: var(--pk-paper); text-shadow: none; }
 .tpl-pinkora .pk-portal__fx { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
@@ -969,7 +946,7 @@
   line-height: 0.82;
   letter-spacing: -0.06em;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(184, 32, 47, 0.45);
+  -webkit-text-stroke: 1px rgba(29, 30, 34, 0.32);
 }
 .tpl-pinkora .pk-footer__grid { display: grid; gap: 28px; }
 .tpl-pinkora .pk-footer__lead { max-width: 38ch; color: var(--pk-mute); margin: 0; }

@@ -6,60 +6,55 @@ import type { Collection } from "../content/collections"
 import type { Product } from "../content/products.mock"
 import { ProductCard, QuickOpenButton } from "../commerce"
 import { brl, pageHref, type TemplateLinks } from "../lib"
+import { SHAPE_CATS } from "../content/shapes"
 import ProductMedia from "../media"
 import { Nail } from "../nail"
 
-// ─── 01 HERO / PRODUCT STAGE ───────────────────────────────────────────────
+// ─── 01 HERO / OS FORMATOS ─────────────────────────────────────────────────
 
 /**
- * O palco do herói.
+ * O leque de FORMATOS no herói — cada unha é uma categoria (stiletto, almond,
+ * quadrada, duck, garras) e leva ao catálogo já filtrado (`?formato=`).
  *
- * ⚠️ `heroImages` é o lugar das fotos reais: se vierem, cada uma entra num
- * dos quadros, NA ORDEM, e herda moldura, profundidade e tilt. Sem elas, os
- * quadros mostram os produtos em destaque como placeholder — o palco nunca
- * fica vazio nem escreve "IMAGE HERE".
+ * ⚠️ É a ÚNICA entrada por formato do site, e por isso o nome fica SEMPRE à
+ * vista (no leque antigo ele só aparecia no hover — aceitável para um produto,
+ * não para uma categoria, que tem que ser lida sem procurar).
+ * ⚠️ A contagem sai de `product.form`, o formato que a dona DECLAROU; o
+ * desenho sorteado do placeholder nunca entra nesta conta.
  */
-export function HeroProductStage({
-  products,
-  heroImages = [],
-}: {
-  products: Product[]
-  heroImages?: string[]
-}) {
-  const frames = [
-    { cls: "pk-stage__f1", depth: "0.6", aspect: "3/4", comp: "set" as const },
-    { cls: "pk-stage__f2", depth: "-0.4", aspect: "4/5", comp: "single" as const },
-    { cls: "pk-stage__f3", depth: "0.9", aspect: "1/1", comp: "macro" as const },
-    { cls: "pk-stage__f4", depth: "-0.8", aspect: "3/5", comp: "single" as const },
-  ]
+export function ShapeFan({ links, products }: { links: TemplateLinks; products: Product[] }) {
+  const mid = (SHAPE_CATS.length - 1) / 2
+  const shop = pageHref(links, "loja")
   return (
-    <div className="pk-stage" aria-hidden="true">
-      <div className="pk-stage__ring" data-depth="0.2" />
-      <div className="pk-stage__capsule pk-stage__capsule--a" data-depth="1.2" />
-      <div className="pk-stage__capsule pk-stage__capsule--b" data-depth="-1" />
-      {frames.map((f, i) => {
-        const p = products[i % products.length]
-        return (
-          <div key={f.cls} className={`pk-stage__frame ${f.cls}`} data-depth={f.depth}>
-            <div className="pk-stage__tilt" data-tilt>
-              <ProductMedia
-                src={heroImages[i] || p.image}
-                alt=""
-                variant={p.variant}
-                aspect={f.aspect}
-                media={p.media}
-                shape={p.shape}
-                tint={p.tint}
-                number={p.number}
-                label={i === 0 ? "DROP 001" : undefined}
-                composition={f.comp}
-                priority={i < 2}
-              />
-            </div>
-          </div>
-        )
-      })}
-    </div>
+    <nav className="pk-shapes" aria-label="Formatos de unha">
+      <ul className="pk-fan__deck pk-fan__deck--hero" style={{ "--mid": mid } as React.CSSProperties}>
+        {SHAPE_CATS.map((c, i) => {
+          const n = products.filter((p) => p.form === c.slug).length
+          return (
+            <li key={c.slug} className="pk-fan__item" style={{ "--i": i } as React.CSSProperties}>
+              <a href={`${shop}?formato=${c.slug}`} className="pk-fan__link" data-cursor="VER" aria-label={c.label}>
+                <span className="pk-shapes__name">
+                  {c.label}
+                  {n ? <small>{n}</small> : null}
+                </span>
+                <Nail shape={c.draw} tint={c.tint} className="pk-fan__nail" />
+              </a>
+            </li>
+          )
+        })}
+      </ul>
+      {/* No celular os cinco nomes não cabem no arco (se sobrepõem): lá as
+          unhas ficam sem etiqueta e os MESMOS links aparecem aqui embaixo. */}
+      <ul className="pk-shapes__list">
+        {SHAPE_CATS.map((c) => (
+          <li key={c.slug}>
+            <a className="pk-chip" href={`${shop}?formato=${c.slug}`}>
+              {c.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   )
 }
 
@@ -100,7 +95,7 @@ export function Hero({
           </a>
         </div>
       </div>
-      <HeroProductStage products={products} />
+      <ShapeFan links={links} products={products} />
       <p className="pk-hero__scroll" aria-hidden="true">
         role · scroll
       </p>
@@ -122,123 +117,6 @@ export function Statement() {
       <p className="pk-statement__note" data-reveal="up">
         Cada set é pensado como objeto: formato, acabamento e luz decididos antes da primeira camada.
       </p>
-    </section>
-  )
-}
-
-// ─── 04 FLOATING NAIL WALL ────────────────────────────────────────────────
-
-const WALL = [
-  { cls: "w1", depth: "0.5", aspect: "3/4", size: "md" as const },
-  { cls: "w2", depth: "-0.6", aspect: "4/5", size: "lg" as const },
-  { cls: "w3", depth: "1", aspect: "1/1", size: "sm" as const },
-  { cls: "w4", depth: "-0.3", aspect: "3/5", size: "md" as const },
-  { cls: "w5", depth: "0.8", aspect: "4/5", size: "sm" as const },
-  { cls: "w6", depth: "-0.9", aspect: "3/4", size: "md" as const },
-]
-
-export function NailWall({ products }: { products: Product[] }) {
-  return (
-    <section className="pk-wall pk-silver" aria-labelledby="pk-wall-title">
-      <h2 id="pk-wall-title" className="pk-wall__title pk-display pk-display--lg" data-depth="-0.2">
-        Nail
-        <br />
-        objects
-      </h2>
-      <div className="pk-wall__grid">
-        {WALL.map((w, i) => {
-          const p = products[i % products.length]
-          return (
-            <div key={w.cls} className={`pk-wall__item pk-wall__${w.cls}`} data-depth={w.depth} data-reveal="up">
-              <ProductCard product={p} aspect={w.aspect} size={w.size} composition={i % 2 ? "single" : "set"} />
-            </div>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-// ─── 05 PRODUCT TAKEOVER / SPOTLIGHT ──────────────────────────────────────
-
-export function Spotlight({ links, product, index }: { links: TemplateLinks; product: Product; index: string }) {
-  return (
-    <section className="pk-spot" aria-labelledby={`pk-spot-${product.slug}`} data-card>
-      <div className="pk-spot__media" data-reveal="scale">
-        <div data-tilt className="pk-spot__tilt">
-          <ProductMedia
-            src={product.image}
-            hoverSrc={product.hoverImage}
-            alt={product.name}
-            variant={product.variant}
-            aspect="4/5"
-            media={product.media}
-            shape={product.shape}
-            tint={product.tint}
-            number={product.number}
-            label="SPOTLIGHT"
-            composition="macro"
-          />
-        </div>
-      </div>
-      <div className="pk-spot__copy">
-        <p className="pk-eyebrow">{index} · Featured</p>
-        <h2 id={`pk-spot-${product.slug}`} className="pk-display pk-display--lg" data-reveal="clip">
-          {product.name}
-        </h2>
-        <p className="pk-spot__lead" data-reveal="up">
-          {product.description}
-        </p>
-        <ul className="pk-spot__details" data-reveal="up">
-          {product.details.map((d) => (
-            <li key={d}>{d}</li>
-          ))}
-        </ul>
-        <p className="pk-spot__price">{brl(product.priceCents)}</p>
-        <div className="pk-spot__cta">
-          <QuickOpenButton slug={product.slug} />
-          <a className="pk-btn pk-btn--line" href={pageHref(links, product.slug)}>
-            Página do produto
-          </a>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ─── 06 NAIL FAN ──────────────────────────────────────────────────────────
-
-/**
- * O leque — o elemento de assinatura. Fechado, as unhas estão empilhadas; a
- * rolagem abre o arco (uma variável CSS, `--open`, escrita pelo GSAP). Cada
- * unha é um LINK para o produto, e a do hover avança.
- *
- * Sem JS e com movimento reduzido o CSS deixa `--open: 1`: o leque aparece
- * aberto e continua clicável.
- */
-export function NailFan({ links, products }: { links: TemplateLinks; products: Product[] }) {
-  const mid = (products.length - 1) / 2
-  return (
-    <section className="pk-fan pk-silver" aria-labelledby="pk-fan-title">
-      <div className="pk-fan__head">
-        <p className="pk-eyebrow">06 — O mostruário</p>
-        <h2 id="pk-fan-title" className="pk-display pk-display--md">
-          Pick a<br />
-          nail
-        </h2>
-      </div>
-      <ul className="pk-fan__deck" data-fan style={{ "--mid": mid } as React.CSSProperties}>
-        {products.map((p, i) => (
-          <li key={p.id} className="pk-fan__item" style={{ "--i": i } as React.CSSProperties}>
-            <a href={pageHref(links, p.slug)} className="pk-fan__link" data-cursor="VIEW">
-              <Nail shape={p.shape} tint={p.tint} className="pk-fan__nail" />
-              <span className="pk-fan__label">
-                <span>{p.number}</span> {p.name} <span>{brl(p.priceCents)}</span>
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
     </section>
   )
 }
@@ -275,7 +153,7 @@ export function CollectionPortals({ links, collections }: { links: TemplateLinks
   return (
     <section id="colecoes" className="pk-portals" aria-labelledby="pk-portals-title">
       <div className="pk-section-head">
-        <p className="pk-eyebrow">07 — Coleções</p>
+        <p className="pk-eyebrow">03 — Coleções</p>
         <h2 id="pk-portals-title" className="pk-display pk-display--md">
           Enter a<br />
           collection
@@ -318,7 +196,7 @@ export function BestSellers({ links, products }: { links: TemplateLinks; product
     <section className="pk-best" aria-labelledby="pk-best-title">
       <div className="pk-section-head pk-section-head--row">
         <div>
-          <p className="pk-eyebrow">09 — Mais pedidos</p>
+          <p className="pk-eyebrow">04 — Mais pedidos</p>
           <h2 id="pk-best-title" className="pk-display pk-display--md">
             Best sellers
           </h2>
@@ -356,7 +234,7 @@ export function Editorial({ links }: { links: TemplateLinks }) {
         />
       </div>
       <div className="pk-editorial__copy">
-        <p className="pk-eyebrow">10 — A marca</p>
+        <p className="pk-eyebrow">05 — A marca</p>
         <h2 id="pk-ed-title" className="pk-display pk-display--md" data-reveal="clip">
           A unha como
           <br />
@@ -377,7 +255,7 @@ export function Editorial({ links }: { links: TemplateLinks }) {
 export function DropAccess({ email }: { email: string }) {
   return (
     <section className="pk-drop" aria-labelledby="pk-drop-title">
-      <p className="pk-eyebrow">11 — Drop access</p>
+      <p className="pk-eyebrow">06 — Drop access</p>
       <h2 id="pk-drop-title" className="pk-display pk-display--lg" data-reveal="clip">
         Next drop
       </h2>

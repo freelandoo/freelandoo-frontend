@@ -32,6 +32,7 @@
 
 import { COLLECTIONS, type Collection, type CollectionEffect } from "./collections"
 import { PRODUCTS, type NailShape, type PlaceholderVariant, type Product } from "./products.mock"
+import { declaredShape, shapeCat } from "./shapes"
 
 export type Catalog = {
   /** `true` = Loja de verdade; `false` = prévia. */
@@ -137,7 +138,16 @@ function preview(): Catalog {
 
 /** Uma montagem por objeto de dados: a página, o roteador e o JSON-LD leem o MESMO. */
 const built = new WeakMap<object, Catalog>()
-const PREVIEW: Catalog = { live: false, storeProfileId: null, products: PRODUCTS, collections: COLLECTIONS }
+/** O formato da prévia também sai dos detalhes — a mesma regra do ao vivo. */
+const PREVIEW: Catalog = {
+  live: false,
+  storeProfileId: null,
+  products: PRODUCTS.map((p) => {
+    const form = declaredShape(p.details)
+    return { ...p, form, shape: form ? shapeCat(form)!.draw : p.shape }
+  }),
+  collections: COLLECTIONS,
+}
 
 export function buildCatalog(data: unknown): Catalog {
   if (!data || typeof data !== "object") return PREVIEW
@@ -188,6 +198,7 @@ function assemble(data: unknown): Catalog {
     const id = Number(p.id_profile_product)
     const collection = (p.id_collection != null && colById.get(p.id_collection)) || LOOSE_COLLECTION
     const text = splitDescription(p.description)
+    const form = declaredShape(text.details)
     const images = (p.images || []).filter(Boolean)
     // Sem destaque escolhido, os quatro primeiros fazem o papel — a home
     // precisa de alguém no palco.
@@ -206,7 +217,9 @@ function assemble(data: unknown): Catalog {
       featured,
       bestSeller: featured,
       variant: colVariant.get(collection) || VARIANTS[id % VARIANTS.length],
-      shape: SHAPES[id % SHAPES.length],
+      // o desenho segue o formato declarado; sem declaração, é só placeholder
+      shape: form ? shapeCat(form)!.draw : SHAPES[id % SHAPES.length],
+      form,
       tint: TINTS[id % TINTS.length],
       media: images.length ? { fit: "cover" } : undefined,
       tagline: text.tagline,

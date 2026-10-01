@@ -7,12 +7,16 @@
 //
 // ⚠️ O ESTADO DA LEITURA NÃO VAI PARA A URL: o filtro é preferência de quem
 // olha, e um `?view=` mudaria o canônico que o buscador lê.
+// A ÚNICA exceção é ENTRAR: `?formato=stiletto` é o link de cada unha do leque
+// do herói. Ele é só LIDO, uma vez, depois da hidratação (a página é estática,
+// então o servidor nunca vê a query) — e o canônico continua sem ela.
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import gsap from "gsap"
 import { Flip } from "gsap/Flip"
 
 import { ProductCard } from "../commerce"
+import { SHAPE_CATS, shapeCat, type ShapeSlug } from "../content/shapes"
 import { useCatalog } from "../store"
 
 type Mode = "grid" | "editorial" | "compact"
@@ -20,14 +24,24 @@ type Mode = "grid" | "editorial" | "compact"
 export default function MorphingCatalog({ initialCollection = "all" }: { initialCollection?: string }) {
   const [mode, setMode] = useState<Mode>("grid")
   const [col, setCol] = useState(initialCollection)
+  const [form, setForm] = useState<ShapeSlug | "all">("all")
   const box = useRef<HTMLDivElement>(null)
   const flipState = useRef<Flip.FlipState | null>(null)
 
   const catalog = useCatalog()
   const items = useMemo(
-    () => (col === "all" ? catalog.products : catalog.products.filter((p) => p.collection === col)),
-    [col, catalog],
+    () =>
+      catalog.products.filter(
+        (p) => (col === "all" || p.collection === col) && (form === "all" || p.form === form),
+      ),
+    [col, form, catalog],
   )
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("formato")
+    const cat = shapeCat(q)
+    if (cat) setForm(cat.slug)
+  }, [])
 
   const capture = () => {
     if (!box.current) return
@@ -48,7 +62,7 @@ export default function MorphingCatalog({ initialCollection = "all" }: { initial
       onEnter: (els) => gsap.fromTo(els, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.4 }),
       onLeave: (els) => gsap.to(els, { opacity: 0, scale: 0.9, duration: 0.3 }),
     })
-  }, [mode, col])
+  }, [mode, col, form])
 
   return (
     <div className="pk-catalog">
@@ -66,6 +80,22 @@ export default function MorphingCatalog({ initialCollection = "all" }: { initial
               }}
             >
               {c.name}
+            </button>
+          ))}
+        </div>
+        <div className="pk-catalog__filters" role="group" aria-label="Formato">
+          {[{ slug: "all" as const, label: "Todos os formatos" }, ...SHAPE_CATS].map((c) => (
+            <button
+              key={c.slug}
+              type="button"
+              className={`pk-chip ${form === c.slug ? "is-on" : ""}`}
+              aria-pressed={form === c.slug}
+              onClick={() => {
+                capture()
+                setForm(c.slug)
+              }}
+            >
+              {c.label}
             </button>
           ))}
         </div>
@@ -88,6 +118,7 @@ export default function MorphingCatalog({ initialCollection = "all" }: { initial
       </div>
       <p className="pk-catalog__count" aria-live="polite">
         {items.length} {items.length === 1 ? "peça" : "peças"}
+        {items.length === 0 && form !== "all" ? " — ainda não há peças neste formato." : ""}
       </p>
       <div ref={box} className={`pk-catalog__grid is-${mode}`}>
         {items.map((p, i) => (
