@@ -33,7 +33,7 @@ function detectPreset(h: string, w: string, l: string): string {
 }
 import { AffiliateOptInField } from "@/components/affiliate/affiliate-opt-in-field"
 import {
-  COLOR_SWATCHES,
+  swatchesFor,
   getAttributeSchema,
   rangeValues,
   type AttrField,
@@ -1355,7 +1355,7 @@ function AttributeFieldsEditor({
             <div key={field.key}>
               <label className="fl-label">{tx.attrLabel(field.label)}</label>
               <div className="flex flex-wrap gap-1.5">
-                {COLOR_SWATCHES.map((c) => {
+                {swatchesFor(field).map((c) => {
                   const active = selected.includes(c.name)
                   return (
                     <button

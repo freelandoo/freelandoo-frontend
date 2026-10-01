@@ -11,7 +11,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { useActionConsent } from "@/hooks/use-action-consent"
 import {
-  COLOR_SWATCHES,
+  swatchesFor,
   getAttributeSchema,
   rangeValues,
   type AttrField,
@@ -879,7 +879,7 @@ function AttrFieldDark({
       <div>
         <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{tx.attrLabel(field.label)}</p>
         <div className="flex flex-wrap gap-1.5">
-          {COLOR_SWATCHES.map((c) => {
+          {swatchesFor(field).map((c) => {
             const active = selected.includes(c.name)
             return (
               <button

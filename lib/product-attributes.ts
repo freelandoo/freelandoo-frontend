@@ -45,6 +45,17 @@ export const COLOR_SWATCHES: { name: string; hex: string }[] = [
   { name: "colorido", hex: "" }, // renderizado como gradiente
 ]
 
+/**
+ * As cores de um campo `colors`: com `options`, só aquelas (na ordem da
+ * paleta); sem, a paleta inteira. Os valores continuam os nomes canônicos de
+ * COLOR_SWATCHES, então o filtro do comprador acha o que o vendedor gravou.
+ */
+export function swatchesFor(field: AttrField): { name: string; hex: string }[] {
+  if (!field.options?.length) return COLOR_SWATCHES
+  const keep = new Set(field.options)
+  return COLOR_SWATCHES.filter((c) => keep.has(c.name))
+}
+
 const COLORS: AttrField = { key: "colors", label: "Cor", type: "colors" }
 const CONDITION: AttrField = {
   key: "condicao", label: "Condição", type: "chips",
@@ -125,6 +136,8 @@ export const PRODUCT_ATTRIBUTE_SCHEMAS: Record<string, AttrField[]> = {
   "beleza-e-cosmeticos": [
     { key: "tipo", label: "Tipo", type: "chips", options: ["Skincare", "Maquiagem", "Cabelos", "Perfumes", "Unhas", "Barba"] },
     { key: "caracteristicas", label: "Características", type: "chips", options: ["Vegano", "Cruelty-free", "Natural/Orgânico", "Hipoalergênico"] },
+    // As cores das unhas da Pinkoracats (pedido do Alex, 2026-10-01).
+    { key: "colors", label: "Cor", type: "colors", options: ["prateado", "dourado", "azul", "verde", "rosa", "branco", "preto"] },
     { key: "brand", label: "Marca", type: "brand", suggestions: ["Natura", "O Boticário", "Avon", "Eudora", "Ruby Rose", "Vult"] },
   ],
   "produtos-pet": [

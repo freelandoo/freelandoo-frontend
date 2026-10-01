@@ -9,7 +9,7 @@
 
 import { ArrowLeft, X } from "lucide-react"
 import {
-  COLOR_SWATCHES,
+  swatchesFor,
   getAttributeSchema,
   type AttrField,
 } from "@/lib/product-attributes"
@@ -224,7 +224,7 @@ function SubfilterField({
           {tx.attrLabel(field.label)}
         </p>
         <div className="flex flex-wrap gap-1.5">
-          {COLOR_SWATCHES.map((c) => {
+          {swatchesFor(field).map((c) => {
             const active = selected.includes(c.name)
             return (
               <button
