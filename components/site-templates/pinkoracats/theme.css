@@ -677,10 +677,12 @@
   --open: 1;
   height: clamp(300px, 52vh, 540px);
 }
+/* A abertura do leque é FIXA (±22°/±26° nas pontas), dividida pelo número de
+   formatos: formato novo entra sem abrir o arco. */
 .tpl-pinkora .pk-fan__deck--hero .pk-fan__item {
   width: clamp(48px, 14vw, 116px);
   transform-origin: 50% 210%;
-  transform: translateX(-50%) rotate(calc((var(--i) - var(--mid)) * 11deg));
+  transform: translateX(-50%) rotate(calc((var(--i) - var(--mid)) / var(--mid) * 22deg));
 }
 .tpl-pinkora .pk-shapes__list {
   display: flex;
@@ -698,7 +700,7 @@
 }
 @media (min-width: 640px) {
   .tpl-pinkora .pk-fan__deck--hero .pk-fan__item {
-    transform: translateX(-50%) rotate(calc((var(--i) - var(--mid)) * 13deg));
+    transform: translateX(-50%) rotate(calc((var(--i) - var(--mid)) / var(--mid) * 26deg));
   }
   .tpl-pinkora .pk-shapes__list { display: none; }
 }

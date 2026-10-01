@@ -19,10 +19,11 @@
 // ── O QUE A LOJA NÃO TEM, E O TEMA DERIVA ────────────────────────────────────
 //
 // O produto da Loja tem nome, descrição, preço, estoque, fotos, coleção e
-// destaque. O tema precisa de mais: o desenho do placeholder (variante, formato
-// da unha, cor), a linha curta e os detalhes. Os três primeiros só existem
-// enquanto NÃO há foto, e saem do id de forma DETERMINÍSTICA (o mesmo produto
-// sempre desenha igual); os outros dois saem da descrição:
+// destaque. O FORMATO da unha é a coleção (as coleções da Taiz são os
+// formatos — ver `shapes.ts`). O tema precisa de mais: o desenho do
+// placeholder (variante, cor), a linha curta e os detalhes. Os dois primeiros
+// só existem enquanto NÃO há foto, e saem do id de forma DETERMINÍSTICA (o
+// mesmo produto sempre desenha igual); os outros dois saem da descrição:
 //   1º parágrafo → a linha curta · 2º → a descrição · linhas "• " → detalhes.
 //
 // ⚠️ ESTE ARQUIVO É PURO (sem React): é lido pelo servidor (páginas, JSON-LD,
@@ -32,7 +33,7 @@
 
 import { COLLECTIONS, type Collection, type CollectionEffect } from "./collections"
 import { PRODUCTS, type NailShape, type PlaceholderVariant, type Product } from "./products.mock"
-import { declaredShape, shapeCat } from "./shapes"
+import { collectionShape, declaredShape, shapeCat, type ShapeSlug } from "./shapes"
 
 export type Catalog = {
   /** `true` = Loja de verdade; `false` = prévia. */
@@ -138,7 +139,7 @@ function preview(): Catalog {
 
 /** Uma montagem por objeto de dados: a página, o roteador e o JSON-LD leem o MESMO. */
 const built = new WeakMap<object, Catalog>()
-/** O formato da prévia também sai dos detalhes — a mesma regra do ao vivo. */
+/** A prévia não tem coleções de formato: o formato dela sai da linha "Formato …" dos detalhes. */
 const PREVIEW: Catalog = {
   live: false,
   storeProfileId: null,
@@ -179,6 +180,11 @@ function assemble(data: unknown): Catalog {
       image: c.cover_url || null,
     }))
   const colById = new Map(raw.collections.map((c) => [c.id_collection, c.slug]))
+  // O formato do produto É a coleção dele (Stiletto, Bailarina…), não uma
+  // linha da descrição.
+  const colShape = new Map<number, ShapeSlug | null>(
+    raw.collections.map((c) => [c.id_collection, collectionShape(c.name, c.slug)])
+  )
   const colVariant = new Map(collections.map((c) => [c.slug, c.variant]))
   const hasLoose = sellable.some((p) => p.id_collection == null || !colById.has(p.id_collection))
   if (hasLoose) {
@@ -198,7 +204,7 @@ function assemble(data: unknown): Catalog {
     const id = Number(p.id_profile_product)
     const collection = (p.id_collection != null && colById.get(p.id_collection)) || LOOSE_COLLECTION
     const text = splitDescription(p.description)
-    const form = declaredShape(text.details)
+    const form = (p.id_collection != null && colShape.get(p.id_collection)) || null
     const images = (p.images || []).filter(Boolean)
     // Sem destaque escolhido, os quatro primeiros fazem o papel — a home
     // precisa de alguém no palco.
@@ -259,7 +265,11 @@ export function productsIn(cat: Catalog, collection: string): Product[] {
   return cat.products.filter((p) => p.collection === collection)
 }
 
-/** A coleção que faz o papel de "drop" (o primeiro chamado da home). */
+/**
+ * A coleção que faz o papel de "drop" (o primeiro chamado da home), se existir
+ * uma chamada "new-drop". Sem fallback para a primeira coleção: na Loja as
+ * coleções são formatos, e o menu chamaria "Stiletto" de drop.
+ */
 export function dropCollection(cat: Catalog): Collection | null {
-  return catalogIndex(cat).colBySlug.get("new-drop") || cat.collections[0] || null
+  return catalogIndex(cat).colBySlug.get("new-drop") || null
 }

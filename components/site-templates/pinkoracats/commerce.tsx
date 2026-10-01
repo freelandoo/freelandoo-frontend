@@ -361,7 +361,7 @@ export function CaseDrawer() {
             <p className="pk-drawer__emptytitle">Your case is empty.</p>
             <p>Nada aqui ainda — as peças novas estão no drop.</p>
             <a className="pk-btn pk-btn--hot" href={pageHref(links, drop ? drop.slug : PAGE.loja)} onClick={close}>
-              Ver o drop
+              {drop ? "Ver o drop" : "Ver a loja"}
             </a>
           </div>
         ) : step === "cart" ? (

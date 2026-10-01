@@ -14,7 +14,7 @@ import { Nail } from "../nail"
 
 /**
  * O leque de FORMATOS no herói — cada unha é uma categoria (stiletto, almond,
- * quadrada, duck, garras) e leva ao catálogo já filtrado (`?formato=`).
+ * quadrada, bailarina, duck, garras) e leva ao catálogo já filtrado (`?formato=`).
  *
  * ⚠️ É a ÚNICA entrada por formato do site, e por isso o nome fica SEMPRE à
  * vista (no leque antigo ele só aparecia no hover — aceitável para um produto,
@@ -43,7 +43,7 @@ export function ShapeFan({ links, products }: { links: TemplateLinks; products: 
           )
         })}
       </ul>
-      {/* No celular os cinco nomes não cabem no arco (se sobrepõem): lá as
+      {/* No celular os nomes não cabem no arco (se sobrepõem): lá as
           unhas ficam sem etiqueta e os MESMOS links aparecem aqui embaixo. */}
       <ul className="pk-shapes__list">
         {SHAPE_CATS.map((c) => (
@@ -88,7 +88,7 @@ export function Hero({
         </p>
         <div className="pk-hero__cta" data-reveal="up">
           <a className="pk-btn pk-btn--hot" href={pageHref(links, drop ? drop.slug : "loja")} data-cursor="SELECT">
-            {drop && drop.slug !== "new-drop" ? `Ver ${drop.name}` : "Ver o new drop"}
+            {drop ? "Ver o new drop" : "Ver a loja"}
           </a>
           <a className="pk-btn pk-btn--line" href={pageHref(links, "loja")}>
             Todo o catálogo
