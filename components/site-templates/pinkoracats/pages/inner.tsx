@@ -99,7 +99,7 @@ export function ProductPage({ links, catalog, product }: Ctx & { catalog: Catalo
         </div>
       </article>
       {more.length ? (
-      <section className="pk-related" aria-labelledby="pk-related-title">
+      <section className="pk-related pk-silver" aria-labelledby="pk-related-title">
         <h2 id="pk-related-title" className="pk-display pk-display--sm">
           Da mesma coleção
         </h2>
@@ -131,7 +131,7 @@ export function CollectionPage({
             variant={collection.variant}
             aspect="16/10"
             shape={(["almond", "coffin", "stiletto", "square"] as const)[i % 4]}
-            tint={i % 2 ? ["#121212", "#ff4f9a"] : ["#ff8dc2", "#f5f2ef"]}
+            tint={i % 2 ? ["#a81f2e", "#ff9aa0"] : ["#ff9aa0", "#f5f6f8"]}
             kicker={collection.kicker}
             composition="set"
             priority
@@ -204,7 +204,7 @@ export function AboutPage({ links, catalog }: Ctx & { catalog: Catalog }) {
             variant="pink-chrome"
             aspect="3/4"
             shape="stiletto"
-            tint={["#ff8dc2", "#f5f2ef"]}
+            tint={["#ff9aa0", "#f5f6f8"]}
             kicker="Atelier"
             label={BRAND.handle}
             composition="portrait"

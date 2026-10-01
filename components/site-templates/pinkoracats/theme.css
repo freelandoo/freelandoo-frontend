@@ -3,7 +3,14 @@
  *
  * ⚠️ TUDO ESCOPADO EM `.tpl-pinkora`: o site roda dentro da aplicação da
  * Freelandoo, e uma regra solta atravessaria a plataforma inteira.
- * ⚠️ PRETO PROFUNDO + OFF-WHITE; ROSA SÓ COMO ACENTO. Cromo e vidro dão a luz.
+ * ⚠️ BRANCO + VERMELHO METÁLICO + PRATA (paleta de 2026-09-30, pedido do Alex).
+ * Os NOMES das variáveis são legado do tema escuro e agora mentem de propósito
+ * (renomear 130 usos só mudaria nome): `--pk-black` é o FUNDO branco e a tinta
+ * sobre o vermelho; `--pk-paper` é a TINTA vermelha do texto.
+ * ⚠️ O vermelho CLARO (#ff9aa0) não aguenta texto corrido no branco (2,3:1):
+ * ele mora só como brilho do degradê `--pk-metal`, nos títulos grandes.
+ * Texto corrido usa `--pk-paper` (6,3:1). Nas seções prata (`.pk-silver`) o
+ * vermelho escurece um degrau para continuar passando em AA.
  * ⚠️ SEM CANTOS ARREDONDADOS NA UI (regra da casa). As formas curvas que
  * existem aqui são OBJETOS (a unha, a cápsula), não botões nem cards.
  * ⚠️ MOVIMENTO SÓ EM `transform`/`opacity`, e o fundo da janela é pintado
@@ -13,15 +20,19 @@
  */
 
 .tpl-pinkora {
-  --pk-black: #070707;
-  --pk-ink: #101010;
-  --pk-ink-2: #181818;
-  --pk-paper: #f5f2ef;
-  --pk-hot: #ff4f9a;
-  --pk-soft: #ff8dc2;
-  --pk-silver: #b8b8b8;
-  --pk-line: rgba(245, 242, 239, 0.14);
-  --pk-mute: rgba(245, 242, 239, 0.62);
+  --pk-black: #ffffff;   /* fundo (e tinta sobre o vermelho) */
+  --pk-ink: #f5f5f7;     /* superfície: mídia, Case, quick view */
+  --pk-ink-2: #e6e7ea;
+  --pk-paper: #b8202f;   /* tinta do texto — 6,3:1 no branco */
+  --pk-hot: #d42f42;     /* acento — 4,9:1 no branco */
+  --pk-soft: #c8283a;    /* sobrelinha — 5,5:1 */
+  --pk-silver: #6b6d73;
+  --pk-line: rgba(184, 32, 47, 0.18);
+  --pk-mute: #b8404e;    /* 5,4:1 */
+  /* vermelho claro metálico: o brilho (#ff9aa0) é uma faixa estreita */
+  --pk-metal: linear-gradient(176deg, #e8505d 0%, #c8283a 34%, #ff9aa0 49%, #d43a4b 58%, #a81f2e 100%);
+  /* prata metálico */
+  --pk-silver-bg: linear-gradient(180deg, #f3f4f6 0%, #e2e3e6 42%, #f5f6f8 54%, #d9dadd 100%);
 
   --motion-fast: 180ms;
   --motion-standard: 420ms;
@@ -79,8 +90,8 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(60vw 40vh at 85% -10%, rgba(255, 79, 154, 0.14), transparent 70%),
-    radial-gradient(50vw 50vh at -10% 60%, rgba(184, 184, 184, 0.06), transparent 70%),
+    radial-gradient(60vw 40vh at 85% -10%, rgba(212, 47, 66, 0.07), transparent 70%),
+    radial-gradient(50vw 50vh at -10% 60%, rgba(184, 186, 192, 0.18), transparent 70%),
     var(--pk-black);
 }
 
@@ -96,6 +107,18 @@
 }
 .tpl-pinkora .pk-skip:focus {
   top: 12px;
+}
+
+/* ─── seções prata ─────────────────────────────────────────────────────── */
+
+/* Uma classe só, e ela também escurece o vermelho: no prata o #b8404e cai
+   para 4,0:1 e reprovaria. */
+.tpl-pinkora .pk-silver {
+  background: var(--pk-silver-bg);
+  --pk-paper: #a81f2e;
+  --pk-mute: #9e2a37;
+  --pk-soft: #a81f2e;
+  --pk-line: rgba(120, 22, 34, 0.2);
 }
 
 /* ─── tipografia ─────────────────────────────────────────────────────────── */
@@ -139,6 +162,30 @@
   display: block;
 }
 
+/* Vermelho claro metálico: o degradê preenche o desenho da letra. Vai também
+   nos FILHOS porque as linhas do título são spans transformados pelo GSAP, e
+   filho com transform pinta numa camada própria, fora do recorte do pai. */
+.tpl-pinkora .pk-display,
+.tpl-pinkora .pk-display span,
+.tpl-pinkora .pk-display em,
+.tpl-pinkora .pk-statement__line,
+.tpl-pinkora .pk-nav__logo,
+.tpl-pinkora .pk-nav__logo span,
+.tpl-pinkora .pk-orbit__name,
+.tpl-pinkora .pk-drawer__title,
+.tpl-pinkora .pk-quick__title,
+.tpl-pinkora .pk-menu a,
+.tpl-pinkora .pk-portal__name {
+  background-image: var(--pk-metal);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+/* o nome da coleção fica sobre a foto: um halo branco o descola de qualquer
+   imagem (text-shadow pintaria POR CIMA do degradê) */
+.tpl-pinkora .pk-portal__name { filter: drop-shadow(0 1px 8px rgba(255, 255, 255, 0.9)); }
+
 /* gate do movimento: só esconde o que o GSAP vai trazer */
 .tpl-pinkora[data-motion="on"] [data-reveal]:not([data-reveal="clip"]) { opacity: 0; }
 .tpl-pinkora[data-motion="on"] [data-reveal="clip"] { clip-path: inset(0 0 100% 0); }
@@ -159,8 +206,11 @@
   transition: transform var(--motion-fast) var(--ease-out), background var(--motion-fast), color var(--motion-fast);
 }
 .tpl-pinkora .pk-btn:active { transform: scale(0.97); }
-.tpl-pinkora .pk-btn--hot { background: var(--pk-hot); color: var(--pk-black); }
-.tpl-pinkora .pk-btn--hot:hover { background: var(--pk-paper); }
+.tpl-pinkora .pk-btn--hot {
+  background: linear-gradient(180deg, #d63c4d 0%, #b8202f 46%, #c62d3e 52%, #a01c2a 100%);
+  color: var(--pk-black);
+}
+.tpl-pinkora .pk-btn--hot:hover { background: #a01c2a; }
 .tpl-pinkora .pk-btn--hot:disabled { background: var(--pk-ink-2); color: var(--pk-mute); cursor: not-allowed; }
 .tpl-pinkora .pk-btn--line { border: 1px solid var(--pk-line); }
 .tpl-pinkora .pk-btn--line:hover { border-color: var(--pk-paper); }
@@ -185,7 +235,7 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  background: rgba(7, 7, 7, 0.72);
+  background: rgba(255, 255, 255, 0.86);
   border: 1px solid var(--pk-line);
   transition: border-color var(--motion-fast), background var(--motion-fast), color var(--motion-fast);
 }
@@ -212,14 +262,18 @@
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 60;
+  background: var(--pk-silver-bg);
+  border-bottom: 1px solid rgba(120, 22, 34, 0.14);
+  --pk-paper: #a81f2e;
+  --pk-mute: #9e2a37;
+  --pk-line: rgba(120, 22, 34, 0.2);
   transition: transform var(--motion-standard) var(--ease-out), background var(--motion-standard);
 }
-.tpl-pinkora .pk-nav.is-solid { background: rgba(7, 7, 7, 0.88); border-bottom: 1px solid var(--pk-line); }
+.tpl-pinkora .pk-nav.is-solid { box-shadow: 0 10px 24px -18px rgba(120, 22, 34, 0.35); }
 /* Recolher = ENCOLHER, nunca sumir: o Case mora nesta barra e o carrinho
    tem que estar sempre a um toque (no celular não existe outro caminho). */
 .tpl-pinkora .pk-nav.is-hidden .pk-nav__notice { display: none; }
 .tpl-pinkora .pk-nav.is-hidden .pk-nav__bar { height: 52px; }
-.tpl-pinkora .pk-nav.is-hidden { background: rgba(7, 7, 7, 0.92); }
 .tpl-pinkora .pk-nav__notice {
   margin: 0;
   padding: 5px var(--gutter);
@@ -228,7 +282,7 @@
   text-transform: uppercase;
   text-align: center;
   color: var(--pk-black);
-  background: var(--pk-soft);
+  background: #b8202f;
 }
 .tpl-pinkora .pk-nav__bar {
   display: flex;
@@ -293,7 +347,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 12px var(--gutter) 28px;
-  background: var(--pk-black);
+  background: var(--pk-silver-bg);
   border-bottom: 1px solid var(--pk-line);
 }
 .tpl-pinkora .pk-menu.is-open { display: flex; }
@@ -321,7 +375,7 @@
   background: var(--pk-ink);
   transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition: transform 600ms var(--ease-out);
-  box-shadow: 0 24px 40px -18px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 24px 40px -18px rgba(120, 22, 34, 0.28);
 }
 .tpl-pinkora .pk-media__img {
   position: absolute;
@@ -439,7 +493,7 @@
   background:
     repeating-linear-gradient(0deg, transparent 0 39px, rgba(7, 7, 7, 0.06) 39px 40px),
     repeating-linear-gradient(90deg, transparent 0 39px, rgba(7, 7, 7, 0.06) 39px 40px),
-    var(--pk-paper);
+    #ffffff;
 }
 .tpl-pinkora .pk-ph--editorial-white .pk-ph__tag { color: rgba(7, 7, 7, 0.7); }
 /* 06 — TRANSPARENT GLASS */
@@ -555,14 +609,14 @@
   width: 78%;
   aspect-ratio: 1;
   translate: -50% -50%;
-  border: 1px solid rgba(184, 184, 184, 0.22);
+  border: 1px solid rgba(184, 32, 47, 0.22);
   border-radius: 50%;
 }
 .tpl-pinkora .pk-stage__capsule {
   position: absolute;
   border-radius: 999px;
   background: linear-gradient(160deg, #f7f7f7, #6f6f6f 40%, #e6e6e6 60%, #4d4d4d);
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 20px 40px -10px rgba(120, 22, 34, 0.3);
 }
 .tpl-pinkora .pk-stage__capsule--a { width: 14%; height: 5%; left: 4%; top: 14%; rotate: -24deg; }
 .tpl-pinkora .pk-stage__capsule--b {
@@ -571,7 +625,7 @@
   right: 34%;
   bottom: 4%;
   rotate: 18deg;
-  background: linear-gradient(160deg, #ffd3e6, #ff4f9a 50%, #5a0f2c);
+  background: linear-gradient(160deg, #ffd3d6, #d42f42 50%, #6a1220);
 }
 @media (min-width: 1024px) {
   .tpl-pinkora .pk-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 110px; }
@@ -675,9 +729,14 @@
   z-index: 0;
   text-align: center;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(245, 242, 239, 0.28);
+  -webkit-text-stroke: 1px rgba(184, 32, 47, 0.26);
   font-size: clamp(3.4rem, 15vw, 15rem);
   pointer-events: none;
+}
+/* título vazado: o preenchimento metálico do .pk-display não pode valer aqui */
+.tpl-pinkora .pk-wall__title,
+.tpl-pinkora .pk-wall__title span {
+  background: none;
 }
 .tpl-pinkora .pk-wall__grid {
   position: relative;
@@ -746,7 +805,7 @@
   display: block;
   transition: translate 500ms var(--ease-out);
 }
-.tpl-pinkora .pk-fan__nail { width: 100%; height: auto; display: block; filter: drop-shadow(0 20px 20px rgba(0, 0, 0, 0.6)); }
+.tpl-pinkora .pk-fan__nail { width: 100%; height: auto; display: block; filter: drop-shadow(0 20px 20px rgba(120, 22, 34, 0.3)); }
 .tpl-pinkora .pk-fan__link:hover,
 .tpl-pinkora .pk-fan__link:focus-visible { translate: 0 -18%; }
 .tpl-pinkora .pk-fan__label {
@@ -766,7 +825,7 @@
   pointer-events: none;
   transition: opacity var(--motion-fast);
 }
-.tpl-pinkora .pk-fan__label span { color: var(--pk-hot); }
+.tpl-pinkora .pk-fan__label span { color: #ffd3d6; }
 .tpl-pinkora .pk-fan__link:hover .pk-fan__label,
 .tpl-pinkora .pk-fan__link:focus-visible .pk-fan__label { opacity: 1; }
 
@@ -792,8 +851,6 @@
   text-transform: uppercase;
   letter-spacing: -0.04em;
   line-height: 0.9;
-  color: var(--pk-paper);
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
 }
 .tpl-pinkora .pk-portal__kicker {
   position: absolute;
@@ -803,11 +860,10 @@
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--pk-paper);
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  text-shadow: 0 1px 8px rgba(120, 22, 34, 0.85);
 }
-.tpl-pinkora .pk-portal--paper .pk-portal__name,
-.tpl-pinkora .pk-portal--paper .pk-portal__kicker { color: var(--pk-black); text-shadow: none; }
+.tpl-pinkora .pk-portal--paper .pk-portal__kicker { color: var(--pk-paper); text-shadow: none; }
 .tpl-pinkora .pk-portal__fx { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 .tpl-pinkora .pk-portal--sweep .pk-portal__fx {
   background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.55) 48%, transparent 62%);
@@ -816,10 +872,10 @@
 }
 .tpl-pinkora .pk-portal--sweep:hover .pk-portal__fx { transform: translateX(110%); }
 .tpl-pinkora .pk-portal--glow .pk-portal__fx {
-  box-shadow: inset 0 0 0 0 rgba(255, 79, 154, 0);
+  box-shadow: inset 0 0 0 0 rgba(212, 47, 66, 0);
   transition: box-shadow var(--motion-slow) var(--ease-out);
 }
-.tpl-pinkora .pk-portal--glow:hover .pk-portal__fx { box-shadow: inset 0 0 80px 10px rgba(255, 79, 154, 0.55); }
+.tpl-pinkora .pk-portal--glow:hover .pk-portal__fx { box-shadow: inset 0 0 80px 10px rgba(212, 47, 66, 0.5); }
 .tpl-pinkora .pk-portal--glass .pk-portal__fx {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.12), transparent 35%, rgba(0, 0, 0, 0.5));
   opacity: 0.6;
@@ -894,11 +950,7 @@
   display: grid;
   gap: 32px;
   padding: 100px var(--gutter);
-  background: var(--pk-paper);
-  color: var(--pk-black);
 }
-.tpl-pinkora .pk-editorial .pk-eyebrow { color: #c21f68; }
-.tpl-pinkora .pk-editorial .pk-link { color: var(--pk-black); }
 .tpl-pinkora .pk-editorial__copy p { max-width: 50ch; font-size: 17px; }
 @media (min-width: 900px) {
   .tpl-pinkora .pk-editorial { grid-template-columns: 0.8fr 1.2fr; align-items: center; }
@@ -917,7 +969,7 @@
   line-height: 0.82;
   letter-spacing: -0.06em;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(255, 79, 154, 0.55);
+  -webkit-text-stroke: 1px rgba(184, 32, 47, 0.45);
 }
 .tpl-pinkora .pk-footer__grid { display: grid; gap: 28px; }
 .tpl-pinkora .pk-footer__lead { max-width: 38ch; color: var(--pk-mute); margin: 0; }
@@ -1023,7 +1075,7 @@
    mora FORA da tela, e preso aqui ele não abre rolagem horizontal. */
 .tpl-pinkora .pk-drawer { position: fixed; inset: 0; z-index: 90; overflow: hidden; pointer-events: none; visibility: hidden; transition: visibility 0s linear var(--motion-standard); }
 .tpl-pinkora .pk-drawer.is-open { pointer-events: auto; visibility: visible; transition: none; }
-.tpl-pinkora .pk-drawer__scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); opacity: 0; transition: opacity var(--motion-standard); }
+.tpl-pinkora .pk-drawer__scrim { position: absolute; inset: 0; background: rgba(60, 12, 18, 0.4); opacity: 0; transition: opacity var(--motion-standard); }
 .tpl-pinkora .pk-drawer.is-open .pk-drawer__scrim { opacity: 1; }
 .tpl-pinkora .pk-drawer__panel {
   position: absolute;
@@ -1072,14 +1124,14 @@
   height: 18px;
   border-radius: 999px;
   background: var(--pk-hot);
-  box-shadow: 0 0 16px 2px rgba(255, 79, 154, 0.6);
+  box-shadow: 0 0 16px 2px rgba(212, 47, 66, 0.55);
   pointer-events: none;
 }
 
 /* ─── QUICK VIEW ────────────────────────────────────────────────────────── */
 
 .tpl-pinkora .pk-quick { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; padding: 16px; }
-.tpl-pinkora .pk-quick__scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.75); animation: pkFade var(--motion-standard) both; }
+.tpl-pinkora .pk-quick__scrim { position: absolute; inset: 0; background: rgba(60, 12, 18, 0.45); animation: pkFade var(--motion-standard) both; }
 .tpl-pinkora .pk-quick__panel {
   position: relative;
   display: grid;
@@ -1143,7 +1195,7 @@
   z-index: 100;
   overflow-y: auto;
   padding: 80px var(--gutter) 60px;
-  background: rgba(7, 7, 7, 0.97);
+  background: rgba(255, 255, 255, 0.97);
   outline: none;
   animation: pkFade var(--motion-standard) both;
 }

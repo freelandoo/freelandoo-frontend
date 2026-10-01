@@ -139,7 +139,7 @@ const WALL = [
 
 export function NailWall({ products }: { products: Product[] }) {
   return (
-    <section className="pk-wall" aria-labelledby="pk-wall-title">
+    <section className="pk-wall pk-silver" aria-labelledby="pk-wall-title">
       <h2 id="pk-wall-title" className="pk-wall__title pk-display pk-display--lg" data-depth="-0.2">
         Nail
         <br />
@@ -219,7 +219,7 @@ export function Spotlight({ links, product, index }: { links: TemplateLinks; pro
 export function NailFan({ links, products }: { links: TemplateLinks; products: Product[] }) {
   const mid = (products.length - 1) / 2
   return (
-    <section className="pk-fan" aria-labelledby="pk-fan-title">
+    <section className="pk-fan pk-silver" aria-labelledby="pk-fan-title">
       <div className="pk-fan__head">
         <p className="pk-eyebrow">06 — O mostruário</p>
         <h2 id="pk-fan-title" className="pk-display pk-display--md">
@@ -260,7 +260,7 @@ export function Portal({ links, c, index }: { links: TemplateLinks; c: Collectio
         variant={c.variant}
         aspect="4/5"
         shape={(["almond", "coffin", "stiletto", "square"] as const)[index % 4]}
-        tint={index % 2 ? ["#121212", "#ff4f9a"] : ["#ff8dc2", "#f5f2ef"]}
+        tint={index % 2 ? ["#a81f2e", "#ff9aa0"] : ["#ff9aa0", "#f5f6f8"]}
         kicker={c.kicker}
         composition={index % 3 === 0 ? "set" : "single"}
       />
@@ -296,7 +296,7 @@ const RUNWAY_SHAPE = ["is-tall", "is-wide", "is-tilt", "is-tall", "is-round", "i
 
 export function Runway({ products, title = "New drop" }: { products: Product[]; title?: string }) {
   return (
-    <section className="pk-runway" data-runway aria-labelledby="pk-runway-title">
+    <section className="pk-runway pk-silver" data-runway aria-labelledby="pk-runway-title">
       <div className="pk-runway__track" data-runway-track>
         <h2 id="pk-runway-title" className="pk-runway__title pk-display pk-display--xl">
           {title}
@@ -342,14 +342,14 @@ export function BestSellers({ links, products }: { links: TemplateLinks; product
 
 export function Editorial({ links }: { links: TemplateLinks }) {
   return (
-    <section className="pk-editorial" aria-labelledby="pk-ed-title">
+    <section className="pk-editorial pk-silver" aria-labelledby="pk-ed-title">
       <div className="pk-editorial__media" data-depth="0.4">
         <ProductMedia
           alt=""
           variant="editorial-white"
           aspect="3/4"
           shape="almond"
-          tint={["#f5f2ef", "#ff4f9a"]}
+          tint={["#f5f6f8", "#d42f42"]}
           kicker="Atelier"
           label="FEITO À MÃO"
           composition="portrait"

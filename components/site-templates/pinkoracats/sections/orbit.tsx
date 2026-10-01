@@ -158,7 +158,7 @@ export default function NailOrbit({ products }: { products: Product[] }) {
   const p = products[active]
 
   return (
-    <section ref={section} className="pk-orbit" aria-labelledby="pk-orbit-title">
+    <section ref={section} className="pk-orbit pk-silver" aria-labelledby="pk-orbit-title">
       <div className="pk-orbit__head">
         <p className="pk-eyebrow">02 — New drop</p>
         <h2 id="pk-orbit-title" className="pk-display pk-display--md">

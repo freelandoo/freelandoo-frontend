@@ -98,7 +98,7 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
 export function SiteFooter({ links }: { links: TemplateLinks }) {
   const catalog = useCatalog()
   return (
-    <footer className="pk-footer">
+    <footer className="pk-footer pk-silver">
       <p className="pk-footer__giant" aria-hidden="true">
         PINKORA
         <br />
