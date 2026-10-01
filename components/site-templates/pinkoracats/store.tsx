@@ -49,6 +49,12 @@ type Store = {
   cartOpen: boolean
   searchOpen: boolean
   quick: Product | null
+  /**
+   * De onde o quick view nasceu (o retângulo da caixa clicada) e se a View
+   * Transition API cuidou da passagem. Sem a API, o QuickView faz o FLIP à mão
+   * a partir deste retângulo.
+   */
+  quickOrigin: { rect: DOMRect | null; viaVT: boolean }
   add: (id: string, size: string, qty: number, from?: HTMLElement | null) => void
   setQty: (id: string, size: string, qty: number) => void
   remove: (id: string, size: string) => void
@@ -85,36 +91,50 @@ function reducedMotion() {
 }
 
 /**
- * A cápsula que voa até o Case.
+ * ADD TO CASE — a caixinha fecha, dá o "clique", encolhe e voa até o Case.
  *
- * É um elemento `fixed` de 18px criado na hora e removido no fim — nunca
+ * ⚠️ O ITEM JÁ ENTROU NO CARRINHO antes disto começar: a animação é só
+ * confirmação visual, nunca a condição para a compra existir.
+ *
+ * É um elemento `fixed` de 56px criado na hora e removido no fim — nunca
  * cresce além da viewport, então não abre rolagem horizontal. WAAPI em
- * `transform`/`opacity` só: nada que custe layout.
+ * `transform`/`opacity` só. ~520ms no total.
  */
 function flyToCase(from: HTMLElement) {
   const target = document.querySelector<HTMLElement>(".tpl-pinkora [data-case-target]")
-  if (!target) return
+  const host = document.querySelector(".tpl-pinkora")
+  if (!target || !host) return
   const a = from.getBoundingClientRect()
   const b = target.getBoundingClientRect()
-  const dot = document.createElement("div")
-  dot.className = "pk-capsule"
-  dot.style.left = `${a.left + a.width / 2 - 9}px`
-  dot.style.top = `${a.top + a.height / 2 - 9}px`
-  document.querySelector(".tpl-pinkora")?.appendChild(dot)
+  const box = document.createElement("div")
+  box.className = "pk-flycase"
+  box.innerHTML = '<span class="pk-flycase__lid"></span>'
+  box.style.left = `${a.left + a.width / 2 - 28}px`
+  box.style.top = `${a.top + a.height / 2 - 28}px`
+  host.appendChild(box)
   const dx = b.left + b.width / 2 - (a.left + a.width / 2)
   const dy = b.top + b.height / 2 - (a.top + a.height / 2)
-  const anim = dot.animate(
+  const ease = "cubic-bezier(.22,1,.36,1)"
+  // 1) a tampa fecha
+  box.querySelector<HTMLElement>(".pk-flycase__lid")?.animate(
+    [{ transform: "rotateX(-100deg)" }, { transform: "rotateX(0deg)" }],
+    { duration: 170, easing: ease, fill: "forwards" },
+  )
+  // 2) clique, encolhe e voa
+  const anim = box.animate(
     [
-      { transform: "translate(0,0) scale(1.6)", opacity: 0 },
-      { transform: `translate(${dx * 0.35}px, ${dy * 0.35 - 80}px) scale(1.2)`, opacity: 1, offset: 0.35 },
-      { transform: `translate(${dx}px, ${dy}px) scale(0.5)`, opacity: 0.2 },
+      { transform: "translate(0,0) scale(1)", opacity: 0, offset: 0 },
+      { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0.2 },
+      { transform: "translate(0,0) scale(0.9)", opacity: 1, offset: 0.34 },
+      { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0.42 },
+      { transform: `translate(${dx}px, ${dy}px) scale(0.32)`, opacity: 0.35, offset: 1 },
     ],
-    { duration: 560, easing: "cubic-bezier(.6,0,.3,1)" },
+    { duration: 520, easing: ease },
   )
   anim.onfinish = () => {
-    dot.remove()
-    target.animate([{ transform: "scale(1)" }, { transform: "scale(1.25)" }, { transform: "scale(1)" }], {
-      duration: 280,
+    box.remove()
+    target.animate([{ transform: "scale(1)" }, { transform: "scale(1.22)" }, { transform: "scale(1)" }], {
+      duration: 260,
     })
   }
 }
@@ -169,6 +189,10 @@ export function StoreProvider({
   const [cartOpen, setCartOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [quick, setQuick] = useState<Product | null>(null)
+  const [quickOrigin, setQuickOrigin] = useState<{ rect: DOMRect | null; viaVT: boolean }>({
+    rect: null,
+    viaVT: false,
+  })
   const loaded = useRef(false)
 
   // Lido depois da hidratação: `localStorage` não existe no servidor, e ler no
@@ -264,26 +288,34 @@ export function StoreProvider({
   }, [])
 
   /**
-   * O quick view nasce DO CARD, não no lugar dele.
+   * PRODUCT TAKEOVER: a caixa clicada SAI do nicho e vira o quick view — não
+   * um modal que aparece do nada.
    *
-   * ⚠️ O NOME DA TRANSIÇÃO É POSTO NA HORA DO CLIQUE, e só no card clicado. O
-   * mesmo produto aparece em várias vitrines da home (órbita, parede, runway)
-   * — com `view-transition-name` fixo, dois elementos teriam o mesmo nome e o
-   * navegador ABORTA a transição inteira. Sem a API, o modal só entra com o
-   * próprio movimento de CSS.
+   * ⚠️ O NOME DA TRANSIÇÃO É POSTO NA HORA DO CLIQUE, e só na caixa clicada. O
+   * mesmo produto aparece em várias vitrines da home — com
+   * `view-transition-name` fixo, dois elementos teriam o mesmo nome e o
+   * navegador ABORTA a transição inteira. Sem a API, o QuickView faz o FLIP a
+   * partir do retângulo guardado aqui (fallback com GSAP).
    */
   const openQuick = useCallback((slug: string | null, from?: HTMLElement | null) => {
     const next = slug ? bySlug.get(slug) || null : null
     const doc = document as VTDocument
-    const media = from?.querySelector<HTMLElement>("[data-media]") || from || null
+    const media =
+      from?.querySelector<HTMLElement>("[data-case]") ||
+      from?.querySelector<HTMLElement>("[data-media]") ||
+      from ||
+      null
+    const rect = media ? media.getBoundingClientRect() : null
     if (next && media && doc.startViewTransition && !reducedMotion()) {
       media.style.viewTransitionName = "pk-quick"
+      setQuickOrigin({ rect, viaVT: true })
       doc.startViewTransition(() => {
         media.style.viewTransitionName = ""
         flushSync(() => setQuick(next))
       })
       return
     }
+    setQuickOrigin({ rect: next ? rect : null, viaVT: false })
     setQuick(next)
   }, [bySlug])
 
@@ -306,6 +338,7 @@ export function StoreProvider({
       cartOpen,
       searchOpen,
       quick,
+      quickOrigin,
       add,
       setQty,
       remove,
@@ -314,7 +347,7 @@ export function StoreProvider({
       openSearch: setSearchOpen,
       openQuick,
     }
-  }, [links, catalog, order, closeOrder, clearCart, byId, lines, saved, cartOpen, searchOpen, quick, add, setQty, remove, toggleSave, openQuick])
+  }, [links, catalog, order, closeOrder, clearCart, byId, lines, saved, cartOpen, searchOpen, quick, quickOrigin, add, setQty, remove, toggleSave, openQuick])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

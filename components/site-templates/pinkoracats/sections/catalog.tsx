@@ -1,9 +1,11 @@
 "use client"
 
-// MORPHING GRID — o catálogo completo. Aqui o grid é permitido, mas com três
-// leituras: GRID (2–4 colunas), EDITORIAL (assimétrico) e COMPACT (lista
-// rápida). Trocar de leitura ou de coleção ANIMA a passagem com GSAP Flip:
-// cada card sai de onde estava e chega onde vai, em vez de a grade piscar.
+// MORPHING CATALOG — o catálogo completo. Aqui a grade é permitida, mas com
+// três leituras: GALLERY (assimétrica, editorial), GRID (2–4 colunas de
+// caixas) e COMPACT (lista com mais informação). Trocar de leitura, coleção
+// ou formato ANIMA a passagem com GSAP Flip: cada caixa sai de onde estava e
+// chega onde vai, em vez de a grade piscar. Mesmo na grade, cada produto é uma
+// caixa acrílica — nunca sombra + canto arredondado genérico.
 //
 // ⚠️ O ESTADO DA LEITURA NÃO VAI PARA A URL: o filtro é preferência de quem
 // olha, e um `?view=` mudaria o canônico que o buscador lê.
@@ -15,20 +17,23 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import gsap from "gsap"
 import { Flip } from "gsap/Flip"
 
-import { ProductCard } from "../commerce"
+import AcrylicProductCase from "../case"
+import { Price, ProductCard, TakeoverLink } from "../commerce"
+import { displayId } from "../content/display"
+import { pageHref } from "../lib"
 import { SHAPE_CATS, shapeCat, type ShapeSlug } from "../content/shapes"
-import { useCatalog } from "../store"
+import { useStore } from "../store"
 
-type Mode = "grid" | "editorial" | "compact"
+type Mode = "gallery" | "grid" | "compact"
 
 export default function MorphingCatalog({ initialCollection = "all" }: { initialCollection?: string }) {
-  const [mode, setMode] = useState<Mode>("grid")
+  const [mode, setMode] = useState<Mode>("gallery")
   const [col, setCol] = useState(initialCollection)
   const [form, setForm] = useState<ShapeSlug | "all">("all")
   const box = useRef<HTMLDivElement>(null)
   const flipState = useRef<Flip.FlipState | null>(null)
 
-  const catalog = useCatalog()
+  const { catalog, links } = useStore()
   const items = useMemo(
     () =>
       catalog.products.filter(
@@ -100,7 +105,7 @@ export default function MorphingCatalog({ initialCollection = "all" }: { initial
           ))}
         </div>
         <div className="pk-catalog__modes" role="group" aria-label="Leitura">
-          {(["grid", "editorial", "compact"] as Mode[]).map((m) => (
+          {(["gallery", "grid", "compact"] as Mode[]).map((m) => (
             <button
               key={m}
               type="button"
@@ -111,7 +116,7 @@ export default function MorphingCatalog({ initialCollection = "all" }: { initial
                 setMode(m)
               }}
             >
-              {m === "grid" ? "Grid" : m === "editorial" ? "Editorial" : "Compact"}
+              {m === "gallery" ? "Gallery" : m === "grid" ? "Grid" : "Compact"}
             </button>
           ))}
         </div>
@@ -123,12 +128,24 @@ export default function MorphingCatalog({ initialCollection = "all" }: { initial
       <div ref={box} className={`pk-catalog__grid is-${mode}`}>
         {items.map((p, i) => (
           <div key={p.id} data-flip-id={p.id} data-flip className={`pk-catalog__cell c${i % 6}`}>
-            <ProductCard
-              product={p}
-              aspect={mode === "compact" ? "1/1" : mode === "editorial" && i % 3 === 0 ? "3/5" : "4/5"}
-              size={mode === "compact" ? "sm" : "md"}
-              composition={i % 2 ? "single" : "set"}
-            />
+            {mode === "compact" ? (
+              <div className="pk-row">
+                <TakeoverLink product={p} className="pk-row__case">
+                  <AcrylicProductCase product={p} size="xs" />
+                </TakeoverLink>
+                <span className="pk-mono pk-row__id">{displayId(p.number)}</span>
+                <a className="pk-row__name" href={pageHref(links, p.slug)}>
+                  {p.name}
+                </a>
+                <span className="pk-row__tag">{p.tagline || p.details[0] || ""}</span>
+                <span className={`pk-row__stock ${p.stock <= 3 ? "is-low" : ""}`}>
+                  {p.stock <= 0 ? "Esgotado" : p.stock <= 3 ? `Últimas ${p.stock}` : "Em estoque"}
+                </span>
+                <Price product={p} className="pk-row__price" />
+              </div>
+            ) : (
+              <ProductCard product={p} size={mode === "gallery" && i % 5 === 0 ? "lg" : mode === "gallery" ? "md" : "sm"} />
+            )}
           </div>
         ))}
       </div>
