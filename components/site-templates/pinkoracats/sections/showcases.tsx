@@ -2,7 +2,7 @@
 // sai pronto para o buscador; o gesto mora nas peças de cliente que eles
 // montam (`ProductCard`, `ProductMedia`) e nos atributos que `motion.tsx` lê.
 
-import { COLLECTIONS, type Collection } from "../content/collections"
+import type { Collection } from "../content/collections"
 import type { Product } from "../content/products.mock"
 import { ProductCard, QuickOpenButton } from "../commerce"
 import { brl, pageHref, type TemplateLinks } from "../lib"
@@ -63,7 +63,15 @@ export function HeroProductStage({
   )
 }
 
-export function Hero({ links, products }: { links: TemplateLinks; products: Product[] }) {
+export function Hero({
+  links,
+  products,
+  drop,
+}: {
+  links: TemplateLinks
+  products: Product[]
+  drop: Collection | null
+}) {
   return (
     <section className="pk-hero" aria-labelledby="pk-hero-title">
       <div className="pk-hero__copy">
@@ -84,8 +92,8 @@ export function Hero({ links, products }: { links: TemplateLinks; products: Prod
           Unhas autorais tratadas como peça de design: sets prontos, charms e encomendas desenhadas uma a uma.
         </p>
         <div className="pk-hero__cta" data-reveal="up">
-          <a className="pk-btn pk-btn--hot" href={pageHref(links, "new-drop")} data-cursor="SELECT">
-            Ver o new drop
+          <a className="pk-btn pk-btn--hot" href={pageHref(links, drop ? drop.slug : "loja")} data-cursor="SELECT">
+            {drop && drop.slug !== "new-drop" ? `Ver ${drop.name}` : "Ver o new drop"}
           </a>
           <a className="pk-btn pk-btn--line" href={pageHref(links, "loja")}>
             Todo o catálogo
@@ -263,7 +271,7 @@ export function Portal({ links, c, index }: { links: TemplateLinks; c: Collectio
   )
 }
 
-export function CollectionPortals({ links }: { links: TemplateLinks }) {
+export function CollectionPortals({ links, collections }: { links: TemplateLinks; collections: Collection[] }) {
   return (
     <section id="colecoes" className="pk-portals" aria-labelledby="pk-portals-title">
       <div className="pk-section-head">
@@ -274,7 +282,7 @@ export function CollectionPortals({ links }: { links: TemplateLinks }) {
         </h2>
       </div>
       <div className="pk-portals__grid">
-        {COLLECTIONS.map((c, i) => (
+        {collections.map((c, i) => (
           <Portal key={c.slug} links={links} c={c} index={i} />
         ))}
       </div>

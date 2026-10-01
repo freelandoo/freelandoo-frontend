@@ -8,12 +8,15 @@
 
 import { useEffect, useState } from "react"
 
-import { COLLECTIONS } from "./content/collections"
-import { BRAND, PLACEHOLDER_CATALOG } from "./content/brand"
+import { dropCollection } from "./content/catalog"
+import { BRAND } from "./content/brand"
 import { CaseButton, SearchButton } from "./commerce"
 import { PAGE, pageHref, type TemplateLinks } from "./lib"
+import { useCatalog } from "./store"
 
 export function SiteHeader({ links }: { links: TemplateLinks }) {
+  const catalog = useCatalog()
+  const drop = dropCollection(catalog)
   const [hidden, setHidden] = useState(false)
   const [solid, setSolid] = useState(false)
   const [menu, setMenu] = useState(false)
@@ -41,7 +44,7 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
 
   return (
     <header className={`pk-nav ${solid ? "is-solid" : ""} ${hidden && !menu ? "is-hidden" : ""}`}>
-      {PLACEHOLDER_CATALOG ? (
+      {!catalog.live ? (
         <p className="pk-nav__notice">Catálogo em prévia · fotos e preços definitivos em breve</p>
       ) : null}
       <div className="pk-nav__bar">
@@ -52,9 +55,11 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
           <a className="pk-nav__link" href={pageHref(links, PAGE.loja)}>
             Shop
           </a>
-          <a className="pk-nav__link" href={pageHref(links, "new-drop")}>
-            New drop
-          </a>
+          {drop ? (
+            <a className="pk-nav__link" href={pageHref(links, drop.slug)}>
+              {drop.name}
+            </a>
+          ) : null}
           <a className="pk-nav__link" href={`${links.home}#colecoes`}>
             Coleções
           </a>
@@ -77,7 +82,7 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
         <a href={pageHref(links, PAGE.loja)} onClick={() => setMenu(false)}>
           Shop
         </a>
-        {COLLECTIONS.map((c) => (
+        {catalog.collections.map((c) => (
           <a key={c.slug} href={pageHref(links, c.slug)} onClick={() => setMenu(false)}>
             {c.name}
           </a>
@@ -91,6 +96,7 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
 }
 
 export function SiteFooter({ links }: { links: TemplateLinks }) {
+  const catalog = useCatalog()
   return (
     <footer className="pk-footer">
       <p className="pk-footer__giant" aria-hidden="true">
@@ -106,7 +112,7 @@ export function SiteFooter({ links }: { links: TemplateLinks }) {
           </p>
         </div>
         <nav aria-label="Coleções" className="pk-footer__col">
-          {COLLECTIONS.map((c) => (
+          {catalog.collections.map((c) => (
             <a key={c.slug} href={pageHref(links, c.slug)}>
               {c.name}
             </a>

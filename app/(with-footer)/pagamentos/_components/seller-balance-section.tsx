@@ -26,6 +26,14 @@ interface BalanceItem {
   delivery_mode?: "shipping" | "local_pickup" | null
   order_total_cents: number
   buyer_name: string | null
+  /**
+   * Compra sem conta pelo carrinho do site (mig 271): sem caixa de mensagens,
+   * o contato dela e o recado do pedido (os tamanhos) chegam por aqui.
+   */
+  buyer_whatsapp?: string | null
+  buyer_email?: string | null
+  buyer_is_guest?: boolean
+  cart_note?: string | null
   order_created_at: string
   label_pdf_url: string | null
   label_purchased_at: string | null
@@ -202,6 +210,30 @@ export function SellerBalanceSection() {
                   {t("order", "Pedido")} #{b.id_order} · {formatDate(b.order_created_at, locale)}
                   {b.buyer_name ? ` · ${b.buyer_name}` : ""}
                 </p>
+                {b.delivery_mode === "local_pickup" && (b.buyer_whatsapp || b.buyer_email) ? (
+                  <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                    {b.buyer_whatsapp ? (
+                      <a
+                        className="font-semibold text-emerald-500 underline-offset-2 hover:underline"
+                        href={`https://wa.me/${b.buyer_whatsapp.length <= 11 ? `55${b.buyer_whatsapp}` : b.buyer_whatsapp}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {t("buyerWhatsapp", "WhatsApp da compradora")}
+                      </a>
+                    ) : null}
+                    {b.buyer_email ? (
+                      <a className="text-sky-500 underline-offset-2 hover:underline" href={`mailto:${b.buyer_email}`}>
+                        {b.buyer_email}
+                      </a>
+                    ) : null}
+                  </p>
+                ) : null}
+                {b.cart_note ? (
+                  <p className="mt-0.5 text-[11px] text-[#C9C2B6]">
+                    {t("orderNote", "Recado do pedido:")} {b.cart_note}
+                  </p>
+                ) : null}
                 {b.status === "aguardando" && (
                   <p className="mt-0.5 text-[11px] text-amber-600">
                     {t("releasesOn", "Libera em")} {formatDate(b.available_at, locale)}

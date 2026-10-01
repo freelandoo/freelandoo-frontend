@@ -8,6 +8,11 @@ import {
   type ProfileProduct,
   type ProfileProductMedia,
 } from "@/components/profile/profile-product-edit-modal"
+import {
+  ProductCollectionsBar,
+  type CollectionFilter,
+  type ProductCollection,
+} from "@/components/profile/product-collections-bar"
 import { EmptyState, LoadingState } from "@/components/tabloide"
 import { useActionConsent } from "@/hooks/use-action-consent"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
@@ -53,6 +58,10 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
   const [productSheet, setProductSheet] = useState<ProfileProduct | "create" | null>(null)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<number | null>(null)
+  // Coleções da Loja (mig 271). Falhar ao carregá-las não tranca a loja: a
+  // barra só não aparece, e os produtos continuam editáveis.
+  const [collections, setCollections] = useState<ProductCollection[]>([])
+  const [filter, setFilter] = useState<CollectionFilter>("all")
   const { ensureConsent } = useActionConsent()
 
   const load = useCallback(async () => {
@@ -65,7 +74,14 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
         setState("error")
         return
       }
-      const res = await fetch(`/api/profile/${profileId}/products`, { headers: ah })
+      const [res, colRes] = await Promise.all([
+        fetch(`/api/profile/${profileId}/products`, { headers: ah }),
+        fetch(`/api/profile/${profileId}/product-collections`, { headers: ah }).catch(() => null),
+      ])
+      if (colRes?.ok) {
+        const cd = await colRes.json().catch(() => ({}))
+        setCollections(Array.isArray(cd.collections) ? (cd.collections as ProductCollection[]) : [])
+      }
       const d = await res.json().catch(() => ({}))
       if (!res.ok) {
         setLoadError(d?.error || `${t("httpError", "Erro HTTP")} ${res.status}`)
@@ -137,6 +153,21 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
       setDeleting(null)
     }
   }
+
+  const counts: Record<string, number> = { all: products.length, none: 0 }
+  for (const p of products) {
+    const k = p.id_collection != null && collections.some((c) => c.id_collection === p.id_collection)
+      ? String(p.id_collection)
+      : "none"
+    counts[k] = (counts[k] || 0) + 1
+  }
+  const colName = new Map(collections.map((c) => [c.id_collection, c.name]))
+  const visible =
+    filter === "all"
+      ? products
+      : filter === "none"
+        ? products.filter((p) => p.id_collection == null || !colName.has(p.id_collection))
+        : products.filter((p) => p.id_collection === filter)
 
   if (state === "loading") {
     return (
@@ -240,6 +271,19 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
         </p>
       )}
 
+      <ProductCollectionsBar
+        profileId={profileId}
+        collections={collections}
+        onChange={setCollections}
+        filter={filter}
+        onFilter={setFilter}
+        counts={counts}
+        onError={(msg) => {
+          setFeedbackError(msg)
+          window.setTimeout(() => setFeedbackError(null), 5000)
+        }}
+      />
+
       {products.length === 0 ? (
         <EmptyState
           icon={<Package className="h-7 w-7" />}
@@ -248,7 +292,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
         />
       ) : (
         <ul className="grid grid-cols-2 items-stretch gap-4 md:grid-cols-3">
-          {products.map((p) => {
+          {visible.map((p) => {
             const img = getCoverUrl(p)
             const { integer, cents } = formatPriceParts(p.price_amount, intlTag)
             const desc = p.description?.trim()
@@ -282,11 +326,23 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
                     )}
                   </button>
 
-                  {!p.is_active && (
-                    <span className="absolute left-2 top-2 z-10 rounded-full border border-[#0B0B0D] bg-[#0B0B0D]/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#F1EDE2]">
-                      {t("inactive", "Inativo")}
-                    </span>
-                  )}
+                  <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
+                    {!p.is_active && (
+                      <span className="border border-[#0B0B0D] bg-[#0B0B0D]/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#F1EDE2]">
+                        {t("inactive", "Inativo")}
+                      </span>
+                    )}
+                    {p.is_featured && (
+                      <span className="border border-[#0B0B0D] bg-[#F2B705] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0B0B0D]">
+                        {t("featuredBadge", "Destaque")}
+                      </span>
+                    )}
+                    {p.id_collection != null && colName.has(p.id_collection) && (
+                      <span className="max-w-[9rem] truncate border border-[#0B0B0D] bg-[#F1EDE2] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0B0B0D]">
+                        {colName.get(p.id_collection)}
+                      </span>
+                    )}
+                  </div>
 
                   {img ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -339,6 +395,8 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
         onClose={() => setProductSheet(null)}
         profileId={profileId}
         product={productSheet !== null && productSheet !== "create" ? productSheet : null}
+        collections={collections}
+        defaultCollectionId={typeof filter === "number" ? filter : null}
         onSaved={(updated) => {
           handleSaved(updated)
           setFeedbackError(null)

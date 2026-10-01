@@ -28,32 +28,10 @@ export const BRAND = {
   whatsappNumber: null as string | null,
 } as const
 
-/**
- * ⚠️⚠️ O CATÁLOGO AINDA É PRÉVIA. Nomes, preços e estoques de
- * `products.mock.ts` são provisórios — ninguém os aprovou como oferta.
- *
- * Enquanto for `true`: uma faixa discreta diz "catálogo em prévia", o JSON-LD
- * NÃO declara preço (preço chutado no dado estruturado é o que rende ação
- * manual) e o carrinho fecha pedido por e-mail em vez de prometer pagamento.
- * Virar `false` é a decisão de que os preços são reais.
- */
-export const PLACEHOLDER_CATALOG = true
-
-/**
- * A Loja da Freelandoo onde o pagamento acontece (retirada combinada).
- *
- * É o perfil-conta da Taiz — é ELE que é dono da Loja. Um produto do site
- * passa a ser comprável no dia em que `storeProductId` for preenchido com o id
- * do produto cadastrado lá; o site nunca cobra nada por conta própria.
- */
-export const STORE = {
-  origin: "https://www.freelandoo.com.br",
-  profileId: "cd3abc4f-e743-4017-b13e-7c3e53593740",
-} as const
-
-export function storeProductUrl(id: string): string {
-  return `${STORE.origin}/p/${STORE.profileId}/produto/${id}`
-}
+// ⚠️ A PRÉVIA × A LOJA deixou de ser uma constante daqui: quem decide é o
+// catálogo (`content/catalog.ts`, campo `live`), que vira sozinho no dia em que
+// a Taiz liga o primeiro produto na Loja dela. O pagamento é o carrinho do
+// site (`/store-carts`, mig 271), não mais a página de cada produto.
 
 export function whatsappLink(message: string): string | null {
   if (!BRAND.whatsappNumber) return null

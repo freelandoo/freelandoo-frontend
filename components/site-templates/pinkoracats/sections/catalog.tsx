@@ -12,9 +12,8 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import gsap from "gsap"
 import { Flip } from "gsap/Flip"
 
-import { COLLECTIONS } from "../content/collections"
-import { PRODUCTS } from "../content/products.mock"
 import { ProductCard } from "../commerce"
+import { useCatalog } from "../store"
 
 type Mode = "grid" | "editorial" | "compact"
 
@@ -24,7 +23,11 @@ export default function MorphingCatalog({ initialCollection = "all" }: { initial
   const box = useRef<HTMLDivElement>(null)
   const flipState = useRef<Flip.FlipState | null>(null)
 
-  const items = useMemo(() => (col === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.collection === col)), [col])
+  const catalog = useCatalog()
+  const items = useMemo(
+    () => (col === "all" ? catalog.products : catalog.products.filter((p) => p.collection === col)),
+    [col, catalog],
+  )
 
   const capture = () => {
     if (!box.current) return
@@ -51,7 +54,7 @@ export default function MorphingCatalog({ initialCollection = "all" }: { initial
     <div className="pk-catalog">
       <div className="pk-catalog__bar">
         <div className="pk-catalog__filters" role="group" aria-label="Coleção">
-          {[{ slug: "all", name: "Tudo" }, ...COLLECTIONS].map((c) => (
+          {[{ slug: "all", name: "Tudo" }, ...catalog.collections].map((c) => (
             <button
               key={c.slug}
               type="button"

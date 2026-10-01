@@ -1052,7 +1052,6 @@
 .tpl-pinkora .pk-line .pk-link { align-self: flex-start; margin-top: 4px; }
 .tpl-pinkora .pk-drawer__foot { display: grid; gap: 10px; padding: 18px 22px 24px; border-top: 1px solid var(--pk-line); background: var(--pk-black); }
 .tpl-pinkora .pk-drawer__total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; }
-.tpl-pinkora .pk-drawer__store { display: grid; gap: 8px; }
 .tpl-pinkora .pk-drawer__hint { margin: 0; font-size: 12px; color: var(--pk-mute); }
 .tpl-pinkora .pk-drawer__empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 30px; color: var(--pk-mute); }
 .tpl-pinkora .pk-drawer__emptytitle { font-family: var(--pk-font-display); font-weight: 800; font-size: 28px; text-transform: uppercase; color: var(--pk-paper); letter-spacing: -0.03em; margin: 0; }
@@ -1101,6 +1100,38 @@
   .tpl-pinkora .pk-quick__panel { grid-template-columns: 1fr 1fr; padding: 24px; gap: 32px; }
   .tpl-pinkora .pk-quick__info { padding-top: 40px; }
 }
+/* ─── CHECKOUT (no Case) e RECIBO (a volta do Mercado Pago) ─────────────── */
+
+/* O formulário mora no corpo do painel, no lugar da lista: o Case tem altura
+   fixa da tela, então ele rola por dentro, como a lista. */
+.tpl-pinkora .pk-checkout { flex: 1; overflow-y: auto; display: grid; align-content: start; gap: 14px; padding: 18px 22px 24px; }
+.tpl-pinkora .pk-checkout__lead { margin: 0; font-size: 15px; color: var(--pk-mute); }
+.tpl-pinkora .pk-checkout__lead strong { color: var(--pk-paper); font-weight: 600; }
+.tpl-pinkora .pk-field { display: grid; gap: 6px; }
+.tpl-pinkora .pk-field span { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--pk-mute); }
+.tpl-pinkora .pk-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  background: var(--pk-black);
+  color: var(--pk-paper);
+  border: 1px solid var(--pk-line);
+  border-radius: 0;
+  font: inherit;
+  font-size: 16px; /* 16px: abaixo disso o iOS dá zoom no campo */
+}
+.tpl-pinkora .pk-field input:focus-visible { outline: 2px solid var(--pk-hot); outline-offset: 0; border-color: transparent; }
+.tpl-pinkora .pk-checkout__error { margin: 0; padding: 10px 12px; border: 1px solid var(--pk-hot); color: var(--pk-soft); font-size: 14px; }
+.tpl-pinkora .pk-checkout .pk-btn[disabled] { opacity: 0.6; cursor: progress; }
+.tpl-pinkora .pk-checkout .pk-link { justify-self: start; }
+
+/* O recibo reaproveita o painel do quick view, mas numa coluna só e estreito:
+   é um aviso, não uma vitrine. */
+.tpl-pinkora .pk-quick__panel.pk-order { width: min(520px, 100%); grid-template-columns: 1fr; }
+.tpl-pinkora .pk-order__body { display: grid; gap: 4px; padding-top: 28px; }
+.tpl-pinkora .pk-order__list { list-style: none; margin: 0 0 18px; padding: 0; border-top: 1px solid var(--pk-line); }
+.tpl-pinkora .pk-order__list li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--pk-line); font-size: 14px; }
+.tpl-pinkora .pk-order__total { font-weight: 700; font-size: 16px !important; }
 @keyframes pkFade { from { opacity: 0; } }
 @keyframes pkRise { from { opacity: 0; transform: translateY(24px) scale(0.98); } }
 

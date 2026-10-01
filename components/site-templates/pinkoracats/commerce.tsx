@@ -3,11 +3,11 @@
 // AS PEÇAS DE COMPRA: card de produto, botões, caixa de compra, Case (carrinho),
 // quick view e busca.
 //
-// ⚠️ A EXPERIÊNCIA TERMINA ANTES DO DINHEIRO. Nenhuma peça aqui cobra nada:
-// o pagamento acontece na Loja da Freelandoo (produto com `storeProductId`) ou,
-// enquanto o catálogo for prévia, o pedido segue por e-mail para a Taiz. O
-// briefing pede checkout convencional e rápido — reinventar pagamento dentro
-// de um site de vitrine é o jeito mais caro de perder a venda.
+// ⚠️ NENHUMA PEÇA AQUI COBRA NADA. O Case manda ids e quantidades para
+// `/store-carts/checkout` (mig 271), o backend RECALCULA o preço e devolve a
+// página do Mercado Pago — um pagamento só para o carrinho inteiro, sem a
+// compradora precisar de conta. Enquanto o catálogo for prévia (`catalog.live`
+// falso), o pedido segue por e-mail/WhatsApp para a Taiz.
 //
 // ⚠️ PRODUTO É LINK DE VERDADE e botão é botão de verdade: o card é um `<a>`
 // para a página do produto, e o "ver rápido" é um `<button>` IRMÃO dele, nunca
@@ -15,10 +15,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { COLLECTION_BY_SLUG } from "./content/collections"
-import { PRODUCTS, PRODUCT_BY_ID, type Product } from "./content/products.mock"
-import { BRAND, PLACEHOLDER_CATALOG, mailtoOrder, storeProductUrl, whatsappLink } from "./content/brand"
-import { brl, pageHref } from "./lib"
+import { catalogIndex, dropCollection } from "./content/catalog"
+import type { Product } from "./content/products.mock"
+import { BRAND, mailtoOrder, whatsappLink } from "./content/brand"
+import { PAGE, brl, pageHref } from "./lib"
 import ProductMedia, { type Composition } from "./media"
 import { useStore } from "./store"
 
@@ -41,8 +41,8 @@ export function ProductCard({
   priority?: boolean
   className?: string
 }) {
-  const { links, openQuick, saved, toggleSave } = useStore()
-  const col = COLLECTION_BY_SLUG.get(product.collection)
+  const { links, catalog, openQuick, saved, toggleSave } = useStore()
+  const col = catalogIndex(catalog).colBySlug.get(product.collection)
   const isSaved = saved.includes(product.id)
   return (
     <article className={`pk-card pk-card--${size} ${className}`} data-card data-tilt>
@@ -68,7 +68,7 @@ export function ProductCard({
           {showPrice ? <span className="pk-card__price">{brl(product.priceCents)}</span> : null}
         </div>
         <p className="pk-card__reveal">
-          <span>{product.tagline}</span>
+          <span>{product.tagline || product.description}</span>
           <span className="pk-card__cta">Ver detalhes →</span>
         </p>
       </a>
@@ -257,14 +257,33 @@ function useDialog(open: boolean, close: () => void, panel: React.RefObject<HTML
   }, [open, close, panel])
 }
 
+type Step = "cart" | "form" | "sending"
+
+/** O que a API devolve no checkout. */
+type CheckoutApi = { checkout_url?: string; error?: string }
+
 export function CaseDrawer() {
-  const { links, lines, subtotal, cartOpen, openCart, setQty, remove } = useStore()
+  const { links, catalog, lines, subtotal, cartOpen, openCart, setQty, remove } = useStore()
+  const { byId } = catalogIndex(catalog)
   const panel = useRef<HTMLDivElement>(null)
   const close = useMemo(() => () => openCart(false), [openCart])
   useDialog(cartOpen, close, panel)
+  const [step, setStep] = useState<Step>("cart")
+  const [error, setError] = useState<string | null>(null)
+  const [buyer, setBuyer] = useState({ name: "", email: "", whatsapp: "" })
+  const drop = dropCollection(catalog)
+
+  // Fechar e reabrir volta para a lista: um formulário pela metade, aberto do
+  // nada na próxima visita ao Case, parece pedido em andamento.
+  useEffect(() => {
+    if (!cartOpen) {
+      setStep("cart")
+      setError(null)
+    }
+  }, [cartOpen])
 
   const rows = lines
-    .map((l) => ({ l, p: PRODUCT_BY_ID.get(l.id) }))
+    .map((l) => ({ l, p: byId.get(l.id) }))
     .filter((r): r is { l: typeof r.l; p: Product } => !!r.p)
 
   const summary = rows
@@ -272,7 +291,50 @@ export function CaseDrawer() {
     .join("\n")
   const body = `Olá, Taiz! Quero fechar este pedido do site:\n\n${summary}\n\nSubtotal: ${brl(subtotal)}\n\nMeu nome:\nComo prefiro combinar a retirada:`
   const wa = whatsappLink(body)
-  const linked = rows.filter(({ p }) => p.storeProductId)
+
+  /**
+   * Fecha o pedido no backend e manda a compradora para o Mercado Pago.
+   *
+   * ⚠️ SÓ VAI ID E QUANTIDADE: o preço é recalculado no backend. O tamanho da
+   * tip não existe na Loja (é uma escolha do set), então ele viaja como a
+   * observação do pedido — é ali que a Taiz lê.
+   */
+  async function pay(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setStep("sending")
+    const items = new Map<string, number>()
+    for (const { l, p } of rows) {
+      if (!p.storeProductId) continue
+      items.set(p.storeProductId, (items.get(p.storeProductId) || 0) + l.qty)
+    }
+    const note = rows.map(({ l, p }) => `${l.qty}× ${p.name} — tamanho ${l.size}`).join("; ")
+    try {
+      const res = await fetch("/api/store-carts/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_community: links.communityId,
+          buyer,
+          note: note.slice(0, 500),
+          items: [...items.entries()].map(([id, quantity]) => ({ id_profile_product: Number(id), quantity })),
+          // A volta do pagamento: esta mesma página. O backend confere que a
+          // origem é do site antes de usar.
+          return_url: `${window.location.origin}${window.location.pathname}`,
+        }),
+      })
+      const data = (await res.json().catch(() => ({}))) as CheckoutApi
+      if (!res.ok || !data.checkout_url) {
+        setError(data.error || "Não foi possível abrir o pagamento. Tente de novo.")
+        setStep("form")
+        return
+      }
+      window.location.assign(data.checkout_url)
+    } catch {
+      setError("Sem conexão. Confira a internet e tente de novo.")
+      setStep("form")
+    }
+  }
 
   return (
     <div className={`pk-drawer ${cartOpen ? "is-open" : ""}`} aria-hidden={!cartOpen}>
@@ -287,7 +349,7 @@ export function CaseDrawer() {
       >
         <header className="pk-drawer__head">
           <p className="pk-eyebrow">Pinkora</p>
-          <h2 className="pk-drawer__title">Case</h2>
+          <h2 className="pk-drawer__title">{step === "cart" ? "Case" : "Checkout"}</h2>
           <button type="button" className="pk-x" onClick={close} aria-label="Fechar">
             ×
           </button>
@@ -298,11 +360,11 @@ export function CaseDrawer() {
             <div className="pk-empty-orb" aria-hidden="true" />
             <p className="pk-drawer__emptytitle">Your case is empty.</p>
             <p>Nada aqui ainda — as peças novas estão no drop.</p>
-            <a className="pk-btn pk-btn--hot" href={pageHref(links, "new-drop")} onClick={close}>
+            <a className="pk-btn pk-btn--hot" href={pageHref(links, drop ? drop.slug : PAGE.loja)} onClick={close}>
               Ver o drop
             </a>
           </div>
-        ) : (
+        ) : step === "cart" ? (
           <>
             <ul className="pk-drawer__list">
               {rows.map(({ l, p }) => (
@@ -349,17 +411,17 @@ export function CaseDrawer() {
                 <span>Subtotal</span>
                 <span>{brl(subtotal)}</span>
               </div>
-              {linked.length > 0 ? (
-                <div className="pk-drawer__store">
-                  <p className="pk-drawer__hint">Pagamento seguro na loja, peça por peça:</p>
-                  {linked.map(({ p }) => (
-                    <a key={p.id} className="pk-btn pk-btn--line" href={storeProductUrl(p.storeProductId as string)}>
-                      Pagar {p.name}
-                    </a>
-                  ))}
-                </div>
-              ) : null}
-              {linked.length < rows.length ? (
+              {catalog.live ? (
+                <>
+                  <button type="button" className="pk-btn pk-btn--hot" onClick={() => setStep("form")}>
+                    Finalizar compra
+                  </button>
+                  <p className="pk-drawer__hint">
+                    Pagamento pelo Mercado Pago — Pix, cartão ou boleto. Retirada combinada com a Taiz em {BRAND.city}/
+                    {BRAND.state}.
+                  </p>
+                </>
+              ) : (
                 <>
                   {wa ? (
                     <a className="pk-btn pk-btn--hot" href={wa} target="_blank" rel="noopener noreferrer">
@@ -373,27 +435,163 @@ export function CaseDrawer() {
                     Enviar pedido por e-mail
                   </a>
                   <p className="pk-drawer__hint">
-                    {PLACEHOLDER_CATALOG
-                      ? "O pagamento online abre quando o catálogo definitivo entrar. Por enquanto o pedido chega direto para a Taiz, que confirma valores e prazo."
-                      : "Estas peças são fechadas direto com a Taiz, que confirma prazo e retirada."}
+                    O pagamento online abre quando o catálogo definitivo entrar. Por enquanto o pedido chega direto
+                    para a Taiz, que confirma valores e prazo.
                   </p>
                 </>
-              ) : null}
+              )}
             </footer>
           </>
+        ) : (
+          <form className="pk-checkout" onSubmit={pay}>
+            <p className="pk-checkout__lead">
+              {rows.reduce((s, r) => s + r.l.qty, 0)} {rows.length === 1 && rows[0].l.qty === 1 ? "peça" : "peças"} ·{" "}
+              <strong>{brl(subtotal)}</strong>
+            </p>
+            <label className="pk-field">
+              <span>Seu nome</span>
+              <input
+                required
+                autoComplete="name"
+                value={buyer.name}
+                onChange={(e) => setBuyer((b) => ({ ...b, name: e.target.value }))}
+              />
+            </label>
+            <label className="pk-field">
+              <span>E-mail</span>
+              <input
+                required
+                type="email"
+                autoComplete="email"
+                value={buyer.email}
+                onChange={(e) => setBuyer((b) => ({ ...b, email: e.target.value }))}
+              />
+            </label>
+            <label className="pk-field">
+              <span>WhatsApp com DDD</span>
+              <input
+                required
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="(11) 99999-9999"
+                value={buyer.whatsapp}
+                onChange={(e) => setBuyer((b) => ({ ...b, whatsapp: e.target.value }))}
+              />
+            </label>
+            <p className="pk-drawer__hint">
+              É por ele que a Taiz combina a retirada em {BRAND.city}/{BRAND.state}. Não precisa criar conta.
+            </p>
+            {error ? (
+              <p className="pk-checkout__error" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <button type="submit" className="pk-btn pk-btn--hot" disabled={step === "sending"}>
+              {step === "sending" ? "Abrindo o pagamento…" : "Pagar com Mercado Pago"}
+            </button>
+            <button type="button" className="pk-link" onClick={() => setStep("cart")} disabled={step === "sending"}>
+              ← Voltar ao Case
+            </button>
+          </form>
         )}
       </div>
     </div>
   )
 }
 
+/**
+ * O RECIBO: o que a compradora vê quando volta do Mercado Pago.
+ *
+ * Pago → "pedido confirmado" e o próximo passo (a Taiz chama no WhatsApp).
+ * Pendente → o webhook ainda não chegou, ou é boleto/Pix aguardando.
+ * Voltou sem pagar → o carrinho continua, e o botão leva de volta a ele.
+ */
+export function OrderPanel() {
+  const { order, closeOrder, openCart } = useStore()
+  const panel = useRef<HTMLDivElement>(null)
+  useDialog(!!order, closeOrder, panel)
+  if (!order) return null
+
+  const title =
+    order.status === "paid"
+      ? "Pedido confirmado"
+      : order.status === "cancel"
+        ? "Pagamento não concluído"
+        : order.status === "canceled" || order.status === "refunded"
+          ? "Pedido cancelado"
+          : order.status === "error"
+            ? "Pedido recebido"
+            : "Confirmando o pagamento…"
+  const text =
+    order.status === "paid"
+      ? `A Taiz recebeu o seu pedido e vai chamar você no WhatsApp para combinar a retirada em ${BRAND.city}/${BRAND.state}.`
+      : order.status === "cancel"
+        ? "Nada foi cobrado. As peças continuam no seu Case."
+        : order.status === "canceled"
+          ? "Uma das peças esgotou antes de o pagamento confirmar. O valor é devolvido integralmente pelo Mercado Pago."
+          : order.status === "refunded"
+            ? "Este pedido foi reembolsado."
+            : order.status === "error"
+              ? "Não conseguimos ler o estado do pedido agora. Se o pagamento foi feito, você recebe o comprovante do Mercado Pago por e-mail."
+              : "Se você pagou com Pix ou cartão, isso leva alguns segundos. Boleto confirma quando é compensado."
+
+  return (
+    <div className="pk-quick" role="presentation">
+      <button type="button" className="pk-quick__scrim" onClick={closeOrder} tabIndex={-1} aria-label="Fechar" />
+      <div ref={panel} className="pk-quick__panel pk-order" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
+        <button type="button" className="pk-x" onClick={closeOrder} aria-label="Fechar">
+          ×
+        </button>
+        <div className="pk-order__body" aria-live="polite">
+          <p className="pk-eyebrow">Pedido {order.id.slice(0, 8)}</p>
+          <h2 className="pk-quick__title">{title}</h2>
+          <p className="pk-quick__desc">{text}</p>
+          {order.items.length ? (
+            <ul className="pk-order__list">
+              {order.items.map((i, n) => (
+                <li key={n}>
+                  <span>
+                    {i.quantity}× {i.name}
+                  </span>
+                  <span>{brl(i.unitCents * i.quantity)}</span>
+                </li>
+              ))}
+              <li className="pk-order__total">
+                <span>Total</span>
+                <span>{brl(order.totalCents)}</span>
+              </li>
+            </ul>
+          ) : null}
+          {order.status === "cancel" ? (
+            <button
+              type="button"
+              className="pk-btn pk-btn--hot"
+              onClick={() => {
+                closeOrder()
+                openCart(true)
+              }}
+            >
+              Voltar ao Case
+            </button>
+          ) : (
+            <button type="button" className="pk-btn pk-btn--line" onClick={closeOrder}>
+              Continuar no site
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function QuickView() {
-  const { links, quick, openQuick } = useStore()
+  const { links, catalog, quick, openQuick } = useStore()
   const panel = useRef<HTMLDivElement>(null)
   const close = useMemo(() => () => openQuick(null), [openQuick])
   useDialog(!!quick, close, panel)
   if (!quick) return null
-  const col = COLLECTION_BY_SLUG.get(quick.collection)
+  const col = catalogIndex(catalog).colBySlug.get(quick.collection)
   return (
     <div className="pk-quick" role="presentation">
       <button type="button" className="pk-quick__scrim" onClick={close} tabIndex={-1} aria-label="Fechar" />
@@ -448,7 +646,8 @@ function norm(s: string) {
 }
 
 export function SearchOverlay() {
-  const { links, searchOpen, openSearch } = useStore()
+  const { links, catalog, searchOpen, openSearch } = useStore()
+  const { colBySlug } = catalogIndex(catalog)
   const [q, setQ] = useState("")
   const panel = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -461,11 +660,11 @@ export function SearchOverlay() {
 
   const results = useMemo(() => {
     const t = norm(q.trim())
-    if (!t) return PRODUCTS.filter((p) => p.featured)
-    return PRODUCTS.filter((p) =>
-      norm(`${p.name} ${p.tagline} ${COLLECTION_BY_SLUG.get(p.collection)?.name || ""}`).includes(t),
+    if (!t) return catalog.products.filter((p) => p.featured)
+    return catalog.products.filter((p) =>
+      norm(`${p.name} ${p.tagline} ${p.description} ${colBySlug.get(p.collection)?.name || ""}`).includes(t),
     )
-  }, [q])
+  }, [q, catalog, colBySlug])
 
   if (!searchOpen) return null
   return (
@@ -494,7 +693,7 @@ export function SearchOverlay() {
             <a href={pageHref(links, p.slug)} onClick={close} className="pk-search__item">
               <span className="pk-search__num">{p.number}</span>
               <span className="pk-search__name">{p.name}</span>
-              <span className="pk-search__col">{COLLECTION_BY_SLUG.get(p.collection)?.name}</span>
+              <span className="pk-search__col">{colBySlug.get(p.collection)?.name}</span>
               <span className="pk-search__price">{brl(p.priceCents)}</span>
             </a>
           </li>

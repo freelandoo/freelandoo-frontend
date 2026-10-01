@@ -1,8 +1,9 @@
 // AS PÁGINAS INTERNAS: produto, coleção, loja e sobre.
 
-import { BRAND, PLACEHOLDER_CATALOG } from "../content/brand"
-import { COLLECTIONS, COLLECTION_BY_SLUG, type Collection } from "../content/collections"
-import { PRODUCTS, productsIn, type Product } from "../content/products.mock"
+import { BRAND } from "../content/brand"
+import { catalogIndex, productsIn, type Catalog } from "../content/catalog"
+import type { Collection } from "../content/collections"
+import type { Product } from "../content/products.mock"
 import { BuyBox, ProductCard } from "../commerce"
 import { PAGE, pageHref, type Ctx } from "../lib"
 import ProductMedia from "../media"
@@ -61,10 +62,10 @@ function ProductGallery({ product }: { product: Product }) {
   )
 }
 
-export function ProductPage({ links, product }: Ctx & { product: Product }) {
-  const col = COLLECTION_BY_SLUG.get(product.collection)
-  const related = PRODUCTS.filter((p) => p.collection === product.collection && p.id !== product.id)
-  const more = related.length ? related : PRODUCTS.filter((p) => p.id !== product.id).slice(0, 4)
+export function ProductPage({ links, catalog, product }: Ctx & { catalog: Catalog; product: Product }) {
+  const col = catalogIndex(catalog).colBySlug.get(product.collection)
+  const related = catalog.products.filter((p) => p.collection === product.collection && p.id !== product.id)
+  const more = related.length ? related : catalog.products.filter((p) => p.id !== product.id).slice(0, 4)
   return (
     <>
       <article className="pk-product">
@@ -82,19 +83,22 @@ export function ProductPage({ links, product }: Ctx & { product: Product }) {
               {product.number} · {col?.name}
             </p>
             <h1 className="pk-display pk-display--md pk-product__title">{product.name}</h1>
-            <p className="pk-product__tag">{product.tagline}</p>
+            {product.tagline ? <p className="pk-product__tag">{product.tagline}</p> : null}
             <BuyBox product={product} />
             <div className="pk-product__desc">
-              <p>{product.description}</p>
-              <ul>
-                {product.details.map((d) => (
-                  <li key={d}>{d}</li>
-                ))}
-              </ul>
+              {product.description ? <p>{product.description}</p> : null}
+              {product.details.length ? (
+                <ul>
+                  {product.details.map((d) => (
+                    <li key={d}>{d}</li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           </div>
         </div>
       </article>
+      {more.length ? (
       <section className="pk-related" aria-labelledby="pk-related-title">
         <h2 id="pk-related-title" className="pk-display pk-display--sm">
           Da mesma coleção
@@ -105,13 +109,18 @@ export function ProductPage({ links, product }: Ctx & { product: Product }) {
           ))}
         </div>
       </section>
+      ) : null}
     </>
   )
 }
 
-export function CollectionPage({ links, collection }: Ctx & { collection: Collection }) {
-  const items = productsIn(collection.slug)
-  const i = COLLECTIONS.findIndex((c) => c.slug === collection.slug)
+export function CollectionPage({
+  links,
+  catalog,
+  collection,
+}: Ctx & { catalog: Catalog; collection: Collection }) {
+  const items = productsIn(catalog, collection.slug)
+  const i = Math.max(0, catalog.collections.findIndex((c) => c.slug === collection.slug))
   return (
     <>
       <header className={`pk-colhero pk-portal--${collection.effect}`}>
@@ -149,10 +158,11 @@ export function CollectionPage({ links, collection }: Ctx & { collection: Collec
       </section>
       <section className="pk-portals pk-portals--more" aria-label="Outras coleções">
         <div className="pk-portals__grid">
-          {COLLECTIONS.filter((c) => c.slug !== collection.slug)
+          {catalog.collections
+            .filter((c) => c.slug !== collection.slug)
             .slice(0, 3)
             .map((c) => (
-              <Portal key={c.slug} links={links} c={c} index={COLLECTIONS.indexOf(c)} />
+              <Portal key={c.slug} links={links} c={c} index={catalog.collections.indexOf(c)} />
             ))}
         </div>
       </section>
@@ -160,21 +170,25 @@ export function CollectionPage({ links, collection }: Ctx & { collection: Collec
   )
 }
 
-export function ShopPage({ links }: Ctx) {
+export function ShopPage({ links, catalog }: Ctx & { catalog: Catalog }) {
   return (
     <section className="pk-shop">
       <Crumbs links={links} trail={[{ name: "Loja" }]} />
       <h1 className="pk-display pk-display--xl">Shop</h1>
       <p className="pk-shop__lead">
         Todo o catálogo, peça por peça.
-        {PLACEHOLDER_CATALOG ? " As fotos definitivas estão chegando — o que você vê aqui é a composição de cada set." : ""}
+        {!catalog.live ? " As fotos definitivas estão chegando — o que você vê aqui é a composição de cada set." : ""}
       </p>
       <MorphingCatalog />
     </section>
   )
 }
 
-export function AboutPage({ links }: Ctx) {
+export function AboutPage({ links, catalog }: Ctx & { catalog: Catalog }) {
+  // "Pedir um custom" só aponta para a coleção quando ela existe na Loja; sem
+  // ela, o caminho é a loja inteira (um link para 404 no site da cliente é o
+  // pior jeito de terminar a página de marca).
+  const custom = catalogIndex(catalog).colBySlug.get("custom")
   return (
     <section className="pk-about">
       <Crumbs links={links} trail={[{ name: "Sobre" }]} />
@@ -209,8 +223,8 @@ export function AboutPage({ links }: Ctx) {
             formato, tamanho e acabamento antes de produzir.
           </p>
           <div className="pk-hero__cta">
-            <a className="pk-btn pk-btn--hot" href={pageHref(links, "custom")}>
-              Pedir um custom
+            <a className="pk-btn pk-btn--hot" href={pageHref(links, custom ? custom.slug : PAGE.loja)}>
+              {custom ? "Pedir um custom" : "Ver a loja"}
             </a>
             <a className="pk-btn pk-btn--line" href={pageHref(links, PAGE.loja)}>
               Ver a loja

@@ -4,8 +4,9 @@
 // buscador lê. As peças com gesto (órbita, Case, quick view, busca, cursor,
 // movimento) são de cliente, por dentro.
 //
-// ⚠️ TEMA AUTORAL: o conteúdo mora no código (`content/`), e o `normalize` do
-// backend devolve `{}`. O `data` que chega é ignorado de propósito.
+// ⚠️ TEMA AUTORAL: a marca e os textos moram no código (`content/`). O `data`
+// traz UMA coisa só — a Loja da Taiz ao vivo (`data.catalog`, mig 271), que
+// vira o catálogo do site. Sem produto ativo na Loja, é a prévia que aparece.
 //
 // ⚠️ A FOLHA E AS FONTES SÃO IMPORTADAS AQUI, e tudo é escopado em
 // `.tpl-pinkora`: regra solta atravessaria a Freelandoo inteira.
@@ -15,11 +16,12 @@ import type { Metadata } from "next"
 
 import { SiteAnalytics } from "./analytics"
 import { BRAND } from "./content/brand"
-import { CaseDrawer, QuickView, SearchOverlay } from "./commerce"
+import { CaseDrawer, OrderPanel, QuickView, SearchOverlay } from "./commerce"
+import { buildCatalog } from "./content/catalog"
 import { CursorFollower, SiteFooter, SiteHeader } from "./chrome"
 import { PAGE, pageHref, type TemplateLinks } from "./lib"
 import Motion from "./motion"
-import { PAGE_SLUGS, pageMeta, pageSlug, resolvePinkoraPage, type PinkoraPage } from "./pages"
+import { pageMeta, pageSlug, pinkoraPageSlugs, resolvePinkoraPage, type PinkoraPage } from "./pages"
 import HomePage from "./pages/home"
 import { AboutPage, CollectionPage, ProductPage, ShopPage } from "./pages/inner"
 import { BreadcrumbLd, ProductLd, StoreLd } from "./schema"
@@ -39,7 +41,7 @@ const serif = Instrument_Serif({
 /** Texto. */
 const sans = Geist({ subsets: ["latin"], variable: "--pk-font-sans", display: "swap" })
 
-export { PAGE_SLUGS as pinkoraPageSlugs, resolvePinkoraPage }
+export { pinkoraPageSlugs, resolvePinkoraPage }
 export type { PinkoraPage }
 
 /**
@@ -48,6 +50,7 @@ export type { PinkoraPage }
  * contra freelandoo.com.br e tiraria o site da cliente do índice.
  */
 export function pinkoraMetadata({
+  data,
   links,
   page = null,
 }: {
@@ -55,7 +58,7 @@ export function pinkoraMetadata({
   links: TemplateLinks
   page?: PinkoraPage | null
 }): Metadata {
-  const { title, description } = pageMeta(page)
+  const { title, description } = pageMeta(page, buildCatalog(data))
   const slug = pageSlug(page)
   const url = `${links.origin}${slug ? pageHref(links, slug) : links.home}`
   return {
@@ -75,6 +78,7 @@ export function pinkoraMetadata({
 }
 
 export function PinkoracatsSite({
+  data,
   links,
   page = null,
 }: {
@@ -82,6 +86,7 @@ export function PinkoracatsSite({
   links: TemplateLinks
   page?: PinkoraPage | null
 }) {
+  const catalog = buildCatalog(data)
   const slug = pageSlug(page)
   const url = `${links.origin}${slug ? pageHref(links, slug) : links.home}`
   const trail: { name: string; href: string }[] = !page
@@ -112,32 +117,33 @@ export function PinkoracatsSite({
       <StoreLd origin={links.origin} home={links.home} />
       <BreadcrumbLd origin={links.origin} home={links.home} trail={trail} />
       {page?.kind === "product" ? (
-        <ProductLd origin={links.origin} home={links.home} url={url} product={page.product} />
+        <ProductLd origin={links.origin} home={links.home} url={url} product={page.product} live={catalog.live} />
       ) : null}
 
       <div className="tpl-pinkora__bg" aria-hidden="true" />
 
-      <StoreProvider links={links}>
+      <StoreProvider links={links} catalog={catalog}>
         <a href="#conteudo" className="pk-skip">
           Ir para o conteúdo
         </a>
         <SiteHeader links={links} />
         <main id="conteudo">
           {!page ? (
-            <HomePage links={links} />
+            <HomePage links={links} catalog={catalog} />
           ) : page.kind === "product" ? (
-            <ProductPage links={links} product={page.product} />
+            <ProductPage links={links} catalog={catalog} product={page.product} />
           ) : page.kind === "collection" ? (
-            <CollectionPage links={links} collection={page.collection} />
+            <CollectionPage links={links} catalog={catalog} collection={page.collection} />
           ) : page.kind === "loja" ? (
-            <ShopPage links={links} />
+            <ShopPage links={links} catalog={catalog} />
           ) : (
-            <AboutPage links={links} />
+            <AboutPage links={links} catalog={catalog} />
           )}
         </main>
         <SiteFooter links={links} />
         <CaseDrawer />
         <QuickView />
+        <OrderPanel />
         <SearchOverlay />
         <CursorFollower />
         <Motion />

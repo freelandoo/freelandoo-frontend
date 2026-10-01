@@ -2,12 +2,13 @@
 //
 // ⚠️ Nada de `aggregateRating`, `review` ou `priceRange` — não existe avaliação
 // nenhuma desta marca ainda, e nota inventada rende ação manual.
-// ⚠️ OFERTA (preço) SÓ COM CATÁLOGO DEFINITIVO: enquanto `PLACEHOLDER_CATALOG`
-// for `true` os preços são provisórios, e preço chutado no dado estruturado é
-// pior que preço nenhum. O produto continua marcado (nome, descrição, marca).
+// ⚠️ OFERTA (preço) SÓ COM CATÁLOGO DEFINITIVO: enquanto o catálogo for a
+// prévia (`live` falso) os preços são provisórios, e preço chutado no dado
+// estruturado é pior que preço nenhum. Com a Loja ao vivo, o preço é o mesmo
+// que o carrinho cobra. O produto continua marcado (nome, descrição, marca).
 // ⚠️ Campo vazio não vira campo (`prune`).
 
-import { BRAND, PLACEHOLDER_CATALOG } from "./content/brand"
+import { BRAND } from "./content/brand"
 import type { Product } from "./content/products.mock"
 
 function prune(v: unknown): unknown {
@@ -85,7 +86,19 @@ export function BreadcrumbLd({
   )
 }
 
-export function ProductLd({ origin, home, url, product }: { origin: string; home: string; url: string; product: Product }) {
+export function ProductLd({
+  origin,
+  home,
+  url,
+  product,
+  live,
+}: {
+  origin: string
+  home: string
+  url: string
+  product: Product
+  live: boolean
+}) {
   const images = [product.image, ...product.detailImages]
     .filter((s): s is string => !!s)
     .map((s) => (s.startsWith("http") ? s : `${origin}${s}`))
@@ -95,13 +108,13 @@ export function ProductLd({ origin, home, url, product }: { origin: string; home
         "@context": "https://schema.org",
         "@type": "Product",
         name: product.name,
-        description: product.description,
+        description: product.description || product.tagline,
         sku: product.id,
         url,
         image: images,
         brand: { "@type": "Brand", name: BRAND.full },
         seller: { "@id": `${origin}${home}#store` },
-        offers: PLACEHOLDER_CATALOG
+        offers: !live
           ? undefined
           : {
               "@type": "Offer",

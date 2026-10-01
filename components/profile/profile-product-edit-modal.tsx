@@ -69,6 +69,10 @@ export interface ProfileProduct {
   affiliate_percent?: number | null
   delivery_mode?: "shipping" | "local_pickup"
   attributes?: ProductAttributes | null
+  /** Coleção da vitrine (mig 271). */
+  id_collection?: number | null
+  /** Destaque da vitrine: o que o site põe na frente (mig 271). */
+  is_featured?: boolean
   created_at?: string
   updated_at?: string
   media?: ProfileProductMedia[]
@@ -224,6 +228,14 @@ interface ProfileProductEditModalProps {
   onSaved: (product: ProfileProduct) => void
   onMediaChanged?: (productId: number, media: ProfileProductMedia[]) => void
   onError?: (message: string) => void
+  /**
+   * As coleções da Loja (mig 271). Sem a prop, o formulário não mostra o
+   * campo e NÃO manda coleção nem destaque — quem não conhece coleção não
+   * pode soltar o produto da dela sem querer.
+   */
+  collections?: { id_collection: number; name: string }[]
+  /** Coleção já escolhida ao CRIAR (o filtro aberto na grade). */
+  defaultCollectionId?: number | null
 }
 
 export function ProfileProductEditModal({
@@ -234,6 +246,8 @@ export function ProfileProductEditModal({
   onSaved,
   onMediaChanged,
   onError,
+  collections,
+  defaultCollectionId = null,
 }: ProfileProductEditModalProps) {
   const t = useTranslations("Account")
   const tx = useTaxonomy()
@@ -254,6 +268,8 @@ export function ProfileProductEditModal({
     affiliates_allowed: false,
     affiliate_percent: null as number | null,
     delivery_mode: "local_pickup" as "shipping" | "local_pickup",
+    id_collection: "" as string,
+    is_featured: false,
   })
   const [attrs, setAttrs] = useState<ProductAttributes>({})
   const [saving, setSaving] = useState(false)
@@ -319,6 +335,8 @@ export function ProfileProductEditModal({
       affiliates_allowed: false,
       affiliate_percent: null,
       delivery_mode: "local_pickup",
+      id_collection: defaultCollectionId != null ? String(defaultCollectionId) : "",
+      is_featured: false,
     })
     setAttrs({})
     setForceCustomBox(false)
@@ -327,6 +345,9 @@ export function ProfileProductEditModal({
       if (prev) URL.revokeObjectURL(prev)
       return null
     })
+    // A coleção padrão é lida na ABERTURA; mudar o filtro com o modal aberto
+    // não deve trocar o que a dona já escolheu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, product])
 
   useEffect(() => {
@@ -349,6 +370,8 @@ export function ProfileProductEditModal({
       affiliate_percent: product.affiliate_percent ?? null,
       // SÓ RETIRADA (mig 264): o backend grava local_pickup de qualquer jeito.
       delivery_mode: SHIPPING_ENABLED && product.delivery_mode === "shipping" ? "shipping" : "local_pickup",
+      id_collection: product.id_collection != null ? String(product.id_collection) : "",
+      is_featured: product.is_featured === true,
     })
     setAttrs(product.attributes && typeof product.attributes === "object" ? product.attributes : {})
     setForceCustomBox(
@@ -642,6 +665,12 @@ export function ProfileProductEditModal({
       affiliate_percent: form.affiliate_percent,
       delivery_mode: form.delivery_mode,
       attributes: attrs,
+      ...(collections
+        ? {
+            id_collection: form.id_collection ? Number(form.id_collection) : null,
+            is_featured: form.is_featured,
+          }
+        : {}),
     }
     try {
       const url = product
@@ -1150,6 +1179,37 @@ export function ProfileProductEditModal({
               )}
             </section>
           )}
+
+          {collections ? (
+            <section className="grid gap-3 border-2 border-[#0B0B0D]/15 p-3">
+              <label className="grid gap-1">
+                <span className="text-xs font-bold text-[#0B0B0D]">{t("productCollection", "Coleção")}</span>
+                <select
+                  className="fl-input"
+                  value={form.id_collection}
+                  onChange={(e) => setForm((f) => ({ ...f, id_collection: e.target.value }))}
+                >
+                  <option value="">{t("collectionNone", "Sem coleção")}</option>
+                  {collections.map((c) => (
+                    <option key={c.id_collection} value={String(c.id_collection)}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={form.is_featured}
+                  onChange={(e) => setForm((f) => ({ ...f, is_featured: e.target.checked }))}
+                  className="h-4 w-4 border-[#0B0B0D]/40 accent-[#E0A500]"
+                />
+                <span className="text-sm font-medium text-[#0B0B0D]">
+                  {t("productFeatured", "Destaque (aparece primeiro no site)")}
+                </span>
+              </label>
+            </section>
+          ) : null}
 
           <label className="flex cursor-pointer items-center gap-2">
             <input
