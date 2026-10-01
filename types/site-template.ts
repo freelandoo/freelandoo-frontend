@@ -154,6 +154,14 @@ export type SiteTemplate =
       slug: "ecoluz"
       data: null
     }
+  /**
+   * Tema AUTORAL de um cliente (Pinkoracats Nail Art). O catálogo mora no
+   * código do tema e `data` é `null`; o `normalize` do backend devolve `{}`.
+   */
+  | {
+      slug: "pinkoracats"
+      data: null
+    }
 
 /**
  * O endereço do site nos TRÊS lugares em que ele é servido.

@@ -1,0 +1,149 @@
+// A porta do tema `pinkoracats` — é este arquivo que as rotas montam.
+//
+// Componente de SERVIDOR: fontes, folha e JSON-LD precisam estar no HTML que o
+// buscador lê. As peças com gesto (órbita, Case, quick view, busca, cursor,
+// movimento) são de cliente, por dentro.
+//
+// ⚠️ TEMA AUTORAL: o conteúdo mora no código (`content/`), e o `normalize` do
+// backend devolve `{}`. O `data` que chega é ignorado de propósito.
+//
+// ⚠️ A FOLHA E AS FONTES SÃO IMPORTADAS AQUI, e tudo é escopado em
+// `.tpl-pinkora`: regra solta atravessaria a Freelandoo inteira.
+
+import { Geist, Instrument_Serif, Unbounded } from "next/font/google"
+import type { Metadata } from "next"
+
+import { SiteAnalytics } from "./analytics"
+import { BRAND } from "./content/brand"
+import { CaseDrawer, QuickView, SearchOverlay } from "./commerce"
+import { CursorFollower, SiteFooter, SiteHeader } from "./chrome"
+import { PAGE, pageHref, type TemplateLinks } from "./lib"
+import Motion from "./motion"
+import { PAGE_SLUGS, pageMeta, pageSlug, resolvePinkoraPage, type PinkoraPage } from "./pages"
+import HomePage from "./pages/home"
+import { AboutPage, CollectionPage, ProductPage, ShopPage } from "./pages/inner"
+import { BreadcrumbLd, ProductLd, StoreLd } from "./schema"
+import { StoreProvider } from "./store"
+import "./theme.css"
+
+/** Display: grotesca larga, para headlines enormes de passarela. */
+const display = Unbounded({ subsets: ["latin"], variable: "--pk-font-display", display: "swap" })
+/** Acento editorial em itálico — a voz de revista, usada com parcimônia. */
+const serif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--pk-font-serif",
+  display: "swap",
+})
+/** Texto. */
+const sans = Geist({ subsets: ["latin"], variable: "--pk-font-sans", display: "swap" })
+
+export { PAGE_SLUGS as pinkoraPageSlugs, resolvePinkoraPage }
+export type { PinkoraPage }
+
+/**
+ * ⚠️ TÍTULO `absolute` (o layout raiz acrescentaria a marca da plataforma) e
+ * CANÔNICO ABSOLUTO com a origem desta visita — caminho relativo resolveria
+ * contra freelandoo.com.br e tiraria o site da cliente do índice.
+ */
+export function pinkoraMetadata({
+  links,
+  page = null,
+}: {
+  data?: unknown
+  links: TemplateLinks
+  page?: PinkoraPage | null
+}): Metadata {
+  const { title, description } = pageMeta(page)
+  const slug = pageSlug(page)
+  const url = `${links.origin}${slug ? pageHref(links, slug) : links.home}`
+  return {
+    title: { absolute: title },
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      type: page?.kind === "product" ? "article" : "website",
+      url,
+      siteName: BRAND.full,
+      locale: "pt_BR",
+    },
+    twitter: { card: "summary", title, description },
+  }
+}
+
+export function PinkoracatsSite({
+  links,
+  page = null,
+}: {
+  data?: unknown
+  links: TemplateLinks
+  page?: PinkoraPage | null
+}) {
+  const slug = pageSlug(page)
+  const url = `${links.origin}${slug ? pageHref(links, slug) : links.home}`
+  const trail: { name: string; href: string }[] = !page
+    ? []
+    : page.kind === "product"
+      ? [
+          { name: page.product.name, href: pageHref(links, page.product.slug) },
+        ]
+      : page.kind === "collection"
+        ? [{ name: page.collection.name, href: pageHref(links, page.collection.slug) }]
+        : page.kind === "loja"
+          ? [{ name: "Loja", href: pageHref(links, PAGE.loja) }]
+          : [{ name: "Sobre", href: pageHref(links, PAGE.sobre) }]
+
+  return (
+    <div
+      className={`tpl-pinkora ${display.variable} ${serif.variable} ${sans.variable}`}
+      suppressHydrationWarning
+    >
+      {/* O gate do movimento, escrito durante o PARSE (antes da 1ª pintura).
+          Sem JS o atributo nunca existe e a página aparece INTEIRA. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html:
+            "(function(){var s=document.currentScript;if(s&&s.parentElement&&!matchMedia('(prefers-reduced-motion: reduce)').matches)s.parentElement.setAttribute('data-motion','on')})()",
+        }}
+      />
+      <StoreLd origin={links.origin} home={links.home} />
+      <BreadcrumbLd origin={links.origin} home={links.home} trail={trail} />
+      {page?.kind === "product" ? (
+        <ProductLd origin={links.origin} home={links.home} url={url} product={page.product} />
+      ) : null}
+
+      <div className="tpl-pinkora__bg" aria-hidden="true" />
+
+      <StoreProvider links={links}>
+        <a href="#conteudo" className="pk-skip">
+          Ir para o conteúdo
+        </a>
+        <SiteHeader links={links} />
+        <main id="conteudo">
+          {!page ? (
+            <HomePage links={links} />
+          ) : page.kind === "product" ? (
+            <ProductPage links={links} product={page.product} />
+          ) : page.kind === "collection" ? (
+            <CollectionPage links={links} collection={page.collection} />
+          ) : page.kind === "loja" ? (
+            <ShopPage links={links} />
+          ) : (
+            <AboutPage links={links} />
+          )}
+        </main>
+        <SiteFooter links={links} />
+        <CaseDrawer />
+        <QuickView />
+        <SearchOverlay />
+        <CursorFollower />
+        <Motion />
+      </StoreProvider>
+
+      <SiteAnalytics communityId={links.communityId} bookingHref={links.booking} />
+    </div>
+  )
+}

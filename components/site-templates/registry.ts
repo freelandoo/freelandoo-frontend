@@ -54,6 +54,13 @@ import {
   resolveEcoluzPage,
   type EcoluzPage,
 } from "./ecoluz"
+import {
+  PinkoracatsSite,
+  pinkoraMetadata,
+  pinkoraPageSlugs,
+  resolvePinkoraPage,
+  type PinkoraPage,
+} from "./pinkoracats"
 
 /**
  * O que a rota entrega ao tema.
@@ -186,11 +193,31 @@ const ECOLUZ: TemplateEntry = {
   pageSlugs: () => ecoluzPageSlugs,
 }
 
+/**
+ * Tema AUTORAL, escrito para UM cliente: Pinkoracats Nail Art (Taiz Herrera,
+ * São Bernardo do Campo/SP) — loja experimental de nail art.
+ *
+ * ⚠️ Ignora `data` e `services` de propósito: o catálogo mora no código do
+ * tema (`content/products.mock.ts`, ainda PRÉVIA) e o pagamento acontece na
+ * Loja do perfil-conta da dona, por `storeProductId`. Ligar `services` aqui
+ * poria a vitrine de serviços do cadastro numa loja de produtos.
+ */
+const PINKORACATS: TemplateEntry = {
+  slug: "pinkoracats",
+  Site: ({ links, page }) =>
+    PinkoracatsSite({ links, page: (page as PinkoraPage | null) ?? null }),
+  resolvePage: (_data, slug) => resolvePinkoraPage(slug),
+  metadata: ({ links, page }) =>
+    pinkoraMetadata({ links, page: (page as PinkoraPage | null) ?? null }),
+  pageSlugs: () => pinkoraPageSlugs,
+}
+
 const TEMPLATES: Record<string, TemplateEntry> = {
   "oficina-local": OFICINA_LOCAL,
   "ricardo-fogoes": RICARDO_FOGOES,
   "enzo-cortes": ENZO_CORTES,
   ecoluz: ECOLUZ,
+  pinkoracats: PINKORACATS,
 }
 
 /**
