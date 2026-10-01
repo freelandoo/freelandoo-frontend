@@ -1,7 +1,6 @@
-// As COLEÇÕES. Cada uma é um AMBIENTE DE MATERIAL: a UI continua branca,
-// preta e prata, e o que muda é a luz e a placa (`effect` → material, ver
-// `PLATE_MATERIAL`). A fotografia, quando existir, é só a superfície e troca
-// sem mexer no efeito.
+// As COLEÇÕES. Cada uma é uma instalação: um comportamento de luz próprio,
+// que pertence ao CONTAINER (`effect`) — a fotografia, quando existir, é
+// só a superfície e troca sem mexer no efeito.
 
 import type { PlaceholderVariant } from "./products.mock"
 
@@ -26,7 +25,7 @@ export const COLLECTIONS: Collection[] = [
     kicker: "Drop 001",
     statement: "As peças que acabaram de sair da bancada. Tiragem curta, sem reposição garantida.",
     effect: "holo",
-    variant: "acrylic-clear",
+    variant: "holographic",
     image: null,
   },
   {
@@ -35,7 +34,7 @@ export const COLLECTIONS: Collection[] = [
     kicker: "Soft signal",
     statement: "Rosa como acento, nunca como fundo: glitter fino, leite, cereja e brilho molhado.",
     effect: "glow",
-    variant: "white-studio",
+    variant: "pink-chrome",
     image: null,
   },
   {
@@ -44,7 +43,7 @@ export const COLLECTIONS: Collection[] = [
     kicker: "Black glass",
     statement: "Preto espelhado, cat eye profundo e acabamento vidro. Para quem quer a unha como joia escura.",
     effect: "glass",
-    variant: "mirror-display",
+    variant: "black-glass",
     image: null,
   },
   {
@@ -53,7 +52,7 @@ export const COLLECTIONS: Collection[] = [
     kicker: "Liquid metal",
     statement: "Prata líquida, cromado espelho e reflexo que atravessa a peça quando a mão se move.",
     effect: "sweep",
-    variant: "chrome-pedestal",
+    variant: "mirror",
     image: null,
   },
   {
@@ -62,7 +61,7 @@ export const COLLECTIONS: Collection[] = [
     kicker: "Hardware",
     statement: "Pingentes, pérolas e peças metálicas aplicadas uma a uma — a unha como suporte de joalheria.",
     effect: "sparks",
-    variant: "silver-frame",
+    variant: "transparent-glass",
     image: null,
   },
   {
@@ -75,22 +74,5 @@ export const COLLECTIONS: Collection[] = [
     image: null,
   },
 ]
-
-/**
- * O MATERIAL DA PLACA de cada coleção. É a única tradução de "efeito" para
- * superfície do site — a placa da home, o herói da coleção e o menu leem daqui.
- *
- *   sweep  → cromado polido (Chrome)      glow  → prata acetinada (Pink, Nude)
- *   glass  → acrílico fumê (Dark)         sparks → prata escovada (Charms)
- *   holo   → prata espelho (o drop)       paper → branco editorial (Custom)
- */
-export const PLATE_MATERIAL: Record<CollectionEffect, "polished" | "satin" | "smoked" | "brushed" | "mirror" | "paper"> = {
-  sweep: "polished",
-  glow: "satin",
-  glass: "smoked",
-  sparks: "brushed",
-  holo: "mirror",
-  paper: "paper",
-}
 
 export const COLLECTION_BY_SLUG = new Map(COLLECTIONS.map((c) => [c.slug, c]))

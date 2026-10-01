@@ -1,13 +1,8 @@
 // A porta do tema `pinkoracats` — é este arquivo que as rotas montam.
 //
-// ACRYLIC VAULT — uma joalheria digital de press-on nails: branco é o espaço,
-// preto é a informação, prata é a arquitetura, o acrílico é a identidade e as
-// unhas são a cor. Cada produto é exposto numa caixa acrílica
-// (`AcrylicProductCase`), nunca num card.
-//
 // Componente de SERVIDOR: fontes, folha e JSON-LD precisam estar no HTML que o
-// buscador lê. As peças com gesto (Vault, drop, esteira, Case, quick view,
-// busca, lente, cursor, movimento) são de cliente, por dentro.
+// buscador lê. As peças com gesto (órbita, Case, quick view, busca, cursor,
+// movimento) são de cliente, por dentro.
 //
 // ⚠️ TEMA AUTORAL: a marca e os textos moram no código (`content/`). O `data`
 // traz UMA coisa só — a Loja da Taiz ao vivo (`data.catalog`, mig 271), que
@@ -16,7 +11,7 @@
 // ⚠️ A FOLHA E AS FONTES SÃO IMPORTADAS AQUI, e tudo é escopado em
 // `.tpl-pinkora`: regra solta atravessaria a Freelandoo inteira.
 
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google"
+import { Geist, Instrument_Serif, Unbounded } from "next/font/google"
 import type { Metadata } from "next"
 
 import { SiteAnalytics } from "./analytics"
@@ -33,21 +28,18 @@ import { BreadcrumbLd, ProductLd, StoreLd } from "./schema"
 import { StoreProvider } from "./store"
 import "./theme.css"
 
-/**
- * DISPLAY EDITORIAL: serifa de revista, condensada e precisa — a manchete
- * monumental em preto. Nada decorativo: é a voz de passarela, não de convite.
- */
-const display = Instrument_Serif({
+/** Display: grotesca larga, para headlines enormes de passarela. */
+const display = Unbounded({ subsets: ["latin"], variable: "--pk-font-display", display: "swap" })
+/** Acento editorial em itálico — a voz de revista, usada com parcimônia. */
+const serif = Instrument_Serif({
   subsets: ["latin"],
   weight: "400",
   style: ["normal", "italic"],
-  variable: "--pk-font-display",
+  variable: "--pk-font-serif",
   display: "swap",
 })
-/** Texto: grotesca moderna, extremamente legível. */
+/** Texto. */
 const sans = Geist({ subsets: ["latin"], variable: "--pk-font-sans", display: "swap" })
-/** Metadado técnico: "PC / 001", "DROP / 01", "DETAIL / 01". */
-const mono = Geist_Mono({ subsets: ["latin"], variable: "--pk-font-mono", display: "swap" })
 
 export { pinkoraPageSlugs, resolvePinkoraPage }
 export type { PinkoraPage }
@@ -111,7 +103,7 @@ export function PinkoracatsSite({
 
   return (
     <div
-      className={`tpl-pinkora ${display.variable} ${sans.variable} ${mono.variable}`}
+      className={`tpl-pinkora ${display.variable} ${serif.variable} ${sans.variable}`}
       suppressHydrationWarning
     >
       {/* O gate do movimento, escrito durante o PARSE (antes da 1ª pintura).

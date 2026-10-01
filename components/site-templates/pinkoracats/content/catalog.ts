@@ -31,8 +31,7 @@
 // montado de cada lado por `catalogIndex`.
 
 import { COLLECTIONS, type Collection, type CollectionEffect } from "./collections"
-import { declaredContainer, isDisplayLine } from "./display"
-import { FINISHES, PRODUCTS, type NailShape, type PlaceholderVariant, type Product } from "./products.mock"
+import { PRODUCTS, type NailShape, type PlaceholderVariant, type Product } from "./products.mock"
 import { declaredShape, shapeCat } from "./shapes"
 
 export type Catalog = {
@@ -66,17 +65,25 @@ type LiveCollection = {
 type LiveCatalog = { store_profile_id: string | null; collections: LiveCollection[]; products: LiveProduct[] }
 
 const VARIANTS: PlaceholderVariant[] = [
-  "white-studio",
-  "acrylic-clear",
-  "chrome-pedestal",
-  "silver-frame",
-  "mirror-display",
+  "holographic",
+  "pink-chrome",
+  "black-glass",
+  "mirror",
+  "transparent-glass",
   "editorial-white",
 ]
-const EFFECTS: CollectionEffect[] = ["sweep", "glow", "glass", "sparks", "holo", "paper"]
+const EFFECTS: CollectionEffect[] = ["holo", "glow", "glass", "sweep", "sparks", "paper"]
 const SHAPES: NailShape[] = ["almond", "coffin", "stiletto", "square"]
-/** Os acabamentos neutros do placeholder: nude, cromado, preto, rosa claro, transparente. */
-const TINTS: [string, string][] = [FINISHES.nude, FINISHES.chrome, FINISHES.black, FINISHES.pink, FINISHES.clear]
+const TINTS: [string, string][] = [
+  ["#5a0f24", "#ff4f9a"],
+  ["#2c2c2c", "#ff8dc2"],
+  ["#0b0b0b", "#b8b8b8"],
+  ["#ff8dc2", "#ff4f9a"],
+  ["#efe4dc", "#ffffff"],
+  ["#8fd8ff", "#ff8dc2"],
+  ["#1a1030", "#b58cff"],
+  ["#ffd3e6", "#ff4f9a"],
+]
 
 /** Os tamanhos de tip que a compradora escolhe — vão no pedido como observação. */
 export const SIZES = ["P", "M", "G"]
@@ -104,28 +111,20 @@ export function productSlug(name: string, id: number): string {
 }
 
 /** Linha curta, descrição e detalhes, a partir do texto único da Loja. */
-function splitDescription(text: string): {
-  tagline: string
-  description: string
-  details: string[]
-  control: string[]
-} {
+function splitDescription(text: string): { tagline: string; description: string; details: string[] } {
   const lines = String(text || "").replace(/\r\n/g, "\n").split("\n")
-  // ⚠️ A linha "Exibição: …" é controle, não detalhe: lida por
-  // `declaredContainer` e escondida da compradora.
-  const all = lines
+  const details = lines
     .map((l) => l.trim())
     .filter((l) => /^[•\-*]\s+/.test(l))
     .map((l) => l.replace(/^[•\-*]\s+/, ""))
-  const details = all.filter((l) => !isDisplayLine(l))
   const prose = lines
     .filter((l) => !/^\s*[•\-*]\s+/.test(l))
     .join("\n")
     .split(/\n\s*\n/)
     .map((p) => p.replace(/\s+/g, " ").trim())
     .filter(Boolean)
-  if (prose.length >= 2) return { tagline: prose[0], description: prose.slice(1).join(" "), details, control: all }
-  return { tagline: "", description: prose[0] || "", details, control: all }
+  if (prose.length >= 2) return { tagline: prose[0], description: prose.slice(1).join(" "), details }
+  return { tagline: "", description: prose[0] || "", details }
 }
 
 function isLive(data: unknown): data is { catalog: LiveCatalog } {
@@ -201,7 +200,6 @@ function assemble(data: unknown): Catalog {
     const text = splitDescription(p.description)
     const form = declaredShape(text.details)
     const images = (p.images || []).filter(Boolean)
-    const container = declaredContainer(text.control)
     // Sem destaque escolhido, os quatro primeiros fazem o papel — a home
     // precisa de alguém no palco.
     const featured = anyFeatured ? p.is_featured : i < 4
@@ -223,8 +221,7 @@ function assemble(data: unknown): Catalog {
       shape: form ? shapeCat(form)!.draw : SHAPES[id % SHAPES.length],
       form,
       tint: TINTS[id % TINTS.length],
-      media: container ? { container, fit: container === "transparent" ? "contain" : "cover" } : images.length ? { fit: "cover" } : undefined,
-      newDrop: collection === "new-drop",
+      media: images.length ? { fit: "cover" } : undefined,
       tagline: text.tagline,
       description: text.description,
       details: text.details,

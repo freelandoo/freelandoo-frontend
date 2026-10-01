@@ -2,21 +2,13 @@
 
 // A CASCA: barra, rodapé e o seguidor do cursor.
 //
-// A BARRA É UMA PEÇA FÍSICA: no topo ela quase some no branco; ao rolar, uma
-// placa de prata acetinada desliza por trás do conteúdo, e um reflexo a
-// atravessa UMA vez (na primeira entrada da placa — repetir a cada rolagem
-// viraria tique).
-//
-// ⚠️ A barra RECOLHE ao descer (encolhe), mas o Case nunca some: carrinho
-// escondido é venda perdida, e no celular não existe outro caminho até ele.
-//
-// ⚠️ SEM "CONTA": a compra é de convidada (nome, e-mail e WhatsApp no
-// checkout, mig 271). Um link "Account" levaria a uma porta que não existe
-// para quem compra aqui.
+// ⚠️ A barra RECOLHE ao descer e volta ao subir — mas o Case nunca some: ele
+// fica num botão que é desenhado nos dois estados. Carrinho escondido é
+// venda perdida.
 
 import { useEffect, useState } from "react"
 
-import { catalogIndex, dropCollection } from "./content/catalog"
+import { dropCollection } from "./content/catalog"
 import { BRAND } from "./content/brand"
 import { CaseButton, SearchButton } from "./commerce"
 import { PAGE, pageHref, type TemplateLinks } from "./lib"
@@ -25,10 +17,8 @@ import { useCatalog } from "./store"
 export function SiteHeader({ links }: { links: TemplateLinks }) {
   const catalog = useCatalog()
   const drop = dropCollection(catalog)
-  const custom = catalogIndex(catalog).colBySlug.get("custom")
   const [hidden, setHidden] = useState(false)
   const [solid, setSolid] = useState(false)
-  const [swept, setSwept] = useState(false)
   const [menu, setMenu] = useState(false)
 
   useEffect(() => {
@@ -39,7 +29,7 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
       raf = requestAnimationFrame(() => {
         const y = window.scrollY
         setSolid(y > 24)
-        setHidden(y > 260 && y > last + 4)
+        setHidden(y > 240 && y > last + 4)
         if (y < last - 4) setHidden(false)
         last = y
       })
@@ -52,42 +42,27 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
     }
   }, [])
 
-  // o reflexo atravessa só na PRIMEIRA vez que a placa entra
-  useEffect(() => {
-    if (!solid || swept) return
-    const t = window.setTimeout(() => setSwept(true), 1300)
-    return () => window.clearTimeout(t)
-  }, [solid, swept])
-
-  const nav = [
-    { label: "Shop", href: pageHref(links, PAGE.loja) },
-    ...(drop ? [{ label: "New Drop", href: pageHref(links, drop.slug) }] : []),
-    { label: "Collections", href: `${links.home}#colecoes` },
-    { label: "Custom", href: pageHref(links, custom ? custom.slug : PAGE.sobre) },
-  ]
-
   return (
-    <header
-      className={`pk-nav ${solid || menu ? "is-solid" : ""} ${solid && !swept ? "is-sweeping" : ""} ${
-        hidden && !menu ? "is-hidden" : ""
-      }`}
-    >
+    <header className={`pk-nav ${solid ? "is-solid" : ""} ${hidden && !menu ? "is-hidden" : ""}`}>
       {!catalog.live ? (
         <p className="pk-nav__notice">Catálogo em prévia · fotos e preços definitivos em breve</p>
       ) : null}
       <div className="pk-nav__bar">
-        <span className="pk-nav__plate" aria-hidden="true">
-          <span className="pk-nav__sweep" />
-        </span>
         <a href={links.home} className="pk-nav__logo" aria-label={`${BRAND.full} — início`}>
-          Pinkoracats
+          PINKORA<span>CATS</span>
         </a>
         <nav className="pk-nav__links" aria-label="Principal">
-          {nav.map((n) => (
-            <a key={n.label} className="pk-nav__link" href={n.href}>
-              {n.label}
+          <a className="pk-nav__link" href={pageHref(links, PAGE.loja)}>
+            Shop
+          </a>
+          {drop ? (
+            <a className="pk-nav__link" href={pageHref(links, drop.slug)}>
+              {drop.name}
             </a>
-          ))}
+          ) : null}
+          <a className="pk-nav__link" href={`${links.home}#colecoes`}>
+            Coleções
+          </a>
           <SearchButton />
         </nav>
         <div className="pk-nav__right">
@@ -104,20 +79,17 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
         </div>
       </div>
       <div id="pk-menu" className={`pk-menu ${menu ? "is-open" : ""}`} hidden={!menu}>
-        {nav.map((n) => (
-          <a key={n.label} href={n.href} onClick={() => setMenu(false)}>
-            {n.label}
-          </a>
-        ))}
+        <a href={pageHref(links, PAGE.loja)} onClick={() => setMenu(false)}>
+          Shop
+        </a>
         {catalog.collections.map((c) => (
-          <a key={c.slug} className="pk-menu__sub" href={pageHref(links, c.slug)} onClick={() => setMenu(false)}>
+          <a key={c.slug} href={pageHref(links, c.slug)} onClick={() => setMenu(false)}>
             {c.name}
           </a>
         ))}
-        <a className="pk-menu__sub" href={pageHref(links, PAGE.sobre)} onClick={() => setMenu(false)}>
-          Sobre a marca
+        <a href={pageHref(links, PAGE.sobre)} onClick={() => setMenu(false)}>
+          Sobre
         </a>
-        <SearchButton className="pk-menu__search" />
       </div>
     </header>
   )
@@ -126,19 +98,20 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
 export function SiteFooter({ links }: { links: TemplateLinks }) {
   const catalog = useCatalog()
   return (
-    <footer className="pk-footer pk-mat-satin">
+    <footer className="pk-footer pk-silver">
       <p className="pk-footer__giant" aria-hidden="true">
-        Pinkoracats
+        PINKORA
+        <br />
+        CATS
       </p>
       <div className="pk-footer__grid">
         <div>
-          <p className="pk-eyebrow">Press-on objects</p>
+          <p className="pk-eyebrow">Nail art as object</p>
           <p className="pk-footer__lead">
-            Sets autorais de press-on nails, expostos em caixas acrílicas. Feitos à mão em {BRAND.city}/{BRAND.state}.
+            Sets autorais de unhas, charms e peças sob encomenda. Feitos à mão em {BRAND.city}/{BRAND.state}.
           </p>
         </div>
         <nav aria-label="Coleções" className="pk-footer__col">
-          <p className="pk-mono pk-footer__h">Collections</p>
           {catalog.collections.map((c) => (
             <a key={c.slug} href={pageHref(links, c.slug)}>
               {c.name}
@@ -146,7 +119,6 @@ export function SiteFooter({ links }: { links: TemplateLinks }) {
           ))}
         </nav>
         <nav aria-label="Loja" className="pk-footer__col">
-          <p className="pk-mono pk-footer__h">Shop</p>
           <a href={pageHref(links, PAGE.loja)}>Todo o catálogo</a>
           <a href={pageHref(links, PAGE.sobre)}>Sobre a marca</a>
           <a href={`mailto:${BRAND.email}`}>{BRAND.email}</a>
@@ -157,16 +129,19 @@ export function SiteFooter({ links }: { links: TemplateLinks }) {
           ) : null}
         </nav>
       </div>
-      <p className="pk-footer__fine pk-mono">© {BRAND.full} · feito à mão · retirada em {BRAND.city}/{BRAND.state}</p>
+      <p className="pk-footer__fine">
+        © {BRAND.full} · feito à mão
+      </p>
     </footer>
   )
 }
 
 /**
- * O seguidor do cursor: um quadrado preto pequeno que diz VIEW / OPEN / DRAG.
+ * O seguidor do cursor: um ponto pequeno que diz VIEW / SELECT / DRAG.
  *
  * ⚠️ SÓ COM PONTEIRO FINO E SEM movimento reduzido — no toque não existe
- * cursor. E ele NÃO substitui o cursor nativo: só acompanha.
+ * cursor, e um ponto parado no canto da tela seria lixo visual. E ele NÃO
+ * substitui o cursor nativo: só acompanha.
  */
 export function CursorFollower() {
   const [on, setOn] = useState(false)
@@ -184,8 +159,8 @@ export function CursorFollower() {
     let ty = -100
     let raf = 0
     const tick = () => {
-      x += (tx - x) * 0.24
-      y += (ty - y) * 0.24
+      x += (tx - x) * 0.22
+      y += (ty - y) * 0.22
       dot.style.transform = `translate3d(${x}px, ${y}px, 0)`
       if (Math.abs(tx - x) > 0.3 || Math.abs(ty - y) > 0.3) raf = requestAnimationFrame(tick)
       else raf = 0

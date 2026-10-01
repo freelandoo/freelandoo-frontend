@@ -1,8 +1,7 @@
 "use client"
 
-// AS PEÇAS DE COMPRA: card (uma caixa exposta), link de takeover, preço,
-// caixa de compra, Your Case (carrinho), Digital Unboxing (quick view), recibo
-// e busca.
+// AS PEÇAS DE COMPRA: card de produto, botões, caixa de compra, Case (carrinho),
+// quick view e busca.
 //
 // ⚠️ NENHUMA PEÇA AQUI COBRA NADA. O Case manda ids e quantidades para
 // `/store-carts/checkout` (mig 271), o backend RECALCULA o preço e devolve a
@@ -10,162 +9,112 @@
 // compradora precisar de conta. Enquanto o catálogo for prévia (`catalog.live`
 // falso), o pedido segue por e-mail/WhatsApp para a Taiz.
 //
-// ⚠️ O CHECKOUT É CONVENCIONAL DE PROPÓSITO: nada de 3D nem cena — ali o que
-// vende é clareza, confiança e velocidade.
-//
 // ⚠️ PRODUTO É LINK DE VERDADE e botão é botão de verdade: o card é um `<a>`
 // para a página do produto, e o "ver rápido" é um `<button>` IRMÃO dele, nunca
 // filho (botão dentro de link não existe em HTML).
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import gsap from "gsap"
+import { useEffect, useMemo, useRef, useState } from "react"
 
-import AcrylicProductCase, { type CaseSize } from "./case"
 import { catalogIndex, dropCollection } from "./content/catalog"
-import { displayId, vtProduct } from "./content/display"
 import type { Product } from "./content/products.mock"
 import { BRAND, mailtoOrder, whatsappLink } from "./content/brand"
 import { PAGE, brl, pageHref } from "./lib"
+import ProductMedia, { type Composition } from "./media"
 import { useStore } from "./store"
-import { DUR, registerEase, reducedMotion } from "./tokens"
 
-// ─── preço ──────────────────────────────────────────────────────────────────
-
-/** O preço — claro, sempre. O "de" só aparece se for de fato maior. */
-export function Price({ product, className = "" }: { product: Product; className?: string }) {
-  const was = product.compareAtPriceCents
-  return (
-    <span className={`pk-price ${className}`}>
-      {was && was > product.priceCents ? (
-        <s aria-label={`Antes ${brl(was)}`}>{brl(was)}</s>
-      ) : null}
-      <span>{brl(product.priceCents)}</span>
-    </span>
-  )
-}
-
-// ─── takeover ───────────────────────────────────────────────────────────────
-
-/**
- * O link que vira TAKEOVER: clique simples abre o produto no lugar (a caixa
- * sai da vitrine e cresce até o quick view); Ctrl/⌘-clique, botão do meio e
- * o robô continuam vendo um link para a página do produto.
- */
-export function TakeoverLink({
-  product,
-  className = "",
-  children,
-  cursor = "OPEN",
-  originClosest,
-}: {
-  product: Product
-  className?: string
-  children: React.ReactNode
-  cursor?: string
-  /** Seletor do ancestral que contém a caixa (quando o link não é a caixa). */
-  originClosest?: string
-}) {
-  const { links, openQuick } = useStore()
-  return (
-    <a
-      href={pageHref(links, product.slug)}
-      className={className}
-      data-cursor={cursor}
-      onClick={(e) => {
-        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-        e.preventDefault()
-        openQuick(
-          product.slug,
-          (originClosest && e.currentTarget.closest<HTMLElement>(originClosest)) || e.currentTarget,
-        )
-      }}
-    >
-      {children}
-    </a>
-  )
-}
-
-// ─── card ───────────────────────────────────────────────────────────────────
+// ─── cartão ─────────────────────────────────────────────────────────────────
 
 export function ProductCard({
   product,
+  aspect = "4/5",
+  composition = "set",
   size = "md",
   showPrice = true,
   priority,
   className = "",
 }: {
   product: Product
-  size?: CaseSize
+  aspect?: string
+  composition?: Composition
+  size?: "sm" | "md" | "lg"
   showPrice?: boolean
   priority?: boolean
   className?: string
 }) {
-  const { links, openQuick, saved, toggleSave } = useStore()
+  const { links, catalog, openQuick, saved, toggleSave } = useStore()
+  const col = catalogIndex(catalog).colBySlug.get(product.collection)
   const isSaved = saved.includes(product.id)
   return (
-    <article className={`pk-card pk-card--${size} ${className}`} data-card data-tilt data-pickup>
-      <a
-        href={pageHref(links, product.slug)}
-        className="pk-card__link"
-        data-cursor="VIEW"
-        onClick={(e) => {
-          // a caixa clicada vira o palco da página do produto (View Transition
-          // entre documentos) — nome posto só agora, só nela (ver `vt.tsx`)
-          if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-          const c = e.currentTarget.querySelector<HTMLElement>("[data-case]")
-          if (c) c.style.viewTransitionName = vtProduct(product.id)
-        }}
-      >
-        <AcrylicProductCase product={product} size={size} priority={priority} />
+    <article className={`pk-card pk-card--${size} ${className}`} data-card data-tilt>
+      <a href={pageHref(links, product.slug)} className="pk-card__link" data-cursor="VIEW">
+        <ProductMedia
+          src={product.image}
+          hoverSrc={product.hoverImage}
+          alt={`${product.name} — ${product.tagline}`}
+          variant={product.variant}
+          aspect={aspect}
+          media={product.media}
+          shape={product.shape}
+          tint={product.tint}
+          number={product.number}
+          label={product.name}
+          kicker={col?.kicker}
+          composition={composition}
+          priority={priority}
+        />
         <div className="pk-card__meta">
-          <span className="pk-mono pk-card__num">{displayId(product.number)}</span>
+          <span className="pk-card__num">{product.number}</span>
           <h3 className="pk-card__name">{product.name}</h3>
-          {showPrice ? <Price product={product} className="pk-card__price" /> : null}
+          {showPrice ? <span className="pk-card__price">{brl(product.priceCents)}</span> : null}
         </div>
+        <p className="pk-card__reveal">
+          <span>{product.tagline || product.description}</span>
+          <span className="pk-card__cta">Ver detalhes →</span>
+        </p>
       </a>
       <div className="pk-card__actions">
         <button
           type="button"
           className="pk-chip"
-          data-cursor="OPEN"
+          data-cursor="SELECT"
           onClick={(e) => openQuick(product.slug, e.currentTarget.closest<HTMLElement>("[data-card]"))}
         >
           Ver rápido
         </button>
-        <SaveButton product={product} on={isSaved} toggle={toggleSave} />
+        <button
+          type="button"
+          className={`pk-chip pk-chip--icon ${isSaved ? "is-on" : ""}`}
+          aria-pressed={isSaved}
+          aria-label={isSaved ? `Tirar ${product.name} do Case salvo` : `Salvar ${product.name} no Case`}
+          onClick={() => toggleSave(product.id)}
+        >
+          <SaveGlyph on={isSaved} />
+        </button>
       </div>
     </article>
   )
 }
 
-function SaveButton({ product, on, toggle }: { product: Product; on: boolean; toggle: (id: string) => void }) {
+function SaveGlyph({ on }: { on: boolean }) {
   return (
-    <button
-      type="button"
-      className={`pk-chip pk-chip--save ${on ? "is-on" : ""}`}
-      aria-pressed={on}
-      aria-label={on ? `Tirar ${product.name} da coleção salva` : `Salvar ${product.name} na coleção`}
-      onClick={() => toggle(product.id)}
-    >
-      {on ? "Saved" : "Save"}
-    </button>
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <path d="M4 1.5h8v13l-4-3-4 3z" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.4" />
+    </svg>
   )
 }
 
-/** "Abrir" uma peça destacada: a caixa mais próxima vira o quick view. */
-export function QuickOpenButton({ slug, label = "Abrir o set" }: { slug: string; label?: string }) {
+/**
+ * "Abrir" o produto em destaque: o próprio bloco cresce até virar quick view
+ * (o `data-card` ancestral é a origem da transição).
+ */
+export function QuickOpenButton({ slug, label = "Abrir a peça" }: { slug: string; label?: string }) {
   const { openQuick } = useStore()
   return (
     <button
       type="button"
-      className="pk-btn pk-btn--ink"
-      data-cursor="OPEN"
-      onClick={(e) =>
-        openQuick(
-          slug,
-          e.currentTarget.closest<HTMLElement>("[data-card]") || e.currentTarget.closest<HTMLElement>("section"),
-        )
-      }
+      className="pk-btn pk-btn--hot"
+      data-cursor="SELECT"
+      onClick={(e) => openQuick(slug, e.currentTarget.closest<HTMLElement>("[data-card]"))}
     >
       {label}
     </button>
@@ -177,11 +126,8 @@ export function QuickOpenButton({ slug, label = "Abrir o set" }: { slug: string;
 export function CaseButton() {
   const { count, openCart } = useStore()
   return (
-    <button type="button" className="pk-nav__case" onClick={() => openCart(true)} data-cursor="OPEN">
-      <span>
-        <span className="pk-nav__your">Your </span>
-        <b>Case</b>
-      </span>
+    <button type="button" className="pk-nav__case" onClick={() => openCart(true)} data-cursor="SELECT">
+      <span>Case</span>
       <span className="pk-nav__count" data-case-target aria-label={`${count} itens no Case`}>
         {count}
       </span>
@@ -189,11 +135,11 @@ export function CaseButton() {
   )
 }
 
-export function SearchButton({ className = "pk-nav__link" }: { className?: string }) {
+export function SearchButton() {
   const { openSearch } = useStore()
   return (
-    <button type="button" className={className} onClick={() => openSearch(true)}>
-      Search
+    <button type="button" className="pk-nav__link" onClick={() => openSearch(true)}>
+      Buscar
     </button>
   )
 }
@@ -211,14 +157,14 @@ export function BuyBox({ product, compact = false }: { product: Product; compact
 
   useEffect(() => {
     if (!done) return
-    const t = window.setTimeout(() => setDone(false), 2400)
+    const t = window.setTimeout(() => setDone(false), 2200)
     return () => window.clearTimeout(t)
   }, [done])
 
   return (
     <div className={`pk-buy ${compact ? "pk-buy--compact" : ""}`}>
       <div className="pk-buy__price">
-        <Price product={product} />
+        <span>{brl(product.priceCents)}</span>
         <span className={`pk-buy__stock ${product.stock <= 3 ? "is-low" : ""}`}>
           {soldOut ? "Esgotado" : product.stock <= 3 ? `Últimas ${product.stock} unidades` : "Em estoque"}
         </span>
@@ -249,7 +195,7 @@ export function BuyBox({ product, compact = false }: { product: Product; compact
           <span aria-live="polite">{qty}</span>
           <button
             type="button"
-            onClick={() => setQty((q) => Math.min(Math.max(1, product.stock), q + 1))}
+            onClick={() => setQty((q) => Math.min(product.stock, q + 1))}
             aria-label="Aumentar"
           >
             +
@@ -258,21 +204,21 @@ export function BuyBox({ product, compact = false }: { product: Product; compact
         <button
           ref={btn}
           type="button"
-          className="pk-btn pk-btn--ink"
+          className="pk-btn pk-btn--hot"
           disabled={soldOut}
-          data-cursor="ADD"
+          data-cursor="SELECT"
           onClick={() => {
             add(product.id, size, qty, btn.current)
             setDone(true)
           }}
         >
-          {soldOut ? "Esgotado" : done ? "No Case ✓" : "Adicionar ao Case"}
+          {done ? "No Case ✓" : "Adicionar ao Case"}
         </button>
       </div>
 
       <div className="pk-buy__row pk-buy__row--quiet">
         <button type="button" className="pk-link" onClick={() => toggleSave(product.id)} aria-pressed={isSaved}>
-          {isSaved ? "Salvo na coleção ✓" : "Save — salvar para depois"}
+          {isSaved ? "Salvo no Case ✓" : "Salvar para depois"}
         </button>
         {done ? (
           <button type="button" className="pk-link" onClick={() => openCart(true)}>
@@ -281,18 +227,9 @@ export function BuyBox({ product, compact = false }: { product: Product; compact
         ) : null}
       </div>
 
-      <dl className="pk-buy__facts">
-        <div>
-          <dt>Retirada</dt>
-          <dd>
-            Combinada em {BRAND.city}/{BRAND.state}
-          </dd>
-        </div>
-        <div>
-          <dt>Prazo</dt>
-          <dd>Confirmado pela Taiz no fechamento do pedido</dd>
-        </div>
-      </dl>
+      <p className="pk-buy__note">
+        Retirada combinada em {BRAND.city}/{BRAND.state}. Prazo de produção confirmado no fechamento do pedido.
+      </p>
     </div>
   )
 }
@@ -350,7 +287,7 @@ export function CaseDrawer() {
     .filter((r): r is { l: typeof r.l; p: Product } => !!r.p)
 
   const summary = rows
-    .map(({ l, p }) => `• ${l.qty}× ${p.name} (${displayId(p.number)}) — tamanho ${l.size} — ${brl(p.priceCents * l.qty)}`)
+    .map(({ l, p }) => `• ${l.qty}× ${p.name} (${p.number}) — tamanho ${l.size} — ${brl(p.priceCents * l.qty)}`)
     .join("\n")
   const body = `Olá, Taiz! Quero fechar este pedido do site:\n\n${summary}\n\nSubtotal: ${brl(subtotal)}\n\nMeu nome:\nComo prefiro combinar a retirada:`
   const wa = whatsappLink(body)
@@ -399,8 +336,6 @@ export function CaseDrawer() {
     }
   }
 
-  const count = rows.reduce((s, r) => s + r.l.qty, 0)
-
   return (
     <div className={`pk-drawer ${cartOpen ? "is-open" : ""}`} aria-hidden={!cartOpen}>
       <button type="button" className="pk-drawer__scrim" onClick={close} tabIndex={-1} aria-label="Fechar o Case" />
@@ -409,12 +344,12 @@ export function CaseDrawer() {
         className="pk-drawer__panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Your Case — seu carrinho"
+        aria-label="Pinkora Case — seu carrinho"
         tabIndex={-1}
       >
         <header className="pk-drawer__head">
-          <p className="pk-eyebrow">{step === "cart" ? `${count} ${count === 1 ? "set" : "sets"}` : "Pinkoracats"}</p>
-          <h2 className="pk-drawer__title">{step === "cart" ? "Your Case" : "Checkout"}</h2>
+          <p className="pk-eyebrow">Pinkora</p>
+          <h2 className="pk-drawer__title">{step === "cart" ? "Case" : "Checkout"}</h2>
           <button type="button" className="pk-x" onClick={close} aria-label="Fechar">
             ×
           </button>
@@ -422,11 +357,11 @@ export function CaseDrawer() {
 
         {rows.length === 0 ? (
           <div className="pk-drawer__empty">
-            <AcrylicProductCase product={null} size="sm" lid="open" />
+            <div className="pk-empty-orb" aria-hidden="true" />
             <p className="pk-drawer__emptytitle">Your case is empty.</p>
             <p>Nada aqui ainda — as peças novas estão no drop.</p>
-            <a className="pk-btn pk-btn--ink" href={pageHref(links, drop ? drop.slug : PAGE.loja)} onClick={close}>
-              Discover the drop
+            <a className="pk-btn pk-btn--hot" href={pageHref(links, drop ? drop.slug : PAGE.loja)} onClick={close}>
+              Ver o drop
             </a>
           </div>
         ) : step === "cart" ? (
@@ -434,13 +369,23 @@ export function CaseDrawer() {
             <ul className="pk-drawer__list">
               {rows.map(({ l, p }) => (
                 <li key={`${l.id}-${l.size}`} className="pk-line">
-                  <AcrylicProductCase product={p} size="xs" className="pk-line__case" />
+                  <ProductMedia
+                    src={p.image}
+                    alt=""
+                    variant={p.variant}
+                    aspect="3/4"
+                    shape={p.shape}
+                    tint={p.tint}
+                    composition="single"
+                    tilt={false}
+                    className="pk-line__media"
+                  />
                   <div className="pk-line__info">
                     <a href={pageHref(links, p.slug)} className="pk-line__name" onClick={close}>
                       {p.name}
                     </a>
-                    <span className="pk-line__sub pk-mono">
-                      {displayId(p.number)} · tamanho {l.size}
+                    <span className="pk-line__sub">
+                      {p.number} · tamanho {l.size}
                     </span>
                     <div className="pk-line__row">
                       <div className="pk-qty pk-qty--sm" role="group" aria-label={`Quantidade de ${p.name}`}>
@@ -468,7 +413,7 @@ export function CaseDrawer() {
               </div>
               {catalog.live ? (
                 <>
-                  <button type="button" className="pk-btn pk-btn--ink" onClick={() => setStep("form")}>
+                  <button type="button" className="pk-btn pk-btn--hot" onClick={() => setStep("form")}>
                     Finalizar compra
                   </button>
                   <p className="pk-drawer__hint">
@@ -479,12 +424,12 @@ export function CaseDrawer() {
               ) : (
                 <>
                   {wa ? (
-                    <a className="pk-btn pk-btn--ink" href={wa} target="_blank" rel="noopener noreferrer">
+                    <a className="pk-btn pk-btn--hot" href={wa} target="_blank" rel="noopener noreferrer">
                       Fechar pedido no WhatsApp
                     </a>
                   ) : null}
                   <a
-                    className={`pk-btn ${wa ? "pk-btn--line" : "pk-btn--ink"}`}
+                    className={`pk-btn ${wa ? "pk-btn--line" : "pk-btn--hot"}`}
                     href={mailtoOrder("Pedido pelo site — Pinkoracats", body)}
                   >
                     Enviar pedido por e-mail
@@ -500,7 +445,8 @@ export function CaseDrawer() {
         ) : (
           <form className="pk-checkout" onSubmit={pay}>
             <p className="pk-checkout__lead">
-              {count} {count === 1 ? "peça" : "peças"} · <strong>{brl(subtotal)}</strong>
+              {rows.reduce((s, r) => s + r.l.qty, 0)} {rows.length === 1 && rows[0].l.qty === 1 ? "peça" : "peças"} ·{" "}
+              <strong>{brl(subtotal)}</strong>
             </p>
             <label className="pk-field">
               <span>Seu nome</span>
@@ -541,7 +487,7 @@ export function CaseDrawer() {
                 {error}
               </p>
             ) : null}
-            <button type="submit" className="pk-btn pk-btn--ink" disabled={step === "sending"}>
+            <button type="submit" className="pk-btn pk-btn--hot" disabled={step === "sending"}>
               {step === "sending" ? "Abrindo o pagamento…" : "Pagar com Mercado Pago"}
             </button>
             <button type="button" className="pk-link" onClick={() => setStep("cart")} disabled={step === "sending"}>
@@ -598,7 +544,7 @@ export function OrderPanel() {
           ×
         </button>
         <div className="pk-order__body" aria-live="polite">
-          <p className="pk-eyebrow pk-mono">Pedido {order.id.slice(0, 8)}</p>
+          <p className="pk-eyebrow">Pedido {order.id.slice(0, 8)}</p>
           <h2 className="pk-quick__title">{title}</h2>
           <p className="pk-quick__desc">{text}</p>
           {order.items.length ? (
@@ -620,7 +566,7 @@ export function OrderPanel() {
           {order.status === "cancel" ? (
             <button
               type="button"
-              className="pk-btn pk-btn--ink"
+              className="pk-btn pk-btn--hot"
               onClick={() => {
                 closeOrder()
                 openCart(true)
@@ -639,70 +585,19 @@ export function OrderPanel() {
   )
 }
 
-/**
- * DIGITAL UNBOXING — o quick view.
- *
- * A caixa chega (View Transition a partir da caixa clicada; sem a API, o FLIP
- * é feito aqui com GSAP a partir do retângulo guardado), a tampa abre, o set
- * aparece. "Explorar o set" aproxima a peça e deixa o ponteiro passear por
- * ela; com as 10 unhas em arquivo (`product.nails`), elas saem da caixa.
- */
 export function QuickView() {
-  const { links, catalog, quick, quickOrigin, openQuick } = useStore()
+  const { links, catalog, quick, openQuick } = useStore()
   const panel = useRef<HTMLDivElement>(null)
-  const stage = useRef<HTMLDivElement>(null)
   const close = useMemo(() => () => openQuick(null), [openQuick])
   useDialog(!!quick, close, panel)
-  const [open, setOpen] = useState(false)
-  const [explore, setExplore] = useState(false)
-
-  // a tampa abre depois que a caixa chega
-  useEffect(() => {
-    setExplore(false)
-    if (!quick) {
-      setOpen(false)
-      return
-    }
-    if (reducedMotion()) {
-      setOpen(true)
-      return
-    }
-    setOpen(false)
-    const t = window.setTimeout(() => setOpen(true), 380)
-    return () => window.clearTimeout(t)
-  }, [quick])
-
-  // FALLBACK do takeover: sem View Transition, a caixa voa do nicho até aqui.
-  useLayoutEffect(() => {
-    const el = stage.current
-    const from = quickOrigin.rect
-    if (!quick || !el || !from || quickOrigin.viaVT || reducedMotion()) return
-    const to = el.getBoundingClientRect()
-    if (!to.width || !to.height) return
-    const ease = registerEase()
-    gsap.fromTo(
-      el,
-      {
-        x: from.left - to.left,
-        y: from.top - to.top,
-        scaleX: from.width / to.width,
-        scaleY: from.height / to.height,
-        transformOrigin: "0 0",
-      },
-      { x: 0, y: 0, scaleX: 1, scaleY: 1, duration: DUR.cinematic, ease, clearProps: "transform" },
-    )
-  }, [quick, quickOrigin])
-
   if (!quick) return null
   const col = catalogIndex(catalog).colBySlug.get(quick.collection)
-  const nails = quick.nails || []
-
   return (
     <div className="pk-quick" role="presentation">
       <button type="button" className="pk-quick__scrim" onClick={close} tabIndex={-1} aria-label="Fechar" />
       <div
         ref={panel}
-        className="pk-quick__panel pk-unbox"
+        className="pk-quick__panel"
         role="dialog"
         aria-modal="true"
         aria-label={`${quick.name} — visualização rápida`}
@@ -711,46 +606,28 @@ export function QuickView() {
         <button type="button" className="pk-x" onClick={close} aria-label="Fechar">
           ×
         </button>
-        <div
-          ref={stage}
-          className={`pk-unbox__stage ${open ? "is-open" : ""} ${explore ? "is-exploring" : ""}`}
-          style={{ viewTransitionName: "pk-quick" }}
-          onPointerMove={(e) => {
-            if (!explore) return
-            const r = e.currentTarget.getBoundingClientRect()
-            e.currentTarget.style.setProperty("--px", `${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%`)
-            e.currentTarget.style.setProperty("--py", `${(((e.clientY - r.top) / r.height) * 100).toFixed(1)}%`)
-          }}
-        >
-          <AcrylicProductCase product={quick} size="xl" lid="live" plate priority />
-          {explore && nails.length ? (
-            <ul className="pk-unbox__nails" aria-label="As unhas do set">
-              {nails.slice(0, 10).map((src, i) => (
-                <li key={src} style={{ "--i": i } as React.CSSProperties}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={`Unha ${i + 1} de ${quick.name}`} loading="lazy" decoding="async" />
-                </li>
-              ))}
-            </ul>
-          ) : null}
+        <div className="pk-quick__media" style={{ viewTransitionName: "pk-quick" }}>
+          <ProductMedia
+            src={quick.image}
+            hoverSrc={quick.hoverImage}
+            alt={quick.name}
+            variant={quick.variant}
+            aspect="4/5"
+            media={quick.media}
+            shape={quick.shape}
+            tint={quick.tint}
+            number={quick.number}
+            label={quick.name}
+            kicker={col?.kicker}
+            priority
+          />
         </div>
         <div className="pk-quick__info">
-          <p className="pk-eyebrow pk-mono">
-            {displayId(quick.number)} · {col?.name || "Coleção"}
+          <p className="pk-eyebrow">
+            {quick.number} · {col?.name}
           </p>
           <h2 className="pk-quick__title">{quick.name}</h2>
-          {quick.description ? <p className="pk-quick__desc">{quick.description}</p> : null}
-          <button
-            type="button"
-            className="pk-link"
-            aria-pressed={explore}
-            onClick={() => {
-              setOpen(true)
-              setExplore((x) => !x)
-            }}
-          >
-            {explore ? "Voltar à caixa" : "Explore set — ver de perto"}
-          </button>
+          <p className="pk-quick__desc">{quick.description}</p>
           <BuyBox product={quick} compact />
           <a className="pk-link" href={pageHref(links, quick.slug)}>
             Página completa do produto →
@@ -768,11 +645,6 @@ function norm(s: string) {
     .toLowerCase()
 }
 
-/**
- * A BUSCA — tela cheia, branca, um campo enorme em preto. Os resultados são
- * pequenas vitrines (caixas fechadas). Nada anima enquanto se digita: o filtro
- * é instantâneo, o movimento ficaria atrás das teclas.
- */
 export function SearchOverlay() {
   const { links, catalog, searchOpen, openSearch } = useStore()
   const { colBySlug } = catalogIndex(catalog)
@@ -788,9 +660,9 @@ export function SearchOverlay() {
 
   const results = useMemo(() => {
     const t = norm(q.trim())
-    if (!t) return catalog.products.filter((p) => p.featured).slice(0, 8)
+    if (!t) return catalog.products.filter((p) => p.featured)
     return catalog.products.filter((p) =>
-      norm(`${p.name} ${p.tagline} ${p.description} ${p.details.join(" ")} ${colBySlug.get(p.collection)?.name || ""}`).includes(t),
+      norm(`${p.name} ${p.tagline} ${p.description} ${colBySlug.get(p.collection)?.name || ""}`).includes(t),
     )
   }, [q, catalog, colBySlug])
 
@@ -801,7 +673,7 @@ export function SearchOverlay() {
         ×
       </button>
       <label className="pk-search__label" htmlFor="pk-search-input">
-        Search
+        Buscar
       </label>
       <input
         id="pk-search-input"
@@ -812,18 +684,17 @@ export function SearchOverlay() {
         placeholder="chrome, cereja, stiletto…"
         autoComplete="off"
       />
-      <p className="pk-search__count pk-mono" aria-live="polite">
+      <p className="pk-search__count" aria-live="polite">
         {q.trim() ? `${results.length} resultado${results.length === 1 ? "" : "s"}` : "Em destaque"}
       </p>
       <ul className="pk-search__list">
         {results.map((p) => (
           <li key={p.id}>
             <a href={pageHref(links, p.slug)} onClick={close} className="pk-search__item">
-              <AcrylicProductCase product={p} size="xs" />
-              <span className="pk-search__num pk-mono">{displayId(p.number)}</span>
+              <span className="pk-search__num">{p.number}</span>
               <span className="pk-search__name">{p.name}</span>
               <span className="pk-search__col">{colBySlug.get(p.collection)?.name}</span>
-              <Price product={p} className="pk-search__price" />
+              <span className="pk-search__price">{brl(p.priceCents)}</span>
             </a>
           </li>
         ))}
