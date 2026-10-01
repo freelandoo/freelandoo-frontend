@@ -10,11 +10,13 @@
 //
 // ── A PRÉVIA ─────────────────────────────────────────────────────────────────
 //
-// Enquanto a Loja não tiver NENHUM produto ativo, o site mostra a prévia de
-// `products.mock.ts` (com a faixa "catálogo em prévia", JSON-LD sem preço e o
-// pedido por e-mail). `live` é ESSA decisão, num lugar só — antes ela era uma
-// constante escrita à mão (`PLACEHOLDER_CATALOG`), e agora vira sozinha no dia
-// em que a Taiz liga o primeiro produto.
+// Enquanto a Loja não tiver NENHUM produto ativo, o backend manda os
+// RASCUNHOS dela (`draft: true`) e o site os desenha como PRÉVIA (faixa
+// "catálogo em prévia", JSON-LD sem preço, pedido por e-mail, sem checkout) —
+// assim a foto, o nome e o preço que a Taiz troca na Loja aparecem no site
+// antes de ela ligar o produto (pedido do Alex, 2026-10-01). Só sem produto
+// nenhum na Loja entra a prévia fixa de `products.mock.ts`. `live` é ESSA
+// decisão, num lugar só, e vira sozinha no dia em que ela liga o primeiro.
 //
 // ── O QUE A LOJA NÃO TEM, E O TEMA DERIVA ────────────────────────────────────
 //
@@ -63,7 +65,13 @@ type LiveCollection = {
   description: string
   cover_url: string | null
 }
-type LiveCatalog = { store_profile_id: string | null; collections: LiveCollection[]; products: LiveProduct[] }
+type LiveCatalog = {
+  store_profile_id: string | null
+  /** sem produto ativo: são os rascunhos, desenhados como prévia */
+  draft?: boolean
+  collections: LiveCollection[]
+  products: LiveProduct[]
+}
 
 const VARIANTS: PlaceholderVariant[] = [
   "holographic",
@@ -163,8 +171,8 @@ function assemble(data: unknown): Catalog {
   if (!isLive(data)) return preview()
   const raw = data.catalog
   const sellable = raw.products.filter((p) => p && p.id_profile_product && p.name)
-  // Loja sem nenhum produto ativo: a prévia continua no ar. Um site vazio
-  // seria pior do que um site que diz que está em prévia.
+  // Loja sem produto nenhum (nem rascunho): a prévia fixa continua no ar. Um
+  // site vazio seria pior do que um site que diz que está em prévia.
   if (sellable.length === 0) return preview()
 
   const used = new Set(sellable.map((p) => p.id_collection).filter((x): x is number => x != null))
@@ -236,7 +244,7 @@ function assemble(data: unknown): Catalog {
     }
   })
 
-  return { live: true, storeProfileId: raw.store_profile_id || null, products, collections }
+  return { live: !raw.draft, storeProfileId: raw.store_profile_id || null, products, collections }
 }
 
 type Index = {
