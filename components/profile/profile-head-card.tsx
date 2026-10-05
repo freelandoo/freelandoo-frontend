@@ -857,21 +857,27 @@ export function ProfileHeadCard({
               leva pro editar (isso vive no menu de perfis do /account). */}
           <div
             ref={menuRef}
-            onMouseEnter={() => setMenuOpen(true)}
-            onMouseLeave={() => setMenuOpen(false)}
             className="mt-5 flex flex-wrap items-center gap-1.5"
           >
             {isOwnProfile && ownerActions ? (
               <>
-                <IconAction
-                  onClick={handleSettingsClick}
-                  icon={Wrench}
-                  label={menuOpen ? t("close", "Fechar") : t("tools", "Ferramentas")}
-                  hint="headcard-settings"
-                  accent
-                  ariaExpanded={menuOpen}
-                  badge={muralHasNew && !menuOpen}
-                />
+                {/* Só a ENGRENAGEM abre no hover (passar no "Jogo" não abre a
+                    gaveta). Sair da engrenagem + gaveta fecha. */}
+                <div
+                  onMouseLeave={() => setMenuOpen(false)}
+                  className="flex items-center gap-1.5"
+                >
+                <span className="inline-flex" onMouseEnter={() => setMenuOpen(true)}>
+                  <IconAction
+                    onClick={handleSettingsClick}
+                    icon={Wrench}
+                    label={menuOpen ? t("close", "Fechar") : t("tools", "Ferramentas")}
+                    hint="headcard-settings"
+                    accent
+                    ariaExpanded={menuOpen}
+                    badge={muralHasNew && !menuOpen}
+                  />
+                </span>
                 <RetractableIcons open={menuOpen}>
                   {/* Mensagens e Comunidade SAÍRAM daqui (2026-09-04, pedido do
                       Alex): as duas já são raiz do dock da ProfileSidebar, que
@@ -934,6 +940,7 @@ export function ProfileHeadCard({
                     />
                   ))}
                 </RetractableIcons>
+                </div>
                 {isPlatformAdmin && (
                   <Link
                     href="/monsters"
