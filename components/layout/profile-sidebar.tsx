@@ -61,6 +61,10 @@ const HIDDEN_ON_PATHS = [
   "/confirmar-email",
   "/activate",
   "/bem-vindo",
+  // O JOGO É TELA CHEIA E DEITADA. No celular esta toolbar é uma pílula fixa
+  // no rodapé CENTRAL — exatamente onde a build Godot desenha o botão de sair
+  // da partida (ver `jogo/scripts/ui/toque.gd`).
+  "/monsters",
 ]
 
 /**
@@ -71,10 +75,8 @@ const HIDDEN_ON_PATHS = [
  * um item novo não precise ser copiado em três lugares — o terceiro é sempre o
  * lugar de onde ele some quando alguém mexer só nos outros dois.
  *
- * ⚠️ O MONSTERS SAIU DAQUI (pedido do Alex, 2026-09-08) e a página foi
- * APAGADA em 2026-09-09, junto com o resto do frontend de games — ele só era
- * alcançável por dentro daquele ambiente (pill roxo → plataforma → item "Game"
- * do dock de lá).
+ * ⚠️ O MONSTERS NÃO ENTRA AQUI. A página voltou em 2026-10-04 com uma porta
+ * só: o botão "Jogo" do headcard, visível apenas para o administrador.
  */
 const ITENS_COMUNS: SidebarItem[] = [
   { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },

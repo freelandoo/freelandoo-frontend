@@ -4305,7 +4305,9 @@
     "noRatings": "No ratings",
     "servicesSettingsAria": "Configure services and hours",
     "itemActions": "Item actions",
-    "priceOnRequest": "On request"
+    "priceOnRequest": "On request",
+    "game": "Game",
+    "gameAria": "Open the Freelandoo Monsters game"
   },
   "Bees": {
     "chat": "Chat",
@@ -7413,5 +7415,27 @@
     "colRange": "Range",
     "colCount": "Prices",
     "footnote": "Only fixed, active prices count: quote-only services, zero prices and inactive listings are left out."
+  },
+  "Monsters": {
+    "waitTitle": "One moment",
+    "waitText": "Checking your session…",
+    "loginTitle": "Sign in to play",
+    "loginText": "Your monster is born from your Freelandoo profile — without an account there's no one to be born from.",
+    "loginCta": "Sign in",
+    "lockedTitle": "Not yet",
+    "lockedText": "The game is in closed testing and for now only opens for the administration.",
+    "back": "Back",
+    "noBuildTitle": "The build hasn't been published yet",
+    "noBuildText": "NEXT_PUBLIC_MONSTERS_JOGO_URL still needs to point to the Godot build address.",
+    "frameTitle": "Freelandoo Monsters",
+    "loading": "loading the world…",
+    "landscapeTitle": "The game is played sideways",
+    "landscapeText": "Turn your phone sideways. Upright, the arena shrinks to a stamp and the buttons become grains of rice.",
+    "rotateFull": "Rotate and go fullscreen",
+    "enterFull": "Go fullscreen",
+    "iphoneHint": "on iPhone you rotate by hand — Safari won't let the page rotate itself",
+    "downloadingHint": "the world is already downloading while you read",
+    "portraitTitle": "Turn your phone sideways",
+    "portraitText": "Upright, the arena shrinks to a stamp and the buttons vanish. Rotate it and everything returns to the right size."
   }
 }

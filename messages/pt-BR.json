@@ -3719,7 +3719,9 @@
     "noRatings": "Sem avaliações",
     "servicesSettingsAria": "Configurar serviços e horários",
     "itemActions": "Ações do item",
-    "priceOnRequest": "Sob orçamento"
+    "priceOnRequest": "Sob orçamento",
+    "game": "Jogo",
+    "gameAria": "Abrir o jogo Freelandoo Monsters"
   },
   "Bees": {
     "chat": "Chat",
@@ -6827,5 +6829,27 @@
     "colRange": "Faixa",
     "colCount": "Preços",
     "footnote": "Contam só preços fechados e ativos: serviço sob orçamento, preço zero e anúncio fora do ar ficam de fora."
+  },
+  "Monsters": {
+    "waitTitle": "Um instante",
+    "waitText": "Conferindo sua sessão…",
+    "loginTitle": "Entre para jogar",
+    "loginText": "Seu monstro nasce do seu perfil da Freelandoo — sem conta não há de quem nascer.",
+    "loginCta": "Entrar",
+    "lockedTitle": "Ainda não",
+    "lockedText": "O jogo está em teste fechado e por enquanto só abre para a administração.",
+    "back": "Voltar",
+    "noBuildTitle": "A build ainda não foi publicada",
+    "noBuildText": "Falta apontar NEXT_PUBLIC_MONSTERS_JOGO_URL para o endereço da build Godot.",
+    "frameTitle": "Freelandoo Monsters",
+    "loading": "carregando o mundo…",
+    "landscapeTitle": "O jogo é deitado",
+    "landscapeText": "Vire o celular na horizontal. Em pé, a arena fica do tamanho de um selo e os botões viram grãos de arroz.",
+    "rotateFull": "Girar e entrar em tela cheia",
+    "enterFull": "Entrar em tela cheia",
+    "iphoneHint": "no iPhone o giro é na mão — o Safari não deixa a página girar sozinha",
+    "downloadingHint": "o mundo já está baixando enquanto você lê",
+    "portraitTitle": "Deite o telefone",
+    "portraitText": "Em pé, a arena fica do tamanho de um selo e os botões somem. Girando, tudo volta ao tamanho certo."
   }
 }
