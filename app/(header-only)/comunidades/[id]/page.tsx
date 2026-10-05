@@ -34,6 +34,7 @@ import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 // A comunidade de NEGÓCIO troca o conteúdo do dock global. Quem sabe qual é a
 // modalidade é ESTA página (ela não está na URL), então é ela que declara.
 import { CommunityShellBeacon, onCommunityView } from "@/components/layout/community-shell"
+import { LightSurfaceBeacon } from "@/components/layout/light-surface"
 // A paleta editável do líder e o formatador de XP moram FORA desta página: o
 // ranking cheio (`[id]/ranking`) pinta o pódio com o MESMO accent, e uma cópia
 // da lista faria as duas telas da mesma comunidade divergirem de tom.
@@ -1737,6 +1738,9 @@ export default function CommunityDetailPage() {
           de barra, e é por isso que a porta de saída existe. O que depende de
           quem olha é só o item do Site (`showSiteEntry`, que some junto da
           aba quando o líder aperta "Ver como público"). */}
+      {/* Peles CLARAS (pet, condomínio): o dock troca a tinta branca por
+          contorno e ícones pretos — senão ele some no fundo. */}
+      {(isPetPlatform || isCondoSkin) && <LightSurfaceBeacon />}
       {shellKind && (
         <CommunityShellBeacon
           communityId={id}

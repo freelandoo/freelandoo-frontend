@@ -20,6 +20,7 @@ import {
   type CommunityView,
   type Shell,
 } from "./community-shell"
+import { useLightSurface } from "./light-surface"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
@@ -214,6 +215,7 @@ export function ProfileSidebar() {
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [dropsideEverOpened, setDropsideEverOpened] = useState(false)
   const navCounts = useNavCounts()
+  const lightSurface = useLightSurface()
   const { registerAction } = useTour()
 
   useEffect(() => {
@@ -269,6 +271,9 @@ export function ProfileSidebar() {
   // somem. Escurece o contorno só nessas rotas; no hover (painel vira vidro
   // escuro) volta ao branco pra continuar legível.
   const isCasa = pathname.startsWith("/acasaviews")
+  // Comunidades de pele clara (pet, condomínio) declaram pelo beacon: contorno
+  // PRETO e ícones pretos; no hover o painel vira vidro escuro e volta ao branco.
+  const isLightCommunity = lightSurface && !isCasa
 
   const isAdmin =
     !!user.is_admin ||
@@ -304,7 +309,8 @@ export function ProfileSidebar() {
           "w-14 flex-col gap-1 rounded-[22px] border border-white/10 bg-transparent p-1.5 shadow-none",
           "transition-[width,background-color,border-color] duration-300 ease-out",
           "hover:w-[216px] hover:border-white/20 hover:bg-zinc-950/55 hover:backdrop-blur-xl",
-          isCasa && "border-zinc-900/25 [&_svg]:!text-zinc-900 group-hover/sidebar:border-white/20 group-hover/sidebar:[&_svg]:!text-white/85"
+          isCasa && "border-zinc-900/25 [&_svg]:!text-zinc-900 group-hover/sidebar:border-white/20 group-hover/sidebar:[&_svg]:!text-white/85",
+          isLightCommunity && "border-zinc-950 [&_svg]:!text-zinc-900 group-hover/sidebar:border-white/20 group-hover/sidebar:[&_svg]:!text-white/85"
         )}
       >
         <span
@@ -330,7 +336,8 @@ export function ProfileSidebar() {
         data-app-toolbar
         className={cn(
           "fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-transparent px-2 py-1.5 shadow-none md:hidden",
-          isCasa && "border-zinc-900/25 bg-white/70 backdrop-blur [&_svg]:!text-zinc-900"
+          isCasa && "border-zinc-900/25 bg-white/70 backdrop-blur [&_svg]:!text-zinc-900",
+          isLightCommunity && "border-zinc-950 bg-white/70 backdrop-blur [&_svg]:!text-zinc-900"
         )}
         style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
