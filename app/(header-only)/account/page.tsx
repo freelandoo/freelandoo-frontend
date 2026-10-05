@@ -2184,7 +2184,7 @@ export default function PerfilPage() {
 
       {/* Modal de Upload de Avatar */}
       <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-        <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
+        <DialogContent className="fl-root fl-sharp fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{t("changeAvatarTitle", "Alterar avatar")}</DialogTitle>
           </DialogHeader>
@@ -2193,7 +2193,7 @@ export default function PerfilPage() {
             <div className="space-y-6 py-4">
               {/* Avatar Atual ou Iniciais */}
               <div className="flex flex-col items-center gap-4">
-                <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-2 border-[#0B0B0D] bg-[radial-gradient(circle_at_30%_25%,rgba(242,183,5,0.35),transparent_60%),#1d1810] shadow-[4px_4px_0_0_#0B0B0D]">
+                <div className="flex aspect-[2/3] w-32 items-center justify-center overflow-hidden border-2 border-[#0B0B0D] bg-[radial-gradient(circle_at_30%_25%,rgba(242,183,5,0.35),transparent_60%),#1d1810] shadow-[4px_4px_0_0_#0B0B0D]">
                   {perfil?.avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -2240,7 +2240,7 @@ export default function PerfilPage() {
               {/* Preview Circular */}
               <div className="flex flex-col items-center gap-4">
                 <div
-                  className="relative h-48 w-48 flex-shrink-0 cursor-move overflow-hidden rounded-full border-4 border-[#0B0B0D] bg-[#1d1810] shadow-[4px_4px_0_0_#0B0B0D]"
+                  className="relative aspect-[2/3] w-40 flex-shrink-0 cursor-move overflow-hidden border-4 border-[#0B0B0D] bg-[#1d1810] shadow-[4px_4px_0_0_#0B0B0D]"
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}

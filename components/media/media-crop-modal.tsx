@@ -107,6 +107,7 @@ export function MediaCropModal({
     if (Math.abs(frameRatio - 1) < 0.001) return "1:1"
     if (Math.abs(frameRatio - 4 / 5) < 0.001) return "4:5"
     if (Math.abs(frameRatio - 16 / 9) < 0.001) return "16:9"
+    if (Math.abs(frameRatio - 2 / 3) < 0.001) return "2:3"
     return frameRatio.toFixed(2)
   }, [frameRatio])
 
@@ -219,7 +220,7 @@ export function MediaCropModal({
         // acontecer. O véu do Radix continua em `z-50` (ele não aceita classe),
         // então o modal de baixo segue visível atrás — o que preserva o
         // contexto e não atrapalha, já que este painel é opaco.
-        className="z-[100] max-h-[92vh] gap-0 overflow-hidden border-white/10 bg-zinc-950 p-0 text-white shadow-2xl sm:max-w-[760px]"
+        className="fl-sharp z-[100] max-h-[92vh] gap-0 overflow-hidden border-white/10 bg-zinc-950 p-0 text-white shadow-2xl sm:max-w-[760px]"
         showCloseButton={!processing}
       >
         <DialogHeader className="border-b border-white/10 px-5 py-4">
@@ -277,8 +278,11 @@ export function MediaCropModal({
             <div
               ref={frameRef}
               className={cn(
-                "relative w-full max-w-[420px] overflow-hidden rounded-2xl border border-primary/40 bg-black shadow-[0_24px_70px_-36px_rgba(242,196,9,0.55)] touch-none",
-                mediaType === "profile_avatar" && "rounded-full"
+                "relative w-full max-w-[420px] overflow-hidden border border-primary/40 bg-black shadow-[0_24px_70px_-36px_rgba(242,196,9,0.55)] touch-none",
+                // A moldura é a do card da foto (retangular 2:3, cantos retos):
+                // um círculo aqui mostraria um enquadramento que o headcard não
+                // usa, e o que fica fora do círculo apareceria depois no card.
+                mediaType === "profile_avatar" && "max-w-[300px]"
               )}
               style={{ aspectRatio: frameRatio }}
               onPointerDown={handlePointerDown}

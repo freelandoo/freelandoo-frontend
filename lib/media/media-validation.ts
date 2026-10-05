@@ -1,7 +1,9 @@
 "use client"
 
 export const POST_IMAGE_ASPECT_RATIO = 4 / 5
-export const AVATAR_IMAGE_ASPECT_RATIO = 1
+// 2:3 = a proporção do card da foto no headcard (aspect-[2/3]). Espelho do
+// processAvatarImage do backend (800x1200) — mudou de um lado, muda do outro.
+export const AVATAR_IMAGE_ASPECT_RATIO = 2 / 3
 export const BEES_VIDEO_ASPECT_RATIO = 9 / 16
 // Bees aceita qualquer ratio <= 0.6 (cobre 9:16 = 0.5625 com folga;
 // alinhado com o backfill da migration 053).
@@ -26,7 +28,7 @@ export const POST_ORIENTATIONS: PostOrientation[] = [
   { id: "1:1", ratio: 1, width: 1080, height: 1080 },
   { id: "16:9", ratio: 16 / 9, width: 1920, height: 1080 },
 ]
-export const AVATAR_IMAGE_OUTPUT = { width: 800, height: 800 }
+export const AVATAR_IMAGE_OUTPUT = { width: 800, height: 1200 }
 export const ASPECT_RATIO_TOLERANCE = 0.01
 
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
