@@ -83,7 +83,11 @@ export const BTN_DARK =
 // ⚠️ A FAIXA SÓLIDA (Alex, 2026-09-30: "como em games, com uma cor sólida"):
 // barra de data e cabeçalho de card são LARANJA CHEIO com tinta preta, como a
 // barra roxa "Publicar no games". Faixa nova do ambiente usa estas duas.
-export const BAR_SOLID = "border-2 border-[#0B0B0D] bg-[#FF8C2B] text-[#0B0B0D]"
+// A FAIXA DE CABEÇALHO (data, refeições, medições) é da cor da SOMBRA DURA do
+// headcard (HEADCARD_SHADOW, rgb 124 45 18) — pedido do Alex, 2026-10-05: o
+// laranja vivo ficou só para ação. Fundo escuro → tinta CLARA por cima.
+export const HEADER_BG = "#7C2D12"
+export const BAR_SOLID = "border-2 border-[#0B0B0D] bg-[#7C2D12] text-[#F5F1E8]"
 // Botão em cima da faixa: preto com o ícone laranja claro.
 export const BTN_ON_BAR =
   "inline-flex items-center justify-center border-2 border-[#0B0B0D] bg-[#0B0B0D] text-[#FB923C] hover:bg-[#1c0a06] disabled:opacity-50"

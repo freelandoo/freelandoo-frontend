@@ -499,9 +499,9 @@ export function FitnessView() {
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 text-center">
-            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">{fmtDay}</p>
+            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]">{fmtDay}</p>
             {!isToday && (
-              <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#0B0B0D]/70 hover:text-[#0B0B0D]">
+              <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#F5F1E8]/70 hover:text-[#F5F1E8]">
                 {t("today", "Hoje")} →
               </button>
             )}
@@ -582,10 +582,10 @@ export function FitnessView() {
                   const mealKcal = logs.reduce((acc, l) => acc + l.kcal, 0)
                   return (
                     <div key={meal.id} className={PANEL}>
-                      <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#FF8C2B] px-3 py-2 text-[#0B0B0D]">
+                      <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#7C2D12] px-3 py-2 text-[#F5F1E8]">
                         <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]">{t(meal.key, meal.fallback)}</p>
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-bold text-[#0B0B0D]/70">{Math.round(mealKcal)} kcal</span>
+                          <span className="text-[11px] font-bold text-[#F5F1E8]/70">{Math.round(mealKcal)} kcal</span>
                           <button
                             onClick={() => {
                               setSearchOpen(meal.id)
