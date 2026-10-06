@@ -1,0 +1,563 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   CASA VIEWS — "REALITY" (identidade escura: tabloide digital + broadcast)
+   --------------------------------------------------------------------------
+   Escopo: `.rv`. Tudo aqui vive dentro dele — nada vaza para o Freelandoo.
+   Convive com o `.casa-rank` (tema de papel claro) das páginas de ranking
+   internas: as duas peles usam as MESMAS fontes do layout raiz (Anton para
+   display, Archivo para corpo, Caveat para o manuscrito, Geist Mono para dado).
+
+   Regras da casa que esta folha respeita:
+   - SEM cantos arredondados (exceção: avatar circular).
+   - Nada de animação contínua numa camada do tamanho da janela: grão, grade e
+     scanline são PINTADOS uma vez; o que se move é pequeno (o selo AO VIVO, a
+     faixa de pontos, o palco 3D do herói — que é limitado e pausa fora da tela).
+   - Cor só por token. Hex solto em componente é defeito.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.rv,
+.rv-tokens {
+  /* superfícies */
+  --rv-bg: #050505;
+  --rv-surface: #0a0a0a;
+  --rv-surface-2: #111111;
+  --rv-surface-3: #161616;
+  /* tinta */
+  --rv-white: #f4f4f0;
+  --rv-muted: rgba(244, 244, 240, 0.58);
+  --rv-faint: rgba(244, 244, 240, 0.32);
+  --rv-line: rgba(244, 244, 240, 0.14);
+  --rv-line-strong: rgba(244, 244, 240, 0.32);
+  --rv-grid-color: rgba(244, 244, 240, 0.045);
+  /* acentos */
+  --rv-pink: #ff007a;
+  --rv-pink-hot: #ff2b91;
+  --rv-pink-ink: #ff4fa3; /* rosa como TINTA sobre preto (contraste ~5,9:1) */
+  --rv-yellow: #ffc400;
+  --rv-cyan: #2ee6f2; /* pontual: estado técnico */
+  --rv-up: #3ddc84;
+  --rv-down: #ff4d4d;
+  /* tipografia */
+  --rv-font-display: var(--font-anton), "Impact", ui-sans-serif, sans-serif;
+  --rv-font-body: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --rv-font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+  --rv-font-script: var(--font-caveat), ui-serif, cursive;
+  /* movimento */
+  --rv-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --rv-ease-snap: cubic-bezier(0.7, 0, 0.2, 1);
+  --rv-dur-fast: 160ms;
+  --rv-dur: 320ms;
+  --rv-dur-slow: 700ms;
+  /* profundidade */
+  --rv-z-deco: 0;
+  --rv-z-content: 2;
+  --rv-z-header: 60;
+  --rv-z-overlay: 90;
+  /* sombra dura (a assinatura tabloide) e brilho */
+  --rv-shadow-hard: 6px 6px 0 0 var(--rv-pink);
+  --rv-glow: 0 0 0 1px var(--rv-pink), 0 0 24px -4px rgba(255, 0, 122, 0.55);
+}
+
+/* invólucro das páginas escuras */
+.rv {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  background-color: var(--rv-bg);
+  color: var(--rv-white);
+  font-family: var(--rv-font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+.rv * {
+  border-radius: 0;
+}
+.rv img[data-avatar],
+.rv [data-avatar] {
+  border-radius: 9999px;
+}
+
+/* ── tipografia ─────────────────────────────────────────────────────────── */
+.rv-display {
+  font-family: var(--rv-font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 0.82;
+  letter-spacing: -0.005em;
+}
+.rv-mono {
+  font-family: var(--rv-font-mono);
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0.04em;
+}
+.rv-script {
+  font-family: var(--rv-font-script);
+  font-weight: 700;
+  line-height: 1;
+}
+.rv-label {
+  font-family: var(--rv-font-body);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+/* número contornado (outline) — os "01 02 03" gigantes */
+.rv-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--rv-white);
+  /* sobre foto clara o contorno branco sumiria */
+  filter: drop-shadow(0 0 1px rgba(5, 5, 5, 0.9)) drop-shadow(0 0 6px rgba(5, 5, 5, 0.55));
+}
+.rv-outline-pink {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--rv-pink);
+}
+
+/* ── texturas (pintadas uma vez) ───────────────────────────────────────── */
+.rv-grid {
+  background-image:
+    linear-gradient(var(--rv-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rv-grid-color) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.rv-noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.07;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.rv-scan {
+  position: relative;
+}
+.rv-scan::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.32) 0,
+    rgba(0, 0, 0, 0.32) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+.rv-halftone {
+  background-image: radial-gradient(var(--rv-pink) 1.1px, transparent 1.4px);
+  background-size: 9px 9px;
+}
+
+/* ── imagem tratada (P&B duro + rosa no hover) ─────────────────────────── */
+.rv-photo {
+  filter: grayscale(1) contrast(1.25) brightness(0.92);
+  transition:
+    filter var(--rv-dur) var(--rv-ease),
+    transform var(--rv-dur-slow) var(--rv-ease);
+}
+.rv-photo-tint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--rv-pink);
+  mix-blend-mode: multiply;
+  opacity: 0;
+  transition: opacity var(--rv-dur) var(--rv-ease);
+}
+
+/* ── recortes geométricos ──────────────────────────────────────────────── */
+.rv-cut {
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+.rv-cut-sm {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+
+/* ── bordas ────────────────────────────────────────────────────────────── */
+.rv-border {
+  border: 1px solid var(--rv-line-strong);
+}
+.rv-border-white {
+  border: 2px solid var(--rv-white);
+}
+.rv-border-pink {
+  border: 2px solid var(--rv-pink);
+}
+
+/* ── etiquetas / stickers ──────────────────────────────────────────────── */
+.rv-sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-family: var(--rv-font-body);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  line-height: 1.3;
+  color: var(--rv-bg);
+  background: var(--rv-white);
+  border: 2px solid var(--rv-bg);
+  box-shadow: 3px 3px 0 0 var(--rv-pink);
+}
+.rv-sticker-pink {
+  background: var(--rv-pink);
+  color: var(--rv-white);
+  box-shadow: 3px 3px 0 0 var(--rv-white);
+}
+.rv-sticker-yellow {
+  background: var(--rv-yellow);
+  color: var(--rv-bg);
+  box-shadow: 3px 3px 0 0 var(--rv-bg);
+}
+
+/* ── AO VIVO ───────────────────────────────────────────────────────────── */
+.rv-live-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--rv-pink);
+  flex: none;
+}
+.rv-live-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--rv-pink);
+  animation: rv-ping 1.8s var(--rv-ease) infinite;
+}
+@keyframes rv-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  80%,
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+/* ── faixa contínua (marquee) — pequena, só transform ───────────────────── */
+.rv-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.rv-marquee-track {
+  display: inline-flex;
+  width: max-content;
+  animation: rv-marquee 38s linear infinite;
+  will-change: transform;
+}
+.rv-marquee:hover .rv-marquee-track {
+  animation-play-state: paused;
+}
+@keyframes rv-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* ── botões ────────────────────────────────────────────────────────────── */
+.rv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 18px;
+  font-family: var(--rv-font-body);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--rv-white);
+  background: var(--rv-pink);
+  border: 2px solid var(--rv-pink);
+  box-shadow: 4px 4px 0 0 var(--rv-white);
+  transition:
+    transform var(--rv-dur-fast) var(--rv-ease),
+    box-shadow var(--rv-dur-fast) var(--rv-ease),
+    background var(--rv-dur-fast) var(--rv-ease);
+}
+.rv-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 0 var(--rv-white);
+  background: var(--rv-pink-hot);
+}
+.rv-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--rv-white);
+}
+.rv-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  transform: none;
+  box-shadow: none;
+}
+.rv-btn-ghost {
+  background: transparent;
+  border-color: var(--rv-white);
+  box-shadow: 4px 4px 0 0 var(--rv-pink);
+}
+.rv-btn-ghost:hover {
+  background: var(--rv-white);
+  color: var(--rv-bg);
+  box-shadow: 6px 6px 0 0 var(--rv-pink);
+}
+.rv-btn .rv-arrow {
+  transition: transform var(--rv-dur-fast) var(--rv-ease);
+}
+.rv-btn:hover .rv-arrow {
+  transform: translateX(4px);
+}
+
+/* link com sublinhado que se revela */
+.rv-link {
+  background-image: linear-gradient(var(--rv-pink), var(--rv-pink));
+  background-size: 0% 2px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size var(--rv-dur) var(--rv-ease);
+}
+.rv-link:hover,
+.rv-link[aria-current="page"] {
+  background-size: 100% 2px;
+}
+
+/* ── foco ──────────────────────────────────────────────────────────────── */
+.rv :focus-visible,
+.rv-tokens :focus-visible {
+  outline: 2px solid var(--rv-pink-hot);
+  outline-offset: 3px;
+}
+
+/* ── card editorial com tilt (variáveis escritas pelo TiltCard) ─────────── */
+.rv-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  --mx: 50%;
+  --my: 50%;
+  position: relative;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  transform-style: preserve-3d;
+  transition:
+    transform var(--rv-dur) var(--rv-ease),
+    box-shadow var(--rv-dur) var(--rv-ease),
+    border-color var(--rv-dur) var(--rv-ease);
+}
+.rv-card:hover {
+  box-shadow: var(--rv-glow);
+}
+.rv-card .rv-spot {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(260px circle at var(--mx) var(--my), rgba(255, 0, 122, 0.22), transparent 62%);
+  transition: opacity var(--rv-dur) var(--rv-ease);
+}
+.rv-card:hover .rv-spot {
+  opacity: 1;
+}
+.rv-card:hover .rv-photo {
+  filter: grayscale(0.15) contrast(1.15) brightness(1);
+  transform: scale(1.04);
+}
+.rv-card:hover .rv-photo-tint {
+  opacity: 0.32;
+}
+.rv-card .rv-title-shift {
+  transition: transform var(--rv-dur) var(--rv-ease);
+}
+.rv-card:hover .rv-title-shift {
+  transform: translate(3px, -2px);
+}
+/* scanline que passa UMA vez no hover */
+.rv-card .rv-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.rv-card .rv-sweep::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -30%;
+  height: 30%;
+  background: linear-gradient(to bottom, transparent, rgba(255, 0, 122, 0.18), transparent);
+  transform: translateY(0);
+  opacity: 0;
+}
+.rv-card:hover .rv-sweep::before {
+  animation: rv-sweep 900ms var(--rv-ease) 1;
+}
+@keyframes rv-sweep {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(440%);
+  }
+}
+
+/* ── revelação por rolagem ─────────────────────────────────────────────────
+   O estado escondido SÓ vale com `data-rv-motion="on"`, escrito por um script
+   inline durante o parse (antes da primeira pintura). Sem JS — ou com
+   movimento reduzido — o atributo nunca existe e tudo aparece inteiro. */
+[data-rv-motion="on"] [data-rv]:not([data-in]) {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  filter: blur(6px);
+}
+[data-rv-motion="on"] [data-rv="mask"]:not([data-in]) {
+  opacity: 1;
+  filter: none;
+  transform: none;
+  clip-path: inset(0 0 100% 0);
+}
+[data-rv-motion="on"] [data-rv="left"]:not([data-in]) {
+  transform: translate3d(-28px, 0, 0);
+}
+[data-rv-motion="on"] [data-rv] {
+  transition:
+    opacity var(--rv-dur-slow) var(--rv-ease),
+    transform var(--rv-dur-slow) var(--rv-ease),
+    filter var(--rv-dur-slow) var(--rv-ease),
+    clip-path 900ms var(--rv-ease-snap);
+  transition-delay: var(--rv-delay, 0ms);
+}
+/* revelada, a máscara ganha folga: acentos (Ê, Ç) passam acima da caixa de
+   uma linha de 0.8 e o inset(0) os cortaria. */
+[data-rv-motion="on"] [data-rv="mask"] {
+  clip-path: inset(-25% -4% -12% -4%);
+}
+
+/* entrada da página */
+.rv-page-in {
+  animation: rv-page-in 520ms var(--rv-ease) both;
+}
+@keyframes rv-page-in {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+/* número que mudou: brilho curto */
+.rv-bump {
+  animation: rv-bump 700ms var(--rv-ease) 1;
+}
+@keyframes rv-bump {
+  0% {
+    color: var(--rv-pink-hot);
+    text-shadow: 0 0 18px rgba(255, 0, 122, 0.8);
+  }
+  100% {
+    text-shadow: none;
+  }
+}
+
+/* glitch de acento (só no hover do selo) */
+.rv-glitch:hover {
+  animation: rv-glitch 260ms steps(2) 1;
+}
+@keyframes rv-glitch {
+  0% {
+    text-shadow: 2px 0 var(--rv-pink), -2px 0 var(--rv-cyan);
+  }
+  50% {
+    text-shadow: -2px 0 var(--rv-pink), 2px 0 var(--rv-cyan);
+    transform: translateX(1px);
+  }
+  100% {
+    text-shadow: none;
+    transform: none;
+  }
+}
+
+/* esqueleto editorial: bloco reto com uma varredura */
+.rv-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--rv-surface-2);
+}
+.rv-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(244, 244, 240, 0.06), transparent);
+  transform: translateX(-100%);
+  animation: rv-skel 1.4s linear infinite;
+}
+@keyframes rv-skel {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* trilho horizontal com snap (carrossel nativo, sem biblioteca) */
+.rv-rail {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rv-pink) transparent;
+  padding-bottom: 14px;
+}
+.rv-rail > * {
+  scroll-snap-align: start;
+}
+
+/* ── movimento reduzido: o que se move para; o desenho fica ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .rv-live-dot::after,
+  .rv-marquee-track,
+  .rv-skeleton::after,
+  .rv-page-in,
+  .rv-card:hover .rv-sweep::before,
+  .rv-glitch:hover,
+  .rv-bump {
+    animation: none !important;
+  }
+  .rv-card {
+    transform: none !important;
+  }
+}
+
+/* ── admin: mesma identidade, sem espetáculo ─────────────────────────────
+   Página preta, cartões brancos, acento rosa. Sem GPU e sem movimento. */
+.rv-admin {
+  background-color: #050505;
+  background-image:
+    linear-gradient(rgba(244, 244, 240, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 244, 240, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  color: #f4f4f0;
+}
+.rv-admin.casa-rank {
+  --magenta: #ff007a;
+  --magenta-deep: #d4006a;
+}

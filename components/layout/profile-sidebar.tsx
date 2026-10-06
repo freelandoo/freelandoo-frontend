@@ -270,7 +270,12 @@ export function ProfileSidebar() {
   // Ambiente A Casa Views tem fundo claro (papel) — os ícones brancos da rail
   // somem. Escurece o contorno só nessas rotas; no hover (painel vira vidro
   // escuro) volta ao branco pra continuar legível.
-  const isCasa = pathname.startsWith("/acasaviews")
+  // ⚠️ Só as páginas de PAPEL: rankings e conveniência passaram à pele escura
+  // ("reality") e ali o contorno escuro sumiria no preto.
+  const isCasa =
+    pathname.startsWith("/acasaviews") &&
+    !pathname.startsWith("/acasaviews/rankings") &&
+    !pathname.startsWith("/acasaviews/conveniencia")
   // Comunidades de pele clara (pet, condomínio) declaram pelo beacon: contorno
   // PRETO e ícones pretos; no hover o painel vira vidro escuro e volta ao branco.
   const isLightCommunity = lightSurface && !isCasa

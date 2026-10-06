@@ -1,6 +1,7 @@
 "use client"
 
 import "@/app/acasaviews/casa.css"
+import "@/app/acasaviews/reality.css"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
@@ -77,7 +78,7 @@ export default function AdminCasaStorePage() {
   if (!token) {
     return (
       <div className="casa-app">
-        <div className="casa-rank casa-paper flex min-h-[60dvh] items-center justify-center casa-body font-bold text-[var(--ink-soft)]/70">
+        <div className="casa-rank rv-admin flex min-h-[60dvh] items-center justify-center casa-body font-bold text-white/70">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verificando sessão…
         </div>
       </div>
@@ -86,20 +87,20 @@ export default function AdminCasaStorePage() {
 
   return (
     <div className="casa-app">
-      <div className="casa-rank casa-paper min-h-screen">
+      <div className="casa-rank rv-admin min-h-screen">
         <div className="mx-auto max-w-6xl px-5 py-8 md:px-8">
           {/* Header */}
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b-2 border-[var(--ink)] pb-4">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b-2 border-white/25 pb-4">
             <div className="flex items-center gap-3">
-              <button onClick={() => router.push("/admin")} className="border-2 border-[var(--ink)] p-2 text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] transition-transform hover:-translate-y-0.5">
+              <button onClick={() => router.push("/admin")} aria-label="Voltar para a administração" className="border-2 border-white p-2 text-white shadow-[3px_3px_0_0_var(--magenta)] transition-transform hover:-translate-y-0.5">
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <div>
-                <p className="casa-marker text-xl text-[var(--gold)] md:text-2xl">loja oficial</p>
-                <h1 className="casa-display flex items-center gap-2 text-4xl leading-[0.85] text-[var(--ink)] md:text-5xl">
+                <p className="casa-marker text-xl text-[var(--magenta)] md:text-2xl">loja oficial · admin</p>
+                <h1 className="casa-display flex items-center gap-2 text-4xl leading-[0.85] text-white md:text-6xl">
                   <ShoppingBag className="h-7 w-7" /> CONVENIÊNCIA VIEWS
                 </h1>
-                <p className="mt-1 casa-body text-sm font-semibold text-[var(--ink-soft)]/65">
+                <p className="mt-1 casa-body text-sm font-semibold text-white/55">
                   Loja única espelhada em todas as páginas de participante. A venda registra qual participante recebeu.
                 </p>
               </div>
@@ -108,8 +109,8 @@ export default function AdminCasaStorePage() {
               <button
                 onClick={addProduct}
                 disabled={creating}
-                className="inline-flex items-center gap-2 border-2 border-[var(--ink)] px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--ink)] shadow-[4px_4px_0_0_var(--ink)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-                style={{ background: "var(--gold)" }}
+                className="inline-flex items-center gap-2 border-2 border-[var(--magenta)] px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] text-white shadow-[4px_4px_0_0_#f4f4f0] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+                style={{ background: "var(--magenta)" }}
               >
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 Adicionar produto
@@ -129,7 +130,7 @@ export default function AdminCasaStorePage() {
 
           {tab === "produtos" ? (
             loading ? (
-              <div className="flex items-center gap-2 py-20 casa-body font-bold text-[var(--ink-soft)]/60"><Loader2 className="h-5 w-5 animate-spin" /> Carregando…</div>
+              <div className="flex items-center gap-2 py-20 casa-body font-bold text-white/60"><Loader2 className="h-5 w-5 animate-spin" /> Carregando…</div>
             ) : products.length === 0 ? (
               <div className="border-2 border-dashed border-[var(--ink)]/30 bg-white/60 px-6 py-16 text-center">
                 <ShoppingBag className="mx-auto mb-3 h-10 w-10 text-[var(--ink)]/30" />
@@ -156,8 +157,9 @@ function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick:
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-2 border-2 border-[var(--ink)] px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] transition-transform hover:-translate-y-0.5 ${active ? "text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)]" : "text-[var(--ink-soft)]/60"}`}
-      style={active ? { background: "var(--cyan)" } : { background: "transparent" }}
+      aria-pressed={active}
+      className={`inline-flex items-center gap-2 border-2 px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] transition-transform hover:-translate-y-0.5 ${active ? "border-[var(--magenta)] text-white shadow-[3px_3px_0_0_#f4f4f0]" : "border-white/30 text-white/60 hover:text-white"}`}
+      style={active ? { background: "var(--magenta)" } : { background: "transparent" }}
     >
       {icon}{children}
     </button>
@@ -264,7 +266,7 @@ function ProductCardEditable({ product, token, authHeaders, onChanged }: {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nome do produto"
-          className="w-full border-b-2 border-dashed border-[var(--ink)]/30 bg-transparent casa-display text-xl leading-tight text-[var(--ink)] outline-none focus:border-[var(--gold)]"
+          className="w-full border-b-2 border-dashed border-[var(--ink)]/30 bg-transparent casa-display text-xl leading-tight text-[var(--ink)] outline-none focus:border-[var(--magenta)]"
         />
 
         {/* Preço editável */}
@@ -275,7 +277,7 @@ function ProductCardEditable({ product, token, authHeaders, onChanged }: {
             onChange={(e) => setPrice(e.target.value)}
             placeholder="0,00"
             inputMode="decimal"
-            className="w-24 border-b-2 border-dashed border-[var(--ink)]/30 bg-transparent casa-display text-2xl text-[var(--ink)] outline-none focus:border-[var(--gold)]"
+            className="w-24 border-b-2 border-dashed border-[var(--ink)]/30 bg-transparent casa-display text-2xl text-[var(--ink)] outline-none focus:border-[var(--magenta)]"
           />
         </div>
 
@@ -294,7 +296,7 @@ function ProductCardEditable({ product, token, authHeaders, onChanged }: {
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             placeholder="Descrição do produto…"
-            className="w-full border-2 border-[var(--ink)]/30 bg-[var(--paper-2)] p-2 casa-body text-xs text-[var(--ink)] outline-none focus:border-[var(--gold)]"
+            className="w-full border-2 border-[var(--ink)]/30 bg-[var(--paper-2)] p-2 casa-body text-xs text-[var(--ink)] outline-none focus:border-[var(--magenta)]"
           />
         )}
 
@@ -306,7 +308,7 @@ function ProductCardEditable({ product, token, authHeaders, onChanged }: {
               value={stock}
               onChange={(e) => setStock(e.target.value.replace(/[^\d]/g, ""))}
               placeholder="∞"
-              className="w-12 border-b-2 border-dashed border-[var(--ink)]/30 bg-transparent text-center casa-body text-sm font-bold text-[var(--ink)] outline-none focus:border-[var(--gold)]"
+              className="w-12 border-b-2 border-dashed border-[var(--ink)]/30 bg-transparent text-center casa-body text-sm font-bold text-[var(--ink)] outline-none focus:border-[var(--magenta)]"
             />
           </label>
           <button
@@ -328,12 +330,12 @@ function ProductCardEditable({ product, token, authHeaders, onChanged }: {
             onClick={save}
             disabled={saving || !dirty}
             className="inline-flex flex-1 items-center justify-center gap-1.5 border-2 border-[var(--ink)] py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-40 disabled:shadow-none"
-            style={{ background: dirty ? "var(--cyan)" : "transparent" }}
+            style={{ background: dirty ? "var(--magenta)" : "transparent", color: dirty ? "#fff" : undefined }}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {dirty ? "salvar" : "salvo"}
           </button>
-          <button onClick={remove} className="border-2 border-[var(--ink)] p-1.5 text-[var(--magenta)] transition-transform hover:-translate-y-0.5">
+          <button onClick={remove} aria-label={`Excluir ${product.name}`} className="border-2 border-[var(--ink)] p-1.5 text-[var(--magenta)] transition-transform hover:-translate-y-0.5">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
