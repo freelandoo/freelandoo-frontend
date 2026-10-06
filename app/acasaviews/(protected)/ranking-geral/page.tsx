@@ -1,13 +1,14 @@
 import type { Metadata } from "next"
-import { Trophy, Scale, CalendarDays } from "lucide-react"
 import { RealityMotion } from "@/features/acasaviews/components/reality/reality-motion"
-import { fetchGeneralRanking } from "@/lib/acasaviews/ranking-geral"
+import { fetchGeneralRanking, type GeneralEntry } from "@/lib/acasaviews/ranking-geral"
+import { fetchLiveRanking } from "@/lib/acasaviews/ranking-live"
+import type { AudienceEntry, ParticipantEntry } from "@/lib/acasaviews/ranking-data"
 import { RankingHeader } from "@/features/acasaviews/components/acasaviews/ranking/ranking-header"
 import { RankingHero } from "@/features/acasaviews/components/acasaviews/ranking/ranking-hero"
+import { RankingNav } from "@/features/acasaviews/components/acasaviews/ranking/ranking-nav"
 import { PodiumTop3, type PodiumItem } from "@/features/acasaviews/components/acasaviews/ranking/podium-top3"
 import { RankingList } from "@/features/acasaviews/components/acasaviews/ranking/ranking-list"
 import { RankingCard } from "@/features/acasaviews/components/acasaviews/ranking/ranking-card"
-import { RankingHighlightNote } from "@/features/acasaviews/components/acasaviews/ranking/ranking-highlight-note"
 import { RankingPageFooter } from "@/features/acasaviews/components/acasaviews/ranking/ranking-page-footer"
 
 export const metadata: Metadata = {
@@ -19,18 +20,28 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 export default async function RankingGeralPage() {
-  const standings = await fetchGeneralRanking()
+  const [standings, live] = await Promise.all([
+    fetchGeneralRanking(),
+    fetchLiveRanking().catch(() => ({ audience: [] as AudienceEntry[], participants: [] as ParticipantEntry[] })),
+  ])
+
+  const handleOf = (e: GeneralEntry) => (e.slug ? `@${e.slug}` : `@${e.ranking_user_id}`)
+  const tagOf = (e: GeneralEntry) => (e.vitorias > 0 ? `${e.vitorias}× 1º lugar` : "na disputa")
+  const statsOf = (e: GeneralEntry) => [
+    { label: "vitórias", value: e.vitorias },
+    { label: "dias", value: e.dias },
+  ]
 
   const top3: PodiumItem[] = standings.slice(0, 3).map((e) => ({
     rank: e.posicao,
     name: e.display_name,
-    handle: e.slug ? `@${e.slug}` : `@${e.ranking_user_id}`,
+    handle: handleOf(e),
     avatar: e.avatar_url || "",
     score: e.pontos_geral,
     scoreLabel: "pontos",
-    tag: e.vitorias > 0 ? `${e.vitorias}× 1º lugar` : "na disputa",
+    tag: tagOf(e),
     tagAccent: "gold",
-    meta: [],
+    meta: statsOf(e),
   }))
 
   const rest = standings.slice(3)
@@ -53,69 +64,64 @@ export default async function RankingGeralPage() {
         title2="GERAL"
         accent="magenta"
         liveLabel="temporada"
+        kicker="consistência vence o viral"
+        boxLabel="placar da temporada"
         lead={
           <>
-            A temporada inteira em um placar. Todo dia <strong>fecha valendo pontos por posição</strong> — 1º = 8, 2º = 7,
-            3º = 6, 4º = 5 e os demais 4. Consistência vence o pico viral.
+            Todo dia <strong>fecha valendo pontos por posição</strong>: 1º = 8, 2º = 7, 3º = 6, 4º = 5 e os demais 4.
           </>
         }
         bigStat={{ label: "pontos acumulados", value: totalPoints, compact: true }}
-        sideStat={{ label: "na disputa", value: totalPeople }}
+        sideStat={{ label: "na disputa da temporada", value: totalPeople }}
       />
 
-      {/* Como funciona */}
-      <section className="mx-auto grid max-w-[1600px] gap-4 px-4 pb-6 md:grid-cols-3 md:px-8">
-        <RankingHighlightNote
-          icon={Scale}
-          kicker="paridade acima de tudo"
-          text="Não importa o tamanho do número — importa a posição do dia."
-          index={1}
-        />
-        <RankingHighlightNote
-          icon={Trophy}
-          kicker="fechou em 1º, fechou com 8"
-          text="Cada dia vira 8/7/6/5/4 pontos e soma na temporada."
-          index={2}
-        />
-        <RankingHighlightNote
-          icon={CalendarDays}
-          kicker="todo dia conta"
-          text="Quem é consistente sobe — um viral isolado não decide."
-          index={3}
-        />
-      </section>
+      <RankingNav
+        current="geral"
+        photos={{
+          audiencia: live.audience[0]?.avatar || null,
+          participantes: live.participants[0]?.avatar || null,
+          geral: standings[0]?.avatar_url || null,
+        }}
+      />
 
-      <PodiumTop3 items={top3} accent="magenta" />
+      <PodiumTop3
+        items={top3}
+        accent="magenta"
+        side={{
+          title: ["Top 3", "da temporada"],
+          text: "Não importa o tamanho do número — importa a posição do dia. Quem é consistente sobe.",
+          script: "todo dia conta",
+        }}
+      />
 
       <RankingList
-        title="A temporada inteira"
+        title="A temporada inteira!"
         subtitle="soma dos pontos de posição, dia a dia"
+        note="atualiza a cada fechamento diário"
         emptyText={top3.length === 0 ? "O placar geral começa após o primeiro fechamento diário." : undefined}
       >
         {rest.map((e) => (
-            <RankingCard
-              key={e.ranking_user_id}
-              rank={e.posicao}
-              name={e.display_name}
-              handle={e.slug ? `@${e.slug}` : `@${e.ranking_user_id}`}
-              avatar={e.avatar_url || ""}
-              score={e.pontos_geral}
-              scoreLabel="pontos"
-              trend="same"
-              trendValue={0}
-              tag={e.vitorias > 0 ? `${e.vitorias}× 1º` : "na disputa"}
-              tagAccent="gold"
-              accent="magenta"
-              stats={[
-                { label: "vitórias", value: e.vitorias },
-                { label: "dias", value: e.dias },
-              ]}
-            />
-          ))}
+          <RankingCard
+            key={e.ranking_user_id}
+            rank={e.posicao}
+            name={e.display_name}
+            handle={handleOf(e)}
+            avatar={e.avatar_url || ""}
+            score={e.pontos_geral}
+            scoreLabel="pontos"
+            trend="same"
+            trendValue={0}
+            tag={tagOf(e)}
+            tagAccent="gold"
+            accent="magenta"
+            stats={statsOf(e)}
+          />
+        ))}
       </RankingList>
 
       <RankingPageFooter
         tagline="CONSISTÊNCIA VENCE."
+        script="fechou em 1º, fechou com 8"
         ctaLabel="Ver o ranking do dia"
         ctaHref="/acasaviews/ranking-participantes"
         accent="magenta"

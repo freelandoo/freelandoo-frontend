@@ -1,25 +1,34 @@
 import type { Metadata } from "next"
-import { Eye, Flame, TrendingUp } from "lucide-react"
 import { RealityMotion } from "@/features/acasaviews/components/reality/reality-motion"
 import { fetchLiveRanking } from "@/lib/acasaviews/ranking-live"
+import { fetchGeneralRanking, type GeneralEntry } from "@/lib/acasaviews/ranking-geral"
 import { RankingHeader } from "@/features/acasaviews/components/acasaviews/ranking/ranking-header"
 import { RankingHero } from "@/features/acasaviews/components/acasaviews/ranking/ranking-hero"
+import { RankingNav } from "@/features/acasaviews/components/acasaviews/ranking/ranking-nav"
 import { PodiumTop3, type PodiumItem } from "@/features/acasaviews/components/acasaviews/ranking/podium-top3"
-import { RankingFilterBar } from "@/features/acasaviews/components/acasaviews/ranking/ranking-filter-bar"
 import { RankingList } from "@/features/acasaviews/components/acasaviews/ranking/ranking-list"
 import { RankingCard } from "@/features/acasaviews/components/acasaviews/ranking/ranking-card"
-import { RankingHighlightNote } from "@/features/acasaviews/components/acasaviews/ranking/ranking-highlight-note"
 import { RankingPageFooter } from "@/features/acasaviews/components/acasaviews/ranking/ranking-page-footer"
 
 export const metadata: Metadata = {
   title: "Ranking dos Participantes | Casa Views",
-  description: "Atenção vira poder. Views, likes e comentários definem quem domina a temporada.",
+  description: "Visualizações, likes e comentários definem quem domina a temporada na Casa Views.",
 }
 
 export const dynamic = "force-dynamic"
 
 export default async function RankingParticipantesPage() {
-  const { participants } = await fetchLiveRanking()
+  const [{ audience, participants }, season] = await Promise.all([
+    fetchLiveRanking(),
+    fetchGeneralRanking().catch(() => [] as GeneralEntry[]),
+  ])
+
+  // os números que o placar soma — os mesmos no pódio e na tabela
+  const statsOf = (e: (typeof participants)[number]) => [
+    { label: "views", value: e.views, compact: true },
+    { label: "likes", value: e.likes, compact: true },
+    { label: "comentários", value: e.comments, compact: true },
+  ]
 
   const top3: PodiumItem[] = participants.slice(0, 3).map((e) => ({
     rank: e.rank,
@@ -30,7 +39,7 @@ export default async function RankingParticipantesPage() {
     scoreLabel: "pontos",
     tag: e.tag,
     tagAccent: e.tagAccent,
-    meta: [],
+    meta: statsOf(e),
   }))
 
   const rest = participants.slice(3)
@@ -53,44 +62,38 @@ export default async function RankingParticipantesPage() {
         title2="PARTICIPANTES"
         accent="magenta"
         liveLabel="ao vivo"
+        kicker="atenção vira poder"
+        boxLabel="placar da casa"
         lead={
           <>
-            Na Casa Views, <strong>atenção vira poder.</strong> Visualizações, likes e comentários definem quem está
-            dominando a temporada.
+            Visualizações, likes e comentários <strong>definem quem domina a temporada.</strong> Postou, pontuou.
           </>
         }
-        bigStat={{ label: "pontos da temporada", value: totalPoints, compact: true }}
-        sideStat={{ label: "na casa", value: totalPeople }}
+        bigStat={{ label: "pontos somados hoje", value: totalPoints, compact: true }}
+        sideStat={{ label: "participantes em disputa", value: totalPeople }}
       />
 
-      {/* Insights */}
-      <section className="mx-auto grid max-w-[1600px] gap-4 px-4 pb-6 md:grid-cols-3 md:px-8">
-        <RankingHighlightNote
-          icon={Eye}
-          kicker="postou, pontuou"
-          text="Cada view conta no placar da casa."
-          index={1}
-        />
-        <RankingHighlightNote
-          icon={Flame}
-          kicker="quem domina o post domina a casa"
-          text="A atenção virou a moeda da temporada."
-          index={2}
-        />
-        <RankingHighlightNote
-          icon={TrendingUp}
-          kicker="performance também é jogo"
-          text="Subir no feed é subir no ranking."
-          index={3}
-        />
-      </section>
+      <RankingNav
+        current="participantes"
+        photos={{
+          audiencia: audience[0]?.avatar || null,
+          participantes: participants[0]?.avatar || null,
+          geral: season[0]?.avatar_url || null,
+        }}
+      />
 
-      <PodiumTop3 items={top3} accent="magenta" />
-
-      <RankingFilterBar options={["Geral", "Views", "Likes", "Em alta"]} accent="magenta" note="quem performa, sobe" />
+      <PodiumTop3
+        items={top3}
+        accent="magenta"
+        side={{
+          title: ["Top 3", "da casa"],
+          text: "Quem domina o post domina a casa. Views, likes e comentários das redes, somados ao vivo.",
+          script: "performance também é jogo",
+        }}
+      />
 
       <RankingList
-        title="A casa inteira"
+        title="A casa inteira!"
         subtitle="quem está dominando a temporada"
         emptyText={top3.length === 0 ? "O placar abre assim que os números chegarem das redes." : undefined}
       >
@@ -108,13 +111,14 @@ export default async function RankingParticipantesPage() {
             tag={e.tag}
             tagAccent={e.tagAccent}
             accent="magenta"
-            stats={[]}
+            stats={statsOf(e)}
           />
         ))}
       </RankingList>
 
       <RankingPageFooter
         tagline="QUEM PERFORMA, SOBE."
+        script="postou, pontuou"
         ctaLabel="Ver a audiência"
         ctaHref="/acasaviews/ranking-audiencia"
         accent="magenta"

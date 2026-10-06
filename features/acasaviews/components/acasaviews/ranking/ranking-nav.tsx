@@ -72,7 +72,9 @@ function NavCard({
       style={{ ["--rv-delay" as string]: `${delay}ms` }}
       className={cn(
         "group block w-[80%] shrink-0 snap-start md:w-auto",
-        active && "drop-shadow-[0_0_18px_rgba(255,0,122,0.45)]",
+        // no celular o trilho rola: o cartão da página aberta vem primeiro,
+        // senão quem está em "Geral" vê o próprio cartão cortado na borda
+        active && "order-first drop-shadow-[0_0_18px_rgba(255,0,122,0.45)] md:order-none",
       )}
     >
       <div className={cn("rv-frame h-full [--c:22px]", active && "rv-frame-pink")}>

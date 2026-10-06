@@ -364,9 +364,14 @@ export function AudienceRankingInteractive({ audience }: AudienceRankingInteract
           if (entry) openEntry(entry)
         }}
         getSelectLabel={(item) => `Abrir ${item.name}`}
+        side={{
+          title: ["Top 3", "da audiência"],
+          text: "Quem mais comenta, levanta teorias e movimenta a conversa sobe. Toque num nome para curtir e comentar.",
+          script: "quem manda é a audiência",
+        }}
       />
 
-      <RankingList title="O resto do júri" subtitle="quem mais movimenta o jogo">
+      <RankingList title="O resto do júri!" subtitle="quem mais movimenta o jogo">
         {rest.map((entry) => {
           const summary = summaryById[entry.id] || emptySummary(entry.id)
           return (

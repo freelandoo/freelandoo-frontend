@@ -1,11 +1,10 @@
 import type { Metadata } from "next"
-import { MessageSquare, Sparkles, Trophy } from "lucide-react"
 import { RealityMotion } from "@/features/acasaviews/components/reality/reality-motion"
 import { fetchLiveRanking } from "@/lib/acasaviews/ranking-live"
+import { fetchGeneralRanking, type GeneralEntry } from "@/lib/acasaviews/ranking-geral"
 import { RankingHeader } from "@/features/acasaviews/components/acasaviews/ranking/ranking-header"
 import { RankingHero } from "@/features/acasaviews/components/acasaviews/ranking/ranking-hero"
-import { RankingFilterBar } from "@/features/acasaviews/components/acasaviews/ranking/ranking-filter-bar"
-import { RankingHighlightNote } from "@/features/acasaviews/components/acasaviews/ranking/ranking-highlight-note"
+import { RankingNav } from "@/features/acasaviews/components/acasaviews/ranking/ranking-nav"
 import { RankingPageFooter } from "@/features/acasaviews/components/acasaviews/ranking/ranking-page-footer"
 import { AudienceDateAdmin } from "@/features/acasaviews/components/acasaviews/ranking/audience-date-admin"
 import { AudienceRankingInteractive } from "./audience-ranking-interactive"
@@ -18,7 +17,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 export default async function RankingAudienciaPage() {
-  const { audience } = await fetchLiveRanking()
+  const [{ audience, participants }, season] = await Promise.all([
+    fetchLiveRanking(),
+    fetchGeneralRanking().catch(() => [] as GeneralEntry[]),
+  ])
 
   const totalPoints = audience.reduce((s, e) => s + e.points, 0)
   const totalPeople = audience.length
@@ -41,43 +43,32 @@ export default async function RankingAudienciaPage() {
         title2="AUDIÊNCIA"
         accent="cyan"
         liveLabel="ao vivo"
+        kicker="a audiência também joga"
+        boxLabel="placar do público"
         lead={
           <>
-            A audiência não apenas assiste. <strong>Ela joga.</strong> Comentários relevantes, teorias fortes e
-            discussões que movimentam a narrativa fazem o público subir no ranking.
+            A audiência da Casa Views define rumos. Teorias, comentários e engajamento{" "}
+            <strong>transformam a conversa em poder.</strong>
           </>
         }
         bigStat={{ label: "pontos em disputa", value: totalPoints, compact: true }}
-        sideStat={{ label: "no público", value: totalPeople }}
+        sideStat={{ label: "pessoas no público", value: totalPeople }}
       />
 
-      <section className="mx-auto grid max-w-[1600px] gap-4 px-4 pb-10 md:grid-cols-3 md:px-8">
-        <RankingHighlightNote
-          icon={Sparkles}
-          kicker="a melhor teoria sobe"
-          text="Quem movimenta a conversa domina o ranking."
-          index={1}
-        />
-        <RankingHighlightNote
-          icon={Trophy}
-          kicker="o 9º jogador tem poder"
-          text="Status e mérito viram vantagem dentro da casa."
-          index={2}
-        />
-        <RankingHighlightNote
-          icon={MessageSquare}
-          kicker="comentar bem é jogar melhor"
-          text="Likes, respostas e relevância valem pontos."
-          index={3}
-        />
-      </section>
-
-      <RankingFilterBar options={["Geral", "Semana", "Hoje", "Em alta"]} accent="cyan" note="atualiza ao vivo" />
+      <RankingNav
+        current="audiencia"
+        photos={{
+          audiencia: audience[0]?.avatar || null,
+          participantes: participants[0]?.avatar || null,
+          geral: season[0]?.avatar_url || null,
+        }}
+      />
 
       <AudienceRankingInteractive audience={audience} />
 
       <RankingPageFooter
         tagline="O 9º JOGADOR SUBIU."
+        script="vem também decidir"
         ctaLabel="Entrar no jogo"
         ctaHref="/acasaviews/ranking-participantes"
         accent="cyan"
