@@ -437,6 +437,11 @@
 [data-rv-motion="on"] [data-rv="left"]:not([data-in]) {
   transform: translate3d(-28px, 0, 0);
 }
+/* entra pela direita — só dentro de um bloco com overflow escondido, senão
+   os 28px abrem rolagem horizontal antes de a animação rodar */
+[data-rv-motion="on"] [data-rv="right"]:not([data-in]) {
+  transform: translate3d(28px, 0, 0);
+}
 [data-rv-motion="on"] [data-rv] {
   transition:
     opacity var(--rv-dur-slow) var(--rv-ease),
