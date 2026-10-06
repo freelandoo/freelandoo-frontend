@@ -1,156 +1,89 @@
-"use client"
-
 import type { ReactNode } from "react"
-import { useRef } from "react"
-import gsap from "gsap"
-import { useGSAP } from "@gsap/react"
 import { cn } from "@/lib/utils"
-import { DoodleAccent } from "./doodle-accent"
 import { AnimatedNumber } from "./animated-number"
-
-gsap.registerPlugin(useGSAP)
 
 interface RankingHeroProps {
   title1: string
   title2: string
   lead: ReactNode
+  /** legado do tema claro — a pele escura é rosa nos dois placares */
   accent: "cyan" | "magenta"
   liveLabel: string
   bigStat: { label: string; value: number; compact?: boolean; suffix?: string }
   sideStat: { label: string; value: number; compact?: boolean; suffix?: string }
-  /** Override do tamanho dos títulos (para títulos longos). */
-  titleClassName?: string
 }
 
-export function RankingHero({
-  title1,
-  title2,
-  lead,
-  accent,
-  liveLabel,
-  bigStat,
-  sideStat,
-  titleClassName = "text-[18vw] sm:text-[14vw] lg:text-[8.5rem]",
-}: RankingHeroProps) {
-  const root = useRef<HTMLDivElement>(null)
-  const accentVar = accent === "cyan" ? "var(--cyan)" : "var(--magenta)"
-
-  useGSAP(
-    () => {
-      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      const targets = gsap.utils.toArray<HTMLElement>("[data-reveal]")
-      if (prefersReduced) {
-        gsap.set(targets, { opacity: 1, y: 0, rotate: 0, scale: 1 })
-        return
-      }
-      gsap
-        .timeline({ defaults: { ease: "power3.out" } })
-        .fromTo("[data-reveal='t1']", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.7 })
-        .fromTo("[data-reveal='t2']", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.7 }, "-=0.45")
-        .fromTo("[data-reveal='lead']", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.15 }, "-=0.4")
-        .fromTo(
-          "[data-reveal='panel']",
-          { opacity: 0, y: 30, rotate: 2 },
-          { opacity: 1, y: 0, rotate: -1.2, duration: 0.7 },
-          "-=0.5",
-        )
-        .fromTo(
-          "[data-reveal='doodle']",
-          { opacity: 0, scale: 0.6 },
-          { opacity: 1, scale: 1, duration: 0.5, stagger: 0.12 },
-          "-=0.4",
-        )
-    },
-    { scope: root },
-  )
+/**
+ * Herói das páginas internas de ranking, na composição da página de
+ * Rankings: manchete larga (1ª linha branca gasta, 2ª em rosa com brilho),
+ * texto em letra de máquina e o placar num cartão de canto cortado.
+ *
+ * O tamanho da 2ª linha sai do COMPRIMENTO dela: "PARTICIPANTES" tem 13
+ * letras na fonte expandida e, no tamanho de "GERAL", estouraria o celular.
+ */
+export function RankingHero({ title1, title2, lead, liveLabel, bigStat, sideStat }: RankingHeroProps) {
+  const long = title2.length > 9
+  const big = long ? "text-[8.4vw] lg:text-[clamp(3rem,5.4vw,5.6rem)]" : "text-[12vw] lg:text-[clamp(4.2rem,7.4vw,7.8rem)]"
 
   return (
-    <section ref={root} className="relative mx-auto max-w-7xl px-5 pt-4 pb-10 md:px-10 md:pt-6 md:pb-16">
-      <div className="grid items-center gap-8 lg:grid-cols-12">
-        {/* Coluna texto */}
-        <div className="lg:col-span-7">
-          <div data-reveal="lead" className="mb-4 flex items-center gap-3">
-            <span className="inline-flex items-center gap-2 bg-[var(--ink)] px-3 py-1.5 text-white">
-              <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: accentVar }} />
-              <span className="casa-body text-[11px] font-extrabold uppercase tracking-[0.2em]">{liveLabel}</span>
+    <section className="relative mx-auto max-w-[1600px] px-4 pb-10 pt-8 md:px-8 md:pb-14 md:pt-12">
+      <div className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="min-w-0">
+          <div className="mb-5 flex flex-wrap items-center gap-3" data-rv>
+            <span className="rv-glow-box inline-flex items-center gap-2 bg-[var(--rv-pink)] px-3 py-1.5">
+              <span className="rv-live-dot" aria-hidden style={{ background: "var(--rv-white)" }} />
+              <span className="rv-type text-[11px] font-bold uppercase tracking-[0.18em]">{liveLabel}</span>
             </span>
-            <span className="casa-marker text-2xl text-[var(--ink-soft)]" style={{ color: accentVar }}>
-              ao vivo, todo dia
-            </span>
+            <span className="rv-type text-[11px] uppercase tracking-[0.16em] text-[var(--rv-muted)]">placar em tempo real</span>
           </div>
 
-          <h1 className="relative">
-            <span data-reveal="t1" className={cn("casa-display block text-[var(--ink)]", titleClassName)}>
+          <h1>
+            <span data-rv className="rv-wide rv-grunge block whitespace-nowrap text-[6.6vw] leading-[0.95] lg:text-[clamp(2.2rem,3.4vw,3.6rem)]">
               {title1}
             </span>
             <span
-              data-reveal="t2"
-              className={cn("casa-display relative z-10 block", titleClassName)}
-              style={{ color: accentVar }}
+              data-rv
+              style={{ ["--rv-delay" as string]: "90ms" }}
+              className={cn("rv-wide rv-glow-text block whitespace-nowrap leading-[0.88] text-[var(--rv-pink)]", big)}
             >
               {title2}
-              <DoodleAccent
-                type="underline"
-                data-reveal="doodle"
-                className="absolute -bottom-3 left-0 h-5 w-[62%] text-[var(--cyan)]"
-              />
             </span>
-            <DoodleAccent
-              type="spark"
-              data-reveal="doodle"
-              className="absolute -left-2 -top-4 h-10 w-10 text-[var(--magenta)] md:-left-8"
-            />
           </h1>
 
-          <p data-reveal="lead" className="mt-7 max-w-xl text-pretty text-base font-medium leading-relaxed text-[var(--ink-soft)] md:text-lg">
+          <div
+            className="rv-type mt-6 max-w-2xl text-[13px] uppercase leading-relaxed tracking-[0.05em] md:text-[14px] [&_strong]:bg-[var(--rv-pink)] [&_strong]:px-1 [&_strong]:font-bold"
+            data-rv
+            style={{ ["--rv-delay" as string]: "160ms" }}
+          >
             {lead}
-          </p>
+          </div>
         </div>
 
-        {/* Coluna painel de números */}
-        <div className="lg:col-span-5">
-          <div
-            data-reveal="panel"
-            className="casa-cut relative bg-[var(--ink)] p-6 text-white md:p-8"
-            style={{ transform: "rotate(-1.2deg)" }}
-          >
-            <span className="casa-tape -top-3 left-8 rotate-[8deg]" style={{ background: `${accentVar}73` }} />
-            <div className="flex items-center justify-between">
-              <span className="casa-body text-[11px] font-extrabold uppercase tracking-[0.24em] text-white/60">
-                Placar geral
-              </span>
-              <span className="casa-body text-[11px] font-extrabold uppercase tracking-[0.2em]" style={{ color: accentVar }}>
-                live
-              </span>
-            </div>
-
-            <div className="mt-5">
-              <div className="casa-display text-6xl md:text-7xl" style={{ color: accentVar }}>
+        {/* placar */}
+        <div data-rv style={{ ["--rv-delay" as string]: "220ms" }}>
+          <div className="rv-frame rv-frame-pink [--c:24px]">
+            <div className="rv-frame-in relative p-6 md:p-7">
+              <span aria-hidden className="rv-glitch-stripes absolute -right-6 top-0 h-full w-32 opacity-[0.14]" />
+              <div className="relative flex items-center justify-between">
+                <span className="rv-type text-[11px] uppercase tracking-[0.2em] text-[var(--rv-muted)]">Placar geral</span>
+                <span className="rv-type flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--rv-pink-ink)]">
+                  <span className="rv-live-dot" aria-hidden /> live
+                </span>
+              </div>
+              <div className="rv-wide rv-glow-text relative mt-4 text-6xl leading-none text-[var(--rv-pink)] md:text-7xl">
                 <AnimatedNumber value={bigStat.value} compact={bigStat.compact} suffix={bigStat.suffix} />
               </div>
-              <div className="mt-2 casa-body text-xs font-bold uppercase tracking-[0.18em] text-white/55">
-                {bigStat.label}
+              <p className="rv-type relative mt-2 text-[11px] uppercase tracking-[0.18em] text-[var(--rv-muted)]">{bigStat.label}</p>
+              <div className="relative mt-6 flex items-end justify-between border-t border-[var(--rv-line-strong)] pt-4">
+                <div>
+                  <div className="rv-wide text-3xl leading-none">
+                    <AnimatedNumber value={sideStat.value} compact={sideStat.compact} suffix={sideStat.suffix} />
+                  </div>
+                  <p className="rv-type mt-1 text-[10px] uppercase tracking-[0.18em] text-[var(--rv-faint)]">{sideStat.label}</p>
+                </div>
+                <span className="rv-type text-[11px] uppercase tracking-[0.14em] text-[var(--rv-pink-ink)]">+24h</span>
               </div>
             </div>
-
-            <div className="mt-6 flex items-end justify-between border-t border-white/12 pt-5">
-              <div>
-                <div className="casa-display text-3xl text-white">
-                  <AnimatedNumber value={sideStat.value} compact={sideStat.compact} suffix={sideStat.suffix} />
-                </div>
-                <div className="mt-1 casa-body text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
-                  {sideStat.label}
-                </div>
-              </div>
-              <div className={cn("casa-marker text-3xl leading-none")} style={{ color: accentVar }}>
-                +24h
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-3 flex items-center justify-end gap-2 pr-2">
-            <DoodleAccent data-reveal="doodle" type="arrow" className="h-10 w-16 text-[var(--ink)]" />
-            <span className="casa-marker text-xl text-[var(--ink-soft)]">o jogo é aqui</span>
           </div>
         </div>
       </div>

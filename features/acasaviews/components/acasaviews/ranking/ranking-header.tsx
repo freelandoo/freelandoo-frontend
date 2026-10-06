@@ -1,7 +1,6 @@
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { PageCounterBadge } from "./page-counter-badge"
+import { ArrowLeft, ArrowRight } from "lucide-react"
+import { pad2 } from "@/features/acasaviews/components/reality/format"
 
 interface RankingHeaderProps {
   /** Ex.: ["RANKING", "AUDIÊNCIA", "JOGO"] */
@@ -13,6 +12,11 @@ interface RankingHeaderProps {
   switchLabel: string
 }
 
+/**
+ * Faixa de topo das páginas internas de ranking, na pele escura: Voltar
+ * quadrado, trilha da categoria em letra de máquina e o atalho para o outro
+ * placar. O logo NÃO entra aqui — o cabeçalho global da seção já o carrega.
+ */
 export function RankingHeader({
   category,
   pageCurrent,
@@ -22,46 +26,38 @@ export function RankingHeader({
   switchLabel,
 }: RankingHeaderProps) {
   return (
-    <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-5 md:px-10 md:py-7">
-      {/* O logo saiu daqui: o cabeçalho global da seção (RealityHeader) já o
-          carrega, e dois logos empilhados liam como duas páginas coladas. */}
-      <span className="casa-body text-[11px] font-extrabold uppercase tracking-[0.2em] text-[var(--ink)] md:hidden">
-        {category[0]}
-      </span>
-
-      {/* Categoria editorial (esconde no mobile) */}
-      <div className="hidden items-center gap-2 md:flex">
-        <span className="h-2.5 w-2.5 rounded-full bg-[var(--magenta)]" />
-        {category.map((c, i) => (
-          <span key={c} className="flex items-center gap-2">
-            <span className="casa-body text-xs font-extrabold uppercase tracking-[0.22em] text-[var(--ink)]">
-              {c}
-            </span>
-            {i < category.length - 1 && <span className="text-[var(--ink-soft)]/40">•</span>}
-          </span>
-        ))}
-      </div>
-
-      {/* Navegação + badge */}
-      <div className="flex items-center gap-3 md:gap-4">
+    <div className="relative z-20 mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 pt-6 md:px-8 md:pt-8">
+      <div className="flex min-w-0 items-center gap-3">
         <Link
           href={backHref}
-          className={cn(
-            "inline-flex h-9 w-9 items-center justify-center border-2 border-[var(--ink)] bg-white",
-            "transition-transform hover:-translate-y-0.5 hover:bg-[var(--ink)] hover:text-white md:h-10 md:w-10",
-          )}
-          aria-label="Voltar"
+          aria-label="Voltar para os rankings"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[var(--rv-white)] text-[var(--rv-white)] transition-colors hover:border-[var(--rv-pink)] hover:bg-[var(--rv-pink)]"
         >
-          <ArrowLeft className="h-4 w-4" strokeWidth={3} />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
         </Link>
+        <span aria-hidden className="h-2.5 w-2.5 shrink-0 bg-[var(--rv-pink)] shadow-[0_0_10px_rgba(255,0,122,0.9)]" />
+        <p className="rv-type truncate text-[11px] uppercase tracking-[0.2em] md:text-[12px]">
+          {category.map((c, i) => (
+            <span key={c}>
+              <span className={i === category.length - 1 ? "text-[var(--rv-pink-ink)]" : ""}>{c}</span>
+              {i < category.length - 1 && <span className="px-2 text-[var(--rv-faint)]">/</span>}
+            </span>
+          ))}
+        </p>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-3">
         <Link
           href={switchHref}
-          className="hidden border-2 border-[var(--ink)] bg-white px-3 py-2 casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] transition-colors hover:bg-[var(--cyan)] sm:inline-flex"
+          className="rv-type hidden items-center gap-2 border-2 border-[var(--rv-white)] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] transition-colors hover:border-[var(--rv-pink)] hover:text-[var(--rv-pink-ink)] sm:inline-flex"
         >
-          {switchLabel}
+          {switchLabel.replace(/\s*→\s*$/, "")}
+          <ArrowRight className="h-4 w-4" />
         </Link>
-        <PageCounterBadge current={pageCurrent} total={pageTotal} />
+        <span className="rv-type text-[11px] text-[var(--rv-faint)]" aria-label={`página ${pageCurrent} de ${pageTotal}`}>
+          {pad2(pageCurrent)}/{pad2(pageTotal)}
+        </span>
       </div>
-    </header>
+    </div>
   )
 }

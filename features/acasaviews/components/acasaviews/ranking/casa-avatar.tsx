@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils"
  */
 
 const PALETTE = [
-  { bg: "var(--magenta)", fg: "#ffffff" },
-  { bg: "var(--cyan)", fg: "var(--ink)" },
-  { bg: "var(--gold)", fg: "var(--ink)" },
+  { bg: "#ff007a", fg: "#f4f4f0" },
+  { bg: "#f4f4f0", fg: "#050505" },
+  { bg: "#161616", fg: "#ff4fa3" },
 ] as const
 
 function pickColor(name: string) {

@@ -395,7 +395,12 @@ export function AudienceRankingInteractive({ audience }: AudienceRankingInteract
       </RankingList>
 
       {selected && selectedSummary && (
-        <div className="fixed inset-0 z-[120]">
+        <div
+          className="fixed inset-0 z-[120]"
+          // a pele escura fala só preto, branco e rosa: o ciano e o dourado
+          // do tema claro viram rosa e branco DENTRO do modal
+          style={{ ["--cyan" as string]: "#ff007a", ["--gold" as string]: "#f4f4f0", ["--magenta" as string]: "#ff007a" }}
+        >
           <button
             type="button"
             aria-label="Fechar"

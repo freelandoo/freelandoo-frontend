@@ -38,7 +38,10 @@ export interface StageRenderer {
 // por vértice: x y z | r g b a | spin  → 8 floats
 const STRIDE = 8
 
-function buildGeometry(c: StageColors, dense: boolean): Float32Array<ArrayBuffer> {
+export type StageVariant = "globe" | "cube"
+
+function buildGeometry(c: StageColors, dense: boolean, variant: StageVariant = "globe"): Float32Array<ArrayBuffer> {
+  if (variant === "cube") return buildCubeGeometry(c, dense)
   const out: number[] = []
   const seg = (a: number[], b: number[], col: number[], alpha: number, spin = 0) => {
     out.push(a[0], a[1], a[2], col[0], col[1], col[2], alpha, spin)
@@ -121,6 +124,92 @@ function buildGeometry(c: StageColors, dense: boolean): Float32Array<ArrayBuffer
   const edges = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
   for (const [a, b] of edges) seg(v[a], v[b], c.pink, 0.9, -0.22)
 
+  return new Float32Array(out)
+}
+
+/**
+ * Variante "cubo de vidro" (a referência do herói de Rankings): o cubo é o
+ * protagonista, com arestas em três camadas (dá espessura e o brilho do
+ * vidro), um cubo interno girando ao contrário, dois anéis rosa em volta e o
+ * globo wireframe APAGADO atrás, deslocado. Mesmo formato de vértice da
+ * variante globo — o shader não muda.
+ */
+function buildCubeGeometry(c: StageColors, dense: boolean): Float32Array<ArrayBuffer> {
+  const out: number[] = []
+  const seg = (a: number[], b: number[], col: number[], alpha: number, spin = 0) => {
+    out.push(a[0], a[1], a[2], col[0], col[1], col[2], alpha, spin)
+    out.push(b[0], b[1], b[2], col[0], col[1], col[2], alpha, spin)
+  }
+  const edges = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
+  const cube = (k: number, col: number[], alpha: number, spin: number, off = [0, 0, 0]) => {
+    const v = [
+      [-k, -k, -k], [k, -k, -k], [k, k, -k], [-k, k, -k],
+      [-k, -k, k], [k, -k, k], [k, k, k], [-k, k, k],
+    ].map((p) => [p[0] + off[0], p[1] + off[1], p[2] + off[2]])
+    for (const [a, b] of edges) seg(v[a], v[b], col, alpha, spin)
+  }
+  // cubo principal: três cascas = aresta grossa com brilho
+  cube(0.82, c.pink, 1, 0)
+  cube(0.8, c.white, 0.55, 0)
+  cube(0.845, c.pink, 0.35, 0)
+  // faces de vidro sugeridas por diagonais finas
+  const k = 0.82
+  seg([-k, -k, k], [k, k, k], c.white, 0.12)
+  seg([k, -k, -k], [k, k, k], c.white, 0.12)
+  seg([-k, k, -k], [k, k, k], c.white, 0.1)
+  // cubo interno girando ao contrário
+  cube(0.4, c.pink, 0.7, -0.4)
+
+  // anéis orbitais em volta do cubo
+  const ring = (radius: number, tiltX: number, tiltZ: number, col: number[], alpha: number, dashed = false) => {
+    const cx = Math.cos(tiltX), sx = Math.sin(tiltX)
+    const cz = Math.cos(tiltZ), sz = Math.sin(tiltZ)
+    const p = (a: number) => {
+      let x = radius * Math.cos(a), y = 0, z = radius * Math.sin(a)
+      const y1 = y * cx - z * sx, z1 = y * sx + z * cx
+      y = y1; z = z1
+      const x2 = x * cz - y * sz, y2 = x * sz + y * cz
+      return [x2, y2, z]
+    }
+    const n = 112
+    for (let i = 0; i < n; i += dashed ? 2 : 1) seg(p((i / n) * Math.PI * 2), p(((i + 1) / n) * Math.PI * 2), col, alpha)
+  }
+  ring(1.55, 1.25, 0.42, c.pink, 0.95)
+  ring(1.78, 1.05, -0.5, c.pink, 0.55)
+  ring(2.05, 1.4, 0.15, c.white, 0.22, true)
+
+  // globo apagado ao fundo, deslocado para trás e para cima
+  const R = 1.15
+  const off = [-0.9, 0.85, -1.9]
+  const steps = dense ? 48 : 32
+  for (let m = 0; m < (dense ? 10 : 7); m++) {
+    const lon = (m / (dense ? 10 : 7)) * Math.PI
+    for (let i = 0; i < steps; i++) {
+      const a0 = (i / steps) * Math.PI * 2, a1 = ((i + 1) / steps) * Math.PI * 2
+      const p = (a: number) => [R * Math.cos(a) * Math.cos(lon) + off[0], R * Math.sin(a) + off[1], R * Math.cos(a) * Math.sin(lon) + off[2]]
+      seg(p(a0), p(a1), c.white, 0.1)
+    }
+  }
+  for (let q = 1; q < 6; q++) {
+    const lat = -Math.PI / 2 + (q / 6) * Math.PI
+    const r = R * Math.cos(lat), y = R * Math.sin(lat)
+    for (let i = 0; i < steps; i++) {
+      const a0 = (i / steps) * Math.PI * 2, a1 = ((i + 1) / steps) * Math.PI * 2
+      seg([r * Math.cos(a0) + off[0], y + off[1], r * Math.sin(a0) + off[2]], [r * Math.cos(a1) + off[0], y + off[1], r * Math.sin(a1) + off[2]], c.white, 0.08)
+    }
+  }
+
+  // estilhaços que orbitam
+  const particles = dense ? 22 : 12
+  for (let i = 0; i < particles; i++) {
+    const a = (i / particles) * Math.PI * 2
+    const rr = 1.55 + ((i * 37) % 7) * 0.04
+    const x = rr * Math.cos(a), z = rr * Math.sin(a), yy = (((i * 53) % 9) - 4) * 0.05
+    const s = i % 4 === 0 ? 0.045 : 0.025
+    const col = i % 3 === 0 ? c.white : c.pink
+    seg([x - s, yy, z], [x + s, yy, z], col, 1, 0.3 + (i % 4) * 0.05)
+    seg([x, yy - s, z], [x, yy + s, z], col, 1, 0.3 + (i % 4) * 0.05)
+  }
   return new Float32Array(out)
 }
 
@@ -394,9 +483,9 @@ function createWebGL2(canvas: HTMLCanvasElement, geo: Float32Array<ArrayBuffer>)
 export async function createStageRenderer(
   canvas: HTMLCanvasElement,
   colors: StageColors,
-  opts: { dense: boolean; preferWebGPU: boolean },
+  opts: { dense: boolean; preferWebGPU: boolean; variant?: StageVariant },
 ): Promise<{ renderer: StageRenderer; canvas: HTMLCanvasElement } | null> {
-  const geo = buildGeometry(colors, opts.dense)
+  const geo = buildGeometry(colors, opts.dense, opts.variant)
   let target = canvas
   if (opts.preferWebGPU && typeof navigator !== "undefined" && "gpu" in navigator) {
     const gpu = await createWebGPU(target, geo)

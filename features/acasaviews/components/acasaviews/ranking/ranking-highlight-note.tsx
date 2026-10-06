@@ -6,44 +6,37 @@ interface RankingHighlightNoteProps {
   icon: LucideIcon
   kicker: string
   text: string
+  /** legado do tema claro: na pele escura todo destaque é rosa */
   accent?: Accent
+  /** legado: a pele escura não inclina os cartões */
   rotate?: number
   className?: string
+  /** numeração dos destaques (01, 02, 03) */
+  index?: number
 }
 
-const accentBar: Record<Accent, string> = {
-  magenta: "bg-[var(--magenta)]",
-  cyan: "bg-[var(--cyan)]",
-  gold: "bg-[var(--gold)]",
-  ink: "bg-[var(--ink)]",
-}
-const accentText: Record<Accent, string> = {
-  magenta: "text-[var(--magenta)]",
-  cyan: "text-[var(--cyan)]",
-  gold: "text-[var(--gold)]",
-  ink: "text-[var(--ink)]",
-}
-
-/** Caixa de insight/curiosidade do ranking — papel com barra de acento. */
-export function RankingHighlightNote({
-  icon: Icon,
-  kicker,
-  text,
-  accent = "cyan",
-  rotate = 0,
-  className,
-}: RankingHighlightNoteProps) {
+/**
+ * Destaque do ranking na composição dos cartões de Rankings: moldura de canto
+ * cortado, número no canto, ícone em quadrado rosa e o texto em manchete.
+ */
+export function RankingHighlightNote({ icon: Icon, kicker, text, className, index }: RankingHighlightNoteProps) {
   return (
-    <div
-      className={cn("relative overflow-hidden border-2 border-[var(--ink)] bg-white p-5 casa-cut", className)}
-      style={{ transform: `rotate(${rotate}deg)` }}
-    >
-      <span className={cn("absolute left-0 top-0 h-full w-1.5", accentBar[accent])} />
-      <Icon className={cn("h-5 w-5", accentText[accent])} strokeWidth={2.6} />
-      <p className={cn("mt-3 casa-body text-[10px] font-extrabold uppercase tracking-[0.2em]", accentText[accent])}>
-        {kicker}
-      </p>
-      <p className="mt-1 casa-display text-xl leading-tight text-[var(--ink)] md:text-2xl">{text}</p>
+    <div className={cn("rv-frame h-full [--c:18px]", className)} data-rv>
+      <div className="rv-frame-in relative p-5 md:p-6">
+        <span aria-hidden className="rv-glitch-stripes absolute -right-4 bottom-0 h-8 w-28 opacity-25" />
+        <div className="relative flex items-start justify-between gap-3">
+          {index != null ? (
+            <span className="rv-wide text-2xl leading-none">{String(index).padStart(2, "0")}</span>
+          ) : (
+            <span />
+          )}
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-[var(--rv-pink)]">
+            <Icon className="h-5 w-5 text-[var(--rv-bg)]" strokeWidth={2.5} />
+          </span>
+        </div>
+        <p className="rv-type relative mt-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--rv-pink-ink)]">{kicker}</p>
+        <p className="rv-display relative mt-1.5 text-2xl leading-[0.95] md:text-[28px]">{text}</p>
+      </div>
     </div>
   )
 }

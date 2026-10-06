@@ -1,63 +1,44 @@
-"use client"
-
-import { useRef } from "react"
-import gsap from "gsap"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
-import { useGSAP } from "@gsap/react"
-import type { ReactNode } from "react"
-import { DoodleAccent } from "./doodle-accent"
-
-gsap.registerPlugin(ScrollTrigger, useGSAP)
+import { Children, type ReactNode } from "react"
 
 interface RankingListProps {
   title: string
   subtitle?: string
   children: ReactNode
+  /** frase do vazio (quando não há nem pódio) */
+  emptyText?: string
 }
 
-/** Lista do ranking com revelação em cascata ao scroll. */
-export function RankingList({ title, subtitle, children }: RankingListProps) {
-  const root = useRef<HTMLDivElement>(null)
-
-  useGSAP(
-    () => {
-      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      const cards = gsap.utils.toArray<HTMLElement>("[data-rank-card]")
-      if (prefersReduced) {
-        gsap.set(cards, { opacity: 1, x: 0 })
-        return
-      }
-      gsap.fromTo(
-        cards,
-        { opacity: 0, x: -28 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.5,
-          ease: "power2.out",
-          stagger: 0.08,
-          scrollTrigger: { trigger: root.current, start: "top 82%", once: true },
-        },
-      )
-    },
-    { scope: root },
-  )
-
+/**
+ * Lista completa do ranking, na pele escura. A cascata de entrada é CSS
+ * (`rv-page-in` com atraso por linha) — sem GSAP e sem observador: a lista
+ * pode ser recriada pelo cliente, e um observador montado antes não a veria.
+ */
+export function RankingList({ title, subtitle, children, emptyText }: RankingListProps) {
+  const rows = Children.toArray(children)
   return (
-    <section ref={root} className="mx-auto max-w-4xl px-5 py-12 md:px-10 md:py-16">
-      <div className="mb-7 flex items-end justify-between">
-        <div className="relative">
-          <h2 className="casa-display text-4xl text-[var(--ink)] md:text-6xl">{title}</h2>
-          {subtitle && (
-            <p className="mt-2 casa-marker text-2xl text-[var(--ink-soft)]/70">{subtitle}</p>
-          )}
-          <DoodleAccent type="underline" className="absolute -bottom-3 left-0 h-4 w-44 text-[var(--magenta)]" />
+    <section className="mx-auto max-w-5xl px-4 py-12 md:px-8 md:py-16">
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rv-line-strong)] pb-4">
+        <div>
+          <h2 className="rv-wide rv-grunge text-[7.4vw] leading-none md:text-5xl">{title}</h2>
+          {subtitle && <p className="rv-type mt-2 text-[12px] uppercase tracking-[0.14em] text-[var(--rv-pink-ink)]">{subtitle}</p>}
         </div>
-        <span className="casa-body text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--ink-soft)]/50">
-          ranking completo
+        <span className="rv-type text-[11px] uppercase tracking-[0.18em] text-[var(--rv-faint)]">
+          ranking completo · {String(rows.length).padStart(2, "0")}
         </span>
       </div>
-      <div className="flex flex-col gap-4">{children}</div>
+      {rows.length === 0 ? (
+        <p className="rv-type border border-dashed border-[var(--rv-line-strong)] px-6 py-10 text-center text-xs uppercase text-[var(--rv-muted)]">
+          {emptyText || "Só o pódio por enquanto — a lista abre quando mais gente pontuar."}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {rows.map((row, i) => (
+            <div key={i} className="rv-page-in" style={{ animationDelay: `${Math.min(i, 10) * 45}ms` }}>
+              {row}
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   )
 }

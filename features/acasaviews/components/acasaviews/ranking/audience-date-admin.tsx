@@ -75,10 +75,10 @@ export function AudienceDateAdmin() {
   if (!isAdmin) return null
 
   return (
-    <section className="mx-auto max-w-7xl px-5 pt-4 md:px-10">
-      <div className="flex flex-wrap items-center gap-3 border-2 border-[var(--ink)] bg-white px-4 py-3 shadow-[4px_4px_0_0_var(--ink)]">
+    <section className="mx-auto max-w-[1600px] px-4 pt-5 md:px-8">
+      <div className="flex flex-wrap items-center gap-3 border border-[var(--rv-pink)] bg-[var(--rv-surface)] px-4 py-3">
         <span
-          className="inline-flex items-center gap-2 casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)]"
+          className="rv-type inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--rv-pink-ink)]"
         >
           <CalendarClock className="h-4 w-4" />
           admin · audiência conta a partir de
@@ -89,14 +89,13 @@ export function AudienceDateAdmin() {
           value={date}
           disabled={!loaded || saving}
           onChange={(e) => setDate(e.target.value)}
-          className="border-2 border-[var(--ink)] bg-[var(--paper)] px-2 py-1 casa-body text-sm font-bold text-[var(--ink)] outline-none"
+          className="rv-type border border-[var(--rv-white)] bg-[var(--rv-bg)] px-2 py-1 text-sm text-[var(--rv-white)] outline-none [color-scheme:dark]"
         />
 
         <button
           onClick={() => save(date)}
           disabled={saving || !loaded}
-          className="inline-flex items-center gap-1.5 border-2 border-[var(--ink)] px-3 py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-          style={{ background: "var(--cyan)" }}
+          className="rv-type inline-flex items-center gap-1.5 bg-[var(--rv-pink)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--rv-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedFlash ? <Check className="h-4 w-4" /> : null}
           {savedFlash ? "salvo" : "salvar"}
@@ -109,14 +108,14 @@ export function AudienceDateAdmin() {
               save("")
             }}
             disabled={saving}
-            className="casa-body text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/60 underline hover:text-[var(--ink)] disabled:opacity-60"
+            className="rv-type text-[11px] uppercase tracking-[0.12em] text-[var(--rv-muted)] underline hover:text-[var(--rv-white)] disabled:opacity-60"
           >
             limpar (contar tudo)
           </button>
         )}
 
-        {error && <span className="casa-body text-[11px] font-bold text-[var(--magenta)]">{error}</span>}
-        <span className="casa-body text-[10px] font-semibold text-[var(--ink-soft)]/55">
+        {error && <span className="rv-type text-[11px] text-[var(--rv-down)]">{error}</span>}
+        <span className="rv-type text-[10px] text-[var(--rv-faint)]">
           posts publicados a partir desta data · vazio = todos
         </span>
       </div>

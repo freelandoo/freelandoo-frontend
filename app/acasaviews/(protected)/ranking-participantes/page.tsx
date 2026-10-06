@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { Eye, Flame, TrendingUp } from "lucide-react"
-import { casaFontVars } from "@/lib/acasaviews/fonts"
+import { RealityMotion } from "@/features/acasaviews/components/reality/reality-motion"
 import { fetchLiveRanking } from "@/lib/acasaviews/ranking-live"
 import { RankingHeader } from "@/features/acasaviews/components/acasaviews/ranking/ranking-header"
 import { RankingHero } from "@/features/acasaviews/components/acasaviews/ranking/ranking-hero"
@@ -38,9 +38,8 @@ export default async function RankingParticipantesPage() {
   const totalPeople = participants.length
 
   return (
-    <div className={`${casaFontVars} casa-rank casa-paper min-h-screen overflow-hidden`}>
-      <div className="casa-dots pointer-events-none absolute left-0 top-28 h-32 w-32 opacity-[0.07]" />
-
+    <div className="casa-rank rv rv-grid rv-page-in">
+      <RealityMotion />
       <RankingHeader
         category={["RANKING", "PARTICIPANTES", "PERFORMANCE"]}
         pageCurrent={8}
@@ -54,12 +53,10 @@ export default async function RankingParticipantesPage() {
         title2="PARTICIPANTES"
         accent="magenta"
         liveLabel="ao vivo"
-        titleClassName="text-[12.5vw] sm:text-[10vw] lg:text-[6.5rem]"
         lead={
           <>
-            Na Casa Views, <span className="casa-hl casa-hl-magenta font-bold text-white">atenção vira poder.</span>{" "}
-            <span className="casa-hl font-bold">Visualizações</span>, likes e comentários definem quem está dominando a
-            temporada.
+            Na Casa Views, <strong>atenção vira poder.</strong> Visualizações, likes e comentários definem quem está
+            dominando a temporada.
           </>
         }
         bigStat={{ label: "pontos da temporada", value: totalPoints, compact: true }}
@@ -67,26 +64,24 @@ export default async function RankingParticipantesPage() {
       />
 
       {/* Insights */}
-      <section className="mx-auto grid max-w-7xl gap-4 px-5 pb-6 md:grid-cols-3 md:px-10">
+      <section className="mx-auto grid max-w-[1600px] gap-4 px-4 pb-6 md:grid-cols-3 md:px-8">
         <RankingHighlightNote
           icon={Eye}
           kicker="postou, pontuou"
           text="Cada view conta no placar da casa."
-          accent="magenta"
-          rotate={-1}
+          index={1}
         />
         <RankingHighlightNote
           icon={Flame}
           kicker="quem domina o post domina a casa"
           text="A atenção virou a moeda da temporada."
-          accent="cyan"
+          index={2}
         />
         <RankingHighlightNote
           icon={TrendingUp}
           kicker="performance também é jogo"
           text="Subir no feed é subir no ranking."
-          accent="gold"
-          rotate={1}
+          index={3}
         />
       </section>
 
@@ -94,7 +89,11 @@ export default async function RankingParticipantesPage() {
 
       <RankingFilterBar options={["Geral", "Views", "Likes", "Em alta"]} accent="magenta" note="quem performa, sobe" />
 
-      <RankingList title="A casa inteira" subtitle="quem está dominando a temporada">
+      <RankingList
+        title="A casa inteira"
+        subtitle="quem está dominando a temporada"
+        emptyText={top3.length === 0 ? "O placar abre assim que os números chegarem das redes." : undefined}
+      >
         {rest.map((e) => (
           <RankingCard
             key={e.id}

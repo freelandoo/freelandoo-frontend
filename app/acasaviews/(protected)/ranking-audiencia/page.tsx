@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { MessageSquare, Sparkles, Trophy } from "lucide-react"
-import { casaFontVars } from "@/lib/acasaviews/fonts"
+import { RealityMotion } from "@/features/acasaviews/components/reality/reality-motion"
 import { fetchLiveRanking } from "@/lib/acasaviews/ranking-live"
 import { RankingHeader } from "@/features/acasaviews/components/acasaviews/ranking/ranking-header"
 import { RankingHero } from "@/features/acasaviews/components/acasaviews/ranking/ranking-hero"
@@ -24,9 +24,8 @@ export default async function RankingAudienciaPage() {
   const totalPeople = audience.length
 
   return (
-    <div className={`${casaFontVars} casa-rank casa-paper min-h-screen overflow-hidden`}>
-      <div className="casa-dots pointer-events-none absolute right-0 top-24 h-32 w-32 opacity-[0.07]" />
-
+    <div className="casa-rank rv rv-grid rv-page-in">
+      <RealityMotion />
       <RankingHeader
         category={["RANKING", "AUDIÊNCIA", "JOGO"]}
         pageCurrent={9}
@@ -44,35 +43,32 @@ export default async function RankingAudienciaPage() {
         liveLabel="ao vivo"
         lead={
           <>
-            A audiência não apenas assiste. <span className="casa-hl casa-hl-magenta font-bold text-white">Ela joga.</span>{" "}
-            Comentários relevantes, <span className="casa-hl font-bold">teorias fortes</span> e discussões que
-            movimentam a narrativa fazem o público subir no ranking.
+            A audiência não apenas assiste. <strong>Ela joga.</strong> Comentários relevantes, teorias fortes e
+            discussões que movimentam a narrativa fazem o público subir no ranking.
           </>
         }
         bigStat={{ label: "pontos em disputa", value: totalPoints, compact: true }}
         sideStat={{ label: "no público", value: totalPeople }}
       />
 
-      <section className="mx-auto grid max-w-7xl gap-4 px-5 pb-6 md:grid-cols-3 md:px-10">
+      <section className="mx-auto grid max-w-[1600px] gap-4 px-4 pb-10 md:grid-cols-3 md:px-8">
         <RankingHighlightNote
           icon={Sparkles}
           kicker="a melhor teoria sobe"
           text="Quem movimenta a conversa domina o ranking."
-          accent="cyan"
-          rotate={-1}
+          index={1}
         />
         <RankingHighlightNote
           icon={Trophy}
           kicker="o 9º jogador tem poder"
           text="Status e mérito viram vantagem dentro da casa."
-          accent="gold"
+          index={2}
         />
         <RankingHighlightNote
           icon={MessageSquare}
           kicker="comentar bem é jogar melhor"
           text="Likes, respostas e relevância valem pontos."
-          accent="magenta"
-          rotate={1}
+          index={3}
         />
       </section>
 

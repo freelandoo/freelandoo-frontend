@@ -1,16 +1,12 @@
 "use client"
 
-import { useRef, type KeyboardEvent } from "react"
-import gsap from "gsap"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
-import { useGSAP } from "@gsap/react"
+import type { KeyboardEvent } from "react"
+import { Crown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Accent } from "@/lib/acasaviews/ranking-data"
 import { AnimatedNumber } from "./animated-number"
-import { DoodleAccent } from "./doodle-accent"
 import { CasaAvatar } from "./casa-avatar"
-
-gsap.registerPlugin(ScrollTrigger, useGSAP)
+import { tagClass } from "./tag-style"
 
 export interface PodiumMeta {
   label: string
@@ -33,37 +29,33 @@ export interface PodiumItem {
 
 interface PodiumTop3Props {
   items: PodiumItem[] // [rank1, rank2, rank3]
+  /** legado do tema claro — a pele escura é rosa nos dois placares */
   accent: "cyan" | "magenta"
   onSelect?: (item: PodiumItem) => void
   getSelectLabel?: (item: PodiumItem) => string
 }
 
-const accentBg: Record<Accent, string> = {
-  magenta: "bg-[var(--magenta)] text-white",
-  cyan: "bg-[var(--cyan)] text-[var(--ink)]",
-  gold: "bg-[var(--gold)] text-[var(--ink)]",
-  ink: "bg-[var(--ink)] text-white",
-}
-
+/**
+ * Pódio na pele escura: retrato em moldura de canto cortado (rosa e com
+ * brilho no 1º, branca no 2º e 3º), coroa sobre o campeão, placa com nome e
+ * pontos e o pedestal com o número. Ordem visual 2 · 1 · 3.
+ * A entrada é CSS (`rv-page-in` com atraso): 3º e 2º sobem antes do campeão.
+ */
 function PodiumColumn({
   item,
-  accent,
   onSelect,
   selectLabel,
 }: {
   item: PodiumItem
-  accent: "cyan" | "magenta"
   onSelect?: (item: PodiumItem) => void
   selectLabel?: string
 }) {
   const isFirst = item.rank === 1
-  const accentVar = accent === "cyan" ? "var(--cyan)" : "var(--magenta)"
-  const frameColor = isFirst ? accentVar : "var(--ink)"
   const interactive = !!onSelect
-
   const order = item.rank === 1 ? "order-2" : item.rank === 2 ? "order-1" : "order-3"
-  const width = isFirst ? "w-[40%]" : "w-[30%]"
-  const pedestalH = isFirst ? "h-14 md:h-40" : item.rank === 2 ? "h-10 md:h-28" : "h-8 md:h-20"
+  const width = isFirst ? "w-[38%]" : "w-[31%]"
+  const pedestalH = isFirst ? "h-16 md:h-36" : item.rank === 2 ? "h-11 md:h-24" : "h-8 md:h-16"
+  const delay = item.rank === 1 ? 360 : item.rank === 2 ? 180 : 0
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!onSelect) return
@@ -75,93 +67,73 @@ function PodiumColumn({
 
   return (
     <div
-      className={cn(
-        "flex min-w-0 flex-col items-center outline-none",
-        interactive && "cursor-pointer focus-visible:ring-4 focus-visible:ring-[var(--cyan)]/55",
-        order,
-        width,
-      )}
-      data-podium-col
-      data-rank={item.rank}
+      className={cn("rv-page-in group flex min-w-0 flex-col items-center outline-none", interactive && "cursor-pointer", order, width)}
+      style={{ animationDelay: `${delay}ms` }}
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       aria-label={interactive ? selectLabel || item.name : undefined}
       onClick={interactive ? () => onSelect?.(item) : undefined}
       onKeyDown={interactive ? handleKeyDown : undefined}
     >
-      {/* Card flutuante */}
       <div className="relative w-full">
         {isFirst && (
           <>
-            <div
-              className="absolute -inset-6 -z-10 rounded-full blur-3xl"
-              style={{ background: accentVar, opacity: 0.28 }}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -inset-8 -z-10"
+              style={{ background: "radial-gradient(closest-side, rgba(255,0,122,0.35), transparent)" }}
             />
-            <DoodleAccent
-              type="crown"
-              className="absolute -top-7 left-1/2 z-20 h-8 w-12 -translate-x-1/2 md:-top-12 md:h-12 md:w-16"
-              style={{ color: accentVar }}
+            <Crown
+              aria-hidden
+              className="absolute -top-8 left-1/2 z-20 h-7 w-7 -translate-x-1/2 fill-[var(--rv-pink)] text-[var(--rv-pink)] drop-shadow-[0_0_10px_rgba(255,0,122,0.9)] md:-top-12 md:h-10 md:w-10"
             />
           </>
         )}
 
-        {/* Selo de posição */}
-        <span
-          className={cn(
-            "absolute -left-1.5 -top-1.5 z-20 flex h-6 w-6 rotate-[-6deg] items-center justify-center casa-display text-base md:-left-2 md:-top-2 md:h-12 md:w-12 md:text-3xl",
-            isFirst ? accentBg[accent] : "bg-[var(--ink)] text-white",
-          )}
-        >
-          {item.rank}
-        </span>
-
-        {/* Foto recortada */}
-        <div
-          className="casa-torn-b casa-cut relative overflow-hidden bg-white p-2 md:p-2.5"
-          style={{ background: frameColor }}
-        >
-          <CasaAvatar
-            name={item.name}
-            src={item.avatar}
-            className={cn("w-full", isFirst ? "aspect-[4/5]" : "aspect-square")}
-            textClassName={isFirst ? "text-3xl md:text-8xl" : "text-2xl md:text-6xl"}
-          />
+        {/* retrato */}
+        <div className={cn("rv-frame [--c:14px] md:[--c:22px]", isFirst && "rv-frame-pink")}>
+          <div className="rv-frame-in">
+            <div className="relative">
+              <CasaAvatar
+                name={item.name}
+                src={item.avatar}
+                className={cn("rv-photo w-full", isFirst ? "aspect-[4/5]" : "aspect-square")}
+                textClassName={isFirst ? "text-5xl md:text-9xl" : "text-4xl md:text-7xl"}
+              />
+              <span aria-hidden className="rv-scan absolute inset-0" />
+              <span
+                className={cn(
+                  "rv-wide absolute left-0 top-0 z-[3] px-1.5 py-0.5 text-lg leading-none md:px-3 md:py-1 md:text-3xl",
+                  isFirst ? "bg-[var(--rv-pink)] text-[var(--rv-white)]" : "bg-[var(--rv-bg)] text-[var(--rv-white)]",
+                )}
+              >
+                {String(item.rank).padStart(2, "0")}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Bloco de nome + score */}
-        <div className="relative mt-2 bg-white p-2 text-center casa-cut md:mt-3 md:p-3">
-          <span
-            className={cn(
-              "inline-block -rotate-1 px-2 py-0.5 casa-body text-[9px] font-extrabold uppercase tracking-[0.14em]",
-              accentBg[item.tagAccent],
-            )}
-          >
+        {/* placa */}
+        <div className="mt-2 border border-[var(--rv-line-strong)] bg-[var(--rv-surface)] px-1.5 py-2 text-center md:mt-3 md:p-3">
+          <span className={cn("rv-type inline-block px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] md:text-[9px]", tagClass(item.tagAccent))}>
             {item.tag}
           </span>
-          <h3 className={cn("casa-display mt-1.5 leading-none text-[var(--ink)] md:mt-2", isFirst ? "text-sm md:text-4xl" : "text-xs md:text-3xl")}>
+          <h3 className={cn("rv-display mt-1.5 truncate leading-none md:mt-2", isFirst ? "text-base md:text-4xl" : "text-sm md:text-3xl")}>
             {item.name}
           </h3>
-          <p className="casa-body text-[9px] font-semibold text-[var(--ink-soft)]/60 md:text-[11px]">{item.handle}</p>
-
-          <div className="mt-1.5 casa-display leading-none md:mt-2" style={{ color: accentVar }}>
-            <span className={isFirst ? "text-xl md:text-5xl" : "text-lg md:text-4xl"}>
-              <AnimatedNumber value={item.score} compact={item.score >= 100000} />
-            </span>
+          <p className="rv-type truncate text-[8px] text-[var(--rv-faint)] md:text-[10px]">{item.handle}</p>
+          <div className={cn("rv-wide mt-1.5 leading-none text-[var(--rv-pink)] md:mt-2", isFirst ? "text-2xl md:text-5xl" : "text-xl md:text-4xl")}>
+            <AnimatedNumber value={item.score} compact={item.score >= 100000} />
           </div>
-          <p className="casa-body text-[8px] font-bold uppercase tracking-[0.18em] text-[var(--ink-soft)]/55 md:text-[10px]">
-            {item.scoreLabel}
-          </p>
-
+          <p className="rv-type text-[8px] uppercase tracking-[0.16em] text-[var(--rv-faint)] md:text-[10px]">{item.scoreLabel}</p>
           {item.meta.length > 0 && (
-            <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-[var(--line)] pt-2 md:mt-3 md:gap-3">
+            <div className="mt-2 flex items-center justify-center gap-2 border-t border-[var(--rv-line)] pt-2 md:mt-3 md:gap-4">
               {item.meta.slice(0, 3).map((m) => (
                 <div key={m.label} className="text-center">
-                  <div className="casa-body text-xs font-extrabold tabular-nums text-[var(--ink)]">
+                  <div className="rv-type text-[11px] font-bold">
                     <AnimatedNumber value={m.value} compact={m.compact} />
                   </div>
-                  <div className="text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/50">
-                    {m.label}
-                  </div>
+                  <div className="rv-type text-[7px] uppercase tracking-[0.1em] text-[var(--rv-faint)] md:text-[8px]">{m.label}</div>
                 </div>
               ))}
             </div>
@@ -169,20 +141,16 @@ function PodiumColumn({
         </div>
       </div>
 
-      {/* Pedestal */}
-      <div
-        className={cn("relative mt-3 flex w-[78%] items-center justify-center md:w-full", pedestalH)}
-      >
+      {/* pedestal */}
+      <div className={cn("relative mt-3 flex w-[82%] items-center justify-center md:w-full", pedestalH)}>
         <div
-          className={cn("absolute inset-0", isFirst ? accentBg[accent] : "bg-[var(--ink)]")}
-          style={{ clipPath: "polygon(6% 0, 94% 0, 100% 100%, 0 100%)" }}
+          className={cn("absolute inset-0", isFirst ? "bg-[var(--rv-pink)]" : "bg-[var(--rv-surface-3)]")}
+          style={{
+            clipPath: "polygon(8% 0, 92% 0, 100% 100%, 0 100%)",
+            boxShadow: isFirst ? "0 0 40px rgba(255,0,122,0.6)" : undefined,
+          }}
         />
-        <span
-          className={cn(
-            "casa-display relative z-10 text-2xl md:text-8xl",
-            isFirst ? "text-white/90" : "text-white/85",
-          )}
-        >
+        <span className={cn("rv-wide relative z-10 text-3xl md:text-7xl", isFirst ? "text-[var(--rv-white)]" : "rv-outline")}>
           {item.rank}
         </span>
       </div>
@@ -190,49 +158,13 @@ function PodiumColumn({
   )
 }
 
-export function PodiumTop3({ items, accent, onSelect, getSelectLabel }: PodiumTop3Props) {
-  const root = useRef<HTMLDivElement>(null)
-
-  useGSAP(
-    () => {
-      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      const cols = gsap.utils.toArray<HTMLElement>("[data-podium-col]")
-      if (prefersReduced) {
-        gsap.set(cols, { opacity: 1, y: 0 })
-        return
-      }
-      // Ordem de entrada: 2 e 3 primeiro, depois o campeão com destaque
-      const sorted = cols.sort(
-        (a, b) =>
-          Number(b.dataset.rank) - Number(a.dataset.rank),
-      )
-      gsap.fromTo(
-        sorted,
-        { opacity: 0, y: 60 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.7,
-          ease: "back.out(1.4)",
-          stagger: 0.18,
-          scrollTrigger: { trigger: root.current, start: "top 78%", once: true },
-        },
-      )
-    },
-    { scope: root },
-  )
-
+export function PodiumTop3({ items, onSelect, getSelectLabel }: PodiumTop3Props) {
+  if (items.length === 0) return null
   return (
-    <div ref={root} className="mx-auto max-w-5xl px-5 pb-10 pt-16 md:px-10 md:pt-20">
-      <div className="flex items-end justify-center gap-1.5 sm:gap-3 md:gap-5">
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-16 md:px-8 md:pt-20">
+      <div className="flex items-end justify-center gap-2 sm:gap-4 md:gap-6">
         {items.map((item) => (
-          <PodiumColumn
-            key={item.rank}
-            item={item}
-            accent={accent}
-            onSelect={onSelect}
-            selectLabel={getSelectLabel?.(item)}
-          />
+          <PodiumColumn key={item.rank} item={item} onSelect={onSelect} selectLabel={getSelectLabel?.(item)} />
         ))}
       </div>
     </div>

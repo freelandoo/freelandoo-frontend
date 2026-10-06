@@ -3,16 +3,17 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ArrowLeft, Menu, X } from "lucide-react"
-import { LiveBadge } from "./live-badge"
+import { ArrowLeft, Home, Menu, Radio, X } from "lucide-react"
 
 /**
  * Cabeçalho único da Casa Views. Montado pelo layout de /acasaviews, então
  * vale para toda página da seção — inclusive as de ranking que seguem no tema
  * de papel: é ele que costura as duas peles numa experiência só.
  *
- * ⚠️ A navegação lista SÓ o que existe. "Desafios" e busca apareciam no
- * briefing e não têm rota nem dado — link para o nada é pior que link nenhum.
+ * ⚠️ A navegação lista SÓ o que existe. "Desafios", "Premiação" e a busca
+ * aparecem na referência visual e não têm rota nem dado — link para o nada é
+ * pior que link nenhum. O menu de três linhas abre em TODA largura (é o
+ * desenho da referência); no computador a barra também mostra as seções.
  */
 const NAV = [
   { href: "/acasaviews/rankings", label: "Rankings", match: ["/acasaviews/rankings"] },
@@ -53,27 +54,27 @@ export function RealityHeader() {
 
   return (
     <header
-      className="sticky top-0 border-b border-[var(--rv-line)] bg-[rgba(5,5,5,0.92)] text-[var(--rv-white)]"
+      className="sticky top-0 border-b border-[var(--rv-line)] bg-[rgba(5,5,5,0.94)] text-[var(--rv-white)]"
       style={{ zIndex: "var(--rv-z-header)" }}
     >
-      <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-4 px-4 md:h-16 md:px-8">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4 md:h-16 md:px-8">
         {/* porta de volta para a Freelandoo (a seção não tem o chrome da plataforma) */}
         <Link
           href="/account"
           aria-label="Voltar para a Freelandoo"
-          className="hidden h-9 w-9 shrink-0 items-center justify-center border border-[var(--rv-line-strong)] text-[var(--rv-muted)] transition-colors hover:border-[var(--rv-pink)] hover:text-[var(--rv-white)] sm:inline-flex"
+          className="hidden h-8 w-8 shrink-0 items-center justify-center text-[var(--rv-faint)] transition-colors hover:text-[var(--rv-white)] sm:inline-flex"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
 
-        <Link href="/acasaviews/rankings" className="group flex shrink-0 items-baseline gap-1.5" aria-label="A Casa Views — início">
-          <span className="rv-label text-[9px] text-[var(--rv-pink-ink)]">A</span>
-          <span className="rv-display text-[22px] leading-none tracking-wide md:text-[26px]">
-            CASA<span className="text-[var(--rv-pink)]">/</span>VIEWS
-          </span>
+        <Link href="/acasaviews/rankings" className="group flex shrink-0 items-center gap-2.5" aria-label="A Casa Views — início">
+          <Home className="h-6 w-6 text-[var(--rv-pink)] md:h-7 md:w-7" strokeWidth={2.75} aria-hidden />
+          <span className="rv-type text-[13px] font-bold tracking-[0.12em] md:text-[15px]">A CASA VIEWS</span>
         </Link>
 
-        <nav aria-label="Seções da Casa Views" className="ml-4 hidden items-center gap-1 lg:flex">
+        <span aria-hidden className="mx-3 hidden h-7 w-px bg-[var(--rv-line-strong)] lg:block" />
+
+        <nav aria-label="Seções da Casa Views" className="hidden items-center gap-1 lg:flex">
           {NAV.map((n) => {
             const active = isActive(n.match)
             return (
@@ -81,27 +82,39 @@ export function RealityHeader() {
                 key={n.href}
                 href={n.href}
                 aria-current={active ? "page" : undefined}
-                className={`relative px-3 py-2 rv-label text-[11px] transition-colors ${
-                  active ? "bg-[var(--rv-pink)] text-[var(--rv-white)]" : "text-[var(--rv-muted)] hover:text-[var(--rv-white)]"
+                className={`relative px-3.5 py-2 rv-type text-[11px] uppercase transition-colors xl:px-4 ${
+                  active ? "rv-glow-text text-[var(--rv-pink-ink)]" : "text-[var(--rv-white)] hover:text-[var(--rv-pink-ink)]"
                 }`}
               >
                 {n.label}
+                {active && (
+                  <span aria-hidden className="absolute inset-x-2 -bottom-[13px] h-[3px] bg-[var(--rv-pink)] shadow-[0_0_14px_2px_rgba(255,0,122,0.8)] md:-bottom-[17px]" />
+                )}
               </Link>
             )
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3">
-          <LiveBadge href="/acasaviews/ranking-participantes" />
+        <span aria-hidden className="ml-2 hidden h-7 w-px bg-[var(--rv-line-strong)] lg:block" />
+
+        <div className="ml-auto flex items-center gap-3 md:gap-5">
+          <Link
+            href="/acasaviews/ranking-participantes"
+            aria-label="Ao vivo: placar do dia"
+            className="rv-glow-box inline-flex items-center gap-2 bg-[var(--rv-pink)] px-3 py-2 text-[var(--rv-white)] transition-transform hover:-translate-y-0.5 md:px-5 md:py-2.5"
+          >
+            <Radio className="h-4 w-4 md:h-5 md:w-5" strokeWidth={2.5} aria-hidden />
+            <span className="rv-type text-[11px] font-bold tracking-[0.14em] md:text-[13px]">AO VIVO</span>
+          </Link>
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
             aria-controls="rv-mobile-nav"
             aria-label={open ? "Fechar menu" : "Abrir menu"}
-            className="inline-flex h-10 w-10 items-center justify-center border border-[var(--rv-line-strong)] lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center text-[var(--rv-white)] hover:text-[var(--rv-pink-ink)]"
           >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-7 w-7" strokeWidth={2.25} />}
           </button>
         </div>
       </div>
@@ -110,9 +123,9 @@ export function RealityHeader() {
         <nav
           id="rv-mobile-nav"
           aria-label="Seções da Casa Views"
-          className="rv-page-in absolute inset-x-0 top-full h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-[var(--rv-line)] bg-[var(--rv-bg)] px-4 pb-10 pt-4 lg:hidden"
+          className="rv-page-in absolute inset-x-0 top-full h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-[var(--rv-line)] bg-[var(--rv-bg)] px-4 pb-10 pt-4 md:h-[calc(100dvh-4rem)]"
         >
-          <ul className="flex flex-col">
+          <ul className="mx-auto flex max-w-[1600px] flex-col md:px-4">
             {NAV.map((n, i) => {
               const active = isActive(n.match)
               return (
@@ -122,14 +135,14 @@ export function RealityHeader() {
                     aria-current={active ? "page" : undefined}
                     className="flex items-baseline gap-4 py-4"
                   >
-                    <span className="rv-mono text-xs text-[var(--rv-faint)]">{String(i + 1).padStart(2, "0")}</span>
-                    <span className={`rv-display text-5xl ${active ? "text-[var(--rv-pink)]" : ""}`}>{n.label}</span>
+                    <span className="rv-type text-xs text-[var(--rv-faint)]">{String(i + 1).padStart(2, "0")}</span>
+                    <span className={`rv-wide text-4xl md:text-6xl ${active ? "text-[var(--rv-pink)]" : ""}`}>{n.label}</span>
                   </Link>
                 </li>
               )
             })}
             <li>
-              <Link href="/account" className="flex items-center gap-2 py-5 rv-label text-[var(--rv-muted)]">
+              <Link href="/account" className="rv-type flex items-center gap-2 py-5 text-xs uppercase text-[var(--rv-muted)]">
                 <ArrowLeft className="h-4 w-4" /> Voltar para a Freelandoo
               </Link>
             </li>

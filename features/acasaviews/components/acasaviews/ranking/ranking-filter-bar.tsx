@@ -5,26 +5,30 @@ import { cn } from "@/lib/utils"
 
 interface RankingFilterBarProps {
   options: string[]
+  /** legado do tema claro — a pele escura é rosa nos dois placares */
   accent: "cyan" | "magenta"
   note?: string
 }
 
-/** Barra de filtros (período/recorte) — pills com estado ativo. */
-export function RankingFilterBar({ options, accent, note }: RankingFilterBarProps) {
+/** Barra de recortes do ranking, nos botões da referência (rosa ativo). */
+export function RankingFilterBar({ options, note }: RankingFilterBarProps) {
   const [active, setActive] = useState(0)
-  const activeBg = accent === "cyan" ? "bg-[var(--cyan)] text-[var(--ink)]" : "bg-[var(--magenta)] text-white"
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-5 md:px-10">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 md:px-8">
+      <div className="flex flex-wrap items-center gap-2" role="tablist">
         {options.map((opt, i) => (
           <button
             key={opt}
             type="button"
+            role="tab"
+            aria-selected={i === active}
             onClick={() => setActive(i)}
             className={cn(
-              "border-2 border-[var(--ink)] px-3 py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] transition-all",
-              i === active ? activeBg : "bg-white text-[var(--ink)] hover:bg-[var(--paper-2)]",
+              "rv-type border-2 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] transition-colors",
+              i === active
+                ? "rv-glow-box border-[var(--rv-pink)] bg-[var(--rv-pink)] text-[var(--rv-white)]"
+                : "border-[var(--rv-white)] text-[var(--rv-white)] hover:border-[var(--rv-pink)] hover:text-[var(--rv-pink-ink)]",
             )}
           >
             {opt}
@@ -32,7 +36,10 @@ export function RankingFilterBar({ options, accent, note }: RankingFilterBarProp
         ))}
       </div>
       {note && (
-        <span className="casa-marker text-xl text-[var(--ink-soft)]/70">{note}</span>
+        <span className="rv-type flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-[var(--rv-muted)]">
+          <span className="rv-live-dot" aria-hidden />
+          {note}
+        </span>
       )}
     </div>
   )

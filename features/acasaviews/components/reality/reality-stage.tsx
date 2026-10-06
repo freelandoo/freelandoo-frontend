@@ -18,7 +18,14 @@ import { useEffect, useRef, useState } from "react"
  * - mouse só em ponteiro fino, e a influência é de poucos graus.
  * O renderizador (stage-renderer) chega por import() depois da página aparecer.
  */
-export function RealityStage({ className = "" }: { className?: string }) {
+export function RealityStage({
+  className = "",
+  variant = "globe",
+}: {
+  className?: string
+  /** "cube" = cubo de vidro rosa (herói de Rankings); "globe" = globo wireframe */
+  variant?: "globe" | "cube"
+}) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [live, setLive] = useState(false)
   // Quem chama posiciona (absolute). Com "relative" e "absolute" juntas quem
@@ -96,7 +103,7 @@ export function RealityStage({ className = "" }: { className?: string }) {
       const res = await mod.createStageRenderer(
         el,
         { white: [0.957, 0.957, 0.941], pink: [1, 0, 0.478], yellow: [1, 0.769, 0] },
-        { dense: fine, preferWebGPU: true },
+        { dense: fine, preferWebGPU: true, variant },
       )
       if (disposed || !res) {
         res?.renderer.dispose()
@@ -126,11 +133,11 @@ export function RealityStage({ className = "" }: { className?: string }) {
       renderer?.dispose()
       host.querySelectorAll("canvas").forEach((c) => c.remove())
     }
-  }, [])
+  }, [variant])
 
   return (
     <div ref={hostRef} className={`pointer-events-none ${positioned ? "" : "relative "}${className}`} aria-hidden>
-      <StageFallback hidden={live} />
+      {variant === "cube" ? <CubeFallback hidden={live} /> : <StageFallback hidden={live} />}
     </div>
   )
 }
@@ -159,6 +166,36 @@ function StageFallback({ hidden }: { hidden: boolean }) {
       {[0, 60, 130, 210, 290].map((a) => (
         <circle key={a} r="2.2" fill="var(--rv-pink)" cx={168 * Math.cos((a * Math.PI) / 180)} cy={26 * Math.sin((a * Math.PI) / 180)} />
       ))}
+    </svg>
+  )
+}
+
+/** Degrau estático da variante cubo: o mesmo desenho, parado. */
+function CubeFallback({ hidden }: { hidden: boolean }) {
+  // cubo em perspectiva isométrica simples
+  const f = [
+    [-60, -40], [40, -60], [80, -10], [-20, 10],
+    [-60, 60], [40, 40], [80, 90], [-20, 110],
+  ]
+  const e = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
+  return (
+    <svg
+      viewBox="-200 -200 400 400"
+      className="absolute inset-0 h-full w-full transition-opacity duration-700"
+      style={{ opacity: hidden ? 0 : 1 }}
+    >
+      <g fill="none" stroke="var(--rv-white)" strokeOpacity="0.1">
+        <circle cx="-80" cy="-90" r="80" />
+        <ellipse cx="-80" cy="-90" rx="40" ry="80" />
+        <ellipse cx="-80" cy="-90" rx="80" ry="20" />
+      </g>
+      <ellipse rx="170" ry="40" transform="rotate(-20) translate(10 25)" fill="none" stroke="var(--rv-pink)" strokeWidth="1.5" />
+      <ellipse rx="190" ry="60" transform="rotate(25) translate(10 25)" fill="none" stroke="var(--rv-pink)" strokeOpacity="0.5" />
+      <g stroke="var(--rv-pink)" strokeWidth="2.5">
+        {e.map(([a, b], i) => (
+          <line key={i} x1={f[a][0]} y1={f[a][1]} x2={f[b][0]} y2={f[b][1]} />
+        ))}
+      </g>
     </svg>
   )
 }

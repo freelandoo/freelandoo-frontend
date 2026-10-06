@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import type { Accent, Trend } from "@/lib/acasaviews/ranking-data"
 import { AnimatedNumber } from "./animated-number"
 import { CasaAvatar } from "./casa-avatar"
+import { tagClass } from "./tag-style"
 
 export interface RankingCardStat {
   label: string
@@ -25,40 +26,36 @@ interface RankingCardProps {
   tag: string
   tagAccent: Accent
   stats: RankingCardStat[]
+  /** legado do tema claro — a pele escura é rosa nos dois placares */
   accent: "cyan" | "magenta"
   onSelect?: () => void
   selectLabel?: string
 }
 
-const accentBg: Record<Accent, string> = {
-  magenta: "bg-[var(--magenta)] text-white",
-  cyan: "bg-[var(--cyan)] text-[var(--ink)]",
-  gold: "bg-[var(--gold)] text-[var(--ink)]",
-  ink: "bg-[var(--ink)] text-white",
-}
-
 function TrendBadge({ trend, value }: { trend: Trend; value: number }) {
   if (trend === "same") {
     return (
-      <span className="inline-flex items-center gap-1 casa-body text-[11px] font-bold text-[var(--ink-soft)]/60">
-        <Minus className="h-3.5 w-3.5" strokeWidth={3} /> =
+      <span className="rv-type inline-flex items-center gap-1 text-[10px] text-[var(--rv-faint)]">
+        <Minus className="h-3.5 w-3.5" /> =
       </span>
     )
   }
   const up = trend === "up"
   return (
     <span
-      className={cn(
-        "inline-flex items-center gap-0.5 casa-body text-[11px] font-extrabold tabular-nums",
-        up ? "text-[var(--cyan)]" : "text-[var(--magenta)]",
-      )}
+      className="rv-type inline-flex items-center gap-0.5 text-[10px] font-bold"
+      style={{ color: up ? "var(--rv-up)" : "var(--rv-down)" }}
     >
-      {up ? <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={3} /> : <ArrowDownRight className="h-3.5 w-3.5" strokeWidth={3} />}
+      {up ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
       {value}
     </span>
   )
 }
 
+/**
+ * Linha do ranking na pele escura: moldura de canto cortado (fica rosa no
+ * hover), posição grande em contorno, retrato P&B, pontos em rosa.
+ */
 export function RankingCard({
   rank,
   name,
@@ -71,11 +68,9 @@ export function RankingCard({
   tag,
   tagAccent,
   stats,
-  accent,
   onSelect,
   selectLabel,
 }: RankingCardProps) {
-  const accentVar = accent === "cyan" ? "var(--cyan)" : "var(--magenta)"
   const interactive = !!onSelect
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -88,12 +83,9 @@ export function RankingCard({
 
   return (
     <div
-      data-rank-card
       className={cn(
-        "group relative flex items-center gap-3 border-2 border-[var(--ink)] bg-white px-3 py-3 md:gap-5 md:px-5 md:py-4",
-        "transition-transform duration-200 hover:-translate-y-1 hover:-rotate-[0.4deg]",
-        "shadow-[5px_5px_0_0_var(--ink)] hover:shadow-[8px_8px_0_0_var(--ink)]",
-        interactive && "cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-[var(--cyan)]/55",
+        "group rv-frame [--c:14px] [--frame:var(--rv-line-strong)] hover:[--frame:var(--rv-pink)]",
+        interactive && "cursor-pointer outline-none",
       )}
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
@@ -101,59 +93,45 @@ export function RankingCard({
       onClick={interactive ? onSelect : undefined}
       onKeyDown={interactive ? handleKeyDown : undefined}
     >
-      {/* Posição */}
-      <div className="flex w-10 shrink-0 justify-center md:w-14">
-        <span className="casa-display text-3xl text-[var(--ink)] md:text-5xl">{rank}</span>
-      </div>
+      <div className="rv-frame-in flex items-center gap-3 px-3 py-3 transition-colors group-hover:bg-[var(--rv-surface-2)] md:gap-5 md:px-5 md:py-4">
+        <span className="rv-wide rv-outline w-10 shrink-0 text-center text-2xl leading-none md:w-16 md:text-5xl">
+          {String(rank).padStart(2, "0")}
+        </span>
 
-      {/* Avatar */}
-      <div
-        className="relative shrink-0 rotate-[-2deg] overflow-hidden border-2 border-[var(--ink)]"
-        style={{ outline: `2px solid ${accentVar}`, outlineOffset: "1px" }}
-      >
-        <CasaAvatar name={name} src={avatar} className="h-12 w-12 md:h-16 md:w-16" textClassName="text-xl md:text-2xl" />
-      </div>
-
-      {/* Nome + tag */}
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h4 className="casa-display truncate text-xl leading-none text-[var(--ink)] md:text-2xl">{name}</h4>
-          <span
-            className={cn(
-              "hidden -rotate-1 px-1.5 py-0.5 casa-body text-[8px] font-extrabold uppercase tracking-[0.12em] sm:inline-block",
-              accentBg[tagAccent],
-            )}
-          >
-            {tag}
-          </span>
+        <div className="relative shrink-0 overflow-hidden border-2 border-[var(--rv-white)] transition-colors group-hover:border-[var(--rv-pink)]">
+          <CasaAvatar name={name} src={avatar} className="rv-photo h-12 w-12 md:h-16 md:w-16" textClassName="text-xl md:text-2xl" />
         </div>
-        <p className="truncate casa-body text-[11px] font-semibold text-[var(--ink-soft)]/55">{handle}</p>
 
-        {/* Stats secundárias */}
-        <div className="mt-1.5 hidden items-center gap-4 md:flex">
-          {stats.map((s) => (
-            <div key={s.label} className="flex items-baseline gap-1">
-              <span className="casa-body text-xs font-extrabold tabular-nums text-[var(--ink)]">
-                <AnimatedNumber value={s.value} compact={s.compact} />
-              </span>
-              <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--ink-soft)]/45">
-                {s.label}
-              </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="rv-display truncate text-xl leading-none md:text-2xl">{name}</h4>
+            <span className={cn("rv-type hidden px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] sm:inline-block", tagClass(tagAccent))}>
+              {tag}
+            </span>
+          </div>
+          <p className="rv-type truncate text-[10px] text-[var(--rv-faint)]">{handle}</p>
+          {stats.length > 0 && (
+            <div className="mt-1.5 hidden items-center gap-4 md:flex">
+              {stats.map((s) => (
+                <div key={s.label} className="flex items-baseline gap-1">
+                  <span className="rv-type text-xs font-bold">
+                    <AnimatedNumber value={s.value} compact={s.compact} />
+                  </span>
+                  <span className="rv-type text-[9px] uppercase tracking-[0.1em] text-[var(--rv-faint)]">{s.label}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      </div>
 
-      {/* Score + variação */}
-      <div className="flex shrink-0 flex-col items-end">
-        <div className="casa-display text-2xl leading-none md:text-4xl" style={{ color: accentVar }}>
-          <AnimatedNumber value={score} compact={score >= 100000} />
-        </div>
-        <div className="mt-1 flex items-center gap-2">
-          <span className="text-[8px] font-bold uppercase tracking-[0.14em] text-[var(--ink-soft)]/45">
-            {scoreLabel}
-          </span>
-          <TrendBadge trend={trend} value={trendValue} />
+        <div className="flex shrink-0 flex-col items-end">
+          <div className="rv-wide text-2xl leading-none text-[var(--rv-pink)] md:text-4xl">
+            <AnimatedNumber value={score} compact={score >= 100000} />
+          </div>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="rv-type text-[8px] uppercase tracking-[0.14em] text-[var(--rv-faint)]">{scoreLabel}</span>
+            <TrendBadge trend={trend} value={trendValue} />
+          </div>
         </div>
       </div>
     </div>

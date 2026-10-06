@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import "./casa.css"
 import "./reality.css"
 import { RealityHeader } from "@/features/acasaviews/components/reality/reality-header"
+import { realityFontVars } from "@/features/acasaviews/components/reality/fonts"
 
 /**
  * Layout da seção A Casa Views, integrada ao Freelandoo sob /acasaviews.
@@ -23,7 +24,7 @@ export default function AcasaviewsLayout({
   children: React.ReactNode
 }>) {
   return (
-    <div className="casa-app rv-tokens">
+    <div className={`casa-app rv-tokens ${realityFontVars}`}>
       <RealityHeader />
       {children}
     </div>

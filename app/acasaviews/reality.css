@@ -41,6 +41,8 @@
   --rv-font-body: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --rv-font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
   --rv-font-script: var(--font-caveat), ui-serif, cursive;
+  --rv-font-wide: var(--font-rv-wide), var(--font-archivo), "Arial Black", sans-serif;
+  --rv-font-type: var(--font-rv-type), var(--font-geist-mono), ui-monospace, monospace;
   /* movimento */
   --rv-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --rv-ease-snap: cubic-bezier(0.7, 0, 0.2, 1);
@@ -560,4 +562,165 @@
 .rv-admin.casa-rank {
   --magenta: #ff007a;
   --magenta-deep: #d4006a;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V2 — a composição da referência (2026-10-05): manchete larga gasta, letra
+   de máquina, molduras de canto cortado, faixas de luz diagonais.
+   Tudo PINTADO uma vez — nada aqui anima numa camada do tamanho da janela.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* manchete larga (Archivo expandido no peso máximo) */
+.rv-wide {
+  font-family: var(--rv-font-wide);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: "wdth" 125;
+  text-transform: uppercase;
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+}
+/* letra de máquina */
+.rv-type {
+  font-family: var(--rv-font-type);
+  letter-spacing: 0.06em;
+}
+
+/* textura gasta na tinta: degradê metálico recortado pelo texto + máscara de
+   ruído que abre "furos" e riscos. Sem a máscara (navegador antigo) sobra o
+   texto metálico inteiro — degrada para legível, nunca para quebrado. */
+.rv-grunge {
+  color: transparent;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(5, 5, 5, 0.18) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(0deg, rgba(5, 5, 5, 0.12) 0 1px, transparent 1px 18px),
+    linear-gradient(180deg, #ffffff 0%, #d9d9d6 38%, #ffffff 52%, #b9b9b4 74%, #f1f1ee 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035 0.09' numOctaves='5' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -16 0 0 0 12.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035 0.09' numOctaves='5' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -16 0 0 0 12.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  -webkit-mask-size: 520px 520px;
+  mask-size: 520px 520px;
+}
+/* contorno gasto (o "QUEM ESTÁ" da referência) */
+.rv-grunge-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(244, 244, 240, 0.85);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05 0.12' numOctaves='4' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -12 0 0 0 8.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05 0.12' numOctaves='4' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -12 0 0 0 8.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* moldura de canto cortado: a borda é o FUNDO do invólucro, o miolo repete o
+   recorte 1,5px para dentro. `--c` é o tamanho do corte. */
+.rv-frame {
+  --c: 22px;
+  --frame: rgba(244, 244, 240, 0.85);
+  position: relative;
+  padding: 1.5px;
+  background: var(--frame);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.rv-frame > .rv-frame-in {
+  position: relative;
+  height: 100%;
+  background: var(--rv-bg);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  overflow: hidden;
+}
+.rv-frame-pink {
+  --frame: var(--rv-pink);
+}
+
+/* faixa rosa em seta ("DOIS JOGOS, UM PLACAR AO VIVO. >>") */
+.rv-arrowbar {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+}
+
+/* código de barras do bloco técnico */
+.rv-barcode {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--rv-white) 0 2px,
+    transparent 2px 3px,
+    var(--rv-white) 3px 4px,
+    transparent 4px 7px,
+    var(--rv-white) 7px 10px,
+    transparent 10px 11px
+  );
+}
+
+/* faixas de luz diagonais (vidro) nas bordas do herói */
+.rv-streak {
+  position: absolute;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(244, 244, 240, 0.06) 20%,
+    rgba(244, 244, 240, 0.22) 48%,
+    rgba(244, 244, 240, 0.06) 80%,
+    transparent
+  );
+  transform: rotate(-52deg);
+}
+.rv-streak-pink {
+  background: linear-gradient(90deg, transparent, rgba(255, 0, 122, 0.25) 45%, rgba(255, 0, 122, 0.55) 50%, transparent);
+}
+
+/* listras rosa de glitch nos cartões */
+.rv-glitch-stripes {
+  background: repeating-linear-gradient(-55deg, var(--rv-pink) 0 10px, transparent 10px 22px);
+}
+
+/* foto em duotom rosa (os cards de "quem está jogando") */
+.rv-duo {
+  filter: grayscale(1) contrast(1.15) brightness(1.02);
+}
+.rv-duo-tint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255, 0, 122, 0.75), rgba(255, 0, 122, 0.15) 55%, rgba(5, 5, 5, 0.1));
+  mix-blend-mode: screen;
+}
+
+/* brilho rosa no item ativo do menu e no AO VIVO */
+.rv-glow-text {
+  text-shadow: 0 0 12px rgba(255, 0, 122, 0.85);
+}
+.rv-glow-box {
+  box-shadow:
+    0 0 0 1px var(--rv-pink),
+    0 0 22px -2px rgba(255, 0, 122, 0.8);
+}
+
+/* "+" técnico */
+.rv-plus {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--rv-white), var(--rv-white)) center / 100% 1px no-repeat,
+    linear-gradient(var(--rv-white), var(--rv-white)) center / 1px 100% no-repeat;
+  opacity: 0.55;
+}
+.rv-dotline {
+  background-image: linear-gradient(90deg, rgba(244, 244, 240, 0.45) 1px, transparent 1px);
+  background-size: 6px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
+}
+
+/* o cubo 3D ganha luz rosa (elemento limitado, não a janela) */
+.rv-stage-glow canvas {
+  filter: drop-shadow(0 0 6px rgba(255, 0, 122, 0.75)) drop-shadow(0 0 18px rgba(255, 0, 122, 0.35));
+}
+
+/* trilho sem barra (as setas navegam) */
+.rv-rail-bare {
+  scrollbar-width: none;
+}
+.rv-rail-bare::-webkit-scrollbar {
+  display: none;
 }
