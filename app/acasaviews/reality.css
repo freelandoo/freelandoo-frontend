@@ -39,6 +39,16 @@
   /* tinta sobre o painel branco dos cards da Conveniência */
   --rv-up-ink: #0e7a40; /* verde de estoque sobre branco (~5,2:1) */
   --rv-pink-deep: #d1005f; /* rosa como tinta sobre branco (~4,8:1) */
+  /* cor de destaque escolhida pelo admin no dossiê do participante (pinta só
+     o banner — a estrutura da página continua rosa) */
+  --rv-acc-magenta: #ff007a;
+  --rv-acc-cyan: #2ee6f2;
+  --rv-acc-gold: #ffc400;
+  --rv-acc-purple: #8b3dff;
+  --rv-acc-leaf: #3ddc84;
+  --rv-acc-red: #ff4d4d;
+  --rv-acc-orange: #ff7a18;
+  --rv-acc-gray: #8a8a8f;
   /* tipografia */
   --rv-font-display: var(--font-anton), "Impact", ui-sans-serif, sans-serif;
   --rv-font-body: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
@@ -780,4 +790,59 @@
 .rv-paper-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DOSSIÊ DO PARTICIPANTE (2026-10-06) — a página /participantes/[slug] na pele
+   escura. Banner em duotom da cor de destaque; o resto é rosa/branco.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* banner: foto P&B multiplicada pela cor de destaque (`--acc`) */
+.rv-duo-acc {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--acc, var(--rv-pink));
+  mix-blend-mode: multiply;
+}
+/* cabeçalho dos blocos: filete rosa curto + linha fina */
+.rv-block-head {
+  position: relative;
+  border-bottom: 1px solid var(--rv-line);
+}
+.rv-block-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 72px;
+  height: 2px;
+  background: var(--rv-pink);
+}
+/* bilhete de papel (caixinha de segredos) — leve giro alternado */
+.rv-note {
+  background: var(--rv-white);
+  color: var(--rv-bg);
+  box-shadow: 3px 3px 0 0 var(--rv-pink);
+}
+.rv-note:nth-child(odd) {
+  transform: rotate(-0.6deg);
+}
+.rv-note:nth-child(even) {
+  transform: rotate(0.5deg);
+}
+/* campo de edição sobre o escuro */
+.rv-field {
+  background: transparent;
+  color: var(--rv-white);
+  outline: none;
+}
+.rv-field::placeholder {
+  color: var(--rv-faint);
+}
+.rv-select {
+  background: var(--rv-bg);
+  color: var(--rv-white);
+  border: 1.5px solid var(--rv-white);
+  outline: none;
 }

@@ -14,7 +14,7 @@ function getToken(): string | null {
   return localStorage.getItem("token")
 }
 
-export function ConvenienceStore({ products, accent, slug }: { products: ProductItem[]; accent: string; slug: string }) {
+export function ConvenienceStore({ products, slug }: { products: ProductItem[]; slug: string }) {
   const router = useRouter()
   const [selected, setSelected] = useState<ProductItem | null>(null)
   const [descModal, setDescModal] = useState<ProductItem | null>(null)
@@ -48,7 +48,7 @@ export function ConvenienceStore({ products, accent, slug }: { products: Product
 
   if (products.length === 0) {
     return (
-      <p className="border-2 border-dashed border-[var(--ink)]/25 bg-white/50 px-5 py-10 text-center casa-body text-sm font-semibold text-[var(--ink-soft)]/55">
+      <p className="rv-type border border-dashed border-[var(--rv-line-strong)] px-5 py-10 text-center text-[11px] uppercase tracking-[0.14em] text-[var(--rv-muted)]">
         Nenhum produto deste participante por enquanto.
       </p>
     )
@@ -56,37 +56,32 @@ export function ConvenienceStore({ products, accent, slug }: { products: Product
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((prod) => {
           const soldOut = prod.stock !== null && prod.stock <= 0
           return (
-            <div key={prod.id} className="flex flex-col overflow-hidden border-2 border-[var(--ink)] bg-white shadow-[5px_5px_0_0_var(--ink)]">
-              <div className="aspect-square overflow-hidden border-b-2 border-[var(--ink)] bg-[var(--paper-2)]">
+            <div key={prod.id} className="rv-cut-tr flex flex-col border-[1.5px] border-[var(--rv-white)] bg-[var(--rv-bg)]">
+              <div className="rv-shelf-art relative aspect-square overflow-hidden">
                 {prod.image_url && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={prod.image_url} alt={prod.name} className="h-full w-full object-cover" />
+                  <img src={prod.image_url} alt={prod.name} className="relative h-full w-full object-cover" />
                 )}
+                {soldOut && <span className="rv-sticker rv-sticker-pink absolute left-3 top-3">esgotado</span>}
               </div>
-              <div className="flex flex-1 flex-col p-3">
-                <h3 className="casa-display text-xl leading-tight text-[var(--ink)]">{prod.name}</h3>
+              <div className="rv-paper flex flex-1 flex-col p-4">
+                <h3 className="rv-display text-2xl leading-tight">{prod.name}</h3>
                 {prod.description && (
                   <button
                     type="button"
                     onClick={() => setDescModal(prod)}
-                    className="mt-1 w-fit casa-body text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink-soft)]/70 underline hover:text-[var(--ink)]"
+                    className="rv-type mt-1 w-fit text-[10px] uppercase tracking-[0.14em] text-[rgba(5,5,5,0.6)] underline hover:text-[var(--rv-bg)]"
                   >
                     ver descrição
                   </button>
                 )}
-                <div className="mt-auto flex items-center justify-between gap-2 pt-3">
-                  <span className="casa-display text-2xl" style={{ color: accent }}>{brl(prod.price_cents)}</span>
-                  <button
-                    type="button"
-                    disabled={soldOut}
-                    onClick={() => setSelected(prod)}
-                    className="border-2 border-[var(--ink)] px-3 py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
-                    style={{ background: soldOut ? "transparent" : accent }}
-                  >
+                <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+                  <span className="rv-display text-3xl text-[var(--rv-pink-deep)]">{brl(prod.price_cents)}</span>
+                  <button type="button" disabled={soldOut} onClick={() => setSelected(prod)} className="rv-paper-btn px-3 py-2">
                     {soldOut ? "esgotado" : "comprar"}
                   </button>
                 </div>
@@ -98,35 +93,30 @@ export function ConvenienceStore({ products, accent, slug }: { products: Product
 
       {/* Dialog de confirmação */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !loading && setSelected(null)}>
-          <div className="w-full max-w-md border-2 border-[var(--ink)] bg-white shadow-[8px_8px_0_0_var(--ink)]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b-2 border-[var(--ink)] px-4 py-3">
-              <span className="flex items-center gap-2 casa-display text-xl text-[var(--ink)]"><ShoppingBag className="h-5 w-5" style={{ color: accent }} /> Confirmar compra</span>
-              <button onClick={() => !loading && setSelected(null)} className="text-[var(--ink)]"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(5,5,5,0.8)] p-4" onClick={() => !loading && setSelected(null)}>
+          <div className="w-full max-w-md border-2 border-[var(--rv-pink)] bg-[var(--rv-bg)] text-[var(--rv-white)] rv-glow-box" onClick={(e) => e.stopPropagation()}>
+            <div className="rv-block-head flex items-center justify-between px-4 py-3">
+              <span className="rv-display flex items-center gap-2 text-2xl"><ShoppingBag className="h-5 w-5 text-[var(--rv-pink)]" /> Confirmar compra</span>
+              <button onClick={() => !loading && setSelected(null)} aria-label="Fechar"><X className="h-5 w-5" /></button>
             </div>
-            <div className="space-y-3 p-4">
+            <div className="space-y-4 p-4">
               <div className="flex items-center gap-3">
-                <div className="h-16 w-16 shrink-0 overflow-hidden border-2 border-[var(--ink)] bg-[var(--paper-2)]">
+                <div className="h-16 w-16 shrink-0 overflow-hidden border border-[var(--rv-white)] bg-[var(--rv-surface-2)]">
                   {selected.image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={selected.image_url} alt="" className="h-full w-full object-cover" />
                   )}
                 </div>
                 <div className="min-w-0">
-                  <h4 className="casa-display text-lg leading-tight text-[var(--ink)]">{selected.name}</h4>
-                  <span className="casa-display text-xl" style={{ color: accent }}>{brl(selected.price_cents)}</span>
+                  <h4 className="rv-display text-xl leading-tight">{selected.name}</h4>
+                  <span className="rv-display text-2xl text-[var(--rv-pink-ink)]">{brl(selected.price_cents)}</span>
                 </div>
               </div>
-              <p className="casa-body text-xs text-[var(--ink-soft)]/65">
-                Você será levado ao pagamento seguro (Stripe). Produto digital/simbólico da Conveniência Views — sem frete.
+              <p className="text-xs text-[var(--rv-muted)]">
+                Você será levado ao pagamento seguro. Produto digital/simbólico da Conveniência Views — sem frete.
               </p>
-              {error && <p className="border border-[var(--magenta)] bg-[var(--magenta)]/10 px-3 py-2 casa-body text-xs font-semibold text-[var(--magenta-deep)]">{error}</p>}
-              <button
-                onClick={() => buy(selected)}
-                disabled={loading}
-                className="flex w-full items-center justify-center gap-2 border-2 border-[var(--ink)] py-2.5 casa-body text-sm font-extrabold uppercase tracking-[0.14em] text-[var(--ink)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-                style={{ background: accent }}
-              >
+              {error && <p className="border border-[var(--rv-pink)] bg-[rgba(255,0,122,0.1)] px-3 py-2 text-xs font-semibold text-[var(--rv-pink-ink)]">{error}</p>}
+              <button onClick={() => buy(selected)} disabled={loading} className="rv-btn w-full">
                 {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecionando…</> : "Ir para o pagamento"}
               </button>
             </div>
@@ -136,14 +126,14 @@ export function ConvenienceStore({ products, accent, slug }: { products: Product
 
       {/* Descrição (somente leitura) */}
       {descModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setDescModal(null)}>
-          <div className="w-full max-w-md border-2 border-[var(--ink)] bg-white shadow-[8px_8px_0_0_var(--ink)]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b-2 border-[var(--ink)] px-4 py-3">
-              <span className="casa-display text-xl leading-tight text-[var(--ink)]">{descModal.name}</span>
-              <button onClick={() => setDescModal(null)} className="text-[var(--ink)]"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(5,5,5,0.8)] p-4" onClick={() => setDescModal(null)}>
+          <div className="w-full max-w-md border-2 border-[var(--rv-white)] bg-[var(--rv-bg)] text-[var(--rv-white)]" onClick={(e) => e.stopPropagation()}>
+            <div className="rv-block-head flex items-center justify-between px-4 py-3">
+              <span className="rv-display text-2xl leading-tight">{descModal.name}</span>
+              <button onClick={() => setDescModal(null)} aria-label="Fechar"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4">
-              <p className="whitespace-pre-line casa-body text-sm leading-relaxed text-[var(--ink-soft)]/80">{descModal.description}</p>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--rv-muted)]">{descModal.description}</p>
             </div>
           </div>
         </div>
