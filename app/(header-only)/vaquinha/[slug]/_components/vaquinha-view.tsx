@@ -433,7 +433,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
     return (
       <VaquinhaShell>
         <div className="flex min-h-[60vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#F472B6]" aria-hidden />
+          <Loader2 className="h-8 w-8 animate-spin text-[#BE185D]" aria-hidden />
         </div>
       </VaquinhaShell>
     )
@@ -443,9 +443,9 @@ export function VaquinhaView({ slug }: { slug: string }) {
     return (
       <VaquinhaShell>
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
-          <HeartHandshake className="h-10 w-10 text-[#F472B6]" />
+          <HeartHandshake className="h-10 w-10 text-[#BE185D]" />
           <h1 className={`${TITLE} text-3xl`}>{t("notFound", "Vaquinha não encontrada")}</h1>
-          <Link href="/" className="text-sm font-bold text-[#F472B6] underline">
+          <Link href="/" className="text-sm font-bold text-[#BE185D] underline">
             {t("backHome", "Voltar ao início")}
           </Link>
         </div>
@@ -475,7 +475,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
                 onChange={(e) => setForm((f) => ({ ...f, goalText: e.target.value.replace(/[^\d]/g, "") }))}
                 onBlur={saveGoal}
                 placeholder="1000"
-                className="fl-display w-24 border-b-2 border-[#5A1530] bg-transparent text-right text-2xl leading-none text-[#FFE4F1] outline-none focus:border-[#EC4899]"
+                className="fl-display w-24 border-b-2 border-[#5A1530] bg-transparent text-right text-2xl leading-none text-[#FFE4F1] outline-none focus:border-[#9D174D]"
               />
             </div>
           ) : (
@@ -509,8 +509,8 @@ export function VaquinhaView({ slug }: { slug: string }) {
           className="h-full transition-all"
           style={{
             width: `${progress}%`,
-            background: "linear-gradient(90deg, #9D174D, #EC4899)",
-            boxShadow: "0 0 14px rgba(236, 72, 153, 0.7)",
+            background: "linear-gradient(90deg, #500724, #9D174D)",
+            boxShadow: "0 0 14px rgba(157, 23, 77, 0.7)",
           }}
         />
       </div>
@@ -535,7 +535,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
           mySponsorship ? (
             <div className={`${INNER} mt-5 p-3`}>
               <p className="inline-flex flex-wrap items-center gap-2 text-sm font-bold text-[#FFE4F1]">
-                <Award className="h-4 w-4 text-[#F472B6]" />
+                <Award className="h-4 w-4 text-[#BE185D]" />
                 {t("youSponsor", "Você patrocina esta bolsa")} · {money(mySponsorship.monthly_cents)}/{t("perMonthShort", "mês")}
                 {mySponsorship.status === "past_due" && (
                   <span className="border border-[#f87171] px-1.5 py-0.5 text-[10px] font-black uppercase text-[#f87171]">{t("pastDue", "Pagamento pendente")}</span>
@@ -584,7 +584,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
         <PageBackLink href={isOwner ? "/wallet/carteira" : "/feed"} />
         {isOwner && isActive && (
           <span className="inline-flex items-center gap-2 border-2 border-[#5A1530] bg-[rgba(48,9,26,0.78)] px-3 py-1.5">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[#F472B6]" />
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#BE185D]" />
             <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#FFE4F1]">
               {t("editHint", "Sua vaquinha está no ar · edite tudo aqui")}
             </span>
@@ -597,7 +597,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
       <header className="relative mx-auto mt-4 max-w-5xl px-0 md:px-10">
         <div
           className="relative overflow-hidden border-2 border-[#5A1530]"
-          style={{ boxShadow: "0 0 30px rgba(236, 72, 153, 0.22), 8px 8px 0 0 rgba(90, 21, 48, 0.9)" }}
+          style={{ boxShadow: "0 0 30px rgba(157, 23, 77, 0.22), 8px 8px 0 0 rgba(90, 21, 48, 0.9)" }}
         >
           <div className="relative h-48 bg-[#1E0712] md:h-64">
             {v.cover_url ? (
@@ -610,10 +610,10 @@ export function VaquinhaView({ slug }: { slug: string }) {
                   className="absolute inset-0"
                   style={{
                     backgroundImage: [
-                      "radial-gradient(70% 120% at 18% 0%, rgba(190, 24, 93, 0.45), transparent 65%)",
-                      "radial-gradient(60% 120% at 88% 10%, rgba(236, 72, 153, 0.22), transparent 68%)",
-                      "repeating-linear-gradient(to right, rgba(244, 114, 182, 0.10) 0 1px, transparent 1px 40px)",
-                      "repeating-linear-gradient(to bottom, rgba(244, 114, 182, 0.07) 0 1px, transparent 1px 40px)",
+                      "radial-gradient(70% 120% at 18% 0%, rgba(131, 24, 67, 0.45), transparent 65%)",
+                      "radial-gradient(60% 120% at 88% 10%, rgba(157, 23, 77, 0.22), transparent 68%)",
+                      "repeating-linear-gradient(to right, rgba(190, 24, 93, 0.10) 0 1px, transparent 1px 40px)",
+                      "repeating-linear-gradient(to bottom, rgba(190, 24, 93, 0.07) 0 1px, transparent 1px 40px)",
                     ].join(","),
                   }}
                 />
@@ -621,20 +621,20 @@ export function VaquinhaView({ slug }: { slug: string }) {
                   aria-hidden
                   className="pointer-events-none absolute -right-6 -top-6 h-64 w-64 select-none md:h-80 md:w-80"
                   strokeWidth={1}
-                  style={{ color: "rgba(244, 114, 182, 0.12)" }}
+                  style={{ color: "rgba(190, 24, 93, 0.12)" }}
                 />
               </>
             )}
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0"
-              style={{ background: "linear-gradient(180deg, transparent 35%, rgba(20, 5, 12, 0.9) 100%)" }}
+              style={{ background: "linear-gradient(180deg, transparent 35%, rgba(15, 3, 10, 0.92) 100%)" }}
             />
-            <span className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 border-2 border-[#F472B6] bg-[#BE185D] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#FFE4F1]">
+            <span className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 border-2 border-[#BE185D] bg-[#831843] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#FFE4F1]">
               {isBolsa ? <Award className="h-3.5 w-3.5" /> : <HeartHandshake className="h-3.5 w-3.5" />} {kindLabel}
             </span>
             <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#5A1530] bg-[rgba(20,5,12,0.85)] px-2">
-              <span className="fl-display text-xl leading-none text-[#F472B6]">{progress}%</span>
+              <span className="fl-display text-xl leading-none text-[#BE185D]">{progress}%</span>
               <span className="text-[8px] font-bold uppercase text-[#D99AB9]">{t("ofGoal", "da meta")}</span>
             </span>
             {!isActive && (
@@ -706,12 +706,12 @@ export function VaquinhaView({ slug }: { slug: string }) {
                 >
                   <Award className="h-3.5 w-3.5" /> {t("kindBolsa", "Bolsa Patrocínio")}
                 </button>
-                {switchingKind && <Loader2 className="h-4 w-4 animate-spin text-[#F472B6]" />}
+                {switchingKind && <Loader2 className="h-4 w-4 animate-spin text-[#BE185D]" />}
               </>
             )}
             {savingField && (
               <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold ${MUTED}`}>
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F472B6]" /> {t("saving", "Salvando…")}
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#BE185D]" /> {t("saving", "Salvando…")}
               </span>
             )}
             {isActive && (
@@ -745,7 +745,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
           {isBolsa && (
             <section>
               <h2 className={`${TITLE} mb-3 inline-flex items-center gap-2 text-xl`}>
-                <Award className="h-4 w-4 text-[#F472B6]" /> {t("sponsorsTitle", "Patrocinadores")}
+                <Award className="h-4 w-4 text-[#BE185D]" /> {t("sponsorsTitle", "Patrocinadores")}
               </h2>
               {sponsors.length === 0 ? (
                 <p className={`border-2 border-dashed border-[#5A1530] py-6 text-center text-sm ${MUTED}`}>
@@ -799,7 +799,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
           {(v.bio || (isOwner && isActive)) && (
             <section>
               <h2 className={`${TITLE} mb-3 inline-flex items-center gap-2 text-xl`}>
-                <Target className="h-4 w-4 text-[#F472B6]" /> {t("about", "Sobre a campanha")}
+                <Target className="h-4 w-4 text-[#BE185D]" /> {t("about", "Sobre a campanha")}
               </h2>
               {isOwner && isActive ? (
                 <textarea
@@ -858,7 +858,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
                     <button
                       type="button"
                       onClick={() => fileRef.current?.click()}
-                      className="inline-flex items-center gap-2 border-2 border-dashed border-[#5A1530] bg-[rgba(20,5,12,0.6)] px-3 py-2 text-sm font-bold text-[#FFE4F1] transition hover:border-[#F472B6]"
+                      className="inline-flex items-center gap-2 border-2 border-dashed border-[#5A1530] bg-[rgba(20,5,12,0.6)] px-3 py-2 text-sm font-bold text-[#FFE4F1] transition hover:border-[#BE185D]"
                     >
                       <Plus className="h-4 w-4" /> {file ? file.name.slice(0, 28) : composerKind === "bee" ? t("pickVideo", "Escolher vídeo") : t("pickPhoto", "Escolher foto")}
                     </button>
@@ -930,7 +930,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
                 Pix não se repete sozinho, então dizer o meio antes do clique
                 evita a pessoa chegar no checkout procurando o Pix. */}
             <div className={`${INNER} mt-3 flex items-start gap-2 p-2.5 text-xs font-semibold text-[#FFE4F1]`}>
-              <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#F472B6]" />
+              <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#BE185D]" />
               <span>{t("sponsorCardNote", "Pagamento recorrente no cartão de crédito: o valor é cobrado automaticamente todo mês, até você cancelar.")}</span>
             </div>
 
@@ -1038,7 +1038,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
  */
 function VaquinhaShell({ children }: { children: ReactNode }) {
   return (
-    <main className="fl-root fl-sharp relative min-h-[100dvh] overflow-x-clip bg-[#14050C] pb-24 text-[#FFE4F1]">
+    <main className="fl-root fl-sharp relative min-h-[100dvh] overflow-x-clip bg-[#0F030A] pb-24 text-[#FFE4F1]">
       <TechBackdrop variant="vaquinha" />
       <div className="relative z-10">{children}</div>
     </main>

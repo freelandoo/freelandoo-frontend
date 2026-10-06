@@ -1588,12 +1588,12 @@ body.camera-active { overflow: hidden; }
    promovidas.
    ============================================================================ */
 .fl-vaquinha-bg {
-  background-color: #14050C;
+  background-color: #0F030A;
   background-image:
-    radial-gradient(60% 45% at 22% 16%, rgba(190, 24, 93, 0.42), transparent 70%),
-    radial-gradient(50% 40% at 84% 28%, rgba(236, 72, 153, 0.20), transparent 72%),
-    radial-gradient(80% 55% at 50% 108%, rgba(157, 23, 77, 0.34), transparent 70%),
+    radial-gradient(60% 45% at 22% 16%, rgba(131, 24, 67, 0.40), transparent 70%),
+    radial-gradient(50% 40% at 84% 28%, rgba(157, 23, 77, 0.16), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(112, 18, 54, 0.32), transparent 70%),
     radial-gradient(130% 95% at 50% 50%, transparent 58%, rgba(8, 1, 4, 0.55) 100%),
-    repeating-linear-gradient(to right, rgba(244, 114, 182, 0.07) 0 1px, transparent 1px 64px),
-    repeating-linear-gradient(to bottom, rgba(244, 114, 182, 0.05) 0 1px, transparent 1px 64px);
+    repeating-linear-gradient(to right, rgba(190, 24, 93, 0.06) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(190, 24, 93, 0.045) 0 1px, transparent 1px 64px);
 }
