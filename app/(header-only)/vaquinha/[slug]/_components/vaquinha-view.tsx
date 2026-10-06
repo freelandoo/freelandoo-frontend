@@ -1,12 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { HeartHandshake, Loader2, Users, Clock, Target, Square, ArrowLeft, ImageIcon, Clapperboard, Type, Trash2, Plus, UploadCloud, Repeat, Award, XCircle, CreditCard } from "lucide-react"
+import { HeartHandshake, Loader2, Users, Clock, Target, Square, ImageIcon, Clapperboard, Type, Trash2, Plus, UploadCloud, Repeat, Award, XCircle, CreditCard } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { PageBackLink } from "@/components/tabloide/PageBackLink"
+import { TechBackdrop } from "@/components/platform/tech-backdrop"
+import { BTN_GHOST, BTN_PRIMARY, INNER, INPUT, LABEL, MODAL, MONEY, MUTED, PANEL, TITLE } from "./vaquinha-ui"
 
 type Vaquinha = {
   id_vaquinha: string
@@ -428,503 +431,539 @@ export function VaquinhaView({ slug }: { slug: string }) {
 
   if (state === "loading") {
     return (
-      <main className="flex min-h-[60vh] items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
-      </main>
+      <VaquinhaShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#F472B6]" aria-hidden />
+        </div>
+      </VaquinhaShell>
     )
   }
 
   if (state === "error" || !v) {
     return (
-      <main className="flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-background px-4 text-center">
-        <HeartHandshake className="h-10 w-10 text-muted-foreground" />
-        <h1 className="fl-display text-3xl text-foreground">{t("notFound", "Vaquinha não encontrada")}</h1>
-        <Link href="/" className="text-sm font-bold text-primary underline">
-          {t("backHome", "Voltar ao início")}
-        </Link>
-      </main>
+      <VaquinhaShell>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
+          <HeartHandshake className="h-10 w-10 text-[#F472B6]" />
+          <h1 className={`${TITLE} text-3xl`}>{t("notFound", "Vaquinha não encontrada")}</h1>
+          <Link href="/" className="text-sm font-bold text-[#F472B6] underline">
+            {t("backHome", "Voltar ao início")}
+          </Link>
+        </div>
+      </VaquinhaShell>
     )
   }
 
-  return (
-    <main className="min-h-screen bg-background pb-16">
-      {/* Hero */}
-      <div className="relative">
-        <div className="h-44 w-full overflow-hidden border-b-2 border-[#0B0B0D] bg-[#1d1810] md:h-60">
-          {v.cover_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={v.cover_url} alt={v.title} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#1d1810] to-[#0B0B0D]">
-              <HeartHandshake className="h-16 w-16 text-[#F2B705]/40" />
+  const kindLabel = isBolsa ? t("kindBolsa", "Bolsa Patrocínio") : t("kindVaquinha", "Vaquinha")
+
+  // O painel do contador: na coluna da direita no computador (preso ao rolar),
+  // primeiro na pilha no celular — é ele que responde "quanto falta?".
+  const counter = (
+    <section className={`${PANEL} p-5`}>
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className={LABEL}>{t("raised", "Arrecadado")}</p>
+          <p className={`${TITLE} text-4xl leading-none md:text-5xl`}>{money(v.raised_cents)}</p>
+        </div>
+        <div className="text-right">
+          <p className={LABEL}>{t("goal", "Meta")}</p>
+          {isOwner && isActive ? (
+            <div className="flex items-center justify-end gap-1">
+              <span className="fl-display text-2xl leading-none text-[#D99AB9]">R$</span>
+              <input
+                inputMode="numeric"
+                value={form.goalText}
+                onChange={(e) => setForm((f) => ({ ...f, goalText: e.target.value.replace(/[^\d]/g, "") }))}
+                onBlur={saveGoal}
+                placeholder="1000"
+                className="fl-display w-24 border-b-2 border-[#5A1530] bg-transparent text-right text-2xl leading-none text-[#FFE4F1] outline-none focus:border-[#EC4899]"
+              />
             </div>
+          ) : (
+            <p className="fl-display text-2xl leading-none text-[#FFE4F1]">{money(v.goal_cents)}</p>
           )}
         </div>
-        {isOwner && (
-          <>
-            <input
-              ref={coverRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) void uploadCover(f)
-                e.target.value = ""
-              }}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => coverRef.current?.click()}
-              disabled={uploadingCover}
-              className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-1.5 text-[12px] font-bold text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60"
-            >
-              {uploadingCover ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
-              {v.cover_url ? t("changeCover", "Trocar capa") : t("addCover", "Adicionar capa")}
-            </button>
-          </>
+      </div>
+
+      {/* Editor de prazo (só dono; bolsa não tem prazo) */}
+      {isOwner && isActive && !isBolsa && (
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-2 border-dashed border-[#5A1530] p-2.5">
+          <label className={`inline-flex items-center gap-1.5 ${LABEL}`}>
+            <Clock className="h-3.5 w-3.5" /> {t("deadlineLabel", "Prazo")}
+          </label>
+          <input
+            type="date"
+            min={minDeadline}
+            max={maxDeadline}
+            value={form.deadline}
+            onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
+            onBlur={saveDeadline}
+            className={`${INPUT} px-2 py-1 text-sm [color-scheme:dark]`}
+          />
+          <span className={`text-[11px] ${MUTED}`}>{t("deadlineHint", "Máx. 90 dias")}</span>
+        </div>
+      )}
+
+      {/* Barra — o preenchimento brilha como a luz do fundo. */}
+      <div className="mt-4 h-3 w-full overflow-hidden border-2 border-[#5A1530] bg-[rgba(255,228,241,0.06)]">
+        <div
+          className="h-full transition-all"
+          style={{
+            width: `${progress}%`,
+            background: "linear-gradient(90deg, #9D174D, #EC4899)",
+            boxShadow: "0 0 14px rgba(236, 72, 153, 0.7)",
+          }}
+        />
+      </div>
+      <div className={`mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[12px] font-bold ${MUTED}`}>
+        <span>{progress}% {t("ofGoal", "da meta")}</span>
+        <span className="inline-flex items-center gap-1">
+          <Users className="h-3.5 w-3.5" /> {v.donors_count} {isBolsa ? t("supporters", "apoiadores") : t("donors", "doadores")}
+        </span>
+        {isBolsa ? (
+          <span className="inline-flex items-center gap-1">
+            <Repeat className="h-3.5 w-3.5" /> {isActive ? `${money(monthlyTotal)}/${t("perMonthShort", "mês")} · ${t("noDeadline", "sem prazo")}` : t("finished", "finalizada")}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" /> {isActive ? `${daysLeft} ${t("daysLeft", "dias restantes")}` : t("finished", "finalizada")}
+          </span>
         )}
       </div>
 
-      <div className="mx-auto max-w-3xl px-4">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-muted-foreground transition hover:text-foreground"
+      {isActive ? (
+        isBolsa ? (
+          mySponsorship ? (
+            <div className={`${INNER} mt-5 p-3`}>
+              <p className="inline-flex flex-wrap items-center gap-2 text-sm font-bold text-[#FFE4F1]">
+                <Award className="h-4 w-4 text-[#F472B6]" />
+                {t("youSponsor", "Você patrocina esta bolsa")} · {money(mySponsorship.monthly_cents)}/{t("perMonthShort", "mês")}
+                {mySponsorship.status === "past_due" && (
+                  <span className="border border-[#f87171] px-1.5 py-0.5 text-[10px] font-black uppercase text-[#f87171]">{t("pastDue", "Pagamento pendente")}</span>
+                )}
+              </p>
+              <button
+                type="button"
+                disabled={cancelingSponsor}
+                onClick={cancelMySponsorship}
+                className={`${BTN_GHOST} mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold`}
+              >
+                {cancelingSponsor ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />} {t("sponsorCancel", "Cancelar patrocínio")}
+              </button>
+            </div>
+          ) : !isOwner ? (
+            <button
+              type="button"
+              onClick={() => { setAmount(2500); setSponsorOpen(true) }}
+              className={`${BTN_PRIMARY} mt-5 inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-black uppercase tracking-wide`}
+            >
+              <Repeat className="h-4 w-4" /> {t("sponsorCta", "Patrocinar mensalmente")}
+              <span className="inline-flex items-center gap-1 border border-[#FFE4F1]/40 px-1.5 py-0.5 text-[10px]"><CreditCard className="h-3 w-3" /> {t("sponsorCardChip", "Cartão")}</span>
+            </button>
+          ) : null
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setAmount(2500); setDonateOpen(true) }}
+            className={`${BTN_PRIMARY} mt-5 inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-black uppercase tracking-wide`}
+          >
+            <HeartHandshake className="h-4 w-4" /> {t("donate", "Doar")}
+          </button>
+        )
+      ) : (
+        <p className={`mt-5 border-2 border-dashed border-[#5A1530] py-3 text-center text-sm font-bold ${MUTED}`}>
+          {isBolsa ? t("bolsaEndedHint", "Esta bolsa não está mais recebendo patrocínios.") : t("endedHint", "Esta vaquinha não está mais recebendo doações.")}
+        </p>
+      )}
+    </section>
+  )
+
+  return (
+    <VaquinhaShell>
+      {/* Top bar — a saída e, para o dono, o aviso de que a página é o editor. */}
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-3 pt-6 md:px-10">
+        <PageBackLink href={isOwner ? "/wallet/carteira" : "/feed"} />
+        {isOwner && isActive && (
+          <span className="inline-flex items-center gap-2 border-2 border-[#5A1530] bg-[rgba(48,9,26,0.78)] px-3 py-1.5">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#F472B6]" />
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#FFE4F1]">
+              {t("editHint", "Sua vaquinha está no ar · edite tudo aqui")}
+            </span>
+          </span>
+        )}
+      </div>
+
+      {/* HEADCARD — o banner de games: capa (ou a grade desenhada), chip do
+          tipo num canto, o percentual no outro e o título no pé. */}
+      <header className="relative mx-auto mt-4 max-w-5xl px-0 md:px-10">
+        <div
+          className="relative overflow-hidden border-2 border-[#5A1530]"
+          style={{ boxShadow: "0 0 30px rgba(236, 72, 153, 0.22), 8px 8px 0 0 rgba(90, 21, 48, 0.9)" }}
         >
-          <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
-        </button>
-
-        {/* Dica de edição (só dono) */}
-        {isOwner && isActive && (
-          <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
-            <HeartHandshake className="h-3.5 w-3.5" /> {t("editHint", "Sua vaquinha está no ar · edite tudo aqui")}
-          </p>
-        )}
-
-        {/* Tipo da campanha (só dono): Vaquinha ⇄ Bolsa Patrocínio */}
-        {isOwner && isActive && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{t("kindLabel", "Tipo")}</span>
-            <button
-              type="button"
-              disabled={switchingKind}
-              onClick={() => switchKind("vaquinha")}
-              className={`inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-3 py-1.5 text-[12px] font-bold transition disabled:opacity-60 ${!isBolsa ? "bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]" : "bg-[#1D1810] text-[#F1EDE2]/70"}`}
-            >
-              <HeartHandshake className="h-3.5 w-3.5" /> {t("kindVaquinha", "Vaquinha")}
-            </button>
-            <button
-              type="button"
-              disabled={switchingKind}
-              onClick={() => switchKind("bolsa")}
-              className={`inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-3 py-1.5 text-[12px] font-bold transition disabled:opacity-60 ${isBolsa ? "bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]" : "bg-[#1D1810] text-[#F1EDE2]/70"}`}
-            >
-              <Award className="h-3.5 w-3.5" /> {t("kindBolsa", "Bolsa Patrocínio")}
-            </button>
-            {switchingKind && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            <span className="basis-full text-[11px] text-muted-foreground">
-              {isBolsa
-                ? t("kindBolsaHint", "Bolsa: sem prazo — patrocinadores apoiam com um valor mensal recorrente.")
-                : t("kindVaquinhaHint", "Vaquinha: doações únicas com meta e prazo.")}
-            </span>
-          </div>
-        )}
-
-        {/* Cabeçalho + status */}
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-          {isOwner && isActive ? (
-            <input
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              onBlur={saveTitle}
-              maxLength={120}
-              placeholder={t("titlePlaceholder", "Nome da sua campanha")}
-              className="fl-display w-full flex-1 bg-transparent text-4xl leading-none text-foreground outline-none placeholder:text-muted-foreground/40 md:text-5xl"
+          <div className="relative h-48 bg-[#1E0712] md:h-64">
+            {v.cover_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={v.cover_url} alt={v.title} className="h-full w-full object-cover" />
+            ) : (
+              <>
+                <div
+                  aria-hidden
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: [
+                      "radial-gradient(70% 120% at 18% 0%, rgba(190, 24, 93, 0.45), transparent 65%)",
+                      "radial-gradient(60% 120% at 88% 10%, rgba(236, 72, 153, 0.22), transparent 68%)",
+                      "repeating-linear-gradient(to right, rgba(244, 114, 182, 0.10) 0 1px, transparent 1px 40px)",
+                      "repeating-linear-gradient(to bottom, rgba(244, 114, 182, 0.07) 0 1px, transparent 1px 40px)",
+                    ].join(","),
+                  }}
+                />
+                <HeartHandshake
+                  aria-hidden
+                  className="pointer-events-none absolute -right-6 -top-6 h-64 w-64 select-none md:h-80 md:w-80"
+                  strokeWidth={1}
+                  style={{ color: "rgba(244, 114, 182, 0.12)" }}
+                />
+              </>
+            )}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{ background: "linear-gradient(180deg, transparent 35%, rgba(20, 5, 12, 0.9) 100%)" }}
             />
-          ) : (
-            <h1 className="fl-display text-4xl leading-none text-foreground md:text-5xl">{v.title}</h1>
-          )}
-          {isBolsa && (
-            <span className="inline-flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-[#0B0B0D]">
-              <Award className="h-3.5 w-3.5" /> {t("kindBolsa", "Bolsa Patrocínio")}
+            <span className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 border-2 border-[#F472B6] bg-[#BE185D] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#FFE4F1]">
+              {isBolsa ? <Award className="h-3.5 w-3.5" /> : <HeartHandshake className="h-3.5 w-3.5" />} {kindLabel}
             </span>
-          )}
-          {!isActive && (
-            <span className="border-2 border-[#0B0B0D] bg-[#dc2626] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-[#F1EDE2]">
-              {t("ended", "Encerrada")}
+            <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#5A1530] bg-[rgba(20,5,12,0.85)] px-2">
+              <span className="fl-display text-xl leading-none text-[#F472B6]">{progress}%</span>
+              <span className="text-[8px] font-bold uppercase text-[#D99AB9]">{t("ofGoal", "da meta")}</span>
             </span>
-          )}
+            {!isActive && (
+              <span className="absolute left-4 top-14 z-20 border-2 border-[#0B0B0D] bg-[#dc2626] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#FFE4F1]">
+                {t("ended", "Encerrada")}
+              </span>
+            )}
+            {isOwner && (
+              <>
+                <input
+                  ref={coverRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) void uploadCover(f)
+                    e.target.value = ""
+                  }}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => coverRef.current?.click()}
+                  disabled={uploadingCover}
+                  className={`${BTN_GHOST} absolute bottom-3 right-3 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold`}
+                >
+                  {uploadingCover ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
+                  <span className="hidden sm:inline">{v.cover_url ? t("changeCover", "Trocar capa") : t("addCover", "Adicionar capa")}</span>
+                </button>
+              </>
+            )}
+            {/* O título vive no PÉ do banner, como a sala nos headcards de games. */}
+            <div className="absolute inset-x-4 bottom-3 z-10 pr-14 sm:pr-40">
+              {isOwner && isActive ? (
+                <input
+                  value={form.title}
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  onBlur={saveTitle}
+                  maxLength={120}
+                  placeholder={t("titlePlaceholder", "Nome da sua campanha")}
+                  className={`${TITLE} w-full bg-transparent text-3xl leading-none outline-none placeholder:text-[#FFE4F1]/35 md:text-5xl`}
+                />
+              ) : (
+                <h1 className={`${TITLE} text-3xl leading-none md:text-5xl`}>{v.title}</h1>
+              )}
+            </div>
+          </div>
         </div>
 
+        {/* Linha de controles do dono: tipo da campanha, salvando e encerrar. */}
         {isOwner && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-2 px-3 md:px-0">
+            {isActive && (
+              <>
+                <span className={LABEL}>{t("kindLabel", "Tipo")}</span>
+                <button
+                  type="button"
+                  disabled={switchingKind}
+                  onClick={() => switchKind("vaquinha")}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold ${!isBolsa ? BTN_PRIMARY : BTN_GHOST}`}
+                >
+                  <HeartHandshake className="h-3.5 w-3.5" /> {t("kindVaquinha", "Vaquinha")}
+                </button>
+                <button
+                  type="button"
+                  disabled={switchingKind}
+                  onClick={() => switchKind("bolsa")}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold ${isBolsa ? BTN_PRIMARY : BTN_GHOST}`}
+                >
+                  <Award className="h-3.5 w-3.5" /> {t("kindBolsa", "Bolsa Patrocínio")}
+                </button>
+                {switchingKind && <Loader2 className="h-4 w-4 animate-spin text-[#F472B6]" />}
+              </>
+            )}
             {savingField && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" /> {t("saving", "Salvando…")}
+              <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold ${MUTED}`}>
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F472B6]" /> {t("saving", "Salvando…")}
               </span>
             )}
             {isActive && (
               <button
                 type="button"
                 onClick={closeCampaign}
-                className="ml-auto inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[12px] font-bold text-[#F1EDE2] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+                className={`${BTN_GHOST} ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold`}
               >
                 <Square className="h-3.5 w-3.5" /> {t("close", "Encerrar")}
               </button>
             )}
+            {isActive && (
+              <span className={`basis-full text-[11px] ${MUTED}`}>
+                {isBolsa
+                  ? t("kindBolsaHint", "Bolsa: sem prazo — patrocinadores apoiam com um valor mensal recorrente.")
+                  : t("kindVaquinhaHint", "Vaquinha: doações únicas com meta e prazo.")}
+              </span>
+            )}
           </div>
         )}
+      </header>
 
-        {/* Painel do contador */}
-        <section className="mt-5 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D]">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B0B0D]/60">{t("raised", "Arrecadado")}</p>
-              <p className="fl-display text-4xl leading-none md:text-5xl">{money(v.raised_cents)}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B0B0D]/60">{t("goal", "Meta")}</p>
-              {isOwner && isActive ? (
-                <div className="flex items-center justify-end gap-1">
-                  <span className="fl-display text-2xl leading-none text-[#0B0B0D]/70">R$</span>
-                  <input
-                    inputMode="numeric"
-                    value={form.goalText}
-                    onChange={(e) => setForm((f) => ({ ...f, goalText: e.target.value.replace(/[^\d]/g, "") }))}
-                    onBlur={saveGoal}
-                    placeholder="1000"
-                    className="fl-display w-28 border-b-2 border-[#0B0B0D]/40 bg-transparent text-right text-2xl leading-none outline-none focus:border-[#0B0B0D]"
-                  />
-                </div>
+      {/* Duas colunas no computador: a história e as publicações à esquerda, o
+          contador e quem apoia à direita (o contador fica preso ao rolar). No
+          celular o `aside` vem primeiro no DOM, então o contador abre a página. */}
+      <div className="mx-auto mt-6 grid max-w-5xl gap-6 px-3 md:grid-cols-[minmax(0,1fr)_340px] md:px-10">
+        <aside className="space-y-6 md:sticky md:top-6 md:order-2 md:self-start">
+          {counter}
+
+          {/* Patrocinadores (bolsa) */}
+          {isBolsa && (
+            <section>
+              <h2 className={`${TITLE} mb-3 inline-flex items-center gap-2 text-xl`}>
+                <Award className="h-4 w-4 text-[#F472B6]" /> {t("sponsorsTitle", "Patrocinadores")}
+              </h2>
+              {sponsors.length === 0 ? (
+                <p className={`border-2 border-dashed border-[#5A1530] py-6 text-center text-sm ${MUTED}`}>
+                  {t("noSponsors", "Seja o primeiro a patrocinar.")}
+                </p>
               ) : (
-                <p className="fl-display text-2xl leading-none">{money(v.goal_cents)}</p>
+                <ul className="space-y-2">
+                  {sponsors.map((s) => (
+                    <li key={s.id_sponsorship} className={`${INNER} flex items-center justify-between gap-3 px-3 py-2.5`}>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-[#FFE4F1]">{s.sponsor_name}</p>
+                        {s.since && (
+                          <p className={`mt-0.5 text-xs ${MUTED}`}>
+                            {t("sponsorSince", "Apoia desde")} {new Date(s.since).toLocaleDateString(locale)}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`shrink-0 ${MONEY}`}>{money(s.monthly_cents)}/{t("perMonthShort", "mês")}</span>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </div>
-          </div>
-
-          {/* Editor de prazo (só dono; bolsa não tem prazo) */}
-          {isOwner && isActive && !isBolsa && (
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-2 border-dashed border-[#0B0B0D]/30 p-2.5">
-              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">
-                <Clock className="h-3.5 w-3.5" /> {t("deadlineLabel", "Prazo")}
-              </label>
-              <input
-                type="date"
-                min={minDeadline}
-                max={maxDeadline}
-                value={form.deadline}
-                onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
-                onBlur={saveDeadline}
-                className="border-2 border-[#0B0B0D] bg-white px-2 py-1 text-sm outline-none"
-              />
-              <span className="text-[11px] text-[#0B0B0D]/50">{t("deadlineHint", "Máx. 90 dias")}</span>
-            </div>
+            </section>
           )}
 
-          {/* Barra */}
-          <div className="mt-4 h-4 w-full overflow-hidden border-2 border-[#0B0B0D] bg-[#0B0B0D]/10">
-            <div className="h-full bg-[#16a34a] transition-all" style={{ width: `${progress}%` }} />
-          </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[12px] font-bold text-[#0B0B0D]/70">
-            <span>{progress}% {t("ofGoal", "da meta")}</span>
-            <span className="inline-flex items-center gap-1">
-              <Users className="h-3.5 w-3.5" /> {v.donors_count} {isBolsa ? t("supporters", "apoiadores") : t("donors", "doadores")}
-            </span>
-            {isBolsa ? (
-              <span className="inline-flex items-center gap-1">
-                <Repeat className="h-3.5 w-3.5" /> {isActive ? `${money(monthlyTotal)}/${t("perMonthShort", "mês")} · ${t("noDeadline", "sem prazo")}` : t("finished", "finalizada")}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" /> {isActive ? `${daysLeft} ${t("daysLeft", "dias restantes")}` : t("finished", "finalizada")}
-              </span>
-            )}
-          </div>
-
-          {isActive ? (
-            isBolsa ? (
-              mySponsorship ? (
-                <div className="mt-5 border-2 border-[#0B0B0D] bg-white p-3">
-                  <p className="inline-flex items-center gap-2 text-sm font-bold text-[#0B0B0D]">
-                    <Award className="h-4 w-4 text-[#16a34a]" />
-                    {t("youSponsor", "Você patrocina esta bolsa")} · {money(mySponsorship.monthly_cents)}/{t("perMonthShort", "mês")}
-                    {mySponsorship.status === "past_due" && (
-                      <span className="border border-[#dc2626] px-1.5 py-0.5 text-[10px] font-black uppercase text-[#dc2626]">{t("pastDue", "Pagamento pendente")}</span>
-                    )}
-                  </p>
-                  <button
-                    type="button"
-                    disabled={cancelingSponsor}
-                    onClick={cancelMySponsorship}
-                    className="mt-2 inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-white px-3 py-1.5 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#0B0B0D]/5 disabled:opacity-60"
-                  >
-                    {cancelingSponsor ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />} {t("sponsorCancel", "Cancelar patrocínio")}
-                  </button>
-                </div>
-              ) : !isOwner ? (
-                <button
-                  type="button"
-                  onClick={() => { setAmount(2500); setSponsorOpen(true) }}
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-sm font-black uppercase tracking-wide text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
-                >
-                  <Repeat className="h-4 w-4" /> {t("sponsorCta", "Patrocinar mensalmente")}
-                  <span className="inline-flex items-center gap-1 border border-[#0B0B0D] bg-white/60 px-1.5 py-0.5 text-[10px]"><CreditCard className="h-3 w-3" /> {t("sponsorCardChip", "Cartão")}</span>
-                </button>
-              ) : null
-            ) : (
-              <button
-                type="button"
-                onClick={() => { setAmount(2500); setDonateOpen(true) }}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-sm font-black uppercase tracking-wide text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
-              >
-                <HeartHandshake className="h-4 w-4" /> {t("donate", "Doar")}
-              </button>
-            )
-          ) : (
-            <p className="mt-5 border-2 border-dashed border-[#0B0B0D]/30 py-3 text-center text-sm font-bold text-[#0B0B0D]/60">
-              {isBolsa ? t("bolsaEndedHint", "Esta bolsa não está mais recebendo patrocínios.") : t("endedHint", "Esta vaquinha não está mais recebendo doações.")}
-            </p>
-          )}
-        </section>
-
-        {/* Bio */}
-        {(v.bio || (isOwner && isActive)) && (
-          <section className="mt-6">
-            <h2 className="fl-display mb-2 inline-flex items-center gap-2 text-xl text-foreground">
-              <Target className="h-4 w-4 text-primary" /> {t("about", "Sobre a campanha")}
-            </h2>
-            {isOwner && isActive ? (
-              <textarea
-                value={form.bio}
-                onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-                onBlur={saveBio}
-                maxLength={3000}
-                rows={5}
-                placeholder={t("bioPlaceholder", "Conte a história: para que serve a arrecadação, quem é ajudado, como o dinheiro será usado…")}
-                className="w-full resize-y border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm leading-relaxed text-[#0B0B0D] outline-none placeholder:text-[#0B0B0D]/40 focus:shadow-[3px_3px_0_0_#0B0B0D]"
-              />
-            ) : (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{v.bio}</p>
-            )}
-          </section>
-        )}
-
-        {/* Publicações da vaquinha (só aqui, não entram no feed) */}
-        <section className="mt-8">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="fl-display text-xl text-foreground">{t("updates", "Publicações")}</h2>
-            {isOwner && (
-              <div className="flex gap-1.5">
-                <ComposerBtn icon={Type} label={t("kindText", "Recado")} onClick={() => openComposer("text")} />
-                <ComposerBtn icon={ImageIcon} label={t("kindPost", "Foto")} onClick={() => openComposer("post")} />
-                <ComposerBtn icon={Clapperboard} label={t("kindCurto", "Curto")} onClick={() => openComposer("bee")} />
-              </div>
-            )}
-          </div>
-
-          {/* Composer inline */}
-          {isOwner && composerKind && (
-            <div className="mb-4 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D]">
-              <p className="fl-display text-lg">
-                {composerKind === "text" ? t("kindText", "Recado") : composerKind === "post" ? t("kindPost", "Foto") : t("kindCurto", "Curto")}
-              </p>
-              <textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                maxLength={3000}
-                rows={3}
-                placeholder={composerKind === "text" ? t("writePh", "Escreva uma atualização…") : t("captionPh", "Legenda (opcional)…")}
-                className="mt-2 w-full resize-none border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm outline-none"
-              />
-              {composerKind !== "text" && (
-                <div className="mt-2">
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept={composerKind === "bee" ? "video/*" : "image/*"}
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="inline-flex items-center gap-2 border-2 border-dashed border-[#0B0B0D]/40 bg-white px-3 py-2 text-sm font-bold transition hover:border-[#0B0B0D]"
-                  >
-                    <Plus className="h-4 w-4" /> {file ? file.name.slice(0, 28) : composerKind === "bee" ? t("pickVideo", "Escolher vídeo") : t("pickPhoto", "Escolher foto")}
-                  </button>
-                </div>
-              )}
-              <div className="mt-3 flex gap-2">
-                <button type="button" onClick={() => setComposerKind(null)} disabled={posting} className="flex-1 border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm font-bold transition hover:bg-[#0B0B0D]/5 disabled:opacity-50">
-                  {t("cancel", "Cancelar")}
-                </button>
-                <button type="button" onClick={submitPost} disabled={posting} className="flex-[2] inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-2 text-sm font-black uppercase tracking-wide text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60">
-                  {posting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {t("publish", "Publicar")}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {posts.length === 0 ? (
-            <p className="border-2 border-dashed border-foreground/15 py-8 text-center text-sm text-muted-foreground">
-              {t("noPosts", "Nenhuma publicação ainda.")}
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {posts.map((p) => (
-                <li key={p.id_post} className="relative border-2 border-[#0B0B0D] bg-[#1D1810] p-3 text-[#F1EDE2]">
-                  {isOwner && (
-                    <button type="button" onClick={() => deletePost(p.id_post)} aria-label={t("delete", "Apagar")} className="absolute right-2 top-2 border border-[#F1EDE2]/20 bg-black/40 p-1 text-[#F1EDE2]/60 transition hover:text-red-300">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                  {p.kind !== "text" && p.media_url && (
-                    /* Post aceita 4:5, 1:1 e 16:9 — a moldura não pode ser fixa.
-                       O Curto (bee) continua vertical; o post deitado se
-                       ajusta sozinho pela altura natural da mídia. */
-                    p.media_type === "video" ? (
-                      <video
-                        src={p.media_url}
-                        poster={p.thumbnail_url || undefined}
-                        controls
-                        className={`w-full bg-black object-contain ${p.kind === "bee" ? "aspect-[9/16]" : "max-h-[70vh]"}`}
-                      />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={p.media_url}
-                        alt={p.caption || ""}
-                        loading="lazy"
-                        className="max-h-[70vh] w-full bg-black object-contain"
-                      />
-                    )
-                  )}
-                  {p.caption && <p className="mt-2 whitespace-pre-wrap text-sm text-[#F1EDE2]/90">{p.caption}</p>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* Patrocinadores (bolsa) */}
-        {isBolsa && (
-          <section className="mt-8">
-            <h2 className="fl-display mb-3 inline-flex items-center gap-2 text-xl text-foreground">
-              <Award className="h-4 w-4 text-primary" /> {t("sponsorsTitle", "Patrocinadores")}
-            </h2>
-            {sponsors.length === 0 ? (
-              <p className="border-2 border-dashed border-foreground/15 py-8 text-center text-sm text-muted-foreground">
-                {t("noSponsors", "Seja o primeiro a patrocinar.")}
+          {/* Doadores */}
+          <section>
+            <h2 className={`${TITLE} mb-3 text-xl`}>{isBolsa ? t("recentPayments", "Apoios recentes") : t("recentDonors", "Doações recentes")}</h2>
+            {donors.length === 0 ? (
+              <p className={`border-2 border-dashed border-[#5A1530] py-6 text-center text-sm ${MUTED}`}>
+                {t("noDonors", "Seja o primeiro a doar.")}
               </p>
             ) : (
               <ul className="space-y-2">
-                {sponsors.map((s) => (
-                  <li key={s.id_sponsorship} className="flex items-center justify-between gap-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2.5">
+                {donors.map((d) => (
+                  <li key={d.id_donation} className={`${INNER} flex items-start justify-between gap-3 px-3 py-2.5`}>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-[#F1EDE2]">{s.sponsor_name}</p>
-                      {s.since && (
-                        <p className="mt-0.5 text-xs text-[#F1EDE2]/60">
-                          {t("sponsorSince", "Apoia desde")} {new Date(s.since).toLocaleDateString(locale)}
-                        </p>
-                      )}
+                      <p className="truncate text-sm font-bold text-[#FFE4F1]">{d.donor_name}</p>
+                      {d.message && <p className={`mt-0.5 line-clamp-2 text-xs ${MUTED}`}>{d.message}</p>}
                     </div>
-                    <span className="shrink-0 font-mono text-sm font-bold text-[#16a34a]">{money(s.monthly_cents)}/{t("perMonthShort", "mês")}</span>
+                    <span className={`shrink-0 ${MONEY}`}>{money(d.amount_cents)}</span>
                   </li>
                 ))}
               </ul>
             )}
           </section>
-        )}
+        </aside>
 
-        {/* Doadores */}
-        <section className="mt-8">
-          <h2 className="fl-display mb-3 text-xl text-foreground">{isBolsa ? t("recentPayments", "Apoios recentes") : t("recentDonors", "Doações recentes")}</h2>
-          {donors.length === 0 ? (
-            <p className="border-2 border-dashed border-foreground/15 py-8 text-center text-sm text-muted-foreground">
-              {t("noDonors", "Seja o primeiro a doar.")}
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {donors.map((d) => (
-                <li key={d.id_donation} className="flex items-start justify-between gap-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-[#F1EDE2]">{d.donor_name}</p>
-                    {d.message && <p className="mt-0.5 line-clamp-2 text-xs text-[#F1EDE2]/60">{d.message}</p>}
-                  </div>
-                  <span className="shrink-0 font-mono text-sm font-bold text-[#16a34a]">{money(d.amount_cents)}</span>
-                </li>
-              ))}
-            </ul>
+        <div className="min-w-0 space-y-8 md:order-1">
+          {/* Bio */}
+          {(v.bio || (isOwner && isActive)) && (
+            <section>
+              <h2 className={`${TITLE} mb-3 inline-flex items-center gap-2 text-xl`}>
+                <Target className="h-4 w-4 text-[#F472B6]" /> {t("about", "Sobre a campanha")}
+              </h2>
+              {isOwner && isActive ? (
+                <textarea
+                  value={form.bio}
+                  onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+                  onBlur={saveBio}
+                  maxLength={3000}
+                  rows={6}
+                  placeholder={t("bioPlaceholder", "Conte a história: para que serve a arrecadação, quem é ajudado, como o dinheiro será usado…")}
+                  className={`${INPUT} w-full resize-y px-3 py-2.5 text-sm leading-relaxed`}
+                />
+              ) : (
+                <div className={`${PANEL} p-4`}>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#FFE4F1]/85">{v.bio}</p>
+                </div>
+              )}
+            </section>
           )}
-        </section>
+
+          {/* Publicações da vaquinha (só aqui, não entram no feed) */}
+          <section>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className={`${TITLE} text-xl`}>{t("updates", "Publicações")}</h2>
+              {isOwner && (
+                <div className="flex gap-1.5">
+                  <ComposerBtn icon={Type} label={t("kindText", "Recado")} onClick={() => openComposer("text")} />
+                  <ComposerBtn icon={ImageIcon} label={t("kindPost", "Foto")} onClick={() => openComposer("post")} />
+                  <ComposerBtn icon={Clapperboard} label={t("kindCurto", "Curto")} onClick={() => openComposer("bee")} />
+                </div>
+              )}
+            </div>
+
+            {/* Composer inline */}
+            {isOwner && composerKind && (
+              <div className={`${PANEL} mb-4 p-4`}>
+                <p className={`${TITLE} text-lg`}>
+                  {composerKind === "text" ? t("kindText", "Recado") : composerKind === "post" ? t("kindPost", "Foto") : t("kindCurto", "Curto")}
+                </p>
+                <textarea
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  maxLength={3000}
+                  rows={3}
+                  placeholder={composerKind === "text" ? t("writePh", "Escreva uma atualização…") : t("captionPh", "Legenda (opcional)…")}
+                  className={`${INPUT} mt-2 w-full resize-none px-3 py-2 text-sm`}
+                />
+                {composerKind !== "text" && (
+                  <div className="mt-2">
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept={composerKind === "bee" ? "video/*" : "image/*"}
+                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      className="inline-flex items-center gap-2 border-2 border-dashed border-[#5A1530] bg-[rgba(20,5,12,0.6)] px-3 py-2 text-sm font-bold text-[#FFE4F1] transition hover:border-[#F472B6]"
+                    >
+                      <Plus className="h-4 w-4" /> {file ? file.name.slice(0, 28) : composerKind === "bee" ? t("pickVideo", "Escolher vídeo") : t("pickPhoto", "Escolher foto")}
+                    </button>
+                  </div>
+                )}
+                <div className="mt-3 flex gap-2">
+                  <button type="button" onClick={() => setComposerKind(null)} disabled={posting} className={`${BTN_GHOST} flex-1 px-3 py-2 text-sm font-bold`}>
+                    {t("cancel", "Cancelar")}
+                  </button>
+                  <button type="button" onClick={submitPost} disabled={posting} className={`${BTN_PRIMARY} flex-[2] inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-black uppercase tracking-wide`}>
+                    {posting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {t("publish", "Publicar")}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {posts.length === 0 ? (
+              <p className={`border-2 border-dashed border-[#5A1530] py-8 text-center text-sm ${MUTED}`}>
+                {t("noPosts", "Nenhuma publicação ainda.")}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {posts.map((p) => (
+                  <li key={p.id_post} className={`${PANEL} relative p-3`}>
+                    {isOwner && (
+                      <button type="button" onClick={() => deletePost(p.id_post)} aria-label={t("delete", "Apagar")} className="absolute right-2 top-2 z-10 border border-[#5A1530] bg-black/50 p-1 text-[#FFE4F1]/70 transition hover:text-red-300">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {p.kind !== "text" && p.media_url && (
+                      /* Post aceita 4:5, 1:1 e 16:9 — a moldura não pode ser fixa.
+                         O Curto (bee) continua vertical; o post deitado se
+                         ajusta sozinho pela altura natural da mídia. */
+                      p.media_type === "video" ? (
+                        <video
+                          src={p.media_url}
+                          poster={p.thumbnail_url || undefined}
+                          controls
+                          className={`w-full bg-black object-contain ${p.kind === "bee" ? "aspect-[9/16]" : "max-h-[70vh]"}`}
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={p.media_url}
+                          alt={p.caption || ""}
+                          loading="lazy"
+                          className="max-h-[70vh] w-full bg-black object-contain"
+                        />
+                      )
+                    )}
+                    {p.caption && <p className="mt-2 whitespace-pre-wrap text-sm text-[#FFE4F1]/90">{p.caption}</p>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       </div>
 
       {/* Modal de patrocínio mensal (bolsa) */}
       {sponsorOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={() => !submitting && setSponsorOpen(false)}>
-          <div
-            className="w-full max-w-md border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="fl-display text-2xl">{t("sponsorTo", "Patrocinar")} “{v.title}”</h3>
-            <p className="mt-1 text-xs text-[#0B0B0D]/60">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4" onClick={() => !submitting && setSponsorOpen(false)}>
+          <div className={`${MODAL} w-full max-w-md p-5`} onClick={(e) => e.stopPropagation()}>
+            <h3 className={`${TITLE} text-2xl`}>{t("sponsorTo", "Patrocinar")} “{v.title}”</h3>
+            <p className={`mt-1 text-xs ${MUTED}`}>
               {t("sponsorMonthlyNote", "Cobrança recorrente todo mês. Cancele quando quiser.")} · {t("minLabel", "Mínimo")}: {money(minCents)}
             </p>
             {/* O patrocínio é uma ASSINATURA no cartão (preapproval do gateway):
                 Pix não se repete sozinho, então dizer o meio antes do clique
                 evita a pessoa chegar no checkout procurando o Pix. */}
-            <div className="mt-3 flex items-start gap-2 border-2 border-[#0B0B0D] bg-white p-2.5 text-xs font-semibold">
-              <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#16a34a]" />
+            <div className={`${INNER} mt-3 flex items-start gap-2 p-2.5 text-xs font-semibold text-[#FFE4F1]`}>
+              <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#F472B6]" />
               <span>{t("sponsorCardNote", "Pagamento recorrente no cartão de crédito: o valor é cobrado automaticamente todo mês, até você cancelar.")}</span>
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {PRESETS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setAmount(p)}
-                  className={`border-2 border-[#0B0B0D] px-2 py-2 text-sm font-bold transition ${amount === p ? "bg-[#F2B705]" : "bg-white hover:bg-[#F2B705]/20"}`}
-                >
-                  {money(p)}/{t("perMonthShort", "mês")}
-                </button>
-              ))}
-            </div>
+            <AmountPresets amount={amount} onPick={setAmount} format={(p) => `${money(p)}/${t("perMonthShort", "mês")}`} />
 
-            <label className="mt-4 block text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">{t("otherMonthlyAmount", "Outro valor mensal (R$)")}</label>
+            <label className={`mt-4 block ${LABEL}`}>{t("otherMonthlyAmount", "Outro valor mensal (R$)")}</label>
             <input
               type="number"
               min={minCents / 100}
               step="1"
               value={(amount / 100).toString()}
               onChange={(e) => setAmount(Math.round(Number(e.target.value) * 100) || 0)}
-              className="mt-1 w-full border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm outline-none"
+              className={`${INPUT} mt-1 w-full px-3 py-2 text-sm`}
             />
 
-            <label className="mt-3 block text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">{t("yourName", "Seu nome (opcional)")}</label>
+            <label className={`mt-3 block ${LABEL}`}>{t("yourName", "Seu nome (opcional)")}</label>
             <input
               value={donorName}
               onChange={(e) => setDonorName(e.target.value)}
               maxLength={80}
               placeholder={t("anon", "Anônimo")}
-              className="mt-1 w-full border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm outline-none"
+              className={`${INPUT} mt-1 w-full px-3 py-2 text-sm`}
             />
 
             <div className="mt-5 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setSponsorOpen(false)}
-                disabled={submitting}
-                className="flex-1 border-2 border-[#0B0B0D] bg-white px-3 py-2.5 text-sm font-bold transition hover:bg-[#0B0B0D]/5 disabled:opacity-50"
-              >
+              <button type="button" onClick={() => setSponsorOpen(false)} disabled={submitting} className={`${BTN_GHOST} flex-1 px-3 py-2.5 text-sm font-bold`}>
                 {t("cancel", "Cancelar")}
               </button>
               <button
                 type="button"
                 onClick={submitSponsorship}
                 disabled={submitting}
-                className="flex-[2] inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#16a34a] px-3 py-2.5 text-sm font-black uppercase tracking-wide text-white shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60"
+                className={`${BTN_PRIMARY} flex-[2] inline-flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-black uppercase tracking-wide`}
               >
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
                 {t("sponsorPayCard", "Assinar no cartão")}
@@ -936,69 +975,50 @@ export function VaquinhaView({ slug }: { slug: string }) {
 
       {/* Modal de doação */}
       {donateOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={() => !submitting && setDonateOpen(false)}>
-          <div
-            className="w-full max-w-md border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="fl-display text-2xl">{t("donateTo", "Doar para")} “{v.title}”</h3>
-            <p className="mt-1 text-xs text-[#0B0B0D]/60">{t("minLabel", "Mínimo")}: {money(minCents)}</p>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4" onClick={() => !submitting && setDonateOpen(false)}>
+          <div className={`${MODAL} w-full max-w-md p-5`} onClick={(e) => e.stopPropagation()}>
+            <h3 className={`${TITLE} text-2xl`}>{t("donateTo", "Doar para")} “{v.title}”</h3>
+            <p className={`mt-1 text-xs ${MUTED}`}>{t("minLabel", "Mínimo")}: {money(minCents)}</p>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {PRESETS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setAmount(p)}
-                  className={`border-2 border-[#0B0B0D] px-2 py-2 text-sm font-bold transition ${amount === p ? "bg-[#F2B705]" : "bg-white hover:bg-[#F2B705]/20"}`}
-                >
-                  {money(p)}
-                </button>
-              ))}
-            </div>
+            <AmountPresets amount={amount} onPick={setAmount} format={money} />
 
-            <label className="mt-4 block text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">{t("otherAmount", "Outro valor (R$)")}</label>
+            <label className={`mt-4 block ${LABEL}`}>{t("otherAmount", "Outro valor (R$)")}</label>
             <input
               type="number"
               min={minCents / 100}
               step="1"
               value={(amount / 100).toString()}
               onChange={(e) => setAmount(Math.round(Number(e.target.value) * 100) || 0)}
-              className="mt-1 w-full border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm outline-none"
+              className={`${INPUT} mt-1 w-full px-3 py-2 text-sm`}
             />
 
-            <label className="mt-3 block text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">{t("yourName", "Seu nome (opcional)")}</label>
+            <label className={`mt-3 block ${LABEL}`}>{t("yourName", "Seu nome (opcional)")}</label>
             <input
               value={donorName}
               onChange={(e) => setDonorName(e.target.value)}
               maxLength={80}
               placeholder={t("anon", "Anônimo")}
-              className="mt-1 w-full border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm outline-none"
+              className={`${INPUT} mt-1 w-full px-3 py-2 text-sm`}
             />
 
-            <label className="mt-3 block text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">{t("messageLabel", "Mensagem (opcional)")}</label>
+            <label className={`mt-3 block ${LABEL}`}>{t("messageLabel", "Mensagem (opcional)")}</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               maxLength={280}
               rows={2}
-              className="mt-1 w-full resize-none border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm outline-none"
+              className={`${INPUT} mt-1 w-full resize-none px-3 py-2 text-sm`}
             />
 
             <div className="mt-5 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setDonateOpen(false)}
-                disabled={submitting}
-                className="flex-1 border-2 border-[#0B0B0D] bg-white px-3 py-2.5 text-sm font-bold transition hover:bg-[#0B0B0D]/5 disabled:opacity-50"
-              >
+              <button type="button" onClick={() => setDonateOpen(false)} disabled={submitting} className={`${BTN_GHOST} flex-1 px-3 py-2.5 text-sm font-bold`}>
                 {t("cancel", "Cancelar")}
               </button>
               <button
                 type="button"
                 onClick={submitDonation}
                 disabled={submitting}
-                className="flex-[2] inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#16a34a] px-3 py-2.5 text-sm font-black uppercase tracking-wide text-white shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60"
+                className={`${BTN_PRIMARY} flex-[2] inline-flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-black uppercase tracking-wide`}
               >
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <HeartHandshake className="h-4 w-4" />}
                 {t("continueToPay", "Ir para o pagamento")}
@@ -1007,17 +1027,45 @@ export function VaquinhaView({ slug }: { slug: string }) {
           </div>
         </div>
       )}
+    </VaquinhaShell>
+  )
+}
+
+/**
+ * A casca da página: canvas quase preto, o fundo `.fl-vaquinha-bg` (a grade de
+ * games em rosa escuro) e cantos retos. O fundo é o PRIMEIRO filho e sem
+ * z-index; o conteúdo entra com `relative z-10` por cima da camada `fixed`.
+ */
+function VaquinhaShell({ children }: { children: ReactNode }) {
+  return (
+    <main className="fl-root fl-sharp relative min-h-[100dvh] overflow-x-clip bg-[#14050C] pb-24 text-[#FFE4F1]">
+      <TechBackdrop variant="vaquinha" />
+      <div className="relative z-10">{children}</div>
     </main>
+  )
+}
+
+/** Os valores prontos, iguais nos dois modais (doação e patrocínio). */
+function AmountPresets({ amount, onPick, format }: { amount: number; onPick: (v: number) => void; format: (cents: number) => string }) {
+  return (
+    <div className="mt-4 grid grid-cols-3 gap-2">
+      {PRESETS.map((p) => (
+        <button
+          key={p}
+          type="button"
+          onClick={() => onPick(p)}
+          className={`px-2 py-2 text-sm font-bold ${amount === p ? BTN_PRIMARY : BTN_GHOST}`}
+        >
+          {format(p)}
+        </button>
+      ))}
+    </div>
   )
 }
 
 function ComposerBtn({ icon: Icon, label, onClick }: { icon: typeof Type; label: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-2 py-1 text-[11px] font-bold text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
-    >
+    <button type="button" onClick={onClick} className={`${BTN_GHOST} inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold`}>
       <Icon className="h-3.5 w-3.5" /> {label}
     </button>
   )

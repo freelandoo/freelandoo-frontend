@@ -825,7 +825,8 @@ body.camera-active { overflow: hidden; }
 .fl-pet-bg,
 .fl-car-bg,
 .fl-condo-bg,
-.fl-hood-bg {
+.fl-hood-bg,
+.fl-vaquinha-bg {
   transform: translateZ(0);
   will-change: transform;
   backface-visibility: hidden;
@@ -1574,4 +1575,25 @@ body.camera-active { overflow: hidden; }
 .fl-no-cv .fl-feed-card {
   content-visibility: visible;
   contain-intrinsic-size: auto;
+}
+
+/* ============================================================================
+   VAQUINHA — o fundo de GAMES em ROSA ESCURO (`.fl-vaquinha-bg`)
+   ----------------------------------------------------------------------------
+   Pedido do Alex (2026-10-05): "modernizar, deixar no estilo games, porém com
+   a cor rosa escuro". É o `.fl-games-bg` linha por linha com o roxo trocado
+   por vinho/rosa: quase preto, luz rosa, a grade fina e vinheta nas bordas.
+   As cores da tela moram em `vaquinha/[slug]/_components/vaquinha-ui.ts`.
+   ⚠️ NÃO ANIMAR (ver a nota da `.fl-finance-bg`). Está na lista de camadas
+   promovidas.
+   ============================================================================ */
+.fl-vaquinha-bg {
+  background-color: #14050C;
+  background-image:
+    radial-gradient(60% 45% at 22% 16%, rgba(190, 24, 93, 0.42), transparent 70%),
+    radial-gradient(50% 40% at 84% 28%, rgba(236, 72, 153, 0.20), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(157, 23, 77, 0.34), transparent 70%),
+    radial-gradient(130% 95% at 50% 50%, transparent 58%, rgba(8, 1, 4, 0.55) 100%),
+    repeating-linear-gradient(to right, rgba(244, 114, 182, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(244, 114, 182, 0.05) 0 1px, transparent 1px 64px);
 }
