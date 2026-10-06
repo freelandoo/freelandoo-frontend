@@ -162,15 +162,18 @@ export default async function RankingsLandingPage() {
               </p>
             </div>
 
-            {/* manchete */}
-            <div className="relative min-w-0">
+            {/* manchete — a fonte é medida pela COLUNA (cqw), não pela janela:
+                o rv-grunge pinta a tinta com background-clip e a máscara de
+                entrada recorta na caixa do h1, então letra que passa da
+                borda fica transparente (era o "S" sumindo atrás do cubo). */}
+            <div className="relative min-w-0 [container-type:inline-size]">
               <Crown
                 aria-hidden
                 className="absolute -left-3 -top-4 hidden h-7 w-7 -rotate-12 fill-[var(--rv-pink)] text-[var(--rv-pink)] lg:block"
               />
               <h1
                 data-rv="mask"
-                className="rv-wide rv-grunge whitespace-nowrap text-[13.2vw] leading-[0.82] lg:text-[clamp(5rem,8.3vw,10rem)]"
+                className="rv-wide rv-grunge whitespace-nowrap text-[12.6cqw] leading-[0.82]"
               >
                 Rankings
               </h1>
