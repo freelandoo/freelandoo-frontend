@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   ArrowLeft, ChevronRight, Eye, EyeOff, Heart, MessageCircle, Trophy, BarChart3, Vault, Zap,
-  Camera, ScrollText, Lock, Lightbulb, ShoppingBag, Loader2, Save, Trash2, Thermometer,
+  Camera, ScrollText, Lock, Lightbulb, Loader2, Save, Trash2, Thermometer,
   Plus, X, ImagePlus, Palette, Bookmark, Share2, Star, Crown, UserRound, Route, Quote,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
@@ -487,16 +487,20 @@ export function ParticipantDossie({ initial, slug, compra }: { initial: Particip
 
         {/* Conveniência Views */}
         {visible("show_store") && (
-          <section className={`mt-12 ${edit && !d.show_store ? "opacity-50" : ""}`}>
-            <div className="rv-block-head mb-6 flex flex-wrap items-center gap-3 pb-3">
-              <ShoppingBag className="h-7 w-7 text-[var(--rv-pink)]" />
-              <h2 className="rv-display text-4xl md:text-5xl">Conveniência <span className="text-[var(--rv-pink)]">Views</span></h2>
-              {edit && <span className="ml-auto"><SectionToggle on={d.show_store} onToggle={() => toggle("show_store")} /></span>}
-            </div>
-            {compra === "success" && <div className="mb-4 border-2 border-[var(--rv-up)] bg-[rgba(61,220,132,0.08)] px-4 py-3 text-sm font-bold text-[var(--rv-up)]">✓ Compra confirmada! Obrigado por apoiar {d.display_name}.</div>}
-            {compra === "cancel" && <div className="mb-4 border border-[var(--rv-line-strong)] px-4 py-3 text-sm font-bold text-[var(--rv-muted)]">Compra cancelada.</div>}
-            <ConvenienceStore products={initial.products} slug={slug} />
-          </section>
+          <div className={`mt-12 ${edit && !d.show_store ? "opacity-50" : ""}`}>
+            <ConvenienceStore
+              products={initial.products}
+              slug={slug}
+              participantName={d.display_name}
+              participantAvatar={d.avatar_url}
+              edit={edit}
+              adminSlot={edit ? <SectionToggle on={d.show_store} onToggle={() => toggle("show_store")} /> : null}
+              notice={(compra === "success" || compra === "cancel") ? <>
+                {compra === "success" && <div className="mb-4 border-2 border-[var(--rv-up)] bg-[rgba(61,220,132,0.08)] px-4 py-3 text-sm font-bold text-[var(--rv-up)]">✓ Compra confirmada! Obrigado por apoiar {d.display_name}.</div>}
+                {compra === "cancel" && <div className="mb-4 border border-[var(--rv-line-strong)] px-4 py-3 text-sm font-bold text-[var(--rv-muted)]">Compra cancelada.</div>}
+              </> : null}
+            />
+          </div>
         )}
       </div>
 
