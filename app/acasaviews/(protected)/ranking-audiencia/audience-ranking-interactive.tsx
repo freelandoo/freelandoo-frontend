@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
+import { createPortal } from "react-dom"
 import { ExternalLink, Heart, Instagram, Loader2, MessageSquare, Send, Trash2, X } from "lucide-react"
 import { getStoredUser, getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
@@ -399,12 +400,24 @@ export function AudienceRankingInteractive({ audience }: AudienceRankingInteract
         })}
       </RankingList>
 
-      {selected && selectedSummary && (
+      {selected && selectedSummary && createPortal(
+        // POR PORTAL NO BODY, e não no fluxo: o invólucro da página tem a
+        // animação `rv-page-in` (filter/transform) e `isolation: isolate` —
+        // preso ali, o `fixed` passava a medir a PÁGINA inteira (o sidebar
+        // nascia com a altura do documento e só o meio vazio dele ficava na
+        // tela) e o cabeçalho da seção pintava por cima. Fora dele perde-se o
+        // escopo `.casa-rank`, que é reaplicado aqui (fundo transparente: a
+        // classe pinta papel).
         <div
-          className="fixed inset-0 z-[120]"
+          className="casa-rank fixed inset-0 z-[120]"
           // a pele escura fala só preto, branco e rosa: o ciano e o dourado
           // do tema claro viram rosa e branco DENTRO do modal
-          style={{ ["--cyan" as string]: "#ff007a", ["--gold" as string]: "#f4f4f0", ["--magenta" as string]: "#ff007a" }}
+          style={{
+            backgroundColor: "transparent",
+            ["--cyan" as string]: "#ff007a",
+            ["--gold" as string]: "#f4f4f0",
+            ["--magenta" as string]: "#ff007a",
+          }}
         >
           <button
             type="button"
@@ -593,7 +606,8 @@ export function AudienceRankingInteractive({ audience }: AudienceRankingInteract
               </div>
             </form>
           </aside>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )
