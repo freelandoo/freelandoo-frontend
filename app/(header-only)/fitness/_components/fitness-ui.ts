@@ -99,6 +99,8 @@ export const PAY_STATUS: Record<string, [string, string]> = {
   paid: ["payPaid", "Pago"],
   pending: ["payPending", "Pendente"],
   overdue: ["payOverdue", "Atrasado"],
+  canceled: ["payCanceled", "Cancelado"],
+  refunded: ["payRefunded", "Estornado"],
 }
 
 export function todayIso(): string {

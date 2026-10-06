@@ -5869,6 +5869,8 @@
     "payPaid": "Paid",
     "payPending": "Pending",
     "payOverdue": "Overdue",
+    "payCanceled": "Canceled",
+    "payRefunded": "Refunded",
     "goalsTitle": "Goals",
     "goalKcalLabel": "Daily calorie goal (kcal)",
     "goalWaterLabel": "Daily water goal (ml)",

@@ -132,7 +132,7 @@ export default function FitnessAcademyPage() {
                               {(p.amount_cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })}
                             </span>
                             <span
-                              className={`border-2 border-[#0B0B0D] px-1.5 py-0.5 text-[10px] font-extrabold uppercase ${p.status === "paid" ? "bg-[#4fc95a] text-[#0B0B0D]" : p.status === "overdue" ? "bg-[#ff5a44] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
+                              className={`border-2 border-[#0B0B0D] px-1.5 py-0.5 text-[10px] font-extrabold uppercase ${p.status === "paid" ? "bg-[#4fc95a] text-[#0B0B0D]" : p.status === "overdue" ? "bg-[#ff5a44] text-[#0B0B0D]" : p.status === "refunded" ? "bg-[#f2b134] text-[#0B0B0D]" : p.status === "canceled" ? "bg-[#1D1810] text-[#9A938A] line-through" : "bg-[#1D1810] text-[#9A938A]"}`}
                             >
                               {t(meta[0], meta[1])}
                             </span>

@@ -5849,6 +5849,8 @@
     "payPaid": "Pagado",
     "payPending": "Pendiente",
     "payOverdue": "Atrasado",
+    "payCanceled": "Cancelado",
+    "payRefunded": "Reembolsado",
     "goalsTitle": "Metas",
     "goalKcalLabel": "Meta diaria de calorías (kcal)",
     "goalWaterLabel": "Meta diaria de agua (ml)",
