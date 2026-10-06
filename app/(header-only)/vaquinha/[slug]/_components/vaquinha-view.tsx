@@ -8,6 +8,7 @@ import { HeartHandshake, Loader2, Users, Clock, Target, Square, ImageIcon, Clapp
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { PageBackLink } from "@/components/tabloide/PageBackLink"
+import { InviteShareButton } from "@/components/community/invite-share-button"
 import { TechBackdrop } from "@/components/platform/tech-backdrop"
 import { BTN_GHOST, BTN_PRIMARY, INNER, INPUT, LABEL, MODAL, MONEY, MUTED, PANEL, TITLE } from "./vaquinha-ui"
 
@@ -582,6 +583,20 @@ export function VaquinhaView({ slug }: { slug: string }) {
       {/* Top bar — a saída e, para o dono, o aviso de que a página é o editor. */}
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-3 pt-6 md:px-10">
         <PageBackLink href={isOwner ? "/wallet/carteira" : "/feed"} />
+        <div className="flex flex-wrap items-center gap-2">
+        {/* COMPARTILHAR — para todo mundo (quem divulga a vaquinha é quem
+            apoia). A miniatura do link é a CAPA do banner: ela é o og:image
+            da página (page.tsx). */}
+        <InviteShareButton
+          url={`/vaquinha/${encodeURIComponent(v.slug)}`}
+          name={v.title}
+          accent="#BE185D"
+          size="sm"
+          align="right"
+          ctaLabel={t("shareCta", "Compartilhar vaquinha")}
+          menuTitle={t("shareMenuTitle", "Compartilhar {name}")}
+          message={isBolsa ? t("shareMessageBolsa", "Apoie a bolsa {name} na Freelandoo!") : t("shareMessage", "Ajude a vaquinha {name} na Freelandoo!")}
+        />
         {isOwner && isActive && (
           <span className="inline-flex items-center gap-2 border-2 border-[#5A1530] bg-[rgba(48,9,26,0.78)] px-3 py-1.5">
             <span className="h-2 w-2 animate-pulse rounded-full bg-[#BE185D]" />
@@ -590,6 +605,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
             </span>
           </span>
         )}
+        </div>
       </div>
 
       {/* HEADCARD — o banner de games: capa (ou a grade desenhada), chip do
@@ -822,7 +838,14 @@ export function VaquinhaView({ slug }: { slug: string }) {
           {/* Publicações da vaquinha (só aqui, não entram no feed) */}
           <section>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className={`${TITLE} text-xl`}>{t("updates", "Publicações")}</h2>
+              <div>
+                <h2 className={`${TITLE} text-xl`}>{t("updates", "Publicações")}</h2>
+                {isOwner && (
+                  <p className={`mt-1 text-[11px] ${MUTED}`}>
+                    {t("updatesFeedHint", "O que você publica aqui também vai para o feed geral, com um botão que leva a esta vaquinha.")}
+                  </p>
+                )}
+              </div>
               {isOwner && (
                 <div className="flex gap-1.5">
                   <ComposerBtn icon={Type} label={t("kindText", "Recado")} onClick={() => openComposer("text")} />

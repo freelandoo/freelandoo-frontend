@@ -1883,7 +1883,8 @@
     "curtoLabel": "Short",
     "hotPostAria": "Trending: getting more than today's average",
     "hotPostLeaderAria": "Today's engagement leader",
-    "hotPostRisingAria": "Trending: close to today's leader"
+    "hotPostRisingAria": "Trending: close to today's leader",
+    "accessVaquinha": "See fundraiser"
   },
   "Stories": {
     "createStoryLabel": "Post",
@@ -5520,7 +5521,12 @@
     "kindCurto": "Short",
     "sponsorCardNote": "Recurring credit card payment: the amount is charged automatically every month until you cancel.",
     "sponsorPayCard": "Subscribe with card",
-    "sponsorCardChip": "Card"
+    "sponsorCardChip": "Card",
+    "shareCta": "Share fundraiser",
+    "shareMenuTitle": "Share {name}",
+    "shareMessage": "Help the fundraiser {name} on Freelandoo!",
+    "shareMessageBolsa": "Support the sponsorship {name} on Freelandoo!",
+    "updatesFeedHint": "What you post here also goes to the main feed, with a button that leads to this fundraiser."
   },
   "ApiConnections": {
     "title": "Connect support tool",

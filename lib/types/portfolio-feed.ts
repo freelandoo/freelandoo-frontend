@@ -94,6 +94,9 @@ export interface FeedPost {
   /** Academia à qual o post está ligado (mig 181). Alimenta o chip "Acessar
    *  academia" no header do card do /feed. Null se não pertence. */
   academy?: FeedAcademy | null
+  /** Vaquinha de onde o post saiu (mig 272). Alimenta o botão "Ver vaquinha"
+   *  no header do card. Null se o post não nasceu numa vaquinha. */
+  vaquinha?: { slug: string; title: string | null } | null
   /** Recado: nota só-texto exclusiva do feed de uma comunidade (mig 162). */
   is_recado?: boolean
   recado_id?: number

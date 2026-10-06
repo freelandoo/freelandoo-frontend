@@ -58,6 +58,9 @@ export function InviteShareButton({
   locked = false,
   lockedLabel,
   onLockedClick,
+  message,
+  menuTitle,
+  ctaLabel,
 }: {
   /** Link da página a convidar (caminho relativo ou URL absoluta). */
   url: string
@@ -79,6 +82,14 @@ export function InviteShareButton({
   locked?: boolean
   lockedLabel?: string
   onLockedClick?: () => void
+  /**
+   * Textos próprios da superfície (a vaquinha não convida "para fazer parte",
+   * pede apoio). Sem eles vale o convite de comunidade. `{name}` é trocado
+   * pelo nome, como no padrão.
+   */
+  message?: string
+  menuTitle?: string
+  ctaLabel?: string
 }) {
   const t = useTranslations("Invite")
   const [open, setOpen] = useState(false)
@@ -109,7 +120,7 @@ export function InviteShareButton({
   }, [open])
 
   // O provider de i18n não interpola: o `{name}` entra por `.replace`.
-  const inviteText = t("message", "Vem fazer parte de {name} na Freelandoo!").replace("{name}", name)
+  const inviteText = (message ?? t("message", "Vem fazer parte de {name} na Freelandoo!")).replace("{name}", name)
 
   const notifyCopy = (ok: boolean) => {
     if (ok) toast.success(t("copied", "Link copiado!"))
@@ -136,7 +147,7 @@ export function InviteShareButton({
     notifyCopy(await copyText(absoluteUrl(url)))
   }
 
-  const label = locked && lockedLabel ? lockedLabel : t("cta", "Convidar pessoas")
+  const label = locked && lockedLabel ? lockedLabel : ctaLabel ?? t("cta", "Convidar pessoas")
   const isLg = size === "lg"
   const buttonClass = `grid shrink-0 place-items-center border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8] ${
     isLg ? "h-14 w-14" : "h-9 w-9"
@@ -190,7 +201,7 @@ export function InviteShareButton({
           style={{ boxShadow: "4px 4px 0 0 #0B0B0D" }}
         >
           <p className="mb-2 px-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">
-            {t("menuTitle", "Convidar para {name}").replace("{name}", name)}
+            {(menuTitle ?? t("menuTitle", "Convidar para {name}")).replace("{name}", name)}
           </p>
           {items.map((it) => {
             const Icon = it.icon

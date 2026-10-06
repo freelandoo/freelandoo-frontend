@@ -1883,7 +1883,8 @@
     "curtoLabel": "Corto",
     "hotPostAria": "En alza: recibiendo más que el promedio del día",
     "hotPostLeaderAria": "Líder del día en interacción",
-    "hotPostRisingAria": "En alza: cerca del líder del día"
+    "hotPostRisingAria": "En alza: cerca del líder del día",
+    "accessVaquinha": "Ver vaquita"
   },
   "Stories": {
     "createStoryLabel": "Publicar",
@@ -5500,7 +5501,12 @@
     "kindCurto": "Corto",
     "sponsorCardNote": "Pago recurrente con tarjeta de crédito: el monto se cobra automáticamente cada mes hasta que canceles.",
     "sponsorPayCard": "Suscribirse con tarjeta",
-    "sponsorCardChip": "Tarjeta"
+    "sponsorCardChip": "Tarjeta",
+    "shareCta": "Compartir vaquita",
+    "shareMenuTitle": "Compartir {name}",
+    "shareMessage": "¡Ayuda a la vaquita {name} en Freelandoo!",
+    "shareMessageBolsa": "¡Apoya la beca {name} en Freelandoo!",
+    "updatesFeedHint": "Lo que publicas aquí también va al feed general, con un botón que lleva a esta vaquita."
   },
   "ApiConnections": {
     "title": "Conectar atención",

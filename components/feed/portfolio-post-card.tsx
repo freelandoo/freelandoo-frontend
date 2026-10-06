@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { memo, useEffect, useRef, useState } from "react"
-import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX, Users, Trash2, ArrowUpRight, Dumbbell } from "lucide-react"
+import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX, Users, Trash2, ArrowUpRight, Dumbbell, HeartHandshake } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { TrackAudio } from "@/components/media/track-audio"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -486,6 +486,35 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
     </Link>
   ) : null
 
+  // Vaquinha de onde o post saiu (mig 272) — botão "Ver vaquinha", no rosa
+  // escuro da identidade da vaquinha (é a porta dela, e a cor é a da página).
+  const showVaquinhaLink = !!post.vaquinha?.slug
+  const vaquinhaHref = showVaquinhaLink ? `/vaquinha/${encodeURIComponent(post.vaquinha!.slug)}` : ""
+  const vaquinhaChipFeed = showVaquinhaLink ? (
+    <Link
+      href={vaquinhaHref}
+      onClick={(e) => e.stopPropagation()}
+      title={t("accessVaquinha", "Ver vaquinha")}
+      className="inline-flex shrink-0 items-center gap-1 border-2 border-[#BE185D] bg-[#831843] px-2 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#FFE4F1] transition hover:-translate-y-0.5"
+    >
+      <HeartHandshake className="h-3 w-3" />
+      <span className="hidden sm:inline">{t("accessVaquinha", "Ver vaquinha")}</span>
+      <ArrowUpRight className="h-3 w-3" />
+    </Link>
+  ) : null
+  const vaquinhaChipPaged = showVaquinhaLink ? (
+    <Link
+      href={vaquinhaHref}
+      onClick={(e) => e.stopPropagation()}
+      title={t("accessVaquinha", "Ver vaquinha")}
+      className="inline-flex shrink-0 items-center gap-1 px-2 py-1 text-[10px] font-semibold text-[#FFE4F1]"
+      style={{ background: "#831843", border: "1px solid #BE185D" }}
+    >
+      <HeartHandshake className="h-3 w-3" />
+      <span className="hidden sm:inline">{t("accessVaquinha", "Ver vaquinha")}</span>
+    </Link>
+  ) : null
+
   // ── Recado: nota só-texto exclusiva do feed da comunidade (sem mídia). ──────
   if (post.is_recado) {
     return (
@@ -533,6 +562,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
           </span>
           {communityChipFeed}
           {academyChipFeed}
+          {vaquinhaChipFeed}
         </div>
 
         {/* Corpo: texto do recado */}
@@ -651,6 +681,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
           )}
           {communityChipPaged}
           {academyChipPaged}
+          {vaquinhaChipPaged}
         </div>
       ) : (
         <div className="flex w-full min-w-0 shrink-0 items-center gap-2.5 border-b border-[#F5F1E8]/10 bg-[#15120E] px-3 py-2.5">
@@ -723,6 +754,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
           )}
           {communityChipFeed}
           {academyChipFeed}
+          {vaquinhaChipFeed}
         </div>
       )}
 
