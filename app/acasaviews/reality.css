@@ -36,6 +36,9 @@
   --rv-cyan: #2ee6f2; /* pontual: estado técnico */
   --rv-up: #3ddc84;
   --rv-down: #ff4d4d;
+  /* tinta sobre o painel branco dos cards da Conveniência */
+  --rv-up-ink: #0e7a40; /* verde de estoque sobre branco (~5,2:1) */
+  --rv-pink-deep: #d1005f; /* rosa como tinta sobre branco (~4,8:1) */
   /* tipografia */
   --rv-font-display: var(--font-anton), "Impact", ui-sans-serif, sans-serif;
   --rv-font-body: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
@@ -723,4 +726,53 @@
 }
 .rv-rail-bare::-webkit-scrollbar {
   display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CONVENIÊNCIA VIEWS (2026-10-05) — vitrine na composição da referência:
+   card com a foto num quadro escuro de listras e o painel branco embaixo.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* quadro escuro da foto: listras rosa diagonais pintadas uma vez */
+.rv-shelf-art {
+  background:
+    radial-gradient(120% 80% at 50% 60%, rgba(255, 0, 122, 0.28), transparent 62%),
+    repeating-linear-gradient(-55deg, rgba(255, 0, 122, 0.22) 0 8px, transparent 8px 26px),
+    var(--rv-surface-2);
+}
+/* painel branco do card (a tinta por cima é escura) */
+.rv-paper {
+  background: var(--rv-white);
+  color: var(--rv-bg);
+}
+/* canto superior direito cortado do card de produto */
+.rv-cut-tr {
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+}
+/* botão contornado sobre o papel */
+.rv-paper-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1.5px solid var(--rv-bg);
+  background: transparent;
+  color: var(--rv-bg);
+  font-family: var(--rv-font-type);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition:
+    background var(--rv-dur) var(--rv-ease),
+    color var(--rv-dur) var(--rv-ease);
+}
+.rv-paper-btn:hover:not(:disabled) {
+  background: var(--rv-pink);
+  border-color: var(--rv-pink);
+  color: var(--rv-white);
+}
+.rv-paper-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
