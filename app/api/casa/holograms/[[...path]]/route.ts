@@ -18,3 +18,9 @@ export async function POST(request: Request, ctx: Ctx) {
   const { path } = await ctx.params
   return forwardToBackend(request, "POST", backendPath(path))
 }
+
+// Só admin (o backend confere): tira o holograma da própria vitrine.
+export async function DELETE(request: Request, ctx: Ctx) {
+  const { path } = await ctx.params
+  return forwardToBackend(request, "DELETE", backendPath(path))
+}

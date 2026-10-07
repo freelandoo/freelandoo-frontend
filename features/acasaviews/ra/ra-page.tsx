@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
-import { ArrowRight, Box, Crown, Lock, ScanLine, X } from "lucide-react"
+import { ArrowRight, Box, Crown, Lock, ScanLine, Trash2, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { realityFontVars } from "@/features/acasaviews/components/reality/fonts"
 import { COLISEU, HOLOGRAMS, VAULT_SLOTS, hologramByKey, type Hologram } from "./catalog"
@@ -250,6 +250,15 @@ export function RaPage() {
     }
   }
 
+  /** Só admin: tira da própria vitrine para colecionar de novo (o slot volta a "Coletar na RA"). */
+  async function removeFromVault(item: Hologram) {
+    await api(`/${encodeURIComponent(item.key)}`, { method: "DELETE" })
+    setViewing(null)
+    setFresh(null)
+    await load()
+    setNotice(`${item.name} saiu da sua vitrine. Inicie a RA para colecionar de novo.`)
+  }
+
   function closeBuy() {
     if (checkoutBusy) return
     setBuying(null)
@@ -467,7 +476,14 @@ export function RaPage() {
 
       {mounted && viewing &&
         createPortal(
-          <Pedestal item={viewing} own={ownedOf(viewing.key)} reduced={reduced} onClose={closeViewer} pause={pauseTurntable} />,
+          <Pedestal
+            item={viewing}
+            own={ownedOf(viewing.key)}
+            reduced={reduced}
+            onClose={closeViewer}
+            pause={pauseTurntable}
+            onRemove={isAdmin ? removeFromVault : undefined}
+          />,
           document.body,
         )}
 
@@ -638,15 +654,38 @@ function Pedestal({
   reduced,
   onClose,
   pause,
+  onRemove,
 }: {
   item: Hologram
   own: Owned | null
   reduced: boolean
   onClose: () => void
   pause: (v: boolean) => void
+  /** só chega para administrador */
+  onRemove?: (item: Hologram) => Promise<void>
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [failed, setFailed] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [removeError, setRemoveError] = useState<string | null>(null)
+
+  async function remove() {
+    if (!onRemove) return
+    if (!confirming) {
+      setConfirming(true)
+      return
+    }
+    setRemoving(true)
+    setRemoveError(null)
+    try {
+      await onRemove(item)
+    } catch (e) {
+      setRemoveError(e instanceof Error ? e.message : "Não foi possível remover.")
+      setRemoving(false)
+      setConfirming(false)
+    }
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -693,11 +732,34 @@ function Pedestal({
             >
               ‹ Vitrine
             </button>
-            {own && (
-              <span className="rv-type text-[10px] uppercase tracking-[0.16em] text-[var(--rv-muted)]">
-                Coletado em {fmtDate(own.collected_at)}
-              </span>
-            )}
+            <div className="flex flex-col items-end gap-2">
+              {own && (
+                <span className="rv-type text-[10px] uppercase tracking-[0.16em] text-[var(--rv-muted)]">
+                  Coletado em {fmtDate(own.collected_at)}
+                </span>
+              )}
+              {onRemove && (
+                <button
+                  type="button"
+                  onClick={remove}
+                  disabled={removing}
+                  onBlur={() => !removing && setConfirming(false)}
+                  className={`rv-type inline-flex items-center gap-2 border px-3 py-2 text-[11px] uppercase tracking-[0.16em] disabled:opacity-50 ${
+                    confirming
+                      ? "border-[var(--rv-pink)] bg-[var(--rv-pink)] text-[var(--rv-white)]"
+                      : "border-[var(--rv-line-strong)] bg-[rgba(5,5,5,0.6)] hover:border-[var(--rv-pink)]"
+                  }`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {removing ? "Removendo…" : confirming ? "Confirmar remoção" : "Remover da vitrine · admin"}
+                </button>
+              )}
+              {removeError && (
+                <span role="alert" className="rv-type text-[10px] uppercase text-[var(--rv-pink-ink)]">
+                  {removeError}
+                </span>
+              )}
+            </div>
           </header>
           <div className="absolute bottom-0 left-0 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] md:px-8 md:pb-10">
             <p className="rv-type text-[11px] uppercase tracking-[0.2em] text-[var(--rv-pink-ink)]">
