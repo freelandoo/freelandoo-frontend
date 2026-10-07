@@ -34,6 +34,7 @@ type Phase =
 const brl = (cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).replace(/\//g, ".")
+const priceLabel = (cents: number) => (cents === 0 ? "Grátis" : brl(cents))
 const pad2 = (n: number) => String(n).padStart(2, "0")
 
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -49,7 +50,7 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 const STAGE_TEXT = {
-  hologram: "Pagamento confirmado. Materializando…",
+  hologram: "Confirmado. Materializando…",
   solidifying: "A linha sobe: ele ganha as cores.",
   solid: "Ele é seu.",
   taking: "Guardando na sua vitrine…",
@@ -59,6 +60,7 @@ export function RaPage() {
   const [reduced, setReduced] = useState(false)
   const [owned, setOwned] = useState<Owned[] | null>(null)
   const [prices, setPrices] = useState<Priced[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [arBusy, setArBusy] = useState(false)
   const [arError, setArError] = useState<string | null>(null)
@@ -85,8 +87,9 @@ export function RaPage() {
 
   const load = useCallback(async () => {
     try {
-      const data = await api<{ holograms: Priced[]; owned: Owned[] }>("")
+      const data = await api<{ holograms: Priced[]; owned: Owned[]; is_admin?: boolean }>("")
       setPrices(data.holograms)
+      setIsAdmin(!!data.is_admin)
       setOwned(data.owned)
       setLoadError(null)
       return data.owned
@@ -258,10 +261,19 @@ export function RaPage() {
     setCheckoutBusy(true)
     setCheckoutError(null)
     try {
-      const r = await api<{ checkout_url: string }>("/checkout", {
+      const item = buying
+      const r = await api<{ checkout_url?: string; free?: boolean }>("/checkout", {
         method: "POST",
-        body: JSON.stringify({ key: buying.key }),
+        body: JSON.stringify({ key: item.key }),
       })
+      if (r.free) {
+        // admin: o backend já gravou a compra paga a R$0 — materializa direto
+        arRef.current?.close()
+        setBuying(null)
+        setCheckoutBusy(false)
+        setPhase({ kind: "materializing", item })
+        return
+      }
       if (!r.checkout_url) throw new Error("Não foi possível abrir o pagamento.")
       arRef.current?.close()
       window.location.href = r.checkout_url
@@ -324,8 +336,9 @@ export function RaPage() {
               </a>
             </div>
             <p className="rv-type mt-4 max-w-[60ch] text-[11px] uppercase leading-relaxed text-[var(--rv-faint)]">
-              Usa a câmera do celular; nenhuma imagem é gravada. Cada holograma custa {brl(priceOf(art.key) ?? 199)}, pago
-              uma vez pelo Mercado Pago.
+              Usa a câmera do celular; nenhuma imagem é gravada. {isAdmin
+                ? "Administrador: você coleciona de graça."
+                : `Cada holograma custa ${brl(priceOf(art.key) ?? 199)}, pago uma vez pelo Mercado Pago.`}
             </p>
             {arError && (
               <p role="alert" className="rv-type mt-3 text-[12px] uppercase text-[var(--rv-pink-ink)]">
@@ -418,7 +431,7 @@ export function RaPage() {
                           className="rv-duo absolute inset-0 h-full w-full object-contain p-4 opacity-50 transition-opacity group-hover:opacity-80"
                         />
                         <span className="rv-duo-tint" />
-                        <SlotMeta num={num} name="Disponível agora" cta={`Coletar na RA · ${brl(priceOf(item.key) ?? 199)} ›`} />
+                        <SlotMeta num={num} name="Disponível agora" cta={`Coletar na RA · ${priceLabel(priceOf(item.key) ?? 199)} ›`} />
                       </SlotBody>
                     </button>
                   ) : (
@@ -589,12 +602,14 @@ function BuyModal({
             </p>
             <p className="rv-wide mt-1 text-2xl leading-[0.95]">{item.name}</p>
             <p className="rv-type mt-1 text-[11px] uppercase text-[var(--rv-muted)]">{item.title}</p>
-            <p className="rv-display mt-4 text-5xl text-[var(--rv-pink)]">{price != null ? brl(price) : "—"}</p>
+            <p className="rv-display mt-4 text-5xl text-[var(--rv-pink)]">{price != null ? priceLabel(price) : "—"}</p>
           </div>
         </div>
         <div className="space-y-3 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+20px)]">
           <p className="rv-type text-[11px] uppercase leading-relaxed text-[var(--rv-muted)]">
-            Pagamento único pelo Mercado Pago. Confirmado o pagamento, o holograma ganha as cores e entra na sua vitrine.
+            {price === 0
+              ? "Cortesia de administrador: sem pagamento. O holograma ganha as cores e entra na sua vitrine."
+              : "Pagamento único pelo Mercado Pago. Confirmado o pagamento, o holograma ganha as cores e entra na sua vitrine."}
           </p>
           {error && (
             <p role="alert" className="rv-type text-[12px] uppercase text-[var(--rv-pink-ink)]">
@@ -602,7 +617,13 @@ function BuyModal({
             </p>
           )}
           <button type="button" onClick={onPay} disabled={busy || price == null} className="rv-btn w-full py-4 text-[13px]">
-            {busy ? "Abrindo o Mercado Pago…" : `Pagar ${price != null ? brl(price) : ""} com Mercado Pago`}
+            {price === 0
+              ? busy
+                ? "Colecionando…"
+                : "Colecionar grátis"
+              : busy
+                ? "Abrindo o Mercado Pago…"
+                : `Pagar ${price != null ? brl(price) : ""} com Mercado Pago`}
             {!busy && <ArrowRight className="h-4 w-4" />}
           </button>
         </div>
