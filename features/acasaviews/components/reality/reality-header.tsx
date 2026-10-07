@@ -25,6 +25,8 @@ const NAV = [
   },
   { href: "/acasaviews/ranking-geral", label: "Temporada", match: ["/acasaviews/ranking-geral"] },
   { href: "/acasaviews/conveniencia", label: "Conveniência", match: ["/acasaviews/conveniencia"] },
+  // Hologramas colecionáveis (câmera + vitrine).
+  { href: "/acasaviews/ra", label: "RA", match: ["/acasaviews/ra"] },
 ]
 
 export function RealityHeader() {

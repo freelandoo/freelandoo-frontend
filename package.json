@@ -61,8 +61,12 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.9",
+    "three": "^0.186.1",
     "tw-animate-css": "1.3.3",
     "typescript": "^5",
     "vaul": "^1.1.2"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0"
   }
 }

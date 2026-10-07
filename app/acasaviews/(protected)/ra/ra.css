@@ -1,0 +1,282 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   CASA VIEWS — ABA RA (câmera, holograma, vitrine e pedestal do Coliseu)
+   --------------------------------------------------------------------------
+   A sessão de RA (`.cvra`) é montada direto no <body> (fora do `.rv`, que
+   isola o empilhamento): por isso os tokens da pele são repetidos aqui. O
+   modal de pagamento e o pedestal saem por portal com `.rv-tokens`.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.cvra,
+.cvx {
+  --cv-pink: #ff007a;
+  --cv-pink-hot: #ff2b91;
+  --cv-white: #f4f4f0;
+  --cv-bg: #050505;
+  --cv-type: var(--font-rv-type), var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html.cvra-open,
+html.cvra-open body {
+  overflow: hidden;
+}
+
+/* ── sessão de RA ──────────────────────────────────────────────────────── */
+.cvra {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: #000;
+  color: var(--cv-white);
+  font-family: var(--cv-type);
+}
+.cvra-video,
+.cvra-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.cvra-video {
+  object-fit: cover;
+  z-index: 0;
+}
+.cvra-video[hidden] {
+  display: none;
+}
+.cvra-canvas {
+  z-index: 1;
+}
+/* prévia sem câmera: o fundo é o grid escuro da casa */
+.cvra[data-mode="preview"] {
+  background:
+    radial-gradient(ellipse at 50% 70%, rgba(255, 0, 122, 0.22), transparent 60%),
+    linear-gradient(rgba(244, 244, 240, 0.045) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, rgba(244, 244, 240, 0.045) 1px, transparent 1px) 0 0 / 48px 48px,
+    #050505;
+}
+.cvra-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  /* recebe os gestos (girar/ampliar) em toda a tela */
+  touch-action: none;
+}
+.cvra-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 0;
+}
+.cvra-chip {
+  padding: 7px 11px;
+  border: 1px solid var(--cv-pink);
+  background: rgba(5, 5, 5, 0.65);
+  color: var(--cv-pink-hot);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  box-shadow: 0 0 18px -4px rgba(255, 0, 122, 0.8);
+}
+.cvra-icon {
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(244, 244, 240, 0.32);
+  background: rgba(5, 5, 5, 0.6);
+  color: var(--cv-white);
+  font-size: 18px;
+  cursor: pointer;
+}
+/* mira enquanto procura a figura (proporção da arte, retrato) */
+.cvra-frame {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: min(62vw, 340px);
+  aspect-ratio: 1122 / 1402;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: cvra-breathe 1.8s ease-in-out infinite;
+}
+.cvra-frame[hidden] {
+  display: none;
+}
+.cvra-frame i {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 0 solid var(--cv-pink);
+  filter: drop-shadow(0 0 6px rgba(255, 0, 122, 0.9));
+}
+.cvra-frame i:nth-child(1) {
+  left: 0;
+  top: 0;
+  border-width: 3px 0 0 3px;
+}
+.cvra-frame i:nth-child(2) {
+  right: 0;
+  top: 0;
+  border-width: 3px 3px 0 0;
+}
+.cvra-frame i:nth-child(3) {
+  left: 0;
+  bottom: 0;
+  border-width: 0 0 3px 3px;
+}
+.cvra-frame i:nth-child(4) {
+  right: 0;
+  bottom: 0;
+  border-width: 0 3px 3px 0;
+}
+@keyframes cvra-breathe {
+  50% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+.cvra-hint {
+  margin: auto auto 16px;
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  border: 1px solid rgba(244, 244, 240, 0.18);
+  background: rgba(5, 5, 5, 0.7);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.cvra-hint:empty {
+  opacity: 0;
+}
+.cvra-collect {
+  align-self: center;
+  min-width: 240px;
+  margin: 0 0 calc(env(safe-area-inset-bottom, 0px) + 28px);
+  padding: 16px 30px;
+  border: 2px solid var(--cv-pink);
+  background: var(--cv-pink);
+  color: var(--cv-white);
+  font-family: var(--cv-type);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  box-shadow:
+    5px 5px 0 0 var(--cv-white),
+    0 0 34px -2px rgba(255, 0, 122, 0.9);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  cursor: pointer;
+  animation: cvra-call 1.6s ease-in-out infinite;
+}
+.cvra-collect[hidden] {
+  display: none;
+}
+.cvra-collect.is-owned {
+  background: var(--cv-white);
+  border-color: var(--cv-white);
+  color: var(--cv-bg);
+  animation: none;
+}
+@keyframes cvra-call {
+  50% {
+    transform: scale(1.05);
+  }
+}
+.cvra-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 16px;
+  background: rgba(5, 5, 5, 0.9);
+  color: rgba(244, 244, 240, 0.6);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+.cvra-loading[hidden] {
+  display: none;
+}
+.cvra-loading i {
+  width: 56px;
+  height: 56px;
+  border: 2px solid rgba(255, 0, 122, 0.25);
+  border-top-color: var(--cv-pink);
+  border-radius: 50%;
+  animation: cvra-spin 0.9s linear infinite;
+}
+@keyframes cvra-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── pedestal do Coliseu e materialização (portal) ────────────────────── */
+.cvx-stage {
+  position: fixed;
+  inset: 0;
+  background-color: #050505;
+  background-position: center;
+  background-size: cover;
+}
+.cvx-stage canvas,
+.cvra-mat-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+/* leitura do texto sobre o neon */
+.cvx-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 5, 0.75), transparent 22%),
+    linear-gradient(0deg, rgba(5, 5, 5, 0.9), transparent 38%);
+}
+.cvx-stage > .cvx-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.cvx-stage > .cvx-ui > * {
+  pointer-events: auto;
+}
+
+/* ── vitrine ───────────────────────────────────────────────────────────── */
+.cv-slot-3d {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.cv-slot.is-3d .cv-slot-3d {
+  opacity: 1;
+}
+.cv-slot.is-3d .cv-slot-art {
+  opacity: 0;
+}
+.cv-slot.is-new {
+  animation: cv-new 1.2s var(--rv-ease) 2;
+}
+@keyframes cv-new {
+  50% {
+    box-shadow: 0 0 0 2px var(--rv-pink), 0 0 44px 4px rgba(255, 0, 122, 0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cvra-frame,
+  .cvra-collect,
+  .cv-slot.is-new {
+    animation: none;
+  }
+}

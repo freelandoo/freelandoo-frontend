@@ -66,6 +66,8 @@ const HIDDEN_ON_PATHS = [
   // no rodapé CENTRAL — exatamente onde a build Godot desenha o botão de sair
   // da partida (ver `jogo/scripts/ui/toque.gd`).
   "/monsters",
+  // RA da Casa Views: câmera em tela cheia, e o botão COLECIONAR mora no rodapé.
+  "/acasaviews/ra",
 ]
 
 /**
