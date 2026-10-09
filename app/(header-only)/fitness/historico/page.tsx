@@ -5,30 +5,35 @@
 // A sala do pill TURQUESA (pedido do Alex, 2026-09-10: "peso, altura,
 // histórico (...) você vai salvar e vai ter um histórico").
 //
-// ⚠️ NADA É "SALVO" AQUI DE NOVO: o diário e a água já são gravados por DATA
-// conforme a pessoa registra no Meu dia (UPSERT). Esta sala só LÊ o que
-// ficou (`GET /fitness/history`, dias com algum registro, mais recentes
-// primeiro) e abre qualquer um deles na raiz pelo deep-link `?dia=`.
+// ⚠️ DESDE 2026-10-09 O "MEU DIA" MORA AQUI, NO TOPO (calorias, água,
+// refeições e metas — `FitnessView`), porque a raiz do /fitness virou o feed
+// da plataforma (mig 276). Peso, medições e os dias gravados vêm embaixo,
+// como `children` do dia.
+//
+// ⚠️ NADA É "SALVO" DE NOVO: o diário e a água são gravados por DATA conforme
+// a pessoa registra (UPSERT). A lista só LÊ o que ficou (`GET
+// /fitness/history`) e abre qualquer dia NO PRÓPRIO TOPO, por `openDay` —
+// nunca por `?dia=` para a mesma rota, que não relê nada.
 
 import { useCallback, useEffect, useState } from "react"
-import Link from "next/link"
 import { toast } from "sonner"
 import { AlertCircle, Droplets, Flame, History, Loader2, Ruler } from "lucide-react"
 import { getToken } from "@/lib/auth"
-import { useMeProfile } from "@/hooks/use-me-profile"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
-import { FitnessShell } from "../_components/fitness-shell"
-import { FitnessHeadcard } from "../_components/fitness-headcard"
-import { BTN_DARK, BTN_GOLD, CYAN, GOLD, H_SECTION, INPUT, PANEL, PILL, StateBox } from "../_components/fitness-ui"
+import { FitnessView } from "../_components/fitness-view"
+import { BTN_DARK, BTN_GOLD, CYAN, GOLD, H_SECTION, INPUT, PANEL, PILL, StateBox, todayIso } from "../_components/fitness-ui"
 
 type HistoryDay = { date: string; kcal: number; protein_g: number; carbs_g: number; fat_g: number; water_ml: number }
 type HistoryPayload = { days: HistoryDay[]; goals: { daily_kcal_goal: number; water_goal_ml: number } }
 type Measurement = { id_measurement: string; weight_kg: string | number | null; height_cm: string | number | null; measured_at: string }
 
 export default function FitnessHistoryPage() {
+  return <FitnessView>{(openDay) => <HistoryContent openDay={openDay} />}</FitnessView>
+}
+
+function HistoryContent({ openDay }: { openDay: (date: string) => void }) {
   const t = useTranslations("Fitness")
   const locale = useLocale()
-  const { perfil } = useMeProfile()
 
   const [history, setHistory] = useState<HistoryPayload | null>(null)
   const [measurements, setMeasurements] = useState<Measurement[] | null>(null)
@@ -103,21 +108,8 @@ export default function FitnessHistoryPage() {
   const num = (v: string | number | null) => (v === null || v === undefined || v === "" ? null : Number(v))
 
   return (
-    <FitnessShell>
-      <FitnessHeadcard
-        perfil={perfil}
-        title={t("historyTitle", "Histórico")}
-        backHref="/fitness"
-        active="history"
-        action={
-          <button onClick={() => setMeasureOpen(true)} className={`${BTN_GOLD} px-3 py-2 text-[11px]`}>
-            <Ruler className="h-4 w-4" />
-            {t("measureCta", "Registrar")}
-          </button>
-        }
-      />
-
-      <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
+    <>
+      <section className="mx-auto mt-10 w-full max-w-5xl px-0 md:px-10">
         {error ? (
           <StateBox
             icon={<AlertCircle className="h-6 w-6" />}
@@ -181,19 +173,19 @@ export default function FitnessHistoryPage() {
                 <History className="h-4 w-4 text-[#FB923C]" /> {t("historyDaysTitle", "Os seus dias")}
               </h2>
               <p className="mt-1 px-3 text-[11px] text-[#9A938A] md:px-0">
-                {t("historyDaysHint", "Os dias em que você registrou comida ou água. Toque num dia para abri-lo.")}
+                {t("historyDaysHint", "Os dias em que você registrou comida ou água. Toque num dia para abri-lo lá em cima.")}
               </p>
               {history.days.length === 0 ? (
                 <div className="mt-3">
                   <StateBox
                     icon={<History className="h-6 w-6" />}
                     title={t("historyDaysEmptyTitle", "Nada gravado ainda.")}
-                    desc={t("historyDaysEmpty", "O que você come e bebe no Meu dia fica guardado aqui, um dia por linha.")}
+                    desc={t("historyDaysEmpty", "O que você come e bebe fica guardado aqui, um dia por linha.")}
                     accent={PILL.history.bg}
                     action={
-                      <Link href="/fitness" className={`${BTN_GOLD} px-5 py-2.5 text-xs`}>
+                      <button type="button" onClick={() => openDay(todayIso())} className={`${BTN_GOLD} px-5 py-2.5 text-xs`}>
                         {t("historyGoToday", "Registrar o dia de hoje")}
-                      </Link>
+                      </button>
                     }
                   />
                 </div>
@@ -204,9 +196,10 @@ export default function FitnessHistoryPage() {
                     const waterPct = Math.min(100, Math.round((d.water_ml / history.goals.water_goal_ml) * 100))
                     return (
                       <li key={d.date} className="border-b-2 border-[#0B0B0D] last:border-b-0">
-                        <Link
-                          href={`/fitness?dia=${d.date}`}
-                          className="flex items-center gap-3 px-3 py-3 transition hover:bg-[#1D1810]"
+                        <button
+                          type="button"
+                          onClick={() => openDay(d.date)}
+                          className="flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-[#1D1810]"
                           aria-label={t("historyOpenDay", "Abrir o dia {date}").replace("{date}", fmtDay(d.date))}
                         >
                           <span className="w-24 shrink-0 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8]">
@@ -235,7 +228,7 @@ export default function FitnessHistoryPage() {
                           <span className="hidden shrink-0 text-[10px] text-[#9A938A] sm:block">
                             P {d.protein_g}g · C {d.carbs_g}g · G {d.fat_g}g
                           </span>
-                        </Link>
+                        </button>
                       </li>
                     )
                   })}
@@ -275,6 +268,6 @@ export default function FitnessHistoryPage() {
           </div>
         </div>
       )}
-    </FitnessShell>
+    </>
   )
 }

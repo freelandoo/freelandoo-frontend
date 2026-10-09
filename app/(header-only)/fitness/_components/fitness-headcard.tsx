@@ -1,7 +1,8 @@
 "use client"
 
 // O HEADCARD DA PLATAFORMA FITNESS — peça ÚNICA das telas de `/fitness` (a
-// raiz, que é o "Meu dia", e as salas dos quatro botões retráteis).
+// raiz, que é o FEED da plataforma desde a mig 276, e as salas dos quatro
+// botões retráteis — o "Meu dia" mora na do Histórico).
 //
 // ⚠️ É A SILHUETA DO GAMES/FINANCEIRO com a pele laranja (pedido do Alex,
 // 2026-09-10: "o card da foto precisa ficar retangular na mesma proporção dos
@@ -30,7 +31,7 @@ import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { BANNER_LAYERS, EMBER_GLOW, HEADCARD_SHADOW, PILL, initialsOf } from "./fitness-ui"
 
-/** Qual das salas está no ar (a raiz, que é o Meu dia, não acende nenhuma). */
+/** Qual das salas está no ar (a raiz, que é o feed, não acende nenhuma). */
 export type FitnessPillKey = "academy" | "workout" | "history" | "indicators"
 
 /** As rotas das quatro salas, num lugar só. */
@@ -54,7 +55,7 @@ export function FitnessHeadcard({
   /** Para onde o "Voltar" leva: /account na raiz, /fitness nas salas. */
   backHref?: string
   active?: FitnessPillKey | null
-  /** O canto de ação do headcard (na raiz, o botão de Metas). */
+  /** O canto de ação do headcard (na raiz, o "+" de publicar; no Histórico, Metas). */
   action?: ReactNode
 }) {
   const tr = useTranslations("Fitness")
@@ -90,7 +91,7 @@ export function FitnessHeadcard({
         key: "history",
         icon: History,
         label: tr("historyPill", "Histórico"),
-        ariaLabel: tr("historyPillAria", "Peso, altura e o histórico dos seus dias"),
+        ariaLabel: tr("historyPillAria", "Calorias, água, refeições, peso e o histórico dos seus dias"),
         bg: PILL.history.bg,
         bgHover: PILL.history.hover,
         href: FITNESS_ROUTES.history,

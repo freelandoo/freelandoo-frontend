@@ -1,19 +1,25 @@
 "use client"
 
-// /fitness — A RAIZ DA PLATAFORMA FITNESS: o "Meu dia".
+// O "MEU DIA" — calorias e água lado a lado, o diário de refeições embaixo e
+// as metas. Mora no TOPO de `/fitness/historico` (o pill turquesa).
 //
-// ⚠️ REDESENHADA NOS MOLDES DO GAMES E DO FINANCEIRO (pedido do Alex,
-// 2026-09-10): a casca, o headcard com a foto 2/3 e os quatro pills atrás
-// dela, seções de ponta a ponta no celular. O que morava aqui e saiu para as
-// salas dos pills: academia (laranja), treino (rosa), peso/altura/histórico
-// (turquesa) e indicadores (turquesa). O que FICA é o dia: calorias e água
-// lado a lado, e o diário de refeições embaixo.
+// ⚠️ ELE NÃO É MAIS A RAIZ (pedido do Alex, 2026-10-09: "transformar a
+// comunidade fitness em uma comunidade igual a todas, a primeira tela é o feed
+// geral (...) e essa parte de calorias e água vai para dentro do pill
+// histórico"). A raiz do /fitness é o feed da plataforma (mig 276); o dia
+// virou a primeira coisa da sala do Histórico, e o que já estava lá (peso,
+// altura e os dias gravados) entra embaixo por `children`.
 //
-// A data navega (< >) e aceita deep-link `?dia=YYYY-MM-DD` — é assim que o
-// Histórico abre um dia antigo. Lido do `window` num efeito, nunca por
-// `useSearchParams` (obriga Suspense) nem no initializer (hidratação).
+// ⚠️ `children` É UMA FUNÇÃO QUE RECEBE `openDay`: a lista dos dias gravados
+// mora embaixo, NA MESMA ROTA. Um `<Link href="?dia=...">` para a própria
+// rota não relê nada (a página não remonta e o deep-link é lido uma vez) — o
+// botão do dia PEDE a troca por callback, e o dia sobe para a tela.
+//
+// A data navega (< >) e aceita deep-link `?dia=YYYY-MM-DD` vindo de OUTRA
+// rota. Lido do `window` num efeito, nunca por `useSearchParams` (obriga
+// Suspense) nem no initializer (hidratação).
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 import {
   AlertCircle,
@@ -98,7 +104,12 @@ const MEALS: Array<{ id: FoodLog["meal"]; key: string; fallback: string }> = [
   { id: "jantar", key: "mealJantar", fallback: "Jantar" },
 ]
 
-export function FitnessView() {
+export function FitnessView({
+  children,
+}: {
+  /** O que vem embaixo do dia (a lista de medições e de dias do Histórico). */
+  children?: (openDay: (date: string) => void) => ReactNode
+} = {}) {
   const t = useTranslations("Fitness")
   const locale = useLocale()
   const { perfil } = useMeProfile()
@@ -143,6 +154,14 @@ export function FitnessView() {
     if (typeof window === "undefined") return
     const dia = new URLSearchParams(window.location.search).get("dia")
     if (dia && /^\d{4}-\d{2}-\d{2}$/.test(dia)) setDate(dia)
+  }, [])
+
+  const topRef = useRef<HTMLElement | null>(null)
+  // Abrir um dia da lista de baixo: troca a data e sobe a tela até ela.
+  const openDay = useCallback((d: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return
+    setDate(d)
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }, [])
 
   const load = useCallback(async () => {
@@ -482,8 +501,9 @@ export function FitnessView() {
 
       <FitnessHeadcard
         perfil={perfil}
-        title={t("platformTitle", "Fitness")}
-        backHref="/account"
+        title={t("historyTitle", "Histórico")}
+        backHref="/fitness"
+        active="history"
         action={
           <button onClick={() => setGoalsOpen(true)} className={`${BTN_DARK} px-3 py-2 text-[11px]`} aria-label={t("goalsTitle", "Metas")}>
             <Settings2 className="h-4 w-4" />
@@ -492,7 +512,7 @@ export function FitnessView() {
         }
       />
 
-      <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
+      <section ref={topRef} className="mx-auto mt-8 w-full max-w-5xl scroll-mt-20 px-0 md:px-10">
         {/* A DATA: o dia que a tela mostra. */}
         <div className={`${BAR_SOLID} flex items-center justify-between gap-2 px-2 py-2`}>
           <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_ON_BAR} p-2`} aria-label={t("prevDay", "Dia anterior")}>
@@ -626,6 +646,8 @@ export function FitnessView() {
           </>
         )}
       </section>
+
+      {children?.(openDay)}
 
       {/* Modal busca de alimento */}
       {searchOpen && (
