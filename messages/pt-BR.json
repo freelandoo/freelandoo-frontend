@@ -107,7 +107,10 @@
     "termsGateSubmitting": "Salvando...",
     "termsGateAccept": "Concordar e continuar",
     "termsOfUse": "Termos de Uso",
-    "privacyPolicy": "Política de Privacidade"
+    "privacyPolicy": "Política de Privacidade",
+    "showPassword": "Mostrar senha",
+    "hidePassword": "Ocultar senha",
+    "emailPlaceholder": "seu@email.com"
   },
   "Account": {
     "title": "Minha conta",

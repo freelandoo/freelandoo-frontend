@@ -5,6 +5,7 @@ import { getVisitorToken } from "@/lib/visitor-token"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -15,6 +16,9 @@ import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-t
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  // O olho fica SEMPRE ali (pedido do Alex, 2026-10-09): ver o que foi
+  // digitado evita errar a senha às cegas, sobretudo no celular.
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
@@ -163,7 +167,7 @@ export default function LoginPage() {
               id="email"
               type="email"
               className="fl-input"
-              placeholder="seu@email.com"
+              placeholder={t("emailPlaceholder", "seu@email.com")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -177,15 +181,27 @@ export default function LoginPage() {
                 {t("forgotPassword", "Esqueceu a senha?")}
               </Link>
             </div>
-            <input
-              id="password"
-              type="password"
-              className="fl-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                className="fl-input pr-12"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? t("hidePassword", "Ocultar senha") : t("showPassword", "Mostrar senha")}
+                aria-pressed={showPassword}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#0B0B0D]/70 transition hover:text-[#0B0B0D]"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
 
           <button
