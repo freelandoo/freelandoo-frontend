@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { BadgeCheck, Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, Radio, Fingerprint, MessageCircle, type LucideIcon } from "lucide-react"
+import { BadgeCheck, Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, Radio, Fingerprint, MessageCircle, Calculator, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -39,6 +39,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
 
   // Repasses — dinheiro de terceiros que a plataforma segura no holdback e paga via PIX
   { section: "Repasses", hint: "admin-store-payouts", href: "/administracao/repasses", icon: HandCoins, title: "Repasses", body: "Saldos a pagar via PIX: Loja, Agendamentos e Afiliados num só extrato, com filtro por origem e status." },
+  { section: "Repasses", href: "/administracao/contabilidade", icon: Calculator, title: "Contabilidade", body: "Guias vencidas e a vencer (com multa e juros estimados), livro caixa, cálculo do DAS com Fator R e calendário de obrigações das empresas que os admins acompanham.", badge: "novo" },
 
   // Configurações de monetização — definem preço/taxa (não são extrato financeiro)
   { section: "Configurações de monetização", hint: "admin-anuidade", href: "/administracao/monetizacao", icon: Wallet, title: "Configurações de monetização", body: "Ativação, Agendamento, Poléns, Premium, Manifestação e Cupons — preços, taxas e descontos em abas." },
