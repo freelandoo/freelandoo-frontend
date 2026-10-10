@@ -349,15 +349,19 @@ export default function MonstersPage() {
       />
       )}
 
+      {/* NO CENTRO DE BAIXO, e nao no canto de cima: o canto superior esquerdo
+          e onde o jogo poe o logotipo (placa de kanji + EVO BRAZIL) em todas
+          as telas, e o botao ficava por cima dele. O centro de baixo e o unico
+          lugar que nenhuma tela do jogo ocupa. */}
       <Link
         href="/account"
-        className="absolute left-3 top-3 border border-white/15 bg-black/55 px-3 py-1.5 text-xs font-medium tracking-wide text-white/80 backdrop-blur transition hover:border-white/35 hover:text-white"
+        className="absolute bottom-3 left-1/2 -translate-x-1/2 border border-white/15 bg-black/55 px-3 py-1.5 text-xs font-medium tracking-wide text-white/80 backdrop-blur transition hover:border-white/35 hover:text-white"
       >
         ← {t("back", "Voltar")}
       </Link>
 
       {!entregue && !retrato && (!dedo || entrou) && (
-        <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/55 px-3 py-1 text-[11px] text-white/50 backdrop-blur">
+        <span className="pointer-events-none absolute bottom-14 left-1/2 -translate-x-1/2 bg-black/55 px-3 py-1 text-[11px] text-white/50 backdrop-blur">
           {t("loading", "carregando o mundo…")}
         </span>
       )}
