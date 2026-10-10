@@ -3725,7 +3725,7 @@
     "itemActions": "Ações do item",
     "priceOnRequest": "Sob orçamento",
     "game": "Jogo",
-    "gameAria": "Abrir o jogo Freelandoo Monsters"
+    "gameAria": "Abrir o jogo EVO Brazil"
   },
   "Bees": {
     "chat": "Chat",
@@ -6860,7 +6860,7 @@
     "back": "Voltar",
     "noBuildTitle": "A build ainda não foi publicada",
     "noBuildText": "Falta apontar NEXT_PUBLIC_MONSTERS_JOGO_URL para o endereço da build Godot.",
-    "frameTitle": "Freelandoo Monsters",
+    "frameTitle": "EVO Brazil",
     "loading": "carregando o mundo…",
     "landscapeTitle": "O jogo é deitado",
     "landscapeText": "Vire o celular na horizontal. Em pé, a arena fica do tamanho de um selo e os botões viram grãos de arroz.",

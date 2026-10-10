@@ -339,7 +339,7 @@ export function ProfileHeadCard({
     roles?: { desc_role?: string }[]
   } | null>(null)
 
-  // O JOGO (Freelandoo Monsters) é só do administrador por enquanto: a página
+  // O JOGO (EVO Brazil) é só do administrador por enquanto: a página
   // `/monsters` recusa quem não é admin, e o botão espelha isso. O papel sai do
   // usuário que o login guarda (`is_admin` + roles), o mesmo de UserDropside.
   const isPlatformAdmin = !!(
@@ -944,8 +944,8 @@ export function ProfileHeadCard({
                 {isPlatformAdmin && (
                   <Link
                     href="/monsters"
-                    aria-label={t("gameAria", "Abrir o jogo Freelandoo Monsters")}
-                    title={t("gameAria", "Abrir o jogo Freelandoo Monsters")}
+                    aria-label={t("gameAria", "Abrir o jogo EVO Brazil")}
+                    title={t("gameAria", "Abrir o jogo EVO Brazil")}
                     className="inline-flex h-9 shrink-0 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 text-[11px] font-bold uppercase tracking-wider text-[#F2B705] shadow-[2px_2px_0_0_#F2B705] transition hover:bg-[#1D1810] active:scale-[0.96]"
                   >
                     <Gamepad2 className="h-3.5 w-3.5" />

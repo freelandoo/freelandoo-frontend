@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Freelandoo Monsters — o jogo, embutido.
+ * EVO Brazil — o jogo, embutido.
  *
  * A página é uma casca fina: quem desenha é a build Godot (WebAssembly) num
  * `<iframe>`. O que esta tela faz de verdade são três coisas, e nenhuma delas
@@ -318,7 +318,7 @@ export default function MonstersPage() {
       <iframe
         ref={frame}
         src={jogoUrl}
-        title={t("frameTitle", "Freelandoo Monsters")}
+        title={t("frameTitle", "EVO Brazil")}
         // `onLoad` não garante que a WebAssembly já subiu — a entrega de
         // verdade vem do `jogo:pronto`. Este é só o primeiro tiro, para o caso
         // de a build já estar em cache e ter perguntado antes deste efeito.

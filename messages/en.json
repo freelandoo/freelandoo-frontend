@@ -4311,7 +4311,7 @@
     "itemActions": "Item actions",
     "priceOnRequest": "On request",
     "game": "Game",
-    "gameAria": "Open the Freelandoo Monsters game"
+    "gameAria": "Open the EVO Brazil game"
   },
   "Bees": {
     "chat": "Chat",
@@ -7446,7 +7446,7 @@
     "back": "Back",
     "noBuildTitle": "The build hasn't been published yet",
     "noBuildText": "NEXT_PUBLIC_MONSTERS_JOGO_URL still needs to point to the Godot build address.",
-    "frameTitle": "Freelandoo Monsters",
+    "frameTitle": "EVO Brazil",
     "loading": "loading the world…",
     "landscapeTitle": "The game is played sideways",
     "landscapeText": "Turn your phone sideways. Upright, the arena shrinks to a stamp and the buttons become grains of rice.",
