@@ -50,8 +50,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { deitaEmTelaCheia, jaDeitado, solta } from "@/lib/game/landscape"
-import { RotateCcw } from "lucide-react"
+import { solta } from "@/lib/game/landscape"
 import { getToken } from "@/lib/auth"
 import { useAuth } from "@/hooks/use-auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -219,27 +218,26 @@ export default function MonstersPage() {
   // alvo. Eles continuam funcionando; ninguém consegue acertar. Deitado o mesmo
   // aparelho dá 0,38 e os mesmos botões passam de 4 mm.
   //
-  // Por isso o retrato é BLOQUEADO e não só avisado: deixar entrar é deixar a
-  // pessoa concluir que o jogo está quebrado.
+  // Por isso o retrato não existe para o jogo: com o aparelho EM PÉ, a moldura
+  // do iframe é GIRADA 90° no CSS (`girado`, lá embaixo) e o jogo continua
+  // recebendo uma janela deitada. Antes era uma tela pedindo para girar o
+  // telefone — e no iPhone, onde a página não pode travar a orientação, era a
+  // única saída. Girar a moldura vale nos dois e persiste: a pessoa pode
+  // segurar o telefone como quiser que a arena segue horizontal.
+  //
+  // O toque atravessa a rotação certo: o navegador desfaz o `transform` ao
+  // entregar o evento ao iframe, e lá dentro o Godot recebe as coordenadas do
+  // documento DELE, que não está girado.
   const [retrato, setRetrato] = useState(false)
 
-  // ── E O AVISO VEM ANTES, E NÃO SÓ QUANDO DÁ ERRADO ─────────────────────
-  //
-  // O bloqueio acima é uma REAÇÃO: ele espera a pessoa estar em pé para
-  // dizer que em pé não dá. Quem chega com o aparelho já deitado nunca lê
-  // nada — e é essa a pessoa que gira o telefone no meio da partida sem
-  // saber que está desmontando a tela.
-  //
-  // `dedo` é o aparelho e `entrou` é o toque que abre o jogo (a BUILD quem
-  // escolhe é o `pesada` lá de cima — são perguntas diferentes). Enquanto esse
-  // toque não vem, a porta fica fechada: é ela que carrega o pedido escrito e
-  // é ela que dá ao `deita()` o GESTO que o navegador exige (ver abaixo — sem
-  // gesto, tela cheia e trava de orientação são as duas recusadas).
-  //
-  // No computador não existe porta nenhuma: `dedo` é falso e o jogo abre
-  // direto, como sempre abriu.
+  // `dedo` é o aparelho (a BUILD quem escolhe é o `pesada` lá de cima — são
+  // perguntas diferentes). NÃO HÁ MAIS PORTA: a tela cheia e a trava deitada
+  // são pedidas no clique do botão "Jogo" do perfil (o gesto que o navegador
+  // exige), e o que aquela trava não alcança (iPhone, ou quem entrou por link)
+  // a moldura girada resolve. Uma porta pedindo "gire o telefone" sobre uma
+  // tela que já gira sozinha só custaria um toque.
   const [dedo, setDedo] = useState(false)
-  const [entrou, setEntrou] = useState(false)
+  const girado = dedo && retrato
 
   // AO SAIR DO JOGO o site volta ao normal: sem isto, a Freelandoo inteira
   // seguiria em tela cheia e travada na horizontal depois do "Voltar".
@@ -264,31 +262,12 @@ export default function MonstersPage() {
       setRetrato(toque.matches && empe.matches)
     }
     olha()
-    // CHEGOU DEITADO PELO BOTÃO "JOGO" do perfil (que pediu tela cheia e trava
-    // no clique — ver `lib/game/landscape.ts`): a porta não tem mais o que
-    // pedir, e abre sozinha.
-    if (toque.matches && jaDeitado()) setEntrou(true)
     empe.addEventListener("change", olha)
     toque.addEventListener("change", olha)
     return () => {
       empe.removeEventListener("change", olha)
       toque.removeEventListener("change", olha)
     }
-  }, [])
-
-  // DEITAR SOZINHO SÓ FUNCIONA DENTRO DE UM GESTO E EM TELA CHEIA. A versão
-  // anterior chamava `orientation.lock` num `useEffect` no carregamento; o
-  // navegador recusa nas duas contas (sem gesto, e fora de tela cheia) e a
-  // promessa era engolida por um `catch` vazio — parecia tratado e não fazia
-  // nada. Agora quem chama é o dedo, e a tela cheia vem antes.
-  const deita = useCallback(async () => {
-    await deitaEmTelaCheia()
-    // A PORTA ABRE MESMO QUE AS DUAS TENTATIVAS TENHAM FALHADO. No iPhone
-    // elas falham sempre — não há tela cheia em página nem trava de orientação
-    // — e prender o jogo atrás de uma promessa que aquele aparelho nunca vai
-    // cumprir seria trocar um aviso por uma parede. Ali o texto é o mecanismo:
-    // a pessoa leu, gira na mão, e entra.
-    setEntrou(true)
   }, [])
 
   if (status === "loading") {
@@ -331,6 +310,24 @@ export default function MonstersPage() {
           começar a baixar uma build no palpite, para trocar de `src` um
           instante depois e baixar tudo de novo. São 56 ou 196 MB de `.pck` de
           diferença, e é justamente o peso que derruba a aba. */}
+      {/* A MOLDURA GIRADA. Em pé, ela mede a tela ao contrário (altura por
+          largura) e gira 90° no sentido horário a partir do canto de cima: o
+          iframe recebe uma janela deitada e o jogo nem sabe que o aparelho
+          está em pé. Ela é a MESMA div nos dois estados — trocar o iframe de
+          pai o remontaria e recomeçaria o download da build. */}
+      <div
+        className="absolute left-0 top-0"
+        style={
+          girado
+            ? {
+                width: "100dvh",
+                height: "100dvw",
+                transformOrigin: "top left",
+                transform: "rotate(90deg) translateY(-100%)",
+              }
+            : { width: "100%", height: "100%" }
+        }
+      >
       {pesada !== null && (
       <iframe
         ref={frame}
@@ -365,6 +362,7 @@ export default function MonstersPage() {
         allow="fullscreen; autoplay; gamepad"
       />
       )}
+      </div>
 
       {/* NO CENTRO DE BAIXO, e nao no canto de cima: o canto superior esquerdo
           e onde o jogo poe o logotipo (placa de kanji + EVO BRAZIL) em todas
@@ -381,61 +379,12 @@ export default function MonstersPage() {
       </Link>
       )}
 
-      {!entregue && !retrato && (!dedo || entrou) && (
+      {!entregue && (
         <span className="pointer-events-none absolute bottom-14 left-1/2 -translate-x-1/2 bg-black/55 px-3 py-1 text-[11px] text-white/50 backdrop-blur">
           {t("loading", "carregando o mundo…")}
         </span>
       )}
 
-      {/* A PORTA. Ela cobre a tela e o iframe carrega atrás dela — os 94 MB da
-          build de celular começam a descer no primeiro segundo, enquanto a
-          pessoa lê. Fechar o jogo por trás de um toque não custa espera
-          nenhuma; custa só o toque, que é justamente o que o navegador exige
-          para deitar a tela. */}
-      {dedo && !entrou && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#0b0804] px-8 text-center">
-          <RotateCcw className="h-10 w-10 text-[#f2b705]" aria-hidden />
-          <h2 className="fl-headline text-2xl text-[#f2b705]">{t("landscapeTitle", "O jogo é deitado")}</h2>
-          <p className="max-w-xs text-sm leading-relaxed text-white/60">
-            {t("landscapeText", "Vire o celular na horizontal. Em pé, a arena fica do tamanho de um selo e os botões viram grãos de arroz.")}
-          </p>
-          <button
-            type="button"
-            onClick={deita}
-            className="mt-1 bg-[#f2b705] px-5 py-2 text-sm font-semibold text-[#0b0b0d] transition hover:bg-[#e0a500]"
-          >
-            {retrato ? t("rotateFull", "Girar e entrar em tela cheia") : t("enterFull", "Entrar em tela cheia")}
-          </button>
-          <span className="text-[11px] text-white/35">
-            {entregue
-              ? t("iphoneHint", "no iPhone o giro é na mão — o Safari não deixa a página girar sozinha")
-              : t("downloadingHint", "o mundo já está baixando enquanto você lê")}
-          </span>
-        </div>
-      )}
-
-      {/* O iframe continua vivo por baixo: a build segue baixando
-          enquanto a pessoa gira o aparelho. Desmontá-lo aqui recomeçaria o
-          download do zero a cada rotação. */}
-      {retrato && entrou && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#0b0804] px-8 text-center">
-          <RotateCcw className="h-10 w-10 text-[#f2b705]" aria-hidden />
-          <h2 className="fl-headline text-2xl text-[#f2b705]">{t("portraitTitle", "Deite o telefone")}</h2>
-          <p className="max-w-xs text-sm leading-relaxed text-white/60">
-            {t("portraitText", "Em pé, a arena fica do tamanho de um selo e os botões somem. Girando, tudo volta ao tamanho certo.")}
-          </p>
-          <button
-            type="button"
-            onClick={deita}
-            className="mt-1 bg-[#f2b705] px-5 py-2 text-sm font-semibold text-[#0b0b0d] transition hover:bg-[#e0a500]"
-          >
-            {t("rotateFull", "Girar e entrar em tela cheia")}
-          </button>
-          <span className="text-[11px] text-white/35">
-            {t("iphoneHint", "no iPhone o giro é na mão — o Safari não deixa a página girar sozinha")}
-          </span>
-        </div>
-      )}
     </main>
   )
 }
