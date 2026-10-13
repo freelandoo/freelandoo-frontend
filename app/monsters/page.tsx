@@ -49,6 +49,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { RotateCcw } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useAuth } from "@/hooks/use-auth"
@@ -150,6 +151,11 @@ export default function MonstersPage() {
   )
   const frame = useRef<HTMLIFrameElement | null>(null)
   const [entregue, setEntregue] = useState(false)
+  // O JOGO JÁ ESTÁ DE PÉ? Diferente de `entregue`, que liga já no `onLoad` do
+  // iframe (com a WebAssembly ainda descendo). Só o `jogo:pronto` prova que
+  // há um jogo desenhando — e é a partir dele que a saída passa a ser do jogo.
+  const [pronto, setPronto] = useState(false)
+  const router = useRouter()
 
   // `null` = ainda não perguntei à GPU. A ESCOLHA TEM QUE VIR ANTES DO
   // `<iframe>` NASCER: trocar o `src` depois de montado recomeça o download do
@@ -181,12 +187,22 @@ export default function MonstersPage() {
     if (!origemJogo) return
     function ouve(ev: MessageEvent) {
       if (ev.origin !== origemJogo) return
-      if (!ev.data || ev.data.tipo !== "jogo:pronto") return
+      if (!ev.data) return
+      // A SAÍDA DE DENTRO DO JOGO. O "← Voltar" desta página cobria o HUD no
+      // centro de baixo de toda tela (foto do Alex, 12/10). Com o jogo de pé,
+      // quem sai é o "VOLTAR À FREELANDOO" do menu principal dele, que chega
+      // aqui — mesma conferência de origem do `jogo:pronto`.
+      if (ev.data.tipo === "jogo:sair") {
+        router.push("/account")
+        return
+      }
+      if (ev.data.tipo !== "jogo:pronto") return
+      setPronto(true)
       entrega()
     }
     window.addEventListener("message", ouve)
     return () => window.removeEventListener("message", ouve)
-  }, [origemJogo, entrega])
+  }, [origemJogo, entrega, router])
 
   // ── O RETRATO NÃO É "FEIO", É INJOGÁVEL ────────────────────────────────
   //
@@ -352,13 +368,17 @@ export default function MonstersPage() {
       {/* NO CENTRO DE BAIXO, e nao no canto de cima: o canto superior esquerdo
           e onde o jogo poe o logotipo (placa de kanji + EVO BRAZIL) em todas
           as telas, e o botao ficava por cima dele. O centro de baixo e o unico
-          lugar que nenhuma tela do jogo ocupa. */}
+          lugar que nenhuma tela do jogo ocupa — e mesmo assim cobria o HUD.
+          Por isso ele SÓ EXISTE ATÉ O `jogo:pronto`: carregando, com erro ou
+          na porta do celular. Com o jogo de pé, a saída é do jogo. */}
+      {!pronto && (
       <Link
         href="/account"
         className="absolute bottom-3 left-1/2 -translate-x-1/2 border border-white/15 bg-black/55 px-3 py-1.5 text-xs font-medium tracking-wide text-white/80 backdrop-blur transition hover:border-white/35 hover:text-white"
       >
         ← {t("back", "Voltar")}
       </Link>
+      )}
 
       {!entregue && !retrato && (!dedo || entrou) && (
         <span className="pointer-events-none absolute bottom-14 left-1/2 -translate-x-1/2 bg-black/55 px-3 py-1 text-[11px] text-white/50 backdrop-blur">
