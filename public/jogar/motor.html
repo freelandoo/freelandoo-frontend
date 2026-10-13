@@ -60,6 +60,7 @@
   <div id="barra"><i></i></div>
   <button id="entrar" type="button" hidden></button>
   <a id="acao" hidden></a>
+  <small id="build" style="margin-top:6px;color:rgba(245,241,232,.35);font-size:11px;letter-spacing:.08em"></small>
 </div>
 <script>
 (function () {
@@ -144,7 +145,18 @@
   // `?mt=1` — A BUILD COM THREADS, em teste. Ela só existe para celular
   // (ETC2/ASTC) e só abre em página isolada, que é esta. Fica atrás da chave
   // até a medição no aparelho dizer se threads ajudam ou pioram a memória.
-  var base = "/jogar/" + (aqui.get("mt") === "1" ? "celular-mt" : (leS3TC() ? "pc" : "celular")) + "/";
+  // ⚠️ APARELHO DE TOQUE RECEBE SEMPRE A DE CELULAR. A pergunta da GPU sozinha
+  // errava justo no iPhone: o Safari do iOS DIZ que lê S3TC (desde o iOS 8),
+  // então o iPhone baixava a build de COMPUTADOR — pacote de 318 MB inteiro na
+  // memória, textura em tamanho cheio e vídeo de fundo — e o iOS matava a aba
+  // por memória depois de 2 ou 3 lutas, recarregando a página (Alex, 13/10).
+  // `?build=pc|celular` força uma ou outra para medir.
+  var pedida = aqui.get("build");
+  var qual = aqui.get("mt") === "1" ? "celular-mt"
+    : (pedida === "pc" || pedida === "celular") ? pedida
+    : (!dedo && leS3TC()) ? "pc" : "celular";
+  var base = "/jogar/" + qual + "/";
+  document.getElementById("build").textContent = "build: " + qual;
   // As chaves de bancada passam adiante como no `/monsters`.
   var chaves = [];
   ["diag", "toque", "mt"].forEach(function (k) { if (aqui.get(k) === "1") chaves.push(k + "=1"); });

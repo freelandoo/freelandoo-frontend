@@ -251,7 +251,10 @@ export default function MonstersPage() {
     const repasse = new URLSearchParams()
     for (const k of ["diag", "toque"]) if (aqui.get(k) === "1") repasse.set(k, "1")
     setChaves(repasse.toString())
-    setPesada(leS3TC())
+    // ⚠️ Toque recebe sempre a de celular: o Safari do iPhone DIZ que lê S3TC
+    // e baixava a build de computador (318 MB inteiros na memória), e o iOS
+    // matava a aba depois de poucas lutas. Ver `public/jogar/motor.html`.
+    setPesada(!window.matchMedia("(pointer: coarse)").matches && leS3TC())
 
     // `pointer: coarse` separa dedo de mouse. Sem isso, quem estreitasse a
     // janela no computador levaria um "gire o telefone" sem ter telefone.
