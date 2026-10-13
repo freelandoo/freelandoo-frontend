@@ -211,6 +211,28 @@
   try { reciclou = sessionStorage.getItem("evo_recicla") === "1"; sessionStorage.removeItem("evo_recicla"); } catch (e) {}
   if (reciclou) { texto.textContent = L.recicla; document.getElementById("dica").hidden = true; }
 
+  // ── A CAIXA-PRETA: o jogo anota a cada 2 s onde está e quanta memória usa
+  // (`window.__evo_ultimo`, ver `desempenho.gd`). Se o WebGL cair, a última
+  // anotação fica guardada e aparece aqui na próxima abertura — é o dado que
+  // o iPhone não deixa medir de outro jeito. Mostrada uma vez e apagada.
+  try {
+    var q = JSON.parse(localStorage.getItem("evo_queda") || "null");
+    if (q) {
+      localStorage.removeItem("evo_queda");
+      var b = document.getElementById("build");
+      b.textContent += " · última queda: " + (q.cena || "?") + " · vídeo " + q.video + " MB · textura "
+        + q.textura + " MB · processo " + q.processo + " MB · " + q.fps + " fps · luzes " + q.luzes;
+      b.style.color = "rgba(245,241,232,.75)";
+    }
+  } catch (e) {}
+  document.getElementById("canvas").addEventListener("webglcontextlost", function () {
+    try {
+      var u = window.__evo_ultimo || {};
+      u.quando = new Date().toISOString();
+      localStorage.setItem("evo_queda", JSON.stringify(u));
+    } catch (e) {}
+  }, false);
+
   var carregou = false;
   var pediu = !dedo || reciclou;  // no computador não há gesto a pedir
   function talvezAbre() {
