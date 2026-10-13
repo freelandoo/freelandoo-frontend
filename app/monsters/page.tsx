@@ -162,6 +162,11 @@ export default function MonstersPage() {
   // zero, e o que se teria baixado até ali é a build errada — no telefone, a
   // que o mata.
   const [pesada, setPesada] = useState<boolean | null>(null)
+  // AS CHAVES DE BANCADA DA BUILD (`?diag=1` liga o medidor de desempenho,
+  // `?toque=1` força o controle de toque). A build lê o endereço DELA, que é o
+  // do iframe — então a página repassa. Lidas no MESMO efeito que escolhe a
+  // build: trocar o `src` depois de montado recomeçaria o download.
+  const [chaves, setChaves] = useState("")
   const jogoUrl = pesada ? JOGO_URL : JOGO_CELULAR_URL
   const origemJogo = jogoUrl ? origemDe(jogoUrl) : null
 
@@ -239,6 +244,10 @@ export default function MonstersPage() {
     // A GPU decide a BUILD; o dedo decide a MOLDURA (porta, orientação,
     // controles de toque). São duas perguntas diferentes e é de propósito: o
     // 2-em-1 tem dedo e lê S3TC, e precisa das duas respostas separadas.
+    const aqui = new URLSearchParams(window.location.search)
+    const repasse = new URLSearchParams()
+    for (const k of ["diag", "toque"]) if (aqui.get(k) === "1") repasse.set(k, "1")
+    setChaves(repasse.toString())
     setPesada(leS3TC())
 
     // `pointer: coarse` separa dedo de mouse. Sem isso, quem estreitasse a
@@ -333,7 +342,7 @@ export default function MonstersPage() {
       {pesada !== null && (
       <iframe
         ref={frame}
-        src={jogoUrl}
+        src={chaves ? `${jogoUrl}${jogoUrl.includes("?") ? "&" : "?"}${chaves}` : jogoUrl}
         title={t("frameTitle", "EVO Brazil")}
         // `onLoad` não garante que a WebAssembly já subiu — a entrega de
         // verdade vem do `jogo:pronto`. Este é só o primeiro tiro, para o caso
