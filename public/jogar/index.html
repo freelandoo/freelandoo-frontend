@@ -3,23 +3,21 @@
   EVO Brazil — a PÁGINA PRÓPRIA do jogo (`/jogar`).
 
   POR QUE EXISTE (ver `Cat demon/PERFORMANCE_AUDITORIA.md`): no `/monsters` o
-  jogo roda num iframe DENTRO da Freelandoo, e no Android o iframe divide o
-  processo com a página — React, Next, o chrome inteiro. Aqui o jogo é a página
-  inteira: HTML puro, sem framework nenhum por baixo.
+  jogo roda num iframe DENTRO da Freelandoo (React, Next, o chrome inteiro).
+  Aqui não há framework nenhum: esta página é só uma MOLDURA e o motor mora em
+  `/jogar/motor.html` — mesma origem, mesmos cabeçalhos COOP/COEP (ver
+  `next.config.mjs`), então o isolamento e a build com threads seguem valendo.
 
-  E ELA É ISOLADA (COOP + COEP, ver `next.config.mjs`). É isso que liga o
-  `SharedArrayBuffer`, que é o pré-requisito para a build com THREADS. A build
-  continua no R2 e entra por rewrite (`/jogar/celular/*`, `/jogar/pc/*`) como se
-  fosse desta origem — e mesma origem é a condição para o isolamento não a
-  bloquear e para esta casca ler a sessão direto do `localStorage`, sem o
-  `postMessage` do iframe.
-
-  QUAL BUILD: a mesma pergunta do `/monsters` — a GPU lê S3TC? Lê → a de
-  computador; não lê, ou na dúvida → a de celular.
-
-  QUAL VERSÃO: a casca não sabe o número da release. Ela lê o `index.html` que
-  a publicação deixa no R2 e tira dele o `GODOT_CONFIG` — a publicação continua
-  sendo o único lugar que diz qual release está no ar.
+  A MOLDURA EXISTE PARA GIRAR. Decisão do Alex: o jogo é SEMPRE deitado, não
+  existe tela de "deite o celular". Com o aparelho em pé (só dedo), a moldura
+  mede a tela ao contrário e gira 90° a partir do canto de cima: o iframe
+  recebe uma janela deitada e o jogo nem sabe que o aparelho está em pé. O
+  navegador desfaz o `transform` ao entregar o toque ao iframe, então o Godot
+  recebe coordenadas certas — girar o canvas direto, sem iframe, quebraria o
+  toque. É CSS puro: vale no iPhone (que não deixa travar a orientação) e
+  persiste a partida inteira, segure o telefone como quiser. No Android a tela
+  cheia + trava deitada (pedidas no toque de entrada, lá no motor) deixam o
+  aparelho deitado de verdade, e aí a regra simplesmente não casa.
 -->
 <html lang="pt-BR">
 <head>
@@ -30,200 +28,36 @@
 <style>
   html, body { margin: 0; height: 100%; background: #0b0804; overflow: hidden;
     overscroll-behavior: none; touch-action: none; -webkit-user-select: none; user-select: none; }
-  #canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; outline: none; }
-  #porta { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 14px; padding: 24px; background: #0b0804; color: #f5f1e8;
-    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; text-align: center; z-index: 5; }
-  #porta h1 { margin: 0; color: #f2b705; font: 900 34px/1 Impact, "Arial Black", sans-serif;
-    letter-spacing: .02em; text-transform: uppercase; }
-  #porta p { margin: 0; max-width: 340px; color: rgba(245,241,232,.62); }
-  #barra { width: min(320px, 80vw); height: 6px; background: rgba(245,241,232,.12); }
-  #barra > i { display: block; height: 100%; width: 0; background: #f2b705; transition: width .2s; }
-  #porta a, #porta button { margin-top: 4px; border: 0; padding: 12px 22px; background: #f2b705;
-    color: #0b0b0d; font: 700 15px system-ui, sans-serif; text-decoration: none; cursor: pointer; }
-  #porta button[hidden], #porta a[hidden] { display: none; }
-  #deite { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    padding: 32px; background: #0b0804; color: #f2b705; text-align: center; z-index: 6;
-    font: 900 26px/1.15 Impact, "Arial Black", sans-serif; text-transform: uppercase; }
-  /* SÓ DEDO E EM PÉ. No Android a tela já foi travada deitada no toque de
-     entrada; isto é para o iPhone, onde a página não pode travar nada. */
-  @media (pointer: coarse) and (orientation: portrait) { body.jogando #deite { display: flex; } }
+  #moldura { position: fixed; left: 0; top: 0; width: 100%; height: 100%; }
+  #moldura iframe { display: block; width: 100%; height: 100%; border: 0; }
+  @media (pointer: coarse) and (orientation: portrait) {
+    #moldura { width: 100vh; height: 100vw; width: 100dvh; height: 100dvw;
+      transform-origin: top left; transform: rotate(90deg) translateY(-100%); }
+  }
 </style>
 </head>
 <body>
-<canvas id="canvas" tabindex="-1">HTML5 canvas</canvas>
-<div id="porta">
-  <h1>EVO Brazil</h1>
-  <p id="texto"></p>
-  <div id="barra"><i></i></div>
-  <button id="entrar" type="button" hidden></button>
-  <a id="acao" hidden></a>
+<div id="moldura">
+  <iframe id="motor" title="EVO Brazil" allow="fullscreen; gamepad; autoplay; cross-origin-isolated"></iframe>
 </div>
-<div id="deite"></div>
 <script>
 (function () {
   "use strict";
-
-  // ── IDIOMA: o mesmo cookie que o site usa (`NEXT_LOCALE`). ──────────────
-  var TXT = {
-    "pt-BR": { carregando: "carregando o mundo…", entrar: "Tocar para jogar",
-      pronto: "Pronto. Toque para entrar em tela cheia.",
-      login: "Entre na Freelandoo para jogar — seu monstro nasce do seu perfil.", loginCta: "Entrar",
-      fechado: "O jogo está em teste fechado e por enquanto só abre para a administração.", voltar: "Voltar",
-      erro: "O jogo não conseguiu abrir neste aparelho.", deite: "Deite o celular para jogar",
-      falta: "Este navegador não tem o que o jogo precisa: " },
-    en: { carregando: "loading the world…", entrar: "Tap to play",
-      pronto: "Ready. Tap to go full screen.",
-      login: "Sign in to Freelandoo to play — your monster is born from your profile.", loginCta: "Sign in",
-      fechado: "The game is in closed testing and only opens for administrators for now.", voltar: "Back",
-      erro: "The game could not start on this device.", deite: "Turn your phone sideways to play",
-      falta: "This browser lacks what the game needs: " },
-    es: { carregando: "cargando el mundo…", entrar: "Toca para jugar",
-      pronto: "Listo. Toca para pantalla completa.",
-      login: "Inicia sesión en Freelandoo para jugar — tu monstruo nace de tu perfil.", loginCta: "Entrar",
-      fechado: "El juego está en prueba cerrada y por ahora solo abre para la administración.", voltar: "Volver",
-      erro: "El juego no pudo abrirse en este dispositivo.", deite: "Gira el celular para jugar",
-      falta: "Este navegador no tiene lo que el juego necesita: " }
-  };
-  var m = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/);
-  var loc = m ? decodeURIComponent(m[1]) : (navigator.language || "pt-BR");
-  var L = TXT[loc] || TXT[loc.slice(0, 2)] || TXT["pt-BR"];
-  document.documentElement.lang = TXT[loc] ? loc : "pt-BR";
-
-  var porta = document.getElementById("porta");
-  var texto = document.getElementById("texto");
-  var barra = document.querySelector("#barra > i");
-  var entrar = document.getElementById("entrar");
-  var acao = document.getElementById("acao");
-  document.getElementById("deite").textContent = L.deite;
-  texto.textContent = L.carregando;
-
-  function para(msg, href, rotulo) {
-    texto.textContent = msg;
-    document.getElementById("barra").style.display = "none";
-    if (href) { acao.href = href; acao.textContent = rotulo; acao.hidden = false; }
-  }
-
-  // ── A SESSÃO: mesma origem, então é ler o que o login guardou. ───────────
-  var token = "", user = null;
-  try {
-    token = localStorage.getItem("token") || "";
-    user = JSON.parse(localStorage.getItem("user") || "null");
-  } catch (e) {}
-  if (!token) { para(L.login, "/login?next=/jogar", L.loginCta); return; }
-  // A MESMA TRAVA DO `/monsters`: por enquanto só a administração. É trava de
-  // UI — a build é pública no R2 de qualquer forma; o que importa (a sessão)
-  // só existe para quem está logado.
-  var admin = !!(user && (user.is_admin || (user.roles || []).some(function (r) {
-    return r && r.desc_role === "Administrator";
-  })));
-  if (!admin) { para(L.fechado, "/account", L.voltar); return; }
-
-  // O jogo lê `window.__freelandoo` (ver `sessao.gd`) e sabe que está na
-  // página própria por `__freelandoo_pagina` — é o que faz o "VOLTAR À
-  // FREELANDOO" do menu navegar para o perfil.
-  window.__freelandoo_pagina = true;
-  window.__freelandoo = { token: token, api: "", handle: (user && user.username) || "" };
-
-  // ── QUAL BUILD ───────────────────────────────────────────────────────────
-  function leS3TC() {
-    try {
-      var c = document.createElement("canvas");
-      var gl = c.getContext("webgl2") || c.getContext("webgl");
-      if (!gl) return false;
-      return (gl.getSupportedExtensions() || []).some(function (e) {
-        return /compressed_texture_s3tc$/.test(e);
-      });
-    } catch (e) { return false; }
-  }
-  var dedo = window.matchMedia("(pointer: coarse)").matches;
-  var aqui = new URLSearchParams(location.search);
-  // `?mt=1` — A BUILD COM THREADS, em teste. Ela só existe para celular
-  // (ETC2/ASTC) e só abre em página isolada, que é esta. Fica atrás da chave
-  // até a medição no aparelho dizer se threads ajudam ou pioram a memória.
-  var base = "/jogar/" + (aqui.get("mt") === "1" ? "celular-mt" : (leS3TC() ? "pc" : "celular")) + "/";
-  // As chaves de bancada passam adiante como no `/monsters`.
-  var chaves = [];
-  ["diag", "toque", "mt"].forEach(function (k) { if (aqui.get(k) === "1") chaves.push(k + "=1"); });
-  if (chaves.length) history.replaceState(null, "", "/jogar?" + chaves.join("&"));
-
-  // ── TELA CHEIA E DEITADO: só dentro de um gesto, e tela cheia antes. ────
-  function deita() {
-    var el = document.documentElement;
-    var p = (el.requestFullscreen || el.webkitRequestFullscreen || function () {}).call(el);
-    Promise.resolve(p).catch(function () {}).then(function () {
-      try { screen.orientation.lock("landscape").catch(function () {}); } catch (e) {}
-    });
-  }
-
-  var carregou = false;
-  var pediu = !dedo;          // no computador não há gesto a pedir
-  function talvezAbre() {
-    if (!carregou || !pediu) return;
-    porta.style.display = "none";
-    document.body.classList.add("jogando");
-    document.getElementById("canvas").focus();
-  }
-  if (dedo) {
-    entrar.textContent = L.entrar;
-    entrar.hidden = false;
-    entrar.addEventListener("click", function () {
-      deita();
-      pediu = true;
-      entrar.hidden = true;
-      talvezAbre();
-    });
-  }
-
-  // ── A VERSÃO NO AR, lida do `index.html` da publicação ──────────────────
-  fetch(base + "index.html", { cache: "no-cache" })
-    .then(function (r) { if (!r.ok) throw new Error("index " + r.status); return r.text(); })
-    .then(function (html) {
-      var mc = html.match(/GODOT_CONFIG\s*=\s*(\{[\s\S]*?\});/);
-      var mt = html.match(/GODOT_THREADS_ENABLED\s*=\s*(true|false)/);
-      if (!mc) throw new Error("GODOT_CONFIG");
-      var cfg = JSON.parse(mc[1]);
-      var threads = !!(mt && mt[1] === "true");
-      // O `executable` vira caminho desta origem; o tamanho dos arquivos é
-      // indexado por ele (é dele que sai a barra de progresso).
-      var exe = base + cfg.executable;
-      var tamanhos = {};
-      Object.keys(cfg.fileSizes || {}).forEach(function (k) { tamanhos[base + k] = cfg.fileSizes[k]; });
-      cfg.executable = exe;
-      cfg.fileSizes = tamanhos;
-      cfg.mainPack = exe + ".pck";
-      cfg.args = (cfg.args || []);
-      // O isolamento é DESTA página (cabeçalhos), não do service worker do
-      // Godot — que recarregaria a página para se instalar.
-      cfg.ensureCrossOriginIsolationHeaders = false;
-      return new Promise(function (ok, falha) {
-        var s = document.createElement("script");
-        s.src = exe + ".js";
-        s.onload = function () { ok({ cfg: cfg, threads: threads }); };
-        s.onerror = function () { falha(new Error("engine js")); };
-        document.head.appendChild(s);
-      });
-    })
-    .then(function (r) {
-      /* global Engine */
-      var falta = Engine.getMissingFeatures({ threads: r.threads });
-      if (falta.length) { para(L.falta + falta.join(", ")); return; }
-      var engine = new Engine(r.cfg);
-      return engine.startGame({
-        onProgress: function (atual, total) {
-          if (atual > 0 && total > 0) barra.style.width = Math.round((atual / total) * 100) + "%";
-        }
-      }).then(function () {
-        carregou = true;
-        barra.style.width = "100%";
-        if (dedo && !pediu) texto.textContent = L.pronto;
-        talvezAbre();
-      });
-    })
-    .catch(function (e) {
-      console.error(e);
-      para(L.erro, "/account", L.voltar);
-    });
+  var motor = document.getElementById("motor");
+  // As chaves de bancada (`?diag=1`, `?toque=1`, `?mt=1`) passam ao motor.
+  motor.src = "/jogar/motor.html" + location.search;
+  // O jogo dentro do iframe avisa por mensagem. "VOLTAR À FREELANDOO" navega
+  // esta página (a de cima), não o iframe. O `jogo:pronto` é ignorado: a
+  // sessão o motor já leu sozinho, por ser da mesma origem.
+  window.addEventListener("message", function (ev) {
+    if (ev.origin !== location.origin || !ev.data) return;
+    if (ev.data.tipo === "jogo:sair") {
+      try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+      location.href = "/account";
+    }
+  });
+  // O iframe recebe o foco para o teclado do computador valer de cara.
+  motor.addEventListener("load", function () { try { motor.focus(); } catch (e) {} });
 })();
 </script>
 </body>
