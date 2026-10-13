@@ -128,8 +128,12 @@ const nextConfig = {
       // entradas casando o mesmo caminho deixam a ordem decidir qual vale — e
       // essa ordem não está escrita em lugar nenhum. Aqui cada caminho casa
       // com exatamente uma regra.
-      { source: "/:path((?!site-preview).*)", headers: securityHeaders },
+      { source: "/:path((?!site-preview|jogar/motor).*)", headers: securityHeaders },
       { source: "/site-preview/:path*", headers: previewHeaders },
+      // O MOTOR DO JOGO roda num iframe da propria `/jogar` (a moldura que gira
+      // em pe) -- com o DENY global ele nasceria invisivel. Mesma excecao da
+      // pre-visualizacao: so a propria origem pode emoldura-lo.
+      { source: "/jogar/motor.html", headers: previewHeaders },
       // O JOGO NA PAGINA PROPRIA (`/jogar`) e ISOLADO (COOP + COEP). E o que
       // libera `SharedArrayBuffer` -- sem ele o Godot Web roda numa thread so.
       // So aqui: isolar o site inteiro quebraria tudo o que vem de outra origem
