@@ -72,19 +72,22 @@
       login: "Entre na Freelandoo para jogar — seu monstro nasce do seu perfil.", loginCta: "Entrar",
       fechado: "O jogo está em teste fechado e por enquanto só abre para a administração.", voltar: "Voltar",
       erro: "O jogo não conseguiu abrir neste aparelho.",
-      falta: "Este navegador não tem o que o jogo precisa: " },
+      falta: "Este navegador não tem o que o jogo precisa: ",
+      zerar: "Apagar todo o progresso do jogo neste aparelho e começar do zero? Não tem volta." },
     en: { carregando: "loading the world…", entrar: "Tap to play",
       pronto: "Ready. Tap to go full screen.",
       login: "Sign in to Freelandoo to play — your monster is born from your profile.", loginCta: "Sign in",
       fechado: "The game is in closed testing and only opens for administrators for now.", voltar: "Back",
       erro: "The game could not start on this device.",
-      falta: "This browser lacks what the game needs: " },
+      falta: "This browser lacks what the game needs: ",
+      zerar: "Erase all game progress on this device and start over? This cannot be undone." },
     es: { carregando: "cargando el mundo…", entrar: "Toca para jugar",
       pronto: "Listo. Toca para pantalla completa.",
       login: "Inicia sesión en Freelandoo para jugar — tu monstruo nace de tu perfil.", loginCta: "Entrar",
       fechado: "El juego está en prueba cerrada y por ahora solo abre para la administración.", voltar: "Volver",
       erro: "El juego no pudo abrirse en este dispositivo.",
-      falta: "Este navegador no tiene lo que el juego necesita: " }
+      falta: "Este navegador no tiene lo que el juego necesita: ",
+      zerar: "¿Borrar todo el progreso del juego en este dispositivo y empezar de cero? No se puede deshacer." }
   };
   var m = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/);
   var loc = m ? decodeURIComponent(m[1]) : (navigator.language || "pt-BR");
@@ -178,8 +181,28 @@
     });
   }
 
+  // ── `?zerar=1`: RECOMEÇAR DO ZERO. O save não mora no servidor: é o
+  // `user://` do Godot, que no navegador é o banco IndexedDB "/userfs" desta
+  // origem. Apagá-lo ANTES de o motor subir zera rancho, bicho e configurações
+  // deste aparelho. Pergunta antes (não tem volta) e tira a chave do endereço,
+  // senão recarregar a página zeraria de novo.
+  function zeraSeFoiPedido() {
+    if (aqui.get("zerar") !== "1") return Promise.resolve();
+    var limpa = new URLSearchParams(location.search);
+    limpa.delete("zerar");
+    var q = limpa.toString();
+    try { window.top.history.replaceState(null, "", "/jogar" + (q ? "?" + q : "")); } catch (e) {}
+    if (!window.confirm(L.zerar)) return Promise.resolve();
+    return new Promise(function (ok) {
+      try {
+        var r = indexedDB.deleteDatabase("/userfs");
+        r.onsuccess = r.onerror = r.onblocked = function () { ok(); };
+      } catch (e) { ok(); }
+    });
+  }
+
   // ── A VERSÃO NO AR, lida do `index.html` da publicação ──────────────────
-  fetch(base + "index.html", { cache: "no-cache" })
+  zeraSeFoiPedido().then(function () { return fetch(base + "index.html", { cache: "no-cache" }); })
     .then(function (r) { if (!r.ok) throw new Error("index " + r.status); return r.text(); })
     .then(function (html) {
       var mc = html.match(/GODOT_CONFIG\s*=\s*(\{[\s\S]*?\});/);
