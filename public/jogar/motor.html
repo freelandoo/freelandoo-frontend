@@ -201,6 +201,18 @@
     });
   }
 
+  // ── FECHAR A ABA COM PROGRESSO NÃO SALVO ────────────────────────────────
+  // O jogo não salva sozinho: os saves são 5 slots na conta, salvos à mão. O
+  // jogo põe `window.__evo_sujo` (ver `Criacao._marca_alterado`) e a página DE
+  // CIMA pede confirmação ao fechar. O texto é do navegador (não dá para mudar);
+  // o Safari do iPhone costuma ignorar — lá vale o "SALVAR ANTES DE SAIR?" do jogo.
+  var eu = window;
+  try {
+    window.top.addEventListener("beforeunload", function (ev) {
+      if (eu.__evo_sujo) { ev.preventDefault(); ev.returnValue = ""; return ""; }
+    });
+  } catch (e) {}
+
   // ── A VERSÃO NO AR, lida do `index.html` da publicação ──────────────────
   zeraSeFoiPedido().then(function () { return fetch(base + "index.html", { cache: "no-cache" }); })
     .then(function (r) { if (!r.ok) throw new Error("index " + r.status); return r.text(); })
