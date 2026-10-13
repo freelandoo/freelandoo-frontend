@@ -8,7 +8,7 @@
 // ⚠️ TODA SEÇÃO QUE DEPENDE DE DADO DO CLIENTE DEVOLVE `null` QUANDO NÃO TEM
 // DADO. Não é defensividade: é a regra que impede a única falha irreversível
 // deste trabalho, que é publicar número, foto ou depoimento inventado com o
-// nome da EcoLuz em cima. O que falta some da página; o que é inventado vai ao
+// nome da Eco Luz em cima. O que falta some da página; o que é inventado vai ao
 // ar. Ver `content/company.ts`.
 
 import Image from "next/image";
@@ -80,7 +80,7 @@ export function ProjectsSection() {
     <Section id="projetos" tone="deep">
       <SectionHead
         eyebrow="Projetos realizados"
-        title="Obra da EcoLuz, no Maranhão."
+        title="Obra da Eco Luz, no Maranhão."
         lead="Cada foto abaixo é de um sistema que a nossa equipe projetou e instalou. Nenhuma é banco de imagens — se está aqui, existe e pode ser visitada."
       />
 
@@ -240,13 +240,56 @@ export function AboutSection({ links }: { links: TemplateLinks }) {
         </div>
 
         {hasPhoto ? (
-          <div className="relative aspect-[4/5] overflow-hidden" data-reveal="scale">
+          // ⚠️ SEM RECORTE, E POR ISSO SEM `fill` + `aspect`. O slot tinha
+          // proporção fixa de retrato (4/5), desenhada quando ainda não havia
+          // foto nenhuma; a que chegou é deitada e tem a equipe espalhada de
+          // ponta a ponta, então `object-cover` cortaria justamente as pessoas
+          // das bordas — numa seção que se chama "tem uma equipe por trás de
+          // cada projeto", isso é o assunto saindo da imagem.
+          //
+          // A JANELA É MAIS BAIXA QUE A FOTO, E É ISSO QUE FAZ A PARALAXE
+          // EXISTIR. Uma camada só anda em relação ao quadro se sobrar foto
+          // fora dele; na janela da mesma altura, `yPercent` arrastaria a
+          // imagem para fora e abriria faixa vazia na borda.
+          //
+          // ⚠️ A JANELA É MAIS LARGA DE RAZÃO QUE A FOTO, não mais estreita —
+          // 2/1 de janela para 16/9 de foto. Na mesma largura, quanto MAIOR a
+          // razão, mais baixo o quadro: 2.0 dá 258px onde a foto dá 290, e são
+          // esses ~11% de sobra que a paralaxe tem para percorrer. A primeira
+          // versão disto usou 16/10 por simetria com o 16/9 da foto, e 16/10 é
+          // razão MENOR — janela mais ALTA que a foto, com faixa vazia de 31px
+          // na borda de baixo durante o percurso inteiro.
+          //
+          // ⚠️ A SOBRA É SÓ VERTICAL, e isso é o ponto. A largura fica inteira: a
+          // equipe está espalhada de ponta a ponta, e recortar na horizontal
+          // — que é o que `object-cover` faria — tiraria justamente as
+          // pessoas das pontas de uma seção chamada "tem uma equipe por trás
+          // de cada projeto". No vertical nada se perde: o quadro percorre a
+          // foto conforme se rola, do letreiro da loja até a calçada.
+          <div
+            className="relative aspect-[2/1] overflow-hidden"
+            data-reveal="scale"
+          >
             <Image
               src={ABOUT_HOME.photo}
               alt={ABOUT_HOME.alt}
-              fill
-              sizes="(min-width: 1024px) 30rem, 100vw"
-              className="object-cover"
+              // 33rem é a LARGURA MEDIDA do slot (515px, onde o container
+              // trava) e não um arredondamento: declarado o 30rem de antes, o
+              // browser baixava a versão de 480px e a ampliava para 515 — a
+              // foto chegava inteira e borrada, que é o tipo de defeito que
+              // ninguém vê no código.
+              sizes="(min-width: 1024px) 33rem, 100vw"
+              // ⚠️ NEGATIVO, E O GATILHO É A JANELA (o `parentElement`, como
+              // em todo `[data-parallax]` do tema). O valor é a sobra: 10% da
+              // altura da foto é o que ela tem a mais que o quadro (290px contra 258),
+              // então o
+              // percurso termina exatamente na borda de baixo — mais que isso
+              // abriria a faixa vazia que a janela existe para evitar.
+              //
+              // Sem JS e em `prefers-reduced-motion` ela fica em zero, ou
+              // seja, alinhada pelo topo e parada. É enquadramento, não falha.
+              data-parallax="-10"
+              className="absolute inset-x-0 top-0 h-auto w-full"
             />
           </div>
         ) : null}
@@ -316,7 +359,7 @@ export function UnitsSection({ links }: { links: TemplateLinks }) {
         <CoverageMap links={links} />
       </div>
 
-      {/* ── Até onde a EcoLuz vai ─────────────────────────────────────── */}
+      {/* ── Até onde a Eco Luz vai ─────────────────────────────────────── */}
       <div className="mt-16">
         <div className="rule rule-ink mb-5 w-16" data-rule />
         <h3 className="display text-[1.75rem] text-[var(--el-paper-ink)] md:text-[2.125rem]" data-reveal="up">
@@ -482,7 +525,7 @@ export function ReviewsSection() {
     <Section id="avaliacoes">
       <SectionHead
         eyebrow="Avaliações"
-        title="Quem já escolheu a EcoLuz, recomenda."
+        title="Quem já escolheu a Eco Luz, recomenda."
         lead="As avaliações abaixo foram publicadas por clientes no perfil da empresa no Google. Estão aqui como foram escritas."
       />
 

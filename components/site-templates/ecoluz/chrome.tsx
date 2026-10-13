@@ -29,7 +29,7 @@ function navFor(links: TemplateLinks) {
     { href: pageHref(links, PAGE.servicos), label: "Serviços" },
     { href: pageHref(links, "sistema-off-grid"), label: "Off-grid" },
     { href: pageHref(links, PAGE.areas), label: "Onde atendemos" },
-    { href: pageHref(links, PAGE.sobre), label: "A EcoLuz" },
+    { href: pageHref(links, PAGE.sobre), label: "A Eco Luz" },
     { href: pageHref(links, PAGE.contato), label: "Contato" },
   ];
 }
@@ -120,9 +120,9 @@ export function SiteHeader({ links }: { links: TemplateLinks }) {
           className="flex items-center gap-2.5 text-[var(--el-sun)]"
           aria-label={`${BUSINESS.name} — início`}
         >
-          <Monogram className="h-9 w-9" />
+          <Monogram className="h-9 w-auto" />
           <span className="display hidden text-[1.15rem] leading-none text-[var(--el-cream)] sm:block">
-            Eco<span className="text-[var(--el-sun)]">Luz</span>
+            Eco <span className="text-[var(--el-sun)]">Luz</span>
           </span>
         </a>
 
@@ -218,9 +218,9 @@ export function SiteFooter({ links }: { links: TemplateLinks }) {
       >
         <div>
           <a href={links.home} className="flex items-center gap-2.5 text-[var(--el-sun)]">
-            <Monogram className="h-10 w-10" />
+            <Monogram className="h-10 w-auto" />
             <span className="display text-[1.3rem] leading-none text-[var(--el-cream)]">
-              Eco<span className="text-[var(--el-sun)]">Luz</span>
+              Eco <span className="text-[var(--el-sun)]">Luz</span>
             </span>
           </a>
 
@@ -270,7 +270,7 @@ export function SiteFooter({ links }: { links: TemplateLinks }) {
             title="A empresa"
             items={[
               { href: links.home, label: "Início" },
-              { href: pageHref(links, PAGE.sobre), label: "Sobre a EcoLuz" },
+              { href: pageHref(links, PAGE.sobre), label: "Sobre a Eco Luz" },
               { href: pageHref(links, PAGE.contato), label: "Contato" },
             ]}
           />
@@ -329,7 +329,7 @@ export function WhatsappFab() {
       href={whatsappLink(WA_DEFAULT)}
       target="_blank"
       rel="noopener"
-      aria-label="Falar com a EcoLuz no WhatsApp"
+      aria-label="Falar com a Eco Luz no WhatsApp"
       className="fab-zap fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25d366] text-[#07240f] transition-transform duration-200 hover:brightness-110"
     >
       <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">

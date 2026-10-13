@@ -47,14 +47,14 @@ export const AREAS: Area[] = [
     uf: "MA",
     isBase: true,
     h1: "Energia solar em São Luís",
-    title: "Energia solar em São Luís/MA | EcoLuz",
+    title: "Energia solar em São Luís/MA | Eco Luz",
     description:
-      "Projeto, instalação e homologação de energia solar em São Luís. A EcoLuz fica no Turu e atende residências, comércios e empresas na capital.",
+      "Projeto, instalação e homologação de energia solar em São Luís. A Eco Luz fica no Turu e atende residências, comércios e empresas na capital.",
     eyebrow: "Nossa base",
     card: "A loja fica no Turu, na Av. Mário Andreazza — é daqui que os projetos saem.",
     wa: "Olá! Sou de São Luís e quero energia solar. Podemos conversar?",
     intro: [
-      "São Luís é a base da EcoLuz: a loja fica no Turu, no Centro Comercial Bougainville, na Av. Mário Andreazza. Quem é da capital consegue resolver presencialmente o que em outros lugares só se resolve por telefone.",
+      "São Luís é a base da Eco Luz: a loja fica no Turu, no Centro Comercial Bougainville, na Av. Mário Andreazza. Quem é da capital consegue resolver presencialmente o que em outros lugares só se resolve por telefone.",
       "A capital concentra os dois perfis que mais procuram energia solar: a casa em que o ar-condicionado domina a conta e o comércio que funciona o dia inteiro com refrigeração ligada. São situações diferentes, e o dimensionamento acompanha essa diferença.",
     ],
     focus: {
@@ -88,7 +88,7 @@ export const AREAS: Area[] = [
     uf: "MA",
     isBase: false,
     h1: "Energia solar em São José de Ribamar",
-    title: "Energia solar em São José de Ribamar/MA | EcoLuz",
+    title: "Energia solar em São José de Ribamar/MA | Eco Luz",
     description:
       "Energia solar para casas, comércios e sítios em São José de Ribamar. Sistemas conectados à rede e off-grid com baterias, com projeto e homologação.",
     eyebrow: "Ilha do Maranhão",
@@ -129,14 +129,14 @@ export const AREAS: Area[] = [
     uf: "MA",
     isBase: false,
     h1: "Energia solar em Paço do Lumiar",
-    title: "Energia solar em Paço do Lumiar/MA | EcoLuz",
+    title: "Energia solar em Paço do Lumiar/MA | Eco Luz",
     description:
       "Energia solar para residências e condomínios em Paço do Lumiar. Dimensionamento pelo consumo, instalação e homologação na concessionária.",
     eyebrow: "Ilha do Maranhão",
     card: "Bairro residencial em expansão, telhado próprio e conta que cresce com a família.",
     wa: "Olá! Sou de Paço do Lumiar e quero energia solar.",
     intro: [
-      "Paço do Lumiar é vizinho imediato do Turu, onde fica a loja — é uma das áreas mais próximas da base da EcoLuz. O município cresceu como região residencial, com muita casa térrea, telhado próprio e condomínio horizontal.",
+      "Paço do Lumiar é vizinho imediato do Turu, onde fica a loja — é uma das áreas mais próximas da base da Eco Luz. O município cresceu como região residencial, com muita casa térrea, telhado próprio e condomínio horizontal.",
       "Esse é o cenário mais favorável que existe para energia solar: área de cobertura disponível, imóvel próprio e uma conta que sobe conforme a família e os equipamentos aumentam.",
     ],
     focus: {
@@ -170,7 +170,7 @@ export const AREAS: Area[] = [
     uf: "MA",
     isBase: false,
     h1: "Energia solar na Raposa",
-    title: "Energia solar na Raposa/MA | EcoLuz",
+    title: "Energia solar na Raposa/MA | Eco Luz",
     description:
       "Energia solar na Raposa com atenção à maresia: escolha de estrutura, fixação e manutenção para imóvel de litoral. Sistemas com e sem bateria.",
     eyebrow: "Ilha do Maranhão",

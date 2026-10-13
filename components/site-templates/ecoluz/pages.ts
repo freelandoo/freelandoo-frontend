@@ -107,7 +107,7 @@ export function pageMeta(page: EcoluzPage | null): {
 } {
   if (!page) {
     return {
-      title: "EcoLuz Energia Solar | Projetos on-grid e off-grid em São Luís/MA",
+      title: "Eco Luz Energia Solar | Projetos on-grid e off-grid em São Luís/MA",
       description:
         "Energia solar para casas, empresas e sítios em São Luís e na Ilha do Maranhão. Sistemas conectados à rede e off-grid com baterias, com projeto, instalação e homologação.",
     };
@@ -120,27 +120,27 @@ export function pageMeta(page: EcoluzPage | null): {
       return { title: page.area.title, description: page.area.description };
     case "servicos":
       return {
-        title: "Serviços de energia solar | EcoLuz",
+        title: "Serviços de energia solar | Eco Luz",
         description:
           "Energia solar residencial, para empresas, sistemas off-grid com baterias, projeto e homologação, manutenção e ampliação em São Luís/MA.",
       };
     case "areas":
       return {
-        title: "Onde a EcoLuz atende | Ilha do Maranhão",
+        title: "Onde a Eco Luz atende | Ilha do Maranhão",
         description:
           "Atendimento em São Luís, São José de Ribamar, Paço do Lumiar e Raposa — os quatro municípios da Ilha do Maranhão.",
       };
     case "sobre":
       return {
-        title: "Sobre a EcoLuz Energia Solar",
+        title: "Sobre a Eco Luz Energia Solar",
         description:
-          "Quem é a EcoLuz: projeto, instalação e acompanhamento de sistemas de energia solar em São Luís, no Maranhão.",
+          "Quem é a Eco Luz: projeto, instalação e acompanhamento de sistemas de energia solar em São Luís, no Maranhão.",
       };
     case "contato":
       return {
-        title: "Contato | EcoLuz Energia Solar",
+        title: "Contato | Eco Luz Energia Solar",
         description:
-          "Fale com a EcoLuz pelo WhatsApp, telefone ou e-mail. A loja fica na Av. Mário Andreazza, no Turu, em São Luís/MA.",
+          "Fale com a Eco Luz pelo WhatsApp, telefone ou e-mail. A loja fica na Av. Mário Andreazza, no Turu, em São Luís/MA.",
       };
   }
 }

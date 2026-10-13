@@ -47,7 +47,7 @@ import OpeningMotion from "./opening-motion";
 
 /** A mensagem de quem chega pelo terceiro ato, já sabendo o que quer. */
 const WA_ESPECIALISTA =
-  "Olá! Vim pelo site da EcoLuz e quero falar com um especialista sobre energia solar.";
+  "Olá! Vim pelo site da Eco Luz e quero falar com um especialista sobre energia solar.";
 
 export default function Opening({ links }: { links: TemplateLinks }) {
   return (
@@ -97,7 +97,7 @@ export default function Opening({ links }: { links: TemplateLinks }) {
 
             <p className="el-open__lead">
               Gere sua própria energia e tenha mais controle sobre o que você
-              paga todo mês. A EcoLuz projeta, instala e homologa sistemas
+              paga todo mês. A Eco Luz projeta, instala e homologa sistemas
               solares — com bateria ou sem — para casas, empresas e sítios.
             </p>
 
@@ -169,7 +169,7 @@ export default function Opening({ links }: { links: TemplateLinks }) {
 
           {/* ── ATO 3 — QUEM FAZ ────────────────────────────────────────── */}
           <article className="el-open__act" data-open-act>
-            <Monogram className="h-11 w-11 text-[var(--el-sun)]" />
+            <Monogram className="h-11 w-auto text-[var(--el-sun)]" />
 
             <h2 className="display el-open__title el-open__title--tight">
               Projeto, instalação
@@ -180,7 +180,7 @@ export default function Opening({ links }: { links: TemplateLinks }) {
             <p className="el-open__lead">
               Equipe própria no Maranhão, do diagnóstico da conta ao
               acompanhamento depois de ligado. A etapa em que mais gente trava
-              sozinha — o processo na concessionária — é conduzida pela EcoLuz.
+              sozinha — o processo na concessionária — é conduzida pela Eco Luz.
             </p>
 
             <div className="el-open__cta">
@@ -190,7 +190,7 @@ export default function Opening({ links }: { links: TemplateLinks }) {
                 rel="noopener"
                 className="btn btn-solid"
               >
-                Falar com a EcoLuz
+                Falar com a Eco Luz
               </a>
               <a href={pageHref(links, PAGE.servicos)} className="btn btn-ghost">
                 Ver as soluções

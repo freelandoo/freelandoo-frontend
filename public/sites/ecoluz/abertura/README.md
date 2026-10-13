@@ -1,4 +1,4 @@
-# A abertura em vídeo da EcoLuz
+# A abertura em vídeo da Eco Luz
 
 Aqui moram os quadros que a rolagem da home arrasta. Duas pastas:
 

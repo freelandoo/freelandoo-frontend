@@ -15,7 +15,7 @@ import {
 import { pageHref, type TemplateLinks } from "./lib";
 
 /**
- * O MARANHÃO ENERGIZADO — onde a EcoLuz está e até onde vai.
+ * O MARANHÃO ENERGIZADO — onde a Eco Luz está e até onde vai.
  *
  * Duas pranchas lado a lado: o estado inteiro (com a unidade de Vitória do
  * Mearim e o recorte da ilha marcado) e a Ilha do Maranhão ampliada, com os
@@ -31,7 +31,7 @@ import { pageHref, type TemplateLinks } from "./lib";
  * ⚠️ AS CIDADES SÃO BOTÕES DE VERDADE, numa lista ao lado — os desenhos são
  * `aria-hidden`. Passar o cursor numa forma ou focar um botão acende a MESMA
  * cidade nos dois lugares, e o painel de detalhe (`aria-live`) diz o que é
- * aquela cidade para a EcoLuz e leva à página dela, quando existe.
+ * aquela cidade para a Eco Luz e leva à página dela, quando existe.
  *
  * ⚠️ NENHUMA BIBLIOTECA DE MAPA. Cinco pontos e quatro formas não justificam
  * um mapa de azulejos com chave de API e script de terceiro na CSP.

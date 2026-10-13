@@ -3,12 +3,12 @@
 // ⚠️ NENHUMA PÁGINA É OUTRA COM O NOME TROCADO. Página repetida com uma
 // palavra substituída é exatamente o padrão que o buscador trata como
 // conteúdo duplicado, e o efeito é o oposto do pretendido: em vez de cinco
-// portas de entrada, a EcoLuz teria uma e quatro sombras dela.
+// portas de entrada, a Eco Luz teria uma e quatro sombras dela.
 //
 // ⚠️ E NENHUMA AFIRMA NÚMERO QUE NINGUÉM APUROU. Não há promessa de
 // porcentagem de economia, de prazo de retorno nem de potência: isso depende
 // de consumo, tarifa, telhado e forma de pagamento, e é o que a análise
-// técnica responde. O que o site promete é o PROCESSO, que é o que a EcoLuz
+// técnica responde. O que o site promete é o PROCESSO, que é o que a Eco Luz
 // controla.
 
 import type { IconName } from "../icons";
@@ -43,7 +43,7 @@ export const SERVICES: Service[] = [
     slug: "energia-solar-residencial",
     label: "Solar residencial",
     h1: "Energia solar para a sua casa",
-    title: "Energia solar residencial em São Luís | EcoLuz",
+    title: "Energia solar residencial em São Luís | Eco Luz",
     description:
       "Projeto de energia solar para casas em São Luís e região: dimensionamento pelo seu consumo, instalação e homologação na concessionária. Peça uma análise da sua conta.",
     eyebrow: "Para a casa",
@@ -65,7 +65,7 @@ export const SERVICES: Service[] = [
     },
     covers: {
       title: "O que entra no projeto",
-      lead: "A EcoLuz entrega o sistema funcionando e homologado — não só os equipamentos na porta de casa.",
+      lead: "A Eco Luz entrega o sistema funcionando e homologado — não só os equipamentos na porta de casa.",
       items: [
         {
           title: "Análise da conta",
@@ -81,7 +81,7 @@ export const SERVICES: Service[] = [
         },
         {
           title: "Homologação na concessionária",
-          text: "A EcoLuz cuida da documentação e do processo junto à distribuidora até o sistema ser aprovado e conectado.",
+          text: "A Eco Luz cuida da documentação e do processo junto à distribuidora até o sistema ser aprovado e conectado.",
         },
       ],
     },
@@ -96,7 +96,7 @@ export const SERVICES: Service[] = [
       },
       {
         q: "Quanto tempo leva para ficar pronto?",
-        a: "A instalação em si costuma ser a parte mais rápida. O prazo total depende da homologação na concessionária, que tem etapas e tempos próprios — e é justamente por isso que a EcoLuz conduz esse processo em vez de deixá-lo com o cliente.",
+        a: "A instalação em si costuma ser a parte mais rápida. O prazo total depende da homologação na concessionária, que tem etapas e tempos próprios — e é justamente por isso que a Eco Luz conduz esse processo em vez de deixá-lo com o cliente.",
       },
       {
         q: "E se eu me mudar?",
@@ -110,7 +110,7 @@ export const SERVICES: Service[] = [
     slug: "energia-solar-para-empresas",
     label: "Solar para empresas",
     h1: "Energia solar para empresas e comércios",
-    title: "Energia solar para empresas em São Luís | EcoLuz",
+    title: "Energia solar para empresas em São Luís | Eco Luz",
     description:
       "Projetos de energia solar para comércios, clínicas, restaurantes e pequenas indústrias em São Luís. Custo fixo previsível e dimensionamento pelo consumo real do negócio.",
     eyebrow: "Para o negócio",
@@ -148,7 +148,7 @@ export const SERVICES: Service[] = [
         },
         {
           title: "Homologação e acompanhamento",
-          text: "Processo junto à concessionária conduzido pela EcoLuz e monitoramento do desempenho depois da ativação.",
+          text: "Processo junto à concessionária conduzido pela Eco Luz e monitoramento do desempenho depois da ativação.",
         },
       ],
     },
@@ -173,7 +173,7 @@ export const SERVICES: Service[] = [
     slug: "sistema-off-grid",
     label: "Sistema off-grid",
     h1: "Sistema off-grid: energia com baterias",
-    title: "Sistema solar off-grid com baterias no Maranhão | EcoLuz",
+    title: "Sistema solar off-grid com baterias no Maranhão | Eco Luz",
     description:
       "Sistemas solares off-grid e híbridos com baterias para sítios, chácaras e locais sem rede elétrica ou com queda constante de energia no Maranhão.",
     eyebrow: "Autonomia",
@@ -241,16 +241,16 @@ export const SERVICES: Service[] = [
     slug: "projeto-e-homologacao",
     label: "Projeto e homologação",
     h1: "Projeto, documentação e homologação",
-    title: "Projeto e homologação de energia solar no Maranhão | EcoLuz",
+    title: "Projeto e homologação de energia solar no Maranhão | Eco Luz",
     description:
-      "Dimensionamento, projeto elétrico e homologação do sistema solar junto à concessionária no Maranhão. A EcoLuz conduz o processo do início à aprovação.",
+      "Dimensionamento, projeto elétrico e homologação do sistema solar junto à concessionária no Maranhão. A Eco Luz conduz o processo do início à aprovação.",
     eyebrow: "Engenharia",
     icon: "file",
     card: "A parte que ninguém vê e que decide se o sistema entra em operação — ou fica no telhado esperando.",
     wa: "Olá! Quero entender o projeto e a homologação de um sistema solar.",
     intro: [
       "Um sistema solar não passa a gerar crédito porque foi instalado: ele precisa ser aprovado e conectado pela concessionária. Essa etapa tem documentação, projeto elétrico, prazos e exigências técnicas próprias.",
-      "É a parte do processo em que mais gente trava — e é por isso que ela é um serviço, e não uma linha miúda no contrato. A EcoLuz conduz a homologação do início até a aprovação, com o cliente acompanhando em vez de correr atrás.",
+      "É a parte do processo em que mais gente trava — e é por isso que ela é um serviço, e não uma linha miúda no contrato. A Eco Luz conduz a homologação do início até a aprovação, com o cliente acompanhando em vez de correr atrás.",
     ],
     forWho: {
       title: "Este serviço resolve",
@@ -286,7 +286,7 @@ export const SERVICES: Service[] = [
     faq: [
       {
         q: "Já tenho um sistema instalado, mas sem homologação. Dá para resolver?",
-        a: "Dá, e é um caso que aparece com frequência. A EcoLuz avalia o que foi instalado, verifica se atende às exigências técnicas e conduz o processo — quando necessário, apontando antes o que precisa ser corrigido.",
+        a: "Dá, e é um caso que aparece com frequência. A Eco Luz avalia o que foi instalado, verifica se atende às exigências técnicas e conduz o processo — quando necessário, apontando antes o que precisa ser corrigido.",
       },
       {
         q: "Preciso pagar alguma coisa para a concessionária?",
@@ -294,7 +294,7 @@ export const SERVICES: Service[] = [
       },
       {
         q: "Por que a homologação demora?",
-        a: "Porque o prazo é da concessionária, não de quem instala. O que a EcoLuz controla é entregar a documentação correta na primeira vez — exigência devolvida por erro de projeto é o que faz um processo simples levar meses.",
+        a: "Porque o prazo é da concessionária, não de quem instala. O que a Eco Luz controla é entregar a documentação correta na primeira vez — exigência devolvida por erro de projeto é o que faz um processo simples levar meses.",
       },
     ],
     related: ["energia-solar-residencial", "energia-solar-para-empresas"],
@@ -304,7 +304,7 @@ export const SERVICES: Service[] = [
     slug: "manutencao-e-monitoramento",
     label: "Manutenção e monitoramento",
     h1: "Manutenção, monitoramento e ampliação",
-    title: "Manutenção e monitoramento de sistema solar | EcoLuz",
+    title: "Manutenção e monitoramento de sistema solar | Eco Luz",
     description:
       "Acompanhamento de desempenho, limpeza técnica, manutenção e ampliação de sistemas de energia solar já instalados em São Luís e região.",
     eyebrow: "Depois da instalação",

@@ -26,7 +26,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
  *      comentário nomeou como a hora de trocar.
  *   2. O CHUNK JÁ DESCE NESTA ROTA. O `registry.ts` importa os quatro temas
  *      ESTATICAMENTE, e `enzo-cortes` e `oficina-local` importam `gsap` — ou
- *      seja, em /c/<slug> o GSAP já é baixado hoje, mesmo servindo a EcoLuz.
+ *      seja, em /c/<slug> o GSAP já é baixado hoje, mesmo servindo a Eco Luz.
  *      Usá-lo aqui custa zero byte a mais.
  *
  * ── AS REGRAS QUE MORDEM EM SILÊNCIO ──────────────────────────────────────

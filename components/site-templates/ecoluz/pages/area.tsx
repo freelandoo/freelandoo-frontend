@@ -64,7 +64,7 @@ export default function AreaPage({ links, area }: Ctx & { area: Area }) {
           </div>
           <div className="mt-9" data-reveal="up" data-reveal-delay="180">
             <a href={wa} target="_blank" rel="noopener" className="btn btn-solid">
-              Falar com a EcoLuz
+              Falar com a Eco Luz
             </a>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function AreaPage({ links, area }: Ctx & { area: Area }) {
         <div className="grid gap-14">
           <div>
             <p className="eyebrow mb-6 text-[var(--el-sun)]">
-              O que a EcoLuz faz {area.prep}
+              O que a Eco Luz faz {area.prep}
             </p>
             <div className="grid gap-px sm:grid-cols-2 lg:grid-cols-3" style={{ background: "var(--el-line-soft)" }}>
               {SERVICES.map((s, i) => (

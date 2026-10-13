@@ -23,7 +23,7 @@ export type Segment = {
    *
    * ⚠️ RURAL E MAIOR PORTE AINDA NÃO TÊM PÁGINA — e por isso vão para a
    * conversa. Não é esquecimento: escrever uma página inteira sobre o que a
-   * EcoLuz faz num sítio ou numa usina exigiria afirmar detalhe técnico que o
+   * Eco Luz faz num sítio ou numa usina exigiria afirmar detalhe técnico que o
    * cliente ainda não informou, e página de serviço é onde o site faz promessa
    * mais específica. Quando ele descrever essas duas frentes, elas entram em
    * `services.ts` e ganham `page` aqui — o card não muda.
@@ -68,7 +68,7 @@ export const SEGMENTS: Segment[] = [
     icon: "grain",
     label: "Rural",
     text: "Sítios, chácaras e produção no campo, inclusive onde a rede é frágil ou não chega. É aqui que o sistema com baterias deixa de ser luxo e passa a ser o que mantém bomba, câmara fria e casa funcionando.",
-    wa: "Olá! Vim pelo site da EcoLuz e quero energia solar para uma propriedade rural.",
+    wa: "Olá! Vim pelo site da Eco Luz e quero energia solar para uma propriedade rural.",
     points: ["Sítios, chácaras e produção", "Onde a rede é frágil ou não chega", "Sistemas com bateria"],
     scale: 3,
   },
@@ -76,7 +76,7 @@ export const SEGMENTS: Segment[] = [
     icon: "bolt",
     label: "Projetos de maior porte",
     text: "Indústria, agronegócio e múltiplas unidades consumidoras. Projetos em que a conta de energia é uma linha relevante do orçamento e o dimensionamento precisa ser feito sobre o histórico inteiro.",
-    wa: "Olá! Vim pelo site da EcoLuz e quero avaliar um projeto de maior porte.",
+    wa: "Olá! Vim pelo site da Eco Luz e quero avaliar um projeto de maior porte.",
     points: ["Indústria e agronegócio", "Múltiplas unidades consumidoras", "Dimensionado sobre o histórico inteiro"],
     scale: 4,
   },
@@ -116,9 +116,9 @@ export const FINANCING = {
     },
   ],
   /** A ressalva que precisa estar visível, não em letra miúda. */
-  note: "Condições, prazo e taxa sujeitos a análise e aprovação de crédito pela instituição financeira. A EcoLuz não é instituição financeira e não aprova crédito.",
+  note: "Condições, prazo e taxa sujeitos a análise e aprovação de crédito pela instituição financeira. A Eco Luz não é instituição financeira e não aprova crédito.",
   cta: "Quero simular o financiamento",
-  wa: "Olá! Vim pelo site da EcoLuz e quero saber sobre o financiamento do sistema solar.",
+  wa: "Olá! Vim pelo site da Eco Luz e quero saber sobre o financiamento do sistema solar.",
 };
 
 /* ══════════════════ § 13 — O QUE CABE NA SUA CONTA ══════════════════════ */
@@ -171,4 +171,4 @@ export const LOADS: Load[] = [
 ];
 
 export const LOADS_NOTE =
-  "A EcoLuz dimensiona o sistema de acordo com o seu consumo real — não por um pacote de prateleira.";
+  "A Eco Luz dimensiona o sistema de acordo com o seu consumo real — não por um pacote de prateleira.";

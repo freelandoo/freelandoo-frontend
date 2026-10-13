@@ -12,7 +12,7 @@ import { Icon } from "./icons";
  * existe para a pessoa SE RECONHECER numa situação (pedido do cliente, §13 do
  * brief), e uma grade de seis cartões iguais pede que ela leia os seis. Aqui
  * ela escolhe a dela, e o painel "lê" aquela carga — o gesto de uma análise de
- * consumo, que é exatamente o primeiro passo do trabalho da EcoLuz.
+ * consumo, que é exatamente o primeiro passo do trabalho da Eco Luz.
  *
  * ⚠️ NENHUM NÚMERO DE CONSUMO. "Um ar-condicionado gasta X kWh" depende de
  * potência, horas de uso, eficiência e tarifa — e um número médio aqui seria

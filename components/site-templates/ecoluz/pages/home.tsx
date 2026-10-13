@@ -41,11 +41,11 @@ import { CtaBand, FaqList, FeatureCard, Section, SectionHead } from "../ui";
 
 /** A mensagem do fecho: quem aperta já vai mandar a conta. */
 const WA_CONTA =
-  "Olá! Vim pelo site da EcoLuz e quero mandar a minha conta de luz para análise.";
+  "Olá! Vim pelo site da Eco Luz e quero mandar a minha conta de luz para análise.";
 
 /** A mensagem de quem chega pela calculadora, já com um número na cabeça. */
 const WA_ANALISE =
-  "Olá! Simulei no site da EcoLuz e quero uma análise personalizada da minha conta de luz.";
+  "Olá! Simulei no site da Eco Luz e quero uma análise personalizada da minha conta de luz.";
 
 export default function HomePage({ links }: Ctx) {
   return (
@@ -64,7 +64,7 @@ export default function HomePage({ links }: Ctx) {
       <Section id="diferenciais" tone="paper">
         <SectionHead
           tone="paper"
-          eyebrow="Por que escolher a EcoLuz"
+          eyebrow="Por que escolher a Eco Luz"
           title="O que a gente entrega além do equipamento."
           lead="Painel e inversor qualquer um vende. O que separa um sistema que funciona de um que dá dor de cabeça é o que acontece antes e depois da entrega da caixa."
         />
@@ -142,7 +142,7 @@ export default function HomePage({ links }: Ctx) {
       {/* § 8 — Financiamento. */}
       <FinancingSection />
 
-      {/* § 9 — Conheça a EcoLuz. */}
+      {/* § 9 — Conheça a Eco Luz. */}
       <AboutSection links={links} />
 
       {/* § 10 — Onde estamos + até onde atendemos. */}
@@ -179,7 +179,7 @@ export default function HomePage({ links }: Ctx) {
             <span className="text-[var(--el-sun)]">Falta colocar ele para trabalhar.</span>
           </>
         }
-        text="Mande uma foto da sua conta de luz para um especialista da EcoLuz. Em geral ela já responde metade das perguntas — e a análise do seu consumo é o primeiro passo do projeto."
+        text="Mande uma foto da sua conta de luz para um especialista da Eco Luz. Em geral ela já responde metade das perguntas — e a análise do seu consumo é o primeiro passo do projeto."
         href={whatsappLink(WA_CONTA)}
         label="Analisar minha conta"
       />

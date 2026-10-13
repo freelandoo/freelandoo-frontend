@@ -16,7 +16,7 @@
 // conteúdo não muda quando o conteúdo muda, isso CONGELAVA a imagem para quem
 // já tinha visitado — e o sintoma é o pior possível, porque o servidor está
 // certo, os cabeçalhos estão certos e mesmo assim a pessoa vê o arquivo velho.
-// Mordeu de verdade: os 120 quadros da abertura do site da EcoLuz ficaram
+// Mordeu de verdade: os 120 quadros da abertura do site da Eco Luz ficaram
 // presos, e quatro trocas de vídeo seguidas não apareceram para quem tinha
 // aberto a página uma vez.
 //

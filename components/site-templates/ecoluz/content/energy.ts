@@ -14,7 +14,7 @@
 // ⚠️ E O CRÉDITO É DESCRITO "CONFORME AS REGRAS DA COMPENSAÇÃO". A regra do
 // crédito de energia é da regulação e da concessionária, muda com o tempo e
 // tem prazo e condições. Escrever "o excedente vira dinheiro" seria uma
-// promessa que a EcoLuz não controla.
+// promessa que a Eco Luz não controla.
 
 import type { IconName } from "../icons";
 
@@ -125,7 +125,7 @@ export const SYSTEMS: SystemInfo[] = [
  * ⚠️ É UMA VISUALIZAÇÃO DO PROCESSO, NÃO O STATUS DE UM CLIENTE. Nada aqui é
  * dado real de obra — a tela deixa isso escrito em voz alta. E nenhuma etapa
  * tem prazo: o prazo do meio do caminho é da concessionária, e virar data
- * aqui seria uma cobrança que a EcoLuz não tem como honrar (a mesma regra do
+ * aqui seria uma cobrança que a Eco Luz não tem como honrar (a mesma regra do
  * passo a passo em `content/site.ts`).
  */
 export const HOMOLOGATION: { icon: IconName; label: string; text: string }[] = [
@@ -143,7 +143,7 @@ export const HOMOLOGATION: { icon: IconName; label: string; text: string }[] = [
  * As cidades marcadas no mapa, em coordenadas geográficas (graus decimais).
  *
  * ⚠️ AS COORDENADAS SÃO DO CENTRO DE CADA MUNICÍPIO (sede), não do endereço da
- * loja. O mapa responde "até onde a EcoLuz vai", e um alfinete no endereço
+ * loja. O mapa responde "até onde a Eco Luz vai", e um alfinete no endereço
  * exato de uma rua seria uma precisão que ele não precisa ter — e que, errada
  * por uma quadra, mandaria gente para o lugar errado.
  *

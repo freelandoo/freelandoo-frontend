@@ -46,7 +46,7 @@ const MIN = 150;
 const MAX = 6000;
 const STEP = 50;
 const YEARS = 10;
-/** O teto da faixa que a EcoLuz usa como referência de conversa. */
+/** O teto da faixa que a Eco Luz usa como referência de conversa. */
 const MAX_OFFSET = 0.85;
 
 /** Quanto tempo a varredura continua depois do último toque no controle. */

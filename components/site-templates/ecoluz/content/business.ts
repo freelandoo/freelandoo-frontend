@@ -1,4 +1,4 @@
-// O NEGÓCIO — a fonte ÚNICA de tudo que identifica a EcoLuz.
+// O NEGÓCIO — a fonte ÚNICA de tudo que identifica a Eco Luz.
 //
 // ⚠️ NADA AQUI É REPETIDO EM OUTRO ARQUIVO. Telefone, endereço e e-mail
 // aparecem na barra, no rodapé, no botão flutuante, na página de contato e no
@@ -9,7 +9,7 @@
  *  outra erra no primeiro número com nono dígito ausente ou DDD de duas
  *  casas. Ele é o mesmo em todas — o que muda é o formato. */
 export const BUSINESS = {
-  name: "EcoLuz Energia Solar",
+  name: "Eco Luz Energia Solar",
   owner: "Mauricio Sousa Rocha",
 
   /** O que se lê. */
@@ -59,7 +59,7 @@ export function whatsappLink(message?: string): string {
 
 /** A mensagem de quem chega sem passar por serviço nenhum. */
 export const WA_DEFAULT =
-  "Olá! Vim pelo site da EcoLuz e quero saber quanto posso economizar com energia solar.";
+  "Olá! Vim pelo site da Eco Luz e quero saber quanto posso economizar com energia solar.";
 
 /**
  * O mapa da página de contato, derivado do endereço que já está aqui em cima.

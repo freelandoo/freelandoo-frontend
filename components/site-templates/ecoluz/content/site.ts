@@ -10,7 +10,7 @@ import type { IconName } from "../icons";
 
 /**
  * ⚠️ O PASSO A PASSO É DO PROCESSO, NÃO DO RESULTADO. Cada etapa descreve algo
- * que a EcoLuz faz e controla; nenhuma promete prazo, porque o prazo do meio do
+ * que a Eco Luz faz e controla; nenhuma promete prazo, porque o prazo do meio do
  * caminho é da concessionária e virar promessa aqui seria uma cobrança que a
  * empresa não tem como honrar.
  *
@@ -92,7 +92,7 @@ export const DIFFERENTIALS: { icon: IconName; title: string; text: string }[] = 
   {
     icon: "shield",
     title: "Homologação acompanhada",
-    text: "A documentação e o processo na Equatorial ficam com a EcoLuz, até a vistoria e a troca do medidor. É a parte burocrática que trava quem compra sozinho.",
+    text: "A documentação e o processo na Equatorial ficam com a Eco Luz, até a vistoria e a troca do medidor. É a parte burocrática que trava quem compra sozinho.",
   },
   {
     icon: "support",
@@ -132,7 +132,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Posso financiar?",
-    a: "Pode. Trabalhamos com linhas de financiamento para energia solar, em até 120 meses, e a análise entra junto com a proposta técnica. Condições, prazo e taxa dependem da aprovação de crédito pela instituição financeira — a EcoLuz não aprova crédito, apenas encaminha.",
+    a: "Pode. Trabalhamos com linhas de financiamento para energia solar, em até 120 meses, e a análise entra junto com a proposta técnica. Condições, prazo e taxa dependem da aprovação de crédito pela instituição financeira — a Eco Luz não aprova crédito, apenas encaminha.",
   },
   {
     q: "Vocês fazem toda a instalação?",
@@ -140,7 +140,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Vocês cuidam da homologação com a Equatorial?",
-    a: "Cuidamos. A documentação, o pedido de acesso e o acompanhamento até a vistoria e a troca do medidor ficam com a EcoLuz. É a etapa em que mais gente trava quando compra equipamento por conta própria.",
+    a: "Cuidamos. A documentação, o pedido de acesso e o acompanhamento até a vistoria e a troca do medidor ficam com a Eco Luz. É a etapa em que mais gente trava quando compra equipamento por conta própria.",
   },
   {
     q: "Quanto tempo leva para instalar?",

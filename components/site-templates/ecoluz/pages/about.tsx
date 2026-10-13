@@ -25,7 +25,7 @@ export default function SobrePage({ links }: Ctx) {
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start lg:gap-16">
             <div>
               <p className="eyebrow text-[var(--el-sun)]" data-reveal="up">
-                A EcoLuz
+                A Eco Luz
               </p>
               <h1
                 className="display mt-5 text-[2.5rem] text-[var(--el-cream)] sm:text-[3.25rem] md:text-[4rem]"
@@ -40,7 +40,7 @@ export default function SobrePage({ links }: Ctx) {
                 data-reveal-delay="120"
               >
                 <p>
-                  A EcoLuz é uma empresa de energia solar de São Luís, com loja
+                  A Eco Luz é uma empresa de energia solar de São Luís, com loja
                   no Turu. Ela projeta, instala e homologa sistemas para casas,
                   comércios, empresas e propriedades rurais na Ilha do Maranhão
                   — tanto os conectados à rede quanto os off-grid, com baterias.
@@ -60,7 +60,7 @@ export default function SobrePage({ links }: Ctx) {
             </div>
 
             <aside className="panel p-8" data-reveal="up" data-reveal-delay="180">
-              <Monogram className="h-12 w-12 text-[var(--el-sun)]" />
+              <Monogram className="h-12 w-auto text-[var(--el-sun)]" />
               <dl className="mt-7 grid gap-5 text-[0.9375rem]">
                 <div>
                   <dt className="eyebrow text-[var(--el-cream-faint)]">Responsável</dt>
@@ -115,7 +115,7 @@ export default function SobrePage({ links }: Ctx) {
           <div data-reveal="up">
             <p className="eyebrow text-[var(--el-sun)]">Honestidade</p>
             <h2 className="display mt-5 text-[2rem] text-[var(--el-cream)] md:text-[2.5rem]">
-              O que a EcoLuz não promete.
+              O que a Eco Luz não promete.
             </h2>
             <p className="mt-5 text-[1.0625rem] leading-relaxed text-[var(--el-cream-dim)]">
               Num ramo cheio de porcentagem redonda e retorno garantido, dizer o

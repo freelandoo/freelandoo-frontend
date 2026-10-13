@@ -1,4 +1,4 @@
-// A EMPRESA — o que a EcoLuz já fez, onde ela está e quem fala bem dela.
+// A EMPRESA — o que a Eco Luz já fez, onde ela está e quem fala bem dela.
 //
 // ═══ ESTE ARQUIVO CONCENTRA, DE PROPÓSITO, TUDO QUE DEPENDE DE DADO REAL ═══
 //
@@ -15,6 +15,8 @@
 // O cliente já avisou que vai mandar (brief de 14/09): "Os números nós vamos
 // enviar para você assim que levantarmos". Quando chegarem, é preencher a lista
 // daqui e a seção aparece sozinha — não há nenhuma outra edição a fazer.
+
+import equipe from "@/public/sites/ecoluz/equipe.webp";
 
 import { BUSINESS } from "./business";
 
@@ -94,10 +96,10 @@ export const PROJECTS: Project[] = [];
  * resultado de busca.
  */
 export const ABOUT_HOME = {
-  eyebrow: "Conheça a EcoLuz",
+  eyebrow: "Conheça a Eco Luz",
   title: "Tem uma equipe por trás de cada projeto.",
   paragraphs: [
-    "A EcoLuz é uma empresa maranhense de energia solar. O trabalho não termina na venda do equipamento: começa no diagnóstico da conta de luz, passa pela visita técnica, pelo projeto elétrico e pela homologação na concessionária, e continua depois que o sistema está gerando.",
+    "A Eco Luz é uma empresa maranhense de energia solar. O trabalho não termina na venda do equipamento: começa no diagnóstico da conta de luz, passa pela visita técnica, pelo projeto elétrico e pela homologação na concessionária, e continua depois que o sistema está gerando.",
     "Quem atende, projeta e instala é gente daqui. É o que permite responder rápido quando alguma coisa muda — e é a diferença entre comprar um sistema e ter alguém por perto para cuidar dele.",
   ],
   /**
@@ -105,9 +107,20 @@ export const ABOUT_HOME = {
    * e/ou das nossas unidades"). Vazio: a seção sai só com o texto, que
    * continua de pé. Uma foto de banco aqui seria uma equipe que não existe
    * anunciando uma empresa que existe.
+   *
+   * ⚠️ ELA É DEITADA (16:9) E A EQUIPE OCUPA A LARGURA INTEIRA. O slot não
+   * recorta de propósito (ver `AboutSection` em `home-blocks.tsx`): num
+   * enquadramento retrato, `object-cover` cortaria as pessoas das pontas —
+   * numa foto cujo assunto é "tem uma equipe por trás", perder metade dela é
+   * perder a frase.
+   *
+   * ⚠️ E ELA É IMPORTADA, NÃO ESCRITA COMO CAMINHO. É o import que carrega as
+   * medidas do arquivo até o `<Image>`; com o caminho em texto, as duas
+   * precisariam ser digitadas à mão lá, e trocar a foto por uma de outra
+   * proporção sem lembrar de trocá-las daria salto de layout no carregamento.
    */
-  photo: "",
-  alt: "",
+  photo: equipe,
+  alt: "Equipe da Eco Luz reunida em frente à loja da empresa, em São Luís, no dia da inauguração.",
 };
 
 /* ══════════════════ § 10 — ONDE ESTAMOS ═════════════════════════════════ */
@@ -179,7 +192,7 @@ export type Review = {
    *
    * Vazio é um estado LEGÍTIMO, não uma pendência: o card desenha a INICIAL
    * do nome num disco, que é exatamente o que o próprio Google faz com quem
-   * não tem foto (é o caso do Matheus no perfil da EcoLuz hoje).
+   * não tem foto (é o caso do Matheus no perfil da Eco Luz hoje).
    */
   photo?: string;
 };
@@ -223,7 +236,7 @@ export const REVIEWS: Review[] = [
  * que o brief pede, e é ele que torna as avaliações verificáveis — sem o link,
  * as citações da página são só texto que nós escrevemos.
  *
- * Pegar em: Google Maps → perfil da EcoLuz → Compartilhar → Copiar link.
+ * Pegar em: Google Maps → perfil da Eco Luz → Compartilhar → Copiar link.
  * Vazio: o botão não é desenhado.
  */
 export const REVIEWS_URL = "https://share.google/jPG9ePtwpyh4h1vtp";
@@ -256,7 +269,7 @@ export const TEAM: { name: string; role: string; text: string; wa: string }[] = 
     name: "Rafael Andrade",
     role: "Atendimento inicial",
     text: "Para quem quer começar agora, tirar dúvidas e entender qual é o melhor caminho antes de decidir qualquer coisa.",
-    wa: "Olá! Vim pelo site da EcoLuz e quero tirar umas dúvidas sobre energia solar.",
+    wa: "Olá! Vim pelo site da Eco Luz e quero tirar umas dúvidas sobre energia solar.",
   },
   {
     name: "Mariana Costa",

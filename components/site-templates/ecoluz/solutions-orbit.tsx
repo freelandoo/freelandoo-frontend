@@ -187,7 +187,7 @@ export default function SolutionsOrbit({ links }: { links: TemplateLinks }) {
 
       <div ref={trackRef} className="el-orbit__track">
         <div className="el-orbit__stage">
-          {/* O núcleo: a EcoLuz no meio das quatro frentes. Só existe com a
+          {/* O núcleo: a Eco Luz no meio das quatro frentes. Só existe com a
               órbita ligada — na grade e no deslizar ele seria um enfeite solto. */}
           <div className="el-orbit__core" aria-hidden="true">
             <span className="el-orbit__core-glow" />
@@ -197,7 +197,7 @@ export default function SolutionsOrbit({ links }: { links: TemplateLinks }) {
             <span className="el-orbit__core-sun" />
           </div>
 
-          <ul className="el-orbit__ring" aria-label="Soluções da EcoLuz">
+          <ul className="el-orbit__ring" aria-label="Soluções da Eco Luz">
             {SEGMENTS.map((seg, i) => {
               // ⚠️ O DESTINO SAI DO CONTEÚDO, NÃO DE UM `if` AQUI — ver a nota em
               // `content/offer.ts`: rural e maior porte vão para a conversa até

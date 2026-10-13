@@ -81,7 +81,7 @@ export function EnergyPipeline() {
             </h2>
           </div>
           <p className="text-[1.0625rem] leading-relaxed text-[var(--el-paper-dim)]" data-reveal="up" data-reveal-delay="80">
-            Seis etapas, e você sabe em qual delas o seu projeto está. A EcoLuz
+            Seis etapas, e você sabe em qual delas o seu projeto está. A Eco Luz
             não vende equipamento: entrega uma solução completa, incluindo a
             parte que costuma travar — a homologação.
           </p>
@@ -123,7 +123,7 @@ export function EnergyPipeline() {
    ══════════════════════════════════════════════════════════════════════════
 
    A etapa em que mais gente trava sozinha ganha uma seção própria, porque é
-   um dos diferenciais que a EcoLuz sustenta em toda obra. Seis passos, e cada
+   um dos diferenciais que a Eco Luz sustenta em toda obra. Seis passos, e cada
    um troca de estado em cascata — pendente → em análise → aprovado —, até o
    último virar "gerando".
 
@@ -213,7 +213,7 @@ export function HomologationFlow() {
           <p className="text-[1.0625rem] leading-relaxed text-[var(--el-cream-dim)]" data-reveal="up" data-reveal-delay="80">
             Entre o sistema instalado e o sistema gerando existe um processo na
             concessionária: projeto, documentação, pedido de acesso, vistoria e
-            troca do medidor. A EcoLuz conduz cada passo — é a parte em que mais
+            troca do medidor. A Eco Luz conduz cada passo — é a parte em que mais
             gente trava quando compra sozinha.
           </p>
         </header>
