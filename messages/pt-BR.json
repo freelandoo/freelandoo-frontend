@@ -3725,7 +3725,9 @@
     "itemActions": "Ações do item",
     "priceOnRequest": "Sob orçamento",
     "game": "Jogo",
-    "gameAria": "Abrir o jogo EVO Brazil"
+    "gameAria": "Abrir o jogo EVO Brazil",
+    "gameApp": "App",
+    "gameAppAria": "Vincular o app EVO Brazil no celular"
   },
   "Bees": {
     "chat": "Chat",
@@ -6870,5 +6872,29 @@
     "downloadingHint": "o mundo já está baixando enquanto você lê",
     "portraitTitle": "Deite o telefone",
     "portraitText": "Em pé, a arena fica do tamanho de um selo e os botões somem. Girando, tudo volta ao tamanho certo."
+  },
+  "EvoApp": {
+    "title": "Vincular o app EVO Brazil",
+    "intro": "Abra o app EVO Brazil no celular e digite o código abaixo na tela \"Vincular conta\". Ele vale 5 minutos e uma vez só.",
+    "genError": "Não foi possível gerar o código.",
+    "revokeConfirm": "Desligar este aparelho? O app dele vai pedir um código novo.",
+    "revokeError": "Não foi possível desligar o aparelho.",
+    "needLogin": "Entre na sua conta da Freelandoo para gerar o código.",
+    "login": "Entrar",
+    "codeLabel": "Seu código",
+    "generating": "Gerando…",
+    "expired": "Este código venceu. Gere outro.",
+    "expiresIn": "Vence em {time}",
+    "openApp": "Abrir no app",
+    "copied": "Copiado",
+    "copy": "Copiar",
+    "another": "Gerar outro",
+    "openAppHint": "\"Abrir no app\" só funciona no celular com o EVO Brazil instalado.",
+    "devicesTitle": "Aparelhos vinculados",
+    "loading": "Carregando…",
+    "noDevices": "Nenhum aparelho vinculado ainda.",
+    "unknownDevice": "Aparelho sem nome",
+    "lastUsed": "Último uso: {date}",
+    "revoke": "Desligar"
   }
 }

@@ -12,6 +12,7 @@ import {
   Camera,
   Cog,
   Gamepad2,
+  Smartphone,
   Instagram,
   LayoutGrid,
   Megaphone,
@@ -959,6 +960,20 @@ export function ProfileHeadCard({
                     <Gamepad2 className="h-3.5 w-3.5" />
                     {t("game", "Jogo")}
                   </a>
+                )}
+                {isPlatformAdmin && (
+                  // O APP ANDROID (mig 278): a página que mostra o código de
+                  // vínculo. Mesmo gate do botão "Jogo" — o jogo ainda é só
+                  // de administrador.
+                  <Link
+                    href="/evo"
+                    aria-label={t("gameAppAria", "Vincular o app EVO Brazil no celular")}
+                    title={t("gameAppAria", "Vincular o app EVO Brazil no celular")}
+                    className="inline-flex h-9 shrink-0 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 text-[11px] font-bold uppercase tracking-wider text-[#F2B705] shadow-[2px_2px_0_0_#F2B705] transition hover:bg-[#1D1810] active:scale-[0.96]"
+                  >
+                    <Smartphone className="h-3.5 w-3.5" />
+                    {t("gameApp", "App")}
+                  </Link>
                 )}
               </>
             ) : (

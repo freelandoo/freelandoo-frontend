@@ -4311,7 +4311,9 @@
     "itemActions": "Item actions",
     "priceOnRequest": "On request",
     "game": "Game",
-    "gameAria": "Open the EVO Brazil game"
+    "gameAria": "Open the EVO Brazil game",
+    "gameApp": "App",
+    "gameAppAria": "Link the EVO Brazil app on your phone"
   },
   "Bees": {
     "chat": "Chat",
@@ -7456,5 +7458,29 @@
     "downloadingHint": "the world is already downloading while you read",
     "portraitTitle": "Turn your phone sideways",
     "portraitText": "Upright, the arena shrinks to a stamp and the buttons vanish. Rotate it and everything returns to the right size."
+  },
+  "EvoApp": {
+    "title": "Link the EVO Brazil app",
+    "intro": "Open the EVO Brazil app on your phone and type the code below on the \"Link account\" screen. It is valid for 5 minutes and only once.",
+    "genError": "Could not generate the code.",
+    "revokeConfirm": "Unlink this device? Its app will ask for a new code.",
+    "revokeError": "Could not unlink the device.",
+    "needLogin": "Sign in to your Freelandoo account to generate the code.",
+    "login": "Sign in",
+    "codeLabel": "Your code",
+    "generating": "Generating…",
+    "expired": "This code has expired. Generate another.",
+    "expiresIn": "Expires in {time}",
+    "openApp": "Open in the app",
+    "copied": "Copied",
+    "copy": "Copy",
+    "another": "Generate another",
+    "openAppHint": "\"Open in the app\" only works on a phone with EVO Brazil installed.",
+    "devicesTitle": "Linked devices",
+    "loading": "Loading…",
+    "noDevices": "No device linked yet.",
+    "unknownDevice": "Unnamed device",
+    "lastUsed": "Last used: {date}",
+    "revoke": "Unlink"
   }
 }
