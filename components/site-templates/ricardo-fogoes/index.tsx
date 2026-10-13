@@ -82,6 +82,82 @@ export { PAGE_SLUGS as ricardoPageSlugs, resolveRicardoPage }
 export type { RicardoPage }
 
 /**
+ * ⚠️ SITE SUSPENSO — desde 2026-10-13, por pagamento não realizado.
+ *
+ * Enquanto isto for `true`, NENHUMA das três origens desenha o site: home,
+ * serviço, cidade, áreas, contato e sobre caem todas no aviso de
+ * `SuspendedNotice`. Religar é trocar por `false`; quando o combinado voltar
+ * ao normal, o certo é APAGAR a flag e o aviso em vez de deixar `false` aqui.
+ *
+ * ⚠️ A TRAVA FICA NESTA PORTA de propósito, e não nas rotas. São cinco rotas
+ * que montam este tema (`/c/<slug>`, `/c/<slug>/pagina/<p>`,
+ * `/dominio/<host>`, `/dominio/<host>/pagina/<p>` e `/site-preview/<id>`);
+ * travar rota por rota deixaria as sub-páginas abertas — e é por elas que o
+ * buscador manda a maior parte das visitas deste site.
+ *
+ * ⚠️ `ricardoMetadata` NÃO FOI MEXIDO, e a omissão é deliberada: pôr
+ * `robots: noindex` aqui tiraria as quinze páginas do índice do Google de
+ * verdade, e voltar leva semanas — caro demais para uma pausa de dias. Se a
+ * suspensão passar de umas duas semanas, aí sim vale o noindex.
+ *
+ * ponytail: flag no tema porque o tema é de UM cliente. Se isso virar regra de
+ * cobrança para vários sites, sobe para campo no backend e sai daqui.
+ */
+const SUSPENDED: boolean = true
+
+/**
+ * O contato de COBRANÇA da responsável pelo site — (11) 98427-4134.
+ *
+ * ⚠️ NÃO é o número da Central de Ajuda (`features/tour`, 11 96275-7599): ali
+ * atende suporte do produto, e quem clica nesta tela precisa falar sobre o
+ * pagamento DESTE site. Mandar para o suporte geral seria devolver a pessoa
+ * para uma fila que não resolve o motivo da suspensão.
+ */
+const PLATFORM_WHATSAPP = "https://wa.me/5511984274134"
+
+/**
+ * A tela que substitui o site enquanto ele está suspenso.
+ *
+ * Nas cores da FREELANDOO e não nas do tema, de propósito: é a plataforma
+ * falando, não o site do cliente — a mesma escolha da caixa de "comunidade
+ * fechada" em `app/c/[slug]/page.tsx`. Por isso também não traz telefone nem
+ * WhatsApp do cliente: um site suspenso que ainda entrega contato não está
+ * suspenso.
+ */
+function SuspendedNotice() {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#0B0B0D] px-6 py-16">
+      <div
+        className="w-full max-w-md border-2 border-[#0B0B0D] bg-[#15120E] p-8 text-center"
+        style={{ boxShadow: "6px 6px 0 0 #F2B705" }}
+      >
+        <p className="text-[10px] font-extrabold tracking-[0.16em] text-[#F2B705] uppercase">
+          Site inativo
+        </p>
+        <h1 className="mt-4 text-2xl leading-tight font-extrabold text-[#F5F1E8]">
+          {BUSINESS.name}
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-[#F5F1E8]/70">
+          Este site está temporariamente fora do ar. Para reativá-lo, fale com a
+          empresa responsável pela criação e manutenção.
+        </p>
+        <a
+          href={PLATFORM_WHATSAPP}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 inline-block border-2 border-[#0B0B0D] bg-[#F2B705] px-6 py-3 text-xs font-extrabold tracking-[0.14em] text-[#0B0B0D] uppercase"
+        >
+          Falar com a responsável
+        </a>
+        <p className="mt-6 text-[10px] font-extrabold tracking-[0.16em] text-[#9A938A] uppercase">
+          Freelandoo
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/**
  * Os metadados da página.
  *
  * ⚠️ O TÍTULO É `absolute`: o layout raiz da plataforma acrescenta o nome da
@@ -216,6 +292,11 @@ export function RicardoFogoesSite({
   links: TemplateLinks
   page?: RicardoPage | null
 }) {
+  // ⚠️ ANTES DE TUDO: nem fonte, nem folha do tema, nem JSON-LD, nem contador
+  // de visita. Um site suspenso que ainda publica a ficha do negócio continua
+  // dizendo ao buscador que está atendendo.
+  if (SUSPENDED) return <SuspendedNotice />
+
   const ctx: Ctx = { links }
 
   return (
