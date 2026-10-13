@@ -50,6 +50,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { deitaEmTelaCheia, jaDeitado, solta } from "@/lib/game/landscape"
 import { RotateCcw } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useAuth } from "@/hooks/use-auth"
@@ -240,6 +241,10 @@ export default function MonstersPage() {
   const [dedo, setDedo] = useState(false)
   const [entrou, setEntrou] = useState(false)
 
+  // AO SAIR DO JOGO o site volta ao normal: sem isto, a Freelandoo inteira
+  // seguiria em tela cheia e travada na horizontal depois do "Voltar".
+  useEffect(() => () => solta(), [])
+
   useEffect(() => {
     // A GPU decide a BUILD; o dedo decide a MOLDURA (porta, orientação,
     // controles de toque). São duas perguntas diferentes e é de propósito: o
@@ -259,6 +264,10 @@ export default function MonstersPage() {
       setRetrato(toque.matches && empe.matches)
     }
     olha()
+    // CHEGOU DEITADO PELO BOTÃO "JOGO" do perfil (que pediu tela cheia e trava
+    // no clique — ver `lib/game/landscape.ts`): a porta não tem mais o que
+    // pedir, e abre sozinha.
+    if (toque.matches && jaDeitado()) setEntrou(true)
     empe.addEventListener("change", olha)
     toque.addEventListener("change", olha)
     return () => {
@@ -273,25 +282,8 @@ export default function MonstersPage() {
   // promessa era engolida por um `catch` vazio — parecia tratado e não fazia
   // nada. Agora quem chama é o dedo, e a tela cheia vem antes.
   const deita = useCallback(async () => {
-    const alvo = document.documentElement as HTMLElement & {
-      webkitRequestFullscreen?: () => Promise<void>
-    }
-    try {
-      if (!document.fullscreenElement) {
-        await (alvo.requestFullscreen?.() ?? alvo.webkitRequestFullscreen?.())
-      }
-    } catch {
-      /* o iOS não tem tela cheia em página; o pedido escrito cobre */
-    }
-    try {
-      const o = screen.orientation as ScreenOrientation & {
-        lock?: (o: string) => Promise<void>
-      }
-      await o.lock?.("landscape")
-    } catch {
-      /* iOS não trava orientação; a pessoa gira na mão */
-    }
-    // A PORTA ABRE MESMO QUE AS DUAS TENTATIVAS ACIMA TENHAM FALHADO. No iPhone
+    await deitaEmTelaCheia()
+    // A PORTA ABRE MESMO QUE AS DUAS TENTATIVAS TENHAM FALHADO. No iPhone
     // elas falham sempre — não há tela cheia em página nem trava de orientação
     // — e prender o jogo atrás de uma promessa que aquele aparelho nunca vai
     // cumprir seria trocar um aviso por uma parede. Ali o texto é o mecanismo:
