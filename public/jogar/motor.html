@@ -60,6 +60,7 @@
   <div id="barra"><i></i></div>
   <button id="entrar" type="button" hidden></button>
   <a id="acao" hidden></a>
+  <p id="dica" hidden style="margin:10px 24px 0;max-width:520px;text-align:center;color:rgba(245,241,232,.7);font-size:13px;line-height:1.4"></p>
   <small id="build" style="margin-top:6px;color:rgba(245,241,232,.35);font-size:11px;letter-spacing:.08em"></small>
 </div>
 <script>
@@ -70,6 +71,8 @@
   var TXT = {
     "pt-BR": { carregando: "carregando o mundo…", entrar: "Tocar para jogar",
       pronto: "Pronto. Toque para entrar em tela cheia.",
+      prontoIos: "Pronto.",
+      ios: "Para jogar sem a barra do Safari: toque em Compartilhar e depois em “Adicionar à Tela de Início”. O EVO Brazil vira um app na sua tela.",
       login: "Entre na Freelandoo para jogar — seu monstro nasce do seu perfil.", loginCta: "Entrar",
       fechado: "O jogo está em teste fechado e por enquanto só abre para a administração.", voltar: "Voltar",
       erro: "O jogo não conseguiu abrir neste aparelho.",
@@ -77,6 +80,8 @@
       zerar: "Apagar todo o progresso do jogo neste aparelho e começar do zero? Não tem volta." },
     en: { carregando: "loading the world…", entrar: "Tap to play",
       pronto: "Ready. Tap to go full screen.",
+      prontoIos: "Ready.",
+      ios: "To play without Safari's bar: tap Share, then “Add to Home Screen”. EVO Brazil becomes an app on your screen.",
       login: "Sign in to Freelandoo to play — your monster is born from your profile.", loginCta: "Sign in",
       fechado: "The game is in closed testing and only opens for administrators for now.", voltar: "Back",
       erro: "The game could not start on this device.",
@@ -84,6 +89,8 @@
       zerar: "Erase all game progress on this device and start over? This cannot be undone." },
     es: { carregando: "cargando el mundo…", entrar: "Toca para jugar",
       pronto: "Listo. Toca para pantalla completa.",
+      prontoIos: "Listo.",
+      ios: "Para jugar sin la barra de Safari: toca Compartir y luego “Agregar a inicio”. EVO Brazil se vuelve una app en tu pantalla.",
       login: "Inicia sesión en Freelandoo para jugar — tu monstruo nace de tu perfil.", loginCta: "Entrar",
       fechado: "El juego está en prueba cerrada y por ahora solo abre para la administración.", voltar: "Volver",
       erro: "El juego no pudo abrirse en este dispositivo.",
@@ -101,6 +108,24 @@
   var entrar = document.getElementById("entrar");
   var acao = document.getElementById("acao");
   texto.textContent = L.carregando;
+
+  // ── O iPHONE NÃO TEM TELA CHEIA DE PÁGINA (só de vídeo): a barra do Safari
+  // só some com o jogo INSTALADO na tela de início (manifesto em /jogar). Fora
+  // dele, a porta ensina o caminho em vez de prometer uma tela cheia que não vem.
+  var ios = /iP(hone|ad|od)/.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var instalado = false;
+  try {
+    instalado = window.top.navigator.standalone === true
+      || window.top.matchMedia("(display-mode: standalone)").matches
+      || window.top.matchMedia("(display-mode: fullscreen)").matches;
+  } catch (e) {}
+  if (ios) L.pronto = L.prontoIos;
+  if (ios && !instalado) {
+    var dica = document.getElementById("dica");
+    dica.textContent = L.ios;
+    dica.hidden = false;
+  }
 
   function para(msg, href, rotulo) {
     texto.textContent = msg;

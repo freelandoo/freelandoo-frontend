@@ -24,6 +24,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b0804">
+<!-- O JOGO COMO APP (Alex, 13/10: "o header do navegador, consegue fazer sumir?").
+     No iPhone o Safari NÃO deixa página nenhuma esconder a barra dele (tela
+     cheia de página só existe para vídeo). O caminho é instalar: Compartilhar →
+     "Adicionar à Tela de Início". Aberto por lá ele roda sem barra nenhuma. O
+     manifesto é PRÓPRIO, com escopo /jogar — o da Freelandoo é em pé e
+     abriria o site, não o jogo. -->
+<link rel="manifest" href="/jogar/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EVO Brazil">
+<link rel="apple-touch-icon" href="/jogar/apple-touch-icon.png">
 <title>EVO Brazil</title>
 <style>
   html, body { margin: 0; height: 100%; background: #0b0804; overflow: hidden;
