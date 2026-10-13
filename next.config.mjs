@@ -80,6 +80,12 @@ const cspReportOnly = [
   "frame-ancestors 'none'",
 ].join("; ")
 
+const jogoIsolado = [
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+]
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -124,6 +130,13 @@ const nextConfig = {
       // com exatamente uma regra.
       { source: "/:path((?!site-preview).*)", headers: securityHeaders },
       { source: "/site-preview/:path*", headers: previewHeaders },
+      // O JOGO NA PAGINA PROPRIA (`/jogar`) e ISOLADO (COOP + COEP). E o que
+      // libera `SharedArrayBuffer` -- sem ele o Godot Web roda numa thread so.
+      // So aqui: isolar o site inteiro quebraria tudo o que vem de outra origem
+      // sem CORP (checkout, vídeos, anúncios). A build e servida por esta
+      // MESMA origem (rewrite abaixo), entao o `require-corp` nao a bloqueia.
+      { source: "/jogar/:path*", headers: jogoIsolado },
+      { source: "/jogar", headers: jogoIsolado },
     ]
   },
   // Tree-shaking de barris grandes: framer-motion (29 arquivos) e date-fns não
@@ -173,6 +186,13 @@ const nextConfig = {
         // Deck de investidores: HTML estatico em public/, servido em URL limpa.
         // Fica fora do chrome da plataforma de proposito (e um documento, nao uma tela).
         { source: "/investidores", destination: "/investidores.html" },
+        // O JOGO NA PAGINA PROPRIA. A casca e um HTML puro em public/ (sem
+        // Next nem React por baixo do jogo); a build continua no R2 e entra
+        // por estas rotas como se fosse daqui -- mesma origem, que e a condicao
+        // do isolamento (COOP/COEP) e de a casca ler a sessao direto.
+        { source: "/jogar", destination: "/jogar/index.html" },
+        { source: "/jogar/celular/:path*", destination: `${R2_PUBLIC}/monsters/jogo-celular/:path*` },
+        { source: "/jogar/pc/:path*", destination: `${R2_PUBLIC}/monsters/jogo/:path*` },
       ],
     }
   },

@@ -36,7 +36,6 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { HeadcardPills, VisitorHeadcardPills } from "@/components/profile/headcard-pills"
 import { ProfileSwitcher } from "@/components/profile/profile-switcher"
-import { deitaEmTelaCheia, ehAparelhoDeToque } from "@/lib/game/landscape"
 import { useAccountTools } from "@/components/profile/account-tools"
 import { VerifiedBadge } from "@/components/profile/verified-badge"
 import { isAccountProfile, profileIsActivated } from "@/lib/profile/activation"
@@ -943,21 +942,23 @@ export function ProfileHeadCard({
                 </RetractableIcons>
                 </div>
                 {isPlatformAdmin && (
-                  <Link
-                    href="/monsters"
-                    // O CLIQUE É O GESTO: tela cheia + horizontal pedidas aqui
-                    // sobrevivem à navegação do roteador, e o jogo abre deitado
-                    // sem a porta pedir um segundo toque (só aparelho de dedo).
-                    onClick={() => {
-                      if (ehAparelhoDeToque()) void deitaEmTelaCheia()
-                    }}
+                  // A PÁGINA PRÓPRIA DO JOGO (`/jogar`), e por `<a>`, não `<Link>`:
+                  // ela é HTML puro em public/, fora do App Router — a navegação
+                  // tem que ser um carregamento de documento. É isso que deixa o
+                  // jogo sem a Freelandoo por baixo e com o isolamento (COOP/COEP)
+                  // que destrava threads. Tela cheia e trava deitada são pedidas
+                  // lá, no toque de entrada (não sobreviveriam ao carregamento).
+                  // O `/monsters` (iframe) continua no ar como reserva.
+                  // eslint-disable-next-line @next/next/no-html-link-for-pages -- /jogar é HTML estático, fora do App Router
+                  <a
+                    href="/jogar"
                     aria-label={t("gameAria", "Abrir o jogo EVO Brazil")}
                     title={t("gameAria", "Abrir o jogo EVO Brazil")}
                     className="inline-flex h-9 shrink-0 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 text-[11px] font-bold uppercase tracking-wider text-[#F2B705] shadow-[2px_2px_0_0_#F2B705] transition hover:bg-[#1D1810] active:scale-[0.96]"
                   >
                     <Gamepad2 className="h-3.5 w-3.5" />
                     {t("game", "Jogo")}
-                  </Link>
+                  </a>
                 )}
               </>
             ) : (
