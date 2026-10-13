@@ -193,6 +193,7 @@ const nextConfig = {
         { source: "/jogar", destination: "/jogar/index.html" },
         { source: "/jogar/celular/:path*", destination: `${R2_PUBLIC}/monsters/jogo-celular/:path*` },
         { source: "/jogar/pc/:path*", destination: `${R2_PUBLIC}/monsters/jogo/:path*` },
+        { source: "/jogar/celular-mt/:path*", destination: `${R2_PUBLIC}/monsters/jogo-celular-mt/:path*` },
       ],
     }
   },

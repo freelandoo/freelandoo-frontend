@@ -137,11 +137,14 @@
     } catch (e) { return false; }
   }
   var dedo = window.matchMedia("(pointer: coarse)").matches;
-  var base = "/jogar/" + (leS3TC() ? "pc" : "celular") + "/";
-  // As chaves de bancada passam adiante como no `/monsters`.
   var aqui = new URLSearchParams(location.search);
+  // `?mt=1` — A BUILD COM THREADS, em teste. Ela só existe para celular
+  // (ETC2/ASTC) e só abre em página isolada, que é esta. Fica atrás da chave
+  // até a medição no aparelho dizer se threads ajudam ou pioram a memória.
+  var base = "/jogar/" + (aqui.get("mt") === "1" ? "celular-mt" : (leS3TC() ? "pc" : "celular")) + "/";
+  // As chaves de bancada passam adiante como no `/monsters`.
   var chaves = [];
-  ["diag", "toque"].forEach(function (k) { if (aqui.get(k) === "1") chaves.push(k + "=1"); });
+  ["diag", "toque", "mt"].forEach(function (k) { if (aqui.get(k) === "1") chaves.push(k + "=1"); });
   if (chaves.length) history.replaceState(null, "", "/jogar?" + chaves.join("&"));
 
   // ── TELA CHEIA E DEITADO: só dentro de um gesto, e tela cheia antes. ────
