@@ -75,6 +75,7 @@ function loadIo() {
 
 async function ensureSocket(): Promise<Socket | null> {
   if (typeof window === "undefined") return null
+  if (suspensos > 0) return null
   const token = getToken()
   if (!token) {
     if (socket) {
@@ -191,6 +192,28 @@ export function emitRealtime(event: string, payload?: unknown) {
   })
 }
 
+// ─── Suspensão (o jogo) ────────────────────────────────────────────────────
+// O `/monsters` é uma build Godot que precisa do aparelho inteiro: no Android o
+// iframe roda no MESMO processo da página, e um WebSocket aberto com reconexão
+// e handlers vivos é custo pago por nada enquanto se joga. `suspendRealtime`
+// fecha a conexão e impede que qualquer `onRealtime`/`emitRealtime` a reabra;
+// a função devolvida reabre (as subscriptions são re-emitidas no `connect`).
+// É contador, e não booleano: duas telas suspendendo não se soltam uma à outra.
+let suspensos = 0
+
+export function suspendRealtime(): () => void {
+  suspensos += 1
+  clearIdleTimer()
+  if (socket && socket.connected) socket.disconnect()
+  let solto = false
+  return () => {
+    if (solto) return
+    solto = true
+    suspensos = Math.max(0, suspensos - 1)
+    if (suspensos === 0) void ensureSocket()
+  }
+}
+
 // ─── Visibility-aware idle disconnect ─────────────────────────────────────
 // Quando a aba fica em background, agenda o fechamento do WS após 5 min.
 // Volta ao foreground → cancela o timer e reabre na hora se já fechou.
@@ -219,6 +242,7 @@ function handleVisibilityChange() {
   } else {
     // Voltou ao foreground. Cancela o timer e reabre se fechou.
     clearIdleTimer()
+    if (suspensos > 0) return
     if (socket && !socket.connected) {
       socket.connect()
     } else if (!socket) {
