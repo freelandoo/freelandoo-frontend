@@ -72,6 +72,7 @@
     "pt-BR": { carregando: "carregando o mundo…", entrar: "Tocar para jogar",
       pronto: "Pronto. Toque para entrar em tela cheia.",
       prontoIos: "Pronto.",
+      recicla: "liberando memória… o rancho volta já",
       ios: "Para jogar sem a barra do Safari: toque em Compartilhar e depois em “Adicionar à Tela de Início”. O EVO Brazil vira um app na sua tela.",
       login: "Entre na Freelandoo para jogar — seu monstro nasce do seu perfil.", loginCta: "Entrar",
       fechado: "O jogo está em teste fechado e por enquanto só abre para a administração.", voltar: "Voltar",
@@ -81,6 +82,7 @@
     en: { carregando: "loading the world…", entrar: "Tap to play",
       pronto: "Ready. Tap to go full screen.",
       prontoIos: "Ready.",
+      recicla: "freeing memory… the ranch is coming right back",
       ios: "To play without Safari's bar: tap Share, then “Add to Home Screen”. EVO Brazil becomes an app on your screen.",
       login: "Sign in to Freelandoo to play — your monster is born from your profile.", loginCta: "Sign in",
       fechado: "The game is in closed testing and only opens for administrators for now.", voltar: "Back",
@@ -90,6 +92,7 @@
     es: { carregando: "cargando el mundo…", entrar: "Toca para jugar",
       pronto: "Listo. Toca para pantalla completa.",
       prontoIos: "Listo.",
+      recicla: "liberando memoria… el rancho vuelve enseguida",
       ios: "Para jugar sin la barra de Safari: toca Compartir y luego “Agregar a inicio”. EVO Brazil se vuelve una app en tu pantalla.",
       login: "Inicia sesión en Freelandoo para jugar — tu monstruo nace de tu perfil.", loginCta: "Entrar",
       fechado: "El juego está en prueba cerrada y por ahora solo abre para la administración.", voltar: "Volver",
@@ -199,15 +202,24 @@
     });
   }
 
+  // ── A RECICLAGEM DE MEMÓRIA (ver `Criacao.recicla_memoria`): no celular, ao
+  // fim de cada campeonato o jogo guarda o rancho e recarrega SÓ este iframe
+  // — é o único jeito de o iPhone devolver toda a memória de vídeo. Na volta
+  // não há porta para tocar: o jogador já estava jogando, e o rancho reabre
+  // sozinho. A marca é de uso único.
+  var reciclou = false;
+  try { reciclou = sessionStorage.getItem("evo_recicla") === "1"; sessionStorage.removeItem("evo_recicla"); } catch (e) {}
+  if (reciclou) { texto.textContent = L.recicla; document.getElementById("dica").hidden = true; }
+
   var carregou = false;
-  var pediu = !dedo;          // no computador não há gesto a pedir
+  var pediu = !dedo || reciclou;  // no computador não há gesto a pedir
   function talvezAbre() {
     if (!carregou || !pediu) return;
     porta.style.display = "none";
     document.body.classList.add("jogando");
     document.getElementById("canvas").focus();
   }
-  if (dedo) {
+  if (dedo && !reciclou) {
     entrar.textContent = L.entrar;
     entrar.hidden = false;
     entrar.addEventListener("click", function () {
