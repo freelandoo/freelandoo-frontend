@@ -11,8 +11,6 @@ import {
   CalendarDays,
   Camera,
   Cog,
-  Gamepad2,
-  Smartphone,
   Instagram,
   LayoutGrid,
   Megaphone,
@@ -339,13 +337,6 @@ export function ProfileHeadCard({
     is_admin?: boolean
     roles?: { desc_role?: string }[]
   } | null>(null)
-
-  // O JOGO (EVO Brazil) é só do administrador por enquanto: a página
-  // `/monsters` recusa quem não é admin, e o botão espelha isso. O papel sai do
-  // usuário que o login guarda (`is_admin` + roles), o mesmo de UserDropside.
-  const isPlatformAdmin = !!(
-    lsUser?.is_admin || lsUser?.roles?.some((r) => r.desc_role === "Administrator")
-  )
 
   useEffect(() => {
     if (!bannerArmed) return
@@ -942,39 +933,6 @@ export function ProfileHeadCard({
                   ))}
                 </RetractableIcons>
                 </div>
-                {isPlatformAdmin && (
-                  // A PÁGINA PRÓPRIA DO JOGO (`/jogar`), e por `<a>`, não `<Link>`:
-                  // ela é HTML puro em public/, fora do App Router — a navegação
-                  // tem que ser um carregamento de documento. É isso que deixa o
-                  // jogo sem a Freelandoo por baixo e com o isolamento (COOP/COEP)
-                  // que destrava threads. Tela cheia e trava deitada são pedidas
-                  // lá, no toque de entrada (não sobreviveriam ao carregamento).
-                  // O `/monsters` (iframe) continua no ar como reserva.
-                  // eslint-disable-next-line @next/next/no-html-link-for-pages -- /jogar é HTML estático, fora do App Router
-                  <a
-                    href="/jogar"
-                    aria-label={t("gameAria", "Abrir o jogo EVO Brazil")}
-                    title={t("gameAria", "Abrir o jogo EVO Brazil")}
-                    className="inline-flex h-9 shrink-0 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 text-[11px] font-bold uppercase tracking-wider text-[#F2B705] shadow-[2px_2px_0_0_#F2B705] transition hover:bg-[#1D1810] active:scale-[0.96]"
-                  >
-                    <Gamepad2 className="h-3.5 w-3.5" />
-                    {t("game", "Jogo")}
-                  </a>
-                )}
-                {isPlatformAdmin && (
-                  // O APP ANDROID (mig 278): a página que mostra o código de
-                  // vínculo. Mesmo gate do botão "Jogo" — o jogo ainda é só
-                  // de administrador.
-                  <Link
-                    href="/evo"
-                    aria-label={t("gameAppAria", "Vincular o app EVO Brazil no celular")}
-                    title={t("gameAppAria", "Vincular o app EVO Brazil no celular")}
-                    className="inline-flex h-9 shrink-0 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 text-[11px] font-bold uppercase tracking-wider text-[#F2B705] shadow-[2px_2px_0_0_#F2B705] transition hover:bg-[#1D1810] active:scale-[0.96]"
-                  >
-                    <Smartphone className="h-3.5 w-3.5" />
-                    {t("gameApp", "App")}
-                  </Link>
-                )}
               </>
             ) : (
               <>

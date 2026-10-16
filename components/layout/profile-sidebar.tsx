@@ -62,10 +62,6 @@ const HIDDEN_ON_PATHS = [
   "/confirmar-email",
   "/activate",
   "/bem-vindo",
-  // O JOGO É TELA CHEIA E DEITADA. No celular esta toolbar é uma pílula fixa
-  // no rodapé CENTRAL — exatamente onde a build Godot desenha o botão de sair
-  // da partida (ver `jogo/scripts/ui/toque.gd`).
-  "/monsters",
   // RA da Casa Views: câmera em tela cheia, e o botão COLECIONAR mora no rodapé.
   "/acasaviews/ra",
 ]
@@ -77,9 +73,6 @@ const HIDDEN_ON_PATHS = [
  * lista e só divergem no Ranking, que muda de destino. Ela é constante para que
  * um item novo não precise ser copiado em três lugares — o terceiro é sempre o
  * lugar de onde ele some quando alguém mexer só nos outros dois.
- *
- * ⚠️ O MONSTERS NÃO ENTRA AQUI. A página voltou em 2026-10-04 com uma porta
- * só: o botão "Jogo" do headcard, visível apenas para o administrador.
  */
 const ITENS_COMUNS: SidebarItem[] = [
   { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },

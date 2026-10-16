@@ -7,7 +7,7 @@
  * Página sem saída visível deixa quem chegou por link/notificação preso — só
  * o gesto do sistema operacional resolve, e no PWA instalado nem isso. As
  * únicas dispensadas são as RAÍZES do dock (`ProfileSidebar`: /feed, /bees,
- * /search, /mensagens, /monsters, /ranking e o /account da foto), que já são
+ * /search, /mensagens, /ranking e o /account da foto), que já são
  * o destino de um clique fixo, e as telas de redirecionamento, que ninguém
  * chega a ver.
  *

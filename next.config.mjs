@@ -19,46 +19,6 @@
 const BACKEND_PUBLIC = "https://freelandoo-backend-production.up.railway.app"
 const R2_PUBLIC = "https://pub-3b9774a0af714847979058ea5677a840.r2.dev"
 
-// Freelandoo Monsters: a build Godot roda num <iframe> em /monsters e mora
-// FORA deste repositório (o .pck passa de 250 MB e o GitHub recusa arquivo
-// acima de 100 MB). Sem o host dela no `frame-src`, o iframe é bloqueado no
-// dia em que a CSP sair do Report-Only — falha que não aparece agora e aparece
-// depois, sem ninguém ter mexido no jogo. Vazio = a página avisa que a build
-// não foi publicada e nada é liberado à toa.
-// A build publicada mora no MESMO R2 da mídia, então o padrão não precisa de
-// host novo — é o `R2_PUBLIC` que já está declarado aqui em cima. A variável
-// só entra quando alguém aponta o iframe para outro lugar (bancada local, ou
-// uma versão de teste).
-//
-// SÃO DUAS BUILDS (uma por família de textura de GPU — ver
-// `Cat demon/publicacao/README.md`) e por isso são dois endereços. Hoje as duas
-// moram no mesmo R2 e o padrão já cobre as duas; a lista existe para quando
-// alguém apontar UMA delas para a bancada local. Sem isto, a `/monsters`
-// funcionaria no computador e o iframe do celular seria bloqueado — no dia
-// distante em que esta CSP deixar de ser `Report-Only`.
-const MONSTERS_JOGO = (() => {
-  const origens = new Set([R2_PUBLIC])
-  for (const bruto of [process.env.NEXT_PUBLIC_MONSTERS_JOGO_URL?.trim(),
-                       process.env.NEXT_PUBLIC_MONSTERS_JOGO_URL_CELULAR?.trim()]) {
-    if (!bruto) continue
-    try {
-      origens.add(new URL(bruto).origin)
-    } catch {
-      /* endereço torto não derruba a configuração; o R2 padrão continua valendo */
-    }
-  }
-  return [...origens].filter(Boolean).join(" ")
-})()
-const MONSTERS_API = (() => {
-  const bruto = process.env.NEXT_PUBLIC_MONSTERS_API_URL?.trim()
-  if (!bruto) return ""
-  try {
-    return new URL(bruto).origin
-  } catch {
-    return ""
-  }
-})()
-
 const cspReportOnly = [
   "default-src 'self'",
   // 'unsafe-inline' por causa dos scripts inline do próprio Next (sem nonce) e
@@ -71,20 +31,14 @@ const cspReportOnly = [
   "img-src 'self' data: blob: https:",
   `media-src 'self' blob: ${R2_PUBLIC} https://*.r2.dev`,
   "font-src 'self' data:",
-  `connect-src 'self' ${BACKEND_PUBLIC} wss://freelandoo-backend-production.up.railway.app https://*.r2.cloudflarestorage.com ${R2_PUBLIC} https://*.r2.dev https://cdn.jsdelivr.net https://storage.googleapis.com https://accounts.google.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.adtrafficquality.google wss:${MONSTERS_API ? " " + MONSTERS_API : ""}`,
+  `connect-src 'self' ${BACKEND_PUBLIC} wss://freelandoo-backend-production.up.railway.app https://*.r2.cloudflarestorage.com ${R2_PUBLIC} https://*.r2.dev https://cdn.jsdelivr.net https://storage.googleapis.com https://accounts.google.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.adtrafficquality.google wss:`,
   "worker-src 'self' blob:",
-  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://vercel.live${MONSTERS_JOGO ? " " + MONSTERS_JOGO : ""}`,
+  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://vercel.live`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
 ].join("; ")
-
-const jogoIsolado = [
-  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-  { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
-  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
-]
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -128,19 +82,8 @@ const nextConfig = {
       // entradas casando o mesmo caminho deixam a ordem decidir qual vale — e
       // essa ordem não está escrita em lugar nenhum. Aqui cada caminho casa
       // com exatamente uma regra.
-      { source: "/:path((?!site-preview|jogar/motor).*)", headers: securityHeaders },
+      { source: "/:path((?!site-preview).*)", headers: securityHeaders },
       { source: "/site-preview/:path*", headers: previewHeaders },
-      // O MOTOR DO JOGO roda num iframe da propria `/jogar` (a moldura que gira
-      // em pe) -- com o DENY global ele nasceria invisivel. Mesma excecao da
-      // pre-visualizacao: so a propria origem pode emoldura-lo.
-      { source: "/jogar/motor.html", headers: previewHeaders },
-      // O JOGO NA PAGINA PROPRIA (`/jogar`) e ISOLADO (COOP + COEP). E o que
-      // libera `SharedArrayBuffer` -- sem ele o Godot Web roda numa thread so.
-      // So aqui: isolar o site inteiro quebraria tudo o que vem de outra origem
-      // sem CORP (checkout, vídeos, anúncios). A build e servida por esta
-      // MESMA origem (rewrite abaixo), entao o `require-corp` nao a bloqueia.
-      { source: "/jogar/:path*", headers: jogoIsolado },
-      { source: "/jogar", headers: jogoIsolado },
     ]
   },
   // Tree-shaking de barris grandes: framer-motion (29 arquivos) e date-fns não
@@ -190,14 +133,6 @@ const nextConfig = {
         // Deck de investidores: HTML estatico em public/, servido em URL limpa.
         // Fica fora do chrome da plataforma de proposito (e um documento, nao uma tela).
         { source: "/investidores", destination: "/investidores.html" },
-        // O JOGO NA PAGINA PROPRIA. A casca e um HTML puro em public/ (sem
-        // Next nem React por baixo do jogo); a build continua no R2 e entra
-        // por estas rotas como se fosse daqui -- mesma origem, que e a condicao
-        // do isolamento (COOP/COEP) e de a casca ler a sessao direto.
-        { source: "/jogar", destination: "/jogar/index.html" },
-        { source: "/jogar/celular/:path*", destination: `${R2_PUBLIC}/monsters/jogo-celular/:path*` },
-        { source: "/jogar/pc/:path*", destination: `${R2_PUBLIC}/monsters/jogo/:path*` },
-        { source: "/jogar/celular-mt/:path*", destination: `${R2_PUBLIC}/monsters/jogo-celular-mt/:path*` },
       ],
     }
   },
