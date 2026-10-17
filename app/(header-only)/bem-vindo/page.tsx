@@ -13,7 +13,8 @@ import { SiteAssetsProvider } from "@/components/site-assets/SiteAssetsProvider"
 import { EditableText } from "@/components/site-texts/EditableText"
 import { EditableImageCarousel } from "@/components/site-assets/EditableImageCarousel"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getToken, getStoredUser, setStoredUser } from "@/lib/auth"
+import { completeAuthRedirect, getToken, getStoredUser, setStoredUser } from "@/lib/auth"
+import { isOutsideNextApp, safeInternalPath } from "@/lib/safe-return"
 
 // Cada item = um botão/recurso explicado. slot = chave do texto (admin-editável
 // via site-texts + fallback i18n no ns "Tour"). icon = ícone fixo (não editável).
@@ -119,7 +120,8 @@ function TourInner() {
 
   useEffect(() => {
     const raw = new URLSearchParams(window.location.search).get("next")
-    if (raw && raw.startsWith("/") && !raw.startsWith("//")) setNext(raw)
+    const safe = safeInternalPath(raw)
+    if (safe) setNext(safe)
   }, [])
 
   const total = STEPS.length
@@ -140,6 +142,7 @@ function TourInner() {
     }
     const u = getStoredUser()
     if (u) setStoredUser({ ...u, onboarding_tour_done: true })
+    if (isOutsideNextApp(next)) return completeAuthRedirect(next)
     router.replace(next)
   }
 

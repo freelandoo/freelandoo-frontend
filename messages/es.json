@@ -1599,7 +1599,11 @@
     "passwordTooShort": "Contraseña demasiado corta",
     "passwordsDontMatch": "Las contraseñas no coinciden",
     "loginFailed": "Correo o contraseña incorrectos",
-    "serverError": "Error del servidor. Intenta de nuevo en breve."
+    "serverError": "Error del servidor. Intenta de nuevo en breve.",
+    "googleUnavailable": "El inicio de sesión con Google no está disponible ahora.",
+    "googleFailed": "Error al entrar con Google",
+    "googleNoSession": "El inicio con Google no devolvió sesión. Inténtalo de nuevo.",
+    "timeout": "El servidor tardó en responder. Inténtalo de nuevo."
   },
   "Success": {
     "saved": "Guardado correctamente",

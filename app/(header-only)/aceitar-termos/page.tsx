@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { AuthShell, AuthCard } from "@/components/tabloide"
 import { SIGNUP_TERMS_VERSION } from "@/lib/action-consents"
-import { getToken } from "@/lib/auth"
+import { completeAuthRedirect, getToken } from "@/lib/auth"
 import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
+import { isOutsideNextApp, safeInternalPath } from "@/lib/safe-return"
 
 // Tela obrigatória de aceite dos Termos + Privacidade. Aparece quando o backend
 // devolve needs_terms=true (cadastro novo via Google ou bump de versão dos termos).
@@ -31,12 +32,14 @@ export default function AcceptTermsPage() {
     }
     const params = new URLSearchParams(window.location.search)
     const rawNext = params.get("next")
-    if (rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")) setNext(rawNext)
+    const safe = safeInternalPath(rawNext)
+    if (safe) setNext(safe)
     const v = Number(params.get("v"))
     if (Number.isInteger(v) && v >= 1) setVersion(v)
   }, [router])
 
   const goNext = () => {
+    if (isOutsideNextApp(next)) return completeAuthRedirect(next)
     router.replace(next)
     router.refresh()
     window.setTimeout(() => {

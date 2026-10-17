@@ -12,6 +12,7 @@ import { Check, X, ArrowLeft, ArrowRight, Info, ShieldCheck, Search, TrendingUp 
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { AuthShell } from "@/components/tabloide"
+import { safeInternalPath } from "@/lib/safe-return"
 
 interface Category {
   id_category: number
@@ -46,7 +47,8 @@ export default function CadastroPage() {
   const [nextParam, setNextParam] = useState<string | null>(null)
   useEffect(() => {
     const raw = new URLSearchParams(window.location.search).get("next")
-    if (raw && raw.startsWith("/") && !raw.startsWith("//")) setNextParam(raw)
+    const safe = safeInternalPath(raw)
+    if (safe) setNextParam(safe)
   }, [])
   const loginHref = nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"
   const t = useTranslations("Signup")

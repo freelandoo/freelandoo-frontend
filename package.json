@@ -14,7 +14,8 @@
     "check:site-pages": "node scripts/check-site-pages.mjs",
     "check:site-chrome": "node scripts/check-site-chrome.mjs",
     "check:site-template": "node scripts/check-site-template.mjs",
-    "frames:ecoluz": "node scripts/ecoluz-frames.mjs"
+    "frames:ecoluz": "node scripts/ecoluz-frames.mjs",
+    "check:safe-return": "node scripts/check-safe-return.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

@@ -10,8 +10,9 @@ import { useRouter } from "next/navigation"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { AuthShell, AuthCard } from "@/components/tabloide"
-import { extractAuthSession, setSession } from "@/lib/auth"
+import { completeAuthRedirect, extractAuthSession, setSession } from "@/lib/auth"
 import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
+import { isOutsideNextApp, safeInternalPath } from "@/lib/safe-return"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -27,7 +28,8 @@ export default function LoginPage() {
   const [nextParam, setNextParam] = useState<string | null>(null)
   useEffect(() => {
     const raw = new URLSearchParams(window.location.search).get("next")
-    if (raw && raw.startsWith("/") && !raw.startsWith("//")) setNextParam(raw)
+    const safe = safeInternalPath(raw)
+    if (safe) setNextParam(safe)
   }, [])
   const t = useTranslations("Auth")
   const tCommon = useTranslations("Common")
@@ -90,6 +92,12 @@ export default function LoginPage() {
           }`
         : postLogin
       didRedirect = true
+      // Destino fora deste app (ex.: /arena, servido por rewrite): navegação de
+      // documento inteiro — o roteador do Next não chega lá.
+      if (isOutsideNextApp(target)) {
+        completeAuthRedirect(target)
+        return
+      }
       // SPA primeiro (rápido, mantém socket), fallback duro depois.
       try {
         router.replace(target)

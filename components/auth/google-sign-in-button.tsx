@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Script from "next/script"
-import { extractAuthSession, setSession } from "@/lib/auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { completeAuthRedirect, extractAuthSession, setSession } from "@/lib/auth"
 import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
 import { getVisitorToken } from "@/lib/visitor-token"
+import { isOutsideNextApp, safeInternalPath } from "@/lib/safe-return"
 
 declare global {
   interface Window {
@@ -58,6 +60,7 @@ export function GoogleSignInButton({
   onComplete,
 }: Props) {
   const router = useRouter()
+  const tErr = useTranslations("Errors")
   const containerRef = useRef<HTMLDivElement>(null)
   const [scriptReady, setScriptReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -68,7 +71,7 @@ export function GoogleSignInButton({
   useEffect(() => {
     if (!scriptReady) return
     if (!clientId) {
-      setError("Login com Google indisponível: configurar NEXT_PUBLIC_GOOGLE_CLIENT_ID.")
+      setError(tErr("googleUnavailable", "Login com Google indisponível no momento."))
       return
     }
     if (!window.google || !containerRef.current) return
@@ -97,14 +100,14 @@ export function GoogleSignInButton({
               ? data.error
               : typeof data?.message === "string"
                 ? data.message
-                : "Erro ao entrar com Google"
+                : tErr("googleFailed", "Erro ao entrar com Google")
           setError(msg)
           return
         }
 
         const session = extractAuthSession(data)
         if (!session) {
-          setError("Login com Google retornou sem sessão. Tente novamente.")
+          setError(tErr("googleNoSession", "Login com Google retornou sem sessão. Tente novamente."))
           return
         }
 
@@ -112,7 +115,7 @@ export function GoogleSignInButton({
 
         // Destino pós-auth: o backend decide se mostra o tour (config admin).
         const needsTour = session.showTour
-        const postAuth = redirectTo || (needsTour ? "/bem-vindo" : "/search")
+        const postAuth = safeInternalPath(redirectTo) || (needsTour ? "/bem-vindo" : "/search")
 
         // Aceite dos Termos pendente (conta nova via Google / bump de versão):
         // leva à tela obrigatória de aceite antes de qualquer outro destino,
@@ -142,6 +145,10 @@ export function GoogleSignInButton({
         const target =
           session.emailVerified === false ? "/verify-email" : postAuth
         didRedirect = true
+        if (isOutsideNextApp(target)) {
+          completeAuthRedirect(target)
+          return
+        }
         try {
           router.replace(target)
           router.refresh()
@@ -155,9 +162,9 @@ export function GoogleSignInButton({
         }, 400)
       } catch (err) {
         if (isClientFetchTimeout(err)) {
-          setError("Servidor demorou para responder. Tente novamente.")
+          setError(tErr("timeout", "Servidor demorou para responder. Tente novamente."))
         } else {
-          setError("Erro ao conectar com o servidor")
+          setError(tErr("network", "Erro ao conectar com o servidor"))
         }
       } finally {
         if (!didRedirect) setLoading(false)
@@ -182,7 +189,7 @@ export function GoogleSignInButton({
       width: 320,
       locale: "pt-BR",
     })
-  }, [scriptReady, clientId, redirectTo, theme, text, shape, router, onComplete])
+  }, [scriptReady, clientId, redirectTo, theme, text, shape, router, onComplete, tErr])
 
   return (
     <div className={className}>

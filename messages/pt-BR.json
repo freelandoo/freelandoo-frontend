@@ -1599,7 +1599,11 @@
     "passwordTooShort": "Senha muito curta",
     "passwordsDontMatch": "As senhas não coincidem",
     "loginFailed": "E-mail ou senha incorretos",
-    "serverError": "Erro no servidor. Tente novamente em instantes."
+    "serverError": "Erro no servidor. Tente novamente em instantes.",
+    "googleUnavailable": "Login com Google indisponível no momento.",
+    "googleFailed": "Erro ao entrar com Google",
+    "googleNoSession": "Login com Google retornou sem sessão. Tente novamente.",
+    "timeout": "Servidor demorou para responder. Tente novamente."
   },
   "Success": {
     "saved": "Salvo com sucesso",

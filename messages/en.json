@@ -1599,7 +1599,11 @@
     "passwordTooShort": "Password too short",
     "passwordsDontMatch": "Passwords don't match",
     "loginFailed": "Wrong email or password",
-    "serverError": "Server error. Please try again shortly."
+    "serverError": "Server error. Please try again shortly.",
+    "googleUnavailable": "Google sign-in is unavailable right now.",
+    "googleFailed": "Could not sign in with Google",
+    "googleNoSession": "Google sign-in returned no session. Please try again.",
+    "timeout": "The server took too long to respond. Please try again."
   },
   "Success": {
     "saved": "Saved successfully",
