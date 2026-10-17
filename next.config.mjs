@@ -140,7 +140,9 @@ const nextConfig = {
         // variável nada muda (produção ainda não publica a Arena).
         ...(arenaOrigin
           ? [
-              { source: "/arena", destination: `${arenaOrigin}/arena/` },
+              // index.html explícito: a origem pode ser estática sem índice
+              // de pasta (R2); numa hospedagem com índice dá no mesmo.
+              { source: "/arena", destination: `${arenaOrigin}/arena/index.html` },
               { source: "/arena/:path*", destination: `${arenaOrigin}/arena/:path*` },
             ]
           : []),

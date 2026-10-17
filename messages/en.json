@@ -4313,7 +4313,9 @@
     "noRatings": "No ratings",
     "servicesSettingsAria": "Configure services and hours",
     "itemActions": "Item actions",
-    "priceOnRequest": "On request"
+    "priceOnRequest": "On request",
+    "game": "Game",
+    "gameAria": "Open Freelandoo Arena"
   },
   "Bees": {
     "chat": "Chat",

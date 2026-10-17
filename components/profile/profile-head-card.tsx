@@ -21,6 +21,7 @@ import {
   Trophy,
   Users,
   Wrench,
+  Gamepad2,
   type LucideIcon,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
@@ -337,6 +338,13 @@ export function ProfileHeadCard({
     is_admin?: boolean
     roles?: { desc_role?: string }[]
   } | null>(null)
+  // A FREELANDOO ARENA ainda é só do administrador (prototipagem): o botão
+  // espelha isso. O papel sai do usuário que o login guarda (`is_admin` +
+  // roles), o mesmo de UserDropside. Quem decide de verdade é a sessão da
+  // Arena no backend — o botão só não é oferecido a quem não é admin.
+  const isPlatformAdmin = !!(
+    lsUser?.is_admin || lsUser?.roles?.some((r) => r.desc_role === "Administrator")
+  )
 
   useEffect(() => {
     if (!bannerArmed) return
@@ -933,6 +941,21 @@ export function ProfileHeadCard({
                   ))}
                 </RetractableIcons>
                 </div>
+                {isPlatformAdmin && (
+                  // `<a>` e não `<Link>`: /arena é outra aplicação (reescrita
+                  // para os arquivos estáticos da Arena), então a navegação
+                  // tem que ser um carregamento de documento.
+                  // eslint-disable-next-line @next/next/no-html-link-for-pages -- /arena fica fora do App Router
+                  <a
+                    href="/arena"
+                    aria-label={t("gameAria", "Abrir a Freelandoo Arena")}
+                    title={t("gameAria", "Abrir a Freelandoo Arena")}
+                    className="inline-flex h-9 shrink-0 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 text-[11px] font-bold uppercase tracking-wider text-[#F2B705] shadow-[2px_2px_0_0_#F2B705] transition hover:bg-[#1D1810] active:scale-[0.96]"
+                  >
+                    <Gamepad2 className="h-3.5 w-3.5" />
+                    {t("game", "Jogo")}
+                  </a>
+                )}
               </>
             ) : (
               <>
