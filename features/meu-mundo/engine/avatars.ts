@@ -34,7 +34,7 @@ import type { Scene } from "@babylonjs/core/scene"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import type { BodyId } from "../types"
 
-export const AVATAR_ASSET_VERSION = "v1"
+export const AVATAR_ASSET_VERSION = "v2"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
 const ASSETS = {
   texture: "avatar-basecolor-512.jpg",
@@ -44,11 +44,17 @@ const ASSETS = {
     fat: "avatar-fat.glb",
     strong: "avatar-strong.glb",
   } satisfies Record<BodyId, string>,
-  // Corpos volumosos usam a versão com os braços um pouco abertos (mesmos
-  // nomes de animação e de ossos) para a mão não atravessar a barriga.
-  anims: { narrow: "anim-locomotion.glb", wide: "anim-locomotion-wide.glb" },
+  // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
+  // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
+  // calibrado no Blender) para a mão não atravessar a barriga nem o peito.
+  anims: {
+    base: "anim-locomotion.glb",
+    fat: "anim-locomotion-fat.glb",
+    strong: "anim-locomotion-strong.glb",
+  },
 }
-const WIDE_BODIES = new Set<BodyId>(["fat", "strong"])
+type AnimSet = keyof typeof ASSETS.anims
+const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 type Clip = (typeof CLIPS)[number]
 
@@ -58,7 +64,7 @@ export class AvatarLibrary {
   readonly material: StandardMaterial
   private readonly texture: Texture
   private readonly bodies = new Map<BodyId, Promise<AssetContainer>>()
-  private readonly anims = new Map<"narrow" | "wide", Promise<AssetContainer>>()
+  private readonly anims = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -92,7 +98,7 @@ export class AvatarLibrary {
   }
 
   private animSet(id: BodyId) {
-    const key = WIDE_BODIES.has(id) ? "wide" : "narrow"
+    const key = ANIM_SET[id]
     let p = this.anims.get(key)
     if (!p) {
       p = LoadAssetContainerAsync(BASE + ASSETS.anims[key], this.scene)
