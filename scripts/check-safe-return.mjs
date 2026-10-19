@@ -32,7 +32,7 @@ check("recusa caractere de controle", s("/a\u0000b") === null && s("/a%0Ab") ===
 check("recusa credencial em parâmetro", s("/arena/?token=abc") === null && s("/x?access_token=1") === null)
 check("recusa vazio, nulo e longo demais", s("") === null && s(null) === null && s("/" + "a".repeat(600)) === null)
 check("recusa caminho relativo", s("arena") === null)
-check("isOutsideNextApp reconhece /arena", mod.isOutsideNextApp("/arena/") && mod.isOutsideNextApp("/arena") && !mod.isOutsideNextApp("/arenas"))
+check("isOutsideNextApp não reconhece mais /arena (o jogo saiu da produção)", !mod.isOutsideNextApp("/arena/") && !mod.isOutsideNextApp("/arena"))
 
 console.log(fail ? `\n${fail} falha(s)` : "\nok")
 process.exit(fail ? 1 : 0)

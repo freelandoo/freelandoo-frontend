@@ -45,10 +45,14 @@ export function safeInternalPath(raw: string | null | undefined): string | null 
 }
 
 /**
- * Caminhos que NÃO são páginas deste app Next (são servidos por rewrite, como
- * a Freelandoo Arena em /arena). Navegação do roteador do Next não chega lá:
- * precisa de navegação de documento inteiro.
+ * Caminhos que NÃO são páginas deste app Next (servidos por rewrite para outra
+ * aplicação). Navegação do roteador do Next não chega lá: precisa de navegação
+ * de documento inteiro. Hoje não há nenhum — o único, o jogo em /arena, saiu da
+ * produção em 2026-10-18 —, mas os quatro retornos do login já perguntam aqui:
+ * destino novo desse tipo entra só nesta lista.
  */
+const OUTSIDE_PREFIXES: string[] = []
+
 export function isOutsideNextApp(path: string): boolean {
-  return path === "/arena" || path.startsWith("/arena/") || path.startsWith("/arena?")
+  return OUTSIDE_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`) || path.startsWith(`${p}?`))
 }

@@ -124,7 +124,6 @@ const nextConfig = {
     ],
   },
   async rewrites() {
-    const arenaOrigin = process.env.ARENA_ORIGIN?.trim().replace(/\/$/, "") || ""
     const backend =
       process.env.BACKEND_API_URL?.trim() ||
       "https://freelandoo-backend-production.up.railway.app"
@@ -134,18 +133,6 @@ const nextConfig = {
         // Deck de investidores: HTML estatico em public/, servido em URL limpa.
         // Fica fora do chrome da plataforma de proposito (e um documento, nao uma tela).
         { source: "/investidores", destination: "/investidores.html" },
-        // Freelandoo Arena em /arena (ADR-0002 do repositório da Arena): mesma
-        // origem, para o jogo ler a sessão (localStorage) e o idioma (cookie)
-        // sem segundo login. SÓ existe com ARENA_ORIGIN definida — sem a
-        // variável nada muda (produção ainda não publica a Arena).
-        ...(arenaOrigin
-          ? [
-              // index.html explícito: a origem pode ser estática sem índice
-              // de pasta (R2); numa hospedagem com índice dá no mesmo.
-              { source: "/arena", destination: `${arenaOrigin}/arena/index.html` },
-              { source: "/arena/:path*", destination: `${arenaOrigin}/arena/:path*` },
-            ]
-          : []),
       ],
     }
   },

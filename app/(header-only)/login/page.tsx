@@ -92,7 +92,7 @@ export default function LoginPage() {
           }`
         : postLogin
       didRedirect = true
-      // Destino fora deste app (ex.: /arena, servido por rewrite): navegação de
+      // Destino fora deste app (servido por rewrite): navegação de
       // documento inteiro — o roteador do Next não chega lá.
       if (isOutsideNextApp(target)) {
         completeAuthRedirect(target)
