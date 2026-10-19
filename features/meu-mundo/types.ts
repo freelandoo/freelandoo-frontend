@@ -44,10 +44,53 @@ export interface Box2Def {
   h: number
 }
 
+/** Configuração do lote (coordenadas LOCAIS, metros, frente no -Z). */
+export interface LotPlan {
+  width: number
+  depth: number
+  setbacks: { front: number; side: number; back: number }
+  /** Meio da fachada da casa: as casas maiores crescem daqui para trás e para os lados. */
+  houseFront: Vec2
+  /** Onde o lote encontra a calçada. */
+  access: Vec2
+  sign: Vec2
+  hedge: { thickness: number; height: number; frontGap: number }
+  tree: Vec2 & { scale: number }
+  flowers: Vec2
+  /** Casa nível 01 (medidas fixas). */
+  house: { width: number; depth: number; height: number; pathWidth: number; stepDepth: number; stepWidth: number }
+  /** Espaço máximo para as casas futuras. */
+  buildable: { minX: number; maxX: number; minZ: number; maxZ: number }
+}
+
+/** [x, z, escala] */
+export type TreeAt = [number, number, number]
+
+/** Medidas do bairro (anel, calçadas, cerca, portão, gramado). */
+export interface NeighborhoodDims {
+  ring: number
+  roadHalf: number
+  sidewalk: number
+  lotFront: number
+  hedge: number
+  gateX: number
+  exitZ: number
+  exitEnd: number
+  innerWalk: number
+  plazaTrees: TreeAt[]
+  plazaFlowers: [number, number][]
+  cornerTrees: TreeAt[]
+  outerTrees: TreeAt[]
+}
+
 export interface Neighborhood {
   id: string
   name: string
   layout: "ring-20"
+  /** Versão do desenho (2 = terrenos 18 × 24, mm3d-03). Ausente = mm3d-02. */
+  layoutVersion?: number
+  lotPlan?: LotPlan
+  dims?: NeighborhoodDims
   capacity: number
   /** Titulares do bairro (permanentes; não confundir com quem está online). */
   residents: number

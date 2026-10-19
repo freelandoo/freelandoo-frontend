@@ -19,6 +19,7 @@ import { Scene } from "@babylonjs/core/scene"
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { TargetCamera } from "@babylonjs/core/Cameras/targetCamera"
 import { SceneInstrumentation } from "@babylonjs/core/Instrumentation/sceneInstrumentation"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
@@ -298,6 +299,26 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
     }
   })
+
+  // Só em desenvolvimento: câmera ortográfica de cima, para conferir o layout
+  // com escala real (1 unidade = 1 m). Fora do build de produção.
+  if (process.env.NODE_ENV !== "production") {
+    const w = window as unknown as { __mmTopView?: (cx: number, cz: number, span: number) => void }
+    w.__mmTopView = (cx, cz, span) => {
+      const top = new TargetCamera("mm-top", new Vector3(cx, 300, cz - 0.001), scene)
+      top.mode = TargetCamera.ORTHOGRAPHIC_CAMERA
+      const aspect = engine.getRenderWidth() / engine.getRenderHeight()
+      top.orthoTop = span / 2
+      top.orthoBottom = -span / 2
+      top.orthoLeft = (-span / 2) * aspect
+      top.orthoRight = (span / 2) * aspect
+      top.minZ = 1
+      top.maxZ = 400
+      top.setTarget(new Vector3(cx, 0, cz))
+      scene.fogMode = Scene.FOGMODE_NONE
+      scene.activeCamera = top
+    }
+  }
 
   scene.executeWhenReady(() => {
     if (!disposed) opts.onReady?.()

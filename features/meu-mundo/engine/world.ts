@@ -18,16 +18,57 @@ import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { GeoBuilder, frameOf, place, type RGB } from "./geometry"
 import { rotY, type Box2 } from "./collision"
-import type { House, Interactable, Lot, Neighborhood } from "../types"
+import type { House, Interactable, Lot, LotPlan, Neighborhood, NeighborhoodDims } from "../types"
 
-// ── Medidas do layout ring-20 (espelham src/utils/meuMundoDemo.js) ──────────
-const RING = 26
-const ROAD_HALF = 3
-const INNER_WALK = RING - ROAD_HALF - 2 // 21
-const OUTER_WALK = RING + ROAD_HALF + 2 // 31
-const HEDGE = 47
-const GATE_X = 48
-const EXIT_Z = RING
+// ── Medidas ──────────────────────────────────────────────────────────────────
+// Vêm do SERVIDOR (payload: `dims` e `lotPlan`, de src/utils/meuMundoLayout.js):
+// o cliente não guarda uma segunda cópia. A reserva abaixo é o desenho do
+// mm3d-02, usada só se o payload vier de um backend anterior ao mm3d-03.
+const LEGACY_DIMS: NeighborhoodDims = (() => {
+  const out: NeighborhoodDims = {
+    ring: 26,
+    roadHalf: 3,
+    sidewalk: 2,
+    lotFront: 31,
+    hedge: 47,
+    gateX: 48,
+    exitZ: 26,
+    exitEnd: 70,
+    innerWalk: 21,
+    plazaTrees: [],
+    plazaFlowers: [],
+    cornerTrees: [],
+    outerTrees: [
+      [-55, 30, 1.3], [-58, -12, 1.4], [-52, -44, 1.2], [-20, -56, 1.4], [18, -55, 1.3],
+      [50, -52, 1.2], [57, -15, 1.4], [57, 10, 1.2], [56, 40, 1.3], [30, 57, 1.4],
+      [-10, 58, 1.3], [-45, 54, 1.2], [62, 33, 1.1], [64, 19, 1.2],
+    ],
+  }
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      out.plazaTrees.push([14 * sx, 14 * sz, 1], [16.5 * sx, 5 * sz, 0.9], [5 * sx, 16.5 * sz, 0.9])
+      out.plazaFlowers.push([11 * sx, 11 * sz])
+      if (sx === 1 && sz === 1) continue
+      out.cornerTrees.push([36 * sx, 36 * sz, 1.1], [42 * sx, 39 * sz, 0.95], [38.5 * sx, 43 * sz, 0.9])
+    }
+  }
+  out.cornerTrees.push([36, 38, 1.1], [42, 42, 0.95])
+  return out
+})()
+
+const LEGACY_PLAN: LotPlan = {
+  width: 9,
+  depth: 12,
+  setbacks: { front: 0, side: 0, back: 0 },
+  houseFront: { x: 0, z: -1.6 },
+  access: { x: 0, z: -6 },
+  sign: { x: 2.5, z: -5.35 },
+  hedge: { thickness: 0.3, height: 0.7, frontGap: 3.1 },
+  tree: { x: 2.8, z: 4.3, scale: 0.85 },
+  flowers: { x: -2.6, z: -4.6 },
+  house: { width: 5.4, depth: 4.8, height: 4.6, pathWidth: 1.3, stepDepth: 0.6, stepWidth: 1.6 },
+  buildable: { minX: -4.5, maxX: 4.5, minZ: -6, maxZ: 6 },
+}
 
 // ── Paleta ───────────────────────────────────────────────────────────────────
 const C = {
@@ -133,7 +174,14 @@ function drawAtlas(tex: DynamicTexture, exitLabel: string) {
 // ── Peças reaproveitadas ─────────────────────────────────────────────────────
 // `boxes` param o personagem; `viewOnly` só a câmera (a copa das árvores:
 // o personagem passa rente a ela, a câmera não pode entrar nela).
-type Ctx = { geo: GeoBuilder; signs: GeoBuilder; boxes: Box2[]; viewOnly: Box2[] }
+type Ctx = {
+  geo: GeoBuilder
+  signs: GeoBuilder
+  boxes: Box2[]
+  viewOnly: Box2[]
+  d: NeighborhoodDims
+  plan: LotPlan
+}
 
 /** Placa de chão: caixa fina do y=0 até `top`. */
 function slab(g: GeoBuilder, cx: number, cz: number, w: number, d: number, top: number, color: RGB) {
@@ -182,122 +230,154 @@ function lotBox(lot: Lot, lx: number, lz: number, hx: number, hz: number, h: num
   return { x: lot.position.x + o.x, z: lot.position.z + o.z, hx, hz, rot: lot.rotationY, h }
 }
 
-function house(ctx: Ctx, lot: Lot, h: House): Interactable {
-  const { geo, signs, boxes } = ctx
+/**
+ * Um lote com a casa nível 01. Tudo é posicionado a partir do `plan`: a casa
+ * pela referência da fachada, o caminho do acesso até o degrau, a placa, as
+ * cercas e a decoração — o mesmo objeto de onde o servidor tira os colisores.
+ */
+function house(ctx: Ctx, lot: Lot, h: House): Interactable[] {
+  const { geo, signs, boxes, plan } = ctx
+  const H = plan.house
   const f = frameOf(lot.position.x, lot.position.z, lot.rotationY)
   const v = h.variant
   const wall = WALLS[v % WALLS.length]
   const roof = ROOFS[Math.floor(v / 3) % ROOFS.length]
   const door = DOORS[v % DOORS.length]
+  const hf = plan.houseFront.z // fachada
+  const hc = hf + H.depth / 2 // centro da base
+  const hx = plan.houseFront.x
+  const W = plan.width
+  const D = plan.depth
 
-  // Gramado do lote e caminho da porta até a calçada.
-  geo.box(lot.width - 0.4, 0.025, lot.depth - 0.4, place(0, 0.0125, 0, 0, f), C.lotLawn)
-  geo.box(1.3, 0.05, 3.95, place(0, 0.025, -4.03, 0, f), C.path)
+  // Gramado do lote e caminho da calçada até o degrau da porta.
+  geo.box(W - 0.4, 0.025, D - 0.4, place(0, 0.0125, 0, 0, f), C.lotLawn)
+  const stepFront = hf - (H.stepDepth - 0.15)
+  const pathLen = stepFront - plan.access.z
+  geo.box(H.pathWidth, 0.05, pathLen, place(plan.access.x, 0.025, plan.access.z + pathLen / 2, 0, f), C.path)
 
   // Casa: base, corpo e telhado. A frente (porta) fica no -Z local.
-  geo.box(5.4, 0.25, 4.8, place(0, 0.125, 0.8, 0, f), C.stone)
-  geo.box(5, 2.6, 4.4, place(0, 1.55, 0.8, 0, f), wall)
-  geo.prism(5.8, 5.2, 1.7, place(0, 2.85, 0.8, 0, f), roof)
-  if (v % 2 === 0) geo.box(0.6, 1.4, 0.6, place(1.5, 3.4, 1.7, 0, f), [0.66, 0.41, 0.36])
+  geo.box(H.width, 0.25, H.depth, place(hx, 0.125, hc, 0, f), C.stone)
+  geo.box(5, 2.6, 4.4, place(hx, 1.55, hc, 0, f), wall)
+  geo.prism(5.8, 5.2, 1.7, place(hx, 2.85, hc, 0, f), roof)
+  if (v % 2 === 0) geo.box(0.6, 1.4, 0.6, place(hx + 1.5, 3.4, hc + 0.9, 0, f), [0.66, 0.41, 0.36])
 
   // Porta, degrau, maçaneta.
-  geo.box(1, 1.8, 0.1, place(0, 1.15, -1.45, 0, f), door)
-  geo.box(1.6, 0.12, 0.6, place(0, 0.06, -1.75, 0, f), C.stone)
-  geo.box(0.1, 0.1, 0.06, place(0.32, 1.1, -1.52, 0, f), C.knob)
+  geo.box(1, 1.8, 0.1, place(hx, 1.15, hf + 0.15, 0, f), door)
+  geo.box(H.stepWidth, 0.12, H.stepDepth, place(hx, 0.06, hf - 0.15, 0, f), C.stone)
+  geo.box(0.1, 0.1, 0.06, place(hx + 0.32, 1.1, hf + 0.08, 0, f), C.knob)
 
   // Janelas da frente e dos lados (moldura atrás do vidro).
   for (const sx of [-1.55, 1.55]) {
-    geo.box(1.15, 1.05, 0.06, place(sx, 1.75, -1.42, 0, f), C.frame)
-    geo.box(0.92, 0.82, 0.08, place(sx, 1.75, -1.45, 0, f), C.glass)
+    geo.box(1.15, 1.05, 0.06, place(hx + sx, 1.75, hf + 0.18, 0, f), C.frame)
+    geo.box(0.92, 0.82, 0.08, place(hx + sx, 1.75, hf + 0.15, 0, f), C.glass)
   }
   for (const sx of [-2.53, 2.53]) {
-    geo.box(0.06, 1.05, 1.15, place(sx, 1.75, 0.8, 0, f), C.frame)
-    geo.box(0.08, 0.82, 0.92, place(sx + Math.sign(sx) * 0.02, 1.75, 0.8, 0, f), C.glass)
+    geo.box(0.06, 1.05, 1.15, place(hx + sx, 1.75, hc, 0, f), C.frame)
+    geo.box(0.08, 0.82, 0.92, place(hx + sx + Math.sign(sx) * 0.02, 1.75, hc, 0, f), C.glass)
   }
 
-  // Jardim: arbustos ao lado da porta, flores, e às vezes uma árvore no fundo.
-  geo.sphere(0.95, [1, 0.75, 0.9], place(-2.2, 0.35, -1.95, 0, f), C.hedgeLot)
-  geo.sphere(0.95, [1, 0.75, 0.9], place(2.2, 0.35, -1.95, 0, f), C.hedgeLot)
-  const fp = rotY(-2.6, -4.6, lot.rotationY)
+  // Jardim: arbustos ao lado da porta, flores e, às vezes, uma árvore — no
+  // jardim da frente, fora do miolo da área edificável.
+  geo.sphere(0.95, [1, 0.75, 0.9], place(hx - 2.2, 0.35, hf - 0.35, 0, f), C.hedgeLot)
+  geo.sphere(0.95, [1, 0.75, 0.9], place(hx + 2.2, 0.35, hf - 0.35, 0, f), C.hedgeLot)
+  const fp = rotY(plan.flowers.x, plan.flowers.z, lot.rotationY)
   flowerPatch(ctx, lot.position.x + fp.x, lot.position.z + fp.z, v)
   if (v % 3 === 1) {
-    const tp = rotY(2.8, 4.3, lot.rotationY)
-    tree(ctx, lot.position.x + tp.x, lot.position.z + tp.z, 0.85)
+    const tp = rotY(plan.tree.x, plan.tree.z, lot.rotationY)
+    tree(ctx, lot.position.x + tp.x, lot.position.z + tp.z, plan.tree.scale)
   }
 
   // Cercas vivas baixas: laterais e fundo. A frente fica aberta para a rua.
-  geo.box(0.3, 0.7, 8.6, place(-4.35, 0.35, 1.4, 0, f), C.hedgeLot)
-  geo.box(0.3, 0.7, 8.6, place(4.35, 0.35, 1.4, 0, f), C.hedgeLot)
-  geo.box(9, 0.7, 0.3, place(0, 0.35, 5.85, 0, f), C.hedgeLot)
+  const t = plan.hedge.thickness
+  const hh = plan.hedge.height
+  const zStart = -D / 2 + plan.hedge.frontGap
+  const zEnd = D / 2 - t
+  const sideX = W / 2 - t / 2
+  const sideZ = (zStart + zEnd) / 2
+  const sideLen = zEnd - zStart
+  geo.box(t, hh, sideLen, place(-sideX, hh / 2, sideZ, 0, f), C.hedgeLot)
+  geo.box(t, hh, sideLen, place(sideX, hh / 2, sideZ, 0, f), C.hedgeLot)
+  geo.box(W, hh, t, place(0, hh / 2, D / 2 - t / 2, 0, f), C.hedgeLot)
 
   // Placa com o número do lote, de frente para a rua.
-  geo.box(0.14, 1.2, 0.14, place(2.5, 0.6, -5.35, 0, f), C.woodDark)
-  geo.box(1.05, 0.62, 0.08, place(2.5, 1.38, -5.35, 0, f), h.isMine ? C.mineBoard : C.board)
+  const sg = plan.sign
+  geo.box(0.14, 1.2, 0.14, place(sg.x, 0.6, sg.z, 0, f), C.woodDark)
+  geo.box(1.05, 0.62, 0.08, place(sg.x, 1.38, sg.z, 0, f), h.isMine ? C.mineBoard : C.board)
   // Casa do jogador: destaque discreto — moldura dourada na placa e tapete
   // dourado na frente da porta, visível de longe sem virar letreiro.
   if (h.isMine) {
-    geo.box(1.25, 0.82, 0.06, place(2.5, 1.38, -5.31, 0, f), C.knob)
-    geo.box(1.5, 0.03, 0.9, place(0, 0.135, -2.35, 0, f), C.mineMat)
+    geo.box(1.25, 0.82, 0.06, place(sg.x, 1.38, sg.z + 0.04, 0, f), C.knob)
+    geo.box(1.5, 0.03, 0.9, place(hx, 0.135, hf - 0.75, 0, f), C.mineMat)
   }
-  signs.quad(0.95, 0.52, numberCell(lot.number), place(2.5, 1.38, -5.4, 0, f))
+  signs.quad(0.95, 0.52, numberCell(lot.number), place(sg.x, 1.38, sg.z - 0.05, 0, f))
 
-  boxes.push(lotBox(lot, 0, 0.8, 2.7, 2.4, 4.6))
-  boxes.push(lotBox(lot, -4.35, 1.4, 0.15, 4.3, 0.7))
-  boxes.push(lotBox(lot, 4.35, 1.4, 0.15, 4.3, 0.7))
-  boxes.push(lotBox(lot, 0, 5.85, 4.5, 0.15, 0.7))
-  boxes.push(lotBox(lot, 2.5, -5.35, 0.12, 0.12, 2))
+  // Reserva de colisão (a que vale é a lista do servidor; ver buildWorld).
+  boxes.push(lotBox(lot, hx, hc, H.width / 2, H.depth / 2, H.height))
+  boxes.push(lotBox(lot, -sideX, sideZ, t / 2, sideLen / 2, hh))
+  boxes.push(lotBox(lot, sideX, sideZ, t / 2, sideLen / 2, hh))
+  boxes.push(lotBox(lot, 0, D / 2 - t / 2, W / 2, t / 2, hh))
+  boxes.push(lotBox(lot, sg.x, sg.z, 0.12, 0.12, 2))
 
-  const ip = rotY(0.8, -3.4, lot.rotationY)
-  return {
-    kind: "house",
-    id: h.id,
-    x: lot.position.x + ip.x,
-    z: lot.position.z + ip.z,
-    // Alcança a calçada em frente ao lote; os pontos vizinhos ficam a 9 m.
-    radius: 3.6,
-    lot,
-    house: h,
+  // Dois pontos de interação para a mesma casa: a placa (alcança a calçada) e
+  // a porta (para quem subiu o caminho). Os lotes vizinhos ficam a 18 m.
+  const at = (lx: number, lz: number) => {
+    const o = rotY(lx, lz, lot.rotationY)
+    return { x: lot.position.x + o.x, z: lot.position.z + o.z }
   }
+  const sign = at(sg.x - 1.3, plan.access.z + 1.2)
+  const doorPt = at(hx + 0.8, hf - 1.8)
+  return [
+    { kind: "house", id: h.id, ...sign, radius: 3.6, lot, house: h },
+    { kind: "house", id: h.id, ...doorPt, radius: 3.0, lot, house: h },
+  ]
 }
 
 function streets(ctx: Ctx) {
-  const { geo } = ctx
-  const len = 2 * (RING + ROAD_HALF)
+  const { geo, d } = ctx
+  const R = d.ring
+  const RH = d.roadHalf
+  const SW = d.sidewalk
+  const INNER_WALK = R - RH - SW
+  const OUTER_WALK = R + RH + SW
+  const len = 2 * (R + RH)
+  const road = 2 * RH
   // Anel: norte/sul cobrem os cantos, leste/oeste completam.
-  slab(geo, 0, RING, len, 6, 0.03, C.road)
-  slab(geo, 0, -RING, len, 6, 0.03, C.road)
-  slab(geo, RING, 0, 6, len - 12, 0.03, C.road)
-  slab(geo, -RING, 0, 6, len - 12, 0.03, C.road)
+  slab(geo, 0, R, len, road, 0.03, C.road)
+  slab(geo, 0, -R, len, road, 0.03, C.road)
+  slab(geo, R, 0, road, len - 2 * road, 0.03, C.road)
+  slab(geo, -R, 0, road, len - 2 * road, 0.03, C.road)
   // Rua de saída para o Centro, que segue além do portão.
-  slab(geo, (RING + ROAD_HALF + 70) / 2, EXIT_Z, 70 - (RING + ROAD_HALF), 6, 0.03, C.road)
+  slab(geo, (R + RH + d.exitEnd) / 2, d.exitZ, d.exitEnd - (R + RH), road, 0.03, C.road)
 
   // Faixas tracejadas no eixo.
-  for (let t = -20; t <= 20; t += 3.2) {
-    geo.box(1.4, 0.012, 0.16, place(t, 0.036, RING), C.roadLine)
-    geo.box(1.4, 0.012, 0.16, place(t, 0.036, -RING), C.roadLine)
-    geo.box(0.16, 0.012, 1.4, place(RING, 0.036, t), C.roadLine)
-    geo.box(0.16, 0.012, 1.4, place(-RING, 0.036, t), C.roadLine)
+  const dash = R - 6
+  for (let t = -dash; t <= dash; t += 3.2) {
+    geo.box(1.4, 0.012, 0.16, place(t, 0.036, R), C.roadLine)
+    geo.box(1.4, 0.012, 0.16, place(t, 0.036, -R), C.roadLine)
+    geo.box(0.16, 0.012, 1.4, place(R, 0.036, t), C.roadLine)
+    geo.box(0.16, 0.012, 1.4, place(-R, 0.036, t), C.roadLine)
   }
-  for (let t = 33; t <= 68; t += 3.2) geo.box(1.4, 0.012, 0.16, place(t, 0.036, EXIT_Z), C.roadLine)
+  for (let t = R + 7; t <= d.exitEnd - 2; t += 3.2) geo.box(1.4, 0.012, 0.16, place(t, 0.036, d.exitZ), C.roadLine)
 
-  // Calçadas de dentro (21–23) e de fora (29–31).
-  const inner = INNER_WALK + 1
-  slab(geo, 0, inner, 2 * (INNER_WALK + 2), 2, 0.08, C.walk)
-  slab(geo, 0, -inner, 2 * (INNER_WALK + 2), 2, 0.08, C.walk)
-  slab(geo, inner, 0, 2, 2 * INNER_WALK, 0.08, C.walk)
-  slab(geo, -inner, 0, 2, 2 * INNER_WALK, 0.08, C.walk)
-  const outer = OUTER_WALK - 1
+  // Calçadas de dentro e de fora do anel.
+  const inner = INNER_WALK + SW / 2
+  slab(geo, 0, inner, 2 * (INNER_WALK + SW), SW, 0.08, C.walk)
+  slab(geo, 0, -inner, 2 * (INNER_WALK + SW), SW, 0.08, C.walk)
+  slab(geo, inner, 0, SW, 2 * INNER_WALK, 0.08, C.walk)
+  slab(geo, -inner, 0, SW, 2 * INNER_WALK, 0.08, C.walk)
+  const outer = OUTER_WALK - SW / 2
   // Norte: segue pela rua de saída até o portão.
-  slab(geo, (GATE_X - OUTER_WALK) / 2, outer, GATE_X + OUTER_WALK, 2, 0.08, C.walk)
-  slab(geo, 0, -outer, 2 * OUTER_WALK, 2, 0.08, C.walk)
-  slab(geo, -outer, 0, 2, 2 * (OUTER_WALK - 2), 0.08, C.walk)
+  slab(geo, (d.gateX - OUTER_WALK) / 2, outer, d.gateX + OUTER_WALK, SW, 0.08, C.walk)
+  slab(geo, 0, -outer, 2 * OUTER_WALK, SW, 0.08, C.walk)
+  slab(geo, -outer, 0, SW, 2 * (OUTER_WALK - SW), 0.08, C.walk)
   // Leste: interrompida pela rua de saída, que vira calçada ao sul dela.
-  slab(geo, outer, (-(OUTER_WALK - 2) + (RING - ROAD_HALF)) / 2, 2, RING - ROAD_HALF + (OUTER_WALK - 2), 0.08, C.walk)
-  slab(geo, (RING + ROAD_HALF + GATE_X) / 2, RING - ROAD_HALF - 1, GATE_X - (RING + ROAD_HALF), 2, 0.08, C.walk)
+  slab(geo, outer, (-(OUTER_WALK - SW) + (R - RH)) / 2, SW, R - RH + (OUTER_WALK - SW), 0.08, C.walk)
+  slab(geo, (R + RH + d.gateX) / 2, R - RH - SW / 2, d.gateX - (R + RH), SW, 0.08, C.walk)
 }
 
 function plaza(ctx: Ctx, spawn: { x: number; z: number }) {
-  const { geo } = ctx
+  const { geo, d } = ctx
+  const INNER_WALK = d.innerWalk
   slab(geo, 0, 0, 2 * INNER_WALK, 2 * INNER_WALK, 0.015, C.lawn)
   slab(geo, 0, 0, 19, 19, 0.05, C.plazaEdge)
   slab(geo, 0, 0, 17.6, 17.6, 0.06, C.plaza)
@@ -322,17 +402,12 @@ function plaza(ctx: Ctx, spawn: { x: number; z: number }) {
     bench(ctx, x, z, Math.atan2(x, z))
   }
   for (const sx of [-8.2, 8.2]) for (const sz of [-8.2, 8.2]) lamp(ctx, sx, sz)
-  for (const sx of [-22, 22]) for (const sz of [-22, 22]) lamp(ctx, sx, sz)
+  const lampAt = INNER_WALK + 1
+  for (const sx of [-lampAt, lampAt]) for (const sz of [-lampAt, lampAt]) lamp(ctx, sx, sz)
 
   // Árvores e flores no gramado de dentro, longe dos caminhos.
-  for (const sx of [-1, 1]) {
-    for (const sz of [-1, 1]) {
-      tree(ctx, 14 * sx, 14 * sz, 1)
-      tree(ctx, 16.5 * sx, 5 * sz, 0.9)
-      tree(ctx, 5 * sx, 16.5 * sz, 0.9)
-      flowerPatch(ctx, 11 * sx, 11 * sz, 1 + sx + sz)
-    }
-  }
+  for (const [x, z, s] of d.plazaTrees) tree(ctx, x, z, s)
+  for (const [x, z] of d.plazaFlowers) flowerPatch(ctx, x, z, 1 + Math.sign(x) + Math.sign(z))
 
   // Ponto de chegada: disco amarelo no caminho sul.
   geo.cylinder(2.6, 0.06, place(spawn.x, 0.06, spawn.z), C.spawn, 16)
@@ -340,7 +415,10 @@ function plaza(ctx: Ctx, spawn: { x: number; z: number }) {
 }
 
 function boundary(ctx: Ctx) {
-  const { geo, boxes } = ctx
+  const { geo, boxes, d } = ctx
+  const HEDGE = d.hedge
+  const GATE_X = d.gateX
+  const EXIT_Z = d.exitZ
   const hedge = (x: number, z: number, w: number, d: number) => {
     geo.box(w, 1.5, d, place(x, 0.75, z), C.hedge)
     boxes.push({ x, z, hx: w / 2, hz: d / 2, rot: 0, h: 1.5 })
@@ -350,8 +428,8 @@ function boundary(ctx: Ctx) {
   hedge(0, -HEDGE, L, 1)
   hedge(-HEDGE, 0, 1, L)
   // Leste: aberta só onde passa a rua de saída (z 21–31), e lá fica o portão.
-  const gapLo = RING - ROAD_HALF - 2
-  const gapHi = RING + ROAD_HALF + 2
+  const gapLo = d.ring - d.roadHalf - 2
+  const gapHi = d.ring + d.roadHalf + 2
   hedge(HEDGE, (-HEDGE - 0.5 + gapLo) / 2, 1, gapLo + HEDGE + 0.5)
   hedge(HEDGE, (gapHi + HEDGE + 0.5) / 2, 1, HEDGE + 0.5 - gapHi)
 
@@ -376,22 +454,8 @@ function boundary(ctx: Ctx) {
 function outskirts(ctx: Ctx) {
   // Cantos entre as quadras e o lado de fora da cerca: só árvores, para dar
   // profundidade sem abrir caminho falso.
-  for (const sx of [-1, 1]) {
-    for (const sz of [-1, 1]) {
-      if (sx === 1 && sz === 1) continue
-      tree(ctx, 36 * sx, 36 * sz, 1.1)
-      tree(ctx, 42 * sx, 39 * sz, 0.95)
-      tree(ctx, 38.5 * sx, 43 * sz, 0.9)
-    }
-  }
-  tree(ctx, 36, 38, 1.1)
-  tree(ctx, 42, 42, 0.95)
-  const out: [number, number, number][] = [
-    [-55, 30, 1.3], [-58, -12, 1.4], [-52, -44, 1.2], [-20, -56, 1.4], [18, -55, 1.3],
-    [50, -52, 1.2], [57, -15, 1.4], [57, 10, 1.2], [56, 40, 1.3], [30, 57, 1.4],
-    [-10, 58, 1.3], [-45, 54, 1.2], [62, 33, 1.1], [64, 19, 1.2],
-  ]
-  for (const [x, z, s] of out) tree(ctx, x, z, s, false)
+  for (const [x, z, s] of ctx.d.cornerTrees) tree(ctx, x, z, s)
+  for (const [x, z, s] of ctx.d.outerTrees) tree(ctx, x, z, s, false)
 }
 
 export interface BuiltWorld {
@@ -419,11 +483,14 @@ export function buildWorld(scene: Scene, nb: Neighborhood, exitLabel: string): B
   signMat.emissiveColor = new Color3(0.35, 0.35, 0.35)
   signMat.backFaceCulling = false
 
-  const ctx: Ctx = { geo: new GeoBuilder(), signs: new GeoBuilder(), boxes: [], viewOnly: [] }
+  const d = nb.dims ?? LEGACY_DIMS
+  const plan = nb.lotPlan ?? LEGACY_PLAN
+  const ctx: Ctx = { geo: new GeoBuilder(), signs: new GeoBuilder(), boxes: [], viewOnly: [], d, plan }
 
   // Chão: de fora (até o horizonte com a névoa) e de dentro da cerca.
-  slab(ctx.geo, 0, 0, 220, 220, 0.002, C.grassOut)
-  slab(ctx.geo, 0, 0, 2 * HEDGE, 2 * HEDGE, 0.008, C.grass)
+  const ground = 2 * ((nb.limit ?? 70) + 60)
+  slab(ctx.geo, 0, 0, ground, ground, 0.002, C.grassOut)
+  slab(ctx.geo, 0, 0, 2 * d.hedge, 2 * d.hedge, 0.008, C.grass)
   streets(ctx)
   plaza(ctx, nb.spawn)
   boundary(ctx)
@@ -433,7 +500,7 @@ export function buildWorld(scene: Scene, nb: Neighborhood, exitLabel: string): B
   const interactables: Interactable[] = []
   for (const lot of nb.lots) {
     const h = housesById.get(lot.houseId)
-    if (h) interactables.push(house(ctx, lot, h))
+    if (h) interactables.push(...house(ctx, lot, h))
   }
   interactables.push({
     kind: "exit",
@@ -452,6 +519,16 @@ export function buildWorld(scene: Scene, nb: Neighborhood, exitLabel: string): B
   // Colisão: a lista que veio do SERVIDOR é a mesma que a sala usa para
   // validar o movimento. A desenhada aqui só serve de reserva (payload antigo).
   const boxes: Box2[] = nb.obstacles?.length ? nb.obstacles : ctx.boxes
+  // Em desenvolvimento: confere se o desenho e a colisão do servidor batem.
+  if (process.env.NODE_ENV !== "production" && nb.obstacles?.length) {
+    const key = (b: Box2) => [b.x, b.z, b.hx, b.hz, b.h].map((n) => (Math.round(n * 100) / 100 || 0).toFixed(2)).join("|")
+    const server = new Set(nb.obstacles.map(key))
+    const drawn = new Set(ctx.boxes.map(key))
+    const onlyDrawn = [...drawn].filter((k) => !server.has(k))
+    const onlyServer = [...server].filter((k) => !drawn.has(k))
+    ;(window as unknown as { __mmLayoutCheck?: unknown }).__mmLayoutCheck = { onlyDrawn, onlyServer }
+    if (onlyDrawn.length || onlyServer.length) console.warn("[meu-mundo] desenho × colisão divergem", { onlyDrawn, onlyServer })
+  }
   return {
     meshes: [world, signs],
     boxes,
