@@ -6,8 +6,10 @@
 //
 // ═══ O QUE É COMPARTILHADO E O QUE NÃO É ═══
 // Compartilhado (seguro): o arquivo de cada corpo é baixado UMA vez (a malha
-// de cada jogador reaproveita a geometria do contêiner), o atlas de textura é
-// UM só para os quatro corpos e um material só serve todos.
+// de cada jogador reaproveita a geometria do contêiner) e cada TEXTURA tem um
+// material só, criado na primeira vez que alguém usa aquele corpo. Normal e
+// magro dividem o atlas do personagem; desde o mm3d-07 o gordo e o forte são
+// modelos próprios do Tripo, com textura própria (ver ASSETS.textures).
 // NÃO compartilhado: cada jogador tem o próprio esqueleto (nós transformados)
 // e os próprios AnimationGroups — clonados do arquivo de animação e ligados
 // aos ossos DELE pelo nome. Estado mutável de animação nunca é dividido.
@@ -34,10 +36,16 @@ import type { Scene } from "@babylonjs/core/scene"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import type { BodyId } from "../types"
 
-export const AVATAR_ASSET_VERSION = "v2"
+export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
 const ASSETS = {
-  texture: "avatar-basecolor-512.jpg",
+  // Textura por corpo (mm3d-07): gordo e forte são modelos próprios.
+  textures: {
+    normal: "avatar-basecolor-512.jpg",
+    slim: "avatar-basecolor-512.jpg",
+    fat: "avatar-fat-basecolor-512.jpg",
+    strong: "avatar-strong-basecolor-512.jpg",
+  } satisfies Record<BodyId, string>,
   bodies: {
     normal: "avatar-normal.glb",
     slim: "avatar-slim.glb",
@@ -68,8 +76,8 @@ export function ensureLoaders() {
 }
 
 export class AvatarLibrary {
-  readonly material: StandardMaterial
-  private readonly texture: Texture
+  /** arquivo de textura → material (um por textura, compartilhado por quem usa). */
+  private readonly materials = new Map<string, StandardMaterial>()
   private readonly bodies = new Map<BodyId, Promise<AssetContainer>>()
   private readonly anims = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
@@ -78,17 +86,27 @@ export class AvatarLibrary {
 
   constructor(private readonly scene: Scene) {
     ensureLoaders()
-    // Atlas único, sem mapas PBR: o próprio basecolor já traz o sombreado do
-    // modelo, então o material é simples (difuso + um pouco de emissivo para
-    // não escurecer o sombreado que já vem pintado).
-    this.texture = new Texture(BASE + ASSETS.texture, scene, false, false)
-    const m = new StandardMaterial("mm-avatar", scene)
-    m.diffuseTexture = this.texture
-    m.emissiveTexture = this.texture
-    m.emissiveColor = new Color3(0.42, 0.42, 0.42)
-    m.diffuseColor = new Color3(0.72, 0.72, 0.72)
-    m.specularColor = new Color3(0, 0, 0)
-    this.material = m
+  }
+
+  /**
+   * Material do corpo. Sem mapas PBR: o próprio basecolor já traz o sombreado
+   * do modelo, então o material é simples (difuso + um pouco de emissivo para
+   * não escurecer o sombreado que já vem pintado).
+   */
+  private materialFor(id: BodyId) {
+    const file = ASSETS.textures[id]
+    let m = this.materials.get(file)
+    if (!m) {
+      const tex = new Texture(BASE + file, this.scene, false, false)
+      m = new StandardMaterial(`mm-avatar-${file}`, this.scene)
+      m.diffuseTexture = tex
+      m.emissiveTexture = tex
+      m.emissiveColor = new Color3(0.42, 0.42, 0.42)
+      m.diffuseColor = new Color3(0.72, 0.72, 0.72)
+      m.specularColor = new Color3(0, 0, 0)
+      this.materials.set(file, m)
+    }
+    return m
   }
 
   private body(id: BodyId) {
@@ -129,7 +147,7 @@ export class AvatarLibrary {
     }
     const meshes = root.getChildMeshes(false) as AbstractMesh[]
     for (const mesh of meshes) {
-      mesh.material = this.material
+      mesh.material = this.materialFor(id)
       mesh.isPickable = false
       // Bounding com folga: o esqueleto animado sai um pouco da pose T de
       // repouso, e sem isso a malha some na borda da tela.
@@ -150,8 +168,11 @@ export class AvatarLibrary {
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.anims.clear()
-    this.material.dispose()
-    this.texture.dispose()
+    for (const m of this.materials.values()) {
+      m.diffuseTexture?.dispose()
+      m.dispose()
+    }
+    this.materials.clear()
   }
 }
 
