@@ -58,6 +58,8 @@ const C = {
   spawn: [0.98, 0.78, 0.2],
   barrierA: [0.86, 0.24, 0.22],
   barrierB: [0.97, 0.96, 0.92],
+  mineBoard: [1, 0.78, 0.18],
+  mineMat: [0.95, 0.72, 0.16],
 } satisfies Record<string, RGB>
 
 const WALLS: RGB[] = [
@@ -230,7 +232,13 @@ function house(ctx: Ctx, lot: Lot, h: House): Interactable {
 
   // Placa com o número do lote, de frente para a rua.
   geo.box(0.14, 1.2, 0.14, place(2.5, 0.6, -5.35, 0, f), C.woodDark)
-  geo.box(1.05, 0.62, 0.08, place(2.5, 1.38, -5.35, 0, f), C.board)
+  geo.box(1.05, 0.62, 0.08, place(2.5, 1.38, -5.35, 0, f), h.isMine ? C.mineBoard : C.board)
+  // Casa do jogador: destaque discreto — moldura dourada na placa e tapete
+  // dourado na frente da porta, visível de longe sem virar letreiro.
+  if (h.isMine) {
+    geo.box(1.25, 0.82, 0.06, place(2.5, 1.38, -5.31, 0, f), C.knob)
+    geo.box(1.5, 0.03, 0.9, place(0, 0.135, -2.35, 0, f), C.mineMat)
+  }
   signs.quad(0.95, 0.52, numberCell(lot.number), place(2.5, 1.38, -5.4, 0, f))
 
   boxes.push(lotBox(lot, 0, 0.8, 2.7, 2.4, 4.6))
@@ -441,10 +449,13 @@ export function buildWorld(scene: Scene, nb: Neighborhood, exitLabel: string): B
   worldMat.freeze()
   signMat.freeze()
 
+  // Colisão: a lista que veio do SERVIDOR é a mesma que a sala usa para
+  // validar o movimento. A desenhada aqui só serve de reserva (payload antigo).
+  const boxes: Box2[] = nb.obstacles?.length ? nb.obstacles : ctx.boxes
   return {
     meshes: [world, signs],
-    boxes: ctx.boxes,
-    viewBoxes: [...ctx.boxes, ...ctx.viewOnly],
+    boxes,
+    viewBoxes: [...boxes, ...ctx.viewOnly],
     interactables,
     dispose: () => {
       world.dispose()

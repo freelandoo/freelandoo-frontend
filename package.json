@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "@babylonjs/core": "9.29.0",
+    "@babylonjs/loaders": "9.29.0",
+    "@colyseus/sdk": "0.18.5",
     "@gsap/react": "^2.1.2",
     "@mediapipe/tasks-vision": "^0.10.35",
     "@radix-ui/react-avatar": "1.1.2",

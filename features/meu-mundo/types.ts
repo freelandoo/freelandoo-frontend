@@ -1,10 +1,10 @@
 // features/meu-mundo/types.ts
 //
 // Contrato do bairro do Meu Mundo 3D. É exatamente a forma que o servidor
-// devolve (`GET /meu-mundo/admin/neighborhood`, hoje um bairro
-// demonstrativo). A entrega do bairro persistente troca a FONTE desses dados,
-// não a forma — por isso nada aqui é desenho: posição e orientação dos lotes
-// vêm do servidor, ruas e casas são desenhadas pelo cliente a partir do layout.
+// devolve (`GET /meu-mundo/admin/neighborhood`). Desde o mm3d-02 o bairro é
+// PERSISTENTE (mig 291): quem mora em cada casa vem do banco. Posição e
+// orientação dos lotes e a lista de obstáculos de colisão vêm do servidor;
+// ruas e casas são desenhadas pelo cliente a partir do layout.
 
 export type Vec2 = { x: number; z: number }
 
@@ -28,8 +28,20 @@ export interface House {
   level: number
   /** Variação visual estável (cores e detalhes). */
   variant: number
-  /** Dono real. Nesta etapa é sempre null: o bairro é demonstrativo. */
-  ownerId: string | null
+  /** Nome público do titular; null = casa disponível. Nunca e-mail ou id. */
+  ownerName: string | null
+  /** A casa é do jogador que está vendo. */
+  isMine: boolean
+}
+
+/** Obstáculo de colisão (retângulo girado no plano XZ), vindo do servidor. */
+export interface Box2Def {
+  x: number
+  z: number
+  hx: number
+  hz: number
+  rot: number
+  h: number
 }
 
 export interface Neighborhood {
@@ -37,17 +49,50 @@ export interface Neighborhood {
   name: string
   layout: "ring-20"
   capacity: number
+  /** Titulares do bairro (permanentes; não confundir com quem está online). */
+  residents: number
   lots: Lot[]
   houses: House[]
   spawn: Vec2 & { rotationY: number }
   exit: Vec2 & { id: string; label: string }
+  /** A MESMA lista que a sala multiplayer usa para validar o movimento. */
+  obstacles: Box2Def[]
+  limit: number
+}
+
+export type BodyId = "normal" | "slim" | "fat" | "strong"
+export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong"]
+
+export interface SeatReservation {
+  name: string
+  sessionId: string
+  roomId: string
+  processId: string
+  [k: string]: unknown
+}
+
+export interface MultiplayerSession {
+  wsPath: string
+  reservation: SeatReservation
 }
 
 export interface NeighborhoodPayload {
   release: string
   demo: boolean
+  environment: string
   neighborhood: Neighborhood
+  me: {
+    name: string
+    body: BodyId
+    house: number
+    newResidence: boolean
+    home: Vec2 & { rotationY: number }
+  }
+  motion: { walkSpeed: number; runSpeed: number }
+  multiplayer: MultiplayerSession | { error: string } | null
 }
+
+export type NetStatus = "connecting" | "online" | "reconnecting" | "offline" | "replaced"
 
 /** O que o jogador pode acionar quando está perto. */
 export type Interactable =
@@ -66,4 +111,6 @@ export interface GameStats {
   /** Posição do personagem (metros). */
   x: number
   z: number
+  /** Avatares com esqueleto e animação próprios na cena (local + remotos). */
+  avatars: number
 }

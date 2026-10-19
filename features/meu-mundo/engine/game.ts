@@ -1,17 +1,18 @@
 // features/meu-mundo/engine/game.ts
 //
-// Ciclo de vida do Meu Mundo 3D: cria o motor, monta o bairro, roda UM laço
-// de renderização e, ao sair, desmonta tudo que criou.
+// Ciclo de vida do Meu Mundo 3D: cria o motor, monta o bairro, conecta à sala
+// do bairro, roda UM laço de renderização e, ao sair, desmonta tudo que criou.
 //
-// Esta peça não sabe nada de React nem da Freelandoo: recebe um canvas, a
-// definição do bairro e callbacks. É isso que permite levar as regras do jogo
+// Esta peça não sabe nada de React nem da Freelandoo: recebe um canvas, o
+// payload do bairro e callbacks. É isso que permite levar as regras do jogo
 // para um aplicativo depois sem reescrever o mundo.
 //
 // ═══ O QUE O DESCARTE GARANTE ═══
-// Ao sair: o laço para, os ouvintes saem (um AbortController só), o observador
-// de tamanho desconecta, a cena e o motor são descartados e nenhum callback é
-// chamado depois disso. `liveGames()` conta quantas instâncias estão de pé —
-// entrar e sair várias vezes tem que deixar o número em zero ou um.
+// Ao sair: a conexão é encerrada (e reconexões pendentes canceladas), o laço
+// para, os ouvintes saem (um AbortController só), o observador de tamanho
+// desconecta, avatares, animações, texturas, a cena e o motor são descartados
+// e nenhum callback é chamado depois disso. `liveGames()` conta quantas
+// instâncias estão de pé — entrar e sair várias vezes deixa zero ou um.
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -22,42 +23,71 @@ import { SceneInstrumentation } from "@babylonjs/core/Instrumentation/sceneInstr
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildWorld } from "./world"
-import { Player } from "./player"
+import { Character, LocalPlayer, RemotePlayer } from "./player"
+import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
-import { attachInput, clearInput, createInputState, moveAxis, type InputState } from "./input"
-import type { GameStats, Interactable, Neighborhood } from "../types"
+import { NetClient } from "./net"
+import { MOTION, type Intent, type MoveState } from "./motion"
+import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type InputState } from "./input"
+import {
+  BODY_IDS,
+  type BodyId,
+  type GameStats,
+  type Interactable,
+  type MultiplayerSession,
+  type NeighborhoodPayload,
+  type NetStatus,
+} from "../types"
 
 let live = 0
 export const liveGames = () => live
 
 export interface GameOptions {
   canvas: HTMLCanvasElement
-  neighborhood: Neighborhood
+  payload: NeighborhoodPayload
   exitLabel: string
   /** Teto da resolução interna (pixels de tela por pixel CSS). */
   maxPixelRatio?: number
+  fetchSession: () => Promise<MultiplayerSession | null>
   onReady?: () => void
   onNearbyChange?: (item: Interactable | null) => void
   onInteract?: (item: Interactable) => void
   onStats?: (stats: GameStats) => void
   onError?: (reason: "context-lost") => void
+  onNet?: (status: NetStatus) => void
+  /** Jogadores conectados neste bairro (inclui você). */
+  onOnline?: (count: number) => void
+  onBody?: (body: BodyId) => void
+  /** Titulares do bairro (permanentes), atualizado pela sala. */
+  onResidents?: (count: number) => void
 }
 
 export interface GameHandle {
   input: InputState
   /** Joystick virtual do celular: x = direita, y = frente, módulo até 1. */
   setJoystick: (x: number, y: number) => void
+  setRun: (on: boolean) => void
   setBlocked: (blocked: boolean) => void
+  setBody: (body: BodyId) => void
   interact: () => void
-  respawn: () => void
+  /** Recoloca a câmera atrás do personagem (não move o personagem). */
+  recenter: () => void
+  reconnect: () => void
   setStatsEnabled: (on: boolean) => void
   dispose: () => void
 }
 
 const SKY = new Color3(0.66, 0.83, 0.95)
+const isBody = (b: string): b is BodyId => (BODY_IDS as string[]).includes(b)
 
 export function createMeuMundoGame(opts: GameOptions): GameHandle {
-  const { canvas, neighborhood: nb } = opts
+  const { canvas, payload } = opts
+  const nb = payload.neighborhood
+  const speeds = {
+    walk: payload.motion?.walkSpeed ?? MOTION.WALK_SPEED,
+    run: payload.motion?.runSpeed ?? MOTION.RUN_SPEED,
+  }
+  const limit = nb.limit ?? 70
   const engine = new Engine(
     canvas,
     true,
@@ -65,13 +95,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     false,
   )
   live++
-  // Só leitura, para conferir de fora (teste e painel técnico) que entrar e
-  // sair não acumula instâncias.
   ;(window as unknown as { __mmLiveGames?: () => number }).__mmLiveGames = liveGames
   let disposed = false
 
-  // Resolução interna limitada: em tela de alta densidade o custo por pixel é
-  // o que pesa, e a cena (cores sólidas) não ganha nada acima de 1,5×.
   const ratio = Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5)
   engine.setHardwareScalingLevel(1 / ratio)
 
@@ -82,11 +108,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   scene.fogColor = SKY
   scene.fogStart = 70
   scene.fogEnd = 165
-  // A seleção por ponteiro do Babylon não é usada (o jogo faz a própria).
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
-  scene.skipFrustumClipping = false
   scene.autoClear = true
 
   const hemi = new HemisphericLight("mm-hemi", new Vector3(0.25, 1, 0.15), scene)
@@ -96,30 +120,115 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   sun.intensity = 0.55
 
   const world = buildWorld(scene, nb, opts.exitLabel)
+  const lib = new AvatarLibrary(scene)
 
-  const characterMat = new StandardMaterial("mm-character", scene)
-  characterMat.diffuseColor = new Color3(1, 1, 1)
-  characterMat.specularColor = new Color3(0.08, 0.08, 0.08)
-  const player = new Player(scene, characterMat)
+  const fallbackMat = new StandardMaterial("mm-character", scene)
+  fallbackMat.diffuseColor = new Color3(1, 1, 1)
+  fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
+  const shadowMat = new StandardMaterial("mm-shadow", scene)
+  shadowMat.diffuseColor = new Color3(0, 0, 0)
+  shadowMat.specularColor = new Color3(0, 0, 0)
+  shadowMat.disableLighting = true
+  shadowMat.alpha = 0.22
+  const mats = { fallback: fallbackMat, shadow: shadowMat }
+
+  const home = payload.me.home
+  let myBody: BodyId = isBody(payload.me.body) ? payload.me.body : "normal"
+  const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true), home.x, home.z, home.rotationY)
   const follow = new FollowCamera(scene)
   scene.activeCamera = follow.camera
-
-  const spawn = () => {
-    player.teleport(nb.spawn.x, nb.spawn.z, nb.spawn.rotationY)
-    follow.snapBehind(nb.spawn.x, nb.spawn.z, nb.spawn.rotationY)
-    follow.update(1, player.x, player.z, world.viewBoxes)
-  }
-  spawn()
+  follow.snapBehind(home.x, home.z, home.rotationY)
+  follow.update(1, local.x, local.z, world.viewBoxes)
 
   const input = createInputState()
   const detachInput = attachInput(canvas, input)
 
+  // ── Rede ──────────────────────────────────────────────────────────────────
+  const remotes = new Map<string, RemotePlayer>()
+  let welcomed = false
+  let onlineCount = -1
+  let residentCount = nb.residents
+  const net = new NetClient({
+    onStatus: (s) => {
+      if (disposed) return
+      opts.onNet?.(s)
+      if (s !== "online") for (const [, r] of remotes) r.dispose()
+      if (s !== "online") remotes.clear()
+    },
+    onWelcome: (p) => {
+      if (disposed) return
+      // Primeira entrada: o servidor decide onde você nasce. Reconexão: só
+      // corrige se a diferença for grande (a predição local já está perto).
+      const far = Math.hypot(p.x - local.x, p.z - local.z) > 3
+      if (!welcomed || far) {
+        local.teleport(p.x, p.z, p.facing)
+        if (!welcomed) follow.snapBehind(p.x, p.z, p.facing)
+      }
+      welcomed = true
+    },
+    fetchSession: opts.fetchSession,
+  })
+  const mp = payload.multiplayer
+  if (mp && "reservation" in mp) void net.connect(mp)
+  else void net.retry()
+
+  const syncNetwork = (now: number, intent: Intent) => {
+    net.sendIntent(intent, now)
+    const players = net.players()
+    const me = net.sessionId
+    if (!players || net.status !== "online") {
+      if (onlineCount !== 1) {
+        onlineCount = 1
+        opts.onOnline?.(1)
+      }
+      return
+    }
+    const residents = net.residents()
+    if (residents !== null && residents !== residentCount) {
+      residentCount = residents
+      opts.onResidents?.(residents)
+    }
+    const seen = new Set<string>()
+    players.forEach((p, sid) => {
+      if (sid === me) {
+        local.setServer(p.x, p.z)
+        return
+      }
+      seen.add(sid)
+      let r = remotes.get(sid)
+      const body = isBody(p.body) ? p.body : "normal"
+      if (!r) {
+        r = new RemotePlayer(new Character(scene, lib, mats, body, p.name, false), p.x, p.z, p.facing)
+        remotes.set(sid, r)
+        // Vizinho que se mudou depois que você entrou: a casa dele deixa de
+        // aparecer como disponível (o banco é a fonte; a sala só confirma).
+        const h = nb.houses[p.house - 1]
+        if (h && !h.isMine && !h.ownerName) h.ownerName = p.name
+      } else if (r.char.body !== body) {
+        void r.char.setBody(body)
+      }
+      r.setTarget(p.x, p.z, p.facing, Math.max(0, Math.min(2, p.move)) as MoveState)
+    })
+    for (const [sid, r] of remotes) {
+      if (!seen.has(sid)) {
+        r.dispose()
+        remotes.delete(sid)
+      }
+    }
+    const count = seen.size + 1
+    if (count !== onlineCount) {
+      onlineCount = count
+      opts.onOnline?.(count)
+    }
+  }
+
+  // ── Interação ─────────────────────────────────────────────────────────────
   let nearby: Interactable | null = null
   const findNearby = () => {
     let best: Interactable | null = null
     let bestD = Infinity
     for (const it of world.interactables) {
-      const d = Math.hypot(it.x - player.x, it.z - player.z)
+      const d = Math.hypot(it.x - local.x, it.z - local.z)
       if (d <= it.radius && d < bestD) {
         best = it
         bestD = d
@@ -128,19 +237,13 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     return best
   }
 
-  // Estatísticas só quando o painel técnico está aberto: a instrumentação tem
-  // custo e ninguém precisa dela com o painel fechado.
   let instr: SceneInstrumentation | null = null
   let statsTimer = 0
 
   scene.onBeforeRenderObservable.add(() => {
-    // Até 0,1 s o movimento acompanha o relógio (o personagem divide em
-    // subpassos); acima disso é um engasgo (aba voltando) e não vale pular.
     const dt = Math.min(engine.getDeltaTime() / 1000, 0.1)
-    if (input.blocked) {
-      player.stop()
-      player.update(dt, 0, 0, world.boxes)
-    } else {
+    let intent: Intent = { x: 0, z: 0, run: false }
+    if (!input.blocked) {
       if (input.camDX || input.camDY) {
         follow.rotate(input.camDX * 0.006, input.camDY * 0.004)
         input.camDX = 0
@@ -153,11 +256,17 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const axis = moveAxis(input)
       const f = follow.forward()
       // direita = cima × frente (mão esquerda): (f.z, -f.x)
-      const mx = f.x * axis.y + f.z * axis.x
-      const mz = f.z * axis.y - f.x * axis.x
-      player.update(dt, mx, mz, world.boxes)
+      intent = {
+        x: f.x * axis.y + f.z * axis.x,
+        z: f.z * axis.y - f.x * axis.x,
+        run: wantsRun(input),
+      }
+      if (Math.hypot(intent.x, intent.z) < 0.05) intent = { x: 0, z: 0, run: intent.run }
     }
-    follow.update(dt, player.x, player.z, world.viewBoxes)
+    local.update(dt, intent, world.boxes, limit, speeds)
+    syncNetwork(performance.now(), intent)
+    for (const r of remotes.values()) r.update(dt)
+    follow.update(dt, local.x, local.z, world.viewBoxes)
 
     const next = findNearby()
     if (next?.id !== nearby?.id) {
@@ -179,13 +288,12 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           meshes: scene.meshes.length,
           activeMeshes: scene.getActiveMeshes().length,
           materials: scene.materials.length,
-          // No Babylon 9 só o motor nativo conta draw calls; no WebGL o contador
-          // fica em zero. Zero aqui seria mentira — vira "indisponível".
           drawCalls: Math.round(instr.drawCallsCounter.lastSecAverage) || null,
           webgl: engine.webGLVersion,
           liveGames: live,
-          x: player.x,
-          z: player.z,
+          x: local.x,
+          z: local.z,
+          avatars: lib.live,
         })
       }
     }
@@ -214,16 +322,28 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       input.joyX = x
       input.joyY = y
     },
+    setRun(on) {
+      input.runToggle = on
+    },
     setBlocked(blocked) {
       input.blocked = blocked
       clearInput(input)
     },
+    setBody(body) {
+      if (!isBody(body) || body === myBody) return
+      myBody = body
+      void local.char.setBody(body)
+      net.sendBody(body)
+      opts.onBody?.(body)
+    },
     interact() {
       if (nearby && !input.blocked) opts.onInteract?.(nearby)
     },
-    respawn() {
-      clearInput(input)
-      spawn()
+    recenter() {
+      follow.snapBehind(local.x, local.z, local.body.facing)
+    },
+    reconnect() {
+      void net.retry()
     },
     setStatsEnabled(on) {
       if (on && !instr) {
@@ -238,15 +358,20 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     dispose() {
       if (disposed) return
       disposed = true
+      net.dispose()
       engine.stopRenderLoop()
       detachInput()
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
       instr?.dispose()
       instr = null
-      player.dispose()
+      for (const r of remotes.values()) r.dispose()
+      remotes.clear()
+      local.dispose()
+      lib.dispose()
       world.dispose()
-      characterMat.dispose()
+      fallbackMat.dispose()
+      shadowMat.dispose()
       scene.dispose()
       engine.dispose()
       live--

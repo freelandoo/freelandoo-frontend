@@ -17,10 +17,12 @@ export interface InputState {
   zoom: number
   interactQueued: boolean
   blocked: boolean
+  /** Botão de corrida lenta do celular (alterna). Shift faz o mesmo no teclado. */
+  runToggle: boolean
 }
 
 export function createInputState(): InputState {
-  return { keys: new Set(), joyX: 0, joyY: 0, camDX: 0, camDY: 0, zoom: 0, interactQueued: false, blocked: false }
+  return { keys: new Set(), joyX: 0, joyY: 0, camDX: 0, camDY: 0, zoom: 0, interactQueued: false, blocked: false, runToggle: false }
 }
 
 export function clearInput(s: InputState) {
@@ -42,6 +44,11 @@ function isEditable(t: EventTarget | null) {
   if (!el) return false
   const tag = el.tagName
   return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable
+}
+
+/** Corrida lenta: Shift segurado no teclado ou o botão do celular ligado. */
+export function wantsRun(s: InputState) {
+  return s.runToggle || s.keys.has("ShiftLeft") || s.keys.has("ShiftRight")
 }
 
 /** Eixo de movimento do teclado + joystick: x = direita, y = frente. */
@@ -68,7 +75,9 @@ export function attachInput(canvas: HTMLCanvasElement, s: InputState): () => voi
     "keydown",
     (e) => {
       if (s.blocked || isEditable(e.target) || e.ctrlKey || e.metaKey || e.altKey) return
-      if (MOVE_KEYS.has(e.code)) {
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
+        s.keys.add(e.code)
+      } else if (MOVE_KEYS.has(e.code)) {
         s.keys.add(e.code)
         e.preventDefault()
       } else if ((e.code === "KeyE" || e.code === "Enter" || e.code === "Space") && !e.repeat) {

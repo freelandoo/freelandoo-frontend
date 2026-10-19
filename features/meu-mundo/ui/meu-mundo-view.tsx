@@ -11,13 +11,36 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Activity, ArrowLeft, Construction, Hand, LocateFixed, X } from "lucide-react"
+import {
+  Activity,
+  ArrowLeft,
+  Construction,
+  Footprints,
+  Hand,
+  Home,
+  LocateFixed,
+  RefreshCw,
+  Shirt,
+  Users,
+  Wifi,
+  WifiOff,
+  X,
+} from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
-import type { GameStats, Interactable, NeighborhoodPayload } from "../types"
+import { fetchSession } from "../data"
+import {
+  BODY_IDS,
+  type BodyId,
+  type GameStats,
+  type Interactable,
+  type NeighborhoodPayload,
+  type NetStatus,
+} from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-01"
+export const CLIENT_RELEASE = "mm3d-02"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 const BTN =
@@ -45,6 +68,12 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
   const [statsOpen, setStatsOpen] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
   const [helpOpen, setHelpOpen] = useState(true)
+  const [net, setNet] = useState<NetStatus>("connecting")
+  const [online, setOnline] = useState(1)
+  const [body, setBody] = useState<BodyId>(payload.me.body)
+  const [bodyOpen, setBodyOpen] = useState(false)
+  const [running, setRunning] = useState(false)
+  const [residents, setResidents] = useState(nb.residents)
   const [isTouch] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -83,8 +112,16 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
       try {
         handle = createMeuMundoGame({
           canvas,
-          neighborhood: nb,
+          payload,
           exitLabel: exitLabelRef.current || nb.exit.label,
+          fetchSession: async () => {
+            const token = getToken()
+            return token ? fetchSession(token) : null
+          },
+          onNet: (s) => alive && setNet(s),
+          onOnline: (n) => alive && setOnline(n),
+          onBody: (b) => alive && setBody(b),
+          onResidents: (n) => alive && setResidents(n),
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (it) => alive && setNearby(it),
           onInteract: (it) => alive && setOpen(it),
@@ -104,7 +141,7 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
       handle?.dispose()
       gameRef.current = null
     }
-  }, [nb, attempt])
+  }, [nb, payload, attempt])
 
   useEffect(() => {
     statsOpenRef.current = statsOpen
@@ -131,10 +168,37 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
     setAttempt((a) => a + 1)
   }, [])
 
-  const respawn = useCallback(() => {
+  const recenter = useCallback(() => {
     setOpen(null)
-    gameRef.current?.respawn()
+    gameRef.current?.recenter()
   }, [])
+
+  const chooseBody = useCallback((b: BodyId) => {
+    gameRef.current?.setBody(b)
+    setBodyOpen(false)
+  }, [])
+
+  const toggleRun = useCallback(() => {
+    setRunning((r) => {
+      gameRef.current?.setRun(!r)
+      return !r
+    })
+  }, [])
+
+  const netLabel = {
+    connecting: t("netConnecting", "Conectando"),
+    online: t("netOnline", "Online"),
+    reconnecting: t("netReconnecting", "Reconectando"),
+    offline: t("netOffline", "Conexão interrompida"),
+    replaced: t("netReplaced", "Aberto em outra janela"),
+  }[net]
+  const bodyLabel = (b: BodyId) =>
+    ({
+      normal: t("bodyNormal", "Normal"),
+      slim: t("bodySlim", "Magro"),
+      fat: t("bodyFat", "Gordo"),
+      strong: t("bodyStrong", "Forte"),
+    })[b]
 
   const nearbyLabel =
     nearby?.kind === "house"
@@ -166,11 +230,50 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
             {t("devBadge", "Em desenvolvimento")}
             <span className="hidden sm:inline">· {nb.name}</span>
           </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1 bg-[#F2B705] px-1.5 py-0.5 text-[#0B0B0D]">
+              <Home className="h-3 w-3" />
+              {t("myHouse", "Sua casa {n}").replace("{n}", String(payload.me.house).padStart(2, "0"))}
+            </span>
+            <span
+              className="inline-flex items-center gap-1 bg-[#0B0B0D] px-1.5 py-0.5 text-[#F7F0D9]"
+              title={t("residentsHint", "Moradores titulares do bairro")}
+            >
+              <Users className="h-3 w-3" />
+              {t("residents", "{n} moradores").replace("{n}", String(residents))}
+            </span>
+            <span
+              role="status"
+              aria-live="polite"
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-white ${
+                net === "online" ? "bg-[#15803D]" : net === "offline" || net === "replaced" ? "bg-[#B91C1C]" : "bg-[#8A6400]"
+              }`}
+            >
+              {net === "online" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+              {netLabel}
+              {net === "online" && <> · {t("onlineNow", "{n} conectados").replace("{n}", String(online))}</>}
+            </span>
+          </div>
         </div>
         <div className="pointer-events-auto flex shrink-0 justify-end gap-2">
-          <button type="button" onClick={respawn} className={BTN} aria-label={t("respawn", "Voltar ao ponto inicial")}>
+          {(net === "offline" || net === "replaced") && (
+            <button type="button" onClick={() => gameRef.current?.reconnect()} className={BTN}>
+              <RefreshCw className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("reconnect", "Reconectar")}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setBodyOpen((v) => !v)}
+            className={BTN}
+            aria-pressed={bodyOpen}
+            aria-label={t("bodyPicker", "Tipo físico (teste)")}
+          >
+            <Shirt className="h-4 w-4" />
+            <span className="hidden sm:inline">{bodyLabel(body)}</span>
+          </button>
+          <button type="button" onClick={recenter} className={BTN} aria-label={t("recenter", "Centralizar a câmera")}>
             <LocateFixed className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("respawnShort", "Início")}</span>
           </button>
           <button
             type="button"
@@ -187,6 +290,36 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
           </Link>
         </div>
       </div>
+
+      {/* Seletor administrativo de tipo físico (teste — não é loja nem guarda-roupa) */}
+      {bodyOpen && (
+        <div
+          className="pointer-events-auto absolute right-0 border-2 border-[#0B0B0D] bg-[#F7F0D9] p-2 text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+          style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 52px)", marginRight: SAFE.right }}
+        >
+          <div className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#8A6400]">
+            {t("bodyPicker", "Tipo físico (teste)")}
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {BODY_IDS.map((b) => (
+              <button
+                key={b}
+                type="button"
+                onClick={() => chooseBody(b)}
+                aria-pressed={body === b}
+                className={`h-11 min-w-24 border-2 border-[#0B0B0D] px-3 text-[12px] font-black uppercase ${
+                  body === b ? "bg-[#0B0B0D] text-[#F2B705]" : "bg-white"
+                }`}
+              >
+                {bodyLabel(b)}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 max-w-[14rem] px-1 text-[10px] font-medium leading-tight text-[#6B645A]">
+            {t("bodyHint", "Teste visual: nenhum corpo tem vantagem de velocidade.")}
+          </p>
+        </div>
+      )}
 
       {/* Painel técnico */}
       {statsOpen && (
@@ -213,7 +346,10 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
                 x {stats.x.toFixed(1)} · z {stats.z.toFixed(1)}
               </div>
               <div>
-                {t("liveGames", "Jogos ativos")} {stats.liveGames}
+                {t("liveGames", "Jogos ativos")} {stats.liveGames} · {t("avatars", "Avatares")} {stats.avatars}
+              </div>
+              <div>
+                {t("netShort", "Rede")} {net} · {online}
               </div>
             </>
           ) : (
@@ -238,8 +374,8 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
           }
         >
           {isTouch
-            ? t("helpTouch", "Joystick: andar · Arraste a tela: girar a câmera · Botão: interagir")
-            : t("helpDesktop", "WASD ou setas: andar · Arraste: girar a câmera · Roda: zoom · E: interagir")}
+            ? t("helpTouch2", "Joystick: andar · Correr: corrida lenta · Arraste a tela: girar a câmera · Botão: interagir")
+            : t("helpDesktop2", "WASD ou setas: andar · Shift: corrida lenta · Arraste: girar a câmera · Roda: zoom · E: interagir")}
           <span className="ml-2 text-[#8A6400]">{t("hideHelp", "(ocultar)")}</span>
         </button>
       )}
@@ -259,6 +395,19 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
       {status === "ready" && isTouch && !open && (
         <>
           <Joystick gameRef={gameRef} />
+          <button
+            type="button"
+            onClick={toggleRun}
+            aria-pressed={running}
+            aria-label={t("runAria", "Corrida lenta (liga e desliga)")}
+            className={`absolute flex h-16 w-16 flex-col items-center justify-center gap-0.5 border-2 border-[#0B0B0D] text-[10px] font-black uppercase shadow-[3px_3px_0_0_#0B0B0D] ${
+              running ? "bg-[#0B0B0D] text-[#F2B705]" : "bg-[#F7F0D9] text-[#0B0B0D]"
+            }`}
+            style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 112px)", right: SAFE.right }}
+          >
+            <Footprints className="h-6 w-6" />
+            {t("run", "Correr")}
+          </button>
           {nearby && (
             <button
               type="button"
@@ -298,7 +447,12 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
             {open.kind === "house" ? (
               <>
                 <div className="text-[11px] font-bold uppercase tracking-widest text-[#8A6400]">
-                  {t("houseEyebrow", "Casa")} · {t("demo", "demonstração")}
+                  {t("houseEyebrow", "Casa")} ·{" "}
+                  {open.house.isMine
+                    ? t("yourHouse", "Sua casa")
+                    : open.house.ownerName
+                      ? t("occupied", "Ocupada")
+                      : t("available", "Disponível")}
                 </div>
                 <div className="mt-1 text-3xl font-black uppercase leading-none">
                   {t("lot", "Lote {n}").replace("{n}", String(open.lot.number).padStart(2, "0"))}
@@ -308,7 +462,7 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
                   <dd className="font-bold">{String(open.house.level).padStart(2, "0")}</dd>
                   <dt className="font-semibold text-[#6B645A]">{t("owner", "Proprietário")}</dt>
                   <dd className="font-bold">
-                    {open.house.ownerId ? t("ownerDemo", "Proprietário demonstrativo") : t("noOwner", "Sem proprietário")}
+                    {open.house.isMine ? t("yourHouse", "Sua casa") : (open.house.ownerName ?? t("available", "Disponível"))}
                   </dd>
                 </dl>
                 <div className="mt-4 flex items-center gap-2 border-2 border-dashed border-[#0B0B0D]/40 px-3 py-2 text-sm font-semibold">
