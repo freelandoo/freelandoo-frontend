@@ -2,6 +2,8 @@
 //
 // Modelos das casas níveis 02–10 (GLB do pipeline MEU MUNDO 3D/pipeline/casas).
 // O nível 01 não passa por aqui: é a geometria que o world.ts sempre desenhou.
+// Desde o mm3d-08 os níveis 02–09 são modelados no MESMO estilo dela
+// (build_styled.py): caixas com cor por vértice (COLOR_0), sem textura.
 //
 // ═══ UM MODELO POR NÍVEL, NÃO POR CASA ═══
 // Cada nível é baixado UMA vez e vira UMA malha na cena. As casas que usam
@@ -21,9 +23,10 @@
 // O transform do glTF (mão direita → esquerda, dequantização do
 // KHR_mesh_quantization) é ASSADO nos vértices: a malha fica em coordenadas
 // locais do lote (frente no -Z, origem = frente dos degraus), e cada thin
-// instance só leva a posição e a rotação do lote. O material PBR do arquivo é
-// trocado por um StandardMaterial com a mesma textura: o basecolor do modelo
-// já traz o sombreado, como nos avatares.
+// instance só leva a posição e a rotação do lote. O material do arquivo é
+// trocado por um StandardMaterial com os MESMOS ajustes do "mm-world" (difuso
+// branco × cor do vértice, sem brilho): a casa nível 02 é iluminada igual à 01
+// do lado. Modelo antigo com textura (Tripo) ainda funciona: usa a textura.
 
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
@@ -142,13 +145,22 @@ export class HouseModels {
     c.dispose()
 
     const mat = new StandardMaterial(`mm-house-n${entry.level}`, this.scene)
-    mat.diffuseTexture = texture
-    mat.emissiveTexture = texture
-    mat.emissiveColor = new Color3(0.3, 0.3, 0.3)
-    mat.diffuseColor = new Color3(0.82, 0.82, 0.82)
     mat.specularColor = new Color3(0, 0, 0)
-    // Modelo gerado automaticamente: algumas bordas abertas (o recorte da
-    // passarela). Sem descarte de face traseira, nada "some" de um ângulo.
+    if (texture) {
+      mat.diffuseTexture = texture
+      mat.emissiveTexture = texture
+      mat.emissiveColor = new Color3(0.3, 0.3, 0.3)
+      mat.diffuseColor = new Color3(0.82, 0.82, 0.82)
+    } else {
+      // Igual ao material do mundo (world.ts): a cor vem do vértice.
+      mat.diffuseColor = new Color3(1, 1, 1)
+      mesh.useVertexColors = true
+      // COLOR_0 chega em RGBA (alfa sempre 1): sem isto o loader marca a malha
+      // como translúcida e ela entraria na fila de transparência.
+      mesh.hasVertexAlpha = false
+    }
+    // Peças simples com faces internas (como a casa 01): sem descarte de face
+    // traseira, nada "some" de um ângulo.
     mat.backFaceCulling = false
     if (keepGeo) this.scene.addGeometry(keepGeo)
     if (texture) this.scene.addTexture(texture)
