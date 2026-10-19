@@ -21,6 +21,7 @@ import {
   Trophy,
   Users,
   Wrench,
+  Gamepad2,
   type LucideIcon,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
@@ -337,6 +338,13 @@ export function ProfileHeadCard({
     is_admin?: boolean
     roles?: { desc_role?: string }[]
   } | null>(null)
+  // MEU MUNDO 3D (em desenvolvimento) é só do administrador. O papel sai do
+  // usuário que o login guarda (`is_admin` + roles), o mesmo de UserDropside.
+  // Quem decide de verdade é o backend (GET /meu-mundo/admin/neighborhood,
+  // papel Administrator): o botão só não é oferecido a quem não é admin.
+  const isPlatformAdmin = !!(
+    lsUser?.is_admin || lsUser?.roles?.some((r) => r.desc_role === "Administrator")
+  )
 
   useEffect(() => {
     if (!bannerArmed) return
@@ -933,6 +941,20 @@ export function ProfileHeadCard({
                   ))}
                 </RetractableIcons>
                 </div>
+                {isPlatformAdmin && !isClan && (
+                  <Link
+                    href="/meu-mundo/admin"
+                    aria-label={t("meuMundoAria", "Abrir o Meu Mundo (em desenvolvimento)")}
+                    title={t("meuMundoAria", "Abrir o Meu Mundo (em desenvolvimento)")}
+                    className="inline-flex h-9 shrink-0 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 text-[11px] font-bold uppercase tracking-wider text-[#F2B705] shadow-[2px_2px_0_0_#F2B705] transition hover:bg-[#1D1810] active:scale-[0.96]"
+                  >
+                    <Gamepad2 className="h-3.5 w-3.5" />
+                    {t("meuMundo", "Meu Mundo")}
+                    <span className="text-[9px] font-semibold normal-case tracking-normal text-[#E8E2D2]/80">
+                      — {t("meuMundoDev", "Em desenvolvimento")}
+                    </span>
+                  </Link>
+                )}
               </>
             ) : (
               <>
