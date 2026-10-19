@@ -6918,6 +6918,20 @@
     "runAria": "Corrida lenta (liga e desliga)",
     "avatars": "Avatares",
     "helpTouch2": "Joystick: andar · Correr: corrida lenta · Arraste a tela: girar a câmera · Botão: interagir",
-    "helpDesktop2": "WASD ou setas: andar · Shift: corrida lenta · Arraste: girar a câmera · Roda: zoom · E: interagir"
+    "helpDesktop2": "WASD ou setas: andar · Shift: corrida lenta · Arraste: girar a câmera · Roda: zoom · E: interagir",
+    "changeHouse": "Alterar casa",
+    "testFeature": "Recurso de teste",
+    "levelTitle": "Escolher nível da casa",
+    "levelN": "Nível {n}",
+    "levelCurrent": "Atual",
+    "levelNoModel": "Modelo ainda não fornecido",
+    "levelLoading": "Carregando nível {n}…",
+    "levelLoadFail": "O modelo do nível {n} não carregou — mostrando o nível {m}.",
+    "levelConfirmed": "Nível confirmado: {n}",
+    "levelSize": "{w} × {d} m",
+    "levelTestNote": "Teste visual: todos os níveis estão liberados, sem custo. Não é loja nem evolução.",
+    "levelApply": "Aplicar nível {n}",
+    "levelNetError": "Sem conexão. Tente de novo.",
+    "houseModels": "Casas na GPU"
   }
 }

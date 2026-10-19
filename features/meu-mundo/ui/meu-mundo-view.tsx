@@ -18,6 +18,7 @@ import {
   Footprints,
   Hand,
   Home,
+  Loader2,
   LocateFixed,
   RefreshCw,
   Shirt,
@@ -29,18 +30,20 @@ import {
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
-import { fetchSession } from "../data"
+import { fetchSession, postHouseLevel } from "../data"
 import {
   BODY_IDS,
   type BodyId,
   type GameStats,
+  type HouseCatalog,
+  type HouseVisual,
   type Interactable,
   type NeighborhoodPayload,
   type NetStatus,
 } from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-05"
+export const CLIENT_RELEASE = "mm3d-06"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 const BTN =
@@ -74,6 +77,16 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
   const [bodyOpen, setBodyOpen] = useState(false)
   const [running, setRunning] = useState(false)
   const [residents, setResidents] = useState(nb.residents)
+  // Casa do jogador: nível confirmado × exibido (o seletor de teste mostra os dois).
+  const myLot = payload.me.house
+  const myHouse = nb.houses[myLot - 1]
+  const [houseVis, setHouseVis] = useState<HouseVisual>({
+    lot: myLot,
+    confirmed: myHouse?.level ?? 1,
+    shown: myHouse?.level ?? 1,
+    status: "ok",
+  })
+  const [levelOpen, setLevelOpen] = useState(false)
   const [isTouch] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -124,7 +137,13 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
           onResidents: (n) => alive && setResidents(n),
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (it) => alive && setNearby(it),
-          onInteract: (it) => alive && setOpen(it),
+          // Na PRÓPRIA casa a ação é trocar o nível; nas outras, ver a ficha.
+          onInteract: (it) => {
+            if (!alive) return
+            if (it.kind === "house" && it.house.isMine) setLevelOpen(true)
+            else setOpen(it)
+          },
+          onHouseVisual: (v) => alive && v.lot === myLot && setHouseVis(v),
           onStats: (s) => alive && setStats(s),
           onError: () => alive && setStatus("error"),
         })
@@ -141,7 +160,7 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
       handle?.dispose()
       gameRef.current = null
     }
-  }, [nb, payload, attempt])
+  }, [nb, payload, attempt, myLot])
 
   useEffect(() => {
     statsOpenRef.current = statsOpen
@@ -149,7 +168,10 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
   }, [statsOpen])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(!!open)
+    gameRef.current?.setBlocked(!!open || levelOpen)
+  }, [open, levelOpen])
+
+  useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Enter") {
@@ -200,8 +222,10 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
       strong: t("bodyStrong", "Forte"),
     })[b]
 
-  const nearbyLabel =
-    nearby?.kind === "house"
+  const nearbyMine = nearby?.kind === "house" && nearby.house.isMine
+  const nearbyLabel = nearbyMine
+    ? t("changeHouse", "Alterar casa")
+    : nearby?.kind === "house"
       ? t("seeHouse", "Ver casa {n}").replace("{n}", String(nearby.lot.number).padStart(2, "0"))
       : nearby?.kind === "exit"
         ? exitLabel
@@ -351,6 +375,9 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
               <div>
                 {t("netShort", "Rede")} {net} · {online}
               </div>
+              <div>
+                {t("houseModels", "Casas na GPU")} {stats.houseModels.length ? stats.houseModels.map((n) => String(n).padStart(2, "0")).join(",") : "—"}
+              </div>
             </>
           ) : (
             <div>…</div>
@@ -381,7 +408,7 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
       )}
 
       {/* Aviso de interação */}
-      {status === "ready" && nearby && !open && !isTouch && (
+      {status === "ready" && nearby && !nearbyMine && !open && !levelOpen && !isTouch && (
         <div
           className="pointer-events-none absolute left-1/2 -translate-x-1/2 border-2 border-[#0B0B0D] bg-[#0B0B0D]/90 px-3 py-2 text-[12px] font-bold uppercase tracking-wider text-[#F7F0D9]"
           style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
@@ -391,8 +418,25 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
         </div>
       )}
 
+      {/* Computador: a própria casa ganha botão clicável, com o atalho E nele */}
+      {status === "ready" && nearbyMine && !open && !levelOpen && !isTouch && (
+        <button
+          type="button"
+          onClick={() => gameRef.current?.interact()}
+          aria-label={t("changeHouse", "Alterar casa")}
+          className="absolute left-1/2 inline-flex h-12 -translate-x-1/2 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 text-[13px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+          style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
+        >
+          <span className="inline-flex h-6 w-6 items-center justify-center bg-[#0B0B0D] text-[#F2B705]" aria-hidden>
+            E
+          </span>
+          <Home className="h-5 w-5" />
+          {t("changeHouse", "Alterar casa")}
+        </button>
+      )}
+
       {/* Controles de toque */}
-      {status === "ready" && isTouch && !open && (
+      {status === "ready" && isTouch && !open && !levelOpen && (
         <>
           <Joystick gameRef={gameRef} />
           <button
@@ -412,10 +456,11 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
             <button
               type="button"
               onClick={() => gameRef.current?.interact()}
+              aria-label={nearbyLabel}
               className="absolute flex min-h-16 min-w-16 max-w-[44vw] items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-[13px] font-black uppercase leading-tight text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
               style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 24px)", right: SAFE.right }}
             >
-              <Hand className="h-5 w-5 shrink-0" />
+              {nearbyMine ? <Home className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
               {nearbyLabel}
             </button>
           )}
@@ -492,6 +537,17 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
             </button>
           </div>
         </div>
+      )}
+
+      {/* Seletor de nível da própria casa (teste) */}
+      {levelOpen && nb.houseCatalog && (
+        <HouseLevelPanel
+          catalog={nb.houseCatalog}
+          lot={myLot}
+          visual={houseVis}
+          gameRef={gameRef}
+          onClose={() => setLevelOpen(false)}
+        />
       )}
 
       {/* Carregando / erro */}
@@ -582,6 +638,210 @@ function Joystick({ gameRef }: { gameRef: React.RefObject<GameHandle | null> }) 
         className="pointer-events-none h-16 w-16 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] shadow-[2px_2px_0_0_#0B0B0D]"
         data-avatar
       />
+    </div>
+  )
+}
+
+/**
+ * Painel "Escolher nível da casa" (recurso de TESTE: sem preço, cadeado ou
+ * compra). Miniaturas estáticas — nenhuma cena 3D é aberta aqui, e nenhum
+ * modelo é baixado só por abrir o painel: o download começa ao APLICAR.
+ * O nível confirmado vem do servidor; o exibido pode ficar para trás enquanto
+ * o modelo carrega ou se ele falhar — o painel mostra os dois.
+ */
+function HouseLevelPanel({
+  catalog,
+  lot,
+  visual,
+  gameRef,
+  onClose,
+}: {
+  catalog: HouseCatalog
+  lot: number
+  visual: HouseVisual
+  gameRef: React.RefObject<GameHandle | null>
+  onClose: () => void
+}) {
+  const t = useTranslations("MeuMundo")
+  const [selected, setSelected] = useState(visual.confirmed)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const seqRef = useRef(0)
+  const pad = (n: number) => String(n).padStart(2, "0")
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  const apply = useCallback(async () => {
+    const token = getToken()
+    if (!token) return
+    const seq = ++seqRef.current
+    setPending(true)
+    setError(null)
+    const r = await postHouseLevel(token, selected)
+    // Resposta confirmada SEMPRE chega ao jogo (a revisão decide a ordem);
+    // só a mensagem de uma resposta antiga é ignorada.
+    if (r.ok) gameRef.current?.applyHouseLevel(r.house, r.level, r.rev)
+    if (seq !== seqRef.current) return
+    setPending(false)
+    if (!r.ok) setError(r.status === 0 ? t("levelNetError", "Sem conexão. Tente de novo.") : r.error)
+  }, [selected, gameRef, t])
+
+  const loading = visual.status === "loading"
+  const failed = visual.status === "error"
+  const pct = visual.progress != null ? Math.round(visual.progress * 100) : null
+  const current = catalog.levels.find((l) => l.level === selected)
+
+  return (
+    <div
+      className="absolute inset-0 z-10 flex items-end justify-center bg-black/40 sm:items-center"
+      style={{ paddingBottom: SAFE.bottom, paddingLeft: SAFE.left, paddingRight: SAFE.right, paddingTop: SAFE.top }}
+      onPointerDown={(e) => {
+        e.stopPropagation()
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mm-level-title"
+        className="relative flex max-h-full w-full max-w-2xl flex-col border-2 border-[#0B0B0D] bg-[#F7F0D9] text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
+      >
+        <div className="flex items-start justify-between gap-2 border-b-2 border-[#0B0B0D] px-4 py-3">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-widest text-[#8A6400]">
+              {t("lot", "Lote {n}").replace("{n}", pad(lot))} · {t("testFeature", "Recurso de teste")}
+            </div>
+            <h2 id="mm-level-title" className="mt-0.5 text-xl font-black uppercase leading-none">
+              {t("levelTitle", "Escolher nível da casa")}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-white"
+            aria-label={t("close", "Fechar")}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="grid min-h-0 flex-1 grid-cols-3 gap-2 overflow-y-auto p-3 sm:grid-cols-5">
+          {catalog.levels.map((l) => {
+            const isConfirmed = l.level === visual.confirmed
+            const isSel = l.level === selected
+            return (
+              <button
+                key={l.level}
+                type="button"
+                disabled={!l.available}
+                onClick={() => setSelected(l.level)}
+                aria-pressed={isSel}
+                aria-label={t("levelN", "Nível {n}").replace("{n}", pad(l.level))}
+                className={`relative flex flex-col border-2 text-left transition-colors ${
+                  isSel ? "border-[#0B0B0D] bg-[#F2B705]" : "border-[#0B0B0D]/30 bg-white"
+                } ${l.available ? "" : "cursor-not-allowed opacity-50"}`}
+              >
+                <div className="flex aspect-[4/3] items-center justify-center bg-[#A8D4F2]">
+                  {l.thumb ? (
+                    // Miniatura estática pequena (WebP com hash), dentro de um jogo só de admin.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={catalog.basePath + l.thumb}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-contain"
+                      draggable={false}
+                    />
+                  ) : (
+                    <Construction className="h-6 w-6 text-[#0B0B0D]/50" />
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-1 px-2 py-1.5">
+                  <span className="text-[13px] font-black uppercase">{t("levelN", "Nível {n}").replace("{n}", pad(l.level))}</span>
+                  {isConfirmed && (
+                    <span className="bg-[#0B0B0D] px-1 text-[9px] font-black uppercase text-[#F2B705]">
+                      {t("levelCurrent", "Atual")}
+                    </span>
+                  )}
+                </div>
+                {!l.available && (
+                  <div className="px-2 pb-1.5 text-[10px] font-semibold leading-tight text-[#6B645A]">
+                    {t("levelNoModel", "Modelo ainda não fornecido")}
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="border-t-2 border-[#0B0B0D] px-4 py-3">
+          <div role="status" aria-live="polite" className="min-h-5 text-[12px] font-semibold text-[#3D372F]">
+            {loading ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("levelLoading", "Carregando nível {n}…").replace("{n}", pad(visual.confirmed))}
+                {pct != null && ` ${pct}%`}
+              </span>
+            ) : failed ? (
+              <span className="inline-flex flex-wrap items-center gap-2 text-[#B91C1C]">
+                {t("levelLoadFail", "O modelo do nível {n} não carregou — mostrando o nível {m}.")
+                  .replace("{n}", pad(visual.confirmed))
+                  .replace("{m}", pad(visual.shown))}
+                <button
+                  type="button"
+                  onClick={() => gameRef.current?.retryHouse(lot)}
+                  className="inline-flex h-8 items-center gap-1 border-2 border-[#0B0B0D] bg-white px-2 text-[11px] font-black uppercase text-[#0B0B0D]"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {t("retry", "Tentar de novo")}
+                </button>
+              </span>
+            ) : error ? (
+              <span className="text-[#B91C1C]">{error}</span>
+            ) : (
+              <span>
+                {t("levelConfirmed", "Nível confirmado: {n}").replace("{n}", pad(visual.confirmed))}
+                {current?.size && (
+                  <span className="text-[#6B645A]">
+                    {" · "}
+                    {t("levelSize", "{w} × {d} m").replace("{w}", current.size.width.toFixed(1)).replace("{d}", current.size.depth.toFixed(1))}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-[10px] font-medium leading-tight text-[#6B645A]">
+            {t("levelTestNote", "Teste visual: todos os níveis estão liberados, sem custo. Não é loja nem evolução.")}
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={apply}
+              disabled={pending || !current?.available || selected === visual.confirmed}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#0B0B0D] text-sm font-bold uppercase tracking-wider text-[#F2B705] disabled:opacity-40"
+            >
+              {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t("levelApply", "Aplicar nível {n}").replace("{n}", pad(selected))}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-11 items-center justify-center border-2 border-[#0B0B0D] bg-white px-4 text-sm font-bold uppercase tracking-wider"
+            >
+              {t("close", "Fechar")}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

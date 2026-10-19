@@ -18,7 +18,18 @@ import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { GeoBuilder, frameOf, place, type RGB } from "./geometry"
 import { rotY, type Box2 } from "./collision"
-import type { House, Interactable, Lot, LotPlan, Neighborhood, NeighborhoodDims } from "../types"
+import { HouseModels } from "./houses"
+import type {
+  House,
+  HouseCatalog,
+  HouseLevelDef,
+  HouseVisual,
+  Interactable,
+  Lot,
+  LotPlan,
+  Neighborhood,
+  NeighborhoodDims,
+} from "../types"
 
 // ── Medidas ──────────────────────────────────────────────────────────────────
 // Vêm do SERVIDOR (payload: `dims` e `lotPlan`, de src/utils/meuMundoLayout.js):
@@ -230,56 +241,30 @@ function lotBox(lot: Lot, lx: number, lz: number, hx: number, hz: number, h: num
   return { x: lot.position.x + o.x, z: lot.position.z + o.z, hx, hz, rot: lot.rotationY, h }
 }
 
+/** Caixas de colisão da casa (catálogo, coordenadas do lote) no mundo. */
+function houseBoxesFor(lot: Lot, def: HouseLevelDef): Box2[] {
+  return (def.colliders ?? []).map(([lx, lz, hx, hz, h]) => ({ ...lotBox(lot, lx, lz, hx, hz, h), lot: lot.number }))
+}
+
+/** Origem do modelo no lote (frente dos degraus), em coordenadas locais. */
+function originOf(plan: LotPlan, def: HouseLevelDef) {
+  return def.origin ?? { x: plan.houseFront.x, z: plan.houseFront.z - (plan.house.stepDepth - 0.15) }
+}
+
 /**
- * Um lote com a casa nível 01. Tudo é posicionado a partir do `plan`: a casa
- * pela referência da fachada, o caminho do acesso até o degrau, a placa, as
- * cercas e a decoração — o mesmo objeto de onde o servidor tira os colisores.
+ * A parte FIXA de um lote (não muda com o nível da casa): gramado, cercas,
+ * placa, flores e árvore — no jardim da frente ou nas divisas, fora da área
+ * edificável. Posicionado a partir do `plan`, o mesmo objeto de onde o
+ * servidor tira os colisores. Devolve o ponto de interação da PLACA.
  */
-function house(ctx: Ctx, lot: Lot, h: House): Interactable[] {
+function lotStatic(ctx: Ctx, lot: Lot, h: House): Interactable {
   const { geo, signs, boxes, plan } = ctx
-  const H = plan.house
   const f = frameOf(lot.position.x, lot.position.z, lot.rotationY)
   const v = h.variant
-  const wall = WALLS[v % WALLS.length]
-  const roof = ROOFS[Math.floor(v / 3) % ROOFS.length]
-  const door = DOORS[v % DOORS.length]
-  const hf = plan.houseFront.z // fachada
-  const hc = hf + H.depth / 2 // centro da base
-  const hx = plan.houseFront.x
   const W = plan.width
   const D = plan.depth
 
-  // Gramado do lote e caminho da calçada até o degrau da porta.
   geo.box(W - 0.4, 0.025, D - 0.4, place(0, 0.0125, 0, 0, f), C.lotLawn)
-  const stepFront = hf - (H.stepDepth - 0.15)
-  const pathLen = stepFront - plan.access.z
-  geo.box(H.pathWidth, 0.05, pathLen, place(plan.access.x, 0.025, plan.access.z + pathLen / 2, 0, f), C.path)
-
-  // Casa: base, corpo e telhado. A frente (porta) fica no -Z local.
-  geo.box(H.width, 0.25, H.depth, place(hx, 0.125, hc, 0, f), C.stone)
-  geo.box(5, 2.6, 4.4, place(hx, 1.55, hc, 0, f), wall)
-  geo.prism(5.8, 5.2, 1.7, place(hx, 2.85, hc, 0, f), roof)
-  if (v % 2 === 0) geo.box(0.6, 1.4, 0.6, place(hx + 1.5, 3.4, hc + 0.9, 0, f), [0.66, 0.41, 0.36])
-
-  // Porta, degrau, maçaneta.
-  geo.box(1, 1.8, 0.1, place(hx, 1.15, hf + 0.15, 0, f), door)
-  geo.box(H.stepWidth, 0.12, H.stepDepth, place(hx, 0.06, hf - 0.15, 0, f), C.stone)
-  geo.box(0.1, 0.1, 0.06, place(hx + 0.32, 1.1, hf + 0.08, 0, f), C.knob)
-
-  // Janelas da frente e dos lados (moldura atrás do vidro).
-  for (const sx of [-1.55, 1.55]) {
-    geo.box(1.15, 1.05, 0.06, place(hx + sx, 1.75, hf + 0.18, 0, f), C.frame)
-    geo.box(0.92, 0.82, 0.08, place(hx + sx, 1.75, hf + 0.15, 0, f), C.glass)
-  }
-  for (const sx of [-2.53, 2.53]) {
-    geo.box(0.06, 1.05, 1.15, place(hx + sx, 1.75, hc, 0, f), C.frame)
-    geo.box(0.08, 0.82, 0.92, place(hx + sx + Math.sign(sx) * 0.02, 1.75, hc, 0, f), C.glass)
-  }
-
-  // Jardim: arbustos ao lado da porta, flores e, às vezes, uma árvore — no
-  // jardim da frente, fora do miolo da área edificável.
-  geo.sphere(0.95, [1, 0.75, 0.9], place(hx - 2.2, 0.35, hf - 0.35, 0, f), C.hedgeLot)
-  geo.sphere(0.95, [1, 0.75, 0.9], place(hx + 2.2, 0.35, hf - 0.35, 0, f), C.hedgeLot)
   const fp = rotY(plan.flowers.x, plan.flowers.z, lot.rotationY)
   flowerPatch(ctx, lot.position.x + fp.x, lot.position.z + fp.z, v)
   if (v % 3 === 1) {
@@ -299,37 +284,69 @@ function house(ctx: Ctx, lot: Lot, h: House): Interactable[] {
   geo.box(t, hh, sideLen, place(sideX, hh / 2, sideZ, 0, f), C.hedgeLot)
   geo.box(W, hh, t, place(0, hh / 2, D / 2 - t / 2, 0, f), C.hedgeLot)
 
-  // Placa com o número do lote, de frente para a rua.
+  // Placa com o número do lote, de frente para a rua. Casa do jogador:
+  // moldura dourada na placa (o tapete dourado vai com a casa, ver lotHouse).
   const sg = plan.sign
   geo.box(0.14, 1.2, 0.14, place(sg.x, 0.6, sg.z, 0, f), C.woodDark)
   geo.box(1.05, 0.62, 0.08, place(sg.x, 1.38, sg.z, 0, f), h.isMine ? C.mineBoard : C.board)
-  // Casa do jogador: destaque discreto — moldura dourada na placa e tapete
-  // dourado na frente da porta, visível de longe sem virar letreiro.
-  if (h.isMine) {
-    geo.box(1.25, 0.82, 0.06, place(sg.x, 1.38, sg.z + 0.04, 0, f), C.knob)
-    geo.box(1.5, 0.03, 0.9, place(hx, 0.135, hf - 0.75, 0, f), C.mineMat)
-  }
+  if (h.isMine) geo.box(1.25, 0.82, 0.06, place(sg.x, 1.38, sg.z + 0.04, 0, f), C.knob)
   signs.quad(0.95, 0.52, numberCell(lot.number), place(sg.x, 1.38, sg.z - 0.05, 0, f))
 
   // Reserva de colisão (a que vale é a lista do servidor; ver buildWorld).
-  boxes.push(lotBox(lot, hx, hc, H.width / 2, H.depth / 2, H.height))
   boxes.push(lotBox(lot, -sideX, sideZ, t / 2, sideLen / 2, hh))
   boxes.push(lotBox(lot, sideX, sideZ, t / 2, sideLen / 2, hh))
   boxes.push(lotBox(lot, 0, D / 2 - t / 2, W / 2, t / 2, hh))
   boxes.push(lotBox(lot, sg.x, sg.z, 0.12, 0.12, 2))
 
-  // Dois pontos de interação para a mesma casa: a placa (alcança a calçada) e
-  // a porta (para quem subiu o caminho). Os lotes vizinhos ficam a 18 m.
-  const at = (lx: number, lz: number) => {
-    const o = rotY(lx, lz, lot.rotationY)
-    return { x: lot.position.x + o.x, z: lot.position.z + o.z }
+  const o = rotY(sg.x - 1.3, plan.access.z + 1.2, lot.rotationY)
+  return { kind: "house", id: h.id, x: lot.position.x + o.x, z: lot.position.z + o.z, radius: 3.6, lot, house: h }
+}
+
+/**
+ * A parte que MUDA com o nível: o caminho da calçada até os degraus, o tapete
+ * dourado da casa do jogador e — quando é ela que está na tela — a casa 01.
+ * Vai para a malha "mm-houses", reconstruída a cada troca (são caixas: barato).
+ */
+function lotHouse(g: GeoBuilder, plan: LotPlan, lot: Lot, h: House, def: HouseLevelDef) {
+  const H = plan.house
+  const f = frameOf(lot.position.x, lot.position.z, lot.rotationY)
+  const end = def.pathEnd ?? originOf(plan, def)
+  const pathLen = end.z - plan.access.z
+  g.box(H.pathWidth, 0.05, pathLen, place(end.x, 0.025, plan.access.z + pathLen / 2, 0, f), C.path)
+  if (h.isMine) g.box(1.5, 0.03, 0.9, place(end.x, 0.065, end.z - 0.75, 0, f), C.mineMat)
+  if (def.kind !== "builtin") return
+
+  const v = h.variant
+  const wall = WALLS[v % WALLS.length]
+  const roof = ROOFS[Math.floor(v / 3) % ROOFS.length]
+  const door = DOORS[v % DOORS.length]
+  const hf = plan.houseFront.z // fachada
+  const hc = hf + H.depth / 2 // centro da base
+  const hx = plan.houseFront.x
+
+  // Casa: base, corpo e telhado. A frente (porta) fica no -Z local.
+  g.box(H.width, 0.25, H.depth, place(hx, 0.125, hc, 0, f), C.stone)
+  g.box(5, 2.6, 4.4, place(hx, 1.55, hc, 0, f), wall)
+  g.prism(5.8, 5.2, 1.7, place(hx, 2.85, hc, 0, f), roof)
+  if (v % 2 === 0) g.box(0.6, 1.4, 0.6, place(hx + 1.5, 3.4, hc + 0.9, 0, f), [0.66, 0.41, 0.36])
+
+  // Porta, degrau, maçaneta.
+  g.box(1, 1.8, 0.1, place(hx, 1.15, hf + 0.15, 0, f), door)
+  g.box(H.stepWidth, 0.12, H.stepDepth, place(hx, 0.06, hf - 0.15, 0, f), C.stone)
+  g.box(0.1, 0.1, 0.06, place(hx + 0.32, 1.1, hf + 0.08, 0, f), C.knob)
+
+  // Janelas da frente e dos lados (moldura atrás do vidro).
+  for (const sx of [-1.55, 1.55]) {
+    g.box(1.15, 1.05, 0.06, place(hx + sx, 1.75, hf + 0.18, 0, f), C.frame)
+    g.box(0.92, 0.82, 0.08, place(hx + sx, 1.75, hf + 0.15, 0, f), C.glass)
   }
-  const sign = at(sg.x - 1.3, plan.access.z + 1.2)
-  const doorPt = at(hx + 0.8, hf - 1.8)
-  return [
-    { kind: "house", id: h.id, ...sign, radius: 3.6, lot, house: h },
-    { kind: "house", id: h.id, ...doorPt, radius: 3.0, lot, house: h },
-  ]
+  for (const sx of [-2.53, 2.53]) {
+    g.box(0.06, 1.05, 1.15, place(hx + sx, 1.75, hc, 0, f), C.frame)
+    g.box(0.08, 0.82, 0.92, place(hx + sx + Math.sign(sx) * 0.02, 1.75, hc, 0, f), C.glass)
+  }
+  // Arbustos ao lado da porta: só a casa 01 deixa espaço para eles ali.
+  g.sphere(0.95, [1, 0.75, 0.9], place(hx - 2.2, 0.35, hf - 0.35, 0, f), C.hedgeLot)
+  g.sphere(0.95, [1, 0.75, 0.9], place(hx + 2.2, 0.35, hf - 0.35, 0, f), C.hedgeLot)
 }
 
 function streets(ctx: Ctx) {
@@ -460,14 +477,41 @@ function outskirts(ctx: Ctx) {
 
 export interface BuiltWorld {
   meshes: Mesh[]
+  /** Colisão do personagem. Mutada NO LUGAR quando o nível de uma casa muda. */
   boxes: Box2[]
-  /** Obstáculos da câmera: os do personagem mais as copas. */
+  /** Obstáculos da câmera: os do personagem mais as copas (idem). */
   viewBoxes: Box2[]
   interactables: Interactable[]
+  catalog: HouseCatalog
+  /**
+   * Nível CONFIRMADO pelo servidor para a casa do lote. Só vale revisão maior
+   * que a atual (a última confirmada vence). Troca colisores e porta na hora;
+   * o modelo troca quando terminar de carregar — até lá a casa anterior fica.
+   */
+  applyLevel: (lot: number, level: number, rev: number) => boolean
+  /** Carrega de novo o modelo que falhou (o confirmado não muda). */
+  retryVisual: (lot: number) => void
+  visual: (lot: number) => HouseVisual | null
+  /** Níveis com modelo carregado na GPU (painel técnico). */
+  loadedLevels: () => number[]
   dispose: () => void
 }
 
-export function buildWorld(scene: Scene, nb: Neighborhood, exitLabel: string): BuiltWorld {
+/** Catálogo de reserva para backend anterior ao mm3d-06: só o nível 01. */
+function legacyCatalog(): HouseCatalog {
+  return {
+    assetVersion: "builtin",
+    basePath: "/meu-mundo/casas/",
+    levels: [{ level: 1, id: "level-01", available: true, kind: "builtin", asset: null, thumb: null }],
+  }
+}
+
+export function buildWorld(
+  scene: Scene,
+  nb: Neighborhood,
+  exitLabel: string,
+  onHouseVisual?: (v: HouseVisual) => void,
+): BuiltWorld {
   const worldMat = new StandardMaterial("mm-world", scene)
   worldMat.diffuseColor = new Color3(1, 1, 1)
   worldMat.specularColor = new Color3(0, 0, 0)
@@ -496,11 +540,36 @@ export function buildWorld(scene: Scene, nb: Neighborhood, exitLabel: string): B
   boundary(ctx)
   outskirts(ctx)
 
+  // ── Lotes ─────────────────────────────────────────────────────────────────
+  const catalog = nb.houseCatalog ?? legacyCatalog()
+  const fallback = catalog.levels.find((l) => l.level === 1) ?? legacyCatalog().levels[0]
+  const defOf = (level: number) => catalog.levels.find((l) => l.level === level && l.available) ?? fallback
+
+  type Slot = {
+    lot: Lot
+    house: House
+    rev: number
+    /** Nível que está NA TELA (pode ficar atrás do confirmado enquanto carrega ou se falhar). */
+    shown: number
+    token: number
+    status: HouseVisual["status"]
+    progress?: number
+    door: Interactable
+  }
   const housesById = new Map(nb.houses.map((h) => [h.id, h]))
   const interactables: Interactable[] = []
+  const slots = new Map<number, Slot>()
   for (const lot of nb.lots) {
     const h = housesById.get(lot.houseId)
-    if (h) interactables.push(...house(ctx, lot, h))
+    if (!h) continue
+    h.level = defOf(h.level).level
+    interactables.push(lotStatic(ctx, lot, h))
+    // Dois pontos de interação por casa: a placa (alcança a calçada) e a
+    // porta (na frente dos degraus — nunca atrás da casa). Os vizinhos ficam
+    // a 22 m.
+    const door: Interactable = { kind: "house", id: h.id, x: 0, z: 0, radius: 3.0, lot, house: h }
+    interactables.push(door)
+    slots.set(lot.number, { lot, house: h, rev: h.levelRev ?? 0, shown: 1, token: 0, status: "ok", door })
   }
   interactables.push({
     kind: "exit",
@@ -516,25 +585,131 @@ export function buildWorld(scene: Scene, nb: Neighborhood, exitLabel: string): B
   worldMat.freeze()
   signMat.freeze()
 
+  // ── Casas (mudam com o nível) ─────────────────────────────────────────────
+  const models = new HouseModels(scene, catalog)
+  let housesMesh: Mesh | null = null
+  let disposed = false
+  const rebuildHouses = () => {
+    const g = new GeoBuilder()
+    for (const sl of slots.values()) lotHouse(g, plan, sl.lot, sl.house, defOf(sl.shown))
+    const next = g.build("mm-houses", scene, worldMat)
+    housesMesh?.dispose()
+    housesMesh = next
+  }
+  const placeDoor = (sl: Slot) => {
+    const def = defOf(sl.house.level)
+    const o = originOf(plan, def)
+    const p = rotY((def.door ?? o).x + 0.8, o.z - 1.35, sl.lot.rotationY)
+    sl.door.x = sl.lot.position.x + p.x
+    sl.door.z = sl.lot.position.z + p.z
+  }
+  const emit = (sl: Slot) =>
+    onHouseVisual?.({ lot: sl.lot.number, confirmed: sl.house.level, shown: sl.shown, status: sl.status, progress: sl.progress })
+
+  /** Troca a casa na tela de uma vez: nunca duas casas sobrepostas. */
+  const setShown = (sl: Slot, level: number): boolean => {
+    const def = defOf(level)
+    const f = frameOf(sl.lot.position.x, sl.lot.position.z, sl.lot.rotationY)
+    const o = originOf(plan, def)
+    if (!models.show(sl.lot.number, def.kind === "glb" ? def.level : null, place(o.x, 0, o.z, 0, f))) return false
+    sl.shown = def.level
+    sl.status = "ok"
+    sl.progress = undefined
+    rebuildHouses()
+    emit(sl)
+    return true
+  }
+  const requestVisual = (sl: Slot) => {
+    const token = ++sl.token
+    const def = defOf(sl.house.level)
+    if (def.kind !== "glb") {
+      setShown(sl, def.level)
+      return
+    }
+    sl.status = "loading"
+    sl.progress = 0
+    emit(sl)
+    models
+      .load(def.level, (p) => {
+        if (token !== sl.token || disposed) return
+        sl.progress = p
+        emit(sl)
+      })
+      .then(() => {
+        if (token !== sl.token || disposed) return
+        if (!setShown(sl, def.level)) requestVisual(sl)
+      })
+      .catch(() => {
+        if (token !== sl.token || disposed) return
+        // A casa anterior continua na tela; o confirmado segue sendo o novo.
+        sl.status = "error"
+        sl.progress = undefined
+        emit(sl)
+      })
+  }
+
   // Colisão: a lista que veio do SERVIDOR é a mesma que a sala usa para
-  // validar o movimento. A desenhada aqui só serve de reserva (payload antigo).
-  const boxes: Box2[] = nb.obstacles?.length ? nb.obstacles : ctx.boxes
-  // Em desenvolvimento: confere se o desenho e a colisão do servidor batem.
+  // validar o movimento (as caixas de cada casa vêm marcadas com o lote). A
+  // desenhada aqui só serve de reserva (payload antigo).
+  const boxes: Box2[] = nb.obstacles?.length ? [...nb.obstacles] : [...ctx.boxes]
+  if (!nb.obstacles?.length) {
+    for (const sl of slots.values()) boxes.push(...houseBoxesFor(sl.lot, defOf(sl.house.level)))
+  }
+  // Em desenvolvimento: confere se o desenho e a colisão do servidor batem
+  // (fora as casas, que vêm do catálogo e são conferidas na suíte do backend).
   if (process.env.NODE_ENV !== "production" && nb.obstacles?.length) {
     const key = (b: Box2) => [b.x, b.z, b.hx, b.hz, b.h].map((n) => (Math.round(n * 100) / 100 || 0).toFixed(2)).join("|")
-    const server = new Set(nb.obstacles.map(key))
+    const server = new Set(nb.obstacles.filter((b) => b.lot === undefined).map(key))
     const drawn = new Set(ctx.boxes.map(key))
     const onlyDrawn = [...drawn].filter((k) => !server.has(k))
     const onlyServer = [...server].filter((k) => !drawn.has(k))
     ;(window as unknown as { __mmLayoutCheck?: unknown }).__mmLayoutCheck = { onlyDrawn, onlyServer }
     if (onlyDrawn.length || onlyServer.length) console.warn("[meu-mundo] desenho × colisão divergem", { onlyDrawn, onlyServer })
   }
+  const viewBoxes = [...boxes, ...ctx.viewOnly]
+  const replaceLotBoxes = (list: Box2[], lot: number, next: Box2[]) => {
+    for (let i = list.length - 1; i >= 0; i--) if (list[i].lot === lot) list.splice(i, 1)
+    list.push(...next)
+  }
+
+  for (const sl of slots.values()) placeDoor(sl)
+  rebuildHouses()
+  for (const sl of slots.values()) if (sl.house.level !== 1) requestVisual(sl)
+
   return {
     meshes: [world, signs],
     boxes,
-    viewBoxes: [...boxes, ...ctx.viewOnly],
+    viewBoxes,
     interactables,
+    catalog,
+    applyLevel(lot, level, rev) {
+      const sl = slots.get(lot)
+      if (!sl || rev <= sl.rev) return false
+      const def = defOf(level)
+      sl.rev = rev
+      sl.house.levelRev = rev
+      if (def.level === sl.house.level) return true
+      sl.house.level = def.level
+      const next = houseBoxesFor(sl.lot, def)
+      replaceLotBoxes(boxes, lot, next)
+      replaceLotBoxes(viewBoxes, lot, next)
+      placeDoor(sl)
+      requestVisual(sl)
+      return true
+    },
+    retryVisual(lot) {
+      const sl = slots.get(lot)
+      if (sl && sl.shown !== sl.house.level) requestVisual(sl)
+    },
+    visual(lot) {
+      const sl = slots.get(lot)
+      return sl ? { lot, confirmed: sl.house.level, shown: sl.shown, status: sl.status, progress: sl.progress } : null
+    },
+    loadedLevels: () => models.loadedLevels,
     dispose: () => {
+      disposed = true
+      models.dispose()
+      housesMesh?.dispose()
       world.dispose()
       signs.dispose()
       worldMat.dispose()

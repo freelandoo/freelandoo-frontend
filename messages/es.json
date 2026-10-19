@@ -7484,6 +7484,20 @@
     "runAria": "Trote (activar y desactivar)",
     "avatars": "Avatares",
     "helpTouch2": "Joystick: caminar · Correr: trote · Arrastra la pantalla: girar la cámara · Botón: interactuar",
-    "helpDesktop2": "WASD o flechas: caminar · Shift: trote · Arrastra: girar la cámara · Rueda: zoom · E: interactuar"
+    "helpDesktop2": "WASD o flechas: caminar · Shift: trote · Arrastra: girar la cámara · Rueda: zoom · E: interactuar",
+    "changeHouse": "Cambiar casa",
+    "testFeature": "Función de prueba",
+    "levelTitle": "Elegir nivel de la casa",
+    "levelN": "Nivel {n}",
+    "levelCurrent": "Actual",
+    "levelNoModel": "Modelo aún no disponible",
+    "levelLoading": "Cargando nivel {n}…",
+    "levelLoadFail": "El modelo del nivel {n} no cargó — mostrando el nivel {m}.",
+    "levelConfirmed": "Nivel confirmado: {n}",
+    "levelSize": "{w} × {d} m",
+    "levelTestNote": "Prueba visual: todos los niveles están liberados, sin costo. No es tienda ni progresión.",
+    "levelApply": "Aplicar nivel {n}",
+    "levelNetError": "Sin conexión. Inténtalo de nuevo.",
+    "houseModels": "Casas en GPU"
   }
 }

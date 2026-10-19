@@ -7504,6 +7504,20 @@
     "runAria": "Jog (toggle)",
     "avatars": "Avatars",
     "helpTouch2": "Joystick: walk · Run: jog · Drag the screen: turn the camera · Button: interact",
-    "helpDesktop2": "WASD or arrows: walk · Shift: jog · Drag: turn the camera · Wheel: zoom · E: interact"
+    "helpDesktop2": "WASD or arrows: walk · Shift: jog · Drag: turn the camera · Wheel: zoom · E: interact",
+    "changeHouse": "Change house",
+    "testFeature": "Test feature",
+    "levelTitle": "Choose house level",
+    "levelN": "Level {n}",
+    "levelCurrent": "Current",
+    "levelNoModel": "Model not provided yet",
+    "levelLoading": "Loading level {n}…",
+    "levelLoadFail": "The level {n} model did not load — showing level {m}.",
+    "levelConfirmed": "Confirmed level: {n}",
+    "levelSize": "{w} × {d} m",
+    "levelTestNote": "Visual test: every level is unlocked, at no cost. This is not a shop or progression.",
+    "levelApply": "Apply level {n}",
+    "levelNetError": "No connection. Try again.",
+    "houseModels": "Houses on GPU"
   }
 }

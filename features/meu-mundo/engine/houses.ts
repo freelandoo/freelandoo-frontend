@@ -1,0 +1,225 @@
+// features/meu-mundo/engine/houses.ts
+//
+// Modelos das casas níveis 02–10 (GLB do pipeline MEU MUNDO 3D/pipeline/casas).
+// O nível 01 não passa por aqui: é a geometria que o world.ts sempre desenhou.
+//
+// ═══ UM MODELO POR NÍVEL, NÃO POR CASA ═══
+// Cada nível é baixado UMA vez e vira UMA malha na cena. As casas que usam
+// aquele nível são THIN INSTANCES dela (uma matriz por lote): vinte casas do
+// mesmo nível custam uma chamada de desenho, a mesma geometria, o mesmo
+// material e a mesma textura. Trocar o nível de uma casa só reescreve as
+// matrizes dos dois níveis envolvidos — nada é clonado nem recriado.
+//
+// ═══ MEMÓRIA ═══
+// Política de cache (documentada no REGISTRO): fica carregado todo nível em
+// uso por alguma casa do bairro + até MAX_IDLE níveis sem uso (os mais
+// recentes, para quem está testando ir e voltar). Além disso, o modelo sai da
+// GPU (malha, material e textura). O cache HTTP do navegador não é tocado: o
+// nome do arquivo tem hash, então baixar de novo é ler do disco.
+//
+// ═══ O QUE É FEITO NO CARREGAMENTO ═══
+// O transform do glTF (mão direita → esquerda, dequantização do
+// KHR_mesh_quantization) é ASSADO nos vértices: a malha fica em coordenadas
+// locais do lote (frente no -Z, origem = frente dos degraus), e cada thin
+// instance só leva a posição e a rotação do lote. O material PBR do arquivo é
+// trocado por um StandardMaterial com a mesma textura: o basecolor do modelo
+// já traz o sombreado, como nos avatares.
+
+import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { Color3 } from "@babylonjs/core/Maths/math.color"
+import { Matrix } from "@babylonjs/core/Maths/math.vector"
+import { Mesh } from "@babylonjs/core/Meshes/mesh"
+import "@babylonjs/core/Meshes/thinInstanceMesh"
+import type { BaseTexture } from "@babylonjs/core/Materials/Textures/baseTexture"
+import type { Scene } from "@babylonjs/core/scene"
+import { ensureLoaders } from "./avatars"
+import type { HouseCatalog } from "../types"
+
+const MAX_IDLE = 2
+
+interface Entry {
+  level: number
+  promise: Promise<void>
+  mesh: Mesh | null
+  material: StandardMaterial | null
+  texture: BaseTexture | null
+  lastUsed: number
+  failed: boolean
+}
+
+export class HouseModels {
+  private readonly entries = new Map<number, Entry>()
+  /** lote → { nível exibido em GLB, matriz do lote } */
+  private readonly lots = new Map<number, { level: number; matrix: Matrix }>()
+  private readonly progress = new Map<number, Set<(p: number) => void>>()
+  private disposed = false
+  private clock = 0
+
+  constructor(
+    private readonly scene: Scene,
+    private readonly catalog: HouseCatalog,
+  ) {
+    ensureLoaders()
+  }
+
+  /** Níveis com modelo na GPU agora (painel técnico). */
+  get loadedLevels() {
+    return [...this.entries.values()].filter((e) => e.mesh).map((e) => e.level)
+  }
+
+  private def(level: number) {
+    return this.catalog.levels.find((l) => l.level === level)
+  }
+
+  /** Garante o modelo do nível na cena. Rejeita se o arquivo não carregar. */
+  load(level: number, onProgress?: (p: number) => void): Promise<void> {
+    if (this.disposed) return Promise.reject(new Error("disposed"))
+    const def = this.def(level)
+    if (!def?.available || !def.asset) return Promise.reject(new Error(`nível ${level} sem modelo`))
+    let e = this.entries.get(level)
+    if (e && e.failed) {
+      this.entries.delete(level)
+      e = undefined
+    }
+    if (onProgress) {
+      let set = this.progress.get(level)
+      if (!set) this.progress.set(level, (set = new Set()))
+      set.add(onProgress)
+    }
+    if (!e) {
+      const entry: Entry = { level, promise: Promise.resolve(), mesh: null, material: null, texture: null, lastUsed: ++this.clock, failed: false }
+      entry.promise = this.fetch(entry, this.catalog.basePath + def.asset).catch((err) => {
+        entry.failed = true
+        throw err
+      })
+      this.entries.set(level, entry)
+      e = entry
+    }
+    e.lastUsed = ++this.clock
+    const done = () => {
+      if (onProgress) this.progress.get(level)?.delete(onProgress)
+    }
+    return e.promise.then(done, (err) => {
+      done()
+      throw err
+    })
+  }
+
+  private async fetch(entry: Entry, url: string) {
+    const c = await LoadAssetContainerAsync(url, this.scene, {
+      onProgress: (ev) => {
+        if (!ev.lengthComputable || !ev.total) return
+        const p = ev.loaded / ev.total
+        for (const cb of this.progress.get(entry.level) ?? []) cb(p)
+      },
+    })
+    if (this.disposed || this.entries.get(entry.level) !== entry) {
+      c.dispose()
+      throw new Error("descartado")
+    }
+    const geo = c.meshes.filter((m): m is Mesh => m instanceof Mesh && m.getTotalVertices() > 0)
+    if (geo.length !== 1) {
+      c.dispose()
+      throw new Error(`modelo do nível ${entry.level} com ${geo.length} malhas`)
+    }
+    const mesh = geo[0]
+    const src = mesh.material as unknown as { albedoTexture?: BaseTexture | null; diffuseTexture?: BaseTexture | null } | null
+    const texture = src?.albedoTexture ?? src?.diffuseTexture ?? null
+    // Assa o transform do arquivo (mão, dequantização) e solta a malha do nó raiz.
+    mesh.computeWorldMatrix(true)
+    mesh.bakeTransformIntoVertices(mesh.getWorldMatrix().clone())
+    mesh.parent = null
+    mesh.position.setAll(0)
+    mesh.rotationQuaternion = null
+    mesh.rotation.setAll(0)
+    mesh.scaling.setAll(1)
+    // Tira do contêiner o que fica; o resto (nó raiz, material PBR) é descartado.
+    const keepGeo = mesh.geometry
+    c.meshes.splice(c.meshes.indexOf(mesh), 1)
+    if (keepGeo) c.geometries.splice(c.geometries.indexOf(keepGeo), 1)
+    if (texture) c.textures.splice(c.textures.indexOf(texture as never), 1)
+    c.dispose()
+
+    const mat = new StandardMaterial(`mm-house-n${entry.level}`, this.scene)
+    mat.diffuseTexture = texture
+    mat.emissiveTexture = texture
+    mat.emissiveColor = new Color3(0.3, 0.3, 0.3)
+    mat.diffuseColor = new Color3(0.82, 0.82, 0.82)
+    mat.specularColor = new Color3(0, 0, 0)
+    // Modelo gerado automaticamente: algumas bordas abertas (o recorte da
+    // passarela). Sem descarte de face traseira, nada "some" de um ângulo.
+    mat.backFaceCulling = false
+    if (keepGeo) this.scene.addGeometry(keepGeo)
+    if (texture) this.scene.addTexture(texture)
+    this.scene.addMesh(mesh)
+    mesh.material = mat
+    mesh.name = `mm-house-n${entry.level}`
+    mesh.isPickable = false
+    mesh.doNotSyncBoundingInfo = true
+    mesh.setEnabled(false)
+    mesh.freezeWorldMatrix()
+    entry.mesh = mesh
+    entry.material = mat
+    entry.texture = texture
+    this.syncLevel(entry.level)
+  }
+
+  /**
+   * Mostra o lote com o modelo do nível (null = sem modelo GLB, ou seja,
+   * casa 01 desenhada pelo mundo). O nível precisa estar carregado.
+   */
+  show(lot: number, level: number | null, matrix: Matrix): boolean {
+    // Modelo saiu da GPU entre o fim do download e agora: quem chamou pede de novo.
+    if (level !== null && !this.entries.get(level)?.mesh) return false
+    const prev = this.lots.get(lot)?.level
+    if (level === null) this.lots.delete(lot)
+    else this.lots.set(lot, { level, matrix })
+    if (prev && prev !== level) this.syncLevel(prev)
+    if (level !== null) this.syncLevel(level)
+    this.evict()
+    return true
+  }
+
+  private syncLevel(level: number) {
+    const e = this.entries.get(level)
+    if (!e?.mesh) return
+    const mats: Matrix[] = []
+    for (const v of this.lots.values()) if (v.level === level) mats.push(v.matrix)
+    if (mats.length) e.lastUsed = ++this.clock
+    const buf = new Float32Array(Math.max(1, mats.length) * 16)
+    mats.forEach((m, i) => m.copyToArray(buf, i * 16))
+    e.mesh.thinInstanceSetBuffer("matrix", buf, 16, true)
+    e.mesh.thinInstanceCount = mats.length
+    e.mesh.thinInstanceRefreshBoundingInfo(false)
+    e.mesh.setEnabled(mats.length > 0)
+  }
+
+  private inUse(level: number) {
+    for (const v of this.lots.values()) if (v.level === level) return true
+    return false
+  }
+
+  /** Mantém em uso + MAX_IDLE níveis ociosos mais recentes; o resto sai da GPU. */
+  private evict() {
+    const idle = [...this.entries.values()]
+      .filter((e) => e.mesh && !this.inUse(e.level))
+      .sort((a, b) => b.lastUsed - a.lastUsed)
+    for (const e of idle.slice(MAX_IDLE)) this.drop(e)
+  }
+
+  private drop(e: Entry) {
+    this.entries.delete(e.level)
+    e.mesh?.dispose(false, false)
+    e.material?.dispose()
+    e.texture?.dispose()
+    e.mesh = null
+  }
+
+  dispose() {
+    this.disposed = true
+    for (const e of [...this.entries.values()]) this.drop(e)
+    this.lots.clear()
+    this.progress.clear()
+  }
+}

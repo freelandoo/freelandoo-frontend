@@ -60,6 +60,13 @@ type Clip = (typeof CLIPS)[number]
 
 let loadersRegistered = false
 
+/** Registra os carregadores (glTF) uma vez por página. Avatares e casas usam. */
+export function ensureLoaders() {
+  if (loadersRegistered) return
+  registerBuiltInLoaders()
+  loadersRegistered = true
+}
+
 export class AvatarLibrary {
   readonly material: StandardMaterial
   private readonly texture: Texture
@@ -70,10 +77,7 @@ export class AvatarLibrary {
   live = 0
 
   constructor(private readonly scene: Scene) {
-    if (!loadersRegistered) {
-      registerBuiltInLoaders()
-      loadersRegistered = true
-    }
+    ensureLoaders()
     // Atlas único, sem mapas PBR: o próprio basecolor já traz o sombreado do
     // modelo, então o material é simples (difuso + um pouco de emissivo para
     // não escurecer o sombreado que já vem pintado).

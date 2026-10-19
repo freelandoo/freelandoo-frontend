@@ -41,11 +41,19 @@ export interface NetCallbacks {
   onStatus: (s: NetStatus) => void
   /** Posição de partida decidida pelo servidor (primeira entrada e reconexões). */
   onWelcome: (p: { x: number; z: number; facing: number }) => void
+  /** O servidor tirou você de dentro de uma casa que cresceu (troca de nível). */
+  onMoved?: (p: { x: number; z: number; facing: number }) => void
   /** Pede ao backend uma reserva nova. null = sem acesso (não insistir). */
   fetchSession: () => Promise<MultiplayerSession | null>
 }
 
-type MMRoom = Room<unknown, { players: Map<string, RemoteState> }>
+/** Nível confirmado de uma casa (chave = número do lote). Só número e revisão. */
+export interface HouseLevelState {
+  level: number
+  rev: number
+}
+
+type MMRoom = Room<unknown, { players: Map<string, RemoteState>; houses?: Map<string, HouseLevelState> }>
 
 export class NetClient {
   private client: Client | null = null
@@ -73,6 +81,12 @@ export class NetClient {
   players(): Map<string, RemoteState> | null {
     const st = this.room?.state as { players?: Map<string, RemoteState> } | undefined
     return st?.players ?? null
+  }
+
+  /** Nível confirmado de cada casa segundo a sala. */
+  houses(): Map<string, HouseLevelState> | null {
+    const st = this.room?.state as { houses?: Map<string, HouseLevelState> } | undefined
+    return st?.houses ?? null
   }
 
   /** Titulares do bairro segundo a sala (atualiza quando alguém se muda). */
@@ -104,6 +118,9 @@ export class NetClient {
     let replaced = false
     room.onMessage("welcome", (p: { x: number; z: number; facing: number }) => {
       if (!this.disposed) this.cb.onWelcome(p)
+    })
+    room.onMessage("moved", (p: { x: number; z: number; facing: number }) => {
+      if (!this.disposed) this.cb.onMoved?.(p)
     })
     room.onMessage("replaced", () => {
       replaced = true

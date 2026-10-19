@@ -67,3 +67,30 @@ function isValidPayload(body: NeighborhoodPayload | null): body is NeighborhoodP
       houseIds.has(l.houseId),
   )
 }
+
+export type HouseLevelResult =
+  | { ok: true; house: number; level: number; rev: number }
+  | { ok: false; status: number; error: string }
+
+/**
+ * Troca o nível da PRÓPRIA casa (seletor de teste). Manda só o número: o
+ * servidor confere sessão, papel, residência e se o nível existe no catálogo.
+ */
+export async function postHouseLevel(token: string, level: number): Promise<HouseLevelResult> {
+  let res: Response
+  try {
+    res = await fetch("/api/meu-mundo/admin/house/level", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ level }),
+      cache: "no-store",
+    })
+  } catch {
+    return { ok: false, status: 0, error: "network" }
+  }
+  const body = (await res.json().catch(() => null)) as { house?: number; level?: number; rev?: number; error?: string } | null
+  if (!res.ok || !body || typeof body.level !== "number" || typeof body.rev !== "number") {
+    return { ok: false, status: res.status, error: body?.error || `http ${res.status}` }
+  }
+  return { ok: true, house: Number(body.house), level: body.level, rev: body.rev }
+}

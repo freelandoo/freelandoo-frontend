@@ -34,6 +34,7 @@ import {
   BODY_IDS,
   type BodyId,
   type GameStats,
+  type HouseVisual,
   type Interactable,
   type MultiplayerSession,
   type NeighborhoodPayload,
@@ -61,6 +62,8 @@ export interface GameOptions {
   onBody?: (body: BodyId) => void
   /** Titulares do bairro (permanentes), atualizado pela sala. */
   onResidents?: (count: number) => void
+  /** Casa de um lote: nível confirmado × exibido, carregamento e falha. */
+  onHouseVisual?: (v: HouseVisual) => void
 }
 
 export interface GameHandle {
@@ -74,6 +77,10 @@ export interface GameHandle {
   /** Recoloca a câmera atrás do personagem (não move o personagem). */
   recenter: () => void
   reconnect: () => void
+  /** Nível confirmado pelo servidor (resposta HTTP); a sala confirma de novo. */
+  applyHouseLevel: (lot: number, level: number, rev: number) => void
+  retryHouse: (lot: number) => void
+  houseVisual: (lot: number) => HouseVisual | null
   setStatsEnabled: (on: boolean) => void
   dispose: () => void
 }
@@ -120,7 +127,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const sun = new DirectionalLight("mm-sun", new Vector3(-0.55, -1, -0.35), scene)
   sun.intensity = 0.55
 
-  const world = buildWorld(scene, nb, opts.exitLabel)
+  const world = buildWorld(scene, nb, opts.exitLabel, (v) => {
+    if (!disposed) opts.onHouseVisual?.(v)
+  })
   const lib = new AvatarLibrary(scene)
 
   const fallbackMat = new StandardMaterial("mm-character", scene)
@@ -167,6 +176,11 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
       welcomed = true
     },
+    onMoved: (p) => {
+      if (disposed) return
+      local.teleport(p.x, p.z, p.facing)
+      follow.snapBehind(p.x, p.z, p.facing)
+    },
     fetchSession: opts.fetchSession,
   })
   const mp = payload.multiplayer
@@ -184,6 +198,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
       return
     }
+    // Nível das casas: a sala é a fonte (revisão maior vence; o mundo ignora
+    // o que já aplicou, então ler todo quadro custa 20 comparações).
+    net.houses()?.forEach((h, key) => world.applyLevel(Number(key), h.level, h.rev))
     const residents = net.residents()
     if (residents !== null && residents !== residentCount) {
       residentCount = residents
@@ -295,6 +312,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           x: local.x,
           z: local.z,
           avatars: lib.live,
+          houseModels: world.loadedLevels(),
         })
       }
     }
@@ -365,6 +383,15 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     reconnect() {
       void net.retry()
+    },
+    applyHouseLevel(lot, level, rev) {
+      if (!disposed) world.applyLevel(lot, level, rev)
+    },
+    retryHouse(lot) {
+      if (!disposed) world.retryVisual(lot)
+    },
+    houseVisual(lot) {
+      return world.visual(lot)
     },
     setStatsEnabled(on) {
       if (on && !instr) {

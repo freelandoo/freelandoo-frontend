@@ -15,6 +15,8 @@ export interface Box2 {
   hz: number
   rot: number
   h: number
+  /** Caixa da CASA daquele lote (trocada quando o nível muda). */
+  lot?: number
 }
 
 /** Mesma convenção de rotação do Babylon (Matrix.RotationY, mão esquerda). */
