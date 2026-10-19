@@ -129,7 +129,9 @@ function drawAtlas(tex: DynamicTexture, exitLabel: string) {
 }
 
 // ── Peças reaproveitadas ─────────────────────────────────────────────────────
-type Ctx = { geo: GeoBuilder; signs: GeoBuilder; boxes: Box2[] }
+// `boxes` param o personagem; `viewOnly` só a câmera (a copa das árvores:
+// o personagem passa rente a ela, a câmera não pode entrar nela).
+type Ctx = { geo: GeoBuilder; signs: GeoBuilder; boxes: Box2[]; viewOnly: Box2[] }
 
 /** Placa de chão: caixa fina do y=0 até `top`. */
 function slab(g: GeoBuilder, cx: number, cz: number, w: number, d: number, top: number, color: RGB) {
@@ -143,6 +145,7 @@ function tree(ctx: Ctx, x: number, z: number, s = 1, collide = true) {
   geo.sphere(1.6 * s, [1, 0.9, 1], place(x + 0.45 * s, 2.8 * s, z - 0.2 * s), C.leafB)
   geo.sphere(1.3 * s, [1, 0.9, 1], place(x - 0.5 * s, 2.65 * s, z + 0.35 * s), C.leafB)
   if (collide) ctx.boxes.push({ x, z, hx: 0.35 * s, hz: 0.35 * s, rot: 0, h: 3.4 * s })
+  ctx.viewOnly.push({ x, z, hx: 1.05 * s, hz: 1.05 * s, rot: 0, h: 3.4 * s })
 }
 
 function bench(ctx: Ctx, x: number, z: number, rot: number) {
@@ -386,6 +389,8 @@ function outskirts(ctx: Ctx) {
 export interface BuiltWorld {
   meshes: Mesh[]
   boxes: Box2[]
+  /** Obstáculos da câmera: os do personagem mais as copas. */
+  viewBoxes: Box2[]
   interactables: Interactable[]
   dispose: () => void
 }
@@ -406,7 +411,7 @@ export function buildWorld(scene: Scene, nb: Neighborhood, exitLabel: string): B
   signMat.emissiveColor = new Color3(0.35, 0.35, 0.35)
   signMat.backFaceCulling = false
 
-  const ctx: Ctx = { geo: new GeoBuilder(), signs: new GeoBuilder(), boxes: [] }
+  const ctx: Ctx = { geo: new GeoBuilder(), signs: new GeoBuilder(), boxes: [], viewOnly: [] }
 
   // Chão: de fora (até o horizonte com a névoa) e de dentro da cerca.
   slab(ctx.geo, 0, 0, 220, 220, 0.002, C.grassOut)
@@ -439,6 +444,7 @@ export function buildWorld(scene: Scene, nb: Neighborhood, exitLabel: string): B
   return {
     meshes: [world, signs],
     boxes: ctx.boxes,
+    viewBoxes: [...ctx.boxes, ...ctx.viewOnly],
     interactables,
     dispose: () => {
       world.dispose()

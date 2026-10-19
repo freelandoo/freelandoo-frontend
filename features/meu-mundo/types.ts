@@ -63,4 +63,7 @@ export interface GameStats {
   drawCalls: number | null
   webgl: number
   liveGames: number
+  /** Posição do personagem (metros). */
+  x: number
+  z: number
 }

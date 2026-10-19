@@ -210,6 +210,9 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
               <div>Draw calls {stats.drawCalls ?? "—"}</div>
               <div>WebGL {stats.webgl}</div>
               <div>
+                x {stats.x.toFixed(1)} · z {stats.z.toFixed(1)}
+              </div>
+              <div>
                 {t("liveGames", "Jogos ativos")} {stats.liveGames}
               </div>
             </>

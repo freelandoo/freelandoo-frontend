@@ -107,7 +107,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const spawn = () => {
     player.teleport(nb.spawn.x, nb.spawn.z, nb.spawn.rotationY)
     follow.snapBehind(nb.spawn.x, nb.spawn.z, nb.spawn.rotationY)
-    follow.update(1, player.x, player.z, world.boxes)
+    follow.update(1, player.x, player.z, world.viewBoxes)
   }
   spawn()
 
@@ -157,7 +157,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const mz = f.z * axis.y - f.x * axis.x
       player.update(dt, mx, mz, world.boxes)
     }
-    follow.update(dt, player.x, player.z, world.boxes)
+    follow.update(dt, player.x, player.z, world.viewBoxes)
 
     const next = findNearby()
     if (next?.id !== nearby?.id) {
@@ -184,6 +184,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           drawCalls: Math.round(instr.drawCallsCounter.lastSecAverage) || null,
           webgl: engine.webGLVersion,
           liveGames: live,
+          x: player.x,
+          z: player.z,
         })
       }
     }
