@@ -73,11 +73,22 @@ const ASSETS = {
     strong: "anim-sit-strong.glb",
     sergio: "anim-sit-sergio.glb",
   },
+  // Descanso e cansaço (mm3d-13, pipeline/build_rest.py): Lie (deitado de
+  // costas), Sleep (dormindo de lado), TiredIdle e TiredWalk (tronco curvado,
+  // cabeça baixa). Um arquivo de ~55 KB por conjunto; se falhar, o avatar
+  // continua com as poses de sempre.
+  rest: {
+    base: "anim-rest-base.glb",
+    fat: "anim-rest-fat.glb",
+    strong: "anim-rest-strong.glb",
+    sergio: "anim-rest-sergio.glb",
+  },
 }
 type AnimSet = keyof typeof ASSETS.anims
 const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
-type Clip = (typeof CLIPS)[number] | "Sit"
+const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk"] as const
+type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number]
 
 let loadersRegistered = false
 
@@ -94,6 +105,7 @@ export class AvatarLibrary {
   private readonly bodies = new Map<BodyId, Promise<AssetContainer>>()
   private readonly anims = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly sits = new Map<AnimSet, Promise<AssetContainer>>()
+  private readonly rests = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -159,12 +171,25 @@ export class AvatarLibrary {
     return p
   }
 
+  private restSet(id: BodyId) {
+    const key = ANIM_SET[id]
+    let p = this.rests.get(key)
+    if (!p) {
+      p = LoadAssetContainerAsync(BASE + ASSETS.rest[key], this.scene)
+      p.catch(() => this.rests.delete(key))
+      this.rests.set(key, p)
+    }
+    return p
+  }
+
   /** Cria um avatar com esqueleto e animações próprios. */
   async create(id: BodyId): Promise<AvatarRig> {
-    // A pose de sentar é opcional: se o arquivo falhar, o avatar existe
-    // (sentado fica parado em pé, sem quebrar a casa).
+    // A pose de sentar e as de descanso/cansaço são opcionais: se o arquivo
+    // falhar, o avatar existe (sentado/deitado fica parado em pé, sem quebrar
+    // a casa; cansado anda normal).
     const sitP = this.withSit ? this.sitSet(id).catch(() => null) : Promise.resolve(null)
-    const [container, anims, sit] = await Promise.all([this.body(id), this.animSet(id), sitP])
+    const restP = this.restSet(id).catch(() => null)
+    const [container, anims, sit, rest] = await Promise.all([this.body(id), this.animSet(id), sitP, restP])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
     const root = entries.rootNodes[0] as TransformNode
@@ -179,6 +204,10 @@ export class AvatarLibrary {
     }
     const sitSrc = sit?.animationGroups.find((g) => g.name === "Sit")
     if (sitSrc) groups.Sit = sitSrc.clone(`Sit#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+    for (const clip of REST_CLIPS) {
+      const src = rest?.animationGroups.find((g) => g.name === clip)
+      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+    }
     const meshes = root.getChildMeshes(false) as AbstractMesh[]
     for (const mesh of meshes) {
       mesh.material = this.materialFor(id)
@@ -198,11 +227,12 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.anims.values(), ...this.sits.values()]
+    const all = [...this.bodies.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.anims.clear()
     this.sits.clear()
+    this.rests.clear()
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
@@ -215,7 +245,7 @@ let cloneSeq = 0
 
 /** Um corpo animado. Não sabe de rede nem de colisão: recebe estado e toca. */
 export class AvatarRig {
-  private weights: Record<Clip, number> = { Idle: 1, Walk: 0, SlowRun: 0, Sit: 0 }
+  private weights: Record<Clip, number> = { Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0 }
   private readonly clips: Clip[]
   private disposed = false
 
@@ -227,7 +257,7 @@ export class AvatarRig {
     private readonly groups: Partial<Record<Clip, AnimationGroup>> & Record<(typeof CLIPS)[number], AnimationGroup>,
     readonly meshes: AbstractMesh[],
   ) {
-    this.clips = groups.Sit ? [...CLIPS, "Sit"] : [...CLIPS]
+    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
       const g = groups[clip]!
       g.weight = this.weights[clip]
@@ -249,15 +279,27 @@ export class AvatarRig {
    * reprodução segue a velocidade REAL do deslocamento (reduz o deslize dos
    * pés): a animação anda X m/s a 1×, então a taxa é velocidade ÷ X.
    */
-  update(dt: number, move: MoveState, speed: number) {
+  update(dt: number, move: MoveState, speed: number, tired = false) {
     if (this.disposed) return
-    // Sentado (3) sem a pose carregada: fica em repouso.
-    const sit = move === 3 && !!this.groups.Sit
+    const have = this.groups
+    // Sentado (3), deitado (4) ou dormindo (5) sem a pose carregada: fica em
+    // repouso. Dormindo sem "Sleep" usa "Lie".
+    const sit = move === 3 && !!have.Sit
+    const sleep = move === 5 && !!have.Sleep
+    const lie = (move === 4 || (move === 5 && !sleep)) && !!have.Lie
+    const still = move === 0 || (move >= 3 && !sit && !sleep && !lie)
+    // Cansado (ritmo < 1, mm3d-13): repouso e caminhada curvados.
+    const tiredIdle = tired && !!have.TiredIdle
+    const tiredWalk = tired && !!have.TiredWalk
     const target: Record<Clip, number> = {
-      Idle: move === 0 || (move === 3 && !sit) ? 1 : 0,
-      Walk: move === 1 ? 1 : 0,
+      Idle: still && !tiredIdle ? 1 : 0,
+      Walk: move === 1 && !tiredWalk ? 1 : 0,
       SlowRun: move === 2 ? 1 : 0,
       Sit: sit ? 1 : 0,
+      Lie: lie ? 1 : 0,
+      Sleep: sleep ? 1 : 0,
+      TiredIdle: still && tiredIdle ? 1 : 0,
+      TiredWalk: move === 1 && tiredWalk ? 1 : 0,
     }
     const k = 1 - Math.exp(-10 * dt)
     let sum = 0
@@ -277,6 +319,7 @@ export class AvatarRig {
     const walkRate = speed > 0.05 ? speed / ANIM_NATURAL_SPEED.walk : 1
     const runRate = speed > 0.05 ? speed / ANIM_NATURAL_SPEED.run : 1
     this.groups.Walk.speedRatio = Math.max(0.5, Math.min(2.2, walkRate))
+    if (this.groups.TiredWalk) this.groups.TiredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
     this.groups.SlowRun.speedRatio = Math.max(0.6, Math.min(2.2, runRate))
   }
 

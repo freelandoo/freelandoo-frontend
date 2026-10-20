@@ -7617,6 +7617,16 @@
     "tuneSteerRate": "Steering speed",
     "tuneAssist": "Drift assist",
     "tuneStiff": "Tire lateral stiffness",
-    "tuneReset": "Reset to default"
+    "tuneReset": "Reset to default",
+    "bedLie": "Lie down",
+    "bedSleep": "Sleep",
+    "bedWake": "Wake up",
+    "bedTaken": "That bed is taken",
+    "bedFar": "Get closer to the bed",
+    "bedStimulated": "With stimulants in his body he can't fall asleep",
+    "bedDenied": "Couldn't lie down right now",
+    "bedSleepingLine": "Sleeping — he keeps sleeping even with the game closed",
+    "lifeInHospital": "He is in the hospital",
+    "lifeDead": "Your resident died"
   }
 }

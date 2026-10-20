@@ -181,6 +181,59 @@ export interface NeighborhoodPayload {
   motion: { walkSpeed: number; runSpeed: number }
   multiplayer: MultiplayerSession | { error: string } | null
   visits?: VisitState
+  life?: LifeSummary | null
+}
+
+// ═══ Vida do hóspede (mm3d-13) ══════════════════════════════════════════════
+// Espelho do snapshot de freelandoo-backend/src/utils/meuMundoLife.js. Os
+// cards (fase seguinte) leem GET /meu-mundo/admin/life; o payload de entrada
+// traz só o hóspede e a carteira.
+
+export type LifeActivity = "idle" | "lying" | "sleeping" | "studying" | "training" | "working" | "hospital"
+
+export interface LifeCharacter {
+  generation: number
+  bornAt: string
+  deathSeen: boolean
+  status: "alive" | "hospital" | "dead"
+  deathCause: string | null
+  diedAt: string | null
+  personality: Record<"discipline" | "anxiety" | "optimism" | "appetite" | "resilience" | "metabolism", number>
+  vitals: Record<"energy" | "satiety" | "mood" | "stress" | "health" | "vitality", number>
+  body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bmi: number; bodyHint: BodyId }
+  attributes: Record<"intelligence" | "strength" | "speed" | "fertility", number>
+  health: {
+    diabetes: "none" | "controlled" | "uncontrolled"
+    hypertension: "none" | "controlled" | "uncontrolled"
+    diabetesRisk: number
+    bpRisk: number
+    glucose: number
+    systolic: number
+    diastolic: number
+    toxicity: number
+    cardiac: number
+    diet: number
+    awakeHours: number
+  }
+  activity: {
+    kind: LifeActivity
+    startedAt: string
+    until: string | null
+    remainingH: number | null
+    inBed: boolean
+    resume: { kind: LifeActivity; until: string } | null
+  }
+  effects: { id: string; remainingH: number }[]
+  meals: { at: number; state: "eaten" | "missed" | "open" | "upcoming" }[]
+  today: { day: string; score: number; label: "otima" | "boa" | "regular" | "ruim" | "critica"; hours: Record<LifeActivity, number> }
+  /** Ritmo de caminhada: 1 normal, 0,7 cansado, 0,42 exausto. */
+  pace: number
+}
+
+export interface LifeSummary {
+  now: string
+  character: LifeCharacter
+  wallet: { coins: number }
 }
 
 // ═══ Interiores (mm3d-09) ═══════════════════════════════════════════════════
@@ -251,6 +304,17 @@ export interface InteriorSeat {
   kind: string
 }
 
+/** Lugar de deitar numa cama (mm3d-13): o personagem fica no chão, no ponto; a pose traz a altura do colchão. */
+export interface InteriorBed {
+  id: string
+  floor: number
+  x: number
+  z: number
+  facing: number
+  stand: Vec2
+  kind: string
+}
+
 export interface InteriorDef {
   level: number
   version: string
@@ -260,6 +324,9 @@ export interface InteriorDef {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
   seats: InteriorSeat[]
   seatTop: number
+  /** mm3d-13 — ausente em backend antigo. */
+  beds?: InteriorBed[]
+  bedTop?: number
   /** Medidas-padrão de cada tipo de móvel (largura, profundidade, altura). */
   furnitureTypes: Record<string, { w: number; d: number; h: number }>
   entry: Vec2 & { facing: number; floor: number }
@@ -285,6 +352,7 @@ export interface HousePayload {
   motion: { walkSpeed: number; runSpeed: number }
   multiplayer: MultiplayerSession | { error: string } | null
   visits?: VisitState
+  life?: LifeSummary | null
 }
 
 export type ScenePayload = (NeighborhoodPayload & { scene?: "neighborhood" }) | HousePayload
@@ -326,6 +394,7 @@ export type Interactable =
   | { kind: "exit"; id: string; x: number; z: number; radius: number; label: string }
   | { kind: "door"; id: string; x: number; z: number; radius: number }
   | { kind: "seat"; id: string; x: number; z: number; radius: number; seat: InteriorSeat }
+  | { kind: "bed"; id: string; x: number; z: number; radius: number; bed: InteriorBed }
   // Carro (mm3d-11): entrar no próprio carro / sair dirigindo.
   | { kind: "car"; id: string; x: number; z: number; radius: number; lot: number }
   | { kind: "car-exit"; id: string; x: number; z: number; radius: number }

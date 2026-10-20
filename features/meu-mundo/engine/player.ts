@@ -45,6 +45,8 @@ export class Character {
   body: BodyId
   move: MoveState = 0
   speed = 0
+  /** Ritmo < 1 (cansado/exausto, mm3d-13): poses curvadas. */
+  tired = false
 
   constructor(
     private readonly scene: Scene,
@@ -85,7 +87,7 @@ export class Character {
       return
     }
     next.setParent(this.holder)
-    next.update(0, this.move, this.speed)
+    next.update(0, this.move, this.speed, this.tired)
     const prev = this.rig
     this.rig = next
     prev?.dispose()
@@ -110,7 +112,7 @@ export class Character {
   animate(dt: number, move: MoveState, speed: number) {
     this.move = move
     this.speed = speed
-    this.rig?.update(dt, move, speed)
+    this.rig?.update(dt, move, speed, this.tired)
     if (this.fallback) {
       const bob = move ? Math.abs(Math.sin(performance.now() / 120)) * 0.06 : 0
       this.fallback.position.y = bob

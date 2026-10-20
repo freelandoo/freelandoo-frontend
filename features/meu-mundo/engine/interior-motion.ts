@@ -88,5 +88,5 @@ export function stepInterior(
   body.y = heightAt(body, def)
   if (speed > 0.25) body.facing = Math.atan2(body.vx, body.vz)
   if (speed < 0.25) return 0
-  return intent.run && speed > (speeds.walk + speeds.run) / 2 - 0.4 ? 2 : 1
+  return intent.run && speeds.run > speeds.walk && speed > (speeds.walk + speeds.run) / 2 - 0.4 ? 2 : 1
 }

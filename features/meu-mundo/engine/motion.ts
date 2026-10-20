@@ -18,6 +18,19 @@ export const MOTION = {
   RADIUS: 0.42,
   SUBSTEP: 0.025,
   STOP_EPS: 0.02,
+  // mm3d-13: abaixo deste ritmo (exausto) não se corre — "correr" anda.
+  PACE_RUN_MIN: 0.6,
+}
+
+/**
+ * Velocidades a pé pelo RITMO do corpo que a sala manda (`pace`: 1 normal,
+ * 0,7 cansado, 0,42 exausto). Espelho de paceSpeeds em
+ * freelandoo-backend/src/utils/meuMundoMotion.js.
+ */
+export function paceSpeeds(pace = 1, base = { walk: MOTION.WALK_SPEED, run: MOTION.RUN_SPEED }) {
+  const p = Number.isFinite(pace) && pace > 0 ? Math.min(1, pace) : 1
+  const walk = base.walk * p
+  return { walk, run: p >= MOTION.PACE_RUN_MIN ? base.run * p : walk }
 }
 
 /**
@@ -57,8 +70,11 @@ export interface Body {
   facing: number
 }
 
-/** 0 parado, 1 andando, 2 correndo, 3 sentado (só dentro das casas). */
-export type MoveState = 0 | 1 | 2 | 3
+/**
+ * 0 parado, 1 andando, 2 correndo; só dentro das casas: 3 sentado, 4 deitado,
+ * 5 dormindo (mm3d-13).
+ */
+export type MoveState = 0 | 1 | 2 | 3 | 4 | 5
 
 export function step(
   body: Body,
@@ -89,7 +105,7 @@ export function step(
   }
   if (speed > 0.25) body.facing = Math.atan2(body.vx, body.vz)
   if (speed < 0.25) return 0
-  return intent.run && speed > (speeds.walk + speeds.run) / 2 - 0.4 ? 2 : 1
+  return intent.run && speeds.run > speeds.walk && speed > (speeds.walk + speeds.run) / 2 - 0.4 ? 2 : 1
 }
 
 export function lerpAngle(a: number, b: number, t: number) {

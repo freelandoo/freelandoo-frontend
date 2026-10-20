@@ -4,10 +4,12 @@
 //
 // Um jogo por montagem, como o bairro: a casca troca de ambiente desmontando
 // esta tela (o descarte do motor acontece aqui) antes de montar a próxima.
-// A porta pede a saída ao servidor pela casca; sentar e levantar vão pela sala.
+// A porta pede a saída ao servidor pela casca; sentar, deitar, dormir e
+// levantar vão pela sala (mm3d-13: deitar e dormir gravam a vida do hóspede —
+// ele continua dormindo com o jogo fechado).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { DoorOpen, Footprints, Info, Armchair, ArrowUpFromLine, RefreshCw, Send, Users, Wifi, WifiOff, X } from "lucide-react"
+import { DoorOpen, Footprints, Info, Armchair, ArrowUpFromLine, BedDouble, Moon, RefreshCw, Send, Sun, Users, Wifi, WifiOff, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { createHouseGame, type HouseGameHandle } from "../engine/house-game"
@@ -35,7 +37,9 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const [online, setOnline] = useState(1)
   const [nearby, setNearby] = useState<Interactable | null>(null)
   const [seat, setSeat] = useState<string | null>(null)
+  const [rest, setRest] = useState<{ bed: string; sleeping: boolean } | null>(null)
   const [denied, setDenied] = useState<string | null>(null)
+  const [restDenied, setRestDenied] = useState<string | null>(null)
   const [infoOpen, setInfoOpen] = useState(false)
   const [running, setRunning] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
@@ -81,10 +85,17 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
             setDenied(r)
             setTimeout(() => alive && setDenied(null), 2500)
           },
+          onRest: (r) => alive && setRest(r),
+          onRestDenied: (r) => {
+            if (!alive) return
+            setRestDenied(r)
+            setTimeout(() => alive && setRestDenied(null), 3000)
+          },
           onInteract: (it) => {
             if (!alive) return
             if (it.kind === "door") cbRef.current.onExit()
             else if (it.kind === "seat") handle?.sit(it.seat.id)
+            else if (it.kind === "bed") handle?.lie(it.bed.id)
           },
           onStats: (s) => alive && setStats(s),
           onError: () => alive && setStatus("error"),
@@ -136,21 +147,45 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
     moved: t("netMoved", "Mudando de lugar…"),
   }[net]
 
-  const actionLabel = seat
-    ? t("stand", "Levantar")
-    : nearby?.kind === "door"
-      ? t("exitHouse", "Sair da casa")
-      : nearby?.kind === "seat"
-        ? t("sit", "Sentar")
-        : ""
-  const actionIcon = seat ? (
+  const actionLabel = rest
+    ? rest.sleeping
+      ? t("bedWake", "Acordar")
+      : t("stand", "Levantar")
+    : seat
+      ? t("stand", "Levantar")
+      : nearby?.kind === "door"
+        ? t("exitHouse", "Sair da casa")
+        : nearby?.kind === "seat"
+          ? t("sit", "Sentar")
+          : nearby?.kind === "bed"
+            ? t("bedLie", "Deitar")
+            : ""
+  const actionIcon = rest?.sleeping ? (
+    <Sun className="h-5 w-5 shrink-0" />
+  ) : seat || rest ? (
     <ArrowUpFromLine className="h-5 w-5 shrink-0" />
   ) : nearby?.kind === "door" ? (
     <DoorOpen className="h-5 w-5 shrink-0" />
+  ) : nearby?.kind === "bed" ? (
+    <BedDouble className="h-5 w-5 shrink-0" />
   ) : (
     <Armchair className="h-5 w-5 shrink-0" />
   )
-  const hasAction = !!seat || !!nearby
+  const hasAction = !!seat || !!rest || !!nearby
+  // Deitado (acordado): "Dormir" ao lado da ação. Dormir fica 8 h.
+  const canSleep = !!rest && !rest.sleeping
+  const restDeniedLabel =
+    restDenied === "taken"
+      ? t("bedTaken", "Essa cama já está ocupada")
+      : restDenied === "far"
+        ? t("bedFar", "Chegue mais perto da cama")
+        : restDenied === "stimulated"
+          ? t("bedStimulated", "Com estimulante no corpo ele não consegue dormir")
+          : restDenied === "hospital"
+            ? t("lifeInHospital", "Ele está internado no hospital")
+            : restDenied === "dead"
+              ? t("lifeDead", "Seu hóspede morreu")
+              : t("bedDenied", "Não deu para deitar agora")
   const lotLabel = String(h.number).padStart(2, "0")
 
   const visitLine = (() => {
@@ -245,6 +280,37 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
         </div>
       )}
 
+      {restDenied && (
+        <div className="pointer-events-none absolute inset-x-0 top-28 flex justify-center px-4">
+          <div className="border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-2 text-xs font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
+            {restDeniedLabel}
+          </div>
+        </div>
+      )}
+
+      {rest?.sleeping && (
+        <div className="pointer-events-none absolute inset-x-0 top-28 flex justify-center px-4">
+          <div className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 py-2 text-xs font-black uppercase text-[#F7F0D9] shadow-[3px_3px_0_0_#F2B705]">
+            <Moon className="h-4 w-4 shrink-0" />
+            {t("bedSleepingLine", "Dormindo — ele continua dormindo mesmo com o jogo fechado")}
+          </div>
+        </div>
+      )}
+
+      {/* Deitado: dormir (8 h). Computador e celular. */}
+      {status === "ready" && canSleep && !infoOpen && (
+        <button
+          type="button"
+          onClick={() => gameRef.current?.sleep(8)}
+          aria-label={t("bedSleep", "Dormir")}
+          className="absolute flex min-h-12 items-center gap-2 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-4 py-3 text-sm font-black uppercase text-[#F2B705] shadow-[3px_3px_0_0_#F2B705]"
+          style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 96px)", right: SAFE.right }}
+        >
+          <Moon className="h-5 w-5 shrink-0" />
+          {t("bedSleep", "Dormir")}
+        </button>
+      )}
+
       {/* Computador: ação clicável com o atalho E */}
       {status === "ready" && hasAction && !infoOpen && !isTouch && (
         <button
@@ -262,8 +328,8 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
 
       {status === "ready" && isTouch && !infoOpen && (
         <>
-          {!seat && <Joystick gameRef={gameRef} />}
-          {!seat && (
+          {!seat && !rest && <Joystick gameRef={gameRef} />}
+          {!seat && !rest && (
             <button
               type="button"
               onClick={toggleRun}

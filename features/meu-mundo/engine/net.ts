@@ -41,6 +41,8 @@ export interface RemoteState {
   move: number
   /** Lote do carro que está dirigindo (0 = a pé). */
   car?: number
+  /** Ritmo de caminhada pelo corpo (mm3d-13): 1 normal, 0,7 cansado, 0,42 exausto. */
+  pace?: number
 }
 
 /** Carro de uma casa (chave = número do lote). driver = sessionId ou "". */
@@ -160,7 +162,7 @@ export class NetClient {
     room.onMessage("replaced", () => {
       replaced = true
     })
-    for (const type of ["visits", "visit_ended", "seat", "stood", "car_denied", "tuned"]) {
+    for (const type of ["visits", "visit_ended", "seat", "stood", "bed", "life", "car_denied", "tuned"]) {
       room.onMessage(type, (p: unknown) => {
         if (!this.disposed) this.cb.onMessage?.(type, p)
       })

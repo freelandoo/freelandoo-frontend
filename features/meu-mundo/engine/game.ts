@@ -28,7 +28,7 @@ import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
 import { NetClient } from "./net"
-import { CAR, MOTION, lerpAngle, type Intent, type MoveState } from "./motion"
+import { CAR, MOTION, lerpAngle, paceSpeeds, type Intent, type MoveState } from "./motion"
 import { CarFleet, type CarPose } from "./cars"
 import { STEP, MAX_STEPS, IDLE_DRIVE, createVehicle, stepVehicle, tuned, sanitizeTuning, type Tuning, type VehicleState } from "./vehicle"
 import { attachInput, clearInput, createInputState, driveAxis, moveAxis, wantsRun, type InputState } from "./input"
@@ -225,6 +225,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const remotes = new Map<string, RemotePlayer>()
   let welcomed = false
   let onlineCount = -1
+  // Ritmo do MEU corpo (mm3d-13), vindo da sala: cansado anda mais devagar.
+  let myPace = 1
   let residentCount = nb.residents
   const net = new NetClient({
     onStatus: (s) => {
@@ -296,6 +298,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       if (sid === me) {
         local.setServer(p.x, p.z)
         setDriving(p.car ?? 0, p)
+        if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
         return
       }
       seen.add(sid)
@@ -313,6 +316,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
       // Dirigindo, o boneco some (quem aparece é o carro).
       r.char.setVisible(!p.car)
+      r.char.tired = (p.pace ?? 1) < 1
       r.setTarget(p.x, p.z, p.facing, (p.car ? 0 : Math.max(0, Math.min(2, p.move))) as MoveState)
     })
     for (const [sid, r] of remotes) {
@@ -472,7 +476,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     // segura abas que voltam): cortar em 0,1 s deixava a previsão para trás
     // do servidor em aparelhos lentos.
     if (driving && veh) driveFrame(Math.min(engine.getDeltaTime() / 1000, 0.25), boxes, now)
-    else local.update(dt, intent, boxes, limit, speeds)
+    else {
+      local.char.tired = myPace < 1
+      local.update(dt, intent, boxes, limit, paceSpeeds(myPace, speeds))
+    }
     // Dirigindo, a intenção a pé é zero (o controle a pé não age).
     syncNetwork(now, driving ? { x: 0, z: 0, run: false } : intent)
     fleet.sync(net.cars(), dt, driving, driving && veh ? pose : null)

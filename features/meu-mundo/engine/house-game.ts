@@ -6,8 +6,11 @@
 //
 // Mesma arquitetura do bairro (game.ts): o cliente manda só intenção; a sala
 // da casa simula com a MESMA regra (interior-motion.ts ↔ meuMundoInteriorMotion.js)
-// e os MESMOS colisores do payload. Sentar e levantar são pedidos ao
-// servidor, que confere distância, andar e ocupação do assento.
+// e os MESMOS colisores do payload. Sentar, deitar, dormir e levantar são
+// pedidos ao servidor, que confere distância, andar e ocupação do assento ou
+// da cama (mm3d-13: deitar e dormir também gravam a VIDA do hóspede — ele
+// continua dormindo com o jogo fechado). O ritmo de caminhada (`pace`) vem
+// da sala: cansado anda mais devagar e curvado.
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -22,7 +25,7 @@ import { Character, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera, INDOOR_CAMERA } from "./camera"
 import { NetClient } from "./net"
-import { MOTION, lerpAngle, type Intent, type MoveState } from "./motion"
+import { MOTION, lerpAngle, paceSpeeds, type Intent, type MoveState } from "./motion"
 import { stepInterior, type InteriorBody } from "./interior-motion"
 import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type InputState } from "./input"
 import type { Box2 } from "./collision"
@@ -54,6 +57,10 @@ export interface HouseGameOptions {
   onSeat?: (seat: string | null) => void
   /** Pedido de assento recusado (ocupado, longe…). */
   onSeatDenied?: (reason: string) => void
+  /** Na cama (deitado ou dormindo) ou fora dela (null), confirmado pelo servidor. */
+  onRest?: (rest: { bed: string; sleeping: boolean } | null) => void
+  /** Deitar/dormir recusado (longe, ocupada, estimulante, internado…). */
+  onRestDenied?: (reason: string) => void
   /** Mensagens de visita vindas da sala. */
   onServerMessage?: (type: string, payload: unknown) => void
 }
@@ -66,6 +73,11 @@ export interface HouseGameHandle {
   setBody: (body: BodyId) => void
   interact: () => void
   sit: (seatId: string) => void
+  /** Deitar na cama (fica acordado). */
+  lie: (bedId: string) => void
+  /** Dormir — na cama em que está deitado, ou direto numa cama perto. */
+  sleep: (hours?: number, bedId?: string) => void
+  /** Levantar (do assento ou da cama — dormindo, acorda). */
   stand: () => void
   recenter: () => void
   reconnect: () => void
@@ -86,6 +98,8 @@ interface RemoteHouseState {
   facing: number
   move: number
   seat: string
+  bed?: string
+  pace?: number
 }
 
 const WALL_COLOR = new Color3(0.93, 0.9, 0.84)
@@ -141,6 +155,10 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   let server: { x: number; z: number; floor: number } | null = null
   let seated: string | null = null
   let pendingSit: string | null = null
+  let rest: { bed: string; sleeping: boolean } | null = null
+  let pendingBed = false
+  let myPace = 1
+  const beds = def.beds ?? []
   char.place(body.x, body.z, body.facing, body.y)
 
   const follow = new FollowCamera(scene, INDOOR_CAMERA)
@@ -185,10 +203,15 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
           follow.snapHeight(body.y)
         }
       }
-      // Reconexão: a sala não guarda assento de quem caiu.
+      // Reconexão: a sala não guarda assento de quem caiu. A cama, sim (ela
+      // é da VIDA): se ele ainda estiver deitado, a sala manda "bed" de novo.
       if (seated) {
         seated = null
         opts.onSeat?.(null)
+      }
+      if (rest) {
+        rest = null
+        opts.onRest?.(null)
       }
       welcomed = true
     },
@@ -210,12 +233,35 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         } else opts.onSeatDenied?.(m.reason || "seat")
         return
       }
+      if (type === "bed") {
+        const m = p as { ok: boolean; bed: string; a?: "lie" | "sleep"; reason?: string }
+        pendingBed = false
+        if (m.ok) {
+          const bd = beds.find((b) => b.id === m.bed)
+          if (bd) {
+            seated = null
+            rest = { bed: bd.id, sleeping: m.a === "sleep" }
+            Object.assign(body, { x: bd.x, z: bd.z, vx: 0, vz: 0, facing: bd.facing, floor: bd.floor })
+            body.y = def.floors[bd.floor].y
+            visualFacing = bd.facing
+            opts.onRest?.(rest)
+          }
+        } else opts.onRestDenied?.(m.reason || "bed")
+        return
+      }
       if (type === "stood") {
         const m = p as { x: number; z: number; floor: number; facing: number }
+        const wasResting = !!rest
         seated = null
+        rest = null
         teleport(m.x, m.z, m.floor, m.facing)
         opts.onSeat?.(null)
+        if (wasResting) opts.onRest?.(null)
         return
+      }
+      if (type === "life") {
+        const m = p as { pace?: number }
+        if (typeof m.pace === "number") myPace = m.pace
       }
       opts.onServerMessage?.(type, p)
     },
@@ -226,7 +272,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   else void net.retry()
 
   const syncNetwork = (now: number, intent: Intent) => {
-    net.sendIntent(seated ? { x: 0, z: 0, run: false } : intent, now)
+    net.sendIntent(seated || rest ? { x: 0, z: 0, run: false } : intent, now)
     const st = net.state<{ players?: Map<string, RemoteHouseState> }>()
     const players = st?.players
     const me = net.sessionId
@@ -241,6 +287,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     players.forEach((p, sid) => {
       if (sid === me) {
         server = { x: p.x, z: p.z, floor: p.floor }
+        if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
         return
       }
       seen.add(sid)
@@ -253,7 +300,8 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         void r.char.setBody(b)
       }
       r.floor = p.floor
-      r.setTarget(p.x, p.z, p.facing, Math.max(0, Math.min(3, p.move)) as MoveState, p.y)
+      r.char.tired = (p.pace ?? 1) < 1
+      r.setTarget(p.x, p.z, p.facing, Math.max(0, Math.min(5, p.move)) as MoveState, p.y)
     })
     for (const [sid, r] of remotes) {
       if (!seen.has(sid)) {
@@ -267,18 +315,19 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     }
   }
 
-  // ── Interação: a porta (saída) e os assentos livres do andar ─────────────
+  // ── Interação: a porta (saída), os assentos e as camas livres do andar ───
   const door: Interactable = { kind: "door", id: "exit", x: def.exit.x, z: def.exit.z, radius: def.exit.radius }
   let nearby: Interactable | null = null
   const occupied = () => {
     const out = new Set<string>()
     net.state<{ players?: Map<string, RemoteHouseState> }>()?.players?.forEach((p) => {
       if (p.seat) out.add(p.seat)
+      if (p.bed) out.add(p.bed)
     })
     return out
   }
   const findNearby = (): Interactable | null => {
-    if (seated) return null
+    if (seated || rest) return null
     let best: Interactable | null = null
     let bestD = Infinity
     if (body.floor === def.exit.floor) {
@@ -294,6 +343,15 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       const d = Math.hypot(s.x - body.x, s.z - body.z)
       if (d <= 1.25 && d < bestD) {
         best = { kind: "seat", id: s.id, x: s.x, z: s.z, radius: 1.25, seat: s }
+        bestD = d
+      }
+    }
+    // Cama: o servidor aceita a até 1,9 m do ponto de deitar (BED_REACH).
+    for (const b of beds) {
+      if (b.floor !== body.floor || taken.has(b.id)) continue
+      const d = Math.hypot(b.x - body.x, b.z - body.z)
+      if (d <= 1.6 && d < bestD) {
+        best = { kind: "bed", id: b.id, x: b.x, z: b.z, radius: 1.6, bed: b }
         bestD = d
       }
     }
@@ -321,14 +379,15 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       intent = { x: f.x * axis.y + f.z * axis.x, z: f.z * axis.y - f.x * axis.x, run: wantsRun(input) }
       if (Math.hypot(intent.x, intent.z) < 0.05) intent = { x: 0, z: 0, run: intent.run }
     }
-    if (seated) {
-      // Sentado: andar = levantar (pedido ao servidor, que leva ao ponto livre).
+    if (seated || rest) {
+      // Sentado/deitado: andar = levantar (pedido ao servidor, que leva ao
+      // ponto livre). Dormindo, andar acorda.
       if (intent.x || intent.z) handle.stand()
-      move = 3
+      move = seated ? 3 : rest!.sleeping ? 5 : 4
       body.vx = 0
       body.vz = 0
     } else {
-      move = stepInterior(body, intent, dt, def, speeds)
+      move = stepInterior(body, intent, dt, def, paceSpeeds(myPace, speeds))
       if (server) {
         const moving = intent.x !== 0 || intent.z !== 0
         const ex = server.x - body.x
@@ -349,6 +408,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     }
     visualFacing = lerpAngle(visualFacing, body.facing, 1 - Math.exp(-12 * dt))
     char.place(body.x, body.z, visualFacing, body.y)
+    char.tired = myPace < 1
     char.animate(dt, move, Math.hypot(body.vx, body.vz))
     syncNetwork(performance.now(), intent)
     for (const r of remotes.values()) {
@@ -366,7 +426,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     }
     if (input.interactQueued) {
       input.interactQueued = false
-      if (seated) handle.stand()
+      if (seated || rest) handle.stand()
       else if (nearby && !input.blocked) opts.onInteract?.(nearby)
     }
 
@@ -427,7 +487,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       opts.onBody?.(b)
     },
     interact() {
-      if (seated) handle.stand()
+      if (seated || rest) handle.stand()
       else if (nearby && !input.blocked) opts.onInteract?.(nearby)
     },
     sit(seatId) {
@@ -439,8 +499,26 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         if (pendingSit === seatId) pendingSit = null
       }, 3000)
     },
+    lie(bedId) {
+      if (seated || rest || pendingBed) return
+      pendingBed = true
+      net.send("bed", { bed: bedId, a: "lie" })
+      setTimeout(() => {
+        pendingBed = false
+      }, 3000)
+    },
+    sleep(hours = 8, bedId) {
+      if (seated || pendingBed || (rest && rest.sleeping)) return
+      const target = rest ? rest.bed : bedId
+      if (!target) return
+      pendingBed = true
+      net.send("bed", { bed: target, a: "sleep", hours })
+      setTimeout(() => {
+        pendingBed = false
+      }, 3000)
+    },
     stand() {
-      if (!seated) return
+      if (!seated && !rest) return
       net.send("stand", {})
     },
     recenter() {

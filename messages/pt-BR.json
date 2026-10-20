@@ -7031,6 +7031,16 @@
     "tuneSteerRate": "Rapidez do volante",
     "tuneAssist": "Assistência de drift",
     "tuneStiff": "Rigidez lateral do pneu",
-    "tuneReset": "Voltar ao padrão"
+    "tuneReset": "Voltar ao padrão",
+    "bedLie": "Deitar",
+    "bedSleep": "Dormir",
+    "bedWake": "Acordar",
+    "bedTaken": "Essa cama já está ocupada",
+    "bedFar": "Chegue mais perto da cama",
+    "bedStimulated": "Com estimulante no corpo ele não consegue dormir",
+    "bedDenied": "Não deu para deitar agora",
+    "bedSleepingLine": "Dormindo — ele continua dormindo mesmo com o jogo fechado",
+    "lifeInHospital": "Ele está internado no hospital",
+    "lifeDead": "Seu hóspede morreu"
   }
 }
