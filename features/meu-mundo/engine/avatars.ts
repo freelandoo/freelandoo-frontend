@@ -45,12 +45,16 @@ const ASSETS = {
     slim: "avatar-basecolor-512.jpg",
     fat: "avatar-fat-basecolor-512.jpg",
     strong: "avatar-strong-basecolor-512.jpg",
+    // Sergio, o lutador da RA da Casa Views (pipeline/build_sergio.py): o
+    // esqueleto e os pesos são os dele; as animações são as mesmas do bairro.
+    sergio: "avatar-sergio-basecolor-512.jpg",
   } satisfies Record<BodyId, string>,
   bodies: {
     normal: "avatar-normal.glb",
     slim: "avatar-slim.glb",
     fat: "avatar-fat.glb",
     strong: "avatar-strong.glb",
+    sergio: "avatar-sergio.glb",
   } satisfies Record<BodyId, string>,
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
@@ -59,6 +63,7 @@ const ASSETS = {
     base: "anim-locomotion.glb",
     fat: "anim-locomotion-fat.glb",
     strong: "anim-locomotion-strong.glb",
+    sergio: "anim-locomotion-sergio.glb",
   },
   // Pose "Sit" (mm3d-09, pipeline/build_sit.py): só dentro das casas — a rua
   // não baixa estes arquivos.
@@ -66,10 +71,11 @@ const ASSETS = {
     base: "anim-sit-base.glb",
     fat: "anim-sit-fat.glb",
     strong: "anim-sit-strong.glb",
+    sergio: "anim-sit-sergio.glb",
   },
 }
 type AnimSet = keyof typeof ASSETS.anims
-const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong" }
+const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 type Clip = (typeof CLIPS)[number] | "Sit"
 

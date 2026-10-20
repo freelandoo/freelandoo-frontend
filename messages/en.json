@@ -7575,6 +7575,7 @@
     "changeLevelTest": "Change level — test",
     "levelOccupied": "Ask everyone to leave the house before changing the level.",
     "exitGoToDoor": "Walk to the door to leave",
-    "enterMyHouse": "Enter the house"
+    "enterMyHouse": "Enter the house",
+    "bodySergio": "Sergio"
   }
 }

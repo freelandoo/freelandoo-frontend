@@ -141,8 +141,8 @@ export interface Neighborhood {
   limit: number
 }
 
-export type BodyId = "normal" | "slim" | "fat" | "strong"
-export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong"]
+export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio"
+export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio"]
 
 export interface SeatReservation {
   name: string

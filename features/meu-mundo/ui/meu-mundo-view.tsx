@@ -47,7 +47,7 @@ import {
 } from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-09"
+export const CLIENT_RELEASE = "mm3d-10"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 export const BTN =
@@ -254,6 +254,7 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
       slim: t("bodySlim", "Magro"),
       fat: t("bodyFat", "Gordo"),
       strong: t("bodyStrong", "Forte"),
+      sergio: t("bodySergio", "Sergio"),
     })[b]
 
   const nearbyMine = nearby?.kind === "house" && nearby.house.isMine && !payload.me.visitor
