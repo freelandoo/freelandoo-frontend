@@ -7556,6 +7556,11 @@
     "levelOccupied": "Pide a todos que salgan de la casa antes de cambiar el nivel.",
     "exitGoToDoor": "Ve hasta la puerta para salir",
     "enterMyHouse": "Entrar en la casa",
-    "bodySergio": "Sergio"
+    "bodySergio": "Sergio",
+    "enterCar": "Subir al coche",
+    "exitCar": "Bajar del coche",
+    "carExitBlocked": "No hay espacio para bajar aquí. Para en un lugar más libre.",
+    "carTooFar": "Acércate más al coche.",
+    "carUnavailable": "Este coche no está disponible ahora."
   }
 }

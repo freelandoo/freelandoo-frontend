@@ -38,6 +38,17 @@ export interface RemoteState {
   z: number
   facing: number
   move: number
+  /** Lote do carro que está dirigindo (0 = a pé). */
+  car?: number
+}
+
+/** Carro de uma casa (chave = número do lote). driver = sessionId ou "". */
+export interface CarState {
+  lot: number
+  x: number
+  z: number
+  facing: number
+  driver: string
 }
 
 export interface NetCallbacks {
@@ -45,7 +56,7 @@ export interface NetCallbacks {
   /** Posição de partida decidida pelo servidor (primeira entrada e reconexões). */
   onWelcome: (p: { x: number; z: number; facing: number }) => void
   /** O servidor tirou você de dentro de uma casa que cresceu (troca de nível). */
-  onMoved?: (p: { x: number; z: number; facing: number }) => void
+  onMoved?: (p: { x: number; z: number; facing: number; car?: number }) => void
   /** Pede ao backend uma reserva nova. null = sem acesso (não insistir). */
   fetchSession: () => Promise<(MultiplayerSession & { sceneKey?: string }) | null>
   /** Ambiente desta conexão ("nb:…" / "house:…"). Reserva de outro = trocar de ambiente. */
@@ -96,6 +107,12 @@ export class NetClient {
     return st?.houses ?? null
   }
 
+  /** Carros do bairro (posição e quem dirige). */
+  cars(): Map<string, CarState> | null {
+    const st = this.room?.state as { cars?: Map<string, CarState> } | undefined
+    return st?.cars ?? null
+  }
+
   /** Titulares do bairro segundo a sala (atualiza quando alguém se muda). */
   residents(): number | null {
     const st = this.room?.state as { residents?: number } | undefined
@@ -126,13 +143,13 @@ export class NetClient {
     room.onMessage("welcome", (p: { x: number; z: number; facing: number }) => {
       if (!this.disposed) this.cb.onWelcome(p)
     })
-    room.onMessage("moved", (p: { x: number; z: number; facing: number }) => {
+    room.onMessage("moved", (p: { x: number; z: number; facing: number; car?: number }) => {
       if (!this.disposed) this.cb.onMoved?.(p)
     })
     room.onMessage("replaced", () => {
       replaced = true
     })
-    for (const type of ["visits", "visit_ended", "seat", "stood"]) {
+    for (const type of ["visits", "visit_ended", "seat", "stood", "car_denied"]) {
       room.onMessage(type, (p: unknown) => {
         if (!this.disposed) this.cb.onMessage?.(type, p)
       })

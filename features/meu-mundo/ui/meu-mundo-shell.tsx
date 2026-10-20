@@ -120,6 +120,15 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       else if (type === "visit_ended") {
         const p = payload as { reason?: string; hostName?: string } | null
         say(t("visitEndedNotice", "A visita a {name} terminou.").replace("{name}", p?.hostName ?? ""))
+      } else if (type === "car_denied") {
+        const r = (payload as { reason?: string } | null)?.reason
+        say(
+          r === "blocked"
+            ? t("carExitBlocked", "Não há espaço para descer aqui. Pare num lugar mais livre.")
+            : r === "far"
+              ? t("carTooFar", "Chegue mais perto do carro.")
+              : t("carUnavailable", "Este carro não está disponível agora."),
+        )
       }
     },
     [say, t],

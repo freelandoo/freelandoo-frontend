@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Activity,
   ArrowLeft,
+  CarFront,
   Construction,
   DoorOpen,
   Footprints,
@@ -47,7 +48,7 @@ import {
 } from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-10"
+export const CLIENT_RELEASE = "mm3d-11"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 export const BTN =
@@ -259,8 +260,14 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
 
   const nearbyMine = nearby?.kind === "house" && nearby.house.isMine && !payload.me.visitor
   const nearbyVisit = nearby?.kind === "house" && nearby.lot.number === visitingLot
-  const nearbyAction = nearbyMine || nearbyVisit
-  const nearbyLabel = nearbyMine
+  // Carro (mm3d-11): entrar no próprio carro, ou sair dirigindo.
+  const nearbyCar = nearby?.kind === "car" || nearby?.kind === "car-exit"
+  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar
+  const nearbyLabel = nearby?.kind === "car"
+    ? t("enterCar", "Entrar no carro")
+    : nearby?.kind === "car-exit"
+      ? t("exitCar", "Sair do carro")
+      : nearbyMine
     ? t("enterMyHouse", "Entrar na casa")
     : nearbyVisit
       ? t("enterVisit", "Entrar na casa {n}").replace("{n}", String(visitingLot).padStart(2, "0"))
@@ -491,7 +498,7 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
           <span className="inline-flex h-6 w-6 items-center justify-center bg-[#0B0B0D] text-[#F2B705]" aria-hidden>
             E
           </span>
-          <DoorOpen className="h-5 w-5" />
+          {nearbyCar ? <CarFront className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
           {nearbyLabel}
         </button>
         </div>
@@ -533,7 +540,7 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
               className="absolute flex min-h-16 min-w-16 max-w-[44vw] items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-[13px] font-black uppercase leading-tight text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
               style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 24px)", right: SAFE.right }}
             >
-              {nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
+              {nearbyCar ? <CarFront className="h-6 w-6 shrink-0" /> : nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
               {nearbyLabel}
             </button>
           )}

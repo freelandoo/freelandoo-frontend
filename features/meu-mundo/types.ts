@@ -326,8 +326,13 @@ export type Interactable =
   | { kind: "exit"; id: string; x: number; z: number; radius: number; label: string }
   | { kind: "door"; id: string; x: number; z: number; radius: number }
   | { kind: "seat"; id: string; x: number; z: number; radius: number; seat: InteriorSeat }
+  // Carro (mm3d-11): entrar no próprio carro / sair dirigindo.
+  | { kind: "car"; id: string; x: number; z: number; radius: number; lot: number }
+  | { kind: "car-exit"; id: string; x: number; z: number; radius: number }
 
 export interface GameStats {
+  /** Carros desenhados no bairro (mm3d-11). */
+  cars?: number
   fps: number
   frameMs: number | null
   meshes: number

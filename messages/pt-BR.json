@@ -6990,6 +6990,11 @@
     "levelOccupied": "Peça para todos saírem da casa antes de trocar o nível.",
     "exitGoToDoor": "Vá até a porta para sair",
     "enterMyHouse": "Entrar na casa",
-    "bodySergio": "Sergio"
+    "bodySergio": "Sergio",
+    "enterCar": "Entrar no carro",
+    "exitCar": "Sair do carro",
+    "carExitBlocked": "Não há espaço para descer aqui. Pare num lugar mais livre.",
+    "carTooFar": "Chegue mais perto do carro.",
+    "carUnavailable": "Este carro não está disponível agora."
   }
 }

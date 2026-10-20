@@ -19,7 +19,7 @@ import type { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { GeoBuilder, place } from "./geometry"
 import { type Box2 } from "./collision"
 import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder } from "./avatars"
-import { lerpAngle, step, type Body, type Intent, type MoveState } from "./motion"
+import { lerpAngle, step, type Body, type Intent, type MotionProfile, type MoveState } from "./motion"
 import type { BodyId } from "../types"
 
 function provisionalMesh(scene: Scene, material: StandardMaterial, name: string): Mesh {
@@ -174,8 +174,9 @@ export class LocalPlayer {
     boxes: Box2[],
     limit: number,
     speeds: { walk: number; run: number },
+    shape: MotionProfile | null = null,
   ) {
-    this.move = step(this.body, intent, dt, boxes, limit, speeds)
+    this.move = step(this.body, intent, dt, boxes, limit, speeds, shape)
     const moving = intent.x !== 0 || intent.z !== 0
     if (this.server) {
       const ex = this.server.x - this.body.x

@@ -7576,6 +7576,11 @@
     "levelOccupied": "Ask everyone to leave the house before changing the level.",
     "exitGoToDoor": "Walk to the door to leave",
     "enterMyHouse": "Enter the house",
-    "bodySergio": "Sergio"
+    "bodySergio": "Sergio",
+    "enterCar": "Get in the car",
+    "exitCar": "Get out of the car",
+    "carExitBlocked": "No room to get out here. Stop somewhere with more space.",
+    "carTooFar": "Get closer to the car.",
+    "carUnavailable": "This car isn't available right now."
   }
 }

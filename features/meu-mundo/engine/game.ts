@@ -28,7 +28,8 @@ import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
 import { NetClient } from "./net"
-import { MOTION, type Intent, type MoveState } from "./motion"
+import { CAR, CAR_SHAPE, CAR_SPEEDS, MOTION, type Intent, type MoveState } from "./motion"
+import { CarFleet } from "./cars"
 import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type InputState } from "./input"
 import {
   BODY_IDS,
@@ -83,6 +84,8 @@ export interface GameOptions {
   onHouseVisual?: (v: HouseVisual) => void
   /** Mensagens de visita vindas da sala (convites, fim de visita). */
   onServerMessage?: (type: string, payload: unknown) => void
+  /** Entrou (lote do carro) ou saiu (0) do carro — confirmado pela sala. */
+  onDriving?: (lot: number) => void
 }
 
 export interface GameHandle {
@@ -149,6 +152,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     if (!disposed) opts.onHouseVisual?.(v)
   })
   const lib = new AvatarLibrary(scene)
+  // Carros (mm3d-11): desenhados a partir do estado da sala.
+  const fleet = new CarFleet(scene)
+  /** Lote do carro que você está dirigindo (0 = a pé). Quem decide é a sala. */
+  let driving = 0
 
   const fallbackMat = new StandardMaterial("mm-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
@@ -163,6 +170,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const home = payload.me.home
   let myBody: BodyId = isBody(payload.me.body) ? payload.me.body : "normal"
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true), home.x, home.z, home.rotationY)
+  // Conferência (como __mmHouse): onde estou e se estou dirigindo.
+  const probe = () => ({ x: local.x, z: local.z, driving })
+  ;(window as unknown as { __mmStreet?: typeof probe }).__mmStreet = probe
   const follow = new FollowCamera(scene)
   scene.activeCamera = follow.camera
   follow.snapBehind(home.x, home.z, home.rotationY)
@@ -197,7 +207,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     onMoved: (p) => {
       if (disposed) return
       local.teleport(p.x, p.z, p.facing)
-      follow.snapBehind(p.x, p.z, p.facing)
+      if (typeof p.car === "number") setDriving(p.car)
+      else follow.snapBehind(p.x, p.z, p.facing)
     },
     fetchSession: opts.fetchSession,
     sceneKey: payload.sceneKey,
@@ -232,6 +243,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     players.forEach((p, sid) => {
       if (sid === me) {
         local.setServer(p.x, p.z)
+        setDriving(p.car ?? 0)
         return
       }
       seen.add(sid)
@@ -247,7 +259,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       } else if (r.char.body !== body) {
         void r.char.setBody(body)
       }
-      r.setTarget(p.x, p.z, p.facing, Math.max(0, Math.min(2, p.move)) as MoveState)
+      // Dirigindo, o boneco some (quem aparece é o carro).
+      r.char.setVisible(!p.car)
+      r.setTarget(p.x, p.z, p.facing, (p.car ? 0 : Math.max(0, Math.min(2, p.move))) as MoveState)
     })
     for (const [sid, r] of remotes) {
       if (!seen.has(sid)) {
@@ -264,9 +278,22 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
 
   // ── Interação ─────────────────────────────────────────────────────────────
   let nearby: Interactable | null = null
+  const myLot = payload.me.house || 0
+  const exitCar: Interactable = { kind: "car-exit", id: "car-exit", x: 0, z: 0, radius: 99 }
   const findNearby = () => {
+    // Dirigindo, a única interação é sair do carro.
+    if (driving) return exitCar
     let best: Interactable | null = null
     let bestD = Infinity
+    // O próprio carro (só o titular dirige o da casa dele; visitante não).
+    const mine = myLot && !payload.me.visitor ? fleet.latest.get(String(myLot)) : null
+    if (mine && !mine.driver) {
+      const d = Math.hypot(mine.x - local.x, mine.z - local.z)
+      if (d <= CAR.ENTER_RADIUS - 0.2) {
+        best = { kind: "car", id: `car-${myLot}`, x: mine.x, z: mine.z, radius: CAR.ENTER_RADIUS, lot: myLot }
+        bestD = d
+      }
+    }
     for (const it of world.interactables) {
       const d = Math.hypot(it.x - local.x, it.z - local.z)
       if (d <= it.radius && d < bestD) {
@@ -275,6 +302,25 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
     }
     return best
+  }
+
+  /** Entrar/sair do carro é pedido à sala; a resposta chega pelo estado. */
+  const interactWith = (it: Interactable) => {
+    if (it.kind === "car") net.send("car", { a: "enter" })
+    else if (it.kind === "car-exit") net.send("car", { a: "exit" })
+    else opts.onInteract?.(it)
+  }
+
+  /** A sala confirmou que você entrou/saiu do carro. */
+  function setDriving(lot: number) {
+    if (lot === driving) return
+    const was = driving
+    driving = lot
+    local.char.setVisible(!lot)
+    // Dirigindo, a câmera recua (o carro é maior e anda mais rápido).
+    if (lot && !was) follow.zoom(4)
+    if (!lot && was) follow.zoom(-4)
+    opts.onDriving?.(lot)
   }
 
   let instr: SceneInstrumentation | null = null
@@ -303,8 +349,12 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
       if (Math.hypot(intent.x, intent.z) < 0.05) intent = { x: 0, z: 0, run: intent.run }
     }
-    local.update(dt, intent, world.boxes, limit, speeds)
+    const carBoxes = fleet.boxes(driving)
+    const boxes = carBoxes.length ? world.boxes.concat(carBoxes) : world.boxes
+    if (driving) local.update(dt, intent, boxes, limit, CAR_SPEEDS, CAR_SHAPE)
+    else local.update(dt, intent, boxes, limit, speeds)
     syncNetwork(performance.now(), intent)
+    fleet.sync(net.cars(), dt, driving, driving ? { x: local.x, z: local.z, facing: local.body.facing } : null)
     for (const r of remotes.values()) r.update(dt)
     follow.update(dt, local.x, local.z, world.viewBoxes)
 
@@ -315,7 +365,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     }
     if (input.interactQueued) {
       input.interactQueued = false
-      if (nearby && !input.blocked) opts.onInteract?.(nearby)
+      if (nearby && !input.blocked) interactWith(nearby)
     }
 
     if (instr && opts.onStats) {
@@ -334,6 +384,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           x: local.x,
           z: local.z,
           avatars: lib.live,
+          cars: fleet.count,
           houseModels: world.loadedLevels(),
         })
       }
@@ -398,7 +449,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       opts.onBody?.(body)
     },
     interact() {
-      if (nearby && !input.blocked) opts.onInteract?.(nearby)
+      if (nearby && !input.blocked) interactWith(nearby)
     },
     recenter() {
       follow.snapBehind(local.x, local.z, local.body.facing)
@@ -428,6 +479,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     dispose() {
       if (disposed) return
       disposed = true
+      const w = window as unknown as { __mmStreet?: typeof probe }
+      if (w.__mmStreet === probe) delete w.__mmStreet
       net.dispose()
       engine.stopRenderLoop()
       detachInput()
@@ -438,6 +491,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       for (const r of remotes.values()) r.dispose()
       remotes.clear()
       local.dispose()
+      fleet.dispose()
       lib.dispose()
       world.dispose()
       fallbackMat.dispose()

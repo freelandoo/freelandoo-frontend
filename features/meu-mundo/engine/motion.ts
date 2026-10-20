@@ -20,6 +20,28 @@ export const MOTION = {
   STOP_EPS: 0.02,
 }
 
+/**
+ * Carro (mm3d-11): espelho de freelandoo-backend/src/utils/meuMundoCars.js.
+ * O carro usa a MESMA regra de deslocamento com outro perfil.
+ */
+export const CAR = {
+  SPEED: 9,
+  TURBO: 13,
+  ACCEL: 2.4,
+  RADIUS: 1.4,
+  HX: 1.15,
+  HZ: 1.95,
+  ENTER_RADIUS: 3.4,
+}
+
+/** Perfil opcional de `step` (o carro); sem ele, a pé. */
+export interface MotionProfile {
+  accel: number
+  radius: number
+}
+export const CAR_SHAPE: MotionProfile = { accel: CAR.ACCEL, radius: CAR.RADIUS }
+export const CAR_SPEEDS = { walk: CAR.SPEED, run: CAR.TURBO }
+
 /** Velocidade natural das animações (medida no Blender, ver REGISTRO.md). */
 export const ANIM_NATURAL_SPEED = { walk: 1.267, run: 2.221 }
 
@@ -47,9 +69,11 @@ export function step(
   boxes: Box2[],
   limit: number,
   speeds = { walk: MOTION.WALK_SPEED, run: MOTION.RUN_SPEED },
+  shape: MotionProfile | null = null,
 ): MoveState {
   const speedMax = intent.run ? speeds.run : speeds.walk
-  const k = 1 - Math.exp(-MOTION.ACCEL * dt)
+  const radius = shape ? shape.radius : MOTION.RADIUS
+  const k = 1 - Math.exp(-(shape ? shape.accel : MOTION.ACCEL) * dt)
   body.vx += (intent.x * speedMax - body.vx) * k
   body.vz += (intent.z * speedMax - body.vz) * k
   let speed = Math.hypot(body.vx, body.vz)
@@ -61,7 +85,7 @@ export function step(
   const steps = Math.max(1, Math.ceil(dt / MOTION.SUBSTEP))
   const h = dt / steps
   for (let i = 0; i < steps; i++) {
-    const next = resolveCircle(body.x + body.vx * h, body.z + body.vz * h, MOTION.RADIUS, boxes)
+    const next = resolveCircle(body.x + body.vx * h, body.z + body.vz * h, radius, boxes)
     body.x = Math.max(-limit, Math.min(limit, next.x))
     body.z = Math.max(-limit, Math.min(limit, next.z))
   }
