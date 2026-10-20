@@ -15,12 +15,15 @@ import {
   Activity,
   ArrowLeft,
   Construction,
+  DoorOpen,
   Footprints,
   Hand,
   Home,
   Loader2,
   LocateFixed,
+  Lock,
   RefreshCw,
+  Send,
   Shirt,
   Users,
   Wifi,
@@ -40,23 +43,37 @@ import {
   type Interactable,
   type NeighborhoodPayload,
   type NetStatus,
+  type VisitState,
 } from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-08"
+export const CLIENT_RELEASE = "mm3d-09"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
-const BTN =
+export const BTN =
   "inline-flex h-10 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D]/85 px-3 text-[11px] font-bold uppercase tracking-wider text-[#F2B705] shadow-[2px_2px_0_0_#F2B705] active:translate-x-[1px] active:translate-y-[1px]"
 
-const SAFE = {
+export const SAFE = {
   top: "max(12px, env(safe-area-inset-top))",
   bottom: "max(16px, env(safe-area-inset-bottom))",
   left: "max(12px, env(safe-area-inset-left))",
   right: "max(12px, env(safe-area-inset-right))",
 }
 
-export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload }) {
+export interface NeighborhoodSceneProps {
+  payload: NeighborhoodPayload
+  visits: VisitState | null
+  /** Entrar na casa do lote (o servidor confere porta, dono e convite). */
+  onEnterHouse: (lot: number) => void
+  onOpenInvite: () => void
+  /** O servidor levou o jogador para outro ambiente: pedir o destino de novo. */
+  onMoved: () => void
+  onServerMessage: (type: string, payload: unknown) => void
+  /** Algum painel da casca está aberto (convite): o jogo não lê teclas. */
+  blocked?: boolean
+}
+
+export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvite, onMoved, onServerMessage, blocked }: NeighborhoodSceneProps) {
   const t = useTranslations("MeuMundo")
   const nb = payload.neighborhood
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -87,6 +104,16 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
     status: "ok",
   })
   const [levelOpen, setLevelOpen] = useState(false)
+  // Menu da própria casa: entrar, alterar o nível (teste) e convidar.
+  const [homeMenu, setHomeMenu] = useState(false)
+  // Casa que este jogador pode visitar aqui. Quem é do MESMO bairro não troca
+  // de ambiente ao aceitar: a visita ativa chega pelo estado de visitas.
+  const activeGuest = visits?.active?.role === "guest" && visits.active.neighborhoodName === nb.name ? visits.active.house : null
+  const visitingLot = payload.me.visiting?.house ?? activeGuest
+  const cbRef = useRef({ onEnterHouse, onMoved, onServerMessage, visitingLot })
+  useEffect(() => {
+    cbRef.current = { onEnterHouse, onMoved, onServerMessage, visitingLot }
+  }, [onEnterHouse, onMoved, onServerMessage, visitingLot])
   const [isTouch] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -131,16 +158,23 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
             const token = getToken()
             return token ? fetchSession(token) : null
           },
-          onNet: (s) => alive && setNet(s),
+          onNet: (s) => {
+            if (!alive) return
+            setNet(s)
+            if (s === "moved") cbRef.current.onMoved()
+          },
+          onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
           onResidents: (n) => alive && setResidents(n),
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (it) => alive && setNearby(it),
-          // Na PRÓPRIA casa a ação é trocar o nível; nas outras, ver a ficha.
+          // Na PRÓPRIA casa: menu (entrar, nível, convidar). Na casa visitada:
+          // entrar. Nas outras: a ficha (que diz que é preciso convite).
           onInteract: (it) => {
             if (!alive) return
-            if (it.kind === "house" && it.house.isMine) setLevelOpen(true)
+            if (it.kind === "house" && it.house.isMine && !payload.me.visitor) setHomeMenu(true)
+            else if (it.kind === "house" && it.lot.number === cbRef.current.visitingLot) cbRef.current.onEnterHouse(it.lot.number)
             else setOpen(it)
           },
           onHouseVisual: (v) => alive && v.lot === myLot && setHouseVis(v),
@@ -168,8 +202,20 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
   }, [statsOpen])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(!!open || levelOpen)
-  }, [open, levelOpen])
+    gameRef.current?.setBlocked(!!open || levelOpen || homeMenu || !!blocked)
+  }, [open, levelOpen, homeMenu, blocked])
+
+  useEffect(() => {
+    if (!homeMenu) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setHomeMenu(false)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [homeMenu])
 
   useEffect(() => {
     if (!open) return
@@ -213,6 +259,7 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
     reconnecting: t("netReconnecting", "Reconectando"),
     offline: t("netOffline", "Conexão interrompida"),
     replaced: t("netReplaced", "Aberto em outra janela"),
+    moved: t("netMoved", "Mudando de lugar…"),
   }[net]
   const bodyLabel = (b: BodyId) =>
     ({
@@ -222,10 +269,14 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
       strong: t("bodyStrong", "Forte"),
     })[b]
 
-  const nearbyMine = nearby?.kind === "house" && nearby.house.isMine
+  const nearbyMine = nearby?.kind === "house" && nearby.house.isMine && !payload.me.visitor
+  const nearbyVisit = nearby?.kind === "house" && nearby.lot.number === visitingLot
+  const nearbyAction = nearbyMine || nearbyVisit
   const nearbyLabel = nearbyMine
-    ? t("changeHouse", "Alterar casa")
-    : nearby?.kind === "house"
+    ? t("myHouseAction", "Sua casa")
+    : nearbyVisit
+      ? t("enterVisit", "Entrar na casa {n}").replace("{n}", String(visitingLot).padStart(2, "0"))
+      : nearby?.kind === "house"
       ? t("seeHouse", "Ver casa {n}").replace("{n}", String(nearby.lot.number).padStart(2, "0"))
       : nearby?.kind === "exit"
         ? exitLabel
@@ -255,10 +306,19 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
             <span className="hidden sm:inline">· {nb.name}</span>
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
-            <span className="inline-flex items-center gap-1 bg-[#F2B705] px-1.5 py-0.5 text-[#0B0B0D]">
-              <Home className="h-3 w-3" />
-              {t("myHouse", "Sua casa {n}").replace("{n}", String(payload.me.house).padStart(2, "0"))}
-            </span>
+            {payload.me.visitor && payload.me.visiting ? (
+              <span className="inline-flex items-center gap-1 bg-[#F2B705] px-1.5 py-0.5 text-[#0B0B0D]">
+                <DoorOpen className="h-3 w-3" />
+                {t("visitingChip", "Visitando {name} · casa {n}")
+                  .replace("{name}", payload.me.visiting.hostName)
+                  .replace("{n}", String(payload.me.visiting.house).padStart(2, "0"))}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 bg-[#F2B705] px-1.5 py-0.5 text-[#0B0B0D]">
+                <Home className="h-3 w-3" />
+                {t("myHouse", "Sua casa {n}").replace("{n}", String(payload.me.house).padStart(2, "0"))}
+              </span>
+            )}
             <span
               className="inline-flex items-center gap-1 bg-[#0B0B0D] px-1.5 py-0.5 text-[#F7F0D9]"
               title={t("residentsHint", "Moradores titulares do bairro")}
@@ -408,7 +468,7 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
       )}
 
       {/* Aviso de interação */}
-      {status === "ready" && nearby && !nearbyMine && !open && !levelOpen && !isTouch && (
+      {status === "ready" && nearby && !nearbyAction && !open && !levelOpen && !homeMenu && !isTouch && (
         <div
           className="pointer-events-none absolute left-1/2 -translate-x-1/2 border-2 border-[#0B0B0D] bg-[#0B0B0D]/90 px-3 py-2 text-[12px] font-bold uppercase tracking-wider text-[#F7F0D9]"
           style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
@@ -418,25 +478,25 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
         </div>
       )}
 
-      {/* Computador: a própria casa ganha botão clicável, com o atalho E nele */}
-      {status === "ready" && nearbyMine && !open && !levelOpen && !isTouch && (
+      {/* Computador: a própria casa (e a casa visitada) ganha botão clicável, com o atalho E nele */}
+      {status === "ready" && nearbyAction && !open && !levelOpen && !homeMenu && !isTouch && (
         <button
           type="button"
           onClick={() => gameRef.current?.interact()}
-          aria-label={t("changeHouse", "Alterar casa")}
+          aria-label={nearbyLabel}
           className="absolute left-1/2 inline-flex h-12 -translate-x-1/2 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 text-[13px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
           style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
         >
           <span className="inline-flex h-6 w-6 items-center justify-center bg-[#0B0B0D] text-[#F2B705]" aria-hidden>
             E
           </span>
-          <Home className="h-5 w-5" />
-          {t("changeHouse", "Alterar casa")}
+          {nearbyVisit ? <DoorOpen className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+          {nearbyLabel}
         </button>
       )}
 
       {/* Controles de toque */}
-      {status === "ready" && isTouch && !open && !levelOpen && (
+      {status === "ready" && isTouch && !open && !levelOpen && !homeMenu && (
         <>
           <Joystick gameRef={gameRef} />
           <button
@@ -460,7 +520,7 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
               className="absolute flex min-h-16 min-w-16 max-w-[44vw] items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-[13px] font-black uppercase leading-tight text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
               style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 24px)", right: SAFE.right }}
             >
-              {nearbyMine ? <Home className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
+              {nearbyMine ? <Home className="h-6 w-6 shrink-0" /> : nearbyVisit ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
               {nearbyLabel}
             </button>
           )}
@@ -510,10 +570,12 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
                     {open.house.isMine ? t("yourHouse", "Sua casa") : (open.house.ownerName ?? t("available", "Disponível"))}
                   </dd>
                 </dl>
-                <div className="mt-4 flex items-center gap-2 border-2 border-dashed border-[#0B0B0D]/40 px-3 py-2 text-sm font-semibold">
-                  <Construction className="h-4 w-4 shrink-0" />
-                  {t("interiorSoon", "Interior em construção")}
-                </div>
+                {open.house.ownerName && (
+                  <div className="mt-4 flex items-center gap-2 border-2 border-dashed border-[#0B0B0D]/40 px-3 py-2 text-sm font-semibold">
+                    <Lock className="h-4 w-4 shrink-0" />
+                    {t("needsInvite", "Esta casa só abre com convite do morador.")}
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -535,6 +597,76 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
             >
               {t("ok", "Entendi")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Menu da própria casa: entrar, alterar o nível (teste), convidar */}
+      {homeMenu && (
+        <div
+          className="absolute inset-0 flex items-end justify-center bg-black/30 sm:items-center"
+          style={{ paddingBottom: SAFE.bottom, paddingLeft: SAFE.left, paddingRight: SAFE.right }}
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget) setHomeMenu(false)
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mm-home-title"
+            className="relative w-full max-w-xs border-2 border-[#0B0B0D] bg-[#F7F0D9] p-4 text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
+          >
+            <button
+              type="button"
+              onClick={() => setHomeMenu(false)}
+              className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center"
+              aria-label={t("close", "Fechar")}
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="text-[11px] font-bold uppercase tracking-widest text-[#8A6400]">
+              {t("lot", "Lote {n}").replace("{n}", String(myLot).padStart(2, "0"))}
+            </div>
+            <h2 id="mm-home-title" className="mt-0.5 text-2xl font-black uppercase leading-none">
+              {t("yourHouse", "Sua casa")}
+            </h2>
+            <div className="mt-4 grid gap-2">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => {
+                  setHomeMenu(false)
+                  onEnterHouse(myLot)
+                }}
+                className="inline-flex h-12 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 text-sm font-black uppercase"
+              >
+                <DoorOpen className="h-5 w-5" />
+                {t("enterHouse", "Entrar")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHomeMenu(false)
+                  setLevelOpen(true)
+                }}
+                className="inline-flex h-11 items-center gap-2 border-2 border-[#0B0B0D] bg-white px-3 text-sm font-bold uppercase"
+              >
+                <Construction className="h-4 w-4" />
+                {t("changeLevelTest", "Alterar nível — teste")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHomeMenu(false)
+                  onOpenInvite()
+                }}
+                disabled={!!visits?.active && visits.active.role === "guest"}
+                className="inline-flex h-11 items-center gap-2 border-2 border-[#0B0B0D] bg-white px-3 text-sm font-bold uppercase disabled:opacity-40"
+              >
+                <Send className="h-4 w-4" />
+                {t("invite", "Convidar")}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -581,7 +713,7 @@ export default function MeuMundoView({ payload }: { payload: NeighborhoodPayload
 
 // Joystick virtual: escreve direto no estado de entrada do jogo, sem passar
 // por estado do React (seriam dezenas de renders por segundo).
-function Joystick({ gameRef }: { gameRef: React.RefObject<GameHandle | null> }) {
+export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: (x: number, y: number) => void } | null> }) {
   const baseRef = useRef<HTMLDivElement | null>(null)
   const knobRef = useRef<HTMLDivElement | null>(null)
   const idRef = useRef<number | null>(null)
@@ -692,7 +824,14 @@ function HouseLevelPanel({
     if (r.ok) gameRef.current?.applyHouseLevel(r.house, r.level, r.rev)
     if (seq !== seqRef.current) return
     setPending(false)
-    if (!r.ok) setError(r.status === 0 ? t("levelNetError", "Sem conexão. Tente de novo.") : r.error)
+    if (!r.ok)
+      setError(
+        r.status === 0
+          ? t("levelNetError", "Sem conexão. Tente de novo.")
+          : r.code === "occupied"
+            ? t("levelOccupied", "Peça para todos saírem da casa antes de trocar o nível.")
+            : r.error,
+      )
   }, [selected, gameRef, t])
 
   const loading = visual.status === "loading"

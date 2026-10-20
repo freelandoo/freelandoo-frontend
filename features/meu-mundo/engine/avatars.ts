@@ -60,11 +60,18 @@ const ASSETS = {
     fat: "anim-locomotion-fat.glb",
     strong: "anim-locomotion-strong.glb",
   },
+  // Pose "Sit" (mm3d-09, pipeline/build_sit.py): só dentro das casas — a rua
+  // não baixa estes arquivos.
+  sit: {
+    base: "anim-sit-base.glb",
+    fat: "anim-sit-fat.glb",
+    strong: "anim-sit-strong.glb",
+  },
 }
 type AnimSet = keyof typeof ASSETS.anims
 const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
-type Clip = (typeof CLIPS)[number]
+type Clip = (typeof CLIPS)[number] | "Sit"
 
 let loadersRegistered = false
 
@@ -80,11 +87,16 @@ export class AvatarLibrary {
   private readonly materials = new Map<string, StandardMaterial>()
   private readonly bodies = new Map<BodyId, Promise<AssetContainer>>()
   private readonly anims = new Map<AnimSet, Promise<AssetContainer>>()
+  private readonly sits = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
 
-  constructor(private readonly scene: Scene) {
+  constructor(
+    private readonly scene: Scene,
+    /** Dentro das casas: cada avatar ganha também a pose de sentar. */
+    private readonly withSit = false,
+  ) {
     ensureLoaders()
   }
 
@@ -130,21 +142,37 @@ export class AvatarLibrary {
     return p
   }
 
+  private sitSet(id: BodyId) {
+    const key = ANIM_SET[id]
+    let p = this.sits.get(key)
+    if (!p) {
+      p = LoadAssetContainerAsync(BASE + ASSETS.sit[key], this.scene)
+      p.catch(() => this.sits.delete(key))
+      this.sits.set(key, p)
+    }
+    return p
+  }
+
   /** Cria um avatar com esqueleto e animações próprios. */
   async create(id: BodyId): Promise<AvatarRig> {
-    const [container, anims] = await Promise.all([this.body(id), this.animSet(id)])
+    // A pose de sentar é opcional: se o arquivo falhar, o avatar existe
+    // (sentado fica parado em pé, sem quebrar a casa).
+    const sitP = this.withSit ? this.sitSet(id).catch(() => null) : Promise.resolve(null)
+    const [container, anims, sit] = await Promise.all([this.body(id), this.animSet(id), sitP])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
     const root = entries.rootNodes[0] as TransformNode
     const byName = new Map<string, Node>()
     for (const n of root.getDescendants(false)) byName.set(n.name, n)
-    const groups = {} as Record<Clip, AnimationGroup>
+    const groups = {} as Partial<Record<Clip, AnimationGroup>> & Record<(typeof CLIPS)[number], AnimationGroup>
     for (const clip of CLIPS) {
       const src = anims.animationGroups.find((g) => g.name === clip)
       if (!src) throw new Error(`animação ${clip} ausente`)
       const g = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
       groups[clip] = g
     }
+    const sitSrc = sit?.animationGroups.find((g) => g.name === "Sit")
+    if (sitSrc) groups.Sit = sitSrc.clone(`Sit#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     const meshes = root.getChildMeshes(false) as AbstractMesh[]
     for (const mesh of meshes) {
       mesh.material = this.materialFor(id)
@@ -164,10 +192,11 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.anims.values()]
+    const all = [...this.bodies.values(), ...this.anims.values(), ...this.sits.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.anims.clear()
+    this.sits.clear()
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
@@ -180,7 +209,8 @@ let cloneSeq = 0
 
 /** Um corpo animado. Não sabe de rede nem de colisão: recebe estado e toca. */
 export class AvatarRig {
-  private weights: Record<Clip, number> = { Idle: 1, Walk: 0, SlowRun: 0 }
+  private weights: Record<Clip, number> = { Idle: 1, Walk: 0, SlowRun: 0, Sit: 0 }
+  private readonly clips: Clip[]
   private disposed = false
 
   constructor(
@@ -188,11 +218,12 @@ export class AvatarRig {
     readonly body: BodyId,
     private readonly entries: InstantiatedEntries,
     readonly root: TransformNode,
-    private readonly groups: Record<Clip, AnimationGroup>,
+    private readonly groups: Partial<Record<Clip, AnimationGroup>> & Record<(typeof CLIPS)[number], AnimationGroup>,
     readonly meshes: AbstractMesh[],
   ) {
-    for (const clip of CLIPS) {
-      const g = groups[clip]
+    this.clips = groups.Sit ? [...CLIPS, "Sit"] : [...CLIPS]
+    for (const clip of this.clips) {
+      const g = groups[clip]!
       g.weight = this.weights[clip]
       g.start(true, 1)
       if (this.weights[clip] === 0) g.pause()
@@ -214,21 +245,24 @@ export class AvatarRig {
    */
   update(dt: number, move: MoveState, speed: number) {
     if (this.disposed) return
+    // Sentado (3) sem a pose carregada: fica em repouso.
+    const sit = move === 3 && !!this.groups.Sit
     const target: Record<Clip, number> = {
-      Idle: move === 0 ? 1 : 0,
+      Idle: move === 0 || (move === 3 && !sit) ? 1 : 0,
       Walk: move === 1 ? 1 : 0,
       SlowRun: move === 2 ? 1 : 0,
+      Sit: sit ? 1 : 0,
     }
     const k = 1 - Math.exp(-10 * dt)
     let sum = 0
-    for (const clip of CLIPS) {
+    for (const clip of this.clips) {
       let w = this.weights[clip] + (target[clip] - this.weights[clip]) * k
       if (Math.abs(w - target[clip]) < 0.01) w = target[clip]
       this.weights[clip] = w
       sum += w
     }
-    for (const clip of CLIPS) {
-      const g = this.groups[clip]
+    for (const clip of this.clips) {
+      const g = this.groups[clip]!
       const w = sum > 0 ? this.weights[clip] / sum : 0
       g.weight = w
       if (w <= 0 && g.isPlaying) g.pause()
@@ -243,7 +277,7 @@ export class AvatarRig {
   dispose() {
     if (this.disposed) return
     this.disposed = true
-    for (const clip of CLIPS) this.groups[clip].dispose()
+    for (const clip of this.clips) this.groups[clip]!.dispose()
     this.entries.dispose()
     this.lib.release()
   }

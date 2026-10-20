@@ -14,16 +14,16 @@ import { useRouter } from "next/navigation"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { fetchAdminNeighborhood } from "@/features/meu-mundo/data"
-import type { NeighborhoodPayload } from "@/features/meu-mundo/types"
+import type { ScenePayload } from "@/features/meu-mundo/types"
 
-const MeuMundoView = dynamic(() => import("@/features/meu-mundo/ui/meu-mundo-view"), {
+const MeuMundoShell = dynamic(() => import("@/features/meu-mundo/ui/meu-mundo-shell"), {
   ssr: false,
   loading: () => <Splash />,
 })
 
 type Phase =
   | { kind: "checking" }
-  | { kind: "ready"; payload: NeighborhoodPayload }
+  | { kind: "ready"; payload: ScenePayload }
   | { kind: "forbidden" }
   | { kind: "error" }
 
@@ -67,7 +67,7 @@ export default function MeuMundoAdminPage() {
     return () => ac.abort()
   }, [router, attempt])
 
-  if (phase.kind === "ready") return <MeuMundoView payload={phase.payload} />
+  if (phase.kind === "ready") return <MeuMundoShell initial={phase.payload} />
   if (phase.kind === "checking") return <Splash />
 
   const forbidden = phase.kind === "forbidden"

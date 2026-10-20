@@ -26,6 +26,9 @@ const SEND_MIN_MS = 80
 const KEEPALIVE_MS = 1000
 const CLOSE_REPLACED = 4009
 const CLOSE_FORBIDDEN = 4003
+// O servidor levou o jogador para outro ambiente (visita encerrada, nível da
+// casa mudou): o jogo pede o destino novo em vez de reconectar aqui.
+const CLOSE_MOVED = 4011
 
 export interface RemoteState {
   name: string
@@ -44,7 +47,11 @@ export interface NetCallbacks {
   /** O servidor tirou você de dentro de uma casa que cresceu (troca de nível). */
   onMoved?: (p: { x: number; z: number; facing: number }) => void
   /** Pede ao backend uma reserva nova. null = sem acesso (não insistir). */
-  fetchSession: () => Promise<MultiplayerSession | null>
+  fetchSession: () => Promise<(MultiplayerSession & { sceneKey?: string }) | null>
+  /** Ambiente desta conexão ("nb:…" / "house:…"). Reserva de outro = trocar de ambiente. */
+  sceneKey?: string
+  /** Outras mensagens do servidor (visitas, assentos…). */
+  onMessage?: (type: string, payload: unknown) => void
 }
 
 /** Nível confirmado de uma casa (chave = número do lote). Só número e revisão. */
@@ -125,11 +132,20 @@ export class NetClient {
     room.onMessage("replaced", () => {
       replaced = true
     })
+    for (const type of ["visits", "visit_ended", "seat", "stood"]) {
+      room.onMessage(type, (p: unknown) => {
+        if (!this.disposed) this.cb.onMessage?.(type, p)
+      })
+    }
     room.onLeave((code) => {
       if (this.room === room) this.room = null
       if (this.disposed) return
       if (replaced || code === CLOSE_REPLACED) {
         this.setStatus("replaced")
+        return
+      }
+      if (code === CLOSE_MOVED) {
+        this.setStatus("moved")
         return
       }
       if (code === CLOSE_FORBIDDEN) {
@@ -162,6 +178,7 @@ export class NetClient {
       if (this.disposed) return
       if (session === null) this.setStatus("offline")
       else if (session === "retry") this.scheduleRetry()
+      else if (this.cb.sceneKey && session.sceneKey && session.sceneKey !== this.cb.sceneKey) this.setStatus("moved")
       else void this.connect(session)
     }, wait)
   }
@@ -178,6 +195,7 @@ export class NetClient {
     try {
       const s = await this.cb.fetchSession()
       if (!s) return this.setStatus("offline")
+      if (this.cb.sceneKey && s.sceneKey && s.sceneKey !== this.cb.sceneKey) return this.setStatus("moved")
       await this.connect(s)
     } catch {
       this.scheduleRetry()
@@ -205,6 +223,16 @@ export class NetClient {
 
   sendBody(body: BodyId) {
     this.room?.send("body", { body })
+  }
+
+  /** Mensagem avulsa (sentar, levantar). */
+  send(type: string, payload: unknown) {
+    this.room?.send(type, payload)
+  }
+
+  /** Estado decodificado da sala (a casa lê os jogadores daqui). */
+  state<T>(): T | null {
+    return (this.room?.state as T) ?? null
   }
 
   dispose() {

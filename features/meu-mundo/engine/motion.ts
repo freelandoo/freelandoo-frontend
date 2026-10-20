@@ -37,7 +37,8 @@ export interface Body {
   facing: number
 }
 
-export type MoveState = 0 | 1 | 2
+/** 0 parado, 1 andando, 2 correndo, 3 sentado (só dentro das casas). */
+export type MoveState = 0 | 1 | 2 | 3
 
 export function step(
   body: Body,

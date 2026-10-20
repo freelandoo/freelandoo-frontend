@@ -95,10 +95,16 @@ export class Character {
     }
   }
 
-  place(x: number, z: number, facing: number) {
-    this.holder.position.set(x, 0, z)
+  place(x: number, z: number, facing: number, y = 0) {
+    this.holder.position.set(x, y, z)
     this.holder.rotation.y = facing
-    this.shadow.position.set(x, 0.09, z)
+    this.shadow.position.set(x, y + 0.09, z)
+  }
+
+  /** Esconde (outro andar) sem descartar. */
+  setVisible(v: boolean) {
+    this.holder.setEnabled(v)
+    this.shadow.setEnabled(v)
   }
 
   animate(dt: number, move: MoveState, speed: number) {
@@ -206,6 +212,8 @@ export class RemotePlayer {
   private tz: number
   private tf: number
   private tMove: MoveState = 0
+  y = 0
+  private ty = 0
   private lastX: number
   private lastZ: number
   private speed = 0
@@ -217,11 +225,12 @@ export class RemotePlayer {
     char.place(x, z, facing)
   }
 
-  setTarget(x: number, z: number, facing: number, move: MoveState) {
+  setTarget(x: number, z: number, facing: number, move: MoveState, y = 0) {
     this.tx = x
     this.tz = z
     this.tf = facing
     this.tMove = move
+    this.ty = y
   }
 
   update(dt: number) {
@@ -229,17 +238,19 @@ export class RemotePlayer {
     if (err > 8) {
       this.x = this.tx
       this.z = this.tz
+      this.y = this.ty
     } else {
       const k = 1 - Math.exp(-10 * dt)
       this.x += (this.tx - this.x) * k
       this.z += (this.tz - this.z) * k
+      this.y += (this.ty - this.y) * k
     }
     this.facing = lerpAngle(this.facing, this.tf, 1 - Math.exp(-10 * dt))
     const inst = dt > 0 ? Math.hypot(this.x - this.lastX, this.z - this.lastZ) / dt : 0
     this.speed += (inst - this.speed) * (1 - Math.exp(-8 * dt))
     this.lastX = this.x
     this.lastZ = this.z
-    this.char.place(this.x, this.z, this.facing)
+    this.char.place(this.x, this.z, this.facing, this.y)
     this.char.animate(dt, this.tMove, this.speed)
   }
 

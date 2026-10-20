@@ -44,13 +44,30 @@ import {
 let live = 0
 export const liveGames = () => live
 
+/**
+ * Conta mais um jogo vivo (bairro OU interior) e devolve a função que o
+ * desconta. `window.__mmLiveGames()` confere que trocar de ambiente não
+ * acumula motores: o número fica em 0 ou 1.
+ */
+export function liveGamesBump() {
+  live++
+  ;(window as unknown as { __mmLiveGames?: () => number }).__mmLiveGames = liveGames
+  let done = false
+  return () => {
+    if (done) return
+    done = true
+    live--
+  }
+}
+liveGamesBump.count = liveGames
+
 export interface GameOptions {
   canvas: HTMLCanvasElement
   payload: NeighborhoodPayload
   exitLabel: string
   /** Teto da resolução interna (pixels de tela por pixel CSS). */
   maxPixelRatio?: number
-  fetchSession: () => Promise<MultiplayerSession | null>
+  fetchSession: () => Promise<(MultiplayerSession & { sceneKey?: string }) | null>
   onReady?: () => void
   onNearbyChange?: (item: Interactable | null) => void
   onInteract?: (item: Interactable) => void
@@ -64,6 +81,8 @@ export interface GameOptions {
   onResidents?: (count: number) => void
   /** Casa de um lote: nível confirmado × exibido, carregamento e falha. */
   onHouseVisual?: (v: HouseVisual) => void
+  /** Mensagens de visita vindas da sala (convites, fim de visita). */
+  onServerMessage?: (type: string, payload: unknown) => void
 }
 
 export interface GameHandle {
@@ -102,8 +121,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     { stencil: false, preserveDrawingBuffer: false, powerPreference: "default" },
     false,
   )
-  live++
-  ;(window as unknown as { __mmLiveGames?: () => number }).__mmLiveGames = liveGames
+  const unlive = liveGamesBump()
   let disposed = false
 
   const ratio = Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5)
@@ -182,6 +200,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       follow.snapBehind(p.x, p.z, p.facing)
     },
     fetchSession: opts.fetchSession,
+    sceneKey: payload.sceneKey,
+    onMessage: (type, p) => {
+      if (!disposed) opts.onServerMessage?.(type, p)
+    },
   })
   const mp = payload.multiplayer
   if (mp && "reservation" in mp) void net.connect(mp)
@@ -422,7 +444,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       shadowMat.dispose()
       scene.dispose()
       engine.dispose()
-      live--
+      unlive()
     },
   }
   return handle

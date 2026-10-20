@@ -12,25 +12,39 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { Scene } from "@babylonjs/core/scene"
 import { pointBlocked, type Box2 } from "./collision"
 
-const MIN_PITCH = 0.62 // rad a partir da vertical
-const MAX_PITCH = 1.32
-const MIN_DIST = 4.5
-const MAX_DIST = 14
 const EYE = 1.3
+
+/** Rua (padrão) × dentro de casa: lá a câmera fica mais perto e mais alta. */
+export interface CameraLimits {
+  minPitch: number // rad a partir da vertical
+  maxPitch: number
+  minDist: number
+  maxDist: number
+  dist: number
+  pitch: number
+}
+export const STREET_CAMERA: CameraLimits = { minPitch: 0.62, maxPitch: 1.32, minDist: 4.5, maxDist: 14, dist: 9, pitch: 1.08 }
+// Dentro de casa: paredes de 2,6 m e cômodos pequenos. Mais inclinada (vê o
+// cômodo por cima das paredes) e mais perto; o teto do andar não é desenhado.
+export const INDOOR_CAMERA: CameraLimits = { minPitch: 0.42, maxPitch: 0.95, minDist: 3.2, maxDist: 9, dist: 6.2, pitch: 0.72 }
 
 export class FollowCamera {
   readonly camera: TargetCamera
   private yaw = -Math.PI / 2
-  private pitch = 1.08
+  private pitch: number
   /** Inclinação aplicada: a escolhida, ou mais alta enquanto há obstáculo. */
-  private effPitch = 1.08
-  private dist = 9
-  private actual = 9
+  private effPitch: number
+  private dist: number
+  private actual: number
   private tx = 0
   private tz = 0
+  /** Altura do chão sob o personagem (andar, escada). */
+  private ty = 0
   private readonly target = new Vector3()
 
-  constructor(scene: Scene) {
+  constructor(scene: Scene, private readonly lim: CameraLimits = STREET_CAMERA) {
+    this.pitch = this.effPitch = lim.pitch
+    this.dist = this.actual = lim.dist
     this.camera = new TargetCamera("mm-camera", new Vector3(0, 8, -9), scene)
     this.camera.minZ = 0.3
     this.camera.maxZ = 260
@@ -46,13 +60,18 @@ export class FollowCamera {
     this.effPitch = this.pitch
   }
 
+  /** Coloca a altura de uma vez (entrada na casa, troca de andar pelo servidor). */
+  snapHeight(y: number) {
+    this.ty = y
+  }
+
   rotate(dYaw: number, dPitch: number) {
     this.yaw -= dYaw
-    this.pitch = Math.max(MIN_PITCH, Math.min(MAX_PITCH, this.pitch - dPitch))
+    this.pitch = Math.max(this.lim.minPitch, Math.min(this.lim.maxPitch, this.pitch - dPitch))
   }
 
   zoom(delta: number) {
-    this.dist = Math.max(MIN_DIST, Math.min(MAX_DIST, this.dist + delta))
+    this.dist = Math.max(this.lim.minDist, Math.min(this.lim.maxDist, this.dist + delta))
   }
 
   /** Direção "para a frente" no chão, do ponto de vista da câmera. */
@@ -69,18 +88,20 @@ export class FollowCamera {
     // Folga pequena (0,2 m): o personagem pode estar colado na parede, e uma
     // folga maior já "encostaria" no próprio personagem e bloquearia tudo.
     for (let d = 1; d <= this.dist; d += 0.3) {
-      if (pointBlocked(this.tx + dx * d, EYE + dy * d, this.tz + dz * d, boxes, 0.2)) {
+      if (pointBlocked(this.tx + dx * d, this.ty + EYE + dy * d, this.tz + dz * d, boxes, 0.2)) {
         return Math.max(1, d - 0.4)
       }
     }
     return this.dist
   }
 
-  update(dt: number, px: number, pz: number, boxes: Box2[]) {
+  update(dt: number, px: number, pz: number, boxes: Box2[], py = 0) {
     const follow = 1 - Math.exp(-12 * dt)
     this.tx += (px - this.tx) * follow
     this.tz += (pz - this.tz) * follow
-    this.target.set(this.tx, EYE, this.tz)
+    // Subindo a escada a câmera acompanha a altura (mais devagar, sem tranco).
+    this.ty += (py - this.ty) * (1 - Math.exp(-8 * dt))
+    this.target.set(this.tx, this.ty + EYE, this.tz)
 
     // Caminho bloqueado perto do personagem (ele está encostado numa casa,
     // de frente para a câmera)? Só encurtar poria a câmera dentro da parede:
@@ -103,7 +124,7 @@ export class FollowCamera {
     const sp = Math.sin(this.effPitch)
     this.camera.position.set(
       this.tx + Math.cos(this.yaw) * sp * this.actual,
-      EYE + Math.cos(this.effPitch) * this.actual,
+      this.ty + EYE + Math.cos(this.effPitch) * this.actual,
       this.tz + Math.sin(this.yaw) * sp * this.actual,
     )
     this.camera.setTarget(this.target)

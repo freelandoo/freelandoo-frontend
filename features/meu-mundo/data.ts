@@ -5,10 +5,10 @@
 // Quem decide quem pode ver é o SERVIDOR (auth + papel Administrator): 401 e
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
-import type { MultiplayerSession, NeighborhoodPayload } from "./types"
+import type { HousePayload, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState } from "./types"
 
 export type NeighborhoodResult =
-  | { ok: true; payload: NeighborhoodPayload }
+  | { ok: true; payload: ScenePayload }
   | { ok: false; reason: "unauthenticated" | "forbidden" | "invalid" | "network" }
 
 export async function fetchAdminNeighborhood(
@@ -30,15 +30,37 @@ export async function fetchAdminNeighborhood(
   if (res.status === 403) return { ok: false, reason: "forbidden" }
   if (!res.ok) return { ok: false, reason: "network" }
 
-  const body = (await res.json().catch(() => null)) as NeighborhoodPayload | null
-  return isValidPayload(body) ? { ok: true, payload: body } : { ok: false, reason: "invalid" }
+  const body = (await res.json().catch(() => null)) as ScenePayload | null
+  return isValidScene(body) ? { ok: true, payload: body } : { ok: false, reason: "invalid" }
+}
+
+/** Confere a forma de qualquer ambiente (rua ou interior). */
+export function isValidScene(body: unknown): body is ScenePayload {
+  const b = body as ScenePayload | null
+  if (b && (b as HousePayload).scene === "house") return isValidHouse(b as HousePayload)
+  return isValidPayload(b as NeighborhoodPayload | null)
+}
+
+function isValidHouse(b: HousePayload): boolean {
+  const d = b?.interior
+  return (
+    !!d &&
+    Array.isArray(d.floors) &&
+    d.floors.length > 0 &&
+    d.floors.every((f) => Array.isArray(f.boxes) && Array.isArray(f.rooms) && !!f.bounds) &&
+    Array.isArray(d.seats) &&
+    !!d.entry &&
+    !!d.exit &&
+    !!b.house &&
+    !!b.me
+  )
 }
 
 /**
  * Reserva nova para (re)conectar. O servidor revalida login, papel e
  * residência. null = sem acesso (não insistir); lança em falha de rede.
  */
-export async function fetchSession(token: string): Promise<MultiplayerSession | null> {
+export async function fetchSession(token: string): Promise<(MultiplayerSession & { sceneKey?: string }) | null> {
   const res = await fetch("/api/meu-mundo/admin/session", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
@@ -46,10 +68,45 @@ export async function fetchSession(token: string): Promise<MultiplayerSession | 
   })
   if (res.status === 401 || res.status === 403 || res.status === 409) return null
   if (!res.ok) throw new Error(`session ${res.status}`)
-  const body = (await res.json().catch(() => null)) as { multiplayer?: MultiplayerSession } | null
+  const body = (await res.json().catch(() => null)) as { multiplayer?: MultiplayerSession; sceneKey?: string } | null
   if (!body?.multiplayer?.reservation) throw new Error("session inválida")
-  return body.multiplayer
+  return { ...body.multiplayer, sceneKey: body.sceneKey }
 }
+
+// ═══ mm3d-09: casa e visitas ════════════════════════════════════════════════
+export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; error: string; code?: string }
+
+async function call<T>(token: string, method: "GET" | "POST", path: string, body?: unknown): Promise<ApiResult<T>> {
+  let res: Response
+  try {
+    res = await fetch(`/api/meu-mundo/admin${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, ...(body !== undefined ? { "Content-Type": "application/json" } : {}) },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+    })
+  } catch {
+    return { ok: false, status: 0, error: "network" }
+  }
+  const data = (await res.json().catch(() => null)) as (T & { error?: string; code?: string }) | null
+  if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}`, code: data?.code }
+  return { ok: true, data }
+}
+
+/** Entrar na casa do lote (o servidor confere posição, propriedade e convite). */
+export const postHouseEnter = (token: string, lot: number) => call<ScenePayload>(token, "POST", "/house/enter", { lot })
+/** Sair pela porta: devolve a rua do bairro da casa. */
+export const postHouseExit = (token: string) => call<ScenePayload>(token, "POST", "/house/exit", {})
+export const getVisits = (token: string) => call<VisitState>(token, "GET", "/visits")
+export const getInviteCandidates = (token: string) =>
+  call<{ candidates: { name: string; available: boolean; reason: string | null }[] }>(token, "GET", "/visits/candidates")
+export const postInvite = (token: string, name: string) => call<{ visit: VisitState }>(token, "POST", "/visits", { name })
+export const postAccept = (token: string, id: string) =>
+  call<{ stay: boolean; scene?: ScenePayload; visits?: VisitState }>(token, "POST", `/visits/${encodeURIComponent(id)}/accept`, {})
+export const postDecline = (token: string, id: string) => call<{ ok: true }>(token, "POST", `/visits/${encodeURIComponent(id)}/decline`, {})
+export const postCancel = (token: string, id: string) => call<{ ok: true }>(token, "POST", `/visits/${encodeURIComponent(id)}/cancel`, {})
+export const postEndVisit = (token: string, id: string) =>
+  call<{ ok: true; scene?: ScenePayload | null; visits?: VisitState }>(token, "POST", `/visits/${encodeURIComponent(id)}/end`, {})
 
 // Conferência mínima da forma: dado torto aqui vira cena quebrada lá na frente,
 // e é melhor dizer "não carregou" do que desenhar um bairro pela metade.
@@ -70,7 +127,7 @@ function isValidPayload(body: NeighborhoodPayload | null): body is NeighborhoodP
 
 export type HouseLevelResult =
   | { ok: true; house: number; level: number; rev: number }
-  | { ok: false; status: number; error: string }
+  | { ok: false; status: number; error: string; code?: string }
 
 /**
  * Troca o nível da PRÓPRIA casa (seletor de teste). Manda só o número: o
@@ -88,9 +145,9 @@ export async function postHouseLevel(token: string, level: number): Promise<Hous
   } catch {
     return { ok: false, status: 0, error: "network" }
   }
-  const body = (await res.json().catch(() => null)) as { house?: number; level?: number; rev?: number; error?: string } | null
+  const body = (await res.json().catch(() => null)) as { house?: number; level?: number; rev?: number; error?: string; code?: string } | null
   if (!res.ok || !body || typeof body.level !== "number" || typeof body.rev !== "number") {
-    return { ok: false, status: res.status, error: body?.error || `http ${res.status}` }
+    return { ok: false, status: res.status, error: body?.error || `http ${res.status}`, code: body?.code }
   }
   return { ok: true, house: Number(body.house), level: body.level, rev: body.rev }
 }

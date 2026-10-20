@@ -155,9 +155,13 @@ export interface SeatReservation {
 export interface MultiplayerSession {
   wsPath: string
   reservation: SeatReservation
+  sceneKey?: string
 }
 
 export interface NeighborhoodPayload {
+  scene?: "neighborhood"
+  /** Em que sala a reserva vale ("nb:<id>"). */
+  sceneKey?: string
   release: string
   demo: boolean
   environment: string
@@ -168,9 +172,140 @@ export interface NeighborhoodPayload {
     house: number
     newResidence: boolean
     home: Vec2 & { rotationY: number }
+    /** Na rua de OUTRO bairro, por visita. */
+    visitor?: boolean
+    /** Casa que este jogador pode visitar aqui (visita ativa). */
+    visiting?: { house: number; hostName: string } | null
+    homeNeighborhood?: boolean
   }
   motion: { walkSpeed: number; runSpeed: number }
   multiplayer: MultiplayerSession | { error: string } | null
+  visits?: VisitState
+}
+
+// ═══ Interiores (mm3d-09) ═══════════════════════════════════════════════════
+export type FloorMat = "wood" | "tile" | "carpet" | "stone"
+
+export interface InteriorRoom {
+  id: string
+  name: string
+  mat: FloorMat
+  x0: number
+  z0: number
+  x1: number
+  z1: number
+  outdoor?: boolean
+}
+
+export interface InteriorWall {
+  x: number
+  z: number
+  hx: number
+  hz: number
+  /** Altura relativa ao piso. */
+  h: number
+  kind: "ext" | "int" | "facade" | "rail"
+}
+
+export interface InteriorFurniture {
+  t: string
+  x: number
+  z: number
+  /** Giro em graus (múltiplos de 90). */
+  r: number
+  w?: number
+  d?: number
+  h?: number
+}
+
+export interface InteriorFloor {
+  y: number
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
+  rooms: InteriorRoom[]
+  walls: InteriorWall[]
+  windows: { x: number; z: number; axis: "x" | "z"; inward: number }[]
+  /** Laje (andares de cima): os cômodos menos o vão da escada. */
+  slabs: { x0: number; z0: number; x1: number; z1: number; mat: FloorMat }[] | null
+  furniture: InteriorFurniture[]
+  /** A MESMA lista que a sala da casa usa (h absoluto, para a câmera). */
+  boxes: Box2Def[]
+}
+
+export interface InteriorStair {
+  x0: number
+  x1: number
+  z0: number
+  z1: number
+  dir: "+z" | "-z" | "+x" | "-x"
+  from: number
+  to: number
+}
+
+export interface InteriorSeat {
+  id: string
+  floor: number
+  x: number
+  z: number
+  facing: number
+  stand: Vec2
+  kind: string
+}
+
+export interface InteriorDef {
+  level: number
+  version: string
+  name: string
+  floors: InteriorFloor[]
+  stairs: InteriorStair[]
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
+  seats: InteriorSeat[]
+  seatTop: number
+  /** Medidas-padrão de cada tipo de móvel (largura, profundidade, altura). */
+  furnitureTypes: Record<string, { w: number; d: number; h: number }>
+  entry: Vec2 & { facing: number; floor: number }
+  exit: Vec2 & { radius: number; floor: number }
+  door: Vec2 & { w: number }
+}
+
+export interface HousePayload {
+  scene: "house"
+  sceneKey: string
+  release: string
+  environment: string
+  house: {
+    id: string
+    number: number
+    level: number
+    ownerName: string
+    neighborhoodName: string
+    isMine: boolean
+  }
+  interior: InteriorDef
+  me: { name: string; body: BodyId; role: "owner" | "guest" }
+  motion: { walkSpeed: number; runSpeed: number }
+  multiplayer: MultiplayerSession | { error: string } | null
+  visits?: VisitState
+}
+
+export type ScenePayload = (NeighborhoodPayload & { scene?: "neighborhood" }) | HousePayload
+
+export interface VisitPublic {
+  id: string
+  status: "pending" | "active"
+  hostName: string
+  guestName: string
+  house: number
+  neighborhoodName: string
+  expiresAt: string
+  expiresIn: number
+  role?: "host" | "guest"
+}
+
+export interface VisitState {
+  outgoing: VisitPublic | null
+  incoming: VisitPublic[]
+  active: (VisitPublic & { role: "host" | "guest" }) | null
+  rules: { inviteTtlMs: number; disconnectGraceMs: number }
 }
 
 /** Estado da casa de um lote: o confirmado pelo servidor × o que está na tela. */
@@ -183,12 +318,14 @@ export interface HouseVisual {
   progress?: number
 }
 
-export type NetStatus = "connecting" | "online" | "reconnecting" | "offline" | "replaced"
+export type NetStatus = "connecting" | "online" | "reconnecting" | "offline" | "replaced" | "moved"
 
 /** O que o jogador pode acionar quando está perto. */
 export type Interactable =
   | { kind: "house"; id: string; x: number; z: number; radius: number; lot: Lot; house: House }
   | { kind: "exit"; id: string; x: number; z: number; radius: number; label: string }
+  | { kind: "door"; id: string; x: number; z: number; radius: number }
+  | { kind: "seat"; id: string; x: number; z: number; radius: number; seat: InteriorSeat }
 
 export interface GameStats {
   fps: number
