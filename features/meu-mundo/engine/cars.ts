@@ -12,10 +12,8 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
-import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder"
 import type { AssetContainer, InstantiatedEntries } from "@babylonjs/core/assetContainer"
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
-import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { Scene } from "@babylonjs/core/scene"
 import { ensureLoaders } from "./avatars"
 import { lerpAngle, CAR } from "./motion"
@@ -30,7 +28,6 @@ const TEXTURE = "car-sport-basecolor-1024.jpg"
 interface CarView {
   holder: TransformNode
   entries: InstantiatedEntries | null
-  shadow: Mesh
   x: number
   z: number
   facing: number
@@ -43,18 +40,12 @@ export class CarFleet {
   private container: Promise<AssetContainer> | null = null
   private material: StandardMaterial | null = null
   private readonly views = new Map<string, CarView>()
-  private readonly shadowMat: StandardMaterial
   private disposed = false
   /** Última posição conhecida de cada carro (para colisão e interação). */
   readonly latest = new Map<string, CarState>()
 
   constructor(private readonly scene: Scene) {
     ensureLoaders()
-    this.shadowMat = new StandardMaterial("mm-car-shadow", scene)
-    this.shadowMat.diffuseColor = new Color3(0, 0, 0)
-    this.shadowMat.specularColor = new Color3(0, 0, 0)
-    this.shadowMat.disableLighting = true
-    this.shadowMat.alpha = 0.25
   }
 
   private load() {
@@ -89,12 +80,8 @@ export class CarFleet {
 
   private create(key: string, c: CarState): CarView {
     const holder = new TransformNode(`mm-car-${key}`, this.scene)
-    const shadow = MeshBuilder.CreateGround(`mm-car-shadow-${key}`, { width: CAR.HX * 2.2, height: CAR.HZ * 2.15 }, this.scene)
-    shadow.material = this.shadowMat
-    shadow.isPickable = false
-    shadow.parent = holder
-    shadow.position.y = 0.03
-    const view: CarView = { holder, entries: null, shadow, x: c.x, z: c.z, facing: c.facing, tx: c.x, tz: c.z, tf: c.facing }
+    // Sem sombra no chão (pedido do Alex): só o carro.
+    const view: CarView = { holder, entries: null, x: c.x, z: c.z, facing: c.facing, tx: c.x, tz: c.z, tf: c.facing }
     this.place(view)
     void this.load()
       .then((container) => {
@@ -170,7 +157,6 @@ export class CarFleet {
 
   private drop(v: CarView) {
     v.entries?.dispose()
-    v.shadow.dispose()
     v.holder.dispose()
   }
 
@@ -187,6 +173,5 @@ export class CarFleet {
     this.container?.then((c) => c.dispose()).catch(() => {})
     this.material?.diffuseTexture?.dispose()
     this.material?.dispose()
-    this.shadowMat.dispose()
   }
 }
