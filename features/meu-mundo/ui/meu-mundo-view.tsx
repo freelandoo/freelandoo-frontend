@@ -34,6 +34,7 @@ import {
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
+import { CarTuningPanel, TouchDriveControls } from "./drive-controls"
 import { fetchSession, postHouseLevel } from "../data"
 import {
   BODY_IDS,
@@ -48,7 +49,7 @@ import {
 } from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-11"
+export const CLIENT_RELEASE = "mm3d-12"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 export const BTN =
@@ -95,6 +96,8 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
   const [bodyOpen, setBodyOpen] = useState(false)
   const [running, setRunning] = useState(false)
   const [residents, setResidents] = useState(nb.residents)
+  // Lote do carro que você dirige (0 = a pé) — confirmado pela sala.
+  const [drivingLot, setDrivingLot] = useState(0)
   // Casa do jogador: nível confirmado × exibido (o seletor de teste mostra os dois).
   const myLot = payload.me.house
   const myHouse = nb.houses[myLot - 1]
@@ -167,6 +170,7 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
           onResidents: (n) => alive && setResidents(n),
+          onDriving: (lot) => alive && setDrivingLot(lot),
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (it) => alive && setNearby(it),
           // Própria casa ou casa visitada: E entra (o "Alterar casa" é botão
@@ -430,6 +434,7 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
               <div>
                 {t("netShort", "Rede")} {net} · {online}
               </div>
+              <CarTuningPanel stats={stats} gameRef={gameRef} />
               <div>
                 {t("houseModels", "Casas na GPU")} {stats.houseModels.length ? stats.houseModels.map((n) => String(n).padStart(2, "0")).join(",") : "—"}
               </div>
@@ -455,9 +460,13 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
               : { bottom: SAFE.bottom, left: SAFE.left }
           }
         >
-          {isTouch
-            ? t("helpTouch2", "Joystick: andar · Correr: corrida lenta · Arraste a tela: girar a câmera · Botão: interagir")
-            : t("helpDesktop2", "WASD ou setas: andar · Shift: corrida lenta · Arraste: girar a câmera · Roda: zoom · E: interagir")}
+          {drivingLot
+            ? isTouch
+              ? t("helpDriveTouch", "◀ ▶: volante · Acelera · Freio/Ré (parado, engata a ré) · Freio de mão: derrapar")
+              : t("helpDriveDesktop", "W/↑ acelerar · S/↓ frear (parado, ré) · A/D ou ←/→ direção · Espaço: freio de mão · E: sair")
+            : isTouch
+              ? t("helpTouch2", "Joystick: andar · Correr: corrida lenta · Arraste a tela: girar a câmera · Botão: interagir")
+              : t("helpDesktop2", "WASD ou setas: andar · Shift: corrida lenta · Arraste: girar a câmera · Roda: zoom · E: interagir")}
           <span className="ml-2 text-[#8A6400]">{t("hideHelp", "(ocultar)")}</span>
         </button>
       )}
@@ -474,7 +483,7 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
       )}
 
       {/* Computador: a própria casa (e a casa visitada) ganha botão clicável, com o atalho E nele */}
-      {status === "ready" && nearbyAction && !open && !levelOpen && !isTouch && (
+      {status === "ready" && nearbyAction && !open && !levelOpen && !isTouch && !drivingLot && (
         <div
           className="absolute left-1/2 flex -translate-x-1/2 items-stretch gap-2"
           style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
@@ -505,7 +514,34 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
       )}
 
       {/* Controles de toque */}
-      {status === "ready" && isTouch && !open && !levelOpen && (
+      {status === "ready" && !!drivingLot && !open && !levelOpen && (
+        <div
+          className="absolute left-1/2 flex -translate-x-1/2 gap-2"
+          style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 96px)" }}
+        >
+          <button
+            type="button"
+            onClick={() => gameRef.current?.interact()}
+            className="inline-flex h-11 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 text-[12px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+          >
+            <CarFront className="h-5 w-5" />
+            {t("exitCar", "Sair do carro")}
+          </button>
+          <button
+            type="button"
+            onClick={() => gameRef.current?.recoverCar()}
+            className="inline-flex h-11 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F7F0D9] px-3 text-[11px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+            title={t("recoverHint", "Carro preso? Volta para a vaga da casa (parado, a cada 15 s).")}
+          >
+            <RefreshCw className="h-4 w-4" />
+            {t("recoverCar", "Recuperar")}
+          </button>
+        </div>
+      )}
+
+      {status === "ready" && isTouch && !open && !levelOpen && !!drivingLot && <TouchDriveControls gameRef={gameRef} />}
+
+      {status === "ready" && isTouch && !open && !levelOpen && !drivingLot && (
         <>
           <Joystick gameRef={gameRef} />
           <button

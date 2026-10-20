@@ -28,9 +28,30 @@ export const STREET_CAMERA: CameraLimits = { minPitch: 0.62, maxPitch: 1.32, min
 // cômodo por cima das paredes) e mais perto; o teto do andar não é desenhado.
 export const INDOOR_CAMERA: CameraLimits = { minPitch: 0.42, maxPitch: 0.95, minDist: 3.2, maxDist: 9, dist: 6.2, pitch: 0.72 }
 
+/**
+ * Perseguição do carro (mm3d-12): atrás e acima, acompanhando o RUMO do carro
+ * (não a velocidade — na ré a câmera não dá meia-volta), com atraso
+ * controlado nas curvas, olhando um pouco à frente e com o FOV abrindo de
+ * leve com a velocidade. Não herda arfagem/rolagem da carroceria.
+ */
+export const CHASE = {
+  dist: 7.2,
+  pitch: 1.2,
+  yawRate: 3.2,
+  lookAhead: 0.18,
+  maxAhead: 3.5,
+  fovBase: 0.85,
+  fovFast: 0.97,
+  fastSpeed: 19,
+}
+
 export class FollowCamera {
   readonly camera: TargetCamera
   private yaw = -Math.PI / 2
+  private chasing = false
+  /** Giro feito pelo jogador sobre a perseguição; volta sozinho a zero. */
+  private chaseOffset = 0
+  private saved: { dist: number; pitch: number } | null = null
   private pitch: number
   /** Inclinação aplicada: a escolhida, ou mais alta enquanto há obstáculo. */
   private effPitch: number
@@ -66,12 +87,60 @@ export class FollowCamera {
   }
 
   rotate(dYaw: number, dPitch: number) {
+    if (this.chasing) {
+      this.chaseOffset = Math.max(-1.6, Math.min(1.6, this.chaseOffset - dYaw))
+      this.pitch = Math.max(this.lim.minPitch, Math.min(this.lim.maxPitch, this.pitch - dPitch))
+      return
+    }
     this.yaw -= dYaw
     this.pitch = Math.max(this.lim.minPitch, Math.min(this.lim.maxPitch, this.pitch - dPitch))
   }
 
   zoom(delta: number) {
+    if (this.chasing) {
+      this.dist = Math.max(4.5, Math.min(12, this.dist + delta))
+      return
+    }
     this.dist = Math.max(this.lim.minDist, Math.min(this.lim.maxDist, this.dist + delta))
+  }
+
+  /** Liga/desliga a perseguição do carro. Ao sair, devolve a câmera a pé. */
+  setChase(on: boolean, facing = 0) {
+    if (on === this.chasing) return
+    this.chasing = on
+    this.chaseOffset = 0
+    if (on) {
+      this.saved = { dist: this.dist, pitch: this.pitch }
+      this.dist = CHASE.dist
+      this.pitch = CHASE.pitch
+      this.yaw = Math.atan2(-Math.cos(facing), -Math.sin(facing))
+    } else {
+      if (this.saved) {
+        this.dist = this.saved.dist
+        this.pitch = this.saved.pitch
+      }
+      this.saved = null
+      this.camera.fov = CHASE.fovBase
+    }
+  }
+
+  get isChasing() {
+    return this.chasing
+  }
+
+  /** Um quadro de perseguição: segue o rumo do carro com atraso suave. */
+  chase(dt: number, x: number, z: number, facing: number, speed: number, boxes: Box2[]) {
+    const want = Math.atan2(-Math.cos(facing), -Math.sin(facing)) + this.chaseOffset
+    let d = want - this.yaw
+    while (d > Math.PI) d -= Math.PI * 2
+    while (d < -Math.PI) d += Math.PI * 2
+    this.yaw += d * (1 - Math.exp(-CHASE.yawRate * dt))
+    this.chaseOffset *= Math.exp(-0.8 * dt)
+    const t = Math.min(1, Math.abs(speed) / CHASE.fastSpeed)
+    const fov = CHASE.fovBase + (CHASE.fovFast - CHASE.fovBase) * t * t
+    this.camera.fov += (fov - this.camera.fov) * (1 - Math.exp(-3 * dt))
+    const ahead = Math.min(CHASE.maxAhead, Math.max(0, speed) * CHASE.lookAhead)
+    this.update(dt, x + Math.sin(facing) * ahead, z + Math.cos(facing) * ahead, boxes)
   }
 
   /** Direção "para a frente" no chão, do ponto de vista da câmera. */

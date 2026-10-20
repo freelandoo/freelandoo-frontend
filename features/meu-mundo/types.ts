@@ -348,4 +348,17 @@ export interface GameStats {
   avatars: number
   /** Níveis de casa com modelo na GPU agora. */
   houseModels: number[]
+  /** Dirigindo (mm3d-12): telemetria do SEU carro, só no painel técnico. */
+  car?: {
+    kmh: number
+    gear: number
+    steerDeg: number
+    slip: number
+    betaDeg: number
+    drifting: boolean
+    contacts: number
+    handbrake: number
+    /** Distância entre a sua previsão e a posição confirmada pela sala (m). */
+    serverErr: number
+  } | null
 }

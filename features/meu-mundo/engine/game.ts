@@ -28,9 +28,10 @@ import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
 import { NetClient } from "./net"
-import { CAR, CAR_SHAPE, CAR_SPEEDS, MOTION, type Intent, type MoveState } from "./motion"
-import { CarFleet } from "./cars"
-import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type InputState } from "./input"
+import { CAR, MOTION, lerpAngle, type Intent, type MoveState } from "./motion"
+import { CarFleet, type CarPose } from "./cars"
+import { STEP, MAX_STEPS, IDLE_DRIVE, createVehicle, stepVehicle, tuned, sanitizeTuning, type Tuning, type VehicleState } from "./vehicle"
+import { attachInput, clearInput, createInputState, driveAxis, moveAxis, wantsRun, type InputState } from "./input"
 import {
   BODY_IDS,
   type BodyId,
@@ -104,6 +105,12 @@ export interface GameHandle {
   retryHouse: (lot: number) => void
   houseVisual: (lot: number) => HouseVisual | null
   setStatsEnabled: (on: boolean) => void
+  /** Botão de direção do celular apertado/solto (cada um com o próprio dedo). */
+  setTouchDrive: (key: "left" | "right" | "gas" | "brake" | "hb", on: boolean) => void
+  /** Ajuste de dirigibilidade (painel do administrador); null = padrão. */
+  setTuning: (t: Tuning | null) => void
+  /** Pede à sala para devolver o carro preso à vaga da casa. */
+  recoverCar: () => void
   dispose: () => void
 }
 
@@ -156,6 +163,24 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const fleet = new CarFleet(scene)
   /** Lote do carro que você está dirigindo (0 = a pé). Quem decide é a sala. */
   let driving = 0
+  // ── Carro previsto (mm3d-12) ──
+  // A física roda aqui em passo fixo (vehicle.ts, espelho do servidor); a
+  // apresentação interpola entre o passo anterior e o atual (alpha), e a
+  // previsão converge suavemente para o estado da sala.
+  let veh: VehicleState | null = null
+  const prevPose = { x: 0, z: 0, yaw: 0 }
+  let tune: Tuning | null = null
+  let serverErr = 0
+  const pose: CarPose = { x: 0, z: 0, facing: 0, sp: 0, st: 0, hb: 0, sl: 0, ax: 0, ay: 0 }
+  // Só em desenvolvimento: o teste de navegador pode comandar o carro com
+  // valores proporcionais a cada quadro (a física, a sala e o desenho são os
+  // reais). Fora do build de produção.
+  const devDrive: { current: import("./vehicle").DriveInput | null } = { current: null }
+  if (process.env.NODE_ENV !== "production") {
+    ;(window as unknown as { __mmDriveOverride?: (d: import("./vehicle").DriveInput | null) => void }).__mmDriveOverride = (d) => {
+      devDrive.current = d
+    }
+  }
 
   const fallbackMat = new StandardMaterial("mm-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
@@ -171,7 +196,22 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   let myBody: BodyId = isBody(payload.me.body) ? payload.me.body : "normal"
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true), home.x, home.z, home.rotationY)
   // Conferência (como __mmHouse): onde estou e se estou dirigindo.
-  const probe = () => ({ x: local.x, z: local.z, driving })
+  const probe = () => ({
+    x: local.x,
+    z: local.z,
+    driving,
+    car: veh ? { yaw: veh.yaw, u: veh.u, steer: veh.steer, slip: veh.slip, beta: veh.beta, hb: veh.hb, gear: veh.gear } : null,
+    cars: fleet.debug(),
+    fov: follow.camera.fov,
+    live,
+    meshes: scene.meshes.length,
+    fps: engine.getFps(),
+    srv: (() => {
+      const c = driving ? net.cars()?.get(String(driving)) : null
+      return c ? { x: c.x, z: c.z, facing: c.facing, sp: c.sp ?? 0, driver: c.driver } : null
+    })(),
+    serverErr,
+  })
   ;(window as unknown as { __mmStreet?: typeof probe }).__mmStreet = probe
   const follow = new FollowCamera(scene)
   scene.activeCamera = follow.camera
@@ -207,13 +247,25 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     onMoved: (p) => {
       if (disposed) return
       local.teleport(p.x, p.z, p.facing)
-      if (typeof p.car === "number") setDriving(p.car)
-      else follow.snapBehind(p.x, p.z, p.facing)
+      if (typeof p.car === "number") {
+        // Entrar, sair ou recuperar: a sala decide onde o carro está.
+        if (p.car && p.car === driving) {
+          veh = createVehicle(p.x, p.z, p.facing)
+          Object.assign(prevPose, { x: p.x, z: p.z, yaw: p.facing })
+        }
+        setDriving(p.car, p)
+      } else follow.snapBehind(p.x, p.z, p.facing)
     },
     fetchSession: opts.fetchSession,
     sceneKey: payload.sceneKey,
     onMessage: (type, p) => {
-      if (!disposed) opts.onServerMessage?.(type, p)
+      if (disposed) return
+      // A sala confirmou os ajustes (já limitados às faixas): a previsão usa os mesmos.
+      if (type === "tuned") {
+        const t = sanitizeTuning((p || {}) as Tuning)
+        tune = Object.keys(t).length ? t : null
+      }
+      opts.onServerMessage?.(type, p)
     },
   })
   const mp = payload.multiplayer
@@ -243,7 +295,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     players.forEach((p, sid) => {
       if (sid === me) {
         local.setServer(p.x, p.z)
-        setDriving(p.car ?? 0)
+        setDriving(p.car ?? 0, p)
         return
       }
       seen.add(sid)
@@ -312,15 +364,79 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   }
 
   /** A sala confirmou que você entrou/saiu do carro. */
-  function setDriving(lot: number) {
+  function setDriving(lot: number, at?: { x: number; z: number; facing: number }) {
     if (lot === driving) return
-    const was = driving
     driving = lot
     local.char.setVisible(!lot)
-    // Dirigindo, a câmera recua (o carro é maior e anda mais rápido).
-    if (lot && !was) follow.zoom(4)
-    if (!lot && was) follow.zoom(-4)
+    input.driving = !!lot
+    input.keys.delete("Space")
+    if (lot) {
+      const c = fleet.latest.get(String(lot))
+      const p = at ?? c ?? { x: local.x, z: local.z, facing: local.body.facing }
+      veh = createVehicle(p.x, p.z, p.facing)
+      Object.assign(prevPose, { x: p.x, z: p.z, yaw: p.facing })
+      follow.setChase(true, p.facing)
+    } else {
+      veh = null
+      follow.setChase(false)
+      follow.snapBehind(local.x, local.z, local.body.facing)
+    }
     opts.onDriving?.(lot)
+  }
+
+  /**
+   * Um quadro dirigindo: passo fixo com acumulador (MAX_STEPS por quadro —
+   * aba que volta não simula o tempo perdido), reconciliação com a sala e a
+   * pose interpolada para desenhar.
+   */
+  const driveFrame = (dt: number, boxes: typeof world.boxes, now: number) => {
+    const v = veh!
+    const d = devDrive.current ?? (input.blocked ? IDLE_DRIVE : driveAxis(input))
+    const P = tuned(tune)
+    v.acc = Math.min(v.acc + dt, STEP * MAX_STEPS)
+    while (v.acc >= STEP) {
+      prevPose.x = v.x
+      prevPose.z = v.z
+      prevPose.yaw = v.yaw
+      stepVehicle(v, d, boxes, limit, P)
+      v.acc -= STEP
+    }
+    net.sendDrive(d, now)
+
+    // Reconciliação: a sala está ~meia latência atrás. Em movimento só corrige
+    // o que passa da folga (choque divergente); parado converge de vez.
+    const sc = net.status === "online" ? net.cars()?.get(String(driving)) : null
+    if (sc && sc.driver === net.sessionId) {
+      const ex = sc.x - v.x
+      const ez = sc.z - v.z
+      serverErr = Math.hypot(ex, ez)
+      const speed = Math.hypot(v.vx, v.vz)
+      const idle = speed < 0.3 && d.t === 0 && d.b === 0
+      const tol = idle ? 0.02 : speed * 0.35 + 0.6
+      if (serverErr > 8) {
+        Object.assign(v, { x: sc.x, z: sc.z, yaw: sc.facing, vx: 0, vz: 0, w: 0 })
+      } else if (serverErr > tol) {
+        const k = 1 - Math.exp(-(idle ? 6 : 2) * dt)
+        v.x += ex * k
+        v.z += ez * k
+        if (idle) v.yaw = lerpAngle(v.yaw, sc.facing, k)
+      }
+    }
+
+    const a = v.acc / STEP
+    pose.x = prevPose.x + (v.x - prevPose.x) * a
+    pose.z = prevPose.z + (v.z - prevPose.z) * a
+    pose.facing = lerpAngle(prevPose.yaw, v.yaw, a)
+    pose.sp = v.u
+    pose.st = v.steer
+    pose.hb = v.hb
+    pose.sl = v.slip
+    pose.ax = v.ax
+    pose.ay = v.ay
+    // O jogador "está" no carro (interação, painel, câmera).
+    local.body.x = pose.x
+    local.body.z = pose.z
+    local.body.facing = pose.facing
   }
 
   let instr: SceneInstrumentation | null = null
@@ -351,12 +467,18 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     }
     const carBoxes = fleet.boxes(driving)
     const boxes = carBoxes.length ? world.boxes.concat(carBoxes) : world.boxes
-    if (driving) local.update(dt, intent, boxes, limit, CAR_SPEEDS, CAR_SHAPE)
+    const now = performance.now()
+    // O carro usa o tempo REAL do quadro (o teto de passos de vehicle.ts
+    // segura abas que voltam): cortar em 0,1 s deixava a previsão para trás
+    // do servidor em aparelhos lentos.
+    if (driving && veh) driveFrame(Math.min(engine.getDeltaTime() / 1000, 0.25), boxes, now)
     else local.update(dt, intent, boxes, limit, speeds)
-    syncNetwork(performance.now(), intent)
-    fleet.sync(net.cars(), dt, driving, driving ? { x: local.x, z: local.z, facing: local.body.facing } : null)
+    // Dirigindo, a intenção a pé é zero (o controle a pé não age).
+    syncNetwork(now, driving ? { x: 0, z: 0, run: false } : intent)
+    fleet.sync(net.cars(), dt, driving, driving && veh ? pose : null)
     for (const r of remotes.values()) r.update(dt)
-    follow.update(dt, local.x, local.z, world.viewBoxes)
+    if (driving && veh) follow.chase(dt, pose.x, pose.z, pose.facing, veh.u, world.viewBoxes)
+    else follow.update(dt, local.x, local.z, world.viewBoxes)
 
     const next = findNearby()
     if (next?.id !== nearby?.id) {
@@ -386,6 +508,20 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           avatars: lib.live,
           cars: fleet.count,
           houseModels: world.loadedLevels(),
+          car: veh
+            ? {
+                kmh: veh.u * 3.6,
+                gear: veh.gear,
+                steerDeg: (veh.steer * 180) / Math.PI,
+                slip: veh.slip,
+                betaDeg: (veh.beta * 180) / Math.PI,
+                drifting: Math.abs(veh.beta) > 0.2 && Math.hypot(veh.vx, veh.vz) > 4,
+                // Chão plano: as quatro rodas estão sempre apoiadas.
+                contacts: 4,
+                handbrake: veh.hb,
+                serverErr,
+              }
+            : null,
         })
       }
     }
@@ -465,6 +601,17 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     houseVisual(lot) {
       return world.visual(lot)
+    },
+    setTouchDrive(key, on) {
+      input.touchDrive[key] = on
+    },
+    setTuning(t) {
+      const clean = t ? sanitizeTuning(t) : null
+      tune = clean && Object.keys(clean).length ? clean : null
+      net.send("tune", clean ?? { reset: true })
+    },
+    recoverCar() {
+      if (driving) net.send("car", { a: "recover" })
     },
     setStatsEnabled(on) {
       if (on && !instr) {

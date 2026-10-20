@@ -20,6 +20,7 @@ import { Client, type Room } from "@colyseus/sdk"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import type { BodyId, MultiplayerSession, NetStatus } from "../types"
 import type { Intent } from "./motion"
+import type { DriveInput } from "./vehicle"
 
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000, 20000]
 const SEND_MIN_MS = 80
@@ -49,6 +50,14 @@ export interface CarState {
   z: number
   facing: number
   driver: string
+  /** Velocidade longitudinal (m/s, negativa = ré) — gira as rodas. */
+  sp?: number
+  /** Esterçamento das rodas da frente (rad, positivo = direita). */
+  st?: number
+  /** Freio de mão puxado. */
+  hb?: boolean
+  /** 0..1 quanto a traseira escorrega (derrapagem). */
+  sl?: number
 }
 
 export interface NetCallbacks {
@@ -81,6 +90,8 @@ export class NetClient {
   private disposed = false
   private lastSent: Intent = { x: 0, z: 0, run: false }
   private lastSentAt = 0
+  private lastDrive: DriveInput | null = null
+  private lastDriveAt = 0
   status: NetStatus = "connecting"
 
   constructor(private readonly cb: NetCallbacks) {}
@@ -149,7 +160,7 @@ export class NetClient {
     room.onMessage("replaced", () => {
       replaced = true
     })
-    for (const type of ["visits", "visit_ended", "seat", "stood", "car_denied"]) {
+    for (const type of ["visits", "visit_ended", "seat", "stood", "car_denied", "tuned"]) {
       room.onMessage(type, (p: unknown) => {
         if (!this.disposed) this.cb.onMessage?.(type, p)
       })
@@ -236,6 +247,25 @@ export class NetClient {
     })
     this.lastSent = { ...intent }
     this.lastSentAt = now
+  }
+
+  /**
+   * Entrada de direção (dirigindo). Até ~15×/s e só quando muda, mais um
+   * lembrete a cada 0,5 s com algum comando ativo.
+   */
+  sendDrive(d: DriveInput, now: number) {
+    const room = this.room
+    if (!room) return
+    const q = (v: number) => Math.round(v * 100) / 100
+    const cur = { t: q(d.t), b: q(d.b), s: q(d.s), h: d.h }
+    const last = this.lastDrive
+    const changed = !last || last.t !== cur.t || last.b !== cur.b || Math.abs(last.s - cur.s) > 0.04 || last.h !== cur.h
+    const active = cur.t > 0 || cur.b > 0 || cur.s !== 0 || cur.h
+    if (now - this.lastDriveAt < 66) return
+    if (!changed && !(active && now - this.lastDriveAt > 500)) return
+    room.send("drive", { t: cur.t, b: cur.b, s: cur.s, h: cur.h ? 1 : 0 })
+    this.lastDrive = cur
+    this.lastDriveAt = now
   }
 
   sendBody(body: BodyId) {

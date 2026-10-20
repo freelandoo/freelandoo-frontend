@@ -21,26 +21,24 @@ export const MOTION = {
 }
 
 /**
- * Carro (mm3d-11): espelho de freelandoo-backend/src/utils/meuMundoCars.js.
- * O carro usa a MESMA regra de deslocamento com outro perfil.
+ * Carro: o que é do BAIRRO (caixa, entrar, sair, recuperar) — espelho de
+ * freelandoo-backend/src/utils/meuMundoCars.js. A física do carro está em
+ * vehicle.ts (mm3d-12).
  */
 export const CAR = {
-  SPEED: 9,
-  TURBO: 13,
-  ACCEL: 2.4,
-  RADIUS: 1.4,
-  HX: 1.15,
-  HZ: 1.95,
+  HX: 1.0,
+  HZ: 2.12,
   ENTER_RADIUS: 3.4,
+  EXIT_MAX_SPEED: 1.5,
+  RECOVER_MAX_SPEED: 2,
+  RECOVER_COOLDOWN_MS: 15000,
 }
 
-/** Perfil opcional de `step` (o carro); sem ele, a pé. */
+/** Perfil opcional de `step`; sem ele, a pé. */
 export interface MotionProfile {
   accel: number
   radius: number
 }
-export const CAR_SHAPE: MotionProfile = { accel: CAR.ACCEL, radius: CAR.RADIUS }
-export const CAR_SPEEDS = { walk: CAR.SPEED, run: CAR.TURBO }
 
 /** Velocidade natural das animações (medida no Blender, ver REGISTRO.md). */
 export const ANIM_NATURAL_SPEED = { walk: 1.267, run: 2.221 }
