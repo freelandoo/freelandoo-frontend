@@ -73,6 +73,8 @@ const MEU_MUNDO = {
   invitePlaceholder: ["@usuario", "@username", "@usuario"],
   inviteConfirm: ["Convidar @{name}", "Invite @{name}", "Invitar a @{name}"],
   myHouseAction: ["Sua casa", "Your house", "Tu casa"],
+  changeHouse: ["Alterar casa", "Change house", "Cambiar casa"],
+  enterMyHouse: ["Entrar na casa", "Enter the house", "Entrar en la casa"],
   enterVisit: ["Entrar na casa {n}", "Enter house {n}", "Entrar en la casa {n}"],
   visitingChip: ["Visitando {name} · casa {n}", "Visiting {name} · house {n}", "Visitando a {name} · casa {n}"],
   needsInvite: [

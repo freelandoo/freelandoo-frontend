@@ -105,7 +105,6 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
   })
   const [levelOpen, setLevelOpen] = useState(false)
   // Menu da própria casa: entrar, alterar o nível (teste) e convidar.
-  const [homeMenu, setHomeMenu] = useState(false)
   // Casa que este jogador pode visitar aqui. Quem é do MESMO bairro não troca
   // de ambiente ao aceitar: a visita ativa chega pelo estado de visitas.
   const activeGuest = visits?.active?.role === "guest" && visits.active.neighborhoodName === nb.name ? visits.active.house : null
@@ -169,12 +168,12 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
           onResidents: (n) => alive && setResidents(n),
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (it) => alive && setNearby(it),
-          // Na PRÓPRIA casa: menu (entrar, nível, convidar). Na casa visitada:
-          // entrar. Nas outras: a ficha (que diz que é preciso convite).
+          // Própria casa ou casa visitada: E entra (o "Alterar casa" é botão
+          // ao lado). Nas outras: a ficha (que diz que é preciso convite).
           onInteract: (it) => {
             if (!alive) return
-            if (it.kind === "house" && it.house.isMine && !payload.me.visitor) setHomeMenu(true)
-            else if (it.kind === "house" && it.lot.number === cbRef.current.visitingLot) cbRef.current.onEnterHouse(it.lot.number)
+            if (it.kind === "house" && ((it.house.isMine && !payload.me.visitor) || it.lot.number === cbRef.current.visitingLot))
+              cbRef.current.onEnterHouse(it.lot.number)
             else setOpen(it)
           },
           onHouseVisual: (v) => alive && v.lot === myLot && setHouseVis(v),
@@ -202,20 +201,8 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
   }, [statsOpen])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(!!open || levelOpen || homeMenu || !!blocked)
-  }, [open, levelOpen, homeMenu, blocked])
-
-  useEffect(() => {
-    if (!homeMenu) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        setHomeMenu(false)
-      }
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [homeMenu])
+    gameRef.current?.setBlocked(!!open || levelOpen || !!blocked)
+  }, [open, levelOpen, blocked])
 
   useEffect(() => {
     if (!open) return
@@ -273,7 +260,7 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
   const nearbyVisit = nearby?.kind === "house" && nearby.lot.number === visitingLot
   const nearbyAction = nearbyMine || nearbyVisit
   const nearbyLabel = nearbyMine
-    ? t("myHouseAction", "Sua casa")
+    ? t("enterMyHouse", "Entrar na casa")
     : nearbyVisit
       ? t("enterVisit", "Entrar na casa {n}").replace("{n}", String(visitingLot).padStart(2, "0"))
       : nearby?.kind === "house"
@@ -468,7 +455,7 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
       )}
 
       {/* Aviso de interação */}
-      {status === "ready" && nearby && !nearbyAction && !open && !levelOpen && !homeMenu && !isTouch && (
+      {status === "ready" && nearby && !nearbyAction && !open && !levelOpen && !isTouch && (
         <div
           className="pointer-events-none absolute left-1/2 -translate-x-1/2 border-2 border-[#0B0B0D] bg-[#0B0B0D]/90 px-3 py-2 text-[12px] font-bold uppercase tracking-wider text-[#F7F0D9]"
           style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
@@ -479,24 +466,38 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
       )}
 
       {/* Computador: a própria casa (e a casa visitada) ganha botão clicável, com o atalho E nele */}
-      {status === "ready" && nearbyAction && !open && !levelOpen && !homeMenu && !isTouch && (
+      {status === "ready" && nearbyAction && !open && !levelOpen && !isTouch && (
+        <div
+          className="absolute left-1/2 flex -translate-x-1/2 items-stretch gap-2"
+          style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
+        >
+        {nearbyMine && (
+          <button
+            type="button"
+            onClick={() => setLevelOpen(true)}
+            className="inline-flex h-12 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F7F0D9] px-4 text-[13px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+          >
+            <Construction className="h-5 w-5" />
+            {t("changeHouse", "Alterar casa")}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => gameRef.current?.interact()}
           aria-label={nearbyLabel}
-          className="absolute left-1/2 inline-flex h-12 -translate-x-1/2 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 text-[13px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-          style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
+          className="inline-flex h-12 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 text-[13px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
         >
           <span className="inline-flex h-6 w-6 items-center justify-center bg-[#0B0B0D] text-[#F2B705]" aria-hidden>
             E
           </span>
-          {nearbyVisit ? <DoorOpen className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+          <DoorOpen className="h-5 w-5" />
           {nearbyLabel}
         </button>
+        </div>
       )}
 
       {/* Controles de toque */}
-      {status === "ready" && isTouch && !open && !levelOpen && !homeMenu && (
+      {status === "ready" && isTouch && !open && !levelOpen && (
         <>
           <Joystick gameRef={gameRef} />
           <button
@@ -512,6 +513,17 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
             <Footprints className="h-6 w-6" />
             {t("run", "Correr")}
           </button>
+          {nearbyMine && (
+            <button
+              type="button"
+              onClick={() => setLevelOpen(true)}
+              className="absolute flex min-h-14 max-w-[44vw] items-center gap-2 border-2 border-[#0B0B0D] bg-[#F7F0D9] px-4 py-2 text-[13px] font-black uppercase leading-tight text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+              style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 196px)", right: SAFE.right }}
+            >
+              <Construction className="h-5 w-5 shrink-0" />
+              {t("changeHouse", "Alterar casa")}
+            </button>
+          )}
           {nearby && (
             <button
               type="button"
@@ -520,7 +532,7 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
               className="absolute flex min-h-16 min-w-16 max-w-[44vw] items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-[13px] font-black uppercase leading-tight text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
               style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 24px)", right: SAFE.right }}
             >
-              {nearbyMine ? <Home className="h-6 w-6 shrink-0" /> : nearbyVisit ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
+              {nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
               {nearbyLabel}
             </button>
           )}
@@ -597,76 +609,6 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
             >
               {t("ok", "Entendi")}
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Menu da própria casa: entrar, alterar o nível (teste), convidar */}
-      {homeMenu && (
-        <div
-          className="absolute inset-0 flex items-end justify-center bg-black/30 sm:items-center"
-          style={{ paddingBottom: SAFE.bottom, paddingLeft: SAFE.left, paddingRight: SAFE.right }}
-          onPointerDown={(e) => {
-            if (e.target === e.currentTarget) setHomeMenu(false)
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="mm-home-title"
-            className="relative w-full max-w-xs border-2 border-[#0B0B0D] bg-[#F7F0D9] p-4 text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
-          >
-            <button
-              type="button"
-              onClick={() => setHomeMenu(false)}
-              className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center"
-              aria-label={t("close", "Fechar")}
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="text-[11px] font-bold uppercase tracking-widest text-[#8A6400]">
-              {t("lot", "Lote {n}").replace("{n}", String(myLot).padStart(2, "0"))}
-            </div>
-            <h2 id="mm-home-title" className="mt-0.5 text-2xl font-black uppercase leading-none">
-              {t("yourHouse", "Sua casa")}
-            </h2>
-            <div className="mt-4 grid gap-2">
-              <button
-                type="button"
-                autoFocus
-                onClick={() => {
-                  setHomeMenu(false)
-                  onEnterHouse(myLot)
-                }}
-                className="inline-flex h-12 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 text-sm font-black uppercase"
-              >
-                <DoorOpen className="h-5 w-5" />
-                {t("enterHouse", "Entrar")}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setHomeMenu(false)
-                  setLevelOpen(true)
-                }}
-                className="inline-flex h-11 items-center gap-2 border-2 border-[#0B0B0D] bg-white px-3 text-sm font-bold uppercase"
-              >
-                <Construction className="h-4 w-4" />
-                {t("changeLevelTest", "Alterar nível — teste")}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setHomeMenu(false)
-                  onOpenInvite()
-                }}
-                disabled={!!visits?.active && visits.active.role === "guest"}
-                className="inline-flex h-11 items-center gap-2 border-2 border-[#0B0B0D] bg-white px-3 text-sm font-bold uppercase disabled:opacity-40"
-              >
-                <Send className="h-4 w-4" />
-                {t("invite", "Convidar")}
-              </button>
-            </div>
           </div>
         </div>
       )}

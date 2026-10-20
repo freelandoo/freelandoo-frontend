@@ -6988,6 +6988,7 @@
     "enterHouse": "Entrar",
     "changeLevelTest": "Alterar nível — teste",
     "levelOccupied": "Peça para todos saírem da casa antes de trocar o nível.",
-    "exitGoToDoor": "Vá até a porta para sair"
+    "exitGoToDoor": "Vá até a porta para sair",
+    "enterMyHouse": "Entrar na casa"
   }
 }
