@@ -60,6 +60,10 @@ export interface CarState {
   hb?: boolean
   /** 0..1 quanto a traseira escorrega (derrapagem). */
   sl?: number
+  /** Velocidade (m/s) e giro (rad/s) — reconciliação do motorista (car-sync.ts). */
+  vx?: number
+  vz?: number
+  w?: number
 }
 
 export interface NetCallbacks {

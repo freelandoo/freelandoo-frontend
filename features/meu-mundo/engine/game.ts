@@ -31,6 +31,7 @@ import { NetClient } from "./net"
 import { CAR, MOTION, lerpAngle, paceSpeeds, type Intent, type MoveState } from "./motion"
 import { CarFleet, type CarPose } from "./cars"
 import { STEP, MAX_STEPS, IDLE_DRIVE, createVehicle, stepVehicle, tuned, sanitizeTuning, type Tuning, type VehicleState } from "./vehicle"
+import { CarReconciler } from "./car-sync"
 import { attachInput, clearInput, createInputState, driveAxis, moveAxis, wantsRun, type InputState } from "./input"
 import {
   BODY_IDS,
@@ -171,6 +172,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const prevPose = { x: 0, z: 0, yaw: 0 }
   let tune: Tuning | null = null
   let serverErr = 0
+  const recon = new CarReconciler()
   const pose: CarPose = { x: 0, z: 0, facing: 0, sp: 0, st: 0, hb: 0, sl: 0, ax: 0, ay: 0 }
   // Só em desenvolvimento: o teste de navegador pode comandar o carro com
   // valores proporcionais a cada quadro (a física, a sala e o desenho são os
@@ -254,6 +256,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         if (p.car && p.car === driving) {
           veh = createVehicle(p.x, p.z, p.facing)
           Object.assign(prevPose, { x: p.x, z: p.z, yaw: p.facing })
+          recon.reset()
         }
         setDriving(p.car, p)
       } else follow.snapBehind(p.x, p.z, p.facing)
@@ -379,6 +382,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const p = at ?? c ?? { x: local.x, z: local.z, facing: local.body.facing }
       veh = createVehicle(p.x, p.z, p.facing)
       Object.assign(prevPose, { x: p.x, z: p.z, yaw: p.facing })
+      recon.reset()
       follow.setChase(true, p.facing)
     } else {
       veh = null
@@ -407,24 +411,15 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     }
     net.sendDrive(d, now)
 
-    // Reconciliação: a sala está ~meia latência atrás. Em movimento só corrige
-    // o que passa da folga (choque divergente); parado converge de vez.
+    // Reconciliação (car-sync.ts): compara a sala com o nosso passado mais
+    // parecido (absorve o atraso da rede) e corrige posição, RUMO e velocidade
+    // aos poucos. Corrigir só a posição deixava o carro andando de lado.
+    recon.record(v, now)
     const sc = net.status === "online" ? net.cars()?.get(String(driving)) : null
     if (sc && sc.driver === net.sessionId) {
-      const ex = sc.x - v.x
-      const ez = sc.z - v.z
-      serverErr = Math.hypot(ex, ez)
-      const speed = Math.hypot(v.vx, v.vz)
-      const idle = speed < 0.3 && d.t === 0 && d.b === 0
-      const tol = idle ? 0.02 : speed * 0.35 + 0.6
-      if (serverErr > 8) {
-        Object.assign(v, { x: sc.x, z: sc.z, yaw: sc.facing, vx: 0, vz: 0, w: 0 })
-      } else if (serverErr > tol) {
-        const k = 1 - Math.exp(-(idle ? 6 : 2) * dt)
-        v.x += ex * k
-        v.z += ez * k
-        if (idle) v.yaw = lerpAngle(v.yaw, sc.facing, k)
-      }
+      if (recon.observe(v, sc) === "snap") Object.assign(prevPose, { x: v.x, z: v.z, yaw: v.yaw })
+      recon.apply(v, dt)
+      serverErr = recon.err
     }
 
     const a = v.acc / STEP
