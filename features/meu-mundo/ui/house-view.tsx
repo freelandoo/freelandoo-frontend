@@ -9,13 +9,15 @@
 // ele continua dormindo com o jogo fechado).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { DoorOpen, Footprints, Info, Armchair, ArrowUpFromLine, BedDouble, HeartPulse, Moon, RefreshCw, Send, Sun, Users, Wifi, WifiOff, X } from "lucide-react"
+import { DoorOpen, Footprints, Info, Armchair, ArrowUpFromLine, BedDouble, HeartPulse, Moon, RefreshCw, Send, Sun, Users, Wifi, WifiOff } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { createHouseGame, type HouseGameHandle } from "../engine/house-game"
 import { fetchSession } from "../data"
 import type { BodyId, GameStats, HousePayload, Interactable, NetStatus, VisitState } from "../types"
-import { BTN, CLIENT_RELEASE, Joystick, SAFE } from "./meu-mundo-view"
+import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain } from "./meu-mundo-view"
+import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, type DrawerItem } from "./hud/hud-kit"
+import { EVO } from "./status/evo-skin"
 
 export interface HouseSceneProps {
   payload: HousePayload
@@ -43,6 +45,8 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const [denied, setDenied] = useState<string | null>(null)
   const [restDenied, setRestDenied] = useState<string | null>(null)
   const [infoOpen, setInfoOpen] = useState(false)
+  // A gaveta do menu (direita): abre puxando, clicando no puxador ou com M.
+  const [menuOpen, setMenuOpen] = useState(false)
   const [running, setRunning] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
   const cbRef = useRef({ onExit, onMoved, onServerMessage })
@@ -118,20 +122,8 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   }, [payload, attempt])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(infoOpen || !!blocked)
-  }, [infoOpen, blocked])
-
-  useEffect(() => {
-    if (!infoOpen) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        setInfoOpen(false)
-      }
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [infoOpen])
+    gameRef.current?.setBlocked(infoOpen || menuOpen || !!blocked)
+  }, [infoOpen, menuOpen, blocked])
 
   const toggleRun = useCallback(() => {
     setRunning((r) => {
@@ -201,6 +193,32 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
     return t("visitNone", "Sem visita")
   })()
 
+  const nearDoor = nearby?.kind === "door"
+  const menuItems: DrawerItem[] = [
+    ...(onOpenStatus
+      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, onSelect: () => onOpenStatus(payload.me.body) }]
+      : []),
+    ...(isOwner
+      ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, onSelect: onOpenInvite }]
+      : []),
+    { id: "info", label: t("houseInfoShort", "Casa"), hint: t("houseInfo", "Informações da casa"), icon: <Info className="h-5 w-5" />, onSelect: () => setInfoOpen(true) },
+    ...(net === "offline" || net === "replaced"
+      ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
+      : []),
+    // Sair é na porta (o servidor confere); longe dela o item só orienta.
+    {
+      id: "exit",
+      label: t("exitHouse", "Sair da casa"),
+      hint: nearDoor ? undefined : t("exitGoToDoor", "Vá até a porta para sair"),
+      icon: <DoorOpen className="h-5 w-5" />,
+      disabled: !nearDoor,
+      onSelect: onExit,
+    },
+  ]
+  const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
+  const netTone = net === "online" ? "bom" : net === "offline" || net === "replaced" ? "perigo" : "ambar"
+  const overlay = infoOpen || menuOpen
+
   return (
     <div className="fl-sharp fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#29262B]">
       <canvas
@@ -210,243 +228,147 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
         aria-label={t("houseCanvasAria", "Interior da casa")}
       />
 
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2"
-        style={{ paddingTop: SAFE.top, paddingLeft: SAFE.left, paddingRight: SAFE.right }}
-      >
-        <div className="pointer-events-auto border-2 border-[#0B0B0D] bg-[#F7F0D9] px-3 py-1.5 shadow-[3px_3px_0_0_#0B0B0D]">
-          <div className="text-[13px] font-black uppercase leading-none tracking-wide text-[#0B0B0D]">
-            {isOwner
-              ? t("yourHouse", "Sua casa")
-              : t("houseOf", "Casa de {name}").replace("{name}", h.ownerName)}
-          </div>
-          <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[#8A6400]">
-            {t("houseSub", "Casa {n} · nível {l}")
-              .replace("{n}", lotLabel)
-              .replace("{l}", String(h.level).padStart(2, "0"))}
-          </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
-            <span className="inline-flex items-center gap-1 bg-[#0B0B0D] px-1.5 py-0.5 text-[#F7F0D9]">
-              <Users className="h-3 w-3" />
-              {t("insideNow", "{n} aqui dentro").replace("{n}", String(online))}
-            </span>
-            <span
-              role="status"
-              aria-live="polite"
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-white ${
-                net === "online" ? "bg-[#15803D]" : net === "offline" || net === "replaced" ? "bg-[#B91C1C]" : "bg-[#8A6400]"
-              }`}
+      {/* Identidade (o menu mora na gaveta da direita) */}
+      <div className="pointer-events-none absolute left-0 top-0" style={{ paddingTop: SAFE.top, paddingLeft: SAFE.left }}>
+        <IdPlate
+          seal={["夢", "居"]}
+          title={isOwner ? t("yourHouse", "Sua casa") : t("houseOf", "Casa de {name}").replace("{name}", h.ownerName)}
+          sub={t("houseSub", "Casa {n} · nível {l}").replace("{n}", lotLabel).replace("{l}", String(h.level).padStart(2, "0"))}
+        >
+          <HudChip icon={<Users className="h-3 w-3" />}>{t("insideNow", "{n} aqui dentro").replace("{n}", String(online))}</HudChip>
+          <span role="status" aria-live="polite">
+            <HudChip
+              tone={netTone}
+              icon={net === "online" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+              onClick={net === "offline" || net === "replaced" ? () => gameRef.current?.reconnect() : undefined}
+              title={net === "offline" || net === "replaced" ? t("reconnect", "Reconectar") : undefined}
             >
-              {net === "online" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
               {netLabel}
-            </span>
-          </div>
-        </div>
-        <div className="pointer-events-auto flex shrink-0 flex-wrap justify-end gap-2">
-          {(net === "offline" || net === "replaced") && (
-            <button type="button" onClick={() => gameRef.current?.reconnect()} className={BTN}>
-              <RefreshCw className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("reconnect", "Reconectar")}</span>
-            </button>
-          )}
-          {onOpenStatus && (
-            <button
-              type="button"
-              onClick={() => onOpenStatus(payload.me.body)}
-              className={BTN}
-              aria-label={t("stOpen", "Status do hóspede")}
-            >
-              <HeartPulse className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("stTitle", "Status")}</span>
-            </button>
-          )}
-          {isOwner && (
-            <button type="button" onClick={onOpenInvite} className={BTN} aria-label={t("invite", "Convidar")}>
-              <Send className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("invite", "Convidar")}</span>
-            </button>
-          )}
-          <button type="button" onClick={() => setInfoOpen(true)} className={BTN} aria-label={t("houseInfo", "Informações da casa")}>
-            <Info className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("houseInfoShort", "Casa")}</span>
-          </button>
-          {/* Sair é na porta (o servidor confere); longe dela o botão só orienta. */}
-          <button
-            type="button"
-            onClick={onExit}
-            disabled={nearby?.kind !== "door"}
-            className={`${BTN} disabled:cursor-not-allowed disabled:opacity-50`}
-            aria-label={nearby?.kind === "door" ? t("exitHouse", "Sair da casa") : t("exitGoToDoor", "Vá até a porta para sair")}
-            title={nearby?.kind === "door" ? undefined : t("exitGoToDoor", "Vá até a porta para sair")}
-          >
-            <DoorOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("exitHouse", "Sair da casa")}</span>
-          </button>
-        </div>
+            </HudChip>
+          </span>
+        </IdPlate>
       </div>
 
-      {denied && (
-        <div className="pointer-events-none absolute inset-x-0 top-28 flex justify-center px-4">
-          <div className="border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-2 text-xs font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
-            {denied === "taken" ? t("seatTaken", "Esse lugar já está ocupado") : t("seatDenied", "Chegue mais perto para sentar")}
-          </div>
-        </div>
-      )}
-
-      {restDenied && (
-        <div className="pointer-events-none absolute inset-x-0 top-28 flex justify-center px-4">
-          <div className="border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-2 text-xs font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
-            {restDeniedLabel}
-          </div>
-        </div>
-      )}
-
-      {rest?.sleeping && (
-        <div className="pointer-events-none absolute inset-x-0 top-28 flex justify-center px-4">
-          <div className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 py-2 text-xs font-black uppercase text-[#F7F0D9] shadow-[3px_3px_0_0_#F2B705]">
-            <Moon className="h-4 w-4 shrink-0" />
-            {t("bedSleepingLine", "Dormindo — ele continua dormindo mesmo com o jogo fechado")}
-          </div>
+      {/* Avisos curtos (lugar ocupado, cama longe, dormindo) */}
+      {(denied || restDenied || rest?.sleeping) && (
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>
+          {denied ? (
+            <EvoToast>{denied === "taken" ? t("seatTaken", "Esse lugar já está ocupado") : t("seatDenied", "Chegue mais perto para sentar")}</EvoToast>
+          ) : restDenied ? (
+            <EvoToast>{restDeniedLabel}</EvoToast>
+          ) : (
+            <EvoToast tone="magenta" icon={<Moon className="h-4 w-4 shrink-0" />}>
+              {t("bedSleepingLine", "Dormindo — ele continua dormindo mesmo com o jogo fechado")}
+            </EvoToast>
+          )}
         </div>
       )}
 
       {/* Deitado: dormir (8 h). Computador e celular. */}
-      {status === "ready" && canSleep && !infoOpen && (
-        <button
-          type="button"
+      {status === "ready" && canSleep && !overlay && (
+        <EvoButton
+          variant="gold"
+          size="lg"
           onClick={() => gameRef.current?.sleep(8)}
           aria-label={t("bedSleep", "Dormir")}
-          className="absolute flex min-h-12 items-center gap-2 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-4 py-3 text-sm font-black uppercase text-[#F2B705] shadow-[3px_3px_0_0_#F2B705]"
-          style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 96px)", right: SAFE.right }}
+          className="!absolute"
+          style={{ bottom: bottom(isTouch ? 104 : 96), right: SAFE.right }}
+          icon={<Moon className="h-5 w-5 shrink-0" />}
         >
-          <Moon className="h-5 w-5 shrink-0" />
           {t("bedSleep", "Dormir")}
-        </button>
+        </EvoButton>
       )}
 
       {/* Computador: ação clicável com o atalho E */}
-      {status === "ready" && hasAction && !infoOpen && !isTouch && (
-        <button
-          type="button"
-          onClick={() => gameRef.current?.interact()}
-          aria-label={actionLabel}
-          className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-sm font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-          style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 24px)" }}
-        >
-          {actionIcon}
-          {actionLabel}
-          <kbd className="ml-1 border border-[#0B0B0D] px-1.5 text-[11px]">E</kbd>
-        </button>
+      {status === "ready" && hasAction && !overlay && !isTouch && (
+        <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: bottom(24) }}>
+          <EvoButton variant="primary" size="lg" kbd="E" icon={actionIcon} onClick={() => gameRef.current?.interact()} aria-label={actionLabel}>
+            {actionLabel}
+          </EvoButton>
+        </div>
       )}
 
-      {status === "ready" && isTouch && !infoOpen && (
+      {status === "ready" && isTouch && !overlay && (
         <>
           {!seat && !rest && <Joystick gameRef={gameRef} />}
           {!seat && !rest && (
-            <button
-              type="button"
+            <EvoButton
+              variant="gold"
+              size="none"
               onClick={toggleRun}
               aria-pressed={running}
               aria-label={t("runAria", "Corrida lenta (liga e desliga)")}
-              className={`absolute flex h-16 w-16 flex-col items-center justify-center gap-0.5 border-2 border-[#0B0B0D] text-[10px] font-black uppercase shadow-[3px_3px_0_0_#0B0B0D] ${
-                running ? "bg-[#0B0B0D] text-[#F2B705]" : "bg-[#F7F0D9] text-[#0B0B0D]"
-              }`}
-              style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 112px)", right: SAFE.right }}
+              className="!absolute h-16 w-16 flex-col !gap-0.5 !px-0 text-[14px]"
+              style={{ bottom: bottom(112), right: SAFE.right }}
+              icon={<Footprints className="h-6 w-6" />}
             >
-              <Footprints className="h-6 w-6" />
               {t("run", "Correr")}
-            </button>
+            </EvoButton>
           )}
           {hasAction && (
-            <button
-              type="button"
+            <EvoButton
+              variant="primary"
+              size="none"
               onClick={() => gameRef.current?.interact()}
               aria-label={actionLabel}
-              className="absolute flex min-h-16 min-w-16 max-w-[44vw] items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-[13px] font-black uppercase leading-tight text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-              style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 24px)", right: SAFE.right }}
+              className="!absolute min-h-16 min-w-16 max-w-[44vw] text-[18px] leading-tight"
+              style={{ bottom: bottom(24), right: SAFE.right }}
+              icon={actionIcon}
             >
-              {actionIcon}
               {actionLabel}
-            </button>
+            </EvoButton>
           )}
         </>
       )}
 
-      {infoOpen && (
-        <div
-          className="absolute inset-0 flex items-end justify-center bg-black/30 sm:items-center"
-          style={{ paddingBottom: SAFE.bottom, paddingLeft: SAFE.left, paddingRight: SAFE.right }}
-          onPointerDown={(e) => {
-            if (e.target === e.currentTarget) setInfoOpen(false)
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="mm-house-info"
-            className="relative w-full max-w-sm border-2 border-[#0B0B0D] bg-[#F7F0D9] p-5 text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
-          >
-            <button
-              type="button"
-              onClick={() => setInfoOpen(false)}
-              className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center"
-              aria-label={t("close", "Fechar")}
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="text-[11px] font-bold uppercase tracking-widest text-[#8A6400]">{t("houseInfo", "Informações da casa")}</div>
-            <h2 id="mm-house-info" className="mt-0.5 text-2xl font-black uppercase leading-none">
-              {t("lot", "Lote {n}").replace("{n}", lotLabel)}
-            </h2>
-            <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
-              <dt className="font-bold">{t("infoOwner", "Titular")}</dt>
-              <dd>{h.ownerName}</dd>
-              <dt className="font-bold">{t("infoLevel", "Nível")}</dt>
-              <dd>{String(h.level).padStart(2, "0")}</dd>
-              <dt className="font-bold">{t("infoPlace", "Bairro e número")}</dt>
-              <dd>
-                {h.neighborhoodName} · {lotLabel}
-              </dd>
-              <dt className="font-bold">{t("infoFloors", "Andares")}</dt>
-              <dd>{payload.interior.floors.length}</dd>
-              <dt className="font-bold">{t("infoVisit", "Visita")}</dt>
-              <dd>{visitLine}</dd>
-            </dl>
-            <div className="mt-4 text-[10px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
-              {payload.release} · {CLIENT_RELEASE} · {payload.interior.version ?? ""}
-              {stats && <> · {Math.round(stats.fps)} fps</>}
-            </div>
-          </div>
+      {/* A gaveta do menu (direita) */}
+      {status === "ready" && (
+        <div className="pointer-events-none absolute inset-0">
+          <Drawer
+            open={menuOpen}
+            onOpenChange={setMenuOpen}
+            heading={t("menuHouse", "A casa")}
+            kanjiMark="居"
+            items={menuItems}
+            hotkeys={!blocked && !infoOpen}
+            footer={
+              <>
+                {payload.release} · {CLIENT_RELEASE} · {payload.interior.version ?? ""}
+                {stats && <> · {Math.round(stats.fps)} fps</>}
+              </>
+            }
+          />
         </div>
       )}
 
+      {infoOpen && (
+        <EvoDialog labelId="mm-house-info" eyebrow={t("houseInfo", "Informações da casa")} title={t("lot", "Lote {n}").replace("{n}", lotLabel)} kanjiMark="居" onClose={() => setInfoOpen(false)} width="max-w-sm">
+          <InfoRow label={t("infoOwner", "Titular")}>{h.ownerName}</InfoRow>
+          <InfoRow label={t("infoLevel", "Nível")}>{String(h.level).padStart(2, "0")}</InfoRow>
+          <InfoRow label={t("infoPlace", "Bairro e número")}>
+            {h.neighborhoodName} · {lotLabel}
+          </InfoRow>
+          <InfoRow label={t("infoFloors", "Andares")}>{payload.interior.floors.length}</InfoRow>
+          <InfoRow label={t("infoVisit", "Visita")}>{visitLine}</InfoRow>
+          <div className="mt-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: EVO.mudo }}>
+            {payload.release} · {CLIENT_RELEASE} · {payload.interior.version ?? ""}
+            {stats && <> · {Math.round(stats.fps)} fps</>}
+          </div>
+        </EvoDialog>
+      )}
+
       {status !== "ready" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#29262B] p-6 text-center">
-          {status === "loading" ? (
-            <div className="border-2 border-[#0B0B0D] bg-[#F7F0D9] px-4 py-3 text-sm font-bold uppercase tracking-wider text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
-              {t("houseLoading", "Abrindo a casa…")}
-            </div>
-          ) : (
-            <div className="max-w-sm border-2 border-[#0B0B0D] bg-[#F7F0D9] p-5 text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D]">
-              <div className="text-lg font-black uppercase">{t("houseErrorTitle", "A casa não abriu")}</div>
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStatus("loading")
-                    setAttempt((a) => a + 1)
-                  }}
-                  className={BTN}
-                >
-                  {t("retry", "Tentar de novo")}
-                </button>
-                <button type="button" onClick={onExit} className={BTN}>
-                  {t("exitHouse", "Sair da casa")}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <SceneCurtain
+          status={status}
+          text={t("houseLoading", "Abrindo a casa…")}
+          errorTitle={t("houseErrorTitle", "A casa não abriu")}
+          onRetry={() => {
+            setStatus("loading")
+            setAttempt((a) => a + 1)
+          }}
+          onLeave={onExit}
+          leaveLabel={t("exitHouse", "Sair da casa")}
+        />
       )}
     </div>
   )

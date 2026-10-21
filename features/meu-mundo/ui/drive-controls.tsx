@@ -20,6 +20,8 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { GameHandle } from "../engine/game"
 import { TUNING_RANGES, VEHICLE, type Tuning, type TuningKey } from "../engine/vehicle"
 import type { GameStats } from "../types"
+import { teko } from "./status/evo-skin"
+import hud from "./hud/hud.module.css"
 
 type Key = "left" | "right" | "gas" | "brake" | "hb"
 
@@ -45,13 +47,15 @@ function HoldButton({
     setDown(false)
     gameRef.current?.setTouchDrive(k, false)
   }
+  // Pele EVO (hud.module.css): placa chanfrada; apertado acende magenta.
   return (
+    <div className={`absolute ${className}`} style={style}>
     <button
       type="button"
       aria-label={label}
       aria-pressed={down}
-      className={`${className} ${down ? "translate-x-[2px] translate-y-[2px] bg-[#0B0B0D] text-[#F2B705] shadow-none" : ""}`}
-      style={{ ...style, touchAction: "none" }}
+      className={`${hud.btn} ${hud.gold} ${teko.className} h-full w-full select-none flex-col !gap-0.5 !px-0`}
+      style={{ touchAction: "none" }}
       onPointerDown={(e) => {
         if (id.current !== null) return
         id.current = e.pointerId
@@ -70,10 +74,11 @@ function HoldButton({
     >
       {children}
     </button>
+    </div>
   )
 }
 
-const PAD = "absolute flex select-none flex-col items-center justify-center gap-1 border-2 border-[#0B0B0D] bg-[#F7F0D9]/95 font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+const PAD = "text-[16px]"
 const B = "max(16px, env(safe-area-inset-bottom))"
 const L = "max(12px, env(safe-area-inset-left))"
 const R = "max(12px, env(safe-area-inset-right))"
@@ -101,14 +106,14 @@ export function TouchDriveControls({ gameRef }: { gameRef: React.RefObject<GameH
       >
         <ChevronRight className="h-10 w-10" />
       </HoldButton>
-      <HoldButton k="gas" gameRef={gameRef} label={t("gas", "Acelerar")} className={`${PAD} h-28 w-20 text-[11px]`} style={{ bottom: B, right: R }}>
+      <HoldButton k="gas" gameRef={gameRef} label={t("gas", "Acelerar")} className={`${PAD} h-28 w-20`} style={{ bottom: B, right: R }}>
         ▲<span>{t("gasShort", "Acelera")}</span>
       </HoldButton>
       <HoldButton
         k="brake"
         gameRef={gameRef}
         label={t("brakeReverse", "Frear e dar ré")}
-        className={`${PAD} h-20 w-20 text-[11px]`}
+        className={`${PAD} h-20 w-20`}
         style={{ bottom: B, right: `calc(${R} + 92px)` }}
       >
         ▼<span>{t("brakeShort", "Freio/Ré")}</span>
@@ -117,7 +122,7 @@ export function TouchDriveControls({ gameRef }: { gameRef: React.RefObject<GameH
         k="hb"
         gameRef={gameRef}
         label={t("handbrake", "Freio de mão")}
-        className={`${PAD} h-16 w-[172px] text-[11px]`}
+        className={`${PAD} h-16 w-[172px]`}
         style={{ bottom: `calc(${B} + 124px)`, right: R }}
       >
         {t("handbrakeShort", "Freio de mão")}
@@ -158,21 +163,21 @@ export function CarTuningPanel({ stats, gameRef }: { stats: GameStats | null; ga
   }
   return (
     <div className="mt-1 border-t border-white/15 pt-1">
-      <div className="font-bold text-[#F2B705]">{t("carTelemetry", "Carro")}</div>
+      <div className="font-bold text-[#ffaa4a]">{t("carTelemetry", "Carro")}</div>
       <div>
         {car.kmh.toFixed(0)} km/h · {t("gear", "marcha")} {car.gear > 0 ? "D" : car.gear < 0 ? "R" : "N"} · {t("steerShort", "esterço")} {car.steerDeg.toFixed(0)}°
       </div>
       <div>
         {t("contacts", "Rodas no chão")} {car.contacts}/4 · {t("slip", "traseira")} {(car.slip * 100).toFixed(0)}%
       </div>
-      <div className={car.drifting ? "text-[#F2B705]" : ""}>
+      <div className={car.drifting ? "text-[#ffaa4a]" : ""}>
         β {car.betaDeg.toFixed(0)}° {car.drifting ? `· ${t("drifting", "DERRAPANDO")}` : ""} · {t("handbrakeShort", "Freio de mão")} {(car.handbrake * 100).toFixed(0)}%
       </div>
       <div>
         {t("serverErr", "Diferença p/ servidor")} {car.serverErr.toFixed(2)} m
       </div>
       <details className="mt-1">
-        <summary className="cursor-pointer text-[#F2B705]">{t("tuning", "Ajustar dirigibilidade")}</summary>
+        <summary className="cursor-pointer text-[#ffaa4a]">{t("tuning", "Ajustar dirigibilidade")}</summary>
         <div className="mt-1 max-h-[42vh] w-64 overflow-y-auto pr-1">
           {(Object.keys(TUNING_RANGES) as TuningKey[]).map((k) => {
             const [lo, hi] = TUNING_RANGES[k]
@@ -182,7 +187,7 @@ export function CarTuningPanel({ stats, gameRef }: { stats: GameStats | null; ga
               <label key={k} className="block py-0.5">
                 <span className="flex justify-between">
                   <span>{t(LABELS[k][0], LABELS[k][1])}</span>
-                  <span className="text-[#F2B705]">{Number(v.toFixed(2))}</span>
+                  <span className="text-[#ffaa4a]">{Number(v.toFixed(2))}</span>
                 </span>
                 <input
                   type="range"
@@ -191,7 +196,7 @@ export function CarTuningPanel({ stats, gameRef }: { stats: GameStats | null; ga
                   step={stepSize}
                   value={v}
                   onChange={(e) => push({ ...vals, [k]: Number(e.target.value) })}
-                  className="w-full accent-[#F2B705]"
+                  className="w-full accent-[#ffaa4a]"
                 />
               </label>
             )

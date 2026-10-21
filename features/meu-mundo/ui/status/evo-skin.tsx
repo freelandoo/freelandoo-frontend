@@ -113,11 +113,16 @@ export function Plate({
 }
 
 /** Barra fina com trilho escuro (as barras dos anexos do STATUS). */
-export function Bar({ value, max = 100, color, height = 10, min = 0 }: { value: number; max?: number; color: string; height?: number; min?: number }) {
-  const p = Math.max(0, Math.min(1, (value - min) / (max - min || 1)))
+/** Barra fina; `mark` desenha um traço dourado (o piso que não se perde). */
+export function Bar({ value, max = 100, color, height = 10, min = 0, mark }: { value: number; max?: number; color: string; height?: number; min?: number; mark?: number }) {
+  const at = (v: number) => Math.max(0, Math.min(1, (v - min) / (max - min || 1)))
+  const p = at(value)
   return (
-    <div className="w-full" style={{ height, background: "rgba(0,0,0,0.55)", boxShadow: `inset 0 0 0 1px ${EVO.linha}` }}>
+    <div className="relative w-full" style={{ height, background: "rgba(0,0,0,0.55)", boxShadow: `inset 0 0 0 1px ${EVO.linha}` }}>
       <div style={{ width: `${p * 100}%`, height: "100%", background: color, boxShadow: `0 0 10px ${color}66` }} />
+      {mark != null && mark > min && (
+        <div className="absolute" style={{ left: `calc(${at(mark) * 100}% - 1px)`, top: -4, bottom: -4, width: 3, background: EVO.douradoClaro, boxShadow: `0 0 6px ${EVO.dourado}` }} />
+      )}
     </div>
   )
 }

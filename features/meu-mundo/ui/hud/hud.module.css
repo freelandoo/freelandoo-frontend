@@ -1,0 +1,392 @@
+/* features/meu-mundo/ui/hud/hud.module.css — a pele EVO dos botões do jogo.
+ *
+ * O menu do estábulo do EVO Brazil (Cat demon/jogo/ui/evo/rancho/botao_rancho.gd):
+ * placa preta, filete dourado, canto de baixo à direita cortado, ícone
+ * dourado, texto branco condensado. Quente (hover/foco/aberto): o recheio vira
+ * degradê magenta, o halo acende e a seta aparece na ponta.
+ *
+ * Só `opacity` e `transform` animam (o halo é uma camada própria; nada de
+ * animar filtro ou gradiente). As cores vêm de evo-skin.tsx (EVO).
+ */
+
+/* ═══ item do menu (a placa do estábulo) ═══ */
+.item {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+@media (pointer: coarse) {
+  .item {
+    height: 64px;
+  }
+}
+.item:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+.halo {
+  position: absolute;
+  inset: 0;
+  box-shadow: 0 0 22px 2px rgba(255, 0, 110, 0.55);
+  opacity: 0;
+  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.plate {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  background: rgba(214, 167, 91, 0.75); /* o filete dourado */
+  transition: background 180ms;
+}
+.fill,
+.hot {
+  position: absolute;
+  inset: 1.5px;
+  clip-path: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%);
+}
+.fill {
+  background: linear-gradient(180deg, rgba(13, 9, 12, 0.92), rgba(5, 3, 5, 0.95));
+}
+.hot {
+  background: linear-gradient(90deg, rgba(158, 0, 66, 0.96), rgba(242, 13, 115, 0.92));
+  opacity: 0;
+  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.shine {
+  position: absolute;
+  left: 6px;
+  top: 3px;
+  width: 35%;
+  height: 1px;
+  background: rgba(242, 211, 154, 0.2);
+}
+.metal {
+  position: absolute;
+  right: 18px;
+  bottom: 0;
+  width: 42px;
+  height: 2.5px;
+  background: #d6a75b;
+  transition: opacity 180ms;
+}
+.icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  display: flex;
+  translate: 0 -50%;
+  color: #d6a75b;
+  transition: color 180ms;
+}
+.label {
+  position: absolute;
+  left: 58px;
+  right: 46px;
+  top: 50%;
+  translate: 0 -46%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #f5f1ed;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.hint {
+  position: absolute;
+  left: 58px;
+  right: 46px;
+  bottom: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: rgba(245, 241, 237, 0.55);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.item[data-hint] .label {
+  top: 42%;
+}
+.arrow {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  display: flex;
+  translate: 0 -50%;
+  color: #f5f1ed;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition:
+    opacity 180ms,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bar {
+  position: absolute;
+  right: 2px;
+  top: 6px;
+  bottom: 14px;
+  width: 3px;
+  background: #ff168a;
+  opacity: 0;
+  transition: opacity 180ms;
+}
+.badge {
+  position: absolute;
+  right: 44px;
+  top: 50%;
+  translate: 0 -50%;
+  padding: 2px 6px 0;
+  background: #ff006e;
+  color: #f5f1ed;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 18px;
+}
+
+.item:not(:disabled):hover .halo,
+.item:not(:disabled):focus-visible .halo,
+.item[data-active] .halo,
+.item:not(:disabled):hover .hot,
+.item:not(:disabled):focus-visible .hot,
+.item[data-active] .hot,
+.item:not(:disabled):hover .bar,
+.item:not(:disabled):focus-visible .bar,
+.item[data-active] .bar {
+  opacity: 1;
+}
+.item:not(:disabled):hover .plate,
+.item:not(:disabled):focus-visible .plate,
+.item[data-active] .plate {
+  background: #ff5fae;
+}
+.item:not(:disabled):hover .arrow,
+.item:not(:disabled):focus-visible .arrow,
+.item[data-active] .arrow {
+  opacity: 1;
+  transform: none;
+}
+.item:not(:disabled):hover .icon,
+.item:not(:disabled):focus-visible .icon,
+.item[data-active] .icon {
+  color: #f5f1ed;
+}
+.item:not(:disabled):hover .metal,
+.item:not(:disabled):focus-visible .metal,
+.item[data-active] .metal {
+  opacity: 0.5;
+}
+.item:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* ═══ botões (ação magenta, ouro, fantasma) ═══ */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  isolation: isolate;
+  transition: transform 120ms;
+}
+.btn::before,
+.btn::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+}
+/* borda = camada de fora; recheio = camada de dentro (o clip-path corta borda e sombra) */
+.btn::before {
+  inset: 0;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+}
+.btn::after {
+  inset: 2px;
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+}
+.btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+.btn:focus-visible {
+  box-shadow: 0 0 0 2px #f2d39a;
+}
+.primary {
+  color: #f5f1ed;
+}
+.primary::before {
+  background: #ff4fa4;
+}
+.primary::after {
+  background: linear-gradient(180deg, rgba(128, 0, 51, 0.97), rgba(61, 0, 26, 0.98));
+}
+.primary:not(:disabled):hover::after,
+.primary[aria-pressed="true"]::after {
+  background: linear-gradient(180deg, rgba(178, 5, 77, 0.97), rgba(110, 0, 42, 0.98));
+}
+.gold {
+  color: #f2d39a;
+}
+.gold::before {
+  background: rgba(214, 167, 91, 0.85);
+}
+.gold::after {
+  background: linear-gradient(180deg, rgba(21, 19, 24, 0.95), rgba(8, 7, 11, 0.96));
+}
+.gold:not(:disabled):hover {
+  color: #f5f1ed;
+}
+.gold:not(:disabled):hover::before,
+.gold[aria-pressed="true"]::before {
+  background: #ff5fae;
+}
+.gold[aria-pressed="true"]::after {
+  background: linear-gradient(180deg, rgba(128, 0, 51, 0.97), rgba(61, 0, 26, 0.98));
+}
+.ghost {
+  color: #a39aa3;
+}
+.ghost::before {
+  background: rgba(245, 240, 237, 0.28);
+}
+.ghost::after {
+  background: rgba(8, 7, 11, 0.9);
+}
+.ghost:not(:disabled):hover {
+  color: #f5f1ed;
+}
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 2px 4px 0;
+  border: 1.5px solid currentColor;
+  font-size: 15px;
+  letter-spacing: 0;
+  opacity: 0.85;
+}
+
+/* ═══ o puxador da gaveta ═══ */
+.pull {
+  position: absolute;
+  right: 0;
+  width: 40px;
+  height: 148px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms;
+}
+.pull .plate {
+  clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+}
+.pull .fill,
+.pull .hot {
+  clip-path: polygon(11px 0, 100% 0, 100% 100%, 11px 100%, 0 calc(100% - 11px), 0 11px);
+}
+.pull:hover .hot,
+.pull:focus-visible .hot,
+.pull:hover .halo,
+.pull:focus-visible .halo {
+  opacity: 1;
+}
+.pull:hover .plate,
+.pull:focus-visible .plate {
+  background: #ff5fae;
+}
+.pullInner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #f2d39a;
+}
+.pullText {
+  writing-mode: vertical-rl;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #f5f1ed;
+}
+
+/* ═══ a gaveta ═══ */
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(360px, 88vw);
+  background: linear-gradient(90deg, rgba(8, 7, 11, 0) 0%, rgba(8, 7, 11, 0.82) 16%, rgba(8, 7, 11, 0.95) 100%);
+  transform: translateX(105%);
+  transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+  touch-action: pan-y;
+}
+.drawer[data-open] {
+  transform: none;
+}
+.drawer .slot {
+  opacity: 0;
+  transform: translateX(80px);
+  transition:
+    opacity 200ms,
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.drawer[data-open] .slot {
+  opacity: 1;
+  transform: none;
+}
+.fio {
+  height: 2px;
+  background: linear-gradient(90deg, #ff006e, rgba(255, 0, 110, 0.1));
+  box-shadow: 0 0 10px rgba(255, 0, 110, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .drawer .slot,
+  .pull,
+  .arrow,
+  .hot,
+  .halo {
+    transition: none;
+  }
+}

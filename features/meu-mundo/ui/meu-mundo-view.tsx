@@ -9,21 +9,22 @@
 // servidor confirmou o acesso de administrador — abrir o perfil ou o feed não
 // baixa nem inicializa o motor 3D.
 
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Activity,
-  ArrowLeft,
   CarFront,
   Construction,
   DoorOpen,
   Footprints,
+  Gamepad2,
   Hand,
   HeartPulse,
   Home,
   Loader2,
   LocateFixed,
   Lock,
+  LogOut,
   RefreshCw,
   Send,
   Shirt,
@@ -36,6 +37,8 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { CarTuningPanel, TouchDriveControls } from "./drive-controls"
+import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, type DrawerItem } from "./hud/hud-kit"
+import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
 import {
   BODY_IDS,
@@ -52,9 +55,6 @@ import {
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
 export const CLIENT_RELEASE = "mm3d-13"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
-
-export const BTN =
-  "inline-flex h-10 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D]/85 px-3 text-[11px] font-bold uppercase tracking-wider text-[#F2B705] shadow-[2px_2px_0_0_#F2B705] active:translate-x-[1px] active:translate-y-[1px]"
 
 export const SAFE = {
   top: "max(12px, env(safe-area-inset-top))",
@@ -120,6 +120,9 @@ export default function MeuMundoView({
     status: "ok",
   })
   const [levelOpen, setLevelOpen] = useState(false)
+  // A gaveta do menu (direita): abre puxando, clicando no puxador ou com M.
+  const [menuOpen, setMenuOpen] = useState(false)
+  const router = useRouter()
   // Menu da própria casa: entrar, alterar o nível (teste) e convidar.
   // Casa que este jogador pode visitar aqui. Quem é do MESMO bairro não troca
   // de ambiente ao aceitar: a visita ativa chega pelo estado de visitas.
@@ -218,8 +221,8 @@ export default function MeuMundoView({
   }, [statsOpen])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(!!open || levelOpen || !!blocked)
-  }, [open, levelOpen, blocked])
+    gameRef.current?.setBlocked(!!open || levelOpen || bodyOpen || menuOpen || !!blocked)
+  }, [open, levelOpen, bodyOpen, menuOpen, blocked])
 
   useEffect(() => {
     if (!open) return
@@ -293,6 +296,31 @@ export default function MeuMundoView({
         ? exitLabel
         : ""
 
+  const menuItems: DrawerItem[] = [
+    ...(onOpenStatus
+      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, onSelect: () => onOpenStatus(body) }]
+      : []),
+    ...(!payload.me.visitor
+      ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, onSelect: onOpenInvite }]
+      : []),
+    {
+      id: "body",
+      label: t("menuBody", "Tipo físico"),
+      hint: t("menuBodyHint", "Teste · {body}").replace("{body}", bodyLabel(body)),
+      icon: <Shirt className="h-5 w-5" />,
+      onSelect: () => setBodyOpen(true),
+    },
+    { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: recenter },
+    { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, onSelect: () => setHelpOpen(true) },
+    { id: "tech", label: t("menuTech", "Técnico"), hint: t("techPanel", "Painel técnico"), icon: <Activity className="h-5 w-5" />, active: statsOpen, onSelect: () => setStatsOpen((v) => !v) },
+    ...(net === "offline" || net === "replaced"
+      ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
+      : []),
+    { id: "leave", label: t("menuExitGame", "Sair do jogo"), hint: t("back", "Voltar ao perfil"), icon: <LogOut className="h-5 w-5" />, onSelect: () => router.push("/account") },
+  ]
+  const netTone = net === "online" ? "bom" : net === "offline" || net === "replaced" ? "perigo" : "ambar"
+  const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
+
   return (
     <div className="fl-sharp fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#A8D4F2]">
       <canvas
@@ -302,419 +330,357 @@ export default function MeuMundoView({
         aria-label={t("canvasAria", "Bairro do Meu Mundo")}
       />
 
-      {/* Barra superior */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2"
-        style={{ paddingTop: SAFE.top, paddingLeft: SAFE.left, paddingRight: SAFE.right }}
-      >
-        <div className="pointer-events-auto border-2 border-[#0B0B0D] bg-[#F7F0D9] px-3 py-1.5 shadow-[3px_3px_0_0_#0B0B0D]">
-          <div className="text-[13px] font-black uppercase leading-none tracking-wide text-[#0B0B0D]">
-            {t("title", "Meu Mundo")}
-          </div>
-          <div className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#8A6400]">
-            <Construction className="h-3 w-3" />
-            {t("devBadge", "Em desenvolvimento")}
-            <span className="hidden sm:inline">· {nb.name}</span>
-          </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
-            {payload.me.visitor && payload.me.visiting ? (
-              <span className="inline-flex items-center gap-1 bg-[#F2B705] px-1.5 py-0.5 text-[#0B0B0D]">
-                <DoorOpen className="h-3 w-3" />
-                {t("visitingChip", "Visitando {name} · casa {n}")
-                  .replace("{name}", payload.me.visiting.hostName)
-                  .replace("{n}", String(payload.me.visiting.house).padStart(2, "0"))}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 bg-[#F2B705] px-1.5 py-0.5 text-[#0B0B0D]">
-                <Home className="h-3 w-3" />
-                {t("myHouse", "Sua casa {n}").replace("{n}", String(payload.me.house).padStart(2, "0"))}
-              </span>
-            )}
-            <span
-              className="inline-flex items-center gap-1 bg-[#0B0B0D] px-1.5 py-0.5 text-[#F7F0D9]"
-              title={t("residentsHint", "Moradores titulares do bairro")}
+      {/* Identidade (o menu mora na gaveta da direita) */}
+      <div className="pointer-events-none absolute left-0 top-0" style={{ paddingTop: SAFE.top, paddingLeft: SAFE.left }}>
+        <IdPlate
+          seal={["天", "地"]}
+          title={t("title", "Meu Mundo")}
+          sub={
+            <>
+              {t("devBadge", "Em desenvolvimento")}
+              <span className="hidden sm:inline"> · {nb.name}</span>
+            </>
+          }
+        >
+          {payload.me.visitor && payload.me.visiting ? (
+            <HudChip tone="ouro" icon={<DoorOpen className="h-3 w-3" />}>
+              {t("visitingChip", "Visitando {name} · casa {n}")
+                .replace("{name}", payload.me.visiting.hostName)
+                .replace("{n}", String(payload.me.visiting.house).padStart(2, "0"))}
+            </HudChip>
+          ) : (
+            <HudChip tone="ouro" icon={<Home className="h-3 w-3" />}>
+              {t("myHouse", "Sua casa {n}").replace("{n}", String(payload.me.house).padStart(2, "0"))}
+            </HudChip>
+          )}
+          <HudChip icon={<Users className="h-3 w-3" />} title={t("residentsHint", "Moradores titulares do bairro")}>
+            {t("residents", "{n} moradores").replace("{n}", String(residents))}
+          </HudChip>
+          <span role="status" aria-live="polite">
+            <HudChip
+              tone={netTone}
+              icon={net === "online" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+              onClick={net === "offline" || net === "replaced" ? () => gameRef.current?.reconnect() : undefined}
+              title={net === "offline" || net === "replaced" ? t("reconnect", "Reconectar") : undefined}
             >
-              <Users className="h-3 w-3" />
-              {t("residents", "{n} moradores").replace("{n}", String(residents))}
-            </span>
-            <span
-              role="status"
-              aria-live="polite"
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-white ${
-                net === "online" ? "bg-[#15803D]" : net === "offline" || net === "replaced" ? "bg-[#B91C1C]" : "bg-[#8A6400]"
-              }`}
-            >
-              {net === "online" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
               {netLabel}
               {net === "online" && <> · {t("onlineNow", "{n} conectados").replace("{n}", String(online))}</>}
-            </span>
-          </div>
-        </div>
-        <div className="pointer-events-auto flex shrink-0 justify-end gap-2">
-          {(net === "offline" || net === "replaced") && (
-            <button type="button" onClick={() => gameRef.current?.reconnect()} className={BTN}>
-              <RefreshCw className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("reconnect", "Reconectar")}</span>
-            </button>
-          )}
-          {onOpenStatus && (
-            <button
-              type="button"
-              onClick={() => onOpenStatus(body)}
-              className={BTN}
-              aria-label={t("stOpen", "Status do hóspede")}
-            >
-              <HeartPulse className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("stTitle", "Status")}</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setBodyOpen((v) => !v)}
-            className={BTN}
-            aria-pressed={bodyOpen}
-            aria-label={t("bodyPicker", "Tipo físico (teste)")}
-          >
-            <Shirt className="h-4 w-4" />
-            <span className="hidden sm:inline">{bodyLabel(body)}</span>
-          </button>
-          <button type="button" onClick={recenter} className={BTN} aria-label={t("recenter", "Centralizar a câmera")}>
-            <LocateFixed className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatsOpen((v) => !v)}
-            className={BTN}
-            aria-pressed={statsOpen}
-            aria-label={t("techPanel", "Painel técnico")}
-          >
-            <Activity className="h-4 w-4" />
-          </button>
-          <Link href="/account" className={BTN}>
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("back", "Voltar ao perfil")}</span>
-          </Link>
-        </div>
+            </HudChip>
+          </span>
+        </IdPlate>
       </div>
 
-      {/* Seletor administrativo de tipo físico (teste — não é loja nem guarda-roupa) */}
-      {bodyOpen && (
-        <div
-          className="pointer-events-auto absolute right-0 border-2 border-[#0B0B0D] bg-[#F7F0D9] p-2 text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-          style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 52px)", marginRight: SAFE.right }}
-        >
-          <div className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#8A6400]">
-            {t("bodyPicker", "Tipo físico (teste)")}
-          </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            {BODY_IDS.map((b) => (
-              <button
-                key={b}
-                type="button"
-                onClick={() => chooseBody(b)}
-                aria-pressed={body === b}
-                className={`h-11 min-w-24 border-2 border-[#0B0B0D] px-3 text-[12px] font-black uppercase ${
-                  body === b ? "bg-[#0B0B0D] text-[#F2B705]" : "bg-white"
-                }`}
-              >
-                {bodyLabel(b)}
-              </button>
-            ))}
-          </div>
-          <p className="mt-1.5 max-w-[14rem] px-1 text-[10px] font-medium leading-tight text-[#6B645A]">
-            {t("bodyHint", "Teste visual: nenhum corpo tem vantagem de velocidade.")}
-          </p>
-        </div>
-      )}
-
-      {/* Painel técnico */}
+      {/* Painel técnico (leitura ao vivo; não bloqueia o jogo) */}
       {statsOpen && (
-        <div
-          className="pointer-events-auto absolute right-0 border-2 border-[#0B0B0D] bg-[#0B0B0D]/90 px-3 py-2 font-mono text-[11px] leading-5 text-[#E8E2D2]"
-          style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 52px)", marginRight: SAFE.right }}
-        >
-          <div className="mb-1 font-bold text-[#F2B705]">{t("techPanel", "Painel técnico")}</div>
-          {stats ? (
-            <>
-              <div>FPS {stats.fps.toFixed(0)}</div>
-              <div>
-                {t("frameMs", "Quadro")} {stats.frameMs != null ? `${stats.frameMs.toFixed(1)} ms` : "—"}
+        <div className="pointer-events-auto absolute left-0 max-w-[min(92vw,320px)]" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 96px)", marginLeft: SAFE.left }}>
+          <Chamfer cut={12} border={`${EVO.dourado}99`}>
+            <div className="relative px-3 py-2 font-mono text-[11px] leading-5" style={{ color: EVO.branco }}>
+              <button
+                type="button"
+                onClick={() => setStatsOpen(false)}
+                className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center"
+                style={{ color: EVO.mudo }}
+                aria-label={t("close", "Fechar")}
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className={`${teko.className} mb-0.5 text-[18px] uppercase tracking-[0.14em]`} style={{ color: EVO.ambar }}>
+                {t("techPanel", "Painel técnico")}
               </div>
-              <div>
-                {t("meshes", "Malhas")} {stats.meshes} ({t("active", "ativas")} {stats.activeMeshes})
+              {stats ? (
+                <>
+                  <div>FPS {stats.fps.toFixed(0)}</div>
+                  <div>
+                    {t("frameMs", "Quadro")} {stats.frameMs != null ? `${stats.frameMs.toFixed(1)} ms` : "—"}
+                  </div>
+                  <div>
+                    {t("meshes", "Malhas")} {stats.meshes} ({t("active", "ativas")} {stats.activeMeshes})
+                  </div>
+                  <div>
+                    {t("materials", "Materiais")} {stats.materials}
+                  </div>
+                  <div>Draw calls {stats.drawCalls ?? "—"}</div>
+                  <div>WebGL {stats.webgl}</div>
+                  <div>
+                    x {stats.x.toFixed(1)} · z {stats.z.toFixed(1)}
+                  </div>
+                  <div>
+                    {t("liveGames", "Jogos ativos")} {stats.liveGames} · {t("avatars", "Avatares")} {stats.avatars}
+                  </div>
+                  <div>
+                    {t("netShort", "Rede")} {net} · {online}
+                  </div>
+                  <CarTuningPanel stats={stats} gameRef={gameRef} />
+                  <div>
+                    {t("houseModels", "Casas na GPU")} {stats.houseModels.length ? stats.houseModels.map((n) => String(n).padStart(2, "0")).join(",") : "—"}
+                  </div>
+                </>
+              ) : (
+                <div>…</div>
+              )}
+              <div className="mt-1 border-t pt-1" style={{ borderColor: EVO.linha, color: EVO.mudo }}>
+                {CLIENT_RELEASE} · {payload.release} · {BUILD}
               </div>
-              <div>
-                {t("materials", "Materiais")} {stats.materials}
-              </div>
-              <div>Draw calls {stats.drawCalls ?? "—"}</div>
-              <div>WebGL {stats.webgl}</div>
-              <div>
-                x {stats.x.toFixed(1)} · z {stats.z.toFixed(1)}
-              </div>
-              <div>
-                {t("liveGames", "Jogos ativos")} {stats.liveGames} · {t("avatars", "Avatares")} {stats.avatars}
-              </div>
-              <div>
-                {t("netShort", "Rede")} {net} · {online}
-              </div>
-              <CarTuningPanel stats={stats} gameRef={gameRef} />
-              <div>
-                {t("houseModels", "Casas na GPU")} {stats.houseModels.length ? stats.houseModels.map((n) => String(n).padStart(2, "0")).join(",") : "—"}
-              </div>
-            </>
-          ) : (
-            <div>…</div>
-          )}
-          <div className="mt-1 border-t border-white/15 pt-1 text-[#9A938A]">
-            {CLIENT_RELEASE} · {payload.release} · {BUILD}
-          </div>
+            </div>
+          </Chamfer>
         </div>
       )}
 
-      {/* Ajuda dos controles */}
-      {status === "ready" && helpOpen && !open && (
+      {/* Ajuda dos controles (some ao tocar; volta pelo menu) */}
+      {status === "ready" && helpOpen && !open && !menuOpen && (
         <button
           type="button"
           onClick={() => setHelpOpen(false)}
-          className="absolute max-w-[min(92vw,420px)] border-2 border-[#0B0B0D] bg-[#F7F0D9]/95 px-3 py-2 text-left text-[11px] font-semibold leading-4 text-[#2B2620] shadow-[3px_3px_0_0_#0B0B0D]"
-          style={
-            isTouch
-              ? { bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 176px)", left: SAFE.left }
-              : { bottom: SAFE.bottom, left: SAFE.left }
-          }
+          className="pointer-events-auto absolute max-w-[min(92vw,440px)] text-left"
+          style={isTouch ? { bottom: bottom(176), left: SAFE.left } : { bottom: SAFE.bottom, left: SAFE.left }}
         >
-          {drivingLot
-            ? isTouch
-              ? t("helpDriveTouch", "◀ ▶: volante · Acelera · Freio/Ré (parado, engata a ré) · Freio de mão: derrapar")
-              : t("helpDriveDesktop", "W/↑ acelerar · S/↓ frear (parado, ré) · A/D ou ←/→ direção · Espaço: freio de mão · E: sair")
-            : isTouch
-              ? t("helpTouch2", "Joystick: andar · Correr: corrida lenta · Arraste a tela: girar a câmera · Botão: interagir")
-              : t("helpDesktop2", "WASD ou setas: andar · Shift: corrida lenta · Arraste: girar a câmera · Roda: zoom · E: interagir")}
-          <span className="ml-2 text-[#8A6400]">{t("hideHelp", "(ocultar)")}</span>
+          <Chamfer cut={10} border={`${EVO.dourado}99`}>
+            <div className={`${archivo.className} px-3 py-2 text-[12px] font-medium leading-4`} style={{ color: EVO.branco }}>
+              <span className={`${teko.className} mr-2 text-[16px] uppercase tracking-[0.14em]`} style={{ color: EVO.ambar }}>
+                {t("menuControls", "Controles")}
+              </span>
+              {drivingLot
+                ? isTouch
+                  ? t("helpDriveTouch", "◀ ▶: volante · Acelera · Freio/Ré (parado, engata a ré) · Freio de mão: derrapar")
+                  : t("helpDriveDesktop", "W/↑ acelerar · S/↓ frear (parado, ré) · A/D ou ←/→ direção · Espaço: freio de mão · E: sair")
+                : isTouch
+                  ? t("helpTouch3", "Joystick: andar · Correr: corrida lenta · Arraste a tela: girar a câmera · Botão: interagir · Puxe a aba da direita: menu")
+                  : t("helpDesktop3", "WASD ou setas: andar · Shift: corrida lenta · Arraste: girar a câmera · Roda: zoom · E: interagir · M: menu")}
+              <span className="ml-2" style={{ color: EVO.mudo }}>
+                {t("hideHelp", "(ocultar)")}
+              </span>
+            </div>
+          </Chamfer>
         </button>
       )}
 
-      {/* Aviso de interação */}
+      {/* Aviso de interação (só leitura: casa alheia, saída) */}
       {status === "ready" && nearby && !nearbyAction && !open && !levelOpen && !isTouch && (
-        <div
-          className="pointer-events-none absolute left-1/2 -translate-x-1/2 border-2 border-[#0B0B0D] bg-[#0B0B0D]/90 px-3 py-2 text-[12px] font-bold uppercase tracking-wider text-[#F7F0D9]"
-          style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
-        >
-          <span className="mr-2 inline-flex h-6 w-6 items-center justify-center bg-[#F2B705] text-[#0B0B0D]">E</span>
-          {nearbyLabel}
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2" style={{ bottom: bottom(48) }}>
+          <EvoToast icon={<kbd className="border px-1.5 pt-0.5 text-[15px]">E</kbd>}>{nearbyLabel}</EvoToast>
         </div>
       )}
 
       {/* Computador: a própria casa (e a casa visitada) ganha botão clicável, com o atalho E nele */}
       {status === "ready" && nearbyAction && !open && !levelOpen && !isTouch && !drivingLot && (
-        <div
-          className="absolute left-1/2 flex -translate-x-1/2 items-stretch gap-2"
-          style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 48px)" }}
-        >
-        {nearbyMine && (
-          <button
-            type="button"
-            onClick={() => setLevelOpen(true)}
-            className="inline-flex h-12 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F7F0D9] px-4 text-[13px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+        <div className="absolute left-1/2 flex -translate-x-1/2 items-stretch gap-2" style={{ bottom: bottom(48) }}>
+          {nearbyMine && (
+            <EvoButton variant="gold" size="lg" icon={<Construction className="h-5 w-5" />} onClick={() => setLevelOpen(true)}>
+              {t("changeHouse", "Alterar casa")}
+            </EvoButton>
+          )}
+          <EvoButton
+            variant="primary"
+            size="lg"
+            kbd="E"
+            icon={nearbyCar ? <CarFront className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
+            onClick={() => gameRef.current?.interact()}
+            aria-label={nearbyLabel}
           >
-            <Construction className="h-5 w-5" />
-            {t("changeHouse", "Alterar casa")}
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => gameRef.current?.interact()}
-          aria-label={nearbyLabel}
-          className="inline-flex h-12 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 text-[13px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-        >
-          <span className="inline-flex h-6 w-6 items-center justify-center bg-[#0B0B0D] text-[#F2B705]" aria-hidden>
-            E
-          </span>
-          {nearbyCar ? <CarFront className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
-          {nearbyLabel}
-        </button>
+            {nearbyLabel}
+          </EvoButton>
         </div>
       )}
 
-      {/* Controles de toque */}
+      {/* Dirigindo: sair e recuperar */}
       {status === "ready" && !!drivingLot && !open && !levelOpen && (
-        <div
-          className="absolute left-1/2 flex -translate-x-1/2 gap-2"
-          style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 96px)" }}
-        >
-          <button
-            type="button"
-            onClick={() => gameRef.current?.interact()}
-            className="inline-flex h-11 items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 text-[12px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-          >
-            <CarFront className="h-5 w-5" />
+        <div className="absolute left-1/2 flex -translate-x-1/2 gap-2" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>
+          <EvoButton variant="primary" icon={<CarFront className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
             {t("exitCar", "Sair do carro")}
-          </button>
-          <button
-            type="button"
+          </EvoButton>
+          <EvoButton
+            variant="gold"
+            icon={<RefreshCw className="h-4 w-4" />}
             onClick={() => gameRef.current?.recoverCar()}
-            className="inline-flex h-11 items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F7F0D9] px-3 text-[11px] font-black uppercase text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
             title={t("recoverHint", "Carro preso? Volta para a vaga da casa (parado, a cada 15 s).")}
           >
-            <RefreshCw className="h-4 w-4" />
             {t("recoverCar", "Recuperar")}
-          </button>
+          </EvoButton>
         </div>
       )}
 
-      {status === "ready" && isTouch && !open && !levelOpen && !!drivingLot && <TouchDriveControls gameRef={gameRef} />}
+      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !!drivingLot && <TouchDriveControls gameRef={gameRef} />}
 
-      {status === "ready" && isTouch && !open && !levelOpen && !drivingLot && (
+      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !drivingLot && (
         <>
           <Joystick gameRef={gameRef} />
-          <button
-            type="button"
+          <EvoButton
+            variant="gold"
             onClick={toggleRun}
             aria-pressed={running}
             aria-label={t("runAria", "Corrida lenta (liga e desliga)")}
-            className={`absolute flex h-16 w-16 flex-col items-center justify-center gap-0.5 border-2 border-[#0B0B0D] text-[10px] font-black uppercase shadow-[3px_3px_0_0_#0B0B0D] ${
-              running ? "bg-[#0B0B0D] text-[#F2B705]" : "bg-[#F7F0D9] text-[#0B0B0D]"
-            }`}
-            style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 112px)", right: SAFE.right }}
+            size="none"
+            className="!absolute h-16 w-16 flex-col !gap-0.5 !px-0 text-[14px]"
+            style={{ bottom: bottom(112), right: SAFE.right }}
+            icon={<Footprints className="h-6 w-6" />}
           >
-            <Footprints className="h-6 w-6" />
             {t("run", "Correr")}
-          </button>
+          </EvoButton>
           {nearbyMine && (
-            <button
-              type="button"
+            <EvoButton
+              variant="gold"
               onClick={() => setLevelOpen(true)}
-              className="absolute flex min-h-14 max-w-[44vw] items-center gap-2 border-2 border-[#0B0B0D] bg-[#F7F0D9] px-4 py-2 text-[13px] font-black uppercase leading-tight text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-              style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 196px)", right: SAFE.right }}
+              size="none"
+              className="!absolute min-h-14 max-w-[44vw] text-[17px] leading-tight"
+              style={{ bottom: bottom(196), right: SAFE.right }}
+              icon={<Construction className="h-5 w-5 shrink-0" />}
             >
-              <Construction className="h-5 w-5 shrink-0" />
               {t("changeHouse", "Alterar casa")}
-            </button>
+            </EvoButton>
           )}
           {nearby && (
-            <button
-              type="button"
+            <EvoButton
+              variant="primary"
               onClick={() => gameRef.current?.interact()}
               aria-label={nearbyLabel}
-              className="absolute flex min-h-16 min-w-16 max-w-[44vw] items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-[13px] font-black uppercase leading-tight text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-              style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 24px)", right: SAFE.right }}
+              size="none"
+              className="!absolute min-h-16 min-w-16 max-w-[44vw] text-[18px] leading-tight"
+              style={{ bottom: bottom(24), right: SAFE.right }}
+              icon={nearbyCar ? <CarFront className="h-6 w-6 shrink-0" /> : nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
             >
-              {nearbyCar ? <CarFront className="h-6 w-6 shrink-0" /> : nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
               {nearbyLabel}
-            </button>
+            </EvoButton>
           )}
         </>
       )}
 
-      {/* Painel da casa / da saída */}
-      {open && (
-        <div
-          className="absolute inset-0 flex items-end justify-center bg-black/30 sm:items-center"
-          style={{ paddingBottom: SAFE.bottom, paddingLeft: SAFE.left, paddingRight: SAFE.right }}
-          onPointerDown={(e) => {
-            if (e.target === e.currentTarget) setOpen(null)
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="relative w-full max-w-sm border-2 border-[#0B0B0D] bg-[#F7F0D9] p-5 text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
-          >
-            <button
-              type="button"
-              onClick={() => setOpen(null)}
-              className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center"
-              aria-label={t("close", "Fechar")}
-            >
-              <X className="h-5 w-5" />
-            </button>
-            {open.kind === "house" ? (
+      {/* A gaveta do menu (direita) */}
+      {status === "ready" && (
+        <div className="pointer-events-none absolute inset-0">
+          <Drawer
+            open={menuOpen}
+            onOpenChange={setMenuOpen}
+            heading={t("menuStreet", "O bairro")}
+            kanjiMark="道"
+            items={menuItems}
+            hotkeys={!blocked && !open && !levelOpen && !bodyOpen}
+            footer={
               <>
-                <div className="text-[11px] font-bold uppercase tracking-widest text-[#8A6400]">
-                  {t("houseEyebrow", "Casa")} ·{" "}
-                  {open.house.isMine
-                    ? t("yourHouse", "Sua casa")
-                    : open.house.ownerName
-                      ? t("occupied", "Ocupada")
-                      : t("available", "Disponível")}
-                </div>
-                <div className="mt-1 text-3xl font-black uppercase leading-none">
-                  {t("lot", "Lote {n}").replace("{n}", String(open.lot.number).padStart(2, "0"))}
-                </div>
-                <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                  <dt className="font-semibold text-[#6B645A]">{t("level", "Nível da casa")}</dt>
-                  <dd className="font-bold">{String(open.house.level).padStart(2, "0")}</dd>
-                  <dt className="font-semibold text-[#6B645A]">{t("owner", "Proprietário")}</dt>
-                  <dd className="font-bold">
-                    {open.house.isMine ? t("yourHouse", "Sua casa") : (open.house.ownerName ?? t("available", "Disponível"))}
-                  </dd>
-                </dl>
-                {open.house.ownerName && (
-                  <div className="mt-4 flex items-center gap-2 border-2 border-dashed border-[#0B0B0D]/40 px-3 py-2 text-sm font-semibold">
-                    <Lock className="h-4 w-4 shrink-0" />
-                    {t("needsInvite", "Esta casa só abre com convite do morador.")}
-                  </div>
-                )}
+                {nb.name} · {CLIENT_RELEASE} · {BUILD}
               </>
-            ) : (
-              <>
-                <div className="text-[11px] font-bold uppercase tracking-widest text-[#8A6400]">
-                  {t("exitEyebrow", "Saída do bairro")}
-                </div>
-                <div className="mt-1 text-2xl font-black uppercase leading-tight">
-                  {exitLabel} — {t("nextStage", "próxima etapa")}
-                </div>
-                <p className="mt-3 text-sm font-medium text-[#3D372F]">
-                  {t("exitDesc", "O centro da cidade ainda está sendo construído. Por enquanto, o portão fica fechado.")}
-                </p>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setOpen(null)}
-              className="mt-5 inline-flex h-11 w-full items-center justify-center border-2 border-[#0B0B0D] bg-[#0B0B0D] text-sm font-bold uppercase tracking-wider text-[#F2B705]"
-            >
-              {t("ok", "Entendi")}
-            </button>
-          </div>
+            }
+          />
         </div>
+      )}
+
+      {/* Seletor administrativo de tipo físico (teste — não é loja nem guarda-roupa) */}
+      {bodyOpen && (
+        <EvoDialog
+          labelId="mm-body-title"
+          eyebrow={t("testFeature", "Recurso de teste")}
+          title={t("bodyPicker", "Tipo físico (teste)")}
+          kanjiMark="体"
+          onClose={() => setBodyOpen(false)}
+          width="max-w-sm"
+        >
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            {BODY_IDS.map((b) => (
+              <EvoButton key={b} variant="gold" aria-pressed={body === b} onClick={() => chooseBody(b)} className="w-full">
+                {bodyLabel(b)}
+              </EvoButton>
+            ))}
+          </div>
+          <p className="mt-3" style={{ color: EVO.mudo }}>
+            {t("bodyHint", "Teste visual: nenhum corpo tem vantagem de velocidade.")}
+          </p>
+        </EvoDialog>
+      )}
+
+      {/* Ficha da casa / da saída */}
+      {open && (
+        <EvoDialog
+          labelId="mm-open-title"
+          eyebrow={
+            open.kind === "house"
+              ? `${t("houseEyebrow", "Casa")} · ${
+                  open.house.isMine ? t("yourHouse", "Sua casa") : open.house.ownerName ? t("occupied", "Ocupada") : t("available", "Disponível")
+                }`
+              : t("exitEyebrow", "Saída do bairro")
+          }
+          title={open.kind === "house" ? t("lot", "Lote {n}").replace("{n}", String(open.lot.number).padStart(2, "0")) : `${exitLabel} — ${t("nextStage", "próxima etapa")}`}
+          kanjiMark={open.kind === "house" ? "居" : "道"}
+          onClose={() => setOpen(null)}
+          width="max-w-sm"
+          footer={
+            <EvoButton variant="primary" className="w-full" onClick={() => setOpen(null)}>
+              {t("ok", "Entendi")}
+            </EvoButton>
+          }
+        >
+          {open.kind === "house" ? (
+            <>
+              <InfoRow label={t("level", "Nível da casa")}>{String(open.house.level).padStart(2, "0")}</InfoRow>
+              <InfoRow label={t("owner", "Proprietário")}>
+                {open.house.isMine ? t("yourHouse", "Sua casa") : (open.house.ownerName ?? t("available", "Disponível"))}
+              </InfoRow>
+              {open.house.ownerName && (
+                <div className="mt-3 flex items-center gap-2 px-3 py-2 font-semibold" style={{ boxShadow: `inset 0 0 0 1px ${EVO.linhaForte}` }}>
+                  <Lock className="h-4 w-4 shrink-0" style={{ color: EVO.douradoClaro }} />
+                  {t("needsInvite", "Esta casa só abre com convite do morador.")}
+                </div>
+              )}
+            </>
+          ) : (
+            <p style={{ color: EVO.mudo }}>{t("exitDesc", "O centro da cidade ainda está sendo construído. Por enquanto, o portão fica fechado.")}</p>
+          )}
+        </EvoDialog>
       )}
 
       {/* Seletor de nível da própria casa (teste) */}
       {levelOpen && nb.houseCatalog && (
-        <HouseLevelPanel
-          catalog={nb.houseCatalog}
-          lot={myLot}
-          visual={houseVis}
-          gameRef={gameRef}
-          onClose={() => setLevelOpen(false)}
-        />
+        <HouseLevelPanel catalog={nb.houseCatalog} lot={myLot} visual={houseVis} gameRef={gameRef} onClose={() => setLevelOpen(false)} />
       )}
 
       {/* Carregando / erro */}
-      {status !== "ready" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#A8D4F2] p-6 text-center">
-          {status === "loading" ? (
-            <div className="border-2 border-[#0B0B0D] bg-[#F7F0D9] px-4 py-3 text-sm font-bold uppercase tracking-wider text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
-              {t("loading", "Montando o bairro…")}
+      {status !== "ready" && <SceneCurtain status={status} text={t("loading", "Montando o bairro…")} errorTitle={t("errorTitle", "O bairro não abriu")} errorText={t("errorDesc", "O navegador não conseguiu iniciar o 3D. Tente de novo; se continuar, volte ao perfil.")} onRetry={retry} onLeave={() => router.push("/account")} leaveLabel={t("back", "Voltar ao perfil")} />}
+    </div>
+  )
+}
+
+/** Cortina de carregamento/erro dos ambientes (rua e casa). */
+export function SceneCurtain({
+  status,
+  text,
+  errorTitle,
+  errorText,
+  onRetry,
+  onLeave,
+  leaveLabel,
+}: {
+  status: "loading" | "error" | "ready"
+  text: string
+  errorTitle: string
+  errorText?: string
+  onRetry: () => void
+  onLeave: () => void
+  leaveLabel: string
+}) {
+  const t = useTranslations("MeuMundo")
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center" style={{ background: `radial-gradient(ellipse at 50% 40%, ${EVO.vinho}, ${EVO.preto} 70%)` }}>
+      {status === "loading" ? (
+        <EvoToast icon={<Loader2 className="h-4 w-4 animate-spin" />}>{text}</EvoToast>
+      ) : (
+        <Chamfer cut={16} border={`${EVO.dourado}bb`} className="w-full max-w-sm">
+          <div className="p-5 text-left">
+            <div className={`${teko.className} text-[30px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+              {errorTitle}
             </div>
-          ) : (
-            <div className="max-w-sm border-2 border-[#0B0B0D] bg-[#F7F0D9] p-5 text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D]">
-              <div className="text-lg font-black uppercase">{t("errorTitle", "O bairro não abriu")}</div>
-              <p className="mt-2 text-sm">
-                {t("errorDesc", "O navegador não conseguiu iniciar o 3D. Tente de novo; se continuar, volte ao perfil.")}
+            {errorText && (
+              <p className={`${archivo.className} mt-2 text-[14px]`} style={{ color: EVO.mudo }}>
+                {errorText}
               </p>
-              <div className="mt-4 flex gap-2">
-                <button type="button" onClick={retry} className={BTN}>
-                  {t("retry", "Tentar de novo")}
-                </button>
-                <Link href="/account" className={BTN}>
-                  {t("back", "Voltar ao perfil")}
-                </Link>
-              </div>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <EvoButton variant="primary" icon={<RefreshCw className="h-4 w-4" />} onClick={onRetry}>
+                {t("retry", "Tentar de novo")}
+              </EvoButton>
+              <EvoButton variant="gold" onClick={onLeave}>
+                {leaveLabel}
+              </EvoButton>
             </div>
-          )}
-        </div>
+          </div>
+        </Chamfer>
       )}
     </div>
   )
@@ -722,6 +688,7 @@ export default function MeuMundoView({
 
 // Joystick virtual: escreve direto no estado de entrada do jogo, sem passar
 // por estado do React (seriam dezenas de renders por segundo).
+const OCT = "polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%)"
 export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: (x: number, y: number) => void } | null> }) {
   const baseRef = useRef<HTMLDivElement | null>(null)
   const knobRef = useRef<HTMLDivElement | null>(null)
@@ -761,8 +728,8 @@ export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: 
   return (
     <div
       ref={baseRef}
-      className="absolute flex h-36 w-36 items-center justify-center rounded-full border-2 border-[#0B0B0D]/60 bg-[#0B0B0D]/25"
-      style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)", left: SAFE.left, touchAction: "none" }}
+      className="absolute flex h-36 w-36 items-center justify-center"
+      style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)", left: SAFE.left, touchAction: "none", clipPath: OCT, background: `${EVO.dourado}88` }}
       onPointerDown={(e) => {
         if (idRef.current !== null) return
         idRef.current = e.pointerId
@@ -772,12 +739,12 @@ export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: 
       onPointerMove={move}
       onPointerUp={end}
       onPointerCancel={end}
-      data-avatar
     >
+      <div className="pointer-events-none absolute inset-[2px]" style={{ clipPath: OCT, background: "rgba(8,7,11,0.45)" }} />
       <div
         ref={knobRef}
-        className="pointer-events-none h-16 w-16 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] shadow-[2px_2px_0_0_#0B0B0D]"
-        data-avatar
+        className="pointer-events-none relative h-16 w-16"
+        style={{ clipPath: OCT, background: `linear-gradient(180deg, ${EVO.rosa}, #8a0040)` }}
       />
     </div>
   )
@@ -810,17 +777,6 @@ function HouseLevelPanel({
   const seqRef = useRef(0)
   const pad = (n: number) => String(n).padStart(2, "0")
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        onClose()
-      }
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [onClose])
-
   const apply = useCallback(async () => {
     const token = getToken()
     if (!token) return
@@ -849,90 +805,16 @@ function HouseLevelPanel({
   const current = catalog.levels.find((l) => l.level === selected)
 
   return (
-    <div
-      className="absolute inset-0 z-10 flex items-end justify-center bg-black/40 sm:items-center"
-      style={{ paddingBottom: SAFE.bottom, paddingLeft: SAFE.left, paddingRight: SAFE.right, paddingTop: SAFE.top }}
-      onPointerDown={(e) => {
-        e.stopPropagation()
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="mm-level-title"
-        className="relative flex max-h-full w-full max-w-2xl flex-col border-2 border-[#0B0B0D] bg-[#F7F0D9] text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
-      >
-        <div className="flex items-start justify-between gap-2 border-b-2 border-[#0B0B0D] px-4 py-3">
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-widest text-[#8A6400]">
-              {t("lot", "Lote {n}").replace("{n}", pad(lot))} · {t("testFeature", "Recurso de teste")}
-            </div>
-            <h2 id="mm-level-title" className="mt-0.5 text-xl font-black uppercase leading-none">
-              {t("levelTitle", "Escolher nível da casa")}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-white"
-            aria-label={t("close", "Fechar")}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="grid min-h-0 flex-1 grid-cols-3 gap-2 overflow-y-auto p-3 sm:grid-cols-5">
-          {catalog.levels.map((l) => {
-            const isConfirmed = l.level === visual.confirmed
-            const isSel = l.level === selected
-            return (
-              <button
-                key={l.level}
-                type="button"
-                disabled={!l.available}
-                onClick={() => setSelected(l.level)}
-                aria-pressed={isSel}
-                aria-label={t("levelN", "Nível {n}").replace("{n}", pad(l.level))}
-                className={`relative flex flex-col border-2 text-left transition-colors ${
-                  isSel ? "border-[#0B0B0D] bg-[#F2B705]" : "border-[#0B0B0D]/30 bg-white"
-                } ${l.available ? "" : "cursor-not-allowed opacity-50"}`}
-              >
-                <div className="flex aspect-[4/3] items-center justify-center bg-[#A8D4F2]">
-                  {l.thumb ? (
-                    // Miniatura estática pequena (WebP com hash), dentro de um jogo só de admin.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={catalog.basePath + l.thumb}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-contain"
-                      draggable={false}
-                    />
-                  ) : (
-                    <Construction className="h-6 w-6 text-[#0B0B0D]/50" />
-                  )}
-                </div>
-                <div className="flex items-center justify-between gap-1 px-2 py-1.5">
-                  <span className="text-[13px] font-black uppercase">{t("levelN", "Nível {n}").replace("{n}", pad(l.level))}</span>
-                  {isConfirmed && (
-                    <span className="bg-[#0B0B0D] px-1 text-[9px] font-black uppercase text-[#F2B705]">
-                      {t("levelCurrent", "Atual")}
-                    </span>
-                  )}
-                </div>
-                {!l.available && (
-                  <div className="px-2 pb-1.5 text-[10px] font-semibold leading-tight text-[#6B645A]">
-                    {t("levelNoModel", "Modelo ainda não fornecido")}
-                  </div>
-                )}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="border-t-2 border-[#0B0B0D] px-4 py-3">
-          <div role="status" aria-live="polite" className="min-h-5 text-[12px] font-semibold text-[#3D372F]">
+    <EvoDialog
+      labelId="mm-level-title"
+      eyebrow={`${t("lot", "Lote {n}").replace("{n}", pad(lot))} · ${t("testFeature", "Recurso de teste")}`}
+      title={t("levelTitle", "Escolher nível da casa")}
+      kanjiMark="居"
+      onClose={onClose}
+      width="max-w-2xl"
+      footer={
+        <div className="w-full">
+          <div role="status" aria-live="polite" className="min-h-5 text-[13px] font-semibold" style={{ color: EVO.branco }}>
             {loading ? (
               <span className="inline-flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -940,26 +822,21 @@ function HouseLevelPanel({
                 {pct != null && ` ${pct}%`}
               </span>
             ) : failed ? (
-              <span className="inline-flex flex-wrap items-center gap-2 text-[#B91C1C]">
+              <span className="inline-flex flex-wrap items-center gap-2" style={{ color: EVO.perigo }}>
                 {t("levelLoadFail", "O modelo do nível {n} não carregou — mostrando o nível {m}.")
                   .replace("{n}", pad(visual.confirmed))
                   .replace("{m}", pad(visual.shown))}
-                <button
-                  type="button"
-                  onClick={() => gameRef.current?.retryHouse(lot)}
-                  className="inline-flex h-8 items-center gap-1 border-2 border-[#0B0B0D] bg-white px-2 text-[11px] font-black uppercase text-[#0B0B0D]"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
+                <EvoButton variant="ghost" size="sm" icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={() => gameRef.current?.retryHouse(lot)}>
                   {t("retry", "Tentar de novo")}
-                </button>
+                </EvoButton>
               </span>
             ) : error ? (
-              <span className="text-[#B91C1C]">{error}</span>
+              <span style={{ color: EVO.perigo }}>{error}</span>
             ) : (
               <span>
                 {t("levelConfirmed", "Nível confirmado: {n}").replace("{n}", pad(visual.confirmed))}
                 {current?.size && (
-                  <span className="text-[#6B645A]">
+                  <span style={{ color: EVO.mudo }}>
                     {" · "}
                     {t("levelSize", "{w} × {d} m").replace("{w}", current.size.width.toFixed(1)).replace("{d}", current.size.depth.toFixed(1))}
                   </span>
@@ -967,29 +844,66 @@ function HouseLevelPanel({
               </span>
             )}
           </div>
-          <p className="mt-1 text-[10px] font-medium leading-tight text-[#6B645A]">
+          <p className="mt-1 text-[11px] leading-tight" style={{ color: EVO.mudo }}>
             {t("levelTestNote", "Teste visual: todos os níveis estão liberados, sem custo. Não é loja nem evolução.")}
           </p>
           <div className="mt-3 flex gap-2">
-            <button
-              type="button"
+            <EvoButton
+              variant="primary"
+              className="flex-1"
               onClick={apply}
               disabled={pending || !current?.available || selected === visual.confirmed}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#0B0B0D] text-sm font-bold uppercase tracking-wider text-[#F2B705] disabled:opacity-40"
+              icon={pending ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
             >
-              {pending && <Loader2 className="h-4 w-4 animate-spin" />}
               {t("levelApply", "Aplicar nível {n}").replace("{n}", pad(selected))}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-11 items-center justify-center border-2 border-[#0B0B0D] bg-white px-4 text-sm font-bold uppercase tracking-wider"
-            >
+            </EvoButton>
+            <EvoButton variant="ghost" onClick={onClose}>
               {t("close", "Fechar")}
-            </button>
+            </EvoButton>
           </div>
         </div>
+      }
+    >
+      <div className="grid grid-cols-3 gap-2 pt-1 sm:grid-cols-5">
+        {catalog.levels.map((l) => {
+          const isConfirmed = l.level === visual.confirmed
+          const isSel = l.level === selected
+          return (
+            <button
+              key={l.level}
+              type="button"
+              disabled={!l.available}
+              onClick={() => setSelected(l.level)}
+              aria-pressed={isSel}
+              aria-label={t("levelN", "Nível {n}").replace("{n}", pad(l.level))}
+              className={`text-left ${l.available ? "" : "cursor-not-allowed opacity-45"}`}
+            >
+              <Chamfer cut={10} border={isSel ? "#ff5fae" : EVO.linhaForte} width={isSel ? 2 : 1}>
+                <div className="flex aspect-[4/3] items-center justify-center" style={{ background: isSel ? "rgba(128,0,51,0.55)" : "rgba(245,240,237,0.06)" }}>
+                  {l.thumb ? (
+                    // Miniatura estática pequena (WebP com hash), dentro de um jogo só de admin.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={catalog.basePath + l.thumb} alt="" loading="lazy" className="h-full w-full object-contain" draggable={false} />
+                  ) : (
+                    <Construction className="h-6 w-6" style={{ color: EVO.mudo }} />
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-1 px-2 pb-1 pt-1.5">
+                  <span className={`${teko.className} text-[17px] font-semibold uppercase leading-none`} style={{ color: EVO.branco }}>
+                    {t("levelN", "Nível {n}").replace("{n}", pad(l.level))}
+                  </span>
+                  {isConfirmed && <HudChip tone="ouro">{t("levelCurrent", "Atual")}</HudChip>}
+                </div>
+                {!l.available && (
+                  <div className="px-2 pb-1.5 text-[10px] font-semibold leading-tight" style={{ color: EVO.mudo }}>
+                    {t("levelNoModel", "Modelo ainda não fornecido")}
+                  </div>
+                )}
+              </Chamfer>
+            </button>
+          )
+        })}
       </div>
-    </div>
+    </EvoDialog>
   )
 }

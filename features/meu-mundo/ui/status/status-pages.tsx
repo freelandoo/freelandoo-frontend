@@ -227,6 +227,22 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
       return t("evActivityEnd", "Terminou: {act}.").replace("{act}", activityLabel(String(data.kind), t))
     case "collapse":
       return t("evCollapse", "Desmaiou de exaustão e dormiu no chão.")
+    case "routine_meal":
+      return t("evRoutineMeal", "Rotina: comprou e comeu {item} ({n} moedas).")
+        .replace("{item}", item ? itemName(item, t) : String(data.item ?? ""))
+        .replace("{n}", String(data.price ?? ""))
+    case "routine_pause":
+      return (
+        data.reason === "energy"
+          ? t("evPauseEnergy", "Rotina: sem energia, foi dormir {h} e depois volta a {act}.")
+          : data.reason === "stress"
+            ? t("evPauseStress", "Rotina: estressado, deitou {h} e depois volta a {act}.")
+            : data.reason === "night"
+              ? t("evPauseNight", "Rotina: hora de dormir ({h}); amanhã volta a {act}.")
+              : t("evPauseCap", "Rotina: já rendeu o máximo de {act} hoje; descansa {h}.")
+      )
+        .replace("{h}", hoursText(Number(data.hours)))
+        .replace("{act}", activityLabel(String(data.during), t).toLowerCase())
     case "hospital_in":
       return t("evHospitalIn", "Foi internado no hospital.")
     case "hospital_out":
@@ -244,7 +260,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
   }
 }
 function eventIcon(kind: string) {
-  if (kind === "meal" || kind === "meal_missed" || kind === "consume") return <Utensils className="h-5 w-5" />
+  if (kind === "meal" || kind === "meal_missed" || kind === "consume" || kind === "routine_meal") return <Utensils className="h-5 w-5" />
   if (kind === "hospital_in" || kind === "hospital_out") return <Hospital className="h-5 w-5" />
   if (kind === "heart_attack" || kind === "hypertension") return <HeartPulse className="h-5 w-5" />
   if (kind === "diabetes") return <Droplet className="h-5 w-5" />
@@ -667,17 +683,20 @@ function BodyPage({ life, compact, t }: PageProps) {
 function Attributes({ life, compact, t }: PageProps) {
   const c = life.character
   const at = c.attributes
+  const max = life.catalog.attributes?.max ?? 1000
+  const useful = at.usefulToday
+  // [ícone, cor, nome, valor, máximo da barra, piso (traço dourado), texto, sufixo]
   const rows = [
-    [<Brain key="i" className="h-6 w-6" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, t("atIntelligenceText", "Sobe estudando. Aumenta o que ele ganha trabalhando.")],
-    [<Dumbbell key="f" className="h-6 w-6" />, EVO.perigo, t("atStrength", "Força"), at.strength, t("atStrengthText", "Sobe treinando; whey, creatina, pré-treino e anabolizante aceleram.")],
-    [<Wind key="v" className="h-6 w-6" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, t("atSpeedText", "Sobe treinando. Cai devagar sem treino.")],
-    [<Sprout key="r" className="h-6 w-6" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade.")],
+    [<Brain key="i" className="h-6 w-6" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceText2", "Sobe estudando (rende até 5 h por dia). O que ele aprende fica: nunca cai abaixo de 90% do maior valor."), ""],
+    [<Dumbbell key="f" className="h-6 w-6" />, EVO.perigo, t("atStrength", "Força"), at.strength, max, at.floors?.strength, t("atStrengthText2", "Sobe treinando (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Sem treino cai até 60% do maior valor."), ""],
+    [<Wind key="v" className="h-6 w-6" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedText2", "Sobe treinando. Sem treino cai até 60% do maior valor; voltar ao topo é mais rápido."), ""],
+    [<Sprout key="r" className="h-6 w-6" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, 100, undefined, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade."), "%"],
   ] as const
   return (
     <div className={`grid gap-4 ${compact ? "" : "grid-cols-[1.3fr_1fr]"}`}>
-      <Plate title={t("stAttributes", "Atributos")} aside={<span className={`${archivo.className} text-[14px]`} style={{ color: EVO.mudo }}>{t("stAttrScale", "De 0 a 100")}</span>}>
+      <Plate title={t("stAttributes", "Atributos")} aside={<span className={`${archivo.className} text-[14px]`} style={{ color: EVO.mudo }}>{t("stAttrScale2", "De 0 a {max} · traço = piso").replace("{max}", String(max))}</span>}>
         <div className="grid">
-          {rows.map(([icon, color, label, value, text]) => (
+          {rows.map(([icon, color, label, value, top, floor, text, unit]) => (
             <div key={label} className="flex items-center gap-4 border-b py-3" style={{ borderColor: EVO.linha }}>
               <Ring color={color}>{icon}</Ring>
               <div className="min-w-0 flex-1">
@@ -685,11 +704,12 @@ function Attributes({ life, compact, t }: PageProps) {
                   <span className={`${teko.className} w-40 shrink-0 text-[24px] font-semibold uppercase tracking-[0.12em]`} style={{ color: EVO.branco }}>
                     {label}
                   </span>
-                  <span className={`${teko.className} w-12 text-[36px] font-bold leading-none`} style={{ color: EVO.branco }}>
+                  <span className={`${teko.className} w-20 text-[36px] font-bold leading-none`} style={{ color: EVO.branco }}>
                     {r0(value)}
+                    {unit}
                   </span>
                   <div className="flex-1">
-                    <Bar value={value} color={color} />
+                    <Bar value={value} max={top} mark={floor} color={color} />
                   </div>
                 </div>
                 <div className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
@@ -698,6 +718,18 @@ function Attributes({ life, compact, t }: PageProps) {
               </div>
             </div>
           ))}
+          {useful && (
+            <div className="flex flex-wrap gap-2 pt-3">
+              {(["studying", "training"] as const).map((k) => (
+                <Tag key={k} tone={useful[k].done >= useful[k].cap ? "mudo" : "ouro"}>
+                  {t("atUsefulToday", "{act} hoje: {done}/{cap} h úteis")
+                    .replace("{act}", activityLabel(k, t))
+                    .replace("{done}", String(Math.round(useful[k].done * 10) / 10))
+                    .replace("{cap}", String(useful[k].cap))}
+                </Tag>
+              ))}
+            </div>
+          )}
         </div>
       </Plate>
       <div className="flex flex-col gap-4">
@@ -782,14 +814,18 @@ function Routine({ life, compact, t, act }: PageProps) {
                 {activityLabel(a.kind, t)}
               </div>
               <div className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
-                {a.remainingH != null
+                {a.resume && a.remainingH != null
+                  ? t("stRoutinePause", "Pausa da rotina: em {h} volta a {act}.")
+                      .replace("{h}", hoursText(a.remainingH))
+                      .replace("{act}", activityLabel(a.resume.kind, t).toLowerCase())
+                  : a.remainingH != null
                   ? t("stUntil", "Faltam {h}. Ele continua mesmo com o jogo fechado.").replace("{h}", hoursText(a.remainingH))
                   : a.kind === "hospital"
                     ? t("stHospitalText", "Internado até se recuperar (saúde 60).")
                     : t("stIdleText", "Sem nada marcado.")}
               </div>
             </div>
-            {(a.kind === "studying" || a.kind === "training" || a.kind === "working") && (
+            {(a.kind === "studying" || a.kind === "training" || a.kind === "working" || a.resume) && (
               <GoldButton onClick={() => act.activity("idle")} disabled={busy}>
                 {t("stStop", "Parar")}
               </GoldButton>
@@ -816,7 +852,7 @@ function Routine({ life, compact, t, act }: PageProps) {
             </div>
           ))}
           <p className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
-            {t("stRoutineText", "Deitar e dormir é na cama, dentro de casa. Sem energia por muito tempo ele desmaia; com estimulante não desmaia — e o coração sofre.")}
+            {t("stRoutineText2", "É uma rotina: ele rende as primeiras horas do dia (estudo 5 h, treino 4 h), descansa, dorme às 23 h e volta às 7 h. Na hora da refeição compra comida com as moedas. Constância de dias rende mais que maratona.")}
           </p>
         </div>
       </Plate>

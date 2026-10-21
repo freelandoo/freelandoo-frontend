@@ -189,6 +189,8 @@ export interface NeighborhoodPayload {
 // cards (fase seguinte) leem GET /meu-mundo/admin/life; o payload de entrada
 // traz só o hóspede e a carteira.
 
+export type LifeTrained = "intelligence" | "strength" | "speed"
+
 export type LifeActivity = "idle" | "lying" | "sleeping" | "studying" | "training" | "working" | "hospital"
 
 export interface LifeCharacter {
@@ -201,7 +203,14 @@ export interface LifeCharacter {
   personality: Record<"discipline" | "anxiety" | "optimism" | "appetite" | "resilience" | "metabolism", number>
   vitals: Record<"energy" | "satiety" | "mood" | "stress" | "health" | "vitality", number>
   body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bmi: number; bodyHint: BodyId }
-  attributes: Record<"intelligence" | "strength" | "speed" | "fertility", number>
+  /** Inteligência, força e velocidade 0–1000; fertilidade 0–100. */
+  attributes: Record<"intelligence" | "strength" | "speed" | "fertility", number> & {
+    /** Maior valor já alcançado e o piso que não se perde mais (0–1000). */
+    peaks: Record<LifeTrained, number>
+    floors: Record<LifeTrained, number>
+    /** Horas que ainda rendem hoje (estudo e treino têm teto por dia). */
+    usefulToday: Record<"studying" | "training", { done: number; cap: number }>
+  }
   health: {
     diabetes: "none" | "controlled" | "uncontrolled"
     hypertension: "none" | "controlled" | "uncontrolled"
@@ -285,6 +294,7 @@ export interface LifeFull extends LifeSummary {
   catalog: {
     items: LifeItem[]
     activityHours: Record<string, [number, number]>
+    attributes: { max: number; usefulH: Record<"studying" | "training", number>; floor: Record<LifeTrained, number> }
     clock: { offsetMin: number; meals: number[]; mealWindowH: number }
   }
 }
