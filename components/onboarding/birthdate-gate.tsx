@@ -174,12 +174,20 @@ export function BirthdateGate() {
         return
       }
       const me = await res.json()
+      // Conta criada pela academia (mig 296): o AcademyConsentGate vem antes, e
+      // a academia já conferiu nascimento e CPF. Enxame/profissão não se aplica
+      // a quem entrou para ver os treinos — fica para quando quiser atuar.
+      const academyAccount = !!me?.academy_onboarding_state
+      if (me?.academy_onboarding_state === "aguardando_aceite") {
+        setOpen(false)
+        return
+      }
       // data_nascimento existe se for não nula. Idade também é fornecida.
       const hasBirthdate = !!me?.data_nascimento || !!me?.idade
       const hasCpf = !!me?.has_cpf
       // Sem perfil-conta no /me não dá pra pedir taxonomia — não travar o user.
       const acc = me?.account_profile
-      const hasTaxonomy = !acc?.id_profile || !!acc?.has_taxonomy
+      const hasTaxonomy = academyAccount || !acc?.id_profile || !!acc?.has_taxonomy
       setNeedBirthdate(!hasBirthdate)
       setNeedCpf(!hasCpf)
       setNeedTaxonomy(!hasTaxonomy)

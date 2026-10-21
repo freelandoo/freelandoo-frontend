@@ -56,6 +56,7 @@ import { PublishMenuButton } from "@/components/composer/publish-menu-button"
 import { InviteShareButton } from "@/components/community/invite-share-button"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
+import { PartnerKeyCard } from "./partner-key-card"
 // A gaveta dos números — a MESMA peça da comunidade. Só a mecânica é dela: o
 // que entra na coluna (vinculados, professores, destaque e ranking do mês) é
 // desta página.
@@ -830,6 +831,9 @@ export function AcademyView({ slug }: { slug: string }) {
           </section>
         )}
 
+        {/* Chave da API de parceiro (mig 296) — só o dono. */}
+        {academy.is_owner && <PartnerKeyCard academyId={academy.id_academy} />}
+
         {/* Mural social (público; postar = vinculado/staff) */}
         <AcademyFeed academyId={academy.id_academy} slug={academy.slug} reloadKey={feedReload} isOwner={academy.is_owner} meId={meId} />
       </div>
@@ -896,9 +900,8 @@ export function AcademyView({ slug }: { slug: string }) {
               </button>
             </div>
             <p className="mt-3 text-xs text-[#9A938A]">
-              {t("expiredIntro", "{n} aluno(s) estão com a mesma ficha há {d} dias ou mais. Hora de montar um treino novo.")
-                .replace("{n}", String(expired.count))
-                .replace("{d}", String(expired.days))}
+              {t("expiredIntroValidity", "{n} aluno(s) estão com a ficha vencida — a validade escolhida para ela acabou. Hora de montar um treino novo.")
+                .replace("{n}", String(expired.count))}
             </p>
             <ul className="mt-3 space-y-2">
               {expired.members.map((m) => (
@@ -907,6 +910,9 @@ export function AcademyView({ slug }: { slug: string }) {
                     <span className="block truncate font-bold">{m.nome || "—"}</span>
                     <span className="block truncate text-[11px] text-[#9A938A]">
                       {m.active_plan_nome || t("noPlanName", "sem nome")}
+                      {m.validade_dias
+                        ? ` · ${t("expiredValidity", "validade {n} dias").replace("{n}", String(m.validade_dias))}`
+                        : ""}
                     </span>
                   </span>
                   <span className="shrink-0 border-2 border-[#0B0B0D] bg-[#ff3b30] px-2 py-1 text-[10px] font-black uppercase text-[#0B0B0D]">

@@ -32,6 +32,8 @@ export type FitnessProposal = {
     notes?: string | null
     is_active?: boolean
     plan_nome?: string | null
+    /** Validade proposta para a ficha (mig 296): 30/60/90. */
+    validade_dias?: number | null
     exercises?: ProposalExercise[]
   }
   created_at: string
@@ -100,6 +102,11 @@ function ProposalLine({ p }: { p: FitnessProposal }) {
             <span className="ml-2 text-[10px] font-extrabold uppercase text-[#9A938A]">{t("propPlanOn", "(ativar)")}</span>
           )}
         </p>
+        {payload.validade_dias ? (
+          <p className="mt-0.5 text-[11px] font-extrabold uppercase text-[#FB923C]">
+            {t("propValidity", "Validade: {n} dias").replace("{n}", String(payload.validade_dias))}
+          </p>
+        ) : null}
         {Array.isArray(payload.exercises) && payload.exercises.length > 0 && (
           <ul className="mt-1 space-y-0.5 text-xs text-[#9A938A]">
             {payload.exercises.map((ex, i) => (

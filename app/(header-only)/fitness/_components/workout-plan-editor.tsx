@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { ArrowDown, ArrowUp, Loader2, Plus, Search, Trash2, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { ValidityPicker, asValidade, type ValidadeDias } from "./workout-validity"
 
 type Exercise = { id_exercise: string; nome: string; muscle_group: string }
 
@@ -21,6 +22,8 @@ export type EditablePlan = {
   id_plan: string
   nome: string
   notes: string | null
+  /** Validade da ficha (30/60/90). Ausente = ficha antiga → cai no padrão 60. */
+  validade_dias?: number | null
   exercises: EditablePlanExercise[]
 }
 
@@ -55,6 +58,7 @@ export function WorkoutPlanEditor({
   const [nome, setNome] = useState(plan?.nome || "")
   const [notes, setNotes] = useState(plan?.notes || "")
   const [exercises, setExercises] = useState<EditablePlanExercise[]>(plan?.exercises || [])
+  const [validade, setValidade] = useState<ValidadeDias>(asValidade(plan?.validade_dias))
   const [saving, setSaving] = useState(false)
 
   const [library, setLibrary] = useState<Exercise[]>([])
@@ -119,6 +123,7 @@ export function WorkoutPlanEditor({
       const body = {
         nome: nome.trim(),
         notes: notes.trim() || null,
+        validade_dias: validade,
         exercises: exercises.map((ex) => ({
           id_exercise: ex.id_exercise,
           sets: ex.sets,
@@ -142,7 +147,7 @@ export function WorkoutPlanEditor({
     } finally {
       setSaving(false)
     }
-  }, [nome, notes, exercises, plan, authHeaders, onSaved, onClose, t])
+  }, [nome, notes, validade, exercises, plan, authHeaders, onSaved, onClose, t])
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4" onClick={onClose}>
@@ -183,6 +188,10 @@ export function WorkoutPlanEditor({
               className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none focus:border-[#FF8C2B]"
             />
           </label>
+        </div>
+
+        <div className="mt-3">
+          <ValidityPicker value={validade} onChange={setValidade} />
         </div>
 
         {/* Exercícios escolhidos */}

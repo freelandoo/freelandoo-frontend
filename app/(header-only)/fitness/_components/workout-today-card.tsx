@@ -6,6 +6,7 @@ import { Check, Dumbbell, Loader2, Maximize2, Pencil, Plus, Trash2, X } from "lu
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { WorkoutPlanEditor, type EditablePlan } from "./workout-plan-editor"
+import { ValidityLine } from "./workout-validity"
 
 type PlanExercise = {
   id_plan_exercise: string
@@ -24,6 +25,9 @@ type Plan = {
   nome: string
   notes: string | null
   days_on_plan: number
+  /** Validade da ficha (mig 296): 30/60/90 e o vencimento pronto da API. */
+  validade_dias?: number | null
+  vence_em?: string | null
   completed_at: string | null
   /** Autoria (mig 189): ficha que o próprio usuário montou × ficha do professor. */
   by_student: boolean
@@ -148,6 +152,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
             id_plan: p.id_plan,
             nome: p.nome,
             notes: p.notes,
+            validade_dias: p.validade_dias ?? null,
             exercises: p.exercises.map((ex) => ({
               id_exercise: ex.id_exercise,
               exercise_nome: ex.exercise_nome,
@@ -248,6 +253,9 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                 {plan.by_student ? t("ownPlanBadge", "Feita por você") : t("profPlanBadge", "Do professor")}
               </span>
             </p>
+            <p className="text-[10px] font-bold uppercase text-[#9A938A]">
+              <ValidityLine validadeDias={plan.validade_dias} venceEm={plan.vence_em} />
+            </p>
             {plan.completed_at && (
               <p className="mt-1 border-2 border-[#0B0B0D] bg-[#22C55E] px-2 py-0.5 text-center text-[10px] font-extrabold uppercase text-[#0B0B0D]">
                 {t("sessionDone", "Treino concluído!")}
@@ -302,6 +310,9 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                     : plan.academy_nome
                       ? `${t("profPlanBadge", "Do professor")} · ${plan.academy_nome}`
                       : t("profPlanBadge", "Do professor")}
+                </p>
+                <p className="text-[11px] font-bold uppercase text-[#9A938A]">
+                  <ValidityLine validadeDias={plan.validade_dias} venceEm={plan.vence_em} />
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">

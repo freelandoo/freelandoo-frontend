@@ -12,6 +12,8 @@ export interface AuthUser {
   roles?: { id_role: string; desc_role: string }[]
   /** false = ainda não viu o tour de boas-vindas (mostrar /bem-vindo no 1º acesso). */
   onboarding_tour_done?: boolean
+  /** Conta criada por academia (mig 296): 'aguardando_aceite' abre o AcademyConsentGate. */
+  academy_onboarding_state?: "aguardando_aceite" | "ativa" | null
 }
 
 type AuthResponse = Record<string, unknown>

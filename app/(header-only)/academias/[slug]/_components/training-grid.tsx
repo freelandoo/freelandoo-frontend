@@ -18,6 +18,13 @@ import {
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import {
+  ValidityLine,
+  ValidityPicker,
+  VALIDADE_PADRAO,
+  asValidade,
+  type ValidadeDias,
+} from "@/app/(header-only)/fitness/_components/workout-validity"
 
 type GridRow = {
   id_member: string
@@ -32,6 +39,9 @@ type GridRow = {
   /** A ficha ativa foi montada pelo próprio aluno (mig 189). */
   active_plan_by_student: boolean
   days_on_plan: number | null
+  /** Validade da ficha ativa (mig 296) e o vencimento pronto da API. */
+  active_plan_validade_dias?: number | null
+  active_plan_vence_em?: string | null
   frequency_days_30d: number
   sessions_done_7d: number
 }
@@ -56,6 +66,8 @@ type Plan = {
   /** Ficha montada pelo próprio aluno (mig 189) — alterá-la ainda vira proposta. */
   by_student: boolean
   days_on_plan: number
+  validade_dias?: number | null
+  vence_em?: string | null
   exercises: (PlanExercise & { id_plan_exercise: string })[]
 }
 
@@ -97,18 +109,16 @@ function shiftDate(date: string, days: number): string {
 export function TrainingGrid({
   academyId,
   expiredIds,
-  expiryDays,
 }: {
   academyId: string
   /**
    * Quem está com a ficha vencida, JÁ RESOLVIDO por quem montou a página (que
-   * leu `/expired-plans`). A grade não recalcula os 90 dias: dois lugares
-   * fazendo essa conta é como a bolinha do botão "Membros" acenderia apontando
-   * para uma tabela sem nenhuma linha marcada.
+   * leu `/expired-plans`). A grade não recalcula o vencimento (desde a mig 296
+   * ele é por ficha: created_at + validade_dias): dois lugares fazendo essa
+   * conta é como a bolinha do botão "Membros" acenderia apontando para uma
+   * tabela sem nenhuma linha marcada.
    */
   expiredIds?: Set<string>
-  /** Quantos dias contam como vencida — só para escrever o aviso na tela. */
-  expiryDays?: number
 }) {
   const t = useTranslations("Workouts")
   const locale = useLocale()
@@ -126,6 +136,7 @@ export function TrainingGrid({
   const [planName, setPlanName] = useState("")
   const [planNotes, setPlanNotes] = useState("")
   const [planExercises, setPlanExercises] = useState<PlanExercise[]>([])
+  const [planValidade, setPlanValidade] = useState<ValidadeDias>(VALIDADE_PADRAO)
   const [saving, setSaving] = useState(false)
   const planNameRef = useRef<HTMLInputElement | null>(null)
 
@@ -209,6 +220,7 @@ export function TrainingGrid({
     setPlanName("")
     setPlanNotes("")
     setPlanExercises([])
+    setPlanValidade(VALIDADE_PADRAO)
     setMuscle("")
     setExQ("")
     setEditorOpen(true)
@@ -218,6 +230,7 @@ export function TrainingGrid({
     setEditingPlanId(plan.id_plan)
     setPlanName(plan.nome)
     setPlanNotes(plan.notes || "")
+    setPlanValidade(asValidade(plan.validade_dias))
     setPlanExercises(
       plan.exercises.map((e) => ({
         id_exercise: e.id_exercise,
@@ -246,7 +259,12 @@ export function TrainingGrid({
     }
     setSaving(true)
     try {
-      const body = JSON.stringify({ nome: planName.trim(), notes: planNotes.trim() || null, exercises: planExercises })
+      const body = JSON.stringify({
+        nome: planName.trim(),
+        notes: planNotes.trim() || null,
+        validade_dias: planValidade,
+        exercises: planExercises,
+      })
       const res = editingPlanId
         ? await fetch(`/api/academies/${academyId}/plans/${editingPlanId}`, {
             method: "PATCH",
@@ -269,7 +287,7 @@ export function TrainingGrid({
     } finally {
       setSaving(false)
     }
-  }, [detail, planName, planNotes, planExercises, editingPlanId, academyId, authHeaders, openMember, loadGrid, t])
+  }, [detail, planName, planNotes, planValidade, planExercises, editingPlanId, academyId, authHeaders, openMember, loadGrid, t])
 
   const togglePlanActive = useCallback(
     async (plan: Plan) => {
@@ -459,9 +477,9 @@ export function TrainingGrid({
                     {expiredIds?.has(r.id_member) ? (
                       <span
                         className="inline-block border-2 border-[#0B0B0D] bg-[#ff3b30] px-1.5 py-0.5 text-[10px] font-black uppercase text-[#0B0B0D]"
-                        title={t("expiredHint", "Mesma ficha há {d} dias ou mais — hora de montar um treino novo.").replace(
+                        title={t("expiredHintValidity", "A validade desta ficha ({d} dias) acabou — hora de montar um treino novo.").replace(
                           "{d}",
-                          String(expiryDays ?? r.days_on_plan ?? 0)
+                          String(r.active_plan_validade_dias ?? "—")
                         )}
                       >
                         {r.days_on_plan ?? "—"} · {t("expiredShort", "vencida")}
@@ -633,6 +651,8 @@ export function TrainingGrid({
                         </div>
                         <p className="mt-1 text-[11px] opacity-60">
                           {p.exercises.length} {t("exercisesSuffix", "exercícios")} · {t("daysOnPlan", "{n} dias com esta ficha").replace("{n}", String(p.days_on_plan))}
+                          {p.vence_em ? " · " : ""}
+                          <ValidityLine validadeDias={p.validade_dias} venceEm={p.vence_em} />
                         </p>
                         <p className="mt-1 truncate text-[11px] opacity-50">{p.exercises.map((e) => e.exercise_nome).join(" · ")}</p>
                       </li>
@@ -667,6 +687,9 @@ export function TrainingGrid({
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("planNotesLabel", "Observações")}</span>
                 <input value={planNotes} onChange={(e) => setPlanNotes(e.target.value)} className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none" />
               </label>
+            </div>
+            <div className="mt-3">
+              <ValidityPicker value={planValidade} onChange={setPlanValidade} />
             </div>
 
             {/* Exercícios escolhidos */}

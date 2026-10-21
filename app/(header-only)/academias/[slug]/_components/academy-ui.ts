@@ -34,8 +34,10 @@ export {
 
 /** O que a API de fichas vencidas devolve (`GET /academies/:id/expired-plans`). */
 export type ExpiredPlans = {
-  /** Quantos dias de ficha contam como vencida. Vem do backend — não guardar 90 aqui. */
-  days: number
+  /**
+   * Desde a mig 296 a validade é POR FICHA (30/60/90): não existe mais um
+   * número único de dias. Cada aluno traz `validade_dias` e `vence_em`.
+   */
   count: number
   members: {
     id_member: string
@@ -45,5 +47,7 @@ export type ExpiredPlans = {
     active_plan_nome: string | null
     active_plan_by_student: boolean
     days_on_plan: number
+    validade_dias?: number | null
+    vence_em?: string | null
   }[]
 }

@@ -35,6 +35,7 @@ export function TabloidDialog({
   footer,
   size = "md",
   closeLabel = "Fechar",
+  dismissible = true,
   className,
 }: {
   open?: boolean
@@ -49,6 +50,8 @@ export function TabloidDialog({
   footer?: ReactNode
   size?: "sm" | "md" | "lg"
   closeLabel?: string
+  /** false = modal obrigatório: sem X, ESC e clique fora não fecham */
+  dismissible?: boolean
   className?: string
 }) {
   const maxWidth = { sm: "sm:max-w-sm", md: "sm:max-w-lg", lg: "sm:max-w-2xl" }[size]
@@ -58,6 +61,8 @@ export function TabloidDialog({
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
         showCloseButton={false}
+        onPointerDownOutside={dismissible ? undefined : (e) => e.preventDefault()}
+        onEscapeKeyDown={dismissible ? undefined : (e) => e.preventDefault()}
         className={cn(
           "gap-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-0 text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]",
           maxWidth,
@@ -80,12 +85,14 @@ export function TabloidDialog({
               </DialogDescription>
             )}
           </div>
-          <DialogClose
-            aria-label={closeLabel}
-            className="shrink-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-1 text-[#0B0B0D] transition-colors hover:bg-[#F2B705]"
-          >
-            <X className="h-4 w-4" />
-          </DialogClose>
+          {dismissible && (
+            <DialogClose
+              aria-label={closeLabel}
+              className="shrink-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-1 text-[#0B0B0D] transition-colors hover:bg-[#F2B705]"
+            >
+              <X className="h-4 w-4" />
+            </DialogClose>
+          )}
         </div>
 
         {children && <div className="px-5 py-5">{children}</div>}

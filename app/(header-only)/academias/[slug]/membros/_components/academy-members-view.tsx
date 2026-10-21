@@ -308,7 +308,7 @@ export function AcademyMembersView({ slug }: { slug: string }) {
             )}
           </section>
         ) : (
-          <TrainingGrid academyId={academy.id_academy} expiredIds={expiredIds} expiryDays={expired?.days} />
+          <TrainingGrid academyId={academy.id_academy} expiredIds={expiredIds} />
         )}
       </div>
     </FitnessShell>
