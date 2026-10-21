@@ -489,7 +489,7 @@ export default function MeuMundoView({
             variant="gold"
             icon={<RefreshCw className="h-4 w-4" />}
             onClick={() => gameRef.current?.recoverCar()}
-            title={t("recoverHint", "Carro preso? Volta para a vaga da casa (parado, a cada 15 s).")}
+            title={t("recoverHintAny", "Preso? Volta para a vaga da casa (parado, a cada 15 s).")}
           >
             {t("recoverCar", "Recuperar")}
           </EvoButton>

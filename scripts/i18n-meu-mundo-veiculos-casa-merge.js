@@ -7,6 +7,12 @@ const path = require("path")
 const dir = path.join(__dirname, "..", "messages")
 
 const MEU_MUNDO = {
+  vehicleMoving: ["Pare primeiro.", "Stop first.", "Detente primero."],
+  recoverHintAny: [
+    "Preso? Volta para a vaga da casa (parado, a cada 15 s).",
+    "Stuck? Goes back to the house spot (stopped, every 15 s).",
+    "¿Atascado? Vuelve al lugar de la casa (detenido, cada 15 s).",
+  ],
   rideStairs: ["Na escada não dá para descer.", "You can't get off on the stairs.", "En la escalera no se puede bajar."],
 }
 

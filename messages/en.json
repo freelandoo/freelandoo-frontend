@@ -7892,6 +7892,8 @@
     "vehicleBusy": "Someone is already using it.",
     "carNotOwner": "Only the resident of the house can use this car.",
     "vehicleUnavailable": "Not available right now.",
-    "rideStairs": "You can't get off on the stairs."
+    "rideStairs": "You can't get off on the stairs.",
+    "vehicleMoving": "Stop first.",
+    "recoverHintAny": "Stuck? Goes back to the house spot (stopped, every 15 s)."
   }
 }

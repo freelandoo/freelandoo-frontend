@@ -133,7 +133,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           r === "blocked"
             ? t("carExitBlocked", "Não há espaço para descer aqui. Pare num lugar mais livre.")
             : r === "moving"
-              ? t("carMoving", "Pare o carro primeiro.")
+              ? t("vehicleMoving", "Pare primeiro.")
               : r === "spot_busy"
                 ? t("carSpotBusy", "A vaga da casa está ocupada agora.")
               : r === "cooldown"

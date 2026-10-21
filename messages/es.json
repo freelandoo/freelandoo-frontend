@@ -7872,6 +7872,8 @@
     "vehicleBusy": "Alguien ya lo está usando.",
     "carNotOwner": "Solo el residente de la casa usa este auto.",
     "vehicleUnavailable": "No está disponible ahora.",
-    "rideStairs": "En la escalera no se puede bajar."
+    "rideStairs": "En la escalera no se puede bajar.",
+    "vehicleMoving": "Detente primero.",
+    "recoverHintAny": "¿Atascado? Vuelve al lugar de la casa (detenido, cada 15 s)."
   }
 }

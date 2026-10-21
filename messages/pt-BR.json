@@ -7306,6 +7306,8 @@
     "vehicleBusy": "Alguém já está usando.",
     "carNotOwner": "Só o morador da casa usa este carro.",
     "vehicleUnavailable": "Não está disponível agora.",
-    "rideStairs": "Na escada não dá para descer."
+    "rideStairs": "Na escada não dá para descer.",
+    "vehicleMoving": "Pare primeiro.",
+    "recoverHintAny": "Preso? Volta para a vaga da casa (parado, a cada 15 s)."
   }
 }
