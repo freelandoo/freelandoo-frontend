@@ -96,7 +96,6 @@ export interface GameHandle {
   setJoystick: (x: number, y: number) => void
   setRun: (on: boolean) => void
   setBlocked: (blocked: boolean) => void
-  setBody: (body: BodyId) => void
   interact: () => void
   /** Recoloca a câmera atrás do personagem (não move o personagem). */
   recenter: () => void
@@ -302,6 +301,12 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     players.forEach((p, sid) => {
       if (sid === me) {
         local.setServer(p.x, p.z)
+        // Tipo físico: vem da vida (a sala aplica); ninguém escolhe.
+        if (isBody(p.body) && p.body !== myBody) {
+          myBody = p.body
+          void local.char.setBody(myBody)
+          opts.onBody?.(myBody)
+        }
         setDriving(p.car ?? 0, p)
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
         return
@@ -620,13 +625,6 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     setBlocked(blocked) {
       input.blocked = blocked
       clearInput(input)
-    },
-    setBody(body) {
-      if (!isBody(body) || body === myBody) return
-      myBody = body
-      void local.char.setBody(body)
-      net.sendBody(body)
-      opts.onBody?.(body)
     },
     interact() {
       if (nearby && !input.blocked) interactWith(nearby)

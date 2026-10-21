@@ -49,6 +49,8 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const [menuOpen, setMenuOpen] = useState(false)
   const [running, setRunning] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
+  // Tipo físico: vem da vida, pela sala (não se escolhe).
+  const [body, setBody] = useState<BodyId>(payload.me.body)
   const cbRef = useRef({ onExit, onMoved, onServerMessage })
   useEffect(() => {
     cbRef.current = { onExit, onMoved, onServerMessage }
@@ -83,6 +85,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
           },
           onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
           onOnline: (n) => alive && setOnline(n),
+          onBody: (b) => alive && setBody(b),
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (it) => alive && setNearby(it),
           onSeat: (s) => alive && setSeat(s),
@@ -196,7 +199,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const nearDoor = nearby?.kind === "door"
   const menuItems: DrawerItem[] = [
     ...(onOpenStatus
-      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, onSelect: () => onOpenStatus(payload.me.body) }]
+      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, onSelect: () => onOpenStatus(body) }]
       : []),
     ...(isOwner
       ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, onSelect: onOpenInvite }]

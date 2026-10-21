@@ -28,7 +28,6 @@ import {
   LogOut,
   RefreshCw,
   Send,
-  Shirt,
   Users,
   Wifi,
   WifiOff,
@@ -43,7 +42,6 @@ import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, type
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
 import {
-  BODY_IDS,
   type BodyId,
   type GameStats,
   type HouseCatalog,
@@ -106,8 +104,8 @@ export default function MeuMundoView({
   const [helpOpen, setHelpOpen] = useState(true)
   const [net, setNet] = useState<NetStatus>("connecting")
   const [online, setOnline] = useState(1)
+  // Tipo físico: não se escolhe (2026-10-21) — vem da vida, pela sala.
   const [body, setBody] = useState<BodyId>(payload.me.body)
-  const [bodyOpen, setBodyOpen] = useState(false)
   const [running, setRunning] = useState(false)
   const [residents, setResidents] = useState(nb.residents)
   // Lote do carro que você dirige (0 = a pé) — confirmado pela sala.
@@ -223,8 +221,8 @@ export default function MeuMundoView({
   }, [statsOpen])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(!!open || levelOpen || bodyOpen || menuOpen || !!blocked)
-  }, [open, levelOpen, bodyOpen, menuOpen, blocked])
+    gameRef.current?.setBlocked(!!open || levelOpen || menuOpen || !!blocked)
+  }, [open, levelOpen, menuOpen, blocked])
 
   useEffect(() => {
     if (!open) return
@@ -250,11 +248,6 @@ export default function MeuMundoView({
     gameRef.current?.recenter()
   }, [])
 
-  const chooseBody = useCallback((b: BodyId) => {
-    gameRef.current?.setBody(b)
-    setBodyOpen(false)
-  }, [])
-
   const toggleRun = useCallback(() => {
     setRunning((r) => {
       gameRef.current?.setRun(!r)
@@ -270,14 +263,6 @@ export default function MeuMundoView({
     replaced: t("netReplaced", "Aberto em outra janela"),
     moved: t("netMoved", "Mudando de lugar…"),
   }[net]
-  const bodyLabel = (b: BodyId) =>
-    ({
-      normal: t("bodyNormal", "Normal"),
-      slim: t("bodySlim", "Magro"),
-      fat: t("bodyFat", "Gordo"),
-      strong: t("bodyStrong", "Forte"),
-      sergio: t("bodySergio", "Sergio"),
-    })[b]
 
   const drivingKind = (drivingLot && kindOfId(drivingLot)) || "car"
   const nearbyMine = nearby?.kind === "house" && nearby.house.isMine && !payload.me.visitor
@@ -308,13 +293,6 @@ export default function MeuMundoView({
     ...(!payload.me.visitor
       ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, onSelect: onOpenInvite }]
       : []),
-    {
-      id: "body",
-      label: t("menuBody", "Tipo físico"),
-      hint: t("menuBodyHint", "Teste · {body}").replace("{body}", bodyLabel(body)),
-      icon: <Shirt className="h-5 w-5" />,
-      onSelect: () => setBodyOpen(true),
-    },
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: recenter },
     { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, onSelect: () => setHelpOpen(true) },
     { id: "tech", label: t("menuTech", "Técnico"), hint: t("techPanel", "Painel técnico"), icon: <Activity className="h-5 w-5" />, active: statsOpen, onSelect: () => setStatsOpen((v) => !v) },
@@ -558,7 +536,7 @@ export default function MeuMundoView({
             heading={t("menuStreet", "O bairro")}
             kanjiMark="道"
             items={menuItems}
-            hotkeys={!blocked && !open && !levelOpen && !bodyOpen}
+            hotkeys={!blocked && !open && !levelOpen}
             footer={
               <>
                 {nb.name} · {CLIENT_RELEASE} · {BUILD}
@@ -566,29 +544,6 @@ export default function MeuMundoView({
             }
           />
         </div>
-      )}
-
-      {/* Seletor administrativo de tipo físico (teste — não é loja nem guarda-roupa) */}
-      {bodyOpen && (
-        <EvoDialog
-          labelId="mm-body-title"
-          eyebrow={t("testFeature", "Recurso de teste")}
-          title={t("bodyPicker", "Tipo físico (teste)")}
-          kanjiMark="体"
-          onClose={() => setBodyOpen(false)}
-          width="max-w-sm"
-        >
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            {BODY_IDS.map((b) => (
-              <EvoButton key={b} variant="gold" aria-pressed={body === b} onClick={() => chooseBody(b)} className="w-full">
-                {bodyLabel(b)}
-              </EvoButton>
-            ))}
-          </div>
-          <p className="mt-3" style={{ color: EVO.mudo }}>
-            {t("bodyHint", "Teste visual: nenhum corpo tem vantagem de velocidade.")}
-          </p>
-        </EvoDialog>
       )}
 
       {/* Ficha da casa / da saída */}

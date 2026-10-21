@@ -18,7 +18,7 @@
 
 import { Client, type Room } from "@colyseus/sdk"
 import { getPublicBackendUrl } from "@/lib/backend-public"
-import type { BodyId, MultiplayerSession, NetStatus } from "../types"
+import type { MultiplayerSession, NetStatus } from "../types"
 import type { Intent } from "./motion"
 import type { DriveInput } from "./vehicle"
 
@@ -274,10 +274,6 @@ export class NetClient {
     room.send("drive", { t: cur.t, b: cur.b, s: cur.s, h: cur.h ? 1 : 0 })
     this.lastDrive = cur
     this.lastDriveAt = now
-  }
-
-  sendBody(body: BodyId) {
-    this.room?.send("body", { body })
   }
 
   /** Mensagem avulsa (sentar, levantar). */

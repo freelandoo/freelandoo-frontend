@@ -70,7 +70,6 @@ export interface HouseGameHandle {
   setJoystick: (x: number, y: number) => void
   setRun: (on: boolean) => void
   setBlocked: (blocked: boolean) => void
-  setBody: (body: BodyId) => void
   interact: () => void
   sit: (seatId: string) => void
   /** Deitar na cama (fica acordado). */
@@ -287,6 +286,12 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     players.forEach((p, sid) => {
       if (sid === me) {
         server = { x: p.x, z: p.z, floor: p.floor }
+        // Tipo físico: vem da vida (a sala aplica); ninguém escolhe.
+        if (isBody(p.body) && p.body !== myBody) {
+          myBody = p.body
+          void char.setBody(myBody)
+          opts.onBody?.(myBody)
+        }
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
         return
       }
@@ -478,13 +483,6 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     setBlocked(blocked) {
       input.blocked = blocked
       clearInput(input)
-    },
-    setBody(b) {
-      if (!isBody(b) || b === myBody) return
-      myBody = b
-      void char.setBody(b)
-      net.sendBody(b)
-      opts.onBody?.(b)
     },
     interact() {
       if (seated || rest) handle.stand()
