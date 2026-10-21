@@ -7865,6 +7865,12 @@
     "evPauseEnergy": "Rutina: sin energía, durmió {h} y luego vuelve a {act}.",
     "evPauseStress": "Rutina: estresado, se acostó {h} y luego vuelve a {act}.",
     "evPauseNight": "Rutina: hora de dormir ({h}); mañana vuelve a {act}.",
-    "evPauseCap": "Rutina: ya rindió lo máximo de {act} hoy; descansa {h}."
+    "evPauseCap": "Rutina: ya rindió lo máximo de {act} hoy; descansa {h}.",
+    "useVehicle": "Usar",
+    "leaveVehicle": "Bajar",
+    "vehicleTooFar": "Acércate más.",
+    "vehicleBusy": "Alguien ya lo está usando.",
+    "carNotOwner": "Solo el residente de la casa usa este auto.",
+    "vehicleUnavailable": "No está disponible ahora."
   }
 }

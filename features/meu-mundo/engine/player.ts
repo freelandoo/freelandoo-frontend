@@ -123,6 +123,21 @@ export class Character {
     return !!this.rig
   }
 
+  /** Ângulo da pedivela de quem pedala (mm3d-14); 0 sem avatar. */
+  get crank() {
+    return this.rig?.crank ?? 0
+  }
+
+  /** Tornozelos no mundo [esquerdo, direito] (patins); null sem avatar. */
+  feetWorld() {
+    return this.rig?.feetWorld() ?? [null, null]
+  }
+
+  /** Tornozelo acima da sola em pé (m). */
+  get ankleRest() {
+    return this.rig?.ankleRest ?? 0.148
+  }
+
   dispose() {
     if (this.disposed) return
     this.disposed = true
@@ -208,6 +223,8 @@ export class LocalPlayer {
 
 /** Outro morador: interpola o estado recebido da sala. */
 export class RemotePlayer {
+  /** Id do veículo em que está montado (bike, skate, patins); 0 = a pé ou no carro. */
+  car = 0
   x: number
   z: number
   facing: number

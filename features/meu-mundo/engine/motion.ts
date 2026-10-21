@@ -47,6 +47,25 @@ export const CAR = {
   RECOVER_COOLDOWN_MS: 15000,
 }
 
+/**
+ * Modalidades de veículo (mm3d-14) — espelho de RIDE_KINDS em
+ * freelandoo-backend/src/utils/meuMundoCars.js (o teste confere). Id = lote +
+ * offset; `move` é o estado de quem usa (o carro esconde a pessoa: 0).
+ */
+export const RIDE_KINDS = {
+  car: { offset: 0, enter: 3.4, ownerOnly: true, parkedBlocks: true, move: 0 },
+  bike: { offset: 20, enter: 1.8, ownerOnly: false, parkedBlocks: true, move: 6 },
+  skate: { offset: 40, enter: 1.5, ownerOnly: false, parkedBlocks: false, move: 7 },
+  skates: { offset: 60, enter: 1.5, ownerOnly: false, parkedBlocks: false, move: 8 },
+} as const
+export type RideKind = keyof typeof RIDE_KINDS
+export const RIDE_KIND_NAMES = ["car", "bike", "skate", "skates"] as const satisfies readonly RideKind[]
+/** Modalidade pelo id do veículo (1–80); null fora da faixa. */
+export function kindOfId(id: number): RideKind | null {
+  if (!Number.isInteger(id) || id < 1 || id > 80) return null
+  return RIDE_KIND_NAMES[Math.floor((id - 1) / 20)]
+}
+
 /** Perfil opcional de `step`; sem ele, a pé. */
 export interface MotionProfile {
   accel: number
@@ -74,7 +93,9 @@ export interface Body {
  * 0 parado, 1 andando, 2 correndo; só dentro das casas: 3 sentado, 4 deitado,
  * 5 dormindo (mm3d-13).
  */
-export type MoveState = 0 | 1 | 2 | 3 | 4 | 5
+// 0 parado, 1 andando, 2 correndo, 3 sentado, 4 deitado, 5 dormindo (casa);
+// 6 de bicicleta, 7 de skate, 8 de patins (mm3d-14, rua).
+export type MoveState = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
 export function step(
   body: Body,

@@ -91,6 +91,24 @@ export const TUNING_RANGES: Record<TuningKey, [number, number]> = {
 
 export type Tuning = Partial<Record<TuningKey, number>>
 
+/**
+ * Modalidades (mm3d-14) — espelho de KINDS em meuMundoVehicle.js. A
+ * mobilidade é a do carro; muda só a forma que bate (círculos e caixa).
+ */
+export const KINDS = {
+  car: {},
+  bike: { COL_OFFSET: 0.42, COL_RADIUS: 0.36, HX: 0.32, HZ: 0.72 },
+  skate: { COL_OFFSET: 0.2, COL_RADIUS: 0.34, HX: 0.3, HZ: 0.42 },
+  skates: { COL_OFFSET: 0.0, COL_RADIUS: 0.36, HX: 0.3, HZ: 0.3 },
+} as const
+
+/** Parâmetros de uma modalidade com os ajustes do painel por cima. */
+export function paramsFor(kind: keyof typeof KINDS, overrides: Tuning | null): VehicleParams {
+  const k = KINDS[kind] ?? KINDS.car
+  if (!overrides && kind === "car") return VEHICLE
+  return Object.freeze({ ...VEHICLE, ...k, ...(overrides ?? {}) })
+}
+
 export function tuned(overrides: Tuning | null): VehicleParams {
   if (!overrides) return VEHICLE
   return { ...VEHICLE, ...overrides }

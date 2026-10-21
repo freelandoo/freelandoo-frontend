@@ -459,7 +459,8 @@ export type Interactable =
   | { kind: "seat"; id: string; x: number; z: number; radius: number; seat: InteriorSeat }
   | { kind: "bed"; id: string; x: number; z: number; radius: number; bed: InteriorBed }
   // Carro (mm3d-11): entrar no próprio carro / sair dirigindo.
-  | { kind: "car"; id: string; x: number; z: number; radius: number; lot: number }
+  // Veículo livre para "Usar" (mm3d-14): vid = id do veículo, vkind = modalidade.
+  | { kind: "car"; id: string; x: number; z: number; radius: number; lot: number; vid: number; vkind: "car" | "bike" | "skate" | "skates" }
   | { kind: "car-exit"; id: string; x: number; z: number; radius: number }
 
 export interface GameStats {

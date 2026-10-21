@@ -139,8 +139,12 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
               : r === "cooldown"
                 ? t("carCooldown", "Espere alguns segundos para recuperar de novo.")
                 : r === "far"
-              ? t("carTooFar", "Chegue mais perto do carro.")
-              : t("carUnavailable", "Este carro não está disponível agora."),
+              ? t("vehicleTooFar", "Chegue mais perto.")
+              : r === "busy"
+                ? t("vehicleBusy", "Alguém já está usando.")
+                : r === "not_owner"
+                  ? t("carNotOwner", "Só o morador da casa usa este carro.")
+                  : t("vehicleUnavailable", "Não está disponível agora."),
         )
       }
     },

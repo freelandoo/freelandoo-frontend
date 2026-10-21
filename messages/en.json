@@ -7885,6 +7885,12 @@
     "evPauseEnergy": "Routine: out of energy, slept {h} and will go back to {act}.",
     "evPauseStress": "Routine: stressed, lay down for {h} and will go back to {act}.",
     "evPauseNight": "Routine: bedtime ({h}); back to {act} tomorrow.",
-    "evPauseCap": "Routine: {act} already paid off all it could today; resting {h}."
+    "evPauseCap": "Routine: {act} already paid off all it could today; resting {h}.",
+    "useVehicle": "Use",
+    "leaveVehicle": "Get off",
+    "vehicleTooFar": "Get closer.",
+    "vehicleBusy": "Someone is already using it.",
+    "carNotOwner": "Only the resident of the house can use this car.",
+    "vehicleUnavailable": "Not available right now."
   }
 }

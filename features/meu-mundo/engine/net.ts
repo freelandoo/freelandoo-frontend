@@ -48,6 +48,8 @@ export interface RemoteState {
 /** Carro de uma casa (chave = número do lote). driver = sessionId ou "". */
 export interface CarState {
   lot: number
+  /** mm3d-14: "car" | "bike" | "skate" | "skates" (a chave do mapa é o id do veículo). */
+  kind?: string
   x: number
   z: number
   facing: number

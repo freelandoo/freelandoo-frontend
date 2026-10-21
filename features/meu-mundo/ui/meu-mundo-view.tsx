@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Activity,
+  Bike,
   CarFront,
   Construction,
   DoorOpen,
@@ -36,6 +37,7 @@ import {
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
+import { kindOfId, type RideKind } from "../engine/motion"
 import { CarTuningPanel, TouchDriveControls } from "./drive-controls"
 import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, type DrawerItem } from "./hud/hud-kit"
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
@@ -53,7 +55,7 @@ import {
 } from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-13"
+export const CLIENT_RELEASE = "mm3d-14"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 export const SAFE = {
@@ -277,15 +279,18 @@ export default function MeuMundoView({
       sergio: t("bodySergio", "Sergio"),
     })[b]
 
+  const drivingKind = (drivingLot && kindOfId(drivingLot)) || "car"
   const nearbyMine = nearby?.kind === "house" && nearby.house.isMine && !payload.me.visitor
   const nearbyVisit = nearby?.kind === "house" && nearby.lot.number === visitingLot
   // Carro (mm3d-11): entrar no próprio carro, ou sair dirigindo.
   const nearbyCar = nearby?.kind === "car" || nearby?.kind === "car-exit"
   const nearbyAction = nearbyMine || nearbyVisit || nearbyCar
+  const vehicleKind = nearby?.kind === "car" ? nearby.vkind : drivingKind
+  // Veículos (mm3d-14): "Usar" para todos — carro, bike, skate e patins — e "Descer".
   const nearbyLabel = nearby?.kind === "car"
-    ? t("enterCar", "Entrar no carro")
+    ? t("useVehicle", "Usar")
     : nearby?.kind === "car-exit"
-      ? t("exitCar", "Sair do carro")
+      ? t("leaveVehicle", "Descer")
       : nearbyMine
     ? t("enterMyHouse", "Entrar na casa")
     : nearbyVisit
@@ -473,7 +478,7 @@ export default function MeuMundoView({
             variant="primary"
             size="lg"
             kbd="E"
-            icon={nearbyCar ? <CarFront className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
+            icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
             onClick={() => gameRef.current?.interact()}
             aria-label={nearbyLabel}
           >
@@ -485,8 +490,8 @@ export default function MeuMundoView({
       {/* Dirigindo: sair e recuperar */}
       {status === "ready" && !!drivingLot && !open && !levelOpen && (
         <div className="absolute left-1/2 flex -translate-x-1/2 gap-2" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>
-          <EvoButton variant="primary" icon={<CarFront className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
-            {t("exitCar", "Sair do carro")}
+          <EvoButton variant="primary" icon={<VehicleIcon kind={drivingKind} className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
+            {t("leaveVehicle", "Descer")}
           </EvoButton>
           <EvoButton
             variant="gold"
@@ -536,7 +541,7 @@ export default function MeuMundoView({
               size="none"
               className="!absolute min-h-16 min-w-16 max-w-[44vw] text-[18px] leading-tight"
               style={{ bottom: bottom(24), right: SAFE.right }}
-              icon={nearbyCar ? <CarFront className="h-6 w-6 shrink-0" /> : nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
+              icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-6 w-6 shrink-0" /> : nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
             >
               {nearbyLabel}
             </EvoButton>
@@ -634,6 +639,21 @@ export default function MeuMundoView({
       {/* Carregando / erro */}
       {status !== "ready" && <SceneCurtain status={status} text={t("loading", "Montando o bairro…")} errorTitle={t("errorTitle", "O bairro não abriu")} errorText={t("errorDesc", "O navegador não conseguiu iniciar o 3D. Tente de novo; se continuar, volte ao perfil.")} onRetry={retry} onLeave={() => router.push("/account")} leaveLabel={t("back", "Voltar ao perfil")} />}
     </div>
+  )
+}
+
+/** Ícone do veículo (mm3d-14): carro, bicicleta, skate ou patins. */
+function VehicleIcon({ kind, className }: { kind: RideKind; className?: string }) {
+  if (kind === "car") return <CarFront className={className} />
+  if (kind === "bike") return <Bike className={className} />
+  if (kind === "skates") return <Footprints className={className} />
+  // skate: a prancha vista de lado
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={className} aria-hidden>
+      <path d="M3 10h18l-2 3H5z" />
+      <circle cx="7" cy="17" r="1.8" />
+      <circle cx="17" cy="17" r="1.8" />
+    </svg>
   )
 }
 

@@ -25,6 +25,7 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
+import type { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder"
 import type { AssetContainer, InstantiatedEntries } from "@babylonjs/core/assetContainer"
@@ -83,12 +84,29 @@ const ASSETS = {
     strong: "anim-rest-strong.glb",
     sergio: "anim-rest-sergio.glb",
   },
+  // Bicicleta, skate e patins (mm3d-14, pipeline/build_ride.py): BikeA/BikeB
+  // (pedal direito embaixo / esquerdo embaixo), SkateRide, SkatePush (1 s) e
+  // SkatesGlide — no referencial do veículo. Só a rua baixa estes arquivos.
+  ride: {
+    base: "anim-ride-base.glb",
+    fat: "anim-ride-fat.glb",
+    strong: "anim-ride-strong.glb",
+    sergio: "anim-ride-sergio.glb",
+  },
 }
+/** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
+export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203 }
 type AnimSet = keyof typeof ASSETS.anims
 const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk"] as const
-type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number]
+const RIDE_CLIPS = ["BikeA", "BikeB", "SkateRide", "SkatePush", "SkatesGlide"] as const
+type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number]
+/** Uma pedalada a cada 2 s (pedido do Alex); a troca de pose leva ~0,45 s. */
+export const PEDAL_PERIOD = 2
+const PEDAL_SWAP = 0.45
+/** Velocidade (m/s) abaixo da qual o veículo conta como parado. */
+const RIDE_STOP = 0.3
 
 let loadersRegistered = false
 
@@ -106,6 +124,7 @@ export class AvatarLibrary {
   private readonly anims = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly sits = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly rests = new Map<AnimSet, Promise<AssetContainer>>()
+  private readonly rides = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -114,6 +133,8 @@ export class AvatarLibrary {
     private readonly scene: Scene,
     /** Dentro das casas: cada avatar ganha também a pose de sentar. */
     private readonly withSit = false,
+    /** Na rua: poses de bicicleta, skate e patins (mm3d-14). */
+    private readonly withRide = false,
   ) {
     ensureLoaders()
   }
@@ -182,6 +203,17 @@ export class AvatarLibrary {
     return p
   }
 
+  private rideSet(id: BodyId) {
+    const key = ANIM_SET[id]
+    let p = this.rides.get(key)
+    if (!p) {
+      p = LoadAssetContainerAsync(BASE + ASSETS.ride[key], this.scene)
+      p.catch(() => this.rides.delete(key))
+      this.rides.set(key, p)
+    }
+    return p
+  }
+
   /** Cria um avatar com esqueleto e animações próprios. */
   async create(id: BodyId): Promise<AvatarRig> {
     // A pose de sentar e as de descanso/cansaço são opcionais: se o arquivo
@@ -189,7 +221,8 @@ export class AvatarLibrary {
     // a casa; cansado anda normal).
     const sitP = this.withSit ? this.sitSet(id).catch(() => null) : Promise.resolve(null)
     const restP = this.restSet(id).catch(() => null)
-    const [container, anims, sit, rest] = await Promise.all([this.body(id), this.animSet(id), sitP, restP])
+    const rideP = this.withRide ? this.rideSet(id).catch(() => null) : Promise.resolve(null)
+    const [container, anims, sit, rest, ride] = await Promise.all([this.body(id), this.animSet(id), sitP, restP, rideP])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
     const root = entries.rootNodes[0] as TransformNode
@@ -208,6 +241,11 @@ export class AvatarLibrary {
       const src = rest?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
+    for (const clip of RIDE_CLIPS) {
+      const src = ride?.animationGroups.find((g) => g.name === clip)
+      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+    }
+    const feet = [byName.get("mixamorig:LeftFoot"), byName.get("mixamorig:RightFoot")] as (TransformNode | undefined)[]
     const meshes = root.getChildMeshes(false) as AbstractMesh[]
     for (const mesh of meshes) {
       mesh.material = this.materialFor(id)
@@ -218,7 +256,7 @@ export class AvatarLibrary {
       mesh.getBoundingInfo().scale(1.25)
     }
     this.live++
-    return new AvatarRig(this, id, entries, root, groups, meshes)
+    return new AvatarRig(this, id, entries, root, groups, meshes, feet, ANKLE_REST[ANIM_SET[id]])
   }
 
   release() {
@@ -227,12 +265,13 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values()]
+    const all = [...this.bodies.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.anims.clear()
     this.sits.clear()
     this.rests.clear()
+    this.rides.clear()
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
@@ -245,9 +284,20 @@ let cloneSeq = 0
 
 /** Um corpo animado. Não sabe de rede nem de colisão: recebe estado e toca. */
 export class AvatarRig {
-  private weights: Record<Clip, number> = { Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0 }
+  private weights: Record<Clip, number> = {
+    Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0,
+    BikeA: 0, BikeB: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0,
+  }
   private readonly clips: Clip[]
   private disposed = false
+  // ── veículo (mm3d-14) ──
+  private rideMove: MoveState = 0
+  private rideStopped = true
+  private rideClock = 0
+  /** Segundos que faltam do impulso (skate) ou do passo de saída (patins). */
+  private rideStart = 0
+  /** Ângulo da pedivela (rad): meia volta por pedalada, junto com a troca de pose. */
+  crank = 0
 
   constructor(
     private readonly lib: AvatarLibrary,
@@ -256,8 +306,11 @@ export class AvatarRig {
     readonly root: TransformNode,
     private readonly groups: Partial<Record<Clip, AnimationGroup>> & Record<(typeof CLIPS)[number], AnimationGroup>,
     readonly meshes: AbstractMesh[],
+    private readonly feet: (TransformNode | undefined)[] = [],
+    /** Tornozelo acima da sola, em pé (m). */
+    readonly ankleRest = 0.148,
   ) {
-    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS] as const).filter((c) => !!groups[c])]
+    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
       const g = groups[clip]!
       g.weight = this.weights[clip]
@@ -274,6 +327,65 @@ export class AvatarRig {
     for (const m of this.meshes) m.isVisible = v
   }
 
+  /** Posição no mundo dos tornozelos [esquerdo, direito] (patins presos aos pés). */
+  feetWorld(): (Vector3 | null)[] {
+    return this.feet.map((n) => (n ? n.getAbsolutePosition().clone() : null))
+  }
+
+  /**
+   * Pesos de quem está num veículo (move 6 bike, 7 skate, 8 patins). Bike: a
+   * cada PEDAL_PERIOD em movimento troca A↔B (uma pedalada) e a pedivela dá
+   * meia volta junto. Skate: ao sair do parado, o impulso (SkatePush, 1 s) e
+   * depois SkateRide. Patins: ao sair do parado, um ciclo de caminhada e
+   * depois SkatesGlide. Sem as poses carregadas, fica em repouso.
+   */
+  private rideTargets(dt: number, move: MoveState, speed: number, target: Record<Clip, number>) {
+    const have = this.groups
+    if (move !== this.rideMove) {
+      this.rideMove = move
+      this.rideStopped = true
+      this.rideClock = 0
+      this.rideStart = 0
+    }
+    const moving = Math.abs(speed) > RIDE_STOP
+    if (this.rideStopped && moving) {
+      this.rideStopped = false
+      if (move === 7 && have.SkatePush) {
+        this.rideStart = 1.0
+        const g = have.SkatePush
+        g.stop()
+        g.start(false, 1)
+      } else if (move === 8) {
+        this.rideStart = 1.05
+        this.groups.Walk.goToFrame(this.groups.Walk.from)
+      }
+    } else if (!moving && this.rideStart <= 0) this.rideStopped = true
+    this.rideStart = Math.max(0, this.rideStart - dt)
+    if (move === 6 && have.BikeA && have.BikeB) {
+      if (moving) this.rideClock += dt
+      const stroke = Math.floor(this.rideClock / PEDAL_PERIOD)
+      const into = Math.min(1, (this.rideClock - stroke * PEDAL_PERIOD) / PEDAL_SWAP)
+      const even = stroke % 2 === 0
+      target[even ? "BikeA" : "BikeB"] = 1
+      // A pedivela gira junto com a troca de pose (a pose B é a A meia volta adiante).
+      // pedalada 0 = pose A (pedivela como no modelo); cada pedalada seguinte gira meia volta.
+      this.crank = Math.max(0, stroke - 1 + into) * Math.PI
+      return true
+    }
+    if (move === 7 && have.SkateRide) {
+      if (this.rideStart > 0 && have.SkatePush) target.SkatePush = 1
+      else target.SkateRide = 1
+      return true
+    }
+    if (move === 8 && have.SkatesGlide) {
+      if (this.rideStart > 0) target.Walk = 1
+      else target.SkatesGlide = 1
+      return true
+    }
+    target.Idle = 1
+    return true
+  }
+
   /**
    * Transição suave entre repouso, caminhada e corrida lenta. A velocidade de
    * reprodução segue a velocidade REAL do deslocamento (reduz o deslize dos
@@ -281,6 +393,8 @@ export class AvatarRig {
    */
   update(dt: number, move: MoveState, speed: number, tired = false) {
     if (this.disposed) return
+    if (move >= 6) return this.applyWeights(dt, this.rideTargetsFor(dt, move, speed), 1)
+    this.rideMove = 0
     const have = this.groups
     // Sentado (3), deitado (4) ou dormindo (5) sem a pose carregada: fica em
     // repouso. Dormindo sem "Sleep" usa "Lie".
@@ -300,8 +414,21 @@ export class AvatarRig {
       Sleep: sleep ? 1 : 0,
       TiredIdle: still && tiredIdle ? 1 : 0,
       TiredWalk: move === 1 && tiredWalk ? 1 : 0,
+      BikeA: 0, BikeB: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0,
     }
-    const k = 1 - Math.exp(-10 * dt)
+    this.applyWeights(dt, target, speed)
+  }
+
+  private rideTargetsFor(dt: number, move: MoveState, speed: number) {
+    const target = Object.fromEntries(this.clips.map((c) => [c, 0])) as Record<Clip, number>
+    this.rideTargets(dt, move, speed, target)
+    return target
+  }
+
+  /** Aproxima os pesos do alvo e ajusta a velocidade das caminhadas. */
+  private applyWeights(dt: number, target: Record<Clip, number>, speed: number) {
+    // A troca de pedalada é mais lenta (~0,45 s) que as outras transições.
+    const k = 1 - Math.exp(-(this.rideMove === 6 ? 7 : 10) * dt)
     let sum = 0
     for (const clip of this.clips) {
       let w = this.weights[clip] + (target[clip] - this.weights[clip]) * k
@@ -314,9 +441,11 @@ export class AvatarRig {
       const w = sum > 0 ? this.weights[clip] / sum : 0
       g.weight = w
       if (w <= 0 && g.isPlaying) g.pause()
-      else if (w > 0 && !g.isPlaying) g.play(true)
+      // O impulso do skate toca UMA vez (disparado em rideTargets), nunca em laço.
+      else if (w > 0 && !g.isPlaying && clip !== "SkatePush") g.play(true)
     }
-    const walkRate = speed > 0.05 ? speed / ANIM_NATURAL_SPEED.walk : 1
+    // Patins: o passo de saída anda no ritmo natural (um ciclo em ~1 s).
+    const walkRate = this.rideMove === 8 ? 1 : speed > 0.05 ? speed / ANIM_NATURAL_SPEED.walk : 1
     const runRate = speed > 0.05 ? speed / ANIM_NATURAL_SPEED.run : 1
     this.groups.Walk.speedRatio = Math.max(0.5, Math.min(2.2, walkRate))
     if (this.groups.TiredWalk) this.groups.TiredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
