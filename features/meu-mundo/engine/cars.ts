@@ -66,6 +66,8 @@ const kindOf = (c: { kind?: string }): RideKind => (c.kind && c.kind in MODELS ?
 export interface CarPose {
   x: number
   z: number
+  /** Altura do chão (dentro de casa); na rua, 0. */
+  y?: number
   facing: number
   sp: number
   st: number
@@ -101,6 +103,7 @@ interface CarView {
   boots: { node: TransformNode; rest: Vector3 }[]
   crankAngle: number
   x: number
+  y: number
   z: number
   facing: number
   tx: number
@@ -208,6 +211,7 @@ export class CarFleet {
       boots: [],
       crankAngle: 0,
       x: c.x,
+      y: c.y ?? 0,
       z: c.z,
       facing: c.facing,
       tx: c.x,
@@ -276,7 +280,7 @@ export class CarFleet {
   }
 
   private place(v: CarView) {
-    v.holder.position.set(v.x, 0, v.z)
+    v.holder.position.set(v.x, v.y, v.z)
     v.holder.rotation.y = v.facing
   }
 
@@ -327,6 +331,7 @@ export class CarFleet {
       }
       if (mine && key === String(mine) && pose) {
         v.x = v.tx = pose.x
+        v.y = pose.y ?? 0
         v.z = v.tz = pose.z
         v.facing = v.tf = pose.facing
         v.sp = pose.sp
@@ -339,6 +344,7 @@ export class CarFleet {
         v.tx = c.x
         v.tz = c.z
         v.tf = c.facing
+        v.y += ((c.y ?? 0) - v.y) * (1 - Math.exp(-10 * dt))
         const err = Math.hypot(v.tx - v.x, v.tz - v.z)
         if (err > 12) {
           v.x = v.tx
@@ -382,7 +388,7 @@ export class CarFleet {
   /** Pose desenhada de um veículo (quem está montado acompanha sem atraso). */
   poseOf(key: string) {
     const v = this.views.get(key)
-    return v ? { x: v.x, z: v.z, facing: v.facing, sp: v.sp, kind: v.kind } : null
+    return v ? { x: v.x, y: v.y, z: v.z, facing: v.facing, sp: v.sp, kind: v.kind } : null
   }
 
   /** Pedivela da bike (rad), dada pela pedalada de quem pedala. */

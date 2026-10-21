@@ -29,7 +29,8 @@ import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
 import { NetClient } from "./net"
 import { MOTION, RIDE_KINDS, kindOfId, lerpAngle, paceSpeeds, type Intent, type MoveState, type RideKind } from "./motion"
-import { CarFleet, SKATES_SOLE, type CarPose } from "./cars"
+import { CarFleet, type CarPose } from "./cars"
+import { placeRider } from "./ride"
 import { STEP, MAX_STEPS, IDLE_DRIVE, createVehicle, stepVehicle, paramsFor, sanitizeTuning, type Tuning, type VehicleState } from "./vehicle"
 import { CarReconciler } from "./car-sync"
 import { attachInput, clearInput, createInputState, driveAxis, moveAxis, wantsRun, type InputState } from "./input"
@@ -88,6 +89,11 @@ export interface GameOptions {
   onServerMessage?: (type: string, payload: unknown) => void
   /** Entrou (lote do carro) ou saiu (0) do carro — confirmado pela sala. */
   onDriving?: (lot: number) => void
+  /**
+   * Montado numa bike, skate ou patins (mm3d-15): esta casa aceita a pessoa
+   * entrando com ele? (a própria, ou a visitada). O carro nunca entra.
+   */
+  canRideInto?: (it: Interactable) => boolean
 }
 
 export interface GameHandle {
@@ -111,6 +117,8 @@ export interface GameHandle {
   setTuning: (t: Tuning | null) => void
   /** Pede à sala para devolver o carro preso à vaga da casa. */
   recoverCar: () => void
+  /** Descer do veículo (o E pode estar apontando para a casa). */
+  leaveVehicle: () => void
   dispose: () => void
 }
 
@@ -350,8 +358,17 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const myLot = payload.me.house || 0
   const exitCar: Interactable = { kind: "car-exit", id: "car-exit", x: 0, z: 0, radius: 99 }
   const findNearby = () => {
-    // Em um veículo, a única interação é descer.
-    if (driving) return exitCar
+    // Em um veículo: descer — ou, de bike/skate/patins perto da própria
+    // casa (ou da visitada), entrar nela montado (mm3d-15).
+    if (driving) {
+      if (drivingKind !== "car" && opts.canRideInto) {
+        for (const it of world.interactables) {
+          if (it.kind !== "house" || !opts.canRideInto(it)) continue
+          if (Math.hypot(it.x - local.x, it.z - local.z) <= it.radius) return it
+        }
+      }
+      return exitCar
+    }
     let best: Interactable | null = null
     let bestD = Infinity
     // "Usar" (mm3d-14): o veículo livre mais perto. O carro é só do titular
@@ -453,26 +470,6 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     local.body.facing = pose.facing
   }
 
-  /**
-   * Quem está montado (você ou outro): o boneco vai junto com o veículo
-   * desenhado, com a pose da modalidade; a bike recebe a pedivela da
-   * pedalada e os patins vão para baixo dos pés.
-   */
-  const ride = (char: Character, key: string, kind: RideKind, x: number, z: number, facing: number, sp: number, dt: number) => {
-    char.place(x, z, facing, kind === "skates" ? SKATES_SOLE : 0)
-    char.animate(dt, RIDE_KINDS[kind].move as MoveState, sp)
-    if (kind === "bike") fleet.setCrank(key, char.crank)
-    else if (kind === "skates") {
-      // Tornozelo → chão sob o meio do tênis (um pouco à frente do tornozelo).
-      const fx = Math.sin(facing) * 0.05
-      const fz = Math.cos(facing) * 0.05
-      const drop = char.ankleRest + SKATES_SOLE
-      fleet.setFeet(
-        key,
-        char.feetWorld().map((p) => (p ? new Vector3(p.x + fx, Math.max(0, p.y - drop), p.z + fz) : null)),
-      )
-    }
-  }
 
   let instr: SceneInstrumentation | null = null
   let statsTimer = 0
@@ -514,12 +511,12 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     // Dirigindo, a intenção a pé é zero (o controle a pé não age).
     syncNetwork(now, driving ? { x: 0, z: 0, run: false } : intent)
     fleet.sync(net.cars(), dt, driving, driving && veh ? pose : null)
-    if (driving && veh && drivingKind !== "car") ride(local.char, String(driving), drivingKind, pose.x, pose.z, pose.facing, pose.sp, dt)
+    if (driving && veh && drivingKind !== "car") placeRider(fleet, local.char, String(driving), drivingKind, pose.x, pose.z, pose.facing, pose.sp, dt)
     for (const r of remotes.values()) {
       const rk = r.car ? kindOfId(r.car) : null
       const vp = rk ? fleet.poseOf(String(r.car)) : null
       if (rk && vp) {
-        ride(r.char, String(r.car), rk, vp.x, vp.z, vp.facing, vp.sp, dt)
+        placeRider(fleet, r.char, String(r.car), rk, vp.x, vp.z, vp.facing, vp.sp, dt)
         // Montado, a interpolação a pé acompanha o veículo (ao descer não "desliza").
         r.x = vp.x
         r.z = vp.z
@@ -654,6 +651,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     recoverCar() {
       if (driving) net.send("car", { a: "recover" })
+    },
+    leaveVehicle() {
+      if (driving) net.send("car", { a: "exit" })
     },
     setStatsEnabled(on) {
       if (on && !instr) {

@@ -66,6 +66,8 @@ export interface CarState {
   vx?: number
   vz?: number
   w?: number
+  /** Altura do chão (andar da casa, mm3d-15); na rua, 0. */
+  y?: number
 }
 
 export interface NetCallbacks {

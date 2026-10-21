@@ -7891,6 +7891,7 @@
     "vehicleTooFar": "Get closer.",
     "vehicleBusy": "Someone is already using it.",
     "carNotOwner": "Only the resident of the house can use this car.",
-    "vehicleUnavailable": "Not available right now."
+    "vehicleUnavailable": "Not available right now.",
+    "rideStairs": "You can't get off on the stairs."
   }
 }

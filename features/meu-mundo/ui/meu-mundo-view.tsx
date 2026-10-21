@@ -53,7 +53,7 @@ import {
 } from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-14"
+export const CLIENT_RELEASE = "mm3d-15"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 export const SAFE = {
@@ -188,6 +188,10 @@ export default function MeuMundoView({
           onDriving: (lot) => alive && setDrivingLot(lot),
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (it) => alive && setNearby(it),
+          // Montado em bike/skate/patins: dá para entrar na própria casa (ou
+          // na visitada) sem descer (mm3d-15). O carro não entra.
+          canRideInto: (it) =>
+            it.kind === "house" && ((it.house.isMine && !payload.me.visitor) || it.lot.number === cbRef.current.visitingLot),
           // Própria casa ou casa visitada: E entra (o "Alterar casa" é botão
           // ao lado). Nas outras: a ficha (que diz que é preciso convite).
           onInteract: (it) => {
@@ -465,10 +469,20 @@ export default function MeuMundoView({
         </div>
       )}
 
-      {/* Dirigindo: sair e recuperar */}
+      {/* Dirigindo: sair e recuperar — e, montado perto de casa, entrar com o veículo */}
       {status === "ready" && !!drivingLot && !open && !levelOpen && (
         <div className="absolute left-1/2 flex -translate-x-1/2 gap-2" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>
-          <EvoButton variant="primary" icon={<VehicleIcon kind={drivingKind} className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
+          {(nearbyMine || nearbyVisit) && drivingKind !== "car" && (
+            <EvoButton variant="primary" icon={<DoorOpen className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
+              {nearbyLabel}
+            </EvoButton>
+          )}
+          <EvoButton
+            variant={(nearbyMine || nearbyVisit) && drivingKind !== "car" ? "gold" : "primary"}
+            icon={<VehicleIcon kind={drivingKind} className="h-5 w-5" />}
+            onClick={() => gameRef.current?.leaveVehicle()}
+            kbd={isTouch || ((nearbyMine || nearbyVisit) && drivingKind !== "car") ? undefined : "E"}
+          >
             {t("leaveVehicle", "Descer")}
           </EvoButton>
           <EvoButton
@@ -598,7 +612,7 @@ export default function MeuMundoView({
 }
 
 /** Ícone do veículo (mm3d-14): carro, bicicleta, skate ou patins. */
-function VehicleIcon({ kind, className }: { kind: RideKind; className?: string }) {
+export function VehicleIcon({ kind, className }: { kind: RideKind; className?: string }) {
   if (kind === "car") return <CarFront className={className} />
   if (kind === "bike") return <Bike className={className} />
   if (kind === "skates") return <Footprints className={className} />

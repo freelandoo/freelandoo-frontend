@@ -11,6 +11,10 @@
 // da cama (mm3d-13: deitar e dormir também gravam a VIDA do hóspede — ele
 // continua dormindo com o jogo fechado). O ritmo de caminhada (`pace`) vem
 // da sala: cansado anda mais devagar e curvado.
+//
+// mm3d-15: bike, skate e patins entram em casa com a pessoa (o carro, não).
+// Ficam guardados onde ela desceu (state.rides, gravado no banco); montado,
+// anda com a MESMA regra de andar (a casa é pequena) e a pose da modalidade.
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -25,7 +29,10 @@ import { Character, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera, INDOOR_CAMERA } from "./camera"
 import { NetClient } from "./net"
-import { MOTION, lerpAngle, paceSpeeds, type Intent, type MoveState } from "./motion"
+import { MOTION, kindOfId, lerpAngle, paceSpeeds, type Intent, type MoveState, type RideKind } from "./motion"
+import { CarFleet, type CarPose } from "./cars"
+import { placeRider } from "./ride"
+import type { CarState } from "./net"
 import { stepInterior, type InteriorBody } from "./interior-motion"
 import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type InputState } from "./input"
 import type { Box2 } from "./collision"
@@ -63,6 +70,10 @@ export interface HouseGameOptions {
   onRestDenied?: (reason: string) => void
   /** Mensagens de visita vindas da sala. */
   onServerMessage?: (type: string, payload: unknown) => void
+  /** Montado (id do veículo) ou a pé (0), confirmado pela sala (mm3d-15). */
+  onRiding?: (id: number) => void
+  /** Usar/descer recusado (longe, ocupado, na escada…). */
+  onRideDenied?: (reason: string) => void
 }
 
 export interface HouseGameHandle {
@@ -78,6 +89,8 @@ export interface HouseGameHandle {
   sleep: (hours?: number, bedId?: string) => void
   /** Levantar (do assento ou da cama — dormindo, acorda). */
   stand: () => void
+  /** Descer da bike/skate/patins (fica parado onde está). */
+  leaveRide: () => void
   recenter: () => void
   reconnect: () => void
   setStatsEnabled: (on: boolean) => void
@@ -99,6 +112,19 @@ interface RemoteHouseState {
   seat: string
   bed?: string
   pace?: number
+  ride?: number
+}
+
+/** Veículo guardado na casa (mm3d-15; chave = id do veículo). */
+interface HouseRideState {
+  kind: string
+  x: number
+  z: number
+  y: number
+  floor: number
+  facing: number
+  rider: string
+  sp: number
 }
 
 const WALL_COLOR = new Color3(0.93, 0.9, 0.84)
@@ -131,7 +157,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   void WALL_COLOR
 
   const interior = buildInterior(scene, def)
-  const lib = new AvatarLibrary(scene, true)
+  // Sentar e — desde o mm3d-15 — as poses de bike, skate e patins.
+  const lib = new AvatarLibrary(scene, true, true)
+  const fleet = new CarFleet(scene)
   const fallbackMat = new StandardMaterial("mm-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
   fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
@@ -157,6 +185,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   let rest: { bed: string; sleeping: boolean } | null = null
   let pendingBed = false
   let myPace = 1
+  // Veículo em que estou montado (0 = a pé) — o que a sala diz.
+  let myRide = 0
+  const myPose: CarPose = { x: 0, z: 0, y: 0, facing: 0, sp: 0, st: 0, hb: 0, sl: 0, ax: 0, ay: 0 }
   const beds = def.beds ?? []
   char.place(body.x, body.z, body.facing, body.y)
 
@@ -258,6 +289,12 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         if (wasResting) opts.onRest?.(null)
         return
       }
+      if (type === "ride") {
+        const m = p as { ok: boolean; id?: number; x?: number; z?: number; floor?: number; facing?: number; reason?: string }
+        if (!m.ok) opts.onRideDenied?.(m.reason || "ride")
+        else if (m.id && typeof m.x === "number" && typeof m.z === "number") teleport(m.x, m.z, m.floor ?? body.floor, m.facing ?? body.facing)
+        return
+      }
       if (type === "life") {
         const m = p as { pace?: number }
         if (typeof m.pace === "number") myPace = m.pace
@@ -293,6 +330,11 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
           opts.onBody?.(myBody)
         }
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
+        const rid = p.ride ?? 0
+        if (rid !== myRide) {
+          myRide = rid
+          opts.onRiding?.(rid)
+        }
         return
       }
       seen.add(sid)
@@ -305,6 +347,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         void r.char.setBody(b)
       }
       r.floor = p.floor
+      r.car = p.ride ?? 0
       r.char.tired = (p.pace ?? 1) < 1
       r.setTarget(p.x, p.z, p.facing, Math.max(0, Math.min(5, p.move)) as MoveState, p.y)
     })
@@ -331,6 +374,8 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     })
     return out
   }
+  const exitRide: Interactable = { kind: "car-exit", id: "ride-exit", x: 0, z: 0, radius: 99 }
+  const rides = () => net.state<{ rides?: Map<string, HouseRideState> }>()?.rides ?? null
   const findNearby = (): Interactable | null => {
     if (seated || rest) return null
     let best: Interactable | null = null
@@ -342,6 +387,19 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         bestD = d
       }
     }
+    // Montado: sair pela porta (ele vai junto) ou descer.
+    if (myRide) return best ?? exitRide
+    // "Usar" um veículo parado do mesmo andar.
+    rides()?.forEach((r, key) => {
+      if (r.rider || r.floor !== body.floor) return
+      const kind = kindOfId(Number(key))
+      if (!kind || kind === "car") return
+      const d = Math.hypot(r.x - body.x, r.z - body.z)
+      if (d <= 1.25 && d < bestD) {
+        best = { kind: "car", id: `ride-${key}`, x: r.x, z: r.z, radius: 1.25, lot: 0, vid: Number(key), vkind: kind }
+        bestD = d
+      }
+    })
     const taken = occupied()
     for (const s of def.seats) {
       if (s.floor !== body.floor || taken.has(s.id)) continue
@@ -361,6 +419,23 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       }
     }
     return best
+  }
+
+  /** Usar e descer são pedidos à sala; o resto (porta, assento, cama) é da tela. */
+  const interactWith = (it: Interactable) => {
+    if (it.kind === "car") net.send("ride", { a: "on", id: it.vid })
+    else if (it.kind === "car-exit") net.send("ride", { a: "off" })
+    else opts.onInteract?.(it)
+  }
+
+  /** Os veículos guardados para desenhar (os de andares acima do meu, não). */
+  const rideCars = () => {
+    const out = new Map<string, CarState>()
+    rides()?.forEach((r, key) => {
+      if (r.floor > body.floor) return
+      out.set(key, { lot: 0, kind: r.kind, x: r.x, z: r.z, y: r.y, facing: r.facing, driver: r.rider, sp: r.sp })
+    })
+    return out
   }
 
   let instr: SceneInstrumentation | null = null
@@ -412,12 +487,26 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       }
     }
     visualFacing = lerpAngle(visualFacing, body.facing, 1 - Math.exp(-12 * dt))
-    char.place(body.x, body.z, visualFacing, body.y)
     char.tired = myPace < 1
-    char.animate(dt, move, Math.hypot(body.vx, body.vz))
+    const speed = Math.hypot(body.vx, body.vz)
+    const myKind = myRide ? kindOfId(myRide) : null
+    if (!myKind || myKind === "car") {
+      char.place(body.x, body.z, visualFacing, body.y)
+      char.animate(dt, move, speed)
+    }
     syncNetwork(performance.now(), intent)
+    if (myKind && myKind !== "car") Object.assign(myPose, { x: body.x, z: body.z, y: body.y, facing: visualFacing, sp: speed })
+    fleet.sync(rideCars(), dt, myRide, myKind && myKind !== "car" ? myPose : null)
+    if (myKind && myKind !== "car") placeRider(fleet, char, String(myRide), myKind as RideKind, body.x, body.z, visualFacing, speed, dt, body.y)
     for (const r of remotes.values()) {
-      r.update(dt)
+      const rk = r.car ? kindOfId(r.car) : null
+      const vp = rk && rk !== "car" ? fleet.poseOf(String(r.car)) : null
+      if (rk && rk !== "car" && vp) {
+        placeRider(fleet, r.char, String(r.car), rk, vp.x, vp.z, vp.facing, vp.sp, dt, vp.y)
+        r.x = vp.x
+        r.z = vp.z
+        r.facing = vp.facing
+      } else r.update(dt)
       // Outro andar acima do meu: escondido junto com o andar.
       r.char.setVisible((r.floor ?? 0) <= body.floor)
     }
@@ -432,7 +521,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     if (input.interactQueued) {
       input.interactQueued = false
       if (seated || rest) handle.stand()
-      else if (nearby && !input.blocked) opts.onInteract?.(nearby)
+      else if (nearby && !input.blocked) interactWith(nearby)
     }
 
     if (instr && opts.onStats) {
@@ -486,7 +575,10 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     },
     interact() {
       if (seated || rest) handle.stand()
-      else if (nearby && !input.blocked) opts.onInteract?.(nearby)
+      else if (nearby && !input.blocked) interactWith(nearby)
+    },
+    leaveRide() {
+      if (myRide) net.send("ride", { a: "off" })
     },
     sit(seatId) {
       if (seated || pendingSit) return
@@ -550,6 +642,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       instr = null
       for (const r of remotes.values()) r.dispose()
       remotes.clear()
+      fleet.dispose()
       char.dispose()
       lib.dispose()
       interior.dispose()

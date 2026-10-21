@@ -13,9 +13,10 @@ import { DoorOpen, Footprints, Info, Armchair, ArrowUpFromLine, BedDouble, Heart
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { createHouseGame, type HouseGameHandle } from "../engine/house-game"
+import { kindOfId } from "../engine/motion"
 import { fetchSession } from "../data"
 import type { BodyId, GameStats, HousePayload, Interactable, NetStatus, VisitState } from "../types"
-import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain } from "./meu-mundo-view"
+import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
 import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, type DrawerItem } from "./hud/hud-kit"
 import { EVO } from "./status/evo-skin"
 
@@ -51,6 +52,10 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const [stats, setStats] = useState<GameStats | null>(null)
   // Tipo físico: vem da vida, pela sala (não se escolhe).
   const [body, setBody] = useState<BodyId>(payload.me.body)
+  // Montado numa bike/skate/patins (id; 0 = a pé) e recusa de usar/descer (mm3d-15).
+  const [riding, setRiding] = useState(0)
+  const [rideDenied, setRideDenied] = useState<string | null>(null)
+  const rideKind = (riding && kindOfId(riding)) || "bike"
   const cbRef = useRef({ onExit, onMoved, onServerMessage })
   useEffect(() => {
     cbRef.current = { onExit, onMoved, onServerMessage }
@@ -86,6 +91,12 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
           onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
+          onRiding: (id) => alive && setRiding(id),
+          onRideDenied: (r) => {
+            if (!alive) return
+            setRideDenied(r)
+            setTimeout(() => alive && setRideDenied(null), 2500)
+          },
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (it) => alive && setNearby(it),
           onSeat: (s) => alive && setSeat(s),
@@ -150,6 +161,10 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
       : t("stand", "Levantar")
     : seat
       ? t("stand", "Levantar")
+      : nearby?.kind === "car"
+        ? t("useVehicle", "Usar")
+        : nearby?.kind === "car-exit"
+          ? t("leaveVehicle", "Descer")
       : nearby?.kind === "door"
         ? t("exitHouse", "Sair da casa")
         : nearby?.kind === "seat"
@@ -161,6 +176,10 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
     <Sun className="h-5 w-5 shrink-0" />
   ) : seat || rest ? (
     <ArrowUpFromLine className="h-5 w-5 shrink-0" />
+  ) : nearby?.kind === "car" ? (
+    <VehicleIcon kind={nearby.vkind} className="h-5 w-5 shrink-0" />
+  ) : nearby?.kind === "car-exit" ? (
+    <VehicleIcon kind={rideKind} className="h-5 w-5 shrink-0" />
   ) : nearby?.kind === "door" ? (
     <DoorOpen className="h-5 w-5 shrink-0" />
   ) : nearby?.kind === "bed" ? (
@@ -169,6 +188,16 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
     <Armchair className="h-5 w-5 shrink-0" />
   )
   const hasAction = !!seat || !!rest || !!nearby
+  // Montado na porta: "Sair da casa" (ele sai junto) e, ao lado, "Descer".
+  const rideAtDoor = !!riding && nearby?.kind === "door"
+  const rideDeniedLabel =
+    rideDenied === "stairs"
+      ? t("rideStairs", "Na escada não dá para descer.")
+      : rideDenied === "far"
+        ? t("vehicleTooFar", "Chegue mais perto.")
+        : rideDenied === "busy"
+          ? t("vehicleBusy", "Alguém já está usando.")
+          : t("vehicleUnavailable", "Não está disponível agora.")
   // Deitado (acordado): "Dormir" ao lado da ação. Dormir fica 8 h.
   const canSleep = !!rest && !rest.sleeping
   const restDeniedLabel =
@@ -253,10 +282,12 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
       </div>
 
       {/* Avisos curtos (lugar ocupado, cama longe, dormindo) */}
-      {(denied || restDenied || rest?.sleeping) && (
+      {(denied || restDenied || rideDenied || rest?.sleeping) && (
         <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>
           {denied ? (
             <EvoToast>{denied === "taken" ? t("seatTaken", "Esse lugar já está ocupado") : t("seatDenied", "Chegue mais perto para sentar")}</EvoToast>
+          ) : rideDenied ? (
+            <EvoToast>{rideDeniedLabel}</EvoToast>
           ) : restDenied ? (
             <EvoToast>{restDeniedLabel}</EvoToast>
           ) : (
@@ -279,6 +310,21 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
           icon={<Moon className="h-5 w-5 shrink-0" />}
         >
           {t("bedSleep", "Dormir")}
+        </EvoButton>
+      )}
+
+      {/* Montado e perto da porta: descer aqui dentro (o E sai com ele) */}
+      {status === "ready" && rideAtDoor && !overlay && (
+        <EvoButton
+          variant="gold"
+          size="lg"
+          onClick={() => gameRef.current?.leaveRide()}
+          aria-label={t("leaveVehicle", "Descer")}
+          className="!absolute"
+          style={{ bottom: bottom(isTouch ? 104 : 96), right: SAFE.right }}
+          icon={<VehicleIcon kind={rideKind} className="h-5 w-5 shrink-0" />}
+        >
+          {t("leaveVehicle", "Descer")}
         </EvoButton>
       )}
 

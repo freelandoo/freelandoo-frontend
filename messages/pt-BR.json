@@ -7305,6 +7305,7 @@
     "vehicleTooFar": "Chegue mais perto.",
     "vehicleBusy": "Alguém já está usando.",
     "carNotOwner": "Só o morador da casa usa este carro.",
-    "vehicleUnavailable": "Não está disponível agora."
+    "vehicleUnavailable": "Não está disponível agora.",
+    "rideStairs": "Na escada não dá para descer."
   }
 }
