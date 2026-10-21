@@ -1,0 +1,3 @@
+YujiSyuku-Kanji.ttf — Yuji Syuku (Google Fonts, ofl/yujisyuku), RECORTADA no projeto EVO Brazil/Cat demon
+(só ~100 ideogramas). Licença SIL Open Font License 1.1.
+A tela de STATUS do Meu Mundo usa 心 e 体. Kanji fora do recorte sai em branco.

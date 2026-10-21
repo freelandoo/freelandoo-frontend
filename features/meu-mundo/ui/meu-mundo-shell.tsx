@@ -16,6 +16,7 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import MeuMundoView, { BTN, SAFE } from "./meu-mundo-view"
 import HouseView from "./house-view"
+import StatusScreen from "./status/status-screen"
 import {
   fetchAdminNeighborhood,
   getInviteCandidates,
@@ -28,7 +29,7 @@ import {
   postHouseExit,
   postInvite,
 } from "../data"
-import type { HousePayload, NeighborhoodPayload, ScenePayload, VisitState } from "../types"
+import type { BodyId, HousePayload, NeighborhoodPayload, ScenePayload, VisitState } from "../types"
 
 const isHouse = (p: ScenePayload): p is HousePayload => (p as HousePayload).scene === "house"
 const sceneKeyOf = (p: ScenePayload) =>
@@ -43,6 +44,9 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [notice, setNotice] = useState<string | null>(null)
   const [visits, setVisits] = useState<VisitState | null>(initial.visits ?? null)
   const [inviteOpen, setInviteOpen] = useState(false)
+  // Tela de STATUS do hóspede (mm3d-13): o corpo em cena vai para o retrato.
+  const [statusBody, setStatusBody] = useState<BodyId | null>(null)
+  const [lifeTick, setLifeTick] = useState(0)
   const busyRef = useRef(false)
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -117,6 +121,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const onServerMessage = useCallback(
     (type: string, payload: unknown) => {
       if (type === "visits") setVisits(payload as VisitState)
+      else if (type === "life") setLifeTick((n) => n + 1)
       else if (type === "visit_ended") {
         const p = payload as { reason?: string; hostName?: string } | null
         say(t("visitEndedNotice", "A visita a {name} terminou.").replace("{name}", p?.hostName ?? ""))
@@ -226,7 +231,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     [run, say, t, errText],
   )
 
-  const overlayOpen = !!busy || inviteOpen || !!incoming
+  const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody
   const key = `${sceneKeyOf(scene)}#${mount}`
 
   return (
@@ -241,6 +246,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onMoved={reload}
           onServerMessage={onServerMessage}
           blocked={overlayOpen}
+          onOpenStatus={setStatusBody}
         />
       ) : (
         <MeuMundoView
@@ -252,7 +258,12 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onMoved={reload}
           onServerMessage={onServerMessage}
           blocked={overlayOpen}
+          onOpenStatus={setStatusBody}
         />
+      )}
+
+      {statusBody && (
+        <StatusScreen name={scene.me.name} body={statusBody} lifeTick={lifeTick} onClose={() => setStatusBody(null)} />
       )}
 
       {/* Faixa da visita (convite enviado ou visita em andamento) */}

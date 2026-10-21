@@ -236,6 +236,59 @@ export interface LifeSummary {
   wallet: { coins: number }
 }
 
+export type LifeItemKind = "food" | "drink" | "supplement" | "medicine" | "stimulant" | "anabolic"
+
+/** Item do catálogo (fonte: ITEMS em meuMundoLife.js). */
+export interface LifeItem {
+  id: string
+  kind: LifeItemKind
+  name: string
+  price: number
+  kcal: number
+  sat: number
+  sugar: number
+  sodium: number
+  nutri: number
+  protein: number
+  mood: number
+  energy: number
+  stress: number
+  tox: number
+  effect: { id: string; hours: number } | null
+}
+
+export interface LifeDay {
+  day: string
+  closed: boolean
+  hours: Record<LifeActivity, number>
+  mealsEaten: number
+  mealsMissed: number
+  healthy: number
+  junk: number
+  avgMood: number | null
+  minHealth: number
+  maxStress: number
+  coins: number
+  condition: { score: number; label: LifeCharacter["today"]["label"] }
+}
+
+export interface LifeEvent {
+  at: string
+  kind: string
+  data: Record<string, unknown>
+}
+
+/** GET /meu-mundo/admin/life */
+export interface LifeFull extends LifeSummary {
+  days: LifeDay[]
+  events: LifeEvent[]
+  catalog: {
+    items: LifeItem[]
+    activityHours: Record<string, [number, number]>
+    clock: { offsetMin: number; meals: number[]; mealWindowH: number }
+  }
+}
+
 // ═══ Interiores (mm3d-09) ═══════════════════════════════════════════════════
 export type FloorMat = "wood" | "tile" | "carpet" | "stone"
 

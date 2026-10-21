@@ -9,12 +9,12 @@
 // ele continua dormindo com o jogo fechado).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { DoorOpen, Footprints, Info, Armchair, ArrowUpFromLine, BedDouble, Moon, RefreshCw, Send, Sun, Users, Wifi, WifiOff, X } from "lucide-react"
+import { DoorOpen, Footprints, Info, Armchair, ArrowUpFromLine, BedDouble, HeartPulse, Moon, RefreshCw, Send, Sun, Users, Wifi, WifiOff, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { createHouseGame, type HouseGameHandle } from "../engine/house-game"
 import { fetchSession } from "../data"
-import type { GameStats, HousePayload, Interactable, NetStatus, VisitState } from "../types"
+import type { BodyId, GameStats, HousePayload, Interactable, NetStatus, VisitState } from "../types"
 import { BTN, CLIENT_RELEASE, Joystick, SAFE } from "./meu-mundo-view"
 
 export interface HouseSceneProps {
@@ -25,9 +25,11 @@ export interface HouseSceneProps {
   onMoved: () => void
   onServerMessage: (type: string, payload: unknown) => void
   blocked?: boolean
+  /** Abre a tela de STATUS do hóspede (mm3d-13). */
+  onOpenStatus?: (body: BodyId) => void
 }
 
-export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked }: HouseSceneProps) {
+export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked, onOpenStatus }: HouseSceneProps) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<HouseGameHandle | null>(null)
@@ -245,6 +247,17 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
             <button type="button" onClick={() => gameRef.current?.reconnect()} className={BTN}>
               <RefreshCw className="h-4 w-4" />
               <span className="hidden sm:inline">{t("reconnect", "Reconectar")}</span>
+            </button>
+          )}
+          {onOpenStatus && (
+            <button
+              type="button"
+              onClick={() => onOpenStatus(payload.me.body)}
+              className={BTN}
+              aria-label={t("stOpen", "Status do hóspede")}
+            >
+              <HeartPulse className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("stTitle", "Status")}</span>
             </button>
           )}
           {isOwner && (

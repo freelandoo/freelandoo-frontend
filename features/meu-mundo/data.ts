@@ -5,7 +5,7 @@
 // Quem decide quem pode ver é o SERVIDOR (auth + papel Administrator): 401 e
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
-import type { HousePayload, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState } from "./types"
+import type { HousePayload, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState } from "./types"
 
 export type NeighborhoodResult =
   | { ok: true; payload: ScenePayload }
@@ -107,6 +107,17 @@ export const postDecline = (token: string, id: string) => call<{ ok: true }>(tok
 export const postCancel = (token: string, id: string) => call<{ ok: true }>(token, "POST", `/visits/${encodeURIComponent(id)}/cancel`, {})
 export const postEndVisit = (token: string, id: string) =>
   call<{ ok: true; scene?: ScenePayload | null; visits?: VisitState }>(token, "POST", `/visits/${encodeURIComponent(id)}/end`, {})
+
+// ═══ mm3d-13: vida do hóspede (tela de STATUS) ═══════════════════════════════
+/** Hóspede + carteira + diário + linha do tempo + catálogo (a tela de STATUS). */
+export const getLife = (token: string) => call<LifeFull>(token, "GET", "/life")
+/** Estudar/treinar/trabalhar por `hours` (1–72) ou parar (`idle`). Deitar/dormir é pela cama, na casa. */
+export const postLifeActivity = (token: string, activity: string, hours?: number) =>
+  call<LifeSummary>(token, "POST", "/life/activity", { activity, hours })
+/** Comer/tomar um item do catálogo (cobra as moedas do jogo). */
+export const postLifeConsume = (token: string, item: string) => call<LifeSummary>(token, "POST", "/life/consume", { item })
+/** Depois da morte: o próximo hóspede chega. */
+export const postLifeNewcomer = (token: string) => call<LifeSummary>(token, "POST", "/life/newcomer", {})
 
 // Conferência mínima da forma: dado torto aqui vira cena quebrada lá na frente,
 // e é melhor dizer "não carregou" do que desenhar um bairro pela metade.

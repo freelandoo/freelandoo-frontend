@@ -19,6 +19,7 @@ import {
   DoorOpen,
   Footprints,
   Hand,
+  HeartPulse,
   Home,
   Loader2,
   LocateFixed,
@@ -73,9 +74,20 @@ export interface NeighborhoodSceneProps {
   onServerMessage: (type: string, payload: unknown) => void
   /** Algum painel da casca está aberto (convite): o jogo não lê teclas. */
   blocked?: boolean
+  /** Abre a tela de STATUS do hóspede (mm3d-13), com o corpo que está em cena. */
+  onOpenStatus?: (body: BodyId) => void
 }
 
-export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvite, onMoved, onServerMessage, blocked }: NeighborhoodSceneProps) {
+export default function MeuMundoView({
+  payload,
+  visits,
+  onEnterHouse,
+  onOpenInvite,
+  onMoved,
+  onServerMessage,
+  blocked,
+  onOpenStatus,
+}: NeighborhoodSceneProps) {
   const t = useTranslations("MeuMundo")
   const nb = payload.neighborhood
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -343,6 +355,17 @@ export default function MeuMundoView({ payload, visits, onEnterHouse, onOpenInvi
             <button type="button" onClick={() => gameRef.current?.reconnect()} className={BTN}>
               <RefreshCw className="h-4 w-4" />
               <span className="hidden sm:inline">{t("reconnect", "Reconectar")}</span>
+            </button>
+          )}
+          {onOpenStatus && (
+            <button
+              type="button"
+              onClick={() => onOpenStatus(body)}
+              className={BTN}
+              aria-label={t("stOpen", "Status do hóspede")}
+            >
+              <HeartPulse className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("stTitle", "Status")}</span>
             </button>
           )}
           <button
