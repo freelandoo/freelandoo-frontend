@@ -23,6 +23,7 @@ import { getLife, postLifeActivity, postLifeConsume, postLifeNewcomer } from "..
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, archivo, chamfer, teko } from "./evo-skin"
 import { PAGES, StatusPage, pageTitle, type PageActions } from "./status-pages"
+import SkinWardrobe from "./skin-wardrobe"
 
 const N = PAGES.length
 const W = 1460
@@ -93,6 +94,13 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
   const [sel, setSel] = useState(0)
   const [compact, setCompact] = useState(false)
   const [scale, setScale] = useState(0.6)
+  // Vestuário (mm3d-16) por cima do STATUS; o retrato segue o que está vestido.
+  const [wardrobe, setWardrobe] = useState(false)
+  const wardrobeOpen = useRef(false)
+  useEffect(() => {
+    wardrobeOpen.current = wardrobe
+  }, [wardrobe])
+  const [avatar, setAvatar] = useState<BodyId>(body)
 
   // ── dados ────────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -101,6 +109,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
     const r = await getLife(token)
     if (r.ok) {
       setLife(r.data)
+      if (r.data.avatar) setAvatar(r.data.avatar)
       setError(null)
     } else setError(r.error)
   }, [])
@@ -138,6 +147,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
       activity: (kind, hours) => void run((tk) => postLifeActivity(tk, kind, hours)),
       consume: (item) => void run((tk) => postLifeConsume(tk, item)),
       newcomer: () => void run((tk) => postLifeNewcomer(tk)),
+      openSkins: () => setWardrobe(true),
     }),
     [busy, run],
   )
@@ -255,6 +265,8 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
   // ── teclado e roda ───────────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Com o vestuário aberto, as teclas são dele.
+      if (wardrobeOpen.current) return
       const k = e.key
       let handled = true
       if (k === "Escape") close()
@@ -312,7 +324,18 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
     animateTo(Math.round(cursor.current + Math.sign(moved) * 0.18))
   }
 
-  const portrait = PORTRAIT[body] ?? PORTRAIT.normal
+  const portrait = PORTRAIT[avatar] ?? PORTRAIT.normal
+  // Irmão (não filho) das telas: arrastar no palco não troca o card do STATUS.
+  const skins = wardrobe && (
+    <SkinWardrobe
+      t={t}
+      onClose={() => setWardrobe(false)}
+      onChanged={(r) => {
+        if (r.avatar) setAvatar(r.avatar)
+        setLife((l) => (l ? { ...l, wallet: r.wallet, character: r.character } : l))
+      }}
+    />
+  )
   const frameFill = "linear-gradient(160deg, #1b0711 0%, #0d070b 50%, #14060e 100%)"
 
   // ── estados de espera ────────────────────────────────────────────────────
@@ -333,6 +356,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
   if (compact) {
     const page = PAGES[sel]
     return (
+      <>
       <div
         className={`${archivo.className} fixed inset-0 z-[80] flex flex-col bg-black/70`}
         style={{ paddingTop: "max(10px, env(safe-area-inset-top))", paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
@@ -362,6 +386,8 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
         </div>
         {notice && <Notice text={notice} />}
       </div>
+      {skins}
+      </>
     )
   }
 
@@ -369,6 +395,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
   // Só o da frente e os dois de lado desenham o conteúdo (o de trás é invisível).
   const rel = (i: number) => Math.abs(relativo(i, sel))
   return (
+    <>
     <div
       className={`${archivo.className} fixed inset-0 z-[80] select-none overflow-hidden`}
       style={{ background: "radial-gradient(ellipse at 50% 55%, rgba(8,7,11,0.35), rgba(8,7,11,0.78))" }}
@@ -469,6 +496,8 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
       </div>
       {notice && <Notice text={notice} />}
     </div>
+    {skins}
+    </>
   )
 }
 

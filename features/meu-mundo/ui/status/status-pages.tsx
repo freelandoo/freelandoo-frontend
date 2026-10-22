@@ -24,6 +24,7 @@ import {
   HeartPulse,
   Hospital,
   Pill,
+  Shirt,
   Skull,
   Smile,
   Sprout,
@@ -46,6 +47,8 @@ export interface PageActions {
   activity: (kind: "studying" | "training" | "working" | "idle", hours?: number) => void
   consume: (item: string) => void
   newcomer: () => void
+  /** Abre o vestuário (botão SKIN embaixo da foto, mm3d-16). */
+  openSkins: () => void
 }
 
 export interface PageProps {
@@ -253,6 +256,10 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
       return t("evHypertension", "Desenvolveu pressão alta.")
     case "heart_attack":
       return t("evHeartAttack", "Teve um infarto.")
+    case "skin_bought":
+      return t("evSkinBought", "Comprou a skin {skin} ({n} moedas).")
+        .replace("{skin}", data.skin === "sergio" ? "Sergio" : String(data.skin ?? ""))
+        .replace("{n}", String(data.price ?? ""))
     case "death":
       return t("evDeath", "Morreu: {cause}.").replace("{cause}", causeLabel(String(data.cause ?? ""), t))
     default:
@@ -266,6 +273,7 @@ function eventIcon(kind: string) {
   if (kind === "diabetes") return <Droplet className="h-5 w-5" />
   if (kind === "death") return <Skull className="h-5 w-5" />
   if (kind === "collapse") return <Zap className="h-5 w-5" />
+  if (kind === "skin_bought") return <Shirt className="h-5 w-5" />
   return <Clock className="h-5 w-5" />
 }
 function timeOf(iso: string, offsetMin: number) {
@@ -491,8 +499,11 @@ function Overview({ life, portrait, compact, t, act }: PageProps) {
   return (
     <div className={`grid h-full gap-5 ${compact ? "" : "grid-cols-[minmax(0,560px)_1fr]"}`}>
       <div className="flex flex-col gap-4">
-        <div className="flex flex-1 items-center justify-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <Portrait src={portrait} size={compact ? 200 : 330} />
+          <GoldButton onClick={act.openSkins} active>
+            <Shirt className="h-5 w-5" /> {t("stSkin", "Skin")}
+          </GoldButton>
         </div>
         <Chamfer cut={16}>
           <div className="flex items-center gap-4 px-4 py-3">

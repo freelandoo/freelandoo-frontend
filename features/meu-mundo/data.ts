@@ -5,7 +5,7 @@
 // Quem decide quem pode ver é o SERVIDOR (auth + papel Administrator): 401 e
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
-import type { HousePayload, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState } from "./types"
+import type { HousePayload, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState, WardrobeResult } from "./types"
 
 export type NeighborhoodResult =
   | { ok: true; payload: ScenePayload }
@@ -118,6 +118,14 @@ export const postLifeActivity = (token: string, activity: string, hours?: number
 export const postLifeConsume = (token: string, item: string) => call<LifeSummary>(token, "POST", "/life/consume", { item })
 /** Depois da morte: o próximo hóspede chega. */
 export const postLifeNewcomer = (token: string) => call<LifeSummary>(token, "POST", "/life/newcomer", {})
+
+// ═══ mm3d-16: vestuário (skins compradas com as moedas do jogo) ═════════════
+export const getSkins = (token: string) => call<WardrobeResult>(token, "GET", "/skins")
+export const postSkinBuy = (token: string, id: string) =>
+  call<WardrobeResult>(token, "POST", `/skins/${encodeURIComponent(id)}/buy`, {})
+/** Vestir uma skin sua, ou voltar ao padrão ("standard"). */
+export const postSkinEquip = (token: string, id: string) =>
+  call<WardrobeResult>(token, "POST", `/skins/${encodeURIComponent(id)}/equip`, {})
 
 // Conferência mínima da forma: dado torto aqui vira cena quebrada lá na frente,
 // e é melhor dizer "não carregou" do que desenhar um bairro pela metade.

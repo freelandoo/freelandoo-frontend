@@ -243,6 +243,23 @@ export interface LifeSummary {
   now: string
   character: LifeCharacter
   wallet: { coins: number }
+  /** O que a sala desenha: a skin vestida ou a condição física (mm3d-16). */
+  avatar?: BodyId
+}
+
+/** Vestuário (mm3d-16): GET /meu-mundo/admin/skins e as ações. */
+export interface WardrobeSkin {
+  id: string
+  kind: "standard" | "skin"
+  name: string
+  price: number
+  owned: boolean
+  equipped: boolean
+}
+
+export interface WardrobeResult extends LifeSummary {
+  wardrobe: { condition: BodyId; skins: WardrobeSkin[] }
+  bought?: boolean
 }
 
 export type LifeItemKind = "food" | "drink" | "supplement" | "medicine" | "stimulant" | "anabolic"
