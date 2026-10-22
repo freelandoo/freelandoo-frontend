@@ -6,8 +6,9 @@
 // Tela cheia com o palco de cada personagem ao fundo (o padrão no palco do
 // Meu Mundo; o Sergio no Coliseu da Casa Views) e o personagem em 3D no
 // pedestal (engine/skin-stage.ts). Setas trocam de personagem; arrastar gira.
-// Skin que a pessoa não tem aparece como HOLOGRAMA; comprou, ela se
-// materializa. O personagem padrão é de todos e não tem holograma: o corpo
+// Skin que a pessoa não tem aparece como HOLOGRAMA rosa com ADQUIRIR embaixo
+// (de graça para administrador); adquiriu, ela se materializa e o botão
+// vira USAR. O personagem padrão é de todos e não tem holograma: o corpo
 // dele é a CONDIÇÃO física de agora (magro, normal, gordo, forte) — isso não
 // é skin e não se escolhe aqui.
 
@@ -141,7 +142,7 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
     materializing.current = false
     setData(r.data)
     onChanged(r.data)
-    say(t("skinBought", "É seu! Agora é só vestir."))
+    say(t("skinAcquired", "Adquirido! Agora é só usar."))
     setBusy(false)
   }
 
@@ -154,7 +155,7 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
     else {
       setData(r.data)
       onChanged(r.data)
-      say(id === "standard" ? t("skinBackStandard", "De volta ao personagem padrão") : t("skinEquipped", "Skin vestida"))
+      say(id === "standard" ? t("skinBackStandard", "De volta ao personagem padrão") : t("skinInUseNow", "Skin em uso"))
     }
     setBusy(false)
   }
@@ -168,19 +169,23 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
     if (entry.equipped)
       action = (
         <EvoButton variant="ghost" size="lg" disabled icon={<Shirt className="h-5 w-5" />}>
-          {t("skinWearing", "Vestindo")}
+          {t("skinInUse", "Em uso")}
         </EvoButton>
       )
     else if (owned)
       action = (
         <EvoButton variant="primary" size="lg" disabled={busy} onClick={() => void equip(entry.id)} icon={<Shirt className="h-5 w-5" />}>
-          {art.body === null ? t("skinWearStandard", "Usar o padrão") : t("skinWear", "Vestir")}
+          {t("skinUse", "Usar")}
         </EvoButton>
       )
     else
       action = (
-        <EvoButton variant="gold" size="lg" disabled={busy || coins < entry.price} onClick={() => void buy()} icon={<Sparkles className="h-5 w-5" />}>
-          {t("skinBuy", "Comprar · {price}").replace("{price}", coinsText(entry.price))}
+        <EvoButton variant="gold" size="lg" disabled={busy || coins < entry.cost} onClick={() => void buy()} icon={<Sparkles className="h-5 w-5" />}>
+          {entry.cost > 0
+            ? t("skinAcquirePrice", "Adquirir · {price}").replace("{price}", coinsText(entry.cost))
+            : data.wardrobe.admin
+              ? t("skinAcquireAdmin", "Adquirir · grátis (admin)")
+              : t("skinAcquire", "Adquirir")}
         </EvoButton>
       )
   }

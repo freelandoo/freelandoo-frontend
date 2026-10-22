@@ -253,12 +253,14 @@ export interface WardrobeSkin {
   kind: "standard" | "skin"
   name: string
   price: number
+  /** quanto ESTA pessoa paga (administrador: 0) */
+  cost: number
   owned: boolean
   equipped: boolean
 }
 
 export interface WardrobeResult extends LifeSummary {
-  wardrobe: { condition: BodyId; skins: WardrobeSkin[] }
+  wardrobe: { condition: BodyId; admin: boolean; skins: WardrobeSkin[] }
   bought?: boolean
 }
 

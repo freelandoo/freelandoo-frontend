@@ -7319,18 +7319,20 @@
     "skinKindSkin": "Skin",
     "skinCondition": "Condição: {c}",
     "skinHologram": "Holograma · ainda não é seu",
-    "skinBuy": "Comprar · {price}",
-    "skinWear": "Vestir",
-    "skinWearStandard": "Usar o padrão",
-    "skinWearing": "Vestindo",
-    "skinBought": "É seu! Agora é só vestir.",
-    "skinEquipped": "Skin vestida",
     "skinBackStandard": "De volta ao personagem padrão",
     "skinNoCoins": "Moedas insuficientes",
     "skinLoadFail": "O personagem não carregou",
     "skinListFail": "Não carregou o vestuário",
     "skinPrev": "Personagem anterior",
     "skinNext": "Próximo personagem",
-    "evSkinBought": "Comprou a skin {skin} ({n} moedas)."
+    "skinAcquire": "Adquirir",
+    "skinAcquirePrice": "Adquirir · {price}",
+    "skinAcquireAdmin": "Adquirir · grátis (admin)",
+    "skinUse": "Usar",
+    "skinInUse": "Em uso",
+    "skinAcquired": "Adquirido! Agora é só usar.",
+    "skinInUseNow": "Skin em uso",
+    "evSkinAcquired": "Adquiriu a skin {skin} ({n} moedas).",
+    "evSkinAcquiredFree": "Adquiriu a skin {skin}."
   }
 }

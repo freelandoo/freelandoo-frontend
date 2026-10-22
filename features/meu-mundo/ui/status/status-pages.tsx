@@ -257,7 +257,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
     case "heart_attack":
       return t("evHeartAttack", "Teve um infarto.")
     case "skin_bought":
-      return t("evSkinBought", "Comprou a skin {skin} ({n} moedas).")
+      return (Number(data.price) > 0 ? t("evSkinAcquired", "Adquiriu a skin {skin} ({n} moedas).") : t("evSkinAcquiredFree", "Adquiriu a skin {skin}."))
         .replace("{skin}", data.skin === "sergio" ? "Sergio" : String(data.skin ?? ""))
         .replace("{n}", String(data.price ?? ""))
     case "death":
