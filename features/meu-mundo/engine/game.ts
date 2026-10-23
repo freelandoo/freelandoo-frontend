@@ -109,6 +109,8 @@ export interface GameHandle {
   setJoystick: (x: number, y: number) => void
   setRun: (on: boolean) => void
   setBlocked: (blocked: boolean) => void
+  /** Para de desenhar (um minijogo cobre a tela, mm3d-20); a sala e a presença seguem. */
+  setSuspended: (on: boolean) => void
   interact: () => void
   /** Recoloca a câmera atrás do personagem (não move o personagem). */
   recenter: () => void
@@ -673,8 +675,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     if (!disposed) opts.onReady?.()
   })
 
+  let suspended = false
   engine.runRenderLoop(() => {
-    if (!disposed) scene.render()
+    if (!disposed && !suspended) scene.render()
   })
 
   const ro = new ResizeObserver(() => {
@@ -694,6 +697,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     setRun(on) {
       input.runToggle = on
+    },
+    setSuspended(on) {
+      suspended = on
+      if (on) clearInput(input)
     },
     setBlocked(blocked) {
       input.blocked = blocked

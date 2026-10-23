@@ -10,6 +10,7 @@
 // Quem decide a sala, o bairro de casa e o veículo é o SERVIDOR.
 
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Activity, Footprints, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, RefreshCw, Store, Users, Wifi, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -23,6 +24,12 @@ import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
 import { fetchSession } from "../data"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, NetStatus, VisitState } from "../types"
+
+// Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
+const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => m.JetpackView), { ssr: false })
+
+/** O local abre um minijogo agora (o registro do servidor decide). */
+const gameOf = (p: CenterPlace) => (p.available && p.destination.startsWith("game:") ? p.destination.slice(5) : null)
 
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
@@ -62,6 +69,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [attempt, setAttempt] = useState(0)
   const [nearby, setNearby] = useState<Interactable | null>(null)
   const [open, setOpen] = useState<CenterPlace | null>(null)
+  const [minigame, setMinigame] = useState<string | null>(null)
   const [statsOpen, setStatsOpen] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
   const [helpOpen, setHelpOpen] = useState(true)
@@ -132,7 +140,11 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           onInteract: (it) => {
             if (!alive) return
             if (it.kind === "portal") cbRef.current.onGoHome()
-            else if (it.kind === "place") setOpen(it.place)
+            else if (it.kind === "place") {
+              const g = gameOf(it.place)
+              if (g === "jetpack") setMinigame(g)
+              else setOpen(it.place)
+            }
           },
           onStats: (s) => alive && setStats(s),
           onError: () => alive && setStatus("error"),
@@ -158,8 +170,13 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   }, [statsOpen])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(!!open || menuOpen || !!blocked)
-  }, [open, menuOpen, blocked])
+    gameRef.current?.setBlocked(!!open || menuOpen || !!blocked || !!minigame)
+  }, [open, menuOpen, blocked, minigame])
+
+  // Minijogo aberto: o centro para de desenhar (dois 3D ao mesmo tempo pesam no celular).
+  useEffect(() => {
+    gameRef.current?.setSuspended(!!minigame)
+  }, [minigame])
 
   useEffect(() => {
     if (!open) return
@@ -204,6 +221,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           : nearPlace
             ? placeName(nearPlace)
             : ""
+  // "Jogar" nos locais com minijogo; "Em breve" nos outros.
+  const placeTag = nearPlace && gameOf(nearPlace) ? t("centerPlay", "Jogar") : t("centerSoon", "Em breve")
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
 
   const menuItems: DrawerItem[] = [
@@ -319,7 +338,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
         <div className="absolute left-1/2 flex -translate-x-1/2 items-stretch gap-2" style={{ bottom: bottom(48) }}>
           {nearPlace ? (
             <EvoButton variant="gold" size="lg" kbd="E" icon={<Store className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} aria-label={nearbyLabel}>
-              {nearbyLabel} · {t("centerSoon", "Em breve")}
+              {nearbyLabel} · {placeTag}
             </EvoButton>
           ) : (
             <EvoButton
@@ -385,7 +404,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               style={{ bottom: bottom(24), right: SAFE.right }}
               icon={nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-6 w-6 shrink-0" /> : nearPortal ? <Home className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
             >
-              {nearPlace ? `${nearbyLabel} · ${t("centerSoon", "Em breve")}` : nearbyLabel}
+              {nearPlace ? `${nearbyLabel} · ${placeTag}` : nearbyLabel}
             </EvoButton>
           )}
         </>
@@ -399,7 +418,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             heading={t("menuCenter", "O centro")}
             kanjiMark="市"
             items={menuItems}
-            hotkeys={!blocked && !open}
+            hotkeys={!blocked && !open && !minigame}
             footer={
               <>
                 {t("exitLabel", "Centro da cidade")} · {CLIENT_RELEASE} · {BUILD}
@@ -427,6 +446,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           <p style={{ color: EVO.mudo }}>{t("centerSoonDesc", "O interior de {name} ainda está sendo construído. Por enquanto, só a fachada.").replace("{name}", placeName(open))}</p>
         </EvoDialog>
       )}
+
+      {/* Minijogo do local (mm3d-20): cobre a tela; ao sair, volta à porta do prédio */}
+      {minigame === "jetpack" && <JetpackView body={body} onExit={() => setMinigame(null)} />}
 
       {status !== "ready" && (
         <SceneCurtain

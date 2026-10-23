@@ -110,6 +110,11 @@ export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.14
 type AnimSet = keyof typeof ASSETS.anims
 const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
+
+/** Arquivos de um corpo, para quem desenha o avatar fora do Babylon (o jetpack, mm3d-20). */
+export function avatarFiles(id: BodyId) {
+  return { body: BASE + ASSETS.bodies[id], texture: BASE + ASSETS.textures[id], anims: BASE + ASSETS.anims[ANIM_SET[id]] }
+}
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk"] as const
 const RIDE_CLIPS = ["BikeA", "BikeB", "SkateRide", "SkatePush", "SkatesGlide"] as const
 type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number]
