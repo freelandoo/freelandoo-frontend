@@ -43,6 +43,12 @@ export class FuelSystem {
     this.emit({ type: 'fuel_changed', value: this.value, ratio: this.ratio });
   }
 
+  /** Põe o valor sem avisar ninguém (restaurar um estado do servidor, mm3d-21). */
+  setValue(v: number) {
+    this.value = Math.max(0, Math.min(this.max, v));
+    this.low = this.ratio < this.lowRatio;
+  }
+
   /** Gasta até `amount`; devolve quanto realmente saiu do tanque. */
   consume(amount: number): number {
     if (amount <= 0 || this.value <= 0) return 0;
