@@ -2,7 +2,7 @@
 
 // features/meu-mundo/ui/meu-mundo-shell.tsx — a CASCA do Meu Mundo (mm3d-09).
 //
-// Troca de ambiente (rua ↔ casa ↔ bairro visitado). Quem decide para onde o
+// Troca de ambiente (rua ↔ casa ↔ bairro visitado ↔ centro da cidade, mm3d-17). Quem decide para onde o
 // jogador vai é o SERVIDOR: a casca só pede (entrar, sair, aceitar, voltar) e
 // monta o ambiente que voltou. Só existe UM ambiente 3D por vez — o anterior
 // é desmontado (e descartado) quando o próximo chega; até lá ele continua de
@@ -18,6 +18,7 @@ import MeuMundoView from "./meu-mundo-view"
 import { EvoButton, EvoDialog, EvoToast } from "./hud/hud-kit"
 import { Chamfer, EVO, teko } from "./status/evo-skin"
 import HouseView from "./house-view"
+import CenterView from "./center-view"
 import StatusScreen from "./status/status-screen"
 import {
   fetchAdminNeighborhood,
@@ -25,15 +26,18 @@ import {
   getVisits,
   postAccept,
   postCancel,
+  postCenterEnter,
+  postCenterLeave,
   postDecline,
   postEndVisit,
   postHouseEnter,
   postHouseExit,
   postInvite,
 } from "../data"
-import type { BodyId, HousePayload, NeighborhoodPayload, ScenePayload, VisitState } from "../types"
+import type { BodyId, CenterPayload, HousePayload, NeighborhoodPayload, ScenePayload, VisitState } from "../types"
 
 const isHouse = (p: ScenePayload): p is HousePayload => (p as HousePayload).scene === "house"
+const isCenter = (p: ScenePayload): p is CenterPayload => (p as CenterPayload).scene === "center"
 const sceneKeyOf = (p: ScenePayload) =>
   (p as { sceneKey?: string }).sceneKey ?? (isHouse(p) ? `house:${p.house.id}` : `nb:${(p as NeighborhoodPayload).neighborhood.id}`)
 
@@ -116,6 +120,34 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       void run(t("transExit", "Saindo para a rua…"), async (token) => {
         const r = await postHouseExit(token)
         return r.ok ? r.data : { error: errText(r) }
+      }),
+    [run, t, errText],
+  )
+
+  // Centro da cidade (mm3d-17): ir (da rua) e voltar para casa. O servidor
+  // reserva a sala do centro ANTES de soltar o bairro; falha = fica onde está.
+  const goCenter = useCallback(
+    () =>
+      void run(t("transCenter", "Indo ao centro…"), async (token) => {
+        const r = await postCenterEnter(token)
+        return r.ok
+          ? r.data
+          : {
+              error:
+                r.code === "visiting"
+                  ? t("centerVisiting", "Encerre a visita antes de ir ao centro.")
+                  : r.code === "moving"
+                    ? t("vehicleMoving", "Pare primeiro.")
+                    : errText(r),
+            }
+      }),
+    [run, t, errText],
+  )
+  const goHome = useCallback(
+    () =>
+      void run(t("transCenterHome", "Voltando para casa…"), async (token) => {
+        const r = await postCenterLeave(token)
+        return r.ok ? r.data : { error: r.code === "moving" ? t("vehicleMoving", "Pare primeiro.") : errText(r) }
       }),
     [run, t, errText],
   )
@@ -242,7 +274,18 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
 
   return (
     <>
-      {isHouse(scene) ? (
+      {isCenter(scene) ? (
+        <CenterView
+          key={key}
+          payload={scene}
+          visits={visits}
+          onGoHome={goHome}
+          onMoved={reload}
+          onServerMessage={onServerMessage}
+          blocked={overlayOpen}
+          onOpenStatus={setStatusBody}
+        />
+      ) : isHouse(scene) ? (
         <HouseView
           key={key}
           payload={scene}
@@ -260,6 +303,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           payload={scene}
           visits={visits}
           onEnterHouse={enterHouse}
+          onGoCenter={goCenter}
           onOpenInvite={() => setInviteOpen(true)}
           onMoved={reload}
           onServerMessage={onServerMessage}

@@ -437,7 +437,112 @@ export interface HousePayload {
   life?: LifeSummary | null
 }
 
-export type ScenePayload = (NeighborhoodPayload & { scene?: "neighborhood" }) | HousePayload
+// ═══ Centro da cidade (mm3d-17) ═════════════════════════════════════════════
+// Espelho de freelandoo-backend/src/utils/meuMundoCenter.js (a planta é a
+// mesma para todas as salas; o cliente desenha a partir dela).
+export type CenterPlaceId =
+  | "pizzaria"
+  | "hamburgueria"
+  | "supermercado"
+  | "universidade"
+  | "biblioteca"
+  | "escola"
+  | "academia"
+  | "jetpack"
+  | "igreja"
+  | "delegacia"
+
+export interface CenterPlace {
+  id: CenterPlaceId
+  zone: "comercial" | "educacional" | "atividades" | "civica"
+  /** Chave de tradução do nome (namespace MeuMundo). */
+  nameKey: string
+  rect: { x0: number; x1: number; z0: number; z1: number }
+  size: { w: number; d: number; h: number; peak: number }
+  center: Vec2
+  front: "n" | "s" | "e" | "w"
+  /** Giro do modelo (frente no -Z local). */
+  rotationY: number
+  /** Origem do modelo: meio da fachada, no chão. */
+  origin: Vec2
+  model: { width: number; depth: number; doorX: number }
+  door: Vec2 & { width: number }
+  entry: Vec2 & { facing: number }
+  interact: Vec2 & { radius: number }
+  return: Vec2 & { facing: number }
+  /** Interior futuro ("interior:<id>"). */
+  destination: string
+  /** false nesta entrega: nenhum interior existe ainda. */
+  available: boolean
+}
+
+export interface CenterSpot {
+  x: number
+  z: number
+  facing: number
+}
+
+export interface CenterLayout {
+  id: string
+  version: number
+  capacity: number
+  dims: {
+    plaza: number
+    ring: number
+    roadHalf: number
+    sidewalk: number
+    cornerR: number
+    ringIn: number
+    ringOut: number
+    outerWalk: number
+    front: number
+    bound: number
+    avenue: { z: number; half: number; x0: number; x1: number }
+    portalX: number
+    planter: { half: number; h: number; from: number; to: number }
+    bollard: number
+  }
+  places: CenterPlace[]
+  plaza: {
+    id: "praca"
+    nameKey: string
+    half: number
+    monument: Vec2 & { radius: number; h: number }
+    trees: [number, number, number][]
+    benches: [number, number, number][]
+    lamps: [number, number][]
+    flowers: [number, number][]
+    planters: { x: number; z: number; hx: number; hz: number; rot: number }[]
+    bollards: [number, number][]
+  }
+  crosswalks: { x: number; z: number; axis: "x" | "z" }[]
+  parking: { id: string; rect: [number, number, number, number]; slots: CenterSpot[] }[]
+  streetLamps: [number, number][]
+  streetTrees: [number, number, number][]
+  arrival: CenterSpot
+  portal: Vec2 & { id: string; radius: number; nameKey: string }
+  obstacles: Box2Def[]
+  limit: number
+  /** Modelos publicados (null = só os blocos de reserva). */
+  assets: { version: string; basePath: string; places: Partial<Record<CenterPlaceId, string>> } | null
+}
+
+export interface CenterPayload {
+  scene: "center"
+  /** "center:<id da sala>" */
+  sceneKey: string
+  release: string
+  environment: string
+  center: CenterLayout
+  /** house = vaga nesta sala (definida ao entrar); driving = veículo que veio junto. */
+  me: { name: string; body: BodyId; house: number; driving: number; visitor?: boolean }
+  motion: { walkSpeed: number; runSpeed: number }
+  multiplayer: MultiplayerSession | { error: string } | null
+  visits?: VisitState
+  life?: LifeSummary | null
+}
+
+export type ScenePayload = (NeighborhoodPayload & { scene?: "neighborhood" }) | HousePayload | CenterPayload
 
 export interface VisitPublic {
   id: string
@@ -481,6 +586,9 @@ export type Interactable =
   // Veículo livre para "Usar" (mm3d-14): vid = id do veículo, vkind = modalidade.
   | { kind: "car"; id: string; x: number; z: number; radius: number; lot: number; vid: number; vkind: "car" | "bike" | "skate" | "skates" }
   | { kind: "car-exit"; id: string; x: number; z: number; radius: number }
+  // Centro (mm3d-17): entrada de um estabelecimento ("Em breve") e o portal de volta.
+  | { kind: "place"; id: string; x: number; z: number; radius: number; place: CenterPlace }
+  | { kind: "portal"; id: string; x: number; z: number; radius: number }
 
 export interface GameStats {
   /** Carros desenhados no bairro (mm3d-11). */

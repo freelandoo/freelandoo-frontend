@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Activity,
   Bike,
+  Building2,
   CarFront,
   Construction,
   DoorOpen,
@@ -53,7 +54,7 @@ import {
 } from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-16"
+export const CLIENT_RELEASE = "mm3d-17"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 export const SAFE = {
@@ -68,6 +69,8 @@ export interface NeighborhoodSceneProps {
   visits: VisitState | null
   /** Entrar na casa do lote (o servidor confere porta, dono e convite). */
   onEnterHouse: (lot: number) => void
+  /** Ir ao centro da cidade (mm3d-17): portão do bairro ou menu. */
+  onGoCenter?: () => void
   onOpenInvite: () => void
   /** O servidor levou o jogador para outro ambiente: pedir o destino de novo. */
   onMoved: () => void
@@ -82,6 +85,7 @@ export default function MeuMundoView({
   payload,
   visits,
   onEnterHouse,
+  onGoCenter,
   onOpenInvite,
   onMoved,
   onServerMessage,
@@ -128,10 +132,10 @@ export default function MeuMundoView({
   // de ambiente ao aceitar: a visita ativa chega pelo estado de visitas.
   const activeGuest = visits?.active?.role === "guest" && visits.active.neighborhoodName === nb.name ? visits.active.house : null
   const visitingLot = payload.me.visiting?.house ?? activeGuest
-  const cbRef = useRef({ onEnterHouse, onMoved, onServerMessage, visitingLot })
+  const cbRef = useRef({ onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot })
   useEffect(() => {
-    cbRef.current = { onEnterHouse, onMoved, onServerMessage, visitingLot }
-  }, [onEnterHouse, onMoved, onServerMessage, visitingLot])
+    cbRef.current = { onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot }
+  }, [onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot])
   const [isTouch] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -196,6 +200,8 @@ export default function MeuMundoView({
           // ao lado). Nas outras: a ficha (que diz que é preciso convite).
           onInteract: (it) => {
             if (!alive) return
+            // Portão do bairro (mm3d-17): agora leva ao centro (o servidor decide a sala).
+            if (it.kind === "exit" && cbRef.current.onGoCenter) return cbRef.current.onGoCenter()
             if (it.kind === "house" && ((it.house.isMine && !payload.me.visitor) || it.lot.number === cbRef.current.visitingLot))
               cbRef.current.onEnterHouse(it.lot.number)
             else setOpen(it)
@@ -273,7 +279,8 @@ export default function MeuMundoView({
   const nearbyVisit = nearby?.kind === "house" && nearby.lot.number === visitingLot
   // Carro (mm3d-11): entrar no próprio carro, ou sair dirigindo.
   const nearbyCar = nearby?.kind === "car" || nearby?.kind === "car-exit"
-  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar
+  const nearbyExit = nearby?.kind === "exit" && !!onGoCenter
+  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar || nearbyExit
   const vehicleKind = nearby?.kind === "car" ? nearby.vkind : drivingKind
   // Veículos (mm3d-14): "Usar" para todos — carro, bike, skate e patins — e "Descer".
   const nearbyLabel = nearby?.kind === "car"
@@ -287,7 +294,9 @@ export default function MeuMundoView({
       : nearby?.kind === "house"
       ? t("seeHouse", "Ver casa {n}").replace("{n}", String(nearby.lot.number).padStart(2, "0"))
       : nearby?.kind === "exit"
-        ? exitLabel
+        ? onGoCenter
+          ? t("goCenter", "Ir ao centro")
+          : exitLabel
         : ""
 
   const menuItems: DrawerItem[] = [
@@ -296,6 +305,9 @@ export default function MeuMundoView({
       : []),
     ...(!payload.me.visitor
       ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, onSelect: onOpenInvite }]
+      : []),
+    ...(onGoCenter && !payload.me.visitor
+      ? [{ id: "center", label: t("goCenter", "Ir ao centro"), hint: t("goCenterHint", "Encontrar gente de outros bairros"), icon: <Building2 className="h-5 w-5" />, onSelect: onGoCenter }]
       : []),
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: recenter },
     { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, onSelect: () => setHelpOpen(true) },
@@ -460,7 +472,7 @@ export default function MeuMundoView({
             variant="primary"
             size="lg"
             kbd="E"
-            icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
+            icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : nearbyExit ? <Building2 className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
             onClick={() => gameRef.current?.interact()}
             aria-label={nearbyLabel}
           >
@@ -477,11 +489,16 @@ export default function MeuMundoView({
               {nearbyLabel}
             </EvoButton>
           )}
+          {nearbyExit && (
+            <EvoButton variant="primary" icon={<Building2 className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
+              {t("goCenter", "Ir ao centro")}
+            </EvoButton>
+          )}
           <EvoButton
-            variant={(nearbyMine || nearbyVisit) && drivingKind !== "car" ? "gold" : "primary"}
+            variant={((nearbyMine || nearbyVisit) && drivingKind !== "car") || nearbyExit ? "gold" : "primary"}
             icon={<VehicleIcon kind={drivingKind} className="h-5 w-5" />}
             onClick={() => gameRef.current?.leaveVehicle()}
-            kbd={isTouch || ((nearbyMine || nearbyVisit) && drivingKind !== "car") ? undefined : "E"}
+            kbd={isTouch || ((nearbyMine || nearbyVisit) && drivingKind !== "car") || nearbyExit ? undefined : "E"}
           >
             {t("leaveVehicle", "Descer")}
           </EvoButton>
@@ -533,7 +550,7 @@ export default function MeuMundoView({
               size="none"
               className="!absolute min-h-16 min-w-16 max-w-[44vw] text-[18px] leading-tight"
               style={{ bottom: bottom(24), right: SAFE.right }}
-              icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-6 w-6 shrink-0" /> : nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
+              icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-6 w-6 shrink-0" /> : nearbyExit ? <Building2 className="h-6 w-6 shrink-0" /> : nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
             >
               {nearbyLabel}
             </EvoButton>

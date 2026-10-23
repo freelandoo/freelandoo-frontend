@@ -5,7 +5,7 @@
 // Quem decide quem pode ver é o SERVIDOR (auth + papel Administrator): 401 e
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
-import type { HousePayload, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState, WardrobeResult } from "./types"
+import type { CenterPayload, HousePayload, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState, WardrobeResult } from "./types"
 
 export type NeighborhoodResult =
   | { ok: true; payload: ScenePayload }
@@ -38,7 +38,24 @@ export async function fetchAdminNeighborhood(
 export function isValidScene(body: unknown): body is ScenePayload {
   const b = body as ScenePayload | null
   if (b && (b as HousePayload).scene === "house") return isValidHouse(b as HousePayload)
+  if (b && (b as CenterPayload).scene === "center") return isValidCenter(b as CenterPayload)
   return isValidPayload(b as NeighborhoodPayload | null)
+}
+
+function isValidCenter(b: CenterPayload): boolean {
+  const c = b?.center
+  return (
+    !!c &&
+    Array.isArray(c.places) &&
+    c.places.length > 0 &&
+    c.places.every((p) => typeof p.id === "string" && !!p.rect && !!p.interact && !!p.origin) &&
+    Array.isArray(c.obstacles) &&
+    !!c.arrival &&
+    !!c.portal &&
+    !!c.plaza &&
+    !!b.me &&
+    typeof b.sceneKey === "string"
+  )
 }
 
 function isValidHouse(b: HousePayload): boolean {
@@ -97,6 +114,10 @@ async function call<T>(token: string, method: "GET" | "POST", path: string, body
 export const postHouseEnter = (token: string, lot: number) => call<ScenePayload>(token, "POST", "/house/enter", { lot })
 /** Sair pela porta: devolve a rua do bairro da casa. */
 export const postHouseExit = (token: string) => call<ScenePayload>(token, "POST", "/house/exit", {})
+/** Ir ao centro (mm3d-17): da rua do bairro, a pé ou com o veículo. O servidor reserva a sala. */
+export const postCenterEnter = (token: string) => call<ScenePayload>(token, "POST", "/center/enter", {})
+/** Voltar para casa: o servidor decide o bairro (o da residência). */
+export const postCenterLeave = (token: string) => call<ScenePayload>(token, "POST", "/center/leave", {})
 export const getVisits = (token: string) => call<VisitState>(token, "GET", "/visits")
 export const getInviteCandidates = (token: string) =>
   call<{ candidates: { name: string; available: boolean; reason: string | null }[] }>(token, "GET", "/visits/candidates")

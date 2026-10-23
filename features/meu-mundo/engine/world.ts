@@ -82,7 +82,8 @@ const LEGACY_PLAN: LotPlan = {
 }
 
 // ── Paleta ───────────────────────────────────────────────────────────────────
-const C = {
+// Exportada: o centro (center-world.ts) usa os mesmos números.
+export const C = {
   grassOut: [0.47, 0.67, 0.37],
   grass: [0.56, 0.77, 0.43],
   lawn: [0.6, 0.81, 0.46],
@@ -184,22 +185,25 @@ function drawAtlas(tex: DynamicTexture, exitLabel: string) {
 
 // ── Peças reaproveitadas ─────────────────────────────────────────────────────
 // `boxes` param o personagem; `viewOnly` só a câmera (a copa das árvores:
-// o personagem passa rente a ela, a câmera não pode entrar nela).
-type Ctx = {
+// o personagem passa rente a ela, a câmera não pode entrar nela). As peças
+// soltas (árvore, banco, poste, flores) servem também ao centro (mm3d-17).
+export type PropCtx = {
   geo: GeoBuilder
-  signs: GeoBuilder
   boxes: Box2[]
   viewOnly: Box2[]
+}
+type Ctx = PropCtx & {
+  signs: GeoBuilder
   d: NeighborhoodDims
   plan: LotPlan
 }
 
 /** Placa de chão: caixa fina do y=0 até `top`. */
-function slab(g: GeoBuilder, cx: number, cz: number, w: number, d: number, top: number, color: RGB) {
+export function slab(g: GeoBuilder, cx: number, cz: number, w: number, d: number, top: number, color: RGB) {
   g.box(w, top, d, place(cx, top / 2, cz), color)
 }
 
-function tree(ctx: Ctx, x: number, z: number, s = 1, collide = true) {
+export function tree(ctx: PropCtx, x: number, z: number, s = 1, collide = true) {
   const { geo } = ctx
   geo.cylinder(0.34 * s, 1.6 * s, place(x, 0.8 * s, z), C.trunk, 6)
   geo.sphere(2.2 * s, [1, 0.85, 1], place(x, 2.15 * s, z), C.leafA)
@@ -209,7 +213,7 @@ function tree(ctx: Ctx, x: number, z: number, s = 1, collide = true) {
   ctx.viewOnly.push({ x, z, hx: 1.05 * s, hz: 1.05 * s, rot: 0, h: 3.4 * s })
 }
 
-function bench(ctx: Ctx, x: number, z: number, rot: number) {
+export function bench(ctx: PropCtx, x: number, z: number, rot: number) {
   const { geo } = ctx
   const f = frameOf(x, z, rot)
   geo.box(2, 0.12, 0.55, place(0, 0.45, 0, 0, f), C.wood)
@@ -218,7 +222,7 @@ function bench(ctx: Ctx, x: number, z: number, rot: number) {
   ctx.boxes.push({ x, z, hx: 1.05, hz: 0.38, rot, h: 1 })
 }
 
-function lamp(ctx: Ctx, x: number, z: number) {
+export function lamp(ctx: PropCtx, x: number, z: number) {
   const { geo } = ctx
   geo.cylinder(0.16, 3.2, place(x, 1.6, z), C.metal, 6)
   geo.box(0.42, 0.42, 0.42, place(x, 3.35, z), C.bulb)
@@ -226,7 +230,7 @@ function lamp(ctx: Ctx, x: number, z: number) {
   ctx.boxes.push({ x, z, hx: 0.2, hz: 0.2, rot: 0, h: 3.6 })
 }
 
-function flowerPatch(ctx: Ctx, x: number, z: number, seed: number) {
+export function flowerPatch(ctx: PropCtx, x: number, z: number, seed: number) {
   for (let k = 0; k < 6; k++) {
     const a = seed * 1.7 + k * 1.05
     const r = 0.25 + (k % 3) * 0.22

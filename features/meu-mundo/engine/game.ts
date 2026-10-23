@@ -1,7 +1,8 @@
 // features/meu-mundo/engine/game.ts
 //
-// Ciclo de vida do Meu Mundo 3D: cria o motor, monta o bairro, conecta à sala
-// do bairro, roda UM laço de renderização e, ao sair, desmonta tudo que criou.
+// Ciclo de vida do Meu Mundo 3D: cria o motor, monta o bairro (ou o Centro da
+// cidade, mm3d-17 — mesma física, mesma rede, outro mundo), conecta à sala,
+// roda UM laço de renderização e, ao sair, desmonta tudo que criou.
 //
 // Esta peça não sabe nada de React nem da Freelandoo: recebe um canvas, o
 // payload do bairro e callbacks. É isso que permite levar as regras do jogo
@@ -24,6 +25,7 @@ import { SceneInstrumentation } from "@babylonjs/core/Instrumentation/sceneInstr
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildWorld } from "./world"
+import { buildCenterWorld, type CenterLabels } from "./center-world"
 import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
@@ -37,6 +39,7 @@ import { attachInput, clearInput, createInputState, driveAxis, moveAxis, wantsRu
 import {
   BODY_IDS,
   type BodyId,
+  type CenterPayload,
   type GameStats,
   type HouseVisual,
   type Interactable,
@@ -67,8 +70,11 @@ liveGamesBump.count = liveGames
 
 export interface GameOptions {
   canvas: HTMLCanvasElement
-  payload: NeighborhoodPayload
+  /** Rua de um bairro ou o Centro da cidade (mm3d-17). */
+  payload: NeighborhoodPayload | CenterPayload
   exitLabel: string
+  /** Centro: nomes já traduzidos para os letreiros. */
+  centerLabels?: CenterLabels
   /** Teto da resolução interna (pixels de tela por pixel CSS). */
   maxPixelRatio?: number
   fetchSession: () => Promise<(MultiplayerSession & { sceneKey?: string }) | null>
@@ -127,12 +133,13 @@ const isBody = (b: string): b is BodyId => (BODY_IDS as string[]).includes(b)
 
 export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const { canvas, payload } = opts
-  const nb = payload.neighborhood
+  const centerP = (payload as CenterPayload).scene === "center" ? (payload as CenterPayload) : null
+  const nb = centerP ? null : (payload as NeighborhoodPayload).neighborhood
   const speeds = {
     walk: payload.motion?.walkSpeed ?? MOTION.WALK_SPEED,
     run: payload.motion?.runSpeed ?? MOTION.RUN_SPEED,
   }
-  const limit = nb.limit ?? 70
+  const limit = centerP ? centerP.center.limit : (nb!.limit ?? 70)
   const engine = new Engine(
     canvas,
     true,
@@ -163,9 +170,11 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const sun = new DirectionalLight("mm-sun", new Vector3(-0.55, -1, -0.35), scene)
   sun.intensity = 0.55
 
-  const world = buildWorld(scene, nb, opts.exitLabel, (v) => {
-    if (!disposed) opts.onHouseVisual?.(v)
-  })
+  const world = centerP
+    ? buildCenterWorld(scene, centerP.center, opts.centerLabels ?? { place: (p) => p.id, portal: opts.exitLabel })
+    : buildWorld(scene, nb!, opts.exitLabel, (v) => {
+        if (!disposed) opts.onHouseVisual?.(v)
+      })
   // Na rua, os avatares também trazem as poses de bike, skate e patins (mm3d-14).
   const lib = new AvatarLibrary(scene, false, true)
   // Carros (mm3d-11): desenhados a partir do estado da sala.
@@ -203,7 +212,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   shadowMat.alpha = 0.22
   const mats = { fallback: fallbackMat, shadow: shadowMat }
 
-  const home = payload.me.home
+  const home = centerP
+    ? { x: centerP.center.arrival.x, z: centerP.center.arrival.z, rotationY: centerP.center.arrival.facing }
+    : (payload as NeighborhoodPayload).me.home
   let myBody: BodyId = isBody(payload.me.body) ? payload.me.body : "normal"
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true), home.x, home.z, home.rotationY)
   // Conferência (como __mmHouse): onde estou e se estou dirigindo.
@@ -238,7 +249,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   let onlineCount = -1
   // Ritmo do MEU corpo (mm3d-13), vindo da sala: cansado anda mais devagar.
   let myPace = 1
-  let residentCount = nb.residents
+  let residentCount = nb?.residents ?? 0
   const net = new NetClient({
     onStatus: (s) => {
       if (disposed) return
@@ -317,6 +328,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         }
         setDriving(p.car ?? 0, p)
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
+        // No centro a "casa" é a vaga nesta sala: é ela que diz de quem é cada veículo.
+        if (p.house) myLot = p.house
         return
       }
       seen.add(sid)
@@ -327,7 +340,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         remotes.set(sid, r)
         // Vizinho que se mudou depois que você entrou: a casa dele deixa de
         // aparecer como disponível (o banco é a fonte; a sala só confirma).
-        const h = nb.houses[p.house - 1]
+        const h = nb?.houses[p.house - 1]
         if (h && !h.isMine && !h.ownerName) h.ownerName = p.name
       } else if (r.char.body !== body) {
         void r.char.setBody(body)
@@ -355,12 +368,18 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
 
   // ── Interação ─────────────────────────────────────────────────────────────
   let nearby: Interactable | null = null
-  const myLot = payload.me.house || 0
+  let myLot = payload.me.house || 0
+  const visitor = !!(payload.me as { visitor?: boolean }).visitor
   const exitCar: Interactable = { kind: "car-exit", id: "car-exit", x: 0, z: 0, radius: 99 }
   const findNearby = () => {
     // Em um veículo: descer — ou, de bike/skate/patins perto da própria
-    // casa (ou da visitada), entrar nela montado (mm3d-15).
+    // casa (ou da visitada), entrar nela montado (mm3d-15). Perto do portão
+    // do bairro ou do portal do centro, viajar com ele (mm3d-17).
     if (driving) {
+      for (const it of world.interactables) {
+        if (it.kind !== "exit" && it.kind !== "portal") continue
+        if (Math.hypot(it.x - local.x, it.z - local.z) <= it.radius + 2.5) return it
+      }
       if (drivingKind !== "car" && opts.canRideInto) {
         for (const it of world.interactables) {
           if (it.kind !== "house" || !opts.canRideInto(it)) continue
@@ -376,7 +395,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     for (const [key, c] of fleet.latest) {
       if (c.driver) continue
       const k = RIDE_KINDS[c.kind]
-      if (k.ownerOnly && (!myLot || payload.me.visitor || c.lot !== myLot)) continue
+      // No centro todo veículo é só de quem o trouxe.
+      if ((k.ownerOnly || centerP) && (!myLot || visitor || c.lot !== myLot)) continue
       const d = Math.hypot(c.x - local.x, c.z - local.z)
       if (d <= k.enter - 0.2 && d < bestD) {
         best = { kind: "car", id: `veh-${key}`, x: c.x, z: c.z, radius: k.enter, lot: c.lot, vid: Number(key), vkind: c.kind }
@@ -591,6 +611,47 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       scene.fogMode = Scene.FOGMODE_NONE
       scene.activeCamera = top
     }
+    // Vitrine de conferência (mm3d-18): câmera livre, avatar ao lado do
+    // prédio e o custo da cena (triângulos visíveis, recursos vivos).
+    let look: TargetCamera | null = null
+    const dev = window as unknown as {
+      __mmLookFrom?: (px: number, py: number, pz: number, tx: number, ty: number, tz: number, fov?: number) => void
+      __mmFollow?: () => void
+      __mmTeleport?: (x: number, z: number, facing: number) => void
+      __mmPerf?: () => Record<string, number | null>
+    }
+    dev.__mmLookFrom = (px, py, pz, tx, ty, tz, fov = 0.9) => {
+      look?.dispose()
+      look = new TargetCamera("mm-look", new Vector3(px, py, pz), scene)
+      look.fov = fov
+      look.minZ = 0.3
+      look.maxZ = 600
+      look.setTarget(new Vector3(tx, ty, tz))
+      scene.activeCamera = look
+    }
+    dev.__mmFollow = () => {
+      look?.dispose()
+      look = null
+      scene.activeCamera = follow.camera
+    }
+    dev.__mmTeleport = (x, z, facing) => {
+      local.teleport(x, z, facing)
+      follow.snapBehind(x, z, facing)
+    }
+    dev.__mmPerf = () => ({
+      triangles: Math.round(scene.getActiveIndices() / 3),
+      activeMeshes: scene.getActiveMeshes().length,
+      meshes: scene.meshes.length,
+      materials: scene.materials.length,
+      textures: scene.textures.length,
+      geometries: scene.getGeometries().length,
+      drawCalls: instr ? Math.round(instr.drawCallsCounter.current) : null,
+      frameMs: instr ? instr.frameTimeCounter.lastSecAverage : null,
+      fps: engine.getFps(),
+      live,
+    })
+    ;(dev as { __mmMeshes?: () => [string, number][] }).__mmMeshes = () =>
+      scene.meshes.filter((m) => m.isEnabled()).map((m) => [m.name, Math.round(m.getTotalIndices() / 3)])
   }
 
   scene.executeWhenReady(() => {
