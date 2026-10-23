@@ -37,6 +37,7 @@ import { stepInterior, type InteriorBody } from "./interior-motion"
 import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type InputState } from "./input"
 import type { Box2 } from "./collision"
 import { liveGamesBump } from "./game"
+import { ResolutionGovernor, resolveQuality, type QualityChoice } from "./quality"
 import {
   BODY_IDS,
   type BodyId,
@@ -94,6 +95,8 @@ export interface HouseGameHandle {
   recenter: () => void
   reconnect: () => void
   setStatsEnabled: (on: boolean) => void
+  /** Qualidade gráfica escolhida na gaveta (mm3d-19). */
+  setQuality: (c: QualityChoice) => void
   /** Andar onde o personagem está (painel). */
   floor: () => number
   dispose: () => void
@@ -140,8 +143,8 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: "default" }, false)
   const unlive = liveGamesBump()
   let disposed = false
-  const ratio = Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5)
-  engine.setHardwareScalingLevel(1 / ratio)
+  // Resolução pelo FPS medido (mm3d-19); a casa é pequena, o resto não muda.
+  const governor = new ResolutionGovernor(engine, resolveQuality(), Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
 
   const scene = new Scene(engine)
   scene.clearColor = new Color4(0.16, 0.15, 0.17, 1)
@@ -512,6 +515,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     }
     interior.showUpTo(body.floor)
     follow.update(dt, body.x, body.z, viewBoxes(), body.y)
+    governor.tick(engine.getDeltaTime())
 
     const next = findNearby()
     if (next?.id !== nearby?.id) {
@@ -541,6 +545,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
           z: body.z,
           avatars: lib.live,
           houseModels: [],
+          renderScale: governor.ratio,
         })
       }
     }
@@ -616,6 +621,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     },
     reconnect() {
       void net.retry()
+    },
+    setQuality(c) {
+      governor.setProfile(resolveQuality(c))
     },
     setStatsEnabled(on) {
       if (on && !instr) {

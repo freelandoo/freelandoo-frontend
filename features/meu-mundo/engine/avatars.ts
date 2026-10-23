@@ -34,6 +34,7 @@ import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { Node } from "@babylonjs/core/node"
 import type { Scene } from "@babylonjs/core/scene"
+import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import type { BodyId } from "../types"
 
@@ -57,6 +58,16 @@ const ASSETS = {
     strong: "avatar-strong.glb",
     sergio: "avatar-sergio.glb",
   } satisfies Record<BodyId, string>,
+  // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
+  // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
+  // avatar, então não anima nada a mais. Corpo sem entrada (Sergio: costuras
+  // demais para simplificar) ou arquivo que falhar = só a malha cheia.
+  lod: {
+    normal: "avatar-normal-lod.glb",
+    slim: "avatar-slim-lod.glb",
+    fat: "avatar-fat-lod.glb",
+    strong: "avatar-strong-lod.glb",
+  } as Partial<Record<BodyId, string>>,
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
   // calibrado no Blender) para a mão não atravessar a barriga nem o peito.
@@ -121,6 +132,7 @@ export class AvatarLibrary {
   /** arquivo de textura → material (um por textura, compartilhado por quem usa). */
   private readonly materials = new Map<string, StandardMaterial>()
   private readonly bodies = new Map<BodyId, Promise<AssetContainer>>()
+  private readonly lods = new Map<BodyId, Promise<AssetContainer>>()
   private readonly anims = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly sits = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly rests = new Map<AnimSet, Promise<AssetContainer>>()
@@ -135,6 +147,8 @@ export class AvatarLibrary {
     private readonly withSit = false,
     /** Na rua: poses de bicicleta, skate e patins (mm3d-14). */
     private readonly withRide = false,
+    /** A partir daqui (m) o avatar usa a malha leve (mm3d-19). */
+    public lodDistance = 24,
   ) {
     ensureLoaders()
   }
@@ -166,6 +180,18 @@ export class AvatarLibrary {
       p = LoadAssetContainerAsync(BASE + ASSETS.bodies[id], this.scene)
       p.catch(() => this.bodies.delete(id))
       this.bodies.set(id, p)
+    }
+    return p
+  }
+
+  private lodBody(id: BodyId) {
+    const file = ASSETS.lod[id]
+    if (!file) return Promise.resolve(null)
+    let p = this.lods.get(id)
+    if (!p) {
+      p = LoadAssetContainerAsync(BASE + file, this.scene)
+      p.catch(() => this.lods.delete(id))
+      this.lods.set(id, p)
     }
     return p
   }
@@ -222,7 +248,8 @@ export class AvatarLibrary {
     const sitP = this.withSit ? this.sitSet(id).catch(() => null) : Promise.resolve(null)
     const restP = this.restSet(id).catch(() => null)
     const rideP = this.withRide ? this.rideSet(id).catch(() => null) : Promise.resolve(null)
-    const [container, anims, sit, rest, ride] = await Promise.all([this.body(id), this.animSet(id), sitP, restP, rideP])
+    const lodP = this.lodBody(id).catch(() => null)
+    const [container, anims, sit, rest, ride, lodC] = await Promise.all([this.body(id), this.animSet(id), sitP, restP, rideP, lodP])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
     const root = entries.rootNodes[0] as TransformNode
@@ -250,13 +277,42 @@ export class AvatarLibrary {
     for (const mesh of meshes) {
       mesh.material = this.materialFor(id)
       mesh.isPickable = false
-      // Bounding com folga: o esqueleto animado sai um pouco da pose T de
-      // repouso, e sem isso a malha some na borda da tela.
-      mesh.refreshBoundingInfo({ applySkeleton: false })
+      // Caixa COM o esqueleto (pose de ligação, uma vez): a malha é quantizada
+      // e a desquantização mora nas matrizes de ligação — sem o esqueleto, a
+      // caixa saía em unidades cruas (esfera de 14 km), nada era recortado
+      // fora da tela e o LOD do Babylon (distância ao centro da caixa) sempre
+      // escolhia a malha leve (mm3d-19). Folga: a animação sai da pose T.
+      mesh.skeleton?.prepare(true)
+      mesh.refreshBoundingInfo({ applySkeleton: true })
       mesh.getBoundingInfo().scale(1.25)
     }
+    const lod = lodC ? this.attachLod(lodC, meshes[0] as Mesh, id) : null
     this.live++
-    return new AvatarRig(this, id, entries, root, groups, meshes, feet, ANKLE_REST[ANIM_SET[id]])
+    const rig = new AvatarRig(this, id, entries, root, groups, meshes, feet, ANKLE_REST[ANIM_SET[id]], lod)
+    rig.setLodDistance(this.lodDistance)
+    return rig
+  }
+
+  /**
+   * Malha leve como nível de LOD da cheia: filha dela (sai junto no descarte)
+   * e no esqueleto DELA. O Babylon desenha o nível com a matriz e a caixa da
+   * malha mestra; a cópia de esqueleto que veio do arquivo é descartada.
+   */
+  private attachLod(c: AssetContainer, main: Mesh, id: BodyId): Mesh | null {
+    if (!main?.skeleton) return null
+    const e = c.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
+    const mesh = (e.rootNodes[0] as TransformNode | undefined)?.getChildMeshes(false)[0] as Mesh | undefined
+    if (!mesh || mesh.getTotalVertices() === 0) {
+      e.dispose()
+      return null
+    }
+    mesh.parent = main
+    mesh.skeleton = main.skeleton
+    mesh.material = this.materialFor(id)
+    mesh.isPickable = false
+    e.rootNodes.forEach((n) => n.dispose())
+    e.skeletons.forEach((s) => s.dispose())
+    return mesh
   }
 
   release() {
@@ -265,9 +321,10 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values()]
+    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
+    this.lods.clear()
     this.anims.clear()
     this.sits.clear()
     this.rests.clear()
@@ -290,6 +347,9 @@ export class AvatarRig {
   }
   private readonly clips: Clip[]
   private disposed = false
+  /** Longe ou fora da tela (mm3d-19): a pose fica parada, nada é avaliado. */
+  private frozen = false
+  private lodAt = -1
   // ── veículo (mm3d-14) ──
   private rideMove: MoveState = 0
   private rideStopped = true
@@ -309,6 +369,8 @@ export class AvatarRig {
     private readonly feet: (TransformNode | undefined)[] = [],
     /** Tornozelo acima da sola, em pé (m). */
     readonly ankleRest = 0.148,
+    /** Malha leve (nível de LOD da primeira malha), se carregou. */
+    private readonly lod: Mesh | null = null,
   ) {
     this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
@@ -325,6 +387,36 @@ export class AvatarRig {
 
   setVisible(v: boolean) {
     for (const m of this.meshes) m.isVisible = v
+  }
+
+  /** Distância (m) a partir da qual a malha leve entra. */
+  setLodDistance(d: number) {
+    const main = this.meshes[0] as Mesh | undefined
+    if (!this.lod || !main || d === this.lodAt) return
+    if (this.lodAt >= 0) main.removeLODLevel(this.lod)
+    main.addLODLevel(d, this.lod)
+    this.lodAt = d
+  }
+
+  get lodDistance() {
+    return this.lod ? this.lodAt : Infinity
+  }
+
+  /** Parar/retomar a animação. Retomando, o próximo update volta a tocar o que tem peso. */
+  setFrozen(f: boolean) {
+    if (f === this.frozen) return
+    this.frozen = f
+    if (f) for (const clip of this.clips) this.groups[clip]!.pause()
+  }
+
+  get isFrozen() {
+    return this.frozen
+  }
+
+  /** Está na tela? (planos do quadro anterior; sem malha, conta como sim). */
+  inFrustum(planes: Plane[]) {
+    const m = this.meshes[0]
+    return !m || planes.length === 0 || m.isInFrustum(planes)
   }
 
   /** Posição no mundo dos tornozelos [esquerdo, direito] (patins presos aos pés). */
@@ -392,7 +484,7 @@ export class AvatarRig {
    * pés): a animação anda X m/s a 1×, então a taxa é velocidade ÷ X.
    */
   update(dt: number, move: MoveState, speed: number, tired = false) {
-    if (this.disposed) return
+    if (this.disposed || this.frozen) return
     if (move >= 6) return this.applyWeights(dt, this.rideTargetsFor(dt, move, speed), 1)
     this.rideMove = 0
     const have = this.groups

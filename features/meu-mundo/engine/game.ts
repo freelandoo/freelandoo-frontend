@@ -35,6 +35,7 @@ import { CarFleet, type CarPose } from "./cars"
 import { placeRider } from "./ride"
 import { STEP, MAX_STEPS, IDLE_DRIVE, createVehicle, stepVehicle, paramsFor, sanitizeTuning, type Tuning, type VehicleState } from "./vehicle"
 import { CarReconciler } from "./car-sync"
+import { ResolutionGovernor, resolveQuality, type QualityChoice, type QualityProfile } from "./quality"
 import { attachInput, clearInput, createInputState, driveAxis, moveAxis, wantsRun, type InputState } from "./input"
 import {
   BODY_IDS,
@@ -125,6 +126,8 @@ export interface GameHandle {
   recoverCar: () => void
   /** Descer do veículo (o E pode estar apontando para a casa). */
   leaveVehicle: () => void
+  /** Qualidade gráfica escolhida na gaveta (mm3d-19). */
+  setQuality: (c: QualityChoice) => void
   dispose: () => void
 }
 
@@ -149,16 +152,18 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const unlive = liveGamesBump()
   let disposed = false
 
-  const ratio = Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5)
-  engine.setHardwareScalingLevel(1 / ratio)
+  // Qualidade (mm3d-19): resolução que se ajusta ao FPS medido; neblina,
+  // horizonte e detalhe dos outros jogadores pelo perfil do aparelho.
+  let quality: QualityProfile = resolveQuality()
+  const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
 
   const scene = new Scene(engine)
   scene.clearColor = new Color4(SKY.r, SKY.g, SKY.b, 1)
   scene.ambientColor = new Color3(0.2, 0.2, 0.22)
   scene.fogMode = Scene.FOGMODE_LINEAR
   scene.fogColor = SKY
-  scene.fogStart = 70
-  scene.fogEnd = 165
+  scene.fogStart = quality.fogStart
+  scene.fogEnd = quality.fogEnd
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
@@ -176,7 +181,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         if (!disposed) opts.onHouseVisual?.(v)
       })
   // Na rua, os avatares também trazem as poses de bike, skate e patins (mm3d-14).
-  const lib = new AvatarLibrary(scene, false, true)
+  const lib = new AvatarLibrary(scene, false, true, quality.avatarLod)
   // Carros (mm3d-11): desenhados a partir do estado da sala.
   const fleet = new CarFleet(scene)
   /** Id do veículo que você usa (0 = a pé; mm3d-14: 1–80). Quem decide é a sala. */
@@ -236,6 +241,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   })
   ;(window as unknown as { __mmStreet?: typeof probe }).__mmStreet = probe
   const follow = new FollowCamera(scene)
+  follow.camera.maxZ = quality.maxZ
   scene.activeCamera = follow.camera
   follow.snapBehind(home.x, home.z, home.rotationY)
   follow.update(1, local.x, local.z, world.viewBoxes)
@@ -542,7 +548,11 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         r.z = vp.z
         r.facing = vp.facing
       } else r.update(dt)
+      // Longe: malha leve; fora da tela ou além do corte: não anima; o nome só de perto.
+      const cam = follow.camera.globalPosition
+      r.char.applyDistance(Math.hypot(r.x - cam.x, r.z - cam.z), scene.frustumPlanes, quality)
     }
+    governor.tick(engine.getDeltaTime())
     if (driving && veh) follow.chase(dt, pose.x, pose.z, pose.facing, veh.u, world.viewBoxes)
     else follow.update(dt, local.x, local.z, world.viewBoxes)
 
@@ -572,6 +582,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           x: local.x,
           z: local.z,
           avatars: lib.live,
+          quality: quality.tier,
+          renderScale: governor.ratio,
           cars: fleet.count,
           houseModels: world.loadedLevels(),
           car: veh
@@ -649,6 +661,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       frameMs: instr ? instr.frameTimeCounter.lastSecAverage : null,
       fps: engine.getFps(),
       live,
+      renderScale: governor.ratio,
+      avatarsAnimated: [...remotes.values()].filter((r) => r.char.animating).length,
+      avatarsLod: [...remotes.values()].filter((r) => r.char.usingLod(scene.activeCamera ?? follow.camera)).length,
     })
     ;(dev as { __mmMeshes?: () => [string, number][] }).__mmMeshes = () =>
       scene.meshes.filter((m) => m.isEnabled()).map((m) => [m.name, Math.round(m.getTotalIndices() / 3)])
@@ -715,6 +730,14 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     leaveVehicle() {
       if (driving) net.send("car", { a: "exit" })
+    },
+    setQuality(c) {
+      quality = resolveQuality(c)
+      governor.setProfile(quality)
+      scene.fogStart = quality.fogStart
+      scene.fogEnd = quality.fogEnd
+      follow.camera.maxZ = quality.maxZ
+      lib.lodDistance = quality.avatarLod
     },
     setStatsEnabled(on) {
       if (on && !instr) {

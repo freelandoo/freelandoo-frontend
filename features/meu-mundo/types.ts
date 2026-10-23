@@ -608,6 +608,9 @@ export interface GameStats {
   avatars: number
   /** Níveis de casa com modelo na GPU agora. */
   houseModels: number[]
+  /** Qualidade em uso (mm3d-19): perfil e resolução de desenho (pixels por pixel CSS). */
+  quality?: "low" | "mid" | "high"
+  renderScale?: number
   /** Dirigindo (mm3d-12): telemetria do SEU carro, só no painel técnico. */
   car?: {
     kmh: number

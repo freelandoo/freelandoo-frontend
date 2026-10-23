@@ -16,6 +16,9 @@ import type { StandardMaterial } from "@babylonjs/core/Materials/standardMateria
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { TransformNode } from "@babylonjs/core/Meshes/transformNode"
+import type { Plane } from "@babylonjs/core/Maths/math.plane"
+import type { Camera } from "@babylonjs/core/Cameras/camera"
+import type { QualityProfile } from "./quality"
 import { GeoBuilder, place } from "./geometry"
 import { type Box2 } from "./collision"
 import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder } from "./avatars"
@@ -47,6 +50,10 @@ export class Character {
   speed = 0
   /** Ritmo < 1 (cansado/exausto, mm3d-13): poses curvadas. */
   tired = false
+  /** Pedido de quem chama (carro, outro andar). */
+  private shown = true
+  /** Além do corte de distância (mm3d-19). */
+  private culled = false
 
   constructor(
     private readonly scene: Scene,
@@ -105,8 +112,43 @@ export class Character {
 
   /** Esconde (outro andar) sem descartar. */
   setVisible(v: boolean) {
-    this.holder.setEnabled(v)
-    this.shadow.setEnabled(v)
+    this.shown = v
+    this.syncEnabled()
+  }
+
+  private syncEnabled() {
+    const on = this.shown && !this.culled
+    this.holder.setEnabled(on)
+    this.shadow.setEnabled(on)
+  }
+
+  /**
+   * Detalhe pela distância à câmera (mm3d-19), para os OUTROS jogadores:
+   * além do corte some e não anima; fora da tela fica com a pose parada (não
+   * é desenhado mesmo); o nome só aparece de perto. A malha leve é trocada
+   * pelo próprio Babylon (nível de LOD), na distância do perfil.
+   */
+  applyDistance(d: number, planes: Plane[], q: QualityProfile) {
+    const culled = d > q.avatarCut
+    if (culled !== this.culled) {
+      this.culled = culled
+      this.syncEnabled()
+    }
+    if (this.tag) this.tag.mesh.setEnabled(d <= q.tagCut)
+    if (!this.rig) return
+    this.rig.setLodDistance(q.avatarLod)
+    this.rig.setFrozen(culled || !this.rig.inFrustum(planes))
+  }
+
+  /** Animando agora (conferência). */
+  get animating() {
+    return !!this.rig && !this.rig.isFrozen && this.shown && !this.culled
+  }
+
+  /** Desenhado com a malha leve por esta câmera (conferência). */
+  usingLod(cam: Camera) {
+    if (!this.rig || !this.shown || this.culled) return false
+    return Math.hypot(this.holder.position.x - cam.globalPosition.x, this.holder.position.z - cam.globalPosition.z) > this.rig.lodDistance
   }
 
   animate(dt: number, move: MoveState, speed: number) {

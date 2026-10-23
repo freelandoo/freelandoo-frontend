@@ -18,6 +18,7 @@ import { fetchSession } from "../data"
 import type { BodyId, GameStats, HousePayload, Interactable, NetStatus, VisitState } from "../types"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
 import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, type DrawerItem } from "./hud/hud-kit"
+import { useQualityItem } from "./hud/quality-item"
 import { EVO } from "./status/evo-skin"
 
 export interface HouseSceneProps {
@@ -36,6 +37,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<HouseGameHandle | null>(null)
+  const qualityItem = useQualityItem((c) => gameRef.current?.setQuality(c))
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [attempt, setAttempt] = useState(0)
   const [net, setNet] = useState<NetStatus>("connecting")
@@ -233,6 +235,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
     ...(isOwner
       ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, onSelect: onOpenInvite }]
       : []),
+    qualityItem,
     { id: "info", label: t("houseInfoShort", "Casa"), hint: t("houseInfo", "Informações da casa"), icon: <Info className="h-5 w-5" />, onSelect: () => setInfoOpen(true) },
     ...(net === "offline" || net === "replaced"
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]

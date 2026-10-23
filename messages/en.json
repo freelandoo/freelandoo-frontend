@@ -7946,6 +7946,11 @@
     "transCenter": "Going downtown…",
     "transCenterHome": "Going home…",
     "menuCenter": "Downtown",
-    "canvasAriaCenter": "Meu Mundo downtown"
+    "canvasAriaCenter": "Meu Mundo downtown",
+    "menuQuality": "Graphics",
+    "qualityAuto": "Automatic",
+    "qualityLow": "Low",
+    "qualityMid": "Medium",
+    "qualityHigh": "High"
   }
 }

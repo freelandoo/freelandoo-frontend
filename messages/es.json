@@ -7926,6 +7926,11 @@
     "transCenter": "Yendo al centro…",
     "transCenterHome": "Volviendo a casa…",
     "menuCenter": "El centro",
-    "canvasAriaCenter": "Centro de la ciudad de Meu Mundo"
+    "canvasAriaCenter": "Centro de la ciudad de Meu Mundo",
+    "menuQuality": "Gráficos",
+    "qualityAuto": "Automática",
+    "qualityLow": "Baja",
+    "qualityMid": "Media",
+    "qualityHigh": "Alta"
   }
 }

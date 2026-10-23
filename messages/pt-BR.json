@@ -7360,6 +7360,11 @@
     "transCenter": "Indo ao centro…",
     "transCenterHome": "Voltando para casa…",
     "menuCenter": "O centro",
-    "canvasAriaCenter": "Centro da cidade do Meu Mundo"
+    "canvasAriaCenter": "Centro da cidade do Meu Mundo",
+    "menuQuality": "Gráficos",
+    "qualityAuto": "Automática",
+    "qualityLow": "Baixa",
+    "qualityMid": "Média",
+    "qualityHigh": "Alta"
   }
 }

@@ -40,6 +40,7 @@ import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId, type RideKind } from "../engine/motion"
 import { CarTuningPanel, TouchDriveControls } from "./drive-controls"
 import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, type DrawerItem } from "./hud/hud-kit"
+import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
 import {
@@ -54,7 +55,7 @@ import {
 } from "../types"
 
 /** Versão do cliente. Sobe a cada entrega do Meu Mundo 3D. */
-export const CLIENT_RELEASE = "mm3d-17"
+export const CLIENT_RELEASE = "mm3d-19"
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 export const SAFE = {
@@ -96,6 +97,7 @@ export default function MeuMundoView({
   const nb = payload.neighborhood
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<GameHandle | null>(null)
+  const qualityItem = useQualityItem((c) => gameRef.current?.setQuality(c))
   const statsOpenRef = useRef(false)
   const exitLabelRef = useRef("")
 
@@ -311,6 +313,7 @@ export default function MeuMundoView({
       : []),
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: recenter },
     { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, onSelect: () => setHelpOpen(true) },
+    qualityItem,
     { id: "tech", label: t("menuTech", "Técnico"), hint: t("techPanel", "Painel técnico"), icon: <Activity className="h-5 w-5" />, active: statsOpen, onSelect: () => setStatsOpen((v) => !v) },
     ...(net === "offline" || net === "replaced"
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
