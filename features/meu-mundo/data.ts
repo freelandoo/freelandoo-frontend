@@ -5,7 +5,7 @@
 // Quem decide quem pode ver é o SERVIDOR (auth + papel Administrator): 401 e
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
-import type { CenterPayload, HousePayload, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState, WardrobeResult } from "./types"
+import type { CenterPayload, HousePayload, JetpackSession, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState, WardrobeResult } from "./types"
 
 export type NeighborhoodResult =
   | { ok: true; payload: ScenePayload }
@@ -118,6 +118,9 @@ export const postHouseExit = (token: string) => call<ScenePayload>(token, "POST"
 export const postCenterEnter = (token: string) => call<ScenePayload>(token, "POST", "/center/enter", {})
 /** Voltar para casa: o servidor decide o bairro (o da residência). */
 export const postCenterLeave = (token: string) => call<ScenePayload>(token, "POST", "/center/leave", {})
+/** Jetpack em grupo (mm3d-21): lugar na sala do centro (perto da porta). `roomId` = voltar à mesma. */
+export const postJetpackJoin = (token: string, roomId?: string | null) =>
+  call<JetpackSession>(token, "POST", "/center/jetpack", roomId ? { roomId } : {})
 export const getVisits = (token: string) => call<VisitState>(token, "GET", "/visits")
 export const getInviteCandidates = (token: string) =>
   call<{ candidates: { name: string; available: boolean; reason: string | null }[] }>(token, "GET", "/visits/candidates")

@@ -158,6 +158,12 @@ export interface MultiplayerSession {
   sceneKey?: string
 }
 
+/** Lugar na sala do jetpack em grupo (mm3d-21): POST /center/jetpack. */
+export interface JetpackSession {
+  multiplayer: MultiplayerSession
+  party: { max: number }
+}
+
 export interface NeighborhoodPayload {
   scene?: "neighborhood"
   /** Em que sala a reserva vale ("nb:<id>"). */
