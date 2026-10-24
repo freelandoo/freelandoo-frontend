@@ -24,9 +24,10 @@ import { Particles, glowTexture } from './render/particles';
 import { Input } from './input';
 import { GameAudio } from './audio';
 import { hasWebGL2, jetpackPerf } from './perf';
-import type { BodyId } from '../types';
+import { PartyMode, PARTY_STATES, type PartyPageState, type PartyTexts } from './party';
+import type { BodyId, JetpackSession } from '../types';
 
-type PageState = 'loading' | 'menu' | 'ready' | 'playing' | 'paused' | 'countdown' | 'over' | 'error';
+type PageState = 'loading' | 'menu' | 'ready' | 'playing' | 'paused' | 'countdown' | 'over' | 'error' | PartyPageState;
 
 /** Textos dinâmicos (já traduzidos). `{n}`/`{k}` são trocados aqui. */
 export interface JetpackTexts {
@@ -50,6 +51,8 @@ export interface JetpackOptions {
   body: BodyId;
   texts: JetpackTexts;
   onExit: () => void;
+  /** Jetpack em grupo (mm3d-21): o local aceita até 4 (place.party). Sem isto, só o jogo sozinho. */
+  party?: { texts: PartyTexts; fetch: (roomId: string | null) => Promise<JetpackSession | null> };
 }
 
 export interface JetpackHandle {
@@ -176,11 +179,13 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
     setState('ready');
   }
 
-  function handle(e: GameEvent) {
+  /** Evento do próprio jogador. `group`: partida em grupo (quem encerra é a sala). */
+  function handle(e: GameEvent, group = false) {
     switch (e.type) {
       case 'start':
-        writeNum(PLAYS_KEY, readNum(PLAYS_KEY) + 1);
         player.play('fly', 0.2);
+        if (group) break;
+        writeNum(PLAYS_KEY, readNum(PLAYS_KEY) + 1);
         setState('playing');
         clearTimeout(hintTimer);
         hintTimer = window.setTimeout(() => (ui.hint.hidden = true), 2500);
@@ -190,7 +195,7 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
         break;
       case 'thrust_off':
         audio.setJet(false);
-        if (world.alive) audio.play('off');
+        if (group || world.alive) audio.play('off');
         player.puff();
         break;
       case 'pickup':
@@ -219,7 +224,7 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
         break;
       case 'power_off':
         delete root.dataset.power;
-        if (world.alive) audio.play('power_off');
+        if (group || world.alive) audio.play('power_off');
         break;
       case 'smash':
         audio.play('smash');
@@ -234,12 +239,22 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
         toast(fill(texts.phase, e.phase), 'phase');
         break;
       case 'dead':
-        die();
+        if (group) crash();
+        else die();
         break;
     }
   }
 
   function die() {
+    crash();
+    deathY = world.y;
+    deathVy = Math.max(world.vy, 2);
+    deathAt = performance.now();
+    overTimer = window.setTimeout(gameOver, 1150);
+  }
+
+  /** Batida: som, tremor, clarão, giro e explosão do pacote. */
+  function crash() {
     audio.setJet(false);
     audio.play('crash');
     stage.addShake(1);
@@ -247,13 +262,9 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
     void frame.offsetWidth;
     frame.classList.add('hit');
     player.play('impact', 0.08);
-    deathY = world.y;
-    deathVy = Math.max(world.vy, 2);
-    deathAt = performance.now();
     const p = player.packWorld(new THREE.Vector3());
     burst(p.x, p.y, [1, 0.45, 0.1], 46);
     if ('vibrate' in navigator) navigator.vibrate?.(120);
-    overTimer = window.setTimeout(gameOver, 1150);
   }
 
   function burst(x: number, y: number, c: [number, number, number], n: number) {
@@ -298,19 +309,23 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
   const pad = (n: number) => String(Math.floor(n)).padStart(6, '0');
 
   function updateHud() {
-    const d = Math.floor(world.distance);
+    hud(world.distance, world.fuel.ratio, world.fuel.isLow, world.fuel.empty, world.powered ? world.powerLeft : 0);
+  }
+
+  function hud(distance: number, ratio: number, low: boolean, empty: boolean, powerLeft: number) {
+    const d = Math.floor(distance);
     if (d !== shownDist) {
       shownDist = d;
       ui.dist.textContent = pad(d);
     }
-    if (world.powered) ui.powerBar.style.transform = `scaleX(${world.powerLeft / TUNING.powerTime})`;
-    const f = Math.ceil(world.fuel.ratio * 100);
+    if (powerLeft > 0) ui.powerBar.style.transform = `scaleX(${powerLeft / TUNING.powerTime})`;
+    const f = Math.ceil(ratio * 100);
     if (f !== shownFuel) {
       shownFuel = f;
-      ui.fuelBar.style.transform = `scaleX(${world.fuel.ratio})`;
+      ui.fuelBar.style.transform = `scaleX(${ratio})`;
       ui.fuelPct.textContent = `${f}%`;
-      ui.fuel.classList.toggle('low', world.fuel.isLow);
-      ui.fuel.classList.toggle('empty', world.fuel.empty);
+      ui.fuel.classList.toggle('low', low);
+      ui.fuel.classList.toggle('empty', empty);
     }
   }
 
@@ -349,10 +364,74 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
     setState('countdown');
   }
 
+  // ---------------------------------------------------------------- grupo (mm3d-21)
+
+  /** Jogo sozinho a partir da espera do grupo: "voltar" leva de volta à espera. */
+  let soloFromLobby = false;
+  const party = opts.party
+    ? new PartyMode({
+        root,
+        frame,
+        stage,
+        env,
+        fire,
+        smoke,
+        glow,
+        obstacles,
+        pickups,
+        player,
+        audio,
+        input,
+        texts: opts.party.texts,
+        setState: (s) => setState(s as PageState),
+        count: ui.count,
+        burst,
+        debris,
+        toast,
+        ownEvent: (e) => handle(e, true),
+        hud: (d, r, low, empty, left) => {
+          hud(d, r, low, empty, left);
+          if (left > 0) root.dataset.power = '1';
+          else delete root.dataset.power;
+        },
+        record: (distance) => {
+          const rec = distance > readNum(BEST_KEY);
+          if (rec) writeNum(BEST_KEY, distance);
+          showBest();
+          return rec && distance > 0;
+        },
+        fetchParty: opts.party.fetch,
+        solo: () => {
+          soloFromLobby = true;
+          shownDist = shownFuel = -1;
+          prepareRun();
+        },
+        exit: () => opts.onExit(),
+      })
+    : null;
+
+  /** Sair do jogo sozinho: de volta à espera do grupo, ou ao centro. */
+  function exit() {
+    if (party && soloFromLobby) {
+      clearTimeout(overTimer);
+      soloFromLobby = false;
+      input.releaseAll();
+      audio.setJet(false);
+      audio.suspend(false);
+      shownDist = shownFuel = -1;
+      void party.join();
+    } else opts.onExit();
+  }
+
   // ---------------------------------------------------------------- controles
 
   input.onPress = () => audio.unlock();
-  input.onPause = () => (state === 'paused' ? resume() : state === 'menu' || state === 'over' ? opts.onExit() : pause());
+  input.onPause = () => {
+    if (party?.active) return;
+    if (state === 'paused') resume();
+    else if (state === 'menu' || state === 'over') exit();
+    else pause();
+  };
   input.onConfirm = () => {
     if (state === 'menu' || (state === 'over' && performance.now() - deathAt > 1600)) {
       audio.unlock();
@@ -379,9 +458,9 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
     prepareRun();
   });
   click('jg-pause', () => (state === 'paused' ? resume() : pause()));
-  click('jg-quit', opts.onExit);
-  click('jg-back', opts.onExit);
-  click('jg-menu-back', opts.onExit);
+  click('jg-quit', exit);
+  click('jg-back', exit);
+  click('jg-menu-back', exit);
   click('jg-error-back', opts.onExit);
   click('jg-retry', () => {
     void start();
@@ -417,6 +496,10 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
     last = now;
     const time = now / 1000;
     input.pollGamepad();
+    if (party?.active && PARTY_STATES.includes(state)) {
+      party.frame(now, dt, time);
+      return;
+    }
 
     if (state === 'countdown') {
       const left = Math.ceil((countdownEnd - now) / 500);
@@ -483,6 +566,12 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
     get state() {
       return state;
     },
+    get party() {
+      return party?.debug() ?? null;
+    },
+    set auto(v: boolean) {
+      if (party) party.auto = v;
+    },
     calls: () => stage.renderer.info.render.calls,
   };
 
@@ -497,7 +586,8 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
       if (disposed) return;
       // Primeiro desenho fora da tela: compila os shaders antes do menu aparecer.
       stage.renderer.compile(stage.scene, stage.camera);
-      setState('menu');
+      if (party) void party.join();
+      else setState('menu');
     } catch (err) {
       if (disposed) return;
       console.error('[jetpack]', err);
@@ -519,6 +609,7 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
       clearTimeout(toastTimer);
       clearTimeout(hintTimer);
       for (const off of offs) off();
+      party?.dispose();
       ro.disconnect();
       input.dispose();
       audio.dispose();

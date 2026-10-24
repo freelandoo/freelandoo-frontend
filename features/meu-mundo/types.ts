@@ -480,6 +480,8 @@ export interface CenterPlace {
   destination: string
   /** false nesta entrega: nenhum interior existe ainda. */
   available: boolean
+  /** Minijogo em grupo: até N na mesma partida (mm3d-21, jetpack = 4). */
+  party?: number
 }
 
 export interface CenterSpot {

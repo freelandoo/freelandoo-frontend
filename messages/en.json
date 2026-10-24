@@ -8000,6 +8000,27 @@
     "jpOverFuel": "{n} ({k} capsules)",
     "jpSavedLocal": "Record saved on this device.",
     "jpNoWebgl": "This device or browser doesn't support 3D graphics (WebGL 2).",
-    "jpLoadFailed": "Couldn't load your avatar. Check your connection and try again."
+    "jpLoadFailed": "Couldn't load your avatar. Check your connection and try again.",
+    "jpPartyKicker": "GROUP JETPACK · UP TO 4",
+    "jpPartyJoining": "Joining the room…",
+    "jpPartyLobby": "LOBBY",
+    "jpPartyWaiting": "Waiting for players · {n}",
+    "jpPartyAlone": "Waiting for someone else to join…",
+    "jpPartyStartsIn": "Starts in {n} s",
+    "jpPartyReadyTag": "READY",
+    "jpPartyEmptySlot": "open slot",
+    "jpPartyYou": "YOU",
+    "jpPartyReady": "START",
+    "jpPartyUnready": "CANCEL",
+    "jpPartySolo": "PLAY SOLO",
+    "jpPartyHold": "HOLD ON GO!",
+    "jpPartyOut": "You're out · {n} m",
+    "jpPartyLeave": "LEAVE",
+    "jpPartyResults": "RESULTS",
+    "jpPartyPlace": "#{n}",
+    "jpPartyCaps": "{n} capsules",
+    "jpPartySoloFallback": "PLAYING SOLO",
+    "jpPartyReconnecting": "RECONNECTING…",
+    "jpPartyReplaced": "OPENED IN ANOTHER WINDOW"
   }
 }

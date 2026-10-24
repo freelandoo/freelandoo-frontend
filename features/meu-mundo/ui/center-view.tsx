@@ -22,13 +22,21 @@ import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, type DrawerIt
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
-import { fetchSession } from "../data"
+import { fetchSession, postJetpackJoin } from "../data"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
 const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => m.JetpackView), { ssr: false })
 
 /** O local abre um minijogo agora (o registro do servidor decide). */
+/** Lugar na sala do jetpack em grupo (null = sem acesso: o jogo cai no sozinho). */
+async function fetchJetpackParty(roomId: string | null) {
+  const token = getToken()
+  if (!token) return null
+  const r = await postJetpackJoin(token, roomId)
+  return r.ok ? r.data : null
+}
+
 const gameOf = (p: CenterPlace) => (p.available && p.destination.startsWith("game:") ? p.destination.slice(5) : null)
 
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
@@ -70,6 +78,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [nearby, setNearby] = useState<Interactable | null>(null)
   const [open, setOpen] = useState<CenterPlace | null>(null)
   const [minigame, setMinigame] = useState<string | null>(null)
+  /** O minijogo aberto aceita grupo (place.party, mm3d-21). */
+  const [minigameParty, setMinigameParty] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
   const [helpOpen, setHelpOpen] = useState(true)
@@ -142,7 +152,10 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             if (it.kind === "portal") cbRef.current.onGoHome()
             else if (it.kind === "place") {
               const g = gameOf(it.place)
-              if (g === "jetpack") setMinigame(g)
+              if (g === "jetpack") {
+                setMinigameParty((it.place.party ?? 0) > 1)
+                setMinigame(g)
+              }
               else setOpen(it.place)
             }
           },
@@ -448,7 +461,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       )}
 
       {/* Minijogo do local (mm3d-20): cobre a tela; ao sair, volta à porta do prédio */}
-      {minigame === "jetpack" && <JetpackView body={body} onExit={() => setMinigame(null)} />}
+      {minigame === "jetpack" && (
+        <JetpackView body={body} onExit={() => setMinigame(null)} fetchParty={minigameParty ? fetchJetpackParty : undefined} />
+      )}
 
       {status !== "ready" && (
         <SceneCurtain

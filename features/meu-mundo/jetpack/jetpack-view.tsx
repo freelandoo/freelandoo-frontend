@@ -8,19 +8,35 @@ import { useEffect, useRef } from "react"
 import { JetBrains_Mono } from "next/font/google"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { archivo } from "../ui/status/evo-skin"
-import type { BodyId } from "../types"
+import type { BodyId, JetpackSession } from "../types"
 import { createJetpackGame, type JetpackTexts } from "./game"
+import type { PartyTexts } from "./party"
 import "./jetpack.css"
 
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], display: "swap" })
 
-export function JetpackView({ body, onExit }: { body: BodyId; onExit: () => void }) {
+/**
+ * `fetchParty` (mm3d-21): o local aceita jogar em grupo — pede o lugar na sala
+ * do jetpack (null = sem acesso). Sem ele, só o jogo sozinho.
+ */
+export function JetpackView({
+  body,
+  onExit,
+  fetchParty,
+}: {
+  body: BodyId
+  onExit: () => void
+  fetchParty?: (roomId: string | null) => Promise<JetpackSession | null>
+}) {
   const t = useTranslations("MeuMundo")
   const rootRef = useRef<HTMLDivElement>(null)
   const exitRef = useRef(onExit)
+  const fetchRef = useRef(fetchParty)
   useEffect(() => {
     exitRef.current = onExit
-  }, [onExit])
+    fetchRef.current = fetchParty
+  }, [onExit, fetchParty])
+  const grouped = !!fetchParty
 
   const texts: JetpackTexts = {
     turbo: t("jpToastTurbo", "TURBO · 2X · QUEBRE AS PILASTRAS"),
@@ -37,14 +53,40 @@ export function JetpackView({ body, onExit }: { body: BodyId; onExit: () => void
     soundOn: t("jpSoundOnTitle", "Ligar som"),
     soundOff: t("jpSoundOffTitle", "Desligar som"),
   }
+  const partyTexts: PartyTexts = {
+    joining: t("jpPartyJoining", "Entrando na sala…"),
+    waiting: t("jpPartyWaiting", "Esperando jogadores · {n}"),
+    alone: t("jpPartyAlone", "Esperando mais alguém chegar…"),
+    startsIn: t("jpPartyStartsIn", "Começa em {n} s"),
+    readyTag: t("jpPartyReadyTag", "PRONTO"),
+    emptySlot: t("jpPartyEmptySlot", "vaga livre"),
+    you: t("jpPartyYou", "VOCÊ"),
+    out: t("jpPartyOut", "Você saiu · {n} m"),
+    place: t("jpPartyPlace", "{n}º"),
+    caps: t("jpPartyCaps", "{n} cápsulas"),
+    soloFallback: t("jpPartySoloFallback", "JOGANDO SOZINHO"),
+    reconnecting: t("jpPartyReconnecting", "RECONECTANDO…"),
+    replaced: t("jpPartyReplaced", "ABERTO EM OUTRA JANELA"),
+    ready: t("jpPartyReady", "COMEÇAR"),
+    unready: t("jpPartyUnready", "CANCELAR"),
+  }
   const textsRef = useRef(texts)
+  const partyTextsRef = useRef(partyTexts)
 
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
-    const game = createJetpackGame({ root, body, texts: textsRef.current, onExit: () => exitRef.current() })
+    const game = createJetpackGame({
+      root,
+      body,
+      texts: textsRef.current,
+      onExit: () => exitRef.current(),
+      party: grouped
+        ? { texts: partyTextsRef.current, fetch: (roomId) => fetchRef.current?.(roomId) ?? Promise.resolve(null) }
+        : undefined,
+    })
     return () => game.dispose()
-  }, [body])
+  }, [body, grouped])
 
   return (
     <div
@@ -154,6 +196,55 @@ export function JetpackView({ body, onExit }: { body: BodyId; onExit: () => void
             <button type="button" className="jg-link" data-sound>
               <span className="on">{t("jpSoundOn", "SOM: LIGADO")}</span>
               <span className="off">{t("jpSoundOff", "SOM: DESLIGADO")}</span>
+            </button>
+          </div>
+        </section>
+
+        {/* grupo (mm3d-21): entrando, espera, saiu, resultados */}
+        <section className="jg-panel" data-panel="joining">
+          <p className="jg-kicker">{t("jpPartyKicker", "JETPACK EM GRUPO · ATÉ 4")}</p>
+          <p className="jg-sub">{partyTexts.joining}</p>
+        </section>
+
+        <section className="jg-panel" data-panel="lobby">
+          <p className="jg-kicker">{t("jpPartyKicker", "JETPACK EM GRUPO · ATÉ 4")}</p>
+          <h2 className="jg-title sm">{t("jpPartyLobby", "ESPERA")}</h2>
+          <ul className="jg-slots" id="jg-lobby-list" />
+          <p className="jg-sub small" id="jg-lobby-info" />
+          <button type="button" className="jg-btn" id="jg-ready">
+            {partyTexts.ready}
+          </button>
+          <button type="button" className="jg-btn ghost" id="jg-solo">
+            {t("jpPartySolo", "ENTRAR SOZINHO")}
+          </button>
+          <div className="jg-row">
+            <button type="button" className="jg-link" id="jg-lobby-back">
+              ← {t("jpBack", "VOLTAR AO CENTRO")}
+            </button>
+          </div>
+        </section>
+
+        <p className="jg-hold" aria-hidden="true">
+          {t("jpPartyHold", "SEGURE NO VAI!")}
+        </p>
+
+        <section className="jg-panel jg-banner" data-panel="spectate">
+          <p className="jg-sub" id="jg-spec-text" />
+          <button type="button" className="jg-link" id="jg-spec-leave">
+            {t("jpPartyLeave", "SAIR")}
+          </button>
+        </section>
+
+        <section className="jg-panel" data-panel="results">
+          <p className="jg-kicker">{t("jpOver", "FIM DA MISSÃO")}</p>
+          <h2 className="jg-title sm">{t("jpPartyResults", "RESULTADO")}</h2>
+          <ol className="jg-results" id="jg-res-list" />
+          <button type="button" className="jg-btn" id="jg-res-again">
+            {t("jpAgain", "JOGAR DE NOVO")}
+          </button>
+          <div className="jg-row">
+            <button type="button" className="jg-link" id="jg-res-back">
+              ← {t("jpBack", "VOLTAR AO CENTRO")}
             </button>
           </div>
         </section>
