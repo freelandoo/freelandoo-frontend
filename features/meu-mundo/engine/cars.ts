@@ -421,11 +421,18 @@ export class CarFleet {
     }
   }
 
-  /** Caixas dos veículos que bloqueiam você (menos o seu e os que não bloqueiam parados). */
-  boxes(mine: number): Box2[] {
+  /**
+   * Caixas dos veículos que bloqueiam você (menos o seu e os que não bloqueiam
+   * parados). `me` = sua sessão: veículo que a sala ainda diz que é seu nunca
+   * te bloqueia — igual a carBoxes() da sala (mm3d-24: logo depois de descer, o
+   * "desceu" chega antes do estado novo; o veículo largado, ainda com você de
+   * condutor e na posição antiga, te empurrava ~0,5 m e você deslizava de volta).
+   */
+  boxes(mine: number, me: string | null = null): Box2[] {
     const out: Box2[] = []
     for (const [key, c] of this.latest) {
       if (mine && key === String(mine)) continue
+      if (me && c.driver === me) continue
       if (!c.driver && !RIDE_KINDS[c.kind].parkedBlocks) continue
       const k = KINDS[c.kind] as { HX?: number; HZ?: number }
       out.push({ x: c.x, z: c.z, hx: k.HX ?? CAR.HX, hz: k.HZ ?? CAR.HZ, rot: c.facing, h: c.kind === "car" ? 1.3 : 1.0 })

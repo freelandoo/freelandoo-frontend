@@ -229,15 +229,27 @@ export class LocalPlayer {
     return this.body.z
   }
 
+  private lastServer: { x: number; z: number } | null = null
+  private staleServer: { x: number; z: number } | null = null
+
   teleport(x: number, z: number, facing: number) {
     Object.assign(this.body, { x, z, vx: 0, vz: 0, facing })
     this.visualFacing = facing
+    // A mensagem do teleporte chega ANTES do estado novo da sala: até ele
+    // chegar, a posição do servidor que o laço repassa ainda é a de antes
+    // (ao descer do veículo, a do motorista, no meio do carro) — e puxava o
+    // personagem de volta para dentro do carro, onde ficava preso (mm3d-24).
+    this.staleServer = this.lastServer
     this.server = null
     this.char.place(x, z, facing)
   }
 
-  /** Posição confirmada pelo servidor (chega ~10×/s). */
+  /** Posição confirmada pelo servidor (chega ~10×/s). Ignora a de antes do último teleporte. */
   setServer(x: number, z: number) {
+    const old = this.staleServer
+    if (old && old.x === x && old.z === z) return
+    this.staleServer = null
+    this.lastServer = { x, z }
     this.server = { x, z }
   }
 

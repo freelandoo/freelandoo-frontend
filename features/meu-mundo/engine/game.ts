@@ -202,6 +202,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // aplica cada mudança no mesmo passo — sem isso a curva saía diferente lá).
   let driveN = 0
   let heldDrive: DriveInput = IDLE_DRIVE
+  /** Veículo dito pela última mensagem "moved" até o estado da sala concordar (null = o estado manda). */
+  let carFromMessage: number | null = null
+  let carFromMessageAt = 0
   const pose: CarPose = { x: 0, z: 0, facing: 0, sp: 0, st: 0, hb: 0, sl: 0, ax: 0, ay: 0 }
   // Só em desenvolvimento: o teste de navegador pode comandar o carro com
   // valores proporcionais a cada quadro (a física, a sala e o desenho são os
@@ -244,6 +247,14 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       return c ? { x: c.x, z: c.z, facing: c.facing, sp: c.sp ?? 0, driver: c.driver } : null
     })(),
     serverErr,
+    // Posição deste jogador segundo a sala (harness: previsto × servidor).
+    me: (() => {
+      const p = net.sessionId ? net.players()?.get(net.sessionId) : null
+      return p ? { x: p.x, z: p.z, move: p.move } : null
+    })(),
+    // Caixas de veículo que bloqueiam o jogador agora (harness).
+    vboxes: () => fleet.boxes(driving, net.sessionId),
+    wboxes: (r = 4) => world.boxes.filter((b) => Math.hypot(b.x - local.x, b.z - local.z) < r + Math.max(b.hx, b.hz)),
   })
   ;(window as unknown as { __mmStreet?: typeof probe }).__mmStreet = probe
   const follow = new FollowCamera(scene)
@@ -293,6 +304,11 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           heldDrive = IDLE_DRIVE
         }
         setDriving(p.car, p)
+        // O estado da sala chega depois desta mensagem: até ele dizer o mesmo,
+        // não decide montar/descer (mm3d-24: o estado velho remontava quem
+        // acabou de descer, o personagem voltava ao meio do carro e ficava preso).
+        carFromMessage = p.car
+        carFromMessageAt = performance.now()
       } else follow.snapBehind(p.x, p.z, p.facing)
     },
     fetchSession: opts.fetchSession,
@@ -340,7 +356,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           void local.char.setBody(myBody)
           opts.onBody?.(myBody)
         }
-        setDriving(p.car ?? 0, p)
+        if (carFromMessage !== null && ((p.car ?? 0) === carFromMessage || performance.now() - carFromMessageAt > 2000)) carFromMessage = null
+        if (carFromMessage === null) setDriving(p.car ?? 0, p)
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
         // No centro a "casa" é a vaga nesta sala: é ela que diz de quem é cada veículo.
         if (p.house) myLot = p.house
@@ -540,7 +557,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
       if (Math.hypot(intent.x, intent.z) < 0.05) intent = { x: 0, z: 0, run: intent.run }
     }
-    const carBoxes = fleet.boxes(driving)
+    const carBoxes = fleet.boxes(driving, net.sessionId)
     const boxes = carBoxes.length ? world.boxes.concat(carBoxes) : world.boxes
     const now = performance.now()
     // O carro usa o tempo REAL do quadro (o teto de passos de vehicle.ts
