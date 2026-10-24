@@ -101,12 +101,13 @@ const ASSETS = {
   // estes arquivos. mm3d-22 (pipeline/build_ride_mocap.py): SkateRide (o
   // Skateboarding do Mixamo, 2,2 s em ciclo, com a remada), SkatePush (o
   // trecho da remada, 1 s) e BikePedal (pedalada em ciclo, 0,7 s); SkatesGlide
-  // continua o do mm3d-14 (build_ride.py).
+  // continua o do mm3d-14 (build_ride.py). mm3d-23: SkatesStride (passada dos
+  // patins em ciclo, 1,2 s, pipeline/build_skates_stride.py).
   ride: {
-    base: "anim-ride-base-m22.glb",
-    fat: "anim-ride-fat-m22.glb",
-    strong: "anim-ride-strong-m22.glb",
-    sergio: "anim-ride-sergio-m22.glb",
+    base: "anim-ride-base-m23.glb",
+    fat: "anim-ride-fat-m23.glb",
+    strong: "anim-ride-strong-m23.glb",
+    sergio: "anim-ride-sergio-m23.glb",
   },
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
@@ -120,7 +121,7 @@ export function avatarFiles(id: BodyId) {
   return { body: BASE + ASSETS.bodies[id], texture: BASE + ASSETS.textures[id], anims: BASE + ASSETS.anims[ANIM_SET[id]] }
 }
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk"] as const
-const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide"] as const
+const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide", "SkatesStride"] as const
 type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number]
 /** Uma pedalada a cada 2 s (pedido do Alex); a troca de pose leva ~0,45 s. */
 export const PEDAL_PERIOD = 2
@@ -135,6 +136,8 @@ const RIDE_STOP = 0.3
 const PEDAL_NATURAL_SPEED = 6
 const PEDAL_RIGHT_LOW = 0.6
 const CRANK_MODEL_FROM_LOW = 0.585
+/** SkatesStride (mm3d-23): a 5 m/s a passada toca a 1× (uma passada de cada pé em 1,2 s). */
+const STRIDE_NATURAL_SPEED = 5
 
 let loadersRegistered = false
 
@@ -360,7 +363,7 @@ let cloneSeq = 0
 export class AvatarRig {
   private weights: Record<Clip, number> = {
     Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0,
-    BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0,
+    BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -464,7 +467,7 @@ export class AvatarRig {
         const g = have.SkatePush
         g.stop()
         g.start(false, 1)
-      } else if (move === 8) {
+      } else if (move === 8 && !have.SkatesStride) {
         this.rideStart = 1.05
         this.groups.Walk.goToFrame(this.groups.Walk.from)
       }
@@ -500,6 +503,14 @@ export class AvatarRig {
         g.goToFrame(g.from)
         g.speedRatio = 0
       } else if (moving) g.speedRatio = 1
+      return true
+    }
+    if (move === 8 && have.SkatesStride) {
+      // Patins: andando, a passada no ritmo da velocidade; parado, deslize em pé.
+      const g = have.SkatesStride
+      g.speedRatio = Math.max(0.6, Math.min(1.8, Math.abs(speed) / STRIDE_NATURAL_SPEED))
+      if (moving) target.SkatesStride = 1
+      else target[have.SkatesGlide ? "SkatesGlide" : "Idle"] = 1
       return true
     }
     if (move === 8 && have.SkatesGlide) {
@@ -539,7 +550,7 @@ export class AvatarRig {
       Sleep: sleep ? 1 : 0,
       TiredIdle: still && tiredIdle ? 1 : 0,
       TiredWalk: move === 1 && tiredWalk ? 1 : 0,
-      BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0,
+      BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
     }
     this.applyWeights(dt, target, speed)
   }

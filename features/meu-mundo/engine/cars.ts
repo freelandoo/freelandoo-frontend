@@ -408,6 +408,11 @@ export class CarFleet {
   setFeet(key: string, feet: (Vector3 | null)[] | null) {
     const v = this.views.get(key)
     if (!v || !v.boots.length) return
+    // O veículo acabou de ser posto (place): a matriz do pai da bota ainda é a
+    // do quadro anterior — recalcula a cadeia antes de pôr a bota no mundo.
+    const chain: TransformNode[] = []
+    for (let n = v.boots[0].node.parent as TransformNode | null; n; n = n.parent as TransformNode | null) chain.unshift(n)
+    for (const n of chain) n.computeWorldMatrix(true)
     for (let i = 0; i < v.boots.length; i++) {
       const b = v.boots[i]
       const p = feet?.[i]

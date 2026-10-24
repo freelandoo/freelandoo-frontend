@@ -28,12 +28,19 @@ export function placeRider(
   if (kind === "bike") fleet.setCrank(key, char.crank)
   else if (kind === "skates") {
     // Tornozelo → chão sob o meio do tênis (um pouco à frente do tornozelo).
-    const fx = Math.sin(facing) * 0.05
-    const fz = Math.cos(facing) * 0.05
-    const drop = char.ankleRest + SKATES_SOLE
+    // A pose vem no referencial do personagem e vai para a posição e o rumo
+    // de AGORA (mm3d-23: com a posição de mundo do quadro anterior, a bota
+    // ficava para trás/de lado nas curvas).
+    const c = Math.cos(facing)
+    const s = Math.sin(facing)
+    const base = y + SKATES_SOLE
     fleet.setFeet(
       key,
-      char.feetWorld().map((p) => (p ? new Vector3(p.x + fx, Math.max(y, p.y - drop), p.z + fz) : null)),
+      char.feetLocal().map((p) => {
+        if (!p) return null
+        const lz = p.z + 0.05
+        return new Vector3(x + p.x * c + lz * s, Math.max(y, base + p.y - char.ankleRest - SKATES_SOLE), z - p.x * s + lz * c)
+      }),
     )
   }
 }

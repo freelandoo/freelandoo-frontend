@@ -16,6 +16,7 @@ import type { StandardMaterial } from "@babylonjs/core/Materials/standardMateria
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { TransformNode } from "@babylonjs/core/Meshes/transformNode"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import type { Camera } from "@babylonjs/core/Cameras/camera"
 import type { QualityProfile } from "./quality"
@@ -173,6 +174,19 @@ export class Character {
   /** Tornozelos no mundo [esquerdo, direito] (patins); null sem avatar. */
   feetWorld() {
     return this.rig?.feetWorld() ?? [null, null]
+  }
+
+  /**
+   * Tornozelos no referencial do próprio personagem (x, altura, frente), do
+   * último quadro desenhado — pose e referencial do MESMO quadro, então não
+   * atrasa quando o personagem anda (mm3d-23: a bota dos patins ficava para
+   * trás nas curvas porque a posição de mundo era do quadro anterior).
+   */
+  feetLocal(): (Vector3 | null)[] {
+    const world = this.rig?.feetWorld()
+    if (!world) return [null, null]
+    const inv = this.holder.getWorldMatrix().clone().invert()
+    return world.map((p) => (p ? Vector3.TransformCoordinates(p, inv) : null))
   }
 
   /** Tornozelo acima da sola em pé (m). */
