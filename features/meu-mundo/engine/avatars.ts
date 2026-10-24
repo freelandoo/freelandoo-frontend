@@ -56,7 +56,9 @@ const ASSETS = {
     slim: "avatar-slim.glb",
     fat: "avatar-fat.glb",
     strong: "avatar-strong.glb",
-    sergio: "avatar-sergio.glb",
+    // mm3d-22: pesos do ombro suavizados (pipeline/fix_sergio_shoulder.py) —
+    // no skate e na bike o ombro abria um vinco na cava da regata.
+    sergio: "avatar-sergio-m22.glb",
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -95,14 +97,16 @@ const ASSETS = {
     strong: "anim-rest-strong.glb",
     sergio: "anim-rest-sergio.glb",
   },
-  // Bicicleta, skate e patins (mm3d-14, pipeline/build_ride.py): BikeA/BikeB
-  // (pedal direito embaixo / esquerdo embaixo), SkateRide, SkatePush (1 s) e
-  // SkatesGlide — no referencial do veículo. Só a rua baixa estes arquivos.
+  // Bicicleta, skate e patins — no referencial do veículo; só a rua baixa
+  // estes arquivos. mm3d-22 (pipeline/build_ride_mocap.py): SkateRide (o
+  // Skateboarding do Mixamo, 2,2 s em ciclo, com a remada), SkatePush (o
+  // trecho da remada, 1 s) e BikePedal (pedalada em ciclo, 0,7 s); SkatesGlide
+  // continua o do mm3d-14 (build_ride.py).
   ride: {
-    base: "anim-ride-base.glb",
-    fat: "anim-ride-fat.glb",
-    strong: "anim-ride-strong.glb",
-    sergio: "anim-ride-sergio.glb",
+    base: "anim-ride-base-m22.glb",
+    fat: "anim-ride-fat-m22.glb",
+    strong: "anim-ride-strong-m22.glb",
+    sergio: "anim-ride-sergio-m22.glb",
   },
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
@@ -116,13 +120,21 @@ export function avatarFiles(id: BodyId) {
   return { body: BASE + ASSETS.bodies[id], texture: BASE + ASSETS.textures[id], anims: BASE + ASSETS.anims[ANIM_SET[id]] }
 }
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk"] as const
-const RIDE_CLIPS = ["BikeA", "BikeB", "SkateRide", "SkatePush", "SkatesGlide"] as const
+const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide"] as const
 type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number]
 /** Uma pedalada a cada 2 s (pedido do Alex); a troca de pose leva ~0,45 s. */
 export const PEDAL_PERIOD = 2
 const PEDAL_SWAP = 0.45
 /** Velocidade (m/s) abaixo da qual o veículo conta como parado. */
 const RIDE_STOP = 0.3
+/**
+ * BikePedal (mm3d-22): a 6 m/s a pedalada toca a 1× (uma volta em 0,7 s).
+ * O pé direito chega embaixo em 60 % do ciclo (ride_mocap_report.json); a
+ * pedivela do modelo tem o braço direito 33,5° à frente do ponto mais baixo.
+ */
+const PEDAL_NATURAL_SPEED = 6
+const PEDAL_RIGHT_LOW = 0.6
+const CRANK_MODEL_FROM_LOW = 0.585
 
 let loadersRegistered = false
 
@@ -348,7 +360,7 @@ let cloneSeq = 0
 export class AvatarRig {
   private weights: Record<Clip, number> = {
     Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0,
-    BikeA: 0, BikeB: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0,
+    BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -458,6 +470,16 @@ export class AvatarRig {
       }
     } else if (!moving && this.rideStart <= 0) this.rideStopped = true
     this.rideStart = Math.max(0, this.rideStart - dt)
+    if (move === 6 && have.BikePedal) {
+      // Pedalada em ciclo no ritmo da bike; a pedivela segue a fase do ciclo.
+      const g = have.BikePedal
+      g.speedRatio = moving ? Math.max(0.35, Math.min(2.5, Math.abs(speed) / PEDAL_NATURAL_SPEED)) : 0
+      target.BikePedal = 1
+      const a = g.animatables[0]?.masterFrame ?? g.from
+      const phase = g.to > g.from ? (a - g.from) / (g.to - g.from) : 0
+      this.crank = CRANK_MODEL_FROM_LOW + 2 * Math.PI * (phase - PEDAL_RIGHT_LOW)
+      return true
+    }
     if (move === 6 && have.BikeA && have.BikeB) {
       if (moving) this.rideClock += dt
       const stroke = Math.floor(this.rideClock / PEDAL_PERIOD)
@@ -472,6 +494,12 @@ export class AvatarRig {
     if (move === 7 && have.SkateRide) {
       if (this.rideStart > 0 && have.SkatePush) target.SkatePush = 1
       else target.SkateRide = 1
+      // Parado em cima da prancha: agachado (o começo do ciclo), sem remar.
+      const g = have.SkateRide
+      if (!moving && g.speedRatio !== 0) {
+        g.goToFrame(g.from)
+        g.speedRatio = 0
+      } else if (moving) g.speedRatio = 1
       return true
     }
     if (move === 8 && have.SkatesGlide) {
@@ -511,7 +539,7 @@ export class AvatarRig {
       Sleep: sleep ? 1 : 0,
       TiredIdle: still && tiredIdle ? 1 : 0,
       TiredWalk: move === 1 && tiredWalk ? 1 : 0,
-      BikeA: 0, BikeB: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0,
+      BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0,
     }
     this.applyWeights(dt, target, speed)
   }
