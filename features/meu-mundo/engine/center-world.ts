@@ -55,10 +55,11 @@ const ZONE: Record<CenterPlace["zone"], RGB> = {
   civica: [0.93, 0.88, 0.92],
 }
 
-// ── Atlas dos letreiros: 10 locais + portal, uma célula por linha ──────────────
+// ── Atlas dos letreiros: um local por linha e o portal na última ─────────────
+// (12 células de 84 px cabem nos 1024: 11 locais + portal.)
 const ATLAS_W = 1024
 const ATLAS_H = 1024
-const CELL_H = 88
+const CELL_H = 84
 
 function cellUV(i: number): [number, number, number, number] {
   return [0, 1 - ((i + 1) * CELL_H) / ATLAS_H, 1, 1 - (i * CELL_H) / ATLAS_H]
@@ -173,6 +174,19 @@ function roads(ctx: PropCtx, c: CenterLayout) {
   // Acesso ao estacionamento do supermercado, a partir do canto do anel.
   const sup = c.parking.find((p) => p.id === "estacionamento-supermercado")
   if (sup) slab(geo, sup.rect[0] - 2.5, sup.rect[2] + 3, 6, 6, 0.06, K.asphalt)
+  // Chão girado (hospital, mm3d-26). A pista fica acima da calçada do anel
+  // (o rebaixo por onde a ambulância sai); a calçada nova, abaixo dela.
+  for (const g of c.grounds ?? []) {
+    const [top, color] = GROUND[g.kind]
+    geo.box(g.w, top, g.d, place(0, top / 2, 0, 0, frameOf(g.x, g.z, g.rot)), color)
+  }
+}
+
+const GROUND: Record<NonNullable<CenterLayout["grounds"]>[number]["kind"], [number, RGB]> = {
+  pave: [0.058, K.pave],
+  asphalt: [0.08, K.asphalt],
+  walk: [0.07, C.walk],
+  mark: [0.083, K.gold],
 }
 
 function plaza(ctx: PropCtx, c: CenterLayout) {
@@ -245,7 +259,7 @@ function portal(ctx: PropCtx, signs: GeoBuilder, c: CenterLayout) {
   // Casinha no topo: a volta é para os bairros.
   geo.box(1.6, 1.2, 1.8, place(x, 7.6, 0), C.board)
   geo.prism(2, 2.3, 0.9, place(x, 8.2, 0, Math.PI / 2), C.barrierA)
-  signs.quad(7.8, BOARD_H, cellUV(10), place(x + 0.72, 6.4, 0, -Math.PI / 2))
+  signs.quad(7.8, BOARD_H, cellUV(c.places.length), place(x + 0.72, 6.4, 0, -Math.PI / 2))
 }
 
 /** Bloco de reserva de um local: pegada, telhado, porta e a faixa do letreiro. */
@@ -314,6 +328,15 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
   const models = new CenterModels(scene)
   let disposed = false
   const assets = c.assets
+  // Objetos parados (ambulância): só aparecem com o modelo — a caixa de colisão
+  // é do servidor e vale mesmo sem ele.
+  for (const o of c.props ?? []) {
+    const file = assets?.props?.[o.id]
+    if (!file) continue
+    models.load(`prop-${o.id}`, assets!.basePath + file, frameOf(o.x, o.z, o.facing + Math.PI)).catch((err) => {
+      if (!disposed && process.env.NODE_ENV !== "production") console.warn("[meu-mundo] modelo do centro falhou", o.id, err)
+    })
+  }
   if (assets) {
     for (const p of c.places) {
       const file = assets.places[p.id]

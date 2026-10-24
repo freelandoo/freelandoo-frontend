@@ -457,6 +457,7 @@ export type CenterPlaceId =
   | "jetpack"
   | "igreja"
   | "delegacia"
+  | "hospital"
 
 export interface CenterPlace {
   id: CenterPlaceId
@@ -466,7 +467,8 @@ export interface CenterPlace {
   rect: { x0: number; x1: number; z0: number; z1: number }
   size: { w: number; d: number; h: number; peak: number }
   center: Vec2
-  front: "n" | "s" | "e" | "w"
+  /** "rot" = prédio girado (hospital, mm3d-26): `rect` é só a caixa que o envolve. */
+  front: "n" | "s" | "e" | "w" | "rot"
   /** Giro do modelo (frente no -Z local). */
   rotationY: number
   /** Origem do modelo: meio da fachada, no chão. */
@@ -527,12 +529,16 @@ export interface CenterLayout {
   parking: { id: string; rect: [number, number, number, number]; slots: CenterSpot[] }[]
   streetLamps: [number, number][]
   streetTrees: [number, number, number][]
+  /** Chão extra girado (pátio, pista e calçada do hospital, mm3d-26). w = X local, d = Z local. */
+  grounds?: { kind: "pave" | "asphalt" | "walk" | "mark"; x: number; z: number; w: number; d: number; rot: number }[]
+  /** Objetos parados com modelo próprio (ambulância). */
+  props?: { id: string; x: number; z: number; facing: number }[]
   arrival: CenterSpot
   portal: Vec2 & { id: string; radius: number; nameKey: string }
   obstacles: Box2Def[]
   limit: number
   /** Modelos publicados (null = só os blocos de reserva). */
-  assets: { version: string; basePath: string; places: Partial<Record<CenterPlaceId, string>> } | null
+  assets: { version: string; basePath: string; places: Partial<Record<CenterPlaceId, string>>; props?: Record<string, string> } | null
 }
 
 export interface CenterPayload {

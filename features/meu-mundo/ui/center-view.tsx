@@ -53,6 +53,7 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   jetpack: "Jetpack",
   igreja: "Igreja",
   delegacia: "Delegacia",
+  hospital: "Hospital",
 }
 
 export interface CenterSceneProps {
