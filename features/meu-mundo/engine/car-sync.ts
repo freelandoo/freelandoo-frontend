@@ -18,7 +18,25 @@
 // duas vezes. Acima de 8 m (choque divergente, aba que voltou) assume o
 // estado da sala COM a velocidade dela — nunca zera.
 
-import type { VehicleState } from "./vehicle"
+import type { DriveInput, VehicleState } from "./vehicle"
+
+/**
+ * mm3d-22 — volante marcado pelo passo (espelho de DRIVE_EVERY em
+ * freelandoo-backend/src/utils/meuMundoDriveSync.js): o volante só muda a
+ * cada 3 passos de física e vai à sala com o passo em que passou a valer
+ * aqui; a sala aplica no MESMO passo dela. Antes, a sala aplicava quando a
+ * mensagem chegava (blocos de 50 ms): numa curva os trajetos se afastavam e
+ * a reconciliação empurrava o veículo de lado.
+ */
+export const DRIVE_EVERY = 3
+
+/** Volante como a sala vai aplicar (degraus de 0,05; freio de mão sim/não). */
+export function quantizeDrive(d: DriveInput): DriveInput {
+  const q = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(v * 20) / 20))
+  return { t: q(d.t, 0, 1), b: q(d.b, 0, 1), s: q(d.s, -1, 1), h: !!d.h }
+}
+
+export const sameDrive = (a: DriveInput, b: DriveInput) => a.t === b.t && a.b === b.b && a.s === b.s && a.h === b.h
 
 export interface CarSnap {
   x: number

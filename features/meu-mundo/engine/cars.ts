@@ -38,7 +38,8 @@ import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { Scene } from "@babylonjs/core/scene"
 import { ensureLoaders } from "./avatars"
-import { lerpAngle, CAR, RIDE_KINDS, type RideKind } from "./motion"
+import { CAR, RIDE_KINDS, type RideKind } from "./motion"
+import { RemoteVehicle, type RemotePose } from "./remote-vehicle"
 import { VEHICLE, KINDS } from "./vehicle"
 import type { Box2 } from "./collision"
 import type { CarState } from "./net"
@@ -124,6 +125,8 @@ interface CarView {
   rollV: number
   lastX: number
   lastZ: number
+  /** Veículo dos outros: estados da sala para interpolar (mm3d-22). */
+  track: RemoteVehicle | null
 }
 
 /** Telemetria do seu carro (painel de ajuste do administrador). */
@@ -155,6 +158,7 @@ export class CarFleet {
   private disposed = false
   /** Última posição conhecida de cada veículo (chave = id; colisão e interação). */
   readonly latest = new Map<string, FleetEntry>()
+  private readonly tmpPose: RemotePose = { x: 0, z: 0, facing: 0 }
 
   constructor(private readonly scene: Scene) {
     ensureLoaders()
@@ -231,6 +235,7 @@ export class CarFleet {
       rollV: 0,
       lastX: c.x,
       lastZ: c.z,
+      track: null,
     }
     this.place(view)
     void this.load(kind)
@@ -330,6 +335,7 @@ export class CarFleet {
         this.views.set(key, v)
       }
       if (mine && key === String(mine) && pose) {
+        v.track?.reset()
         v.x = v.tx = pose.x
         v.y = pose.y ?? 0
         v.z = v.tz = pose.z
@@ -345,16 +351,14 @@ export class CarFleet {
         v.tz = c.z
         v.tf = c.facing
         v.y += ((c.y ?? 0) - v.y) * (1 - Math.exp(-10 * dt))
-        const err = Math.hypot(v.tx - v.x, v.tz - v.z)
-        if (err > 12) {
-          v.x = v.tx
-          v.z = v.tz
-          v.facing = v.tf
-        } else {
-          const k = 1 - Math.exp(-10 * dt)
-          v.x += (v.tx - v.x) * k
-          v.z += (v.tz - v.z) * k
-          v.facing = lerpAngle(v.facing, v.tf, k)
+        // Entre dois estados da sala, pela velocidade (remote-vehicle.ts).
+        const tr = v.track ?? (v.track = new RemoteVehicle())
+        const now = performance.now() / 1000
+        tr.push(now, c.x, c.z, c.facing, c.vx ?? 0, c.vz ?? 0)
+        if (tr.pose(now, this.tmpPose)) {
+          v.x = this.tmpPose.x
+          v.z = this.tmpPose.z
+          v.facing = this.tmpPose.facing
         }
         // Dos outros: rodas e balanço pelo que a sala manda (sem física aqui).
         const ks = 1 - Math.exp(-12 * dt)

@@ -33,8 +33,8 @@ import { NetClient } from "./net"
 import { MOTION, RIDE_KINDS, kindOfId, lerpAngle, paceSpeeds, type Intent, type MoveState, type RideKind } from "./motion"
 import { CarFleet, type CarPose } from "./cars"
 import { placeRider } from "./ride"
-import { STEP, MAX_STEPS, IDLE_DRIVE, createVehicle, stepVehicle, paramsFor, sanitizeTuning, type Tuning, type VehicleState } from "./vehicle"
-import { CarReconciler } from "./car-sync"
+import { STEP, MAX_STEPS, IDLE_DRIVE, createVehicle, stepVehicle, paramsFor, sanitizeTuning, type DriveInput, type Tuning, type VehicleState } from "./vehicle"
+import { CarReconciler, DRIVE_EVERY, quantizeDrive, sameDrive } from "./car-sync"
 import { ResolutionGovernor, resolveQuality, type QualityChoice, type QualityProfile } from "./quality"
 import { attachInput, clearInput, createInputState, driveAxis, moveAxis, wantsRun, type InputState } from "./input"
 import {
@@ -198,6 +198,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   let tune: Tuning | null = null
   let serverErr = 0
   const recon = new CarReconciler()
+  // Passos de física desde que montou e o volante em uso (mm3d-22: a sala
+  // aplica cada mudança no mesmo passo — sem isso a curva saía diferente lá).
+  let driveN = 0
+  let heldDrive: DriveInput = IDLE_DRIVE
   const pose: CarPose = { x: 0, z: 0, facing: 0, sp: 0, st: 0, hb: 0, sl: 0, ax: 0, ay: 0 }
   // Só em desenvolvimento: o teste de navegador pode comandar o carro com
   // valores proporcionais a cada quadro (a física, a sala e o desenho são os
@@ -285,6 +289,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           veh = createVehicle(p.x, p.z, p.facing)
           Object.assign(prevPose, { x: p.x, z: p.z, yaw: p.facing })
           recon.reset()
+          driveN = 0
+          heldDrive = IDLE_DRIVE
         }
         setDriving(p.car, p)
       } else follow.snapBehind(p.x, p.z, p.facing)
@@ -443,6 +449,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       veh = createVehicle(p.x, p.z, p.facing)
       Object.assign(prevPose, { x: p.x, z: p.z, yaw: p.facing })
       recon.reset()
+      driveN = 0
+      heldDrive = IDLE_DRIVE
       follow.setChase(true, p.facing)
     } else {
       veh = null
@@ -463,13 +471,20 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     const P = paramsFor(drivingKind, tune)
     v.acc = Math.min(v.acc + dt, STEP * MAX_STEPS)
     while (v.acc >= STEP) {
+      if (driveN % DRIVE_EVERY === 0) {
+        const q = quantizeDrive(d)
+        if (!sameDrive(q, heldDrive)) {
+          heldDrive = q
+          net.sendDriveAt(q, driveN + 1)
+        }
+      }
       prevPose.x = v.x
       prevPose.z = v.z
       prevPose.yaw = v.yaw
-      stepVehicle(v, d, boxes, limit, P)
+      stepVehicle(v, heldDrive, boxes, limit, P)
+      driveN++
       v.acc -= STEP
     }
-    net.sendDrive(d, now)
 
     // Reconciliação (car-sync.ts): compara a sala com o nosso passado mais
     // parecido (absorve o atraso da rede) e corrige posição, RUMO e velocidade

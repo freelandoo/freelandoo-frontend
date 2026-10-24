@@ -100,8 +100,6 @@ export class NetClient {
   private disposed = false
   private lastSent: Intent = { x: 0, z: 0, run: false }
   private lastSentAt = 0
-  private lastDrive: DriveInput | null = null
-  private lastDriveAt = 0
   status: NetStatus = "connecting"
 
   constructor(private readonly cb: NetCallbacks) {}
@@ -260,22 +258,12 @@ export class NetClient {
   }
 
   /**
-   * Entrada de direção (dirigindo). Até ~15×/s e só quando muda, mais um
-   * lembrete a cada 0,5 s com algum comando ativo.
+   * Mudança de volante (já em degraus, car-sync.ts) com o passo `k` em que
+   * passou a valer aqui — a sala aplica no mesmo passo dela (mm3d-22). Só
+   * quando muda, no máximo a cada 3 passos (20×/s).
    */
-  sendDrive(d: DriveInput, now: number) {
-    const room = this.room
-    if (!room) return
-    const q = (v: number) => Math.round(v * 100) / 100
-    const cur = { t: q(d.t), b: q(d.b), s: q(d.s), h: d.h }
-    const last = this.lastDrive
-    const changed = !last || last.t !== cur.t || last.b !== cur.b || Math.abs(last.s - cur.s) > 0.04 || last.h !== cur.h
-    const active = cur.t > 0 || cur.b > 0 || cur.s !== 0 || cur.h
-    if (now - this.lastDriveAt < 66) return
-    if (!changed && !(active && now - this.lastDriveAt > 500)) return
-    room.send("drive", { t: cur.t, b: cur.b, s: cur.s, h: cur.h ? 1 : 0 })
-    this.lastDrive = cur
-    this.lastDriveAt = now
+  sendDriveAt(d: DriveInput, k: number) {
+    this.room?.send("drive", { t: d.t, b: d.b, s: d.s, h: d.h ? 1 : 0, k })
   }
 
   /** Mensagem avulsa (sentar, levantar). */
