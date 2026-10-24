@@ -18,7 +18,7 @@ export type GameEvent =
   | { type: 'start' }
   | { type: 'thrust_on' }
   | { type: 'thrust_off' }
-  | { type: 'pickup'; kind: Pickup['kind']; added: number; x: number; y: number }
+  | { type: 'pickup'; kind: Pickup['kind']; added: number; x: number; y: number; id: number }
   | { type: 'fuel_low' }
   | { type: 'fuel_empty' }
   | { type: 'pass' }
@@ -162,7 +162,7 @@ export class Runner {
     const added = this.fuel.collect(this.tune.fuel[p.kind]);
     this.fuelCollected += added;
     this.pickupsTaken++;
-    this.events.push({ type: 'pickup', kind: p.kind, added, x: p.x, y: p.y });
+    this.events.push({ type: 'pickup', kind: p.kind, added, x: p.x, y: p.y, id: p.id });
     if (p.kind === 'vulcan') {
       this.powerUntil = t + this.tune.powerTime;
       this.poweredFlag = true;
