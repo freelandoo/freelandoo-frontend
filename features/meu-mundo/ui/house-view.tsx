@@ -31,9 +31,11 @@ export interface HouseSceneProps {
   blocked?: boolean
   /** Abre a tela de STATUS do hóspede (mm3d-13). */
   onOpenStatus?: (body: BodyId) => void
+  /** Outra tela 3D por cima (hospital, mm3d-26): a sala segue ligada, o desenho para. */
+  suspended?: boolean
 }
 
-export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked, onOpenStatus }: HouseSceneProps) {
+export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked, onOpenStatus, suspended }: HouseSceneProps) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<HouseGameHandle | null>(null)
@@ -139,7 +141,8 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
 
   useEffect(() => {
     gameRef.current?.setBlocked(infoOpen || menuOpen || !!blocked)
-  }, [infoOpen, menuOpen, blocked])
+    gameRef.current?.setSuspended(!!suspended)
+  }, [infoOpen, menuOpen, blocked, suspended, status])
 
   const toggleRun = useCallback(() => {
     setRunning((r) => {

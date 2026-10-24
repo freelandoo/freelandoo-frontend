@@ -5,7 +5,7 @@
 // Quem decide quem pode ver é o SERVIDOR (auth + papel Administrator): 401 e
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
-import type { CenterPayload, HousePayload, JetpackSession, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState, WardrobeResult } from "./types"
+import type { CenterPayload, HospitalInfo, HousePayload, JetpackSession, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState, WardrobeResult } from "./types"
 
 export type NeighborhoodResult =
   | { ok: true; payload: ScenePayload }
@@ -135,6 +135,8 @@ export const postEndVisit = (token: string, id: string) =>
 // ═══ mm3d-13: vida do hóspede (tela de STATUS) ═══════════════════════════════
 /** Hóspede + carteira + diário + linha do tempo + catálogo (a tela de STATUS). */
 export const getLife = (token: string) => call<LifeFull>(token, "GET", "/life")
+/** Hospital do centro (mm3d-26): planta por dentro, leito do usuário, régua da alta e a vida agora. */
+export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "/hospital")
 /** Estudar/treinar/trabalhar por `hours` (1–72) ou parar (`idle`). Deitar/dormir é pela cama, na casa. */
 export const postLifeActivity = (token: string, activity: string, hours?: number) =>
   call<LifeSummary>(token, "POST", "/life/activity", { activity, hours })

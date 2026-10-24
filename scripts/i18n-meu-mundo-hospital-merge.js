@@ -8,6 +8,19 @@ const dir = path.join(__dirname, "..", "messages")
 
 const MEU_MUNDO = {
   centerPlace_hospital: ["Hospital", "Hospital", "Hospital"],
+  centerEnter: ["Entrar", "Enter", "Entrar"],
+  hospitalLeave: ["Sair", "Leave", "Salir"],
+  hospitalAria: ["Dentro do hospital", "Inside the hospital", "Dentro del hospital"],
+  hospitalDischarged: ["Alta", "Discharged", "Alta"],
+  hospitalHealth: ["Saúde {n}/{max}", "Health {n}/{max}", "Salud {n}/{max}"],
+  hospitalLoading: ["Entrando no hospital…", "Entering the hospital…", "Entrando al hospital…"],
+  hospitalErrorTitle: ["O hospital não abriu", "The hospital didn't open", "El hospital no abrió"],
+  ambulanceTitle: ["Ambulância a caminho", "Ambulance on the way", "Ambulancia en camino"],
+  ambulanceDesc: [
+    "A saúde dele chegou ao limite. Ele vai ser internado no hospital do centro.",
+    "His health hit the limit. He's being admitted to the downtown hospital.",
+    "Su salud llegó al límite. Será internado en el hospital del centro.",
+  ],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

@@ -7437,6 +7437,15 @@
     "jpPartyReconnecting": "RECONECTANDO…",
     "jpPartyReplaced": "ABERTO EM OUTRA JANELA",
     "helpDriveTouch2": "Joystick: para a frente acelera, para trás freia e dá ré, para os lados vira",
-    "centerPlace_hospital": "Hospital"
+    "centerPlace_hospital": "Hospital",
+    "centerEnter": "Entrar",
+    "hospitalLeave": "Sair",
+    "hospitalAria": "Dentro do hospital",
+    "hospitalDischarged": "Alta",
+    "hospitalHealth": "Saúde {n}/{max}",
+    "hospitalLoading": "Entrando no hospital…",
+    "hospitalErrorTitle": "O hospital não abriu",
+    "ambulanceTitle": "Ambulância a caminho",
+    "ambulanceDesc": "A saúde dele chegou ao limite. Ele vai ser internado no hospital do centro."
   }
 }

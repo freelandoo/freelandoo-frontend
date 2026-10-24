@@ -8003,6 +8003,15 @@
     "jpPartyReconnecting": "RECONECTANDO…",
     "jpPartyReplaced": "ABIERTO EN OTRA VENTANA",
     "helpDriveTouch2": "Joystick: hacia adelante acelera, hacia atrás frena y da marcha atrás, a los lados gira",
-    "centerPlace_hospital": "Hospital"
+    "centerPlace_hospital": "Hospital",
+    "centerEnter": "Entrar",
+    "hospitalLeave": "Salir",
+    "hospitalAria": "Dentro del hospital",
+    "hospitalDischarged": "Alta",
+    "hospitalHealth": "Salud {n}/{max}",
+    "hospitalLoading": "Entrando al hospital…",
+    "hospitalErrorTitle": "El hospital no abrió",
+    "ambulanceTitle": "Ambulancia en camino",
+    "ambulanceDesc": "Su salud llegó al límite. Será internado en el hospital del centro."
   }
 }

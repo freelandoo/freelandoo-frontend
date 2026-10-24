@@ -51,6 +51,12 @@ const C = {
   door: [0.48, 0.3, 0.2],
   knob: [0.92, 0.75, 0.3],
   step: [0.78, 0.6, 0.42],
+  // Hospital (mm3d-26).
+  teal: [0.13, 0.62, 0.64],
+  mint: [0.74, 0.89, 0.85],
+  sheet: [0.7, 0.84, 0.93],
+  ivBag: [0.82, 0.92, 0.97],
+  pulse: [0.32, 0.92, 0.52],
 } satisfies Record<string, RGB>
 
 const MAT: Record<FloorMat, RGB> = { wood: C.wood, tile: C.tile, carpet: C.carpet, stone: C.stone }
@@ -187,6 +193,49 @@ function furniture(g: GeoBuilder, it: InteriorFurniture, y: number, seatTop: num
       break
     case "rug":
       B(g, f, 0, 0.005, 0, w, 0.015, d, n % 2 ? C.rugA : C.rugB)
+      break
+    // ── Hospital (mm3d-26) ──
+    case "hbed":
+      // Estrutura de aço, colchão no mesmo nível da cama (a pose de deitar serve igual).
+      legs(g, f, w - 0.06, d - 0.06, 0.3, C.steel, 0.05)
+      B(g, f, 0, 0.26, 0, w, 0.06, d, C.steel)
+      B(g, f, 0, 0.32, 0, w - 0.06, 0.15, d - 0.06, C.white)
+      B(g, f, 0, 0.47, -0.22, w - 0.04, 0.04, d * 0.6, C.sheet)
+      B(g, f, 0, 0.47, d / 2 - 0.28, w * 0.7, 0.1, 0.32, C.white)
+      B(g, f, 0, 0.26, d / 2 - 0.03, w, 0.72, 0.05, C.teal)
+      B(g, f, 0, 0.26, -d / 2 + 0.03, w, 0.42, 0.05, C.teal)
+      for (const sx of [-1, 1]) B(g, f, sx * (w / 2 + 0.01), 0.52, 0.2, 0.03, 0.05, d * 0.45, C.steel)
+      break
+    case "ivpole":
+      for (const a of [0, 90]) B(g, frame(it.x, y, it.z, it.r + a), 0, 0, 0, w * 0.9, 0.04, 0.05, C.steel)
+      g.cylinder(0.035, h, Matrix.Translation(0, h / 2, 0).multiply(f), C.steel, 6)
+      B(g, f, 0, h - 0.06, 0, 0.36, 0.03, 0.03, C.steel)
+      B(g, f, 0.14, h - 0.36, 0, 0.13, 0.26, 0.06, C.ivBag)
+      B(g, f, 0.14, 0.9, 0, 0.012, h - 1.28, 0.012, C.ivBag)
+      break
+    case "monitor":
+      g.cylinder(0.28, 0.04, Matrix.Translation(0, 0.02, 0).multiply(f), C.steel, 8)
+      g.cylinder(0.04, h - 0.4, Matrix.Translation(0, (h - 0.4) / 2, 0).multiply(f), C.steel, 6)
+      B(g, f, 0, h - 0.42, 0, w, 0.4, 0.14, C.dark)
+      B(g, f, 0, h - 0.38, -0.075, w - 0.08, 0.32, 0.01, C.black)
+      B(g, f, 0, h - 0.23, -0.082, w - 0.16, 0.025, 0.01, C.pulse)
+      B(g, f, 0.04, h - 0.27, -0.083, 0.03, 0.12, 0.01, C.pulse)
+      break
+    case "screen":
+      // Biombo: armação de aço e cortina verde-clara.
+      for (const sx of [-1, 1]) B(g, f, sx * (w / 2 - 0.02), 0, 0, 0.04, h, 0.04, C.steel)
+      B(g, f, 0, h - 0.04, 0, w, 0.04, 0.04, C.steel)
+      B(g, f, 0, 0.25, 0, w - 0.08, h - 0.32, 0.02, C.mint)
+      break
+    case "reception":
+      B(g, f, 0, 0, 0, w, h - 0.05, d, C.white)
+      B(g, f, 0, 0.1, -d / 2 - 0.005, w - 0.1, h - 0.3, 0.01, C.teal)
+      B(g, f, 0, h - 0.05, 0, w + 0.06, 0.05, d + 0.06, C.dark)
+      break
+    case "cabinet":
+      B(g, f, 0, 0, 0, w, h, d, C.white)
+      for (const sx of [-1, 1]) B(g, f, sx * (w / 4), h * 0.45, -d / 2 - 0.005, w / 2 - 0.06, h * 0.5, 0.01, C.glass)
+      B(g, f, 0, h - 0.02, 0, w + 0.02, 0.03, d + 0.02, C.teal)
       break
     default:
       B(g, f, 0, 0, 0, w, h, d, C.wood)

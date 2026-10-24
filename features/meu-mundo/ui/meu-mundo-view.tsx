@@ -80,6 +80,8 @@ export interface NeighborhoodSceneProps {
   blocked?: boolean
   /** Abre a tela de STATUS do hóspede (mm3d-13), com o corpo que está em cena. */
   onOpenStatus?: (body: BodyId) => void
+  /** Outra tela 3D por cima (hospital, mm3d-26): a sala segue ligada, o desenho para. */
+  suspended?: boolean
 }
 
 export default function MeuMundoView({
@@ -92,6 +94,7 @@ export default function MeuMundoView({
   onServerMessage,
   blocked,
   onOpenStatus,
+  suspended,
 }: NeighborhoodSceneProps) {
   const t = useTranslations("MeuMundo")
   const nb = payload.neighborhood
@@ -236,6 +239,10 @@ export default function MeuMundoView({
   useEffect(() => {
     gameRef.current?.setBlocked(!!open || levelOpen || menuOpen || !!blocked)
   }, [open, levelOpen, menuOpen, blocked])
+
+  useEffect(() => {
+    gameRef.current?.setSuspended(!!suspended)
+  }, [suspended, status])
 
   useEffect(() => {
     if (!open) return

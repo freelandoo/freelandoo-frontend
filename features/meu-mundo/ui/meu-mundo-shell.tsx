@@ -9,6 +9,9 @@
 // pé atrás da tela de transição, e uma falha devolve o jogador a ele.
 //
 // Convites e visitas chegam por mensagem da sala ("visits"), sem polling.
+// Internação (mm3d-26): a vida diz "hospital" pela sala ("life") e a casca
+// cobre o ambiente com a ambulância e o leito — o ambiente fica suspenso por
+// baixo, ligado à sala, que é por onde a alta chega.
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { DoorOpen, Home, Loader2, Send } from "lucide-react"
@@ -20,6 +23,8 @@ import { Chamfer, EVO, teko } from "./status/evo-skin"
 import HouseView from "./house-view"
 import CenterView from "./center-view"
 import StatusScreen from "./status/status-screen"
+import { HospitalView } from "./hospital-view"
+import { AmbulanceCurtain, useHospitalStay } from "./hospital-stay"
 import {
   fetchAdminNeighborhood,
   getInviteCandidates,
@@ -53,6 +58,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // Tela de STATUS do hóspede (mm3d-13): o corpo em cena vai para o retrato.
   const [statusBody, setStatusBody] = useState<BodyId | null>(null)
   const [lifeTick, setLifeTick] = useState(0)
+  const stay = useHospitalStay(initial.life)
+  const onLife = stay.onLife
   const busyRef = useRef(false)
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -155,7 +162,10 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const onServerMessage = useCallback(
     (type: string, payload: unknown) => {
       if (type === "visits") setVisits(payload as VisitState)
-      else if (type === "life") setLifeTick((n) => n + 1)
+      else if (type === "life") {
+        setLifeTick((n) => n + 1)
+        onLife((payload as { status?: string } | null)?.status)
+      }
       else if (type === "visit_ended") {
         const p = payload as { reason?: string; hostName?: string } | null
         say(t("visitEndedNotice", "A visita a {name} terminou.").replace("{name}", p?.hostName ?? ""))
@@ -180,7 +190,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         )
       }
     },
-    [say, t],
+    [say, t, onLife],
   )
 
   // Estado das visitas ao trocar de ambiente (a sala nova pode demorar a mandar).
@@ -269,7 +279,11 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     [run, say, t, errText],
   )
 
-  const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody
+  // Hospital por cima só quando ele abriu de fato (a planta chegou): sem a
+  // rota no ar, o jogo segue normal em vez de ficar parado embaixo do nada.
+  const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
+  const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp
+  const suspended = hospitalUp
   const key = `${sceneKeyOf(scene)}#${mount}`
 
   return (
@@ -284,6 +298,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onServerMessage={onServerMessage}
           blocked={overlayOpen}
           onOpenStatus={setStatusBody}
+          suspended={suspended}
         />
       ) : isHouse(scene) ? (
         <HouseView
@@ -296,6 +311,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onServerMessage={onServerMessage}
           blocked={overlayOpen}
           onOpenStatus={setStatusBody}
+          suspended={suspended}
         />
       ) : (
         <MeuMundoView
@@ -309,6 +325,23 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onServerMessage={onServerMessage}
           blocked={overlayOpen}
           onOpenStatus={setStatusBody}
+          suspended={suspended}
+        />
+      )}
+
+      {/* Internação (mm3d-26): ambulância, leito e — com a alta — a porta do hospital */}
+      {stay.phase === "ambulance" && <AmbulanceCurtain />}
+      {stay.phase && stay.phase !== "ambulance" && stay.info && (
+        <HospitalView
+          interior={stay.info.interior}
+          bed={stay.info.bed}
+          body={scene.me.body}
+          mode="patient"
+          discharged={stay.phase === "discharged"}
+          health={stay.info.life.character.vitals.health}
+          dischargeAt={stay.info.dischargeAt}
+          onExit={stay.close}
+          onOpenStatus={() => setStatusBody(scene.me.body)}
         />
       )}
 

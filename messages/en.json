@@ -8023,6 +8023,15 @@
     "jpPartyReconnecting": "RECONNECTING…",
     "jpPartyReplaced": "OPENED IN ANOTHER WINDOW",
     "helpDriveTouch2": "Joystick: push forward to accelerate, back to brake and reverse, sideways to steer",
-    "centerPlace_hospital": "Hospital"
+    "centerPlace_hospital": "Hospital",
+    "centerEnter": "Enter",
+    "hospitalLeave": "Leave",
+    "hospitalAria": "Inside the hospital",
+    "hospitalDischarged": "Discharged",
+    "hospitalHealth": "Health {n}/{max}",
+    "hospitalLoading": "Entering the hospital…",
+    "hospitalErrorTitle": "The hospital didn't open",
+    "ambulanceTitle": "Ambulance on the way",
+    "ambulanceDesc": "His health hit the limit. He's being admitted to the downtown hospital."
   }
 }

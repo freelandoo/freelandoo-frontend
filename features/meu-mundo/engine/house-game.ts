@@ -82,6 +82,8 @@ export interface HouseGameHandle {
   setJoystick: (x: number, y: number) => void
   setRun: (on: boolean) => void
   setBlocked: (blocked: boolean) => void
+  /** Outra tela 3D por cima (hospital, mm3d-26): para de desenhar, a sala continua. */
+  setSuspended: (on: boolean) => void
   interact: () => void
   sit: (seatId: string) => void
   /** Deitar na cama (fica acordado). */
@@ -554,8 +556,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   scene.executeWhenReady(() => {
     if (!disposed) opts.onReady?.()
   })
+  let suspended = false
   engine.runRenderLoop(() => {
-    if (!disposed) scene.render()
+    if (!disposed && !suspended) scene.render()
   })
   const ro = new ResizeObserver(() => {
     if (!disposed) engine.resize()
@@ -577,6 +580,10 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     setBlocked(blocked) {
       input.blocked = blocked
       clearInput(input)
+    },
+    setSuspended(on) {
+      suspended = on
+      if (on) clearInput(input)
     },
     interact() {
       if (seated || rest) handle.stand()

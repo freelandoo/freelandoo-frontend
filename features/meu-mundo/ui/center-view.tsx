@@ -26,6 +26,7 @@ import { fetchSession, postJetpackJoin } from "../data"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
+const HospitalView = dynamic(() => import("./hospital-view").then((m) => m.HospitalView), { ssr: false })
 const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => m.JetpackView), { ssr: false })
 
 /** O local abre um minijogo agora (o registro do servidor decide). */
@@ -38,6 +39,9 @@ async function fetchJetpackParty(roomId: string | null) {
 }
 
 const gameOf = (p: CenterPlace) => (p.available && p.destination.startsWith("game:") ? p.destination.slice(5) : null)
+/** Interior que abre (mm3d-26: só o hospital); sem a planta no payload, "Em breve". */
+const interiorOf = (p: CenterPlace, c: CenterPayload["center"]) =>
+  p.available && p.destination === "interior:hospital" && c.interiors?.hospital ? ("hospital" as const) : null
 
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
@@ -65,9 +69,11 @@ export interface CenterSceneProps {
   onServerMessage: (type: string, payload: unknown) => void
   blocked?: boolean
   onOpenStatus?: (body: BodyId) => void
+  /** Outra tela 3D por cima (hospital, mm3d-26): a sala segue ligada, o desenho para. */
+  suspended?: boolean
 }
 
-export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus }: CenterSceneProps) {
+export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, suspended }: CenterSceneProps) {
   const t = useTranslations("MeuMundo")
   const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -157,7 +163,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               if (g === "jetpack") {
                 setMinigameParty((it.place.party ?? 0) > 1)
                 setMinigame(g)
-              }
+              } else if (interiorOf(it.place, payload.center)) setMinigame("hospital")
               else setOpen(it.place)
             }
           },
@@ -190,8 +196,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
 
   // Minijogo aberto: o centro para de desenhar (dois 3D ao mesmo tempo pesam no celular).
   useEffect(() => {
-    gameRef.current?.setSuspended(!!minigame)
-  }, [minigame])
+    gameRef.current?.setSuspended(!!minigame || !!suspended)
+  }, [minigame, suspended, status])
 
   useEffect(() => {
     if (!open) return
@@ -237,7 +243,12 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             ? placeName(nearPlace)
             : ""
   // "Jogar" nos locais com minijogo; "Em breve" nos outros.
-  const placeTag = nearPlace && gameOf(nearPlace) ? t("centerPlay", "Jogar") : t("centerSoon", "Em breve")
+  const placeTag =
+    nearPlace && gameOf(nearPlace)
+      ? t("centerPlay", "Jogar")
+      : nearPlace && interiorOf(nearPlace, payload.center)
+        ? t("centerEnter", "Entrar")
+        : t("centerSoon", "Em breve")
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
 
   const menuItems: DrawerItem[] = [
@@ -469,6 +480,10 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {/* Minijogo do local (mm3d-20): cobre a tela; ao sair, volta à porta do prédio */}
       {minigame === "jetpack" && (
         <JetpackView body={body} onExit={() => setMinigame(null)} fetchParty={minigameParty ? fetchJetpackParty : undefined} />
+      )}
+      {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
+      {minigame === "hospital" && payload.center.interiors?.hospital && (
+        <HospitalView interior={payload.center.interiors.hospital} body={body} mode="visit" onExit={() => setMinigame(null)} />
       )}
 
       {status !== "ready" && (

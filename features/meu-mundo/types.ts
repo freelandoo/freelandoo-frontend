@@ -533,6 +533,8 @@ export interface CenterLayout {
   grounds?: { kind: "pave" | "asphalt" | "walk" | "mark"; x: number; z: number; w: number; d: number; rot: number }[]
   /** Objetos parados com modelo próprio (ambulância). */
   props?: { id: string; x: number; z: number; facing: number }[]
+  /** Interiores que abrem (destino "interior:<id>", mm3d-26: o hospital). */
+  interiors?: { hospital?: InteriorDef }
   arrival: CenterSpot
   portal: Vec2 & { id: string; radius: number; nameKey: string }
   obstacles: Box2Def[]
@@ -554,6 +556,16 @@ export interface CenterPayload {
   multiplayer: MultiplayerSession | { error: string } | null
   visits?: VisitState
   life?: LifeSummary | null
+}
+
+/** GET /meu-mundo/hospital (mm3d-26). */
+export interface HospitalInfo {
+  interior: InteriorDef
+  /** Leito do usuário na enfermaria (sempre o mesmo para a mesma pessoa). */
+  bed: string
+  /** Saúde a partir da qual a vida dá alta. */
+  dischargeAt: number
+  life: LifeSummary
 }
 
 export type ScenePayload = (NeighborhoodPayload & { scene?: "neighborhood" }) | HousePayload | CenterPayload
