@@ -57,10 +57,15 @@ interface Past {
   w: number
 }
 
-/** Quanto passado guardar (ms) — cobre ping + intervalo de estado da sala. */
-const KEEP_MS = 1000
-/** Tempo de assentamento da correção (s). */
-const SETTLE_S = 0.15
+/**
+ * Quanto passado guardar (ms) — cobre ping, intervalo de estado da sala e a
+ * folga do volante marcado pelo passo depois de um pico de rede (mm3d-22b:
+ * com 1 s, um pico deixava a sala além do passado guardado e o veículo era
+ * puxado para um ponto errado).
+ */
+const KEEP_MS = 2000
+/** Tempo de assentamento da correção (s); 0,25 s para um pico de rede não parecer salto (mm3d-22b). */
+const SETTLE_S = 0.25
 /** Acima disso, assume o estado da sala de uma vez (m). */
 const SNAP_M = 8
 /** Peso do rumo na busca do ponto mais parecido (m por rad). */
