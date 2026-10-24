@@ -11,11 +11,11 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import type { PerfProfile } from '../perf';
 import { TUNING } from '../sim/tuning';
+import { PLAYER_SCREEN_X } from '../party-camera';
 
 /** Largura do mundo visível no plano do jogo (m). */
 export const VIEW_WIDTH = 9.5;
-/** Posição horizontal do jogador na tela (fração a partir da esquerda). */
-export const PLAYER_SCREEN_X = 0.26;
+export { PLAYER_SCREEN_X };
 /** Altura mínima visível (m): faixa de 13 m + espaço do HUD em cima e da dica embaixo. */
 const MIN_VIEW_HEIGHT = 18;
 const FOV = 36;
@@ -153,10 +153,13 @@ export class Stage {
     this.shake = Math.max(this.shake, amount);
   }
 
-  /** Posiciona a câmera seguindo o jogador (x interpolado) e desenha. */
-  render(playerX: number, dt: number, time: number) {
+  /**
+   * Posiciona a câmera seguindo o jogador (x interpolado) e desenha. Em grupo,
+   * o jogador seguido é o líder e `screenX` vem de party-camera.ts.
+   */
+  render(playerX: number, dt: number, time: number, screenX = PLAYER_SCREEN_X) {
     const cam = this.camera;
-    cam.position.x = playerX + this.viewWidth * (0.5 - PLAYER_SCREEN_X);
+    cam.position.x = playerX + this.viewWidth * (0.5 - screenX);
     cam.position.y = this.baseCamY();
     if (this.shake > 0.001) {
       cam.position.x += Math.sin(time * 71) * this.shake * 0.35;

@@ -8,7 +8,8 @@
 // dos dois bocais na direção dos pés.
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import type { Particles } from './particles';
 import { avatarFiles } from '../../engine/avatars';
 import type { BodyId } from '../../types';
@@ -31,12 +32,69 @@ const PACK_CENTER = new THREE.Vector3(0, -0.03, -0.2);
 /** Bocais: a mesma posição relativa do jogo original, ampliada com o pacote. */
 const NOZZLES = [-1, 1].map((s) => new THREE.Vector3(0.055 * s, -0.13, -0.01).multiplyScalar(PACK_SCALE).add(PACK_CENTER));
 
+type RGB = [number, number, number];
+/** Cor do fogo por vaga (mm3d-21): base, miolo e ponta da chama; partículas (início, fim). A vaga 0 é a do jogo sozinho. */
+const FLAMES: { base: RGB; core: RGB; tip: RGB; p0: RGB; p1: RGB }[] = [
+  { base: [1, 0.22, 0.02], core: [1, 0.85, 0.35], tip: [1, 0.75, 0.3], p0: [1, 0.75, 0.3], p1: [0.9, 0.12, 0.02] },
+  { base: [0.02, 0.35, 1], core: [0.55, 0.9, 1], tip: [0.45, 0.8, 1], p0: [0.5, 0.85, 1], p1: [0.02, 0.2, 0.9] },
+  { base: [0.1, 0.85, 0.08], core: [0.75, 1, 0.45], tip: [0.6, 1, 0.4], p0: [0.6, 1, 0.4], p1: [0.05, 0.6, 0.05] },
+  { base: [0.65, 0.08, 1], core: [0.95, 0.7, 1], tip: [0.85, 0.55, 1], p0: [0.85, 0.55, 1], p1: [0.45, 0.04, 0.8] },
+];
+
+interface BodyAssets {
+  gltf: GLTF;
+  anims: GLTF;
+  tex: THREE.Texture;
+}
+
+/**
+ * Malhas por corpo numa partida em grupo (mm3d-21): o mesmo corpo é baixado
+ * uma vez e cada jogador ganha um clone (esqueleto próprio). Uma por sessão do
+ * jogo — o Stage solta tudo da GPU ao fechar.
+ */
+export class AvatarAssets {
+  private map = new Map<BodyId, Promise<BodyAssets>>();
+
+  get(bodyId: BodyId, onProgress?: (ratio: number) => void): Promise<BodyAssets> {
+    let p = this.map.get(bodyId);
+    if (!p) {
+      p = loadBody(bodyId, onProgress);
+      p.catch(() => this.map.delete(bodyId));
+      this.map.set(bodyId, p);
+    }
+    return p;
+  }
+}
+
+async function loadBody(bodyId: BodyId, onProgress?: (ratio: number) => void): Promise<BodyAssets> {
+  const files = avatarFiles(bodyId);
+  const loader = new GLTFLoader();
+  let done = 0;
+  const tick = () => onProgress?.(++done / 3);
+  const [gltf, anims, tex] = await Promise.all([
+    loader.loadAsync(files.body).then((g) => (tick(), g)),
+    loader.loadAsync(files.anims).then((g) => (tick(), g)),
+    new THREE.TextureLoader().loadAsync(files.texture).then((t) => (tick(), t)),
+  ]);
+  // Convenção do glTF (a mesma do Babylon com invertY = false).
+  tex.flipY = false;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return { gltf, anims, tex };
+}
+
 function flameMaterial(): THREE.ShaderMaterial {
+  const f = FLAMES[0];
   return new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
-    uniforms: { uTime: { value: 0 }, uPower: { value: 0 } },
+    uniforms: {
+      uTime: { value: 0 },
+      uPower: { value: 0 },
+      uBase: { value: new THREE.Vector3(...f.base) },
+      uCore: { value: new THREE.Vector3(...f.core) },
+      uTip: { value: new THREE.Vector3(...f.tip) },
+    },
     vertexShader: /* glsl */ `
       varying vec2 vUv;
       void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
@@ -44,13 +102,16 @@ function flameMaterial(): THREE.ShaderMaterial {
       varying vec2 vUv;
       uniform float uTime;
       uniform float uPower;
+      uniform vec3 uBase;
+      uniform vec3 uCore;
+      uniform vec3 uTip;
       void main() {
         // vUv.y = 1 no bocal, 0 na ponta da chama
         float along = vUv.y;
         float flick = 0.8 + 0.2 * sin(uTime * 60.0 + vUv.x * 25.0) * sin(uTime * 37.0);
         float core = smoothstep(0.35, 1.0, along);
-        vec3 col = mix(vec3(1.0, 0.22, 0.02), vec3(1.0, 0.85, 0.35), core);
-        col = mix(col, vec3(1.0, 0.75, 0.3), smoothstep(0.85, 1.0, along));
+        vec3 col = mix(uBase, uCore, core);
+        col = mix(col, uTip, smoothstep(0.85, 1.0, along));
         float a = pow(along, 1.4) * flick * uPower;
         gl_FragColor = vec4(col * a * 1.25, a);
       }`,
@@ -95,6 +156,10 @@ export class AvatarView {
   private power01 = 0;
   private powerLeft = 0;
   private powerAcc = 0;
+  /** Partículas do rastro (1 = sozinho; os outros jogadores de um grupo emitem menos). */
+  emitScale = 1;
+  private trail = FLAMES[0];
+  private mat: THREE.MeshLambertMaterial | null = null;
 
   constructor(
     scene: THREE.Scene,
@@ -114,19 +179,10 @@ export class AvatarView {
     this.body.add(this.aura);
   }
 
-  async load(bodyId: BodyId, onProgress?: (ratio: number) => void) {
-    const files = avatarFiles(bodyId);
-    const loader = new GLTFLoader();
-    let done = 0;
-    const tick = () => onProgress?.(++done / 3);
-    const [gltf, anims, tex] = await Promise.all([
-      loader.loadAsync(files.body).then((g) => (tick(), g)),
-      loader.loadAsync(files.anims).then((g) => (tick(), g)),
-      new THREE.TextureLoader().loadAsync(files.texture).then((t) => (tick(), t)),
-    ]);
-    // Convenção do glTF (a mesma do Babylon com invertY = false).
-    tex.flipY = false;
-    tex.colorSpace = THREE.SRGBColorSpace;
+  /** `assets` = cache de um grupo (o modelo vira clone); sem ele, baixa e usa o original. */
+  async load(bodyId: BodyId, onProgress?: (ratio: number) => void, assets?: AvatarAssets) {
+    const a = assets ? await assets.get(bodyId, onProgress) : await loadBody(bodyId, onProgress);
+    const { anims, tex } = a;
     // Igual ao material do bairro: o basecolor já traz o sombreado pintado,
     // então difuso + emissivo (a luz do espaço, escura e vermelha, não apaga o boneco).
     const mat = new THREE.MeshLambertMaterial({
@@ -136,7 +192,8 @@ export class AvatarView {
       emissive: new THREE.Color(0.48, 0.48, 0.48),
     });
 
-    this.model = gltf.scene;
+    this.mat = mat;
+    this.model = assets ? cloneSkinned(a.gltf.scene) : a.gltf.scene;
     // As animações do Mixamo olham para +Z; o percurso anda em +X.
     this.model.rotation.y = Math.PI / 2;
     this.model.scale.setScalar(MODEL_SCALE);
@@ -207,6 +264,30 @@ export class AvatarView {
     sm.parent!.add(shell);
     this.outlineMat = mat;
     this.outline = shell;
+  }
+
+  /** Cor do fogo da vaga (grupo). */
+  setSlot(slot: number) {
+    const f = FLAMES[slot] ?? FLAMES[0];
+    this.trail = f;
+    const u = this.flameMat.uniforms;
+    (u.uBase.value as THREE.Vector3).set(...f.base);
+    (u.uCore.value as THREE.Vector3).set(...f.core);
+    (u.uTip.value as THREE.Vector3).set(...f.tip);
+    for (const g of this.glow) g.material.color.setRGB(f.p0[0], f.p0[1] * 0.6, f.p0[2] * 0.6);
+  }
+
+  /** Translúcido (rebocado na borda): 1 = normal. */
+  setFade(a: number) {
+    const m = this.mat;
+    if (!m || m.opacity === a) return;
+    m.opacity = a;
+    const t = a < 1;
+    if (m.transparent !== t) {
+      m.transparent = t;
+      m.depthWrite = !t;
+      m.needsUpdate = true;
+    }
   }
 
   /** Liga/desliga o visual do turbo; `left` = segundos restantes (pisca no fim). */
@@ -341,7 +422,7 @@ export class AvatarView {
     this.aura.material.opacity = this.power01 * 0.32 * pulse * blink;
     if (!on) return;
     // Partículas vermelhas saindo de trás do jogador.
-    this.powerAcc += dt * 120;
+    this.powerAcc += dt * 120 * this.emitScale;
     const p = this.root.position;
     while (this.powerAcc >= 1) {
       this.powerAcc -= 1;
@@ -359,7 +440,7 @@ export class AvatarView {
     spine.updateWorldMatrix(true, false);
     for (let i = 0; i < 2; i++) this.nozzleWorld[i].copy(NOZZLES[i]).applyMatrix4(spine.matrixWorld);
     this.dirWorld.set(0, -1, 0).transformDirection(spine.matrixWorld);
-    this.emitAcc += dt * (thrust ? 90 : 20);
+    this.emitAcc += dt * (thrust ? 90 : 20) * this.emitScale;
     while (this.emitAcc >= 1) {
       this.emitAcc -= 1;
       const n = this.nozzleWorld[(Math.random() * 2) | 0];
@@ -370,7 +451,7 @@ export class AvatarView {
         x: n.x, y: n.y, z: n.z,
         vx: this.tmp.x * sp + j() - 2.5, vy: this.tmp.y * sp + j(), vz: this.tmp.z * sp + j(),
         life: 0.18 + Math.random() * 0.14, size: 0.16 + Math.random() * 0.1,
-        c0: [1, 0.75, 0.3], c1: [0.9, 0.12, 0.02], drag: 3, grow: 0.6,
+        c0: this.trail.p0, c1: this.trail.p1, drag: 3, grow: 0.6,
       });
       if (Math.random() < 0.3) {
         this.smoke.emit({
