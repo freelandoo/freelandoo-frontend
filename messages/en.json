@@ -8021,6 +8021,7 @@
     "jpPartyCaps": "{n} capsules",
     "jpPartySoloFallback": "PLAYING SOLO",
     "jpPartyReconnecting": "RECONNECTING…",
-    "jpPartyReplaced": "OPENED IN ANOTHER WINDOW"
+    "jpPartyReplaced": "OPENED IN ANOTHER WINDOW",
+    "helpDriveTouch2": "Joystick: push forward to accelerate, back to brake and reverse, sideways to steer"
   }
 }

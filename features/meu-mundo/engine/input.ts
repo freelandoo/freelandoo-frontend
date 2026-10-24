@@ -21,11 +21,7 @@ export interface InputState {
   runToggle: boolean
   /** Dirigindo (mm3d-12): Espaço vira freio de mão em vez de interagir. */
   driving: boolean
-  /** Botões de direção do celular, um por dedo (multitoque). */
-  touchDrive: { left: boolean; right: boolean; gas: boolean; brake: boolean; hb: boolean }
 }
-
-const noTouch = () => ({ left: false, right: false, gas: false, brake: false, hb: false })
 
 export function createInputState(): InputState {
   return {
@@ -39,7 +35,6 @@ export function createInputState(): InputState {
     blocked: false,
     runToggle: false,
     driving: false,
-    touchDrive: noTouch(),
   }
 }
 
@@ -51,26 +46,30 @@ export function clearInput(s: InputState) {
   s.camDY = 0
   s.zoom = 0
   s.interactQueued = false
-  s.touchDrive = noTouch()
 }
 
+/** Zona morta do joystick, reescalada para o eixo ainda ir de 0 a 1. */
+const dead = (v: number, z: number) => (Math.abs(v) <= z ? 0 : (Math.sign(v) * (Math.abs(v) - z)) / (1 - z))
+const clamp1 = (v: number) => Math.max(-1, Math.min(1, v))
+
 /**
- * Comandos de direção (teclado + botões do celular): W/↑ acelera, S/↓ freia
- * (parado, engata a ré), A/D ou ←/→ esterçam, Espaço puxa o freio de mão.
+ * Comandos de direção. Teclado: W/↑ acelera, S/↓ freia (parado, engata a ré),
+ * A/D ou ←/→ esterçam, Espaço puxa o freio de mão. Celular (mm3d-25): o MESMO
+ * joystick de andar, sem pedal nem botão — para a frente acelera, para trás
+ * freia e, parado, dá ré; para os lados vira. Igual em carro, bike, skate e
+ * patins (a física de cada um sai de `paramsFor`).
  */
 export function driveAxis(s: InputState) {
   const k = s.keys
-  const td = s.touchDrive
-  const t = k.has("KeyW") || k.has("ArrowUp") || td.gas ? 1 : 0
-  const b = k.has("KeyS") || k.has("ArrowDown") || td.brake ? 1 : 0
-  const right = k.has("KeyD") || k.has("ArrowRight") || td.right ? 1 : 0
-  const left = k.has("KeyA") || k.has("ArrowLeft") || td.left ? 1 : 0
-  // Joystick do celular (se usado dirigindo): eixo X esterça, Y acelera/freia.
-  let steer = right - left + s.joyX
-  steer = Math.max(-1, Math.min(1, steer))
-  const gas = Math.max(t, s.joyY > 0.25 ? s.joyY : 0)
-  const brake = Math.max(b, s.joyY < -0.25 ? -s.joyY : 0)
-  return { t: gas, b: brake, s: steer, h: k.has("Space") || td.hb }
+  const t = k.has("KeyW") || k.has("ArrowUp") ? 1 : 0
+  const b = k.has("KeyS") || k.has("ArrowDown") ? 1 : 0
+  const right = k.has("KeyD") || k.has("ArrowRight") ? 1 : 0
+  const left = k.has("KeyA") || k.has("ArrowLeft") ? 1 : 0
+  // Na diagonal o joystick dá ~0,7 em cada eixo: 1,4× devolve o curso inteiro
+  // (acelerar e virar tudo ao mesmo tempo) sem tirar a precisão perto do centro.
+  const jx = clamp1(dead(s.joyX, 0.12) * 1.4)
+  const jy = clamp1(dead(s.joyY, 0.2) * 1.4)
+  return { t: Math.max(t, jy > 0 ? jy : 0), b: Math.max(b, jy < 0 ? -jy : 0), s: clamp1(right - left + jx), h: k.has("Space") }
 }
 
 const MOVE_KEYS = new Set([

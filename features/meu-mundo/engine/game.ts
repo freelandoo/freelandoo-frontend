@@ -120,8 +120,6 @@ export interface GameHandle {
   retryHouse: (lot: number) => void
   houseVisual: (lot: number) => HouseVisual | null
   setStatsEnabled: (on: boolean) => void
-  /** Botão de direção do celular apertado/solto (cada um com o próprio dedo). */
-  setTouchDrive: (key: "left" | "right" | "gas" | "brake" | "hb", on: boolean) => void
   /** Ajuste de dirigibilidade (painel do administrador); null = padrão. */
   setTuning: (t: Tuning | null) => void
   /** Pede à sala para devolver o carro preso à vaga da casa. */
@@ -755,9 +753,6 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     houseVisual(lot) {
       return world.visual(lot)
-    },
-    setTouchDrive(key, on) {
-      input.touchDrive[key] = on
     },
     setTuning(t) {
       const clean = t ? sanitizeTuning(t) : null

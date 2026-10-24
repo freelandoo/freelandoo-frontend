@@ -38,7 +38,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId, type RideKind } from "../engine/motion"
-import { CarTuningPanel, TouchDriveControls } from "./drive-controls"
+import { CarTuningPanel } from "./drive-controls"
 import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, type DrawerItem } from "./hud/hud-kit"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
@@ -107,7 +107,8 @@ export default function MeuMundoView({
   const [open, setOpen] = useState<Interactable | null>(null)
   const [statsOpen, setStatsOpen] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
-  const [helpOpen, setHelpOpen] = useState(true)
+  // Tela limpa: a ajuda dos controles só abre pelo menu.
+  const [helpOpen, setHelpOpen] = useState(false)
   const [net, setNet] = useState<NetStatus>("connecting")
   const [online, setOnline] = useState(1)
   // Tipo físico: não se escolhe (2026-10-21) — vem da vida, pela sala.
@@ -311,6 +312,9 @@ export default function MeuMundoView({
     ...(onGoCenter && !payload.me.visitor
       ? [{ id: "center", label: t("goCenter", "Ir ao centro"), hint: t("goCenterHint", "Encontrar gente de outros bairros"), icon: <Building2 className="h-5 w-5" />, onSelect: onGoCenter }]
       : []),
+    ...(drivingLot
+      ? [{ id: "recover", label: t("recoverCar", "Recuperar"), hint: t("recoverHintAny", "Preso? Volta para a vaga da casa (parado, a cada 15 s)."), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.recoverCar() }]
+      : []),
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: recenter },
     { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, onSelect: () => setHelpOpen(true) },
     qualityItem,
@@ -443,7 +447,7 @@ export default function MeuMundoView({
               </span>
               {drivingLot
                 ? isTouch
-                  ? t("helpDriveTouch", "◀ ▶: volante · Acelera · Freio/Ré (parado, engata a ré) · Freio de mão: derrapar")
+                  ? t("helpDriveTouch2", "Joystick: para a frente acelera, para trás freia e dá ré, para os lados vira")
                   : t("helpDriveDesktop", "W/↑ acelerar · S/↓ frear (parado, ré) · A/D ou ←/→ direção · Espaço: freio de mão · E: sair")
                 : isTouch
                   ? t("helpTouch3", "Joystick: andar · Correr: corrida lenta · Arraste a tela: girar a câmera · Botão: interagir · Puxe a aba da direita: menu")
@@ -484,9 +488,13 @@ export default function MeuMundoView({
         </div>
       )}
 
-      {/* Dirigindo: sair e recuperar — e, montado perto de casa, entrar com o veículo */}
-      {status === "ready" && !!drivingLot && !open && !levelOpen && (
-        <div className="absolute left-1/2 flex -translate-x-1/2 gap-2" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>
+      {/* Dirigindo: descer — e, montado perto de casa, entrar com o veículo. No
+          celular fica embaixo à direita (o joystick dirige); "Recuperar" mora no menu. */}
+      {status === "ready" && !!drivingLot && !open && !levelOpen && (!isTouch || !menuOpen) && (
+        <div
+          className={isTouch ? "absolute flex flex-col items-end gap-2" : "absolute left-1/2 flex -translate-x-1/2 gap-2"}
+          style={isTouch ? { bottom: bottom(24), right: SAFE.right } : { top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}
+        >
           {(nearbyMine || nearbyVisit) && drivingKind !== "car" && (
             <EvoButton variant="primary" icon={<DoorOpen className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
               {nearbyLabel}
@@ -505,22 +513,14 @@ export default function MeuMundoView({
           >
             {t("leaveVehicle", "Descer")}
           </EvoButton>
-          <EvoButton
-            variant="gold"
-            icon={<RefreshCw className="h-4 w-4" />}
-            onClick={() => gameRef.current?.recoverCar()}
-            title={t("recoverHintAny", "Preso? Volta para a vaga da casa (parado, a cada 15 s).")}
-          >
-            {t("recoverCar", "Recuperar")}
-          </EvoButton>
         </div>
       )}
 
-      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !!drivingLot && <TouchDriveControls gameRef={gameRef} />}
+      {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
+      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && <Joystick gameRef={gameRef} />}
 
       {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !drivingLot && (
         <>
-          <Joystick gameRef={gameRef} />
           <EvoButton
             variant="gold"
             onClick={toggleRun}

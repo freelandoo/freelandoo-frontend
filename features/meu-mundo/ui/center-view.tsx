@@ -17,7 +17,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId } from "../engine/motion"
-import { CarTuningPanel, TouchDriveControls } from "./drive-controls"
+import { CarTuningPanel } from "./drive-controls"
 import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, type DrawerItem } from "./hud/hud-kit"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
@@ -82,7 +82,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [minigameParty, setMinigameParty] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
-  const [helpOpen, setHelpOpen] = useState(true)
+  // Tela limpa: a ajuda dos controles só abre pelo menu.
+  const [helpOpen, setHelpOpen] = useState(false)
   const [net, setNet] = useState<NetStatus>("connecting")
   const [online, setOnline] = useState(1)
   const [body, setBody] = useState<BodyId>(payload.me.body)
@@ -243,6 +244,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     ...(onOpenStatus
       ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, onSelect: () => onOpenStatus(body) }]
       : []),
+    ...(drivingLot
+      ? [{ id: "recover", label: t("recoverCar", "Recuperar"), hint: t("centerRecoverHint", "Preso? Volta para uma vaga livre (parado, a cada 15 s)."), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.recoverCar() }]
+      : []),
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: () => gameRef.current?.recenter() },
     { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, onSelect: () => setHelpOpen(true) },
     qualityItem,
@@ -333,7 +337,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               </span>
               {drivingLot
                 ? isTouch
-                  ? t("helpDriveTouch", "◀ ▶: volante · Acelera · Freio/Ré (parado, engata a ré) · Freio de mão: derrapar")
+                  ? t("helpDriveTouch2", "Joystick: para a frente acelera, para trás freia e dá ré, para os lados vira")
                   : t("helpDriveDesktop", "W/↑ acelerar · S/↓ frear (parado, ré) · A/D ou ←/→ direção · Espaço: freio de mão · E: sair")
                 : isTouch
                   ? t("helpTouch3", "Joystick: andar · Correr: corrida lenta · Arraste a tela: girar a câmera · Botão: interagir · Puxe a aba da direita: menu")
@@ -368,9 +372,13 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
         </div>
       )}
 
-      {/* Dirigindo: voltar para casa com o veículo (no portal), descer, recuperar */}
-      {status === "ready" && !!drivingLot && !open && (
-        <div className="absolute left-1/2 flex -translate-x-1/2 gap-2" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>
+      {/* Dirigindo: voltar para casa com o veículo (no portal) e descer. No celular
+          fica embaixo à direita (o joystick dirige); "Recuperar" mora no menu. */}
+      {status === "ready" && !!drivingLot && !open && (!isTouch || !menuOpen) && (
+        <div
+          className={isTouch ? "absolute flex flex-col items-end gap-2" : "absolute left-1/2 flex -translate-x-1/2 gap-2"}
+          style={isTouch ? { bottom: bottom(24), right: SAFE.right } : { top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}
+        >
           {nearPortal && (
             <EvoButton variant="primary" icon={<Home className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
               {t("backHome", "Voltar para casa")}
@@ -379,17 +387,14 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           <EvoButton variant={nearPortal ? "gold" : "primary"} icon={<VehicleIcon kind={drivingKind} className="h-5 w-5" />} onClick={() => gameRef.current?.leaveVehicle()} kbd={isTouch || nearPortal ? undefined : "E"}>
             {t("leaveVehicle", "Descer")}
           </EvoButton>
-          <EvoButton variant="gold" icon={<RefreshCw className="h-4 w-4" />} onClick={() => gameRef.current?.recoverCar()} title={t("centerRecoverHint", "Preso? Volta para uma vaga livre (parado, a cada 15 s).")}>
-            {t("recoverCar", "Recuperar")}
-          </EvoButton>
         </div>
       )}
 
-      {status === "ready" && isTouch && !open && !menuOpen && !!drivingLot && <TouchDriveControls gameRef={gameRef} />}
+      {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
+      {status === "ready" && isTouch && !open && !menuOpen && <Joystick gameRef={gameRef} />}
 
       {status === "ready" && isTouch && !open && !menuOpen && !drivingLot && (
         <>
-          <Joystick gameRef={gameRef} />
           <EvoButton
             variant="gold"
             onClick={() =>

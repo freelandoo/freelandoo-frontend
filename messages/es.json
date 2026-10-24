@@ -8001,6 +8001,7 @@
     "jpPartyCaps": "{n} cápsulas",
     "jpPartySoloFallback": "JUGANDO SOLO",
     "jpPartyReconnecting": "RECONECTANDO…",
-    "jpPartyReplaced": "ABIERTO EN OTRA VENTANA"
+    "jpPartyReplaced": "ABIERTO EN OTRA VENTANA",
+    "helpDriveTouch2": "Joystick: hacia adelante acelera, hacia atrás frena y da marcha atrás, a los lados gira"
   }
 }
