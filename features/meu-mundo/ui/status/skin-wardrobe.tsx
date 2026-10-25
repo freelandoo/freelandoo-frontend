@@ -15,11 +15,12 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, Coins, Shirt, Sparkles, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
-import { getSkins, postSkinBuy, postSkinEquip } from "../../data"
+import { getSkins, getWallets, postSkinBuy, postSkinEquip } from "../../data"
 import { SKINS, type SkinArt } from "../../skins"
 import type { BodyId, WardrobeResult } from "../../types"
 import { SkinStage } from "../../engine/skin-stage"
 import { EvoButton, EvoToast } from "../hud/hud-kit"
+import { PolenIcon } from "@/components/polens/polen-icon"
 import { Chamfer, EVO, archivo, teko } from "./evo-skin"
 import { MM } from "../hud/tokens"
 
@@ -33,11 +34,24 @@ export interface SkinWardrobeProps {
 }
 
 function conditionName(b: BodyId, t: Tr) {
-  return { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio" }[b]
+  return { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina" }[b]
 }
 
 export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProps) {
   const [data, setData] = useState<WardrobeResult | null>(null)
+  // Poléns (mm3d-30): saldo da carteira oficial para a skin exclusiva; null = indisponível.
+  const [polens, setPolens] = useState<number | null>(null)
+  // Exclusiva de Poléns pede dois toques (dinheiro de verdade): este guarda o id confirmando.
+  const [confirming, setConfirming] = useState<string | null>(null)
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    let alive = true
+    void getWallets(token).then((r) => alive && r.ok && setPolens(r.data.wallet.polens))
+    return () => {
+      alive = false
+    }
+  }, [])
   const [failed, setFailed] = useState(false)
   const [idx, setIdx] = useState(0)
   const [busy, setBusy] = useState(false)
@@ -128,13 +142,25 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
   const buy = async () => {
     const token = getToken()
     if (!token || busy || !entry) return
+    if (entry.currency === "polens" && confirming !== entry.id) {
+      setConfirming(entry.id)
+      return
+    }
+    setConfirming(null)
     setBusy(true)
     const r = await postSkinBuy(token, entry.id)
     if (!r.ok) {
-      say(r.code === "coins" ? t("skinNoCoins", "Moedas insuficientes") : r.error || t("stActionFail", "Não deu certo agora"))
+      say(
+        r.code === "coins"
+          ? t("skinNoCoins", "Moedas insuficientes")
+          : r.code === "polens"
+            ? t("skinNoPolens", "Poléns insuficientes")
+            : r.error || t("stActionFail", "Não deu certo agora"),
+      )
       setBusy(false)
       return
     }
+    if (r.data.wallet.polens != null) setPolens(r.data.wallet.polens)
     // A linha sobe pelo holograma e ele vira o personagem; só então a tela
     // passa a dizer que é seu (senão o palco recarregaria o corpo no meio).
     materializing.current = true
@@ -179,7 +205,27 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
           {t("skinUse", "Usar")}
         </EvoButton>
       )
-    else
+    else if (entry.currency === "polens") {
+      // Exclusiva de Poléns: nunca com moedas; confirmação mostra o saldo depois.
+      const short = polens === null ? null : Math.max(0, entry.cost - polens)
+      action = (
+        <EvoButton
+          variant={confirming === entry.id ? "primary" : "gold"}
+          size="lg"
+          disabled={busy || polens === null || (short ?? 0) > 0}
+          onClick={() => void buy()}
+          icon={<PolenIcon className="h-5 w-5 max-[759px]:h-4 max-[759px]:w-4" />}
+        >
+          {polens === null
+            ? t("skinPolensOff", "Saldo de Poléns indisponível")
+            : (short ?? 0) > 0
+              ? t("skinPolensShort", "Faltam {n} Poléns").replace("{n}", String(short))
+              : confirming === entry.id
+                ? t("skinPolensConfirm", "Confirmar · {n} Poléns (fica {left})").replace("{n}", String(entry.cost)).replace("{left}", String(polens - entry.cost))
+                : t("skinAcquirePrice", "Adquirir · {price}").replace("{price}", t("stPolens", "{n} Poléns").replace("{n}", String(entry.cost)))}
+        </EvoButton>
+      )
+    } else
       action = (
         <EvoButton variant="gold" size="lg" disabled={busy || coins < entry.cost} onClick={() => void buy()} icon={<Sparkles className="h-5 w-5 max-[759px]:h-4 max-[759px]:w-4" />}>
           {entry.cost > 0
@@ -261,6 +307,11 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
                 {!owned && (
                   <span className={`${teko.className} text-[17px] uppercase tracking-[0.14em] max-[759px]:text-[13px]`} style={{ color: EVO.rosaClaro }}>
                     {t("skinHologram", "Holograma · ainda não é seu")}
+                  </span>
+                )}
+                {entry?.currency === "polens" && (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold text-amber-200 max-[759px]:text-[11px]" style={{ background: "rgba(229,190,112,0.14)", border: `1px solid ${MM.goldBorder}` }}>
+                    <PolenIcon className="h-3.5 w-3.5" /> {t("skinPolensOnly", "Exclusivo Poléns")}
                   </span>
                 )}
               </div>

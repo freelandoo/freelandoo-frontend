@@ -141,8 +141,9 @@ export interface Neighborhood {
   limit: number
 }
 
-export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio"
-export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio"]
+// mm3d-30: "female" = skin "feminina"; "ekaterina" = skin "ekaterina".
+export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina"
+export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina"]
 
 export interface SeatReservation {
   name: string
@@ -287,7 +288,8 @@ export interface LifeSummary {
   /** Geladeira (mm3d-28). */
   fridge?: FridgeStock
   character: LifeCharacter
-  wallet: { coins: number }
+  /** Moedas do jogo; `polens` (mm3d-30) = Poléns da carteira oficial, null = indisponível agora. */
+  wallet: { coins: number; polens?: number | null }
   /** O que a sala desenha: a skin vestida ou a condição física (mm3d-16). */
   avatar?: BodyId
 }
@@ -298,7 +300,9 @@ export interface WardrobeSkin {
   kind: "standard" | "skin"
   name: string
   price: number
-  /** quanto ESTA pessoa paga (administrador: 0) */
+  /** Moeda do preço (mm3d-30): "polens" = exclusiva de Poléns. */
+  currency?: Currency
+  /** quanto ESTA pessoa paga (administrador: 0 em moedas; em Poléns todos pagam) */
   cost: number
   owned: boolean
   equipped: boolean
@@ -707,4 +711,85 @@ export interface GameStats {
     /** Distância entre a sua previsão e a posição confirmada pela sala (m). */
     serverErr: number
   } | null
+}
+
+// ═══ mm3d-30: sino, correio interno, itens e as duas moedas ════════════════
+/** Moeda de um produto: as do jogo ou Poléns (a moeda paga da Freelandoo). */
+export type Currency = "coins" | "polens"
+
+export type NoticeKind = "need" | "life" | "gift" | "official" | "promo" | "purchase"
+
+export interface MailGift {
+  type: "item" | "skin" | "coins"
+  id: string
+  qty: number
+}
+
+/** Uma linha do histórico do sino (tb_mm_notice). */
+export interface MMNotice {
+  id: string
+  kind: NoticeKind
+  /** need: id da necessidade · life: evento · gift/official/promo · purchase: polens_credited */
+  code: string
+  /** 1 = mais urgente */
+  priority: number
+  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number }
+  mailId: string | null
+  createdAt: string
+  read: boolean
+}
+
+export type MailKind = "gift" | "official" | "promo" | "receipt"
+
+/** Uma carta do correio interno (tb_mm_mail). Título/texto oficiais vêm do admin (não traduzem). */
+export interface MMMail {
+  id: string
+  kind: MailKind
+  title: string
+  body: string
+  data: { from?: string; polens?: number; product?: string | null; session?: string }
+  gift: MailGift | null
+  claimedAt: string | null
+  claimResult: (MailGift & { where: string; alreadyOwned?: boolean }) | null
+  createdAt: string
+  read: boolean
+}
+
+export interface InboxCounts {
+  notices: number
+  mail: number
+  gifts: number
+}
+
+export type NoticeFilter = "all" | "unread" | "character" | "rewards" | "official"
+export type MailTab = "all" | "gift" | "official" | "promo" | "receipt"
+
+export type VehicleKind = "car" | "bike" | "skate" | "skates"
+
+export interface InventoryResult extends LifeSummary {
+  /** catálogo da vida (nomes, tipo, efeitos) para os slots da geladeira */
+  items: LifeItem[]
+  inventory: {
+    wardrobe: { condition: BodyId; admin: boolean; skins: WardrobeSkin[] }
+    vehicles: { kind: VehicleKind; where: "spot" | "street" | "house" }[]
+    house: { level: number; lot: number; neighborhood: string } | null
+    recentGifts: { gift: MailGift; claimedAt: string }[]
+  }
+}
+
+/** Os dois saldos. `polens: null` = indisponível agora (nunca um zero inventado). */
+export interface Wallets {
+  coins: number
+  polens: number | null
+}
+
+/** Pacote da Loja de Polén (GET /polens/products). */
+export interface PolenProduct {
+  id: string
+  name: string
+  description?: string | null
+  price_cents: number
+  polens_amount: number
+  bonus_polens: number
+  image_url?: string | null
 }

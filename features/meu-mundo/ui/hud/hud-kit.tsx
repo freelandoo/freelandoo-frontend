@@ -148,7 +148,7 @@ export function Drawer({
   }, [hotkeys, open, onOpenChange, close])
 
   // Gaveta aberta: o balão de avisos (que mora na casca, acima da cena) se
-  // esconde para não cobrir o topo do menu (needs-bubble ouve este evento).
+  // esconde para não cobrir o topo do menu (os cards de notificação ouvem este evento).
   useEffect(() => {
     window.dispatchEvent(new CustomEvent(DRAWER_EVENT, { detail: open }))
     return () => {

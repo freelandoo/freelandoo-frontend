@@ -1,0 +1,202 @@
+// Meu Mundo 3D — mm3d-30: notificações, sino, caixa de entrada, aba Itens,
+// Poléns no jogo e as skins feminina e Ekaterina. Namespace "MeuMundo". Idempotente,
+// fill-if-absent. Rodar: node scripts/i18n-meu-mundo-inbox-merge.js
+const fs = require("fs")
+const path = require("path")
+
+const dir = path.join(__dirname, "..", "messages")
+
+const MEU_MUNDO = {
+  // skin feminina
+  skinFeminina: ["Personagem feminina", "Female character", "Personaje femenina"],
+  skinFemininaLine: ["A versão feminina da personagem do Meu Mundo.", "The female version of the Meu Mundo character.", "La versión femenina del personaje de Meu Mundo."],
+  bodyFemale: ["Feminina", "Female", "Femenina"],
+  // skin Ekaterina
+  skinEkaterina: ["Ekaterina", "Ekaterina", "Ekaterina"],
+  skinEkaterinaLine: [
+    "Jaqueta de couro e olhar de quem manda no Coliseu.",
+    "Leather jacket and the look of someone who runs the Colosseum.",
+    "Chaqueta de cuero y mirada de quien manda en el Coliseo.",
+  ],
+  // cards de notificação
+  ntRegion: ["Notificações", "Notifications", "Notificaciones"],
+  ntGiftTitle: ["Chegou um presente para você!", "You got a gift!", "¡Te llegó un regalo!"],
+  ntPolensTitle: ["Poléns creditados", "Pollens credited", "Poléns acreditados"],
+  ntPolensLine: ["{n} Poléns entraram na sua carteira.", "{n} Pollens were added to your wallet.", "{n} Poléns entraron en tu cartera."],
+  ntReceiptTitle: ["Compra confirmada", "Purchase confirmed", "Compra confirmada"],
+  ntOfficial: ["Comunicado oficial", "Official notice", "Comunicado oficial"],
+  ntOfficialLine: ["Comunicado do Meu Mundo", "A notice from Meu Mundo", "Comunicado de Meu Mundo"],
+  ntPromo: ["Promoção", "Promotion", "Promoción"],
+  ntPromoLine: ["Promoção do Meu Mundo", "A Meu Mundo promotion", "Promoción de Meu Mundo"],
+  ntDeath: ["Seu hóspede morreu.", "Your resident died.", "Tu huésped murió."],
+  ntHeartAttack: ["Ele teve um infarto!", "He had a heart attack!", "¡Tuvo un infarto!"],
+  ntHospitalIn: ["Fui levado ao hospital.", "I was taken to the hospital.", "Me llevaron al hospital."],
+  ntHospitalOut: ["Recebi alta do hospital!", "I was discharged from the hospital!", "¡Me dieron el alta del hospital!"],
+  ntDiabetes: ["Fui diagnosticado com diabetes.", "I was diagnosed with diabetes.", "Me diagnosticaron diabetes."],
+  ntHypertension: ["Fui diagnosticado com pressão alta.", "I was diagnosed with high blood pressure.", "Me diagnosticaron presión alta."],
+  ntBorn: ["Um novo hóspede chegou (geração {n}).", "A new resident arrived (generation {n}).", "Llegó un nuevo huésped (generación {n})."],
+  ntLife: ["Algo mudou na vida do hóspede.", "Something changed in your resident's life.", "Algo cambió en la vida del huésped."],
+  ntOpenGift: ["Abrir presente", "Open gift", "Abrir regalo"],
+  ntOpenReceipt: ["Ver recibo", "View receipt", "Ver recibo"],
+  ntRead: ["Ler", "Read", "Leer"],
+  // sino e caixa
+  ibEyebrow: ["Meu Mundo", "Meu Mundo", "Meu Mundo"],
+  ibNoticesTitle: ["Notificações", "Notifications", "Notificaciones"],
+  ibMailTitle: ["Caixa de entrada", "Inbox", "Bandeja de entrada"],
+  ibMailShort: ["Caixa", "Inbox", "Bandeja"],
+  ibViews: ["Notificações e caixa de entrada", "Notifications and inbox", "Notificaciones y bandeja de entrada"],
+  ibUnreadCount: ["{n} não lidas", "{n} unread", "{n} sin leer"],
+  ibToday: ["Hoje", "Today", "Hoy"],
+  ibYesterday: ["Ontem", "Yesterday", "Ayer"],
+  ibFilter: ["Filtrar notificações", "Filter notifications", "Filtrar notificaciones"],
+  ibAll: ["Todas", "All", "Todas"],
+  ibUnread: ["Não lidas", "Unread", "Sin leer"],
+  ibCharacter: ["Personagem", "Character", "Personaje"],
+  ibRewards: ["Presentes e compras", "Gifts and purchases", "Regalos y compras"],
+  ibOfficial: ["Oficiais", "Official", "Oficiales"],
+  ibMarkAll: ["Marcar todas como lidas", "Mark all as read", "Marcar todas como leídas"],
+  ibMarkAllShort: ["Marcar como lidas", "Mark as read", "Marcar como leídas"],
+  ibEmptyUnread: ["Tudo lido por aqui.", "All caught up.", "Todo leído por aquí."],
+  ibEmptyNotices: ["Nenhuma notificação ainda.", "No notifications yet.", "Aún no hay notificaciones."],
+  ibNew: ["Não lida", "Unread", "Sin leer"],
+  ibMailTabs: ["Categorias da caixa", "Inbox categories", "Categorías de la bandeja"],
+  ibMessages: ["Mensagens", "Messages", "Mensajes"],
+  ibGifts: ["Presentes", "Gifts", "Regalos"],
+  ibOfficialTab: ["Oficiais", "Official", "Oficiales"],
+  ibPromos: ["Promoções", "Promotions", "Promociones"],
+  ibReceipts: ["Compras", "Purchases", "Compras"],
+  ibPromosPref: ["Receber promoções", "Receive promotions", "Recibir promociones"],
+  ibClaimed: ["Resgatado", "Claimed", "Canjeado"],
+  ibToClaim: ["Toque para resgatar", "Tap to claim", "Toca para canjear"],
+  ibFromPlatform: ["Meu Mundo", "Meu Mundo", "Meu Mundo"],
+  ibEmptyGifts: ["Nenhum presente por enquanto.", "No gifts for now.", "Ningún regalo por ahora."],
+  ibEmptyPromos: ["Nenhuma promoção agora.", "No promotions right now.", "Ninguna promoción ahora."],
+  ibEmptyReceipts: ["Suas compras aparecem aqui.", "Your purchases show up here.", "Tus compras aparecen aquí."],
+  ibEmptyOfficial: ["Nenhum comunicado.", "No notices.", "Ningún comunicado."],
+  ibClaimFull: [
+    "A geladeira não cabe mais desse item. Coma ou abra espaço e tente de novo.",
+    "Your fridge can't hold more of this item. Eat some or make room and try again.",
+    "La nevera no admite más de este artículo. Come o haz espacio e inténtalo de nuevo.",
+  ],
+  ibBack: ["Voltar à caixa", "Back to inbox", "Volver a la bandeja"],
+  ibReceiptProduct: ["Pacote: {name}", "Pack: {name}", "Paquete: {name}"],
+  ibGiftReady: ["Pronto para resgatar", "Ready to claim", "Listo para canjear"],
+  ibClaim: ["Resgatar", "Claim", "Canjear"],
+  ibGiftOwned: ["Você já tinha — continua no seu vestuário.", "You already had it — it's still in your wardrobe.", "Ya lo tenías — sigue en tu vestuario."],
+  ibGiftFridge: ["Recebido · está na sua geladeira (aba Itens).", "Received · it's in your fridge (Items tab).", "Recibido · está en tu nevera (pestaña Objetos)."],
+  ibGiftWardrobe: ["Recebido · está no seu vestuário (aba Itens).", "Received · it's in your wardrobe (Items tab).", "Recibido · está en tu vestuario (pestaña Objetos)."],
+  ibGiftWallet: ["Recebido · moedas na sua carteira do jogo.", "Received · coins in your game wallet.", "Recibido · monedas en tu cartera del juego."],
+  ibEmptyMessages: ["Nenhuma conversa ainda.", "No conversations yet.", "Aún no hay conversaciones."],
+  ibMessagesHint: [
+    "Suas conversas da Freelandoo. Abrem em outra aba, sem sair do jogo.",
+    "Your Freelandoo conversations. They open in another tab, without leaving the game.",
+    "Tus conversaciones de Freelandoo. Se abren en otra pestaña, sin salir del juego.",
+  ],
+  ibLoadFail: ["Não carregou agora.", "Couldn't load right now.", "No se pudo cargar ahora."],
+  ibRetry: ["Tentar de novo", "Try again", "Intentar de nuevo"],
+  ibMore: ["Carregar mais", "Load more", "Cargar más"],
+  // aba Itens
+  itTitle: ["Itens", "Items", "Objetos"],
+  itEyebrow: ["Seus bens", "Your belongings", "Tus bienes"],
+  itAll: ["Todos", "All", "Todos"],
+  itGroups: ["Categorias", "Categories", "Categorías"],
+  itNew: ["Novos", "New", "Nuevos"],
+  itNewBadge: ["Novo", "New", "Nuevo"],
+  itSearch: ["Buscar", "Search", "Buscar"],
+  itNoMatch: ["Nada com esse nome.", "Nothing with that name.", "Nada con ese nombre."],
+  itEmpty: [
+    "Nada aqui ainda. O mercado do Status compra para a sua geladeira.",
+    "Nothing here yet. The Status market buys for your fridge.",
+    "Nada aquí todavía. El mercado de Estado compra para tu nevera.",
+  ],
+  itLoadFail: ["Não carregou seus itens.", "Couldn't load your items.", "No se cargaron tus objetos."],
+  itWallet: ["Moedas do jogo: {n}", "Game coins: {n}", "Monedas del juego: {n}"],
+  itGroupFood: ["Alimentos", "Food", "Alimentos"],
+  itGroupHealth: ["Saúde e energia", "Health and energy", "Salud y energía"],
+  itGroupWardrobe: ["Vestuário", "Wardrobe", "Vestuario"],
+  itGroupVehicles: ["Veículos", "Vehicles", "Vehículos"],
+  itGroupHome: ["Casa", "Home", "Casa"],
+  itCar: ["Carro", "Car", "Coche"],
+  itBike: ["Bicicleta", "Bike", "Bicicleta"],
+  itSkate: ["Skate", "Skateboard", "Monopatín"],
+  itSkates: ["Patins", "Roller skates", "Patines"],
+  itHouse: ["Casa nível {n}", "Level {n} house", "Casa nivel {n}"],
+  itHouseLine: ["Lote {lot} · {nb}", "Lot {lot} · {nb}", "Lote {lot} · {nb}"],
+  itCoinsGift: ["{n} moedas do jogo", "{n} game coins", "{n} monedas del juego"],
+  itSkinGift: ["Skin: {name}", "Skin: {name}", "Skin: {name}"],
+  itWearing: ["Vestida", "Wearing", "Puesta"],
+  itWearingNow: ["Você está usando", "You're wearing it", "La estás usando"],
+  itWear: ["Vestir", "Wear", "Vestir"],
+  itSkinOwned: ["Skin sua, para sempre.", "Your skin, forever.", "Tu skin, para siempre."],
+  itInFridge: ["{n} na sua geladeira", "{n} in your fridge", "{n} en tu nevera"],
+  itEatHint: ["Para comer ou tomar, abra a geladeira dentro de casa.", "To eat or drink, open the fridge inside your home.", "Para comer o tomar, abre la nevera dentro de casa."],
+  itAtSpot: ["Na vaga da sua casa.", "In your home's parking spot.", "En la plaza de tu casa."],
+  itInHouse: ["Guardado dentro de casa.", "Stored inside your home.", "Guardado dentro de casa."],
+  itOnStreet: ["Ficou na rua do bairro, onde você deixou.", "Left on the street, where you parked it.", "Quedó en la calle del barrio, donde lo dejaste."],
+  menuItemsHint: ["Comida, vestuário, veículos e casa", "Food, wardrobe, vehicles and home", "Comida, vestuario, vehículos y casa"],
+  menuInboxHint: ["Presentes, comunicados e compras", "Gifts, notices and purchases", "Regalos, comunicados y compras"],
+  // Poléns
+  plEyebrow: ["Carteira", "Wallet", "Cartera"],
+  plTitle: ["Adquirir Poléns", "Get Pollens", "Adquirir Poléns"],
+  plCoins: ["Moedas do jogo", "Game coins", "Monedas del juego"],
+  plPolens: ["Poléns", "Pollens", "Poléns"],
+  plUnavailable: ["Saldo indisponível agora", "Balance unavailable right now", "Saldo no disponible ahora"],
+  plBuyShort: ["+ Poléns", "+ Pollens", "+ Poléns"],
+  plRule: [
+    "Poléns são a moeda paga da Freelandoo: valem aqui e no resto da plataforma. Não viram moedas do jogo, e moedas do jogo não viram Poléns.",
+    "Pollens are Freelandoo's paid currency: they work here and across the platform. They don't turn into game coins, and game coins don't turn into Pollens.",
+    "Los Poléns son la moneda de pago de Freelandoo: valen aquí y en el resto de la plataforma. No se convierten en monedas del juego, ni las monedas del juego en Poléns.",
+  ],
+  plLoadFail: ["Os pacotes não carregaram.", "Packs didn't load.", "Los paquetes no cargaron."],
+  plNoProducts: ["Nenhum pacote à venda agora.", "No packs for sale right now.", "Ningún paquete a la venta ahora."],
+  plAmount: ["{n} Poléns", "{n} Pollens", "{n} Poléns"],
+  plBonus: ["+ {n} de bônus", "+ {n} bonus", "+ {n} de bono"],
+  plMp: [
+    "Pagamento pelo Mercado Pago. Os Poléns entram na carteira quando o pagamento é confirmado — você recebe um aviso no sino.",
+    "Payment via Mercado Pago. Pollens are added once the payment is confirmed — you'll get a notification on the bell.",
+    "Pago con Mercado Pago. Los Poléns entran en la cartera cuando se confirma el pago — recibes un aviso en la campana.",
+  ],
+  plReturnTitle: ["Compra de Poléns", "Pollens purchase", "Compra de Poléns"],
+  plPaid: ["Pagamento confirmado: {n} Poléns na sua carteira.", "Payment confirmed: {n} Pollens in your wallet.", "Pago confirmado: {n} Poléns en tu cartera."],
+  plChecking: ["Confirmando o pagamento com o Mercado Pago…", "Confirming the payment with Mercado Pago…", "Confirmando el pago con Mercado Pago…"],
+  plPending: [
+    "O pagamento ainda está em análise. Quando for confirmado, os Poléns entram e você recebe um aviso no sino.",
+    "The payment is still under review. Once confirmed, the Pollens are added and you get a notification on the bell.",
+    "El pago aún está en análisis. Cuando se confirme, los Poléns entran y recibes un aviso en la campana.",
+  ],
+  plFailed: [
+    "O pagamento não foi aprovado. Nenhum Polén foi cobrado nem creditado.",
+    "The payment wasn't approved. No Pollens were charged or credited.",
+    "El pago no fue aprobado. No se cobró ni acreditó ningún Polén.",
+  ],
+  plCanceled: ["Compra cancelada. Nada foi cobrado.", "Purchase canceled. Nothing was charged.", "Compra cancelada. No se cobró nada."],
+  plUnknown: [
+    "Não deu para conferir esta compra. Se o pagamento for aprovado, o aviso chega no sino.",
+    "We couldn't check this purchase. If the payment is approved, you'll be notified on the bell.",
+    "No pudimos verificar esta compra. Si el pago se aprueba, el aviso llega a la campana.",
+  ],
+  plOk: ["Entendi", "Got it", "Entendido"],
+  stPolens: ["{n} Poléns", "{n} Pollens", "{n} Poléns"],
+  stPolensOff: ["Poléns —", "Pollens —", "Poléns —"],
+  skinNoPolens: ["Poléns insuficientes", "Not enough Pollens", "Poléns insuficientes"],
+  skinPolensOff: ["Saldo de Poléns indisponível", "Pollens balance unavailable", "Saldo de Poléns no disponible"],
+  skinPolensShort: ["Faltam {n} Poléns", "{n} Pollens short", "Faltan {n} Poléns"],
+  skinPolensConfirm: ["Confirmar · {n} Poléns (fica {left})", "Confirm · {n} Pollens ({left} left)", "Confirmar · {n} Poléns (quedan {left})"],
+  skinPolensOnly: ["Exclusivo Poléns", "Pollens exclusive", "Exclusivo Poléns"],
+}
+
+const LOCALES = ["pt-BR", "en", "es"]
+let added = 0
+for (const [i, locale] of LOCALES.entries()) {
+  const file = path.join(dir, `${locale}.json`)
+  const json = JSON.parse(fs.readFileSync(file, "utf8"))
+  json.MeuMundo = json.MeuMundo || {}
+  for (const [key, vals] of Object.entries(MEU_MUNDO)) {
+    if (json.MeuMundo[key] === undefined) {
+      json.MeuMundo[key] = vals[i]
+      added++
+    }
+  }
+  fs.writeFileSync(file, JSON.stringify(json, null, 2) + "\n")
+}
+console.log(`i18n meu-mundo inbox: ${added} chaves adicionadas`)

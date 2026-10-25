@@ -81,6 +81,8 @@ export interface NeighborhoodSceneProps {
   onOpenStatus?: (body: BodyId) => void
   /** Outra tela 3D por cima (hospital, mm3d-26): a sala segue ligada, o desenho para. */
   suspended?: boolean
+  /** Entradas da casca na gaveta (mm3d-30): Itens e a caixa de entrada. */
+  menuExtras?: DrawerItem[]
 }
 
 export default function MeuMundoView({
@@ -94,6 +96,7 @@ export default function MeuMundoView({
   blocked,
   onOpenStatus,
   suspended,
+  menuExtras,
 }: NeighborhoodSceneProps) {
   const t = useTranslations("MeuMundo")
   const nb = payload.neighborhood
@@ -307,6 +310,7 @@ export default function MeuMundoView({
     ...(onOpenStatus
       ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, kind: "nav" as const, onSelect: () => onOpenStatus(body) }]
       : []),
+    ...(menuExtras ?? []),
     ...(!payload.me.visitor
       ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, kind: "nav" as const, onSelect: onOpenInvite }]
       : []),

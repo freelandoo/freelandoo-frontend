@@ -50,6 +50,13 @@ const ASSETS = {
     // Sergio, o lutador da RA da Casa Views (pipeline/build_sergio.py): o
     // esqueleto e os pesos são os dele; as animações são as mesmas do bairro.
     sergio: "avatar-sergio-basecolor-512.jpg",
+    // A personagem feminina (mm3d-30, pipeline/build_female.py): no esqueleto
+    // do normal SEM encaixe — usa todas as animações do conjunto "base".
+    female: "avatar-female-basecolor-512.jpg",
+    // Ekaterina (mm3d-30, pipeline/build_ekaterina.py): esqueleto encaixado
+    // nas proporções dela, então um conjunto de animações próprio (como o
+    // Sergio); 5 mil tris, textura 512, sem malha leve (como o Sergio).
+    ekaterina: "avatar-ekaterina-basecolor-512.jpg",
   } satisfies Record<BodyId, string>,
   bodies: {
     normal: "avatar-normal.glb",
@@ -59,6 +66,8 @@ const ASSETS = {
     // mm3d-22: pesos do ombro suavizados (pipeline/fix_sergio_shoulder.py) —
     // no skate e na bike o ombro abria um vinco na cava da regata.
     sergio: "avatar-sergio-m22.glb",
+    female: "avatar-female.glb",
+    ekaterina: "avatar-ekaterina.glb",
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -69,6 +78,7 @@ const ASSETS = {
     slim: "avatar-slim-lod.glb",
     fat: "avatar-fat-lod.glb",
     strong: "avatar-strong-lod.glb",
+    female: "avatar-female-lod.glb",
   } as Partial<Record<BodyId, string>>,
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
@@ -78,6 +88,7 @@ const ASSETS = {
     fat: "anim-locomotion-fat.glb",
     strong: "anim-locomotion-strong.glb",
     sergio: "anim-locomotion-sergio.glb",
+    ekaterina: "anim-locomotion-ekaterina.glb",
   },
   // Pose "Sit" (mm3d-09, pipeline/build_sit.py): só dentro das casas — a rua
   // não baixa estes arquivos.
@@ -86,6 +97,7 @@ const ASSETS = {
     fat: "anim-sit-fat.glb",
     strong: "anim-sit-strong.glb",
     sergio: "anim-sit-sergio.glb",
+    ekaterina: "anim-sit-ekaterina.glb",
   },
   // Descanso e cansaço (mm3d-13, pipeline/build_rest.py): Lie (deitado de
   // costas), Sleep (dormindo de lado), TiredIdle e TiredWalk (tronco curvado,
@@ -97,6 +109,7 @@ const ASSETS = {
     fat: "anim-rest-fat-m28.glb",
     strong: "anim-rest-strong-m28.glb",
     sergio: "anim-rest-sergio-m28.glb",
+    ekaterina: "anim-rest-ekaterina-m28.glb",
   },
   // Bicicleta, skate e patins — no referencial do veículo; só a rua baixa
   // estes arquivos. mm3d-22 (pipeline/build_ride_mocap.py): SkateRide (o
@@ -109,12 +122,13 @@ const ASSETS = {
     fat: "anim-ride-fat-m23.glb",
     strong: "anim-ride-strong-m23.glb",
     sergio: "anim-ride-sergio-m23.glb",
+    ekaterina: "anim-ride-ekaterina-m23.glb",
   },
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
-export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203 }
+export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
 type AnimSet = keyof typeof ASSETS.anims
-const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio" }
+const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 
 /** Arquivos de um corpo, para quem desenha o avatar fora do Babylon (o jetpack, mm3d-20). */

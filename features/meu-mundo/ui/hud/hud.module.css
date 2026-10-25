@@ -470,6 +470,32 @@
     opacity: 0;
   }
 }
+/* Card de notificação (mm3d-30): sai subindo e some (só transform/opacity). */
+.leaveTop {
+  animation: mm-lift 180ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+@keyframes mm-lift {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+/* Tempo restante do card: barra que encolhe por transform (pausa com o ponteiro em cima). */
+.timer {
+  transform-origin: left center;
+  animation: mm-timer linear forwards;
+}
+.timer[data-paused] {
+  animation-play-state: paused;
+}
+@keyframes mm-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
 
 /* ═══ celular: um pouco mais compacto (tudo tocável com folga) ═══ */
 @media (max-width: 759px) {
@@ -539,7 +565,12 @@
   .scrim,
   .enter,
   .enterTop,
+  .leaveTop,
   .fade {
+    animation: none;
+  }
+  /* sem animação, o tempo do card continua valendo (o JS fecha), só não aparece encolhendo */
+  .timer {
     animation: none;
   }
   .spin {

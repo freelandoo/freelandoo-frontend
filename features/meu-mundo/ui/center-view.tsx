@@ -73,9 +73,11 @@ export interface CenterSceneProps {
   onOpenStatus?: (body: BodyId) => void
   /** Outra tela 3D por cima (hospital, mm3d-26): a sala segue ligada, o desenho para. */
   suspended?: boolean
+  /** Entradas da casca na gaveta (mm3d-30): Itens e a caixa de entrada. */
+  menuExtras?: DrawerItem[]
 }
 
-export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, suspended }: CenterSceneProps) {
+export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras }: CenterSceneProps) {
   const t = useTranslations("MeuMundo")
   const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -251,6 +253,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     ...(onOpenStatus
       ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, kind: "nav" as const, onSelect: () => onOpenStatus(body) }]
       : []),
+    ...(menuExtras ?? []),
     ...(drivingLot
       ? [{ id: "recover", label: t("recoverCar", "Recuperar"), hint: t("centerRecoverHint", "Preso? Volta para uma vaga livre (parado, a cada 15 s)."), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.recoverCar() }]
       : []),

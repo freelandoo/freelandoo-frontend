@@ -14,13 +14,15 @@
 // baixo, ligado à sala, que é por onde a alta chega.
 // Avisos com retrato (mm3d-28): as necessidades vêm no mesmo "life" e o balão
 // mora aqui, então a memória do que já foi dito sobrevive à troca de cena.
+// Sino, caixa de entrada, Itens e Poléns (mm3d-30) também moram aqui: a sala
+// empurra "notice"; os painéis valem em todas as cenas.
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { DoorOpen, Home, Loader2, Send } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Backpack, DoorOpen, Home, Loader2, Mail, Send } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import MeuMundoView from "./meu-mundo-view"
-import { EvoButton, EvoDialog, EvoToast } from "./hud/hud-kit"
+import { EvoButton, EvoDialog, EvoToast, type DrawerItem } from "./hud/hud-kit"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { MM } from "./hud/tokens"
 import HouseView from "./house-view"
@@ -28,10 +30,15 @@ import CenterView from "./center-view"
 import StatusScreen from "./status/status-screen"
 import { HospitalView } from "./hospital-view"
 import { AmbulanceCurtain, useHospitalStay } from "./hospital-stay"
-import NeedsBubble from "./needs/needs-bubble"
+import NoticeStack from "./inbox/notice-stack"
+import HudInbox from "./inbox/hud-inbox"
+import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
+import ItemsPanel from "./items/items-panel"
+import PolensSheet, { PolensReturn } from "./polens/polens-sheet"
 import {
   fetchAdminNeighborhood,
   getInviteCandidates,
+  getNoticeSummary,
   getVisits,
   postAccept,
   postCancel,
@@ -43,7 +50,18 @@ import {
   postHouseExit,
   postInvite,
 } from "../data"
-import { BODY_IDS, type BodyId, type CenterPayload, type HousePayload, type LifeNeed, type NeighborhoodPayload, type ScenePayload, type VisitState } from "../types"
+import {
+  BODY_IDS,
+  type BodyId,
+  type CenterPayload,
+  type HousePayload,
+  type InboxCounts,
+  type LifeNeed,
+  type MMNotice,
+  type NeighborhoodPayload,
+  type ScenePayload,
+  type VisitState,
+} from "../types"
 
 const isHouse = (p: ScenePayload): p is HousePayload => (p as HousePayload).scene === "house"
 const isCenter = (p: ScenePayload): p is CenterPayload => (p as CenterPayload).scene === "center"
@@ -69,6 +87,12 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [asleep, setAsleep] = useState(() => initial.life?.character.activity.kind === "sleeping")
   const [avatar, setAvatar] = useState<BodyId>(() => initial.life?.avatar ?? initial.me.body)
   const onLife = stay.onLife
+  // Sino e caixa (mm3d-30): contadores do servidor + o que a sala empurrou.
+  const [counts, setCounts] = useState<InboxCounts | null>(null)
+  const [pushed, setPushed] = useState<MMNotice[]>([])
+  const [inbox, setInbox] = useState<InboxView | null>(null)
+  const [itemsOpen, setItemsOpen] = useState(false)
+  const [polensOpen, setPolensOpen] = useState(false)
   const busyRef = useRef(false)
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -168,8 +192,33 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     [run, t, errText],
   )
 
+  // Ao entrar: os contadores e, no máximo, as 2 notificações frescas (10 min)
+  // que ainda valem card — nunca a fila do tempo offline.
+  const refreshCounts = useCallback(async (withFresh = false) => {
+    const token = getToken()
+    if (!token) return
+    const r = await getNoticeSummary(token)
+    if (!r.ok) return
+    setCounts(r.data.counts)
+    if (withFresh && r.data.fresh.length) setPushed((l) => [...l, ...r.data.fresh])
+  }, [])
+  useEffect(() => {
+    void refreshCounts(true)
+  }, [refreshCounts])
+
   const onServerMessage = useCallback(
     (type: string, payload: unknown) => {
+      if (type === "notice") {
+        const n = payload as MMNotice | null
+        if (!n || typeof n.id !== "string") return
+        setPushed((l) => [...l.slice(-30), n])
+        setCounts((c) =>
+          c
+            ? { notices: c.notices + 1, mail: c.mail + (n.mailId ? 1 : 0), gifts: c.gifts + (n.kind === "gift" ? 1 : 0) }
+            : c,
+        )
+        return
+      }
       if (type === "visits") setVisits(payload as VisitState)
       else if (type === "life") {
         const p = payload as { status?: string; activity?: string; needs?: LifeNeed[]; body?: string } | null
@@ -298,7 +347,27 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // Hospital por cima só quando ele abriu de fato (a planta chegou): sem a
   // rota no ar, o jogo segue normal em vez de ficar parado embaixo do nada.
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
-  const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp
+  const panelOpen = !!inbox || itemsOpen || polensOpen
+  const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || panelOpen
+  const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
+  const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
+  const lifeChanged = useCallback(() => setLifeTick((n) => n + 1), [])
+  // Entradas da gaveta (as três cenas): Itens e a caixa de entrada.
+  const menuExtras: DrawerItem[] = useMemo(
+    () => [
+      { id: "items", label: t("itTitle", "Itens"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
+      {
+        id: "inbox",
+        label: t("ibMailTitle", "Caixa de entrada"),
+        hint: t("menuInboxHint", "Presentes, comunicados e compras"),
+        icon: <Mail className="h-5 w-5" />,
+        kind: "nav",
+        badge: counts?.mail ? String(counts.mail > 99 ? "99+" : counts.mail) : undefined,
+        onSelect: () => setInbox({ view: "mail", tab: counts?.gifts ? "gift" : "official" }),
+      },
+    ],
+    [t, counts],
+  )
   const suspended = hospitalUp
   const key = `${sceneKeyOf(scene)}#${mount}`
 
@@ -315,6 +384,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           blocked={overlayOpen}
           onOpenStatus={setStatusBody}
           suspended={suspended}
+          menuExtras={menuExtras}
         />
       ) : isHouse(scene) ? (
         <HouseView
@@ -328,6 +398,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           blocked={overlayOpen}
           onOpenStatus={setStatusBody}
           suspended={suspended}
+          menuExtras={menuExtras}
         />
       ) : (
         <MeuMundoView
@@ -342,6 +413,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           blocked={overlayOpen}
           onOpenStatus={setStatusBody}
           suspended={suspended}
+          menuExtras={menuExtras}
         />
       )}
 
@@ -361,11 +433,37 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
 
-      {!busy && !statusBody && !hospitalUp && !asleep && <NeedsBubble needs={needs} tick={needsTick} body={avatar} below={active || outgoing ? 56 : 0} onOpenStatus={() => setStatusBody(scene.me.body)} />}
+      {/* Notificações (mm3d-30): a fila segue mesmo escondida (STATUS, painel, sono) */}
+      <NoticeStack
+        needs={needs}
+        needsTick={needsTick}
+        pushed={pushed}
+        body={avatar}
+        below={active || outgoing ? 56 : 0}
+        hidden={!!busy || !!statusBody || hospitalUp || asleep || panelOpen}
+        onOpenStatus={openStatus}
+        onOpenNotice={(n) => setInbox(n.mailId ? { view: "mail", tab: n.kind === "gift" ? "gift" : n.kind === "promo" ? "promo" : n.kind === "purchase" ? "receipt" : "official", open: n.mailId } : { view: "notices" })}
+      />
+      {!overlayOpen && <HudInbox counts={counts} onBell={() => setInbox({ view: "notices" })} onMail={() => setInbox({ view: "mail", tab: counts?.gifts ? "gift" : "official" })} />}
 
       {statusBody && (
-        <StatusScreen name={scene.me.name} body={statusBody} lifeTick={lifeTick} onClose={() => setStatusBody(null)} />
+        <StatusScreen name={scene.me.name} body={statusBody} lifeTick={lifeTick} onClose={() => setStatusBody(null)} onOpenPolens={() => setPolensOpen(true)} />
       )}
+
+      {inbox && (
+        <InboxPanel
+          initial={inbox}
+          body={avatar}
+          counts={counts}
+          onCounts={onCounts}
+          onClose={() => setInbox(null)}
+          onOpenStatus={openStatus}
+          onClaimed={lifeChanged}
+        />
+      )}
+      {itemsOpen && <ItemsPanel onClose={() => setItemsOpen(false)} onChanged={lifeChanged} />}
+      {polensOpen && <PolensSheet onClose={() => setPolensOpen(false)} />}
+      <PolensReturn onPaid={() => void refreshCounts()} />
 
       {/* Faixa da visita (convite enviado ou visita em andamento) */}
       {(active || outgoing) && !busy && (

@@ -8,7 +8,7 @@
 
 import type { BodyId } from "./types"
 
-export type SkinId = "standard" | "sergio"
+export type SkinId = "standard" | "sergio" | "feminina" | "ekaterina"
 
 /** Palco 1672×941 com o pedestal no meio (os dois têm a mesma geometria). */
 export interface SkinStage {
@@ -52,6 +52,28 @@ export const SKINS: SkinArt[] = [
     taglineKey: "skinSergioLine",
     taglineFallback: "O lutador do Coliseu da Casa Views.",
     body: "sergio",
+    stage: { src: `${BASE}/coliseu.webp`, small: `${BASE}/coliseu-1024.webp` },
+    holo: { color: "#ff2b91", accent: "#ffd1e8" },
+  },
+  {
+    // mm3d-30: a versão feminina da personagem padrão, no mesmo palco dela.
+    id: "feminina",
+    labelKey: "skinFeminina",
+    fallback: "Personagem feminina",
+    taglineKey: "skinFemininaLine",
+    taglineFallback: "A versão feminina da personagem do Meu Mundo.",
+    body: "female",
+    stage: { src: `${BASE}/palco-meu-mundo.webp`, small: `${BASE}/palco-meu-mundo-1024.webp` },
+    holo: { color: "#ff2b3a", accent: "#ffd1d6" },
+  },
+  {
+    // mm3d-30: no palco do Sergio (o Coliseu neon).
+    id: "ekaterina",
+    labelKey: "skinEkaterina",
+    fallback: "Ekaterina",
+    taglineKey: "skinEkaterinaLine",
+    taglineFallback: "Jaqueta de couro e olhar de quem manda no Coliseu.",
+    body: "ekaterina",
     stage: { src: `${BASE}/coliseu.webp`, small: `${BASE}/coliseu-1024.webp` },
     holo: { color: "#ff2b91", accent: "#ffd1e8" },
   },

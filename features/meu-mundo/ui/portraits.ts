@@ -1,13 +1,71 @@
-// features/meu-mundo/ui/portraits.ts — o retrato pré-renderizado de cada
-// corpo/skin (pipeline/build_portraits.py). Uma imagem pequena por corpo: o
-// STATUS e o balão dos avisos (mm3d-28) usam a mesma, sem renderizar 3D.
+// features/meu-mundo/ui/portraits.ts — o retrato de cada corpo/skin. Imagem
+// pequena e estática (sem 3D): STATUS, notificações e cards usam a mesma.
+//
+// mm3d-30: o personagem PADRÃO (as quatro condições físicas — o corpo muda no
+// 3D, o rosto é o mesmo) ganhou a ilustração do Alex, em dois recortes:
+// 4:5 para cards retangulares e o ROSTO para círculos (a piscadinha no meio).
+// Cada skin tem o retrato e a folha de 12 expressões dela (fontes em
+// PERSONAGENS/STANDARD/<personagem>, recortadas por
+// pipeline/build_portraits_2d.py); os avisos falam com a expressão certa.
 
 import type { BodyId } from "../types"
 
+const V2 = "/meu-mundo/retratos/v2"
+const STANDARD = `${V2}/padrao.webp`
+const STANDARD_FACE = `${V2}/padrao-rosto.webp`
+// A personagem feminina (mm3d-30): retrato e expressões próprios, mesmo fundo.
+const FEMALE = `${V2}/feminina.webp`
+const FEMALE_FACE = `${V2}/feminina-rosto.webp`
+// Ekaterina (mm3d-30): retrato no Coliseu neon e expressões próprias.
+const EKATERINA = `${V2}/ekaterina.webp`
+const EKATERINA_FACE = `${V2}/ekaterina-rosto.webp`
+
+/** Retrato 4:5 (cards retangulares, STATUS). */
 export const PORTRAIT: Record<BodyId, string> = {
-  normal: "/meu-mundo/retratos/v1/normal.webp",
-  slim: "/meu-mundo/retratos/v1/slim.webp",
-  fat: "/meu-mundo/retratos/v1/fat.webp",
-  strong: "/meu-mundo/retratos/v1/strong.webp",
-  sergio: "/meu-mundo/retratos/v1/sergio.webp",
+  normal: STANDARD,
+  slim: STANDARD,
+  fat: STANDARD,
+  strong: STANDARD,
+  sergio: `${V2}/sergio.webp`,
+  female: FEMALE,
+  ekaterina: EKATERINA,
+}
+
+/** Recorte do rosto para círculos (avatar, notificação). */
+const FACE: Record<BodyId, string> = {
+  normal: STANDARD_FACE,
+  slim: STANDARD_FACE,
+  fat: STANDARD_FACE,
+  strong: STANDARD_FACE,
+  sergio: `${V2}/sergio-rosto.webp`,
+  female: FEMALE_FACE,
+  ekaterina: EKATERINA_FACE,
+}
+
+export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "normal"] ?? STANDARD_FACE
+
+/** Para quem só tem a URL do retrato 4:5 (Portrait redondo do STATUS). */
+export const faceForPortrait = (src: string) => (src === STANDARD ? STANDARD_FACE : src === FEMALE ? FEMALE_FACE : src === EKATERINA ? EKATERINA_FACE : src === PORTRAIT.sergio ? FACE.sergio : src)
+
+export type Expression =
+  | "worried"
+  | "fever"
+  | "happy"
+  | "satisfied"
+  | "grateful"
+  | "sleepy"
+  | "exhausted"
+  | "stressed"
+  | "thirsty"
+  | "nauseous"
+  | "crying"
+  | "determined"
+
+/** Prefixo da folha de expressões de cada corpo (o padrão vale para as quatro condições). */
+export function expressionSrc(body: BodyId | null | undefined, e: Expression | null): string {
+  if (!e) return faceOf(body)
+  if (body === "sergio") return `${V2}/expr-sergio-${e}.webp`
+  if (body === "female") return `${V2}/expr-feminina-${e}.webp`
+  if (body === "ekaterina") return `${V2}/expr-ekaterina-${e}.webp`
+  return `${V2}/expr-${e}.webp`
 }

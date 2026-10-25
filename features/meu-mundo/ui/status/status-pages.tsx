@@ -39,6 +39,7 @@ import { Bar, Chamfer, EVO, Gauge, Plate, Ring, Tag, archivo, teko, toneFor } fr
 import { MM } from "../hud/tokens"
 import { Arc, Card, effectText, toneColor } from "../fridge/shelf"
 import { effectsOf, thumbOf } from "../fridge/fridge-logic"
+import { faceForPortrait } from "../portraits"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -53,6 +54,8 @@ export interface PageActions {
   newcomer: () => void
   /** Abre o vestuário (botão SKIN embaixo da foto, mm3d-16). */
   openSkins: () => void
+  /** Adquirir Poléns pelo checkout oficial (mm3d-30). */
+  openPolens?: () => void
 }
 
 export interface PageProps {
@@ -194,6 +197,18 @@ function quote(c: LifeCharacter, t: Tr) {
   if (v.mood >= 70) return t("qHappy", "Ele está feliz.")
   return t("qFine", "Ele está bem.")
 }
+/**
+ * As duas moedas, separadas (mm3d-30): as do jogo e Poléns (a moeda paga da
+ * Freelandoo, da carteira oficial). Poléns ainda não lidos não aparecem;
+ * indisponível mostra "—" — nunca um zero que não foi confirmado.
+ */
+export function walletText(life: LifeFull, t: Tr) {
+  const coins = t("stCoins", "{n} moedas").replace("{n}", String(life.wallet.coins))
+  const p = life.wallet.polens
+  if (p === undefined) return coins
+  return `${coins} · ${p === null ? t("stPolensOff", "Poléns —") : t("stPolens", "{n} Poléns").replace("{n}", String(p))}`
+}
+
 export function itemName(it: LifeItem, t: Tr) {
   return t(`item_${it.id}`, it.name)
 }
@@ -272,7 +287,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
       return t("evHeartAttack", "Teve um infarto.")
     case "skin_bought":
       return (Number(data.price) > 0 ? t("evSkinAcquired", "Adquiriu a skin {skin} ({n} moedas).") : t("evSkinAcquiredFree", "Adquiriu a skin {skin}."))
-        .replace("{skin}", data.skin === "sergio" ? "Sergio" : String(data.skin ?? ""))
+        .replace("{skin}", data.skin === "sergio" ? "Sergio" : data.skin === "feminina" ? t("skinFeminina", "Personagem feminina") : data.skin === "ekaterina" ? "Ekaterina" : String(data.skin ?? ""))
         .replace("{n}", String(data.price ?? ""))
     case "death":
       return t("evDeath", "Morreu: {cause}.").replace("{cause}", causeLabel(String(data.cause ?? ""), t))
@@ -320,7 +335,7 @@ function Portrait({ src, size, round = false }: { src: string; size: number; rou
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- retrato pequeno, local, só no jogo (admin) */}
-      <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover object-top" draggable={false} />
+      <img src={round ? faceForPortrait(src) : src} alt="" decoding="async" className="absolute inset-0 h-full w-full object-cover object-top" draggable={false} />
     </div>
   )
 }
@@ -346,7 +361,7 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
             {name}
           </div>
           <div className={`${archivo.className} truncate text-[10px] leading-tight`} style={{ color: EVO.mudo }}>
-            {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {t("stCoins", "{n} moedas").replace("{n}", String(life.wallet.coins))}
+            {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {walletText(life, t)}
           </div>
         </div>
       </div>
@@ -371,7 +386,7 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
               {name}
             </span>
             <span className={`${archivo.className} truncate text-[13px]`} style={{ color: EVO.mudo }}>
-              {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {t("stCoins", "{n} moedas").replace("{n}", String(life.wallet.coins))}
+              {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {walletText(life, t)}
             </span>
           </div>
         )}
@@ -387,7 +402,7 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
               {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} • {personalityLabel(c.personality, t)}
             </div>
             <div className={`${archivo.className} text-[16px]`} style={{ color: EVO.branco }}>
-              {t("stDaysLived", "{n} dias de vida").replace("{n}", String(days))} • {t("stCoins", "{n} moedas").replace("{n}", String(life.wallet.coins))} •{" "}
+              {t("stDaysLived", "{n} dias de vida").replace("{n}", String(days))} • {walletText(life, t)} •{" "}
               {t("stToday", "Hoje: {c}").replace("{c}", conditionLabel(c.today.label, t))}
             </div>
           </div>
@@ -630,7 +645,7 @@ function BodyPage({ life, compact, t }: PageProps) {
   const c = life.character
   const b = c.body
   const h = c.health
-  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio" }[b.bodyHint]
+  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina" }[b.bodyHint]
   const dis = (s: "none" | "controlled" | "uncontrolled") =>
     s === "none" ? <Tag tone="bom">{t("disNone", "Não tem")}</Tag> : s === "controlled" ? <Tag>{t("disControlled", "Controlada")}</Tag> : <Tag tone="perigo">{t("disUncontrolled", "Sem remédio")}</Tag>
   return (
@@ -919,7 +934,12 @@ function Market({ life, compact, t, act }: PageProps) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className={`${teko.className} text-[30px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-          {t("mkWallet", "Carteira")}: <span style={{ color: EVO.douradoClaro }}>{t("stCoins", "{n} moedas").replace("{n}", String(life.wallet.coins))}</span>
+          {t("mkWallet", "Carteira")}: <span style={{ color: EVO.douradoClaro }}>{walletText(life, t)}</span>
+          {act.openPolens && (
+            <button type="button" onClick={act.openPolens} className={`${archivo.className} ml-3 align-middle text-[15px] font-semibold normal-case underline decoration-1 underline-offset-4`} style={{ color: MM.gold }}>
+              {t("plBuyShort", "+ Poléns")}
+            </button>
+          )}
         </div>
         <span className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
           {t("mkHintFridge", "Tudo vai para a geladeira da sua casa — é lá que ele come. Saudável é caro, porcaria é barata.")}
@@ -1320,7 +1340,7 @@ function BodyC({ life, t }: PageProps) {
   const c = life.character
   const b = c.body
   const h = c.health
-  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio" }[b.bodyHint]
+  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina" }[b.bodyHint]
   const dis = (s: "none" | "controlled" | "uncontrolled") =>
     s === "none" ? <MiniTag tone="bom">{t("disNone", "Não tem")}</MiniTag> : s === "controlled" ? <MiniTag>{t("disControlled", "Controlada")}</MiniTag> : <MiniTag tone="perigo">{t("disUncontrolled", "Sem remédio")}</MiniTag>
   const bar = (label: string, shown: string, value: number, max: number, color: string) => (
@@ -1626,7 +1646,12 @@ function MarketC({ life, t, act }: PageProps) {
     <div className="flex flex-col gap-2">
       <div>
         <div className={`${teko.className} text-[18px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-          {t("mkWallet", "Carteira")}: <span style={{ color: EVO.douradoClaro }}>{t("stCoins", "{n} moedas").replace("{n}", String(life.wallet.coins))}</span>
+          {t("mkWallet", "Carteira")}: <span style={{ color: EVO.douradoClaro }}>{walletText(life, t)}</span>
+          {act.openPolens && (
+            <button type="button" onClick={act.openPolens} className={`${archivo.className} ml-2 align-middle text-[12px] font-semibold normal-case underline decoration-1 underline-offset-2`} style={{ color: MM.gold }}>
+              {t("plBuyShort", "+ Poléns")}
+            </button>
+          )}
         </div>
         <p className={`${archivo.className} mt-0.5 text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
           {t("mkHintFridge", "Tudo vai para a geladeira da sua casa — é lá que ele come. Saudável é caro, porcaria é barata.")}

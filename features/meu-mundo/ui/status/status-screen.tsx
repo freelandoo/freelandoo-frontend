@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getLife, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
+import { getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, FUNDO, archivo } from "./evo-skin"
 import { MM } from "../hud/tokens"
@@ -77,9 +77,11 @@ export interface StatusScreenProps {
   onClose: () => void
   /** Sobe quando a sala avisa que a vida mudou (mensagem "life"). */
   lifeTick?: number
+  /** Adquirir Poléns (mm3d-30): a folha da casca, por cima do STATUS. */
+  onOpenPolens?: () => void
 }
 
-export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: StatusScreenProps) {
+export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpenPolens }: StatusScreenProps) {
   const t = useTranslations("MeuMundo")
   const [life, setLife] = useState<LifeFull | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -100,9 +102,11 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
   const load = useCallback(async () => {
     const token = getToken()
     if (!token) return
-    const r = await getLife(token)
+    // As duas moedas (mm3d-30): a vida traz as do jogo; Poléns vêm da carteira
+    // oficial. Falha nos Poléns = null ("—"), nunca zero.
+    const [r, w] = await Promise.all([getLife(token), getWallets(token)])
     if (r.ok) {
-      setLife(r.data)
+      setLife({ ...r.data, wallet: { ...r.data.wallet, polens: w.ok ? w.data.wallet.polens : null } })
       if (r.data.avatar) setAvatar(r.data.avatar)
       setError(null)
     } else setError(r.error)
@@ -143,8 +147,9 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
       buy: (item) => void run((tk) => postLifeBuy(tk, item), t("mkStored", "Guardado na geladeira")),
       newcomer: () => void run((tk) => postLifeNewcomer(tk)),
       openSkins: () => setWardrobe(true),
+      openPolens: onOpenPolens,
     }),
-    [busy, run, t],
+    [busy, run, t, onOpenPolens],
   )
 
   // ── tamanho: carrossel no computador, card único no celular ─────────────
@@ -327,7 +332,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
       onClose={() => setWardrobe(false)}
       onChanged={(r) => {
         if (r.avatar) setAvatar(r.avatar)
-        setLife((l) => (l ? { ...l, wallet: r.wallet, character: r.character } : l))
+        setLife((l) => (l ? { ...l, wallet: { ...l.wallet, ...r.wallet }, character: r.character } : l))
       }}
     />
   )

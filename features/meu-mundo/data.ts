@@ -5,7 +5,27 @@
 // Quem decide quem pode ver é o SERVIDOR (auth + papel Administrator): 401 e
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
-import type { CenterPayload, HospitalInfo, HousePayload, JetpackSession, LifeFull, LifeSummary, MultiplayerSession, NeighborhoodPayload, ScenePayload, VisitState, WardrobeResult } from "./types"
+import type {
+  CenterPayload,
+  HospitalInfo,
+  HousePayload,
+  InboxCounts,
+  InventoryResult,
+  JetpackSession,
+  LifeFull,
+  LifeSummary,
+  MailTab,
+  MMMail,
+  MMNotice,
+  MultiplayerSession,
+  NeighborhoodPayload,
+  NoticeFilter,
+  PolenProduct,
+  ScenePayload,
+  VisitState,
+  Wallets,
+  WardrobeResult,
+} from "./types"
 
 export type NeighborhoodResult =
   | { ok: true; payload: ScenePayload }
@@ -154,6 +174,132 @@ export const postSkinBuy = (token: string, id: string) =>
 /** Vestir uma skin sua, ou voltar ao padrão ("standard"). */
 export const postSkinEquip = (token: string, id: string) =>
   call<WardrobeResult>(token, "POST", `/skins/${encodeURIComponent(id)}/equip`, {})
+
+// ═══ mm3d-30: sino, correio interno, presentes, itens e Poléns ══════════════
+export const getNoticeSummary = (token: string) =>
+  call<{ counts: InboxCounts; fresh: MMNotice[] }>(token, "GET", "/notices/summary")
+export const getNotices = (token: string, filter: NoticeFilter, before?: string | null) =>
+  call<{ items: MMNotice[]; more: boolean; counts: InboxCounts }>(
+    token,
+    "GET",
+    `/notices?filter=${filter}${before ? `&before=${encodeURIComponent(before)}` : ""}`,
+  )
+/** Marca como lidas: `ids` ou todas. Sair da tela não marca nada. */
+export const postNoticesRead = (token: string, ids: string[] | "all") =>
+  call<{ updated: number; counts: InboxCounts }>(token, "POST", "/notices/read", ids === "all" ? { all: true } : { ids })
+export const getMail = (token: string, tab: MailTab, before?: string | null) =>
+  call<{ items: MMMail[]; more: boolean; counts: InboxCounts }>(
+    token,
+    "GET",
+    `/mail?tab=${tab}${before ? `&before=${encodeURIComponent(before)}` : ""}`,
+  )
+/** Abrir uma carta (marca ela e a notificação dela como lidas). */
+export const getMailItem = (token: string, id: string) =>
+  call<{ mail: MMMail; counts: InboxCounts }>(token, "GET", `/mail/${encodeURIComponent(id)}`)
+export const postMailReadAll = (token: string) => call<{ counts: InboxCounts }>(token, "POST", "/mail/read-all", {})
+/** Resgatar um presente: o servidor entrega uma vez; repetir devolve o resultado gravado. */
+export const postMailClaim = (token: string, id: string) =>
+  call<LifeSummary & { claim: NonNullable<MMMail["claimResult"]> & { mailId: string; replay: boolean } }>(
+    token,
+    "POST",
+    `/mail/${encodeURIComponent(id)}/claim`,
+    {},
+  )
+export const getMailPrefs = (token: string) => call<{ prefs: { promos: boolean } }>(token, "GET", "/mail/prefs")
+export const postMailPrefs = (token: string, promos: boolean) =>
+  call<{ prefs: { promos: boolean } }>(token, "POST", "/mail/prefs", { promos })
+/** Aba Itens: o inventário real (geladeira, vestuário, veículos, casa). */
+export const getInventory = (token: string) => call<InventoryResult>(token, "GET", "/inventory")
+/** Moedas do jogo + Poléns da Freelandoo, cada um da sua fonte. */
+export const getWallets = (token: string) => call<{ wallet: Wallets }>(token, "GET", "/wallets")
+/** Situação de uma compra de Poléns que voltou do checkout (quem credita é o webhook). */
+export const getPolensPurchase = (token: string, session: string) =>
+  call<{ purchase: { status: "pending" | "paid" | "failed" | "expired" | "refunded"; polens: number } }>(
+    token,
+    "GET",
+    `/polens/purchase/${encodeURIComponent(session)}`,
+  )
+
+/** Pacotes da Loja de Polén (o mesmo catálogo da /loja-polens). */
+export async function getPolenProducts(): Promise<ApiResult<{ products: PolenProduct[] }>> {
+  try {
+    const res = await fetch("/api/polens/products", { cache: "no-store" })
+    const data = (await res.json().catch(() => null)) as { products?: PolenProduct[]; error?: string } | null
+    if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+    return { ok: true, data: { products: data.products ?? [] } }
+  } catch {
+    return { ok: false, status: 0, error: "network" }
+  }
+}
+
+/**
+ * Abre o checkout OFICIAL de Poléns (Mercado Pago, o mesmo da /loja-polens)
+ * com volta para o jogo. O crédito só acontece pelo webhook, no servidor.
+ */
+export async function postPolenCheckout(token: string, productId: string): Promise<ApiResult<{ checkout_url: string; session_id: string }>> {
+  try {
+    const res = await fetch(`/api/polens/products/${encodeURIComponent(productId)}/checkout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ return_to: "meu-mundo" }),
+      cache: "no-store",
+    })
+    const data = (await res.json().catch(() => null)) as { checkout_url?: string; session_id?: string; error?: string } | null
+    if (!res.ok || !data?.checkout_url) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+    return { ok: true, data: { checkout_url: data.checkout_url, session_id: data.session_id ?? "" } }
+  } catch {
+    return { ok: false, status: 0, error: "network" }
+  }
+}
+
+/**
+ * Conversas da Freelandoo (o chat que já existe, /mensagens): a aba
+ * Mensagens da caixa do jogo só lista e abre lá — não guarda cópia.
+ */
+export interface ConversationRow {
+  id: string
+  title: string
+  avatar: string | null
+  preview: string | null
+  at: string | null
+  unread: number
+}
+
+export async function getConversations(token: string): Promise<ApiResult<{ items: ConversationRow[] }>> {
+  try {
+    const res = await fetch("/api/conversations?limit=20", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+    type Raw = {
+      id_conversation: string
+      name: string | null
+      cover_url: string | null
+      last_message_preview: string | null
+      last_message_at: string | null
+      unread_count: number
+      other_entity: { display_name?: string | null; username?: string | null; avatar_url?: string | null } | null
+    }
+    const data = (await res.json().catch(() => null)) as { items?: Raw[]; error?: string } | null
+    if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+    return {
+      ok: true,
+      data: {
+        items: (data.items ?? []).map((r) => ({
+          id: String(r.id_conversation),
+          title: r.name || r.other_entity?.display_name || (r.other_entity?.username ? `@${r.other_entity.username}` : "—"),
+          avatar: r.cover_url || r.other_entity?.avatar_url || null,
+          preview: r.last_message_preview,
+          at: r.last_message_at,
+          unread: Number(r.unread_count) || 0,
+        })),
+      },
+    }
+  } catch {
+    return { ok: false, status: 0, error: "network" }
+  }
+}
+
+/** Mercado com `key`: produto exclusivo de Poléns exige; a mesma chave não cobra duas vezes. */
+export const postLifeBuyKeyed = (token: string, item: string, qty: number, key: string) =>
+  call<LifeSummary>(token, "POST", "/life/buy", { item, qty, key })
 
 // Conferência mínima da forma: dado torto aqui vira cena quebrada lá na frente,
 // e é melhor dizer "não carregou" do que desenhar um bairro pela metade.
