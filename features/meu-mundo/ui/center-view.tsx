@@ -12,13 +12,13 @@
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Activity, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, RefreshCw, Store, Users, Wifi, WifiOff, X } from "lucide-react"
+import { Activity, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, RefreshCw, Store, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId } from "../engine/motion"
 import { CarTuningPanel } from "./drive-controls"
-import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, WindedToast, type DrawerItem } from "./hud/hud-kit"
+import { Drawer, EvoButton, EvoDialog, EvoToast, WindedToast, type DrawerItem } from "./hud/hud-kit"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
@@ -220,15 +220,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     setAttempt((a) => a + 1)
   }, [])
 
-  const netLabel = {
-    connecting: t("netConnecting", "Conectando"),
-    online: t("netOnline", "Online"),
-    reconnecting: t("netReconnecting", "Reconectando"),
-    offline: t("netOffline", "Conexão interrompida"),
-    replaced: t("netReplaced", "Aberto em outra janela"),
-    moved: t("netMoved", "Mudando de lugar…"),
-  }[net]
-  const netTone = net === "online" ? "bom" : net === "offline" || net === "replaced" ? "perigo" : "ambar"
 
   const drivingKind = (drivingLot && kindOfId(drivingLot)) || "car"
   const nearPortal = nearby?.kind === "portal"
@@ -275,28 +266,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     <div className="fl-sharp fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#A8D4F2]">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("canvasAriaCenter", "Centro da cidade do Meu Mundo")} />
 
-      <div className="pointer-events-none absolute left-0 top-0" style={{ paddingTop: SAFE.top, paddingLeft: SAFE.left }}>
-        <IdPlate seal={["天", "地"]} title={t("title", "Meu Mundo")} sub={<>{t("devBadge", "Em desenvolvimento")}</>}>
-          <HudChip tone="ouro" icon={<Store className="h-3 w-3" />}>
-            {t("exitLabel", "Centro da cidade")}
-          </HudChip>
-          <HudChip icon={<Users className="h-3 w-3" />} title={t("centerRoomHint", "Cada centro recebe até {n} pessoas").replace("{n}", String(payload.center.capacity))}>
-            {t("centerOnline", "{n} no centro").replace("{n}", String(online))}
-          </HudChip>
-          <span role="status" aria-live="polite">
-            <HudChip
-              tone={netTone}
-              icon={net === "online" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-              onClick={net === "offline" || net === "replaced" ? () => gameRef.current?.reconnect() : undefined}
-            >
-              {netLabel}
-            </HudChip>
-          </span>
-        </IdPlate>
-      </div>
-
       {statsOpen && (
-        <div className="pointer-events-auto absolute left-0 max-w-[min(92vw,320px)]" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 96px)", marginLeft: SAFE.left }}>
+        <div className="pointer-events-auto absolute left-0 max-w-[min(92vw,320px)]" style={{ top: "max(12px, env(safe-area-inset-top))", marginLeft: SAFE.left }}>
           <Chamfer cut={12} border={`${EVO.dourado}99`}>
             <div className="relative px-3 py-2 font-mono text-[11px] leading-5" style={{ color: EVO.branco }}>
               <button type="button" onClick={() => setStatsOpen(false)} className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center" style={{ color: EVO.mudo }} aria-label={t("close", "Fechar")}>
@@ -391,7 +362,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {status === "ready" && !!drivingLot && !open && (!isTouch || !menuOpen) && (
         <div
           className={isTouch ? "absolute flex flex-col items-end gap-2" : "absolute left-1/2 flex -translate-x-1/2 gap-2"}
-          style={isTouch ? { bottom: bottom(24), right: SAFE.right } : { top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}
+          style={isTouch ? { bottom: bottom(24), right: SAFE.right } : { top: "max(12px, env(safe-area-inset-top))" }}
         >
           {nearPortal && (
             <EvoButton variant="primary" icon={<Home className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
@@ -431,7 +402,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             open={menuOpen}
             onOpenChange={setMenuOpen}
             heading={t("menuCenter", "O centro")}
-            kanjiMark="市"
             items={menuItems}
             hotkeys={!blocked && !open && !minigame}
             footer={
@@ -449,7 +419,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           labelId="mm-place-title"
           eyebrow={`${t("exitLabel", "Centro da cidade")} · ${t("centerSoon", "Em breve")}`}
           title={placeName(open)}
-          kanjiMark="市"
           onClose={() => setOpen(null)}
           width="max-w-sm"
           footer={
@@ -483,12 +452,12 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
         />
       )}
       {status === "ready" && winded && (
-        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 148px)" }}>
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
           <WindedToast />
         </div>
       )}
       {status === "ready" && net === "offline" && (
-        <div className="pointer-events-none absolute inset-x-0 flex justify-center" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
           <EvoToast icon={<WifiOff className="h-4 w-4" />}>{t("netOffline", "Conexão interrompida")}</EvoToast>
         </div>
       )}

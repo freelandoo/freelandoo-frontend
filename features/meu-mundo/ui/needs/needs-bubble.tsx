@@ -65,7 +65,7 @@ function NeedIcon({ id }: { id: LifeNeedId }) {
  * mensagem, mesmo se a lista vier igual — é assim que o lembrete das graves
  * acontece sem relógio próprio).
  */
-export default function NeedsBubble({ needs, tick, body, onOpenStatus }: { needs: LifeNeed[]; tick: number; body: BodyId; onOpenStatus?: () => void }) {
+export default function NeedsBubble({ needs, tick, body, below = 0, onOpenStatus }: { needs: LifeNeed[]; tick: number; body: BodyId; /** px abaixo do topo (faixa da visita) */ below?: number; onOpenStatus?: () => void }) {
   const t = useTranslations("MeuMundo")
   const memory = useRef(freshNeedsMemory())
   const [line, setLine] = useState<NeedLine | null>(null)
@@ -84,7 +84,7 @@ export default function NeedsBubble({ needs, tick, body, onOpenStatus }: { needs
   return (
     <div
       className="fl-sharp pointer-events-none fixed left-0 z-[72] px-3"
-      style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 96px)", paddingLeft: "max(12px, env(safe-area-inset-left))" }}
+      style={{ top: `calc(max(12px, env(safe-area-inset-top)) + ${below}px)`, paddingLeft: "max(12px, env(safe-area-inset-left))" }}
       role="status"
       aria-live="polite"
     >

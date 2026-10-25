@@ -14,7 +14,7 @@
 // lenta) usa a mesma chave, então a sala nunca come duas vezes.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { DoorOpen, Info, Armchair, ArrowUpFromLine, BedDouble, HeartPulse, Moon, Refrigerator, RefreshCw, Send, Sun, Users, Wifi, WifiOff } from "lucide-react"
+import { DoorOpen, Info, Armchair, ArrowUpFromLine, BedDouble, HeartPulse, Moon, Refrigerator, RefreshCw, Send, Sun, WifiOff } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { createHouseGame, type FridgeReply, type HouseGameHandle } from "../engine/house-game"
@@ -22,7 +22,7 @@ import { kindOfId } from "../engine/motion"
 import { fetchSession } from "../data"
 import type { BodyId, FridgeStock, GameStats, HousePayload, Interactable, LifeCharacter, LifeItem, NetStatus, VisitState } from "../types"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
-import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, WindedToast, type DrawerItem } from "./hud/hud-kit"
+import { Drawer, EvoButton, EvoDialog, EvoToast, InfoRow, WindedToast, type DrawerItem } from "./hud/hud-kit"
 import { useQualityItem } from "./hud/quality-item"
 import { EVO } from "./status/evo-skin"
 import { itemName } from "./status/status-pages"
@@ -383,7 +383,6 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
     },
   ]
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
-  const netTone = net === "online" ? "bom" : net === "offline" || net === "replaced" ? "perigo" : "ambar"
   const overlay = infoOpen || menuOpen || !!fridge
 
   return (
@@ -395,30 +394,16 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
         aria-label={t("houseCanvasAria", "Interior da casa")}
       />
 
-      {/* Identidade (o menu mora na gaveta da direita) */}
-      <div className="pointer-events-none absolute left-0 top-0" style={{ paddingTop: SAFE.top, paddingLeft: SAFE.left }}>
-        <IdPlate
-          seal={["夢", "居"]}
-          title={isOwner ? t("yourHouse", "Sua casa") : t("houseOf", "Casa de {name}").replace("{name}", h.ownerName)}
-          sub={t("houseSub", "Casa {n} · nível {l}").replace("{n}", lotLabel).replace("{l}", String(h.level).padStart(2, "0"))}
-        >
-          <HudChip icon={<Users className="h-3 w-3" />}>{t("insideNow", "{n} aqui dentro").replace("{n}", String(online))}</HudChip>
-          <span role="status" aria-live="polite">
-            <HudChip
-              tone={netTone}
-              icon={net === "online" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-              onClick={net === "offline" || net === "replaced" ? () => gameRef.current?.reconnect() : undefined}
-              title={net === "offline" || net === "replaced" ? t("reconnect", "Reconectar") : undefined}
-            >
-              {netLabel}
-            </HudChip>
-          </span>
-        </IdPlate>
-      </div>
-
+      {status === "ready" && (net === "offline" || net === "replaced") && (
+        <div className="absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
+          <button type="button" onClick={() => gameRef.current?.reconnect()} aria-label={t("reconnect", "Reconectar")}>
+            <EvoToast icon={<WifiOff className="h-4 w-4 shrink-0" />}>{netLabel}</EvoToast>
+          </button>
+        </div>
+      )}
       {/* Avisos curtos (lugar ocupado, cama longe, dormindo) */}
       {(denied || restDenied || rideDenied || fridgeDenied || rest?.sleeping || (winded && !overlay)) && (
-        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
           {denied ? (
             <EvoToast>{denied === "taken" ? t("seatTaken", "Esse lugar já está ocupado") : t("seatDenied", "Chegue mais perto para sentar")}</EvoToast>
           ) : rideDenied ? (
@@ -502,7 +487,6 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
             open={menuOpen}
             onOpenChange={setMenuOpen}
             heading={t("menuHouse", "A casa")}
-            kanjiMark="居"
             items={menuItems}
             hotkeys={!blocked && !infoOpen && !fridge}
             footer={
@@ -530,7 +514,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
       )}
 
       {infoOpen && (
-        <EvoDialog labelId="mm-house-info" eyebrow={t("houseInfo", "Informações da casa")} title={t("lot", "Lote {n}").replace("{n}", lotLabel)} kanjiMark="居" onClose={() => setInfoOpen(false)} width="max-w-sm">
+        <EvoDialog labelId="mm-house-info" eyebrow={t("houseInfo", "Informações da casa")} title={t("lot", "Lote {n}").replace("{n}", lotLabel)} onClose={() => setInfoOpen(false)} width="max-w-sm">
           <InfoRow label={t("infoOwner", "Titular")}>{h.ownerName}</InfoRow>
           <InfoRow label={t("infoLevel", "Nível")}>{String(h.level).padStart(2, "0")}</InfoRow>
           <InfoRow label={t("infoPlace", "Bairro e número")}>

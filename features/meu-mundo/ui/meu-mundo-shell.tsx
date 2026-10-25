@@ -358,7 +358,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
 
-      {!busy && !statusBody && !hospitalUp && <NeedsBubble needs={needs} tick={needsTick} body={avatar} onOpenStatus={() => setStatusBody(scene.me.body)} />}
+      {!busy && !statusBody && !hospitalUp && <NeedsBubble needs={needs} tick={needsTick} body={avatar} below={active || outgoing ? 56 : 0} onOpenStatus={() => setStatusBody(scene.me.body)} />}
 
       {statusBody && (
         <StatusScreen name={scene.me.name} body={statusBody} lifeTick={lifeTick} onClose={() => setStatusBody(null)} />
@@ -368,7 +368,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       {(active || outgoing) && !busy && (
         <div
           className="fl-sharp pointer-events-none fixed inset-x-0 z-[70] flex justify-center px-3"
-          style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 100px)" }}
+          style={{ top: "max(12px, env(safe-area-inset-top))" }}
         >
           <Chamfer cut={10} border="#ff5fae" width={1.5} className="pointer-events-auto max-w-full">
             <div className={`${teko.className} flex flex-wrap items-center gap-2 py-1 pl-3 pr-1 text-[18px] font-medium uppercase leading-none tracking-[0.08em]`} style={{ color: EVO.branco }}>
@@ -416,7 +416,6 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           labelId="mm-incoming"
           eyebrow={t("inviteReceived", "Convite de visita")}
           title={t("inviteFrom", "{name} te chamou").replace("{name}", incoming.hostName)}
-          kanjiMark="居"
           width="max-w-sm"
           footer={
             <>
@@ -449,7 +448,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       )}
 
       {notice && !busy && (
-        <div className="fl-sharp pointer-events-none fixed inset-x-0 bottom-28 z-[80] flex justify-center px-4">
+        <div className="fl-sharp pointer-events-none fixed inset-x-0 z-[80] flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
           <EvoToast>{notice}</EvoToast>
         </div>
       )}
@@ -510,7 +509,6 @@ function InvitePanel({ onClose, onSent }: { onClose: () => void; onSent: (v: Vis
       labelId="mm-invite"
       eyebrow={t("inviteTitle", "Convidar para sua casa")}
       title={t("invite", "Convidar")}
-      kanjiMark="居"
       onClose={onClose}
       width="max-w-sm"
       footer={

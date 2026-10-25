@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { ChevronLeft, ChevronRight, Loader2, Refrigerator, Utensils, X } from "lucide-react"
 import type { FridgeStock, LifeCharacter, LifeItem } from "../../types"
 import { EvoButton } from "../hud/hud-kit"
-import { Chamfer, EVO, archivo, kanji, teko } from "../status/evo-skin"
+import { Chamfer, EVO, archivo, teko } from "../status/evo-skin"
 import { hoursText, itemName } from "../status/status-pages"
 import { categories, effectsOf, mealFit, thumbOf, verbOf, type CategoryCard, type Effect, type FridgeCategory } from "./fridge-logic"
 
@@ -162,6 +162,14 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
       aria-modal="true"
       aria-labelledby="mm-fridge-title"
     >
+      {/* Aviso da geladeira (comeu, acabou…): no topo, como os outros avisos. */}
+      {notice && (
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
+          <div role="status" className={`${teko.className} px-3 pb-0.5 pt-1 text-[18px] uppercase tracking-[0.08em]`} style={{ background: EVO.douradoClaro, color: EVO.preto }}>
+            {notice}
+          </div>
+        </div>
+      )}
       <div
         className="flex min-h-0 flex-col"
         style={{
@@ -270,18 +278,12 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
           <ItemSheet item={item} qty={stock[item.id] ?? 0} character={character} pending={pending === item.id} compact={compact} t={t} onEat={eat} onBack={back} />
         )}
 
-        {/* rodapé: atalhos (computador) ou aviso */}
+        {/* rodapé: atalhos (computador) */}
         <div className="mx-auto mt-2 flex min-h-6 w-full max-w-[980px] items-center justify-center">
-          {notice ? (
-            <div role="status" className={`${teko.className} px-3 pb-0.5 pt-1 text-[18px] uppercase tracking-[0.08em]`} style={{ background: EVO.douradoClaro, color: EVO.preto }}>
-              {notice}
+          {!compact && (
+            <div className={`${teko.className} text-[18px] uppercase tracking-[0.12em]`} style={{ color: `${EVO.branco}99` }}>
+              ← → {t("frHintMove", "Girar")} &nbsp; ENTER {t("frHintPick", "Escolher")} &nbsp; ESC {t("frHintBack", "Voltar")}
             </div>
-          ) : (
-            !compact && (
-              <div className={`${teko.className} text-[18px] uppercase tracking-[0.12em]`} style={{ color: `${EVO.branco}99` }}>
-                ← → {t("frHintMove", "Girar")} &nbsp; ENTER {t("frHintPick", "Escolher")} &nbsp; ESC {t("frHintBack", "Voltar")}
-              </div>
-            )
           )}
         </div>
       </div>
@@ -506,9 +508,6 @@ function ItemSheet({
           <div className="relative shrink-0 overflow-hidden" style={{ width: compact ? "100%" : 210, height: compact ? 170 : 280, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail local pequena, só no jogo (admin) */}
             <img src={thumbOf(item.id)} alt="" className="h-full w-full object-cover" style={{ opacity: qty ? 1 : 0.35 }} draggable={false} />
-            <span className={`${kanji.className} absolute bottom-1 left-2 text-[30px] leading-none`} style={{ color: ICE, opacity: 0.6 }} aria-hidden>
-              冷
-            </span>
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

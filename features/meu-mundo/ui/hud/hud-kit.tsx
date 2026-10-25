@@ -10,7 +10,6 @@
 // vezes diverge em silêncio, então nenhum outro arquivo do jogo pinta botão
 // ou modal à mão.
 //
-//   IdPlate     placa de identidade (canto superior esquerdo)
 //   HudChip     etiqueta de estado (rede, pessoas, casa)
 //   Drawer      puxador na borda direita + gaveta com os itens do menu
 //   EvoDialog   modal (centro no computador, de baixo no celular)
@@ -21,37 +20,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { ChevronRight, Menu, Wind, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { Chamfer, EVO, archivo, kanji, teko } from "../status/evo-skin"
+import { Chamfer, EVO, archivo, teko } from "../status/evo-skin"
 import s from "./hud.module.css"
-
-// ═══ placa de identidade ═══════════════════════════════════════════════════
-export function IdPlate({ seal, title, sub, children }: { seal: [string, string]; title: string; sub?: ReactNode; children?: ReactNode }) {
-  return (
-    <div className="pointer-events-auto flex max-w-[min(92vw,460px)] items-stretch gap-2">
-      <div
-        className={`${kanji.className} flex w-9 shrink-0 flex-col items-center justify-center gap-0.5 text-[20px] leading-none`}
-        style={{ color: EVO.douradoClaro, background: "rgba(8,7,11,0.88)", boxShadow: `inset 0 0 0 1.5px ${EVO.dourado}` }}
-        aria-hidden
-      >
-        <span>{seal[0]}</span>
-        <span>{seal[1]}</span>
-      </div>
-      <Chamfer cut={12} border={`${EVO.dourado}aa`} className="min-w-0">
-        <div className="px-3 pb-2 pt-1.5">
-          <div className={`${teko.className} truncate text-[26px] font-bold uppercase leading-none tracking-wide`} style={{ color: EVO.branco }}>
-            {title}
-          </div>
-          {sub && (
-            <div className={`${archivo.className} mt-0.5 truncate text-[11px] font-semibold uppercase tracking-[0.18em]`} style={{ color: EVO.douradoClaro }}>
-              {sub}
-            </div>
-          )}
-          {children && <div className="mt-1.5 flex flex-wrap items-center gap-1">{children}</div>}
-        </div>
-      </Chamfer>
-    </div>
-  )
-}
 
 export type ChipTone = "bom" | "ambar" | "perigo" | "ouro" | "escuro"
 const CHIP: Record<ChipTone, [string, string]> = {
@@ -103,7 +73,6 @@ export function Drawer({
   open,
   onOpenChange,
   heading,
-  kanjiMark,
   items,
   footer,
   hotkeys = true,
@@ -111,7 +80,6 @@ export function Drawer({
   open: boolean
   onOpenChange: (v: boolean) => void
   heading: string
-  kanjiMark: string
   items: DrawerItem[]
   footer?: ReactNode
   /** Desligar quando outro painel está por cima (o M não abre por trás dele). */
@@ -199,9 +167,6 @@ export function Drawer({
         <span className={s.fill} />
         <span className={s.hot} />
         <span className={s.pullInner}>
-          <span className={`${kanji.className} text-[20px] leading-none`} style={{ color: EVO.douradoClaro }}>
-            {kanjiMark}
-          </span>
           <Menu className="h-4 w-4" />
           <span className={`${s.pullText} ${teko.className}`}>{t("menu", "Menu")}</span>
         </span>
@@ -233,9 +198,6 @@ export function Drawer({
           <div className="flex items-end justify-between">
             <span className={`${teko.className} text-[19px] font-semibold uppercase leading-none tracking-[0.5em]`} style={{ color: EVO.douradoClaro }}>
               {heading}
-            </span>
-            <span className={`${kanji.className} -mb-1 text-[38px] leading-none`} style={{ color: EVO.ritual, opacity: 0.7 }} aria-hidden>
-              {kanjiMark}
             </span>
           </div>
           <div className={`${s.fio} mt-1.5`} />
@@ -336,7 +298,6 @@ export function EvoButton({
 export function EvoDialog({
   eyebrow,
   title,
-  kanjiMark,
   onClose,
   children,
   footer,
@@ -347,7 +308,6 @@ export function EvoDialog({
 }: {
   eyebrow?: string
   title: string
-  kanjiMark?: string
   onClose?: () => void
   children?: ReactNode
   footer?: ReactNode
@@ -388,11 +348,6 @@ export function EvoDialog({
         <Chamfer cut={18} border={`${EVO.dourado}bb`} width={1.5} className="flex max-h-full min-h-0 flex-col" style={{ boxShadow: "none" }}>
           <div className="flex max-h-[calc(100dvh-24px)] min-h-0 flex-col">
             <div className="relative px-5 pb-2 pt-4">
-              {kanjiMark && (
-                <span className={`${kanji.className} pointer-events-none absolute right-14 top-2 text-[44px] leading-none`} style={{ color: EVO.ritual, opacity: 0.45 }} aria-hidden>
-                  {kanjiMark}
-                </span>
-              )}
               {eyebrow && (
                 <div className={`${archivo.className} text-[11px] font-semibold uppercase tracking-[0.28em]`} style={{ color: EVO.douradoClaro }}>
                   {eyebrow}

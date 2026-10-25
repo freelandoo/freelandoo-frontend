@@ -1,6 +1,6 @@
 // features/meu-mundo/ui/status/status-pages.tsx — o CONTEÚDO dos seis modais
 // do STATUS do hóspede (mm3d-13), na silhueta dos modais do STATUS do EVO
-// Brazil: cabeçalho com o selo kanji, STATUS, o subtítulo da página, o retrato
+// Brazil: cabeçalho com STATUS, o subtítulo da página, o retrato
 // redondo, o nome e a linha de resumo; embaixo, os blocos de cada página.
 //
 // Nenhum número é calculado aqui: tudo vem de GET /meu-mundo/admin/life
@@ -35,7 +35,7 @@ import {
   Zap,
 } from "lucide-react"
 import type { LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
-import { Bar, Chamfer, EVO, Gauge, Plate, Ring, Tag, archivo, kanji, teko, toneFor } from "./evo-skin"
+import { Bar, Chamfer, EVO, Gauge, Plate, Ring, Tag, archivo, teko, toneFor } from "./evo-skin"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -327,21 +327,6 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
   const days = Math.max(1, Math.floor((new Date(life.now).getTime() - new Date(c.bornAt).getTime()) / 86400000) + 1)
   return (
     <div className="flex items-center gap-4 border-b pb-3" style={{ borderColor: `${EVO.magenta}55` }}>
-      <div
-        className={`${kanji.className} flex shrink-0 flex-col items-center justify-center leading-none`}
-        style={{
-          width: compact ? 44 : 62,
-          height: compact ? 72 : 104,
-          fontSize: compact ? 28 : 40,
-          color: EVO.douradoClaro,
-          border: `2px solid ${EVO.douradoEscuro}`,
-          background: "rgba(0,0,0,0.35)",
-        }}
-        aria-hidden
-      >
-        <span>心</span>
-        <span className="mt-1">体</span>
-      </div>
       <div className="min-w-0 flex-1">
         <div className={`${teko.className} font-bold uppercase leading-[0.85]`} style={{ fontSize: compact ? 54 : 92, color: EVO.branco, letterSpacing: "0.01em" }}>
           {t("stTitle", "Status")}

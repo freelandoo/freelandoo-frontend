@@ -7,12 +7,12 @@
 // cena). Tela mínima: o joystick e um botão por vez.
 
 import { useEffect, useRef, useState } from "react"
-import { ArrowUpFromLine, BedDouble, Armchair, DoorOpen, HeartPulse, Hospital } from "lucide-react"
+import { ArrowUpFromLine, BedDouble, Armchair, DoorOpen, HeartPulse } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { createHospitalGame, type HospitalGameHandle, type HospitalMode } from "../engine/hospital-game"
 import type { BodyId, InteriorDef, Interactable } from "../types"
 import { Joystick, SAFE, SceneCurtain } from "./meu-mundo-view"
-import { EvoButton, HudChip, IdPlate } from "./hud/hud-kit"
+import { EvoButton } from "./hud/hud-kit"
 
 export interface HospitalViewProps {
   interior: InteriorDef
@@ -96,27 +96,6 @@ export function HospitalView({ interior, body, mode, bed, onExit, health, discha
   return (
     <div className="fl-sharp fixed inset-0 z-[70] touch-none select-none overflow-hidden bg-[#33393d]">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("hospitalAria", "Dentro do hospital")} />
-
-      <div className="pointer-events-none absolute left-0 top-0" style={{ paddingTop: SAFE.top, paddingLeft: SAFE.left }}>
-        <IdPlate seal={["医", "院"]} title={t("centerPlace_hospital", "Hospital")}>
-          {patient ? (
-            <HudChip tone="perigo" icon={<Hospital className="h-3 w-3" />}>
-              {t("actHospital", "Internado")}
-            </HudChip>
-          ) : discharged ? (
-            <HudChip tone="bom" icon={<HeartPulse className="h-3 w-3" />}>
-              {t("hospitalDischarged", "Alta")}
-            </HudChip>
-          ) : null}
-          {mode === "patient" && typeof health === "number" && (
-            <HudChip icon={<HeartPulse className="h-3 w-3" />}>
-              {t("hospitalHealth", "Saúde {n}/{max}")
-                .replace("{n}", String(Math.round(health)))
-                .replace("{max}", String(dischargeAt ?? 100))}
-            </HudChip>
-          )}
-        </IdPlate>
-      </div>
 
       {status === "ready" && (
         <div className="absolute flex flex-col items-end gap-2" style={{ bottom: bottom(isTouch ? 24 : 16), right: SAFE.right }}>

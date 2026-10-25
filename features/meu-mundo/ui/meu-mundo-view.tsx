@@ -22,15 +22,12 @@ import {
   Gamepad2,
   Hand,
   HeartPulse,
-  Home,
   Loader2,
   LocateFixed,
   Lock,
   LogOut,
   RefreshCw,
   Send,
-  Users,
-  Wifi,
   WifiOff,
   X,
 } from "lucide-react"
@@ -39,7 +36,7 @@ import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId, type RideKind } from "../engine/motion"
 import { CarTuningPanel } from "./drive-controls"
-import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, WindedToast, InfoRow, type DrawerItem } from "./hud/hud-kit"
+import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, WindedToast, InfoRow, type DrawerItem } from "./hud/hud-kit"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
@@ -118,7 +115,7 @@ export default function MeuMundoView({
   const [body, setBody] = useState<BodyId>(payload.me.body)
   // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
   const [winded, setWinded] = useState(false)
-  const [residents, setResidents] = useState(nb.residents)
+  const [, setResidents] = useState(nb.residents)
   // Lote do carro que você dirige (0 = a pé) — confirmado pela sala.
   const [drivingLot, setDrivingLot] = useState(0)
   // Casa do jogador: nível confirmado × exibido (o seletor de teste mostra os dois).
@@ -326,7 +323,6 @@ export default function MeuMundoView({
       : []),
     { id: "leave", label: t("menuExitGame", "Sair do jogo"), hint: t("back", "Voltar ao perfil"), icon: <LogOut className="h-5 w-5" />, onSelect: () => router.push("/account") },
   ]
-  const netTone = net === "online" ? "bom" : net === "offline" || net === "replaced" ? "perigo" : "ambar"
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
 
   return (
@@ -338,49 +334,9 @@ export default function MeuMundoView({
         aria-label={t("canvasAria", "Bairro do Meu Mundo")}
       />
 
-      {/* Identidade (o menu mora na gaveta da direita) */}
-      <div className="pointer-events-none absolute left-0 top-0" style={{ paddingTop: SAFE.top, paddingLeft: SAFE.left }}>
-        <IdPlate
-          seal={["天", "地"]}
-          title={t("title", "Meu Mundo")}
-          sub={
-            <>
-              {t("devBadge", "Em desenvolvimento")}
-              <span className="hidden sm:inline"> · {nb.name}</span>
-            </>
-          }
-        >
-          {payload.me.visitor && payload.me.visiting ? (
-            <HudChip tone="ouro" icon={<DoorOpen className="h-3 w-3" />}>
-              {t("visitingChip", "Visitando {name} · casa {n}")
-                .replace("{name}", payload.me.visiting.hostName)
-                .replace("{n}", String(payload.me.visiting.house).padStart(2, "0"))}
-            </HudChip>
-          ) : (
-            <HudChip tone="ouro" icon={<Home className="h-3 w-3" />}>
-              {t("myHouse", "Sua casa {n}").replace("{n}", String(payload.me.house).padStart(2, "0"))}
-            </HudChip>
-          )}
-          <HudChip icon={<Users className="h-3 w-3" />} title={t("residentsHint", "Moradores titulares do bairro")}>
-            {t("residents", "{n} moradores").replace("{n}", String(residents))}
-          </HudChip>
-          <span role="status" aria-live="polite">
-            <HudChip
-              tone={netTone}
-              icon={net === "online" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-              onClick={net === "offline" || net === "replaced" ? () => gameRef.current?.reconnect() : undefined}
-              title={net === "offline" || net === "replaced" ? t("reconnect", "Reconectar") : undefined}
-            >
-              {netLabel}
-              {net === "online" && <> · {t("onlineNow", "{n} conectados").replace("{n}", String(online))}</>}
-            </HudChip>
-          </span>
-        </IdPlate>
-      </div>
-
       {/* Painel técnico (leitura ao vivo; não bloqueia o jogo) */}
       {statsOpen && (
-        <div className="pointer-events-auto absolute left-0 max-w-[min(92vw,320px)]" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 96px)", marginLeft: SAFE.left }}>
+        <div className="pointer-events-auto absolute left-0 max-w-[min(92vw,320px)]" style={{ top: "max(12px, env(safe-area-inset-top))", marginLeft: SAFE.left }}>
           <Chamfer cut={12} border={`${EVO.dourado}99`}>
             <div className="relative px-3 py-2 font-mono text-[11px] leading-5" style={{ color: EVO.branco }}>
               <button
@@ -495,7 +451,7 @@ export default function MeuMundoView({
       {status === "ready" && !!drivingLot && !open && !levelOpen && (!isTouch || !menuOpen) && (
         <div
           className={isTouch ? "absolute flex flex-col items-end gap-2" : "absolute left-1/2 flex -translate-x-1/2 gap-2"}
-          style={isTouch ? { bottom: bottom(24), right: SAFE.right } : { top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}
+          style={isTouch ? { bottom: bottom(24), right: SAFE.right } : { top: "max(12px, env(safe-area-inset-top))" }}
         >
           {(nearbyMine || nearbyVisit) && drivingKind !== "car" && (
             <EvoButton variant="primary" icon={<DoorOpen className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
@@ -558,7 +514,6 @@ export default function MeuMundoView({
             open={menuOpen}
             onOpenChange={setMenuOpen}
             heading={t("menuStreet", "O bairro")}
-            kanjiMark="道"
             items={menuItems}
             hotkeys={!blocked && !open && !levelOpen}
             footer={
@@ -582,7 +537,6 @@ export default function MeuMundoView({
               : t("exitEyebrow", "Saída do bairro")
           }
           title={open.kind === "house" ? t("lot", "Lote {n}").replace("{n}", String(open.lot.number).padStart(2, "0")) : `${exitLabel} — ${t("nextStage", "próxima etapa")}`}
-          kanjiMark={open.kind === "house" ? "居" : "道"}
           onClose={() => setOpen(null)}
           width="max-w-sm"
           footer={
@@ -616,8 +570,15 @@ export default function MeuMundoView({
       )}
 
       {status === "ready" && winded && (
-        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 148px)" }}>
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
           <WindedToast />
+        </div>
+      )}
+      {status === "ready" && (net === "offline" || net === "replaced") && (
+        <div className="absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
+          <button type="button" onClick={() => gameRef.current?.reconnect()} aria-label={t("reconnect", "Reconectar")}>
+            <EvoToast icon={<WifiOff className="h-4 w-4 shrink-0" />}>{netLabel}</EvoToast>
+          </button>
         </div>
       )}
       {/* Carregando / erro */}
@@ -822,7 +783,6 @@ function HouseLevelPanel({
       labelId="mm-level-title"
       eyebrow={`${t("lot", "Lote {n}").replace("{n}", pad(lot))} · ${t("testFeature", "Recurso de teste")}`}
       title={t("levelTitle", "Escolher nível da casa")}
-      kanjiMark="居"
       onClose={onClose}
       width="max-w-2xl"
       footer={
