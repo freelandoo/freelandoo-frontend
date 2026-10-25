@@ -1,5 +1,5 @@
 // features/meu-mundo/ui/player-card/place.ts — onde o card de perfil (mm3d-31)
-// aparece, sempre em 9:12 e AO LADO do boneco tocado.
+// aparece, sempre em 9:14 e AO LADO do boneco tocado.
 //
 // Computador: no lado do boneco que fica LONGE do centro da tela (lá está o
 // seu próprio personagem; sem espaço, o outro lado), centrado na altura do
@@ -14,6 +14,16 @@ import type { ScreenBox } from "../../engine/player-select"
 
 /** Celular: card menor encostado na borda (mesma régua das notificações). */
 export const isCompactViewport = (w: number, h: number) => w < 760 || h < 520
+
+/** Altura ÷ largura do card (9:14: margem embaixo dos botões e foto maior). */
+export const CARD_RATIO = 14 / 9
+
+/**
+ * Largura do card (a altura sai do 9:14). No celular cabe ao lado do boneco;
+ * em tela baixa (celular deitado) a largura sai da altura livre.
+ */
+export const cardWidth = (compact: boolean, vw: number, vh: number) =>
+  Math.min(compact ? Math.min(244, Math.round(vw * 0.64)) : 340, Math.floor((vh - 64 - 12) / CARD_RATIO))
 
 export interface CardPlace {
   left: number
@@ -43,8 +53,11 @@ export function placeCard(box: ScreenBox | null, w: number, h: number, vw: numbe
 /** Celular: o card vai para a borda oposta ao boneco (boneco à esquerda → card à direita). */
 export const compactCardRight = (box: ScreenBox | null, vw: number) => !box || box.x < vw / 2
 
-/** Celular: onde a câmera põe o boneco (fração da largura) — no meio da metade livre. */
-export const compactFrameX = (box: ScreenBox | null, vw: number) => (compactCardRight(box, vw) ? 0.27 : 0.73)
+/** Celular: onde a câmera põe o boneco (fração da largura) — no meio do espaço livre ao lado do card. */
+export function compactFrameX(box: ScreenBox | null, vw: number, vh: number) {
+  const w = cardWidth(true, vw, vh) + EDGE
+  return compactCardRight(box, vw) ? (vw - w) / 2 / vw : (w + (vw - w) / 2) / vw
+}
 
 export function placeCompact(box: ScreenBox | null, w: number, h: number, vw: number, vh: number): CardPlace {
   const left = compactCardRight(box, vw) ? vw - w - EDGE : EDGE

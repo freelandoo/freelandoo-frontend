@@ -809,6 +809,8 @@ export interface PlayerProfile {
   username?: string | null
   avatarUrl?: string | null
   coverUrl?: string | null
+  /** "Município, UF" do perfil (null = a pessoa não preencheu) */
+  city?: string | null
   posts?: number
   followers?: number
   following?: number

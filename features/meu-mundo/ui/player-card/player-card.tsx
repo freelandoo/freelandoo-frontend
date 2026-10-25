@@ -15,7 +15,10 @@
 // aba Mensagens da caixa); Seguir é o /entity-follows do FollowButton.
 //
 // Visual: grafite a 70% SÓ no fundo (texto e imagem nítidos), rubi na ação
-// principal, dourado no Seguir, sem blur. Sempre 9:12 e ao lado do boneco
+// principal, dourado no Seguir, sem blur. Topo = capa da manifestação em 6:9
+// (altura:largura) com a foto 2:3 do perfil subindo sobre ela e "Online"
+// embaixo da foto; ao lado, nome e cidade (sem @, pedido do Alex). Sempre 9:14
+// (margem embaixo dos botões) e ao lado do boneco
 // (place.ts); no celular o mesmo card, menor, numa borda — e a câmera gira
 // para o boneco ficar na outra metade (pedido do Alex: nada de card embaixo).
 //
@@ -23,7 +26,7 @@
 // (input.ts); toque no card não chega ao canvas.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
-import { Loader2, MessageCircle, RotateCw, Star, User, UserCheck, UserPlus, X } from "lucide-react"
+import { Loader2, MapPin, MessageCircle, RotateCw, Star, User, UserCheck, UserPlus, X } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import type { PlayerTap } from "../../engine/player-select"
@@ -31,7 +34,7 @@ import type { PlayerProfile } from "../../types"
 import { getPlayerProfile, postFollow } from "../../data"
 import { MM } from "../hud/tokens"
 import { archivo } from "../status/evo-skin"
-import { isCompactViewport, placeCard, placeCompact, type CardPlace } from "./place"
+import { cardWidth, isCompactViewport, placeCard, placeCompact, type CardPlace } from "./place"
 import s from "../hud/hud.module.css"
 
 /** Fundo do card: grafite a 70% (pedido do Alex) — só o fundo é translúcido. */
@@ -158,8 +161,10 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
   })()
 
   const frame: React.CSSProperties = place ? { left: place.left, top: place.top } : { left: -9999, top: 0 }
-  // 9:12 nos dois; no celular a largura cabe ao lado do boneco (≤ 60% da tela).
-  const width = compact ? Math.min(228, Math.round(window.innerWidth * 0.6)) : 340
+  const width = cardWidth(compact, window.innerWidth, window.innerHeight)
+  // Foto 2:3 (a do perfil) subindo sobre a capa; o nome começa onde a capa acaba.
+  const photoW = compact ? 62 : 92
+  const overlap = compact ? 56 : 84
 
   return (
     <div
@@ -167,65 +172,54 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
       data-mm-panel
       role="dialog"
       aria-modal="false"
-      aria-labelledby="mm-player-card-title"
-      className={`${archivo.className} ${leaving ? s.cardOut : s.cardIn} fixed z-[74] flex flex-col justify-between overflow-hidden ${compact ? "gap-1.5 p-2.5" : "gap-3 p-3.5"}`}
-      style={{ ...frame, width, aspectRatio: "9 / 12", background: BG, border: `1px solid ${MM.borderStrong}`, borderRadius: MM.radius.panel, boxShadow: MM.shadow, color: MM.text }}
+      aria-label={t("pcTitle", "Perfil do jogador")}
+      className={`${archivo.className} ${leaving ? s.cardOut : s.cardIn} fixed z-[74] flex flex-col overflow-hidden ${compact ? "gap-1.5 p-2 pb-3.5" : "gap-3 p-3 pb-5"}`}
+      style={{ ...frame, width, aspectRatio: "9 / 14", background: BG, border: `1px solid ${MM.borderStrong}`, borderRadius: MM.radius.panel, boxShadow: MM.shadow, color: MM.text }}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center justify-between">
-        <span className={`${compact ? "text-[10px]" : "text-[11px]"} font-semibold uppercase tracking-[0.14em]`} style={{ color: MM.muted }}>
-          {t("pcTitle", "Perfil do jogador")}
-        </span>
-        <button
-          type="button"
-          onClick={close}
-          aria-label={t("pcClose", "Fechar")}
-          className={`-mr-1 inline-flex ${compact ? "h-7 w-7" : "h-8 w-8"} items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70]`}
-          style={{ background: "rgba(255,255,255,0.06)", color: MM.text }}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+      <div>
+        {/* Capa da manifestação (6:9) com o fechar por cima */}
+        <div className="relative">
+          <Cover url={usable ? p?.coverUrl : null} />
+          <button
+            type="button"
+            onClick={close}
+            aria-label={t("pcClose", "Fechar")}
+            className={`absolute right-1.5 top-1.5 inline-flex ${compact ? "h-7 w-7" : "h-8 w-8"} items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70]`}
+            style={{ background: "rgba(10,12,16,0.55)", color: "#fff" }}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-      {/* Capa + foto + nome */}
-      <div className="relative">
-        <Cover url={usable ? p?.coverUrl : null} compact={compact} />
-        <div className={`flex items-end px-1.5 ${compact ? "-mt-6 gap-2" : "-mt-10 gap-3"}`}>
-          <Avatar url={usable ? p?.avatarUrl : null} name={title} compact={compact} alt={t("pcAvatarAlt", "Foto de {name}").replace("{name}", title)} />
-          <div className="min-w-0 flex-1 pb-0.5">
-            <h2 id="mm-player-card-title" className={`truncate font-bold leading-tight ${compact ? "text-[15px]" : "text-[19px]"}`}>
-              {title}
-            </h2>
-            {usable && p?.username && (
-              <div className={`truncate ${compact ? "text-[11px]" : "text-[12px]"}`} style={{ color: MM.muted }}>
-                @{p.username}
+        {/* Foto + Online embaixo dela; nome, cidade e @ ao lado */}
+        <div className={`flex px-1.5 ${compact ? "gap-2" : "gap-3"}`} style={{ marginTop: -overlap }}>
+          <div className="flex shrink-0 flex-col items-center gap-1">
+            <Avatar url={usable ? p?.avatarUrl : null} name={title} width={photoW} alt={t("pcAvatarAlt", "Foto de {name}").replace("{name}", title)} />
+            <span className={`inline-flex items-center gap-1 font-semibold ${compact ? "text-[10px]" : "text-[12px]"}`} style={{ color: gone ? MM.muted : MM.text }}>
+              <span className="inline-block h-2 w-2 rounded-full" style={{ background: gone ? MM.muted : MM.online }} aria-hidden />
+              {gone ? t("pcLeft", "Saiu daqui") : t("pcOnline", "Online")}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1" style={{ paddingTop: overlap + (compact ? 4 : 8) }}>
+            <h2 className={`truncate font-bold leading-tight ${compact ? "text-[15px]" : "text-[19px]"}`}>{title}</h2>
+            {usable && p?.city && (
+              <div className={`mt-0.5 flex items-center gap-1 ${compact ? "text-[11px]" : "text-[13px]"}`} style={{ color: MM.gold }}>
+                <MapPin className={compact ? "h-3 w-3 shrink-0" : "h-3.5 w-3.5 shrink-0"} aria-hidden />
+                <span className="truncate">{p.city}</span>
               </div>
             )}
-            <div className={`mt-0.5 flex items-center gap-1.5 ${compact ? "text-[11px]" : "text-[13px]"}`}>
-              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: gone ? MM.muted : MM.online }} aria-hidden />
-              {gone ? (
-                <span style={{ color: MM.muted }}>{t("pcLeft", "Saiu daqui")}</span>
-              ) : (
-                <>
-                  <span>{t("pcOnline", "Online")}</span>
-                  <span style={{ color: MM.muted }} aria-hidden>
-                    •
-                  </span>
-                  <span style={{ color: MM.gold }}>{t("pcWorld", "Meu Mundo")}</span>
-                </>
-              )}
-            </div>
           </div>
         </div>
       </div>
 
       {load.state === "loading" ? (
-        <div className="flex items-center justify-center gap-2 py-3 text-[13px]" style={{ color: MM.muted }} role="status">
+        <div className="flex items-center justify-center gap-2 py-2 text-[13px]" style={{ color: MM.muted }} role="status">
           <Loader2 className="h-4 w-4 animate-spin" />
           {t("pcLoading", "Carregando perfil…")}
         </div>
       ) : load.state === "error" ? (
-        <div className="flex flex-col items-center gap-2 py-2 text-center text-[13px]" style={{ color: MM.muted }}>
+        <div className="flex flex-col items-center gap-2 py-1 text-center text-[13px]" style={{ color: MM.muted }}>
           <span>{load.gone ? t("pcGone", "Esse jogador não está mais aqui.") : t("pcError", "Não deu para carregar o perfil.")}</span>
           {!load.gone && (
             <button
@@ -243,14 +237,14 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
           )}
         </div>
       ) : p?.unavailable ? (
-        <div className="py-2 text-center text-[13px]" style={{ color: MM.muted }}>
+        <div className="py-1 text-center text-[13px]" style={{ color: MM.muted }}>
           <div className="font-semibold" style={{ color: MM.text }}>
             {t("pcUnavailable", "Perfil indisponível")}
           </div>
           {t("pcUnavailableHint", "Este perfil não está disponível para você.")}
         </div>
       ) : (
-        <>
+        <div className={`flex flex-col ${compact ? "gap-1" : "gap-2"}`}>
           {/* Números reais: posts públicos, seguidores, seguindo e avaliações */}
           <div className="grid grid-cols-3 text-center" style={{ borderBottom: `1px solid ${MM.border}` }}>
             {[
@@ -258,33 +252,33 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
               [p?.followers, t("pcFollowers", "Seguidores")],
               [p?.following, t("pcFollowing", "Seguindo")],
             ].map(([n, label], i) => (
-              <div key={i} className={`min-w-0 ${compact ? "pb-1.5" : "pb-3"}`} style={i ? { borderLeft: `1px solid ${MM.border}` } : undefined}>
-                <div className={`font-bold tabular-nums ${compact ? "text-[15px]" : "text-[20px]"}`}>{num(n as number | undefined)}</div>
+              <div key={i} className={`min-w-0 ${compact ? "pb-1" : "pb-2"}`} style={i ? { borderLeft: `1px solid ${MM.border}` } : undefined}>
+                <div className={`font-bold tabular-nums leading-tight ${compact ? "text-[15px]" : "text-[19px]"}`}>{num(n as number | undefined)}</div>
                 <div className={`truncate ${compact ? "text-[10px]" : "text-[12px]"}`} style={{ color: MM.muted }}>
                   {label as string}
                 </div>
               </div>
             ))}
           </div>
-          <div className={`flex flex-col items-center justify-center ${compact ? "gap-0.5" : "gap-1"}`}>
+          <div className="flex items-center justify-center gap-1.5">
             <Stars avg={p?.ratings?.count ? p.ratings.avg : 0} small={compact} />
-            <span className={compact ? "text-[11px]" : "text-[12px]"} style={{ color: MM.muted }}>
+            <span className={`truncate ${compact ? "text-[10px]" : "text-[12px]"}`} style={{ color: MM.muted }}>
               {ratingLine}
             </span>
           </div>
-        </>
+        </div>
       )}
 
-      {/* Ações */}
-      <div className={`flex flex-col ${compact ? "gap-1.5" : "gap-2"}`}>
-        <ActionLink
-          href={usable ? `/freelancer/${encodeURIComponent(p!.profileId!)}` : null}
-          primary
-          icon={<User className="h-4 w-4" />}
-          label={t("pcViewProfile", "Ver perfil")}
-          compact={compact}
-        />
-        <div className={`grid grid-cols-2 ${compact ? "gap-1.5" : "gap-2"}`}>
+      {/* Ações: uma linha (rubi, grafite, dourado), presa embaixo */}
+      <div className="mt-auto">
+        <div className={`grid grid-cols-3 ${compact ? "gap-1" : "gap-1.5"}`}>
+          <ActionLink
+            href={usable ? `/freelancer/${encodeURIComponent(p!.profileId!)}` : null}
+            primary
+            icon={<User className="h-4 w-4" />}
+            label={t("pcViewProfile", "Ver perfil")}
+            compact={compact}
+          />
           <ActionLink
             href={usable ? `/mensagens?with=${encodeURIComponent(p!.profileId!)}` : null}
             icon={<MessageCircle className="h-4 w-4" />}
@@ -298,7 +292,7 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
             disabled={!usable || !p?.viewerProfileId}
             aria-busy={followBusy}
             aria-pressed={!!p?.isFollowing}
-            className={`inline-flex items-center justify-center gap-1.5 rounded-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70] ${compact ? "h-9 text-[12px]" : "h-11 text-[14px]"}`}
+            className={actionClass(compact)}
             style={{
               border: `1px solid ${usable ? MM.gold : MM.border}`,
               background: p?.isFollowing ? "rgba(229,190,112,0.12)" : "transparent",
@@ -306,25 +300,26 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
             }}
           >
             {followBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : p?.isFollowing ? <UserCheck className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-            {p?.isFollowing ? t("pcFollowingBtn", "Seguindo") : t("pcFollow", "Seguir")}
+            <span className="truncate">{p?.isFollowing ? t("pcFollowingBtn", "Seguindo") : t("pcFollow", "Seguir")}</span>
           </button>
         </div>
+        {followError && (
+          <div className="mt-1 text-center text-[11px] font-semibold" style={{ color: MM.danger }} role="alert">
+            {t("pcFollowError", "Não deu para seguir agora.")}
+          </div>
+        )}
       </div>
-      {followError && (
-        <div className="-mt-1 text-center text-[12px] font-semibold" style={{ color: MM.danger }} role="alert">
-          {t("pcFollowError", "Não deu para seguir agora.")}
-        </div>
-      )}
     </div>
   )
 }
 
-function Cover({ url, compact }: { url: string | null | undefined; compact: boolean }) {
+/** Capa da manifestação: 6:9 (altura:largura), largura toda do card. */
+function Cover({ url }: { url: string | null | undefined }) {
   const [broken, setBroken] = useState(false)
   return (
     <div
-      className={`w-full shrink-0 overflow-hidden ${compact ? "h-12" : "h-[92px]"}`}
-      style={{ borderRadius: MM.radius.card, background: "linear-gradient(135deg, #650D2A 0%, #2A1A22 55%, #1D232C 100%)" }}
+      className="w-full shrink-0 overflow-hidden"
+      style={{ aspectRatio: "9 / 6", borderRadius: MM.radius.card, background: "linear-gradient(135deg, #650D2A 0%, #2A1A22 55%, #1D232C 100%)" }}
     >
       {url && !broken && (
         // eslint-disable-next-line @next/next/no-img-element -- capa de usuário (regra 4: <img> lazy, host fora do otimizador)
@@ -334,17 +329,18 @@ function Cover({ url, compact }: { url: string | null | undefined; compact: bool
   )
 }
 
-function Avatar({ url, name, alt, compact }: { url: string | null | undefined; name: string; alt: string; compact: boolean }) {
+/** Foto do perfil em 2:3 (a mesma proporção do headcard do perfil). */
+function Avatar({ url, name, alt, width }: { url: string | null | undefined; name: string; alt: string; width: number }) {
   const [broken, setBroken] = useState(false)
-  const size = compact ? 52 : 80
+  const height = Math.round(width * 1.5)
   return (
     <div
       className="relative shrink-0 overflow-hidden"
-      style={{ width: size, height: size, borderRadius: MM.radius.card, border: "2px solid rgba(255,255,255,0.85)", background: "#232733", boxShadow: MM.shadowSoft }}
+      style={{ width, height, borderRadius: MM.radius.card, border: "2px solid rgba(255,255,255,0.85)", background: "#232733", boxShadow: MM.shadowSoft }}
     >
       {url && !broken ? (
         // eslint-disable-next-line @next/next/no-img-element -- foto de pessoa (regra 4: <img> lazy)
-        <img src={url} alt={alt} width={size} height={size} loading="lazy" decoding="async" className="h-full w-full object-cover" onError={() => setBroken(true)} />
+        <img src={url} alt={alt} width={width} height={height} loading="lazy" decoding="async" className="h-full w-full object-cover" onError={() => setBroken(true)} />
       ) : (
         <span className="flex h-full w-full items-center justify-center text-[24px] font-bold" style={{ color: MM.gold }} aria-label={alt}>
           {(name.trim()[0] || "?").toUpperCase()}
@@ -364,8 +360,14 @@ function Stars({ avg, small }: { avg: number; small?: boolean }) {
   )
 }
 
+/** Botão da linha de ações: no celular o ícone vai em cima do texto (três cabem lado a lado). */
+const actionClass = (compact: boolean) =>
+  `inline-flex min-w-0 items-center justify-center rounded-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70] ${
+    compact ? "h-[42px] flex-col gap-0.5 px-1 text-[10px]" : "h-11 gap-1 px-1 text-[12.5px]"
+  }`
+
 function ActionLink({ href, icon, label, primary, compact }: { href: string | null; icon: React.ReactNode; label: string; primary?: boolean; compact: boolean }) {
-  const cls = `inline-flex items-center justify-center gap-1.5 rounded-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70] ${compact ? "h-9 text-[12px]" : "h-11 text-[14px]"}`
+  const cls = actionClass(compact)
   const style: React.CSSProperties = primary
     ? { background: href ? MM.rubyFill : "rgba(255,255,255,0.06)", border: `1px solid ${href ? MM.rubyBorder : MM.border}`, color: href ? "#fff" : MM.disabledText }
     : { border: `1px solid ${MM.borderStrong}`, color: href ? MM.text : MM.disabledText }
@@ -373,13 +375,13 @@ function ActionLink({ href, icon, label, primary, compact }: { href: string | nu
     return (
       <span className={cls} style={style} aria-disabled="true">
         {icon}
-        {label}
+        <span className="truncate">{label}</span>
       </span>
     )
   return (
     <a href={href} target="_blank" rel="noopener" className={cls} style={style}>
       {icon}
-      {label}
+      <span className="truncate">{label}</span>
     </a>
   )
 }

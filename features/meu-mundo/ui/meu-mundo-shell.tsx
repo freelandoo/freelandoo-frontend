@@ -383,7 +383,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     setPlayerCard((c) => {
       if (!tap) return c ? { ...c, dismiss: c.dismiss + 1 } : c
       if (c && c.tap.sessionId === tap.sessionId) return c
-      const frame = isCompactViewport(window.innerWidth, window.innerHeight) ? compactFrameX(tap.box, window.innerWidth) : null
+      const frame = isCompactViewport(window.innerWidth, window.innerHeight) ? compactFrameX(tap.box, window.innerWidth, window.innerHeight) : null
       return { tap, gone: false, dismiss: 0, frame }
     })
   }, [])
