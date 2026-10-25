@@ -180,14 +180,15 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
               <Refrigerator className="h-5 w-5 shrink-0" />
               <span className={`${archivo.className} text-[11px] font-semibold uppercase tracking-[0.28em]`}>{t("frEyebrow", "Geladeira")}</span>
             </div>
-            <h2 id="mm-fridge-title" className={`${teko.className} truncate text-[32px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+            <h2 id="mm-fridge-title" className={`${teko.className} line-clamp-2 ${compact ? "text-[26px]" : "text-[32px]"} font-bold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
               {item ? itemName(item, t) : crumb}
             </h2>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {level.lv !== "cats" && (
-              <EvoButton variant="ghost" size="sm" onClick={back} icon={<ChevronLeft className="h-4 w-4" />}>
-                {t("frBack", "Voltar")}
+              // No celular só o ícone: o nome do item precisa do espaço.
+              <EvoButton variant="ghost" size="sm" onClick={back} icon={<ChevronLeft className="h-4 w-4" />} aria-label={t("frBack", "Voltar")}>
+                {compact ? null : t("frBack", "Voltar")}
               </EvoButton>
             )}
             <button
@@ -278,7 +279,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
           ) : (
             !compact && (
               <div className={`${teko.className} text-[18px] uppercase tracking-[0.12em]`} style={{ color: `${EVO.branco}99` }}>
-                ◀ ▶ {t("frHintMove", "Girar")} &nbsp; ENTER {t("frHintPick", "Escolher")} &nbsp; ESC {t("frHintBack", "Voltar")}
+                ← → {t("frHintMove", "Girar")} &nbsp; ENTER {t("frHintPick", "Escolher")} &nbsp; ESC {t("frHintBack", "Voltar")}
               </div>
             )
           )}
@@ -327,7 +328,12 @@ function Arc({
     const s = start.current
     if (!s || s.id !== e.pointerId) return
     const dx = e.clientX - s.x
-    if (Math.abs(dx) > 8) s.moved = true
+    // Arrasto de verdade: captura o ponteiro (o dedo sai da prateleira e o
+    // soltar ainda chega aqui). Toque parado não captura — vira clique no card.
+    if (!s.moved && Math.abs(dx) > 8) {
+      s.moved = true
+      e.currentTarget.setPointerCapture?.(e.pointerId)
+    }
     if (s.moved) setDrag(Math.max(-(count - 1 - sel) * spacing - 40, Math.min(sel * spacing + 40, dx)))
   }
   const up = (e: React.PointerEvent) => {
