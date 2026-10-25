@@ -200,6 +200,22 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // aplica cada mudança no mesmo passo — sem isso a curva saía diferente lá).
   let driveN = 0
   let heldDrive: DriveInput = IDLE_DRIVE
+  // mm3d-27: época do volante. Recomeçar o passo (montar, recuperar, voltar do
+  // segundo plano) abre uma época nova — a sala mede a folga de novo em vez de
+  // tratar o passo 1 como "chegou tarde" e voltar 2 s no tempo.
+  let driveEpoch = 0
+  let lastDriveSent = 0
+  /** A aba voltou do segundo plano: assumir o estado da sala antes de seguir. */
+  let resyncDrive = false
+  const restartDrive = () => {
+    recon.reset()
+    driveN = 0
+    heldDrive = IDLE_DRIVE
+    driveEpoch++
+    lastDriveSent = 0
+  }
+  /** Volante repetido enquanto dirige (a sala freia quem some por 1,5 s). */
+  const DRIVE_BEAT_MS = 500
   /** Veículo dito pela última mensagem "moved" até o estado da sala concordar (null = o estado manda). */
   let carFromMessage: number | null = null
   let carFromMessageAt = 0
@@ -297,9 +313,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         if (p.car && p.car === driving) {
           veh = createVehicle(p.x, p.z, p.facing)
           Object.assign(prevPose, { x: p.x, z: p.z, yaw: p.facing })
-          recon.reset()
-          driveN = 0
-          heldDrive = IDLE_DRIVE
+          restartDrive()
         }
         setDriving(p.car, p)
         // O estado da sala chega depois desta mensagem: até ele dizer o mesmo,
@@ -463,9 +477,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const p = at ?? c ?? { x: local.x, z: local.z, facing: local.body.facing }
       veh = createVehicle(p.x, p.z, p.facing)
       Object.assign(prevPose, { x: p.x, z: p.z, yaw: p.facing })
-      recon.reset()
-      driveN = 0
-      heldDrive = IDLE_DRIVE
+      restartDrive()
+      resyncDrive = false
       follow.setChase(true, p.facing)
     } else {
       veh = null
@@ -481,6 +494,20 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
    * pose interpolada para desenhar.
    */
   const driveFrame = (dt: number, boxes: typeof world.boxes, now: number) => {
+    // Voltou do segundo plano (mm3d-27): a sala freou e parou o veículo
+    // enquanto este laço estava parado. Assume o estado dela (com a velocidade)
+    // e abre uma época nova — sem isso o carro daqui seguia de onde parou e
+    // era arrastado/teleportado até o da sala.
+    if (resyncDrive) {
+      const sc = net.status === "online" ? net.cars()?.get(String(driving)) : null
+      if (sc && sc.driver === net.sessionId) {
+        resyncDrive = false
+        veh = createVehicle(sc.x, sc.z, sc.facing)
+        Object.assign(veh, { vx: sc.vx ?? 0, vz: sc.vz ?? 0, w: sc.w ?? 0 })
+        Object.assign(prevPose, { x: sc.x, z: sc.z, yaw: sc.facing })
+        restartDrive()
+      }
+    }
     const v = veh!
     const d = devDrive.current ?? (input.blocked ? IDLE_DRIVE : driveAxis(input))
     const P = paramsFor(drivingKind, tune)
@@ -488,9 +515,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     while (v.acc >= STEP) {
       if (driveN % DRIVE_EVERY === 0) {
         const q = quantizeDrive(d)
-        if (!sameDrive(q, heldDrive)) {
+        if (!sameDrive(q, heldDrive) || now - lastDriveSent > DRIVE_BEAT_MS) {
           heldDrive = q
-          net.sendDriveAt(q, driveN + 1)
+          lastDriveSent = now
+          net.sendDriveAt(q, driveN + 1, driveEpoch)
         }
       }
       prevPose.x = v.x
@@ -531,6 +559,18 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
 
   let instr: SceneInstrumentation | null = null
   let statsTimer = 0
+
+  // Aba em segundo plano (mm3d-27): o navegador para este laço, mas a sala
+  // segue. Avisa já — dirigindo, a sala freia e estaciona; a pé, para — e, ao
+  // voltar, o veículo assume o estado da sala numa época nova.
+  const onVisibility = () => {
+    if (disposed) return
+    if (document.hidden) {
+      if (driving && veh) net.send("drive", { t: 0, b: 1, s: 0, h: 0, k: driveN + 1, e: driveEpoch, z: 1 })
+      else net.send("in", { x: 0, z: 0, r: 0 })
+    } else if (driving) resyncDrive = true
+  }
+  document.addEventListener("visibilitychange", onVisibility)
 
   scene.onBeforeRenderObservable.add(() => {
     const dt = Math.min(engine.getDeltaTime() / 1000, 0.1)
@@ -788,6 +828,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       disposed = true
       const w = window as unknown as { __mmStreet?: typeof probe }
       if (w.__mmStreet === probe) delete w.__mmStreet
+      document.removeEventListener("visibilitychange", onVisibility)
       net.dispose()
       engine.stopRenderLoop()
       detachInput()

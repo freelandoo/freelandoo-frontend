@@ -13,6 +13,10 @@
 // além de 300 ms depois do último estado. Morte prevista é só desenho: "saiu"
 // vale com o estado 4 do servidor (outConfirmed).
 //
+// mm3d-27: o fantasma também é corrigido aos poucos (ghostErr). Antes, cada
+// vez que o outro mudava o botão, o boneco dele saltava na tela a cada estado
+// do servidor (o "interpolando" com duas pessoas no jetpack).
+//
 // Só TypeScript que pode ser apagado: o teste do backend carrega este arquivo
 // direto (test/unit/meuMundoJetpackClient.test.js).
 
@@ -29,6 +33,8 @@ const RING = 180;
 const GHOST_MAX = 36;
 /** Erro visual: some em ~100 ms. */
 const ERR_TAU_MS = 33;
+/** Erro visual do fantasma: some em ~250 ms (a correção dele é maior: um RTT inteiro de botão errado). */
+const GHOST_TAU_MS = 80;
 /** Diferença acima disto não é suavizada (pula direto). */
 const ERR_SNAP = 2;
 /** Passos re-simulados ou avançados por chamada (aba que voltou do segundo plano). */
@@ -89,6 +95,10 @@ export class PartySim {
   private changes: { k: number; h: boolean }[] = [];
   private held = false;
   private readonly ghost = [false, false, false, false];
+  /** Diferença visual de cada fantasma (m), como errX/errY do próprio. */
+  private readonly gErrX = [0, 0, 0, 0];
+  private readonly gErrY = [0, 0, 0, 0];
+  private readonly gBefore: ({ x: number; y: number } | null)[] = [null, null, null, null];
   private readonly heldBuf = [false, false, false, false];
   private readonly opts: PartySimOptions;
 
@@ -121,6 +131,18 @@ export class PartySim {
     this.held = held;
     this.changes = [{ k: 1, h: held }];
     this.opts.send?.(1, held);
+  }
+
+  /**
+   * Aba escondida (mm3d-27): o laço local para, mas a partida segue — solta o
+   * botão já, para o servidor não seguir "segurando" pelo jogador.
+   */
+  release() {
+    if (!this.held) return;
+    this.held = false;
+    const k = this.match.ticks + 1;
+    this.changes.push({ k, h: false });
+    this.opts.send?.(k, false);
   }
 
   /** Avança o laço local até o passo `target` com o botão `held`. Devolve os eventos (efeitos e som). */
@@ -161,6 +183,11 @@ export class PartySim {
     const me = this.runner;
     const bx = me ? me.x : 0;
     const by = me ? me.y : 0;
+    for (const s of m.slots) {
+      if (s === this.me) continue;
+      const g = this.ghostSnap(s);
+      this.gBefore[s] = g ? { x: g.x, y: g.y } : null;
+    }
 
     this.syncTrack(st);
     for (const r of st.runners.values()) {
@@ -179,6 +206,17 @@ export class PartySim {
       this.errY += by - me.y;
       if (Math.hypot(this.errX, this.errY) > ERR_SNAP) this.errX = this.errY = 0;
     }
+    for (const s of m.slots) {
+      const b = this.gBefore[s];
+      const g = s !== this.me && b ? this.ghostSnap(s) : null;
+      if (!b || !g || g.state === 'dead') {
+        this.gErrX[s] = this.gErrY[s] = 0;
+        continue;
+      }
+      this.gErrX[s] += b.x - g.x;
+      this.gErrY[s] += b.y - g.y;
+      if (Math.hypot(this.gErrX[s], this.gErrY[s]) > ERR_SNAP) this.gErrX[s] = this.gErrY[s] = 0;
+    }
     // Mudanças do botão antes de S já foram contadas lá (guarda a última anterior).
     let keep = 0;
     while (keep + 1 < this.changes.length && this.changes[keep + 1].k <= S) keep++;
@@ -190,6 +228,16 @@ export class PartySim {
     const f = Math.exp(-dtMs / ERR_TAU_MS);
     this.errX *= f;
     this.errY *= f;
+    const g = Math.exp(-dtMs / GHOST_TAU_MS);
+    for (let s = 0; s < 4; s++) {
+      this.gErrX[s] *= g;
+      this.gErrY[s] *= g;
+    }
+  }
+
+  /** Diferença visual a somar no fantasma `slot` (some sozinha, como a do próprio). */
+  ghostErr(slot: number): { x: number; y: number } {
+    return { x: this.gErrX[slot] ?? 0, y: this.gErrY[slot] ?? 0 };
   }
 
   /** Estado para desenhar outro jogador: no máximo 300 ms além do último estado do servidor. */

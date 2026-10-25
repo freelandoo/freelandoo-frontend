@@ -90,6 +90,10 @@ export interface PartyKit {
 }
 
 const isBody = (b: string): b is BodyId => (BODY_IDS as string[]).includes(b);
+/** Garante o clipe pelo estado (só troca quando muda; predição de batida desfeita volta a voar). */
+const syncClip = (av: AvatarView, want: 'idle' | 'fly' | 'impact') => {
+  if (av.clip !== want) av.play(want, want === 'impact' ? 0.08 : 0.2);
+};
 const fill = (s: string, n: number | string) => s.replace('{n}', String(n));
 
 /** Segura até a altura alvo (piloto do harness). */
@@ -149,6 +153,12 @@ export class PartyMode {
     click('jg-spec-leave', () => this.leave());
     click('jg-res-again', () => this.net?.ready(true));
     click('jg-res-back', () => this.leave());
+    // Aba escondida (mm3d-27): solta o botão já (a partida segue no servidor).
+    const onHide = () => {
+      if (document.hidden) this.sim?.release();
+    };
+    document.addEventListener('visibilitychange', onHide);
+    this.offs.push(() => document.removeEventListener('visibilitychange', onHide));
   }
 
   /** Está desenhando (estados do grupo)? */
@@ -521,6 +531,7 @@ export class PartyMode {
       }
       k.player.root.visible = true;
       k.player.root.position.set(me.x + sim!.errX, y, 0);
+      if (this.page !== 'pcount') syncClip(k.player, me.alive ? 'fly' : 'impact');
       const t = sim!.match.track.t;
       const mode = this.page === 'pcount' ? 'ready' : !me.alive ? 'dead' : me.fuel.empty ? 'empty' : 'play';
       k.player.setTimeScale(mode === 'empty' ? 0.45 : 1);
@@ -542,7 +553,12 @@ export class PartyMode {
       const lobbyView = !inRace && r;
       av.root.visible = !!snap || !!lobbyView;
       if (snap) {
-        av.root.position.set(snap.x, snap.state === 'dead' ? Math.max(TUNING.floor + 0.25, snap.y) : snap.y, OTHER_Z * order);
+        const ge = sim!.ghostErr(slot);
+        av.root.position.set(snap.x + ge.x, snap.state === 'dead' ? Math.max(TUNING.floor + 0.25, snap.y) : snap.y + ge.y, OTHER_Z * order);
+        // Pose pelo ESTADO, não por evento (mm3d-27): "start" e "dead" dos outros
+        // costumam acontecer dentro da re-simulação, cujos eventos são
+        // descartados — o boneco ficava em pé voando e não caía ao bater.
+        if (this.page !== 'pcount') syncClip(av, snap.state === 'ready' ? 'idle' : snap.state === 'dead' ? 'impact' : 'fly');
         const t = sim!.match.track.t;
         av.setPower(snap.state !== 'dead' ? Math.max(0, snap.powerUntil - t) : 0);
         av.setFade(snap.towed ? 0.45 : 1);

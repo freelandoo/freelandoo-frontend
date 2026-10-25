@@ -332,6 +332,11 @@ export class AvatarView {
     spine.add(pack);
   }
 
+  /** Clipe atual (idle = em pé; fly = deitado voando; impact = caindo). */
+  get clip(): Clip {
+    return this.current;
+  }
+
   /** Estado visual: em pé flutuando, voando deitado ou batendo (giro de queda). */
   play(clip: Clip, _fade = 0.25) {
     if (clip === 'impact' && this.current !== 'impact') this.spinV = 9;

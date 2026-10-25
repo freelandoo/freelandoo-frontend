@@ -260,10 +260,12 @@ export class NetClient {
   /**
    * Mudança de volante (já em degraus, car-sync.ts) com o passo `k` em que
    * passou a valer aqui — a sala aplica no mesmo passo dela (mm3d-22). Só
-   * quando muda, no máximo a cada 3 passos (20×/s).
+   * quando muda, no máximo a cada 3 passos (20×/s), e repetido a cada 0,5 s
+   * enquanto dirige (mm3d-27). `e` = época (recomeça o passo ao voltar do
+   * segundo plano).
    */
-  sendDriveAt(d: DriveInput, k: number) {
-    this.room?.send("drive", { t: d.t, b: d.b, s: d.s, h: d.h ? 1 : 0, k })
+  sendDriveAt(d: DriveInput, k: number, e?: number) {
+    this.room?.send("drive", { t: d.t, b: d.b, s: d.s, h: d.h ? 1 : 0, k, e })
   }
 
   /** Mensagem avulsa (sentar, levantar). */

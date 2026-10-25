@@ -22,6 +22,7 @@ import type { Camera } from "@babylonjs/core/Cameras/camera"
 import type { QualityProfile } from "./quality"
 import { GeoBuilder, place } from "./geometry"
 import { type Box2 } from "./collision"
+import { RemoteWalker, type WalkerPose } from "./remote-walker"
 import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder } from "./avatars"
 import { lerpAngle, step, type Body, type Intent, type MotionProfile, type MoveState } from "./motion"
 import type { BodyId } from "../types"
@@ -296,44 +297,36 @@ export class RemotePlayer {
   x: number
   z: number
   facing: number
-  private tx: number
-  private tz: number
-  private tf: number
   private tMove: MoveState = 0
   y = 0
-  private ty = 0
   private lastX: number
   private lastZ: number
   private speed = 0
+  // mm3d-27: linha do tempo dos estados da sala (remote-walker.ts), no lugar
+  // de perseguir o último ponto (anda-e-freia a cada pacote).
+  private readonly track = new RemoteWalker()
+  private readonly at: WalkerPose = { x: 0, z: 0, y: 0, facing: 0 }
 
   constructor(readonly char: Character, x: number, z: number, facing: number) {
-    this.x = this.tx = this.lastX = x
-    this.z = this.tz = this.lastZ = z
-    this.facing = this.tf = facing
+    this.x = this.lastX = x
+    this.z = this.lastZ = z
+    this.facing = facing
+    this.track.push(performance.now() / 1000, x, z, facing)
     char.place(x, z, facing)
   }
 
   setTarget(x: number, z: number, facing: number, move: MoveState, y = 0) {
-    this.tx = x
-    this.tz = z
-    this.tf = facing
     this.tMove = move
-    this.ty = y
+    this.track.push(performance.now() / 1000, x, z, facing, y)
   }
 
   update(dt: number) {
-    const err = Math.hypot(this.tx - this.x, this.tz - this.z)
-    if (err > 8) {
-      this.x = this.tx
-      this.z = this.tz
-      this.y = this.ty
-    } else {
-      const k = 1 - Math.exp(-10 * dt)
-      this.x += (this.tx - this.x) * k
-      this.z += (this.tz - this.z) * k
-      this.y += (this.ty - this.y) * k
+    if (this.track.pose(performance.now() / 1000, this.at)) {
+      this.x = this.at.x
+      this.z = this.at.z
+      this.y = this.at.y
+      this.facing = this.at.facing
     }
-    this.facing = lerpAngle(this.facing, this.tf, 1 - Math.exp(-10 * dt))
     const inst = dt > 0 ? Math.hypot(this.x - this.lastX, this.z - this.lastZ) / dt : 0
     this.speed += (inst - this.speed) * (1 - Math.exp(-8 * dt))
     this.lastX = this.x

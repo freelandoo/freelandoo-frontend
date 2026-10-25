@@ -18,6 +18,8 @@ const NOMINAL = 0.1
 const MAX_EXTRA = 0.25
 /** Acima disto (m) entre estados, é teletransporte: não interpola. */
 const JUMP = 12
+/** Intervalo sem estado (s) que quebra a linha do tempo (mm3d-27: aba escondida, rede caiu). */
+const GAP = 0.6
 const KEEP = 8
 
 interface Sample {
@@ -52,6 +54,11 @@ export class RemoteVehicle {
     this.key = key
     const last = this.s[this.s.length - 1]
     if (last && Math.hypot(x - last.x, z - last.z) > JUMP) this.s.length = 0
+    else if (last && now - last.t > GAP + DELAY) {
+      // Parado ou sem rede por um tempo: recomeça daqui, sem atravessar o vazio.
+      this.s.length = 0
+      this.s.push({ ...last, t: now - NOMINAL })
+    }
     const prev = this.s[this.s.length - 1]
     let t = now
     if (prev) {
