@@ -8112,6 +8112,8 @@
     "actDoStudy": "Study",
     "actDoTrain": "Train",
     "actDoWork": "Work",
-    "stRoutineShort": "It's a routine: the first hours of the day pay off (study 5 h, training 4 h), then he rests, sleeps at 23:00 and is back at 7:00. Consistency beats marathons."
+    "stRoutineShort": "It's a routine: the first hours of the day pay off (study 5 h, training 4 h), then he rests, sleeps at 23:00 and is back at 7:00. Consistency beats marathons.",
+    "mkBuyPrice": "Buy · {n} coins",
+    "mkNoCoins": "Not enough coins"
   }
 }

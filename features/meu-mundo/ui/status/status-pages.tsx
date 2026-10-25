@@ -36,6 +36,8 @@ import {
 } from "lucide-react"
 import type { LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
 import { Bar, Chamfer, EVO, Gauge, Plate, Ring, Tag, archivo, teko, toneFor } from "./evo-skin"
+import { Arc, Card, effectText, toneColor } from "../fridge/shelf"
+import { effectsOf, thumbOf } from "../fridge/fridge-logic"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -1601,6 +1603,7 @@ function MarketC({ life, t, act }: PageProps) {
   const items = life.catalog.items
   const c = life.character
   const [tab, setTab] = useState<string>("mkHealthy")
+  const [sel, setSel] = useState(0)
   const groupOf = (it: LifeItem) =>
     it.kind === "food" || it.kind === "drink"
       ? it.nutri >= 4
@@ -1610,6 +1613,11 @@ function MarketC({ life, t, act }: PageProps) {
   const busy = act.busy || c.status !== "alive"
   const group = MARKET_GROUPS.find(([key]) => key === tab) ?? MARKET_GROUPS[0]
   const list = items.filter((it) => groupOf(it) === group[0])
+  const at = Math.min(sel, Math.max(0, list.length - 1))
+  const it = list[at]
+  const inFridge = it ? (life.fridge?.[it.id] ?? 0) : 0
+  const poor = !!it && life.wallet.coins < it.price
+  const fx = it ? effectsOf(it) : []
   return (
     <div className="flex flex-col gap-2">
       <div>
@@ -1620,50 +1628,83 @@ function MarketC({ life, t, act }: PageProps) {
           {t("mkHintFridge", "Tudo vai para a geladeira da sua casa — é lá que ele come. Saudável é caro, porcaria é barata.")}
         </p>
       </div>
-      {/* abas só com ícone; o nome da aba aberta vira o título da placa */}
+      {/* abas só com ícone; o nome da aba aberta vira o título */}
       <div className="grid grid-cols-6 gap-1">
         {MARKET_GROUPS.map(([key, fallback, , icon]) => (
-          <MiniButton key={key} onClick={() => setTab(key)} active={tab === key} h={32} label={t(key, fallback)} tight>
+          <MiniButton
+            key={key}
+            onClick={() => {
+              setTab(key)
+              setSel(0)
+            }}
+            active={tab === key}
+            h={32}
+            label={t(key, fallback)}
+            tight
+          >
             <span className="flex [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
           </MiniButton>
         ))}
       </div>
-      <MiniPlate title={t(group[0], group[1])} aside={<span className={SM_ICON} style={{ color: EVO.ambar }}>{group[3]}</span>}>
-        <div className="grid grid-cols-2 gap-1.5">
-          {list.map((it) => {
-            const inFridge = life.fridge?.[it.id]
-            return (
-              <Chamfer key={it.id} cut={7} border={EVO.linha}>
-                <div className="flex flex-col gap-1 p-1.5">
-                  <div className="min-w-0">
-                    <div className={`${archivo.className} line-clamp-2 text-[11px] font-semibold leading-tight`} style={{ color: EVO.branco }}>
-                      {itemName(it, t)}
-                    </div>
-                    <div className={`${archivo.className} truncate text-[10px] leading-tight`} style={{ color: EVO.mudo }}>
-                      {[
-                        it.kcal ? `${it.kcal} kcal` : null,
-                        it.nutri >= 4 ? t("mkGood", "faz bem") : it.nutri <= -4 ? t("mkBad", "faz mal") : null,
-                        it.effect ? t("mkLasts", "dura {h}").replace("{h}", hoursText(it.effect.hours)) : null,
-                        it.tox ? t("mkTox", "tóxico") : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || " "}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-1">
-                    <span className={`${archivo.className} truncate text-[10px]`} style={{ color: inFridge ? EVO.douradoClaro : EVO.mudoEscuro }}>
-                      {inFridge ? t("mkInFridge", "{n} na geladeira").replace("{n}", String(inFridge)) : ""}
-                    </span>
-                    <MiniButton onClick={() => act.buy(it.id)} disabled={busy || life.wallet.coins < it.price} h={28} className="min-w-[44px] shrink-0">
-                      {it.price}
-                    </MiniButton>
-                  </div>
+      <div className={`${teko.className} flex items-center justify-between text-[16px] font-semibold uppercase leading-none tracking-wide`} style={{ color: EVO.ambar }}>
+        {t(group[0], group[1])}
+        <span className={SM_ICON}>{group[3]}</span>
+      </div>
+      {/* as comidas em cards: a MESMA prateleira da geladeira (fridge/shelf.tsx) */}
+      <Arc
+        count={list.length}
+        sel={at}
+        onSel={setSel}
+        onPick={setSel}
+        cardW={132}
+        cardH={196}
+        spacing={112}
+        compact
+        t={t}
+        render={(i, active) => {
+          const x = list[i]
+          const n = life.fridge?.[x.id] ?? 0
+          const main = effectsOf(x)[0]
+          return (
+            <Card active={active} empty={false} img={thumbOf(x.id)} badge={n ? `×${n}` : undefined} w={132} h={196} compact>
+              <div className={`${teko.className} line-clamp-2 text-[15px] font-semibold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
+                {itemName(x, t)}
+              </div>
+              {main && (
+                <div className={`${teko.className} mt-0.5 text-[14px] leading-none`} style={{ color: toneColor(main.tone) }}>
+                  {effectText(main, t)}
                 </div>
-              </Chamfer>
-            )
-          })}
+              )}
+              <div className={`${teko.className} mt-0.5 text-[15px] font-semibold leading-none`} style={{ color: EVO.douradoClaro }}>
+                {t("stCoins", "{n} moedas").replace("{n}", String(x.price))}
+              </div>
+            </Card>
+          )
+        }}
+      />
+      {/* o escolhido: efeitos, o que já tem na geladeira e o Comprar */}
+      {it && (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className={`${archivo.className} min-w-0 truncate text-[12px] font-semibold`} style={{ color: EVO.branco }}>
+              {itemName(it, t)}
+            </span>
+            <span className={`${archivo.className} shrink-0 text-[10px]`} style={{ color: inFridge ? EVO.douradoClaro : EVO.mudo }}>
+              {t("mkInFridge", "{n} na geladeira").replace("{n}", String(inFridge))}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {fx.map((e) => (
+              <span key={e.key} className={`${teko.className} px-1.5 pb-0 pt-[3px] text-[13px] leading-none`} style={{ color: toneColor(e.tone), boxShadow: `inset 0 0 0 1px ${toneColor(e.tone)}55` }}>
+                {effectText(e, t)}
+              </span>
+            ))}
+          </div>
+          <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor} h={40} className="w-full">
+            {poor ? t("mkNoCoins", "Moedas insuficientes") : t("mkBuyPrice", "Comprar · {n} moedas").replace("{n}", String(it.price))}
+          </MiniButton>
         </div>
-      </MiniPlate>
+      )}
     </div>
   )
 }

@@ -8092,6 +8092,8 @@
     "actDoStudy": "Estudiar",
     "actDoTrain": "Entrenar",
     "actDoWork": "Trabajar",
-    "stRoutineShort": "Es una rutina: rinde en las primeras horas del día (estudio 5 h, entrenamiento 4 h), descansa, duerme a las 23 h y vuelve a las 7 h. La constancia rinde más que el maratón."
+    "stRoutineShort": "Es una rutina: rinde en las primeras horas del día (estudio 5 h, entrenamiento 4 h), descansa, duerme a las 23 h y vuelve a las 7 h. La constancia rinde más que el maratón.",
+    "mkBuyPrice": "Comprar · {n} monedas",
+    "mkNoCoins": "Monedas insuficientes"
   }
 }
