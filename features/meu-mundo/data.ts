@@ -300,7 +300,13 @@ export interface ConversationRow {
 
 export async function getConversations(token: string): Promise<ApiResult<{ items: ConversationRow[] }>> {
   try {
-    const res = await fetch("/api/conversations?limit=20", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+    // O /conversations exige o ator (perfil-conta de quem joga); sem ele volta 400.
+    const actor = await getAccountProfileId(token)
+    if (!actor) return { ok: false, status: 0, error: "actor" }
+    const res = await fetch(`/api/conversations?limit=20&actor_type=profile&actor_id=${encodeURIComponent(actor)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    })
     type Raw = {
       id_conversation: string
       name: string | null
@@ -329,6 +335,94 @@ export async function getConversations(token: string): Promise<ApiResult<{ items
     return { ok: false, status: 0, error: "network" }
   }
 }
+
+// ═══ mm3d-32: chat (Global do jogo + conversa 1:1 da Freelandoo) ═══════════
+export type ChatLine = {
+  id: string
+  text: string
+  at: string | null
+  name: string
+  avatar: string | null
+  profileId: string | null
+  session: string | null
+  mine: boolean
+}
+
+/** Histórico do Global, mais nova primeiro (a página pode vir curta: o filtro de bloqueio é no servidor). */
+export const getChatGlobal = (token: string, before?: string | null) =>
+  call<{ items: ChatLine[]; next_before: string | null; has_more: boolean }>(
+    token,
+    "GET",
+    `/chat/global${before ? `?before=${encodeURIComponent(before)}` : ""}`,
+  )
+/** Recusa da moderação volta como `{ error, code }` (block / mute_temp / review). */
+export const postChatGlobal = (token: string, text: string) => call<{ line: ChatLine }>(token, "POST", "/chat/global", { text })
+export const postChatReport = (token: string, id: string, reason_category = "other") =>
+  call<{ ok?: boolean }>(token, "POST", `/chat/global/${encodeURIComponent(id)}/report`, { reason_category })
+/** Acha/cria a conversa 1:1 (pela sessão do boneco na minha sala ou pelo perfil-conta). */
+export const postChatDirect = (token: string, who: { session?: string; profileId?: string }) =>
+  call<{ conversation: { id_conversation: string } }>(token, "POST", "/chat/direct", who)
+
+/**
+ * Perfil-conta de quem joga (o "ator" das conversas): vem do /users/me
+ * (`account_profile.id_profile`). Guardado por token — uma ida só por sessão.
+ */
+let accountActor: { token: string; id: Promise<string | null> } | null = null
+export function getAccountProfileId(token: string): Promise<string | null> {
+  if (accountActor?.token === token) return accountActor.id
+  const id = fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((me: { account_profile?: { id_profile?: string | null } | null } | null) => me?.account_profile?.id_profile ?? null)
+    .catch(() => null)
+  const entry = { token, id }
+  accountActor = entry
+  // Falha não fica guardada: a próxima chamada tenta de novo.
+  void id.then((v) => {
+    if (!v && accountActor === entry) accountActor = null
+  })
+  return id
+}
+
+/** Mensagem da thread 1:1 no formato das linhas do chat (merge/pendente iguais aos do Global). */
+export type DmMessage = { id: string; text: string; at: string | null; mine: boolean; pending?: boolean; clientId?: string }
+type RawDm = { id_message: string; body: string | null; created_at: string; sender_entity_id: string; kind?: string; deleted_at?: string | null }
+export const mapDm = (m: RawDm, actorId: string): DmMessage => ({
+  id: String(m.id_message),
+  text: m.deleted_at ? "" : (m.body ?? ""),
+  at: m.created_at,
+  mine: String(m.sender_entity_id) === String(actorId),
+})
+
+/** Thread 1:1: as mesmas rotas do /mensagens (o histórico é um só). A lista vem DESC. */
+export async function getDirectMessages(token: string, id: string, actorId: string): Promise<ApiResult<{ items: DmMessage[] }>> {
+  const qs = `limit=50&actor_type=profile&actor_id=${encodeURIComponent(actorId)}`
+  const res = await fetch(`/api/conversations/${encodeURIComponent(id)}/messages?${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  }).catch(() => null)
+  if (!res) return { ok: false, status: 0, error: "network" }
+  const data = (await res.json().catch(() => null)) as { items?: RawDm[]; error?: string } | null
+  if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+  return { ok: true, data: { items: (data.items || []).map((m) => mapDm(m, actorId)).reverse() } }
+}
+/** `client_message_id` (UUID): repetir não duplica (mig 283). */
+export async function postDirectMessage(token: string, id: string, actorId: string, body: string, clientId: string): Promise<ApiResult<{ message: DmMessage }>> {
+  const res = await fetch(`/api/conversations/${encodeURIComponent(id)}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ body, actor_id: actorId, actor_type: "profile", client_message_id: clientId }),
+  }).catch(() => null)
+  if (!res) return { ok: false, status: 0, error: "network" }
+  const data = (await res.json().catch(() => null)) as { message?: RawDm; error?: string } | null
+  if (!res.ok || !data?.message) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+  return { ok: true, data: { message: { ...mapDm(data.message, actorId), mine: true } } }
+}
+export const postDirectRead = (token: string, id: string, actorId: string) =>
+  fetch(`/api/conversations/${encodeURIComponent(id)}/read`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ actor_id: actorId, actor_type: "profile" }),
+  }).catch(() => null)
 
 /** Mercado com `key`: produto exclusivo de Poléns exige; a mesma chave não cobra duas vezes. */
 export const postLifeBuyKeyed = (token: string, item: string, qty: number, key: string) =>
