@@ -68,8 +68,9 @@ const ASSETS = {
     sergio: "avatar-sergio-m22.glb",
     female: "avatar-female.glb",
     // 2026-10-25: o rosto com a malha original (a redução colapsava as
-    // costuras do atlas e deformava o lado direito do rosto).
-    ekaterina: "avatar-ekaterina-rosto.glb",
+    // costuras do atlas e deformava o lado direito do rosto); pescoço refeito
+    // (build_ekaterina.py 4b): rosto 100% na cabeça — o maxilar esticava na corrida.
+    ekaterina: "avatar-ekaterina-pescoco.glb",
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
