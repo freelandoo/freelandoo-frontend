@@ -78,7 +78,7 @@ export interface CenterSceneProps extends ScenePlayerProps {
   menuExtras?: DrawerItem[]
 }
 
-export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras, selectedPlayer = null, onPlayerTap, onPlayerGone }: CenterSceneProps) {
+export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras, selectedPlayer = null, selectedFrame = null, onPlayerTap, onPlayerGone }: CenterSceneProps) {
   const t = useTranslations("MeuMundo")
   const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -109,8 +109,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     playerCb.current = { onPlayerTap, onPlayerGone }
   }, [onPlayerTap, onPlayerGone])
   useEffect(() => {
-    if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer)
-  }, [selectedPlayer, status])
+    if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer, selectedFrame)
+  }, [selectedPlayer, selectedFrame, status])
 
   const cbRef = useRef({ onGoHome, onMoved, onServerMessage })
   useEffect(() => {
@@ -393,10 +393,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       )}
 
       {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
-      {/* Card de perfil aberto (mm3d-31): ele ocupa o pé da tela; os controles voltam ao fechar */}
-      {status === "ready" && isTouch && !open && !menuOpen && !selectedPlayer && <Joystick gameRef={gameRef} />}
+      {status === "ready" && isTouch && !open && !menuOpen && <Joystick gameRef={gameRef} />}
 
-      {status === "ready" && isTouch && !open && !menuOpen && !drivingLot && !selectedPlayer && (
+      {status === "ready" && isTouch && !open && !menuOpen && !drivingLot && (
         <>
           {nearby && (
             <EvoButton

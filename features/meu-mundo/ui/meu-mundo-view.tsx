@@ -99,6 +99,7 @@ export default function MeuMundoView({
   suspended,
   menuExtras,
   selectedPlayer = null,
+  selectedFrame = null,
   onPlayerTap,
   onPlayerGone,
 }: NeighborhoodSceneProps) {
@@ -151,8 +152,8 @@ export default function MeuMundoView({
     playerCb.current = { onPlayerTap, onPlayerGone }
   }, [onPlayerTap, onPlayerGone])
   useEffect(() => {
-    if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer)
-  }, [selectedPlayer, status])
+    if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer, selectedFrame)
+  }, [selectedPlayer, selectedFrame, status])
 
   const cbRef = useRef({ onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot })
   useEffect(() => {
@@ -495,10 +496,9 @@ export default function MeuMundoView({
       )}
 
       {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
-      {/* Card de perfil aberto (mm3d-31): ele ocupa o pé da tela; os controles voltam ao fechar */}
-      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !selectedPlayer && <Joystick gameRef={gameRef} />}
+      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && <Joystick gameRef={gameRef} />}
 
-      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !drivingLot && !selectedPlayer && (
+      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !drivingLot && (
         <>
           {nearbyMine && (
             <EvoButton

@@ -10,6 +10,10 @@
 // nome e a bolinha verde (textura pintada uma vez), os dois filhos do boneco
 // — andam junto sem nada por quadro. Uma seleção por vez: marcar outro tira
 // o anterior.
+//
+// Enquadramento (celular): com o card num lado da tela, a câmera gira um
+// pouco (até ~1,5 s) para o boneco ficar na outra metade. Arrastar a câmera
+// cancela — quem joga sempre vence.
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Camera } from "@babylonjs/core/Cameras/camera"
@@ -56,6 +60,7 @@ export class PlayerSelection {
   private marked: Character | null = null
   private sid: string | null = null
   private label = ""
+  private frame: { x: number; until: number } | null = null
   private readonly tmp = new Vector3()
 
   constructor(
@@ -142,11 +147,45 @@ export class PlayerSelection {
     return { sessionId: sid, name: r.name, box: this.screenBox(r.char) }
   }
 
-  /** Destaca a sessão `sid` entre `remotes` (null ou ausente = ninguém). */
-  selectIn(remotes: Map<string, Selectable>, sid: string | null) {
+  /**
+   * Destaca a sessão `sid` entre `remotes` (null ou ausente = ninguém).
+   * `frameX` = onde o boneco deve ficar na tela (fração da largura); null = não mexe na câmera.
+   */
+  selectIn(remotes: Map<string, Selectable>, sid: string | null, frameX: number | null = null) {
     const r = sid ? remotes.get(sid) : undefined
+    const changed = (r ? sid : null) !== this.sid
     this.sid = r ? sid : null
     this.mark(r?.char ?? null, r?.name ?? "")
+    if (!r || frameX == null) this.frame = null
+    else if (changed || !this.frame) this.frame = { x: frameX, until: performance.now() + 1500 }
+  }
+
+  /** Arrasto de câmera: o enquadramento automático para na hora. */
+  stopFrame() {
+    this.frame = null
+  }
+
+  /**
+   * Giro de câmera deste quadro (para FollowCamera.rotate) até o selecionado
+   * chegar em `frame.x`; 0 = nada a fazer. Positivo leva o boneco para a esquerda.
+   */
+  frameStep(dt: number): number {
+    const f = this.frame
+    if (!f || !this.marked) return 0
+    const b = performance.now() < f.until ? this.screenBox(this.marked) : null
+    if (!b) {
+      this.frame = null
+      return 0
+    }
+    const rect = this.canvas.getBoundingClientRect()
+    const err = (b.x - rect.left) / rect.width - f.x
+    if (Math.abs(err) < 0.012) {
+      this.frame = null
+      return 0
+    }
+    // erro em fração da largura → ângulo horizontal (fov da câmera é vertical)
+    const halfH = Math.atan(Math.tan(this.camera().fov / 2) * (rect.width / rect.height))
+    return Math.atan(err * 2 * Math.tan(halfH)) * (1 - Math.exp(-7 * dt))
   }
 
   /**
@@ -253,6 +292,7 @@ export class PlayerSelection {
 
   dispose() {
     this.sid = null
+    this.frame = null
     this.mark(null)
     this.ring.material?.dispose()
     this.ring.dispose()

@@ -15,8 +15,9 @@
 // aba Mensagens da caixa); Seguir é o /entity-follows do FollowButton.
 //
 // Visual: grafite a 70% SÓ no fundo (texto e imagem nítidos), rubi na ação
-// principal, dourado no Seguir, sem blur. Computador: ao lado do boneco
-// (place.ts). Celular: card inferior compacto.
+// principal, dourado no Seguir, sem blur. Sempre 9:12 e ao lado do boneco
+// (place.ts); no celular o mesmo card, menor, numa borda — e a câmera gira
+// para o boneco ficar na outra metade (pedido do Alex: nada de card embaixo).
 //
 // `data-mm-panel`: teclado com foco aqui dentro não comanda o personagem
 // (input.ts); toque no card não chega ao canvas.
@@ -30,7 +31,7 @@ import type { PlayerProfile } from "../../types"
 import { getPlayerProfile, postFollow } from "../../data"
 import { MM } from "../hud/tokens"
 import { archivo } from "../status/evo-skin"
-import { isCompactViewport, placeCard, type CardPlace } from "./place"
+import { isCompactViewport, placeCard, placeCompact, type CardPlace } from "./place"
 import s from "../hud/hud.module.css"
 
 /** Fundo do card: grafite a 70% (pedido do Alex) — só o fundo é translúcido. */
@@ -47,6 +48,8 @@ const cached = (sid: string) => {
 export interface ScenePlayerProps {
   /** sessão do card aberto (o motor destaca esse boneco) */
   selectedPlayer?: string | null
+  /** celular: onde o boneco deve ficar na tela (fração da largura), ao lado do card */
+  selectedFrame?: number | null
   onPlayerTap?: (tap: PlayerTap | null) => void
   onPlayerGone?: (sessionId: string) => void
 }
@@ -116,12 +119,12 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
     }
   }, [close])
 
-  // Computador: mede o card e encosta ao lado do boneco (uma vez por abertura/conteúdo).
+  // Mede o card e encosta ao lado do boneco (uma vez por abertura/tamanho de tela).
   useLayoutEffect(() => {
-    if (compact || !ref.current) return
+    if (!ref.current) return
     const el = ref.current
-    setPlace(placeCard(tap.box, el.offsetWidth, el.offsetHeight, window.innerWidth, window.innerHeight))
-  }, [compact, tap.box, load.state])
+    setPlace((compact ? placeCompact : placeCard)(tap.box, el.offsetWidth, el.offsetHeight, window.innerWidth, window.innerHeight))
+  }, [compact, tap.box])
 
   const p = load.state === "ready" ? load.p : null
   const title = p?.displayName || p?.name || tap.name
@@ -154,11 +157,9 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
       .replace("{n}", num(r.count))
   })()
 
-  const frame: React.CSSProperties = compact
-    ? { left: "max(10px, env(safe-area-inset-left))", right: "max(10px, env(safe-area-inset-right))", bottom: "max(10px, env(safe-area-inset-bottom))" }
-    : place
-      ? { left: place.left, top: place.top }
-      : { left: -9999, top: 0 }
+  const frame: React.CSSProperties = place ? { left: place.left, top: place.top } : { left: -9999, top: 0 }
+  // 9:12 nos dois; no celular a largura cabe ao lado do boneco (≤ 60% da tela).
+  const width = compact ? Math.min(228, Math.round(window.innerWidth * 0.6)) : 340
 
   return (
     <div
@@ -167,19 +168,19 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
       role="dialog"
       aria-modal="false"
       aria-labelledby="mm-player-card-title"
-      className={`${archivo.className} ${leaving ? s.cardOut : s.cardIn} fixed z-[74] mx-auto flex flex-col ${compact ? "max-w-[440px] gap-2 p-2.5" : "w-[340px] gap-3 p-3.5"}`}
-      style={{ ...frame, background: BG, border: `1px solid ${MM.borderStrong}`, borderRadius: MM.radius.panel, boxShadow: MM.shadow, color: MM.text }}
+      className={`${archivo.className} ${leaving ? s.cardOut : s.cardIn} fixed z-[74] flex flex-col justify-between overflow-hidden ${compact ? "gap-1.5 p-2.5" : "gap-3 p-3.5"}`}
+      style={{ ...frame, width, aspectRatio: "9 / 12", background: BG, border: `1px solid ${MM.borderStrong}`, borderRadius: MM.radius.panel, boxShadow: MM.shadow, color: MM.text }}
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MM.muted }}>
+        <span className={`${compact ? "text-[10px]" : "text-[11px]"} font-semibold uppercase tracking-[0.14em]`} style={{ color: MM.muted }}>
           {t("pcTitle", "Perfil do jogador")}
         </span>
         <button
           type="button"
           onClick={close}
           aria-label={t("pcClose", "Fechar")}
-          className="-mr-1 inline-flex h-8 w-8 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70]"
+          className={`-mr-1 inline-flex ${compact ? "h-7 w-7" : "h-8 w-8"} items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70]`}
           style={{ background: "rgba(255,255,255,0.06)", color: MM.text }}
         >
           <X className="h-4 w-4" />
@@ -189,18 +190,18 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
       {/* Capa + foto + nome */}
       <div className="relative">
         <Cover url={usable ? p?.coverUrl : null} compact={compact} />
-        <div className={`flex items-end gap-3 px-1.5 ${compact ? "-mt-7" : "-mt-10"}`}>
+        <div className={`flex items-end px-1.5 ${compact ? "-mt-6 gap-2" : "-mt-10 gap-3"}`}>
           <Avatar url={usable ? p?.avatarUrl : null} name={title} compact={compact} alt={t("pcAvatarAlt", "Foto de {name}").replace("{name}", title)} />
           <div className="min-w-0 flex-1 pb-0.5">
-            <h2 id="mm-player-card-title" className={`truncate font-bold leading-tight ${compact ? "text-[16px]" : "text-[19px]"}`}>
+            <h2 id="mm-player-card-title" className={`truncate font-bold leading-tight ${compact ? "text-[15px]" : "text-[19px]"}`}>
               {title}
             </h2>
             {usable && p?.username && (
-              <div className="truncate text-[12px]" style={{ color: MM.muted }}>
+              <div className={`truncate ${compact ? "text-[11px]" : "text-[12px]"}`} style={{ color: MM.muted }}>
                 @{p.username}
               </div>
             )}
-            <div className="mt-0.5 flex items-center gap-1.5 text-[13px]">
+            <div className={`mt-0.5 flex items-center gap-1.5 ${compact ? "text-[11px]" : "text-[13px]"}`}>
               <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: gone ? MM.muted : MM.online }} aria-hidden />
               {gone ? (
                 <span style={{ color: MM.muted }}>{t("pcLeft", "Saiu daqui")}</span>
@@ -251,23 +252,23 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
       ) : (
         <>
           {/* Números reais: posts públicos, seguidores, seguindo e avaliações */}
-          <div className="grid grid-cols-3 text-center" style={{ borderBottom: compact ? undefined : `1px solid ${MM.border}` }}>
+          <div className="grid grid-cols-3 text-center" style={{ borderBottom: `1px solid ${MM.border}` }}>
             {[
               [p?.posts, t("pcPosts", "Posts")],
               [p?.followers, t("pcFollowers", "Seguidores")],
               [p?.following, t("pcFollowing", "Seguindo")],
             ].map(([n, label], i) => (
-              <div key={i} className={compact ? "py-0.5" : "pb-3"} style={i ? { borderLeft: `1px solid ${MM.border}` } : undefined}>
-                <div className={`font-bold tabular-nums ${compact ? "text-[16px]" : "text-[20px]"}`}>{num(n as number | undefined)}</div>
-                <div className="text-[12px]" style={{ color: MM.muted }}>
+              <div key={i} className={`min-w-0 ${compact ? "pb-1.5" : "pb-3"}`} style={i ? { borderLeft: `1px solid ${MM.border}` } : undefined}>
+                <div className={`font-bold tabular-nums ${compact ? "text-[15px]" : "text-[20px]"}`}>{num(n as number | undefined)}</div>
+                <div className={`truncate ${compact ? "text-[10px]" : "text-[12px]"}`} style={{ color: MM.muted }}>
                   {label as string}
                 </div>
               </div>
             ))}
           </div>
-          <div className={`flex items-center justify-center ${compact ? "gap-2" : "flex-col gap-1"}`}>
-            <Stars avg={p?.ratings?.count ? p.ratings.avg : 0} />
-            <span className="text-[12px]" style={{ color: MM.muted }}>
+          <div className={`flex flex-col items-center justify-center ${compact ? "gap-0.5" : "gap-1"}`}>
+            <Stars avg={p?.ratings?.count ? p.ratings.avg : 0} small={compact} />
+            <span className={compact ? "text-[11px]" : "text-[12px]"} style={{ color: MM.muted }}>
               {ratingLine}
             </span>
           </div>
@@ -275,7 +276,7 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
       )}
 
       {/* Ações */}
-      <div className={compact ? "grid grid-cols-3 gap-1.5" : "flex flex-col gap-2"}>
+      <div className={`flex flex-col ${compact ? "gap-1.5" : "gap-2"}`}>
         <ActionLink
           href={usable ? `/freelancer/${encodeURIComponent(p!.profileId!)}` : null}
           primary
@@ -283,7 +284,7 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
           label={t("pcViewProfile", "Ver perfil")}
           compact={compact}
         />
-        <div className={compact ? "contents" : "grid grid-cols-2 gap-2"}>
+        <div className={`grid grid-cols-2 ${compact ? "gap-1.5" : "gap-2"}`}>
           <ActionLink
             href={usable ? `/mensagens?with=${encodeURIComponent(p!.profileId!)}` : null}
             icon={<MessageCircle className="h-4 w-4" />}
@@ -297,7 +298,7 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
             disabled={!usable || !p?.viewerProfileId}
             aria-busy={followBusy}
             aria-pressed={!!p?.isFollowing}
-            className={`inline-flex items-center justify-center gap-1.5 rounded-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70] ${compact ? "h-10 text-[13px]" : "h-11 text-[14px]"}`}
+            className={`inline-flex items-center justify-center gap-1.5 rounded-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70] ${compact ? "h-9 text-[12px]" : "h-11 text-[14px]"}`}
             style={{
               border: `1px solid ${usable ? MM.gold : MM.border}`,
               background: p?.isFollowing ? "rgba(229,190,112,0.12)" : "transparent",
@@ -322,7 +323,7 @@ function Cover({ url, compact }: { url: string | null | undefined; compact: bool
   const [broken, setBroken] = useState(false)
   return (
     <div
-      className={`w-full overflow-hidden ${compact ? "h-14" : "h-[92px]"}`}
+      className={`w-full shrink-0 overflow-hidden ${compact ? "h-12" : "h-[92px]"}`}
       style={{ borderRadius: MM.radius.card, background: "linear-gradient(135deg, #650D2A 0%, #2A1A22 55%, #1D232C 100%)" }}
     >
       {url && !broken && (
@@ -335,7 +336,7 @@ function Cover({ url, compact }: { url: string | null | undefined; compact: bool
 
 function Avatar({ url, name, alt, compact }: { url: string | null | undefined; name: string; alt: string; compact: boolean }) {
   const [broken, setBroken] = useState(false)
-  const size = compact ? 56 : 80
+  const size = compact ? 52 : 80
   return (
     <div
       className="relative shrink-0 overflow-hidden"
@@ -353,18 +354,18 @@ function Avatar({ url, name, alt, compact }: { url: string | null | undefined; n
   )
 }
 
-function Stars({ avg }: { avg: number }) {
+function Stars({ avg, small }: { avg: number; small?: boolean }) {
   return (
     <span className="inline-flex gap-1" aria-hidden>
       {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} className="h-4 w-4" style={{ color: avg >= i - 0.25 ? MM.gold : MM.muted }} fill={avg >= i - 0.25 ? MM.gold : "none"} strokeWidth={1.6} />
+        <Star key={i} className={small ? "h-3.5 w-3.5" : "h-4 w-4"} style={{ color: avg >= i - 0.25 ? MM.gold : MM.muted }} fill={avg >= i - 0.25 ? MM.gold : "none"} strokeWidth={1.6} />
       ))}
     </span>
   )
 }
 
 function ActionLink({ href, icon, label, primary, compact }: { href: string | null; icon: React.ReactNode; label: string; primary?: boolean; compact: boolean }) {
-  const cls = `inline-flex items-center justify-center gap-1.5 rounded-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70] ${compact ? "h-10 text-[13px]" : "h-11 text-[14px]"}`
+  const cls = `inline-flex items-center justify-center gap-1.5 rounded-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70] ${compact ? "h-9 text-[12px]" : "h-11 text-[14px]"}`
   const style: React.CSSProperties = primary
     ? { background: href ? MM.rubyFill : "rgba(255,255,255,0.06)", border: `1px solid ${href ? MM.rubyBorder : MM.border}`, color: href ? "#fff" : MM.disabledText }
     : { border: `1px solid ${MM.borderStrong}`, color: href ? MM.text : MM.disabledText }

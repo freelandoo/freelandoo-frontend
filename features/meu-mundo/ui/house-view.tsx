@@ -53,7 +53,7 @@ export interface HouseSceneProps extends ScenePlayerProps {
   menuExtras?: DrawerItem[]
 }
 
-export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras, selectedPlayer = null, onPlayerTap, onPlayerGone }: HouseSceneProps) {
+export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras, selectedPlayer = null, selectedFrame = null, onPlayerTap, onPlayerGone }: HouseSceneProps) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<HouseGameHandle | null>(null)
@@ -91,8 +91,8 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
     playerCb.current = { onPlayerTap, onPlayerGone }
   }, [onPlayerTap, onPlayerGone])
   useEffect(() => {
-    if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer)
-  }, [selectedPlayer, status])
+    if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer, selectedFrame)
+  }, [selectedPlayer, selectedFrame, status])
 
   const cbRef = useRef({ onExit, onMoved, onServerMessage, onFridge: (_m: FridgeReply) => {} })
   useEffect(() => {
@@ -480,8 +480,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
         </div>
       )}
 
-      {/* Card de perfil aberto (mm3d-31): ele ocupa o pé da tela; os controles voltam ao fechar */}
-      {status === "ready" && isTouch && !overlay && !selectedPlayer && (
+      {status === "ready" && isTouch && !overlay && (
         <>
           {!seat && !rest && <Joystick gameRef={gameRef} />}
           {hasAction && (

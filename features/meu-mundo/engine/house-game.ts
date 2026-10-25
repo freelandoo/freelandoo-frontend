@@ -141,7 +141,7 @@ export interface HouseGameHandle {
   /** Qualidade gráfica escolhida na gaveta (mm3d-19). */
   setQuality: (c: QualityChoice) => void
   /** Destaque no jogador do card aberto; null = ninguém (mm3d-31). */
-  selectPlayer: (sessionId: string | null) => void
+  selectPlayer: (sessionId: string | null, frameX?: number | null) => void
   /** Andar onde o personagem está (painel). */
   floor: () => number
   dispose: () => void
@@ -558,6 +558,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     let intent: Intent = { x: 0, z: 0, run: false }
     if (!input.blocked) {
       if (input.camDX || input.camDY) {
+        select.stopFrame()
         follow.rotate(input.camDX * 0.006, input.camDY * 0.004)
         input.camDX = 0
         input.camDY = 0
@@ -635,6 +636,8 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     if (tap !== undefined && !input.blocked) opts.onPlayerTap?.(tap)
     interior.showUpTo(body.floor)
     fridgeDoor.tick(dt, body.floor)
+    const frameYaw = select.frameStep(dt)
+    if (frameYaw) follow.rotate(frameYaw, 0)
     follow.update(dt, body.x, body.z, viewBoxes(), body.y)
     governor.tick(engine.getDeltaTime())
 
@@ -767,8 +770,8 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     reconnect() {
       void net.retry()
     },
-    selectPlayer(sid) {
-      if (!disposed) select.selectIn(remotes, sid)
+    selectPlayer(sid, frameX = null) {
+      if (!disposed) select.selectIn(remotes, sid, frameX)
     },
     setQuality(c) {
       governor.setProfile(resolveQuality(c))

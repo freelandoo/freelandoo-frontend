@@ -37,6 +37,7 @@ import ItemsPanel from "./items/items-panel"
 import PolensSheet, { PolensReturn } from "./polens/polens-sheet"
 import PlayerCard from "./player-card/player-card"
 import type { PlayerTap } from "../engine/player-select"
+import { compactFrameX, isCompactViewport } from "./player-card/place"
 import {
   fetchAdminNeighborhood,
   getInviteCandidates,
@@ -97,7 +98,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [polensOpen, setPolensOpen] = useState(false)
   // Card de perfil de outro jogador (mm3d-31): um por vez; `dismiss` sobe no
   // toque no vazio do mundo (o card sai com a animação dele).
-  const [playerCard, setPlayerCard] = useState<{ tap: PlayerTap; gone: boolean; dismiss: number } | null>(null)
+  // `frame` (celular): onde a câmera põe o boneco, na metade oposta à do card.
+  const [playerCard, setPlayerCard] = useState<{ tap: PlayerTap; gone: boolean; dismiss: number; frame: number | null } | null>(null)
   const busyRef = useRef(false)
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -381,13 +383,14 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     setPlayerCard((c) => {
       if (!tap) return c ? { ...c, dismiss: c.dismiss + 1 } : c
       if (c && c.tap.sessionId === tap.sessionId) return c
-      return { tap, gone: false, dismiss: 0 }
+      const frame = isCompactViewport(window.innerWidth, window.innerHeight) ? compactFrameX(tap.box, window.innerWidth) : null
+      return { tap, gone: false, dismiss: 0, frame }
     })
   }, [])
   const onPlayerGone = useCallback((sid: string) => setPlayerCard((c) => (c && c.tap.sessionId === sid ? { ...c, gone: true } : c)), [])
   // Só fecha o card DAQUELA sessão (a saída animada não pode fechar o próximo).
   const closePlayerCard = useCallback((sid: string) => setPlayerCard((c) => (c && c.tap.sessionId === sid ? null : c)), [])
-  const scenePlayer = { selectedPlayer: playerCard?.tap.sessionId ?? null, onPlayerTap, onPlayerGone }
+  const scenePlayer = { selectedPlayer: playerCard?.tap.sessionId ?? null, selectedFrame: playerCard?.frame ?? null, onPlayerTap, onPlayerGone }
 
   return (
     <>
