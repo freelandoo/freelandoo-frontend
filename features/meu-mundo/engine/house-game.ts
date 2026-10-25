@@ -485,13 +485,13 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         bestD = d
       }
     }
-    // Geladeira: só o titular; a sala aceita a até 1,4 m (FRIDGE_REACH).
+    // Geladeira: só o titular; a sala aceita a até 1,7 m (FRIDGE_REACH).
     if (isOwner) {
       for (const f of fridges) {
         if (f.floor !== body.floor) continue
         const d = Math.hypot(f.x - body.x, f.z - body.z)
-        if (d <= 1.25 && d < bestD) {
-          best = { kind: "fridge", id: f.id, x: f.x, z: f.z, radius: 1.25, fridge: f }
+        if (d <= 1.5 && d < bestD) {
+          best = { kind: "fridge", id: f.id, x: f.x, z: f.z, radius: 1.5, fridge: f }
           bestD = d
         }
       }

@@ -173,7 +173,9 @@ export class NetClient {
     room.onMessage("replaced", () => {
       replaced = true
     })
-    for (const type of ["visits", "visit_ended", "seat", "stood", "bed", "life", "car_denied", "tuned"]) {
+    // Tipo que a sala manda e não está aqui é DESCARTADO pelo Colyseus (em
+    // silêncio): "ride" (mm3d-15) e "fridge" (mm3d-28) ficaram de fora até 2026-10-25.
+    for (const type of ["visits", "visit_ended", "seat", "stood", "bed", "life", "car_denied", "tuned", "ride", "fridge"]) {
       room.onMessage(type, (p: unknown) => {
         if (!this.disposed) this.cb.onMessage?.(type, p)
       })
