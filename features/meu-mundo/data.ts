@@ -142,6 +142,8 @@ export const postLifeActivity = (token: string, activity: string, hours?: number
   call<LifeSummary>(token, "POST", "/life/activity", { activity, hours })
 /** Comer/tomar um item do catálogo (cobra as moedas do jogo). */
 export const postLifeConsume = (token: string, item: string) => call<LifeSummary>(token, "POST", "/life/consume", { item })
+/** Mercado → geladeira (mig 301): compra e guarda; comer é na geladeira da casa. */
+export const postLifeBuy = (token: string, item: string, qty = 1) => call<LifeSummary>(token, "POST", "/life/buy", { item, qty })
 /** Depois da morte: o próximo hóspede chega. */
 export const postLifeNewcomer = (token: string) => call<LifeSummary>(token, "POST", "/life/newcomer", {})
 

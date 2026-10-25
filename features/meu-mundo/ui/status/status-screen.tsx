@@ -19,11 +19,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getLife, postLifeActivity, postLifeConsume, postLifeNewcomer } from "../../data"
+import { getLife, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, archivo, chamfer, teko } from "./evo-skin"
 import { PAGES, StatusPage, pageTitle, type PageActions } from "./status-pages"
 import SkinWardrobe from "./skin-wardrobe"
+import { PORTRAIT } from "../portraits"
 
 const N = PAGES.length
 const W = 1460
@@ -68,14 +69,6 @@ function estado(r: number) {
 const easeOutQuart = (x: number) => 1 - Math.pow(1 - x, 4)
 const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3)
 const easeInCubic = (x: number) => x * x * x
-
-const PORTRAIT: Record<BodyId, string> = {
-  normal: "/meu-mundo/retratos/v1/normal.webp",
-  slim: "/meu-mundo/retratos/v1/slim.webp",
-  fat: "/meu-mundo/retratos/v1/fat.webp",
-  strong: "/meu-mundo/retratos/v1/strong.webp",
-  sergio: "/meu-mundo/retratos/v1/sergio.webp",
-}
 
 export interface StatusScreenProps {
   name: string
@@ -130,12 +123,13 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
     window.setTimeout(() => setNotice(null), 2800)
   }, [])
   const run = useCallback(
-    async (fn: (token: string) => Promise<{ ok: boolean; error?: string }>) => {
+    async (fn: (token: string) => Promise<{ ok: boolean; error?: string }>, done?: string) => {
       const token = getToken()
       if (!token || busy) return
       setBusy(true)
       const r = await fn(token)
       if (!r.ok) say(r.error || t("stActionFail", "Não deu certo agora"))
+      else if (done) say(done)
       await load()
       setBusy(false)
     },
@@ -145,11 +139,11 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
     () => ({
       busy,
       activity: (kind, hours) => void run((tk) => postLifeActivity(tk, kind, hours)),
-      consume: (item) => void run((tk) => postLifeConsume(tk, item)),
+      buy: (item) => void run((tk) => postLifeBuy(tk, item), t("mkStored", "Guardado na geladeira")),
       newcomer: () => void run((tk) => postLifeNewcomer(tk)),
       openSkins: () => setWardrobe(true),
     }),
-    [busy, run],
+    [busy, run, t],
   )
 
   // ── tamanho: carrossel no computador, card único no celular ─────────────

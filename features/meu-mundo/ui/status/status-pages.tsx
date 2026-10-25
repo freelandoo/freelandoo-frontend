@@ -45,7 +45,8 @@ export type PageId = (typeof PAGES)[number]
 export interface PageActions {
   busy: boolean
   activity: (kind: "studying" | "training" | "working" | "idle", hours?: number) => void
-  consume: (item: string) => void
+  /** Mercado → geladeira (mm3d-28): compra e guarda; comer é na geladeira da casa. */
+  buy: (item: string) => void
   newcomer: () => void
   /** Abre o vestuário (botão SKIN embaixo da foto, mm3d-16). */
   openSkins: () => void
@@ -220,6 +221,15 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
       return t("evMeal", "Refeição das {h} h: {item}.").replace("{h}", String(data.meal)).replace("{item}", item ? itemName(item, t) : "")
     case "meal_missed":
       return t("evMealMissed", "Perdeu a refeição das {h} h.").replace("{h}", String(data.meal))
+    case "meal_part":
+      return t("evMealPart", "Parte da refeição das {h} h: {item}.").replace("{h}", String(data.meal)).replace("{item}", item ? itemName(item, t) : "")
+    case "meal_lost":
+      return t("evMealLost", "A refeição das {h} h ficou para trás (a penalidade terminou).").replace("{h}", String(data.meal))
+    case "buy":
+      return t("evBuy", "Comprou {n}× {item} para a geladeira ({p} moedas).")
+        .replace("{n}", String(data.qty ?? 1))
+        .replace("{item}", item ? itemName(item, t) : String(data.item ?? ""))
+        .replace("{p}", String(data.price ?? ""))
     case "consume":
       return t("evConsume", "Consumiu {item}.").replace("{item}", item ? itemName(item, t) : String(data.item ?? ""))
     case "activity":
@@ -231,6 +241,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
     case "collapse":
       return t("evCollapse", "Desmaiou de exaustão e dormiu no chão.")
     case "routine_meal":
+      if (data.from === "fridge") return t("evRoutineFridge", "Rotina: comeu {item} da geladeira.").replace("{item}", item ? itemName(item, t) : String(data.item ?? ""))
       return t("evRoutineMeal", "Rotina: comprou e comeu {item} ({n} moedas).")
         .replace("{item}", item ? itemName(item, t) : String(data.item ?? ""))
         .replace("{n}", String(data.price ?? ""))
@@ -267,7 +278,8 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
   }
 }
 function eventIcon(kind: string) {
-  if (kind === "meal" || kind === "meal_missed" || kind === "consume" || kind === "routine_meal") return <Utensils className="h-5 w-5" />
+  if (kind === "meal" || kind === "meal_missed" || kind === "meal_part" || kind === "meal_lost" || kind === "consume" || kind === "routine_meal" || kind === "buy")
+    return <Utensils className="h-5 w-5" />
   if (kind === "hospital_in" || kind === "hospital_out") return <Hospital className="h-5 w-5" />
   if (kind === "heart_attack" || kind === "hypertension") return <HeartPulse className="h-5 w-5" />
   if (kind === "diabetes") return <Droplet className="h-5 w-5" />
@@ -898,7 +910,7 @@ function Market({ life, compact, t, act }: PageProps) {
           {t("mkWallet", "Carteira")}: <span style={{ color: EVO.douradoClaro }}>{t("stCoins", "{n} moedas").replace("{n}", String(life.wallet.coins))}</span>
         </div>
         <span className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
-          {t("mkHint", "Saudável é caro e porcaria é barata. Trabalhar rende moedas.")}
+          {t("mkHintFridge", "Tudo vai para a geladeira da sua casa — é lá que ele come. Saudável é caro, porcaria é barata.")}
         </span>
       </div>
       {/* abas de categoria (os chips do EVO) */}
@@ -928,12 +940,13 @@ function Market({ life, compact, t, act }: PageProps) {
                           it.nutri >= 4 ? t("mkGood", "faz bem") : it.nutri <= -4 ? t("mkBad", "faz mal") : null,
                           it.effect ? t("mkLasts", "dura {h}").replace("{h}", hoursText(it.effect.hours)) : null,
                           it.tox ? t("mkTox", "tóxico") : null,
+                          life.fridge?.[it.id] ? t("mkInFridge", "{n} na geladeira").replace("{n}", String(life.fridge[it.id])) : null,
                         ]
                           .filter(Boolean)
                           .join(" · ")}
                       </div>
                     </div>
-                    <GoldButton onClick={() => act.consume(it.id)} disabled={busy || life.wallet.coins < it.price}>
+                    <GoldButton onClick={() => act.buy(it.id)} disabled={busy || life.wallet.coins < it.price}>
                       {it.price}
                     </GoldButton>
                   </div>

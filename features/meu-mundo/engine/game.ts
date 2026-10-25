@@ -88,6 +88,8 @@ export interface GameOptions {
   /** Jogadores conectados neste bairro (inclui você). */
   onOnline?: (count: number) => void
   onBody?: (body: BodyId) => void
+  /** Sem fôlego (mm3d-28), como a sala diz: só anda até recuperar. */
+  onWinded?: (winded: boolean) => void
   /** Titulares do bairro (permanentes), atualizado pela sala. */
   onResidents?: (count: number) => void
   /** Casa de um lote: nível confirmado × exibido, carregamento e falha. */
@@ -286,6 +288,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   let onlineCount = -1
   // Ritmo do MEU corpo (mm3d-13), vindo da sala: cansado anda mais devagar.
   let myPace = 1
+  // Sem fôlego (mm3d-28): a sala para a corrida; aqui a previsão também não corre.
+  let winded = false
   let residentCount = nb?.residents ?? 0
   const net = new NetClient({
     onStatus: (s) => {
@@ -371,6 +375,11 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         if (carFromMessage !== null && ((p.car ?? 0) === carFromMessage || performance.now() - carFromMessageAt > 2000)) carFromMessage = null
         if (carFromMessage === null) setDriving(p.car ?? 0, p)
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
+        local.char.unwell = !!p.sk
+        if (!!p.wd !== winded) {
+          winded = !!p.wd
+          opts.onWinded?.(winded)
+        }
         // No centro a "casa" é a vaga nesta sala: é ela que diz de quem é cada veículo.
         if (p.house) myLot = p.house
         return
@@ -393,7 +402,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const rk = p.car ? kindOfId(p.car) : null
       r.car = rk && rk !== "car" ? (p.car ?? 0) : 0
       r.char.setVisible(!p.car || rk !== "car")
-      r.char.tired = (p.pace ?? 1) < 1
+      r.char.tired = (p.pace ?? 1) < 1 || !!p.wd
+      r.char.unwell = !!p.sk
       r.setTarget(p.x, p.z, p.facing, (p.car ? 0 : Math.max(0, Math.min(2, p.move))) as MoveState)
     })
     for (const [sid, r] of remotes) {
@@ -603,8 +613,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     // do servidor em aparelhos lentos.
     if (driving && veh) driveFrame(Math.min(engine.getDeltaTime() / 1000, 0.25), boxes, now)
     else {
-      local.char.tired = myPace < 1
-      local.update(dt, intent, boxes, limit, paceSpeeds(myPace, speeds))
+      local.char.tired = myPace < 1 || winded
+      local.update(dt, winded && intent.run ? { ...intent, run: false } : intent, boxes, limit, paceSpeeds(myPace, speeds))
     }
     // Dirigindo, a intenção a pé é zero (o controle a pé não age).
     syncNetwork(now, driving ? { x: 0, z: 0, run: false } : intent)

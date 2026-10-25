@@ -16,9 +16,10 @@
 //   EvoDialog   modal (centro no computador, de baixo no celular)
 //   EvoButton   ação magenta, ouro ou fantasma (com a tecla do atalho)
 //   EvoToast    aviso curto
+//   WindedToast "sem fôlego" (mm3d-28; rua, centro e casa)
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
-import { ChevronRight, Menu, X } from "lucide-react"
+import { ChevronRight, Menu, Wind, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { Chamfer, EVO, archivo, kanji, teko } from "../status/evo-skin"
 import s from "./hud.module.css"
@@ -441,6 +442,12 @@ export function InfoRow({ label, children }: { label: string; children: ReactNod
 }
 
 // ═══ aviso ═════════════════════════════════════════════════════════════════
+/** Sem fôlego (a sala parou a corrida até ele recuperar 30%). */
+export function WindedToast() {
+  const t = useTranslations("MeuMundo")
+  return <EvoToast icon={<Wind className="h-4 w-4 shrink-0" />}>{t("winded", "Sem fôlego — andando até recuperar")}</EvoToast>
+}
+
 export function EvoToast({ icon, children, tone = "ouro" }: { icon?: ReactNode; children: ReactNode; tone?: "ouro" | "magenta" }) {
   const c = tone === "magenta" ? "#ff5fae" : EVO.dourado
   return (

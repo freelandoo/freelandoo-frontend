@@ -89,13 +89,14 @@ const ASSETS = {
   },
   // Descanso e cansaço (mm3d-13, pipeline/build_rest.py): Lie (deitado de
   // costas), Sleep (dormindo de lado), TiredIdle e TiredWalk (tronco curvado,
-  // cabeça baixa). Um arquivo de ~55 KB por conjunto; se falhar, o avatar
-  // continua com as poses de sempre.
+  // cabeça baixa). mm3d-28 (pipeline/build_injured.py): + InjuredIdle e
+  // InjuredWalk (mocap "Injured Idle/Walk" do Mixamo) para o indisposto.
+  // ~144 KB por conjunto; se falhar, o avatar continua com as poses de sempre.
   rest: {
-    base: "anim-rest-base.glb",
-    fat: "anim-rest-fat.glb",
-    strong: "anim-rest-strong.glb",
-    sergio: "anim-rest-sergio.glb",
+    base: "anim-rest-base-m28.glb",
+    fat: "anim-rest-fat-m28.glb",
+    strong: "anim-rest-strong-m28.glb",
+    sergio: "anim-rest-sergio-m28.glb",
   },
   // Bicicleta, skate e patins — no referencial do veículo; só a rua baixa
   // estes arquivos. mm3d-22 (pipeline/build_ride_mocap.py): SkateRide (o
@@ -120,7 +121,7 @@ const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 export function avatarFiles(id: BodyId) {
   return { body: BASE + ASSETS.bodies[id], texture: BASE + ASSETS.textures[id], anims: BASE + ASSETS.anims[ANIM_SET[id]] }
 }
-const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk"] as const
+const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk", "InjuredIdle", "InjuredWalk"] as const
 const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide", "SkatesStride"] as const
 type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number]
 /** Uma pedalada a cada 2 s (pedido do Alex); a troca de pose leva ~0,45 s. */
@@ -362,7 +363,7 @@ let cloneSeq = 0
 /** Um corpo animado. Não sabe de rede nem de colisão: recebe estado e toca. */
 export class AvatarRig {
   private weights: Record<Clip, number> = {
-    Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0,
+    Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0, InjuredIdle: 0, InjuredWalk: 0,
     BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
   }
   private readonly clips: Clip[]
@@ -527,7 +528,7 @@ export class AvatarRig {
    * reprodução segue a velocidade REAL do deslocamento (reduz o deslize dos
    * pés): a animação anda X m/s a 1×, então a taxa é velocidade ÷ X.
    */
-  update(dt: number, move: MoveState, speed: number, tired = false) {
+  update(dt: number, move: MoveState, speed: number, tired = false, unwell = false) {
     if (this.disposed || this.frozen) return
     if (move >= 6) return this.applyWeights(dt, this.rideTargetsFor(dt, move, speed), 1)
     this.rideMove = 0
@@ -538,18 +539,23 @@ export class AvatarRig {
     const sleep = move === 5 && !!have.Sleep
     const lie = (move === 4 || (move === 5 && !sleep)) && !!have.Lie
     const still = move === 0 || (move >= 3 && !sit && !sleep && !lie)
-    // Cansado (ritmo < 1, mm3d-13): repouso e caminhada curvados.
-    const tiredIdle = tired && !!have.TiredIdle
-    const tiredWalk = tired && !!have.TiredWalk
+    // Indisposto (saúde perto do hospital, mm3d-28) vence o cansado (ritmo < 1,
+    // mm3d-13): um estado de corpo inteiro por vez, nunca os dois somados.
+    const sickIdle = unwell && !!have.InjuredIdle
+    const sickWalk = unwell && !!have.InjuredWalk
+    const tiredIdle = tired && !sickIdle && !!have.TiredIdle
+    const tiredWalk = tired && !sickWalk && !!have.TiredWalk
     const target: Record<Clip, number> = {
-      Idle: still && !tiredIdle ? 1 : 0,
-      Walk: move === 1 && !tiredWalk ? 1 : 0,
+      Idle: still && !tiredIdle && !sickIdle ? 1 : 0,
+      Walk: move === 1 && !tiredWalk && !sickWalk ? 1 : 0,
       SlowRun: move === 2 ? 1 : 0,
       Sit: sit ? 1 : 0,
       Lie: lie ? 1 : 0,
       Sleep: sleep ? 1 : 0,
       TiredIdle: still && tiredIdle ? 1 : 0,
       TiredWalk: move === 1 && tiredWalk ? 1 : 0,
+      InjuredIdle: still && sickIdle ? 1 : 0,
+      InjuredWalk: move === 1 && sickWalk ? 1 : 0,
       BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
     }
     this.applyWeights(dt, target, speed)
@@ -585,6 +591,7 @@ export class AvatarRig {
     const runRate = speed > 0.05 ? speed / ANIM_NATURAL_SPEED.run : 1
     this.groups.Walk.speedRatio = Math.max(0.5, Math.min(2.2, walkRate))
     if (this.groups.TiredWalk) this.groups.TiredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
+    if (this.groups.InjuredWalk) this.groups.InjuredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
     this.groups.SlowRun.speedRatio = Math.max(0.6, Math.min(2.2, runRate))
   }
 

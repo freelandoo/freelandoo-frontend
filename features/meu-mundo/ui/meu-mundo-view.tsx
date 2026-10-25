@@ -39,7 +39,7 @@ import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId, type RideKind } from "../engine/motion"
 import { CarTuningPanel } from "./drive-controls"
-import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, InfoRow, type DrawerItem } from "./hud/hud-kit"
+import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, WindedToast, InfoRow, type DrawerItem } from "./hud/hud-kit"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
@@ -116,6 +116,8 @@ export default function MeuMundoView({
   const [online, setOnline] = useState(1)
   // Tipo físico: não se escolhe (2026-10-21) — vem da vida, pela sala.
   const [body, setBody] = useState<BodyId>(payload.me.body)
+  // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
+  const [winded, setWinded] = useState(false)
   const [running, setRunning] = useState(false)
   const [residents, setResidents] = useState(nb.residents)
   // Lote do carro que você dirige (0 = a pé) — confirmado pela sala.
@@ -194,6 +196,7 @@ export default function MeuMundoView({
           onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
+          onWinded: (w) => alive && setWinded(w),
           onResidents: (n) => alive && setResidents(n),
           onDriving: (lot) => alive && setDrivingLot(lot),
           onReady: () => alive && setStatus("ready"),
@@ -632,6 +635,11 @@ export default function MeuMundoView({
         <HouseLevelPanel catalog={nb.houseCatalog} lot={myLot} visual={houseVis} gameRef={gameRef} onClose={() => setLevelOpen(false)} />
       )}
 
+      {status === "ready" && winded && (
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 148px)" }}>
+          <WindedToast />
+        </div>
+      )}
       {/* Carregando / erro */}
       {status !== "ready" && <SceneCurtain status={status} text={t("loading", "Montando o bairro…")} errorTitle={t("errorTitle", "O bairro não abriu")} errorText={t("errorDesc", "O navegador não conseguiu iniciar o 3D. Tente de novo; se continuar, volte ao perfil.")} onRetry={retry} onLeave={() => router.push("/account")} leaveLabel={t("back", "Voltar ao perfil")} />}
     </div>

@@ -43,6 +43,11 @@ export interface RemoteState {
   car?: number
   /** Ritmo de caminhada pelo corpo (mm3d-13): 1 normal, 0,7 cansado, 0,42 exausto. */
   pace?: number
+  /** Fôlego de corrida (mm3d-28): % que resta e sem fôlego (a sala só deixa andar). */
+  st?: number
+  wd?: boolean
+  /** Indisposto (mm3d-28): a vida diz "unwell"; só muda a pose. */
+  sk?: boolean
 }
 
 /** Carro de uma casa (chave = número do lote). driver = sessionId ou "". */

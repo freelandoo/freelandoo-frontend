@@ -15,6 +15,14 @@
 // mm3d-15: bike, skate e patins entram em casa com a pessoa (o carro, não).
 // Ficam guardados onde ela desceu (state.rides, gravado no banco); montado,
 // anda com a MESMA regra de andar (a casa é pequena) e a pose da modalidade.
+//
+// mm3d-28: a GELADEIRA do titular. Perto do ponto em frente à porta aparece
+// "Abrir geladeira"; abrir e comer são pedidos à sala (mensagem "fridge", que
+// confere dono, andar e distância e grava a vida). A porta que abre é só
+// desta tela (fridge-door.ts) e, com ela aberta, o personagem fica parado
+// olhando para o móvel. Afastar-se, cair a rede ou reconectar fecha a porta.
+// Fôlego de corrida: a sala diz `wd` (sem fôlego) e aqui não se prevê
+// corrida enquanto ele estiver ligado (a física é a da sala).
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -38,12 +46,15 @@ import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type Inp
 import type { Box2 } from "./collision"
 import { liveGamesBump } from "./game"
 import { ResolutionGovernor, resolveQuality, type QualityChoice } from "./quality"
+import { FridgeDoor } from "./fridge-door"
 import {
   BODY_IDS,
   type BodyId,
   type GameStats,
   type HousePayload,
   type Interactable,
+  type LifeCharacter,
+  type LifeItem,
   type MultiplayerSession,
   type NetStatus,
 } from "../types"
@@ -73,8 +84,29 @@ export interface HouseGameOptions {
   onServerMessage?: (type: string, payload: unknown) => void
   /** Montado (id do veículo) ou a pé (0), confirmado pela sala (mm3d-15). */
   onRiding?: (id: number) => void
+  /** Resposta da sala à geladeira (mm3d-28): abrir ou comer. */
+  onFridge?: (msg: FridgeReply) => void
+  /** A geladeira fechou sem pedido da tela (afastou-se, a rede caiu). */
+  onFridgeClosed?: () => void
+  /** Sem fôlego (mm3d-28), como a sala diz: só anda até recuperar. */
+  onWinded?: (winded: boolean) => void
   /** Usar/descer recusado (longe, ocupado, na escada…). */
   onRideDenied?: (reason: string) => void
+}
+
+/** Mensagem "fridge" da sala (src/realtime/meuMundo.js onFridge). */
+export interface FridgeReply {
+  ok: boolean
+  a: "open" | "eat" | ""
+  fridge: string
+  key?: string
+  reason?: string
+  stock?: Record<string, number>
+  character?: LifeCharacter
+  wallet?: { coins: number }
+  ate?: { item: string; meal: { id: string; at: number; credit: number; done: boolean; late: boolean } | null } | null
+  replay?: boolean
+  catalog?: { items: LifeItem[] }
 }
 
 export interface HouseGameHandle {
@@ -94,6 +126,10 @@ export interface HouseGameHandle {
   stand: () => void
   /** Descer da bike/skate/patins (fica parado onde está). */
   leaveRide: () => void
+  /** Geladeira (mm3d-28): pedir para abrir, comer uma unidade (chave idempotente) e fechar. */
+  openFridge: (id: string) => void
+  eatFridge: (item: string, key: string) => void
+  closeFridge: () => void
   recenter: () => void
   reconnect: () => void
   setStatsEnabled: (on: boolean) => void
@@ -118,6 +154,9 @@ interface RemoteHouseState {
   bed?: string
   pace?: number
   ride?: number
+  st?: number
+  wd?: boolean
+  sk?: boolean
 }
 
 /** Veículo guardado na casa (mm3d-15; chave = id do veículo). */
@@ -194,6 +233,13 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   let myRide = 0
   const myPose: CarPose = { x: 0, z: 0, y: 0, facing: 0, sp: 0, st: 0, hb: 0, sl: 0, ax: 0, ay: 0 }
   const beds = def.beds ?? []
+  // Geladeira (mm3d-28): só o titular abre; a porta aberta é só desta tela.
+  const fridges = def.fridges ?? []
+  const isOwner = payload.me.role === "owner"
+  const fridgeDoor = new FridgeDoor(scene, def)
+  let fridgeOpen: string | null = null
+  let fridgeAsked: string | null = null
+  let winded = false
   char.place(body.x, body.z, body.facing, body.y)
 
   const follow = new FollowCamera(scene, INDOOR_CAMERA)
@@ -226,6 +272,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       if (s !== "online") {
         for (const [, r] of remotes) r.dispose()
         remotes.clear()
+        shutFridge(true)
       }
     },
     onWelcome: (p) => {
@@ -248,6 +295,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         rest = null
         opts.onRest?.(null)
       }
+      shutFridge(true)
       welcomed = true
     },
     onMessage: (type, p) => {
@@ -300,6 +348,23 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         else if (m.id && typeof m.x === "number" && typeof m.z === "number") teleport(m.x, m.z, m.floor ?? body.floor, m.facing ?? body.facing)
         return
       }
+      if (type === "fridge") {
+        const m = p as FridgeReply
+        if (m.a === "open") {
+          if (m.fridge !== fridgeAsked) return
+          fridgeAsked = null
+          const f = fridges.find((x) => x.id === m.fridge)
+          if (m.ok && f && !seated && !rest) {
+            fridgeOpen = f.id
+            fridgeDoor.show(f)
+            body.vx = 0
+            body.vz = 0
+            body.facing = f.facing
+          }
+        }
+        opts.onFridge?.(m)
+        return
+      }
       if (type === "life") {
         const m = p as { pace?: number }
         if (typeof m.pace === "number") myPace = m.pace
@@ -313,7 +378,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   else void net.retry()
 
   const syncNetwork = (now: number, intent: Intent) => {
-    net.sendIntent(seated || rest ? { x: 0, z: 0, run: false } : intent, now)
+    net.sendIntent(seated || rest || fridgeOpen ? { x: 0, z: 0, run: false } : intent, now)
     const st = net.state<{ players?: Map<string, RemoteHouseState> }>()
     const players = st?.players
     const me = net.sessionId
@@ -335,6 +400,11 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
           opts.onBody?.(myBody)
         }
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
+        char.unwell = !!p.sk
+        if (!!p.wd !== winded) {
+          winded = !!p.wd
+          opts.onWinded?.(winded)
+        }
         const rid = p.ride ?? 0
         if (rid !== myRide) {
           myRide = rid
@@ -353,7 +423,8 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       }
       r.floor = p.floor
       r.car = p.ride ?? 0
-      r.char.tired = (p.pace ?? 1) < 1
+      r.char.tired = (p.pace ?? 1) < 1 || !!p.wd
+      r.char.unwell = !!p.sk
       r.setTarget(p.x, p.z, p.facing, Math.max(0, Math.min(5, p.move)) as MoveState, p.y)
     })
     for (const [sid, r] of remotes) {
@@ -382,7 +453,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   const exitRide: Interactable = { kind: "car-exit", id: "ride-exit", x: 0, z: 0, radius: 99 }
   const rides = () => net.state<{ rides?: Map<string, HouseRideState> }>()?.rides ?? null
   const findNearby = (): Interactable | null => {
-    if (seated || rest) return null
+    if (seated || rest || fridgeOpen) return null
     let best: Interactable | null = null
     let bestD = Infinity
     if (body.floor === def.exit.floor) {
@@ -414,6 +485,17 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
         bestD = d
       }
     }
+    // Geladeira: só o titular; a sala aceita a até 1,4 m (FRIDGE_REACH).
+    if (isOwner) {
+      for (const f of fridges) {
+        if (f.floor !== body.floor) continue
+        const d = Math.hypot(f.x - body.x, f.z - body.z)
+        if (d <= 1.25 && d < bestD) {
+          best = { kind: "fridge", id: f.id, x: f.x, z: f.z, radius: 1.25, fridge: f }
+          bestD = d
+        }
+      }
+    }
     // Cama: o servidor aceita a até 1,9 m do ponto de deitar (BED_REACH).
     for (const b of beds) {
       if (b.floor !== body.floor || taken.has(b.id)) continue
@@ -430,7 +512,17 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   const interactWith = (it: Interactable) => {
     if (it.kind === "car") net.send("ride", { a: "on", id: it.vid })
     else if (it.kind === "car-exit") net.send("ride", { a: "off" })
+    else if (it.kind === "fridge") handle.openFridge(it.fridge.id)
     else opts.onInteract?.(it)
+  }
+
+  /** Fecha a porta; `notify` = não foi a tela que pediu (ela precisa saber). */
+  function shutFridge(notify: boolean) {
+    fridgeAsked = null
+    if (!fridgeOpen) return
+    fridgeOpen = null
+    fridgeDoor.hide()
+    if (notify) opts.onFridgeClosed?.()
   }
 
   /** Os veículos guardados para desenhar (os de andares acima do meu, não). */
@@ -464,7 +556,15 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       intent = { x: f.x * axis.y + f.z * axis.x, z: f.z * axis.y - f.x * axis.x, run: wantsRun(input) }
       if (Math.hypot(intent.x, intent.z) < 0.05) intent = { x: 0, z: 0, run: intent.run }
     }
-    if (seated || rest) {
+    if (fridgeOpen) {
+      // Geladeira aberta: parado, olhando para ela (a sala também não anda).
+      move = 0
+      body.vx = 0
+      body.vz = 0
+      const f = fridges.find((x) => x.id === fridgeOpen)
+      // A sala o levou para longe (escada, correção grande): a porta fecha.
+      if (!f || f.floor !== body.floor || Math.hypot(f.x - body.x, f.z - body.z) > 1.8) shutFridge(true)
+    } else if (seated || rest) {
       // Sentado/deitado: andar = levantar (pedido ao servidor, que leva ao
       // ponto livre). Dormindo, andar acorda.
       if (intent.x || intent.z) handle.stand()
@@ -472,7 +572,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       body.vx = 0
       body.vz = 0
     } else {
-      move = stepInterior(body, intent, dt, def, paceSpeeds(myPace, speeds))
+      move = stepInterior(body, winded && intent.run ? { ...intent, run: false } : intent, dt, def, paceSpeeds(myPace, speeds))
       if (server) {
         const moving = intent.x !== 0 || intent.z !== 0
         const ex = server.x - body.x
@@ -492,7 +592,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       }
     }
     visualFacing = lerpAngle(visualFacing, body.facing, 1 - Math.exp(-12 * dt))
-    char.tired = myPace < 1
+    char.tired = myPace < 1 || winded
     const speed = Math.hypot(body.vx, body.vz)
     const myKind = myRide ? kindOfId(myRide) : null
     if (!myKind || myKind === "car") {
@@ -516,6 +616,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       r.char.setVisible((r.floor ?? 0) <= body.floor)
     }
     interior.showUpTo(body.floor)
+    fridgeDoor.tick(dt, body.floor)
     follow.update(dt, body.x, body.z, viewBoxes(), body.y)
     governor.tick(engine.getDeltaTime())
 
@@ -592,6 +693,25 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     leaveRide() {
       if (myRide) net.send("ride", { a: "off" })
     },
+    openFridge(id) {
+      if (!isOwner || seated || rest || myRide || fridgeOpen || fridgeAsked) return
+      fridgeAsked = id
+      net.send("fridge", { a: "open", fridge: id })
+      // Sem resposta (rede caiu): libera para tentar de novo.
+      setTimeout(() => {
+        if (fridgeAsked === id) {
+          fridgeAsked = null
+          opts.onFridge?.({ ok: false, a: "open", fridge: id, reason: "timeout" })
+        }
+      }, 4000)
+    },
+    eatFridge(item, key) {
+      if (!fridgeOpen) return
+      net.send("fridge", { a: "eat", fridge: fridgeOpen, item, key })
+    },
+    closeFridge() {
+      shutFridge(false)
+    },
     sit(seatId) {
       if (seated || pendingSit) return
       pendingSit = seatId
@@ -658,6 +778,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       for (const r of remotes.values()) r.dispose()
       remotes.clear()
       fleet.dispose()
+      fridgeDoor.dispose()
       char.dispose()
       lib.dispose()
       interior.dispose()

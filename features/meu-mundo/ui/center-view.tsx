@@ -18,7 +18,7 @@ import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId } from "../engine/motion"
 import { CarTuningPanel } from "./drive-controls"
-import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, type DrawerItem } from "./hud/hud-kit"
+import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, IdPlate, WindedToast, type DrawerItem } from "./hud/hud-kit"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
@@ -94,6 +94,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [net, setNet] = useState<NetStatus>("connecting")
   const [online, setOnline] = useState(1)
   const [body, setBody] = useState<BodyId>(payload.me.body)
+  // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
+  const [winded, setWinded] = useState(false)
   const [running, setRunning] = useState(false)
   const [drivingLot, setDrivingLot] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -152,6 +154,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
+          onWinded: (w) => alive && setWinded(w),
           onDriving: (lot) => alive && setDrivingLot(lot),
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (it) => alive && setNearby(it),
@@ -496,6 +499,11 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           onLeave={onGoHome}
           leaveLabel={t("backHome", "Voltar para casa")}
         />
+      )}
+      {status === "ready" && winded && (
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 148px)" }}>
+          <WindedToast />
+        </div>
       )}
       {status === "ready" && net === "offline" && (
         <div className="pointer-events-none absolute inset-x-0 flex justify-center" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)" }}>

@@ -12,6 +12,8 @@
 // Internação (mm3d-26): a vida diz "hospital" pela sala ("life") e a casca
 // cobre o ambiente com a ambulância e o leito — o ambiente fica suspenso por
 // baixo, ligado à sala, que é por onde a alta chega.
+// Avisos com retrato (mm3d-28): as necessidades vêm no mesmo "life" e o balão
+// mora aqui, então a memória do que já foi dito sobrevive à troca de cena.
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { DoorOpen, Home, Loader2, Send } from "lucide-react"
@@ -25,6 +27,7 @@ import CenterView from "./center-view"
 import StatusScreen from "./status/status-screen"
 import { HospitalView } from "./hospital-view"
 import { AmbulanceCurtain, useHospitalStay } from "./hospital-stay"
+import NeedsBubble from "./needs/needs-bubble"
 import {
   fetchAdminNeighborhood,
   getInviteCandidates,
@@ -39,7 +42,7 @@ import {
   postHouseExit,
   postInvite,
 } from "../data"
-import type { BodyId, CenterPayload, HousePayload, NeighborhoodPayload, ScenePayload, VisitState } from "../types"
+import { BODY_IDS, type BodyId, type CenterPayload, type HousePayload, type LifeNeed, type NeighborhoodPayload, type ScenePayload, type VisitState } from "../types"
 
 const isHouse = (p: ScenePayload): p is HousePayload => (p as HousePayload).scene === "house"
 const isCenter = (p: ScenePayload): p is CenterPayload => (p as CenterPayload).scene === "center"
@@ -59,6 +62,10 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [statusBody, setStatusBody] = useState<BodyId | null>(null)
   const [lifeTick, setLifeTick] = useState(0)
   const stay = useHospitalStay(initial.life)
+  // Necessidades (mm3d-28): a do login sai do payload; depois, de cada "life".
+  const [needs, setNeeds] = useState<LifeNeed[]>(() => initial.life?.character.needs ?? [])
+  const [needsTick, setNeedsTick] = useState(0)
+  const [avatar, setAvatar] = useState<BodyId>(() => initial.life?.avatar ?? initial.me.body)
   const onLife = stay.onLife
   const busyRef = useRef(false)
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -163,8 +170,14 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     (type: string, payload: unknown) => {
       if (type === "visits") setVisits(payload as VisitState)
       else if (type === "life") {
+        const p = payload as { status?: string; needs?: LifeNeed[]; body?: string } | null
         setLifeTick((n) => n + 1)
-        onLife((payload as { status?: string } | null)?.status)
+        onLife(p?.status)
+        if (Array.isArray(p?.needs)) {
+          setNeeds(p.needs)
+          setNeedsTick((n) => n + 1)
+        }
+        if (p?.body && (BODY_IDS as string[]).includes(p.body)) setAvatar(p.body as BodyId)
       }
       else if (type === "visit_ended") {
         const p = payload as { reason?: string; hostName?: string } | null
@@ -344,6 +357,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onOpenStatus={() => setStatusBody(scene.me.body)}
         />
       )}
+
+      {!busy && !statusBody && !hospitalUp && <NeedsBubble needs={needs} tick={needsTick} body={avatar} onOpenStatus={() => setStatusBody(scene.me.body)} />}
 
       {statusBody && (
         <StatusScreen name={scene.me.name} body={statusBody} lifeTick={lifeTick} onClose={() => setStatusBody(null)} />

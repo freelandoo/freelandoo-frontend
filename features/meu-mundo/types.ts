@@ -239,14 +239,53 @@ export interface LifeCharacter {
     resume: { kind: LifeActivity; until: string } | null
   }
   effects: { id: string; remainingH: number }[]
-  meals: { at: number; state: "eaten" | "missed" | "open" | "upcoming" }[]
+  /** Refeições de hoje (mm3d-28): aceitas de 2 h antes a 2 h depois; "late" = penalidade correndo. */
+  meals: LifeMeal[]
+  /** A refeição que um prato atenderia agora (pode ser de ontem, atrasada). */
+  pendingMeal?: LifeMeal | null
+  sleep?: { awakeHours: number; warnAt: number }
+  /** Horas críticas acumuladas (o que separa um dia ruim de negligência). */
+  exposure?: Record<"hunger" | "sleep" | "stress" | "health", number>
+  /** Orçamento de vida em dias equivalentes (1 por dia bem cuidado). */
+  life?: { budgetDays: number; wearDays: number; leftDays: number; wearRate: number }
+  /** Fôlego de corrida: segundos cheios e segundos para encher. */
+  stamina?: { maxS: number; refillS: number }
+  /** Necessidades de agora, da mais urgente para a mais leve. */
+  needs?: LifeNeed[]
   today: { day: string; score: number; label: "otima" | "boa" | "regular" | "ruim" | "critica"; hours: Record<LifeActivity, number> }
   /** Ritmo de caminhada: 1 normal, 0,7 cansado, 0,42 exausto. */
   pace: number
 }
 
+export type LifeMealState = "eaten" | "missed" | "open" | "partial" | "late" | "upcoming"
+
+export interface LifeMeal {
+  at: number
+  id?: string
+  opensAt?: string
+  closesAt?: string
+  penaltyEndsAt?: string
+  credit?: number
+  state: LifeMealState
+}
+
+export type LifeNeedId = "hospital" | "unwell" | "exhausted" | "starving" | "hungry" | "sleep" | "tired" | "stressed" | "aging"
+
+/** level: 1 emergência, 2 saúde/exaustão, 3 fome intensa, 4 sono, 5 leves. */
+export interface LifeNeed {
+  id: LifeNeedId
+  level: number
+  hours?: number
+  meal?: number | null
+}
+
+/** Estoque da geladeira (mig 301): itemId → quantidade. */
+export type FridgeStock = Record<string, number>
+
 export interface LifeSummary {
   now: string
+  /** Geladeira (mm3d-28). */
+  fridge?: FridgeStock
   character: LifeCharacter
   wallet: { coins: number }
   /** O que a sala desenha: a skin vestida ou a condição física (mm3d-16). */
@@ -289,6 +328,8 @@ export interface LifeItem {
   stress: number
   tox: number
   effect: { id: string; hours: number } | null
+  /** Crédito de refeição (1 quita; fração = lanche; 0 não conta). */
+  meal?: number
 }
 
 export interface LifeDay {
@@ -320,7 +361,8 @@ export interface LifeFull extends LifeSummary {
     items: LifeItem[]
     activityHours: Record<string, [number, number]>
     attributes: { max: number; usefulH: Record<"studying" | "training", number>; floor: Record<LifeTrained, number> }
-    clock: { offsetMin: number; meals: number[]; mealWindowH: number }
+    clock: { offsetMin: number; meals: number[]; beforeH: number; afterH: number; penaltyH: number }
+    mealPenalty?: Record<"satiety" | "energy" | "stress" | "health", number>
   }
 }
 
@@ -403,6 +445,17 @@ export interface InteriorBed {
   kind: string
 }
 
+/** Geladeira (mm3d-28): onde a pessoa fica para abrir; `center`/`r` = o móvel. */
+export interface InteriorFridge {
+  id: string
+  floor: number
+  x: number
+  z: number
+  facing: number
+  center: Vec2
+  r: number
+}
+
 export interface InteriorDef {
   level: number
   version: string
@@ -414,6 +467,8 @@ export interface InteriorDef {
   seatTop: number
   /** mm3d-13 — ausente em backend antigo. */
   beds?: InteriorBed[]
+  /** mm3d-28: ponto em pé em frente a cada geladeira, olhando para ela. */
+  fridges?: InteriorFridge[]
   bedTop?: number
   /** Medidas-padrão de cada tipo de móvel (largura, profundidade, altura). */
   furnitureTypes: Record<string, { w: number; d: number; h: number }>
@@ -608,6 +663,8 @@ export type Interactable =
   | { kind: "door"; id: string; x: number; z: number; radius: number }
   | { kind: "seat"; id: string; x: number; z: number; radius: number; seat: InteriorSeat }
   | { kind: "bed"; id: string; x: number; z: number; radius: number; bed: InteriorBed }
+  // Geladeira da casa (mm3d-28): só o titular abre.
+  | { kind: "fridge"; id: string; x: number; z: number; radius: number; fridge: InteriorFridge }
   // Carro (mm3d-11): entrar no próprio carro / sair dirigindo.
   // Veículo livre para "Usar" (mm3d-14): vid = id do veículo, vkind = modalidade.
   | { kind: "car"; id: string; x: number; z: number; radius: number; lot: number; vid: number; vkind: "car" | "bike" | "skate" | "skates" }

@@ -52,6 +52,8 @@ export class Character {
   speed = 0
   /** Ritmo < 1 (cansado/exausto, mm3d-13): poses curvadas. */
   tired = false
+  /** Indisposto (mm3d-28, `sk` da sala): pose de quem passa mal; vence o cansado. */
+  unwell = false
   /** Pedido de quem chama (carro, outro andar). */
   private shown = true
   /** Além do corte de distância (mm3d-19). */
@@ -96,7 +98,7 @@ export class Character {
       return
     }
     next.setParent(this.holder)
-    next.update(0, this.move, this.speed, this.tired)
+    next.update(0, this.move, this.speed, this.tired, this.unwell)
     const prev = this.rig
     this.rig = next
     prev?.dispose()
@@ -156,7 +158,7 @@ export class Character {
   animate(dt: number, move: MoveState, speed: number) {
     this.move = move
     this.speed = speed
-    this.rig?.update(dt, move, speed, this.tired)
+    this.rig?.update(dt, move, speed, this.tired, this.unwell)
     if (this.fallback) {
       const bob = move ? Math.abs(Math.sin(performance.now() / 120)) * 0.06 : 0
       this.fallback.position.y = bob
