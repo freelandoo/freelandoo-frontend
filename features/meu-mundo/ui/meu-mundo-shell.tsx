@@ -16,11 +16,16 @@
 // mora aqui, então a memória do que já foi dito sobrevive à troca de cena.
 // Sino, caixa de entrada, Itens e Poléns (mm3d-30) também moram aqui: a sala
 // empurra "notice"; os painéis valem em todas as cenas.
+// Chat (mm3d-32): o Global chega pela sala ("chat", já filtrado por bloqueio
+// no servidor) e mora aqui para sobreviver à troca de cena; "say" é o balão
+// sobre a cabeça de quem falou. O 1:1 é a conversa do /mensagens, aberta
+// dentro do jogo (card do jogador, caixa de entrada ou nome no Global).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Backpack, DoorOpen, Home, Loader2, Mail, Send } from "lucide-react"
+import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useNavCounts } from "@/components/navigation/use-nav-counts"
 import MeuMundoView from "./meu-mundo-view"
 import { EvoButton, EvoDialog, EvoToast, type DrawerItem } from "./hud/hud-kit"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
@@ -36,22 +41,30 @@ import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
 import PolensSheet, { PolensReturn } from "./polens/polens-sheet"
 import PlayerCard from "./player-card/player-card"
+import ChatPanel, { type ChatView } from "./chat/chat-panel"
+import { bumpUnread, confirmLine, dropPending, mergeLines, newClientId, pendingLine, type Line } from "./chat/chat-logic"
 import type { PlayerTap } from "../engine/player-select"
 import { compactFrameX, isCompactViewport } from "./player-card/place"
 import {
   fetchAdminNeighborhood,
+  getAccountProfileId,
+  getChatGlobal,
   getInviteCandidates,
   getNoticeSummary,
   getVisits,
   postAccept,
   postCancel,
   postCenterEnter,
+  postChatDirect,
+  postChatGlobal,
+  postChatReport,
   postCenterLeave,
   postDecline,
   postEndVisit,
   postHouseEnter,
   postHouseExit,
   postInvite,
+  type ChatLine,
 } from "../data"
 import {
   BODY_IDS,
@@ -100,8 +113,22 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // toque no vazio do mundo (o card sai com a animação dele).
   // `frame` (celular): onde a câmera põe o boneco, na metade oposta à do card.
   const [playerCard, setPlayerCard] = useState<{ tap: PlayerTap; gone: boolean; dismiss: number; frame: number | null } | null>(null)
+  // Chat (mm3d-32): linhas do Global (teto em chat-logic), não lidas e a vista aberta.
+  const [chatView, setChatView] = useState<ChatView | null>(null)
+  const [chatLines, setChatLines] = useState<Line[]>([])
+  const [chatUnread, setChatUnread] = useState(0)
+  // Perfil-conta de quem joga: o "ator" das conversas (do /users/me).
+  const [actorId, setActorId] = useState<string | null>(null)
+  const globalOpenRef = useRef(false)
+  // Preenchido pelo balão 3D (Task 15); até lá o "say" é ignorado.
+  const bubbleRef = useRef<((session: string, text: string) => void) | null>(null)
+  const nav = useNavCounts()
+  const dmUnread = actorId ? (nav.conversationByActor[actorId] ?? 0) : 0
   const busyRef = useRef(false)
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    globalOpenRef.current = chatView?.tab === "global"
+  }, [chatView])
 
   const say = useCallback((msg: string) => {
     setNotice(msg)
@@ -215,6 +242,18 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
 
   const onServerMessage = useCallback(
     (type: string, payload: unknown) => {
+      if (type === "chat") {
+        const l = payload as ChatLine | null
+        if (!l || typeof l.id !== "string") return
+        setChatLines((cur) => mergeLines(cur, [l]))
+        setChatUnread((n) => bumpUnread(n, l, globalOpenRef.current))
+        return
+      }
+      if (type === "say") {
+        const p = payload as { s?: string; t?: string } | null
+        if (p && typeof p.s === "string" && typeof p.t === "string") bubbleRef.current?.(p.s, p.t)
+        return
+      }
       if (type === "notice") {
         const n = payload as MMNotice | null
         if (!n || typeof n.id !== "string") return
@@ -354,14 +393,111 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // Hospital por cima só quando ele abriu de fato (a planta chegou): sem a
   // rota no ar, o jogo segue normal em vez de ficar parado embaixo do nada.
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
-  const panelOpen = !!inbox || itemsOpen || polensOpen
+  const panelOpen = !!inbox || itemsOpen || polensOpen || !!chatView
   const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
   const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
   const lifeChanged = useCallback(() => setLifeTick((n) => n + 1), [])
-  // Entradas da gaveta (as três cenas): Itens e a caixa de entrada.
+
+  // ═══ mm3d-32: chat ═══
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    let alive = true
+    void getAccountProfileId(token).then((id) => {
+      if (alive && id) setActorId(id)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+  const showChat = useCallback((v: ChatView) => {
+    setChatView(v)
+    if (v.tab === "global") setChatUnread(0)
+  }, [])
+  const openChat = useCallback(
+    (v: ChatView = { tab: "global" }) => {
+      showChat(v)
+      const token = getToken()
+      if (!token) return
+      void getChatGlobal(token).then((r) => {
+        if (r.ok) setChatLines((cur) => mergeLines(cur, r.data.items))
+      })
+    },
+    [showChat],
+  )
+  const chatErr = useCallback(
+    (r: { status: number; error: string; code?: string }) =>
+      r.code === "block"
+        ? t("chBlocked", "Mensagem bloqueada.")
+        : r.code === "mute_temp"
+          ? t("chMuted", "Você está sem falar no chat por um tempo.")
+          : r.code === "review"
+            ? t("chReview", "Sua mensagem foi para revisão.")
+            : errText(r),
+    [t, errText],
+  )
+  const sendGlobal = useCallback(
+    async (text: string) => {
+      const token = getToken()
+      if (!token) return
+      const clientId = newClientId()
+      setChatLines((cur) => mergeLines(cur, [pendingLine(clientId, text)]))
+      const r = await postChatGlobal(token, text)
+      if (r.ok) setChatLines((cur) => confirmLine(cur, clientId, r.data.line))
+      else {
+        setChatLines((cur) => dropPending(cur, clientId))
+        say(chatErr(r))
+      }
+    },
+    [say, chatErr],
+  )
+  const reportLine = useCallback(
+    (id: string) => {
+      const token = getToken()
+      if (!token) return
+      void postChatReport(token, id).then((r) => say(r.ok ? t("chReported", "Denúncia enviada. Obrigado.") : errText(r)))
+    },
+    [say, t, errText],
+  )
+  /** Acha/cria a conversa 1:1 e abre a thread no chat do jogo. */
+  const openDirect = useCallback(
+    async (who: { session?: string; profileId?: string }, title: string) => {
+      const token = getToken()
+      if (!token) return
+      const r = await postChatDirect(token, who)
+      if (r.ok) showChat({ tab: "thread", conversationId: r.data.conversation.id_conversation, title })
+      else say(r.code === "self" ? t("chSelf", "Esse é você") : r.code === "gone" ? t("pcGone", "Esse jogador não está mais aqui.") : errText(r))
+    },
+    [showChat, say, t, errText],
+  )
+  // Tecla T abre o chat (desktop). Campo editável e painel aberto ficam de fora.
+  useEffect(() => {
+    if (overlayOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "KeyT" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return
+      const el = e.target as HTMLElement | null
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable || el.closest?.("[data-mm-panel]"))) return
+      e.preventDefault()
+      openChat()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [overlayOpen, openChat])
+
+  const chatBadge = chatUnread + dmUnread
+  // Entradas da gaveta (as três cenas): Chat, Itens e a caixa de entrada.
   const menuExtras: DrawerItem[] = useMemo(
     () => [
+      {
+        id: "chat",
+        label: t("chTitle", "Chat"),
+        hint: t("menuChatHint", "Global e conversas"),
+        icon: <MessageCircle className="h-5 w-5" />,
+        kind: "nav",
+        badge: chatBadge ? String(chatBadge > 99 ? "99+" : chatBadge) : undefined,
+        onSelect: () => openChat(),
+      },
       { id: "items", label: t("itTitle", "Itens"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
       {
         id: "inbox",
@@ -373,7 +509,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         onSelect: () => setInbox({ view: "mail", tab: counts?.gifts ? "gift" : "official" }),
       },
     ],
-    [t, counts],
+    [t, counts, chatBadge, openChat],
   )
   const suspended = hospitalUp
   const key = `${sceneKeyOf(scene)}#${mount}`
@@ -468,11 +604,32 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         onOpenStatus={openStatus}
         onOpenNotice={(n) => setInbox(n.mailId ? { view: "mail", tab: n.kind === "gift" ? "gift" : n.kind === "promo" ? "promo" : n.kind === "purchase" ? "receipt" : "official", open: n.mailId } : { view: "notices" })}
       />
-      {!overlayOpen && <HudInbox counts={counts} onBell={() => setInbox({ view: "notices" })} onMail={() => setInbox({ view: "mail", tab: counts?.gifts ? "gift" : "official" })} />}
+      {!overlayOpen && (
+        <HudInbox
+          counts={counts}
+          onBell={() => setInbox({ view: "notices" })}
+          onMail={() => setInbox({ view: "mail", tab: counts?.gifts ? "gift" : "official" })}
+          chat={chatBadge}
+          onChat={() => openChat()}
+        />
+      )}
 
       {/* Perfil de outro jogador (mm3d-31): fica até ser dispensado; some sob painéis e transições */}
       {playerCard && !overlayOpen && (
-        <PlayerCard key={playerCard.tap.sessionId} tap={playerCard.tap} gone={playerCard.gone} dismiss={playerCard.dismiss} onClose={closePlayerCard} />
+        <PlayerCard
+          key={playerCard.tap.sessionId}
+          tap={playerCard.tap}
+          gone={playerCard.gone}
+          dismiss={playerCard.dismiss}
+          onClose={closePlayerCard}
+          onMessage={(p) => {
+            // Saiu da cena: a sessão não vale mais, vai pelo perfil-conta.
+            const who = playerCard.gone && p.profileId ? { profileId: p.profileId } : { session: p.sessionId }
+            if (!actorId && p.viewerProfileId) setActorId(p.viewerProfileId)
+            setPlayerCard(null)
+            void openDirect(who, p.displayName || p.name || playerCard.tap.name)
+          }}
+        />
       )}
 
       {statusBody && (
@@ -488,6 +645,24 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onClose={() => setInbox(null)}
           onOpenStatus={openStatus}
           onClaimed={lifeChanged}
+          onOpenConversation={(id, title) => {
+            setInbox(null)
+            showChat({ tab: "thread", conversationId: id, title })
+          }}
+        />
+      )}
+      {chatView && (
+        <ChatPanel
+          token={getToken()}
+          view={chatView}
+          setView={showChat}
+          lines={chatLines}
+          actorId={actorId}
+          dmUnread={dmUnread}
+          onSendGlobal={(text) => void sendGlobal(text)}
+          onReport={reportLine}
+          onDirectTo={(l) => void openDirect(l.session ? { session: l.session } : { profileId: l.profileId || undefined }, l.name)}
+          onClose={() => setChatView(null)}
         />
       )}
       {itemsOpen && <ItemsPanel onClose={() => setItemsOpen(false)} onChanged={lifeChanged} />}

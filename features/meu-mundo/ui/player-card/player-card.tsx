@@ -10,9 +10,10 @@
 // de jogador e voltar não refaz a consulta); um card por sessão (`key` no
 // pai), então troca rápida nunca mistura dados de dois jogadores.
 //
-// Ações reaproveitam o site: Ver perfil (/freelancer/<perfil>) e Mensagem
-// (/mensagens?with=<perfil>) abrem em outra aba, sem sair do jogo (como a
-// aba Mensagens da caixa); Seguir é o /entity-follows do FollowButton.
+// Ações reaproveitam o site: Ver perfil (/freelancer/<perfil>) abre em outra
+// aba; Mensagem abre a conversa no chat do jogo (mm3d-32, `onMessage`; sem
+// ela, /mensagens?with=<perfil> em outra aba); Seguir é o /entity-follows do
+// FollowButton.
 //
 // Visual: grafite a 70% SÓ no fundo (texto e imagem nítidos), rubi na ação
 // principal, dourado no Seguir, sem blur. Topo = capa da manifestação em 6:9
@@ -66,9 +67,11 @@ export interface PlayerCardProps {
   /** sobe a cada toque no vazio do mundo: fecha com a animação de saída */
   dismiss: number
   onClose: (sessionId: string) => void
+  /** mm3d-32: "Mensagem" abre a conversa no chat do jogo (sem ela, o /mensagens em outra aba) */
+  onMessage?: (p: PlayerProfile) => void
 }
 
-export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardProps) {
+export default function PlayerCard({ tap, gone, dismiss, onClose, onMessage }: PlayerCardProps) {
   const t = useTranslations("MeuMundo")
   const locale = useLocale()
   const [load, setLoad] = useState<Load>(() => {
@@ -279,12 +282,25 @@ export default function PlayerCard({ tap, gone, dismiss, onClose }: PlayerCardPr
             label={t("pcViewProfile", "Ver perfil")}
             compact={compact}
           />
-          <ActionLink
-            href={usable ? `/mensagens?with=${encodeURIComponent(p!.profileId!)}` : null}
-            icon={<MessageCircle className="h-4 w-4" />}
-            label={t("pcMessage", "Mensagem")}
-            compact={compact}
-          />
+          {onMessage ? (
+            <button
+              type="button"
+              onClick={() => p && onMessage(p)}
+              disabled={!usable}
+              className={actionClass(compact)}
+              style={{ border: `1px solid ${MM.borderStrong}`, color: usable ? MM.text : MM.disabledText }}
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span className="truncate">{t("pcMessage", "Mensagem")}</span>
+            </button>
+          ) : (
+            <ActionLink
+              href={usable ? `/mensagens?with=${encodeURIComponent(p!.profileId!)}` : null}
+              icon={<MessageCircle className="h-4 w-4" />}
+              label={t("pcMessage", "Mensagem")}
+              compact={compact}
+            />
+          )}
           <button
             type="button"
             onClick={() => void toggleFollow()}

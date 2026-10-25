@@ -5,8 +5,9 @@
 //  • Notificações: histórico do sino (tb_mm_notice), mais recentes primeiro,
 //    agrupadas por dia, com filtro; tocar abre o conteúdo e marca como lida;
 //    "Marcar todas como lidas".
-//  • Caixa: Mensagens (as conversas da Freelandoo — abre /mensagens em outra
-//    aba, sem cópia), Presentes, Oficiais, Promoções e Compras (tb_mm_mail).
+//  • Caixa: Mensagens (as conversas da Freelandoo, sem cópia — desde o mm3d-32
+//    abrem a thread no chat do jogo; sem o chat, o /mensagens em outra aba),
+//    Presentes, Oficiais, Promoções e Compras (tb_mm_mail).
 //    Carta aberta = lida; presente tem "Resgatar" (o servidor entrega uma vez).
 // Listas paginadas por cursor ("Carregar mais"), nada virtualizado: 30 linhas
 // leves por página. Estados de carregando, vazio e erro em todas.
@@ -63,9 +64,11 @@ export interface InboxPanelProps {
   onOpenStatus: () => void
   /** depois de resgatar: a vida mudou (geladeira, moedas, vestuário) */
   onClaimed: () => void
+  /** mm3d-32: abre a conversa no chat do jogo (sem ela, o /mensagens em outra aba) */
+  onOpenConversation?: (id: string, title: string) => void
 }
 
-export default function InboxPanel({ initial, body, counts, onCounts, onClose, onOpenStatus, onClaimed }: InboxPanelProps) {
+export default function InboxPanel({ initial, body, counts, onCounts, onClose, onOpenStatus, onClaimed, onOpenConversation }: InboxPanelProps) {
   const t = useTranslations("MeuMundo")
   const [view, setView] = useState<"notices" | "mail">(initial.view)
   const [openMail, setOpenMail] = useState<string | null>(initial.view === "mail" ? (initial.open ?? null) : null)
@@ -104,7 +107,7 @@ export default function InboxPanel({ initial, body, counts, onCounts, onClose, o
       ) : openMail ? (
         <MailDetail id={openMail} t={t} onBack={() => setOpenMail(null)} onCounts={onCounts} onClaimed={onClaimed} />
       ) : (
-        <MailList t={t} tab={tab} onTab={setTab} onOpen={setOpenMail} onCounts={onCounts} />
+        <MailList t={t} tab={tab} onTab={setTab} onOpen={setOpenMail} onCounts={onCounts} onOpenConversation={onOpenConversation} />
       )}
     </EvoDialog>
   )
@@ -317,11 +320,25 @@ function NoticeAvatar({ n, body }: { n: MMNotice; body: BodyId }) {
 }
 
 // ═══ caixa ═════════════════════════════════════════════════════════════════
-function MailList({ t, tab, onTab, onOpen, onCounts }: { t: Tr; tab: MailTab | "messages"; onTab: (v: MailTab | "messages") => void; onOpen: (id: string) => void; onCounts: (c: InboxCounts) => void }) {
+function MailList({
+  t,
+  tab,
+  onTab,
+  onOpen,
+  onCounts,
+  onOpenConversation,
+}: {
+  t: Tr
+  tab: MailTab | "messages"
+  onTab: (v: MailTab | "messages") => void
+  onOpen: (id: string) => void
+  onCounts: (c: InboxCounts) => void
+  onOpenConversation?: (id: string, title: string) => void
+}) {
   return (
     <>
       <Chips items={TABS} value={tab} onChange={onTab} t={t} label={t("ibMailTabs", "Categorias da caixa")} />
-      {tab === "messages" ? <Conversations t={t} /> : <Letters key={tab} t={t} tab={tab} onOpen={onOpen} onCounts={onCounts} />}
+      {tab === "messages" ? <Conversations t={t} onOpenConversation={onOpenConversation} /> : <Letters key={tab} t={t} tab={tab} onOpen={onOpen} onCounts={onCounts} />}
     </>
   )
 }
@@ -591,7 +608,7 @@ function GiftThumb({ gift }: { gift: NonNullable<MMMail["gift"]> }) {
 }
 
 // ═══ mensagens (o chat que já existe) ══════════════════════════════════════
-function Conversations({ t }: { t: Tr }) {
+function Conversations({ t, onOpenConversation }: { t: Tr; onOpenConversation?: (id: string, title: string) => void }) {
   const [items, setItems] = useState<ConversationRow[] | null>(null)
   const [error, setError] = useState(false)
   const alive = useMounted()
@@ -615,16 +632,17 @@ function Conversations({ t }: { t: Tr }) {
   return (
     <>
       <p className="mb-2 text-[12px]" style={{ color: MM.muted }}>
-        {t("ibMessagesHint", "Suas conversas da Freelandoo. Abrem em outra aba, sem sair do jogo.")}
+        {onOpenConversation
+          ? t("ibMessagesHintGame", "Suas conversas da Freelandoo. Abrem aqui, no chat do jogo.")
+          : t("ibMessagesHint", "Suas conversas da Freelandoo. Abrem em outra aba, sem sair do jogo.")}
       </p>
       <ul className="flex flex-col gap-1.5">
         {items.map((c) => (
           <li key={c.id}>
-            <a
-              href={`/mensagens?c=${encodeURIComponent(c.id)}`}
-              target="_blank"
-              rel="noopener"
-              className="flex w-full items-center gap-3 rounded-[14px] p-2"
+            <ConversationLink
+              id={c.id}
+              onOpen={onOpenConversation ? () => onOpenConversation(c.id, c.title) : undefined}
+              className="flex w-full items-center gap-3 rounded-[14px] p-2 text-left"
               style={{ background: c.unread ? MM.card : "transparent", border: `1px solid ${c.unread ? MM.border : "transparent"}` }}
             >
               {c.avatar ? (
@@ -644,12 +662,27 @@ function Conversations({ t }: { t: Tr }) {
                   {c.at ? ` · ${when.full(c.at)}` : ""}
                 </span>
               </span>
-              {c.unread > 0 ? <CountBadge n={c.unread} /> : <ExternalLink className="h-4 w-4 shrink-0" style={{ color: MM.muted }} aria-hidden />}
-            </a>
+              {c.unread > 0 ? <CountBadge n={c.unread} /> : !onOpenConversation && <ExternalLink className="h-4 w-4 shrink-0" style={{ color: MM.muted }} aria-hidden />}
+            </ConversationLink>
           </li>
         ))}
       </ul>
     </>
+  )
+}
+
+/** A linha da conversa: botão que abre no jogo, ou o link antigo para o /mensagens. */
+function ConversationLink({ id, onOpen, className, style, children }: { id: string; onOpen?: () => void; className: string; style: React.CSSProperties; children: React.ReactNode }) {
+  if (onOpen)
+    return (
+      <button type="button" onClick={onOpen} className={className} style={style}>
+        {children}
+      </button>
+    )
+  return (
+    <a href={`/mensagens?c=${encodeURIComponent(id)}`} target="_blank" rel="noopener" className={className} style={style}>
+      {children}
+    </a>
   )
 }
 

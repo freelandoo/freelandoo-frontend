@@ -1,15 +1,29 @@
 "use client"
 
-// features/meu-mundo/ui/inbox/hud-inbox.tsx — envelope e sino no canto de
-// cima à direita (mm3d-30), com o contador de não lidas. Dois botões de
-// 44 × 44, grafite; o número em rubi. Abrem o mesmo painel (inbox-panel).
+// features/meu-mundo/ui/inbox/hud-inbox.tsx — chat, envelope e sino no canto
+// de cima à direita (mm3d-30; chat = mm3d-32), com o contador de não lidas.
+// Botões de 44 × 44, grafite; o número em rubi. Envelope e sino abrem o mesmo
+// painel (inbox-panel); o balão abre o chat (Global + conversas).
 
-import { Bell, Mail } from "lucide-react"
+import { Bell, Mail, MessageCircle } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { InboxCounts } from "../../types"
 import { MM } from "../hud/tokens"
 
-export default function HudInbox({ counts, onBell, onMail }: { counts: InboxCounts | null; onBell: () => void; onMail: () => void }) {
+export default function HudInbox({
+  counts,
+  onBell,
+  onMail,
+  chat,
+  onChat,
+}: {
+  counts: InboxCounts | null
+  onBell: () => void
+  onMail: () => void
+  /** não lidas do chat (Global + conversas) */
+  chat: number
+  onChat: () => void
+}) {
   const t = useTranslations("MeuMundo")
   const n = counts?.notices ?? 0
   const m = counts?.mail ?? 0
@@ -19,6 +33,7 @@ export default function HudInbox({ counts, onBell, onMail }: { counts: InboxCoun
       className="pointer-events-none fixed right-0 z-[71] flex gap-2"
       style={{ top: "max(12px, env(safe-area-inset-top))", paddingRight: "max(12px, env(safe-area-inset-right))" }}
     >
+      <HudButton onClick={onChat} count={chat} label={label(t("chTitle", "Chat"), chat)} icon={<MessageCircle className="h-5 w-5" />} />
       <HudButton onClick={onMail} count={m} label={label(t("ibMailTitle", "Caixa de entrada"), m)} icon={<Mail className="h-5 w-5" />} />
       <HudButton onClick={onBell} count={n} label={label(t("ibNoticesTitle", "Notificações"), n)} icon={<Bell className="h-5 w-5" />} />
     </div>
