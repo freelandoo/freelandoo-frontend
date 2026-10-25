@@ -959,30 +959,44 @@ function Market({ life, compact, t, act }: PageProps) {
           const list = items.filter((it) => groupOf(it) === key)
           return (
             <Plate key={key} pad="p-3" title={t(key, fallback)} aside={<span style={{ color: EVO.ambar }}>{icon}</span>}>
-              <div className={`grid gap-x-6 ${compact ? "" : "grid-cols-2"}`}>
-                {list.map((it) => (
-                  <div key={it.id} className="flex items-center gap-2 border-b py-1.5" style={{ borderColor: EVO.linha }}>
-                    <div className="min-w-0 flex-1">
-                      <div className={`${archivo.className} truncate text-[17px] font-semibold`} style={{ color: EVO.branco }}>
-                        {itemName(it, t)}
+              {/* os itens em cards: a MESMA peça da geladeira (fridge/shelf.tsx), Comprar embaixo */}
+              <div className={`grid gap-x-4 gap-y-3 ${compact ? "grid-cols-3" : "grid-cols-5"}`}>
+                {list.map((it) => {
+                  const n = life.fridge?.[it.id] ?? 0
+                  const main = effectsOf(it)[0]
+                  const poor = life.wallet.coins < it.price
+                  const extra = [
+                    it.kcal ? `${it.kcal} kcal` : null,
+                    it.effect ? t("mkLasts", "dura {h}").replace("{h}", hoursText(it.effect.hours)) : null,
+                    it.tox ? t("mkTox", "tóxico") : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                  return (
+                    <div key={it.id} className="flex min-w-0 flex-col gap-2">
+                      <div style={{ height: 196 }}>
+                        <Card active={false} empty={false} img={thumbOf(it.id)} badge={n ? `×${n}` : undefined} w={250} h={196} compact={false}>
+                          <div className={`${teko.className} line-clamp-1 text-[20px] font-semibold uppercase leading-none`} style={{ color: EVO.branco }}>
+                            {itemName(it, t)}
+                          </div>
+                          {main && (
+                            <div className={`${teko.className} mt-0.5 text-[17px] leading-none`} style={{ color: toneColor(main.tone) }}>
+                              {effectText(main, t)}
+                            </div>
+                          )}
+                          {extra && (
+                            <div className={`${archivo.className} mt-0.5 truncate text-[12px] leading-tight`} style={{ color: EVO.mudo }}>
+                              {extra}
+                            </div>
+                          )}
+                        </Card>
                       </div>
-                      <div className={`${archivo.className} truncate text-[14px]`} style={{ color: EVO.mudo }}>
-                        {[
-                          it.kcal ? `${it.kcal} kcal` : null,
-                          it.nutri >= 4 ? t("mkGood", "faz bem") : it.nutri <= -4 ? t("mkBad", "faz mal") : null,
-                          it.effect ? t("mkLasts", "dura {h}").replace("{h}", hoursText(it.effect.hours)) : null,
-                          it.tox ? t("mkTox", "tóxico") : null,
-                          life.fridge?.[it.id] ? t("mkInFridge", "{n} na geladeira").replace("{n}", String(life.fridge[it.id])) : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </div>
+                      <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor} primary={!poor} h={38} className="w-full">
+                        {poor ? t("mkNoCoins", "Moedas insuficientes") : t("mkBuyPrice", "Comprar · {n} moedas").replace("{n}", String(it.price))}
+                      </MiniButton>
                     </div>
-                    <GoldButton onClick={() => act.buy(it.id)} disabled={busy || life.wallet.coins < it.price} active>
-                      {it.price}
-                    </GoldButton>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </Plate>
           )

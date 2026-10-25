@@ -67,7 +67,9 @@ const ASSETS = {
     // no skate e na bike o ombro abria um vinco na cava da regata.
     sergio: "avatar-sergio-m22.glb",
     female: "avatar-female.glb",
-    ekaterina: "avatar-ekaterina.glb",
+    // 2026-10-25: o rosto com a malha original (a redução colapsava as
+    // costuras do atlas e deformava o lado direito do rosto).
+    ekaterina: "avatar-ekaterina-rosto.glb",
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
