@@ -732,8 +732,17 @@ export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: 
     <div
       ref={baseRef}
       className="absolute flex h-36 w-36 items-center justify-center"
-      // Redondo, sem contorno e transparente (pedido do Alex, 2026-10-25; exceção à regra dos cantos retos, como o avatar).
-      style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)", left: SAFE.left, touchAction: "none", borderRadius: "50%", background: "rgba(255,255,255,0.14)" }}
+      // Redondo, sem contorno, transparente e com sombra leve (pedido do Alex,
+      // 2026-10-25). data-dot: o .fl-sharp zera todo arredondamento, menos círculos.
+      data-dot=""
+      style={{
+        bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)",
+        left: SAFE.left,
+        touchAction: "none",
+        borderRadius: "50%",
+        background: "rgba(255,255,255,0.14)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
+      }}
       onPointerDown={(e) => {
         if (idRef.current !== null) return
         idRef.current = e.pointerId
@@ -747,7 +756,8 @@ export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: 
       <div
         ref={knobRef}
         className="pointer-events-none relative h-16 w-16"
-        style={{ borderRadius: "50%", background: "rgba(255,255,255,0.42)" }}
+        data-dot=""
+        style={{ borderRadius: "50%", background: "rgba(255,255,255,0.42)", boxShadow: "0 3px 10px rgba(0,0,0,0.18)" }}
       />
     </div>
   )
