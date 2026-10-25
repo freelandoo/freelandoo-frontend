@@ -18,9 +18,11 @@ import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId } from "../engine/motion"
 import { CarTuningPanel } from "./drive-controls"
-import { Drawer, EvoButton, EvoDialog, EvoToast, WindedToast, type DrawerItem } from "./hud/hud-kit"
+import { Drawer, EvoButton, EvoDialog, EvoToast, WindedToast, presenceState, type DrawerItem } from "./hud/hud-kit"
+import { MM } from "./hud/tokens"
+import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
-import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
+import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
 import { fetchSession, postJetpackJoin } from "../data"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, NetStatus, VisitState } from "../types"
@@ -92,7 +94,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   // Tela limpa: a ajuda dos controles só abre pelo menu.
   const [helpOpen, setHelpOpen] = useState(false)
   const [net, setNet] = useState<NetStatus>("connecting")
-  const [online, setOnline] = useState(1)
+  const [online, setOnline] = useState<number | null>(null)
   const [body, setBody] = useState<BodyId>(payload.me.body)
   // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
   const [winded, setWinded] = useState(false)
@@ -247,15 +249,15 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const menuItems: DrawerItem[] = [
     { id: "home", label: t("backHome", "Voltar para casa"), hint: t("centerHomeHint", "Para a frente da sua casa, no seu bairro"), icon: <Home className="h-5 w-5" />, onSelect: onGoHome },
     ...(onOpenStatus
-      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, onSelect: () => onOpenStatus(body) }]
+      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, kind: "nav" as const, onSelect: () => onOpenStatus(body) }]
       : []),
     ...(drivingLot
       ? [{ id: "recover", label: t("recoverCar", "Recuperar"), hint: t("centerRecoverHint", "Preso? Volta para uma vaga livre (parado, a cada 15 s)."), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.recoverCar() }]
       : []),
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: () => gameRef.current?.recenter() },
-    { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, onSelect: () => setHelpOpen(true) },
+    { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, kind: "nav", active: helpOpen, onSelect: () => setHelpOpen(true) },
     qualityItem,
-    { id: "tech", label: t("menuTech", "Técnico"), hint: t("techPanel", "Painel técnico"), icon: <Activity className="h-5 w-5" />, active: statsOpen, onSelect: () => setStatsOpen((v) => !v) },
+    { id: "tech", label: t("menuTech", "Técnico"), hint: t("techPanel", "Painel técnico"), icon: <Activity className="h-5 w-5" />, kind: "nav", active: statsOpen, onSelect: () => setStatsOpen((v) => !v) },
     ...(net === "offline" || net === "replaced"
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
       : []),
@@ -263,17 +265,17 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   ]
 
   return (
-    <div className="fl-sharp fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#A8D4F2]">
+    <div className="fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#A8D4F2]">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("canvasAriaCenter", "Centro da cidade do Meu Mundo")} />
 
       {statsOpen && (
         <div className="pointer-events-auto absolute left-0 max-w-[min(92vw,320px)]" style={{ top: "max(12px, env(safe-area-inset-top))", marginLeft: SAFE.left }}>
-          <Chamfer cut={12} border={`${EVO.dourado}99`}>
-            <div className="relative px-3 py-2 font-mono text-[11px] leading-5" style={{ color: EVO.branco }}>
-              <button type="button" onClick={() => setStatsOpen(false)} className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center" style={{ color: EVO.mudo }} aria-label={t("close", "Fechar")}>
+          <Chamfer cut={16} fill={MM.surface}>
+            <div className="relative px-3.5 py-2.5 font-mono text-[11px] leading-5" style={{ color: EVO.branco }}>
+              <button type="button" onClick={() => setStatsOpen(false)} className={`${s.close} absolute right-1.5 top-1`} aria-label={t("close", "Fechar")}>
                 <X className="h-4 w-4" />
               </button>
-              <div className={`${teko.className} mb-0.5 text-[18px] uppercase tracking-[0.14em]`} style={{ color: EVO.ambar }}>
+              <div className={`${archivo.className} mb-1 pr-10 text-[13px] font-bold uppercase leading-[34px] tracking-[0.14em]`} style={{ color: MM.gold }}>
                 {t("techPanel", "Painel técnico")}
               </div>
               {stats ? (
@@ -293,7 +295,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
                     {t("liveGames", "Jogos ativos")} {stats.liveGames} · {t("avatars", "Avatares")} {stats.avatars}
                   </div>
                   <div>
-                    {t("netShort", "Rede")} {net} · {online}/{payload.center.capacity}
+                    {t("netShort", "Rede")} {net} · {online ?? "—"}/{payload.center.capacity}
                   </div>
                   <CarTuningPanel stats={stats} gameRef={gameRef} />
                 </>
@@ -315,9 +317,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           className="pointer-events-auto absolute max-w-[min(92vw,440px)] text-left"
           style={isTouch ? { bottom: bottom(176), left: SAFE.left } : { bottom: SAFE.bottom, left: SAFE.left }}
         >
-          <Chamfer cut={10} border={`${EVO.dourado}99`}>
-            <div className={`${archivo.className} px-3 py-2 text-[12px] font-medium leading-4`} style={{ color: EVO.branco }}>
-              <span className={`${teko.className} mr-2 text-[16px] uppercase tracking-[0.14em]`} style={{ color: EVO.ambar }}>
+          <Chamfer cut={14} fill={MM.surface}>
+            <div className={`${archivo.className} px-3.5 py-2.5 text-[13px] font-medium leading-[18px]`} style={{ color: EVO.branco }}>
+              <span className="mr-2 text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: MM.gold }}>
                 {t("menuControls", "Controles")}
               </span>
               {drivingLot
@@ -385,9 +387,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               variant={nearPlace ? "gold" : "primary"}
               onClick={() => gameRef.current?.interact()}
               aria-label={nearbyLabel}
-              size="none"
-              className="!absolute !min-h-11 min-w-11 max-w-[48vw] text-[15px] leading-tight"
-              style={{ bottom: bottom(24), right: SAFE.right }}
+              className="!absolute !min-h-12 max-w-[50vw]"
+              style={{ bottom: bottom(20), right: SAFE.right }}
               icon={nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5 shrink-0" /> : nearPortal ? <Home className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearPlace ? `${nearbyLabel} · ${placeTag}` : nearbyLabel}
@@ -404,11 +405,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             heading={t("menuCenter", "O centro")}
             items={menuItems}
             hotkeys={!blocked && !open && !minigame}
-            footer={
-              <>
-                {t("exitLabel", "Centro da cidade")} · {CLIENT_RELEASE} · {BUILD}
-              </>
-            }
+            presence={{ count: online, scope: t("presenceCenter", "No centro"), state: presenceState(net) }}
           />
         </div>
       )}

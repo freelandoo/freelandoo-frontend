@@ -17,7 +17,7 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getHospital } from "../data"
 import type { HospitalInfo, LifeSummary } from "../types"
-import { EVO, teko } from "./status/evo-skin"
+import { EVO, archivo } from "./status/evo-skin"
 
 export type StayPhase = "ambulance" | "admitted" | "discharged"
 
@@ -97,14 +97,14 @@ export function AmbulanceCurtain() {
   const t = useTranslations("MeuMundo")
   useEffect(() => playSiren(AMBULANCE_MS - 300), [])
   return (
-    <div className="fl-sharp fixed inset-0 z-[75] flex flex-col items-center justify-center gap-5 px-6 text-center" style={{ background: EVO.preto }}>
+    <div className="fixed inset-0 z-[75] flex flex-col items-center justify-center gap-5 px-6 text-center" style={{ background: EVO.preto }}>
       {/* Giroflex: só as duas barras piscam (animação pequena, nunca a tela inteira). */}
       <div className="flex gap-1" aria-hidden>
-        <span className="mm-siren-a block h-5 w-16" style={{ background: "#e0352f" }} />
-        <span className="mm-siren-b block h-5 w-16" style={{ background: "#3366f2" }} />
+        <span className="mm-siren-a block h-5 w-16 rounded-l-full" style={{ background: "#e0352f" }} />
+        <span className="mm-siren-b block h-5 w-16 rounded-r-full" style={{ background: "#3366f2" }} />
       </div>
       <Ambulance className="h-16 w-16" style={{ color: EVO.branco }} />
-      <div role="status" className={`${teko.className} text-[30px] uppercase leading-none tracking-[0.1em]`} style={{ color: EVO.branco }}>
+      <div role="status" className={`${archivo.className} text-[22px] font-bold leading-tight`} style={{ color: EVO.branco }}>
         {t("ambulanceTitle", "Ambulância a caminho")}
       </div>
       <p className="max-w-xs text-[14px]" style={{ color: EVO.mudo }}>

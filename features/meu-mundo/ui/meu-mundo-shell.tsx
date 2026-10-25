@@ -21,7 +21,8 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import MeuMundoView from "./meu-mundo-view"
 import { EvoButton, EvoDialog, EvoToast } from "./hud/hud-kit"
-import { Chamfer, EVO, teko } from "./status/evo-skin"
+import { Chamfer, EVO, archivo } from "./status/evo-skin"
+import { MM } from "./hud/tokens"
 import HouseView from "./house-view"
 import CenterView from "./center-view"
 import StatusScreen from "./status/status-screen"
@@ -369,16 +370,16 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       {/* Faixa da visita (convite enviado ou visita em andamento) */}
       {(active || outgoing) && !busy && (
         <div
-          className="fl-sharp pointer-events-none fixed inset-x-0 z-[70] flex justify-center px-3"
+          className="pointer-events-none fixed inset-x-0 z-[70] flex justify-center px-3"
           style={{ top: "max(12px, env(safe-area-inset-top))" }}
         >
-          <Chamfer cut={10} border="#ff5fae" width={1.5} className="pointer-events-auto max-w-full">
-            <div className={`${teko.className} flex flex-wrap items-center gap-2 py-1 pl-3 pr-1 text-[18px] font-medium uppercase leading-none tracking-[0.08em] max-[759px]:gap-1.5 max-[759px]:py-0.5 max-[759px]:pl-2 max-[759px]:text-[14px]`} style={{ color: EVO.branco }}>
+          <Chamfer cut={14} fill={MM.surface} border={MM.rubyBorder} className="pointer-events-auto max-w-full" style={{ boxShadow: MM.shadow }}>
+            <div className={`${archivo.className} flex flex-wrap items-center gap-2 py-1 pl-3.5 pr-1 text-[14px] font-semibold leading-tight max-[759px]:gap-1.5 max-[759px]:pl-2.5 max-[759px]:text-[13px]`} style={{ color: EVO.branco }}>
               {active ? (
                 active.role === "host" ? (
                   <>
                     <Home className="h-4 w-4" style={{ color: EVO.douradoClaro }} />
-                    <span className="pt-[3px]">{t("visitHostLine", "Visita de {name}").replace("{name}", active.guestName)}</span>
+                    <span>{t("visitHostLine", "Visita de {name}").replace("{name}", active.guestName)}</span>
                     <EvoButton variant="ghost" size="sm" onClick={() => endVisit(active.id, false)}>
                       {t("endVisit", "Encerrar visita")}
                     </EvoButton>
@@ -386,7 +387,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
                 ) : (
                   <>
                     <DoorOpen className="h-4 w-4" style={{ color: EVO.douradoClaro }} />
-                    <span className="pt-[3px]">{t("visitingName", "Visitando {name}").replace("{name}", active.hostName)}</span>
+                    <span>{t("visitingName", "Visitando {name}").replace("{name}", active.hostName)}</span>
                     <EvoButton variant="primary" size="sm" onClick={() => endVisit(active.id, true)}>
                       {t("backHome", "Voltar para casa")}
                     </EvoButton>
@@ -395,7 +396,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
               ) : outgoing ? (
                 <>
                   <Send className="h-4 w-4" style={{ color: EVO.douradoClaro }} />
-                  <span className="pt-[3px]">
+                  <span>
                     {t("outgoingLine", "Convite para {name} · {time}")
                       .replace("{name}", outgoing.guestName)
                       .replace("{time}", left(outgoing.expiresIn))}
@@ -424,7 +425,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
               <EvoButton variant="primary" className="flex-1" autoFocus onClick={() => accept(incoming.id)}>
                 {t("accept", "Aceitar")}
               </EvoButton>
-              <EvoButton variant="ghost" className="flex-1" onClick={() => void decline(incoming.id)}>
+              <EvoButton variant="gold" className="flex-1" onClick={() => void decline(incoming.id)}>
                 {t("decline", "Recusar")}
               </EvoButton>
             </>
@@ -450,14 +451,14 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       )}
 
       {notice && !busy && (
-        <div className="fl-sharp pointer-events-none fixed inset-x-0 z-[80] flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
+        <div className="pointer-events-none fixed inset-x-0 z-[80] flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
           <EvoToast>{notice}</EvoToast>
         </div>
       )}
 
       {/* Transição: por cima do ambiente atual, que só sai quando o próximo chega */}
       {busy && (
-        <div className="fl-sharp fixed inset-0 z-[90] flex items-center justify-center p-6" style={{ background: "rgba(8,7,11,0.86)" }}>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-6" style={{ background: "rgba(8,10,14,0.86)" }}>
           <EvoToast tone="magenta" icon={<Loader2 className="h-4 w-4 animate-spin" />}>
             {busy}
           </EvoToast>
@@ -526,9 +527,9 @@ function InvitePanel({ onClose, onSent }: { onClose: () => void; onSent: (v: Vis
       }
     >
       <p style={{ color: EVO.mudo }}>{t("inviteRule", "Uma visita por vez. O convite expira em 5 minutos.")}</p>
-      <div className="mt-3 max-h-48 overflow-y-auto" style={{ boxShadow: `inset 0 0 0 1px ${EVO.linhaForte}`, background: "rgba(0,0,0,0.35)" }}>
+      <div className="mt-3 max-h-48 overflow-y-auto rounded-[14px]" style={{ border: `1px solid ${MM.border}`, background: MM.card }}>
         {list === null ? (
-          <div className={`${teko.className} flex items-center gap-2 p-3 text-[17px] uppercase tracking-[0.1em] max-[759px]:p-2 max-[759px]:text-[14px]`}>
+          <div className={`${archivo.className} flex items-center gap-2 p-3 text-[14px] font-semibold max-[759px]:p-2.5 max-[759px]:text-[13px]`}>
             <Loader2 className="h-4 w-4 animate-spin" />
             {t("loadingShort", "Carregando…")}
           </div>
@@ -547,10 +548,10 @@ function InvitePanel({ onClose, onSent }: { onClose: () => void; onSent: (v: Vis
                 setManual("")
               }}
               className="flex w-full items-center justify-between border-b px-3 py-2 text-left disabled:opacity-40 max-[759px]:min-h-9 max-[759px]:py-1.5"
-              style={{ borderColor: EVO.linha, background: pick === c.name ? "linear-gradient(90deg, rgba(158,0,66,0.9), rgba(242,13,115,0.8))" : undefined }}
+              style={{ borderColor: EVO.linha, background: pick === c.name ? MM.rubySoft : undefined }}
             >
               <span className="font-bold">@{c.name}</span>
-              {!c.available && <span className={`${teko.className} text-[14px] uppercase tracking-[0.1em] max-[759px]:text-[12px]`}>{t("inVisit", "Em visita")}</span>}
+              {!c.available && <span className={`${archivo.className} text-[12px] font-semibold max-[759px]:text-[11px]`}>{t("inVisit", "Em visita")}</span>}
             </button>
           ))
         )}
@@ -563,8 +564,8 @@ function InvitePanel({ onClose, onSent }: { onClose: () => void; onSent: (v: Vis
         }}
         placeholder={t("invitePlaceholder", "@usuario")}
         aria-label={t("invitePlaceholder", "@usuario")}
-        className="mt-2 h-10 w-full px-2 text-sm outline-none placeholder:text-[#a39aa3]"
-        style={{ background: "rgba(0,0,0,0.45)", color: EVO.branco, boxShadow: `inset 0 0 0 1.5px ${EVO.dourado}99` }}
+        className="mt-2 h-11 w-full rounded-[12px] px-3 text-sm outline-none placeholder:text-[#8d939c] focus-visible:ring-2 focus-visible:ring-[#E5BE70]"
+        style={{ background: "rgba(0,0,0,0.35)", color: EVO.branco, border: `1px solid ${MM.border}` }}
       />
       {error && (
         <div className="mt-2 text-xs font-bold" style={{ color: EVO.perigo }}>

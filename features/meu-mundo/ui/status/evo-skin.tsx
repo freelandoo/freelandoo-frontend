@@ -1,42 +1,41 @@
-// features/meu-mundo/ui/status/evo-skin.tsx — a pele EVO na web.
+// features/meu-mundo/ui/status/evo-skin.tsx — a pele do jogo na web.
 //
-// A tela de STATUS do Meu Mundo é a do STATUS do EVO Brazil/Cat demon
-// (Cat demon/jogo/ui/evo/status/*, Godot), refeita em React: mesma paleta
-// (ui/evo/evo.gd), mesmas fontes (Teko nos títulos e números, Archivo no
-// texto, Yuji Syuku no selo kanji), molduras CHANFRADAS no canto superior
-// direito e no inferior esquerdo, neon MAGENTA só no que está aceso, metal
-// dourado discreto. Cor escrita aqui e só aqui — as páginas não digitam hex.
+// Nasceu como o STATUS do EVO Brazil (chanfro, neon magenta). Desde a
+// modernização visual (2026-10-25) as mesmas peças desenham a linguagem de
+// ui/hud/tokens.ts: grafite translúcido, cantos arredondados, bordas finas,
+// rubi no que está escolhido. Teko fica para números grandes; o resto é
+// Archivo. Cor escrita aqui e em tokens.ts — as páginas não digitam hex.
 
 import type { CSSProperties, ReactNode } from "react"
 import { Archivo, Teko } from "next/font/google"
-import localFont from "next/font/local"
+import { MM } from "../hud/tokens"
 
 export const teko = Teko({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" })
 export const archivo = Archivo({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" })
-// Recorte da Yuji Syuku do EVO Brazil (só ~100 ideogramas; ver fonts/LICENCA.txt).
-export const kanji = localFont({ src: "./fonts/YujiSyuku-Kanji.ttf", display: "block" })
 
-// ═══ a paleta (ui/evo/evo.gd) ═══
+// ═══ a paleta ═══
+// Os NOMES ficaram (as páginas usam EVO.x); as cores são as de MM: rubi no
+// lugar do magenta neon, dourado discreto, linhas brancas finas.
 export const EVO = {
-  preto: "#08070b",
-  carvao: "#151318",
-  carvao2: "#1f1b22",
-  fumaca: "#2c2730",
-  magenta: "#ff006e",
-  rosa: "#ff168a",
-  rosaClaro: "#ff6fb1",
-  ritual: "#a91332",
+  preto: "#0c0f14",
+  carvao: "#151a21",
+  carvao2: "#1e232b",
+  fumaca: "#2c323c",
+  magenta: "#D02A5E",
+  rosa: "#D94B7B",
+  rosaClaro: "#F08DAE",
+  ritual: MM.rubyDark,
   vinho: "#4a0a1c",
-  dourado: "#d6a75b",
-  douradoClaro: "#f2d39a",
+  dourado: "#D9AE62",
+  douradoClaro: "#F0D39C",
   douradoEscuro: "#5e4521",
   ambar: "#ffaa4a",
   ambarFundo: "#a85a0c",
-  branco: "#f5f1ed",
-  mudo: "#a39aa3",
-  mudoEscuro: "#6b636b",
-  linha: "rgba(245,240,237,0.13)",
-  linhaForte: "rgba(245,240,237,0.28)",
+  branco: MM.text,
+  mudo: MM.muted,
+  mudoEscuro: "#6f7682",
+  linha: MM.border,
+  linhaForte: MM.borderStrong,
   perigo: "#ff3344",
   bom: "#5fe39a",
   azul: "#3a9bff",
@@ -44,52 +43,31 @@ export const EVO = {
 } as const
 
 /**
- * Fundos das placas (pedido do Alex, 2026-10-25): cinza translúcido no lugar
- * do vinho. `card` = placas e cards (alpha 0,76); `moldura` = o fundo grande
- * atrás deles (alpha 0,56). Mudar a transparência do jogo = mudar aqui.
+ * Fundos (grafite translúcido). `card` = placas e cards; `moldura` = o fundo
+ * grande atrás deles. Mudar a transparência do jogo = mudar aqui.
  */
 export const FUNDO = {
-  card: "linear-gradient(180deg, rgba(58,58,64,0.76), rgba(42,42,48,0.76))",
-  cardLiso: "rgba(46,46,52,0.76)",
-  moldura: "linear-gradient(160deg, rgba(34,34,38,0.56) 0%, rgba(24,24,28,0.56) 100%)",
+  card: "rgba(30, 35, 43, 0.72)",
+  cardLiso: "rgba(30, 35, 43, 0.72)",
+  moldura: "rgba(18, 22, 28, 0.74)",
 } as const
 
-/** O tempo (evo.gd): resposta rápida, painel, tela, escalonamento. */
-export const T = { rapido: 140, painel: 360, tela: 750, escalona: 65 } as const
+/** O tempo: resposta rápida, painel, tela, escalonamento. */
+export const T = { rapido: 140, painel: 220, tela: 420, escalona: 45 } as const
 
-/** Polígono do chanfro: canto superior direito e inferior esquerdo cortados. */
-export function chamfer(cut: number) {
-  return `polygon(0 0, calc(100% - ${cut}px) 0, 100% ${cut}px, 100% 100%, ${cut}px 100%, 0 calc(100% - ${cut}px))`
+/** Raio do canto pelo antigo tamanho do chanfro (painéis 20, cards 14, miúdos 10). */
+export function radiusFor(cut: number) {
+  return cut >= 16 ? MM.radius.panel : cut <= 8 ? 10 : MM.radius.card
 }
 
 /**
- * Só a BORDA do chanfro, como anel (polygon evenodd: contorno de fora + de
- * dentro). Com o recheio translúcido (FUNDO), uma camada cheia de borda atrás
- * dele tingiria o card inteiro — por isso a borda é um anel por cima.
- */
-export function chamferRing(cut: number, w: number) {
-  const c = Math.max(0, cut - w)
-  const a = (x: string, y: string) => `${x} ${y}`
-  const outer = [a("0", "0"), a(`calc(100% - ${cut}px)`, "0"), a("100%", `${cut}px`), a("100%", "100%"), a(`${cut}px`, "100%"), a("0", `calc(100% - ${cut}px)`), a("0", "0")]
-  const inner = [
-    a(`${w}px`, `${w}px`),
-    a(`calc(100% - ${w + c}px)`, `${w}px`),
-    a(`calc(100% - ${w}px)`, `${w + c}px`),
-    a(`calc(100% - ${w}px)`, `calc(100% - ${w}px)`),
-    a(`${w + c}px`, `calc(100% - ${w}px)`),
-    a(`${w}px`, `calc(100% - ${w + c}px)`),
-    a(`${w}px`, `${w}px`),
-  ]
-  return `polygon(evenodd, ${[...outer, ...inner].join(", ")})`
-}
-
-/**
- * Moldura chanfrada: recheio (fill) no chanfro inteiro e a borda como anel
- * por cima (chamferRing). O espaçamento interno (`width`) continua o mesmo.
+ * Caixa arredondada com borda fina (era a moldura chanfrada do EVO; nome e
+ * API ficaram para não mexer em quem chama). A borda é CSS de verdade; uma
+ * borda em gradiente vira contorno rubi.
  */
 export function Chamfer({
   cut = 16,
-  border = EVO.linhaForte,
+  border = MM.border,
   fill = FUNDO.card,
   width = 1,
   className = "",
@@ -104,15 +82,15 @@ export function Chamfer({
   style?: CSSProperties
   children?: ReactNode
 }) {
+  const color = border.includes("gradient") ? MM.rubyBorder : border
   return (
-    <div className={`relative ${className}`} style={{ clipPath: chamfer(cut), background: fill, padding: width, ...style }}>
+    <div className={`relative ${className}`} style={{ borderRadius: radiusFor(cut), background: fill, border: `${Math.min(width, 2)}px solid ${color}`, ...style }}>
       <div className="relative h-full w-full">{children}</div>
-      <div className="pointer-events-none absolute inset-0" style={{ clipPath: chamferRing(cut, width), background: border }} aria-hidden />
     </div>
   )
 }
 
-/** Placa com título dourado (os blocos de dentro dos modais). */
+/** Placa com título (os blocos de dentro dos modais e do STATUS). */
 export function Plate({
   title,
   aside,
@@ -127,11 +105,11 @@ export function Plate({
   pad?: string
 }) {
   return (
-    <Chamfer cut={16} className={className}>
+    <Chamfer cut={14} className={className}>
       <div className={`h-full ${pad}`}>
         {title && (
           <div className="mb-2 flex items-baseline justify-between gap-3">
-            <h3 className={`${teko.className} text-[30px] font-semibold uppercase leading-none tracking-wide`} style={{ color: EVO.ambar }}>
+            <h3 className={`${archivo.className} text-[15px] font-bold uppercase leading-tight tracking-[0.12em]`} style={{ color: EVO.douradoClaro }}>
               {title}
             </h3>
             {aside}
@@ -143,29 +121,28 @@ export function Plate({
   )
 }
 
-/** Barra fina com trilho escuro (as barras dos anexos do STATUS). */
 /** Barra fina; `mark` desenha um traço dourado (o piso que não se perde). */
 export function Bar({ value, max = 100, color, height = 10, min = 0, mark }: { value: number; max?: number; color: string; height?: number; min?: number; mark?: number }) {
   const at = (v: number) => Math.max(0, Math.min(1, (v - min) / (max - min || 1)))
   const p = at(value)
   return (
-    <div className="relative w-full" style={{ height, background: "rgba(0,0,0,0.55)", boxShadow: `inset 0 0 0 1px ${EVO.linha}` }}>
-      <div style={{ width: `${p * 100}%`, height: "100%", background: color, boxShadow: `0 0 10px ${color}66` }} />
+    <div className="relative w-full" style={{ height, borderRadius: 999, background: "rgba(0,0,0,0.45)", boxShadow: `inset 0 0 0 1px ${EVO.linha}` }}>
+      <div style={{ width: `${p * 100}%`, height: "100%", borderRadius: 999, background: color }} />
       {mark != null && mark > min && (
-        <div className="absolute" style={{ left: `calc(${at(mark) * 100}% - 1px)`, top: -4, bottom: -4, width: 3, background: EVO.douradoClaro, boxShadow: `0 0 6px ${EVO.dourado}` }} />
+        <div className="absolute" style={{ left: `calc(${at(mark) * 100}% - 1px)`, top: -4, bottom: -4, width: 3, borderRadius: 2, background: EVO.douradoClaro }} />
       )}
     </div>
   )
 }
 
-/** Etiqueta dourada ("TENSO", "CANSADO"). */
+/** Etiqueta ("TENSO", "CANSADO"): pílula pequena. */
 export function Tag({ children, tone = "ouro" }: { children: ReactNode; tone?: "ouro" | "perigo" | "bom" | "mudo" }) {
-  const bg = tone === "perigo" ? EVO.perigo : tone === "bom" ? EVO.bom : tone === "mudo" ? EVO.fumaca : EVO.douradoClaro
-  const fg = tone === "mudo" ? EVO.branco : EVO.preto
+  const bg = tone === "perigo" ? "rgba(255,51,68,0.18)" : tone === "bom" ? "rgba(95,227,154,0.16)" : tone === "mudo" ? "rgba(255,255,255,0.08)" : "rgba(229,190,112,0.16)"
+  const fg = tone === "perigo" ? "#ff7b86" : tone === "bom" ? EVO.bom : tone === "mudo" ? EVO.branco : EVO.douradoClaro
   return (
     <span
-      className={`${teko.className} inline-flex items-center px-2 pt-[3px] text-[17px] font-semibold uppercase leading-[22px] tracking-wider`}
-      style={{ background: bg, color: fg, boxShadow: `0 0 0 2px ${EVO.douradoEscuro}` }}
+      className={`${archivo.className} inline-flex items-center px-2.5 text-[12px] font-bold uppercase leading-[22px] tracking-[0.08em]`}
+      style={{ background: bg, color: fg, borderRadius: 999, boxShadow: `inset 0 0 0 1px ${fg}44` }}
     >
       {children}
     </span>
@@ -177,7 +154,7 @@ export function Ring({ color, children, size = 46 }: { color: string; children: 
   return (
     <span
       className="inline-flex shrink-0 items-center justify-center"
-      style={{ width: size, height: size, borderRadius: "50%", border: `2px solid ${color}`, color, boxShadow: `0 0 12px ${color}55` }}
+      style={{ width: size, height: size, borderRadius: "50%", border: `1.5px solid ${color}`, color, background: `${color}14` }}
     >
       {children}
     </span>
@@ -192,14 +169,14 @@ export function Gauge({ value, label, size = 168, color = EVO.ambar }: { value: 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="rgba(0,0,0,0.5)" stroke={EVO.fumaca} strokeWidth={8} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={8} strokeDasharray={`${c * p} ${c}`} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="rgba(0,0,0,0.4)" stroke={EVO.fumaca} strokeWidth={8} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={8} strokeLinecap="round" strokeDasharray={`${c * p} ${c}`} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={`${teko.className} text-[54px] font-bold leading-[0.9]`} style={{ color: EVO.branco }}>
           {Math.round(value)}
         </span>
-        <span className={`${teko.className} text-[17px] font-medium uppercase tracking-[0.2em]`} style={{ color: EVO.douradoClaro }}>
+        <span className={`${archivo.className} text-[12px] font-semibold uppercase tracking-[0.16em]`} style={{ color: EVO.douradoClaro }}>
           {label}
         </span>
       </div>
@@ -207,7 +184,7 @@ export function Gauge({ value, label, size = 168, color = EVO.ambar }: { value: 
   )
 }
 
-/** Cor da barra pelo valor (vida: vermelho só no último terço — evo.gd PERIGO). */
+/** Cor da barra pelo valor (vida: vermelho só no último terço). */
 export function toneFor(v: number, good: "high" | "low" = "high") {
   const x = good === "high" ? v : 100 - v
   if (x < 34) return EVO.perigo

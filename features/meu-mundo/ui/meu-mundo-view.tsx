@@ -36,9 +36,11 @@ import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId, type RideKind } from "../engine/motion"
 import { CarTuningPanel } from "./drive-controls"
-import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, WindedToast, InfoRow, type DrawerItem } from "./hud/hud-kit"
+import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, WindedToast, InfoRow, presenceState, type DrawerItem } from "./hud/hud-kit"
+import { MM } from "./hud/tokens"
+import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
-import { Chamfer, EVO, archivo, teko } from "./status/evo-skin"
+import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
 import {
   type BodyId,
@@ -110,7 +112,7 @@ export default function MeuMundoView({
   // Tela limpa: a ajuda dos controles só abre pelo menu.
   const [helpOpen, setHelpOpen] = useState(false)
   const [net, setNet] = useState<NetStatus>("connecting")
-  const [online, setOnline] = useState(1)
+  const [online, setOnline] = useState<number | null>(null)
   // Tipo físico: não se escolhe (2026-10-21) — vem da vida, pela sala.
   const [body, setBody] = useState<BodyId>(payload.me.body)
   // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
@@ -303,10 +305,10 @@ export default function MeuMundoView({
 
   const menuItems: DrawerItem[] = [
     ...(onOpenStatus
-      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, onSelect: () => onOpenStatus(body) }]
+      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, kind: "nav" as const, onSelect: () => onOpenStatus(body) }]
       : []),
     ...(!payload.me.visitor
-      ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, onSelect: onOpenInvite }]
+      ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, kind: "nav" as const, onSelect: onOpenInvite }]
       : []),
     ...(onGoCenter && !payload.me.visitor
       ? [{ id: "center", label: t("goCenter", "Ir ao centro"), hint: t("goCenterHint", "Encontrar gente de outros bairros"), icon: <Building2 className="h-5 w-5" />, onSelect: onGoCenter }]
@@ -315,9 +317,9 @@ export default function MeuMundoView({
       ? [{ id: "recover", label: t("recoverCar", "Recuperar"), hint: t("recoverHintAny", "Preso? Volta para a vaga da casa (parado, a cada 15 s)."), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.recoverCar() }]
       : []),
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: recenter },
-    { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, onSelect: () => setHelpOpen(true) },
+    { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, kind: "nav", active: helpOpen, onSelect: () => setHelpOpen(true) },
     qualityItem,
-    { id: "tech", label: t("menuTech", "Técnico"), hint: t("techPanel", "Painel técnico"), icon: <Activity className="h-5 w-5" />, active: statsOpen, onSelect: () => setStatsOpen((v) => !v) },
+    { id: "tech", label: t("menuTech", "Técnico"), hint: t("techPanel", "Painel técnico"), icon: <Activity className="h-5 w-5" />, kind: "nav", active: statsOpen, onSelect: () => setStatsOpen((v) => !v) },
     ...(net === "offline" || net === "replaced"
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
       : []),
@@ -326,7 +328,7 @@ export default function MeuMundoView({
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
 
   return (
-    <div className="fl-sharp fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#A8D4F2]">
+    <div className="fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#A8D4F2]">
       <canvas
         ref={canvasRef}
         className="block h-full w-full outline-none"
@@ -337,18 +339,17 @@ export default function MeuMundoView({
       {/* Painel técnico (leitura ao vivo; não bloqueia o jogo) */}
       {statsOpen && (
         <div className="pointer-events-auto absolute left-0 max-w-[min(92vw,320px)]" style={{ top: "max(12px, env(safe-area-inset-top))", marginLeft: SAFE.left }}>
-          <Chamfer cut={12} border={`${EVO.dourado}99`}>
-            <div className="relative px-3 py-2 font-mono text-[11px] leading-5" style={{ color: EVO.branco }}>
+          <Chamfer cut={16} fill={MM.surface}>
+            <div className="relative px-3.5 py-2.5 font-mono text-[11px] leading-5" style={{ color: EVO.branco }}>
               <button
                 type="button"
                 onClick={() => setStatsOpen(false)}
-                className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center"
-                style={{ color: EVO.mudo }}
+                className={`${s.close} absolute right-1.5 top-1`}
                 aria-label={t("close", "Fechar")}
               >
                 <X className="h-4 w-4" />
               </button>
-              <div className={`${teko.className} mb-0.5 text-[18px] uppercase tracking-[0.14em]`} style={{ color: EVO.ambar }}>
+              <div className={`${archivo.className} mb-1 pr-10 text-[13px] font-bold uppercase leading-[34px] tracking-[0.14em]`} style={{ color: MM.gold }}>
                 {t("techPanel", "Painel técnico")}
               </div>
               {stats ? (
@@ -372,7 +373,7 @@ export default function MeuMundoView({
                     {t("liveGames", "Jogos ativos")} {stats.liveGames} · {t("avatars", "Avatares")} {stats.avatars}
                   </div>
                   <div>
-                    {t("netShort", "Rede")} {net} · {online}
+                    {t("netShort", "Rede")} {net} · {online ?? "—"}
                   </div>
                   <CarTuningPanel stats={stats} gameRef={gameRef} />
                   <div>
@@ -383,7 +384,7 @@ export default function MeuMundoView({
                 <div>…</div>
               )}
               <div className="mt-1 border-t pt-1" style={{ borderColor: EVO.linha, color: EVO.mudo }}>
-                {CLIENT_RELEASE} · {payload.release} · {BUILD}
+                {nb.name} · {CLIENT_RELEASE} · {payload.release} · {BUILD}
               </div>
             </div>
           </Chamfer>
@@ -398,9 +399,9 @@ export default function MeuMundoView({
           className="pointer-events-auto absolute max-w-[min(92vw,440px)] text-left"
           style={isTouch ? { bottom: bottom(176), left: SAFE.left } : { bottom: SAFE.bottom, left: SAFE.left }}
         >
-          <Chamfer cut={10} border={`${EVO.dourado}99`}>
-            <div className={`${archivo.className} px-3 py-2 text-[12px] font-medium leading-4`} style={{ color: EVO.branco }}>
-              <span className={`${teko.className} mr-2 text-[16px] uppercase tracking-[0.14em]`} style={{ color: EVO.ambar }}>
+          <Chamfer cut={14} fill={MM.surface}>
+            <div className={`${archivo.className} px-3.5 py-2.5 text-[13px] font-medium leading-[18px]`} style={{ color: EVO.branco }}>
+              <span className="mr-2 text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: MM.gold }}>
                 {t("menuControls", "Controles")}
               </span>
               {drivingLot
@@ -421,7 +422,7 @@ export default function MeuMundoView({
       {/* Aviso de interação (só leitura: casa alheia, saída) */}
       {status === "ready" && nearby && !nearbyAction && !open && !levelOpen && !isTouch && (
         <div className="pointer-events-none absolute left-1/2 -translate-x-1/2" style={{ bottom: bottom(48) }}>
-          <EvoToast icon={<kbd className="border px-1.5 pt-0.5 text-[15px]">E</kbd>}>{nearbyLabel}</EvoToast>
+          <EvoToast icon={<kbd className={s.kbd}>E</kbd>}>{nearbyLabel}</EvoToast>
         </div>
       )}
 
@@ -483,10 +484,9 @@ export default function MeuMundoView({
             <EvoButton
               variant="gold"
               onClick={() => setLevelOpen(true)}
-              size="none"
-              className="!absolute !min-h-10 max-w-[44vw] text-[14px] leading-tight"
-              style={{ bottom: bottom(84), right: SAFE.right }}
-              icon={<Construction className="h-4 w-4 shrink-0" />}
+              className="!absolute max-w-[46vw]"
+              style={{ bottom: bottom(80), right: SAFE.right }}
+              icon={<Construction className="h-5 w-5 shrink-0" />}
             >
               {t("changeHouse", "Alterar casa")}
             </EvoButton>
@@ -496,9 +496,8 @@ export default function MeuMundoView({
               variant="primary"
               onClick={() => gameRef.current?.interact()}
               aria-label={nearbyLabel}
-              size="none"
-              className="!absolute !min-h-11 min-w-11 max-w-[44vw] text-[15px] leading-tight"
-              style={{ bottom: bottom(24), right: SAFE.right }}
+              className="!absolute !min-h-12 max-w-[46vw]"
+              style={{ bottom: bottom(20), right: SAFE.right }}
               icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5 shrink-0" /> : nearbyExit ? <Building2 className="h-5 w-5 shrink-0" /> : nearbyAction ? <DoorOpen className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearbyLabel}
@@ -516,11 +515,7 @@ export default function MeuMundoView({
             heading={t("menuStreet", "O bairro")}
             items={menuItems}
             hotkeys={!blocked && !open && !levelOpen}
-            footer={
-              <>
-                {nb.name} · {CLIENT_RELEASE} · {BUILD}
-              </>
-            }
+            presence={{ count: online, scope: t("presenceStreet", "Neste bairro"), state: presenceState(net) }}
           />
         </div>
       )}
@@ -552,7 +547,7 @@ export default function MeuMundoView({
                 {open.house.isMine ? t("yourHouse", "Sua casa") : (open.house.ownerName ?? t("available", "Disponível"))}
               </InfoRow>
               {open.house.ownerName && (
-                <div className="mt-3 flex items-center gap-2 px-3 py-2 font-semibold" style={{ boxShadow: `inset 0 0 0 1px ${EVO.linhaForte}` }}>
+                <div className="mt-3 flex items-center gap-2 rounded-[12px] px-3 py-2.5 font-semibold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
                   <Lock className="h-4 w-4 shrink-0" style={{ color: EVO.douradoClaro }} />
                   {t("needsInvite", "Esta casa só abre com convite do morador.")}
                 </div>
@@ -622,13 +617,13 @@ export function SceneCurtain({
 }) {
   const t = useTranslations("MeuMundo")
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center" style={{ background: `radial-gradient(ellipse at 50% 40%, ${EVO.vinho}, ${EVO.preto} 70%)` }}>
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center" style={{ background: "radial-gradient(ellipse at 50% 40%, #232a35, #0c0f14 70%)" }}>
       {status === "loading" ? (
         <EvoToast icon={<Loader2 className="h-4 w-4 animate-spin" />}>{text}</EvoToast>
       ) : (
-        <Chamfer cut={16} border={`${EVO.dourado}bb`} className="w-full max-w-sm">
+        <Chamfer cut={16} fill={MM.surface} className="w-full max-w-sm">
           <div className="p-5 text-left">
-            <div className={`${teko.className} text-[30px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+            <div className={`${archivo.className} text-[20px] font-bold leading-tight`} style={{ color: EVO.branco }}>
               {errorTitle}
             </div>
             {errorText && (
@@ -694,7 +689,7 @@ export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: 
       ref={baseRef}
       className="absolute flex h-36 w-36 items-center justify-center"
       // Redondo, sem contorno, transparente e com sombra leve (pedido do Alex,
-      // 2026-10-25). data-dot: o .fl-sharp zera todo arredondamento, menos círculos.
+      // 2026-10-25).
       data-dot=""
       style={{
         bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)",
@@ -851,8 +846,8 @@ function HouseLevelPanel({
               aria-label={t("levelN", "Nível {n}").replace("{n}", pad(l.level))}
               className={`text-left ${l.available ? "" : "cursor-not-allowed opacity-45"}`}
             >
-              <Chamfer cut={10} border={isSel ? "#ff5fae" : EVO.linhaForte} width={isSel ? 2 : 1}>
-                <div className="flex aspect-[4/3] items-center justify-center" style={{ background: isSel ? "rgba(128,0,51,0.55)" : "rgba(245,240,237,0.06)" }}>
+              <Chamfer cut={10} border={isSel ? MM.ruby : MM.border} width={isSel ? 2 : 1} className="overflow-hidden">
+                <div className="flex aspect-[4/3] items-center justify-center" style={{ background: isSel ? "rgba(128,18,56,0.45)" : "rgba(255,255,255,0.05)" }}>
                   {l.thumb ? (
                     // Miniatura estática pequena (WebP com hash), dentro de um jogo só de admin.
                     // eslint-disable-next-line @next/next/no-img-element
@@ -862,7 +857,7 @@ function HouseLevelPanel({
                   )}
                 </div>
                 <div className="flex items-center justify-between gap-1 px-2 pb-1 pt-1.5">
-                  <span className={`${teko.className} text-[17px] font-semibold uppercase leading-none`} style={{ color: EVO.branco }}>
+                  <span className={`${archivo.className} text-[13px] font-semibold leading-none`} style={{ color: EVO.branco }}>
                     {t("levelN", "Nível {n}").replace("{n}", pad(l.level))}
                   </span>
                   {isConfirmed && <HudChip tone="ouro">{t("levelCurrent", "Atual")}</HudChip>}

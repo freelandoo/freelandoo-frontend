@@ -21,7 +21,8 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getLife, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
-import { EVO, FUNDO, archivo, chamfer, chamferRing, teko } from "./evo-skin"
+import { EVO, FUNDO, archivo } from "./evo-skin"
+import { MM } from "../hud/tokens"
 import { PAGES, StatusPage, type PageActions } from "./status-pages"
 import SkinWardrobe from "./skin-wardrobe"
 import { PORTRAIT } from "../portraits"
@@ -340,7 +341,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
   )
   if (!life) {
     return shell(
-      <div className={`${teko.className} text-[34px] uppercase tracking-[0.3em]`} style={{ color: EVO.douradoClaro }}>
+      <div className={`${archivo.className} text-[15px] font-semibold uppercase tracking-[0.2em]`} style={{ color: EVO.douradoClaro }}>
         {error ? t("stLoadFail", "Não carregou o status") : t("stLoading", "Carregando…")}
       </div>,
     )
@@ -361,24 +362,23 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
       >
-        <div className="relative mx-2 min-h-0 flex-1" style={{ clipPath: chamfer(18), background: compactFill, padding: 2 }}>
-          <div className="pointer-events-none absolute inset-0" style={{ clipPath: chamferRing(18, 2), background: EVO.magenta }} aria-hidden />
+        <div className="relative mx-2 min-h-0 flex-1" style={{ borderRadius: MM.radius.panel, background: compactFill, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
           <div className="h-full overflow-hidden p-2.5">
             <StatusPage page={page} life={life} name={name} portrait={portrait} compact t={t} act={act} />
           </div>
         </div>
         {/* rodapé numa linha de 40 px: ‹ pontos › e fechar (o nome da página está no cabeçalho) */}
         <div className="mx-2 mt-1.5 flex h-10 shrink-0 items-center gap-1">
-          <button type="button" onClick={() => go(-1)} aria-label={t("stPrev", "Tela anterior")} className="flex h-9 w-9 shrink-0 items-center justify-center" style={{ color: EVO.magenta }}>
+          <button type="button" onClick={() => go(-1)} aria-label={t("stPrev", "Tela anterior")} className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ color: EVO.branco, borderRadius: 12, background: MM.card, border: `1px solid ${MM.border}` }}>
             <ChevronLeft className="h-6 w-6" />
           </button>
           <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
             <Dots sel={sel} onPick={goTo} small />
-            <span className={`${teko.className} shrink-0 text-[14px] leading-none tracking-wider`} style={{ color: EVO.mudo }}>
+            <span className={`${archivo.className} shrink-0 text-[12px] font-semibold leading-none`} style={{ color: EVO.mudo }}>
               {sel + 1}/{N}
             </span>
           </div>
-          <button type="button" onClick={() => go(1)} aria-label={t("stNext", "Próxima tela")} className="flex h-9 w-9 shrink-0 items-center justify-center" style={{ color: EVO.magenta }}>
+          <button type="button" onClick={() => go(1)} aria-label={t("stNext", "Próxima tela")} className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ color: EVO.branco, borderRadius: 12, background: MM.card, border: `1px solid ${MM.border}` }}>
             <ChevronRight className="h-6 w-6" />
           </button>
           <BackButton onClick={close} t={t} icon />
@@ -397,7 +397,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
     <>
     <div
       className={`${archivo.className} fixed inset-0 z-[80] select-none overflow-hidden`}
-      style={{ background: "radial-gradient(ellipse at 50% 55%, rgba(8,7,11,0.25), rgba(8,7,11,0.55))" }}
+      style={{ background: "radial-gradient(ellipse at 50% 55%, rgba(6,8,12,0.22), rgba(6,8,12,0.5))" }}
       onClick={(e) => {
         if (e.target === e.currentTarget && performance.now() - draggedAt.current > 250) close()
       }}
@@ -421,7 +421,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
                 if (i !== sel && performance.now() - draggedAt.current > 250) goTo(i)
               }}
             >
-              {/* neon da frente: camada estática, só a opacidade anima */}
+              {/* contorno rubi da frente: camada estática, só a opacidade anima */}
               <div
                 ref={(el) => {
                   glowRefs.current[i] = el
@@ -429,24 +429,10 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
                 className="pointer-events-none absolute -inset-4"
                 style={{ opacity: 0 }}
               >
-                <svg width={W + 32} height={H + 32} className="absolute inset-0" style={{ filter: "blur(14px)" }}>
-                  <polygon points={chamferPoints(16, 16, W, H, 40)} fill="none" stroke={EVO.magenta} strokeWidth={14} />
-                </svg>
-                <svg width={W + 32} height={H + 32} className="absolute inset-0">
-                  <polygon points={chamferPoints(16, 16, W, H, 40)} fill="none" stroke={EVO.rosaClaro} strokeWidth={3} />
-                </svg>
+                <div className="absolute inset-[13px]" style={{ borderRadius: MM.radius.panel + 3, border: `2px solid ${MM.rubyBorder}`, boxShadow: MM.shadow }} />
               </div>
-              <div className="absolute inset-0" style={{ clipPath: chamfer(40), background: frameFill, padding: 4 }}>
-                <div className="pointer-events-none absolute inset-0" style={{ clipPath: chamferRing(40, 4), background: `linear-gradient(135deg, ${EVO.magenta}, ${EVO.ritual} 55%, ${EVO.magenta})` }} aria-hidden />
+              <div className="absolute inset-0 overflow-hidden" style={{ borderRadius: MM.radius.panel, background: frameFill, border: `1px solid ${MM.border}` }}>
                 <div className="relative h-full w-full overflow-hidden">
-                  {/* pinceladas magenta atrás do título, como no anexo */}
-                  <div
-                    className="pointer-events-none absolute left-[22%] top-6 h-28 w-[46%]"
-                    style={{
-                      background: `repeating-linear-gradient(-8deg, transparent 0 14px, ${EVO.magenta}22 14px 17px, transparent 17px 30px)`,
-                      transform: "skewX(-20deg)",
-                    }}
-                  />
                   <div className="relative h-full px-9 pb-7 pt-6">
                     {rel(i) <= 1 && <StatusPage page={page} life={life} name={name} portrait={portrait} compact={false} t={t} act={act} />}
                   </div>
@@ -468,22 +454,22 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
           onClick={() => go(-1)}
           aria-label={t("stPrev", "Tela anterior")}
           className="pointer-events-auto absolute flex items-center justify-center"
-          style={{ left: -W / 2 - 130, top: -60, width: 110, height: 120, color: EVO.magenta, filter: `drop-shadow(0 0 12px ${EVO.magenta})` }}
+          style={{ left: -W / 2 - 96, top: -32, width: 64, height: 64, color: EVO.branco, borderRadius: 999, background: MM.surface, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}
         >
-          <ChevronLeft className="h-28 w-28" strokeWidth={2.4} />
+          <ChevronLeft className="h-8 w-8" strokeWidth={2} />
         </button>
         <button
           type="button"
           onClick={() => go(1)}
           aria-label={t("stNext", "Próxima tela")}
           className="pointer-events-auto absolute flex items-center justify-center"
-          style={{ left: W / 2 + 20, top: -60, width: 110, height: 120, color: EVO.magenta, filter: `drop-shadow(0 0 12px ${EVO.magenta})` }}
+          style={{ left: W / 2 + 32, top: -32, width: 64, height: 64, color: EVO.branco, borderRadius: 999, background: MM.surface, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}
         >
-          <ChevronRight className="h-28 w-28" strokeWidth={2.4} />
+          <ChevronRight className="h-8 w-8" strokeWidth={2} />
         </button>
         <div
-          className={`${teko.className} absolute whitespace-nowrap text-[24px] uppercase tracking-[0.12em]`}
-          style={{ left: -W / 2, top: H / 2 + 18, color: `${EVO.branco}b3` }}
+          className={`${archivo.className} absolute whitespace-nowrap text-[13px] font-medium`}
+          style={{ left: -W / 2, top: H / 2 + 22, color: EVO.mudo }}
         >
           ◀ ▶ {t("stHintSwap", "Trocar tela")} &nbsp;&nbsp; 1 – 6 {t("stHintDirect", "Ir direto")} &nbsp;&nbsp; ESC {t("stHintBack", "Voltar")}
         </div>
@@ -501,20 +487,6 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
   )
 }
 
-/** Pontos do polígono chanfrado (para o SVG do neon). */
-function chamferPoints(ox: number, oy: number, w: number, h: number, cut: number) {
-  return [
-    [ox, oy],
-    [ox + w - cut, oy],
-    [ox + w, oy + cut],
-    [ox + w, oy + h],
-    [ox + cut, oy + h],
-    [ox, oy + h - cut],
-  ]
-    .map((p) => p.join(","))
-    .join(" ")
-}
-
 function Dots({ sel, onPick, small = false }: { sel: number; onPick: (i: number) => void; small?: boolean }) {
   // Celular: pontos menores, com área de toque de 22 px em volta de cada um.
   if (small) {
@@ -526,8 +498,8 @@ function Dots({ sel, onPick, small = false }: { sel: number; onPick: (i: number)
               className="block"
               style={
                 i === sel
-                  ? { width: 18, height: 8, border: `2px solid ${EVO.magenta}`, boxShadow: `0 0 6px ${EVO.magenta}` }
-                  : { width: 6, height: 6, background: `${EVO.branco}55` }
+                  ? { width: 18, height: 6, borderRadius: 999, background: MM.ruby }
+                  : { width: 6, height: 6, borderRadius: 999, background: `${EVO.branco}55` }
               }
             />
           </button>
@@ -546,8 +518,8 @@ function Dots({ sel, onPick, small = false }: { sel: number; onPick: (i: number)
           className="block"
           style={
             i === sel
-              ? { width: 26, height: 12, border: `2px solid ${EVO.magenta}`, boxShadow: `0 0 8px ${EVO.magenta}` }
-              : { width: 8, height: 8, background: `${EVO.branco}55` }
+              ? { width: 26, height: 8, borderRadius: 999, background: MM.ruby }
+              : { width: 8, height: 8, borderRadius: 999, background: `${EVO.branco}55` }
           }
         />
       ))}
@@ -563,8 +535,8 @@ function BackButton({ onClick, t, big = false, icon = false }: { onClick: () => 
         type="button"
         onClick={onClick}
         aria-label={t("stBack", "Voltar")}
-        className="inline-flex h-9 w-9 shrink-0 items-center justify-center"
-        style={{ clipPath: chamfer(8), background: `linear-gradient(180deg, ${EVO.carvao2}, ${EVO.preto})`, color: EVO.douradoClaro, boxShadow: `inset 0 0 0 2px ${EVO.douradoEscuro}` }}
+        className="inline-flex h-10 w-10 shrink-0 items-center justify-center"
+        style={{ borderRadius: 12, background: MM.surface, color: EVO.branco, border: `1px solid ${MM.border}` }}
       >
         <X className="h-5 w-5" />
       </button>
@@ -574,18 +546,19 @@ function BackButton({ onClick, t, big = false, icon = false }: { onClick: () => 
     <button
       type="button"
       onClick={onClick}
-      className={`${teko.className} inline-flex items-center gap-3 font-semibold uppercase tracking-[0.18em]`}
+      className={`${archivo.className} inline-flex items-center gap-2.5 font-semibold`}
       style={{
-        height: big ? 56 : 46,
-        padding: big ? "6px 26px 0" : "4px 16px 0",
-        fontSize: big ? 28 : 22,
-        clipPath: chamfer(12),
-        background: `linear-gradient(180deg, ${EVO.carvao2}, ${EVO.preto})`,
-        color: EVO.douradoClaro,
-        boxShadow: `inset 0 0 0 2px ${EVO.douradoEscuro}`,
+        height: big ? 52 : 44,
+        padding: big ? "0 22px" : "0 16px",
+        fontSize: big ? 16 : 15,
+        borderRadius: MM.radius.button,
+        background: MM.surface,
+        color: EVO.branco,
+        border: `1px solid ${MM.goldBorder}`,
+        boxShadow: MM.shadowSoft,
       }}
     >
-      {t("stBack", "Voltar")} <X className={big ? "h-6 w-6" : "h-5 w-5"} />
+      <X className={big ? "h-5 w-5" : "h-4 w-4"} style={{ color: EVO.dourado }} /> {t("stBack", "Voltar")}
     </button>
   )
 }
@@ -593,7 +566,7 @@ function BackButton({ onClick, t, big = false, icon = false }: { onClick: () => 
 function Notice({ text, small = false }: { text: string; small?: boolean }) {
   return (
     <div className={`pointer-events-none fixed inset-x-0 z-[90] flex justify-center px-4 ${small ? "top-3" : "top-6"}`}>
-      <div className={`${teko.className} font-semibold uppercase tracking-wider ${small ? "px-3 pb-0.5 pt-1.5 text-[15px]" : "px-4 pb-1 pt-2 text-[22px]"}`} style={{ background: EVO.douradoClaro, color: EVO.preto, clipPath: chamfer(10) }}>
+      <div role="status" className={`${archivo.className} font-semibold ${small ? "px-3.5 py-2 text-[13px]" : "px-5 py-2.5 text-[15px]"}`} style={{ background: MM.surface, color: EVO.branco, borderRadius: MM.radius.card, border: `1px solid ${MM.goldBorder}`, boxShadow: MM.shadow }}>
         {text}
       </div>
     </div>

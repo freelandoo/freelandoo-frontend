@@ -36,6 +36,8 @@ export function useQualityItem(apply: (c: QualityChoice) => void): DrawerItem {
     label: t("menuQuality", "Gráficos"),
     hint,
     icon: <Gauge className="h-5 w-5" />,
+    // Troca na hora e mostra o valor novo: a gaveta não fecha.
+    keepOpen: true,
     onSelect: () => {
       const next = ORDER[(ORDER.indexOf(choice) + 1) % ORDER.length]
       setChoice(next)

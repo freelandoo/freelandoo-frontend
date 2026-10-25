@@ -22,7 +22,7 @@ import { kindOfId } from "../engine/motion"
 import { fetchSession } from "../data"
 import type { BodyId, FridgeStock, GameStats, HousePayload, Interactable, LifeCharacter, LifeItem, NetStatus, VisitState } from "../types"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
-import { Drawer, EvoButton, EvoDialog, EvoToast, InfoRow, WindedToast, type DrawerItem } from "./hud/hud-kit"
+import { Drawer, EvoButton, EvoDialog, EvoToast, InfoRow, WindedToast, presenceState, type DrawerItem } from "./hud/hud-kit"
 import { useQualityItem } from "./hud/quality-item"
 import { EVO } from "./status/evo-skin"
 import { itemName } from "./status/status-pages"
@@ -58,7 +58,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [attempt, setAttempt] = useState(0)
   const [net, setNet] = useState<NetStatus>("connecting")
-  const [online, setOnline] = useState(1)
+  const [online, setOnline] = useState<number | null>(null)
   const [nearby, setNearby] = useState<Interactable | null>(null)
   const [seat, setSeat] = useState<string | null>(null)
   const [rest, setRest] = useState<{ bed: string; sleeping: boolean } | null>(null)
@@ -362,13 +362,13 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const nearDoor = nearby?.kind === "door"
   const menuItems: DrawerItem[] = [
     ...(onOpenStatus
-      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, onSelect: () => onOpenStatus(body) }]
+      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, kind: "nav" as const, onSelect: () => onOpenStatus(body) }]
       : []),
     ...(isOwner
-      ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, onSelect: onOpenInvite }]
+      ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, kind: "nav" as const, onSelect: onOpenInvite }]
       : []),
     qualityItem,
-    { id: "info", label: t("houseInfoShort", "Casa"), hint: t("houseInfo", "Informações da casa"), icon: <Info className="h-5 w-5" />, onSelect: () => setInfoOpen(true) },
+    { id: "info", label: t("houseInfoShort", "Casa"), hint: t("houseInfo", "Informações da casa"), icon: <Info className="h-5 w-5" />, kind: "nav", active: infoOpen, onSelect: () => setInfoOpen(true) },
     ...(net === "offline" || net === "replaced"
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
       : []),
@@ -386,7 +386,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const overlay = infoOpen || menuOpen || !!fridge
 
   return (
-    <div className="fl-sharp fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#29262B]">
+    <div className="fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#29262B]">
       <canvas
         ref={canvasRef}
         className="block h-full w-full outline-none"
@@ -471,11 +471,10 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
           {hasAction && (
             <EvoButton
               variant="primary"
-              size="none"
               onClick={() => gameRef.current?.interact()}
               aria-label={actionLabel}
-              className="!absolute !min-h-11 min-w-11 max-w-[44vw] text-[15px] leading-tight"
-              style={{ bottom: bottom(24), right: SAFE.right }}
+              className="!absolute !min-h-12 max-w-[46vw]"
+              style={{ bottom: bottom(20), right: SAFE.right }}
               icon={actionIcon}
             >
               {actionLabel}
@@ -484,8 +483,8 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
         </>
       )}
 
-      {/* A gaveta do menu (direita) */}
-      {status === "ready" && (
+      {/* A gaveta do menu (direita); some com a geladeira aberta (a aba ficava por cima dela) */}
+      {status === "ready" && !fridge && (
         <div className="pointer-events-none absolute inset-0">
           <Drawer
             open={menuOpen}
@@ -493,12 +492,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
             heading={t("menuHouse", "A casa")}
             items={menuItems}
             hotkeys={!blocked && !infoOpen && !fridge}
-            footer={
-              <>
-                {payload.release} · {CLIENT_RELEASE} · {payload.interior.version ?? ""}
-                {stats && <> · {Math.round(stats.fps)} fps</>}
-              </>
-            }
+            presence={{ count: online, scope: t("presenceHouse", "Nesta casa"), state: presenceState(net) }}
           />
         </div>
       )}
@@ -526,7 +520,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
           </InfoRow>
           <InfoRow label={t("infoFloors", "Andares")}>{payload.interior.floors.length}</InfoRow>
           <InfoRow label={t("infoVisit", "Visita")}>{visitLine}</InfoRow>
-          <div className="mt-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: EVO.mudo }}>
+          <div className="mt-3 font-mono text-[10px] leading-4" style={{ color: EVO.mudo }}>
             {payload.release} · {CLIENT_RELEASE} · {payload.interior.version ?? ""}
             {stats && <> · {Math.round(stats.fps)} fps</>}
           </div>

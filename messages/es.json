@@ -8094,6 +8094,16 @@
     "actDoWork": "Trabajar",
     "stRoutineShort": "Es una rutina: rinde en las primeras horas del día (estudio 5 h, entrenamiento 4 h), descansa, duerme a las 23 h y vuelve a las 7 h. La constancia rinde más que el maratón.",
     "mkBuyPrice": "Comprar · {n} monedas",
-    "mkNoCoins": "Monedas insuficientes"
+    "mkNoCoins": "Monedas insuficientes",
+    "menuOpenNav": "Abrir navegación",
+    "presenceOne": "{n} jugador en línea",
+    "presenceMany": "{n} jugadores en línea",
+    "presenceConnecting": "Conectando…",
+    "presenceOffline": "Sin conexión",
+    "presenceStreet": "En este barrio",
+    "presenceHouse": "En esta casa",
+    "presenceCenter": "En el centro",
+    "needSleepMain": "Necesito dormir.",
+    "needAwakeHours": "Llevo {h} horas despierto."
   }
 }

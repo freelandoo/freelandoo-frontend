@@ -10,10 +10,12 @@ import { useEffect, useRef, useState } from "react"
 import { BatteryLow, Bed, Flame, HeartPulse, Hourglass, Moon, Utensils, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId, LifeNeed, LifeNeedId } from "../../types"
-import { Chamfer, EVO, archivo } from "../status/evo-skin"
+import { EVO, archivo } from "../status/evo-skin"
+import { MM } from "../hud/tokens"
 import { PORTRAIT } from "../portraits"
 import { NEEDS_TIMING, freshNeedsMemory, pickNeed, type NeedLine } from "./needs-logic"
 import { DRAWER_EVENT } from "../hud/hud-kit"
+import s from "../hud/hud.module.css"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -40,18 +42,20 @@ function sentence(id: LifeNeedId, t: Tr, hours?: number) {
   }
 }
 
-/** Frase do balão: uma necessidade ou a combinação com o sono. */
-export function needText(line: NeedLine, t: Tr) {
+/**
+ * As duas linhas do balão: a principal (o que ele sente) e a complementar
+ * (há quantas horas está acordado — número real, vindo da vida).
+ */
+export function needLines(line: NeedLine, t: Tr): { main: string; extra: string | null } {
   const [first, second] = line.ids
-  if (second !== "sleep") return sentence(first, t, line.hours)
-  const h = String(line.hours ?? 16)
-  if (first === "starving") return t("needStarvingSleep", "Estou com muita fome e já estou há {h} horas acordado.").replace("{h}", h)
-  if (first === "hungry") return t("needHungrySleep", "Estou ficando com fome e já estou há {h} horas acordado.").replace("{h}", h)
-  return `${sentence(first, t)} ${t("needAlsoSleep", "E já estou há {h} horas acordado.").replace("{h}", h)}`
+  const awake = line.hours != null ? t("needAwakeHours", "Já estou há {h} horas acordado.").replace("{h}", String(line.hours)) : null
+  if (first === "sleep") return { main: t("needSleepMain", "Preciso dormir."), extra: awake }
+  if (second === "sleep") return { main: sentence(first, t), extra: awake }
+  return { main: sentence(first, t), extra: null }
 }
 
 function NeedIcon({ id }: { id: LifeNeedId }) {
-  const cls = "h-5 w-5 max-[759px]:h-4 max-[759px]:w-4"
+  const cls = "h-4 w-4"
   if (id === "hospital" || id === "unwell") return <HeartPulse className={cls} />
   if (id === "starving" || id === "hungry") return <Utensils className={cls} />
   if (id === "sleep") return <Moon className={cls} />
@@ -89,36 +93,53 @@ export default function NeedsBubble({ needs, tick, body, below = 0, onOpenStatus
   }, [tick])
   if (!line || drawerOpen) return null
   const urgent = line.level <= 2
+  const { main, extra } = needLines(line, t)
   return (
     <div
-      className="fl-sharp pointer-events-none fixed left-0 z-[72] px-3"
+      className="pointer-events-none fixed left-0 z-[72] px-3"
       style={{ top: `calc(max(12px, env(safe-area-inset-top)) + ${below}px)`, paddingLeft: "max(12px, env(safe-area-inset-left))" }}
       role="status"
       aria-live="polite"
     >
-      <Chamfer cut={12} border={urgent ? EVO.perigo : EVO.dourado} width={1.5} className="pointer-events-auto max-w-[min(92vw,420px)] max-[759px]:max-w-[min(92vw,360px)]">
-        <div className="flex items-stretch gap-2.5 p-2 pr-1.5 max-[759px]:gap-2 max-[759px]:p-1.5 max-[759px]:pr-1">
+      <div
+        className={`${archivo.className} ${s.enterTop} pointer-events-auto flex max-w-[min(92vw,440px)] items-start gap-3 p-3 pr-1.5 max-[759px]:max-w-[min(92vw,360px)] max-[759px]:gap-2.5 max-[759px]:p-2 max-[759px]:pr-1`}
+        style={{ borderRadius: MM.radius.panel, background: MM.surface, border: `1px solid ${urgent ? MM.rubyBorder : MM.border}`, boxShadow: MM.shadow }}
+      >
+        <div className="relative shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element -- retrato pequeno, local, só no jogo (admin) */}
-          <img src={PORTRAIT[body] ?? PORTRAIT.normal} alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-full object-cover max-[759px]:h-10 max-[759px]:w-10" style={{ boxShadow: `0 0 0 2px ${urgent ? EVO.perigo : EVO.dourado}` }} />
-          <div className="flex min-w-0 flex-1 flex-col justify-center">
-            <div className="flex items-center gap-1.5" style={{ color: urgent ? "#ff6b78" : EVO.ambar }}>
-              <NeedIcon id={line.ids[0]} />
-              {line.ids[1] && <NeedIcon id={line.ids[1]} />}
-            </div>
-            <p className={`${archivo.className} mt-0.5 text-[14px] font-semibold leading-5 max-[759px]:text-[12px] max-[759px]:leading-4`} style={{ color: EVO.branco }}>
-              {needText(line, t)}
-            </p>
-            {onOpenStatus && (
-              <button type="button" onClick={onOpenStatus} className={`${archivo.className} mt-0.5 self-start text-[12px] font-semibold uppercase tracking-[0.14em] underline max-[759px]:mt-0 max-[759px]:py-0.5 max-[759px]:text-[10px]`} style={{ color: EVO.douradoClaro }}>
-                {t("needOpenStatus", "Ver status")}
-              </button>
-            )}
-          </div>
-          <button type="button" onClick={() => setLine(null)} className="inline-flex h-8 w-8 shrink-0 items-center justify-center self-start" style={{ color: EVO.mudo }} aria-label={t("close", "Fechar")}>
-            <X className="h-4 w-4" />
-          </button>
+          <img src={PORTRAIT[body] ?? PORTRAIT.normal} alt="" width={56} height={56} className="h-14 w-14 rounded-full object-cover max-[759px]:h-11 max-[759px]:w-11" style={{ boxShadow: `0 0 0 2px ${MM.ruby}` }} />
+          <span
+            className="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full max-[759px]:h-5 max-[759px]:w-5"
+            style={{ background: MM.drawer, color: urgent ? "#ff7b86" : MM.gold, border: `1px solid ${MM.border}` }}
+            aria-hidden
+          >
+            <NeedIcon id={line.ids[0]} />
+          </span>
         </div>
-      </Chamfer>
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-0.5">
+          <p className="text-[15px] font-semibold leading-5 max-[759px]:text-[14px] max-[759px]:leading-[18px]" style={{ color: EVO.branco }}>
+            {main}
+          </p>
+          {extra && (
+            <p className="text-[13px] leading-[18px] max-[759px]:text-[12px] max-[759px]:leading-4" style={{ color: MM.muted }}>
+              {extra}
+            </p>
+          )}
+          {onOpenStatus && (
+            <button
+              type="button"
+              onClick={onOpenStatus}
+              className="mt-0.5 self-start py-0.5 text-[13px] font-semibold underline decoration-1 underline-offset-[3px] max-[759px]:text-[12px]"
+              style={{ color: MM.gold }}
+            >
+              {t("needOpenStatus", "Ver status")}
+            </button>
+          )}
+        </div>
+        <button type="button" onClick={() => setLine(null)} className="-my-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ color: MM.muted }} aria-label={t("close", "Fechar")}>
+          <X className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   )
 }

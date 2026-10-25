@@ -1,285 +1,227 @@
-/* features/meu-mundo/ui/hud/hud.module.css — a pele EVO dos botões do jogo.
+/* features/meu-mundo/ui/hud/hud.module.css — a pele das peças do jogo.
  *
- * O menu do estábulo do EVO Brazil (Cat demon/jogo/ui/evo/rancho/botao_rancho.gd):
- * placa preta, filete dourado, canto de baixo à direita cortado, ícone
- * dourado, texto branco condensado. Quente (hover/foco/aberto): o recheio vira
- * degradê magenta, o halo acende e a seta aparece na ponta.
+ * Modernização visual (2026-10-25, referências do Alex): grafite translúcido,
+ * rubi nas ações principais e no que está aceso, dourado discreto nos ícones,
+ * verde na presença online, cantos arredondados, bordas finas e sombras curtas.
+ * As cores espelham tokens.ts (`MM`) — mudar uma = mudar as duas.
  *
- * Só `opacity` e `transform` animam (o halo é uma camada própria; nada de
- * animar filtro ou gradiente). As cores vêm de evo-skin.tsx (EVO).
+ * Regras: transparência só no FUNDO (rgba; nunca `opacity` na peça inteira),
+ * sem backdrop-filter, só `transform`/`opacity` animam (toque 140 ms, painel
+ * 220 ms), nada contínuo, e `prefers-reduced-motion` desliga tudo.
  */
 
-/* ═══ item do menu (a placa do estábulo) ═══ */
+/* ═══ card de navegação da gaveta ═══ */
 .item {
   position: relative;
-  display: block;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 20px;
+  align-items: center;
+  column-gap: 14px;
   width: 100%;
-  height: 56px;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  min-height: 60px;
+  padding: 9px 14px 9px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 14px;
+  background: rgba(30, 35, 43, 0.6);
+  color: #f4f5f7;
   cursor: pointer;
   text-align: left;
   -webkit-tap-highlight-color: transparent;
   outline: none;
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-@media (pointer: coarse) {
-  .item {
-    height: 64px;
+.item[data-hint] {
+  min-height: 64px;
+}
+@media (hover: hover) {
+  .item:not(:disabled):hover {
+    background: rgba(44, 50, 60, 0.7);
+    border-color: rgba(255, 255, 255, 0.22);
   }
+}
+.item:not(:disabled):active {
+  transform: scale(0.98);
+}
+.item:focus-visible {
+  box-shadow: 0 0 0 2px #e5be70;
+}
+.item[data-active] {
+  background: linear-gradient(180deg, rgba(128, 18, 56, 0.78) 0%, rgba(78, 10, 34, 0.78) 100%);
+  border-color: rgba(255, 120, 160, 0.45);
 }
 .item:disabled {
   cursor: not-allowed;
-  opacity: 0.42;
+  background: rgba(24, 28, 34, 0.5);
+  color: rgba(184, 190, 200, 0.5);
 }
-.halo {
-  position: absolute;
-  inset: 0;
-  box-shadow: 0 0 22px 2px rgba(255, 0, 110, 0.55);
-  opacity: 0;
-  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
-  pointer-events: none;
-}
-.plate {
-  position: absolute;
-  inset: 0;
-  /* só o filete (anel): o recheio translúcido não fica tingido de dourado */
-  clip-path: polygon(evenodd, 0 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 0, 1.5px 1.5px, calc(100% - 4.5px) 1.5px, calc(100% - 1.5px) 4.5px, calc(100% - 1.5px) calc(100% - 12.5px), calc(100% - 12.5px) calc(100% - 1.5px), 1.5px calc(100% - 1.5px), 1.5px 1.5px);
-  background: rgba(214, 167, 91, 0.75); /* o filete dourado */
-  transition: background 180ms;
-}
-.fill,
-.hot {
-  position: absolute;
-  inset: 1.5px;
-  clip-path: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%);
-}
-.fill {
-  background: linear-gradient(180deg, rgba(58, 58, 64, 0.76), rgba(42, 42, 48, 0.76));
-}
-.hot {
-  background: linear-gradient(90deg, rgba(158, 0, 66, 0.96), rgba(242, 13, 115, 0.92));
-  opacity: 0;
-  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.shine {
-  position: absolute;
-  left: 6px;
-  top: 3px;
-  width: 35%;
-  height: 1px;
-  background: rgba(242, 211, 154, 0.2);
-}
-.metal {
-  position: absolute;
-  right: 18px;
-  bottom: 0;
-  width: 42px;
-  height: 2.5px;
-  background: #d6a75b;
-  transition: opacity 180ms;
+.item[aria-busy="true"] {
+  cursor: progress;
 }
 .icon {
-  position: absolute;
-  left: 18px;
-  top: 50%;
   display: flex;
-  translate: 0 -50%;
-  color: #d6a75b;
-  transition: color 180ms;
+  align-items: center;
+  justify-content: center;
+  color: #e5be70;
+}
+.icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.9;
+}
+.item:disabled .icon {
+  color: rgba(229, 190, 112, 0.42);
+}
+.text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 .label {
-  position: absolute;
-  left: 58px;
-  right: 46px;
-  top: 50%;
-  translate: 0 -46%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: #f5f1ed;
-  font-size: 23px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  line-height: 1;
+  line-height: 1.2;
 }
 .hint {
-  position: absolute;
-  left: 58px;
-  right: 46px;
-  bottom: 6px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: rgba(245, 241, 237, 0.55);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  color: #b8bec8;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.25;
 }
-.item[data-hint] .label {
-  top: 42%;
+.item:disabled .hint {
+  color: rgba(184, 190, 200, 0.45);
 }
 .arrow {
-  position: absolute;
-  right: 20px;
-  top: 50%;
   display: flex;
-  translate: 0 -50%;
-  color: #f5f1ed;
-  opacity: 0;
-  transform: translateX(-10px);
-  transition:
-    opacity 180ms,
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  justify-content: flex-end;
+  color: #b8bec8;
 }
-.bar {
-  position: absolute;
-  right: 2px;
-  top: 6px;
-  bottom: 14px;
-  width: 3px;
-  background: #ff168a;
-  opacity: 0;
-  transition: opacity 180ms;
+.arrow svg {
+  width: 20px;
+  height: 20px;
+}
+.item[data-active] .arrow {
+  color: #ff8fb3;
+}
+.spin {
+  animation: mm-spin 900ms linear infinite;
+}
+@keyframes mm-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .badge {
   position: absolute;
-  right: 44px;
+  right: 40px;
   top: 50%;
   translate: 0 -50%;
-  padding: 2px 6px 0;
-  background: #ff006e;
-  color: #f5f1ed;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  line-height: 18px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ad1644;
+  color: #f4f5f7;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
 }
 
-.item:not(:disabled):hover .halo,
-.item:not(:disabled):focus-visible .halo,
-.item[data-active] .halo,
-.item:not(:disabled):hover .hot,
-.item:not(:disabled):focus-visible .hot,
-.item[data-active] .hot,
-.item:not(:disabled):hover .bar,
-.item:not(:disabled):focus-visible .bar,
-.item[data-active] .bar {
-  opacity: 1;
-}
-.item:not(:disabled):hover .plate,
-.item:not(:disabled):focus-visible .plate,
-.item[data-active] .plate {
-  background: #ff5fae;
-}
-.item:not(:disabled):hover .arrow,
-.item:not(:disabled):focus-visible .arrow,
-.item[data-active] .arrow {
-  opacity: 1;
-  transform: none;
-}
-.item:not(:disabled):hover .icon,
-.item:not(:disabled):focus-visible .icon,
-.item[data-active] .icon {
-  color: #f5f1ed;
-}
-.item:not(:disabled):hover .metal,
-.item:not(:disabled):focus-visible .metal,
-.item[data-active] .metal {
-  opacity: 0.5;
-}
-.item:not(:disabled):active {
-  transform: scale(0.97);
-}
-
-/* ═══ botões (ação magenta, ouro, fantasma) ═══ */
+/* ═══ botões: primário (rubi), secundário (grafite), fantasma e de ícone ═══ */
 .btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   min-height: 44px;
-  padding: 0 16px;
-  border: 0;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 14px;
   cursor: pointer;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 1;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
   outline: none;
-  isolation: isolate;
-  transition: transform 120ms;
-}
-.btn::before,
-.btn::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-}
-/* borda = anel de fora; recheio = camada de dentro (translúcido: a borda não pode ficar atrás dele) */
-.btn::before {
-  inset: 0;
-  clip-path: polygon(evenodd, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px, 10px 0, 11px 2px, calc(100% - 11px) 2px, calc(100% - 2px) 11px, calc(100% - 2px) calc(100% - 11px), calc(100% - 11px) calc(100% - 2px), 11px calc(100% - 2px), 2px calc(100% - 11px), 2px 11px, 11px 2px);
-}
-.btn::after {
-  inset: 2px;
-  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .btn:not(:disabled):active {
   transform: scale(0.97);
 }
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.42;
-}
 .btn:focus-visible {
-  box-shadow: 0 0 0 2px #f2d39a;
+  box-shadow: 0 0 0 2px #e5be70;
+}
+.btn > svg {
+  flex-shrink: 0;
 }
 .primary {
-  color: #f5f1ed;
+  color: #f4f5f7;
+  background: linear-gradient(180deg, #b81a4a 0%, #8a1238 100%);
+  border-color: rgba(255, 120, 160, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
 }
-.primary::before {
-  background: #ff4fa4;
-}
-.primary::after {
-  background: linear-gradient(180deg, rgba(128, 0, 51, 0.97), rgba(61, 0, 26, 0.98));
-}
-.primary:not(:disabled):hover::after,
-.primary[aria-pressed="true"]::after {
-  background: linear-gradient(180deg, rgba(178, 5, 77, 0.97), rgba(110, 0, 42, 0.98));
+.primary:focus-visible {
+  box-shadow:
+    0 0 0 2px #e5be70,
+    0 4px 14px rgba(0, 0, 0, 0.28);
 }
 .gold {
-  color: #f2d39a;
+  color: #f4f5f7;
+  background: rgba(18, 22, 28, 0.84);
+  border-color: rgba(229, 190, 112, 0.38);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
 }
-.gold::before {
-  background: rgba(214, 167, 91, 0.85);
+.gold > svg {
+  color: #e5be70;
 }
-.gold::after {
-  background: linear-gradient(180deg, rgba(58, 58, 64, 0.76), rgba(42, 42, 48, 0.76));
-}
-.gold:not(:disabled):hover {
-  color: #f5f1ed;
-}
-.gold:not(:disabled):hover::before,
-.gold[aria-pressed="true"]::before {
-  background: #ff5fae;
-}
-.gold[aria-pressed="true"]::after {
-  background: linear-gradient(180deg, rgba(128, 0, 51, 0.97), rgba(61, 0, 26, 0.98));
+.gold[aria-pressed="true"] {
+  background: linear-gradient(180deg, rgba(128, 18, 56, 0.78) 0%, rgba(78, 10, 34, 0.78) 100%);
+  border-color: rgba(255, 120, 160, 0.45);
 }
 .ghost {
-  color: #a39aa3;
+  color: #b8bec8;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.13);
 }
-.ghost::before {
-  background: rgba(245, 240, 237, 0.28);
+@media (hover: hover) {
+  .primary:not(:disabled):hover {
+    background: linear-gradient(180deg, #c81f53 0%, #981540 100%);
+  }
+  .gold:not(:disabled):hover {
+    background: rgba(36, 42, 51, 0.88);
+    border-color: rgba(229, 190, 112, 0.6);
+  }
+  .ghost:not(:disabled):hover {
+    color: #f4f5f7;
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
-.ghost::after {
-  background: rgba(46, 46, 52, 0.76);
+.btn:disabled {
+  cursor: not-allowed;
+  color: rgba(184, 190, 200, 0.5);
+  background: rgba(30, 35, 43, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
 }
-.ghost:not(:disabled):hover {
-  color: #f5f1ed;
+.btn:disabled > svg {
+  color: inherit;
+}
+.btn[aria-busy="true"] {
+  cursor: progress;
+}
+/* só o ícone: quadrado de toque (44 × 44) */
+.iconOnly {
+  width: 44px;
+  min-width: 44px;
+  padding: 0;
 }
 .kbd {
   display: inline-flex;
@@ -287,66 +229,82 @@
   justify-content: center;
   min-width: 22px;
   height: 22px;
-  padding: 2px 4px 0;
-  border: 1.5px solid currentColor;
-  font-size: 15px;
+  padding: 0 5px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 6px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0;
-  opacity: 0.85;
 }
 
-/* ═══ o puxador da gaveta ═══ */
+/* ═══ a aba da gaveta (só o chevron) ═══
+ * O botão é a área de toque (44 × 76); a aba desenhada encosta na borda. */
 .pull {
   position: absolute;
   right: 0;
-  width: 40px;
-  height: 148px;
+  top: 40%;
+  width: 44px;
+  height: 76px;
+  margin-top: -38px;
   padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
+  pointer-events: auto;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
   outline: none;
-  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms;
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 160ms;
 }
-.pull .plate {
-  clip-path: polygon(evenodd, 12px 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px), 0 12px, 12px 0, 12.5px 1.5px, calc(100% - 1.5px) 1.5px, calc(100% - 1.5px) calc(100% - 1.5px), 12.5px calc(100% - 1.5px), 1.5px calc(100% - 12.5px), 1.5px 12.5px, 12.5px 1.5px);
+.pull[data-hidden] {
+  transform: translateX(44px);
+  opacity: 0;
+  pointer-events: none;
 }
-.pull .fill,
-.pull .hot {
-  clip-path: polygon(11px 0, 100% 0, 100% 100%, 11px 100%, 0 calc(100% - 11px), 0 11px);
-}
-.pull:hover .hot,
-.pull:focus-visible .hot,
-.pull:hover .halo,
-.pull:focus-visible .halo {
-  opacity: 1;
-}
-.pull:hover .plate,
-.pull:focus-visible .plate {
-  background: #ff5fae;
-}
-.pullInner {
+.tab {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
-  flex-direction: column;
+  width: 34px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: #f2d39a;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-right: 0;
+  border-radius: 16px 0 0 16px;
+  background: rgba(18, 22, 28, 0.84);
+  color: #f4f5f7;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.pullText {
-  writing-mode: vertical-rl;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  line-height: 1;
-  color: #f5f1ed;
+.tab svg {
+  width: 20px;
+  height: 20px;
+}
+@media (hover: hover) {
+  .pull:hover .tab {
+    background: rgba(36, 42, 51, 0.9);
+  }
+}
+.pull:active .tab {
+  transform: translateX(-2px);
+}
+.pull:focus-visible .tab {
+  box-shadow: 0 0 0 2px #e5be70;
 }
 
 /* ═══ a gaveta ═══ */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 8, 12, 0.38);
+  pointer-events: auto;
+  animation: mm-fade 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
 .drawer {
   position: absolute;
   top: 0;
@@ -354,122 +312,237 @@
   bottom: 0;
   display: flex;
   flex-direction: column;
-  width: min(360px, 88vw);
-  background: linear-gradient(90deg, rgba(24, 24, 28, 0) 0%, rgba(30, 30, 34, 0.5) 16%, rgba(24, 24, 28, 0.6) 100%);
-  transform: translateX(105%);
-  transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
+  width: min(380px, 82vw);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-right: 0;
+  border-radius: 20px 0 0 20px;
+  background: rgba(15, 19, 25, 0.88);
+  box-shadow: -4px 0 14px rgba(0, 0, 0, 0.28);
+  transform: translateX(104%);
+  visibility: hidden;
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 220ms;
   touch-action: pan-y;
 }
 .drawer[data-open] {
   transform: none;
-}
-.drawer .slot {
-  opacity: 0;
-  transform: translateX(80px);
+  visibility: visible;
   transition:
-    opacity 200ms,
-    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s;
+  will-change: transform;
 }
-.drawer[data-open] .slot {
-  opacity: 1;
-  transform: none;
+.head {
+  position: relative;
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
-.fio {
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: #f4f5f7;
+}
+.titleRule {
+  width: 28px;
   height: 2px;
-  background: linear-gradient(90deg, #ff006e, rgba(255, 0, 110, 0.1));
-  box-shadow: 0 0 10px rgba(255, 0, 110, 0.45);
+  margin-top: 8px;
+  border-radius: 2px;
+  background: #e5be70;
+}
+.close {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-right: -8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #b8bec8;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.close:focus-visible {
+  box-shadow: 0 0 0 2px #e5be70;
+}
+@media (hover: hover) {
+  .close:hover {
+    color: #f4f5f7;
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+.list {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px -4px 0;
+  padding: 2px 4px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.foot {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.13);
+  padding-top: 14px;
+}
+.presence {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: center;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #38e881;
+}
+.presence[data-state="connecting"] .dot {
+  background: #b8bec8;
+}
+.presence[data-state="offline"] .dot {
+  background: #ff5a6e;
+}
+.count {
+  color: #38e881;
+  font-weight: 600;
+}
+.presence[data-state="connecting"] .count,
+.presence[data-state="offline"] .count {
+  color: #f4f5f7;
+}
+.scope {
+  grid-column: 2;
+  color: #b8bec8;
+  font-size: 13px;
+}
+.extra {
+  margin-top: 8px;
+  color: #b8bec8;
+  font-size: 11px;
 }
 
-/* ═══ celular: tudo menor (o computador não muda) ═══
- * Pedido do Alex (2026-10-25): fontes bem menores e o menu inteiro na tela,
- * sem rolagem. Item de 44 px ainda é tocável com folga. */
+/* ═══ painel (modal, aviso, painel técnico) ═══ */
+.panel {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 20px;
+  background: rgba(18, 22, 28, 0.84);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  color: #f4f5f7;
+}
+.enter {
+  animation: mm-rise 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.enterTop {
+  animation: mm-drop 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fade {
+  animation: mm-fade 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes mm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes mm-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes mm-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ═══ celular: um pouco mais compacto (tudo tocável com folga) ═══ */
 @media (max-width: 759px) {
-  .item {
-    height: 44px;
-  }
-  .icon {
-    left: 12px;
-  }
-  .icon svg {
-    width: 18px;
-    height: 18px;
+  .item,
+  .item[data-hint] {
+    min-height: 56px;
+    padding: 7px 12px 7px 14px;
+    column-gap: 12px;
   }
   .label {
-    left: 40px;
-    right: 34px;
-    font-size: 17px;
-    letter-spacing: 0.12em;
+    font-size: 15px;
   }
   .hint {
-    left: 40px;
-    right: 34px;
-    bottom: 4px;
-    font-size: 10px;
-  }
-  .item[data-hint] .label {
-    top: 38%;
-  }
-  .arrow {
-    right: 12px;
-  }
-  .arrow svg {
-    width: 18px;
-    height: 18px;
-  }
-  .badge {
-    right: 32px;
     font-size: 13px;
-    line-height: 15px;
   }
-  .metal {
-    width: 30px;
-    right: 14px;
+  .list {
+    gap: 8px;
+    margin-top: 10px;
   }
-  .pull {
-    width: 30px;
-    height: 111px;
+  .btn {
+    padding: 0 16px;
+    gap: 8px;
   }
-  .pullInner {
-    gap: 6px;
+  .btn[data-size="sm"] {
+    min-height: 36px;
+    padding: 0 12px;
   }
-  .pullInner svg {
-    width: 14px;
-    height: 14px;
-  }
-  .pullText {
-    font-size: 14px;
+  .iconOnly,
+  .btn[data-size="sm"].iconOnly {
+    padding: 0;
   }
   /* atalho de teclado não serve no celular (e come largura do botão) */
   .kbd {
     display: none;
   }
-  /* botões: a altura mínima mora aqui (a classe do módulo vence o utilitário
-     do Tailwind, que fica numa camada); o corpo da letra vem do EvoButton. */
-  .btn {
-    min-height: 40px;
-    padding: 0 12px;
-    gap: 6px;
+}
+
+/* Tela baixa (celular deitado): cards mais baixos — a lista rola. */
+@media (max-height: 480px) {
+  .item,
+  .item[data-hint] {
+    min-height: 50px;
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
-  .btn[data-size="lg"] {
+  .list {
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .head {
     min-height: 44px;
   }
-  .btn[data-size="sm"] {
-    min-height: 32px;
-    padding: 0 10px;
-  }
-  .drawer {
-    width: min(300px, 84vw);
+  .foot {
+    padding-top: 8px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .drawer,
-  .drawer .slot,
+  .drawer[data-open],
   .pull,
-  .arrow,
-  .hot,
-  .halo {
+  .tab,
+  .item,
+  .btn {
     transition: none;
+  }
+  .scrim,
+  .enter,
+  .enterTop,
+  .fade {
+    animation: none;
+  }
+  .spin {
+    animation-duration: 2400ms;
   }
 }

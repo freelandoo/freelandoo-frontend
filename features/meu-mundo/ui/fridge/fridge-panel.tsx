@@ -20,6 +20,7 @@ import { ChevronLeft, Loader2, Refrigerator, Utensils, X } from "lucide-react"
 import type { FridgeStock, LifeCharacter, LifeItem } from "../../types"
 import { EvoButton } from "../hud/hud-kit"
 import { Chamfer, EVO, FUNDO, archivo, teko } from "../status/evo-skin"
+import { MM } from "../hud/tokens"
 import { itemName } from "../status/status-pages"
 import { categories, effectsOf, mealFit, thumbOf, verbOf, type CategoryCard, type FridgeCategory } from "./fridge-logic"
 import { Arc, Card, ICE, effectText, toneColor } from "./shelf"
@@ -132,7 +133,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
 
   return (
     <div
-      className={`${archivo.className} fl-sharp absolute inset-0 z-20 flex flex-col justify-end`}
+      className={`${archivo.className} absolute inset-0 z-20 flex flex-col justify-end`}
       // Um pouco translúcido: o jogo aparece atrás (pedido do Alex, 2026-10-25).
       style={{ background: "linear-gradient(180deg, rgba(24,24,28,0) 0%, rgba(24,24,28,0.14) 35%, rgba(24,24,28,0.5) 100%)" }}
       // A interface engole o toque: nada atravessa para o jogo.
@@ -146,7 +147,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
           do balão de necessidades, que cobria o aviso). */}
       {notice && !compact && (
         <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
-          <div role="status" className={`${teko.className} px-3 pb-0.5 pt-1 text-[18px] uppercase tracking-[0.08em]`} style={{ background: EVO.douradoClaro, color: EVO.preto }}>
+          <div role="status" className={`${archivo.className} px-4 py-2 text-[14px] font-semibold`} style={{ background: MM.surface, color: EVO.branco, borderRadius: MM.radius.card, border: `1px solid ${MM.goldBorder}`, boxShadow: MM.shadow }}>
             {notice}
           </div>
         </div>
@@ -164,7 +165,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
       >
         {notice && compact && (
           <div className="pointer-events-none mb-2 flex justify-center">
-            <div role="status" className={`${teko.className} px-2.5 pb-0 pt-[3px] text-center text-[14px] uppercase leading-[1.05] tracking-[0.06em]`} style={{ background: EVO.douradoClaro, color: EVO.preto }}>
+            <div role="status" className={`${archivo.className} px-3 py-1.5 text-center text-[12px] font-semibold leading-tight`} style={{ background: MM.surface, color: EVO.branco, borderRadius: 12, border: `1px solid ${MM.goldBorder}` }}>
               {notice}
             </div>
           </div>
@@ -190,8 +191,8 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
             <button
               type="button"
               onClick={onClose}
-              className={`inline-flex ${compact ? "h-8 w-8" : "h-10 w-10"} items-center justify-center`}
-              style={{ color: EVO.douradoClaro, background: FUNDO.cardLiso, boxShadow: `inset 0 0 0 1.5px ${EVO.dourado}99` }}
+              className={`inline-flex ${compact ? "h-9 w-9" : "h-11 w-11"} items-center justify-center`}
+              style={{ color: EVO.branco, background: MM.surface, borderRadius: 12, border: `1px solid ${MM.border}` }}
               aria-label={t("frClose", "Fechar a geladeira")}
             >
               <X className={compact ? "h-4 w-4" : "h-5 w-5"} />
@@ -271,7 +272,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
         {/* rodapé: atalhos (só computador; no celular a faixa vazia não ocupa altura) */}
         {!compact && (
           <div className="mx-auto mt-2 flex min-h-6 w-full max-w-[980px] items-center justify-center">
-            <div className={`${teko.className} text-[18px] uppercase tracking-[0.12em]`} style={{ color: `${EVO.branco}99` }}>
+            <div className={`${archivo.className} text-[13px] font-medium`} style={{ color: EVO.mudo }}>
               ← → {t("frHintMove", "Girar")} &nbsp; ENTER {t("frHintPick", "Escolher")} &nbsp; ESC {t("frHintBack", "Voltar")}
             </div>
           </div>
@@ -315,9 +316,9 @@ function ItemSheet({
           : t("frFitNoMeal", "Nenhuma refeição aberta agora — vale como lanche.")
   return (
     <div className="mx-auto w-full max-w-[720px]">
-      <Chamfer cut={18} border={`${EVO.dourado}bb`} width={1.5}>
+      <Chamfer cut={18} fill={MM.surface} style={{ boxShadow: MM.shadow }}>
         <div className={`flex ${compact ? "flex-col gap-2 p-2.5" : "gap-4 p-4"}`}>
-          <div className="relative shrink-0 overflow-hidden" style={{ width: compact ? "100%" : 210, height: compact ? 120 : 280, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
+          <div className="relative shrink-0 overflow-hidden" style={{ width: compact ? "100%" : 210, height: compact ? 120 : 280, borderRadius: MM.radius.card, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail local pequena, só no jogo (admin) */}
             <img src={thumbOf(item.id)} alt="" className="h-full w-full object-cover" style={{ opacity: qty ? 1 : 0.35 }} draggable={false} />
           </div>
@@ -334,8 +335,8 @@ function ItemSheet({
               {fx.map((e) => (
                 <li
                   key={e.key}
-                  className={`${teko.className} ${compact ? "px-1.5 pb-0 pt-[3px] text-[13px]" : "px-2 pb-0.5 pt-1 text-[18px]"} leading-none`}
-                  style={{ color: toneColor(e.tone), boxShadow: `inset 0 0 0 1px ${toneColor(e.tone)}55`, background: "rgba(0,0,0,0.35)" }}
+                  className={`${archivo.className} ${compact ? "px-2 py-[3px] text-[11px]" : "px-2.5 py-1 text-[13px]"} font-semibold leading-none`}
+                  style={{ borderRadius: 999, color: toneColor(e.tone), boxShadow: `inset 0 0 0 1px ${toneColor(e.tone)}55`, background: "rgba(0,0,0,0.3)" }}
                 >
                   {effectText(e, t)}
                 </li>
@@ -358,7 +359,7 @@ function ItemSheet({
               >
                 {verbLabel}
               </EvoButton>
-              <EvoButton variant="ghost" size={compact ? "md" : "lg"} onClick={onBack} icon={<ChevronLeft className={compact ? "h-4 w-4" : "h-5 w-5"} />}>
+              <EvoButton variant="gold" size={compact ? "md" : "lg"} onClick={onBack} icon={<ChevronLeft className={compact ? "h-4 w-4" : "h-5 w-5"} />}>
                 {t("frBack", "Voltar")}
               </EvoButton>
             </div>

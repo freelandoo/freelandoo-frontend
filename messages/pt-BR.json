@@ -7528,6 +7528,16 @@
     "actDoWork": "Trabalhar",
     "stRoutineShort": "É uma rotina: rende nas primeiras horas do dia (estudo 5 h, treino 4 h), descansa, dorme às 23 h e volta às 7 h. Constância rende mais que maratona.",
     "mkBuyPrice": "Comprar · {n} moedas",
-    "mkNoCoins": "Moedas insuficientes"
+    "mkNoCoins": "Moedas insuficientes",
+    "menuOpenNav": "Abrir navegação",
+    "presenceOne": "{n} jogador online",
+    "presenceMany": "{n} jogadores online",
+    "presenceConnecting": "Conectando…",
+    "presenceOffline": "Sem conexão",
+    "presenceStreet": "Neste bairro",
+    "presenceHouse": "Nesta casa",
+    "presenceCenter": "No centro",
+    "needSleepMain": "Preciso dormir.",
+    "needAwakeHours": "Já estou há {h} horas acordado."
   }
 }

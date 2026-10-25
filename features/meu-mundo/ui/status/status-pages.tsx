@@ -36,6 +36,7 @@ import {
 } from "lucide-react"
 import type { LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
 import { Bar, Chamfer, EVO, Gauge, Plate, Ring, Tag, archivo, teko, toneFor } from "./evo-skin"
+import { MM } from "../hud/tokens"
 import { Arc, Card, effectText, toneColor } from "../fridge/shelf"
 import { effectsOf, thumbOf } from "../fridge/fridge-logic"
 
@@ -315,7 +316,7 @@ function Portrait({ src, size, round = false }: { src: string; size: number; rou
         height: round ? size : size * 1.25,
         borderRadius: round ? "50%" : 0,
         background: "radial-gradient(circle at 50% 40%, #ffe15a 0%, #ffc21a 45%, #ff8a00 100%)",
-        boxShadow: round ? `0 0 0 3px ${EVO.douradoEscuro}, 0 0 18px ${EVO.magenta}66` : undefined,
+        boxShadow: round ? `0 0 0 2px ${MM.ruby}` : undefined,
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- retrato pequeno, local, só no jogo (admin) */}
@@ -330,7 +331,7 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
   // Celular: uma faixa só (~44 px) — retrato, STATUS e a página; nome à direita.
   if (compact) {
     return (
-      <div className="flex shrink-0 items-center gap-2 border-b pb-1.5" style={{ borderColor: `${EVO.magenta}55` }}>
+      <div className="flex shrink-0 items-center gap-2 border-b pb-1.5" style={{ borderColor: MM.border }}>
         <Portrait src={portrait} size={28} round />
         <div className="min-w-0 flex-1">
           <div className={`${teko.className} font-bold uppercase leading-[0.9]`} style={{ fontSize: 24, color: EVO.branco }}>
@@ -352,7 +353,7 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
     )
   }
   return (
-    <div className="flex items-center gap-4 border-b pb-3" style={{ borderColor: `${EVO.magenta}55` }}>
+    <div className="flex items-center gap-4 border-b pb-3" style={{ borderColor: MM.border }}>
       <div className="min-w-0 flex-1">
         <div className={`${teko.className} font-bold uppercase leading-[0.85]`} style={{ fontSize: compact ? 54 : 92, color: EVO.branco, letterSpacing: "0.01em" }}>
           {t("stTitle", "Status")}
@@ -468,12 +469,12 @@ function GoldButton({ children, onClick, disabled, active }: { children: ReactNo
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`${teko.className} inline-flex items-center justify-center gap-2 px-4 pb-1 pt-2 text-[22px] font-semibold uppercase leading-none tracking-wider transition-transform active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-40`}
+      className={`${archivo.className} inline-flex min-h-11 items-center justify-center gap-2 px-4 text-[15px] font-semibold leading-none transition-transform duration-[140ms] active:scale-[0.97] disabled:cursor-not-allowed`}
       style={{
-        clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
-        background: active ? EVO.magenta : `linear-gradient(180deg, ${EVO.carvao2}, ${EVO.preto})`,
-        color: active ? EVO.branco : EVO.douradoClaro,
-        boxShadow: `inset 0 0 0 2px ${active ? EVO.rosaClaro : EVO.douradoEscuro}`,
+        borderRadius: MM.radius.button,
+        background: disabled ? MM.card : active ? MM.rubyFill : MM.surface,
+        color: disabled ? MM.disabledText : EVO.branco,
+        border: `1px solid ${disabled ? MM.border : active ? MM.rubyBorder : MM.goldBorder}`,
       }}
     >
       {children}
@@ -599,7 +600,7 @@ function Overview({ life, portrait, compact, t, act }: PageProps) {
             {c.meals.map((m) => {
               const color = m.state === "eaten" ? EVO.bom : m.state === "missed" ? EVO.perigo : m.state === "open" ? EVO.magenta : EVO.mudoEscuro
               return (
-                <div key={m.at} className="flex items-center gap-3 px-3 py-2" style={{ boxShadow: `inset 0 0 0 1px ${color}88`, background: "rgba(0,0,0,0.35)" }}>
+                <div key={m.at} className="flex items-center gap-3 rounded-[12px] px-3 py-2" style={{ boxShadow: `inset 0 0 0 1px ${color}88`, background: "rgba(0,0,0,0.35)" }}>
                   <Utensils className="h-5 w-5 shrink-0" style={{ color }} />
                   <div>
                     <div className={`${teko.className} text-[26px] font-bold leading-none`} style={{ color: EVO.branco }}>
@@ -838,7 +839,7 @@ function Routine({ life, compact, t, act }: PageProps) {
         </Plate>
       </div>
       <Plate title={t("stDoNow", "O que ele faz agora")}>
-        <Chamfer cut={14} border={`${EVO.magenta}88`}>
+        <Chamfer cut={14} border={MM.rubyBorder}>
           <div className="flex items-center gap-4 px-4 py-3">
             <Ring color={EVO.magenta} size={50}>
               {ACT_ICON[a.kind]}
@@ -871,7 +872,7 @@ function Routine({ life, compact, t, act }: PageProps) {
             <div key={kind} className="flex flex-wrap items-center gap-2 border-b pb-3" style={{ borderColor: EVO.linha }}>
               <span
                 className={`${teko.className} flex w-44 items-center gap-2 text-[24px] font-semibold uppercase tracking-wider`}
-                style={{ color: a.kind === kind ? EVO.magenta : EVO.douradoClaro, textShadow: a.kind === kind ? `0 0 10px ${EVO.magenta}` : undefined }}
+                style={{ color: a.kind === kind ? EVO.rosaClaro : EVO.douradoClaro }}
               >
                 {icon}
                 {activityLabel(kind, t)}
@@ -957,7 +958,7 @@ function Market({ life, compact, t, act }: PageProps) {
                           .join(" · ")}
                       </div>
                     </div>
-                    <GoldButton onClick={() => act.buy(it.id)} disabled={busy || life.wallet.coins < it.price}>
+                    <GoldButton onClick={() => act.buy(it.id)} disabled={busy || life.wallet.coins < it.price} active>
                       {it.price}
                     </GoldButton>
                   </div>
@@ -1081,6 +1082,7 @@ function MiniButton({
   className = "",
   label,
   tight = false,
+  primary = false,
 }: {
   children: ReactNode
   onClick: () => void
@@ -1091,6 +1093,8 @@ function MiniButton({
   label?: string
   /** Menos respiro (botões de 3 por linha em 320 px). */
   tight?: boolean
+  /** Ação principal (rubi), sem ser alternância como `active`. */
+  primary?: boolean
 }) {
   return (
     <button
@@ -1099,14 +1103,14 @@ function MiniButton({
       disabled={disabled}
       aria-label={label}
       aria-pressed={active}
-      className={`${teko.className} inline-flex items-center justify-center gap-1 pt-[2px] font-semibold uppercase leading-none ${tight ? "px-1 tracking-normal" : "px-2 tracking-wider"} transition-transform active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      className={`${archivo.className} inline-flex items-center justify-center gap-1 font-semibold leading-none ${tight ? "px-1" : "px-2"} transition-transform duration-[140ms] active:scale-[0.97] disabled:cursor-not-allowed ${className}`}
       style={{
         height: h,
-        fontSize: h >= 32 && !tight ? 15 : 14,
-        clipPath: "polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px))",
-        background: active ? EVO.magenta : `linear-gradient(180deg, ${EVO.carvao2}, ${EVO.preto})`,
-        color: active ? EVO.branco : EVO.douradoClaro,
-        boxShadow: `inset 0 0 0 1.5px ${active ? EVO.rosaClaro : EVO.douradoEscuro}`,
+        fontSize: tight ? 11 : h >= 32 ? 13 : 12,
+        borderRadius: 10,
+        background: disabled ? MM.card : active || primary ? MM.rubyFill : MM.surface,
+        color: disabled ? MM.disabledText : EVO.branco,
+        border: `1px solid ${disabled ? MM.border : active || primary ? MM.rubyBorder : MM.goldBorder}`,
       }}
     >
       {children}
@@ -1183,7 +1187,7 @@ function MealChips({ meals, t }: { meals: LifeCharacter["meals"]; t: Tr }) {
       {meals.map((m) => {
         const [color, word] = mealLook(m.state, t)
         return (
-          <div key={m.at} className="flex flex-col items-center justify-center py-1" style={{ boxShadow: `inset 0 0 0 1px ${color}aa`, background: "rgba(0,0,0,0.35)" }}>
+          <div key={m.at} className="flex flex-col items-center justify-center rounded-[10px] py-1" style={{ boxShadow: `inset 0 0 0 1px ${color}aa`, background: "rgba(0,0,0,0.35)" }}>
             <span className={`${teko.className} text-[17px] font-bold leading-none`} style={{ color: EVO.branco }}>
               {t("mealAt", "{h} h").replace("{h}", String(m.at))}
             </span>
@@ -1545,7 +1549,7 @@ function RoutineC({ life, t, act }: PageProps) {
         </div>
       </MiniPlate>
       <MiniPlate title={t("stDoNow", "O que ele faz agora")}>
-        <Chamfer cut={9} border={`${EVO.magenta}88`}>
+        <Chamfer cut={9} border={MM.rubyBorder}>
           <div className="flex items-center gap-2 px-2 py-1.5">
             <Ring color={EVO.magenta} size={28}>
               <span className={SM_ICON}>{ACT_ICON[a.kind]}</span>
@@ -1695,12 +1699,12 @@ function MarketC({ life, t, act }: PageProps) {
           </div>
           <div className="flex flex-wrap gap-1">
             {fx.map((e) => (
-              <span key={e.key} className={`${teko.className} px-1.5 pb-0 pt-[3px] text-[13px] leading-none`} style={{ color: toneColor(e.tone), boxShadow: `inset 0 0 0 1px ${toneColor(e.tone)}55` }}>
+              <span key={e.key} className={`${archivo.className} rounded-full px-2 py-[3px] text-[11px] font-semibold leading-none`} style={{ color: toneColor(e.tone), boxShadow: `inset 0 0 0 1px ${toneColor(e.tone)}55` }}>
                 {effectText(e, t)}
               </span>
             ))}
           </div>
-          <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor} h={40} className="w-full">
+          <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor} primary={!poor} h={40} className="w-full">
             {poor ? t("mkNoCoins", "Moedas insuficientes") : t("mkBuyPrice", "Comprar · {n} moedas").replace("{n}", String(it.price))}
           </MiniButton>
         </div>

@@ -7,7 +7,8 @@
 
 import { useRef, useState, type ReactNode } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Chamfer, EVO, FUNDO, teko } from "../status/evo-skin"
+import { Chamfer, EVO, FUNDO, archivo } from "../status/evo-skin"
+import { MM } from "../hud/tokens"
 import { hoursText } from "../status/status-pages"
 import type { Effect } from "./fridge-logic"
 
@@ -171,7 +172,7 @@ export function Arc({
         disabled={sel <= 0}
         aria-label={t("frPrev", "Anterior")}
         className={`absolute left-0 top-1/2 flex ${compact ? "h-10 w-8" : "h-14 w-11"} -translate-y-1/2 items-center justify-center disabled:opacity-25`}
-        style={{ color: ICE, background: "rgba(8,7,11,0.6)" }}
+        style={{ color: EVO.branco, background: MM.surface, border: `1px solid ${MM.border}`, borderRadius: 12 }}
       >
         <ChevronLeft className={compact ? "h-6 w-6" : "h-8 w-8"} />
       </button>
@@ -181,7 +182,7 @@ export function Arc({
         disabled={sel >= count - 1}
         aria-label={t("frNext", "Próximo")}
         className={`absolute right-0 top-1/2 flex ${compact ? "h-10 w-8" : "h-14 w-11"} -translate-y-1/2 items-center justify-center disabled:opacity-25`}
-        style={{ color: ICE, background: "rgba(8,7,11,0.6)" }}
+        style={{ color: EVO.branco, background: MM.surface, border: `1px solid ${MM.border}`, borderRadius: 12 }}
       >
         <ChevronRight className={compact ? "h-6 w-6" : "h-8 w-8"} />
       </button>
@@ -212,12 +213,12 @@ export function Card({
   const imgH = Math.round(h * 0.6)
   return (
     <div className="relative h-full w-full">
-      {/* neon do escolhido: camada estática, só a opacidade muda */}
+      {/* contorno rubi do escolhido: camada estática, só a opacidade muda */}
       <div
         className="pointer-events-none absolute -inset-[3px]"
-        style={{ boxShadow: `inset 0 0 0 3px ${EVO.magenta}, 0 0 22px ${EVO.magenta}`, opacity: active ? 1 : 0, transition: "opacity 240ms" }}
+        style={{ borderRadius: MM.radius.card + 3, boxShadow: `inset 0 0 0 2px ${MM.ruby}, ${MM.shadow}`, opacity: active ? 1 : 0, transition: "opacity 180ms" }}
       />
-      <Chamfer cut={14} border={active ? EVO.rosaClaro : ICE_DIM} width={1.5} className="h-full" fill={FUNDO.card}>
+      <Chamfer cut={14} border={active ? MM.rubyBorder : MM.border} className="h-full overflow-hidden" fill={FUNDO.card}>
         <div className="relative overflow-hidden" style={{ height: imgH, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail local pequena, só no jogo (admin) */}
           <img
@@ -233,8 +234,8 @@ export function Card({
           />
           {badge && (
           <span
-            className={`${teko.className} absolute right-0 top-0 ${compact ? "px-1.5 pb-0 pt-[3px] text-[13px]" : "px-2 pb-0.5 pt-1 text-[18px]"} font-semibold leading-none`}
-            style={{ background: empty ? EVO.vinho : EVO.douradoClaro, color: empty ? EVO.branco : EVO.preto }}
+            className={`${archivo.className} absolute ${compact ? "right-1 top-1 px-1.5 py-[3px] text-[10px]" : "right-1.5 top-1.5 px-2 py-1 text-[12px]"} font-bold leading-none`}
+            style={{ borderRadius: 999, background: empty ? "rgba(74,10,28,0.9)" : "rgba(12,15,20,0.82)", color: empty ? EVO.branco : EVO.douradoClaro, border: `1px solid ${empty ? MM.rubyBorder : MM.goldBorder}` }}
           >
             {badge}
           </span>

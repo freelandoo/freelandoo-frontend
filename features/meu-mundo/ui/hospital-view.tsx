@@ -94,7 +94,7 @@ export function HospitalView({ interior, body, mode, bed, onExit, health, discha
           : null
 
   return (
-    <div className="fl-sharp fixed inset-0 z-[70] touch-none select-none overflow-hidden bg-[#33393d]">
+    <div className="fixed inset-0 z-[70] touch-none select-none overflow-hidden bg-[#33393d]">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("hospitalAria", "Dentro do hospital")} />
 
       {status === "ready" && (
