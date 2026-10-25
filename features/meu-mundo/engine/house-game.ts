@@ -142,6 +142,8 @@ export interface HouseGameHandle {
   setQuality: (c: QualityChoice) => void
   /** Destaque no jogador do card aberto; null = ninguém (mm3d-31). */
   selectPlayer: (sessionId: string | null, frameX?: number | null) => void
+  /** Fala do chat (mm3d-32): balão sobre a cabeça do jogador desta sessão (ausente = ignora). */
+  sayFrom: (sessionId: string, text: string) => void
   /** Andar onde o personagem está (painel). */
   floor: () => number
   dispose: () => void
@@ -271,6 +273,10 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   // ── Rede ────────────────────────────────────────────────────────────────
   const remotes = new Map<string, RemotePlayer & { floor?: number }>()
   // Descarte de outro jogador: o destaque de seleção é filho do boneco e sai antes.
+  // Conferência (harness, só com ?u=): sessões com balão no ar.
+  const bubbles = () => [...remotes].filter(([, r]) => r.char.speaking).map(([sid]) => sid)
+  const bubbleProbe = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("u")
+  if (bubbleProbe) (window as unknown as { __mmBubbles?: typeof bubbles }).__mmBubbles = bubbles
   const dropRemote = (sid: string) => {
     const r = remotes.get(sid)
     if (!r) return
@@ -630,6 +636,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       } else r.update(dt)
       // Outro andar acima do meu: escondido junto com o andar.
       r.char.setVisible((r.floor ?? 0) <= body.floor)
+      r.char.tickBubble()
     }
     // Toque curto no mundo (mm3d-31): outro jogador abre o card; o vazio fecha.
     const tap = select.takeTap(input.taps, remotes)
@@ -773,6 +780,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     selectPlayer(sid, frameX = null) {
       if (!disposed) select.selectIn(remotes, sid, frameX)
     },
+    sayFrom(sid, text) {
+      if (!disposed) remotes.get(sid)?.char.say(text)
+    },
     setQuality(c) {
       governor.setProfile(resolveQuality(c))
     },
@@ -792,6 +802,8 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       disposed = true
       const w = window as unknown as { __mmHouse?: typeof probe }
       if (w.__mmHouse === probe) delete w.__mmHouse
+      const wb = window as unknown as { __mmBubbles?: typeof bubbles }
+      if (wb.__mmBubbles === bubbles) delete wb.__mmBubbles
       net.dispose()
       engine.stopRenderLoop()
       detachInput()

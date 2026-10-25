@@ -23,6 +23,7 @@ import type { QualityProfile } from "./quality"
 import { GeoBuilder, place } from "./geometry"
 import { type Box2 } from "./collision"
 import { RemoteWalker, type WalkerPose } from "./remote-walker"
+import { SpeechBubble } from "./speech-bubble"
 import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder } from "./avatars"
 import { lerpAngle, step, type Body, type Intent, type MotionProfile, type MoveState } from "./motion"
 import type { BodyId } from "../types"
@@ -45,6 +46,8 @@ export class Character {
   private fallback: Mesh | null
   private readonly shadow: Mesh
   private tag: { mesh: Mesh; dispose: () => void } | null = null
+  /** Balão de fala (mm3d-32): criado só na primeira fala. */
+  private bubble: SpeechBubble | null = null
   private loadToken = 0
   private disposed = false
   body: BodyId
@@ -143,6 +146,7 @@ export class Character {
     }
     this.tagNear = d <= q.tagCut
     if (this.tag) this.tag.mesh.setEnabled(this.tagNear && !this.tagHidden)
+    this.tickBubble()
     if (!this.rig) return
     this.rig.setLodDistance(q.avatarLod)
     this.rig.setFrozen(culled || !this.rig.inFrustum(planes))
@@ -152,6 +156,27 @@ export class Character {
   setTagHidden(on: boolean) {
     this.tagHidden = on
     if (this.tag) this.tag.mesh.setEnabled(this.tagNear && !on)
+  }
+
+  /**
+   * Fala do chat (mm3d-32) num balão sobre a cabeça. O balão continua com o
+   * boneco selecionado (é fala, não nome) e segue o corte de distância do nome.
+   */
+  say(text: string) {
+    if (this.disposed) return
+    this.bubble ??= new SpeechBubble(this.scene, this.holder)
+    this.bubble.say(text)
+    this.tickBubble()
+  }
+
+  /** Apaga o balão vencido; cena sem corte de distância (casa) chama no laço. */
+  tickBubble() {
+    this.bubble?.tick(this.tagNear)
+  }
+
+  /** Com balão no ar (conferência). */
+  get speaking() {
+    return !!this.bubble?.active()
   }
 
   /** Animando agora (conferência). */
@@ -215,6 +240,8 @@ export class Character {
     this.rig = null
     this.fallback?.dispose()
     this.tag?.dispose()
+    this.bubble?.dispose()
+    this.bubble = null
     this.shadow.dispose()
     this.holder.dispose()
   }

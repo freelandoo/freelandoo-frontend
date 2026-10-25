@@ -26,7 +26,7 @@
 // `data-mm-panel`: teclado com foco aqui dentro não comanda o personagem
 // (input.ts); toque no card não chega ao canvas.
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
 import { Loader2, MapPin, MessageCircle, RotateCw, Star, User, UserCheck, UserPlus, X } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
@@ -56,6 +56,8 @@ export interface ScenePlayerProps {
   selectedFrame?: number | null
   onPlayerTap?: (tap: PlayerTap | null) => void
   onPlayerGone?: (sessionId: string) => void
+  /** Balão de fala (mm3d-32): a cena pronta põe aqui quem desenha o "say" da sala. */
+  sayRef?: RefObject<((sessionId: string, text: string) => void) | null>
 }
 
 type Load = { state: "loading" } | { state: "ready"; p: PlayerProfile } | { state: "error"; gone: boolean }

@@ -102,6 +102,7 @@ export default function MeuMundoView({
   selectedFrame = null,
   onPlayerTap,
   onPlayerGone,
+  sayRef,
 }: NeighborhoodSceneProps) {
   const t = useTranslations("MeuMundo")
   const nb = payload.neighborhood
@@ -154,6 +155,15 @@ export default function MeuMundoView({
   useEffect(() => {
     if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer, selectedFrame)
   }, [selectedPlayer, selectedFrame, status])
+  // Balão de fala (mm3d-32): a casca recebe o "say" da sala e entrega a esta cena.
+  useEffect(() => {
+    if (status !== "ready" || !sayRef) return
+    const fn = (s: string, text: string) => gameRef.current?.sayFrom(s, text)
+    sayRef.current = fn
+    return () => {
+      if (sayRef.current === fn) sayRef.current = null
+    }
+  }, [status, sayRef])
 
   const cbRef = useRef({ onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot })
   useEffect(() => {

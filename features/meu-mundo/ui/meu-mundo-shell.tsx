@@ -120,7 +120,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // Perfil-conta de quem joga: o "ator" das conversas (do /users/me).
   const [actorId, setActorId] = useState<string | null>(null)
   const globalOpenRef = useRef(false)
-  // Preenchido pelo balão 3D (Task 15); até lá o "say" é ignorado.
+  // Preenchido pela cena pronta (rua, centro, casa); sem cena o "say" é ignorado.
   const bubbleRef = useRef<((session: string, text: string) => void) | null>(null)
   const nav = useNavCounts()
   const dmUnread = actorId ? (nav.conversationByActor[actorId] ?? 0) : 0
@@ -526,7 +526,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const onPlayerGone = useCallback((sid: string) => setPlayerCard((c) => (c && c.tap.sessionId === sid ? { ...c, gone: true } : c)), [])
   // Só fecha o card DAQUELA sessão (a saída animada não pode fechar o próximo).
   const closePlayerCard = useCallback((sid: string) => setPlayerCard((c) => (c && c.tap.sessionId === sid ? null : c)), [])
-  const scenePlayer = { selectedPlayer: playerCard?.tap.sessionId ?? null, selectedFrame: playerCard?.frame ?? null, onPlayerTap, onPlayerGone }
+  const scenePlayer = { selectedPlayer: playerCard?.tap.sessionId ?? null, selectedFrame: playerCard?.frame ?? null, onPlayerTap, onPlayerGone, sayRef: bubbleRef }
 
   return (
     <>

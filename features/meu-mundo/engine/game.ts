@@ -140,6 +140,8 @@ export interface GameHandle {
   setQuality: (c: QualityChoice) => void
   /** Destaque (anel + cápsula) no jogador do card aberto; null = ninguém (mm3d-31). */
   selectPlayer: (sessionId: string | null, frameX?: number | null) => void
+  /** Fala do chat (mm3d-32): balão sobre a cabeça do jogador desta sessão (ausente = ignora). */
+  sayFrom: (sessionId: string, text: string) => void
   dispose: () => void
 }
 
@@ -299,6 +301,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // ── Rede ──────────────────────────────────────────────────────────────────
   const remotes = new Map<string, RemotePlayer>()
   // Descarte de outro jogador: o destaque de seleção é filho do boneco e sai antes.
+  // Conferência (harness, só com ?u=): sessões com balão no ar.
+  const bubbles = () => [...remotes].filter(([, r]) => r.char.speaking).map(([sid]) => sid)
+  const bubbleProbe = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("u")
+  if (bubbleProbe) (window as unknown as { __mmBubbles?: typeof bubbles }).__mmBubbles = bubbles
   const dropRemote = (sid: string) => {
     const r = remotes.get(sid)
     if (!r) return
@@ -845,6 +851,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     selectPlayer(sid, frameX = null) {
       if (!disposed) select.selectIn(remotes, sid, frameX)
     },
+    sayFrom(sid, text) {
+      if (!disposed) remotes.get(sid)?.char.say(text)
+    },
     setQuality(c) {
       quality = resolveQuality(c)
       governor.setProfile(quality)
@@ -868,6 +877,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       disposed = true
       const w = window as unknown as { __mmStreet?: typeof probe }
       if (w.__mmStreet === probe) delete w.__mmStreet
+      const wb = window as unknown as { __mmBubbles?: typeof bubbles }
+      if (wb.__mmBubbles === bubbles) delete wb.__mmBubbles
       document.removeEventListener("visibilitychange", onVisibility)
       net.dispose()
       engine.stopRenderLoop()

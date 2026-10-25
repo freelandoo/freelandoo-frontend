@@ -53,7 +53,7 @@ export interface HouseSceneProps extends ScenePlayerProps {
   menuExtras?: DrawerItem[]
 }
 
-export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras, selectedPlayer = null, selectedFrame = null, onPlayerTap, onPlayerGone }: HouseSceneProps) {
+export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras, selectedPlayer = null, selectedFrame = null, onPlayerTap, onPlayerGone, sayRef }: HouseSceneProps) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<HouseGameHandle | null>(null)
@@ -93,6 +93,15 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   useEffect(() => {
     if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer, selectedFrame)
   }, [selectedPlayer, selectedFrame, status])
+  // Balão de fala (mm3d-32): a casca recebe o "say" da sala e entrega a esta cena.
+  useEffect(() => {
+    if (status !== "ready" || !sayRef) return
+    const fn = (s: string, text: string) => gameRef.current?.sayFrom(s, text)
+    sayRef.current = fn
+    return () => {
+      if (sayRef.current === fn) sayRef.current = null
+    }
+  }, [status, sayRef])
 
   const cbRef = useRef({ onExit, onMoved, onServerMessage, onFridge: (_m: FridgeReply) => {} })
   useEffect(() => {
