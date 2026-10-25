@@ -56,6 +56,13 @@ Eventos da re-simulação são descartados (sem som/efeito repetido). Por isso a
 (`idle` em pé, `fly` deitado, `impact` caindo) vem do estado do jogador a cada
 quadro (`syncClip` em `party.ts`); evento serve só para efeito.
 
+## Quem sou eu na sala
+
+O Colyseus manda o estado completo ANTES de qualquer mensagem do `onJoin`
+(`welcome`). Identificar o próprio jogador sempre pelo `sessionId` (chave do
+mapa do estado), nunca por um dado que só chega depois — no jetpack isso criava
+um boneco de "outro" na própria vaga (dois de si em cada tela, mm3d-27b).
+
 ## Ao sair de uma cena
 
 Cada cena (`game.ts`, `house-game.ts`, `hospital-game.ts`, `jetpack/game.ts`) tem

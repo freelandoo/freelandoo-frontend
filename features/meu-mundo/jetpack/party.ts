@@ -261,7 +261,18 @@ export class PartyMode {
     if (this.disposed) return;
     this.st = st;
     clearTimeout(this.joinTimer);
-    for (const r of st.runners.values()) this.ensureAvatar(r);
+    // Quem sou eu sai do sessionId, não da vaga (mm3d-27b): o Colyseus manda o
+    // estado completo ANTES da mensagem "welcome", e com a vaga ainda -1 o
+    // próprio jogador ganhava um boneco de "outro" — dois de si em cada tela.
+    const sid = this.net?.sessionId;
+    const own = sid ? st.runners.get(sid) : undefined;
+    if (own && own.slot !== this.slot) {
+      this.slot = own.slot;
+      this.kit.player.setSlot(own.slot);
+    }
+    st.runners.forEach((r, key) => {
+      if (key !== sid) this.ensureAvatar(r);
+    });
     if (st.phase === 'countdown' || st.phase === 'running') {
       if (!this.sim || this.seed !== st.seed) this.newMatch(st);
       if (st.phase === 'running' && this.sim) this.sim.reconcile(st);
@@ -547,6 +558,11 @@ export class PartyMode {
     // Outros (fantasmas da predição)
     let order = 1;
     for (const [slot, av] of this.others) {
+      // A própria vaga nunca desenha um "outro" (vaga trocada depois de sair e voltar).
+      if (slot === this.slot) {
+        av.root.visible = false;
+        continue;
+      }
       const r = st ? [...st.runners.values()].find((x) => x.slot === slot) : null;
       let snap: RunnerSnap | null = null;
       if (inRace && sim && r && r.inMatch) snap = sim.ghostSnap(slot);
