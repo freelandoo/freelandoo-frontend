@@ -383,15 +383,19 @@ export function getAccountProfileId(token: string): Promise<string | null> {
   return id
 }
 
-/** Mensagem da thread 1:1 no formato das linhas do chat (merge/pendente iguais aos do Global). */
-export type DmMessage = { id: string; text: string; at: string | null; mine: boolean; pending?: boolean; clientId?: string }
+/**
+ * Mensagem da thread 1:1 no formato das linhas do chat (merge/pendente iguais
+ * aos do Global). `kind`: o que mostrar quando não há texto — áudio
+ * (tb_message.kind 'audio', mig 080), apagada (`deleted_at`) ou outra mídia.
+ */
+export type DmKind = "text" | "audio" | "media" | "deleted"
+export type DmMessage = { id: string; text: string; at: string | null; mine: boolean; kind?: DmKind; pending?: boolean; clientId?: string }
 type RawDm = { id_message: string; body: string | null; created_at: string; sender_entity_id: string; kind?: string; deleted_at?: string | null }
-export const mapDm = (m: RawDm, actorId: string): DmMessage => ({
-  id: String(m.id_message),
-  text: m.deleted_at ? "" : (m.body ?? ""),
-  at: m.created_at,
-  mine: String(m.sender_entity_id) === String(actorId),
-})
+export const mapDm = (m: RawDm, actorId: string): DmMessage => {
+  const body = m.deleted_at ? "" : (m.body ?? "").trim()
+  const kind: DmKind = m.deleted_at ? "deleted" : m.kind === "audio" ? "audio" : body ? "text" : "media"
+  return { id: String(m.id_message), text: body, at: m.created_at, mine: String(m.sender_entity_id) === String(actorId), kind }
+}
 
 /** Thread 1:1: as mesmas rotas do /mensagens (o histórico é um só). A lista vem DESC. */
 export async function getDirectMessages(token: string, id: string, actorId: string): Promise<ApiResult<{ items: DmMessage[] }>> {

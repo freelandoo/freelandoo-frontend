@@ -142,6 +142,8 @@ export interface GameHandle {
   selectPlayer: (sessionId: string | null, frameX?: number | null) => void
   /** Fala do chat (mm3d-32): balão sobre a cabeça do jogador desta sessão (ausente = ignora). */
   sayFrom: (sessionId: string, text: string) => void
+  /** O meu balão (a sala não manda o "say" de volta para quem falou). */
+  sayLocal: (text: string) => void
   dispose: () => void
 }
 
@@ -645,6 +647,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       local.update(dt, winded && intent.run ? { ...intent, run: false } : intent, boxes, limit, paceSpeeds(myPace, speeds))
     }
     // Dirigindo, a intenção a pé é zero (o controle a pé não age).
+    local.char.tickBubble()
     syncNetwork(now, driving ? { x: 0, z: 0, run: false } : intent)
     fleet.sync(net.cars(), dt, driving, driving && veh ? pose : null)
     if (driving && veh && drivingKind !== "car") placeRider(fleet, local.char, String(driving), drivingKind, pose.x, pose.z, pose.facing, pose.sp, dt)
@@ -853,6 +856,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     sayFrom(sid, text) {
       if (!disposed) remotes.get(sid)?.char.say(text)
+    },
+    sayLocal(text) {
+      if (!disposed) local.char.say(text)
     },
     setQuality(c) {
       quality = resolveQuality(c)

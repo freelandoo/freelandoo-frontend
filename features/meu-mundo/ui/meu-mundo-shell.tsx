@@ -42,7 +42,7 @@ import ItemsPanel from "./items/items-panel"
 import PolensSheet, { PolensReturn } from "./polens/polens-sheet"
 import PlayerCard from "./player-card/player-card"
 import ChatPanel, { type ChatView } from "./chat/chat-panel"
-import { bumpUnread, confirmLine, dropPending, mergeLines, newClientId, pendingLine, type Line } from "./chat/chat-logic"
+import { bubbleText, bumpUnread, confirmLine, dropPending, mergeLines, newClientId, pendingLine, type Line } from "./chat/chat-logic"
 import type { PlayerTap } from "../engine/player-select"
 import { compactFrameX, isCompactViewport } from "./player-card/place"
 import {
@@ -120,15 +120,14 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // Perfil-conta de quem joga: o "ator" das conversas (do /users/me).
   const [actorId, setActorId] = useState<string | null>(null)
   const globalOpenRef = useRef(false)
-  // Preenchido pela cena pronta (rua, centro, casa); sem cena o "say" é ignorado.
-  const bubbleRef = useRef<((session: string, text: string) => void) | null>(null)
+  // Balão 3D (Slice 5): a cena pronta preenche; sessão null = o meu boneco
+  // (a sala não devolve o "say" para quem falou).
+  const bubbleRef = useRef<((session: string | null, text: string) => void) | null>(null)
+  const [actorFailed, setActorFailed] = useState(false)
   const nav = useNavCounts()
   const dmUnread = actorId ? (nav.conversationByActor[actorId] ?? 0) : 0
   const busyRef = useRef(false)
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => {
-    globalOpenRef.current = chatView?.tab === "global"
-  }, [chatView])
 
   const say = useCallback((msg: string) => {
     setNotice(msg)
@@ -400,35 +399,56 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const lifeChanged = useCallback(() => setLifeTick((n) => n + 1), [])
 
   // ═══ mm3d-32: chat ═══
-  useEffect(() => {
+  // Perfil-conta (ator das conversas): no começo e de novo ao abrir o chat ou
+  // uma thread enquanto não veio. Falha = a thread mostra erro + "Tentar de novo".
+  const actorRef = useRef<string | null>(null)
+  const ensureActor = useCallback(() => {
+    if (actorRef.current) return
     const token = getToken()
     if (!token) return
-    let alive = true
+    setActorFailed(false)
     void getAccountProfileId(token).then((id) => {
-      if (alive && id) setActorId(id)
+      if (id) {
+        actorRef.current = id
+        setActorId(id)
+      } else setActorFailed(true)
     })
-    return () => {
-      alive = false
-    }
   }, [])
-  const showChat = useCallback((v: ChatView) => {
-    setChatView(v)
-    if (v.tab === "global") setChatUnread(0)
+  useEffect(() => {
+    ensureActor()
+  }, [ensureActor])
+  const adoptActor = useCallback((id: string) => {
+    if (actorRef.current) return
+    actorRef.current = id
+    setActorId(id)
   }, [])
+  const showChat = useCallback(
+    (v: ChatView | null) => {
+      // O ref acompanha na hora: linha que chega no mesmo instante já sabe se o Global está à vista.
+      globalOpenRef.current = v?.tab === "global"
+      setChatView(v)
+      if (v?.tab === "global") setChatUnread(0)
+      if (v && v.tab !== "global") ensureActor()
+    },
+    [ensureActor],
+  )
   const openChat = useCallback(
     (v: ChatView = { tab: "global" }) => {
       showChat(v)
+      ensureActor()
       const token = getToken()
       if (!token) return
       void getChatGlobal(token).then((r) => {
         if (r.ok) setChatLines((cur) => mergeLines(cur, r.data.items))
       })
     },
-    [showChat],
+    [showChat, ensureActor],
   )
   const chatErr = useCallback(
     (r: { status: number; error: string; code?: string }) =>
-      r.code === "block"
+      r.status === 0
+        ? t("chOffline", "Sem conexão. Tente de novo.")
+        : r.code === "block"
         ? t("chBlocked", "Mensagem bloqueada.")
         : r.code === "mute_temp"
           ? t("chMuted", "Você está sem falar no chat por um tempo.")
@@ -440,18 +460,24 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const sendGlobal = useCallback(
     async (text: string) => {
       const token = getToken()
-      if (!token) return
+      if (!token) return false
       const clientId = newClientId()
       setChatLines((cur) => mergeLines(cur, [pendingLine(clientId, text)]))
       const r = await postChatGlobal(token, text)
-      if (r.ok) setChatLines((cur) => confirmLine(cur, clientId, r.data.line))
-      else {
+      if (r.ok) {
+        setChatLines((cur) => confirmLine(cur, clientId, r.data.line))
+        // O meu balão: mesmo corte que o back usa no "say" dos outros.
+        bubbleRef.current?.(null, bubbleText(r.data.line.text || text))
+      } else {
         setChatLines((cur) => dropPending(cur, clientId))
         say(chatErr(r))
       }
+      return r.ok
     },
     [say, chatErr],
   )
+  /** Erro cru da thread 1:1 ("network" ou texto do servidor) na língua de quem joga. */
+  const dmErr = useCallback((e: string) => (e === "network" ? t("chOffline", "Sem conexão. Tente de novo.") : e), [t])
   const reportLine = useCallback(
     (id: string) => {
       const token = getToken()
@@ -460,16 +486,27 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     },
     [say, t, errText],
   )
-  /** Acha/cria a conversa 1:1 e abre a thread no chat do jogo. */
+  /**
+   * Acha/cria a conversa 1:1 e abre a thread no chat do jogo. O perfil-conta
+   * vale de qualquer sala; a sessão só quando é o que se tem (e "gone" com um
+   * perfil na mão tenta por ele).
+   */
   const openDirect = useCallback(
-    async (who: { session?: string; profileId?: string }, title: string) => {
+    async (target: { session?: string | null; profileId?: string | null }, title: string) => {
       const token = getToken()
       if (!token) return
-      const r = await postChatDirect(token, who)
+      const byProfile = target.profileId ? { profileId: target.profileId } : null
+      const bySession = target.session ? { session: target.session } : null
+      const first = byProfile ?? bySession
+      if (!first) return
+      let r = await postChatDirect(token, first)
+      // "gone" por um caminho: tenta o outro, se houver.
+      const other = first === byProfile ? bySession : byProfile
+      if (!r.ok && r.code === "gone" && other) r = await postChatDirect(token, other)
       if (r.ok) showChat({ tab: "thread", conversationId: r.data.conversation.id_conversation, title })
-      else say(r.code === "self" ? t("chSelf", "Esse é você") : r.code === "gone" ? t("pcGone", "Esse jogador não está mais aqui.") : errText(r))
+      else say(r.code === "self" ? t("chSelf", "Esse é você") : r.code === "gone" ? t("pcGone", "Esse jogador não está mais aqui.") : chatErr(r))
     },
-    [showChat, say, t, errText],
+    [showChat, say, t, chatErr],
   )
   // Tecla T abre o chat (desktop). Campo editável e painel aberto ficam de fora.
   useEffect(() => {
@@ -623,11 +660,10 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           dismiss={playerCard.dismiss}
           onClose={closePlayerCard}
           onMessage={(p) => {
-            // Saiu da cena: a sessão não vale mais, vai pelo perfil-conta.
-            const who = playerCard.gone && p.profileId ? { profileId: p.profileId } : { session: p.sessionId }
-            if (!actorId && p.viewerProfileId) setActorId(p.viewerProfileId)
+            // Pelo perfil-conta quando há (vale mesmo se o jogador saiu da cena).
+            if (p.viewerProfileId) adoptActor(p.viewerProfileId)
             setPlayerCard(null)
-            void openDirect(who, p.displayName || p.name || playerCard.tap.name)
+            void openDirect({ profileId: p.profileId, session: playerCard.gone ? null : p.sessionId }, p.displayName || p.name || playerCard.tap.name)
           }}
         />
       )}
@@ -658,11 +694,15 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           setView={showChat}
           lines={chatLines}
           actorId={actorId}
+          actorFailed={actorFailed}
+          onRetryActor={ensureActor}
+          errLabel={dmErr}
+          globalUnread={chatUnread}
           dmUnread={dmUnread}
-          onSendGlobal={(text) => void sendGlobal(text)}
+          onSendGlobal={sendGlobal}
           onReport={reportLine}
-          onDirectTo={(l) => void openDirect(l.session ? { session: l.session } : { profileId: l.profileId || undefined }, l.name)}
-          onClose={() => setChatView(null)}
+          onDirectTo={(l) => void openDirect({ profileId: l.profileId, session: l.session }, l.name)}
+          onClose={() => showChat(null)}
         />
       )}
       {itemsOpen && <ItemsPanel onClose={() => setItemsOpen(false)} onChanged={lifeChanged} />}

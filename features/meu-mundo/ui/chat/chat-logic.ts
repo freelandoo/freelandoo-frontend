@@ -26,6 +26,14 @@ export type Line = {
 export const LINES_MAX = 200
 export const GLOBAL_MAX = 500
 export const DIRECT_MAX = 4000
+/** Balão sobre a cabeça: 2 linhas (espelho de BUBBLE_MAX em src/utils/meuMundoChat.js do back). */
+export const BUBBLE_MAX = 90
+
+/** Texto do balão: espaços colapsados e corte com "…" — igual ao bubbleText do back. */
+export function bubbleText(raw: string): string {
+  const s = String(raw || "").replace(/\s+/g, " ").trim()
+  return s.length > BUBBLE_MAX ? `${s.slice(0, BUBBLE_MAX - 1)}…` : s
+}
 
 const time = (l: Line) => (l.at ? Date.parse(l.at) : Number.MAX_SAFE_INTEGER)
 

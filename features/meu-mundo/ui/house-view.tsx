@@ -96,7 +96,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   // Balão de fala (mm3d-32): a casca recebe o "say" da sala e entrega a esta cena.
   useEffect(() => {
     if (status !== "ready" || !sayRef) return
-    const fn = (s: string, text: string) => gameRef.current?.sayFrom(s, text)
+    const fn = (s: string | null, text: string) => (s === null ? gameRef.current?.sayLocal(text) : gameRef.current?.sayFrom(s, text))
     sayRef.current = fn
     return () => {
       if (sayRef.current === fn) sayRef.current = null

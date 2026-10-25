@@ -9,12 +9,12 @@
 // guardado no jogo. No celular nada rola além da lista (data-mm-scroll).
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowLeft, ExternalLink, Flag, Globe, MessageCircle, Send } from "lucide-react"
+import { ArrowLeft, ExternalLink, Flag, Globe, MessageCircle, RefreshCw, Send } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { EvoButton, EvoDialog } from "../hud/hud-kit"
 import { MM } from "../hud/tokens"
 import { archivo } from "../status/evo-skin"
-import { getConversations, type ChatLine, type ConversationRow } from "../../data"
+import { getConversations, type ChatLine, type ConversationRow, type DmMessage } from "../../data"
 import { cleanDraft, DIRECT_MAX, GLOBAL_MAX, type Line } from "./chat-logic"
 import { useDirectThread } from "./use-direct-thread"
 
@@ -25,43 +25,72 @@ export interface ChatPanelProps {
   view: ChatView
   setView: (v: ChatView) => void
   lines: Line[]
-  onSendGlobal: (text: string) => void
+  /** true = enviada (o campo só limpa aí) */
+  onSendGlobal: (text: string) => Promise<boolean>
   onReport: (id: string) => void
   onDirectTo: (line: ChatLine) => void
   /** perfil-conta de quem joga (o ator da conversa); null = ainda carregando */
   actorId: string | null
+  /** o perfil-conta não veio (sem ele a thread não abre) */
+  actorFailed: boolean
+  onRetryActor: () => void
+  /** traduz o erro cru da thread ("network", texto do servidor) */
+  errLabel: (error: string) => string
+  globalUnread: number
   dmUnread: number
   onClose: () => void
 }
 
 // Altura fixa do miolo: a lista rola, o resto (abas, campo) fica parado.
 const BODY_H = "min(520px, calc(100dvh - 132px))"
+const ARM_MS = 4000
 
-export default function ChatPanel({ token, view, setView, lines, onSendGlobal, onReport, onDirectTo, actorId, dmUnread, onClose }: ChatPanelProps) {
+export default function ChatPanel(props: ChatPanelProps) {
+  const { token, view, setView, lines, onSendGlobal, onReport, onDirectTo, actorId, actorFailed, onRetryActor, errLabel, globalUnread, dmUnread, onClose } = props
   const t = useTranslations("MeuMundo")
+  const panelId = "mm-chat-tabpanel"
   return (
     <EvoDialog fixed z="z-[78]" width="max-w-lg" labelId="mm-chat-title" title={t("chTitle", "Chat")} onClose={onClose}>
       <div data-mm-panel className="flex flex-col" style={{ height: BODY_H }}>
-        <div className="mb-2 grid shrink-0 grid-cols-2 gap-1 rounded-[14px] p-1" role="tablist" style={{ background: "rgba(0,0,0,0.28)", border: `1px solid ${MM.border}` }}>
-          <Tab on={view.tab === "global"} onClick={() => setView({ tab: "global" })} icon={<Globe className="h-4 w-4" />} label={t("chGlobal", "Global")} />
-          <Tab on={view.tab !== "global"} onClick={() => setView({ tab: "dms" })} icon={<MessageCircle className="h-4 w-4" />} label={t("chDms", "Conversas")} count={dmUnread} />
+        <div
+          className="mb-2 grid shrink-0 grid-cols-2 gap-1 rounded-[14px] p-1"
+          role="tablist"
+          aria-label={t("chTitle", "Chat")}
+          style={{ background: "rgba(0,0,0,0.28)", border: `1px solid ${MM.border}` }}
+        >
+          <Tab id="mm-chat-tab-global" panel={panelId} on={view.tab === "global"} onClick={() => setView({ tab: "global" })} icon={<Globe className="h-4 w-4" />} label={t("chGlobal", "Global")} count={view.tab === "global" ? 0 : globalUnread} />
+          <Tab id="mm-chat-tab-dms" panel={panelId} on={view.tab !== "global"} onClick={() => setView({ tab: "dms" })} icon={<MessageCircle className="h-4 w-4" />} label={t("chDms", "Conversas")} count={dmUnread} />
         </div>
-        {view.tab === "global" && <GlobalTab lines={lines} onSend={onSendGlobal} onReport={onReport} onDirectTo={onDirectTo} />}
-        {view.tab === "dms" && <DmList token={token} onOpen={(c) => setView({ tab: "thread", conversationId: c.id, title: c.title })} />}
-        {view.tab === "thread" && (
-          <Thread key={view.conversationId} token={token} actorId={actorId} conversationId={view.conversationId} title={view.title} onBack={() => setView({ tab: "dms" })} />
-        )}
+        <div id={panelId} role="tabpanel" aria-labelledby={view.tab === "global" ? "mm-chat-tab-global" : "mm-chat-tab-dms"} className="flex min-h-0 flex-1 flex-col">
+          {view.tab === "global" && <GlobalTab lines={lines} onSend={onSendGlobal} onReport={onReport} onDirectTo={onDirectTo} />}
+          {view.tab === "dms" && <DmList token={token} onOpen={(c) => setView({ tab: "thread", conversationId: c.id, title: c.title })} />}
+          {view.tab === "thread" && (
+            <Thread
+              key={view.conversationId}
+              token={token}
+              actorId={actorId}
+              actorFailed={actorFailed}
+              onRetryActor={onRetryActor}
+              errLabel={errLabel}
+              conversationId={view.conversationId}
+              title={view.title}
+              onBack={() => setView({ tab: "dms" })}
+            />
+          )}
+        </div>
       </div>
     </EvoDialog>
   )
 }
 
-function Tab({ on, onClick, icon, label, count = 0 }: { on: boolean; onClick: () => void; icon: React.ReactNode; label: string; count?: number }) {
+function Tab({ id, panel, on, onClick, icon, label, count = 0 }: { id: string; panel: string; on: boolean; onClick: () => void; icon: React.ReactNode; label: string; count?: number }) {
   return (
     <button
+      id={id}
       type="button"
       role="tab"
       aria-selected={on}
+      aria-controls={panel}
       onClick={onClick}
       className={`${archivo.className} flex h-9 items-center justify-center gap-2 rounded-[11px] text-[14px] font-semibold max-[759px]:h-8 max-[759px]:text-[13px]`}
       style={{ background: on ? MM.rubySoft : "transparent", color: on ? MM.text : MM.muted, border: on ? `1px solid ${MM.rubyBorder}` : "1px solid transparent" }}
@@ -104,23 +133,23 @@ function Avatar({ url, size }: { url: string | null | undefined; size: number })
   return <img src={url} alt="" width={size} height={size} loading="lazy" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size, background: "#232733" }} />
 }
 
-function Composer({ max, onSend, placeholder }: { max: number; onSend: (text: string) => void; placeholder: string }) {
+function Composer({ max, onSend, placeholder }: { max: number; onSend: (text: string) => Promise<boolean>; placeholder: string }) {
   const t = useTranslations("MeuMundo")
   const [draft, setDraft] = useState("")
   // Teclado virtual só quando a pessoa toca no campo (no celular ele cobriria o mundo).
   const [focusNow] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(pointer: fine)").matches)
-  const submit = () => {
+  const submit = async () => {
     const text = cleanDraft(draft, max)
     if (!text) return
-    onSend(text)
-    setDraft("")
+    // O rascunho só some quando o servidor aceitou: recusa e queda de rede não perdem o texto.
+    if (await onSend(text)) setDraft((d) => (cleanDraft(d, max) === text ? "" : d))
   }
   return (
     <form
       className="mt-2 flex shrink-0 gap-2"
       onSubmit={(e) => {
         e.preventDefault()
-        submit()
+        void submit()
       }}
     >
       <input
@@ -139,22 +168,27 @@ function Composer({ max, onSend, placeholder }: { max: number; onSend: (text: st
   )
 }
 
-function GlobalTab({ lines, onSend, onReport, onDirectTo }: { lines: Line[]; onSend: (t: string) => void; onReport: (id: string) => void; onDirectTo: (l: ChatLine) => void }) {
+function GlobalTab({ lines, onSend, onReport, onDirectTo }: { lines: Line[]; onSend: (t: string) => Promise<boolean>; onReport: (id: string) => void; onDirectTo: (l: ChatLine) => void }) {
   const t = useTranslations("MeuMundo")
   const clock = useClock()
   const ref = useStickBottom(lines.length)
-  // Denunciar pede um segundo toque (o primeiro só arma) — toque sem querer não vira denúncia.
+  // Denunciar pede um segundo toque (o primeiro só arma, e desarma sozinho em 4 s).
   const [armed, setArmed] = useState<string | null>(null)
+  useEffect(() => {
+    if (!armed) return
+    const id = setTimeout(() => setArmed(null), ARM_MS)
+    return () => clearTimeout(id)
+  }, [armed])
   return (
     <>
-      <div ref={ref} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1" data-mm-scroll>
+      <div ref={ref} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1" data-mm-scroll role="log" aria-live="polite" aria-label={t("chGlobal", "Global")}>
         {lines.length === 0 && <p className="py-6 text-center text-sm" style={{ color: MM.muted }}>{t("chEmpty", "Ninguém falou ainda. Diga oi!")}</p>}
         {lines.map((l) => (
           <div key={l.id} className="flex items-start gap-2" style={{ color: l.pending ? MM.muted : MM.text }}>
             <Avatar url={l.mine ? null : l.avatar} size={28} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 text-xs">
-                {l.mine || !l.profileId ? (
+                {l.mine || (!l.profileId && !l.session) ? (
                   <span className="truncate font-bold" style={{ color: l.mine ? MM.gold : MM.text }}>
                     {l.mine ? t("chYou", "Você") : l.name}
                   </span>
@@ -168,6 +202,7 @@ function GlobalTab({ lines, onSend, onReport, onDirectTo }: { lines: Line[]; onS
                   <button
                     type="button"
                     aria-label={t("chReport", "Denunciar")}
+                    aria-pressed={armed === l.id}
                     title={t("chReport", "Denunciar")}
                     className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5"
                     style={{ color: armed === l.id ? MM.danger : MM.muted, border: `1px solid ${armed === l.id ? MM.danger : "transparent"}` }}
@@ -193,6 +228,18 @@ function GlobalTab({ lines, onSend, onReport, onDirectTo }: { lines: Line[]; onS
   )
 }
 
+function Failed({ text, onRetry }: { text: string; onRetry: () => void }) {
+  const t = useTranslations("MeuMundo")
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-sm" style={{ color: MM.muted }} role="alert">
+      {text}
+      <EvoButton variant="gold" size="sm" icon={<RefreshCw className="h-4 w-4" />} onClick={onRetry}>
+        {t("ibRetry", "Tentar de novo")}
+      </EvoButton>
+    </div>
+  )
+}
+
 function DmList({ token, onOpen }: { token: string | null; onOpen: (c: { id: string; title: string }) => void }) {
   const t = useTranslations("MeuMundo")
   const [rows, setRows] = useState<ConversationRow[] | null>(null)
@@ -212,29 +259,24 @@ function DmList({ token, onOpen }: { token: string | null; onOpen: (c: { id: str
   }, [token, attempt])
   if (failed)
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-sm" style={{ color: MM.muted }} role="alert">
-        {t("ibLoadFail", "Não carregou agora.")}
-        <EvoButton
-          variant="gold"
-          size="sm"
-          onClick={() => {
-            setFailed(false)
-            setRows(null)
-            setAttempt((n) => n + 1)
-          }}
-        >
-          {t("ibRetry", "Tentar de novo")}
-        </EvoButton>
-      </div>
+      <Failed
+        text={t("ibLoadFail", "Não carregou agora.")}
+        onRetry={() => {
+          setFailed(false)
+          setRows(null)
+          setAttempt((n) => n + 1)
+        }}
+      />
     )
   if (!rows) return <p className="py-6 text-center text-sm" style={{ color: MM.muted }}>{t("chLoading", "Carregando…")}</p>
   if (!rows.length) return <p className="py-6 text-center text-sm" style={{ color: MM.muted }}>{t("chNoDms", "Nenhuma conversa ainda. Toque num jogador e escolha Mensagem.")}</p>
   return (
-    <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain" data-mm-scroll>
+    <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain" data-mm-scroll role="list" aria-label={t("chDms", "Conversas")}>
       {rows.map((c) => (
         <button
           key={c.id}
           type="button"
+          role="listitem"
           onClick={() => onOpen({ id: c.id, title: c.title })}
           className="flex w-full items-center gap-3 rounded-[14px] p-2 text-left"
           style={{ background: c.unread ? MM.card : "transparent", border: `1px solid ${c.unread ? MM.border : "transparent"}` }}
@@ -259,10 +301,32 @@ function DmList({ token, onOpen }: { token: string | null; onOpen: (c: { id: str
   )
 }
 
-function Thread({ token, actorId, conversationId, title, onBack }: { token: string | null; actorId: string | null; conversationId: string; title: string; onBack: () => void }) {
+function Thread({
+  token,
+  actorId,
+  actorFailed,
+  onRetryActor,
+  errLabel,
+  conversationId,
+  title,
+  onBack,
+}: {
+  token: string | null
+  actorId: string | null
+  actorFailed: boolean
+  onRetryActor: () => void
+  errLabel: (e: string) => string
+  conversationId: string
+  title: string
+  onBack: () => void
+}) {
   const t = useTranslations("MeuMundo")
-  const { items, loading, error, send } = useDirectThread(token, conversationId, actorId)
+  const { items, loading, error, send, retry } = useDirectThread(token, conversationId, actorId)
   const ref = useStickBottom(items.length)
+  // Sem texto: diz o que é (áudio, apagada, outra mídia) em vez de um balão vazio.
+  const textOf = (m: DmMessage) =>
+    m.kind === "deleted" ? t("chDmDeleted", "Mensagem apagada") : m.kind === "audio" && !m.text ? t("chDmAudio", "Mensagem de áudio") : m.kind === "media" ? t("chDmMedia", "Mídia") : m.text
+  const loadFailed = !!error && !items.length && !loading
   return (
     <>
       <div className="mb-2 flex shrink-0 items-center gap-2">
@@ -277,25 +341,33 @@ function Thread({ token, actorId, conversationId, title, onBack }: { token: stri
           {t("chOpenSite", "Abrir na Freelandoo")} <ExternalLink className="h-3 w-3" />
         </a>
       </div>
-      <div ref={ref} className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain pr-1" data-mm-scroll>
-        {(loading || !actorId) && !items.length && <p className="py-6 text-center text-sm" style={{ color: MM.muted }}>{t("chLoading", "Carregando…")}</p>}
-        {items.map((m) => (
-          <div key={m.id} className={m.mine ? "flex justify-end" : "flex"}>
-            <p
-              className="max-w-[80%] whitespace-pre-wrap break-words rounded-[14px] px-3 py-2 text-sm"
-              style={{ background: m.mine ? MM.rubyFill : MM.card, color: m.pending ? MM.muted : "#fff", border: `1px solid ${m.mine ? MM.rubyBorder : MM.border}` }}
-            >
-              {m.text}
-            </p>
+      {!actorId && actorFailed ? (
+        <Failed text={t("ibLoadFail", "Não carregou agora.")} onRetry={onRetryActor} />
+      ) : loadFailed ? (
+        <Failed text={errLabel(error)} onRetry={retry} />
+      ) : (
+        <>
+          <div ref={ref} className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain pr-1" data-mm-scroll role="log" aria-live="polite" aria-label={title}>
+            {(loading || !actorId) && !items.length && <p className="py-6 text-center text-sm" style={{ color: MM.muted }}>{t("chLoading", "Carregando…")}</p>}
+            {items.map((m) => (
+              <div key={m.id} className={m.mine ? "flex justify-end" : "flex"}>
+                <p
+                  className={`max-w-[80%] whitespace-pre-wrap break-words rounded-[14px] px-3 py-2 text-sm ${m.kind && m.kind !== "text" && !m.text ? "italic" : ""}`}
+                  style={{ background: m.mine ? MM.rubyFill : MM.card, color: m.pending ? MM.muted : "#fff", border: `1px solid ${m.mine ? MM.rubyBorder : MM.border}` }}
+                >
+                  {textOf(m)}
+                </p>
+              </div>
+            ))}
+            {error && !loadFailed && (
+              <p className="text-center text-xs font-semibold" style={{ color: MM.danger }} role="alert">
+                {errLabel(error)}
+              </p>
+            )}
           </div>
-        ))}
-        {error && (
-          <p className="text-center text-xs font-semibold" style={{ color: MM.danger }} role="alert">
-            {error}
-          </p>
-        )}
-      </div>
-      <Composer max={DIRECT_MAX} onSend={(text) => void send(text)} placeholder={t("chDmPh", "Escreva uma mensagem")} />
+          <Composer max={DIRECT_MAX} onSend={send} placeholder={t("chDmPh", "Escreva uma mensagem")} />
+        </>
+      )}
     </>
   )
 }

@@ -144,6 +144,8 @@ export interface HouseGameHandle {
   selectPlayer: (sessionId: string | null, frameX?: number | null) => void
   /** Fala do chat (mm3d-32): balão sobre a cabeça do jogador desta sessão (ausente = ignora). */
   sayFrom: (sessionId: string, text: string) => void
+  /** O meu balão (a sala não manda o "say" de volta para quem falou). */
+  sayLocal: (text: string) => void
   /** Andar onde o personagem está (painel). */
   floor: () => number
   dispose: () => void
@@ -621,6 +623,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       char.place(body.x, body.z, visualFacing, body.y)
       char.animate(dt, move, speed)
     }
+    char.tickBubble()
     syncNetwork(performance.now(), intent)
     if (myKind && myKind !== "car") Object.assign(myPose, { x: body.x, z: body.z, y: body.y, facing: visualFacing, sp: speed })
     fleet.sync(rideCars(), dt, myRide, myKind && myKind !== "car" ? myPose : null)
@@ -782,6 +785,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     },
     sayFrom(sid, text) {
       if (!disposed) remotes.get(sid)?.char.say(text)
+    },
+    sayLocal(text) {
+      if (!disposed) char.say(text)
     },
     setQuality(c) {
       governor.setProfile(resolveQuality(c))
