@@ -11,6 +11,7 @@
 
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { ScenePlayerProps } from "./player-card/player-card"
 import {
   Activity,
   Bike,
@@ -64,7 +65,7 @@ export const SAFE = {
   right: "max(12px, env(safe-area-inset-right))",
 }
 
-export interface NeighborhoodSceneProps {
+export interface NeighborhoodSceneProps extends ScenePlayerProps {
   payload: NeighborhoodPayload
   visits: VisitState | null
   /** Entrar na casa do lote (o servidor confere porta, dono e convite). */
@@ -97,6 +98,9 @@ export default function MeuMundoView({
   onOpenStatus,
   suspended,
   menuExtras,
+  selectedPlayer = null,
+  onPlayerTap,
+  onPlayerGone,
 }: NeighborhoodSceneProps) {
   const t = useTranslations("MeuMundo")
   const nb = payload.neighborhood
@@ -141,6 +145,15 @@ export default function MeuMundoView({
   // de ambiente ao aceitar: a visita ativa chega pelo estado de visitas.
   const activeGuest = visits?.active?.role === "guest" && visits.active.neighborhoodName === nb.name ? visits.active.house : null
   const visitingLot = payload.me.visiting?.house ?? activeGuest
+  // Toque em outro jogador (mm3d-31): o card vive na casca; aqui só repassa e destaca.
+  const playerCb = useRef({ onPlayerTap, onPlayerGone })
+  useEffect(() => {
+    playerCb.current = { onPlayerTap, onPlayerGone }
+  }, [onPlayerTap, onPlayerGone])
+  useEffect(() => {
+    if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer)
+  }, [selectedPlayer, status])
+
   const cbRef = useRef({ onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot })
   useEffect(() => {
     cbRef.current = { onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot }
@@ -195,6 +208,8 @@ export default function MeuMundoView({
             if (s === "moved") cbRef.current.onMoved()
           },
           onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
+          onPlayerTap: (tp) => alive && playerCb.current.onPlayerTap?.(tp),
+          onPlayerGone: (sid) => alive && playerCb.current.onPlayerGone?.(sid),
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
           onWinded: (w) => alive && setWinded(w),
@@ -480,9 +495,10 @@ export default function MeuMundoView({
       )}
 
       {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
-      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && <Joystick gameRef={gameRef} />}
+      {/* Card de perfil aberto (mm3d-31): ele ocupa o pé da tela; os controles voltam ao fechar */}
+      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !selectedPlayer && <Joystick gameRef={gameRef} />}
 
-      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !drivingLot && (
+      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !drivingLot && !selectedPlayer && (
         <>
           {nearbyMine && (
             <EvoButton

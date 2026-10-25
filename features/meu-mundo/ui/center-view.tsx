@@ -12,6 +12,7 @@
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { ScenePlayerProps } from "./player-card/player-card"
 import { Activity, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, RefreshCw, Store, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
@@ -62,7 +63,7 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   hospital: "Hospital",
 }
 
-export interface CenterSceneProps {
+export interface CenterSceneProps extends ScenePlayerProps {
   payload: CenterPayload
   visits: VisitState | null
   /** Voltar para casa (o servidor decide o bairro). */
@@ -77,7 +78,7 @@ export interface CenterSceneProps {
   menuExtras?: DrawerItem[]
 }
 
-export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras }: CenterSceneProps) {
+export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras, selectedPlayer = null, onPlayerTap, onPlayerGone }: CenterSceneProps) {
   const t = useTranslations("MeuMundo")
   const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -102,6 +103,15 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [winded, setWinded] = useState(false)
   const [drivingLot, setDrivingLot] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
+  // Toque em outro jogador (mm3d-31): o card vive na casca; aqui só repassa e destaca.
+  const playerCb = useRef({ onPlayerTap, onPlayerGone })
+  useEffect(() => {
+    playerCb.current = { onPlayerTap, onPlayerGone }
+  }, [onPlayerTap, onPlayerGone])
+  useEffect(() => {
+    if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer)
+  }, [selectedPlayer, status])
+
   const cbRef = useRef({ onGoHome, onMoved, onServerMessage })
   useEffect(() => {
     cbRef.current = { onGoHome, onMoved, onServerMessage }
@@ -155,6 +165,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             if (s === "moved") cbRef.current.onMoved()
           },
           onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
+          onPlayerTap: (tp) => alive && playerCb.current.onPlayerTap?.(tp),
+          onPlayerGone: (sid) => alive && playerCb.current.onPlayerGone?.(sid),
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
           onWinded: (w) => alive && setWinded(w),
@@ -381,9 +393,10 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       )}
 
       {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
-      {status === "ready" && isTouch && !open && !menuOpen && <Joystick gameRef={gameRef} />}
+      {/* Card de perfil aberto (mm3d-31): ele ocupa o pé da tela; os controles voltam ao fechar */}
+      {status === "ready" && isTouch && !open && !menuOpen && !selectedPlayer && <Joystick gameRef={gameRef} />}
 
-      {status === "ready" && isTouch && !open && !menuOpen && !drivingLot && (
+      {status === "ready" && isTouch && !open && !menuOpen && !drivingLot && !selectedPlayer && (
         <>
           {nearby && (
             <EvoButton

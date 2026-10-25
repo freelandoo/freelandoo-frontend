@@ -36,6 +36,7 @@ import { buildInterior } from "./interior"
 import { Character, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera, INDOOR_CAMERA } from "./camera"
+import { PlayerSelection, type PlayerTap } from "./player-select"
 import { NetClient } from "./net"
 import { MOTION, kindOfId, lerpAngle, paceSpeeds, type Intent, type MoveState, type RideKind } from "./motion"
 import { CarFleet, type CarPose } from "./cars"
@@ -92,6 +93,10 @@ export interface HouseGameOptions {
   onWinded?: (winded: boolean) => void
   /** Usar/descer recusado (longe, ocupado, na escada…). */
   onRideDenied?: (reason: string) => void
+  /** Toque no mundo (mm3d-31): outro jogador tocado, ou null (toque no vazio). */
+  onPlayerTap?: (tap: PlayerTap | null) => void
+  /** O jogador selecionado saiu da casa (ou a conexão caiu). */
+  onPlayerGone?: (sessionId: string) => void
 }
 
 /** Mensagem "fridge" da sala (src/realtime/meuMundo.js onFridge). */
@@ -135,6 +140,8 @@ export interface HouseGameHandle {
   setStatsEnabled: (on: boolean) => void
   /** Qualidade gráfica escolhida na gaveta (mm3d-19). */
   setQuality: (c: QualityChoice) => void
+  /** Destaque no jogador do card aberto; null = ninguém (mm3d-31). */
+  selectPlayer: (sessionId: string | null) => void
   /** Andar onde o personagem está (painel). */
   floor: () => number
   dispose: () => void
@@ -243,6 +250,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   char.place(body.x, body.z, body.facing, body.y)
 
   const follow = new FollowCamera(scene, INDOOR_CAMERA)
+  const select = new PlayerSelection(scene, canvas, () => scene.activeCamera ?? follow.camera)
   scene.activeCamera = follow.camera
   follow.snapBehind(body.x, body.z, body.facing)
   follow.snapHeight(body.y)
@@ -262,6 +270,14 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
 
   // ── Rede ────────────────────────────────────────────────────────────────
   const remotes = new Map<string, RemotePlayer & { floor?: number }>()
+  // Descarte de outro jogador: o destaque de seleção é filho do boneco e sai antes.
+  const dropRemote = (sid: string) => {
+    const r = remotes.get(sid)
+    if (!r) return
+    if (select.release(sid)) opts.onPlayerGone?.(sid)
+    r.dispose()
+    remotes.delete(sid)
+  }
   let welcomed = false
   let onlineCount = -1
   const net = new NetClient({
@@ -270,8 +286,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       if (disposed) return
       opts.onNet?.(s)
       if (s !== "online") {
-        for (const [, r] of remotes) r.dispose()
-        remotes.clear()
+        for (const sid of remotes.keys()) dropRemote(sid)
         shutFridge(true)
       }
     },
@@ -417,9 +432,14 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       const b = isBody(p.body) ? p.body : "normal"
       if (!r) {
         r = new RemotePlayer(new Character(scene, lib, mats, b, p.name, false), p.x, p.z, p.facing)
+        r.name = p.name
         remotes.set(sid, r)
       } else if (r.char.body !== b) {
         void r.char.setBody(b)
+      }
+      if (r.name !== p.name) {
+        r.name = p.name
+        select.rename(sid, p.name)
       }
       r.floor = p.floor
       r.car = p.ride ?? 0
@@ -427,12 +447,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       r.char.unwell = !!p.sk
       r.setTarget(p.x, p.z, p.facing, Math.max(0, Math.min(5, p.move)) as MoveState, p.y)
     })
-    for (const [sid, r] of remotes) {
-      if (!seen.has(sid)) {
-        r.dispose()
-        remotes.delete(sid)
-      }
-    }
+    for (const sid of remotes.keys()) if (!seen.has(sid)) dropRemote(sid)
     if (seen.size + 1 !== onlineCount) {
       onlineCount = seen.size + 1
       opts.onOnline?.(onlineCount)
@@ -615,6 +630,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       // Outro andar acima do meu: escondido junto com o andar.
       r.char.setVisible((r.floor ?? 0) <= body.floor)
     }
+    // Toque curto no mundo (mm3d-31): outro jogador abre o card; o vazio fecha.
+    const tap = select.takeTap(input.taps, remotes)
+    if (tap !== undefined && !input.blocked) opts.onPlayerTap?.(tap)
     interior.showUpTo(body.floor)
     fridgeDoor.tick(dt, body.floor)
     follow.update(dt, body.x, body.z, viewBoxes(), body.y)
@@ -749,6 +767,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     reconnect() {
       void net.retry()
     },
+    selectPlayer(sid) {
+      if (!disposed) select.selectIn(remotes, sid)
+    },
     setQuality(c) {
       governor.setProfile(resolveQuality(c))
     },
@@ -775,6 +796,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       engine.onContextLostObservable.remove(lost)
       instr?.dispose()
       instr = null
+      select.dispose()
       for (const r of remotes.values()) r.dispose()
       remotes.clear()
       fleet.dispose()

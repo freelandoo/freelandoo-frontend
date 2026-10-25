@@ -29,6 +29,7 @@ import { buildCenterWorld, type CenterLabels } from "./center-world"
 import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
+import { PlayerSelection, type PlayerTap } from "./player-select"
 import { NetClient } from "./net"
 import { MOTION, RIDE_KINDS, kindOfId, lerpAngle, paceSpeeds, type Intent, type MoveState, type RideKind } from "./motion"
 import { CarFleet, type CarPose } from "./cars"
@@ -103,6 +104,13 @@ export interface GameOptions {
    * entrando com ele? (a própria, ou a visitada). O carro nunca entra.
    */
   canRideInto?: (it: Interactable) => boolean
+  /**
+   * Toque/clique curto no mundo (mm3d-31): o outro jogador tocado, ou null
+   * (toque no vazio — fecha o card). Arrastar a câmera nunca chega aqui.
+   */
+  onPlayerTap?: (tap: PlayerTap | null) => void
+  /** O jogador selecionado saiu da cena (ou a conexão caiu). */
+  onPlayerGone?: (sessionId: string) => void
 }
 
 export interface GameHandle {
@@ -130,6 +138,8 @@ export interface GameHandle {
   leaveVehicle: () => void
   /** Qualidade gráfica escolhida na gaveta (mm3d-19). */
   setQuality: (c: QualityChoice) => void
+  /** Destaque (anel + cápsula) no jogador do card aberto; null = ninguém (mm3d-31). */
+  selectPlayer: (sessionId: string | null) => void
   dispose: () => void
 }
 
@@ -271,9 +281,13 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     // Caixas de veículo que bloqueiam o jogador agora (harness).
     vboxes: () => fleet.boxes(driving, net.sessionId),
     wboxes: (r = 4) => world.boxes.filter((b) => Math.hypot(b.x - local.x, b.z - local.z) < r + Math.max(b.hx, b.hz)),
+    // Outros jogadores na tela e o selecionado (mm3d-31, harness).
+    others: () => [...remotes].map(([sid, r]) => ({ sid, name: r.name, shown: r.char.holder.isEnabled(), box: select.screenBox(r.char) })),
+    selected: () => select.selected,
   })
   ;(window as unknown as { __mmStreet?: typeof probe }).__mmStreet = probe
   const follow = new FollowCamera(scene)
+  const select = new PlayerSelection(scene, canvas, () => scene.activeCamera ?? follow.camera)
   follow.camera.maxZ = quality.maxZ
   scene.activeCamera = follow.camera
   follow.snapBehind(home.x, home.z, home.rotationY)
@@ -284,6 +298,14 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
 
   // ── Rede ──────────────────────────────────────────────────────────────────
   const remotes = new Map<string, RemotePlayer>()
+  // Descarte de outro jogador: o destaque de seleção é filho do boneco e sai antes.
+  const dropRemote = (sid: string) => {
+    const r = remotes.get(sid)
+    if (!r) return
+    if (select.release(sid)) opts.onPlayerGone?.(sid)
+    r.dispose()
+    remotes.delete(sid)
+  }
   let welcomed = false
   let onlineCount = -1
   // Ritmo do MEU corpo (mm3d-13), vindo da sala: cansado anda mais devagar.
@@ -295,8 +317,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     onStatus: (s) => {
       if (disposed) return
       opts.onNet?.(s)
-      if (s !== "online") for (const [, r] of remotes) r.dispose()
-      if (s !== "online") remotes.clear()
+      if (s !== "online") for (const sid of remotes.keys()) dropRemote(sid)
     },
     onWelcome: (p) => {
       if (disposed) return
@@ -389,6 +410,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const body = isBody(p.body) ? p.body : "normal"
       if (!r) {
         r = new RemotePlayer(new Character(scene, lib, mats, body, p.name, false), p.x, p.z, p.facing)
+        r.name = p.name
         remotes.set(sid, r)
         // Vizinho que se mudou depois que você entrou: a casa dele deixa de
         // aparecer como disponível (o banco é a fonte; a sala só confirma).
@@ -396,6 +418,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         if (h && !h.isMine && !h.ownerName) h.ownerName = p.name
       } else if (r.char.body !== body) {
         void r.char.setBody(body)
+      }
+      if (r.name !== p.name) {
+        r.name = p.name
+        select.rename(sid, p.name)
       }
       // No carro o boneco some; em bike, skate e patins ele aparece montado
       // (a pose sai da modalidade e a posição, do veículo desenhado).
@@ -406,12 +432,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       r.char.unwell = !!p.sk
       r.setTarget(p.x, p.z, p.facing, (p.car ? 0 : Math.max(0, Math.min(2, p.move))) as MoveState)
     })
-    for (const [sid, r] of remotes) {
-      if (!seen.has(sid)) {
-        r.dispose()
-        remotes.delete(sid)
-      }
-    }
+    for (const sid of remotes.keys()) if (!seen.has(sid)) dropRemote(sid)
     const count = seen.size + 1
     if (count !== onlineCount) {
       onlineCount = count
@@ -634,6 +655,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const cam = follow.camera.globalPosition
       r.char.applyDistance(Math.hypot(r.x - cam.x, r.z - cam.z), scene.frustumPlanes, quality)
     }
+    // Toque curto no mundo (mm3d-31): outro jogador abre o card; o vazio fecha.
+    const tap = select.takeTap(input.taps, remotes)
+    if (tap !== undefined && !input.blocked) opts.onPlayerTap?.(tap)
     governor.tick(engine.getDeltaTime())
     if (driving && veh) follow.chase(dt, pose.x, pose.z, pose.facing, veh.u, world.viewBoxes)
     else follow.update(dt, local.x, local.z, world.viewBoxes)
@@ -815,6 +839,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     leaveVehicle() {
       if (driving) net.send("car", { a: "exit" })
     },
+    selectPlayer(sid) {
+      if (!disposed) select.selectIn(remotes, sid)
+    },
     setQuality(c) {
       quality = resolveQuality(c)
       governor.setProfile(quality)
@@ -846,6 +873,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       engine.onContextLostObservable.remove(lost)
       instr?.dispose()
       instr = null
+      select.dispose()
       for (const r of remotes.values()) r.dispose()
       remotes.clear()
       local.dispose()

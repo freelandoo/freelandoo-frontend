@@ -58,6 +58,9 @@ export class Character {
   private shown = true
   /** Além do corte de distância (mm3d-19). */
   private culled = false
+  /** Selecionado por quem joga (mm3d-31): a cápsula do destaque toma o lugar do nome. */
+  private tagHidden = false
+  private tagNear = true
 
   constructor(
     private readonly scene: Scene,
@@ -138,10 +141,17 @@ export class Character {
       this.culled = culled
       this.syncEnabled()
     }
-    if (this.tag) this.tag.mesh.setEnabled(d <= q.tagCut)
+    this.tagNear = d <= q.tagCut
+    if (this.tag) this.tag.mesh.setEnabled(this.tagNear && !this.tagHidden)
     if (!this.rig) return
     this.rig.setLodDistance(q.avatarLod)
     this.rig.setFrozen(culled || !this.rig.inFrustum(planes))
+  }
+
+  /** Esconde o nome comum enquanto o destaque de seleção mostra o dele (player-select.ts). */
+  setTagHidden(on: boolean) {
+    this.tagHidden = on
+    if (this.tag) this.tag.mesh.setEnabled(this.tagNear && !on)
   }
 
   /** Animando agora (conferência). */
@@ -296,6 +306,8 @@ export class LocalPlayer {
 export class RemotePlayer {
   /** Id do veículo em que está montado (bike, skate, patins); 0 = a pé ou no carro. */
   car = 0
+  /** Nome que a sala mostra (mm3d-31: cápsula do destaque e cabeçalho do card). */
+  name = ""
   x: number
   z: number
   facing: number

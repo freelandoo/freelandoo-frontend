@@ -20,6 +20,7 @@ import type {
   MultiplayerSession,
   NeighborhoodPayload,
   NoticeFilter,
+  PlayerProfile,
   PolenProduct,
   ScenePayload,
   VisitState,
@@ -219,6 +220,38 @@ export const getPolensPurchase = (token: string, session: string) =>
     "GET",
     `/polens/purchase/${encodeURIComponent(session)}`,
   )
+
+// ═══ mm3d-31: card de perfil de outro jogador ═══════════════════════════════
+/** Quem está por trás do boneco tocado — só se ele está na MESMA sala agora. */
+export const getPlayerProfile = (token: string, session: string) =>
+  call<{ player: PlayerProfile }>(token, "GET", `/players/${encodeURIComponent(session)}`)
+
+/**
+ * Seguir/deixar de seguir pelo /entity-follows que o site já usa (o mesmo do
+ * FollowButton), com o perfil-conta de quem joga como ator. Devolve a
+ * contagem real do alvo depois da mudança.
+ */
+export async function postFollow(
+  token: string,
+  actorProfileId: string,
+  targetProfileId: string,
+  follow: boolean,
+): Promise<ApiResult<{ isFollowing: boolean; followers: number | null }>> {
+  try {
+    const res = await fetch("/api/entity-follows", {
+      method: follow ? "POST" : "DELETE",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ actor_type: "profile", actor_id: actorProfileId, target_type: "profile", target_id: targetProfileId }),
+      cache: "no-store",
+    })
+    const data = (await res.json().catch(() => null)) as { is_following?: boolean; counts?: { followers_count?: number }; error?: string } | null
+    if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+    const n = Number(data.counts?.followers_count)
+    return { ok: true, data: { isFollowing: typeof data.is_following === "boolean" ? data.is_following : follow, followers: Number.isFinite(n) ? n : null } }
+  } catch {
+    return { ok: false, status: 0, error: "network" }
+  }
+}
 
 /** Pacotes da Loja de Polén (o mesmo catálogo da /loja-polens). */
 export async function getPolenProducts(): Promise<ApiResult<{ products: PolenProduct[] }>> {

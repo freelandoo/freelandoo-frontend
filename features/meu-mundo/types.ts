@@ -793,3 +793,27 @@ export interface PolenProduct {
   bonus_polens: number
   image_url?: string | null
 }
+
+/**
+ * Card de perfil de outro jogador (mm3d-31, GET /players/:session). Projeção
+ * pública do perfil-conta de quem foi TOCADO; `unavailable` (bloqueio, conta
+ * bloqueada) traz só o nome que a sala já mostra.
+ */
+export interface PlayerProfile {
+  sessionId: string
+  name: string | null
+  online: boolean
+  unavailable: boolean
+  profileId?: string
+  displayName?: string | null
+  username?: string | null
+  avatarUrl?: string | null
+  coverUrl?: string | null
+  posts?: number
+  followers?: number
+  following?: number
+  ratings?: { count: number; avg: number }
+  isFollowing?: boolean
+  /** perfil-conta de quem olha: o "ator" do Seguir */
+  viewerProfileId?: string | null
+}

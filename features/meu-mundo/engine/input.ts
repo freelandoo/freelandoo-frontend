@@ -21,7 +21,15 @@ export interface InputState {
   runToggle: boolean
   /** Dirigindo (mm3d-12): Espaço vira freio de mão em vez de interagir. */
   driving: boolean
+  /**
+   * Toques/cliques curtos no canvas (mm3d-31), em px da janela: menos de
+   * TAP_PX de deslocamento e TAP_MS de duração — arrastar continua sendo câmera.
+   */
+  taps: { x: number; y: number }[]
 }
+
+const TAP_PX = 8
+const TAP_MS = 450
 
 export function createInputState(): InputState {
   return {
@@ -35,6 +43,7 @@ export function createInputState(): InputState {
     blocked: false,
     runToggle: false,
     driving: false,
+    taps: [],
   }
 }
 
@@ -46,6 +55,7 @@ export function clearInput(s: InputState) {
   s.camDY = 0
   s.zoom = 0
   s.interactQueued = false
+  s.taps.length = 0
 }
 
 /** Zona morta do joystick, reescalada para o eixo ainda ir de 0 a 1. */
@@ -80,7 +90,8 @@ function isEditable(t: EventTarget | null) {
   const el = t as HTMLElement | null
   if (!el) return false
   const tag = el.tagName
-  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable
+  // Teclado dentro de um painel do jogo (card de perfil etc.) não comanda o personagem.
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable || !!el.closest?.("[data-mm-panel]")
 }
 
 /** Corrida lenta: Shift segurado no teclado ou o botão do celular ligado. */
@@ -153,14 +164,20 @@ export function attachInput(canvas: HTMLCanvasElement, s: InputState): () => voi
   let dragId: number | null = null
   let lastX = 0
   let lastY = 0
+  let downX = 0
+  let downY = 0
+  let downT = 0
+  let travel = 0
   canvas.addEventListener(
     "pointerdown",
     (e) => {
       if (s.blocked || dragId !== null) return
       if (e.pointerType === "mouse" && e.button !== 0 && e.button !== 2) return
       dragId = e.pointerId
-      lastX = e.clientX
-      lastY = e.clientY
+      lastX = downX = e.clientX
+      lastY = downY = e.clientY
+      downT = performance.now()
+      travel = 0
       canvas.setPointerCapture(e.pointerId)
     },
     opts,
@@ -169,6 +186,7 @@ export function attachInput(canvas: HTMLCanvasElement, s: InputState): () => voi
     "pointermove",
     (e) => {
       if (e.pointerId !== dragId) return
+      travel = Math.max(travel, Math.hypot(e.clientX - downX, e.clientY - downY))
       s.camDX += e.clientX - lastX
       s.camDY += e.clientY - lastY
       lastX = e.clientX
@@ -179,6 +197,11 @@ export function attachInput(canvas: HTMLCanvasElement, s: InputState): () => voi
   const end = (e: PointerEvent) => {
     if (e.pointerId !== dragId) return
     dragId = null
+    // Toque curto e parado = escolher (o arraste de câmera nunca vira toque).
+    if (e.type === "pointerup" && (e.pointerType !== "mouse" || e.button === 0) && travel < TAP_PX && performance.now() - downT < TAP_MS && !s.blocked) {
+      s.taps.push({ x: e.clientX, y: e.clientY })
+      if (s.taps.length > 4) s.taps.shift()
+    }
     if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId)
   }
   canvas.addEventListener("pointerup", end, opts)

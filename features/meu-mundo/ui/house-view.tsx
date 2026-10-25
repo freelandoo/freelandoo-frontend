@@ -14,6 +14,7 @@
 // lenta) usa a mesma chave, então a sala nunca come duas vezes.
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { ScenePlayerProps } from "./player-card/player-card"
 import { DoorOpen, Info, Armchair, ArrowUpFromLine, BedDouble, HeartPulse, Moon, Refrigerator, RefreshCw, Send, Sun, WifiOff } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -36,7 +37,7 @@ interface FridgeView {
   character: LifeCharacter | null
 }
 
-export interface HouseSceneProps {
+export interface HouseSceneProps extends ScenePlayerProps {
   payload: HousePayload
   visits: VisitState | null
   onExit: () => void
@@ -52,7 +53,7 @@ export interface HouseSceneProps {
   menuExtras?: DrawerItem[]
 }
 
-export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras }: HouseSceneProps) {
+export default function HouseView({ payload, visits, onExit, onOpenInvite, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras, selectedPlayer = null, onPlayerTap, onPlayerGone }: HouseSceneProps) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<HouseGameHandle | null>(null)
@@ -84,6 +85,15 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const [fridgeDenied, setFridgeDenied] = useState<string | null>(null)
   // Sem fôlego (mm3d-28): a sala só deixa andar até recuperar.
   const [winded, setWinded] = useState(false)
+  // Toque em outro jogador (mm3d-31): o card vive na casca; aqui só repassa e destaca.
+  const playerCb = useRef({ onPlayerTap, onPlayerGone })
+  useEffect(() => {
+    playerCb.current = { onPlayerTap, onPlayerGone }
+  }, [onPlayerTap, onPlayerGone])
+  useEffect(() => {
+    if (status === "ready") gameRef.current?.selectPlayer(selectedPlayer)
+  }, [selectedPlayer, status])
+
   const cbRef = useRef({ onExit, onMoved, onServerMessage, onFridge: (_m: FridgeReply) => {} })
   useEffect(() => {
     cbRef.current = { ...cbRef.current, onExit, onMoved, onServerMessage }
@@ -117,6 +127,8 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
             if (s === "moved") cbRef.current.onMoved()
           },
           onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
+          onPlayerTap: (tp) => alive && playerCb.current.onPlayerTap?.(tp),
+          onPlayerGone: (sid) => alive && playerCb.current.onPlayerGone?.(sid),
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
           onRiding: (id) => alive && setRiding(id),
@@ -468,7 +480,8 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
         </div>
       )}
 
-      {status === "ready" && isTouch && !overlay && (
+      {/* Card de perfil aberto (mm3d-31): ele ocupa o pé da tela; os controles voltam ao fechar */}
+      {status === "ready" && isTouch && !overlay && !selectedPlayer && (
         <>
           {!seat && !rest && <Joystick gameRef={gameRef} />}
           {hasAction && (

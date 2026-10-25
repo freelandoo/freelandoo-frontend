@@ -35,6 +35,8 @@ import HudInbox from "./inbox/hud-inbox"
 import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
 import PolensSheet, { PolensReturn } from "./polens/polens-sheet"
+import PlayerCard from "./player-card/player-card"
+import type { PlayerTap } from "../engine/player-select"
 import {
   fetchAdminNeighborhood,
   getInviteCandidates,
@@ -93,6 +95,9 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [inbox, setInbox] = useState<InboxView | null>(null)
   const [itemsOpen, setItemsOpen] = useState(false)
   const [polensOpen, setPolensOpen] = useState(false)
+  // Card de perfil de outro jogador (mm3d-31): um por vez; `dismiss` sobe no
+  // toque no vazio do mundo (o card sai com a animação dele).
+  const [playerCard, setPlayerCard] = useState<{ tap: PlayerTap; gone: boolean; dismiss: number } | null>(null)
   const busyRef = useRef(false)
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -370,6 +375,19 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   )
   const suspended = hospitalUp
   const key = `${sceneKeyOf(scene)}#${mount}`
+  // Outra cena = outras sessões: o card da anterior não vale mais.
+  useEffect(() => setPlayerCard(null), [key])
+  const onPlayerTap = useCallback((tap: PlayerTap | null) => {
+    setPlayerCard((c) => {
+      if (!tap) return c ? { ...c, dismiss: c.dismiss + 1 } : c
+      if (c && c.tap.sessionId === tap.sessionId) return c
+      return { tap, gone: false, dismiss: 0 }
+    })
+  }, [])
+  const onPlayerGone = useCallback((sid: string) => setPlayerCard((c) => (c && c.tap.sessionId === sid ? { ...c, gone: true } : c)), [])
+  // Só fecha o card DAQUELA sessão (a saída animada não pode fechar o próximo).
+  const closePlayerCard = useCallback((sid: string) => setPlayerCard((c) => (c && c.tap.sessionId === sid ? null : c)), [])
+  const scenePlayer = { selectedPlayer: playerCard?.tap.sessionId ?? null, onPlayerTap, onPlayerGone }
 
   return (
     <>
@@ -385,6 +403,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onOpenStatus={setStatusBody}
           suspended={suspended}
           menuExtras={menuExtras}
+          {...scenePlayer}
         />
       ) : isHouse(scene) ? (
         <HouseView
@@ -399,6 +418,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onOpenStatus={setStatusBody}
           suspended={suspended}
           menuExtras={menuExtras}
+          {...scenePlayer}
         />
       ) : (
         <MeuMundoView
@@ -414,6 +434,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onOpenStatus={setStatusBody}
           suspended={suspended}
           menuExtras={menuExtras}
+          {...scenePlayer}
         />
       )}
 
@@ -445,6 +466,11 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         onOpenNotice={(n) => setInbox(n.mailId ? { view: "mail", tab: n.kind === "gift" ? "gift" : n.kind === "promo" ? "promo" : n.kind === "purchase" ? "receipt" : "official", open: n.mailId } : { view: "notices" })}
       />
       {!overlayOpen && <HudInbox counts={counts} onBell={() => setInbox({ view: "notices" })} onMail={() => setInbox({ view: "mail", tab: counts?.gifts ? "gift" : "official" })} />}
+
+      {/* Perfil de outro jogador (mm3d-31): fica até ser dispensado; some sob painéis e transições */}
+      {playerCard && !overlayOpen && (
+        <PlayerCard key={playerCard.tap.sessionId} tap={playerCard.tap} gone={playerCard.gone} dismiss={playerCard.dismiss} onClose={closePlayerCard} />
+      )}
 
       {statusBody && (
         <StatusScreen name={scene.me.name} body={statusBody} lifeTick={lifeTick} onClose={() => setStatusBody(null)} onOpenPolens={() => setPolensOpen(true)} />

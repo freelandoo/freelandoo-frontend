@@ -577,3 +577,29 @@
     animation-duration: 2400ms;
   }
 }
+/* Card de perfil de outro jogador (mm3d-31): entra subindo, sai descendo (só transform/opacity). */
+.cardIn {
+  animation: mm-card-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cardOut {
+  animation: mm-card-out 170ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+@keyframes mm-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+@keyframes mm-card-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cardIn,
+  .cardOut {
+    animation-duration: 1ms;
+  }
+}
