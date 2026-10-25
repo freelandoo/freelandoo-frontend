@@ -54,7 +54,7 @@
   clip-path: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%);
 }
 .fill {
-  background: linear-gradient(180deg, rgba(13, 9, 12, 0.92), rgba(5, 3, 5, 0.95));
+  background: linear-gradient(180deg, rgba(13, 9, 12, 0.86), rgba(5, 3, 5, 0.88));
 }
 .hot {
   background: linear-gradient(90deg, rgba(158, 0, 66, 0.96), rgba(242, 13, 115, 0.92));
@@ -256,7 +256,7 @@
   background: rgba(214, 167, 91, 0.85);
 }
 .gold::after {
-  background: linear-gradient(180deg, rgba(21, 19, 24, 0.95), rgba(8, 7, 11, 0.96));
+  background: linear-gradient(180deg, rgba(21, 19, 24, 0.86), rgba(8, 7, 11, 0.88));
 }
 .gold:not(:disabled):hover {
   color: #f5f1ed;
@@ -275,7 +275,7 @@
   background: rgba(245, 240, 237, 0.28);
 }
 .ghost::after {
-  background: rgba(8, 7, 11, 0.9);
+  background: rgba(8, 7, 11, 0.86);
 }
 .ghost:not(:disabled):hover {
   color: #f5f1ed;
@@ -354,7 +354,7 @@
   display: flex;
   flex-direction: column;
   width: min(360px, 88vw);
-  background: linear-gradient(90deg, rgba(8, 7, 11, 0) 0%, rgba(8, 7, 11, 0.82) 16%, rgba(8, 7, 11, 0.95) 100%);
+  background: linear-gradient(90deg, rgba(8, 7, 11, 0) 0%, rgba(8, 7, 11, 0.76) 16%, rgba(8, 7, 11, 0.87) 100%);
   transform: translateX(105%);
   transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
@@ -378,6 +378,88 @@
   height: 2px;
   background: linear-gradient(90deg, #ff006e, rgba(255, 0, 110, 0.1));
   box-shadow: 0 0 10px rgba(255, 0, 110, 0.45);
+}
+
+/* ═══ celular: tudo menor (o computador não muda) ═══
+ * Pedido do Alex (2026-10-25): fontes bem menores e o menu inteiro na tela,
+ * sem rolagem. Item de 44 px ainda é tocável com folga. */
+@media (max-width: 759px) {
+  .item {
+    height: 44px;
+  }
+  .icon {
+    left: 12px;
+  }
+  .icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .label {
+    left: 40px;
+    right: 34px;
+    font-size: 17px;
+    letter-spacing: 0.12em;
+  }
+  .hint {
+    left: 40px;
+    right: 34px;
+    bottom: 4px;
+    font-size: 10px;
+  }
+  .item[data-hint] .label {
+    top: 38%;
+  }
+  .arrow {
+    right: 12px;
+  }
+  .arrow svg {
+    width: 18px;
+    height: 18px;
+  }
+  .badge {
+    right: 32px;
+    font-size: 13px;
+    line-height: 15px;
+  }
+  .metal {
+    width: 30px;
+    right: 14px;
+  }
+  .pull {
+    width: 30px;
+    height: 111px;
+  }
+  .pullInner {
+    gap: 6px;
+  }
+  .pullInner svg {
+    width: 14px;
+    height: 14px;
+  }
+  .pullText {
+    font-size: 14px;
+  }
+  /* atalho de teclado não serve no celular (e come largura do botão) */
+  .kbd {
+    display: none;
+  }
+  /* botões: a altura mínima mora aqui (a classe do módulo vence o utilitário
+     do Tailwind, que fica numa camada); o corpo da letra vem do EvoButton. */
+  .btn {
+    min-height: 40px;
+    padding: 0 12px;
+    gap: 6px;
+  }
+  .btn[data-size="lg"] {
+    min-height: 44px;
+  }
+  .btn[data-size="sm"] {
+    min-height: 32px;
+    padding: 0 10px;
+  }
+  .drawer {
+    width: min(300px, 84vw);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

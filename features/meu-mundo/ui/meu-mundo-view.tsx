@@ -484,9 +484,9 @@ export default function MeuMundoView({
               variant="gold"
               onClick={() => setLevelOpen(true)}
               size="none"
-              className="!absolute min-h-14 max-w-[44vw] text-[17px] leading-tight"
-              style={{ bottom: bottom(196), right: SAFE.right }}
-              icon={<Construction className="h-5 w-5 shrink-0" />}
+              className="!absolute !min-h-10 max-w-[44vw] text-[14px] leading-tight"
+              style={{ bottom: bottom(84), right: SAFE.right }}
+              icon={<Construction className="h-4 w-4 shrink-0" />}
             >
               {t("changeHouse", "Alterar casa")}
             </EvoButton>
@@ -497,9 +497,9 @@ export default function MeuMundoView({
               onClick={() => gameRef.current?.interact()}
               aria-label={nearbyLabel}
               size="none"
-              className="!absolute min-h-16 min-w-16 max-w-[44vw] text-[18px] leading-tight"
+              className="!absolute !min-h-11 min-w-11 max-w-[44vw] text-[15px] leading-tight"
               style={{ bottom: bottom(24), right: SAFE.right }}
-              icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-6 w-6 shrink-0" /> : nearbyExit ? <Building2 className="h-6 w-6 shrink-0" /> : nearbyAction ? <DoorOpen className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
+              icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5 shrink-0" /> : nearbyExit ? <Building2 className="h-5 w-5 shrink-0" /> : nearbyAction ? <DoorOpen className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearbyLabel}
             </EvoButton>

@@ -13,6 +13,7 @@ import type { BodyId, LifeNeed, LifeNeedId } from "../../types"
 import { Chamfer, EVO, archivo } from "../status/evo-skin"
 import { PORTRAIT } from "../portraits"
 import { NEEDS_TIMING, freshNeedsMemory, pickNeed, type NeedLine } from "./needs-logic"
+import { DRAWER_EVENT } from "../hud/hud-kit"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -50,7 +51,7 @@ export function needText(line: NeedLine, t: Tr) {
 }
 
 function NeedIcon({ id }: { id: LifeNeedId }) {
-  const cls = "h-5 w-5"
+  const cls = "h-5 w-5 max-[759px]:h-4 max-[759px]:w-4"
   if (id === "hospital" || id === "unwell") return <HeartPulse className={cls} />
   if (id === "starving" || id === "hungry") return <Utensils className={cls} />
   if (id === "sleep") return <Moon className={cls} />
@@ -69,6 +70,13 @@ export default function NeedsBubble({ needs, tick, body, below = 0, onOpenStatus
   const t = useTranslations("MeuMundo")
   const memory = useRef(freshNeedsMemory())
   const [line, setLine] = useState<NeedLine | null>(null)
+  // Com a gaveta do menu aberta o balão some (ele cobriria o topo do menu).
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  useEffect(() => {
+    const on = (e: Event) => setDrawerOpen(!!(e as CustomEvent<boolean>).detail)
+    window.addEventListener(DRAWER_EVENT, on)
+    return () => window.removeEventListener(DRAWER_EVENT, on)
+  }, [])
   useEffect(() => {
     const r = pickNeed(needs, memory.current, Date.now())
     memory.current = r.memory
@@ -79,7 +87,7 @@ export default function NeedsBubble({ needs, tick, body, below = 0, onOpenStatus
     // `needs` muda junto com `tick` (mesma mensagem).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick])
-  if (!line) return null
+  if (!line || drawerOpen) return null
   const urgent = line.level <= 2
   return (
     <div
@@ -88,20 +96,20 @@ export default function NeedsBubble({ needs, tick, body, below = 0, onOpenStatus
       role="status"
       aria-live="polite"
     >
-      <Chamfer cut={12} border={urgent ? EVO.perigo : EVO.dourado} width={1.5} className="pointer-events-auto max-w-[min(92vw,420px)]">
-        <div className="flex items-stretch gap-2.5 p-2 pr-1.5">
+      <Chamfer cut={12} border={urgent ? EVO.perigo : EVO.dourado} width={1.5} className="pointer-events-auto max-w-[min(92vw,420px)] max-[759px]:max-w-[min(92vw,360px)]">
+        <div className="flex items-stretch gap-2.5 p-2 pr-1.5 max-[759px]:gap-2 max-[759px]:p-1.5 max-[759px]:pr-1">
           {/* eslint-disable-next-line @next/next/no-img-element -- retrato pequeno, local, só no jogo (admin) */}
-          <img src={PORTRAIT[body] ?? PORTRAIT.normal} alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-full object-cover" style={{ boxShadow: `0 0 0 2px ${urgent ? EVO.perigo : EVO.dourado}` }} />
+          <img src={PORTRAIT[body] ?? PORTRAIT.normal} alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-full object-cover max-[759px]:h-10 max-[759px]:w-10" style={{ boxShadow: `0 0 0 2px ${urgent ? EVO.perigo : EVO.dourado}` }} />
           <div className="flex min-w-0 flex-1 flex-col justify-center">
             <div className="flex items-center gap-1.5" style={{ color: urgent ? "#ff6b78" : EVO.ambar }}>
               <NeedIcon id={line.ids[0]} />
               {line.ids[1] && <NeedIcon id={line.ids[1]} />}
             </div>
-            <p className={`${archivo.className} mt-0.5 text-[14px] font-semibold leading-5`} style={{ color: EVO.branco }}>
+            <p className={`${archivo.className} mt-0.5 text-[14px] font-semibold leading-5 max-[759px]:text-[12px] max-[759px]:leading-4`} style={{ color: EVO.branco }}>
               {needText(line, t)}
             </p>
             {onOpenStatus && (
-              <button type="button" onClick={onOpenStatus} className={`${archivo.className} mt-0.5 self-start text-[12px] font-semibold uppercase tracking-[0.14em] underline`} style={{ color: EVO.douradoClaro }}>
+              <button type="button" onClick={onOpenStatus} className={`${archivo.className} mt-0.5 self-start text-[12px] font-semibold uppercase tracking-[0.14em] underline max-[759px]:mt-0 max-[759px]:py-0.5 max-[759px]:text-[10px]`} style={{ color: EVO.douradoClaro }}>
                 {t("needOpenStatus", "Ver status")}
               </button>
             )}

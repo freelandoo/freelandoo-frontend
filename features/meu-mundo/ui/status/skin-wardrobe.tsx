@@ -168,19 +168,19 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
   if (data && entry) {
     if (entry.equipped)
       action = (
-        <EvoButton variant="ghost" size="lg" disabled icon={<Shirt className="h-5 w-5" />}>
+        <EvoButton variant="ghost" size="lg" disabled icon={<Shirt className="h-5 w-5 max-[759px]:h-4 max-[759px]:w-4" />}>
           {t("skinInUse", "Em uso")}
         </EvoButton>
       )
     else if (owned)
       action = (
-        <EvoButton variant="primary" size="lg" disabled={busy} onClick={() => void equip(entry.id)} icon={<Shirt className="h-5 w-5" />}>
+        <EvoButton variant="primary" size="lg" disabled={busy} onClick={() => void equip(entry.id)} icon={<Shirt className="h-5 w-5 max-[759px]:h-4 max-[759px]:w-4" />}>
           {t("skinUse", "Usar")}
         </EvoButton>
       )
     else
       action = (
-        <EvoButton variant="gold" size="lg" disabled={busy || coins < entry.cost} onClick={() => void buy()} icon={<Sparkles className="h-5 w-5" />}>
+        <EvoButton variant="gold" size="lg" disabled={busy || coins < entry.cost} onClick={() => void buy()} icon={<Sparkles className="h-5 w-5 max-[759px]:h-4 max-[759px]:w-4" />}>
           {entry.cost > 0
             ? t("skinAcquirePrice", "Adquirir · {price}").replace("{price}", coinsText(entry.cost))
             : data.wardrobe.admin
@@ -210,12 +210,12 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
         className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 px-4"
         style={{ paddingTop: "max(14px, env(safe-area-inset-top))" }}
       >
-        <div className={`${teko.className} text-[34px] font-bold uppercase leading-none tracking-[0.18em] sm:text-[44px]`} style={{ color: EVO.branco, textShadow: `0 0 18px ${EVO.magenta}` }}>
+        <div className={`${teko.className} text-[34px] font-bold uppercase leading-none tracking-[0.18em] sm:text-[44px] max-[759px]:text-[22px]`} style={{ color: EVO.branco, textShadow: `0 0 18px ${EVO.magenta}` }}>
           {t("skinTitle", "Vestuário")}
         </div>
         <Chamfer cut={10} border={`${EVO.dourado}aa`} className="pointer-events-auto">
-          <div className={`${teko.className} flex items-center gap-2 px-3 pb-1 pt-2 text-[22px] font-semibold uppercase leading-none`} style={{ color: EVO.douradoClaro }}>
-            <Coins className="h-5 w-5" /> {coinsText(coins)}
+          <div className={`${teko.className} flex items-center gap-2 px-3 pb-1 pt-2 text-[22px] font-semibold uppercase leading-none max-[759px]:gap-1.5 max-[759px]:px-2 max-[759px]:pb-0.5 max-[759px]:pt-1.5 max-[759px]:text-[16px]`} style={{ color: EVO.douradoClaro }}>
+            <Coins className="h-5 w-5 max-[759px]:h-4 max-[759px]:w-4" /> {coinsText(coins)}
           </div>
         </Chamfer>
       </div>
@@ -225,51 +225,51 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
         type="button"
         onClick={() => go(-1)}
         aria-label={t("skinPrev", "Personagem anterior")}
-        className="absolute left-1 top-1/2 flex h-24 w-14 -translate-y-1/2 items-center justify-center sm:left-6 sm:w-20"
+        className="absolute left-1 top-1/2 flex h-24 w-14 -translate-y-1/2 items-center justify-center sm:left-6 sm:w-20 max-[759px]:h-16 max-[759px]:w-10"
         style={{ color: EVO.branco, filter: `drop-shadow(0 0 10px ${EVO.magenta})` }}
       >
-        <ChevronLeft className="h-14 w-14 sm:h-20 sm:w-20" strokeWidth={2.4} />
+        <ChevronLeft className="h-14 w-14 sm:h-20 sm:w-20 max-[759px]:h-10 max-[759px]:w-10" strokeWidth={2.4} />
       </button>
       <button
         type="button"
         onClick={() => go(1)}
         aria-label={t("skinNext", "Próximo personagem")}
-        className="absolute right-1 top-1/2 flex h-24 w-14 -translate-y-1/2 items-center justify-center sm:right-6 sm:w-20"
+        className="absolute right-1 top-1/2 flex h-24 w-14 -translate-y-1/2 items-center justify-center sm:right-6 sm:w-20 max-[759px]:h-16 max-[759px]:w-10"
         style={{ color: EVO.branco, filter: `drop-shadow(0 0 10px ${EVO.magenta})` }}
       >
-        <ChevronRight className="h-14 w-14 sm:h-20 sm:w-20" strokeWidth={2.4} />
+        <ChevronRight className="h-14 w-14 sm:h-20 sm:w-20 max-[759px]:h-10 max-[759px]:w-10" strokeWidth={2.4} />
       </button>
 
       {/* ficha do personagem */}
       <div className="absolute inset-x-0 bottom-0 flex justify-center px-3" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
         <Chamfer cut={18} border={`linear-gradient(135deg, ${EVO.magenta}, ${EVO.ritual} 55%, ${EVO.magenta})`} width={2} className="w-full max-w-[640px]">
-          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between max-[759px]:gap-2 max-[759px]:p-2.5">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`${teko.className} px-2 pb-0.5 pt-1 text-[15px] font-semibold uppercase leading-none tracking-[0.18em]`}
+                  className={`${teko.className} px-2 pb-0.5 pt-1 text-[15px] font-semibold uppercase leading-none tracking-[0.18em] max-[759px]:px-1.5 max-[759px]:pt-[3px] max-[759px]:text-[12px]`}
                   style={{ clipPath: chamfer(6), background: art.body === null ? EVO.douradoClaro : EVO.magenta, color: art.body === null ? EVO.preto : EVO.branco }}
                 >
                   {art.body === null ? t("skinKindStandard", "Padrão") : t("skinKindSkin", "Skin")}
                 </span>
                 {art.body === null && (
-                  <span className={`${teko.className} text-[17px] uppercase tracking-[0.14em]`} style={{ color: EVO.douradoClaro }}>
+                  <span className={`${teko.className} text-[17px] uppercase tracking-[0.14em] max-[759px]:text-[13px]`} style={{ color: EVO.douradoClaro }}>
                     {t("skinCondition", "Condição: {c}").replace("{c}", conditionName(condition, t))}
                   </span>
                 )}
                 {!owned && (
-                  <span className={`${teko.className} text-[17px] uppercase tracking-[0.14em]`} style={{ color: EVO.rosaClaro }}>
+                  <span className={`${teko.className} text-[17px] uppercase tracking-[0.14em] max-[759px]:text-[13px]`} style={{ color: EVO.rosaClaro }}>
                     {t("skinHologram", "Holograma · ainda não é seu")}
                   </span>
                 )}
               </div>
-              <div className={`${teko.className} mt-1 truncate text-[40px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+              <div className={`${teko.className} mt-1 truncate text-[40px] font-bold uppercase leading-none max-[759px]:mt-0.5 max-[759px]:text-[24px]`} style={{ color: EVO.branco }}>
                 {name}
               </div>
-              <p className="mt-1 text-[14px] leading-snug" style={{ color: EVO.mudo }}>
+              <p className="mt-1 text-[14px] leading-snug max-[759px]:mt-0.5 max-[759px]:text-[12px]" style={{ color: EVO.mudo }}>
                 {t(art.taglineKey, art.taglineFallback)}
               </p>
-              <div className="mt-2 flex items-center gap-1.5">
+              <div className="mt-2 flex items-center gap-1.5 max-[759px]:mt-1.5">
                 {SKINS.map((s, i) => (
                   <button
                     key={s.id}
@@ -288,13 +288,13 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               {failed ? (
-                <span className={`${teko.className} text-[20px] uppercase`} style={{ color: EVO.perigo }}>
+                <span className={`${teko.className} text-[20px] uppercase max-[759px]:text-[15px]`} style={{ color: EVO.perigo }}>
                   {t("skinListFail", "Não carregou o vestuário")}
                 </span>
               ) : (
                 action
               )}
-              <EvoButton variant="ghost" size="lg" onClick={onClose} icon={<X className="h-5 w-5" />} kbd="ESC">
+              <EvoButton variant="ghost" size="lg" onClick={onClose} icon={<X className="h-5 w-5 max-[759px]:h-4 max-[759px]:w-4" />} kbd="ESC">
                 {t("stBack", "Voltar")}
               </EvoButton>
             </div>

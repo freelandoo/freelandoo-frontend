@@ -58,7 +58,7 @@ export function chamfer(cut: number) {
 export function Chamfer({
   cut = 16,
   border = EVO.linhaForte,
-  fill = "linear-gradient(180deg, rgba(16,10,14,0.96), rgba(10,7,11,0.96))",
+  fill = "linear-gradient(180deg, rgba(16,10,14,0.86), rgba(10,7,11,0.86))",
   width = 1,
   className = "",
   style,

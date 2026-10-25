@@ -386,9 +386,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               onClick={() => gameRef.current?.interact()}
               aria-label={nearbyLabel}
               size="none"
-              className="!absolute min-h-16 min-w-16 max-w-[48vw] text-[18px] leading-tight"
+              className="!absolute !min-h-11 min-w-11 max-w-[48vw] text-[15px] leading-tight"
               style={{ bottom: bottom(24), right: SAFE.right }}
-              icon={nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-6 w-6 shrink-0" /> : nearPortal ? <Home className="h-6 w-6 shrink-0" /> : <Hand className="h-5 w-5 shrink-0" />}
+              icon={nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5 shrink-0" /> : nearPortal ? <Home className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearPlace ? `${nearbyLabel} · ${placeTag}` : nearbyLabel}
             </EvoButton>

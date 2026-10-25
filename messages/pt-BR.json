@@ -7512,6 +7512,20 @@
     "evMealPart": "Parte da refeição das {h} h: {item}.",
     "evMealLost": "A refeição das {h} h ficou para trás (a penalidade terminou).",
     "evBuy": "Comprou {n}× {item} para a geladeira ({p} moedas).",
-    "evRoutineFridge": "Rotina: comeu {item} da geladeira."
+    "evRoutineFridge": "Rotina: comeu {item} da geladeira.",
+    "stMealsRuleFridge": "Coma de 2 h antes até 2 h depois de cada horário, pela geladeira da sua casa. Depois disso, ele vai perdendo saciedade, energia e saúde por 2 h.",
+    "mealPartial": "Parcial",
+    "mealLate": "Atrasada",
+    "stMood": "Humor",
+    "atIntelligenceShort": "Sobe estudando (até 5 h/dia). Nunca cai abaixo de 90% do pico.",
+    "atStrengthShort": "Sobe treinando (até 4 h/dia); suplementos aceleram. Sem treino cai até 60% do pico.",
+    "atSpeedShort": "Sobe treinando. Sem treino cai até 60% do pico; voltar é mais rápido.",
+    "stMoreEffects": "+{n} efeitos",
+    "stNoHoursYet": "Nada contado hoje ainda.",
+    "stForHours": "Por",
+    "actDoStudy": "Estudar",
+    "actDoTrain": "Treinar",
+    "actDoWork": "Trabalhar",
+    "stRoutineShort": "É uma rotina: rende nas primeiras horas do dia (estudo 5 h, treino 4 h), descansa, dorme às 23 h e volta às 7 h. Constância rende mais que maratona."
   }
 }

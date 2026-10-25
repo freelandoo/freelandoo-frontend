@@ -373,7 +373,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           style={{ top: "max(12px, env(safe-area-inset-top))" }}
         >
           <Chamfer cut={10} border="#ff5fae" width={1.5} className="pointer-events-auto max-w-full">
-            <div className={`${teko.className} flex flex-wrap items-center gap-2 py-1 pl-3 pr-1 text-[18px] font-medium uppercase leading-none tracking-[0.08em]`} style={{ color: EVO.branco }}>
+            <div className={`${teko.className} flex flex-wrap items-center gap-2 py-1 pl-3 pr-1 text-[18px] font-medium uppercase leading-none tracking-[0.08em] max-[759px]:gap-1.5 max-[759px]:py-0.5 max-[759px]:pl-2 max-[759px]:text-[14px]`} style={{ color: EVO.branco }}>
               {active ? (
                 active.role === "host" ? (
                   <>
@@ -528,7 +528,7 @@ function InvitePanel({ onClose, onSent }: { onClose: () => void; onSent: (v: Vis
       <p style={{ color: EVO.mudo }}>{t("inviteRule", "Uma visita por vez. O convite expira em 5 minutos.")}</p>
       <div className="mt-3 max-h-48 overflow-y-auto" style={{ boxShadow: `inset 0 0 0 1px ${EVO.linhaForte}`, background: "rgba(0,0,0,0.35)" }}>
         {list === null ? (
-          <div className={`${teko.className} flex items-center gap-2 p-3 text-[17px] uppercase tracking-[0.1em]`}>
+          <div className={`${teko.className} flex items-center gap-2 p-3 text-[17px] uppercase tracking-[0.1em] max-[759px]:p-2 max-[759px]:text-[14px]`}>
             <Loader2 className="h-4 w-4 animate-spin" />
             {t("loadingShort", "Carregando…")}
           </div>
@@ -546,11 +546,11 @@ function InvitePanel({ onClose, onSent }: { onClose: () => void; onSent: (v: Vis
                 setPick(c.name)
                 setManual("")
               }}
-              className="flex w-full items-center justify-between border-b px-3 py-2 text-left disabled:opacity-40"
+              className="flex w-full items-center justify-between border-b px-3 py-2 text-left disabled:opacity-40 max-[759px]:min-h-9 max-[759px]:py-1.5"
               style={{ borderColor: EVO.linha, background: pick === c.name ? "linear-gradient(90deg, rgba(158,0,66,0.9), rgba(242,13,115,0.8))" : undefined }}
             >
               <span className="font-bold">@{c.name}</span>
-              {!c.available && <span className={`${teko.className} text-[14px] uppercase tracking-[0.1em]`}>{t("inVisit", "Em visita")}</span>}
+              {!c.available && <span className={`${teko.className} text-[14px] uppercase tracking-[0.1em] max-[759px]:text-[12px]`}>{t("inVisit", "Em visita")}</span>}
             </button>
           ))
         )}

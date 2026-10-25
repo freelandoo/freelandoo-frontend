@@ -34,7 +34,7 @@ const CHIP: Record<ChipTone, [string, string]> = {
 
 export function HudChip({ tone = "escuro", icon, children, onClick, title }: { tone?: ChipTone; icon?: ReactNode; children: ReactNode; onClick?: () => void; title?: string }) {
   const [bg, fg] = CHIP[tone]
-  const cls = `${teko.className} inline-flex h-[22px] items-center gap-1 px-1.5 pt-[2px] text-[15px] font-medium uppercase leading-none tracking-[0.08em]`
+  const cls = `${teko.className} inline-flex h-[22px] items-center gap-1 px-1.5 pt-[2px] text-[15px] max-[759px]:h-5 max-[759px]:text-[13px] font-medium uppercase leading-none tracking-[0.08em]`
   const style: CSSProperties = { background: bg, color: fg, boxShadow: tone === "ouro" ? undefined : `inset 0 0 0 1px ${fg}44` }
   return onClick ? (
     <button type="button" onClick={onClick} className={cls} style={style} title={title}>
@@ -48,6 +48,9 @@ export function HudChip({ tone = "escuro", icon, children, onClick, title }: { t
     </span>
   )
 }
+
+/** Evento de janela: a gaveta abriu (true) ou fechou (false). */
+export const DRAWER_EVENT = "mm-drawer"
 
 // ═══ a gaveta ══════════════════════════════════════════════════════════════
 export interface DrawerItem {
@@ -116,6 +119,15 @@ export function Drawer({
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [hotkeys, open, onOpenChange, close])
+
+  // Gaveta aberta: o balão de avisos (que mora na casca, acima da cena) se
+  // esconde para não cobrir o topo do menu (needs-bubble ouve este evento).
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(DRAWER_EVENT, { detail: open }))
+    return () => {
+      if (open) window.dispatchEvent(new CustomEvent(DRAWER_EVENT, { detail: false }))
+    }
+  }, [open])
 
   // Ao abrir, o foco vai para o primeiro item (teclado e leitor de tela).
   useEffect(() => {
@@ -196,7 +208,7 @@ export function Drawer({
       >
         <div className={`${s.slot} relative pb-1 pt-3`}>
           <div className="flex items-end justify-between">
-            <span className={`${teko.className} text-[19px] font-semibold uppercase leading-none tracking-[0.5em]`} style={{ color: EVO.douradoClaro }}>
+            <span className={`${teko.className} text-[19px] font-semibold uppercase leading-none tracking-[0.5em] max-[759px]:text-[15px] max-[759px]:tracking-[0.4em]`} style={{ color: EVO.douradoClaro }}>
               {heading}
             </span>
           </div>
@@ -211,7 +223,7 @@ export function Drawer({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div ref={listRef} className="mt-3 flex min-h-0 flex-1 flex-col gap-[7px] overflow-y-auto pb-2 pr-0.5" style={{ overscrollBehavior: "contain" }}>
+        <div ref={listRef} className="mt-3 flex min-h-0 flex-1 flex-col gap-[7px] overflow-y-auto pb-2 pr-0.5 max-[759px]:mt-2 max-[759px]:gap-[5px]" style={{ overscrollBehavior: "contain" }}>
           {items.map((it, i) => (
             <div key={it.id} className={s.slot} style={{ transitionDelay: open ? `${60 + i * 40}ms` : "0ms" }}>
               <MenuItem
@@ -225,7 +237,7 @@ export function Drawer({
           ))}
         </div>
         {footer && (
-          <div className={`${s.slot} ${archivo.className} border-t pt-2 text-[11px] font-medium leading-4`} style={{ borderColor: EVO.linha, color: EVO.mudo }}>
+          <div className={`${s.slot} ${archivo.className} border-t pt-2 text-[11px] font-medium leading-4 max-[759px]:text-[10px]`} style={{ borderColor: EVO.linha, color: EVO.mudo }}>
             {footer}
           </div>
         )}
@@ -280,9 +292,17 @@ export function EvoButton({
   /** "none": quem chama dá altura e corpo da letra (sem classe concorrente). */
   size?: "sm" | "md" | "lg" | "none"
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const sz = size === "lg" ? "min-h-14 px-5 text-[22px]" : size === "sm" ? "min-h-9 px-3 text-[16px]" : size === "md" ? "text-[19px]" : ""
+  // No celular (< 760 px) a letra desce; a altura vem do hud.module.css (`data-size`).
+  const sz =
+    size === "lg"
+      ? "min-h-14 px-5 text-[22px] max-[759px]:text-[16px]"
+      : size === "sm"
+        ? "min-h-9 px-3 text-[16px] max-[759px]:text-[14px]"
+        : size === "md"
+          ? "text-[19px] max-[759px]:text-[15px]"
+          : ""
   return (
-    <button type="button" className={`${s.btn} ${s[variant]} ${teko.className} ${sz} ${className}`} {...rest}>
+    <button type="button" data-size={size} className={`${s.btn} ${s[variant]} ${teko.className} ${sz} ${className}`} {...rest}>
       {icon}
       {children != null && <span className="pt-[3px]">{children}</span>}
       {kbd && <kbd className={s.kbd}>{kbd}</kbd>}
@@ -347,21 +367,21 @@ export function EvoDialog({
       <div role="dialog" aria-modal="true" aria-labelledby={labelId} className={`relative flex max-h-full w-full ${width} flex-col`}>
         <Chamfer cut={18} border={`${EVO.dourado}bb`} width={1.5} className="flex max-h-full min-h-0 flex-col" style={{ boxShadow: "none" }}>
           <div className="flex max-h-[calc(100dvh-24px)] min-h-0 flex-col">
-            <div className="relative px-5 pb-2 pt-4">
+            <div className="relative px-5 pb-2 pt-4 max-[759px]:px-3 max-[759px]:pb-1.5 max-[759px]:pt-3">
               {eyebrow && (
-                <div className={`${archivo.className} text-[11px] font-semibold uppercase tracking-[0.28em]`} style={{ color: EVO.douradoClaro }}>
+                <div className={`${archivo.className} text-[11px] font-semibold uppercase tracking-[0.28em] max-[759px]:text-[10px]`} style={{ color: EVO.douradoClaro }}>
                   {eyebrow}
                 </div>
               )}
-              <h2 id={labelId} className={`${teko.className} pr-12 text-[34px] font-bold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
+              <h2 id={labelId} className={`${teko.className} pr-12 text-[34px] font-bold uppercase leading-[0.95] max-[759px]:pr-10 max-[759px]:text-[22px]`} style={{ color: EVO.branco }}>
                 {title}
               </h2>
-              <div className={`${s.fio} mt-2`} />
+              <div className={`${s.fio} mt-2 max-[759px]:mt-1.5`} />
               {onClose && (
                 <button
                   type="button"
                   onClick={onClose}
-                  className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center"
+                  className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center max-[759px]:right-2 max-[759px]:top-2 max-[759px]:h-8 max-[759px]:w-8"
                   style={{ color: EVO.douradoClaro, background: "rgba(8,7,11,0.9)", boxShadow: `inset 0 0 0 1.5px ${EVO.dourado}99` }}
                   aria-label={t("close", "Fechar")}
                 >
@@ -369,11 +389,11 @@ export function EvoDialog({
                 </button>
               )}
             </div>
-            <div className={`${archivo.className} min-h-0 flex-1 overflow-y-auto px-5 pb-4 text-[14px] leading-5`} style={{ color: EVO.branco }}>
+            <div className={`${archivo.className} min-h-0 flex-1 overflow-y-auto px-5 pb-4 text-[14px] leading-5 max-[759px]:px-3 max-[759px]:pb-3 max-[759px]:text-[12px] max-[759px]:leading-4`} style={{ color: EVO.branco }}>
               {children}
             </div>
             {footer && (
-              <div className="flex flex-wrap gap-2 border-t px-5 py-3" style={{ borderColor: EVO.linha }}>
+              <div className="flex flex-wrap gap-2 border-t px-5 py-3 max-[759px]:px-3 max-[759px]:py-2" style={{ borderColor: EVO.linha }}>
                 {footer}
               </div>
             )}
@@ -387,8 +407,8 @@ export function EvoDialog({
 /** Linha "rótulo · valor" dos modais (ficha da casa etc.). */
 export function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b py-1.5" style={{ borderColor: EVO.linha }}>
-      <span className={`${teko.className} text-[17px] uppercase tracking-[0.14em]`} style={{ color: EVO.mudo }}>
+    <div className="flex items-baseline justify-between gap-3 border-b py-1.5 max-[759px]:py-1" style={{ borderColor: EVO.linha }}>
+      <span className={`${teko.className} text-[17px] uppercase tracking-[0.14em] max-[759px]:text-[14px]`} style={{ color: EVO.mudo }}>
         {label}
       </span>
       <span className="text-right font-semibold">{children}</span>
@@ -400,14 +420,14 @@ export function InfoRow({ label, children }: { label: string; children: ReactNod
 /** Sem fôlego (a sala parou a corrida até ele recuperar 30%). */
 export function WindedToast() {
   const t = useTranslations("MeuMundo")
-  return <EvoToast icon={<Wind className="h-4 w-4 shrink-0" />}>{t("winded", "Sem fôlego — andando até recuperar")}</EvoToast>
+  return <EvoToast icon={<Wind className="h-4 w-4 shrink-0 max-[759px]:h-3.5 max-[759px]:w-3.5" />}>{t("winded", "Sem fôlego — andando até recuperar")}</EvoToast>
 }
 
 export function EvoToast({ icon, children, tone = "ouro" }: { icon?: ReactNode; children: ReactNode; tone?: "ouro" | "magenta" }) {
   const c = tone === "magenta" ? "#ff5fae" : EVO.dourado
   return (
     <Chamfer cut={10} border={c} width={1.5}>
-      <div role="status" className={`${teko.className} flex items-center gap-2 px-4 pb-1.5 pt-2 text-[18px] font-medium uppercase leading-none tracking-[0.1em]`} style={{ color: EVO.branco }}>
+      <div role="status" className={`${teko.className} flex items-center gap-2 px-4 pb-1.5 pt-2 text-[18px] font-medium uppercase leading-none tracking-[0.1em] max-[759px]:gap-1.5 max-[759px]:px-2.5 max-[759px]:pb-1 max-[759px]:pt-1.5 max-[759px]:text-[13px]`} style={{ color: EVO.branco }}>
         {icon}
         {children}
       </div>

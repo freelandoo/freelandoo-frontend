@@ -434,7 +434,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
           onClick={() => gameRef.current?.sleep(8)}
           aria-label={t("bedSleep", "Dormir")}
           className="!absolute"
-          style={{ bottom: bottom(isTouch ? 104 : 96), right: SAFE.right }}
+          style={{ bottom: bottom(isTouch ? 80 : 96), right: SAFE.right }}
           icon={<Moon className="h-5 w-5 shrink-0" />}
         >
           {t("bedSleep", "Dormir")}
@@ -449,7 +449,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
           onClick={() => gameRef.current?.leaveRide()}
           aria-label={t("leaveVehicle", "Descer")}
           className="!absolute"
-          style={{ bottom: bottom(isTouch ? 104 : 96), right: SAFE.right }}
+          style={{ bottom: bottom(isTouch ? 80 : 96), right: SAFE.right }}
           icon={<VehicleIcon kind={rideKind} className="h-5 w-5 shrink-0" />}
         >
           {t("leaveVehicle", "Descer")}
@@ -474,7 +474,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
               size="none"
               onClick={() => gameRef.current?.interact()}
               aria-label={actionLabel}
-              className="!absolute min-h-16 min-w-16 max-w-[44vw] text-[18px] leading-tight"
+              className="!absolute !min-h-11 min-w-11 max-w-[44vw] text-[15px] leading-tight"
               style={{ bottom: bottom(24), right: SAFE.right }}
               icon={actionIcon}
             >

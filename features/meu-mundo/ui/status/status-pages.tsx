@@ -325,6 +325,30 @@ function Portrait({ src, size, round = false }: { src: string; size: number; rou
 function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act">) {
   const c = life.character
   const days = Math.max(1, Math.floor((new Date(life.now).getTime() - new Date(c.bornAt).getTime()) / 86400000) + 1)
+  // Celular: uma faixa só (~44 px) — retrato, STATUS e a página; nome à direita.
+  if (compact) {
+    return (
+      <div className="flex shrink-0 items-center gap-2 border-b pb-1.5" style={{ borderColor: `${EVO.magenta}55` }}>
+        <Portrait src={portrait} size={28} round />
+        <div className="min-w-0 flex-1">
+          <div className={`${teko.className} font-bold uppercase leading-[0.9]`} style={{ fontSize: 24, color: EVO.branco }}>
+            {t("stTitle", "Status")}
+          </div>
+          <div className={`${archivo.className} truncate text-[10.5px] font-medium uppercase leading-tight tracking-[0.08em]`} style={{ color: EVO.douradoClaro }}>
+            {pageTitle(page, t)}
+          </div>
+        </div>
+        <div className="min-w-0 max-w-[42%] text-right">
+          <div className={`${teko.className} truncate text-[16px] font-semibold uppercase leading-none`} style={{ color: EVO.branco }}>
+            {name}
+          </div>
+          <div className={`${archivo.className} truncate text-[10px] leading-tight`} style={{ color: EVO.mudo }}>
+            {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {t("stCoins", "{n} moedas").replace("{n}", String(life.wallet.coins))}
+          </div>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="flex items-center gap-4 border-b pb-3" style={{ borderColor: `${EVO.magenta}55` }}>
       <div className="min-w-0 flex-1">
@@ -795,7 +819,7 @@ function Routine({ life, compact, t, act }: PageProps) {
             </div>
           ))}
           <p className={`${archivo.className} mt-2 text-[15px]`} style={{ color: EVO.mudo }}>
-            {t("stMealsText", "Cada refeição vale por 2 h. Entre no jogo e dê comida (página Mercado). Perder refeição deixa ele triste e estressado.")}
+            {t("stMealsRuleFridge", "Coma de 2 h antes até 2 h depois de cada horário, pela geladeira da sua casa. Depois disso, ele vai perdendo saciedade, energia e saúde por 2 h.")}
           </p>
         </Plate>
         <Plate title={t("stHoursToday", "Horas de hoje")}>
@@ -992,7 +1016,725 @@ function History({ life, compact, t }: PageProps) {
   )
 }
 
+// ─── celular (compacto) ───────────────────────────────────────────────────────
+// No celular cada página cabe na tela (~600 px de altura úteis), sem rolagem,
+// como no computador: letra menor, grades de 2 colunas, listas limitadas ao que
+// cabe e textos longos trocados por resumos. O layout do computador (acima)
+// não passa por aqui.
+
+/** Ícones de 20 px das tabelas acima, encolhidos para os anéis pequenos. */
+const SM_ICON = "flex [&>svg]:h-3.5 [&>svg]:w-3.5"
+
+/** Placa do celular: título de 15 px, recheio de 8 px. */
+function MiniPlate({ title, aside, children, className = "" }: { title?: string; aside?: ReactNode; children?: ReactNode; className?: string }) {
+  return (
+    <Chamfer cut={10} className={className}>
+      <div className="h-full p-2">
+        {title && (
+          <div className="mb-1 flex items-baseline justify-between gap-2">
+            <h3 className={`${teko.className} truncate text-[16px] font-semibold uppercase leading-none tracking-wide`} style={{ color: EVO.ambar }}>
+              {title}
+            </h3>
+            {aside}
+          </div>
+        )}
+        {children}
+      </div>
+    </Chamfer>
+  )
+}
+
+function MiniTag({ children, tone = "ouro" }: { children: ReactNode; tone?: "ouro" | "perigo" | "bom" | "mudo" }) {
+  const bg = tone === "perigo" ? EVO.perigo : tone === "bom" ? EVO.bom : tone === "mudo" ? EVO.fumaca : EVO.douradoClaro
+  return (
+    <span
+      className={`${archivo.className} inline-block min-w-0 max-w-full truncate whitespace-nowrap px-1 text-[9.5px] font-bold uppercase leading-[14px] tracking-wide`}
+      style={{ background: bg, color: tone === "mudo" ? EVO.branco : EVO.preto }}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** Linha "nome … valor" de 22 px (rótulo 10 px, valor 12 px). */
+function MiniRow({ label, value, tone }: { label: string; value: ReactNode; tone?: string }) {
+  return (
+    <div className="flex h-[22px] items-center justify-between gap-2 border-b" style={{ borderColor: EVO.linha }}>
+      <span className={`${archivo.className} truncate text-[10px]`} style={{ color: EVO.branco }}>
+        {label}
+      </span>
+      <span className={`${archivo.className} shrink-0 whitespace-nowrap text-[12px] font-semibold tabular-nums`} style={{ color: tone ?? EVO.douradoClaro }}>
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function MiniButton({
+  children,
+  onClick,
+  disabled,
+  active,
+  h = 34,
+  className = "",
+  label,
+  tight = false,
+}: {
+  children: ReactNode
+  onClick: () => void
+  disabled?: boolean
+  active?: boolean
+  h?: number
+  className?: string
+  label?: string
+  /** Menos respiro (botões de 3 por linha em 320 px). */
+  tight?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      aria-pressed={active}
+      className={`${teko.className} inline-flex items-center justify-center gap-1 pt-[2px] font-semibold uppercase leading-none ${tight ? "px-1 tracking-normal" : "px-2 tracking-wider"} transition-transform active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      style={{
+        height: h,
+        fontSize: h >= 32 && !tight ? 15 : 14,
+        clipPath: "polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px))",
+        background: active ? EVO.magenta : `linear-gradient(180deg, ${EVO.carvao2}, ${EVO.preto})`,
+        color: active ? EVO.branco : EVO.douradoClaro,
+        boxShadow: `inset 0 0 0 1.5px ${active ? EVO.rosaClaro : EVO.douradoEscuro}`,
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+/** Anel de progresso pequeno (o Gauge do computador tem número de 54 px). */
+function MiniGauge({ value, label, size = 64, color = EVO.ambar }: { value: number; label: string; size?: number; color?: string }) {
+  const r = size / 2 - 4
+  const c = 2 * Math.PI * r
+  const p = Math.max(0, Math.min(1, value / 100))
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="rgba(0,0,0,0.5)" stroke={EVO.fumaca} strokeWidth={5} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={5} strokeDasharray={`${c * p} ${c}`} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={`${teko.className} font-bold leading-[0.85]`} style={{ fontSize: Math.round(size * 0.36), color: EVO.branco }}>
+          {Math.round(value)}
+        </span>
+        <span className={`${archivo.className} max-w-full truncate px-1 text-[8.5px] font-semibold uppercase`} style={{ color: EVO.douradoClaro }}>
+          {label}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/** Indicador do celular: anel 26 px, rótulo 10 px, número 16 px, barra fina. */
+function MiniMeter({ icon, color, label, value, max = 100, barColor, tag }: { icon: ReactNode; color: string; label: string; value: number; max?: number; barColor?: string; tag?: string }) {
+  return (
+    <Chamfer cut={9}>
+      <div className="flex items-center gap-2 px-2 py-1.5">
+        <Ring color={color} size={26}>
+          <span className={SM_ICON}>{icon}</span>
+        </Ring>
+        <div className="min-w-0 flex-1">
+          <div className={`${archivo.className} truncate text-[10px] font-semibold uppercase tracking-wide`} style={{ color: EVO.branco }}>
+            {label}
+          </div>
+          <div className="flex items-center justify-between gap-1">
+            <span className={`${teko.className} shrink-0 whitespace-nowrap font-bold leading-none`} style={{ fontSize: 18, color: EVO.branco }}>
+              {r0(value)}
+              {/* "/ 100" só quando o teto não é 100 (a saúde vai até a vitalidade) */}
+              {r0(max) !== 100 && <span style={{ color: EVO.mudo, fontSize: 13 }}> / {r0(max)}</span>}
+            </span>
+            {tag && <MiniTag>{tag}</MiniTag>}
+          </div>
+          <div className="mt-0.5">
+            <Bar value={value} max={max} color={barColor ?? color} height={4} />
+          </div>
+        </div>
+      </div>
+    </Chamfer>
+  )
+}
+
+/** Cor e palavra de cada estado de refeição (mm3d-28: aberta, parcial, atrasada…). */
+function mealLook(s: string, t: Tr): [string, string] {
+  if (s === "eaten") return [EVO.bom, t("mealEaten", "Comeu")]
+  if (s === "open") return [EVO.ambar, t("mealOpen", "Agora")]
+  if (s === "partial") return [EVO.ambar, t("mealPartial", "Parcial")]
+  if (s === "late") return [EVO.perigo, t("mealLate", "Atrasada")]
+  if (s === "missed") return [EVO.perigo, t("mealMissed", "Perdeu")]
+  return [EVO.mudoEscuro, t("mealLater", "Depois")]
+}
+
+/** As 4 refeições do dia numa linha só. */
+function MealChips({ meals, t }: { meals: LifeCharacter["meals"]; t: Tr }) {
+  return (
+    <div className="grid grid-cols-4 gap-1.5">
+      {meals.map((m) => {
+        const [color, word] = mealLook(m.state, t)
+        return (
+          <div key={m.at} className="flex flex-col items-center justify-center py-1" style={{ boxShadow: `inset 0 0 0 1px ${color}aa`, background: "rgba(0,0,0,0.35)" }}>
+            <span className={`${teko.className} text-[17px] font-bold leading-none`} style={{ color: EVO.branco }}>
+              {t("mealAt", "{h} h").replace("{h}", String(m.at))}
+            </span>
+            <span className={`${archivo.className} max-w-full truncate px-0.5 text-[9.5px] font-bold uppercase leading-tight`} style={{ color }}>
+              {word}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function OverviewC({ life, portrait, t, act }: PageProps) {
+  const c = life.character
+  const v = c.vitals
+  const a = c.activity
+  const total = a.until ? (new Date(a.until).getTime() - new Date(a.startedAt).getTime()) / 3600000 : null
+  const progress = total && a.remainingH != null ? Math.max(0, Math.min(1, 1 - a.remainingH / total)) : null
+  if (c.status === "dead") {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-center" style={{ filter: "grayscale(1) brightness(0.55)" }}>
+          <Portrait src={portrait} size={150} />
+        </div>
+        <MiniPlate title={t("stDeadTitle", "Seu hóspede morreu")}>
+          <div className="flex items-start gap-2">
+            <Ring color={EVO.perigo} size={30}>
+              <Skull className="h-4 w-4" />
+            </Ring>
+            <div className="min-w-0">
+              <div className={`${teko.className} text-[20px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+                {causeLabel(c.deathCause, t)}
+              </div>
+              <p className={`${archivo.className} mt-1 text-[11px] leading-snug`} style={{ color: EVO.mudo }}>
+                {t("stDeadText", "A casa e as moedas continuam suas. Um novo hóspede pode chegar agora.")}
+              </p>
+            </div>
+          </div>
+          <MiniButton onClick={act.newcomer} disabled={act.busy} active className="mt-2 w-full">
+            {t("stNewcomer", "Receber novo hóspede")}
+          </MiniButton>
+        </MiniPlate>
+      </div>
+    )
+  }
+  const pace = c.pace >= 1 ? t("paceNormal", "normal") : c.pace >= 0.6 ? t("paceTired", "cansado") : t("paceExhausted", "exausto")
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-2.5">
+        <div className="flex flex-col items-center gap-1">
+          <Portrait src={portrait} size={112} />
+          <MiniButton onClick={act.openSkins} active h={26} className="w-full">
+            <Shirt className="h-3.5 w-3.5" /> {t("stSkin", "Skin")}
+          </MiniButton>
+        </div>
+        <div className="flex min-w-0 flex-col gap-2">
+          <Chamfer cut={9}>
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <Ring color={EVO.ambar} size={28}>
+                <span className={SM_ICON}>{ACT_ICON[a.kind]}</span>
+              </Ring>
+              <div className="min-w-0 flex-1">
+                <div className={`${archivo.className} text-[9.5px] font-semibold uppercase tracking-[0.16em]`} style={{ color: EVO.mudo }}>
+                  {t("stNow", "Agora")}
+                </div>
+                <div className={`${teko.className} truncate text-[18px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+                  {activityLabel(a.kind, t)}
+                </div>
+                {a.remainingH != null && (
+                  <div className={`${archivo.className} truncate text-[10px]`} style={{ color: EVO.ambar }}>
+                    {t("stRemaining", "faltam {h}").replace("{h}", hoursText(a.remainingH))}
+                  </div>
+                )}
+                {progress != null && (
+                  <div className="mt-0.5">
+                    <Bar value={progress * 100} height={4} color={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </Chamfer>
+          <div className="flex items-start gap-1.5">
+            <span className={`${teko.className} text-[30px] font-bold leading-[0.7]`} style={{ color: EVO.magenta }}>
+              “
+            </span>
+            <div className="min-w-0">
+              <div className={`${archivo.className} line-clamp-3 text-[12px] font-semibold leading-snug`} style={{ color: EVO.branco }}>
+                {quote(c, t)}
+              </div>
+              <div className={`${archivo.className} mt-0.5 text-[10px] uppercase leading-snug`} style={{ color: EVO.mudo }}>
+                {t("stMoodIs", "Humor: {m}").replace("{m}", moodTag(v.mood, t))}
+                <br />
+                {t("stHungerIs", "Fome: {m}").replace("{m}", satietyTag(v.satiety, t))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <MiniMeter icon={<Heart />} color={EVO.perigo} label={t("stHealth", "Saúde")} value={v.health} max={Math.max(1, v.vitality)} barColor={toneFor(v.health)} tag={healthTag(v.health, t)} />
+        <MiniMeter icon={<Zap />} color={EVO.ambar} label={t("stEnergy", "Energia")} value={v.energy} barColor={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} tag={energyTag(v.energy, t)} />
+        <MiniMeter icon={<Activity />} color={EVO.roxo} label={t("stStress", "Estresse")} value={v.stress} barColor={toneFor(v.stress, "low")} tag={stressTag(v.stress, t)} />
+        <MiniMeter icon={<Utensils />} color={EVO.bom} label={t("stSatiety", "Saciedade")} value={v.satiety} barColor={toneFor(v.satiety)} tag={satietyTag(v.satiety, t)} />
+        <MiniMeter icon={<Smile />} color={EVO.douradoClaro} label={t("stMood", "Humor")} value={v.mood} barColor={toneFor(v.mood)} tag={moodTag(v.mood, t)} />
+        <MiniMeter icon={<HeartPulse />} color={EVO.rosa} label={t("stVitality", "Vitalidade")} value={v.vitality} barColor={toneFor(v.vitality)} />
+      </div>
+      <Chamfer cut={9}>
+        <div className={`${archivo.className} px-2 py-1.5 text-[11px] leading-snug`} style={{ color: EVO.branco }}>
+          <span className="font-semibold uppercase" style={{ color: EVO.ambar }}>
+            {t("stPersonality", "Personalidade")}:
+          </span>{" "}
+          <span className="font-semibold uppercase">{personalityLabel(c.personality, t)}</span>
+          <div className="text-[10px]" style={{ color: EVO.mudo }}>
+            {t("stTodayLine", "Condição de hoje: {c} ({n}/100). Ritmo: {p}.")
+              .replace("{c}", conditionLabel(c.today.label, t))
+              .replace("{n}", String(c.today.score))
+              .replace("{p}", pace)}
+          </div>
+        </div>
+      </Chamfer>
+      <MiniPlate title={t("stMeals", "Refeições de hoje")}>
+        <MealChips meals={c.meals} t={t} />
+      </MiniPlate>
+    </div>
+  )
+}
+
+function BodyC({ life, t }: PageProps) {
+  const c = life.character
+  const b = c.body
+  const h = c.health
+  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio" }[b.bodyHint]
+  const dis = (s: "none" | "controlled" | "uncontrolled") =>
+    s === "none" ? <MiniTag tone="bom">{t("disNone", "Não tem")}</MiniTag> : s === "controlled" ? <MiniTag>{t("disControlled", "Controlada")}</MiniTag> : <MiniTag tone="perigo">{t("disUncontrolled", "Sem remédio")}</MiniTag>
+  const bar = (label: string, shown: string, value: number, max: number, color: string) => (
+    <div className="min-w-0">
+      <div className={`${archivo.className} flex justify-between gap-1 text-[10px] uppercase`} style={{ color: EVO.branco }}>
+        <span className="truncate">{label}</span>
+        <span className="font-semibold" style={{ color: EVO.douradoClaro }}>
+          {shown}
+        </span>
+      </div>
+      <Bar value={value} max={max} color={color} height={6} />
+    </div>
+  )
+  return (
+    <div className="flex flex-col gap-2">
+      <MiniPlate title={t("stBody", "Corpo")}>
+        <div className="grid grid-cols-2 gap-x-3">
+          <MiniRow label={t("stWeight", "Peso")} value={`${b.weightKg.toFixed(1)} kg`} />
+          <MiniRow label={t("stHeight", "Altura")} value={`${b.heightM.toFixed(2)} m`} />
+          <MiniRow label={t("stBmi", "IMC")} value={b.bmi.toFixed(1)} tone={b.bmi >= 30 || b.bmi < 18.5 ? EVO.perigo : b.bmi >= 25 ? EVO.ambar : EVO.bom} />
+          <MiniRow label={t("stFat", "Gordura corporal")} value={`${b.fatPct.toFixed(1)}%`} tone={b.fatPct >= 30 ? EVO.perigo : b.fatPct >= 22 ? EVO.ambar : EVO.bom} />
+          <MiniRow label={t("stLean", "Massa magra")} value={`${b.leanKg.toFixed(1)} kg`} />
+          <MiniRow label={t("stBodyHint", "Tipo físico")} value={hint} />
+        </div>
+      </MiniPlate>
+      <MiniPlate title={t("stExams", "Exames")}>
+        <div className="grid grid-cols-2 gap-x-3">
+          <MiniRow label={t("stGlucose", "Glicemia")} value={`${h.glucose} mg/dL`} tone={h.glucose >= 180 ? EVO.perigo : h.glucose >= 126 ? EVO.ambar : EVO.bom} />
+          <MiniRow label={t("stPressure", "Pressão")} value={`${h.systolic}/${h.diastolic}`} tone={h.systolic >= 150 ? EVO.perigo : h.systolic >= 130 ? EVO.ambar : EVO.bom} />
+          <MiniRow label={t("stAwake", "Acordado há")} value={hoursText(h.awakeHours)} tone={h.awakeHours > 30 ? EVO.perigo : h.awakeHours > 18 ? EVO.ambar : undefined} />
+          <MiniRow label={t("stDiet", "Qualidade da dieta")} value={`${h.diet > 0 ? "+" : ""}${r0(h.diet)}`} tone={h.diet < -30 ? EVO.perigo : h.diet < 0 ? EVO.ambar : EVO.bom} />
+        </div>
+        <div className="mt-1.5 grid grid-cols-2 gap-3">
+          {bar(t("stCardiac", "Carga no coração"), `${r0(h.cardiac)}%`, h.cardiac, 100, toneFor(h.cardiac, "low"))}
+          {bar(t("stToxicity", "Toxicidade"), String(r0(h.toxicity)), h.toxicity, 120, toneFor((h.toxicity / 120) * 100, "low"))}
+        </div>
+      </MiniPlate>
+      <MiniPlate title={t("stDiseases", "Doenças")}>
+        <div className="grid grid-cols-2 gap-3">
+          {(
+            [
+              [<Droplet key="d" className="h-3.5 w-3.5" />, t("stDiabetes", "Diabetes"), h.diabetes, h.diabetesRisk],
+              [<HeartPulse key="p" className="h-3.5 w-3.5" />, t("stHypertension", "Pressão alta"), h.hypertension, h.bpRisk],
+            ] as const
+          ).map(([icon, label, state, risk]) => (
+            <div key={label} className="flex min-w-0 items-center gap-1.5">
+              <Ring color={state === "uncontrolled" ? EVO.perigo : EVO.rosa} size={24}>
+                {icon}
+              </Ring>
+              <div className="min-w-0 flex-1">
+                <div className={`${archivo.className} truncate text-[11px] font-semibold uppercase`} style={{ color: EVO.branco }}>
+                  {label}
+                </div>
+                <div className="flex items-center gap-1">
+                  {dis(state)}
+                  {state === "none" && (
+                    <span className={`${archivo.className} truncate text-[10px]`} style={{ color: EVO.mudo }}>
+                      {t("stRisk", "Risco: {n}%").replace("{n}", String(r0(risk)))}
+                    </span>
+                  )}
+                </div>
+                {state === "none" && (
+                  <div className="mt-0.5">
+                    <Bar value={risk} color={toneFor(risk, "low")} height={4} />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </MiniPlate>
+      <MiniPlate title={t("stVitality", "Vitalidade")}>
+        <div className="flex items-center gap-2.5">
+          <MiniGauge value={c.vitals.vitality} label={t("stVitalityUnit", "de 100")} size={60} color={toneFor(c.vitals.vitality)} />
+          <p className={`${archivo.className} text-[10.5px] leading-snug`} style={{ color: EVO.mudo }}>
+            {t("stVitalityText", "É o teto da saúde. Cada internação deixa uma sequela (−8) e um infarto, −20. Volta devagar com a saúde acima de 80. Internado com vitalidade 20 ou menos, ele não resiste.")}
+          </p>
+        </div>
+      </MiniPlate>
+    </div>
+  )
+}
+
+/** Quantos efeitos cabem na placa do celular (o resto vira "+n"). */
+const EFFECTS_MAX_C = 6
+
+function AttributesC({ life, t }: PageProps) {
+  const c = life.character
+  const at = c.attributes
+  const max = life.catalog.attributes?.max ?? 1000
+  const useful = at.usefulToday
+  // [ícone, cor, nome, valor, máximo da barra, piso, resumo, sufixo]
+  const rows = [
+    [<Brain key="i" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceShort", "Sobe estudando (até 5 h/dia). Nunca cai abaixo de 90% do pico."), ""],
+    [<Dumbbell key="f" />, EVO.perigo, t("atStrength", "Força"), at.strength, max, at.floors?.strength, t("atStrengthShort", "Sobe treinando (até 4 h/dia); suplementos aceleram. Sem treino cai até 60% do pico."), ""],
+    [<Wind key="v" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedShort", "Sobe treinando. Sem treino cai até 60% do pico; voltar é mais rápido."), ""],
+    [<Sprout key="r" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, 100, undefined, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade."), "%"],
+  ] as const
+  const effects = c.effects.slice(0, EFFECTS_MAX_C)
+  return (
+    <div className="flex flex-col gap-2">
+      <MiniPlate
+        title={t("stAttributes", "Atributos")}
+        aside={
+          <span className={`${archivo.className} truncate text-[10px]`} style={{ color: EVO.mudo }}>
+            {t("stAttrScale2", "De 0 a {max} · traço = piso").replace("{max}", String(max))}
+          </span>
+        }
+      >
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+          {rows.map(([icon, color, label, value, top, floor, text, unit]) => (
+            <div key={label} className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className={SM_ICON} style={{ color }}>
+                  {icon}
+                </span>
+                <span className={`${archivo.className} truncate text-[10px] font-semibold uppercase`} style={{ color: EVO.branco }}>
+                  {label}
+                </span>
+                <span className={`${teko.className} ml-auto text-[18px] font-bold leading-none`} style={{ color: EVO.branco }}>
+                  {r0(value)}
+                  {unit}
+                </span>
+              </div>
+              <div className="my-1">
+                <Bar value={value} max={top} mark={floor} color={color} height={6} />
+              </div>
+              <p className={`${archivo.className} text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
+                {text}
+              </p>
+            </div>
+          ))}
+        </div>
+        {useful && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {(["studying", "training"] as const).map((k) => (
+              <MiniTag key={k} tone={useful[k].done >= useful[k].cap ? "mudo" : "ouro"}>
+                {t("atUsefulToday", "{act} hoje: {done}/{cap} h úteis")
+                  .replace("{act}", activityLabel(k, t))
+                  .replace("{done}", String(Math.round(useful[k].done * 10) / 10))
+                  .replace("{cap}", String(useful[k].cap))}
+              </MiniTag>
+            ))}
+          </div>
+        )}
+      </MiniPlate>
+      <MiniPlate
+        title={t("stPersonality", "Personalidade")}
+        aside={
+          <span className={`${archivo.className} truncate text-[10px] font-semibold uppercase`} style={{ color: EVO.douradoClaro }}>
+            {personalityLabel(c.personality, t)}
+          </span>
+        }
+      >
+        <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
+          {TRAITS.map((k) => (
+            <div key={k} className="min-w-0">
+              <div className={`${archivo.className} flex justify-between gap-1 text-[10px] uppercase`} style={{ color: EVO.branco }}>
+                <span className="truncate">{traitName(k, t)}</span>
+                <span className="font-semibold" style={{ color: EVO.douradoClaro }}>
+                  {r0(c.personality[k] * 100)}
+                </span>
+              </div>
+              <Bar value={c.personality[k] * 100} color={`linear-gradient(90deg, ${EVO.ritual}, ${EVO.magenta})`} height={4} />
+            </div>
+          ))}
+        </div>
+      </MiniPlate>
+      <MiniPlate title={t("stEffects", "Efeitos no corpo")}>
+        {effects.length === 0 ? (
+          <p className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
+            {t("stNoEffects", "Nenhum suplemento, remédio ou estimulante agindo agora.")}
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-x-3">
+            {effects.map((e) => (
+              <MiniRow key={e.id} label={effectName(e.id, t)} value={t("stEffectLeft", "mais {h}").replace("{h}", hoursText(e.remainingH))} />
+            ))}
+            {c.effects.length > EFFECTS_MAX_C && (
+              <span className={`${archivo.className} col-span-2 pt-0.5 text-[10px]`} style={{ color: EVO.mudo }}>
+                {t("stMoreEffects", "+{n} efeitos").replace("{n}", String(c.effects.length - EFFECTS_MAX_C))}
+              </span>
+            )}
+          </div>
+        )}
+      </MiniPlate>
+    </div>
+  )
+}
+
+function RoutineC({ life, t, act }: PageProps) {
+  const c = life.character
+  const a = c.activity
+  const busy = act.busy || c.status !== "alive"
+  // No celular escolhe-se a duração uma vez e depois a atividade (no
+  // computador são 3 × 8 botões). Abaixo de 380 px os ícones saem para o nome caber.
+  const [hours, setHours] = useState(4)
+  const kinds = [
+    ["studying", <BookOpen key="s" className="hidden h-3.5 w-3.5 shrink-0 min-[380px]:block" />, t("actDoStudy", "Estudar")],
+    ["training", <Dumbbell key="t" className="hidden h-3.5 w-3.5 shrink-0 min-[380px]:block" />, t("actDoTrain", "Treinar")],
+    ["working", <Briefcase key="w" className="hidden h-3.5 w-3.5 shrink-0 min-[380px]:block" />, t("actDoWork", "Trabalhar")],
+  ] as const
+  const done = (["sleeping", "studying", "training", "working", "lying", "hospital"] as const).filter((k) => (c.today.hours[k] ?? 0) > 0.01)
+  return (
+    <div className="flex flex-col gap-2">
+      <MiniPlate title={t("stMeals", "Refeições de hoje")}>
+        <MealChips meals={c.meals} t={t} />
+        <p className={`${archivo.className} mt-1.5 text-[11.5px] leading-snug`} style={{ color: EVO.mudo }}>
+          {t("stMealsRuleFridge", "Coma de 2 h antes até 2 h depois de cada horário, pela geladeira da sua casa. Depois disso, ele vai perdendo saciedade, energia e saúde por 2 h.")}
+        </p>
+      </MiniPlate>
+      <MiniPlate title={t("stHoursToday", "Horas de hoje")}>
+        <div className="flex items-center gap-3">
+          <MiniGauge value={c.today.score} label={conditionLabel(c.today.label, t)} color={c.today.score >= 60 ? EVO.bom : c.today.score >= 40 ? EVO.ambar : EVO.perigo} />
+          {done.length ? (
+            <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-3">
+              {done.map((k) => (
+                <MiniRow key={k} label={activityLabel(k, t)} value={hoursText(c.today.hours[k])} />
+              ))}
+            </div>
+          ) : (
+            <p className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
+              {t("stNoHoursYet", "Nada contado hoje ainda.")}
+            </p>
+          )}
+        </div>
+      </MiniPlate>
+      <MiniPlate title={t("stDoNow", "O que ele faz agora")}>
+        <Chamfer cut={9} border={`${EVO.magenta}88`}>
+          <div className="flex items-center gap-2 px-2 py-1.5">
+            <Ring color={EVO.magenta} size={28}>
+              <span className={SM_ICON}>{ACT_ICON[a.kind]}</span>
+            </Ring>
+            <div className="min-w-0 flex-1">
+              <div className={`${teko.className} truncate text-[18px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+                {activityLabel(a.kind, t)}
+              </div>
+              <div className={`${archivo.className} line-clamp-2 text-[10.5px] leading-snug`} style={{ color: EVO.mudo }}>
+                {a.resume && a.remainingH != null
+                  ? t("stRoutinePause", "Pausa da rotina: em {h} volta a {act}.")
+                      .replace("{h}", hoursText(a.remainingH))
+                      .replace("{act}", activityLabel(a.resume.kind, t).toLowerCase())
+                  : a.remainingH != null
+                    ? t("stUntil", "Faltam {h}. Ele continua mesmo com o jogo fechado.").replace("{h}", hoursText(a.remainingH))
+                    : a.kind === "hospital"
+                      ? t("stHospitalText", "Internado até se recuperar (saúde 60).")
+                      : t("stIdleText", "Sem nada marcado.")}
+              </div>
+            </div>
+            {(a.kind === "studying" || a.kind === "training" || a.kind === "working" || a.resume) && (
+              <MiniButton onClick={() => act.activity("idle")} disabled={busy} h={30}>
+                {t("stStop", "Parar")}
+              </MiniButton>
+            )}
+          </div>
+        </Chamfer>
+        <div className="mt-2 flex items-center gap-1">
+          <span className={`${archivo.className} shrink-0 text-[10px] font-semibold uppercase`} style={{ color: EVO.mudo }}>
+            {t("stForHours", "Por")}
+          </span>
+          {HOUR_CHOICES.map((h) => (
+            <MiniButton key={h} onClick={() => setHours(h)} active={hours === h} h={28} tight className="min-w-0 flex-1">
+              {h}h
+            </MiniButton>
+          ))}
+        </div>
+        <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+          {kinds.map(([kind, icon, label]) => (
+            <MiniButton key={kind} onClick={() => act.activity(kind, hours)} disabled={busy} active={a.kind === kind} tight className="min-w-0">
+              {icon}
+              <span className="truncate">{label}</span>
+            </MiniButton>
+          ))}
+        </div>
+        <p className={`${archivo.className} mt-1.5 text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
+          {t("stRoutineShort", "É uma rotina: rende nas primeiras horas do dia (estudo 5 h, treino 4 h), descansa, dorme às 23 h e volta às 7 h. Constância rende mais que maratona.")}
+        </p>
+      </MiniPlate>
+    </div>
+  )
+}
+
+function MarketC({ life, t, act }: PageProps) {
+  const items = life.catalog.items
+  const c = life.character
+  const [tab, setTab] = useState<string>("mkHealthy")
+  const groupOf = (it: LifeItem) =>
+    it.kind === "food" || it.kind === "drink"
+      ? it.nutri >= 4
+        ? "mkHealthy"
+        : "mkJunk"
+      : MARKET_GROUPS.find((g) => g[0] !== "mkHealthy" && g[0] !== "mkJunk" && g[2].includes(it.kind))?.[0]
+  const busy = act.busy || c.status !== "alive"
+  const group = MARKET_GROUPS.find(([key]) => key === tab) ?? MARKET_GROUPS[0]
+  const list = items.filter((it) => groupOf(it) === group[0])
+  return (
+    <div className="flex flex-col gap-2">
+      <div>
+        <div className={`${teko.className} text-[18px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+          {t("mkWallet", "Carteira")}: <span style={{ color: EVO.douradoClaro }}>{t("stCoins", "{n} moedas").replace("{n}", String(life.wallet.coins))}</span>
+        </div>
+        <p className={`${archivo.className} mt-0.5 text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
+          {t("mkHintFridge", "Tudo vai para a geladeira da sua casa — é lá que ele come. Saudável é caro, porcaria é barata.")}
+        </p>
+      </div>
+      {/* abas só com ícone; o nome da aba aberta vira o título da placa */}
+      <div className="grid grid-cols-6 gap-1">
+        {MARKET_GROUPS.map(([key, fallback, , icon]) => (
+          <MiniButton key={key} onClick={() => setTab(key)} active={tab === key} h={32} label={t(key, fallback)} tight>
+            <span className="flex [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+          </MiniButton>
+        ))}
+      </div>
+      <MiniPlate title={t(group[0], group[1])} aside={<span className={SM_ICON} style={{ color: EVO.ambar }}>{group[3]}</span>}>
+        <div className="grid grid-cols-2 gap-1.5">
+          {list.map((it) => {
+            const inFridge = life.fridge?.[it.id]
+            return (
+              <Chamfer key={it.id} cut={7} border={EVO.linha}>
+                <div className="flex flex-col gap-1 p-1.5">
+                  <div className="min-w-0">
+                    <div className={`${archivo.className} line-clamp-2 text-[11px] font-semibold leading-tight`} style={{ color: EVO.branco }}>
+                      {itemName(it, t)}
+                    </div>
+                    <div className={`${archivo.className} truncate text-[10px] leading-tight`} style={{ color: EVO.mudo }}>
+                      {[
+                        it.kcal ? `${it.kcal} kcal` : null,
+                        it.nutri >= 4 ? t("mkGood", "faz bem") : it.nutri <= -4 ? t("mkBad", "faz mal") : null,
+                        it.effect ? t("mkLasts", "dura {h}").replace("{h}", hoursText(it.effect.hours)) : null,
+                        it.tox ? t("mkTox", "tóxico") : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || " "}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className={`${archivo.className} truncate text-[10px]`} style={{ color: inFridge ? EVO.douradoClaro : EVO.mudoEscuro }}>
+                      {inFridge ? t("mkInFridge", "{n} na geladeira").replace("{n}", String(inFridge)) : ""}
+                    </span>
+                    <MiniButton onClick={() => act.buy(it.id)} disabled={busy || life.wallet.coins < it.price} h={28} className="min-w-[44px] shrink-0">
+                      {it.price}
+                    </MiniButton>
+                  </div>
+                </div>
+              </Chamfer>
+            )
+          })}
+        </div>
+      </MiniPlate>
+    </div>
+  )
+}
+
+/** Quantos dias e eventos cabem no celular (o histórico real é longo). */
+const DIARY_MAX_C = 3
+const EVENTS_MAX_C = 8
+
+function HistoryC({ life, t }: PageProps) {
+  const items = new Map(life.catalog.items.map((i) => [i.id, i]))
+  const off = life.catalog.clock.offsetMin
+  return (
+    <div className="flex flex-col gap-2">
+      <MiniPlate title={t("stDiary", "Diário")}>
+        {life.days.length === 0 && (
+          <p className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
+            {t("stNoEvents", "Nada aconteceu ainda.")}
+          </p>
+        )}
+        {life.days.slice(0, DIARY_MAX_C).map((d) => (
+          <div key={d.day} className="flex h-6 items-center gap-2 border-b" style={{ borderColor: EVO.linha }}>
+            <span className={`${teko.className} w-11 shrink-0 text-[15px] font-semibold leading-none`} style={{ color: EVO.branco }}>
+              {d.day.slice(8, 10)}/{d.day.slice(5, 7)}
+            </span>
+            <div className={`${archivo.className} min-w-0 flex-1 truncate text-[10px]`} style={{ color: EVO.mudo }}>
+              {t("stDiaryLine", "Dormiu {s} · {m} refeições · perdeu {x}")
+                .replace("{s}", hoursText(d.hours.sleeping ?? 0))
+                .replace("{m}", String(d.mealsEaten))
+                .replace("{x}", String(d.mealsMissed))}
+            </div>
+            <MiniTag tone={d.condition.score >= 60 ? "bom" : d.condition.score >= 40 ? "ouro" : "perigo"}>{conditionLabel(d.condition.label, t)}</MiniTag>
+          </div>
+        ))}
+      </MiniPlate>
+      <MiniPlate title={t("stTimeline", "Linha do tempo")}>
+        {life.events.length === 0 && (
+          <p className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
+            {t("stNoEvents", "Nada aconteceu ainda.")}
+          </p>
+        )}
+        {life.events.slice(0, EVENTS_MAX_C).map((e, i) => (
+          <div key={`${e.at}-${i}`} className="flex items-center gap-2 border-b py-[3px]" style={{ borderColor: EVO.linha }}>
+            <span className="inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center [&>svg]:h-3 [&>svg]:w-3" style={{ border: `1.5px solid ${EVO.perigo}`, color: EVO.perigo }}>
+              {eventIcon(e.kind)}
+            </span>
+            <div className={`${archivo.className} line-clamp-2 min-w-0 flex-1 text-[11px] leading-[14px]`} style={{ color: EVO.branco }}>
+              <span className="mr-1.5 text-[10px] font-semibold tabular-nums" style={{ color: EVO.douradoClaro }}>
+                {timeOf(e.at, off)}
+              </span>
+              {eventText(e.kind, e.data, t, items)}
+            </div>
+          </div>
+        ))}
+      </MiniPlate>
+    </div>
+  )
+}
+
 export function StatusPage(props: PageProps) {
+  // Celular: cada página é desenhada para caber na tela, sem rolagem.
+  if (props.compact) {
+    const P = { overview: OverviewC, body: BodyC, attributes: AttributesC, routine: RoutineC, market: MarketC, history: HistoryC }[props.page]
+    return (
+      <div className={`${archivo.className} flex h-full flex-col gap-2`}>
+        <Header {...props} />
+        <div className="min-h-0 flex-1">
+          <P {...props} />
+        </div>
+      </div>
+    )
+  }
   const body =
     props.page === "overview" ? (
       <Overview {...props} />

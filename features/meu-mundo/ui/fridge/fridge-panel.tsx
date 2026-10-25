@@ -147,23 +147,28 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
     return () => window.removeEventListener("keydown", onKey, true)
   }, [])
 
-  const cardW = compact ? 150 : 200
-  const cardH = Math.round(cardW * 1.48)
-  const spacing = compact ? 128 : 190
+  // Celular (mm3d-28c): card 118×172 e letra miúda — a prateleira, o
+  // cabeçalho e a ficha cabem inteiros na tela, sem rolagem.
+  const cardW = compact ? 118 : 200
+  const cardH = compact ? 172 : Math.round(cardW * 1.48)
+  const spacing = compact ? 104 : 190
   const crumb = cat ? t(CATEGORY_LABEL[cat.id][0], CATEGORY_LABEL[cat.id][1]) : t("frChooseCategory", "Escolha a categoria")
 
   return (
     <div
       className={`${archivo.className} fl-sharp absolute inset-0 z-20 flex flex-col justify-end`}
-      style={{ background: "linear-gradient(180deg, rgba(8,7,11,0) 0%, rgba(8,7,11,0.25) 35%, rgba(8,10,16,0.82) 100%)" }}
+      // Um pouco translúcido: o jogo aparece atrás (pedido do Alex, 2026-10-25).
+      style={{ background: "linear-gradient(180deg, rgba(8,7,11,0) 0%, rgba(8,7,11,0.2) 35%, rgba(8,10,16,0.72) 100%)" }}
       // A interface engole o toque: nada atravessa para o jogo.
       onPointerDown={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
       aria-labelledby="mm-fridge-title"
     >
-      {/* Aviso da geladeira (comeu, acabou…): no topo, como os outros avisos. */}
-      {notice && (
+      {/* Aviso da geladeira (comeu, acabou…): no computador fica no topo, como
+          os outros avisos; no celular vai colado em cima da prateleira (o topo é
+          do balão de necessidades, que cobria o aviso). */}
+      {notice && !compact && (
         <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
           <div role="status" className={`${teko.className} px-3 pb-0.5 pt-1 text-[18px] uppercase tracking-[0.08em]`} style={{ background: EVO.douradoClaro, color: EVO.preto }}>
             {notice}
@@ -181,14 +186,21 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
           transition: "transform 420ms cubic-bezier(.2,.8,.2,1), opacity 300ms ease-out",
         }}
       >
+        {notice && compact && (
+          <div className="pointer-events-none mb-2 flex justify-center">
+            <div role="status" className={`${teko.className} px-2.5 pb-0 pt-[3px] text-center text-[14px] uppercase leading-[1.05] tracking-[0.06em]`} style={{ background: EVO.douradoClaro, color: EVO.preto }}>
+              {notice}
+            </div>
+          </div>
+        )}
         {/* cabeçalho: título, onde estou e fechar */}
-        <div className="mx-auto flex w-full max-w-[980px] items-end justify-between gap-3 pb-2">
+        <div className={`mx-auto flex w-full max-w-[980px] items-end justify-between gap-3 ${compact ? "pb-1.5" : "pb-2"}`}>
           <div className="min-w-0">
             <div className="flex items-center gap-2" style={{ color: ICE }}>
-              <Refrigerator className="h-5 w-5 shrink-0" />
-              <span className={`${archivo.className} text-[11px] font-semibold uppercase tracking-[0.28em]`}>{t("frEyebrow", "Geladeira")}</span>
+              <Refrigerator className={`${compact ? "h-3.5 w-3.5" : "h-5 w-5"} shrink-0`} />
+              <span className={`${archivo.className} ${compact ? "text-[10px]" : "text-[11px]"} font-semibold uppercase tracking-[0.28em]`}>{t("frEyebrow", "Geladeira")}</span>
             </div>
-            <h2 id="mm-fridge-title" className={`${teko.className} line-clamp-2 ${compact ? "text-[26px]" : "text-[32px]"} font-bold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
+            <h2 id="mm-fridge-title" className={`${teko.className} line-clamp-2 ${compact ? "text-[18px]" : "text-[32px]"} font-bold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
               {item ? itemName(item, t) : crumb}
             </h2>
           </div>
@@ -202,11 +214,11 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 w-10 items-center justify-center"
-              style={{ color: EVO.douradoClaro, background: "rgba(8,7,11,0.9)", boxShadow: `inset 0 0 0 1.5px ${EVO.dourado}99` }}
+              className={`inline-flex ${compact ? "h-8 w-8" : "h-10 w-10"} items-center justify-center`}
+              style={{ color: EVO.douradoClaro, background: "rgba(8,7,11,0.86)", boxShadow: `inset 0 0 0 1.5px ${EVO.dourado}99` }}
               aria-label={t("frClose", "Fechar a geladeira")}
             >
-              <X className="h-5 w-5" />
+              <X className={compact ? "h-4 w-4" : "h-5 w-5"} />
             </button>
           </div>
         </div>
@@ -220,15 +232,16 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
             cardW={cardW}
             cardH={cardH}
             spacing={spacing}
+            compact={compact}
             t={t}
             render={(i, active) => {
               const c = cats[i]
               return (
-                <Card active={active} empty={c.qty === 0} img={c.cover} badge={`×${c.qty}`} w={cardW} h={cardH}>
-                  <div className={`${teko.className} truncate text-[24px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+                <Card active={active} empty={c.qty === 0} img={c.cover} badge={`×${c.qty}`} w={cardW} h={cardH} compact={compact}>
+                  <div className={`${teko.className} truncate ${compact ? "text-[17px]" : "text-[24px]"} font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
                     {t(CATEGORY_LABEL[c.id][0], CATEGORY_LABEL[c.id][1])}
                   </div>
-                  <div className="mt-1 truncate text-[12px]" style={{ color: EVO.mudo }}>
+                  <div className={`mt-1 ${compact ? "line-clamp-2 text-[10px] leading-[12px]" : "truncate text-[12px]"}`} style={{ color: EVO.mudo }}>
                     {c.qty
                       ? t("frUnits", "{n} na geladeira").replace("{n}", String(c.qty))
                       : t("frCatEmpty", "Nada aqui — compre no Mercado")}
@@ -248,23 +261,24 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
             cardW={cardW}
             cardH={cardH}
             spacing={spacing}
+            compact={compact}
             t={t}
             render={(i, active) => {
               const it = cat.items[i]
               const n = stock[it.id] ?? 0
               const fx = effectsOf(it)
               return (
-                <Card active={active} empty={n === 0} img={thumbOf(it.id)} badge={n ? `×${n}` : t("frOut", "Acabou")} w={cardW} h={cardH}>
-                  <div className={`${teko.className} line-clamp-2 text-[20px] font-semibold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
+                <Card active={active} empty={n === 0} img={thumbOf(it.id)} badge={n ? `×${n}` : t("frOut", "Acabou")} w={cardW} h={cardH} compact={compact}>
+                  <div className={`${teko.className} line-clamp-2 ${compact ? "text-[15px]" : "text-[20px]"} font-semibold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
                     {itemName(it, t)}
                   </div>
                   {fx[0] && (
-                    <div className={`${teko.className} mt-1 text-[19px] leading-none`} style={{ color: toneColor(fx[0].tone) }}>
+                    <div className={`${teko.className} ${compact ? "mt-0.5 text-[14px]" : "mt-1 text-[19px]"} leading-none`} style={{ color: toneColor(fx[0].tone) }}>
                       {effectText(fx[0], t)}
                     </div>
                   )}
                   {fx.length > 1 && (
-                    <div className="mt-0.5 truncate text-[11px]" style={{ color: EVO.mudo }}>
+                    <div className={`mt-0.5 truncate ${compact ? "text-[10px]" : "text-[11px]"}`} style={{ color: EVO.mudo }}>
                       {fx.slice(1, 3).map((e) => effectText(e, t)).join(" · ")}
                     </div>
                   )}
@@ -278,14 +292,14 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
           <ItemSheet item={item} qty={stock[item.id] ?? 0} character={character} pending={pending === item.id} compact={compact} t={t} onEat={eat} onBack={back} />
         )}
 
-        {/* rodapé: atalhos (computador) */}
-        <div className="mx-auto mt-2 flex min-h-6 w-full max-w-[980px] items-center justify-center">
-          {!compact && (
+        {/* rodapé: atalhos (só computador; no celular a faixa vazia não ocupa altura) */}
+        {!compact && (
+          <div className="mx-auto mt-2 flex min-h-6 w-full max-w-[980px] items-center justify-center">
             <div className={`${teko.className} text-[18px] uppercase tracking-[0.12em]`} style={{ color: `${EVO.branco}99` }}>
               ← → {t("frHintMove", "Girar")} &nbsp; ENTER {t("frHintPick", "Escolher")} &nbsp; ESC {t("frHintBack", "Voltar")}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -303,6 +317,7 @@ function Arc({
   cardW,
   cardH,
   spacing,
+  compact,
   t,
 }: {
   count: number
@@ -313,6 +328,7 @@ function Arc({
   cardW: number
   cardH: number
   spacing: number
+  compact: boolean
   t: Tr
 }) {
   const [drag, setDrag] = useState(0)
@@ -393,14 +409,14 @@ function Arc({
     <div className="relative mx-auto w-full max-w-[980px]">
       <div
         className="relative w-full select-none overflow-hidden"
-        style={{ height: cardH + 46, perspective: 1100, touchAction: "none" }}
+        style={{ height: cardH + (compact ? 30 : 46), perspective: 1100, touchAction: "none" }}
         onPointerDown={down}
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={up}
         onWheel={wheel}
       >
-        <div className="absolute inset-x-0 top-4" style={{ transformStyle: "preserve-3d", height: cardH }}>
+        <div className={`absolute inset-x-0 ${compact ? "top-2" : "top-4"}`} style={{ transformStyle: "preserve-3d", height: cardH }}>
           {cards}
         </div>
         {/* a prateleira: faixa fria acesa embaixo dos cards (estática) */}
@@ -414,26 +430,44 @@ function Arc({
         onClick={() => onSel(clamp(sel - 1))}
         disabled={sel <= 0}
         aria-label={t("frPrev", "Anterior")}
-        className="absolute left-0 top-1/2 flex h-14 w-11 -translate-y-1/2 items-center justify-center disabled:opacity-25"
+        className={`absolute left-0 top-1/2 flex ${compact ? "h-10 w-8" : "h-14 w-11"} -translate-y-1/2 items-center justify-center disabled:opacity-25`}
         style={{ color: ICE, background: "rgba(8,7,11,0.6)" }}
       >
-        <ChevronLeft className="h-8 w-8" />
+        <ChevronLeft className={compact ? "h-6 w-6" : "h-8 w-8"} />
       </button>
       <button
         type="button"
         onClick={() => onSel(clamp(sel + 1))}
         disabled={sel >= count - 1}
         aria-label={t("frNext", "Próximo")}
-        className="absolute right-0 top-1/2 flex h-14 w-11 -translate-y-1/2 items-center justify-center disabled:opacity-25"
+        className={`absolute right-0 top-1/2 flex ${compact ? "h-10 w-8" : "h-14 w-11"} -translate-y-1/2 items-center justify-center disabled:opacity-25`}
         style={{ color: ICE, background: "rgba(8,7,11,0.6)" }}
       >
-        <ChevronRight className="h-8 w-8" />
+        <ChevronRight className={compact ? "h-6 w-6" : "h-8 w-8"} />
       </button>
     </div>
   )
 }
 
-function Card({ active, empty, img, badge, w, h, children }: { active: boolean; empty: boolean; img: string; badge: string; w: number; h: number; children: ReactNode }) {
+function Card({
+  active,
+  empty,
+  img,
+  badge,
+  w,
+  h,
+  compact,
+  children,
+}: {
+  active: boolean
+  empty: boolean
+  img: string
+  badge: string
+  w: number
+  h: number
+  compact: boolean
+  children: ReactNode
+}) {
   const imgH = Math.round(h * 0.6)
   return (
     <div className="relative h-full w-full">
@@ -442,7 +476,7 @@ function Card({ active, empty, img, badge, w, h, children }: { active: boolean; 
         className="pointer-events-none absolute -inset-[3px]"
         style={{ background: EVO.magenta, boxShadow: `0 0 22px ${EVO.magenta}`, opacity: active ? 1 : 0, transition: "opacity 240ms" }}
       />
-      <Chamfer cut={14} border={active ? EVO.rosaClaro : ICE_DIM} width={1.5} className="h-full" fill="linear-gradient(180deg, #121823 0%, #0b0d13 100%)">
+      <Chamfer cut={14} border={active ? EVO.rosaClaro : ICE_DIM} width={1.5} className="h-full" fill="linear-gradient(180deg, rgba(18,24,35,0.86) 0%, rgba(11,13,19,0.86) 100%)">
         <div className="relative overflow-hidden" style={{ height: imgH, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail local pequena, só no jogo (admin) */}
           <img
@@ -457,13 +491,13 @@ function Card({ active, empty, img, badge, w, h, children }: { active: boolean; 
             style={{ opacity: empty ? 0.35 : 1 }}
           />
           <span
-            className={`${teko.className} absolute right-0 top-0 px-2 pb-0.5 pt-1 text-[18px] font-semibold leading-none`}
+            className={`${teko.className} absolute right-0 top-0 ${compact ? "px-1.5 pb-0 pt-[3px] text-[13px]" : "px-2 pb-0.5 pt-1 text-[18px]"} font-semibold leading-none`}
             style={{ background: empty ? EVO.vinho : EVO.douradoClaro, color: empty ? EVO.branco : EVO.preto }}
           >
             {badge}
           </span>
         </div>
-        <div className="px-2.5 pb-2 pt-1.5">{children}</div>
+        <div className={compact ? "px-2 pb-1.5 pt-1" : "px-2.5 pb-2 pt-1.5"}>{children}</div>
       </Chamfer>
     </div>
   )
@@ -504,49 +538,49 @@ function ItemSheet({
   return (
     <div className="mx-auto w-full max-w-[720px]">
       <Chamfer cut={18} border={`${EVO.dourado}bb`} width={1.5}>
-        <div className={`flex gap-4 p-4 ${compact ? "flex-col" : ""}`}>
-          <div className="relative shrink-0 overflow-hidden" style={{ width: compact ? "100%" : 210, height: compact ? 170 : 280, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
+        <div className={`flex ${compact ? "flex-col gap-2 p-2.5" : "gap-4 p-4"}`}>
+          <div className="relative shrink-0 overflow-hidden" style={{ width: compact ? "100%" : 210, height: compact ? 120 : 280, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail local pequena, só no jogo (admin) */}
             <img src={thumbOf(item.id)} alt="" className="h-full w-full object-cover" style={{ opacity: qty ? 1 : 0.35 }} draggable={false} />
           </div>
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <div className={`flex min-w-0 flex-1 flex-col ${compact ? "gap-1.5" : "gap-2"}`}>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className={`${teko.className} text-[22px] uppercase tracking-[0.08em]`} style={{ color: EVO.mudo }}>
+              <span className={`${teko.className} ${compact ? "text-[15px] leading-none" : "text-[22px]"} uppercase tracking-[0.08em]`} style={{ color: EVO.mudo }}>
                 {t("frPortion", "Porção: 1 unidade")}
               </span>
-              <span className={`${teko.className} text-[22px] uppercase tracking-[0.08em]`} style={{ color: qty ? EVO.douradoClaro : "#ff6b78" }}>
+              <span className={`${teko.className} ${compact ? "text-[15px] leading-none" : "text-[22px]"} uppercase tracking-[0.08em]`} style={{ color: qty ? EVO.douradoClaro : "#ff6b78" }}>
                 {qty ? t("frUnits", "{n} na geladeira").replace("{n}", String(qty)) : t("frOut", "Acabou")}
               </span>
             </div>
-            <ul className="flex flex-wrap gap-1.5">
+            <ul className={`flex flex-wrap ${compact ? "gap-1" : "gap-1.5"}`}>
               {fx.map((e) => (
                 <li
                   key={e.key}
-                  className={`${teko.className} px-2 pb-0.5 pt-1 text-[18px] leading-none`}
+                  className={`${teko.className} ${compact ? "px-1.5 pb-0 pt-[3px] text-[13px]" : "px-2 pb-0.5 pt-1 text-[18px]"} leading-none`}
                   style={{ color: toneColor(e.tone), boxShadow: `inset 0 0 0 1px ${toneColor(e.tone)}55`, background: "rgba(0,0,0,0.35)" }}
                 >
                   {effectText(e, t)}
                 </li>
               ))}
-              {!fx.length && <li className="text-[13px]" style={{ color: EVO.mudo }}>{t("frNoEffect", "Sem efeito imediato.")}</li>}
+              {!fx.length && <li className={compact ? "text-[11px]" : "text-[13px]"} style={{ color: EVO.mudo }}>{t("frNoEffect", "Sem efeito imediato.")}</li>}
             </ul>
-            <div className="flex items-start gap-2 text-[14px] leading-5" style={{ color: fit.kind === "full" ? EVO.bom : EVO.branco }}>
-              <Utensils className="mt-0.5 h-4 w-4 shrink-0" style={{ color: ICE }} />
+            <div className={`flex items-start gap-2 ${compact ? "text-[12px] leading-4" : "text-[14px] leading-5"}`} style={{ color: fit.kind === "full" ? EVO.bom : EVO.branco }}>
+              <Utensils className={`shrink-0 ${compact ? "h-3.5 w-3.5" : "mt-0.5 h-4 w-4"}`} style={{ color: ICE }} />
               <span>{fitLine}</span>
             </div>
-            <div className="mt-auto flex flex-wrap gap-2 pt-2">
+            <div className={`mt-auto flex flex-wrap gap-2 ${compact ? "pt-1" : "pt-2"}`}>
               <EvoButton
                 variant="primary"
-                size="lg"
+                size={compact ? "md" : "lg"}
                 kbd={compact ? undefined : "↵"}
                 className="flex-1"
                 onClick={onEat}
                 disabled={!qty || pending}
-                icon={pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Utensils className="h-5 w-5" />}
+                icon={pending ? <Loader2 className={`${compact ? "h-4 w-4" : "h-5 w-5"} animate-spin`} /> : <Utensils className={compact ? "h-4 w-4" : "h-5 w-5"} />}
               >
                 {verbLabel}
               </EvoButton>
-              <EvoButton variant="ghost" size="lg" onClick={onBack} icon={<ChevronLeft className="h-5 w-5" />}>
+              <EvoButton variant="ghost" size={compact ? "md" : "lg"} onClick={onBack} icon={<ChevronLeft className={compact ? "h-4 w-4" : "h-5 w-5"} />}>
                 {t("frBack", "Voltar")}
               </EvoButton>
             </div>

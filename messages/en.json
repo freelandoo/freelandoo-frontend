@@ -8098,6 +8098,20 @@
     "evMealPart": "Part of the {h}:00 meal: {item}.",
     "evMealLost": "The {h}:00 meal was left behind (the penalty ended).",
     "evBuy": "Bought {n}× {item} for the fridge ({p} coins).",
-    "evRoutineFridge": "Routine: ate {item} from the fridge."
+    "evRoutineFridge": "Routine: ate {item} from the fridge.",
+    "stMealsRuleFridge": "Eat from 2 h before to 2 h after each mealtime, from your home fridge. After that, he keeps losing satiety, energy and health for 2 h.",
+    "mealPartial": "Partial",
+    "mealLate": "Late",
+    "stMood": "Mood",
+    "atIntelligenceShort": "Rises by studying (up to 5 h/day). Never drops below 90% of the peak.",
+    "atStrengthShort": "Rises by training (up to 4 h/day); supplements speed it up. Without training it drops to 60% of the peak.",
+    "atSpeedShort": "Rises by training. Without training it drops to 60% of the peak; getting back is faster.",
+    "stMoreEffects": "+{n} effects",
+    "stNoHoursYet": "Nothing counted today yet.",
+    "stForHours": "For",
+    "actDoStudy": "Study",
+    "actDoTrain": "Train",
+    "actDoWork": "Work",
+    "stRoutineShort": "It's a routine: the first hours of the day pay off (study 5 h, training 4 h), then he rests, sleeps at 23:00 and is back at 7:00. Consistency beats marathons."
   }
 }

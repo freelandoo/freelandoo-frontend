@@ -22,7 +22,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getLife, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, archivo, chamfer, teko } from "./evo-skin"
-import { PAGES, StatusPage, pageTitle, type PageActions } from "./status-pages"
+import { PAGES, StatusPage, type PageActions } from "./status-pages"
 import SkinWardrobe from "./skin-wardrobe"
 import { PORTRAIT } from "../portraits"
 
@@ -347,38 +347,42 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
   }
 
   // ── celular: um card por vez ─────────────────────────────────────────────
+  // A página cabe na tela (sem rolagem, como no computador); a moldura é
+  // levemente translúcida (alfa no fundo, nunca backdrop-filter).
   if (compact) {
     const page = PAGES[sel]
+    const compactFill = "linear-gradient(160deg, rgba(27,7,17,0.86) 0%, rgba(13,7,11,0.86) 50%, rgba(20,6,14,0.86) 100%)"
     return (
       <>
       <div
-        className={`${archivo.className} fixed inset-0 z-[80] flex flex-col bg-black/70`}
-        style={{ paddingTop: "max(10px, env(safe-area-inset-top))", paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
+        className={`${archivo.className} fixed inset-0 z-[80] flex flex-col bg-black/45`}
+        style={{ paddingTop: "max(8px, env(safe-area-inset-top))", paddingBottom: "max(6px, env(safe-area-inset-bottom))" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
       >
-        <div className="relative mx-2 min-h-0 flex-1" style={{ clipPath: chamfer(26), background: EVO.magenta, padding: 3 }}>
-          <div className="h-full overflow-y-auto overscroll-contain p-4" style={{ clipPath: chamfer(24), background: frameFill }}>
+        <div className="relative mx-2 min-h-0 flex-1" style={{ clipPath: chamfer(18), background: EVO.magenta, padding: 2 }}>
+          <div className="h-full overflow-hidden p-2.5" style={{ clipPath: chamfer(17), background: compactFill }}>
             <StatusPage page={page} life={life} name={name} portrait={portrait} compact t={t} act={act} />
           </div>
         </div>
-        <div className="mx-2 mt-2 flex items-center justify-between gap-2">
-          <button type="button" onClick={() => go(-1)} aria-label={t("stPrev", "Tela anterior")} className="flex h-12 w-12 items-center justify-center" style={{ color: EVO.magenta }}>
-            <ChevronLeft className="h-9 w-9" />
+        {/* rodapé numa linha de 40 px: ‹ pontos › e fechar (o nome da página está no cabeçalho) */}
+        <div className="mx-2 mt-1.5 flex h-10 shrink-0 items-center gap-1">
+          <button type="button" onClick={() => go(-1)} aria-label={t("stPrev", "Tela anterior")} className="flex h-9 w-9 shrink-0 items-center justify-center" style={{ color: EVO.magenta }}>
+            <ChevronLeft className="h-6 w-6" />
           </button>
-          <div className="flex min-w-0 flex-col items-center">
-            <span className={`${teko.className} truncate text-[20px] uppercase tracking-[0.2em]`} style={{ color: EVO.douradoClaro }}>
-              {pageTitle(page, t)}
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+            <Dots sel={sel} onPick={goTo} small />
+            <span className={`${teko.className} shrink-0 text-[14px] leading-none tracking-wider`} style={{ color: EVO.mudo }}>
+              {sel + 1}/{N}
             </span>
-            <Dots sel={sel} onPick={goTo} />
           </div>
-          <button type="button" onClick={() => go(1)} aria-label={t("stNext", "Próxima tela")} className="flex h-12 w-12 items-center justify-center" style={{ color: EVO.magenta }}>
-            <ChevronRight className="h-9 w-9" />
+          <button type="button" onClick={() => go(1)} aria-label={t("stNext", "Próxima tela")} className="flex h-9 w-9 shrink-0 items-center justify-center" style={{ color: EVO.magenta }}>
+            <ChevronRight className="h-6 w-6" />
           </button>
-          <BackButton onClick={close} t={t} />
+          <BackButton onClick={close} t={t} icon />
         </div>
-        {notice && <Notice text={notice} />}
+        {notice && <Notice text={notice} small />}
       </div>
       {skins}
       </>
@@ -509,7 +513,26 @@ function chamferPoints(ox: number, oy: number, w: number, h: number, cut: number
     .join(" ")
 }
 
-function Dots({ sel, onPick }: { sel: number; onPick: (i: number) => void }) {
+function Dots({ sel, onPick, small = false }: { sel: number; onPick: (i: number) => void; small?: boolean }) {
+  // Celular: pontos menores, com área de toque de 22 px em volta de cada um.
+  if (small) {
+    return (
+      <div className="flex items-center justify-center">
+        {PAGES.map((p, i) => (
+          <button key={p} type="button" aria-label={String(i + 1)} onClick={() => onPick(i)} className="flex h-[22px] items-center justify-center px-[4px]">
+            <span
+              className="block"
+              style={
+                i === sel
+                  ? { width: 18, height: 8, border: `2px solid ${EVO.magenta}`, boxShadow: `0 0 6px ${EVO.magenta}` }
+                  : { width: 6, height: 6, background: `${EVO.branco}55` }
+              }
+            />
+          </button>
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="flex items-center justify-center gap-2 py-1">
       {PAGES.map((p, i) => (
@@ -530,7 +553,21 @@ function Dots({ sel, onPick }: { sel: number; onPick: (i: number) => void }) {
   )
 }
 
-function BackButton({ onClick, t, big = false }: { onClick: () => void; t: (k: string, f: string) => string; big?: boolean }) {
+function BackButton({ onClick, t, big = false, icon = false }: { onClick: () => void; t: (k: string, f: string) => string; big?: boolean; icon?: boolean }) {
+  // Celular: só o X, 36×36, com o nome no aria-label.
+  if (icon) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={t("stBack", "Voltar")}
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center"
+        style={{ clipPath: chamfer(8), background: `linear-gradient(180deg, ${EVO.carvao2}, ${EVO.preto})`, color: EVO.douradoClaro, boxShadow: `inset 0 0 0 2px ${EVO.douradoEscuro}` }}
+      >
+        <X className="h-5 w-5" />
+      </button>
+    )
+  }
   return (
     <button
       type="button"
@@ -551,10 +588,10 @@ function BackButton({ onClick, t, big = false }: { onClick: () => void; t: (k: s
   )
 }
 
-function Notice({ text }: { text: string }) {
+function Notice({ text, small = false }: { text: string; small?: boolean }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-6 z-[90] flex justify-center px-4">
-      <div className={`${teko.className} px-4 pb-1 pt-2 text-[22px] font-semibold uppercase tracking-wider`} style={{ background: EVO.douradoClaro, color: EVO.preto, clipPath: chamfer(10) }}>
+    <div className={`pointer-events-none fixed inset-x-0 z-[90] flex justify-center px-4 ${small ? "top-3" : "top-6"}`}>
+      <div className={`${teko.className} font-semibold uppercase tracking-wider ${small ? "px-3 pb-0.5 pt-1.5 text-[15px]" : "px-4 pb-1 pt-2 text-[22px]"}`} style={{ background: EVO.douradoClaro, color: EVO.preto, clipPath: chamfer(10) }}>
         {text}
       </div>
     </div>
