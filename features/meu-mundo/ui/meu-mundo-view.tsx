@@ -118,7 +118,6 @@ export default function MeuMundoView({
   const [body, setBody] = useState<BodyId>(payload.me.body)
   // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
   const [winded, setWinded] = useState(false)
-  const [running, setRunning] = useState(false)
   const [residents, setResidents] = useState(nb.residents)
   // Lote do carro que você dirige (0 = a pé) — confirmado pela sala.
   const [drivingLot, setDrivingLot] = useState(0)
@@ -269,13 +268,6 @@ export default function MeuMundoView({
   const recenter = useCallback(() => {
     setOpen(null)
     gameRef.current?.recenter()
-  }, [])
-
-  const toggleRun = useCallback(() => {
-    setRunning((r) => {
-      gameRef.current?.setRun(!r)
-      return !r
-    })
   }, [])
 
   const netLabel = {
@@ -531,18 +523,6 @@ export default function MeuMundoView({
 
       {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !drivingLot && (
         <>
-          <EvoButton
-            variant="gold"
-            onClick={toggleRun}
-            aria-pressed={running}
-            aria-label={t("runAria", "Corrida lenta (liga e desliga)")}
-            size="none"
-            className="!absolute h-16 w-16 flex-col !gap-0.5 !px-0 text-[14px]"
-            style={{ bottom: bottom(112), right: SAFE.right }}
-            icon={<Footprints className="h-6 w-6" />}
-          >
-            {t("run", "Correr")}
-          </EvoButton>
           {nearbyMine && (
             <EvoButton
               variant="gold"
@@ -712,7 +692,6 @@ export function SceneCurtain({
 
 // Joystick virtual: escreve direto no estado de entrada do jogo, sem passar
 // por estado do React (seriam dezenas de renders por segundo).
-const OCT = "polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%)"
 export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: (x: number, y: number) => void } | null> }) {
   const baseRef = useRef<HTMLDivElement | null>(null)
   const knobRef = useRef<HTMLDivElement | null>(null)
@@ -753,7 +732,8 @@ export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: 
     <div
       ref={baseRef}
       className="absolute flex h-36 w-36 items-center justify-center"
-      style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)", left: SAFE.left, touchAction: "none", clipPath: OCT, background: `${EVO.dourado}88` }}
+      // Redondo, sem contorno e transparente (pedido do Alex, 2026-10-25; exceção à regra dos cantos retos, como o avatar).
+      style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)", left: SAFE.left, touchAction: "none", borderRadius: "50%", background: "rgba(255,255,255,0.14)" }}
       onPointerDown={(e) => {
         if (idRef.current !== null) return
         idRef.current = e.pointerId
@@ -764,11 +744,10 @@ export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: 
       onPointerUp={end}
       onPointerCancel={end}
     >
-      <div className="pointer-events-none absolute inset-[2px]" style={{ clipPath: OCT, background: "rgba(8,7,11,0.45)" }} />
       <div
         ref={knobRef}
         className="pointer-events-none relative h-16 w-16"
-        style={{ clipPath: OCT, background: `linear-gradient(180deg, ${EVO.rosa}, #8a0040)` }}
+        style={{ borderRadius: "50%", background: "rgba(255,255,255,0.42)" }}
       />
     </div>
   )

@@ -14,7 +14,7 @@
 // lenta) usa a mesma chave, então a sala nunca come duas vezes.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { DoorOpen, Footprints, Info, Armchair, ArrowUpFromLine, BedDouble, HeartPulse, Moon, Refrigerator, RefreshCw, Send, Sun, Users, Wifi, WifiOff } from "lucide-react"
+import { DoorOpen, Info, Armchair, ArrowUpFromLine, BedDouble, HeartPulse, Moon, Refrigerator, RefreshCw, Send, Sun, Users, Wifi, WifiOff } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { createHouseGame, type FridgeReply, type HouseGameHandle } from "../engine/house-game"
@@ -67,7 +67,6 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const [infoOpen, setInfoOpen] = useState(false)
   // A gaveta do menu (direita): abre puxando, clicando no puxador ou com M.
   const [menuOpen, setMenuOpen] = useState(false)
-  const [running, setRunning] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
   // Tipo físico: vem da vida, pela sala (não se escolhe).
   const [body, setBody] = useState<BodyId>(payload.me.body)
@@ -277,13 +276,6 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
     return () => window.removeEventListener("resize", fit)
   }, [])
 
-  const toggleRun = useCallback(() => {
-    setRunning((r) => {
-      gameRef.current?.setRun(!r)
-      return !r
-    })
-  }, [])
-
   const netLabel = {
     connecting: t("netConnecting", "Conectando"),
     online: t("netOnline", "Online"),
@@ -487,20 +479,6 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
       {status === "ready" && isTouch && !overlay && (
         <>
           {!seat && !rest && <Joystick gameRef={gameRef} />}
-          {!seat && !rest && (
-            <EvoButton
-              variant="gold"
-              size="none"
-              onClick={toggleRun}
-              aria-pressed={running}
-              aria-label={t("runAria", "Corrida lenta (liga e desliga)")}
-              className="!absolute h-16 w-16 flex-col !gap-0.5 !px-0 text-[14px]"
-              style={{ bottom: bottom(112), right: SAFE.right }}
-              icon={<Footprints className="h-6 w-6" />}
-            >
-              {t("run", "Correr")}
-            </EvoButton>
-          )}
           {hasAction && (
             <EvoButton
               variant="primary"

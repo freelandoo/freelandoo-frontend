@@ -84,8 +84,16 @@ function isEditable(t: EventTarget | null) {
 }
 
 /** Corrida lenta: Shift segurado no teclado ou o botão do celular ligado. */
+/**
+ * Joystick do celular (pedido do Alex, 2026-10-25): sem botão de correr — até
+ * JOY_WALK_AT da borda ele acelera até a caminhada cheia, de JOY_RUN_AT em
+ * diante corre. No computador o Shift corre.
+ */
+export const JOY_WALK_AT = 0.5
+export const JOY_RUN_AT = 0.85
+
 export function wantsRun(s: InputState) {
-  return s.runToggle || s.keys.has("ShiftLeft") || s.keys.has("ShiftRight")
+  return s.runToggle || s.keys.has("ShiftLeft") || s.keys.has("ShiftRight") || Math.hypot(s.joyX, s.joyY) >= JOY_RUN_AT
 }
 
 /** Eixo de movimento do teclado + joystick: x = direita, y = frente. */
@@ -93,8 +101,14 @@ export function moveAxis(s: InputState) {
   const k = s.keys
   let x = (k.has("KeyD") || k.has("ArrowRight") ? 1 : 0) - (k.has("KeyA") || k.has("ArrowLeft") ? 1 : 0)
   let y = (k.has("KeyW") || k.has("ArrowUp") ? 1 : 0) - (k.has("KeyS") || k.has("ArrowDown") ? 1 : 0)
-  x += s.joyX
-  y += s.joyY
+  // Joystick: metade do curso já é a caminhada cheia (a velocidade a pé é
+  // proporcional ao tamanho da intenção — meuMundoMotion.step).
+  const jm = Math.hypot(s.joyX, s.joyY)
+  if (jm > 0) {
+    const g = Math.min(1, jm / JOY_WALK_AT) / jm
+    x += s.joyX * g
+    y += s.joyY * g
+  }
   const m = Math.hypot(x, y)
   if (m > 1) {
     x /= m

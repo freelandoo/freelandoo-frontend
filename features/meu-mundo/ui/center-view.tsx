@@ -12,7 +12,7 @@
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Activity, Footprints, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, RefreshCw, Store, Users, Wifi, WifiOff, X } from "lucide-react"
+import { Activity, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, RefreshCw, Store, Users, Wifi, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
@@ -96,7 +96,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [body, setBody] = useState<BodyId>(payload.me.body)
   // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
   const [winded, setWinded] = useState(false)
-  const [running, setRunning] = useState(false)
   const [drivingLot, setDrivingLot] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const cbRef = useRef({ onGoHome, onMoved, onServerMessage })
@@ -410,23 +409,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
 
       {status === "ready" && isTouch && !open && !menuOpen && !drivingLot && (
         <>
-          <EvoButton
-            variant="gold"
-            onClick={() =>
-              setRunning((r) => {
-                gameRef.current?.setRun(!r)
-                return !r
-              })
-            }
-            aria-pressed={running}
-            aria-label={t("runAria", "Corrida lenta (liga e desliga)")}
-            size="none"
-            className="!absolute h-16 w-16 flex-col !gap-0.5 !px-0 text-[14px]"
-            style={{ bottom: bottom(112), right: SAFE.right }}
-            icon={<Footprints className="h-6 w-6" />}
-          >
-            {t("run", "Correr")}
-          </EvoButton>
           {nearby && (
             <EvoButton
               variant={nearPlace ? "gold" : "primary"}
