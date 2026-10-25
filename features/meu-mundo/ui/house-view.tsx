@@ -394,6 +394,10 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
         aria-label={t("houseCanvasAria", "Interior da casa")}
       />
 
+      {/* Dormindo (pedido do Alex, 2026-10-25): a tela escurece bastante; o
+          "Acordar" e os avisos ficam por cima. Camada estática, sem animação. */}
+      {rest?.sleeping && <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(4,4,10,0.82)" }} aria-hidden />}
+
       {status === "ready" && (net === "offline" || net === "replaced") && (
         <div className="absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
           <button type="button" onClick={() => gameRef.current?.reconnect()} aria-label={t("reconnect", "Reconectar")}>

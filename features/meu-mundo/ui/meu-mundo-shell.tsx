@@ -65,6 +65,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // Necessidades (mm3d-28): a do login sai do payload; depois, de cada "life".
   const [needs, setNeeds] = useState<LifeNeed[]>(() => initial.life?.character.needs ?? [])
   const [needsTick, setNeedsTick] = useState(0)
+  const [asleep, setAsleep] = useState(() => initial.life?.character.activity.kind === "sleeping")
   const [avatar, setAvatar] = useState<BodyId>(() => initial.life?.avatar ?? initial.me.body)
   const onLife = stay.onLife
   const busyRef = useRef(false)
@@ -170,7 +171,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     (type: string, payload: unknown) => {
       if (type === "visits") setVisits(payload as VisitState)
       else if (type === "life") {
-        const p = payload as { status?: string; needs?: LifeNeed[]; body?: string } | null
+        const p = payload as { status?: string; activity?: string; needs?: LifeNeed[]; body?: string } | null
+        if (typeof p?.activity === "string") setAsleep(p.activity === "sleeping")
         setLifeTick((n) => n + 1)
         onLife(p?.status)
         if (Array.isArray(p?.needs)) {
@@ -358,7 +360,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
 
-      {!busy && !statusBody && !hospitalUp && <NeedsBubble needs={needs} tick={needsTick} body={avatar} below={active || outgoing ? 56 : 0} onOpenStatus={() => setStatusBody(scene.me.body)} />}
+      {!busy && !statusBody && !hospitalUp && !asleep && <NeedsBubble needs={needs} tick={needsTick} body={avatar} below={active || outgoing ? 56 : 0} onOpenStatus={() => setStatusBody(scene.me.body)} />}
 
       {statusBody && (
         <StatusScreen name={scene.me.name} body={statusBody} lifeTick={lifeTick} onClose={() => setStatusBody(null)} />
