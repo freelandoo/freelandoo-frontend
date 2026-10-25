@@ -353,7 +353,7 @@ export function EvoDialog({
     <div
       className={`fl-sharp ${fixed ? "fixed" : "absolute"} inset-0 ${z} flex items-end justify-center sm:items-center`}
       style={{
-        background: "rgba(8,7,11,0.55)",
+        background: "rgba(8,7,11,0.38)",
         paddingTop: "max(12px, env(safe-area-inset-top))",
         paddingBottom: "max(12px, env(safe-area-inset-bottom))",
         paddingLeft: "max(12px, env(safe-area-inset-left))",

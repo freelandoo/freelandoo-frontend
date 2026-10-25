@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { ChevronLeft, ChevronRight, Loader2, Refrigerator, Utensils, X } from "lucide-react"
 import type { FridgeStock, LifeCharacter, LifeItem } from "../../types"
 import { EvoButton } from "../hud/hud-kit"
-import { Chamfer, EVO, archivo, teko } from "../status/evo-skin"
+import { Chamfer, EVO, FUNDO, archivo, teko } from "../status/evo-skin"
 import { hoursText, itemName } from "../status/status-pages"
 import { categories, effectsOf, mealFit, thumbOf, verbOf, type CategoryCard, type Effect, type FridgeCategory } from "./fridge-logic"
 
@@ -158,7 +158,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
     <div
       className={`${archivo.className} fl-sharp absolute inset-0 z-20 flex flex-col justify-end`}
       // Um pouco translúcido: o jogo aparece atrás (pedido do Alex, 2026-10-25).
-      style={{ background: "linear-gradient(180deg, rgba(8,7,11,0) 0%, rgba(8,7,11,0.2) 35%, rgba(8,10,16,0.72) 100%)" }}
+      style={{ background: "linear-gradient(180deg, rgba(24,24,28,0) 0%, rgba(24,24,28,0.14) 35%, rgba(24,24,28,0.5) 100%)" }}
       // A interface engole o toque: nada atravessa para o jogo.
       onPointerDown={(e) => e.stopPropagation()}
       role="dialog"
@@ -215,7 +215,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
               type="button"
               onClick={onClose}
               className={`inline-flex ${compact ? "h-8 w-8" : "h-10 w-10"} items-center justify-center`}
-              style={{ color: EVO.douradoClaro, background: "rgba(8,7,11,0.86)", boxShadow: `inset 0 0 0 1.5px ${EVO.dourado}99` }}
+              style={{ color: EVO.douradoClaro, background: FUNDO.cardLiso, boxShadow: `inset 0 0 0 1.5px ${EVO.dourado}99` }}
               aria-label={t("frClose", "Fechar a geladeira")}
             >
               <X className={compact ? "h-4 w-4" : "h-5 w-5"} />
@@ -476,7 +476,7 @@ function Card({
         className="pointer-events-none absolute -inset-[3px]"
         style={{ background: EVO.magenta, boxShadow: `0 0 22px ${EVO.magenta}`, opacity: active ? 1 : 0, transition: "opacity 240ms" }}
       />
-      <Chamfer cut={14} border={active ? EVO.rosaClaro : ICE_DIM} width={1.5} className="h-full" fill="linear-gradient(180deg, rgba(18,24,35,0.86) 0%, rgba(11,13,19,0.86) 100%)">
+      <Chamfer cut={14} border={active ? EVO.rosaClaro : ICE_DIM} width={1.5} className="h-full" fill={FUNDO.card}>
         <div className="relative overflow-hidden" style={{ height: imgH, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail local pequena, só no jogo (admin) */}
           <img

@@ -43,6 +43,17 @@ export const EVO = {
   roxo: "#a64dff",
 } as const
 
+/**
+ * Fundos das placas (pedido do Alex, 2026-10-25): cinza translúcido no lugar
+ * do vinho. `card` = placas e cards (alpha 0,76); `moldura` = o fundo grande
+ * atrás deles (alpha 0,56). Mudar a transparência do jogo = mudar aqui.
+ */
+export const FUNDO = {
+  card: "linear-gradient(180deg, rgba(58,58,64,0.76), rgba(42,42,48,0.76))",
+  cardLiso: "rgba(46,46,52,0.76)",
+  moldura: "linear-gradient(160deg, rgba(34,34,38,0.56) 0%, rgba(24,24,28,0.56) 100%)",
+} as const
+
 /** O tempo (evo.gd): resposta rápida, painel, tela, escalonamento. */
 export const T = { rapido: 140, painel: 360, tela: 750, escalona: 65 } as const
 
@@ -52,13 +63,34 @@ export function chamfer(cut: number) {
 }
 
 /**
- * Moldura chanfrada: a borda é a camada de fora, o recheio a de dentro (o
- * clip-path corta sombra e borda, então a "linha" é a diferença entre as duas).
+ * Só a BORDA do chanfro, como anel (polygon evenodd: contorno de fora + de
+ * dentro). Com o recheio translúcido (FUNDO), uma camada cheia de borda atrás
+ * dele tingiria o card inteiro — por isso a borda é um anel por cima.
+ */
+export function chamferRing(cut: number, w: number) {
+  const c = Math.max(0, cut - w)
+  const a = (x: string, y: string) => `${x} ${y}`
+  const outer = [a("0", "0"), a(`calc(100% - ${cut}px)`, "0"), a("100%", `${cut}px`), a("100%", "100%"), a(`${cut}px`, "100%"), a("0", `calc(100% - ${cut}px)`), a("0", "0")]
+  const inner = [
+    a(`${w}px`, `${w}px`),
+    a(`calc(100% - ${w + c}px)`, `${w}px`),
+    a(`calc(100% - ${w}px)`, `${w + c}px`),
+    a(`calc(100% - ${w}px)`, `calc(100% - ${w}px)`),
+    a(`${w + c}px`, `calc(100% - ${w}px)`),
+    a(`${w}px`, `calc(100% - ${w + c}px)`),
+    a(`${w}px`, `${w}px`),
+  ]
+  return `polygon(evenodd, ${[...outer, ...inner].join(", ")})`
+}
+
+/**
+ * Moldura chanfrada: recheio (fill) no chanfro inteiro e a borda como anel
+ * por cima (chamferRing). O espaçamento interno (`width`) continua o mesmo.
  */
 export function Chamfer({
   cut = 16,
   border = EVO.linhaForte,
-  fill = "linear-gradient(180deg, rgba(16,10,14,0.86), rgba(10,7,11,0.86))",
+  fill = FUNDO.card,
   width = 1,
   className = "",
   style,
@@ -73,10 +105,9 @@ export function Chamfer({
   children?: ReactNode
 }) {
   return (
-    <div className={`relative ${className}`} style={{ clipPath: chamfer(cut), background: border, padding: width, ...style }}>
-      <div className="relative h-full w-full" style={{ clipPath: chamfer(Math.max(0, cut - width)), background: fill }}>
-        {children}
-      </div>
+    <div className={`relative ${className}`} style={{ clipPath: chamfer(cut), background: fill, padding: width, ...style }}>
+      <div className="relative h-full w-full">{children}</div>
+      <div className="pointer-events-none absolute inset-0" style={{ clipPath: chamferRing(cut, width), background: border }} aria-hidden />
     </div>
   )
 }

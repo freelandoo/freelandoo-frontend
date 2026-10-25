@@ -21,7 +21,7 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getLife, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
-import { EVO, archivo, chamfer, teko } from "./evo-skin"
+import { EVO, FUNDO, archivo, chamfer, chamferRing, teko } from "./evo-skin"
 import { PAGES, StatusPage, type PageActions } from "./status-pages"
 import SkinWardrobe from "./skin-wardrobe"
 import { PORTRAIT } from "../portraits"
@@ -330,7 +330,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
       }}
     />
   )
-  const frameFill = "linear-gradient(160deg, #1b0711 0%, #0d070b 50%, #14060e 100%)"
+  const frameFill = FUNDO.moldura
 
   // ── estados de espera ────────────────────────────────────────────────────
   const shell = (children: React.ReactNode) => (
@@ -351,7 +351,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
   // levemente translúcida (alfa no fundo, nunca backdrop-filter).
   if (compact) {
     const page = PAGES[sel]
-    const compactFill = "linear-gradient(160deg, rgba(27,7,17,0.86) 0%, rgba(13,7,11,0.86) 50%, rgba(20,6,14,0.86) 100%)"
+    const compactFill = FUNDO.moldura
     return (
       <>
       <div
@@ -361,8 +361,9 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
       >
-        <div className="relative mx-2 min-h-0 flex-1" style={{ clipPath: chamfer(18), background: EVO.magenta, padding: 2 }}>
-          <div className="h-full overflow-hidden p-2.5" style={{ clipPath: chamfer(17), background: compactFill }}>
+        <div className="relative mx-2 min-h-0 flex-1" style={{ clipPath: chamfer(18), background: compactFill, padding: 2 }}>
+          <div className="pointer-events-none absolute inset-0" style={{ clipPath: chamferRing(18, 2), background: EVO.magenta }} aria-hidden />
+          <div className="h-full overflow-hidden p-2.5">
             <StatusPage page={page} life={life} name={name} portrait={portrait} compact t={t} act={act} />
           </div>
         </div>
@@ -396,7 +397,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
     <>
     <div
       className={`${archivo.className} fixed inset-0 z-[80] select-none overflow-hidden`}
-      style={{ background: "radial-gradient(ellipse at 50% 55%, rgba(8,7,11,0.35), rgba(8,7,11,0.78))" }}
+      style={{ background: "radial-gradient(ellipse at 50% 55%, rgba(8,7,11,0.25), rgba(8,7,11,0.55))" }}
       onClick={(e) => {
         if (e.target === e.currentTarget && performance.now() - draggedAt.current > 250) close()
       }}
@@ -435,8 +436,9 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0 }: Stat
                   <polygon points={chamferPoints(16, 16, W, H, 40)} fill="none" stroke={EVO.rosaClaro} strokeWidth={3} />
                 </svg>
               </div>
-              <div className="absolute inset-0" style={{ clipPath: chamfer(40), background: `linear-gradient(135deg, ${EVO.magenta}, ${EVO.ritual} 55%, ${EVO.magenta})`, padding: 4 }}>
-                <div className="relative h-full w-full overflow-hidden" style={{ clipPath: chamfer(37), background: frameFill }}>
+              <div className="absolute inset-0" style={{ clipPath: chamfer(40), background: frameFill, padding: 4 }}>
+                <div className="pointer-events-none absolute inset-0" style={{ clipPath: chamferRing(40, 4), background: `linear-gradient(135deg, ${EVO.magenta}, ${EVO.ritual} 55%, ${EVO.magenta})` }} aria-hidden />
+                <div className="relative h-full w-full overflow-hidden">
                   {/* pinceladas magenta atrás do título, como no anexo */}
                   <div
                     className="pointer-events-none absolute left-[22%] top-6 h-28 w-[46%]"
