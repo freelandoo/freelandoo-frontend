@@ -2,8 +2,10 @@
 //
 // Leves (pedido do Alex): um gatinho ESTÁTICO por cor (pipeline/build_paint_cats.py
 // — a pose do "idle" aplicada na malha, sem esqueleto) desenhado por
-// instâncias; o movimento é por código. mm3d-35h: 5× menores, o rabo é peça
-// própria (balança) e o corpo respira.
+// instâncias; o movimento é por código. mm3d-35h: menores, o rabo é peça
+// própria (balança) e o corpo respira. mm3d-35i: 2× o tamanho da 35h e ANDAM —
+// as 4 patas são peças próprias e balançam em passo diagonal, no ritmo dos
+// metros andados (antes pareciam arrastados).
 //
 //  - No mapa: parados no lugar, com o anel dourado; pegou → pula e some.
 //  - Na FILA atrás de quem pegou, como no Cat Demon (comitiva.gd): RASTRO DE
@@ -33,31 +35,35 @@ import type { PaintCat, Solid } from "../sim/map"
 import { supportAt } from "../sim/collide"
 
 export const CAT_ASSETS = "/meu-mundo/paint/v1/"
-const CAT_FILES = ["gato-branco-m35h.glb", "gato-preto-m35h.glb"]
-/** O modelo tem ~0,2 m; no jogo ~0,13 m (mm3d-35h: 5× menor que o 3,2 de antes). */
-const CAT_SCALE = 0.64
+const CAT_FILES = ["gato-branco-m35i.glb", "gato-preto-m35i.glb"]
+/** O modelo tem ~0,2 m; no jogo ~0,25 m (mm3d-35i: 2× a 35h, pedido do Alex). */
+const CAT_SCALE = 1.28
 /** Fila (comitiva.gd × a escala): distância entre gatos e do primeiro ao dono. */
-const SPACING = 0.3
-const FIRST = 0.6
+const SPACING = 0.5
+const FIRST = 0.8
 const SAMPLE = 0.1
 /** Mais que isto atrás de um jogador não é desenhado (o placar continua contando). */
 const MAX_SHOWN = 24
 const GRAVITY = 22
 /** Subida sem pular e folga do "pé" do gato. */
-const CAT_STEP = 0.06
-const CAT_PAD = 0.04
+const CAT_STEP = 0.1
+const CAT_PAD = 0.06
+/** Peças móveis do GLB (build_paint_cats.py): rabo + patas frente/trás × esq./dir. */
+const PARTS = ["rabo", "pata_fe", "pata_fd", "pata_te", "pata_td"] as const
+/** Fase do passo por metro andado (uma passada ≈ 0,22 m). */
+const GAIT = (Math.PI * 2) / 0.22
 
-/** Um gatinho desenhado: corpo + rabo (filho, gira na base). */
+/** Um gatinho desenhado: corpo + peças (filhas, giram na base), na ordem de PARTS. */
 interface CatInst {
   body: InstancedMesh
-  tail: InstancedMesh | null
+  parts: (InstancedMesh | null)[]
 }
 
 interface CatSource {
   body: Mesh
-  tail: Mesh | null
-  /** Base do rabo no espaço do corpo (já na escala). */
-  pivot: Vector3
+  parts: (Mesh | null)[]
+  /** Base de cada peça no espaço do corpo (já na escala). */
+  pivots: Vector3[]
 }
 
 interface MapCat {
@@ -80,6 +86,8 @@ interface Follower {
   jumpAt: number
   jumpV: number
   hop: number
+  /** 0 parado … 1 andando (suaviza o balanço das patas). */
+  walk: number
   phase: number
 }
 
@@ -142,7 +150,7 @@ class Trail {
     while (this.cats.length < want) {
       const skin = (this.cats.length % 3 === 2 ? 1 : 0) as 0 | 1
       const tail = this.pointAt(FIRST + this.cats.length * SPACING)
-      this.cats.push({ inst: this.herd.instance(skin), skin, x: tail.x, y: tail.g + 0.3, z: tail.z, vy: 0, grounded: false, jumpAt: 0, jumpV: 0, hop: Math.random() * 6, phase: Math.random() * 6 })
+      this.cats.push({ inst: this.herd.instance(skin), skin, x: tail.x, y: tail.g + 0.3, z: tail.z, vy: 0, grounded: false, jumpAt: 0, jumpV: 0, hop: Math.random() * 6, walk: 0, phase: Math.random() * 6 })
     }
     while (this.cats.length > want) this.herd.release(this.cats.pop()?.inst ?? null)
     this.maxLen = FIRST + want * SPACING + 1
@@ -200,15 +208,17 @@ class Trail {
         c.vy = 0
         c.grounded = true
       }
-      c.hop += moved * 14
-      const bounce = c.grounded && moved > 0.002 ? Math.abs(Math.sin(c.hop)) * 0.035 : 0
+      c.hop += moved * GAIT
+      const going = dt > 0 && moved / dt > 0.25 ? 1 : 0
+      c.walk += (going - c.walk) * Math.min(1, dt * 10)
+      const bounce = c.grounded ? Math.abs(Math.sin(c.hop)) * 0.012 * c.walk : 0
       if (!c.inst) c.inst = this.herd.instance(c.skin)
       if (!c.inst) return
       c.inst.body.position.set(c.x, c.y + bounce, c.z)
       const dx = ahead.x - p.x
       const dz = ahead.z - p.z
       if (Math.hypot(dx, dz) > 0.005) c.inst.body.rotation.y = Math.atan2(dx, dz)
-      this.herd.alive(c.inst, c.phase, moved > 0.002)
+      this.herd.alive(c.inst, c.phase, c.hop, c.walk, !c.grounded)
     })
   }
 
@@ -250,13 +260,13 @@ export class CatHerd {
     this.ringMat.emissiveColor = new Color3(0.95, 0.72, 0.2)
     this.ringMat.diffuseColor = new Color3(0.95, 0.75, 0.3)
     this.ringMat.disableLighting = true
-    this.ringBase = CreateTorus("paint-cat-ring", { diameter: 0.36, thickness: 0.025, tessellation: 24 }, scene)
+    this.ringBase = CreateTorus("paint-cat-ring", { diameter: 0.6, thickness: 0.04, tessellation: 24 }, scene)
     this.ringBase.material = this.ringMat
     this.ringBase.isPickable = false
     this.ringBase.position.y = -1000
     for (const c of cats) {
       const ring = this.ringBase.createInstance(`paint-cat-ring-${c.id}`)
-      ring.position.set(c.x, c.y + 0.03, c.z)
+      ring.position.set(c.x, c.y + 0.04, c.z)
       ring.isPickable = false
       const v: MapCat = { cat: c, inst: null, ring, taken: 0 }
       this.map.push(v)
@@ -274,19 +284,24 @@ export class CatHerd {
       }
       got.forEach((c, i) => {
         c.addAllToScene()
-        const isTail = (m: { name: string; parent: unknown }) => m.name.startsWith("rabo") || ((m.parent as { name?: string } | null)?.name ?? "").startsWith("rabo")
-        const parts = c.meshes.filter((m): m is Mesh => m instanceof Mesh && m.getTotalVertices() > 0)
-        // base do rabo: a origem do nó "rabo" (o pipeline põe na base do Tail.001)
-        const tailNode = [...c.meshes, ...c.transformNodes].find((n) => n.name === "rabo")
-        tailNode?.computeWorldMatrix(true)
-        const pivot = tailNode ? tailNode.getAbsolutePosition().clone() : Vector3.Zero()
-        const body = this.bake(parts.filter((m) => !isTail(m)), Vector3.Zero())
-        const tail = this.bake(parts.filter((m) => isTail(m)), pivot)
+        // peça de cada malha: o nome dela ou do nó pai (primitivas "rabo_primitive0")
+        const partOf = (m: Mesh) => PARTS.findIndex((k) => m.name.startsWith(k) || (m.parent?.name ?? "").startsWith(k))
+        const meshes = c.meshes.filter((m): m is Mesh => m instanceof Mesh && m.getTotalVertices() > 0)
+        // base de cada peça: a origem do nó dela (o pipeline põe no ombro/quadril/rabo)
+        const pivots = PARTS.map((k) => {
+          const node = [...c.meshes, ...c.transformNodes].find((n) => n.name === k)
+          node?.computeWorldMatrix(true)
+          return node ? node.getAbsolutePosition().clone() : Vector3.Zero()
+        })
+        const body = this.bake(meshes.filter((m) => partOf(m) < 0), Vector3.Zero())
+        const parts = PARTS.map((k, j) => this.bake(meshes.filter((m) => partOf(m) === j), pivots[j]))
         for (const n of c.transformNodes) if (n.getChildMeshes().length === 0) n.dispose()
         if (!body) return
         body.name = `paint-cat-src-${i}`
-        if (tail) tail.name = `paint-cat-tail-${i}`
-        this.sources[i] = { body, tail, pivot: pivot.scale(CAT_SCALE) }
+        parts.forEach((m, j) => {
+          if (m) m.name = `paint-cat-${PARTS[j]}-${i}`
+        })
+        this.sources[i] = { body, parts, pivots: pivots.map((v) => v.scale(CAT_SCALE)) }
       })
     } catch (err) {
       if (!this.disposed) console.warn("[paint] gatinhos não carregaram", err)
@@ -320,33 +335,45 @@ export class CatHerd {
     return merged
   }
 
-  /** Um gatinho (corpo + rabo) — null até carregar. */
+  /** Um gatinho (corpo + rabo + patas) — null até carregar. */
   instance(skin: 0 | 1): CatInst | null {
     const src = this.sources[skin]
     if (!src) return null
     const body = src.body.createInstance(`paint-cat-${++this.seq}`)
     body.isPickable = false
     body.scaling.setAll(1)
-    let tail: InstancedMesh | null = null
-    if (src.tail) {
-      tail = src.tail.createInstance(`paint-cat-tail-${this.seq}`)
-      tail.isPickable = false
-      tail.parent = body
-      tail.position.copyFrom(src.pivot)
-    }
-    return { body, tail }
+    const parts = src.parts.map((m, j) => {
+      if (!m) return null
+      const p = m.createInstance(`paint-cat-${PARTS[j]}-${this.seq}`)
+      p.isPickable = false
+      p.parent = body
+      p.position.copyFrom(src.pivots[j])
+      return p
+    })
+    return { body, parts }
   }
 
   release(inst: CatInst | null) {
-    inst?.tail?.dispose()
-    inst?.body.dispose()
+    if (!inst) return
+    for (const p of inst.parts) p?.dispose()
+    inst.body.dispose()
   }
 
-  /** Respira (o peito sobe e desce) e balança o rabo; andando, o rabo vai mais rápido. */
-  alive(inst: CatInst, phase: number, moving: boolean) {
+  /**
+   * Respira, balança o rabo e anda: `gait` é a fase do passo (metros andados),
+   * `walk` 0…1 o quanto está andando; passo diagonal (frente-esq. com trás-dir.).
+   * No ar, as patas esticam (frente para a frente, trás para trás).
+   */
+  alive(inst: CatInst, phase: number, gait = 0, walk = 0, air = false) {
     const b = Math.sin(this.clock * 2.4 + phase) * 0.035
     inst.body.scaling.set(1 - b * 0.5, 1 + b, 1 - b * 0.5)
-    if (inst.tail) inst.tail.rotation.y = Math.sin(this.clock * (moving ? 6 : 2.6) + phase) * 0.35
+    const [tail, fe, fd, te, td] = inst.parts
+    if (tail) tail.rotation.y = Math.sin(this.clock * (walk > 0.5 ? 6 : 2.6) + phase) * 0.35
+    const swing = Math.sin(gait) * 0.65 * walk
+    const legs: [InstancedMesh | null, number][] = air
+      ? [[fe, -0.7], [fd, -0.7], [te, 0.7], [td, 0.7]]
+      : [[fe, swing], [td, swing], [fd, -swing], [te, -swing]]
+    for (const [leg, a] of legs) if (leg) leg.rotation.x += (a - leg.rotation.x) * (air ? 0.25 : 1)
   }
 
   /** O mundo do quadro (antes das filas). */
@@ -386,7 +413,7 @@ export class CatHerd {
         v.ring.rotation.y = this.clock * 0.8
         const pulse = 1 + Math.sin(this.clock * 3 + v.cat.id) * 0.08
         v.ring.scaling.set(pulse, 1, pulse)
-        if (v.inst) this.alive(v.inst, v.cat.id, false)
+        if (v.inst) this.alive(v.inst, v.cat.id)
         continue
       }
       if (v.taken < 0 || !v.inst || !v.inst.body.isEnabled()) continue
@@ -396,7 +423,7 @@ export class CatHerd {
         continue
       }
       // pulinho de alegria e some (vai para a fila de quem pegou)
-      v.inst.body.position.y = v.cat.y + Math.sin(Math.min(1, t / 0.5) * Math.PI) * 0.4
+      v.inst.body.position.y = v.cat.y + Math.sin(Math.min(1, t / 0.5) * Math.PI) * 0.6
       v.inst.body.rotation.y = v.cat.facing + t * 10
       v.inst.body.scaling.setAll(Math.max(0.05, 1 - t / 0.5))
     }
@@ -414,7 +441,7 @@ export class CatHerd {
       if (!s) continue
       s.body.material?.dispose(true, true)
       s.body.dispose()
-      s.tail?.dispose()
+      for (const m of s.parts) m?.dispose()
     }
     this.ringBase.dispose()
     this.ringMat.dispose()
