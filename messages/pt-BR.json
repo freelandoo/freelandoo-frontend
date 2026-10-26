@@ -7855,7 +7855,19 @@
     "pvSoon": "Em breve",
     "pvLoading": "Entrando: {place}…",
     "pvErrorTitle": "O lugar não abriu",
-    "pvErrorText": "Não deu para carregar o lugar. Tente de novo."
+    "pvErrorText": "Não deu para carregar o lugar. Tente de novo.",
+    "pvFail": "Não deu certo agora. Tente de novo.",
+    "pvTrainingFor": "Treinando por {h} h",
+    "pvStudyingFor": "Estudando por {h} h",
+    "pvTrainTitle": "Treinar quanto tempo?",
+    "pvStudyTitle": "Estudar quanto tempo?",
+    "pvTrainText": "Força e velocidade sobem nas primeiras 4 h do dia. Ele continua mesmo com o jogo fechado; sair do aparelho para.",
+    "pvStudyText": "A inteligência sobe nas primeiras 5 h do dia. Ele continua mesmo com o jogo fechado; levantar para.",
+    "pvUniText": "Na universidade rende 1,5× — a hora de aula custa {c} moedas.",
+    "actPraying": "Rezando",
+    "actJail": "Preso",
+    "stWhereShort": "Treinar: na academia do centro. Estudar: na biblioteca, na escola ou na universidade.",
+    "stWhere": "Treinar é na academia do centro; estudar, na biblioteca, na escola ou na universidade (rende mais, mas cobra a hora de aula). Entre no prédio e use um aparelho ou uma carteira."
   },
   "Sports": {
     "eyebrow": "Esportes",

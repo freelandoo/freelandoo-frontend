@@ -24,7 +24,7 @@ import { GeoBuilder, place } from "./geometry"
 import { type Box2 } from "./collision"
 import { RemoteWalker, type WalkerPose } from "./remote-walker"
 import { SpeechBubble } from "./speech-bubble"
-import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder } from "./avatars"
+import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder, type PlacePose } from "./avatars"
 import { lerpAngle, step, type Body, type Intent, type MotionProfile, type MoveState } from "./motion"
 import type { BodyId } from "../types"
 
@@ -109,6 +109,7 @@ export class Character {
       return
     }
     next.setParent(this.holder)
+    next.pose = this.pose
     next.update(0, this.move, this.speed, this.tired, this.unwell)
     const prev = this.rig
     this.rig = next
@@ -149,6 +150,13 @@ export class Character {
   setAirPhase(p: number) {
     this.rig?.setAirPhase(p)
   }
+
+  /** Atividade num prédio (mm3d-37b): o clipe do aparelho em laço; null = normal. */
+  setPose(pose: PlacePose | null) {
+    this.pose = pose
+    if (this.rig) this.rig.pose = pose
+  }
+  private pose: PlacePose | null = null
 
   /** Locomoção armada do Paint (m/s no referencial do corpo); null = normal. */
   setPaintMove(fwd: number, side: number, firing: boolean) {

@@ -23,10 +23,12 @@ import {
   Heart,
   HeartPulse,
   Hospital,
+  Lock,
   Pill,
   Shirt,
   Skull,
   Smile,
+  Sparkles,
   Sprout,
   Square,
   Syringe,
@@ -130,6 +132,8 @@ export function activityLabel(k: LifeActivity | string, t: Tr) {
       training: t("actTraining", "Treinando"),
       working: t("actWorking", "Trabalhando"),
       hospital: t("actHospital", "Internado"),
+      praying: t("actPraying", "Rezando"),
+      jail: t("actJail", "Preso"),
     } as Record<string, string>
   )[k] ?? k
 }
@@ -141,6 +145,8 @@ const ACT_ICON: Record<string, ReactNode> = {
   training: <Dumbbell className="h-5 w-5" />,
   working: <Briefcase className="h-5 w-5" />,
   hospital: <Hospital className="h-5 w-5" />,
+  praying: <Sparkles className="h-5 w-5" />,
+  jail: <Lock className="h-5 w-5" />,
 }
 function causeLabel(c: string | null, t: Tr) {
   if (!c) return ""
@@ -850,11 +856,8 @@ function Routine({ life, compact, t, act }: PageProps) {
   const busy = act.busy || c.status !== "alive"
   const mealTag = (s: string) =>
     s === "eaten" ? <Tag tone="bom">{t("mealEaten", "Comeu")}</Tag> : s === "missed" ? <Tag tone="perigo">{t("mealMissed", "Perdeu")}</Tag> : s === "open" ? <Tag>{t("mealOpen", "Agora")}</Tag> : <Tag tone="mudo">{t("mealLater", "Depois")}</Tag>
-  const kinds = [
-    ["studying", <BookOpen key="s" className="h-5 w-5" />],
-    ["training", <Dumbbell key="t" className="h-5 w-5" />],
-    ["working", <Briefcase key="w" className="h-5 w-5" />],
-  ] as const
+  // Treino e estudo só no prédio do centro (mm3d-37b): aqui só se marca trabalho.
+  const kinds = [["working", <Briefcase key="w" className="h-5 w-5" />]] as const
   return (
     <div className={`grid gap-4 ${compact ? "" : "grid-cols-[1fr_1.15fr]"}`}>
       <div className="flex flex-col gap-4">
@@ -935,6 +938,9 @@ function Routine({ life, compact, t, act }: PageProps) {
               </div>
             </div>
           ))}
+          <p className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
+            {t("stWhere", "Treinar é na academia do centro; estudar, na biblioteca, na escola ou na universidade (rende mais, mas cobra a hora de aula). Entre no prédio e use um aparelho ou uma carteira.")}
+          </p>
           <p className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
             {t("stRoutineText2", "É uma rotina: ele rende as primeiras horas do dia (estudo 5 h, treino 4 h), descansa, dorme às 23 h e volta às 7 h. Na hora da refeição compra comida com as moedas. Constância de dias rende mais que maratona.")}
           </p>
@@ -1593,11 +1599,8 @@ function RoutineC({ life, t, act }: PageProps) {
   // No celular escolhe-se a duração uma vez e depois a atividade (no
   // computador são 3 × 8 botões). Abaixo de 380 px os ícones saem para o nome caber.
   const [hours, setHours] = useState(4)
-  const kinds = [
-    ["studying", <BookOpen key="s" className="hidden h-3.5 w-3.5 shrink-0 min-[380px]:block" />, t("actDoStudy", "Estudar")],
-    ["training", <Dumbbell key="t" className="hidden h-3.5 w-3.5 shrink-0 min-[380px]:block" />, t("actDoTrain", "Treinar")],
-    ["working", <Briefcase key="w" className="hidden h-3.5 w-3.5 shrink-0 min-[380px]:block" />, t("actDoWork", "Trabalhar")],
-  ] as const
+  // Treino e estudo só no prédio do centro (mm3d-37b): aqui só se marca trabalho.
+  const kinds = [["working", <Briefcase key="w" className="hidden h-3.5 w-3.5 shrink-0 min-[380px]:block" />, t("actDoWork", "Trabalhar")]] as const
   const done = (["sleeping", "studying", "training", "working", "lying", "hospital"] as const).filter((k) => (c.today.hours[k] ?? 0) > 0.01)
   return (
     <div className="flex flex-col gap-2">
@@ -1662,7 +1665,7 @@ function RoutineC({ life, t, act }: PageProps) {
             </MiniButton>
           ))}
         </div>
-        <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+        <div className="mt-1.5 grid grid-cols-1 gap-1.5">
           {kinds.map(([kind, icon, label]) => (
             <MiniButton key={kind} onClick={() => act.activity(kind, hours)} disabled={busy} active={a.kind === kind} tight className="min-w-0">
               {icon}
@@ -1671,6 +1674,9 @@ function RoutineC({ life, t, act }: PageProps) {
           ))}
         </div>
         <p className={`${archivo.className} mt-1.5 text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
+          {t("stWhereShort", "Treinar: na academia do centro. Estudar: na biblioteca, na escola ou na universidade.")}
+        </p>
+        <p className={`${archivo.className} mt-1 text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
           {t("stRoutineShort", "É uma rotina: rende nas primeiras horas do dia (estudo 5 h, treino 4 h), descansa, dorme às 23 h e volta às 7 h. Constância rende mais que maratona.")}
         </p>
       </MiniPlate>

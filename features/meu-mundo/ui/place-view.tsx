@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { createPlaceGame, type PlaceGameHandle, type PlaceMode, type PlaceState } from "../engine/place-game"
+import type { PlacePose } from "../engine/avatars"
 import type { BodyId, InteriorDef, Interactable, PlaceUse } from "../types"
 import { Joystick, SAFE, SceneCurtain } from "./meu-mundo-view"
 import { EvoButton } from "./hud/hud-kit"
@@ -74,6 +75,12 @@ export interface PlaceViewProps {
   extra?: ReactNode
   /** Mudou onde a pessoa está (a tela de quem chamou pode reagir). */
   onState?: (state: PlaceState) => void
+  /** O movimento da atividade em andamento (treino), null = parado. */
+  pose?: PlacePose | null
+  /** Bloqueia o andar (diálogo aberto por cima). */
+  blocked?: boolean
+  /** Esconde o botão da ação (já em andamento). */
+  hideUse?: boolean
   /** Internado: saúde agora (0–100) e a de alta, para a placa. */
   health?: number | null
   dischargeAt?: number
@@ -82,7 +89,7 @@ export interface PlaceViewProps {
   onOpenStatus?: () => void
 }
 
-export function PlaceView({ interior, body, look = "", mode, bed, placeName, onExit, onUse, extra, onState, discharged, onOpenStatus }: PlaceViewProps) {
+export function PlaceView({ interior, body, look = "", mode, bed, placeName, onExit, onUse, extra, onState, pose = null, blocked = false, hideUse = false, discharged, onOpenStatus }: PlaceViewProps) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<PlaceGameHandle | null>(null)
@@ -148,6 +155,14 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
     }
   }, [interior, body, look, sceneMode, bed, attempt])
 
+  useEffect(() => {
+    gameRef.current?.setPose(pose)
+  }, [pose, status])
+
+  useEffect(() => {
+    gameRef.current?.setBlocked(blocked)
+  }, [blocked, status])
+
   const patient = sceneMode === "patient"
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
   const action =
@@ -185,7 +200,7 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
               {t("stTitle", "Status")}
             </EvoButton>
           )}
-          {!patient && use && (
+          {!patient && use && !hideUse && (
             <EvoButton variant="gold" icon={actionOf(use, t).icon} onClick={doUse}>
               {actionOf(use, t).label}
             </EvoButton>

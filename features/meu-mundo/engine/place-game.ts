@@ -29,7 +29,7 @@ import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildInterior } from "./interior"
 import { Character } from "./player"
-import { AvatarLibrary } from "./avatars"
+import { AvatarLibrary, type PlacePose } from "./avatars"
 import { FollowCamera, INDOOR_CAMERA } from "./camera"
 import { MOTION, lerpAngle, type Intent, type MoveState } from "./motion"
 import { stepInterior, type InteriorBody } from "./interior-motion"
@@ -77,6 +77,8 @@ export interface PlaceGameHandle {
   interact: () => void
   /** Levantar do leito, da cadeira ou sair do ponto de uso (internado não levanta). */
   stand: () => void
+  /** A atividade começou (o movimento do aparelho em laço) ou parou (null). */
+  setPose: (pose: PlacePose | null) => void
   recenter: () => void
   dispose: () => void
 }
@@ -130,7 +132,9 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   key.intensity = 0.35
 
   const interior = buildInterior(scene, def)
-  const lib = new AvatarLibrary(scene, true, true)
+  // Academia e igreja baixam também os clipes de treino e de reza (mm3d-37b).
+  const withPlace = (def.spots ?? []).some((s) => !!s.anim) || def.seats.some((s) => s.use === "pray")
+  const lib = new AvatarLibrary(scene, true, false, 24, false, withPlace)
   const fallbackMat = new StandardMaterial("mm-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
   fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
@@ -185,6 +189,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   }
   const getUp = () => {
     if (state.kind === "free" || locked) return
+    char.setPose(null)
     const from = state.kind === "seat" ? state.seat.stand : state.kind === "bed" ? state.bed.stand : null
     if (from) Object.assign(body, { x: from.x, z: from.z, vx: 0, vz: 0 })
     setState({ kind: "free" })
@@ -323,6 +328,9 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       else if (nearby && !input.blocked) interactWith(nearby)
     },
     stand: getUp,
+    setPose(pose) {
+      char.setPose(pose)
+    },
     recenter() {
       follow.snapBehind(body.x, body.z, body.facing)
     },

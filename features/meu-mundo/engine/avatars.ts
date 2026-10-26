@@ -141,6 +141,16 @@ const ASSETS = {
     sergio: "anim-paint-sergio-m35c.glb",
     ekaterina: "anim-paint-ekaterina-m35c.glb",
   },
+  // Prédios do centro (mm3d-37b, pipeline/build_place_mocap.py, biblioteca de
+  // animações do Alex): academia (agachamento, saco de pancada, caixa de
+  // salto, abdominal, kettlebell) e a reza da igreja. Só os interiores baixam.
+  place: {
+    base: "anim-place-base-m37.glb",
+    fat: "anim-place-fat-m37.glb",
+    strong: "anim-place-strong-m37.glb",
+    sergio: "anim-place-sergio-m37.glb",
+    ekaterina: "anim-place-ekaterina-m37.glb",
+  },
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
 export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
@@ -160,10 +170,15 @@ export function tintedAvatarTexture(id: BodyId, look: string) {
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk", "InjuredIdle", "InjuredWalk"] as const
 const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide", "SkatesStride"] as const
 const PAINT_CLIPS = ["PIdle", "PFire", "PWalk", "PRun", "PStrafe", "Air", "AirSide", "Air2", "Punch"] as const
+/** Atividade num prédio (mm3d-37b): toca em laço enquanto a pessoa usa o aparelho. */
+const PLACE_CLIPS = ["GymSquat", "GymPunch", "GymBoxJump", "GymSitups", "GymKettle", "Pray"] as const
+export type PlacePose = (typeof PLACE_CLIPS)[number] | "Run"
+/** `anim` do ponto de uso (servidor) → clipe. */
+export const POSE_OF_ANIM: Record<string, PlacePose> = { run: "Run", squat: "GymSquat", punch: "GymPunch", boxjump: "GymBoxJump", situps: "GymSitups", kettlebell: "GymKettle", pray: "Pray" }
 /** Pulos do Paint: 0 parado/à frente, 1 de lado, 2 o segundo pulo (no ar). */
 const AIR_CLIPS = ["Air", "AirSide", "Air2"] as const
 export type JumpKind = 0 | 1 | 2
-type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number] | (typeof PAINT_CLIPS)[number]
+type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number] | (typeof PAINT_CLIPS)[number] | (typeof PLACE_CLIPS)[number]
 /** Soco (mm3d-35): o jab toca acelerado e dura isto (s). */
 const PUNCH_RATE = 2.4
 const PUNCH_TIME = 0.7
@@ -202,6 +217,7 @@ export class AvatarLibrary {
   private readonly rests = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly rides = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly paints = new Map<AnimSet, Promise<AssetContainer>>()
+  private readonly places = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -216,6 +232,8 @@ export class AvatarLibrary {
     public lodDistance = 24,
     /** No Paint (mm3d-35): pulo e soco. */
     private readonly withPaint = false,
+    /** Nos prédios do centro (mm3d-37b): academia e reza. */
+    private readonly withPlace = false,
   ) {
     ensureLoaders()
   }
@@ -325,6 +343,17 @@ export class AvatarLibrary {
     return p
   }
 
+  private placeSet(id: BodyId) {
+    const key = ANIM_SET[id]
+    let p = this.places.get(key)
+    if (!p) {
+      p = LoadAssetContainerAsync(BASE + ASSETS.place[key], this.scene)
+      p.catch(() => this.places.delete(key))
+      this.places.set(key, p)
+    }
+    return p
+  }
+
   private rideSet(id: BodyId) {
     const key = ANIM_SET[id]
     let p = this.rides.get(key)
@@ -346,7 +375,8 @@ export class AvatarLibrary {
     const rideP = this.withRide ? this.rideSet(id).catch(() => null) : Promise.resolve(null)
     const lodP = this.lodBody(id).catch(() => null)
     const paintP = this.withPaint ? this.paintSet(id).catch(() => null) : Promise.resolve(null)
-    const [container, anims, sit, rest, ride, lodC, paint] = await Promise.all([this.body(id), this.animSet(id), sitP, restP, rideP, lodP, paintP])
+    const placeP = this.withPlace ? this.placeSet(id).catch(() => null) : Promise.resolve(null)
+    const [container, anims, sit, rest, ride, lodC, paint, place] = await Promise.all([this.body(id), this.animSet(id), sitP, restP, rideP, lodP, paintP, placeP])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
     const root = entries.rootNodes[0] as TransformNode
@@ -367,6 +397,10 @@ export class AvatarLibrary {
     }
     for (const clip of PAINT_CLIPS) {
       const src = paint?.animationGroups.find((g) => g.name === clip)
+      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+    }
+    for (const clip of PLACE_CLIPS) {
+      const src = place?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
     for (const clip of RIDE_CLIPS) {
@@ -422,7 +456,7 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values()]
+    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.lods.clear()
@@ -431,6 +465,7 @@ export class AvatarLibrary {
     this.rests.clear()
     this.rides.clear()
     this.paints.clear()
+    this.places.clear()
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
@@ -447,6 +482,7 @@ export class AvatarRig {
     Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0, InjuredIdle: 0, InjuredWalk: 0,
     BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
     PIdle: 0, PFire: 0, PWalk: 0, PRun: 0, PStrafe: 0, Air: 0, AirSide: 0, Air2: 0, Punch: 0,
+    GymSquat: 0, GymPunch: 0, GymBoxJump: 0, GymSitups: 0, GymKettle: 0, Pray: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -475,7 +511,7 @@ export class AvatarRig {
     /** Malha leve (nível de LOD da primeira malha), se carregou. */
     private readonly lod: Mesh | null = null,
   ) {
-    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS] as const).filter((c) => !!groups[c])]
+    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
       const g = groups[clip]!
       g.weight = this.weights[clip]
@@ -664,8 +700,20 @@ export class AvatarRig {
     g.play(true)
   }
 
+  /**
+   * Atividade num prédio (mm3d-37b): o clipe do aparelho em laço, parado no
+   * lugar; "Run" = a corrida da locomoção (esteira). null = a locomoção normal.
+   */
+  pose: PlacePose | null = null
+
   update(dt: number, move: MoveState, speed: number, tired = false, unwell = false) {
     if (this.disposed || this.frozen) return
+    if (this.pose && (this.pose === "Run" || this.groups[this.pose])) {
+      const target = Object.fromEntries(this.clips.map((c) => [c, 0])) as Record<Clip, number>
+      target[this.pose === "Run" ? "SlowRun" : this.pose] = 1
+      // Esteira: a corrida no ritmo de quem corre a ~3,4 m/s.
+      return this.applyWeights(dt, target, this.pose === "Run" ? 3.4 : 0)
+    }
     // Paint (mm3d-35): soco vence o pulo, que vence a locomoção (armada, se houver).
     const punching = this.punchLeft > 0 && !!this.groups.Punch
     const air = this.air && !!this.groups[this.airClip]
@@ -720,6 +768,7 @@ export class AvatarRig {
       InjuredWalk: move === 1 && sickWalk ? 1 : 0,
       BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
       PIdle: 0, PFire: 0, PWalk: 0, PRun: 0, PStrafe: 0, Air: 0, AirSide: 0, Air2: 0, Punch: 0,
+      GymSquat: 0, GymPunch: 0, GymBoxJump: 0, GymSitups: 0, GymKettle: 0, Pray: 0,
     }
     this.applyWeights(dt, target, speed)
   }

@@ -206,7 +206,7 @@ export interface NeighborhoodPayload {
 
 export type LifeTrained = "intelligence" | "strength" | "speed"
 
-export type LifeActivity = "idle" | "lying" | "sleeping" | "studying" | "training" | "working" | "hospital"
+export type LifeActivity = "idle" | "lying" | "sleeping" | "studying" | "training" | "working" | "hospital" | "praying" | "jail"
 
 export interface LifeCharacter {
   generation: number
@@ -254,7 +254,9 @@ export interface LifeCharacter {
     until: string | null
     remainingH: number | null
     inBed: boolean
-    resume: { kind: LifeActivity; until: string } | null
+    /** Onde treina/estuda (mm3d-37b): academia, universidade, biblioteca ou escola. */
+    place?: string | null
+    resume: { kind: LifeActivity; until: string; place?: string | null } | null
   }
   effects: { id: string; remainingH: number }[]
   /** Refeições de hoje (mm3d-28): aceitas de 2 h antes a 2 h depois; "late" = penalidade correndo. */

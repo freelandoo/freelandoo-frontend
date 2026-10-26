@@ -166,9 +166,9 @@ export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "
 /** Interior de um prédio do centro (mm3d-37): a planta, buscada ao entrar. */
 export const getCenterInterior = (token: string, id: string) =>
   call<{ id: string; interior: InteriorDef }>(token, "GET", `/center/interiors/${encodeURIComponent(id)}`)
-/** Estudar/treinar/trabalhar por `hours` (1–72) ou parar (`idle`). Deitar/dormir é pela cama, na casa. */
-export const postLifeActivity = (token: string, activity: string, hours?: number) =>
-  call<LifeSummary>(token, "POST", "/life/activity", { activity, hours })
+/** Estudar/treinar/trabalhar por `hours` (1–72) ou parar (`idle`). Treino e estudo só no prédio (`place`, mm3d-37b). Deitar/dormir é pela cama, na casa. */
+export const postLifeActivity = (token: string, activity: string, hours?: number, place?: string) =>
+  call<LifeSummary>(token, "POST", "/life/activity", { activity, hours, place })
 /** Comer/tomar um item do catálogo (cobra as moedas do jogo). */
 export const postLifeConsume = (token: string, item: string) => call<LifeSummary>(token, "POST", "/life/consume", { item })
 /** Mercado → geladeira (mig 301): compra e guarda; comer é na geladeira da casa. */

@@ -30,7 +30,7 @@ import type { PaintJoin } from "../paint/ui/paint-view"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
-const PlaceView = dynamic(() => import("./place-view").then((m) => m.PlaceView), { ssr: false })
+const PlaceScreen = dynamic(() => import("./place/place-screen").then((m) => m.PlaceScreen), { ssr: false })
 const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => m.JetpackView), { ssr: false })
 const PaintView = dynamic(() => import("../paint/ui/paint-view").then((m) => m.PaintView), { ssr: false })
 
@@ -506,7 +506,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
       {/* Prédios do centro (mm3d-37): mesma tela; a planta vem do servidor ao entrar */}
       {minigame === "interior" && inside && insidePlace && inside.interior && (
-        <PlaceView interior={inside.interior} body={body} look={look} mode="visit" placeName={placeName(insidePlace)} onExit={closeInside} />
+        <PlaceScreen placeId={inside.id} interior={inside.interior} body={body} look={look} placeName={placeName(insidePlace)} onExit={closeInside} />
       )}
       {minigame === "interior" && inside && insidePlace && !inside.interior && (
         <div className="fixed inset-0 z-[70] bg-[#33393d]">

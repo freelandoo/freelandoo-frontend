@@ -8441,7 +8441,19 @@
     "pvSoon": "Coming soon",
     "pvLoading": "Entering: {place}…",
     "pvErrorTitle": "The place didn't open",
-    "pvErrorText": "Couldn't load the place. Try again."
+    "pvErrorText": "Couldn't load the place. Try again.",
+    "pvFail": "That didn't work. Try again.",
+    "pvTrainingFor": "Working out for {h} h",
+    "pvStudyingFor": "Studying for {h} h",
+    "pvTrainTitle": "Work out for how long?",
+    "pvStudyTitle": "Study for how long?",
+    "pvTrainText": "Strength and speed grow in the first 4 h of the day. He keeps going even with the game closed; stepping off the machine stops it.",
+    "pvStudyText": "Intelligence grows in the first 5 h of the day. He keeps going even with the game closed; standing up stops it.",
+    "pvUniText": "At the university it yields 1.5× — each class hour costs {c} coins.",
+    "actPraying": "Praying",
+    "actJail": "In jail",
+    "stWhereShort": "Work out: at the downtown gym. Study: at the library, the school or the university.",
+    "stWhere": "Working out is at the downtown gym; studying, at the library, the school or the university (yields more, but charges per class hour). Go into the building and use a machine or a desk."
   },
   "Sports": {
     "eyebrow": "Sports",
