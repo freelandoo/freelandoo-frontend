@@ -717,7 +717,8 @@ export interface GameStats {
 /** Moeda de um produto: as do jogo ou Poléns (a moeda paga da Freelandoo). */
 export type Currency = "coins" | "polens"
 
-export type NoticeKind = "need" | "life" | "gift" | "official" | "promo" | "purchase"
+/** "dm" (mm3d-33) é só do aparelho: mensagem 1:1 que chegou jogando — não vai ao sino. */
+export type NoticeKind = "need" | "life" | "gift" | "official" | "promo" | "purchase" | "dm"
 
 export interface MailGift {
   type: "item" | "skin" | "coins"
@@ -733,7 +734,7 @@ export interface MMNotice {
   code: string
   /** 1 = mais urgente */
   priority: number
-  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number }
+  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string }
   mailId: string | null
   createdAt: string
   read: boolean

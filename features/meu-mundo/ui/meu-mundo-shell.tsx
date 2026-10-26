@@ -120,6 +120,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // Perfil-conta de quem joga: o "ator" das conversas (do /users/me).
   const [actorId, setActorId] = useState<string | null>(null)
   const globalOpenRef = useRef(false)
+  // Conversa 1:1 aberta agora (mm3d-33: com ela na tela a mensagem nova não vira aviso).
+  const threadOpenRef = useRef<string | null>(null)
   // Balão 3D (Slice 5): a cena pronta preenche; sessão null = o meu boneco
   // (a sala não devolve o "say" para quem falou).
   const bubbleRef = useRef<((session: string | null, text: string) => void) | null>(null)
@@ -251,6 +253,21 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       if (type === "say") {
         const p = payload as { s?: string; t?: string } | null
         if (p && typeof p.s === "string" && typeof p.t === "string") bubbleRef.current?.(p.s, p.t)
+        return
+      }
+      if (type === "dm") {
+        // mm3d-33: 1:1 que chegou — só eu recebo. Balão em cima de quem falou
+        // (se está na minha sala) e o aviso com o meu rosto, menos com a
+        // conversa já aberta na tela.
+        const p = payload as { s?: string | null; t?: string; c?: string; n?: string } | null
+        if (!p || typeof p.t !== "string" || typeof p.c !== "string") return
+        if (typeof p.s === "string") bubbleRef.current?.(p.s, p.t)
+        if (threadOpenRef.current === p.c) return
+        const at = new Date().toISOString()
+        setPushed((l) => [
+          ...l.slice(-30),
+          { id: `dm:${p.c}:${at}`, kind: "dm", code: p.c!, priority: 3, data: { from: p.n || undefined, conversationId: p.c }, mailId: null, createdAt: at, read: false },
+        ])
         return
       }
       if (type === "notice") {
@@ -426,6 +443,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     (v: ChatView | null) => {
       // O ref acompanha na hora: linha que chega no mesmo instante já sabe se o Global está à vista.
       globalOpenRef.current = v?.tab === "global"
+      threadOpenRef.current = v?.tab === "thread" ? v.conversationId : null
       setChatView(v)
       if (v?.tab === "global") setChatUnread(0)
       if (v && v.tab !== "global") ensureActor()
@@ -639,7 +657,14 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         below={active || outgoing ? 56 : 0}
         hidden={!!busy || !!statusBody || hospitalUp || asleep || panelOpen}
         onOpenStatus={openStatus}
-        onOpenNotice={(n) => setInbox(n.mailId ? { view: "mail", tab: n.kind === "gift" ? "gift" : n.kind === "promo" ? "promo" : n.kind === "purchase" ? "receipt" : "official", open: n.mailId } : { view: "notices" })}
+        onOpenNotice={(n) => {
+          // Mensagem (mm3d-33): "Responder" abre a conversa no chat do jogo.
+          if (n.kind === "dm") {
+            if (n.data.conversationId) showChat({ tab: "thread", conversationId: n.data.conversationId, title: n.data.from ?? t("chDms", "Conversas") })
+            return
+          }
+          setInbox(n.mailId ? { view: "mail", tab: n.kind === "gift" ? "gift" : n.kind === "promo" ? "promo" : n.kind === "purchase" ? "receipt" : "official", open: n.mailId } : { view: "notices" })
+        }}
       />
       {!overlayOpen && (
         <HudInbox

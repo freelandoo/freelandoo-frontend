@@ -8285,6 +8285,9 @@
     "chMuted": "No puedes hablar en el chat por un tiempo.",
     "chReview": "Tu mensaje fue enviado a revisión.",
     "menuChatHint": "Global y conversaciones",
-    "ibMessagesHintGame": "Tus conversaciones de Freelandoo. Se abren aquí, en el chat del juego."
+    "ibMessagesHintGame": "Tus conversaciones de Freelandoo. Se abren aquí, en el chat del juego.",
+    "ntDmTitle": "Recibimos un mensaje",
+    "ntDmFrom": "De {name}",
+    "ntDmReply": "Responder"
   }
 }

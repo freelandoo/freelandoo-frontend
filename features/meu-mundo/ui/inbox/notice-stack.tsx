@@ -13,7 +13,7 @@
 // Não bloqueia o jogo: só o card recebe toque (pointer-events).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Gift, Megaphone, ReceiptText, Tag, X } from "lucide-react"
+import { Gift, Megaphone, MessageCircle, ReceiptText, Tag, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId, LifeNeed, MMNotice } from "../../types"
 import { archivo } from "../status/evo-skin"
@@ -114,7 +114,8 @@ export default function NoticeStack({ needs, needsTick, pushed, body, below = 0,
     setQueue((q) =>
       fresh
         .filter((n) => n.kind !== "need" && !n.read)
-        .reduce((acc, n) => enqueue(acc, { key: n.id, group: `${n.kind}:${n.code}`, priority: n.priority, at: now, notice: n, need: null }, now), q),
+        // Mensagem (dm): um card por conversa na tela; saiu, a próxima mensagem já ganha outro.
+        .reduce((acc, n) => enqueue(acc, { key: n.id, group: `${n.kind}:${n.code}`, priority: n.priority, at: now, notice: n, need: null, repeatMs: n.kind === "dm" ? 0 : undefined }, now), q),
     )
   }, [pushed])
 
@@ -193,12 +194,19 @@ function NoticeCard({
     title = txt.title
     extra = txt.line
     if (speaksAsCharacter(n)) img = expressionSrc(body, noticeExpression(n))
-    badge = n.kind === "gift" ? <Gift className="h-4 w-4" /> : n.kind === "purchase" ? <ReceiptText className="h-4 w-4" /> : null
+    badge = n.kind === "gift" ? <Gift className="h-4 w-4" /> : n.kind === "purchase" ? <ReceiptText className="h-4 w-4" /> : n.kind === "dm" ? <MessageCircle className="h-4 w-4" /> : null
     action =
       n.kind === "life"
         ? { label: t("needOpenStatus", "Ver status"), run: onOpenStatus }
         : {
-            label: n.kind === "gift" ? t("ntOpenGift", "Abrir presente") : n.kind === "purchase" ? t("ntOpenReceipt", "Ver recibo") : t("ntRead", "Ler"),
+            label:
+              n.kind === "gift"
+                ? t("ntOpenGift", "Abrir presente")
+                : n.kind === "purchase"
+                  ? t("ntOpenReceipt", "Ver recibo")
+                  : n.kind === "dm"
+                    ? t("ntDmReply", "Responder")
+                    : t("ntRead", "Ler"),
             run: () => onOpenNotice(n),
           }
   } else return null

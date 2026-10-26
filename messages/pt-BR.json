@@ -7719,6 +7719,9 @@
     "chMuted": "Você está sem falar no chat por um tempo.",
     "chReview": "Sua mensagem foi para revisão.",
     "menuChatHint": "Global e conversas",
-    "ibMessagesHintGame": "Suas conversas da Freelandoo. Abrem aqui, no chat do jogo."
+    "ibMessagesHintGame": "Suas conversas da Freelandoo. Abrem aqui, no chat do jogo.",
+    "ntDmTitle": "Recebemos uma mensagem",
+    "ntDmFrom": "De {name}",
+    "ntDmReply": "Responder"
   }
 }

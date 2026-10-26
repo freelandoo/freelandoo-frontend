@@ -48,7 +48,9 @@ export function noticeExpression(n: Pick<MMNotice, "kind" | "code">): Expression
 }
 
 /** Quem "fala" no card: o próprio personagem, ou a plataforma. */
-export const speaksAsCharacter = (n: Pick<MMNotice, "kind">) => n.kind === "need" || n.kind === "life" || n.kind === "gift" || n.kind === "purchase"
+/** Mensagem 1:1 (mm3d-33): o rosto normal (sem expressão) diz "Recebemos uma mensagem". */
+export const speaksAsCharacter = (n: Pick<MMNotice, "kind">) =>
+  n.kind === "need" || n.kind === "life" || n.kind === "gift" || n.kind === "purchase" || n.kind === "dm"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -73,6 +75,8 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
       return { title: n.data.title ?? t("ntPromo", "Promoção"), line: t("ntPromoLine", "Promoção do Meu Mundo") }
     case "life":
       return { title: lifeTitle(n.code, t, n.data.generation), line: null }
+    case "dm":
+      return { title: t("ntDmTitle", "Recebemos uma mensagem"), line: n.data.from ? t("ntDmFrom", "De {name}").replace("{name}", n.data.from) : null }
   }
 }
 
@@ -131,6 +135,8 @@ export interface Card {
   notice: MMNotice | null
   /** necessidade vinda do needs-logic (sem linha no servidor ainda) */
   need: { ids: LifeNeedId[]; level: number; hours?: number } | null
+  /** espera própria para o mesmo grupo voltar (padrão SAME_CARD_MS) */
+  repeatMs?: number
 }
 
 export interface Queue {
@@ -149,7 +155,7 @@ const byUrgency = (a: Card, b: Card) => a.priority - b.priority || a.at - b.at
 /** Entra um card novo: descartado se repetido, senão vai para a espera. */
 export function enqueue(q: Queue, card: Card, now: number): Queue {
   if (q.seen.includes(card.key)) return q
-  const recently = now - (q.shown[card.group] ?? -Infinity) < SAME_CARD_MS
+  const recently = now - (q.shown[card.group] ?? -Infinity) < (card.repeatMs ?? SAME_CARD_MS)
   const already = q.visible.some((c) => c.group === card.group) || q.waiting.some((c) => c.group === card.group)
   const seen = [...q.seen, card.key].slice(-100)
   // Urgentes (prioridade 1) furam a regra de repetição; o resto só vai ao sino.
