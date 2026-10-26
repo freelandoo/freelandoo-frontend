@@ -8470,7 +8470,18 @@
     "paintGreen": "Verde",
     "paintOrange": "Naranja",
     "paintPurple": "Morado",
-    "paintPink": "Rosa"
+    "paintPink": "Rosa",
+    "carJailed": "Preso no conduce.",
+    "crimeHitJail": "Atropellaste a alguien: {n} minutos en la comisaría.",
+    "crimePlazaJail": "Condujiste en la plaza otra vez: {n} minutos en la comisaría.",
+    "crimePlazaFine": "Conducir en la plaza está prohibido: multa de {n} monedas. La próxima, cárcel.",
+    "jailLeft": "Libre en {t}",
+    "jailReleasing": "Saliendo de la celda…",
+    "ntFined": "Multa de {n} monedas.",
+    "ntFinedLine": "Conducir en la plaza está prohibido. La próxima vez el mismo día, cárcel.",
+    "ntJailed": "Me arrestaron: {n} minutos en la comisaría.",
+    "ntJailedHit": "Atropellé a alguien con el auto.",
+    "ntJailedPlaza": "Conduje en la plaza otra vez el mismo día."
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -811,7 +811,7 @@ export interface MMNotice {
   code: string
   /** 1 = mais urgente */
   priority: number
-  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string; paidBy?: "freelandoo" | "player"; coins?: number }
+  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string; paidBy?: "freelandoo" | "player"; coins?: number; minutes?: number; reason?: string }
   mailId: string | null
   createdAt: string
   read: boolean

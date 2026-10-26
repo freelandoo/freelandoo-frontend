@@ -42,7 +42,7 @@ export function noticeExpression(n: Pick<MMNotice, "kind" | "code"> & { data?: M
     if (n.code === "born") return "determined"
     if (n.code === "death") return "crying"
     if (n.code === "funeral") return n.data?.paidBy === "freelandoo" ? "grateful" : "worried"
-    if (n.code === "diabetes" || n.code === "hypertension") return "worried"
+    if (n.code === "diabetes" || n.code === "hypertension" || n.code === "fined" || n.code === "jailed") return "worried"
     return "fever"
   }
   return null // oficial e promoção: identidade da plataforma, não o rosto
@@ -79,6 +79,14 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
         return n.data.paidBy === "freelandoo"
           ? { title: t("ntFuneralFree", "A Freelandoo pagou o funeral."), line: t("ntFuneralFreeLine", "Ele morreu de velhice. O novo hóspede herdou 20% dos atributos.") }
           : { title: t("ntFuneralPaid", "Funeral pago: {n} moedas.").replace("{n}", String(n.data.coins ?? 0)), line: t("ntFuneralPaidLine", "Sem herança: o novo hóspede começou do zero.") }
+      // mm3d-37f: multa (praça) e prisão (reincidência na praça ou atropelamento).
+      if (n.code === "fined")
+        return { title: t("ntFined", "Multa de {n} moedas.").replace("{n}", String(n.data.coins ?? 0)), line: t("ntFinedLine", "Dirigir na praça é proibido. Na próxima vez no mesmo dia, prisão.") }
+      if (n.code === "jailed")
+        return {
+          title: t("ntJailed", "Fui preso: {n} minutos na delegacia.").replace("{n}", String(n.data.minutes ?? 0)),
+          line: n.data.reason === "atropelamento" ? t("ntJailedHit", "Atropelei alguém com o carro.") : t("ntJailedPlaza", "Dirigi na praça de novo no mesmo dia."),
+        }
       // mm3d-36: aviso único (uma vez por conta) de que as cores existem.
       if (n.code === "colors_hint")
         return { title: t("ntColorsTitle", "Você pode mudar as cores do seu personagem"), line: t("ntColorsLine", "No STATUS → SKIN → Cores: camiseta, calça, pele e cabelo.") }

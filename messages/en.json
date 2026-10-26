@@ -8490,7 +8490,18 @@
     "paintGreen": "Green",
     "paintOrange": "Orange",
     "paintPurple": "Purple",
-    "paintPink": "Pink"
+    "paintPink": "Pink",
+    "carJailed": "You can't drive while in jail.",
+    "crimeHitJail": "You ran someone over: {n} minutes at the police station.",
+    "crimePlazaJail": "You drove in the square again: {n} minutes at the police station.",
+    "crimePlazaFine": "Driving in the square is forbidden: {n} coin fine. Next time, jail.",
+    "jailLeft": "Free in {t}",
+    "jailReleasing": "Leaving the cell…",
+    "ntFined": "{n} coin fine.",
+    "ntFinedLine": "Driving in the square is forbidden. Next time the same day, jail.",
+    "ntJailed": "I got arrested: {n} minutes at the police station.",
+    "ntJailedHit": "I ran someone over with the car.",
+    "ntJailedPlaza": "I drove in the square again the same day."
   },
   "Sports": {
     "eyebrow": "Sports",

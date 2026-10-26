@@ -33,8 +33,9 @@ import { MM } from "./hud/tokens"
 import HouseView from "./house-view"
 import CenterView from "./center-view"
 import StatusScreen from "./status/status-screen"
-import { HospitalView } from "./place-view"
+import { HospitalView, PlaceView } from "./place-view"
 import { AmbulanceCurtain, useHospitalStay } from "./hospital-stay"
+import { JailTimer, useJailStay } from "./jail-stay"
 import NoticeStack from "./inbox/notice-stack"
 import HudInbox from "./inbox/hud-inbox"
 import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
@@ -99,6 +100,9 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [statusShop, setStatusShop] = useState(false)
   const [lifeTick, setLifeTick] = useState(0)
   const stay = useHospitalStay(initial.life)
+  // Prisão (mm3d-37f): a cela da delegacia, pela mesma régua da internação.
+  const jail = useJailStay(initial.life)
+  const onJailLife = jail.onLife
   // Necessidades (mm3d-28): a do login sai do payload; depois, de cada "life".
   const [needs, setNeeds] = useState<LifeNeed[]>(() => initial.life?.character.needs ?? [])
   const [needsTick, setNeedsTick] = useState(0)
@@ -285,10 +289,11 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       }
       if (type === "visits") setVisits(payload as VisitState)
       else if (type === "life") {
-        const p = payload as { status?: string; activity?: string; needs?: LifeNeed[]; body?: string } | null
+        const p = payload as { status?: string; activity?: string; until?: string | null; needs?: LifeNeed[]; body?: string } | null
         if (typeof p?.activity === "string") setAsleep(p.activity === "sleeping")
         setLifeTick((n) => n + 1)
         onLife(p?.status)
+        onJailLife(p?.activity, p?.until)
         if (Array.isArray(p?.needs)) {
           setNeeds(p.needs)
           setNeedsTick((n) => n + 1)
@@ -315,11 +320,25 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
                 ? t("vehicleBusy", "Alguém já está usando.")
                 : r === "not_owner"
                   ? t("carNotOwner", "Só o morador da casa usa este carro.")
-                  : t("vehicleUnavailable", "Não está disponível agora."),
+                  : r === "jailed"
+                    ? t("carJailed", "Preso não dirige.")
+                    : t("vehicleUnavailable", "Não está disponível agora."),
+        )
+      } else if (type === "crime") {
+        // mm3d-37f: a sala viu o crime e a vida aplicou a pena.
+        const c = payload as { kind?: string; fine?: number; jailed?: boolean; minutes?: number } | null
+        if (!c) return
+        const min = String(c.minutes ?? 0)
+        say(
+          c.jailed
+            ? c.kind === "atropelamento"
+              ? t("crimeHitJail", "Você atropelou alguém: {n} minutos na delegacia.").replace("{n}", min)
+              : t("crimePlazaJail", "Dirigiu na praça de novo: {n} minutos na delegacia.").replace("{n}", min)
+            : t("crimePlazaFine", "Dirigir na praça é proibido: multa de {n} moedas. Na próxima, prisão.").replace("{n}", String(c.fine ?? 0)),
         )
       }
     },
-    [say, t, onLife],
+    [say, t, onLife, onJailLife],
   )
 
   // Estado das visitas ao trocar de ambiente (a sala nova pode demorar a mandar).
@@ -411,8 +430,10 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // Hospital por cima só quando ele abriu de fato (a planta chegou): sem a
   // rota no ar, o jogo segue normal em vez de ficar parado embaixo do nada.
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
+  // A cela (mm3d-37f) só com a planta na mão; internado, o hospital manda.
+  const jailUp = !!jail.phase && !!jail.interior && !hospitalUp
   const panelOpen = !!inbox || itemsOpen || polensOpen || !!chatView
-  const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || panelOpen
+  const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || jailUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
   const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
   const lifeChanged = useCallback(() => setLifeTick((n) => n + 1), [])
@@ -568,7 +589,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     ],
     [t, counts, chatBadge, openChat],
   )
-  const suspended = hospitalUp
+  const suspended = hospitalUp || jailUp
   const key = `${sceneKeyOf(scene)}#${mount}`
   // Outra cena = outras sessões: o card da anterior não vale mais.
   useEffect(() => setPlayerCard(null), [key])
@@ -655,6 +676,20 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
 
+      {/* Prisão (mm3d-37f): a cela até a vida soltar; depois, a porta da delegacia */}
+      {jailUp && jail.interior && (
+        <PlaceView
+          interior={jail.interior}
+          body={scene.me.body}
+          look={scene.me.look}
+          mode="prisoner"
+          placeName={t("centerPlace_delegacia", "Delegacia")}
+          discharged={jail.phase === "released"}
+          onExit={jail.close}
+          extra={jail.phase === "jailed" ? <JailTimer until={jail.until} /> : undefined}
+        />
+      )}
+
       {/* Notificações (mm3d-30): a fila segue mesmo escondida (STATUS, painel, sono) */}
       <NoticeStack
         needs={needs}
@@ -662,7 +697,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         pushed={pushed}
         body={avatar}
         below={active || outgoing ? 56 : 0}
-        hidden={!!busy || !!statusBody || hospitalUp || asleep || panelOpen}
+        hidden={!!busy || !!statusBody || hospitalUp || jailUp || asleep || panelOpen}
         onOpenStatus={openStatus}
         onOpenNotice={(n) => {
           // Mensagem (mm3d-33): "Responder" abre a conversa no chat do jogo.
