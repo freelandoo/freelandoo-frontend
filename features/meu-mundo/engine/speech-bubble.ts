@@ -14,7 +14,8 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { Scene } from "@babylonjs/core/scene"
 
-export const BUBBLE_MS = 6000
+/** 10 s na tela (mm3d-33, pedido do Alex); fala nova da mesma pessoa troca o texto na hora. */
+export const BUBBLE_MS = 10_000
 const W = 512
 const H = 128
 /** Altura da cauda (px da textura) abaixo da caixa. */
@@ -49,7 +50,7 @@ export class SpeechBubble {
     this.mesh.setEnabled(false)
   }
 
-  /** Redesenha com a fala nova (substitui a anterior) e reinicia o tempo. */
+  /** Redesenha com a fala nova (substitui a anterior na hora) e reinicia os 10 s. */
   say(text: string, now = performance.now()) {
     const ctx = this.tex.getContext() as unknown as CanvasRenderingContext2D
     ctx.clearRect(0, 0, W, H)
