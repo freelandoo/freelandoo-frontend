@@ -25,6 +25,9 @@ export const TUNING = {
   run: 6.6,
   /** Pulo: 7,6 m/s com g 22 → ~1,31 m de altura, ~0,69 s no ar. */
   jumpV: 7.6,
+  /** Pulo duplo (mm3d-35c, pedido do Alex): mais um pulo no ar, um pouco mais baixo. */
+  maxJumps: 2,
+  airJumpV: 7.0,
   /** Controle no ar (fração da aceleração no chão). */
   airControl: 0.55,
   accel: 30,

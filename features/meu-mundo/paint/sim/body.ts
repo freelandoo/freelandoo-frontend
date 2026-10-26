@@ -28,6 +28,8 @@ export interface PaintBody {
   gy: number
   /** Para onde olha (rad, 0 = +z). */
   facing: number
+  /** Pulos desde que saiu do chão (mm3d-35c: até dois). */
+  jumps: number
 }
 
 export interface BodyIntent {
@@ -40,7 +42,7 @@ export interface BodyIntent {
 }
 
 export function newBody(x: number, y: number, z: number, facing: number): PaintBody {
-  return { x, y, z, vx: 0, vy: 0, vz: 0, ground: true, air: 0, gy: y, facing }
+  return { x, y, z, vx: 0, vy: 0, vz: 0, ground: true, air: 0, gy: y, facing, jumps: 0 }
 }
 
 /** Movimento para a animação: 0 parado, 1 andando, 2 correndo, 5 no ar. */
@@ -71,10 +73,17 @@ export function stepBody(b: PaintBody, it: BodyIntent, solids: readonly Solid[],
   }
   if (m > 0.05) b.facing = Math.atan2(mx, mz)
 
-  if (it.jump && (b.ground || b.air < T.coyote) && b.vy <= 0.01) {
-    b.vy = T.jumpV
-    b.ground = false
-    b.air = T.coyote
+  if (it.jump) {
+    if ((b.ground || b.air < T.coyote) && b.vy <= 0.01) {
+      b.vy = T.jumpV
+      b.ground = false
+      b.air = T.coyote
+      b.jumps = 1
+    } else if (!b.ground && b.jumps < T.maxJumps) {
+      // pulo no ar (mm3d-35c): saiu da borda sem pular também tem um
+      b.vy = T.airJumpV
+      b.jumps = T.maxJumps
+    }
   }
 
   // horizontal + empurrão de lado
@@ -103,6 +112,7 @@ export function stepBody(b: PaintBody, it: BodyIntent, solids: readonly Solid[],
     b.ground = true
     b.air = 0
     b.gy = floor
+    b.jumps = 0
   } else if (wasGround && b.vy <= 0 && floor > -Infinity && b.y - floor <= 0.25) {
     // descendo rampa/degrau baixo: gruda
     b.y = floor

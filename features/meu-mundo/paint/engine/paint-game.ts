@@ -21,7 +21,7 @@ import { AvatarLibrary } from "../../engine/avatars"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
 import type { BodyId } from "../../types"
-import { TUNING, type PaintColor } from "../sim/tuning"
+import { PAINT_COLORS, TUNING, type PaintColor } from "../sim/tuning"
 import { newBody, stepBody, knockBody, liftOnto, type BodyMove, type PaintBody } from "../sim/body"
 import { rayBody, supportAt } from "../sim/collide"
 import { muzzleOf } from "../sim/paint"
@@ -36,6 +36,7 @@ import { attachPaintInput, clearPaintInput, createPaintInput, paintMoveAxis, pai
 import type { PaintPort, RemoteSample } from "./port"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
+import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 
 /** O que a interface mostra (atualizado ~10×/s e a cada acontecimento). */
 export interface PaintHud {
@@ -340,6 +341,16 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     port.punch()
   }
 
+  // Marcador da mira no mundo (PC): onde o tiro bate, na cor escolhida.
+  const aimMarkMat = new StandardMaterial("paint-aim-mark", scene)
+  aimMarkMat.disableLighting = true
+  aimMarkMat.alpha = 0.85
+  const aimMark = CreateSphere("paint-aim-mark", { diameter: 0.22, segments: 8 }, scene)
+  aimMark.material = aimMarkMat
+  aimMark.isPickable = false
+  aimMark.renderingGroupId = 1
+  aimMark.setEnabled(false)
+
   /** A arma entre as mãos (o cabo na direita, o cano para a esquerda). */
   const holdGun = (c: Character, g: PaintGun, facing: number) => {
     const rh = c.bonePosition("mixamorig:RightHand")
@@ -366,6 +377,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     vx: number
     vz: number
     shotAt: number
+    y: number
+    vy: number
+    air: boolean
   }
   const remotes = new Map<number, Remote>()
   const DELAY = 120
@@ -399,7 +413,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         ring.position.y = 0.06
         ring.isPickable = false
         ring.material = ringMats[p.team === me.team ? 0 : 1]
-        r = { char: c, gun: g, ring, x: p.pose.x, z: p.pose.z, speed: 0, vx: 0, vz: 0, shotAt: -10 }
+        r = { char: c, gun: g, ring, x: p.pose.x, z: p.pose.z, speed: 0, vx: 0, vz: 0, shotAt: -10, y: p.pose.y, vy: 0, air: false }
         remotes.set(p.slot, r)
       }
       const s = sampleAt(port.samples?.get(p.slot), now) ?? { x: p.pose.x, y: p.pose.y, z: p.pose.z, f: p.pose.facing, g: p.pose.ground }
@@ -415,6 +429,13 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       r.x = s.x
       r.z = s.z
       r.char.place(s.x, s.z, s.f, s.y, supportAt(solids, s.x, s.z, s.y + 0.05))
+      // pulo dos outros: saiu do chão = 1º pulo; no ar voltou a subir = 2º
+      const vy = (s.y - r.y) / Math.max(dt, 1e-3)
+      if (!s.g && !r.air) r.char.jump(0)
+      else if (!s.g && r.air && r.vy < 0 && vy > 3) r.char.jump(2)
+      r.air = !s.g
+      r.vy = vy
+      r.y = s.y
       r.char.setAir(!s.g)
       const fx = Math.sin(s.f)
       const fz = Math.cos(s.f)
@@ -462,7 +483,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       cam.look(input.lookDX, input.lookDY, opts.touch ? 0.0042 : 0.0034)
     }
     // cursor na borda da tela: a câmera gira para aquele lado (PC)
-    if (!input.blocked && input.edge) cam.look(input.edge * 900 * dt, 0, 0.0024)
+    if (!input.blocked && input.edge) cam.look(input.edge * 1100 * dt, 0, 0.0024)
     input.lookDX = 0
     input.lookDY = 0
 
@@ -486,7 +507,16 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       n++
       prev = { x: body.x, y: body.y, z: body.z }
       const facingBefore = body.facing
+      const jumpsBefore = body.jumps
       move = stepBody(body, { ...intent, jump }, solids)
+      if (body.jumps > jumpsBefore) {
+        const fx = Math.sin(body.facing)
+        const fz = Math.cos(body.facing)
+        const side = Math.abs(body.vx * fz - body.vz * fx)
+        const fwd = Math.abs(body.vx * fx + body.vz * fz)
+        // 1º pulo deixa jumps = 1; o pulo no ar deixa jumps = maxJumps
+        char.jump(body.jumps >= TUNING.maxJumps ? 2 : side > 1.2 && side > fwd * 1.2 ? 1 : 0)
+      }
       jump = false
       if (aimHold > 0) body.facing = facingBefore
     }
@@ -495,6 +525,20 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       aimHold -= dt
       body.facing = aimYaw
     }
+
+    // PC (mm3d-35c): a mira segue o cursor o tempo todo, atirando ou não — o
+    // corpo vira para onde ele aponta e o marcador mostra onde o tiro bate.
+    if (!opts.touch && canMove && input.aimX !== null) {
+      const at = cam.aimPointAt(input.aimX, input.aimY, solids, bodiesRay)
+      if (Math.hypot(at.x - body.x, at.z - body.z) > 0.4) {
+        aimYaw = Math.atan2(at.x - body.x, at.z - body.z)
+        aimHold = Math.max(aimHold, 0.15)
+        body.facing = aimYaw
+      }
+      aimMark.position.set(at.x, at.y, at.z)
+      aimMark.setEnabled(true)
+    } else aimMark.setEnabled(false)
+    aimMarkMat.emissiveColor = Color3.FromHexString(PAINT_COLORS[input.color])
 
     // tiro (segurando o mouse / o dedo parado, ou um toque rápido) e soco
     if (gun.current !== input.color) gun.setColor(input.color)
@@ -651,6 +695,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         r.ring.dispose()
       }
       for (const m of ringMats) m.dispose()
+      aimMark.dispose()
+      aimMarkMat.dispose()
       lib.dispose()
       pickups.dispose()
       paint.dispose()

@@ -130,6 +130,11 @@ export class Character {
     this.rig?.punch()
   }
 
+  /** Pulou (Paint): 0 parado/à frente, 1 de lado, 2 o segundo pulo. */
+  jump(kind: 0 | 1 | 2) {
+    this.rig?.jump(kind)
+  }
+
   /** Locomoção armada do Paint (m/s no referencial do corpo); null = normal. */
   setPaintMove(fwd: number, side: number, firing: boolean) {
     if (this.rig) this.rig.paint = { fwd, side, firing }

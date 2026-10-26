@@ -79,8 +79,8 @@ export function nextColor(c: PaintColor): PaintColor {
 }
 
 const KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "ShiftLeft", "ShiftRight"])
-/** Borda da tela que gira a câmera (fração da largura). */
-const EDGE = 0.06
+/** Faixa das bordas em que o cursor gira a câmera (fração da largura); mais perto da borda, mais rápido. */
+const EDGE = 0.14
 /** Toque que andou mais que isto (px) vira mira e para de atirar. */
 const TAP_SLOP = 12
 /** Dedo parado por isto (ms) começa a atirar; antes disso pode virar mira. */
@@ -142,7 +142,8 @@ export function attachPaintInput(canvas: HTMLCanvasElement, s: PaintInput, touch
         const p = local(e)
         s.aimX = p.x
         s.aimY = p.y
-        s.edge = dragging ? 0 : p.x < p.w * EDGE ? -1 : p.x > p.w * (1 - EDGE) ? 1 : 0
+        const fx = p.x / Math.max(1, p.w)
+        s.edge = dragging ? 0 : fx < EDGE ? -(EDGE - fx) / EDGE : fx > 1 - EDGE ? (fx - (1 - EDGE)) / EDGE : 0
         if (dragging && !s.blocked) {
           s.lookDX += e.clientX - lx
           s.lookDY += e.clientY - ly
@@ -182,6 +183,8 @@ export function attachPaintInput(canvas: HTMLCanvasElement, s: PaintInput, touch
       "pointerleave",
       () => {
         s.edge = 0
+        s.aimX = null
+        s.aimY = null
       },
       o,
     )

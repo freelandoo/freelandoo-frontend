@@ -132,11 +132,12 @@ const ASSETS = {
   // correndo (PRun) e de lado (PStrafe) com a arma; pulo (Air, Jump Up) e soco
   // (Punch, Lead Jab). Só o Paint baixa estes arquivos.
   paint: {
-    base: "anim-paint-base-m35b.glb",
-    fat: "anim-paint-fat-m35b.glb",
-    strong: "anim-paint-strong-m35b.glb",
-    sergio: "anim-paint-sergio-m35b.glb",
-    ekaterina: "anim-paint-ekaterina-m35b.glb",
+    // 35c: pulos novos (Rifle Jump In Place, Run Strafing Jump, Pistol Jump).
+    base: "anim-paint-base-m35c.glb",
+    fat: "anim-paint-fat-m35c.glb",
+    strong: "anim-paint-strong-m35c.glb",
+    sergio: "anim-paint-sergio-m35c.glb",
+    ekaterina: "anim-paint-ekaterina-m35c.glb",
   },
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
@@ -151,7 +152,10 @@ export function avatarFiles(id: BodyId) {
 }
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk", "InjuredIdle", "InjuredWalk"] as const
 const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide", "SkatesStride"] as const
-const PAINT_CLIPS = ["PIdle", "PFire", "PWalk", "PRun", "PStrafe", "Air", "Punch"] as const
+const PAINT_CLIPS = ["PIdle", "PFire", "PWalk", "PRun", "PStrafe", "Air", "AirSide", "Air2", "Punch"] as const
+/** Pulos do Paint: 0 parado/à frente, 1 de lado, 2 o segundo pulo (no ar). */
+const AIR_CLIPS = ["Air", "AirSide", "Air2"] as const
+export type JumpKind = 0 | 1 | 2
 type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number] | (typeof PAINT_CLIPS)[number]
 /** Soco (mm3d-35): o jab toca acelerado e dura isto (s). */
 const PUNCH_RATE = 2.4
@@ -417,7 +421,7 @@ export class AvatarRig {
   private weights: Record<Clip, number> = {
     Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0, InjuredIdle: 0, InjuredWalk: 0,
     BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
-    PIdle: 0, PFire: 0, PWalk: 0, PRun: 0, PStrafe: 0, Air: 0, Punch: 0,
+    PIdle: 0, PFire: 0, PWalk: 0, PRun: 0, PStrafe: 0, Air: 0, AirSide: 0, Air2: 0, Punch: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -586,10 +590,22 @@ export class AvatarRig {
    * reprodução segue a velocidade REAL do deslocamento (reduz o deslize dos
    * pés): a animação anda X m/s a 1×, então a taxa é velocidade ÷ X.
    */
-  /** No ar (Paint): o pulo toca uma vez a cada saída do chão. */
+  /** No ar (Paint): o clipe do último pulo, uma vez (fica no último quadro). */
   air = false
-  private wasAir = false
+  private airClip: (typeof AIR_CLIPS)[number] = "Air"
   private punchLeft = 0
+
+  /** Pulou (Paint, mm3d-35c): toca o clipe do tipo do pulo do começo. */
+  jump(kind: JumpKind) {
+    const clip = AIR_CLIPS[kind]
+    const g = this.groups[clip] ?? this.groups.Air
+    if (!g) return
+    this.airClip = this.groups[clip] ? clip : "Air"
+    g.reset()
+    // dura ~o tempo no ar (0,69 s o 1º pulo, ~0,64 s o 2º)
+    g.speedRatio = ((g.to - g.from) / 30) / (kind === 2 ? 0.62 : 0.66)
+    g.play(false)
+  }
   /**
    * Locomoção armada do Paint (mm3d-35b): movimento no referencial do corpo
    * (m/s, frente e direita) e se está atirando. null = a locomoção normal.
@@ -610,22 +626,12 @@ export class AvatarRig {
     if (this.disposed || this.frozen) return
     // Paint (mm3d-35): soco vence o pulo, que vence a locomoção (armada, se houver).
     const punching = this.punchLeft > 0 && !!this.groups.Punch
-    const air = this.air && !!this.groups.Air
-    if (air && !this.wasAir) {
-      // saiu do chão: o pulo do começo, uma vez (fica no último quadro)
-      const g = this.groups.Air!
-      g.reset()
-      g.speedRatio = 1.25
-      g.play(false)
-      // o corpo já saiu do chão: pula o agachamento do começo do clipe
-      g.goToFrame(g.from + (g.to - g.from) * 0.3)
-    }
-    this.wasAir = air
+    const air = this.air && !!this.groups[this.airClip]
     if (punching || air || (this.paint && this.groups.PIdle)) {
       this.punchLeft = Math.max(0, this.punchLeft - dt)
       const target = Object.fromEntries(this.clips.map((c) => [c, 0])) as Record<Clip, number>
       if (punching) target.Punch = 1
-      else if (air) target.Air = 1
+      else if (air) target[this.airClip] = 1
       else {
         const p = this.paint!
         const moving = Math.hypot(p.fwd, p.side) > 0.35
@@ -671,7 +677,7 @@ export class AvatarRig {
       InjuredIdle: still && sickIdle ? 1 : 0,
       InjuredWalk: move === 1 && sickWalk ? 1 : 0,
       BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
-      PIdle: 0, PFire: 0, PWalk: 0, PRun: 0, PStrafe: 0, Air: 0, Punch: 0,
+      PIdle: 0, PFire: 0, PWalk: 0, PRun: 0, PStrafe: 0, Air: 0, AirSide: 0, Air2: 0, Punch: 0,
     }
     this.applyWeights(dt, target, speed)
   }
@@ -699,7 +705,7 @@ export class AvatarRig {
       g.weight = w
       if (w <= 0 && g.isPlaying) g.pause()
       // O impulso do skate toca UMA vez (disparado em rideTargets), nunca em laço.
-      else if (w > 0 && !g.isPlaying && clip !== "SkatePush" && clip !== "Air") g.play(true)
+      else if (w > 0 && !g.isPlaying && clip !== "SkatePush" && clip !== "Air" && clip !== "AirSide" && clip !== "Air2") g.play(true)
     }
     // Patins: o passo de saída anda no ritmo natural (um ciclo em ~1 s).
     const walkRate = this.rideMove === 8 ? 1 : speed > 0.05 ? speed / ANIM_NATURAL_SPEED.walk : 1
