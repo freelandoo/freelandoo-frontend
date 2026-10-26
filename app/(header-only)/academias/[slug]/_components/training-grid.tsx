@@ -194,6 +194,17 @@ export function TrainingGrid({
     [academyId, authHeaders, t]
   )
 
+  // Link do modal da fila de treinos (`?aba=treinos&aluno=<id_member>`): abre
+  // a ficha do aluno direto. Lido do window, como o `aba` em
+  // academy-members-view (useSearchParams obrigaria Suspense). Uma vez só.
+  const abriuDoLink = useRef(false)
+  useEffect(() => {
+    if (abriuDoLink.current) return
+    abriuDoLink.current = true
+    const id = new URLSearchParams(window.location.search).get("aluno")
+    if (id) void openMember(id)
+  }, [openMember])
+
   const loadLibrary = useCallback(
     async (m: string, q: string) => {
       try {

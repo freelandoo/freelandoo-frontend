@@ -59,6 +59,7 @@ import React, {
 import { ProfileSidebar } from "@/components/layout/profile-sidebar"
 import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { AcademyConsentGate } from "@/components/onboarding/academy-consent-gate"
+import { TrainingQueueGate } from "@/components/onboarding/training-queue-gate"
 import { CookieConsent } from "@/components/cookie-consent"
 import { AnalyticsProvider } from "@/components/analytics-provider"
 import { CouponCapture } from "@/components/share/coupon-capture"
@@ -133,6 +134,7 @@ export function PlatformChrome() {
       <ProfileSidebar />
       <BirthdateGate />
       <AcademyConsentGate />
+      <TrainingQueueGate />
       <CookieConsent />
       <AnalyticsProvider />
       <CouponCapture />

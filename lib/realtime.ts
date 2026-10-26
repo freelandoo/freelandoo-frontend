@@ -158,6 +158,9 @@ async function ensureSocket(): Promise<Socket | null> {
     // desta lista o evento nao chega, e a tela de compras mostraria "aguardando
     // pagamento" um pedido que ja foi pago, ate alguem apertar F5.
     "listing-order:changed",
+    // Fila de treinos (mig 305): o "Avisar professores" do Coliseu reabre o
+    // modal do professor na hora. Fora desta lista, só na próxima entrada.
+    "training-queue:remind",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))
