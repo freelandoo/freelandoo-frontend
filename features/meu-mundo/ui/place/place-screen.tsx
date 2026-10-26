@@ -8,9 +8,11 @@
 //    aparelho ou do prédio para (fechar o jogo, não — a vida segue sozinha).
 //  - pedir no balcão (pizzaria, hamburgueria): o cardápio do lugar; come na hora.
 //  - pagar no caixa (supermercado): abre o Mercado do STATUS, comprando.
+//  - rezar no banco da igreja (1–3 h): ajoelha em frente ao banco; o estresse
+//    cai rápido e o humor sobe (vida).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { BookOpen, Dumbbell, UtensilsCrossed } from "lucide-react"
+import { BookOpen, Dumbbell, Sparkles, UtensilsCrossed } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { getLife, postLifeActivity, postLifeOrder } from "../../data"
@@ -28,6 +30,7 @@ const CLASS_FEE_H: Record<string, number> = { universidade: 8 }
 /** Rendimento do estudo no lugar — espelho de PLACE_RULES em meuMundoLife.js. */
 const STUDY_MUL: Record<string, number> = { universidade: 1.5 }
 const HOURS = [1, 2, 4, 8] as const
+const PRAY_HOURS = [1, 2, 3] as const
 
 type Tr = (key: string, fallback: string) => string
 
@@ -44,8 +47,13 @@ export interface PlaceScreenProps {
 
 /** O que está em andamento aqui dentro (null = nada). */
 interface Doing {
-  kind: "training" | "studying"
+  kind: "training" | "studying" | "praying"
   hours: number
+}
+
+function doingText(kind: Doing["kind"], hours: number, t: Tr) {
+  const k = kind === "training" ? t("pvTrainingFor", "Treinando por {h} h") : kind === "praying" ? t("pvPrayingFor", "Rezando por {h} h") : t("pvStudyingFor", "Estudando por {h} h")
+  return k.replace("{h}", String(hours))
 }
 
 export function PlaceScreen({ placeId, placeName, interior, body, look = "", onExit, onOpenMarket }: PlaceScreenProps) {
@@ -53,6 +61,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   const [ask, setAsk] = useState<{ use: PlaceUse; state: PlaceState } | null>(null)
   const [doing, setDoing] = useState<Doing | null>(null)
   const [pose, setPose] = useState<PlacePose | null>(null)
+  const [poseAt, setPoseAt] = useState<{ x: number; z: number; facing: number } | null>(null)
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState<{ text: string; tone: "ouro" | "magenta" } | null>(null)
   const doingRef = useRef<Doing | null>(null)
@@ -76,13 +85,14 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
     doingRef.current = null
     setDoing(null)
     setPose(null)
+    setPoseAt(null)
     const token = getToken()
     if (token) void postLifeActivity(token, "idle")
   }, [])
 
   const start = async (hours: number) => {
     if (!ask) return
-    const kind = ask.use === "train" ? "training" : "studying"
+    const kind = ask.use === "train" ? "training" : ask.use === "pray" ? "praying" : "studying"
     const token = getToken()
     if (!token) return
     setBusy(true)
@@ -96,13 +106,14 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
     const d = { kind, hours } as Doing
     doingRef.current = d
     setDoing(d)
-    // Treino: o movimento do aparelho; estudo: sentado (a pose da cadeira).
+    // Treino: o movimento do aparelho; estudo: sentado (a pose da cadeira);
+    // reza: ajoelhado no vão em frente ao banco, olhando para o altar.
     const anim = ask.state.kind === "spot" ? ask.state.spot.anim : null
-    setPose(kind === "training" && anim ? (POSE_OF_ANIM[anim] ?? null) : null)
-    setToast({
-      text: (kind === "training" ? t("pvTrainingFor", "Treinando por {h} h") : t("pvStudyingFor", "Estudando por {h} h")).replace("{h}", String(hours)),
-      tone: "ouro",
-    })
+    if (kind === "praying" && ask.state.kind === "seat") {
+      setPoseAt({ x: ask.state.seat.stand.x, z: ask.state.seat.stand.z, facing: ask.state.seat.facing })
+      setPose("Pray")
+    } else setPose(kind === "training" && anim ? (POSE_OF_ANIM[anim] ?? null) : null)
+    setToast({ text: doingText(kind, hours, t), tone: "ouro" })
   }
 
   const openMenu = async () => {
@@ -136,7 +147,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   }
 
   const onUse = (use: PlaceUse, state: PlaceState) => {
-    if (use === "train" || use === "study") {
+    if (use === "train" || use === "study" || use === "pray") {
       if (doingRef.current) return
       setAsk({ use, state })
       return
@@ -158,6 +169,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
 
   const fee = CLASS_FEE_H[placeId] ?? 0
   const training = ask?.use === "train"
+  const praying = ask?.use === "pray"
 
   return (
     <>
@@ -171,12 +183,13 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
         onUse={onUse}
         onState={onState}
         pose={pose}
+        poseAt={poseAt}
         blocked={!!ask || menuOpen}
         hideUse={!!doing}
         extra={
           doing ? (
-            <EvoToast icon={doing.kind === "training" ? <Dumbbell className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}>
-              {(doing.kind === "training" ? t("pvTrainingFor", "Treinando por {h} h") : t("pvStudyingFor", "Estudando por {h} h")).replace("{h}", String(doing.hours))}
+            <EvoToast icon={doing.kind === "training" ? <Dumbbell className="h-4 w-4" /> : doing.kind === "praying" ? <Sparkles className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}>
+              {doingText(doing.kind, doing.hours, t)}
             </EvoToast>
           ) : null
         }
@@ -230,9 +243,9 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
           <EvoDialog
             labelId="mm-place-hours"
             eyebrow={placeName}
-            title={training ? t("pvTrainTitle", "Treinar quanto tempo?") : t("pvStudyTitle", "Estudar quanto tempo?")}
+            title={training ? t("pvTrainTitle", "Treinar quanto tempo?") : praying ? t("pvPrayTitle", "Rezar quanto tempo?") : t("pvStudyTitle", "Estudar quanto tempo?")}
             onClose={() => setAsk(null)}
-            footer={HOURS.map((h) => (
+            footer={(praying ? PRAY_HOURS : HOURS).map((h) => (
               <EvoButton key={h} variant="gold" loading={busy} onClick={() => void start(h)}>
                 {`${h} h${fee ? ` · ${fee * h}` : ""}`}
               </EvoButton>
@@ -241,9 +254,11 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
             <p>
               {training
                 ? t("pvTrainText", "Força e velocidade sobem nas primeiras 4 h do dia. Ele continua mesmo com o jogo fechado; sair do aparelho para.")
-                : t("pvStudyText", "A inteligência sobe nas primeiras 5 h do dia. Ele continua mesmo com o jogo fechado; levantar para.")}
+                : praying
+                  ? t("pvPrayText", "Rezando, o estresse cai rápido e o humor sobe. Levantar para.")
+                  : t("pvStudyText", "A inteligência sobe nas primeiras 5 h do dia. Ele continua mesmo com o jogo fechado; levantar para.")}
             </p>
-            {!training && (STUDY_MUL[placeId] ?? 1) > 1 && (
+            {!training && !praying && (STUDY_MUL[placeId] ?? 1) > 1 && (
               <p className="mt-2">
                 {t("pvUniText", "Na universidade rende 1,5× — a hora de aula custa {c} moedas.").replace("{c}", String(fee))}
               </p>

@@ -77,8 +77,11 @@ export interface PlaceGameHandle {
   interact: () => void
   /** Levantar do leito, da cadeira ou sair do ponto de uso (internado não levanta). */
   stand: () => void
-  /** A atividade começou (o movimento do aparelho em laço) ou parou (null). */
-  setPose: (pose: PlacePose | null) => void
+  /**
+   * A atividade começou (o movimento do aparelho em laço) ou parou (null).
+   * `at`: onde fazer (a reza ajoelha em frente ao banco, mm3d-37d).
+   */
+  setPose: (pose: PlacePose | null, at?: { x: number; z: number; facing: number }) => void
   recenter: () => void
   dispose: () => void
 }
@@ -328,7 +331,8 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       else if (nearby && !input.blocked) interactWith(nearby)
     },
     stand: getUp,
-    setPose(pose) {
+    setPose(pose, at) {
+      if (at) settle({ ...at, floor: body.floor })
       char.setPose(pose)
     },
     recenter() {

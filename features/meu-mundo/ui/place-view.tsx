@@ -75,8 +75,10 @@ export interface PlaceViewProps {
   extra?: ReactNode
   /** Mudou onde a pessoa está (a tela de quem chamou pode reagir). */
   onState?: (state: PlaceState) => void
-  /** O movimento da atividade em andamento (treino), null = parado. */
+  /** O movimento da atividade em andamento (treino, reza), null = parado. */
   pose?: PlacePose | null
+  /** Onde fazer o movimento (a reza ajoelha em frente ao banco). */
+  poseAt?: { x: number; z: number; facing: number } | null
   /** Bloqueia o andar (diálogo aberto por cima). */
   blocked?: boolean
   /** Esconde o botão da ação (já em andamento). */
@@ -89,7 +91,7 @@ export interface PlaceViewProps {
   onOpenStatus?: () => void
 }
 
-export function PlaceView({ interior, body, look = "", mode, bed, placeName, onExit, onUse, extra, onState, pose = null, blocked = false, hideUse = false, discharged, onOpenStatus }: PlaceViewProps) {
+export function PlaceView({ interior, body, look = "", mode, bed, placeName, onExit, onUse, extra, onState, pose = null, poseAt = null, blocked = false, hideUse = false, discharged, onOpenStatus }: PlaceViewProps) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<PlaceGameHandle | null>(null)
@@ -156,8 +158,8 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
   }, [interior, body, look, sceneMode, bed, attempt])
 
   useEffect(() => {
-    gameRef.current?.setPose(pose)
-  }, [pose, status])
+    gameRef.current?.setPose(pose, poseAt ?? undefined)
+  }, [pose, poseAt, status])
 
   useEffect(() => {
     gameRef.current?.setBlocked(blocked)

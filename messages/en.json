@@ -8460,7 +8460,10 @@
     "pvOrderPrice": "Order · {n}",
     "pvAte": "Ate: {item}",
     "mkAtMarket": "At the supermarket · {n}",
-    "mkHintGoMarket": "To buy, go to the downtown supermarket and use the checkout. Everything goes to your home fridge."
+    "mkHintGoMarket": "To buy, go to the downtown supermarket and use the checkout. Everything goes to your home fridge.",
+    "pvPrayTitle": "Pray for how long?",
+    "pvPrayText": "While praying, stress drops fast and mood rises. Standing up stops it.",
+    "pvPrayingFor": "Praying for {h} h"
   },
   "Sports": {
     "eyebrow": "Sports",

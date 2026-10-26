@@ -8440,7 +8440,10 @@
     "pvOrderPrice": "Pedir · {n}",
     "pvAte": "Comió: {item}",
     "mkAtMarket": "En el supermercado · {n}",
-    "mkHintGoMarket": "Para comprar, ve al supermercado del centro y pasa por la caja. Todo va a la nevera de tu casa."
+    "mkHintGoMarket": "Para comprar, ve al supermercado del centro y pasa por la caja. Todo va a la nevera de tu casa.",
+    "pvPrayTitle": "¿Rezar cuánto tiempo?",
+    "pvPrayText": "Rezando, el estrés baja rápido y el ánimo sube. Levantarse lo detiene.",
+    "pvPrayingFor": "Rezando por {h} h"
   },
   "Sports": {
     "eyebrow": "Deportes",

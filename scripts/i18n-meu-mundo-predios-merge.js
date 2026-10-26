@@ -69,6 +69,10 @@ const MEU_MUNDO = {
     "To buy, go to the downtown supermarket and use the checkout. Everything goes to your home fridge.",
     "Para comprar, ve al supermercado del centro y pasa por la caja. Todo va a la nevera de tu casa.",
   ],
+  // mm3d-37d: rezar na igreja
+  pvPrayTitle: ["Rezar quanto tempo?", "Pray for how long?", "¿Rezar cuánto tiempo?"],
+  pvPrayText: ["Rezando, o estresse cai rápido e o humor sobe. Levantar para.", "While praying, stress drops fast and mood rises. Standing up stops it.", "Rezando, el estrés baja rápido y el ánimo sube. Levantarse lo detiene."],
+  pvPrayingFor: ["Rezando por {h} h", "Praying for {h} h", "Rezando por {h} h"],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]
