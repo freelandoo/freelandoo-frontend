@@ -57,9 +57,51 @@ const C = {
   sheet: [0.7, 0.84, 0.93],
   ivBag: [0.82, 0.92, 0.97],
   pulse: [0.32, 0.92, 0.52],
+  // Centro por dentro (mm3d-37).
+  rubber: [0.27, 0.28, 0.31],
+  red: [0.78, 0.2, 0.18],
+  yellow: [0.98, 0.76, 0.16],
+  green: [0.22, 0.56, 0.32],
+  navy: [0.16, 0.23, 0.42],
+  gold: [0.86, 0.69, 0.3],
+  board: [0.17, 0.3, 0.24],
+  chalk: [0.92, 0.94, 0.9],
+  brick: [0.62, 0.32, 0.22],
+  fire: [1, 0.55, 0.15],
+  bag: [0.55, 0.12, 0.12],
+  iron: [0.35, 0.36, 0.4],
+  candle: [0.99, 0.96, 0.86],
+  flame: [1, 0.8, 0.3],
+  mattress: [0.62, 0.62, 0.58],
 } satisfies Record<string, RGB>
 
-const MAT: Record<FloorMat, RGB> = { wood: C.wood, tile: C.tile, carpet: C.carpet, stone: C.stone }
+const MAT: Record<FloorMat, RGB> = { wood: C.wood, tile: C.tile, carpet: C.carpet, stone: C.stone, rubber: C.rubber }
+
+/**
+ * Tema de cores de um prédio do centro (mm3d-37): parede, a cor da casa
+ * (estofados, balcões, placas) e uma segunda. Casas e hospital: sem tema.
+ */
+interface Theme {
+  wall: RGB
+  accent: RGB
+  second: RGB
+}
+const THEMES: Record<string, Theme> = {
+  pizzaria: { wall: [0.97, 0.9, 0.78], accent: C.red, second: C.green },
+  hamburgueria: { wall: [0.98, 0.93, 0.84], accent: C.red, second: C.yellow },
+  supermercado: { wall: [0.95, 0.96, 0.95], accent: C.green, second: C.yellow },
+  universidade: { wall: [0.93, 0.91, 0.86], accent: C.navy, second: C.gold },
+  biblioteca: { wall: [0.9, 0.84, 0.72], accent: [0.42, 0.18, 0.16], second: C.gold },
+  escola: { wall: [0.95, 0.93, 0.8], accent: [0.3, 0.55, 0.78], second: C.yellow },
+  academia: { wall: [0.36, 0.37, 0.4], accent: C.yellow, second: C.red },
+  igreja: { wall: [0.92, 0.88, 0.8], accent: [0.45, 0.25, 0.5], second: C.gold },
+  delegacia: { wall: [0.82, 0.86, 0.9], accent: C.navy, second: C.gold },
+}
+const NO_THEME: Theme = { wall: C.wall, accent: C.fabricB, second: C.fabricA }
+/** Cores das lombadas e dos produtos de cena (só desenho). */
+const STOCK: RGB[] = [C.red, C.yellow, C.green, [0.3, 0.55, 0.85], [0.95, 0.55, 0.2], C.white, [0.6, 0.35, 0.65]]
+/** Cilindro deitado ao longo do X local do móvel. */
+const ALONG_X = Matrix.RotationZ(Math.PI / 2)
 const FABRICS: RGB[] = [C.fabricA, C.fabricB, C.fabricC]
 
 /** Quadro de um móvel: giro em Y (graus) e posição, com a altura do andar. */
@@ -76,7 +118,7 @@ function legs(g: GeoBuilder, f: Matrix, w: number, d: number, h: number, c: RGB,
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) B(g, f, sx * (w / 2 - t), 0, sz * (d / 2 - t), t, h, t, c)
 }
 
-function furniture(g: GeoBuilder, it: InteriorFurniture, y: number, seatTop: number, n: number, sizes: Record<string, { w: number; d: number; h: number }>) {
+function furniture(g: GeoBuilder, it: InteriorFurniture, y: number, seatTop: number, n: number, sizes: Record<string, { w: number; d: number; h: number }>, th: Theme) {
   const base = sizes[it.t] ?? { w: 0.5, d: 0.5, h: 0.5 }
   const w = it.w ?? base.w
   const d = it.d ?? base.d
@@ -192,7 +234,7 @@ function furniture(g: GeoBuilder, it: InteriorFurniture, y: number, seatTop: num
       B(g, f, 0, 0.75, -d / 2 + 0.08, w - 0.1, 0.02, 0.06, C.black)
       break
     case "rug":
-      B(g, f, 0, 0.005, 0, w, 0.015, d, n % 2 ? C.rugA : C.rugB)
+      B(g, f, 0, 0.005, 0, w, 0.015, d, th === NO_THEME ? (n % 2 ? C.rugA : C.rugB) : th.accent)
       break
     // ── Hospital (mm3d-26) ──
     case "hbed":
@@ -229,13 +271,231 @@ function furniture(g: GeoBuilder, it: InteriorFurniture, y: number, seatTop: num
       break
     case "reception":
       B(g, f, 0, 0, 0, w, h - 0.05, d, C.white)
-      B(g, f, 0, 0.1, -d / 2 - 0.005, w - 0.1, h - 0.3, 0.01, C.teal)
+      // Hospital: verde-azulado; prédio do centro: a cor da casa (mm3d-37).
+      B(g, f, 0, 0.1, -d / 2 - 0.005, w - 0.1, h - 0.3, 0.01, th === NO_THEME ? C.teal : th.accent)
       B(g, f, 0, h - 0.05, 0, w + 0.06, 0.05, d + 0.06, C.dark)
       break
     case "cabinet":
       B(g, f, 0, 0, 0, w, h, d, C.white)
       for (const sx of [-1, 1]) B(g, f, sx * (w / 4), h * 0.45, -d / 2 - 0.005, w / 2 - 0.06, h * 0.5, 0.01, C.glass)
       B(g, f, 0, h - 0.02, 0, w + 0.02, 0.03, d + 0.02, C.teal)
+      break
+    // ── Centro por dentro (mm3d-37) ── academia
+    case "treadmill":
+      B(g, f, 0, 0, 0.1, w, 0.18, d - 0.2, C.dark)
+      B(g, f, 0, 0.18, 0.1, w - 0.2, 0.02, d - 0.35, C.black)
+      for (const sx of [-1, 1]) B(g, f, sx * (w / 2 - 0.05), 0.18, -d / 2 + 0.2, 0.06, h - 0.3, 0.06, C.steel)
+      B(g, f, 0, h - 0.32, -d / 2 + 0.2, w, 0.3, 0.16, C.dark)
+      B(g, f, 0, h - 0.24, -d / 2 + 0.11, w * 0.6, 0.14, 0.01, th.accent)
+      break
+    case "squat_rack":
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) B(g, f, sx * (w / 2 - 0.06), 0, sz * (d / 2 - 0.06), 0.08, h, 0.08, C.iron)
+      for (const sz of [-1, 1]) B(g, f, 0, h - 0.06, sz * (d / 2 - 0.06), w, 0.06, 0.08, C.iron)
+      B(g, f, 0, 0, 0, w, 0.04, d, C.rubber)
+      // Barra no meio, onde quem agacha fica, com as anilhas.
+      g.cylinder(0.035, w + 0.5, ALONG_X.multiply(Matrix.Translation(0, 1.45, 0)).multiply(f), C.steel, 6)
+      for (const sx of [-1, 1]) g.cylinder(0.42, 0.08, ALONG_X.multiply(Matrix.Translation(sx * (w / 2 + 0.12), 1.45, 0)).multiply(f), C.black, 10)
+      break
+    case "punching_bag":
+      B(g, f, 0, h - 0.06, 0, 0.08, 0.06, 0.08, C.iron)
+      g.cylinder(0.015, 0.3, Matrix.Translation(0, h - 0.2, 0).multiply(f), C.steel, 4)
+      g.cylinder(w * 0.75, 1.15, Matrix.Translation(0, h - 0.92, 0).multiply(f), C.bag, 10)
+      break
+    case "plyo_box":
+      B(g, f, 0, 0, 0, w, h, d, C.wood)
+      B(g, f, 0, h - 0.02, 0, w + 0.01, 0.02, d + 0.01, th.accent)
+      break
+    case "gym_mat":
+      B(g, f, 0, 0.005, 0, w, 0.025, d, th.second)
+      break
+    case "kettlebells":
+      B(g, f, 0, 0, 0, w, 0.06, d, C.rubber)
+      for (let k = 0; k < 4; k++) {
+        const kx = -w / 2 + 0.16 + k * ((w - 0.32) / 3)
+        g.sphere(0.18 + k * 0.02, [1, 1, 1], Matrix.Translation(kx, 0.16, 0).multiply(f), C.black)
+        B(g, f, kx, 0.26 + k * 0.02, 0, 0.12, 0.04, 0.03, C.black)
+      }
+      break
+    case "dumbbell_rack":
+      B(g, f, 0, 0, 0, w, 0.06, d, C.iron)
+      for (const sx of [-1, 1]) B(g, f, sx * (w / 2 - 0.05), 0, 0, 0.06, h, d, C.iron)
+      for (const ly of [0.45, 0.85]) {
+        B(g, f, 0, ly - 0.08, 0, w - 0.1, 0.03, d - 0.1, C.iron)
+        for (let k = 0; k < 6; k++) B(g, f, -w / 2 + 0.22 + k * ((w - 0.44) / 5), ly - 0.05, 0, 0.12, 0.12, 0.3, C.black)
+      }
+      break
+    case "weight_bench":
+      legs(g, f, w, d - 0.2, 0.42, C.iron, 0.05)
+      B(g, f, 0, 0.4, 0, w, 0.1, d, C.black)
+      break
+    case "mirror":
+      B(g, f, 0, 0.3, 0, w, h - 0.3, d, C.steel)
+      B(g, f, 0, 0.34, -0.005, w - 0.08, h - 0.38, d, C.glass)
+      break
+    case "lockers":
+      B(g, f, 0, 0, 0, w, h, d, th.accent)
+      for (let k = 0; k < 3; k++) B(g, f, -w / 2 + w / 6 + (k * w) / 3, 0.08, -d / 2 - 0.005, w / 3 - 0.06, h - 0.16, 0.01, C.steel)
+      break
+    // ── escola, universidade e biblioteca ──
+    case "blackboard":
+      B(g, f, 0, 0.75, 0, w, h - 0.75, d, C.woodDark)
+      B(g, f, 0, 0.82, -0.01, w - 0.12, h - 0.89, d, C.board)
+      // Giz no quadro (riscos).
+      for (let k = 0; k < 3; k++) B(g, f, -w / 4 + k * 0.4, 1.4 + k * 0.18, -d / 2 - 0.006, 0.9 - k * 0.2, 0.03, 0.005, C.chalk)
+      B(g, f, 0, 0.78, -d / 2 - 0.04, w - 0.2, 0.03, 0.08, C.woodDark)
+      break
+    case "lectern":
+      B(g, f, 0, 0, 0, w * 0.6, 0.06, d * 0.8, C.woodDark)
+      B(g, f, 0, 0.06, 0, 0.18, h - 0.2, 0.18, C.woodDark)
+      B(g, f, 0, h - 0.16, 0, w, 0.12, d, C.wood)
+      break
+    case "bookcase":
+      B(g, f, 0, 0, d / 2 - 0.03, w, h, 0.06, C.woodDark)
+      for (const sx of [-1, 1]) B(g, f, sx * (w / 2 - 0.03), 0, 0, 0.06, h, d, C.woodDark)
+      for (let k = 0; k < 5; k++) {
+        const ly = 0.04 + k * (h / 5)
+        B(g, f, 0, ly, 0, w - 0.1, 0.04, d - 0.04, C.wood)
+        // Lombadas: larguras e alturas variadas.
+        let bx = -w / 2 + 0.1
+        let j = 0
+        while (bx < w / 2 - 0.25) {
+          const bw = 0.1 + ((n + k + j) % 3) * 0.05
+          const bh = 0.24 + ((n + j * 2 + k) % 4) * 0.04
+          B(g, f, bx + bw / 2, ly + 0.04, 0, bw - 0.01, bh, d - 0.12, STOCK[(n + k * 3 + j) % STOCK.length])
+          bx += bw
+          j++
+        }
+      }
+      break
+    // ── igreja ──
+    case "pew":
+      for (const sx of [-1, 1]) B(g, f, sx * (w / 2 - 0.04), 0, 0, 0.08, h, d, C.woodDark)
+      B(g, f, 0, seatTop - 0.06, -0.04, w - 0.08, 0.06, d - 0.12, C.wood)
+      B(g, f, 0, seatTop, d / 2 - 0.05, w - 0.08, h - seatTop, 0.06, C.wood)
+      B(g, f, 0, 0.12, d / 2 + 0.02, w - 0.2, 0.06, 0.12, C.woodDark)
+      break
+    case "altar":
+      B(g, f, 0, 0, 0, w, h, d, C.white)
+      B(g, f, 0, h - 0.05, 0, w + 0.1, 0.05, d + 0.1, C.wood)
+      B(g, f, 0, 0.2, -d / 2 - 0.005, w * 0.5, h - 0.4, 0.01, th.second)
+      break
+    case "cross":
+      B(g, f, 0, 0.6, 0, 0.16, h - 0.6, d, th.second)
+      B(g, f, 0, h - 0.65, 0, w, 0.16, d, th.second)
+      break
+    case "candles":
+      g.cylinder(0.05, h - 0.25, Matrix.Translation(0, (h - 0.25) / 2, 0).multiply(f), C.gold, 6)
+      g.cylinder(0.28, 0.04, Matrix.Translation(0, 0.02, 0).multiply(f), C.gold, 8)
+      B(g, f, 0, h - 0.27, 0, 0.32, 0.03, 0.04, C.gold)
+      for (const sx of [-0.12, 0, 0.12]) {
+        g.cylinder(0.05, 0.22, Matrix.Translation(sx, h - 0.14, 0).multiply(f), C.candle, 6)
+        g.sphere(0.05, [1, 1.6, 1], Matrix.Translation(sx, h + 0.01, 0).multiply(f), C.flame)
+      }
+      break
+    // ── pizzaria e hamburgueria ──
+    case "order_counter":
+      B(g, f, 0, 0, 0, w, h - 0.05, d, C.woodDark)
+      B(g, f, 0, 0.1, -d / 2 - 0.005, w - 0.1, h - 0.3, 0.01, th.accent)
+      B(g, f, 0, h - 0.05, 0, w + 0.06, 0.05, d + 0.06, C.dark)
+      // Caixa registradora.
+      B(g, f, -w / 2 + 0.45, h, 0.05, 0.4, 0.18, 0.3, C.dark)
+      B(g, f, -w / 2 + 0.45, h + 0.18, 0.15, 0.32, 0.18, 0.04, C.black)
+      break
+    case "pizza_oven":
+      B(g, f, 0, 0, 0, w, 0.9, d, C.brick)
+      g.sphere(w * 0.95, [1, 0.62, d / w], Matrix.Translation(0, 0.9, 0).multiply(f), C.brick)
+      B(g, f, 0, 0.92, -d / 2 + 0.02, 0.55, 0.34, 0.05, C.black)
+      B(g, f, 0, 0.95, -d / 2 + 0.06, 0.4, 0.16, 0.02, C.fire)
+      g.cylinder(0.24, 0.7, Matrix.Translation(0, h - 0.2, d / 4).multiply(f), C.iron, 6)
+      break
+    case "menu_board":
+      B(g, f, 0, 1.2, 0, w, h - 1.2, d, C.woodDark)
+      B(g, f, 0, 1.26, -0.01, w - 0.1, h - 1.32, d, C.black)
+      for (let k = 0; k < 4; k++) {
+        B(g, f, -w / 6, 1.42 + k * 0.22, -d / 2 - 0.006, w * 0.45, 0.05, 0.005, C.chalk)
+        B(g, f, w / 3, 1.42 + k * 0.22, -d / 2 - 0.006, w * 0.12, 0.05, 0.005, th.second)
+      }
+      B(g, f, 0, h - 0.24, -d / 2 - 0.006, w * 0.6, 0.12, 0.005, th.accent)
+      break
+    case "booth":
+      B(g, f, 0, 0, 0, w, seatTop - 0.08, d, C.woodDark)
+      B(g, f, 0, seatTop - 0.08, -0.05, w, 0.1, d - 0.15, th.accent)
+      B(g, f, 0, seatTop - 0.08, d / 2 - 0.1, w, h - seatTop + 0.08, 0.2, th.accent)
+      B(g, f, 0, h - 0.04, d / 2 - 0.1, w + 0.02, 0.05, 0.22, C.woodDark)
+      break
+    case "soda_machine":
+      B(g, f, 0, 0, 0, w, h, d, th.accent)
+      B(g, f, 0, 0.9, -d / 2 - 0.005, w - 0.12, 0.7, 0.01, C.dark)
+      for (const sx of [-0.22, 0, 0.22]) B(g, f, sx, 1.0, -d / 2 - 0.03, 0.12, 0.08, 0.05, C.steel)
+      B(g, f, 0, 0.75, -d / 2 - 0.04, w - 0.2, 0.04, 0.12, C.steel)
+      break
+    case "fryer":
+      B(g, f, 0, 0, 0, w, h - 0.05, d, C.steel)
+      B(g, f, 0, h - 0.05, 0, w - 0.08, 0.05, d - 0.08, C.yellow)
+      break
+    case "stool":
+      g.cylinder(0.06, seatTop - 0.06, Matrix.Translation(0, (seatTop - 0.06) / 2, 0).multiply(f), C.steel, 6)
+      g.cylinder(w, 0.06, Matrix.Translation(0, seatTop - 0.03, 0).multiply(f), th.accent, 10)
+      break
+    // ── supermercado (prateleiras de cena: pedido do Alex, nada para pegar) ──
+    case "gondola":
+      B(g, f, 0, 0, 0, w, 0.12, d, C.dark)
+      B(g, f, 0, 0, 0, w, h, 0.06, C.steel)
+      for (let k = 0; k < 4; k++) {
+        const ly = 0.12 + k * 0.4
+        for (const sz of [-1, 1]) {
+          B(g, f, 0, ly, sz * (d / 4 + 0.02), w - 0.04, 0.03, d / 2 - 0.06, C.white)
+          for (let j = 0; j < 8; j++)
+            B(g, f, -w / 2 + 0.22 + j * ((w - 0.44) / 7), ly + 0.03, sz * (d / 4 + 0.02), 0.26, 0.2 + ((j + k) % 3) * 0.05, d / 2 - 0.14, STOCK[(n + j + k * 2) % STOCK.length])
+        }
+      }
+      B(g, f, 0, h, 0, w, 0.06, d, th.accent)
+      break
+    case "fridge_case":
+      B(g, f, 0, 0, 0, w, h, d, C.white)
+      for (let k = 0; k < 4; k++)
+        for (let j = 0; j < 6; j++) B(g, f, -w / 2 + 0.3 + j * ((w - 0.6) / 5), 0.2 + k * 0.42, -0.05, 0.18, 0.26, d * 0.55, STOCK[(n + j * 2 + k) % STOCK.length])
+      B(g, f, 0, 0.12, -d / 2 - 0.005, w - 0.1, h - 0.36, 0.01, C.glass)
+      B(g, f, 0, h - 0.24, -d / 2 - 0.01, w, 0.2, 0.02, th.accent)
+      break
+    case "fruit_stand":
+      legs(g, f, w, d, 0.6, C.woodDark, 0.06)
+      B(g, f, 0, 0.6, 0, w, 0.1, d, C.wood)
+      for (let j = 0; j < 6; j++)
+        for (let k = 0; k < 3; k++)
+          g.sphere(0.14, [1, 0.9, 1], Matrix.Translation(-w / 2 + 0.18 + j * ((w - 0.36) / 5), 0.78, -d / 2 + 0.2 + k * ((d - 0.4) / 2)).multiply(f), [C.red, C.yellow, C.green, C.fire][(j + n) % 4])
+      break
+    case "checkout":
+      B(g, f, 0, 0, 0, w, h - 0.05, d, C.white)
+      B(g, f, 0, h - 0.05, 0, w, 0.05, d, C.dark)
+      B(g, f, -w / 4, h, 0, w / 2 - 0.1, 0.02, d - 0.2, C.black)
+      B(g, f, w / 2 - 0.3, h, 0.1, 0.36, 0.2, 0.3, C.dark)
+      g.cylinder(0.04, 1.1, Matrix.Translation(w / 2 - 0.1, h + 0.55, d / 2 - 0.1).multiply(f), C.steel, 6)
+      B(g, f, w / 2 - 0.1, h + 1.1, d / 2 - 0.1, 0.34, 0.22, 0.06, th.accent)
+      break
+    case "poster":
+      B(g, f, 0, 0.9, 0, w, h, d, C.white)
+      B(g, f, 0, 0.98, -0.01, w - 0.16, h * 0.55, d, n % 2 ? th.second : th.accent)
+      for (let k = 0; k < 3; k++) B(g, f, 0, 0.98 + h * 0.6 + k * 0.1, -0.01, w * (0.7 - k * 0.15), 0.04, d, C.dark)
+      break
+    // ── delegacia ──
+    case "bars":
+      B(g, f, 0, 0, 0, w, 0.08, d, C.iron)
+      B(g, f, 0, h - 0.08, 0, w, 0.08, d, C.iron)
+      B(g, f, 0, 1.1, 0, w, 0.05, d, C.iron)
+      for (let k = 0; k <= Math.floor(w / 0.16); k++) g.cylinder(0.05, h, Matrix.Translation(-w / 2 + k * 0.16, h / 2, 0).multiply(f), C.iron, 5)
+      break
+    case "cot":
+      legs(g, f, w, d, 0.3, C.iron, 0.05)
+      B(g, f, 0, 0.3, 0, w, 0.04, d, C.iron)
+      B(g, f, 0, 0.34, 0, w - 0.06, 0.12, d - 0.06, C.mattress)
+      B(g, f, 0, 0.46, d / 2 - 0.25, w * 0.7, 0.07, 0.3, C.white)
+      break
+    case "flag":
+      g.cylinder(0.05, h, Matrix.Translation(0, h / 2, 0).multiply(f), C.gold, 6)
+      g.cylinder(0.3, 0.06, Matrix.Translation(0, 0.03, 0).multiply(f), C.dark, 8)
+      B(g, f, 0.4, h - 0.65, 0, 0.75, 0.5, 0.02, C.green)
+      B(g, f, 0.4, h - 0.5, -0.012, 0.42, 0.2, 0.01, C.yellow)
       break
     default:
       B(g, f, 0, 0, 0, w, h, d, C.wood)
@@ -275,6 +535,7 @@ function stairSteps(g: GeoBuilder, def: InteriorDef, si: number) {
 }
 
 export function buildInterior(scene: Scene, def: InteriorDef): BuiltInterior {
+  const th = (def.theme && THEMES[def.theme]) || NO_THEME
   const mat = new StandardMaterial("mm-interior", scene)
   mat.diffuseColor = new Color3(1, 1, 1)
   mat.specularColor = new Color3(0, 0, 0)
@@ -297,7 +558,7 @@ export function buildInterior(scene: Scene, def: InteriorDef): BuiltInterior {
       const inBath = fl.rooms.some(
         (r) => bathIds.has(r.id) && w.x >= r.x0 - 0.2 && w.x <= r.x1 + 0.2 && w.z >= r.z0 - 0.2 && w.z <= r.z1 + 0.2 && w.kind !== "int",
       )
-      const color = rail ? C.rail : inBath ? C.wallBath : C.wall
+      const color = rail ? C.rail : inBath && !def.theme ? C.wallBath : th.wall
       if (rail) {
         g.box(w.hx * 2, 0.08, w.hz * 2, Matrix.Translation(w.x, y + w.h - 0.04, w.z), C.rail)
         g.box(w.hx * 2 * 0.98, 0.1, w.hz * 2 * 0.98, Matrix.Translation(w.x, y + 0.05, w.z), C.rail)
@@ -332,7 +593,7 @@ export function buildInterior(scene: Scene, def: InteriorDef): BuiltInterior {
     def.stairs.forEach((st, si) => {
       if (st.from === fi) stairSteps(g, def, si)
     })
-    for (const it of fl.furniture) furniture(g, it, y, def.seatTop, n++, def.furnitureTypes)
+    for (const it of fl.furniture) furniture(g, it, y, def.seatTop, n++, def.furnitureTypes, th)
     const mesh = g.build(`mm-interior-f${fi}`, scene, mat)
     meshes.push(mesh)
   })

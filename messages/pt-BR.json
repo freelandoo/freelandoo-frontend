@@ -7842,7 +7842,20 @@
     "clr_darkBlonde": "Loiro-escuro",
     "clr_blonde": "Loiro",
     "clr_blue": "Azul",
-    "frEffHealth": "{n} saúde"
+    "frEffHealth": "{n} saúde",
+    "pvTrain": "Treinar",
+    "pvStudy": "Estudar",
+    "pvPray": "Rezar",
+    "pvOrder": "Fazer pedido",
+    "pvMarket": "Comprar",
+    "pvSeller": "Conversar",
+    "pvPolice": "Falar com o delegado",
+    "pvGoTo": "Usar",
+    "pvLeaveSpot": "Sair daqui",
+    "pvSoon": "Em breve",
+    "pvLoading": "Entrando: {place}…",
+    "pvErrorTitle": "O lugar não abriu",
+    "pvErrorText": "Não deu para carregar o lugar. Tente de novo."
   },
   "Sports": {
     "eyebrow": "Esportes",

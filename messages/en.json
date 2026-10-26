@@ -8428,7 +8428,20 @@
     "clr_darkBlonde": "Dark blonde",
     "clr_blonde": "Blonde",
     "clr_blue": "Blue",
-    "frEffHealth": "{n} health"
+    "frEffHealth": "{n} health",
+    "pvTrain": "Work out",
+    "pvStudy": "Study",
+    "pvPray": "Pray",
+    "pvOrder": "Order",
+    "pvMarket": "Shop",
+    "pvSeller": "Talk",
+    "pvPolice": "Talk to the chief",
+    "pvGoTo": "Use",
+    "pvLeaveSpot": "Step away",
+    "pvSoon": "Coming soon",
+    "pvLoading": "Entering: {place}…",
+    "pvErrorTitle": "The place didn't open",
+    "pvErrorText": "Couldn't load the place. Try again."
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -392,7 +392,8 @@ export interface LifeFull extends LifeSummary {
 }
 
 // ═══ Interiores (mm3d-09) ═══════════════════════════════════════════════════
-export type FloorMat = "wood" | "tile" | "carpet" | "stone"
+/** `rubber` = piso de academia (mm3d-37). */
+export type FloorMat = "wood" | "tile" | "carpet" | "stone" | "rubber"
 
 export interface InteriorRoom {
   id: string
@@ -403,6 +404,8 @@ export interface InteriorRoom {
   x1: number
   z1: number
   outdoor?: boolean
+  /** Cela da delegacia (mm3d-37): fechada pela grade. */
+  cell?: boolean
 }
 
 export interface InteriorWall {
@@ -424,6 +427,9 @@ export interface InteriorFurniture {
   w?: number
   d?: number
   h?: number
+  /** mm3d-37: o que se faz ali (sobrepõe o do tipo) e o NPC sentado. */
+  use?: string
+  npc?: string
 }
 
 export interface InteriorFloor {
@@ -457,6 +463,35 @@ export interface InteriorSeat {
   facing: number
   stand: Vec2
   kind: string
+  /** mm3d-37: assento de estudar, rezar ou falar com o vendedor. */
+  use?: PlaceUse
+}
+
+/** O que se faz num ponto de um prédio do centro (mm3d-37). */
+export type PlaceUse = "train" | "study" | "pray" | "order" | "market" | "seller" | "police"
+
+/** Ponto de uso (mm3d-37): onde a pessoa fica, olhando para o móvel. */
+export interface InteriorSpot {
+  id: string
+  floor: number
+  x: number
+  z: number
+  facing: number
+  use: PlaceUse
+  /** Movimento de quem usa (academia: run, squat, punch…). */
+  anim: string | null
+  kind: string
+  center: Vec2
+}
+
+/** NPC do prédio (mm3d-37): atendente em pé ou o vendedor sentado. */
+export interface InteriorNpc {
+  role: string
+  floor: number
+  x: number
+  z: number
+  facing: number
+  pose: "sit" | "stand"
 }
 
 /** Lugar de deitar numa cama (mm3d-13): o personagem fica no chão, no ponto; a pose traz a altura do colchão. */
@@ -494,6 +529,10 @@ export interface InteriorDef {
   beds?: InteriorBed[]
   /** mm3d-28: ponto em pé em frente a cada geladeira, olhando para ela. */
   fridges?: InteriorFridge[]
+  /** mm3d-37: pontos de uso, NPCs e o tema de cores do prédio. */
+  spots?: InteriorSpot[]
+  npcs?: InteriorNpc[]
+  theme?: string | null
   bedTop?: number
   /** Medidas-padrão de cada tipo de móvel (largura, profundidade, altura). */
   furnitureTypes: Record<string, { w: number; d: number; h: number }>
@@ -615,6 +654,7 @@ export interface CenterLayout {
   /** Objetos parados com modelo próprio (ambulância). */
   props?: { id: string; x: number; z: number; facing: number }[]
   /** Interiores que abrem (destino "interior:<id>", mm3d-26: o hospital). */
+  /** Só o hospital vem no payload; os outros prédios são buscados ao entrar (mm3d-37). */
   interiors?: { hospital?: InteriorDef }
   arrival: CenterSpot
   portal: Vec2 & { id: string; radius: number; nameKey: string }
@@ -697,6 +737,8 @@ export type Interactable =
   | { kind: "car-exit"; id: string; x: number; z: number; radius: number }
   // Centro (mm3d-17): entrada de um estabelecimento ("Em breve") e o portal de volta.
   | { kind: "place"; id: string; x: number; z: number; radius: number; place: CenterPlace }
+  // Ponto de uso dentro de um prédio do centro (mm3d-37).
+  | { kind: "spot"; id: string; x: number; z: number; radius: number; spot: InteriorSpot }
   | { kind: "portal"; id: string; x: number; z: number; radius: number }
 
 export interface GameStats {

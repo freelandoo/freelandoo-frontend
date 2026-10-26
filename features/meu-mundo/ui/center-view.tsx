@@ -25,12 +25,12 @@ import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
-import { fetchSession, postJetpackJoin, postPaintJoin } from "../data"
+import { fetchSession, getCenterInterior, postJetpackJoin, postPaintJoin } from "../data"
 import type { PaintJoin } from "../paint/ui/paint-view"
-import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, NetStatus, VisitState } from "../types"
+import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
-const HospitalView = dynamic(() => import("./hospital-view").then((m) => m.HospitalView), { ssr: false })
+const PlaceView = dynamic(() => import("./place-view").then((m) => m.PlaceView), { ssr: false })
 const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => m.JetpackView), { ssr: false })
 const PaintView = dynamic(() => import("../paint/ui/paint-view").then((m) => m.PaintView), { ssr: false })
 
@@ -54,9 +54,21 @@ async function fetchJetpackParty(roomId: string | null) {
 }
 
 const gameOf = (p: CenterPlace) => (p.available && p.destination.startsWith("game:") ? p.destination.slice(5) : null)
-/** Interior que abre (mm3d-26: só o hospital); sem a planta no payload, "Em breve". */
-const interiorOf = (p: CenterPlace, c: CenterPayload["center"]) =>
-  p.available && p.destination === "interior:hospital" && c.interiors?.hospital ? ("hospital" as const) : null
+/** Interior que abre (mm3d-26 hospital; mm3d-37 todos os prédios). */
+const interiorOf = (p: CenterPlace) => (p.available && p.destination.startsWith("interior:") ? p.id : null)
+
+/** Plantas dos prédios já buscadas (a mesma para todos; vale a sessão inteira). */
+const interiorCache = new Map<string, InteriorDef>()
+async function loadInterior(id: string): Promise<InteriorDef | null> {
+  const hit = interiorCache.get(id)
+  if (hit) return hit
+  const token = getToken()
+  if (!token) return null
+  const r = await getCenterInterior(token, id)
+  if (!r.ok) return null
+  interiorCache.set(id, r.data.interior)
+  return r.data.interior
+}
 
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
@@ -105,6 +117,13 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [minigame, setMinigame] = useState<string | null>(null)
   /** O minijogo aberto aceita grupo (place.party, mm3d-21). */
   const [minigameParty, setMinigameParty] = useState(false)
+  // Prédio aberto (mm3d-37): qual e a planta (null = ainda buscando).
+  const [inside, setInside] = useState<{ id: string; interior: InteriorDef | null; failed: boolean } | null>(null)
+  const insidePlace = inside ? (payload.center.places.find((p) => p.id === inside.id) ?? null) : null
+  const closeInside = useCallback(() => {
+    setInside(null)
+    setMinigame(null)
+  }, [])
   const [statsOpen, setStatsOpen] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
   // Tela limpa: a ajuda dos controles só abre pelo menu.
@@ -207,7 +226,16 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
                 setMinigameParty((it.place.party ?? 0) > 1)
                 setMinigame(g)
               } else if (g === "paint") setMinigame(g)
-              else if (interiorOf(it.place, payload.center)) setMinigame("hospital")
+              else if (interiorOf(it.place)) {
+                const id = it.place.id
+                const ready = id === "hospital" ? (payload.center.interiors?.hospital ?? null) : (interiorCache.get(id) ?? null)
+                setInside({ id, interior: ready, failed: false })
+                setMinigame("interior")
+                if (!ready)
+                  void loadInterior(id).then((def) => {
+                    if (alive) setInside((cur) => (cur && cur.id === id ? { id, interior: def, failed: !def } : cur))
+                  })
+              }
               else setOpen(it.place)
             }
           },
@@ -281,7 +309,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const placeTag =
     nearPlace && gameOf(nearPlace)
       ? t("centerPlay", "Jogar")
-      : nearPlace && interiorOf(nearPlace, payload.center)
+      : nearPlace && interiorOf(nearPlace)
         ? t("centerEnter", "Entrar")
         : t("centerSoon", "Em breve")
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
@@ -476,8 +504,26 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {/* Paint (mm3d-35): ilhas, tinta e gatinhos; ao sair, volta à porta */}
       {minigame === "paint" && <PaintView body={body} look={look} onExit={() => setMinigame(null)} join={paintJoin} />}
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
-      {minigame === "hospital" && payload.center.interiors?.hospital && (
-        <HospitalView interior={payload.center.interiors.hospital} body={body} look={look} mode="visit" onExit={() => setMinigame(null)} />
+      {/* Prédios do centro (mm3d-37): mesma tela; a planta vem do servidor ao entrar */}
+      {minigame === "interior" && inside && insidePlace && inside.interior && (
+        <PlaceView interior={inside.interior} body={body} look={look} mode="visit" placeName={placeName(insidePlace)} onExit={closeInside} />
+      )}
+      {minigame === "interior" && inside && insidePlace && !inside.interior && (
+        <div className="fixed inset-0 z-[70] bg-[#33393d]">
+          <SceneCurtain
+            status={inside.failed ? "error" : "loading"}
+            text={t("pvLoading", "Entrando: {place}…").replace("{place}", placeName(insidePlace))}
+            errorTitle={t("pvErrorTitle", "O lugar não abriu")}
+            errorText={t("pvErrorText", "Não deu para carregar o lugar. Tente de novo.")}
+            onRetry={() => {
+              const id = inside.id
+              setInside({ id, interior: null, failed: false })
+              void loadInterior(id).then((def) => setInside((cur) => (cur && cur.id === id ? { id, interior: def, failed: !def } : cur)))
+            }}
+            onLeave={closeInside}
+            leaveLabel={t("hospitalLeave", "Sair")}
+          />
+        </div>
       )}
 
       {status !== "ready" && (
