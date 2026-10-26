@@ -539,6 +539,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     acc += dt
     let n = 0
     const solids = state.solids()
+    herd.setSolids(solids)
     while (acc >= STEP && n < 8) {
       acc -= STEP
       n++
