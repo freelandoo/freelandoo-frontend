@@ -25,12 +25,24 @@ import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
-import { fetchSession, postJetpackJoin } from "../data"
+import { fetchSession, postJetpackJoin, postPaintJoin } from "../data"
+import type { PaintJoin } from "../paint/ui/paint-view"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
 const HospitalView = dynamic(() => import("./hospital-view").then((m) => m.HospitalView), { ssr: false })
 const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => m.JetpackView), { ssr: false })
+const PaintView = dynamic(() => import("../paint/ui/paint-view").then((m) => m.PaintView), { ssr: false })
+
+/** Paint (mm3d-35): reserva numa sala do modo pedido (null = sem acesso). */
+async function fetchPaintSession(mode: string, roomId: string | null) {
+  const token = getToken()
+  if (!token) return null
+  const r = await postPaintJoin(token, mode, roomId)
+  return r.ok ? r.data : null
+}
+/** A rede do Paint só baixa quando alguém escolhe 1×1/2×2/3×3. */
+const paintJoin: PaintJoin = async (mode, hooks) => (await import("../paint/engine/join")).makePaintJoin(fetchPaintSession)(mode, hooks)
 
 /** O local abre um minijogo agora (o registro do servidor decide). */
 /** Lugar na sala do jetpack em grupo (null = sem acesso: o jogo cai no sozinho). */
@@ -58,6 +70,7 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   escola: "Escola",
   academia: "Academia",
   jetpack: "Jetpack",
+  paint: "Paint",
   igreja: "Igreja",
   delegacia: "Delegacia",
   hospital: "Hospital",
@@ -190,7 +203,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               if (g === "jetpack") {
                 setMinigameParty((it.place.party ?? 0) > 1)
                 setMinigame(g)
-              } else if (interiorOf(it.place, payload.center)) setMinigame("hospital")
+              } else if (g === "paint") setMinigame(g)
+              else if (interiorOf(it.place, payload.center)) setMinigame("hospital")
               else setOpen(it.place)
             }
           },
@@ -456,6 +470,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {minigame === "jetpack" && (
         <JetpackView body={body} onExit={() => setMinigame(null)} fetchParty={minigameParty ? fetchJetpackParty : undefined} />
       )}
+      {/* Paint (mm3d-35): ilhas, tinta e gatinhos; ao sair, volta à porta */}
+      {minigame === "paint" && <PaintView body={body} onExit={() => setMinigame(null)} join={paintJoin} />}
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
       {minigame === "hospital" && payload.center.interiors?.hospital && (
         <HospitalView interior={payload.center.interiors.hospital} body={body} mode="visit" onExit={() => setMinigame(null)} />

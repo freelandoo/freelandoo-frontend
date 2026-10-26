@@ -33,7 +33,9 @@ import { PickupsView } from "./pickups-view"
 import { AimCamera } from "./aim-camera"
 import { PaintGun } from "./gun"
 import { attachPaintInput, clearPaintInput, createPaintInput, paintMoveAxis, paintWantsRun, type PaintInput } from "./paint-input"
-import type { PaintPort } from "./port"
+import type { PaintPort, RemoteSample } from "./port"
+import type { Mesh } from "@babylonjs/core/Meshes/mesh"
+import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 
 /** O que a interface mostra (atualizado ~10×/s e a cada acontecimento). */
 export interface PaintHud {
@@ -155,7 +157,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   shadowMat.specularColor = new Color3(0, 0, 0)
   shadowMat.disableLighting = true
   shadowMat.alpha = 0.2
-  const char = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, opts.body, null, true)
+  const mats = { fallback: fallbackMat, shadow: shadowMat }
+  const char = new Character(scene, lib, mats, opts.body, null, true)
   const gun = new PaintGun(scene)
   // Ao lado do peito, apontando para a frente (a pose de mira com a mão vem com as animações do Paint).
   gun.root.parent = char.holder
@@ -191,8 +194,13 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const handle = (e: MatchEvent) => {
     switch (e.type) {
       case "blob":
-        paint.add(e.id, e.blob)
-        if (e.owner === port.me) liftOnto(body, e.blob.x, e.blob.z, e.blob.r, e.blob.y1)
+        if (e.q && paint.has(-e.q)) {
+          // a prevista virou a da sala (sem nascer de novo)
+          paint.rename(-e.q, e.id, e.blob)
+        } else {
+          paint.add(e.id, e.blob)
+          if (e.owner === port.me) liftOnto(body, e.blob.x, e.blob.z, e.blob.r, e.blob.y1)
+        }
         break
       case "unblob":
         paint.remove(e.id)
@@ -319,6 +327,78 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     port.punch()
   }
 
+  // ── outros jogadores (rede) ─────────────────────────────────────────────────
+  const ringMats = [new Color3(0.9, 0.75, 0.44), new Color3(0.88, 0.16, 0.29)].map((c, i) => {
+    const m = new StandardMaterial(`paint-team-ring-${i}`, scene)
+    m.emissiveColor = c
+    m.diffuseColor = c
+    m.disableLighting = true
+    return m
+  })
+  interface Remote {
+    char: Character
+    gun: PaintGun
+    ring: Mesh
+    x: number
+    z: number
+    speed: number
+  }
+  const remotes = new Map<number, Remote>()
+  const DELAY = 120
+  const sampleAt = (list: RemoteSample[] | undefined, now: number) => {
+    if (!list || !list.length) return null
+    const t = now - DELAY
+    let i = list.length - 1
+    while (i > 0 && list[i - 1].t > t) i--
+    const b = list[i]
+    const a = list[i - 1]
+    if (!a || t >= b.t) return b
+    const k = Math.max(0, Math.min(1, (t - a.t) / Math.max(1, b.t - a.t)))
+    let df = b.f - a.f
+    df = Math.atan2(Math.sin(df), Math.cos(df))
+    return { t, x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k, f: a.f + df * k, g: b.g }
+  }
+  const tickRemotes = (dt: number, solids: Solid[]) => {
+    const now = performance.now()
+    for (const p of state.players.values()) {
+      if (p.slot === port.me) continue
+      let r = remotes.get(p.slot)
+      if (!r) {
+        const info = port.info(p.slot)
+        if (!info) continue
+        const c = new Character(scene, lib, mats, info.body, info.name, false)
+        const g = new PaintGun(scene)
+        g.root.parent = c.holder
+        g.root.position.set(0.3, 1.12, 0.32)
+        const ring = CreateTorus(`paint-ring-${p.slot}`, { diameter: 1.05, thickness: 0.06, tessellation: 24 }, scene)
+        ring.parent = c.holder
+        ring.position.y = 0.06
+        ring.isPickable = false
+        ring.material = ringMats[p.team === me.team ? 0 : 1]
+        r = { char: c, gun: g, ring, x: p.pose.x, z: p.pose.z, speed: 0 }
+        remotes.set(p.slot, r)
+      }
+      const s = sampleAt(port.samples?.get(p.slot), now) ?? { x: p.pose.x, y: p.pose.y, z: p.pose.z, f: p.pose.facing, g: p.pose.ground }
+      const seen = p.online && p.inBoss === me.inBoss && (!p.ko || Math.floor(clock * 8) % 2 === 0)
+      r.char.holder.setEnabled(seen)
+      if (!seen) continue
+      const hs = Math.hypot(s.x - r.x, s.z - r.z) / Math.max(dt, 1e-3)
+      r.speed += (Math.min(hs, 12) - r.speed) * (1 - Math.exp(-10 * dt))
+      r.x = s.x
+      r.z = s.z
+      r.char.place(s.x, s.z, s.f, s.y, supportAt(solids, s.x, s.z, s.y + 0.05))
+      r.char.animate(dt, !s.g ? 0 : r.speed > 5.5 ? 2 : r.speed > 0.35 ? 1 : 0, r.speed)
+      r.gun.tick(dt, 0.25)
+    }
+    for (const [slot, r] of remotes) {
+      if (state.players.has(slot)) continue
+      r.char.dispose()
+      r.gun.dispose()
+      r.ring.dispose()
+      remotes.delete(slot)
+    }
+  }
+
   // ── HUD ────────────────────────────────────────────────────────────────────
   let hudAt = 0
   const hud = (): PaintHud => ({
@@ -419,6 +499,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       camSolids = camRock.concat(solids.slice(map.solids.length))
     }
     cam.update(dt, x, y, z, camSolids)
+    if (port.samples) tickRemotes(dt, solids)
     world.tick(dt)
     paint.tick(dt)
     pickups.tick(dt, cam.camera)
@@ -459,6 +540,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     yaw: cam.yaw,
     pitch: cam.pitch,
     blobs: paint.count,
+    blobIds: paint.ids(),
     hp: me.hp,
     ammo: [...me.ammo],
     cats: me.cats,
@@ -519,6 +601,12 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       for (const k of ["__paint", "__paintTp", "__paintLook", "__paintState", "__paintFire"]) delete w[k]
       gun.dispose()
       char.dispose()
+      for (const r of remotes.values()) {
+        r.char.dispose()
+        r.gun.dispose()
+        r.ring.dispose()
+      }
+      for (const m of ringMats) m.dispose()
       lib.dispose()
       pickups.dispose()
       paint.dispose()

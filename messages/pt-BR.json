@@ -7780,6 +7780,11 @@
     "paintWin": "Vitória!",
     "paintYou": "Você",
     "paintYourDamage": "Seu dano: {n}",
-    "paintYourTeam": "Seu time"
+    "paintYourTeam": "Seu time",
+    "paintWaiting": "Esperando jogadores {n}/{k}",
+    "paintCancel": "Cancelar",
+    "paintReconnecting": "Reconectando…",
+    "paintReplaced": "Aberto em outra janela",
+    "paintOffline": "Sem conexão com a sala"
   }
 }

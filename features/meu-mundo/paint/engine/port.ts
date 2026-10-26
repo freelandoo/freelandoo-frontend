@@ -10,6 +10,16 @@ import type { PaintColor, PaintMode } from "../sim/tuning"
 import type { Vec3 } from "../sim/map"
 import type { BodyId } from "../../types"
 
+/** Pose de outro jogador com a hora (performance.now) em que chegou. */
+export interface RemoteSample {
+  t: number
+  x: number
+  y: number
+  z: number
+  f: number
+  g: boolean
+}
+
 export interface PortPlayerInfo {
   name: string
   body: BodyId
@@ -28,6 +38,8 @@ export interface PaintPort {
   punch(): void
   /** Avança o relógio e devolve o que aconteceu. */
   tick(dt: number): MatchEvent[]
+  /** Poses dos outros (rede): vaga → amostras recentes. */
+  readonly samples?: Map<number, RemoteSample[]>
   /** A rede prevê a tinta: mancha local até a sala confirmar (id negativo). */
   readonly predicts: boolean
   dispose(): void

@@ -159,6 +159,12 @@ export interface MultiplayerSession {
   sceneKey?: string
 }
 
+/** Lugar numa sala do Paint (mm3d-35): POST /center/paint. */
+export interface PaintSession {
+  multiplayer: MultiplayerSession
+  mode: "solo" | "1v1" | "2v2" | "3v3"
+}
+
 /** Lugar na sala do jetpack em grupo (mm3d-21): POST /center/jetpack. */
 export interface JetpackSession {
   multiplayer: MultiplayerSession
@@ -523,6 +529,7 @@ export type CenterPlaceId =
   | "escola"
   | "academia"
   | "jetpack"
+  | "paint"
   | "igreja"
   | "delegacia"
   | "hospital"

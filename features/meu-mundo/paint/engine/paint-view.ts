@@ -145,13 +145,15 @@ export class PaintView {
     this.burst({ x: blob.x, y: blob.y1, z: blob.z }, c, 6, 2.5)
   }
 
-  /** A mancha prevista no aparelho virou a confirmada (id da sala). */
-  rename(from: number, to: number) {
+  /** A mancha prevista no aparelho virou a confirmada (id e lugar da sala). */
+  rename(from: number, to: number, blob: NewBlob) {
     const e = this.byId.get(from)
     if (!e || this.byId.has(to)) return
     this.byId.delete(from)
     e.live.id = to
+    e.live.blob = blob
     this.byId.set(to, e)
+    this.dirty[e.c] = true
   }
 
   remove(id: number, instant = false) {
@@ -300,6 +302,11 @@ export class PaintView {
   /** Quantas manchas vivas (conferência). */
   get count() {
     return this.byId.size
+  }
+
+  /** Ids desenhados agora (conferência). */
+  ids() {
+    return [...this.byId.keys()]
   }
 
   dispose() {

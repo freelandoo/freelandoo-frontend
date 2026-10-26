@@ -71,6 +71,11 @@ const MEU_MUNDO = {
   paintYou: ["Você", "You", "Tú"],
   paintYourDamage: ["Seu dano: {n}", "Your damage: {n}", "Tu daño: {n}"],
   paintYourTeam: ["Seu time", "Your team", "Tu equipo"],
+  paintWaiting: ["Esperando jogadores {n}/{k}", "Waiting for players {n}/{k}", "Esperando jugadores {n}/{k}"],
+  paintCancel: ["Cancelar", "Cancel", "Cancelar"],
+  paintReconnecting: ["Reconectando…", "Reconnecting…", "Reconectando…"],
+  paintReplaced: ["Aberto em outra janela", "Opened in another window", "Abierto en otra ventana"],
+  paintOffline: ["Sem conexão com a sala", "No connection to the room", "Sin conexión con la sala"],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

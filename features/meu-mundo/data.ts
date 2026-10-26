@@ -18,6 +18,7 @@ import type {
   MMMail,
   MMNotice,
   MultiplayerSession,
+  PaintSession,
   NeighborhoodPayload,
   NoticeFilter,
   PlayerProfile,
@@ -142,6 +143,9 @@ export const postCenterLeave = (token: string) => call<ScenePayload>(token, "POS
 /** Jetpack em grupo (mm3d-21): lugar na sala do centro (perto da porta). `roomId` = voltar à mesma. */
 export const postJetpackJoin = (token: string, roomId?: string | null) =>
   call<JetpackSession>(token, "POST", "/center/jetpack", roomId ? { roomId } : {})
+/** Paint (mm3d-35): lugar numa sala do centro (perto da porta), no modo pedido. */
+export const postPaintJoin = (token: string, mode: string, roomId?: string | null) =>
+  call<PaintSession>(token, "POST", "/center/paint", roomId ? { mode, roomId } : { mode })
 export const getVisits = (token: string) => call<VisitState>(token, "GET", "/visits")
 export const getInviteCandidates = (token: string) =>
   call<{ candidates: { name: string; available: boolean; reason: string | null }[] }>(token, "GET", "/visits/candidates")

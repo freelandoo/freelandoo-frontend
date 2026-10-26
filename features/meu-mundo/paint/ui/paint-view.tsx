@@ -21,7 +21,11 @@ import { createPaintGame, type PaintGameHandle, type PaintHud, type PaintNotice 
 import { LocalPort, type PaintPort } from "../engine/port"
 import { PAINT_COLORS, TUNING, type PaintColor, type PaintMode } from "../sim/tuning"
 
-export type PaintJoin = (mode: Exclude<PaintMode, "solo">, signal: AbortSignal) => Promise<PaintPort | null>
+export type PaintNetStatus = "connecting" | "online" | "reconnecting" | "replaced" | "offline"
+export type PaintJoin = (
+  mode: Exclude<PaintMode, "solo">,
+  hooks: { signal: AbortSignal; onLobby: (n: number, cap: number) => void; onStatus: (s: PaintNetStatus) => void },
+) => Promise<PaintPort | null>
 
 export interface PaintViewProps {
   body: BodyId
@@ -30,7 +34,10 @@ export interface PaintViewProps {
   join?: PaintJoin
 }
 
-type Stage = { kind: "menu" } | { kind: "joining"; mode: Exclude<PaintMode, "solo"> } | { kind: "game"; port: PaintPort; key: number }
+type Stage =
+  | { kind: "menu" }
+  | { kind: "joining"; mode: Exclude<PaintMode, "solo">; ac: AbortController }
+  | { kind: "game"; port: PaintPort; key: number }
 
 const COLOR_KEYS = ["paintColorBridge", "paintColorHarm", "paintColorStep"] as const
 const COLOR_FALLBACK = ["Ponte", "Dano", "Degrau"]
@@ -39,6 +46,8 @@ export function PaintView({ body, onExit, join }: PaintViewProps) {
   const t = useTranslations("MeuMundo")
   const [stage, setStage] = useState<Stage>({ kind: "menu" })
   const [error, setError] = useState<string | null>(null)
+  const [lobby, setLobby] = useState<{ n: number; cap: number } | null>(null)
+  const [net, setNet] = useState<PaintNetStatus>("online")
   const seq = useRef(0)
 
   const play = useCallback(
@@ -49,10 +58,16 @@ export function PaintView({ body, onExit, join }: PaintViewProps) {
         return
       }
       if (!join) return
-      setStage({ kind: "joining", mode })
       const ac = new AbortController()
+      setStage({ kind: "joining", mode, ac })
+      setLobby(null)
+      setNet("online")
       try {
-        const port = await join(mode, ac.signal)
+        const port = await join(mode, { signal: ac.signal, onLobby: (n, cap) => setLobby({ n, cap }), onStatus: setNet })
+        if (ac.signal.aborted) {
+          port?.dispose()
+          return
+        }
         if (!port) {
           setError(t("paintJoinFail", "A sala não abriu agora. Tente de novo ou treine sozinho."))
           setStage({ kind: "menu" })
@@ -60,6 +75,7 @@ export function PaintView({ body, onExit, join }: PaintViewProps) {
         }
         setStage({ kind: "game", port, key: ++seq.current })
       } catch {
+        if (ac.signal.aborted) return
         setError(t("paintJoinFail", "A sala não abriu agora. Tente de novo ou treine sozinho."))
         setStage({ kind: "menu" })
       }
@@ -70,10 +86,16 @@ export function PaintView({ body, onExit, join }: PaintViewProps) {
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#e6edf3" }}>
       {stage.kind === "game" ? (
-        <PaintGameScreen key={stage.key} port={stage.port} body={body} onLeave={() => setStage({ kind: "menu" })} />
+        <PaintGameScreen key={stage.key} port={stage.port} body={body} net={stage.port.mode === "solo" ? "online" : net} onLeave={() => setStage({ kind: "menu" })} />
       ) : (
         <PaintMenu
           joining={stage.kind === "joining" ? stage.mode : null}
+          lobby={lobby}
+          onCancel={() => {
+            if (stage.kind !== "joining") return
+            stage.ac.abort()
+            setStage({ kind: "menu" })
+          }}
           versus={!!join}
           error={error}
           onPlay={play}
@@ -88,12 +110,16 @@ export function PaintView({ body, onExit, join }: PaintViewProps) {
 
 function PaintMenu({
   joining,
+  lobby,
+  onCancel,
   versus,
   error,
   onPlay,
   onExit,
 }: {
   joining: PaintMode | null
+  lobby: { n: number; cap: number } | null
+  onCancel: () => void
   versus: boolean
   error: string | null
   onPlay: (m: PaintMode) => void
@@ -169,13 +195,24 @@ function PaintMenu({
                 <span>
                   <span className="block text-[16px] font-bold leading-tight">{m.title}</span>
                   <span className="block text-[12px] leading-tight" style={{ color: off ? MM.disabledText : MM.muted }}>
-                    {busy ? t("paintJoining", "Procurando sala…") : m.mode !== "solo" && !versus ? t("paintSoon", "Em breve") : m.sub}
+                    {busy
+                      ? lobby
+                        ? t("paintWaiting", "Esperando jogadores {n}/{k}").replace("{n}", String(lobby.n)).replace("{k}", String(lobby.cap))
+                        : t("paintJoining", "Procurando sala…")
+                      : m.mode !== "solo" && !versus
+                        ? t("paintSoon", "Em breve")
+                        : m.sub}
                   </span>
                 </span>
               </button>
             )
           })}
         </div>
+        {joining && (
+          <button type="button" onClick={onCancel} className="mt-3 w-full rounded-[14px] py-2.5 text-[14px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}>
+            {t("paintCancel", "Cancelar")}
+          </button>
+        )}
         {error && (
           <p role="alert" className="mt-3 text-[13px]" style={{ color: MM.danger }}>
             {error}
@@ -211,7 +248,7 @@ function fmtTime(s: number) {
   return `${m}:${String(r).padStart(2, "0")}`
 }
 
-function PaintGameScreen({ port, body, onLeave }: { port: PaintPort; body: BodyId; onLeave: () => void }) {
+function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: BodyId; net: PaintNetStatus; onLeave: () => void }) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<PaintGameHandle | null>(null)
@@ -327,6 +364,23 @@ function PaintGameScreen({ port, body, onLeave }: { port: PaintPort; body: BodyI
             </div>
           )}
           {ended && hud.result && <Results hud={hud} port={port} onAgain={onLeave} />}
+          {!ended && net !== "online" && net !== "connecting" && (
+            <div className="absolute inset-x-0 grid place-items-center" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 110px)" }}>
+              <div className="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-bold" style={{ background: MM.surface, color: MM.text }}>
+                {net === "reconnecting" && <Loader2 className="h-4 w-4 animate-spin" />}
+                {net === "reconnecting"
+                  ? t("paintReconnecting", "Reconectando…")
+                  : net === "replaced"
+                    ? t("paintReplaced", "Aberto em outra janela")
+                    : t("paintOffline", "Sem conexão com a sala")}
+                {net !== "reconnecting" && (
+                  <button type="button" onClick={onLeave} className="ml-1 rounded-full px-2.5 py-1 text-[12px]" style={{ background: MM.rubyFill }}>
+                    {t("paintBackMenu", "Voltar ao menu")}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </>
       )}
 

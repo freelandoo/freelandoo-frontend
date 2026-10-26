@@ -8346,6 +8346,11 @@
     "paintWin": "¡Victoria!",
     "paintYou": "Tú",
     "paintYourDamage": "Tu daño: {n}",
-    "paintYourTeam": "Tu equipo"
+    "paintYourTeam": "Tu equipo",
+    "paintWaiting": "Esperando jugadores {n}/{k}",
+    "paintCancel": "Cancelar",
+    "paintReconnecting": "Reconectando…",
+    "paintReplaced": "Abierto en otra ventana",
+    "paintOffline": "Sin conexión con la sala"
   }
 }

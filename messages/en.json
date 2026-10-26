@@ -8366,6 +8366,11 @@
     "paintWin": "Victory!",
     "paintYou": "You",
     "paintYourDamage": "Your damage: {n}",
-    "paintYourTeam": "Your team"
+    "paintYourTeam": "Your team",
+    "paintWaiting": "Waiting for players {n}/{k}",
+    "paintCancel": "Cancel",
+    "paintReconnecting": "Reconnecting…",
+    "paintReplaced": "Opened in another window",
+    "paintOffline": "No connection to the room"
   }
 }
