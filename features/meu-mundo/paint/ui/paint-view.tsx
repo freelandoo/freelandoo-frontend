@@ -11,7 +11,7 @@
 //  - RESULTADO: quem deu mais dano no chefão, gatinhos de cada um.
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
-import { ArrowBigUp, Cat, Crosshair, DoorOpen, Heart, Loader2, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
+import { ArrowBigUp, Cat, DoorOpen, Heart, Loader2, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId } from "../../types"
 import { MM } from "../../ui/hud/tokens"
@@ -40,6 +40,9 @@ type Stage =
   | { kind: "game"; port: PaintPort; key: number }
 
 const COLOR_KEYS = ["paintColorBridge", "paintColorHarm", "paintColorStep"] as const
+/** No PC a mira é o cursor (mm3d-35b): um anel com ponto, centrado no clique. */
+const AIM_CURSOR =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><circle cx='16' cy='16' r='10' fill='none' stroke='black' stroke-opacity='0.55' stroke-width='4'/><circle cx='16' cy='16' r='10' fill='none' stroke='white' stroke-width='2'/><circle cx='16' cy='16' r='2' fill='white' stroke='black' stroke-opacity='0.5'/></svg>\") 16 16, crosshair"
 const COLOR_FALLBACK = ["Ponte", "Dano", "Degrau"]
 
 export function PaintView({ body, onExit, join }: PaintViewProps) {
@@ -341,7 +344,12 @@ function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: 
 
   return (
     <>
-      <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("paintAria", "Jogo Paint")} />
+      <canvas
+        ref={canvasRef}
+        className="block h-full w-full outline-none"
+        style={{ touchAction: "none", cursor: isTouch ? undefined : AIM_CURSOR }}
+        aria-label={t("paintAria", "Jogo Paint")}
+      />
 
       {status === "ready" && hud && (
         <>
@@ -468,11 +476,6 @@ function Hud({ hud, touch, hurt, onLeave }: { hud: PaintHud; touch: boolean; hur
         </button>
       </div>
 
-      {/* mira */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-        <Crosshair className="h-7 w-7" strokeWidth={1.6} style={{ color: "rgba(255,255,255,0.95)", filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" }} />
-      </div>
-
       {/* contagem */}
       {hud.phase === "countdown" && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
@@ -491,11 +494,16 @@ function Hud({ hud, touch, hurt, onLeave }: { hud: PaintHud; touch: boolean; hur
         </div>
       )}
 
-      {/* computador: clique para mirar */}
-      {!touch && !hud.locked && hud.phase !== "end" && (
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2" style={{ bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 12px)" }}>
-          <span className="rounded-full px-4 py-2 text-[13px] font-semibold" style={{ background: MM.surface, color: MM.text }}>
-            {t("paintClickToAim", "Clique no jogo para mirar · WASD anda · Espaço pula · F soco · 1/2/3 cor · Esc solta o mouse")}
+      {/* como jogar: na contagem e nos primeiros segundos */}
+      {(hud.phase === "countdown" || (hud.phase === "play" && hud.timeLeft > TUNING.matchTime - 12)) && (
+        <div
+          className="pointer-events-none absolute left-1/2 w-max max-w-[92vw] -translate-x-1/2 text-center"
+          style={{ bottom: touch ? "calc(max(16px, env(safe-area-inset-bottom)) + 190px)" : "calc(max(16px, env(safe-area-inset-bottom)) + 12px)" }}
+        >
+          <span className="inline-block rounded-full px-4 py-2 text-[13px] font-semibold max-[759px]:text-[12px]" style={{ background: MM.surface, color: MM.text }}>
+            {touch
+              ? t("paintHelpTouch", "Arraste o dedo para mirar · toque e segure para atirar · as cores embaixo trocam a tinta")
+              : t("paintHelpPc", "O mouse mira · botão esquerdo atira · E troca a cor · botão direito gira a câmera · Espaço pula · F soco")}
           </span>
         </div>
       )}
@@ -531,7 +539,7 @@ function DesktopColors({ hud, onPick }: { hud: PaintHud; onPick: (c: PaintColor)
             </span>
             <Bubble c={c} size={on ? 58 : 46} ring={on} />
             <span className="text-[12px] font-bold" style={{ color: "#3b3127" }}>
-              {c + 1}
+              {on ? "E" : c + 1}
             </span>
           </button>
         )
@@ -542,22 +550,14 @@ function DesktopColors({ hud, onPick }: { hud: PaintHud; onPick: (c: PaintColor)
 
 function TouchControls({ gameRef, hud }: { gameRef: React.RefObject<PaintGameHandle | null>; hud: PaintHud }) {
   const t = useTranslations("MeuMundo")
-  const hold = (c: PaintColor) => ({
-    onPointerDown: (e: React.PointerEvent) => {
-      e.currentTarget.setPointerCapture(e.pointerId)
-      gameRef.current?.setFiring(c)
-    },
-    onPointerUp: () => gameRef.current?.setFiring(null),
-    onPointerCancel: () => gameRef.current?.setFiring(null),
-  })
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
   return (
     <>
       <Joystick gameRef={gameRef} />
       <div className="absolute flex items-end gap-2.5" style={{ bottom: bottom(118), right: SAFE.right }}>
         {([0, 1, 2] as PaintColor[]).map((c) => (
-          <button key={c} type="button" className="flex flex-col items-center gap-0.5" style={{ touchAction: "none" }} aria-label={t(COLOR_KEYS[c], COLOR_FALLBACK[c])} {...hold(c)}>
-            <Bubble c={c} size={hud.firing === c ? 60 : 54} ring={hud.firing === c} />
+          <button key={c} type="button" className="flex flex-col items-center gap-0.5" style={{ touchAction: "none" }} aria-label={t(COLOR_KEYS[c], COLOR_FALLBACK[c])} aria-pressed={hud.color === c} onPointerDown={() => gameRef.current?.selectColor(c)}>
+            <Bubble c={c} size={hud.color === c ? 60 : 50} ring={hud.color === c} />
             <span className="rounded-full px-1.5 text-[11px] font-bold tabular-nums" style={{ background: "rgba(255,255,255,0.75)", color: hud.ammo[c] < TUNING.cost[c] ? "#C8203F" : "#3b3127" }}>
               {hud.ammo[c]}
             </span>

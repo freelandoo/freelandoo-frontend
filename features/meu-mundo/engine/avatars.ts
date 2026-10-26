@@ -127,14 +127,16 @@ const ASSETS = {
     sergio: "anim-ride-sergio-m23.glb",
     ekaterina: "anim-ride-ekaterina-m23.glb",
   },
-  // Paint (mm3d-35, pipeline/build_paint_mocap.py): Air (o trecho no ar do Box
-  // Jump, ida e volta) e Punch (Lead Jab). Só o Paint baixa estes arquivos.
+  // Paint (mm3d-35b, pipeline/build_paint_mocap.py, animações da pasta paint/
+  // do Alex): parado mirando (PIdle), atirando parado (PFire), andando (PWalk),
+  // correndo (PRun) e de lado (PStrafe) com a arma; pulo (Air, Jump Up) e soco
+  // (Punch, Lead Jab). Só o Paint baixa estes arquivos.
   paint: {
-    base: "anim-paint-base-m35.glb",
-    fat: "anim-paint-fat-m35.glb",
-    strong: "anim-paint-strong-m35.glb",
-    sergio: "anim-paint-sergio-m35.glb",
-    ekaterina: "anim-paint-ekaterina-m35.glb",
+    base: "anim-paint-base-m35b.glb",
+    fat: "anim-paint-fat-m35b.glb",
+    strong: "anim-paint-strong-m35b.glb",
+    sergio: "anim-paint-sergio-m35b.glb",
+    ekaterina: "anim-paint-ekaterina-m35b.glb",
   },
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
@@ -149,7 +151,7 @@ export function avatarFiles(id: BodyId) {
 }
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk", "InjuredIdle", "InjuredWalk"] as const
 const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide", "SkatesStride"] as const
-const PAINT_CLIPS = ["Air", "Punch"] as const
+const PAINT_CLIPS = ["PIdle", "PFire", "PWalk", "PRun", "PStrafe", "Air", "Punch"] as const
 type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number] | (typeof PAINT_CLIPS)[number]
 /** Soco (mm3d-35): o jab toca acelerado e dura isto (s). */
 const PUNCH_RATE = 2.4
@@ -415,7 +417,7 @@ export class AvatarRig {
   private weights: Record<Clip, number> = {
     Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0, InjuredIdle: 0, InjuredWalk: 0,
     BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
-    Air: 0, Punch: 0,
+    PIdle: 0, PFire: 0, PWalk: 0, PRun: 0, PStrafe: 0, Air: 0, Punch: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -584,9 +586,15 @@ export class AvatarRig {
    * reprodução segue a velocidade REAL do deslocamento (reduz o deslize dos
    * pés): a animação anda X m/s a 1×, então a taxa é velocidade ÷ X.
    */
-  /** No ar (Paint): a pose do pulo enquanto durar. */
+  /** No ar (Paint): o pulo toca uma vez a cada saída do chão. */
   air = false
+  private wasAir = false
   private punchLeft = 0
+  /**
+   * Locomoção armada do Paint (mm3d-35b): movimento no referencial do corpo
+   * (m/s, frente e direita) e se está atirando. null = a locomoção normal.
+   */
+  paint: { fwd: number; side: number; firing: boolean } | null = null
 
   /** Soco (Paint): o jab do começo, uma vez. */
   punch() {
@@ -600,13 +608,40 @@ export class AvatarRig {
 
   update(dt: number, move: MoveState, speed: number, tired = false, unwell = false) {
     if (this.disposed || this.frozen) return
-    // Paint (mm3d-35): soco vence o pulo, que vence a locomoção.
+    // Paint (mm3d-35): soco vence o pulo, que vence a locomoção (armada, se houver).
     const punching = this.punchLeft > 0 && !!this.groups.Punch
-    if (punching || (this.air && this.groups.Air)) {
+    const air = this.air && !!this.groups.Air
+    if (air && !this.wasAir) {
+      // saiu do chão: o pulo do começo, uma vez (fica no último quadro)
+      const g = this.groups.Air!
+      g.reset()
+      g.speedRatio = 1.25
+      g.play(false)
+      // o corpo já saiu do chão: pula o agachamento do começo do clipe
+      g.goToFrame(g.from + (g.to - g.from) * 0.3)
+    }
+    this.wasAir = air
+    if (punching || air || (this.paint && this.groups.PIdle)) {
       this.punchLeft = Math.max(0, this.punchLeft - dt)
       const target = Object.fromEntries(this.clips.map((c) => [c, 0])) as Record<Clip, number>
-      target[punching ? "Punch" : "Air"] = 1
-      if (this.groups.Air) this.groups.Air.speedRatio = 1.5
+      if (punching) target.Punch = 1
+      else if (air) target.Air = 1
+      else {
+        const p = this.paint!
+        const moving = Math.hypot(p.fwd, p.side) > 0.35
+        if (!moving) target[p.firing && this.groups.PFire ? "PFire" : "PIdle"] = 1
+        else if (Math.abs(p.side) > Math.abs(p.fwd) * 1.2 && this.groups.PStrafe) {
+          target.PStrafe = 1
+          // a fonte anda para a ESQUERDA; para a direita, ao contrário
+          this.groups.PStrafe.speedRatio = (p.side > 0 ? -1 : 1) * Math.max(0.6, Math.min(1.8, Math.abs(p.side) / 2.6))
+        } else if (speed > 5.5 && p.fwd > 0 && this.groups.PRun) {
+          target.PRun = 1
+          this.groups.PRun.speedRatio = Math.max(0.7, Math.min(1.6, speed / 6.2))
+        } else if (this.groups.PWalk) {
+          target.PWalk = 1
+          this.groups.PWalk.speedRatio = (p.fwd < -0.2 ? -1 : 1) * Math.max(0.7, Math.min(1.9, speed / 3.4))
+        } else target.Walk = 1
+      }
       return this.applyWeights(dt, target, speed)
     }
     if (move >= 6) return this.applyWeights(dt, this.rideTargetsFor(dt, move, speed), 1)
@@ -636,7 +671,7 @@ export class AvatarRig {
       InjuredIdle: still && sickIdle ? 1 : 0,
       InjuredWalk: move === 1 && sickWalk ? 1 : 0,
       BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
-      Air: 0, Punch: 0,
+      PIdle: 0, PFire: 0, PWalk: 0, PRun: 0, PStrafe: 0, Air: 0, Punch: 0,
     }
     this.applyWeights(dt, target, speed)
   }
@@ -664,7 +699,7 @@ export class AvatarRig {
       g.weight = w
       if (w <= 0 && g.isPlaying) g.pause()
       // O impulso do skate toca UMA vez (disparado em rideTargets), nunca em laço.
-      else if (w > 0 && !g.isPlaying && clip !== "SkatePush") g.play(true)
+      else if (w > 0 && !g.isPlaying && clip !== "SkatePush" && clip !== "Air") g.play(true)
     }
     // Patins: o passo de saída anda no ritmo natural (um ciclo em ~1 s).
     const walkRate = this.rideMove === 8 ? 1 : speed > 0.05 ? speed / ANIM_NATURAL_SPEED.walk : 1

@@ -130,6 +130,21 @@ export class Character {
     this.rig?.punch()
   }
 
+  /** Locomoção armada do Paint (m/s no referencial do corpo); null = normal. */
+  setPaintMove(fwd: number, side: number, firing: boolean) {
+    if (this.rig) this.rig.paint = { fwd, side, firing }
+  }
+
+  /** Posição de mundo de um osso, com a cadeia recalculada AGORA (depois de place). */
+  bonePosition(name: string): Vector3 | null {
+    const n = this.rig?.node(name)
+    if (!n) return null
+    const chain = []
+    for (let p: TransformNode | null = n; p; p = p.parent as TransformNode | null) chain.push(p)
+    for (let i = chain.length - 1; i >= 0; i--) chain[i].computeWorldMatrix(true)
+    return n.getAbsolutePosition().clone()
+  }
+
   /** Nó do esqueleto pelo nome (ex.: "mixamorig:RightHand"); null sem avatar. */
   bone(name: string) {
     return this.rig?.node(name) ?? null

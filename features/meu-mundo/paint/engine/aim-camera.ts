@@ -9,6 +9,7 @@
 
 import { TargetCamera } from "@babylonjs/core/Cameras/targetCamera"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import "@babylonjs/core/Culling/ray"
 import type { Scene } from "@babylonjs/core/scene"
 import { raycast } from "../sim/collide"
 import type { Solid, Vec3 } from "../sim/map"
@@ -81,6 +82,26 @@ export class AimCamera {
     this.camera.position.set(pivot.x + back.x * this.actual, pivot.y + back.y * this.actual, pivot.z + back.z * this.actual)
     this.target.set(pivot.x + f.x * 10, pivot.y + f.y * 10, pivot.z + f.z * 10)
     this.camera.setTarget(this.target)
+  }
+
+  /**
+   * Onde a mira acerta por um PONTO da tela (cursor no PC, dedo no celular;
+   * px do canvas). null = o meio da tela.
+   */
+  aimPointAt(sx: number | null, sy: number | null, solids: readonly Solid[], bodies?: (o: Vec3, d: Vec3, maxT: number) => number | null): Vec3 {
+    if (sx === null || sy === null) return this.aimPoint(solids, bodies)
+    const scene = this.camera.getScene()
+    const ray = scene.createPickingRay(sx, sy, null, this.camera)
+    const o = { x: ray.origin.x, y: ray.origin.y, z: ray.origin.z }
+    const d = { x: ray.direction.x, y: ray.direction.y, z: ray.direction.z }
+    // começa perto do personagem (o que está entre a câmera e ele não conta)
+    const skip = this.actual * 0.75
+    const s = { x: o.x + d.x * skip, y: o.y + d.y * skip, z: o.z + d.z * skip }
+    const hit = raycast(solids, s, d, AIM_FAR)
+    let t = hit ? hit.t : AIM_FAR
+    const tb = bodies?.(s, d, t)
+    if (tb !== null && tb !== undefined && tb < t) t = tb
+    return { x: s.x + d.x * t, y: s.y + d.y * t, z: s.z + d.z * t }
   }
 
   /**

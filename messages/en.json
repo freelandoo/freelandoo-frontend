@@ -8371,6 +8371,8 @@
     "paintCancel": "Cancel",
     "paintReconnecting": "Reconnecting…",
     "paintReplaced": "Opened in another window",
-    "paintOffline": "No connection to the room"
+    "paintOffline": "No connection to the room",
+    "paintHelpPc": "The mouse aims · left button shoots · E changes color · right button turns the camera · Space jumps · F punches",
+    "paintHelpTouch": "Drag your finger to aim · tap and hold to shoot · the colors below switch the paint"
   }
 }

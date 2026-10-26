@@ -57,7 +57,6 @@ export interface PaintHud {
   dmg: number
   /** s de nocaute que faltam (0 = de pé). */
   ko: number
-  locked: boolean
   result: MatchResult | null
 }
 
@@ -177,6 +176,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   let emptyAt = -10
   let clock = 0
   let lunge = 0
+  /** Para onde o corpo fica virado enquanto mira (o último tiro). */
+  let aimYaw = 0
+  let shotAt = -10
   /** Nocaute visto (o renascimento depois dele não é "caiu"). */
   let knocked = false
 
@@ -206,7 +208,14 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         paint.remove(e.id)
         break
       case "shot":
-        if (e.slot !== port.me) paint.bolt(e.o, e.to, e.c)
+        if (e.slot !== port.me) {
+          paint.bolt(e.o, e.to, e.c)
+          const r = remotes.get(e.slot)
+          if (r) {
+            r.shotAt = clock
+            r.gun.setColor(e.c)
+          }
+        }
         break
       case "splat":
         paint.splat(e.point, e.normal)
@@ -303,13 +312,15 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       return
     }
     nextFire[c] = clock + 1 / TUNING.fireRate[c]
-    // a arma aponta para a mira: o corpo vira junto antes de atirar
-    body.facing = cam.yaw
-    visualFacing = cam.yaw
+    // a mira é o ponto da tela (cursor/dedo); o corpo vira para ele antes de atirar
+    const at = cam.aimPointAt(input.aimX, input.aimY, state.solids(), bodiesRay)
+    const dxz = Math.hypot(at.x - body.x, at.z - body.z)
+    aimYaw = dxz > 0.4 ? Math.atan2(at.x - body.x, at.z - body.z) : cam.yaw
+    body.facing = aimYaw
     aimHold = AIM_HOLD
+    shotAt = clock
     port.pose(posePacket())
     const o = muzzleOf(body, body.facing)
-    const at = cam.aimPoint(state.solids(), bodiesRay)
     const dir = { x: at.x - o.x, y: at.y - o.y, z: at.z - o.z }
     if (Math.hypot(dir.x, dir.y, dir.z) < 0.05) return
     shotSeq++
@@ -320,13 +331,21 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
 
   const doPunch = () => {
     if (state.phase !== "play" || me.ko) return
-    body.facing = cam.yaw
-    visualFacing = cam.yaw
+    aimYaw = cam.yaw
+    body.facing = aimYaw
     aimHold = AIM_HOLD
     lunge = 1
     char.punch()
     port.pose(posePacket())
     port.punch()
+  }
+
+  /** A arma entre as mãos (o cabo na direita, o cano para a esquerda). */
+  const holdGun = (c: Character, g: PaintGun, facing: number) => {
+    const rh = c.bonePosition("mixamorig:RightHand")
+    const lh = c.bonePosition("mixamorig:LeftHand")
+    if (!rh || !lh) return g.unmount(c.holder)
+    g.mount(rh, lh, new Vector3(Math.sin(facing), 0, Math.cos(facing)))
   }
 
   // ── outros jogadores (rede) ─────────────────────────────────────────────────
@@ -344,6 +363,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     x: number
     z: number
     speed: number
+    vx: number
+    vz: number
+    shotAt: number
   }
   const remotes = new Map<number, Remote>()
   const DELAY = 120
@@ -377,20 +399,28 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         ring.position.y = 0.06
         ring.isPickable = false
         ring.material = ringMats[p.team === me.team ? 0 : 1]
-        r = { char: c, gun: g, ring, x: p.pose.x, z: p.pose.z, speed: 0 }
+        r = { char: c, gun: g, ring, x: p.pose.x, z: p.pose.z, speed: 0, vx: 0, vz: 0, shotAt: -10 }
         remotes.set(p.slot, r)
       }
       const s = sampleAt(port.samples?.get(p.slot), now) ?? { x: p.pose.x, y: p.pose.y, z: p.pose.z, f: p.pose.facing, g: p.pose.ground }
       const seen = p.online && p.inBoss === me.inBoss && (!p.ko || Math.floor(clock * 8) % 2 === 0)
       r.char.holder.setEnabled(seen)
       if (!seen) continue
-      const hs = Math.hypot(s.x - r.x, s.z - r.z) / Math.max(dt, 1e-3)
-      r.speed += (Math.min(hs, 12) - r.speed) * (1 - Math.exp(-10 * dt))
+      const kk = 1 - Math.exp(-10 * dt)
+      const ivx = (s.x - r.x) / Math.max(dt, 1e-3)
+      const ivz = (s.z - r.z) / Math.max(dt, 1e-3)
+      r.vx += (Math.max(-12, Math.min(12, ivx)) - r.vx) * kk
+      r.vz += (Math.max(-12, Math.min(12, ivz)) - r.vz) * kk
+      r.speed = Math.hypot(r.vx, r.vz)
       r.x = s.x
       r.z = s.z
       r.char.place(s.x, s.z, s.f, s.y, supportAt(solids, s.x, s.z, s.y + 0.05))
       r.char.setAir(!s.g)
+      const fx = Math.sin(s.f)
+      const fz = Math.cos(s.f)
+      r.char.setPaintMove(r.vx * fx + r.vz * fz, r.vx * fz - r.vz * fx, clock - r.shotAt < 0.35)
       r.char.animate(dt, !s.g ? 0 : r.speed > 5.5 ? 2 : r.speed > 0.35 ? 1 : 0, r.speed)
+      holdGun(r.char, r.gun, s.f)
       r.gun.tick(dt, 0.25)
     }
     for (const [slot, r] of remotes) {
@@ -411,7 +441,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     hp: me.hp,
     ammo: [me.ammo[0], me.ammo[1], me.ammo[2]],
     color: input.color,
-    firing: input.firing,
+    firing: input.firing ? input.color : null,
     myTeam: me.team,
     teams: port.mode === "solo" ? 1 : 2,
     teamCats: [state.teamCats[0], state.teamCats[1]],
@@ -421,7 +451,6 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     bossHp: state.bossHp,
     dmg: me.dmg,
     ko: me.ko ? Math.max(0, me.ko - state.time) : 0,
-    locked: input.locked,
     result: state.result,
   })
 
@@ -430,8 +459,10 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     const dt = Math.min(engine.getDeltaTime() / 1000, 0.1)
     clock += dt
     if (!input.blocked && (input.lookDX || input.lookDY)) {
-      cam.look(input.lookDX, input.lookDY, opts.touch ? 0.0042 : 0.0024)
+      cam.look(input.lookDX, input.lookDY, opts.touch ? 0.0042 : 0.0034)
     }
+    // cursor na borda da tela: a câmera gira para aquele lado (PC)
+    if (!input.blocked && input.edge) cam.look(input.edge * 900 * dt, 0, 0.0024)
     input.lookDX = 0
     input.lookDY = 0
 
@@ -462,14 +493,13 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     if (n === 8) acc = 0
     if (aimHold > 0) {
       aimHold -= dt
-      body.facing = cam.yaw
+      body.facing = aimYaw
     }
 
-    // tiro segurado (cor do botão / do mouse) e soco
-    if (canMove && input.firing !== null) {
-      gun.setColor(input.firing)
-      tryFire(input.firing)
-    } else if (gun.current !== input.color) gun.setColor(input.color)
+    // tiro (segurando o mouse / o dedo parado, ou um toque rápido) e soco
+    if (gun.current !== input.color) gun.setColor(input.color)
+    if (canMove && (input.firing || input.tapQueued)) tryFire(input.color)
+    input.tapQueued = false
     if (input.punchQueued) {
       input.punchQueued = false
       if (canMove) doPunch()
@@ -493,9 +523,14 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     char.place(x + lx, z + lz, visualFacing, y, ground)
     const hs = Math.hypot(body.vx, body.vz)
     char.setAir(move === 5 && !me.ko)
+    {
+      const fx = Math.sin(visualFacing)
+      const fz = Math.cos(visualFacing)
+      char.setPaintMove(body.vx * fx + body.vz * fz, body.vx * fz - body.vz * fx, clock - shotAt < 0.35)
+    }
     char.animate(dt, me.ko ? 0 : move === 5 ? 0 : move, hs)
     char.holder.setEnabled(!me.ko || Math.floor(clock * 8) % 2 === 0)
-
+    holdGun(char, gun, visualFacing)
     gun.tick(dt, aimHold > 0 ? cam.pitch * 0.85 : 0.25)
 
     if (camFrom !== solids) {
@@ -545,6 +580,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     pitch: cam.pitch,
     blobs: paint.count,
     blobIds: paint.ids(),
+    color: input.color,
+    firing: input.firing,
+    aim: [input.aimX, input.aimY],
     hp: me.hp,
     ammo: [...me.ammo],
     cats: me.cats,
@@ -566,8 +604,12 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   }
   w.__paintState = () => state
   w.__paintFire = (c: PaintColor | null) => {
-    input.firing = c
+    input.firing = c !== null
     if (c !== null) input.color = c
+  }
+  w.__paintAim = (x: number | null, y: number | null) => {
+    input.aimX = x
+    input.aimY = y
   }
 
   return {
@@ -577,12 +619,11 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       input.joyY = y
     },
     setFiring(c) {
-      input.firing = c
+      input.firing = c !== null
       if (c !== null) input.color = c
     },
     selectColor(c) {
       input.color = c
-      if (input.firing !== null) input.firing = c
     },
     jump() {
       input.jumpQueued = true
@@ -593,7 +634,6 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     setBlocked(blocked) {
       input.blocked = blocked
       clearPaintInput(input)
-      if (blocked && document.pointerLockElement === canvas) document.exitPointerLock?.()
     },
     dispose() {
       if (disposed) return
@@ -602,7 +642,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       detachInput()
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
-      for (const k of ["__paint", "__paintTp", "__paintLook", "__paintState", "__paintFire"]) delete w[k]
+      for (const k of ["__paint", "__paintTp", "__paintLook", "__paintState", "__paintFire", "__paintAim"]) delete w[k]
       gun.dispose()
       char.dispose()
       for (const r of remotes.values()) {

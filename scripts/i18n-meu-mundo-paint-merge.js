@@ -72,6 +72,16 @@ const MEU_MUNDO = {
   paintYourDamage: ["Seu dano: {n}", "Your damage: {n}", "Tu daño: {n}"],
   paintYourTeam: ["Seu time", "Your team", "Tu equipo"],
   paintWaiting: ["Esperando jogadores {n}/{k}", "Waiting for players {n}/{k}", "Esperando jugadores {n}/{k}"],
+  paintHelpPc: [
+    "O mouse mira · botão esquerdo atira · E troca a cor · botão direito gira a câmera · Espaço pula · F soco",
+    "The mouse aims · left button shoots · E changes color · right button turns the camera · Space jumps · F punches",
+    "El ratón apunta · botón izquierdo dispara · E cambia el color · botón derecho gira la cámara · Espacio salta · F golpea",
+  ],
+  paintHelpTouch: [
+    "Arraste o dedo para mirar · toque e segure para atirar · as cores embaixo trocam a tinta",
+    "Drag your finger to aim · tap and hold to shoot · the colors below switch the paint",
+    "Arrastra el dedo para apuntar · toca y mantén para disparar · los colores de abajo cambian la pintura",
+  ],
   paintCancel: ["Cancelar", "Cancel", "Cancelar"],
   paintReconnecting: ["Reconectando…", "Reconnecting…", "Reconectando…"],
   paintReplaced: ["Aberto em outra janela", "Opened in another window", "Abierto en otra ventana"],

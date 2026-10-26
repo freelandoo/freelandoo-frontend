@@ -11,7 +11,7 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { GeoBuilder, place, type RGB } from "../../engine/geometry"
-import { Matrix } from "@babylonjs/core/Maths/math.vector"
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { PAINT_COLORS, type PaintColor } from "../sim/tuning"
 
 const BODY: RGB = [0.42, 0.34, 0.27]
@@ -27,6 +27,7 @@ export class PaintGun {
   private readonly tanks: { mesh: Mesh; mat: StandardMaterial; base: Color3 }[] = []
   private color: PaintColor = 0
   private kick = 0
+  private mounted = false
 
   constructor(scene: Scene) {
     const id = ++seq
@@ -75,10 +76,35 @@ export class PaintGun {
     this.kick = 1
   }
 
-  /** Inclinação da mira (rad, + = para baixo) e o coice. */
+  /**
+   * Nas mãos (mm3d-35b): o cabo na mão direita, o cano para a esquerda (as
+   * animações de arma seguram um fuzil à frente do corpo). Posições de mundo.
+   */
+  mount(right: Vector3, left: Vector3, fallbackDir: Vector3) {
+    if (!this.mounted) {
+      this.root.parent = null
+      this.mounted = true
+    }
+    let dir = left.subtract(right)
+    if (dir.length() < 0.08) dir = fallbackDir
+    dir.normalize()
+    this.root.position.copyFrom(right).addInPlace(dir.scale(0.06)).addInPlaceFromFloats(0, 0.07, 0)
+    this.root.lookAt(this.root.position.add(dir))
+  }
+
+  /** Solta da mão (avatar ainda carregando): volta para o lado do corpo. */
+  unmount(holder: TransformNode) {
+    if (!this.mounted) return
+    this.mounted = false
+    this.root.rotationQuaternion = null
+    this.root.parent = holder
+    this.root.position.set(0.3, 1.12, 0.32)
+  }
+
+  /** Inclinação da mira (rad, + = para baixo; só fora da mão) e o coice. */
   tick(dt: number, pitch: number) {
     this.kick = Math.max(0, this.kick - dt * 9)
-    this.root.rotation.x = pitch
+    if (!this.mounted) this.root.rotation.x = pitch
     this.frame.position.z = -this.kick * 0.05
   }
 

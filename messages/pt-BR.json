@@ -7785,6 +7785,8 @@
     "paintCancel": "Cancelar",
     "paintReconnecting": "Reconectando…",
     "paintReplaced": "Aberto em outra janela",
-    "paintOffline": "Sem conexão com a sala"
+    "paintOffline": "Sem conexão com a sala",
+    "paintHelpPc": "O mouse mira · botão esquerdo atira · E troca a cor · botão direito gira a câmera · Espaço pula · F soco",
+    "paintHelpTouch": "Arraste o dedo para mirar · toque e segure para atirar · as cores embaixo trocam a tinta"
   }
 }
