@@ -19,6 +19,7 @@ import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import { createPaintGame, type PaintGameHandle, type PaintHud, type PaintNotice } from "../engine/paint-game"
 import { LocalPort, type PaintPort } from "../engine/port"
+import { CAT_ASSETS } from "../engine/cat-herd"
 import { PAINT_COLORS, TUNING, type PaintColor, type PaintMode } from "../sim/tuning"
 
 export type PaintNetStatus = "connecting" | "online" | "reconnecting" | "replaced" | "offline"
@@ -527,17 +528,35 @@ function Hud({ hud, touch, hurt, onLeave }: { hud: PaintHud; touch: boolean; hur
   )
 }
 
+/** Card dos gatinhos (mm3d-35k): a foto do gatinho e o número grande; pula a cada gatinho novo. */
 function CatCount({ label, n, goal, open, dim }: { label: string | null; n: number; goal: number; open: boolean; dim?: boolean }) {
+  const num = useRef<HTMLSpanElement>(null)
+  const last = useRef(n)
+  useEffect(() => {
+    if (n > last.current) num.current?.animate([{ transform: "scale(1.45)" }, { transform: "scale(1)" }], { duration: 380, easing: "cubic-bezier(.2,.9,.25,1)" })
+    last.current = n
+  }, [n])
   return (
-    <div className="flex items-center gap-2 rounded-full py-1 pl-2 pr-3" style={{ background: dim ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.86)", boxShadow: MM.shadowSoft, color: "#3b3127" }}>
-      <span className="grid h-7 w-7 place-items-center rounded-full" style={{ background: open ? "#F2C230" : "#efe4d2" }}>
-        <Cat className="h-4 w-4" />
-      </span>
-      {label && <span className="text-[11px] font-semibold uppercase tracking-wide opacity-70">{label}</span>}
-      <span className="text-[15px] font-extrabold tabular-nums">
-        {Math.min(n, 99)}
-        <span className="opacity-50">/{goal}</span>
-      </span>
+    <div
+      className={`flex items-center rounded-2xl ${dim ? "gap-2 p-1.5 pr-3" : "gap-3 p-2 pr-4 max-[759px]:gap-2 max-[759px]:p-1.5 max-[759px]:pr-3"}`}
+      style={{ background: dim ? "rgba(255,255,255,0.62)" : "rgba(255,255,255,0.9)", boxShadow: open ? `0 0 0 3px #F2C230, ${MM.shadowSoft}` : MM.shadowSoft, color: "#3b3127" }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`${CAT_ASSETS}gatinho-card.webp`}
+        alt=""
+        draggable={false}
+        className={`shrink-0 rounded-xl object-cover ${dim ? "h-9 w-9" : "h-16 w-16 max-[759px]:h-12 max-[759px]:w-12"}`}
+      />
+      <div className="flex flex-col items-start leading-none">
+        {label && <span className="mb-1 text-[10px] font-semibold uppercase tracking-wide opacity-70">{label}</span>}
+        <span className="flex items-baseline font-black tabular-nums">
+          <span ref={num} className={`inline-block origin-center ${dim ? "text-[22px]" : "text-[44px] max-[759px]:text-[34px]"}`}>
+            {Math.min(n, 99)}
+          </span>
+          <span className={`ml-0.5 opacity-45 ${dim ? "text-[13px]" : "text-[18px] max-[759px]:text-[15px]"}`}>/{goal}</span>
+        </span>
+      </div>
     </div>
   )
 }
