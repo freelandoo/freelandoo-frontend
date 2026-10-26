@@ -148,7 +148,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   for (const b of state.blobs.values()) paint.add(b.id, b.blob)
   state.portalOpen.forEach((open, t) => world.setPortalOpen(t, open))
 
-  const lib = new AvatarLibrary(scene, false, false)
+  const lib = new AvatarLibrary(scene, false, false, 24, true)
   const fallbackMat = new StandardMaterial("paint-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
   fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
@@ -265,6 +265,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         world.setBossAlive(e.hp > 0)
         break
       case "punch":
+        if (e.slot !== port.me) remotes.get(e.slot)?.char.punch()
         break
       case "deny":
         if (e.slot === port.me && port.predicts) paint.remove(-e.q, true)
@@ -323,6 +324,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     visualFacing = cam.yaw
     aimHold = AIM_HOLD
     lunge = 1
+    char.punch()
     port.pose(posePacket())
     port.punch()
   }
@@ -387,6 +389,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       r.x = s.x
       r.z = s.z
       r.char.place(s.x, s.z, s.f, s.y, supportAt(solids, s.x, s.z, s.y + 0.05))
+      r.char.setAir(!s.g)
       r.char.animate(dt, !s.g ? 0 : r.speed > 5.5 ? 2 : r.speed > 0.35 ? 1 : 0, r.speed)
       r.gun.tick(dt, 0.25)
     }
@@ -489,6 +492,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     const ground = supportAt(solids, x, z, y + 0.05)
     char.place(x + lx, z + lz, visualFacing, y, ground)
     const hs = Math.hypot(body.vx, body.vz)
+    char.setAir(move === 5 && !me.ko)
     char.animate(dt, me.ko ? 0 : move === 5 ? 0 : move, hs)
     char.holder.setEnabled(!me.ko || Math.floor(clock * 8) % 2 === 0)
 

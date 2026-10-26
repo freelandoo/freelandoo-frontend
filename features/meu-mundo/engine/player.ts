@@ -121,6 +121,15 @@ export class Character {
     this.shadow.position.set(x, (Number.isFinite(groundY) ? groundY : y - 400) + 0.09, z)
   }
 
+  /** Paint (mm3d-35): no ar (pose do pulo) e soco. */
+  setAir(on: boolean) {
+    if (this.rig) this.rig.air = on
+  }
+
+  punch() {
+    this.rig?.punch()
+  }
+
   /** Nó do esqueleto pelo nome (ex.: "mixamorig:RightHand"); null sem avatar. */
   bone(name: string) {
     return this.rig?.node(name) ?? null

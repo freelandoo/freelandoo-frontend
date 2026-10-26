@@ -127,6 +127,15 @@ const ASSETS = {
     sergio: "anim-ride-sergio-m23.glb",
     ekaterina: "anim-ride-ekaterina-m23.glb",
   },
+  // Paint (mm3d-35, pipeline/build_paint_mocap.py): Air (o trecho no ar do Box
+  // Jump, ida e volta) e Punch (Lead Jab). Só o Paint baixa estes arquivos.
+  paint: {
+    base: "anim-paint-base-m35.glb",
+    fat: "anim-paint-fat-m35.glb",
+    strong: "anim-paint-strong-m35.glb",
+    sergio: "anim-paint-sergio-m35.glb",
+    ekaterina: "anim-paint-ekaterina-m35.glb",
+  },
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
 export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
@@ -140,7 +149,11 @@ export function avatarFiles(id: BodyId) {
 }
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk", "InjuredIdle", "InjuredWalk"] as const
 const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide", "SkatesStride"] as const
-type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number]
+const PAINT_CLIPS = ["Air", "Punch"] as const
+type Clip = (typeof CLIPS)[number] | "Sit" | (typeof REST_CLIPS)[number] | (typeof RIDE_CLIPS)[number] | (typeof PAINT_CLIPS)[number]
+/** Soco (mm3d-35): o jab toca acelerado e dura isto (s). */
+const PUNCH_RATE = 2.4
+const PUNCH_TIME = 0.7
 /** Uma pedalada a cada 2 s (pedido do Alex); a troca de pose leva ~0,45 s. */
 export const PEDAL_PERIOD = 2
 const PEDAL_SWAP = 0.45
@@ -175,6 +188,7 @@ export class AvatarLibrary {
   private readonly sits = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly rests = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly rides = new Map<AnimSet, Promise<AssetContainer>>()
+  private readonly paints = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -187,6 +201,8 @@ export class AvatarLibrary {
     private readonly withRide = false,
     /** A partir daqui (m) o avatar usa a malha leve (mm3d-19). */
     public lodDistance = 24,
+    /** No Paint (mm3d-35): pulo e soco. */
+    private readonly withPaint = false,
   ) {
     ensureLoaders()
   }
@@ -267,6 +283,17 @@ export class AvatarLibrary {
     return p
   }
 
+  private paintSet(id: BodyId) {
+    const key = ANIM_SET[id]
+    let p = this.paints.get(key)
+    if (!p) {
+      p = LoadAssetContainerAsync(BASE + ASSETS.paint[key], this.scene)
+      p.catch(() => this.paints.delete(key))
+      this.paints.set(key, p)
+    }
+    return p
+  }
+
   private rideSet(id: BodyId) {
     const key = ANIM_SET[id]
     let p = this.rides.get(key)
@@ -287,7 +314,8 @@ export class AvatarLibrary {
     const restP = this.restSet(id).catch(() => null)
     const rideP = this.withRide ? this.rideSet(id).catch(() => null) : Promise.resolve(null)
     const lodP = this.lodBody(id).catch(() => null)
-    const [container, anims, sit, rest, ride, lodC] = await Promise.all([this.body(id), this.animSet(id), sitP, restP, rideP, lodP])
+    const paintP = this.withPaint ? this.paintSet(id).catch(() => null) : Promise.resolve(null)
+    const [container, anims, sit, rest, ride, lodC, paint] = await Promise.all([this.body(id), this.animSet(id), sitP, restP, rideP, lodP, paintP])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
     const root = entries.rootNodes[0] as TransformNode
@@ -304,6 +332,10 @@ export class AvatarLibrary {
     if (sitSrc) groups.Sit = sitSrc.clone(`Sit#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     for (const clip of REST_CLIPS) {
       const src = rest?.animationGroups.find((g) => g.name === clip)
+      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+    }
+    for (const clip of PAINT_CLIPS) {
+      const src = paint?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
     for (const clip of RIDE_CLIPS) {
@@ -359,7 +391,7 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values()]
+    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.lods.clear()
@@ -367,6 +399,7 @@ export class AvatarLibrary {
     this.sits.clear()
     this.rests.clear()
     this.rides.clear()
+    this.paints.clear()
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
@@ -382,6 +415,7 @@ export class AvatarRig {
   private weights: Record<Clip, number> = {
     Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0, InjuredIdle: 0, InjuredWalk: 0,
     BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
+    Air: 0, Punch: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -410,7 +444,7 @@ export class AvatarRig {
     /** Malha leve (nível de LOD da primeira malha), se carregou. */
     private readonly lod: Mesh | null = null,
   ) {
-    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS] as const).filter((c) => !!groups[c])]
+    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
       const g = groups[clip]!
       g.weight = this.weights[clip]
@@ -550,8 +584,31 @@ export class AvatarRig {
    * reprodução segue a velocidade REAL do deslocamento (reduz o deslize dos
    * pés): a animação anda X m/s a 1×, então a taxa é velocidade ÷ X.
    */
+  /** No ar (Paint): a pose do pulo enquanto durar. */
+  air = false
+  private punchLeft = 0
+
+  /** Soco (Paint): o jab do começo, uma vez. */
+  punch() {
+    const g = this.groups.Punch
+    if (!g) return
+    this.punchLeft = PUNCH_TIME
+    g.reset()
+    g.speedRatio = PUNCH_RATE
+    g.play(true)
+  }
+
   update(dt: number, move: MoveState, speed: number, tired = false, unwell = false) {
     if (this.disposed || this.frozen) return
+    // Paint (mm3d-35): soco vence o pulo, que vence a locomoção.
+    const punching = this.punchLeft > 0 && !!this.groups.Punch
+    if (punching || (this.air && this.groups.Air)) {
+      this.punchLeft = Math.max(0, this.punchLeft - dt)
+      const target = Object.fromEntries(this.clips.map((c) => [c, 0])) as Record<Clip, number>
+      target[punching ? "Punch" : "Air"] = 1
+      if (this.groups.Air) this.groups.Air.speedRatio = 1.5
+      return this.applyWeights(dt, target, speed)
+    }
     if (move >= 6) return this.applyWeights(dt, this.rideTargetsFor(dt, move, speed), 1)
     this.rideMove = 0
     const have = this.groups
@@ -579,6 +636,7 @@ export class AvatarRig {
       InjuredIdle: still && sickIdle ? 1 : 0,
       InjuredWalk: move === 1 && sickWalk ? 1 : 0,
       BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
+      Air: 0, Punch: 0,
     }
     this.applyWeights(dt, target, speed)
   }
