@@ -475,6 +475,14 @@ export interface InteriorSeat {
 /** O que se faz num ponto de um prédio do centro (mm3d-37). */
 export type PlaceUse = "train" | "study" | "pray" | "order" | "market" | "seller" | "police"
 
+/** O vendedor do centro (mm3d-37e): GET /meu-mundo/admin/shop. */
+export interface ShopCatalog {
+  coins: number | null
+  house: { level: number; paint: string } | null
+  houses: { level: number; price: number; current: boolean }[]
+  paints: { id: string; hex: string; price: number; owned: boolean }[]
+}
+
 /** Ponto de uso (mm3d-37): onde a pessoa fica, olhando para o móvel. */
 export interface InteriorSpot {
   id: string

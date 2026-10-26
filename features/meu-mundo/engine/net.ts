@@ -75,6 +75,8 @@ export interface CarState {
   w?: number
   /** Altura do chão (andar da casa, mm3d-15); na rua, 0. */
   y?: number
+  /** Cor da lataria do carro (mm3d-37e, id de meuMundoShop.js; "" = vermelho de fábrica). */
+  paint?: string
 }
 
 export interface NetCallbacks {

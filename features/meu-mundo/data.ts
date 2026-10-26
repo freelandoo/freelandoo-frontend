@@ -25,6 +25,7 @@ import type {
   PlayerProfile,
   PolenProduct,
   ScenePayload,
+  ShopCatalog,
   VisitState,
   Wallets,
   WardrobeResult,
@@ -171,6 +172,11 @@ export const postLifeActivity = (token: string, activity: string, hours?: number
   call<LifeSummary>(token, "POST", "/life/activity", { activity, hours, place })
 /** Comer/tomar um item do catálogo (cobra as moedas do jogo). */
 export const postLifeConsume = (token: string, item: string) => call<LifeSummary>(token, "POST", "/life/consume", { item })
+/** Vendedor do centro (mm3d-37e): catálogo, casa (nível) e cor do carro. */
+export const getShop = (token: string) => call<ShopCatalog>(token, "GET", "/shop")
+export const postShopHouse = (token: string, level: number) => call<LifeSummary & { house: { level: number; price: number } }>(token, "POST", "/shop/house", { level })
+export const postShopPaint = (token: string, paint: string) =>
+  call<LifeSummary & { paint: { id: string; bought: boolean; price: number } }>(token, "POST", "/shop/paint", { paint })
 /** Pedido no balcão da pizzaria/hamburgueria (mm3d-37c): come na hora, lá dentro. */
 export const postLifeOrder = (token: string, place: string, item: string) => call<LifeSummary>(token, "POST", "/life/order", { place, item })
 /** Mercado → geladeira (mig 301): compra e guarda; comer é na geladeira da casa. Só no supermercado (mm3d-37c). */

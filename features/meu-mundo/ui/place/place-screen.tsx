@@ -10,6 +10,7 @@
 //  - pagar no caixa (supermercado): abre o Mercado do STATUS, comprando.
 //  - rezar no banco da igreja (1–3 h): ajoelha em frente ao banco; o estresse
 //    cai rápido e o humor sobe (vida).
+//  - conversar com o vendedor (supermercado): casas e cores do carro.
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { BookOpen, Dumbbell, Sparkles, UtensilsCrossed } from "lucide-react"
@@ -24,6 +25,7 @@ import { effectText, toneColor } from "../fridge/shelf"
 import { itemName } from "../status/status-pages"
 import { EvoButton, EvoDialog, EvoToast } from "../hud/hud-kit"
 import { PlaceView } from "../place-view"
+import { SellerDialog } from "./seller-dialog"
 
 /** Hora de aula (moedas do jogo) — espelho de PLACE_RULES em meuMundoLife.js. */
 const CLASS_FEE_H: Record<string, number> = { universidade: 8 }
@@ -68,6 +70,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   // Cardápio do balcão (mm3d-37c): itens do lugar e as moedas (null = buscando).
   const [menu, setMenu] = useState<{ items: LifeItem[]; coins: number } | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [sellerOpen, setSellerOpen] = useState(false)
 
   useEffect(() => {
     doingRef.current = doing
@@ -154,6 +157,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
     }
     if (use === "order") return void openMenu()
     if (use === "market" && onOpenMarket) return onOpenMarket()
+    if (use === "seller") return setSellerOpen(true)
     setToast({ text: t("pvSoon", "Em breve"), tone: "ouro" })
   }
 
@@ -184,7 +188,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
         onState={onState}
         pose={pose}
         poseAt={poseAt}
-        blocked={!!ask || menuOpen}
+        blocked={!!ask || menuOpen || sellerOpen}
         hideUse={!!doing}
         extra={
           doing ? (
@@ -197,6 +201,11 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
       {toast && (
         <div className="pointer-events-none fixed left-1/2 top-6 z-[75] -translate-x-1/2">
           <EvoToast tone={toast.tone}>{toast.text}</EvoToast>
+        </div>
+      )}
+      {sellerOpen && (
+        <div className="fixed inset-0 z-[76]">
+          <SellerDialog placeName={placeName} onClose={() => setSellerOpen(false)} onToast={(text, tone) => setToast({ text, tone })} />
         </div>
       )}
       {menuOpen && (

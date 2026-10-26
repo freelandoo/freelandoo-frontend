@@ -37,6 +37,7 @@ import type { AssetContainer, InstantiatedEntries } from "@babylonjs/core/assetC
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { Scene } from "@babylonjs/core/scene"
+import { VertexBuffer } from "@babylonjs/core/Buffers/buffer"
 import { ensureLoaders } from "./avatars"
 import { CAR, RIDE_KINDS, type RideKind } from "./motion"
 import { RemoteVehicle, type RemotePose } from "./remote-vehicle"
@@ -62,6 +63,62 @@ const AXIS_Y = new Vector3(0, 1, 0)
 const AXIS_Z = new Vector3(0, 0, 1)
 
 const kindOf = (c: { kind?: string }): RideKind => (c.kind && c.kind in MODELS ? (c.kind as RideKind) : "car")
+
+/**
+ * Cores da lataria (mm3d-37e) — espelho de CAR_PAINTS em
+ * src/utils/meuMundoShop.js. "" / desconhecida = o vermelho de fábrica.
+ */
+export const CAR_PAINT_HEX: Record<string, string> = {
+  vermelho: "#DB1714",
+  preto: "#1C1D22",
+  branco: "#EEF0F2",
+  prata: "#A7ADB5",
+  azul: "#2257D6",
+  amarelo: "#F2C230",
+  verde: "#1E8A4A",
+  laranja: "#F07A28",
+  roxo: "#7B4FC0",
+  rosa: "#F08DB4",
+}
+/** Os dois vermelhos da lataria no modelo (build_supercar.py: RED, RED_DARK). */
+const PAINT_SOURCE = [
+  [0.86, 0.09, 0.08],
+  [0.62, 0.05, 0.05],
+] as const
+const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
+
+/**
+ * Pinta a lataria das malhas do carro: cada vértice com um dos vermelhos de
+ * origem vira a cor nova, na mesma proporção de claro/escuro. O arquivo pode
+ * trazer a cor crua ou já linear (depende de como o Blender guardou), então
+ * as duas formas da origem são procuradas.
+ */
+function repaint(meshes: AbstractMesh[], hex: string) {
+  const raw = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+  const forms = [
+    { refs: PAINT_SOURCE.map((r) => [...r]), to: raw },
+    { refs: PAINT_SOURCE.map((r) => r.map(toLinear)), to: raw.map(toLinear) },
+  ]
+  for (const m of meshes) {
+    const col = (m as Mesh).getVerticesData?.(VertexBuffer.ColorKind)
+    if (!col) continue
+    const stride = col.length % 4 === 0 && col.length / 4 === (m as Mesh).getTotalVertices() ? 4 : 3
+    let changed = false
+    for (let i = 0; i < col.length; i += stride) {
+      for (const f of forms) {
+        const hit = f.refs.find((r) => Math.abs(col[i] - r[0]) < 0.06 && Math.abs(col[i + 1] - r[1]) < 0.04 && Math.abs(col[i + 2] - r[2]) < 0.04)
+        if (!hit) continue
+        const k = col[i] / f.refs[0][0]
+        col[i] = Math.min(1, f.to[0] * k)
+        col[i + 1] = Math.min(1, f.to[1] * k)
+        col[i + 2] = Math.min(1, f.to[2] * k)
+        changed = true
+        break
+      }
+    }
+    if (changed) (m as Mesh).setVerticesData(VertexBuffer.ColorKind, col, false, stride)
+  }
+}
 
 /** Pose do veículo que você usa (vem da previsão local, já interpolada). */
 export interface CarPose {
@@ -92,6 +149,8 @@ interface Wheel extends Joint {
 
 interface CarView {
   kind: RideKind
+  /** Cor da lataria em que foi montado (mm3d-37e; "" = de fábrica). */
+  paint: string
   holder: TransformNode
   tilt: TransformNode
   entries: InstantiatedEntries | null
@@ -152,7 +211,8 @@ function turn(j: Joint, axis: Vector3, angle: number) {
 }
 
 export class CarFleet {
-  private readonly containers = new Map<RideKind, Promise<AssetContainer>>()
+  // chave: modalidade, ou "car|<cor>" para o carro pintado (mm3d-37e)
+  private readonly containers = new Map<string, Promise<AssetContainer>>()
   private material: StandardMaterial | null = null
   private readonly views = new Map<string, CarView>()
   private disposed = false
@@ -164,8 +224,11 @@ export class CarFleet {
     ensureLoaders()
   }
 
-  private load(kind: RideKind) {
-    let p = this.containers.get(kind)
+  /** Um arquivo por modalidade e, no carro, uma cópia por cor de lataria (mm3d-37e). */
+  private load(kind: RideKind, paint = "") {
+    const hex = kind === "car" && paint && paint !== "vermelho" ? CAR_PAINT_HEX[paint] : undefined
+    const key = hex ? `${kind}|${paint}` : kind
+    let p = this.containers.get(key)
     if (!p) {
       p = LoadAssetContainerAsync(MODELS[kind].url, this.scene).then((c) => {
         // Instâncias usam o material da malha-FONTE: ele vai aqui, uma vez.
@@ -175,10 +238,11 @@ export class CarFleet {
           ;(m as Mesh).useVertexColors = true
           m.hasVertexAlpha = false
         }
+        if (hex) repaint(c.meshes, hex)
         return c
       })
-      p.catch(() => this.containers.delete(kind))
-      this.containers.set(kind, p)
+      p.catch(() => this.containers.delete(key))
+      this.containers.set(key, p)
     }
     return p
   }
@@ -203,8 +267,10 @@ export class CarFleet {
     const tilt = new TransformNode(`mm-car-tilt-${key}`, this.scene)
     tilt.parent = holder
     tilt.position.y = kind === "car" ? VEHICLE.WHEEL_RADIUS : 0
+    const paint = kind === "car" ? (c.paint ?? "") : ""
     const view: CarView = {
       kind,
+      paint,
       holder,
       tilt,
       entries: null,
@@ -238,7 +304,7 @@ export class CarFleet {
       track: null,
     }
     this.place(view)
-    void this.load(kind)
+    void this.load(kind, paint)
       .then((container) => {
         if (this.disposed || this.views.get(key) !== view) return
         const entries = container.instantiateModelsToScene((n) => `${n}-${key}`, false, { doNotInstantiate: false })
@@ -330,6 +396,12 @@ export class CarFleet {
       seen.add(key)
       this.latest.set(key, { lot: c.lot, kind: kindOf(c), x: c.x, z: c.z, facing: c.facing, driver: c.driver })
       let v = this.views.get(key)
+      // Cor nova da lataria (o dono comprou com o vendedor): monta de novo.
+      if (v && v.kind === "car" && v.paint !== (c.paint ?? "")) {
+        this.drop(v)
+        this.views.delete(key)
+        v = undefined
+      }
       if (!v) {
         v = this.create(key, c)
         this.views.set(key, v)
