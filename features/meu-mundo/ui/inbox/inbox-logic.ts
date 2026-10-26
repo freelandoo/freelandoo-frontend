@@ -33,7 +33,7 @@ export const NEED_EXPRESSION: Record<LifeNeedId, Expression> = {
 }
 
 /** Expressão para as notificações do servidor (necessidade usa a tabela acima). */
-export function noticeExpression(n: Pick<MMNotice, "kind" | "code">): Expression | null {
+export function noticeExpression(n: Pick<MMNotice, "kind" | "code"> & { data?: MMNotice["data"] }): Expression | null {
   if (n.kind === "need") return NEED_EXPRESSION[n.code as LifeNeedId] ?? "worried"
   if (n.kind === "gift") return "grateful"
   if (n.kind === "purchase") return "happy"
@@ -41,6 +41,7 @@ export function noticeExpression(n: Pick<MMNotice, "kind" | "code">): Expression
     if (n.code === "hospital_out") return "happy"
     if (n.code === "born") return "determined"
     if (n.code === "death") return "crying"
+    if (n.code === "funeral") return n.data?.paidBy === "freelandoo" ? "grateful" : "worried"
     if (n.code === "diabetes" || n.code === "hypertension") return "worried"
     return "fever"
   }
@@ -74,6 +75,10 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
     case "promo":
       return { title: n.data.title ?? t("ntPromo", "Promoção"), line: t("ntPromoLine", "Promoção do Meu Mundo") }
     case "life":
+      if (n.code === "funeral")
+        return n.data.paidBy === "freelandoo"
+          ? { title: t("ntFuneralFree", "A Freelandoo pagou o funeral."), line: t("ntFuneralFreeLine", "Ele morreu de velhice. O novo hóspede herdou 20% dos atributos.") }
+          : { title: t("ntFuneralPaid", "Funeral pago: {n} moedas.").replace("{n}", String(n.data.coins ?? 0)), line: t("ntFuneralPaidLine", "Sem herança: o novo hóspede começou do zero.") }
       return { title: lifeTitle(n.code, t, n.data.generation), line: null }
     case "dm":
       return { title: t("ntDmTitle", "Recebemos uma mensagem"), line: n.data.from ? t("ntDmFrom", "De {name}").replace("{name}", n.data.from) : null }

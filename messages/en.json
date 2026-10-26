@@ -8308,6 +8308,16 @@
     "ibMessagesHintGame": "Your Freelandoo conversations. They open right here, in the game chat.",
     "ntDmTitle": "We got a message",
     "ntDmFrom": "From {name}",
-    "ntDmReply": "Reply"
+    "ntDmReply": "Reply",
+    "causeOldAge": "Old age",
+    "stFuneralFree": "Died of old age: Freelandoo paid for the funeral.",
+    "stHeirInherit": "The new guest inherits 20%: intelligence {i}, strength {s}, speed {v}.",
+    "stFuneralPaid": "The funeral costs {n} coins and you pay for it.",
+    "stHeirNone": "No inheritance: the new guest starts from scratch.",
+    "stNewcomerPay": "Pay for the funeral and welcome a new guest",
+    "ntFuneralFree": "Freelandoo paid for the funeral.",
+    "ntFuneralFreeLine": "He died of old age. The new guest inherited 20% of his attributes.",
+    "ntFuneralPaid": "Funeral paid: {n} coins.",
+    "ntFuneralPaidLine": "No inheritance: the new guest started from scratch."
   }
 }

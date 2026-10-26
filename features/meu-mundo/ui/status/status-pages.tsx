@@ -156,9 +156,31 @@ function causeLabel(c: string | null, t: Tr) {
       dieta: t("causeDiet", "Má alimentação"),
       estresse: t("causeStress", "Estresse extremo"),
       complicacoes: t("causeComplications", "Complicações no hospital"),
+      velhice: t("causeOldAge", "Velhice"),
     } as Record<string, string>
   )[c] ?? c
 }
+/** Funeral e herança (mm3d-34) na tela de morte: o que o servidor decidiu em `afterlife`. */
+function afterlifeLines(c: LifeCharacter, coins: number, t: Tr): { funeral: string; heir: string; button: string } | null {
+  const a = c.afterlife
+  if (!a) return null
+  if (a.natural && a.inherit)
+    return {
+      funeral: t("stFuneralFree", "Morreu de velhice: a Freelandoo pagou o funeral."),
+      heir: t("stHeirInherit", "O novo hóspede herda 20%: inteligência {i}, força {s}, velocidade {v}.")
+        .replace("{i}", String(Math.round(a.inherit.intelligence)))
+        .replace("{s}", String(Math.round(a.inherit.strength)))
+        .replace("{v}", String(Math.round(a.inherit.speed))),
+      button: t("stNewcomer", "Receber novo hóspede"),
+    }
+  return {
+    // Cobra até o que houver na carteira (nunca negativa): mostra o que vai sair de fato.
+    funeral: t("stFuneralPaid", "O funeral custa {n} moedas e é você quem paga.").replace("{n}", String(Math.min(a.funeral.coins, Math.floor(coins)))),
+    heir: t("stHeirNone", "Sem herança: o novo hóspede começa do zero."),
+    button: t("stNewcomerPay", "Pagar funeral e receber novo hóspede"),
+  }
+}
+
 const TRAITS = ["discipline", "anxiety", "optimism", "appetite", "resilience", "metabolism"] as const
 function traitName(k: (typeof TRAITS)[number], t: Tr) {
   return {
@@ -505,6 +527,8 @@ function Overview({ life, portrait, compact, t, act }: PageProps) {
   const total = a.until ? (new Date(a.until).getTime() - new Date(a.startedAt).getTime()) / 3600000 : null
   const progress = total && a.remainingH != null ? Math.max(0, Math.min(1, 1 - a.remainingH / total)) : null
   if (c.status === "dead") {
+    const lines = afterlifeLines(c, life.wallet.coins, t)
+    const after = lines && { ...lines, free: !!c.afterlife?.natural }
     return (
       <div className={`grid gap-5 ${compact ? "" : "grid-cols-[minmax(0,560px)_1fr]"}`}>
         <div className="flex justify-center">
@@ -524,11 +548,21 @@ function Overview({ life, portrait, compact, t, act }: PageProps) {
               <p className={`${archivo.className} mt-2 text-[17px]`} style={{ color: EVO.mudo }}>
                 {t("stDeadText", "A casa e as moedas continuam suas. Um novo hóspede pode chegar agora.")}
               </p>
+              {after && (
+                <>
+                  <p className={`${archivo.className} mt-3 text-[17px] font-semibold`} style={{ color: after.free ? EVO.bom : EVO.douradoClaro }}>
+                    {after.funeral}
+                  </p>
+                  <p className={`${archivo.className} mt-1 text-[16px]`} style={{ color: EVO.mudo }}>
+                    {after.heir}
+                  </p>
+                </>
+              )}
             </div>
           </div>
           <div className="mt-6">
             <GoldButton onClick={act.newcomer} disabled={act.busy} active>
-              {t("stNewcomer", "Receber novo hóspede")}
+              {after?.button ?? t("stNewcomer", "Receber novo hóspede")}
             </GoldButton>
           </div>
         </Plate>
@@ -1242,6 +1276,8 @@ function OverviewC({ life, portrait, t, act }: PageProps) {
   const total = a.until ? (new Date(a.until).getTime() - new Date(a.startedAt).getTime()) / 3600000 : null
   const progress = total && a.remainingH != null ? Math.max(0, Math.min(1, 1 - a.remainingH / total)) : null
   if (c.status === "dead") {
+    const lines = afterlifeLines(c, life.wallet.coins, t)
+    const after = lines && { ...lines, free: !!c.afterlife?.natural }
     return (
       <div className="flex flex-col gap-2">
         <div className="flex justify-center" style={{ filter: "grayscale(1) brightness(0.55)" }}>
@@ -1259,10 +1295,15 @@ function OverviewC({ life, portrait, t, act }: PageProps) {
               <p className={`${archivo.className} mt-1 text-[11px] leading-snug`} style={{ color: EVO.mudo }}>
                 {t("stDeadText", "A casa e as moedas continuam suas. Um novo hóspede pode chegar agora.")}
               </p>
+              {after && (
+                <p className={`${archivo.className} mt-1 text-[11px] font-semibold leading-snug`} style={{ color: after.free ? EVO.bom : EVO.douradoClaro }}>
+                  {after.funeral} {after.heir}
+                </p>
+              )}
             </div>
           </div>
           <MiniButton onClick={act.newcomer} disabled={act.busy} active className="mt-2 w-full">
-            {t("stNewcomer", "Receber novo hóspede")}
+            {after?.button ?? t("stNewcomer", "Receber novo hóspede")}
           </MiniButton>
         </MiniPlate>
       </div>

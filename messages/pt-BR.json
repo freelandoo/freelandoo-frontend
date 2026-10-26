@@ -7722,6 +7722,16 @@
     "ibMessagesHintGame": "Suas conversas da Freelandoo. Abrem aqui, no chat do jogo.",
     "ntDmTitle": "Recebemos uma mensagem",
     "ntDmFrom": "De {name}",
-    "ntDmReply": "Responder"
+    "ntDmReply": "Responder",
+    "causeOldAge": "Velhice",
+    "stFuneralFree": "Morreu de velhice: a Freelandoo pagou o funeral.",
+    "stHeirInherit": "O novo hóspede herda 20%: inteligência {i}, força {s}, velocidade {v}.",
+    "stFuneralPaid": "O funeral custa {n} moedas e é você quem paga.",
+    "stHeirNone": "Sem herança: o novo hóspede começa do zero.",
+    "stNewcomerPay": "Pagar funeral e receber novo hóspede",
+    "ntFuneralFree": "A Freelandoo pagou o funeral.",
+    "ntFuneralFreeLine": "Ele morreu de velhice. O novo hóspede herdou 20% dos atributos.",
+    "ntFuneralPaid": "Funeral pago: {n} moedas.",
+    "ntFuneralPaidLine": "Sem herança: o novo hóspede começou do zero."
   }
 }

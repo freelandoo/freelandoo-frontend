@@ -207,6 +207,15 @@ export interface LifeCharacter {
   status: "alive" | "hospital" | "dead"
   deathCause: string | null
   diedAt: string | null
+  /**
+   * Morto (mm3d-34): velhice = a Freelandoo paga o funeral e o novo hóspede
+   * herda 20% do pico; outra causa = o jogador paga e não há herança. null = vivo.
+   */
+  afterlife?: {
+    natural: boolean
+    funeral: { coins: number; paidBy: "freelandoo" | "player" }
+    inherit: Record<LifeTrained, number> | null
+  } | null
   personality: Record<"discipline" | "anxiety" | "optimism" | "appetite" | "resilience" | "metabolism", number>
   vitals: Record<"energy" | "satiety" | "mood" | "stress" | "health" | "vitality", number>
   body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bmi: number; bodyHint: BodyId }
@@ -734,7 +743,7 @@ export interface MMNotice {
   code: string
   /** 1 = mais urgente */
   priority: number
-  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string }
+  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string; paidBy?: "freelandoo" | "player"; coins?: number }
   mailId: string | null
   createdAt: string
   read: boolean
