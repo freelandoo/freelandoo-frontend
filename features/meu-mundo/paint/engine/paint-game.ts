@@ -32,7 +32,7 @@ import { PaintView } from "./paint-view"
 import { PickupsView } from "./pickups-view"
 import { AimCamera } from "./aim-camera"
 import { PaintGun } from "./gun"
-import { attachPaintInput, clearPaintInput, createPaintInput, paintMoveAxis, paintWantsRun, type PaintInput } from "./paint-input"
+import { attachPaintInput, clearPaintInput, createPaintInput, createReticle, paintMoveAxis, paintWantsRun, type PaintInput } from "./paint-input"
 import type { PaintPort, RemoteSample } from "./port"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
@@ -179,6 +179,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   let lunge = 0
   /** Para onde o corpo fica virado enquanto mira (o último tiro). */
   let aimYaw = 0
+  let reticleColor = -1
   let shotAt = -10
   /** Nocaute visto (o renascimento depois dele não é "caiu"). */
   let knocked = false
@@ -188,7 +189,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   cam.snap(body.facing)
 
   const input = createPaintInput()
-  const detachInput = attachPaintInput(canvas, input, opts.touch)
+  // A mira do PC (o cursor vira a mira): desenhada por cima do canvas, colada no mouse.
+  const reticle = canvas.parentElement ? createReticle(canvas.parentElement) : null
+  const detachInput = attachPaintInput(canvas, input, reticle)
 
   const posePacket = (): PaintPose => ({ x: body.x, y: body.y, z: body.z, facing: body.facing, ground: body.ground, gy: body.gy, e: epoch })
 
@@ -528,7 +531,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
 
     // PC (mm3d-35c): a mira segue o cursor o tempo todo, atirando ou não — o
     // corpo vira para onde ele aponta e o marcador mostra onde o tiro bate.
-    if (!opts.touch && canMove && input.aimX !== null) {
+    if (input.mouseAim && canMove && input.aimX !== null) {
       const at = cam.aimPointAt(input.aimX, input.aimY, solids, bodiesRay)
       if (Math.hypot(at.x - body.x, at.z - body.z) > 0.4) {
         aimYaw = Math.atan2(at.x - body.x, at.z - body.z)
@@ -539,6 +542,10 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       aimMark.setEnabled(true)
     } else aimMark.setEnabled(false)
     aimMarkMat.emissiveColor = Color3.FromHexString(PAINT_COLORS[input.color])
+    if (reticleColor !== input.color) {
+      reticleColor = input.color
+      reticle?.setColor(PAINT_COLORS[input.color])
+    }
 
     // tiro (segurando o mouse / o dedo parado, ou um toque rápido) e soco
     if (gun.current !== input.color) gun.setColor(input.color)
@@ -684,6 +691,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       disposed = true
       engine.stopRenderLoop()
       detachInput()
+      reticle?.dispose()
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
       for (const k of ["__paint", "__paintTp", "__paintLook", "__paintState", "__paintFire", "__paintAim"]) delete w[k]

@@ -40,9 +40,6 @@ type Stage =
   | { kind: "game"; port: PaintPort; key: number }
 
 const COLOR_KEYS = ["paintColorBridge", "paintColorHarm", "paintColorStep"] as const
-/** No PC a mira é o cursor (mm3d-35b): um anel com ponto, centrado no clique. */
-const AIM_CURSOR =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><circle cx='16' cy='16' r='10' fill='none' stroke='black' stroke-opacity='0.55' stroke-width='4'/><circle cx='16' cy='16' r='10' fill='none' stroke='white' stroke-width='2'/><circle cx='16' cy='16' r='2' fill='white' stroke='black' stroke-opacity='0.5'/></svg>\") 16 16, crosshair"
 const COLOR_FALLBACK = ["Ponte", "Dano", "Degrau"]
 
 export function PaintView({ body, onExit, join }: PaintViewProps) {
@@ -259,7 +256,18 @@ function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: 
   const [hud, setHud] = useState<PaintHud | null>(null)
   const [toast, setToast] = useState<{ text: string; tone: "ok" | "bad" | "gold"; id: number } | null>(null)
   const [hurt, setHurt] = useState(0)
-  const [isTouch] = useState(() => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches)
+  // Tela de celular só em aparelho SÓ de toque: notebook com mouse e tela de
+  // toque fica com a tela de PC (o mouse é a mira).
+  const [isTouch, setIsTouch] = useState(() => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches && !window.matchMedia("(any-pointer: fine)").matches)
+  // o jogo nasce com o modo do aparelho; trocar a tela depois não recria a cena
+  const touchAtStart = useRef(isTouch)
+  // mexeu um mouse de verdade: tela de PC (o mouse é a mira)
+  useEffect(() => {
+    if (!isTouch) return
+    const onMove = (e: PointerEvent) => e.pointerType === "mouse" && setIsTouch(false)
+    window.addEventListener("pointermove", onMove)
+    return () => window.removeEventListener("pointermove", onMove)
+  }, [isTouch])
   const toastSeq = useRef(0)
   const textRef = useRef(t)
   useEffect(() => {
@@ -319,7 +327,7 @@ function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: 
         canvas,
         port,
         body,
-        touch: isTouch,
+        touch: touchAtStart.current,
         onReady: () => alive && setStatus("ready"),
         onHud: (h) => alive && setHud(h),
         onNotice,
@@ -335,7 +343,7 @@ function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: 
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [port, body, isTouch])
+  }, [port, body])
 
   const ended = hud?.phase === "end" && !!hud.result
   useEffect(() => {
@@ -347,7 +355,7 @@ function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: 
       <canvas
         ref={canvasRef}
         className="block h-full w-full outline-none"
-        style={{ touchAction: "none", cursor: isTouch ? undefined : AIM_CURSOR }}
+        style={{ touchAction: "none" }}
         aria-label={t("paintAria", "Jogo Paint")}
       />
 

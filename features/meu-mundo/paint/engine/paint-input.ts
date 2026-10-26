@@ -1,14 +1,17 @@
-// features/meu-mundo/paint/engine/paint-input.ts — PAINT (mm3d-35b): os controles.
+// features/meu-mundo/paint/engine/paint-input.ts — PAINT (mm3d-35d): os controles.
 //
-// Pedido do Alex (2026-10-26):
-//  - Computador: a MIRA É O CURSOR do mouse (o tiro vai para onde ele aponta);
-//    botão esquerdo atira, E troca a cor (1/2/3 também), W/A/S/D anda, Shift
-//    corre, Espaço pula, F soco. A câmera gira com o botão direito arrastando
-//    e quando o cursor encosta na borda esquerda/direita da tela.
-//  - Celular: o joystick anda; arrastar o dedo na tela gira a mira; tocar e
-//    SEGURAR sem arrastar atira no ponto tocado (arrastou além de um pouco,
-//    vira mira e para de atirar). As cores embaixo, do outro lado, só escolhem.
-// Tudo vira um estado que o laço lê a cada quadro.
+// Pedido do Alex (2026-10-26): ao entrar no jogo o CURSOR VIRA A MIRA — a
+// setinha some e a mira do jogo anda com o mouse; mexeu o mouse, a mira mexe
+// (e o personagem vira para ela), mesmo sem atirar. Botão esquerdo atira, E
+// troca a cor (1/2/3 e rodinha também), W/A/S/D anda, Shift corre, Espaço pula
+// (dois pulos), F soco. Botão direito arrastando, ou a mira perto da borda,
+// gira a câmera.
+// Celular: o joystick anda; arrastar o dedo gira a mira; tocar e segurar sem
+// arrastar atira no ponto tocado (toque rápido = um tiro).
+//
+// Cada evento é tratado pelo QUE ELE É (pointerType), não pelo aparelho:
+// notebook com tela de toque se diz "toque" ao navegador, e o mouse dele
+// ficava se comportando como dedo (mm3d-35c, "mexo o mouse e não faz nada").
 
 import type { PaintColor } from "../sim/tuning"
 
@@ -22,7 +25,9 @@ export interface PaintInput {
   /** Ponto da mira na tela (px do canvas); null = o meio da tela. */
   aimX: number | null
   aimY: number | null
-  /** Cursor encostado na borda (−1 esquerda, 1 direita, 0 não): a câmera gira. */
+  /** A mira está com o mouse (PC): o corpo segue a mira o tempo todo. */
+  mouseAim: boolean
+  /** Mira encostada na borda (−1..1, mais perto da borda = mais rápido): a câmera gira. */
   edge: number
   /** Cor escolhida e se está atirando agora. */
   color: PaintColor
@@ -35,7 +40,23 @@ export interface PaintInput {
 }
 
 export function createPaintInput(): PaintInput {
-  return { keys: new Set(), joyX: 0, joyY: 0, lookDX: 0, lookDY: 0, aimX: null, aimY: null, edge: 0, color: 0, firing: false, tapQueued: false, jumpQueued: false, punchQueued: false, blocked: false }
+  return {
+    keys: new Set(),
+    joyX: 0,
+    joyY: 0,
+    lookDX: 0,
+    lookDY: 0,
+    aimX: null,
+    aimY: null,
+    mouseAim: false,
+    edge: 0,
+    color: 0,
+    firing: false,
+    tapQueued: false,
+    jumpQueued: false,
+    punchQueued: false,
+    blocked: false,
+  }
 }
 
 export function clearPaintInput(s: PaintInput) {
@@ -79,7 +100,7 @@ export function nextColor(c: PaintColor): PaintColor {
 }
 
 const KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "ShiftLeft", "ShiftRight"])
-/** Faixa das bordas em que o cursor gira a câmera (fração da largura); mais perto da borda, mais rápido. */
+/** Faixa das bordas em que a mira gira a câmera (fração da largura). */
 const EDGE = 0.14
 /** Toque que andou mais que isto (px) vira mira e para de atirar. */
 const TAP_SLOP = 12
@@ -93,8 +114,41 @@ function isEditable(t: EventTarget | null) {
   return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable || !!el.closest?.("[data-mm-panel]")
 }
 
-/** Liga os ouvintes. `touch` = celular. Devolve o desligar. */
-export function attachPaintInput(canvas: HTMLCanvasElement, s: PaintInput, touch: boolean): () => void {
+/**
+ * A mira do PC: um anel com ponto, desenhado por cima do jogo e colado no
+ * mouse (a setinha some sobre o canvas). `setColor` pinta na cor da tinta.
+ */
+export function createReticle(host: HTMLElement) {
+  const el = document.createElement("div")
+  el.setAttribute("aria-hidden", "true")
+  el.dataset.paintReticle = ""
+  el.style.cssText = "position:absolute;left:0;top:0;width:40px;height:40px;margin:-20px 0 0 -20px;pointer-events:none;z-index:5;display:none;will-change:transform"
+  el.innerHTML =
+    '<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="12" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="5"/><circle data-ring cx="20" cy="20" r="12" fill="none" stroke="#fff" stroke-width="2.6"/><path d="M20 2v9M20 29v9M2 20h9M29 20h9" stroke="rgba(0,0,0,0.5)" stroke-width="4"/><path d="M20 3v8M20 29v8M3 20h8M29 20h8" stroke="#fff" stroke-width="2"/><circle data-dot cx="20" cy="20" r="2.6" fill="#fff" stroke="rgba(0,0,0,0.55)" stroke-width="1"/></svg>'
+  host.appendChild(el)
+  const ring = el.querySelector("[data-ring]") as SVGCircleElement
+  const dot = el.querySelector("[data-dot]") as SVGCircleElement
+  return {
+    move(x: number, y: number) {
+      el.style.display = "block"
+      el.style.transform = `translate(${x}px, ${y}px)`
+    },
+    hide() {
+      el.style.display = "none"
+    },
+    setColor(hex: string) {
+      ring.setAttribute("stroke", hex)
+      dot.setAttribute("fill", hex)
+    },
+    dispose() {
+      el.remove()
+    },
+  }
+}
+export type Reticle = ReturnType<typeof createReticle>
+
+/** Liga os ouvintes (mouse e toque juntos). Devolve o desligar. */
+export function attachPaintInput(canvas: HTMLCanvasElement, s: PaintInput, reticle: Reticle | null): () => void {
   const ac = new AbortController()
   const o = { signal: ac.signal }
   const local = (e: { clientX: number; clientY: number }) => {
@@ -132,34 +186,77 @@ export function attachPaintInput(canvas: HTMLCanvasElement, s: PaintInput, touch
     o,
   )
 
-  if (!touch) {
-    let dragging = false
-    let lx = 0
-    let ly = 0
-    canvas.addEventListener(
-      "pointermove",
-      (e) => {
-        const p = local(e)
-        s.aimX = p.x
-        s.aimY = p.y
-        const fx = p.x / Math.max(1, p.w)
-        s.edge = dragging ? 0 : fx < EDGE ? -(EDGE - fx) / EDGE : fx > 1 - EDGE ? (fx - (1 - EDGE)) / EDGE : 0
+  // ── mouse ──
+  let dragging = false
+  let lx = 0
+  let ly = 0
+  const mouseAt = (e: PointerEvent) => {
+    const p = local(e)
+    s.aimX = p.x
+    s.aimY = p.y
+    s.mouseAim = true
+    const fx = p.x / Math.max(1, p.w)
+    s.edge = dragging ? 0 : fx < EDGE ? -(EDGE - fx) / EDGE : fx > 1 - EDGE ? (fx - (1 - EDGE)) / EDGE : 0
+    reticle?.move(p.x, p.y)
+    canvas.style.cursor = "none"
+  }
+  const mouseOut = () => {
+    s.edge = 0
+    s.aimX = null
+    s.aimY = null
+    s.mouseAim = false
+    reticle?.hide()
+  }
+
+  // ── toque ──
+  const fingers = new Map<number, { x: number; y: number; sx: number; sy: number; aiming: boolean }>()
+  let shooter: number | null = null
+  let hold: ReturnType<typeof setTimeout> | null = null
+  const stopHold = () => {
+    if (hold) clearTimeout(hold)
+    hold = null
+  }
+  ac.signal.addEventListener("abort", stopHold)
+
+  canvas.addEventListener(
+    "pointermove",
+    (e) => {
+      if (e.pointerType === "mouse") {
+        mouseAt(e)
         if (dragging && !s.blocked) {
           s.lookDX += e.clientX - lx
           s.lookDY += e.clientY - ly
         }
         lx = e.clientX
         ly = e.clientY
-      },
-      o,
-    )
-    canvas.addEventListener(
-      "pointerdown",
-      (e) => {
-        if (s.blocked || e.pointerType !== "mouse") return
-        const p = local(e)
-        s.aimX = p.x
-        s.aimY = p.y
+        return
+      }
+      const f = fingers.get(e.pointerId)
+      if (!f) return
+      if (!f.aiming && Math.hypot(e.clientX - f.sx, e.clientY - f.sy) > TAP_SLOP) {
+        f.aiming = true
+        if (shooter === e.pointerId) {
+          stopHold()
+          s.firing = false
+          s.aimX = null
+          s.aimY = null
+        }
+      }
+      if (f.aiming && !s.blocked) {
+        s.lookDX += (e.clientX - f.x) * 1.6
+        s.lookDY += (e.clientY - f.y) * 1.6
+      }
+      f.x = e.clientX
+      f.y = e.clientY
+    },
+    o,
+  )
+  canvas.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (s.blocked) return
+      if (e.pointerType === "mouse") {
+        mouseAt(e)
         if (e.button === 0) s.firing = true
         else if (e.button === 2) {
           dragging = true
@@ -168,106 +265,71 @@ export function attachPaintInput(canvas: HTMLCanvasElement, s: PaintInput, touch
           canvas.setPointerCapture(e.pointerId)
         } else if (e.button === 1) s.punchQueued = true
         e.preventDefault()
-      },
-      o,
-    )
-    const up = (e: PointerEvent) => {
-      if (e.button === 0) s.firing = false
-      if (e.button === 2) {
-        dragging = false
-        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId)
+        return
       }
-    }
-    window.addEventListener("pointerup", up, o)
-    canvas.addEventListener(
-      "pointerleave",
-      () => {
-        s.edge = 0
-        s.aimX = null
-        s.aimY = null
-      },
-      o,
-    )
-    canvas.addEventListener(
-      "wheel",
-      (e) => {
-        e.preventDefault()
-        if (s.blocked || !e.deltaY) return
-        s.color = (((s.color + (e.deltaY > 0 ? 1 : 2)) % 3) as PaintColor)
-      },
-      { signal: ac.signal, passive: false },
-    )
-    canvas.addEventListener("contextmenu", (e) => e.preventDefault(), o)
-  } else {
-    // Cada dedo no jogo: parado = atira no ponto; arrastou = mira (gira a câmera).
-    const fingers = new Map<number, { x: number; y: number; sx: number; sy: number; aiming: boolean }>()
-    let shooter: number | null = null
-    let hold: ReturnType<typeof setTimeout> | null = null
-    const stopHold = () => {
-      if (hold) clearTimeout(hold)
-      hold = null
-    }
-    ac.signal.addEventListener("abort", stopHold)
-    canvas.addEventListener(
-      "pointerdown",
-      (e) => {
-        if (s.blocked) return
-        fingers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, aiming: false })
-        canvas.setPointerCapture(e.pointerId)
-        if (shooter === null) {
-          shooter = e.pointerId
-          const p = local(e)
-          s.aimX = p.x
-          s.aimY = p.y
-          const id = e.pointerId
-          stopHold()
-          hold = setTimeout(() => {
-            hold = null
-            const f = fingers.get(id)
-            if (shooter === id && f && !f.aiming && !s.blocked) s.firing = true
-          }, HOLD_MS)
-        }
-      },
-      o,
-    )
-    canvas.addEventListener(
-      "pointermove",
-      (e) => {
-        const f = fingers.get(e.pointerId)
-        if (!f) return
-        if (!f.aiming && Math.hypot(e.clientX - f.sx, e.clientY - f.sy) > TAP_SLOP) {
-          f.aiming = true
-          if (shooter === e.pointerId) {
-            stopHold()
-            s.firing = false
-            s.aimX = null
-            s.aimY = null
-          }
-        }
-        if (f.aiming && !s.blocked) {
-          s.lookDX += (e.clientX - f.x) * 1.6
-          s.lookDY += (e.clientY - f.y) * 1.6
-        }
-        f.x = e.clientX
-        f.y = e.clientY
-      },
-      o,
-    )
-    const end = (e: PointerEvent) => {
-      const f = fingers.get(e.pointerId)
-      fingers.delete(e.pointerId)
-      if (shooter === e.pointerId) {
-        // toque rápido e parado: um tiro
-        if (hold && f && !f.aiming && e.type === "pointerup" && !s.blocked) s.tapQueued = true
+      // dedo: parado atira no ponto, arrastou mira
+      s.mouseAim = false
+      reticle?.hide()
+      fingers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, aiming: false })
+      canvas.setPointerCapture(e.pointerId)
+      if (shooter === null) {
+        shooter = e.pointerId
+        const p = local(e)
+        s.aimX = p.x
+        s.aimY = p.y
+        const id = e.pointerId
         stopHold()
-        shooter = null
-        s.firing = false
+        hold = setTimeout(() => {
+          hold = null
+          const f = fingers.get(id)
+          if (shooter === id && f && !f.aiming && !s.blocked) s.firing = true
+        }, HOLD_MS)
       }
-      if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId)
+    },
+    o,
+  )
+  const fingerEnd = (e: PointerEvent) => {
+    const f = fingers.get(e.pointerId)
+    if (!f) return
+    fingers.delete(e.pointerId)
+    if (shooter === e.pointerId) {
+      if (hold && !f.aiming && e.type === "pointerup" && !s.blocked) s.tapQueued = true
+      stopHold()
+      shooter = null
+      s.firing = false
     }
-    canvas.addEventListener("pointerup", end, o)
-    canvas.addEventListener("pointercancel", end, o)
+    if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId)
   }
+  window.addEventListener(
+    "pointerup",
+    (e) => {
+      if (e.pointerType === "mouse") {
+        if (e.button === 0) s.firing = false
+        if (e.button === 2) {
+          dragging = false
+          if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId)
+        }
+        return
+      }
+      fingerEnd(e)
+    },
+    o,
+  )
+  window.addEventListener("pointercancel", (e) => e.pointerType !== "mouse" && fingerEnd(e), o)
+  canvas.addEventListener("pointerleave", (e) => e.pointerType === "mouse" && !dragging && mouseOut(), o)
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault()
+      if (s.blocked || !e.deltaY) return
+      s.color = (((s.color + (e.deltaY > 0 ? 1 : 2)) % 3) as PaintColor)
+    },
+    { signal: ac.signal, passive: false },
+  )
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault(), o)
 
-  return () => ac.abort()
+  return () => {
+    ac.abort()
+    canvas.style.cursor = ""
+  }
 }
