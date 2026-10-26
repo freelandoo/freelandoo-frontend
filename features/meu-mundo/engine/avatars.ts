@@ -52,7 +52,8 @@ const ASSETS = {
     sergio: "avatar-sergio-basecolor-512.jpg",
     // A personagem feminina (mm3d-30, pipeline/build_female.py): no esqueleto
     // do normal SEM encaixe — usa todas as animações do conjunto "base".
-    female: "avatar-female-basecolor-512.jpg",
+    // mm3d-36: a menina nova (cartoon girl), mesmo caminho do build_female.py.
+    female: "avatar-female-m36-basecolor-512.jpg",
     // Ekaterina (mm3d-30, pipeline/build_ekaterina.py): esqueleto encaixado
     // nas proporções dela, então um conjunto de animações próprio (como o
     // Sergio); 5 mil tris, textura 512, sem malha leve (como o Sergio).
@@ -66,7 +67,7 @@ const ASSETS = {
     // mm3d-22: pesos do ombro suavizados (pipeline/fix_sergio_shoulder.py) —
     // no skate e na bike o ombro abria um vinco na cava da regata.
     sergio: "avatar-sergio-m22.glb",
-    female: "avatar-female.glb",
+    female: "avatar-female-m36.glb",
     // 2026-10-25: o rosto com a malha original (a redução colapsava as
     // costuras do atlas e deformava o lado direito do rosto); pescoço refeito
     // (build_ekaterina.py 4b): rosto 100% na cabeça — o maxilar esticava na corrida.
@@ -81,7 +82,7 @@ const ASSETS = {
     slim: "avatar-slim-lod.glb",
     fat: "avatar-fat-lod.glb",
     strong: "avatar-strong-lod.glb",
-    female: "avatar-female-lod.glb",
+    female: "avatar-female-m36-lod.glb",
   } as Partial<Record<BodyId, string>>,
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
