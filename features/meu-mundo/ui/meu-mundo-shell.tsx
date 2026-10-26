@@ -95,6 +95,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [inviteOpen, setInviteOpen] = useState(false)
   // Tela de STATUS do hóspede (mm3d-13): o corpo em cena vai para o retrato.
   const [statusBody, setStatusBody] = useState<BodyId | null>(null)
+  // Aberto pelo caixa do supermercado (mm3d-37c): no Mercado, comprando.
+  const [statusShop, setStatusShop] = useState(false)
   const [lifeTick, setLifeTick] = useState(0)
   const stay = useHospitalStay(initial.life)
   // Necessidades (mm3d-28): a do login sai do payload; depois, de cada "life".
@@ -595,6 +597,10 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onServerMessage={onServerMessage}
           blocked={overlayOpen}
           onOpenStatus={setStatusBody}
+          onOpenMarket={(b) => {
+            setStatusShop(true)
+            setStatusBody(b)
+          }}
           suspended={suspended}
           menuExtras={menuExtras}
           {...scenePlayer}
@@ -695,7 +701,18 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       )}
 
       {statusBody && (
-        <StatusScreen name={scene.me.name} body={statusBody} lifeTick={lifeTick} onClose={() => setStatusBody(null)} onOpenPolens={() => setPolensOpen(true)} />
+        <StatusScreen
+          name={scene.me.name}
+          body={statusBody}
+          lifeTick={lifeTick}
+          onClose={() => {
+            setStatusBody(null)
+            setStatusShop(false)
+          }}
+          onOpenPolens={() => setPolensOpen(true)}
+          initialPage={statusShop ? "market" : undefined}
+          shopping={statusShop}
+        />
       )}
 
       {inbox && (

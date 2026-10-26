@@ -8433,7 +8433,14 @@
     "actPraying": "Rezando",
     "actJail": "Preso",
     "stWhereShort": "Entrenar: en el gimnasio del centro. Estudiar: en la biblioteca, la escuela o la universidad.",
-    "stWhere": "Entrenar es en el gimnasio del centro; estudiar, en la biblioteca, la escuela o la universidad (rinde más, pero cobra la hora de clase). Entra en el edificio y usa un aparato o un pupitre."
+    "stWhere": "Entrenar es en el gimnasio del centro; estudiar, en la biblioteca, la escuela o la universidad (rinde más, pero cobra la hora de clase). Entra en el edificio y usa un aparato o un pupitre.",
+    "pvMenuTitle": "Menú",
+    "pvMenuLoading": "Abriendo el menú…",
+    "pvMenuCoins": "Tus monedas: {n}. Come aquí mismo — cuenta como comida.",
+    "pvOrderPrice": "Pedir · {n}",
+    "pvAte": "Comió: {item}",
+    "mkAtMarket": "En el supermercado · {n}",
+    "mkHintGoMarket": "Para comprar, ve al supermercado del centro y pasa por la caja. Todo va a la nevera de tu casa."
   },
   "Sports": {
     "eyebrow": "Deportes",

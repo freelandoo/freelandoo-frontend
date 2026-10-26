@@ -53,6 +53,22 @@ const MEU_MUNDO = {
     "Working out is at the downtown gym; studying, at the library, the school or the university (yields more, but charges per class hour). Go into the building and use a machine or a desk.",
     "Entrenar es en el gimnasio del centro; estudiar, en la biblioteca, la escuela o la universidad (rinde más, pero cobra la hora de clase). Entra en el edificio y usa un aparato o un pupitre.",
   ],
+  // mm3d-37c: balcão dos restaurantes e caixa do supermercado
+  pvMenuTitle: ["Cardápio", "Menu", "Menú"],
+  pvMenuLoading: ["Abrindo o cardápio…", "Opening the menu…", "Abriendo el menú…"],
+  pvMenuCoins: [
+    "Suas moedas: {n}. Ele come aqui mesmo — vale a refeição.",
+    "Your coins: {n}. He eats right here — it counts as the meal.",
+    "Tus monedas: {n}. Come aquí mismo — cuenta como comida.",
+  ],
+  pvOrderPrice: ["Pedir · {n}", "Order · {n}", "Pedir · {n}"],
+  pvAte: ["Comeu: {item}", "Ate: {item}", "Comió: {item}"],
+  mkAtMarket: ["No supermercado · {n}", "At the supermarket · {n}", "En el supermercado · {n}"],
+  mkHintGoMarket: [
+    "Para comprar, vá ao supermercado do centro e passe no caixa. Tudo vai para a geladeira da sua casa.",
+    "To buy, go to the downtown supermarket and use the checkout. Everything goes to your home fridge.",
+    "Para comprar, ve al supermercado del centro y pasa por la caja. Todo va a la nevera de tu casa.",
+  ],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

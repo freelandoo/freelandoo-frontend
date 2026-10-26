@@ -6,15 +6,20 @@
 //  - treinar (academia) e estudar (universidade, biblioteca, escola): escolhe
 //    as horas, a vida confere que a pessoa está no prédio e marca; sair do
 //    aparelho ou do prédio para (fechar o jogo, não — a vida segue sozinha).
+//  - pedir no balcão (pizzaria, hamburgueria): o cardápio do lugar; come na hora.
+//  - pagar no caixa (supermercado): abre o Mercado do STATUS, comprando.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { BookOpen, Dumbbell } from "lucide-react"
+import { BookOpen, Dumbbell, UtensilsCrossed } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
-import { postLifeActivity } from "../../data"
+import { getLife, postLifeActivity, postLifeOrder } from "../../data"
 import { POSE_OF_ANIM, type PlacePose } from "../../engine/avatars"
 import type { PlaceState } from "../../engine/place-game"
-import type { BodyId, InteriorDef, PlaceUse } from "../../types"
+import type { BodyId, InteriorDef, LifeItem, PlaceUse } from "../../types"
+import { effectsOf } from "../fridge/fridge-logic"
+import { effectText, toneColor } from "../fridge/shelf"
+import { itemName } from "../status/status-pages"
 import { EvoButton, EvoDialog, EvoToast } from "../hud/hud-kit"
 import { PlaceView } from "../place-view"
 
@@ -33,6 +38,8 @@ export interface PlaceScreenProps {
   body: BodyId
   look?: string
   onExit: () => void
+  /** O caixa do supermercado (mm3d-37c): o Mercado do STATUS, comprando. */
+  onOpenMarket?: () => void
 }
 
 /** O que está em andamento aqui dentro (null = nada). */
@@ -41,7 +48,7 @@ interface Doing {
   hours: number
 }
 
-export function PlaceScreen({ placeId, placeName, interior, body, look = "", onExit }: PlaceScreenProps) {
+export function PlaceScreen({ placeId, placeName, interior, body, look = "", onExit, onOpenMarket }: PlaceScreenProps) {
   const t = useTranslations("MeuMundo") as Tr
   const [ask, setAsk] = useState<{ use: PlaceUse; state: PlaceState } | null>(null)
   const [doing, setDoing] = useState<Doing | null>(null)
@@ -49,6 +56,9 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState<{ text: string; tone: "ouro" | "magenta" } | null>(null)
   const doingRef = useRef<Doing | null>(null)
+  // Cardápio do balcão (mm3d-37c): itens do lugar e as moedas (null = buscando).
+  const [menu, setMenu] = useState<{ items: LifeItem[]; coins: number } | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     doingRef.current = doing
@@ -95,12 +105,44 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
     })
   }
 
+  const openMenu = async () => {
+    setMenuOpen(true)
+    const token = getToken()
+    if (!token) return
+    const r = await getLife(token)
+    if (!r.ok) {
+      setMenuOpen(false)
+      setToast({ text: r.error || t("pvFail", "Não deu certo agora. Tente de novo."), tone: "magenta" })
+      return
+    }
+    const ids = r.data.catalog.menus?.[placeId] ?? []
+    const items = ids.map((id) => r.data.catalog.items.find((it) => it.id === id)).filter((it): it is LifeItem => !!it)
+    setMenu({ items, coins: r.data.wallet.coins })
+  }
+
+  const order = async (it: LifeItem) => {
+    const token = getToken()
+    if (!token) return
+    setBusy(true)
+    const r = await postLifeOrder(token, placeId, it.id)
+    setBusy(false)
+    if (!r.ok) {
+      setToast({ text: r.error || t("pvFail", "Não deu certo agora. Tente de novo."), tone: "magenta" })
+      return
+    }
+    setMenu((m) => (m ? { ...m, coins: r.data.wallet.coins } : m))
+    setMenuOpen(false)
+    setToast({ text: t("pvAte", "Comeu: {item}").replace("{item}", itemName(it, t)), tone: "ouro" })
+  }
+
   const onUse = (use: PlaceUse, state: PlaceState) => {
     if (use === "train" || use === "study") {
       if (doingRef.current) return
       setAsk({ use, state })
       return
     }
+    if (use === "order") return void openMenu()
+    if (use === "market" && onOpenMarket) return onOpenMarket()
     setToast({ text: t("pvSoon", "Em breve"), tone: "ouro" })
   }
 
@@ -129,7 +171,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
         onUse={onUse}
         onState={onState}
         pose={pose}
-        blocked={!!ask}
+        blocked={!!ask || menuOpen}
         hideUse={!!doing}
         extra={
           doing ? (
@@ -142,6 +184,45 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
       {toast && (
         <div className="pointer-events-none fixed left-1/2 top-6 z-[75] -translate-x-1/2">
           <EvoToast tone={toast.tone}>{toast.text}</EvoToast>
+        </div>
+      )}
+      {menuOpen && (
+        <div className="fixed inset-0 z-[76]">
+          <EvoDialog
+            labelId="mm-place-menu"
+            eyebrow={placeName}
+            title={t("pvMenuTitle", "Cardápio")}
+            onClose={() => setMenuOpen(false)}
+          >
+            {!menu ? (
+              <p>{t("pvMenuLoading", "Abrindo o cardápio…")}</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="text-[13px] opacity-80">{t("pvMenuCoins", "Suas moedas: {n}. Ele come aqui mesmo — vale a refeição.").replace("{n}", String(Math.floor(menu.coins)))}</p>
+                {menu.items.map((it) => {
+                  const poor = menu.coins < it.price
+                  return (
+                    <div key={it.id} className="flex items-center gap-3 border-b py-2" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+                      <UtensilsCrossed className="h-5 w-5 shrink-0 opacity-70" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold">{itemName(it, t)}</div>
+                        <div className="mt-0.5 flex flex-wrap gap-x-2 text-[12px]">
+                          {effectsOf(it).slice(0, 3).map((e) => (
+                            <span key={e.key} style={{ color: toneColor(e.tone) }}>
+                              {effectText(e, t)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <EvoButton variant={poor ? "ghost" : "gold"} size="sm" loading={busy} onClick={() => !poor && void order(it)}>
+                        {poor ? t("mkNoCoins", "Moedas insuficientes") : t("pvOrderPrice", "Pedir · {n}").replace("{n}", String(it.price))}
+                      </EvoButton>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </EvoDialog>
         </div>
       )}
       {ask && (

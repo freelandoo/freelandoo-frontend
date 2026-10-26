@@ -97,13 +97,15 @@ export interface CenterSceneProps extends ScenePlayerProps {
   onServerMessage: (type: string, payload: unknown) => void
   blocked?: boolean
   onOpenStatus?: (body: BodyId) => void
+  /** O caixa do supermercado (mm3d-37c): abre o STATUS no Mercado, comprando. */
+  onOpenMarket?: (body: BodyId) => void
   /** Outra tela 3D por cima (hospital, mm3d-26): a sala segue ligada, o desenho para. */
   suspended?: boolean
   /** Entradas da casca na gaveta (mm3d-30): Itens e a caixa de entrada. */
   menuExtras?: DrawerItem[]
 }
 
-export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, suspended, menuExtras, selectedPlayer = null, selectedFrame = null, onPlayerTap, onPlayerGone, sayRef }: CenterSceneProps) {
+export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, onOpenMarket, suspended, menuExtras, selectedPlayer = null, selectedFrame = null, onPlayerTap, onPlayerGone, sayRef }: CenterSceneProps) {
   const t = useTranslations("MeuMundo")
   const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -506,7 +508,15 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
       {/* Prédios do centro (mm3d-37): mesma tela; a planta vem do servidor ao entrar */}
       {minigame === "interior" && inside && insidePlace && inside.interior && (
-        <PlaceScreen placeId={inside.id} interior={inside.interior} body={body} look={look} placeName={placeName(insidePlace)} onExit={closeInside} />
+        <PlaceScreen
+          placeId={inside.id}
+          interior={inside.interior}
+          body={body}
+          look={look}
+          placeName={placeName(insidePlace)}
+          onExit={closeInside}
+          onOpenMarket={onOpenMarket ? () => onOpenMarket(body) : undefined}
+        />
       )}
       {minigame === "interior" && inside && insidePlace && !inside.interior && (
         <div className="fixed inset-0 z-[70] bg-[#33393d]">

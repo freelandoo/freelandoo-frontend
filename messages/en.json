@@ -8453,7 +8453,14 @@
     "actPraying": "Praying",
     "actJail": "In jail",
     "stWhereShort": "Work out: at the downtown gym. Study: at the library, the school or the university.",
-    "stWhere": "Working out is at the downtown gym; studying, at the library, the school or the university (yields more, but charges per class hour). Go into the building and use a machine or a desk."
+    "stWhere": "Working out is at the downtown gym; studying, at the library, the school or the university (yields more, but charges per class hour). Go into the building and use a machine or a desk.",
+    "pvMenuTitle": "Menu",
+    "pvMenuLoading": "Opening the menu…",
+    "pvMenuCoins": "Your coins: {n}. He eats right here — it counts as the meal.",
+    "pvOrderPrice": "Order · {n}",
+    "pvAte": "Ate: {item}",
+    "mkAtMarket": "At the supermarket · {n}",
+    "mkHintGoMarket": "To buy, go to the downtown supermarket and use the checkout. Everything goes to your home fridge."
   },
   "Sports": {
     "eyebrow": "Sports",

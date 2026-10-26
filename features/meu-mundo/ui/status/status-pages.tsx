@@ -53,6 +53,8 @@ export interface PageActions {
   activity: (kind: "studying" | "training" | "working" | "idle", hours?: number) => void
   /** Mercado → geladeira (mm3d-28): compra e guarda; comer é na geladeira da casa. */
   buy: (item: string) => void
+  /** Está no supermercado (mm3d-37c): fora dele o Mercado só mostra. */
+  canBuy: boolean
   newcomer: () => void
   /** Abre o vestuário (botão SKIN embaixo da foto, mm3d-16). */
   openSkins: () => void
@@ -982,7 +984,9 @@ function Market({ life, compact, t, act }: PageProps) {
           )}
         </div>
         <span className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
-          {t("mkHintFridge", "Tudo vai para a geladeira da sua casa — é lá que ele come. Saudável é caro, porcaria é barata.")}
+          {act.canBuy
+            ? t("mkHintFridge", "Tudo vai para a geladeira da sua casa — é lá que ele come. Saudável é caro, porcaria é barata.")
+            : t("mkHintGoMarket", "Para comprar, vá ao supermercado do centro e passe no caixa. Tudo vai para a geladeira da sua casa.")}
         </span>
       </div>
       {/* abas de categoria (os chips do EVO) */}
@@ -1031,8 +1035,8 @@ function Market({ life, compact, t, act }: PageProps) {
                           )}
                         </Card>
                       </div>
-                      <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor} primary={!poor} h={38} className="w-full">
-                        {poor ? t("mkNoCoins", "Moedas insuficientes") : t("mkBuyPrice", "Comprar · {n} moedas").replace("{n}", String(it.price))}
+                      <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor || !act.canBuy} primary={!poor && act.canBuy} h={38} className="w-full">
+                        {!act.canBuy ? t("mkAtMarket", "No supermercado · {n}").replace("{n}", String(it.price)) : poor ? t("mkNoCoins", "Moedas insuficientes") : t("mkBuyPrice", "Comprar · {n} moedas").replace("{n}", String(it.price))}
                       </MiniButton>
                     </div>
                   )
@@ -1790,8 +1794,8 @@ function MarketC({ life, t, act }: PageProps) {
               </span>
             ))}
           </div>
-          <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor} primary={!poor} h={40} className="w-full">
-            {poor ? t("mkNoCoins", "Moedas insuficientes") : t("mkBuyPrice", "Comprar · {n} moedas").replace("{n}", String(it.price))}
+          <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor || !act.canBuy} primary={!poor && act.canBuy} h={40} className="w-full">
+            {!act.canBuy ? t("mkAtMarket", "No supermercado · {n}").replace("{n}", String(it.price)) : poor ? t("mkNoCoins", "Moedas insuficientes") : t("mkBuyPrice", "Comprar · {n} moedas").replace("{n}", String(it.price))}
           </MiniButton>
         </div>
       )}

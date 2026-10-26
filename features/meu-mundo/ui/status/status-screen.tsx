@@ -23,7 +23,7 @@ import { getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } 
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, FUNDO, archivo } from "./evo-skin"
 import { MM } from "../hud/tokens"
-import { PAGES, StatusPage, type PageActions } from "./status-pages"
+import { PAGES, StatusPage, type PageActions, type PageId } from "./status-pages"
 import SkinWardrobe from "./skin-wardrobe"
 import { PORTRAIT } from "../portraits"
 
@@ -79,15 +79,21 @@ export interface StatusScreenProps {
   lifeTick?: number
   /** Adquirir Poléns (mm3d-30): a folha da casca, por cima do STATUS. */
   onOpenPolens?: () => void
+  /** Abre nesta página (mm3d-37c: o caixa do supermercado abre no Mercado). */
+  initialPage?: PageId
+  /** No supermercado (mm3d-37c): o Mercado compra; fora dele, só mostra. */
+  shopping?: boolean
 }
 
-export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpenPolens }: StatusScreenProps) {
+export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpenPolens, initialPage, shopping = false }: StatusScreenProps) {
   const t = useTranslations("MeuMundo")
   const [life, setLife] = useState<LifeFull | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [sel, setSel] = useState(0)
+  // Página de partida (mm3d-37c: o caixa abre no Mercado); o carrossel nasce nela.
+  const [start] = useState(() => Math.max(0, initialPage ? PAGES.indexOf(initialPage) : 0))
+  const [sel, setSel] = useState(start)
   const [compact, setCompact] = useState(false)
   const [scale, setScale] = useState(0.6)
   // Vestuário (mm3d-16) por cima do STATUS; o retrato segue o que está vestido.
@@ -145,11 +151,12 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       busy,
       activity: (kind, hours) => void run((tk) => postLifeActivity(tk, kind, hours)),
       buy: (item) => void run((tk) => postLifeBuy(tk, item), t("mkStored", "Guardado na geladeira")),
+      canBuy: shopping,
       newcomer: () => void run((tk) => postLifeNewcomer(tk)),
       openSkins: () => setWardrobe(true),
       openPolens: onOpenPolens,
     }),
-    [busy, run, t, onOpenPolens],
+    [busy, run, t, onOpenPolens, shopping],
   )
 
   // ── tamanho: carrossel no computador, card único no celular ─────────────
@@ -170,8 +177,8 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
   const modalRefs = useRef<(HTMLDivElement | null)[]>([])
   const glowRefs = useRef<(HTMLDivElement | null)[]>([])
   const dimRefs = useRef<(HTMLDivElement | null)[]>([])
-  const cursor = useRef(0)
-  const alvo = useRef(0)
+  const cursor = useRef(start)
+  const alvo = useRef(start)
   const tween = useRef<{ from: number; to: number; t0: number; dur: number } | null>(null)
   const entrada = useRef<number[]>(Array(N).fill(0))
   const entradaAnim = useRef<{ from: number[]; to: number; t0: number; dur: number; delay: number[]; ease: (x: number) => number } | null>(null)

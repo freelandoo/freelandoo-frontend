@@ -7867,7 +7867,14 @@
     "actPraying": "Rezando",
     "actJail": "Preso",
     "stWhereShort": "Treinar: na academia do centro. Estudar: na biblioteca, na escola ou na universidade.",
-    "stWhere": "Treinar é na academia do centro; estudar, na biblioteca, na escola ou na universidade (rende mais, mas cobra a hora de aula). Entre no prédio e use um aparelho ou uma carteira."
+    "stWhere": "Treinar é na academia do centro; estudar, na biblioteca, na escola ou na universidade (rende mais, mas cobra a hora de aula). Entre no prédio e use um aparelho ou uma carteira.",
+    "pvMenuTitle": "Cardápio",
+    "pvMenuLoading": "Abrindo o cardápio…",
+    "pvMenuCoins": "Suas moedas: {n}. Ele come aqui mesmo — vale a refeição.",
+    "pvOrderPrice": "Pedir · {n}",
+    "pvAte": "Comeu: {item}",
+    "mkAtMarket": "No supermercado · {n}",
+    "mkHintGoMarket": "Para comprar, vá ao supermercado do centro e passe no caixa. Tudo vai para a geladeira da sua casa."
   },
   "Sports": {
     "eyebrow": "Esportes",

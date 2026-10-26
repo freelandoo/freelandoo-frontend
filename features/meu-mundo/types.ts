@@ -390,6 +390,9 @@ export interface LifeFull extends LifeSummary {
     attributes: { max: number; usefulH: Record<"studying" | "training", number>; floor: Record<LifeTrained, number> }
     clock: { offsetMin: number; meals: number[]; beforeH: number; afterH: number; penaltyH: number }
     mealPenalty?: Record<"satiety" | "energy" | "stress" | "health", number>
+    /** Cardápio de cada restaurante do centro (mm3d-37c) e onde se compra para a geladeira. */
+    menus?: Record<string, string[]>
+    marketPlace?: string
   }
 }
 
