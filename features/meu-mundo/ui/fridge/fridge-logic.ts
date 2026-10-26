@@ -55,7 +55,7 @@ export function verbOf(it: LifeItem): "eat" | "drink" | "take" {
   return "take"
 }
 
-export type EffectKey = "satiety" | "energy" | "mood" | "stress" | "good" | "bad" | "toxic" | "lasts"
+export type EffectKey = "satiety" | "health" | "energy" | "mood" | "stress" | "good" | "bad" | "toxic" | "lasts"
 
 export interface Effect {
   key: EffectKey
@@ -68,6 +68,7 @@ export interface Effect {
 export function effectsOf(it: LifeItem): Effect[] {
   const out: Effect[] = []
   if (it.sat) out.push({ key: "satiety", value: it.sat, tone: "good" })
+  if (it.heal) out.push({ key: "health", value: it.heal, tone: "good" })
   if (it.energy) out.push({ key: "energy", value: it.energy, tone: it.energy > 0 ? "good" : "bad" })
   if (it.mood) out.push({ key: "mood", value: it.mood, tone: "good" })
   if (it.stress) out.push({ key: "stress", value: it.stress, tone: it.stress < 0 ? "good" : "bad" })

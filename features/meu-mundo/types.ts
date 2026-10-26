@@ -351,6 +351,8 @@ export interface LifeItem {
   stress: number
   tox: number
   effect: { id: string; hours: number } | null
+  /** Saúde na hora (comida natural, mm3d-36m). */
+  heal?: number
   /** Crédito de refeição (1 quita; fração = lanche; 0 não conta). */
   meal?: number
 }

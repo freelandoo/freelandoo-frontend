@@ -7841,7 +7841,8 @@
     "clr_copper": "Acobreado",
     "clr_darkBlonde": "Loiro-escuro",
     "clr_blonde": "Loiro",
-    "clr_blue": "Azul"
+    "clr_blue": "Azul",
+    "frEffHealth": "{n} saúde"
   },
   "Sports": {
     "eyebrow": "Esportes",

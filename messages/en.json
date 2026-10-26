@@ -8427,7 +8427,8 @@
     "clr_copper": "Copper",
     "clr_darkBlonde": "Dark blonde",
     "clr_blonde": "Blonde",
-    "clr_blue": "Blue"
+    "clr_blue": "Blue",
+    "frEffHealth": "{n} health"
   },
   "Sports": {
     "eyebrow": "Sports",

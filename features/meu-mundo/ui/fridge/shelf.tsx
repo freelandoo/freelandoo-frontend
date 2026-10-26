@@ -22,6 +22,8 @@ export function effectText(e: Effect, t: Tr) {
   switch (e.key) {
     case "satiety":
       return t("frEffSatiety", "{n} saciedade").replace("{n}", n(e.value))
+    case "health":
+      return t("frEffHealth", "{n} saúde").replace("{n}", n(e.value))
     case "energy":
       return t("frEffEnergy", "{n} energia").replace("{n}", n(e.value))
     case "mood":
