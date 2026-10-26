@@ -132,6 +132,14 @@ export interface ComposerProps {
   communityExclusiveOnly?: boolean
   /** Post/Bee: quando definido, o item publicado é ligado ao feed desta academia (mig 181). */
   academyId?: string | null
+  /**
+   * Plataforma Esportes (mig 306): a lista de esportes — com ela o último passo
+   * pergunta de qual esporte é o post (vai junto ao ligar o post ao feed, e é
+   * o que alimenta a aba "Meu esporte").
+   */
+  sportOptions?: { key: string; label: string }[] | null
+  /** O esporte já marcado no seletor — o da pessoa. */
+  defaultSport?: string | null
   onClose: () => void
   onPosted?: () => void
 }

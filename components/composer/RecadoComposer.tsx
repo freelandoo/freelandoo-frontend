@@ -31,6 +31,11 @@ export interface RecadoComposerProps {
   communityId?: string | null
   /** Liga o recado ao mural da academia (mig 181). */
   academyId?: string | null
+  /**
+   * Plataforma Esportes (mig 306): o recado leva o esporte da pessoa — sem
+   * seletor, porque o recado é o atalho rápido de texto.
+   */
+  sport?: string | null
   onClose: () => void
   onPosted?: () => void
 }
@@ -40,6 +45,7 @@ export function RecadoComposer({
   initialProfileId = null,
   communityId = null,
   academyId = null,
+  sport = null,
   onClose,
   onPosted,
 }: RecadoComposerProps) {
@@ -140,7 +146,7 @@ export function RecadoComposer({
           await fetch(`/api/communities/${communityId}/feed`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ id_portfolio_item: itemId }),
+            body: JSON.stringify({ id_portfolio_item: itemId, ...(sport ? { sport } : {}) }),
           })
         } catch {
           /* noop */
@@ -167,7 +173,7 @@ export function RecadoComposer({
     } finally {
       setSubmitting(false)
     }
-  }, [body, selectedProfileId, communityId, academyId, onPosted, onClose, router, t])
+  }, [body, selectedProfileId, communityId, academyId, sport, onPosted, onClose, router, t])
 
   if (!open) return null
 

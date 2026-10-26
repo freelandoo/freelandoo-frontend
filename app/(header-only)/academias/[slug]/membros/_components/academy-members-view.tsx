@@ -20,7 +20,7 @@ import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { PageBackLink } from "@/components/tabloide/PageBackLink"
-import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
+import { FitnessShell } from "@/app/(header-only)/esportes/_components/fitness-shell"
 import { TrainingGrid } from "../../_components/training-grid"
 import {
   BTN_DARK,

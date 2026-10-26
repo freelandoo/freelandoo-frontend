@@ -19,9 +19,12 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, Dumbbell, Loader2, MapPin, Plus, Search, Users } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { ArrowLeft, ArrowRight, Dumbbell, Loader2, MapPin, Plus, Search, Users, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
+import { getToken } from "@/lib/auth"
+import { FitnessShell } from "@/app/(header-only)/esportes/_components/fitness-shell"
 import {
   BANNER_LAYERS,
   BTN_DARK,
@@ -33,7 +36,7 @@ import {
   PANEL,
   StateBox,
   initialsOf,
-} from "@/app/(header-only)/fitness/_components/fitness-ui"
+} from "@/app/(header-only)/esportes/_components/fitness-ui"
 
 type Academy = {
   id_academy: string
@@ -56,11 +59,66 @@ export function AcademiesView() {
 
 function AcademiesBody() {
   const t = useTranslations("Academies")
+  const router = useRouter()
 
   const [academies, setAcademies] = useState<Academy[]>([])
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
   const [q, setQ] = useState("")
   const [city, setCity] = useState("")
+
+  // CONECTAR É O CLIQUE NO CARD (pedido do Alex, 2026-10-26: "quando você
+  // clicar ali em Coliseu ele pede o CPF e vincula automático"). Quem já está
+  // vinculado vai direto para a aba da academia em /esportes — a página da
+  // academia, para o aluno, virou essa aba.
+  const [linked, setLinked] = useState<Set<string>>(new Set())
+  const [connecting, setConnecting] = useState<Academy | null>(null)
+  const [cpf, setCpf] = useState("")
+  const [linking, setLinking] = useState(false)
+
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    fetch("/api/me/academy-memberships", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const ms: { id_academy: string }[] = Array.isArray(d?.memberships) ? d.memberships : []
+        setLinked(new Set(ms.map((m) => m.id_academy)))
+      })
+      .catch(() => {})
+  }, [])
+
+  const openAcademy = (a: Academy) => {
+    if (linked.has(a.id_academy)) {
+      router.push(`/esportes?aba=${encodeURIComponent(a.slug)}`)
+      return
+    }
+    if (!getToken()) {
+      toast.error(t("loginToConnect", "Entre na sua conta para conectar sua academia."))
+      return
+    }
+    setCpf("")
+    setConnecting(a)
+  }
+
+  const connect = async () => {
+    if (!connecting || linking) return
+    setLinking(true)
+    try {
+      const res = await fetch(`/api/academies/${connecting.id_academy}/link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ cpf }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error)
+      toast.success(t("connectOk", "Academia conectada!"))
+      router.push(`/esportes?aba=${encodeURIComponent(connecting.slug)}`)
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : t("linkError", "Não foi possível vincular o CPF"))
+    } finally {
+      setLinking(false)
+    }
+  }
 
   // O cadastro de academia mora no formulário de criação
   // (/comunidades/criar?tipo=academy) — esta página é vitrine/busca e a porta
@@ -91,11 +149,11 @@ function AcademiesBody() {
       {/* Top bar — a saída à esquerda, como no headcard das salas do fitness. */}
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-3 pt-6 md:px-10">
         <Link
-          href="/fitness"
+          href="/esportes"
           className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t("backToFitness", "Voltar pro painel fitness")}
+          {t("backToSports", "Voltar para Esportes")}
         </Link>
       </div>
 
@@ -132,21 +190,10 @@ function AcademiesBody() {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-start justify-between gap-3 px-3 md:px-0">
+        <div className="mt-4 px-3 md:px-0">
           <p className="max-w-2xl text-sm text-[#9A938A]">
-            {t(
-              "subtitle",
-              "Vincule sua matrícula pelo CPF e acompanhe frequência, treinos e calorias no seu painel fitness."
-            )}
+            {t("connectSubtitle", "Toque na sua academia e confirme com o CPF da matrícula — ela vira uma aba em Esportes.")}
           </p>
-          {/* O cadastro de academia continua no formulário de criação (ela
-              precisa de URL e token da API dela antes de existir), mas a
-              comunidade comum saiu de lá (mig 219) — então a vitrine da
-              academia é a porta dele. */}
-          <Link href="/comunidades/criar?tipo=academy" className={`${BTN_GOLD} px-3 py-2 text-[11px]`}>
-            <Plus className="h-4 w-4" />
-            {t("registerCta", "Cadastrar academia")}
-          </Link>
         </div>
       </header>
 
@@ -202,16 +249,84 @@ function AcademiesBody() {
             accent={EMBER}
           />
         )}
-        {state === "loaded" && academies.length > 0 && (
-          <ul className="grid gap-6 sm:grid-cols-2 md:gap-8">
+        {state === "loaded" && (
+          <ul className="mt-6 grid gap-6 sm:grid-cols-2 md:gap-8">
             {academies.map((a) => (
               <li key={a.id_academy}>
-                <AcademyCard academy={a} />
+                <AcademyCard academy={a} linked={linked.has(a.id_academy)} onOpen={() => openAcademy(a)} />
               </li>
             ))}
+            {/* O "+" de cadastrar a PRÓPRIA academia fica na lista, ao lado das
+                academias (pedido do Alex). O cadastro continua no formulário de
+                criação: a academia precisa de URL e token da API antes de existir. */}
+            <li>
+              <Link
+                href="/comunidades/criar?tipo=academy"
+                className={`group flex h-full min-h-[14rem] flex-col items-center justify-center gap-3 border-2 border-dashed border-[#F5F1E8]/25 p-6 text-center transition hover:border-[#FB923C]`}
+              >
+                <span className="grid h-14 w-14 place-items-center border-2 border-[#0B0B0D] bg-[#FF8C2B] text-[#0B0B0D]">
+                  <Plus className="h-7 w-7" />
+                </span>
+                <span className="fl-display text-2xl text-[#F5F1E8] group-hover:text-[#FB923C]">
+                  {t("registerMine", "Cadastrar minha academia")}
+                </span>
+              </Link>
+            </li>
           </ul>
         )}
       </section>
+
+      {connecting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => !linking && setConnecting(null)}>
+          <div
+            className="fl-sharp w-full max-w-md border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]"
+            style={{ boxShadow: `8px 8px 0 0 ${EMBER}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] pb-3">
+              <h2 className="text-xl font-black uppercase">{connecting.nome}</h2>
+              <button onClick={() => setConnecting(null)} aria-label={t("close", "Fechar")} disabled={linking}>
+                <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-[#9A938A]">
+              {t(
+                "linkIntro",
+                "Digite o CPF cadastrado na academia. Vamos confirmar sua matrícula direto no sistema dela — na hora."
+              )}
+            </p>
+            <label className="mt-4 block">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("cpfLabel", "CPF")}</span>
+              <input
+                value={cpf}
+                onChange={(e) => setCpf(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void connect()}
+                placeholder="000.000.000-00"
+                inputMode="numeric"
+                autoFocus
+                className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 font-mono text-lg text-[#F5F1E8] outline-none placeholder:text-[#9A938A]"
+              />
+            </label>
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t-2 border-[#0B0B0D] pt-4">
+              {/* Dono e professor não se vinculam por CPF: a página da academia
+                  (membros, treinos, chave de parceiro) continua sendo deles. */}
+              <Link
+                href={`/academias/${connecting.slug}`}
+                className="mr-auto text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F5F1E8]"
+              >
+                {t("staffOpenPage", "Sou da equipe")}
+              </Link>
+              <button onClick={() => setConnecting(null)} disabled={linking} className={`${BTN_DARK} px-4 py-2 text-xs`}>
+                {t("cancel", "Cancelar")}
+              </button>
+              <button onClick={() => void connect()} disabled={linking} className={`${BTN_GOLD} px-4 py-2 text-xs`}>
+                {linking && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {t("connectSubmit", "Conectar")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -225,14 +340,15 @@ function AcademiesBody() {
  * celular e `w-28` (112px → 168px) no md; o recuo é METADE da altura
  * (`-mt-[72px]` / `md:-mt-[84px]`). Mexeu na largura da foto? Refazer.
  */
-function AcademyCard({ academy: a }: { academy: Academy }) {
+function AcademyCard({ academy: a, linked, onOpen }: { academy: Academy; linked: boolean; onOpen: () => void }) {
   const t = useTranslations("Academies")
   const cityLabel = a.cidade ? `${a.cidade}${a.uf ? ` · ${a.uf}` : ""}` : t("cityUnknown", "Cidade não informada")
 
   return (
-    <Link
-      href={`/academias/${a.slug}`}
-      className={`group block ${PANEL} transition-transform hover:-translate-y-0.5`}
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`group block w-full text-left ${PANEL} transition-transform hover:-translate-y-0.5`}
       style={{ boxShadow: `8px 8px 0 0 ${EMBER}` }}
     >
       {/* `z-0` tranca o banner debaixo da linha da foto. */}
@@ -286,10 +402,10 @@ function AcademyCard({ academy: a }: { academy: Academy }) {
       <div className="flex items-end justify-between gap-3 px-3 pb-4 pt-3">
         <p className="line-clamp-2 min-h-[2.5rem] text-sm text-[#9A938A]">{a.descricao || ""}</p>
         <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A] transition-colors group-hover:text-[#F5F1E8]">
-          {t("openAcademy", "Abrir")}
+          {linked ? t("openAcademy", "Abrir") : t("connectCta", "Conectar")}
           <ArrowRight className="h-3.5 w-3.5" />
         </span>
       </div>
-    </Link>
+    </button>
   )
 }

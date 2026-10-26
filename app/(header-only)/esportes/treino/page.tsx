@@ -30,7 +30,7 @@ export default function FitnessWorkoutPage() {
     <FitnessShell>
       <FitnessProposalsGate onApplied={() => setRefreshKey((k) => k + 1)} />
 
-      <FitnessHeadcard perfil={perfil} title={t("workoutTitle", "Treino")} backHref="/fitness" active="workout" />
+      <FitnessHeadcard perfil={perfil} title={t("workoutTitle", "Treino")} backHref="/esportes" active="workout" />
 
       <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
         <div className={`${BAR_SOLID} flex items-center justify-between gap-2 px-2 py-2`}>

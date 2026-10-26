@@ -30,7 +30,7 @@ export {
   INNER,
   PANEL,
   initialsOf,
-} from "@/app/(header-only)/fitness/_components/fitness-ui"
+} from "@/app/(header-only)/esportes/_components/fitness-ui"
 
 /** O que a API de fichas vencidas devolve (`GET /academies/:id/expired-plans`). */
 export type ExpiredPlans = {

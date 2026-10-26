@@ -123,6 +123,14 @@ const nextConfig = {
       },
     ],
   },
+  // A plataforma Fitness virou ESPORTES (2026-10-26): link antigo, PWA
+  // instalado e post compartilhado continuam abrindo a tela certa.
+  async redirects() {
+    return [
+      { source: "/fitness", destination: "/esportes", permanent: true },
+      { source: "/fitness/:path*", destination: "/esportes/:path*", permanent: true },
+    ]
+  },
   async rewrites() {
     const backend =
       process.env.BACKEND_API_URL?.trim() ||

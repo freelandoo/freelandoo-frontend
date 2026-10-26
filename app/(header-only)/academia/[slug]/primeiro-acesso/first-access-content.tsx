@@ -92,7 +92,7 @@ export function FirstAccessContent() {
       }
       setSession(session.token, session.user)
       // Entra direto no app de treinos; o modal de termos da academia abre lá.
-      router.replace("/fitness")
+      router.replace("/esportes")
     } catch {
       setError(t("network", "Erro ao conectar com o servidor. Tente de novo."))
     } finally {

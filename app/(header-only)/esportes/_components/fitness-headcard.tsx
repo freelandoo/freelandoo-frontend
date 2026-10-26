@@ -36,10 +36,10 @@ export type FitnessPillKey = "academy" | "workout" | "history" | "indicators"
 
 /** As rotas das quatro salas, num lugar só. */
 export const FITNESS_ROUTES: Record<FitnessPillKey, string> = {
-  academy: "/fitness/academia",
-  workout: "/fitness/treino",
-  history: "/fitness/historico",
-  indicators: "/fitness/indicadores",
+  academy: "/esportes/academia",
+  workout: "/esportes/treino",
+  history: "/esportes/historico",
+  indicators: "/esportes/indicadores",
 }
 
 export function FitnessHeadcard({

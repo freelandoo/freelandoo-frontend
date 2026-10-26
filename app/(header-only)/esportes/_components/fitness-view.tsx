@@ -502,7 +502,7 @@ export function FitnessView({
       <FitnessHeadcard
         perfil={perfil}
         title={t("historyTitle", "Histórico")}
-        backHref="/fitness"
+        backHref="/esportes"
         active="history"
         action={
           <button onClick={() => setGoalsOpen(true)} className={`${BTN_DARK} px-3 py-2 text-[11px]`} aria-label={t("goalsTitle", "Metas")}>

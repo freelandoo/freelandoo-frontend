@@ -1429,7 +1429,7 @@
     "academiasAria": "Academias: vincular matrícula e acessar o painel fitness",
     "toolsButton": "Ferramentas",
     "toolsClose": "Fechar ferramentas",
-    "fitnessTool": "Fitness",
+    "fitnessTool": "Esportes",
     "fitnessAria": "Painel fitness: calorias, água, peso e treinos",
     "curtosLabel": "Curtos",
     "savedKindBees": "Bees",
@@ -1503,7 +1503,7 @@
     "walletPill": "Carteira",
     "changeManifestation": "Alterar",
     "changeManifestationAria": "Trocar sua manifestação na loja",
-    "fitnessPill": "Fitness",
+    "fitnessPill": "Esportes",
     "browseByEnxame": "Buscar por enxame",
     "functionsHintAlwaysOn": "As funções da sua conta ficam sempre ativas.",
     "xpLabel": "Métricas",
@@ -3435,7 +3435,9 @@
     "publish.preparing": "Preparando",
     "publish.processing": "Finalizando no servidor",
     "errors.uploadNetwork": "Falha de rede no envio. Confira sua conexão e tente de novo.",
-    "errors.uploadCanceled": "Envio cancelado."
+    "errors.uploadCanceled": "Envio cancelado.",
+    "details.sportLabel": "Esporte do post",
+    "details.sportNone": "Sem esporte (só no Geral)"
   },
   "Chamado": {
     "titleService": "Abrir chamado de serviço",
@@ -3713,7 +3715,7 @@
     "myWallet": "Minha Carteira",
     "dataApi": "Conexões de Dados",
     "atendimentoIa": "Atendimento IA",
-    "fitnessTool": "Fitness",
+    "fitnessTool": "Esportes",
     "openAccountMenu": "Abrir menu da conta",
     "openSettings": "Abrir configurações",
     "addSocial": "Adicionar rede social",
@@ -5057,7 +5059,7 @@
     "includedHint": "Seu atendente vem com o Plano Negócio — sem cobrança à parte. Ele cai junto se o plano for cancelado."
   },
   "Academies": {
-    "eyebrow": "Fitness · Freelandoo",
+    "eyebrow": "Esportes · Freelandoo",
     "title": "Academias",
     "subtitle": "Vincule sua matrícula pelo CPF e acompanhe frequência, treinos e calorias no seu painel fitness.",
     "registerCta": "Cadastrar minha academia",
@@ -5229,7 +5231,15 @@
     "rankingPillAria": "Abrir o ranking completo da academia",
     "platformLabel": "Plataforma",
     "loadFailedTitle": "Não deu pra carregar.",
-    "openAcademy": "Abrir"
+    "openAcademy": "Abrir",
+    "backToSports": "Voltar para Esportes",
+    "connectSubtitle": "Toque na sua academia e confirme com o CPF da matrícula — ela vira uma aba em Esportes.",
+    "registerMine": "Cadastrar minha academia",
+    "loginToConnect": "Entre na sua conta para conectar sua academia.",
+    "connectOk": "Academia conectada!",
+    "connectSubmit": "Conectar",
+    "connectCta": "Conectar",
+    "staffOpenPage": "Sou da equipe"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",
@@ -5376,7 +5386,7 @@
     "scanInvalid": "Código inválido. Aponte a câmera ou digite ao menos 8 dígitos.",
     "scanNotFound": "Produto não encontrado para este código",
     "scanCamDenied": "Não foi possível abrir a câmera. Digite o código abaixo.",
-    "platformTitle": "Fitness",
+    "platformTitle": "Esportes",
     "platformLabel": "Plataforma",
     "today": "Hoje",
     "loadFailedTitle": "Não deu pra carregar.",
@@ -5401,12 +5411,12 @@
     "historyDaysEmpty": "O que você come e bebe fica guardado aqui, um dia por linha.",
     "historyGoToday": "Registrar o dia de hoje",
     "historyOpenDay": "Abrir o dia {date}",
-    "feedLoadError": "Não deu pra abrir o feed do Fitness.",
+    "feedLoadError": "Não deu pra abrir o feed de Esportes.",
     "postLabel": "Post",
     "curtoLabel": "Curto",
     "beeLabel": "Bee",
     "recadoLabel": "Recado",
-    "publishCta": "Publicar no Fitness",
+    "publishCta": "Publicar em Esportes",
     "composeCta": "Publicar",
     "loadMore": "Carregar mais"
   },
@@ -5861,7 +5871,7 @@
     "myChildren": "Meus filhos",
     "qpBusiness": "Business",
     "qpWallet": "Carteira",
-    "qpFitness": "Fitness",
+    "qpFitness": "Esportes",
     "qpGames": "Games",
     "managePills": "Gerenciar pills",
     "managePillsHint": "Escolha até {max} para o acesso rápido atrás da sua foto.",
@@ -5880,7 +5890,7 @@
     "pillPublicOff": "Só você vê",
     "pillPublicOnAria": "{pill} aparece para quem visita. Esconder",
     "pillPublicOffAria": "{pill} está escondido de quem visita. Mostrar",
-    "visitorFitness": "Fitness",
+    "visitorFitness": "Esportes",
     "visitorFitnessAria": "Abrir a academia de {who}"
   },
   "CommunitySite": {
@@ -7832,5 +7842,29 @@
     "clr_darkBlonde": "Loiro-escuro",
     "clr_blonde": "Loiro",
     "clr_blue": "Azul"
+  },
+  "Sports": {
+    "eyebrow": "Esportes",
+    "tabAll": "Geral",
+    "tabMine": "Meu esporte",
+    "tabsAria": "Seções de Esportes",
+    "pickTitleFirst": "Qual é o seu esporte?",
+    "pickTitle": "Trocar meu esporte",
+    "pickDescription": "A aba Meu esporte mostra só os posts dele. O feed Geral continua com todos os esportes.",
+    "pickError": "Não deu para salvar. Tente de novo.",
+    "mySportIs": "Seu esporte: {sport}",
+    "noSportYet": "Você ainda não escolheu seu esporte.",
+    "changeSport": "Trocar",
+    "chooseSport": "Escolher esporte",
+    "addAcademy": "Adicionar academia",
+    "shareAcademy": "Compartilhar academia",
+    "ranking": "Ranking",
+    "postToAcademy": "Postar na comunidade",
+    "shareText": "Treine comigo na {name}!",
+    "shareCopied": "Link da academia copiado.",
+    "unlink": "Desconectar academia",
+    "unlinkConfirm": "Desconectar sua matrícula desta academia?",
+    "unlinked": "Academia desconectada.",
+    "unlinkError": "Não deu para desconectar agora."
   }
 }

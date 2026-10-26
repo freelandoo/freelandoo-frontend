@@ -16,7 +16,7 @@ import { DoodleCrown } from "@/components/home/landing/primitives"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
-import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
+import { FitnessShell } from "@/app/(header-only)/esportes/_components/fitness-shell"
 
 type RankMember = {
   id_member: string

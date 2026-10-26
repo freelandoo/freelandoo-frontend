@@ -27,6 +27,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   ArrowLeft,
@@ -55,7 +56,7 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { PublishMenuButton } from "@/components/composer/publish-menu-button"
 import { InviteShareButton } from "@/components/community/invite-share-button"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
-import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
+import { FitnessShell } from "@/app/(header-only)/esportes/_components/fitness-shell"
 import { PartnerKeyCard } from "./partner-key-card"
 // A gaveta dos números — a MESMA peça da comunidade. Só a mecânica é dela: o
 // que entra na coluna (vinculados, professores, destaque e ranking do mês) é
@@ -152,6 +153,7 @@ function markAlertSeen(id_academy: string) {
 
 export function AcademyView({ slug }: { slug: string }) {
   const t = useTranslations("Academies")
+  const router = useRouter()
   const locale = useLocale()
   const enabled = useFeature("fitness_academias")
 
@@ -199,6 +201,14 @@ export function AcademyView({ slug }: { slug: string }) {
       const res = await fetch(`/api/academies/slug/${encodeURIComponent(slug)}`, { headers: authHeaders() })
       if (!res.ok) throw new Error()
       const data = await res.json()
+      // PARA O ALUNO VINCULADO, A ACADEMIA É UMA ABA DE /esportes (pedido do
+      // Alex, 2026-10-26: "aquela terceira desaparece e vira uma aba no feed
+      // principal de quem está conectado"). A página segue sendo da equipe
+      // (membros, treinos, chave) e da vitrine para quem não é membro.
+      if (data.academy?.my_membership && !data.academy?.is_owner && !data.academy?.is_professor) {
+        router.replace(`/esportes?aba=${encodeURIComponent(data.academy.slug)}`)
+        return
+      }
       setAcademy(data.academy)
       setState("loaded")
       if (data.academy?.is_owner || data.academy?.is_professor) {
@@ -219,7 +229,7 @@ export function AcademyView({ slug }: { slug: string }) {
     } catch {
       setState("error")
     }
-  }, [slug, authHeaders])
+  }, [slug, authHeaders, router])
 
   useEffect(() => {
     if (enabled) void load()
@@ -447,7 +457,7 @@ export function AcademyView({ slug }: { slug: string }) {
           do /fitness. `px-3` porque texto não encosta na borda. */}
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-3 pt-6 md:px-10">
         <Link
-          href="/fitness"
+          href="/esportes"
           className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -607,7 +617,7 @@ export function AcademyView({ slug }: { slug: string }) {
                 {t("linkedSince", "Vinculado desde")} {fmtDate(ms.linked_at)}
               </p>
               <div className="mt-3 flex gap-2">
-                <Link href="/fitness" className={`${BTN_GOLD} px-3 py-1.5 text-[11px]`}>
+                <Link href="/esportes" className={`${BTN_GOLD} px-3 py-1.5 text-[11px]`}>
                   {t("goFitness", "Meu painel fitness")}
                 </Link>
                 <button onClick={() => void unlink()} className={`${BTN_DARK} px-2 py-1.5`} aria-label={t("unlinkCta", "Desvincular")}>

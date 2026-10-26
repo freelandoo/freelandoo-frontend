@@ -53,7 +53,7 @@ export default function FitnessAcademyPage() {
       <FitnessHeadcard
         perfil={perfil}
         title={t("gymTitle", "Minha academia")}
-        backHref="/fitness"
+        backHref="/esportes"
         active="academy"
         action={
           <Link href="/academias" className={`${BTN_GOLD} px-3 py-2 text-[11px]`}>

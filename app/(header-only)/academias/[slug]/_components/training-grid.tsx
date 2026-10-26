@@ -24,7 +24,7 @@ import {
   VALIDADE_PADRAO,
   asValidade,
   type ValidadeDias,
-} from "@/app/(header-only)/fitness/_components/workout-validity"
+} from "@/app/(header-only)/esportes/_components/workout-validity"
 
 type GridRow = {
   id_member: string

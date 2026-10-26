@@ -269,7 +269,7 @@ export function SpacesMenu({
   }
   const HREF: Partial<Record<QuickKey, string>> = {
     wallet: "/wallet",
-    fitness: "/fitness",
+    fitness: "/esportes",
     games: "/games",
     children: "/account/parental",
   }

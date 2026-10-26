@@ -18,7 +18,7 @@ export default function FitnessIndicatorsPage() {
 
   return (
     <FitnessShell>
-      <FitnessHeadcard perfil={perfil} title={t("indicatorsTitle", "Indicadores")} backHref="/fitness" active="indicators" />
+      <FitnessHeadcard perfil={perfil} title={t("indicatorsTitle", "Indicadores")} backHref="/esportes" active="indicators" />
       <section className="mx-auto mt-2 w-full max-w-5xl px-0 md:px-10">
         <IndicatorsTab />
       </section>

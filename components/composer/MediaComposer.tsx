@@ -94,9 +94,10 @@ const MAX_BEE_LINKS = 3
 export function MediaComposer({
   open, mode: modeProp, initialProfileId = null, communityId = null,
   communityName = null, communityExclusiveOnly = false,
-  academyId = null, onClose, onPosted,
+  academyId = null, sportOptions = null, defaultSport = null, onClose, onPosted,
 }: ComposerProps) {
   const t = useTranslations("Composer")
+  const [sport, setSport] = useState<string>(defaultSport || "")
   const router = useRouter()
   const { user, status } = useAuth()
 
@@ -863,7 +864,11 @@ export function MediaComposer({
           await fetch(`/api/communities/${communityId}/feed`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ id_portfolio_item: itemId, exclusive: destination === "community" }),
+            body: JSON.stringify({
+              id_portfolio_item: itemId,
+              exclusive: destination === "community",
+              ...(sportOptions && sport ? { sport } : {}),
+            }),
           })
         } catch { /* noop */ }
       }
@@ -1090,6 +1095,9 @@ export function MediaComposer({
               communityName={communityId && mode !== "story" ? communityName : null}
               communityExclusiveOnly={communityExclusiveOnly}
               destination={destination} setDestination={setDestination}
+              // O bee não passa pelo link do feed (vive na faixa do grupo), então
+              // não tem onde guardar o esporte: o seletor é só de post/curto.
+              sportOptions={communityId && mode !== "story" ? sportOptions : null} sport={sport} setSport={setSport}
               error={error}
             />
           )}
@@ -1523,7 +1531,8 @@ function DetailsStep({
   mode, userName, profiles, loadingProfiles, selectedProfileId, onSelectProfile,
   title, setTitle, description, setDescription, caption, setCaption,
   beeLocation, setBeeLocation, beeLinks, setBeeLinks,
-  communityName, communityExclusiveOnly, destination, setDestination, error,
+  communityName, communityExclusiveOnly, destination, setDestination,
+  sportOptions, sport, setSport, error,
 }: {
   mode: string; userName: string | null
   profiles: ProfileLite[]; loadingProfiles: boolean
@@ -1538,6 +1547,10 @@ function DetailsStep({
   communityExclusiveOnly: boolean
   destination: "global" | "community"
   setDestination: (d: "global" | "community") => void
+  /** Plataforma Esportes: não-nulo = pergunta o esporte do post. */
+  sportOptions: { key: string; label: string }[] | null
+  sport: string
+  setSport: (s: string) => void
   error: string | null
 }) {
   const t = useTranslations("Composer")
@@ -1686,6 +1699,27 @@ function DetailsStep({
             <Counter n={description.length} max={MAX_DESC} />
           </div>
         </>
+      )}
+
+      {/* DE QUAL ESPORTE É ESTE POST (plataforma Esportes, mig 306) — já vem
+          marcado com o esporte da pessoa; é ele que põe o post na aba "Meu
+          esporte" de quem pratica o mesmo. */}
+      {sportOptions && sportOptions.length > 0 && (
+        <div className="mt-5">
+          <Label>{t("details.sportLabel", "Esporte do post")}</Label>
+          <select
+            value={sport}
+            onChange={(e) => setSport(e.target.value)}
+            className="mt-2 w-full border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D] focus:outline-none"
+          >
+            <option value="">{t("details.sportNone", "Sem esporte (só no Geral)")}</option>
+            {sportOptions.map((s) => (
+              <option key={s.key} value={s.key}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
 
       {/* ONDE ESTE POST APARECE — última coisa da última tela, que é onde a
