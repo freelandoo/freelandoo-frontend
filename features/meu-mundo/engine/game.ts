@@ -288,7 +288,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     vboxes: () => fleet.boxes(driving, net.sessionId),
     wboxes: (r = 4) => world.boxes.filter((b) => Math.hypot(b.x - local.x, b.z - local.z) < r + Math.max(b.hx, b.hz)),
     // Outros jogadores na tela e o selecionado (mm3d-31, harness).
-    others: () => [...remotes].map(([sid, r]) => ({ sid, name: r.name, shown: r.char.holder.isEnabled(), box: select.screenBox(r.char) })),
+    others: () => [...remotes].map(([sid, r]) => ({ sid, name: r.name, body: r.char.body, look: r.char.look, shown: r.char.holder.isEnabled(), box: select.screenBox(r.char) })),
+    // Minhas cores (mm3d-36, harness).
+    myLook: () => local.char.look,
     selected: () => select.selected,
   })
   ;(window as unknown as { __mmStreet?: typeof probe }).__mmStreet = probe

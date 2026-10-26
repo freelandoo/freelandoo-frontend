@@ -179,6 +179,9 @@ export const postSkinBuy = (token: string, id: string) =>
 /** Vestir uma skin sua, ou voltar ao padrão ("standard"). */
 export const postSkinEquip = (token: string, id: string) =>
   call<WardrobeResult>(token, "POST", `/skins/${encodeURIComponent(id)}/equip`, {})
+/** Cores do personagem (mm3d-36): de graça, grava o código look da skin. */
+export const postSkinColors = (token: string, id: string, look: string) =>
+  call<WardrobeResult>(token, "POST", `/skins/${encodeURIComponent(id)}/colors`, { look })
 
 // ═══ mm3d-30: sino, correio interno, presentes, itens e Poléns ══════════════
 export const getNoticeSummary = (token: string) =>

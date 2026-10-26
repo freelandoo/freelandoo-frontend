@@ -79,6 +79,9 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
         return n.data.paidBy === "freelandoo"
           ? { title: t("ntFuneralFree", "A Freelandoo pagou o funeral."), line: t("ntFuneralFreeLine", "Ele morreu de velhice. O novo hóspede herdou 20% dos atributos.") }
           : { title: t("ntFuneralPaid", "Funeral pago: {n} moedas.").replace("{n}", String(n.data.coins ?? 0)), line: t("ntFuneralPaidLine", "Sem herança: o novo hóspede começou do zero.") }
+      // mm3d-36: aviso único (uma vez por conta) de que as cores existem.
+      if (n.code === "colors_hint")
+        return { title: t("ntColorsTitle", "Você pode mudar as cores do seu personagem"), line: t("ntColorsLine", "No STATUS → SKIN → Cores: camiseta, calça, pele e cabelo.") }
       return { title: lifeTitle(n.code, t, n.data.generation), line: null }
     case "dm":
       return { title: t("ntDmTitle", "Recebemos uma mensagem"), line: n.data.from ? t("ntDmFrom", "De {name}").replace("{name}", n.data.from) : null }

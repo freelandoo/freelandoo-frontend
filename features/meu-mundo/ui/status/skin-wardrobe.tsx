@@ -11,11 +11,17 @@
 // vira USAR. O personagem padrão é de todos e não tem holograma: o corpo
 // dele é a CONDIÇÃO física de agora (magro, normal, gordo, forte) — isso não
 // é skin e não se escolhe aqui.
+//
+// mm3d-36: no padrão e na feminina, o botão CORES abre a paleta (camiseta,
+// calça, pele, cabelo) no lugar da ficha; o palco mostra na hora e "Salvar
+// cores" grava na conta (todos veem). De graça.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, Coins, Shirt, Sparkles, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Coins, Palette, Shirt, Sparkles, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
-import { getSkins, getWallets, postSkinBuy, postSkinEquip } from "../../data"
+import { getSkins, getWallets, postSkinBuy, postSkinColors, postSkinEquip } from "../../data"
+import { COLORABLE_SKINS, DEFAULT_LOOK } from "../../avatar-colors"
+import { SkinColors } from "./skin-colors"
 import { SKINS, type SkinArt } from "../../skins"
 import type { BodyId, WardrobeResult } from "../../types"
 import { SkinStage } from "../../engine/skin-stage"
@@ -56,6 +62,9 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
   const [idx, setIdx] = useState(0)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  // Cores (mm3d-36): painel aberto e o rascunho (o palco mostra o rascunho).
+  const [colorsOpen, setColorsOpen] = useState(false)
+  const [draft, setDraft] = useState(DEFAULT_LOOK)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const stageRef = useRef<SkinStage | null>(null)
   const picked = useRef(false)
@@ -104,19 +113,27 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
   const condition = data?.wardrobe.condition ?? "normal"
   const owned = art.body === null || !!entry?.owned
   const body: BodyId = art.body ?? condition
-  // Mostra de novo só quando muda o corpo ou a posse (não a cada moeda).
-  const showKey = data ? `${art.id}|${body}|${owned ? 1 : 0}` : ""
+  const colorable = COLORABLE_SKINS.has(art.id)
+  const savedLook = colorable ? (data?.wardrobe.colors?.[art.id] ?? DEFAULT_LOOK) : ""
+  // Holograma não tem cores; com o painel aberto, o palco mostra o rascunho.
+  const look = !owned ? "" : colorsOpen ? draft : savedLook
+  // Mostra de novo só quando muda o corpo, a posse ou as cores (não a cada moeda).
+  const baseKey = data ? `${art.id}|${body}|${owned ? 1 : 0}` : ""
+  const showKey = baseKey ? `${baseKey}|${look}` : ""
   const materializing = useRef(false)
   const shown = useRef("")
   useEffect(() => {
     if (!showKey || materializing.current || shown.current === showKey) return
+    // Só as cores mudaram: troca sem a animação de entrada.
+    const quiet = shown.current.startsWith(`${baseKey}|`)
     shown.current = showKey
-    void stageRef.current?.show({ body, holo: !owned, color: art.holo.color, accent: art.holo.accent }).catch(() => say(t("skinLoadFail", "O personagem não carregou")))
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- showKey resume corpo e posse
+    void stageRef.current?.show({ body, holo: !owned, color: art.holo.color, accent: art.holo.accent, look }, quiet).catch(() => say(t("skinLoadFail", "O personagem não carregou")))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- showKey resume corpo, posse e cores
   }, [showKey])
 
   const go = useCallback((d: number) => {
     if (materializing.current) return
+    setColorsOpen(false)
     setIdx((i) => (i + d + SKINS.length) % SKINS.length)
   }, [])
 
@@ -125,7 +142,10 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
     const onKey = (e: KeyboardEvent) => {
       const k = e.key
       let handled = true
-      if (k === "Escape") onClose()
+      if (k === "Escape") {
+        if (colorsOpen) setColorsOpen(false)
+        else onClose()
+      }
       else if (k === "ArrowLeft" || k === "a" || k === "A") go(-1)
       else if (k === "ArrowRight" || k === "d" || k === "D") go(1)
       else handled = false
@@ -136,7 +156,7 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
     }
     window.addEventListener("keydown", onKey, true)
     return () => window.removeEventListener("keydown", onKey, true)
-  }, [go, onClose])
+  }, [go, onClose, colorsOpen])
 
   // ── ações ────────────────────────────────────────────────────────────────
   const buy = async () => {
@@ -165,7 +185,7 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
     // passa a dizer que é seu (senão o palco recarregaria o corpo no meio).
     materializing.current = true
     await stageRef.current?.materialize()
-    shown.current = `${art.id}|${body}|1`
+    shown.current = `${art.id}|${body}|1|${colorable ? savedLook : ""}`
     materializing.current = false
     setData(r.data)
     onChanged(r.data)
@@ -183,6 +203,26 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
       setData(r.data)
       onChanged(r.data)
       say(id === "standard" ? t("skinBackStandard", "De volta ao personagem padrão") : t("skinInUseNow", "Skin em uso"))
+    }
+    setBusy(false)
+  }
+
+  const openColors = () => {
+    setDraft(savedLook || DEFAULT_LOOK)
+    setColorsOpen(true)
+  }
+
+  const saveColors = async () => {
+    const token = getToken()
+    if (!token || busy) return
+    setBusy(true)
+    const r = await postSkinColors(token, art.id, draft)
+    if (!r.ok) say(r.error || t("stActionFail", "Não deu certo agora"))
+    else {
+      setData(r.data)
+      onChanged(r.data)
+      setColorsOpen(false)
+      say(t("skinColorsSaved", "Cores salvas"))
     }
     setBusy(false)
   }
@@ -267,7 +307,9 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
         </Chamfer>
       </div>
 
-      {/* setas */}
+      {/* setas (somem com a paleta aberta) */}
+      {!colorsOpen && (
+      <>
       <button
         type="button"
         onClick={() => go(-1)}
@@ -286,9 +328,19 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
       >
         <ChevronRight className="h-7 w-7 max-[759px]:h-6 max-[759px]:w-6" strokeWidth={2} />
       </button>
+      </>
+      )}
 
-      {/* ficha do personagem */}
+      {/* CORES: a paleta na lateral (o personagem continua à vista no palco) */}
+      {colorsOpen && (
+        <div className="absolute right-3 top-1/2 flex w-[min(580px,calc(100vw-24px))] -translate-y-1/2 justify-end sm:right-8 max-[759px]:w-[370px] [@media(max-height:520px)]:w-[382px]">
+          <SkinColors t={t} draft={draft} saved={savedLook} busy={busy} onPick={setDraft} onSave={() => void saveColors()} onClose={() => setColorsOpen(false)} />
+        </div>
+      )}
+
+      {/* ficha do personagem (some com a paleta aberta) */}
       <div className="absolute inset-x-0 bottom-0 flex justify-center px-3" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
+        {colorsOpen ? null : (
         <Chamfer cut={18} fill={MM.surface} className="w-full max-w-[640px]" style={{ boxShadow: MM.shadow }}>
           <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between max-[759px]:gap-2 max-[759px]:p-2.5">
             <div className="min-w-0">
@@ -336,6 +388,17 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
                     }
                   />
                 ))}
+                {data && colorable && owned && (
+                  <button
+                    type="button"
+                    onClick={openColors}
+                    disabled={busy}
+                    className={`${teko.className} ml-2 inline-flex items-center gap-1.5 px-3 pb-0.5 pt-1 text-[17px] uppercase leading-none tracking-[0.12em] max-[759px]:px-2 max-[759px]:text-[13px]`}
+                    style={{ borderRadius: 999, background: MM.rubyFill, color: EVO.branco, border: `1px solid ${MM.rubyBorder}` }}
+                  >
+                    <Palette className="h-4 w-4 max-[759px]:h-3.5 max-[759px]:w-3.5" /> {t("skinColors", "Cores")}
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -352,6 +415,7 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
             </div>
           </div>
         </Chamfer>
+        )}
       </div>
 
       {notice && (

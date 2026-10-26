@@ -326,7 +326,9 @@ export interface WardrobeSkin {
 }
 
 export interface WardrobeResult extends LifeSummary {
-  wardrobe: { condition: BodyId; admin: boolean; skins: WardrobeSkin[] }
+  /** Cores de cada skin colorível (mm3d-36): código look. */
+  wardrobe: { condition: BodyId; admin: boolean; skins: WardrobeSkin[]; colors?: Record<string, string> }
+  look?: string
   bought?: boolean
 }
 

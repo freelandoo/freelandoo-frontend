@@ -32,7 +32,7 @@ import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { Constants } from "@babylonjs/core/Engines/constants"
-import { AvatarLibrary, type AvatarRig } from "./avatars"
+import { AvatarLibrary, tintedAvatarTexture, type AvatarRig } from "./avatars"
 import { STAGE } from "../skins"
 import type { BodyId } from "../types"
 
@@ -200,6 +200,8 @@ export interface StageLook {
   holo: boolean
   color: string
   accent: string
+  /** Cores do personagem (mm3d-36); "" = textura original. */
+  look?: string
 }
 
 export class SkinStage {
@@ -312,10 +314,16 @@ export class SkinStage {
     this.engine.runRenderLoop(() => this.frame())
   }
 
-  /** Mostra um corpo (holograma ou sólido). Trocas rápidas: vale a última. */
-  async show(look: StageLook) {
+  /**
+   * Mostra um corpo (holograma ou sólido). Trocas rápidas: vale a última.
+   * `quiet` (mm3d-36): só mudaram as cores — sem a animação de entrada.
+   */
+  async show(look: StageLook, quiet = false) {
     const my = ++this.seq
-    const rig = await this.lib.create(look.body)
+    // A textura pintada antes do clone do material (o clone leva a textura da hora).
+    await tintedAvatarTexture(look.body, look.look ?? "")?.catch(() => null)
+    const rig = await this.lib.create(look.body, look.look ?? "")
+    await Promise.resolve()
     if (this.disposed || my !== this.seq) {
       rig.dispose()
       return
@@ -351,6 +359,10 @@ export class SkinStage {
       let mat = byMat.get(src)
       if (!mat) {
         mat = src.clone(`${src.name}-stage`) as StandardMaterial
+        // O clone de uma DynamicTexture (cores, mm3d-36) nasce vazia e nunca
+        // fica pronta — a malha some. Usa as texturas da fonte (compartilhadas).
+        mat.diffuseTexture = src.diffuseTexture
+        mat.emissiveTexture = src.emissiveTexture
         const p = new HoloPlugin(mat)
         p.color = color
         p.accent = accent
@@ -361,6 +373,7 @@ export class SkinStage {
       m.material = mat
     }
     this.setHolo(look.holo)
+    if (quiet) return
     this.sinceShow = 0
     this.enter = this.reduced ? 1 : 0
     this.idle = 4

@@ -25,6 +25,9 @@ export const PALETTE: Record<ColorPart, Swatch[]> = {
 /** Camiseta vermelha, jeans, pele do meio, cabelo castanho: as cores de sempre. */
 export const DEFAULT_LOOK = "0032"
 
+/** Skins que mudam de cor (Sergio e Ekaterina têm visual próprio). */
+export const COLORABLE_SKINS: ReadonlySet<string> = new Set(["standard", "feminina"])
+
 /** Índices na paleta (camiseta, calça, pele, cabelo); inválido = o padrão. */
 export function parseLook(code: string | null | undefined): number[] {
   const s = String(code || "")
