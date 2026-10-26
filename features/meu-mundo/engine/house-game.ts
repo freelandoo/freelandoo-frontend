@@ -73,6 +73,8 @@ export interface HouseGameOptions {
   onNet?: (status: NetStatus) => void
   onOnline?: (count: number) => void
   onBody?: (body: BodyId) => void
+  /** Minhas cores mudaram (mm3d-36). */
+  onLook?: (look: string) => void
   /** Sentado (id do assento) ou em pé (null), confirmado pelo servidor. */
   onSeat?: (seat: string | null) => void
   /** Pedido de assento recusado (ocupado, longe…). */
@@ -152,6 +154,8 @@ export interface HouseGameHandle {
 }
 
 interface RemoteHouseState {
+  /** Cores (mm3d-36). */
+  look?: string
   name: string
   body: string
   host: boolean
@@ -226,7 +230,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   const mats = { fallback: fallbackMat, shadow: shadowMat }
 
   let myBody: BodyId = isBody(payload.me.body) ? payload.me.body : "normal"
-  const char = new Character(scene, lib, mats, myBody, null, true)
+  const char = new Character(scene, lib, mats, myBody, null, true, payload.me.look ?? "")
   const e = def.entry
   const body: InteriorBody = { x: e.x, z: e.z, vx: 0, vz: 0, facing: e.facing, floor: e.floor, y: def.floors[e.floor].y }
   // Conferência (como __mmLiveGames): onde estou e onde fica a saída.
@@ -422,6 +426,11 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
           void char.setBody(myBody)
           opts.onBody?.(myBody)
         }
+        // Cores (mm3d-36): a sala aplica as que eu salvei.
+        if (typeof p.look === "string" && p.look !== char.look) {
+          void char.setLook(p.look)
+          opts.onLook?.(p.look)
+        }
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
         char.unwell = !!p.sk
         if (!!p.wd !== winded) {
@@ -439,11 +448,11 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       let r = remotes.get(sid)
       const b = isBody(p.body) ? p.body : "normal"
       if (!r) {
-        r = new RemotePlayer(new Character(scene, lib, mats, b, p.name, false), p.x, p.z, p.facing)
+        r = new RemotePlayer(new Character(scene, lib, mats, b, p.name, false, p.look ?? ""), p.x, p.z, p.facing)
         r.name = p.name
         remotes.set(sid, r)
-      } else if (r.char.body !== b) {
-        void r.char.setBody(b)
+      } else if (r.char.body !== b || r.char.look !== (p.look ?? "")) {
+        void r.char.setBody(b, false, p.look ?? "")
       }
       if (r.name !== p.name) {
         r.name = p.name

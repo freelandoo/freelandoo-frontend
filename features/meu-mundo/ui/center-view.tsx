@@ -112,6 +112,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [net, setNet] = useState<NetStatus>("connecting")
   const [online, setOnline] = useState<number | null>(null)
   const [body, setBody] = useState<BodyId>(payload.me.body)
+  // Cores (mm3d-36): o Paint, o Jetpack e o hospital desenham com elas.
+  const [look, setLook] = useState(payload.me.look ?? "")
   // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
   const [winded, setWinded] = useState(false)
   const [drivingLot, setDrivingLot] = useState(0)
@@ -191,6 +193,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           onPlayerGone: (sid) => alive && playerCb.current.onPlayerGone?.(sid),
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
+          onLook: (l) => alive && setLook(l),
           onWinded: (w) => alive && setWinded(w),
           onDriving: (lot) => alive && setDrivingLot(lot),
           onReady: () => alive && setStatus("ready"),
@@ -468,13 +471,13 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
 
       {/* Minijogo do local (mm3d-20): cobre a tela; ao sair, volta à porta do prédio */}
       {minigame === "jetpack" && (
-        <JetpackView body={body} onExit={() => setMinigame(null)} fetchParty={minigameParty ? fetchJetpackParty : undefined} />
+        <JetpackView body={body} look={look} onExit={() => setMinigame(null)} fetchParty={minigameParty ? fetchJetpackParty : undefined} />
       )}
       {/* Paint (mm3d-35): ilhas, tinta e gatinhos; ao sair, volta à porta */}
-      {minigame === "paint" && <PaintView body={body} onExit={() => setMinigame(null)} join={paintJoin} />}
+      {minigame === "paint" && <PaintView body={body} look={look} onExit={() => setMinigame(null)} join={paintJoin} />}
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
       {minigame === "hospital" && payload.center.interiors?.hospital && (
-        <HospitalView interior={payload.center.interiors.hospital} body={body} mode="visit" onExit={() => setMinigame(null)} />
+        <HospitalView interior={payload.center.interiors.hospital} body={body} look={look} mode="visit" onExit={() => setMinigame(null)} />
       )}
 
       {status !== "ready" && (

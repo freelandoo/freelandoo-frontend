@@ -49,6 +49,8 @@ export interface JetpackTexts {
 export interface JetpackOptions {
   root: HTMLElement;
   body: BodyId;
+  /** Cores do personagem (mm3d-36). */
+  look?: string;
   texts: JetpackTexts;
   onExit: () => void;
   /** Jetpack em grupo (mm3d-21): o local aceita até 4 (place.party). Sem isto, só o jogo sozinho. */
@@ -580,7 +582,7 @@ export function createJetpackGame(opts: JetpackOptions): JetpackHandle {
     setState('loading');
     try {
       if (!loaded) {
-        await player.load(opts.body, (r) => (ui.progress.style.transform = `scaleX(${r})`));
+        await player.load(opts.body, (r) => (ui.progress.style.transform = `scaleX(${r})`), undefined, opts.look ?? '');
         loaded = true;
       }
       if (disposed) return;

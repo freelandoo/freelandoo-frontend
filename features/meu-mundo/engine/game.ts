@@ -89,6 +89,8 @@ export interface GameOptions {
   /** Jogadores conectados neste bairro (inclui você). */
   onOnline?: (count: number) => void
   onBody?: (body: BodyId) => void
+  /** Minhas cores mudaram (mm3d-36): o Paint, o Jetpack e o hospital usam. */
+  onLook?: (look: string) => void
   /** Sem fôlego (mm3d-28), como a sala diz: só anda até recuperar. */
   onWinded?: (winded: boolean) => void
   /** Titulares do bairro (permanentes), atualizado pela sala. */
@@ -260,7 +262,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     ? { x: centerP.center.arrival.x, z: centerP.center.arrival.z, rotationY: centerP.center.arrival.facing }
     : (payload as NeighborhoodPayload).me.home
   let myBody: BodyId = isBody(payload.me.body) ? payload.me.body : "normal"
-  const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true), home.x, home.z, home.rotationY)
+  const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, payload.me.look ?? ""), home.x, home.z, home.rotationY)
   // Conferência (como __mmHouse): onde estou e se estou dirigindo.
   const probe = () => ({
     x: local.x,
@@ -401,6 +403,11 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           void local.char.setBody(myBody)
           opts.onBody?.(myBody)
         }
+        // Cores (mm3d-36): a sala aplica as que eu salvei.
+        if (typeof p.look === "string" && p.look !== local.char.look) {
+          void local.char.setLook(p.look)
+          opts.onLook?.(p.look)
+        }
         if (carFromMessage !== null && ((p.car ?? 0) === carFromMessage || performance.now() - carFromMessageAt > 2000)) carFromMessage = null
         if (carFromMessage === null) setDriving(p.car ?? 0, p)
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
@@ -417,15 +424,15 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       let r = remotes.get(sid)
       const body = isBody(p.body) ? p.body : "normal"
       if (!r) {
-        r = new RemotePlayer(new Character(scene, lib, mats, body, p.name, false), p.x, p.z, p.facing)
+        r = new RemotePlayer(new Character(scene, lib, mats, body, p.name, false, p.look ?? ""), p.x, p.z, p.facing)
         r.name = p.name
         remotes.set(sid, r)
         // Vizinho que se mudou depois que você entrou: a casa dele deixa de
         // aparecer como disponível (o banco é a fonte; a sala só confirma).
         const h = nb?.houses[p.house - 1]
         if (h && !h.isMine && !h.ownerName) h.ownerName = p.name
-      } else if (r.char.body !== body) {
-        void r.char.setBody(body)
+      } else if (r.char.body !== body || r.char.look !== (p.look ?? "")) {
+        void r.char.setBody(body, false, p.look ?? "")
       }
       if (r.name !== p.name) {
         r.name = p.name

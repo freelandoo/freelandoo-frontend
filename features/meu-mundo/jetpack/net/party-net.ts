@@ -28,6 +28,8 @@ export interface PartyRunnerState {
   slot: number;
   name: string;
   body: string;
+  /** Cores do personagem (mm3d-36). */
+  look?: string;
   ready: boolean;
   inMatch: boolean;
   online: boolean;

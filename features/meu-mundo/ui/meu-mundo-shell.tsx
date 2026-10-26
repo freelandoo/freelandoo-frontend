@@ -639,6 +639,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           interior={stay.info.interior}
           bed={stay.info.bed}
           body={scene.me.body}
+          look={scene.me.look}
           mode="patient"
           discharged={stay.phase === "discharged"}
           health={stay.info.life.character.vitals.health}

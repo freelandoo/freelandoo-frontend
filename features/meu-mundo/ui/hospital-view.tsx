@@ -17,6 +17,8 @@ import { EvoButton } from "./hud/hud-kit"
 export interface HospitalViewProps {
   interior: InteriorDef
   body: BodyId
+  /** Cores do personagem (mm3d-36). */
+  look?: string
   mode: HospitalMode
   /** Leito do internado (GET /meu-mundo/hospital). */
   bed?: string
@@ -30,7 +32,7 @@ export interface HospitalViewProps {
   onOpenStatus?: () => void
 }
 
-export function HospitalView({ interior, body, mode, bed, onExit, health, dischargeAt, discharged, onOpenStatus }: HospitalViewProps) {
+export function HospitalView({ interior, body, look = "", mode, bed, onExit, health, dischargeAt, discharged, onOpenStatus }: HospitalViewProps) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<HospitalGameHandle | null>(null)
@@ -62,6 +64,7 @@ export function HospitalView({ interior, body, mode, bed, onExit, health, discha
         canvas,
         interior,
         body,
+        look,
         mode: sceneMode,
         bed,
         onReady: () => alive && setStatus("ready"),
@@ -80,7 +83,7 @@ export function HospitalView({ interior, body, mode, bed, onExit, health, discha
       handle?.dispose()
       gameRef.current = null
     }
-  }, [interior, body, sceneMode, bed, attempt])
+  }, [interior, body, look, sceneMode, bed, attempt])
 
   const patient = sceneMode === "patient"
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`

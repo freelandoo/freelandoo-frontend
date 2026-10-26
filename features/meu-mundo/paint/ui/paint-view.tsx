@@ -30,6 +30,8 @@ export type PaintJoin = (
 
 export interface PaintViewProps {
   body: BodyId
+  /** Cores do personagem (mm3d-36). */
+  look?: string
   onExit: () => void
   /** Sala multiplayer (S4). Sem ela, só o treino. */
   join?: PaintJoin
@@ -43,7 +45,7 @@ type Stage =
 const COLOR_KEYS = ["paintColorBridge", "paintColorHarm", "paintColorStep"] as const
 const COLOR_FALLBACK = ["Ponte", "Dano", "Cama elástica"]
 
-export function PaintView({ body, onExit, join }: PaintViewProps) {
+export function PaintView({ body, look = "", onExit, join }: PaintViewProps) {
   const t = useTranslations("MeuMundo")
   const [stage, setStage] = useState<Stage>({ kind: "menu" })
   const [error, setError] = useState<string | null>(null)
@@ -87,7 +89,7 @@ export function PaintView({ body, onExit, join }: PaintViewProps) {
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#e6edf3" }}>
       {stage.kind === "game" ? (
-        <PaintGameScreen key={stage.key} port={stage.port} body={body} net={stage.port.mode === "solo" ? "online" : net} onLeave={() => setStage({ kind: "menu" })} />
+        <PaintGameScreen key={stage.key} port={stage.port} body={body} look={look} net={stage.port.mode === "solo" ? "online" : net} onLeave={() => setStage({ kind: "menu" })} />
       ) : (
         <PaintMenu
           joining={stage.kind === "joining" ? stage.mode : null}
@@ -249,7 +251,7 @@ function fmtTime(s: number) {
   return `${m}:${String(r).padStart(2, "0")}`
 }
 
-function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: BodyId; net: PaintNetStatus; onLeave: () => void }) {
+function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; body: BodyId; look: string; net: PaintNetStatus; onLeave: () => void }) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<PaintGameHandle | null>(null)
@@ -336,6 +338,7 @@ function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: 
         canvas,
         port,
         body,
+        look,
         touch: touchAtStart.current,
         onReady: () => alive && setStatus("ready"),
         onHud: (h) => alive && setHud(h),
@@ -352,7 +355,7 @@ function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: 
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [port, body])
+  }, [port, body, look])
 
   const ended = hud?.phase === "end" && !!hud.result
   useEffect(() => {

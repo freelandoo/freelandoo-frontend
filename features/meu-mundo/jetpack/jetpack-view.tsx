@@ -21,10 +21,13 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], displa
  */
 export function JetpackView({
   body,
+  look = "",
   onExit,
   fetchParty,
 }: {
   body: BodyId
+  /** Cores do personagem (mm3d-36). */
+  look?: string
   onExit: () => void
   fetchParty?: (roomId: string | null) => Promise<JetpackSession | null>
 }) {
@@ -79,6 +82,7 @@ export function JetpackView({
     const game = createJetpackGame({
       root,
       body,
+      look,
       texts: textsRef.current,
       onExit: () => exitRef.current(),
       party: grouped
@@ -86,7 +90,7 @@ export function JetpackView({
         : undefined,
     })
     return () => game.dispose()
-  }, [body, grouped])
+  }, [body, look, grouped])
 
   return (
     <div

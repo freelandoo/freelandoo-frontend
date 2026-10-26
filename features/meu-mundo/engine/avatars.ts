@@ -152,6 +152,11 @@ const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 export function avatarFiles(id: BodyId) {
   return { body: BASE + ASSETS.bodies[id], texture: BASE + ASSETS.textures[id], anims: BASE + ASSETS.anims[ANIM_SET[id]] }
 }
+
+/** Textura do corpo pintada com as cores (mm3d-36) para quem não usa a biblioteca (Jetpack); null = a original. */
+export function tintedAvatarTexture(id: BodyId, look: string) {
+  return tintedTexture(BASE, ASSETS.textures[id], id, look)
+}
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk", "InjuredIdle", "InjuredWalk"] as const
 const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide", "SkatesStride"] as const
 const PAINT_CLIPS = ["PIdle", "PFire", "PWalk", "PRun", "PStrafe", "Air", "AirSide", "Air2", "Punch"] as const

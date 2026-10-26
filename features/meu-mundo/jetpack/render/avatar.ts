@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import type { Particles } from './particles';
-import { avatarFiles } from '../../engine/avatars';
+import { avatarFiles, tintedAvatarTexture } from '../../engine/avatars';
 import type { BodyId } from '../../types';
 
 type Clip = 'idle' | 'fly' | 'impact';
@@ -53,28 +53,35 @@ interface BodyAssets {
  * jogo — o Stage solta tudo da GPU ao fechar.
  */
 export class AvatarAssets {
-  private map = new Map<BodyId, Promise<BodyAssets>>();
+  /** Por corpo e cores (mm3d-36): `normal|6478`. */
+  private map = new Map<string, Promise<BodyAssets>>();
 
-  get(bodyId: BodyId, onProgress?: (ratio: number) => void): Promise<BodyAssets> {
-    let p = this.map.get(bodyId);
+  get(bodyId: BodyId, onProgress?: (ratio: number) => void, look = ''): Promise<BodyAssets> {
+    const key = `${bodyId}|${look}`;
+    let p = this.map.get(key);
     if (!p) {
-      p = loadBody(bodyId, onProgress);
-      p.catch(() => this.map.delete(bodyId));
-      this.map.set(bodyId, p);
+      p = loadBody(bodyId, onProgress, look);
+      p.catch(() => this.map.delete(key));
+      this.map.set(key, p);
     }
     return p;
   }
 }
 
-async function loadBody(bodyId: BodyId, onProgress?: (ratio: number) => void): Promise<BodyAssets> {
+async function loadBody(bodyId: BodyId, onProgress?: (ratio: number) => void, look = ''): Promise<BodyAssets> {
   const files = avatarFiles(bodyId);
   const loader = new GLTFLoader();
   let done = 0;
   const tick = () => onProgress?.(++done / 3);
+  // Cores (mm3d-36): a textura pintada no canvas (avatar-tint.ts); se falhar, a original.
+  const tint = tintedAvatarTexture(bodyId, look);
   const [gltf, anims, tex] = await Promise.all([
     loader.loadAsync(files.body).then((g) => (tick(), g)),
     loader.loadAsync(files.anims).then((g) => (tick(), g)),
-    new THREE.TextureLoader().loadAsync(files.texture).then((t) => (tick(), t)),
+    (tint
+      ? tint.then((c) => new THREE.CanvasTexture(c) as THREE.Texture).catch(() => new THREE.TextureLoader().loadAsync(files.texture))
+      : new THREE.TextureLoader().loadAsync(files.texture)
+    ).then((t) => (tick(), t)),
   ]);
   // Convenção do glTF (a mesma do Babylon com invertY = false).
   tex.flipY = false;
@@ -180,8 +187,8 @@ export class AvatarView {
   }
 
   /** `assets` = cache de um grupo (o modelo vira clone); sem ele, baixa e usa o original. */
-  async load(bodyId: BodyId, onProgress?: (ratio: number) => void, assets?: AvatarAssets) {
-    const a = assets ? await assets.get(bodyId, onProgress) : await loadBody(bodyId, onProgress);
+  async load(bodyId: BodyId, onProgress?: (ratio: number) => void, assets?: AvatarAssets, look = '') {
+    const a = assets ? await assets.get(bodyId, onProgress, look) : await loadBody(bodyId, onProgress, look);
     const { anims, tex } = a;
     // Igual ao material do bairro: o basecolor já traz o sombreado pintado,
     // então difuso + emissivo (a luz do espaço, escura e vermelha, não apaga o boneco).

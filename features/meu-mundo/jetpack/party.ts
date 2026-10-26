@@ -356,7 +356,7 @@ export class PartyMode {
     const av = new AvatarView(k.stage.scene, k.fire, k.smoke, k.glow);
     av.emitScale = 0.5;
     av.root.visible = false;
-    av.load(isBody(r.body) ? r.body : 'normal', undefined, this.assets).then(
+    av.load(isBody(r.body) ? r.body : 'normal', undefined, this.assets, r.look ?? '').then(
       () => {
         this.loading.delete(r.slot);
         if (this.disposed) return;

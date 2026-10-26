@@ -182,6 +182,8 @@ export interface NeighborhoodPayload {
   me: {
     name: string
     body: BodyId
+    /** Cores do personagem (mm3d-36): código look; "" = visual próprio. */
+    look?: string
     house: number
     newResidence: boolean
     home: Vec2 & { rotationY: number }
@@ -510,7 +512,7 @@ export interface HousePayload {
     isMine: boolean
   }
   interior: InteriorDef
-  me: { name: string; body: BodyId; role: "owner" | "guest" }
+  me: { name: string; body: BodyId; look?: string; role: "owner" | "guest" }
   motion: { walkSpeed: number; runSpeed: number }
   multiplayer: MultiplayerSession | { error: string } | null
   visits?: VisitState
@@ -626,7 +628,7 @@ export interface CenterPayload {
   environment: string
   center: CenterLayout
   /** house = vaga nesta sala (definida ao entrar); driving = veículo que veio junto. */
-  me: { name: string; body: BodyId; house: number; driving: number; visitor?: boolean }
+  me: { name: string; body: BodyId; look?: string; house: number; driving: number; visitor?: boolean }
   motion: { walkSpeed: number; runSpeed: number }
   multiplayer: MultiplayerSession | { error: string } | null
   visits?: VisitState

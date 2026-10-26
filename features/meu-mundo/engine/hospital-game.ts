@@ -40,6 +40,8 @@ export interface HospitalGameOptions {
   canvas: HTMLCanvasElement
   interior: InteriorDef
   body: BodyId
+  /** Cores do personagem (mm3d-36). */
+  look?: string
   mode: HospitalMode
   /** Leito do internado (id da planta); sem ele, o primeiro da enfermaria. */
   bed?: string
@@ -96,7 +98,7 @@ export function createHospitalGame(opts: HospitalGameOptions): HospitalGameHandl
   shadowMat.specularColor = new Color3(0, 0, 0)
   shadowMat.disableLighting = true
   shadowMat.alpha = 0.22
-  const char = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, opts.body, null, true)
+  const char = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, opts.body, null, true, opts.look ?? "")
 
   const beds = def.beds ?? []
   const patient = opts.mode === "patient"

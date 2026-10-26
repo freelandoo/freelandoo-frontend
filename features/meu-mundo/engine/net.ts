@@ -35,6 +35,8 @@ export interface RemoteState {
   name: string
   house: number
   body: string
+  /** Cores (mm3d-36): código look; "" = textura original. */
+  look?: string
   x: number
   z: number
   facing: number
