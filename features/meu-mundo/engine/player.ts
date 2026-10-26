@@ -51,6 +51,8 @@ export class Character {
   private loadToken = 0
   private disposed = false
   body: BodyId
+  /** Cores (mm3d-36): código look da sala ("" = textura original). */
+  look = ""
   move: MoveState = 0
   speed = 0
   /** Ritmo < 1 (cansado/exausto, mm3d-13): poses curvadas. */
@@ -72,6 +74,7 @@ export class Character {
     body: BodyId,
     name: string | null,
     mine: boolean,
+    look = "",
   ) {
     const id = ++seq
     this.holder = newHolder(scene, `mm-char-${id}`)
@@ -84,17 +87,19 @@ export class Character {
       this.tag.mesh.position.y = 2.1
     }
     this.body = body
+    this.look = look
     void this.setBody(body, true)
   }
 
-  /** Troca o corpo preservando posição, orientação e movimento. */
-  async setBody(body: BodyId, force = false) {
-    if (!force && body === this.body && this.rig) return
+  /** Troca o corpo (e/ou as cores) preservando posição, orientação e movimento. */
+  async setBody(body: BodyId, force = false, look = this.look) {
+    if (!force && body === this.body && look === this.look && this.rig) return
     this.body = body
+    this.look = look
     const token = ++this.loadToken
     let next: AvatarRig
     try {
-      next = await this.lib.create(body)
+      next = await this.lib.create(body, look)
     } catch (err) {
       if (!this.disposed) console.warn("[meu-mundo] avatar não carregou", body, err)
       return
@@ -112,6 +117,11 @@ export class Character {
       this.fallback.dispose()
       this.fallback = null
     }
+  }
+
+  /** Cores novas (mm3d-36): recria o avatar com a textura pintada. */
+  setLook(look: string) {
+    return this.setBody(this.body, false, look)
   }
 
   /** `groundY`: chão sob quem está no ar (Paint, mm3d-35); sem chão embaixo, a sombra some na névoa. */

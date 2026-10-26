@@ -36,6 +36,7 @@ import type { Node } from "@babylonjs/core/node"
 import type { Scene } from "@babylonjs/core/scene"
 import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
+import { tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
 
 export const AVATAR_ASSET_VERSION = "v3"
@@ -218,19 +219,37 @@ export class AvatarLibrary {
    * Material do corpo. Sem mapas PBR: o próprio basecolor já traz o sombreado
    * do modelo, então o material é simples (difuso + um pouco de emissivo para
    * não escurecer o sombreado que já vem pintado).
+   *
+   * Com cores (mm3d-36): um material por (textura, look). Nasce com a textura
+   * original e troca pela pintada (avatar-tint.ts) quando ela fica pronta.
    */
-  private materialFor(id: BodyId) {
+  private materialFor(id: BodyId, look = "") {
     const file = ASSETS.textures[id]
-    let m = this.materials.get(file)
+    const tint = tintedTexture(BASE, file, id, look)
+    const key = tint ? `${file}|${look}` : file
+    let m = this.materials.get(key)
     if (!m) {
       const tex = new Texture(BASE + file, this.scene, false, false)
-      m = new StandardMaterial(`mm-avatar-${file}`, this.scene)
-      m.diffuseTexture = tex
-      m.emissiveTexture = tex
-      m.emissiveColor = new Color3(0.42, 0.42, 0.42)
-      m.diffuseColor = new Color3(0.72, 0.72, 0.72)
-      m.specularColor = new Color3(0, 0, 0)
-      this.materials.set(file, m)
+      const mat = new StandardMaterial(`mm-avatar-${key}`, this.scene)
+      mat.diffuseTexture = tex
+      mat.emissiveTexture = tex
+      mat.emissiveColor = new Color3(0.42, 0.42, 0.42)
+      mat.diffuseColor = new Color3(0.72, 0.72, 0.72)
+      mat.specularColor = new Color3(0, 0, 0)
+      this.materials.set(key, mat)
+      m = mat
+      tint
+        ?.then((canvas) => {
+          if (this.disposed || this.materials.get(key) !== mat) return
+          const dt = new DynamicTexture(`mm-avatar-${key}-tint`, canvas, this.scene, true)
+          dt.update(false)
+          dt.wrapU = tex.wrapU
+          dt.wrapV = tex.wrapV
+          mat.diffuseTexture = dt
+          mat.emissiveTexture = dt
+          tex.dispose()
+        })
+        .catch((err) => console.warn("[meu-mundo] cores não aplicadas", look, err))
     }
     return m
   }
@@ -313,7 +332,7 @@ export class AvatarLibrary {
   }
 
   /** Cria um avatar com esqueleto e animações próprios. */
-  async create(id: BodyId): Promise<AvatarRig> {
+  async create(id: BodyId, look = ""): Promise<AvatarRig> {
     // A pose de sentar e as de descanso/cansaço são opcionais: se o arquivo
     // falhar, o avatar existe (sentado/deitado fica parado em pé, sem quebrar
     // a casa; cansado anda normal).
@@ -352,7 +371,7 @@ export class AvatarLibrary {
     const feet = [byName.get("mixamorig:LeftFoot"), byName.get("mixamorig:RightFoot")] as (TransformNode | undefined)[]
     const meshes = root.getChildMeshes(false) as AbstractMesh[]
     for (const mesh of meshes) {
-      mesh.material = this.materialFor(id)
+      mesh.material = this.materialFor(id, look)
       mesh.isPickable = false
       // Caixa COM o esqueleto (pose de ligação, uma vez): a malha é quantizada
       // e a desquantização mora nas matrizes de ligação — sem o esqueleto, a
@@ -363,7 +382,7 @@ export class AvatarLibrary {
       mesh.refreshBoundingInfo({ applySkeleton: true })
       mesh.getBoundingInfo().scale(1.25)
     }
-    const lod = lodC ? this.attachLod(lodC, meshes[0] as Mesh, id) : null
+    const lod = lodC ? this.attachLod(lodC, meshes[0] as Mesh, id, look) : null
     this.live++
     const rig = new AvatarRig(this, id, entries, root, groups, meshes, feet, ANKLE_REST[ANIM_SET[id]], lod)
     rig.setLodDistance(this.lodDistance)
@@ -375,7 +394,7 @@ export class AvatarLibrary {
    * e no esqueleto DELA. O Babylon desenha o nível com a matriz e a caixa da
    * malha mestra; a cópia de esqueleto que veio do arquivo é descartada.
    */
-  private attachLod(c: AssetContainer, main: Mesh, id: BodyId): Mesh | null {
+  private attachLod(c: AssetContainer, main: Mesh, id: BodyId, look: string): Mesh | null {
     if (!main?.skeleton) return null
     const e = c.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
     const mesh = (e.rootNodes[0] as TransformNode | undefined)?.getChildMeshes(false)[0] as Mesh | undefined
@@ -385,7 +404,7 @@ export class AvatarLibrary {
     }
     mesh.parent = main
     mesh.skeleton = main.skeleton
-    mesh.material = this.materialFor(id)
+    mesh.material = this.materialFor(id, look)
     mesh.isPickable = false
     e.rootNodes.forEach((n) => n.dispose())
     e.skeletons.forEach((s) => s.dispose())

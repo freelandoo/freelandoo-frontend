@@ -82,6 +82,8 @@ export interface PaintGameOptions {
   canvas: HTMLCanvasElement
   port: PaintPort
   body: BodyId
+  /** Cores do personagem (mm3d-36). */
+  look?: string
   /** Celular (sem trava de mouse; botões na tela). */
   touch: boolean
   maxPixelRatio?: number
@@ -163,7 +165,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   shadowMat.disableLighting = true
   shadowMat.alpha = 0.2
   const mats = { fallback: fallbackMat, shadow: shadowMat }
-  const char = new Character(scene, lib, mats, opts.body, null, true)
+  const char = new Character(scene, lib, mats, opts.body, null, true, opts.look ?? "")
   const gun = new PaintGun(scene)
   // Ao lado do peito, apontando para a frente (a pose de mira com a mão vem com as animações do Paint).
   gun.root.parent = char.holder
@@ -430,7 +432,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       if (!r) {
         const info = port.info(p.slot)
         if (!info) continue
-        const c = new Character(scene, lib, mats, info.body, info.name, false)
+        const c = new Character(scene, lib, mats, info.body, info.name, false, info.look ?? "")
         const g = new PaintGun(scene)
         g.root.parent = c.holder
         g.root.position.set(0.3, 1.12, 0.32)

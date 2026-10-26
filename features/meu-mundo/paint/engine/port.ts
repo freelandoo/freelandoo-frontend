@@ -23,6 +23,8 @@ export interface RemoteSample {
 export interface PortPlayerInfo {
   name: string
   body: BodyId
+  /** Cores (mm3d-36), "" = textura original. */
+  look?: string
 }
 
 export interface PaintPort {

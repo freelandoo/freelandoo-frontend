@@ -32,6 +32,7 @@ interface SPlayer {
   sit: number
   name: string
   body: string
+  look?: string
   online: boolean
   x: number
   y: number
@@ -208,7 +209,7 @@ export class NetPort implements PaintPort {
 
   private onState(s: SState) {
     const players = [...s.players.values()]
-    for (const p of players) this.names.set(p.slot, { name: p.name, body: (p.body || "normal") as BodyId })
+    for (const p of players) this.names.set(p.slot, { name: p.name, body: (p.body || "normal") as BodyId, look: p.look || "" })
     if (!this.state) {
       if (s.phase === "lobby" || this.me < 0) {
         this.hooks.onLobby?.(players.length, modeCapacity(this.mode))
