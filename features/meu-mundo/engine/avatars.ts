@@ -457,6 +457,11 @@ export class AvatarRig {
     return !m || planes.length === 0 || m.isInFrustum(planes)
   }
 
+  /** Nó do esqueleto pelo nome (a arma do Paint vai na mão, mm3d-35). */
+  node(name: string): TransformNode | null {
+    return (this.root.getDescendants(false).find((n) => n.name === name) as TransformNode | undefined) ?? null
+  }
+
   /** Posição no mundo dos tornozelos [esquerdo, direito] (patins presos aos pés). */
   feetWorld(): (Vector3 | null)[] {
     return this.feet.map((n) => (n ? n.getAbsolutePosition().clone() : null))

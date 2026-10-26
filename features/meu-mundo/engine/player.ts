@@ -114,10 +114,16 @@ export class Character {
     }
   }
 
-  place(x: number, z: number, facing: number, y = 0) {
+  /** `groundY`: chão sob quem está no ar (Paint, mm3d-35); sem chão embaixo, a sombra some na névoa. */
+  place(x: number, z: number, facing: number, y = 0, groundY = y) {
     this.holder.position.set(x, y, z)
     this.holder.rotation.y = facing
-    this.shadow.position.set(x, y + 0.09, z)
+    this.shadow.position.set(x, (Number.isFinite(groundY) ? groundY : y - 400) + 0.09, z)
+  }
+
+  /** Nó do esqueleto pelo nome (ex.: "mixamorig:RightHand"); null sem avatar. */
+  bone(name: string) {
+    return this.rig?.node(name) ?? null
   }
 
   /** Esconde (outro andar) sem descartar. */

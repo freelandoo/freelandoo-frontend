@@ -1,0 +1,535 @@
+// features/meu-mundo/paint/engine/paint-game.ts — PAINT (mm3d-35): a cena.
+//
+// Cena própria (como o hospital): motor Babylon, céu claro e névoa, o mundo
+// das ilhas, a tinta, gatinhos e cápsulas, o avatar de quem joga com a arma,
+// a câmera de mira e os controles. A PARTIDA vem de uma porta (port.ts):
+// treino no aparelho ou sala multiplayer — a cena é a mesma.
+//
+// O movimento é deste aparelho (sim/body.ts em passos de 1/60 s, desenho
+// interpolado). Os tiros saem da arma em direção ao ponto que a mira acerta;
+// o que eles viram (tinta, dano, respingo) volta pelos acontecimentos.
+
+import { Engine } from "@babylonjs/core/Engines/engine"
+import { Scene } from "@babylonjs/core/scene"
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
+import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Character } from "../../engine/player"
+import { AvatarLibrary } from "../../engine/avatars"
+import { liveGamesBump } from "../../engine/game"
+import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
+import type { BodyId } from "../../types"
+import { TUNING, type PaintColor } from "../sim/tuning"
+import { newBody, stepBody, knockBody, liftOnto, type BodyMove, type PaintBody } from "../sim/body"
+import { rayBody, supportAt } from "../sim/collide"
+import { muzzleOf } from "../sim/paint"
+import type { MatchEvent, MatchResult, PaintPose } from "../sim/match"
+import type { Solid } from "../sim/map"
+import { buildPaintWorld } from "./world-view"
+import { PaintView } from "./paint-view"
+import { PickupsView } from "./pickups-view"
+import { AimCamera } from "./aim-camera"
+import { PaintGun } from "./gun"
+import { attachPaintInput, clearPaintInput, createPaintInput, paintMoveAxis, paintWantsRun, type PaintInput } from "./paint-input"
+import type { PaintPort } from "./port"
+
+/** O que a interface mostra (atualizado ~10×/s e a cada acontecimento). */
+export interface PaintHud {
+  phase: "countdown" | "play" | "end"
+  /** s até o "vai" (contagem) ou até o fim (partida). */
+  countdown: number
+  timeLeft: number
+  hp: number
+  ammo: [number, number, number]
+  color: PaintColor
+  firing: PaintColor | null
+  myTeam: number
+  teams: number
+  teamCats: [number, number]
+  myCats: number
+  portalOpen: boolean
+  inBoss: boolean
+  bossHp: number
+  dmg: number
+  /** s de nocaute que faltam (0 = de pé). */
+  ko: number
+  locked: boolean
+  result: MatchResult | null
+}
+
+/** Avisos para a interface (texto, som, vibração). */
+export type PaintNotice =
+  | { kind: "cat"; mine: boolean; team: number }
+  | { kind: "capsule"; c: PaintColor }
+  | { kind: "empty"; c: PaintColor }
+  | { kind: "hurt"; how: "harm" | "punch" }
+  | { kind: "hitOther" }
+  | { kind: "ko" }
+  | { kind: "portal"; team: number; mine: boolean }
+  | { kind: "boss"; dmg: number }
+  | { kind: "enterBoss" }
+  | { kind: "fell" }
+  | { kind: "end" }
+
+export interface PaintGameOptions {
+  canvas: HTMLCanvasElement
+  port: PaintPort
+  body: BodyId
+  /** Celular (sem trava de mouse; botões na tela). */
+  touch: boolean
+  maxPixelRatio?: number
+  onReady?: () => void
+  onHud?: (h: PaintHud) => void
+  onNotice?: (n: PaintNotice) => void
+  onError?: (reason: "context-lost") => void
+}
+
+export interface PaintGameHandle {
+  input: PaintInput
+  setJoystick: (x: number, y: number) => void
+  /** Botão de cor do celular: apertado = atira essa cor. */
+  setFiring: (c: PaintColor | null) => void
+  selectColor: (c: PaintColor) => void
+  jump: () => void
+  punch: () => void
+  setBlocked: (blocked: boolean) => void
+  dispose: () => void
+}
+
+const STEP = TUNING.step
+/** Depois de atirar, o corpo continua virado para a mira por este tempo (s). */
+const AIM_HOLD = 0.9
+
+export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
+  const { canvas, port } = opts
+  const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: "high-performance" }, false)
+  const unlive = liveGamesBump()
+  let disposed = false
+  const quality = resolveQuality()
+  const lowEnd = quality.tier === "low"
+  const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
+
+  const scene = new Scene(engine)
+  const sky = new Color4(0.9, 0.93, 0.96, 1)
+  scene.clearColor = sky
+  scene.ambientColor = new Color3(0.3, 0.3, 0.3)
+  scene.fogMode = Scene.FOGMODE_LINEAR
+  scene.fogColor = new Color3(sky.r, sky.g, sky.b)
+  scene.fogStart = lowEnd ? 55 : 75
+  scene.fogEnd = lowEnd ? 170 : 230
+  scene.skipPointerMovePicking = true
+  scene.skipPointerDownPicking = true
+  scene.skipPointerUpPicking = true
+  const hemi = new HemisphericLight("paint-hemi", new Vector3(0.15, 1, -0.1), scene)
+  hemi.intensity = 0.78
+  hemi.diffuse = new Color3(1, 0.99, 0.97)
+  hemi.groundColor = new Color3(0.78, 0.72, 0.64)
+  const sun = new DirectionalLight("paint-sun", new Vector3(-0.45, -1, 0.35), scene)
+  sun.intensity = 0.85
+  sun.diffuse = new Color3(1, 0.96, 0.9)
+
+  const state = port.state
+  const map = state.map
+  // Câmera colide com a PEDRA DESENHADA (mais funda que a colisão do corpo),
+  // senão ela entra embaixo das ilhas; a tinta entra por cima.
+  const camRock: Solid[] = map.islands.map((i) => ({ k: 0, x: i.x, z: i.z, y0: i.y - i.depth * 0.8, y1: i.y, r: i.r * 0.92 }))
+  let camSolids: Solid[] = camRock
+  let camFrom: Solid[] | null = null
+  const world = buildPaintWorld(scene, map, lowEnd)
+  const paint = new PaintView(scene, lowEnd)
+  const pickups = new PickupsView(scene, map.cats, map.capsules)
+  // O que já estava no mundo ao entrar (rede: gatinhos pegos, cápsulas fora, tinta).
+  for (const id of state.catsTaken.keys()) pickups.take(id, true)
+  for (const id of state.capsuleBack.keys()) pickups.setCapsule(id, false)
+  for (const b of state.blobs.values()) paint.add(b.id, b.blob)
+  state.portalOpen.forEach((open, t) => world.setPortalOpen(t, open))
+
+  const lib = new AvatarLibrary(scene, false, false)
+  const fallbackMat = new StandardMaterial("paint-character", scene)
+  fallbackMat.diffuseColor = new Color3(1, 1, 1)
+  fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
+  const shadowMat = new StandardMaterial("paint-shadow", scene)
+  shadowMat.diffuseColor = new Color3(0, 0, 0)
+  shadowMat.specularColor = new Color3(0, 0, 0)
+  shadowMat.disableLighting = true
+  shadowMat.alpha = 0.2
+  const char = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, opts.body, null, true)
+  const gun = new PaintGun(scene)
+  // Ao lado do peito, apontando para a frente (a pose de mira com a mão vem com as animações do Paint).
+  gun.root.parent = char.holder
+  gun.root.position.set(0.3, 1.12, 0.32)
+
+  const me = state.players.get(port.me)!
+  const body: PaintBody = newBody(me.pose.x, me.pose.y, me.pose.z, me.pose.facing)
+  let epoch = me.epoch
+  let prev = { x: body.x, y: body.y, z: body.z }
+  let move: BodyMove = 0
+  let visualFacing = body.facing
+  let aimHold = 0
+  let acc = 0
+  let shotSeq = 0
+  const nextFire: [number, number, number] = [0, 0, 0]
+  let emptyAt = -10
+  let clock = 0
+  let lunge = 0
+  /** Nocaute visto (o renascimento depois dele não é "caiu"). */
+  let knocked = false
+
+  const cam = new AimCamera(scene)
+  scene.activeCamera = cam.camera
+  cam.snap(body.facing)
+
+  const input = createPaintInput()
+  const detachInput = attachPaintInput(canvas, input, opts.touch)
+
+  const posePacket = (): PaintPose => ({ x: body.x, y: body.y, z: body.z, facing: body.facing, ground: body.ground, gy: body.gy, e: epoch })
+
+  // ── acontecimentos ─────────────────────────────────────────────────────────
+  const notice = (n: PaintNotice) => opts.onNotice?.(n)
+  const handle = (e: MatchEvent) => {
+    switch (e.type) {
+      case "blob":
+        paint.add(e.id, e.blob)
+        if (e.owner === port.me) liftOnto(body, e.blob.x, e.blob.z, e.blob.r, e.blob.y1)
+        break
+      case "unblob":
+        paint.remove(e.id)
+        break
+      case "shot":
+        if (e.slot !== port.me) paint.bolt(e.o, e.to, e.c)
+        break
+      case "splat":
+        paint.splat(e.point, e.normal)
+        break
+      case "hit":
+        if (e.slot === port.me) {
+          knockBody(body, e.kx, e.ky, e.kz)
+          notice({ kind: "hurt", how: e.how })
+        } else if (e.by === port.me) notice({ kind: "hitOther" })
+        break
+      case "ko":
+        if (e.slot === port.me) {
+          knocked = true
+          notice({ kind: "ko" })
+        }
+        break
+      case "respawn":
+        if (e.slot === port.me) {
+          const fell = !knocked && !e.inBoss
+          knocked = false
+          Object.assign(body, newBody(e.x, e.y, e.z, e.facing))
+          prev = { x: body.x, y: body.y, z: body.z }
+          epoch = e.e
+          cam.snap(e.facing)
+          visualFacing = e.facing
+          if (e.inBoss && me.inBoss) notice({ kind: "enterBoss" })
+          else if (fell) notice({ kind: "fell" })
+        }
+        break
+      case "fix":
+        if (e.slot === port.me) {
+          body.x = e.pose.x
+          body.y = e.pose.y
+          body.z = e.pose.z
+          body.vx = body.vy = body.vz = 0
+          prev = { x: body.x, y: body.y, z: body.z }
+        }
+        break
+      case "cat":
+        pickups.take(e.id)
+        notice({ kind: "cat", mine: e.slot === port.me, team: e.team })
+        break
+      case "capsule":
+        pickups.setCapsule(e.id, false)
+        if (e.slot === port.me) notice({ kind: "capsule", c: e.c })
+        break
+      case "capsuleBack":
+        pickups.setCapsule(e.id, true)
+        break
+      case "portal":
+        world.setPortalOpen(e.team, true)
+        notice({ kind: "portal", team: e.team, mine: e.team === me.team })
+        break
+      case "boss":
+        if (e.slot === port.me) notice({ kind: "boss", dmg: e.dmg })
+        world.setBossAlive(e.hp > 0)
+        break
+      case "punch":
+        break
+      case "deny":
+        if (e.slot === port.me && port.predicts) paint.remove(-e.q, true)
+        break
+      case "end":
+        notice({ kind: "end" })
+        break
+    }
+  }
+
+  // ── tiro e soco ────────────────────────────────────────────────────────────
+  const bodiesRay = (o: { x: number; y: number; z: number }, d: { x: number; y: number; z: number }, maxT: number) => {
+    let best: number | null = null
+    for (const p of state.players.values()) {
+      if (p.slot === port.me || p.ko || p.inBoss !== me.inBoss) continue
+      const t = rayBody(o, d, p.pose, TUNING.hitR, TUNING.bodyH, best ?? maxT)
+      if (t !== null) best = t
+    }
+    if (me.inBoss && state.bossAlive()) {
+      const b = state.bossBody()
+      const t = rayBody(o, d, b, b.r, b.h, best ?? maxT)
+      if (t !== null) best = t
+    }
+    return best
+  }
+
+  const tryFire = (c: PaintColor) => {
+    if (state.phase !== "play" || me.ko) return
+    if (clock < nextFire[c]) return
+    if (me.ammo[c] < TUNING.cost[c]) {
+      if (clock - emptyAt > 0.8) {
+        emptyAt = clock
+        notice({ kind: "empty", c })
+      }
+      return
+    }
+    nextFire[c] = clock + 1 / TUNING.fireRate[c]
+    // a arma aponta para a mira: o corpo vira junto antes de atirar
+    body.facing = cam.yaw
+    visualFacing = cam.yaw
+    aimHold = AIM_HOLD
+    port.pose(posePacket())
+    const o = muzzleOf(body, body.facing)
+    const at = cam.aimPoint(state.solids(), bodiesRay)
+    const dir = { x: at.x - o.x, y: at.y - o.y, z: at.z - o.z }
+    if (Math.hypot(dir.x, dir.y, dir.z) < 0.05) return
+    shotSeq++
+    paint.bolt(o, at, c)
+    gun.fired()
+    port.fire(c, o, dir, shotSeq)
+  }
+
+  const doPunch = () => {
+    if (state.phase !== "play" || me.ko) return
+    body.facing = cam.yaw
+    visualFacing = cam.yaw
+    aimHold = AIM_HOLD
+    lunge = 1
+    port.pose(posePacket())
+    port.punch()
+  }
+
+  // ── HUD ────────────────────────────────────────────────────────────────────
+  let hudAt = 0
+  const hud = (): PaintHud => ({
+    phase: state.phase,
+    countdown: Math.max(0, -state.time),
+    timeLeft: Math.max(0, TUNING.matchTime - Math.max(0, state.time)),
+    hp: me.hp,
+    ammo: [me.ammo[0], me.ammo[1], me.ammo[2]],
+    color: input.color,
+    firing: input.firing,
+    myTeam: me.team,
+    teams: port.mode === "solo" ? 1 : 2,
+    teamCats: [state.teamCats[0], state.teamCats[1]],
+    myCats: me.cats,
+    portalOpen: state.portalOpen[me.team],
+    inBoss: me.inBoss,
+    bossHp: state.bossHp,
+    dmg: me.dmg,
+    ko: me.ko ? Math.max(0, me.ko - state.time) : 0,
+    locked: input.locked,
+    result: state.result,
+  })
+
+  // ── laço ───────────────────────────────────────────────────────────────────
+  scene.onBeforeRenderObservable.add(() => {
+    const dt = Math.min(engine.getDeltaTime() / 1000, 0.1)
+    clock += dt
+    if (!input.blocked && (input.lookDX || input.lookDY)) {
+      cam.look(input.lookDX, input.lookDY, opts.touch ? 0.0042 : 0.0024)
+    }
+    input.lookDX = 0
+    input.lookDY = 0
+
+    const canMove = state.phase === "play" && !me.ko && !input.blocked
+    const axis = canMove ? paintMoveAxis(input) : { x: 0, y: 0 }
+    const f = { x: Math.sin(cam.yaw), z: Math.cos(cam.yaw) }
+    const r = cam.right()
+    const intent = {
+      mx: r.x * axis.x + f.x * axis.y,
+      mz: r.z * axis.x + f.z * axis.y,
+      run: paintWantsRun(input),
+      jump: false,
+    }
+    let jump = canMove && input.jumpQueued
+    input.jumpQueued = false
+    acc += dt
+    let n = 0
+    const solids = state.solids()
+    while (acc >= STEP && n < 8) {
+      acc -= STEP
+      n++
+      prev = { x: body.x, y: body.y, z: body.z }
+      const facingBefore = body.facing
+      move = stepBody(body, { ...intent, jump }, solids)
+      jump = false
+      if (aimHold > 0) body.facing = facingBefore
+    }
+    if (n === 8) acc = 0
+    if (aimHold > 0) {
+      aimHold -= dt
+      body.facing = cam.yaw
+    }
+
+    // tiro segurado (cor do botão / do mouse) e soco
+    if (canMove && input.firing !== null) {
+      gun.setColor(input.firing)
+      tryFire(input.firing)
+    } else if (gun.current !== input.color) gun.setColor(input.color)
+    if (input.punchQueued) {
+      input.punchQueued = false
+      if (canMove) doPunch()
+    }
+
+    port.pose(posePacket())
+    for (const e of port.tick(dt)) handle(e)
+
+    // desenho (interpolado entre os dois últimos passos)
+    const a = Math.min(1, acc / STEP)
+    const x = prev.x + (body.x - prev.x) * a
+    const y = prev.y + (body.y - prev.y) * a
+    const z = prev.z + (body.z - prev.z) * a
+    let d = body.facing - visualFacing
+    d = Math.atan2(Math.sin(d), Math.cos(d))
+    visualFacing += d * (1 - Math.exp(-(aimHold > 0 ? 22 : 12) * dt))
+    lunge = Math.max(0, lunge - dt * 5)
+    const lx = Math.sin(visualFacing) * Math.sin(lunge * Math.PI) * 0.25
+    const lz = Math.cos(visualFacing) * Math.sin(lunge * Math.PI) * 0.25
+    const ground = supportAt(solids, x, z, y + 0.05)
+    char.place(x + lx, z + lz, visualFacing, y, ground)
+    const hs = Math.hypot(body.vx, body.vz)
+    char.animate(dt, me.ko ? 0 : move === 5 ? 0 : move, hs)
+    char.holder.setEnabled(!me.ko || Math.floor(clock * 8) % 2 === 0)
+
+    gun.tick(dt, aimHold > 0 ? cam.pitch * 0.85 : 0.25)
+
+    if (camFrom !== solids) {
+      camFrom = solids
+      camSolids = camRock.concat(solids.slice(map.solids.length))
+    }
+    cam.update(dt, x, y, z, camSolids)
+    world.tick(dt)
+    paint.tick(dt)
+    pickups.tick(dt, cam.camera)
+    governor.tick(engine.getDeltaTime())
+
+    hudAt -= dt
+    if (hudAt <= 0) {
+      hudAt = 0.1
+      opts.onHud?.(hud())
+    }
+  })
+
+  scene.executeWhenReady(() => {
+    if (!disposed) {
+      opts.onReady?.()
+      opts.onHud?.(hud())
+    }
+  })
+  engine.runRenderLoop(() => {
+    if (!disposed) scene.render()
+  })
+  const ro = new ResizeObserver(() => {
+    if (!disposed) engine.resize()
+  })
+  ro.observe(canvas)
+  const lost = engine.onContextLostObservable.add(() => {
+    if (!disposed) opts.onError?.("context-lost")
+  })
+
+  // conferência (harness)
+  const w = window as unknown as Record<string, unknown>
+  w.__paint = () => ({
+    x: body.x,
+    y: body.y,
+    z: body.z,
+    ground: body.ground,
+    facing: body.facing,
+    yaw: cam.yaw,
+    pitch: cam.pitch,
+    blobs: paint.count,
+    hp: me.hp,
+    ammo: [...me.ammo],
+    cats: me.cats,
+    teamCats: [...state.teamCats],
+    phase: state.phase,
+    time: state.time,
+    inBoss: me.inBoss,
+    fps: engine.getFps(),
+  })
+  w.__paintTp = (x: number, y: number, z: number, facing = 0) => {
+    Object.assign(body, newBody(x, y, z, facing))
+    me.pose = { ...me.pose, x, y, z, facing, gy: y }
+    prev = { x, y, z }
+    cam.snap(facing)
+  }
+  w.__paintLook = (yaw: number, pitch: number) => {
+    cam.yaw = yaw
+    cam.pitch = pitch
+  }
+  w.__paintState = () => state
+  w.__paintFire = (c: PaintColor | null) => {
+    input.firing = c
+    if (c !== null) input.color = c
+  }
+
+  return {
+    input,
+    setJoystick(x, y) {
+      input.joyX = x
+      input.joyY = y
+    },
+    setFiring(c) {
+      input.firing = c
+      if (c !== null) input.color = c
+    },
+    selectColor(c) {
+      input.color = c
+      if (input.firing !== null) input.firing = c
+    },
+    jump() {
+      input.jumpQueued = true
+    },
+    punch() {
+      input.punchQueued = true
+    },
+    setBlocked(blocked) {
+      input.blocked = blocked
+      clearPaintInput(input)
+      if (blocked && document.pointerLockElement === canvas) document.exitPointerLock?.()
+    },
+    dispose() {
+      if (disposed) return
+      disposed = true
+      engine.stopRenderLoop()
+      detachInput()
+      ro.disconnect()
+      engine.onContextLostObservable.remove(lost)
+      for (const k of ["__paint", "__paintTp", "__paintLook", "__paintState", "__paintFire"]) delete w[k]
+      gun.dispose()
+      char.dispose()
+      lib.dispose()
+      pickups.dispose()
+      paint.dispose()
+      world.dispose()
+      cam.dispose()
+      fallbackMat.dispose()
+      shadowMat.dispose()
+      scene.dispose()
+      engine.dispose()
+      port.dispose()
+      unlive()
+    },
+  }
+}
