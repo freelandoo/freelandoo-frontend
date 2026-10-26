@@ -478,14 +478,12 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       r.char.animate(dt, !s.g ? 0 : r.speed > 5.5 ? 2 : r.speed > 0.35 ? 1 : 0, r.speed)
       holdGun(r.char, r.gun, s.f)
       r.gun.tick(dt, 0.25)
-      herd.follow(p.slot, dt, s.x, s.y, s.z, s.g, p.ko || !p.online ? 0 : p.cats, s.f)
     }
     for (const [slot, r] of remotes) {
       if (state.players.has(slot)) continue
       r.char.dispose()
       r.gun.dispose()
       r.ring.dispose()
-      herd.drop(slot)
       remotes.delete(slot)
     }
   }
@@ -539,7 +537,6 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     acc += dt
     let n = 0
     const solids = state.solids()
-    herd.setSolids(solids)
     while (acc >= STEP && n < 8) {
       acc -= STEP
       n++
@@ -641,7 +638,6 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     world.tick(dt)
     paint.tick(dt)
     pickups.tick(dt)
-    herd.follow(port.me, dt, x, y, z, body.ground, me.ko ? 0 : me.cats, visualFacing)
     herd.tick(dt, cam.camera)
     governor.tick(engine.getDeltaTime())
 
