@@ -82,6 +82,8 @@ const MEU_MUNDO = {
     "Drag your finger to aim · tap and hold to shoot · the colors below switch the paint",
     "Arrastra el dedo para apuntar · toca y mantén para disparar · los colores de abajo cambian la pintura",
   ],
+  paintToastStealGain: ["Derrubou! +{n} gatinhos para você", "Knocked out! +{n} kittens for you", "¡Derribado! +{n} gatitos para ti"],
+  paintToastStealLoss: ["Derrubaram você: perdeu {n} gatinhos", "You got knocked out: lost {n} kittens", "Te derribaron: perdiste {n} gatitos"],
   paintCancel: ["Cancelar", "Cancel", "Cancelar"],
   paintReconnecting: ["Reconectando…", "Reconnecting…", "Reconectando…"],
   paintReplaced: ["Aberto em outra janela", "Opened in another window", "Abierto en otra ventana"],

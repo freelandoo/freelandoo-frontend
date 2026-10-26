@@ -8353,6 +8353,8 @@
     "paintReplaced": "Abierto en otra ventana",
     "paintOffline": "Sin conexión con la sala",
     "paintHelpPc": "El ratón apunta · botón izquierdo dispara · E cambia el color · botón derecho gira la cámara · Espacio salta · F golpea",
-    "paintHelpTouch": "Arrastra el dedo para apuntar · toca y mantén para disparar · los colores de abajo cambian la pintura"
+    "paintHelpTouch": "Arrastra el dedo para apuntar · toca y mantén para disparar · los colores de abajo cambian la pintura",
+    "paintToastStealGain": "¡Derribado! +{n} gatitos para ti",
+    "paintToastStealLoss": "Te derribaron: perdiste {n} gatitos"
   }
 }

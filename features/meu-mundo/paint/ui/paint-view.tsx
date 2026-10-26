@@ -315,6 +315,14 @@ function PaintGameScreen({ port, body, net, onLeave }: { port: PaintPort; body: 
         case "enterBoss":
           say(tt("paintToastBoss", "Ilha do chefão: dano com vermelho e soco!"), "gold")
           break
+        case "steal":
+          say(
+            n.gained
+              ? tt("paintToastStealGain", "Derrubou! +{n} gatinhos para você").replace("{n}", String(n.n))
+              : tt("paintToastStealLoss", "Derrubaram você: perdeu {n} gatinhos").replace("{n}", String(n.n)),
+            n.gained ? "gold" : "bad",
+          )
+          break
         case "fell":
           say(tt("paintToastFell", "Caiu nas nuvens — de volta à base"), "bad")
           break

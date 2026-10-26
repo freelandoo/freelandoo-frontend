@@ -230,6 +230,15 @@ export class PaintView {
     this.burst(p, 1, 5, 2)
   }
 
+  /**
+   * Sangue (mm3d-35g): o vermelho acertou alguém — gotas voando do peito e uma
+   * mancha no chão embaixo dele. `big` = nocaute.
+   */
+  blood(chest: Vec3, groundY: number, big: boolean) {
+    this.burst(chest, 1, big ? 22 : 12, big ? 4.2 : 3.2)
+    if (Number.isFinite(groundY)) this.splat({ x: chest.x + (Math.random() - 0.5) * 0.4, y: groundY + 0.02, z: chest.z + (Math.random() - 0.5) * 0.4 }, { x: 0, y: 1, z: 0 })
+  }
+
   /** Gotas que voam de um ponto. */
   burst(p: Vec3, c: PaintColor, n: number, speed: number) {
     for (let i = 0; i < n; i++) {

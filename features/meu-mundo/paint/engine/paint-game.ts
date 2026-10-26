@@ -30,6 +30,7 @@ import type { Solid } from "../sim/map"
 import { buildPaintWorld } from "./world-view"
 import { PaintView } from "./paint-view"
 import { PickupsView } from "./pickups-view"
+import { CatHerd } from "./cat-herd"
 import { AimCamera } from "./aim-camera"
 import { PaintGun } from "./gun"
 import { attachPaintInput, clearPaintInput, createPaintInput, createReticle, paintMoveAxis, paintWantsRun, type PaintInput } from "./paint-input"
@@ -73,6 +74,8 @@ export type PaintNotice =
   | { kind: "boss"; dmg: number }
   | { kind: "enterBoss" }
   | { kind: "fell" }
+  /** Roubo de gatinhos no nocaute (ganhei ou perdi `n`). */
+  | { kind: "steal"; gained: boolean; n: number }
   | { kind: "end" }
 
 export interface PaintGameOptions {
@@ -141,9 +144,11 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   let camFrom: Solid[] | null = null
   const world = buildPaintWorld(scene, map, lowEnd)
   const paint = new PaintView(scene, lowEnd)
-  const pickups = new PickupsView(scene, map.cats, map.capsules)
+  const pickups = new PickupsView(scene, map.capsules)
+  // Gatinhos leves (mm3d-35g): no mapa e em fila atrás de quem pegou.
+  const herd = new CatHerd(scene, map.cats)
   // O que já estava no mundo ao entrar (rede: gatinhos pegos, cápsulas fora, tinta).
-  for (const id of state.catsTaken.keys()) pickups.take(id, true)
+  for (const id of state.catsTaken.keys()) herd.take(id, true)
   for (const id of state.capsuleBack.keys()) pickups.setCapsule(id, false)
   for (const b of state.blobs.values()) paint.add(b.id, b.blob)
   state.portalOpen.forEach((open, t) => world.setPortalOpen(t, open))
@@ -227,13 +232,19 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       case "splat":
         paint.splat(e.point, e.normal)
         break
+      case "steal":
+        if (e.to === port.me) notice({ kind: "steal", gained: true, n: e.n })
+        else if (e.from === port.me) notice({ kind: "steal", gained: false, n: e.n })
+        break
       case "hit":
+        if (e.how === "harm") bleed(e.slot, false)
         if (e.slot === port.me) {
           knockBody(body, e.kx, e.ky, e.kz)
           notice({ kind: "hurt", how: e.how })
         } else if (e.by === port.me) notice({ kind: "hitOther" })
         break
       case "ko":
+        bleed(e.slot, true)
         if (e.slot === port.me) {
           knocked = true
           notice({ kind: "ko" })
@@ -262,7 +273,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         }
         break
       case "cat":
-        pickups.take(e.id)
+        herd.take(e.id)
         notice({ kind: "cat", mine: e.slot === port.me, team: e.team })
         break
       case "capsule":
@@ -290,6 +301,14 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         notice({ kind: "end" })
         break
     }
+  }
+
+  /** Sangue em quem levou o vermelho (eu ou outro jogador). */
+  const bleed = (slot: number, big: boolean) => {
+    const p = slot === port.me ? { x: body.x, y: body.y, z: body.z } : state.players.get(slot)?.pose
+    if (!p) return
+    const ground = supportAt(state.solids(), p.x, p.z, p.y + 0.1)
+    paint.blood({ x: p.x, y: p.y + 1.15, z: p.z }, ground, big)
   }
 
   // ── tiro e soco ────────────────────────────────────────────────────────────
@@ -459,12 +478,14 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       r.char.animate(dt, !s.g ? 0 : r.speed > 5.5 ? 2 : r.speed > 0.35 ? 1 : 0, r.speed)
       holdGun(r.char, r.gun, s.f)
       r.gun.tick(dt, 0.25)
+      herd.follow(p.slot, dt, s.x, s.y, s.z, s.g, p.ko || !p.online ? 0 : p.cats, s.f)
     }
     for (const [slot, r] of remotes) {
       if (state.players.has(slot)) continue
       r.char.dispose()
       r.gun.dispose()
       r.ring.dispose()
+      herd.drop(slot)
       remotes.delete(slot)
     }
   }
@@ -618,7 +639,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     if (port.samples) tickRemotes(dt, solids)
     world.tick(dt)
     paint.tick(dt)
-    pickups.tick(dt, cam.camera)
+    pickups.tick(dt)
+    herd.follow(port.me, dt, x, y, z, body.ground, me.ko ? 0 : me.cats, visualFacing)
+    herd.tick(dt, cam.camera)
     governor.tick(engine.getDeltaTime())
 
     hudAt -= dt
@@ -733,6 +756,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       aimMarkMat.dispose()
       lib.dispose()
       pickups.dispose()
+      herd.dispose()
       paint.dispose()
       world.dispose()
       cam.dispose()
