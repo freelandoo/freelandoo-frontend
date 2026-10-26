@@ -595,16 +595,33 @@ export class AvatarRig {
   private airClip: (typeof AIR_CLIPS)[number] = "Air"
   private punchLeft = 0
 
-  /** Pulou (Paint, mm3d-35c): toca o clipe do tipo do pulo do começo. */
+  /**
+   * Pulou ou saiu do chão (Paint, mm3d-35c/e): escolhe o clipe do tipo do
+   * pulo. O clipe NÃO anda pelo relógio: `setAirPhase` põe o quadro pela fase
+   * do voo (subida → 1ª metade, alto → meio, descida → 2ª metade), então serve
+   * para pulo curto, duplo, quique da cama elástica e queda da borda. O grupo
+   * fica tocando PAUSADO — grupo parado não contribui e, com peso 1, o
+   * esqueleto voltava à pose de ligação (a pose T que o Alex viu).
+   */
   jump(kind: JumpKind) {
     const clip = AIR_CLIPS[kind]
     const g = this.groups[clip] ?? this.groups.Air
     if (!g) return
     this.airClip = this.groups[clip] ? clip : "Air"
-    g.reset()
-    // dura ~o tempo no ar (0,69 s o 1º pulo, ~0,64 s o 2º)
-    g.speedRatio = ((g.to - g.from) / 30) / (kind === 2 ? 0.62 : 0.66)
-    g.play(false)
+    g.play(true)
+    g.pause()
+    g.goToFrame(g.from)
+  }
+
+  /** Fase do voo (0 saindo do chão, 0,5 no alto, 1 chegando ao chão). */
+  setAirPhase(p: number) {
+    const g = this.groups[this.airClip]
+    if (!g) return
+    if (!g.isStarted) {
+      g.play(true)
+      g.pause()
+    }
+    g.goToFrame(g.from + (g.to - g.from) * Math.max(0, Math.min(1, p)))
   }
   /**
    * Locomoção armada do Paint (mm3d-35b): movimento no referencial do corpo

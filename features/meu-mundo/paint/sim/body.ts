@@ -10,7 +10,8 @@
 // aqui para os dois lados concordarem sobre o que dá e o que não dá.
 
 import { TUNING } from "./tuning"
-import { ceilingAt, pushOut, supportAt } from "./collide"
+import { ceilingAt, pushOut, supportIndex } from "./collide"
+import { PAINT } from "./tuning"
 import type { Solid } from "./map"
 
 export interface PaintBody {
@@ -30,6 +31,8 @@ export interface PaintBody {
   facing: number
   /** Pulos desde que saiu do chão (mm3d-35c: até dois). */
   jumps: number
+  /** Quicou numa cama elástica NESTE passo (id da mancha; -1 sem id), senão null. */
+  bounce: number | null
 }
 
 export interface BodyIntent {
@@ -42,7 +45,7 @@ export interface BodyIntent {
 }
 
 export function newBody(x: number, y: number, z: number, facing: number): PaintBody {
-  return { x, y, z, vx: 0, vy: 0, vz: 0, ground: true, air: 0, gy: y, facing, jumps: 0 }
+  return { x, y, z, vx: 0, vy: 0, vz: 0, ground: true, air: 0, gy: y, facing, jumps: 0, bounce: null }
 }
 
 /** Movimento para a animação: 0 parado, 1 andando, 2 correndo, 5 no ar. */
@@ -50,6 +53,7 @@ export type BodyMove = 0 | 1 | 2 | 5
 
 export function stepBody(b: PaintBody, it: BodyIntent, solids: readonly Solid[], dt = TUNING.step): BodyMove {
   const T = TUNING
+  b.bounce = null
   let mx = it.mx
   let mz = it.mz
   const m = Math.hypot(mx, mz)
@@ -105,13 +109,24 @@ export function stepBody(b: PaintBody, it: BodyIntent, solids: readonly Solid[],
   }
   // chão: o mais alto até o pé (+ subida, se já estava pisando)
   const reach = wasGround ? Math.max(prevY, b.y) + T.stepUp : Math.max(prevY, b.y) + 0.02
-  const floor = supportAt(solids, b.x, b.z, reach)
-  if (b.vy <= 0 && floor > -Infinity && b.y <= floor + (wasGround ? 0.06 : 0)) {
+  const fi = supportIndex(solids, b.x, b.z, reach)
+  const fs = fi >= 0 ? solids[fi] : null
+  const floor = fs ? fs.y1 : -Infinity
+  if (b.vy <= 0 && fs && b.y <= floor + (wasGround ? 0.06 : 0)) {
     b.y = floor
+    b.gy = floor
+    if (fs.k === 0 && fs.c === PAINT.STEP) {
+      // cama elástica (mm3d-35e): lança para cima; no ar ainda tem um pulo
+      b.vy = T.bounceV
+      b.ground = false
+      b.air = T.coyote
+      b.jumps = 1
+      b.bounce = fs.b ?? -1
+      return 5
+    }
     b.vy = 0
     b.ground = true
     b.air = 0
-    b.gy = floor
     b.jumps = 0
   } else if (wasGround && b.vy <= 0 && floor > -Infinity && b.y - floor <= 0.25) {
     // descendo rampa/degrau baixo: gruda
@@ -143,7 +158,7 @@ export function knockBody(b: PaintBody, kx: number, ky: number, kz: number) {
   }
 }
 
-/** Um degrau nasceu embaixo de quem está aqui: sobe para o topo (até 1,1 m). */
+/** Uma mancha nasceu embaixo de quem está aqui: sobe para o topo (até 1,1 m). */
 export function liftOnto(b: PaintBody, x: number, z: number, r: number, top: number) {
   if (Math.hypot(b.x - x, b.z - z) > r + TUNING.bodyR * 0.5) return false
   if (top <= b.y || top - b.y > 1.1) return false

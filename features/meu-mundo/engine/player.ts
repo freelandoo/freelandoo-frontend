@@ -135,6 +135,11 @@ export class Character {
     this.rig?.jump(kind)
   }
 
+  /** Fase do voo do Paint (0 saída, 0,5 alto, 1 chegando ao chão). */
+  setAirPhase(p: number) {
+    this.rig?.setAirPhase(p)
+  }
+
   /** Locomoção armada do Paint (m/s no referencial do corpo); null = normal. */
   setPaintMove(fwd: number, side: number, firing: boolean) {
     if (this.rig) this.rig.paint = { fwd, side, firing }

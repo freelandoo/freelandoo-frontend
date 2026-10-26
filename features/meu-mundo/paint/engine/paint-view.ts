@@ -33,6 +33,8 @@ interface Live {
   born: number
   /** >0 = sumindo desde. */
   dying: number
+  /** Quicaram nela (cama elástica) em; 0 = nunca. */
+  squashAt: number
   /** Índice na lista da cor. */
   slot: number
 }
@@ -137,7 +139,7 @@ export class PaintView {
   add(id: number, blob: NewBlob) {
     if (this.byId.has(id)) return
     const c = blob.c
-    const live: Live = { id, blob, born: this.clock, dying: 0, slot: this.lists[c].length }
+    const live: Live = { id, blob, born: this.clock, dying: 0, squashAt: 0, slot: this.lists[c].length }
     this.lists[c].push(live)
     this.byId.set(id, { c, live })
     this.animating.add(live)
@@ -170,6 +172,15 @@ export class PaintView {
     return this.byId.has(id)
   }
 
+  /** Alguém quicou nela (cama elástica, mm3d-35e): afunda e balança como gelatina. */
+  squash(id: number) {
+    const e = this.byId.get(id)
+    if (!e) return
+    e.live.squashAt = this.clock
+    this.animating.add(e.live)
+    this.burst({ x: e.live.blob.x, y: e.live.blob.y1, z: e.live.blob.z }, e.c, 5, 2)
+  }
+
   private drop(c: PaintColor, live: Live) {
     const list = this.lists[c]
     const last = list.pop()!
@@ -193,8 +204,17 @@ export class PaintView {
     const sy = (h * 0.5 + 0.025) * Math.max(0.15, k)
     const cy = b.y0 + h * 0.5
     // leve "respiração" ao nascer
-    const wob = 1 + Math.sin((this.clock - l.born) * 18) * 0.06 * Math.max(0, 1 - (this.clock - l.born) / 0.6)
-    Matrix.ComposeToRef(new Vector3(sx * wob, sy / wob, sx * wob), Quaternion.Identity(), new Vector3(b.x, cy, b.z), TMP).copyToArray(out, o)
+    let wob = 1 + Math.sin((this.clock - l.born) * 18) * 0.06 * Math.max(0, 1 - (this.clock - l.born) / 0.6)
+    // quique: afunda forte e balança amortecendo (a base fica no lugar)
+    let base = 0
+    if (l.squashAt) {
+      const t = this.clock - l.squashAt
+      const amp = Math.exp(-5.5 * t) * Math.cos(t * 19)
+      const k2 = 1 + amp * 0.45
+      wob *= k2
+      base = -(sy - sy / k2)
+    }
+    Matrix.ComposeToRef(new Vector3(sx * wob, sy / wob, sx * wob), Quaternion.Identity(), new Vector3(b.x, cy + base, b.z), TMP).copyToArray(out, o)
   }
 
   // ── efeitos ───────────────────────────────────────────────────────────────
@@ -242,7 +262,7 @@ export class PaintView {
         continue
       }
       this.dirty[c] = true
-      if (!l.dying && this.clock - l.born > 0.6) this.animating.delete(l)
+      if (!l.dying && this.clock - l.born > 0.6 && (!l.squashAt || this.clock - l.squashAt > 1)) this.animating.delete(l)
     }
     for (let c = 0; c < 3; c++) {
       if (!this.dirty[c]) continue

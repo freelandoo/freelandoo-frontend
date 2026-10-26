@@ -23,7 +23,7 @@ import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
 import type { BodyId } from "../../types"
 import { PAINT_COLORS, TUNING, type PaintColor } from "../sim/tuning"
 import { newBody, stepBody, knockBody, liftOnto, type BodyMove, type PaintBody } from "../sim/body"
-import { rayBody, supportAt } from "../sim/collide"
+import { rayBody, supportAt, supportIndex } from "../sim/collide"
 import { muzzleOf } from "../sim/paint"
 import type { MatchEvent, MatchResult, PaintPose } from "../sim/match"
 import type { Solid } from "../sim/map"
@@ -179,6 +179,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   let lunge = 0
   /** Para onde o corpo fica virado enquanto mira (o último tiro). */
   let aimYaw = 0
+  /** Velocidade de saída do último pulo (a fase do voo da animação). */
+  let launchV: number = TUNING.jumpV
+  let wasGround = true
   let reticleColor = -1
   let shotAt = -10
   /** Nocaute visto (o renascimento depois dele não é "caiu"). */
@@ -383,6 +386,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     y: number
     vy: number
     air: boolean
+    v0: number
   }
   const remotes = new Map<number, Remote>()
   const DELAY = 120
@@ -416,7 +420,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         ring.position.y = 0.06
         ring.isPickable = false
         ring.material = ringMats[p.team === me.team ? 0 : 1]
-        r = { char: c, gun: g, ring, x: p.pose.x, z: p.pose.z, speed: 0, vx: 0, vz: 0, shotAt: -10, y: p.pose.y, vy: 0, air: false }
+        r = { char: c, gun: g, ring, x: p.pose.x, z: p.pose.z, speed: 0, vx: 0, vz: 0, shotAt: -10, y: p.pose.y, vy: 0, air: false, v0: 7 }
         remotes.set(p.slot, r)
       }
       const s = sampleAt(port.samples?.get(p.slot), now) ?? { x: p.pose.x, y: p.pose.y, z: p.pose.z, f: p.pose.facing, g: p.pose.ground }
@@ -434,11 +438,20 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       r.char.place(s.x, s.z, s.f, s.y, supportAt(solids, s.x, s.z, s.y + 0.05))
       // pulo dos outros: saiu do chão = 1º pulo; no ar voltou a subir = 2º
       const vy = (s.y - r.y) / Math.max(dt, 1e-3)
-      if (!s.g && !r.air) r.char.jump(0)
+      if (!s.g && !r.air) {
+        r.char.jump(0)
+        // saiu do chão de cima de uma cama elástica: ela afunda na tela de quem vê
+        const pi = supportIndex(solids, s.x, s.z, s.y + 0.6)
+        const pad = pi >= 0 ? solids[pi] : null
+        if (pad && pad.k === 0 && pad.c === 2 && pad.b !== undefined && vy > 9) paint.squash(pad.b)
+      }
       else if (!s.g && r.air && r.vy < 0 && vy > 3) r.char.jump(2)
+      if (!s.g && !r.air) r.v0 = Math.max(4, vy)
+      else if (!s.g && r.air && r.vy < 0 && vy > 3) r.v0 = Math.max(4, vy)
       r.air = !s.g
-      r.vy = vy
+      r.vy += (vy - r.vy) * 0.5
       r.y = s.y
+      if (!s.g) r.char.setAirPhase((r.v0 - r.vy) / (2 * r.v0))
       r.char.setAir(!s.g)
       const fx = Math.sin(s.f)
       const fz = Math.cos(s.f)
@@ -512,7 +525,13 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       const facingBefore = body.facing
       const jumpsBefore = body.jumps
       move = stepBody(body, { ...intent, jump }, solids)
-      if (body.jumps > jumpsBefore) {
+      if (body.bounce !== null) {
+        // cama elástica: a bolha afunda e o corpo sai no pulo
+        paint.squash(body.bounce)
+        char.jump(0)
+        launchV = body.vy
+      } else if (body.jumps > jumpsBefore) {
+        launchV = body.vy
         const fx = Math.sin(body.facing)
         const fz = Math.cos(body.facing)
         const side = Math.abs(body.vx * fz - body.vz * fx)
@@ -522,7 +541,14 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       }
       jump = false
       if (aimHold > 0) body.facing = facingBefore
+      // saiu do chão sem pular (andou para fora da borda): pose de queda
+      if (wasGround && !body.ground && body.bounce === null && body.jumps === jumpsBefore) {
+        char.jump(0)
+        launchV = TUNING.jumpV
+      }
+      wasGround = body.ground
     }
+    if (!body.ground) char.setAirPhase((launchV - body.vy) / (2 * Math.max(1, launchV)))
     if (n === 8) acc = 0
     if (aimHold > 0) {
       aimHold -= dt

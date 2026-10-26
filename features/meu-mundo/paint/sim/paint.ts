@@ -9,7 +9,8 @@
 //    Senão (mirando o vão, ou o lado de uma ilha) → a ponte CRESCE: acha a
 //    borda do chão na direção da mira, na altura do último chão pisado, e põe
 //    um disco logo depois dela. Segurando o botão, disco atrás de disco.
-//  - AMARELO (degrau): no ar → degrau embaixo do pé (empilha). No chão →
+//  - AMARELO (cama elástica, mm3d-35e): no ar → embaixo do pé (cai nela e é
+//    lançado). No chão →
 //    onde a mira bate (perto), ou logo à frente.
 //  - VERMELHO ESCURO (dano): acerta o jogador do OUTRO time, o chefão, ou
 //    apaga tinta do outro time; no chão vira só respingo.

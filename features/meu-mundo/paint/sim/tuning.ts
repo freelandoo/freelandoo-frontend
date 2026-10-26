@@ -10,7 +10,7 @@ export const PAINT = {
   BRIDGE: 0,
   /** Vermelho escuro: dano; apaga a tinta do outro time. */
   HARM: 1,
-  /** Amarelo: degrau (sobe). */
+  /** Amarelo: cama elástica (mm3d-35e: quem pisa é lançado para cima). */
   STEP: 2,
 } as const
 export type PaintColor = 0 | 1 | 2
@@ -59,9 +59,11 @@ export const TUNING = {
   bridgeH: 0.34,
   /** A ponte cresce até esta distância horizontal de quem atira. */
   bridgeReach: 12,
-  /** Degrau (amarelo): cilindro alto. */
-  stepR: 0.85,
-  stepH: 1.0,
+  /** Cama elástica (amarelo, mm3d-35e): almofada baixa (dá para entrar andando) que lança para cima. */
+  stepR: 1.0,
+  stepH: 0.4,
+  /** Velocidade do lançamento: ~4,6 m de altura (+ o pulo no ar; o topo pede 5,2 m). */
+  bounceV: 14.2,
   /** Tinta some depois de (s) e cada jogador tem no máximo N manchas. */
   blobLife: 45,
   blobsPerPlayer: 60,

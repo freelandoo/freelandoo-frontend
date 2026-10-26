@@ -40,7 +40,7 @@ type Stage =
   | { kind: "game"; port: PaintPort; key: number }
 
 const COLOR_KEYS = ["paintColorBridge", "paintColorHarm", "paintColorStep"] as const
-const COLOR_FALLBACK = ["Ponte", "Dano", "Degrau"]
+const COLOR_FALLBACK = ["Ponte", "Dano", "Cama elástica"]
 
 export function PaintView({ body, onExit, join }: PaintViewProps) {
   const t = useTranslations("MeuMundo")
@@ -163,7 +163,7 @@ function PaintMenu({
                   ? t("paintHowBridge", "Segure mirando o vão: a ponte cresce.")
                   : c === 1
                     ? t("paintHowHarm", "Tira coração do outro time e apaga a tinta dele.")
-                    : t("paintHowStep", "Pule e atire no pé: degrau embaixo de você.")}
+                    : t("paintHowStep", "Atire no chão (ou no pé, pulando): pise nela e seja lançado para cima.")}
               </span>
             </li>
           ))}

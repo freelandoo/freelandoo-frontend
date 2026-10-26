@@ -35,6 +35,21 @@ export function supportAt(solids: readonly Solid[], x: number, z: number, maxY: 
   return best
 }
 
+/** Índice do sólido que dá o chão de `supportAt` (-1 = nenhum). */
+export function supportIndex(solids: readonly Solid[], x: number, z: number, maxY: number, pad = FOOT_R) {
+  let best = -Infinity
+  let idx = -1
+  for (let i = 0; i < solids.length; i++) {
+    const s = solids[i]
+    if (s.y1 > maxY || s.y1 <= best) continue
+    if (inside(s, x, z, pad)) {
+      best = s.y1
+      idx = i
+    }
+  }
+  return idx
+}
+
 /**
  * Tira o corpo (círculo de raio r, de `y` a `y + h`) de dentro dos sólidos que
  * ele não consegue subir (topo acima de `y + up`). Mexe em `p` e devolve se

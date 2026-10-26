@@ -88,6 +88,16 @@ const MEU_MUNDO = {
   paintOffline: ["Sem conexão com a sala", "No connection to the room", "Sin conexión con la sala"],
 }
 
+// mm3d-35e: o amarelo virou cama elástica — estes valores SOBRESCREVEM os antigos.
+const OVERRIDE = {
+  paintColorStep: ["Cama elástica", "Trampoline", "Cama elástica"],
+  paintHowStep: [
+    "Atire no chão (ou no pé, pulando): pise nela e seja lançado para cima.",
+    "Shoot the floor (or your feet mid-jump): step on it and get launched up.",
+    "Dispara al suelo (o a tus pies saltando): písala y sal disparado hacia arriba.",
+  ],
+}
+
 const LOCALES = ["pt-BR", "en", "es"]
 let added = 0
 for (const [i, locale] of LOCALES.entries()) {
@@ -96,6 +106,12 @@ for (const [i, locale] of LOCALES.entries()) {
   json.MeuMundo = json.MeuMundo || {}
   for (const [key, vals] of Object.entries(MEU_MUNDO)) {
     if (json.MeuMundo[key] === undefined) {
+      json.MeuMundo[key] = vals[i]
+      added++
+    }
+  }
+  for (const [key, vals] of Object.entries(OVERRIDE)) {
+    if (json.MeuMundo[key] !== vals[i]) {
       json.MeuMundo[key] = vals[i]
       added++
     }
