@@ -6053,7 +6053,22 @@
     "gymMetricStreak": "in a row",
     "gymMetric30": "days / 30d",
     "gymLinkedSince": "linked since {d}",
-    "gymConnectTitle": "Connect your gym"
+    "gymConnectTitle": "Connect your gym",
+    "chkExercises": "exercises",
+    "chkLeft": "{n} to go",
+    "chkNow": "Now",
+    "chkFooter": "{done} of {total} done",
+    "chkRowTodo": "{name}, {sets} sets of {reps}{load} — mark as done",
+    "chkRowDone": "{name} — done, tap to undo",
+    "chkRowNext": "next exercise",
+    "chkLive": "{done} of {total} exercises done",
+    "chkDoneStamp": "Workout done",
+    "chkDoneAt": "Workout done · {time}",
+    "chkEmptyPlan": "This plan has no exercises",
+    "chkSaveError": "Couldn't save the check",
+    "chkBack": "Back",
+    "chkNoPlanTitle": "No active plan",
+    "chkBuildPlan": "Build my plan"
   },
   "Workouts": {
     "todayTitle": "Today's workout",

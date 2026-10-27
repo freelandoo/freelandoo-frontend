@@ -1,12 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
-import { Check, Dumbbell, Loader2, Maximize2, Pencil, Plus, Trash2, X } from "lucide-react"
+import { motion } from "framer-motion"
+import { ChevronLeft, ClipboardList, Loader2, Maximize2, Pencil, Plus, Trash2 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { WorkoutPlanEditor, type EditablePlan } from "./workout-plan-editor"
 import { ValidityLine } from "./workout-validity"
+import { WorkoutChecklist, type ChecklistItem } from "./ui/workout-checklist"
+import { SP } from "./ui/sp-tokens"
 
 type PlanExercise = {
   id_plan_exercise: string
@@ -49,36 +52,16 @@ const MUSCLE_LABEL: Record<string, [string, string]> = {
 }
 
 /**
- * O CHECK da ficha — grande, verde e fácil de acertar com o dedo (pedido do
- * Alex, 2026-09-10: "deixe grande e um check verde bonito, fácil de clicar").
+ * Card "Treino de hoje" do /esportes/treino (fichas da fase 3).
  *
- * É uma peça só para o card e para o modal: dois desenhos do mesmo check
- * divergiriam na primeira mudança de cor. Quem é clicável é a LINHA inteira
- * (o botão que envolve o check), não este quadrado — 32px de quadrado ainda
- * seriam um alvo pequeno; a linha tem 48px de altura e a largura toda.
+ * Repaginada 2026-10-27: o miolo é o CHECKLIST (`ui/workout-checklist`) —
+ * placar enorme "2/6" no topo, barra segmentada, check quadrado grande com
+ * animação de prazer, rodapé "2 de 6 concluídos". É a MESMA peça no card e na
+ * ficha em tela cheia (dois desenhos divergiriam na primeira mudança).
  */
-function BigCheck({ checked, size = "md" }: { checked: boolean; size?: "md" | "lg" }) {
-  const box = size === "lg" ? "h-10 w-10" : "h-8 w-8"
-  const icon = size === "lg" ? "h-7 w-7" : "h-6 w-6"
-  return (
-    <span
-      aria-hidden
-      className={`grid shrink-0 place-items-center border-2 transition-colors ${box} ${
-        checked
-          ? "border-[#0B0B0D] bg-[#22C55E] shadow-[2px_2px_0_0_#0B0B0D]"
-          : "border-[#9A938A]/70 bg-[#0b0804]"
-      }`}
-    >
-      {checked && <Check className={`${icon} text-[#0B0B0D]`} strokeWidth={3.5} />}
-    </span>
-  )
-}
-
-/** Card "Treino de hoje" do painel /fitness (dados da fase 3 — fichas).
- *  Os checks vivem no próprio card (linha inteira clicável) e no modal
- *  grande, que abre pelo nome da ficha. */
 export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refreshKey?: number }) {
   const t = useTranslations("Workouts")
+  const tf = useTranslations("Fitness")
   const [plans, setPlans] = useState<Plan[]>([])
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
   const [active, setActive] = useState(0)
@@ -92,18 +75,25 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
     return token ? { Authorization: `Bearer ${token}` } : {}
   }, [])
 
+  // ⚠️ GERAÇÃO DO LOAD: cada toque recarrega a lista inteira; com toques
+  // rápidos uma resposta VELHA chegava depois e desfazia o toque mais novo (o ✓
+  // sumia e voltava — a piscada mata o prazer do check). Resposta de um load
+  // que começou antes do último toque é descartada.
+  const gen = useRef(0)
   const load = useCallback(async () => {
+    const at = gen.current
     try {
       const res = await fetch(`/api/workouts/today?date=${date}`, { headers: authHeaders() })
       if (!res.ok) throw new Error()
       const data = await res.json()
+      if (at !== gen.current) return
       const next: Plan[] = Array.isArray(data.plans) ? data.plans : []
       setPlans(next)
       // A ficha selecionada pode ter sumido (exclusão) — não deixar índice órfão.
       setActive((a) => Math.min(a, Math.max(0, next.length - 1)))
       setState("loaded")
     } catch {
-      setState("error")
+      if (at === gen.current) setState((s) => (s === "loaded" ? s : "error"))
     }
   }, [date, authHeaders])
 
@@ -122,6 +112,8 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
 
   const toggle = useCallback(
     async (plan: Plan, ex: PlanExercise) => {
+      gen.current++
+      const mine = gen.current
       // otimista
       setPlans((prev) =>
         prev.map((p) =>
@@ -137,12 +129,13 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
           body: JSON.stringify({ id_plan: plan.id_plan, id_plan_exercise: ex.id_plan_exercise, log_date: date }),
         })
         if (!res.ok) throw new Error()
-        void load()
+        if (mine === gen.current) void load()
       } catch {
-        void load()
+        toast.error(tf("chkSaveError", "Não deu pra salvar o check"))
+        if (mine === gen.current) void load()
       }
     },
-    [authHeaders, date, load]
+    [authHeaders, date, load, tf]
   )
 
   const openEditor = useCallback((p: Plan | null) => {
@@ -186,235 +179,232 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
   )
 
   const plan = plans[active]
-  const doneCount = plan ? plan.exercises.filter((e) => e.checked).length : 0
-  const totalCount = plan ? plan.exercises.length : 0
+  const items: ChecklistItem[] = useMemo(
+    () =>
+      plan
+        ? plan.exercises.map((ex) => {
+            const muscle = ex.muscle_group ? MUSCLE_LABEL[ex.muscle_group] : null
+            return {
+              id: ex.id_plan_exercise,
+              name: ex.exercise_nome,
+              sets: ex.sets,
+              reps: ex.reps,
+              load_kg: ex.load_kg,
+              rest_seconds: ex.rest_seconds,
+              muscle: muscle ? t(muscle[0], muscle[1]) : null,
+              checked: ex.checked,
+            }
+          })
+        : [],
+    [plan, t]
+  )
+  const onToggle = useCallback(
+    (it: ChecklistItem) => {
+      if (!plan) return
+      const ex = plan.exercises.find((e) => e.id_plan_exercise === it.id)
+      if (ex) void toggle(plan, ex)
+    },
+    [plan, toggle]
+  )
+
+  const author = plan
+    ? plan.by_student
+      ? t("ownPlanBadge", "Feita por você")
+      : plan.academy_nome
+        ? `${t("profPlanBadge", "Do professor")} · ${plan.academy_nome}`
+        : t("profPlanBadge", "Do professor")
+    : ""
+
+  const header = (full: boolean) =>
+    plan && (
+      <div className="flex items-start gap-3 border-b-2 px-4 py-3" style={{ borderColor: SP.room.workout, background: SP.panel }}>
+        {full ? (
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="inline-flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em]"
+            style={{ background: SP.inner }}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {tf("chkBack", "Voltar")}
+          </button>
+        ) : (
+          <span className="grid h-8 w-8 shrink-0 place-items-center border-2 border-[#0B0B0D] text-[#0B0B0D]" style={{ background: SP.ember }}>
+            <ClipboardList className="h-4 w-4" />
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <h3 className="fl-display truncate text-2xl leading-none md:text-[28px]">{plan.nome}</h3>
+          <p className="mt-1 font-mono text-[11px]" style={{ color: SP.mute }}>
+            <span style={plan.by_student ? { color: SP.glow } : undefined}>{author}</span>
+            {" · "}
+            {t("daysOnPlan", "{n} dias com esta ficha").replace("{n}", String(plan.days_on_plan))}
+            {" · "}
+            <ValidityLine validadeDias={plan.validade_dias} venceEm={plan.vence_em} />
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          {!full && (
+            <IconBtn label={t("openPlanModal", "Abrir ficha em tela cheia")} onClick={() => setExpanded(true)}>
+              <Maximize2 className="h-4 w-4" />
+            </IconBtn>
+          )}
+          {plan.by_student && (
+            <>
+              <IconBtn label={t("editPlan", "Editar")} onClick={() => openEditor(plan)}>
+                <Pencil className="h-4 w-4" />
+              </IconBtn>
+              <IconBtn label={t("deletePlan", "Excluir")} onClick={() => void removePlan(plan)} disabled={deleting}>
+                <Trash2 className="h-4 w-4" />
+              </IconBtn>
+            </>
+          )}
+        </div>
+      </div>
+    )
+
+  const tabs = plans.length > 1 && (
+    <div className="flex border-2 border-[#0B0B0D]">
+      {plans.map((p, i) => (
+        <button
+          key={p.id_plan}
+          type="button"
+          onClick={() => setActive(i)}
+          className="relative min-w-0 flex-1 px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em]"
+          style={{ color: i === active ? "#0B0B0D" : SP.ink, background: i === active ? "transparent" : SP.inner }}
+        >
+          {i === active && <motion.span layoutId="esp-plan-tab" className="absolute inset-0" style={{ background: SP.ember }} />}
+          <span className="relative block truncate" title={p.nome}>
+            {p.nome}
+          </span>
+        </button>
+      ))}
+    </div>
+  )
+
+  const checklist = (size: number) =>
+    plan && (
+      <WorkoutChecklist
+        items={items}
+        planKey={plan.id_plan}
+        dayKey={date}
+        onToggle={onToggle}
+        checkSize={size}
+        completedAt={plan.completed_at}
+      />
+    )
 
   return (
-    <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
+    <div className="space-y-3 text-[#F5F1E8]">
       <div className="flex items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-          <Dumbbell className="h-4 w-4 text-[#FB923C]" /> {t("todayTitle", "Treino de hoje")}
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: SP.mute }}>
+          {t("todayTitle", "Treino de hoje")}
         </p>
         <button
           type="button"
           onClick={() => openEditor(null)}
-          aria-label={t("newPlan", "Nova ficha")}
-          title={t("newPlan", "Nova ficha")}
-          className="flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-2 py-0.5 text-[10px] font-black uppercase text-[#0B0B0D]"
+          className="flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] px-2 py-1 text-[10px] font-black uppercase text-[#0B0B0D]"
+          style={{ background: SP.ember }}
         >
           <Plus className="h-3.5 w-3.5" /> {t("newPlan", "Nova ficha")}
         </button>
       </div>
 
-      {state === "loading" && (
-        <div className="flex justify-center py-6">
-          <Loader2 className="h-4 w-4 animate-spin text-[#9A938A]" />
-        </div>
-      )}
+      {tabs}
 
-      {state !== "loading" && (!plan || plans.length === 0) && (
-        <p className="mt-2 text-xs text-[#9A938A]">
-          {t("todayEmptyOwn", "Nenhuma ficha ativa. Monte a sua aqui ou peça pro seu professor montar na academia.")}
-        </p>
-      )}
-
-      {plan && (
-        <div className="mt-2">
-          {plans.length > 1 && (
-            <div className="flex flex-wrap gap-1">
-              {plans.map((p, i) => (
-                <button
-                  key={p.id_plan}
-                  onClick={() => setActive(i)}
-                  className={`border-2 border-[#0B0B0D] px-2 py-0.5 text-[10px] font-extrabold uppercase ${i === active ? "bg-[#FF8C2B] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
-                >
-                  {p.nome}
-                </button>
+      <div className="relative border-2 border-[#0B0B0D]" style={{ background: SP.panel, boxShadow: `8px 8px 0 0 ${SP.room.workout}` }}>
+        {state === "loading" && (
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-5 w-5 animate-spin" style={{ color: SP.dim }} />
+          </div>
+        )}
+        {state === "error" && (
+          <div className="px-4 py-8 text-center text-sm" style={{ color: SP.mute }}>
+            {tf("loadError", "Erro ao carregar o painel. Tente novamente.")}{" "}
+            <button type="button" onClick={() => void load()} className="underline underline-offset-2">
+              {tf("retry", "Tentar de novo")}
+            </button>
+          </div>
+        )}
+        {state === "loaded" && !plan && (
+          <div className="px-4 py-8 text-center">
+            <div className="mx-auto mb-4 max-w-xs space-y-2 opacity-50">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex items-center gap-3 border-2 border-dashed px-3 py-2.5" style={{ borderColor: SP.mute }}>
+                  <span className="h-8 w-8 border-2 border-dashed" style={{ borderColor: SP.mute }} />
+                  <span className="h-2 flex-1" style={{ background: `${SP.mute}44` }} />
+                </div>
               ))}
             </div>
-          )}
-          {/* O nome da ficha abre o modal grande; os checks ficam AQUI, na
-              linha inteira — botão dentro de botão não existe em HTML, então
-              o título e as linhas são botões IRMÃOS, não aninhados. */}
-          <button
-            type="button"
-            onClick={() => setExpanded(true)}
-            aria-label={t("openPlanModal", "Abrir ficha em tela cheia")}
-            className="mt-1 block w-full text-left hover:bg-[#1D1810]"
-          >
-            <p className="flex items-center gap-1.5 text-base font-black">
-              {plan.nome}
-              <Maximize2 className="h-4 w-4 shrink-0 text-[#FB923C]" />
+            <p className="fl-display text-2xl leading-none">{tf("chkNoPlanTitle", "Nenhuma ficha ativa")}</p>
+            <p className="mx-auto mt-2 max-w-sm text-xs" style={{ color: SP.mute }}>
+              {t("todayEmptyOwn", "Nenhuma ficha ativa. Monte a sua aqui ou peça pro seu professor montar na academia.")}
             </p>
-            <p className="text-[10px] font-bold uppercase text-[#9A938A]">
-              {t("daysOnPlan", "{n} dias com esta ficha").replace("{n}", String(plan.days_on_plan))}
-              {" · "}
-              <span className={plan.by_student ? "text-[#FB923C]" : ""}>
-                {plan.by_student ? t("ownPlanBadge", "Feita por você") : t("profPlanBadge", "Do professor")}
-              </span>
-            </p>
-            <p className="text-[10px] font-bold uppercase text-[#9A938A]">
-              <ValidityLine validadeDias={plan.validade_dias} venceEm={plan.vence_em} />
-            </p>
-            {plan.completed_at && (
-              <p className="mt-1 border-2 border-[#0B0B0D] bg-[#22C55E] px-2 py-0.5 text-center text-[10px] font-extrabold uppercase text-[#0B0B0D]">
-                {t("sessionDone", "Treino concluído!")}
-              </p>
-            )}
-          </button>
-          <ul className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
-            {plan.exercises.map((ex) => (
-              <li key={ex.id_plan_exercise}>
-                <button
-                  type="button"
-                  onClick={() => void toggle(plan, ex)}
-                  aria-pressed={ex.checked}
-                  className={`flex min-h-12 w-full items-center gap-3 border-2 border-[#0B0B0D] px-3 py-2 text-left ${
-                    ex.checked ? "bg-[#1D1810]/60" : "bg-[#1D1810] hover:bg-[#241d12]"
-                  }`}
-                >
-                  <BigCheck checked={ex.checked} />
-                  <span className={`min-w-0 flex-1 truncate text-base font-bold leading-snug ${ex.checked ? "line-through text-[#9A938A]" : "text-[#F5F1E8]"}`}>
-                    {ex.exercise_nome}
-                  </span>
-                  <span className="shrink-0 text-sm font-extrabold text-[#9A938A]">
-                    {ex.sets}×{ex.reps}
-                    {ex.load_kg ? ` · ${ex.load_kg}kg` : ""}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={() => openEditor(null)}
+              className="mt-4 inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]"
+              style={{ background: SP.ember }}
+            >
+              <Plus className="h-4 w-4" /> {tf("chkBuildPlan", "Montar minha ficha")}
+            </button>
+          </div>
+        )}
+        {plan && (
+          <>
+            {header(false)}
+            {checklist(56)}
+          </>
+        )}
+      </div>
 
-      {/* Modal grande da ficha — leitura confortável + checks */}
+      {/* Ficha em tela cheia — o MESMO checklist, maior */}
       {expanded && plan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setExpanded(false)}>
+        <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/85 md:items-center md:p-4" onClick={() => setExpanded(false)}>
           <div
-            className="fl-sharp flex max-h-[92vh] w-full max-w-lg flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8]"
-            style={{ boxShadow: "8px 8px 0 0 #FF8C2B" }}
+            className="fl-sharp flex max-h-[100dvh] w-full max-w-2xl flex-col overflow-y-auto border-2 border-[#0B0B0D] text-[#F5F1E8] md:max-h-[92vh]"
+            style={{ background: SP.panel, boxShadow: `8px 8px 0 0 ${SP.room.workout}` }}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={plan.nome}
           >
-            <div className="flex items-start justify-between gap-3 border-b-2 border-[#0B0B0D] p-5 pb-4">
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-                  <Dumbbell className="h-4 w-4 text-[#FB923C]" /> {t("todayTitle", "Treino de hoje")}
-                </p>
-                <h3 className="mt-1 text-2xl font-black uppercase leading-tight">{plan.nome}</h3>
-                <p className="text-[11px] font-bold uppercase text-[#9A938A]">
-                  {t("daysOnPlan", "{n} dias com esta ficha").replace("{n}", String(plan.days_on_plan))}
-                  {" · "}
-                  {plan.by_student
-                    ? t("ownPlanBadge", "Feita por você")
-                    : plan.academy_nome
-                      ? `${t("profPlanBadge", "Do professor")} · ${plan.academy_nome}`
-                      : t("profPlanBadge", "Do professor")}
-                </p>
-                <p className="text-[11px] font-bold uppercase text-[#9A938A]">
-                  <ValidityLine validadeDias={plan.validade_dias} venceEm={plan.vence_em} />
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <button
-                  onClick={() => openEditor(plan)}
-                  aria-label={t("editPlan", "Editar")}
-                  title={t("editPlan", "Editar")}
-                  className="border-2 border-[#0B0B0D] bg-[#1D1810] p-1.5"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => void removePlan(plan)}
-                  disabled={deleting}
-                  aria-label={t("deletePlan", "Excluir")}
-                  title={t("deletePlan", "Excluir")}
-                  className="border-2 border-[#0B0B0D] bg-[#1D1810] p-1.5 disabled:opacity-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-                <button onClick={() => setExpanded(false)} aria-label={t("close", "Fechar")} className="p-1">
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-5 pt-4">
-              {plans.length > 1 && (
-                <div className="mb-3 flex flex-wrap gap-1">
-                  {plans.map((p, i) => (
-                    <button
-                      key={p.id_plan}
-                      onClick={() => setActive(i)}
-                      className={`border-2 border-[#0B0B0D] px-2.5 py-1 text-[11px] font-extrabold uppercase ${i === active ? "bg-[#FF8C2B] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
-                    >
-                      {p.nome}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {plan.completed_at ? (
-                <p className="border-2 border-[#0B0B0D] bg-[#4fc95a] px-3 py-1.5 text-center text-xs font-extrabold uppercase text-[#0B0B0D]">
-                  {t("sessionDone", "Treino concluído!")}
-                </p>
-              ) : (
-                <div>
-                  <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">
-                    {t("progressCount", "{done}/{total} exercícios feitos")
-                      .replace("{done}", String(doneCount))
-                      .replace("{total}", String(totalCount))}
-                  </p>
-                  <div className="mt-1 h-2 border border-[#0B0B0D] bg-[#1D1810]">
-                    <div
-                      className={doneCount === totalCount && totalCount > 0 ? "h-full bg-[#22C55E]" : "h-full bg-[#FF8C2B]"}
-                      style={{ width: totalCount > 0 ? `${(doneCount / totalCount) * 100}%` : "0%" }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <ul className="mt-4 space-y-2">
-                {plan.exercises.map((ex) => {
-                  const muscle = ex.muscle_group ? MUSCLE_LABEL[ex.muscle_group] : null
-                  return (
-                    <li key={ex.id_plan_exercise}>
-                      <button
-                        type="button"
-                        onClick={() => void toggle(plan, ex)}
-                        aria-pressed={ex.checked}
-                        className={`flex min-h-14 w-full items-center gap-3 border-2 border-[#0B0B0D] px-3 py-2.5 text-left ${ex.checked ? "bg-[#1D1810]/60" : "bg-[#1D1810] hover:bg-[#241d12]"}`}
-                      >
-                        <BigCheck checked={ex.checked} size="lg" />
-                        <span className="min-w-0 flex-1">
-                          <span className={`block text-lg font-bold leading-snug ${ex.checked ? "line-through text-[#9A938A]" : ""}`}>
-                            {ex.exercise_nome}
-                          </span>
-                          <span className="mt-0.5 block text-xs font-semibold text-[#9A938A]">
-                            {ex.sets} {t("seriesLabel", "séries")} × {ex.reps}
-                            {ex.load_kg ? ` · ${ex.load_kg}kg` : ""}
-                            {ex.rest_seconds ? ` · ${t("restLabel", "descanso {s}s").replace("{s}", String(ex.rest_seconds))}` : ""}
-                          </span>
-                        </span>
-                        {muscle && (
-                          <span className="shrink-0 border border-[#0B0B0D] bg-[#15120E] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#FB923C]">
-                            {t(muscle[0], muscle[1])}
-                          </span>
-                        )}
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
+            {header(true)}
+            {plans.length > 1 && <div className="px-3 pt-3">{tabs}</div>}
+            {checklist(60)}
           </div>
         </div>
       )}
 
       {/* Editor da ficha própria — salva direto, sem passar por aprovação */}
-      {editor && (
-        <WorkoutPlanEditor plan={editor.plan} onClose={() => setEditor(null)} onSaved={() => void load()} />
-      )}
+      {editor && <WorkoutPlanEditor plan={editor.plan} onClose={() => setEditor(null)} onSaved={() => void load()} />}
     </div>
+  )
+}
+
+function IconBtn({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      whileTap={{ x: 2, y: 2 }}
+      className="grid h-9 w-9 place-items-center border-2 border-[#0B0B0D] disabled:opacity-50"
+      style={{ background: SP.inner, boxShadow: "2px 2px 0 0 #0B0B0D" }}
+    >
+      {children}
+    </motion.button>
   )
 }

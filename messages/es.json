@@ -6033,7 +6033,22 @@
     "gymMetricStreak": "seguidos",
     "gymMetric30": "días / 30d",
     "gymLinkedSince": "vinculado desde {d}",
-    "gymConnectTitle": "Conecta tu gimnasio"
+    "gymConnectTitle": "Conecta tu gimnasio",
+    "chkExercises": "ejercicios",
+    "chkLeft": "Faltan {n}",
+    "chkNow": "Ahora",
+    "chkFooter": "{done} de {total} completados",
+    "chkRowTodo": "{name}, {sets} series de {reps}{load} — marcar como hecho",
+    "chkRowDone": "{name} — hecho, toca para desmarcar",
+    "chkRowNext": "próximo ejercicio",
+    "chkLive": "{done} de {total} ejercicios completados",
+    "chkDoneStamp": "Entreno completado",
+    "chkDoneAt": "Entreno completado · {time}",
+    "chkEmptyPlan": "Esta ficha no tiene ejercicios",
+    "chkSaveError": "No se pudo guardar el check",
+    "chkBack": "Volver",
+    "chkNoPlanTitle": "Ninguna ficha activa",
+    "chkBuildPlan": "Armar mi ficha"
   },
   "Workouts": {
     "todayTitle": "Entrenamiento de hoy",
