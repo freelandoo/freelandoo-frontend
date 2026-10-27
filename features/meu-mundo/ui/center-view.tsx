@@ -35,6 +35,7 @@ const PlaceScreen = dynamic(() => import("./place/place-screen").then((m) => m.P
 const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => m.JetpackView), { ssr: false })
 const PaintView = dynamic(() => import("../paint/ui/paint-view").then((m) => m.PaintView), { ssr: false })
 const RaceView = dynamic(() => import("../corrida/ui/race-view").then((m) => m.RaceView), { ssr: false })
+const RunView = dynamic(() => import("../noturno/ui/run-view").then((m) => m.RunView), { ssr: false })
 
 /** Paint (mm3d-35): reserva numa sala do modo pedido (null = sem acesso). */
 async function fetchPaintSession(mode: string, roomId: string | null) {
@@ -96,6 +97,7 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   jetpack: "Jetpack",
   paint: "Paint",
   corrida: "Antigravidade",
+  noturno: "Rolê Noturno",
   igreja: "Igreja",
   delegacia: "Delegacia",
   hospital: "Hospital",
@@ -240,7 +242,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               if (g === "jetpack") {
                 setMinigameParty((it.place.party ?? 0) > 1)
                 setMinigame(g)
-              } else if (g === "paint" || g === "corrida") setMinigame(g)
+              } else if (g === "paint" || g === "corrida" || g === "noturno") setMinigame(g)
               else if (interiorOf(it.place)) {
                 const id = it.place.id
                 const ready = id === "hospital" ? (payload.center.interiors?.hospital ?? null) : (interiorCache.get(id) ?? null)
@@ -520,6 +522,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {minigame === "paint" && <PaintView body={body} look={look} onExit={() => setMinigame(null)} join={paintJoin} />}
       {/* Corrida antigravidade (mm3d-39): naves, turbo e penhascos; ao sair, volta à porta */}
       {minigame === "corrida" && <RaceView name={payload.me.name} onExit={() => setMinigame(null)} join={corridaJoin} />}
+      {/* Rolê Noturno (mm3d-40): bike, skate ou patins numa rua de noite; ao sair, volta à porta */}
+      {minigame === "noturno" && <RunView body={body} look={look} onExit={() => setMinigame(null)} />}
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
       {/* Prédios do centro (mm3d-37): mesma tela; a planta vem do servidor ao entrar */}
       {minigame === "interior" && inside && insidePlace && inside.interior && (

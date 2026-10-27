@@ -93,7 +93,7 @@ const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055)
  * trazer a cor crua ou já linear (depende de como o Blender guardou), então
  * as duas formas da origem são procuradas.
  */
-function repaint(meshes: AbstractMesh[], hex: string) {
+export function repaint(meshes: AbstractMesh[], hex: string) {
   const raw = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
   const forms = [
     { refs: PAINT_SOURCE.map((r) => [...r]), to: raw },
