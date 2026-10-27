@@ -588,6 +588,7 @@ export type CenterPlaceId =
   | "academia"
   | "jetpack"
   | "paint"
+  | "corrida"
   | "igreja"
   | "delegacia"
   | "hospital"
