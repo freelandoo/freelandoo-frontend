@@ -8632,6 +8632,7 @@
     "unlink": "Disconnect gym",
     "unlinkConfirm": "Disconnect your membership from this gym?",
     "unlinked": "Gym disconnected.",
-    "unlinkError": "Couldn't disconnect right now."
+    "unlinkError": "Couldn't disconnect right now.",
+    "mySportKicker": "Your sport"
   }
 }

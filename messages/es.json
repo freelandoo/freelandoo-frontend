@@ -8612,6 +8612,7 @@
     "unlink": "Desconectar gimnasio",
     "unlinkConfirm": "¿Desconectar tu matrícula de este gimnasio?",
     "unlinked": "Gimnasio desconectado.",
-    "unlinkError": "No se pudo desconectar ahora."
+    "unlinkError": "No se pudo desconectar ahora.",
+    "mySportKicker": "Tu deporte"
   }
 }

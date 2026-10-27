@@ -27,7 +27,8 @@
 import { useCallback, useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { AlertCircle, Building2, Loader2 } from "lucide-react"
+import { AlertCircle, Building2, Flag, Loader2 } from "lucide-react"
+import { motion } from "framer-motion"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
@@ -38,7 +39,9 @@ import { FitnessHeadcard } from "./_components/fitness-headcard"
 import { FitnessProposalsGate } from "./_components/proposals-modal"
 import { SportPickerModal, type SportOption } from "./_components/sport-picker-modal"
 import { AcademyTab, type AcademyMembership } from "./_components/academy-tab"
-import { BTN_GOLD, EMBER, StateBox } from "./_components/fitness-ui"
+import { EMBER, StateBox } from "./_components/fitness-ui"
+import { SpeedBand } from "./_components/ui/speed-band"
+import { SPRING } from "./_components/ui/motion"
 
 // Pesados e só necessários depois de um gesto — mesma disciplina do Games.
 const PortfolioPostCard = dynamic(
@@ -282,23 +285,28 @@ export default function SportsFeedPage() {
         action={publishMenu()}
       />
 
-      {/* As abas. Rolam na horizontal no celular quando há academia de nome comprido. */}
+      {/* As abas — repaginada 2026-10-27: SEM rolagem horizontal (rolava com
+          academia de nome comprido). Grade de colunas iguais que quebra em
+          linhas; o marcador laranja é UM bloco que desliza entre as abas. */}
       <nav className="mx-auto mt-6 w-full max-w-5xl px-3 md:px-10" aria-label={ts("tabsAria", "Seções de Esportes")}>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(104px,1fr))] border-2 border-[#0B0B0D]" style={{ boxShadow: "3px 3px 0 0 #0B0B0D" }}>
           {tabs.map((tb) => {
             const on = (academyTab ? academyTab.slug : feedTab) === tb.key
             return (
-              <button
+              <motion.button
                 key={tb.key}
                 type="button"
                 onClick={() => setTab(tb.key)}
                 aria-pressed={on}
-                className={`shrink-0 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-black uppercase tracking-[0.12em] transition ${
-                  on ? "bg-[#FF8C2B] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]" : "bg-[#1D1810] text-[#F5F1E8]/80 hover:text-[#F5F1E8]"
+                whileTap={{ y: 2 }}
+                title={tb.label}
+                className={`relative min-w-0 px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] transition-colors ${
+                  on ? "text-[#0B0B0D]" : "bg-[#1D1810] text-[#F5F1E8]/80 hover:text-[#F5F1E8]"
                 }`}
               >
-                {tb.label}
-              </button>
+                {on && <motion.span layoutId="esp-root-tab" className="absolute inset-0 bg-[#FF8C2B]" transition={SPRING.pill} />}
+                <span className="relative block truncate">{tb.label}</span>
+              </motion.button>
             )
           })}
         </div>
@@ -316,19 +324,25 @@ export default function SportsFeedPage() {
         ) : (
           <>
             {feedTab === "meu" && sportLoaded && (
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-3 md:px-0">
-                <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-                  {sportLabel
-                    ? ts("mySportIs", "Seu esporte: {sport}").replace("{sport}", sportLabel)
-                    : ts("noSportYet", "Você ainda não escolheu seu esporte.")}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setPicker(sport ? "change" : "first")}
-                  className={`${BTN_GOLD} px-3 py-1.5 text-[10px]`}
-                >
-                  {sport ? ts("changeSport", "Trocar") : ts("chooseSport", "Escolher esporte")}
-                </button>
+              <div className="mb-4 px-3 md:px-0">
+                <SpeedBand
+                  color={EMBER}
+                  ink="#0B0B0D"
+                  icon={<Flag className="h-5 w-5" />}
+                  kicker={ts("mySportKicker", "Seu esporte")}
+                  title={sportLabel || ts("noSportYet", "Você ainda não escolheu seu esporte.")}
+                  action={
+                    <motion.button
+                      type="button"
+                      whileTap={{ x: 2, y: 2 }}
+                      onClick={() => setPicker(sport ? "change" : "first")}
+                      className="border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#FB923C]"
+                      style={{ boxShadow: "3px 3px 0 0 #7C2D12" }}
+                    >
+                      {sport ? ts("changeSport", "Trocar") : ts("chooseSport", "Escolher esporte")}
+                    </motion.button>
+                  }
+                />
               </div>
             )}
 

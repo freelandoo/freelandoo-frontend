@@ -23,13 +23,43 @@
 // fitness no backend (`PLATFORM_KINDS` é games e finance), então não há badge
 // de câmera aqui: quem quiser outra imagem troca a foto de perfil.
 
-import Link from "next/link"
-import { Activity, ArrowLeft, CalendarDays, Dumbbell, History } from "lucide-react"
-import { useMemo, type ReactNode } from "react"
+import { Activity, CalendarDays, Dumbbell, History } from "lucide-react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { motion, useReducedMotion } from "framer-motion"
+import { PageBackLink } from "@/components/tabloide/PageBackLink"
 import type { PerfilCompleto } from "@/lib/types/account"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { BANNER_LAYERS, EMBER_GLOW, HEADCARD_SHADOW, PILL, initialsOf } from "./fitness-ui"
+import { EASE, SPRING } from "./ui/motion"
+
+/**
+ * As LINHAS DE QUADRA do banner (repaginada "Placar Brasa", 2026-10-27): o
+ * haltere fantasma não dizia "esporte". SVG estático de 1 px — círculo
+ * central, linha do meio e as duas áreas.
+ */
+const COURT_SVG = encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" preserveAspectRatio="none" fill="none" stroke="rgba(251,146,60,.16)" stroke-width="1.5"><rect x="20" y="16" width="760" height="188"/><line x1="400" y1="16" x2="400" y2="204"/><circle cx="400" cy="110" r="46"/><rect x="20" y="62" width="96" height="96"/><rect x="684" y="62" width="96" height="96"/><rect x="20" y="88" width="34" height="44"/><rect x="746" y="88" width="34" height="44"/></svg>`
+)
+const COURT_BG = `url("data:image/svg+xml,${COURT_SVG}") center/100% 100% no-repeat`
+const REFLECTORS =
+  "radial-gradient(28% 70% at 14% -10%, rgba(255,210,166,.20), transparent 70%), radial-gradient(28% 70% at 86% -10%, rgba(255,210,166,.16), transparent 70%)"
+const SPEED_STRIPES = "repeating-linear-gradient(135deg, rgba(255,140,43,.18) 0 6px, transparent 6px 16px)"
+
+/** O chip "Esportes" bate como carimbo UMA vez por sessão (não a cada sala). */
+function useFirstInSession(key: string) {
+  const [first, setFirst] = useState(false)
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(key) === "1") return
+      window.sessionStorage.setItem(key, "1")
+      setFirst(true)
+    } catch {
+      /* sem storage: sem cerimônia */
+    }
+  }, [key])
+  return first
+}
 
 /** Qual das salas está no ar (a raiz, que é o feed, não acende nenhuma). */
 export type FitnessPillKey = "academy" | "workout" | "history" | "indicators"
@@ -59,6 +89,10 @@ export function FitnessHeadcard({
   action?: ReactNode
 }) {
   const tr = useTranslations("Fitness")
+  const reduce = useReducedMotion()
+  const stampChip = useFirstInSession("esp:hc")
+  // A foto "diz" em que sala você está: o contorno é a cor do pill aceso.
+  const roomColor = active ? PILL[active].bg : EMBER_GLOW
 
   const pills = useMemo<PillSpec[]>(
     () => [
@@ -116,15 +150,10 @@ export function FitnessHeadcard({
     <>
       {/* Top bar — a saída à esquerda e a identidade de quem está olhando à direita. */}
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-3 pt-6 md:px-10">
-        <Link
-          href={backHref}
-          className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]"
-        >
-          <ArrowLeft className="h-4 w-4" /> {tr("back", "Voltar")}
-        </Link>
+        <PageBackLink href={backHref} />
         {perfil?.username && (
           <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-[#F5F1E8]">
-            <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: EMBER_GLOW }} />
+            <span className="h-2 w-2 rounded-full" style={{ background: EMBER_GLOW }} />
             <span className="text-[11px] font-extrabold uppercase tracking-[0.2em]">@{perfil.username}</span>
           </span>
         )}
@@ -141,21 +170,22 @@ export function FitnessHeadcard({
             {/* O banner é DESENHADO, não enviado: o painel é da pessoa e não
                 tem banner próprio. A grade do painel e o brilho laranja. */}
             <div aria-hidden className="absolute inset-0" style={{ backgroundImage: BANNER_LAYERS }} />
-            <Dumbbell
-              aria-hidden
-              className="pointer-events-none absolute -right-6 -top-6 h-64 w-64 select-none md:h-80 md:w-80"
-              strokeWidth={1}
-              style={{ color: "rgba(251, 146, 60, 0.10)" }}
-            />
+            <div aria-hidden className="absolute inset-0" style={{ background: `${REFLECTORS}, ${COURT_BG}` }} />
+            <div aria-hidden className="absolute inset-x-0 bottom-0 h-6" style={{ background: SPEED_STRIPES }} />
             <div
               aria-hidden
               className="absolute inset-0"
               style={{ background: "linear-gradient(180deg, transparent 40%, #0c0503cc 100%)" }}
             />
             {/* O CHIP diz o AMBIENTE, o título diz a SALA. */}
-            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
-              {tr("platformTitle", "Fitness")}
-            </span>
+            <motion.span
+              className="absolute left-4 top-4 z-20 border-2 border-[#0B0B0D] bg-[#FF8C2B] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]"
+              initial={stampChip && !reduce ? { scale: 1.6, rotate: -10, opacity: 0 } : false}
+              animate={{ scale: 1, rotate: -2, opacity: 1 }}
+              transition={stampChip ? { ...SPRING.stamp, delay: 0.12 } : { duration: 0 }}
+            >
+              {tr("platformTitle", "Esportes")}
+            </motion.span>
             {/* O selo do canto oposto: a assinatura do ambiente, sem número. */}
             <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
               <span className="text-[8px] font-bold uppercase text-[#9A938A]">
@@ -179,7 +209,7 @@ export function FitnessHeadcard({
             />
             <div
               className="relative aspect-[2/3] w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:w-36"
-              style={{ outline: `2px solid ${EMBER_GLOW}`, outlineOffset: "2px" }}
+              style={{ outline: `2px solid ${roomColor}`, outlineOffset: "2px" }}
             >
               {perfil?.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -199,8 +229,17 @@ export function FitnessHeadcard({
               `basis-full`, ocupa a linha inteira embaixo. */}
           <div aria-hidden className="flex-1 md:hidden" />
           <div className="order-last basis-full pl-1 pt-1 md:order-none md:basis-auto md:flex-1 md:pb-2 md:pl-12 md:pt-0">
-            <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">
-              {title}
+            {/* Máscara reta SÓ no h1 (nunca na coluna da foto: cortaria os pills). */}
+            <h1 className="fl-display overflow-hidden text-4xl leading-[0.95] text-[#F5F1E8] sm:text-5xl md:text-6xl">
+              <motion.span
+                key={title}
+                className="block"
+                initial={reduce ? false : { y: "100%" }}
+                animate={{ y: "0%" }}
+                transition={{ duration: 0.32, ease: EASE.paper }}
+              >
+                {title}
+              </motion.span>
             </h1>
           </div>
 

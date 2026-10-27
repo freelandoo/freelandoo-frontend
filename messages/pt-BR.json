@@ -8046,6 +8046,7 @@
     "unlink": "Desconectar academia",
     "unlinkConfirm": "Desconectar sua matrícula desta academia?",
     "unlinked": "Academia desconectada.",
-    "unlinkError": "Não deu para desconectar agora."
+    "unlinkError": "Não deu para desconectar agora.",
+    "mySportKicker": "Seu esporte"
   }
 }
