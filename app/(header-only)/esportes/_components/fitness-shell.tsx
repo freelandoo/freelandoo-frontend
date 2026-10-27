@@ -20,6 +20,7 @@
 
 import type { ReactNode } from "react"
 import { Dumbbell } from "lucide-react"
+import { MotionConfig } from "framer-motion"
 import { TechBackdrop } from "@/components/platform/tech-backdrop"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -37,7 +38,10 @@ export function FitnessShell({ children }: { children: ReactNode }) {
       <TechBackdrop variant="fitness" />
       <div className="relative z-10">
         {enabled ? (
-          children
+          // Repaginada 2026-10-27: quem pediu menos movimento no sistema não
+          // vê transform em NENHUMA peça do ambiente (os primitivos de
+          // `_components/ui` ainda fazem o próprio desvio por cima).
+          <MotionConfig reducedMotion="user">{children}</MotionConfig>
         ) : (
           <div className="flex min-h-[100dvh] items-center justify-center px-4 text-center">
             <div>

@@ -915,6 +915,18 @@ body.camera-active { overflow: hidden; }
     repeating-linear-gradient(to bottom, rgba(251, 146, 60, 0.05) 0 1px, transparent 1px 64px);
 }
 
+/* A FITA DE OBRA do "Pagar" carregando (Esportes, 2026-10-27): listras que
+   correm DENTRO do botão por transform — composta, nunca background-position.
+   Só existe enquanto o botão está ocupado. */
+@keyframes sp-tape {
+  from { transform: translateX(0); }
+  to   { transform: translateX(22.6px); }
+}
+.sp-tape { animation: sp-tape 0.6s linear infinite; will-change: transform; }
+@media (prefers-reduced-motion: reduce) {
+  .sp-tape { animation: none; }
+}
+
 /* ============================================================================
    PLATAFORMA FINANCEIRO — a pele verde (`.fl-finance`)
    ----------------------------------------------------------------------------
