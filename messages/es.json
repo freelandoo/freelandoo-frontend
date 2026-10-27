@@ -6087,7 +6087,12 @@
     "indLast14": "Últimos 14 días",
     "indWorkoutsWeek": "Entrenos en la semana",
     "indWorkouts30": "{n} en el mes",
-    "indSeeCalendar": "Ver calendario →"
+    "indSeeCalendar": "Ver calendario →",
+    "heatLegend": "Calorías × meta, 13 semanas",
+    "heatLow": "poco",
+    "heatMid": "mitad",
+    "heatOn": "en la meta",
+    "heatOver": "por encima"
   },
   "Workouts": {
     "todayTitle": "Entrenamiento de hoy",

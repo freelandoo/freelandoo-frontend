@@ -15,13 +15,18 @@
 // /fitness/history`) e abre qualquer dia NO PRÓPRIO TOPO, por `openDay` —
 // nunca por `?dia=` para a mesma rota, que não relê nada.
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { motion, useReducedMotion } from "framer-motion"
 import { toast } from "sonner"
 import { AlertCircle, Droplets, Flame, History, Loader2, Ruler } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { FitnessView } from "../_components/fitness-view"
 import { BTN_DARK, BTN_GOLD, CYAN, GOLD, H_SECTION, INPUT, PANEL, PILL, StateBox, todayIso } from "../_components/fitness-ui"
+import { AreaLine } from "../_components/ui/charts"
+import { Reveal } from "../_components/ui/motion-kit"
+import { DUR, EASE } from "../_components/ui/motion"
+import { HERO_NUMBER_STYLE, SP } from "../_components/ui/sp-tokens"
 
 type HistoryDay = { date: string; kcal: number; protein_g: number; carbs_g: number; fat_g: number; water_ml: number }
 type HistoryPayload = { days: HistoryDay[]; goals: { daily_kcal_goal: number; water_goal_ml: number } }
@@ -102,6 +107,16 @@ function HistoryContent({ openDay }: { openDay: (date: string) => void }) {
   }, [weight, height, authHeaders, loadMeasurements, t])
 
   const latest = measurements && measurements.length > 0 ? measurements[0] : null
+  // A curva do peso: as medições com peso, da mais velha para a mais nova.
+  const weightSeries = useMemo(
+    () =>
+      (measurements ?? [])
+        .filter((m) => m.weight_kg !== null && m.weight_kg !== "")
+        .map((m) => ({ date: m.measured_at, weight_kg: Number(m.weight_kg) }))
+        .reverse()
+        .slice(-20),
+    [measurements]
+  )
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })
   const fmtDay = (d: string) =>
     new Date(`${d}T12:00:00Z`).toLocaleDateString(locale, { weekday: "short", day: "2-digit", month: "short" })
@@ -131,8 +146,8 @@ function HistoryContent({ openDay }: { openDay: (date: string) => void }) {
                 </p>
                 {latest ? (
                   <>
-                    <p className="mt-2 fl-display text-4xl leading-none text-[#F5F1E8]">
-                      {num(latest.weight_kg) !== null ? `${num(latest.weight_kg)!.toFixed(1)} kg` : "—"}
+                    <p className="mt-2 fl-display text-5xl leading-none" style={HERO_NUMBER_STYLE}>
+                      {num(latest.weight_kg) !== null ? `${num(latest.weight_kg)!.toFixed(1).replace(".", ",")} kg` : "—"}
                     </p>
                     <p className="mt-1 text-xs font-bold text-[#9A938A]">
                       {num(latest.height_cm) !== null ? `${num(latest.height_cm)!.toFixed(0)} cm · ` : ""}
@@ -141,6 +156,11 @@ function HistoryContent({ openDay }: { openDay: (date: string) => void }) {
                   </>
                 ) : (
                   <p className="mt-2 text-sm text-[#9A938A]">{t("measureEmpty", "Nenhuma medição ainda.")}</p>
+                )}
+                {weightSeries.length >= 2 && (
+                  <div className="mt-4">
+                    <AreaLine series={weightSeries} locale={locale} color={PILL.history.bg} />
+                  </div>
                 )}
                 <button onClick={() => setMeasureOpen(true)} className={`${BTN_DARK} mt-3 px-3 py-1.5 text-[11px]`}>
                   {t("measureCta", "Registrar")}
@@ -190,8 +210,10 @@ function HistoryContent({ openDay }: { openDay: (date: string) => void }) {
                   />
                 </div>
               ) : (
-                <ul className={`${PANEL} mt-3`}>
-                  {history.days.map((d) => {
+                <>
+                <HeatCalendar days={history.days} goal={history.goals.daily_kcal_goal} onOpen={openDay} locale={locale} />
+                <ul className={`${PANEL} mt-4`}>
+                  {history.days.map((d, i) => {
                     const kcalPct = Math.min(100, Math.round((d.kcal / history.goals.daily_kcal_goal) * 100))
                     const waterPct = Math.min(100, Math.round((d.water_ml / history.goals.water_goal_ml) * 100))
                     return (
@@ -212,7 +234,7 @@ function HistoryContent({ openDay }: { openDay: (date: string) => void }) {
                               <span className="text-[#9A938A]">/ {history.goals.daily_kcal_goal} kcal</span>
                             </span>
                             <span className="mt-1 block h-1.5 border border-[#0B0B0D] bg-[#1D1810]">
-                              <span className="block h-full" style={{ width: `${kcalPct}%`, background: GOLD }} />
+                              <GrowBar pct={kcalPct} color={GOLD} delay={Math.min(i, 8) * 0.035} />
                             </span>
                           </span>
                           <span className="min-w-0 flex-1">
@@ -222,7 +244,7 @@ function HistoryContent({ openDay }: { openDay: (date: string) => void }) {
                               <span className="text-[#9A938A]">/ {(history.goals.water_goal_ml / 1000).toFixed(1)} L</span>
                             </span>
                             <span className="mt-1 block h-1.5 border border-[#0B0B0D] bg-[#1D1810]">
-                              <span className="block h-full" style={{ width: `${waterPct}%`, background: CYAN }} />
+                              <GrowBar pct={waterPct} color={CYAN} delay={Math.min(i, 8) * 0.035 + 0.05} />
                             </span>
                           </span>
                           <span className="hidden shrink-0 text-[10px] text-[#9A938A] sm:block">
@@ -233,6 +255,7 @@ function HistoryContent({ openDay }: { openDay: (date: string) => void }) {
                     )
                   })}
                 </ul>
+                </>
               )}
             </section>
           </>
@@ -269,5 +292,96 @@ function HistoryContent({ openDay }: { openDay: (date: string) => void }) {
         </div>
       )}
     </>
+  )
+}
+
+/** Barra que cresce da esquerda ao entrar (scaleX — composta, nunca width). */
+function GrowBar({ pct, color, delay }: { pct: number; color: string; delay: number }) {
+  const reduce = useReducedMotion()
+  return (
+    <motion.span
+      className="block h-full origin-left"
+      style={{ width: `${pct}%`, background: color }}
+      initial={reduce ? false : { scaleX: 0 }}
+      whileInView={{ scaleX: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: DUR.enter, ease: EASE.paper, delay }}
+    />
+  )
+}
+
+/**
+ * MAPA DE CALOR das últimas 13 semanas (spec visual §4.4): de relance, quais
+ * semanas foram boas. Cor = quanto da meta de calorias o dia bateu; sem
+ * registro = vazio. Cada quadrado abre o dia lá em cima.
+ */
+function HeatCalendar({
+  days,
+  goal,
+  onOpen,
+  locale,
+}: {
+  days: { date: string; kcal: number; water_ml: number }[]
+  goal: number
+  onOpen: (date: string) => void
+  locale: string
+}) {
+  const t = useTranslations("Fitness")
+  const byDate = useMemo(() => new Map(days.map((d) => [d.date, d])), [days])
+  const today = todayIso()
+  const start = useMemo(() => {
+    const d = new Date(`${today}T12:00:00Z`)
+    d.setUTCDate(d.getUTCDate() - 7 * 12 - d.getUTCDay())
+    return d
+  }, [today])
+  const cells = Array.from({ length: 13 * 7 }, (_, i) => {
+    const d = new Date(start)
+    d.setUTCDate(start.getUTCDate() + i)
+    return d.toISOString().slice(0, 10)
+  })
+  const level = (date: string) => {
+    const d = byDate.get(date)
+    if (!d || (d.kcal <= 0 && d.water_ml <= 0)) return 0
+    const r = goal > 0 ? d.kcal / goal : 0
+    if (r > 1.1) return 4
+    if (r >= 0.85) return 3
+    if (r >= 0.5) return 2
+    return 1
+  }
+  const fills = ["transparent", "rgba(13,148,136,.35)", "rgba(13,148,136,.65)", PILL.history.bg, SP.bad]
+  const names = [t("heatLow", "pouco"), t("heatMid", "metade"), t("heatOn", "na meta"), t("heatOver", "acima")]
+  return (
+    <div className={`${PANEL} mt-3 p-3`} style={{ boxShadow: `6px 6px 0 0 ${PILL.history.bg}` }}>
+      <Reveal className="grid grid-flow-col grid-rows-7 gap-1" step={0.004} max={91} y={4} tilt={false}>
+        {cells.map((date) => {
+          const lv = level(date)
+          const future = date > today
+          return (
+            <button
+              key={date}
+              type="button"
+              disabled={future}
+              onClick={() => onOpen(date)}
+              title={new Date(`${date}T12:00:00Z`).toLocaleDateString(locale)}
+              aria-label={t("historyOpenDay", "Abrir o dia {date}").replace("{date}", date)}
+              className="block aspect-square w-full border disabled:opacity-20"
+              style={{
+                background: fills[lv],
+                borderColor: date === today ? SP.hot : lv ? "rgba(11,11,13,.6)" : "rgba(244,165,116,.25)",
+              }}
+            />
+          )
+        })}
+      </Reveal>
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px]" style={{ color: SP.mute }}>
+        <span>{t("heatLegend", "Calorias × meta, 13 semanas")}</span>
+        {[1, 2, 3, 4].map((lv) => (
+          <span key={lv} className="inline-flex items-center gap-1">
+            <span className="inline-block h-2.5 w-2.5 border border-[#0B0B0D]" style={{ background: fills[lv] }} />
+            {names[lv - 1]}
+          </span>
+        ))}
+      </p>
+    </div>
   )
 }

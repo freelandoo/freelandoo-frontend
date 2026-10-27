@@ -6107,7 +6107,12 @@
     "indLast14": "Last 14 days",
     "indWorkoutsWeek": "Workouts this week",
     "indWorkouts30": "{n} this month",
-    "indSeeCalendar": "See calendar →"
+    "indSeeCalendar": "See calendar →",
+    "heatLegend": "Calories × goal, 13 weeks",
+    "heatLow": "low",
+    "heatMid": "half",
+    "heatOn": "on target",
+    "heatOver": "over"
   },
   "Workouts": {
     "todayTitle": "Today's workout",
