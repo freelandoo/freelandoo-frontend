@@ -8481,7 +8481,11 @@
     "ntFinedLine": "Conducir en la plaza está prohibido. La próxima vez el mismo día, cárcel.",
     "ntJailed": "Me arrestaron: {n} minutos en la comisaría.",
     "ntJailedHit": "Atropellé a alguien con el auto.",
-    "ntJailedPlaza": "Conduje en la plaza otra vez el mismo día."
+    "ntJailedPlaza": "Conduje en la plaza otra vez el mismo día.",
+    "paintBlood": "Sangre",
+    "paintToastDrop": "Caíste a las nubes: {n} gatitos volvieron al mapa",
+    "paintToastBossSlam": "Golpe al suelo — ¡salta!",
+    "paintToastBossRoar": "¡El jefe rugió!"
   },
   "Sports": {
     "eyebrow": "Deportes",

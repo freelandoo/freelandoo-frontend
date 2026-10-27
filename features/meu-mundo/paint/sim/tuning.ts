@@ -68,8 +68,10 @@ export const TUNING = {
   blobLife: 45,
   blobsPerPlayer: 60,
 
-  /** Corações, soco e dano. */
-  hearts: 5,
+  /** Sangue (mm3d-38: barra no lugar dos 5 corações), soco e dano. */
+  hpMax: 100,
+  harmDmg: 20,
+  punchDmg: 15,
   punchRange: 1.8,
   punchCos: 0.5, // cone de 60° para cada lado
   punchCooldown: 0.6,
@@ -88,12 +90,26 @@ export const TUNING = {
   catsToPortal: 20,
   portalR: 1.8,
 
-  /** Chefão (provisório até a etapa do chefão). */
+  /** Chefão (mm3d-38: gato-gorila de porcelana, 5 m; anda apoiado nas mãos). */
   bossHp: 4000,
   bossHarm: 20,
   bossPunch: 10,
-  bossR: 2.6,
-  bossH: 6,
+  bossR: 1.9,
+  bossH: 5,
+  /** Anda até a vítima (m/s), vira (rad/s) e não sai deste raio do centro da ilha. */
+  bossWalk: 2.4,
+  bossTurn: 2.2,
+  bossLeash: 13,
+  /** Pausa entre um golpe e outro (s). */
+  bossRest: 1.1,
+  /**
+   * Golpes: `hit` = s depois do começo em que acerta, `dur` = duração toda.
+   * Patada: cone na frente. Tapa no chão: círculo à frente dele (pula e bate
+   * as duas mãos). Rugido: sem dano (quando o primeiro chega e na metade da vida).
+   */
+  bossSwipe: { reach: 5.2, cos: 0.35, hit: 0.75, dur: 1.7, dmg: 30, knock: 7, lift: 4.5 },
+  bossSlam: { ahead: 3, r: 4.6, hit: 1.15, dur: 2.4, dmg: 45, knock: 5.5, lift: 6.5 },
+  bossRoar: { dur: 2.2 },
 
   /** Partida. */
   matchTime: 600,

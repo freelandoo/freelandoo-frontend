@@ -15,7 +15,7 @@
 import { Client, type Room } from "@colyseus/sdk"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import type { BodyId, PaintSession } from "../../types"
-import { PaintMatch, type MatchEvent, type PaintPose } from "../sim/match"
+import { PaintMatch, type BossAct, type MatchEvent, type PaintPose } from "../sim/match"
 import { resolveShot, type NewBlob } from "../sim/paint"
 import { PAINT, TUNING, modeCapacity, type PaintColor, type PaintMode } from "../sim/tuning"
 import type { Vec3 } from "../sim/map"
@@ -72,6 +72,12 @@ interface SState {
   p0: boolean
   p1: boolean
   bossHp: number
+  /** Chefão (mm3d-38): posição, para onde olha, o que faz e desde quando (s de partida). */
+  bx: number
+  bz: number
+  bf: number
+  ba: string
+  bt: number
   players: Map<string, SPlayer>
   blobs: Map<string, SBlob>
   result: string
@@ -250,6 +256,13 @@ export class NetPort implements PaintPort {
     m.portalOpen[0] = s.p0
     m.portalOpen[1] = s.p1
     m.bossHp = s.bossHp
+    if (s.ba) {
+      m.boss.x = s.bx
+      m.boss.z = s.bz
+      m.boss.facing = s.bf
+      m.boss.act = s.ba as BossAct
+      m.boss.at = s.bt
+    }
     for (const p of s.players.values()) {
       const mp = m.players.get(p.slot)
       if (!mp) continue
@@ -296,6 +309,11 @@ export class NetPort implements PaintPort {
     }
     // gatinhos/cápsulas (o `ev` avisa; o estado garante quem chega depois)
     for (const [id, team] of s.cats) m.catsTaken.set(Number(id), team)
+    for (const id of [...m.catsTaken.keys()]) {
+      if (s.cats.has(String(id))) continue
+      m.catsTaken.delete(id)
+      this.queue.push({ type: "catBack", id })
+    }
     if (s.phase === "end" && !this.ended && s.result) {
       this.ended = true
       try {
@@ -314,6 +332,10 @@ export class NetPort implements PaintPort {
       switch (e.type) {
         case "cat":
           m.catsTaken.set(e.id, e.team)
+          break
+        case "catBack":
+          // o estado também avisa: só repassa se ainda não tinha saído
+          if (!m.catsTaken.delete(e.id)) continue
           break
         case "capsule":
           m.capsuleBack.set(e.id, m.time + TUNING.capsuleRespawn)

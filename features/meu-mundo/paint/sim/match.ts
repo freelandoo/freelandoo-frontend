@@ -1,7 +1,12 @@
 // features/meu-mundo/paint/sim/match.ts — PAINT (mm3d-35): a partida.
 //
-// O ESTADO do jogo (não o movimento): munição, cápsulas, corações, nocaute,
+// O ESTADO do jogo (não o movimento): munição, cápsulas, sangue, nocaute,
 // tinta no mundo, gatinhos, portal de cada time, chefão, tempo e resultado.
+//
+// mm3d-38 (pedido do Alex): sangue 0–100 no lugar dos corações; nocaute por
+// outro jogador passa os gatinhos para quem derrubou; cair nas nuvens devolve
+// os gatinhos ao mapa; na ilha do chefão não se perde gatinho nem há dano
+// entre jogadores — lá só o chefão bate (ele anda, dá patada e tapa no chão).
 // A sala (PaintRoom) roda esta classe e é a autoridade; o treino sem sala
 // roda a mesma no aparelho. Quem usa: `pose()` com o que o aparelho diz,
 // `fire()`/`punch()` nos botões, `tick(dt)` no relógio e `drain()` para os
@@ -37,6 +42,8 @@ export interface MatchPlayer {
   hp: number
   ammo: [number, number, number]
   cats: number
+  /** Quais gatinhos (ids do mapa) estão com esta pessoa — voltam ao mapa se ela cair. */
+  catIds: number[]
   dmg: number
   /** Nocaute até (s de partida); 0 = de pé. */
   ko: number
@@ -67,8 +74,14 @@ export type MatchEvent =
   | { type: "unblob"; id: number }
   | { type: "shot"; slot: number; c: PaintColor; o: Vec3; to: Vec3; q: number }
   | { type: "deny"; slot: number; q: number }
-  | { type: "hit"; slot: number; by: number; hp: number; kx: number; ky: number; kz: number; how: "harm" | "punch" }
+  /** `by` = -1 quando quem bateu foi o chefão. */
+  | { type: "hit"; slot: number; by: number; hp: number; kx: number; ky: number; kz: number; how: "harm" | "punch" | "boss" }
   | { type: "ko"; slot: number; by: number }
+  /** Caiu nas nuvens com gatinhos: eles voltam ao mapa (um `catBack` por gatinho). */
+  | { type: "drop"; slot: number; n: number }
+  | { type: "catBack"; id: number }
+  /** O chefão começou um golpe/rugido (a pose vem do estado `boss`; isto é para o aviso). */
+  | { type: "bossAct"; act: BossAct; slot: number }
   /** Nocauteou: os gatinhos de quem caiu passam para quem derrubou (mm3d-35g). */
   | { type: "steal"; from: number; to: number; n: number }
   | { type: "respawn"; slot: number; x: number; y: number; z: number; facing: number; e: number; inBoss: boolean }
@@ -88,6 +101,35 @@ export interface MatchResult {
   /** Time vencedor (dano do campeão; sem dano, mais gatinhos; -1 = empate). */
   winnerTeam: number
   rows: { slot: number; team: number; dmg: number; cats: number }[]
+}
+
+export type BossAct = "idle" | "walk" | "swipe" | "slam" | "roar"
+
+/** O chefão (a sala decide; o aparelho só desenha). `at` = s de partida em que o ato começou. */
+export interface BossState {
+  x: number
+  z: number
+  facing: number
+  act: BossAct
+  at: number
+  /** Em quem ele está de olho (-1 = ninguém lá em cima). */
+  target: number
+  /** O golpe atual já acertou? */
+  struck: boolean
+  /** Próximo golpe permitido (s). */
+  next: number
+  /** Golpes dados (o terceiro é tapa no chão). */
+  count: number
+  roared: boolean
+  roaredHalf: boolean
+}
+
+/** Ângulo `a` virado para `b` pelo caminho curto, no máximo `max`. */
+function turnToward(a: number, b: number, max: number) {
+  let d = b - a
+  while (d > Math.PI) d -= Math.PI * 2
+  while (d < -Math.PI) d += Math.PI * 2
+  return a + Math.max(-max, Math.min(max, d))
 }
 
 const POSE_SPEED = 13
@@ -110,6 +152,7 @@ export class PaintMatch {
   readonly teamCats: [number, number] = [0, 0]
   readonly portalOpen: [boolean, boolean] = [false, false]
   bossHp: number = TUNING.bossHp
+  readonly boss: BossState
   result: MatchResult | null = null
   private events: MatchEvent[] = []
   private blobSeq = 1
@@ -120,6 +163,19 @@ export class PaintMatch {
     this.map = map
     this.mode = mode
     this.time = -TUNING.countdown
+    this.boss = {
+      x: map.boss.x,
+      z: map.boss.z,
+      facing: Math.PI,
+      act: "idle",
+      at: 0,
+      target: -1,
+      struck: false,
+      next: 0,
+      count: 0,
+      roared: false,
+      roaredHalf: false,
+    }
     const teams = modeTeams(mode)
     for (const s of seats) {
       const team = Math.min(s.team, teams - 1)
@@ -128,9 +184,10 @@ export class PaintMatch {
         slot: s.slot,
         team,
         sit: s.sit,
-        hp: TUNING.hearts,
+        hp: TUNING.hpMax,
         ammo: [TUNING.ammoStart, TUNING.ammoStart, TUNING.ammoStart],
         cats: 0,
+        catIds: [],
         dmg: 0,
         ko: 0,
         shield: 0,
@@ -160,8 +217,7 @@ export class PaintMatch {
   }
 
   bossBody() {
-    const b = this.map.boss
-    return { x: b.x, y: b.y, z: b.z, r: TUNING.bossR, h: TUNING.bossH }
+    return { x: this.boss.x, y: this.map.boss.y, z: this.boss.z, r: TUNING.bossR, h: TUNING.bossH }
   }
 
   drain(): MatchEvent[] {
@@ -178,9 +234,10 @@ export class PaintMatch {
     return this.phase === "play" && !p.ko
   }
 
-  /** Corpos alvo (de pé, no mesmo lugar — arena ou chefão — de quem atira). */
+  /** Corpos alvo (de pé, na arena). Na ilha do chefão jogador não atinge jogador. */
   private bodies(inBoss: boolean): ShotTargetBody[] {
     const out: ShotTargetBody[] = []
+    if (inBoss) return out
     for (const p of this.players.values()) {
       if (p.ko || p.inBoss !== inBoss || !p.online) continue
       out.push({ slot: p.slot, team: p.team, x: p.pose.x, y: p.pose.y, z: p.pose.z })
@@ -286,7 +343,7 @@ export class PaintMatch {
   private damage(slot: number, by: number, how: "harm" | "punch", kx = 0, kz = 0) {
     const v = this.players.get(slot)
     const a = this.players.get(by)
-    if (!v || !a || v.ko || this.time < v.shield) return
+    if (!v || !a || v.ko || v.inBoss || this.time < v.shield) return
     if (how === "harm") {
       const dx = v.pose.x - a.pose.x
       const dz = v.pose.z - a.pose.z
@@ -294,12 +351,23 @@ export class PaintMatch {
       kx = (dx / d) * TUNING.harmKnock
       kz = (dz / d) * TUNING.harmKnock
     }
-    v.hp = Math.max(0, v.hp - 1)
+    v.hp = Math.max(0, v.hp - (how === "punch" ? TUNING.punchDmg : TUNING.harmDmg))
     this.emit({ type: "hit", slot, by, hp: v.hp, kx, ky: how === "punch" ? TUNING.punchLift : TUNING.harmLift, kz, how })
     if (v.hp === 0) {
       v.ko = this.time + TUNING.koTime
       this.emit({ type: "ko", slot, by })
       this.steal(v, a)
+    }
+  }
+
+  /** Golpe do chefão: lá em cima ninguém perde gatinho, só cai e volta. */
+  private bossDamage(v: MatchPlayer, dmg: number, kx: number, ky: number, kz: number) {
+    if (v.ko || this.time < v.shield) return
+    v.hp = Math.max(0, v.hp - dmg)
+    this.emit({ type: "hit", slot: v.slot, by: -1, hp: v.hp, kx, ky, kz, how: "boss" })
+    if (v.hp === 0) {
+      v.ko = this.time + TUNING.koTime
+      this.emit({ type: "ko", slot: v.slot, by: -1 })
     }
   }
 
@@ -312,6 +380,9 @@ export class PaintMatch {
     if (n <= 0 || v.slot === a.slot) return
     v.cats = 0
     a.cats += n
+    a.catIds.push(...v.catIds)
+    for (const id of v.catIds) this.catsTaken.set(id, a.team)
+    v.catIds = []
     this.teamCats[v.team] = Math.max(0, this.teamCats[v.team] - n)
     this.teamCats[a.team] += n
     this.emit({ type: "steal", from: v.slot, to: a.slot, n })
@@ -331,6 +402,151 @@ export class PaintMatch {
     if (!this.bossAlive()) this.finish("boss")
   }
 
+  /** Caiu nas nuvens: os gatinhos dele voltam ao mapa (o portal que já abriu fica aberto). */
+  private dropCats(p: MatchPlayer) {
+    if (p.inBoss || p.cats <= 0) return
+    this.emit({ type: "drop", slot: p.slot, n: p.cats })
+    this.teamCats[p.team] = Math.max(0, this.teamCats[p.team] - p.cats)
+    for (const id of p.catIds) {
+      this.catsTaken.delete(id)
+      this.emit({ type: "catBack", id })
+    }
+    p.cats = 0
+    p.catIds = []
+  }
+
+  // ── chefão ────────────────────────────────────────────────────────────────
+
+  private bossStart(act: BossAct, target: number) {
+    const b = this.boss
+    b.act = act
+    b.at = this.time
+    b.struck = false
+    if (act === "swipe" || act === "slam" || act === "roar") this.emit({ type: "bossAct", act, slot: target })
+  }
+
+  /** Quem está lá em cima e pode apanhar. */
+  private bossVictims() {
+    const out: MatchPlayer[] = []
+    for (const p of this.players.values()) if (p.inBoss && !p.ko && p.online) out.push(p)
+    return out
+  }
+
+  private bossStrike(victims: MatchPlayer[]) {
+    const T = TUNING
+    const b = this.boss
+    const by = this.map.boss.y
+    const fx = Math.sin(b.facing)
+    const fz = Math.cos(b.facing)
+    for (const v of victims) {
+      const q = v.pose
+      if (q.y > by + 3.2 || q.y < by - 1) continue // pulou por cima / já caiu da ilha
+      if (b.act === "swipe") {
+        const dx = q.x - b.x
+        const dz = q.z - b.z
+        const d = Math.hypot(dx, dz)
+        if (d > T.bossSwipe.reach + T.bossR * 0.5) continue
+        if (d > 0.3 && (dx * fx + dz * fz) / d < T.bossSwipe.cos) continue
+        const ux = d > 0.3 ? dx / d : fx
+        const uz = d > 0.3 ? dz / d : fz
+        this.bossDamage(v, T.bossSwipe.dmg, ux * T.bossSwipe.knock, T.bossSwipe.lift, uz * T.bossSwipe.knock)
+      } else {
+        // tapa no chão: círculo à frente; quem está no ar escapa do tremor
+        const dx = q.x - (b.x + fx * T.bossSlam.ahead)
+        const dz = q.z - (b.z + fz * T.bossSlam.ahead)
+        const d = Math.hypot(dx, dz)
+        if (d > T.bossSlam.r || !q.ground) continue
+        const ux = d > 0.3 ? dx / d : fx
+        const uz = d > 0.3 ? dz / d : fz
+        const k = 1 - (d / T.bossSlam.r) * 0.4
+        this.bossDamage(v, Math.round(T.bossSlam.dmg * k), ux * T.bossSlam.knock, T.bossSlam.lift, uz * T.bossSlam.knock)
+      }
+    }
+  }
+
+  private bossTick(dt: number) {
+    const T = TUNING
+    const b = this.boss
+    const home = this.map.boss
+    const victims = this.bossVictims()
+    // golpe/rugido em andamento: acerta no tempo certo e termina
+    if (b.act === "swipe" || b.act === "slam" || b.act === "roar") {
+      const since = this.time - b.at
+      const spec = b.act === "swipe" ? T.bossSwipe : b.act === "slam" ? T.bossSlam : null
+      if (spec && !b.struck && since >= spec.hit) {
+        b.struck = true
+        this.bossStrike(victims)
+      }
+      if (since < (spec ? spec.dur : T.bossRoar.dur)) return
+      this.bossStart("idle", b.target)
+      b.next = this.time + T.bossRest
+    }
+    // de olho em quem está mais perto
+    let tgt: MatchPlayer | null = null
+    let best = Infinity
+    for (const v of victims) {
+      const d = Math.hypot(v.pose.x - b.x, v.pose.z - b.z)
+      if (d < best) {
+        best = d
+        tgt = v
+      }
+    }
+    b.target = tgt ? tgt.slot : -1
+    let goX = home.x
+    let goZ = home.z
+    if (tgt) {
+      // ruge quando o primeiro chega e quando perde metade da vida
+      if (!b.roared || (!b.roaredHalf && this.bossHp <= T.bossHp / 2)) {
+        if (b.roared) b.roaredHalf = true
+        b.roared = true
+        b.facing = Math.atan2(tgt.pose.x - b.x, tgt.pose.z - b.z)
+        this.bossStart("roar", tgt.slot)
+        return
+      }
+      goX = tgt.pose.x
+      goZ = tgt.pose.z
+    }
+    const dx = goX - b.x
+    const dz = goZ - b.z
+    const d = Math.hypot(dx, dz)
+    const want = Math.atan2(dx, dz)
+    if (d > 0.05) b.facing = turnToward(b.facing, want, T.bossTurn * dt)
+    let off = Math.abs(want - b.facing) % (Math.PI * 2)
+    if (off > Math.PI) off = Math.PI * 2 - off
+    if (tgt && this.time >= b.next && off < 0.5) {
+      // o terceiro golpe é tapa no chão; também se dois estão juntos na frente dele
+      const fx = Math.sin(b.facing)
+      const fz = Math.cos(b.facing)
+      const near = victims.filter((v) => Math.hypot(v.pose.x - (b.x + fx * T.bossSlam.ahead), v.pose.z - (b.z + fz * T.bossSlam.ahead)) < T.bossSlam.r).length
+      const slam = near >= 2 || b.count % 3 === 2
+      if (slam ? near >= 1 : d <= T.bossSwipe.reach) {
+        b.count++
+        this.bossStart(slam ? "slam" : "swipe", tgt.slot)
+        return
+      }
+    }
+    // anda até a vítima (ou volta para o meio), sem sair da ilha
+    const stop = tgt ? T.bossSwipe.reach - 1.2 : 0.3
+    let moved = false
+    if (d > stop && off < 1.2) {
+      const step = Math.min(T.bossWalk * dt, d - stop)
+      let nx = b.x + Math.sin(b.facing) * step
+      let nz = b.z + Math.cos(b.facing) * step
+      const hx = nx - home.x
+      const hz = nz - home.z
+      const hd = Math.hypot(hx, hz)
+      if (hd > T.bossLeash) {
+        nx = home.x + (hx / hd) * T.bossLeash
+        nz = home.z + (hz / hd) * T.bossLeash
+      }
+      moved = Math.hypot(nx - b.x, nz - b.z) > 1e-4
+      b.x = nx
+      b.z = nz
+    }
+    const act: BossAct = moved || (d > stop && off >= 1.2) ? "walk" : "idle"
+    if (b.act !== act) this.bossStart(act, b.target)
+  }
+
   private removeBlob(id: number) {
     const b = this.blobs.get(id)
     if (!b) return
@@ -348,7 +564,7 @@ export class PaintMatch {
     const sp = spawnPoint(this.map, p.team, p.sit, p.inBoss)
     p.epoch++
     p.ko = 0
-    p.hp = TUNING.hearts
+    p.hp = TUNING.hpMax
     p.shield = this.time + TUNING.shield
     p.pose = { x: sp.x, y: sp.y, z: sp.z, facing: sp.facing, ground: true, gy: sp.y, e: p.epoch }
     this.poseAt.delete(p.slot)
@@ -381,6 +597,7 @@ export class PaintMatch {
       }
       const q = p.pose
       if (fellOut(q.y, p.inBoss)) {
+        this.dropCats(p)
         this.respawn(p)
         continue
       }
@@ -391,6 +608,7 @@ export class PaintMatch {
           if (Math.abs(q.y - c.y) > 1.6 || Math.hypot(q.x - c.x, q.z - c.z) > T.catR) continue
           this.catsTaken.set(c.id, p.team)
           p.cats++
+          p.catIds.push(c.id)
           this.teamCats[p.team]++
           this.emit({ type: "cat", id: c.id, slot: p.slot, team: p.team })
           if (!this.portalOpen[p.team] && this.teamCats[p.team] >= T.catsToPortal) {
@@ -402,7 +620,6 @@ export class PaintMatch {
         if (this.portalOpen[p.team] && Math.abs(q.y - portal.y) < 2 && Math.hypot(q.x - portal.x, q.z - portal.z) <= T.portalR) {
           p.inBoss = true
           this.respawn(p)
-          p.hp = T.hearts
           continue
         }
       }
@@ -415,6 +632,7 @@ export class PaintMatch {
         this.emit({ type: "capsule", id: cap.id, slot: p.slot, c: cap.c })
       }
     }
+    if (this.bossAlive()) this.bossTick(dt)
     if (this.time >= T.matchTime) this.finish("time")
   }
 

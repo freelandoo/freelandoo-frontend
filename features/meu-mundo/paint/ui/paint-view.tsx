@@ -11,7 +11,7 @@
 //  - RESULTADO: quem deu mais dano no chefão, gatinhos de cada um.
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
-import { ArrowBigUp, Cat, DoorOpen, Heart, Loader2, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
+import { ArrowBigUp, Cat, DoorOpen, Droplet, Loader2, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId } from "../../types"
 import { MM } from "../../ui/hud/tokens"
@@ -329,6 +329,13 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
         case "fell":
           say(tt("paintToastFell", "Caiu nas nuvens — de volta à base"), "bad")
           break
+        case "drop":
+          say(tt("paintToastDrop", "Caiu nas nuvens: {n} gatinhos voltaram para o mapa").replace("{n}", String(n.n)), "bad")
+          break
+        case "bossAct":
+          if (n.act === "slam") say(tt("paintToastBossSlam", "Tapa no chão — pule!"), "bad")
+          else if (n.act === "roar") say(tt("paintToastBossRoar", "O chefão rugiu!"), "bad")
+          break
         default:
           break
       }
@@ -443,16 +450,27 @@ function Hud({ hud, touch, hurt, onLeave }: { hud: PaintHud; touch: boolean; hur
   const other = hud.teams > 1 ? hud.teamCats[1 - hud.myTeam] : null
   return (
     <>
-      {/* corações */}
-      <div key={hurt} className="pointer-events-none absolute flex items-center gap-1" style={{ top: SAFE.top, left: SAFE.left }}>
-        {Array.from({ length: TUNING.hearts }, (_, i) => (
-          <Heart
-            key={i}
-            className="h-7 w-7 drop-shadow max-[759px]:h-6 max-[759px]:w-6"
-            strokeWidth={2.2}
-            style={{ color: i < hud.hp ? "#C8203F" : "rgba(80,60,50,0.45)", fill: i < hud.hp ? "#E0284A" : "rgba(255,255,255,0.55)" }}
+      {/* sangue (mm3d-38: barra no lugar dos corações) */}
+      <div
+        key={hurt}
+        role="meter"
+        aria-label={t("paintBlood", "Sangue")}
+        aria-valuemin={0}
+        aria-valuemax={TUNING.hpMax}
+        aria-valuenow={hud.hp}
+        className="pointer-events-none absolute flex items-center gap-1.5"
+        style={{ top: SAFE.top, left: SAFE.left }}
+      >
+        <Droplet className="h-6 w-6 drop-shadow max-[759px]:h-5 max-[759px]:w-5" strokeWidth={2.2} style={{ color: "#C8203F", fill: "#E0284A" }} />
+        <div className="overflow-hidden rounded-full" style={{ height: 14, width: "min(180px, 34vw)", background: "rgba(255,255,255,0.55)", boxShadow: "inset 0 0 0 1.5px rgba(80,60,50,0.45)" }}>
+          <div
+            className="h-full rounded-full"
+            style={{ transition: "width 200ms", width: `${(hud.hp / TUNING.hpMax) * 100}%`, background: hud.hp <= TUNING.hpMax * 0.3 ? "linear-gradient(90deg, #7a0f1e, #C8203F)" : "linear-gradient(90deg, #9E1B2B, #E0284A)" }}
           />
-        ))}
+        </div>
+        <span className="text-[13px] font-bold tabular-nums drop-shadow" style={{ color: "#3b3127" }}>
+          {hud.hp}
+        </span>
       </div>
 
       {/* tempo / contagem / chefão */}

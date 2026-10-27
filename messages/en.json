@@ -8501,7 +8501,11 @@
     "ntFinedLine": "Driving in the square is forbidden. Next time the same day, jail.",
     "ntJailed": "I got arrested: {n} minutes at the police station.",
     "ntJailedHit": "I ran someone over with the car.",
-    "ntJailedPlaza": "I drove in the square again the same day."
+    "ntJailedPlaza": "I drove in the square again the same day.",
+    "paintBlood": "Health",
+    "paintToastDrop": "Fell into the clouds: {n} kittens went back to the map",
+    "paintToastBossSlam": "Ground slam — jump!",
+    "paintToastBossRoar": "The boss roared!"
   },
   "Sports": {
     "eyebrow": "Sports",

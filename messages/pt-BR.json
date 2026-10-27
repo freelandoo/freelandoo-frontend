@@ -7915,7 +7915,11 @@
     "ntFinedLine": "Dirigir na praça é proibido. Na próxima vez no mesmo dia, prisão.",
     "ntJailed": "Fui preso: {n} minutos na delegacia.",
     "ntJailedHit": "Atropelei alguém com o carro.",
-    "ntJailedPlaza": "Dirigi na praça de novo no mesmo dia."
+    "ntJailedPlaza": "Dirigi na praça de novo no mesmo dia.",
+    "paintBlood": "Sangue",
+    "paintToastDrop": "Caiu nas nuvens: {n} gatinhos voltaram para o mapa",
+    "paintToastBossSlam": "Tapa no chão — pule!",
+    "paintToastBossRoar": "O chefão rugiu!"
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -25,12 +25,13 @@ import { PAINT_COLORS, TUNING, type PaintColor } from "../sim/tuning"
 import { newBody, stepBody, knockBody, liftOnto, type BodyMove, type PaintBody } from "../sim/body"
 import { rayBody, supportAt, supportIndex } from "../sim/collide"
 import { muzzleOf } from "../sim/paint"
-import type { MatchEvent, MatchResult, PaintPose } from "../sim/match"
+import type { BossAct, MatchEvent, MatchResult, PaintPose } from "../sim/match"
 import type { Solid } from "../sim/map"
 import { buildPaintWorld } from "./world-view"
 import { PaintView } from "./paint-view"
 import { PickupsView } from "./pickups-view"
 import { CatHerd } from "./cat-herd"
+import { BossView } from "./boss-view"
 import { AimCamera } from "./aim-camera"
 import { PaintGun } from "./gun"
 import { attachPaintInput, clearPaintInput, createPaintInput, createReticle, paintMoveAxis, paintWantsRun, type PaintInput } from "./paint-input"
@@ -67,7 +68,7 @@ export type PaintNotice =
   | { kind: "cat"; mine: boolean; team: number }
   | { kind: "capsule"; c: PaintColor }
   | { kind: "empty"; c: PaintColor }
-  | { kind: "hurt"; how: "harm" | "punch" }
+  | { kind: "hurt"; how: "harm" | "punch" | "boss" }
   | { kind: "hitOther" }
   | { kind: "ko" }
   | { kind: "portal"; team: number; mine: boolean }
@@ -76,6 +77,10 @@ export type PaintNotice =
   | { kind: "fell" }
   /** Roubo de gatinhos no nocaute (ganhei ou perdi `n`). */
   | { kind: "steal"; gained: boolean; n: number }
+  /** Caí nas nuvens com `n` gatinhos: voltaram ao mapa (mm3d-38). */
+  | { kind: "drop"; n: number }
+  /** O chefão vai bater (só para quem está lá em cima). */
+  | { kind: "bossAct"; act: BossAct; me: boolean }
   | { kind: "end" }
 
 export interface PaintGameOptions {
@@ -149,6 +154,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const pickups = new PickupsView(scene, map.capsules)
   // Gatinhos leves (mm3d-35g): no mapa e em fila atrás de quem pegou.
   const herd = new CatHerd(scene, map.cats)
+  // Chefão (mm3d-38): a sim decide onde está e o que faz; aqui só desenha.
+  const bossView = new BossView(scene, map.boss.y)
   // O que já estava no mundo ao entrar (rede: gatinhos pegos, cápsulas fora, tinta).
   for (const id of state.catsTaken.keys()) herd.take(id, true)
   for (const id of state.capsuleBack.keys()) pickups.setCapsule(id, false)
@@ -239,7 +246,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         else if (e.from === port.me) notice({ kind: "steal", gained: false, n: e.n })
         break
       case "hit":
-        if (e.how === "harm") bleed(e.slot, false)
+        if (e.how !== "punch") bleed(e.slot, false)
         if (e.slot === port.me) {
           knockBody(body, e.kx, e.ky, e.kz)
           notice({ kind: "hurt", how: e.how })
@@ -274,6 +281,15 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
           prev = { x: body.x, y: body.y, z: body.z }
         }
         break
+      case "catBack":
+        herd.restore(e.id)
+        break
+      case "drop":
+        if (e.slot === port.me) notice({ kind: "drop", n: e.n })
+        break
+      case "bossAct":
+        if (me.inBoss) notice({ kind: "bossAct", act: e.act, me: e.slot === port.me })
+        break
       case "cat":
         herd.take(e.id)
         notice({ kind: "cat", mine: e.slot === port.me, team: e.team })
@@ -291,7 +307,6 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         break
       case "boss":
         if (e.slot === port.me) notice({ kind: "boss", dmg: e.dmg })
-        world.setBossAlive(e.hp > 0)
         break
       case "punch":
         if (e.slot !== port.me) remotes.get(e.slot)?.char.punch()
@@ -317,7 +332,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const bodiesRay = (o: { x: number; y: number; z: number }, d: { x: number; y: number; z: number }, maxT: number) => {
     let best: number | null = null
     for (const p of state.players.values()) {
-      if (p.slot === port.me || p.ko || p.inBoss !== me.inBoss) continue
+      if (p.slot === port.me || p.ko || p.inBoss !== me.inBoss || me.inBoss) continue
       const t = rayBody(o, d, p.pose, TUNING.hitR, TUNING.bodyH, best ?? maxT)
       if (t !== null) best = t
     }
@@ -638,6 +653,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     cam.update(dt, x, y, z, camSolids)
     if (port.samples) tickRemotes(dt, solids)
     world.tick(dt)
+    bossView.setVisible(me.inBoss)
+    if (me.inBoss) bossView.tick(dt, state.boss, state.time, state.bossAlive())
     paint.tick(dt)
     pickups.tick(dt)
     herd.tick(dt, cam.camera)
@@ -756,6 +773,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       lib.dispose()
       pickups.dispose()
       herd.dispose()
+      bossView.dispose()
       paint.dispose()
       world.dispose()
       cam.dispose()

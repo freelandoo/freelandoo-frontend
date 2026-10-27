@@ -165,8 +165,6 @@ function islandGeometry(isl: Island, top: { p: number[]; n: number[]; uv: number
 
 export interface PaintWorldView {
   setPortalOpen(team: number, open: boolean): void
-  /** Totem do chefão (some quando ele cai). */
-  setBossAlive(alive: boolean): void
   tick(dt: number): void
   dispose(): void
 }
@@ -343,33 +341,6 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   })
   disposers.push(() => swirlTex.dispose())
 
-  // ── chefão provisório: totem de pedra com olhos ──
-  const bossRoot = new TransformNode("paint-boss", scene)
-  bossRoot.position.set(map.boss.x, map.boss.y, map.boss.z)
-  {
-    const bg = new GeoBuilder()
-    const R = TUNING.bossR
-    bg.cylinder(R * 2.1, 0.5, place(0, 0.25, 0), STONE.deep, 16)
-    bg.box(R * 1.6, 2.4, R * 1.4, place(0, 1.7, 0), STONE.rock)
-    bg.box(R * 1.9, 0.5, R * 1.6, place(0, 3.1, 0), STONE.rim)
-    bg.box(R * 1.3, 2.2, R * 1.2, place(0, 4.45, 0), STONE.rock)
-    bg.box(R * 0.5, 1.4, R * 0.5, place(-R * 0.95, 2.3, 0), STONE.deep)
-    bg.box(R * 0.5, 1.4, R * 0.5, place(R * 0.95, 2.3, 0), STONE.deep)
-    const body = bg.build("paint-boss-body", scene, rockMat, false)
-    body.parent = bossRoot
-    const eyeMat = new StandardMaterial("paint-boss-eye", scene)
-    eyeMat.emissiveColor = new Color3(0.62, 0.11, 0.17)
-    eyeMat.disableLighting = true
-    const eg = new GeoBuilder()
-    for (const sx of [-0.55, 0.55]) eg.sphere(0.42, [1, 0.7, 0.5], place(sx, 4.7, -R * 0.62), [1, 1, 1], 8)
-    const eyes = eg.build("paint-boss-eyes", scene, eyeMat, false)
-    eyes.parent = bossRoot
-    disposers.push(() => {
-      bossRoot.dispose(false, true)
-      eyeMat.dispose()
-    })
-  }
-
   let clock = 0
   return {
     setPortalOpen(team, open) {
@@ -380,13 +351,9 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
       p.ring.emissiveColor = open ? new Color3(0.85, 0.62, 0.2) : new Color3(0, 0, 0)
       p.ring.diffuseColor = open ? new Color3(0.95, 0.76, 0.3) : new Color3(...STONE.rim)
     },
-    setBossAlive(alive) {
-      bossRoot.setEnabled(alive)
-    },
     tick(dt) {
       clock += dt
       for (const p of portalNodes) if (p.open) p.swirl.rotation.z = -clock * 1.6
-      bossRoot.rotation.y = Math.sin(clock * 0.4) * 0.25
     },
     dispose() {
       for (const d of disposers.splice(0)) d()

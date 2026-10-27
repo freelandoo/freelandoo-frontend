@@ -182,6 +182,23 @@ export class CatHerd {
     if (instant) v.inst?.body.setEnabled(false)
   }
 
+  /** Gatinho volta ao mapa (quem estava com ele caiu nas nuvens, mm3d-38). */
+  restore(id: number) {
+    const v = this.byCat.get(id)
+    if (!v || !v.taken) return
+    v.taken = 0
+    v.ring.setEnabled(true)
+    if (!v.inst) {
+      v.inst = this.instance(v.cat.skin)
+      if (!v.inst) return
+    }
+    const b = v.inst.body
+    b.setEnabled(true)
+    b.position.set(v.cat.x, v.cat.y, v.cat.z)
+    b.rotation.y = v.cat.facing
+    b.scaling.setAll(1)
+  }
+
   tick(dt: number, _cam: Camera | null) {
     this.clock += dt
     for (const v of this.map) {
