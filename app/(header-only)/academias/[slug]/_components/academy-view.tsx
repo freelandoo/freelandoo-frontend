@@ -59,6 +59,7 @@ import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { FitnessShell } from "@/app/(header-only)/esportes/_components/fitness-shell"
 import { PartnerKeyCard } from "./partner-key-card"
 import { WhatsappForwardCard } from "./whatsapp-forward-card"
+import { PayoutsCard } from "./payouts-card"
 // A gaveta dos números — a MESMA peça da comunidade. Só a mecânica é dela: o
 // que entra na coluna (vinculados, professores, destaque e ranking do mês) é
 // desta página.
@@ -847,6 +848,9 @@ export function AcademyView({ slug }: { slug: string }) {
 
         {/* WhatsApp oficial pelo sistema da academia (mig 307) — só o dono. */}
         {academy.is_owner && <WhatsappForwardCard academyId={academy.id_academy} />}
+
+        {/* Recebimentos: mensalidade paga pela Freelandoo e os repasses (mig 310) — só o dono. */}
+        {academy.is_owner && <PayoutsCard academyId={academy.id_academy} />}
 
         {/* Mural social (público; postar = vinculado/staff) */}
         <AcademyFeed academyId={academy.id_academy} slug={academy.slug} reloadKey={feedReload} isOwner={academy.is_owner} meId={meId} />

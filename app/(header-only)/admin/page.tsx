@@ -39,6 +39,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
 
   // Repasses — dinheiro de terceiros que a plataforma segura no holdback e paga via PIX
   { section: "Repasses", hint: "admin-store-payouts", href: "/administracao/repasses", icon: HandCoins, title: "Repasses", body: "Saldos a pagar via PIX: Loja, Agendamentos e Afiliados num só extrato, com filtro por origem e status." },
+  { section: "Repasses", href: "/administracao/repasses-academias", icon: HandCoins, title: "Repasses de academias", body: "Mensalidades pagas pela Freelandoo: líquido (mensalidade − tarifa MP − R$ 2,50) a mandar por PIX para a chave de cada academia após o holdback.", badge: "novo" },
   { section: "Repasses", href: "/administracao/contabilidade", icon: Calculator, title: "Contabilidade", body: "Guias vencidas e a vencer (com multa e juros estimados), livro caixa, cálculo do DAS com Fator R e calendário de obrigações das empresas que os admins acompanham.", badge: "novo" },
 
   // Configurações de monetização — definem preço/taxa (não são extrato financeiro)
