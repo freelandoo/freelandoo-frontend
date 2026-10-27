@@ -36,18 +36,28 @@ export function useHospitalStay(initial: LifeSummary | null | undefined) {
     if (!token) return
     const r = await getHospital(token)
     if (!r.ok) return
-    setInfo(r.data)
+    // A planta não muda durante a internação: manter o MESMO objeto, senão a
+    // cena do leito é desmontada e montada de novo a cada resposta.
+    setInfo((prev) => (prev ? { ...r.data, interior: prev.interior } : r.data))
     if (r.data.life.character.status !== "hospital") setPhase((p) => (p === "admitted" ? "discharged" : p))
   }, [])
 
-  /** Mensagem "life" da sala: internou agora (ambulância) ou mudou algo durante a internação. */
+  /**
+   * Mensagem "life" da sala: só a MUDANÇA de estado pede o hospital de novo
+   * (internou agora ou recebeu alta). O GET do hospital também traz a vida e
+   * ela avisa a sala com outro "life" — pedir a cada aviso virava um ciclo
+   * sem fim que recriava a cena e prendia a tela em "Entrando no hospital…".
+   */
+  const lastStatus = useRef<string | undefined>(undefined)
   const onLife = useCallback(
     (status: string | undefined) => {
+      const changed = status !== lastStatus.current
+      lastStatus.current = status
       if (status === "hospital" && !phaseRef.current) {
         phaseRef.current = "ambulance"
         setPhase("ambulance")
       }
-      if (phaseRef.current || status === "hospital") void refresh()
+      if (changed && (phaseRef.current || status === "hospital")) void refresh()
     },
     [refresh],
   )
