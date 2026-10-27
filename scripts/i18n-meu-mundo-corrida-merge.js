@@ -1,4 +1,4 @@
-// Meu Mundo 3D — mm3d-39: Corrida antigravidade (naves, turbo, penhascos).
+// Meu Mundo 3D — mm3d-39: Corrida antigravidade (naves, turbo, penhascos); mm3d-39b: multiplayer.
 // Namespace "MeuMundo". Idempotente, fill-if-absent.
 // Rodar: node scripts/i18n-meu-mundo-corrida-merge.js
 const fs = require("fs")
@@ -60,6 +60,37 @@ const MEU_MUNDO = {
   corridaWin: ["Vitória!", "Victory!", "¡Victoria!"],
   corridaYou: ["Você", "You", "Tú"],
   corridaYourTime: ["Seu tempo: {t}", "Your time: {t}", "Tu tiempo: {t}"],
+  // mm3d-39b: multiplayer
+  corridaAgainMulti: ["Nova largada", "New race", "Nueva largada"],
+  corridaBot: ["computador", "computer", "computadora"],
+  corridaJoinFail: [
+    "A corrida em grupo não abriu agora. Tente de novo ou corra sozinho.",
+    "The group race didn't open right now. Try again or race alone.",
+    "La carrera en grupo no abrió ahora. Intenta de nuevo o corre solo.",
+  ],
+  corridaLeft: ["saiu", "left", "salió"],
+  corridaLobbyCancel: ["Sair da espera", "Leave the wait", "Salir de la espera"],
+  corridaLobbyCount: [
+    "{n} de 6 pilotos · {b} computadores se ninguém mais entrar",
+    "{n} of 6 pilots · {b} computers if no one else joins",
+    "{n} de 6 pilotos · {b} computadoras si nadie más entra",
+  ],
+  corridaLobbyHow: [
+    "Quem entrar até o fim do tempo corre junto. As vagas que sobrarem viram computador — sempre 6 naves.",
+    "Whoever joins before time runs out races with you. Empty spots become computers — always 6 ships.",
+    "Quien entre antes de que acabe el tiempo corre contigo. Los lugares vacíos son computadoras — siempre 6 naves.",
+  ],
+  corridaLobbyTitle: ["Esperando pilotos…", "Waiting for pilots…", "Esperando pilotos…"],
+  corridaModeMulti: ["Multiplayer", "Multiplayer", "Multijugador"],
+  corridaModeMultiSub: ["Espera até 1 minuto · o resto é computador", "Waits up to 1 minute · the rest are computers", "Espera hasta 1 minuto · el resto son computadoras"],
+  corridaModeSolo: ["Sozinho", "Solo", "Solo"],
+  corridaOffline: ["Sem conexão com a corrida", "No connection to the race", "Sin conexión con la carrera"],
+  corridaReplaced: ["Aberto em outra janela", "Opened in another window", "Abierto en otra ventana"],
+}
+
+// mm3d-39b: "rivais" virou "computadores" — estes valores SOBRESCREVEM os antigos.
+const OVERRIDE = {
+  corridaModeRaceSub: ["Você contra 5 computadores · 3 voltas", "You against 5 computers · 3 laps", "Tú contra 5 computadoras · 3 vueltas"],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]
@@ -70,6 +101,12 @@ for (const [i, locale] of LOCALES.entries()) {
   json.MeuMundo = json.MeuMundo || {}
   for (const [key, vals] of Object.entries(MEU_MUNDO)) {
     if (json.MeuMundo[key] === undefined) {
+      json.MeuMundo[key] = vals[i]
+      added++
+    }
+  }
+  for (const [key, vals] of Object.entries(OVERRIDE)) {
+    if (json.MeuMundo[key] !== vals[i]) {
       json.MeuMundo[key] = vals[i]
       added++
     }

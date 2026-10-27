@@ -20,6 +20,7 @@ import type {
   MMNotice,
   MultiplayerSession,
   PaintSession,
+  CorridaSession,
   NeighborhoodPayload,
   NoticeFilter,
   PlayerProfile,
@@ -148,6 +149,8 @@ export const postJetpackJoin = (token: string, roomId?: string | null) =>
 /** Paint (mm3d-35): lugar numa sala do centro (perto da porta), no modo pedido. */
 export const postPaintJoin = (token: string, mode: string, roomId?: string | null) =>
   call<PaintSession>(token, "POST", "/center/paint", roomId ? { mode, roomId } : { mode })
+/** Corrida em grupo (mm3d-39b): a sala espera até 1 minuto e completa 6 naves com o computador. */
+export const postCorridaJoin = (token: string) => call<CorridaSession>(token, "POST", "/center/corrida", {})
 export const getVisits = (token: string) => call<VisitState>(token, "GET", "/visits")
 export const getInviteCandidates = (token: string) =>
   call<{ candidates: { name: string; available: boolean; reason: string | null }[] }>(token, "GET", "/visits/candidates")

@@ -2,8 +2,10 @@
 
 // features/meu-mundo/corrida/ui/race-view.tsx — CORRIDA ANTIGRAVIDADE (mm3d-39): a tela.
 //
-// Cobre o centro (suspenso por baixo, como o jetpack e o Paint). Três telas:
-//  - MENU: Corrida (5 rivais, 3 voltas) ou Contra o relógio (sozinho).
+// Cobre o centro (suspenso por baixo, como o jetpack e o Paint). Telas:
+//  - MENU: Sozinho (5 computadores), Multiplayer (mm3d-39b) ou Contra o relógio.
+//  - ESPERA (multiplayer): a sala aguarda até 1 minuto por mais gente; quem
+//    entrar corre junto e as vagas que sobram viram computador (6 naves).
 //  - JOGO: a cena (race-game.ts) com a HUD no molde do vídeo do Alex —
 //    posição e volta em cima à esquerda, tempo/melhor volta embaixo delas,
 //    minimapa em cima à direita, velocímetro e cargas de turbo embaixo à
@@ -12,21 +14,37 @@
 //  - RESULTADO: a classificação, o tempo e o recorde do aparelho.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Flag, Flame, Loader2, Rocket, Timer, Trophy, Volume2, VolumeX, X } from "lucide-react"
+import { Bot, Flag, Flame, Loader2, Rocket, Timer, Trophy, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import { createRaceGame, type RaceGameHandle, type RaceHud, type RaceMode, type RaceNotice } from "../engine/race-game"
 import { TUNING } from "../sim/race"
+import type { CorridaNet, CorridaNetStatus, CorridaStart } from "../engine/net"
+
+/** Entrar numa largada em grupo (null = a sala não abriu). */
+export type CorridaJoin = (hooks: {
+  signal: AbortSignal
+  onLobby: (names: string[], until: number) => void
+  onStatus: (s: CorridaNetStatus) => void
+}) => Promise<{ net: CorridaNet; start: CorridaStart } | null>
 
 export interface RaceViewProps {
   /** Nome do jogador (na classificação). */
   name?: string
   onExit: () => void
+  /** Multiplayer (sem isto, só sozinho e contra o relógio). */
+  join?: CorridaJoin
 }
 
-type Stage = { kind: "menu" } | { kind: "game"; mode: RaceMode; key: number }
+/** A largada em grupo. */
+const MAX_CARS = 6
+
+type Stage =
+  | { kind: "menu" }
+  | { kind: "lobby"; ac: AbortController }
+  | { kind: "game"; mode: RaceMode; key: number; mp?: { net: CorridaNet; start: CorridaStart } }
 
 /** Recorde do aparelho (conveniência local; some se o navegador limpar). */
 interface Records {
@@ -57,9 +75,43 @@ export function fmtRace(s: number): string {
   return `${String(m).padStart(2, "0")}:${r.toFixed(3).padStart(6, "0")}`
 }
 
-export function RaceView({ name, onExit }: RaceViewProps) {
+export function RaceView({ name, onExit, join }: RaceViewProps) {
+  const t = useTranslations("MeuMundo")
   const [stage, setStage] = useState<Stage>({ kind: "menu" })
+  const [lobby, setLobby] = useState<{ names: string[]; until: number }>({ names: [], until: 0 })
+  const [error, setError] = useState<string | null>(null)
   const seq = useRef(0)
+
+  const play = useCallback(
+    async (mode: RaceMode) => {
+      setError(null)
+      if (mode !== "multi") {
+        setStage({ kind: "game", mode, key: ++seq.current })
+        return
+      }
+      if (!join) return
+      const ac = new AbortController()
+      setLobby({ names: [], until: 0 })
+      setStage({ kind: "lobby", ac })
+      const fail = () => {
+        setError(t("corridaJoinFail", "A corrida em grupo não abriu agora. Tente de novo ou corra sozinho."))
+        setStage({ kind: "menu" })
+      }
+      try {
+        const got = await join({ signal: ac.signal, onLobby: (names, until) => setLobby({ names, until }), onStatus: () => {} })
+        if (ac.signal.aborted) {
+          got?.net.dispose()
+          return
+        }
+        if (!got) return fail()
+        setStage({ kind: "game", mode: "multi", key: ++seq.current, mp: got })
+      } catch {
+        if (!ac.signal.aborted) fail()
+      }
+    },
+    [join, t],
+  )
+
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#0d1117" }}>
       {stage.kind === "game" ? (
@@ -67,24 +119,85 @@ export function RaceView({ name, onExit }: RaceViewProps) {
           key={stage.key}
           mode={stage.mode}
           name={name}
-          onAgain={() => setStage({ kind: "game", mode: stage.mode, key: ++seq.current })}
+          mp={stage.mp}
+          onAgain={() => void play(stage.mode)}
           onMenu={() => setStage({ kind: "menu" })}
         />
+      ) : stage.kind === "lobby" ? (
+        <RaceLobby
+          names={lobby.names}
+          until={lobby.until}
+          onCancel={() => {
+            stage.ac.abort()
+            setStage({ kind: "menu" })
+          }}
+        />
       ) : (
-        <RaceMenu onPlay={(mode) => setStage({ kind: "game", mode, key: ++seq.current })} onExit={onExit} />
+        <RaceMenu onPlay={(mode) => void play(mode)} onExit={onExit} multi={!!join} error={error} />
       )}
+    </div>
+  )
+}
+
+// ═══ espera (multiplayer) ════════════════════════════════════════════════════
+
+function RaceLobby({ names, until, onCancel }: { names: string[]; until: number; onCancel: () => void }) {
+  const t = useTranslations("MeuMundo")
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250)
+    return () => clearInterval(id)
+  }, [])
+  const left = until ? Math.max(0, Math.ceil((until - now) / 1000)) : null
+  const bots = Math.max(0, MAX_CARS - Math.max(1, names.length))
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: "radial-gradient(120% 90% at 50% 0%, #2b4a66 0%, #111820 60%, #0b0f14 100%)" }}>
+      <div className="w-full max-w-[440px] rounded-[22px] p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+        <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: "#5FE1FF" }}>
+          <Users className="h-4 w-4" /> {t("corridaModeMulti", "Multiplayer")}
+        </div>
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <h2 className="text-[22px] font-black italic leading-tight">{t("corridaLobbyTitle", "Esperando pilotos…")}</h2>
+          <span className="text-[34px] font-black italic tabular-nums leading-none" style={{ color: "#FF7A2F" }} aria-live="polite">
+            {left === null ? <Loader2 className="h-7 w-7 animate-spin" /> : `0:${String(left).padStart(2, "0")}`}
+          </span>
+        </div>
+        <p className="mt-2 text-[13px] leading-snug" style={{ color: MM.muted }}>
+          {t("corridaLobbyHow", "Quem entrar até o fim do tempo corre junto. As vagas que sobrarem viram computador — sempre 6 naves.")}
+        </p>
+        <ol className="mt-3 grid grid-cols-2 gap-1.5 max-[420px]:grid-cols-1">
+          {Array.from({ length: MAX_CARS }, (_, i) => {
+            const n = names[i]
+            return (
+              <li key={i} className="flex items-center gap-2 rounded-[10px] px-2.5 py-2 text-[13.5px]" style={{ background: n ? MM.rubySoft : MM.card, color: n ? MM.text : MM.muted }}>
+                {n ? <Flag className="h-4 w-4 shrink-0" style={{ color: MM.gold }} /> : <Bot className="h-4 w-4 shrink-0" />}
+                <span className="min-w-0 truncate font-semibold">{n || t("corridaBot", "computador")}</span>
+              </li>
+            )
+          })}
+        </ol>
+        <p className="mt-2 text-[12.5px]" style={{ color: MM.muted }}>
+          {t("corridaLobbyCount", "{n} de 6 pilotos · {b} computadores se ninguém mais entrar").replace("{n}", String(Math.max(1, names.length))).replace("{b}", String(bots))}
+        </p>
+        <button type="button" onClick={onCancel} className="mt-4 w-full rounded-[14px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+          {t("corridaLobbyCancel", "Sair da espera")}
+        </button>
+      </div>
     </div>
   )
 }
 
 // ═══ menu ════════════════════════════════════════════════════════════════════
 
-function RaceMenu({ onPlay, onExit }: { onPlay: (m: RaceMode) => void; onExit: () => void }) {
+function RaceMenu({ onPlay, onExit, multi, error }: { onPlay: (m: RaceMode) => void; onExit: () => void; multi: boolean; error: string | null }) {
   const t = useTranslations("MeuMundo")
   const [rec, setRec] = useState<Records>({ race: null, time: null, lap: null })
   useEffect(() => setRec(loadRecords()), [])
   const modes: { mode: RaceMode; icon: React.ReactNode; title: string; sub: string }[] = [
-    { mode: "race", icon: <Flag className="h-5 w-5" />, title: t("corridaModeRace", "Corrida"), sub: t("corridaModeRaceSub", "Você contra 5 rivais · 3 voltas") },
+    { mode: "race", icon: <Flag className="h-5 w-5" />, title: t("corridaModeSolo", "Sozinho"), sub: t("corridaModeRaceSub", "Você contra 5 computadores · 3 voltas") },
+    ...(multi
+      ? [{ mode: "multi" as const, icon: <Users className="h-5 w-5" />, title: t("corridaModeMulti", "Multiplayer"), sub: t("corridaModeMultiSub", "Espera até 1 minuto · o resto é computador") }]
+      : []),
     { mode: "time", icon: <Timer className="h-5 w-5" />, title: t("corridaModeTime", "Contra o relógio"), sub: t("corridaModeTimeSub", "Sozinho na pista · 3 voltas") },
   ]
   return (
@@ -128,7 +241,7 @@ function RaceMenu({ onPlay, onExit }: { onPlay: (m: RaceMode) => void; onExit: (
           </li>
         </ul>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 max-[420px]:grid-cols-1">
+        <div className={`mt-4 grid gap-2 max-[420px]:grid-cols-1 ${modes.length === 3 ? "grid-cols-3 max-[759px]:grid-cols-1" : "grid-cols-2"}`}>
           {modes.map((m, i) => (
             <button
               key={m.mode}
@@ -149,6 +262,12 @@ function RaceMenu({ onPlay, onExit }: { onPlay: (m: RaceMode) => void; onExit: (
             </button>
           ))}
         </div>
+
+        {error && (
+          <p role="alert" className="mt-3 rounded-[12px] px-3 py-2 text-[13px]" style={{ background: "rgba(110, 16, 34, 0.55)", color: "#FFD9DF" }}>
+            {error}
+          </p>
+        )}
 
         {(rec.race !== null || rec.time !== null || rec.lap !== null) && (
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]" style={{ color: MM.muted }}>
@@ -171,7 +290,19 @@ function RaceMenu({ onPlay, onExit }: { onPlay: (m: RaceMode) => void; onExit: (
 
 // ═══ jogo ════════════════════════════════════════════════════════════════════
 
-function RaceScreen({ mode, name, onAgain, onMenu }: { mode: RaceMode; name?: string; onAgain: () => void; onMenu: () => void }) {
+function RaceScreen({
+  mode,
+  name,
+  mp,
+  onAgain,
+  onMenu,
+}: {
+  mode: RaceMode
+  name?: string
+  mp?: { net: CorridaNet; start: CorridaStart }
+  onAgain: () => void
+  onMenu: () => void
+}) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<RaceGameHandle | null>(null)
@@ -186,6 +317,8 @@ function RaceScreen({ mode, name, onAgain, onMenu }: { mode: RaceMode; name?: st
   useEffect(() => {
     textRef.current = t
   }, [t])
+  // o jogo nasce com o modo do aparelho (trocar depois não recria a cena)
+  const touchRef = useRef(isTouch)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -224,6 +357,7 @@ function RaceScreen({ mode, name, onAgain, onMenu }: { mode: RaceMode; name?: st
           if (!n.last) say(n.best ? tt("corridaToastLapBest", "Volta {n}: {t} — melhor volta!").replace("{n}", String(n.lap)).replace("{t}", fmtRace(n.time)) : tt("corridaToastLap", "Volta {n}: {t}").replace("{n}", String(n.lap)).replace("{t}", fmtRace(n.time)), n.best ? "gold" : "ok", 1800)
           break
         case "finish": {
+          if (mode === "multi") break // em grupo o recorde não conta (o resultado é da sala)
           const rec = loadRecords()
           const key = mode === "race" ? "race" : "time"
           let better = false
@@ -251,6 +385,8 @@ function RaceScreen({ mode, name, onAgain, onMenu }: { mode: RaceMode; name?: st
         canvas,
         mode,
         playerName: name || textRef.current("corridaYou", "Você"),
+        touch: touchRef.current,
+        net: mp,
         onReady: () => alive && setStatus("ready"),
         onHud: (h) => {
           if (!alive) return
@@ -280,7 +416,7 @@ function RaceScreen({ mode, name, onAgain, onMenu }: { mode: RaceMode; name?: st
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [mode, name])
+  }, [mode, name, mp])
 
   const toggleMute = useCallback(() => {
     setMuted((m) => {
@@ -344,6 +480,17 @@ function RaceScreen({ mode, name, onAgain, onMenu }: { mode: RaceMode; name?: st
             </div>
           )}
           {ended && hud.results && <Results hud={hud} mode={mode} newRecord={newRecord} onAgain={onAgain} onMenu={onMenu} />}
+          {!ended && (hud.net === "offline" || hud.net === "replaced") && (
+            <div className="absolute inset-x-0 grid place-items-center" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 130px)" }}>
+              <div className="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-bold" style={{ background: MM.surface, color: MM.text }}>
+                <WifiOff className="h-4 w-4" />
+                {hud.net === "replaced" ? t("corridaReplaced", "Aberto em outra janela") : t("corridaOffline", "Sem conexão com a corrida")}
+                <button type="button" onClick={onMenu} className="ml-1 rounded-full px-2.5 py-1 text-[12px]" style={{ background: MM.rubyFill }}>
+                  {t("corridaBackMenu", "Voltar ao menu")}
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -511,6 +658,7 @@ function Results({ hud, mode, newRecord, onAgain, onMenu }: { hud: RaceHud; mode
   const place = rows.findIndex((r) => r.me) + 1
   const waiting = hud.phase !== "end"
   const title = mode === "time" ? t("corridaFinishTime", "Chegada!") : place === 1 ? t("corridaWin", "Vitória!") : t("corridaPlaceTitle", "{n}º lugar").replace("{n}", String(place))
+  const group = mode === "multi"
   return (
     <div className="absolute inset-0 grid place-items-center p-4" style={{ background: MM.scrim }}>
       <div className="w-full max-w-[420px] rounded-[20px] p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
@@ -528,15 +676,20 @@ function Results({ hud, mode, newRecord, onAgain, onMenu }: { hud: RaceHud; mode
             )}
           </p>
         )}
-        {mode === "race" && (
+        {mode !== "time" && (
           <ol className="mt-3 flex flex-col gap-1">
             {rows.map((r, i) => (
               <li key={r.id} className="flex items-center gap-2 rounded-[10px] px-2.5 py-1.5 text-[14px]" style={{ background: r.me ? MM.rubySoft : MM.card }}>
                 <span className="w-6 font-black italic tabular-nums">{i + 1}º</span>
                 <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: r.color }} />
                 <span className="min-w-0 flex-1 truncate font-semibold">{r.name}</span>
+                {group && !r.human && (
+                  <span className="flex shrink-0 items-center gap-1 text-[11px]" style={{ color: MM.muted }}>
+                    <Bot className="h-3.5 w-3.5" /> {t("corridaBot", "computador")}
+                  </span>
+                )}
                 <span className="tabular-nums" style={{ color: MM.muted }}>
-                  {r.time !== null ? fmtRace(r.time) : waiting ? "…" : t("corridaDnf", "não terminou")}
+                  {r.time !== null ? fmtRace(r.time) : r.gone ? t("corridaLeft", "saiu") : waiting ? "…" : t("corridaDnf", "não terminou")}
                 </span>
               </li>
             ))}
@@ -544,7 +697,7 @@ function Results({ hud, mode, newRecord, onAgain, onMenu }: { hud: RaceHud; mode
         )}
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button type="button" onClick={onAgain} className="rounded-[14px] px-3 py-3 text-[15px] font-bold text-white" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}>
-            {t("corridaAgain", "Correr de novo")}
+            {group ? t("corridaAgainMulti", "Nova largada") : t("corridaAgain", "Correr de novo")}
           </button>
           <button type="button" onClick={onMenu} className="rounded-[14px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
             {t("corridaBackMenu", "Voltar ao menu")}

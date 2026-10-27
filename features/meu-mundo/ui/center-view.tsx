@@ -25,8 +25,9 @@ import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
-import { fetchSession, getCenterInterior, postJetpackJoin, postPaintJoin } from "../data"
+import { fetchSession, getCenterInterior, postCorridaJoin, postJetpackJoin, postPaintJoin } from "../data"
 import type { PaintJoin } from "../paint/ui/paint-view"
+import type { CorridaJoin } from "../corrida/ui/race-view"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
@@ -44,6 +45,16 @@ async function fetchPaintSession(mode: string, roomId: string | null) {
 }
 /** A rede do Paint só baixa quando alguém escolhe 1×1/2×2/3×3. */
 const paintJoin: PaintJoin = async (mode, hooks) => (await import("../paint/engine/join")).makePaintJoin(fetchPaintSession)(mode, hooks)
+
+/** Corrida em grupo (mm3d-39b): lugar na próxima largada (null = sem acesso). */
+async function fetchCorridaSession() {
+  const token = getToken()
+  if (!token) return null
+  const r = await postCorridaJoin(token)
+  return r.ok ? r.data : null
+}
+/** A rede da corrida só baixa quando alguém escolhe Multiplayer. */
+const corridaJoin: CorridaJoin = async (hooks) => (await import("../corrida/engine/net")).joinCorrida(fetchCorridaSession, hooks)
 
 /** O local abre um minijogo agora (o registro do servidor decide). */
 /** Lugar na sala do jetpack em grupo (null = sem acesso: o jogo cai no sozinho). */
@@ -508,7 +519,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {/* Paint (mm3d-35): ilhas, tinta e gatinhos; ao sair, volta à porta */}
       {minigame === "paint" && <PaintView body={body} look={look} onExit={() => setMinigame(null)} join={paintJoin} />}
       {/* Corrida antigravidade (mm3d-39): naves, turbo e penhascos; ao sair, volta à porta */}
-      {minigame === "corrida" && <RaceView name={payload.me.name} onExit={() => setMinigame(null)} />}
+      {minigame === "corrida" && <RaceView name={payload.me.name} onExit={() => setMinigame(null)} join={corridaJoin} />}
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
       {/* Prédios do centro (mm3d-37): mesma tela; a planta vem do servidor ao entrar */}
       {minigame === "interior" && inside && insidePlace && inside.interior && (

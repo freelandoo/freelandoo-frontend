@@ -160,6 +160,11 @@ export interface MultiplayerSession {
 }
 
 /** Lugar numa sala do Paint (mm3d-35): POST /center/paint. */
+/** Lugar na próxima largada da corrida em grupo (mm3d-39b): POST /center/corrida. */
+export interface CorridaSession {
+  multiplayer: MultiplayerSession
+}
+
 export interface PaintSession {
   multiplayer: MultiplayerSession
   mode: "solo" | "1v1" | "2v2" | "3v3"

@@ -13,6 +13,12 @@
 // Turbo: faixas na pista (na hora) e cápsulas (cargas, até 3, usadas pelo
 // botão). Rivais seguem a linha de corrida com uma habilidade cada.
 //
+// Três tipos de nave (mm3d-39b, multiplayer): "local" (a deste aparelho, pela
+// entrada), "bot" (o computador dirige) e "remote" (outro jogador: o estado
+// vem de fora, por `applyRemote`, e a regra só conta as voltas dela). Sozinho
+// = 1 local + 5 bots; no servidor = jogadores remote + bots; no aparelho de
+// quem joga em grupo = 1 local + o resto remote (os bots vêm do servidor).
+//
 // Passo fixo de 1/120 s; sem Babylon.
 
 import { STEP, trackAt, surfaceY, worldAt, wrapAngle, wrapS, type Track, type TrackPoint } from "./track"
@@ -65,11 +71,15 @@ export interface CarInput {
   turbo: boolean
 }
 
+export type CarKind = "local" | "remote" | "bot"
+
 export interface Car {
   id: number
   name: string
   color: string
-  bot: boolean
+  kind: CarKind
+  /** Jogador que saiu no meio (fica parado fora da pista, no fim da classificação). */
+  gone: boolean
   /** Metros andados ao longo do eixo (com as voltas). */
   dist: number
   u: number
@@ -118,13 +128,39 @@ export type RacePhase = "countdown" | "race" | "end"
 export const CAR_COLORS = ["#C8102E", "#1F7AE0", "#F2B705", "#16A37F", "#8E44D9", "#F26B1D"] as const
 const RIVALS = ["Faísca", "Cometa", "Vulcão", "Neblina", "Trovão"] as const
 
+export interface RaceSeat {
+  name: string
+  kind: CarKind
+}
+
 export interface RaceOptions {
   track: Track
-  /** Rivais (0 = contra o relógio). */
-  rivals: number
+  /** Rivais (0 = contra o relógio). Ignorado com `seats`. */
+  rivals?: number
+  /** As naves na ordem da largada (0 = última fila). Sem isto: 1 local + `rivals` bots. */
+  seats?: RaceSeat[]
+  /** Qual nave é a deste aparelho (−1 = nenhuma: o servidor). */
+  me?: number
   laps?: number
   playerName?: string
   seed?: number
+  /** A regra encerra sozinha (sozinho/servidor). No aparelho do multiplayer quem encerra é a sala. */
+  autoEnd?: boolean
+}
+
+/** Estado de uma nave que veio da rede. */
+export interface RemoteCar {
+  dist: number
+  u: number
+  Y: number
+  yaw: number
+  v: number
+  vy: number
+  air: boolean
+  boost: boolean
+  down: boolean
+  steer: number
+  throttle: number
 }
 
 /** Gerador pequeno e determinístico (os rivais variam igual em toda partida com a mesma semente). */
@@ -153,6 +189,8 @@ export class Race {
   private padCool = new Map<string, number>()
   private endAt: number | null = null
   private finishedCount = 0
+  readonly me: number
+  readonly autoEnd: boolean
   bestLap: number | null = null
 
   constructor(opts: RaceOptions) {
@@ -160,9 +198,15 @@ export class Race {
     this.laps = opts.laps ?? TUNING.laps
     this.time = -TUNING.countdown
     this.rand = rng(opts.seed ?? 7)
-    const n = 1 + opts.rivals
+    this.me = opts.me ?? 0
+    this.autoEnd = opts.autoEnd ?? true
+    let bots = 0
+    const seats: RaceSeat[] =
+      opts.seats ?? [{ name: opts.playerName ?? "Você", kind: "local" }, ...Array.from({ length: opts.rivals ?? 0 }, (): RaceSeat => ({ name: "", kind: "bot" }))]
+    const n = seats.length
     const W = this.track.width
     for (let i = 0; i < n; i++) {
+      const seat = seats[i]
       // grid em duas colunas atrás da linha; o jogador larga no fim do pelotão
       const slot = n - 1 - i
       const row = Math.floor(slot / 2)
@@ -170,12 +214,14 @@ export class Race {
       const dist = this.track.startS - 8 - row * 9 - (col > 0 ? 4 : 0)
       const pt = trackAt(this.track, dist, this.p)
       const u = col * W * 0.2
-      const base = i === 0 ? 1 : 0.9 + 0.075 * (i / Math.max(1, n - 1)) + this.rand() * 0.02
+      const bot = seat.kind === "bot"
+      const base = bot ? 0.9 + 0.075 * (i / Math.max(1, n - 1)) + this.rand() * 0.02 : 1
       this.cars.push({
         id: i,
-        name: i === 0 ? (opts.playerName ?? "Você") : RIVALS[(i - 1) % RIVALS.length],
+        name: bot ? seat.name || RIVALS[bots++ % RIVALS.length] : seat.name,
         color: CAR_COLORS[i % CAR_COLORS.length],
-        bot: i > 0,
+        kind: seat.kind,
+        gone: false,
         dist,
         u,
         yaw: pt.yaw,
@@ -184,7 +230,7 @@ export class Race {
         vy: 0,
         air: false,
         boost: 0,
-        charges: i === 0 ? 1 : 0,
+        charges: bot ? 0 : 1,
         down: 0,
         scrape: 0,
         finished: null,
@@ -201,8 +247,9 @@ export class Race {
     }
   }
 
+  /** A nave deste aparelho (no servidor não há: a primeira). */
   get player(): Car {
-    return this.cars[0]
+    return this.cars[Math.max(0, this.me)]
   }
 
   /** Volta em andamento (1…laps) de uma nave. */
@@ -212,6 +259,7 @@ export class Race {
 
   /** Progresso para a classificação (quem terminou vem antes, pela ordem de chegada). */
   private score(c: Car): number {
+    if (c.gone && c.finished === null) return -1e9 + c.dist
     return c.finished !== null ? 1e9 - c.finished : c.dist
   }
 
@@ -240,7 +288,8 @@ export class Race {
       else this.padCool.set(k, t - dt)
     }
     for (const c of this.cars) {
-      const inp = c.finished !== null ? FINISHED_INPUT : c.bot ? this.drive(c) : input
+      if (c.kind === "remote" || c.gone) continue
+      const inp = c.finished !== null ? FINISHED_INPUT : c.kind === "bot" ? this.drive(c) : input
       this.move(c, inp, dt, out)
     }
     this.collide(out)
@@ -416,7 +465,7 @@ export class Race {
       c.lapStart = this.time
       c.laps.push(lapTime)
       let best = false
-      if (c.id === 0 && (this.bestLap === null || lapTime < this.bestLap)) {
+      if (c.id === this.me && (this.bestLap === null || lapTime < this.bestLap)) {
         this.bestLap = lapTime
         best = true
       }
@@ -425,10 +474,74 @@ export class Race {
         c.finished = this.time
         this.finishedCount++
         out.push({ type: "finish", car: c.id, place: this.finishedCount, time: this.time })
-        if (c.id === 0) this.endAt = this.time + TUNING.tail
-        if (this.finishedCount === this.cars.length) this.endAt = this.time + 1.5
+        this.checkEnd()
       }
     }
+  }
+
+  /** Todos os jogadores terminaram (ou saíram): mais um tempo para os bots; todo mundo: fim logo. */
+  private checkEnd() {
+    if (!this.autoEnd) return
+    const live = this.cars.filter((c) => !c.gone)
+    if (live.length && live.every((c) => c.finished !== null)) {
+      this.endAt = Math.min(this.endAt ?? Infinity, this.time + 1.5)
+      return
+    }
+    const humans = this.cars.filter((c) => c.kind !== "bot")
+    if (humans.every((c) => c.finished !== null || c.gone) && this.endAt === null) this.endAt = this.time + TUNING.tail
+  }
+
+  // ── multiplayer ──────────────────────────────────────────────────────────
+  /** Estado de outro jogador (ou de um bot do servidor) que chegou pela rede; conta as voltas. */
+  applyRemote(id: number, r: RemoteCar, out: RaceEvent[]) {
+    const c = this.cars[id]
+    if (!c || c.kind !== "remote" || c.gone) return
+    c.dist = r.dist
+    c.u = r.u
+    c.Y = r.Y
+    c.yaw = r.yaw
+    c.v = r.v
+    c.vy = r.vy
+    c.air = r.air
+    c.boost = r.boost ? Math.max(c.boost, 0.1) : 0
+    c.down = r.down ? Math.max(c.down, 0.1) : 0
+    c.steerNow = r.steer
+    c.throttleNow = r.throttle
+    if (this.phase === "race") this.laps_(c, out)
+  }
+
+  /** Estado para mandar pela rede. */
+  remoteOf(c: Car): RemoteCar {
+    return { dist: c.dist, u: c.u, Y: c.Y, yaw: c.yaw, v: c.v, vy: c.vy, air: c.air, boost: c.boost > 0, down: c.down > 0, steer: c.steerNow, throttle: c.throttleNow }
+  }
+
+  /** O jogador saiu no meio: some da pista e vai para o fim da classificação. */
+  markGone(id: number) {
+    const c = this.cars[id]
+    if (!c || c.gone) return
+    c.gone = true
+    c.v = 0
+    this.checkEnd()
+  }
+
+  /** Cápsula pedida por um jogador remoto (o servidor decide quem leva). */
+  claimOrb(car: number, orb: number, out: RaceEvent[]): boolean {
+    const c = this.cars[car]
+    const o = this.track.orbs.find((k) => k.id === orb)
+    if (!c || !o || this.orbOut.has(orb)) return false
+    let ds = Math.abs(wrapS(this.track, c.dist) - o.s)
+    ds = Math.min(ds, this.track.length - ds)
+    if (ds > 40) return false // longe demais da cápsula (atraso cabe; teletransporte não)
+    this.orbOut.set(orb, TUNING.orbBack)
+    out.push({ type: "orb", car, orb })
+    return true
+  }
+
+  /** O fim decidido de fora (a sala mandou o resultado). */
+  end(out: RaceEvent[]) {
+    if (this.phase === "end") return
+    this.phase = "end"
+    out.push({ type: "end" })
   }
 
   // ── encostar: empurra de lado e quem vem atrás perde um pouco ─────────────
@@ -436,23 +549,27 @@ export class Race {
     const cs = this.cars
     for (let i = 0; i < cs.length; i++) {
       const a = cs[i]
-      if (a.down > 0) continue
+      if (a.down > 0 || a.gone) continue
       for (let j = i + 1; j < cs.length; j++) {
         const b = cs[j]
-        if (b.down > 0 || a.air !== b.air) continue
+        if (b.down > 0 || b.gone || a.air !== b.air) continue
+        // a nave que vem da rede não se mexe aqui: quem empurra é só a simulada
+        const ma = a.kind !== "remote"
+        const mb = b.kind !== "remote"
+        if (!ma && !mb) continue
         const ds = b.dist - a.dist
         const du = b.u - a.u
         if (Math.abs(ds) > 4.2 || Math.abs(du) > 2.4) continue
         if (Math.abs(a.Y - b.Y) > 1.6) continue
-        const push = (2.4 - Math.abs(du)) / 2
+        const push = (2.4 - Math.abs(du)) / (ma && mb ? 2 : 1)
         const dir = du === 0 ? (j % 2 ? 1 : -1) : Math.sign(du)
-        a.u -= dir * push
-        b.u += dir * push
+        if (ma) a.u -= dir * push
+        if (mb) b.u += dir * push
         const back = ds > 0 ? a : b
         const front = ds > 0 ? b : a
         if (Math.abs(du) < 1.6) {
-          back.v = Math.max(0, back.v - 3)
-          front.v += 1
+          if (back.kind !== "remote") back.v = Math.max(0, back.v - 3)
+          if (front.kind !== "remote") front.v += 1
         }
         out.push({ type: "bump", a: a.id, b: b.id })
       }
@@ -495,9 +612,15 @@ export class Race {
     const want = ahead.yaw + Math.atan2(target - c.u, look)
     const err = wrapAngle(want - c.yaw)
     const steer = Math.max(-1, Math.min(1, err * 3.2))
-    // elástico: muito longe do jogador acelera/segura um pouco
-    const gap = c.dist - this.player.dist
-    const band = gap > 160 ? 0.95 : gap < -160 ? 1.05 : 1
+    // elástico: muito à frente do melhor jogador segura; muito atrás do último acelera
+    let lead = -Infinity
+    let last = Infinity
+    for (const o of this.cars) {
+      if (o.kind === "bot" || o.gone) continue
+      lead = Math.max(lead, o.dist)
+      last = Math.min(last, o.dist)
+    }
+    const band = !Number.isFinite(lead) ? 1 : c.dist - lead > 160 ? 0.95 : c.dist - last < -160 ? 1.05 : 1
     c.skill += (c.base * band - c.skill) * Math.min(1, 0.5 * dt)
     const turbo = c.charges > 0 && Math.abs(curv) < 0.002 && this.rand() < 0.004
     return { steer, throttle: 1, brake: Math.abs(err) > 0.6 && c.v > 30 ? 0.4 : 0, turbo }

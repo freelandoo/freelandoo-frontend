@@ -6,7 +6,10 @@
 // sombras (pedido do Alex): só luz ambiente + sol.
 //
 // A regra é sim/race.ts em passos de 1/120 s; o desenho interpola entre os
-// dois últimos passos. Teclado: setas/WASD, Espaço ou Shift = turbo. Celular:
+// dois últimos passos. Em grupo (mm3d-39b, `net`): a nave deste aparelho é
+// simulada aqui; as outras (pessoas e computador) chegam da sala a 20 Hz e
+// andam suaves (extrapoladas pelo relógio da sala, corrigidas aos poucos);
+// a cápsula é pedida à sala; quem encerra e dá o resultado é a sala. Teclado: setas/WASD, Espaço ou Shift = turbo. Celular:
 // o joystick (frente acelera, trás freia, lados viram — acelera sozinho) e
 // o botão de turbo.
 
@@ -20,18 +23,23 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
 import { buildTrack, BAIA, type Track } from "../sim/track"
-import { Race, TUNING, carPose, type CarInput, type CarPose, type RaceEvent } from "../sim/race"
+import { Race, TUNING, CAR_COLORS, carPose, type CarInput, type CarPose, type RaceEvent, type RemoteCar } from "../sim/race"
 import { buildTrackView } from "./track-view"
 import { CarFleet, HOVER } from "./car-view"
 import { RaceAudio } from "./audio"
+import type { CorridaNet, CorridaNetStatus, CorridaStart } from "./net"
 
-export type RaceMode = "race" | "time"
+export type RaceMode = "race" | "time" | "multi"
 
 export interface RaceStanding {
   id: number
   name: string
   color: string
   me: boolean
+  /** Pessoa (no grupo); o computador aparece marcado. */
+  human: boolean
+  /** Saiu no meio (grupo). */
+  gone: boolean
   /** Tempo total (null = não terminou). */
   time: number | null
   best: number | null
@@ -58,6 +66,8 @@ export interface RaceHud {
   /** Minimapa: naves (x, z normalizados 0–1), a minha primeiro. */
   dots: { x: number; z: number; color: string; me: boolean }[]
   results: RaceStanding[] | null
+  /** Em grupo: a conexão com a sala (null = sozinho). */
+  net: CorridaNetStatus | null
 }
 
 export type RaceNotice =
@@ -74,6 +84,10 @@ export interface RaceGameOptions {
   canvas: HTMLCanvasElement
   mode: RaceMode
   playerName: string
+  /** Celular: a nave acelera sozinha (puxar o joystick para trás freia). */
+  touch?: boolean
+  /** Em grupo: a sala e a largada que ela mandou. */
+  net?: { net: CorridaNet; start: CorridaStart }
   maxPixelRatio?: number
   onReady?: () => void
   onHud?: (h: RaceHud) => void
@@ -125,12 +139,23 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   sun.diffuse = new Color3(1, 0.95, 0.88)
 
   const track = corridaTrack()
-  const race = new Race({ track, rivals: opts.mode === "race" ? 5 : 0, playerName: opts.playerName, seed: (Date.now() & 0xffff) | 1 })
+  const mp = opts.net ?? null
+  const race = mp
+    ? new Race({
+        track,
+        seats: mp.start.seats.map((s, i) => ({ name: s.name, kind: i === mp.start.me ? "local" : "remote" })),
+        me: mp.start.me,
+        autoEnd: false,
+      })
+    : new Race({ track, rivals: opts.mode === "race" ? 5 : 0, playerName: opts.playerName, seed: (Date.now() & 0xffff) | 1 })
+  /** A nave deste aparelho. */
+  const me = race.me
+  const humans = mp ? mp.start.seats.map((s) => s.human) : race.cars.map((c) => c.kind === "local")
   const view = buildTrackView(scene, track, low)
   const fleet = new CarFleet(
     scene,
     race.cars.map((c) => c.color),
-    (i) => i === 0 || !low,
+    (i) => i === me || !low,
   )
   const audio = new RaceAudio()
   audio.resume()
@@ -169,7 +194,8 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     const up = keys.has("ArrowUp") || keys.has("KeyW")
     const down = keys.has("ArrowDown") || keys.has("KeyS")
     let steer = (right ? 1 : 0) - (left ? 1 : 0)
-    let throttle = up ? 1 : 0
+    // celular: acelera sozinho (o joystick só vira e freia)
+    let throttle = up || (opts.touch && !down) ? 1 : 0
     let brake = down ? 1 : 0
     if (joyOn || (!up && !down && !left && !right && Math.hypot(joyX, joyY) > 0.05)) {
       // joystick: acelera sozinho; puxar para trás freia
@@ -205,7 +231,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
 
   const notice = (nn: RaceNotice) => opts.onNotice?.(nn)
   const handle = (e: RaceEvent) => {
-    const mine = (id: number) => id === 0
+    const mine = (id: number) => id === me
     switch (e.type) {
       case "go":
         audio.beep(1180, 0.35, 0.22)
@@ -227,6 +253,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
         break
       case "orb":
         if (mine(e.car)) {
+          mp?.net.claimOrb(e.orb)
           audio.pickup()
           notice({ kind: "orb", charges: race.player.charges })
         }
@@ -260,15 +287,22 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     }
   }
 
-  const results = (): RaceStanding[] =>
-    race.standings().map((c) => ({
+  const results = (): RaceStanding[] => {
+    // em grupo, o resultado que vale é o da sala
+    const rows = mp?.net.result
+    if (rows)
+      return rows.map((r) => ({ id: r.car, name: r.name, color: CAR_COLORS[r.car % CAR_COLORS.length], me: r.car === me, human: r.human, gone: r.gone, time: r.time, best: r.best }))
+    return race.standings().map((c) => ({
       id: c.id,
       name: c.name,
       color: c.color,
-      me: c.id === 0,
+      me: c.id === me,
+      human: !!humans[c.id],
+      gone: c.gone,
       time: c.finished,
       best: c.laps.length ? Math.min(...c.laps) : null,
     }))
+  }
 
   const pushHud = () => {
     const p = race.player
@@ -291,14 +325,77 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       finished: p.finished !== null,
       dots: race.cars.map((c, i) => {
         const m = norm(cur[i].x, cur[i].z)
-        return { x: m.x, z: m.z, color: c.color, me: i === 0 }
+        return { x: m.x, z: m.z, color: c.color, me: i === me }
       }),
       results: race.phase === "end" || p.finished !== null ? results() : null,
+      net: mp ? mp.net.status : null,
     })
+  }
+
+  // ── grupo: a sala ────────────────────────────────────────────────────────
+  /** Desenho das naves que vêm da rede (suavizado). */
+  const smooth: (RemoteCar | null)[] = race.cars.map(() => null)
+  let poseClock = 0
+  const syncNet = (dt: number) => {
+    if (!mp) return
+    const net = mp.net
+    // relógio: o da sala (corrige devagar; salto grande, na hora)
+    const st = net.serverTime()
+    if (st !== null && race.phase !== "end") {
+      const diff = st - race.time
+      if (Math.abs(diff) > 0.3) race.time = st
+      else race.time += diff * Math.min(1, dt * 2)
+    }
+    // as outras naves: extrapoladas pelo relógio da sala e alcançadas aos poucos
+    const now = st ?? race.time
+    for (let i = 0; i < race.cars.length; i++) {
+      if (i === me) continue
+      const sm = net.cars[i]
+      if (!sm) continue
+      if (sm.gone) {
+        if (!race.cars[i].gone) race.markGone(i)
+        continue
+      }
+      const age = Math.max(0, Math.min(0.35, now - sm.t))
+      const target: RemoteCar = { ...sm, dist: sm.dist + sm.v * age, Y: sm.Y + (sm.air ? sm.vy * age : 0) }
+      let r = smooth[i]
+      if (!r || Math.abs(target.dist - r.dist) > 30 || sm.down) r = smooth[i] = { ...target }
+      else {
+        const k = Math.min(1, dt * 6)
+        r.dist += r.v * dt
+        r.dist += (target.dist - r.dist) * k
+        r.u += (target.u - r.u) * k
+        r.Y += (target.Y - r.Y) * Math.min(1, dt * 10)
+        r.yaw += wrapPi(target.yaw - r.yaw) * k
+        r.v = target.v
+        r.vy = target.vy
+        r.air = target.air
+        r.boost = target.boost
+        r.down = target.down
+        r.steer = target.steer
+        r.throttle = target.throttle
+      }
+      race.applyRemote(i, r, events)
+    }
+    // cápsulas que a sala já deu; turbo negado (outro chegou antes)
+    for (const [id, left] of net.orbs) if (!race.orbOut.has(id)) race.orbOut.set(id, left)
+    const denied = net.takeDenied().length
+    if (denied) race.player.charges = Math.max(0, race.player.charges - denied)
+    // a minha nave para a sala, a 20 Hz
+    poseClock -= dt
+    if (race.phase === "race" && poseClock <= 0) {
+      poseClock = 0.05
+      net.sendPose(race.remoteOf(race.player))
+    }
+    // fim: quem decide é a sala
+    if (net.result && race.phase !== "end") race.end(events)
   }
 
   const frame = () => {
     const dt = Math.min(0.1, engine.getDeltaTime() / 1000)
+    syncNet(dt)
+    for (const e of events) handle(e)
+    events.length = 0
     if (race.phase !== "end") {
       acc += dt
       while (acc >= TUNING.step) {
@@ -336,8 +433,8 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       draw.pitch = a.pitch + (c.pitch - a.pitch) * k
       draw.roll = a.roll + (c.roll - a.roll) * k
       const car = race.cars[i]
-      fleet.place(i, draw, { throttle: car.throttleNow, boost: car.boost > 0, air: car.air, down: car.down > 0 }, dt)
-      if (i === 0) placeCamera(draw, dt)
+      fleet.place(i, draw, { throttle: car.throttleNow, boost: car.boost > 0, air: car.air, down: car.down > 0 || car.gone }, dt)
+      if (i === me) placeCamera(draw, dt)
     }
     fleet.flush()
     for (const o of track.orbs) {
@@ -384,7 +481,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   }
 
   // primeira pose e câmera antes do primeiro quadro
-  placeCamera(cur[0], 1)
+  placeCamera(cur[me], 1)
   void fleet.ready.then(() => {
     if (disposed || readyFired) return
     readyFired = true
@@ -446,6 +543,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       for (const k of ["__corrida", "__corridaTp"]) delete w[k]
       engine.onContextLostObservable.remove(lost)
       engine.stopRenderLoop()
+      mp?.net.dispose()
       audio.dispose()
       fleet.dispose()
       view.dispose()
