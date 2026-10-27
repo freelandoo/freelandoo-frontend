@@ -6102,7 +6102,12 @@
     "chkSaveError": "Couldn't save the check",
     "chkBack": "Back",
     "chkNoPlanTitle": "No active plan",
-    "chkBuildPlan": "Build my plan"
+    "chkBuildPlan": "Build my plan",
+    "indStreakDays": "days in a row",
+    "indLast14": "Last 14 days",
+    "indWorkoutsWeek": "Workouts this week",
+    "indWorkouts30": "{n} this month",
+    "indSeeCalendar": "See calendar →"
   },
   "Workouts": {
     "todayTitle": "Today's workout",

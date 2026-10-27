@@ -5516,7 +5516,12 @@
     "chkSaveError": "Não deu pra salvar o check",
     "chkBack": "Voltar",
     "chkNoPlanTitle": "Nenhuma ficha ativa",
-    "chkBuildPlan": "Montar minha ficha"
+    "chkBuildPlan": "Montar minha ficha",
+    "indStreakDays": "dias seguidos",
+    "indLast14": "Últimos 14 dias",
+    "indWorkoutsWeek": "Treinos na semana",
+    "indWorkouts30": "{n} no mês",
+    "indSeeCalendar": "Ver calendário →"
   },
   "Workouts": {
     "todayTitle": "Treino de hoje",

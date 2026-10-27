@@ -1,25 +1,26 @@
 "use client"
 
-// Aba "Indicadores" do painel fitness: KPIs de saúde/consistência calculados
-// no back (GET /fitness/indicators) + gráficos leves em HTML/SVG na identidade
-// (barras mono-série dourado/ciano com linha de meta, linha de peso com
-// marcadores, distribuição de macros com gaps e rótulos diretos).
+// Aba "Indicadores" do Esportes — KPIs de saúde/consistência calculados no back
+// (GET /fitness/indicators).
+//
+// REPAGINADA "PLACAR BRASA" (2026-10-27; pedido do Alex: "os indicadores estão
+// sem efeitos, feios, quadrados"): o "quadrado" era a grade de caixas iguais
+// com o mesmo número de 30 px. Agora é um BENTO com hierarquia — o herói é a
+// CONSISTÊNCIA (sequência + waffle dos 14 dias + pips da semana), e cada dado
+// ganha a forma que responde à pergunta: IMC = arco semáforo com agulha,
+// calorias/água = anel + barras com tampa, peso = linha com área, proteína =
+// régua com faixa de referência, macros = barra 100% rotulada.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import {
-  Activity,
-  CalendarCheck,
-  Droplets,
-  Dumbbell,
-  Flame,
-  HeartPulse,
-  Loader2,
-  Scale,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react"
+import Link from "next/link"
+import { motion } from "framer-motion"
+import { Activity, AlertCircle, Droplets, Dumbbell, Flame, HeartPulse, Scale, TrendingDown, TrendingUp } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { todayIso } from "./fitness-ui"
+import { CountUp, Reveal, RingMeter } from "./ui/motion-kit"
+import { ArcGauge, AreaLine, BarStrip, BulletMeter, Pips, StackBar, Waffle } from "./ui/charts"
+import { HERO_NUMBER_STYLE, SP, TX, cardStyle } from "./ui/sp-tokens"
 
 type Indicators = {
   bmi: { value: number; class: string; weight_kg: number; height_cm: number } | null
@@ -39,141 +40,79 @@ type Indicators = {
   chart_14d: { date: string; kcal: number; water_ml: number }[]
 }
 
-// ⚠️ NOME LEGADO: era o amarelo da casa e hoje é o laranja de TINTA do ambiente
-// (paleta cinza + laranja escuro, 2026-09-11). Aqui ele é sempre traço, ícone,
-// ponto ou barra fina SOBRE o painel cinza — por isso é o laranja CLARO da
-// família (`EMBER_GLOW`), e não o escuro de fundo: o escuro sumiria no painel.
-const GOLD = "#FB923C"
-// A escala do IMC é SEMÁFORO, não pele: ciano → verde → amarelo → laranja →
-// vermelho. "Sobrepeso" fica amarelo de propósito — em laranja ele encostaria
-// em "Obesidade I" (#ff8c2e) e os dois degraus deixariam de se distinguir.
-const BMI_WARN = "#F2B705"
-const CYAN = "#16c8e8"
-const MAGENTA = "#ff1f8e"
-const PANEL = "border-2 border-[#0B0B0D] bg-[#15120E]"
+const MAGENTA = "#FF1F8E"
+const ROOM = SP.room.indicators
 
 const BMI_CLASS: Record<string, [string, string, string]> = {
-  underweight: ["bmiUnder", "Abaixo do peso", CYAN],
-  normal: ["bmiNormal", "Peso normal", "#4fc95a"],
-  overweight: ["bmiOver", "Sobrepeso", BMI_WARN],
-  obese1: ["bmiOb1", "Obesidade I", "#ff8c2e"],
-  obese2: ["bmiOb2", "Obesidade II", "#ff5a44"],
-  obese3: ["bmiOb3", "Obesidade III", "#ff5a44"],
+  underweight: ["bmiUnder", "Abaixo do peso", SP.water],
+  normal: ["bmiNormal", "Peso normal", SP.ok],
+  overweight: ["bmiOver", "Sobrepeso", SP.warn],
+  obese1: ["bmiOb1", "Obesidade I", "#FF8C2E"],
+  obese2: ["bmiOb2", "Obesidade II", SP.bad],
+  obese3: ["bmiOb3", "Obesidade III", SP.bad],
 }
 
-function Tile({
+const fmtInt = (n: number) => String(Math.round(n))
+
+function Card({
+  kicker,
   icon,
-  label,
-  value,
-  sub,
-  accent,
+  accent = SP.glow,
+  children,
+  className,
+  hero = false,
 }: {
+  kicker: string
   icon: React.ReactNode
-  label: string
-  value: React.ReactNode
-  sub?: React.ReactNode
   accent?: string
+  children: React.ReactNode
+  className?: string
+  hero?: boolean
 }) {
   return (
-    <div className={`${PANEL} p-4`}>
-      <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-        <span style={{ color: accent || GOLD }}>{icon}</span> {label}
-      </p>
-      <p className="mt-2 text-3xl font-black leading-none">{value}</p>
-      {sub && <p className="mt-2 text-[11px] text-[#9A938A]">{sub}</p>}
-    </div>
-  )
-}
-
-/** Barras diárias mono-série (14 dias) com linha tracejada de meta. */
-function DailyBars({
-  data,
-  goal,
-  color,
-  goalLabel,
-  fmt,
-  locale,
-}: {
-  data: { date: string; value: number }[]
-  goal: number
-  color: string
-  goalLabel: string
-  fmt: (v: number) => string
-  locale: string
-}) {
-  const max = Math.max(goal * 1.15, ...data.map((d) => d.value), 1)
-  const goalPct = Math.min(100, (goal / max) * 100)
-  return (
-    <div>
-      <div className="relative h-32">
-        {/* linha de meta */}
-        <div
-          className="absolute inset-x-0 z-10 border-t-2 border-dashed border-[#F5F1E8]/35"
-          style={{ bottom: `${goalPct}%` }}
-        >
-          <span className="absolute -top-4 right-0 text-[9px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">
-            {goalLabel}
-          </span>
-        </div>
-        <div className="flex h-full items-end gap-[2px]">
-          {data.map((d) => (
-            <div
-              key={d.date}
-              title={`${new Date(`${d.date}T12:00:00Z`).toLocaleDateString(locale)} · ${fmt(d.value)}`}
-              className="group relative flex-1 cursor-default"
-              style={{ height: "100%" }}
-            >
-              <div
-                className="absolute bottom-0 w-full transition-opacity group-hover:opacity-80"
-                style={{ height: `${Math.max(d.value > 0 ? 3 : 0, (d.value / max) * 100)}%`, background: color }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="mt-1 flex gap-[2px]">
-        {data.map((d) => (
-          <span key={d.date} className="flex-1 text-center text-[8px] font-bold text-[#9A938A]">
-            {new Date(`${d.date}T12:00:00Z`).getUTCDate()}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/** Linha de peso (SVG) com marcadores e rótulo direto no último ponto. */
-function WeightLine({ series, locale }: { series: { date: string; weight_kg: number }[]; locale: string }) {
-  const pts = series
-  const min = Math.min(...pts.map((p) => p.weight_kg))
-  const max = Math.max(...pts.map((p) => p.weight_kg))
-  const pad = Math.max(0.5, (max - min) * 0.15)
-  const lo = min - pad
-  const hi = max + pad
-  const x = (i: number) => (pts.length === 1 ? 50 : (i / (pts.length - 1)) * 100)
-  const y = (v: number) => 100 - ((v - lo) / (hi - lo)) * 100
-  const points = pts.map((p, i) => `${x(i)},${y(p.weight_kg)}`).join(" ")
-  const last = pts[pts.length - 1]
-  return (
-    <div className="relative h-36 w-full">
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
-        <polyline points={points} fill="none" stroke={GOLD} strokeWidth={2} vectorEffect="non-scaling-stroke" />
-      </svg>
-      {pts.map((p, i) => (
+    <div
+      className={`relative h-full overflow-hidden border-[#0B0B0D] p-4 ${hero ? "border-[3px]" : "border-2"} ${className ?? ""}`}
+      style={{
+        background: SP.panel,
+        ...cardStyle(hero ? ROOM : SP.band, hero ? 8 : 6),
+        ...(hero ? { boxShadow: `inset 0 1px 0 rgba(255,210,166,.12), 8px 8px 0 0 ${ROOM}, 0 0 28px rgba(249,115,22,.22)` } : {}),
+      }}
+    >
+      {hero && (
         <span
-          key={`${p.date}-${i}`}
-          title={`${new Date(p.date).toLocaleDateString(locale)} · ${p.weight_kg.toFixed(1)} kg`}
-          className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 border-2 border-[#15120E]"
-          style={{ left: `${x(i)}%`, top: `${y(p.weight_kg)}%`, background: GOLD }}
+          aria-hidden
+          className="pointer-events-none absolute -right-4 -top-4 h-40 w-56"
+          style={{ background: TX.halftone, maskImage: "linear-gradient(225deg,#000,transparent 70%)", WebkitMaskImage: "linear-gradient(225deg,#000,transparent 70%)" }}
         />
-      ))}
-      <span
-        className="absolute -translate-y-1/2 whitespace-nowrap pl-3 text-xs font-black text-[#F5F1E8]"
-        style={{ left: `${x(pts.length - 1)}%`, top: `${y(last.weight_kg)}%` }}
-      >
-        {last.weight_kg.toFixed(1)} kg
-      </span>
+      )}
+      <p className="relative flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em]" style={{ color: SP.mute }}>
+        <span style={{ color: accent }}>{icon}</span>
+        {kicker}
+      </p>
+      <div className="relative mt-3">{children}</div>
     </div>
+  )
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="border-2 border-dashed px-3 py-4 text-xs" style={{ borderColor: "rgba(244,165,116,.35)", color: SP.mute }}>
+      {children}
+    </p>
+  )
+}
+
+function DeltaChip({ delta, goodDown = true }: { delta: number; goodDown?: boolean }) {
+  const good = goodDown ? delta <= 0 : delta >= 0
+  return (
+    <span
+      className="inline-flex items-center gap-1 border-2 border-[#0B0B0D] px-1.5 py-0.5 font-mono text-[11px] font-bold text-[#0B0B0D]"
+      style={{ background: good ? SP.ok : "#FF8C2E" }}
+    >
+      {delta <= 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+      {delta > 0 ? "+" : ""}
+      {String(delta).replace(".", ",")} kg
+    </span>
   )
 }
 
@@ -182,10 +121,12 @@ export function IndicatorsTab() {
   const locale = useLocale()
   const [data, setData] = useState<Indicators | null>(null)
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
+  const today = useMemo(() => todayIso(), [])
 
   const load = useCallback(async () => {
     const token = getToken()
     if (!token) return
+    setState("loading")
     try {
       const res = await fetch("/api/fitness/indicators", { headers: { Authorization: `Bearer ${token}` } })
       if (!res.ok) throw new Error()
@@ -200,204 +141,286 @@ export function IndicatorsTab() {
     void load()
   }, [load])
 
-  const kcalSeries = useMemo(
-    () => (data ? data.chart_14d.map((d) => ({ date: d.date, value: d.kcal })) : []),
+  const kcalSeries = useMemo(() => (data ? data.chart_14d.map((d) => ({ date: d.date, value: d.kcal })) : []), [data])
+  const waterSeries = useMemo(() => (data ? data.chart_14d.map((d) => ({ date: d.date, value: d.water_ml })) : []), [data])
+  const waffle = useMemo(
+    () => (data ? data.chart_14d.map((d) => ({ date: d.date, on: d.kcal > 0 || d.water_ml > 0 })) : []),
     [data]
   )
-  const waterSeries = useMemo(
-    () => (data ? data.chart_14d.map((d) => ({ date: d.date, value: d.water_ml })) : []),
-    [data]
-  )
+  const fmtLiters = useCallback((n: number) => (n / 1000).toFixed(1).replace(".", ","), [])
 
   if (state === "loading") {
+    // A forma dos gráficos em fantasma (nunca o spinner central): o bento já
+    // está de pé e os números chegam.
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
+      <div className="mt-6 grid gap-4 md:grid-cols-4">
+        {[2, 1, 1, 2, 2, 1, 1, 2].map((span, i) => (
+          <div
+            key={i}
+            className={`relative h-44 overflow-hidden border-2 border-[#0B0B0D] ${span === 2 ? "md:col-span-2" : ""}`}
+            style={{ background: SP.panel }}
+          >
+            <motion.span
+              aria-hidden
+              className="absolute inset-y-0 w-1/3"
+              style={{ background: "linear-gradient(90deg, transparent, rgba(255,210,166,.06), transparent)" }}
+              initial={{ x: "-100%" }}
+              animate={{ x: "400%" }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: "linear", delay: i * 0.08 }}
+            />
+          </div>
+        ))}
       </div>
     )
   }
   if (state === "error" || !data) {
-    return <p className="py-16 text-center text-sm text-[#9A938A]">{t("indLoadError", "Erro ao carregar os indicadores.")}</p>
+    return (
+      <div className="mt-6 flex flex-col items-center gap-3 border-2 border-[#0B0B0D] px-4 py-10 text-center" style={{ background: SP.panel }}>
+        <AlertCircle className="h-6 w-6" style={{ color: SP.bad }} />
+        <p className="text-sm" style={{ color: SP.mute }}>
+          {t("indLoadError", "Erro ao carregar os indicadores.")}
+        </p>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]"
+          style={{ background: SP.ember }}
+        >
+          {t("retry", "Tentar de novo")}
+        </button>
+      </div>
+    )
   }
 
   const bmiMeta = data.bmi ? BMI_CLASS[data.bmi.class] || BMI_CLASS.normal : null
   const delta = data.weight.delta_30d
+  const kcalPct = data.kcal.avg_7d != null && data.kcal.goal > 0 ? (data.kcal.avg_7d / data.kcal.goal) * 100 : 0
+  const waterPct = data.water.avg_7d != null && data.water.goal > 0 ? (data.water.avg_7d / data.water.goal) * 100 : 0
 
   return (
-    <div className="mt-6">
-      {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Tile
-          icon={<HeartPulse className="h-4 w-4" />}
-          label={t("indBmi", "IMC")}
-          accent={bmiMeta ? bmiMeta[2] : GOLD}
-          value={
-            data.bmi ? (
-              <>
-                {data.bmi.value.toFixed(1).replace(".", ",")}
-                <span className="ml-2 align-middle text-[10px] font-extrabold uppercase tracking-[0.1em]" style={{ color: bmiMeta![2] }}>
-                  {t(bmiMeta![0], bmiMeta![1])}
-                </span>
-              </>
-            ) : (
-              "—"
-            )
-          }
-          sub={
-            data.bmi
-              ? `${data.bmi.weight_kg.toFixed(1)} kg · ${data.bmi.height_cm.toFixed(0)} cm`
-              : t("indBmiEmpty", "Registre peso e altura pra calcular.")
-          }
-        />
-        <Tile
-          icon={delta !== null && delta < 0 ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
-          label={t("indWeightTrend", "Peso (30 dias)")}
-          accent={delta === null ? GOLD : delta <= 0 ? "#4fc95a" : "#ff8c2e"}
-          value={
-            delta === null ? "—" : `${delta > 0 ? "+" : ""}${String(delta).replace(".", ",")} kg`
-          }
-          sub={t("indWeightTrendSub", "Variação desde a medição de 30 dias atrás.")}
-        />
-        <Tile
-          icon={<Flame className="h-4 w-4" />}
-          label={t("indKcalAvg", "Calorias — média 7d")}
-          value={data.kcal.avg_7d !== null ? `${data.kcal.avg_7d}` : "—"}
-          sub={`${t("indGoal", "Meta")}: ${data.kcal.goal} kcal · ${t("indOnTarget", "{n}/{d} dias na meta (30d)")
-            .replace("{n}", String(data.kcal.days_on_target_30d))
-            .replace("{d}", String(data.kcal.days_logged_30d))}`}
-        />
-        <Tile
-          icon={<Activity className="h-4 w-4" />}
-          label={t("indProtein", "Proteína")}
-          value={
-            data.macros.protein_g_per_kg !== null ? `${String(data.macros.protein_g_per_kg).replace(".", ",")} g/kg` : "—"
-          }
-          sub={
-            data.macros.protein_avg_g !== null
-              ? `${t("indProteinAvg", "Média {n} g/dia").replace("{n}", String(data.macros.protein_avg_g))} · ${t("indProteinRef", "referência 1,2–2,0 g/kg")}`
-              : t("indProteinEmpty", "Registre refeições pra calcular.")
-          }
-        />
-        <Tile
-          icon={<Droplets className="h-4 w-4" />}
-          label={t("indWaterAvg", "Água — média 7d")}
-          accent={CYAN}
-          value={data.water.avg_7d !== null ? `${(data.water.avg_7d / 1000).toFixed(1).replace(".", ",")} L` : "—"}
-          sub={`${t("indGoal", "Meta")}: ${(data.water.goal / 1000).toFixed(1)} L · ${t("indWaterTarget", "{n} dias na meta (30d)").replace("{n}", String(data.water.days_on_target_30d))}${data.water.ml_per_kg ? ` · ${data.water.ml_per_kg} ml/kg` : ""}`}
-        />
-        <Tile
-          icon={<CalendarCheck className="h-4 w-4" />}
-          label={t("indStreak", "Sequência do diário")}
-          value={`${data.streak_days} ${t("indDays", "dias")}`}
-          sub={t("indStreakSub", "Dias seguidos registrando comida ou água.")}
-        />
-        <Tile
-          icon={<Dumbbell className="h-4 w-4" />}
-          label={t("indWorkouts", "Treinos concluídos")}
-          value={data.workouts.sessions_30d}
-          sub={`${t("indWorkouts7", "{n} nos últimos 7 dias").replace("{n}", String(data.workouts.sessions_7d))} · 30d`}
-        />
-        {data.academy && (
-          <Tile
-            icon={<Scale className="h-4 w-4" />}
-            label={t("indFrequency", "Frequência na academia")}
-            value={`${data.academy.frequency_30d} ${t("indDays", "dias")}`}
-            sub={t("indFrequencySub", "Giros de catraca nos últimos 30 dias.")}
-          />
-        )}
-      </div>
-
-      {/* Gráficos 14 dias */}
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <div className={`${PANEL} p-4`}>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-            {t("indKcalChart", "Calorias — últimos 14 dias")}
-          </p>
-          <div className="mt-4">
-            <DailyBars
-              data={kcalSeries}
-              goal={data.kcal.goal}
-              color={GOLD}
-              goalLabel={`${t("indGoal", "Meta")} ${data.kcal.goal}`}
-              fmt={(v) => `${v} kcal`}
-              locale={locale}
-            />
+    <Reveal
+      className="mt-6 grid gap-4 md:grid-cols-4"
+      step={0.05}
+      cells={["md:col-span-2 md:row-span-2", undefined, undefined, "md:col-span-2", "md:col-span-2", "md:col-span-2", "md:col-span-2"]}
+    >
+      {/* ── HERÓI: consistência ── */}
+      <div key="hero" className="h-full">
+        <Card hero kicker={t("indStreak", "Sequência do diário")} icon={<Flame className="h-4 w-4" />} accent={SP.ember}>
+          <div className="flex items-end gap-3">
+            <Flame className="mb-2 h-10 w-10 shrink-0" style={{ color: SP.ember }} />
+            <span style={HERO_NUMBER_STYLE}>
+              <CountUp value={data.streak_days} format={fmtInt} className="fl-display text-[72px] leading-[0.85] md:text-[88px]" />
+            </span>
+            <span className="mb-2 text-xs font-extrabold uppercase tracking-[0.14em]" style={{ color: SP.mute }}>
+              {t("indStreakDays", "dias seguidos")}
+            </span>
           </div>
-        </div>
-        <div className={`${PANEL} p-4`}>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-            {t("indWaterChart", "Água — últimos 14 dias")}
+          <p className="mt-1 text-[11px]" style={{ color: SP.dim }}>
+            {t("indStreakSub", "Dias seguidos registrando comida ou água.")}
           </p>
-          <div className="mt-4">
-            <DailyBars
-              data={waterSeries}
-              goal={data.water.goal}
-              color={CYAN}
-              goalLabel={`${t("indGoal", "Meta")} ${(data.water.goal / 1000).toFixed(1)}L`}
-              fmt={(v) => `${(v / 1000).toFixed(2)} L`}
-              locale={locale}
-            />
+          <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ color: SP.mute }}>
+            {t("indLast14", "Últimos 14 dias")}
+          </p>
+          <div className="mt-2">
+            <Waffle days={waffle} today={today} />
           </div>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        {/* Evolução do peso */}
-        <div className={`${PANEL} p-4`}>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-            {t("indWeightChart", "Evolução do peso")}
-          </p>
-          {data.weight.series.length >= 2 ? (
-            <div className="mt-4 pr-16">
-              <WeightLine series={data.weight.series} locale={locale} />
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ color: SP.mute }}>
+                <Dumbbell className="h-3.5 w-3.5" style={{ color: SP.room.workout }} />
+                {t("indWorkoutsWeek", "Treinos na semana")}
+              </p>
+              <div className="mt-2">
+                <Pips on={Math.min(7, data.workouts.sessions_7d)} />
+              </div>
+              <p className="mt-1 font-mono text-[11px]" style={{ color: SP.mute }}>
+                {data.workouts.sessions_7d}/7 · {t("indWorkouts30", "{n} no mês").replace("{n}", String(data.workouts.sessions_30d))}
+              </p>
             </div>
-          ) : (
-            <p className="mt-4 text-xs text-[#9A938A]">
-              {t("indWeightChartEmpty", "Registre pelo menos 2 medições de peso pra ver a curva.")}
-            </p>
-          )}
-        </div>
+            {data.academy && (
+              <div>
+                <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ color: SP.mute }}>
+                  <Scale className="h-3.5 w-3.5" style={{ color: SP.room.academy }} />
+                  {t("indFrequency", "Frequência na academia")}
+                </p>
+                <p className="mt-1 flex items-baseline gap-1">
+                  <CountUp value={data.academy.frequency_30d} format={fmtInt} className="fl-display text-4xl leading-none text-[#FFF1E6]" />
+                  <span className="font-mono text-[11px]" style={{ color: SP.mute }}>
+                    / 30d
+                  </span>
+                </p>
+                <Link href="/esportes/academia" className="mt-1 inline-block text-[11px] font-extrabold uppercase tracking-[0.12em] underline underline-offset-4" style={{ color: SP.glow }}>
+                  {t("indSeeCalendar", "Ver calendário →")}
+                </Link>
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
 
-        {/* Distribuição de macros */}
-        <div className={`${PANEL} p-4`}>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-            {t("indMacros", "Distribuição de macros (30d)")}
-          </p>
+      {/* ── IMC: arco semáforo + agulha ── */}
+      <div key="bmi" className="h-full">
+        <Card kicker={t("indBmi", "IMC")} icon={<HeartPulse className="h-4 w-4" />} accent={bmiMeta ? bmiMeta[2] : SP.glow}>
+          {data.bmi ? (
+            <ArcGauge
+              value={data.bmi.value}
+              label={
+                <>
+                  <span className="fl-display block text-3xl leading-none text-[#FFF1E6]">{data.bmi.value.toFixed(1).replace(".", ",")}</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.12em]" style={{ color: bmiMeta![2] }}>
+                    {t(bmiMeta![0], bmiMeta![1])}
+                  </span>
+                </>
+              }
+            />
+          ) : (
+            <Empty>{t("indBmiEmpty", "Registre peso e altura pra calcular.")}</Empty>
+          )}
+        </Card>
+      </div>
+
+      {/* ── proteína: régua com referência ── */}
+      <div key="protein" className="h-full">
+        <Card kicker={t("indProtein", "Proteína")} icon={<Activity className="h-4 w-4" />}>
+          {data.macros.protein_g_per_kg != null ? (
+            <>
+              <p className="flex items-baseline gap-1">
+                <span className="fl-display text-4xl leading-none text-[#FFF1E6]">{String(data.macros.protein_g_per_kg).replace(".", ",")}</span>
+                <span className="font-mono text-xs" style={{ color: SP.mute }}>
+                  g/kg
+                </span>
+              </p>
+              <div className="mt-4">
+                <BulletMeter value={data.macros.protein_g_per_kg} max={3} band={[1.2, 2]} ticks={[0, 1.2, 2, 3]} />
+              </div>
+              <p className="mt-2 font-mono text-[10px]" style={{ color: SP.dim }}>
+                {t("indProteinRef", "referência 1,2–2,0 g/kg")}
+                {data.macros.protein_avg_g != null ? ` · ${t("indProteinAvg", "Média {n} g/dia").replace("{n}", String(data.macros.protein_avg_g))}` : ""}
+              </p>
+            </>
+          ) : (
+            <Empty>{t("indProteinEmpty", "Registre refeições pra calcular.")}</Empty>
+          )}
+        </Card>
+      </div>
+
+      {/* ── peso: linha com área ── */}
+      <div key="weight" className="h-full">
+        <Card kicker={t("indWeightChart", "Evolução do peso")} icon={<Scale className="h-4 w-4" />}>
+          <div className="mb-3 flex items-center gap-2">
+            {delta != null && <DeltaChip delta={delta} />}
+            <span className="font-mono text-[10px]" style={{ color: SP.dim }}>
+              {t("indWeightTrend", "Peso (30 dias)")}
+            </span>
+          </div>
+          {data.weight.series.length >= 2 ? (
+            <AreaLine series={data.weight.series} locale={locale} />
+          ) : (
+            <Empty>{t("indWeightChartEmpty", "Registre pelo menos 2 medições de peso pra ver a curva.")}</Empty>
+          )}
+        </Card>
+      </div>
+
+      {/* ── calorias: anel + barras ── */}
+      <div key="kcal" className="h-full">
+        <Card kicker={t("indKcalChart", "Calorias — últimos 14 dias")} icon={<Flame className="h-4 w-4" />}>
+          <div className="mb-4 flex items-center gap-4">
+            <RingMeter
+              pct={kcalPct}
+              color={SP.glow}
+              size={84}
+              stroke={10}
+              label={
+                <span className="fl-display text-lg leading-none text-[#FFF1E6]">{data.kcal.avg_7d != null ? data.kcal.avg_7d : "—"}</span>
+              }
+            />
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: SP.mute }}>
+                {t("indKcalAvg", "Calorias — média 7d")}
+              </p>
+              <p className="font-mono text-xs" style={{ color: SP.ink }}>
+                {t("indGoal", "Meta")}: {data.kcal.goal} kcal
+              </p>
+              <p className="font-mono text-[11px]" style={{ color: SP.mute }}>
+                {t("indOnTarget", "{n}/{d} dias na meta (30d)")
+                  .replace("{n}", String(data.kcal.days_on_target_30d))
+                  .replace("{d}", String(data.kcal.days_logged_30d))}
+              </p>
+            </div>
+          </div>
+          <BarStrip
+            data={kcalSeries}
+            goal={data.kcal.goal}
+            color={SP.glow}
+            goalLabel={`${t("indGoal", "Meta")} ${data.kcal.goal}`}
+            fmt={(v) => `${v} kcal`}
+            locale={locale}
+            today={today}
+          />
+        </Card>
+      </div>
+
+      {/* ── água: anel ciano + barras ── */}
+      <div key="water" className="h-full">
+        <Card kicker={t("indWaterChart", "Água — últimos 14 dias")} icon={<Droplets className="h-4 w-4" />} accent={SP.water}>
+          <div className="mb-4 flex items-center gap-4">
+            <RingMeter
+              pct={waterPct}
+              color={SP.water}
+              size={84}
+              stroke={10}
+              label={
+                <span className="fl-display text-lg leading-none text-[#FFF1E6]">
+                  {data.water.avg_7d != null ? `${fmtLiters(data.water.avg_7d)}L` : "—"}
+                </span>
+              }
+            />
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: SP.mute }}>
+                {t("indWaterAvg", "Água — média 7d")}
+              </p>
+              <p className="font-mono text-xs" style={{ color: SP.ink }}>
+                {t("indGoal", "Meta")}: {fmtLiters(data.water.goal)} L
+              </p>
+              <p className="font-mono text-[11px]" style={{ color: SP.mute }}>
+                {t("indWaterTarget", "{n} dias na meta (30d)").replace("{n}", String(data.water.days_on_target_30d))}
+                {data.water.ml_per_kg ? ` · ${data.water.ml_per_kg} ml/kg` : ""}
+              </p>
+            </div>
+          </div>
+          <BarStrip
+            data={waterSeries}
+            goal={data.water.goal}
+            color={SP.water}
+            goalLabel={`${t("indGoal", "Meta")} ${fmtLiters(data.water.goal)}L`}
+            fmt={(v) => `${(v / 1000).toFixed(2)} L`}
+            locale={locale}
+            today={today}
+          />
+        </Card>
+      </div>
+
+      {/* ── macros: barra 100% rotulada ── */}
+      <div key="macros" className="h-full">
+        <Card kicker={t("indMacros", "Distribuição de macros (30d)")} icon={<Activity className="h-4 w-4" />}>
           {data.macros.pct ? (
             <>
-              <div className="mt-4 flex h-8 gap-[2px]">
-                <div style={{ width: `${data.macros.pct.protein}%`, background: GOLD }} />
-                <div style={{ width: `${data.macros.pct.carbs}%`, background: CYAN }} />
-                <div style={{ width: `${data.macros.pct.fat}%`, background: MAGENTA }} />
-              </div>
-              <ul className="mt-3 space-y-1 text-xs">
-                <li className="flex items-center gap-2">
-                  <span className="h-3 w-3 shrink-0" style={{ background: GOLD }} />
-                  {t("indMacroP", "Proteína")} — <strong>{data.macros.pct.protein}%</strong>
-                  <span className="text-[#9A938A]">({data.macros.protein_avg_g} g/dia)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-3 w-3 shrink-0" style={{ background: CYAN }} />
-                  {t("indMacroC", "Carboidratos")} — <strong>{data.macros.pct.carbs}%</strong>
-                  <span className="text-[#9A938A]">({data.macros.carbs_avg_g} g/dia)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-3 w-3 shrink-0" style={{ background: MAGENTA }} />
-                  {t("indMacroF", "Gorduras")} — <strong>{data.macros.pct.fat}%</strong>
-                  <span className="text-[#9A938A]">({data.macros.fat_avg_g} g/dia)</span>
-                </li>
-              </ul>
-              <p className="mt-3 text-[11px] text-[#9A938A]">
+              <StackBar
+                parts={[
+                  { pct: data.macros.pct.protein, color: SP.glow, label: t("indMacroP", "Proteína"), sub: `${data.macros.protein_avg_g ?? "—"} g/dia` },
+                  { pct: data.macros.pct.carbs, color: SP.water, label: t("indMacroC", "Carboidratos"), sub: `${data.macros.carbs_avg_g ?? "—"} g/dia` },
+                  { pct: data.macros.pct.fat, color: MAGENTA, label: t("indMacroF", "Gorduras"), sub: `${data.macros.fat_avg_g ?? "—"} g/dia` },
+                ]}
+              />
+              <p className="mt-3 text-[11px]" style={{ color: SP.dim }}>
                 {t("indMacrosHint", "% das calorias (proteína e carbo 4 kcal/g, gordura 9 kcal/g).")}
               </p>
             </>
           ) : (
-            <p className="mt-4 text-xs text-[#9A938A]">
-              {t("indMacrosEmpty", "Registre refeições no diário pra ver a distribuição.")}
-            </p>
+            <Empty>{t("indMacrosEmpty", "Registre refeições no diário pra ver a distribuição.")}</Empty>
           )}
-        </div>
+        </Card>
       </div>
-    </div>
+    </Reveal>
   )
 }

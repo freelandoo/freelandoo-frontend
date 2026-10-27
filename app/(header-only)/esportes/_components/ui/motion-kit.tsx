@@ -45,6 +45,7 @@ export function Reveal({
   className,
   y = DIST.cutY,
   tilt = true,
+  cells,
 }: {
   children: ReactNode
   step?: number
@@ -52,6 +53,8 @@ export function Reveal({
   className?: string
   y?: number
   tilt?: boolean
+  /** Classe da CÉLULA de cada filho (o embrulho animado é o item do grid). */
+  cells?: (string | undefined)[]
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInViewOnce(ref)
@@ -63,6 +66,7 @@ export function Reveal({
       {items.map((child, i) => (
         <motion.div
           key={isValidElement(child) && child.key != null ? child.key : i}
+          className={cells?.[i]}
           variants={{
             hidden: reduce ? { opacity: 0 } : { opacity: 0, y, rotate: tilt ? DIST.cutRotate : 0 },
             show: {
