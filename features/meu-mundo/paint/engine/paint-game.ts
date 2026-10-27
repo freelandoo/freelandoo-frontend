@@ -200,6 +200,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   let shotAt = -10
   /** Nocaute visto (o renascimento depois dele não é "caiu"). */
   let knocked = false
+  /** Quando caí com gatinhos (o aviso deles substitui o "caiu nas nuvens"). */
+  let droppedAt = -10
 
   const cam = new AimCamera(scene)
   scene.activeCamera = cam.camera
@@ -269,7 +271,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
           cam.snap(e.facing)
           visualFacing = e.facing
           if (e.inBoss && me.inBoss) notice({ kind: "enterBoss" })
-          else if (fell) notice({ kind: "fell" })
+          else if (fell && clock - droppedAt > 0.5) notice({ kind: "fell" }) // o aviso dos gatinhos já diz que caiu
         }
         break
       case "fix":
@@ -285,7 +287,10 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         herd.restore(e.id)
         break
       case "drop":
-        if (e.slot === port.me) notice({ kind: "drop", n: e.n })
+        if (e.slot === port.me) {
+          droppedAt = clock
+          notice({ kind: "drop", n: e.n })
+        }
         break
       case "bossAct":
         if (me.inBoss) notice({ kind: "bossAct", act: e.act, me: e.slot === port.me })
@@ -650,6 +655,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       camFrom = solids
       camSolids = camRock.concat(solids.slice(map.solids.length))
     }
+    cam.far = me.inBoss
     cam.update(dt, x, y, z, camSolids)
     if (port.samples) tickRemotes(dt, solids)
     world.tick(dt)

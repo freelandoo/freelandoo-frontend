@@ -14,7 +14,9 @@ import type { Scene } from "@babylonjs/core/scene"
 import { raycast } from "../sim/collide"
 import type { Solid, Vec3 } from "../sim/map"
 
-const DIST = 4.4
+/** Distância atrás do ombro (mm3d-38c: um pouco mais longe; na ilha do chefão, `far`). */
+const DIST = 5
+const DIST_FAR = 6
 const SHOULDER = 0.62
 const PIVOT_H = 1.62
 const MIN_PITCH = -0.75 // olhando para cima
@@ -27,6 +29,8 @@ export class AimCamera {
   yaw = 0
   pitch = 0.22
   private actual = DIST
+  /** Ilha do chefão: câmera mais afastada (ele tem 10 m). */
+  far = false
   private py = 0
   private ready = false
   private readonly target = new Vector3()
@@ -75,8 +79,9 @@ export class AimCamera {
     // perto do chão olhando para baixo: a câmera sobe um pouco
     const pivot = { x: x + r.x * SHOULDER, y: this.py + PIVOT_H + Math.max(0, this.pitch - 0.6) * 0.5, z: z + r.z * SHOULDER }
     const back = { x: -f.x, y: -f.y, z: -f.z }
-    const hit = raycast(solids, pivot, back, DIST + 0.3)
-    const want = hit ? Math.max(0.6, hit.t - 0.35) : DIST
+    const dist = this.far ? DIST_FAR : DIST
+    const hit = raycast(solids, pivot, back, dist + 0.3)
+    const want = hit ? Math.max(0.6, hit.t - 0.35) : dist
     if (want < this.actual) this.actual = want
     else this.actual += (want - this.actual) * (1 - Math.exp(-4 * dt))
     this.camera.position.set(pivot.x + back.x * this.actual, pivot.y + back.y * this.actual, pivot.z + back.z * this.actual)

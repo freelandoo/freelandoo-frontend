@@ -99,7 +99,7 @@ export const TUNING = {
   /** Anda até a vítima (m/s), vira (rad/s) e não sai deste raio do centro da ilha. */
   bossWalk: 3.6,
   bossTurn: 2.2,
-  bossLeash: 11.5,
+  bossLeash: 16,
   /** Pausa entre um golpe e outro (s). */
   bossRest: 1.1,
   /**
