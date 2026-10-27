@@ -13,6 +13,7 @@ import type { AnimationGroup } from "@babylonjs/core/Animations/animationGroup"
 import { ensureLoaders } from "../../engine/avatars"
 import type { BossAct, BossState } from "../sim/match"
 import { CAT_ASSETS } from "./cat-herd"
+import { TUNING } from "../sim/tuning"
 
 const BOSS_FILE = "boss-m38.glb"
 const CLIP: Record<BossAct | "die", string> = {
@@ -25,6 +26,10 @@ const CLIP: Record<BossAct | "die", string> = {
 }
 const LOOP = new Set<string>(["Idle", "Walk"])
 const FPS = 30
+/** O GLB tem 5 m; no jogo 10 m (mm3d-38, pedido do Alex). Bate com TUNING.bossH. */
+const BOSS_SCALE = 2
+/** O clipe Walk foi feito para 2,4 m/s no tamanho do GLB: na escala anda 2,4 × BOSS_SCALE sem escorregar. */
+const WALK_SPEED = 2.4 * BOSS_SCALE
 
 export class BossView {
   private readonly root: TransformNode
@@ -43,6 +48,7 @@ export class BossView {
     ensureLoaders()
     this.root = new TransformNode("paint-boss", scene)
     this.root.position.y = y
+    this.root.scaling.setAll(BOSS_SCALE)
     void this.load()
   }
 
@@ -82,7 +88,7 @@ export class BossView {
     const loop = LOOP.has(name)
     const len = (g.to - g.from) / FPS
     const at = loop ? t % len : Math.min(t, len)
-    g.start(loop, 1, g.from, g.to, false)
+    g.start(loop, name === CLIP.walk ? TUNING.bossWalk / WALK_SPEED : 1, g.from, g.to, false)
     g.goToFrame(g.from + at * FPS)
     if (!loop) g.onAnimationGroupEndObservable.addOnce(() => g.goToFrame(g.to))
     this.playing = g
