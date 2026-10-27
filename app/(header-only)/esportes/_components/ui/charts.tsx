@@ -134,10 +134,10 @@ export function ArcGauge({ value, label }: { value: number | null; label: React.
             animate={{ rotate: inView || reduce ? needle : -90 }}
             transition={reduce ? { duration: 0 } : { ...SPRING.stamp, delay: 0.15 }}
           >
-            <rect x={cx - 2} y={cy - R + 4} width={4} height={R - 4} fill={SP.ink} />
+            {/* agulha só no anel de fora: o número fica no centro do arco */}
+            <rect x={cx - 2} y={cy - R + 4} width={4} height={R - 48} fill={SP.ink} />
           </motion.g>
         )}
-        <rect x={cx - 7} y={cy - 7} width={14} height={14} fill={SP.black} stroke={SP.ink} strokeWidth={2} />
       </svg>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 text-center">{label}</div>
       <div className="mt-1 flex justify-between font-mono text-[9px]" style={{ color: SP.dim }}>
