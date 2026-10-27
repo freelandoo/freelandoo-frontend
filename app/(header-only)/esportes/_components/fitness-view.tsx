@@ -43,6 +43,10 @@ import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { FitnessShell } from "./fitness-shell"
 import { FitnessHeadcard } from "./fitness-headcard"
 import { FitnessProposalsGate } from "./proposals-modal"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { CountUp, Reveal, RingMeter } from "./ui/motion-kit"
+import { DUR, EASE, SPRING } from "./ui/motion"
+import { SP, TX, cardStyle } from "./ui/sp-tokens"
 import {
   BAR_SOLID,
   BTN_DARK,
@@ -490,6 +494,7 @@ export function FitnessView({
     return d.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" })
   }, [date, locale])
   const isToday = date === todayIso()
+  const [dayDir, setDayDir] = useState<1 | -1>(1)
 
   const kcalPct = summary ? Math.min(100, Math.round((summary.totals.kcal / summary.goals.daily_kcal_goal) * 100)) : 0
   const waterPct = summary ? Math.min(100, Math.round((summary.water_ml / summary.goals.water_goal_ml) * 100)) : 0
@@ -513,23 +518,27 @@ export function FitnessView({
       />
 
       <section ref={topRef} className="mx-auto mt-8 w-full max-w-5xl scroll-mt-20 px-0 md:px-10">
-        {/* A DATA: o dia que a tela mostra. */}
-        <div className={`${BAR_SOLID} flex items-center justify-between gap-2 px-2 py-2`}>
-          <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_ON_BAR} p-2`} aria-label={t("prevDay", "Dia anterior")}>
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <div className="min-w-0 text-center">
-            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]">{fmtDay}</p>
-            {!isToday && (
-              <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#F5F1E8]/70 hover:text-[#F5F1E8]">
-                {t("today", "Hoje")} →
-              </button>
-            )}
-          </div>
-          <button onClick={() => setDate((d) => shiftDate(d, 1))} className={`${BTN_ON_BAR} p-2`} aria-label={t("nextDay", "Próximo dia")}>
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
+        {/* A DATA: o dia que a tela mostra — o dia desliza na direção da seta. */}
+        <DayBar
+          label={fmtDay}
+          isToday={isToday}
+          dir={dayDir}
+          onPrev={() => {
+            setDayDir(-1)
+            setDate((d) => shiftDate(d, -1))
+          }}
+          onNext={() => {
+            setDayDir(1)
+            setDate((d) => shiftDate(d, 1))
+          }}
+          onToday={() => {
+            setDayDir(1)
+            setDate(todayIso())
+          }}
+          prevLabel={t("prevDay", "Dia anterior")}
+          nextLabel={t("nextDay", "Próximo dia")}
+          todayLabel={t("today", "Hoje")}
+        />
 
         {state === "loading" || !summary ? (
           state === "error" ? (
@@ -543,70 +552,120 @@ export function FitnessView({
             </div>
           ) : (
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="h-36 animate-pulse border-2 border-[#F5F1E8]/10 bg-[#1D1810]" />
-              <div className="h-36 animate-pulse border-2 border-[#F5F1E8]/10 bg-[#1D1810]" />
+              {[0, 1].map((i) => (
+                <div key={i} className="relative h-56 overflow-hidden border-2 border-[#0B0B0D]" style={{ background: SP.panel }}>
+                  <motion.span
+                    aria-hidden
+                    className="absolute inset-y-0 w-1/3"
+                    style={{ background: "linear-gradient(90deg, transparent, rgba(255,210,166,.06), transparent)" }}
+                    initial={{ x: "-100%" }}
+                    animate={{ x: "400%" }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: "linear", delay: i * 0.1 }}
+                  />
+                </div>
+              ))}
             </div>
           )
         ) : (
           <>
             {/* CALORIAS e ÁGUA lado a lado — duas colunas também no celular
                 (pedido do Alex: "vai fazer duas colunas, deixar um do lado do
-                outro"). */}
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className={`${PANEL} p-4`} style={{ boxShadow: `6px 6px 0 0 ${GOLD}` }}>
-                <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                outro"). Repaginada 2026-10-27: anel de meta e TANQUE de água. */}
+            <Reveal className="mt-4 grid grid-cols-2 gap-3" step={0.08}>
+              <div
+                key="kcal"
+                className="flex h-full flex-col items-center border-2 border-[#0B0B0D] p-3 text-center md:p-4"
+                style={{ background: SP.panel, ...cardStyle(GOLD, 6) }}
+              >
+                <p className="flex items-center gap-1.5 self-start text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ color: SP.mute }}>
                   <Flame className="h-4 w-4 text-[#FB923C]" /> {t("kcalTitle", "Calorias")}
                 </p>
-                <p className="mt-2 fl-display text-4xl leading-none text-[#F5F1E8]">{Math.round(summary.totals.kcal)}</p>
-                <p className="mt-1 text-xs font-bold text-[#9A938A]">/ {summary.goals.daily_kcal_goal} kcal</p>
-                <div className="mt-2 h-3 border-2 border-[#0B0B0D] bg-[#1D1810]">
-                  <div className="h-full" style={{ width: `${kcalPct}%`, background: GOLD }} />
+                <div className="mt-3">
+                  <RingMeter
+                    key={date}
+                    pct={summary.goals.daily_kcal_goal > 0 ? (summary.totals.kcal / summary.goals.daily_kcal_goal) * 100 : 0}
+                    color={SP.glow}
+                    size={128}
+                    stroke={12}
+                    label={
+                      <span>
+                        <CountUp value={Math.round(summary.totals.kcal)} format={fmtInt} className="fl-display block text-[32px] leading-none text-[#FFF1E6]" />
+                        <span className="font-mono text-[10px]" style={{ color: SP.mute }}>
+                          / {summary.goals.daily_kcal_goal} kcal
+                        </span>
+                      </span>
+                    }
+                  />
                 </div>
-                <p className="mt-2 text-[11px] text-[#9A938A]">
-                  P {Math.round(summary.totals.protein_g)}g · C {Math.round(summary.totals.carbs_g)}g · G {Math.round(summary.totals.fat_g)}g
-                </p>
+                <MacroLine
+                  p={summary.totals.protein_g}
+                  c={summary.totals.carbs_g}
+                  f={summary.totals.fat_g}
+                />
               </div>
 
-              <div className={`${PANEL} p-4`} style={{ boxShadow: `6px 6px 0 0 ${CYAN}` }}>
-                <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+              <div
+                key="water"
+                className="flex h-full flex-col border-2 border-[#0B0B0D] p-3 md:p-4"
+                style={{ background: SP.panel, ...cardStyle(CYAN, 6) }}
+              >
+                <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ color: SP.mute }}>
                   <Droplets className="h-4 w-4" style={{ color: CYAN }} /> {t("waterTitle", "Água")}
                 </p>
-                <p className="mt-2 fl-display text-4xl leading-none text-[#F5F1E8]">{(summary.water_ml / 1000).toFixed(1)}</p>
-                <p className="mt-1 text-xs font-bold text-[#9A938A]">/ {(summary.goals.water_goal_ml / 1000).toFixed(1)} L</p>
-                <div className="mt-2 h-3 border-2 border-[#0B0B0D] bg-[#1D1810]">
-                  <div className="h-full" style={{ width: `${waterPct}%`, background: CYAN }} />
+                <div className="mt-3 flex flex-1 items-end gap-3">
+                  <WaterTank pct={summary.goals.water_goal_ml > 0 ? (summary.water_ml / summary.goals.water_goal_ml) * 100 : 0} />
+                  <div className="min-w-0 pb-1">
+                    <p className="fl-display text-[32px] leading-none text-[#FFF1E6]">
+                      {(summary.water_ml / 1000).toFixed(1).replace(".", ",")}
+                    </p>
+                    <p className="font-mono text-[10px]" style={{ color: SP.mute }}>
+                      / {(summary.goals.water_goal_ml / 1000).toFixed(1).replace(".", ",")} L
+                    </p>
+                  </div>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button onClick={() => void setWater(-250)} className={`${BTN_DARK} p-1.5`} aria-label={t("waterMinus", "Remover copo")}>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <motion.button
+                    whileTap={{ x: 2, y: 2 }}
+                    transition={SPRING.press}
+                    onClick={() => void setWater(-250)}
+                    className={`${BTN_DARK} p-2`}
+                    style={{ boxShadow: "2px 2px 0 0 #0B0B0D" }}
+                    aria-label={t("waterMinus", "Remover copo")}
+                  >
                     <Minus className="h-3.5 w-3.5" />
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ x: 2, y: 2 }}
+                    transition={SPRING.press}
                     onClick={() => void setWater(250)}
-                    className="flex items-center gap-1 border-2 border-[#0B0B0D] px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D]"
-                    style={{ background: CYAN }}
+                    className="flex flex-1 items-center justify-center gap-1 border-2 border-[#0B0B0D] px-2.5 py-2 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D]"
+                    style={{ background: CYAN, boxShadow: "2px 2px 0 0 #0B0B0D" }}
                   >
                     <Plus className="h-3.5 w-3.5" /> {t("waterCup", "Copo 250ml")}
-                  </button>
+                  </motion.button>
                 </div>
               </div>
-            </div>
+            </Reveal>
 
             {/* Diário de refeições */}
             <section className="mt-8">
               <h2 className={`${H_SECTION} px-3 md:px-0`}>
                 <Apple className="h-4 w-4 text-[#FB923C]" /> {t("diaryTitle", "Diário de refeições")}
               </h2>
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <Reveal className="mt-3 grid gap-3 md:grid-cols-2" step={0.05}>
                 {MEALS.map((meal) => {
                   const logs = summary.logs.filter((l) => l.meal === meal.id)
                   const mealKcal = logs.reduce((acc, l) => acc + l.kcal, 0)
+                  const share = summary.goals.daily_kcal_goal > 0 ? Math.min(100, (mealKcal / summary.goals.daily_kcal_goal) * 100) : 0
                   return (
-                    <div key={meal.id} className={PANEL}>
-                      <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#7C2D12] px-3 py-2 text-[#F5F1E8]">
-                        <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]">{t(meal.key, meal.fallback)}</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-bold text-[#F5F1E8]/70">{Math.round(mealKcal)} kcal</span>
-                          <button
+                    <div key={meal.id} className="h-full border-2 border-[#0B0B0D]" style={{ background: SP.panel, ...cardStyle(SP.band, 4) }}>
+                      <div className="relative flex items-center justify-between overflow-hidden border-b-2 border-[#0B0B0D] px-3 py-2 text-[#F5F1E8]" style={{ background: SP.band }}>
+                        <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: TX.speed }} />
+                        <p className="fl-display relative text-lg leading-none">{t(meal.key, meal.fallback)}</p>
+                        <div className="relative flex items-center gap-2">
+                          <span className="font-mono text-[11px] font-semibold text-[#F5F1E8]/80">{Math.round(mealKcal)} kcal</span>
+                          <motion.button
+                            whileTap={{ x: 1, y: 1 }}
                             onClick={() => {
                               setSearchOpen(meal.id)
                               setQ("")
@@ -615,33 +674,56 @@ export function FitnessView({
                               setPicked(null)
                               setGrams("100")
                             }}
-                            className="border-2 border-[#0B0B0D] bg-[#0B0B0D] p-1 text-[#FB923C] hover:bg-[#1c0a06]"
+                            className="border-2 border-[#0B0B0D] bg-[#0B0B0D] p-1.5 text-[#FB923C] hover:bg-[#1c0a06]"
                             aria-label={t("addFood", "Adicionar alimento")}
                           >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
+                            <Plus className="h-4 w-4" />
+                          </motion.button>
                         </div>
                       </div>
+                      {/* quanto da meta do dia esta refeição levou */}
+                      <div className="h-1" style={{ background: SP.inner }}>
+                        <motion.div
+                          className="h-full origin-left"
+                          style={{ width: `${share}%`, background: SP.glow }}
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: 1 }}
+                          transition={{ duration: DUR.enter, ease: EASE.paper }}
+                        />
+                      </div>
                       {logs.length === 0 ? (
-                        <p className="px-3 py-4 text-xs text-[#9A938A]">{t("mealEmpty", "Nada registrado.")}</p>
+                        <p className="m-3 border-2 border-dashed px-3 py-3 text-xs" style={{ borderColor: "rgba(244,165,116,.3)", color: SP.mute }}>
+                          {t("mealEmpty", "Nada registrado.")}
+                        </p>
                       ) : (
                         <ul>
-                          {logs.map((l) => (
-                            <li key={l.id_log} className="flex items-center justify-between gap-2 border-b border-[#F5F1E8]/10 px-3 py-2 text-sm last:border-b-0">
-                              <span className="min-w-0 flex-1 truncate">{l.food_nome}</span>
-                              <span className="text-xs text-[#9A938A]">{Math.round(l.quantity_g)}g</span>
-                              <span className="text-xs font-bold text-[#FB923C]">{Math.round(l.kcal)} kcal</span>
-                              <button onClick={() => void removeLog(l.id_log)} aria-label={t("removeLog", "Remover")}>
-                                <Trash2 className="h-3.5 w-3.5 text-[#9A938A] hover:text-[#ff5a44]" />
-                              </button>
-                            </li>
-                          ))}
+                          <AnimatePresence initial={false}>
+                            {logs.map((l) => (
+                              <motion.li
+                                key={l.id_log}
+                                layout
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 16, transition: { duration: DUR.quick } }}
+                                className="flex items-center justify-between gap-2 border-b border-[#F5F1E8]/10 px-3 py-2 text-sm last:border-b-0"
+                              >
+                                <span className="min-w-0 flex-1 truncate">{l.food_nome}</span>
+                                <span className="font-mono text-xs" style={{ color: SP.dim }}>
+                                  {Math.round(l.quantity_g)}g
+                                </span>
+                                <span className="font-mono text-xs font-bold text-[#FB923C]">{Math.round(l.kcal)} kcal</span>
+                                <button onClick={() => void removeLog(l.id_log)} aria-label={t("removeLog", "Remover")}>
+                                  <Trash2 className="h-3.5 w-3.5 text-[#9A938A] hover:text-[#ff5a44]" />
+                                </button>
+                              </motion.li>
+                            ))}
+                          </AnimatePresence>
                         </ul>
                       )}
                     </div>
                   )
                 })}
-              </div>
+              </Reveal>
             </section>
           </>
         )}
@@ -866,5 +948,110 @@ export function FitnessView({
         </div>
       )}
     </FitnessShell>
+  )
+}
+
+const fmtInt = (n: number) => String(Math.round(n))
+
+/** A faixa da data: o rótulo do dia desliza na direção da seta. */
+function DayBar({
+  label,
+  isToday,
+  dir,
+  onPrev,
+  onNext,
+  onToday,
+  prevLabel,
+  nextLabel,
+  todayLabel,
+}: {
+  label: string
+  isToday: boolean
+  dir: 1 | -1
+  onPrev: () => void
+  onNext: () => void
+  onToday: () => void
+  prevLabel: string
+  nextLabel: string
+  todayLabel: string
+}) {
+  const reduce = useReducedMotion()
+  return (
+    <div className={`${BAR_SOLID} relative flex items-center justify-between gap-2 overflow-hidden px-2 py-2`}>
+      <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: TX.speed, opacity: 0.6 }} />
+      <motion.button whileTap={{ x: -2 }} onClick={onPrev} className={`${BTN_ON_BAR} relative p-2`} aria-label={prevLabel}>
+        <ChevronLeft className="h-4 w-4" />
+      </motion.button>
+      <div className="relative min-w-0 flex-1 overflow-hidden text-center">
+        <AnimatePresence mode="popLayout" initial={false} custom={dir}>
+          <motion.p
+            key={label}
+            custom={dir}
+            className="fl-display truncate text-lg leading-tight text-[#F5F1E8] md:text-xl"
+            variants={{
+              enter: (d: number) => (reduce ? { opacity: 0 } : { x: 40 * d, opacity: 0 }),
+              center: { x: 0, opacity: 1, transition: { duration: DUR.base, ease: EASE.paper } },
+              exit: (d: number) => (reduce ? { opacity: 0 } : { x: -40 * d, opacity: 0, transition: { duration: DUR.quick } }),
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+          >
+            {label}
+          </motion.p>
+        </AnimatePresence>
+        {!isToday && (
+          <button onClick={onToday} className="relative text-[10px] font-bold uppercase tracking-[0.12em] text-[#F5F1E8]/70 hover:text-[#F5F1E8]">
+            {todayLabel} →
+          </button>
+        )}
+      </div>
+      <motion.button whileTap={{ x: 2 }} onClick={onNext} className={`${BTN_ON_BAR} relative p-2`} aria-label={nextLabel}>
+        <ChevronRight className="h-4 w-4" />
+      </motion.button>
+    </div>
+  )
+}
+
+/**
+ * O TANQUE de água: coluna reta que enche de baixo (scaleY com mola — a água
+ * "assenta"), marcas de régua a cada 25%, e transborda em ciano claro acima
+ * da meta.
+ */
+function WaterTank({ pct }: { pct: number }) {
+  const reduce = useReducedMotion()
+  const fill = Math.max(0, Math.min(1, pct / 100))
+  return (
+    <div className="relative h-28 w-12 shrink-0 overflow-hidden border-2 border-[#0B0B0D]" style={{ background: SP.inner }}>
+      <motion.div
+        className="absolute inset-x-0 bottom-0 h-full origin-bottom"
+        style={{ background: `linear-gradient(180deg, #7DE8F7 0%, ${SP.water} 40%, #0E7490 100%)` }}
+        initial={reduce ? false : { scaleY: 0 }}
+        animate={{ scaleY: fill }}
+        transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 140, damping: 18 }}
+      />
+      {[0.25, 0.5, 0.75].map((m) => (
+        <span key={m} aria-hidden className="absolute left-0 h-[2px] w-2" style={{ bottom: `${m * 100}%`, background: "#0B0B0D" }} />
+      ))}
+      {pct >= 100 && <span aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: "#E0FBFF" }} />}
+    </div>
+  )
+}
+
+/** Proteína · carbo · gordura do dia em mono, cada um com a cor do macro. */
+function MacroLine({ p, c, f }: { p: number; c: number; f: number }) {
+  const parts: [string, number, string][] = [
+    ["P", p, SP.glow],
+    ["C", c, SP.water],
+    ["G", f, "#FF1F8E"],
+  ]
+  return (
+    <p className="mt-3 flex flex-wrap justify-center gap-x-2 font-mono text-[11px]">
+      {parts.map(([k, v, color]) => (
+        <span key={k} style={{ color }}>
+          {k} {Math.round(v)}g
+        </span>
+      ))}
+    </p>
   )
 }
