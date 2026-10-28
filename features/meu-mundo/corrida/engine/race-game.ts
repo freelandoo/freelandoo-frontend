@@ -517,7 +517,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   const w = window as unknown as Record<string, unknown>
   w.__corrida = () => {
     const p = race.player
-    return { phase: race.phase, time: race.time, dist: p.dist, s: ((p.dist % track.length) + track.length) % track.length, u: p.u, v: p.v, Y: p.Y, air: p.air, down: p.down, lap: race.lapOf(p), place: race.placeOf(p), charges: p.charges, gaps: track.gaps }
+    return { phase: race.phase, time: race.time, dist: p.dist, s: ((p.dist % track.length) + track.length) % track.length, u: p.u, v: p.v, Y: p.Y, air: p.air, down: p.down, lap: race.lapOf(p), place: race.placeOf(p), charges: p.charges, gaps: track.gaps, orbs: track.orbs }
   }
   w.__corridaTp = (s: number, v: number) => {
     const p = race.player

@@ -1,7 +1,9 @@
 // features/meu-mundo/corrida/engine/audio.ts — CORRIDA (mm3d-39): o som, sintetizado.
 //
-// Sem arquivo de áudio: o motor é um par de osciladores num filtro que abre
-// com a velocidade; turbo/faixa = sopro de ruído; parede e encostão = estalo;
+// Sem arquivo de áudio: o motor é o RONCO DE FOGUETE do jetpack (mm3d-41c:
+// ruído marrom em laço num passa-baixa que abre com a velocidade e ruge no
+// turbo) com um zumbido baixo de osciladores por baixo (dá a altura da
+// velocidade); turbo/faixa = sopro de ruído; parede e encostão = estalo;
 // largada = bipes. O contexto nasce no toque que abre a corrida (regra dos
 // navegadores) e morre no dispose.
 
@@ -13,6 +15,8 @@ export class RaceAudio {
   private oscA: OscillatorNode | null = null
   private oscB: OscillatorNode | null = null
   private noise: AudioBuffer | null = null
+  private jet: GainNode | null = null
+  private jetFilter: BiquadFilterNode | null = null
   private lastHit = 0
   muted = false
 
@@ -44,6 +48,28 @@ export class RaceAudio {
       this.noise = ctx.createBuffer(1, len, ctx.sampleRate)
       const d = this.noise.getChannelData(0)
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1
+      // foguete (receita do jetpack/audio.ts): ruído marrom, 2 s em laço
+      const blen = ctx.sampleRate * 2
+      const brown = ctx.createBuffer(1, blen, ctx.sampleRate)
+      const bd = brown.getChannelData(0)
+      let last = 0
+      for (let i = 0; i < blen; i++) {
+        last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02
+        bd[i] = last * 3.5
+      }
+      const jetSrc = ctx.createBufferSource()
+      jetSrc.buffer = brown
+      jetSrc.loop = true
+      this.jetFilter = ctx.createBiquadFilter()
+      this.jetFilter.type = "lowpass"
+      this.jetFilter.frequency.value = 500
+      this.jetFilter.Q.value = 0.8
+      this.jet = ctx.createGain()
+      this.jet.gain.value = 0
+      jetSrc.connect(this.jetFilter)
+      this.jetFilter.connect(this.jet)
+      this.jet.connect(this.master)
+      jetSrc.start()
     } catch {
       this.ctx = null
     }
@@ -67,7 +93,12 @@ export class RaceAudio {
     this.oscA.frequency.setTargetAtTime(f, t, 0.08)
     this.oscB.frequency.setTargetAtTime(f * 0.5 + 3, t, 0.08)
     this.filter.frequency.setTargetAtTime(air ? 500 : 260 + v * 22 + (boost ? 900 : 0), t, 0.1)
-    this.engineGain.gain.setTargetAtTime(on ? 0.09 + Math.min(1, v / 60) * 0.06 : 0, t, 0.12)
+    this.engineGain.gain.setTargetAtTime(on ? 0.025 + Math.min(1, v / 60) * 0.02 : 0, t, 0.12)
+    if (this.jet && this.jetFilter) {
+      const k = Math.min(1, v / 60)
+      this.jet.gain.setTargetAtTime(on ? 0.35 + k * 0.35 + (boost ? 0.3 : 0) : 0, t, on ? 0.05 : 0.12)
+      this.jetFilter.frequency.setTargetAtTime(air ? 700 : 600 + k * 900 + (boost ? 1300 : 0), t, 0.08)
+    }
   }
 
   private burst(dur: number, freq: number, q: number, gain: number, sweep = 1) {

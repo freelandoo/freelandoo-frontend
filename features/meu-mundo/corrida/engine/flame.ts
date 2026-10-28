@@ -74,17 +74,18 @@ void main(void) {
   vec3 v = normalize(eye - vPosW);
   float facing = abs(dot(normalize(vN), v));
   // gás: a borda some, o meio acende
-  float body = pow(facing, 1.6);
-  float core = pow(facing, 6.0) * (1.0 - smoothstep(0.0, 0.55, vT));
-  float along = pow(1.0 - vT, 1.4);
+  float body = pow(facing, 2.0);
+  float core = pow(facing, 4.0) * (1.0 - smoothstep(0.0, 0.45, vT));
+  float along = pow(1.0 - vT, 1.1);
   float flick = 0.78 + 0.22 * sin(time * 41.0 + vSeed * 31.0 - vT * 14.0) * sin(time * 23.0 + vT * 7.0);
-  float a = (body * 0.55 + core * 0.7) * along * flick * vFlame.z;
+  float a = (body * 0.5 + core * 0.8) * along * flick * vFlame.z;
   vec3 hot = mix(vec3(1.0, 0.86, 0.6), vec3(0.7, 0.88, 1.0), vFlame.w);
   vec3 mid = mix(vec3(1.0, 0.45, 0.1), vec3(0.35, 0.6, 1.0), vFlame.w * 0.8);
   vec3 tip = mix(vec3(0.85, 0.12, 0.04), vec3(0.45, 0.2, 0.95), vFlame.w * 0.7);
   vec3 c = mix(hot, mid, smoothstep(0.0, 0.4, vT + (1.0 - facing) * 0.35));
   c = mix(c, tip, smoothstep(0.45, 1.0, vT));
-  gl_FragColor = vec4(c, clamp(a, 0.0, 1.0));
+  // o núcleo passa de 1: na soma vira branco quente (brilho sem pós)
+  gl_FragColor = vec4(c * (1.0 + core * 0.6), clamp(a, 0.0, 1.0));
 }`
 
 /** Tubo cônico: boca de raio 1 em z = 0, ponta em z = −1, anéis para curvar. */
@@ -94,8 +95,8 @@ function flameTube(name: string, scene: Scene): Mesh {
   const idx: number[] = []
   for (let r = 0; r <= RINGS; r++) {
     const t = r / RINGS
-    // perfil de chama: incha logo depois da boca e afina até a ponta
-    const rad = Math.max(0.02, (1 - t) ** 0.75 * (1 + 0.35 * Math.sin(Math.min(1, t * 2.2) * Math.PI)))
+    // perfil de chama: incha logo depois da boca e afina num rabo FINO (pedido do Alex)
+    const rad = Math.max(0.015, (1 - t) ** 2.2 * (1 + 0.6 * Math.sin(Math.min(1, t * 5) * Math.PI)))
     for (let s = 0; s <= SIDES; s++) {
       const a = (s / SIDES) * Math.PI * 2
       pos.push(Math.cos(a) * rad, Math.sin(a) * rad, -t)

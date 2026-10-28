@@ -31,6 +31,8 @@ import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
 import { STEP, type Track } from "../sim/track"
 import { GridPlugin, WindowsPlugin } from "./night"
+import { buildLogos } from "./logos"
+import { buildBillboards, type BillboardSpot } from "./billboards"
 
 /** Altura do chão (a baía) lá embaixo. */
 export const GROUND_Y = -42
@@ -336,36 +338,31 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
     }
   }
 
-  // ── cápsulas de turbo ────────────────────────────────────────────────────
-  const orbMat = new StandardMaterial("corrida-orb", scene)
-  orbMat.diffuseColor = new Color3(0, 0, 0)
-  orbMat.emissiveColor = new Color3(1, 0.42, 0.12)
-  orbMat.disableLighting = true
-  const ringMat = new StandardMaterial("corrida-orb-ring", scene)
-  ringMat.diffuseColor = new Color3(0, 0, 0)
-  ringMat.emissiveColor = new Color3(1, 0.86, 0.35)
-  ringMat.disableLighting = true
-  disposables.push(orbMat, ringMat)
-  const orbBase = CreateSphere("corrida-orb", { diameter: 1.3, segments: 8 }, scene)
-  orbBase.material = orbMat
-  orbBase.isPickable = false
-  orbBase.setEnabled(false)
-  const ringBase = CreateTorus("corrida-orb-ring", { diameter: 2.1, thickness: 0.12, tessellation: 20 }, scene)
-  ringBase.material = ringMat
-  ringBase.isPickable = false
-  ringBase.setEnabled(false)
-  disposables.push(orbBase, ringBase)
-  const orbs = new Map<number, { orb: InstancedMesh; ring: InstancedMesh; y: number }>()
-  for (const o of t.orbs) {
-    const i = Math.round(o.s / STEP)
-    const f = frameAt(t, i)
-    const p = at(f, o.u, 1.5)
-    const orb = orbBase.createInstance(`corrida-orb-${o.id}`)
-    const ring = ringBase.createInstance(`corrida-ring-${o.id}`)
-    orb.position.copyFrom(p)
-    ring.position.copyFrom(p)
-    orb.isPickable = ring.isPickable = false
-    orbs.set(o.id, { orb, ring, y: p.y })
+  // ── cápsulas de turbo = o logo da Freelandoo (logos.ts) ────────────────
+  const logos = buildLogos(
+    scene,
+    t.orbs.map((o) => ({ id: o.id, at: at(frameAt(t, Math.round(o.s / STEP)), o.u, 2.0) })),
+    low,
+  )
+  disposables.push(logos)
+
+  // ── outdoors (billboards.ts): a cada ~170 m, lados alternados, longe da
+  // largada, dos vãos e das rampas ──────────────────────────────────────
+  {
+    const spots: BillboardSpot[] = []
+    const every = Math.round(170 / STEP)
+    let side = 1
+    for (let i = startI + 40; i < startI + t.n - 30; i += every) {
+      const k = i % t.n
+      if (gapNear(k, 25)) continue
+      let ramp = false
+      for (let d = -15; d <= 15; d++) if (t.flag[(k + d + t.n) % t.n] === 2) ramp = true
+      if (ramp) continue
+      const f = frameAt(t, k)
+      spots.push({ at: at(f, side * (wall1 + 5), 0), yaw: t.yaw[k] + side * 0.55, drop: 1.5 })
+      side = -side
+    }
+    disposables.push(buildBillboards(scene, spots))
   }
 
   // ── arcos: pórtico de largada + anéis de neon ────────────────────────────
@@ -563,26 +560,14 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   let clock = 0
   return {
     setOrb(id, on) {
-      const o = orbs.get(id)
-      if (!o) return
-      o.orb.setEnabled(on)
-      o.ring.setEnabled(on)
+      logos.setOn(id, on)
     },
     tick(dt) {
       clock += dt
       padTex.vOffset = (padTex.vOffset - dt * 2.6) % 1
-      for (const o of orbs.values()) {
-        if (!o.orb.isEnabled()) continue
-        o.ring.rotation.y = clock * 2.2
-        o.ring.rotation.x = Math.sin(clock * 1.3) * 0.6
-        o.orb.position.y = o.y + Math.sin(clock * 3) * 0.2
-      }
+      logos.tick(clock)
     },
     dispose() {
-      for (const o of orbs.values()) {
-        o.orb.dispose()
-        o.ring.dispose()
-      }
       for (const d of disposables) d.dispose()
     },
   }
