@@ -48,13 +48,14 @@ export const HOVER = 0.55
 
 /**
  * Bocais no quadro da nave (bico em +z): x, y, z da boca, raio da chama e o
- * comprimento relativo. Medidos na malha (relatório do build_nave_tripo.py).
+ * comprimento relativo. Medidos na malha (relatório do build_nave_tripo.py;
+ * os do meio ficam MAIS BAIXOS que os grandes — conferido com marcadores).
  */
 const NOZZLES: [number, number, number, number, number][] = [
   [-1.026, 0.535, -1.76, 0.16, 1],
   [1.026, 0.535, -1.76, 0.16, 1],
-  [-0.354, 0.7, -1.76, 0.11, 0.72],
-  [0.354, 0.7, -1.76, 0.11, 0.72],
+  [-0.354, 0.37, -1.76, 0.11, 0.72],
+  [0.354, 0.37, -1.76, 0.11, 0.72],
 ]
 /** Traseira (faíscas do turbo). */
 const TAIL_Z = -1.9
