@@ -49,7 +49,8 @@ const FIT: Record<ObstacleKind, { org: number; flip: boolean }> = {
 }
 /** Contramão (o carro aponta para −z): origem a partir da ponta de menor z. */
 const CAR_FRONT = 2.09
-const DRAW_AHEAD = 190
+/** Desenha até ~3,6 s à frente (no mínimo 190 m; a rua vai até ~400 m). */
+const drawAhead = (v: number) => Math.min(390, Math.max(190, v * 3.6))
 const COIN_CAP = 420
 
 interface Model {
@@ -289,9 +290,10 @@ export function buildProps(scene: Scene): PropsView {
     ready,
     sync(run: Run, time: number) {
       const pz = run.z
+      const ahead = drawAhead(run.v)
       const seen = new Set<number>()
       for (const o of run.obstacles) {
-        if (o.z > pz + DRAW_AHEAD || o.z + 12 < pz - 12) continue
+        if (o.z > pz + ahead || o.z + 12 < pz - 12) continue
         seen.add(o.id)
         let v = views.get(o.id)
         if (!v) {
@@ -323,7 +325,7 @@ export function buildProps(scene: Scene): PropsView {
       for (const c of run.coins as Coin[]) {
         if (c.taken) continue
         const z = run.coinZ(c)
-        if (z < pz - 3 || z > pz + DRAW_AHEAD) continue
+        if (z < pz - 3 || z > pz + ahead) continue
         if (n >= COIN_CAP) break
         at.set(c.x, c.y + Math.sin(time * 3 + z * 0.4) * 0.06, z)
         sc.set(1, 1, 1)

@@ -25,14 +25,14 @@ import { Constants } from "@babylonjs/core/Engines/constants"
 
 /** Passo da textura do asfalto (m): a faixa longa pula de tanto em tanto. */
 const TILE = 12
-const ROAD_LEN = TILE * 24
+const ROAD_LEN = TILE * 36
 const BEHIND = 36
 export const ROAD_HALF = 4
 const WALK = 3.6
 const CURB = 0.16
 /** Prédios: vagas de 12 m de cada lado. */
 const B_PITCH = 12
-const B_SLOTS = 24
+const B_SLOTS = 36
 const B_HEIGHTS = [10, 17, 26] as const
 const B_X = ROAD_HALF + WALK + 6.6
 const B_DEPTH = 12
@@ -40,7 +40,7 @@ const B_WIDTH = 11
 /** Textura das janelas: 4 colunas × 8 andares cobrem 11 × 27,2 m. */
 const WIN_H = 27.2
 const L_PITCH = 24
-const L_SLOTS = 13
+const L_SLOTS = 19
 const POLE_X = ROAD_HALF + 1.0
 
 const hash = (k: number, s: number) => {

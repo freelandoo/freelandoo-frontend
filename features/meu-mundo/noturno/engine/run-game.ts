@@ -95,8 +95,9 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
   scene.ambientColor = new Color3(0.25, 0.25, 0.32)
   scene.fogMode = Scene.FOGMODE_LINEAR
   scene.fogColor = new Color3(NIGHT_FOG.r, NIGHT_FOG.g, NIGHT_FOG.b)
-  scene.fogStart = low ? 55 : 80
-  scene.fogEnd = low ? 150 : 185
+  const fogBase = { start: low ? 55 : 80, end: low ? 150 : 185 }
+  scene.fogStart = fogBase.start
+  scene.fogEnd = fogBase.end
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
@@ -353,7 +354,7 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       pose.sp = v
       pose.st = -lean * 0.6
       fleet.sync(rides, dt, 1, pose)
-      placeRider(fleet, char, RIDE_KEY, opts.ride, x, z, facing, run.grounded ? v : v * 0.25, dt, y)
+      placeRider(fleet, char, RIDE_KEY, opts.ride, x, z, facing, v, dt, y)
     } else {
       // bateu: o veículo fica, o boneco voa por cima e cai de cara
       fall = Math.min(1, fall + dt * 2.6)
@@ -378,7 +379,11 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
     cam.position.set(camX + (Math.random() - 0.5) * jit, camY + (Math.random() - 0.5) * jit, z - 6.4 - Math.min(1, v / 30) * 0.8 - (phase === "end" ? fall * 1.6 : 0))
     camTarget.set(camX * 0.85, y + 1.05, z + 10)
     cam.setTarget(camTarget)
-    const wantFov = 0.9 + Math.min(1, v / 30) * 0.22
+    const wantFov = 0.9 + Math.min(1, v / 30) * 0.22 + Math.min(1, Math.max(0, v - 30) / 70) * 0.16
+    // a neblina recua com a velocidade: ~3,6 s de rua à vista
+    const fogEnd = Math.min(low ? 300 : 390, Math.max(fogBase.end, v * 3.6))
+    scene.fogEnd += (fogEnd - scene.fogEnd) * Math.min(1, dt)
+    scene.fogStart = fogBase.start + (scene.fogEnd - fogBase.end) * 0.55
     cam.fov += (wantFov - cam.fov) * Math.min(1, dt * 3)
 
     street.update(z, cam.position)

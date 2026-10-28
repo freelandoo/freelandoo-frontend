@@ -146,7 +146,7 @@ function RunMenu({ onPlay, onExit }: { onPlay: (r: RideKind) => void; onExit: ()
   }, [])
   // barras: velocidade máxima, altura do pulo e agilidade (troca de faixa)
   const stats = (r: RideKind) => ({
-    speed: (RIDES[r].vmax - 22) / 10,
+    speed: (RIDES[r].at20k * 3.6 - 330) / 70,
     jump: (RIDES[r].jumpH - 1.1) / 0.8,
     agile: (0.26 - RIDES[r].laneTime) / 0.15,
   })

@@ -23,12 +23,20 @@ export type ObstacleKind = "car" | "amb" | "truck" | "barrier" | "ramp"
 export const LANE = 2.5
 export const LANE_X = [-LANE, 0, LANE] as const
 
-/** Cada veículo com o seu jeito (diferenças pequenas, para o gosto da escolha). */
-export const RIDES: Record<RideKind, { v0: number; vmax: number; jumpH: number; laneTime: number }> = {
-  bike: { v0: 12, vmax: 30, jumpH: 1.45, laneTime: 0.2 },
-  skate: { v0: 11, vmax: 27, jumpH: 1.75, laneTime: 0.17 },
-  skates: { v0: 11.5, vmax: 28, jumpH: 1.55, laneTime: 0.13 },
+/**
+ * Cada veículo com o seu jeito (diferenças pequenas, para o gosto da escolha).
+ * Velocidade (m/s) pela distância (pedido do Alex, mm3d-40b): o skate sai a
+ * 40 km/h, chega a 200 km/h aos 10 km e a 350 km/h aos 20 km (o teto); bike
+ * e patins na mesma proporção de antes (+11% e +4%). `early` = o tanto que
+ * sobe logo no começo (a arrancada dos primeiros quilômetros).
+ */
+export const RIDES: Record<RideKind, { v0: number; early: number; at10k: number; at20k: number; jumpH: number; laneTime: number }> = {
+  bike: { v0: 12, early: 18, at10k: 61.73, at20k: 108.02, jumpH: 1.45, laneTime: 0.2 },
+  skate: { v0: 11, early: 16, at10k: 55.56, at20k: 97.22, jumpH: 1.75, laneTime: 0.17 },
+  skates: { v0: 11.5, early: 16.5, at10k: 57.61, at20k: 100.82, jumpH: 1.55, laneTime: 0.13 },
 }
+/** Onde a curva muda (m): até o 1º arrancada + subida reta; do 1º ao 2º, reta até `at20k` (o teto). */
+export const SPEED_KNOTS = [10000, 20000] as const
 
 export const TUNING = {
   step: 1 / 120,
@@ -40,9 +48,9 @@ export const TUNING = {
   /** Chegar até isto abaixo do teto ainda sobe (sem bater). */
   stepUp: 0.55,
   half: 0.35,
-  /** Distância em que carros parados no trânsito começam a andar. */
+  /** Distância em que carros parados no trânsito começam a andar (mínimo; cresce com a velocidade). */
   act: 110,
-  /** Metros para a velocidade chegar a ~63% do caminho até a máxima. */
+  /** Metros da arrancada do começo (63% dela em speedK). */
   speedK: 1500,
   /** Janela do segundo tropeço (s). */
   stumbleWindow: 5,
@@ -112,7 +120,25 @@ export type RunEvent =
 
 export function speedAt(ride: RideKind, dist: number) {
   const r = RIDES[ride]
-  return r.v0 + (r.vmax - r.v0) * (1 - Math.exp(-Math.max(0, dist) / TUNING.speedK))
+  const d = Math.max(0, dist)
+  const [k1, k2] = SPEED_KNOTS
+  if (d <= k1) {
+    const early = (x: number) => r.early * (1 - Math.exp(-x / TUNING.speedK))
+    const lin = (r.at10k - r.v0 - early(k1)) / k1
+    return r.v0 + early(d) + lin * d
+  }
+  if (d <= k2) return r.at10k + ((r.at20k - r.at10k) * (d - k1)) / (k2 - k1)
+  return r.at20k
+}
+
+/** Distância (m) em que quem está parado no trânsito começa a andar: ~2,6 s antes de o jogador chegar. */
+export function actAt(v: number) {
+  return Math.max(TUNING.act, v * 2.6)
+}
+
+/** Quantos caminhões em fila depois de uma rampa para o pouso cair em cima de um deles. */
+function convoyOf(v: number) {
+  return Math.max(1, Math.ceil((0.23 * v + 1) / (KINDS.truck.len + 0.5)))
 }
 
 function mulberry(seed: number) {
@@ -187,7 +213,7 @@ export class Run {
 
   // ═══ geração ══════════════════════════════════════════════════════════════
   private add(kind: ObstacleKind, lane: number, z: number, u = 0, dir: 1 | -1 = 1): Obstacle {
-    const o: Obstacle = { id: ++this.seq, kind, lane, x: LANE_X[lane], z, pz: z, u, dir, actAt: z - TUNING.act, tint: Math.floor(this.rnd() * 8) }
+    const o: Obstacle = { id: ++this.seq, kind, lane, x: LANE_X[lane], z, pz: z, u, dir, actAt: z - actAt(speedAt(this.ride, z)), tint: Math.floor(this.rnd() * 8) }
     this.obstacles.push(o)
     return o
   }
@@ -238,6 +264,15 @@ export class Run {
 
   private mark(lane: number, until: number) {
     this.busy[lane] = Math.max(this.busy[lane], until)
+  }
+
+  /** Caminhões em fila a partir de z (o bastante para o pouso da rampa); moedas no último. Devolve o fim. */
+  private convoy(lane: number, z: number, v: number) {
+    const n = convoyOf(v)
+    let t: Obstacle | null = null
+    for (let i = 0; i < n; i++) t = this.add("truck", lane, z + i * (KINDS.truck.len + 0.5))
+    for (let i = 0; i < 4; i++) this.addCoin(LANE_X[lane], KINDS.truck.top + 0.9, 1.5 + i * 2.2, t)
+    return z + n * (KINDS.truck.len + 0.5) - 0.5
   }
 
   /** Um trecho começando em z; devolve o comprimento. Sempre sobra uma faixa livre (ou passável). */
@@ -316,46 +351,49 @@ export class Run {
         const l = lanes[0]
         this.add("ramp", l, z)
         const lip = z + KINDS.ramp.len
-        const gap = Math.max(3.5, Math.min(11, v * 0.38))
-        const t = this.add("truck", l, lip + gap)
+        // a borda lança; o caminhão começa onde o pulo já passou do teto e a fila
+        // vai até onde ele desce (rápido demais, um caminhão só ficava para trás)
+        const gap = Math.max(3.5, v * 0.38)
+        const end = this.convoy(l, lip + gap, v)
         this.coinArc(l, lip, KINDS.ramp.top, TUNING.launchV, v, 5)
-        for (let i = 0; i < 4; i++) this.addCoin(LANE_X[l], KINDS.truck.top + 0.9, 2 + i * 2.2, t)
-        this.mark(l, lip + gap + KINDS.truck.len + 1)
+        this.mark(l, end + 1)
         // do lado: um carro parado (mais tarde)
         if (lanes.length > 2 && d > 0.35) {
           this.add("car", lanes[1], lip + gap + 1)
           this.mark(lanes[1], lip + gap + 1 + KINDS.car.len + 1)
         }
-        return KINDS.ramp.len + gap + KINDS.truck.len
+        return end - z
       }
       case "wall": {
         // dois caminhões lado a lado; a terceira faixa tem rampa+caminhão ou barreira
         const [a, b, c] = lanes
-        const tz = z + KINDS.ramp.len + Math.max(3.5, Math.min(11, v * 0.38))
+        const tz = z + KINDS.ramp.len + Math.max(3.5, v * 0.38)
+        let end = tz + KINDS.truck.len
         for (const l of [a, b]) {
-          const t = this.add("truck", l, tz)
-          this.mark(l, tz + KINDS.truck.len + 1)
-          for (let i = 0; i < 3; i++) this.addCoin(LANE_X[l], KINDS.truck.top + 0.9, 2.5 + i * 2.5, t)
+          const e = this.convoy(l, tz, v)
+          this.mark(l, e + 1)
+          end = Math.max(end, e)
         }
         if (this.rnd() < 0.5) {
           this.add("ramp", c, z)
-          const t = this.add("truck", c, tz)
-          this.mark(c, tz + KINDS.truck.len + 1)
-          for (let i = 0; i < 3; i++) this.addCoin(LANE_X[c], KINDS.truck.top + 0.9, 2.5 + i * 2.5, t)
+          const e = this.convoy(c, tz, v)
+          this.mark(c, e + 1)
+          end = Math.max(end, e)
         } else {
           this.add("barrier", c, tz + 2)
           this.mark(c, tz + 3)
           this.coinArc(c, tz + 2 - (jumpV / g) * v, 0, jumpV, v, 7)
         }
-        return tz - z + KINDS.truck.len
+        return end - z
       }
       case "oncoming": {
         // carro na contramão: encontra o jogador perto de `z`; a faixa fica reservada até onde ele nasce
         const l = lanes[0]
         const u = -(7 + this.rnd() * 3 + d * 3)
-        const z0 = z + (-u * TUNING.act) / (v - u)
+        const act = actAt(v)
+        const z0 = z + (-u * act) / (v - u)
         const o = this.add("car", l, z0, u, -1)
-        o.actAt = z0 - TUNING.act
+        o.actAt = z0 - act
         this.mark(l, z0 + KINDS.car.len + 4)
         if (lanes.length > 1) this.coinLine(lanes[1], z - 6, 6)
         if (lanes.length > 2 && d > 0.3) {
@@ -369,9 +407,10 @@ export class Run {
         const l = lanes[0]
         const u = Math.min(8, v * 0.45) * (0.6 + this.rnd() * 0.4)
         const z0 = z
-        const meet = z0 + (u * TUNING.act) / (v - u)
+        const act = actAt(v)
+        const meet = z0 + (u * act) / (v - u)
         const o = this.add(this.rnd() < 0.3 ? "truck" : "car", l, z0, u, 1)
-        o.actAt = z0 - TUNING.act
+        o.actAt = z0 - act
         this.mark(l, meet + KINDS[o.kind].len + 4)
         if (lanes.length > 1) this.coinLine(lanes[1], z - 4, 5)
         return 6
@@ -508,9 +547,10 @@ export class Run {
       const k = KINDS[o.kind]
       if (!k.solid) continue
       if (Math.abs(this.x - o.x) >= k.hw + T.half) continue
-      if (this.z < o.z - 0.3 || this.z > o.z + k.len) continue
+      // varrido: a 350 km/h o passo anda 0,8 m — o cavalete (0,4 m) não pode passar entre dois passos
+      if (this.z < o.z - 0.3 || prevZ > o.pz + k.len) continue
       if (this.y >= k.top - T.stepUp) {
-        if (this.y < k.top - 0.02 && this.vy <= 0) {
+        if (this.y < k.top - 0.02 && this.vy <= 0 && this.z <= o.z + k.len) {
           this.y = k.top
           this.vy = 0
           if (!this.grounded) out.push({ type: "land", hard: false, trick: false })
@@ -537,7 +577,7 @@ export class Run {
     for (const c of this.coins) {
       if (c.taken) continue
       const cz = this.coinZ(c)
-      if (Math.abs(cz - this.z) > 0.9 || Math.abs(c.x - this.x) > 0.85) continue
+      if (cz < prevZ - 0.9 || cz > this.z + 0.9 || Math.abs(c.x - this.x) > 0.85) continue
       if (Math.abs(c.y - (this.y + 0.9)) > 1.15) continue
       c.taken = true
       this.coinsGot++
@@ -551,7 +591,7 @@ export class Run {
       this.obstacles = this.obstacles.filter((o) => o.z + KINDS[o.kind].len > this.z - 80)
       this.coins = this.coins.filter((c) => !c.taken && this.coinZ(c) > cut)
     }
-    this.generate(this.z + 260)
+    this.generate(this.z + Math.max(260, this.v * 4.5))
   }
 
   private crash(kind: ObstacleKind | "stumble", out: RunEvent[]) {

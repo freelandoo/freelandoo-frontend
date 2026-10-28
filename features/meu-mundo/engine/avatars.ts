@@ -197,6 +197,16 @@ const PEDAL_RIGHT_LOW = 0.6
 const CRANK_MODEL_FROM_LOW = 0.585
 /** SkatesStride (mm3d-23): a 5 m/s a passada toca a 1× (uma passada de cada pé em 1,2 s). */
 const STRIDE_NATURAL_SPEED = 5
+/**
+ * Impulso e embalo (mm3d-40b, pedido do Alex): bike e patins dão PUMPS
+ * pedaladas/passadas para pegar velocidade e depois seguem embalados (pedais
+ * nivelados; patins com as pernas juntas). Voltam a impulsionar ao sair do
+ * parado ou quando a velocidade cai abaixo de COAST_DROP da que tinham.
+ */
+const PUMPS = 3
+const COAST_DROP = 0.6
+/** Fase do BikePedal com os pedais nivelados (o pé direito embaixo fica em 0,6). */
+const PEDAL_LEVEL = 0.85
 
 let loadersRegistered = false
 
@@ -497,6 +507,11 @@ export class AvatarRig {
   private rideStart = 0
   /** Ângulo da pedivela (rad): meia volta por pedalada, junto com a troca de pose. */
   crank = 0
+  // ── impulso e embalo (bike e patins, mm3d-40b) ──
+  private pumping = true
+  private pumps = 0
+  private coastRef = 0
+  private lastPhase = 0
 
   constructor(
     private readonly lib: AvatarLibrary,
@@ -575,6 +590,36 @@ export class AvatarRig {
    * depois SkateRide. Patins: ao sair do parado, um ciclo de caminhada e
    * depois SkatesGlide. Sem as poses carregadas, fica em repouso.
    */
+  /**
+   * Conta os ciclos do clipe de impulso (`phase` 0–1) e decide entre
+   * impulsionar e seguir embalado. Devolve true quando acabou de voltar a
+   * impulsionar (o clipe recomeça do início).
+   */
+  private effort(moving: boolean, speed: number, phase: number) {
+    let restart = false
+    if (!moving) {
+      if (!this.pumping) restart = true
+      this.pumping = true
+      this.pumps = 0
+      this.coastRef = 0
+    } else if (this.pumping) {
+      if (phase < this.lastPhase - 0.5) this.pumps++
+      if (this.pumps >= PUMPS) {
+        this.pumping = false
+        this.coastRef = speed
+      }
+    } else {
+      this.coastRef = Math.max(this.coastRef, speed)
+      if (speed < this.coastRef * COAST_DROP) {
+        this.pumping = true
+        this.pumps = 0
+        restart = true
+      }
+    }
+    this.lastPhase = phase
+    return restart
+  }
+
   private rideTargets(dt: number, move: MoveState, speed: number, target: Record<Clip, number>) {
     const have = this.groups
     if (move !== this.rideMove) {
@@ -582,6 +627,9 @@ export class AvatarRig {
       this.rideStopped = true
       this.rideClock = 0
       this.rideStart = 0
+      this.pumping = true
+      this.pumps = 0
+      this.coastRef = 0
     }
     const moving = Math.abs(speed) > RIDE_STOP
     if (this.rideStopped && moving) {
@@ -598,12 +646,21 @@ export class AvatarRig {
     } else if (!moving && this.rideStart <= 0) this.rideStopped = true
     this.rideStart = Math.max(0, this.rideStart - dt)
     if (move === 6 && have.BikePedal) {
-      // Pedalada em ciclo no ritmo da bike; a pedivela segue a fase do ciclo.
+      // Pedalada em ciclo no ritmo da bike (3 vezes, depois embala com os
+      // pedais nivelados); a pedivela segue a fase do ciclo.
       const g = have.BikePedal
-      g.speedRatio = moving ? Math.max(0.35, Math.min(2.5, Math.abs(speed) / PEDAL_NATURAL_SPEED)) : 0
+      const frameOf = () => g.animatables[0]?.masterFrame ?? g.from
+      let phase = g.to > g.from ? (frameOf() - g.from) / (g.to - g.from) : 0
+      this.effort(moving, Math.abs(speed), phase)
+      if (!moving) g.speedRatio = 0
+      else if (this.pumping) g.speedRatio = Math.max(0.35, Math.min(2.5, Math.abs(speed) / PEDAL_NATURAL_SPEED))
+      else if (g.speedRatio !== 0 && phase >= PEDAL_LEVEL) {
+        // terminou a 3ª pedalada: para com os pedais nivelados
+        g.goToFrame(g.from + PEDAL_LEVEL * (g.to - g.from))
+        g.speedRatio = 0
+        phase = PEDAL_LEVEL
+      }
       target.BikePedal = 1
-      const a = g.animatables[0]?.masterFrame ?? g.from
-      const phase = g.to > g.from ? (a - g.from) / (g.to - g.from) : 0
       this.crank = CRANK_MODEL_FROM_LOW + 2 * Math.PI * (phase - PEDAL_RIGHT_LOW)
       return true
     }
@@ -630,10 +687,17 @@ export class AvatarRig {
       return true
     }
     if (move === 8 && have.SkatesStride) {
-      // Patins: andando, a passada no ritmo da velocidade; parado, deslize em pé.
+      // Patins: 3 passadas no ritmo da velocidade e depois deslize com as
+      // pernas juntas; parado, deslize em pé.
       const g = have.SkatesStride
+      const a = g.animatables[0]?.masterFrame ?? g.from
+      const phase = g.to > g.from ? (a - g.from) / (g.to - g.from) : 0
+      if (this.effort(moving, Math.abs(speed), phase)) {
+        g.goToFrame(g.from)
+        this.lastPhase = 0
+      }
       g.speedRatio = Math.max(0.6, Math.min(1.8, Math.abs(speed) / STRIDE_NATURAL_SPEED))
-      if (moving) target.SkatesStride = 1
+      if (moving && this.pumping) target.SkatesStride = 1
       else target[have.SkatesGlide ? "SkatesGlide" : "Idle"] = 1
       return true
     }
