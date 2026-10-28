@@ -153,13 +153,14 @@ const ASSETS = {
   },
   // Arena de Boxe (mm3d-44, pipeline/build_boxe_mocap.py com a pasta "boxe"
   // do Alex): guarda, aquecimento, golpes dos combos, esquiva, reações, queda,
-  // levantar e vitória. Só a arena baixa.
+  // levantar e vitória; mm3d-45 (build_boxe_steps.py): passadas na guarda.
+  // Só a arena baixa.
   boxe: {
-    base: "anim-boxe-base-m44.glb",
-    fat: "anim-boxe-fat-m44.glb",
-    strong: "anim-boxe-strong-m44.glb",
-    sergio: "anim-boxe-sergio-m44.glb",
-    ekaterina: "anim-boxe-ekaterina-m44.glb",
+    base: "anim-boxe-base-m45.glb",
+    fat: "anim-boxe-fat-m45.glb",
+    strong: "anim-boxe-strong-m45.glb",
+    sergio: "anim-boxe-sergio-m45.glb",
+    ekaterina: "anim-boxe-ekaterina-m45.glb",
   },
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
@@ -184,12 +185,14 @@ const PAINT_CLIPS = ["PIdle", "PFire", "PWalk", "PRun", "PStrafe", "Air", "AirSi
 const PLACE_CLIPS = ["GymSquat", "GymPunch", "GymBoxJump", "GymSitups", "GymKettle", "Pray"] as const
 export type PlacePose = (typeof PLACE_CLIPS)[number] | "Run"
 /** Arena de Boxe (mm3d-44): BGuard/BWarm/BWin em laço; o resto toca uma vez por cima (boxeAct). */
-const BOXE_CLIPS = ["BGuard", "BWarm", "BJab", "BBox0", "BBox1", "BBox2", "BBox3", "BBox4", "BBox5", "BBag", "BDodge", "BHit", "BHitLite", "BStagger", "BFall", "BRise", "BWin"] as const
+const BOXE_CLIPS = ["BGuard", "BWarm", "BJab", "BBox0", "BBox1", "BBox2", "BBox3", "BBox4", "BBox5", "BBag", "BDodge", "BHit", "BHitLite", "BStagger", "BFall", "BRise", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"] as const
+/** Passadas na guarda (mm3d-45): velocidade natural de cada clipe (m/s, build_boxe_steps.py). */
+const BOXE_STEP_SPEED = { BStepF: 0.91, BStepB: 0.79, BStepL: 0.61, BStepR: 0.61 } as const
 export type BoxeClip = (typeof BOXE_CLIPS)[number]
 /** Pose-base da luta: guarda, aquecimento, cansado, machucado, andando para o canto, vitória. */
 export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk"
 /** Golpes e reações tocam uma vez (quem dispara é o boxeAct, nunca o laço). */
-const BOXE_LOOP = new Set<string>(["BGuard", "BWarm", "BWin"])
+const BOXE_LOOP = new Set<string>(["BGuard", "BWarm", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"])
 const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c))])
 /** `anim` do ponto de uso (servidor) → clipe. */
 export const POSE_OF_ANIM: Record<string, PlacePose> = { run: "Run", squat: "GymSquat", punch: "GymPunch", boxjump: "GymBoxJump", situps: "GymSitups", kettlebell: "GymKettle", pray: "Pray" }
@@ -550,6 +553,7 @@ export class AvatarRig {
     GymSquat: 0, GymPunch: 0, GymBoxJump: 0, GymSitups: 0, GymKettle: 0, Pray: 0,
     BGuard: 0, BWarm: 0, BJab: 0, BBox0: 0, BBox1: 0, BBox2: 0, BBox3: 0, BBox4: 0, BBox5: 0, BBag: 0,
     BDodge: 0, BHit: 0, BHitLite: 0, BStagger: 0, BFall: 0, BRise: 0, BWin: 0,
+    BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -832,6 +836,8 @@ export class AvatarRig {
    * Quem desenha a luta escolhe a base e dispara os golpes com boxeAct.
    */
   boxe: BoxeBase | null = null
+  /** Andando na guarda (mm3d-45): m/s no referencial do corpo (frente, direita). */
+  boxeMove = { fwd: 0, side: 0 }
   private boxeClip: BoxeClip | null = null
   private boxeLeft = 0
   private boxeHold = false
@@ -880,10 +886,22 @@ export class AvatarRig {
       if (act && (this.boxeLeft > 0 || this.boxeHold)) target[this.boxeClip!] = 1
       else {
         this.boxeClip = null
-        target[this.groups[this.boxe] ? this.boxe : "Idle"] = 1
+        const base = this.groups[this.boxe] ? this.boxe : "Idle"
+        // andando na guarda (mm3d-45): a passada da direção, no ritmo das pernas
+        const { fwd, side } = this.boxeMove
+        const v = Math.hypot(fwd, side)
+        const m = base === "BGuard" && this.groups.BStepF ? Math.min(1, v / 0.3) : 0
+        target[base] = 1 - m
+        if (m > 0) {
+          const parts = { BStepF: Math.max(0, fwd), BStepB: Math.max(0, -fwd), BStepR: Math.max(0, side), BStepL: Math.max(0, -side) }
+          const sum = parts.BStepF + parts.BStepB + parts.BStepR + parts.BStepL || 1
+          for (const [clip, w] of Object.entries(parts) as [keyof typeof BOXE_STEP_SPEED, number][]) {
+            target[clip] = (m * w) / sum
+            const g = this.groups[clip]
+            if (g) g.speedRatio = Math.max(0.6, Math.min(1.9, v / BOXE_STEP_SPEED[clip]))
+          }
+        }
       }
-      // andando na guarda (mm3d-44): o pulinho acelera com as pernas
-      if (this.groups.BGuard) this.groups.BGuard.speedRatio = this.boxe === "BGuard" ? 1 + Math.min(0.7, speed * 0.4) : 1
       return this.applyWeights(dt, target, this.boxe === "Walk" ? speed : 0, 14)
     }
     if (this.pose && (this.pose === "Run" || this.groups[this.pose])) {
@@ -949,6 +967,7 @@ export class AvatarRig {
       GymSquat: 0, GymPunch: 0, GymBoxJump: 0, GymSitups: 0, GymKettle: 0, Pray: 0,
       BGuard: 0, BWarm: 0, BJab: 0, BBox0: 0, BBox1: 0, BBox2: 0, BBox3: 0, BBox4: 0, BBox5: 0, BBag: 0,
       BDodge: 0, BHit: 0, BHitLite: 0, BStagger: 0, BFall: 0, BRise: 0, BWin: 0,
+      BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
     }
     this.applyWeights(dt, target, speed)
   }

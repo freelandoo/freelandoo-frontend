@@ -763,7 +763,7 @@ function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => vo
       )}
       {status === "ready" && !isTouch && ph?.kind === "intro" && (
         <div className="pointer-events-none absolute inset-x-0 text-center text-[13px] font-semibold" style={{ bottom: `calc(${SAFE.bottom} + 4px)`, color: MM.muted }}>
-          {t("boxeKeys", "WASD ou setas: andar · J, espaço ou clique: atacar · K ou Shift: esquivar")}
+          {t("boxeKeys2", "D/→ avança · A/← recua · W/S de lado · J, espaço ou clique: atacar · K ou Shift: esquivar")}
         </div>
       )}
 

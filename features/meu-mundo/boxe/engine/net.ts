@@ -57,6 +57,8 @@ export interface BoxeResult {
 
 /** O que sai daqui na luta (ver Match.input no servidor). */
 export interface BoxeInput {
+  /** Onde o lutador está neste aparelho (mm3d-45: o movimento é do aparelho). */
+  p?: [number, number]
   /** Direção no chão (|m| ≤ 1). */
   m?: [number, number]
   /** Combo pedido (pedaços da tabela) e o id dele neste aparelho. */

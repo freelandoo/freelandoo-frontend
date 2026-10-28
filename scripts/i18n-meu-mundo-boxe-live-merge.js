@@ -22,6 +22,12 @@ const MEU_MUNDO = {
     "WASD or arrows: move · J, space or click: attack · K or Shift: dodge",
     "WASD o flechas: moverse · J, espacio o clic: atacar · K o Shift: esquivar",
   ],
+  // mm3d-45: o andar é pela linha entre os dois
+  boxeKeys2: [
+    "D/→ avança · A/← recua · W/S de lado · J, espaço ou clique: atacar · K ou Shift: esquivar",
+    "D/→ step in · A/← step back · W/S sideways · J, space or click: attack · K or Shift: dodge",
+    "D/→ avanza · A/← retrocede · W/S de lado · J, espacio o clic: atacar · K o Shift: esquivar",
+  ],
   boxeAttack: ["Atacar", "Attack", "Atacar"],
   boxeDodge: ["Esquivar", "Dodge", "Esquivar"],
   boxeRise: ["Levantar", "Get up", "Levantarse"],

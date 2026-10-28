@@ -8285,7 +8285,8 @@
     "boxeRise": "Levantar",
     "boxeRiseTap": "Toque em LEVANTAR sem parar!",
     "boxeRiseKey": "Aperte J ou espaço sem parar para levantar!",
-    "boxeHuman": "jogador"
+    "boxeHuman": "jogador",
+    "boxeKeys2": "D/→ avança · A/← recua · W/S de lado · J, espaço ou clique: atacar · K ou Shift: esquivar"
   },
   "Sports": {
     "eyebrow": "Esportes",

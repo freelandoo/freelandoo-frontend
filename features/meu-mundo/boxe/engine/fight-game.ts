@@ -4,15 +4,20 @@
 // ATACAR (J, espaço, clique) solta um combo SORTEADO dos pedaços da tabela da
 // sala, ESQUIVAR (K, Shift) abaixa. Quem decide golpe, dano e queda é a sala
 // (Match no servidor); aqui:
-//  - o MEU lutador é previsto: anda na hora pelo joystick (as pernas e o ritmo
-//    vêm do estado) e é corrigido aos poucos pela posição da sala, comparada
-//    com onde eu estava quando ela leu a minha entrada; o combo e a esquiva
-//    tocam no toque (o id do combo volta no estado — combo recusado é solto);
+//  - o MEU lutador anda no aparelho (mm3d-45: a posição é dele, como no Paint;
+//    a sala só limita a velocidade e devolve se recusar): direita = para cima
+//    do outro, esquerda = recua, cima/baixo = de lado (relativo à LINHA entre
+//    os dois, não à câmera); passadas na guarda pela direção (build_boxe_steps);
+//    o combo e a esquiva tocam no toque (o id do combo volta no estado — combo
+//    recusado é solto); o empurrão de um golpe levado é aplicado aqui;
 //  - o OUTRO (pessoa ou computador) é desenhado 0,1 s no passado, entre dois
 //    estados; a ação dele (combo, esquiva, reação, queda, levantar) toca a
 //    partir do instante que a sala marcou, cortando o que já passou;
 //  - eventos (pancada, bloqueio, esquiva, queda, contagem, sinos) no mesmo
-//    relógio do outro: som, suor/sangue, câmera tremendo, plateia, avisos;
+//    relógio do outro (os MEUS golpes, assim que chegam): som, suor/sangue,
+//    câmera tremendo, plateia, avisos; cada golpe que entra mostra o DANO
+//    saltando da cabeça e dá um TRANCO em quem leva (cabeça e tronco jogados
+//    para trás por cima da animação — mm3d-45);
 //  - câmera de transmissão de lado para a dupla, comigo sempre à ESQUERDA
 //    (o joystick é relativo a ela); árbitro anda junto e vai a quem caiu.
 // Animações: a pasta "boxe" do Alex (build_boxe_mocap.py, conjunto -m44).
@@ -25,7 +30,8 @@ import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
-import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
+import type { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import "@babylonjs/core/Particles/particleSystemComponent"
@@ -102,6 +108,8 @@ const CONFIRM_S = 0.45
 const RANGE = 0.95
 /** Queda e levantar (s). */
 const FALL_DUR = 1.2
+/** Sentido do tranco (conferido no harness: a cabeça vai para LONGE de quem bateu). */
+const FLINCH_SIGN = -1
 
 const PH_KIND: Record<number, PhaseKind> = { [PH.INTRO]: "intro", [PH.ROUND]: "round", [PH.BREAK]: "break", [PH.COUNT]: "count", [PH.END]: "end" }
 
@@ -261,7 +269,11 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
     last = s
     snaps.push(s)
     if (snaps.length > 40) snaps.shift()
-    for (const e of s.ev) pendingEv.push(e)
+    for (const e of s.ev) {
+      // o meu golpe: o impacto aparece assim que a sala responde (o soco já tocou aqui)
+      if (e[1] === EV.PUNCH && e[2] === me) fire(e)
+      else pendingEv.push(e)
+    }
     observe(s)
   }
   /** Lutador `i` no relógio `t` (posição entre dois estados; o resto do mais recente até t). */
@@ -347,7 +359,8 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
 
   // ── o meu lutador: previsão ──────────────────────────────────────────────
   const mine = { x: start.snap.f[me][0], z: start.snap.f[me][1] }
-  const hist: { t: number; x: number; z: number }[] = []
+  /** Empurrão de golpe levado (m/s), aplicado aqui (a posição é do aparelho). */
+  const kick = { x: 0, z: 0 }
   /** Ação prevista (tocando antes da sala confirmar). */
   let local: { kind: "combo" | "dodge"; cid: number; at: number; end: number; seen: boolean } | null = null
   let cid = 0
@@ -402,7 +415,7 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
   /** O estado chegou: confirma/recusa o previsto e corrige a minha posição. */
   const observe = (s: Snap) => {
     const a = fighterAt(s.f[me])
-    if (a.seq !== shownSeq[me]) {
+    if (a.seq > shownSeq[me]) {
       const waiting = local && !local.seen
       if (waiting && ((local!.kind === "combo" && a.act === ACT.COMBO && a.cid === local!.cid) || (local!.kind === "dodge" && a.act === ACT.DODGE))) {
         // a sala aceitou o que já está tocando
@@ -421,36 +434,22 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
       plans[me] = []
       fighters[me].boxeClear()
     }
-    // correção: a sala leu a minha entrada ~meia ida e volta depois
+    // fora do round (intervalo, contagem, chão) quem anda é a sala
     if (s.ph[0] !== PH.ROUND || a.act === ACT.DOWN || a.act === ACT.RISE) {
       mine.x = a.x
       mine.z = a.z
-      hist.length = 0
+      kick.x = kick.z = 0
       return
     }
-    const back = s.t - net.roundTrip / 2
-    let h = hist[0]
-    for (let k = hist.length - 1; k >= 0; k--) {
-      if (hist[k].t <= back) {
-        h = hist[k]
-        break
-      }
-    }
-    if (!h) return
-    const ex = a.x - h.x
-    const ez = a.z - h.z
-    if (Math.hypot(ex, ez) > 0.7) {
-      mine.x += ex
-      mine.z += ez
-      for (const p of hist) (p.x += ex), (p.z += ez)
-    } else {
-      mine.x += ex * 0.18
-      mine.z += ez * 0.18
-      for (const p of hist) (p.x += ex * 0.18), (p.z += ez * 0.18)
+    // no round a posição é do aparelho; a sala só fica para trás (meia ida e
+    // volta). Longe demais = ela não deixou (encostado, rápido demais): volta.
+    const ex = a.x - mine.x
+    const ez = a.z - mine.z
+    if (Math.hypot(ex, ez) > 0.6) {
+      mine.x += ex * 0.5
+      mine.z += ez * 0.5
     }
   }
-  net.listeners.snap.push(onSnap)
-  for (const s of net.recent) onSnap(s)
 
   // ── entrada: teclado e joystick ──────────────────────────────────────────
   const keys = new Set<string>()
@@ -458,6 +457,7 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
   /** Direção no chão (pela câmera). */
   const joy = { x: 0, z: 0 }
   let sentJoy = { x: 0, z: 0 }
+  let sentPos = { x: 0, z: 0 }
   let sendAt = 0
   const onKey = (e: KeyboardEvent, down: boolean) => {
     const k = e.key.toLowerCase()
@@ -487,14 +487,19 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
     if (keys.has("s") || keys.has("arrowdown")) y -= 1
     const n = Math.hypot(x, y)
     if (n > 1) (x /= n), (y /= n)
-    // relativo à câmera: frente = para onde ela olha, no chão
-    const fx = camLook.x - camPos.x
-    const fz = camLook.z - camPos.z
-    const fl = Math.hypot(fx, fz) || 1
-    const ux = fx / fl
-    const uz = fz / fl
-    joy.x = uz * x + ux * y
-    joy.z = -ux * x + uz * y
+    // relativo à LINHA entre os dois (eu sempre à esquerda da tela): direita =
+    // para cima do outro, esquerda = recua; cima = de lado para longe da câmera
+    const ox = drawn[op].x - drawn[me].x
+    const oz = drawn[op].z - drawn[me].z
+    const ol = Math.hypot(ox, oz) || 1
+    const ux = ox / ol
+    const uz = oz / ol
+    // lado "para dentro da tela": perpendicular à linha, do lado oposto à câmera
+    let px = -uz
+    let pz = ux
+    if (px * (camPos.x - drawn[me].x) + pz * (camPos.z - drawn[me].z) > 0) (px = -px), (pz = -pz)
+    joy.x = ux * x + px * y
+    joy.z = uz * x + pz * y
     if (Math.hypot(joy.x, joy.z) < 0.12) joy.x = joy.z = 0
   }
 
@@ -512,6 +517,78 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
   let focus: { who: number; until: number } | null = null
   const angDiff = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b))
 
+  // ── dano saltando da cabeça ──────────────────────────────────────────────
+  const layer = document.createElement("div")
+  layer.style.cssText = "position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1"
+  canvas.parentElement?.appendChild(layer)
+  const popDamage = (who: number, dmg: number, kind: "hit" | "clean" | "block") => {
+    const head = fighters[who].bonePosition("mixamorig:HeadTop_End") ?? fighters[who].bonePosition("mixamorig:Head") ?? new Vector3(drawn[who].x, RING_Y + 1.7, drawn[who].z)
+    const w = canvas.clientWidth
+    const h = canvas.clientHeight
+    const p = Vector3.Project(head.add(new Vector3(0, 0.15, 0)), Matrix.Identity(), scene.getTransformMatrix(), cam.viewport.toGlobal(w, h))
+    if (p.z < 0 || p.z > 1) return
+    const el = document.createElement("span")
+    el.textContent = String(Math.max(1, Math.round(dmg)))
+    const size = kind === "clean" ? 54 : kind === "block" ? 26 : 40
+    const color = kind === "clean" ? "#FFD23F" : kind === "block" ? "#C9CED8" : "#FF4FA3"
+    el.style.cssText = `position:absolute;left:${p.x + (Math.random() - 0.5) * 30}px;top:${p.y}px;font:italic 900 ${size}px/1 system-ui,sans-serif;color:${color};-webkit-text-stroke:${kind === "block" ? 1.5 : 2.5}px #fff;paint-order:stroke fill;text-shadow:0 3px 0 rgba(0,0,0,.35);transform:translate(-50%,-50%);will-change:transform,opacity`
+    layer.appendChild(el)
+    const anim = el.animate(
+      [
+        { transform: "translate(-50%,-50%) scale(0.4)", opacity: 0 },
+        { transform: "translate(-50%,-90%) scale(1.25)", opacity: 1, offset: 0.15 },
+        { transform: "translate(-50%,-140%) scale(1)", opacity: 1, offset: 0.6 },
+        { transform: "translate(-50%,-220%) scale(0.9)", opacity: 0 },
+      ],
+      { duration: kind === "clean" ? 1100 : 850, easing: "ease-out" },
+    )
+    anim.onfinish = () => el.remove()
+  }
+
+  // ── tranco: quem leva joga cabeça e tronco para trás, por cima da animação ──
+  const flinches: ({ at: number; amp: number; ax: number; az: number } | null)[] = [null, null]
+  const flinch = (who: number, from: number, amp: number) => {
+    const dx = drawn[who].x - drawn[from].x
+    const dz = drawn[who].z - drawn[from].z
+    const l = Math.hypot(dx, dz) || 1
+    flinches[who] = { at: performance.now() / 1000, amp, ax: dx / l, az: dz / l }
+  }
+  const FLINCH_BONES: [string, number][] = [
+    ["mixamorig:Spine1", 0.35],
+    ["mixamorig:Spine2", 0.3],
+    ["mixamorig:Neck", 0.35],
+    ["mixamorig:Head", 0.6],
+  ]
+  const tmpQ = new Quaternion()
+  const tmpM = new Matrix()
+  const afterAnim = scene.onAfterAnimationsObservable.add(() => {
+    const t = performance.now() / 1000
+    for (let i = 0; i < 2; i++) {
+      const f = flinches[i]
+      if (!f) continue
+      const age = t - f.at
+      if (age > 0.6) {
+        flinches[i] = null
+        continue
+      }
+      // sobe rápido (60 ms) e volta amortecido
+      const env = Math.sin(Math.min(1, age / 0.06) * (Math.PI / 2)) * Math.exp(-Math.max(0, age - 0.06) * 7)
+      const ang = f.amp * env * FLINCH_SIGN
+      // eixo de mundo: horizontal, perpendicular à direção do golpe (o topo vai para longe)
+      const axis = new Vector3(f.az, 0, -f.ax)
+      for (const [name, share] of FLINCH_BONES) {
+        const n = fighters[i].bone(name) as TransformNode | null
+        const parent = n?.parent as TransformNode | null
+        if (!n || !parent || !n.rotationQuaternion) continue
+        fighters[i].bonePosition(name) // a cadeia de mundo AGORA
+        parent.getWorldMatrix().invertToRef(tmpM)
+        const local = Vector3.TransformNormal(axis, tmpM).normalize()
+        Quaternion.RotationAxisToRef(local, ang * share, tmpQ)
+        tmpQ.multiplyToRef(n.rotationQuaternion, n.rotationQuaternion)
+      }
+    }
+  })
+
   // ── eventos da sala ──────────────────────────────────────────────────────
   let endT = Infinity
   let towelled = false
@@ -521,6 +598,21 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
       const res = e[3]
       const dmg = e[4]
       const def = 1 - who
+      if (res >= RES.BLOCK && res !== RES.SLIP) {
+        const clean = res === RES.CLEAN
+        popDamage(def, dmg, res === RES.BLOCK ? "block" : clean ? "clean" : "hit")
+        flinch(def, who, res === RES.BLOCK ? 0.08 : Math.min(0.55, 0.16 + dmg * 0.045) * (clean ? 1.35 : 1))
+        if (def === me) {
+          // o empurrão do golpe (o mesmo da sala)
+          const push = res === RES.BLOCK ? 0.05 : Math.min(0.35, dmg * 0.03)
+          const k = (clean && dmg >= 8 ? 1.6 : 1) * push * 6
+          const ax = mine.x - drawn[who].x
+          const az = mine.z - drawn[who].z
+          const al = Math.hypot(ax, az) || 1
+          kick.x += (ax / al) * k
+          kick.z += (az / al) * k
+        }
+      }
       if (res === RES.BLOCK) audio.block()
       else if (res === RES.SLIP || res === RES.MISS) audio.whoosh()
       else {
@@ -579,7 +671,11 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
   if (net.towel) onTowel(net.towel)
 
   // ── quadro ───────────────────────────────────────────────────────────────
-  const drawn: { x: number; z: number; face: number; speed: number }[] = [0, 1].map((i) => ({ x: start.snap.f[i][0], z: start.snap.f[i][1], face: 0, speed: 0 }))
+  const drawn: { x: number; z: number; face: number; speed: number; vx: number; vz: number }[] = [0, 1].map((i) => ({ x: start.snap.f[i][0], z: start.snap.f[i][1], face: 0, speed: 0, vx: 0, vz: 0 }))
+  // estados que chegaram antes da cena abrir (só agora: usam a cena acima)
+  net.listeners.snap.push(onSnap)
+  for (const s of net.recent) onSnap(s)
+
   let hudAt = 0
   let readyFired = false
   let overFired = false
@@ -591,10 +687,15 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
     // eventos no relógio do outro
     pendingEv.sort((a, b) => a[0] - b[0])
     while (pendingEv.length && pendingEv[0][0] <= tOp + 0.02) fire(pendingEv.shift()!)
-    // ações novas do outro (no passado dele)
+    // ações novas do outro: golpe levado na hora (o soco foi meu); o resto no passado dele
     {
+      const lo = fighterAt(last.f[op])
+      if (lo.seq > shownSeq[op] && lo.act >= ACT.LIGHT && lo.act <= ACT.BLOCK) {
+        shownSeq[op] = lo.seq
+        playAct(op, { ...lo, t0: Math.min(lo.t0, tOp) })
+      }
       const o = fighterIn(op, tOp).at
-      if (o.seq !== shownSeq[op]) {
+      if (o.seq > shownSeq[op]) {
         shownSeq[op] = o.seq
         playAct(op, o)
       }
@@ -624,24 +725,27 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
       const d = Math.hypot(dx, dz) || 1
       const comboing = (local?.kind === "combo" && tNow < local.end) || (ma.act === ACT.COMBO && busy)
       if (comboing && d > RANGE) (vx += (dx / d) * 0.9), (vz += (dz / d) * 0.9)
-      mine.x = Math.max(-T.ring, Math.min(T.ring, mine.x + vx * dt))
-      mine.z = Math.max(-T.ring, Math.min(T.ring, mine.z + vz * dt))
+      mine.x = Math.max(-T.ring, Math.min(T.ring, mine.x + (vx + kick.x) * dt))
+      mine.z = Math.max(-T.ring, Math.min(T.ring, mine.z + (vz + kick.z) * dt))
+      const decay = Math.exp(-7 * dt)
+      kick.x *= decay
+      kick.z *= decay
       const d2 = Math.hypot(o.x - mine.x, o.z - mine.z)
       if (d2 < T.minSep && d2 > 1e-4) {
         const push = T.minSep - d2
         mine.x = Math.max(-T.ring, Math.min(T.ring, mine.x - ((o.x - mine.x) / d2) * push))
         mine.z = Math.max(-T.ring, Math.min(T.ring, mine.z - ((o.z - mine.z) / d2) * push))
       }
-      hist.push({ t: tNow, x: mine.x, z: mine.z })
-      while (hist.length && hist[0].t < tNow - 2) hist.shift()
-      // o joystick vai para a sala: logo que muda e, andando, repetido (a sala expira a intenção)
+      // onde estou vai para a sala (e o joystick, para quem não manda posição)
       sendAt -= dt
       const changed = Math.hypot(joy.x - sentJoy.x, joy.z - sentJoy.z) > 0.15
-      const moving = Math.hypot(joy.x, joy.z) > 0
-      if ((changed && sendAt <= SEND_EVERY * 2) || (moving && sendAt <= 0)) {
-        net.sendInput({ m: [Math.round(joy.x * 100) / 100, Math.round(joy.z * 100) / 100] })
+      const moved = Math.hypot(mine.x - sentPos.x, mine.z - sentPos.z) > 0.01
+      if (sendAt <= 0 && (moved || changed || Math.hypot(joy.x, joy.z) > 0)) {
+        const r = (v: number) => Math.round(v * 1000) / 1000
+        net.sendInput({ p: [r(mine.x), r(mine.z)], m: [r(joy.x), r(joy.z)] })
         sentJoy = { x: joy.x, z: joy.z }
-        sendAt = SEND_EVERY * 3
+        sentPos = { x: mine.x, z: mine.z }
+        sendAt = SEND_EVERY
       }
     } else {
       const s = fighterIn(me, tNow)
@@ -658,8 +762,11 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
       [me, prev],
       [op, prevO],
     ] as const) {
-      const sp = Math.hypot(drawn[i].x - p.x, drawn[i].z - p.z) / Math.max(dt, 1e-3)
-      drawn[i].speed += (sp - drawn[i].speed) * Math.min(1, dt * 8)
+      const k = Math.min(1, dt * 8)
+      const inv = 1 / Math.max(dt, 1e-3)
+      drawn[i].vx += ((drawn[i].x - p.x) * inv - drawn[i].vx) * k
+      drawn[i].vz += ((drawn[i].z - p.z) * inv - drawn[i].vz) * k
+      drawn[i].speed = Math.hypot(drawn[i].vx, drawn[i].vz)
     }
     runPlans()
     for (let i = 0; i < 2; i++) {
@@ -673,6 +780,11 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
       else if (ph === PH.BREAK) base = drawn[i].speed > 0.25 ? "Walk" : "Idle"
       else if (ph === PH.END) base = a.act === ACT.WIN && tNow >= a.t0 ? "BWin" : a.act === ACT.LOSE && tNow >= a.t0 ? "InjuredIdle" : "BGuard"
       fighters[i].setBoxe(base)
+      // passada da direção (frente/trás/lados no referencial dele)
+      const sf = Math.sin(drawn[i].face)
+      const cf = Math.cos(drawn[i].face)
+      if (base === "BGuard") fighters[i].setBoxeMove(drawn[i].vx * sf + drawn[i].vz * cf, drawn[i].vx * cf - drawn[i].vz * sf)
+      else fighters[i].setBoxeMove(0, 0)
       fighters[i].animate(dt, ph === PH.BREAK && drawn[i].speed > 0.25 ? 1 : 0, ph === PH.BREAK ? Math.min(2.2, drawn[i].speed) : drawn[i].speed)
     }
 
@@ -801,7 +913,7 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
 
   // conferência (harness)
   const w = window as unknown as Record<string, unknown>
-  w.__boxe = () => ({ t: now(), ph: phaseNow(), drawn, mine: { ...mine }, local, canAct: canAct(), ready: readyFired, plans: plans.map((p) => p.length) })
+  w.__boxe = () => ({ t: now(), ph: phaseNow(), drawn, mine: { ...mine }, local, canAct: canAct(), ready: readyFired, plans: plans.map((p) => p.length), flinch: (who: number, from: number, amp: number) => flinch(who, from, amp), head: (i: number) => fighters[i].bonePosition("mixamorig:Head") })
   w.__boxeScene = scene
 
   return {
@@ -825,12 +937,14 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
         const i = (list as unknown[]).indexOf(f)
         if (i >= 0) list.splice(i, 1)
       }
-      if (Math.hypot(sentJoy.x, sentJoy.z) > 0) net.sendInput({ m: [0, 0] })
+      if (Math.hypot(sentJoy.x, sentJoy.z) > 0) net.sendInput({ m: [0, 0], p: [mine.x, mine.z] })
       window.removeEventListener("keydown", kd)
       window.removeEventListener("keyup", ku)
       window.removeEventListener("blur", blur)
       canvas.removeEventListener("pointerdown", click)
       ro.disconnect()
+      scene.onAfterAnimationsObservable.remove(afterAnim)
+      layer.remove()
       delete w.__boxe
       delete w.__boxeScene
       engine.onContextLostObservable.remove(lost)

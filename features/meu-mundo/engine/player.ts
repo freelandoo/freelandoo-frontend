@@ -175,6 +175,11 @@ export class Character {
     this.rig?.boxeClear()
   }
 
+  /** Andando na guarda (mm3d-45): m/s no referencial do corpo (frente, direita). */
+  setBoxeMove(fwd: number, side: number) {
+    if (this.rig) this.rig.boxeMove = { fwd, side }
+  }
+
   /** Locomoção armada do Paint (m/s no referencial do corpo); null = normal. */
   setPaintMove(fwd: number, side: number, firing: boolean) {
     if (this.rig) this.rig.paint = { fwd, side, firing }

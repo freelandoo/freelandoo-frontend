@@ -8871,7 +8871,8 @@
     "boxeRise": "Get up",
     "boxeRiseTap": "Keep tapping GET UP!",
     "boxeRiseKey": "Keep pressing J or space to get up!",
-    "boxeHuman": "player"
+    "boxeHuman": "player",
+    "boxeKeys2": "D/→ step in · A/← step back · W/S sideways · J, space or click: attack · K or Shift: dodge"
   },
   "Sports": {
     "eyebrow": "Sports",
