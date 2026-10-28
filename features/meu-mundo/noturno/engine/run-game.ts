@@ -34,7 +34,7 @@ import type { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline"
 import "@babylonjs/core/PostProcesses/RenderPipeline/postProcessRenderPipelineManagerSceneComponent"
 import { liveGamesBump } from "../../engine/game"
-import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
+import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
 import { AvatarLibrary } from "../../engine/avatars"
 import { Character } from "../../engine/player"
 import { CarFleet, type CarPose } from "../../engine/cars"
@@ -161,7 +161,13 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
   let disposed = false
   const quality = resolveQuality()
   const low = quality.tier === "low"
-  const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
+  const touch = window.matchMedia?.("(pointer: coarse)").matches ?? false
+  // Celular (mm3d-42b): o perfil "média" desenhava a 1,25× numa tela de densidade 3 — ~1/8 dos
+  // pixels esticados (borrado). Aqui o teto sobe para 2× (1,5× no fraco) e o piso fica na
+  // densidade da página, pagos com 30 quadros por segundo (a rua não precisa de 60) e sem pós.
+  const capMs = frameCapMs()
+  const profile = touch ? { ...quality, maxRatio: Math.max(quality.maxRatio, low ? 1.5 : 2), minRatio: Math.max(quality.minRatio, 1) } : quality
+  const governor = new ResolutionGovernor(engine, profile, Math.min(window.devicePixelRatio || 1, touch ? 2 : (opts.maxPixelRatio ?? 1.5)))
 
   const scene = new Scene(engine)
   scene.clearColor = NIGHT_FOG.clone()
@@ -175,11 +181,12 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
   const hemi = new HemisphericLight("noturno-hemi", new Vector3(0.1, 1, -0.3), scene)
-  hemi.intensity = 0.55
+  // celular: tela mais escura que monitor e sem o brilho do pós — um pouco mais de luz
+  hemi.intensity = touch ? 0.75 : 0.55
   hemi.diffuse = new Color3(0.72, 0.76, 1)
   hemi.groundColor = new Color3(0.24, 0.2, 0.3)
   const moon = new DirectionalLight("noturno-moonlight", new Vector3(0.4, -1, 0.6), scene)
-  moon.intensity = 0.45
+  moon.intensity = touch ? 0.6 : 0.45
   moon.diffuse = new Color3(0.75, 0.82, 1)
 
   const street = buildStreet(scene, low)
@@ -217,7 +224,7 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
 
   // brilho no neon, vinheta e aberração no poder (o celular fraco fica sem pós)
   let fx: DefaultRenderingPipeline | null = null
-  if (!low) {
+  if (!low && !touch) {
     try {
       fx = new DefaultRenderingPipeline("noturno-fx", true, scene, [cam])
       fx.samples = quality.tier === "high" ? 4 : 1
@@ -552,8 +559,8 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
     ...fleet.meshesOf(key),
   ]
 
-  const frame = () => {
-    const raw = engine.getDeltaTime() / 1000
+  const frame = (ms: number) => {
+    const raw = ms / 1000
     const dt = Math.min(0.1, raw)
     const hidden = typeof document !== "undefined" && document.hidden
     // em grupo a aba escondida não pausa (o rolê dos outros segue); escondida por muito tempo = saiu
@@ -656,8 +663,16 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
     camY += (wantY - camY) * Math.min(1, dt * (wantY < camY ? 7 : 4))
     if (shake > 0) shake = Math.max(0, shake - dt)
     const jit = shake * 0.35
-    cam.position.set(camX + (Math.random() - 0.5) * jit, camY + (Math.random() - 0.5) * jit, z - 6.4 - Math.min(1, v / 30) * 0.8 - (phase === "end" ? fall * 1.6 : 0))
-    camTarget.set(camX * 0.85, y + 1.05, z + 10)
+    // tela em pé (mm3d-42b): o enquadramento era o da tela deitada e metade de baixo virava asfalto
+    // escuro — a câmera sobe e recua um pouco, olhando a rua acesa mais à frente
+    const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
+    const tall = Math.min(1, Math.max(0, (1 - aspect) / 0.55))
+    cam.position.set(
+      camX + (Math.random() - 0.5) * jit,
+      camY + tall * 0.9 + (Math.random() - 0.5) * jit,
+      z - 6.4 - tall * 0.6 - Math.min(1, v / 30) * 0.8 - (phase === "end" ? fall * 1.6 : 0),
+    )
+    camTarget.set(camX * 0.85, y + 1.05 + tall * 0.55, z + 10)
     cam.setTarget(camTarget)
     // o empurrão do poder abre mais a lente
     const wantFov = 0.9 + Math.min(1, v / 30) * 0.22 + Math.min(1, Math.max(0, v - 30) / 70) * 0.16 + (run.boost - 1) * 0.3
@@ -707,7 +722,7 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       hudAt = 0.1
       pushHud()
     }
-    governor.tick(engine.getDeltaTime())
+    governor.tick(ms)
   }
 
   void props.ready.then(() => {
@@ -718,9 +733,15 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
   })
 
   const lost = engine.onContextLostObservable.add(() => opts.onError?.("context-lost"))
+  let lastFrame = performance.now()
   engine.runRenderLoop(() => {
     if (disposed) return
-    frame()
+    const now = performance.now()
+    // celular a 30 (folga de 3 ms: tela de 60 Hz entrega 16,7 ms; dois toques = 33,3 ms)
+    if (capMs && now - lastFrame < capMs - 3) return
+    const ms = now - lastFrame
+    lastFrame = now
+    frame(ms)
     scene.render()
   })
   const ro = new ResizeObserver(() => {

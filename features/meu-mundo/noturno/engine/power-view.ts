@@ -453,8 +453,10 @@ export function buildPower(scene: Scene, low: boolean): PowerView {
 
   return {
     sync(run, clock, dt) {
-      // as partículas andam em 1/60 × a razão do quadro (o Babylon já escala pelo tempo real
-      // nesta cena, que não usa passo constante): nada a ajustar por quadro
+      // o Babylon anda a partícula updateSpeed × razão do quadro do MOTOR; com o teto de 30 no
+      // celular o motor mede 16,7 ms e desenha um sim, um não — o passo real vai na conta
+      const ratio = Math.max(0.05, scene.getAnimationRatio())
+      for (const ps of [glitter, fire, smoke, ...sparks]) ps.updateSpeed = Math.min(0.1, dt) / ratio
       let i = 0
       for (const p of run.powers) {
         if (p.taken || p.z < run.z - 4 || p.z > run.z + 380) continue
