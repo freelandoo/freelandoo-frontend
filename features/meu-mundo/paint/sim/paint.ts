@@ -5,20 +5,27 @@
 // resultado. O aparelho manda a origem e a direção; a sala confere que a
 // origem está perto de onde ela sabe que o jogador está.
 //
-//  - TURQUESA (ponte): bateu no TOPO de algo ao alcance → poça-plataforma ali.
+// mm3d-46: as cores mudaram (ponte LARANJA, dano PRETO, cama elástica
+// VERMELHA) e entrou o MURO (turquesa).
+//
+//  - LARANJA (ponte): bateu no TOPO de algo ao alcance → poça-plataforma ali.
 //    Senão (mirando o vão, ou o lado de uma ilha) → a ponte CRESCE: acha a
 //    borda do chão na direção da mira, na altura do PÉ de quem atira (no ar,
 //    a ponte nasce onde ele está — pular serve para isso, mm3d-35f), e põe
 //    um disco logo depois dela. Segurando o botão, disco atrás de disco.
-//  - AMARELO (cama elástica, mm3d-35e): no ar → embaixo do pé (cai nela e é
+//  - VERMELHO (cama elástica, mm3d-35e): no ar → embaixo do pé (cai nela e é
 //    lançado). No chão →
 //    onde a mira bate (perto), ou logo à frente.
-//  - VERMELHO ESCURO (dano): acerta o jogador do OUTRO time, o chefão, ou
-//    apaga tinta do outro time; no chão vira só respingo.
+//  - PRETO (dano): acerta o jogador do OUTRO time, o chefão, ou apaga tinta
+//    do outro time (o muro aguenta alguns tiros — quem conta é a partida);
+//    no chão vira só respingo.
+//  - TURQUESA (muro): placa em pé atravessada na mira, no chão onde a mira
+//    bate (perto) ou logo à frente; mirando o topo de um muro, empilha. Barra
+//    o corpo e o tiro (é sólido como a ilha).
 
 import { PAINT, TUNING, type PaintColor } from "./tuning"
 import { raycast, rayBody, supportAt } from "./collide"
-import type { Solid, SolidCyl, Vec3 } from "./map"
+import type { Solid, SolidCyl, SolidWall, Vec3 } from "./map"
 
 export interface Shooter {
   slot: number
@@ -46,7 +53,7 @@ export interface ShotWorld {
   boss: { x: number; y: number; z: number; r: number; h: number } | null
 }
 
-/** Mancha nova (sem id: quem guarda dá). */
+/** Mancha nova (sem id: quem guarda dá). No muro `r` é meio comprimento e `a` para onde olha. */
 export interface NewBlob {
   c: PaintColor
   x: number
@@ -54,6 +61,7 @@ export interface NewBlob {
   y0: number
   y1: number
   r: number
+  a?: number
 }
 
 export type ShotResult =
@@ -75,6 +83,10 @@ function blobOf(c: PaintColor, x: number, z: number, y0: number): NewBlob {
   const r = c === PAINT.STEP ? TUNING.stepR : TUNING.bridgeR
   const h = c === PAINT.STEP ? TUNING.stepH : TUNING.bridgeH
   return { c, x: r3(x), z: r3(z), y0: r3(y0), y1: r3(y0 + h), r }
+}
+
+function wallOf(x: number, z: number, y0: number, a: number): NewBlob {
+  return { c: PAINT.WALL, x: r3(x), z: r3(z), y0: r3(y0), y1: r3(y0 + TUNING.wallH), r: TUNING.wallLen / 2, a: r3(a) }
 }
 
 function unit(d: Vec3): Vec3 {
@@ -111,9 +123,34 @@ export function resolveShot(world: ShotWorld, s: Shooter, c: PaintColor, o: Vec3
     }
     if (best) return best
     if (!wall) return { kind: "miss" }
-    const hit = world.solids[wall.index] as SolidCyl
+    const hit = world.solids[wall.index] as SolidCyl | SolidWall
     if (hit.b !== undefined && hit.team !== s.team) return { kind: "erase", blob: hit.b, point: wall.point }
     return { kind: "splat", point: wall.point, normal: wall.normal }
+  }
+
+  if (c === PAINT.WALL) {
+    // de frente para quem atira (atravessado na mira)
+    let hx = d.x
+    let hz = d.z
+    const hl = Math.hypot(hx, hz)
+    if (hl < 0.2) {
+      hx = Math.sin(s.facing)
+      hz = Math.cos(s.facing)
+    } else {
+      hx /= hl
+      hz /= hl
+    }
+    const a = Math.atan2(hx, hz)
+    const hit = raycast(world.solids, o, d, T.range[PAINT.WALL])
+    if (hit && hit.normal.y > 0.5) {
+      const far = Math.hypot(hit.point.x - s.x, hit.point.z - s.z)
+      if (far <= T.wallReach && far > T.bodyR + T.wallT) return { kind: "blob", blob: wallOf(hit.point.x, hit.point.z, hit.point.y, a) }
+    }
+    // logo à frente: no chão de lá, ou na altura do pé (em cima do vão também)
+    const fx = s.x + hx * 2.2
+    const fz = s.z + hz * 2.2
+    const floor = supportAt(world.solids, fx, fz, s.y + 0.3, 0.05)
+    return { kind: "blob", blob: wallOf(fx, fz, floor > s.y - 2 ? floor : s.y, a) }
   }
 
   if (c === PAINT.STEP) {
@@ -164,8 +201,9 @@ export function resolveShot(world: ShotWorld, s: Shooter, c: PaintColor, o: Vec3
   return { kind: "miss" }
 }
 
-/** Tiro conta como mancha nova em `solids` (cilindro com id, cor e time). */
-export function blobSolid(b: NewBlob, id: number, team: number): SolidCyl {
+/** Tiro conta como mancha nova em `solids` (cilindro, ou muro girado, com id, cor e time). */
+export function blobSolid(b: NewBlob, id: number, team: number): SolidCyl | SolidWall {
+  if (b.c === PAINT.WALL) return { k: 2, x: b.x, z: b.z, y0: b.y0, y1: b.y1, hx: b.r, hz: TUNING.wallT / 2, a: b.a ?? 0, b: id, c: b.c, team }
   return { k: 0, x: b.x, z: b.z, y0: b.y0, y1: b.y1, r: b.r, b: id, c: b.c, team }
 }
 

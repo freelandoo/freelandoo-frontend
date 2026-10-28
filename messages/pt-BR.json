@@ -7864,7 +7864,7 @@
     "paintGo": "VAI!",
     "paintHowBridge": "Segure mirando o vão: a ponte cresce.",
     "paintHowGoal": "20 gatinhos do seu time abrem o portal no topo. Na ilha do chefão, vence quem der mais dano.",
-    "paintHowHarm": "Tira coração do outro time e apaga a tinta dele.",
+    "paintHowHarm": "Tira sangue do outro time e apaga a tinta dele.",
     "paintHowStep": "Atire no chão (ou no pé, pulando): pise nela e seja lançado para cima.",
     "paintJoinFail": "A sala não abriu agora. Tente de novo ou treine sozinho.",
     "paintJoining": "Procurando sala…",
@@ -7887,7 +7887,7 @@
     "paintSoloBossDown": "Chefão derrotado!",
     "paintSoloTime": "Tempo esgotado",
     "paintSoon": "Em breve",
-    "paintToastBoss": "Ilha do chefão: dano com vermelho e soco!",
+    "paintToastBoss": "Ilha do chefão: dano com o preto e soco!",
     "paintToastCapsule": "+{n} {cor}",
     "paintToastCat": "Gatinho! {n}/{k}",
     "paintToastEmpty": "Sem tinta de {cor} — pegue uma cápsula",
@@ -8286,7 +8286,10 @@
     "boxeRiseTap": "Toque em LEVANTAR sem parar!",
     "boxeRiseKey": "Aperte J ou espaço sem parar para levantar!",
     "boxeHuman": "jogador",
-    "boxeKeys2": "D/→ avança · A/← recua · W/S de lado · J, espaço ou clique: atacar · K ou Shift: esquivar"
+    "boxeKeys2": "D/→ avança · A/← recua · W/S de lado · J, espaço ou clique: atacar · K ou Shift: esquivar",
+    "paintColorWall": "Muro",
+    "paintHowWall": "Levanta um muro onde a mira bate: barra quem passa e o tiro preto. Pegue o ícone da Freelandoo: +10.",
+    "paintToastEmptyWall": "Sem muro — pegue o ícone da Freelandoo"
   },
   "Sports": {
     "eyebrow": "Esportes",

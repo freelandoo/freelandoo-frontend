@@ -3,7 +3,7 @@
 // Pedido do Alex (2026-10-26): ao entrar no jogo o CURSOR VIRA A MIRA — a
 // setinha some e a mira do jogo anda com o mouse; mexeu o mouse, a mira mexe
 // (e o personagem vira para ela), mesmo sem atirar. Botão esquerdo atira, E
-// troca a cor (1/2/3 e rodinha também), W/A/S/D anda, Shift corre, Espaço pula
+// troca a cor (1/2/3/4 e rodinha também; 4 = muro, mm3d-46), W/A/S/D anda, Shift corre, Espaço pula
 // (dois pulos), F soco. Botão direito arrastando, ou a mira perto da borda,
 // gira a câmera.
 // Celular: o joystick anda; arrastar o dedo gira a mira; tocar e segurar sem
@@ -96,7 +96,7 @@ export function paintWantsRun(s: PaintInput) {
 }
 
 export function nextColor(c: PaintColor): PaintColor {
-  return ((c + 1) % 3) as PaintColor
+  return ((c + 1) % 4) as PaintColor
 }
 
 const KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "ShiftLeft", "ShiftRight"])
@@ -168,7 +168,7 @@ export function attachPaintInput(canvas: HTMLCanvasElement, s: PaintInput, retic
         e.preventDefault()
       } else if (e.code === "KeyE" && !e.repeat) {
         s.color = nextColor(s.color)
-      } else if (e.code === "Digit1" || e.code === "Digit2" || e.code === "Digit3") {
+      } else if (e.code === "Digit1" || e.code === "Digit2" || e.code === "Digit3" || e.code === "Digit4") {
         s.color = (Number(e.code.slice(5)) - 1) as PaintColor
       } else if ((e.code === "KeyF" || e.code === "KeyQ") && !e.repeat) {
         s.punchQueued = true
@@ -322,7 +322,7 @@ export function attachPaintInput(canvas: HTMLCanvasElement, s: PaintInput, retic
     (e) => {
       e.preventDefault()
       if (s.blocked || !e.deltaY) return
-      s.color = (((s.color + (e.deltaY > 0 ? 1 : 2)) % 3) as PaintColor)
+      s.color = (((s.color + (e.deltaY > 0 ? 1 : 3)) % 4) as PaintColor)
     },
     { signal: ac.signal, passive: false },
   )

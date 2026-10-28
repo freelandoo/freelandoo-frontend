@@ -5,23 +5,34 @@
 // sumir. Uma malha base por cor com instâncias finas: centenas de manchas em
 // 3 chamadas de desenho. Mais: respingo no chão (vermelho), gotas que voam no
 // impacto e o rastro do tiro (bolinha da boca da arma até o alvo).
+//
+// mm3d-46: o MURO é uma placa de energia turquesa (caixa com grade de
+// hexágonos acesa, instâncias finas como as manchas) que sobe do chão ao
+// nascer. O dano virou preto: o respingo do tiro é preto e o sangue tem
+// respingo e gotas próprios, vermelhos.
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { CreateLathe } from "@babylonjs/core/Meshes/Builders/latheBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
+import { CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import "@babylonjs/core/Meshes/thinInstanceMesh"
-import { PAINT_COLORS, type PaintColor } from "../sim/tuning"
+import { PAINT, PAINT_COLORS, TUNING, type PaintColor } from "../sim/tuning"
 import type { Vec3 } from "../sim/map"
 import type { NewBlob } from "../sim/paint"
 
 const GROW = 0.22
 const SHRINK = 0.35
+/** Muro sobe do chão mais devagar que a mancha cresce. */
+const WALL_GROW = 0.32
+/** Cor das gotas/respingo de sangue (o índice depois das tintas). */
+const BLOOD = 4
+const BLOOD_HEX = "#B3121F"
 
 function hex(h: string) {
   return Color3.FromHexString(h)
@@ -43,47 +54,62 @@ export class PaintView {
   private readonly bases: Mesh[] = []
   private readonly mats: StandardMaterial[] = []
   /** Por cor: lista densa de manchas (índice = instância). */
-  private readonly lists: Live[][] = [[], [], []]
+  private readonly lists: Live[][] = [[], [], [], []]
   private readonly byId = new Map<number, { c: PaintColor; live: Live }>()
   private readonly animating = new Set<Live>()
-  private readonly splatBase: Mesh
-  private readonly splatMat: StandardMaterial
+  /** Respingo: 0 = tinta preta, 1 = sangue. */
+  private readonly splatBases: Mesh[] = []
+  private readonly splatMats: StandardMaterial[] = []
   private readonly splatTex: DynamicTexture
-  private readonly splats: { born: number; m: Matrix }[] = []
+  private readonly wallTex: DynamicTexture
+  private readonly splats: { born: number; m: Matrix }[][] = [[], []]
   private readonly dropBase: Mesh
   private readonly dropMats: StandardMaterial[] = []
-  private readonly drops: { p: Vector3; v: Vector3; life: number; c: PaintColor; s: number }[] = []
+  private readonly drops: { p: Vector3; v: Vector3; life: number; c: number; s: number }[] = []
   private readonly dropMeshes: Mesh[] = []
   private readonly bolts: { from: Vector3; to: Vector3; t: number; c: PaintColor }[] = []
   private readonly boltMeshes: Mesh[] = []
   private clock = 0
-  private dirty = [false, false, false]
-  private splatDirty = false
+  private dirty = [false, false, false, false]
+  private splatDirty = [false, false]
 
   constructor(scene: Scene, lowEnd: boolean) {
-    for (let c = 0; c < 3; c++) {
+    this.wallTex = wallTexture(scene)
+    for (let c = 0; c < 4; c++) {
       const mat = new StandardMaterial(`paint-blob-${c}`, scene)
       const col = hex(PAINT_COLORS[c])
-      mat.diffuseColor = col
-      mat.diffuseColor = col.scale(0.66)
-      mat.emissiveColor = col.scale(0.1)
-      mat.specularColor = new Color3(0.9, 0.9, 0.9)
-      mat.specularPower = 36
+      if (c === PAINT.WALL) {
+        // placa de energia: grade acesa por cima de um vidro escuro
+        mat.diffuseColor = col.scale(0.35)
+        // o emissivo SOMA à textura: preto, senão o muro estoura em branco
+        mat.emissiveTexture = this.wallTex
+        mat.emissiveColor = new Color3(0, 0, 0)
+        mat.specularColor = new Color3(0.6, 0.8, 0.8)
+        mat.specularPower = 64
+      } else if (c === PAINT.HARM) {
+        // preto envernizado: o brilho é o que mostra a forma
+        mat.diffuseColor = col
+        mat.emissiveColor = new Color3(0.03, 0.025, 0.035)
+        mat.specularColor = new Color3(1, 1, 1)
+        mat.specularPower = 48
+      } else {
+        mat.diffuseColor = col.scale(0.66)
+        mat.emissiveColor = col.scale(0.1)
+        mat.specularColor = new Color3(0.9, 0.9, 0.9)
+        mat.specularPower = 36
+      }
       this.mats.push(mat)
-      const base = puck(`paint-blob-base-${c}`, scene, lowEnd ? 18 : 28)
+      const base = c === PAINT.WALL ? CreateBox(`paint-blob-base-${c}`, { size: 1 }, scene) : puck(`paint-blob-base-${c}`, scene, lowEnd ? 18 : 28)
       base.material = mat
       base.isPickable = false
       // Sem instância o Babylon desenharia a própria malha-base: desligada até a 1ª mancha.
       base.setEnabled(false)
       base.alwaysSelectAsActiveMesh = true
       this.bases.push(base)
-      const dm = new StandardMaterial(`paint-drop-${c}`, scene)
-      dm.diffuseColor = col
-      dm.emissiveColor = col.scale(0.5)
-      dm.specularColor = new Color3(0.6, 0.6, 0.6)
-      this.dropMats.push(dm)
+      this.dropMats.push(dropMat(`paint-drop-${c}`, scene, col))
     }
-    // Respingo: disco com textura de mancha (vermelho escuro).
+    this.dropMats.push(dropMat("paint-drop-blood", scene, hex(BLOOD_HEX)))
+    // Respingo: disco com textura de mancha (tinta preta e sangue).
     this.splatTex = new DynamicTexture("paint-splat", { width: 128, height: 128 }, scene, true)
     {
       const ctx = this.splatTex.getContext() as unknown as CanvasRenderingContext2D
@@ -104,19 +130,23 @@ export class PaintView {
       this.splatTex.hasAlpha = true
       this.splatTex.update(false)
     }
-    this.splatMat = new StandardMaterial("paint-splat", scene)
-    this.splatMat.diffuseTexture = this.splatTex
-    this.splatMat.opacityTexture = this.splatTex
-    this.splatMat.diffuseColor = hex(PAINT_COLORS[1])
-    this.splatMat.emissiveColor = hex(PAINT_COLORS[1]).scale(0.35)
-    this.splatMat.specularColor = new Color3(0.4, 0.4, 0.4)
-    this.splatMat.zOffset = -2
-    this.splatMat.backFaceCulling = false
-    this.splatBase = CreateDisc("paint-splat", { radius: 0.75, tessellation: 12 }, scene)
-    this.splatBase.material = this.splatMat
-    this.splatBase.isPickable = false
-    this.splatBase.setEnabled(false)
-    this.splatBase.alwaysSelectAsActiveMesh = true
+    for (const [k, hx] of [PAINT_COLORS[PAINT.HARM], BLOOD_HEX].entries()) {
+      const mat = new StandardMaterial(`paint-splat-${k}`, scene)
+      mat.diffuseTexture = this.splatTex
+      mat.opacityTexture = this.splatTex
+      mat.diffuseColor = hex(hx)
+      mat.emissiveColor = hex(hx).scale(0.35)
+      mat.specularColor = new Color3(0.4, 0.4, 0.4)
+      mat.zOffset = -2
+      mat.backFaceCulling = false
+      const base = CreateDisc(`paint-splat-${k}`, { radius: 0.75, tessellation: 12 }, scene)
+      base.material = mat
+      base.isPickable = false
+      base.setEnabled(false)
+      base.alwaysSelectAsActiveMesh = true
+      this.splatMats.push(mat)
+      this.splatBases.push(base)
+    }
 
     this.dropBase = CreateSphere("paint-drop", { diameter: 1, segments: 4 }, scene)
     this.dropBase.setEnabled(false)
@@ -196,6 +226,18 @@ export class PaintView {
   private matrixOf(l: Live, out: Float32Array, o: number) {
     const b = l.blob
     const h = b.y1 - b.y0
+    if (b.c === PAINT.WALL) {
+      // sobe do chão (passa um pouco e assenta) e desce ao sumir
+      const t = Math.min(1, (this.clock - l.born) / WALL_GROW)
+      let k = t < 1 ? 1 - (1 - t) ** 3 + Math.sin(t * Math.PI) * 0.08 : 1
+      if (l.dying) k *= Math.max(0, 1 - (this.clock - l.dying) / SHRINK)
+      const hk = Math.max(0.02, h * k)
+      Quaternion.RotationYawPitchRollToRef(b.a ?? 0, 0, 0, TMPQ)
+      TMPV.set(b.r * 2, hk, TUNING.wallT)
+      TMPP.set(b.x, b.y0 + hk / 2, b.z)
+      Matrix.ComposeToRef(TMPV, TMPQ, TMPP, TMP).copyToArray(out, o)
+      return
+    }
     let k = Math.min(1, (this.clock - l.born) / GROW)
     k = 1 - (1 - k) * (1 - k) * (1 - k)
     if (l.dying) k *= Math.max(0, 1 - (this.clock - l.dying) / SHRINK)
@@ -219,15 +261,18 @@ export class PaintView {
 
   // ── efeitos ───────────────────────────────────────────────────────────────
 
-  splat(p: Vec3, n: Vec3) {
+  /** Respingo no ponto: tinta preta, ou sangue (`blood`). */
+  splat(p: Vec3, n: Vec3, blood = false) {
+    const kind = blood ? 1 : 0
     const up = new Vector3(n.x, n.y, n.z).normalize()
     const rot = Quaternion.FromUnitVectorsToRef(new Vector3(0, 0, -1), up, new Quaternion())
     const spin = Quaternion.RotationAxis(up, Math.random() * Math.PI * 2)
     const m = Matrix.Compose(Vector3.One().scale(0.8 + Math.random() * 0.6), spin.multiply(rot), new Vector3(p.x + up.x * 0.03, p.y + up.y * 0.03, p.z + up.z * 0.03))
-    this.splats.push({ born: this.clock, m })
-    if (this.splats.length > 64) this.splats.shift()
-    this.splatDirty = true
-    this.burst(p, 1, 5, 2)
+    const list = this.splats[kind]
+    list.push({ born: this.clock, m })
+    if (list.length > 64) list.shift()
+    this.splatDirty[kind] = true
+    this.burst(p, blood ? BLOOD : PAINT.HARM, 5, 2)
   }
 
   /**
@@ -235,12 +280,12 @@ export class PaintView {
    * mancha no chão embaixo dele. `big` = nocaute.
    */
   blood(chest: Vec3, groundY: number, big: boolean) {
-    this.burst(chest, 1, big ? 22 : 12, big ? 4.2 : 3.2)
-    if (Number.isFinite(groundY)) this.splat({ x: chest.x + (Math.random() - 0.5) * 0.4, y: groundY + 0.02, z: chest.z + (Math.random() - 0.5) * 0.4 }, { x: 0, y: 1, z: 0 })
+    this.burst(chest, BLOOD, big ? 22 : 12, big ? 4.2 : 3.2)
+    if (Number.isFinite(groundY)) this.splat({ x: chest.x + (Math.random() - 0.5) * 0.4, y: groundY + 0.02, z: chest.z + (Math.random() - 0.5) * 0.4 }, { x: 0, y: 1, z: 0 }, true)
   }
 
-  /** Gotas que voam de um ponto. */
-  burst(p: Vec3, c: PaintColor, n: number, speed: number) {
+  /** Gotas que voam de um ponto (`c` = cor da tinta, ou BLOOD). */
+  burst(p: Vec3, c: number, n: number, speed: number) {
     for (let i = 0; i < n; i++) {
       if (this.drops.length >= this.dropMeshes.length) this.drops.shift()
       const a = Math.random() * Math.PI * 2
@@ -273,7 +318,7 @@ export class PaintView {
       this.dirty[c] = true
       if (!l.dying && this.clock - l.born > 0.6 && (!l.squashAt || this.clock - l.squashAt > 1)) this.animating.delete(l)
     }
-    for (let c = 0; c < 3; c++) {
+    for (let c = 0; c < 4; c++) {
       if (!this.dirty[c]) continue
       this.dirty[c] = false
       const list = this.lists[c]
@@ -283,16 +328,18 @@ export class PaintView {
       if (list.length) this.bases[c].thinInstanceSetBuffer("matrix", buf, 16, false)
     }
     // respingos somem em 12 s
-    while (this.splats.length && this.clock - this.splats[0].born > 12) {
-      this.splats.shift()
-      this.splatDirty = true
-    }
-    if (this.splatDirty) {
-      this.splatDirty = false
-      const buf = new Float32Array(this.splats.length * 16)
-      this.splats.forEach((s, i) => s.m.copyToArray(buf, i * 16))
-      this.splatBase.setEnabled(this.splats.length > 0)
-      if (this.splats.length) this.splatBase.thinInstanceSetBuffer("matrix", buf, 16, false)
+    for (let k = 0; k < 2; k++) {
+      const list = this.splats[k]
+      while (list.length && this.clock - list[0].born > 12) {
+        list.shift()
+        this.splatDirty[k] = true
+      }
+      if (!this.splatDirty[k]) continue
+      this.splatDirty[k] = false
+      const buf = new Float32Array(list.length * 16)
+      list.forEach((s, i) => s.m.copyToArray(buf, i * 16))
+      this.splatBases[k].setEnabled(list.length > 0)
+      if (list.length) this.splatBases[k].thinInstanceSetBuffer("matrix", buf, 16, false)
     }
     // gotas
     for (let i = this.drops.length - 1; i >= 0; i--) {
@@ -345,13 +392,66 @@ export class PaintView {
     for (const m of this.dropMeshes) m.dispose()
     for (const m of this.boltMeshes) m.dispose()
     this.dropBase.dispose()
-    this.splatBase.dispose()
-    this.splatMat.dispose()
+    for (const b of this.splatBases) b.dispose()
+    for (const m of this.splatMats) m.dispose()
     this.splatTex.dispose()
+    this.wallTex.dispose()
   }
 }
 
 const TMP = new Matrix()
+const TMPQ = new Quaternion()
+const TMPV = new Vector3()
+const TMPP = new Vector3()
+
+function dropMat(name: string, scene: Scene, col: Color3) {
+  const dm = new StandardMaterial(name, scene)
+  dm.diffuseColor = col
+  dm.emissiveColor = col.scale(0.5)
+  dm.specularColor = new Color3(0.6, 0.6, 0.6)
+  return dm
+}
+
+/**
+ * A cara do muro (mm3d-46): grade de hexágonos turquesa acesa, borda forte e
+ * um degradê que escurece para cima — escudo de energia, sem transparência
+ * (as instâncias não precisam de ordenação).
+ */
+function wallTexture(scene: Scene) {
+  const W = 256
+  const H = 256
+  const tex = new DynamicTexture("paint-wall", { width: W, height: H }, scene, true)
+  const g = tex.getContext() as unknown as CanvasRenderingContext2D
+  const grad = g.createLinearGradient(0, H, 0, 0)
+  grad.addColorStop(0, "rgb(18,120,116)")
+  grad.addColorStop(1, "rgb(6,40,44)")
+  g.fillStyle = grad
+  g.fillRect(0, 0, W, H)
+  g.strokeStyle = "rgba(120,255,240,0.75)"
+  g.lineWidth = 2.5
+  const R = 18
+  const dx = R * Math.sqrt(3)
+  for (let row = -1; row * R * 1.5 < H + R; row++) {
+    for (let col = -1; col * dx < W + dx; col++) {
+      const cx = col * dx + (row % 2 ? dx / 2 : 0)
+      const cy = row * R * 1.5
+      g.beginPath()
+      for (let k = 0; k <= 6; k++) {
+        const a = Math.PI / 6 + (k * Math.PI) / 3
+        const x = cx + Math.cos(a) * R
+        const y = cy + Math.sin(a) * R
+        if (k === 0) g.moveTo(x, y)
+        else g.lineTo(x, y)
+      }
+      g.stroke()
+    }
+  }
+  g.strokeStyle = "rgb(170,255,248)"
+  g.lineWidth = 12
+  g.strokeRect(0, 0, W, H)
+  tex.update(false)
+  return tex
+}
 
 /**
  * Disco de bordas arredondadas (raio 1, meia-altura 1): perfil superelíptico

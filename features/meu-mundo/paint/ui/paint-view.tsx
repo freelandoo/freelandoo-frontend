@@ -9,6 +9,8 @@
 //    embaixo à direita. No celular: joystick à esquerda; à direita Pular,
 //    Soco e as três cores em cima (apertar = atirar aquela cor).
 //  - RESULTADO: quem deu mais dano no chefão, gatinhos de cada um.
+// mm3d-46: quatro cores (ponte laranja, dano preto, cama elástica vermelha e
+// o MURO turquesa, cuja munição vem do ícone da Freelandoo).
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowBigUp, Cat, DoorOpen, Droplet, Loader2, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
@@ -20,7 +22,8 @@ import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import { createPaintGame, type PaintGameHandle, type PaintHud, type PaintNotice } from "../engine/paint-game"
 import { LocalPort, type PaintPort } from "../engine/port"
 import { CAT_ASSETS } from "../engine/cat-herd"
-import { PAINT_COLORS, TUNING, type PaintColor, type PaintMode } from "../sim/tuning"
+import { PAINT, PAINT_COLORS, TUNING, type PaintColor, type PaintMode } from "../sim/tuning"
+import { capsuleGive } from "../sim/match"
 
 export type PaintNetStatus = "connecting" | "online" | "reconnecting" | "replaced" | "offline"
 export type PaintJoin = (
@@ -42,8 +45,9 @@ type Stage =
   | { kind: "joining"; mode: Exclude<PaintMode, "solo">; ac: AbortController }
   | { kind: "game"; port: PaintPort; key: number }
 
-const COLOR_KEYS = ["paintColorBridge", "paintColorHarm", "paintColorStep"] as const
-const COLOR_FALLBACK = ["Ponte", "Dano", "Cama elástica"]
+const COLOR_KEYS = ["paintColorBridge", "paintColorHarm", "paintColorStep", "paintColorWall"] as const
+const COLOR_FALLBACK = ["Ponte", "Dano", "Cama elástica", "Muro"]
+const ALL_COLORS: PaintColor[] = [0, 1, 2, 3]
 
 export function PaintView({ body, look = "", onExit, join }: PaintViewProps) {
   const t = useTranslations("MeuMundo")
@@ -155,8 +159,8 @@ function PaintMenu({
           </button>
         </div>
 
-        <ul className="mt-4 grid grid-cols-3 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>
-          {([0, 1, 2] as PaintColor[]).map((c) => (
+        <ul className="mt-4 grid grid-cols-2 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>
+          {ALL_COLORS.map((c) => (
             <li key={c} className="flex items-start gap-2 rounded-[12px] p-2.5" style={{ background: MM.card }}>
               <Bubble c={c} size={22} />
               <span>
@@ -165,8 +169,10 @@ function PaintMenu({
                 {c === 0
                   ? t("paintHowBridge", "Segure mirando o vão: a ponte cresce.")
                   : c === 1
-                    ? t("paintHowHarm", "Tira coração do outro time e apaga a tinta dele.")
-                    : t("paintHowStep", "Atire no chão (ou no pé, pulando): pise nela e seja lançado para cima.")}
+                    ? t("paintHowHarm", "Tira sangue do outro time e apaga a tinta dele.")
+                    : c === 2
+                      ? t("paintHowStep", "Atire no chão (ou no pé, pulando): pise nela e seja lançado para cima.")
+                      : t("paintHowWall", "Levanta um muro onde a mira bate: barra quem passa e o tiro preto. Pegue o ícone da Freelandoo: +10.")}
               </span>
             </li>
           ))}
@@ -239,7 +245,15 @@ function Bubble({ c, size, ring }: { c: PaintColor; size: number; ring?: boolean
         background: `radial-gradient(circle at 34% 30%, rgba(255,255,255,0.95) 0 9%, ${col} 32%, ${col} 62%, rgba(0,0,0,0.28) 100%)`,
         boxShadow: ring ? `0 0 0 3px rgba(255,255,255,0.9), 0 0 0 6px ${col}66, 0 4px 12px rgba(0,0,0,0.25)` : "0 3px 8px rgba(0,0,0,0.22)",
       }}
-    />
+    >
+      {c === PAINT.WALL && (
+        // o muro: um tijolinho de hexágono por cima da bolha
+        <svg viewBox="0 0 24 24" className="absolute inset-[22%]" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="2.4" strokeLinejoin="round">
+          <path d="M12 2.8 20 7.4v9.2L12 21.2 4 16.6V7.4Z" />
+          <path d="M4 12h16M12 7.4v4.6M8 12v4.6M16 12v4.6" />
+        </svg>
+      )}
+    </span>
   )
 }
 
@@ -296,10 +310,15 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
           if (n.mine) say(tt("paintToastCat", "Gatinho! {n}/{k}").replace("{n}", String(port.state.teamCats[n.team])).replace("{k}", String(TUNING.catsToPortal)), "gold")
           break
         case "capsule":
-          say(tt("paintToastCapsule", "+{n} {cor}").replace("{n}", String(TUNING.capsuleGive)).replace("{cor}", tt(COLOR_KEYS[n.c], COLOR_FALLBACK[n.c])))
+          say(tt("paintToastCapsule", "+{n} {cor}").replace("{n}", String(capsuleGive(n.c))).replace("{cor}", tt(COLOR_KEYS[n.c], COLOR_FALLBACK[n.c])), n.c === PAINT.WALL ? "gold" : "ok")
           break
         case "empty":
-          say(tt("paintToastEmpty", "Sem tinta de {cor} — pegue uma cápsula").replace("{cor}", tt(COLOR_KEYS[n.c], COLOR_FALLBACK[n.c])), "bad")
+          say(
+            n.c === PAINT.WALL
+              ? tt("paintToastEmptyWall", "Sem muro — pegue o ícone da Freelandoo")
+              : tt("paintToastEmpty", "Sem tinta de {cor} — pegue uma cápsula").replace("{cor}", tt(COLOR_KEYS[n.c], COLOR_FALLBACK[n.c])),
+            "bad",
+          )
           break
         case "hurt":
           setHurt((h) => h + 1)
@@ -586,7 +605,7 @@ function DesktopColors({ hud, onPick }: { hud: PaintHud; onPick: (c: PaintColor)
   const t = useTranslations("MeuMundo")
   return (
     <div className="absolute flex items-end gap-3" style={{ bottom: SAFE.bottom, right: SAFE.right }}>
-      {([0, 1, 2] as PaintColor[]).map((c) => {
+      {ALL_COLORS.map((c) => {
         const on = hud.color === c
         return (
           <button key={c} type="button" onClick={() => onPick(c)} className="flex flex-col items-center gap-1" aria-label={t(COLOR_KEYS[c], COLOR_FALLBACK[c])}>
@@ -611,7 +630,7 @@ function TouchControls({ gameRef, hud }: { gameRef: React.RefObject<PaintGameHan
     <>
       <Joystick gameRef={gameRef} />
       <div className="absolute flex items-end gap-2.5" style={{ bottom: bottom(118), right: SAFE.right }}>
-        {([0, 1, 2] as PaintColor[]).map((c) => (
+        {ALL_COLORS.map((c) => (
           <button key={c} type="button" className="flex flex-col items-center gap-0.5" style={{ touchAction: "none" }} aria-label={t(COLOR_KEYS[c], COLOR_FALLBACK[c])} aria-pressed={hud.color === c} onPointerDown={() => gameRef.current?.selectColor(c)}>
             <Bubble c={c} size={hud.color === c ? 60 : 50} ring={hud.color === c} />
             <span className="rounded-full px-1.5 text-[11px] font-bold tabular-nums" style={{ background: "rgba(255,255,255,0.75)", color: hud.ammo[c] < TUNING.cost[c] ? "#C8203F" : "#3b3127" }}>

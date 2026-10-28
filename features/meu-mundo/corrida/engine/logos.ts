@@ -58,7 +58,8 @@ export interface LogoView {
   dispose(): void
 }
 
-export function buildLogos(scene: Scene, spots: LogoSpot[], low: boolean): LogoView {
+/** `scale` (mm3d-46): o Paint usa o mesmo logo, menor, como ícone que dá muros. */
+export function buildLogos(scene: Scene, spots: LogoSpot[], low: boolean, scale = 1): LogoView {
   ensureLoaders()
   const logos = new Map<number, Logo>()
   let disposed = false
@@ -103,6 +104,7 @@ export function buildLogos(scene: Scene, spots: LogoSpot[], low: boolean): LogoV
     const halo = haloBase.createInstance(`corrida-logo-halo-${s.id}`)
     halo.position.copyFrom(s.at)
     halo.billboardMode = Mesh.BILLBOARDMODE_ALL
+    halo.scaling.setAll(scale)
     halo.isPickable = false
     logos.set(s.id, { root: null, halo, at: s.at.clone(), on: true })
   }
@@ -161,6 +163,7 @@ export function buildLogos(scene: Scene, spots: LogoSpot[], low: boolean): LogoV
       for (const [id, l] of logos) {
         const inst = src.createInstance(`corrida-logo-${id}`)
         inst.position.copyFrom(l.at)
+        inst.scaling.setAll(scale)
         inst.isPickable = false
         inst.setEnabled(l.on)
         l.root = inst
@@ -191,7 +194,7 @@ export function buildLogos(scene: Scene, spots: LogoSpot[], low: boolean): LogoV
         k++
         if (!l.on || !l.root) continue
         l.root.rotation.y = clock * 1.8 + k
-        l.root.position.y = l.at.y + Math.sin(clock * 2.6 + k) * 0.22
+        l.root.position.y = l.at.y + Math.sin(clock * 2.6 + k) * 0.22 * scale
         l.halo.position.y = l.root.position.y
       }
     },

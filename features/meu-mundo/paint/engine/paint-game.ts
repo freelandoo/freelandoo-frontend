@@ -8,6 +8,10 @@
 // O movimento é deste aparelho (sim/body.ts em passos de 1/60 s, desenho
 // interpolado). Os tiros saem da arma em direção ao ponto que a mira acerta;
 // o que eles viram (tinta, dano, respingo) volta pelos acontecimentos.
+//
+// mm3d-46: quarta cor (muro) e a arma nova, preta com neon rosa — o brilho
+// é uma GlowLayer que só inclui o neon e o núcleo das armas (celular fraco
+// fica sem ela; o neon continua aceso).
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -16,6 +20,7 @@ import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { GlowLayer } from "@babylonjs/core/Layers/glowLayer"
 import { Character } from "../../engine/player"
 import { AvatarLibrary } from "../../engine/avatars"
 import { liveGamesBump } from "../../engine/game"
@@ -47,7 +52,7 @@ export interface PaintHud {
   countdown: number
   timeLeft: number
   hp: number
-  ammo: [number, number, number]
+  ammo: [number, number, number, number]
   color: PaintColor
   firing: PaintColor | null
   myTeam: number
@@ -151,7 +156,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   let camFrom: Solid[] | null = null
   const world = buildPaintWorld(scene, map, lowEnd)
   const paint = new PaintView(scene, lowEnd)
-  const pickups = new PickupsView(scene, map.capsules)
+  const pickups = new PickupsView(scene, map.capsules, lowEnd)
   // Gatinhos leves (mm3d-35g): no mapa e em fila atrás de quem pegou.
   const herd = new CatHerd(scene, map.cats)
   // Chefão (mm3d-38): a sim decide onde está e o que faz; aqui só desenha.
@@ -173,7 +178,14 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   shadowMat.alpha = 0.2
   const mats = { fallback: fallbackMat, shadow: shadowMat }
   const char = new Character(scene, lib, mats, opts.body, null, true, opts.look ?? "")
+  // Brilho do neon das armas (mm3d-46): só o que as armas pedem entra.
+  const glow = lowEnd ? null : new GlowLayer("paint-gun-glow", scene, { mainTextureRatio: 0.5, blurKernelSize: 32 })
+  if (glow) glow.intensity = 0.85
+  const glowGun = (g: PaintGun) => {
+    if (glow) for (const m of g.glowMeshes) glow.addIncludedOnlyMesh(m)
+  }
   const gun = new PaintGun(scene)
+  glowGun(gun)
   // Ao lado do peito, apontando para a frente (a pose de mira com a mão vem com as animações do Paint).
   gun.root.parent = char.holder
   gun.root.position.set(0.3, 1.12, 0.32)
@@ -187,7 +199,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   let aimHold = 0
   let acc = 0
   let shotSeq = 0
-  const nextFire: [number, number, number] = [0, 0, 0]
+  const nextFire: [number, number, number, number] = [0, 0, 0, 0]
   let emptyAt = -10
   let clock = 0
   let lunge = 0
@@ -454,6 +466,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         if (!info) continue
         const c = new Character(scene, lib, mats, info.body, info.name, false, info.look ?? "")
         const g = new PaintGun(scene)
+        glowGun(g)
         g.root.parent = c.holder
         g.root.position.set(0.3, 1.12, 0.32)
         const ring = CreateTorus(`paint-ring-${p.slot}`, { diameter: 1.05, thickness: 0.06, tessellation: 24 }, scene)
@@ -517,7 +530,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     countdown: Math.max(0, -state.time),
     timeLeft: Math.max(0, TUNING.matchTime - Math.max(0, state.time)),
     hp: me.hp,
-    ammo: [me.ammo[0], me.ammo[1], me.ammo[2]],
+    ammo: [me.ammo[0], me.ammo[1], me.ammo[2], me.ammo[3]],
     color: input.color,
     firing: input.firing ? input.color : null,
     myTeam: me.team,
@@ -774,6 +787,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         r.ring.dispose()
       }
       for (const m of ringMats) m.dispose()
+      glow?.dispose()
       aimMark.dispose()
       aimMarkMat.dispose()
       lib.dispose()

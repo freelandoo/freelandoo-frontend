@@ -4,18 +4,24 @@
 // diretório por scripts/build-paint-sim.js no back) usam os mesmos valores.
 // Unidades: metros, segundos, m/s. y para cima; o chão das ilhas é o topo.
 
-/** As três tintas. O índice é o que viaja na rede. */
+/**
+ * As quatro tintas. O índice é o que viaja na rede. mm3d-46 (pedido do Alex):
+ * a ponte virou LARANJA, o dano PRETO, a cama elástica VERMELHA e entrou o
+ * MURO (turquesa, a cor que sobrou) — munição só pelo ícone da Freelandoo.
+ */
 export const PAINT = {
-  /** Turquesa: plataforma (ponte). */
+  /** Laranja: plataforma (ponte). */
   BRIDGE: 0,
-  /** Vermelho escuro: dano; apaga a tinta do outro time. */
+  /** Preto: dano; apaga a tinta do outro time (o muro aguenta `wallHits`). */
   HARM: 1,
-  /** Amarelo: cama elástica (mm3d-35e: quem pisa é lançado para cima). */
+  /** Vermelho: cama elástica (mm3d-35e: quem pisa é lançado para cima). */
   STEP: 2,
+  /** Turquesa: muro em pé, de frente para a mira — barra quem passa e o tiro preto. */
+  WALL: 3,
 } as const
-export type PaintColor = 0 | 1 | 2
+export type PaintColor = 0 | 1 | 2 | 3
 
-export const PAINT_COLORS = ["#1FC8C0", "#9E1B2B", "#F2C230"] as const
+export const PAINT_COLORS = ["#FF7A1A", "#1A161D", "#E5222E", "#1FC8C0"] as const
 
 export const TUNING = {
   /** Passo fixo da física do corpo. */
@@ -48,11 +54,11 @@ export const TUNING = {
   capsuleRespawn: 10,
   capsuleR: 1.1,
   /** Tiros por segundo segurando o botão (índice = cor). */
-  fireRate: [7, 6, 3.5] as readonly number[],
+  fireRate: [7, 6, 3.5, 4] as readonly number[],
   /** Custo em munição de cada tiro (índice = cor). */
-  cost: [1, 1, 2] as readonly number[],
+  cost: [1, 1, 2, 1] as readonly number[],
   /** Alcance (m) do raio de cada cor. */
-  range: [13, 24, 9] as readonly number[],
+  range: [13, 24, 9, 16] as readonly number[],
 
   /** Ponte (turquesa): disco achatado. */
   bridgeR: 1.25,
@@ -64,6 +70,23 @@ export const TUNING = {
   stepH: 0.4,
   /** Velocidade do lançamento: ~4,6 m de altura (+ o pulo no ar; o topo pede 5,2 m). */
   bounceV: 14.2,
+  /**
+   * Muro (mm3d-46): placa em pé atravessada na mira, nasce no chão onde ela
+   * bate (ou logo à frente). Comprimento, espessura e altura (o pulo duplo
+   * não passa por cima; a cama elástica passa). Começa sem munição: o ícone
+   * da Freelandoo dá `wallGive`.
+   */
+  wallLen: 2,
+  wallT: 0.36,
+  wallH: 3.2,
+  wallReach: 14,
+  /** Tiros pretos do outro time até o muro cair. */
+  wallHits: 3,
+  wallStart: 0,
+  wallGive: 10,
+  wallMax: 20,
+  /** O ícone volta depois de (s). */
+  logoRespawn: 18,
   /** Tinta some depois de (s) e cada jogador tem no máximo N manchas. */
   blobLife: 45,
   blobsPerPlayer: 60,
@@ -124,4 +147,8 @@ export function modeTeams(mode: PaintMode) {
 }
 export function modeCapacity(mode: PaintMode) {
   return PAINT_MODES[mode] * modeTeams(mode)
+}
+/** Teto de munição da cor (o muro tem o dele). */
+export function ammoCap(c: PaintColor) {
+  return c === PAINT.WALL ? TUNING.wallMax : TUNING.ammoMax
 }

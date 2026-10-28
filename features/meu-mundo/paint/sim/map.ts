@@ -14,8 +14,15 @@
 //
 // Gatinhos: 18 de cada lado + 12 no meio = 48; o portal pede 20 do time, então
 // quem só ficar no próprio lado não chega lá.
+//
+// mm3d-46 (pedido do Alex): o DOBRO de ilhas com os mesmos gatinhos — galho
+// em toda ilha da espiral, duas ASAS por torre (cadeia baixa no norte e no sul
+// indo até o meio) e mais ilhas no meio. As ilhas novas entram DEPOIS das
+// antigas (ids, enfeites e gatinhos de antes não mudam). Gatinhos por modo:
+// 2×2 tem o dobro e 3×3 o triplo (mais gente pegando). Ícones da Freelandoo
+// (cápsula da cor MURO) nas bases e nas asas.
 
-import { TUNING } from "./tuning"
+import { PAINT_MODES, TUNING, type PaintMode } from "./tuning"
 
 export interface Vec3 {
   x: number
@@ -36,7 +43,7 @@ export interface SolidCyl {
   c?: number
   team?: number
 }
-/** Caixa alinhada aos eixos (caixote, muro). */
+/** Caixa alinhada aos eixos (caixote). */
 export interface SolidBox {
   k: 1
   x: number
@@ -46,9 +53,26 @@ export interface SolidBox {
   hx: number
   hz: number
 }
-export type Solid = SolidCyl | SolidBox
+/**
+ * Caixa girada em y (o MURO, mm3d-46): `hx` ao longo do muro, `hz` a meia
+ * espessura, `a` = para onde a frente olha (como `facing`). Sempre tinta.
+ */
+export interface SolidWall {
+  k: 2
+  x: number
+  z: number
+  y0: number
+  y1: number
+  hx: number
+  hz: number
+  a: number
+  b?: number
+  c?: number
+  team?: number
+}
+export type Solid = SolidCyl | SolidBox | SolidWall
 
-export type IslandKind = "base" | "path" | "branch" | "summit" | "center" | "boss"
+export type IslandKind = "base" | "path" | "branch" | "summit" | "center" | "wing" | "boss"
 export interface Island {
   id: number
   kind: IslandKind
@@ -82,7 +106,8 @@ export interface PaintCat {
 }
 export interface PaintCapsule {
   id: number
-  c: 0 | 1 | 2
+  /** 3 = ícone da Freelandoo (munição do muro). */
+  c: 0 | 1 | 2 | 3
   x: number
   y: number
   z: number
@@ -119,6 +144,24 @@ const SUMMIT_Y = 30
 const CENTER_Y = [7, 14, 21, 28]
 const CENTER_Z = [5, -5, 5, -5]
 const BOSS = { x: 0, y: 60, z: 320, r: 24 } // mm3d-38c: maior para o chefão de 10 m
+/**
+ * Asa (mm3d-46): cadeia baixa do lado norte de cada torre até o meio, em
+ * coordenadas do time 0 (x espelha para o time 1, z espelha para o sul).
+ * A última ilha é do meio (time -1) e só nasce uma vez por lado.
+ */
+const WING: [number, number, number, number][] = [
+  [-41, 33, 2, 3.6],
+  [-32, 38, 3.6, 3.2],
+  [-23, 34, 5.4, 3.6],
+  [-14.5, 39, 3.8, 3],
+  [-7, 33.5, 6.4, 3.4],
+]
+const WING_JOINT: [number, number, number, number] = [0, 39, 8.2, 4.2]
+/** Ilhas novas do meio (mm3d-46): duas baixas e duas médias, norte e sul. */
+const CENTER_EXTRA: [number, number, number][] = [
+  [2.5, 16.5, 4],
+  [12, 22, 3.4],
+]
 
 const round = (v: number) => Math.round(v * 1000) / 1000
 
@@ -131,7 +174,7 @@ function hash01(n: number) {
   return (h >>> 0) / 4294967296
 }
 
-export function buildPaintMap(): PaintMap {
+export function buildPaintMap(mode: PaintMode = "solo"): PaintMap {
   const islands: Island[] = []
   const props: PaintProp[] = []
   const cats: PaintCat[] = []
@@ -152,7 +195,7 @@ export function buildPaintMap(): PaintMap {
     const p = on(isl, ang, f)
     cats.push({ id: catSeq++, ...p, skin: (catSeq % 3 === 0 ? 1 : 0) as 0 | 1, facing: round(hash01(catSeq * 7 + 3) * Math.PI * 2) })
   }
-  const capsule = (isl: Island, c: 0 | 1 | 2, ang: number, f: number) => {
+  const capsule = (isl: Island, c: PaintCapsule["c"], ang: number, f: number) => {
     const p = on(isl, ang, f)
     capsules.push({ id: capSeq++, c, ...p })
   }
@@ -212,6 +255,61 @@ export function buildPaintMap(): PaintMap {
     decorate(isl)
     for (let k = 0; k < 3; k++) cat(isl, (k / 3) * Math.PI * 2 + i, 0.55)
     capsule(isl, (i % 3) as 0 | 1 | 2, i * 1.3 + Math.PI / 3, 0.15)
+  }
+
+  // ── mm3d-46: o dobro de ilhas (depois das antigas: nada de antes muda) ──
+  for (const team of [0, 1]) {
+    const sx = team === 0 ? -1 : 1
+    const cx = COLUMN_X * sx
+    const a0 = team === 0 ? Math.PI / 2 : -Math.PI / 2
+    const turn = team === 0 ? 1 : -1
+    // galho em toda ilha da espiral que ainda não tinha
+    let y = 0
+    for (let i = 0; i < SPIRAL_DY.length; i++) {
+      y += SPIRAL_DY[i]
+      if (BRANCH_AT.includes(i)) continue
+      const ang = a0 + turn * SPIRAL_STEP * (i + 1)
+      const d = SPIRAL_R + SPIRAL_RADII[i] + 6.5
+      const br = island("branch", team, cx + Math.sin(ang) * d, y + 1.4, Math.cos(ang) * d, 2.4)
+      decorate(br)
+    }
+    // asas norte e sul
+    const base = islands[bases[team].island]
+    capsule(base, 3, a0, 0.7)
+    for (const sz of [1, -1]) {
+      WING.forEach(([wx, wz, wy, wr], i) => {
+        const isl = island("wing", team, -wx * sx, wy, wz * sz, wr)
+        decorate(isl)
+        if (i === 2) capsule(isl, 3, 0, 0)
+        else capsule(isl, (i % 3) as 0 | 1 | 2, Math.PI * (0.25 + i * 0.4), 0.45)
+      })
+    }
+  }
+  for (const sz of [1, -1]) {
+    const [jx, jz, jy, jr] = WING_JOINT
+    const joint = island("center", -1, jx, jy, jz * sz, jr)
+    decorate(joint)
+    capsule(joint, 3, 0, 0)
+    for (const [ey, ez, er] of CENTER_EXTRA) {
+      const isl = island("center", -1, 0, ey, ez * sz, er)
+      decorate(isl)
+      capsule(isl, ((ey | 0) % 3) as 0 | 1 | 2, Math.PI / 2, 0.4)
+    }
+  }
+
+  // Gatinhos a mais por modo (mm3d-46): cada rodada põe outros 48 (18 por lado
+  // + 12 no meio, espelhados) espalhados pelas ilhas, inclusive as novas.
+  const rounds = PAINT_MODES[mode]
+  const side = [0, 1].map((team) => islands.filter((i) => i.team === team && i.kind !== "base"))
+  const middle = islands.filter((i) => i.kind === "center")
+  for (let k = 1; k < rounds; k++) {
+    for (let j = 0; j < 18; j++) {
+      const at = (k * 5 + j * 2) % side[0].length
+      const ang = j * 2.39996 + k * 1.1
+      cat(side[0][at], ang, 0.42)
+      cat(side[1][at], -ang, 0.42)
+    }
+    for (let j = 0; j < 12; j++) cat(middle[(k * 3 + j) % middle.length], j * 2.39996 + k * 0.7, 0.45)
   }
 
   // Ilha do chefão (provisório até a etapa do chefão).

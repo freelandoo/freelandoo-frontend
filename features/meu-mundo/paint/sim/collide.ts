@@ -1,15 +1,32 @@
 // features/meu-mundo/paint/sim/collide.ts — PAINT (mm3d-35): perguntas ao mundo.
 //
 // O mundo é uma lista de sólidos verticais (cilindros e caixas alinhadas): as
-// ilhas, os enfeites e a TINTA (ponte e degrau são cilindros). Três perguntas:
+// ilhas, os enfeites e a TINTA (ponte e degrau são cilindros; o MURO, mm3d-46,
+// é uma caixa girada — as perguntas giram o ponto para o lado dele). Três perguntas:
 //  - apoio: qual o chão mais alto sob um ponto, até uma altura;
 //  - empurrão: tirar o corpo de dentro de um sólido de lado;
 //  - raio: onde o tiro bate (ponto, normal, sólido).
 
-import type { Solid, Vec3 } from "./map"
+import type { Solid, SolidWall, Vec3 } from "./map"
 
 /** Raio do "pé": anda até a borda sem cair antes (menor que o corpo). */
 export const FOOT_R = 0.18
+
+/** Ponto do mundo → eixos do muro (x ao longo dele, z para a frente). */
+function wallLocal(s: SolidWall, x: number, z: number) {
+  const dx = x - s.x
+  const dz = z - s.z
+  const c = Math.cos(s.a)
+  const n = Math.sin(s.a)
+  return { lx: dx * c - dz * n, lz: dx * n + dz * c }
+}
+
+/** Eixos do muro → direção no mundo. */
+function wallWorld(s: SolidWall, lx: number, lz: number) {
+  const c = Math.cos(s.a)
+  const n = Math.sin(s.a)
+  return { x: lx * c + lz * n, z: -lx * n + lz * c }
+}
 
 function inside(s: Solid, x: number, z: number, pad: number) {
   if (s.k === 0) {
@@ -17,6 +34,10 @@ function inside(s: Solid, x: number, z: number, pad: number) {
     const dz = z - s.z
     const r = s.r + pad
     return dx * dx + dz * dz <= r * r
+  }
+  if (s.k === 2) {
+    const l = wallLocal(s, x, z)
+    return Math.abs(l.lx) <= s.hx + pad && Math.abs(l.lz) <= s.hz + pad
   }
   return Math.abs(x - s.x) <= s.hx + pad && Math.abs(z - s.z) <= s.hz + pad
 }
@@ -73,6 +94,15 @@ export function pushOut(solids: readonly Solid[], p: { x: number; y: number; z: 
           p.x = s.x + (dx / d) * R
           p.z = s.z + (dz / d) * R
         }
+        hit = true
+      } else if (s.k === 2) {
+        const l = wallLocal(s, p.x, p.z)
+        const ox = s.hx + r - Math.abs(l.lx)
+        const oz = s.hz + r - Math.abs(l.lz)
+        if (ox <= 0 || oz <= 0) continue
+        const w = ox < oz ? wallWorld(s, Math.sign(l.lx || 1) * ox, 0) : wallWorld(s, 0, Math.sign(l.lz || 1) * oz)
+        p.x += w.x
+        p.z += w.z
         hit = true
       } else {
         const ox = s.hx + r - Math.abs(p.x - s.x)
@@ -184,13 +214,25 @@ function rayBox(o: Vec3, d: Vec3, s: { x: number; z: number; y0: number; y1: num
   return { t: t0, n }
 }
 
+/** Raio × muro: gira o raio para os eixos do muro e usa a caixa. */
+function rayWall(o: Vec3, d: Vec3, s: SolidWall, maxT: number): { t: number; n: Vec3 } | null {
+  const lo = wallLocal(s, o.x, o.z)
+  const c = Math.cos(s.a)
+  const n = Math.sin(s.a)
+  const ld = { x: d.x * c - d.z * n, y: d.y, z: d.x * n + d.z * c }
+  const h = rayBox({ x: lo.lx, y: o.y, z: lo.lz }, ld, { x: 0, z: 0, y0: s.y0, y1: s.y1, hx: s.hx, hz: s.hz }, maxT)
+  if (!h) return null
+  const w = wallWorld(s, h.n.x, h.n.z)
+  return { t: h.t, n: { x: w.x, y: h.n.y, z: w.z } }
+}
+
 /** Primeiro sólido que o raio (d unitário) toca até `maxT`. */
 export function raycast(solids: readonly Solid[], o: Vec3, d: Vec3, maxT: number): RayHit | null {
   let best: RayHit | null = null
   let limit = maxT
   for (let i = 0; i < solids.length; i++) {
     const s = solids[i]
-    const h = s.k === 0 ? rayCyl(o, d, s, limit) : rayBox(o, d, s, limit)
+    const h = s.k === 0 ? rayCyl(o, d, s, limit) : s.k === 2 ? rayWall(o, d, s, limit) : rayBox(o, d, s, limit)
     if (!h) continue
     limit = h.t
     best = { t: h.t, point: { x: o.x + d.x * h.t, y: o.y + d.y * h.t, z: o.z + d.z * h.t }, normal: h.n, index: i }

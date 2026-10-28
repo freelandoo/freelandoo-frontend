@@ -15,7 +15,7 @@
 import { Client, type Room } from "@colyseus/sdk"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import type { BodyId, PaintSession } from "../../types"
-import { PaintMatch, type BossAct, type MatchEvent, type PaintPose } from "../sim/match"
+import { PaintMatch, capsuleRespawn, type BossAct, type MatchEvent, type PaintPose } from "../sim/match"
 import { resolveShot, type NewBlob } from "../sim/paint"
 import { PAINT, TUNING, modeCapacity, type PaintColor, type PaintMode } from "../sim/tuning"
 import type { Vec3 } from "../sim/map"
@@ -44,6 +44,8 @@ interface SPlayer {
   a0: number
   a1: number
   a2: number
+  /** Muro (mm3d-46). */
+  a3?: number
   cats: number
   dmg: number
   ko: number
@@ -56,6 +58,8 @@ interface SBlob {
   y0: number
   y1: number
   r: number
+  /** Muro (mm3d-46): para onde olha. */
+  a?: number
   team: number
   owner: number
   q: number
@@ -270,6 +274,7 @@ export class NetPort implements PaintPort {
       mp.ammo[0] = p.a0
       mp.ammo[1] = p.a1
       mp.ammo[2] = p.a2
+      mp.ammo[3] = p.a3 ?? 0
       mp.cats = p.cats
       mp.dmg = p.dmg
       mp.ko = p.ko
@@ -338,7 +343,7 @@ export class NetPort implements PaintPort {
           if (!m.catsTaken.delete(e.id)) continue
           break
         case "capsule":
-          m.capsuleBack.set(e.id, m.time + TUNING.capsuleRespawn)
+          m.capsuleBack.set(e.id, m.time + capsuleRespawn(e.c))
           break
         case "capsuleBack":
           m.capsuleBack.delete(e.id)
@@ -441,7 +446,7 @@ export class NetPort implements PaintPort {
 }
 
 function toBlob(b: SBlob): NewBlob {
-  return { c: b.c as PaintColor, x: b.x, z: b.z, y0: b.y0, y1: b.y1, r: b.r }
+  return { c: b.c as PaintColor, x: b.x, z: b.z, y0: b.y0, y1: b.y1, r: b.r, ...(b.c === PAINT.WALL ? { a: b.a ?? 0 } : {}) }
 }
 
 const r3 = (v: number) => Math.round(v * 1000) / 1000

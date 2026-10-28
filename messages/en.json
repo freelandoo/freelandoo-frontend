@@ -8450,7 +8450,7 @@
     "paintGo": "GO!",
     "paintHowBridge": "Hold aiming at the gap: the bridge grows.",
     "paintHowGoal": "20 kittens for your team open the portal at the top. On the boss island, whoever deals the most damage wins.",
-    "paintHowHarm": "Takes hearts from the other team and erases their paint.",
+    "paintHowHarm": "Drains the other team's health and erases their paint.",
     "paintHowStep": "Shoot the floor (or your feet mid-jump): step on it and get launched up.",
     "paintJoinFail": "The room didn't open right now. Try again or practice alone.",
     "paintJoining": "Finding a room…",
@@ -8473,7 +8473,7 @@
     "paintSoloBossDown": "Boss defeated!",
     "paintSoloTime": "Time's up",
     "paintSoon": "Coming soon",
-    "paintToastBoss": "Boss island: damage with red and punches!",
+    "paintToastBoss": "Boss island: damage with black and punches!",
     "paintToastCapsule": "+{n} {cor}",
     "paintToastCat": "Kitten! {n}/{k}",
     "paintToastEmpty": "Out of {cor} paint — grab a capsule",
@@ -8872,7 +8872,10 @@
     "boxeRiseTap": "Keep tapping GET UP!",
     "boxeRiseKey": "Keep pressing J or space to get up!",
     "boxeHuman": "player",
-    "boxeKeys2": "D/→ step in · A/← step back · W/S sideways · J, space or click: attack · K or Shift: dodge"
+    "boxeKeys2": "D/→ step in · A/← step back · W/S sideways · J, space or click: attack · K or Shift: dodge",
+    "paintColorWall": "Wall",
+    "paintHowWall": "Raises a wall where you aim: it blocks players and black shots. Grab the Freelandoo icon: +10.",
+    "paintToastEmptyWall": "No walls left — grab the Freelandoo icon"
   },
   "Sports": {
     "eyebrow": "Sports",

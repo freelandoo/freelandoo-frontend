@@ -16,8 +16,12 @@
 // acima do que soco + corrida explicam) e devolve "volte para onde estava".
 // Depois de um renascimento a época sobe: pose de época velha é ignorada (é
 // do caminho de antes do teleporte).
+//
+// mm3d-46: quarta cor, o MURO — começa sem munição, o ícone da Freelandoo
+// (cápsula da cor 3) dá 10; o tiro preto do outro time derruba o muro no
+// terceiro acerto. O mapa sai do modo (2×2 e 3×3 com mais gatinhos).
 
-import { PAINT, TUNING, modeTeams, type PaintColor, type PaintMode } from "./tuning"
+import { PAINT, TUNING, ammoCap, modeTeams, type PaintColor, type PaintMode } from "./tuning"
 import { buildPaintMap, fellOut, spawnPoint, type PaintMap, type Solid, type Vec3 } from "./map"
 import { blobSolid, muzzleOf, punchReachesBoss, punchTargets, resolveShot, type NewBlob, type ShotTargetBody } from "./paint"
 
@@ -40,7 +44,7 @@ export interface MatchPlayer {
   /** Vaga dentro do time (lugar na base). */
   sit: number
   hp: number
-  ammo: [number, number, number]
+  ammo: [number, number, number, number]
   cats: number
   /** Quais gatinhos (ids do mapa) estão com esta pessoa — voltam ao mapa se ela cair. */
   catIds: number[]
@@ -53,7 +57,7 @@ export interface MatchPlayer {
   epoch: number
   pose: PaintPose
   /** Próximo tiro permitido por cor (s) e próximo soco. */
-  nextFire: [number, number, number]
+  nextFire: [number, number, number, number]
   nextPunch: number
   /** Manchas desta pessoa, da mais velha para a mais nova (limite por jogador). */
   blobs: number[]
@@ -149,6 +153,8 @@ export class PaintMatch {
   readonly catsTaken = new Map<number, number>()
   /** cápsula → volta em (s); ausente = disponível. */
   readonly capsuleBack = new Map<number, number>()
+  /** muro → tiros pretos que já levou. */
+  readonly wallHits = new Map<number, number>()
   readonly teamCats: [number, number] = [0, 0]
   readonly portalOpen: [boolean, boolean] = [false, false]
   bossHp: number = TUNING.bossHp
@@ -159,7 +165,7 @@ export class PaintMatch {
   private solidsCache: Solid[] | null = null
   private poseAt = new Map<number, number>()
 
-  constructor(mode: PaintMode, seats: { slot: number; team: number; sit: number }[], map: PaintMap = buildPaintMap()) {
+  constructor(mode: PaintMode, seats: { slot: number; team: number; sit: number }[], map: PaintMap = buildPaintMap(mode)) {
     this.map = map
     this.mode = mode
     this.time = -TUNING.countdown
@@ -185,7 +191,7 @@ export class PaintMatch {
         team,
         sit: s.sit,
         hp: TUNING.hpMax,
-        ammo: [TUNING.ammoStart, TUNING.ammoStart, TUNING.ammoStart],
+        ammo: [TUNING.ammoStart, TUNING.ammoStart, TUNING.ammoStart, TUNING.wallStart],
         cats: 0,
         catIds: [],
         dmg: 0,
@@ -194,7 +200,7 @@ export class PaintMatch {
         inBoss: false,
         epoch: 0,
         pose: { x: sp.x, y: sp.y, z: sp.z, facing: sp.facing, ground: true, gy: sp.y, e: 0 },
-        nextFire: [0, 0, 0],
+        nextFire: [0, 0, 0, 0],
         nextPunch: 0,
         blobs: [],
         online: true,
@@ -281,7 +287,7 @@ export class PaintMatch {
    */
   fire(slot: number, c: PaintColor, o: Vec3, dir: Vec3, q: number) {
     const p = this.players.get(slot)
-    if (!p || !this.standing(p) || !(c === 0 || c === 1 || c === 2)) return this.deny(slot, q)
+    if (!p || !this.standing(p) || !(c === 0 || c === 1 || c === 2 || c === 3)) return this.deny(slot, q)
     if (![o.x, o.y, o.z, dir.x, dir.y, dir.z].every(Number.isFinite)) return this.deny(slot, q)
     const cost = TUNING.cost[c]
     // folga de 30 ms no ritmo (o relógio do aparelho não é o da sala)
@@ -317,7 +323,14 @@ export class PaintMatch {
         this.hitBoss(slot, TUNING.bossHarm)
       } else if (res.kind === "erase") {
         to = res.point
-        this.removeBlob(res.blob)
+        const wall = this.blobs.get(res.blob)
+        const hits = (this.wallHits.get(res.blob) ?? 0) + 1
+        if (wall && wall.blob.c === PAINT.WALL && hits < TUNING.wallHits) {
+          // o muro aguenta: só respinga (de frente para quem atirou)
+          this.wallHits.set(res.blob, hits)
+          const l = Math.hypot(dir.x, dir.z) || 1
+          this.emit({ type: "splat", point: res.point, normal: { x: -dir.x / l, y: 0, z: -dir.z / l } })
+        } else this.removeBlob(res.blob)
       } else if (res.kind === "splat") {
         to = res.point
         this.emit({ type: "splat", point: res.point, normal: res.normal })
@@ -551,6 +564,7 @@ export class PaintMatch {
     const b = this.blobs.get(id)
     if (!b) return
     this.blobs.delete(id)
+    this.wallHits.delete(id)
     this.solidsCache = null
     const owner = this.players.get(b.owner)
     if (owner) {
@@ -625,10 +639,10 @@ export class PaintMatch {
       }
       // cápsulas
       for (const cap of this.map.capsules) {
-        if (this.capsuleBack.has(cap.id) || p.ammo[cap.c] >= T.ammoMax) continue
+        if (this.capsuleBack.has(cap.id) || p.ammo[cap.c] >= ammoCap(cap.c)) continue
         if (Math.abs(q.y - cap.y) > 1.6 || Math.hypot(q.x - cap.x, q.z - cap.z) > T.capsuleR) continue
-        p.ammo[cap.c] = Math.min(T.ammoMax, p.ammo[cap.c] + T.capsuleGive)
-        this.capsuleBack.set(cap.id, this.time + T.capsuleRespawn)
+        p.ammo[cap.c] = Math.min(ammoCap(cap.c), p.ammo[cap.c] + capsuleGive(cap.c))
+        this.capsuleBack.set(cap.id, this.time + capsuleRespawn(cap.c))
         this.emit({ type: "capsule", id: cap.id, slot: p.slot, c: cap.c })
       }
     }
@@ -673,5 +687,15 @@ export class PaintMatch {
   }
 }
 
+/** Quanto a cápsula da cor dá (o ícone da Freelandoo dá muros). */
+export function capsuleGive(c: PaintColor) {
+  return c === PAINT.WALL ? TUNING.wallGive : TUNING.capsuleGive
+}
+
+/** Em quanto tempo a cápsula da cor volta (s). */
+export function capsuleRespawn(c: PaintColor) {
+  return c === PAINT.WALL ? TUNING.logoRespawn : TUNING.capsuleRespawn
+}
+
 /** Atalho para quem só precisa saber se a pose está fora (cliente). */
-export const PAINT_FIRE_COLORS: readonly PaintColor[] = [PAINT.BRIDGE, PAINT.HARM, PAINT.STEP]
+export const PAINT_FIRE_COLORS: readonly PaintColor[] = [PAINT.BRIDGE, PAINT.HARM, PAINT.STEP, PAINT.WALL]
