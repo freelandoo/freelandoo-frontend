@@ -438,10 +438,10 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       draw.pitch = a.pitch + (c.pitch - a.pitch) * k
       draw.roll = a.roll + (c.roll - a.roll) * k
       const car = race.cars[i]
-      fleet.place(i, draw, { throttle: car.throttleNow, boost: car.boost > 0, air: car.air, down: car.down > 0 || car.gone }, dt)
+      fleet.place(i, draw, { throttle: car.throttleNow, speed: Math.min(1, Math.max(0, car.v / TUNING.boostMax)), boost: car.boost > 0, air: car.air, down: car.down > 0 || car.gone }, dt)
       if (i === me) placeCamera(draw, dt)
     }
-    fleet.flush()
+    fleet.flush(dt)
     for (const o of track.orbs) {
       const on = !race.orbOut.has(o.id)
       if (orbState.get(o.id) !== on) {

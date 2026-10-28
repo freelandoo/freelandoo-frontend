@@ -7,9 +7,8 @@
 // cor de cada nave e os filetes ciano acendem (plugin `NaveTint`), com um
 // contorno de luz (fresnel) para a nave ler de noite. Cada nave é um clone;
 // as chamas dos QUATRO bocais (2 grandes nos cantos, 2 menores no meio) são
-// instâncias finas de dois cones (labareda por fora, núcleo claro por
-// dentro), esticadas pelo acelerador e muito mais no turbo, tremendo a cada
-// quadro. O turbo ainda solta faíscas de fogo (sistema de partículas por nave).
+// de GÁS (flame.ts): transparentes, esticam com a velocidade e curvam nas
+// curvas. O turbo ainda solta faíscas de fogo (sistema de partículas por nave).
 //
 // Sem sombra: a única coisa embaixo da nave é o brilho azul da flutuação.
 
@@ -36,6 +35,7 @@ import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { Constants } from "@babylonjs/core/Engines/constants"
 import { ensureLoaders } from "../../engine/avatars"
+import { createFlames, type FlameBank } from "./flame"
 import type { CarPose } from "../sim/race"
 
 export const CORRIDA_ASSETS = "/meu-mundo/corrida/"
@@ -109,48 +109,6 @@ class NaveTint extends MaterialPluginBase {
   }
 }
 
-/** Cone de base redonda em z = 0 e ponta em z = −1 (a chama sai para trás). */
-function flameCone(name: string, scene: Scene): Mesh {
-  const seg = 10
-  const pos: number[] = [0, 0, -1]
-  const idx: number[] = []
-  for (let i = 0; i < seg; i++) {
-    const a = (i / seg) * Math.PI * 2
-    pos.push(Math.cos(a), Math.sin(a), 0)
-  }
-  pos.push(0, 0, 0.02)
-  const capC = seg + 1
-  for (let i = 0; i < seg; i++) {
-    const a = 1 + i
-    const b = 1 + ((i + 1) % seg)
-    idx.push(0, a, b, capC, b, a)
-  }
-  const m = new Mesh(name, scene)
-  const vd = new VertexData()
-  vd.positions = pos
-  vd.indices = idx
-  const normals: number[] = []
-  VertexData.ComputeNormals(pos, idx, normals)
-  vd.normals = normals
-  vd.applyToMesh(m)
-  m.isPickable = false
-  m.alwaysSelectAsActiveMesh = true
-  return m
-}
-
-function flameMat(name: string, scene: Scene, rgb: [number, number, number], alpha: number): StandardMaterial {
-  const m = new StandardMaterial(name, scene)
-  m.diffuseColor = new Color3(0, 0, 0)
-  m.specularColor = new Color3(0, 0, 0)
-  m.emissiveColor = new Color3(...rgb)
-  m.disableLighting = true
-  m.alpha = alpha
-  m.alphaMode = Constants.ALPHA_ADD
-  m.backFaceCulling = false
-  m.fogEnabled = false
-  return m
-}
-
 /** Bolinha macia (faísca e brilho da flutuação). */
 function softDot(scene: Scene, name: string, inner: string, outer: string): DynamicTexture {
   const tex = new DynamicTexture(name, { width: 64, height: 64 }, scene, false)
@@ -175,10 +133,16 @@ interface CarSlot {
   sparks: ParticleSystem | null
   emitter: Vector3
   flicker: number
+  /** Comprimento da chama (suavizado) e a curva da ponta (m, para o lado). */
+  flameLen: number
+  bend: number
+  lastYaw: number | null
 }
 
 export interface CarLook {
   throttle: number
+  /** Velocidade de 0 a 1 (1 = teto do turbo): a chama estica com ela. */
+  speed: number
   boost: boolean
   air: boolean
   down: boolean
@@ -188,16 +152,12 @@ export class CarFleet {
   private readonly slots: CarSlot[] = []
   private readonly containers: AssetContainer[] = []
   private readonly textures: Partial<Record<"full" | "lod", Texture>> = {}
-  private readonly outer: Mesh
-  private readonly inner: Mesh
-  private readonly outerMat: StandardMaterial
-  private readonly innerMat: StandardMaterial
+  private readonly flames: FlameBank
+  private clock = 0
   private readonly hover: Mesh
   private readonly hoverMat: StandardMaterial
   private readonly hoverTex: DynamicTexture
   private readonly sparkTex: DynamicTexture
-  private readonly outerBuf: Float32Array
-  private readonly innerBuf: Float32Array
   private readonly hoverBuf: Float32Array
   private disposed = false
   private readonly tmpM = new Matrix()
@@ -215,17 +175,7 @@ export class CarFleet {
     private readonly fullFor: (i: number) => boolean,
   ) {
     ensureLoaders()
-    this.outer = flameCone("corrida-flame-out", scene)
-    this.inner = flameCone("corrida-flame-in", scene)
-    this.outerMat = flameMat("corrida-flame-out", scene, [1, 0.3, 0.04], 0.9)
-    this.innerMat = flameMat("corrida-flame-in", scene, [1, 0.78, 0.38], 0.9)
-    this.outer.material = this.outerMat
-    this.inner.material = this.innerMat
-    const n = colors.length * NOZZLES.length
-    this.outerBuf = new Float32Array(n * 16)
-    this.innerBuf = new Float32Array(n * 16)
-    this.outer.thinInstanceSetBuffer("matrix", this.outerBuf, 16, false)
-    this.inner.thinInstanceSetBuffer("matrix", this.innerBuf, 16, false)
+    this.flames = createFlames(scene, colors.length * NOZZLES.length)
     // brilho da flutuação: um quadrado deitado com a bolinha azul (sem sombra)
     this.hoverTex = softDot(scene, "corrida-hover", "rgba(140,235,255,0.9)", "rgba(60,170,255,0.35)")
     this.hoverMat = new StandardMaterial("corrida-hover", scene)
@@ -300,7 +250,7 @@ export class CarFleet {
       sparks.updateSpeed = 1 / 60
       sparks.start()
     }
-    return { root, meshes: [], full, paint, sparks, emitter, flicker: Math.random() * 10 }
+    return { root, meshes: [], full, paint, sparks, emitter, flicker: Math.random() * 10, flameLen: 0, bend: 0, lastYaw: null }
   }
 
   private async load() {
@@ -360,18 +310,29 @@ export class CarFleet {
     s.root.rotationQuaternion.copyFrom(this.tmpQ)
     s.root.computeWorldMatrix(true)
     const world = s.root.getWorldMatrix()
-    // chamas: comprimento pelo acelerador e pelo turbo, tremendo
-    const base = look.down ? 0 : look.boost ? 3.4 : 0.55 + look.throttle * 1.15
+    // chamas de gás (flame.ts): esticam com a velocidade, encolhem devagar,
+    // turbo dá mais 50%; sem acelerar ficam curtas. Comprimento suavizado
+    // (a chama não pula) e a ponta atrasa nas curvas pela velocidade de giro.
+    const want = look.down ? 0 : (0.45 + 2.5 * Math.pow(look.speed, 1.15)) * (look.throttle > 0.05 ? 1 : 0.55) * (look.boost ? 1.5 : 1)
+    s.flameLen += (want - s.flameLen) * Math.min(1, dt * (want > s.flameLen ? 9 : 4))
+    const yawRate = s.lastYaw === null || dt <= 0 ? 0 : wrapPi(pose.yaw - s.lastYaw) / dt
+    s.lastYaw = pose.yaw
+    const wantBend = Math.max(-1.6, Math.min(1.6, yawRate * s.flameLen * 0.45))
+    s.bend += (wantBend - s.bend) * Math.min(1, dt * 6)
+    const heat = look.boost ? 1 : 0
     for (let k = 0; k < NOZZLES.length; k++) {
       const [x, y, z, radius, size] = NOZZLES[k]
-      const wob = 1 + Math.sin(s.flicker + k * 1.7) * 0.12 + Math.sin(s.flicker * 2.3 + k) * 0.08
-      const len = base * wob * size
-      const r = radius * (look.boost ? 1.4 : 1)
-      const j = (i * NOZZLES.length + k) * 16
-      Matrix.ComposeToRef(this.sc.set(r, r, Math.max(0.001, len)), IDENTITY, this.at.set(x, y, z), this.tmpM)
-      this.tmpM.multiplyToArray(world, this.outerBuf, j)
-      Matrix.ComposeToRef(this.sc.set(r * 0.55, r * 0.55, Math.max(0.001, len * 0.6)), IDENTITY, this.at.set(x, y, z - 0.02), this.tmpM)
-      this.tmpM.multiplyToArray(world, this.innerBuf, j)
+      const len = Math.max(0.001, s.flameLen * size)
+      const r = radius * (look.boost ? 1.3 : 1)
+      const j = i * NOZZLES.length + k
+      Matrix.ComposeToRef(this.sc.set(r, r, len), IDENTITY, this.at.set(x, y, z), this.tmpM)
+      this.tmpM.multiplyToArray(world, this.flames.matrices, j * 16)
+      // curva em unidades locais (a escala do raio multiplica depois)
+      const p = this.flames.params
+      p[j * 4] = (s.bend * size) / r
+      p[j * 4 + 1] = (look.air ? 0.35 : 0) / r
+      p[j * 4 + 2] = look.down ? 0 : look.boost ? 1 : 0.8
+      p[j * 4 + 3] = heat
     }
     // brilho da flutuação (deitado no chão, perto quando no chão)
     const hs = look.down ? 0.0001 : look.air ? 0.0001 : 3.4
@@ -391,9 +352,10 @@ export class CarFleet {
   }
 
   /** Depois de pôr todas as naves no quadro. */
-  flush() {
-    this.outer.thinInstanceBufferUpdated("matrix")
-    this.inner.thinInstanceBufferUpdated("matrix")
+  flush(dt: number) {
+    this.clock += dt
+    const cam = this.scene.activeCamera
+    if (cam) this.flames.update(this.clock, cam.globalPosition)
     this.hover.thinInstanceBufferUpdated("matrix")
   }
 
@@ -413,11 +375,16 @@ export class CarFleet {
     for (const c of this.containers) c.dispose()
     this.textures.full?.dispose()
     this.textures.lod?.dispose()
-    this.outer.dispose()
-    this.inner.dispose()
+    this.flames.dispose()
     this.hover.dispose()
-    for (const m of [this.outerMat, this.innerMat, this.hoverMat]) m.dispose()
+    this.hoverMat.dispose()
     this.hoverTex.dispose()
     this.sparkTex.dispose()
   }
+}
+
+function wrapPi(a: number): number {
+  while (a > Math.PI) a -= 2 * Math.PI
+  while (a < -Math.PI) a += 2 * Math.PI
+  return a
 }
