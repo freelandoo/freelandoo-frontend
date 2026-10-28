@@ -25,11 +25,12 @@ import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
-import { fetchSession, getBoxeCard, getCenterInterior, postBoxeJoin, postCorridaJoin, postJetpackJoin, postNoturnoJoin, postPaintJoin } from "../data"
+import { fetchSession, getBoxeCard, getCenterInterior, postBoxeJoin, postCorridaJoin, postGincanaJoin, postJetpackJoin, postNoturnoJoin, postPaintJoin } from "../data"
 import type { PaintJoin } from "../paint/ui/paint-view"
 import type { CorridaJoin } from "../corrida/ui/race-view"
 import type { NoturnoJoin } from "../noturno/ui/run-view"
 import type { BoxeJoin } from "../boxe/ui/boxe-view"
+import type { GincanaJoin } from "../gincana/ui/gincana-view"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
@@ -39,6 +40,7 @@ const PaintView = dynamic(() => import("../paint/ui/paint-view").then((m) => m.P
 const RaceView = dynamic(() => import("../corrida/ui/race-view").then((m) => m.RaceView), { ssr: false })
 const RunView = dynamic(() => import("../noturno/ui/run-view").then((m) => m.RunView), { ssr: false })
 const BoxeView = dynamic(() => import("../boxe/ui/boxe-view").then((m) => m.BoxeView), { ssr: false })
+const GincanaView = dynamic(() => import("../gincana/ui/gincana-view").then((m) => m.GincanaView), { ssr: false })
 
 /** Paint (mm3d-35): reserva numa sala do modo pedido (null = sem acesso). */
 async function fetchPaintSession(mode: string, roomId: string | null) {
@@ -84,6 +86,15 @@ const boxeJoin: BoxeJoin = async (mode, tier, strategy, hooks) =>
     return r.ok ? r.data : { error: r.error, code: r.code }
   }, hooks)
 
+/** Gincana em grupo (mm3d-47): a rede só baixa quando alguém escolhe Multiplayer. */
+const gincanaJoin: GincanaJoin = async (body, hooks) =>
+  (await import("../gincana/engine/net")).joinGincana(async () => {
+    const token = getToken()
+    if (!token) return null
+    const r = await postGincanaJoin(token, body)
+    return r.ok ? r.data : null
+  }, hooks)
+
 /** O local abre um minijogo agora (o registro do servidor decide). */
 /** Lugar na sala do jetpack em grupo (null = sem acesso: o jogo cai no sozinho). */
 async function fetchJetpackParty(roomId: string | null) {
@@ -126,6 +137,7 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   corrida: "Antigravidade",
   noturno: "Rolê Noturno",
   boxe: "Arena de Boxe",
+  gincana: "Gincana",
   igreja: "Igreja",
   delegacia: "Delegacia",
   hospital: "Hospital",
@@ -270,7 +282,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               if (g === "jetpack") {
                 setMinigameParty((it.place.party ?? 0) > 1)
                 setMinigame(g)
-              } else if (g === "paint" || g === "corrida" || g === "noturno" || g === "boxe") setMinigame(g)
+              } else if (g === "paint" || g === "corrida" || g === "noturno" || g === "boxe" || g === "gincana") setMinigame(g)
               else if (interiorOf(it.place)) {
                 const id = it.place.id
                 const ready = id === "hospital" ? (payload.center.interiors?.hospital ?? null) : (interiorCache.get(id) ?? null)
@@ -554,6 +566,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {minigame === "noturno" && <RunView body={body} look={look} name={payload.me.name} onExit={() => setMinigame(null)} join={noturnoJoin} />}
       {/* Arena de Boxe (mm3d-43): a luta calculada pela vida; ao sair, volta à porta */}
       {minigame === "boxe" && <BoxeView onExit={() => setMinigame(null)} loadCard={loadBoxeCard} join={boxeJoin} />}
+      {/* Gincana (mm3d-47): corrida de obstáculos sobre o mar; ao sair, volta à porta */}
+      {minigame === "gincana" && <GincanaView body={body} look={look} name={payload.me.name} onExit={() => setMinigame(null)} join={gincanaJoin} />}
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
       {/* Prédios do centro (mm3d-37): mesma tela; a planta vem do servidor ao entrar */}
       {minigame === "interior" && inside && insidePlace && inside.interior && (

@@ -170,6 +170,11 @@ export interface NoturnoSession {
   multiplayer: MultiplayerSession
 }
 
+/** Lugar na próxima largada da Gincana em grupo (mm3d-47): POST /center/gincana. */
+export interface GincanaSession {
+  multiplayer: MultiplayerSession
+}
+
 /** Arena de Boxe (mm3d-43): uma luta (sozinho ou multiplayer): POST /center/boxe. */
 export interface BoxeSession {
   multiplayer: MultiplayerSession
@@ -640,6 +645,7 @@ export type CenterPlaceId =
   | "corrida"
   | "noturno"
   | "boxe"
+  | "gincana"
   | "igreja"
   | "delegacia"
   | "hospital"

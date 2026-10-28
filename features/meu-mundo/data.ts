@@ -22,6 +22,7 @@ import type {
   PaintSession,
   CorridaSession,
   NoturnoSession,
+  GincanaSession,
   BoxeCard,
   BoxeSession,
   NeighborhoodPayload,
@@ -156,6 +157,8 @@ export const postPaintJoin = (token: string, mode: string, roomId?: string | nul
 export const postCorridaJoin = (token: string) => call<CorridaSession>(token, "POST", "/center/corrida", {})
 /** Rolê Noturno em grupo (mm3d-42): espera até 1 minuto; todos na mesma rua. */
 export const postNoturnoJoin = (token: string, ride: string, body: string) => call<NoturnoSession>(token, "POST", "/center/noturno", { ride, body })
+/** Gincana em grupo (mm3d-47): espera até 1 minuto; o computador completa as 8 vagas. */
+export const postGincanaJoin = (token: string, body: string) => call<GincanaSession>(token, "POST", "/center/gincana", { body })
 /** Arena de Boxe (mm3d-43): a ficha (números da vida, condições e os 3 do computador). */
 export const getBoxeCard = (token: string) => call<BoxeCard>(token, "GET", "/center/boxe")
 /** Arena de Boxe: entrar numa luta (sozinho contra o computador escolhido ou multiplayer). */

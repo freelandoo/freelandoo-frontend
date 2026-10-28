@@ -162,6 +162,15 @@ const ASSETS = {
     sergio: "anim-boxe-sergio-m45.glb",
     ekaterina: "anim-boxe-ekaterina-m45.glb",
   },
+  // Gincana (mm3d-47, pipeline/build_gincana_mocap.py): corrida rápida, pulo
+  // sem arma, tombo, levantar, chegada e o mergulho de barriga. Só a Gincana baixa.
+  gincana: {
+    base: "anim-gincana-base-m47.glb",
+    fat: "anim-gincana-fat-m47.glb",
+    strong: "anim-gincana-strong-m47.glb",
+    sergio: "anim-gincana-sergio-m47.glb",
+    ekaterina: "anim-gincana-ekaterina-m47.glb",
+  },
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
 export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
@@ -186,6 +195,18 @@ const PLACE_CLIPS = ["GymSquat", "GymPunch", "GymBoxJump", "GymSitups", "GymKett
 export type PlacePose = (typeof PLACE_CLIPS)[number] | "Run"
 /** Arena de Boxe (mm3d-44): BGuard/BWarm/BWin em laço; o resto toca uma vez por cima (boxeAct). */
 const BOXE_CLIPS = ["BGuard", "BWarm", "BJab", "BBox0", "BBox1", "BBox2", "BBox3", "BBox4", "BBox5", "BBag", "BDodge", "BHit", "BHitLite", "BStagger", "BFall", "BRise", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"] as const
+/** Gincana (mm3d-47): GRun/GDive/GWin em laço; pulo pela fase do voo; tombo e levantar uma vez. */
+const GINCANA_CLIPS = ["GRun", "GJump", "GFall", "GRise", "GWin", "GDive", "GUp"] as const
+/** Corrida rápida: m/s que o clipe anda a 1×. */
+const GRUN_SPEED = 6.4
+/** Estado de animação da Gincana (o mesmo código que viaja na rede, gincana/sim/body.ts ANIM). */
+export interface GincanaPose {
+  /** 0 parado, 1 correndo, 2 no ar, 3 mergulho, 4 de barriga, 5 derrubado, 6 levantando, 7 na água, 8 chegou. */
+  anim: number
+  speed: number
+  /** Fase do voo (0 saindo, 1 chegando). */
+  phase: number
+}
 /** Passadas na guarda (mm3d-45): velocidade natural de cada clipe (m/s, build_boxe_steps.py). */
 const BOXE_STEP_SPEED = { BStepF: 0.91, BStepB: 0.79, BStepL: 0.61, BStepR: 0.61 } as const
 export type BoxeClip = (typeof BOXE_CLIPS)[number]
@@ -193,7 +214,7 @@ export type BoxeClip = (typeof BOXE_CLIPS)[number]
 export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk"
 /** Golpes e reações tocam uma vez (quem dispara é o boxeAct, nunca o laço). */
 const BOXE_LOOP = new Set<string>(["BGuard", "BWarm", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"])
-const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c))])
+const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp"])
 /** `anim` do ponto de uso (servidor) → clipe. */
 export const POSE_OF_ANIM: Record<string, PlacePose> = { run: "Run", squat: "GymSquat", punch: "GymPunch", boxjump: "GymBoxJump", situps: "GymSitups", kettlebell: "GymKettle", pray: "Pray" }
 /** Pulos do Paint: 0 parado/à frente, 1 de lado, 2 o segundo pulo (no ar). */
@@ -207,6 +228,7 @@ type Clip =
   | (typeof PAINT_CLIPS)[number]
   | (typeof PLACE_CLIPS)[number]
   | (typeof BOXE_CLIPS)[number]
+  | (typeof GINCANA_CLIPS)[number]
 /** Soco (mm3d-35): o jab toca acelerado e dura isto (s). */
 const PUNCH_RATE = 2.4
 const PUNCH_TIME = 0.7
@@ -257,6 +279,7 @@ export class AvatarLibrary {
   private readonly paints = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly places = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly boxes = new Map<AnimSet, Promise<AssetContainer>>()
+  private readonly gincanas = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -275,6 +298,8 @@ export class AvatarLibrary {
     private readonly withPlace = false,
     /** Na Arena de Boxe (mm3d-43): os clipes da luta. */
     private readonly withBoxe = false,
+    /** Na Gincana (mm3d-47): corrida, pulo, tombo e mergulho. */
+    private readonly withGincana = false,
   ) {
     ensureLoaders()
   }
@@ -395,6 +420,17 @@ export class AvatarLibrary {
     return p
   }
 
+  private gincanaSet(id: BodyId) {
+    const key = ANIM_SET[id]
+    let p = this.gincanas.get(key)
+    if (!p) {
+      p = LoadAssetContainerAsync(BASE + ASSETS.gincana[key], this.scene)
+      p.catch(() => this.gincanas.delete(key))
+      this.gincanas.set(key, p)
+    }
+    return p
+  }
+
   private placeSet(id: BodyId) {
     const key = ANIM_SET[id]
     let p = this.places.get(key)
@@ -429,7 +465,8 @@ export class AvatarLibrary {
     const paintP = this.withPaint ? this.paintSet(id).catch(() => null) : Promise.resolve(null)
     const placeP = this.withPlace ? this.placeSet(id).catch(() => null) : Promise.resolve(null)
     const boxeP = this.withBoxe ? this.boxeSet(id).catch(() => null) : Promise.resolve(null)
-    const [container, anims, sit, rest, ride, lodC, paint, place, boxe] = await Promise.all([
+    const gincanaP = this.withGincana ? this.gincanaSet(id).catch(() => null) : Promise.resolve(null)
+    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana] = await Promise.all([
       this.body(id),
       this.animSet(id),
       sitP,
@@ -439,6 +476,7 @@ export class AvatarLibrary {
       paintP,
       placeP,
       boxeP,
+      gincanaP,
     ])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
@@ -468,6 +506,10 @@ export class AvatarLibrary {
     }
     for (const clip of BOXE_CLIPS) {
       const src = boxe?.animationGroups.find((g) => g.name === clip)
+      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+    }
+    for (const clip of GINCANA_CLIPS) {
+      const src = gincana?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
     for (const clip of RIDE_CLIPS) {
@@ -523,7 +565,7 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values()]
+    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.lods.clear()
@@ -534,6 +576,7 @@ export class AvatarLibrary {
     this.paints.clear()
     this.places.clear()
     this.boxes.clear()
+    this.gincanas.clear()
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
@@ -554,6 +597,7 @@ export class AvatarRig {
     BGuard: 0, BWarm: 0, BJab: 0, BBox0: 0, BBox1: 0, BBox2: 0, BBox3: 0, BBox4: 0, BBox5: 0, BBag: 0,
     BDodge: 0, BHit: 0, BHitLite: 0, BStagger: 0, BFall: 0, BRise: 0, BWin: 0,
     BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
+    GRun: 0, GJump: 0, GFall: 0, GRise: 0, GWin: 0, GDive: 0, GUp: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -587,7 +631,7 @@ export class AvatarRig {
     /** Malha leve (nível de LOD da primeira malha), se carregou. */
     private readonly lod: Mesh | null = null,
   ) {
-    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS] as const).filter((c) => !!groups[c])]
+    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS, ...GINCANA_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
       const g = groups[clip]!
       g.weight = this.weights[clip]
@@ -865,6 +909,77 @@ export class AvatarRig {
     return true
   }
 
+  /**
+   * Gincana (mm3d-47): o estado do corpo (o mesmo código da rede) vira o
+   * clipe. Tombo e levantar tocam UMA vez ao entrar no estado (esticados
+   * para o tempo do estado); o pulo segue a fase do voo; o resto em laço.
+   */
+  gincana: GincanaPose | null = null
+  private gPrev = -1
+  private gOnce: Clip | null = null
+
+  private gincanaOnce(clip: Clip, dur: number, f0 = 0, f1 = 1) {
+    const g = this.groups[clip]
+    if (!g) return
+    const fps = g.targetedAnimations[0]?.animation.framePerSecond || 30
+    const a = g.from + (g.to - g.from) * f0
+    const b = g.from + (g.to - g.from) * f1
+    g.stop()
+    g.start(false, Math.max(0.05, (b - a) / fps / dur), a, b)
+    this.gOnce = clip
+  }
+
+  private gincanaUpdate(dt: number, p: GincanaPose) {
+    const have = this.groups
+    if (p.anim !== this.gPrev) {
+      const from = this.gPrev
+      this.gPrev = p.anim
+      if (p.anim === 5) this.gincanaOnce("GFall", 0.7)
+      else if (p.anim === 6) {
+        if (from === 3 || from === 4) this.gincanaOnce(have.GUp ? "GUp" : "GRise", 0.45, 0.3, 1)
+        else this.gincanaOnce("GRise", 0.45, 0.5, 1)
+      } else if (p.anim === 7) this.gincanaOnce("GFall", 0.4, 0.2, 1)
+      else if (p.anim === 2 && have.GJump) {
+        have.GJump.play(true)
+        have.GJump.pause()
+      }
+    }
+    const target = Object.fromEntries(this.clips.map((c) => [c, 0])) as Record<Clip, number>
+    switch (p.anim) {
+      case 1:
+        target.GRun = 1
+        have.GRun!.speedRatio = Math.max(0.55, Math.min(1.4, p.speed / GRUN_SPEED))
+        break
+      case 2: {
+        const g = have.GJump
+        if (g) {
+          // o começo do clipe é o impulso no chão: no ar, do meio para o fim
+          g.goToFrame(g.from + (g.to - g.from) * (0.15 + 0.85 * Math.max(0, Math.min(1, p.phase))))
+          target.GJump = 1
+        } else target.Idle = 1
+        break
+      }
+      case 3:
+      case 4:
+        target[have.GDive ? "GDive" : "Idle"] = 1
+        break
+      case 5:
+      case 7:
+        target[have.GFall ? "GFall" : "Idle"] = 1
+        break
+      case 6:
+        target[this.gOnce && have[this.gOnce] ? this.gOnce : "Idle"] = 1
+        break
+      case 8:
+        target[have.GWin ? "GWin" : "Idle"] = 1
+        break
+      default:
+        target.Idle = 1
+    }
+    // troca rápida (o corpo reage na hora), menos entre parado e correndo
+    return this.applyWeights(dt, target, 0, p.anim <= 1 ? 12 : 22)
+  }
+
   /** Solta o golpe/queda em andamento (volta à base). */
   boxeClear() {
     this.boxeClip = null
@@ -874,6 +989,7 @@ export class AvatarRig {
 
   update(dt: number, move: MoveState, speed: number, tired = false, unwell = false) {
     if (this.disposed || this.frozen) return
+    if (this.gincana && this.groups.GRun) return this.gincanaUpdate(dt, this.gincana)
     if (this.boxe) {
       const target = Object.fromEntries(this.clips.map((c) => [c, 0])) as Record<Clip, number>
       const act = this.boxeClip ? this.groups[this.boxeClip] : undefined
@@ -968,6 +1084,7 @@ export class AvatarRig {
       BGuard: 0, BWarm: 0, BJab: 0, BBox0: 0, BBox1: 0, BBox2: 0, BBox3: 0, BBox4: 0, BBox5: 0, BBag: 0,
       BDodge: 0, BHit: 0, BHitLite: 0, BStagger: 0, BFall: 0, BRise: 0, BWin: 0,
       BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
+      GRun: 0, GJump: 0, GFall: 0, GRise: 0, GWin: 0, GDive: 0, GUp: 0,
     }
     this.applyWeights(dt, target, speed)
   }

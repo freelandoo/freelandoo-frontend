@@ -24,7 +24,7 @@ import { GeoBuilder, place } from "./geometry"
 import { type Box2 } from "./collision"
 import { RemoteWalker, type WalkerPose } from "./remote-walker"
 import { SpeechBubble } from "./speech-bubble"
-import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder, type BoxeBase, type BoxeClip, type PlacePose } from "./avatars"
+import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder, type BoxeBase, type BoxeClip, type GincanaPose, type PlacePose } from "./avatars"
 import { lerpAngle, step, type Body, type Intent, type MotionProfile, type MoveState } from "./motion"
 import type { BodyId } from "../types"
 
@@ -111,6 +111,7 @@ export class Character {
     next.setParent(this.holder)
     next.pose = this.pose
     next.boxe = this.boxeBase
+    next.gincana = this.gincanaPose
     next.update(0, this.move, this.speed, this.tired, this.unwell)
     const prev = this.rig
     this.rig = next
@@ -179,6 +180,13 @@ export class Character {
   setBoxeMove(fwd: number, side: number) {
     if (this.rig) this.rig.boxeMove = { fwd, side }
   }
+
+  /** Gincana (mm3d-47): estado do corpo da prova (null = locomoção normal). */
+  setGincana(p: GincanaPose | null) {
+    this.gincanaPose = p
+    if (this.rig) this.rig.gincana = p
+  }
+  private gincanaPose: GincanaPose | null = null
 
   /** Locomoção armada do Paint (m/s no referencial do corpo); null = normal. */
   setPaintMove(fwd: number, side: number, firing: boolean) {
