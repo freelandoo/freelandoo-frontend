@@ -1,5 +1,6 @@
 // Meu Mundo 3D — mm3d-40: Rolê Noturno (corrida sem fim de bike, skate ou patins numa rua de noite).
-// Namespace "MeuMundo". Idempotente, fill-if-absent.
+// mm3d-40d: manobras pelo jogador (lado = 360°, cima = mortal) — chaves em OVERRIDE.
+// Namespace "MeuMundo". Idempotente, fill-if-absent (OVERRIDE regrava).
 // Rodar: node scripts/i18n-meu-mundo-noturno-merge.js
 const fs = require("fs")
 const path = require("path")
@@ -39,12 +40,16 @@ const MEU_MUNDO = {
     "Cada una vale 10 puntos. En fila, en el aire y encima de los camiones.",
   ],
   noturnoHowCoinsTitle: ["Moedas", "Coins", "Monedas"],
-  noturnoHowRamp: ["Te jogam para o alto com um 360°. Caia em cima do caminhão!", "They launch you up with a 360°. Land on top of the truck!", "Te lanzan al aire con un 360°. ¡Cae encima del camión!"],
+  noturnoHowRamp: [
+    "Te jogam para o alto: para o lado gira 360° (+100), para cima dá um mortal (+150). Caia em cima do caminhão!",
+    "They launch you up: sideways spins a 360° (+100), up does a flip (+150). Land on top of the truck!",
+    "Te lanzan al aire: hacia el lado giras 360° (+100), hacia arriba das un mortal (+150). ¡Cae encima del camión!",
+  ],
   noturnoHowRampTitle: ["Rampas", "Ramps", "Rampas"],
   noturnoKeys: [
-    "← → ou A D trocam de faixa · ↑, W ou Espaço pulam · ↓ ou S descem rápido",
-    "← → or A D change lanes · ↑, W or Space jump · ↓ or S drop fast",
-    "← → o A D cambian de carril · ↑, W o Espacio saltan · ↓ o S bajan rápido",
+    "← → ou A D trocam de faixa · ↑, W ou Espaço pulam · ↓ ou S descem rápido · no ar da rampa: ← → giram 360° e ↑ dá um mortal",
+    "← → or A D change lanes · ↑, W or Space jump · ↓ or S drop fast · in the air off a ramp: ← → spin 360° and ↑ does a flip",
+    "← → o A D cambian de carril · ↑, W o Espacio saltan · ↓ o S bajan rápido · en el aire de la rampa: ← → giran 360° y ↑ da un mortal",
   ],
   noturnoKicker: ["Avenida da madrugada", "Late-night avenue", "Avenida de madrugada"],
   noturnoLeave: ["Voltar ao centro", "Back to downtown", "Volver al centro"],
@@ -68,15 +73,18 @@ const MEU_MUNDO = {
   noturnoStatJump: ["Pulo", "Jump", "Salto"],
   noturnoStatSpeed: ["Velocidade", "Speed", "Velocidad"],
   noturnoSwipe: [
-    "Deslize para os lados para trocar de faixa, para cima (ou toque) para pular e para baixo para descer rápido.",
-    "Swipe sideways to change lanes, up (or tap) to jump and down to drop fast.",
-    "Desliza a los lados para cambiar de carril, hacia arriba (o toca) para saltar y hacia abajo para bajar rápido.",
+    "Deslize para os lados para trocar de faixa, para cima (ou toque) para pular e para baixo para descer rápido. No ar da rampa: para o lado gira 360° e para cima dá um mortal.",
+    "Swipe sideways to change lanes, up (or tap) to jump and down to drop fast. In the air off a ramp: sideways spins 360° and up does a flip.",
+    "Desliza a los lados para cambiar de carril, hacia arriba (o toca) para saltar y hacia abajo para bajar rápido. En el aire de la rampa: hacia el lado giras 360° y hacia arriba das un mortal.",
   ],
   noturnoToastCoins: ["{n} moedas!", "{n} coins!", "¡{n} monedas!"],
   noturnoToastStumble: ["Quase! Mais um esbarrão e você cai", "Close one! One more bump and you fall", "¡Casi! Un golpe más y te caes"],
-  noturnoToastTrick: ["360°! +50", "360°! +50", "¡360°! +50"],
+  noturnoToastFlip: ["Mortal! +{n}", "Flip! +{n}", "¡Mortal! +{n}"],
+  noturnoToastTrick: ["360°! +{n}", "360°! +{n}", "¡360°! +{n}"],
   noturnoTricks: ["Manobras", "Tricks", "Trucos"],
 }
+
+const OVERRIDE = new Set(["noturnoHowRamp", "noturnoKeys", "noturnoSwipe", "noturnoToastTrick"])
 
 const LOCALES = ["pt-BR", "en", "es"]
 let added = 0
@@ -85,7 +93,7 @@ for (const [i, locale] of LOCALES.entries()) {
   const json = JSON.parse(fs.readFileSync(file, "utf8"))
   json.MeuMundo = json.MeuMundo || {}
   for (const [key, vals] of Object.entries(MEU_MUNDO)) {
-    if (json.MeuMundo[key] === undefined) {
+    if (json.MeuMundo[key] === undefined || (OVERRIDE.has(key) && json.MeuMundo[key] !== vals[i])) {
       json.MeuMundo[key] = vals[i]
       added++
     }

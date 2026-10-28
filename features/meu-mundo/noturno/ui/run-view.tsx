@@ -230,7 +230,7 @@ function RunMenu({ onPlay, onExit }: { onPlay: (r: RideKind) => void; onExit: ()
           <li className="rounded-[12px] p-2.5" style={{ background: MM.card }}>
             <b style={{ color: CYAN }}>{t("noturnoHowRampTitle", "Rampas")}</b>
             <br />
-            {t("noturnoHowRamp", "Te jogam para o alto com um 360°. Caia em cima do caminhão!")}
+            {t("noturnoHowRamp", "Te jogam para o alto: para o lado gira 360° (+100), para cima dá um mortal (+150). Caia em cima do caminhão!")}
           </li>
           <li className="rounded-[12px] p-2.5" style={{ background: MM.card }}>
             <b style={{ color: NEON }}>{t("noturnoHowCarsTitle", "Trânsito")}</b>
@@ -250,10 +250,10 @@ function RunMenu({ onPlay, onExit }: { onPlay: (r: RideKind) => void; onExit: ()
         </button>
 
         <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-          {t("noturnoKeys", "← → ou A D trocam de faixa · ↑, W ou Espaço pulam · ↓ ou S descem rápido")}
+          {t("noturnoKeys", "← → ou A D trocam de faixa · ↑, W ou Espaço pulam · ↓ ou S descem rápido · no ar da rampa: ← → giram 360° e ↑ dá um mortal")}
         </p>
         <p className="mt-3 hidden text-[12px] leading-snug max-[759px]:block" style={{ color: MM.muted }}>
-          {t("noturnoSwipe", "Deslize para os lados para trocar de faixa, para cima (ou toque) para pular e para baixo para descer rápido.")}
+          {t("noturnoSwipe", "Deslize para os lados para trocar de faixa, para cima (ou toque) para pular e para baixo para descer rápido. No ar da rampa: para o lado gira 360° e para cima dá um mortal.")}
         </p>
       </div>
     </div>
@@ -294,7 +294,11 @@ function RunScreen({ ride, body, look, onAgain, onMenu }: { ride: RideKind; body
       const tt = textRef.current
       switch (n.kind) {
         case "trick":
-          say(tt("noturnoToastTrick", "360°! +50"), "hot", 1000)
+          say(
+            (n.trick === "flip" ? tt("noturnoToastFlip", "Mortal! +{n}") : tt("noturnoToastTrick", "360°! +{n}")).replace("{n}", String(n.points)),
+            "hot",
+            1000,
+          )
           break
         case "stumble":
           say(tt("noturnoToastStumble", "Quase! Mais um esbarrão e você cai"), "bad", 1600)

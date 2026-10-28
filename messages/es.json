@@ -8676,9 +8676,9 @@
     "noturnoHowCarsTitle": "Tráfico",
     "noturnoHowCoins": "Cada una vale 10 puntos. En fila, en el aire y encima de los camiones.",
     "noturnoHowCoinsTitle": "Monedas",
-    "noturnoHowRamp": "Te lanzan al aire con un 360°. ¡Cae encima del camión!",
+    "noturnoHowRamp": "Te lanzan al aire: hacia el lado giras 360° (+100), hacia arriba das un mortal (+150). ¡Cae encima del camión!",
     "noturnoHowRampTitle": "Rampas",
-    "noturnoKeys": "← → o A D cambian de carril · ↑, W o Espacio saltan · ↓ o S bajan rápido",
+    "noturnoKeys": "← → o A D cambian de carril · ↑, W o Espacio saltan · ↓ o S bajan rápido · en el aire de la rampa: ← → giran 360° y ↑ da un mortal",
     "noturnoKicker": "Avenida de madrugada",
     "noturnoLeave": "Volver al centro",
     "noturnoLoading": "Encendiendo las farolas…",
@@ -8696,11 +8696,12 @@
     "noturnoStatAgile": "Agilidad",
     "noturnoStatJump": "Salto",
     "noturnoStatSpeed": "Velocidad",
-    "noturnoSwipe": "Desliza a los lados para cambiar de carril, hacia arriba (o toca) para saltar y hacia abajo para bajar rápido.",
+    "noturnoSwipe": "Desliza a los lados para cambiar de carril, hacia arriba (o toca) para saltar y hacia abajo para bajar rápido. En el aire de la rampa: hacia el lado giras 360° y hacia arriba das un mortal.",
     "noturnoToastCoins": "¡{n} monedas!",
     "noturnoToastStumble": "¡Casi! Un golpe más y te caes",
-    "noturnoToastTrick": "¡360°! +50",
-    "noturnoTricks": "Trucos"
+    "noturnoToastTrick": "¡360°! +{n}",
+    "noturnoTricks": "Trucos",
+    "noturnoToastFlip": "¡Mortal! +{n}"
   },
   "Sports": {
     "eyebrow": "Deportes",

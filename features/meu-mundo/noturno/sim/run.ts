@@ -12,7 +12,12 @@
 //    frente = fim. Entrar de lado = tropeço e volta para a faixa de antes;
 //    dois tropeços em 5 s = fim.
 //  - Rampa de skate: sobe pela superfície e, na borda, lança para cima (dá
-//    para cair no teto do caminhão logo depois) com uma manobra de 360°.
+//    para cair no teto do caminhão logo depois). No ar da rampa (mm3d-40d)
+//    as setas viram manobra: lado = 360° para aquele lado, cima = mortal;
+//    só conta se terminar antes de pousar (dá para emendar duas).
+//  - A partir de 250 km/h (mm3d-40d) a rua aperta: trechos mais juntos, mais
+//    faixas fechadas e o "zigue-zague" de veículos altos que obriga a trocar
+//    de faixa — sempre com uma passagem.
 //  - Carros na contramão e andando na mesma mão: começam a se mexer quando o
 //    jogador chega a `act` metros; o gerador reserva a faixa pelo trecho que
 //    eles percorrem, para nada atravessar nada.
@@ -59,10 +64,22 @@ export const TUNING = {
   lead: 75,
   /** Pulo e descida guardados por este tempo antes de valer (s). */
   buffer: 0.16,
-  /** Pontos por moeda e por manobra limpa. */
+  /** Pontos por moeda. */
   coinPoints: 10,
-  trickPoints: 50,
 } as const
+
+export type TrickKind = "spin" | "flip"
+/** Manobras no ar da rampa (mm3d-40d): duração (s) e pontos (o 360° vale o dobro do antigo). */
+export const TRICKS: Record<TrickKind, { time: number; points: number }> = {
+  spin: { time: 0.4, points: 100 },
+  flip: { time: 0.44, points: 150 },
+}
+/** Pousar com a manobra a partir daqui ainda conta. */
+export const TRICK_GRACE = 0.82
+
+/** Velocidade (m/s) em que a rua começa a apertar e em que aperta de vez (250 → 450 km/h). */
+export const HARD_FROM = 250 / 3.6
+export const HARD_TO = 450 / 3.6
 
 /** Medidas da regra (iguais aos modelos: pipeline/noturno/build_props.py e supercar/ambulância). */
 export const KINDS: Record<ObstacleKind, { hw: number; len: number; top: number; solid: boolean }> = {
@@ -114,6 +131,7 @@ export type RunEvent =
   | { type: "jump" }
   | { type: "launch" }
   | { type: "land"; hard: boolean; trick: boolean }
+  | { type: "trick"; kind: TrickKind; points: number }
   | { type: "step" }
   | { type: "lane" }
   | { type: "stumble" }
@@ -187,10 +205,17 @@ export class Run {
   v = 0
   coinsGot = 0
   tricks = 0
-  /** Manobra no ar (0–1 do giro; null = sem manobra). */
-  spin: number | null = null
-  private airTime = 0
-  private airDur = 0.8
+  trickPts = 0
+  /** Manobra em curso (primitivos: o robô clona a corrida rasa). */
+  trickKind: TrickKind | null = null
+  /** Lado do 360° (1 = direita). */
+  trickDir: 1 | -1 = 1
+  /** 0–1 da manobra em curso. */
+  trickP = 0
+  /** No ar vindo da rampa: as setas fazem manobra em vez de trocar de faixa. */
+  trickAir = false
+  /** Manobras fechadas neste ar. */
+  private airTricks = 0
   private onRamp: Obstacle | null = null
   private stumbleT = 0
   private jumpBuf = 0
@@ -208,12 +233,17 @@ export class Run {
   }
 
   get score() {
-    return Math.floor(this.z) + this.coinsGot * TUNING.coinPoints + this.tricks * TUNING.trickPoints
+    return Math.floor(this.z) + this.coinsGot * TUNING.coinPoints + this.trickPts
   }
 
   /** Dificuldade 0–1 pela distância. */
   private diff(z: number) {
     return Math.min(1, Math.max(0, (z - 150) / 2600))
+  }
+
+  /** Aperto 0–1 pela velocidade: 250 km/h → 450 km/h. */
+  private hard(v: number) {
+    return Math.min(1, Math.max(0, (v - HARD_FROM) / (HARD_TO - HARD_FROM)))
   }
 
   // ═══ geração ══════════════════════════════════════════════════════════════
@@ -261,8 +291,9 @@ export class Run {
       const d = this.diff(z)
       const v = speedAt(this.ride, z)
       const free = [0, 1, 2].filter((l) => this.busy[l] <= z - 1)
-      const len = free.length ? this.pattern(z, d, v, free) : 6
-      const gap = v * (1.5 - 0.65 * d) * (0.85 + this.rnd() * 0.3)
+      const h = this.hard(v)
+      const len = free.length ? this.pattern(z, d, v, free, h) : 6
+      const gap = v * (1.5 - 0.65 * d - 0.28 * h) * (0.85 + this.rnd() * 0.3)
       this.nextZ = z + len + gap
     }
   }
@@ -281,7 +312,7 @@ export class Run {
   }
 
   /** Um trecho começando em z; devolve o comprimento. Sempre sobra uma faixa livre (ou passável). */
-  private pattern(z: number, d: number, v: number, free: number[]): number {
+  private pattern(z: number, d: number, v: number, free: number[], h = 0): number {
     const lanes = this.shuffle([...free])
     const r = this.rnd()
     const g = TUNING.gravity
@@ -295,8 +326,9 @@ export class Run {
       ["coins", 0.6 - d * 0.3],
       ["oncoming", d > 0.12 ? 0.9 : 0],
       ["mover", d > 0.08 ? 0.7 : 0],
-      ["wall", d > 0.3 && free.length === 3 ? 0.8 + d : 0],
-      ["amb", 0.5],
+      ["wall", d > 0.3 && free.length === 3 ? 0.8 + d + h * 0.6 : 0],
+      ["amb", 0.5 + h * 0.5],
+      ["slalom", h > 0 && free.length === 3 ? 0.6 + h * 1.6 : 0],
     ]
     let total = 0
     for (const [, w] of opts) total += Math.max(0, w)
@@ -314,7 +346,7 @@ export class Run {
 
     switch (kind) {
       case "barrier": {
-        const n = one ? 1 : Math.min(lanes.length, this.rnd() < 0.35 + d * 0.4 ? 2 : 1)
+        const n = one ? 1 : Math.min(lanes.length, this.rnd() < 0.35 + d * 0.4 + h * 0.2 ? 2 : 1)
         const blocked = lanes.slice(0, n)
         for (const l of blocked) {
           this.add("barrier", l, z)
@@ -326,10 +358,10 @@ export class Run {
         return 2
       }
       case "cars": {
-        const n = Math.min(lanes.length - 1, this.rnd() < 0.4 + d * 0.4 ? 2 : 1)
+        const n = Math.min(lanes.length - 1, this.rnd() < 0.4 + d * 0.4 + h * 0.3 ? 2 : 1)
         for (let i = 0; i < n; i++) {
           const zz = z + this.rnd() * 6
-          const k = this.rnd() < 0.15 ? "amb" : "car"
+          const k = this.rnd() < 0.15 + h * 0.35 ? "amb" : "car"
           this.add(k, lanes[i], zz)
           this.mark(lanes[i], zz + KINDS[k].len + 1)
         }
@@ -420,6 +452,32 @@ export class Run {
         if (lanes.length > 1) this.coinLine(lanes[1], z - 4, 5)
         return 6
       }
+      case "slalom": {
+        // zigue-zague: portões que fecham duas faixas com veículos parados
+        // (quase todos altos, sem pulo); a passagem muda de faixa a cada um e
+        // entre o fim de um e o começo do outro dá para trocar com folga.
+        const gates = 3 + (this.rnd() < h ? 1 : 0)
+        const t1 = 0.62 - 0.12 * h
+        let open = Math.floor(this.rnd() * 3)
+        let zz = z
+        let end = z
+        for (let i = 0; i < gates; i++) {
+          for (const l of [0, 1, 2]) {
+            if (l === open) continue
+            const q = this.rnd()
+            const k: ObstacleKind = q < 0.45 ? "truck" : q < 0.8 ? "amb" : "car"
+            this.add(k, l, zz)
+            this.mark(l, zz + KINDS[k].len + 1)
+            end = Math.max(end, zz + KINDS[k].len)
+          }
+          this.coinLine(open, zz - 3, 4)
+          // a próxima passagem: ao lado (ou de ponta a ponta, mais tarde, com mais espaço)
+          const next = open === 1 ? (this.rnd() < 0.5 ? 0 : 2) : this.rnd() < 0.3 * h ? 2 - open : 1
+          zz += KINDS.truck.len + v * (t1 + (Math.abs(next - open) === 2 ? 0.32 : 0))
+          open = next
+        }
+        return end - z
+      }
       default: {
         // moedas em zigue-zague pelas faixas livres
         let l = lanes[0]
@@ -461,6 +519,15 @@ export class Run {
     const T = TUNING
     this.time += dt
     if (this.stumbleT > 0) this.stumbleT -= dt
+    // no ar da rampa as setas viram manobra (uma por vez; dá para emendar)
+    if (!this.grounded && this.trickAir && (input.jump || input.left || input.right)) {
+      if (this.trickKind === null) {
+        this.trickKind = input.jump ? "flip" : "spin"
+        this.trickDir = input.right && !input.jump ? 1 : -1
+        this.trickP = 0
+      }
+      input = { ...input, jump: false, left: false, right: false }
+    }
     if (input.jump) this.jumpBuf = T.buffer
     if (input.down) this.downBuf = T.buffer
     if (this.jumpBuf > 0) this.jumpBuf -= dt
@@ -497,26 +564,24 @@ export class Run {
     const sup = this.support(this.x, this.z, this.y)
     if (this.grounded) {
       if (this.onRamp && !sup.ramp && this.z > this.onRamp.z + KINDS.ramp.len - 0.2) {
-        // borda da rampa: lança (com pulo junto, mais alto) e gira
+        // borda da rampa: lança (com pulo junto, mais alto); a manobra é do jogador
         this.vy = T.launchV + (this.jumpBuf > 0 ? 2.5 : 0)
         this.jumpBuf = 0
         this.grounded = false
-        this.spin = 0
-        this.airTime = 0
-        this.airDur = (2 * this.vy) / T.gravity
+        this.trickAir = true
+        this.airTricks = 0
         out.push({ type: "launch" })
       } else if (this.jumpBuf > 0) {
         this.vy = Math.sqrt(2 * T.gravity * RIDES[this.ride].jumpH)
         this.jumpBuf = 0
         this.grounded = false
-        this.spin = null
-        this.airTime = 0
+        this.trickAir = false
         out.push({ type: "jump" })
       } else if (sup.h < this.y - 0.08) {
         // acabou o teto: cai
         this.grounded = false
         this.vy = 0
-        this.spin = null
+        this.trickAir = false
       } else {
         if (sup.h > this.y + 0.05 && !sup.ramp) out.push({ type: "step" })
         this.y = sup.h
@@ -524,26 +589,26 @@ export class Run {
       this.onRamp = sup.ramp
     }
     if (!this.grounded) {
-      this.airTime += dt
       if (this.downBuf > 0) {
+        // descer rápido larga a manobra
         this.vy = Math.min(this.vy, T.dropV)
         this.downBuf = 0
-        if (this.spin !== null) this.spin = null
+        this.trickKind = null
+        this.trickAir = false
+      }
+      if (this.trickKind !== null) {
+        this.trickP += dt / TRICKS[this.trickKind].time
+        if (this.trickP >= 1) this.finishTrick(out)
       }
       this.vy -= T.gravity * dt
       this.y += this.vy * dt
-      if (this.spin !== null) this.spin = Math.min(1, this.airTime / Math.max(0.3, this.airDur * 0.85))
       const s2 = this.support(this.x, this.z, this.y)
       if (this.y <= s2.h && this.vy <= 0) {
         const hard = this.vy < -14
-        const trick = this.spin !== null && this.spin >= 1
-        if (trick) this.tricks++
         this.y = s2.h
         this.vy = 0
-        this.grounded = true
-        this.spin = null
         this.onRamp = s2.ramp
-        out.push({ type: "land", hard, trick })
+        this.land(hard, out)
       }
     }
 
@@ -558,9 +623,7 @@ export class Run {
         if (this.y < k.top - 0.02 && this.vy <= 0 && this.z <= o.z + k.len) {
           this.y = k.top
           this.vy = 0
-          if (!this.grounded) out.push({ type: "land", hard: false, trick: false })
-          this.grounded = true
-          this.spin = null
+          if (!this.grounded) this.land(false, out)
         }
         continue
       }
@@ -597,6 +660,29 @@ export class Run {
       this.coins = this.coins.filter((c) => !c.taken && this.coinZ(c) > cut)
     }
     this.generate(this.z + Math.max(260, this.v * 4.5))
+  }
+
+  private finishTrick(out: RunEvent[]) {
+    const kind = this.trickKind
+    if (kind === null) return
+    const points = TRICKS[kind].points
+    this.tricks++
+    this.trickPts += points
+    this.airTricks++
+    this.trickKind = null
+    this.trickP = 0
+    out.push({ type: "trick", kind, points })
+  }
+
+  /** Pousou: a manobra quase no fim ainda vale; a do meio se perde. */
+  private land(hard: boolean, out: RunEvent[]) {
+    if (this.trickKind !== null && this.trickP >= TRICK_GRACE) this.finishTrick(out)
+    this.trickKind = null
+    this.trickP = 0
+    this.grounded = true
+    this.trickAir = false
+    out.push({ type: "land", hard, trick: this.airTricks > 0 })
+    this.airTricks = 0
   }
 
   private crash(kind: ObstacleKind | "stumble", out: RunEvent[]) {

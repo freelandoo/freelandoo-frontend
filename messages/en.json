@@ -8696,9 +8696,9 @@
     "noturnoHowCarsTitle": "Traffic",
     "noturnoHowCoins": "Each one is worth 10 points. In lines, in the air and on top of trucks.",
     "noturnoHowCoinsTitle": "Coins",
-    "noturnoHowRamp": "They launch you up with a 360°. Land on top of the truck!",
+    "noturnoHowRamp": "They launch you up: sideways spins a 360° (+100), up does a flip (+150). Land on top of the truck!",
     "noturnoHowRampTitle": "Ramps",
-    "noturnoKeys": "← → or A D change lanes · ↑, W or Space jump · ↓ or S drop fast",
+    "noturnoKeys": "← → or A D change lanes · ↑, W or Space jump · ↓ or S drop fast · in the air off a ramp: ← → spin 360° and ↑ does a flip",
     "noturnoKicker": "Late-night avenue",
     "noturnoLeave": "Back to downtown",
     "noturnoLoading": "Turning on the streetlights…",
@@ -8716,11 +8716,12 @@
     "noturnoStatAgile": "Agility",
     "noturnoStatJump": "Jump",
     "noturnoStatSpeed": "Speed",
-    "noturnoSwipe": "Swipe sideways to change lanes, up (or tap) to jump and down to drop fast.",
+    "noturnoSwipe": "Swipe sideways to change lanes, up (or tap) to jump and down to drop fast. In the air off a ramp: sideways spins 360° and up does a flip.",
     "noturnoToastCoins": "{n} coins!",
     "noturnoToastStumble": "Close one! One more bump and you fall",
-    "noturnoToastTrick": "360°! +50",
-    "noturnoTricks": "Tricks"
+    "noturnoToastTrick": "360°! +{n}",
+    "noturnoTricks": "Tricks",
+    "noturnoToastFlip": "Flip! +{n}"
   },
   "Sports": {
     "eyebrow": "Sports",

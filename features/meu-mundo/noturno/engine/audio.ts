@@ -126,13 +126,16 @@ export class RunAudio {
     this.tone(330, 0.35, 0.05, "triangle", 660)
   }
 
-  land(hard: boolean, trick: boolean) {
+  land(hard: boolean) {
     this.burst(hard ? 0.32 : 0.18, 150, 1, hard ? 0.55 : 0.3)
-    if (trick) {
-      this.tone(660, 0.1, 0.07, "square")
-      setTimeout(() => this.tone(880, 0.1, 0.07, "square"), 90)
-      setTimeout(() => this.tone(1320, 0.18, 0.07, "square"), 180)
-    }
+  }
+
+  /** Manobra fechada no ar (o mortal sobe um tom). */
+  trick(flip: boolean) {
+    const k = flip ? 1.26 : 1
+    this.tone(660 * k, 0.1, 0.07, "square")
+    setTimeout(() => this.tone(880 * k, 0.1, 0.07, "square"), 90)
+    setTimeout(() => this.tone(1320 * k, 0.18, 0.07, "square"), 180)
   }
 
   lane() {

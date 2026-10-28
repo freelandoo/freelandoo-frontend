@@ -133,6 +133,8 @@ export interface CarPose {
   sl: number
   ax: number
   ay: number
+  /** Giro no eixo lateral do veículo montado (mortal do Rolê Noturno, mm3d-40d). */
+  flip?: number
 }
 
 /** Nó animado: a animação é composta sobre a rotação de repouso. */
@@ -182,6 +184,8 @@ interface CarView {
   pitchV: number
   roll: number
   rollV: number
+  /** Mortal (só o seu veículo, pela pose). */
+  flip: number
   lastX: number
   lastZ: number
   /** Veículo dos outros: estados da sala para interpolar (mm3d-22). */
@@ -299,6 +303,7 @@ export class CarFleet {
       pitchV: 0,
       roll: 0,
       rollV: 0,
+      flip: 0,
       lastX: c.x,
       lastZ: c.z,
       track: null,
@@ -353,6 +358,7 @@ export class CarFleet {
   private place(v: CarView) {
     v.holder.position.set(v.x, v.y, v.z)
     v.holder.rotation.y = v.facing
+    v.holder.rotation.x = v.flip
   }
 
   /** Rodas, direção, pedivela, trucks e o balanço do carro (todo quadro). */
@@ -418,6 +424,7 @@ export class CarFleet {
         v.sl = pose.sl
         v.ax = pose.ax
         v.ay = pose.ay
+        v.flip = pose.flip ?? 0
       } else {
         v.tx = c.x
         v.tz = c.z

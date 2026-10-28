@@ -1,5 +1,7 @@
 // features/meu-mundo/noturno/engine/run-game.ts — ROLÊ NOTURNO (mm3d-40): a cena.
 //
+// No ar da rampa, ←/→ fazem um 360° e ↑ um mortal (mm3d-40d).
+//
 // Cena própria (como a Corrida e o Paint): motor Babylon, a rua de noite
 // (street-view), os obstáculos e as moedas (props-view) e o jogador — o
 // AVATAR dele (corpo, skin e cores) montado no veículo que escolheu, com as
@@ -28,7 +30,7 @@ import { placeRider } from "../../engine/ride"
 import { RIDE_KINDS, type MoveState } from "../../engine/motion"
 import type { CarState } from "../../engine/net"
 import type { BodyId } from "../../types"
-import { Run, TUNING, type RideKind, type RunEvent, type RunInput, type ObstacleKind } from "../sim/run"
+import { Run, TUNING, type RideKind, type RunEvent, type RunInput, type ObstacleKind, type TrickKind } from "../sim/run"
 import { buildStreet, NIGHT_FOG } from "./street-view"
 import { buildProps } from "./props-view"
 import { RunAudio } from "./audio"
@@ -56,7 +58,7 @@ export interface RunResult {
   by: ObstacleKind | "stumble"
 }
 
-export type RunNotice = { kind: "go" } | { kind: "trick"; n: number } | { kind: "stumble" } | { kind: "coins"; n: number } | { kind: "launch" }
+export type RunNotice = { kind: "go" } | { kind: "trick"; trick: TrickKind; points: number } | { kind: "stumble" } | { kind: "coins"; n: number } | { kind: "launch" }
 
 export interface RunGameOptions {
   canvas: HTMLCanvasElement
@@ -80,6 +82,8 @@ export interface RunGameHandle {
 
 const COUNTDOWN = 2.4
 const RIDE_KEY = "1"
+/** Altura (m) do eixo do mortal acima dos pés: gira em volta do meio do corpo. */
+const FLIP_PIVOT = 0.85
 
 export function createRunGame(opts: RunGameOptions): RunGameHandle {
   const { canvas } = opts
@@ -248,9 +252,12 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
         notice({ kind: "launch" })
         break
       case "land":
-        audio.land(e.hard, e.trick)
+        audio.land(e.hard)
         if (e.hard) shake = Math.max(shake, 0.2)
-        if (e.trick) notice({ kind: "trick", n: run.tricks })
+        break
+      case "trick":
+        audio.trick(e.kind === "flip")
+        notice({ kind: "trick", trick: e.kind, points: e.points })
         break
       case "lane":
         audio.lane()
@@ -337,31 +344,42 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
     const moving = phase === "run"
     const v = moving ? run.v : 0
 
-    // inclinação na troca de faixa e o 360° da rampa
+    // inclinação na troca de faixa e as manobras da rampa (360° no rumo, mortal para trás)
     const want = Math.max(-0.5, Math.min(0.5, (cur.x - prev.x) / TUNING.step / 22))
     lean += (want - lean) * Math.min(1, dt * 12)
     let facing = lean
-    if (run.spin !== null) facing += run.spin * Math.PI * 2
+    let pitch = 0
+    if (run.trickKind !== null && phase === "run") {
+      const turn = (1 - Math.cos(Math.min(1, run.trickP) * Math.PI)) * Math.PI
+      if (run.trickKind === "spin") facing += turn * run.trickDir
+      else pitch = -turn
+    }
+    // o mortal gira em volta do meio do corpo, não dos pés
+    const fy = FLIP_PIVOT * (1 - Math.cos(pitch))
+    const fz = -FLIP_PIVOT * Math.sin(pitch)
     if (phase !== "end") {
+      const px = x + fz * Math.sin(facing)
+      const pz = z + fz * Math.cos(facing)
       rideState.x = x
       rideState.z = z
       rideState.facing = facing
       rideState.y = y
-      pose.x = x
-      pose.z = z
-      pose.y = y
+      pose.x = px
+      pose.z = pz
+      pose.y = y + fy
       pose.facing = facing
+      pose.flip = pitch
       pose.sp = v
       pose.st = -lean * 0.6
       fleet.sync(rides, dt, 1, pose)
-      placeRider(fleet, char, RIDE_KEY, opts.ride, x, z, facing, v, dt, y)
+      placeRider(fleet, char, RIDE_KEY, opts.ride, px, pz, facing, v, dt, y + fy, pitch)
     } else {
       // bateu: o veículo fica, o boneco voa por cima e cai de cara
       fall = Math.min(1, fall + dt * 2.6)
       char.holder.rotation.x = fall * 1.45
       char.holder.position.y = y + Math.sin(fall * Math.PI) * 0.7
       char.holder.position.z = z + fall * 1.1
-      fleet.sync(rides, dt, 1, { ...pose, sp: 0 })
+      fleet.sync(rides, dt, 1, { ...pose, sp: 0, flip: 0 })
       char.animate(dt, RIDE_KINDS[opts.ride].move as MoveState, 0)
       if (!ended && fall >= 1) {
         ended = true
