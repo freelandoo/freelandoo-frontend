@@ -106,6 +106,18 @@ export function resolveQuality(choice: QualityChoice = loadQualityChoice()): Qua
 }
 
 /**
+ * Teto de quadros (ms entre quadros; 0 = sem teto). Celular desenha a 30: é o
+ * que segura a temperatura numa partida de 10–20 min (desenhar a 60 sem teto
+ * em tela de alta densidade é o que mais esquenta). Computador fica livre.
+ * Com o teto, o governador mede ~30 FPS: não desce (limite 25) nem sobe (50).
+ */
+export function frameCapMs(): number {
+  if (typeof window === "undefined") return 0
+  const touch = window.matchMedia?.("(pointer: coarse)").matches ?? false
+  return touch ? 1000 / 30 : 0
+}
+
+/**
  * Ajusta a resolução de desenho pelo FPS medido, em janelas de 1 s:
  *  - abaixo de 25 FPS em duas janelas seguidas, desce 15% (até `minRatio`),
  *    com 2 s de espera entre descidas para o efeito aparecer na medida. Não

@@ -1,9 +1,10 @@
 // features/meu-mundo/corrida/engine/race-game.ts — CORRIDA ANTIGRAVIDADE (mm3d-39): a cena.
 //
-// Cena própria (como o Paint): motor Babylon, céu claro com neblina, a pista
-// suspensa sobre a baía (track-view), as naves com fogo (car-view) e a câmera
-// de perseguição, que abre o ângulo com a velocidade e treme no turbo. Sem
-// sombras (pedido do Alex): só luz ambiente + sol.
+// Cena própria (como o Paint): motor Babylon, céu de NOITE com neblina roxa
+// (mm3d-41), a pista suspensa sobre a cidade (track-view), as naves com fogo
+// (car-view) e a câmera de perseguição, que abre o ângulo com a velocidade e
+// treme no turbo. Sem sombras (pedido do Alex): só luz ambiente + lua. No
+// celular desenha a 30 quadros por segundo (`frameCapMs`).
 //
 // A regra é sim/race.ts em passos de 1/120 s; o desenho interpola entre os
 // dois últimos passos. Em grupo (mm3d-39b, `net`): a nave deste aparelho é
@@ -21,10 +22,10 @@ import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { liveGamesBump } from "../../engine/game"
-import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
+import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
 import { buildTrack, BAIA, type Track } from "../sim/track"
 import { Race, TUNING, CAR_COLORS, carPose, type CarInput, type CarPose, type RaceEvent, type RemoteCar } from "../sim/race"
-import { buildTrackView } from "./track-view"
+import { buildTrackView, NIGHT_HORIZON } from "./track-view"
 import { CarFleet, HOVER } from "./car-view"
 import { RaceAudio } from "./audio"
 import type { CorridaNet, CorridaNetStatus, CorridaStart } from "./net"
@@ -120,7 +121,8 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
 
   const scene = new Scene(engine)
-  const haze = new Color3(0.84, 0.9, 0.95)
+  // mm3d-41: noite. A neblina é a cor do horizonte do céu (track-view).
+  const haze = new Color3(...NIGHT_HORIZON)
   scene.clearColor = new Color4(haze.r, haze.g, haze.b, 1)
   scene.ambientColor = new Color3(0.3, 0.3, 0.3)
   scene.fogMode = Scene.FOGMODE_LINEAR
@@ -130,13 +132,15 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
+  // o passo das partículas é dado pelo jogo (dt real), não pelo ritmo do navegador
+  scene.useConstantAnimationDeltaTime = true
   const hemi = new HemisphericLight("corrida-hemi", new Vector3(0.2, 1, -0.15), scene)
-  hemi.intensity = 0.82
-  hemi.diffuse = new Color3(1, 0.99, 0.97)
-  hemi.groundColor = new Color3(0.55, 0.6, 0.68)
-  const sun = new DirectionalLight("corrida-sun", new Vector3(-0.5, -1, 0.4), scene)
-  sun.intensity = 0.8
-  sun.diffuse = new Color3(1, 0.95, 0.88)
+  hemi.intensity = 0.6
+  hemi.diffuse = new Color3(0.62, 0.68, 1)
+  hemi.groundColor = new Color3(0.32, 0.16, 0.4)
+  const moon = new DirectionalLight("corrida-moon", new Vector3(-0.5, -1, 0.4), scene)
+  moon.intensity = 0.45
+  moon.diffuse = new Color3(0.65, 0.75, 1)
 
   const track = corridaTrack()
   const mp = opts.net ?? null
@@ -156,6 +160,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     scene,
     race.cars.map((c) => c.color),
     (i) => i === me || !low,
+    (i) => i === me,
   )
   const audio = new RaceAudio()
   audio.resume()
@@ -391,8 +396,8 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     if (net.result && race.phase !== "end") race.end(events)
   }
 
-  const frame = () => {
-    const dt = Math.min(0.1, engine.getDeltaTime() / 1000)
+  const frame = (frameMs: number) => {
+    const dt = Math.min(0.1, frameMs / 1000)
     syncNet(dt)
     for (const e of events) handle(e)
     events.length = 0
@@ -454,7 +459,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       finishedSeen = finishedNow
       pushHud()
     }
-    governor.tick(engine.getDeltaTime())
+    governor.tick(frameMs)
   }
 
   const placeCamera = (pose: CarPose, dt: number) => {
@@ -490,9 +495,17 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   })
 
   const lost = engine.onContextLostObservable.add(() => opts.onError?.("context-lost"))
+  // celular: 30 quadros por segundo (o que mais esquenta é desenhar sem teto)
+  const capMs = frameCapMs()
+  let lastFrame = performance.now()
   engine.runRenderLoop(() => {
     if (disposed) return
-    frame()
+    const now = performance.now()
+    // folga de 3 ms: tela de 60 Hz entrega 16,7 ms; dois toques = 33,3 ms
+    if (capMs && now - lastFrame < capMs - 3) return
+    const ms = now - lastFrame
+    lastFrame = now
+    frame(ms)
     scene.render()
   })
   const ro = new ResizeObserver(() => {

@@ -8,6 +8,11 @@
 //
 // Cor por vértice e duas malhas por tipo (corpo iluminado, brilho sem luz),
 // como os prédios do centro.
+//
+// mm3d-41: À NOITE. Asfalto e concreto escuros, faixas e neon acesos (cor no
+// brilho, sem luz), faixa rosa na parede de dentro, prédios com janelas e
+// coroas de neon e o chão em grade (plugins de night.ts), céu roxo no
+// horizonte. A neblina é da cor do horizonte, então o longe some no céu.
 
 import type { Scene } from "@babylonjs/core/scene"
 import "@babylonjs/core/Meshes/instancedMesh"
@@ -25,23 +30,31 @@ import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
 import { STEP, type Track } from "../sim/track"
+import { GridPlugin, WindowsPlugin } from "./night"
 
 /** Altura do chão (a baía) lá embaixo. */
 export const GROUND_Y = -42
 
 type RGB = [number, number, number]
-const ROAD_A: RGB = [0.2, 0.22, 0.27]
-const ROAD_B: RGB = [0.235, 0.255, 0.3]
+/** Céu: horizonte (= neblina), meio e alto. */
+export const NIGHT_HORIZON: RGB = [0.2, 0.07, 0.28]
+const NIGHT_MID: RGB = [0.07, 0.04, 0.17]
+const NIGHT_TOP: RGB = [0.01, 0.01, 0.05]
+const ROAD_A: RGB = [0.075, 0.08, 0.11]
+const ROAD_B: RGB = [0.09, 0.095, 0.13]
 const LINE: RGB = [0.9, 0.92, 0.95]
-const ZEBRA_R: RGB = [0.86, 0.2, 0.18]
-const WALL_IN: RGB = [0.78, 0.82, 0.88]
-const WALL_OUT: RGB = [0.34, 0.38, 0.46]
-const SLAB: RGB = [0.27, 0.3, 0.37]
+/** Linha da faixa acesa (no brilho). */
+const LANE: RGB = [0.45, 0.6, 0.85]
+const ZEBRA_R: RGB = [0.9, 0.16, 0.55]
+const WALL_IN: RGB = [0.16, 0.17, 0.23]
+const WALL_OUT: RGB = [0.09, 0.09, 0.13]
+const SLAB: RGB = [0.07, 0.07, 0.1]
 const HAZARD_Y: RGB = [0.98, 0.74, 0.1]
 const HAZARD_K: RGB = [0.13, 0.13, 0.15]
-const CONCRETE: RGB = [0.62, 0.64, 0.68]
-const CONCRETE_D: RGB = [0.5, 0.53, 0.58]
+const CONCRETE: RGB = [0.13, 0.13, 0.18]
+const CONCRETE_D: RGB = [0.1, 0.1, 0.14]
 const NEON: RGB = [0.35, 0.9, 1.0]
+const NEON_PINK: RGB = [1.0, 0.22, 0.72]
 const NEON_HOT: RGB = [1.0, 0.55, 0.15]
 
 /** Monta uma malha de quads com cor chapada por quad (vértices próprios). */
@@ -197,7 +210,11 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
         let c: RGB = panel
         if (ramp) c = (i + ci) % 2 ? HAZARD_Y : HAZARD_K
         else if (kind === "zebra") c = Math.floor(i / 2) % 2 ? ZEBRA_R : LINE
-        else if (kind === "line") c = i % 4 < 2 ? LINE : panel
+        else if (kind === "line" && i % 4 < 2) {
+          // a linha tracejada acende (de noite ela é o guia da faixa)
+          glow.quad(at(a, u0, 0), at(a, u1, 0), at(b, u1, 0), at(b, u0, 0), LANE)
+          return
+        }
         body.quad(at(a, u0, 0), at(a, u1, 0), at(b, u1, 0), at(b, u0, 0), c)
       })
     }
@@ -206,6 +223,9 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
       const w1 = s * wall1
       // face de dentro, topo (neon), face de fora até a laje
       body.quad(at(a, w0, 0), at(b, w0, 0), at(b, w0, wallH), at(a, w0, wallH), WALL_IN)
+      // faixa de neon na parede de dentro (um pouco à frente da face)
+      const wn = w0 - s * 0.02
+      glow.quad(at(a, wn, 0.42), at(b, wn, 0.42), at(b, wn, 0.6), at(a, wn, 0.6), ramp ? NEON_HOT : NEON_PINK)
       glow.quad(at(a, w0, wallH), at(b, w0, wallH), at(b, w1, wallH), at(a, w1, wallH), ramp ? NEON_HOT : NEON)
       body.quad(at(a, w1, wallH), at(b, w1, wallH), at(b, w1, slab), at(a, w1, slab), WALL_OUT)
       // degrau entre a faixa e o guarda-corpo
@@ -354,6 +374,11 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   neonMat.diffuseColor = new Color3(0, 0, 0)
   neonMat.emissiveColor = new Color3(0.4, 0.92, 1)
   neonMat.disableLighting = true
+  const neonPinkMat = new StandardMaterial("corrida-neon-pink", scene)
+  neonPinkMat.diffuseColor = new Color3(0, 0, 0)
+  neonPinkMat.emissiveColor = new Color3(...NEON_PINK)
+  neonPinkMat.disableLighting = true
+  disposables.push(neonPinkMat)
   const checker = checkerTexture(scene)
   const bannerMat = new StandardMaterial("corrida-banner", scene)
   bannerMat.diffuseColor = new Color3(0, 0, 0)
@@ -387,7 +412,7 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
     ring.rotation.set(Math.PI / 2, yaw, 0)
     const p = at(f, 0, 2.2)
     ring.position.copyFrom(p)
-    ring.material = neonMat
+    ring.material = gi % 2 ? neonMat : neonPinkMat
     ring.isPickable = false
     ring.freezeWorldMatrix()
     disposables.push(ring)
@@ -400,10 +425,11 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   const span = Math.max(b.x1 - b.x0, b.z1 - b.z0)
   const water = CreateBox("corrida-water", { width: span * 6, depth: span * 6, height: 1 }, scene)
   water.position.set(cx, GROUND_Y - 0.5, cz)
+  // chão escuro com a grade de neon (night.ts)
   const waterMat = new StandardMaterial("corrida-water", scene)
-  waterMat.diffuseColor = new Color3(0.32, 0.55, 0.66)
-  waterMat.specularColor = new Color3(0.25, 0.3, 0.32)
-  waterMat.specularPower = 48
+  waterMat.diffuseColor = new Color3(0.03, 0.02, 0.06)
+  waterMat.specularColor = new Color3(0, 0, 0)
+  new GridPlugin(waterMat)
   water.material = waterMat
   water.isPickable = false
   water.freezeWorldMatrix()
@@ -413,7 +439,9 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   tower.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
   const towerMat = new StandardMaterial("corrida-tower", scene)
   towerMat.diffuseColor = new Color3(1, 1, 1)
-  towerMat.specularColor = new Color3(0.2, 0.2, 0.22)
+  towerMat.specularColor = new Color3(0.08, 0.08, 0.12)
+  // janelas acesas e coroas de neon (night.ts)
+  new WindowsPlugin(towerMat)
   tower.material = towerMat
   tower.isPickable = false
   disposables.push(tower, towerMat)
@@ -428,11 +456,11 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   const tm: number[] = []
   const tc: number[] = []
   const PALETTE: RGB[] = [
-    [0.86, 0.89, 0.93],
-    [0.55, 0.66, 0.78],
-    [0.36, 0.45, 0.58],
-    [0.93, 0.92, 0.88],
-    [0.66, 0.74, 0.84],
+    [0.1, 0.11, 0.16],
+    [0.13, 0.12, 0.2],
+    [0.08, 0.09, 0.13],
+    [0.15, 0.14, 0.22],
+    [0.11, 0.13, 0.19],
   ]
   const want = low ? 140 : 320
   for (let k = 0, tries = 0; k < want && tries < want * 6; tries++) {
@@ -452,7 +480,7 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   const mtn = CreateCylinder("corrida-mtn", { diameterTop: 0, diameterBottom: 1, height: 1, tessellation: 4 }, scene)
   mtn.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
   const mtnMat = new StandardMaterial("corrida-mtn", scene)
-  mtnMat.diffuseColor = new Color3(0.55, 0.63, 0.72)
+  mtnMat.diffuseColor = new Color3(0.06, 0.04, 0.11)
   mtnMat.specularColor = new Color3(0, 0, 0)
   mtn.material = mtnMat
   mtn.isPickable = false
@@ -469,16 +497,17 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   tower.thinInstanceSetBuffer("matrix", new Float32Array(tm), 16, true)
   tower.thinInstanceSetBuffer("color", new Float32Array(tc), 4, true)
 
-  // céu: esfera com degradê (sem neblina)
-  const sky = CreateSphere("corrida-sky", { diameter: span * 8, segments: 16, sideOrientation: Mesh.BACKSIDE }, scene)
+  // céu de noite: esfera com degradê (sem neblina) — roxo no horizonte, quase preto no alto
+  const sky = CreateSphere("corrida-sky", { diameter: span * 8, segments: 24, sideOrientation: Mesh.BACKSIDE }, scene)
   {
     const p = sky.getVerticesData("position")!
     const colors: number[] = []
     const R = span * 4
+    const mix = (a: RGB, c: RGB, k: number) => [a[0] + (c[0] - a[0]) * k, a[1] + (c[1] - a[1]) * k, a[2] + (c[2] - a[2]) * k]
     for (let i = 0; i < p.length; i += 3) {
       const h = Math.max(0, Math.min(1, p[i + 1] / R))
-      const k = Math.pow(h, 0.55)
-      colors.push(0.86 + (0.36 - 0.86) * k, 0.91 + (0.58 - 0.91) * k, 0.96 + (0.86 - 0.96) * k, 1)
+      const c = h < 0.18 ? mix(NIGHT_HORIZON, NIGHT_MID, Math.pow(h / 0.18, 0.7)) : mix(NIGHT_MID, NIGHT_TOP, Math.pow((h - 0.18) / 0.82, 0.6))
+      colors.push(c[0], c[1], c[2], 1)
     }
     sky.setVerticesData("color", colors)
   }
@@ -494,6 +523,42 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   sky.isPickable = false
   sky.infiniteDistance = true
   disposables.push(sky, skyMat)
+
+  // estrelas: uma malha de pontos (uma chamada de desenho)
+  {
+    const R = span * 3.6
+    const pos: number[] = []
+    const col: number[] = []
+    const count = low ? 260 : 600
+    for (let k = 0; k < count; k++) {
+      const yaw = rand() * Math.PI * 2
+      const el = 0.12 + Math.pow(rand(), 0.7) * 1.4
+      const c = Math.cos(el)
+      pos.push(Math.cos(yaw) * c * R, Math.sin(el) * R, Math.sin(yaw) * c * R)
+      const b = 0.35 + rand() * 0.65
+      const warm = rand() < 0.2
+      col.push(b, b * (warm ? 0.85 : 0.95), b * (warm ? 0.7 : 1), 1)
+    }
+    const stars = new Mesh("corrida-stars", scene)
+    const vd = new VertexData()
+    vd.positions = pos
+    vd.colors = col
+    vd.indices = pos.map((_, i) => i).slice(0, count)
+    vd.applyToMesh(stars)
+    const starMat = new StandardMaterial("corrida-stars", scene)
+    starMat.disableLighting = true
+    starMat.emissiveColor = new Color3(1, 1, 1)
+    starMat.diffuseColor = new Color3(0, 0, 0)
+    starMat.fogEnabled = false
+    starMat.pointsCloud = true
+    starMat.pointSize = low ? 1.5 : 2
+    stars.material = starMat
+    stars.position.set(cx, 0, cz)
+    stars.isPickable = false
+    stars.infiniteDistance = true
+    stars.alwaysSelectAsActiveMesh = true
+    disposables.push(stars, starMat)
+  }
 
   let clock = 0
   return {
