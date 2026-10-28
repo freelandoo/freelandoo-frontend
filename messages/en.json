@@ -8862,7 +8862,16 @@
     "evBoxeTko": "technical knockout",
     "evBoxeTowel": "towel",
     "evBoxeWin": "Won a boxing match ({how}).",
-    "evHospitalInBoxe": "Went straight from the boxing arena to the hospital."
+    "evHospitalInBoxe": "Went straight from the boxing arena to the hospital.",
+    "boxePitch2": "Now you do the fighting: move around the ring and press ATTACK to throw a combo — every tap is a different sequence — and DODGE to slip away. Your guest's training, food and rest decide power, speed and stamina. Taking too many punches really hurts — you may even end up in the hospital.",
+    "boxeControls": "Phone: joystick moves, ATTACK throws the combo, DODGE ducks. Computer: WASD or arrows, J/space/click attacks, K/Shift dodges. When you're down, press ATTACK to get up.",
+    "boxeKeys": "WASD or arrows: move · J, space or click: attack · K or Shift: dodge",
+    "boxeAttack": "Attack",
+    "boxeDodge": "Dodge",
+    "boxeRise": "Get up",
+    "boxeRiseTap": "Keep tapping GET UP!",
+    "boxeRiseKey": "Keep pressing J or space to get up!",
+    "boxeHuman": "player"
   },
   "Sports": {
     "eyebrow": "Sports",

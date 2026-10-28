@@ -1,19 +1,20 @@
-// features/meu-mundo/boxe/engine/net.ts — ARENA DE BOXE (mm3d-43): a porta da sala.
+// features/meu-mundo/boxe/engine/net.ts — ARENA DE BOXE (mm3d-43 → mm3d-44): a porta da sala.
 //
 // Fala com a BoxeRoom do backend (src/realtime/meuMundoBoxe.js). Quem decide
 // a sala é o backend (POST /center/boxe); aqui só se consome a reserva.
 //  - ESPERA (multiplayer): até 1 minuto por um adversário (o prazo vem em
 //    `left`); ninguém apareceu = a sala põe o computador parelho;
-//  - LARGADA: "start" traz o canto deste aparelho, os dois lutadores e a
-//    LINHA DO TEMPO inteira da luta (calculada pela sala);
-//  - LUTA: só o relógio (tempo do pacote + meia ida e volta); a toalha é a
-//    única mensagem que sai daqui; "towel" corta a luta para os dois;
+//  - LARGADA: "start" traz o canto deste aparelho, os dois lutadores, a
+//    TABELA dos golpes e o 1º estado;
+//  - LUTA (mm3d-44, ao vivo): "s" a cada passo da sala (estado + eventos), que
+//    também acerta o relógio; daqui sai "in" (joystick, ataque com o combo,
+//    esquiva, toques para levantar) e a toalha; "towel" avisa os dois;
 //  - FIM: "result" com o placar e o que a luta deixou na VIDA desta pessoa.
 
 import { Client, type Room } from "@colyseus/sdk"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import type { BoxeSession } from "../../types"
-import type { FightStart } from "./fight"
+import type { FightStart, Snap } from "./fight"
 
 export type BoxeNetStatus = "connecting" | "online" | "replaced" | "offline"
 
@@ -50,6 +51,21 @@ export interface BoxeResult {
   towel: { who: number; at: number } | null
   rows: BoxeResultRow[]
   aftermath: BoxeAftermath | null
+  /** Placar dos juízes [canto 0, canto 1]. */
+  score: [number, number]
+}
+
+/** O que sai daqui na luta (ver Match.input no servidor). */
+export interface BoxeInput {
+  /** Direção no chão (|m| ≤ 1). */
+  m?: [number, number]
+  /** Combo pedido (pedaços da tabela) e o id dele neste aparelho. */
+  a?: number[]
+  c?: number
+  /** Esquivar. */
+  d?: 1
+  /** Toques para levantar. */
+  k?: number
 }
 
 interface SPlayer {
@@ -73,6 +89,8 @@ export class BoxeNet {
   start: FightStart | null = null
   towel: { who: number; at: number } | null = null
   result: BoxeResult | null = null
+  /** Os últimos estados (a cena abre depois da largada e lê daqui o que perdeu). */
+  readonly recent: Snap[] = []
   private room: Room<unknown, SState> | null = null
   private disposed = false
   private offset: number | null = null
@@ -81,7 +99,11 @@ export class BoxeNet {
   private pingTimer: ReturnType<typeof setInterval> | null = null
   private startResolve: ((s: FightStart) => void) | null = null
   /** Quem quer saber da toalha e do resultado (a cena e a tela). */
-  readonly listeners = { towel: [] as ((m: { who: number; at: number }) => void)[], result: [] as ((r: BoxeResult) => void)[] }
+  readonly listeners = {
+    towel: [] as ((m: { who: number; at: number }) => void)[],
+    result: [] as ((r: BoxeResult) => void)[],
+    snap: [] as ((s: Snap) => void)[],
+  }
 
   constructor(
     session: BoxeSession,
@@ -148,6 +170,13 @@ export class BoxeNet {
       this.result = m
       for (const f of this.listeners.result) f(m)
     })
+    room.onMessage("s", (m: Snap) => {
+      if (this.disposed) return
+      this.clock(m.t)
+      this.recent.push(m)
+      if (this.recent.length > 60) this.recent.shift()
+      for (const f of this.listeners.snap) f(m)
+    })
     room.onMessage("pong", (m: { c: number; t: number }) => {
       this.rtt = Math.max(0.01, Math.min(1, (performance.now() - m.c) / 1000))
       this.clock(m.t)
@@ -155,7 +184,6 @@ export class BoxeNet {
     room.onStateChange((s) => {
       if (this.disposed) return
       const st = s as SState
-      this.clock(st.time)
       if (st.phase === "lobby") {
         const list = [...st.players.values()].sort((a, b) => a.slot - b.slot).map((p) => ({ name: p.name, cpu: p.cpu }))
         this.hooks.onLobby?.(list, this.lobbyUntil)
@@ -180,6 +208,15 @@ export class BoxeNet {
   /** Tempo da luta agora pelo relógio da sala (null antes do 1º pacote). */
   serverTime(): number | null {
     return this.offset === null ? null : performance.now() / 1000 + this.offset
+  }
+
+  /** Ida e volta (s), para a previsão do próprio lutador. */
+  get roundTrip() {
+    return this.rtt
+  }
+
+  sendInput(m: BoxeInput) {
+    this.room?.send("in", m)
   }
 
   sendTowel() {

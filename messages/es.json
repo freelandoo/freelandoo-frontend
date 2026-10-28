@@ -8842,7 +8842,16 @@
     "evBoxeTko": "nocaut técnico",
     "evBoxeTowel": "toalla",
     "evBoxeWin": "Ganó una pelea de boxeo ({how}).",
-    "evHospitalInBoxe": "Salió de la arena de boxeo directo al hospital."
+    "evHospitalInBoxe": "Salió de la arena de boxeo directo al hospital.",
+    "boxePitch2": "Ahora peleas tú: muévete por el ring y pulsa ATACAR para lanzar un combo — cada toque es una secuencia distinta — y ESQUIVAR para escapar. El entrenamiento, la comida y el descanso de tu huésped deciden la fuerza, la velocidad y el aliento. Recibir demasiados golpes duele de verdad — puedes terminar en el hospital.",
+    "boxeControls": "Celular: el joystick mueve, ATACAR lanza el combo, ESQUIVAR agacha. Computadora: WASD o flechas, J/espacio/clic ataca, K/Shift esquiva. En la lona, pulsa ATACAR para levantarte.",
+    "boxeKeys": "WASD o flechas: moverse · J, espacio o clic: atacar · K o Shift: esquivar",
+    "boxeAttack": "Atacar",
+    "boxeDodge": "Esquivar",
+    "boxeRise": "Levantarse",
+    "boxeRiseTap": "¡Toca LEVANTARSE sin parar!",
+    "boxeRiseKey": "¡Pulsa J o espacio sin parar para levantarte!",
+    "boxeHuman": "jugador"
   },
   "Sports": {
     "eyebrow": "Deportes",

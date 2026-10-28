@@ -1,27 +1,28 @@
 "use client"
 
-// features/meu-mundo/boxe/ui/boxe-view.tsx — ARENA DE BOXE (mm3d-43): a tela.
+// features/meu-mundo/boxe/ui/boxe-view.tsx — ARENA DE BOXE (mm3d-43 → mm3d-44): a tela.
 //
 // Cobre o centro (suspenso por baixo, como os outros minijogos). Telas:
 //  - FICHA: o seu lutador com os números da VIDA (força, velocidade, defesa,
 //    fôlego, queixo) e as condições de hoje (alimentado, descansado, com fome,
 //    cansado, estressado, machucado…), o cartel, e se pode lutar. Sozinho =
 //    escolher um dos 3 do computador (mais fraco / parelho / mais forte, com a
-//    bolsa); Multiplayer = espera um adversário de verdade. Estratégia antes
-//    da luta (é a única coisa que o jogador decide — a luta é calculada).
+//    bolsa); Multiplayer = espera um adversário de verdade.
 //  - ESPERA (multiplayer): até 1 minuto; ninguém = computador parelho.
-//  - LUTA: a cena (fight-game.ts) com o placar de TV — sangue e fôlego dos
-//    dois, round e relógio, a contagem do árbitro, avisos; a TOALHA (com
-//    confirmação) encerra e conta como derrota.
+//  - LUTA (mm3d-44: a pessoa luta): a cena (fight-game.ts) com o placar de TV —
+//    sangue e fôlego dos dois, round e relógio, a contagem do árbitro, avisos.
+//    Celular: joystick à esquerda, ATACAR (combo sorteado) e ESQUIVAR à
+//    direita; PC: WASD/setas, J/espaço/clique, K/Shift. No chão, ATACAR vira
+//    LEVANTAR (cada toque ajuda). A TOALHA (com confirmação) conta como derrota.
 //  - FIM: vitória/derrota/empate e como, os números, e o que a luta deixou na
 //    vida (saúde, energia, comida, estresse, força, bolsa, lesão, hospital).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Activity, Flame, Loader2, Shield, Swords, User, Users, Volume2, VolumeX, X, Zap } from "lucide-react"
+import { Loader2, Swords, User, Users, Volume2, VolumeX, Wind, X, Zap } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
-import { SAFE } from "../../ui/meu-mundo-view"
+import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import type { BoxeCard, BoxeCondition, BoxeStrategy, BoxeTier, BoxeView as BoxeStats } from "../../types"
 import type { BoxeHud, BoxeNotice, FightGameHandle } from "../engine/fight-game"
 import type { FightStart } from "../engine/fight"
@@ -50,7 +51,6 @@ const BLUE = "#2F6BF2"
 const GOLD = "#F2C230"
 const BG = "radial-gradient(120% 90% at 50% 0%, #3a0f1d 0%, #140b10 58%, #07060a 100%)"
 const TIERS: BoxeTier[] = ["easy", "even", "hard"]
-const STRATS: BoxeStrategy[] = ["aggressive", "balanced", "defensive"]
 const GOOD: BoxeCondition[] = ["fed", "rested"]
 
 function useWords() {
@@ -82,16 +82,6 @@ function useWords() {
       even: t("boxeTierEven", "Parelho"),
       hard: t("boxeTierHard", "Mais forte"),
     } satisfies Record<BoxeTier, string>,
-    strat: {
-      aggressive: t("boxeStratAggressive", "Agressivo"),
-      balanced: t("boxeStratBalanced", "Equilibrado"),
-      defensive: t("boxeStratDefensive", "Defensivo"),
-    } satisfies Record<BoxeStrategy, string>,
-    stratSub: {
-      aggressive: t("boxeStratAggressiveSub", "Ataca mais e bate mais forte, mas abre a guarda e cansa."),
-      balanced: t("boxeStratBalancedSub", "Ataca e defende na medida."),
-      defensive: t("boxeStratDefensiveSub", "Guarda alta e contra-ataque; bate menos."),
-    } satisfies Record<BoxeStrategy, string>,
   }
 }
 
@@ -212,12 +202,11 @@ function Menu({
   onExit: () => void
   error: string | null
 }) {
-  const { t, cond, tier: tierName, strat, stratSub } = useWords()
+  const { t, cond, tier: tierName } = useWords()
   const [card, setCard] = useState<BoxeCard["boxe"] | null>(null)
   const [fail, setFail] = useState<string | null>(null)
   const [mode, setMode] = useState<"solo" | "mp">("solo")
   const [tier, setTier] = useState<BoxeTier>("even")
-  const [strategy, setStrategy] = useState<BoxeStrategy>("balanced")
   useEffect(() => {
     let alive = true
     void loadCard().then((r) => {
@@ -250,7 +239,7 @@ function Menu({
               })()}
             </h1>
             <p className="mt-2 text-[13.5px] leading-snug max-[759px]:text-[12.5px] [@media(max-height:560px)]:hidden" style={{ color: MM.muted }}>
-              {t("boxePitch", "Você não controla a luta: valem o treino, a comida e o descanso do seu hóspede. Escolha a estratégia, suba no ringue e assista. Apanhar demais machuca de verdade — pode até ir para o hospital.")}
+              {t("boxePitch2", "Agora é você quem luta: ande pelo ringue e aperte ATACAR para soltar um combo — cada toque é uma sequência diferente — e ESQUIVAR para escapar. O treino, a comida e o descanso do seu hóspede decidem a força, a velocidade e o fôlego. Apanhar demais machuca de verdade — pode até ir para o hospital.")}
             </p>
           </div>
           <button type="button" aria-label={t("boxeLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
@@ -362,31 +351,9 @@ function Menu({
               </p>
             )}
 
-            {/* estratégia */}
-            <div className="mt-3 text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: MM.muted }}>
-              {t("boxeStrategy", "Estratégia")}
-            </div>
-            <div className="mt-1.5 grid grid-cols-3 gap-2" role="radiogroup" aria-label={t("boxeStrategy", "Estratégia")}>
-              {STRATS.map((s) => {
-                const on = s === strategy
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    onClick={() => setStrategy(s)}
-                    className="flex items-center justify-center gap-1.5 rounded-[12px] px-2 py-2 text-[13px] font-bold"
-                    style={{ background: on ? MM.rubySoft : MM.card, border: `1.5px solid ${on ? RED : MM.border}` }}
-                  >
-                    {s === "aggressive" ? <Flame className="h-4 w-4" /> : s === "defensive" ? <Shield className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
-                    {strat[s]}
-                  </button>
-                )
-              })}
-            </div>
-            <p className="mt-1.5 text-[12px]" style={{ color: MM.muted }}>
-              {stratSub[strategy]}
+            {/* controles */}
+            <p className="mt-3 rounded-[12px] px-3 py-2.5 text-[12.5px] leading-snug [@media(max-height:560px)]:hidden" style={{ background: MM.card, color: MM.muted }}>
+              {t("boxeControls", "Celular: joystick anda, ATACAR solta o combo, ESQUIVAR abaixa. Computador: WASD ou setas, J/espaço/clique ataca, K/Shift esquiva. No chão, aperte ATACAR para levantar.")}
             </p>
 
             {error && (
@@ -397,7 +364,7 @@ function Menu({
             <button
               type="button"
               disabled={!card.ok}
-              onClick={() => onFight(mode, tier, strategy)}
+              onClick={() => onFight(mode, tier, "balanced")}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-[14px] px-3 py-3.5 text-[16px] font-black uppercase italic tracking-wide"
               style={card.ok ? { background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}`, color: "#fff" } : { background: MM.card, color: MM.disabledText, border: `1px solid ${MM.border}` }}
             >
@@ -470,7 +437,7 @@ function clockText(s: number) {
 }
 
 function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => void; onExit: () => void }) {
-  const { t, strat, cond } = useWords()
+  const { t, cond } = useWords()
   const { start, net } = fight
   const me = start.me
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -483,6 +450,14 @@ function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => vo
   const [confirmTowel, setConfirmTowel] = useState(false)
   const [towel, setTowel] = useState(net.towel)
   const [offline, setOffline] = useState(false)
+  // Tela de celular só em aparelho SÓ de toque (como o Paint); mexeu um mouse: PC
+  const [isTouch, setIsTouch] = useState(() => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches && !window.matchMedia("(any-pointer: fine)").matches)
+  useEffect(() => {
+    if (!isTouch) return
+    const onMove = (e: PointerEvent) => e.pointerType === "mouse" && setIsTouch(false)
+    window.addEventListener("pointermove", onMove)
+    return () => window.removeEventListener("pointermove", onMove)
+  }, [isTouch])
   const textRef = useRef(t)
   useEffect(() => {
     textRef.current = t
@@ -571,6 +546,8 @@ function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => vo
 
   const ph = hud?.phase
   const showResult = !!result && (hud?.over ?? true)
+  const myDown = !!hud?.count.down && hud.count.who === me
+  const fighting = ph?.kind === "round" || ph?.kind === "count"
   const corner = (who: number) => {
     const c = start.corners[who]
     const color = who === 0 ? RED : BLUE
@@ -628,8 +605,8 @@ function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => vo
         </div>
       </div>
 
-      {/* botões do canto */}
-      <div className="absolute flex gap-2" style={{ bottom: SAFE.bottom, right: SAFE.right }}>
+      {/* som e toalha: embaixo do placar, à direita (embaixo ficam os controles) */}
+      <div className="absolute flex gap-2" style={{ top: `calc(${SAFE.top} + 76px)`, right: SAFE.right }}>
         <button
           type="button"
           aria-label={muted ? t("boxeSoundOn", "Ligar o som") : t("boxeSoundOff", "Desligar o som")}
@@ -638,7 +615,7 @@ function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => vo
             setMuted(m)
             gameRef.current?.setMuted(m)
           }}
-          className="grid h-11 w-11 place-items-center rounded-full"
+          className="grid h-10 w-10 place-items-center rounded-full"
           style={{ background: MM.surface, border: `1px solid ${MM.border}`, color: MM.text }}
         >
           {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
@@ -655,15 +632,15 @@ function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => vo
               net.sendTowel()
               setConfirmTowel(false)
             }}
-            className="h-11 rounded-full px-4 text-[13.5px] font-bold"
+            className="h-10 rounded-full px-3.5 text-[13px] font-bold"
             style={confirmTowel ? { background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}`, color: "#fff" } : { background: MM.surface, border: `1px solid ${MM.border}`, color: MM.text }}
           >
             {confirmTowel ? t("boxeTowelConfirm", "Confirmar: perder agora") : t("boxeTowel", "Jogar a toalha")}
           </button>
         )}
       </div>
-      <div className="absolute" style={{ bottom: SAFE.bottom, left: SAFE.left }}>
-        <button type="button" onClick={onExit} className="h-11 rounded-full px-4 text-[13px] font-semibold" style={{ background: MM.surface, border: `1px solid ${MM.border}`, color: MM.muted }} title={t("boxeLeaveHint", "Sair não para a luta: ela continua e vale na vida.")}>
+      <div className="absolute" style={{ top: `calc(${SAFE.top} + 76px)`, left: SAFE.left }}>
+        <button type="button" onClick={onExit} className="h-10 rounded-full px-4 text-[13px] font-semibold" style={{ background: MM.surface, border: `1px solid ${MM.border}`, color: MM.muted }} title={t("boxeLeaveHint", "Sair não para a luta: ela continua e vale na vida.")}>
           {t("boxeLeaveShort", "Sair")}
         </button>
       </div>
@@ -680,7 +657,7 @@ function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => vo
                     {c.name}
                   </div>
                   <div className="text-[11.5px]" style={{ color: MM.muted }}>
-                    {c.cpu ? t("boxeCpu", "computador") : strat[c.strategy]}
+                    {c.cpu ? t("boxeCpu", "computador") : who === me ? t("boxeYouTag", "você") : t("boxeHuman", "jogador")}
                   </div>
                   <div className={`mt-1 flex flex-wrap gap-1 ${who === 1 ? "justify-end" : ""} max-[600px]:hidden`}>
                     {c.view.conditions
@@ -717,9 +694,16 @@ function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => vo
       {/* contagem do árbitro */}
       {hud?.count.down && hud.count.n > 0 && !showResult && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <span className="text-[120px] font-black italic leading-none max-[600px]:text-[88px]" style={{ color: "#fff", textShadow: `0 0 30px ${RED}, 0 6px 0 rgba(0,0,0,0.5)` }}>
-            {hud.count.n}
-          </span>
+          <div className="flex flex-col items-center">
+            <span className="text-[120px] font-black italic leading-none max-[600px]:text-[88px]" style={{ color: "#fff", textShadow: `0 0 30px ${RED}, 0 6px 0 rgba(0,0,0,0.5)` }}>
+              {hud.count.n}
+            </span>
+            {myDown && (
+              <span className="mt-2 rounded-full px-3 py-1 text-[15px] font-black uppercase italic" style={{ background: "rgba(8,8,12,0.7)", color: GOLD }}>
+                {isTouch ? t("boxeRiseTap", "Toque em LEVANTAR sem parar!") : t("boxeRiseKey", "Aperte J ou espaço sem parar para levantar!")}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -763,8 +747,62 @@ function FightScreen({ fight, onMenu, onExit }: { fight: Fight; onMenu: () => vo
         </div>
       )}
 
+      {/* controles */}
+      {status === "ready" && !showResult && isTouch && <Joystick gameRef={gameRef} />}
+      {status === "ready" && !showResult && (isTouch || fighting) && (
+        <div className="absolute flex items-end gap-3" style={{ bottom: `calc(${SAFE.bottom} + 10px)`, right: SAFE.right }}>
+          {!myDown && (
+            <ActionButton size={isTouch ? 72 : 58} color={BLUE} label={t("boxeDodge", "Esquivar")} hint={isTouch ? null : "K"} dim={!fighting || !hud?.canAct} onPress={() => gameRef.current?.dodge()}>
+              <Wind className="h-6 w-6" />
+            </ActionButton>
+          )}
+          <ActionButton size={isTouch ? 96 : 74} color={myDown ? GOLD : RED} label={myDown ? t("boxeRise", "Levantar") : t("boxeAttack", "Atacar")} hint={isTouch ? null : "J"} dim={!myDown && (!fighting || !hud?.canAct)} onPress={() => gameRef.current?.attack()}>
+            <Swords className="h-8 w-8" />
+          </ActionButton>
+        </div>
+      )}
+      {status === "ready" && !isTouch && ph?.kind === "intro" && (
+        <div className="pointer-events-none absolute inset-x-0 text-center text-[13px] font-semibold" style={{ bottom: `calc(${SAFE.bottom} + 4px)`, color: MM.muted }}>
+          {t("boxeKeys", "WASD ou setas: andar · J, espaço ou clique: atacar · K ou Shift: esquivar")}
+        </div>
+      )}
+
       {showResult && result && <ResultCard result={result} start={start} onMenu={onMenu} onExit={onExit} />}
     </div>
+  )
+}
+
+/** Botão redondo de luta: dispara no toque (pointerdown, sem esperar soltar). */
+function ActionButton({ size, color, label, hint, dim, onPress, children }: { size: number; color: string; label: string; hint: string | null; dim: boolean; onPress: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        onPress()
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onPress()
+      }}
+      className="relative flex shrink-0 flex-col items-center justify-center rounded-full font-black uppercase italic text-white transition-transform active:scale-95"
+      style={{
+        width: size,
+        height: size,
+        touchAction: "none",
+        background: `radial-gradient(circle at 35% 30%, ${color}, ${color}cc 60%, ${color}88)`,
+        boxShadow: `0 6px 18px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,255,255,0.18) inset`,
+        opacity: dim ? 0.55 : 1,
+      }}
+    >
+      {children}
+      <span className="mt-0.5 text-[10.5px] leading-none tracking-wide">{label}</span>
+      {hint && (
+        <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] not-italic" style={{ background: "rgba(8,8,12,0.8)", color: MM.text }}>
+          {hint}
+        </span>
+      )}
+    </button>
   )
 }
 
@@ -779,7 +817,7 @@ function ResultCard({ result, start, onMenu, onExit }: { result: BoxeResult; sta
   const title = row.outcome === "win" ? t("boxeWin", "VITÓRIA") : row.outcome === "loss" ? t("boxeLoss", "DERROTA") : t("boxeDraw", "EMPATE")
   const color = row.outcome === "win" ? GOLD : row.outcome === "loss" ? "#FF5A6E" : MM.text
   const roundTxt = t("boxeRoundN", "{n}º round").replace("{n}", String(row.round))
-  const score = start.fight.result.score
+  const score = result.score ?? [0, 0]
   const how = (() => {
     switch (row.method) {
       case "ko":
