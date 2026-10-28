@@ -25,18 +25,19 @@ export const LANE_X = [-LANE, 0, LANE] as const
 
 /**
  * Cada veículo com o seu jeito (diferenças pequenas, para o gosto da escolha).
- * Velocidade (m/s) pela distância (pedido do Alex, mm3d-40b): o skate sai a
- * 40 km/h, chega a 200 km/h aos 10 km e a 350 km/h aos 20 km (o teto); bike
- * e patins na mesma proporção de antes (+11% e +4%). `early` = o tanto que
- * sobe logo no começo (a arrancada dos primeiros quilômetros).
+ * Velocidade (m/s) pela distância (pedidos do Alex, mm3d-40b/c): o skate sai
+ * a 40 km/h, chega a 200 km/h aos 10 km, 350 km/h aos 20 km e 450 km/h aos
+ * 30 km (o teto); bike e patins na mesma proporção (+11% e +4%). `early` =
+ * o tanto que sobe logo no começo (a arrancada dos primeiros quilômetros);
+ * `at` = a velocidade em cada marco de SPEED_KNOTS.
  */
-export const RIDES: Record<RideKind, { v0: number; early: number; at10k: number; at20k: number; jumpH: number; laneTime: number }> = {
-  bike: { v0: 12, early: 18, at10k: 61.73, at20k: 108.02, jumpH: 1.45, laneTime: 0.2 },
-  skate: { v0: 11, early: 16, at10k: 55.56, at20k: 97.22, jumpH: 1.75, laneTime: 0.17 },
-  skates: { v0: 11.5, early: 16.5, at10k: 57.61, at20k: 100.82, jumpH: 1.55, laneTime: 0.13 },
+export const RIDES: Record<RideKind, { v0: number; early: number; at: readonly number[]; jumpH: number; laneTime: number }> = {
+  bike: { v0: 12, early: 18, at: [61.73, 108.02, 138.89], jumpH: 1.45, laneTime: 0.2 },
+  skate: { v0: 11, early: 16, at: [55.56, 97.22, 125], jumpH: 1.75, laneTime: 0.17 },
+  skates: { v0: 11.5, early: 16.5, at: [57.61, 100.82, 129.63], jumpH: 1.55, laneTime: 0.13 },
 }
-/** Onde a curva muda (m): até o 1º arrancada + subida reta; do 1º ao 2º, reta até `at20k` (o teto). */
-export const SPEED_KNOTS = [10000, 20000] as const
+/** Marcos da curva (m): até o 1º arrancada + subida reta; depois reta de marco em marco; do último em diante, o teto. */
+export const SPEED_KNOTS = [10000, 20000, 30000] as const
 
 export const TUNING = {
   step: 1 / 120,
@@ -121,14 +122,18 @@ export type RunEvent =
 export function speedAt(ride: RideKind, dist: number) {
   const r = RIDES[ride]
   const d = Math.max(0, dist)
-  const [k1, k2] = SPEED_KNOTS
+  const k1 = SPEED_KNOTS[0]
   if (d <= k1) {
     const early = (x: number) => r.early * (1 - Math.exp(-x / TUNING.speedK))
-    const lin = (r.at10k - r.v0 - early(k1)) / k1
+    const lin = (r.at[0] - r.v0 - early(k1)) / k1
     return r.v0 + early(d) + lin * d
   }
-  if (d <= k2) return r.at10k + ((r.at20k - r.at10k) * (d - k1)) / (k2 - k1)
-  return r.at20k
+  for (let i = 1; i < SPEED_KNOTS.length; i++) {
+    const a = SPEED_KNOTS[i - 1]
+    const b = SPEED_KNOTS[i]
+    if (d <= b) return r.at[i - 1] + ((r.at[i] - r.at[i - 1]) * (d - a)) / (b - a)
+  }
+  return r.at[r.at.length - 1]
 }
 
 /** Distância (m) em que quem está parado no trânsito começa a andar: ~2,6 s antes de o jogador chegar. */
