@@ -25,10 +25,11 @@ import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
-import { fetchSession, getCenterInterior, postCorridaJoin, postJetpackJoin, postNoturnoJoin, postPaintJoin } from "../data"
+import { fetchSession, getBoxeCard, getCenterInterior, postBoxeJoin, postCorridaJoin, postJetpackJoin, postNoturnoJoin, postPaintJoin } from "../data"
 import type { PaintJoin } from "../paint/ui/paint-view"
 import type { CorridaJoin } from "../corrida/ui/race-view"
 import type { NoturnoJoin } from "../noturno/ui/run-view"
+import type { BoxeJoin } from "../boxe/ui/boxe-view"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
@@ -37,6 +38,7 @@ const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => 
 const PaintView = dynamic(() => import("../paint/ui/paint-view").then((m) => m.PaintView), { ssr: false })
 const RaceView = dynamic(() => import("../corrida/ui/race-view").then((m) => m.RaceView), { ssr: false })
 const RunView = dynamic(() => import("../noturno/ui/run-view").then((m) => m.RunView), { ssr: false })
+const BoxeView = dynamic(() => import("../boxe/ui/boxe-view").then((m) => m.BoxeView), { ssr: false })
 
 /** Paint (mm3d-35): reserva numa sala do modo pedido (null = sem acesso). */
 async function fetchPaintSession(mode: string, roomId: string | null) {
@@ -65,6 +67,21 @@ const noturnoJoin: NoturnoJoin = async (ride, body, hooks) =>
     if (!token) return null
     const r = await postNoturnoJoin(token, ride, body)
     return r.ok ? r.data : null
+  }, hooks)
+
+/** Arena de Boxe (mm3d-43): a ficha (vida + adversários) e a sala da luta. */
+async function loadBoxeCard() {
+  const token = getToken()
+  if (!token) return null
+  const r = await getBoxeCard(token)
+  return r.ok ? r.data : { error: r.error, code: r.code }
+}
+const boxeJoin: BoxeJoin = async (mode, tier, strategy, hooks) =>
+  (await import("../boxe/engine/net")).joinBoxe(async () => {
+    const token = getToken()
+    if (!token) return null
+    const r = await postBoxeJoin(token, mode, tier, strategy)
+    return r.ok ? r.data : { error: r.error, code: r.code }
   }, hooks)
 
 /** O local abre um minijogo agora (o registro do servidor decide). */
@@ -108,6 +125,7 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   paint: "Paint",
   corrida: "Antigravidade",
   noturno: "Rolê Noturno",
+  boxe: "Arena de Boxe",
   igreja: "Igreja",
   delegacia: "Delegacia",
   hospital: "Hospital",
@@ -252,7 +270,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               if (g === "jetpack") {
                 setMinigameParty((it.place.party ?? 0) > 1)
                 setMinigame(g)
-              } else if (g === "paint" || g === "corrida" || g === "noturno") setMinigame(g)
+              } else if (g === "paint" || g === "corrida" || g === "noturno" || g === "boxe") setMinigame(g)
               else if (interiorOf(it.place)) {
                 const id = it.place.id
                 const ready = id === "hospital" ? (payload.center.interiors?.hospital ?? null) : (interiorCache.get(id) ?? null)
@@ -534,6 +552,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {minigame === "corrida" && <RaceView name={payload.me.name} onExit={() => setMinigame(null)} join={corridaJoin} />}
       {/* Rolê Noturno (mm3d-40): bike, skate ou patins numa rua de noite; ao sair, volta à porta */}
       {minigame === "noturno" && <RunView body={body} look={look} name={payload.me.name} onExit={() => setMinigame(null)} join={noturnoJoin} />}
+      {/* Arena de Boxe (mm3d-43): a luta calculada pela vida; ao sair, volta à porta */}
+      {minigame === "boxe" && <BoxeView onExit={() => setMinigame(null)} loadCard={loadBoxeCard} join={boxeJoin} />}
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
       {/* Prédios do centro (mm3d-37): mesma tela; a planta vem do servidor ao entrar */}
       {minigame === "interior" && inside && insidePlace && inside.interior && (

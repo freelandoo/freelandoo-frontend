@@ -170,6 +170,45 @@ export interface NoturnoSession {
   multiplayer: MultiplayerSession
 }
 
+/** Arena de Boxe (mm3d-43): uma luta (sozinho ou multiplayer): POST /center/boxe. */
+export interface BoxeSession {
+  multiplayer: MultiplayerSession
+}
+
+/** Notas da ficha do lutador (0–100), saídas da vida. */
+export interface BoxeView {
+  power: number
+  speed: number
+  defense: number
+  stamina: number
+  chin: number
+}
+export type BoxeCondition = "fed" | "peckish" | "hungry" | "stuffed" | "rested" | "tired" | "exhausted" | "sleepy" | "stressed" | "hurt" | "heavy"
+export type BoxeTier = "easy" | "even" | "hard"
+export type BoxeStrategy = "aggressive" | "balanced" | "defensive"
+export interface BoxeRecord {
+  w: number
+  l: number
+  d: number
+  ko: number
+  injuredH?: number
+  fightsToday?: number
+}
+
+/** A ficha antes da luta: GET /center/boxe. */
+export interface BoxeCard {
+  boxe: {
+    ok: boolean
+    /** Por que não pode lutar (tired, unfit, injured, hospital, jail, sleeping, dead). */
+    code: string | null
+    injuredH: number
+    me: { body: string; look: string; view: BoxeView; conditions: BoxeCondition[]; record: BoxeRecord | null }
+    opponents: { tier: BoxeTier; name: string; body: string; look: string; view: BoxeView; purse: number }[]
+    strategies: BoxeStrategy[]
+    rules: { rounds: number; roundS: number; minEnergy: number; minHealth: number }
+  }
+}
+
 export interface PaintSession {
   multiplayer: MultiplayerSession
   mode: "solo" | "1v1" | "2v2" | "3v3"
@@ -600,6 +639,7 @@ export type CenterPlaceId =
   | "paint"
   | "corrida"
   | "noturno"
+  | "boxe"
   | "igreja"
   | "delegacia"
   | "hospital"

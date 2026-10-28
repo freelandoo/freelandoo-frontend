@@ -24,7 +24,7 @@ import { GeoBuilder, place } from "./geometry"
 import { type Box2 } from "./collision"
 import { RemoteWalker, type WalkerPose } from "./remote-walker"
 import { SpeechBubble } from "./speech-bubble"
-import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder, type PlacePose } from "./avatars"
+import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder, type BoxeBase, type BoxeClip, type PlacePose } from "./avatars"
 import { lerpAngle, step, type Body, type Intent, type MotionProfile, type MoveState } from "./motion"
 import type { BodyId } from "../types"
 
@@ -110,6 +110,7 @@ export class Character {
     }
     next.setParent(this.holder)
     next.pose = this.pose
+    next.boxe = this.boxeBase
     next.update(0, this.move, this.speed, this.tired, this.unwell)
     const prev = this.rig
     this.rig = next
@@ -157,6 +158,22 @@ export class Character {
     if (this.rig) this.rig.pose = pose
   }
   private pose: PlacePose | null = null
+
+  /** Arena de Boxe (mm3d-43): pose-base da luta (null = locomoção normal). */
+  setBoxe(base: BoxeBase | null) {
+    this.boxeBase = base
+    if (this.rig) this.rig.boxe = base
+  }
+  private boxeBase: BoxeBase | null = null
+
+  /** Golpe/reação/queda de uma vez, do trecho from–to do clipe, em `dur` s (ver AvatarRig.boxeAct). */
+  boxeAct(clip: BoxeClip, dur: number, from = 0, to = 1, hold = false) {
+    return this.rig?.boxeAct(clip, dur, from, to, hold) ?? false
+  }
+
+  boxeClear() {
+    this.rig?.boxeClear()
+  }
 
   /** Locomoção armada do Paint (m/s no referencial do corpo); null = normal. */
   setPaintMove(fwd: number, side: number, firing: boolean) {

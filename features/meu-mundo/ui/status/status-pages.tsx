@@ -31,6 +31,7 @@ import {
   Sparkles,
   Sprout,
   Square,
+  Swords,
   Syringe,
   Utensils,
   Wind,
@@ -257,6 +258,7 @@ function effectName(id: string, t: Tr) {
       energy_drink: t("effEnergyDrink", "Energético"),
       stim: t("effStim", "Estimulante"),
       anabolic: t("effAnabolic", "Anabolizante"),
+      injury: t("effInjury", "Lesão do boxe"),
     } as Record<string, string>
   )[id] ?? id
 }
@@ -306,7 +308,26 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
         .replace("{h}", hoursText(Number(data.hours)))
         .replace("{act}", activityLabel(String(data.during), t).toLowerCase())
     case "hospital_in":
-      return t("evHospitalIn", "Foi internado no hospital.")
+      return data.reason === "boxe" ? t("evHospitalInBoxe", "Saiu da arena de boxe direto para o hospital.") : t("evHospitalIn", "Foi internado no hospital.")
+    case "boxe":
+      return (
+        data.outcome === "win"
+          ? t("evBoxeWin", "Venceu uma luta de boxe ({how}).")
+          : data.outcome === "loss"
+            ? t("evBoxeLoss", "Perdeu uma luta de boxe ({how}).")
+            : t("evBoxeDraw", "Empatou uma luta de boxe.")
+      )
+        .replace(
+          "{how}",
+          data.method === "ko"
+            ? t("evBoxeKo", "nocaute")
+            : data.method === "tko"
+              ? t("evBoxeTko", "nocaute técnico")
+              : data.method === "towel"
+                ? t("evBoxeTowel", "toalha")
+                : t("evBoxePoints", "pontos"),
+        )
+        .concat(Number(data.coins) > 0 ? " " + t("evBoxeCoins", "+{n} moedas.").replace("{n}", String(data.coins)) : "")
     case "hospital_out":
       return t("evHospitalOut", "Teve alta do hospital.")
     case "diabetes":
@@ -334,6 +355,7 @@ function eventIcon(kind: string) {
   if (kind === "death") return <Skull className="h-5 w-5" />
   if (kind === "collapse") return <Zap className="h-5 w-5" />
   if (kind === "skin_bought") return <Shirt className="h-5 w-5" />
+  if (kind === "boxe") return <Swords className="h-5 w-5" />
   return <Clock className="h-5 w-5" />
 }
 function timeOf(iso: string, offsetMin: number) {
