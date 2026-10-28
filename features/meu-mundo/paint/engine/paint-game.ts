@@ -184,6 +184,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const glowGun = (g: PaintGun) => {
     if (glow) for (const m of g.glowMeshes) glow.addIncludedOnlyMesh(m)
   }
+  if (glow) for (const m of paint.glowMeshes) glow.addIncludedOnlyMesh(m)
   const gun = new PaintGun(scene)
   glowGun(gun)
   // Ao lado do peito, apontando para a frente (a pose de mira com a mão vem com as animações do Paint).

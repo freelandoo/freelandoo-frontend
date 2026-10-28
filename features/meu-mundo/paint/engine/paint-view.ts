@@ -6,17 +6,18 @@
 // 3 chamadas de desenho. Mais: respingo no chão (vermelho), gotas que voam no
 // impacto e o rastro do tiro (bolinha da boca da arma até o alvo).
 //
-// mm3d-46: o MURO é uma placa de energia turquesa (caixa com grade de
-// hexágonos acesa, instâncias finas como as manchas) que sobe do chão ao
-// nascer. O dano virou preto: o respingo do tiro é preto e o sangue tem
+// mm3d-46: o MURO sobe do chão ao nascer; mm3d-46b (pedido do Alex): painel
+// HEXAGONAL amarelo de holograma — translúcido, linhas de varredura subindo,
+// cintila, contorno aceso e brilho da GlowLayer (`glowMeshes`). O dano virou preto: o respingo do tiro é preto e o sangue tem
 // respingo e gotas próprios, vermelhos.
 
 import type { Scene } from "@babylonjs/core/scene"
-import type { Mesh } from "@babylonjs/core/Meshes/mesh"
+import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { CreateLathe } from "@babylonjs/core/Meshes/Builders/latheBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
-import { CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder"
+import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
+import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
@@ -62,6 +63,7 @@ export class PaintView {
   private readonly splatMats: StandardMaterial[] = []
   private readonly splatTex: DynamicTexture
   private readonly wallTex: DynamicTexture
+  private readonly wallScan: DynamicTexture
   private readonly splats: { born: number; m: Matrix }[][] = [[], []]
   private readonly dropBase: Mesh
   private readonly dropMats: StandardMaterial[] = []
@@ -75,17 +77,21 @@ export class PaintView {
 
   constructor(scene: Scene, lowEnd: boolean) {
     this.wallTex = wallTexture(scene)
+    this.wallScan = scanTexture(scene)
     for (let c = 0; c < 4; c++) {
       const mat = new StandardMaterial(`paint-blob-${c}`, scene)
       const col = hex(PAINT_COLORS[c])
       if (c === PAINT.WALL) {
-        // placa de energia: grade acesa por cima de um vidro escuro
-        mat.diffuseColor = col.scale(0.35)
-        // o emissivo SOMA à textura: preto, senão o muro estoura em branco
+        // holograma: só luz própria, translúcido pelas linhas de varredura
+        // (o emissivo SOMA à textura: preto, senão estoura em branco)
+        mat.disableLighting = true
+        mat.diffuseColor = new Color3(0, 0, 0)
         mat.emissiveTexture = this.wallTex
         mat.emissiveColor = new Color3(0, 0, 0)
-        mat.specularColor = new Color3(0.6, 0.8, 0.8)
-        mat.specularPower = 64
+        mat.opacityTexture = this.wallScan
+        mat.backFaceCulling = false
+        mat.disableDepthWrite = true
+        mat.fogEnabled = false
       } else if (c === PAINT.HARM) {
         // preto envernizado: o brilho é o que mostra a forma
         mat.diffuseColor = col
@@ -99,7 +105,7 @@ export class PaintView {
         mat.specularPower = 36
       }
       this.mats.push(mat)
-      const base = c === PAINT.WALL ? CreateBox(`paint-blob-base-${c}`, { size: 1 }, scene) : puck(`paint-blob-base-${c}`, scene, lowEnd ? 18 : 28)
+      const base = c === PAINT.WALL ? hexPanel(`paint-blob-base-${c}`, scene) : puck(`paint-blob-base-${c}`, scene, lowEnd ? 18 : 28)
       base.material = mat
       base.isPickable = false
       // Sem instância o Babylon desenharia a própria malha-base: desligada até a 1ª mancha.
@@ -306,8 +312,19 @@ export class PaintView {
     this.bolts.push({ from: new Vector3(from.x, from.y, from.z), to: new Vector3(to.x, to.y, to.z), t: 0, c })
   }
 
+  /** O que a GlowLayer da cena acende (o holograma do muro). */
+  get glowMeshes(): Mesh[] {
+    return [this.bases[PAINT.WALL]]
+  }
+
   tick(dt: number) {
     this.clock += dt
+    // holograma: a varredura sobe e a luz cintila
+    if (this.lists[PAINT.WALL].length) {
+      this.wallScan.vOffset = (this.wallScan.vOffset - dt * 0.35) % 1
+      const flick = Math.sin(this.clock * 23) * Math.sin(this.clock * 7.3) > 0.82 ? 0.72 : 1
+      this.wallTex.level = (1.05 + Math.sin(this.clock * 3) * 0.08) * flick
+    }
     // manchas: as que estão crescendo/sumindo pedem a matriz de novo
     for (const l of [...this.animating]) {
       const c = l.blob.c
@@ -396,6 +413,7 @@ export class PaintView {
     for (const m of this.splatMats) m.dispose()
     this.splatTex.dispose()
     this.wallTex.dispose()
+    this.wallScan.dispose()
   }
 }
 
@@ -412,44 +430,145 @@ function dropMat(name: string, scene: Scene, col: Color3) {
   return dm
 }
 
+/** Contorno do muro (mm3d-46b) em eixos de [-0,5; 0,5]: topo e base retos, pontas dos lados. */
+const HEX: [number, number][] = [
+  [-0.5, 0],
+  [-0.25, 0.5],
+  [0.25, 0.5],
+  [0.5, 0],
+  [0.25, -0.5],
+  [-0.25, -0.5],
+]
+
 /**
- * A cara do muro (mm3d-46): grade de hexágonos turquesa acesa, borda forte e
- * um degradê que escurece para cima — escudo de energia, sem transparência
- * (as instâncias não precisam de ordenação).
+ * Painel hexagonal (mm3d-46b): frente e verso em leque, seis lados. Mesma
+ * caixa de 1 × 1 × 1 do muro da regra (a instância estica para 2 × 3,2 m).
+ * UV da frente/verso = posição no painel (a textura desenha o mesmo
+ * hexágono); os lados apontam para o canto aceso da textura (a borda brilha).
+ */
+function hexPanel(name: string, scene: Scene) {
+  const pos: number[] = []
+  const nrm: number[] = []
+  const uv: number[] = []
+  const idx: number[] = []
+  for (const side of [1, -1]) {
+    const b = pos.length / 3
+    pos.push(0, 0, side * 0.5)
+    nrm.push(0, 0, side)
+    uv.push(0.5, 0.5)
+    for (const [x, y] of HEX) {
+      pos.push(x, y, side * 0.5)
+      nrm.push(0, 0, side)
+      uv.push(x + 0.5, y + 0.5)
+    }
+    for (let k = 0; k < 6; k++) {
+      const a = b + 1 + k
+      const c = b + 1 + ((k + 1) % 6)
+      if (side > 0) idx.push(b, a, c)
+      else idx.push(b, c, a)
+    }
+  }
+  for (let k = 0; k < 6; k++) {
+    const [x0, y0] = HEX[k]
+    const [x1, y1] = HEX[(k + 1) % 6]
+    const nx = y1 - y0
+    const ny = -(x1 - x0)
+    const nl = Math.hypot(nx, ny)
+    const b = pos.length / 3
+    for (const [x, y, z] of [[x0, y0, 0.5], [x1, y1, 0.5], [x1, y1, -0.5], [x0, y0, -0.5]]) {
+      pos.push(x, y, z)
+      nrm.push(nx / nl, ny / nl, 0)
+      uv.push(0.01, 0.01)
+    }
+    idx.push(b, b + 2, b + 1, b, b + 3, b + 2)
+  }
+  const mesh = new Mesh(name, scene)
+  const vd = new VertexData()
+  vd.positions = pos
+  vd.normals = nrm
+  vd.uvs = uv
+  vd.indices = idx
+  vd.applyToMesh(mesh, false)
+  return mesh
+}
+
+/**
+ * Holograma do muro (mm3d-46b, pedido do Alex: amarelo, brilhoso, como um
+ * holograma): âmbar fraco no meio que acende para as bordas, grade de
+ * hexágonos, contorno duplo no formato do painel e os cantos da textura
+ * acesos (os lados do painel usam).
  */
 function wallTexture(scene: Scene) {
-  const W = 256
-  const H = 256
-  const tex = new DynamicTexture("paint-wall", { width: W, height: H }, scene, true)
+  const S = 256
+  const tex = new DynamicTexture("paint-wall", { width: S, height: S }, scene, true)
   const g = tex.getContext() as unknown as CanvasRenderingContext2D
-  const grad = g.createLinearGradient(0, H, 0, 0)
-  grad.addColorStop(0, "rgb(18,120,116)")
-  grad.addColorStop(1, "rgb(6,40,44)")
+  g.fillStyle = "rgb(255,236,140)"
+  g.fillRect(0, 0, S, S)
+  const hexPath = (k: number) => {
+    g.beginPath()
+    HEX.forEach(([x, y], i) => {
+      const px = S / 2 + x * S * k
+      const py = S / 2 - y * S * k
+      if (i === 0) g.moveTo(px, py)
+      else g.lineTo(px, py)
+    })
+    g.closePath()
+  }
+  g.save()
+  hexPath(1)
+  g.clip()
+  const grad = g.createRadialGradient(S / 2, S / 2, 10, S / 2, S / 2, S * 0.62)
+  grad.addColorStop(0, "rgb(70,46,0)")
+  grad.addColorStop(1, "rgb(190,130,0)")
   g.fillStyle = grad
-  g.fillRect(0, 0, W, H)
-  g.strokeStyle = "rgba(120,255,240,0.75)"
-  g.lineWidth = 2.5
-  const R = 18
+  g.fillRect(0, 0, S, S)
+  g.strokeStyle = "rgba(255,214,60,0.8)"
+  g.lineWidth = 2
+  const R = 13
   const dx = R * Math.sqrt(3)
-  for (let row = -1; row * R * 1.5 < H + R; row++) {
-    for (let col = -1; col * dx < W + dx; col++) {
+  for (let row = -1; row * R * 1.5 < S + R; row++) {
+    for (let col = -1; col * dx < S + dx; col++) {
       const cx = col * dx + (row % 2 ? dx / 2 : 0)
       const cy = row * R * 1.5
       g.beginPath()
       for (let k = 0; k <= 6; k++) {
         const a = Math.PI / 6 + (k * Math.PI) / 3
-        const x = cx + Math.cos(a) * R
-        const y = cy + Math.sin(a) * R
+        const x = cx + Math.cos(a) * R * 0.86
+        const y = cy + Math.sin(a) * R * 0.86
         if (k === 0) g.moveTo(x, y)
         else g.lineTo(x, y)
       }
       g.stroke()
     }
   }
-  g.strokeStyle = "rgb(170,255,248)"
-  g.lineWidth = 12
-  g.strokeRect(0, 0, W, H)
+  g.restore()
+  g.strokeStyle = "rgb(255,248,200)"
+  g.lineWidth = 14
+  hexPath(1)
+  g.stroke()
+  g.strokeStyle = "rgba(255,210,40,0.9)"
+  g.lineWidth = 4
+  hexPath(0.84)
+  g.stroke()
   tex.update(false)
+  return tex
+}
+
+/** Linhas de varredura do holograma (opacidade; rola para cima). */
+function scanTexture(scene: Scene) {
+  const H = 128
+  const tex = new DynamicTexture("paint-wall-scan", { width: 4, height: H }, scene, false)
+  const g = tex.getContext() as unknown as CanvasRenderingContext2D
+  for (let y = 0; y < H; y++) {
+    const band = y % 8 < 3 ? 0.18 : 0
+    const sweep = Math.max(0, 1 - Math.abs(y - 20) / 14) * 0.3
+    const v = Math.round(255 * Math.min(1, 0.52 + band + sweep))
+    g.fillStyle = `rgb(${v},${v},${v})`
+    g.fillRect(0, y, 4, 1)
+  }
+  tex.update(false)
+  tex.getAlphaFromRGB = true
+  tex.wrapV = Texture.WRAP_ADDRESSMODE
   return tex
 }
 
