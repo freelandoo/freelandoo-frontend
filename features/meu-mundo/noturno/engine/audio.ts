@@ -147,6 +147,23 @@ export class RunAudio {
     this.tone(160, 0.2, 0.12, "sawtooth", 90)
   }
 
+  /** Logo da Freelandoo (mm3d-42): acorde de potência subindo + chiado (o "vulcan" do jetpack). */
+  power() {
+    ;[392, 523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.tone(f, 0.16, 0.06, "sawtooth"), i * 55))
+    this.burst(0.5, 600, 0.8, 0.3, 6)
+  }
+
+  /** O poder acabou. */
+  powerEnd() {
+    this.tone(660, 0.14, 0.08, "triangle", 440)
+  }
+
+  /** Obstáculo explodido: estouro de ruído descendo + pancada grave (o "smash" do jetpack). */
+  smash() {
+    this.burst(0.35, 5000, 0.7, 0.55, 0.08)
+    this.tone(140, 0.25, 0.16, "square", 90)
+  }
+
   crash() {
     this.burst(0.9, 900, 0.7, 0.7, 0.2)
     this.tone(120, 0.6, 0.2, "sawtooth", 40)

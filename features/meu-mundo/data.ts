@@ -21,6 +21,7 @@ import type {
   MultiplayerSession,
   PaintSession,
   CorridaSession,
+  NoturnoSession,
   NeighborhoodPayload,
   NoticeFilter,
   PlayerProfile,
@@ -151,6 +152,8 @@ export const postPaintJoin = (token: string, mode: string, roomId?: string | nul
   call<PaintSession>(token, "POST", "/center/paint", roomId ? { mode, roomId } : { mode })
 /** Corrida em grupo (mm3d-39b): a sala espera até 1 minuto e completa 6 naves com o computador. */
 export const postCorridaJoin = (token: string) => call<CorridaSession>(token, "POST", "/center/corrida", {})
+/** Rolê Noturno em grupo (mm3d-42): espera até 1 minuto; todos na mesma rua. */
+export const postNoturnoJoin = (token: string, ride: string, body: string) => call<NoturnoSession>(token, "POST", "/center/noturno", { ride, body })
 export const getVisits = (token: string) => call<VisitState>(token, "GET", "/visits")
 export const getInviteCandidates = (token: string) =>
   call<{ candidates: { name: string; available: boolean; reason: string | null }[] }>(token, "GET", "/visits/candidates")

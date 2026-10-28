@@ -9,24 +9,47 @@
 //    velocidade no alto, contagem, avisos (manobra, tropeço, 50 moedas) e a
 //    borda vermelha enquanto o próximo tropeço derruba.
 //  - FIM: o que derrubou, pontos, moedas, distância, manobras e o recorde.
+//
+// mm3d-42: MULTIPLAYER (pedido do Alex, "na mesma tela como o Antigravidade"):
+// a sala espera até 1 minuto por quem está no centro (6 largam na hora), todos
+// correm na MESMA rua; o placar do grupo fica embaixo das moedas e o fim mostra
+// a classificação ao vivo até o último cair. Sem computador: no Rolê a graça é
+// a rua, quem corre junto é gente. O logo da Freelandoo (a cada 700 m) acende
+// a barra dourada do PODER embaixo da velocidade.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Bike, Loader2, Trophy, Volume2, VolumeX, X } from "lucide-react"
+import { Bike, Loader2, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { SAFE } from "../../ui/meu-mundo-view"
 import type { BodyId } from "../../types"
 import { RIDES, type RideKind } from "../sim/run"
-import { createRunGame, type RunGameHandle, type RunHud, type RunNotice, type RunResult } from "../engine/run-game"
+import { createRunGame, type FieldRow, type RunGameHandle, type RunHud, type RunNotice, type RunResult } from "../engine/run-game"
+import type { NoturnoLobbyEntry, NoturnoNet, NoturnoNetStatus, NoturnoResultRow, NoturnoStart } from "../engine/net"
+
+/** Entrar numa largada em grupo (null = a sala não abriu). */
+export type NoturnoJoin = (
+  ride: RideKind,
+  body: BodyId,
+  hooks: { signal: AbortSignal; onLobby: (list: NoturnoLobbyEntry[], until: number) => void; onStatus: (s: NoturnoNetStatus) => void },
+) => Promise<{ net: NoturnoNet; start: NoturnoStart } | null>
 
 export interface RunViewProps {
   body: BodyId
   look?: string
+  /** Nome do jogador (no placar do grupo). */
+  name?: string
   onExit: () => void
+  /** Multiplayer (sem isto, só sozinho). */
+  join?: NoturnoJoin
 }
 
-type Stage = { kind: "menu" } | { kind: "game"; ride: RideKind; key: number }
+/** Vagas da largada em grupo. */
+const MAX_RIDERS = 6
+
+type Mp = { net: NoturnoNet; start: NoturnoStart }
+type Stage = { kind: "menu" } | { kind: "lobby"; ride: RideKind; ac: AbortController } | { kind: "game"; ride: RideKind; key: number; mp?: Mp }
 
 const RIDE_ORDER: RideKind[] = ["bike", "skate", "skates"]
 const NEON = "#FF4FB3"
@@ -107,20 +130,119 @@ function useRideNames() {
   } satisfies Record<RideKind, string>
 }
 
-export function RunView({ body, look, onExit }: RunViewProps) {
+export function RunView({ body, look, name, onExit, join }: RunViewProps) {
+  const t = useTranslations("MeuMundo")
   const [stage, setStage] = useState<Stage>({ kind: "menu" })
+  const [lobby, setLobby] = useState<{ list: NoturnoLobbyEntry[]; until: number }>({ list: [], until: 0 })
+  const [error, setError] = useState<string | null>(null)
   const seq = useRef(0)
-  const play = useCallback((ride: RideKind) => {
-    saveRide(ride)
-    setStage({ kind: "game", ride, key: ++seq.current })
-  }, [])
+  const play = useCallback(
+    async (ride: RideKind, multi = false) => {
+      saveRide(ride)
+      setError(null)
+      if (!multi || !join) {
+        setStage({ kind: "game", ride, key: ++seq.current })
+        return
+      }
+      const ac = new AbortController()
+      setLobby({ list: [], until: 0 })
+      setStage({ kind: "lobby", ride, ac })
+      const fail = () => {
+        setError(t("noturnoJoinFail", "O rolê em grupo não abriu agora. Tente de novo ou ande sozinho."))
+        setStage({ kind: "menu" })
+      }
+      try {
+        const got = await join(ride, body, { signal: ac.signal, onLobby: (list, until) => setLobby({ list, until }), onStatus: () => {} })
+        if (ac.signal.aborted) {
+          got?.net.dispose()
+          return
+        }
+        if (!got) return fail()
+        setStage({ kind: "game", ride, key: ++seq.current, mp: got })
+      } catch {
+        if (!ac.signal.aborted) fail()
+      }
+    },
+    [join, body, t],
+  )
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#07060d" }}>
       {stage.kind === "game" ? (
-        <RunScreen key={stage.key} ride={stage.ride} body={body} look={look} onAgain={() => play(stage.ride)} onMenu={() => setStage({ kind: "menu" })} />
+        <RunScreen
+          key={stage.key}
+          ride={stage.ride}
+          body={body}
+          look={look}
+          name={name}
+          mp={stage.mp}
+          onAgain={() => void play(stage.ride, !!stage.mp)}
+          onMenu={() => setStage({ kind: "menu" })}
+        />
+      ) : stage.kind === "lobby" ? (
+        <RunLobby
+          list={lobby.list}
+          until={lobby.until}
+          onCancel={() => {
+            stage.ac.abort()
+            setStage({ kind: "menu" })
+          }}
+        />
       ) : (
-        <RunMenu onPlay={play} onExit={onExit} />
+        <RunMenu onPlay={(r, m) => void play(r, m)} onExit={onExit} multi={!!join} error={error} />
       )}
+    </div>
+  )
+}
+
+// ═══ espera (multiplayer) ════════════════════════════════════════════════════
+
+function RunLobby({ list, until, onCancel }: { list: NoturnoLobbyEntry[]; until: number; onCancel: () => void }) {
+  const t = useTranslations("MeuMundo")
+  const names = useRideNames()
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250)
+    return () => clearInterval(id)
+  }, [])
+  const left = until ? Math.max(0, Math.ceil((until - now) / 1000)) : null
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
+      <div className="w-full max-w-[440px] rounded-[22px] p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+        <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: CYAN }}>
+          <Users className="h-4 w-4" /> {t("noturnoModeMulti", "Multiplayer")}
+        </div>
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <h2 className="text-[22px] font-black italic leading-tight">{t("noturnoLobbyTitle", "Esperando a galera…")}</h2>
+          <span className="text-[34px] font-black italic tabular-nums leading-none" style={{ color: NEON }} aria-live="polite">
+            {left === null ? <Loader2 className="h-7 w-7 animate-spin" /> : `0:${String(left).padStart(2, "0")}`}
+          </span>
+        </div>
+        <p className="mt-2 text-[13px] leading-snug [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
+          {t("noturnoLobbyHow", "Quem entrar até o fim do tempo corre junto, na mesma rua. Ganha quem fizer mais pontos antes de cair.")}
+        </p>
+        <ol className="mt-3 grid grid-cols-2 gap-1.5 max-[420px]:grid-cols-1">
+          {Array.from({ length: MAX_RIDERS }, (_, i) => {
+            const e = list[i]
+            return (
+              <li key={i} className="flex items-center gap-2 rounded-[10px] px-2.5 py-2 text-[13.5px]" style={{ background: e ? MM.rubySoft : MM.card, color: e ? MM.text : MM.muted }}>
+                {e ? <RideIcon ride={e.ride} className="h-4 w-4 shrink-0" /> : <User className="h-4 w-4 shrink-0 opacity-50" />}
+                <span className="min-w-0 truncate font-semibold">{e ? e.name : t("noturnoLobbyFree", "vaga livre")}</span>
+                {e && (
+                  <span className="ml-auto shrink-0 text-[11px]" style={{ color: MM.muted }}>
+                    {names[e.ride]}
+                  </span>
+                )}
+              </li>
+            )
+          })}
+        </ol>
+        <p className="mt-2 text-[12.5px]" style={{ color: MM.muted }}>
+          {t("noturnoLobbyCount", "{n} de 6 no rolê").replace("{n}", String(Math.max(1, list.length)))}
+        </p>
+        <button type="button" onClick={onCancel} className="mt-4 w-full rounded-[14px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+          {t("noturnoLobbyCancel", "Sair da espera")}
+        </button>
+      </div>
     </div>
   )
 }
@@ -135,7 +257,7 @@ function Bar({ value, color }: { value: number; color: string }) {
   )
 }
 
-function RunMenu({ onPlay, onExit }: { onPlay: (r: RideKind) => void; onExit: () => void }) {
+function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi: boolean) => void; onExit: () => void; multi: boolean; error: string | null }) {
   const t = useTranslations("MeuMundo")
   const names = useRideNames()
   const [ride, setRide] = useState<RideKind>("skate")
@@ -190,7 +312,7 @@ function RunMenu({ onPlay, onExit }: { onPlay: (r: RideKind) => void; onExit: ()
                 role="radio"
                 aria-checked={on}
                 onClick={() => setRide(r)}
-                onDoubleClick={() => onPlay(r)}
+                onDoubleClick={() => onPlay(r, false)}
                 className="flex flex-col gap-2 rounded-[14px] p-3 text-left transition-transform active:scale-[0.98] max-[480px]:p-2"
                 style={{ background: on ? MM.rubySoft : MM.card, border: `1.5px solid ${on ? NEON : MM.border}`, boxShadow: on ? "0 0 18px rgba(255,79,179,0.25)" : "none" }}
               >
@@ -238,16 +360,42 @@ function RunMenu({ onPlay, onExit }: { onPlay: (r: RideKind) => void; onExit: ()
             {t("noturnoHowCars", "De frente derruba. Pule o cavalete e suba no teto dos carros.")}
           </li>
         </ul>
+        <p className="mt-2 rounded-[12px] px-2.5 py-2 text-[12.5px] leading-snug max-[759px]:hidden [@media(max-height:620px)]:hidden" style={{ background: "rgba(242,183,5,0.1)", color: MM.muted, border: `1px solid ${MM.goldBorder}` }}>
+          <b style={{ color: GOLD }}>{t("noturnoHowPowerTitle", "Logo da Freelandoo")}</b> · {t("noturnoHowPower", "A cada 700 m. Pegou: 5 s de poder — o que você bater explode e você acelera.")}
+        </p>
 
-        <button
-          type="button"
-          onClick={() => onPlay(ride)}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[14px] px-3 py-3.5 text-[17px] [@media(max-height:520px)]:mt-2.5 [@media(max-height:520px)]:py-2.5 font-black italic tracking-wide text-white transition-transform active:scale-[0.98]"
-          style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}
-        >
-          <RideIcon ride={ride} className="h-5 w-5" />
-          {t("noturnoPlay", "Andar de {ride}").replace("{ride}", names[ride].toLowerCase())}
-        </button>
+        {error && (
+          <p className="mt-3 flex items-center gap-2 rounded-[12px] px-3 py-2 text-[13px]" style={{ background: "rgba(110,16,34,0.5)", color: "#ffd5dc" }} role="alert">
+            <WifiOff className="h-4 w-4 shrink-0" /> {error}
+          </p>
+        )}
+
+        <div className={`mt-4 grid gap-2 [@media(max-height:520px)]:mt-2.5 ${multi ? "grid-cols-2" : "grid-cols-1"}`}>
+          <button
+            type="button"
+            onClick={() => onPlay(ride, false)}
+            className="flex w-full items-center justify-center gap-2 rounded-[14px] px-3 py-3.5 text-[17px] [@media(max-height:520px)]:py-2.5 font-black italic tracking-wide text-white transition-transform active:scale-[0.98] max-[420px]:text-[15px]"
+            style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}
+          >
+            <RideIcon ride={ride} className="h-5 w-5 shrink-0" />
+            {multi ? t("noturnoModeSolo", "Sozinho") : t("noturnoPlay", "Andar de {ride}").replace("{ride}", names[ride].toLowerCase())}
+          </button>
+          {multi && (
+            <button
+              type="button"
+              onClick={() => onPlay(ride, true)}
+              className="flex w-full flex-col items-center justify-center rounded-[14px] px-3 py-2 [@media(max-height:520px)]:py-1.5 transition-transform active:scale-[0.98]"
+              style={{ background: MM.card, border: `1.5px solid ${CYAN}`, color: MM.text }}
+            >
+              <span className="flex items-center gap-2 text-[17px] font-black italic tracking-wide max-[420px]:text-[15px]">
+                <Users className="h-5 w-5 shrink-0" style={{ color: CYAN }} /> {t("noturnoModeMulti", "Multiplayer")}
+              </span>
+              <span className="text-[11px] leading-tight [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
+                {t("noturnoModeMultiSub", "Espera até 1 minuto · mesma rua")}
+              </span>
+            </button>
+          )}
+        </div>
 
         <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
           {t("noturnoKeys", "← → ou A D trocam de faixa · ↑, W ou Espaço pulam · ↓ ou S descem rápido · no ar da rampa: ← → giram 360° e ↑ dá um mortal")}
@@ -262,7 +410,23 @@ function RunMenu({ onPlay, onExit }: { onPlay: (r: RideKind) => void; onExit: ()
 
 // ═══ jogo ════════════════════════════════════════════════════════════════════
 
-function RunScreen({ ride, body, look, onAgain, onMenu }: { ride: RideKind; body: BodyId; look?: string; onAgain: () => void; onMenu: () => void }) {
+function RunScreen({
+  ride,
+  body,
+  look,
+  name,
+  mp,
+  onAgain,
+  onMenu,
+}: {
+  ride: RideKind
+  body: BodyId
+  look?: string
+  name?: string
+  mp?: Mp
+  onAgain: () => void
+  onMenu: () => void
+}) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<RunGameHandle | null>(null)
@@ -271,6 +435,8 @@ function RunScreen({ ride, body, look, onAgain, onMenu }: { ride: RideKind; body
   const [result, setResult] = useState<{ r: RunResult; record: boolean; best: Rec | null } | null>(null)
   const [toast, setToast] = useState<{ text: string; tone: "ok" | "hot" | "bad" | "gold"; id: number } | null>(null)
   const [muted, setMuted] = useState(false)
+  const [final, setFinal] = useState<NoturnoResultRow[] | null>(null)
+  const [offline, setOffline] = useState(false)
   const [isTouch] = useState(() => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches && !window.matchMedia("(any-pointer: fine)").matches)
   const textRef = useRef(t)
   useEffect(() => {
@@ -306,12 +472,23 @@ function RunScreen({ ride, body, look, onAgain, onMenu }: { ride: RideKind; body
         case "coins":
           say(tt("noturnoToastCoins", "{n} moedas!").replace("{n}", String(n.n)), "gold", 1100)
           break
+        case "power":
+          say(tt("noturnoToastPower", "PODER DA FREELANDOO! Exploda tudo!"), "gold", 1600)
+          break
+        case "smash":
+          say(tt("noturnoToastSmash", "BOOM! +{n}").replace("{n}", String(n.points)), "hot", 650)
+          break
         default:
           break
       }
     }
     const onEnd = (r: RunResult) => {
       if (!alive) return
+      // em grupo o recorde do aparelho não conta (a rua é a do grupo)
+      if (mp) {
+        setResult({ r, record: false, best: null })
+        return
+      }
       const recs = loadRecords()
       const prev = recs[ride]
       const record = !prev || r.score > prev.score
@@ -326,6 +503,8 @@ function RunScreen({ ride, body, look, onAgain, onMenu }: { ride: RideKind; body
         ride,
         body,
         look,
+        name,
+        mp,
         onReady: () => alive && setStatus("ready"),
         onHud: (h) => alive && setHud(h),
         onNotice,
@@ -343,7 +522,22 @@ function RunScreen({ ride, body, look, onAgain, onMenu }: { ride: RideKind; body
       gameRef.current?.dispose()
       gameRef.current = null
     }
+    // a largada (mp) é fixa durante a vida desta tela
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ride, body, look])
+
+  // em grupo: o resultado da sala (quando o último cai) e a queda da conexão; a sala sai com a tela
+  useEffect(() => {
+    if (!mp) return
+    const id = setInterval(() => {
+      if (mp.net.result) setFinal(mp.net.result)
+      setOffline(mp.net.status === "offline" || mp.net.status === "replaced")
+    }, 400)
+    return () => {
+      clearInterval(id)
+      mp.net.dispose()
+    }
+  }, [mp])
 
   const toggleMute = useCallback(() => {
     setMuted((m) => {
@@ -381,13 +575,33 @@ function RunScreen({ ride, body, look, onAgain, onMenu }: { ride: RideKind; body
                 {hud.coins}
               </span>
             </div>
+            {hud.field && !result && <FieldStrip rows={hud.field} glass={glass} />}
+            {offline && !result && (
+              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: "rgba(110,16,34,0.85)", color: "#ffd5dc" }}>
+                <WifiOff className="h-3.5 w-3.5" /> {t("noturnoOffline", "Sem conexão com o grupo")}
+              </div>
+            )}
           </div>
-          {/* velocidade e distância no alto */}
-          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-center leading-tight" style={{ top: SAFE.top, background: glass }}>
-            <span className="text-[16px] font-black italic tabular-nums text-white">{hud.speed}</span>
-            <span className="ml-1 text-[11px]" style={{ color: MM.muted }}>
-              km/h · {hud.dist} m
-            </span>
+          {/* velocidade e distância no alto; embaixo, a barra do poder do logo */}
+          <div className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 flex-col items-center gap-1.5" style={{ top: SAFE.top }}>
+            <div className="rounded-full px-3 py-1 text-center leading-tight" style={{ background: glass, boxShadow: hud.power > 0 ? "0 0 18px rgba(242,183,5,0.55)" : "none" }}>
+              <span className="text-[16px] font-black italic tabular-nums" style={{ color: hud.power > 0 ? GOLD : "#fff" }}>
+                {hud.speed}
+              </span>
+              <span className="ml-1 text-[11px]" style={{ color: MM.muted }}>
+                km/h · {hud.dist} m
+              </span>
+            </div>
+            {hud.power > 0 && (
+              <div className="flex items-center gap-2 rounded-full px-2.5 py-1" style={{ background: "rgba(70,52,12,0.88)", border: `1px solid ${MM.goldBorder}` }}>
+                <span className="text-[11px] font-black italic uppercase tracking-[0.12em]" style={{ color: "#FFE3A0" }}>
+                  {t("noturnoPower", "Poder")}
+                </span>
+                <span className="block h-1.5 w-[92px] overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.15)" }}>
+                  <span className="block h-full origin-left rounded-full" style={{ width: "100%", transform: `scaleX(${hud.power})`, background: "linear-gradient(90deg, #FFE58A, #F2B705)" }} />
+                </span>
+              </div>
+            )}
           </div>
           {/* sair e som */}
           <div className="absolute flex flex-col gap-2" style={{ top: SAFE.top, right: SAFE.right }}>
@@ -432,7 +646,17 @@ function RunScreen({ ride, body, look, onAgain, onMenu }: { ride: RideKind; body
               </div>
             </div>
           )}
-          {result && <Results ride={ride} result={result.r} record={result.record} best={result.best} onAgain={onAgain} onMenu={onMenu} />}
+          {result && (
+            <Results
+              ride={ride}
+              result={result.r}
+              record={result.record}
+              best={result.best}
+              group={mp ? { live: hud.field ?? [], final, me: mp.start.me } : null}
+              onAgain={onAgain}
+              onMenu={onMenu}
+            />
+          )}
         </>
       )}
 
@@ -462,7 +686,39 @@ function RunScreen({ ride, body, look, onAgain, onMenu }: { ride: RideKind; body
   )
 }
 
-function Results({ ride, result, record, best, onAgain, onMenu }: { ride: RideKind; result: RunResult; record: boolean; best: Rec | null; onAgain: () => void; onMenu: () => void }) {
+/** Placar do grupo ao vivo, embaixo das moedas (pelos pontos). */
+function FieldStrip({ rows, glass }: { rows: FieldRow[]; glass: string }) {
+  return (
+    <ol className="flex w-[168px] flex-col gap-0.5 rounded-[12px] px-2 py-1.5 max-[759px]:w-[138px]" style={{ background: glass, border: `1px solid ${MM.border}` }}>
+      {rows.map((r, i) => (
+        <li key={r.slot} className="flex items-center gap-1.5 text-[12px] leading-tight max-[759px]:text-[11px]" style={{ opacity: r.alive === 1 ? 1 : 0.45, color: r.me ? GOLD : MM.text }}>
+          <span className="w-3 shrink-0 text-right font-black tabular-nums">{i + 1}</span>
+          <RideIcon ride={r.ride} className="h-3 w-3 shrink-0" />
+          <span className="min-w-0 flex-1 truncate font-semibold">{r.name}</span>
+          <span className="shrink-0 font-black tabular-nums">{r.alive === 1 ? r.score.toLocaleString() : "✕"}</span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function Results({
+  ride,
+  result,
+  record,
+  best,
+  group,
+  onAgain,
+  onMenu,
+}: {
+  ride: RideKind
+  result: RunResult
+  record: boolean
+  best: Rec | null
+  group: { live: FieldRow[]; final: NoturnoResultRow[] | null; me: number } | null
+  onAgain: () => void
+  onMenu: () => void
+}) {
   const t = useTranslations("MeuMundo")
   const names = useRideNames()
   const by: Record<RunResult["by"], string> = {
@@ -478,7 +734,16 @@ function Results({ ride, result, record, best, onAgain, onMenu }: { ride: RideKi
     [t("noturnoCoins", "Moedas"), String(result.coins)],
     [t("noturnoDistance", "Distância"), `${result.dist} m`],
     [t("noturnoTricks", "Manobras"), String(result.tricks)],
+    ...(result.smashed ? ([[t("noturnoSmashed", "Explodidos"), String(result.smashed)]] as [string, string][]) : []),
   ]
+  // em grupo: a classificação da sala quando fecha; até lá, a ao vivo
+  const rows = group
+    ? group.final
+      ? group.final.map((r) => ({ slot: r.slot, name: r.name, ride: r.ride, score: r.score, alive: r.gone ? 2 : 0, me: r.slot === group.me }))
+      : group.live.map((r) => ({ slot: r.slot, name: r.name, ride: r.ride, score: r.score, alive: r.alive, me: r.me }))
+    : null
+  const running = rows ? rows.filter((r) => r.alive === 1).length : 0
+  const place = rows ? rows.findIndex((r) => r.me) + 1 : 0
   return (
     <div className="absolute inset-0 grid place-items-center p-4" style={{ background: MM.scrim }}>
       <div className="w-full max-w-[400px] rounded-[20px] p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
@@ -495,7 +760,40 @@ function Results({ ride, result, record, best, onAgain, onMenu }: { ride: RideKi
             {t("noturnoBest", "Seu recorde de {ride}: {n}").replace("{ride}", names[ride].toLowerCase()).replace("{n}", best.score.toLocaleString())}
           </p>
         ) : null}
-        <dl className="mt-3 grid grid-cols-2 gap-1.5">
+        {rows && (
+          <div className="mt-3 rounded-[12px] p-2" style={{ background: MM.card }}>
+            <div className="flex items-center justify-between gap-2 px-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: MM.muted }}>
+              <span className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" /> {t("noturnoField", "Placar do grupo")}
+              </span>
+              {running > 0 ? (
+                <span className="flex items-center gap-1 normal-case tracking-normal" style={{ color: CYAN }}>
+                  <Loader2 className="h-3 w-3 animate-spin" /> {t("noturnoStillRunning", "{n} ainda no rolê").replace("{n}", String(running))}
+                </span>
+              ) : place > 0 ? (
+                <span className="normal-case tracking-normal" style={{ color: MM.gold }}>
+                  {t("noturnoPlace", "Você ficou em {n}º de {t}").replace("{n}", String(place)).replace("{t}", String(rows.length))}
+                </span>
+              ) : null}
+            </div>
+            <ol className="mt-1.5 flex flex-col gap-1">
+              {rows.map((r, i) => (
+                <li key={r.slot} className="flex items-center gap-2 rounded-[8px] px-2 py-1 text-[13px]" style={{ background: r.me ? MM.rubySoft : "transparent" }}>
+                  <span className="w-4 shrink-0 text-right font-black tabular-nums" style={{ color: i === 0 ? MM.gold : MM.muted }}>
+                    {i + 1}
+                  </span>
+                  <RideIcon ride={r.ride} className="h-3.5 w-3.5 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate font-semibold">{r.name}</span>
+                  <span className="shrink-0 text-[11px]" style={{ color: MM.muted }}>
+                    {r.alive === 1 ? t("noturnoRiding", "correndo") : r.alive === 2 ? t("noturnoGone", "saiu") : ""}
+                  </span>
+                  <span className="shrink-0 font-black italic tabular-nums">{r.score.toLocaleString()}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        <dl className={`mt-3 grid grid-cols-2 gap-1.5 ${rows ? "[@media(max-height:560px)]:hidden" : ""}`}>
           {cells.map(([k, v]) => (
             <div key={k} className="rounded-[12px] px-3 py-2" style={{ background: MM.card }}>
               <dt className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: MM.muted }}>
@@ -510,7 +808,7 @@ function Results({ ride, result, record, best, onAgain, onMenu }: { ride: RideKi
             {t("noturnoAgain", "De novo")}
           </button>
           <button type="button" onClick={onMenu} className="rounded-[14px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
-            {t("noturnoChange", "Trocar veículo")}
+            {group ? t("noturnoBackMenu", "Voltar ao menu") : t("noturnoChange", "Trocar veículo")}
           </button>
         </div>
       </div>

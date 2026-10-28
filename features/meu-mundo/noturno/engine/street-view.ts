@@ -7,6 +7,12 @@
 // jogador avança uma vaga, os buffers são refeitos (umas 2 vezes por segundo).
 // Sem luz de verdade nos postes: a poça no chão é uma textura somada (barato
 // no celular). Céu estrelado e lua fora da neblina.
+//
+// mm3d-42 (pedido do Alex: "redesign, outdoors, aprimoramento"): OUTDOORS
+// acesos no alto de alguns prédios (virados para quem vem), PÓRTICOS de LED
+// atravessando a avenida com a marca a cada 240 m, e o neon dos letreiros
+// refletido no asfalto molhado (faixa somada no chão, na cor do letreiro). As
+// artes são as da Antigravidade (corrida/engine/billboards.ts).
 
 import type { Scene } from "@babylonjs/core/scene"
 import "@babylonjs/core/Meshes/thinInstanceMesh"
@@ -22,6 +28,7 @@ import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { Constants } from "@babylonjs/core/Engines/constants"
+import { ARTS } from "../../corrida/engine/billboards"
 
 /** Passo da textura do asfalto (m): a faixa longa pula de tanto em tanto. */
 const TILE = 12
@@ -42,6 +49,12 @@ const WIN_H = 27.2
 const L_PITCH = 24
 const L_SLOTS = 19
 const POLE_X = ROAD_HALF + 1.0
+/** Pórtico de LED sobre a avenida: de tantos em tantos metros. */
+const G_PITCH = 240
+const G_SLOTS = 3
+/** Outdoor no telhado: tamanho do painel. */
+const BB_W = 10
+const BB_H = 5
 
 const hash = (k: number, s: number) => {
   let h = Math.imul(k ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(s + 17, 0xc2b2ae35)
@@ -228,9 +241,39 @@ const NEONS: [number, number, number][] = [
   [0.7, 0.45, 1],
 ]
 
+/** Arte de outdoor numa textura (a da marca redesenha quando a imagem do logo chega). */
+function artTexture(scene: Scene, k: number, logo: HTMLImageElement | null) {
+  const tex = new DynamicTexture(`noturno-outdoor-${k}`, { width: 1024, height: 512 }, scene, true)
+  ARTS[k](tex.getContext() as CanvasRenderingContext2D, 1024, 512, logo)
+  tex.update(true)
+  return tex
+}
+
+/** Faixa de reflexo no asfalto: mais forte no meio, some nas pontas. */
+function reflexTexture(scene: Scene) {
+  const tex = new DynamicTexture("noturno-reflex", { width: 64, height: 256 }, scene, true)
+  const c = tex.getContext() as CanvasRenderingContext2D
+  const g = c.createRadialGradient(32, 128, 2, 32, 128, 128)
+  g.addColorStop(0, "rgba(255,255,255,0.75)")
+  g.addColorStop(0.35, "rgba(255,255,255,0.3)")
+  g.addColorStop(1, "rgba(255,255,255,0)")
+  c.fillStyle = g
+  c.fillRect(0, 0, 64, 256)
+  // estrias de poça (o reflexo quebra no asfalto)
+  c.globalCompositeOperation = "destination-out"
+  for (let y = 0; y < 256; y += 9) {
+    c.fillStyle = `rgba(0,0,0,${0.25 + Math.random() * 0.4})`
+    c.fillRect(0, y, 64, 3 + Math.random() * 3)
+  }
+  tex.hasAlpha = true
+  tex.update(true)
+  return tex
+}
+
 export interface StreetView {
   /** Põe a rua no lugar para o jogador em `z`; `cam` = posição da câmera (céu e lua). */
   update(z: number, cam: Vector3): void
+  neon: Mesh[]
   dispose(): void
 }
 
@@ -338,6 +381,106 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
   const shopC = new Float32Array(B_SLOTS * 2 * 4).fill(1)
   shop.thinInstanceSetBuffer("matrix", shopM, 16, false)
   shop.thinInstanceSetBuffer("color", shopC, 4, false)
+
+  // reflexo do letreiro no asfalto molhado (um por letreiro, na cor dele)
+  const reflexMat = own(new StandardMaterial("noturno-reflex", scene))
+  reflexMat.disableLighting = true
+  reflexMat.emissiveColor = new Color3(1, 1, 1)
+  const reflexTex = own(reflexTexture(scene))
+  reflexMat.diffuseTexture = reflexTex
+  reflexMat.opacityTexture = reflexTex
+  reflexMat.alphaMode = Constants.ALPHA_ADD
+  reflexMat.disableDepthWrite = true
+  reflexMat.zOffset = -3
+  const reflex = own(CreateGround("noturno-reflex", { width: 1.4, height: 1 }, scene))
+  reflex.material = reflexMat
+  reflex.isPickable = false
+  reflex.alwaysSelectAsActiveMesh = true
+  const reflexM = new Float32Array(B_SLOTS * 2 * 16)
+  const reflexC = new Float32Array(B_SLOTS * 2 * 4).fill(1)
+  reflex.thinInstanceSetBuffer("matrix", reflexM, 16, false)
+  reflex.thinInstanceSetBuffer("color", reflexC, 4, false)
+
+  // outdoors no telhado: um painel por arte (instâncias finas) + moldura de neon atrás
+  const logoImg = typeof Image !== "undefined" ? new Image() : null
+  const artMats: StandardMaterial[] = []
+  const boards: { mesh: Mesh; m: Float32Array }[] = []
+  for (let k = 0; k < ARTS.length; k++) {
+    const mat = own(new StandardMaterial(`noturno-outdoor-${k}`, scene))
+    mat.diffuseColor = new Color3(0, 0, 0)
+    mat.specularColor = new Color3(0, 0, 0)
+    mat.emissiveTexture = own(artTexture(scene, k, null))
+    mat.disableLighting = true
+    artMats.push(mat)
+    const mesh = own(CreatePlane(`noturno-outdoor-${k}`, { width: BB_W, height: BB_H }, scene))
+    mesh.material = mat
+    mesh.isPickable = false
+    mesh.alwaysSelectAsActiveMesh = true
+    const m = new Float32Array(B_SLOTS * 2 * 16)
+    mesh.thinInstanceSetBuffer("matrix", m, 16, false)
+    boards.push({ mesh, m })
+  }
+  const frameMat = own(new StandardMaterial("noturno-outdoor-frame", scene))
+  frameMat.disableLighting = true
+  frameMat.emissiveColor = new Color3(1, 1, 1)
+  const frame = own(CreateBox("noturno-outdoor-frame", { width: BB_W + 0.6, height: BB_H + 0.6, depth: 0.3 }, scene))
+  frame.material = frameMat
+  frame.isPickable = false
+  frame.alwaysSelectAsActiveMesh = true
+  const frameM = new Float32Array(B_SLOTS * 2 * 16)
+  const frameC = new Float32Array(B_SLOTS * 2 * 4).fill(1)
+  frame.thinInstanceSetBuffer("matrix", frameM, 16, false)
+  frame.thinInstanceSetBuffer("color", frameC, 4, false)
+  const legMat = own(new StandardMaterial("noturno-outdoor-leg", scene))
+  legMat.diffuseColor = new Color3(0.14, 0.14, 0.18)
+  legMat.emissiveColor = new Color3(0.05, 0.05, 0.07)
+  legMat.specularColor = new Color3(0, 0, 0)
+  const leg = own(CreateBox("noturno-outdoor-leg", { width: 0.3, height: 1, depth: 0.3 }, scene))
+  leg.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
+  leg.material = legMat
+  leg.isPickable = false
+  leg.alwaysSelectAsActiveMesh = true
+  const legM = new Float32Array(B_SLOTS * 2 * 2 * 16)
+  leg.thinInstanceSetBuffer("matrix", legM, 16, false)
+
+  // pórticos de LED sobre a avenida: dois pilares, a viga e o painel com a marca
+  const gPost = own(CreateBox("noturno-gantry-post", { width: 0.45, height: 1, depth: 0.45 }, scene))
+  gPost.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
+  gPost.material = legMat
+  gPost.isPickable = false
+  gPost.alwaysSelectAsActiveMesh = true
+  const gPostM = new Float32Array(G_SLOTS * 2 * 16)
+  gPost.thinInstanceSetBuffer("matrix", gPostM, 16, false)
+  const gBeam = own(CreateBox("noturno-gantry-beam", { width: ROAD_HALF * 2 + 3.2, height: 0.5, depth: 0.5 }, scene))
+  gBeam.material = legMat
+  gBeam.isPickable = false
+  gBeam.alwaysSelectAsActiveMesh = true
+  const gBeamM = new Float32Array(G_SLOTS * 16)
+  gBeam.thinInstanceSetBuffer("matrix", gBeamM, 16, false)
+  const gStripMat = own(new StandardMaterial("noturno-gantry-strip", scene))
+  gStripMat.disableLighting = true
+  gStripMat.emissiveColor = new Color3(0.35, 0.9, 1)
+  const gStrip = own(CreateBox("noturno-gantry-strip", { width: 7.4, height: 0.12, depth: 0.12 }, scene))
+  gStrip.material = gStripMat
+  gStrip.isPickable = false
+  gStrip.alwaysSelectAsActiveMesh = true
+  const gStripM = new Float32Array(G_SLOTS * 2 * 16)
+  gStrip.thinInstanceSetBuffer("matrix", gStripM, 16, false)
+  const gPanel = own(CreatePlane("noturno-gantry-panel", { width: 7, height: 3.5 }, scene))
+  gPanel.material = artMats[0]
+  gPanel.isPickable = false
+  gPanel.alwaysSelectAsActiveMesh = true
+  const gPanelM = new Float32Array(G_SLOTS * 16)
+  gPanel.thinInstanceSetBuffer("matrix", gPanelM, 16, false)
+  if (logoImg) {
+    logoImg.onload = () => {
+      const tex = artMats[0]?.emissiveTexture as DynamicTexture | null
+      if (!tex || !tex.getScene()) return
+      ARTS[0](tex.getContext() as CanvasRenderingContext2D, 1024, 512, logoImg)
+      tex.update(true)
+    }
+    logoImg.src = "/freelandoo-logo.png"
+  }
 
   // ── postes, poças de luz e faixas de pedestre ─────────────────────────────
   const poleMat = own(new StandardMaterial("noturno-pole", scene))
@@ -467,10 +610,43 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
         if (hasSign) {
           const ncol = NEONS[Math.floor(hash(k, side + 21) * NEONS.length)]
           const len = 2.5 + hash(k, side + 23) * 4
+          const nz = z + (hash(k, side + 25) - 0.5) * 3
           sc.set(1, 0.8, len)
-          put(neonM, i, face - s * 0.2, 3.6, z + (hash(k, side + 25) - 0.5) * 3, 0, sc)
+          put(neonM, i, face - s * 0.2, 3.6, nz, 0, sc)
           neonC.set([ncol[0], ncol[1], ncol[2], 1], i * 4)
-        } else hide(neonM, i)
+          // o reflexo esticado no asfalto, perto do meio-fio do lado do letreiro
+          sc.set(1.3, 1, len * 2.2)
+          put(reflexM, i, s * (ROAD_HALF - 0.9), 0.02, nz, 0, sc)
+          reflexC.set([ncol[0] * 0.55, ncol[1] * 0.55, ncol[2] * 0.55, 1], i * 4)
+        } else {
+          hide(neonM, i)
+          hide(reflexM, i)
+        }
+        // outdoor aceso no telhado (de vez em quando), virado para quem vem e um pouco para a rua
+        const bh = B_HEIGHTS[Math.floor(r * 3)]
+        const art = Math.floor(hash(k, side + 43) * ARTS.length)
+        const hasBoard = !gap && hash(k, side + 41) < 0.24
+        for (let a = 0; a < boards.length; a++) {
+          if (!hasBoard || a !== art) hide(boards[a].m, i)
+        }
+        if (hasBoard) {
+          const yaw = s * 0.5
+          const bx = s * (B_X - 2.4)
+          const by = bh + 1.4 + BB_H / 2
+          put(boards[art].m, i, bx, by, z, yaw)
+          // a moldura fica 0,2 m atrás do painel (o painel olha para −z)
+          put(frameM, i, bx + Math.sin(yaw) * 0.2, by, z + Math.cos(yaw) * 0.2, yaw)
+          const fc = NEONS[Math.floor(hash(k, side + 45) * NEONS.length)]
+          frameC.set([fc[0], fc[1], fc[2], 1], i * 4)
+          for (const lx of [-1, 1]) {
+            sc.set(1, 1.4 + 0.2, 1)
+            put(legM, i * 2 + (lx > 0 ? 1 : 0), bx + Math.cos(yaw) * lx * BB_W * 0.33, bh, z - Math.sin(yaw) * lx * BB_W * 0.33 + 0.3, yaw, sc)
+          }
+        } else {
+          hide(frameM, i)
+          hide(legM, i * 2)
+          hide(legM, i * 2 + 1)
+        }
         if (!gap) {
           put(awnM, i, face - s * 0.7, 2.95, z)
           const warm = hash(k, side + 31)
@@ -488,6 +664,12 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
     }
     neon.thinInstanceBufferUpdated("matrix")
     neon.thinInstanceBufferUpdated("color")
+    reflex.thinInstanceBufferUpdated("matrix")
+    reflex.thinInstanceBufferUpdated("color")
+    for (const b of boards) b.mesh.thinInstanceBufferUpdated("matrix")
+    frame.thinInstanceBufferUpdated("matrix")
+    frame.thinInstanceBufferUpdated("color")
+    leg.thinInstanceBufferUpdated("matrix")
     awn.thinInstanceBufferUpdated("matrix")
     shop.thinInstanceBufferUpdated("matrix")
     shop.thinInstanceBufferUpdated("color")
@@ -517,10 +699,31 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
     zebra.thinInstanceBufferUpdated("matrix")
   }
 
+  let gK = Number.NaN
+  const placeGantries = (k0: number) => {
+    for (let j = 0; j < G_SLOTS; j++) {
+      const z = (k0 + j) * G_PITCH + G_PITCH / 2
+      const top = 9.4
+      for (const side of [0, 1]) {
+        sc.set(1, top, 1)
+        put(gPostM, j * 2 + side, (side ? 1 : -1) * (ROAD_HALF + 1.3), 0, z, 0, sc)
+        put(gStripM, j * 2 + side, 0, side ? top + 0.32 : top - 3.95, z - 0.3)
+      }
+      put(gBeamM, j, 0, top, z)
+      put(gPanelM, j, 0, top - 1.95, z - 0.28)
+    }
+    gPost.thinInstanceBufferUpdated("matrix")
+    gBeam.thinInstanceBufferUpdated("matrix")
+    gStrip.thinInstanceBufferUpdated("matrix")
+    gPanel.thinInstanceBufferUpdated("matrix")
+  }
+
   if (low) {
     // celular fraco: sem marquise nem vitrine (menos instâncias desenhadas)
     awn.setEnabled(false)
     shop.setEnabled(false)
+    reflex.setEnabled(false)
+    leg.setEnabled(false)
   }
 
   return {
@@ -538,9 +741,17 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
         lK = lk
         placeLamps(lk)
       }
+      const gk = Math.floor((z - G_PITCH / 2 - 8) / G_PITCH)
+      if (gk !== gK) {
+        gK = gk
+        placeGantries(gk)
+      }
       moon.position.set(cam.x - 70, cam.y + 120, cam.z + 330)
     },
+    /** Malhas que brilham (o realce do pós-processamento pega o resto pela luminância). */
+    neon: [neon, head, frame, gStrip],
     dispose() {
+      if (logoImg) logoImg.onload = null
       for (const o of owned.reverse()) o.dispose()
     },
   }

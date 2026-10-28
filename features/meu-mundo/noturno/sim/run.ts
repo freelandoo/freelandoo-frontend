@@ -21,6 +21,14 @@
 //  - Carros na contramão e andando na mesma mão: começam a se mexer quando o
 //    jogador chega a `act` metros; o gerador reserva a faixa pelo trecho que
 //    eles percorrem, para nada atravessar nada.
+//  - LOGO da Freelandoo a cada 700 m (mm3d-42), sempre numa faixa livre:
+//    pegou = 5 s de poder — bater em qualquer obstáculo o EXPLODE (como no
+//    jetpack) e dá um empurrão de velocidade; acabou, a velocidade volta ao
+//    normal (ainda sem morrer enquanto ela desce).
+//  - Multiplayer (mm3d-42): todos geram a MESMA rua pela semente da sala e
+//    pela curva de velocidade do veículo mais rápido (`street`) — quem vai de
+//    skate/patins só tem mais folga. A rua é igual para todos; cada aparelho
+//    roda a sua corrida.
 
 export type RideKind = "bike" | "skate" | "skates"
 export type ObstacleKind = "car" | "amb" | "truck" | "barrier" | "ramp"
@@ -66,6 +74,22 @@ export const TUNING = {
   buffer: 0.16,
   /** Pontos por moeda. */
   coinPoints: 10,
+} as const
+
+/** Logo da Freelandoo (mm3d-42): de quantos em quantos metros, quanto dura e o empurrão. */
+export const POWER = {
+  every: 700,
+  /** Segundos de poder. */
+  time: 5,
+  /** Velocidade × isto enquanto dura. */
+  boost: 1.3,
+  /** Cada obstáculo explodido soma isto (e volta devagar para `boost`). */
+  kick: 0.12,
+  maxBoost: 1.75,
+  /** Quanto o multiplicador desce por segundo depois do fim. */
+  fall: 0.55,
+  /** Pontos por obstáculo explodido. */
+  points: 25,
 } as const
 
 export type TrickKind = "spin" | "flip"
@@ -136,6 +160,9 @@ export type RunEvent =
   | { type: "lane" }
   | { type: "stumble" }
   | { type: "crash"; kind: ObstacleKind | "stumble" }
+  | { type: "power" }
+  | { type: "powerEnd" }
+  | { type: "smash"; kind: ObstacleKind; x: number; z: number; len: number; top: number; tint: number; coins: number }
 
 export function speedAt(ride: RideKind, dist: number) {
   const r = RIDES[ride]
@@ -183,9 +210,14 @@ export function rampY(s: number) {
 
 export class Run {
   readonly ride: RideKind
+  /** Curva de velocidade com que a rua é gerada (multiplayer: a do veículo mais rápido). */
+  readonly street: RideKind
   private readonly rnd: () => number
   obstacles: Obstacle[] = []
   coins: Coin[] = []
+  /** Logos da Freelandoo (poder). */
+  powers: Coin[] = []
+  private nextPower: number = POWER.every
   private seq = 0
   /** Onde o próximo trecho começa. */
   private nextZ: number = TUNING.lead
@@ -221,10 +253,17 @@ export class Run {
   private jumpBuf = 0
   private downBuf = 0
   crashedBy: ObstacleKind | "stumble" | null = null
+  /** Segundos de poder que faltam. */
+  powerT = 0
+  /** Multiplicador da velocidade (1 = normal). */
+  boost = 1
+  smashed = 0
+  smashPts = 0
   private ticks = 0
 
-  constructor(ride: RideKind, seed = 1) {
+  constructor(ride: RideKind, seed = 1, street: RideKind = ride) {
     this.ride = ride
+    this.street = street
     this.rnd = mulberry(seed)
     this.v = speedAt(ride, 0)
     // começo: uma fileira de moedas no meio para chamar
@@ -233,7 +272,12 @@ export class Run {
   }
 
   get score() {
-    return Math.floor(this.z) + this.coinsGot * TUNING.coinPoints + this.trickPts
+    return Math.floor(this.z) + this.coinsGot * TUNING.coinPoints + this.trickPts + this.smashPts
+  }
+
+  /** Explode o que bater: durante o poder e enquanto a velocidade ainda desce. */
+  get smashing() {
+    return this.powerT > 0 || this.boost > 1.04
   }
 
   /** Dificuldade 0–1 pela distância. */
@@ -248,7 +292,7 @@ export class Run {
 
   // ═══ geração ══════════════════════════════════════════════════════════════
   private add(kind: ObstacleKind, lane: number, z: number, u = 0, dir: 1 | -1 = 1): Obstacle {
-    const o: Obstacle = { id: ++this.seq, kind, lane, x: LANE_X[lane], z, pz: z, u, dir, actAt: z - actAt(speedAt(this.ride, z)), tint: Math.floor(this.rnd() * 8) }
+    const o: Obstacle = { id: ++this.seq, kind, lane, x: LANE_X[lane], z, pz: z, u, dir, actAt: z - actAt(speedAt(this.street, z)), tint: Math.floor(this.rnd() * 8) }
     this.obstacles.push(o)
     return o
   }
@@ -289,8 +333,17 @@ export class Run {
     while (this.nextZ < upTo) {
       const z = this.nextZ
       const d = this.diff(z)
-      const v = speedAt(this.ride, z)
+      const v = speedAt(this.street, z)
       const free = [0, 1, 2].filter((l) => this.busy[l] <= z - 1)
+      if (z >= this.nextPower && free.length) {
+        // o logo: numa faixa livre, com a rua limpa logo depois
+        const l = this.pick(free)
+        this.powers.push({ id: ++this.seq, x: LANE_X[l], y: 1.1, z: z + 2, host: null, taken: false })
+        this.mark(l, z + 6)
+        this.nextPower += POWER.every
+        this.nextZ = z + 6 + v * 0.5
+        continue
+      }
       const h = this.hard(v)
       const len = free.length ? this.pattern(z, d, v, free, h) : 6
       const gap = v * (1.5 - 0.65 * d - 0.28 * h) * (0.85 + this.rnd() * 0.3)
@@ -316,7 +369,7 @@ export class Run {
     const lanes = this.shuffle([...free])
     const r = this.rnd()
     const g = TUNING.gravity
-    const jumpV = Math.sqrt(2 * g * RIDES[this.ride].jumpH)
+    const jumpV = Math.sqrt(2 * g * RIDES[this.street].jumpH)
     // pesos pelo que a dificuldade libera
     const opts: [string, number][] = [
       ["barrier", 1.2],
@@ -550,8 +603,19 @@ export class Run {
     const dx = LANE_X[this.lane] - this.x
     this.x += Math.sign(dx) * Math.min(Math.abs(dx), rate * dt)
 
+    // poder: o multiplicador sobe na hora, os empurrões voltam devagar e, no fim, desce até 1
+    if (this.powerT > 0) {
+      this.powerT -= dt
+      if (this.boost < POWER.boost) this.boost = Math.min(POWER.boost, this.boost + dt * 2.5)
+      else this.boost = Math.max(POWER.boost, this.boost - dt * 0.25)
+      if (this.powerT <= 0) {
+        this.powerT = 0
+        out.push({ type: "powerEnd" })
+      }
+    } else if (this.boost > 1) this.boost = Math.max(1, this.boost - dt * POWER.fall)
+
     // frente
-    this.v = speedAt(this.ride, this.z)
+    this.v = speedAt(this.ride, this.z) * this.boost
     this.z += this.v * dt
 
     // quem anda
@@ -613,6 +677,7 @@ export class Run {
     }
 
     // batidas: caixa que está à frente/ao lado mais alta que os pés
+    let boom: Obstacle[] | null = null
     for (const o of this.obstacles) {
       const k = KINDS[o.kind]
       if (!k.solid) continue
@@ -627,6 +692,11 @@ export class Run {
         }
         continue
       }
+      if (this.smashing) {
+        // com o poder: explode (de frente ou de lado) e empurra
+        ;(boom ??= []).push(o)
+        continue
+      }
       const wasAhead = prevZ < o.pz - 0.3 + 1e-6 || (o.dir === -1 && prevZ < o.pz)
       const wasBeside = Math.abs(prevX - o.x) >= k.hw + T.half - 1e-6
       if (wasBeside && !wasAhead) {
@@ -639,6 +709,17 @@ export class Run {
         continue
       }
       return this.crash(o.kind, out)
+    }
+    if (boom) for (const o of boom) this.smash(o, out)
+
+    // logo da Freelandoo
+    for (const p of this.powers) {
+      if (p.taken) continue
+      if (p.z < prevZ - 1.2 || p.z > this.z + 1.2 || Math.abs(p.x - this.x) > 1.1) continue
+      if (Math.abs(p.y - (this.y + 0.9)) > 1.6) continue
+      p.taken = true
+      this.powerT = POWER.time
+      out.push({ type: "power" })
     }
 
     // moedas
@@ -658,8 +739,31 @@ export class Run {
       this.obstacles = this.obstacles.filter((o) => o.z + KINDS[o.kind].len > cut || o.u < 0)
       this.obstacles = this.obstacles.filter((o) => o.z + KINDS[o.kind].len > this.z - 80)
       this.coins = this.coins.filter((c) => !c.taken && this.coinZ(c) > cut)
+      this.powers = this.powers.filter((p) => !p.taken && p.z > cut)
     }
     this.generate(this.z + Math.max(260, this.v * 4.5))
+  }
+
+  /** Obstáculo explodido: some da rua, as moedas em cima dele vêm junto, a velocidade dá um empurrão. */
+  private smash(o: Obstacle, out: RunEvent[]) {
+    const i = this.obstacles.indexOf(o)
+    if (i < 0) return
+    this.obstacles.splice(i, 1)
+    let got = 0
+    for (const c of this.coins) {
+      if (c.host !== o || c.taken) continue
+      c.taken = true
+      got++
+    }
+    if (got) {
+      this.coinsGot += got
+      out.push({ type: "coin", n: this.coinsGot })
+    }
+    this.smashed++
+    this.smashPts += POWER.points
+    this.boost = Math.min(POWER.maxBoost, this.boost + POWER.kick)
+    const k = KINDS[o.kind]
+    out.push({ type: "smash", kind: o.kind, x: o.x, z: o.z, len: k.len, top: k.top, tint: o.tint, coins: got })
   }
 
   private finishTrick(out: RunEvent[]) {

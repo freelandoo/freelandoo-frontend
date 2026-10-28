@@ -33,9 +33,10 @@ const PANEL_H = 6
 /** Altura da base do painel acima da pista. */
 const LIFT = 3
 
-type Art = (g: CanvasRenderingContext2D, w: number, h: number, logo: HTMLImageElement | null) => void
+export type BillboardArt = (g: CanvasRenderingContext2D, w: number, h: number, logo: HTMLImageElement | null) => void
 
-const ARTS: Art[] = [
+/** As artes (o Rolê Noturno usa as mesmas nos outdoors dele, mm3d-42). */
+export const ARTS: BillboardArt[] = [
   // 1) marca: amarelo, abelha e o nome
   (g, w, h, logo) => {
     g.fillStyle = "#F2B705"

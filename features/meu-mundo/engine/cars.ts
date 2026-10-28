@@ -396,7 +396,8 @@ export class CarFleet {
    * Atualiza a partir da sala. `mine` = id do veículo que você usa (0 = a
    * pé) e `pose` = o seu veículo previsto, que ele segue sem atraso.
    */
-  sync(cars: Map<string, CarState> | null, dt: number, mine: number, pose: CarPose | null) {
+  /** `poses`: outros veículos com pose pronta (o Rolê Noturno em grupo, mm3d-42, desenha os dos outros assim). */
+  sync(cars: Map<string, CarState> | null, dt: number, mine: number, pose: CarPose | null, poses?: Map<string, CarPose>) {
     const seen = new Set<string>()
     cars?.forEach((c, key) => {
       seen.add(key)
@@ -412,7 +413,9 @@ export class CarFleet {
         v = this.create(key, c)
         this.views.set(key, v)
       }
-      if (mine && key === String(mine) && pose) {
+      const fixed = mine && key === String(mine) && pose ? pose : poses?.get(key)
+      if (fixed) {
+        const pose = fixed
         v.track?.reset()
         v.x = v.tx = pose.x
         v.y = pose.y ?? 0
@@ -475,6 +478,11 @@ export class CarFleet {
   }
 
   /** Pedivela da bike (rad), dada pela pedalada de quem pedala. */
+  /** Malhas do veículo (o contorno do poder no Rolê Noturno, mm3d-42). */
+  meshesOf(key: string) {
+    return this.views.get(key)?.holder.getChildMeshes(false) ?? []
+  }
+
   setCrank(key: string, angle: number) {
     const v = this.views.get(key)
     if (v) v.crankAngle = angle

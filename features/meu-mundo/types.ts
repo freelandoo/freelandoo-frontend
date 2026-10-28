@@ -165,6 +165,11 @@ export interface CorridaSession {
   multiplayer: MultiplayerSession
 }
 
+/** Lugar na próxima largada do Rolê Noturno em grupo (mm3d-42): POST /center/noturno. */
+export interface NoturnoSession {
+  multiplayer: MultiplayerSession
+}
+
 export interface PaintSession {
   multiplayer: MultiplayerSession
   mode: "solo" | "1v1" | "2v2" | "3v3"
