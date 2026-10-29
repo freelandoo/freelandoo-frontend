@@ -45,9 +45,10 @@ const SOLID_SPEED = 0.42
 const HAIR = 1.06
 
 // ═══ holograma: plugin do material do avatar ═══════════════════════════════
+// (mm3d-49: também o da garagem da Corrida — as peças são exportadas)
 // A = (pés y, altura, tempo, tremida) · B = (revelado, sólido, opacidade, —)
 // C = cor · D = destaque. Alturas normalizadas: 0 nos pés, 1 no topo.
-class HoloPlugin extends MaterialPluginBase {
+export class HoloPlugin extends MaterialPluginBase {
   feet = 0
   height = 1
   time = 0
@@ -128,7 +129,7 @@ class HoloPlugin extends MaterialPluginBase {
 }
 
 // ═══ peças do holograma: base com anéis e feixe ════════════════════════════
-function ringTexture(scene: Scene) {
+export function ringTexture(scene: Scene) {
   const S = 256
   const tex = new DynamicTexture("mm-skin-ring", { width: S, height: S }, scene, true)
   tex.hasAlpha = true
@@ -160,7 +161,7 @@ function ringTexture(scene: Scene) {
   return tex
 }
 
-function beamTexture(scene: Scene) {
+export function beamTexture(scene: Scene) {
   const tex = new DynamicTexture("mm-skin-beam", { width: 128, height: 128 }, scene, true)
   tex.hasAlpha = true
   const ctx = tex.getContext() as unknown as CanvasRenderingContext2D
@@ -177,7 +178,7 @@ function beamTexture(scene: Scene) {
   return tex
 }
 
-function shadowTexture(scene: Scene) {
+export function shadowTexture(scene: Scene) {
   const tex = new DynamicTexture("mm-skin-shadow", { width: 64, height: 64 }, scene, false)
   tex.hasAlpha = true
   const ctx = tex.getContext() as unknown as CanvasRenderingContext2D

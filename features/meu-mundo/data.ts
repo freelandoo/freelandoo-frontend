@@ -154,7 +154,7 @@ export const postJetpackJoin = (token: string, roomId?: string | null) =>
 export const postPaintJoin = (token: string, mode: string, roomId?: string | null) =>
   call<PaintSession>(token, "POST", "/center/paint", roomId ? { mode, roomId } : { mode })
 /** Corrida em grupo (mm3d-39b): a sala espera até 1 minuto e completa 6 naves com o computador. */
-export const postCorridaJoin = (token: string) => call<CorridaSession>(token, "POST", "/center/corrida", {})
+export const postCorridaJoin = (token: string, ship?: string) => call<CorridaSession>(token, "POST", "/center/corrida", ship ? { ship } : {})
 /** Rolê Noturno em grupo (mm3d-42): espera até 1 minuto; todos na mesma rua. */
 export const postNoturnoJoin = (token: string, ride: string, body: string) => call<NoturnoSession>(token, "POST", "/center/noturno", { ride, body })
 /** Gincana em grupo (mm3d-47): espera até 1 minuto; o computador completa as 8 vagas. */

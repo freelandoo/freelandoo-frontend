@@ -24,7 +24,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
 import { buildTrack, BAIA, type Track } from "../sim/track"
-import { Race, TUNING, CAR_COLORS, carPose, type CarInput, type CarPose, type RaceEvent, type RemoteCar } from "../sim/race"
+import { Race, TUNING, CAR_COLORS, SHIPS, DEFAULT_SHIP, carPose, type CarInput, type CarPose, type RaceEvent, type RaceSeat, type RemoteCar } from "../sim/race"
 import { buildTrackView, NIGHT_HORIZON } from "./track-view"
 import { CarFleet, HOVER } from "./car-view"
 import { RaceAudio } from "./audio"
@@ -85,6 +85,8 @@ export interface RaceGameOptions {
   canvas: HTMLCanvasElement
   mode: RaceMode
   playerName: string
+  /** Nave escolhida na garagem (mm3d-49). */
+  ship?: string
   /** Celular: a nave acelera sozinha (puxar o joystick para trás freia). */
   touch?: boolean
   /** Em grupo: a sala e a largada que ela mandou. */
@@ -103,6 +105,19 @@ export interface RaceGameHandle {
   /** Desenho do circuito para o minimapa (pontos normalizados 0–1). */
   minimap: () => { x: number; z: number }[]
   dispose: () => void
+}
+
+/** Sozinho: eu com a nave da garagem e os rivais com as outras (em ordem sorteada). */
+function soloSeats(opts: RaceGameOptions): RaceSeat[] {
+  const mine = opts.ship ?? DEFAULT_SHIP
+  const others = SHIPS.map((s) => s.id).filter((id) => id !== mine)
+  for (let i = others.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[others[i], others[j]] = [others[j], others[i]]
+  }
+  const me: RaceSeat = { name: opts.playerName, kind: "local", ship: mine }
+  if (opts.mode !== "race") return [me]
+  return [me, ...Array.from({ length: 5 }, (_, i): RaceSeat => ({ name: "", kind: "bot", ship: others[i % others.length] }))]
 }
 
 let trackCache: Track | null = null
@@ -147,11 +162,11 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   const race = mp
     ? new Race({
         track,
-        seats: mp.start.seats.map((s, i) => ({ name: s.name, kind: i === mp.start.me ? "local" : "remote" })),
+        seats: mp.start.seats.map((s, i) => ({ name: s.name, kind: i === mp.start.me ? "local" : "remote", ship: s.ship })),
         me: mp.start.me,
         autoEnd: false,
       })
-    : new Race({ track, rivals: opts.mode === "race" ? 5 : 0, playerName: opts.playerName, seed: (Date.now() & 0xffff) | 1 })
+    : new Race({ track, seats: soloSeats(opts), seed: (Date.now() & 0xffff) | 1 })
   /** A nave deste aparelho. */
   const me = race.me
   const humans = mp ? mp.start.seats.map((s) => s.human) : race.cars.map((c) => c.kind === "local")
@@ -159,8 +174,10 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   const fleet = new CarFleet(
     scene,
     race.cars.map((c) => c.color),
+    race.cars.map((c) => c.ship),
     (i) => i === me || !low,
     (i) => i === me,
+    !low,
   )
   const audio = new RaceAudio()
   audio.resume()

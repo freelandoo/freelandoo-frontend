@@ -3,6 +3,8 @@
 // features/meu-mundo/corrida/ui/race-view.tsx — CORRIDA ANTIGRAVIDADE (mm3d-39): a tela.
 //
 // Cobre o centro (suspenso por baixo, como o jetpack e o Paint). Telas:
+//  - GARAGEM (mm3d-49): a primeira — escolher a nave (holograma que
+//    materializa, status). A escolha fica no aparelho e vai para a corrida.
 //  - MENU: Sozinho (5 computadores), Multiplayer (mm3d-39b) ou Contra o relógio.
 //  - ESPERA (multiplayer): a sala aguarda até 1 minuto por mais gente; quem
 //    entrar corre junto e as vagas que sobram viram computador (6 naves).
@@ -20,7 +22,9 @@ import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import { createRaceGame, type RaceGameHandle, type RaceHud, type RaceMode, type RaceNotice } from "../engine/race-game"
-import { TUNING } from "../sim/race"
+import { DEFAULT_SHIP, SHIPS, TUNING } from "../sim/race"
+import { shipArt } from "../engine/ship-art"
+import { GarageView } from "./garage-view"
 import type { CorridaNet, CorridaNetStatus, CorridaStart } from "../engine/net"
 
 /** Entrar numa largada em grupo (null = a sala não abriu). */
@@ -28,6 +32,8 @@ export type CorridaJoin = (hooks: {
   signal: AbortSignal
   onLobby: (names: string[], until: number) => void
   onStatus: (s: CorridaNetStatus) => void
+  /** Nave da garagem (os outros a veem; mm3d-49). */
+  ship: string
 }) => Promise<{ net: CorridaNet; start: CorridaStart } | null>
 
 export interface RaceViewProps {
@@ -42,6 +48,7 @@ export interface RaceViewProps {
 const MAX_CARS = 6
 
 type Stage =
+  | { kind: "garage" }
   | { kind: "menu" }
   | { kind: "lobby"; ac: AbortController }
   | { kind: "game"; mode: RaceMode; key: number; mp?: { net: CorridaNet; start: CorridaStart } }
@@ -53,6 +60,23 @@ interface Records {
   lap: number | null
 }
 const REC_KEY = "mm-corrida-recordes-v1"
+/** Nave escolhida na garagem (conveniência do aparelho; sem ela, a padrão). */
+const SHIP_KEY = "mm-corrida-nave-v1"
+function loadShip(): string {
+  try {
+    const id = localStorage.getItem(SHIP_KEY)
+    return id && SHIPS.some((s) => s.id === id) ? id : DEFAULT_SHIP
+  } catch {
+    return DEFAULT_SHIP
+  }
+}
+function saveShip(id: string) {
+  try {
+    localStorage.setItem(SHIP_KEY, id)
+  } catch {
+    /* sem armazenamento */
+  }
+}
 function loadRecords(): Records {
   try {
     const r = JSON.parse(localStorage.getItem(REC_KEY) || "null") as Partial<Records> | null
@@ -77,7 +101,9 @@ export function fmtRace(s: number): string {
 
 export function RaceView({ name, onExit, join }: RaceViewProps) {
   const t = useTranslations("MeuMundo")
-  const [stage, setStage] = useState<Stage>({ kind: "menu" })
+  const [stage, setStage] = useState<Stage>({ kind: "garage" })
+  const [ship, setShip] = useState(DEFAULT_SHIP)
+  useEffect(() => setShip(loadShip()), [])
   const [lobby, setLobby] = useState<{ names: string[]; until: number }>({ names: [], until: 0 })
   const [error, setError] = useState<string | null>(null)
   const seq = useRef(0)
@@ -98,7 +124,7 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
         setStage({ kind: "menu" })
       }
       try {
-        const got = await join({ signal: ac.signal, onLobby: (names, until) => setLobby({ names, until }), onStatus: () => {} })
+        const got = await join({ signal: ac.signal, onLobby: (names, until) => setLobby({ names, until }), onStatus: () => {}, ship })
         if (ac.signal.aborted) {
           got?.net.dispose()
           return
@@ -109,7 +135,7 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
         if (!ac.signal.aborted) fail()
       }
     },
-    [join, t],
+    [join, t, ship],
   )
 
   return (
@@ -119,6 +145,7 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
           key={stage.key}
           mode={stage.mode}
           name={name}
+          ship={ship}
           mp={stage.mp}
           onAgain={() => void play(stage.mode)}
           onMenu={() => setStage({ kind: "menu" })}
@@ -132,8 +159,18 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
             setStage({ kind: "menu" })
           }}
         />
+      ) : stage.kind === "garage" ? (
+        <GarageView
+          current={ship}
+          onChoose={(id) => {
+            setShip(id)
+            saveShip(id)
+            setStage({ kind: "menu" })
+          }}
+          onExit={onExit}
+        />
       ) : (
-        <RaceMenu onPlay={(mode) => void play(mode)} onExit={onExit} multi={!!join} error={error} />
+        <RaceMenu onPlay={(mode) => void play(mode)} onExit={onExit} multi={!!join} error={error} ship={ship} onGarage={() => setStage({ kind: "garage" })} />
       )}
     </div>
   )
@@ -189,7 +226,21 @@ function RaceLobby({ names, until, onCancel }: { names: string[]; until: number;
 
 // ═══ menu ════════════════════════════════════════════════════════════════════
 
-function RaceMenu({ onPlay, onExit, multi, error }: { onPlay: (m: RaceMode) => void; onExit: () => void; multi: boolean; error: string | null }) {
+function RaceMenu({
+  onPlay,
+  onExit,
+  multi,
+  error,
+  ship,
+  onGarage,
+}: {
+  onPlay: (m: RaceMode) => void
+  onExit: () => void
+  multi: boolean
+  error: string | null
+  ship: string
+  onGarage: () => void
+}) {
   const t = useTranslations("MeuMundo")
   const [rec, setRec] = useState<Records>({ race: null, time: null, lap: null })
   useEffect(() => setRec(loadRecords()), [])
@@ -223,7 +274,27 @@ function RaceMenu({ onPlay, onExit, multi, error }: { onPlay: (m: RaceMode) => v
           </button>
         </div>
 
-        <ul className="mt-4 grid grid-cols-3 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>
+        <button
+          type="button"
+          onClick={onGarage}
+          className="mt-4 flex w-full items-center justify-between gap-3 rounded-[14px] px-3.5 py-2.5 text-left transition-transform active:scale-[0.99]"
+          style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}
+        >
+          <span className="flex items-center gap-2.5">
+            <span className="h-3 w-3 rounded-full" style={{ background: shipArt(ship).holo.color, boxShadow: `0 0 10px ${shipArt(ship).holo.color}` }} />
+            <span>
+              <span className="block text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: MM.muted }}>
+                {t("corridaMenuShip", "Sua nave")}
+              </span>
+              <span className="block text-[16px] font-bold leading-tight">{t(shipArt(ship).labelKey, shipArt(ship).fallback)}</span>
+            </span>
+          </span>
+          <span className="text-[13px] font-bold" style={{ color: "#5FE1FF" }}>
+            {t("corridaMenuGarage", "Trocar na garagem")}
+          </span>
+        </button>
+
+        <ul className="mt-3 grid grid-cols-3 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>
           <li className="rounded-[12px] p-2.5" style={{ background: MM.card }}>
             <b style={{ color: "#5FE1FF" }}>{t("corridaHowPadTitle", "Faixa de turbo")}</b>
             <br />
@@ -293,12 +364,14 @@ function RaceMenu({ onPlay, onExit, multi, error }: { onPlay: (m: RaceMode) => v
 function RaceScreen({
   mode,
   name,
+  ship,
   mp,
   onAgain,
   onMenu,
 }: {
   mode: RaceMode
   name?: string
+  ship: string
   mp?: { net: CorridaNet; start: CorridaStart }
   onAgain: () => void
   onMenu: () => void
@@ -385,6 +458,7 @@ function RaceScreen({
         canvas,
         mode,
         playerName: name || textRef.current("corridaYou", "Você"),
+        ship,
         touch: touchRef.current,
         net: mp,
         onReady: () => alive && setStatus("ready"),
@@ -416,7 +490,7 @@ function RaceScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [mode, name, mp])
+  }, [mode, name, mp, ship])
 
   const toggleMute = useCallback(() => {
     setMuted((m) => {

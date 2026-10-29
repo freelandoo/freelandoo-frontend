@@ -4,11 +4,18 @@
 // malha com textura de cor. Duas versões: a CHEIA (14,3 mil triângulos,
 // textura 1024) só na nave deste aparelho e a LEVE (4,3 mil, textura 512
 // assada) nas outras. O material é montado aqui: o vermelho da textura vira a
-// cor de cada nave e os filetes ciano acendem (plugin `NaveTint`), com um
+// cor de cada nave e os filetes ciano acendem (plugin `ShipPaint`), com um
 // contorno de luz (fresnel) para a nave ler de noite. Cada nave é um clone;
 // as chamas dos QUATRO bocais (2 grandes nos cantos, 2 menores no meio) são
 // de GÁS (flame.ts): transparentes, esticam com a velocidade e curvam nas
 // curvas. O turbo ainda solta faíscas de fogo (sistema de partículas por nave).
+//
+// mm3d-49: GARAGEM — cada vaga tem a sua nave (ship-art.ts: arquivos e
+// bocais; os status ficam na regra). A tinta por cor só vale na "brasa" (a
+// nave do mm3d-41); as do Tripo novas têm a pintura própria. Todas ganham
+// luz própria da textura (`lift`) e contorno de luz, e a cheia usa o mapa de
+// normais (fora do celular fraco). O vidro da "aurora" é peça própria com
+// material de vidro escuro e reflexo.
 //
 // Sem sombra: a única coisa embaixo da nave é o brilho azul da flutuação.
 
@@ -38,34 +45,23 @@ import { Constants } from "@babylonjs/core/Engines/constants"
 import { ensureLoaders } from "../../engine/avatars"
 import { createFlames, type FlameBank } from "./flame"
 import type { CarPose } from "../sim/race"
+import { SHIP_ASSETS, shipArt, type ShipArt } from "./ship-art"
 
-export const CORRIDA_ASSETS = "/meu-mundo/corrida/"
-/** Nave cheia e leve; cada uma com a sua textura (o GLB vem sem material). */
-const SHIP = { full: { glb: "nave-m41.glb", tex: "nave-m41.jpg" }, lod: { glb: "nave-m41-lod.glb", tex: "nave-m41-lod.jpg" } }
+export const CORRIDA_ASSETS = SHIP_ASSETS
 const IDENTITY = Quaternion.Identity()
 /** Flutuação acima do chão (m). */
 export const HOVER = 0.55
 
-/**
- * Bocais no quadro da nave (bico em +z): x, y, z da boca, raio da chama e o
- * comprimento relativo. Medidos na malha (relatório do build_nave_tripo.py;
- * os do meio ficam MAIS BAIXOS que os grandes — conferido com marcadores).
- */
-const NOZZLES: [number, number, number, number, number][] = [
-  [-1.026, 0.535, -1.76, 0.16, 1],
-  [1.026, 0.535, -1.76, 0.16, 1],
-  [-0.354, 0.37, -1.76, 0.11, 0.72],
-  [0.354, 0.37, -1.76, 0.11, 0.72],
-]
-/** Traseira (faíscas do turbo). */
-const TAIL_Z = -1.9
-
-// ═══ tinta da nave: o vermelho da textura vira a cor da nave ═══════════════
-// O vermelho é reconhecido pela própria cor (r bem acima de g e b), então não
-// há máscara para baixar; os filetes ciano (b acima de r) viram luz.
-class NaveTint extends MaterialPluginBase {
+// ═══ tinta da nave ═════════════════════════════════════════════════════════
+// Brasa (mm3d-41): o vermelho da textura vira a cor da nave (reconhecido pela
+// própria cor: r bem acima de g e b) e os filetes ciano viram luz. Todas: luz
+// própria da textura (`lift`), para a nave não sumir na pista de noite.
+export class ShipPaint extends MaterialPluginBase {
   tint = new Color3(1, 0.2, 0.2)
   glow = new Color3(0.35, 0.9, 1)
+  /** 1 = troca o vermelho pela cor e acende o ciano (brasa). */
+  tintOn = 0
+  lift = 0.2
 
   constructor(material: Material) {
     super(material, "MmNave", 200, { MMNAVE: false })
@@ -85,14 +81,16 @@ class NaveTint extends MaterialPluginBase {
       ubo: [
         { name: "mmNaveTint", size: 3, type: "vec3" },
         { name: "mmNaveGlow", size: 3, type: "vec3" },
+        { name: "mmNaveK", size: 2, type: "vec2" },
       ],
-      fragment: "uniform vec3 mmNaveTint;\nuniform vec3 mmNaveGlow;",
+      fragment: "uniform vec3 mmNaveTint;\nuniform vec3 mmNaveGlow;\nuniform vec2 mmNaveK;",
     }
   }
 
   bindForSubMesh(ubo: UniformBuffer) {
     ubo.updateColor3("mmNaveTint", this.tint)
     ubo.updateColor3("mmNaveGlow", this.glow)
+    ubo.updateFloat2("mmNaveK", this.tintOn, this.lift)
   }
 
   getCustomCode(shaderType: string): { [pointName: string]: string } | null {
@@ -101,14 +99,65 @@ class NaveTint extends MaterialPluginBase {
       CUSTOM_FRAGMENT_MAIN_BEGIN: "float mmNaveLit = 0.0;",
       CUSTOM_FRAGMENT_UPDATE_DIFFUSE: `{
         vec3 mmC = baseColor.rgb;
-        float mmRed = smoothstep(0.10, 0.28, mmC.r - max(mmC.g, mmC.b));
+        float mmRed = smoothstep(0.10, 0.28, mmC.r - max(mmC.g, mmC.b)) * mmNaveK.x;
         float mmHi = max(mmC.r, max(mmC.g, mmC.b));
         baseColor.rgb = mix(mmC, mmNaveTint * (0.3 + 0.95 * mmHi), mmRed);
-        mmNaveLit = smoothstep(0.05, 0.18, mmC.b - mmC.r) * smoothstep(0.3, 0.6, mmC.b);
+        mmNaveLit = smoothstep(0.05, 0.18, mmC.b - mmC.r) * smoothstep(0.3, 0.6, mmC.b) * mmNaveK.x;
       }`,
-      CUSTOM_FRAGMENT_BEFORE_FOG: "color.rgb += mmNaveGlow * mmNaveLit * 1.4;",
+      CUSTOM_FRAGMENT_BEFORE_FOG: "color.rgb += mmNaveGlow * mmNaveLit * 1.6 + baseColor.rgb * mmNaveK.y;",
     }
   }
+}
+
+/**
+ * Material de uma nave (também o da garagem). `full` = a textura cheia (com
+ * normais quando `normals`); senão a leve.
+ */
+export function makeShipPaint(scene: Scene, art: ShipArt, full: boolean, color: string, tex: Texture, normals: Texture | null) {
+  const paint = new StandardMaterial(`corrida-${art.id}-paint`, scene)
+  paint.diffuseTexture = tex
+  paint.diffuseColor = new Color3(1, 1, 1)
+  paint.specularColor = art.tint ? new Color3(0.85, 0.85, 0.95) : new Color3(0.6, 0.62, 0.7)
+  paint.specularPower = art.tint ? 72 : 56
+  // o Tripo exporta dos dois lados (algumas faces vêm viradas)
+  paint.backFaceCulling = false
+  if (full && normals) {
+    paint.bumpTexture = normals
+    paint.bumpTexture.level = 0.7
+    // normal do glTF (OpenGL) numa cena de mão esquerda (como o carregador do glTF faz)
+    paint.invertNormalMapX = true
+    paint.invertNormalMapY = true
+  }
+  // contorno de luz: a nave se destaca da pista à noite (barato, sem pós)
+  paint.emissiveColor = new Color3(1, 1, 1)
+  paint.emissiveFresnelParameters = new FresnelParameters({
+    leftColor: Color3.FromHexString(color).scale(art.tint ? 0.48 : 0.4),
+    rightColor: new Color3(0.05, 0.05, 0.08),
+    power: 2,
+    bias: 0.06,
+  })
+  const plug = new ShipPaint(paint)
+  plug.tintOn = art.tint ? 1 : 0
+  plug.tint = Color3.FromHexString(color)
+  plug.lift = art.lift
+  return paint
+}
+
+/** Vidro escuro com reflexo (a cabine da aurora). */
+export function makeGlass(scene: Scene, accent: string) {
+  const g = new StandardMaterial("corrida-glass", scene)
+  g.diffuseColor = new Color3(0.03, 0.035, 0.07)
+  g.specularColor = new Color3(1, 1, 1)
+  g.specularPower = 160
+  g.emissiveColor = new Color3(1, 1, 1)
+  g.emissiveFresnelParameters = new FresnelParameters({
+    leftColor: Color3.FromHexString(accent).scale(0.75),
+    rightColor: new Color3(0.02, 0.025, 0.06),
+    power: 2.6,
+    bias: 0.02,
+  })
+  g.backFaceCulling = false
+  return g
 }
 
 /** Bolinha macia (faísca e brilho da flutuação). */
@@ -128,6 +177,9 @@ function softDot(scene: Scene, name: string, inner: string, outer: string): Dyna
 
 interface CarSlot {
   root: TransformNode
+  art: ShipArt
+  /** Primeiro bocal desta nave nas listas do fogo e do brilho. */
+  nz0: number
   meshes: AbstractMesh[]
   /** Nave cheia (a deste aparelho) ou leve. */
   full: boolean
@@ -153,7 +205,9 @@ export interface CarLook {
 export class CarFleet {
   private readonly slots: CarSlot[] = []
   private readonly containers: AssetContainer[] = []
-  private readonly textures: Partial<Record<"full" | "lod", Texture>> = {}
+  /** Textura por nave e versão (`id:full`, `id:lod`, `id:n`). */
+  private readonly textures = new Map<string, Texture>()
+  private glass: StandardMaterial | null = null
   private readonly flames: FlameBank
   private clock = 0
   private readonly hover: Mesh
@@ -177,12 +231,18 @@ export class CarFleet {
   constructor(
     private readonly scene: Scene,
     colors: readonly string[],
+    /** Nave da garagem de cada vaga (mm3d-49). */
+    ships: readonly string[],
     private readonly sparksFor: (i: number) => boolean,
     /** Quem usa a nave cheia (a deste aparelho); as outras usam a leve. */
     private readonly fullFor: (i: number) => boolean,
+    /** Mapa de normais na cheia (fora do celular fraco). */
+    private readonly normals = true,
   ) {
     ensureLoaders()
-    this.flames = createFlames(scene, colors.length * NOZZLES.length)
+    const arts = colors.map((_, i) => shipArt(ships[i]))
+    const nozzles = arts.reduce((n, a) => n + a.nozzles.length, 0)
+    this.flames = createFlames(scene, nozzles)
     // brilho da flutuação: um quadrado deitado com a bolinha azul (sem sombra)
     this.hoverTex = softDot(scene, "corrida-hover", "rgba(140,235,255,0.9)", "rgba(60,170,255,0.35)")
     this.hoverMat = new StandardMaterial("corrida-hover", scene)
@@ -213,43 +273,34 @@ export class CarFleet {
     this.glow.material = this.glowMat
     this.glow.isPickable = false
     this.glow.alwaysSelectAsActiveMesh = true
-    this.glowBuf = new Float32Array(colors.length * NOZZLES.length * 16)
+    this.glowBuf = new Float32Array(nozzles * 16)
     this.glow.thinInstanceSetBuffer("matrix", this.glowBuf, 16, false)
-    for (let i = 0; i < colors.length; i++) this.slots.push(this.makeSlot(i, colors[i]))
+    let nz0 = 0
+    for (let i = 0; i < colors.length; i++) {
+      this.slots.push(this.makeSlot(i, colors[i], arts[i], nz0))
+      nz0 += arts[i].nozzles.length
+    }
     this.ready = this.load()
   }
 
-  private texture(kind: "full" | "lod"): Texture {
-    let t = this.textures[kind]
+  private texture(art: ShipArt, kind: "full" | "lod" | "n"): Texture {
+    const key = `${art.id}:${kind}`
+    let t = this.textures.get(key)
     if (!t) {
+      const file = kind === "full" ? art.full.tex : kind === "lod" ? art.lod.tex : (art.full.normal ?? art.full.tex)
       // UV do glTF: sem inverter o v
-      t = new Texture(CORRIDA_ASSETS + SHIP[kind].tex, this.scene, { invertY: false })
-      t.anisotropicFilteringLevel = kind === "full" ? 4 : 1
-      this.textures[kind] = t
+      t = new Texture(CORRIDA_ASSETS + file, this.scene, { invertY: false })
+      t.anisotropicFilteringLevel = kind === "lod" ? 1 : 4
+      this.textures.set(key, t)
     }
     return t
   }
 
-  private makeSlot(i: number, color: string): CarSlot {
+  private makeSlot(i: number, color: string, art: ShipArt, nz0: number): CarSlot {
     const root = new TransformNode(`corrida-car-${i}`, this.scene)
     const full = this.fullFor(i)
-    const paint = new StandardMaterial(`corrida-car-paint-${i}`, this.scene)
-    paint.diffuseTexture = this.texture(full ? "full" : "lod")
-    paint.diffuseColor = new Color3(1, 1, 1)
-    paint.specularColor = new Color3(0.5, 0.52, 0.6)
-    paint.specularPower = 48
-    // o Tripo exporta dos dois lados (algumas faces vêm viradas)
-    paint.backFaceCulling = false
-    // contorno de luz: a nave se destaca da pista à noite (barato, sem pós)
-    paint.emissiveColor = new Color3(1, 1, 1)
-    paint.emissiveFresnelParameters = new FresnelParameters({
-      leftColor: Color3.FromHexString(color).scale(0.3),
-      rightColor: new Color3(0.04, 0.04, 0.07),
-      power: 2.2,
-      bias: 0.05,
-    })
-    const tint = new NaveTint(paint)
-    tint.tint = Color3.FromHexString(color)
+    const normals = full && this.normals && art.full.normal ? this.texture(art, "n") : null
+    const paint = makeShipPaint(this.scene, art, full, color, this.texture(art, full ? "full" : "lod"), normals)
     let sparks: ParticleSystem | null = null
     const emitter = new Vector3()
     if (this.sparksFor(i)) {
@@ -274,37 +325,32 @@ export class CarFleet {
       sparks.updateSpeed = 1 / 60
       sparks.start()
     }
-    return { root, meshes: [], full, paint, sparks, emitter, flicker: Math.random() * 10, flameLen: 0, bend: 0, lastYaw: null }
+    return { root, art, nz0, meshes: [], full, paint, sparks, emitter, flicker: Math.random() * 10, flameLen: 0, bend: 0, lastYaw: null }
   }
 
   private async load() {
-    const kinds = (["full", "lod"] as const).filter((k) => this.slots.some((s) => s.full === (k === "full")))
-    const loaded = await Promise.all(
-      kinds.map(async (k) => {
+    // um arquivo por nave e versão, carregado uma vez e clonado para cada vaga
+    const want = new Map<string, { art: ShipArt; kind: "full" | "lod" }>()
+    for (const s of this.slots) want.set(`${s.art.id}:${s.full ? "full" : "lod"}`, { art: s.art, kind: s.full ? "full" : "lod" })
+    const byKey = new Map<string, AssetContainer>()
+    await Promise.all(
+      [...want].map(async ([key, { art, kind }]) => {
         try {
-          return [k, await LoadAssetContainerAsync(CORRIDA_ASSETS + SHIP[k].glb, this.scene)] as const
+          const c = await LoadAssetContainerAsync(CORRIDA_ASSETS + art[kind].glb, this.scene)
+          if (this.disposed) c.dispose()
+          else {
+            this.containers.push(c)
+            byKey.set(key, c)
+          }
         } catch (err) {
-          if (!this.disposed) console.warn("[corrida] nave não carregou", k, err)
-          return [k, null] as const
+          if (!this.disposed) console.warn("[corrida] nave não carregou", key, err)
         }
       }),
     )
-    const byKind = new Map<string, AssetContainer>()
-    for (const [k, c] of loaded) {
-      if (!c) continue
-      if (this.disposed) c.dispose()
-      else {
-        this.containers.push(c)
-        byKind.set(k, c)
-      }
-    }
     if (this.disposed) return
     for (const s of this.slots) {
-      // sem a versão pedida, a outra serve (a textura vai junto)
-      const want = s.full ? "full" : "lod"
-      const c = byKind.get(want) ?? byKind.get(want === "full" ? "lod" : "full")
+      const c = byKey.get(`${s.art.id}:${s.full ? "full" : "lod"}`)
       if (!c) continue
-      if (!byKind.has(want)) s.paint.diffuseTexture = this.texture(want === "full" ? "lod" : "full")
       const inst = c.instantiateModelsToScene((n) => `${s.root.name}-${n}`, false, { doNotInstantiate: true })
       // o GLB olha para −z; a nave do jogo olha para +z
       const turn = new TransformNode(`${s.root.name}-turn`, this.scene)
@@ -314,7 +360,7 @@ export class CarFleet {
       for (const m of turn.getChildMeshes(false)) {
         m.isPickable = false
         if (!m.getTotalVertices()) continue
-        m.material = s.paint
+        m.material = m.name.includes("vidro") ? (this.glass ??= makeGlass(this.scene, s.art.holo.accent)) : s.paint
         s.meshes.push(m)
       }
     }
@@ -346,11 +392,12 @@ export class CarFleet {
     const wantBend = Math.max(-4, Math.min(4, yawRate * s.flameLen * 0.35))
     s.bend += (wantBend - s.bend) * Math.min(1, dt * 6)
     const heat = look.boost ? 1 : 0
-    for (let k = 0; k < NOZZLES.length; k++) {
-      const [x, y, z, radius, size] = NOZZLES[k]
+    const nozzles = s.art.nozzles
+    for (let k = 0; k < nozzles.length; k++) {
+      const [x, y, z, radius, size] = nozzles[k]
       const len = Math.max(0.001, s.flameLen * size)
       const r = radius * (look.boost ? 1.45 : 1.2)
-      const j = i * NOZZLES.length + k
+      const j = s.nz0 + k
       Matrix.ComposeToRef(this.sc.set(r, r, len), IDENTITY, this.at.set(x, y, z), this.tmpM)
       this.tmpM.multiplyToArray(world, this.flames.matrices, j * 16)
       // curva em unidades locais (a escala do raio multiplica depois)
@@ -372,7 +419,7 @@ export class CarFleet {
     Matrix.ComposeToRef(this.sc.set(hs * 0.8, 1, hs * 1.4), this.tmpQ, this.at.set(pose.x, pose.y + 0.06, pose.z), this.tmpM)
     this.tmpM.copyToArray(this.hoverBuf, i * 16)
     if (s.sparks) {
-      Vector3.TransformCoordinatesFromFloatsToRef(0, 0.6, TAIL_Z, world, s.emitter)
+      Vector3.TransformCoordinatesFromFloatsToRef(0, 0.6, s.art.tailZ, world, s.emitter)
       s.sparks.emitRate = look.down ? 0 : 30 + 200 * look.speed + (look.boost ? 280 : 0)
       s.sparks.maxSize = look.boost ? 0.6 : 0.38
       // passo real do quadro (a cena usa delta constante; a 30 FPS seria meia velocidade)
@@ -407,8 +454,8 @@ export class CarFleet {
       s.paint.dispose()
     }
     for (const c of this.containers) c.dispose()
-    this.textures.full?.dispose()
-    this.textures.lod?.dispose()
+    for (const t of this.textures.values()) t.dispose()
+    this.glass?.dispose()
     this.flames.dispose()
     this.hover.dispose()
     this.hoverMat.dispose()

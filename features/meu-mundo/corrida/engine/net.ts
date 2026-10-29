@@ -25,6 +25,8 @@ export type CorridaNetStatus = "connecting" | "online" | "replaced" | "offline"
 export interface CorridaSeat {
   name: string
   human: boolean
+  /** Nave da garagem (mm3d-49; sala antiga não manda = a do lugar). */
+  ship?: string
 }
 export interface CorridaStart {
   me: number
