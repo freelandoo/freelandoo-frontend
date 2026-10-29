@@ -96,6 +96,8 @@ const THEMES: Record<string, Theme> = {
   academia: { wall: [0.36, 0.37, 0.4], accent: C.yellow, second: C.red },
   igreja: { wall: [0.92, 0.88, 0.8], accent: [0.45, 0.25, 0.5], second: C.gold },
   delegacia: { wall: [0.82, 0.86, 0.9], accent: C.navy, second: C.gold },
+  // Salão do Hall da Fama (mm3d-48): mármore, vermelho dos Jogos Eternos e ouro.
+  hall: { wall: [0.96, 0.94, 0.9], accent: [0.62, 0.1, 0.16], second: C.gold },
 }
 const NO_THEME: Theme = { wall: C.wall, accent: C.fabricB, second: C.fabricA }
 /** Cores das lombadas e dos produtos de cena (só desenho). */
@@ -103,6 +105,17 @@ const STOCK: RGB[] = [C.red, C.yellow, C.green, [0.3, 0.55, 0.85], [0.95, 0.55, 
 /** Cilindro deitado ao longo do X local do móvel. */
 const ALONG_X = Matrix.RotationZ(Math.PI / 2)
 const FABRICS: RGB[] = [C.fabricA, C.fabricB, C.fabricC]
+/** Salão do Hall da Fama (mm3d-48): a pedra das estátuas e a cor de cada um dos Sete. */
+const HERO_STONE: RGB = [0.78, 0.74, 0.68]
+const HERO_TINT: Record<string, RGB> = {
+  aurion: [0.95, 0.75, 0.25],
+  kragor: [0.95, 0.45, 0.12],
+  zephyra: [0.15, 0.75, 0.95],
+  maru: [0.98, 0.5, 0.4],
+  iris: [0.85, 0.2, 0.6],
+  noctis: [0.35, 0.42, 0.75],
+  aeryn: [0.72, 0.47, 0.22],
+}
 
 /** Quadro de um móvel: giro em Y (graus) e posição, com a altura do andar. */
 function frame(x: number, y: number, z: number, deg: number): Matrix {
@@ -391,6 +404,49 @@ function furniture(g: GeoBuilder, it: InteriorFurniture, y: number, seatTop: num
         g.cylinder(0.05, 0.22, Matrix.Translation(sx, h - 0.14, 0).multiply(f), C.candle, 6)
         g.sphere(0.05, [1, 1.6, 1], Matrix.Translation(sx, h + 0.01, 0).multiply(f), C.flame)
       }
+      break
+    // ── Salão do Hall da Fama (mm3d-48) ──
+    case "hero_statue": {
+      // Pedestal de mármore com faixa da cor do herói e a figura de pedra (provisória:
+      // troca pelo modelo do herói quando a arte chegar).
+      const tint = HERO_TINT[it.hero ?? ""] ?? th.second
+      const big = it.hero === "aurion" ? 1.25 : 1
+      B(g, f, 0, 0, 0, w, 0.9, d, C.white)
+      B(g, f, 0, 0.9, 0, w + 0.08, 0.08, d + 0.08, th.second)
+      B(g, f, 0, 0.45, -d / 2 - 0.005, w * 0.7, 0.18, 0.01, tint)
+      const st = HERO_STONE
+      const s0 = 0.98
+      for (const sx of [-0.13, 0.13]) B(g, f, sx * big, s0, 0, 0.2 * big, 0.85 * big, 0.24 * big, st)
+      B(g, f, 0, s0 + 0.85 * big, 0, 0.56 * big, 0.75 * big, 0.32 * big, st)
+      B(g, f, 0, s0 + 1.12 * big, -0.17 * big, 0.36 * big, 0.3 * big, 0.02, tint)
+      g.sphere(0.32 * big, [1, 1.1, 1], Matrix.Translation(0, s0 + 1.78 * big, 0).multiply(f), st)
+      for (const sx of [-1, 1]) B(g, f, sx * 0.36 * big, s0 + 0.9 * big, 0, 0.16 * big, 0.7 * big, 0.18 * big, st)
+      // a arma do herói, de pé ao lado (lâmina)
+      B(g, f, 0.48 * big, s0, -0.05, 0.07, 1.5 * big, 0.03, [0.82, 0.84, 0.88])
+      B(g, f, 0.48 * big, s0 + 0.3 * big, -0.05, 0.28, 0.05, 0.06, th.second)
+      break
+    }
+    case "honor_wall": {
+      // O Muro dos Herdeiros: mármore com 2 fileiras de nichos e placas douradas.
+      B(g, f, 0, 0, 0, w, h, d, [0.92, 0.89, 0.83])
+      B(g, f, 0, h - 0.12, 0, w + 0.1, 0.12, d + 0.06, th.second)
+      const cols = Math.max(4, Math.floor(w / 1.1))
+      for (const row of [0, 1]) {
+        for (let k = 0; k < cols; k++) {
+          const lx = -w / 2 + (w / cols) * (k + 0.5)
+          const ly = 0.45 + row * 1.45
+          B(g, f, lx, ly, -d / 2 - 0.005, (w / cols) * 0.7, 1.05, 0.02, [0.55, 0.48, 0.4])
+          B(g, f, lx, ly - 0.18, -d / 2 - 0.01, (w / cols) * 0.55, 0.12, 0.02, th.second)
+        }
+      }
+      break
+    }
+    case "empty_base":
+      // A base do Oitavo: pedestal vazio com a faixa vermelha e a inscrição dourada.
+      B(g, f, 0, 0, 0, w, h, d, C.white)
+      B(g, f, 0, h, 0, w + 0.1, 0.07, d + 0.1, th.second)
+      for (const [lx, lz, rw, rd] of [[0, -d / 2 - 0.005, w * 0.8, 0.01], [0, d / 2 + 0.005, w * 0.8, 0.01]] as const) B(g, f, lx, h * 0.4, lz, rw, 0.22, rd, th.accent)
+      B(g, f, 0, h * 0.4 + 0.07, -d / 2 - 0.012, w * 0.55, 0.06, 0.01, th.second)
       break
     // ── pizzaria e hamburgueria ──
     case "order_counter":

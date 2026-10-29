@@ -26,6 +26,7 @@ import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildWorld } from "./world"
 import { buildCenterWorld, type CenterLabels } from "./center-world"
+import { CenterMobs } from "./center-mobs"
 import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
@@ -146,6 +147,8 @@ export interface GameHandle {
   sayFrom: (sessionId: string, text: string) => void
   /** O meu balão (a sala não manda o "say" de volta para quem falou). */
   sayLocal: (text: string) => void
+  /** Fim da luta do portal de um monstro (mm3d-48b): vitória tira o monstro da cidade. */
+  reportMob: (mobId: number, win: boolean) => void
   dispose: () => void
 }
 
@@ -247,6 +250,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       devDrive.current = d
     }
   }
+  // Monstros das invasões (mm3d-48b): só no centro.
+  const mobs = centerP ? new CenterMobs(scene) : null
 
   const fallbackMat = new StandardMaterial("mm-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
@@ -369,6 +374,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         const t = sanitizeTuning((p || {}) as Tuning)
         tune = Object.keys(t).length ? t : null
       }
+      // Invasões (mm3d-48b): a lista inteira de monstros no centro.
+      if (type === "mobs") mobs?.set((p as { l?: unknown } | null)?.l)
       opts.onServerMessage?.(type, p)
     },
   })
@@ -494,7 +501,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         bestD = d
       }
     }
-    for (const it of world.interactables) {
+    for (const it of mobs ? world.interactables.concat(mobs.interactables()) : world.interactables) {
       const d = Math.hypot(it.x - local.x, it.z - local.z)
       if (d <= it.radius && d < bestD) {
         best = it
@@ -674,6 +681,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const cam = follow.camera.globalPosition
       r.char.applyDistance(Math.hypot(r.x - cam.x, r.z - cam.z), scene.frustumPlanes, quality)
     }
+    mobs?.update(dt)
     // Toque curto no mundo (mm3d-31): outro jogador abre o card; o vazio fecha.
     const tap = select.takeTap(input.taps, remotes)
     if (tap !== undefined && !input.blocked) opts.onPlayerTap?.(tap)
@@ -869,6 +877,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     sayLocal(text) {
       if (!disposed) local.char.say(text)
     },
+    reportMob(mobId, win) {
+      if (!disposed) net.send("mfight", { id: mobId, r: win ? 1 : 0 })
+    },
     setQuality(c) {
       quality = resolveQuality(c)
       governor.setProfile(quality)
@@ -895,6 +906,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const wb = window as unknown as { __mmBubbles?: typeof bubbles }
       if (wb.__mmBubbles === bubbles) delete wb.__mmBubbles
       document.removeEventListener("visibilitychange", onVisibility)
+      mobs?.dispose()
       net.dispose()
       engine.stopRenderLoop()
       detachInput()

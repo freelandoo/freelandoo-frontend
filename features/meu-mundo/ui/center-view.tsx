@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { ScenePlayerProps } from "./player-card/player-card"
-import { Activity, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, RefreshCw, Store, WifiOff, X } from "lucide-react"
+import { Activity, Crown, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, RefreshCw, Store, Swords, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
@@ -31,6 +31,7 @@ import type { CorridaJoin } from "../corrida/ui/race-view"
 import type { NoturnoJoin } from "../noturno/ui/run-view"
 import type { BoxeJoin } from "../boxe/ui/boxe-view"
 import type { GincanaJoin } from "../gincana/ui/gincana-view"
+import type { LaminasEncounter } from "../laminas/ui/laminas-view"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
@@ -41,6 +42,7 @@ const RaceView = dynamic(() => import("../corrida/ui/race-view").then((m) => m.R
 const RunView = dynamic(() => import("../noturno/ui/run-view").then((m) => m.RunView), { ssr: false })
 const BoxeView = dynamic(() => import("../boxe/ui/boxe-view").then((m) => m.BoxeView), { ssr: false })
 const GincanaView = dynamic(() => import("../gincana/ui/gincana-view").then((m) => m.GincanaView), { ssr: false })
+const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
 /** Paint (mm3d-35): reserva numa sala do modo pedido (null = sem acesso). */
 async function fetchPaintSession(mode: string, roomId: string | null) {
@@ -121,6 +123,17 @@ async function loadInterior(id: string): Promise<InteriorDef | null> {
   return r.data.interior
 }
 
+/** Salão do Hall da Fama (mm3d-48): planta + quem está no Muro; "closed" = não tem direito. */
+type HallInfo = { member: boolean; admin: boolean; members: { name: string; game: string; since: string }[] }
+async function loadHall(): Promise<{ interior: InteriorDef; hall: HallInfo } | "closed" | null> {
+  const token = getToken()
+  if (!token) return null
+  const r = await getCenterInterior(token, "hall")
+  if (!r.ok) return r.status === 403 || r.code === "hall_closed" ? "closed" : null
+  const d = r.data as { interior: InteriorDef; hall?: HallInfo }
+  return { interior: d.interior, hall: d.hall ?? { member: false, admin: false, members: [] } }
+}
+
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 /** Nome em português (fallback do dicionário). */
@@ -138,6 +151,8 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   noturno: "Rolê Noturno",
   boxe: "Arena de Boxe",
   gincana: "Gincana",
+  laminas: "Arena das Lâminas",
+  hall: "Salão do Hall da Fama",
   igreja: "Igreja",
   delegacia: "Delegacia",
   hospital: "Hospital",
@@ -174,6 +189,14 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [minigame, setMinigame] = useState<string | null>(null)
   /** O minijogo aberto aceita grupo (place.party, mm3d-21). */
   const [minigameParty, setMinigameParty] = useState(false)
+  // Arena das Lâminas (mm3d-48): luta vinda do portal de um monstro (null = treino pelo prédio).
+  const [encounter, setEncounter] = useState<LaminasEncounter | null>(null)
+  // Salão do Hall da Fama: quem está no Muro; "fechado" = sem direito de entrar.
+  const [hallInfo, setHallInfo] = useState<HallInfo | null>(null)
+  const [hallClosed, setHallClosed] = useState(false)
+  // Invasões (mm3d-48b): aviso de monstro novo e de quem venceu.
+  const [mobNews, setMobNews] = useState<{ text: string; id: number } | null>(null)
+  const knownMobs = useRef(new Set<number>())
   // Prédio aberto (mm3d-37): qual e a planta (null = ainda buscando).
   const [inside, setInside] = useState<{ id: string; interior: InteriorDef | null; failed: boolean } | null>(null)
   const insidePlace = inside ? (payload.center.places.find((p) => p.id === inside.id) ?? null) : null
@@ -221,11 +244,30 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   )
 
   const placeName = useCallback((p: CenterPlace) => t(p.nameKey, PLACE_PT[p.id] ?? p.id), [t])
-  const labelsRef = useRef({ place: placeName, portal: "" })
+  const mobName = useCallback(
+    (k: string) =>
+      ({
+        wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
+        golem: t("laminasMobGolem", "Golem de Sucata"),
+        harpy: t("laminasMobHarpy", "Harpia"),
+        brute: t("laminasMobBrute", "Brutamontes"),
+      })[k] ?? k,
+    [t],
+  )
+  const mobAlert = t("mobAlert", "Monstros na cidade! Procure o portal violeta.")
+  const mobWinTpl = t("mobWin", "{name} derrotou: {mob}!")
+  const mobWin = useCallback((name: string, kind: string) => mobWinTpl.replace("{name}", name || "Alguém").replace("{mob}", mobName(kind)), [mobWinTpl, mobName])
+  const labelsRef = useRef({ place: placeName, portal: "", mobAlert, mobWin })
   const portalSign = t("centerPortalSign", "Bairros")
   useEffect(() => {
-    labelsRef.current = { place: placeName, portal: portalSign }
-  }, [placeName, portalSign])
+    labelsRef.current = { place: placeName, portal: portalSign, mobAlert, mobWin }
+  }, [placeName, portalSign, mobAlert, mobWin])
+  // O aviso de invasão some sozinho.
+  useEffect(() => {
+    if (!mobNews) return
+    const id = setTimeout(() => setMobNews(null), 4500)
+    return () => clearTimeout(id)
+  }, [mobNews])
 
   // Página do jogo não rola.
   useEffect(() => {
@@ -264,7 +306,20 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             setNet(s)
             if (s === "moved") cbRef.current.onMoved()
           },
-          onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
+          onServerMessage: (type, p) => {
+            if (!alive) return
+            if (type === "mobs") {
+              const rows = ((p as { l?: unknown[] } | null)?.l ?? []) as unknown[][]
+              const ids = new Set(rows.map((r) => Number(r[0])))
+              const fresh = [...ids].some((id) => !knownMobs.current.has(id))
+              knownMobs.current = ids
+              if (fresh) setMobNews({ text: labelsRef.current.mobAlert, id: Date.now() })
+            } else if (type === "mobwin") {
+              const w = p as { kind?: string; name?: string }
+              setMobNews({ text: labelsRef.current.mobWin(w.name || "", w.kind || ""), id: Date.now() })
+            }
+            cbRef.current.onServerMessage(type, p)
+          },
           onPlayerTap: (tp) => alive && playerCb.current.onPlayerTap?.(tp),
           onPlayerGone: (sid) => alive && playerCb.current.onPlayerGone?.(sid),
           onOnline: (n) => alive && setOnline(n),
@@ -277,13 +332,36 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           onInteract: (it) => {
             if (!alive) return
             if (it.kind === "portal") cbRef.current.onGoHome()
-            else if (it.kind === "place") {
+            else if (it.kind === "monster") {
+              // O portal aos pés do monstro (mm3d-48b): luta direto na Arena das Lâminas.
+              setEncounter({ mobId: it.mobId, kind: it.mobKind })
+              setMinigame("laminas")
+            } else if (it.kind === "place") {
               const g = gameOf(it.place)
               if (g === "jetpack") {
                 setMinigameParty((it.place.party ?? 0) > 1)
                 setMinigame(g)
               } else if (g === "paint" || g === "corrida" || g === "noturno" || g === "boxe" || g === "gincana") setMinigame(g)
-              else if (interiorOf(it.place)) {
+              else if (g === "laminas") {
+                setEncounter(null)
+                setMinigame("laminas")
+              } else if (it.place.id === "hall") {
+                // Salão do Hall da Fama: a porta pergunta ao servidor quem pode entrar.
+                setInside({ id: "hall", interior: null, failed: false })
+                setMinigame("interior")
+                void loadHall().then((got) => {
+                  if (!alive) return
+                  if (got === "closed") {
+                    setInside(null)
+                    setMinigame(null)
+                    setHallClosed(true)
+                  } else if (!got) setInside((cur) => (cur && cur.id === "hall" ? { id: "hall", interior: null, failed: true } : cur))
+                  else {
+                    setHallInfo(got.hall)
+                    setInside((cur) => (cur && cur.id === "hall" ? { id: "hall", interior: got.interior, failed: false } : cur))
+                  }
+                })
+              } else if (interiorOf(it.place)) {
                 const id = it.place.id
                 const ready = id === "hospital" ? (payload.center.interiors?.hospital ?? null) : (interiorCache.get(id) ?? null)
                 setInside({ id, interior: ready, failed: false })
@@ -352,8 +430,10 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const nearPortal = nearby?.kind === "portal"
   const nearPlace = nearby?.kind === "place" ? nearby.place : null
   const nearCar = nearby?.kind === "car" || nearby?.kind === "car-exit"
-  const nearbyLabel =
-    nearby?.kind === "car"
+  const nearMob = nearby?.kind === "monster" ? nearby : null
+  const nearbyLabel = nearMob
+    ? `${t("mobFight", "Lutar")} · ${mobName(nearMob.mobKind)}`
+    : nearby?.kind === "car"
       ? t("useVehicle", "Usar")
       : nearby?.kind === "car-exit"
         ? t("leaveVehicle", "Descer")
@@ -475,7 +555,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               variant="primary"
               size="lg"
               kbd="E"
-              icon={nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+              icon={nearMob ? <Swords className="h-5 w-5" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5" /> : <Home className="h-5 w-5" />}
               onClick={() => gameRef.current?.interact()}
               aria-label={nearbyLabel}
             >
@@ -515,7 +595,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               aria-label={nearbyLabel}
               className="!absolute !min-h-12 max-w-[50vw]"
               style={{ bottom: bottom(20), right: SAFE.right }}
-              icon={nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5 shrink-0" /> : nearPortal ? <Home className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
+              icon={nearMob ? <Swords className="h-5 w-5 shrink-0" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5 shrink-0" /> : nearPortal ? <Home className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearPlace ? `${nearbyLabel} · ${placeTag}` : nearbyLabel}
             </EvoButton>
@@ -566,6 +646,49 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {minigame === "noturno" && <RunView body={body} look={look} name={payload.me.name} onExit={() => setMinigame(null)} join={noturnoJoin} />}
       {/* Arena de Boxe (mm3d-43): a luta calculada pela vida; ao sair, volta à porta */}
       {minigame === "boxe" && <BoxeView onExit={() => setMinigame(null)} loadCard={loadBoxeCard} join={boxeJoin} />}
+      {/* Arena das Lâminas (mm3d-48): treino pelo prédio ou a luta do portal de um monstro */}
+      {minigame === "laminas" && (
+        <LaminasView
+          body={body}
+          look={look}
+          encounter={encounter}
+          onExit={() => {
+            setMinigame(null)
+            setEncounter(null)
+          }}
+          onEncounterEnd={(win) => {
+            if (encounter) gameRef.current?.reportMob(encounter.mobId, win)
+          }}
+        />
+      )}
+      {/* Salão do Hall da Fama (mm3d-48): quem está dentro vê o Muro; o admin vê com o aviso */}
+      {minigame === "interior" && inside?.id === "hall" && inside.interior && hallInfo && (
+        <div className="pointer-events-none fixed inset-x-0 z-[75] flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
+          <EvoToast icon={<Crown className="h-4 w-4" />}>
+            {hallInfo.members.length
+              ? t("hallWall", "Muro dos Herdeiros: {names}").replace("{names}", hallInfo.members.slice(0, 6).map((m) => m.name).join(", "))
+              : hallInfo.admin
+                ? t("hallAdmin", "Você entrou como administrador. O Muro ainda não tem nomes.")
+                : t("hallEmpty", "O Muro ainda não tem nomes. O seu pode ser o primeiro.")}
+          </EvoToast>
+        </div>
+      )}
+      {hallClosed && (
+        <EvoDialog
+          labelId="mm-hall-closed"
+          eyebrow={t("hallEyebrow", "Os Jogos Eternos de Lúmen")}
+          title={t("centerPlace_hall", "Salão do Hall da Fama")}
+          onClose={() => setHallClosed(false)}
+          width="max-w-sm"
+          footer={
+            <EvoButton variant="primary" className="w-full" onClick={() => setHallClosed(false)}>
+              {t("ok", "Entendi")}
+            </EvoButton>
+          }
+        >
+          <p style={{ color: EVO.mudo }}>{t("hallClosed", "O Salão é de quem ficou em 1º lugar no ranking por três meses seguidos. Treine, vença e volte com o seu nome.")}</p>
+        </EvoDialog>
+      )}
       {/* Gincana (mm3d-47): corrida de obstáculos sobre o mar; ao sair, volta à porta */}
       {minigame === "gincana" && <GincanaView body={body} look={look} name={payload.me.name} onExit={() => setMinigame(null)} join={gincanaJoin} />}
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
@@ -609,6 +732,11 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           onLeave={onGoHome}
           leaveLabel={t("backHome", "Voltar para casa")}
         />
+      )}
+      {status === "ready" && mobNews && !minigame && (
+        <div key={mobNews.id} className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 48px)" }}>
+          <EvoToast icon={<Swords className="h-4 w-4" />}>{mobNews.text}</EvoToast>
+        </div>
       )}
       {status === "ready" && winded && (
         <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>

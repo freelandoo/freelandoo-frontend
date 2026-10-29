@@ -489,6 +489,8 @@ export interface InteriorFurniture {
   /** mm3d-37: o que se faz ali (sobrepõe o do tipo) e o NPC sentado. */
   use?: string
   npc?: string
+  /** Salão do Hall da Fama (mm3d-48): qual dos Sete está no pedestal. */
+  hero?: string
 }
 
 export interface InteriorFloor {
@@ -646,6 +648,8 @@ export type CenterPlaceId =
   | "noturno"
   | "boxe"
   | "gincana"
+  | "laminas"
+  | "hall"
   | "igreja"
   | "delegacia"
   | "hospital"
@@ -811,6 +815,8 @@ export type Interactable =
   // Ponto de uso dentro de um prédio do centro (mm3d-37).
   | { kind: "spot"; id: string; x: number; z: number; radius: number; spot: InteriorSpot }
   | { kind: "portal"; id: string; x: number; z: number; radius: number }
+  // Monstro de uma invasão (mm3d-48b): o portal aos pés dele leva à Arena das Lâminas.
+  | { kind: "monster"; id: string; x: number; z: number; radius: number; mobId: number; mobKind: "wolf" | "golem" | "harpy" | "brute" }
 
 export interface GameStats {
   /** Carros desenhados no bairro (mm3d-11). */
