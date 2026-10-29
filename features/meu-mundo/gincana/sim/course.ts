@@ -21,20 +21,23 @@ export const DECK = 3
 
 export const GINCANA = {
   step: 1 / 60,
-  gravity: 24,
-  run: 7.2,
-  accel: 42,
+  // mm3d-47b: mais rápido e mais seco (o Alex achou lento e o pulo mole)
+  gravity: 30,
+  run: 8.2,
+  accel: 58,
   /** Controle no ar (fração da aceleração do chão). */
-  airControl: 0.6,
-  /** Pulo: 8,4 m/s com g 24 → ~1,47 m de altura. */
-  jumpV: 8.4,
+  airControl: 0.72,
+  /** Pulo: 9,6 m/s com g 30 → ~1,54 m de altura, 0,64 s no ar. */
+  jumpV: 9.6,
   coyote: 0.12,
+  /** Apertou pular um pouco antes de poder (no ar, chegando ao chão): vale por isto (s). */
+  jumpBuffer: 0.15,
   bodyR: 0.4,
   bodyH: 1.7,
   stepUp: 0.45,
   /** Mergulho: para a frente, um pouco para cima; depois desliza e levanta. */
-  diveV: 10.5,
-  diveUp: 3.8,
+  diveV: 11.5,
+  diveUp: 4.4,
   slideT: 0.45,
   riseT: 0.4,
   /** Derrubado por obstáculo: sem controle por isto (s); depois levanta. */
@@ -44,6 +47,11 @@ export const GINCANA = {
   respawnT: 1.3,
   /** Depois de voltar: nada derruba por isto (s). */
   shieldT: 1.2,
+  /** Logo da Freelandoo (mm3d-47b): turbo com brilho — velocidade ×boost por boostT s; o logo volta para quem pegou depois de logoBack s. */
+  boost: 1.5,
+  boostT: 3.5,
+  logoR: 1.25,
+  logoBack: 12,
   /** Prova: limite depois do "vai" e contagem antes. */
   timeLimit: 180,
   countdown: 3,
@@ -302,6 +310,22 @@ export function ballLane(seed: number, i: number) {
   if (h % 5 === 0) return -1
   return (h >>> 3) % BALLS.lanes.length
 }
+
+/**
+ * Logos da Freelandoo (mm3d-47b): nos lugares abertos do caminho. Cada um é
+ * de cada corredor (quem pega não tira dos outros): nada disso viaja na rede.
+ */
+export const LOGOS: readonly { x: number; z: number; y: number }[] = [
+  [-4, 12.5], [0, 12.5], [4, 12.5],
+  [0, 79],
+  [-5, 87], [5, 87],
+  [-5, 105], [0, 105], [5, 105],
+  [0, 137],
+  [-3.5, 151], [3.5, 161], [-3.5, 171],
+  [0, 187.5],
+  [-2.9, 216.5], [2.9, 216.5],
+  [-4.3, 233], [0, 241], [4.3, 249],
+].map(([x, z]) => ({ x, z, y: (z > RAMP.z0 ? rampTop(z) : DECK) + 1.1 }))
 
 /** Altura do tampo da rampa em z. */
 export function rampTop(z: number) {

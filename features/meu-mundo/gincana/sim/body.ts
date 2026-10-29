@@ -20,6 +20,7 @@ import {
   SWEEPERS,
   TILES,
   TILE_TIME,
+  LOGOS,
   gloveAt,
   pendulumAt,
   rampTop,
@@ -70,6 +71,16 @@ export interface Runner {
   fin: number
   /** Velocidade de saída do último pulo (fase do voo para a animação). */
   launch: number
+  /** s que o pulo apertado ainda vale (buffer: apertou um pouco antes de pousar). */
+  jumpBuf: number
+  /** s de turbo do logo da Freelandoo que faltam. */
+  boost: number
+  /** Quando pegou cada logo (−99 = disponível). */
+  took: number[]
+  /** Posição no começo do passo (para desenhar entre dois passos). */
+  px: number
+  py: number
+  pz: number
 }
 
 export interface RunIntent {
@@ -101,12 +112,13 @@ export type RunEvent =
   | { type: "cp"; slot: number; cp: number }
   | { type: "finish"; slot: number; t: number }
   | { type: "tile"; i: number }
+  | { type: "logo"; slot: number; i: number }
 
 export const IDLE_INTENT: RunIntent = { mx: 0, mz: 0, jump: false, dive: false }
 
 export function newRunner(slot: number): Runner {
   const p = spawnAt(0, slot)
-  return { slot, x: p.x, y: p.y, z: p.z, vx: 0, vy: 0, vz: 0, facing: 0, ground: true, air: 0, mode: MODE.RUN, timer: 0, shield: 0, hitCool: 0, cp: 0, fin: -1, launch: GINCANA.jumpV }
+  return { slot, x: p.x, y: p.y, z: p.z, vx: 0, vy: 0, vz: 0, facing: 0, ground: true, air: 0, mode: MODE.RUN, timer: 0, shield: 0, hitCool: 0, cp: 0, fin: -1, launch: GINCANA.jumpV, jumpBuf: 0, boost: 0, took: LOGOS.map(() => -99), px: p.x, py: p.y, pz: p.z }
 }
 
 const EDGE = 0.12
@@ -326,6 +338,8 @@ export function respawn(b: Runner) {
 export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[] | null, dt = GINCANA.step) {
   const T = GINCANA
   b.shield = Math.max(0, b.shield - dt)
+  b.boost = Math.max(0, b.boost - dt)
+  b.jumpBuf = it.jump ? T.jumpBuffer : Math.max(0, b.jumpBuf - dt)
   b.hitCool = Math.max(0, b.hitCool - dt)
   if (b.mode === MODE.WATER) {
     b.timer -= dt
@@ -350,9 +364,10 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
   }
 
   if (free) {
-    const tx = mx * T.run
-    const tz = mz * T.run
-    const a = T.accel * (b.ground ? 1 : T.airControl) * dt
+    const run = T.run * (b.boost > 0 ? T.boost : 1)
+    const tx = mx * run
+    const tz = mz * run
+    const a = T.accel * (b.boost > 0 ? 1.3 : 1) * (b.ground ? 1 : T.airControl) * dt
     const dvx = tx - b.vx
     const dvz = tz - b.vz
     const dl = Math.hypot(dvx, dvz)
@@ -364,7 +379,8 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
       b.vz += (dvz / dl) * a
     }
     if (m > 0.05) b.facing = Math.atan2(mx, mz)
-    if (!done && it.jump && (b.ground || b.air < T.coyote) && b.vy <= 0.01) {
+    if (!done && b.jumpBuf > 0 && (b.ground || b.air < T.coyote) && b.vy <= 0.01) {
+      b.jumpBuf = 0
       b.vy = T.jumpV
       b.launch = T.jumpV
       b.ground = false
@@ -449,6 +465,15 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     return
   }
   if (b.mode === MODE.DONE) return
+  // logo da Freelandoo: turbo com brilho (cada corredor tem os seus)
+  for (let i = 0; i < LOGOS.length; i++) {
+    const L = LOGOS[i]
+    if (Math.abs(b.z - L.z) > T.logoR + 0.5 || w.t - b.took[i] < T.logoBack) continue
+    if (Math.hypot(b.x - L.x, b.z - L.z) > T.logoR || b.y > L.y + 0.6 || b.y + T.bodyH < L.y - 0.6) continue
+    b.took[i] = w.t
+    b.boost = T.boostT
+    out?.push({ type: "logo", slot: b.slot, i })
+  }
   const next = CHECKPOINTS[b.cp + 1]
   if (next && b.ground && b.z >= next.z - 1.5) {
     b.cp++

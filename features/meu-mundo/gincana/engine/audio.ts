@@ -100,6 +100,12 @@ export class GincanaAudio {
     this.tone("square", go ? 880 : 440, go ? 880 : 440, go ? 0.45 : 0.18, 0.14)
   }
 
+  /** Logo da Freelandoo: brilho subindo (turbo). */
+  logo() {
+    ;[660, 990, 1320].forEach((f, i) => this.tone("sine", f, f * 1.5, 0.16, 0.18, i * 0.05))
+    this.hiss(800, 6000, 0.35, 0.12, "highpass")
+  }
+
   finish() {
     ;[523, 659, 784, 1046].forEach((f, i) => this.tone("triangle", f, f, 0.3, 0.22, i * 0.11))
   }

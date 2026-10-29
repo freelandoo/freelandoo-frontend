@@ -17,6 +17,9 @@ import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Frustum } from "@babylonjs/core/Maths/math.frustum"
+import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
+import { buildLogos } from "../../corrida/engine/logos"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { Character } from "../../engine/player"
@@ -26,7 +29,7 @@ import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
 import { PALETTE, PARTS, lookCode } from "../../avatar-colors"
 import { BODY_IDS, type BodyId } from "../../types"
-import { CHECKPOINTS, FINISH_Z, GINCANA, sectionAt } from "../sim/course"
+import { CHECKPOINTS, FINISH_Z, GINCANA, LOGOS, sectionAt } from "../sim/course"
 import { ANIM, MODE, groundUnder, runnerAnim, type RunEvent, type RunIntent } from "../sim/body"
 import { botRand } from "../sim/bots"
 import { GincanaRace } from "../sim/race"
@@ -60,6 +63,8 @@ export interface GincanaHud {
   finished: boolean
   myTime: number
   board: BoardRow[]
+  /** 0–1 do turbo do logo da Freelandoo (0 = sem). */
+  boost: number
 }
 
 export type GincanaNotice =
@@ -67,6 +72,7 @@ export type GincanaNotice =
   | { kind: "hit"; by: string }
   | { kind: "splash" }
   | { kind: "cp"; cp: number }
+  | { kind: "logo" }
   | { kind: "finish"; place: number; time: number }
   | { kind: "timeout" }
 
@@ -217,6 +223,22 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
 
   const audio = new GincanaAudio()
 
+  // logos da Freelandoo (mm3d-47b): turbo com brilho; aura dourada em quem pegou
+  const logos = buildLogos(scene, LOGOS.map((L, id) => ({ id, at: new Vector3(L.x, L.y, L.z) })), low, 0.55)
+  const auraMat = new StandardMaterial("gincana-aura", scene)
+  auraMat.diffuseColor = new Color3(0, 0, 0)
+  auraMat.specularColor = new Color3(0, 0, 0)
+  auraMat.emissiveColor = new Color3(0.95, 0.55, 0.08)
+  auraMat.alpha = 0.35
+  auraMat.alphaMode = 1 // somando: brilha
+  auraMat.disableLighting = true
+  auraMat.backFaceCulling = false
+  const aura = CreateSphere("gincana-aura", { diameter: 1.5, segments: 12 }, scene)
+  aura.material = auraMat
+  aura.isPickable = false
+  aura.setEnabled(false)
+  const baseFov = cam.fov
+
   // ── controle ───────────────────────────────────────────────────────────────
   const keys = new Set<string>()
   let joyX = 0
@@ -285,10 +307,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     // relativo à câmera: frente = para onde ela olha
     const fx = Math.sin(yaw)
     const fz = Math.cos(yaw)
-    const it: RunIntent = { mx: fx * iy + fz * ix, mz: fz * iy - fx * ix, jump: jumpQ, dive: diveQ }
-    jumpQ = false
-    diveQ = false
-    return it
+    return { mx: fx * iy + fz * ix, mz: fz * iy - fx * ix, jump: jumpQ, dive: diveQ } as RunIntent
   }
 
   // ── relógio, eventos, placar ───────────────────────────────────────────────
@@ -324,6 +343,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       finished: mine.fin >= 0,
       myTime: mine.fin,
       board: rows,
+      boost: mine.boost / GINCANA.boostT,
     }
   }
 
@@ -346,6 +366,10 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
         case "splash":
           audio.splash()
           opts.onNotice?.({ kind: "splash" })
+          break
+        case "logo":
+          audio.logo()
+          opts.onNotice?.({ kind: "logo" })
           break
         case "cp":
           audio.checkpoint()
@@ -399,7 +423,11 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       target = st ?? -mp.start.countdown + (performance.now() / 1000 - mpStartedAt)
     }
     const wasCount = race.t < 0
-    race.advance(target, intent(), events, 12)
+    // o toque só é gasto quando um passo de física roda (quadro rápido pode não ter passo)
+    if (race.advance(target, intent(), events, 12) > 0) {
+      jumpQ = false
+      diveQ = false
+    }
     onEvents()
     if (race.t < 0) {
       const c = Math.ceil(-race.t)
@@ -433,18 +461,32 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
 
     // ── desenho ──
     course.update(race.t, clock, race.world.tiles)
+    // entre dois passos da física: a fração que sobrou do tempo (sem isso o corpo
+    // anda aos trancos quando o quadro não bate com os 60 passos por segundo)
+    const alpha = Math.max(0, Math.min(1, (target - race.t) / GINCANA.step))
+    const planes = Frustum.GetPlanes(scene.getTransformMatrix())
     for (const b of race.runners) {
       const s = seats.get(b.slot)!
       const remote = mp && b.slot !== me
-      const k = Math.min(1, dt * (remote ? 30 : 28))
-      if (Math.hypot(b.x - s.vx, b.z - s.vz) > 3 || Math.abs(b.y - s.vy) > 3) {
+      if (remote) {
+        const k = Math.min(1, dt * 30)
+        if (Math.hypot(b.x - s.vx, b.z - s.vz) > 3 || Math.abs(b.y - s.vy) > 3) {
+          s.vx = b.x
+          s.vy = b.y
+          s.vz = b.z
+        } else {
+          s.vx += (b.x - s.vx) * k
+          s.vy += (b.y - s.vy) * k
+          s.vz += (b.z - s.vz) * k
+        }
+      } else if (Math.hypot(b.x - b.px, b.z - b.pz) > 3) {
         s.vx = b.x
         s.vy = b.y
         s.vz = b.z
       } else {
-        s.vx += (b.x - s.vx) * k
-        s.vy += (b.y - s.vy) * k
-        s.vz += (b.z - s.vz) * k
+        s.vx = b.px + (b.x - b.px) * alpha
+        s.vy = b.py + (b.y - b.py) * alpha
+        s.vz = b.pz + (b.z - b.pz) * alpha
       }
       const anim = remote ? (seatAnim(b.slot) ?? ANIM.IDLE) : runnerAnim(b)
       const moving = b.mode === MODE.RUN || b.mode === MODE.DONE
@@ -461,8 +503,23 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       const lift = anim === ANIM.DIVE || anim === ANIM.SLIDE ? 0.22 : 0
       const gy = groundUnder(race.world, s.vx, s.vz, s.vy + 0.3).y
       s.char.place(s.vx, s.vz, s.vf, s.vy + lift, gy)
+      // os outros: longe some/fica leve e fora da tela não anima (como no centro)
+      if (b.slot !== me) s.char.applyDistance(Math.hypot(s.vx - cam.position.x, s.vz - cam.position.z), planes, profile)
       s.char.animate(dt, 0, speed)
     }
+    // logos da Freelandoo: os que eu já peguei somem até voltar
+    for (let i = 0; i < LOGOS.length; i++) logos.setOn(i, race.t - mine.took[i] >= GINCANA.logoBack)
+    logos.tick(clock)
+    // turbo: aura dourada pulsando em volta de mim
+    const me4 = seats.get(me)!
+    aura.setEnabled(mine.boost > 0)
+    if (mine.boost > 0) {
+      aura.position.set(me4.vx, me4.vy + 0.9, me4.vz)
+      const pulse = 1 + Math.sin(clock * 18) * 0.08
+      aura.scaling.set(1.05 * pulse, 1.35 * pulse, 1.05 * pulse)
+      auraMat.alpha = 0.08 + Math.min(1, mine.boost) * 0.1
+    }
+    cam.fov += ((mine.boost > 0 ? baseFov + 0.12 : baseFov) - cam.fov) * Math.min(1, dt * 6)
     for (const sp of splashes) {
       if (sp.age > 0.9) continue
       sp.age += dt
@@ -570,6 +627,9 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       for (const k of ["__gincana", "__gincanaRace", "__gincanaTp", "__gincanaLook"]) delete w[k]
       for (const s of seats.values()) s.char.dispose()
       for (const s of splashes) s.mesh.dispose()
+      logos.dispose()
+      aura.dispose()
+      auraMat.dispose()
       splashMat.dispose()
       lib.dispose()
       course.dispose()

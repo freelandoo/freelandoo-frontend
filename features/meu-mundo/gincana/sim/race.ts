@@ -86,6 +86,11 @@ export class GincanaRace {
     ballsAt(this.seed, this.t, w.balls)
     // ladrilhos que já voltaram
     for (let i = 0; i < w.tiles.length; i++) if (w.tiles[i] >= 0 && this.t - w.tiles[i] >= TILE_TIME.warn + TILE_TIME.gone) w.tiles[i] = -1
+    for (const b of this.runners) {
+      b.px = b.x
+      b.py = b.y
+      b.pz = b.z
+    }
     if (this.t < 0) return
     for (let i = 0; i < this.runners.length; i++) {
       const b = this.runners[i]

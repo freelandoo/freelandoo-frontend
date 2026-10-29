@@ -312,6 +312,11 @@ export class CourseView {
     const body = darker(top, 0.62)
     if (p.k === 0) {
       g.cylinder(p.r * 2, 0.5, at(p.x, p.y - 0.25, p.z), top, 48)
+      // colchão inflável: anel claro e miolo um pouco mais escuro no tampo
+      if (p.r > 3) {
+        g.torus(p.r * 1.25, 0.16, at(p.x, p.y - 0.06, p.z), mix(top, WHITE, 0.32), 40)
+        g.cylinder(p.r * 0.7, 0.04, at(p.x, p.y + 0.0, p.z), mix(top, [0, 0, 0], 0.08), 32)
+      }
       g.torus(p.r * 2 + 0.1, 0.62, at(p.x, p.y - 0.12, p.z), rim, 48)
       g.cylinder(p.r * 1.84, p.d - 0.4, at(p.x, p.y - 0.4 - (p.d - 0.4) / 2, p.z), body, 32, p.r * 1.9)
       for (let k = 0; k < 3; k++) {
@@ -329,7 +334,9 @@ export class CourseView {
     const r = Math.min(0.24, p.hx * 0.45)
     // tampo, contorno (borda um pouco abaixo e mais larga) e corpo
     const m = (dy: number) => at(p.x, yc + dy, p.z, p.rot, -pitch)
-    g.roundBox(p.hx * 2, 0.5, L, r, m(-0.25), top, 10)
+    g.roundBox(p.hx * 2, 0.5, L, r, m(-0.25), top, 12)
+    // friso claro no meio do tampo (vigas e pisos parecem infláveis costurados)
+    if (L > 3) g.roundBox(Math.max(0.3, p.hx * 0.5), 0.06, L - 1.2, 0.03, m(-0.015), mix(top, WHITE, 0.28), 4)
     g.roundBox(p.hx * 2 + 0.34, 0.5, L + 0.34, r + 0.12, m(-0.33), rim, 10)
     g.roundBox(Math.max(0.6, p.hx * 2 - 0.3), p.d - 0.3, Math.max(0.6, L - 0.3), Math.min(0.3, p.hx * 0.4), m(-0.4 - (p.d - 0.3) / 2), body, 8)
     // colunas: uma a cada ~8 m no comprimento

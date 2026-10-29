@@ -229,7 +229,7 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
       const ttr = (delta - (s.r + GINCANA.bodyR) / Math.max(r, 1)) / Math.abs(s.w)
       const pass = Math.floor((s.w * t + s.a0) / span)
       const err = (botRand(br.seed, br.slot * 31 + i, pass) - 0.5) * (1 - br.skill) * 0.7
-      if (ttr < 0.26 + err && ttr > 0.02) {
+      if (ttr < 0.22 + err && ttr > 0.02) {
         it.jump = true
         br.jumpCool = 0.7
       }

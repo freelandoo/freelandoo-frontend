@@ -233,6 +233,9 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
           ))}
         </ul>
 
+        <p className="mt-3 rounded-[14px] px-2.5 py-2 text-[12.5px] leading-snug [@media(max-height:620px)]:hidden" style={{ background: "rgba(242,183,5,0.1)", color: MM.muted, border: `1px solid ${MM.goldBorder}` }}>
+          <b style={{ color: YELLOW }}>{t("gincanaHowLogoTitle", "Logo da Freelandoo")}</b> · {t("gincanaHowLogo", "Pegou: brilha e corre 50% mais rápido por alguns segundos.")}
+        </p>
         <div className="mt-3 flex items-center gap-2 text-[13px]" style={{ color: MM.muted }}>
           <Trophy className="h-4 w-4" style={{ color: MM.gold }} />
           {rec ? t("gincanaRecord", "Seu recorde: {t}").replace("{t}", fmt(rec)) : t("gincanaNoRecord", "Ainda sem recorde neste aparelho.")}
@@ -346,6 +349,9 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
         case "splash":
           say(tt("gincanaSplash", "Tchibum! Voltando ao último posto"), "bad", 1500)
           break
+        case "logo":
+          say(tt("gincanaLogo", "TURBO DA FREELANDOO!"), "gold", 1100)
+          break
         case "cp":
           say(tt("gincanaCheckpoint", "Posto {n} garantido").replace("{n}", String(n.cp)), "ok", 1200)
           break
@@ -453,6 +459,16 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
                 </span>
               )}
             </div>
+            {hud.boost > 0 && !result && (
+              <div className="flex items-center gap-2 rounded-full px-2.5 py-1" style={{ background: "rgba(70,52,12,0.88)", border: `1px solid ${MM.goldBorder}`, boxShadow: "0 0 18px rgba(242,183,5,0.55)" }}>
+                <span className="text-[11px] font-black italic uppercase tracking-[0.12em]" style={{ color: "#FFE3A0" }}>
+                  {t("gincanaTurbo", "Turbo")}
+                </span>
+                <span className="block h-1.5 w-[88px] overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.15)" }}>
+                  <span className="block h-full origin-left rounded-full" style={{ width: "100%", transform: `scaleX(${hud.boost})`, background: "linear-gradient(90deg, #FFE58A, #F2B705)" }} />
+                </span>
+              </div>
+            )}
             {!result && <BoardStrip rows={hud.board} glass={glass} />}
             {offline && !result && (
               <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: "rgba(110,16,34,0.85)", color: "#ffd5dc" }}>

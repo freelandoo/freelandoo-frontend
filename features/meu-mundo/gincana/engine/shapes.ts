@@ -68,24 +68,78 @@ export class SoftGeo {
    * mais o raio na direção da normal (as faces ficam retas, as quinas redondas).
    */
   roundBox(w: number, h: number, d: number, r: number, m: Matrix, paint: Paint, seg = 10) {
-    const rr = Math.max(0.01, Math.min(r, w / 2, h / 2, d / 2))
-    const ix = w / 2 - rr
-    const iy = h / 2 - rr
-    const iz = d / 2 - rr
-    const vd = CreateSphereVertexData({ diameter: 2, segments: seg })
-    const p = vd.positions as number[]
-    const n: number[] = []
-    for (let k = 0; k < p.length; k += 3) {
-      const nx = p[k]
-      const ny = p[k + 1]
-      const nz = p[k + 2]
-      const l = Math.hypot(nx, ny, nz) || 1
-      n.push(nx / l, ny / l, nz / l)
-      p[k] = Math.sign(nx) * ix + (nx / l) * rr
-      p[k + 1] = Math.sign(ny) * iy + (ny / l) * rr
-      p[k + 2] = Math.sign(nz) * iz + (nz / l) * rr
+    // mm3d-47b: a versão por esfera esticada dobrava triângulos no meio das
+    // faces (os "pedaços faltando" que o Alex viu). Agora: uma grade em cada
+    // face do cubo, com linhas só na faixa da curva; cada ponto vai para o
+    // ponto mais perto da caixa interna + o raio na direção dele.
+    const hx = w / 2
+    const hy = h / 2
+    const hz = d / 2
+    const rr = Math.max(0.005, Math.min(r, hx, hy, hz))
+    const n = Math.max(2, Math.round(seg / 3))
+    const axis = (half: number) => {
+      const out: number[] = []
+      for (let k = 0; k <= n; k++) out.push(-half + (rr * k) / n)
+      if (half - rr > 1e-4) out.push(half - rr)
+      for (let k = 1; k <= n; k++) out.push(half - rr + (rr * k) / n)
+      if (half - rr <= 1e-4) out.pop()
+      return out
     }
-    vd.normals = n
+    const ax = axis(hx)
+    const ay = axis(hy)
+    const az = axis(hz)
+    const positions: number[] = []
+    const normals: number[] = []
+    const indices: number[] = []
+    const ins = [hx - rr, hy - rr, hz - rr]
+    const put = (q: number[]) => {
+      const c = [Math.max(-ins[0], Math.min(ins[0], q[0])), Math.max(-ins[1], Math.min(ins[1], q[1])), Math.max(-ins[2], Math.min(ins[2], q[2]))]
+      const dx = q[0] - c[0]
+      const dy = q[1] - c[1]
+      const dz = q[2] - c[2]
+      const l = Math.hypot(dx, dy, dz) || 1
+      positions.push(c[0] + (dx / l) * rr, c[1] + (dy / l) * rr, c[2] + (dz / l) * rr)
+      normals.push(dx / l, dy / l, dz / l)
+    }
+    // faces: eixo fixo, sinal, e os dois eixos da grade (ordem para a frente ficar para fora)
+    const faces: [number, number, number, number][] = [
+      [0, 1, 1, 2],
+      [0, -1, 2, 1],
+      [1, 1, 2, 0],
+      [1, -1, 0, 2],
+      [2, 1, 0, 1],
+      [2, -1, 1, 0],
+    ]
+    const halves = [hx, hy, hz]
+    const grids = [ax, ay, az]
+    for (const [fa, sg, ua, va] of faces) {
+      const us = grids[ua]
+      const vs = grids[va]
+      const base = positions.length / 3
+      for (const v of vs) {
+        for (const u of us) {
+          const q = [0, 0, 0]
+          q[fa] = sg * halves[fa]
+          q[ua] = u
+          q[va] = v
+          put(q)
+        }
+      }
+      const cols = us.length
+      for (let j = 0; j < vs.length - 1; j++) {
+        for (let i = 0; i < cols - 1; i++) {
+          const a = base + j * cols + i
+          const b = a + 1
+          const c = a + cols
+          const e = c + 1
+          indices.push(a, e, b, a, c, e)
+        }
+      }
+    }
+    const vd = new VertexData()
+    vd.positions = positions
+    vd.normals = normals
+    vd.indices = indices
     this.append(vd, paint, m)
   }
 

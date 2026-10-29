@@ -92,6 +92,14 @@ const MEU_MUNDO = {
   gincanaGone: ["saiu", "left", "salió"],
   gincanaCpu: ["computador", "computer", "computadora"],
   gincanaAgain: ["De novo", "Again", "Otra vez"],
+  gincanaLogo: ["TURBO DA FREELANDOO!", "FREELANDOO BOOST!", "¡TURBO FREELANDOO!"],
+  gincanaTurbo: ["Turbo", "Boost", "Turbo"],
+  gincanaHowLogoTitle: ["Logo da Freelandoo", "Freelandoo logo", "Logo de Freelandoo"],
+  gincanaHowLogo: [
+    "Pegou: brilha e corre 50% mais rápido por alguns segundos.",
+    "Grab it: you glow and run 50% faster for a few seconds.",
+    "Tómalo: brillas y corres 50% más rápido por unos segundos.",
+  ],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

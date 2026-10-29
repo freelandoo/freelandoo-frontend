@@ -8936,7 +8936,11 @@
     "gincanaStillRunning": "{n} still running",
     "gincanaGone": "left",
     "gincanaCpu": "computer",
-    "gincanaAgain": "Again"
+    "gincanaAgain": "Again",
+    "gincanaLogo": "FREELANDOO BOOST!",
+    "gincanaTurbo": "Boost",
+    "gincanaHowLogoTitle": "Freelandoo logo",
+    "gincanaHowLogo": "Grab it: you glow and run 50% faster for a few seconds."
   },
   "Sports": {
     "eyebrow": "Sports",

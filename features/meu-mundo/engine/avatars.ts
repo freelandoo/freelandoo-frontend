@@ -948,7 +948,7 @@ export class AvatarRig {
     switch (p.anim) {
       case 1:
         target.GRun = 1
-        have.GRun!.speedRatio = Math.max(0.55, Math.min(1.4, p.speed / GRUN_SPEED))
+        have.GRun!.speedRatio = Math.max(0.55, Math.min(1.9, p.speed / GRUN_SPEED))
         break
       case 2: {
         const g = have.GJump

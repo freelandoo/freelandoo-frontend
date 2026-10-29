@@ -8350,7 +8350,11 @@
     "gincanaStillRunning": "{n} ainda correndo",
     "gincanaGone": "saiu",
     "gincanaCpu": "computador",
-    "gincanaAgain": "De novo"
+    "gincanaAgain": "De novo",
+    "gincanaLogo": "TURBO DA FREELANDOO!",
+    "gincanaTurbo": "Turbo",
+    "gincanaHowLogoTitle": "Logo da Freelandoo",
+    "gincanaHowLogo": "Pegou: brilha e corre 50% mais rápido por alguns segundos."
   },
   "Sports": {
     "eyebrow": "Esportes",
