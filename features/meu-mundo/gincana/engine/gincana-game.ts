@@ -319,6 +319,18 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   let hudAt = 0
   let poseAt = 0
   const mpStartedAt = performance.now() / 1000
+  /**
+   * Relógio da prova que GUARDA a sobra de cada quadro (mm3d-47c). Antes o alvo
+   * era "tempo da física + dt": a sobra se perdia e, em tela de 90/120/144 Hz
+   * (quadro menor que o passo de 1/60 s), a física quase não andava — lento e
+   * aos trancos. Em grupo ele anda com o quadro e só puxa de leve para o
+   * relógio da sala (sem saltos que fazem a tela tremer).
+   */
+  let simClock = race.t
+  // câmera suavizada (posição e para onde olha), a altura mais devagar: o pulo não sacode a tela
+  const camAt = new Vector3(0, 0, 0)
+  const camLook = new Vector3(0, 0, 0)
+  let camReady = false
 
   const board = (): BoardRow[] => {
     const rows = race.runners.map((b) => {
@@ -417,11 +429,16 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     const dt = Math.min(0.1, ms / 1000)
     clock += dt
     // tempo da prova: o da sala em grupo, o do aparelho no treino
-    let target = race.t + dt
+    simClock += dt
     if (mp) {
-      const st = mp.net.serverTime()
-      target = st ?? -mp.start.countdown + (performance.now() / 1000 - mpStartedAt)
+      const st = mp.net.serverTime() ?? -mp.start.countdown + (performance.now() / 1000 - mpStartedAt)
+      const err = st - simClock
+      if (Math.abs(err) > 0.5) simClock = st
+      else simClock += err * Math.min(1, dt * 1.5)
     }
+    // nunca para trás (a física não volta) e nunca mais de 0,2 s na frente
+    simClock = Math.max(race.t, Math.min(race.t + 0.2, simClock))
+    const target = simClock
     const wasCount = race.t < 0
     // o toque só é gasto quando um passo de física roda (quadro rápido pode não ter passo)
     if (race.advance(target, intent(), events, 12) > 0) {
@@ -534,12 +551,22 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     if (now - dragAt > 2 && !drag) yaw = lerpAngle(yaw, 0, Math.min(1, dt * 0.8))
     const me3 = seats.get(me)!
     const dist = touch ? 7.4 : 6.6
-    const tx = me3.vx
-    const ty = Math.max(me3.vy, mine.mode === MODE.WATER ? DECK_CAM - 2 : -99) + 1.5
-    const tz = me3.vz
-    const want = new Vector3(tx - Math.sin(yaw) * Math.cos(pitch) * dist, ty + Math.sin(pitch) * dist, tz - Math.cos(yaw) * Math.cos(pitch) * dist)
-    cam.position = Vector3.Lerp(cam.position, want, Math.min(1, dt * 10))
-    cam.setTarget(new Vector3(tx + Math.sin(yaw) * 2, ty + 0.2, tz + Math.cos(yaw) * 2))
+    // suavização que não depende da taxa de quadros (exponencial)
+    const kXZ = 1 - Math.exp(-dt * 14)
+    const kY = 1 - Math.exp(-dt * 5)
+    const footY = Math.max(me3.vy, mine.mode === MODE.WATER ? DECK_CAM - 2 : -99)
+    if (!camReady) {
+      camAt.set(me3.vx, footY, me3.vz)
+      camReady = true
+    }
+    camAt.x += (me3.vx - camAt.x) * kXZ
+    camAt.z += (me3.vz - camAt.z) * kXZ
+    camAt.y += (footY - camAt.y) * kY
+    const ty = camAt.y + 1.5
+    const want = new Vector3(camAt.x - Math.sin(yaw) * Math.cos(pitch) * dist, ty + Math.sin(pitch) * dist, camAt.z - Math.cos(yaw) * Math.cos(pitch) * dist)
+    cam.position.copyFrom(want)
+    camLook.set(camAt.x + Math.sin(yaw) * 2, ty + 0.2, camAt.z + Math.cos(yaw) * 2)
+    cam.setTarget(camLook)
 
     hudAt -= dt
     if (hudAt <= 0) {
