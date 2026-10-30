@@ -29,6 +29,7 @@ import { EvoButton, EvoToast } from "../hud/hud-kit"
 import { PolenIcon } from "@/components/polens/polen-icon"
 import { Chamfer, EVO, archivo, teko } from "./evo-skin"
 import { MM } from "../hud/tokens"
+import { GOD_NAMES } from "../../gods"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -40,7 +41,7 @@ export interface SkinWardrobeProps {
 }
 
 function conditionName(b: BodyId, t: Tr) {
-  return { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina" }[b]
+  return { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES }[b]
 }
 
 export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProps) {

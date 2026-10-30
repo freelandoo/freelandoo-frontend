@@ -19,6 +19,8 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { GeoBuilder, frameOf, place, type RGB } from "./geometry"
 import { rotY, type Box2 } from "./collision"
 import { HouseModels } from "./houses"
+import { CenterModels } from "./center-models"
+import { loadStatues, statueBase } from "./statues"
 import type {
   House,
   HouseCatalog,
@@ -410,17 +412,23 @@ function plaza(ctx: Ctx, spawn: { x: number; z: number }) {
   slab(geo, mid, 0, span, 3, 0.055, C.path)
   slab(geo, -mid, 0, span, 3, 0.055, C.path)
 
-  // Canteiro central com árvore.
-  geo.cylinder(4.2, 0.55, place(0, 0.275, 0), C.stone, 12)
-  geo.cylinder(3.7, 0.08, place(0, 0.57, 0), C.lotLawn, 12)
-  tree(ctx, 0, 0, 1.25, false)
-  ctx.boxes.push({ x: 0, z: 0, hx: 2.1, hz: 2.1, rot: Math.PI / 4, h: 1.2 })
-  ctx.boxes.push({ x: 0, z: 0, hx: 2.1, hz: 2.1, rot: 0, h: 1.2 })
-  for (const [fx, fz] of [[1.2, 0.6], [-1, -0.9], [-0.6, 1.2]]) flowerPatch(ctx, fx, fz, 3)
-
-  // Bancos virados para o canteiro, nas diagonais (os eixos são passagem).
-  for (const [x, z] of [[4.6, 4.6], [-4.6, 4.6], [4.6, -4.6], [-4.6, -4.6]]) {
-    bench(ctx, x, z, Math.atan2(x, z))
+  if (d.statues?.length) {
+    // mm3d-50: Aurion no meio e os outros deuses em púlpitos (bases aqui; os
+    // modelos chegam depois, por loadStatues) e as quatro pracinhas.
+    for (const s of d.statues) statueBase(ctx, s)
+    for (const [cx, cz] of d.squares ?? []) square(ctx, cx, cz, d.square ?? { r: 5, bed: 1.1, bench: 3.3 })
+  } else {
+    // Canteiro central com árvore (backend anterior ao mm3d-50).
+    geo.cylinder(4.2, 0.55, place(0, 0.275, 0), C.stone, 12)
+    geo.cylinder(3.7, 0.08, place(0, 0.57, 0), C.lotLawn, 12)
+    tree(ctx, 0, 0, 1.25, false)
+    ctx.boxes.push({ x: 0, z: 0, hx: 2.1, hz: 2.1, rot: Math.PI / 4, h: 1.2 })
+    ctx.boxes.push({ x: 0, z: 0, hx: 2.1, hz: 2.1, rot: 0, h: 1.2 })
+    for (const [fx, fz] of [[1.2, 0.6], [-1, -0.9], [-0.6, 1.2]]) flowerPatch(ctx, fx, fz, 3)
+    // Bancos virados para o canteiro, nas diagonais (os eixos são passagem).
+    for (const [x, z] of [[4.6, 4.6], [-4.6, 4.6], [4.6, -4.6], [-4.6, -4.6]]) {
+      bench(ctx, x, z, Math.atan2(x, z))
+    }
   }
   for (const sx of [-8.2, 8.2]) for (const sz of [-8.2, 8.2]) lamp(ctx, sx, sz)
   const lampAt = INNER_WALK + 1
@@ -433,6 +441,34 @@ function plaza(ctx: Ctx, spawn: { x: number; z: number }) {
   // Ponto de chegada: disco amarelo no caminho sul.
   geo.cylinder(2.6, 0.06, place(spawn.x, 0.06, spawn.z), C.spawn, 16)
   geo.cylinder(1.6, 0.07, place(spawn.x, 0.065, spawn.z), C.plaza, 16)
+}
+
+/**
+ * Pracinha do gramado (mm3d-50): piso redondo com caminho até a praça,
+ * canteiro florido no meio, quatro bancos olhando para ele e um poste na borda
+ * de fora — as mesmas caixas de squareBenches/squareLamp do servidor.
+ */
+function square(ctx: Ctx, cx: number, cz: number, sq: { r: number; bed: number; bench: number }) {
+  const { geo } = ctx
+  // Caminho na diagonal, da quina da praça até a borda da pracinha.
+  const from = 8.8 * Math.SQRT2
+  const to = Math.hypot(cx, cz) - sq.r + 0.3
+  const a = Math.atan2(cx, cz)
+  geo.box(2.2, 0.052, to - from, place((Math.sin(a) * (from + to)) / 2, 0.026, (Math.cos(a) * (from + to)) / 2, a), C.path)
+  geo.cylinder(2 * sq.r + 0.6, 0.05, place(cx, 0.025, cz), C.plazaEdge, 24)
+  geo.cylinder(2 * sq.r, 0.058, place(cx, 0.029, cz), C.plaza, 24)
+  geo.cylinder(2 * sq.bed + 0.3, 0.5, place(cx, 0.25, cz, Math.PI / 8), C.stone, 8)
+  geo.cylinder(2 * sq.bed, 0.06, place(cx, 0.52, cz, Math.PI / 8), C.lotLawn, 8)
+  const seed = 4 + Math.sign(cx) + 2 * Math.sign(cz)
+  for (const [fx, fz] of [[0.35, 0.2], [-0.3, -0.3], [-0.2, 0.4]]) flowerPatch(ctx, cx + fx, cz + fz, seed)
+  ctx.boxes.push({ x: cx, z: cz, hx: sq.bed * 0.85, hz: sq.bed * 0.85, rot: Math.PI / 4, h: 0.5 })
+  for (let i = 0; i < 4; i++) {
+    const b = Math.PI / 4 + (i * Math.PI) / 2
+    const dx = sq.bench * Math.sin(b)
+    const dz = sq.bench * Math.cos(b)
+    bench(ctx, cx + dx, cz + dz, Math.atan2(dx, dz))
+  }
+  lamp(ctx, cx + Math.sign(cx) * (sq.r - 0.5), cz + Math.sign(cz) * (sq.r - 0.5))
 }
 
 function boundary(ctx: Ctx) {
@@ -680,6 +716,10 @@ export function buildWorld(
   rebuildHouses()
   for (const sl of slots.values()) if (sl.house.level !== 1) requestVisual(sl)
 
+  // Estátuas dos deuses (mm3d-50): as bases já estão no buffer do mundo.
+  const statueModels = d.statues?.length && nb.statueAssets ? new CenterModels(scene) : null
+  if (statueModels) loadStatues(statueModels, d.statues!, nb.statueAssets, () => !disposed)
+
   return {
     meshes: [world, signs],
     boxes,
@@ -713,6 +753,7 @@ export function buildWorld(
     dispose: () => {
       disposed = true
       models.dispose()
+      statueModels?.dispose()
       housesMesh?.dispose()
       world.dispose()
       signs.dispose()

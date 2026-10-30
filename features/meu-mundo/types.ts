@@ -6,6 +6,8 @@
 // orientação dos lotes e a lista de obstáculos de colisão vêm do servidor;
 // ruas e casas são desenhadas pelo cliente a partir do layout.
 
+import { GOD_BODIES, type GodBody } from "./gods"
+
 export type Vec2 = { x: number; z: number }
 
 export interface Lot {
@@ -117,6 +119,30 @@ export interface NeighborhoodDims {
   plazaFlowers: [number, number][]
   cornerTrees: TreeAt[]
   outerTrees: TreeAt[]
+  /** mm3d-50: Aurion no meio e os outros deuses em púlpitos (ausente = backend anterior: canteiro). */
+  statues?: StatueDef[]
+  /** mm3d-50: as quatro pracinhas do gramado (piso, canteiro, bancos e poste). */
+  square?: { r: number; bed: number; bench: number }
+  squares?: [number, number][]
+}
+
+/** Estátua de um deus (mm3d-50, src/utils/meuMundoStatues.js). Frente no −Z local. */
+export interface StatueDef {
+  id: string
+  x: number
+  z: number
+  rot: number
+  /** Altura da estátua em metros (o modelo tem 1 m). */
+  height: number
+  /** "none" = em cima da base de outra estátua (só a altura). */
+  base: { kind: "pedestal" | "pulpit" | "none"; r: number; h: number }
+}
+
+/** Modelos publicados das estátuas (pipeline/publish_estatuas.py); null = só as bases. */
+export interface StatueAssets {
+  version: string
+  basePath: string
+  models: Record<string, string>
 }
 
 export interface Neighborhood {
@@ -138,12 +164,14 @@ export interface Neighborhood {
   obstacles: Box2Def[]
   /** Catálogo dos níveis 01–10 (mm3d-06). Ausente = backend anterior: só o 01. */
   houseCatalog?: HouseCatalog
+  statueAssets?: StatueAssets | null
   limit: number
 }
 
 // mm3d-30: "female" = skin "feminina"; "ekaterina" = skin "ekaterina".
-export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina"
-export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina"]
+// mm3d-50: os deuses (gods.ts) — corpo e skin com o mesmo id.
+export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina" | GodBody
+export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina", ...GOD_BODIES]
 
 export interface SeatReservation {
   name: string
@@ -713,6 +741,8 @@ export interface CenterLayout {
     nameKey: string
     half: number
     monument: Vec2 & { radius: number; h: number }
+    /** mm3d-50: Morkhan e a fera sobre o monumento (ausente = a fonte antiga). */
+    statues?: StatueDef[]
     trees: [number, number, number][]
     benches: [number, number, number][]
     lamps: [number, number][]
@@ -731,6 +761,7 @@ export interface CenterLayout {
   /** Interiores que abrem (destino "interior:<id>", mm3d-26: o hospital). */
   /** Só o hospital vem no payload; os outros prédios são buscados ao entrar (mm3d-37). */
   interiors?: { hospital?: InteriorDef }
+  statueAssets?: StatueAssets | null
   arrival: CenterSpot
   portal: Vec2 & { id: string; radius: number; nameKey: string }
   obstacles: Box2Def[]

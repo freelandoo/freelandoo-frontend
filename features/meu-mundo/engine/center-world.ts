@@ -24,6 +24,7 @@ import type { Box2 } from "./collision"
 import { C, bench, flowerPatch, lamp, slab, tree, type PropCtx } from "./world"
 import type { BuiltWorld } from "./world"
 import { CenterModels } from "./center-models"
+import { loadStatues, statueBase } from "./statues"
 import type { CenterLayout, CenterPlace, HouseCatalog, Interactable } from "../types"
 
 export interface CenterLabels {
@@ -197,15 +198,23 @@ function plaza(ctx: PropCtx, c: CenterLayout) {
   // Caminhos em cruz até as travessias.
   slab(geo, 0, 0, 3.2, 2 * P.half, 0.068, C.path)
   slab(geo, 0, 0, 2 * P.half, 3.2, 0.068, C.path)
-  // Fonte estática no meio: bacia, espelho d'água (cor lisa, sem reflexo), coluna e taça.
   const m = P.monument
-  geo.cylinder(2 * m.radius, 0.55, place(m.x, 0.275, m.z), C.stone, 8)
-  geo.cylinder(2 * m.radius - 0.5, 0.04, place(m.x, 0.55, m.z), K.water, 8)
-  geo.cylinder(0.8, 2.2, place(m.x, 1.1, m.z), C.stone, 8)
-  geo.cylinder(1.9, 0.28, place(m.x, 2.2, m.z), C.stone, 8)
-  geo.cylinder(1.5, 0.05, place(m.x, 2.36, m.z), K.water, 8)
-  geo.cylinder(0.32, 1.1, place(m.x, 2.9, m.z), C.stone, 6)
-  geo.sphere(0.7, [1, 1, 1], place(m.x, 3.7, m.z), K.gold, 8)
+  if (P.statues?.length) {
+    // mm3d-50: o monumento é o pedestal de Morkhan (o modelo chega por
+    // loadStatues). A colisão do monumento é a do servidor: a base não soma caixa.
+    const n = ctx.boxes.length
+    for (const s of P.statues) statueBase(ctx, s)
+    ctx.boxes.length = n
+  } else {
+    // Fonte estática no meio: bacia, espelho d'água (cor lisa, sem reflexo), coluna e taça.
+    geo.cylinder(2 * m.radius, 0.55, place(m.x, 0.275, m.z), C.stone, 8)
+    geo.cylinder(2 * m.radius - 0.5, 0.04, place(m.x, 0.55, m.z), K.water, 8)
+    geo.cylinder(0.8, 2.2, place(m.x, 1.1, m.z), C.stone, 8)
+    geo.cylinder(1.9, 0.28, place(m.x, 2.2, m.z), C.stone, 8)
+    geo.cylinder(1.5, 0.05, place(m.x, 2.36, m.z), K.water, 8)
+    geo.cylinder(0.32, 1.1, place(m.x, 2.9, m.z), C.stone, 6)
+    geo.sphere(0.7, [1, 1, 1], place(m.x, 3.7, m.z), K.gold, 8)
+  }
   // Floreiras na borda (fecham a praça para carros) e frades nas travessias.
   for (const p of P.planters) {
     const f = frameOf(p.x, p.z, p.rot)
@@ -328,6 +337,7 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
   const models = new CenterModels(scene)
   let disposed = false
   const assets = c.assets
+  if (c.plaza.statues?.length) loadStatues(models, c.plaza.statues, c.statueAssets, () => !disposed)
   // Objetos parados (ambulância): só aparecem com o modelo — a caixa de colisão
   // é do servidor e vale mesmo sem ele.
   for (const o of c.props ?? []) {

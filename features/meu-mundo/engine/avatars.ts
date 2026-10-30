@@ -38,6 +38,7 @@ import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import { tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
+import { byGod } from "../gods"
 
 export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
@@ -59,6 +60,9 @@ const ASSETS = {
     // nas proporções dela, então um conjunto de animações próprio (como o
     // Sergio); 5 mil tris, textura 512, sem malha leve (como o Sergio).
     ekaterina: "avatar-ekaterina-basecolor-512.jpg",
+    // Deuses (mm3d-50, pipeline/build_deuses.py): 7 mil tris, textura 1024
+    // (2 m de altura e armadura detalhada), sem malha leve (como o Sergio).
+    ...byGod((g) => `avatar-${g}-basecolor-1024.jpg`),
   } satisfies Record<BodyId, string>,
   bodies: {
     normal: "avatar-normal.glb",
@@ -73,6 +77,7 @@ const ASSETS = {
     // costuras do atlas e deformava o lado direito do rosto); pescoço refeito
     // (build_ekaterina.py 4b): rosto 100% na cabeça — o maxilar esticava na corrida.
     ekaterina: "avatar-ekaterina-pescoco.glb",
+    ...byGod((g) => `avatar-${g}.glb`),
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -175,7 +180,9 @@ const ASSETS = {
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
 export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
 type AnimSet = keyof typeof ASSETS.anims
-const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina" }
+// mm3d-50: os deuses usam TODAS as animações do Sergio (build_deuses.py: mesmo
+// repouso de rotação, quadril na mesma altura; os 2 m vêm da escala do nó raiz).
+const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina", ...byGod((): AnimSet => "sergio") }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 
 /** Arquivos de um corpo, para quem desenha o avatar fora do Babylon (o jetpack, mm3d-20). */
