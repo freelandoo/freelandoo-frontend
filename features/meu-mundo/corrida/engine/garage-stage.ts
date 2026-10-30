@@ -77,9 +77,10 @@ export function garageLayout(W: number, H: number, panelW: number): GarageLayout
   const width = GARAGE.w * s
   const cx = left + GARAGE.cx * s
   const cy = top + GARAGE.cy * s
-  // a nave um pouco maior que o círculo, sem passar da tela livre
-  const free = portrait ? W : W - panelW
-  const ppm = Math.min((GARAGE.r * 2.15 * s) / SHIP_LEN, (free * 0.84) / SHIP_LEN, (H * 0.5) / SHIP_LEN)
+  // a nave bem maior que o círculo (o Alex achou pequena a 2,15 r), sem
+  // passar da tela livre nem da altura
+  const free = portrait ? W : (W - panelW) * 0.9
+  const ppm = Math.min((GARAGE.r * 3 * s) / SHIP_LEN, free / SHIP_LEN, (H * 0.8) / SHIP_LEN)
   return { img: { left, top, width, height: GARAGE.h * s }, cx, cy, ppm, portrait }
 }
 
