@@ -165,6 +165,48 @@ export class CenterModels {
     return rec
   }
 
+  /**
+   * Junta as malhas de todos os modelos já carregados por MATERIAL e por bloco
+   * de `cell` metros (mm3d-53b): os 18 prédios viravam ~70 chamadas de desenho
+   * (4 malhas cada); juntos são uma por material em cada bloco, e a câmera
+   * ainda recorta os blocos de trás. Roda uma vez, quando tudo chegou.
+   */
+  consolidate(cell = 64) {
+    if (this.disposed) return
+    const all = [...this.loaded.values()].flatMap((r) => r.meshes)
+    const groups = new Map<string, Mesh[]>()
+    for (const m of all) {
+      const c = m.getBoundingInfo().boundingBox.centerWorld
+      const key = `${m.material?.uniqueId ?? 0}|${Math.floor(c.x / cell)}|${Math.floor(c.z / cell)}`
+      const g = groups.get(key)
+      if (g) g.push(m)
+      else groups.set(key, [m])
+    }
+    const out: Mesh[] = []
+    let triangles = 0
+    let n = 0
+    for (const g of groups.values()) {
+      const mat = g[0].material
+      const merged = g.length > 1 ? Mesh.MergeMeshes(g, true, true) : g[0]
+      if (!merged) {
+        out.push(...g)
+        continue
+      }
+      merged.name = `mm-center-merged-${n++}`
+      merged.material = mat
+      merged.useVertexColors = true
+      merged.hasVertexAlpha = false
+      merged.isPickable = false
+      merged.refreshBoundingInfo()
+      merged.freezeWorldMatrix()
+      merged.doNotSyncBoundingInfo = true
+      triangles += merged.getTotalIndices() / 3
+      out.push(merged)
+    }
+    this.loaded.clear()
+    this.loaded.set("merged", { meshes: out, triangles })
+  }
+
   dispose() {
     this.disposed = true
     for (const p of this.loaded.values()) for (const m of p.meshes) m.dispose(false, false)

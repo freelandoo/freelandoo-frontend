@@ -237,13 +237,14 @@ export function centerPlaza(ctx: CenterCtx) {
     props.box(w + 0.1, 0.04, dd + 0.1, place(0, h - 0.02, 0, 0, f), SP.brassDark)
     props.with("flat", () => {
       props.box(w - 0.16, 0.04, dd - 0.16, place(0, h + 0.01, 0, 0, f), mix(SP.earth, SP.iron, 0.3))
-      const n = Math.max(1, Math.round(L / 1.4))
+      // Arbustos alongados (poucas esferas esticadas): o volume de antes com um terço dos triângulos.
+      const n = Math.max(1, Math.round(L / 2.1))
       for (let i = 0; i < n; i++) {
         const t = (i + 0.5) / n - 0.5
         const lx = alongX ? t * w : 0
         const lz = alongX ? 0 : t * dd
-        props.sphere(0.82, [1, 0.72, 1], place(lx, h + 0.24, lz, 0, f), i % 2 ? SP.hedge : SP.leafDeep, 4)
-        if (i % 2 === 0) props.sphere(0.2, [1, 0.8, 1], place(lx + 0.25, h + 0.48, lz, 0, f), SP.leafRust, 3)
+        const stretch: [number, number, number] = alongX ? [1.9, 0.62, 0.95] : [0.95, 0.62, 1.9]
+        props.sphere(0.9, stretch, place(lx, h + 0.24, lz, 0, f), i % 2 ? SP.hedge : SP.leafDeep, 3)
       }
     })
     // Medalhão de engrenagem no meio da floreira longa, virado para a rua.
@@ -360,12 +361,13 @@ export function centerBoundary(ctx: CenterCtx) {
   wall(-B, -(B + 6) / 2 - 0.25, 1, B - 6 + 0.5)
   // Arbustos do lado de fora do gradil (vegetação + grade).
   props.with("flat", () => {
-    for (let t = -B + 2; t <= B - 2; t += 3.1) {
-      const r = 0.9 + ((Math.round(t * 7) % 3) + 3) * 0.08
-      props.sphere(2 * r, [1, 0.75, 1], place(t, 0.55, B + 1.5), SP.hedge, 4)
-      props.sphere(2 * r, [1, 0.75, 1], place(t + 1.3, 0.55, -B - 1.5), SP.leafDeep, 4)
-      props.sphere(2 * r, [1, 0.75, 1], place(B + 1.5, 0.55, t + 0.6), SP.hedge, 4)
-      if (Math.abs(t) > 8) props.sphere(2 * r, [1, 0.75, 1], place(-B - 1.5, 0.55, t), SP.leafDeep, 4)
+    for (let t = -B + 3; t <= B - 3; t += 5.5) {
+      const r = 1.0 + ((Math.round(t * 7) % 3) + 3) * 0.08
+      const s: [number, number, number] = [1.7, 0.75, 1.7]
+      props.sphere(2 * r, s, place(t, 0.55, B + 1.6), SP.hedge, 3)
+      props.sphere(2 * r, s, place(t + 2.2, 0.55, -B - 1.6), SP.leafDeep, 3)
+      props.sphere(2 * r, s, place(B + 1.6, 0.55, t + 1.1), SP.hedge, 3)
+      if (Math.abs(t) > 8) props.sphere(2 * r, s, place(-B - 1.6, 0.55, t), SP.leafDeep, 3)
     }
   })
   // Portão de ferro fechado atrás do portal (a volta é pelo portal).
@@ -425,7 +427,7 @@ export function centerFronts(ctx: CenterCtx, cellUV: (i: number) => [number, num
     // Moldura de bronze, fundo grafite, filete de latão e rosetas nas pontas.
     props.box(bw + 0.36, boardH + 0.34, 0.12, place(p.model.doorX, boardY, -0.08, 0, f), SP.bronze)
     props.box(bw + 0.16, boardH + 0.14, 0.14, place(p.model.doorX, boardY, -0.1, 0, f), SP.iron)
-    for (const s of [-1, 1]) props.gear(0.16, 0.04, 8, facing(p.model.doorX + s * (bw / 2 + 0.05), boardY, -0.18, f), SP.brass, SP.bronze)
+    for (const s of [-1, 1]) props.cylinder(0.16, 0.05, facing(p.model.doorX + s * (bw / 2 + 0.05), boardY, -0.17, f), SP.brass, 6)
     signs.quad(bw, boardH, cellUV(i), place(p.model.doorX, boardY, -0.19, 0, f))
   })
 }

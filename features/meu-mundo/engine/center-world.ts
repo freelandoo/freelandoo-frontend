@@ -268,12 +268,13 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
       if (!disposed && process.env.NODE_ENV !== "production") console.warn("[meu-mundo] modelo do centro falhou", o.id, err)
     })
   }
+  const pending: Promise<unknown>[] = []
   if (assets) {
     for (const p of c.places) {
       const file = assets.places[p.id]
       if (!file) continue
       const placement = frameOf(p.origin.x, p.origin.z, p.rotationY)
-      models
+      const job = models
         .load(p.id, assets.basePath + file, placement)
         .then(() => {
           if (disposed) return
@@ -291,7 +292,14 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
           // O bloco fica (a colisão e a entrada não dependem do modelo).
           if (!disposed && process.env.NODE_ENV !== "production") console.warn("[meu-mundo] modelo do centro falhou", p.id, err)
         })
+      pending.push(job)
     }
+  }
+  // Tudo chegou (ou falhou): junta as malhas dos prédios por material (mm3d-53b).
+  if (pending.length) {
+    void Promise.allSettled(pending).then(() => {
+      if (!disposed) models.consolidate()
+    })
   }
 
   // Colisão: a lista do SERVIDOR (a mesma que a sala usa). Câmera: + copas.

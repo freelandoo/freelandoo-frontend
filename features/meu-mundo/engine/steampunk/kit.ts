@@ -159,22 +159,23 @@ export function steamTree(ctx: SteamCtx, x: number, z: number, s = 1, collide = 
   props.with("flat", () => {
     if (k === "round") {
       trunk(1.9, 0.36)
-      props.sphere(2.3 * s, [1, 0.78, 1], place(x, 2.35 * s, z), shade(pick(), 0.9), 6)
-      props.sphere(1.7 * s, [1, 0.85, 1], place(x + 0.5 * s, 2.95 * s, z - 0.25 * s), pick(), 5)
-      props.sphere(1.45 * s, [1, 0.85, 1], place(x - 0.55 * s, 2.8 * s, z + 0.35 * s), pick(), 5)
-      props.sphere(1.1 * s, [1, 0.9, 1], place(x + 0.05 * s, 3.45 * s, z + 0.1 * s), mix(pick(), SP.leafRust, 0.15), 4)
+      // Facetas poucas (copa estilizada, "flat"): árvore é a peça mais repetida da cena.
+      props.sphere(2.3 * s, [1, 0.78, 1], place(x, 2.35 * s, z), shade(pick(), 0.9), 4)
+      props.sphere(1.7 * s, [1, 0.85, 1], place(x + 0.5 * s, 2.95 * s, z - 0.25 * s), pick(), 4)
+      props.sphere(1.45 * s, [1, 0.85, 1], place(x - 0.55 * s, 2.8 * s, z + 0.35 * s), pick(), 3)
+      props.sphere(1.1 * s, [1, 0.9, 1], place(x + 0.05 * s, 3.45 * s, z + 0.1 * s), mix(pick(), SP.leafRust, 0.15), 3)
     } else if (k === "column") {
       trunk(1.2, 0.3)
-      props.sphere(1.5 * s, [1, 1.35, 1], place(x, 1.9 * s, z), SP.leafDeep, 5)
-      props.sphere(1.3 * s, [1, 1.4, 1], place(x, 2.9 * s, z), pick(), 5)
-      props.sphere(0.9 * s, [1, 1.5, 1], place(x, 3.75 * s, z), SP.leafSage, 6)
+      props.sphere(1.5 * s, [1, 1.35, 1], place(x, 1.9 * s, z), SP.leafDeep, 4)
+      props.sphere(1.3 * s, [1, 1.4, 1], place(x, 2.9 * s, z), pick(), 4)
+      props.sphere(0.9 * s, [1, 1.5, 1], place(x, 3.75 * s, z), SP.leafSage, 3)
     } else if (k === "ornamental") {
       trunk(1.3, 0.24)
       props.tube([x, 1.1 * s, z], [x + 0.6 * s, 2.0 * s, z - 0.2 * s], 0.06 * s, SP.trunk)
       props.tube([x, 1.0 * s, z], [x - 0.5 * s, 1.9 * s, z + 0.3 * s], 0.06 * s, SP.trunk)
-      props.sphere(1.25 * s, [1, 0.8, 1], place(x + 0.6 * s, 2.15 * s, z - 0.2 * s), mix(SP.leafRust, SP.leafOlive, 0.4), 6)
-      props.sphere(1.1 * s, [1, 0.8, 1], place(x - 0.5 * s, 2.05 * s, z + 0.3 * s), SP.leafRust, 6)
-      props.sphere(1.3 * s, [1, 0.8, 1], place(x, 2.5 * s, z), SP.leafOlive, 6)
+      props.sphere(1.25 * s, [1, 0.8, 1], place(x + 0.6 * s, 2.15 * s, z - 0.2 * s), mix(SP.leafRust, SP.leafOlive, 0.4), 4)
+      props.sphere(1.1 * s, [1, 0.8, 1], place(x - 0.5 * s, 2.05 * s, z + 0.3 * s), SP.leafRust, 4)
+      props.sphere(1.3 * s, [1, 0.8, 1], place(x, 2.5 * s, z), SP.leafOlive, 4)
     } else if (k === "dry") {
       trunk(2.2, 0.34)
       const top: V3 = [x, 2.1 * s, z]
@@ -185,8 +186,8 @@ export function steamTree(ctx: SteamCtx, x: number, z: number, s = 1, collide = 
         props.sphere(0.55 * s, [1, 0.7, 1], place(end[0], end[1], end[2]), SP.leafDry, 4)
       }
     } else {
-      props.sphere(1.6 * s, [1, 0.7, 1], place(x, 0.55 * s, z), SP.hedge, 6)
-      props.sphere(1.1 * s, [1, 0.75, 1], place(x + 0.35 * s, 0.85 * s, z), SP.leafSage, 6)
+      props.sphere(1.6 * s, [1, 0.7, 1], place(x, 0.55 * s, z), SP.hedge, 4)
+      props.sphere(1.1 * s, [1, 0.75, 1], place(x + 0.35 * s, 0.85 * s, z), SP.leafSage, 3)
     }
   })
   if (collide) ctx.boxes.push({ x, z, hx: 0.35 * s, hz: 0.35 * s, rot: 0, h: 3.4 * s })
