@@ -37,7 +37,8 @@ export class GeoBuilder {
   private uvs: number[] = []
   private indices: number[] = []
 
-  private append(vd: VertexData, color: RGB) {
+  // protected: o construtor do bairro steampunk (steampunk/geo.ts) reescreve as UVs antes.
+  protected append(vd: VertexData, color: RGB) {
     const base = this.positions.length / 3
     const p = vd.positions as ArrayLike<number>
     const n = vd.normals as ArrayLike<number>

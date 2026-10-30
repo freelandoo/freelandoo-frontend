@@ -6,7 +6,9 @@
 // (build_styled.py): caixas com cor por vértice (COLOR_0), sem textura.
 //
 // ═══ UM MODELO POR NÍVEL, NÃO POR CASA ═══
-// Cada nível é baixado UMA vez e vira UMA malha na cena. As casas que usam
+// Cada nível é baixado UMA vez e vira UMA malha na cena (mais a malha das
+// luzes "_glow", desde o mm3d-51: vidro âmbar e lanternas, desenhadas com o
+// material de luz do bairro, que acende de noite). As casas que usam
 // aquele nível são THIN INSTANCES dela (uma matriz por lote): vinte casas do
 // mesmo nível custam uma chamada de desenho, a mesma geometria, o mesmo
 // material e a mesma textura. Trocar o nível de uma casa só reescreve as
@@ -35,6 +37,8 @@ import { Matrix } from "@babylonjs/core/Maths/math.vector"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import "@babylonjs/core/Meshes/thinInstanceMesh"
 import type { BaseTexture } from "@babylonjs/core/Materials/Textures/baseTexture"
+import type { Material } from "@babylonjs/core/Materials/material"
+import type { Node } from "@babylonjs/core/node"
 import type { Scene } from "@babylonjs/core/scene"
 import { ensureLoaders } from "./avatars"
 import type { HouseCatalog } from "../types"
@@ -45,6 +49,8 @@ interface Entry {
   level: number
   promise: Promise<void>
   mesh: Mesh | null
+  /** Vidro aceso e lanternas (mm3d-51), com o material de luz do bairro. */
+  glow: Mesh | null
   material: StandardMaterial | null
   texture: BaseTexture | null
   lastUsed: number
@@ -62,6 +68,10 @@ export class HouseModels {
   constructor(
     private readonly scene: Scene,
     private readonly catalog: HouseCatalog,
+    /** Textura de acabamento do bairro (mm3d-51): vale para modelo com UV e sem textura própria. */
+    private readonly detail: BaseTexture | null = null,
+    /** Material de luz do bairro (as malhas "_glow" dos modelos). */
+    private readonly glowMaterial: Material | null = null,
   ) {
     ensureLoaders()
   }
@@ -91,7 +101,7 @@ export class HouseModels {
       set.add(onProgress)
     }
     if (!e) {
-      const entry: Entry = { level, promise: Promise.resolve(), mesh: null, material: null, texture: null, lastUsed: ++this.clock, failed: false }
+      const entry: Entry = { level, promise: Promise.resolve(), mesh: null, glow: null, material: null, texture: null, lastUsed: ++this.clock, failed: false }
       entry.promise = this.fetch(entry, this.catalog.basePath + def.asset).catch((err) => {
         entry.failed = true
         throw err
@@ -121,26 +131,42 @@ export class HouseModels {
       c.dispose()
       throw new Error("descartado")
     }
-    const geo = c.meshes.filter((m): m is Mesh => m instanceof Mesh && m.getTotalVertices() > 0)
-    if (geo.length !== 1) {
+    const all = c.meshes.filter((m): m is Mesh => m instanceof Mesh && m.getTotalVertices() > 0)
+    // O nome "_glow" fica no nó do arquivo (o gltfpack põe a malha num nó
+    // filho sem nome, o da dequantização): sobe pela hierarquia.
+    const isGlow = (m: Mesh) => {
+      for (let n: Node | null = m; n; n = n.parent) if (/_glow/.test(n.name)) return true
+      return false
+    }
+    const glows = all.filter(isGlow)
+    const geo = all.filter((m) => !glows.includes(m))
+    if (geo.length !== 1 || glows.length > 1) {
       c.dispose()
-      throw new Error(`modelo do nível ${entry.level} com ${geo.length} malhas`)
+      throw new Error(`modelo do nível ${entry.level} com ${all.length} malhas`)
     }
     const mesh = geo[0]
+    const glow = glows[0] ?? null
     const src = mesh.material as unknown as { albedoTexture?: BaseTexture | null; diffuseTexture?: BaseTexture | null } | null
     const texture = src?.albedoTexture ?? src?.diffuseTexture ?? null
     // Assa o transform do arquivo (mão, dequantização) e solta a malha do nó raiz.
-    mesh.computeWorldMatrix(true)
-    mesh.bakeTransformIntoVertices(mesh.getWorldMatrix().clone())
-    mesh.parent = null
-    mesh.position.setAll(0)
-    mesh.rotationQuaternion = null
-    mesh.rotation.setAll(0)
-    mesh.scaling.setAll(1)
+    const keep = glow ? [mesh, glow] : [mesh]
+    for (const m of keep) {
+      m.computeWorldMatrix(true)
+      m.bakeTransformIntoVertices(m.getWorldMatrix().clone())
+    }
+    for (const m of keep) {
+      m.parent = null
+      m.position.setAll(0)
+      m.rotationQuaternion = null
+      m.rotation.setAll(0)
+      m.scaling.setAll(1)
+    }
     // Tira do contêiner o que fica; o resto (nó raiz, material PBR) é descartado.
     const keepGeo = mesh.geometry
-    c.meshes.splice(c.meshes.indexOf(mesh), 1)
+    const glowGeo = glow?.geometry ?? null
+    for (const m of keep) c.meshes.splice(c.meshes.indexOf(m), 1)
     if (keepGeo) c.geometries.splice(c.geometries.indexOf(keepGeo), 1)
+    if (glowGeo) c.geometries.splice(c.geometries.indexOf(glowGeo), 1)
     if (texture) c.textures.splice(c.textures.indexOf(texture as never), 1)
     c.dispose()
 
@@ -152,7 +178,10 @@ export class HouseModels {
       mat.emissiveColor = new Color3(0.3, 0.3, 0.3)
       mat.diffuseColor = new Color3(0.82, 0.82, 0.82)
     } else {
-      // Igual ao material do mundo (world.ts): a cor vem do vértice.
+      // Igual às peças do bairro (steampunk/materials.ts "sp-trim"): a cor vem
+      // do vértice e, se o modelo tem UV por face, a textura de acabamento põe
+      // o chanfro escuro em cada face. A textura é do bairro: não é solta aqui.
+      if (this.detail && mesh.isVerticesDataPresent("uv")) mat.diffuseTexture = this.detail
       mat.diffuseColor = new Color3(1, 1, 1)
       mesh.useVertexColors = true
       // COLOR_0 chega em RGBA (alfa sempre 1): sem isto o loader marca a malha
@@ -173,6 +202,19 @@ export class HouseModels {
     mesh.freezeWorldMatrix()
     entry.mesh = mesh
     entry.material = mat
+    if (glow && glowGeo) {
+      this.scene.addGeometry(glowGeo)
+      this.scene.addMesh(glow)
+      glow.material = this.glowMaterial ?? mat
+      glow.useVertexColors = true
+      glow.hasVertexAlpha = false
+      glow.name = `mm-house-n${entry.level}-glow`
+      glow.isPickable = false
+      glow.doNotSyncBoundingInfo = true
+      glow.setEnabled(false)
+      glow.freezeWorldMatrix()
+      entry.glow = glow
+    }
     entry.texture = texture
     this.syncLevel(entry.level)
   }
@@ -201,10 +243,12 @@ export class HouseModels {
     if (mats.length) e.lastUsed = ++this.clock
     const buf = new Float32Array(Math.max(1, mats.length) * 16)
     mats.forEach((m, i) => m.copyToArray(buf, i * 16))
-    e.mesh.thinInstanceSetBuffer("matrix", buf, 16, true)
-    e.mesh.thinInstanceCount = mats.length
-    e.mesh.thinInstanceRefreshBoundingInfo(false)
-    e.mesh.setEnabled(mats.length > 0)
+    for (const m of e.glow ? [e.mesh, e.glow] : [e.mesh]) {
+      m.thinInstanceSetBuffer("matrix", buf, 16, true)
+      m.thinInstanceCount = mats.length
+      m.thinInstanceRefreshBoundingInfo(false)
+      m.setEnabled(mats.length > 0)
+    }
   }
 
   private inUse(level: number) {
@@ -223,6 +267,8 @@ export class HouseModels {
   private drop(e: Entry) {
     this.entries.delete(e.level)
     e.mesh?.dispose(false, false)
+    e.glow?.dispose(false, false)
+    e.glow = null
     e.material?.dispose()
     e.texture?.dispose()
     e.mesh = null

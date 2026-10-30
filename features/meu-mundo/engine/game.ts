@@ -198,9 +198,15 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
 
   const world = centerP
     ? buildCenterWorld(scene, centerP.center, opts.centerLabels ?? { place: (p) => p.id, portal: opts.exitLabel })
-    : buildWorld(scene, nb!, opts.exitLabel, (v) => {
-        if (!disposed) opts.onHouseVisual?.(v)
-      })
+    : buildWorld(
+        scene,
+        nb!,
+        opts.exitLabel,
+        (v) => {
+          if (!disposed) opts.onHouseVisual?.(v)
+        },
+        quality.tier,
+      )
   // Na rua, os avatares também trazem as poses de bike, skate e patins (mm3d-14).
   const lib = new AvatarLibrary(scene, false, true, quality.avatarLod)
   // Carros (mm3d-11): desenhados a partir do estado da sala.
@@ -886,6 +892,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       scene.fogStart = quality.fogStart
       scene.fogEnd = quality.fogEnd
       follow.camera.maxZ = quality.maxZ
+      world.setQuality?.(quality)
       lib.lodDistance = quality.avatarLod
     },
     setStatsEnabled(on) {

@@ -73,6 +73,8 @@ export interface HouseLevelDef {
   pathEnd?: Vec2
   /** [x, z, hx, hz, altura] — retângulos alinhados ao lote. */
   colliders?: [number, number, number, number, number][]
+  /** Saídas de vapor [x, y, z] no quadro do lote (mm3d-51; chaminés do modelo). */
+  vents?: [number, number, number][]
   bytes?: number
 }
 
