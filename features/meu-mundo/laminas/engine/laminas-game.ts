@@ -39,6 +39,7 @@ import type { BodyId } from "../../types"
 import { COMBO, DT, Fight, MOBS, mobAttack, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
 import { buildArena } from "./arena-view"
 import { buildRing } from "./ring-view"
+import { BoxingGloves } from "./gloves"
 import { MonsterModel } from "./monster-view"
 
 export interface LaminasHud {
@@ -190,8 +191,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const tmpS = new Vector3()
   const tmpQ = new Quaternion()
   const tmpP = new Vector3()
+  // Ringue do Boxe (mm3d-57): sem espada; luvas pretas no jogador.
+  const heroGloves = ring ? new BoxingGloves(scene, hero, "black") : null
   const placeSword = () => {
-    const hand = hero.bone(HAND)
+    const hand = ring ? null : hero.bone(HAND)
     if (!hand) {
       sword.setEnabled(false)
       return
@@ -231,7 +234,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     warn.material = warnMat
     warn.isPickable = false
     warn.setEnabled(false)
-    models.set(m.id, { model: new MonsterModel(scene, m.kind), warn, px: m.x, pz: m.z, speed: 0 })
+    models.set(m.id, { model: new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : null), warn, px: m.x, pz: m.z, speed: 0 })
   }
 
   // ── faíscas ──────────────────────────────────────────────────────────────
@@ -546,7 +549,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
 
   // conferência (harness)
   const w = window as unknown as Record<string, unknown>
-  w.__laminas = () => ({ me: { ...fight.me }, mobs: fight.mobs.map((m) => ({ ...m })), over: fight.over, ready: readyFired, sword: sword.position.clone(), hand: hero.bonePosition(HAND) })
+  w.__laminas = () => ({ me: { ...fight.me }, mobs: fight.mobs.map((m) => ({ ...m })), over: fight.over, ready: readyFired, sword: sword.position.clone(), hand: hero.bonePosition(HAND), gloves: heroGloves?.at() ?? null })
   w.__laminasScene = scene
 
   return {
@@ -584,6 +587,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       }
       warnMat.dispose()
       warnTex.dispose()
+      heroGloves?.dispose()
       for (const m of swordParts) m.dispose()
       sword.dispose()
       for (const m of Object.values(swordMats)) m.dispose()

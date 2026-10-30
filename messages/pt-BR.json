@@ -8449,7 +8449,14 @@
     "skinGodLine_ciborgue": "Metade homem, metade máquina de guerra.",
     "skinGodLine_cavaleiro": "Armadura de ouro e honra que não enferruja.",
     "skinGodLine_golem": "Pedra viva com o coração de esmeralda.",
-    "skinGodLine_garras": "Chapéu de caçadora e garras que não erram."
+    "skinGodLine_garras": "Chapéu de caçadora e garras que não erram.",
+    "ringMobSoldier": "Boxeador da casa",
+    "ringMobWolf": "Trio da Rua",
+    "ringMobGolem": "O Pesadão",
+    "ringMobHarpy": "A Ligeira",
+    "ringMobBrute": "O Campeão",
+    "ringSubWolf": "Três de uma vez, rápidos",
+    "ringPitch": "Calce as luvas e encare os lutadores. Quando o chão acender vermelho, o golpe vem ali: esquive e bata na brecha."
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -15,6 +15,8 @@
 //
 // mm3d-56: o prédio do BOXE abre esta mesma tela com stage="ring" — a mesma
 // luta, o mesmo menu, só o lugar é o ringue grande (ring-view.ts).
+// mm3d-57: no ringue não tem espada (luvas) e os adversários são gente — os
+// mesmos tipos da regra com nomes de boxeador; a harpia (voa) fica de fora.
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Shield, Swords, Volume2, VolumeX, X } from "lucide-react"
@@ -50,18 +52,26 @@ const BG = "radial-gradient(120% 90% at 50% 0%, #f7b267 0%, #b5502b 50%, #3a1a12
 
 type Choice = { kind: MobKind; level: number }
 
-export function useMobName() {
+export function useMobName(ring = false) {
   const t = useTranslations("MeuMundo")
   return useCallback(
     (k: MobKind) =>
-      ({
+      (ring
+        ? {
+            soldier: t("ringMobSoldier", "Boxeador da casa"),
+            wolf: t("ringMobWolf", "Trio da Rua"),
+            golem: t("ringMobGolem", "O Pesadão"),
+            harpy: t("ringMobHarpy", "A Ligeira"),
+            brute: t("ringMobBrute", "O Campeão"),
+          }
+        : {
         soldier: t("laminasMobSoldier", "Golem de Pedra"),
         wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
         golem: t("laminasMobGolem", "Ciborgue"),
         harpy: t("laminasMobHarpy", "Dama das Garras"),
-        brute: t("laminasMobBrute", "Brutamontes"),
-      })[k],
-    [t],
+            brute: t("laminasMobBrute", "Brutamontes"),
+          })[k],
+    [t, ring],
   )
 }
 
@@ -100,15 +110,16 @@ export function LaminasView({ body, look, onExit, encounter, onEncounterEnd, sta
 
 function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: () => void; ring: boolean }) {
   const t = useTranslations("MeuMundo")
-  const mobName = useMobName()
-  const opts: { c: Choice; sub: string; tone: string }[] = [
+  const mobName = useMobName(ring)
+  const all: { c: Choice; sub: string; tone: string }[] = [
     { c: { kind: "soldier", level: 1 }, sub: t("laminasLevel", "Nível {n}").replace("{n}", "1"), tone: "#C9A46A" },
     { c: { kind: "soldier", level: 2 }, sub: t("laminasLevel", "Nível {n}").replace("{n}", "2"), tone: "#B9BCC4" },
-    { c: { kind: "wolf", level: 1 }, sub: t("laminasSubWolf", "Bando de 3, rápidos"), tone: "#C2693A" },
+    { c: { kind: "wolf", level: 1 }, sub: ring ? t("ringSubWolf", "Três de uma vez, rápidos") : t("laminasSubWolf", "Bando de 3, rápidos"), tone: "#C2693A" },
     { c: { kind: "golem", level: 1 }, sub: t("laminasSubGolem", "Lento, bate em área"), tone: "#8D95A3" },
     { c: { kind: "harpy", level: 1 }, sub: t("laminasSubHarpy", "Voa e mergulha"), tone: "#7C89A3" },
     { c: { kind: "brute", level: 1 }, sub: t("laminasSubBrute", "Elite: investida e pancada"), tone: VIOLET },
   ]
+  const opts = ring ? all.filter((o) => o.c.kind !== "harpy") : all
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
       <div className="w-full max-w-[600px] rounded-[26px] p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
@@ -121,7 +132,9 @@ function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: (
               {ring ? t("centerPlace_boxe", "Arena de Boxe") : t("laminasTitle", "Arena das Lâminas")}
             </h1>
             <p className="mt-2 text-[14px] leading-snug max-[759px]:text-[13px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-              {t("laminasPitch", "Treine a espada contra a máquina. Quando o chão acender vermelho, o golpe vem ali: esquive e corte na brecha.")}
+              {ring
+                ? t("ringPitch", "Calce as luvas e encare os lutadores. Quando o chão acender vermelho, o golpe vem ali: esquive e bata na brecha.")
+                : t("laminasPitch", "Treine a espada contra a máquina. Quando o chão acender vermelho, o golpe vem ali: esquive e corte na brecha.")}
             </p>
           </div>
           <button type="button" aria-label={t("laminasLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
@@ -179,7 +192,7 @@ function LaminasScreen({
   onMenu: () => void
 }) {
   const t = useTranslations("MeuMundo")
-  const mobName = useMobName()
+  const mobName = useMobName(stage === "ring")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<LaminasGameHandle | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")

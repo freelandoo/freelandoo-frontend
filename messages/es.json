@@ -9015,7 +9015,14 @@
     "skinGodLine_ciborgue": "Mitad hombre, mitad máquina de guerra.",
     "skinGodLine_cavaleiro": "Armadura de oro y un honor que no se oxida.",
     "skinGodLine_golem": "Piedra viva con corazón de esmeralda.",
-    "skinGodLine_garras": "Sombrero de cazadora y garras que no fallan."
+    "skinGodLine_garras": "Sombrero de cazadora y garras que no fallan.",
+    "ringMobSoldier": "Boxeador de la casa",
+    "ringMobWolf": "Trío de la Calle",
+    "ringMobGolem": "El Pesado",
+    "ringMobHarpy": "La Ligera",
+    "ringMobBrute": "El Campeón",
+    "ringSubWolf": "Tres a la vez, rápidos",
+    "ringPitch": "Ponte los guantes y enfrenta a los luchadores. Cuando el suelo se ilumine en rojo, el golpe cae ahí: esquiva y golpea en el hueco."
   },
   "Sports": {
     "eyebrow": "Deportes",

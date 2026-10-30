@@ -15,6 +15,12 @@
 // (mm3d-54: GLB com esqueleto e clipes próprios — Idle/Walk/Run/Bite/Pounce/
 // Dodge/Hit/Die/Howl, pipeline/laminas/build_lobo_anim.py; os golpes tocam o
 // trecho do clipe esticado na duração da regra). O Brutamontes segue de formas.
+//
+// mm3d-57 (Alex, 30/10): no RINGUE do prédio do Boxe os adversários são GENTE
+// de luva marrom (`human`): o mesmo tipo da regra (golpes, vida, velocidade),
+// desenhado com os corpos de sempre e uma roupa própria por tipo — Soldado =
+// boxeador normal, Lobos = trio magro e ligeiro, Golem = o pesadão (gordo),
+// Brutamontes = o campeão (forte). A harpia voa: não entra no ringue.
 
 import type { Scene } from "@babylonjs/core/scene"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
@@ -31,12 +37,25 @@ import type { MobKind, MobState } from "../sim/fight"
 import { AvatarLibrary, ensureLoaders } from "../../engine/avatars"
 import { Character } from "../../engine/player"
 import type { BodyId } from "../../types"
+import { BoxingGloves } from "./gloves"
 
 /** Monstros com corpo de gente: a skin rigada e a escala na luta. */
 const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
   soldier: { body: "golem", scale: 1.1 },
   golem: { body: "ciborgue", scale: 1.4 },
   harpy: { body: "garras", scale: 1.05 },
+}
+/**
+ * Lutadores do ringue (mm3d-57): corpo, escala e roupa (look = camiseta,
+ * calça, pele, cabelo na paleta de avatar-colors.ts). O trio de lobos varia a
+ * roupa pelo número do monstro.
+ */
+const HUMAN: Record<MobKind, { body: BodyId; scale: number; looks: string[] }> = {
+  soldier: { body: "normal", scale: 1, looks: ["1240"] },
+  wolf: { body: "slim", scale: 1, looks: ["4115", "6260", "b350"] },
+  golem: { body: "fat", scale: 1.12, looks: ["3527"] },
+  harpy: { body: "female", scale: 1, looks: ["8913"] },
+  brute: { body: "strong", scale: 1.15, looks: ["2760"] },
 }
 /** O lobo (pipeline/laminas/build_lobo_anim.py): o focinho chega no +X do Babylon → −90° leva ao +Z (frente). */
 const WOLF_URL = "/meu-mundo/laminas/lobo-m54.glb"
@@ -148,12 +167,15 @@ export class MonsterModel {
   private wolf: { anims: Map<string, AnimationGroup>; entries: InstantiatedEntries } | null = null
   private wolfClip = ""
   private dodgeLeft = 0
+  private gloves: BoxingGloves | null = null
 
   constructor(
     private readonly scene: Scene,
     readonly kind: MobKind,
     /** Escala extra (a cidade mostra um pouco maior para ler de longe). */
     scale = 1,
+    /** Ringue (mm3d-57): gente de luva no lugar do monstro; o número varia a roupa. */
+    human: { n: number } | null = null,
   ) {
     const id = ++seq
     this.root = new TransformNode(`mm-mob-${kind}-${id}`, scene)
@@ -164,8 +186,15 @@ export class MonsterModel {
     this.flash = new StandardMaterial(`mm-mob-flash-${id}`, scene)
     this.flash.specularColor = new Color3(0.08, 0.08, 0.08)
     const rig = RIGGED[kind]
-    this.real = !!rig || kind === "wolf"
-    if (rig) {
+    this.real = !!rig || kind === "wolf" || !!human
+    if (human) {
+      const k = rigKit(scene)
+      const h = HUMAN[kind]
+      this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, h.body, null, false, h.looks[human.n % h.looks.length])
+      this.char.holder.scaling.setAll(h.scale * scale)
+      this.char.setBoxe("BGuard")
+      this.gloves = new BoxingGloves(scene, this.char, "brown", h.scale * scale)
+    } else if (rig) {
       const k = rigKit(scene)
       this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rig.body, null, false)
       this.char.holder.scaling.setAll(rig.scale * scale)
@@ -321,7 +350,7 @@ export class MonsterModel {
   private updateRigged(dt: number, p: MobPose) {
     const c = this.char!
     c.place(p.x, p.z, p.facing, p.y, 0)
-    const heavy = this.kind === "golem"
+    const heavy = this.kind === "golem" || (!!this.gloves && this.kind === "brute")
     if (p.state !== this.last) {
       if (p.state === "windup") c.boxeAct(heavy ? "BBox2" : "BJab", 0.55, 0, 0.42, true)
       else if (p.state === "strike") c.boxeAct(heavy ? "BBox2" : "BJab", 0.32, 0.42, 1)
@@ -408,6 +437,7 @@ export class MonsterModel {
   setVisible(v: boolean) {
     this.root.setEnabled(v)
     this.char?.setVisible(v)
+    this.gloves?.setVisible(v)
   }
 
   dispose() {
@@ -417,6 +447,7 @@ export class MonsterModel {
       this.wolf.entries.dispose()
       this.wolf = null
     }
+    this.gloves?.dispose()
     this.char?.dispose()
     for (const p of this.parts) p.mesh.dispose()
     this.flash.dispose()
