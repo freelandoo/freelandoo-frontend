@@ -94,12 +94,13 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const governor = new ResolutionGovernor(engine, profile, Math.min(window.devicePixelRatio || 1, touch ? 2 : 1.5))
 
   const scene = new Scene(engine)
-  scene.clearColor = new Color4(0.98, 0.72, 0.45, 1)
+  // mm3d-55: fim de tarde de fábrica (âmbar com fumaça).
+  scene.clearColor = new Color4(0.86, 0.64, 0.44, 1)
   scene.ambientColor = new Color3(0.35, 0.3, 0.28)
   scene.fogMode = Scene.FOGMODE_LINEAR
-  scene.fogColor = new Color3(0.98, 0.72, 0.45)
-  scene.fogStart = 30
-  scene.fogEnd = 70
+  scene.fogColor = new Color3(0.86, 0.64, 0.44)
+  scene.fogStart = 34
+  scene.fogEnd = 100
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
@@ -291,7 +292,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const cam = new FreeCamera("laminas-cam", new Vector3(0, CAM_H, -5 - CAM_DIST), scene)
   cam.inputs.clear()
   cam.minZ = 0.1
-  cam.maxZ = 150
+  cam.maxZ = 220
   cam.fov = 0.9
   scene.activeCamera = cam
   let camYaw = 0
