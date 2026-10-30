@@ -54,8 +54,9 @@ export class Stage {
     // Neutral preserva o matiz das cores fortes (o ACES puxa o neon vermelho para laranja).
     this.renderer.toneMapping = THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 0.92;
-    this.scene.background = new THREE.Color(0x020306);
-    this.scene.fog = new THREE.Fog(0x020306, 34, 125);
+    // mm3d-55: fábrica ao entardecer (sépia).
+    this.scene.background = new THREE.Color(0x0c0705);
+    this.scene.fog = new THREE.Fog(0x0c0705, 34, 125);
 
     // Reflexos do metal: ambiente gerado uma vez, sem textura externa.
     const pmrem = new THREE.PMREMGenerator(this.renderer);
@@ -68,7 +69,7 @@ export class Stage {
     key.position.set(-4, 8, 10);
     const rim = new THREE.DirectionalLight(0xff2a1a, 1.8);
     rim.position.set(6, 2, -8);
-    const fill = new THREE.HemisphereLight(0x5a6a88, 0x120404, 0.55);
+    const fill = new THREE.HemisphereLight(0x8a6a50, 0x140806, 0.55);
     this.scene.add(key, rim, fill);
 
     if (perf.bloom) this.enableBloom(perf.tier === 'high' ? 0.5 : 0.35);

@@ -2,6 +2,8 @@
 // durante a partida depois do aquecimento. A geometria visível corresponde aos
 // retângulos de colisão da simulação (obstacleRects); só a profundidade (z) é
 // decorativa. Todo perigo tem a borda vermelha da campanha; combustível é ciano.
+// mm3d-55 — STEAMPUNK: canos de cobre, painéis de ferro escuro, cápsulas de
+// latão; a borda vermelha e o ciano do combustível ficam (leitura do jogo).
 
 import * as THREE from 'three';
 import { obstacleRects, offsetAt, type Obstacle, type ObstacleKind, type Pickup, type Rect } from '../sim/generator';
@@ -113,10 +115,10 @@ export class ObstacleRenderer {
   constructor(scene: THREE.Scene) {
     scene.add(this.group);
     this.mats = {
-      metal: new THREE.MeshStandardMaterial({ color: 0x23252b, metalness: 0.8, roughness: 0.45, envMapIntensity: 0.6 }),
+      metal: new THREE.MeshStandardMaterial({ color: 0x6a3a20, metalness: 0.8, roughness: 0.42, envMapIntensity: 0.6 }),
       // Painel grafite: o cinza-claro metálico refletia o ambiente e virava uma
       // caixa quase branca (a viga suspensa era o objeto mais claro da tela).
-      panel: new THREE.MeshStandardMaterial({ color: 0x1c1e23, metalness: 0.6, roughness: 0.6, envMapIntensity: 0.3 }),
+      panel: new THREE.MeshStandardMaterial({ color: 0x3a2a14, metalness: 0.7, roughness: 0.5, envMapIntensity: 0.35 }),
       // Cores acima de 1: passam do limiar do bloom e brilham.
       red: new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 0.04, 0.02) }),
       neon: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.95, 0.02, 0.01) }),
@@ -235,7 +237,7 @@ export class PickupRenderer {
   constructor(scene: THREE.Scene, glow: THREE.Texture, fire: Particles) {
     scene.add(this.group);
     this.fire = fire;
-    this.shell = new THREE.MeshStandardMaterial({ color: 0xd8dade, metalness: 0.8, roughness: 0.25 });
+    this.shell = new THREE.MeshStandardMaterial({ color: 0xc69a37, metalness: 0.85, roughness: 0.3 });
     this.core = {
       small: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 0.95, 1.1) }),
       big: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.15, 0.8, 0.22) }),

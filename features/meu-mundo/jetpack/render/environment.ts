@@ -1,5 +1,11 @@
 // Cenário: céu, eclipse distante (o vermelho da campanha), estrelas, estrutura
-// da estação ao fundo e trilhos letais de chão/teto com luzes de pista. A
+// da estação ao fundo e trilhos letais de chão/teto com luzes de pista.
+//
+// mm3d-55 — STEAMPUNK: céu de fábrica ao entardecer (sépia e cobre), o
+// eclipse vira um RELÓGIO gigante de latão (mostrador, aro dentado, ponteiros
+// andando), estrelas raras e quentes, silhuetas de chaminés com lanternas
+// âmbar e trilhos de chapa de cobre/ferro com nervuras de latão. A linha
+// VERMELHA de perigo fica (é regra de leitura do jogo). A
 // paralaxe é a da própria perspectiva: tudo é estático no mundo e as camadas
 // mais distantes andam menos na tela. Cada camada é um "ladrilho"
 // repetido 3 vezes e reposicionado conforme a câmera anda (sem criar objetos).
@@ -30,10 +36,10 @@ function skyTexture(): THREE.Texture {
   c.height = 256;
   const g = c.getContext('2d')!;
   const grad = g.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, '#05070d');
-  grad.addColorStop(0.55, '#020306');
-  grad.addColorStop(0.85, '#0b0303');
-  grad.addColorStop(1, '#1a0404');
+  grad.addColorStop(0, '#0d0806');
+  grad.addColorStop(0.55, '#1a0f09');
+  grad.addColorStop(0.85, '#3a1c0e');
+  grad.addColorStop(1, '#4a2410');
   g.fillStyle = grad;
   g.fillRect(0, 0, 4, 256);
   const t = new THREE.CanvasTexture(c);
@@ -41,7 +47,7 @@ function skyTexture(): THREE.Texture {
   return t;
 }
 
-/** Planeta em eclipse: disco escuro com borda vermelha (shader, sem textura). */
+/** Relógio de latão no céu (shader, sem textura): aro dentado, 12 marcas e os ponteiros andando. */
 function eclipse(): THREE.Mesh {
   const mat = new THREE.ShaderMaterial({
     transparent: true,
@@ -55,18 +61,30 @@ function eclipse(): THREE.Mesh {
     fragmentShader: /* glsl */ `
       varying vec2 vUv;
       uniform float uTime;
+      float band(float x, float a, float b) { return smoothstep(a - 0.01, a, x) * (1.0 - smoothstep(b, b + 0.01, x)); }
+      float hand(vec2 p, float ang, float len, float w) {
+        vec2 d = vec2(sin(ang), cos(ang));
+        float t = clamp(dot(p, d), 0.0, len);
+        return 1.0 - smoothstep(w * 0.5, w, length(p - d * t));
+      }
       void main() {
         vec2 p = vUv * 2.0 - 1.0;
         float r = length(p);
-        float disk = 0.62;
-        float rim = smoothstep(disk - 0.015, disk, r) * (1.0 - smoothstep(disk, disk + 0.02, r));
-        float halo = exp(-max(r - disk, 0.0) * 9.0) * step(disk, r);
-        // luz vindo de baixo-direita, como na arte da campanha
-        float side = clamp(dot(normalize(p + 1e-4), normalize(vec2(0.55, -0.85))) * 0.5 + 0.5, 0.0, 1.0);
-        float k = (rim * 1.0 + halo * 0.35) * (0.25 + 0.75 * pow(side, 2.0));
-        k *= 0.92 + 0.08 * sin(uTime * 0.7);
-        vec3 col = mix(vec3(1.0, 0.08, 0.04), vec3(1.0, 0.55, 0.35), rim * side);
-        gl_FragColor = vec4(col * k, 1.0);
+        float a = atan(p.x, p.y);
+        // aro dentado (24 dentes) e o aro de latão
+        float teeth = step(0.5, fract(a / 6.2831853 * 24.0)) * band(r, 0.6, 0.66);
+        float rim = band(r, 0.54, 0.6) + teeth;
+        // mostrador fosco e as 12 marcas
+        float face = 1.0 - smoothstep(0.53, 0.54, r);
+        float ticks = band(r, 0.42, 0.5) * step(0.82, cos(a * 12.0));
+        // ponteiros: horas e minutos andam com o tempo do jogo
+        float hands = max(hand(p, uTime * 0.05, 0.28, 0.03), hand(p, uTime * 0.6, 0.42, 0.02));
+        float hub = 1.0 - smoothstep(0.035, 0.045, r);
+        float halo = exp(-max(r - 0.66, 0.0) * 7.0) * step(0.66, r) * 0.22;
+        vec3 brass = vec3(1.0, 0.62, 0.22);
+        vec3 col = brass * (rim * 0.9 + ticks * 0.7 + hub) + vec3(0.36, 0.2, 0.1) * face * 0.35 + vec3(1.0, 0.8, 0.5) * hands * 0.85 + vec3(1.0, 0.45, 0.15) * halo;
+        col *= 0.94 + 0.06 * sin(uTime * 0.7);
+        gl_FragColor = vec4(col, 1.0);
       }`,
   });
   const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
@@ -83,11 +101,11 @@ function starField(count: number, span: number, z0: number, z1: number, rng: () 
     pos[i * 3] = rng() * span;
     pos[i * 3 + 1] = -40 + rng() * 100;
     pos[i * 3 + 2] = z0 + (z1 - z0) * rng();
-    const warm = rng() < 0.12;
-    const b = 0.35 + rng() * 0.65;
+    const warm = rng() < 0.55;
+    const b = 0.25 + rng() * 0.5;
     col[i * 3] = b;
-    col[i * 3 + 1] = warm ? b * 0.55 : b * 0.9;
-    col[i * 3 + 2] = warm ? b * 0.5 : b;
+    col[i * 3 + 1] = warm ? b * 0.62 : b * 0.85;
+    col[i * 3 + 2] = warm ? b * 0.38 : b * 0.7;
   }
   const phase = new Float32Array(count);
   const size = new Float32Array(count);
@@ -209,16 +227,18 @@ export class Environment {
 
     const root = new THREE.Group();
     scene.add(root);
-    const metal = new THREE.MeshStandardMaterial({ color: 0x101115, metalness: 0.25, roughness: 0.85, envMapIntensity: 0.3 });
+    // Chapa de ferro e cobre (o latão nas nervuras vem pelo ambiente).
+    const metal = new THREE.MeshStandardMaterial({ color: 0x2c1a11, metalness: 0.55, roughness: 0.6, envMapIntensity: 0.45 });
     // Fundo: silhuetas translúcidas sem luz — não se confundem com os obstáculos
     // (que são opacos e têm borda vermelha).
-    const farMetal = new THREE.MeshBasicMaterial({ color: 0x0a0c14, transparent: true, opacity: 0.45, depthWrite: false });
+    const farMetal = new THREE.MeshBasicMaterial({ color: 0x1a0e08, transparent: true, opacity: 0.5, depthWrite: false });
     // Linha do trilho acesa mas abaixo do limiar do bloom: ela atravessa a tela
     // toda e o brilho dela virava uma névoa vermelha no fundo.
     const red = new THREE.MeshBasicMaterial({ color: hdr(1.25, 0.02, 0.01), fog: false });
-    const redDim = new THREE.MeshBasicMaterial({ color: hdr(0.45, 0.02, 0.01) });
+    // Lanternas âmbar das chaminés ao fundo.
+    const redDim = new THREE.MeshBasicMaterial({ color: hdr(0.6, 0.32, 0.08) });
 
-    this.layers.push(new Tiled(root, starField(quality === 'high' ? 700 : 380, 140, -90, -130, rng), 140));
+    this.layers.push(new Tiled(root, starField(quality === 'high' ? 360 : 200, 140, -90, -130, rng), 140));
     this.layers.push(new Tiled(root, stationLayer(90, rng, farMetal, redDim), 90));
     this.layers.push(new Tiled(root, railLayer(24, TUNING.floor, false, metal, red), 24));
     this.layers.push(new Tiled(root, railLayer(24, TUNING.ceiling, true, metal, red), 24));
