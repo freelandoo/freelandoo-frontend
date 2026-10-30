@@ -139,7 +139,8 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   const governor = new ResolutionGovernor(engine, profile, Math.min(window.devicePixelRatio || 1, touch ? 2 : 1.5))
 
   const scene = new Scene(engine)
-  const haze = new Color3(1, 0.88, 0.95)
+  // mm3d-55: horizonte dourado (o mesmo do céu da prova).
+  const haze = new Color3(0.99, 0.86, 0.64)
   scene.clearColor = new Color4(haze.r, haze.g, haze.b, 1)
   scene.ambientColor = new Color3(0.35, 0.35, 0.35)
   scene.fogMode = Scene.FOGMODE_LINEAR

@@ -9,6 +9,14 @@
 // de boia nos discos, contorno amarelo nas vigas, colunas de bala listradas,
 // bolas de praia, arco de balões na largada e na chegada, mar turquesa com
 // reflexo e nuvens fofas.
+//
+// mm3d-55 — STEAMPUNK, sem perder o vivo nem o redondo: as cores da regra
+// (GINCANA_COLORS, índices que a sim e o back usam) viram, SÓ AQUI, laca e
+// metal — cobre, latão, vermelho-laca, pátina, ameixa, oliva, azul-aço e
+// marfim. Colunas de ferro com anéis de latão, hastes de ferro, pistões de
+// latão, pórticos de ferro com engrenagem na largada e na chegada, faróis de
+// tijolo e latão no lugar das torres de doce, céu dourado e dirigíveis. O mar
+// continua turquesa (e turquesa nunca no tampo).
 
 import type { Scene } from "@babylonjs/core/scene"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
@@ -42,9 +50,22 @@ import {
   type Pad,
 } from "../sim/course"
 import { SoftGeo, at, hex, mix, stripesY, type RGB } from "./shapes"
+import { AirshipFleet, SP, SteamStage, fleetRing, gearArch, place, tierOf } from "../../engine/steampunk/scenery"
 
-const C = GINCANA_COLORS.map(hex)
-const WHITE: RGB = [1, 1, 1]
+/** A paleta da regra em laca e metal (mesmos índices de GINCANA_COLORS). */
+const STEAM_COLORS: RGB[] = [
+  [0.86, 0.42, 0.18], // laranja → cobre
+  [0.95, 0.72, 0.2], // amarelo → latão
+  [0.82, 0.16, 0.22], // rosa → vermelho-laca
+  [0.3, 0.62, 0.52], // turquesa → pátina
+  [0.46, 0.2, 0.42], // roxo → ameixa
+  [0.52, 0.62, 0.22], // verde → oliva
+  [0.22, 0.38, 0.62], // azul → azul-aço
+  [0.96, 0.9, 0.78], // branco → marfim
+]
+const C = GINCANA_COLORS.map((h, i) => STEAM_COLORS[i] ?? hex(h))
+const WHITE: RGB = STEAM_COLORS[7]
+const IRON: RGB = [0.2, 0.2, 0.22]
 const darker = (c: RGB, k = 0.72): RGB => [c[0] * k, c[1] * k, c[2] * k]
 const YELLOW = C[1]
 const ORANGE = C[0]
@@ -69,6 +90,8 @@ export class CourseView {
   private readonly gate: Mesh
   private readonly logos: LogoView
   private readonly clouds: Mesh
+  private readonly stage: SteamStage
+  private readonly fleet: AirshipFleet | null
   private readonly balls: number[] = []
   private readonly q = new Quaternion()
   private readonly up = new Vector3(0, -1, 0)
@@ -88,8 +111,8 @@ export class CourseView {
 
     // ── céu (gradiente) e nuvens ──
     const skyG = new SoftGeo()
-    const top = hex("#5FD3FF")
-    const horizon = hex("#FFD9F2")
+    const top: RGB = [0.4, 0.58, 0.78]
+    const horizon: RGB = [0.99, 0.86, 0.64]
     skyG.sphere(1400, at(0, 0, 130), (_x, y) => mix(horizon, top, Math.max(0, Math.min(1, (y + 40) / 520))), 24)
     const sky = skyG.build("gincana-sky", scene, this.unlit("gincana-sky-mat"), true)
     sky.material!.backFaceCulling = false
@@ -167,14 +190,27 @@ export class CourseView {
     for (const z of rows) {
       const py = PENDULUMS.find((p) => p.z === z)!.py
       for (const x of [-10.5, 10.5]) {
-        st.cylinder(0.9, py + 1.5, at(x, (py + 1.5) / 2 - 1, z), stripesY(PURPLE, YELLOW, 1.1, 0), 16)
+        st.cylinder(0.9, py + 1.5, at(x, (py + 1.5) / 2 - 1, z), stripesY(IRON, YELLOW, 1.1, 0), 16)
         st.sphere(1.3, at(x, py + 0.6, z), YELLOW, 12)
       }
-      st.capsule(0.42, 22, at(0, py + 0.35, z, 0, 0, Math.PI / 2), PURPLE, 12)
+      st.capsule(0.42, 22, at(0, py + 0.35, z, 0, 0, Math.PI / 2), IRON, 12)
+      for (let k = -4; k <= 4; k++) st.torus(1.0, 0.16, at(k * 2.2, py + 0.35, z, 0, 0, Math.PI / 2), YELLOW, 16)
     }
     // arcos de balões: largada (ciano/rosa) e chegada (amarelo/laranja)
-    this.balloonArch(st, 8.4, DECK, 7.6, [TEAL, PINK, WHITE])
-    this.balloonArch(st, FINISH_Z, FINISH_Y, 7.6, [YELLOW, ORANGE, PINK, WHITE])
+    this.stage = new SteamStage(scene, tierOf(low))
+    gearArch(this.stage.ctx, 0, DECK, 8.4, 0, 15.2, 7.4, 1.15)
+    gearArch(this.stage.ctx, 0, FINISH_Y, FINISH_Z, 0, 15.2, 7.4, 1.15)
+    // Rebites de latão na borda de cada disco (a borda inflável vira um aro rebitado).
+    for (const p of PADS) {
+      if (p.k !== 0) continue
+      const n = Math.max(10, Math.round(p.r * 5))
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * Math.PI * 2
+        this.stage.ctx.props.with("flat", () =>
+          this.stage.ctx.props.sphere(0.18, [1, 0.6, 1], place(p.x + Math.cos(a) * (p.r + 0.06), p.y + 0.18, p.z + Math.sin(a) * (p.r + 0.06)), SP.brassDark, 4),
+        )
+      }
+    }
     // faixa xadrez da chegada
     for (let i = 0; i < 14; i++) {
       for (let j = 0; j < 2; j++) {
@@ -190,19 +226,33 @@ export class CourseView {
       if (i % 3 === 0) st.torus(3.2, 1.1, at(x, 0.15, z), stripesY(col, WHITE, 0.6, 1.1), 24)
       else st.sphere(1.6, at(x, 0.4, z), stripesY(col, WHITE, 0.5, 1.6), 10)
     }
-    // torres de doce ao longe (silhueta divertida no horizonte)
-    for (let i = 0; i < 10; i++) {
-      const side = i % 2 ? 1 : -1
-      const z = 20 + i * 28
-      const x = side * (48 + ((i * 13) % 22))
-      const h = 14 + ((i * 11) % 12)
-      const col = [PINK, TEAL, PURPLE, ORANGE, LIME][i % 5]
-      st.cylinder(6, h, at(x, h / 2 - 1, z), stripesY(col, WHITE, 2.2, 0.4), 18)
-      st.sphere(7.4, at(x, h - 1, z), col, 14, 1, 1.3, 1)
-      st.torus(6.8, 1.2, at(x, h * 0.55, z), YELLOW, 24)
+    // faróis de tijolo e latão ao longe (a silhueta do horizonte), com a lanterna acesa
+    {
+      const { props, glow } = this.stage.ctx
+      for (let i = 0; i < 10; i++) {
+        const side = i % 2 ? 1 : -1
+        const z = 20 + i * 28
+        const x = side * (48 + ((i * 13) % 22))
+        const h = 14 + ((i * 11) % 12)
+        const band = [PINK, ORANGE, PURPLE, BLUE, LIME][i % 5]
+        props.cylinder(9, 1.6, place(x, 0.2, z), SP.stoneDark, 12)
+        props.cone(4.6, 6.4, h, place(x, h / 2, z), SP.brick, 12)
+        for (const k of [0.3, 0.62]) props.cylinder(5.9 - k * 1.6, 0.9, place(x, h * k, z), band, 12)
+        props.cylinder(6, 0.5, place(x, h + 0.25, z), SP.iron, 12)
+        glow.cylinder(3.6, 2.6, place(x, h + 1.8, z), SP.lampGlass, 12)
+        for (let k = 0; k < 6; k++) {
+          const a = (k / 6) * Math.PI * 2
+          props.box(0.2, 2.6, 0.2, place(x + Math.cos(a) * 1.85, h + 1.8, z + Math.sin(a) * 1.85), SP.iron)
+        }
+        props.cone(0.3, 4.6, 2.2, place(x, h + 4.2, z), SP.brass, 12)
+        props.with("flat", () => props.sphere(0.8, [1, 1, 1], place(x, h + 5.5, z), SP.brass, 6))
+        this.stage.ctx.gears.push({ m: place(x, h + 0.7, z), r: 3.1, thick: 0.25, speed: side * 0.3 })
+      }
     }
     const stat = st.build("gincana-course", scene, toy, true)
     this.meshes.push(stat)
+    this.stage.build("gincana-steam")
+    this.fleet = low ? null : new AirshipFleet(scene, this.stage.mats, fleetRing(6, 150, 240, 40, 80, 34, 47), 0, 130)
 
     // portão da largada: cai no "vai"
     const gateG = new SoftGeo()
@@ -227,7 +277,8 @@ export class CourseView {
     // ── pêndulos: haste e bola de praia, pendurados no pivô ──
     for (const p of PENDULUMS) {
       const pg = new SoftGeo()
-      pg.cylinder(0.16, p.len, at(0, -p.len / 2, 0), [0.85, 0.85, 0.9], 8)
+      pg.cylinder(0.16, p.len, at(0, -p.len / 2, 0), IRON, 8)
+      pg.cylinder(0.5, 0.3, at(0, -p.len + p.R * 1.02, 0), YELLOW, 12)
       const ballPaint = (x: number, y: number, z: number): RGB => {
         if (Math.abs(y) < p.R * 0.18) return WHITE
         return y > 0 ? YELLOW : Math.atan2(x, z) > 0 ? PURPLE : PINK
@@ -250,7 +301,7 @@ export class CourseView {
       const glove = gg.build("gincana-glove", scene, toy, false)
       glove.position.set(gv.x0, gv.y, gv.z)
       const rg = new SoftGeo()
-      rg.capsule(0.28, 1, at(0, 0, 0, 0, 0, Math.PI / 2), [0.78, 0.8, 0.86], 10)
+      rg.capsule(0.28, 1, at(0, 0, 0, 0, 0, Math.PI / 2), YELLOW, 10)
       const rod = rg.build("gincana-glove-rod", scene, toy, false)
       rod.position.set(gv.x0, gv.y, gv.z)
       this.gloveMeshes.push({ glove, rod })
@@ -356,19 +407,7 @@ export class CourseView {
   private leg(g: SoftGeo, x: number, z: number, yTop: number) {
     const h = yTop + 1.2
     if (h <= 0.2) return
-    g.cylinder(0.7, h, at(x, yTop - h / 2, z), stripesY(BLUE, WHITE, 0.9, 0), 14)
-  }
-
-  /** Arco de balões em z, de um lado ao outro (raio r), sobre o tampo y. */
-  private balloonArch(g: SoftGeo, z: number, y: number, r: number, cols: RGB[]) {
-    const n = Math.round(r * 3.4)
-    for (let i = 0; i <= n; i++) {
-      const a = (i / n) * Math.PI
-      const x = Math.cos(a) * r
-      const yy = y + Math.sin(a) * r * 1.05
-      g.sphere(1.05, at(x, yy, z - 0.25), cols[i % cols.length], 10, 1, 1.15, 1)
-      g.sphere(1.05, at(x, yy + 0.1, z + 0.35), cols[(i + 1) % cols.length], 10, 1, 1.15, 1)
-    }
+    g.cylinder(0.7, h, at(x, yTop - h / 2, z), stripesY(IRON, YELLOW, 0.9, 0), 14)
   }
 
   /** Um quadro: tudo o que se mexe no tempo da prova `t`; `tiles` = quando cada ladrilho foi pisado. */
@@ -443,6 +482,8 @@ export class CourseView {
 
   dispose() {
     this.logos.dispose()
+    this.fleet?.dispose()
+    this.stage.dispose()
     for (const m of this.meshes) m.dispose(false, true)
     for (const n of this.sweepNodes) n.dispose()
     for (const m of this.swings) m.dispose()
