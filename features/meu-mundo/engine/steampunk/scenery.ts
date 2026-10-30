@@ -177,7 +177,7 @@ export class AirshipFleet {
   private readonly meshes: Mesh[] = []
   private readonly obs: Observer<Scene>
 
-  constructor(scene: Scene, mats: SteamMaterials, ships: FleetShip[], cx = 0, cz = 0, speed = 0.012) {
+  constructor(scene: Scene, mats: Pick<SteamMaterials, "trim" | "glow">, ships: FleetShip[], cx = 0, cz = 0, speed = 0.012) {
     this.node = new TransformNode("sp-fleet", scene)
     this.node.position.set(cx, 0, cz)
     const body = new SteamGeo()

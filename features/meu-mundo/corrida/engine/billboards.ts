@@ -7,6 +7,10 @@
 // "MEU MUNDO" em neon e um painel de setas de velocidade. Cada arte é uma
 // malha-fonte; os outdoors são instâncias (uma chamada por arte), os postes e
 // as molduras instâncias finas.
+//
+// mm3d-55 — STEAMPUNK: moldura de latão aceso no lugar do neon rosa; as artes
+// viram madeira escura com letras de lampião e moldura rebitada (a da marca
+// fica no amarelo da Freelandoo).
 
 import type { Scene } from "@babylonjs/core/scene"
 import "@babylonjs/core/Meshes/instancedMesh"
@@ -47,34 +51,42 @@ export const ARTS: BillboardArt[] = [
     g.textBaseline = "middle"
     g.fillText("FREELANDOO", h - 6, h / 2 + 4, w - h - 10)
   },
-  // 2) Meu Mundo em neon
+  // 2) Meu Mundo em letras de lampião (mm3d-55: madeira escura e moldura de latão rebitada)
   (g, w, h) => {
     const bg = g.createLinearGradient(0, 0, w, h)
-    bg.addColorStop(0, "#14052a")
-    bg.addColorStop(1, "#2a0838")
+    bg.addColorStop(0, "#2a1a0e")
+    bg.addColorStop(1, "#3b2412")
     g.fillStyle = bg
     g.fillRect(0, 0, w, h)
     g.textAlign = "center"
     g.textBaseline = "middle"
     g.font = "900 120px Arial Black, Arial, sans-serif"
-    g.shadowColor = "#ff3fc0"
+    g.shadowColor = "#ffb347"
     g.shadowBlur = 28
-    g.fillStyle = "#ffd0f2"
+    g.fillStyle = "#ffe8c0"
     g.fillText("MEU MUNDO", w / 2, h / 2 + 6, w - 60)
     g.shadowBlur = 0
-    g.strokeStyle = "#54e6ff"
-    g.lineWidth = 6
+    g.strokeStyle = "#c69a37"
+    g.lineWidth = 10
     g.strokeRect(20, 20, w - 40, h - 40)
+    g.lineWidth = 3
+    g.strokeRect(40, 40, w - 80, h - 80)
+    g.fillStyle = "#e0b552"
+    for (let k = 0; k < 12; k++) for (const y of [20, h - 20]) {
+      g.beginPath()
+      g.arc(20 + (k * (w - 40)) / 11, y, 7, 0, Math.PI * 2)
+      g.fill()
+    }
   },
   // 3) setas de velocidade
   (g, w, h) => {
-    g.fillStyle = "#04121c"
+    g.fillStyle = "#1c120a"
     g.fillRect(0, 0, w, h)
-    g.shadowColor = "#54e6ff"
+    g.shadowColor = "#ffb347"
     g.shadowBlur = 22
     for (let k = 0; k < 5; k++) {
       const x = 90 + k * 175
-      g.fillStyle = k % 2 ? "#54e6ff" : "#ffffff"
+      g.fillStyle = k % 2 ? "#ffb347" : "#ffe8c0"
       g.beginPath()
       g.moveTo(x, 50)
       g.lineTo(x + 95, h / 2)
@@ -132,13 +144,13 @@ export function buildBillboards(scene: Scene, spots: BillboardSpot[]): Billboard
   // moldura de neon (atrás do painel) e postes: instâncias finas
   const frameMat = new StandardMaterial("corrida-outdoor-frame", scene)
   frameMat.diffuseColor = new Color3(0, 0, 0)
-  frameMat.emissiveColor = new Color3(1, 0.25, 0.75)
+  frameMat.emissiveColor = new Color3(0.85, 0.55, 0.2)
   frameMat.disableLighting = true
   const frame = CreatePlane("corrida-outdoor-frame", { width: PANEL_W + 0.7, height: PANEL_H + 0.7 }, scene)
   frame.material = frameMat
   frame.isPickable = false
   const postMat = new StandardMaterial("corrida-outdoor-post", scene)
-  postMat.diffuseColor = new Color3(0.12, 0.12, 0.17)
+  postMat.diffuseColor = new Color3(0.16, 0.13, 0.11)
   postMat.specularColor = new Color3(0.05, 0.05, 0.05)
   const post = CreateBox("corrida-outdoor-post", { size: 1 }, scene)
   post.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))

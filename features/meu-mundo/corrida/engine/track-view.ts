@@ -13,6 +13,13 @@
 // brilho, sem luz), faixa rosa na parede de dentro, prédios com janelas e
 // coroas de neon e o chão em grade (plugins de night.ts), céu roxo no
 // horizonte. A neblina é da cor do horizonte, então o longe some no céu.
+//
+// mm3d-55 — STEAMPUNK À NOITE: chapa de ferro escura com faixas de marfim,
+// zebra vermelho-laca, rampas listradas latão/ferro, guarda-corpo de ferro
+// com o friso âmbar aceso (no lugar do neon ciano/rosa), pilares e penhascos
+// de tijolo, prédios de tijolo com janelas de lampião e chaminés, céu de
+// cobre e fumaça no horizonte, anéis de latão aceso, pórtico de largada de
+// latão e dirigíveis com lanternas.
 
 import type { Scene } from "@babylonjs/core/scene"
 import "@babylonjs/core/Meshes/instancedMesh"
@@ -33,31 +40,34 @@ import { STEP, type Track } from "../sim/track"
 import { GridPlugin, WindowsPlugin } from "./night"
 import { buildLogos } from "./logos"
 import { buildBillboards, type BillboardSpot } from "./billboards"
+import { AirshipFleet, fleetRing } from "../../engine/steampunk/scenery"
+import { createTrimMaterials } from "../../engine/steampunk/materials"
 
 /** Altura do chão (a baía) lá embaixo. */
 export const GROUND_Y = -42
 
 type RGB = [number, number, number]
 /** Céu: horizonte (= neblina), meio e alto. */
-export const NIGHT_HORIZON: RGB = [0.2, 0.07, 0.28]
-const NIGHT_MID: RGB = [0.07, 0.04, 0.17]
-const NIGHT_TOP: RGB = [0.01, 0.01, 0.05]
-const ROAD_A: RGB = [0.075, 0.08, 0.11]
-const ROAD_B: RGB = [0.09, 0.095, 0.13]
-const LINE: RGB = [0.9, 0.92, 0.95]
+export const NIGHT_HORIZON: RGB = [0.27, 0.13, 0.08]
+const NIGHT_MID: RGB = [0.09, 0.05, 0.06]
+const NIGHT_TOP: RGB = [0.015, 0.015, 0.035]
+const ROAD_A: RGB = [0.12, 0.105, 0.095]
+const ROAD_B: RGB = [0.145, 0.125, 0.105]
+const LINE: RGB = [0.9, 0.84, 0.7]
 /** Linha da faixa acesa (no brilho). */
-const LANE: RGB = [0.45, 0.6, 0.85]
-const ZEBRA_R: RGB = [0.9, 0.16, 0.55]
-const WALL_IN: RGB = [0.16, 0.17, 0.23]
-const WALL_OUT: RGB = [0.09, 0.09, 0.13]
-const SLAB: RGB = [0.07, 0.07, 0.1]
-const HAZARD_Y: RGB = [0.98, 0.74, 0.1]
-const HAZARD_K: RGB = [0.13, 0.13, 0.15]
-const CONCRETE: RGB = [0.13, 0.13, 0.18]
-const CONCRETE_D: RGB = [0.1, 0.1, 0.14]
-const NEON: RGB = [0.35, 0.9, 1.0]
-const NEON_PINK: RGB = [1.0, 0.22, 0.72]
-const NEON_HOT: RGB = [1.0, 0.55, 0.15]
+const LANE: RGB = [0.95, 0.62, 0.24]
+const ZEBRA_R: RGB = [0.66, 0.12, 0.12]
+const WALL_IN: RGB = [0.22, 0.18, 0.15]
+const WALL_OUT: RGB = [0.13, 0.11, 0.1]
+const SLAB: RGB = [0.09, 0.075, 0.065]
+const HAZARD_Y: RGB = [0.8, 0.6, 0.2]
+const HAZARD_K: RGB = [0.1, 0.09, 0.08]
+const CONCRETE: RGB = [0.3, 0.16, 0.11]
+const CONCRETE_D: RGB = [0.22, 0.13, 0.09]
+/** Antes neon; agora o latão aceso e o cobre aceso (o lampião). */
+const NEON: RGB = [1.0, 0.68, 0.28]
+const NEON_PINK: RGB = [0.92, 0.4, 0.16]
+const NEON_HOT: RGB = [1.0, 0.85, 0.42]
 
 /** Monta uma malha de quads com cor chapada por quad (vértices próprios). */
 class Quads {
@@ -125,7 +135,7 @@ function vertexMat(name: string, scene: Scene, glow: boolean): StandardMaterial 
 function padTexture(scene: Scene): DynamicTexture {
   const tex = new DynamicTexture("corrida-pad", { width: 128, height: 256 }, scene, true)
   const g = tex.getContext() as CanvasRenderingContext2D
-  g.fillStyle = "#06324a"
+  g.fillStyle = "#2a1a0e"
   g.fillRect(0, 0, 128, 256)
   for (let k = 0; k < 2; k++) {
     const y0 = 40 + k * 128
@@ -137,7 +147,7 @@ function padTexture(scene: Scene): DynamicTexture {
     g.lineTo(64, y0 + 38)
     g.lineTo(10, y0 + 90)
     g.closePath()
-    g.fillStyle = k === 0 ? "#5ff0ff" : "#ffe36b"
+    g.fillStyle = k === 0 ? "#ffb347" : "#ffe08a"
     g.fill()
   }
   tex.update(false)
@@ -151,7 +161,7 @@ function checkerTexture(scene: Scene): DynamicTexture {
   const tex = new DynamicTexture("corrida-checker", { width: 256, height: 64 }, scene, true)
   const g = tex.getContext() as CanvasRenderingContext2D
   for (let x = 0; x < 16; x++) for (let y = 0; y < 4; y++) {
-    g.fillStyle = (x + y) % 2 ? "#111318" : "#f4f6f9"
+    g.fillStyle = (x + y) % 2 ? "#1a1410" : "#efe4cc"
     g.fillRect(x * 16, y * 16, 16, 16)
   }
   tex.update(false)
@@ -369,7 +379,7 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   const gateMat = vertexMat("corrida-gate", scene, false)
   const neonMat = new StandardMaterial("corrida-neon", scene)
   neonMat.diffuseColor = new Color3(0, 0, 0)
-  neonMat.emissiveColor = new Color3(0.4, 0.92, 1)
+  neonMat.emissiveColor = new Color3(1, 0.7, 0.3)
   neonMat.disableLighting = true
   const neonPinkMat = new StandardMaterial("corrida-neon-pink", scene)
   neonPinkMat.diffuseColor = new Color3(0, 0, 0)
@@ -383,6 +393,11 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   bannerMat.disableLighting = true
   bannerMat.backFaceCulling = false
   disposables.push(gateMat, neonMat, checker, bannerMat)
+  const brassMat = new StandardMaterial("corrida-brass", scene)
+  brassMat.diffuseColor = new Color3(0.7, 0.52, 0.2)
+  brassMat.specularColor = new Color3(0.5, 0.42, 0.25)
+  brassMat.emissiveColor = new Color3(0.08, 0.05, 0.02)
+  disposables.push(brassMat)
   t.gates.forEach((s, gi) => {
     const i = Math.round(s / STEP) % t.n
     const f = frameAt(t, i)
@@ -393,7 +408,7 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
         const post = CreateBox(`corrida-post-${side}`, { width: 1, depth: 1, height: 10 }, scene)
         post.position.set(p.x, p.y + 5 - 1.5, p.z)
         post.rotation.y = yaw
-        post.material = pillarMat
+        post.material = brassMat
         post.isPickable = false
         disposables.push(post)
       }
@@ -452,13 +467,16 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   }
   const tm: number[] = []
   const tc: number[] = []
+  // Tijolo e cantaria escuros de noite.
   const PALETTE: RGB[] = [
-    [0.1, 0.11, 0.16],
-    [0.13, 0.12, 0.2],
-    [0.08, 0.09, 0.13],
-    [0.15, 0.14, 0.22],
-    [0.11, 0.13, 0.19],
+    [0.17, 0.1, 0.08],
+    [0.2, 0.13, 0.1],
+    [0.12, 0.1, 0.09],
+    [0.22, 0.17, 0.13],
+    [0.15, 0.12, 0.11],
   ]
+  // Chaminés de tijolo em cima de um em cada três prédios (uma malha só).
+  const chim: number[] = []
   const want = low ? 140 : 320
   for (let k = 0, tries = 0; k < want && tries < want * 6; tries++) {
     const x = cx + (rand() - 0.5) * span * 2.2
@@ -469,6 +487,11 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
     const h = (inside ? 30 : 50) + rand() * (inside ? 70 : 150)
     const m = Matrix.Compose(new Vector3(w, h, w * (0.7 + rand() * 0.6)), Quaternion.RotationYawPitchRoll(rand() * Math.PI, 0, 0), new Vector3(x, GROUND_Y, z))
     tm.push(...m.asArray())
+    if (rand() < 0.34) {
+      const cr = 1.2 + rand() * 1.6
+      const ch = 8 + rand() * 16
+      for (const off of rand() < 0.4 ? [-w * 0.22, w * 0.22] : [0]) chim.push(...Matrix.Compose(new Vector3(cr, ch, cr), Quaternion.Identity(), new Vector3(x + off, GROUND_Y + h, z)).asArray())
+    }
     const c = PALETTE[Math.floor(rand() * PALETTE.length)]
     tc.push(c[0], c[1], c[2], 1)
     k++
@@ -477,7 +500,7 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   const mtn = CreateCylinder("corrida-mtn", { diameterTop: 0, diameterBottom: 1, height: 1, tessellation: 4 }, scene)
   mtn.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
   const mtnMat = new StandardMaterial("corrida-mtn", scene)
-  mtnMat.diffuseColor = new Color3(0.06, 0.04, 0.11)
+  mtnMat.diffuseColor = new Color3(0.08, 0.05, 0.04)
   mtnMat.specularColor = new Color3(0, 0, 0)
   mtn.material = mtnMat
   mtn.isPickable = false
@@ -493,6 +516,23 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   mtn.thinInstanceSetBuffer("matrix", new Float32Array(mm), 16, true)
   tower.thinInstanceSetBuffer("matrix", new Float32Array(tm), 16, true)
   tower.thinInstanceSetBuffer("color", new Float32Array(tc), 4, true)
+  if (chim.length) {
+    const stack = CreateCylinder("corrida-chimney", { diameterTop: 0.8, diameterBottom: 1, height: 1, tessellation: 8 }, scene)
+    stack.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
+    const stackMat = new StandardMaterial("corrida-chimney", scene)
+    stackMat.diffuseColor = new Color3(0.26, 0.14, 0.1)
+    stackMat.specularColor = new Color3(0, 0, 0)
+    // a boca da chaminé brilha de leve (brasas lá dentro)
+    stackMat.emissiveColor = new Color3(0.05, 0.02, 0.01)
+    stack.material = stackMat
+    stack.isPickable = false
+    stack.thinInstanceSetBuffer("matrix", new Float32Array(chim), 16, true)
+    disposables.push(stack, stackMat)
+  }
+  // Dirigíveis com lanternas dando a volta lá no alto.
+  const steam = createTrimMaterials(scene, low ? "low" : "mid")
+  disposables.push(steam)
+  if (!low) disposables.push(new AirshipFleet(scene, steam, fleetRing(6, span * 0.45, span * 0.8, 40, 90, 46, 39), cx, cz, 0.008))
 
   // céu de noite: esfera com degradê (sem neblina) — roxo no horizonte, quase preto no alto
   const sky = CreateSphere("corrida-sky", { diameter: span * 8, segments: 24, sideOrientation: Mesh.BACKSIDE }, scene)

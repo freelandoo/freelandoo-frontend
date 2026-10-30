@@ -10,6 +10,10 @@
 //  - `GridPlugin`, no chão lá embaixo: linhas de neon a cada 20 m, mais
 //    largas e mais fracas ao longe (sem cintilar), e a neblina por cima.
 // Tudo entra antes da neblina, então o longe some no roxo como o resto.
+//
+// mm3d-55 — STEAMPUNK: janelas em âmbar, mel e cobre (lampião, não neon), a
+// coroa vira um friso de latão aceso, e a grade do chão é a de uma fábrica à
+// noite (âmbar fraco).
 
 import type { Material } from "@babylonjs/core/Materials/material"
 import type { MaterialDefines } from "@babylonjs/core/Materials/materialDefines"
@@ -72,12 +76,12 @@ export class WindowsPlugin extends MaterialPluginBase {
             float mmWin = step(0.2, mmF.x) * step(mmF.x, 0.8) * step(0.28, mmF.y) * step(mmF.y, 0.74);
             float mmH = mmNightHash(mmId + vec2(mmWinS.x * 97.0, (mmWinN.x + mmWinN.z * 3.0) * 13.0));
             float mmLit = step(0.56, mmH) * mmWin * step(1.0, mmId.y);
-            vec3 mmCol = mmH > 0.93 ? vec3(0.35, 0.85, 1.0) : (mmH > 0.86 ? vec3(1.0, 0.3, 0.8) : vec3(1.0, 0.74, 0.42));
+            vec3 mmCol = mmH > 0.93 ? vec3(1.0, 0.9, 0.6) : (mmH > 0.86 ? vec3(0.95, 0.5, 0.22) : vec3(1.0, 0.7, 0.36));
             color.rgb += mmCol * mmLit * mmWinBright * (0.55 + 0.45 * fract(mmH * 7.0));
             // coroa de neon: um em cada quatro prédios
             float mmTop = step(mmWinS.y - 1.2, mmWinP.y) * step(0.75, mmWinS.x);
-            vec3 mmNeon = fract(mmWinS.x * 13.0) > 0.5 ? vec3(1.0, 0.25, 0.75) : vec3(0.3, 0.9, 1.0);
-            color.rgb += mmNeon * mmTop * 1.3;
+            vec3 mmNeon = fract(mmWinS.x * 13.0) > 0.5 ? vec3(0.95, 0.66, 0.26) : vec3(0.85, 0.42, 0.18);
+            color.rgb += mmNeon * mmTop * 0.9;
           }`,
       }
     }
@@ -86,7 +90,7 @@ export class WindowsPlugin extends MaterialPluginBase {
 }
 
 export class GridPlugin extends MaterialPluginBase {
-  color = new Color3(0.85, 0.2, 0.95)
+  color = new Color3(0.62, 0.36, 0.12)
   /** Distância entre as linhas (m). */
   cell = 20
 
