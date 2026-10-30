@@ -349,7 +349,7 @@ export function buildWorld(
   steamPlaza(ctx, nb.spawn)
   steamBoundary(ctx)
   steamOutskirts(ctx)
-  steamSkyline(ctx)
+  steamSkyline(ctx, d.hedge)
 
   // ── Lotes ─────────────────────────────────────────────────────────────────
   const catalog = nb.houseCatalog ?? legacyCatalog()

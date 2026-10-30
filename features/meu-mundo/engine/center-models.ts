@@ -3,10 +3,14 @@
 // Modelos dos estabelecimentos do Centro (mm3d-17/18): um GLB por local, do
 // pipeline MEU MUNDO 3D/pipeline/centro (cor por vértice, sem textura).
 //
-// Cada arquivo é baixado UMA vez por cena e vira no máximo DUAS malhas: o
-// corpo (material igual ao "mm-world": difuso branco × cor do vértice) e o
-// BRILHO (peças marcadas "glow" no Blender: jetpack, emblemas), com emissivo
-// leve + fresnel — o brilho barato, sem luz extra nem mapa de ambiente.
+// Cada arquivo é baixado UMA vez por cena e vira no máximo QUATRO malhas, uma
+// por material (mm3d-53, steampunk):
+//   body  acabamento: difuso branco × cor do vértice × a textura de acabamento
+//         do bairro (se o modelo tem UV); sem UV (estátuas), o material liso
+//   wall  alvenaria: a textura de cantaria (UV planar em metros)
+//   glow  emblemas (jetpack, pizza, luvas…): emissivo leve + fresnel — o
+//         brilho barato, sem luz extra nem mapa de ambiente
+//   lamp  vidro aceso e lanternas: o "glow" do bairro (âmbar, sem luz)
 // O lugar do prédio é ASSADO nos vértices (é estático): sem matriz por quadro.
 //
 // Vários jogadores ou várias salas não multiplicam nada aqui: o navegador só
@@ -17,6 +21,8 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { FresnelParameters } from "@babylonjs/core/Materials/fresnelParameters"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
+import type { Material } from "@babylonjs/core/Materials/material"
+import type { Node } from "@babylonjs/core/node"
 import type { Matrix } from "@babylonjs/core/Maths/math.vector"
 import type { Scene } from "@babylonjs/core/scene"
 import { ensureLoaders } from "./avatars"
@@ -26,13 +32,36 @@ export interface LoadedPlace {
   triangles: number
 }
 
+/** Materiais steampunk do centro (o mundo cria; aqui só se usa). */
+export interface CenterSteamMats {
+  trim: Material
+  wall: Material | null
+  lamp: Material
+}
+
+type Part = "body" | "wall" | "glow" | "lamp"
+
+/** A parte vem no nome do nó (o gltfpack pode pôr a malha num filho sem nome). */
+function partOf(m: Mesh): Part {
+  for (let n: Node | null = m; n; n = n.parent) {
+    if (/_lamp/i.test(n.name)) return "lamp"
+    if (/_wall/i.test(n.name)) return "wall"
+    if (/glow/i.test(n.name)) return "glow"
+    if (/_body/i.test(n.name)) return "body"
+  }
+  return "body"
+}
+
 export class CenterModels {
   private readonly loaded = new Map<string, LoadedPlace>()
   private readonly bodyMat: StandardMaterial
   private readonly glowMat: StandardMaterial
   private disposed = false
 
-  constructor(private readonly scene: Scene) {
+  constructor(
+    private readonly scene: Scene,
+    private readonly steam: CenterSteamMats | null = null,
+  ) {
     ensureLoaders()
     this.bodyMat = new StandardMaterial("mm-center-body", scene)
     this.bodyMat.diffuseColor = new Color3(1, 1, 1)
@@ -81,9 +110,10 @@ export class CenterModels {
       c.dispose()
       throw new Error(`modelo ${id} vazio`)
     }
-    const body: Mesh[] = []
-    const glow: Mesh[] = []
+    const groups: Record<Part, Mesh[]> = { body: [], wall: [], glow: [], lamp: [] }
     for (const m of parts) {
+      // A parte sai do nome do nó PAI: decidir antes de soltar a malha dele.
+      groups[partOf(m)].push(m)
       // Assa o transform do arquivo (mão, dequantização) + o lugar no centro.
       m.computeWorldMatrix(true)
       m.bakeTransformIntoVertices(m.getWorldMatrix().multiply(placement))
@@ -92,7 +122,6 @@ export class CenterModels {
       m.rotationQuaternion = null
       m.rotation.setAll(0)
       m.scaling.setAll(1)
-      ;(/glow/i.test(m.name) ? glow : body).push(m)
     }
     for (const m of parts) {
       c.meshes.splice(c.meshes.indexOf(m), 1)
@@ -101,10 +130,15 @@ export class CenterModels {
     c.dispose() // nó raiz e materiais PBR do arquivo
     const out: Mesh[] = []
     let triangles = 0
-    for (const [group, mat, tag] of [
-      [body, this.bodyMat, "body"],
-      [glow, this.glowMat, "glow"],
-    ] as const) {
+    const textured = (g: Mesh[]) => g.length > 0 && g.every((m) => m.isVerticesDataPresent("uv"))
+    const st = this.steam
+    const plan: [Mesh[], Material, Part][] = [
+      [groups.body, st && textured(groups.body) ? st.trim : this.bodyMat, "body"],
+      [groups.wall, st?.wall && textured(groups.wall) ? st.wall : this.bodyMat, "wall"],
+      [groups.glow, this.glowMat, "glow"],
+      [groups.lamp, st ? st.lamp : this.glowMat, "lamp"],
+    ]
+    for (const [group, mat, tag] of plan) {
       if (!group.length) continue
       for (const m of group) {
         if (m.geometry) this.scene.addGeometry(m.geometry)
@@ -118,6 +152,9 @@ export class CenterModels {
       // COLOR_0 chega em RGBA (alfa 1): sem isto entraria na fila de transparência.
       merged.hasVertexAlpha = false
       merged.isPickable = false
+      // A caixa de recorte do arquivo é a quantizada: refazer com os vértices assados
+      // (sem isto a câmera descarta a malha olhando de perto — a parede "some").
+      merged.refreshBoundingInfo()
       merged.freezeWorldMatrix()
       merged.doNotSyncBoundingInfo = true
       triangles += merged.getTotalIndices() / 3

@@ -769,7 +769,14 @@ export interface CenterLayout {
   obstacles: Box2Def[]
   limit: number
   /** Modelos publicados (null = só os blocos de reserva). */
-  assets: { version: string; basePath: string; places: Partial<Record<CenterPlaceId, string>>; props?: Record<string, string> } | null
+  assets: {
+    version: string
+    basePath: string
+    places: Partial<Record<CenterPlaceId, string>>
+    props?: Record<string, string>
+    /** mm3d-53: por prédio, engrenagens que giram [x, y, z, raio, espessura, rad/s, eixo 0 x|1 y|2 z] e saídas de vapor [x, y, z], no quadro do modelo. */
+    fx?: Partial<Record<CenterPlaceId, { gears: number[][]; vents: number[][] }>>
+  } | null
 }
 
 export interface CenterPayload {

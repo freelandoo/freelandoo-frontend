@@ -197,7 +197,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   sun.intensity = 0.55
 
   const world = centerP
-    ? buildCenterWorld(scene, centerP.center, opts.centerLabels ?? { place: (p) => p.id, portal: opts.exitLabel })
+    ? buildCenterWorld(scene, centerP.center, opts.centerLabels ?? { place: (p) => p.id, portal: opts.exitLabel }, quality.tier)
     : buildWorld(
         scene,
         nb!,

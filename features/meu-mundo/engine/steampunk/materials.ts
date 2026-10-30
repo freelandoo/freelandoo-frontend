@@ -11,6 +11,8 @@
 //   soil   chão: areia amarelada com ondulações, tufos secos e cascalho.
 //   cobble caminhos dos lotes e anel da praça: paralelepípedos.
 //   glow   luminárias e janelas acesas: emissivo, sem luz (a cor é o âmbar do vértice).
+//   wall   (só no Centro, mm3d-53) alvenaria dos prédios: fiadas de cantaria
+//          com rejunte — os GLBs do centro trazem a malha "wall" com UV planar.
 //
 // As texturas são DESENHADAS uma vez num canvas (sem download, sem licença de
 // terceiro), com semente fixa: o mesmo desenho em todo aparelho. Tamanho pelo
@@ -28,7 +30,7 @@ import { rng } from "./palette"
 type Ctx2D = CanvasRenderingContext2D
 
 /** Tamanho dos ladrilhos no mundo (m) — a UV planar do geo.ts usa estes números. */
-export const TILE = { pavers: 2.4, road: 4, soil: 11, cobble: 1.6 } as const
+export const TILE = { pavers: 2.4, road: 4, soil: 11, cobble: 1.6, wall: 2.4 } as const
 
 const SIZE: Record<QualityTier, number> = { low: 256, mid: 512, high: 1024 }
 const ANISO: Record<QualityTier, number> = { low: 1, mid: 4, high: 8 }
@@ -317,6 +319,44 @@ function litMaterial(name: string, scene: Scene, tex: DynamicTexture | null) {
   return m
 }
 
+/**
+ * Cantaria (mm3d-53): seis fiadas de blocos de pedra por ladrilho (2,4 m →
+ * fiada de 40 cm), juntas desencontradas, cada bloco num tom, rejunte escuro,
+ * fio de luz na aresta de cima e sombra na de baixo (o bloco "salta").
+ */
+function paintAshlar(c: Ctx2D, S: number) {
+  const rand = rng(41)
+  c.fillStyle = g(0.3)
+  c.fillRect(0, 0, S, S)
+  const rows = 6
+  const h = S / rows
+  const joint = Math.max(2, S / 95)
+  for (let r = 0; r < rows; r++) {
+    const cols = r % 2 ? 3 : 4
+    const w = S / cols
+    const off = r % 2 ? w * 0.5 : w * 0.18
+    for (let k = -1; k < cols; k++) {
+      const x = off + k * w
+      const v = 0.74 + rand() * 0.22
+      const warm = (rand() - 0.5) * 0.04
+      const y = r * h
+      // O bloco que passa da borda é desenhado de novo do outro lado (sem costura).
+      for (const bx of [x, x - S, x + S]) {
+        if (bx + w < 0 || bx > S) continue
+        c.fillStyle = rgb(v + warm, v, v - warm)
+        c.fillRect(bx + joint / 2, y + joint / 2, w - joint, h - joint)
+        c.fillStyle = "rgba(255,250,236,0.28)"
+        c.fillRect(bx + joint / 2, y + joint / 2, w - joint, Math.max(1, h * 0.08))
+        c.fillStyle = "rgba(30,24,18,0.34)"
+        c.fillRect(bx + joint / 2, y + h - joint / 2 - Math.max(1, h * 0.12), w - joint, Math.max(1, h * 0.12))
+        c.fillRect(bx + w - joint / 2 - Math.max(1, w * 0.04), y + joint / 2, Math.max(1, w * 0.04), h - joint)
+      }
+    }
+  }
+  speckle(c, S, 2200, rand, 0.55, 1, 0.22, 0.004)
+  blotches(c, S, 18, rand, 0.05, 0.18, () => (rand() < 0.6 ? "rgba(70,60,48,1)" : "rgba(255,248,232,1)"), 0.07)
+}
+
 /** Brilho radial (branco no meio, preto na borda): poças de luz somadas à cena. */
 function paintPool(c: Ctx2D, S: number) {
   const grd = c.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2)
@@ -341,11 +381,14 @@ export interface SteamMaterials {
   pool: StandardMaterial
   /** A textura de acabamento (as casas 02–09 também usam, se o GLB tiver UV). */
   trimTexture: DynamicTexture
+  /** Cantaria das paredes dos prédios do Centro (só com `wall: true`). */
+  wall: StandardMaterial | null
   freeze: () => void
   dispose: () => void
 }
 
-export function createSteamMaterials(scene: Scene, tier: QualityTier): SteamMaterials {
+export function createSteamMaterials(scene: Scene, tier: QualityTier, opts: { wall?: boolean } = {}): SteamMaterials {
+  const texWall = opts.wall ? makeTexture("sp-tex-wall", scene, tier, paintAshlar) : null
   const texTrim = makeTexture("sp-tex-trim", scene, tier === "high" ? "mid" : tier, paintTrim)
   const texPavers = makeTexture("sp-tex-pavers", scene, tier, paintPavers)
   const texRoad = makeTexture("sp-tex-road", scene, tier, paintRoad)
@@ -379,13 +422,14 @@ export function createSteamMaterials(scene: Scene, tier: QualityTier): SteamMate
     glow,
     pool,
     trimTexture: texTrim,
+    wall: texWall ? litMaterial("sp-wall", scene, texWall) : null,
     freeze() {
       // Luzes e poças ficam livres: o dia/noite muda a intensidade delas.
-      for (const m of [out.trim, out.pavers, out.road, out.soil, out.cobble]) m.freeze()
+      for (const m of [out.trim, out.pavers, out.road, out.soil, out.cobble, out.wall]) m?.freeze()
     },
     dispose() {
-      for (const m of [out.trim, out.pavers, out.road, out.soil, out.cobble, out.glow, out.pool]) m.dispose()
-      for (const t of [texTrim, texPavers, texRoad, texSoil, texCobble, texPool]) t.dispose()
+      for (const m of [out.trim, out.pavers, out.road, out.soil, out.cobble, out.glow, out.pool, out.wall]) m?.dispose()
+      for (const t of [texTrim, texPavers, texRoad, texSoil, texCobble, texPool, texWall]) t?.dispose()
     },
   }
   return out

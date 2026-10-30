@@ -370,9 +370,9 @@ export function steamOutskirts(ctx: NbCtx) {
  * chaminés de fábrica com vapor, gasômetros e uma torre de relógio. Dão a
  * profundidade da "cidade mecânica" — a neblina come o que está longe.
  */
-export function steamSkyline(ctx: NbCtx) {
+export function steamSkyline(ctx: SteamCtx, hedge: number) {
   const { props } = ctx
-  const R0 = ctx.d.hedge + 24
+  const R0 = hedge + 24
   const rand = rng(9091)
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2 + rand() * 0.2
