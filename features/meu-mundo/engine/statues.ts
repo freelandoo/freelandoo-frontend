@@ -1,4 +1,5 @@
-// features/meu-mundo/engine/statues.ts — as estátuas dos deuses (mm3d-50).
+// features/meu-mundo/engine/statues.ts — as estátuas dos deuses (mm3d-50):
+// só Aurion (meio dos bairros) e Morkhan (praça do centro), 10 m cada.
 //
 // A planta (bairro e centro) diz onde fica cada uma (StatueDef); aqui a BASE
 // entra no buffer estático do mundo (pedestal octogonal de pedra ou púlpito) e

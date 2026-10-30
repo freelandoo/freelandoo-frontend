@@ -413,9 +413,10 @@ function plaza(ctx: Ctx, spawn: { x: number; z: number }) {
   slab(geo, -mid, 0, span, 3, 0.055, C.path)
 
   if (d.statues?.length) {
-    // mm3d-50: Aurion no meio e os outros deuses em púlpitos (bases aqui; os
-    // modelos chegam depois, por loadStatues) e as quatro pracinhas.
+    // mm3d-50: Aurion de 10 m no meio (a base aqui; o modelo chega depois, por
+    // loadStatues), os bancos virados para ele e as quatro pracinhas.
     for (const s of d.statues) statueBase(ctx, s)
+    for (const [x, z] of [[4.6, 4.6], [-4.6, 4.6], [4.6, -4.6], [-4.6, -4.6]]) bench(ctx, x, z, Math.atan2(x, z))
     for (const [cx, cz] of d.squares ?? []) square(ctx, cx, cz, d.square ?? { r: 5, bed: 1.1, bench: 3.3 })
   } else {
     // Canteiro central com árvore (backend anterior ao mm3d-50).
