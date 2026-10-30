@@ -132,22 +132,23 @@ export function createFightGame(opts: FightGameOptions): FightGameHandle {
   const governor = new ResolutionGovernor(engine, profile, Math.min(window.devicePixelRatio || 1, touch ? 2 : (opts.maxPixelRatio ?? 1.5)))
 
   const scene = new Scene(engine)
-  scene.clearColor = new Color4(0.03, 0.03, 0.05, 1)
+  // mm3d-55: ginásio vitoriano à luz de lampião.
+  scene.clearColor = new Color4(0.05, 0.035, 0.03, 1)
   scene.ambientColor = new Color3(0.3, 0.3, 0.35)
   scene.fogMode = Scene.FOGMODE_LINEAR
-  scene.fogColor = new Color3(0.03, 0.03, 0.05)
-  scene.fogStart = 18
-  scene.fogEnd = 40
+  scene.fogColor = new Color3(0.05, 0.035, 0.03)
+  scene.fogStart = 20
+  scene.fogEnd = 46
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
   const hemi = new HemisphericLight("boxe-hemi", new Vector3(0, 1, 0), scene)
   hemi.intensity = touch ? 0.62 : 0.5
-  hemi.diffuse = new Color3(0.85, 0.85, 0.95)
-  hemi.groundColor = new Color3(0.12, 0.1, 0.14)
+  hemi.diffuse = new Color3(1, 0.88, 0.74)
+  hemi.groundColor = new Color3(0.16, 0.11, 0.08)
   const spot = new SpotLight("boxe-spot", new Vector3(0, 9, 0), new Vector3(0, -1, 0), Math.PI / 3.2, 6, scene)
   spot.intensity = 1.25
-  spot.diffuse = new Color3(1, 0.96, 0.88)
+  spot.diffuse = new Color3(1, 0.9, 0.74)
 
   const arena = buildArena(scene, low)
   const audio = new BoxeAudio()
