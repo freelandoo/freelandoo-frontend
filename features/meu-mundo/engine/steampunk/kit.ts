@@ -326,9 +326,9 @@ export function mailbox(ctx: SteamCtx, x: number, z: number, rot: number, frame?
  * domo, chaminé com vapor, manômetros, volante e um volante de inércia que
  * gira. Cabe na caixa do canteiro antigo (raio ~0,93 m).
  */
-export function boiler(ctx: SteamCtx, cx: number, cz: number, face: number, baseD: number) {
+export function boiler(ctx: SteamCtx, cx: number, cz: number, face: number, baseD: number, y = 0) {
   const { props, soil } = ctx
-  const f = place(cx, 0, cz, face)
+  const f = place(cx, y, cz, face)
   props.cylinder(baseD + 0.3, 0.5, place(0, 0.25, 0, Math.PI / 8, f), SP.stone, 8)
   props.cylinder(baseD + 0.36, 0.06, place(0, 0.52, 0, Math.PI / 8, f), SP.stoneLight, 8)
   soil.cylinder(baseD, 0.04, place(0, 0.53, 0, Math.PI / 8, f), shade(SP.earth, 0.75), 8)

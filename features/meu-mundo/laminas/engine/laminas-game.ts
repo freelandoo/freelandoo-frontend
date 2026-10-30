@@ -16,6 +16,7 @@ import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
+import { SpotLight } from "@babylonjs/core/Lights/spotLight"
 import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
@@ -33,10 +34,11 @@ import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
 import { AvatarLibrary, type BoxeBase, type BoxeClip } from "../../engine/avatars"
 import { Character } from "../../engine/player"
-import { BoxeAudio } from "../../boxe/engine/audio"
+import { BoxeAudio } from "./audio"
 import type { BodyId } from "../../types"
 import { COMBO, DT, Fight, MOBS, mobAttack, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
 import { buildArena } from "./arena-view"
+import { buildRing } from "./ring-view"
 import { MonsterModel } from "./monster-view"
 
 export interface LaminasHud {
@@ -53,6 +55,8 @@ export interface LaminasGameOptions {
   body: BodyId
   look?: string
   setup: FightSetup
+  /** O lugar: o coliseu (prédio das Lâminas e portal) ou o ringue (prédio do Boxe, mm3d-56). */
+  stage?: "arena" | "ring"
   onReady?: () => void
   onHud?: (h: LaminasHud) => void
   onEnd?: (win: boolean) => void
@@ -93,14 +97,24 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const profile = touch ? { ...quality, maxRatio: Math.max(quality.maxRatio, low ? 1.5 : 2), minRatio: Math.max(quality.minRatio, 1) } : quality
   const governor = new ResolutionGovernor(engine, profile, Math.min(window.devicePixelRatio || 1, touch ? 2 : 1.5))
 
+  const ring = opts.stage === "ring"
   const scene = new Scene(engine)
-  // mm3d-55: fim de tarde de fábrica (âmbar com fumaça).
-  scene.clearColor = new Color4(0.86, 0.64, 0.44, 1)
-  scene.ambientColor = new Color3(0.35, 0.3, 0.28)
+  if (ring) {
+    // mm3d-56: o ginásio do ringue à luz de lampião (fundo escuro, a lona acesa).
+    scene.clearColor = new Color4(0.05, 0.035, 0.03, 1)
+    scene.ambientColor = new Color3(0.3, 0.3, 0.35)
+    scene.fogColor = new Color3(0.05, 0.035, 0.03)
+    scene.fogStart = 30
+    scene.fogEnd = 70
+  } else {
+    // mm3d-55: fim de tarde de fábrica (âmbar com fumaça).
+    scene.clearColor = new Color4(0.86, 0.64, 0.44, 1)
+    scene.ambientColor = new Color3(0.35, 0.3, 0.28)
+    scene.fogColor = new Color3(0.86, 0.64, 0.44)
+    scene.fogStart = 34
+    scene.fogEnd = 100
+  }
   scene.fogMode = Scene.FOGMODE_LINEAR
-  scene.fogColor = new Color3(0.86, 0.64, 0.44)
-  scene.fogStart = 34
-  scene.fogEnd = 100
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
@@ -111,8 +125,18 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const sun = new DirectionalLight("laminas-sun", new Vector3(-0.5, -1, 0.35), scene)
   sun.intensity = 0.75
   sun.diffuse = new Color3(1, 0.88, 0.7)
+  if (ring) {
+    // Sob a treliça: menos luz geral, o facho de cima faz o ringue brilhar.
+    hemi.intensity = touch ? 0.72 : 0.62
+    hemi.diffuse = new Color3(1, 0.88, 0.74)
+    hemi.groundColor = new Color3(0.16, 0.11, 0.08)
+    sun.intensity = 0.35
+    const spot = new SpotLight("laminas-ring-spot", new Vector3(0, 13, 0), new Vector3(0, -1, 0), Math.PI / 1.45, 1.2, scene)
+    spot.intensity = 1.15
+    spot.diffuse = new Color3(1, 0.9, 0.74)
+  }
 
-  const arena = buildArena(scene, low)
+  const arena = ring ? buildRing(scene, low) : buildArena(scene, low)
   const audio = new BoxeAudio()
   audio.resume()
 

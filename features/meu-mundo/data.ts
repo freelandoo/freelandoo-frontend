@@ -23,8 +23,6 @@ import type {
   CorridaSession,
   NoturnoSession,
   GincanaSession,
-  BoxeCard,
-  BoxeSession,
   NeighborhoodPayload,
   NoticeFilter,
   PlayerProfile,
@@ -159,11 +157,6 @@ export const postCorridaJoin = (token: string, ship?: string) => call<CorridaSes
 export const postNoturnoJoin = (token: string, ride: string, body: string) => call<NoturnoSession>(token, "POST", "/center/noturno", { ride, body })
 /** Gincana em grupo (mm3d-47): espera até 1 minuto; o computador completa as 8 vagas. */
 export const postGincanaJoin = (token: string, body: string) => call<GincanaSession>(token, "POST", "/center/gincana", { body })
-/** Arena de Boxe (mm3d-43): a ficha (números da vida, condições e os 3 do computador). */
-export const getBoxeCard = (token: string) => call<BoxeCard>(token, "GET", "/center/boxe")
-/** Arena de Boxe: entrar numa luta (sozinho contra o computador escolhido ou multiplayer). */
-export const postBoxeJoin = (token: string, mode: "solo" | "mp", tier: string, strategy: string) =>
-  call<BoxeSession>(token, "POST", "/center/boxe", { mode, tier, strategy })
 export const getVisits = (token: string) => call<VisitState>(token, "GET", "/visits")
 export const getInviteCandidates = (token: string) =>
   call<{ candidates: { name: string; available: boolean; reason: string | null }[] }>(token, "GET", "/visits/candidates")

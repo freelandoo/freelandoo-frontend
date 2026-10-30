@@ -25,11 +25,10 @@ import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
-import { fetchSession, getBoxeCard, getCenterInterior, postBoxeJoin, postCorridaJoin, postGincanaJoin, postJetpackJoin, postNoturnoJoin, postPaintJoin } from "../data"
+import { fetchSession, getCenterInterior, postCorridaJoin, postGincanaJoin, postJetpackJoin, postNoturnoJoin, postPaintJoin } from "../data"
 import type { PaintJoin } from "../paint/ui/paint-view"
 import type { CorridaJoin } from "../corrida/ui/race-view"
 import type { NoturnoJoin } from "../noturno/ui/run-view"
-import type { BoxeJoin } from "../boxe/ui/boxe-view"
 import type { GincanaJoin } from "../gincana/ui/gincana-view"
 import type { LaminasEncounter } from "../laminas/ui/laminas-view"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
@@ -40,7 +39,6 @@ const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => 
 const PaintView = dynamic(() => import("../paint/ui/paint-view").then((m) => m.PaintView), { ssr: false })
 const RaceView = dynamic(() => import("../corrida/ui/race-view").then((m) => m.RaceView), { ssr: false })
 const RunView = dynamic(() => import("../noturno/ui/run-view").then((m) => m.RunView), { ssr: false })
-const BoxeView = dynamic(() => import("../boxe/ui/boxe-view").then((m) => m.BoxeView), { ssr: false })
 const GincanaView = dynamic(() => import("../gincana/ui/gincana-view").then((m) => m.GincanaView), { ssr: false })
 const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
@@ -71,21 +69,6 @@ const noturnoJoin: NoturnoJoin = async (ride, body, hooks) =>
     if (!token) return null
     const r = await postNoturnoJoin(token, ride, body)
     return r.ok ? r.data : null
-  }, hooks)
-
-/** Arena de Boxe (mm3d-43): a ficha (vida + adversários) e a sala da luta. */
-async function loadBoxeCard() {
-  const token = getToken()
-  if (!token) return null
-  const r = await getBoxeCard(token)
-  return r.ok ? r.data : { error: r.error, code: r.code }
-}
-const boxeJoin: BoxeJoin = async (mode, tier, strategy, hooks) =>
-  (await import("../boxe/engine/net")).joinBoxe(async () => {
-    const token = getToken()
-    if (!token) return null
-    const r = await postBoxeJoin(token, mode, tier, strategy)
-    return r.ok ? r.data : { error: r.error, code: r.code }
   }, hooks)
 
 /** Gincana em grupo (mm3d-47): a rede só baixa quando alguém escolhe Multiplayer. */
@@ -341,10 +324,11 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               if (g === "jetpack") {
                 setMinigameParty((it.place.party ?? 0) > 1)
                 setMinigame(g)
-              } else if (g === "paint" || g === "corrida" || g === "noturno" || g === "boxe" || g === "gincana") setMinigame(g)
-              else if (g === "laminas") {
+              } else if (g === "paint" || g === "corrida" || g === "noturno" || g === "gincana") setMinigame(g)
+              else if (g === "laminas" || g === "boxe") {
+                // mm3d-56: o prédio do Boxe abre a MESMA luta das Lâminas, no ringue.
                 setEncounter(null)
-                setMinigame("laminas")
+                setMinigame(g)
               } else if (it.place.id === "hall") {
                 // Salão do Hall da Fama: a porta pergunta ao servidor quem pode entrar.
                 setInside({ id: "hall", interior: null, failed: false })
@@ -644,8 +628,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {minigame === "corrida" && <RaceView name={payload.me.name} onExit={() => setMinigame(null)} join={corridaJoin} />}
       {/* Rolê Noturno (mm3d-40): bike, skate ou patins numa rua de noite; ao sair, volta à porta */}
       {minigame === "noturno" && <RunView body={body} look={look} name={payload.me.name} onExit={() => setMinigame(null)} join={noturnoJoin} />}
-      {/* Arena de Boxe (mm3d-43): a luta calculada pela vida; ao sair, volta à porta */}
-      {minigame === "boxe" && <BoxeView onExit={() => setMinigame(null)} loadCard={loadBoxeCard} join={boxeJoin} />}
+      {/* Arena de Boxe (mm3d-56): a luta das Lâminas no ringue grande; ao sair, volta à porta */}
+      {minigame === "boxe" && <LaminasView body={body} look={look} stage="ring" onExit={() => setMinigame(null)} />}
       {/* Arena das Lâminas (mm3d-48): treino pelo prédio ou a luta do portal de um monstro */}
       {minigame === "laminas" && (
         <LaminasView

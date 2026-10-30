@@ -1,4 +1,4 @@
-// features/meu-mundo/boxe/engine/audio.ts — ARENA DE BOXE (mm3d-43): o som, sintetizado.
+// features/meu-mundo/laminas/engine/audio.ts — o som da luta, sintetizado (veio da Arena de Boxe, mm3d-43; a Lâminas usa desde a mm3d-48).
 //
 // Sem arquivo de áudio (como a Corrida e o Rolê): a multidão é ruído rosa num
 // passa-banda cujo volume segue a "emoção" (sobe com golpe limpo, queda e

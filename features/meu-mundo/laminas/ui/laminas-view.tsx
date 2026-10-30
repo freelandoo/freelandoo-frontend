@@ -12,6 +12,9 @@
 // Na luta: vida e fôlego embaixo à esquerda, a vida dos inimigos em cima, o
 // aviso "ESQUIVE!" quando um golpe vem; no celular joystick + ATACAR e
 // ESQUIVAR à direita.
+//
+// mm3d-56: o prédio do BOXE abre esta mesma tela com stage="ring" — a mesma
+// luta, o mesmo menu, só o lugar é o ringue grande (ring-view.ts).
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Shield, Swords, Volume2, VolumeX, X } from "lucide-react"
@@ -36,6 +39,8 @@ export interface LaminasViewProps {
   encounter?: LaminasEncounter | null
   /** Fim da luta do portal (vitória = o monstro some da cidade). */
   onEncounterEnd?: (win: boolean) => void
+  /** O lugar: coliseu (padrão) ou o ringue do prédio do Boxe (mm3d-56). */
+  stage?: "arena" | "ring"
 }
 
 const SAND = "#E9CF98"
@@ -60,7 +65,7 @@ export function useMobName() {
   )
 }
 
-export function LaminasView({ body, look, onExit, encounter, onEncounterEnd }: LaminasViewProps) {
+export function LaminasView({ body, look, onExit, encounter, onEncounterEnd, stage = "arena" }: LaminasViewProps) {
   const [fight, setFight] = useState<{ key: number; choice: Choice } | null>(() => (encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : null))
   const seq = useRef(1)
   const reported = useRef(false)
@@ -73,6 +78,7 @@ export function LaminasView({ body, look, onExit, encounter, onEncounterEnd }: L
           body={body}
           look={look}
           choice={fight.choice}
+          stage={stage}
           portal={!!encounter}
           onEnd={(win) => {
             if (encounter && !reported.current) {
@@ -84,7 +90,7 @@ export function LaminasView({ body, look, onExit, encounter, onEncounterEnd }: L
           onMenu={encounter ? onExit : () => setFight(null)}
         />
       ) : (
-        <Menu onPick={start} onExit={onExit} />
+        <Menu onPick={start} onExit={onExit} ring={stage === "ring"} />
       )}
     </div>
   )
@@ -92,7 +98,7 @@ export function LaminasView({ body, look, onExit, encounter, onEncounterEnd }: L
 
 // ═══ menu de treino ══════════════════════════════════════════════════════════
 
-function Menu({ onPick, onExit }: { onPick: (c: Choice) => void; onExit: () => void }) {
+function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: () => void; ring: boolean }) {
   const t = useTranslations("MeuMundo")
   const mobName = useMobName()
   const opts: { c: Choice; sub: string; tone: string }[] = [
@@ -112,7 +118,7 @@ function Menu({ onPick, onExit }: { onPick: (c: Choice) => void; onExit: () => v
               {t("laminasKicker", "Os Jogos Eternos de Lúmen")}
             </div>
             <h1 className="mt-1.5 text-[32px] font-black italic leading-none tracking-tight max-[759px]:text-[26px]" style={{ color: SAND }}>
-              {t("laminasTitle", "Arena das Lâminas")}
+              {ring ? t("centerPlace_boxe", "Arena de Boxe") : t("laminasTitle", "Arena das Lâminas")}
             </h1>
             <p className="mt-2 text-[14px] leading-snug max-[759px]:text-[13px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
               {t("laminasPitch", "Treine a espada contra a máquina. Quando o chão acender vermelho, o golpe vem ali: esquive e corte na brecha.")}
@@ -157,6 +163,7 @@ function LaminasScreen({
   body,
   look,
   choice,
+  stage,
   portal,
   onEnd,
   onAgain,
@@ -165,6 +172,7 @@ function LaminasScreen({
   body: BodyId
   look?: string
   choice: Choice
+  stage: "arena" | "ring"
   portal: boolean
   onEnd: (win: boolean) => void
   onAgain?: () => void
@@ -196,6 +204,7 @@ function LaminasScreen({
         body,
         look,
         setup: { kind: choice.kind, level: choice.level },
+        stage,
         onReady: () => alive && setStatus("ready"),
         onHud: (h) => alive && setHud(h),
         onEnd: (win) => {
@@ -214,7 +223,7 @@ function LaminasScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [body, look, choice])
+  }, [body, look, choice, stage])
 
   // a passagem violeta do portal some quando a cena está pronta
   useEffect(() => {
