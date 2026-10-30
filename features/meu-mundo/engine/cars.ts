@@ -45,13 +45,21 @@ import { VEHICLE, KINDS } from "./vehicle"
 import type { Box2 } from "./collision"
 import type { CarState } from "./net"
 
+/**
+ * Carro de NEON do trânsito do Rolê Noturno (noturno/engine/props-view.ts):
+ * fica no superesportivo antigo — a rua de lá é outra estética.
+ */
 export const CAR_ASSET_VERSION = "v2"
-/** Modelo e raio da roda de cada modalidade (os json dos modelos). */
+/**
+ * Modelo e raio da roda de cada modalidade (os json dos modelos). v4 =
+ * steampunk (mm3d-52): mesmos nós, pivôs e raios; a lataria do carro segue nos
+ * vermelhos de origem, então `repaint` continua valendo.
+ */
 const MODELS: Record<RideKind, { url: string; wheelR: number }> = {
-  car: { url: `/meu-mundo/veiculos/${CAR_ASSET_VERSION}/supercar.glb`, wheelR: VEHICLE.WHEEL_RADIUS },
-  bike: { url: "/meu-mundo/veiculos/v3/bike.glb", wheelR: 0.31 },
-  skate: { url: "/meu-mundo/veiculos/v3/skateboard.glb", wheelR: 0.0754 },
-  skates: { url: "/meu-mundo/veiculos/v3/skates.glb", wheelR: 0.05 },
+  car: { url: "/meu-mundo/veiculos/v4/supercar.glb", wheelR: VEHICLE.WHEEL_RADIUS },
+  bike: { url: "/meu-mundo/veiculos/v4/bike.glb", wheelR: 0.31 },
+  skate: { url: "/meu-mundo/veiculos/v4/skateboard.glb", wheelR: 0.0754 },
+  skates: { url: "/meu-mundo/veiculos/v4/skates.glb", wheelR: 0.05 },
 }
 /** Altura da sola dos patins (build_skates.py): quem usa sobe isto. */
 export const SKATES_SOLE = 0.118
