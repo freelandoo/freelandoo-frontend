@@ -450,7 +450,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       v.pz = m.z
       const a = mobAttack(m)
       const warn = m.state === "windup" ? Math.min(1, m.t / Math.max(0.05, m.windup)) : 0
-      v.model.update(dt, { x: m.x, y: m.y, z: m.z, facing: m.facing, state: m.state, t: m.t, warn, speed: v.speed })
+      const cur = m.state === "windup" || m.state === "strike" || m.state === "recover" ? MOBS[m.kind].attacks[m.atk] : undefined
+      const attack = cur ? { id: cur.id, windup: m.windup, active: cur.active, recover: cur.recover } : undefined
+      v.model.update(dt, { x: m.x, y: m.y, z: m.z, facing: m.facing, state: m.state, t: m.t, warn, speed: v.speed, attack })
       // aviso no chão: área = onde vai cair; cone = à frente do monstro
       if (a && m.state === "windup") {
         danger = true

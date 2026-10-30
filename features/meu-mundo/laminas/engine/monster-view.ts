@@ -12,7 +12,9 @@
 // (níveis 1 e 2), Golem de Sucata = Ciborgue, Harpia = Dama das Garras (os três
 // são as skins de 2 m, rigadas com as animações do Sergio: andam e golpeiam com
 // os clipes do boxe, como o jogador na arena) e o Lobo = a fera de 4 patas
-// (GLB sem esqueleto, animado aqui como o provisório). O Brutamontes segue de formas.
+// (mm3d-54: GLB com esqueleto e clipes próprios — Idle/Walk/Run/Bite/Pounce/
+// Dodge/Hit/Die/Howl, pipeline/laminas/build_lobo_anim.py; os golpes tocam o
+// trecho do clipe esticado na duração da regra). O Brutamontes segue de formas.
 
 import type { Scene } from "@babylonjs/core/scene"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
@@ -23,7 +25,8 @@ import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
-import type { AssetContainer } from "@babylonjs/core/assetContainer"
+import type { AssetContainer, InstantiatedEntries } from "@babylonjs/core/assetContainer"
+import type { AnimationGroup } from "@babylonjs/core/Animations/animationGroup"
 import type { MobKind, MobState } from "../sim/fight"
 import { AvatarLibrary, ensureLoaders } from "../../engine/avatars"
 import { Character } from "../../engine/player"
@@ -35,11 +38,22 @@ const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
   golem: { body: "ciborgue", scale: 1.4 },
   harpy: { body: "garras", scale: 1.05 },
 }
-/** O lobo (pipeline/laminas/build_lobo.py): chega com o focinho no −X → gira para o +Z. */
-const WOLF_URL = "/meu-mundo/laminas/lobo-m50.glb"
+/** O lobo (pipeline/laminas/build_lobo_anim.py): chega com o focinho no −X → gira para o +Z. */
+const WOLF_URL = "/meu-mundo/laminas/lobo-m54.glb"
 const WOLF_TURN = Math.PI / 2
 /** O lobo é GRANDE (Alex, 29/10): 4 m de focinho a rabo. */
 const WOLF_SCALE = 2
+/**
+ * Trechos de cada golpe no clipe (s), iguais aos de build_lobo_anim.py: o
+ * preparo, o bote/mordida e a volta tocam esticados na duração da regra.
+ */
+const WOLF_ATTACK: Record<string, { clip: string; len: number; windup: [number, number]; strike: [number, number]; recover: [number, number] }> = {
+  bite: { clip: "Bite", len: 1.3, windup: [0, 0.5], strike: [0.5, 0.68], recover: [0.68, 1.3] },
+  pounce: { clip: "Pounce", len: 1.85, windup: [0, 0.6], strike: [0.6, 0.95], recover: [0.95, 1.85] },
+}
+/** Velocidade das patas no chão com o clipe a 1× (m/s, já na escala de 4 m): o clipe acompanha o passo. */
+const WOLF_WALK = 1.12
+const WOLF_RUN = 8.5
 
 /** Biblioteca de avatares com os clipes do boxe, uma por cena (monstros rigados). */
 const libs = new WeakMap<Scene, { lib: AvatarLibrary; fallback: StandardMaterial; shadow: StandardMaterial }>()
@@ -84,6 +98,8 @@ export interface MobPose {
   warn: number
   /** Andando (m/s), para as pernas. */
   speed: number
+  /** Golpe em curso (windup/strike/recover) e a duração de cada fase na regra. */
+  attack?: { id: string; windup: number; active: number; recover: number }
 }
 
 const VIOLET = new Color3(0.72, 0.3, 1)
@@ -128,6 +144,10 @@ export class MonsterModel {
   private char: Character | null = null
   private last: MobState | null = null
   private readonly real: boolean
+  /** Lobo rigado: os clipes (nome → grupo) e o que está tocando. */
+  private wolf: { anims: Map<string, AnimationGroup>; entries: InstantiatedEntries } | null = null
+  private wolfClip = ""
+  private dodgeLeft = 0
 
   constructor(
     private readonly scene: Scene,
@@ -161,6 +181,20 @@ export class MonsterModel {
           turn.rotation.y = WOLF_TURN
           turn.scaling.setAll(WOLF_SCALE)
           for (const n of e.rootNodes) n.parent = turn
+          if (e.animationGroups.length) {
+            const anims = new Map<string, AnimationGroup>()
+            for (const g of e.animationGroups) {
+              g.stop()
+              // Troca de clipe com mistura curta (sem salto de pose).
+              for (const ta of g.targetedAnimations) {
+                ta.animation.enableBlending = true
+                ta.animation.blendingSpeed = 0.12
+              }
+              anims.set(g.name.replace(`-${id}`, ""), g)
+            }
+            this.wolf = { anims, entries: e }
+            this.playWolf("Idle", true)
+          }
         })
         .catch(() => {
           if (!this.gone) BUILD.wolf(this)
@@ -199,6 +233,7 @@ export class MonsterModel {
   update(dt: number, p: MobPose) {
     if (this.gone) return
     if (this.char) return this.updateRigged(dt, p)
+    if (this.wolf) return this.updateWolf(dt, p)
     this.root.position.set(p.x, p.y, p.z)
     this.root.rotation.y = p.facing
     this.walk += dt * Math.min(9, 2 + p.speed * 3.2)
@@ -304,6 +339,72 @@ export class MonsterModel {
     if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
   }
 
+  /** Toca um clipe do lobo (inteiro ou um trecho em segundos), com a velocidade pedida. */
+  private playWolf(name: string, loop: boolean, speed = 1, part?: [number, number], len?: number) {
+    const g = this.wolf?.anims.get(name)
+    if (!g) return
+    const key = `${name}:${part?.join("-") ?? ""}`
+    if (key === this.wolfClip) {
+      g.speedRatio = speed
+      return
+    }
+    for (const o of this.wolf!.anims.values()) if (o !== g) o.stop()
+    this.wolfClip = key
+    const span = g.to - g.from
+    const from = part && len ? g.from + span * (part[0] / len) : g.from
+    const to = part && len ? g.from + span * (part[1] / len) : g.to
+    g.start(loop, speed, from, to)
+  }
+
+  /** Lobo rigado: a regra diz o estado; o clipe e a velocidade saem dele. */
+  private updateWolf(dt: number, p: MobPose) {
+    this.root.position.set(p.x, p.y, p.z)
+    this.root.rotation.y = p.facing
+    // Enquanto o GLB carregava, o caminho das formas mexeu no corpo (no
+    // "spawn" ele nasce com escala 0,05): o rigado começa do corpo neutro.
+    this.body.scaling.setAll(1)
+    this.body.position.setAll(0)
+    this.body.rotation.setAll(0)
+    const atk = p.attack ? WOLF_ATTACK[p.attack.id] : undefined
+    const was = this.last
+    this.last = p.state
+    switch (p.state) {
+      case "spawn":
+        this.playWolf("Howl", false)
+        break
+      case "windup":
+      case "strike":
+      case "recover": {
+        if (!atk) break
+        const part = atk[p.state]
+        const dur = p.state === "windup" ? p.attack!.windup : p.state === "strike" ? p.attack!.active : p.attack!.recover
+        this.playWolf(atk.clip, false, (part[1] - part[0]) / Math.max(0.05, dur), part, atk.len)
+        break
+      }
+      case "hurt":
+        this.playWolf("Hit", false)
+        break
+      case "dead":
+        this.playWolf("Die", false)
+        if (p.t > 1.8) this.setVisible(false)
+        break
+      default: {
+        // Saindo do golpe para rodear: o pulo de lado (esquiva) antes de andar.
+        if (was === "recover" && this.wolf!.anims.has("Dodge")) {
+          this.playWolf("Dodge", false)
+          this.dodgeLeft = 0.6
+        }
+        if (this.dodgeLeft > 0) {
+          this.dodgeLeft -= dt
+          break
+        }
+        if (p.speed > 2.6) this.playWolf("Run", true, Math.min(1.6, Math.max(0.85, p.speed / WOLF_RUN)))
+        else if (p.speed > 0.25) this.playWolf("Walk", true, Math.min(2.2, Math.max(0.6, p.speed / WOLF_WALK)))
+        else this.playWolf("Idle", true)
+      }
+    }
+  }
+
   setVisible(v: boolean) {
     this.root.setEnabled(v)
     this.char?.setVisible(v)
@@ -311,6 +412,11 @@ export class MonsterModel {
 
   dispose() {
     this.gone = true
+    if (this.wolf) {
+      for (const g of this.wolf.anims.values()) g.dispose()
+      this.wolf.entries.dispose()
+      this.wolf = null
+    }
     this.char?.dispose()
     for (const p of this.parts) p.mesh.dispose()
     this.flash.dispose()
