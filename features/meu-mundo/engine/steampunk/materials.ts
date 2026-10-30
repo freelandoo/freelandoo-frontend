@@ -8,7 +8,7 @@
 //          em cada face (UV "face") = chanfro e oclusão de canto sem geometria.
 //   pavers calçada e praça: lajes de pedra com rejunte.
 //   road   pista: placas de ferro rebitadas com junta e sujeira.
-//   soil   chão: grama oliva com manchas de terra e cascalho.
+//   soil   chão: areia amarelada com ondulações, tufos secos e cascalho.
 //   cobble caminhos dos lotes e anel da praça: paralelepípedos.
 //   glow   luminárias e janelas acesas: emissivo, sem luz (a cor é o âmbar do vértice).
 //
@@ -208,19 +208,31 @@ function paintRoad(c: Ctx2D, S: number) {
   }
 }
 
-/** Chão: grama oliva cheia de manchas de terra, tufos e cascalho (colorida; o vértice tinge). */
+/** Chão: AREIA amarelada (pedido do Alex) com ondulações, manchas, tufos secos e cascalho (colorida; o vértice tinge). */
 function paintSoil(c: Ctx2D, S: number) {
   const rand = rng(41)
-  c.fillStyle = rgb(0.74, 0.8, 0.6)
+  c.fillStyle = rgb(0.96, 0.87, 0.64)
   c.fillRect(0, 0, S, S)
-  blotches(c, S, 60, rand, 0.06, 0.2, () => (rand() < 0.55 ? rgb(0.9, 0.78, 0.6) : rgb(0.58, 0.68, 0.44)), 0.38)
-  blotches(c, S, 160, rand, 0.015, 0.06, () => (rand() < 0.5 ? rgb(0.82, 0.7, 0.54) : rgb(0.66, 0.76, 0.5)), 0.4)
-  // Tufos: traços curtos verticais, claros e escuros.
-  for (let i = 0; i < S * 5; i++) {
+  blotches(c, S, 60, rand, 0.06, 0.2, () => (rand() < 0.5 ? rgb(1, 0.93, 0.72) : rgb(0.86, 0.74, 0.5)), 0.4)
+  blotches(c, S, 160, rand, 0.015, 0.06, () => (rand() < 0.5 ? rgb(0.99, 0.9, 0.68) : rgb(0.84, 0.72, 0.5)), 0.35)
+  // Ondulações do vento: arcos finos claros e escuros.
+  c.lineWidth = Math.max(1, S / 512)
+  for (let i = 0; i < S * 0.5; i++) {
+    const x = rand() * S
+    const y = rand() * S
+    const w = S * (0.02 + rand() * 0.04)
+    c.strokeStyle = rand() < 0.5 ? "rgba(255,245,215,0.35)" : "rgba(150,115,70,0.22)"
+    c.beginPath()
+    c.moveTo(x, y)
+    c.quadraticCurveTo(x + w / 2, y - w * 0.18, x + w, y)
+    c.stroke()
+  }
+  // Tufos secos (poucos), dourados.
+  for (let i = 0; i < S * 1.2; i++) {
     const x = rand() * S
     const y = rand() * S
     const l = S * (0.004 + rand() * 0.008)
-    c.strokeStyle = rand() < 0.5 ? "rgba(70,90,40,0.35)" : "rgba(220,230,170,0.3)"
+    c.strokeStyle = rand() < 0.5 ? "rgba(170,140,60,0.45)" : "rgba(230,205,120,0.4)"
     c.lineWidth = Math.max(1, S / 700)
     c.beginPath()
     c.moveTo(x, y)
@@ -228,11 +240,11 @@ function paintSoil(c: Ctx2D, S: number) {
     c.stroke()
   }
   // Cascalho.
-  for (let i = 0; i < S * 1.2; i++) {
+  for (let i = 0; i < S * 1.5; i++) {
     const x = rand() * S
     const y = rand() * S
     const r = S * (0.0015 + rand() * 0.003)
-    c.fillStyle = rand() < 0.5 ? "rgba(235,225,205,0.5)" : "rgba(70,60,50,0.4)"
+    c.fillStyle = rand() < 0.5 ? "rgba(255,248,230,0.55)" : "rgba(110,85,55,0.4)"
     c.beginPath()
     c.arc(x, y, r, 0, Math.PI * 2)
     c.fill()

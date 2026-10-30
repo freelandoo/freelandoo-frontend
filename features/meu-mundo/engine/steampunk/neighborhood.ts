@@ -54,12 +54,12 @@ export type NbCtx = SteamCtx & {
   wideUV: [number, number, number, number]
 }
 
-// Tintas do chão (multiplicam a textura colorida "soil", média ~0,75/0,78/0,6).
-// Grama puxada para o amarelo (pedido do Alex): mais vermelho e verde, menos azul.
-const GROUND_OUT: RGB = [0.86, 0.74, 0.4]
-const GROUND_IN: RGB = [0.92, 0.82, 0.42]
-const LAWN: RGB = [0.96, 0.88, 0.44]
-const LOT_LAWN: RGB = [0.95, 0.87, 0.43]
+// Tintas do chão (multiplicam a textura de areia "soil", média ~0,93/0,83/0,6):
+// areia amarelada (pedido do Alex), um pouco mais escura fora do muro.
+const GROUND_OUT: RGB = [0.88, 0.82, 0.72]
+const GROUND_IN: RGB = [0.95, 0.9, 0.78]
+const LAWN: RGB = [1, 0.96, 0.82]
+const LOT_LAWN: RGB = [0.99, 0.94, 0.8]
 // Tintas da pedra (multiplicam texturas cinza ~0,85).
 const WALK: RGB = [0.96, 0.89, 0.77]
 const PLAZA: RGB = [0.98, 0.93, 0.83]

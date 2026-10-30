@@ -39,14 +39,15 @@ export const SP = {
   slate: hex("#3B3D44"),
   slateWarm: hex("#4A4440"),
   earth: hex("#80654B"),
-  // Natureza (verdes dessaturados, oliva e cinza)
-  leafOlive: hex("#5E6B37"),
-  leafSage: hex("#6F7C55"),
-  leafDeep: hex("#45522E"),
-  leafRust: hex("#8A6A3A"),
-  leafDry: hex("#7A6F4E"),
+  // Natureza: copas douradas e bege (pedido do Alex: combinar com a areia),
+  // em três tons para a copa não virar uma mancha só.
+  leafOlive: hex("#B39A45"),
+  leafSage: hex("#C9B27A"),
+  leafDeep: hex("#8E7A33"),
+  leafRust: hex("#B27A3C"),
+  leafDry: hex("#A8946A"),
   trunk: hex("#4F3A2A"),
-  hedge: hex("#4B5A33"),
+  hedge: hex("#9C8840"),
   // Luz
   amber: hex("#F4B84A"),
   amberDeep: hex("#E39A32"),
