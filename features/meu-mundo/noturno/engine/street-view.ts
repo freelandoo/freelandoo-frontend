@@ -13,6 +13,13 @@
 // atravessando a avenida com a marca a cada 240 m, e o neon dos letreiros
 // refletido no asfalto molhado (faixa somada no chão, na cor do letreiro). As
 // artes são as da Antigravidade (corrida/engine/billboards.ts).
+//
+// mm3d-55 — STEAMPUNK: rua de paralelepípedo escuro e molhado com faixas de
+// latão e marfim, calçada de lajes, prédios de TIJOLO com janelas em arco
+// (luz de lampião, sem azul), letreiros de latão aceso no lugar do neon,
+// marquises de cobre, vitrines âmbar, postes de ferro com lanterna a gás,
+// pórticos de ferro com engrenagens de latão e o friso âmbar, céu de cobre e
+// fumaça com a lua e a neblina quente.
 
 import type { Scene } from "@babylonjs/core/scene"
 import "@babylonjs/core/Meshes/thinInstanceMesh"
@@ -29,6 +36,8 @@ import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { Constants } from "@babylonjs/core/Engines/constants"
 import { ARTS } from "../../corrida/engine/billboards"
+import { SteamGeo, facing } from "../../engine/steampunk/geo"
+import { SP } from "../../engine/steampunk/palette"
 
 /** Passo da textura do asfalto (m): a faixa longa pula de tanto em tanto. */
 const TILE = 12
@@ -67,22 +76,27 @@ const hash = (k: number, s: number) => {
 function asphaltTexture(scene: Scene) {
   const tex = new DynamicTexture("noturno-road", { width: 256, height: 512 }, scene, true)
   const c = tex.getContext() as CanvasRenderingContext2D
-  c.fillStyle = "#24262d"
+  c.fillStyle = "#1c1916"
   c.fillRect(0, 0, 256, 512)
-  // grão do asfalto
-  for (let i = 0; i < 2600; i++) {
-    const v = 28 + Math.floor(Math.random() * 22)
-    c.fillStyle = `rgb(${v},${v + 1},${v + 6})`
-    c.fillRect(Math.random() * 256, Math.random() * 512, 2, 2)
+  // paralelepípedos em fiadas desencontradas (cada pedra num tom), rejunte escuro
+  for (let r = 0; r < 32; r++) {
+    const off = r % 2 ? 7 : 0
+    for (let x = -off; x < 256; x += 15) {
+      const v = 48 + Math.floor(Math.random() * 26)
+      c.fillStyle = `rgb(${v + 4},${v},${v - 4})`
+      c.fillRect(x + 1.5, r * 16 + 1.5, 12, 13)
+      c.fillStyle = "rgba(255,230,190,0.05)"
+      c.fillRect(x + 2, r * 16 + 2, 11, 3)
+    }
   }
-  // remendo escuro
-  c.fillStyle = "rgba(10,10,14,0.35)"
+  // poça escura
+  c.fillStyle = "rgba(8,6,5,0.35)"
   c.fillRect(150, 300, 50, 90)
   // bordas contínuas (amarelo à esquerda, branco à direita) e divisórias tracejadas
   const u = (x: number) => ((x + ROAD_HALF) / (2 * ROAD_HALF)) * 256
-  c.fillStyle = "#e8c33a"
+  c.fillStyle = "#c69a37"
   c.fillRect(u(-ROAD_HALF) + 5, 0, 5, 512)
-  c.fillStyle = "#e9ecf1"
+  c.fillStyle = "#e6dcc4"
   c.fillRect(u(ROAD_HALF) - 10, 0, 5, 512)
   for (const x of [-1.25, 1.25]) c.fillRect(u(x) - 3, 40, 6, 210)
   tex.update(true)
@@ -94,9 +108,9 @@ function asphaltTexture(scene: Scene) {
 function walkTexture(scene: Scene) {
   const tex = new DynamicTexture("noturno-walk", { width: 128, height: 128 }, scene, true)
   const c = tex.getContext() as CanvasRenderingContext2D
-  c.fillStyle = "#5c5f68"
+  c.fillStyle = "#6b6156"
   c.fillRect(0, 0, 128, 128)
-  c.strokeStyle = "#44474f"
+  c.strokeStyle = "#433b33"
   c.lineWidth = 3
   for (let i = 0; i <= 128; i += 32) {
     c.beginPath()
@@ -116,8 +130,16 @@ function windowTexture(scene: Scene, seed: number, lit: boolean) {
   const H = 512
   const tex = new DynamicTexture(`noturno-win-${seed}-${lit ? "l" : "d"}`, { width: W, height: H }, scene, true)
   const c = tex.getContext() as CanvasRenderingContext2D
-  c.fillStyle = lit ? "#000" : "#d6d6dc"
+  c.fillStyle = lit ? "#000" : "#b46a4a"
   c.fillRect(0, 0, W, H)
+  if (!lit) {
+    // fiadas de tijolo (rejunte claro) e uma cinta de cantaria por andar
+    c.fillStyle = "rgba(60,30,20,0.45)"
+    for (let y = 0; y < H; y += 8) c.fillRect(0, y, W, 1.5)
+    for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 ? 8 : 0; x < W; x += 16) c.fillRect(x, y, 1.5, 8)
+    c.fillStyle = "#cdbb9c"
+    for (let r = 0; r < 8; r++) c.fillRect(0, r * (H / 8), W, 4)
+  }
   const cols = 4
   const rows = 8
   const cw = W / cols
@@ -136,17 +158,32 @@ function windowTexture(scene: Scene, seed: number, lit: boolean) {
       const on = rnd() < 0.42
       if (lit) {
         if (!on) continue
-        const warm = rnd() < 0.72
-        c.fillStyle = warm ? `rgb(255,${200 + Math.floor(rnd() * 40)},${110 + Math.floor(rnd() * 50)})` : `rgb(${120 + Math.floor(rnd() * 60)},${200 + Math.floor(rnd() * 40)},255)`
-        c.fillRect(x, y, w, h)
+        // lampião: âmbar, mel e cobre (nenhum azul)
+        const t = rnd()
+        c.fillStyle = t < 0.6 ? `rgb(255,${180 + Math.floor(rnd() * 40)},${90 + Math.floor(rnd() * 40)})` : t < 0.85 ? `rgb(255,${210 + Math.floor(rnd() * 30)},${140 + Math.floor(rnd() * 40)})` : `rgb(235,${120 + Math.floor(rnd() * 30)},60)`
+        c.fillRect(x, y + h * 0.18, w, h * 0.82)
+        c.beginPath()
+        c.arc(x + w / 2, y + h * 0.2, w / 2, Math.PI, 0)
+        c.fill()
         // cortina: metade de baixo mais fraca
         c.fillStyle = "rgba(0,0,0,0.35)"
         c.fillRect(x, y + h * 0.62, w, h * 0.38)
       } else {
-        c.fillStyle = "#2a2e3a"
-        c.fillRect(x, y, w, h)
-        c.fillStyle = "#b9b9c2"
-        c.fillRect(x - 3, y + h, w + 6, 5)
+        // janela em arco: vidro escuro, caixilho de ferro e o peitoril de pedra
+        c.fillStyle = "#cdbb9c"
+        c.beginPath()
+        c.arc(x + w / 2, y + h * 0.2, w / 2 + 4, Math.PI, 0)
+        c.fill()
+        c.fillStyle = "#231d18"
+        c.fillRect(x, y + h * 0.18, w, h * 0.82)
+        c.beginPath()
+        c.arc(x + w / 2, y + h * 0.2, w / 2, Math.PI, 0)
+        c.fill()
+        c.fillStyle = "#3a332c"
+        c.fillRect(x + w / 2 - 1.5, y, 3, h)
+        c.fillRect(x, y + h * 0.55, w, 3)
+        c.fillStyle = "#cdbb9c"
+        c.fillRect(x - 4, y + h, w + 8, 6)
       }
     }
   }
@@ -172,11 +209,11 @@ function skyTexture(scene: Scene) {
   const tex = new DynamicTexture("noturno-sky", { width: 512, height: 512 }, scene, true)
   const c = tex.getContext() as CanvasRenderingContext2D
   const g = c.createLinearGradient(0, 0, 0, 512)
-  g.addColorStop(0, "#04050c")
-  g.addColorStop(0.42, "#0b1030")
-  g.addColorStop(0.5, "#1b1d44")
-  g.addColorStop(0.56, "#141633")
-  g.addColorStop(1, "#06070f")
+  g.addColorStop(0, "#07050a")
+  g.addColorStop(0.42, "#1a100e")
+  g.addColorStop(0.5, "#3a2014")
+  g.addColorStop(0.56, "#24150f")
+  g.addColorStop(1, "#0a0706")
   c.fillStyle = g
   c.fillRect(0, 0, 512, 512)
   for (let i = 0; i < 520; i++) {
@@ -194,8 +231,8 @@ function moonTexture(scene: Scene) {
   const tex = new DynamicTexture("noturno-moon", { width: 256, height: 256 }, scene, true)
   const c = tex.getContext() as CanvasRenderingContext2D
   const halo = c.createRadialGradient(128, 128, 40, 128, 128, 128)
-  halo.addColorStop(0, "rgba(200,215,255,0.35)")
-  halo.addColorStop(1, "rgba(200,215,255,0)")
+  halo.addColorStop(0, "rgba(255,220,170,0.32)")
+  halo.addColorStop(1, "rgba(255,220,170,0)")
   c.fillStyle = halo
   c.fillRect(0, 0, 256, 256)
   c.fillStyle = "#f3f1e4"
@@ -225,20 +262,22 @@ function zebraTexture(scene: Scene) {
 }
 
 /** Cores das fachadas e dos letreiros. */
+// mm3d-55: tons de tijolo e cantaria (multiplicam a textura de tijolo, de noite).
 const WALLS: [number, number, number][] = [
-  [0.42, 0.4, 0.5],
-  [0.5, 0.36, 0.34],
-  [0.32, 0.38, 0.46],
-  [0.48, 0.44, 0.38],
-  [0.36, 0.33, 0.42],
-  [0.3, 0.34, 0.36],
+  [0.62, 0.52, 0.46],
+  [0.7, 0.5, 0.42],
+  [0.54, 0.5, 0.46],
+  [0.68, 0.6, 0.52],
+  [0.5, 0.42, 0.38],
+  [0.6, 0.54, 0.48],
 ]
+/** Letreiros: latão e cobre acesos (lampião), não neon. */
 const NEONS: [number, number, number][] = [
-  [1, 0.3, 0.7],
-  [0.35, 0.9, 1],
-  [1, 0.78, 0.25],
-  [0.55, 1, 0.45],
-  [0.7, 0.45, 1],
+  [1, 0.72, 0.3],
+  [0.95, 0.5, 0.2],
+  [1, 0.86, 0.52],
+  [0.86, 0.6, 0.26],
+  [0.92, 0.4, 0.2],
 ]
 
 /** Arte de outdoor numa textura (a da marca redesenha quando a imagem do logo chega). */
@@ -289,8 +328,9 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
   const roadTex = own(asphaltTexture(scene))
   roadTex.vScale = ROAD_LEN / TILE
   roadMat.diffuseTexture = roadTex
-  roadMat.emissiveColor = new Color3(0.32, 0.32, 0.36)
-  roadMat.specularColor = new Color3(0.08, 0.08, 0.1)
+  roadMat.emissiveColor = new Color3(0.34, 0.31, 0.28)
+  // pedra molhada: brilho do lampião
+  roadMat.specularColor = new Color3(0.2, 0.16, 0.1)
   const road = own(CreateGround("noturno-road", { width: ROAD_HALF * 2, height: ROAD_LEN }, scene))
   road.material = roadMat
   road.isPickable = false
@@ -300,11 +340,11 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
   walkTex.uScale = WALK / 2
   walkTex.vScale = ROAD_LEN / 2
   walkMat.diffuseTexture = walkTex
-  walkMat.emissiveColor = new Color3(0.22, 0.22, 0.26)
+  walkMat.emissiveColor = new Color3(0.24, 0.21, 0.18)
   walkMat.specularColor = new Color3(0, 0, 0)
   const curbMat = own(new StandardMaterial("noturno-curb", scene))
-  curbMat.diffuseColor = new Color3(0.72, 0.72, 0.76)
-  curbMat.emissiveColor = new Color3(0.3, 0.3, 0.33)
+  curbMat.diffuseColor = new Color3(0.7, 0.62, 0.5)
+  curbMat.emissiveColor = new Color3(0.28, 0.24, 0.2)
   curbMat.specularColor = new Color3(0, 0, 0)
   const walks: Mesh[] = []
   for (const s of [-1, 1]) {
@@ -331,7 +371,7 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
     // o emissivo SOMA por cima (senão é multiplicado pela difusa, onde a janela é escura)
     mat.useEmissiveAsIllumination = true
     mat.specularColor = new Color3(0, 0, 0)
-    mat.ambientColor = new Color3(0.2, 0.2, 0.25)
+    mat.ambientColor = new Color3(0.24, 0.2, 0.18)
     for (const h of B_HEIGHTS) {
       const v = h / WIN_H
       const side = new Vector4(0, 0, 1, v)
@@ -361,7 +401,9 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
   neon.thinInstanceSetBuffer("color", neonC, 4, false)
   // marquise escura em cima da loja
   const awnMat = own(new StandardMaterial("noturno-awn", scene))
-  awnMat.diffuseColor = new Color3(0.16, 0.16, 0.2)
+  // marquise de cobre
+  awnMat.diffuseColor = new Color3(0.36, 0.2, 0.12)
+  awnMat.emissiveColor = new Color3(0.06, 0.03, 0.02)
   awnMat.specularColor = new Color3(0, 0, 0)
   const awn = own(CreateBox("noturno-awn", { width: 1.4, height: 0.25, depth: B_WIDTH - 1 }, scene))
   awn.material = awnMat
@@ -432,8 +474,8 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
   frame.thinInstanceSetBuffer("matrix", frameM, 16, false)
   frame.thinInstanceSetBuffer("color", frameC, 4, false)
   const legMat = own(new StandardMaterial("noturno-outdoor-leg", scene))
-  legMat.diffuseColor = new Color3(0.14, 0.14, 0.18)
-  legMat.emissiveColor = new Color3(0.05, 0.05, 0.07)
+  legMat.diffuseColor = new Color3(0.16, 0.14, 0.13)
+  legMat.emissiveColor = new Color3(0.06, 0.05, 0.04)
   legMat.specularColor = new Color3(0, 0, 0)
   const leg = own(CreateBox("noturno-outdoor-leg", { width: 0.3, height: 1, depth: 0.3 }, scene))
   leg.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
@@ -459,13 +501,24 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
   gBeam.thinInstanceSetBuffer("matrix", gBeamM, 16, false)
   const gStripMat = own(new StandardMaterial("noturno-gantry-strip", scene))
   gStripMat.disableLighting = true
-  gStripMat.emissiveColor = new Color3(0.35, 0.9, 1)
+  gStripMat.emissiveColor = new Color3(1, 0.68, 0.28)
   const gStrip = own(CreateBox("noturno-gantry-strip", { width: 7.4, height: 0.12, depth: 0.12 }, scene))
   gStrip.material = gStripMat
   gStrip.isPickable = false
   gStrip.alwaysSelectAsActiveMesh = true
   const gStripM = new Float32Array(G_SLOTS * 2 * 16)
   gStrip.thinInstanceSetBuffer("matrix", gStripM, 16, false)
+  const gearMat = own(new StandardMaterial("noturno-gantry-gear", scene))
+  gearMat.diffuseColor = new Color3(1, 1, 1)
+  gearMat.specularColor = new Color3(0.4, 0.32, 0.18)
+  gearMat.emissiveColor = new Color3(0.12, 0.08, 0.03)
+  const gg = new SteamGeo()
+  gg.gear(0.9, 0.18, 12, facing(0, 0, 0), SP.brass, SP.bronze)
+  const gGear = own(gg.build("noturno-gantry-gear", scene, gearMat, false))
+  gGear.isPickable = false
+  gGear.alwaysSelectAsActiveMesh = true
+  const gGearM = new Float32Array(G_SLOTS * 3 * 16)
+  gGear.thinInstanceSetBuffer("matrix", gGearM, 16, false)
   const gPanel = own(CreatePlane("noturno-gantry-panel", { width: 7, height: 3.5 }, scene))
   gPanel.material = artMats[0]
   gPanel.isPickable = false
@@ -484,8 +537,8 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
 
   // ── postes, poças de luz e faixas de pedestre ─────────────────────────────
   const poleMat = own(new StandardMaterial("noturno-pole", scene))
-  poleMat.diffuseColor = new Color3(0.22, 0.23, 0.27)
-  poleMat.emissiveColor = new Color3(0.08, 0.08, 0.1)
+  poleMat.diffuseColor = new Color3(0.18, 0.16, 0.15)
+  poleMat.emissiveColor = new Color3(0.07, 0.06, 0.05)
   poleMat.specularColor = new Color3(0, 0, 0)
   const pole = own(CreateCylinder("noturno-pole", { height: 6.6, diameterTop: 0.14, diameterBottom: 0.2, tessellation: 8 }, scene))
   pole.material = poleMat
@@ -497,14 +550,15 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
   arm.alwaysSelectAsActiveMesh = true
   const headMat = own(new StandardMaterial("noturno-lamp", scene))
   headMat.disableLighting = true
-  headMat.emissiveColor = new Color3(1, 0.86, 0.6)
-  const head = own(CreateBox("noturno-head", { width: 0.7, height: 0.12, depth: 0.32 }, scene))
+  headMat.emissiveColor = new Color3(1, 0.76, 0.4)
+  // lanterna a gás: a caixa de vidro âmbar pendurada no braço
+  const head = own(CreateBox("noturno-head", { width: 0.42, height: 0.5, depth: 0.42 }, scene))
   head.material = headMat
   head.isPickable = false
   head.alwaysSelectAsActiveMesh = true
   const poolMat = own(new StandardMaterial("noturno-pool", scene))
   poolMat.disableLighting = true
-  poolMat.emissiveColor = new Color3(1, 0.82, 0.55)
+  poolMat.emissiveColor = new Color3(1, 0.74, 0.42)
   poolMat.diffuseTexture = own(glowTexture(scene, "noturno-pool", "rgba(255,214,150,0.55)"))
   poolMat.diffuseTexture.hasAlpha = true
   poolMat.useAlphaFromDiffuseTexture = true
@@ -651,7 +705,7 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
           put(awnM, i, face - s * 0.7, 2.95, z)
           const warm = hash(k, side + 31)
           put(shopM, i, face - s * 0.02, 1.35, z, s > 0 ? Math.PI / 2 : -Math.PI / 2)
-          shopC.set(warm < 0.33 ? [1, 0.8, 0.5, 1] : warm < 0.66 ? [0.5, 0.75, 1, 1] : [0.18, 0.18, 0.24, 1], i * 4)
+          shopC.set(warm < 0.33 ? [1, 0.78, 0.46, 1] : warm < 0.66 ? [0.9, 0.56, 0.3, 1] : [0.2, 0.16, 0.14, 1], i * 4)
         } else {
           hide(awnM, i)
           hide(shopM, i)
@@ -684,7 +738,7 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
         const z = (k0 + j) * L_PITCH + side * (L_PITCH / 2)
         put(poleM, i, s * POLE_X, CURB + 3.3, z)
         put(armM, i, s * (POLE_X - 1.0), CURB + 6.5, z)
-        put(headM, i, s * (POLE_X - 1.9), CURB + 6.4, z)
+        put(headM, i, s * (POLE_X - 1.9), CURB + 6.1, z)
         put(poolM, i, s * (POLE_X - 2.1), 0.025, z)
       }
     }
@@ -711,11 +765,13 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
       }
       put(gBeamM, j, 0, top, z)
       put(gPanelM, j, 0, top - 1.95, z - 0.28)
+      for (let e = 0; e < 3; e++) put(gGearM, j * 3 + e, (e - 1) * (ROAD_HALF + 1.3), top + (e === 1 ? 1.1 : 0.6), z - 0.32, 0, e === 1 ? one : sc.set(0.6, 0.6, 0.6))
     }
     gPost.thinInstanceBufferUpdated("matrix")
     gBeam.thinInstanceBufferUpdated("matrix")
     gStrip.thinInstanceBufferUpdated("matrix")
     gPanel.thinInstanceBufferUpdated("matrix")
+    gGear.thinInstanceBufferUpdated("matrix")
   }
 
   if (low) {
@@ -757,4 +813,4 @@ export function buildStreet(scene: Scene, low: boolean): StreetView {
   }
 }
 
-export const NIGHT_FOG = new Color4(0.05, 0.06, 0.13, 1)
+export const NIGHT_FOG = new Color4(0.08, 0.055, 0.045, 1)

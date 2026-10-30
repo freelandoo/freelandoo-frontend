@@ -46,10 +46,11 @@ import type { Box2 } from "./collision"
 import type { CarState } from "./net"
 
 /**
- * Carro de NEON do trânsito do Rolê Noturno (noturno/engine/props-view.ts):
- * fica no superesportivo antigo — a rua de lá é outra estética.
+ * Carro do trânsito do Rolê Noturno (noturno/engine/props-view.ts). mm3d-55:
+ * a rua também virou steampunk, então o trânsito usa o Locomóvel (v4; mesmos
+ * nós e os vermelhos de origem na lataria — `repaint` vale igual).
  */
-export const CAR_ASSET_VERSION = "v2"
+export const CAR_ASSET_VERSION = "v4"
 /**
  * Modelo e raio da roda de cada modalidade (os json dos modelos). v4 =
  * steampunk (mm3d-52): mesmos nós, pivôs e raios; a lataria do carro segue nos

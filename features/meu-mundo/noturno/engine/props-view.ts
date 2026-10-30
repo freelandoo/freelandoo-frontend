@@ -31,7 +31,8 @@ import { ensureLoaders } from "../../engine/avatars"
 import { CAR_ASSET_VERSION, CAR_PAINT_HEX, repaint } from "../../engine/cars"
 import type { Coin, Obstacle, ObstacleKind, Run } from "../sim/run"
 
-const BASE = "/meu-mundo/noturno/v1/"
+// v2 = steampunk (mm3d-55: pipeline/noturno/build_props.py + a ambulância do centro), mesmas medidas.
+const BASE = "/meu-mundo/noturno/v2/"
 const CAR_URL = `/meu-mundo/veiculos/${CAR_ASSET_VERSION}/supercar.glb`
 const PAINTS = ["vermelho", "azul", "branco", "amarelo", "preto"] as const
 type ModelKey = Exclude<ObstacleKind, "car"> | `car:${(typeof PAINTS)[number]}`
@@ -123,7 +124,8 @@ export function buildProps(scene: Scene): PropsView {
     const body: Mesh[] = []
     const glow: Mesh[] = []
     const isGlow = (m: AbstractMesh) => {
-      for (let n: { name: string; parent: unknown } | null = m; n; n = n.parent as { name: string; parent: unknown } | null) if (/glow/i.test(n.name)) return true
+      // "lamp" = as lanternas âmbar dos modelos steampunk do centro (a ambulância)
+      for (let n: { name: string; parent: unknown } | null = m; n; n = n.parent as { name: string; parent: unknown } | null) if (/glow|lamp/i.test(n.name)) return true
       return false
     }
     for (const m of parts) {
