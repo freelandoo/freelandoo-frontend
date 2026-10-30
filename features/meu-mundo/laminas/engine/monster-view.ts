@@ -38,9 +38,9 @@ const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
   golem: { body: "ciborgue", scale: 1.4 },
   harpy: { body: "garras", scale: 1.05 },
 }
-/** O lobo (pipeline/laminas/build_lobo_anim.py): chega com o focinho no −X → gira para o +Z. */
+/** O lobo (pipeline/laminas/build_lobo_anim.py): o focinho chega no +X do Babylon → −90° leva ao +Z (frente). */
 const WOLF_URL = "/meu-mundo/laminas/lobo-m54.glb"
-const WOLF_TURN = Math.PI / 2
+const WOLF_TURN = -Math.PI / 2
 /** O lobo é GRANDE (Alex, 29/10): 4 m de focinho a rabo. */
 const WOLF_SCALE = 2
 /**
