@@ -8,6 +8,8 @@
 //    bocal e a lente da mira — acesos e pulsando (o brilho de verdade vem da
 //    GlowLayer da cena, que só inclui `glowMeshes`);
 //  - núcleo de energia na janela do receptor, na cor da tinta escolhida.
+// mm3d-55 — STEAMPUNK: o corpo vira latão, cobre, ferro e madeira (rebites e
+// engrenagem no lado); o NEON ROSA fica (pedido da 46) nos filetes e anéis.
 // Em cima, os quatro tanques (laranja, preto, vermelho, turquesa); o da cor
 // escolhida cresce e acende. Vai entre as mãos do avatar quando os ossos
 // existem; sem eles fica no lado direito do corpo. Inclina com a mira.
@@ -25,9 +27,11 @@ import { PAINT, PAINT_COLORS, type PaintColor } from "../sim/tuning"
 /** Rosa neon da Casa Views. */
 export const GUN_NEON = "#FF007A"
 
-const BLACK: RGB = [0.05, 0.045, 0.055]
-const GRAPHITE: RGB = [0.13, 0.12, 0.14]
-const METAL: RGB = [0.32, 0.31, 0.34]
+const BRASS: RGB = [0.62, 0.46, 0.17]
+const BRASS_D: RGB = [0.42, 0.3, 0.11]
+const COPPER: RGB = [0.5, 0.27, 0.15]
+const IRON: RGB = [0.1, 0.1, 0.11]
+const WOOD: RGB = [0.3, 0.18, 0.1]
 const WHITE: RGB = [1, 1, 1]
 
 /** Cilindro deitado ao longo de +z (cano, anéis). */
@@ -61,8 +65,8 @@ export class PaintGun {
     // ── corpo preto envernizado ──
     this.bodyMat = new StandardMaterial(`paint-gun-${id}`, scene)
     this.bodyMat.diffuseColor = new Color3(1, 1, 1)
-    this.bodyMat.specularColor = new Color3(0.95, 0.9, 1)
-    this.bodyMat.specularPower = 90
+    this.bodyMat.specularColor = new Color3(0.8, 0.7, 0.5)
+    this.bodyMat.specularPower = 48
     this.bodyMat.emissiveColor = new Color3(0.02, 0.015, 0.025)
     this.bodyMat.emissiveFresnelParameters = new FresnelParameters({
       leftColor: new Color3(0.55, 0, 0.27),
@@ -72,19 +76,21 @@ export class PaintGun {
     })
     const g = new GeoBuilder()
     // frente da arma = +z local
-    g.box(0.12, 0.13, 0.4, place(0, 0, 0.03), BLACK) // receptor
-    g.box(0.1, 0.05, 0.3, place(0, 0.085, 0.06), GRAPHITE) // cobertura de cima
-    g.box(0.135, 0.03, 0.2, place(0, -0.06, 0.09), GRAPHITE) // saia de baixo
-    for (const sx of [-1, 1]) g.box(0.018, 0.085, 0.2, place(sx * 0.068, 0.005, 0.1), GRAPHITE) // aletas
-    g.box(0.07, 0.17, 0.075, Matrix.RotationX(0.28).multiply(Matrix.Translation(0, -0.135, -0.07)), BLACK) // cabo
-    g.box(0.07, 0.035, 0.12, place(0, -0.095, 0.02), METAL) // guarda do gatilho
-    g.box(0.085, 0.1, 0.16, place(0, -0.01, -0.23), BLACK) // coronha
-    g.box(0.09, 0.03, 0.05, place(0, -0.06, -0.3), GRAPHITE) // soleira
-    g.cylinder(0.068, 0.26, alongZ(0, 0.01, 0.34), GRAPHITE, 14) // cano
-    g.cylinder(0.112, 0.07, alongZ(0, 0.01, 0.48), BLACK, 14) // bocal
-    g.cylinder(0.08, 0.02, alongZ(0, 0.01, 0.52), METAL, 14) // boca
-    g.box(0.05, 0.045, 0.06, place(0, 0.135, 0.12), BLACK) // base da mira
-    g.box(0.06, 0.05, 0.012, place(0, 0.175, 0.12), GRAPHITE) // moldura da mira
+    g.box(0.12, 0.13, 0.4, place(0, 0, 0.03), BRASS) // receptor
+    g.box(0.1, 0.05, 0.3, place(0, 0.085, 0.06), COPPER) // cobertura de cima
+    g.box(0.135, 0.03, 0.2, place(0, -0.06, 0.09), IRON) // saia de baixo
+    for (const sx of [-1, 1]) g.box(0.018, 0.085, 0.2, place(sx * 0.068, 0.005, 0.1), IRON) // aletas
+    for (const sx of [-1, 1]) for (const z of [-0.12, -0.04, 0.04, 0.12, 0.2]) for (const y of [-0.05, 0.05]) g.box(0.006, 0.012, 0.012, place(sx * 0.0625, y, z), BRASS_D) // rebites
+    for (const sx of [-1, 1]) g.cylinder(0.07, 0.012, Matrix.RotationZ(Math.PI / 2).multiply(Matrix.Translation(sx * 0.064, 0, -0.1)), BRASS_D, 10) // engrenagem do lado
+    g.box(0.07, 0.17, 0.075, Matrix.RotationX(0.28).multiply(Matrix.Translation(0, -0.135, -0.07)), WOOD) // cabo
+    g.box(0.07, 0.035, 0.12, place(0, -0.095, 0.02), BRASS_D) // guarda do gatilho
+    g.box(0.085, 0.1, 0.16, place(0, -0.01, -0.23), WOOD) // coronha
+    g.box(0.09, 0.03, 0.05, place(0, -0.06, -0.3), BRASS) // soleira
+    g.cylinder(0.068, 0.26, alongZ(0, 0.01, 0.34), COPPER, 14) // cano
+    g.cylinder(0.112, 0.07, alongZ(0, 0.01, 0.48), BRASS, 14) // bocal
+    g.cylinder(0.08, 0.02, alongZ(0, 0.01, 0.52), IRON, 14) // boca
+    g.box(0.05, 0.045, 0.06, place(0, 0.135, 0.12), IRON) // base da mira
+    g.box(0.06, 0.05, 0.012, place(0, 0.175, 0.12), BRASS) // moldura da mira
     const frameMesh = g.build(`paint-gun-body-${id}`, scene, this.bodyMat, false)
     frameMesh.parent = this.frame
 
@@ -125,7 +131,7 @@ export class PaintGun {
     for (let c = 0; c < 4; c++) {
       const tg = new GeoBuilder()
       tg.sphere(0.058, [1, 1.3, 1], place(0, 0.15, -0.115 + c * 0.062), WHITE, 8)
-      tg.cylinder(0.03, 0.02, place(0, 0.117, -0.115 + c * 0.062), METAL, 8)
+      tg.cylinder(0.03, 0.02, place(0, 0.117, -0.115 + c * 0.062), BRASS_D, 8)
       const m = new StandardMaterial(`paint-gun-tank-${id}-${c}`, scene)
       const base = Color3.FromHexString(PAINT_COLORS[c])
       m.diffuseColor = base

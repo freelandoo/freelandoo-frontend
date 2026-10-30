@@ -129,7 +129,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
 
   const scene = new Scene(engine)
-  const sky = new Color4(0.9, 0.93, 0.96, 1)
+  // mm3d-55: céu de fim de tarde dourado (os dirigíveis passam nele).
+  const sky = new Color4(0.93, 0.86, 0.74, 1)
   scene.clearColor = sky
   scene.ambientColor = new Color3(0.3, 0.3, 0.3)
   scene.fogMode = Scene.FOGMODE_LINEAR

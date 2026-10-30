@@ -8,6 +8,13 @@
 // Poucas chamadas de desenho: os topos de todas as ilhas são UMA malha, a
 // pedra + enfeites outra, as nuvens outra. A colisão NÃO sai daqui: é a lista
 // de sólidos da regra (sim/map.ts) — o desenho só acompanha.
+//
+// mm3d-55 — STEAMPUNK: o topo continua claro (a tinta é a cor do jogo), mas
+// cada ilha ganha a cinta de ferro e o aro de latão rebitado na borda,
+// lanternas penduradas e, nas grandes, o MOTOR embaixo (engrenagem que gira e
+// vapor); pilares de ferro com anéis de latão, caixotes de madeira com
+// cantoneiras, portais com dentes de engrenagem e lanternas, nuvens douradas
+// e dirigíveis em volta.
 
 import type { Scene } from "@babylonjs/core/scene"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
@@ -20,6 +27,8 @@ import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { GeoBuilder, place, type RGB } from "../../engine/geometry"
+import { postLantern } from "../../engine/steampunk/kit"
+import { AirshipFleet, SP, SteamStage, fleetRing, rivetRing, tierOf, xf } from "../../engine/steampunk/scenery"
 import type { Island, PaintMap } from "../sim/map"
 import { TUNING } from "../sim/tuning"
 
@@ -36,12 +45,13 @@ function rnd(n: number) {
 
 export const STONE = {
   top: [0.93, 0.89, 0.83] as RGB,
-  rim: [0.88, 0.83, 0.76] as RGB,
-  rock: [0.85, 0.79, 0.7] as RGB,
-  deep: [0.7, 0.63, 0.54] as RGB,
-  rope: [0.76, 0.66, 0.5] as RGB,
-  crate: [0.86, 0.78, 0.66] as RGB,
-  crateEdge: [0.72, 0.63, 0.5] as RGB,
+  // mm3d-55: borda = cinta de ferro; pedra mais quente e mais escura; latão e madeira.
+  rim: [0.25, 0.24, 0.25] as RGB,
+  rock: [0.66, 0.58, 0.48] as RGB,
+  deep: [0.46, 0.4, 0.33] as RGB,
+  rope: SP.brass,
+  crate: [0.58, 0.4, 0.25] as RGB,
+  crateEdge: SP.brassDark,
 }
 
 /**
@@ -222,8 +232,9 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   const g = new GeoBuilder()
   for (const p of map.props) {
     if (p.kind === "pillar") {
-      g.cylinder(p.s * 2, p.h, place(p.x, p.y + p.h / 2, p.z), STONE.rim, 10)
-      g.cylinder(p.s * 2.25, 0.12, place(p.x, p.y + p.h - 0.08, p.z), STONE.rim, 10)
+      g.cylinder(p.s * 2, p.h, place(p.x, p.y + p.h / 2, p.z), SP.ironHi, 10)
+      g.cylinder(p.s * 2.4, 0.16, place(p.x, p.y + p.h - 0.08, p.z), SP.brassDark, 10)
+      g.cylinder(p.s * 2.4, 0.2, place(p.x, p.y + 0.1, p.z), SP.iron, 10)
       for (const fy of [0.45, 0.62]) g.cylinder(p.s * 2.12, 0.07, place(p.x, p.y + p.h * fy, p.z), STONE.rope, 10)
     } else {
       const s = p.s * 2
@@ -265,7 +276,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   cg.cylinder(260, 0.5, place(bi.x, bi.y - 26, bi.z), [0.97, 0.98, 1], 32)
   const cloudMat = new StandardMaterial("paint-cloud", scene)
   cloudMat.diffuseColor = new Color3(0.35, 0.36, 0.4)
-  cloudMat.emissiveColor = new Color3(0.78, 0.8, 0.84)
+  cloudMat.emissiveColor = new Color3(0.86, 0.8, 0.7)
   cloudMat.specularColor = new Color3(0, 0, 0)
   const clouds = cg.build("paint-clouds", scene, cloudMat)
   disposers.push(() => {
@@ -307,8 +318,8 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
     // de frente para o meio do mapa
     root.rotation.y = Math.atan2(-p.x, 0)
     const ringMat = new StandardMaterial(`paint-portal-ring-${team}`, scene)
-    ringMat.diffuseColor = new Color3(...STONE.rim)
-    ringMat.specularColor = new Color3(0.05, 0.05, 0.05)
+    ringMat.diffuseColor = new Color3(0.78, 0.6, 0.22)
+    ringMat.specularColor = new Color3(0.4, 0.34, 0.2)
     const ring = CreateTorus(`paint-portal-ring-${team}`, { diameter: TUNING.portalR * 2, thickness: 0.34, tessellation: 40 }, scene)
     ring.rotation.x = Math.PI / 2
     ring.position.y = TUNING.portalR + 0.15
@@ -341,6 +352,54 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   })
   disposers.push(() => swirlTex.dispose())
 
+  // ── steampunk: aros, cintas, lanternas, motores, dentes dos portais, dirigíveis ──
+  const stage = new SteamStage(scene, tierOf(lowEnd))
+  const { ctx } = stage
+  for (const isl of map.islands) {
+    rivetRing(ctx.props, isl.x, isl.y + 0.03, isl.z, isl.r * 0.995, 0.16, 0, SP.brass)
+    const nl = isl.r >= 6 ? 4 : isl.r >= 3.5 ? 2 : 0
+    for (let k = 0; k < nl; k++) {
+      const a = (k / nl) * Math.PI * 2 + isl.id
+      postLantern(ctx, isl.x + Math.sin(a) * isl.r * 1.03, isl.y - 0.75, isl.z + Math.cos(a) * isl.r * 1.03, 0.6)
+    }
+    if (isl.r < 5) continue
+    // motor embaixo: eixo de ferro, a engrenagem girando e o vapor saindo do bico
+    const by = isl.y - isl.depth * 0.9
+    ctx.props.cylinder(isl.r * 0.2, isl.depth * 0.35, place(isl.x, by + isl.depth * 0.1, isl.z), SP.iron, 8)
+    ctx.props.cylinder(isl.r * 0.32, 0.2, place(isl.x, by - 0.2, isl.z), SP.copperDark, 12)
+    ctx.gears.push({ m: place(isl.x, by - 0.45, isl.z), r: isl.r * 0.22, thick: 0.22, speed: isl.id % 2 ? 0.5 : -0.5 })
+    ctx.vents.push([isl.x + isl.r * 0.62, isl.y - 0.5, isl.z])
+    // dois canos de cobre descendo pela pedra
+    for (const s of [-1, 1]) {
+      const px = isl.x + s * isl.r * 0.7
+      ctx.props.pipe([[px, isl.y - 0.4, isl.z + isl.r * 0.72], [px, isl.y - isl.depth * 0.35, isl.z + isl.r * 0.52], [isl.x + s * isl.r * 0.18, by + isl.depth * 0.12, isl.z]], 0.12, SP.copper, SP.brassDark)
+    }
+  }
+  map.portals.forEach((p) => {
+    const f = place(p.x, p.y, p.z, Math.atan2(-p.x, 0))
+    const R = TUNING.portalR + 0.18
+    const cy = TUNING.portalR + 0.15
+    for (let k = 0; k < 18; k++) {
+      const a = (k / 18) * Math.PI * 2
+      ctx.props.box(0.3, 0.34, 0.26, xf(Math.cos(a) * R, cy + Math.sin(a) * R, 0, 0, f, 0, a), SP.brassDark)
+    }
+    for (const s of [-1, 1]) postLantern(ctx, s * TUNING.portalR * 1.15, 0.3, 0, 0.8, f)
+  })
+  stage.build("paint-steam")
+  let cx = 0
+  let cz = 0
+  for (const isl of map.islands) {
+    cx += isl.x
+    cz += isl.z
+  }
+  cx /= Math.max(1, map.islands.length)
+  cz /= Math.max(1, map.islands.length)
+  const fleet = lowEnd ? null : new AirshipFleet(scene, stage.mats, fleetRing(5, 95, 150, 22, 48, 22, 35), cx, cz)
+  disposers.push(() => {
+    fleet?.dispose()
+    stage.dispose()
+  })
+
   let clock = 0
   return {
     setPortalOpen(team, open) {
@@ -349,7 +408,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
       p.open = open
       p.swirl.setEnabled(open)
       p.ring.emissiveColor = open ? new Color3(0.85, 0.62, 0.2) : new Color3(0, 0, 0)
-      p.ring.diffuseColor = open ? new Color3(0.95, 0.76, 0.3) : new Color3(...STONE.rim)
+      p.ring.diffuseColor = open ? new Color3(0.95, 0.76, 0.3) : new Color3(0.78, 0.6, 0.22)
     },
     tick(dt) {
       clock += dt
