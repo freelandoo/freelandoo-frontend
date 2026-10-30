@@ -387,6 +387,34 @@ export interface SteamMaterials {
   dispose: () => void
 }
 
+/**
+ * Só o acabamento e o brilho (mm3d-55): os interiores não têm chão de rua nem
+ * calçada — desenhar as outras 6 texturas seria desperdício.
+ */
+export function createTrimMaterials(scene: Scene, tier: QualityTier) {
+  const tex = makeTexture("sp-tex-trim-in", scene, tier === "high" ? "mid" : tier, paintTrim)
+  const trim = litMaterial("sp-trim-in", scene, tex)
+  const glow = new StandardMaterial("sp-glow-in", scene)
+  glow.disableLighting = true
+  glow.emissiveColor = new Color3(1, 1, 1)
+  glow.diffuseColor = new Color3(0, 0, 0)
+  glow.specularColor = new Color3(0, 0, 0)
+  glow.backFaceCulling = false
+  return {
+    trim,
+    glow,
+    freeze() {
+      trim.freeze()
+      glow.freeze()
+    },
+    dispose() {
+      trim.dispose()
+      glow.dispose()
+      tex.dispose()
+    },
+  }
+}
+
 export function createSteamMaterials(scene: Scene, tier: QualityTier, opts: { wall?: boolean } = {}): SteamMaterials {
   const texWall = opts.wall ? makeTexture("sp-tex-wall", scene, tier, paintAshlar) : null
   const texTrim = makeTexture("sp-tex-trim", scene, tier === "high" ? "mid" : tier, paintTrim)

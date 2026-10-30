@@ -209,13 +209,14 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
   const hemi = new HemisphericLight("mm-house-hemi", new Vector3(0.2, 1, 0.1), scene)
-  hemi.intensity = 0.85
-  hemi.groundColor = new Color3(0.55, 0.52, 0.5)
+  hemi.intensity = 0.98
+  hemi.diffuse = new Color3(1, 0.93, 0.82)
+  hemi.groundColor = new Color3(0.58, 0.52, 0.46)
   const key = new DirectionalLight("mm-house-key", new Vector3(-0.4, -1, 0.3), scene)
   key.intensity = 0.4
   void WALL_COLOR
 
-  const interior = buildInterior(scene, def)
+  const interior = buildInterior(scene, def, resolveQuality().tier)
   // Sentar e — desde o mm3d-15 — as poses de bike, skate e patins.
   const lib = new AvatarLibrary(scene, true, true)
   const fleet = new CarFleet(scene)

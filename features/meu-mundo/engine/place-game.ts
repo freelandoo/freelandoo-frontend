@@ -87,14 +87,14 @@ export interface PlaceGameHandle {
 }
 export type HospitalGameHandle = PlaceGameHandle
 
-/** Luz e fundo de cada prédio (casas não passam por aqui). */
+/** Luz e fundo de cada prédio (casas não passam por aqui). mm3d-55: tudo um pouco mais quente (lampião). */
 const LIGHT: Record<string, { clear: [number, number, number]; ground: [number, number, number]; hemi: number }> = {
-  hospital: { clear: [0.2, 0.24, 0.26], ground: [0.6, 0.62, 0.64], hemi: 0.95 },
-  academia: { clear: [0.12, 0.12, 0.14], ground: [0.45, 0.45, 0.48], hemi: 0.95 },
-  igreja: { clear: [0.16, 0.13, 0.12], ground: [0.62, 0.55, 0.48], hemi: 0.9 },
-  delegacia: { clear: [0.16, 0.18, 0.22], ground: [0.55, 0.58, 0.62], hemi: 0.95 },
+  hospital: { clear: [0.17, 0.16, 0.14], ground: [0.64, 0.6, 0.54], hemi: 1.05 },
+  academia: { clear: [0.11, 0.09, 0.08], ground: [0.52, 0.46, 0.4], hemi: 1.05 },
+  igreja: { clear: [0.14, 0.11, 0.09], ground: [0.66, 0.56, 0.46], hemi: 1.0 },
+  delegacia: { clear: [0.13, 0.13, 0.14], ground: [0.6, 0.56, 0.52], hemi: 1.05 },
 }
-const WARM = { clear: [0.2, 0.17, 0.15] as [number, number, number], ground: [0.66, 0.6, 0.54] as [number, number, number], hemi: 0.95 }
+const WARM = { clear: [0.17, 0.13, 0.1] as [number, number, number], ground: [0.68, 0.6, 0.5] as [number, number, number], hemi: 1.05 }
 
 /** Corpo e cores de cada NPC (código `look` de avatar-colors: camiseta/calça/pele/cabelo). */
 const NPC_LOOK: Record<string, { body: BodyId; look: string }> = {
@@ -130,11 +130,12 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   scene.skipPointerUpPicking = true
   const hemi = new HemisphericLight("mm-place-hemi", new Vector3(0.2, 1, 0.1), scene)
   hemi.intensity = light.hemi
+  hemi.diffuse = new Color3(1, 0.93, 0.82)
   hemi.groundColor = new Color3(light.ground[0], light.ground[1], light.ground[2])
   const key = new DirectionalLight("mm-place-key", new Vector3(-0.4, -1, 0.3), scene)
   key.intensity = 0.35
 
-  const interior = buildInterior(scene, def)
+  const interior = buildInterior(scene, def, resolveQuality().tier)
   // Academia e igreja baixam também os clipes de treino e de reza (mm3d-37b).
   const withPlace = (def.spots ?? []).some((s) => !!s.anim) || def.seats.some((s) => s.use === "pray")
   const lib = new AvatarLibrary(scene, true, false, 24, false, withPlace)
