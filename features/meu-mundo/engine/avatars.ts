@@ -93,12 +93,14 @@ const ASSETS = {
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
   // calibrado no Blender) para a mão não atravessar a barriga nem o peito.
+  // 2026-10-29 (pipeline/build_idle_a45.py): o Idle de TODOS virou a pose de
+  // descanso pedida pelo Alex — pose T com os braços a 45° para baixo, parada.
   anims: {
-    base: "anim-locomotion.glb",
-    fat: "anim-locomotion-fat.glb",
-    strong: "anim-locomotion-strong.glb",
-    sergio: "anim-locomotion-sergio.glb",
-    ekaterina: "anim-locomotion-ekaterina.glb",
+    base: "anim-locomotion-base-m50.glb",
+    fat: "anim-locomotion-fat-m50.glb",
+    strong: "anim-locomotion-strong-m50.glb",
+    sergio: "anim-locomotion-sergio-m50.glb",
+    ekaterina: "anim-locomotion-ekaterina-m50.glb",
   },
   // Pose "Sit" (mm3d-09, pipeline/build_sit.py): só dentro das casas — a rua
   // não baixa estes arquivos.
