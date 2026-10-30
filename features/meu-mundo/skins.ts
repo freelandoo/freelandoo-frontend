@@ -45,6 +45,10 @@ const GOD_LINES: Record<GodBody, string> = {
   iris: "A Deusa das Cores. Cada golpe, um tom.",
   noctis: "A Onça da Lua. Caça no escuro.",
   aeryn: "A Águia de Bronze. Senhora dos céus.",
+  ciborgue: "Metade homem, metade máquina de guerra.",
+  cavaleiro: "Armadura de ouro e honra que não enferruja.",
+  golem: "Pedra viva com o coração de esmeralda.",
+  garras: "Chapéu de caçadora e garras que não erram.",
 }
 
 const GOD_HOLO: Record<GodBody, SkinArt["holo"]> = {
@@ -56,6 +60,10 @@ const GOD_HOLO: Record<GodBody, SkinArt["holo"]> = {
   iris: { color: "#c77dff", accent: "#f1e2ff" },
   noctis: { color: "#2fc2ff", accent: "#cfefff" },
   aeryn: { color: "#d08a3a", accent: "#ffe6c7" },
+  ciborgue: { color: "#ff3040", accent: "#ffd0d4" },
+  cavaleiro: { color: "#ffb030", accent: "#fff0c8" },
+  golem: { color: "#3ddc6a", accent: "#d2ffe0" },
+  garras: { color: "#9b30ff", accent: "#ead6ff" },
 }
 
 export const SKINS: SkinArt[] = [

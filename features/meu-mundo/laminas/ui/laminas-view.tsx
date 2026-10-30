@@ -4,7 +4,8 @@
 //
 // Luta de espada contra a máquina (pedido do Alex, 29/10). Duas portas:
 //  - o PRÉDIO no centro abre o MENU de treino: escolher o inimigo (Soldado de
-//    Pedra em 3 níveis, Lobos, Golem, Harpia, Brutamontes);
+//    Pedra em 3 níveis, Lobos, Golem, Harpia, Brutamontes; 29/10: Golem de Pedra
+//    em 2 níveis, Lobo, Ciborgue, Dama das Garras, Brutamontes);
 //  - o PORTAL de um monstro na cidade abre DIRETO a luta contra ele (com a
 //    passagem violeta) e, no fim, avisa quem chamou (vitória remove o
 //    monstro da cidade para todos).
@@ -49,10 +50,10 @@ export function useMobName() {
   return useCallback(
     (k: MobKind) =>
       ({
-        soldier: t("laminasMobSoldier", "Soldado de Pedra"),
+        soldier: t("laminasMobSoldier", "Golem de Pedra"),
         wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
-        golem: t("laminasMobGolem", "Golem de Sucata"),
-        harpy: t("laminasMobHarpy", "Harpia"),
+        golem: t("laminasMobGolem", "Ciborgue"),
+        harpy: t("laminasMobHarpy", "Dama das Garras"),
         brute: t("laminasMobBrute", "Brutamontes"),
       })[k],
     [t],
@@ -97,7 +98,6 @@ function Menu({ onPick, onExit }: { onPick: (c: Choice) => void; onExit: () => v
   const opts: { c: Choice; sub: string; tone: string }[] = [
     { c: { kind: "soldier", level: 1 }, sub: t("laminasLevel", "Nível {n}").replace("{n}", "1"), tone: "#C9A46A" },
     { c: { kind: "soldier", level: 2 }, sub: t("laminasLevel", "Nível {n}").replace("{n}", "2"), tone: "#B9BCC4" },
-    { c: { kind: "soldier", level: 3 }, sub: t("laminasLevel", "Nível {n}").replace("{n}", "3"), tone: "#E8B23A" },
     { c: { kind: "wolf", level: 1 }, sub: t("laminasSubWolf", "Bando de 3, rápidos"), tone: "#C2693A" },
     { c: { kind: "golem", level: 1 }, sub: t("laminasSubGolem", "Lento, bate em área"), tone: "#8D95A3" },
     { c: { kind: "harpy", level: 1 }, sub: t("laminasSubHarpy", "Voa e mergulha"), tone: "#7C89A3" },

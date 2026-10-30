@@ -27,6 +27,15 @@ const MEU_MUNDO = {
   skinGodLine_iris: ["A Deusa das Cores. Cada golpe, um tom.", "The Goddess of Colors. Every strike, a new hue.", "La Diosa de los Colores. Cada golpe, un tono."],
   skinGodLine_noctis: ["A Onça da Lua. Caça no escuro.", "The Moon Jaguar. Hunts in the dark.", "El Jaguar de la Luna. Caza en la oscuridad."],
   skinGodLine_aeryn: ["A Águia de Bronze. Senhora dos céus.", "The Bronze Eagle. Ruler of the skies.", "El Águila de Bronce. Señora de los cielos."],
+  // outras skins de 2 m
+  skinGod_ciborgue: ["Ciborgue", "Cyborg", "Cíborg"],
+  skinGod_cavaleiro: ["Cavaleiro Dourado", "Golden Knight", "Caballero Dorado"],
+  skinGod_golem: ["Golem de Pedra", "Stone Golem", "Gólem de Piedra"],
+  skinGod_garras: ["Dama das Garras", "Lady of Claws", "Dama de las Garras"],
+  skinGodLine_ciborgue: ["Metade homem, metade máquina de guerra.", "Half man, half war machine.", "Mitad hombre, mitad máquina de guerra."],
+  skinGodLine_cavaleiro: ["Armadura de ouro e honra que não enferruja.", "Golden armor and honor that never rusts.", "Armadura de oro y un honor que no se oxida."],
+  skinGodLine_golem: ["Pedra viva com o coração de esmeralda.", "Living stone with an emerald heart.", "Piedra viva con corazón de esmeralda."],
+  skinGodLine_garras: ["Chapéu de caçadora e garras que não erram.", "A hunter's hat and claws that never miss.", "Sombrero de cazadora y garras que no fallan."],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

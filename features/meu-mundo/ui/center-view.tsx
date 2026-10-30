@@ -248,8 +248,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     (k: string) =>
       ({
         wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
-        golem: t("laminasMobGolem", "Golem de Sucata"),
-        harpy: t("laminasMobHarpy", "Harpia"),
+        golem: t("laminasMobGolem", "Ciborgue"),
+        harpy: t("laminasMobHarpy", "Dama das Garras"),
         brute: t("laminasMobBrute", "Brutamontes"),
       })[k] ?? k,
     [t],

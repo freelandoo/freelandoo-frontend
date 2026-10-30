@@ -7,6 +7,12 @@
 // treme, morte = afunda). O mesmo boneco aparece na cidade (center-mobs.ts)
 // e na arena. Trocar pelo modelo de verdade = outra classe com a mesma API
 // (`update` e `dispose`).
+//
+// 2026-10-29 (Alex): modelos de verdade — Soldado de Pedra = Golem de Pedra
+// (níveis 1 e 2), Golem de Sucata = Ciborgue, Harpia = Dama das Garras (os três
+// são as skins de 2 m, rigadas com as animações do Sergio: andam e golpeiam com
+// os clipes do boxe, como o jogador na arena) e o Lobo = a fera de 4 patas
+// (GLB sem esqueleto, animado aqui como o provisório). O Brutamontes segue de formas.
 
 import type { Scene } from "@babylonjs/core/scene"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
@@ -16,7 +22,54 @@ import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
+import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
+import type { AssetContainer } from "@babylonjs/core/assetContainer"
 import type { MobKind, MobState } from "../sim/fight"
+import { AvatarLibrary, ensureLoaders } from "../../engine/avatars"
+import { Character } from "../../engine/player"
+import type { BodyId } from "../../types"
+
+/** Monstros com corpo de gente: a skin rigada e a escala na luta. */
+const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
+  soldier: { body: "golem", scale: 1.1 },
+  golem: { body: "ciborgue", scale: 1.4 },
+  harpy: { body: "garras", scale: 1.05 },
+}
+/** O lobo (pipeline/laminas/build_lobo.py): chega com o focinho no −X → gira para o +Z. */
+const WOLF_URL = "/meu-mundo/laminas/lobo-m50.glb"
+const WOLF_TURN = Math.PI / 2
+/** O lobo é GRANDE (Alex, 29/10): 4 m de focinho a rabo. */
+const WOLF_SCALE = 2
+
+/** Biblioteca de avatares com os clipes do boxe, uma por cena (monstros rigados). */
+const libs = new WeakMap<Scene, { lib: AvatarLibrary; fallback: StandardMaterial; shadow: StandardMaterial }>()
+function rigKit(scene: Scene) {
+  let k = libs.get(scene)
+  if (!k) {
+    const fallback = new StandardMaterial("mm-mob-fallback", scene)
+    fallback.diffuseColor = new Color3(0.5, 0.48, 0.55)
+    fallback.specularColor = new Color3(0.05, 0.05, 0.05)
+    const shadow = new StandardMaterial("mm-mob-shadow", scene)
+    shadow.diffuseColor = new Color3(0, 0, 0)
+    shadow.specularColor = new Color3(0, 0, 0)
+    shadow.disableLighting = true
+    shadow.alpha = 0.35
+    k = { lib: new AvatarLibrary(scene, false, false, 30, false, false, true), fallback, shadow }
+    scene.onDisposeObservable.addOnce(() => k!.lib.dispose())
+    libs.set(scene, k)
+  }
+  return k
+}
+const wolves = new WeakMap<Scene, Promise<AssetContainer>>()
+function wolfContainer(scene: Scene) {
+  let p = wolves.get(scene)
+  if (!p) {
+    ensureLoaders()
+    p = LoadAssetContainerAsync(WOLF_URL, scene)
+    wolves.set(scene, p)
+  }
+  return p
+}
 
 /** O que a regra diz do monstro neste quadro. */
 export interface MobPose {
@@ -71,6 +124,10 @@ export class MonsterModel {
   private readonly flash: StandardMaterial
   private walk = 0
   private gone = false
+  /** Corpo de gente (skin rigada) no lugar das formas. */
+  private char: Character | null = null
+  private last: MobState | null = null
+  private readonly real: boolean
 
   constructor(
     private readonly scene: Scene,
@@ -86,7 +143,29 @@ export class MonsterModel {
     // Material próprio que pisca no aviso (o corpo principal de cada um).
     this.flash = new StandardMaterial(`mm-mob-flash-${id}`, scene)
     this.flash.specularColor = new Color3(0.08, 0.08, 0.08)
-    BUILD[kind](this)
+    const rig = RIGGED[kind]
+    this.real = !!rig || kind === "wolf"
+    if (rig) {
+      const k = rigKit(scene)
+      this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rig.body, null, false)
+      this.char.holder.scaling.setAll(rig.scale * scale)
+      this.char.setBoxe("BGuard")
+    } else if (kind === "wolf") {
+      wolfContainer(scene)
+        .then((c) => {
+          if (this.gone) return
+          const e = c.instantiateModelsToScene((n) => `${n}-${id}`, false, { doNotInstantiate: true })
+          // A raiz do glTF gira por quaternion: a volta fica num nó próprio.
+          const turn = new TransformNode(`mm-mob-wolf-turn-${id}`, scene)
+          turn.parent = this.body
+          turn.rotation.y = WOLF_TURN
+          turn.scaling.setAll(WOLF_SCALE)
+          for (const n of e.rootNodes) n.parent = turn
+        })
+        .catch(() => {
+          if (!this.gone) BUILD.wolf(this)
+        })
+    } else BUILD[kind](this)
   }
 
   // ── peças ────────────────────────────────────────────────────────────────
@@ -119,6 +198,7 @@ export class MonsterModel {
   // ── animação ─────────────────────────────────────────────────────────────
   update(dt: number, p: MobPose) {
     if (this.gone) return
+    if (this.char) return this.updateRigged(dt, p)
     this.root.position.set(p.x, p.y, p.z)
     this.root.rotation.y = p.facing
     this.walk += dt * Math.min(9, 2 + p.speed * 3.2)
@@ -153,6 +233,8 @@ export class MonsterModel {
     this.body.rotation.x = lean
     this.body.position.x = shake
     this.body.position.y = -sink * 0.6
+    // O lobo de verdade não tem pernas soltas: o passo vira um balanço do corpo.
+    if (this.real && p.speed > 0.2 && p.state !== "dead") this.body.position.y += Math.abs(sw) * 0.06
     this.body.scaling.set(rise, rise, rise)
     this.flash.emissiveColor = new Color3(glow, glow * 0.15, glow * 0.15)
     const moving = p.speed > 0.2 && (p.state === "chase" || p.state === "circle" || p.state === "fly")
@@ -200,12 +282,36 @@ export class MonsterModel {
     if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
   }
 
+  /** Skin rigada: anda pela locomoção e golpeia com os clipes do boxe (a mesma troca do jogador). */
+  private updateRigged(dt: number, p: MobPose) {
+    const c = this.char!
+    c.place(p.x, p.z, p.facing, p.y, 0)
+    const heavy = this.kind === "golem"
+    if (p.state !== this.last) {
+      if (p.state === "windup") c.boxeAct(heavy ? "BBox2" : "BJab", 0.55, 0, 0.42, true)
+      else if (p.state === "strike") c.boxeAct(heavy ? "BBox2" : "BJab", 0.32, 0.42, 1)
+      else if (p.state === "hurt") c.boxeAct("BHitLite", 0.32, 0, 0.66)
+      else if (p.state === "dead") c.boxeAct("BFall", 1.2, 0, 1, true)
+      this.last = p.state
+    }
+    if (p.state === "chase" && p.speed > 0.2) {
+      c.setBoxe(null)
+      c.animate(dt, p.speed > 3.2 ? 2 : 1, p.speed)
+    } else {
+      c.setBoxe("BGuard")
+      c.animate(dt, 0, 0)
+    }
+    if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
+  }
+
   setVisible(v: boolean) {
     this.root.setEnabled(v)
+    this.char?.setVisible(v)
   }
 
   dispose() {
     this.gone = true
+    this.char?.dispose()
     for (const p of this.parts) p.mesh.dispose()
     this.flash.dispose()
     this.body.dispose()

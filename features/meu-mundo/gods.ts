@@ -7,7 +7,9 @@
 // têm o mesmo id; o backend espelha a lista em src/utils/meuMundoSkins.js e
 // no CHECK chk_mm_avatar_body (mig 313).
 
-export const GOD_BODIES = ["aurion", "morkhan", "kragor", "zephyra", "maru", "iris", "noctis", "aeryn"] as const
+// Depois dos 8 deuses, as outras skins de 2 m com a mesma receita (2026-10-29):
+// Ciborgue, Cavaleiro Dourado, Golem de Pedra e Dama das Garras.
+export const GOD_BODIES = ["aurion", "morkhan", "kragor", "zephyra", "maru", "iris", "noctis", "aeryn", "ciborgue", "cavaleiro", "golem", "garras"] as const
 export type GodBody = (typeof GOD_BODIES)[number]
 
 /** Nome próprio (não se traduz). */
@@ -20,6 +22,10 @@ export const GOD_NAMES: Record<GodBody, string> = {
   iris: "Íris",
   noctis: "Noctis",
   aeryn: "Aeryn",
+  ciborgue: "Ciborgue",
+  cavaleiro: "Cavaleiro Dourado",
+  golem: "Golem de Pedra",
+  garras: "Dama das Garras",
 }
 
 export const isGod = (id: string | null | undefined): id is GodBody => (GOD_BODIES as readonly string[]).includes(id ?? "")

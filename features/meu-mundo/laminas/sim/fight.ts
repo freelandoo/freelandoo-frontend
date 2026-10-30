@@ -125,7 +125,7 @@ export const MOBS: Record<MobKind, MobDef> = {
   },
   wolf: {
     hp: 34,
-    radius: 0.45,
+    radius: 0.9, // lobo grande (29/10): 4 m de comprimento
     speed: 5.2,
     engage: 3.4,
     poise: 0,
@@ -270,7 +270,7 @@ export function statEffects(s: Stats) {
 
 /** Quantos e onde nascem: lobos em bando de 3, o resto sozinho. */
 function spawnList(kind: MobKind): { x: number; z: number }[] {
-  if (kind === "wolf") return [{ x: -2.4, z: 5.5 }, { x: 0, z: 6.4 }, { x: 2.4, z: 5.5 }]
+  if (kind === "wolf") return [{ x: -3.6, z: 5.5 }, { x: 0, z: 7 }, { x: 3.6, z: 5.5 }]
   return [{ x: 0, z: 5.5 }]
 }
 
@@ -293,7 +293,8 @@ export class Fight {
   constructor(setup: FightSetup) {
     this.R = rng(setup.seed ?? (Date.now() & 0x7fffffff))
     this.kind = setup.kind
-    this.level = clamp(Math.round(setup.level ?? 1), 1, 3)
+    // O Golem de Pedra (o antigo Soldado) tem só os níveis 1 e 2 (Alex, 29/10).
+    this.level = clamp(Math.round(setup.level ?? 1), 1, setup.kind === "soldier" ? 2 : 3)
     const stats = { ...BASE_STATS, ...(setup.stats ?? {}) }
     this.fx = statEffects(stats)
     this.me = {
