@@ -6398,7 +6398,13 @@
     "hasAccountPrefix": "Já tem conta na Freelandoo?",
     "doneTitle": "Horário marcado",
     "doneOnSiteNote": "Quem atende já foi avisado. O pagamento é feito no atendimento.",
-    "doneBack": "Voltar ao site"
+    "doneBack": "Voltar ao site",
+    "payNowDescMp": "Pix ou cartão pelo Mercado Pago. O horário fica reservado na hora.",
+    "payNowNoteMp": "Ao confirmar, você vai para o Mercado Pago e paga o valor do serviço por Pix ou cartão. Aprovado o pagamento, o horário é seu.",
+    "guestEmailLabelOptional": "Seu e-mail (opcional)",
+    "guestNeededV2": "Informe o seu nome (e, se quiser, um e-mail válido) para confirmar.",
+    "whatsappLabelRequired": "Seu WhatsApp",
+    "whatsappNeeded": "Informe o seu WhatsApp com DDD para confirmar."
   },
   "Whatsapp": {
     "connectCta": "Conectar meu WhatsApp",

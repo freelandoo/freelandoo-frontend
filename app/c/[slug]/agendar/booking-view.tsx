@@ -276,16 +276,29 @@ export function SiteBookingView({
    * pessoa saber ANTES de apertar, em vez de descobrir por um erro vermelho
    * depois de ter escolhido serviço, dia e hora.
    */
+  //
+  // ⚠️ A régua antiga tinha perdido as barras invertidas (`[^s@]` em vez de
+  // `[^\s@]`) e recusava QUALQUER e-mail com a letra "s" — gmail incluso. Era
+  // isso que travava o agendamento. Agora o e-mail é opcional (mig 315) e o
+  // obrigatório é o WhatsApp, com ou sem conta.
+  const guestEmailTrim = guestEmail.trim()
   const guestReady =
-    guestName.trim().length >= 2 && /^[^s@]+@[^s@]+.[^s@]+$/.test(guestEmail.trim())
+    guestName.trim().length >= 2 &&
+    (guestEmailTrim === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmailTrim))
+  const whatsappDigits = whatsapp.replace(/\D/g, "")
+  const whatsappReady = whatsappDigits.length >= 10 && whatsappDigits.length <= 13
 
   const confirm = useCallback(async () => {
     if (!service || !proId || !time) return
     const token = getToken()
-    // Sem conta, nome e e-mail são obrigatórios: é por eles que a confirmação
-    // chega e que quem atende sabe quem vai sentar na cadeira.
+    // Sem conta, o nome é obrigatório (quem atende sabe quem vai sentar na
+    // cadeira); o e-mail, se vier, precisa ser válido.
     if (!token && !guestReady) {
-      setError(t("guestNeeded", "Informe o seu nome e um e-mail válido para confirmar."))
+      setError(t("guestNeededV2", "Informe o seu nome (e, se quiser, um e-mail válido) para confirmar."))
+      return
+    }
+    if (!whatsappReady) {
+      setError(t("whatsappNeeded", "Informe o seu WhatsApp com DDD para confirmar."))
       return
     }
     setSending(true)
@@ -305,13 +318,15 @@ export function SiteBookingView({
           booking_date: date,
           start_time: time,
           id_profile_service: service.id_profile_service,
-          client_whatsapp: whatsapp || null,
+          client_whatsapp: whatsappDigits,
           id_community: communityId,
           payment_mode: payMode,
           // Com sessão, nome e e-mail saem da CONTA, no servidor — mandá-los
           // daqui seria oferecer a quem está logado um jeito de marcar em nome
           // de outra pessoa.
-          ...(token ? {} : { client_name: guestName.trim(), client_email: guestEmail.trim() }),
+          ...(token
+            ? {}
+            : { client_name: guestName.trim(), ...(guestEmailTrim ? { client_email: guestEmailTrim } : {}) }),
         }),
       })
       const data = await res.json()
@@ -338,12 +353,13 @@ export function SiteBookingView({
     proId,
     time,
     date,
-    whatsapp,
+    whatsappDigits,
+    whatsappReady,
     communityId,
     payMode,
     guestReady,
     guestName,
-    guestEmail,
+    guestEmailTrim,
     t,
   ])
 
@@ -779,7 +795,10 @@ export function SiteBookingView({
                   {
                     key: "now" as const,
                     title: t("payNowTitle", "Pagar agora"),
-                    desc: t("payNowDesc", "Você paga o sinal e o horário fica reservado na hora."),
+                    desc: t(
+                      "payNowDescMp",
+                      "Pix ou cartão pelo Mercado Pago. O horário fica reservado na hora."
+                    ),
                   },
                   {
                     key: "on_site" as const,
@@ -847,7 +866,7 @@ export function SiteBookingView({
                     className="block text-[11px] font-extrabold uppercase tracking-[0.12em]"
                     style={{ color: theme.textSecondary }}
                   >
-                    {t("guestEmailLabel", "Seu e-mail")}
+                    {t("guestEmailLabelOptional", "Seu e-mail (opcional)")}
                   </span>
                   <input
                     value={guestEmail}
@@ -871,12 +890,14 @@ export function SiteBookingView({
                 className="block text-[11px] font-extrabold uppercase tracking-[0.12em]"
                 style={{ color: theme.textSecondary }}
               >
-                {t("whatsappLabel", "WhatsApp para contato (opcional)")}
+                {t("whatsappLabelRequired", "Seu WhatsApp")}
               </span>
               <input
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
                 inputMode="tel"
+                autoComplete="tel"
+                required
                 placeholder="(11) 90000-0000"
                 className="mt-2 w-full border-2 px-3 py-3 text-sm outline-none"
                 style={{
@@ -894,8 +915,8 @@ export function SiteBookingView({
                     "Ao confirmar, o horário fica marcado e quem atende é avisado na hora. O pagamento é feito no atendimento."
                   )
                 : t(
-                    "depositNote",
-                    "Ao confirmar, você paga o sinal que reserva o horário. O restante é combinado direto com quem atende."
+                    "payNowNoteMp",
+                    "Ao confirmar, você vai para o Mercado Pago e paga o valor do serviço por Pix ou cartão. Aprovado o pagamento, o horário é seu."
                   )}
             </p>
 

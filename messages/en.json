@@ -6984,7 +6984,13 @@
     "hasAccountPrefix": "Already have a Freelandoo account?",
     "doneTitle": "You're booked",
     "doneOnSiteNote": "The professional has been notified. Payment happens at your appointment.",
-    "doneBack": "Back to the site"
+    "doneBack": "Back to the site",
+    "payNowDescMp": "Pix or card via Mercado Pago. The slot is booked right away.",
+    "payNowNoteMp": "When you confirm, you go to Mercado Pago and pay for the service by Pix or card. Once the payment is approved, the slot is yours.",
+    "guestEmailLabelOptional": "Your email (optional)",
+    "guestNeededV2": "Enter your name (and, if you like, a valid email) to confirm.",
+    "whatsappLabelRequired": "Your WhatsApp",
+    "whatsappNeeded": "Enter your WhatsApp number with area code to confirm."
   },
   "Whatsapp": {
     "connectCta": "Connect my WhatsApp",

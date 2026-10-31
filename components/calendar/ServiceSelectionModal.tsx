@@ -129,6 +129,9 @@ export function ServiceSelectionModal({
   async function handleConfirm() {
     if (!selectedId) { setError("Escolha um serviço"); return }
     if (!isLoggedIn) { setError("Faça login para agendar"); return }
+    // WhatsApp obrigatório (o servidor recusa sem ele): é por ele que quem atende fala com o cliente.
+    const waDigits = whatsapp.replace(/\D/g, "")
+    if (waDigits.length < 10 || waDigits.length > 13) { setError("Informe o seu WhatsApp com DDD"); return }
     setSubmitting(true)
     setError(null)
     try {
@@ -224,7 +227,9 @@ export function ServiceSelectionModal({
                   </div>
                   <input
                     type="tel"
-                    placeholder="WhatsApp (opcional)"
+                    placeholder="WhatsApp com DDD"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={whatsapp}
                     onChange={e => setWhatsapp(e.target.value)}
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-yellow-400 outline-none"

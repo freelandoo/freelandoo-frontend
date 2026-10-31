@@ -6964,7 +6964,13 @@
     "hasAccountPrefix": "¿Ya tienes cuenta en Freelandoo?",
     "doneTitle": "Horario agendado",
     "doneOnSiteNote": "Quien atiende ya fue avisado. El pago se hace en la atención.",
-    "doneBack": "Volver al sitio"
+    "doneBack": "Volver al sitio",
+    "payNowDescMp": "Pix o tarjeta por Mercado Pago. El horario queda reservado al instante.",
+    "payNowNoteMp": "Al confirmar, vas a Mercado Pago y pagas el servicio con Pix o tarjeta. Aprobado el pago, el horario es tuyo.",
+    "guestEmailLabelOptional": "Tu correo (opcional)",
+    "guestNeededV2": "Indica tu nombre (y, si quieres, un correo válido) para confirmar.",
+    "whatsappLabelRequired": "Tu WhatsApp",
+    "whatsappNeeded": "Indica tu WhatsApp con código de área para confirmar."
   },
   "Whatsapp": {
     "connectCta": "Conectar mi WhatsApp",

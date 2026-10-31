@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils"
 export interface AgendaBookingRow {
   id: number
   client_name: string
-  client_email: string
+  client_email: string | null
   client_whatsapp: string
   booking_date: string
   start_time: string
