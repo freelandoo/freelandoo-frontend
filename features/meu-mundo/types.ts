@@ -378,7 +378,8 @@ export interface WardrobeSkin {
 
 export interface WardrobeResult extends LifeSummary {
   /** Cores de cada skin colorível (mm3d-36): código look. */
-  wardrobe: { condition: BodyId; admin: boolean; skins: WardrobeSkin[]; colors?: Record<string, string> }
+  /** clanBody (mm3d-58): o corpo da classe — o "Padrão" mostra ele; null sem classe. */
+  wardrobe: { condition: BodyId; clanBody?: BodyId | null; admin: boolean; skins: WardrobeSkin[]; colors?: Record<string, string> }
   look?: string
   bought?: boolean
 }

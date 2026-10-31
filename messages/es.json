@@ -9110,7 +9110,9 @@
     "clanForever": "La clase es para siempre — solo un artefacto raro la cambia.",
     "clanFox": "Zorra",
     "clanVampire": "Vampiro",
-    "clanVampireF": "Vampira"
+    "clanVampireF": "Vampira",
+    "skinClan": "Clase: {c}",
+    "skinClanLine": "El personaje de tu clase. Se hace adulto con la vida."
   },
   "Sports": {
     "eyebrow": "Deportes",

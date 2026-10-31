@@ -30,7 +30,7 @@ import { PolenIcon } from "@/components/polens/polen-icon"
 import { Chamfer, EVO, archivo, teko } from "./evo-skin"
 import { MM } from "../hud/tokens"
 import { GOD_NAMES } from "../../gods"
-import { clanBodyNames } from "../../classes"
+import { clanBodyName, clanBodyNames } from "../../classes"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -44,6 +44,9 @@ export interface SkinWardrobeProps {
 function conditionName(b: BodyId, t: Tr) {
   return { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES, ...clanBodyNames(t) }[b]
 }
+
+/** mm3d-58: com classe, a feminina sai da lista (o "Padrão" já é o personagem da classe). */
+const skinList = (clanBody: BodyId | null | undefined) => (clanBody ? SKINS.filter((s) => s.id !== "feminina") : SKINS)
 
 export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProps) {
   const [data, setData] = useState<WardrobeResult | null>(null)
@@ -88,7 +91,7 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
       if (!picked.current) {
         picked.current = true
         const on = r.data.wardrobe.skins.find((s) => s.equipped)?.id
-        const i = SKINS.findIndex((s) => s.id === on)
+        const i = skinList(r.data.wardrobe.clanBody).findIndex((s) => s.id === on)
         if (i >= 0) setIdx(i)
       }
     })
@@ -110,12 +113,15 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
     }
   }, [])
 
-  const art: SkinArt = SKINS[idx]
+  // mm3d-58: o "Padrão" é o personagem da classe (corpo vindo do servidor).
+  const clanBody = data?.wardrobe.clanBody ?? null
+  const list = skinList(clanBody)
+  const art: SkinArt = list[Math.min(idx, list.length - 1)]
   const entry = data?.wardrobe.skins.find((s) => s.id === art.id) ?? null
   const condition = data?.wardrobe.condition ?? "normal"
   const owned = art.body === null || !!entry?.owned
-  const body: BodyId = art.body ?? condition
-  const colorable = COLORABLE_SKINS.has(art.id)
+  const body: BodyId = art.body ?? clanBody ?? condition
+  const colorable = COLORABLE_SKINS.has(art.id) && !(clanBody && art.body === null)
   const savedLook = colorable ? (data?.wardrobe.colors?.[art.id] ?? DEFAULT_LOOK) : ""
   // Holograma não tem cores; com o painel aberto, o palco mostra o rascunho.
   const look = !owned ? "" : colorsOpen ? draft : savedLook
@@ -133,11 +139,15 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
     // eslint-disable-next-line react-hooks/exhaustive-deps -- showKey resume corpo, posse e cores
   }, [showKey])
 
-  const go = useCallback((d: number) => {
-    if (materializing.current) return
-    setColorsOpen(false)
-    setIdx((i) => (i + d + SKINS.length) % SKINS.length)
-  }, [])
+  const count = list.length
+  const go = useCallback(
+    (d: number) => {
+      if (materializing.current) return
+      setColorsOpen(false)
+      setIdx((i) => (i + d + count) % count)
+    },
+    [count],
+  )
 
   // ── teclado (por cima do STATUS: ESC fecha só o vestuário) ──────────────
   useEffect(() => {
@@ -230,7 +240,7 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
   }
 
   const coins = data?.wallet.coins ?? 0
-  const name = t(art.labelKey, art.fallback)
+  const name = clanBody && art.body === null ? clanBodyName(clanBody as Parameters<typeof clanBodyName>[0], t) : t(art.labelKey, art.fallback)
   const coinsText = (n: number) => t("stCoins", "{n} moedas").replace("{n}", n.toLocaleString())
 
   let action: React.ReactNode = null
@@ -355,7 +365,9 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
                 </span>
                 {art.body === null && (
                   <span className={`${teko.className} text-[17px] uppercase tracking-[0.14em] max-[759px]:text-[13px]`} style={{ color: EVO.douradoClaro }}>
-                    {t("skinCondition", "Condição: {c}").replace("{c}", conditionName(condition, t))}
+                    {clanBody
+                      ? t("skinClan", "Classe: {c}").replace("{c}", conditionName(clanBody, t))
+                      : t("skinCondition", "Condição: {c}").replace("{c}", conditionName(condition, t))}
                   </span>
                 )}
                 {!owned && (
@@ -373,10 +385,10 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
                 {name}
               </div>
               <p className="mt-1 text-[14px] leading-snug max-[759px]:mt-0.5 max-[759px]:text-[12px]" style={{ color: EVO.mudo }}>
-                {t(art.taglineKey, art.taglineFallback)}
+                {clanBody && art.body === null ? t("skinClanLine", "O personagem da sua classe. Vira adulto com a vida.") : t(art.taglineKey, art.taglineFallback)}
               </p>
               <div className="mt-2 flex items-center gap-1.5 max-[759px]:mt-1.5">
-                {SKINS.map((s, i) => (
+                {list.map((s, i) => (
                   <button
                     key={s.id}
                     type="button"

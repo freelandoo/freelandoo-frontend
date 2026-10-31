@@ -9130,7 +9130,9 @@
     "clanForever": "Your class is for good — only a rare artifact changes it.",
     "clanFox": "Fox",
     "clanVampire": "Vampire",
-    "clanVampireF": "Vampire"
+    "clanVampireF": "Vampire",
+    "skinClan": "Class: {c}",
+    "skinClanLine": "Your class character. Grows up as life goes on."
   },
   "Sports": {
     "eyebrow": "Sports",

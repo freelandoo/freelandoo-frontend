@@ -30,6 +30,13 @@ const MEU_MUNDO = {
   clanFox: ["Raposa", "Fox", "Zorra"],
   clanVampire: ["Vampiro", "Vampire", "Vampiro"],
   clanVampireF: ["Vampira", "Vampire", "Vampira"],
+  // vestuário: o "Padrão" é o personagem da classe
+  skinClan: ["Classe: {c}", "Class: {c}", "Clase: {c}"],
+  skinClanLine: [
+    "O personagem da sua classe. Vira adulto com a vida.",
+    "Your class character. Grows up as life goes on.",
+    "El personaje de tu clase. Se hace adulto con la vida.",
+  ],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]
