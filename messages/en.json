@@ -1585,7 +1585,15 @@
     "collectionCoverError": "Could not upload the cover.",
     "featuredBadge": "Featured",
     "productCollection": "Collection",
-    "productFeatured": "Featured (shown first on your site)"
+    "productFeatured": "Featured (shown first on your site)",
+    "priceClientLabel": "Price for the client (R$)",
+    "clientPaysOnline": "Client pays online",
+    "affiliateCommissionViaCoupon": "+ affiliate commission, coupon only",
+    "freelandooFee": "Freelandoo fee",
+    "mpFee": "Mercado Pago fee",
+    "mpFeeOnApproval": "− deducted on approval",
+    "youReceiveApprox": "You receive (before the MP fee)",
+    "onSiteFullPrice": "On site you receive the full price: the client pays you directly."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

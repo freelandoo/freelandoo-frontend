@@ -1585,7 +1585,15 @@
     "collectionCoverError": "Não foi possível enviar a capa.",
     "featuredBadge": "Destaque",
     "productCollection": "Coleção",
-    "productFeatured": "Destaque (aparece primeiro no site)"
+    "productFeatured": "Destaque (aparece primeiro no site)",
+    "priceClientLabel": "Preço para o cliente (R$)",
+    "clientPaysOnline": "Cliente paga pelo site",
+    "affiliateCommissionViaCoupon": "+ comissão de afiliado, só com cupom",
+    "freelandooFee": "Taxa da Freelandoo",
+    "mpFee": "Tarifa do Mercado Pago",
+    "mpFeeOnApproval": "− descontada na aprovação",
+    "youReceiveApprox": "Você recebe (antes da tarifa do MP)",
+    "onSiteFullPrice": "No balcão você recebe o preço cheio: o pagamento é direto com você."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

@@ -32,6 +32,21 @@ const NAMESPACES = {
     autoSaved: ["Salvo", "Saved", "Guardado"],
     autoSaveError: ["Não salvou", "Not saved", "No se guardó"],
   },
+  // Tela de editar serviço: o campo passou a ser o PREÇO DO CLIENTE (2026-10-31).
+  Account: {
+    priceClientLabel: ["Preço para o cliente (R$)", "Price for the client (R$)", "Precio para el cliente (R$)"],
+    clientPaysOnline: ["Cliente paga pelo site", "Client pays online", "El cliente paga en línea"],
+    affiliateCommissionViaCoupon: ["+ comissão de afiliado, só com cupom", "+ affiliate commission, coupon only", "+ comisión de afiliado, solo con cupón"],
+    freelandooFee: ["Taxa da Freelandoo", "Freelandoo fee", "Tarifa de Freelandoo"],
+    mpFee: ["Tarifa do Mercado Pago", "Mercado Pago fee", "Tarifa de Mercado Pago"],
+    mpFeeOnApproval: ["− descontada na aprovação", "− deducted on approval", "− descontada al aprobarse"],
+    youReceiveApprox: ["Você recebe (antes da tarifa do MP)", "You receive (before the MP fee)", "Recibes (antes de la tarifa de MP)"],
+    onSiteFullPrice: [
+      "No balcão você recebe o preço cheio: o pagamento é direto com você.",
+      "On site you receive the full price: the client pays you directly.",
+      "En el local recibes el precio completo: el cliente te paga directamente.",
+    ],
+  },
   Agenda: {
     upcomingEyebrow: ["Próximos agendamentos", "Upcoming bookings", "Próximas reservas"],
     upcomingNone: ["Nenhum horário marcado", "No bookings yet", "Ningún horario reservado"],

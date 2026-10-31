@@ -6,10 +6,6 @@ import { GripVertical, ImagePlus, Loader2, Save, Trash2, Users, X } from "lucide
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AffiliateOptInField } from "@/components/affiliate/affiliate-opt-in-field"
 import type { ProfileService } from "@/components/calendar/types"
-import {
-  clientTotalCentsFromFreelancerNet,
-  freelancerNetForEditForm,
-} from "@/lib/service-booking-price"
 import type { ProcessedImage } from "@/lib/media/image-processing"
 import {
   POST_IMAGE_ASPECT_RATIO,
@@ -186,29 +182,12 @@ export function ProfileServiceEditModal({
     })
   }, [open, service])
 
-  useEffect(() => {
-    if (!open || !service || !bookingFeesReady) return
-    // Sob orçamento não tem valor a recompor: o preço gravado é zero e a
-    // conta devolveria um líquido negativo, que apareceria no campo no
-    // instante em que alguém desmarcasse a caixa.
-    if (service.price_on_request === true) return
-    const net = freelancerNetForEditForm(
-      service.price_amount,
-      bookingFees.stripe_fee_percent,
-      bookingFees.service_fee_cents,
-    )
-    setServiceForm((f) => ({ ...f, price_reais: (net / 100).toFixed(2).replace(".", ",") }))
-    // Reagimos só quando ids/valores monetários relevantes mudam — não
-    // queremos refazer cálculo a cada referência nova do objeto `service`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    open,
-    service?.id_profile_service,
-    service?.price_amount,
-    bookingFeesReady,
-    bookingFees.stripe_fee_percent,
-    bookingFees.service_fee_cents,
-  ])
+  // ⚠️ O CAMPO É O PREÇO DO CLIENTE (2026-10-31), gravado como digitado.
+  // Antes ele era "o valor que você quer receber" e o salvar somava a taxa
+  // por cima — o que contradizia a regra do agendamento (mig 244: o cliente
+  // paga o preço publicado e a taxa sai de quem recebe). As duas juntas
+  // faziam o cliente pagar 3% a mais E o profissional ainda ter a taxa
+  // descontada: o corte anunciado a R$ 40 saía por R$ 41,20.
 
   const selectedCount = serviceForm.member_profile_ids.length
   const effectiveCount = selectedCount === 0 ? clanMembers.length : selectedCount
@@ -456,13 +435,7 @@ export function ProfileServiceEditModal({
       onError?.(t("loadingBookingFees", "Carregando taxas de agendamento. Tente novamente em instantes."))
       return
     }
-    const price_amount = quote
-      ? 0
-      : clientTotalCentsFromFreelancerNet(
-          price,
-          bookingFees.stripe_fee_percent,
-          bookingFees.service_fee_cents,
-        )
+    const price_amount = quote ? 0 : price
     setSaving(true)
     const body: Record<string, unknown> = {
       name: serviceForm.name.trim(),
@@ -568,7 +541,7 @@ export function ProfileServiceEditModal({
               </select>
             </div>
             <div>
-              <label className="fl-label">{t("priceYouWantLabel", "Valor que você quer receber (R$)")}</label>
+              <label className="fl-label">{t("priceClientLabel", "Preço para o cliente (R$)")}</label>
               <input
                 type="text"
                 value={serviceForm.price_on_request ? "" : serviceForm.price_reais}
@@ -614,44 +587,49 @@ export function ProfileServiceEditModal({
             if (serviceForm.price_on_request) return null
             const baseCents = parsePriceReais(serviceForm.price_reais)
             if (baseCents <= 0) return null
-            const stripeFee = Math.round((baseCents * bookingFees.stripe_fee_percent) / 100)
-            const serviceFee = bookingFees.service_fee_cents
-            const clientTotal = baseCents + stripeFee + serviceFee
-            // Comissão de afiliado (aditiva): % do PRÓPRIO serviço (mig 192),
-            // caindo no padrão da plataforma quando o dono não definiu. Base = preço
-            // do serviço, somada por cima — mesma conta do BookingService no backend.
+            // A MESMA conta do backend (`utils/bookingFee`): a taxa da
+            // Freelandoo é fixo + % do preço e SAI do que você recebe; a tarifa
+            // do Mercado Pago também sai, e só é conhecida na aprovação.
+            const platformFee =
+              bookingFees.service_fee_cents +
+              Math.round((baseCents * bookingFees.stripe_fee_percent) / 100)
+            // Comissão de afiliado (aditiva, mig 090/192): % do PRÓPRIO
+            // serviço, caindo no padrão da plataforma — somada POR CIMA do
+            // preço, para o cliente que chega pelo cupom de um afiliado.
             const affiliatePct =
               serviceForm.affiliate_percent ?? bookingFees.affiliate_commission_percent
             const affiliateFee =
               serviceForm.affiliates_allowed && affiliatePct > 0
                 ? Math.round((baseCents * affiliatePct) / 100)
                 : 0
-            const clientPays = clientTotal + affiliateFee
             return (
               <div className="space-y-2 rounded-lg border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-4 text-xs">
                 <p className="mb-3 font-bold text-[#5b554b]">{t("valueSummary", "Resumo do valor")}</p>
                 <div className="flex justify-between text-[#2b2b2e]">
-                  <span>{t("youReceive", "Você recebe")}</span>
+                  <span>{t("clientPaysOnline", "Cliente paga pelo site")}</span>
                   <span className="font-mono">{centsToReais(baseCents)}</span>
-                </div>
-                <div className="flex justify-between text-[#5b554b]">
-                  <span>{t("cardFee", "Taxa da maquininha")} ({bookingFees.stripe_fee_percent}%)</span>
-                  <span className="font-mono text-[#b8860b]">+ {centsToReais(stripeFee)}</span>
-                </div>
-                <div className="flex justify-between text-[#5b554b]">
-                  <span>{t("serviceFeeFixed", "Taxa de serviço (fixo)")}</span>
-                  <span className="font-mono text-[#b8860b]">+ {centsToReais(serviceFee)}</span>
                 </div>
                 {affiliateFee > 0 && (
                   <div className="flex justify-between text-[#5b554b]">
-                    <span>{t("affiliateCommission", "Comissão de afiliado")} ({affiliatePct}%)</span>
+                    <span>{t("affiliateCommissionViaCoupon", "+ comissão de afiliado, só com cupom")} ({affiliatePct}%)</span>
                     <span className="font-mono text-[#b8860b]">+ {centsToReais(affiliateFee)}</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t-2 border-[#0B0B0D]/15 pt-2 text-sm font-bold">
-                  <span className="text-[#0B0B0D]">{t("clientWillPay", "Cliente pagará")}</span>
-                  <span className="font-mono text-[#E0A500]">{centsToReais(clientPays)}</span>
+                <div className="flex justify-between text-[#5b554b]">
+                  <span>{t("freelandooFee", "Taxa da Freelandoo")}</span>
+                  <span className="font-mono text-[#b8860b]">− {centsToReais(platformFee)}</span>
                 </div>
+                <div className="flex justify-between text-[#5b554b]">
+                  <span>{t("mpFee", "Tarifa do Mercado Pago")}</span>
+                  <span className="text-[#b8860b]">{t("mpFeeOnApproval", "− descontada na aprovação")}</span>
+                </div>
+                <div className="flex justify-between border-t-2 border-[#0B0B0D]/15 pt-2 text-sm font-bold">
+                  <span className="text-[#0B0B0D]">{t("youReceiveApprox", "Você recebe (antes da tarifa do MP)")}</span>
+                  <span className="font-mono text-[#E0A500]">{centsToReais(Math.max(0, baseCents - platformFee))}</span>
+                </div>
+                <p className="pt-1 text-[11px] leading-snug text-[#5b554b]">
+                  {t("onSiteFullPrice", "No balcão você recebe o preço cheio: o pagamento é direto com você.")}
+                </p>
               </div>
             )
           })()}

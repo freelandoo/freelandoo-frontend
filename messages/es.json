@@ -1585,7 +1585,15 @@
     "collectionCoverError": "No se pudo subir la portada.",
     "featuredBadge": "Destacado",
     "productCollection": "Colección",
-    "productFeatured": "Destacado (aparece primero en el sitio)"
+    "productFeatured": "Destacado (aparece primero en el sitio)",
+    "priceClientLabel": "Precio para el cliente (R$)",
+    "clientPaysOnline": "El cliente paga en línea",
+    "affiliateCommissionViaCoupon": "+ comisión de afiliado, solo con cupón",
+    "freelandooFee": "Tarifa de Freelandoo",
+    "mpFee": "Tarifa de Mercado Pago",
+    "mpFeeOnApproval": "− descontada al aprobarse",
+    "youReceiveApprox": "Recibes (antes de la tarifa de MP)",
+    "onSiteFullPrice": "En el local recibes el precio completo: el cliente te paga directamente."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
