@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { format } from "date-fns"
 import { ptBR, enUS, es } from "date-fns/locale"
-import { ChevronLeft, ChevronRight, Clock, Sparkles, MessageCircle, Check, CalendarX, BellRing } from "lucide-react"
+import { Ban, ChevronLeft, ChevronRight, Clock, Sparkles, MessageCircle, Check, CalendarX, BellRing } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   agendaTimeHm,
@@ -101,6 +101,8 @@ interface AgendaBookingsPanelProps {
   onNextWeek: () => void
   onGoCurrentWeek: () => void
   onClearDay: () => void
+  /** Abre o "Bloquear horário" (botão vermelho). Ausente = sem botão. */
+  onBlockTime?: () => void
 }
 
 export function AgendaBookingsPanel({
@@ -111,6 +113,7 @@ export function AgendaBookingsPanel({
   onNextWeek,
   onGoCurrentWeek,
   onClearDay,
+  onBlockTime,
 }: AgendaBookingsPanelProps) {
   const t = useTranslations("Agenda")
   const locale = useLocale()
@@ -179,6 +182,18 @@ export function AgendaBookingsPanel({
                 </button>
               </div>
             </>
+          )}
+          {/* BLOQUEAR HORÁRIO (pedido do Alex, 2026-10-31): o dono tira um
+              horário da página de agendar sem sair daqui. Vermelho porque
+              FECHA a agenda — é o oposto dos botões amarelos. */}
+          {onBlockTime && (
+            <button
+              type="button"
+              onClick={onBlockTime}
+              className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#D7261E] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-white shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5"
+            >
+              <Ban className="size-3.5" aria-hidden /> {t("blockTitle", "Bloquear horário")}
+            </button>
           )}
         </div>
       </header>

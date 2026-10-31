@@ -71,6 +71,27 @@ const NAMESPACES = {
     lunchStart: ["Início do almoço", "Lunch starts", "Inicio del almuerzo"],
     lunchEnd: ["Fim do almoço", "Lunch ends", "Fin del almuerzo"],
     lunchClear: ["Tirar o almoço", "Remove lunch break", "Quitar el almuerzo"],
+    // "Bloquear horário" (botão vermelho da agenda).
+    blockTitle: ["Bloquear horário", "Block time", "Bloquear horario"],
+    blockIntro: [
+      "Toque nos horários que você não vai atender. Eles somem da página de agendar.",
+      "Tap the times you won't be available. They disappear from the booking page.",
+      "Toca los horarios que no vas a atender. Desaparecen de la página de reservas.",
+    ],
+    blockToday: ["Hoje", "Today", "Hoy"],
+    blockTomorrow: ["Amanhã", "Tomorrow", "Mañana"],
+    blockPickDate: ["Outra data", "Another date", "Otra fecha"],
+    blockWholeDay: ["Fechar o dia inteiro", "Close the whole day", "Cerrar el día entero"],
+    blockDayNote: ["Ninguém consegue agendar neste dia.", "Nobody can book on this day.", "Nadie puede reservar este día."],
+    blockNoSlots: ["Não há horários livres neste dia.", "No free times on this day.", "No hay horarios libres este día."],
+    blockSave: ["Salvar bloqueio", "Save block", "Guardar bloqueo"],
+    blockSaved: [
+      "Pronto: esses horários saíram da página de agendar.",
+      "Done: those times are off the booking page.",
+      "Listo: esos horarios salieron de la página de reservas.",
+    ],
+    blockDaySaved: ["Dia fechado para agendamento.", "Day closed for bookings.", "Día cerrado para reservas."],
+    blockError: ["Não foi possível bloquear agora.", "Couldn't block right now.", "No se pudo bloquear ahora."],
     // Modal "Novo agendamento" (components/agenda/new-booking-modal.tsx).
     newBookingTitle: ["Novo agendamento!", "New booking!", "¡Nueva reserva!"],
     newBookingsTitle: ["{n} novos agendamentos!", "{n} new bookings!", "¡{n} nuevas reservas!"],

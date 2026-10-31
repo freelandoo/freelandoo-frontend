@@ -298,7 +298,7 @@ export function BusinessAgenda({ profileId, accent }: { profileId: string; accen
 
       {/* ─── 2ª seção: o calendário inteiro ─────────────────────────────── */}
       <Reveal tilt={false}>
-        <AgendaBookingsExperience profileId={profileId} controlledBookings={bookings} />
+        <AgendaBookingsExperience profileId={profileId} controlledBookings={bookings} canBlock />
       </Reveal>
 
       {/* ─── Por último: o valor acumulado do mês (visor de caixa) ────────── */}

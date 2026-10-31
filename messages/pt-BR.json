@@ -4694,7 +4694,18 @@
     "lunchShort": "Almoço",
     "lunchStart": "Início do almoço",
     "lunchEnd": "Fim do almoço",
-    "lunchClear": "Tirar o almoço"
+    "lunchClear": "Tirar o almoço",
+    "blockTitle": "Bloquear horário",
+    "blockIntro": "Toque nos horários que você não vai atender. Eles somem da página de agendar.",
+    "blockToday": "Hoje",
+    "blockTomorrow": "Amanhã",
+    "blockPickDate": "Outra data",
+    "blockDayNote": "Ninguém consegue agendar neste dia.",
+    "blockNoSlots": "Não há horários livres neste dia.",
+    "blockSave": "Salvar bloqueio",
+    "blockSaved": "Pronto: esses horários saíram da página de agendar.",
+    "blockDaySaved": "Dia fechado para agendamento.",
+    "blockError": "Não foi possível bloquear agora."
   },
   "Mei": {
     "title": "MEI",

@@ -13,6 +13,7 @@ import {
   filterBookingsForWeek,
 } from "@/components/agenda/agenda-booking-utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { BlockTimeModal } from "@/components/agenda/block-time-modal"
 import { cn } from "@/lib/utils"
 
 function authHeaders(): HeadersInit {
@@ -33,6 +34,8 @@ interface AgendaBookingsExperienceProps {
   className?: string
   /** Se passado, mostra um botão de engrenagem que linka para a página de configuração da agenda. */
   settingsHref?: string
+  /** Dono: mostra o botão vermelho "Bloquear horário" (2026-10-31). */
+  canBlock?: boolean
 }
 
 export function AgendaBookingsExperience({
@@ -40,7 +43,9 @@ export function AgendaBookingsExperience({
   controlledBookings,
   className,
   settingsHref,
+  canBlock = false,
 }: AgendaBookingsExperienceProps) {
+  const [blockOpen, setBlockOpen] = useState(false)
   const t = useTranslations("Agenda")
   const standalone = controlledBookings === undefined
 
@@ -210,9 +215,13 @@ export function AgendaBookingsExperience({
             onNextWeek={handleAgendaNextWeek}
             onGoCurrentWeek={handleAgendaThisWeek}
             onClearDay={handleClearAgendaDay}
+            onBlockTime={canBlock ? () => setBlockOpen(true) : undefined}
           />
         </div>
       </div>
+      {canBlock && (
+        <BlockTimeModal profileId={profileId} open={blockOpen} onClose={() => setBlockOpen(false)} />
+      )}
     </div>
   )
 }

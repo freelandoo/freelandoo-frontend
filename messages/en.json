@@ -5280,7 +5280,18 @@
     "lunchShort": "Lunch",
     "lunchStart": "Lunch starts",
     "lunchEnd": "Lunch ends",
-    "lunchClear": "Remove lunch break"
+    "lunchClear": "Remove lunch break",
+    "blockTitle": "Block time",
+    "blockIntro": "Tap the times you won't be available. They disappear from the booking page.",
+    "blockToday": "Today",
+    "blockTomorrow": "Tomorrow",
+    "blockPickDate": "Another date",
+    "blockDayNote": "Nobody can book on this day.",
+    "blockNoSlots": "No free times on this day.",
+    "blockSave": "Save block",
+    "blockSaved": "Done: those times are off the booking page.",
+    "blockDaySaved": "Day closed for bookings.",
+    "blockError": "Couldn't block right now."
   },
   "Mei": {
     "title": "MEI",

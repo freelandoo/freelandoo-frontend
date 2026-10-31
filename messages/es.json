@@ -5260,7 +5260,18 @@
     "lunchShort": "Almuerzo",
     "lunchStart": "Inicio del almuerzo",
     "lunchEnd": "Fin del almuerzo",
-    "lunchClear": "Quitar el almuerzo"
+    "lunchClear": "Quitar el almuerzo",
+    "blockTitle": "Bloquear horario",
+    "blockIntro": "Toca los horarios que no vas a atender. Desaparecen de la página de reservas.",
+    "blockToday": "Hoy",
+    "blockTomorrow": "Mañana",
+    "blockPickDate": "Otra fecha",
+    "blockDayNote": "Nadie puede reservar este día.",
+    "blockNoSlots": "No hay horarios libres este día.",
+    "blockSave": "Guardar bloqueo",
+    "blockSaved": "Listo: esos horarios salieron de la página de reservas.",
+    "blockDaySaved": "Día cerrado para reservas.",
+    "blockError": "No se pudo bloquear ahora."
   },
   "Mei": {
     "title": "MEI",
