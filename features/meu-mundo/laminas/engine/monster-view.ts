@@ -119,6 +119,8 @@ export interface MobPose {
   speed: number
   /** Golpe em curso (windup/strike/recover) e a duração de cada fase na regra. */
   attack?: { id: string; windup: number; active: number; recover: number }
+  /** Na rua (mm3d-57b): gente anda e para na pose de descanso, sem a guarda do boxe. */
+  calm?: boolean
 }
 
 const VIOLET = new Color3(0.72, 0.3, 1)
@@ -358,7 +360,10 @@ export class MonsterModel {
       else if (p.state === "dead") c.boxeAct("BFall", 1.2, 0, 1, true)
       this.last = p.state
     }
-    if (p.state === "chase" && p.speed > 0.2) {
+    if (p.calm) {
+      c.setBoxe(null)
+      c.animate(dt, p.speed > 0.2 ? (p.speed > 2.4 ? 2 : 1) : 0, p.speed)
+    } else if (p.state === "chase" && p.speed > 0.2) {
       c.setBoxe(null)
       c.animate(dt, p.speed > 3.2 ? 2 : 1, p.speed)
     } else {
