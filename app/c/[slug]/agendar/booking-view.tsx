@@ -32,7 +32,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  CreditCard,
   Loader2,
+  Store,
   UserRound,
 } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
@@ -186,10 +188,11 @@ export function SiteBookingView({
   const [guestName, setGuestName] = useState("")
   const [guestEmail, setGuestEmail] = useState("")
 
-  // "now" abre o checkout do sinal; "on_site" marca o horário e o dinheiro é
-  // combinado na cadeira. Nasce em "now" porque é o caminho que garante a
-  // reserva — o balcão depende da palavra dos dois lados.
-  const [payMode, setPayMode] = useState<"now" | "on_site">("now")
+  // "now" abre o checkout; "on_site" marca o horário e o dinheiro é
+  // combinado na cadeira. ⚠️ NASCE SEM ESCOLHA (pedido do Alex, 2026-10-31):
+  // a pessoa tem que apertar um dos dois antes de confirmar — marcado de
+  // fábrica, ela passava direto sem perceber que estava indo pagar.
+  const [payMode, setPayMode] = useState<"now" | "on_site" | null>(null)
 
   // ⚠️ A reserva de balcão NÃO TEM PARA ONDE REDIRECIONAR: não existe cobrança,
   // então não existe checkout. O fim da linha é esta tela, e ela precisa DIZER
@@ -299,6 +302,10 @@ export function SiteBookingView({
     }
     if (!whatsappReady) {
       setError(t("whatsappNeeded", "Informe o seu WhatsApp com DDD para confirmar."))
+      return
+    }
+    if (!payMode) {
+      setError(t("payModeNeeded", "Escolha como você prefere pagar."))
       return
     }
     setSending(true)
@@ -777,58 +784,6 @@ export function SiteBookingView({
               )}
             </dl>
 
-            {/* ─── Como pagar ──────────────────────────────────────────────
-                ⚠️ OS DOIS CAMINHOS SÃO DIFERENTES EM NATUREZA, e o texto diz
-                qual é qual: pagar agora GARANTE o horário (o sinal é o que o
-                prende), enquanto o balcão é um acordo — a reserva vale, mas o
-                dinheiro é combinado na cadeira. Esconder essa diferença faria
-                a pessoa escolher no escuro. */}
-            <fieldset className="mt-6">
-              <legend
-                className="block text-[11px] font-extrabold uppercase tracking-[0.12em]"
-                style={{ color: theme.textSecondary }}
-              >
-                {t("payModeLabel", "Como você prefere pagar")}
-              </legend>
-              <div className="mt-2 grid gap-3 sm:grid-cols-2">
-                {([
-                  {
-                    key: "now" as const,
-                    title: t("payNowTitle", "Pagar agora"),
-                    desc: t(
-                      "payNowDescMp",
-                      "Pix ou cartão pelo Mercado Pago. O horário fica reservado na hora."
-                    ),
-                  },
-                  {
-                    key: "on_site" as const,
-                    title: t("payOnSiteTitle", "Pagar no balcão"),
-                    desc: t("payOnSiteDesc", "O horário fica marcado e você paga no atendimento."),
-                  },
-                ]).map((opt) => {
-                  const active = payMode === opt.key
-                  return (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => setPayMode(opt.key)}
-                      aria-pressed={active}
-                      className="border-2 px-4 py-3 text-left"
-                      style={{
-                        background: active ? theme.primary : theme.surface,
-                        color: active ? theme.background : theme.textPrimary,
-                        borderColor: "#0B0B0D",
-                      }}
-                    >
-                      <span className="block text-sm font-extrabold uppercase tracking-[0.08em]">
-                        {opt.title}
-                      </span>
-                      <span className="mt-1 block text-xs leading-snug opacity-80">{opt.desc}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </fieldset>
 
             {/* ─── Quem está agendando ─────────────────────────────────────
                 Só para quem não tem conta. Com sessão, nome e e-mail saem do
@@ -908,8 +863,87 @@ export function SiteBookingView({
               />
             </label>
 
-            <p className="mt-4 text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
-              {payMode === "on_site"
+            {/* ─── Como pagar ──────────────────────────────────────────────
+                ⚠️ VEM DEPOIS DOS DADOS e NADA vem marcado (pedido do Alex,
+                2026-10-31): primeiro quem é, depois como paga — e a escolha é
+                um clique consciente; "Confirmar" só destrava depois dele.
+                Contraste forte de propósito: borda clara, ícone e marcador nos
+                dois, e o escolhido aceso com sombra dura.
+                Os dois caminhos são diferentes em natureza: pagar agora
+                GARANTE o horário; o balcão é um acordo. */}
+            <fieldset className="mt-8">
+              <legend
+                className="block text-sm font-extrabold uppercase tracking-[0.12em]"
+                style={{ color: theme.textPrimary }}
+              >
+                {t("payModeLabel", "Como você prefere pagar")}
+              </legend>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {([
+                  {
+                    key: "now" as const,
+                    Icon: CreditCard,
+                    title: t("payNowTitle", "Pagar agora"),
+                    desc: t(
+                      "payNowDescMp",
+                      "Pix ou cartão pelo Mercado Pago. O horário fica reservado na hora."
+                    ),
+                  },
+                  {
+                    key: "on_site" as const,
+                    Icon: Store,
+                    title: t("payOnSiteTitle", "Pagar no balcão"),
+                    desc: t("payOnSiteDesc", "O horário fica marcado e você paga no atendimento."),
+                  },
+                ]).map((opt) => {
+                  const active = payMode === opt.key
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => { setPayMode(opt.key); setError(null) }}
+                      aria-pressed={active}
+                      className="flex items-start gap-3 border-2 px-4 py-4 text-left transition-transform"
+                      style={{
+                        background: active ? theme.primary : theme.surface,
+                        color: active ? theme.background : theme.textPrimary,
+                        borderColor: active ? "#0B0B0D" : theme.textPrimary,
+                        boxShadow: active ? `4px 4px 0 0 ${theme.textPrimary}` : "none",
+                        transform: active ? "translate(-2px, -2px)" : "none",
+                      }}
+                    >
+                      {/* Marcador quadrado: vazio = ainda não escolhido. */}
+                      <span
+                        aria-hidden
+                        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border-2"
+                        style={{
+                          borderColor: active ? theme.background : theme.textPrimary,
+                          background: active ? theme.background : "transparent",
+                        }}
+                      >
+                        {active && <Check className="h-3.5 w-3.5" style={{ color: theme.primary }} />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 text-base font-extrabold uppercase tracking-[0.08em]">
+                          <opt.Icon className="h-4 w-4 shrink-0" /> {opt.title}
+                        </span>
+                        <span className="mt-1 block text-sm leading-snug" style={{ opacity: active ? 0.9 : 0.85 }}>
+                          {opt.desc}
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
+
+            <p
+              className="mt-4 text-xs leading-relaxed"
+              style={{ color: payMode ? theme.textSecondary : theme.textPrimary, fontWeight: payMode ? undefined : 700 }}
+            >
+              {!payMode
+                ? t("payModePick", "Escolha uma das duas opções acima para continuar.")
+                : payMode === "on_site"
                 ? t(
                     "onSiteNote",
                     "Ao confirmar, o horário fica marcado e quem atende é avisado na hora. O pagamento é feito no atendimento."
@@ -1000,7 +1034,7 @@ export function SiteBookingView({
             <button
               type="button"
               onClick={confirm}
-              disabled={sending}
+              disabled={sending || !payMode}
               className="inline-flex items-center gap-2 border-2 px-8 py-4 text-sm font-extrabold uppercase tracking-[0.14em] disabled:opacity-50"
               style={{ background: theme.primary, color: theme.background, borderColor: "#0B0B0D" }}
             >

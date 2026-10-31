@@ -36,6 +36,13 @@ const SITE_BOOKING = {
     "Indica tu nombre (y, si quieres, un correo válido) para confirmar.",
   ],
   whatsappLabelRequired: ["Seu WhatsApp", "Your WhatsApp", "Tu WhatsApp"],
+  // Forma de pagamento sem escolha prévia (2026-10-31).
+  payModeNeeded: ["Escolha como você prefere pagar.", "Choose how you'd like to pay.", "Elige cómo prefieres pagar."],
+  payModePick: [
+    "Escolha uma das duas opções acima para continuar.",
+    "Pick one of the two options above to continue.",
+    "Elige una de las dos opciones de arriba para continuar.",
+  ],
   whatsappNeeded: [
     "Informe o seu WhatsApp com DDD para confirmar.",
     "Enter your WhatsApp number with area code to confirm.",

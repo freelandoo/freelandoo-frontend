@@ -6445,7 +6445,9 @@
     "guestEmailLabelOptional": "Seu e-mail (opcional)",
     "guestNeededV2": "Informe o seu nome (e, se quiser, um e-mail válido) para confirmar.",
     "whatsappLabelRequired": "Seu WhatsApp",
-    "whatsappNeeded": "Informe o seu WhatsApp com DDD para confirmar."
+    "whatsappNeeded": "Informe o seu WhatsApp com DDD para confirmar.",
+    "payModeNeeded": "Escolha como você prefere pagar.",
+    "payModePick": "Escolha uma das duas opções acima para continuar."
   },
   "Whatsapp": {
     "connectCta": "Conectar meu WhatsApp",

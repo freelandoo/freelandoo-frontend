@@ -7031,7 +7031,9 @@
     "guestEmailLabelOptional": "Your email (optional)",
     "guestNeededV2": "Enter your name (and, if you like, a valid email) to confirm.",
     "whatsappLabelRequired": "Your WhatsApp",
-    "whatsappNeeded": "Enter your WhatsApp number with area code to confirm."
+    "whatsappNeeded": "Enter your WhatsApp number with area code to confirm.",
+    "payModeNeeded": "Choose how you'd like to pay.",
+    "payModePick": "Pick one of the two options above to continue."
   },
   "Whatsapp": {
     "connectCta": "Connect my WhatsApp",
