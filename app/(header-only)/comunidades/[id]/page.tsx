@@ -30,12 +30,16 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 // temporada e o texto do líder. Botão novo de headcard de comunidade entra
 // nessa pilha, nunca como bloco solto no meio da página.
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
-import { neonText } from "./_business/bz-tokens"
+import { litBox, neonText } from "./_business/bz-tokens"
 // A agenda do negócio só existe para o líder: carregada sob demanda, ela não
 // pesa na página de quem só visita.
 // O letreiro aceso do banner (WebGPU/WebGL2) — só no negócio, carregado à parte.
 const StorefrontShader = dynamic(
   () => import("./_business/storefront-shader").then((m) => m.StorefrontShader),
+  { ssr: false }
+)
+const BusinessShop = dynamic(
+  () => import("./_business/business-shop").then((m) => m.BusinessShop),
   { ssr: false }
 )
 const BusinessAgenda = dynamic(
@@ -143,14 +147,6 @@ const CondoExtras = dynamic(
 
 // As duas VITRINES territoriais (mig 198), agora como abas. Carregadas sob
 // demanda: quem abre uma comunidade comum — a maioria — nunca baixa este chunk.
-const ProfileOwnerProductsSection = dynamic(
-  () => import("@/components/profile/profile-owner-products-section").then((m) => m.ProfileOwnerProductsSection),
-  { ssr: false }
-)
-const ProfilePublicProductsSection = dynamic(
-  () => import("@/components/profile/profile-public-products-section").then((m) => m.ProfilePublicProductsSection),
-  { ssr: false }
-)
 const CommunityListings = dynamic(
   () => import("./_components/community-listings").then((m) => m.CommunityListings),
   { ssr: false }
@@ -2177,8 +2173,14 @@ export default function CommunityDetailPage() {
           que mantém os dois com a mesma cara conforme a lista de botões
           crescer. */}
       {panel === "community" && (
-        <section className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
-          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow("#1D4ED8", 6) }}>
+        // No negócio o painel DESCE como papel (repaginada N7): sai do
+        // headcard em vez de surgir do nada. Só transform/opacity.
+        <motion.section
+          initial={isBusinessPlatform ? { opacity: 0, y: -10 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={isBusinessPlatform ? litBox(accent, 6) : { boxShadow: surfaceShadow("#1D4ED8", 6) }}>
             <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               {/* AS QUATRO ABAS do painel único. Elas substituem os três pills
                   que existiam antes — e por isso carregam os MESMOS ícones e as
@@ -2648,7 +2650,7 @@ export default function CommunityDetailPage() {
               </div>
             )}
           </div>
-        </section>
+        </motion.section>
       )}
 
       {/* O PAINEL DO ASSUNTO (pet/carro) — o pill laranja. Moldura igual à do
@@ -2815,7 +2817,12 @@ export default function CommunityDetailPage() {
                   mesmo construtor. */}
             </div>
 
-            <div className="mt-6">
+            <motion.div
+              key={tab}
+              initial={isBusinessPlatform ? { opacity: 0, y: 12 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-6">
               {/* AS VITRINES (mig 198). Só em comunidade territorial — a fila
                   de abas já garante isso, mas o guard aqui é o que impede a
                   tela de tentar desenhá-las quando um deep-link antigo pedir
@@ -2867,25 +2874,14 @@ export default function CommunityDetailPage() {
               ) : showBusinessAgenda && tab === "agenda" ? (
                 <BusinessAgenda profileId={community.leader_store_profile_id!} accent={accent} />
               ) : isBusinessPlatform && tab === "shop" ? (
-                community.leader_store_profile_id ? (
-                  // O líder GERENCIA (cadastrar, editar, pausar) e todo o
-                  // resto COMPRA. Retirada com o vendedor é regra da Loja
-                  // (mig 264), então não há frete a escolher aqui.
-                  <div className="fl-sharp">
-                    {isLeader ? (
-                      <ProfileOwnerProductsSection profileId={community.leader_store_profile_id} />
-                    ) : (
-                      <ProfilePublicProductsSection profileId={community.leader_store_profile_id} />
-                    )}
-                  </div>
-                ) : (
-                  <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center">
-                    <ShoppingBag className="mx-auto h-10 w-10" style={{ color: accent }} />
-                    <p className="mt-4 text-sm text-[#9A938A]">
-                      {t("shopEmpty", "Este negócio ainda não tem produtos à venda.")}
-                    </p>
-                  </div>
-                )
+                // A VITRINE (repaginada N5): mesma lista de produtos do
+                // perfil-conta do líder, vestida de vitrine acesa. O líder
+                // GERENCIA, o resto COMPRA (retirada com o vendedor, mig 264).
+                <BusinessShop
+                  profileId={community.leader_store_profile_id ?? null}
+                  isLeader={isLeader}
+                  accent={accent}
+                />
               ) : feedLocked ? (
                 <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center">
                   <Lock className="mx-auto h-10 w-10" style={{ color: accent }} />
@@ -3042,7 +3038,7 @@ export default function CommunityDetailPage() {
                   )}
                 </div>
               )}
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

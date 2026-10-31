@@ -3134,7 +3134,11 @@
     "tabAgenda": "Schedule",
     "autoSaving": "Saving…",
     "autoSaved": "Saved",
-    "autoSaveError": "Not saved"
+    "autoSaveError": "Not saved",
+    "shopEyebrow": "Storefront",
+    "shopTitleOwner": "Your products",
+    "shopTitlePublic": "Products for sale",
+    "shopPickupNote": "Buy through Freelandoo, pick up with the seller."
   },
   "Careers": {
     "hero.badge": "Careers",

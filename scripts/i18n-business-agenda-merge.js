@@ -18,6 +18,15 @@ const DIR = path.join(__dirname, "..", "messages");
 const NAMESPACES = {
   Community: {
     tabAgenda: ["Agenda", "Schedule", "Agenda"],
+    // Vitrine (aba Produtos do negócio, repaginada N5).
+    shopEyebrow: ["Vitrine", "Storefront", "Vitrina"],
+    shopTitleOwner: ["Seus produtos", "Your products", "Tus productos"],
+    shopTitlePublic: ["Produtos à venda", "Products for sale", "Productos en venta"],
+    shopPickupNote: [
+      "Compra pela Freelandoo, retirada com o vendedor.",
+      "Buy through Freelandoo, pick up with the seller.",
+      "Compra por Freelandoo, retiro con el vendedor.",
+    ],
     // Salvamento automático do modo de edição (o "Salvar" do rodapé saiu).
     autoSaving: ["Salvando…", "Saving…", "Guardando…"],
     autoSaved: ["Salvo", "Saved", "Guardado"],

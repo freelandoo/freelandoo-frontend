@@ -57,6 +57,7 @@ import { PageBackLink, TabloidDialog } from "@/components/tabloide"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken, getStoredUser } from "@/lib/auth"
 import { cn } from "@/lib/utils"
+import { CountUp, Reveal } from "@/components/motion/motion-kit"
 import { CommunityShellBeacon } from "@/components/layout/community-shell"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { TechBackdrop } from "@/components/platform/tech-backdrop"
@@ -362,7 +363,7 @@ export function CommunityIndicators({ communityId }: { communityId: string }) {
           </div>
         </header>
 
-        <div className="mt-5 space-y-5">
+        <Reveal className="mt-5 space-y-5" tilt={false} step={0.06}>
           {/* ─── 1. O RESULTADO ─────────────────────────────────────────── */}
           <section className={cn(PANEL, "p-5 md:p-6")} style={{ boxShadow: `6px 6px 0 0 ${accent}` }}>
             <SectionTitle icon={<Wallet className="h-4 w-4" />} color={accent}>
@@ -374,11 +375,16 @@ export function CommunityIndicators({ communityId }: { communityId: string }) {
                 <p className={LABEL}>
                   {profitPositive ? t("indProfit", "Lucro") : t("indLoss", "Prejuízo")}
                 </p>
+                {/* O NÚMERO HERÓI (repaginada do Business, N8): conta como
+                    visor de caixa e acende na cor do resultado. */}
                 <p
                   className="fl-display mt-1 text-5xl leading-none md:text-6xl"
-                  style={{ color: profitPositive ? GOOD : BAD }}
+                  style={{
+                    color: profitPositive ? GOOD : BAD,
+                    textShadow: `0 0 18px ${profitPositive ? GOOD : BAD}66, 0 0 42px ${profitPositive ? GOOD : BAD}33`,
+                  }}
                 >
-                  {money(finance.profit_cents)}
+                  <CountUp value={finance.profit_cents} format={money} duration={1.1} />
                 </p>
                 <Delta
                   now={finance.profit_cents}
@@ -729,7 +735,7 @@ export function CommunityIndicators({ communityId }: { communityId: string }) {
               totalText={(v) => t("indChartTotal", "Total no período: {v}").replace("{v}", v)}
             />
           </section>
-        </div>
+        </Reveal>
       </div>
 
       {entryDir && (
@@ -815,7 +821,10 @@ function Kpi({
   accent: string
 }) {
   return (
-    <div className={cn(PANEL, "p-4")} style={{ boxShadow: `4px 4px 0 0 ${accent}` }}>
+    <div
+      className={cn(PANEL, "p-4 transition-transform duration-200 hover:-translate-y-0.5")}
+      style={{ boxShadow: `4px 4px 0 0 ${accent}, 0 16px 36px -22px ${accent}` }}
+    >
       <p className={cn(LABEL, "flex items-center gap-1.5")}>
         <span style={{ color: accent }}>{icon}</span>
         {label}

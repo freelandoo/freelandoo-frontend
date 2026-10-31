@@ -3134,7 +3134,11 @@
     "tabAgenda": "Agenda",
     "autoSaving": "Guardando…",
     "autoSaved": "Guardado",
-    "autoSaveError": "No se guardó"
+    "autoSaveError": "No se guardó",
+    "shopEyebrow": "Vitrina",
+    "shopTitleOwner": "Tus productos",
+    "shopTitlePublic": "Productos en venta",
+    "shopPickupNote": "Compra por Freelandoo, retiro con el vendedor."
   },
   "Careers": {
     "hero.badge": "Carreras",

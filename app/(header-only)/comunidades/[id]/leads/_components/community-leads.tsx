@@ -39,6 +39,7 @@ import { PageBackLink } from "@/components/tabloide"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken, getStoredUser } from "@/lib/auth"
 import { cn } from "@/lib/utils"
+import { Reveal } from "@/components/motion/motion-kit"
 import { CommunityShellBeacon } from "@/components/layout/community-shell"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { TechBackdrop } from "@/components/platform/tech-backdrop"
@@ -560,7 +561,10 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
           <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9A938A]">
             {community.display_name}
           </p>
-          <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] md:text-6xl">
+          <h1
+            className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] md:text-6xl"
+            style={{ textShadow: `0 0 1px ${accent}e6, 0 0 14px ${accent}80, 0 0 34px ${accent}4d` }}
+          >
             {t("title", "Encontre clientes")}
           </h1>
           <p className="mt-2 max-w-xl text-sm text-[#9A938A]">
@@ -936,9 +940,14 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
             </p>
           )}
 
-          <div className="mt-2 grid gap-2">
+          <Reveal className="mt-2 grid gap-2" tilt={false} step={0.035}>
             {shown.map((c) => (
-              <article key={c.id_company} className={cn("p-3", PANEL)}>
+              <article
+                key={c.id_company}
+                className={cn("relative p-3 pl-4 transition-transform duration-200 hover:-translate-y-0.5", PANEL)}
+              >
+                {/* Fio aceso na cor do dono: a ficha é "do balcão" dele. */}
+                <span aria-hidden className="absolute inset-y-0 left-0 w-1" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} />
                 <div className="flex flex-wrap items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <button
@@ -1129,7 +1138,7 @@ export function CommunityLeads({ communityId }: { communityId: string }) {
                 </div>
               </article>
             ))}
-          </div>
+          </Reveal>
 
           {/* Paginação — só na busca; a lista salva vem inteira. */}
           {!openList && searched && total > rows.length && (
