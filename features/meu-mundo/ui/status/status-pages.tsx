@@ -44,6 +44,7 @@ import { Arc, Card, effectText, toneColor } from "../fridge/shelf"
 import { effectsOf, thumbOf } from "../fridge/fridge-logic"
 import { faceForPortrait } from "../portraits"
 import { GOD_NAMES, isGod, type GodBody } from "../../gods"
+import { clanBodyNames } from "../../classes"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -712,7 +713,7 @@ function BodyPage({ life, compact, t }: PageProps) {
   const c = life.character
   const b = c.body
   const h = c.health
-  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES }[b.bodyHint]
+  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES, ...clanBodyNames(t) }[b.bodyHint]
   const dis = (s: "none" | "controlled" | "uncontrolled") =>
     s === "none" ? <Tag tone="bom">{t("disNone", "Não tem")}</Tag> : s === "controlled" ? <Tag>{t("disControlled", "Controlada")}</Tag> : <Tag tone="perigo">{t("disUncontrolled", "Sem remédio")}</Tag>
   return (
@@ -1430,7 +1431,7 @@ function BodyC({ life, t }: PageProps) {
   const c = life.character
   const b = c.body
   const h = c.health
-  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES }[b.bodyHint]
+  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES, ...clanBodyNames(t) }[b.bodyHint]
   const dis = (s: "none" | "controlled" | "uncontrolled") =>
     s === "none" ? <MiniTag tone="bom">{t("disNone", "Não tem")}</MiniTag> : s === "controlled" ? <MiniTag>{t("disControlled", "Controlada")}</MiniTag> : <MiniTag tone="perigo">{t("disUncontrolled", "Sem remédio")}</MiniTag>
   const bar = (label: string, shown: string, value: number, max: number, color: string) => (

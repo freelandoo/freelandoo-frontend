@@ -7,6 +7,7 @@
 // ruas e casas são desenhadas pelo cliente a partir do layout.
 
 import { GOD_BODIES, type GodBody } from "./gods"
+import { CLAN_BODIES, type ClanBody } from "./classes"
 
 export type Vec2 = { x: number; z: number }
 
@@ -172,8 +173,9 @@ export interface Neighborhood {
 
 // mm3d-30: "female" = skin "feminina"; "ekaterina" = skin "ekaterina".
 // mm3d-50: os deuses (gods.ts) — corpo e skin com o mesmo id.
-export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina" | GodBody
-export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina", ...GOD_BODIES]
+// mm3d-58: os corpos das classes (classes.ts) — a sala manda; nunca se escolhem direto.
+export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina" | GodBody | ClanBody
+export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina", ...GOD_BODIES, ...CLAN_BODIES]
 
 export interface SeatReservation {
   name: string

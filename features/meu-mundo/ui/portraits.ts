@@ -10,6 +10,7 @@
 
 import type { BodyId } from "../types"
 import { byGod, isGod } from "../gods"
+import { byClanBody, isClanBody } from "../classes"
 
 const V2 = "/meu-mundo/retratos/v2"
 const STANDARD = `${V2}/padrao.webp`
@@ -32,6 +33,8 @@ export const PORTRAIT: Record<BodyId, string> = {
   ekaterina: EKATERINA,
   // mm3d-50: deuses — retrato PROVISÓRIO renderizado do modelo (pipeline/build_portraits_deuses.py).
   ...byGod((g) => `${V2}/deus-${g}.webp`),
+  // mm3d-58: classes — retrato PROVISÓRIO renderizado do modelo (como os deuses).
+  ...byClanBody((b) => `${V2}/classe-${b}.webp`),
 }
 
 /** Recorte do rosto para círculos (avatar, notificação). */
@@ -44,12 +47,13 @@ const FACE: Record<BodyId, string> = {
   female: FEMALE_FACE,
   ekaterina: EKATERINA_FACE,
   ...byGod((g) => `${V2}/deus-${g}-rosto.webp`),
+  ...byClanBody((b) => `${V2}/classe-${b}-rosto.webp`),
 }
 
 export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "normal"] ?? STANDARD_FACE
 
 /** Para quem só tem a URL do retrato 4:5 (Portrait redondo do STATUS). */
-export const faceForPortrait = (src: string) => (src === STANDARD ? STANDARD_FACE : src === FEMALE ? FEMALE_FACE : src === EKATERINA ? EKATERINA_FACE : src === PORTRAIT.sergio ? FACE.sergio : src.replace(/\/deus-([a-z]+)\.webp$/, "/deus-$1-rosto.webp"))
+export const faceForPortrait = (src: string) => (src === STANDARD ? STANDARD_FACE : src === FEMALE ? FEMALE_FACE : src === EKATERINA ? EKATERINA_FACE : src === PORTRAIT.sergio ? FACE.sergio : src.replace(/\/(deus|classe)-([a-z_]+)\.webp$/, "/$1-$2-rosto.webp"))
 
 export type Expression =
   | "worried"
@@ -72,6 +76,6 @@ export function expressionSrc(body: BodyId | null | undefined, e: Expression | n
   if (body === "female") return `${V2}/expr-feminina-${e}.webp`
   if (body === "ekaterina") return `${V2}/expr-ekaterina-${e}.webp`
   // Deuses ainda sem folha de expressões: o rosto.
-  if (isGod(body)) return faceOf(body)
+  if (isGod(body) || isClanBody(body)) return faceOf(body)
   return `${V2}/expr-${e}.webp`
 }

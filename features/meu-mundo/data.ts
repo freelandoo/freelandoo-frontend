@@ -33,10 +33,11 @@ import type {
   Wallets,
   WardrobeResult,
 } from "./types"
+import type { Clan, Sex } from "./classes"
 
 export type NeighborhoodResult =
   | { ok: true; payload: ScenePayload }
-  | { ok: false; reason: "unauthenticated" | "forbidden" | "invalid" | "network" }
+  | { ok: false; reason: "unauthenticated" | "forbidden" | "invalid" | "network" | "needs_clan" }
 
 export async function fetchAdminNeighborhood(
   token: string,
@@ -55,6 +56,11 @@ export async function fetchAdminNeighborhood(
   }
   if (res.status === 401) return { ok: false, reason: "unauthenticated" }
   if (res.status === 403) return { ok: false, reason: "forbidden" }
+  // mm3d-58: sem classe o servidor não entrega o bairro — a escolha abre antes.
+  if (res.status === 409) {
+    const e = (await res.json().catch(() => null)) as { code?: string } | null
+    if (e?.code === "needs_clan") return { ok: false, reason: "needs_clan" }
+  }
   if (!res.ok) return { ok: false, reason: "network" }
 
   const body = (await res.json().catch(() => null)) as ScenePayload | null
@@ -136,6 +142,21 @@ async function call<T>(token: string, method: "GET" | "POST", path: string, body
   if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}`, code: data?.code }
   return { ok: true, data }
 }
+
+// ═══ mm3d-58: classes ════════════════════════════════════════════════════════
+export interface ClanState {
+  clan: Clan | null
+  sex: Sex | null
+  changedAt: string | null
+  changes: number
+  artifacts: number
+  cooldownDays: number
+}
+export const fetchClan = (token: string) => call<ClanState>(token, "GET", "/clan")
+/** Escolha da classe (uma vez). O servidor já muda a casa para um bairro da classe. */
+export const postClanChoose = (token: string, clan: Clan, sex: Sex) => call<ClanState>(token, "POST", "/clan", { clan, sex })
+/** Troca pelo artefato (consumido). Depois o jogo recarrega (casa nova). */
+export const postClanChange = (token: string, clan: Clan) => call<ClanState>(token, "POST", "/clan/change", { clan })
 
 /** Entrar na casa do lote (o servidor confere posição, propriedade e convite). */
 export const postHouseEnter = (token: string, lot: number) => call<ScenePayload>(token, "POST", "/house/enter", { lot })

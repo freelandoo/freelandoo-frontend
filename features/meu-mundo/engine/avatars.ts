@@ -39,6 +39,7 @@ import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import { tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
 import { byGod } from "../gods"
+import { byClanBody } from "../classes"
 
 export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
@@ -63,6 +64,9 @@ const ASSETS = {
     // Deuses (mm3d-50, pipeline/build_deuses.py): 7 mil tris, textura 1024
     // (2 m de altura e armadura detalhada), sem malha leve (como o Sergio).
     ...byGod((g) => `avatar-${g}-basecolor-1024.jpg`),
+    // Classes (mm3d-58): mesma receita dos deuses (build_deuses.py), 1,8 m,
+    // pesos pela difusão própria (diffuse_weights/tidy_weights).
+    ...byClanBody((b) => `avatar-${b}-basecolor-1024.jpg`),
   } satisfies Record<BodyId, string>,
   bodies: {
     normal: "avatar-normal.glb",
@@ -78,6 +82,7 @@ const ASSETS = {
     // (build_ekaterina.py 4b): rosto 100% na cabeça — o maxilar esticava na corrida.
     ekaterina: "avatar-ekaterina-pescoco.glb",
     ...byGod((g) => `avatar-${g}.glb`),
+    ...byClanBody((b) => `avatar-${b}.glb`),
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -184,7 +189,7 @@ export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.14
 type AnimSet = keyof typeof ASSETS.anims
 // mm3d-50: os deuses usam TODAS as animações do Sergio (build_deuses.py: mesmo
 // repouso de rotação, quadril na mesma altura; os 2 m vêm da escala do nó raiz).
-const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina", ...byGod((): AnimSet => "sergio") }
+const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina", ...byGod((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio") }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 
 /** Arquivos de um corpo, para quem desenha o avatar fora do Babylon (o jetpack, mm3d-20). */

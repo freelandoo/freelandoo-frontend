@@ -20,10 +20,16 @@ const MeuMundoShell = dynamic(() => import("@/features/meu-mundo/ui/meu-mundo-sh
   ssr: false,
   loading: () => <Splash />,
 })
+// mm3d-58: escolha da classe, antes do jogo (sem Babylon).
+const ClanChoice = dynamic(() => import("@/features/meu-mundo/ui/clan/clan-choice"), {
+  ssr: false,
+  loading: () => <Splash />,
+})
 
 type Phase =
   | { kind: "checking" }
   | { kind: "ready"; payload: ScenePayload }
+  | { kind: "clan" }
   | { kind: "forbidden" }
   | { kind: "error" }
 
@@ -59,6 +65,7 @@ export default function MeuMundoAdminPage() {
         else if (r.reason === "unauthenticated")
           router.replace(`/login?next=${encodeURIComponent("/meu-mundo/admin")}`)
         else if (r.reason === "forbidden") setPhase({ kind: "forbidden" })
+        else if (r.reason === "needs_clan") setPhase({ kind: "clan" })
         else setPhase({ kind: "error" })
       })
       .catch(() => {
@@ -69,6 +76,15 @@ export default function MeuMundoAdminPage() {
 
   if (phase.kind === "ready") return <MeuMundoShell initial={phase.payload} />
   if (phase.kind === "checking") return <Splash />
+  if (phase.kind === "clan")
+    return (
+      <ClanChoice
+        onChosen={() => {
+          setPhase({ kind: "checking" })
+          setAttempt((a) => a + 1)
+        }}
+      />
+    )
 
   const forbidden = phase.kind === "forbidden"
   return (
