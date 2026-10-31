@@ -44,6 +44,8 @@ const NAMESPACES = {
       "Online amounts are already net of the Mercado Pago fee and the Freelandoo fee. On-site amounts are in full: the client pays you directly.",
       "Los valores en línea ya descuentan la tarifa de Mercado Pago y la de Freelandoo. En el local el valor es completo: el cliente te paga directamente.",
     ],
+    nextEyebrow: ["Próximo agendamento", "Next booking", "Próxima reserva"],
+    nextMore: ["+{n} marcados depois deste", "+{n} more after this one", "+{n} más después de esta"],
     // Modal "Novo agendamento" (components/agenda/new-booking-modal.tsx).
     newBookingTitle: ["Novo agendamento!", "New booking!", "¡Nueva reserva!"],
     newBookingsTitle: ["{n} novos agendamentos!", "{n} new bookings!", "¡{n} nuevas reservas!"],

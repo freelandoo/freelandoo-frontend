@@ -5241,7 +5241,9 @@
     "totalPaid": "Pagado en línea",
     "totalOnSite": "En el local",
     "totalPending": "Esperando el pago",
-    "totalNetNote": "Los valores en línea ya descuentan la tarifa de Mercado Pago y la de Freelandoo. En el local el valor es completo: el cliente te paga directamente."
+    "totalNetNote": "Los valores en línea ya descuentan la tarifa de Mercado Pago y la de Freelandoo. En el local el valor es completo: el cliente te paga directamente.",
+    "nextEyebrow": "Próxima reserva",
+    "nextMore": "+{n} más después de esta"
   },
   "Mei": {
     "title": "MEI",

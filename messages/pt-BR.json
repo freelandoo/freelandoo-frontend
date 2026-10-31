@@ -4675,7 +4675,9 @@
     "totalPaid": "Pago pelo site",
     "totalOnSite": "No balcão",
     "totalPending": "Aguardando pagamento",
-    "totalNetNote": "Valores do site já sem a tarifa do Mercado Pago e a taxa da Freelandoo. No balcão o valor é cheio: o pagamento é feito direto com você."
+    "totalNetNote": "Valores do site já sem a tarifa do Mercado Pago e a taxa da Freelandoo. No balcão o valor é cheio: o pagamento é feito direto com você.",
+    "nextEyebrow": "Próximo agendamento",
+    "nextMore": "+{n} marcados depois deste"
   },
   "Mei": {
     "title": "MEI",

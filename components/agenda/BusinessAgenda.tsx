@@ -129,23 +129,28 @@ export function BusinessAgenda({ profileId, accent }: { profileId: string; accen
 
   const settingsHref = `/account/profile/${profileId}/agenda`
 
+  // No topo, SÓ o próximo horário (pedido do Alex): o resto da fila está no
+  // calendário logo abaixo.
+  const next = upcoming[0] || null
+  const nextPaid = next?.payment_status === "paid"
+  const nextOnSite = next?.payment_status === "on_site"
+  const nextWa = next ? waLink(next.client_whatsapp) : null
+
   return (
     <div className="fl-sharp space-y-8">
-      {/* ─── 1ª seção: quem agendou ─────────────────────────────────────── */}
+      {/* ─── 1ª seção: o próximo agendamento ─────────────────────────────── */}
       <section className="border-2 border-[#0B0B0D] bg-[#15120E]">
         <header className="flex items-center justify-between gap-3 border-b-2 border-[#F1EDE2]/12 px-5 py-4">
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
               <CalendarClock className="size-3.5" style={{ color: accent }} aria-hidden />
-              {t("upcomingEyebrow", "Próximos agendamentos")}
+              {t("nextEyebrow", "Próximo agendamento")}
             </p>
-            <h2 className="fl-display mt-1 text-2xl leading-none text-[#F1EDE2]">
-              {upcoming.length === 0
-                ? t("upcomingNone", "Nenhum horário marcado")
-                : upcoming.length === 1
-                  ? t("upcomingOne", "1 horário marcado")
-                  : t("upcomingMany", "{n} horários marcados").replace("{n}", String(upcoming.length))}
-            </h2>
+            {upcoming.length > 1 && (
+              <p className="mt-1 text-xs text-[#9A938A]">
+                {t("nextMore", "+{n} marcados depois deste").replace("{n}", String(upcoming.length - 1))}
+              </p>
+            )}
           </div>
           <Link
             href={settingsHref}
@@ -157,8 +162,74 @@ export function BusinessAgenda({ profileId, accent }: { profileId: string; accen
           </Link>
         </header>
 
-        {/* Valor acumulado do mês */}
-        <div className="grid grid-cols-2 gap-px border-b-2 border-[#F1EDE2]/12 bg-[#F1EDE2]/8 sm:grid-cols-4">
+        {!next ? (
+          <p className="px-5 py-10 text-center text-sm text-[#9A938A]">
+            {t(
+              "upcomingEmptyDesc",
+              "Quando alguém marcar pelo seu site ou pelo seu perfil, aparece aqui na hora."
+            )}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
+            <div className="shrink-0">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">
+                {format(new Date(`${bookingDateKey(next.booking_date)}T12:00:00`), "EEEE, d MMM", {
+                  locale: dfLocale,
+                })}
+              </p>
+              <p className="fl-display text-4xl leading-none tabular-nums" style={{ color: accent }}>
+                {agendaTimeHm(next.start_time)}
+              </p>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="break-words text-lg font-extrabold leading-tight text-[#F1EDE2]">
+                {next.client_profile_display_name || next.client_name}
+              </p>
+              <p className="mt-0.5 text-sm text-[#9A938A]">
+                {next.service_name_snapshot || t("serviceFallback", "Serviço")}
+                {next.service_price_amount != null && ` · ${formatAgendaBRL(next.service_price_amount)}`}
+              </p>
+              {next.client_whatsapp && (
+                <p className="mt-0.5 text-sm tabular-nums text-[#9A938A]">{formatPhone(next.client_whatsapp)}</p>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={
+                  nextPaid
+                    ? "bg-[#00876B] px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white"
+                    : nextOnSite
+                      ? "bg-[#F1EDE2] px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#0B0B0D]"
+                      : "bg-[#9A3412] px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white"
+                }
+              >
+                {nextPaid
+                  ? t("payPaid", "Pago")
+                  : nextOnSite
+                    ? t("payOnSite", "Paga no balcão")
+                    : t("payPending", "Aguardando pagamento")}
+              </span>
+              {nextWa && (
+                <a
+                  href={nextWa}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#25D366] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-white"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ─── 2ª seção: o calendário inteiro ─────────────────────────────── */}
+      <AgendaBookingsExperience profileId={profileId} controlledBookings={bookings} />
+
+      {/* ─── Por último: o valor acumulado do mês ─────────────────────────── */}
+      <section className="border-2 border-[#0B0B0D] bg-[#15120E]">
+        <div className="grid grid-cols-2 gap-px bg-[#F1EDE2]/8 sm:grid-cols-4">
           <div className="col-span-2 bg-[#15120E] px-5 py-3 sm:col-span-1">
             <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
               {t("totalMonth", "Acumulado no mês")}
@@ -187,82 +258,16 @@ export function BusinessAgenda({ profileId, accent }: { profileId: string; accen
               </p>
             </div>
           ))}
-          <p className="col-span-2 bg-[#15120E] px-5 pb-3 text-[10px] leading-snug text-[#9A938A] sm:col-span-4">
+          {/* Fecha a grade de 2 colunas no celular (3 blocos + o total). */}
+          <div className="bg-[#15120E] sm:hidden" aria-hidden />
+          <p className="col-span-2 bg-[#15120E] px-5 py-3 text-[10px] leading-snug text-[#9A938A] sm:col-span-4">
             {t(
               "totalNetNote",
               "Valores do site já sem a tarifa do Mercado Pago e a taxa da Freelandoo. No balcão o valor é cheio: o pagamento é feito direto com você."
             )}
           </p>
         </div>
-
-        {upcoming.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-[#9A938A]">
-            {t(
-              "upcomingEmptyDesc",
-              "Quando alguém marcar pelo seu site ou pelo seu perfil, aparece aqui na hora."
-            )}
-          </p>
-        ) : (
-          <ul className="divide-y-2 divide-[#F1EDE2]/8">
-            {upcoming.map((b) => {
-              const date = new Date(`${bookingDateKey(b.booking_date)}T12:00:00`)
-              const name = b.client_profile_display_name || b.client_name
-              const wa = waLink(b.client_whatsapp)
-              const paid = b.payment_status === "paid"
-              const onSite = b.payment_status === "on_site"
-              const payLabel = paid
-                ? t("payPaid", "Pago")
-                : onSite
-                  ? t("payOnSite", "Paga no balcão")
-                  : t("payPending", "Aguardando pagamento")
-              return (
-                <li key={b.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
-                  <div className="w-24 shrink-0">
-                    <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">
-                      {format(date, "EEE d MMM", { locale: dfLocale })}
-                    </p>
-                    <p className="fl-display text-2xl leading-none tabular-nums" style={{ color: accent }}>
-                      {agendaTimeHm(b.start_time)}
-                    </p>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-extrabold text-[#F1EDE2]">{name}</p>
-                    <p className="truncate text-xs text-[#9A938A]">
-                      {b.service_name_snapshot || t("serviceFallback", "Serviço")}
-                      {b.service_price_amount != null && ` · ${formatAgendaBRL(b.service_price_amount)}`}
-                      {b.client_whatsapp && ` · ${formatPhone(b.client_whatsapp)}`}
-                    </p>
-                  </div>
-                  <span
-                    className={
-                      paid
-                        ? "shrink-0 bg-[#00876B] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white"
-                        : onSite
-                          ? "shrink-0 bg-[#F1EDE2] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#0B0B0D]"
-                          : "shrink-0 bg-[#9A3412] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white"
-                    }
-                  >
-                    {payLabel}
-                  </span>
-                  {wa && (
-                    <a
-                      href={wa}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#25D366] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white"
-                    >
-                      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                    </a>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-        )}
       </section>
-
-      {/* ─── 2ª seção: o calendário inteiro ─────────────────────────────── */}
-      <AgendaBookingsExperience profileId={profileId} controlledBookings={bookings} />
     </div>
   )
 }
