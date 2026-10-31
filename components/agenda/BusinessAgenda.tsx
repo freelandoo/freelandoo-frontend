@@ -82,6 +82,34 @@ export function BusinessAgenda({ profileId, accent }: { profileId: string; accen
     )
   }, [bookings])
 
+  // ─── O VALOR ACUMULADO DO MÊS (pedido do Alex, 2026-10-31) ────────────────
+  // Conta pelo DIA DO ATENDIMENTO no mês corrente. Pago pelo site entra pelo
+  // LÍQUIDO (`professional_amount`: preço − taxa − tarifa) — é o que vira
+  // repasse; no balcão o dinheiro não passa pela plataforma, então entra o
+  // preço cheio. Aguardando pagamento fica FORA do total: ainda pode cair.
+  const totals = useMemo(() => {
+    const month = format(new Date(), "yyyy-MM")
+    const t = { paid: 0, onSite: 0, pending: 0, count: 0 }
+    for (const b of bookings || []) {
+      if (!bookingDateKey(b.booking_date).startsWith(month)) continue
+      if (b.status === "pending_payment" && b.payment_status === "pending") {
+        // Líquido ESTIMADO: a tarifa real do Mercado Pago só é apurada quando
+        // o pagamento confirma (e aí a linha passa para "pago").
+        t.pending += Number(b.professional_amount) || 0
+        continue
+      }
+      if (!["confirmed", "completed"].includes(b.status)) continue
+      if (b.payment_status === "paid") {
+        t.paid += Number(b.professional_amount) || 0
+        t.count++
+      } else if (b.payment_status === "on_site") {
+        t.onSite += Number(b.service_price_amount) || 0
+        t.count++
+      }
+    }
+    return t
+  }, [bookings])
+
   if (failed) {
     return (
       <div className="border-2 border-dashed border-[#F1EDE2]/15 px-6 py-14 text-center">
@@ -128,6 +156,44 @@ export function BusinessAgenda({ profileId, accent }: { profileId: string; accen
             <Settings className="size-4" aria-hidden />
           </Link>
         </header>
+
+        {/* Valor acumulado do mês */}
+        <div className="grid grid-cols-2 gap-px border-b-2 border-[#F1EDE2]/12 bg-[#F1EDE2]/8 sm:grid-cols-4">
+          <div className="col-span-2 bg-[#15120E] px-5 py-3 sm:col-span-1">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+              {t("totalMonth", "Acumulado no mês")}
+            </p>
+            <p className="fl-display mt-0.5 text-2xl leading-none tabular-nums" style={{ color: accent }}>
+              {formatAgendaBRL(totals.paid + totals.onSite)}
+            </p>
+            <p className="mt-0.5 text-[10px] text-[#9A938A]">
+              {(totals.count === 1
+                ? t("totalCountOne", "1 atendimento")
+                : t("totalCountMany", "{n} atendimentos")
+              ).replace("{n}", String(totals.count))}
+            </p>
+          </div>
+          {([
+            ["totalPaid", "Pago pelo site", totals.paid],
+            ["totalOnSite", "No balcão", totals.onSite],
+            ["totalPending", "Aguardando pagamento", totals.pending],
+          ] as const).map(([key, label, cents]) => (
+            <div key={key} className="bg-[#15120E] px-5 py-3">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                {t(key, label)}
+              </p>
+              <p className="mt-1 text-base font-extrabold tabular-nums text-[#F1EDE2]">
+                {formatAgendaBRL(cents)}
+              </p>
+            </div>
+          ))}
+          <p className="col-span-2 bg-[#15120E] px-5 pb-3 text-[10px] leading-snug text-[#9A938A] sm:col-span-4">
+            {t(
+              "totalNetNote",
+              "Valores do site já sem a tarifa do Mercado Pago e a taxa da Freelandoo. No balcão o valor é cheio: o pagamento é feito direto com você."
+            )}
+          </p>
+        </div>
 
         {upcoming.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-[#9A938A]">

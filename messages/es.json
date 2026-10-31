@@ -5234,7 +5234,14 @@
     "newBookingEyebrow": "Agenda",
     "newBookingClose": "Cerrar",
     "newBookingSomeone": "Un cliente",
-    "newBookingCta": "Abrir agenda"
+    "newBookingCta": "Abrir agenda",
+    "totalMonth": "Acumulado del mes",
+    "totalCountOne": "1 atención",
+    "totalCountMany": "{n} atenciones",
+    "totalPaid": "Pagado en línea",
+    "totalOnSite": "En el local",
+    "totalPending": "Esperando el pago",
+    "totalNetNote": "Los valores en línea ya descuentan la tarifa de Mercado Pago y la de Freelandoo. En el local el valor es completo: el cliente te paga directamente."
   },
   "Mei": {
     "title": "MEI",

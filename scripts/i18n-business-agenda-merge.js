@@ -32,6 +32,18 @@ const NAMESPACES = {
     payPaid: ["Pago", "Paid", "Pagado"],
     payOnSite: ["Paga no balcão", "Pays on site", "Paga en el local"],
     payPending: ["Aguardando pagamento", "Awaiting payment", "Esperando el pago"],
+    // Valor acumulado do mês (faixa da 1ª seção).
+    totalMonth: ["Acumulado no mês", "This month so far", "Acumulado del mes"],
+    totalCountOne: ["1 atendimento", "1 appointment", "1 atención"],
+    totalCountMany: ["{n} atendimentos", "{n} appointments", "{n} atenciones"],
+    totalPaid: ["Pago pelo site", "Paid online", "Pagado en línea"],
+    totalOnSite: ["No balcão", "On site", "En el local"],
+    totalPending: ["Aguardando pagamento", "Awaiting payment", "Esperando el pago"],
+    totalNetNote: [
+      "Valores do site já sem a tarifa do Mercado Pago e a taxa da Freelandoo. No balcão o valor é cheio: o pagamento é feito direto com você.",
+      "Online amounts are already net of the Mercado Pago fee and the Freelandoo fee. On-site amounts are in full: the client pays you directly.",
+      "Los valores en línea ya descuentan la tarifa de Mercado Pago y la de Freelandoo. En el local el valor es completo: el cliente te paga directamente.",
+    ],
     // Modal "Novo agendamento" (components/agenda/new-booking-modal.tsx).
     newBookingTitle: ["Novo agendamento!", "New booking!", "¡Nueva reserva!"],
     newBookingsTitle: ["{n} novos agendamentos!", "{n} new bookings!", "¡{n} nuevas reservas!"],

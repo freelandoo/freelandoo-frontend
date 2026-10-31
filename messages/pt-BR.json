@@ -4668,7 +4668,14 @@
     "newBookingEyebrow": "Agenda",
     "newBookingClose": "Fechar",
     "newBookingSomeone": "Um cliente",
-    "newBookingCta": "Acessar agenda"
+    "newBookingCta": "Acessar agenda",
+    "totalMonth": "Acumulado no mês",
+    "totalCountOne": "1 atendimento",
+    "totalCountMany": "{n} atendimentos",
+    "totalPaid": "Pago pelo site",
+    "totalOnSite": "No balcão",
+    "totalPending": "Aguardando pagamento",
+    "totalNetNote": "Valores do site já sem a tarifa do Mercado Pago e a taxa da Freelandoo. No balcão o valor é cheio: o pagamento é feito direto com você."
   },
   "Mei": {
     "title": "MEI",

@@ -5254,7 +5254,14 @@
     "newBookingEyebrow": "Schedule",
     "newBookingClose": "Close",
     "newBookingSomeone": "A client",
-    "newBookingCta": "Open schedule"
+    "newBookingCta": "Open schedule",
+    "totalMonth": "This month so far",
+    "totalCountOne": "1 appointment",
+    "totalCountMany": "{n} appointments",
+    "totalPaid": "Paid online",
+    "totalOnSite": "On site",
+    "totalPending": "Awaiting payment",
+    "totalNetNote": "Online amounts are already net of the Mercado Pago fee and the Freelandoo fee. On-site amounts are in full: the client pays you directly."
   },
   "Mei": {
     "title": "MEI",
