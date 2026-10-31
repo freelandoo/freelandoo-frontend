@@ -335,7 +335,13 @@ export function ProfileSidebar() {
         aria-label="Toolbar do perfil"
         data-app-toolbar
         className={cn(
-          "fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-transparent px-2 py-1.5 shadow-none md:hidden",
+          // ⚠️ NO CELULAR A BARRA TEM FUNDO (2026-10-31): transparente, ela
+          // sumia sobre o conteúdo que rolava por baixo. E ela ROLA de lado
+          // quando os botões não cabem — o ambiente de negócio tem oito, e
+          // sem a rolagem os últimos ficavam fora da tela, inalcançáveis.
+          // Camada pequena: o blur aqui não pesa (regra 7 é para camada do
+          // tamanho da janela).
+          "fixed left-1/2 z-50 flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto overscroll-x-contain rounded-full border border-white/15 bg-[#0B0B0D]/85 px-2 py-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.8)] backdrop-blur-md [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden [&>*]:shrink-0",
           isCasa && "border-zinc-900/25 bg-white/70 backdrop-blur [&_svg]:!text-zinc-900",
           isLightCommunity && "border-zinc-950 bg-white/70 backdrop-blur [&_svg]:!text-zinc-900"
         )}

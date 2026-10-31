@@ -3131,7 +3131,10 @@
     "delModalLater": "Ahora no",
     "delPlatformFee": "· {v} queda para Freelandoo",
     "listBillToPlatform": "La mensualidad se paga a Freelandoo, no al líder de la comunidad.",
-    "tabAgenda": "Agenda"
+    "tabAgenda": "Agenda",
+    "autoSaving": "Guardando…",
+    "autoSaved": "Guardado",
+    "autoSaveError": "No se guardó"
   },
   "Careers": {
     "hero.badge": "Carreras",

@@ -3131,7 +3131,10 @@
     "delModalLater": "Not now",
     "delPlatformFee": "· {v} goes to Freelandoo",
     "listBillToPlatform": "The monthly fee is paid to Freelandoo, not to the community leader.",
-    "tabAgenda": "Schedule"
+    "tabAgenda": "Schedule",
+    "autoSaving": "Saving…",
+    "autoSaved": "Saved",
+    "autoSaveError": "Not saved"
   },
   "Careers": {
     "hero.badge": "Careers",

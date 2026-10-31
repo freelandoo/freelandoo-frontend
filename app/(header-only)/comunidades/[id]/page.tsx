@@ -8,7 +8,7 @@ import {
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
   Lock, Globe, PawPrint, Car, UserRound, Bike, ShoppingBag, Building2,
-  Camera,
+  Camera, Check,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -344,6 +344,7 @@ export default function CommunityDetailPage() {
   // Edição (líder)
   const [edit, setEdit] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [autoSave, setAutoSave] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [nameDraft, setNameDraft] = useState("")
   const [bioDraft, setBioDraft] = useState("")
   // Assunto das modalidades da mig 210 (raça do pet, modelo do carro, jogo).
@@ -1485,11 +1486,19 @@ export default function CommunityDetailPage() {
     }
   }
 
+  // ⚠️ O "SALVAR" FIXO NO RODAPÉ SAIU (pedido do Alex, 2026-10-31): ele
+  // cobria a barra de navegação do celular. Nome, bio, enxame e cores agora
+  // salvam SOZINHOS ~1 s depois da última mudança (efeito abaixo), e o selo
+  // ao lado de "Ver como público" diz "Salvando…/Salvo".
+  //
+  // Não recarrega a página depois de salvar: a comunidade é atualizada na
+  // memória. Recarregar a cada letra refaria cinco requisições por pausa de
+  // digitação — os rascunhos já estão certos, só o "salvo" precisa andar.
   const saveAll = async () => {
     const token = getToken()
     if (!token || !community) return
-    if (!nameDraft.trim()) { setActionMsg(t("saveError", "Não foi possível salvar.")); return }
-    setSaving(true); setActionMsg(null)
+    if (!nameDraft.trim()) return
+    setSaving(true); setAutoSave("saving")
     try {
       const pRes = await fetch(`/api/communities/${id}/profile`, {
         method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -1522,13 +1531,57 @@ export default function CommunityDetailPage() {
         const tData = await tRes.json()
         if (!tRes.ok) throw new Error(tData.error || t("saveError", "Não foi possível salvar."))
       }
-      setActionMsg(t("profileSaved", "Alterações salvas!"))
-      await loadAll()
-      setTimeout(() => setActionMsg(null), 2500)
+      const machineChanged =
+        (community.kind ?? "common") === "common" &&
+        String(community.id_machine ?? "") !== machineDraft
+      setCommunity((prev) =>
+        prev
+          ? {
+              ...prev,
+              display_name: nameDraft.trim(),
+              bio: bioDraft.trim() || null,
+              ...((prev.kind ?? "common") === "common"
+                ? { id_machine: machineDraft ? Number(machineDraft) : null }
+                : {}),
+              community_theme: { ...(prev.community_theme || {}), accent: accentDraft, background: bgDraft },
+            }
+          : prev
+      )
+      // O enxame muda o que a página mostra (nome do enxame, ranking): só
+      // nesse caso vale recarregar.
+      if (machineChanged) await loadAll()
+      setAutoSave("saved")
     } catch (err) {
-      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+      setAutoSave("error")
+      toast.error(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
     } finally { setSaving(false) }
   }
+  const saveAllRef = useRef(saveAll)
+  saveAllRef.current = saveAll
+
+  // O que está gravado × o que está na tela. Diferentes = há o que salvar.
+  const savedKey = community
+    ? JSON.stringify([
+        community.display_name,
+        (community.bio || "").trim(),
+        (community.kind ?? "common") === "common" ? String(community.id_machine ?? "") : "",
+        lockedAccentFor(community.kind) || community.community_theme?.accent || defaultAccentFor(community.kind),
+        community.community_theme?.background || "black",
+      ])
+    : null
+  const draftKey = JSON.stringify([
+    nameDraft.trim(),
+    bioDraft.trim(),
+    (community?.kind ?? "common") === "common" ? machineDraft : "",
+    accentDraft,
+    bgDraft,
+  ])
+  const dirty = !!savedKey && savedKey !== draftKey
+  useEffect(() => {
+    if (!showAsLeaderEdit || !dirty || !nameDraft.trim() || saving) return
+    const timer = setTimeout(() => { saveAllRef.current() }, 1100)
+    return () => clearTimeout(timer)
+  }, [showAsLeaderEdit, dirty, draftKey, nameDraft, saving])
 
   // O ASSUNTO (pet/carro) tem Salvar PRÓPRIO desde que virou pill: o Salvar
   // de cima é do modo de edição da página, e o painel abre fora dele.
@@ -1743,7 +1796,7 @@ export default function CommunityDetailPage() {
     // As variáveis do `style` só existem na de negócio, onde a cor é do líder.
     <div
       style={skinVars}
-      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${isCarPlatform ? "fl-car" : ""} ${isCondoSkin ? "fl-condo" : ""} ${isHoodSkin ? "fl-hood" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
+      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${isCarPlatform ? "fl-car" : ""} ${isCondoSkin ? "fl-condo" : ""} ${isHoodSkin ? "fl-hood" : ""} pb-28 md:pb-20`}
     >
       {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
           DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
@@ -1835,6 +1888,20 @@ export default function CommunityDetailPage() {
                 <Crown className="h-4 w-4" style={planActive ? { color: "#22C55E" } : undefined} />
                 {planActive ? t("planActiveButton", "Plano ativo") : t("planButtonSite", "Plano Site")}
               </button>
+            )}
+            {showAsLeaderEdit && (dirty || autoSave !== "idle") && (
+              <span
+                aria-live="polite"
+                className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]"
+              >
+                {autoSave === "error" ? (
+                  <span className="text-[#FCA5A5]">{t("autoSaveError", "Não salvou")}</span>
+                ) : dirty || autoSave === "saving" ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("autoSaving", "Salvando…")}</>
+                ) : (
+                  <><Check className="h-3.5 w-3.5 text-[#22C55E]" /> {t("autoSaved", "Salvo")}</>
+                )}
+              </span>
             )}
             <button type="button" onClick={() => setEdit((e) => !e)}
               className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
@@ -2961,20 +3028,6 @@ export default function CommunityDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Barra fixa de edição */}
-      {showAsLeaderEdit && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-[#0B0B0D] bg-[#15120E] px-5 py-3">
-          <div className="mx-auto flex max-w-5xl items-center gap-3">
-            <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#9A938A]"><Hash className="h-4 w-4" /> {community.display_name}</span>
-            {actionMsg && <span className="text-xs font-bold text-[#F5F1E8]/80">{actionMsg}</span>}
-            <button type="button" onClick={saveAll} disabled={saving}
-              className="ml-auto inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-2 text-sm font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D] disabled:opacity-60">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("save", "Salvar")}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Modal de Recado (nota só-texto, até 2000 chars) */}
       {recadoOpen && (

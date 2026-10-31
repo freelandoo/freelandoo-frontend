@@ -18,6 +18,10 @@ const DIR = path.join(__dirname, "..", "messages");
 const NAMESPACES = {
   Community: {
     tabAgenda: ["Agenda", "Schedule", "Agenda"],
+    // Salvamento automático do modo de edição (o "Salvar" do rodapé saiu).
+    autoSaving: ["Salvando…", "Saving…", "Guardando…"],
+    autoSaved: ["Salvo", "Saved", "Guardado"],
+    autoSaveError: ["Não salvou", "Not saved", "No se guardó"],
   },
   Agenda: {
     upcomingEyebrow: ["Próximos agendamentos", "Upcoming bookings", "Próximas reservas"],
