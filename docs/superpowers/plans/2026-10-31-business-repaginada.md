@@ -63,6 +63,10 @@ passa a importar de lá (reexport, sem mudar comportamento).
 
 ## Etapas
 
+**Status (2026-10-31): TODAS EXECUTADAS e publicadas** — N0 `714b6155` · N1–N4/N6 `702c9501` · N5/N7/N8/N9 `0e986ada`. N10: produção conferida a 375 e 1280 px como visitante (sem rolagem lateral, sem erro de console, letreiro aceso em WebGPU; shaders WGSL e GLSL compilados e desenhados num Chrome real). Pendente do Alex: FPS no celular real e o que só o dono vê (agenda, painéis, salvamento automático, barra do celular).
+
+O que ficou de fora de propósito: os cartões de produto (são os mesmos do perfil — só vestidos); a "edição no lugar" da N7 virou só a moldura e a entrada animada (os campos já editavam no lugar); o construtor do site.
+
 - **N0 — feita (front `714b6155`).** Sem barra "Salvar" (salvamento automático
   com selo Salvando…/Salvo); barra de navegação do celular com fundo, rolagem
   lateral e acima das barras fixas; espaço reservado embaixo.
