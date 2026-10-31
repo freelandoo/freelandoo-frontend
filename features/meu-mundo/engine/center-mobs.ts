@@ -105,7 +105,7 @@ export class CenterMobs {
       v.x = nx
       v.z = nz
       v.facing += Math.atan2(Math.sin(v.tf - v.facing), Math.cos(v.tf - v.facing)) * k
-      v.model.update(dt, { x: v.x, y: v.kind === "harpy" ? 0.6 + Math.sin(this.time * 2) * 0.2 : 0, z: v.z, facing: v.facing, state: "chase", t: this.time, warn: 0, speed: v.speed, calm: true })
+      v.model.update(dt, { x: v.x, y: 0, z: v.z, facing: v.facing, state: "chase", t: this.time, warn: 0, speed: v.speed, calm: true })
       v.glow.position.set(v.x, 0.05, v.z)
       const pulse = 1 + Math.sin(this.time * 2.5 + v.id) * 0.07
       v.glow.scaling.set(pulse, pulse, 1)
