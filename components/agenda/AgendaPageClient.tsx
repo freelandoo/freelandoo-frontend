@@ -20,6 +20,9 @@ interface WeeklyRule {
   end_time: string
   slot_duration_minutes: number
   buffer_minutes: number
+  /** Intervalo do dia (almoço, mig 316). Vazio nos dois = sem intervalo. */
+  break_start?: string | null
+  break_end?: string | null
 }
 
 interface Override {
@@ -468,6 +471,38 @@ export default function AgendaPageClient({
                               <option key={m} value={m}>+{m}m</option>
                             ))}
                           </select>
+                        </div>
+
+                        {/* ALMOÇO (mig 316): a faixa do dia em que ninguém
+                            marca. Vazio = sem intervalo. */}
+                        <div className="flex items-center gap-1" title={t("lunchBreak", "Almoço")}>
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#6B6457]">{t("lunchShort", "Almoço")}</span>
+                          <input
+                            type="time"
+                            value={(rule.break_start || "").slice(0, 5)}
+                            onChange={e => { const next = [...rules]; next[i] = { ...rule, break_start: e.target.value || null }; setRules(next) }}
+                            aria-label={t("lunchStart", "Início do almoço")}
+                            className={PAPER_FIELD}
+                          />
+                          <span className="text-xs text-[#6B6457]">–</span>
+                          <input
+                            type="time"
+                            value={(rule.break_end || "").slice(0, 5)}
+                            onChange={e => { const next = [...rules]; next[i] = { ...rule, break_end: e.target.value || null }; setRules(next) }}
+                            aria-label={t("lunchEnd", "Fim do almoço")}
+                            className={PAPER_FIELD}
+                          />
+                          {(rule.break_start || rule.break_end) && (
+                            <button
+                              type="button"
+                              onClick={() => { const next = [...rules]; next[i] = { ...rule, break_start: null, break_end: null }; setRules(next) }}
+                              aria-label={t("lunchClear", "Tirar o almoço")}
+                              title={t("lunchClear", "Tirar o almoço")}
+                              className="px-1 text-xs font-bold text-[#6B6457] hover:text-[#0B0B0D]"
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                       </div>
                     ) : (

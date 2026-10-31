@@ -4689,7 +4689,12 @@
     "countMin": "Em {m} min",
     "countHours": "Em {h} h {m} min",
     "countTomorrow": "Amanhã",
-    "countDays": "Em {d} dias"
+    "countDays": "Em {d} dias",
+    "lunchBreak": "Almoço",
+    "lunchShort": "Almoço",
+    "lunchStart": "Início do almoço",
+    "lunchEnd": "Fim do almoço",
+    "lunchClear": "Tirar o almoço"
   },
   "Mei": {
     "title": "MEI",

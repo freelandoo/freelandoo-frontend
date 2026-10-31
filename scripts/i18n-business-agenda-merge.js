@@ -65,6 +65,12 @@ const NAMESPACES = {
     countHours: ["Em {h} h {m} min", "In {h} h {m} min", "En {h} h {m} min"],
     countTomorrow: ["Amanhã", "Tomorrow", "Mañana"],
     countDays: ["Em {d} dias", "In {d} days", "En {d} días"],
+    // Intervalo de almoço na regra semanal (mig 316).
+    lunchBreak: ["Almoço", "Lunch break", "Almuerzo"],
+    lunchShort: ["Almoço", "Lunch", "Almuerzo"],
+    lunchStart: ["Início do almoço", "Lunch starts", "Inicio del almuerzo"],
+    lunchEnd: ["Fim do almoço", "Lunch ends", "Fin del almuerzo"],
+    lunchClear: ["Tirar o almoço", "Remove lunch break", "Quitar el almuerzo"],
     // Modal "Novo agendamento" (components/agenda/new-booking-modal.tsx).
     newBookingTitle: ["Novo agendamento!", "New booking!", "¡Nueva reserva!"],
     newBookingsTitle: ["{n} novos agendamentos!", "{n} new bookings!", "¡{n} nuevas reservas!"],

@@ -5275,7 +5275,12 @@
     "countMin": "In {m} min",
     "countHours": "In {h} h {m} min",
     "countTomorrow": "Tomorrow",
-    "countDays": "In {d} days"
+    "countDays": "In {d} days",
+    "lunchBreak": "Lunch break",
+    "lunchShort": "Lunch",
+    "lunchStart": "Lunch starts",
+    "lunchEnd": "Lunch ends",
+    "lunchClear": "Remove lunch break"
   },
   "Mei": {
     "title": "MEI",

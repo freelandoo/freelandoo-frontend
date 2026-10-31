@@ -5255,7 +5255,12 @@
     "countMin": "En {m} min",
     "countHours": "En {h} h {m} min",
     "countTomorrow": "Mañana",
-    "countDays": "En {d} días"
+    "countDays": "En {d} días",
+    "lunchBreak": "Almuerzo",
+    "lunchShort": "Almuerzo",
+    "lunchStart": "Inicio del almuerzo",
+    "lunchEnd": "Fin del almuerzo",
+    "lunchClear": "Quitar el almuerzo"
   },
   "Mei": {
     "title": "MEI",
