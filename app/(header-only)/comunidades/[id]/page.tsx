@@ -29,6 +29,12 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 // temporada e o texto do líder. Botão novo de headcard de comunidade entra
 // nessa pilha, nunca como bloco solto no meio da página.
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
+// A agenda do negócio só existe para o líder: carregada sob demanda, ela não
+// pesa na página de quem só visita.
+const BusinessAgenda = dynamic(
+  () => import("@/components/agenda/BusinessAgenda").then((m) => m.BusinessAgenda),
+  { ssr: false }
+)
 // A coluna retrátil dos números (membros, nível, XP, benchmark, destaque e
 // ranking). A peça é só a MECÂNICA — o que entra na coluna é desta página.
 // A comunidade de NEGÓCIO troca o conteúdo do dock global. Quem sabe qual é a
@@ -116,7 +122,7 @@ const CondoResidence = dynamic(
 // pill Comunidade (`PanelTab`), e nada mais chama `setTab("members")`. Um
 // membro de união que ninguém produz é uma porta que só espera alguém religá-la
 // — e aí a página teria duas listas de membros de novo.
-type CommunityTab = "feed" | "services" | "products" | "shop"
+type CommunityTab = "feed" | "services" | "products" | "shop" | "agenda"
 // "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
 // `/comunidades/<id>/site`. Ele monta uma página inteira, e encaixá-la numa
 // aba embaixo do feed mostrava um site diferente do que ia ao ar. As duas
@@ -664,6 +670,7 @@ export default function CommunityDetailPage() {
   // (ou pet/carro) elas não fazem sentido — quem vende ali tem a Loja e o
   // perfil —, e a rota do backend responde 404 para modalidade não territorial.
   // Oferecer a aba mesmo assim seria porta pintada.
+  const showBusinessAgenda = isBusinessPlatform && isLeader && !!community?.leader_store_profile_id
   const communityTabs = useMemo(
     () =>
       [
@@ -681,11 +688,17 @@ export default function CommunityDetailPage() {
         ...(isBusinessPlatform
           ? ([["shop", t("tabProducts", "Produtos")]] as [CommunityTab, string][])
           : []),
+        // A AGENDA DO NEGÓCIO (2026-10-31): só o LÍDER vê — são os horários
+        // e o WhatsApp de quem marcou com ele. Mora no perfil-conta (o mesmo
+        // da Loja), então sem ele não há agenda para mostrar.
+        ...(showBusinessAgenda
+          ? ([["agenda", t("tabAgenda", "Agenda")]] as [CommunityTab, string][])
+          : []),
         // ⚠️ "Membros" SAIU DAQUI (2026-09-23): virou aba DENTRO do painel do
         // pill Comunidade, junto de Perfil, Mural e Números. Deixá-la nos dois
         // lugares daria duas telas listando os mesmos membros.
       ] as [CommunityTab, string][],
-    [t, isTerritorial, isBusinessPlatform]
+    [t, isTerritorial, isBusinessPlatform, showBusinessAgenda]
   )
 
   // ─── DEEP-LINK DO DOCK ──────────────────────────────────────────────────────
@@ -718,6 +731,7 @@ export default function CommunityDetailPage() {
     if (aba === "servicos" && isTerritorial) setTab("services")
     if (aba === "produtos" && isTerritorial) setTab("products")
     if (aba === "produtos" && isBusinessPlatform) setTab("shop")
+    if (aba === "agenda" && showBusinessAgenda) setTab("agenda")
     if (painel === "perfil") {
       setPanel("community")
       setPanelTab("profile")
@@ -726,7 +740,7 @@ export default function CommunityDetailPage() {
       setPanel("community")
       setPanelTab("mural")
     }
-  }, [community, isTerritorial, isBusinessPlatform])
+  }, [community, isTerritorial, isBusinessPlatform, showBusinessAgenda])
 
   // ─── O DOCK PEDINDO A VISTA (sem navegar) ───────────────────────────────────
   //
@@ -1198,6 +1212,29 @@ export default function CommunityDetailPage() {
     // admin abre como qualquer um, e liga a edição quando quer mexer.
     if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
   }, [isLeader])
+
+  // ─── O DONO ENTRA DIRETO NA AGENDA (pedido do Alex, 2026-10-31) ────────────
+  // Quem atende abre o negócio para ver quem marcou: a página já cai na aba
+  // Agenda e rola até ela. Só quando há serviço AGENDÁVEL (sem ele a agenda
+  // nasce vazia para sempre e a pessoa perderia o feed à toa) e só se o
+  // endereço não pediu outra coisa (`?aba=`/`?painel=` vencem). Uma vez.
+  const autoAgenda = useRef(false)
+  useEffect(() => {
+    if (!showBusinessAgenda || autoAgenda.current || !community?.leader_store_profile_id) return
+    const sp = new URLSearchParams(window.location.search)
+    if (sp.get("aba") || sp.get("painel")) { autoAgenda.current = true; return }
+    let cancelled = false
+    fetch(`/api/public/profile/${community.leader_store_profile_id}/services`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return
+        autoAgenda.current = true
+        const list = (d.services || []) as { is_active?: boolean; price_on_request?: boolean }[]
+        if (list.some((x) => x.is_active !== false && x.price_on_request !== true)) goToTab("agenda")
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [showBusinessAgenda, community?.leader_store_profile_id, goToTab])
 
   // Enxame atual da comunidade comum, para o select nascer no que já vale.
   useEffect(() => {
@@ -2742,6 +2779,8 @@ export default function CommunityDetailPage() {
                   canBuy={sellEnabled && canPublishListing}
                 />
                 </>
+              ) : showBusinessAgenda && tab === "agenda" ? (
+                <BusinessAgenda profileId={community.leader_store_profile_id!} accent={accent} />
               ) : isBusinessPlatform && tab === "shop" ? (
                 community.leader_store_profile_id ? (
                   // O líder GERENCIA (cadastrar, editar, pausar) e todo o

@@ -3117,7 +3117,8 @@
     "delModalSeeBoard": "Ver no quadro",
     "delModalLater": "Agora não",
     "delPlatformFee": "· {v} ficam com a Freelandoo",
-    "listBillToPlatform": "A mensalidade é paga à Freelandoo, não ao líder da comunidade."
+    "listBillToPlatform": "A mensalidade é paga à Freelandoo, não ao líder da comunidade.",
+    "tabAgenda": "Agenda"
   },
   "Careers": {
     "hero.badge": "Carreiras",
@@ -4653,7 +4654,15 @@
     "rescheduleDesc": "Avisamos o profissional que você precisa remarcar.",
     "bookedVia": "agendado pelo perfil {profile}",
     "sharedAgendaHint": "Agenda única da conta: todos os seus perfis compartilham estes horários.",
-    "priceOnRequest": "Sob orçamento"
+    "priceOnRequest": "Sob orçamento",
+    "upcomingEyebrow": "Próximos agendamentos",
+    "upcomingNone": "Nenhum horário marcado",
+    "upcomingOne": "1 horário marcado",
+    "upcomingMany": "{n} horários marcados",
+    "upcomingEmptyDesc": "Quando alguém marcar pelo seu site ou pelo seu perfil, aparece aqui na hora.",
+    "payPaid": "Pago",
+    "payOnSite": "Paga no balcão",
+    "payPending": "Aguardando pagamento"
   },
   "Mei": {
     "title": "MEI",

@@ -3130,7 +3130,8 @@
     "delModalSeeBoard": "See on the board",
     "delModalLater": "Not now",
     "delPlatformFee": "· {v} goes to Freelandoo",
-    "listBillToPlatform": "The monthly fee is paid to Freelandoo, not to the community leader."
+    "listBillToPlatform": "The monthly fee is paid to Freelandoo, not to the community leader.",
+    "tabAgenda": "Schedule"
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -5239,7 +5240,15 @@
     "rescheduleDesc": "We let the professional know you need to reschedule.",
     "bookedVia": "booked through the {profile} profile",
     "sharedAgendaHint": "Single account agenda: all your profiles share these time slots.",
-    "priceOnRequest": "On request"
+    "priceOnRequest": "On request",
+    "upcomingEyebrow": "Upcoming bookings",
+    "upcomingNone": "No bookings yet",
+    "upcomingOne": "1 booking",
+    "upcomingMany": "{n} bookings",
+    "upcomingEmptyDesc": "When someone books through your site or profile, it shows up here right away.",
+    "payPaid": "Paid",
+    "payOnSite": "Pays on site",
+    "payPending": "Awaiting payment"
   },
   "Mei": {
     "title": "MEI",
