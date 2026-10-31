@@ -35,6 +35,7 @@ export const PORTRAIT: Record<BodyId, string> = {
   ...byGod((g) => `${V2}/deus-${g}.webp`),
   // mm3d-58: classes — retrato PROVISÓRIO renderizado do modelo (como os deuses).
   ...byClanBody((b) => `${V2}/classe-${b}.webp`),
+  vampira: `${V2}/classe-vampira_m58b.webp`,
 }
 
 /** Recorte do rosto para círculos (avatar, notificação). */
@@ -48,12 +49,13 @@ const FACE: Record<BodyId, string> = {
   ekaterina: EKATERINA_FACE,
   ...byGod((g) => `${V2}/deus-${g}-rosto.webp`),
   ...byClanBody((b) => `${V2}/classe-${b}-rosto.webp`),
+  vampira: `${V2}/classe-vampira_m58b-rosto.webp`,
 }
 
 export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "normal"] ?? STANDARD_FACE
 
 /** Para quem só tem a URL do retrato 4:5 (Portrait redondo do STATUS). */
-export const faceForPortrait = (src: string) => (src === STANDARD ? STANDARD_FACE : src === FEMALE ? FEMALE_FACE : src === EKATERINA ? EKATERINA_FACE : src === PORTRAIT.sergio ? FACE.sergio : src.replace(/\/(deus|classe)-([a-z_]+)\.webp$/, "/$1-$2-rosto.webp"))
+export const faceForPortrait = (src: string) => (src === STANDARD ? STANDARD_FACE : src === FEMALE ? FEMALE_FACE : src === EKATERINA ? EKATERINA_FACE : src === PORTRAIT.sergio ? FACE.sergio : src.replace(/\/(deus|classe)-([a-z0-9_]+)\.webp$/, "/$1-$2-rosto.webp"))
 
 export type Expression =
   | "worried"

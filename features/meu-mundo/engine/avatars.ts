@@ -83,6 +83,9 @@ const ASSETS = {
     ekaterina: "avatar-ekaterina-pescoco.glb",
     ...byGod((g) => `avatar-${g}.glb`),
     ...byClanBody((b) => `avatar-${b}.glb`),
+    // 2026-10-31: busto menor por alisamento (build_deuses.py smooth_bust) —
+    // nome novo para o cache não servir a versão beliscada.
+    vampira: "avatar-vampira-m58b.glb",
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
