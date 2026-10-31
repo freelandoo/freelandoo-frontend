@@ -5228,7 +5228,13 @@
     "upcomingEmptyDesc": "Cuando alguien reserve por tu sitio o tu perfil, aparece aquí al instante.",
     "payPaid": "Pagado",
     "payOnSite": "Paga en el local",
-    "payPending": "Esperando el pago"
+    "payPending": "Esperando el pago",
+    "newBookingTitle": "¡Nueva reserva!",
+    "newBookingsTitle": "¡{n} nuevas reservas!",
+    "newBookingEyebrow": "Agenda",
+    "newBookingClose": "Cerrar",
+    "newBookingSomeone": "Un cliente",
+    "newBookingCta": "Abrir agenda"
   },
   "Mei": {
     "title": "MEI",

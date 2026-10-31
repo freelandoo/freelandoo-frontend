@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 // Merge idempotente da AGENDA DO NEGÓCIO (aba da comunidade de negócio,
 // 2026-10-31): a aba "Agenda" depois de "Produtos" e a seção "Próximos
-// agendamentos" do `components/agenda/BusinessAgenda.tsx`.
+// agendamentos" do `components/agenda/BusinessAgenda.tsx`, e o modal
+// "Novo agendamento" (`components/agenda/new-booking-modal.tsx`).
 //
 // Padrão da casa: fill-if-absent — nunca sobrescreve o que já está no dicionário.
 //
@@ -31,6 +32,13 @@ const NAMESPACES = {
     payPaid: ["Pago", "Paid", "Pagado"],
     payOnSite: ["Paga no balcão", "Pays on site", "Paga en el local"],
     payPending: ["Aguardando pagamento", "Awaiting payment", "Esperando el pago"],
+    // Modal "Novo agendamento" (components/agenda/new-booking-modal.tsx).
+    newBookingTitle: ["Novo agendamento!", "New booking!", "¡Nueva reserva!"],
+    newBookingsTitle: ["{n} novos agendamentos!", "{n} new bookings!", "¡{n} nuevas reservas!"],
+    newBookingEyebrow: ["Agenda", "Schedule", "Agenda"],
+    newBookingClose: ["Fechar", "Close", "Cerrar"],
+    newBookingSomeone: ["Um cliente", "A client", "Un cliente"],
+    newBookingCta: ["Acessar agenda", "Open schedule", "Abrir agenda"],
   },
 };
 

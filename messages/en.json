@@ -5248,7 +5248,13 @@
     "upcomingEmptyDesc": "When someone books through your site or profile, it shows up here right away.",
     "payPaid": "Paid",
     "payOnSite": "Pays on site",
-    "payPending": "Awaiting payment"
+    "payPending": "Awaiting payment",
+    "newBookingTitle": "New booking!",
+    "newBookingsTitle": "{n} new bookings!",
+    "newBookingEyebrow": "Schedule",
+    "newBookingClose": "Close",
+    "newBookingSomeone": "A client",
+    "newBookingCta": "Open schedule"
   },
   "Mei": {
     "title": "MEI",

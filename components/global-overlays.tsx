@@ -31,6 +31,12 @@ const DeliveryBroadcastModal = dynamic(
   () => import("@/components/community/delivery-broadcast-modal").then((m) => m.DeliveryBroadcastModal),
   { ssr: false }
 )
+// "Novo agendamento" (2026-10-31): abre para o dono assim que alguém marca
+// um horário, com o botão "Acessar agenda".
+const NewBookingModal = dynamic(
+  () => import("@/components/agenda/new-booking-modal").then((m) => m.NewBookingModal),
+  { ssr: false }
+)
 const InstallPrompt = dynamic(
   () => import("@/components/pwa/install-prompt").then((m) => m.InstallPrompt),
   { ssr: false }
@@ -48,6 +54,7 @@ export function GlobalOverlays() {
       <CommunityVoteModal />
       <CondoPollModal />
       <DeliveryBroadcastModal />
+      <NewBookingModal />
       <InstallPrompt />
       <PullToRefresh />
     </>

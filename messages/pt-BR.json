@@ -4662,7 +4662,13 @@
     "upcomingEmptyDesc": "Quando alguém marcar pelo seu site ou pelo seu perfil, aparece aqui na hora.",
     "payPaid": "Pago",
     "payOnSite": "Paga no balcão",
-    "payPending": "Aguardando pagamento"
+    "payPending": "Aguardando pagamento",
+    "newBookingTitle": "Novo agendamento!",
+    "newBookingsTitle": "{n} novos agendamentos!",
+    "newBookingEyebrow": "Agenda",
+    "newBookingClose": "Fechar",
+    "newBookingSomeone": "Um cliente",
+    "newBookingCta": "Acessar agenda"
   },
   "Mei": {
     "title": "MEI",
