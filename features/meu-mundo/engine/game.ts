@@ -148,7 +148,10 @@ export interface GameHandle {
   /** O meu balão (a sala não manda o "say" de volta para quem falou). */
   sayLocal: (text: string) => void
   /** Fim da luta do portal de um monstro (mm3d-48b): vitória tira o monstro da cidade. */
-  reportMob: (mobId: number, win: boolean) => void
+  /** Fim da luta com um monstro da rua; `busy` = não deu para lutar agora (mm3d-57b). */
+  reportMob: (mobId: number, win: boolean, busy?: boolean) => void
+  /** "Lutar" apertado perto do monstro: a sala o segura parado durante a luta. */
+  engageMob: (mobId: number) => void
   dispose: () => void
 }
 
@@ -257,7 +260,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     }
   }
   // Monstros das invasões (mm3d-48b): só no centro.
-  const mobs = centerP ? new CenterMobs(scene) : null
+  // Monstros da rua (mm3d-48b; nos bairros desde a mm3d-57b, só de noite — quem decide é a sala).
+  const mobs = new CenterMobs(scene)
 
   const fallbackMat = new StandardMaterial("mm-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
@@ -381,7 +385,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         tune = Object.keys(t).length ? t : null
       }
       // Invasões (mm3d-48b): a lista inteira de monstros no centro.
-      if (type === "mobs") mobs?.set((p as { l?: unknown } | null)?.l)
+      if (type === "mobs") mobs.set((p as { l?: unknown } | null)?.l)
       opts.onServerMessage?.(type, p)
     },
   })
@@ -507,7 +511,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         bestD = d
       }
     }
-    for (const it of mobs ? world.interactables.concat(mobs.interactables()) : world.interactables) {
+    for (const it of world.interactables.concat(mobs.interactables())) {
       const d = Math.hypot(it.x - local.x, it.z - local.z)
       if (d <= it.radius && d < bestD) {
         best = it
@@ -687,7 +691,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const cam = follow.camera.globalPosition
       r.char.applyDistance(Math.hypot(r.x - cam.x, r.z - cam.z), scene.frustumPlanes, quality)
     }
-    mobs?.update(dt)
+    mobs.update(dt)
     // Toque curto no mundo (mm3d-31): outro jogador abre o card; o vazio fecha.
     const tap = select.takeTap(input.taps, remotes)
     if (tap !== undefined && !input.blocked) opts.onPlayerTap?.(tap)
@@ -883,8 +887,11 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     sayLocal(text) {
       if (!disposed) local.char.say(text)
     },
-    reportMob(mobId, win) {
-      if (!disposed) net.send("mfight", { id: mobId, r: win ? 1 : 0 })
+    reportMob(mobId, win, busy = false) {
+      if (!disposed) net.send("mfight", busy ? { id: mobId, r: 0, b: 1 } : { id: mobId, r: win ? 1 : 0 })
+    },
+    engageMob(mobId) {
+      if (!disposed) net.send("mfight", { id: mobId, s: 1 })
     },
     setQuality(c) {
       quality = resolveQuality(c)
@@ -913,7 +920,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const wb = window as unknown as { __mmBubbles?: typeof bubbles }
       if (wb.__mmBubbles === bubbles) delete wb.__mmBubbles
       document.removeEventListener("visibilitychange", onVisibility)
-      mobs?.dispose()
+      mobs.dispose()
       net.dispose()
       engine.stopRenderLoop()
       detachInput()

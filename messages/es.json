@@ -9022,7 +9022,9 @@
     "ringMobHarpy": "La Ligera",
     "ringMobBrute": "El Campeón",
     "ringSubWolf": "Tres a la vez, rápidos",
-    "ringPitch": "Ponte los guantes y enfrenta a los luchadores. Cuando el suelo se ilumine en rojo, el golpe cae ahí: esquiva y golpea en el hueco."
+    "ringPitch": "Ponte los guantes y enfrenta a los luchadores. Cuando el suelo se ilumine en rojo, el golpe cae ahí: esquiva y golpea en el hueco.",
+    "mobAlertNight": "¡Monstruos sueltos! Si uno te mira de frente, va tras de ti.",
+    "mobCaught": "¡{mob} te alcanzó!"
   },
   "Sports": {
     "eyebrow": "Deportes",

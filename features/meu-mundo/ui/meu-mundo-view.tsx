@@ -29,6 +29,7 @@ import {
   LogOut,
   RefreshCw,
   Send,
+  Swords,
   WifiOff,
   X,
 } from "lucide-react"
@@ -43,6 +44,7 @@ import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
+import { useMobEncounter } from "./mob-encounter"
 import {
   type BodyId,
   type GameStats,
@@ -124,6 +126,8 @@ export default function MeuMundoView({
   const [online, setOnline] = useState<number | null>(null)
   // Tipo físico: não se escolhe (2026-10-21) — vem da vida, pela sala.
   const [body, setBody] = useState<BodyId>(payload.me.body)
+  // Cores (mm3d-36): a luta com monstro desenha o personagem com elas.
+  const [look, setLook] = useState(payload.me.look ?? "")
   // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
   const [winded, setWinded] = useState(false)
   const [, setResidents] = useState(nb.residents)
@@ -139,6 +143,12 @@ export default function MeuMundoView({
     status: "ok",
   })
   const [levelOpen, setLevelOpen] = useState(false)
+  // Monstros da rua (mm3d-57b): também no bairro, só de noite; a luta abre quando um te alcança.
+  const mob = useMobEncounter({ gameRef, busy: !!suspended || !!blocked || levelOpen, body, look })
+  const mobRef = useRef(mob)
+  useEffect(() => {
+    mobRef.current = mob
+  })
   // A gaveta do menu (direita): abre puxando, clicando no puxador ou com M.
   const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
@@ -218,11 +228,16 @@ export default function MeuMundoView({
             setNet(s)
             if (s === "moved") cbRef.current.onMoved()
           },
-          onServerMessage: (type, p) => alive && cbRef.current.onServerMessage(type, p),
+          onServerMessage: (type, p) => {
+            if (!alive) return
+            mobRef.current.onServerMessage(type, p)
+            cbRef.current.onServerMessage(type, p)
+          },
           onPlayerTap: (tp) => alive && playerCb.current.onPlayerTap?.(tp),
           onPlayerGone: (sid) => alive && playerCb.current.onPlayerGone?.(sid),
           onOnline: (n) => alive && setOnline(n),
           onBody: (b) => alive && setBody(b),
+          onLook: (l) => alive && setLook(l),
           onWinded: (w) => alive && setWinded(w),
           onResidents: (n) => alive && setResidents(n),
           onDriving: (lot) => alive && setDrivingLot(lot),
@@ -236,6 +251,7 @@ export default function MeuMundoView({
           // ao lado). Nas outras: a ficha (que diz que é preciso convite).
           onInteract: (it) => {
             if (!alive) return
+            if (it.kind === "monster") return mobRef.current.fight(it)
             // Portão do bairro (mm3d-17): agora leva ao centro (o servidor decide a sala).
             if (it.kind === "exit" && cbRef.current.onGoCenter) return cbRef.current.onGoCenter()
             if (it.kind === "house" && ((it.house.isMine && !payload.me.visitor) || it.lot.number === cbRef.current.visitingLot))
@@ -267,12 +283,12 @@ export default function MeuMundoView({
   }, [statsOpen])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(!!open || levelOpen || menuOpen || !!blocked)
-  }, [open, levelOpen, menuOpen, blocked])
+    gameRef.current?.setBlocked(!!open || levelOpen || menuOpen || !!blocked || !!mob.encounter)
+  }, [open, levelOpen, menuOpen, blocked, mob.encounter])
 
   useEffect(() => {
-    gameRef.current?.setSuspended(!!suspended)
-  }, [suspended, status])
+    gameRef.current?.setSuspended(!!suspended || !!mob.encounter)
+  }, [suspended, status, mob.encounter])
 
   useEffect(() => {
     if (!open) return
@@ -313,10 +329,13 @@ export default function MeuMundoView({
   // Carro (mm3d-11): entrar no próprio carro, ou sair dirigindo.
   const nearbyCar = nearby?.kind === "car" || nearby?.kind === "car-exit"
   const nearbyExit = nearby?.kind === "exit" && !!onGoCenter
-  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar || nearbyExit
+  const nearbyMob = nearby?.kind === "monster"
+  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar || nearbyExit || nearbyMob
   const vehicleKind = nearby?.kind === "car" ? nearby.vkind : drivingKind
   // Veículos (mm3d-14): "Usar" para todos — carro, bike, skate e patins — e "Descer".
-  const nearbyLabel = nearby?.kind === "car"
+  const nearbyLabel = nearby?.kind === "monster"
+    ? mob.label(nearby)
+    : nearby?.kind === "car"
     ? t("useVehicle", "Usar")
     : nearby?.kind === "car-exit"
       ? t("leaveVehicle", "Descer")
@@ -468,7 +487,7 @@ export default function MeuMundoView({
             variant="primary"
             size="lg"
             kbd="E"
-            icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : nearbyExit ? <Building2 className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
+            icon={nearbyMob ? <Swords className="h-5 w-5" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : nearbyExit ? <Building2 className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
             onClick={() => gameRef.current?.interact()}
             aria-label={nearbyLabel}
           >
@@ -528,7 +547,7 @@ export default function MeuMundoView({
               aria-label={nearbyLabel}
               className="!absolute !min-h-12 max-w-[46vw]"
               style={{ bottom: bottom(20), right: SAFE.right }}
-              icon={nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5 shrink-0" /> : nearbyExit ? <Building2 className="h-5 w-5 shrink-0" /> : nearbyAction ? <DoorOpen className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
+              icon={nearbyMob ? <Swords className="h-5 w-5 shrink-0" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5 shrink-0" /> : nearbyExit ? <Building2 className="h-5 w-5 shrink-0" /> : nearbyAction ? <DoorOpen className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearbyLabel}
             </EvoButton>
@@ -606,6 +625,9 @@ export default function MeuMundoView({
           </button>
         </div>
       )}
+      {status === "ready" && !mob.encounter && mob.toast}
+      {/* Luta com um monstro da rua (mm3d-57b): abre sozinha quando ele te alcança */}
+      {mob.view}
       {/* Carregando / erro */}
       {status !== "ready" && <SceneCurtain status={status} text={t("loading", "Montando o bairro…")} errorTitle={t("errorTitle", "O bairro não abriu")} errorText={t("errorDesc", "O navegador não conseguiu iniciar o 3D. Tente de novo; se continuar, volte ao perfil.")} onRetry={retry} onLeave={() => router.push("/account")} leaveLabel={t("back", "Voltar ao perfil")} />}
     </div>

@@ -8456,7 +8456,9 @@
     "ringMobHarpy": "A Ligeira",
     "ringMobBrute": "O Campeão",
     "ringSubWolf": "Três de uma vez, rápidos",
-    "ringPitch": "Calce as luvas e encare os lutadores. Quando o chão acender vermelho, o golpe vem ali: esquive e bata na brecha."
+    "ringPitch": "Calce as luvas e encare os lutadores. Quando o chão acender vermelho, o golpe vem ali: esquive e bata na brecha.",
+    "mobAlertNight": "Monstros à solta! Se um deles te encarar, ele vem atrás.",
+    "mobCaught": "{mob} te alcançou!"
   },
   "Sports": {
     "eyebrow": "Esportes",

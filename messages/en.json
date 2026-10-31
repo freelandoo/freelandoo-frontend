@@ -9042,7 +9042,9 @@
     "ringMobHarpy": "The Quick One",
     "ringMobBrute": "The Champion",
     "ringSubWolf": "Three at once, fast",
-    "ringPitch": "Lace up the gloves and face the fighters. When the floor glows red, the hit lands there: dodge and strike the opening."
+    "ringPitch": "Lace up the gloves and face the fighters. When the floor glows red, the hit lands there: dodge and strike the opening.",
+    "mobAlertNight": "Monsters on the loose! If one stares you down, it comes after you.",
+    "mobCaught": "{mob} caught you!"
   },
   "Sports": {
     "eyebrow": "Sports",
