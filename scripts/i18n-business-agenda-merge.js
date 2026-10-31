@@ -50,6 +50,12 @@ const NAMESPACES = {
     ],
     nextEyebrow: ["Próximo agendamento", "Next booking", "Próxima reserva"],
     nextMore: ["+{n} marcados depois deste", "+{n} more after this one", "+{n} más después de esta"],
+    // Contagem até o próximo horário (repaginada N4).
+    countNow: ["Acontecendo agora", "Happening now", "Ocurriendo ahora"],
+    countMin: ["Em {m} min", "In {m} min", "En {m} min"],
+    countHours: ["Em {h} h {m} min", "In {h} h {m} min", "En {h} h {m} min"],
+    countTomorrow: ["Amanhã", "Tomorrow", "Mañana"],
+    countDays: ["Em {d} dias", "In {d} days", "En {d} días"],
     // Modal "Novo agendamento" (components/agenda/new-booking-modal.tsx).
     newBookingTitle: ["Novo agendamento!", "New booking!", "¡Nueva reserva!"],
     newBookingsTitle: ["{n} novos agendamentos!", "{n} new bookings!", "¡{n} nuevas reservas!"],

@@ -4680,7 +4680,12 @@
     "totalPending": "Aguardando pagamento",
     "totalNetNote": "Valores do site já sem a tarifa do Mercado Pago e a taxa da Freelandoo. No balcão o valor é cheio: o pagamento é feito direto com você.",
     "nextEyebrow": "Próximo agendamento",
-    "nextMore": "+{n} marcados depois deste"
+    "nextMore": "+{n} marcados depois deste",
+    "countNow": "Acontecendo agora",
+    "countMin": "Em {m} min",
+    "countHours": "Em {h} h {m} min",
+    "countTomorrow": "Amanhã",
+    "countDays": "Em {d} dias"
   },
   "Mei": {
     "title": "MEI",

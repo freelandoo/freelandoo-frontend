@@ -5266,7 +5266,12 @@
     "totalPending": "Awaiting payment",
     "totalNetNote": "Online amounts are already net of the Mercado Pago fee and the Freelandoo fee. On-site amounts are in full: the client pays you directly.",
     "nextEyebrow": "Next booking",
-    "nextMore": "+{n} more after this one"
+    "nextMore": "+{n} more after this one",
+    "countNow": "Happening now",
+    "countMin": "In {m} min",
+    "countHours": "In {h} h {m} min",
+    "countTomorrow": "Tomorrow",
+    "countDays": "In {d} days"
   },
   "Mei": {
     "title": "MEI",

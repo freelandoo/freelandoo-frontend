@@ -11,6 +11,7 @@ import {
   Camera, Check,
 } from "lucide-react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
@@ -29,8 +30,14 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 // temporada e o texto do líder. Botão novo de headcard de comunidade entra
 // nessa pilha, nunca como bloco solto no meio da página.
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
+import { neonText } from "./_business/bz-tokens"
 // A agenda do negócio só existe para o líder: carregada sob demanda, ela não
 // pesa na página de quem só visita.
+// O letreiro aceso do banner (WebGPU/WebGL2) — só no negócio, carregado à parte.
+const StorefrontShader = dynamic(
+  () => import("./_business/storefront-shader").then((m) => m.StorefrontShader),
+  { ssr: false }
+)
 const BusinessAgenda = dynamic(
   () => import("@/components/agenda/BusinessAgenda").then((m) => m.BusinessAgenda),
   { ssr: false }
@@ -1930,6 +1937,9 @@ export default function CommunityDetailPage() {
               <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
             )}
             <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCondoSkin ? "#E4E4E7cc" : isHoodSkin ? "#2982CCcc" : "#0b0804cc"} 100%)` }} />
+            {/* O LETREIRO ACESO (repaginada do Business, N2): luz de vitrine na
+                cor do dono, só aqui no banner — nunca no fundo da página. */}
+            {isBusinessPlatform && <StorefrontShader accent={accent} className="z-10" />}
             {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
             {community.enxame_name && (
               <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
@@ -2055,9 +2065,10 @@ export default function CommunityDetailPage() {
           <div className="order-last basis-full pl-1 pt-1 md:order-none md:basis-auto md:flex-1 md:pb-2 md:pl-12 md:pt-0">
             {showAsLeaderEdit ? (
               <input value={nameDraft} maxLength={80} onChange={(e) => setNameDraft(e.target.value)} placeholder={t("nameLabel", "Nome da comunidade")}
+                style={isBusinessPlatform ? neonText(accent, 0.6) : undefined}
                 className="w-full border-b-2 border-dashed border-[#F5F1E8]/30 bg-transparent fl-display text-4xl leading-[0.85] text-[#F5F1E8] outline-none md:text-6xl" />
             ) : (
-              <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">
+              <h1 style={isBusinessPlatform ? neonText(accent, 0.6) : undefined} className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">
                 {community.display_name}
               </h1>
             )}
@@ -2786,10 +2797,17 @@ export default function CommunityDetailPage() {
           {/* Tabs */}
           <div ref={tabsRef} className="scroll-mt-4">
             <div className="flex gap-1 border-b-2 border-[#F5F1E8]/15">
+              {/* O MARCADOR DESLIZA de uma aba para a outra (layoutId) em vez
+                  de piscar — mesma barra de 4 px na cor do dono. */}
               {communityTabs.map(([key, label]) => (
-                <button key={key} type="button" onClick={() => setTab(key)} className="-mb-0.5 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]"
-                  style={{ borderBottom: tab === key ? `4px solid ${accent}` : "4px solid transparent", opacity: tab === key ? 1 : 0.5 }}>
+                <button key={key} type="button" onClick={() => startTransition(() => setTab(key))} className="relative -mb-0.5 px-4 pb-3 pt-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8] transition-opacity"
+                  style={{ opacity: tab === key ? 1 : 0.5, ...(isBusinessPlatform && tab === key ? neonText(accent, 0.35) : {}) }}>
                   {label}
+                  {tab === key && (
+                    <motion.span layoutId={`tabbar-${id}`} aria-hidden className="absolute inset-x-0 bottom-0 h-1"
+                      style={{ background: accent, boxShadow: isBusinessPlatform ? `0 0 14px ${accent}` : undefined }}
+                      transition={{ type: "spring", stiffness: 420, damping: 34 }} />
+                  )}
                 </button>
               ))}
               {/* O "Site" SAIU DAQUI e virou o pill rosa do headcard (ver

@@ -5246,7 +5246,12 @@
     "totalPending": "Esperando el pago",
     "totalNetNote": "Los valores en línea ya descuentan la tarifa de Mercado Pago y la de Freelandoo. En el local el valor es completo: el cliente te paga directamente.",
     "nextEyebrow": "Próxima reserva",
-    "nextMore": "+{n} más después de esta"
+    "nextMore": "+{n} más después de esta",
+    "countNow": "Ocurriendo ahora",
+    "countMin": "En {m} min",
+    "countHours": "En {h} h {m} min",
+    "countTomorrow": "Mañana",
+    "countDays": "En {d} días"
   },
   "Mei": {
     "title": "MEI",
