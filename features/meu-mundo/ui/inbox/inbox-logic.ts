@@ -38,7 +38,7 @@ export function noticeExpression(n: Pick<MMNotice, "kind" | "code"> & { data?: M
   if (n.kind === "gift") return "grateful"
   if (n.kind === "purchase") return "happy"
   if (n.kind === "life") {
-    if (n.code === "hospital_out") return "happy"
+    if (n.code === "hospital_out" || n.code === "adult") return "happy"
     if (n.code === "born") return "determined"
     if (n.code === "death") return "crying"
     if (n.code === "funeral") return n.data?.paidBy === "freelandoo" ? "grateful" : "worried"
@@ -133,6 +133,8 @@ function lifeTitle(code: string, t: Tr, generation?: number): string {
       return t("ntDiabetes", "Fui diagnosticado com diabetes.")
     case "hypertension":
       return t("ntHypertension", "Fui diagnosticado com pressão alta.")
+    case "adult":
+      return t("ntAdult", "Virei adulto! Fiquei 20% mais forte, rápido e esperto, e a saúde voltou a 100.")
     case "born":
       return t("ntBorn", "Um novo hóspede chegou (geração {n}).").replace("{n}", String(generation ?? 1))
     default:

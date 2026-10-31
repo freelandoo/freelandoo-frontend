@@ -337,6 +337,8 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
       return t("evHypertension", "Desenvolveu pressão alta.")
     case "heart_attack":
       return t("evHeartAttack", "Teve um infarto.")
+    case "adult":
+      return t("evAdult", "Virou adulto: +20% em inteligência, força e velocidade; saúde 100.")
     case "skin_bought":
       return (Number(data.price) > 0 ? t("evSkinAcquired", "Adquiriu a skin {skin} ({n} moedas).") : t("evSkinAcquiredFree", "Adquiriu a skin {skin}."))
         .replace("{skin}", data.skin === "sergio" ? "Sergio" : data.skin === "feminina" ? t("skinFeminina", "Personagem feminina") : data.skin === "ekaterina" ? "Ekaterina" : isGod(String(data.skin)) ? GOD_NAMES[data.skin as GodBody] : String(data.skin ?? ""))

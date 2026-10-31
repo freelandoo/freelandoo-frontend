@@ -313,6 +313,8 @@ export interface LifeCharacter {
   exposure?: Record<"hunger" | "sleep" | "stress" | "health", number>
   /** Orçamento de vida em dias equivalentes (1 por dia bem cuidado). */
   life?: { budgetDays: number; wearDays: number; leftDays: number; wearRate: number }
+  /** mm3d-58: jovem → adulto (o modelo da classe muda). Idade + treino; anabolizante adianta. */
+  growth?: { stage: "young" | "adult"; days: number; adultDays: number; pct: number }
   /** Fôlego de corrida: segundos cheios e segundos para encher. */
   stamina?: { maxS: number; refillS: number }
   /** Necessidades de agora, da mais urgente para a mais leve. */

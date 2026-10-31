@@ -8526,7 +8526,9 @@
     "ringSubWolf": "Três de uma vez, rápidos",
     "ringPitch": "Calce as luvas e encare os lutadores. Quando o chão acender vermelho, o golpe vem ali: esquive e bata na brecha.",
     "mobAlertNight": "Monstros à solta! Se um deles te encarar, ele vem atrás.",
-    "mobCaught": "{mob} te alcançou!"
+    "mobCaught": "{mob} te alcançou!",
+    "ntAdult": "Virei adulto! Fiquei 20% mais forte, rápido e esperto, e a saúde voltou a 100.",
+    "evAdult": "Virou adulto: +20% em inteligência, força e velocidade; saúde 100."
   },
   "Sports": {
     "eyebrow": "Esportes",
