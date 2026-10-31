@@ -8,8 +8,9 @@
 
 import type { BodyId } from "./types"
 import { GOD_BODIES, GOD_NAMES, type GodBody } from "./gods"
+import { CLAN_SKINS, type ClanSkinId } from "./classes"
 
-export type SkinId = "standard" | "sergio" | "feminina" | "ekaterina" | GodBody
+export type SkinId = "standard" | "sergio" | "feminina" | "ekaterina" | GodBody | ClanSkinId
 
 /** Palco 1672×941 com o pedestal no meio (os dois têm a mesma geometria). */
 export interface SkinStage {
@@ -28,6 +29,8 @@ export interface SkinArt {
   stage: SkinStage
   /** holograma de quem ainda não comprou */
   holo: { color: string; accent: string }
+  /** mm3d-58: skin de teste (só administrador vê). */
+  adminOnly?: boolean
 }
 
 const BASE = "/meu-mundo/skins/v1"
@@ -121,6 +124,20 @@ export const SKINS: SkinArt[] = [
     stage: { src: `${BASE}/coliseu.webp`, small: `${BASE}/coliseu-1024.webp` },
     holo: GOD_HOLO[g],
   })),
+  // mm3d-58: os personagens das classes como skin de teste (só admin).
+  ...CLAN_SKINS.map(
+    (c): SkinArt => ({
+      id: c.id,
+      labelKey: `skinClan_${c.id}`,
+      fallback: c.name,
+      taglineKey: "skinClanTestLine",
+      taglineFallback: "Teste de administrador: personagem das classes.",
+      body: c.body,
+      stage: { src: `${BASE}/coliseu.webp`, small: `${BASE}/coliseu-1024.webp` },
+      holo: c.body.startsWith("raposa") ? { color: "#ff7a1f", accent: "#ffe1c8" } : { color: "#e0213b", accent: "#ffd1d8" },
+      adminOnly: true,
+    }),
+  ),
 ]
 
 export const skinArt = (id: string | null | undefined) => SKINS.find((s) => s.id === id) ?? null

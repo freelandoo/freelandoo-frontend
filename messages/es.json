@@ -9112,7 +9112,16 @@
     "clanVampire": "Vampiro",
     "clanVampireF": "Vampira",
     "skinClan": "Clase: {c}",
-    "skinClanLine": "El personaje de tu clase. Se hace adulto con la vida."
+    "skinClanLine": "El personaje de tu clase. Se hace adulto con la vida.",
+    "skinClanTestLine": "Prueba de administrador: personaje de las clases.",
+    "skinClan_raposa": "Zorro",
+    "skinClan_raposa-f": "Zorra (chica)",
+    "skinClan_raposa-adulto": "Zorro adulto",
+    "skinClan_raposa-adulta": "Zorra adulta",
+    "skinClan_vampiro": "Vampiro",
+    "skinClan_vampira": "Vampira",
+    "skinClan_vampiro-adulto": "Vampiro adulto",
+    "skinClan_vampira-adulta": "Vampira adulta"
   },
   "Sports": {
     "eyebrow": "Deportes",

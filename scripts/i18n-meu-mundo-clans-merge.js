@@ -32,6 +32,15 @@ const MEU_MUNDO = {
   clanVampireF: ["Vampira", "Vampire", "Vampira"],
   // vestuário: o "Padrão" é o personagem da classe
   skinClan: ["Classe: {c}", "Class: {c}", "Clase: {c}"],
+  skinClanTestLine: ["Teste de administrador: personagem das classes.", "Admin test: class character.", "Prueba de administrador: personaje de las clases."],
+  "skinClan_raposa": ["Raposa", "Fox", "Zorro"],
+  "skinClan_raposa-f": ["Raposa (menina)", "Fox (girl)", "Zorra (chica)"],
+  "skinClan_raposa-adulto": ["Raposa adulto", "Adult fox", "Zorro adulto"],
+  "skinClan_raposa-adulta": ["Raposa adulta", "Adult fox (girl)", "Zorra adulta"],
+  "skinClan_vampiro": ["Vampiro", "Vampire", "Vampiro"],
+  "skinClan_vampira": ["Vampira", "Vampire (girl)", "Vampira"],
+  "skinClan_vampiro-adulto": ["Vampiro adulto", "Adult vampire", "Vampiro adulto"],
+  "skinClan_vampira-adulta": ["Vampira adulta", "Adult vampire (girl)", "Vampira adulta"],
   skinClanLine: [
     "O personagem da sua classe. Vira adulto com a vida.",
     "Your class character. Grows up as life goes on.",

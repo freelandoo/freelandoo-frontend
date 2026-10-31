@@ -45,3 +45,20 @@ export function clanBodyName(b: ClanBody, t: Tr): string {
 
 /** Nomes de todos os corpos de classe (para os mapas Record<BodyId, string>). */
 export const clanBodyNames = (t: Tr) => byClanBody((b) => clanBodyName(b, t))
+
+/**
+ * Os 8 personagens como SKIN SÓ DE ADMINISTRADOR (testes, pedido do Alex).
+ * Id de skin com hífen (CHECK do banco); espelho de CLAN_SKINS em
+ * src/utils/meuMundoSkins.js do backend.
+ */
+export const CLAN_SKINS = [
+  { id: "raposa", body: "raposa", name: "Raposa" },
+  { id: "raposa-f", body: "raposa_f", name: "Raposa (menina)" },
+  { id: "raposa-adulto", body: "raposa_adulto", name: "Raposa adulto" },
+  { id: "raposa-adulta", body: "raposa_adulta", name: "Raposa adulta" },
+  { id: "vampiro", body: "vampiro", name: "Vampiro" },
+  { id: "vampira", body: "vampira", name: "Vampira" },
+  { id: "vampiro-adulto", body: "vampiro_adulto", name: "Vampiro adulto" },
+  { id: "vampira-adulta", body: "vampira_adulta", name: "Vampira adulta" },
+] as const satisfies readonly { id: string; body: ClanBody; name: string }[]
+export type ClanSkinId = (typeof CLAN_SKINS)[number]["id"]

@@ -45,8 +45,12 @@ function conditionName(b: BodyId, t: Tr) {
   return { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES, ...clanBodyNames(t) }[b]
 }
 
-/** mm3d-58: com classe, a feminina sai da lista (o "Padrão" já é o personagem da classe). */
-const skinList = (clanBody: BodyId | null | undefined) => (clanBody ? SKINS.filter((s) => s.id !== "feminina") : SKINS)
+/**
+ * mm3d-58: com classe, a feminina sai da lista (o "Padrão" já é o personagem
+ * da classe); as skins de teste das classes só aparecem para administrador.
+ */
+const skinList = (clanBody: BodyId | null | undefined, admin: boolean) =>
+  SKINS.filter((s) => (!clanBody || s.id !== "feminina") && (!s.adminOnly || admin))
 
 export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProps) {
   const [data, setData] = useState<WardrobeResult | null>(null)
@@ -91,7 +95,7 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
       if (!picked.current) {
         picked.current = true
         const on = r.data.wardrobe.skins.find((s) => s.equipped)?.id
-        const i = skinList(r.data.wardrobe.clanBody).findIndex((s) => s.id === on)
+        const i = skinList(r.data.wardrobe.clanBody, r.data.wardrobe.admin).findIndex((s) => s.id === on)
         if (i >= 0) setIdx(i)
       }
     })
@@ -115,7 +119,7 @@ export default function SkinWardrobe({ t, onClose, onChanged }: SkinWardrobeProp
 
   // mm3d-58: o "Padrão" é o personagem da classe (corpo vindo do servidor).
   const clanBody = data?.wardrobe.clanBody ?? null
-  const list = skinList(clanBody)
+  const list = skinList(clanBody, !!data?.wardrobe.admin)
   const art: SkinArt = list[Math.min(idx, list.length - 1)]
   const entry = data?.wardrobe.skins.find((s) => s.id === art.id) ?? null
   const condition = data?.wardrobe.condition ?? "normal"

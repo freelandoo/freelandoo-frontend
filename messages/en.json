@@ -9132,7 +9132,16 @@
     "clanVampire": "Vampire",
     "clanVampireF": "Vampire",
     "skinClan": "Class: {c}",
-    "skinClanLine": "Your class character. Grows up as life goes on."
+    "skinClanLine": "Your class character. Grows up as life goes on.",
+    "skinClanTestLine": "Admin test: class character.",
+    "skinClan_raposa": "Fox",
+    "skinClan_raposa-f": "Fox (girl)",
+    "skinClan_raposa-adulto": "Adult fox",
+    "skinClan_raposa-adulta": "Adult fox (girl)",
+    "skinClan_vampiro": "Vampire",
+    "skinClan_vampira": "Vampire (girl)",
+    "skinClan_vampiro-adulto": "Adult vampire",
+    "skinClan_vampira-adulta": "Adult vampire (girl)"
   },
   "Sports": {
     "eyebrow": "Sports",
