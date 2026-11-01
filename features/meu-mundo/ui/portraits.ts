@@ -22,9 +22,6 @@ const FEMALE_FACE = `${V2}/feminina-rosto.webp`
 const EKATERINA = `${V2}/ekaterina.webp`
 const EKATERINA_FACE = `${V2}/ekaterina-rosto.webp`
 
-const M58C = ["raposa", "vampiro", "vampira", "vampiro_adulto", "vampira_adulta"] as const
-const byM58c = (f: (b: (typeof M58C)[number]) => string) => Object.fromEntries(M58C.map((b) => [b, f(b)])) as Record<(typeof M58C)[number], string>
-
 /** Retrato 4:5 (cards retangulares, STATUS). */
 export const PORTRAIT: Record<BodyId, string> = {
   normal: STANDARD,
@@ -37,10 +34,8 @@ export const PORTRAIT: Record<BodyId, string> = {
   // mm3d-50: deuses — retrato PROVISÓRIO renderizado do modelo (pipeline/build_portraits_deuses.py).
   ...byGod((g) => `${V2}/deus-${g}.webp`),
   // mm3d-58: classes — retrato PROVISÓRIO renderizado do modelo (como os deuses).
-  ...byClanBody((b) => `${V2}/classe-${b}.webp`),
-  // 2026-11-01: raposa inicial e os 4 vampiros trocados pelo Alex.
-  ...byM58c((b) => `${V2}/classe-${b}_m58c.webp`),
-  vampira: `${V2}/classe-vampira_m58d.webp`,
+  // 2026-11-01: refeitos (modelos novos, rosto e cabelo com mais detalhe).
+  ...byClanBody((b) => `${V2}/classe-${b}_m58e.webp`),
 }
 
 /** Recorte do rosto para círculos (avatar, notificação). */
@@ -53,9 +48,7 @@ const FACE: Record<BodyId, string> = {
   female: FEMALE_FACE,
   ekaterina: EKATERINA_FACE,
   ...byGod((g) => `${V2}/deus-${g}-rosto.webp`),
-  ...byClanBody((b) => `${V2}/classe-${b}-rosto.webp`),
-  ...byM58c((b) => `${V2}/classe-${b}_m58c-rosto.webp`),
-  vampira: `${V2}/classe-vampira_m58d-rosto.webp`,
+  ...byClanBody((b) => `${V2}/classe-${b}_m58e-rosto.webp`),
 }
 
 export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "normal"] ?? STANDARD_FACE
