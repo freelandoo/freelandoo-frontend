@@ -9141,7 +9141,9 @@
     "skinClan_vampiro": "Vampire",
     "skinClan_vampira": "Vampire (girl)",
     "skinClan_vampiro-adulto": "Adult vampire",
-    "skinClan_vampira-adulta": "Adult vampire (girl)"
+    "skinClan_vampira-adulta": "Adult vampire (girl)",
+    "laminasBtnPower": "POWER",
+    "laminasPowerReady": "POWER ready — Q"
   },
   "Sports": {
     "eyebrow": "Sports",

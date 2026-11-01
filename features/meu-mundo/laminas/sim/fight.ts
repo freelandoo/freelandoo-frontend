@@ -72,7 +72,15 @@ const CHAIN_AFTER = 0.05
 const DODGE = { dur: 0.46, iframeFrom: 0.04, iframeTo: 0.36, speed: 8.2, stam: 24 }
 const PLAYER = { hp: 100, walk: 3.4, run: 5.6, stam: 100, stamRegen: 30, attackStam: 9, hurt: 0.32, heavyHurt: 0.7 }
 
-export type PlayerState = "idle" | "attack" | "dodge" | "hurt" | "down" | "win"
+export type PlayerState = "idle" | "attack" | "dodge" | "hurt" | "down" | "win" | "power"
+
+/**
+ * PODER (pedido do Alex em 2026-11-01: "poderes que brilham desde o chão"):
+ * a barra enche com os acertos; cheia, o poder da classe. Durante ele quem
+ * joga não leva dano. Maga = explosão de fogo em volta (área); lâmina =
+ * golpe de sangue à frente que devolve vida.
+ */
+export const POWER = { max: 100, perHit: 14, perHeavy: 22, dur: 1.3, fireAt: 0.6, mageR: 4.6, mageDmg: 46, bladeRange: 4.8, bladeArc: 2.0, bladeDmg: 42, heal: 22 }
 export interface PlayerBody {
   x: number
   z: number
@@ -94,6 +102,8 @@ export interface PlayerBody {
   dodgeZ: number
   /** Ritmo do ataque (velocidade da vida). */
   rate: number
+  /** Barra do poder (0–POWER.max). */
+  power: number
 }
 
 // ── os inimigos ────────────────────────────────────────────────────────────
@@ -246,6 +256,9 @@ export type FightEvent =
   | { t: "cast"; id: number; heavy: boolean }
   /** Bola de fogo explodiu (acertando ou não). */
   | { t: "boom"; id: number; x: number; y: number; z: number; heavy: boolean }
+  /** O poder começou (desenho: círculo e coluna de luz) e quando dispara. */
+  | { t: "power"; x: number; z: number; facing: number }
+  | { t: "powerFire"; x: number; z: number; facing: number; heal: number }
 
 export interface Input {
   /** Direção no chão (mundo), módulo 0–1. */
@@ -254,6 +267,8 @@ export interface Input {
   run: boolean
   attack: boolean
   dodge: boolean
+  /** Soltar o poder (barra cheia). */
+  power?: boolean
 }
 
 /** Uma luta: quem entra e com que força. `level` 1–3 multiplica vida e dano. */
@@ -323,6 +338,7 @@ export class Fight {
   readonly combo: Swing[]
   private prevAttack = false
   private prevDodge = false
+  private prevPower = false
 
   constructor(setup: FightSetup) {
     this.R = rng(setup.seed ?? (Date.now() & 0x7fffffff))
@@ -348,6 +364,7 @@ export class Fight {
       dodgeX: 0,
       dodgeZ: 1,
       rate: this.fx.rate,
+      power: 0,
     }
     const def = MOBS[setup.kind]
     const scale = 1 + 0.45 * (this.level - 1)
@@ -400,10 +417,13 @@ export class Fight {
     const dodgePressed = inp.dodge && !this.prevDodge
     this.prevAttack = inp.attack
     this.prevDodge = inp.dodge
+    const powerPressed = !!inp.power && !this.prevPower
+    this.prevPower = !!inp.power
     if (this.over) {
       this.stepPlayerIdle()
       return
     }
+    this.stepPower(powerPressed)
     this.stepPlayer(inp, attackPressed, dodgePressed)
     this.stepShots()
     this.pickToken()
@@ -418,6 +438,59 @@ export class Fight {
       this.me.t = 0
       this.events.push({ t: "end", win: true })
     }
+  }
+
+  /** Poder: começa com a barra cheia (parado ou golpeando); dispara em fireAt. */
+  private stepPower(pressed: boolean) {
+    const p = this.me
+    if (pressed && p.power >= POWER.max && (p.state === "idle" || p.state === "attack")) {
+      p.power = 0
+      p.vx = 0
+      p.vz = 0
+      this.faceNearest()
+      this.setPlayer("power")
+      this.events.push({ t: "power", x: p.x, z: p.z, facing: p.facing })
+      return
+    }
+    if (p.state !== "power") return
+    // stepPlayer avança o relógio; aqui só o disparo (uma vez, no quadro que cruza fireAt)
+    const t = p.t + DT
+    if (p.t < POWER.fireAt && t >= POWER.fireAt) this.firePower()
+  }
+
+  private faceNearest() {
+    const p = this.me
+    let best = Infinity
+    for (const m of this.mobs) {
+      if (m.state === "dead" || m.state === "spawn") continue
+      const d = Math.hypot(m.x - p.x, m.z - p.z)
+      if (d < best) {
+        best = d
+        p.facing = Math.atan2(m.x - p.x, m.z - p.z)
+      }
+    }
+  }
+
+  private firePower() {
+    const p = this.me
+    const mage = this.combo === MAGE_COMBO
+    let healed = 0
+    for (const m of this.mobs) {
+      if (m.state === "dead" || m.state === "spawn") continue
+      const dx = m.x - p.x
+      const dz = m.z - p.z
+      const d = Math.hypot(dx, dz) - MOBS[m.kind].radius
+      if (mage) {
+        if (d > POWER.mageR) continue
+        this.damageMob(m, Math.round(POWER.mageDmg * this.fx.dmg), true, dx, dz)
+      } else {
+        if (d > POWER.bladeRange || Math.abs(angDiff(Math.atan2(dx, dz), p.facing)) > POWER.bladeArc / 2) continue
+        this.damageMob(m, Math.round(POWER.bladeDmg * this.fx.dmg), true, dx, dz)
+        healed = POWER.heal
+      }
+    }
+    if (healed) p.hp = Math.min(PLAYER.hp, p.hp + healed)
+    this.events.push({ t: "powerFire", x: p.x, z: p.z, facing: p.facing, heal: healed })
   }
 
   private stepPlayerIdle() {
@@ -511,6 +584,11 @@ export class Fight {
       case "win":
         p.vx = 0
         p.vz = 0
+        break
+      case "power":
+        p.vx = 0
+        p.vz = 0
+        if (p.t >= POWER.dur) this.setPlayer("idle")
         break
     }
     p.x += p.vx * DT
@@ -611,6 +689,7 @@ export class Fight {
     m.hp = Math.max(0, m.hp - dmg)
     const dead = m.hp <= 0
     this.events.push({ t: "hit", on: "mob", id: m.id, dmg, x: m.x, y: m.y, z: m.z, heavy, dead })
+    if (this.me.state !== "power") this.me.power = Math.min(POWER.max, this.me.power + (heavy ? POWER.perHeavy : POWER.perHit))
     if (dead) {
       m.state = "dead"
       m.t = 0
@@ -763,7 +842,7 @@ export class Fight {
   private mobHit(m: Mob, a: MobAttack) {
     const p = this.me
     if (p.state === "dodge" && p.t >= DODGE.iframeFrom && p.t <= DODGE.iframeTo) return
-    if (p.state === "down") return
+    if (p.state === "down" || p.state === "power") return
     let hit = false
     if (a.area) {
       // Área: só no primeiro quadro do ativo.

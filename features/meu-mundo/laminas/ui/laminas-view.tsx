@@ -19,7 +19,7 @@
 // mesmos tipos da regra com nomes de boxeador; a harpia (voa) fica de fora.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Shield, Swords, Volume2, VolumeX, X } from "lucide-react"
+import { Shield, Sparkles, Swords, Volume2, VolumeX, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
@@ -247,6 +247,8 @@ function LaminasScreen({
 
   const hpPct = hud ? Math.max(0, hud.hp) : 100
   const stPct = hud ? Math.max(0, hud.stam) : 100
+  const pwPct = hud ? Math.max(0, Math.min(100, hud.power)) : 0
+  const pwFull = pwPct >= 100
   return (
     <div className="absolute inset-0">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("laminasAria", "Arena das Lâminas")} />
@@ -283,6 +285,15 @@ function LaminasScreen({
         <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,.45)" }}>
           <div className="h-full rounded-full" style={{ width: `${stPct}%`, background: "linear-gradient(90deg, #ffe08a, #e5be70)" }} />
         </div>
+        {/* poder: enche com os acertos; cheia = brilha */}
+        <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,.45)", boxShadow: pwFull ? "0 0 10px 2px rgba(255,170,60,.85)" : undefined }}>
+          <div className="h-full rounded-full" style={{ width: `${pwPct}%`, background: "linear-gradient(90deg, #8a5cff, #ffb347)", transition: "width 160ms linear" }} />
+        </div>
+        {!isTouch && pwFull && (
+          <div className="text-[12px] font-black uppercase italic tracking-wide" style={{ color: "#ffb347", textShadow: "0 2px 0 rgba(0,0,0,.45)" }}>
+            {t("laminasPowerReady", "PODER pronto — Q")}
+          </div>
+        )}
       </div>
 
       {/* som e sair */}
@@ -309,6 +320,24 @@ function LaminasScreen({
         <>
           <Joystick gameRef={gameRef} />
           <div className="absolute flex items-end gap-3" style={{ right: SAFE.right, bottom: SAFE.bottom }}>
+            <button
+              type="button"
+              disabled={!pwFull}
+              onPointerDown={(e) => {
+                e.preventDefault()
+                gameRef.current?.power()
+              }}
+              className="mb-14 grid h-14 w-14 place-items-center rounded-full text-[10px] font-black"
+              style={{
+                background: pwFull ? "linear-gradient(135deg, #ffb347, #8a5cff)" : MM.surface,
+                border: `1.5px solid ${pwFull ? "#ffd27a" : MM.border}`,
+                color: pwFull ? "#fff" : MM.disabledText,
+                boxShadow: pwFull ? "0 0 16px 4px rgba(255,170,60,.7)" : undefined,
+              }}
+            >
+              <Sparkles className="h-5 w-5" />
+              {t("laminasBtnPower", "PODER")}
+            </button>
             <button
               type="button"
               onPointerDown={(e) => {

@@ -36,7 +36,7 @@ import { AvatarLibrary, type BoxeBase, type BoxeClip } from "../../engine/avatar
 import { Character } from "../../engine/player"
 import { BoxeAudio } from "./audio"
 import type { BodyId } from "../../types"
-import { COMBO, DT, Fight, MOBS, mobAttack, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
+import { COMBO, DT, Fight, MOBS, POWER, mobAttack, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
 import { buildArena } from "./arena-view"
 import { buildRing } from "./ring-view"
 import { BoxingGloves } from "./gloves"
@@ -50,6 +50,8 @@ import { createVfx, FIRE, VFX_COLORS } from "../../engine/vfx"
 export interface LaminasHud {
   hp: number
   stam: number
+  /** Barra do poder 0–100 (cheia = pode soltar). */
+  power: number
   mobs: { id: number; kind: MobKind; hp: number; hpMax: number }[]
   over: null | { win: boolean }
   /** Algum golpe vindo agora (a tela pisca a dica de esquiva). */
@@ -75,6 +77,8 @@ export interface LaminasGameHandle {
   setJoystick: (x: number, y: number) => void
   attack: () => void
   dodge: () => void
+  /** Solta o poder (barra cheia). */
+  power: () => void
   dispose: () => void
 }
 
@@ -375,6 +379,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const stick = { x: 0, y: 0 }
   let wantAttack = false
   let wantDodge = false
+  let wantPower = false
+  const power = () => {
+    audio.resume()
+    wantPower = true
+  }
   const attack = () => {
     audio.resume()
     wantAttack = true
@@ -385,10 +394,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   }
   const onKey = (e: KeyboardEvent, down: boolean) => {
     const k = e.key.toLowerCase()
-    if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", " ", "j", "k", "shift"].includes(k)) e.preventDefault()
+    if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", " ", "j", "k", "shift", "q"].includes(k)) e.preventDefault()
     if (down) {
       if ((k === "j" || k === " ") && !e.repeat) attack()
       else if ((k === "k" || k === "shift") && !e.repeat) dodge()
+      else if (k === "q" && !e.repeat) power()
       keys.add(k)
     } else keys.delete(k)
   }
@@ -436,7 +446,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const fz = Math.cos(camYaw)
     const mx = fx * y + fz * x
     const mz = fz * y - fx * x
-    const inp: Input = { mx, mz, run: n > 0.85 && !fight.target(), attack: wantAttack, dodge: wantDodge }
+    const inp: Input = { mx, mz, run: n > 0.85 && !fight.target(), attack: wantAttack, dodge: wantDodge, power: wantPower }
     return inp
   }
 
@@ -471,6 +481,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     for (const e of evs) {
       switch (e.t) {
         case "swing": {
+          // maga: o círculo de runas acende no chão a cada feitiço; o 3º sobe em coluna
+          if (clan === "raposa") vfx.ground(new Vector3(fight.me.x, 0, fight.me.z), FIRE, e.combo === 2 ? 1.7 : 1.25, COMBO[e.combo].dur / fight.me.rate + 0.25, e.combo === 2)
           const c = (moves ? moves.swings : SWING_CLIPS)[e.combo]
           hero.boxeAct(c.clip, COMBO[e.combo].dur / fight.me.rate, c.from, c.to)
           audio.whoosh()
@@ -494,6 +506,35 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           const at = new Vector3(e.x, e.y, e.z)
           vfx.impact(at, FIRE, e.heavy)
           if (e.heavy) vfx.burst(at, FIRE)
+          break
+        }
+        case "power": {
+          // o poder: círculo largo, coluna de luz e estrelas subindo do chão
+          vfx.ground(new Vector3(e.x, 0, e.z), clan === "raposa" ? FIRE : fxColor, 3.2, POWER.dur + 0.4, true)
+          if (clan === "raposa") hero.boxeAct("RCast", POWER.dur, 0, 1)
+          else if (clan) hero.boxeAct("VPower", POWER.dur, 0, 1)
+          else hero.boxeAct("BBox2", POWER.dur, 0, 1)
+          audio.excite(1)
+          break
+        }
+        case "powerFire": {
+          const at = new Vector3(e.x, 1.2, e.z)
+          if (clan === "raposa") {
+            // explosão de fogo em volta
+            vfx.burst(at, FIRE)
+            for (let i = 0; i < 6; i++) {
+              const a = (i / 6) * Math.PI * 2
+              vfx.impact(new Vector3(e.x + Math.sin(a) * 2.6, 1, e.z + Math.cos(a) * 2.6), FIRE, true)
+            }
+          } else {
+            // golpe de sangue à frente
+            vfx.burst(at, fxColor)
+            for (let i = 1; i <= 3; i++) vfx.impact(new Vector3(e.x + Math.sin(e.facing) * 1.5 * i, 1.1, e.z + Math.cos(e.facing) * 1.5 * i), fxColor, true)
+            if (e.heal) pop(new Vector3(e.x, 2.4, e.z), `+${e.heal}`, "#7CFFB2", 40)
+          }
+          shake = Math.max(shake, 0.35)
+          hitStop = Math.max(hitStop, 0.1)
+          arena.cheer(0.8)
           break
         }
         case "dodge":
@@ -568,6 +609,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       const inp = readInput()
       wantAttack = false
       wantDodge = false
+      wantPower = false
       fight.step(inp)
       onEvents(fight.events)
       ran += DT
@@ -668,6 +710,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       opts.onHud?.({
         hp: p.hp,
         stam: p.stam,
+        power: p.power,
         mobs: fight.mobs.map((m) => ({ id: m.id, kind: m.kind, hp: m.hp, hpMax: m.hpMax })),
         over: fight.over ? { win: fight.over.win } : null,
         danger,
@@ -707,6 +750,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const w = window as unknown as Record<string, unknown>
   w.__laminas = () => ({ me: { ...fight.me }, mobs: fight.mobs.map((m) => ({ ...m })), over: fight.over, ready: readyFired, sword: sword.position.clone(), hand: hero.bonePosition(HAND), gloves: heroGloves?.at() ?? null })
   w.__laminasScene = scene
+  // só no harness (desenvolvimento): enche a barra do poder
+  if (process.env.NODE_ENV !== "production") w.__laminasFill = () => (fight.me.power = POWER.max)
 
   return {
     setMuted(m) {
@@ -718,6 +763,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     },
     attack,
     dodge,
+    power,
     dispose() {
       if (disposed) return
       disposed = true
@@ -733,6 +779,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       layer.remove()
       delete w.__laminas
       delete w.__laminasScene
+      delete w.__laminasFill
       audio.dispose()
       sparks.dispose()
       ichor.dispose()

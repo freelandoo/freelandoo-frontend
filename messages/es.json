@@ -9121,7 +9121,9 @@
     "skinClan_vampiro": "Vampiro",
     "skinClan_vampira": "Vampira",
     "skinClan_vampiro-adulto": "Vampiro adulto",
-    "skinClan_vampira-adulta": "Vampira adulta"
+    "skinClan_vampira-adulta": "Vampira adulta",
+    "laminasBtnPower": "PODER",
+    "laminasPowerReady": "PODER listo — Q"
   },
   "Sports": {
     "eyebrow": "Deportes",

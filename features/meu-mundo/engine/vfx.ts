@@ -16,6 +16,8 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder"
+import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
+import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { GlowLayer } from "@babylonjs/core/Layers/glowLayer"
@@ -103,6 +105,11 @@ export interface Vfx {
   shot: (id: number, at: Vector3, heavy: boolean) => void
   moveShot: (id: number, at: Vector3) => void
   endShot: (id: number) => void
+  /**
+   * Luz que sobe do CHÃO (pedido do Alex): círculo de runas girando em `at`
+   * (raio `r`) por `dur` s; `pillar` = coluna de luz e estrelas subindo.
+   */
+  ground: (at: Vector3, color: VfxColor, r: number, dur: number, pillar?: boolean) => void
   trail: (points: () => [Vector3, Vector3] | null, color: VfxColor) => Trail
   impact: (at: Vector3, color: VfxColor, heavy?: boolean) => void
   burst: (at: Vector3, color: VfxColor) => void
@@ -257,6 +264,136 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
     p.color1 = new Color4(c.main.r, c.main.g, c.main.b, 1)
     p.color2 = new Color4(c.edge.r, c.edge.g, c.edge.b, 1)
     p.colorDead = new Color4(c.edge.r, c.edge.g, c.edge.b, 0)
+  }
+
+  // ── círculo de runas + coluna de luz (o brilho que vem do chão) ────────
+  const runeTex = canvasTex(scene, "vfx-runes", 512, (g, S) => {
+    const c = S / 2
+    g.strokeStyle = "rgba(255,255,255,1)"
+    g.fillStyle = "rgba(255,255,255,1)"
+    g.shadowColor = "rgba(255,255,255,1)"
+    g.shadowBlur = 10
+    const ring = (r: number, w: number) => {
+      g.lineWidth = w
+      g.beginPath()
+      g.arc(c, c, r, 0, Math.PI * 2)
+      g.stroke()
+    }
+    ring(c * 0.96, 6)
+    ring(c * 0.86, 2)
+    ring(c * 0.6, 3)
+    ring(c * 0.2, 2)
+    // estrela de 8 pontas entre os anéis
+    for (const off of [0, Math.PI / 8]) {
+      g.lineWidth = 3
+      g.beginPath()
+      for (let i = 0; i <= 4; i++) {
+        const a = off + (i * Math.PI * 2 * 3) / 8
+        const x = c + Math.cos(a) * c * 0.86
+        const y = c + Math.sin(a) * c * 0.86
+        if (i === 0) g.moveTo(x, y)
+        else g.lineTo(x, y)
+      }
+      g.stroke()
+    }
+    // runas: marcas curtas em volta (traços e pequenos círculos)
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2
+      const r = c * 0.91
+      g.save()
+      g.translate(c + Math.cos(a) * r, c + Math.sin(a) * r)
+      g.rotate(a + Math.PI / 2)
+      g.lineWidth = 3
+      g.beginPath()
+      if (i % 3 === 0) g.arc(0, 0, 6, 0, Math.PI * 2)
+      else {
+        g.moveTo(-7, -6)
+        g.lineTo(0, 6)
+        g.lineTo(7, -6)
+      }
+      g.stroke()
+      g.restore()
+    }
+    // brilho no meio
+    const gr = g.createRadialGradient(c, c, 0, c, c, c * 0.6)
+    gr.addColorStop(0, "rgba(255,255,255,0.55)")
+    gr.addColorStop(1, "rgba(255,255,255,0)")
+    g.shadowBlur = 0
+    g.fillStyle = gr
+    g.fillRect(0, 0, S, S)
+  })
+  const beamTex = canvasTex(scene, "vfx-beam", 128, (g, S) => {
+    // forte embaixo, some em cima; faixas verticais finas
+    const gr = g.createLinearGradient(0, S, 0, 0)
+    gr.addColorStop(0, "rgba(255,255,255,0.95)")
+    gr.addColorStop(0.35, "rgba(255,255,255,0.45)")
+    gr.addColorStop(1, "rgba(255,255,255,0)")
+    g.fillStyle = gr
+    g.fillRect(0, 0, S, S)
+    g.globalCompositeOperation = "destination-out"
+    for (let x = 0; x < S; x += 16) {
+      g.fillStyle = `rgba(0,0,0,${0.25 + 0.5 * ((x * 37) % 7) / 7})`
+      g.fillRect(x + 8, 0, 6, S)
+    }
+  })
+  owned.push(runeTex, beamTex)
+  type Rune = { disc: Mesh; beam: Mesh; t: number; dur: number; r: number; pillar: boolean }
+  const runes: Rune[] = []
+  for (let i = 0; i < 3; i++) {
+    const disc = CreateGround(`vfx-rune-${i}`, { width: 2, height: 2 }, scene)
+    const dm = addMat(`vfx-rune-mat-${i}`, runeTex)
+    disc.material = dm
+    disc.isPickable = false
+    disc.setEnabled(false)
+    const beam = CreateCylinder(`vfx-beam-${i}`, { height: 1, diameter: 2, tessellation: 32, cap: 0 }, scene)
+    const bm = addMat(`vfx-beam-mat-${i}`, beamTex)
+    beam.material = bm
+    beam.isPickable = false
+    beam.setEnabled(false)
+    // a coluna NÃO entra no brilho (com ele a tela inteira estourava em branco)
+    glow?.addIncludedOnlyMesh(disc)
+    owned.push(disc, beam)
+    runes.push({ disc, beam, t: 1, dur: 1, r: 1, pillar: false })
+  }
+  const groundRise = ps("vfx-ground-rise", low ? 60 : 200, sparkleTex)
+  groundRise.minSize = 0.06
+  groundRise.maxSize = 0.18
+  groundRise.minLifeTime = 0.8
+  groundRise.maxLifeTime = 1.6
+  groundRise.minEmitPower = 0.3
+  groundRise.maxEmitPower = 0.9
+  groundRise.gravity = new Vector3(0, 2.2, 0)
+  groundRise.direction1 = new Vector3(-0.2, 1, -0.2)
+  groundRise.direction2 = new Vector3(0.2, 1, 0.2)
+  let riseLeft = 0
+  const updateRunes = (dt: number) => {
+    for (const u of runes) {
+      if (u.t >= u.dur) {
+        if (u.disc.isEnabled()) {
+          u.disc.setEnabled(false)
+          u.beam.setEnabled(false)
+        }
+        continue
+      }
+      u.t += dt
+      const k = u.t / u.dur
+      // abre rápido, fica, apaga no fim
+      const open = Math.min(1, u.t / 0.18)
+      const fade = k < 0.75 ? 1 : 1 - (k - 0.75) / 0.25
+      u.disc.scaling.setAll(u.r * (0.55 + 0.45 * (1 - Math.pow(1 - open, 3))))
+      u.disc.rotation.y += dt * 0.9
+      u.disc.visibility = fade
+      if (u.pillar) {
+        const h = 6 * (1 - Math.pow(1 - Math.min(1, u.t / 0.35), 2))
+        u.beam.scaling.set(u.r * 0.42, h, u.r * 0.42)
+        u.beam.position.y = u.disc.position.y + h / 2
+        u.beam.visibility = fade * 0.38
+        const tex = (u.beam.material as StandardMaterial).opacityTexture as DynamicTexture
+        tex.vOffset -= dt * 0.8
+      }
+    }
+    if (riseLeft > 0) riseLeft -= dt
+    else groundRise.emitRate = 0
   }
 
   // ── pedra do cajado ─────────────────────────────────────────────────────
@@ -422,6 +559,25 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
 
   return {
     orb,
+    ground(at, color, r, dur, pillar = false) {
+      const u = runes.reduce((a, b) => (b.t / b.dur > a.t / a.dur ? b : a))
+      u.t = 0
+      u.dur = dur
+      u.r = r
+      u.pillar = pillar
+      u.disc.position.set(at.x, 0.04, at.z)
+      u.beam.position.set(at.x, 0.04, at.z)
+      ;(u.disc.material as StandardMaterial).emissiveColor = color.main
+      ;(u.beam.material as StandardMaterial).emissiveColor = color.main
+      u.disc.setEnabled(true)
+      u.beam.setEnabled(pillar)
+      tint(groundRise, color)
+      groundRise.emitter = new Vector3(at.x, 0.05, at.z)
+      groundRise.createCylinderEmitter(r * 0.9, 0.05, 0, 0)
+      groundRise.direction1 = new Vector3(-0.2, 1, -0.2)
+      groundRise.emitRate = (low ? 30 : 110) * (pillar ? 1.6 : 0.8)
+      riseLeft = dur * 0.8
+    },
     shot(id, at, heavy) {
       const b = balls.find((x) => !x.on) ?? balls[0]
       b.id = id
@@ -479,6 +635,7 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
     update(dt) {
       updateTrails(dt)
       updateOrbs(dt)
+      updateRunes(dt)
       for (const b of balls) if (b.on) b.halo.rotation.z += dt * 8
       for (const f of flashes) {
         if (f.t >= f.life) {
