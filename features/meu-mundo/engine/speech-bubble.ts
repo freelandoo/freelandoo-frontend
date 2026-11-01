@@ -25,6 +25,11 @@ const RADIUS = 22
 let seq = 0
 
 export class SpeechBubble {
+  /** Altura do balão sobre o boneco (acompanha a altura do corpo). */
+  setY(y: number) {
+    this.mesh.position.y = y
+  }
+
   private readonly mesh: Mesh
   private readonly mat: StandardMaterial
   private readonly tex: DynamicTexture

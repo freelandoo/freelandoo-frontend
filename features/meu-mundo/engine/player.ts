@@ -27,6 +27,11 @@ import { SpeechBubble } from "./speech-bubble"
 import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder, type BoxeBase, type BoxeClip, type GincanaPose, type PlacePose } from "./avatars"
 import { lerpAngle, step, type Body, type Intent, type MotionProfile, type MoveState } from "./motion"
 import type { BodyId } from "../types"
+import { bodyHeight } from "../heights"
+
+/** Nome 30 cm acima da cabeça; balão de fala 82 cm (era 2,1 e 2,62 com 1,8 m). */
+const TAG_ABOVE = 0.3
+const BUBBLE_ABOVE = 0.82
 
 function provisionalMesh(scene: Scene, material: StandardMaterial, name: string): Mesh {
   const g = new GeoBuilder()
@@ -84,7 +89,7 @@ export class Character {
     if (name) {
       this.tag = makeNameTag(scene, name, mine)
       this.tag.mesh.parent = this.holder
-      this.tag.mesh.position.y = 2.1
+      this.tag.mesh.position.y = bodyHeight(body) + TAG_ABOVE
     }
     this.body = body
     this.look = look
@@ -95,6 +100,9 @@ export class Character {
   async setBody(body: BodyId, force = false, look = this.look) {
     if (!force && body === this.body && look === this.look && this.rig) return
     this.body = body
+    // Nome e balão acompanham a altura do corpo (jovem 1,65 m … deus 2,40 m).
+    if (this.tag) this.tag.mesh.position.y = bodyHeight(body) + TAG_ABOVE
+    this.bubble?.setY(bodyHeight(body) + BUBBLE_ABOVE)
     this.look = look
     const token = ++this.loadToken
     let next: AvatarRig
@@ -252,7 +260,7 @@ export class Character {
    */
   say(text: string) {
     if (this.disposed) return
-    this.bubble ??= new SpeechBubble(this.scene, this.holder)
+    this.bubble ??= new SpeechBubble(this.scene, this.holder, bodyHeight(this.body) + BUBBLE_ABOVE)
     this.bubble.say(text)
     this.tickBubble()
   }
