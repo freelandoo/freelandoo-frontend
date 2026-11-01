@@ -39,7 +39,7 @@ import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import { tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
 import { byGod } from "../gods"
-import { byClanBody } from "../classes"
+import { byClanBody, clanOfBody, CLAN_ANIMS, type Clan } from "../classes"
 
 export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
@@ -228,6 +228,14 @@ const PLACE_CLIPS = ["GymSquat", "GymPunch", "GymBoxJump", "GymSitups", "GymKett
 export type PlacePose = (typeof PLACE_CLIPS)[number] | "Run"
 /** Arena de Boxe (mm3d-44): BGuard/BWarm/BWin em laço; o resto toca uma vez por cima (boxeAct). */
 const BOXE_CLIPS = ["BGuard", "BWarm", "BJab", "BBox0", "BBox1", "BBox2", "BBox3", "BBox4", "BBox5", "BBag", "BDodge", "BHit", "BHitLite", "BStagger", "BFall", "BRise", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"] as const
+/**
+ * Luta das CLASSES (mm3d-58, Arena das Lâminas): os clipes da classe no
+ * lugar do boxe — guarda, corrida/passo de lado e vitória em laço; golpes,
+ * pancadas e queda uma vez (boxeAct). Vampiro = espada e escudo; raposa = cajado.
+ */
+const CLAN_CLIPS = ["VIdle", "VRun", "VStrafe", "VSlash1", "VSlash3", "VAtk2", "VHit", "VDie", "VPower", "RBlock", "RRun", "RStrafe", "RAtk1", "RAtk2", "RAtk3", "RHitS", "RHitL", "RDie", "RCast"] as const
+export type ClanClip = (typeof CLAN_CLIPS)[number]
+const CLAN_LOOP = new Set<string>(["VIdle", "VRun", "VStrafe", "VPower", "RBlock", "RRun", "RStrafe", "RCast"])
 /** Gincana (mm3d-47): GRun/GDive/GWin em laço; pulo pela fase do voo; tombo e levantar uma vez. */
 const GINCANA_CLIPS = ["GRun", "GJump", "GFall", "GRise", "GWin", "GDive", "GUp"] as const
 /** Corrida rápida: m/s que o clipe anda a 1×. */
@@ -242,12 +250,12 @@ export interface GincanaPose {
 }
 /** Passadas na guarda (mm3d-45): velocidade natural de cada clipe (m/s, build_boxe_steps.py). */
 const BOXE_STEP_SPEED = { BStepF: 0.91, BStepB: 0.79, BStepL: 0.61, BStepR: 0.61 } as const
-export type BoxeClip = (typeof BOXE_CLIPS)[number]
+export type BoxeClip = (typeof BOXE_CLIPS)[number] | ClanClip
 /** Pose-base da luta: guarda, aquecimento, cansado, machucado, andando para o canto, vitória. */
-export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk"
+export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast"
 /** Golpes e reações tocam uma vez (quem dispara é o boxeAct, nunca o laço). */
 const BOXE_LOOP = new Set<string>(["BGuard", "BWarm", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"])
-const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp"])
+const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp", ...CLAN_CLIPS.filter((c) => !CLAN_LOOP.has(c))])
 /** `anim` do ponto de uso (servidor) → clipe. */
 export const POSE_OF_ANIM: Record<string, PlacePose> = { run: "Run", squat: "GymSquat", punch: "GymPunch", boxjump: "GymBoxJump", situps: "GymSitups", kettlebell: "GymKettle", pray: "Pray" }
 /** Pulos do Paint: 0 parado/à frente, 1 de lado, 2 o segundo pulo (no ar). */
@@ -262,6 +270,7 @@ type Clip =
   | (typeof PLACE_CLIPS)[number]
   | (typeof BOXE_CLIPS)[number]
   | (typeof GINCANA_CLIPS)[number]
+  | ClanClip
 /** Soco (mm3d-35): o jab toca acelerado e dura isto (s). */
 const PUNCH_RATE = 2.4
 const PUNCH_TIME = 0.7
@@ -312,6 +321,7 @@ export class AvatarLibrary {
   private readonly paints = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly places = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly boxes = new Map<AnimSet, Promise<AssetContainer>>()
+  private readonly clans = new Map<Clan, Promise<AssetContainer>>()
   private readonly gincanas = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
@@ -333,6 +343,8 @@ export class AvatarLibrary {
     private readonly withBoxe = false,
     /** Na Gincana (mm3d-47): corrida, pulo, tombo e mergulho. */
     private readonly withGincana = false,
+    /** Na Arena das Lâminas (mm3d-58): os golpes da classe de quem tem corpo de classe. */
+    private readonly withClan = false,
   ) {
     ensureLoaders()
   }
@@ -453,6 +465,18 @@ export class AvatarLibrary {
     return p
   }
 
+  private clanSet(id: BodyId) {
+    const clan = clanOfBody(id)
+    if (!clan) return Promise.resolve(null)
+    let p = this.clans.get(clan)
+    if (!p) {
+      p = LoadAssetContainerAsync(BASE + CLAN_ANIMS[clan], this.scene)
+      p.catch(() => this.clans.delete(clan))
+      this.clans.set(clan, p)
+    }
+    return p
+  }
+
   private gincanaSet(id: BodyId) {
     const key = ANIM_SET[id]
     let p = this.gincanas.get(key)
@@ -499,7 +523,8 @@ export class AvatarLibrary {
     const placeP = this.withPlace ? this.placeSet(id).catch(() => null) : Promise.resolve(null)
     const boxeP = this.withBoxe ? this.boxeSet(id).catch(() => null) : Promise.resolve(null)
     const gincanaP = this.withGincana ? this.gincanaSet(id).catch(() => null) : Promise.resolve(null)
-    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana] = await Promise.all([
+    const clanP = this.withClan ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
+    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC] = await Promise.all([
       this.body(id),
       this.animSet(id),
       sitP,
@@ -510,6 +535,7 @@ export class AvatarLibrary {
       placeP,
       boxeP,
       gincanaP,
+      clanP,
     ])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
@@ -543,6 +569,10 @@ export class AvatarLibrary {
     }
     for (const clip of GINCANA_CLIPS) {
       const src = gincana?.animationGroups.find((g) => g.name === clip)
+      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+    }
+    for (const clip of CLAN_CLIPS) {
+      const src = clanC?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
     for (const clip of RIDE_CLIPS) {
@@ -598,7 +628,7 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values()]
+    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values(), ...this.clans.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.lods.clear()
@@ -610,6 +640,7 @@ export class AvatarLibrary {
     this.places.clear()
     this.boxes.clear()
     this.gincanas.clear()
+    this.clans.clear()
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
@@ -631,6 +662,8 @@ export class AvatarRig {
     BDodge: 0, BHit: 0, BHitLite: 0, BStagger: 0, BFall: 0, BRise: 0, BWin: 0,
     BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
     GRun: 0, GJump: 0, GFall: 0, GRise: 0, GWin: 0, GDive: 0, GUp: 0,
+    VIdle: 0, VRun: 0, VStrafe: 0, VSlash1: 0, VSlash3: 0, VAtk2: 0, VHit: 0, VDie: 0, VPower: 0,
+    RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -664,7 +697,7 @@ export class AvatarRig {
     /** Malha leve (nível de LOD da primeira malha), se carregou. */
     private readonly lod: Mesh | null = null,
   ) {
-    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS, ...GINCANA_CLIPS] as const).filter((c) => !!groups[c])]
+    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS, ...GINCANA_CLIPS, ...CLAN_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
       const g = groups[clip]!
       g.weight = this.weights[clip]
@@ -1040,6 +1073,18 @@ export class AvatarRig {
         const { fwd, side } = this.boxeMove
         const v = Math.hypot(fwd, side)
         const m = base === "BGuard" && this.groups.BStepF ? Math.min(1, v / 0.3) : 0
+        // Classes: andando na guarda = a corrida da classe (frente) ou o passo de lado.
+        const cl = base === "VIdle" ? "V" : base === "RBlock" ? "R" : null
+        if (cl && v > 0.3) {
+          const sideways = Math.abs(side) > Math.abs(fwd) * 1.2
+          const clip = (sideways ? `${cl}Strafe` : `${cl}Run`) as Clip
+          const g = this.groups[clip]
+          if (g) {
+            target[clip] = 1
+            g.speedRatio = Math.max(0.6, Math.min(1.6, v / (sideways ? 2 : 4)))
+            return this.applyWeights(dt, target, 0, 14)
+          }
+        }
         target[base] = 1 - m
         if (m > 0) {
           const parts = { BStepF: Math.max(0, fwd), BStepB: Math.max(0, -fwd), BStepR: Math.max(0, side), BStepL: Math.max(0, -side) }
@@ -1118,6 +1163,8 @@ export class AvatarRig {
       BDodge: 0, BHit: 0, BHitLite: 0, BStagger: 0, BFall: 0, BRise: 0, BWin: 0,
       BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
       GRun: 0, GJump: 0, GFall: 0, GRise: 0, GWin: 0, GDive: 0, GUp: 0,
+      VIdle: 0, VRun: 0, VStrafe: 0, VSlash1: 0, VSlash3: 0, VAtk2: 0, VHit: 0, VDie: 0, VPower: 0,
+      RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
     }
     this.applyWeights(dt, target, speed)
   }

@@ -41,6 +41,9 @@ import { buildArena } from "./arena-view"
 import { buildRing } from "./ring-view"
 import { BoxingGloves } from "./gloves"
 import { MonsterModel } from "./monster-view"
+import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
+import { clanOfBody, CLAN_WEAPON, type Clan } from "../../classes"
+import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
 
 export interface LaminasHud {
   hp: number
@@ -79,6 +82,41 @@ const SWING_CLIPS: { clip: BoxeClip; from: number; to: number }[] = [
   { clip: "BBox1", from: 7 / 64, to: 35 / 64 },
   { clip: "BBox4", from: 9 / 66, to: 37 / 66 },
 ]
+/**
+ * Luta das CLASSES (mm3d-58): quem tem corpo de classe luta com os clipes e a
+ * arma dela. Trechos medidos no harness das classes (peak.js: o contato é a
+ * mão mais rápida) e cortados para o corte cair a ~47% do trecho, como o
+ * `hitAt` da regra (0,29/0,62, 0,31/0,66, 0,42/0,86).
+ */
+type Seg = { clip: BoxeClip; from: number; to: number }
+const CLAN_MOVES: Record<Clan, { guard: BoxeBase; win: BoxeBase; swings: Seg[]; dodge: Seg; hit: Seg; hitHeavy: Seg; fall: BoxeClip }> = {
+  vampiro: {
+    guard: "VIdle",
+    win: "VPower",
+    swings: [
+      { clip: "VSlash3", from: 0.22, to: 0.58 },
+      { clip: "VSlash1", from: 0.25, to: 0.61 },
+      { clip: "VAtk2", from: 0.28, to: 0.72 },
+    ],
+    dodge: { clip: "VStrafe", from: 0, to: 0.6 },
+    hit: { clip: "VHit", from: 0, to: 0.7 },
+    hitHeavy: { clip: "VHit", from: 0, to: 1 },
+    fall: "VDie",
+  },
+  raposa: {
+    guard: "RBlock",
+    win: "RCast",
+    swings: [
+      { clip: "RAtk1", from: 0.25, to: 0.58 },
+      { clip: "RAtk2", from: 0.33, to: 0.67 },
+      { clip: "RAtk3", from: 0.12, to: 0.42 },
+    ],
+    dodge: { clip: "RStrafe", from: 0, to: 0.6 },
+    hit: { clip: "RHitS", from: 0, to: 0.8 },
+    hitHeavy: { clip: "RHitL", from: 0, to: 0.9 },
+    fall: "RDie",
+  },
+}
 const CAM_DIST = 6.4
 const CAM_H = 3.3
 const HAND = "mixamorig:RightHand"
@@ -145,7 +183,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const fight = new Fight(opts.setup)
 
   // ── o jogador e a espada ─────────────────────────────────────────────────
-  const lib = new AvatarLibrary(scene, false, false, 30, false, false, true)
+  const lib = new AvatarLibrary(scene, false, false, 30, false, false, true, false, true)
+  // Corpo de classe (fora do ringue do Boxe): golpes e arma da classe.
+  const clan = ring ? null : clanOfBody(opts.body)
+  const moves = clan ? CLAN_MOVES[clan] : null
+  const GUARD: BoxeBase = moves ? moves.guard : "BGuard"
   const fallbackMat = new StandardMaterial("laminas-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
   fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
@@ -155,7 +197,32 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   shadowMat.disableLighting = true
   shadowMat.alpha = 0.35
   const hero = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, opts.body, null, true, opts.look ?? "")
-  hero.setBoxe("BGuard")
+  hero.setBoxe(GUARD)
+  // A arma da classe (GLB do build_armas.py) presa pelos ossos da mão.
+  let weaponRoot: TransformNode | null = null
+  let grip: WeaponGrip | null = null
+  if (clan) {
+    LoadAssetContainerAsync(CLAN_WEAPON[clan], scene)
+      .then((c) => {
+        if (disposed) return c.dispose()
+        c.addAllToScene()
+        weaponRoot = c.rootNodes[0] as TransformNode
+        for (const m of weaponRoot.getChildMeshes(false)) m.isPickable = false
+        weaponRoot.setEnabled(false)
+      })
+      .catch(() => {})
+  }
+  const placeWeapon = () => {
+    if (!weaponRoot) return
+    if (!grip) {
+      const hand = hero.bone(GRIP_BONES.hand)
+      const index = hero.bone(GRIP_BONES.index)
+      const thumb = hero.bone(GRIP_BONES.thumb)
+      if (!hand || !index || !thumb) return
+      grip = new WeaponGrip(scene, { hand, index, thumb }, weaponRoot, "laminas-weapon")
+      weaponRoot.setEnabled(true)
+    }
+  }
 
   const swordMats = {
     blade: Object.assign(new StandardMaterial("laminas-blade", scene), { diffuseColor: new Color3(0.86, 0.88, 0.92), specularColor: new Color3(0.9, 0.9, 0.9), specularPower: 64 }),
@@ -194,7 +261,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // Ringue do Boxe (mm3d-57): sem espada; luvas pretas no jogador.
   const heroGloves = ring ? new BoxingGloves(scene, hero, "black") : null
   const placeSword = () => {
-    const hand = ring ? null : hero.bone(HAND)
+    const hand = ring || clan ? null : hero.bone(HAND)
     if (!hand) {
       sword.setEnabled(false)
       return
@@ -380,13 +447,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     for (const e of evs) {
       switch (e.t) {
         case "swing": {
-          const c = SWING_CLIPS[e.combo]
+          const c = (moves ? moves.swings : SWING_CLIPS)[e.combo]
           hero.boxeAct(c.clip, COMBO[e.combo].dur / fight.me.rate, c.from, c.to)
           audio.whoosh()
           break
         }
         case "dodge":
-          hero.boxeAct("BDodge", 0.46, 0, 0.49)
+          if (moves) hero.boxeAct(moves.dodge.clip, 0.46, moves.dodge.from, moves.dodge.to)
+          else hero.boxeAct("BDodge", 0.46, 0, 0.49)
           audio.whoosh()
           break
         case "hit":
@@ -408,7 +476,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             pop(at.add(new Vector3(0, 0.6, 0)), String(e.dmg), "#FF3B3B", 44)
             audio.punch(e.heavy ? 1 : 0.5, false)
             shake = Math.max(shake, e.heavy ? 0.32 : 0.16)
-            if (e.dead) hero.boxeAct("BFall", 1.2, 0, 1, true)
+            if (moves) {
+              if (e.dead) hero.boxeAct(moves.fall, 1.6, 0, 1, true)
+              else if (e.heavy) hero.boxeAct(moves.hitHeavy.clip, 0.7, moves.hitHeavy.from, moves.hitHeavy.to)
+              else hero.boxeAct(moves.hit.clip, 0.36, moves.hit.from, moves.hit.to)
+            } else if (e.dead) hero.boxeAct("BFall", 1.2, 0, 1, true)
             else if (e.heavy) hero.boxeAct("BHit", 0.7, 0, 0.9)
             else hero.boxeAct("BHitLite", 0.32, 0, 0.66)
           }
@@ -453,11 +525,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const sp = Math.hypot(p.vx, p.vz)
     const tgt = fight.target()
     const near = !!tgt && Math.hypot(tgt.x - p.x, tgt.z - p.z) < 9
-    let base: BoxeBase | null = "BGuard"
-    if (p.state === "win") base = "BWin"
+    let base: BoxeBase | null = GUARD
+    if (p.state === "win") base = moves ? moves.win : "BWin"
     else if (p.state === "idle" && !near && sp > 0.3) base = null
     hero.setBoxe(base)
-    if (base === "BGuard") {
+    if (base === GUARD) {
       const sf = Math.sin(p.facing)
       const cf = Math.cos(p.facing)
       hero.setBoxeMove(p.vx * sf + p.vz * cf, p.vx * cf - p.vz * sf)
@@ -466,6 +538,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     if (p.state === "idle" && lastState !== "idle" && p.hp > 0) hero.boxeClear()
     lastState = p.state
     placeSword()
+    placeWeapon()
 
     // monstros
     let danger = false
@@ -591,6 +664,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       for (const m of swordParts) m.dispose()
       sword.dispose()
       for (const m of Object.values(swordMats)) m.dispose()
+      grip?.dispose()
       hero.dispose()
       lib.dispose()
       arena.dispose()

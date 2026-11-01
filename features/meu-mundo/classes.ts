@@ -23,6 +23,9 @@ export const YOUNG_BODY: Record<Clan, Record<Sex, ClanBody>> = {
   vampiro: { m: "vampiro", f: "vampira" },
 }
 
+/** Classe de um corpo de classe (null = deuses, padrão, skins). */
+export const clanOfBody = (b: string | null | undefined): Clan | null => (!b || !isClanBody(b) ? null : b.startsWith("raposa") ? "raposa" : "vampiro")
+
 /** Arma de cada classe (MEU MUNDO 3D/pipeline/build_armas.py). */
 export const CLAN_WEAPON: Record<Clan, string> = {
   raposa: "/meu-mundo/armas/v1/arma-cajado-m58.glb",
