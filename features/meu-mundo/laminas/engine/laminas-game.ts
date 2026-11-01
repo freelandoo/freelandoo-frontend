@@ -46,6 +46,7 @@ import { clanOfBody, CLAN_WEAPON, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 import { createVfx, FIRE, VFX_COLORS } from "../../engine/vfx"
+import { Spirits } from "../../engine/spirits"
 
 export interface LaminasHud {
   hp: number
@@ -220,6 +221,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // Efeitos (mm3d-58): arco da arma, clarão e anel no acerto, raios na vitória, poeira.
   const vfx = createVfx(scene, low)
   const fxColor = clan ? VFX_COLORS[clan] : VFX_COLORS.lamina
+  // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
+  const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
+  if (clan !== "vampiro") spirits.preload()
   // adultos: mais brilho e mais desenho (pedido do Alex)
   const adult = /adult/.test(opts.body)
   const adultK = adult ? 1.3 : 1
@@ -543,6 +547,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         }
         case "powerFire": {
           const at = new Vector3(e.x, 1.2, e.z)
+          const feet = new Vector3(e.x, 0, e.z)
+          if (clan === "vampiro") spirits.bat(feet, e.facing, VFX_COLORS.vampiro.main)
+          else spirits.wolf(feet, e.facing, clan === "raposa" ? FIRE.main : VFX_COLORS.lamina.main)
           if (clan === "raposa") {
             // explosão de fogo em volta
             vfx.burst(at, FIRE)
@@ -692,6 +699,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       vfx.moveShot(s.id, at)
     }
     vfx.update(realDt)
+    spirits.update(realDt)
 
     // monstros
     let danger = false
@@ -829,6 +837,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       for (const m of Object.values(swordMats)) m.dispose()
       grip?.dispose()
       heroFix.dispose()
+      spirits.dispose()
       vfx.dispose()
       hero.dispose()
       lib.dispose()

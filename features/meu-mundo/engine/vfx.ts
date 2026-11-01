@@ -14,6 +14,7 @@ import type { Scene } from "@babylonjs/core/scene"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
+import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder"
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
@@ -100,6 +101,8 @@ export interface Orb {
 export const FIRE: VfxColor = { main: new Color3(1, 0.45, 0.08), edge: new Color3(1, 0.85, 0.3) }
 
 export interface Vfx {
+  /** Põe uma malha no brilho dos efeitos (espíritos de luz). */
+  addGlow: (m: AbstractMesh) => void
   orb: (color: VfxColor) => Orb
   /** Bola de fogo `id` (maga): nasce, anda com `moveShot`, some com `endShot` (a explosão é impact/burst). */
   shot: (id: number, at: Vector3, heavy: boolean, scale?: number) => void
@@ -559,6 +562,7 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
   }
 
   return {
+    addGlow: (m) => glow?.addIncludedOnlyMesh(m as Mesh),
     orb,
     ground(at, color, r, dur, pillar = false, ornate = false) {
       // adultos/golpe S: um segundo círculo maior, girando ao contrário (mais desenho no chão)
