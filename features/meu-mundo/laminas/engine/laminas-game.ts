@@ -45,6 +45,7 @@ import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { clanOfBody, CLAN_WEAPON, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
+import { createVfx, VFX_COLORS } from "../../engine/vfx"
 
 export interface LaminasHud {
   hp: number
@@ -202,6 +203,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   hero.setBoxe(GUARD)
   // Ajustes depois das animações (antes da pegada da arma, que nasce depois):
   // guarda baixa dos corpos volumosos e a mão do cajado de mago.
+  // Efeitos (mm3d-58): arco da arma, clarão e anel no acerto, raios na vitória, poeira.
+  const vfx = createVfx(scene, low)
+  const fxColor = clan ? VFX_COLORS[clan] : VFX_COLORS.lamina
+  let hitStop = 0
   const heroFix = new PoseFix(scene, (n) => hero.bone(n), ring || clan ? null : (BULKY_GUARD[opts.body] ?? null))
   // A arma da classe (GLB do build_armas.py) presa pelos ossos da mão.
   let weaponRoot: TransformNode | null = null
@@ -217,6 +222,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       })
       .catch(() => {})
   }
+  // pontos da lâmina/cabeça no eixo +Y da arma (build_armas.py: espada 0,15→0,93 m; cajado: a pedra 0,55→0,95 m)
+  const bladeLocal: [Vector3, Vector3] = clan === "raposa" ? [new Vector3(0, 0.55, 0), new Vector3(0, 0.95, 0)] : clan ? [new Vector3(0, 0.15, 0), new Vector3(0, 0.93, 0)] : [new Vector3(0, 0.15, 0), new Vector3(0, 1.15, 0)]
+  const heroTrail = vfx.trail(() => {
+    const node = clan ? grip?.root : ring ? null : sword
+    if (!node || !node.isEnabled()) return null
+    const m = node.getWorldMatrix()
+    return [Vector3.TransformCoordinates(bladeLocal[0], m), Vector3.TransformCoordinates(bladeLocal[1], m)]
+  }, fxColor)
   const placeWeapon = () => {
     if (!weaponRoot) return
     if (!grip) {
@@ -458,6 +471,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           break
         }
         case "dodge":
+          vfx.dust(new Vector3(fight.me.x, 0.15, fight.me.z), 8)
           if (moves) hero.boxeAct(moves.dodge.clip, 0.46, moves.dodge.from, moves.dodge.to)
           else hero.boxeAct("BDodge", 0.46, 0, 0.49)
           audio.whoosh()
@@ -468,6 +482,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             burst(sparks, at, e.heavy ? 40 : 22)
             burst(ichor, at, e.heavy ? 18 : 8)
             pop(at.add(new Vector3(0, 0.5, 0)), String(e.dmg), e.heavy ? "#FFD23F" : "#FF4FA3", e.heavy ? 52 : 40)
+            vfx.impact(at, fxColor, e.heavy)
+            if (e.heavy) hitStop = Math.max(hitStop, 0.07)
+            if (e.dead) vfx.burst(new Vector3(e.x, e.y + 1.2, e.z), fxColor)
             audio.punch(e.heavy ? 1 : 0.6, e.heavy)
             shake = Math.max(shake, e.heavy ? 0.18 : 0.08)
             if (e.dead) {
@@ -479,6 +496,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             const at = new Vector3(e.x, 1.4, e.z)
             burst(sparks, at, 14)
             pop(at.add(new Vector3(0, 0.6, 0)), String(e.dmg), "#FF3B3B", 44)
+            vfx.impact(at, VFX_COLORS.dano, e.heavy)
+            if (e.heavy) hitStop = Math.max(hitStop, 0.06)
             audio.punch(e.heavy ? 1 : 0.5, false)
             shake = Math.max(shake, e.heavy ? 0.32 : 0.16)
             if (moves) {
@@ -495,7 +514,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           break
         case "end":
           audio.bell(e.win ? 3 : 1)
-          if (e.win) arena.cheer(1)
+          if (e.win) {
+            arena.cheer(1)
+            vfx.burst(new Vector3(fight.me.x, 1.3, fight.me.z), fxColor)
+          }
           opts.onEnd?.(e.win)
           break
       }
@@ -508,7 +530,12 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let hudAt = 0
   let readyFired = false
   const frame = (ms: number) => {
-    const dt = Math.min(ms / 1000, 0.1)
+    const realDt = Math.min(ms / 1000, 0.1)
+    // pausa de impacto: o mundo quase para por um instante no golpe forte
+    const slow = hitStop > 0
+    hitStop = Math.max(0, hitStop - realDt)
+    scene.animationTimeScale = slow ? 0.08 : 1
+    const dt = slow ? realDt * 0.08 : realDt
     simClock += dt
     let steps = 0
     while (ran + DT <= simClock && steps < 8) {
@@ -548,6 +575,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     heroFix.guardWant = still && base === "BGuard" ? 1 : 0
     heroFix.staffWant = still && clan === "raposa" && base === GUARD && sp < 0.3 ? 1 : 0
     if (grip) grip.upright = heroFix.staffW
+    heroTrail.active = p.state === "attack"
+    vfx.update(realDt)
 
     // monstros
     let danger = false
@@ -675,6 +704,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       for (const m of Object.values(swordMats)) m.dispose()
       grip?.dispose()
       heroFix.dispose()
+      vfx.dispose()
       hero.dispose()
       lib.dispose()
       arena.dispose()
