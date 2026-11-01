@@ -116,12 +116,15 @@ const ASSETS = {
   // calibrado no Blender) para a mão não atravessar a barriga nem o peito.
   // 2026-10-29 (pipeline/build_idle_a45.py): o Idle de TODOS virou a pose de
   // descanso pedida pelo Alex — braços quase caídos, abertos 22° do CORPO (m52; o m50/m51 mediam da horizontal).
+  // 2026-11-01 (m59, pipeline/build_run_arms.py): na CORRIDA o cotovelo fica
+  // com ângulo interno de 90° em todo quadro (o clipe ia de ~68° a ~90° e o
+  // braço caía no balanço) — pedido do Alex.
   anims: {
-    base: "anim-locomotion-base-m52.glb",
-    fat: "anim-locomotion-fat-m52.glb",
-    strong: "anim-locomotion-strong-m52.glb",
-    sergio: "anim-locomotion-sergio-m52.glb",
-    ekaterina: "anim-locomotion-ekaterina-m52.glb",
+    base: "anim-locomotion-base-m59.glb",
+    fat: "anim-locomotion-fat-m59.glb",
+    strong: "anim-locomotion-strong-m59.glb",
+    sergio: "anim-locomotion-sergio-m59.glb",
+    ekaterina: "anim-locomotion-ekaterina-m59.glb",
   },
   // Pose "Sit" (mm3d-09, pipeline/build_sit.py): só dentro das casas — a rua
   // não baixa estes arquivos.
