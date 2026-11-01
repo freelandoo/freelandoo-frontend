@@ -134,6 +134,10 @@ const CLAN_MOVES: Record<Clan, { guard: BoxeBase; win: BoxeBase; swings: Seg[]; 
 /** Dano saltando por ranque (C, B, A, S): cor e tamanho. */
 const RANK_COLOR = ["#FF4FA3", "#FF8A3D", "#FFD23F", "#FFE45C"]
 const RANK_SIZE = [50, 60, 74, 100]
+/** Comprimento da espada no GLB (pomo → ponta, m). */
+const SWORD_LEN = 1.065
+/** Comprimento do cajado no GLB (ponta de lança → topo, m: −0,59 → 0,963). */
+const STAFF_LEN = 1.553
 const CAM_DIST = 6.4
 const CAM_H = 3.3
 const HAND = "mixamorig:RightHand"
@@ -264,6 +268,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       const thumb = hero.bone(GRIP_BONES.thumb)
       if (!hand || !index || !thumb) return
       grip = new WeaponGrip(scene, { hand, index, thumb }, weaponRoot, "laminas-weapon")
+      // Tamanho das armas (regra do Alex, 2026-11-01): espada 1,65 m adulto / 1 m
+      // jovem; cajado 2 m adulto / 1,5 m jovem. A escala vai na raiz da pegada,
+      // então o arco da lâmina e a pedra do cajado acompanham.
+      if (clan === "vampiro") grip.root.scaling.setAll((adult ? 1.65 : 1) / SWORD_LEN)
+      else if (clan === "raposa") grip.root.scaling.setAll((adult ? 2 : 1.5) / STAFF_LEN)
       weaponRoot.setEnabled(true)
     }
   }
