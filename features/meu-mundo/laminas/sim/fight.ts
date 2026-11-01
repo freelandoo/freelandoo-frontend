@@ -43,6 +43,30 @@ export const COMBO: Swing[] = [
   { dur: 0.66, hitAt: 0.31, range: 2.1, arc: 1.9, dmg: 16, lunge: 2.2 },
   { dur: 0.86, hitAt: 0.42, range: 2.4, arc: 2.4, dmg: 26, lunge: 3.2 },
 ]
+/**
+ * MAGA (raposa, pedido do Alex em 2026-11-01: "os magos soltam bolas de
+ * fogo"): o golpe não corta — no instante do disparo sai uma BOLA DE FOGO
+ * que voa até o inimigo (mira automática dentro de `arc`) e explode ao tocar;
+ * a terceira é a grande, que explode em área. Mesmos tempos do combo.
+ */
+export const MAGE_COMBO: Swing[] = [
+  { dur: 0.62, hitAt: 0.29, range: 10, arc: 1.2, dmg: 12, lunge: 0 },
+  { dur: 0.66, hitAt: 0.31, range: 10, arc: 1.2, dmg: 14, lunge: 0 },
+  { dur: 0.86, hitAt: 0.42, range: 11, arc: 1.4, dmg: 24, lunge: 0 },
+]
+export const SHOT = { speed: 15, radius: 0.45, blast: 2.0, y: 1.25 }
+export interface Shot {
+  id: number
+  x: number
+  y: number
+  z: number
+  dx: number
+  dz: number
+  left: number
+  dmg: number
+  heavy: boolean
+}
+
 /** Apertou de novo até isto depois do corte: o próximo golpe do combo encadeia. */
 const CHAIN_AFTER = 0.05
 const DODGE = { dur: 0.46, iframeFrom: 0.04, iframeTo: 0.36, speed: 8.2, stam: 24 }
@@ -218,6 +242,10 @@ export type FightEvent =
   | { t: "evade"; id: number }
   | { t: "stagger"; id: number }
   | { t: "end"; win: boolean }
+  /** Bola de fogo saiu (maga). */
+  | { t: "cast"; id: number; heavy: boolean }
+  /** Bola de fogo explodiu (acertando ou não). */
+  | { t: "boom"; id: number; x: number; y: number; z: number; heavy: boolean }
 
 export interface Input {
   /** Direção no chão (mundo), módulo 0–1. */
@@ -234,6 +262,8 @@ export interface FightSetup {
   level?: number
   seed?: number
   stats?: Partial<Stats>
+  /** "mage" = a raposa (bolas de fogo); sem = corte de espada. */
+  style?: "mage"
 }
 
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v)
@@ -287,12 +317,17 @@ export class Fight {
   events: FightEvent[] = []
   /** Lobo que tem a vez de atacar (os outros circulam). */
   private token = -1
+  /** Bolas de fogo no ar (maga). */
+  readonly shots: Shot[] = []
+  private shotSeq = 0
+  readonly combo: Swing[]
   private prevAttack = false
   private prevDodge = false
 
   constructor(setup: FightSetup) {
     this.R = rng(setup.seed ?? (Date.now() & 0x7fffffff))
     this.kind = setup.kind
+    this.combo = setup.style === "mage" ? MAGE_COMBO : COMBO
     // O Golem de Pedra (o antigo Soldado) tem só os níveis 1 e 2 (Alex, 29/10).
     this.level = clamp(Math.round(setup.level ?? 1), 1, setup.kind === "soldier" ? 2 : 3)
     const stats = { ...BASE_STATS, ...(setup.stats ?? {}) }
@@ -370,6 +405,7 @@ export class Fight {
       return
     }
     this.stepPlayer(inp, attackPressed, dodgePressed)
+    this.stepShots()
     this.pickToken()
     for (const m of this.mobs) this.stepMob(m)
     this.separate()
@@ -408,7 +444,7 @@ export class Fight {
     if (p.state !== "dodge" && p.state !== "hurt" && p.state !== "down") p.stam = Math.min(PLAYER.stam, p.stam + PLAYER.stamRegen * DT * (p.state === "attack" ? 0.3 : 1))
 
     // Esquiva: corta o golpe (antes do corte) e a recuperação de qualquer golpe.
-    if (dodgePressed && p.stam >= DODGE.stam && (p.state === "idle" || (p.state === "attack" && (!p.struck || p.t > COMBO[p.combo].hitAt / p.rate + 0.08)))) {
+    if (dodgePressed && p.stam >= DODGE.stam && (p.state === "idle" || (p.state === "attack" && (!p.struck || p.t > this.combo[p.combo].hitAt / p.rate + 0.08)))) {
       p.stam -= DODGE.stam
       let dx = inp.mx
       let dz = inp.mz
@@ -439,10 +475,10 @@ export class Fight {
         break
       }
       case "attack": {
-        const sw = COMBO[p.combo]
+        const sw = this.combo[p.combo]
         const dur = sw.dur / p.rate
         const hitAt = sw.hitAt / p.rate
-        if (attackPressed && p.combo < COMBO.length - 1) p.queued = true
+        if (attackPressed && p.combo < this.combo.length - 1) p.queued = true
         // Avança até o corte, depois para.
         const lunge = p.t < hitAt ? sw.lunge : 0
         p.vx = Math.sin(p.facing) * lunge
@@ -497,8 +533,58 @@ export class Fight {
     this.events.push({ t: "swing", combo: i })
   }
 
+  /** Maga: a bola de fogo sai do cajado, mirando o inimigo mais perto dentro do cone. */
+  private castShot(sw: Swing) {
+    const p = this.me
+    let dir = p.facing
+    let best = Infinity
+    for (const m of this.mobs) {
+      if (m.state === "dead" || m.state === "spawn") continue
+      const a = Math.atan2(m.x - p.x, m.z - p.z)
+      const d = Math.hypot(m.x - p.x, m.z - p.z)
+      if (d <= sw.range && Math.abs(angDiff(a, p.facing)) <= sw.arc / 2 + 0.2 && d < best) {
+        best = d
+        dir = a
+      }
+    }
+    const heavy = p.combo === this.combo.length - 1
+    const shot: Shot = { id: ++this.shotSeq, x: p.x + Math.sin(dir) * 0.6, y: SHOT.y, z: p.z + Math.cos(dir) * 0.6, dx: Math.sin(dir), dz: Math.cos(dir), left: sw.range, dmg: Math.round(sw.dmg * this.fx.dmg), heavy }
+    this.shots.push(shot)
+    this.events.push({ t: "cast", id: shot.id, heavy })
+  }
+
+  private stepShots() {
+    for (let i = this.shots.length - 1; i >= 0; i--) {
+      const s = this.shots[i]
+      const step = SHOT.speed * DT
+      s.x += s.dx * step
+      s.z += s.dz * step
+      s.left -= step
+      let hit: Mob | null = null
+      for (const m of this.mobs) {
+        if (m.state === "dead" || m.state === "spawn" || m.y > 1.6) continue
+        if (Math.hypot(m.x - s.x, m.z - s.z) <= MOBS[m.kind].radius + SHOT.radius) {
+          hit = m
+          break
+        }
+      }
+      const wall = Math.hypot(s.x, s.z) > ARENA_R + 1
+      if (!hit && s.left > 0 && !wall) continue
+      this.shots.splice(i, 1)
+      this.events.push({ t: "boom", id: s.id, x: s.x, y: s.y, z: s.z, heavy: s.heavy })
+      if (!hit) continue
+      // a grande explode em área; a pequena só no alvo
+      for (const m of this.mobs) {
+        if (m.state === "dead" || m.state === "spawn" || m.y > 1.6) continue
+        const d = Math.hypot(m.x - s.x, m.z - s.z)
+        if (m === hit || (s.heavy && d <= SHOT.blast + MOBS[m.kind].radius)) this.damageMob(m, s.dmg, s.heavy, m.x - s.x + s.dx * 0.3, m.z - s.z + s.dz * 0.3)
+      }
+    }
+  }
+
   /** O corte do jogador: todo inimigo vivo no cone à frente. */
   private playerStrike(sw: Swing) {
+    if (this.combo === MAGE_COMBO) return this.castShot(sw)
     const p = this.me
     let any = false
     for (const m of this.mobs) {
@@ -511,36 +597,41 @@ export class Fight {
       if (d > sw.range) continue
       if (Math.abs(angDiff(Math.atan2(dx, dz), p.facing)) > sw.arc / 2 + 0.25) continue
       any = true
-      const heavy = p.combo === COMBO.length - 1
-      // Pancada na brecha (logo depois do golpe dele) dói mais.
-      const opening = m.state === "recover" ? 1.25 : 1
-      const dmg = Math.round(sw.dmg * this.fx.dmg * opening)
-      m.hp = Math.max(0, m.hp - dmg)
-      const dead = m.hp <= 0
-      this.events.push({ t: "hit", on: "mob", id: m.id, dmg, x: m.x, y: m.y, z: m.z, heavy, dead })
-      if (dead) {
-        m.state = "dead"
-        m.t = 0
-        continue
-      }
-      m.hits++
-      const def = MOBS[m.kind]
-      // Cambaleia: sem postura, ou quando a postura quebra, ou no golpe forte — mas nunca no meio do golpe dele (só pancada).
-      if (m.state !== "strike" && this.time >= m.armorUntil && (m.poise === 0 || m.hits >= m.poise || (heavy && m.poise <= 2))) {
-        m.hits = 0
-        m.armorUntil = this.time + 1.8
-        m.state = "hurt"
-        m.t = 0
-        m.y = 0
-        this.events.push({ t: "stagger", id: m.id })
-      }
-      // Empurrão.
-      const l = Math.hypot(dx, dz) || 1
-      const push = heavy ? 0.9 : 0.35
-      m.x += (dx / l) * push * (m.poise ? 0.5 : 1)
-      m.z += (dz / l) * push * (m.poise ? 0.5 : 1)
+      const heavy = p.combo === this.combo.length - 1
+      this.damageMob(m, Math.round(sw.dmg * this.fx.dmg), heavy, dx, dz)
     }
     if (!any) this.events.push({ t: "whiff", id: 0 })
+  }
+
+  /** Dano num inimigo (corte ou bola de fogo); (dx, dz) = de onde veio, para o empurrão. */
+  private damageMob(m: Mob, base: number, heavy: boolean, dx: number, dz: number) {
+    // Pancada na brecha (logo depois do golpe dele) dói mais.
+    const opening = m.state === "recover" ? 1.25 : 1
+    const dmg = Math.round(base * opening)
+    m.hp = Math.max(0, m.hp - dmg)
+    const dead = m.hp <= 0
+    this.events.push({ t: "hit", on: "mob", id: m.id, dmg, x: m.x, y: m.y, z: m.z, heavy, dead })
+    if (dead) {
+      m.state = "dead"
+      m.t = 0
+      return
+    }
+    m.hits++
+    const def = MOBS[m.kind]
+    // Cambaleia: sem postura, ou quando a postura quebra, ou no golpe forte — mas nunca no meio do golpe dele (só pancada).
+    if (m.state !== "strike" && this.time >= m.armorUntil && (m.poise === 0 || m.hits >= m.poise || (heavy && m.poise <= 2))) {
+      m.hits = 0
+      m.armorUntil = this.time + 1.8
+      m.state = "hurt"
+      m.t = 0
+      m.y = 0
+      this.events.push({ t: "stagger", id: m.id })
+    }
+    // Empurrão.
+    const l = Math.hypot(dx, dz) || 1
+    const push = heavy ? 0.9 : 0.35
+    m.x += (dx / l) * push * (m.poise ? 0.5 : 1)
+    m.z += (dz / l) * push * (m.poise ? 0.5 : 1)
   }
 
   /** Bando: só um lobo ataca por vez; os outros rodeiam. */

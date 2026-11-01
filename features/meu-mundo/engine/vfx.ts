@@ -89,7 +89,20 @@ interface Flash {
   grow: number
 }
 
+/** Pedra do cajado acesa (sempre) e carregando no feitiço. */
+export interface Orb {
+  /** Onde está a pedra (null = esconde) e a carga 0–1 (cresce e acende). */
+  set: (at: Vector3 | null, charge: number) => void
+}
+
+export const FIRE: VfxColor = { main: new Color3(1, 0.45, 0.08), edge: new Color3(1, 0.85, 0.3) }
+
 export interface Vfx {
+  orb: (color: VfxColor) => Orb
+  /** Bola de fogo `id` (maga): nasce, anda com `moveShot`, some com `endShot` (a explosão é impact/burst). */
+  shot: (id: number, at: Vector3, heavy: boolean) => void
+  moveShot: (id: number, at: Vector3) => void
+  endShot: (id: number) => void
   trail: (points: () => [Vector3, Vector3] | null, color: VfxColor) => Trail
   impact: (at: Vector3, color: VfxColor, heavy?: boolean) => void
   burst: (at: Vector3, color: VfxColor) => void
@@ -136,11 +149,13 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
   owned.push(starTex, rayTex, ringTex, dotTex, sparkleTex, smokeTex)
 
   const addMat = (name: string, tex: DynamicTexture, add = true) => {
+    // cor = emissiva lisa; a forma (transparência) vem do alfa da textura
     const m = new StandardMaterial(name, scene)
-    m.diffuseTexture = tex
-    m.useAlphaFromDiffuseTexture = true
+    m.opacityTexture = tex
     m.disableLighting = true
-    m.emissiveColor = new Color3(0, 0, 0)
+    m.diffuseColor = new Color3(0, 0, 0)
+    m.specularColor = new Color3(0, 0, 0)
+    m.emissiveColor = new Color3(1, 1, 1)
     m.backFaceCulling = false
     // aditivo só no miolo de luz; o resto em mistura normal (a cor não "lava" em fundo claro)
     m.alphaMode = add ? Constants.ALPHA_ADD : Constants.ALPHA_COMBINE
@@ -174,7 +189,7 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
     f.life = life
     f.size = size
     f.grow = grow
-    f.mat.diffuseColor = color
+    f.mat.emissiveColor = color
     f.mesh.position.copyFrom(at)
     f.mesh.setEnabled(true)
   }
@@ -243,6 +258,87 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
     p.color2 = new Color4(c.edge.r, c.edge.g, c.edge.b, 1)
     p.colorDead = new Color4(c.edge.r, c.edge.g, c.edge.b, 0)
   }
+
+  // ── pedra do cajado ─────────────────────────────────────────────────────
+  const glowPlane = (name: string, tex: DynamicTexture, color: Color3) => {
+    const m = CreatePlane(name, { size: 1 }, scene)
+    m.billboardMode = Mesh.BILLBOARDMODE_ALL
+    m.isPickable = false
+    const mat = addMat(`${name}-mat`, tex)
+    mat.emissiveColor = color
+    m.material = mat
+    m.setEnabled(false)
+    glow?.addIncludedOnlyMesh(m)
+    owned.push(m)
+    return m
+  }
+  const orbs: { core: Mesh; halo: Mesh; at: Vector3 | null; charge: number; t: number; feed: ParticleSystem }[] = []
+  const orb = (color: VfxColor): Orb => {
+    const i = orbs.length
+    const core = glowPlane(`vfx-orb-core-${i}`, dotTex, new Color3(1, 0.95, 0.75))
+    const halo = glowPlane(`vfx-orb-halo-${i}`, starTex, color.main)
+    // energia sendo puxada para a pedra enquanto carrega
+    const feed = ps(`vfx-orb-feed-${i}`, low ? 30 : 90, sparkleTex)
+    feed.minSize = 0.04
+    feed.maxSize = 0.12
+    feed.minLifeTime = 0.25
+    feed.maxLifeTime = 0.4
+    feed.minEmitPower = -3.2
+    feed.maxEmitPower = -2.2
+    feed.createSphereEmitter(0.7, 0)
+    tint(feed, color)
+    const o = { core, halo, at: null as Vector3 | null, charge: 0, t: 0, feed }
+    orbs.push(o)
+    return {
+      set(at, charge) {
+        o.at = at ? at.clone() : null
+        o.charge = Math.max(0, Math.min(1, charge))
+      },
+    }
+  }
+  const updateOrbs = (dt: number) => {
+    for (const o of orbs) {
+      o.t += dt
+      const on = !!o.at
+      o.core.setEnabled(on)
+      o.halo.setEnabled(on)
+      if (!o.at) {
+        o.feed.emitRate = 0
+        continue
+      }
+      const pulse = 1 + Math.sin(o.t * 6) * 0.1
+      const k = o.charge
+      o.core.position.copyFrom(o.at)
+      o.halo.position.copyFrom(o.at)
+      o.core.scaling.setAll((0.16 + 0.34 * k) * pulse)
+      o.halo.scaling.setAll((0.36 + 0.9 * k) * pulse)
+      o.halo.rotation.z += dt * (1 + 6 * k)
+      o.halo.visibility = 0.6 + 0.4 * k
+      o.feed.emitter = o.at.clone()
+      o.feed.emitRate = k > 0.05 ? (low ? 40 : 120) * k : 0
+    }
+  }
+
+  // ── bolas de fogo ───────────────────────────────────────────────────────
+  type Ball = { id: number; core: Mesh; halo: Mesh; fire: ParticleSystem; on: boolean }
+  const balls: Ball[] = []
+  for (let i = 0; i < 4; i++) {
+    const core = glowPlane(`vfx-ball-core-${i}`, dotTex, new Color3(1, 0.88, 0.55))
+    const halo = glowPlane(`vfx-ball-halo-${i}`, starTex, FIRE.main)
+    const fire = ps(`vfx-ball-fire-${i}`, low ? 60 : 200, smokeTex)
+    fire.minLifeTime = 0.18
+    fire.maxLifeTime = 0.38
+    fire.minEmitPower = 0.2
+    fire.maxEmitPower = 0.8
+    fire.createSphereEmitter(0.12)
+    fire.color1 = new Color4(1, 0.75, 0.2, 1)
+    fire.color2 = new Color4(1, 0.35, 0.05, 1)
+    fire.colorDead = new Color4(0.4, 0.05, 0, 0)
+    fire.addSizeGradient(0, 1)
+    fire.addSizeGradient(1, 0.3)
+    balls.push({ id: -1, core, halo, fire, on: false })
+  }
+  const ballOf = (id: number) => balls.find((b) => b.on && b.id === id)
 
   // ── fitas (rastro da arma) ──────────────────────────────────────────────
   const trails: { t: Trail; mesh: Mesh; pts: () => [Vector3, Vector3] | null; hist: [Vector3, Vector3][]; life: number; pos: Float32Array; col: Float32Array }[] = []
@@ -325,6 +421,38 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
   }
 
   return {
+    orb,
+    shot(id, at, heavy) {
+      const b = balls.find((x) => !x.on) ?? balls[0]
+      b.id = id
+      b.on = true
+      const k = heavy ? 1.7 : 1
+      b.core.scaling.setAll(0.62 * k)
+      b.halo.scaling.setAll(1.35 * k)
+      b.fire.minSize = 0.26 * k
+      b.fire.maxSize = 0.6 * k
+      b.fire.emitRate = (low ? 70 : 220) * (heavy ? 1.4 : 1)
+      for (const m of [b.core, b.halo]) {
+        m.position.copyFrom(at)
+        m.setEnabled(true)
+      }
+      b.fire.emitter = at.clone()
+    },
+    moveShot(id, at) {
+      const b = ballOf(id)
+      if (!b) return
+      b.core.position.copyFrom(at)
+      b.halo.position.copyFrom(at)
+      b.fire.emitter = at.clone()
+    },
+    endShot(id) {
+      const b = ballOf(id)
+      if (!b) return
+      b.on = false
+      b.fire.emitRate = 0
+      b.core.setEnabled(false)
+      b.halo.setEnabled(false)
+    },
     trail,
     impact(at, color, heavy = false) {
       fire(pool.star, at, color.main, heavy ? 1.8 : 1.1, heavy ? 0.22 : 0.15, 1.6)
@@ -350,6 +478,8 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
     },
     update(dt) {
       updateTrails(dt)
+      updateOrbs(dt)
+      for (const b of balls) if (b.on) b.halo.rotation.z += dt * 8
       for (const f of flashes) {
         if (f.t >= f.life) {
           if (f.mesh.isEnabled()) f.mesh.setEnabled(false)

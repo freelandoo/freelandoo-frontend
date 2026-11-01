@@ -45,7 +45,7 @@ import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { clanOfBody, CLAN_WEAPON, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
-import { createVfx, VFX_COLORS } from "../../engine/vfx"
+import { createVfx, FIRE, VFX_COLORS } from "../../engine/vfx"
 
 export interface LaminasHud {
   hp: number
@@ -183,7 +183,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   audio.resume()
 
   // ── a luta ───────────────────────────────────────────────────────────────
-  const fight = new Fight(opts.setup)
+  // a raposa luta como MAGA (bolas de fogo); o resto corta (mm3d-58)
+  const fight = new Fight({ ...opts.setup, style: opts.stage !== "ring" && clanOfBody(opts.body) === "raposa" ? "mage" : undefined })
 
   // ── o jogador e a espada ─────────────────────────────────────────────────
   const lib = new AvatarLibrary(scene, false, false, 30, false, false, true, false, true)
@@ -224,6 +225,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   }
   // pontos da lâmina/cabeça no eixo +Y da arma (build_armas.py: espada 0,15→0,93 m; cajado: a pedra 0,55→0,95 m)
   const bladeLocal: [Vector3, Vector3] = clan === "raposa" ? [new Vector3(0, 0.55, 0), new Vector3(0, 0.95, 0)] : clan ? [new Vector3(0, 0.15, 0), new Vector3(0, 0.93, 0)] : [new Vector3(0, 0.15, 0), new Vector3(0, 1.15, 0)]
+  // pedra do cajado (local +Y da arma): sempre acesa, carrega até o disparo
+  const STONE = new Vector3(0, 0.82, 0)
+  const SHOT_BLEND = 0.15
+  const shotOff = new Map<number, { off: Vector3; t: number }>()
+  const stone = clan === "raposa" ? vfx.orb(FIRE) : null
   const heroTrail = vfx.trail(() => {
     const node = clan ? grip?.root : ring ? null : sword
     if (!node || !node.isEnabled()) return null
@@ -470,6 +476,26 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           audio.whoosh()
           break
         }
+        case "cast": {
+          const s = fight.shots.find((x) => x.id === e.id)
+          if (s) {
+            // a imagem sai da PEDRA e encontra a trajetória da regra em SHOT_BLEND s
+            const node = grip?.root
+            const from = node ? Vector3.TransformCoordinates(STONE, node.getWorldMatrix()) : new Vector3(s.x, s.y, s.z)
+            shotOff.set(e.id, { off: from.subtract(new Vector3(s.x, s.y, s.z)), t: 0 })
+            vfx.shot(e.id, from, e.heavy)
+          }
+          audio.whoosh()
+          break
+        }
+        case "boom": {
+          vfx.endShot(e.id)
+          shotOff.delete(e.id)
+          const at = new Vector3(e.x, e.y, e.z)
+          vfx.impact(at, FIRE, e.heavy)
+          if (e.heavy) vfx.burst(at, FIRE)
+          break
+        }
         case "dodge":
           vfx.dust(new Vector3(fight.me.x, 0.15, fight.me.z), 8)
           if (moves) hero.boxeAct(moves.dodge.clip, 0.46, moves.dodge.from, moves.dodge.to)
@@ -482,7 +508,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             burst(sparks, at, e.heavy ? 40 : 22)
             burst(ichor, at, e.heavy ? 18 : 8)
             pop(at.add(new Vector3(0, 0.5, 0)), String(e.dmg), e.heavy ? "#FFD23F" : "#FF4FA3", e.heavy ? 52 : 40)
-            vfx.impact(at, fxColor, e.heavy)
+            if (clan !== "raposa") vfx.impact(at, fxColor, e.heavy)
             if (e.heavy) hitStop = Math.max(hitStop, 0.07)
             if (e.dead) vfx.burst(new Vector3(e.x, e.y + 1.2, e.z), fxColor)
             audio.punch(e.heavy ? 1 : 0.6, e.heavy)
@@ -575,7 +601,26 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     heroFix.guardWant = still && base === "BGuard" ? 1 : 0
     heroFix.staffWant = still && clan === "raposa" && base === GUARD && sp < 0.3 ? 1 : 0
     if (grip) grip.upright = heroFix.staffW
-    heroTrail.active = p.state === "attack"
+    // a maga não corta: sem arco; a pedra carrega até o disparo
+    heroTrail.active = p.state === "attack" && clan !== "raposa"
+    if (stone) {
+      const node = grip?.root
+      let charge = 0
+      if (p.state === "attack" && !p.struck) {
+        const sw = fight.combo[p.combo]
+        charge = Math.min(1, p.t / (sw.hitAt / p.rate))
+      }
+      stone.set(node && node.isEnabled() ? Vector3.TransformCoordinates(STONE, node.getWorldMatrix()) : null, charge)
+    }
+    for (const s of fight.shots) {
+      const o = shotOff.get(s.id)
+      const at = new Vector3(s.x, s.y, s.z)
+      if (o) {
+        o.t += realDt
+        at.addInPlace(o.off.scale(Math.max(0, 1 - o.t / SHOT_BLEND)))
+      }
+      vfx.moveShot(s.id, at)
+    }
     vfx.update(realDt)
 
     // monstros
