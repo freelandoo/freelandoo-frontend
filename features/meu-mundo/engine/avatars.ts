@@ -85,19 +85,21 @@ const ASSETS = {
     // (build_ekaterina.py 4b): rosto 100% na cabeça — o maxilar esticava na corrida.
     ekaterina: "avatar-ekaterina-pescoco.glb",
     ...byGod((g) => `avatar-${g}.glb`),
-    // 2026-11-01 (regra do Alex): DEUSES com 2,40 m (só a escala da raiz; as
-    // skins que não são deuses — ciborgue, cavaleiro, golem, garras — seguem 2 m).
-    aurion: "avatar-aurion-h240.glb",
-    morkhan: "avatar-morkhan-h240.glb",
-    kragor: "avatar-kragor-h240.glb",
-    zephyra: "avatar-zephyra-h240.glb",
-    maru: "avatar-maru-h240.glb",
-    iris: "avatar-iris-h240.glb",
-    noctis: "avatar-noctis-h240.glb",
-    aeryn: "avatar-aeryn-h240.glb",
+    // 2026-11-01 (regra do Alex, 2ª): DEUSES com 3,20 m e Golem/Ciborgue com 4 m
+    // (só a escala da raiz; cavaleiro e garras seguem 2 m).
+    aurion: "avatar-aurion-h320.glb",
+    morkhan: "avatar-morkhan-h320.glb",
+    kragor: "avatar-kragor-h320.glb",
+    zephyra: "avatar-zephyra-h320.glb",
+    maru: "avatar-maru-h320.glb",
+    iris: "avatar-iris-h320.glb",
+    noctis: "avatar-noctis-h320.glb",
+    aeryn: "avatar-aeryn-h320.glb",
+    golem: "avatar-golem-h400.glb",
+    ciborgue: "avatar-ciborgue-h400.glb",
     // Alturas (regra do Alex, 2026-11-01): jovem 1,70 m (menino) / 1,65 m
-    // (menina), adulto 2,00 m / 1,90 m — escala da raiz (-m58f).
-    ...byClanBody((b) => `avatar-${b}-m58f.glb`),
+    // (menina) (-m58f); adultos 2,70 m (-m58g) — escala da raiz.
+    ...byClanBody((b) => (/adult/.test(b) ? `avatar-${b}-m58g.glb` : `avatar-${b}-m58f.glb`)),
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -109,7 +111,7 @@ const ASSETS = {
     fat: "avatar-fat-lod.glb",
     strong: "avatar-strong-lod.glb",
     female: "avatar-female-m36e-lod.glb",
-    ...byClanBody((b) => `avatar-${b}-m58f-lod.glb`),
+    ...byClanBody((b) => (/adult/.test(b) ? `avatar-${b}-m58g-lod.glb` : `avatar-${b}-m58f-lod.glb`)),
   } as Partial<Record<BodyId, string>>,
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,

@@ -42,8 +42,9 @@ import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 
 /** Monstros com corpo de gente: a skin rigada e a escala na luta. */
 const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
-  soldier: { body: "golem", scale: 1.1 },
-  golem: { body: "ciborgue", scale: 1.4 },
+  // o corpo do Golem/Ciborgue agora tem 4 m (era 2): escala pela metade = mesmo tamanho na luta
+  soldier: { body: "golem", scale: 0.55 },
+  golem: { body: "ciborgue", scale: 0.7 },
   harpy: { body: "garras", scale: 1.05 },
 }
 /**
