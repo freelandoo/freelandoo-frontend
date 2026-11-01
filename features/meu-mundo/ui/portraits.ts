@@ -40,6 +40,7 @@ export const PORTRAIT: Record<BodyId, string> = {
   ...byClanBody((b) => `${V2}/classe-${b}.webp`),
   // 2026-11-01: raposa inicial e os 4 vampiros trocados pelo Alex.
   ...byM58c((b) => `${V2}/classe-${b}_m58c.webp`),
+  vampira: `${V2}/classe-vampira_m58d.webp`,
 }
 
 /** Recorte do rosto para círculos (avatar, notificação). */
@@ -54,6 +55,7 @@ const FACE: Record<BodyId, string> = {
   ...byGod((g) => `${V2}/deus-${g}-rosto.webp`),
   ...byClanBody((b) => `${V2}/classe-${b}-rosto.webp`),
   ...byM58c((b) => `${V2}/classe-${b}_m58c-rosto.webp`),
+  vampira: `${V2}/classe-vampira_m58d-rosto.webp`,
 }
 
 export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "normal"] ?? STANDARD_FACE

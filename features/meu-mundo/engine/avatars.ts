@@ -72,6 +72,7 @@ const ASSETS = {
     // pesos pela difusão própria (diffuse_weights/tidy_weights).
     ...byClanBody((b) => `avatar-${b}-basecolor-1024.jpg`),
     ...M58C((b) => `avatar-${b}-m58c-basecolor-1024.jpg`),
+    vampira: "avatar-vampira-m58d-basecolor-1024.jpg",
   } satisfies Record<BodyId, string>,
   bodies: {
     normal: "avatar-normal.glb",
@@ -91,6 +92,8 @@ const ASSETS = {
     // 2026-11-01: raposa inicial e os 4 vampiros TROCADOS pelo Alex (modelos
     // novos, rig refeito) — nome novo para o cache não servir os antigos.
     ...M58C((b) => `avatar-${b}-m58c.glb`),
+    // Vampira: modelo original SEM redução de busto e garras rígidas na mão.
+    vampira: "avatar-vampira-m58d.glb",
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
