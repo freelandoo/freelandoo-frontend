@@ -41,8 +41,30 @@ export function findGripTargets(nodes: TransformNode[]): GripTargets | null {
   return hand && index && thumb ? { hand, index, thumb } : null
 }
 
+/**
+ * Arma de DUAS mãos (cajado, 2026-11-01): a mão esquerda perto da direita faz
+ * a haste passar pela palma dela — o eixo da arma vira a linha entre as duas
+ * palmas (mesmo sentido do eixo de uma mão). Peso pela distância: até NEAR m
+ * vale inteiro, some em FAR m (mão esquerda longe = arma só na direita).
+ */
+const NEAR = 0.32
+const FAR = 0.55
+
+export interface SecondHand {
+  hand: TransformNode
+  middle: TransformNode
+}
+
 export class WeaponGrip {
   readonly root: TransformNode
+  /** 0–1: quanto a mão esquerda está segurando agora (para o IK fino dela). */
+  twoHanded = 0
+  /**
+   * 0–1: arma EM PÉ (cajado de mago parado, pedra para cima — pedido do Alex
+   * com referências em 2026-11-01). O eixo da arma vai para o "cima" do mundo.
+   */
+  upright = 0
+  second: SecondHand | null = null
   private obs: Observer<Scene> | null
   private readonly h = new Vector3()
   private readonly f = new Vector3()
@@ -79,11 +101,45 @@ export class WeaponGrip {
     f.scaleInPlace(1 / len)
     const s = thumb.getAbsolutePosition().subtractToRef(h, this.s)
     s.subtractInPlace(f.scale(Vector3.Dot(s, f))).normalize()
+    // ponto da pegada com os eixos da MÃO DIREITA (o ajuste abaixo só gira)
+    Vector3.CrossToRef(f, s, this.n)
+    this.n.normalize()
+    const px = h.x + (f.x * ALONG + this.n.x * PALM) * len
+    const py = h.y + (f.y * ALONG + this.n.y * PALM) * len
+    const pz = h.z + (f.z * ALONG + this.n.z * PALM) * len
+    // duas mãos: o eixo (+Y = s) gira para a linha direita → palma esquerda
+    this.twoHanded = 0
+    if (this.second) {
+      const { hand: lh, middle } = this.second
+      lh.computeWorldMatrix(true)
+      middle.computeWorldMatrix(true)
+      const lw = lh.getAbsolutePosition()
+      const palm = lw.add(middle.getAbsolutePosition().subtract(lw).scale(0.55))
+      const grip = h.add(f.scale(ALONG * len))
+      const to = palm.subtract(grip)
+      const d = to.length()
+      const w = Math.max(0, Math.min(1, (FAR - d) / (FAR - NEAR)))
+      if (w > 0 && d > 1e-4) {
+        to.scaleInPlace(1 / d)
+        if (Vector3.Dot(to, s) < 0) to.scaleInPlace(-1)
+        s.scaleInPlace(1 - w).addInPlace(to.scale(w)).normalize()
+        // dedos (f) perpendiculares ao eixo novo
+        f.subtractInPlace(s.scale(Vector3.Dot(f, s))).normalize()
+        this.twoHanded = w
+      }
+    }
+    if (this.upright > 0) {
+      const w = Math.min(1, this.upright)
+      s.scaleInPlace(1 - w).addInPlace(Vector3.Up().scale(w)).normalize()
+      f.subtractInPlace(s.scale(Vector3.Dot(f, s)))
+      if (f.lengthSquared() < 1e-6) f.set(1, 0, 0)
+      f.normalize()
+    }
     Vector3.CrossToRef(f, s, this.n)
     const n = this.n.normalize()
     Matrix.FromXYZAxesToRef(f, s, n, this.m)
     Quaternion.FromRotationMatrixToRef(this.m, this.root.rotationQuaternion!)
-    this.root.position.set(h.x + (f.x * ALONG + n.x * PALM) * len, h.y + (f.y * ALONG + n.y * PALM) * len, h.z + (f.z * ALONG + n.z * PALM) * len)
+    this.root.position.set(px, py, pz)
   }
 
   dispose() {

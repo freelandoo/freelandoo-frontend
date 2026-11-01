@@ -38,6 +38,7 @@ import { AvatarLibrary, ensureLoaders } from "../../engine/avatars"
 import { Character } from "../../engine/player"
 import type { BodyId } from "../../types"
 import { BoxingGloves } from "./gloves"
+import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 
 /** Monstros com corpo de gente: a skin rigada e a escala na luta. */
 const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
@@ -163,6 +164,7 @@ export class MonsterModel {
   private gone = false
   /** Corpo de gente (skin rigada) no lugar das formas. */
   private char: Character | null = null
+  private fix: PoseFix | null = null
   private last: MobState | null = null
   private readonly real: boolean
   /** Lobo rigado: os clipes (nome → grupo) e o que está tocando. */
@@ -201,6 +203,11 @@ export class MonsterModel {
       this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rig.body, null, false)
       this.char.holder.scaling.setAll(rig.scale * scale)
       this.char.setBoxe("BGuard")
+      const guard = BULKY_GUARD[rig.body]
+      if (guard) {
+        const ch = this.char
+        this.fix = new PoseFix(scene, (n) => ch.bone(n), guard)
+      }
     } else if (kind === "wolf") {
       wolfContainer(scene)
         .then((c) => {
@@ -370,6 +377,8 @@ export class MonsterModel {
       c.setBoxe("BGuard")
       c.animate(dt, 0, 0)
     }
+    // guarda baixa dos corpos volumosos (Ciborgue/Golem): só parado na guarda
+    if (this.fix) this.fix.guardWant = !p.calm && !(p.state === "chase" && p.speed > 0.2) && !c.boxeBusy && p.state !== "dead" ? 1 : 0
     if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
   }
 
@@ -453,6 +462,7 @@ export class MonsterModel {
       this.wolf = null
     }
     this.gloves?.dispose()
+    this.fix?.dispose()
     this.char?.dispose()
     for (const p of this.parts) p.mesh.dispose()
     this.flash.dispose()

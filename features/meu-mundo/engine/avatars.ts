@@ -233,9 +233,9 @@ const BOXE_CLIPS = ["BGuard", "BWarm", "BJab", "BBox0", "BBox1", "BBox2", "BBox3
  * lugar do boxe — guarda, corrida/passo de lado e vitória em laço; golpes,
  * pancadas e queda uma vez (boxeAct). Vampiro = espada e escudo; raposa = cajado.
  */
-const CLAN_CLIPS = ["VIdle", "VRun", "VStrafe", "VSlash1", "VSlash3", "VAtk2", "VHit", "VDie", "VPower", "RBlock", "RRun", "RStrafe", "RAtk1", "RAtk2", "RAtk3", "RHitS", "RHitL", "RDie", "RCast"] as const
+const CLAN_CLIPS = ["RIdle", "VIdle", "VRun", "VStrafe", "VSlash1", "VSlash3", "VAtk2", "VHit", "VDie", "VPower", "RBlock", "RRun", "RStrafe", "RAtk1", "RAtk2", "RAtk3", "RHitS", "RHitL", "RDie", "RCast"] as const
 export type ClanClip = (typeof CLAN_CLIPS)[number]
-const CLAN_LOOP = new Set<string>(["VIdle", "VRun", "VStrafe", "VPower", "RBlock", "RRun", "RStrafe", "RCast"])
+const CLAN_LOOP = new Set<string>(["RIdle", "VIdle", "VRun", "VStrafe", "VPower", "RBlock", "RRun", "RStrafe", "RCast"])
 /** Gincana (mm3d-47): GRun/GDive/GWin em laço; pulo pela fase do voo; tombo e levantar uma vez. */
 const GINCANA_CLIPS = ["GRun", "GJump", "GFall", "GRise", "GWin", "GDive", "GUp"] as const
 /** Corrida rápida: m/s que o clipe anda a 1×. */
@@ -252,7 +252,7 @@ export interface GincanaPose {
 const BOXE_STEP_SPEED = { BStepF: 0.91, BStepB: 0.79, BStepL: 0.61, BStepR: 0.61 } as const
 export type BoxeClip = (typeof BOXE_CLIPS)[number] | ClanClip
 /** Pose-base da luta: guarda, aquecimento, cansado, machucado, andando para o canto, vitória. */
-export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast"
+export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast" | "RIdle"
 /** Golpes e reações tocam uma vez (quem dispara é o boxeAct, nunca o laço). */
 const BOXE_LOOP = new Set<string>(["BGuard", "BWarm", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"])
 const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp", ...CLAN_CLIPS.filter((c) => !CLAN_LOOP.has(c))])
@@ -663,7 +663,7 @@ export class AvatarRig {
     BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
     GRun: 0, GJump: 0, GFall: 0, GRise: 0, GWin: 0, GDive: 0, GUp: 0,
     VIdle: 0, VRun: 0, VStrafe: 0, VSlash1: 0, VSlash3: 0, VAtk2: 0, VHit: 0, VDie: 0, VPower: 0,
-    RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
+    RIdle: 0, RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -1046,6 +1046,11 @@ export class AvatarRig {
     return this.applyWeights(dt, target, 0, p.anim <= 1 ? 12 : 22)
   }
 
+  /** Há golpe/reação/queda tocando por cima da base? */
+  get boxeBusy() {
+    return this.boxeClip !== null
+  }
+
   /** Solta o golpe/queda em andamento (volta à base). */
   boxeClear() {
     this.boxeClip = null
@@ -1074,7 +1079,7 @@ export class AvatarRig {
         const v = Math.hypot(fwd, side)
         const m = base === "BGuard" && this.groups.BStepF ? Math.min(1, v / 0.3) : 0
         // Classes: andando na guarda = a corrida da classe (frente) ou o passo de lado.
-        const cl = base === "VIdle" ? "V" : base === "RBlock" ? "R" : null
+        const cl = base === "VIdle" ? "V" : base === "RBlock" || base === "RIdle" ? "R" : null
         if (cl && v > 0.3) {
           const sideways = Math.abs(side) > Math.abs(fwd) * 1.2
           const clip = (sideways ? `${cl}Strafe` : `${cl}Run`) as Clip
@@ -1164,7 +1169,7 @@ export class AvatarRig {
       BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
       GRun: 0, GJump: 0, GFall: 0, GRise: 0, GWin: 0, GDive: 0, GUp: 0,
       VIdle: 0, VRun: 0, VStrafe: 0, VSlash1: 0, VSlash3: 0, VAtk2: 0, VHit: 0, VDie: 0, VPower: 0,
-      RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
+      RIdle: 0, RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
     }
     this.applyWeights(dt, target, speed)
   }

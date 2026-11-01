@@ -184,6 +184,11 @@ export class Character {
     this.rig?.boxeClear()
   }
 
+  /** Golpe/reação tocando por cima da base (mm3d-58: os ajustes de IK só valem na base). */
+  get boxeBusy() {
+    return this.rig?.boxeBusy ?? false
+  }
+
   /** Andando na guarda (mm3d-45): m/s no referencial do corpo (frente, direita). */
   setBoxeMove(fwd: number, side: number) {
     if (this.rig) this.rig.boxeMove = { fwd, side }

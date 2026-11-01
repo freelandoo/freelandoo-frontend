@@ -44,6 +44,7 @@ import { MonsterModel } from "./monster-view"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { clanOfBody, CLAN_WEAPON, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
+import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 
 export interface LaminasHud {
   hp: number
@@ -104,7 +105,8 @@ const CLAN_MOVES: Record<Clan, { guard: BoxeBase; win: BoxeBase; swings: Seg[]; 
     fall: "VDie",
   },
   raposa: {
-    guard: "RBlock",
+    // parado = de pé com o cajado em pé, pedra para cima (PoseFix + WeaponGrip.upright)
+    guard: "RIdle",
     win: "RCast",
     swings: [
       { clip: "RAtk1", from: 0.25, to: 0.58 },
@@ -198,6 +200,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   shadowMat.alpha = 0.35
   const hero = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, opts.body, null, true, opts.look ?? "")
   hero.setBoxe(GUARD)
+  // Ajustes depois das animações (antes da pegada da arma, que nasce depois):
+  // guarda baixa dos corpos volumosos e a mão do cajado de mago.
+  const heroFix = new PoseFix(scene, (n) => hero.bone(n), ring || clan ? null : (BULKY_GUARD[opts.body] ?? null))
   // A arma da classe (GLB do build_armas.py) presa pelos ossos da mão.
   let weaponRoot: TransformNode | null = null
   let grip: WeaponGrip | null = null
@@ -539,6 +544,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     lastState = p.state
     placeSword()
     placeWeapon()
+    const still = !hero.boxeBusy && p.state !== "win" && p.hp > 0
+    heroFix.guardWant = still && base === "BGuard" ? 1 : 0
+    heroFix.staffWant = still && clan === "raposa" && base === GUARD && sp < 0.3 ? 1 : 0
+    if (grip) grip.upright = heroFix.staffW
 
     // monstros
     let danger = false
@@ -665,6 +674,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       sword.dispose()
       for (const m of Object.values(swordMats)) m.dispose()
       grip?.dispose()
+      heroFix.dispose()
       hero.dispose()
       lib.dispose()
       arena.dispose()
