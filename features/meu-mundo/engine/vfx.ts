@@ -102,16 +102,17 @@ export const FIRE: VfxColor = { main: new Color3(1, 0.45, 0.08), edge: new Color
 export interface Vfx {
   orb: (color: VfxColor) => Orb
   /** Bola de fogo `id` (maga): nasce, anda com `moveShot`, some com `endShot` (a explosão é impact/burst). */
-  shot: (id: number, at: Vector3, heavy: boolean) => void
+  shot: (id: number, at: Vector3, heavy: boolean, scale?: number) => void
   moveShot: (id: number, at: Vector3) => void
   endShot: (id: number) => void
   /**
    * Luz que sobe do CHÃO (pedido do Alex): círculo de runas girando em `at`
    * (raio `r`) por `dur` s; `pillar` = coluna de luz e estrelas subindo.
    */
-  ground: (at: Vector3, color: VfxColor, r: number, dur: number, pillar?: boolean) => void
+  ground: (at: Vector3, color: VfxColor, r: number, dur: number, pillar?: boolean, ornate?: boolean) => void
   trail: (points: () => [Vector3, Vector3] | null, color: VfxColor) => Trail
-  impact: (at: Vector3, color: VfxColor, heavy?: boolean) => void
+  /** `boost` (1 = normal) aumenta clarão e faíscas — golpes de ranque alto e adultos. */
+  impact: (at: Vector3, color: VfxColor, heavy?: boolean, boost?: number) => void
   burst: (at: Vector3, color: VfxColor) => void
   dust: (at: Vector3, n?: number) => void
   update: (dt: number) => void
@@ -337,9 +338,9 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
     }
   })
   owned.push(runeTex, beamTex)
-  type Rune = { disc: Mesh; beam: Mesh; t: number; dur: number; r: number; pillar: boolean }
+  type Rune = { disc: Mesh; beam: Mesh; t: number; dur: number; r: number; pillar: boolean; spin: number }
   const runes: Rune[] = []
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     const disc = CreateGround(`vfx-rune-${i}`, { width: 2, height: 2 }, scene)
     const dm = addMat(`vfx-rune-mat-${i}`, runeTex)
     disc.material = dm
@@ -353,7 +354,7 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
     // a coluna NÃO entra no brilho (com ele a tela inteira estourava em branco)
     glow?.addIncludedOnlyMesh(disc)
     owned.push(disc, beam)
-    runes.push({ disc, beam, t: 1, dur: 1, r: 1, pillar: false })
+    runes.push({ disc, beam, t: 1, dur: 1, r: 1, pillar: false, spin: 1 })
   }
   const groundRise = ps("vfx-ground-rise", low ? 60 : 200, sparkleTex)
   groundRise.minSize = 0.06
@@ -381,7 +382,7 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
       const open = Math.min(1, u.t / 0.18)
       const fade = k < 0.75 ? 1 : 1 - (k - 0.75) / 0.25
       u.disc.scaling.setAll(u.r * (0.55 + 0.45 * (1 - Math.pow(1 - open, 3))))
-      u.disc.rotation.y += dt * 0.9
+      u.disc.rotation.y += dt * 0.9 * u.spin
       u.disc.visibility = fade
       if (u.pillar) {
         const h = 6 * (1 - Math.pow(1 - Math.min(1, u.t / 0.35), 2))
@@ -559,12 +560,26 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
 
   return {
     orb,
-    ground(at, color, r, dur, pillar = false) {
+    ground(at, color, r, dur, pillar = false, ornate = false) {
+      // adultos/golpe S: um segundo círculo maior, girando ao contrário (mais desenho no chão)
+      if (ornate) {
+        const o = runes.reduce((a, b) => (b.t / b.dur > a.t / a.dur ? b : a))
+        o.t = 0
+        o.dur = dur
+        o.r = r * 1.45
+        o.pillar = false
+        o.spin = -0.6
+        o.disc.position.set(at.x, 0.035, at.z)
+        ;(o.disc.material as StandardMaterial).emissiveColor = color.edge
+        o.disc.setEnabled(true)
+        o.beam.setEnabled(false)
+      }
       const u = runes.reduce((a, b) => (b.t / b.dur > a.t / a.dur ? b : a))
       u.t = 0
       u.dur = dur
       u.r = r
       u.pillar = pillar
+      u.spin = 1
       u.disc.position.set(at.x, 0.04, at.z)
       u.beam.position.set(at.x, 0.04, at.z)
       ;(u.disc.material as StandardMaterial).emissiveColor = color.main
@@ -578,11 +593,11 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
       groundRise.emitRate = (low ? 30 : 110) * (pillar ? 1.6 : 0.8)
       riseLeft = dur * 0.8
     },
-    shot(id, at, heavy) {
+    shot(id, at, heavy, scale = 1) {
       const b = balls.find((x) => !x.on) ?? balls[0]
       b.id = id
       b.on = true
-      const k = heavy ? 1.7 : 1
+      const k = (heavy ? 1.7 : 1) * scale
       b.core.scaling.setAll(0.62 * k)
       b.halo.scaling.setAll(1.35 * k)
       b.fire.minSize = 0.26 * k
@@ -610,12 +625,13 @@ export function createVfx(scene: Scene, low: boolean): Vfx {
       b.halo.setEnabled(false)
     },
     trail,
-    impact(at, color, heavy = false) {
-      fire(pool.star, at, color.main, heavy ? 1.8 : 1.1, heavy ? 0.22 : 0.15, 1.6)
-      fire(pool.ring, at, color.edge, heavy ? 2.6 : 1.5, heavy ? 0.36 : 0.26, 2.4)
+    impact(at, color, heavy = false, boost = 1) {
+      fire(pool.star, at, color.main, (heavy ? 1.8 : 1.1) * boost, heavy ? 0.22 : 0.15, 1.6)
+      fire(pool.ring, at, color.edge, (heavy ? 2.6 : 1.5) * boost, heavy ? 0.36 : 0.26, 2.4)
       tint(sparkles, color)
       sparkles.emitter = at.clone()
-      sparkles.manualEmitCount = heavy ? 34 : 16
+      // todo acerto solta partículas; mais nos golpes fortes
+      sparkles.manualEmitCount = Math.round((heavy ? 34 : 18) * boost * (low ? 0.5 : 1))
     },
     burst(at, color) {
       fire(pool.rays, at, color.main, 4.6, 0.6, 1.25)

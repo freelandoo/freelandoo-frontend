@@ -65,7 +65,35 @@ export interface Shot {
   left: number
   dmg: number
   heavy: boolean
+  rank: Rank
 }
+
+/**
+ * RANQUES (pedido do Alex em 2026-11-01): cada ATACAR sorteia um golpe C, B, A
+ * ou S. O normal (C) é o mais comum; o S é raro, dá muito mais dano e é o mais
+ * brilhante. Treinar INTELIGÊNCIA (0–1000) puxa a sorte para os fortes.
+ * `slot` = qual dos 3 tempos/alcances do combo o golpe usa.
+ */
+export const RANKS = ["C", "B", "A", "S"] as const
+export type Rank = 0 | 1 | 2 | 3
+export const RANK = {
+  /** Peso no sorteio com inteligência 0 e com 1000 (interpolado). */
+  weight0: [64, 24, 9, 3],
+  weight1: [34, 30, 22, 14],
+  dmg: [1, 1.3, 1.7, 2.6],
+  slot: [0, 1, 2, 2],
+  /** Mais devagar no S (a preparação do golpe especial). */
+  durK: [1, 1, 1, 1.15],
+}
+/** Chance de cada ranque para uma inteligência 0–1000. */
+export function rankOdds(intelligence: number): number[] {
+  const k = clamp(intelligence / 1000, 0, 1)
+  const w = RANK.weight0.map((a, i) => a + (RANK.weight1[i] - a) * k)
+  const sum = w.reduce((a, b) => a + b, 0)
+  return w.map((x) => x / sum)
+}
+/** Golpes seguidos antes de voltar à guarda. */
+const MAX_CHAIN = 3
 
 /** Apertou de novo até isto depois do corte: o próximo golpe do combo encadeia. */
 const CHAIN_AFTER = 0.05
@@ -104,6 +132,9 @@ export interface PlayerBody {
   rate: number
   /** Barra do poder (0–POWER.max). */
   power: number
+  /** Ranque do golpe em curso (0 C … 3 S) e quantos já encadeou. */
+  rank: Rank
+  chain: number
 }
 
 // ── os inimigos ────────────────────────────────────────────────────────────
@@ -242,8 +273,8 @@ export interface Mob {
 }
 
 export type FightEvent =
-  | { t: "swing"; combo: number }
-  | { t: "hit"; on: "mob"; id: number; dmg: number; x: number; y: number; z: number; heavy: boolean; dead: boolean }
+  | { t: "swing"; combo: number; rank: Rank }
+  | { t: "hit"; on: "mob"; id: number; dmg: number; x: number; y: number; z: number; heavy: boolean; dead: boolean; rank: Rank }
   | { t: "hit"; on: "me"; dmg: number; x: number; z: number; heavy: boolean; dead: boolean }
   | { t: "whiff"; id: number }
   | { t: "warn"; id: number; attack: string }
@@ -253,9 +284,9 @@ export type FightEvent =
   | { t: "stagger"; id: number }
   | { t: "end"; win: boolean }
   /** Bola de fogo saiu (maga). */
-  | { t: "cast"; id: number; heavy: boolean }
+  | { t: "cast"; id: number; heavy: boolean; rank: Rank }
   /** Bola de fogo explodiu (acertando ou não). */
-  | { t: "boom"; id: number; x: number; y: number; z: number; heavy: boolean }
+  | { t: "boom"; id: number; x: number; y: number; z: number; heavy: boolean; rank: Rank }
   /** O poder começou (desenho: círculo e coluna de luz) e quando dispara. */
   | { t: "power"; x: number; z: number; facing: number }
   | { t: "powerFire"; x: number; z: number; facing: number; heal: number }
@@ -310,6 +341,7 @@ export function statEffects(s: Stats) {
     rate: 0.92 + 0.3 * k(s.speed),
     move: 0.95 + 0.2 * k(s.speed),
     warn: 1 + 0.35 * k(s.intelligence),
+    intelligence: clamp(s.intelligence, 0, 1000),
   }
 }
 
@@ -323,7 +355,7 @@ export class Fight {
   readonly R: () => number
   readonly me: PlayerBody
   readonly mobs: Mob[] = []
-  readonly fx: ReturnType<typeof statEffects>
+  fx: ReturnType<typeof statEffects>
   readonly level: number
   readonly kind: MobKind
   time = 0
@@ -339,6 +371,8 @@ export class Fight {
   private prevAttack = false
   private prevDodge = false
   private prevPower = false
+  /** Só conferência (harness): força o ranque dos próximos golpes. */
+  forceRank: Rank | null = null
 
   constructor(setup: FightSetup) {
     this.R = rng(setup.seed ?? (Date.now() & 0x7fffffff))
@@ -365,6 +399,8 @@ export class Fight {
       dodgeZ: 1,
       rate: this.fx.rate,
       power: 0,
+      rank: 0,
+      chain: 0,
     }
     const def = MOBS[setup.kind]
     const scale = 1 + 0.45 * (this.level - 1)
@@ -438,6 +474,12 @@ export class Fight {
       this.me.t = 0
       this.events.push({ t: "end", win: true })
     }
+  }
+
+  /** Atributos da vida que chegam depois de a luta abrir (o pedido ao servidor é em paralelo). */
+  setStats(stats: Partial<Stats>) {
+    this.fx = statEffects({ ...BASE_STATS, ...stats })
+    this.me.rate = this.fx.rate
   }
 
   /** Poder: começa com a barra cheia (parado ou golpeando); dispara em fireAt. */
@@ -549,9 +591,9 @@ export class Fight {
       }
       case "attack": {
         const sw = this.combo[p.combo]
-        const dur = sw.dur / p.rate
-        const hitAt = sw.hitAt / p.rate
-        if (attackPressed && p.combo < this.combo.length - 1) p.queued = true
+        const dur = (sw.dur * RANK.durK[p.rank]) / p.rate
+        const hitAt = (sw.hitAt * RANK.durK[p.rank]) / p.rate
+        if (attackPressed && p.chain < MAX_CHAIN - 1) p.queued = true
         // Avança até o corte, depois para.
         const lunge = p.t < hitAt ? sw.lunge : 0
         p.vx = Math.sin(p.facing) * lunge
@@ -561,7 +603,7 @@ export class Fight {
           this.playerStrike(sw)
         }
         if (p.struck && p.queued && p.t >= hitAt + CHAIN_AFTER && p.stam >= PLAYER.attackStam) {
-          this.startSwing(p.combo + 1)
+          this.startSwing(p.chain + 1)
           faceTarget()
         } else if (p.t >= dur) this.setPlayer("idle")
         break
@@ -601,14 +643,28 @@ export class Fight {
     }
   }
 
-  private startSwing(i: number) {
+  /** Golpe novo: o ranque é sorteado (inteligência puxa para os fortes). `chain` = quantos já seguidos. */
+  private startSwing(chain: number) {
     const p = this.me
     p.stam -= PLAYER.attackStam
-    p.combo = i
+    const odds = rankOdds(this.fx.intelligence)
+    let roll = this.R()
+    let rank = 0 as Rank
+    for (let i = 0; i < odds.length; i++) {
+      roll -= odds[i]
+      if (roll <= 0) {
+        rank = i as Rank
+        break
+      }
+    }
+    if (this.forceRank !== null) rank = this.forceRank
+    p.rank = rank
+    p.chain = chain
+    p.combo = RANK.slot[rank]
     p.struck = false
     p.queued = false
     this.setPlayer("attack")
-    this.events.push({ t: "swing", combo: i })
+    this.events.push({ t: "swing", combo: p.combo, rank })
   }
 
   /** Maga: a bola de fogo sai do cajado, mirando o inimigo mais perto dentro do cone. */
@@ -625,10 +681,10 @@ export class Fight {
         dir = a
       }
     }
-    const heavy = p.combo === this.combo.length - 1
-    const shot: Shot = { id: ++this.shotSeq, x: p.x + Math.sin(dir) * 0.6, y: SHOT.y, z: p.z + Math.cos(dir) * 0.6, dx: Math.sin(dir), dz: Math.cos(dir), left: sw.range, dmg: Math.round(sw.dmg * this.fx.dmg), heavy }
+    const heavy = p.rank >= 2
+    const shot: Shot = { id: ++this.shotSeq, x: p.x + Math.sin(dir) * 0.6, y: SHOT.y, z: p.z + Math.cos(dir) * 0.6, dx: Math.sin(dir), dz: Math.cos(dir), left: sw.range, dmg: Math.round(sw.dmg * this.fx.dmg * RANK.dmg[p.rank]), heavy, rank: p.rank }
     this.shots.push(shot)
-    this.events.push({ t: "cast", id: shot.id, heavy })
+    this.events.push({ t: "cast", id: shot.id, heavy, rank: p.rank })
   }
 
   private stepShots() {
@@ -649,13 +705,14 @@ export class Fight {
       const wall = Math.hypot(s.x, s.z) > ARENA_R + 1
       if (!hit && s.left > 0 && !wall) continue
       this.shots.splice(i, 1)
-      this.events.push({ t: "boom", id: s.id, x: s.x, y: s.y, z: s.z, heavy: s.heavy })
+      this.events.push({ t: "boom", id: s.id, x: s.x, y: s.y, z: s.z, heavy: s.heavy, rank: s.rank })
       if (!hit) continue
       // a grande explode em área; a pequena só no alvo
       for (const m of this.mobs) {
         if (m.state === "dead" || m.state === "spawn" || m.y > 1.6) continue
         const d = Math.hypot(m.x - s.x, m.z - s.z)
-        if (m === hit || (s.heavy && d <= SHOT.blast + MOBS[m.kind].radius)) this.damageMob(m, s.dmg, s.heavy, m.x - s.x + s.dx * 0.3, m.z - s.z + s.dz * 0.3)
+        const blast = s.rank === 3 ? SHOT.blast * 1.6 : SHOT.blast
+        if (m === hit || (s.heavy && d <= blast + MOBS[m.kind].radius)) this.damageMob(m, s.dmg, s.heavy, m.x - s.x + s.dx * 0.3, m.z - s.z + s.dz * 0.3, s.rank)
       }
     }
   }
@@ -675,20 +732,20 @@ export class Fight {
       if (d > sw.range) continue
       if (Math.abs(angDiff(Math.atan2(dx, dz), p.facing)) > sw.arc / 2 + 0.25) continue
       any = true
-      const heavy = p.combo === this.combo.length - 1
-      this.damageMob(m, Math.round(sw.dmg * this.fx.dmg), heavy, dx, dz)
+      const heavy = p.rank >= 2
+      this.damageMob(m, Math.round(sw.dmg * this.fx.dmg * RANK.dmg[p.rank]), heavy, dx, dz, p.rank)
     }
     if (!any) this.events.push({ t: "whiff", id: 0 })
   }
 
   /** Dano num inimigo (corte ou bola de fogo); (dx, dz) = de onde veio, para o empurrão. */
-  private damageMob(m: Mob, base: number, heavy: boolean, dx: number, dz: number) {
+  private damageMob(m: Mob, base: number, heavy: boolean, dx: number, dz: number, rank: Rank = 3) {
     // Pancada na brecha (logo depois do golpe dele) dói mais.
     const opening = m.state === "recover" ? 1.25 : 1
     const dmg = Math.round(base * opening)
     m.hp = Math.max(0, m.hp - dmg)
     const dead = m.hp <= 0
-    this.events.push({ t: "hit", on: "mob", id: m.id, dmg, x: m.x, y: m.y, z: m.z, heavy, dead })
+    this.events.push({ t: "hit", on: "mob", id: m.id, dmg, x: m.x, y: m.y, z: m.z, heavy, dead, rank })
     if (this.me.state !== "power") this.me.power = Math.min(POWER.max, this.me.power + (heavy ? POWER.perHeavy : POWER.perHit))
     if (dead) {
       m.state = "dead"

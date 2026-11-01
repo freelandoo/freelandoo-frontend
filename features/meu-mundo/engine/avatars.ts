@@ -233,7 +233,7 @@ const BOXE_CLIPS = ["BGuard", "BWarm", "BJab", "BBox0", "BBox1", "BBox2", "BBox3
  * lugar do boxe — guarda, corrida/passo de lado e vitória em laço; golpes,
  * pancadas e queda uma vez (boxeAct). Vampiro = espada e escudo; raposa = cajado.
  */
-const CLAN_CLIPS = ["RIdle", "VIdle", "VRun", "VStrafe", "VSlash1", "VSlash3", "VAtk2", "VHit", "VDie", "VPower", "RBlock", "RRun", "RStrafe", "RAtk1", "RAtk2", "RAtk3", "RHitS", "RHitL", "RDie", "RCast"] as const
+const CLAN_CLIPS = ["RAtk4", "VGSlash", "RIdle", "VIdle", "VRun", "VStrafe", "VSlash1", "VSlash3", "VAtk2", "VHit", "VDie", "VPower", "RBlock", "RRun", "RStrafe", "RAtk1", "RAtk2", "RAtk3", "RHitS", "RHitL", "RDie", "RCast"] as const
 export type ClanClip = (typeof CLAN_CLIPS)[number]
 const CLAN_LOOP = new Set<string>(["RIdle", "VIdle", "VRun", "VStrafe", "VPower", "RBlock", "RRun", "RStrafe", "RCast"])
 /** Gincana (mm3d-47): GRun/GDive/GWin em laço; pulo pela fase do voo; tombo e levantar uma vez. */
@@ -663,7 +663,7 @@ export class AvatarRig {
     BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
     GRun: 0, GJump: 0, GFall: 0, GRise: 0, GWin: 0, GDive: 0, GUp: 0,
     VIdle: 0, VRun: 0, VStrafe: 0, VSlash1: 0, VSlash3: 0, VAtk2: 0, VHit: 0, VDie: 0, VPower: 0,
-    RIdle: 0, RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
+    RAtk4: 0, VGSlash: 0, RIdle: 0, RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
   }
   private readonly clips: Clip[]
   private disposed = false
@@ -1169,7 +1169,7 @@ export class AvatarRig {
       BStepF: 0, BStepB: 0, BStepL: 0, BStepR: 0,
       GRun: 0, GJump: 0, GFall: 0, GRise: 0, GWin: 0, GDive: 0, GUp: 0,
       VIdle: 0, VRun: 0, VStrafe: 0, VSlash1: 0, VSlash3: 0, VAtk2: 0, VHit: 0, VDie: 0, VPower: 0,
-      RIdle: 0, RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
+      RAtk4: 0, VGSlash: 0, RIdle: 0, RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
     }
     this.applyWeights(dt, target, speed)
   }

@@ -25,6 +25,8 @@ import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import type { BodyId } from "../../types"
+import { getLife } from "../../data"
+import { getToken } from "@/lib/auth"
 import { createLaminasGame, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
 import type { MobKind } from "../sim/fight"
 
@@ -226,6 +228,14 @@ function LaminasScreen({
         },
         onError: () => alive && setStatus("error"),
       })
+      // atributos da vida (inteligência puxa os golpes fortes; força e velocidade no dano/ritmo)
+      const token = getToken()
+      if (token)
+        void getLife(token).then((r) => {
+          if (!alive || !r.ok || !r.data) return
+          const at = r.data.character.attributes
+          gameRef.current?.setStats({ intelligence: at.intelligence, strength: at.strength, speed: at.speed })
+        })
     } catch (err) {
       console.error("[meu-mundo] arena das lâminas não abriu", err)
       setStatus("error")
