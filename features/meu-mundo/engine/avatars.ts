@@ -41,6 +41,10 @@ import type { BodyId } from "../types"
 import { byGod } from "../gods"
 import { byClanBody } from "../classes"
 
+/** Corpos das classes refeitos em 2026-11-01 (arquivos `-m58c`). */
+const M58C_BODIES = ["raposa", "vampiro", "vampira", "vampiro_adulto", "vampira_adulta"] as const
+const M58C = <T,>(f: (b: (typeof M58C_BODIES)[number]) => T) => Object.fromEntries(M58C_BODIES.map((b) => [b, f(b)])) as Record<(typeof M58C_BODIES)[number], T>
+
 export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
 const ASSETS = {
@@ -67,6 +71,7 @@ const ASSETS = {
     // Classes (mm3d-58): mesma receita dos deuses (build_deuses.py), 1,8 m,
     // pesos pela difusão própria (diffuse_weights/tidy_weights).
     ...byClanBody((b) => `avatar-${b}-basecolor-1024.jpg`),
+    ...M58C((b) => `avatar-${b}-m58c-basecolor-1024.jpg`),
   } satisfies Record<BodyId, string>,
   bodies: {
     normal: "avatar-normal.glb",
@@ -83,9 +88,9 @@ const ASSETS = {
     ekaterina: "avatar-ekaterina-pescoco.glb",
     ...byGod((g) => `avatar-${g}.glb`),
     ...byClanBody((b) => `avatar-${b}.glb`),
-    // 2026-10-31: busto menor por alisamento (build_deuses.py smooth_bust) —
-    // nome novo para o cache não servir a versão beliscada.
-    vampira: "avatar-vampira-m58b.glb",
+    // 2026-11-01: raposa inicial e os 4 vampiros TROCADOS pelo Alex (modelos
+    // novos, rig refeito) — nome novo para o cache não servir os antigos.
+    ...M58C((b) => `avatar-${b}-m58c.glb`),
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
