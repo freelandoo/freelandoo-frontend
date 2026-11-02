@@ -88,14 +88,16 @@ const ASSETS = {
     ...byGod((g) => `avatar-${g}.glb`),
     // 2026-11-01 (regra do Alex, 2ª): DEUSES com 3,20 m e Golem/Ciborgue com 4 m
     // (só a escala da raiz; cavaleiro e garras seguem 2 m).
-    aurion: "avatar-aurion-h320.glb",
+    // 2026-11-02 (-h320p / cavaleiro -p): botas para a frente (`feet_fwd` no build_deuses.py).
+    aurion: "avatar-aurion-h320p.glb",
     morkhan: "avatar-morkhan-h320.glb",
-    kragor: "avatar-kragor-h320.glb",
+    kragor: "avatar-kragor-h320p.glb",
     zephyra: "avatar-zephyra-h320.glb",
     maru: "avatar-maru-h320.glb",
-    iris: "avatar-iris-h320.glb",
-    noctis: "avatar-noctis-h320.glb",
-    aeryn: "avatar-aeryn-h320.glb",
+    iris: "avatar-iris-h320p.glb",
+    noctis: "avatar-noctis-h320p.glb",
+    aeryn: "avatar-aeryn-h320p.glb",
+    cavaleiro: "avatar-cavaleiro-p.glb",
     golem: "avatar-golem-h400.glb",
     // 2026-11-02: -h401 rosto/queixo 100% na cabeça (`head_rigid` no build_deuses.py — estava 70–84% no peito);
     // -h402 ombreiras e placas soltas do ombro andam como bloco (`rigid_pieces`) — esticavam na corrida;
@@ -103,8 +105,8 @@ const ASSETS = {
     ciborgue: "avatar-ciborgue-h403.glb",
     // Alturas (regra do Alex, 2026-11-01): jovem 1,70 m (menino) / 1,65 m
     // (menina) (-m58f); adultos 2,70 m (-m58g) — escala da raiz.
-    // 2026-11-02 (-m58h): vampiro adulto com as botas viradas para a frente (`feet_fwd` no build_deuses.py).
-    ...byClanBody((b) => (b === "vampiro_adulto" ? "avatar-vampiro_adulto-m58h.glb" : /adult/.test(b) ? `avatar-${b}-m58g.glb` : `avatar-${b}-m58f.glb`)),
+    // 2026-11-02 (-m58h): botas viradas para a frente (`feet_fwd` no build_deuses.py) — todos menos o raposa adulto (medida não confiável).
+    ...byClanBody((b) => (b !== "raposa_adulto" ? `avatar-${b}-m58h.glb` : `avatar-${b}-m58g.glb`)),
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -116,7 +118,7 @@ const ASSETS = {
     fat: "avatar-fat-lod.glb",
     strong: "avatar-strong-lod.glb",
     female: "avatar-female-m36e-lod.glb",
-    ...byClanBody((b) => (b === "vampiro_adulto" ? "avatar-vampiro_adulto-m58h-lod.glb" : /adult/.test(b) ? `avatar-${b}-m58g-lod.glb` : `avatar-${b}-m58f-lod.glb`)),
+    ...byClanBody((b) => (b !== "raposa_adulto" ? `avatar-${b}-m58h-lod.glb` : `avatar-${b}-m58g-lod.glb`)),
   } as Partial<Record<BodyId, string>>,
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
