@@ -174,7 +174,7 @@ export function Arc({
         disabled={sel <= 0}
         aria-label={t("frPrev", "Anterior")}
         className={`absolute left-0 top-1/2 flex ${compact ? "h-10 w-8" : "h-14 w-11"} -translate-y-1/2 items-center justify-center disabled:opacity-25`}
-        style={{ color: EVO.branco, background: MM.surface, border: `1px solid ${MM.border}`, borderRadius: 12 }}
+        style={{ color: EVO.branco, background: MM.surface, border: `1px solid ${MM.border}` }}
       >
         <ChevronLeft className={compact ? "h-6 w-6" : "h-8 w-8"} />
       </button>
@@ -184,7 +184,7 @@ export function Arc({
         disabled={sel >= count - 1}
         aria-label={t("frNext", "Próximo")}
         className={`absolute right-0 top-1/2 flex ${compact ? "h-10 w-8" : "h-14 w-11"} -translate-y-1/2 items-center justify-center disabled:opacity-25`}
-        style={{ color: EVO.branco, background: MM.surface, border: `1px solid ${MM.border}`, borderRadius: 12 }}
+        style={{ color: EVO.branco, background: MM.surface, border: `1px solid ${MM.border}` }}
       >
         <ChevronRight className={compact ? "h-6 w-6" : "h-8 w-8"} />
       </button>

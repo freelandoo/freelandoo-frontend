@@ -165,7 +165,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
       >
         {notice && compact && (
           <div className="pointer-events-none mb-2 flex justify-center">
-            <div role="status" className={`${archivo.className} px-3 py-1.5 text-center text-[12px] font-semibold leading-tight`} style={{ background: MM.surface, color: EVO.branco, borderRadius: 12, border: `1px solid ${MM.goldBorder}` }}>
+            <div role="status" className={`${archivo.className} px-3 py-1.5 text-center text-[12px] font-semibold leading-tight`} style={{ background: MM.surface, color: EVO.branco, border: `1px solid ${MM.goldBorder}` }}>
               {notice}
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
               type="button"
               onClick={onClose}
               className={`inline-flex ${compact ? "h-9 w-9" : "h-11 w-11"} items-center justify-center`}
-              style={{ color: EVO.branco, background: MM.surface, borderRadius: 12, border: `1px solid ${MM.border}` }}
+              style={{ color: EVO.branco, background: MM.surface, border: `1px solid ${MM.border}` }}
               aria-label={t("frClose", "Fechar a geladeira")}
             >
               <X className={compact ? "h-4 w-4" : "h-5 w-5"} />

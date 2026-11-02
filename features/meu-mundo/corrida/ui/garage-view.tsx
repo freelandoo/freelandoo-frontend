@@ -145,7 +145,7 @@ export function GarageView({ current, onChoose, onExit }: GarageViewProps) {
 
       {/* topo: título e sair */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4 max-[759px]:p-3">
-        <div className="rounded-[16px] px-3.5 py-2.5" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadowSoft }}>
+        <div className="rounded-none px-3.5 py-2.5" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadowSoft }}>
           <div className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "#5FE1FF" }}>
             {t("corridaGarageKicker", "Antigravidade · Garagem")}
           </div>
@@ -192,7 +192,7 @@ export function GarageView({ current, onChoose, onExit }: GarageViewProps) {
         style={portrait ? undefined : { width: frame?.panelW ?? 320 }}
       >
         <div
-          className={`flex flex-col rounded-[20px] ${compact ? "p-3" : "p-4"} ${portrait ? "" : "mt-auto"}`}
+          className={`flex flex-col rounded-none ${compact ? "p-3" : "p-4"} ${portrait ? "" : "mt-auto"}`}
           style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}
         >
           <div className="flex items-center justify-between gap-2">
@@ -233,7 +233,7 @@ export function GarageView({ current, onChoose, onExit }: GarageViewProps) {
           <button
             type="button"
             onClick={() => onChoose(art.id)}
-            className={`flex w-full ${compact ? "mt-2.5 min-h-[44px]" : "mt-3 min-h-[52px]"} items-center justify-center gap-2 rounded-[14px] text-[17px] font-bold transition-[transform,opacity] active:scale-[0.98]`}
+            className={`flex w-full ${compact ? "mt-2.5 min-h-[44px]" : "mt-3 min-h-[52px]"} items-center justify-center gap-2 rounded-none text-[17px] font-bold transition-[transform,opacity] active:scale-[0.98]`}
             style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}`, color: "#fff", opacity: solid ? 1 : 0.75 }}
           >
             <Rocket className="h-5 w-5" /> {t("corridaGarageChoose", "Escolher {n}").replace("{n}", t(shipArt(art.id).labelKey, art.fallback))}

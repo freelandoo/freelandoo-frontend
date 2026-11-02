@@ -72,7 +72,7 @@ export function JailTimer({ until }: { until: string | null }) {
   const left = Number.isFinite(end) ? Math.max(0, Math.ceil((end - now) / 1000)) : null
   const mmss = left != null ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : null
   return (
-    <div role="status" className="flex items-center gap-2 rounded-xl bg-black/70 px-4 py-2 text-[15px] font-semibold text-white">
+    <div role="status" className="flex items-center gap-2 rounded-none bg-black/70 px-4 py-2 text-[15px] font-semibold text-white">
       <Lock className="h-4 w-4" />
       {mmss == null || left === 0 ? t("jailReleasing", "Saindo da cela…") : t("jailLeft", "Livre em {t}").replace("{t}", mmss)}
     </div>

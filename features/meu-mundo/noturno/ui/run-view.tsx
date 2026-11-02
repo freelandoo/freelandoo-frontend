@@ -207,7 +207,7 @@ function RunLobby({ list, until, onCancel }: { list: NoturnoLobbyEntry[]; until:
   const left = until ? Math.max(0, Math.ceil((until - now) / 1000)) : null
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
-      <div className="w-full max-w-[440px] rounded-[22px] p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+      <div className="w-full max-w-[440px] rounded-none p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
         <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: CYAN }}>
           <Users className="h-4 w-4" /> {t("noturnoModeMulti", "Multiplayer")}
         </div>
@@ -224,7 +224,7 @@ function RunLobby({ list, until, onCancel }: { list: NoturnoLobbyEntry[]; until:
           {Array.from({ length: MAX_RIDERS }, (_, i) => {
             const e = list[i]
             return (
-              <li key={i} className="flex items-center gap-2 rounded-[10px] px-2.5 py-2 text-[13.5px]" style={{ background: e ? MM.rubySoft : MM.card, color: e ? MM.text : MM.muted }}>
+              <li key={i} className="flex items-center gap-2 rounded-none px-2.5 py-2 text-[13.5px]" style={{ background: e ? MM.rubySoft : MM.card, color: e ? MM.text : MM.muted }}>
                 {e ? <RideIcon ride={e.ride} className="h-4 w-4 shrink-0" /> : <User className="h-4 w-4 shrink-0 opacity-50" />}
                 <span className="min-w-0 truncate font-semibold">{e ? e.name : t("noturnoLobbyFree", "vaga livre")}</span>
                 {e && (
@@ -239,7 +239,7 @@ function RunLobby({ list, until, onCancel }: { list: NoturnoLobbyEntry[]; until:
         <p className="mt-2 text-[12.5px]" style={{ color: MM.muted }}>
           {t("noturnoLobbyCount", "{n} de 6 no rolê").replace("{n}", String(Math.max(1, list.length)))}
         </p>
-        <button type="button" onClick={onCancel} className="mt-4 w-full rounded-[14px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+        <button type="button" onClick={onCancel} className="mt-4 w-full rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
           {t("noturnoLobbyCancel", "Sair da espera")}
         </button>
       </div>
@@ -279,7 +279,7 @@ function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi
   }
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
-      <div className="w-full max-w-[560px] rounded-[22px] p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+      <div className="w-full max-w-[560px] rounded-none p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: CYAN }}>
@@ -313,7 +313,7 @@ function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi
                 aria-checked={on}
                 onClick={() => setRide(r)}
                 onDoubleClick={() => onPlay(r, false)}
-                className="flex flex-col gap-2 rounded-[14px] p-3 text-left transition-transform active:scale-[0.98] max-[480px]:p-2"
+                className="flex flex-col gap-2 rounded-none p-3 text-left transition-transform active:scale-[0.98] max-[480px]:p-2"
                 style={{ background: on ? MM.rubySoft : MM.card, border: `1.5px solid ${on ? NEON : MM.border}`, boxShadow: on ? "0 0 18px rgba(255,79,179,0.25)" : "none" }}
               >
                 <span className="flex items-center gap-2 max-[480px]:flex-col max-[480px]:gap-1">
@@ -344,28 +344,28 @@ function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi
         </div>
 
         <ul className="mt-3 grid grid-cols-3 gap-2 text-[12.5px] leading-snug max-[759px]:hidden [@media(max-height:620px)]:hidden" style={{ color: MM.muted }}>
-          <li className="rounded-[12px] p-2.5" style={{ background: MM.card }}>
+          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
             <b style={{ color: GOLD }}>{t("noturnoHowCoinsTitle", "Moedas")}</b>
             <br />
             {t("noturnoHowCoins", "Cada uma vale 10 pontos. Em fila, no ar e em cima dos caminhões.")}
           </li>
-          <li className="rounded-[12px] p-2.5" style={{ background: MM.card }}>
+          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
             <b style={{ color: CYAN }}>{t("noturnoHowRampTitle", "Rampas")}</b>
             <br />
             {t("noturnoHowRamp", "Te jogam para o alto: para o lado gira 360° (+100), para cima dá um mortal (+150). Caia em cima do caminhão!")}
           </li>
-          <li className="rounded-[12px] p-2.5" style={{ background: MM.card }}>
+          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
             <b style={{ color: NEON }}>{t("noturnoHowCarsTitle", "Trânsito")}</b>
             <br />
             {t("noturnoHowCars", "De frente derruba. Pule o cavalete e suba no teto dos carros.")}
           </li>
         </ul>
-        <p className="mt-2 rounded-[12px] px-2.5 py-2 text-[12.5px] leading-snug max-[759px]:hidden [@media(max-height:620px)]:hidden" style={{ background: "rgba(242,183,5,0.1)", color: MM.muted, border: `1px solid ${MM.goldBorder}` }}>
+        <p className="mt-2 rounded-none px-2.5 py-2 text-[12.5px] leading-snug max-[759px]:hidden [@media(max-height:620px)]:hidden" style={{ background: "rgba(242,183,5,0.1)", color: MM.muted, border: `1px solid ${MM.goldBorder}` }}>
           <b style={{ color: GOLD }}>{t("noturnoHowPowerTitle", "Logo da Freelandoo")}</b> · {t("noturnoHowPower", "A cada 700 m. Pegou: 5 s de poder — o que você bater explode e você acelera.")}
         </p>
 
         {error && (
-          <p className="mt-3 flex items-center gap-2 rounded-[12px] px-3 py-2 text-[13px]" style={{ background: "rgba(110,16,34,0.5)", color: "#ffd5dc" }} role="alert">
+          <p className="mt-3 flex items-center gap-2 rounded-none px-3 py-2 text-[13px]" style={{ background: "rgba(110,16,34,0.5)", color: "#ffd5dc" }} role="alert">
             <WifiOff className="h-4 w-4 shrink-0" /> {error}
           </p>
         )}
@@ -374,7 +374,7 @@ function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi
           <button
             type="button"
             onClick={() => onPlay(ride, false)}
-            className="flex w-full items-center justify-center gap-2 rounded-[14px] px-3 py-3.5 text-[17px] [@media(max-height:520px)]:py-2.5 font-black italic tracking-wide text-white transition-transform active:scale-[0.98] max-[420px]:text-[15px]"
+            className="flex w-full items-center justify-center gap-2 rounded-none px-3 py-3.5 text-[17px] [@media(max-height:520px)]:py-2.5 font-black italic tracking-wide text-white transition-transform active:scale-[0.98] max-[420px]:text-[15px]"
             style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}
           >
             <RideIcon ride={ride} className="h-5 w-5 shrink-0" />
@@ -384,7 +384,7 @@ function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi
             <button
               type="button"
               onClick={() => onPlay(ride, true)}
-              className="flex w-full flex-col items-center justify-center rounded-[14px] px-3 py-2 [@media(max-height:520px)]:py-1.5 transition-transform active:scale-[0.98]"
+              className="flex w-full flex-col items-center justify-center rounded-none px-3 py-2 [@media(max-height:520px)]:py-1.5 transition-transform active:scale-[0.98]"
               style={{ background: MM.card, border: `1.5px solid ${CYAN}`, color: MM.text }}
             >
               <span className="flex items-center gap-2 text-[17px] font-black italic tracking-wide max-[420px]:text-[15px]">
@@ -561,7 +561,7 @@ function RunScreen({
           />
           {/* pontos e moedas */}
           <div className="pointer-events-none absolute flex flex-col items-start gap-1.5" style={{ top: SAFE.top, left: SAFE.left }}>
-            <div className="rounded-[14px] px-3 py-1.5 leading-none" style={{ background: glass, border: `1px solid ${MM.border}` }}>
+            <div className="rounded-none px-3 py-1.5 leading-none" style={{ background: glass, border: `1px solid ${MM.border}` }}>
               <div className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: MM.muted }}>
                 {t("noturnoScore", "Pontos")}
               </div>
@@ -689,7 +689,7 @@ function RunScreen({
 /** Placar do grupo ao vivo, embaixo das moedas (pelos pontos). */
 function FieldStrip({ rows, glass }: { rows: FieldRow[]; glass: string }) {
   return (
-    <ol className="flex w-[168px] flex-col gap-0.5 rounded-[12px] px-2 py-1.5 max-[759px]:w-[138px]" style={{ background: glass, border: `1px solid ${MM.border}` }}>
+    <ol className="flex w-[168px] flex-col gap-0.5 rounded-none px-2 py-1.5 max-[759px]:w-[138px]" style={{ background: glass, border: `1px solid ${MM.border}` }}>
       {rows.map((r, i) => (
         <li key={r.slot} className="flex items-center gap-1.5 text-[12px] leading-tight max-[759px]:text-[11px]" style={{ opacity: r.alive === 1 ? 1 : 0.45, color: r.me ? GOLD : MM.text }}>
           <span className="w-3 shrink-0 text-right font-black tabular-nums">{i + 1}</span>
@@ -746,7 +746,7 @@ function Results({
   const place = rows ? rows.findIndex((r) => r.me) + 1 : 0
   return (
     <div className="absolute inset-0 grid place-items-center p-4" style={{ background: MM.scrim }}>
-      <div className="w-full max-w-[400px] rounded-[20px] p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
+      <div className="w-full max-w-[400px] rounded-none p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
         <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: CYAN }}>
           <RideIcon ride={ride} className="h-4 w-4" /> {names[ride]}
         </div>
@@ -761,7 +761,7 @@ function Results({
           </p>
         ) : null}
         {rows && (
-          <div className="mt-3 rounded-[12px] p-2" style={{ background: MM.card }}>
+          <div className="mt-3 rounded-none p-2" style={{ background: MM.card }}>
             <div className="flex items-center justify-between gap-2 px-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: MM.muted }}>
               <span className="flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5" /> {t("noturnoField", "Placar do grupo")}
@@ -778,7 +778,7 @@ function Results({
             </div>
             <ol className="mt-1.5 flex flex-col gap-1">
               {rows.map((r, i) => (
-                <li key={r.slot} className="flex items-center gap-2 rounded-[8px] px-2 py-1 text-[13px]" style={{ background: r.me ? MM.rubySoft : "transparent" }}>
+                <li key={r.slot} className="flex items-center gap-2 rounded-none px-2 py-1 text-[13px]" style={{ background: r.me ? MM.rubySoft : "transparent" }}>
                   <span className="w-4 shrink-0 text-right font-black tabular-nums" style={{ color: i === 0 ? MM.gold : MM.muted }}>
                     {i + 1}
                   </span>
@@ -795,7 +795,7 @@ function Results({
         )}
         <dl className={`mt-3 grid grid-cols-2 gap-1.5 ${rows ? "[@media(max-height:560px)]:hidden" : ""}`}>
           {cells.map(([k, v]) => (
-            <div key={k} className="rounded-[12px] px-3 py-2" style={{ background: MM.card }}>
+            <div key={k} className="rounded-none px-3 py-2" style={{ background: MM.card }}>
               <dt className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: MM.muted }}>
                 {k}
               </dt>
@@ -804,10 +804,10 @@ function Results({
           ))}
         </dl>
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <button type="button" onClick={onAgain} className="rounded-[14px] px-3 py-3 text-[15px] font-bold text-white" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}>
+          <button type="button" onClick={onAgain} className="rounded-none px-3 py-3 text-[15px] font-bold text-white" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}>
             {t("noturnoAgain", "De novo")}
           </button>
-          <button type="button" onClick={onMenu} className="rounded-[14px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+          <button type="button" onClick={onMenu} className="rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
             {group ? t("noturnoBackMenu", "Voltar ao menu") : t("noturnoChange", "Trocar veículo")}
           </button>
         </div>

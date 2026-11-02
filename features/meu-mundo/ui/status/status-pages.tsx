@@ -35,6 +35,7 @@ import {
   Syringe,
   Utensils,
   Wind,
+  Crosshair,
   Zap,
 } from "lucide-react"
 import type { LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
@@ -683,7 +684,7 @@ function Overview({ life, portrait, compact, t, act }: PageProps) {
             {c.meals.map((m) => {
               const color = m.state === "eaten" ? EVO.bom : m.state === "missed" ? EVO.perigo : m.state === "open" ? EVO.magenta : EVO.mudoEscuro
               return (
-                <div key={m.at} className="flex items-center gap-3 rounded-[12px] px-3 py-2" style={{ boxShadow: `inset 0 0 0 1px ${color}88`, background: "rgba(0,0,0,0.35)" }}>
+                <div key={m.at} className="flex items-center gap-3 rounded-none px-3 py-2" style={{ boxShadow: `inset 0 0 0 1px ${color}88`, background: "rgba(0,0,0,0.35)" }}>
                   <Utensils className="h-5 w-5 shrink-0" style={{ color }} />
                   <div>
                     <div className={`${teko.className} text-[26px] font-bold leading-none`} style={{ color: EVO.branco }}>
@@ -808,6 +809,8 @@ function Attributes({ life, compact, t }: PageProps) {
     [<Brain key="i" className="h-6 w-6" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceText2", "Sobe estudando (rende até 5 h por dia). O que ele aprende fica: nunca cai abaixo de 90% do maior valor."), ""],
     [<Dumbbell key="f" className="h-6 w-6" />, EVO.perigo, t("atStrength", "Força"), at.strength, max, at.floors?.strength, t("atStrengthText2", "Sobe treinando (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Sem treino cai até 60% do maior valor."), ""],
     [<Wind key="v" className="h-6 w-6" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedText2", "Sobe treinando. Sem treino cai até 60% do maior valor; voltar ao topo é mais rápido."), ""],
+    // mm3d-59: destreza (precisão, fôlego, golpes) — sobe nos minijogos e nas lutas
+    [<Crosshair key="d" className="h-6 w-6" />, "#3FE6D2", t("attrDexterity", "Destreza"), at.dexterity ?? 0, max, at.floors?.dexterity, t("atDexterityText", "Sobe nos minijogos e nas lutas. Economiza fôlego, recupera a arma mais rápido e melhora a chance de golpe forte."), ""],
     [<Sprout key="r" className="h-6 w-6" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, 100, undefined, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade."), "%"],
   ] as const
   return (
@@ -846,6 +849,22 @@ function Attributes({ life, compact, t }: PageProps) {
                     .replace("{cap}", String(useful[k].cap))}
                 </Tag>
               ))}
+            </div>
+          )}
+          {/* mm3d-59: o orçamento de prática do dia (todas as fontes juntas) */}
+          {at.budgetToday && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {(["strength", "intelligence", "dexterity", "speed"] as const).map((k) => {
+                const b = at.budgetToday![k]
+                return (
+                  <Tag key={k} tone={b.used >= b.cap ? "mudo" : "bom"}>
+                    {t("atBudgetToday", "{attr}: {used}/{cap} de prática hoje")
+                      .replace("{attr}", k === "strength" ? t("atStrength", "Força") : k === "intelligence" ? t("atIntelligence", "Inteligência") : k === "dexterity" ? t("attrDexterity", "Destreza") : t("atSpeed", "Velocidade"))
+                      .replace("{used}", String(Math.round(b.used * 10) / 10))
+                      .replace("{cap}", String(b.cap))}
+                  </Tag>
+                )
+              })}
             </div>
           )}
         </div>
@@ -1211,7 +1230,6 @@ function MiniButton({
       style={{
         height: h,
         fontSize: tight ? 11 : h >= 32 ? 13 : 12,
-        borderRadius: 10,
         background: disabled ? MM.card : active || primary ? MM.rubyFill : MM.surface,
         color: disabled ? MM.disabledText : EVO.branco,
         border: `1px solid ${disabled ? MM.border : active || primary ? MM.rubyBorder : MM.goldBorder}`,
@@ -1291,7 +1309,7 @@ function MealChips({ meals, t }: { meals: LifeCharacter["meals"]; t: Tr }) {
       {meals.map((m) => {
         const [color, word] = mealLook(m.state, t)
         return (
-          <div key={m.at} className="flex flex-col items-center justify-center rounded-[10px] py-1" style={{ boxShadow: `inset 0 0 0 1px ${color}aa`, background: "rgba(0,0,0,0.35)" }}>
+          <div key={m.at} className="flex flex-col items-center justify-center rounded-none py-1" style={{ boxShadow: `inset 0 0 0 1px ${color}aa`, background: "rgba(0,0,0,0.35)" }}>
             <span className={`${teko.className} text-[17px] font-bold leading-none`} style={{ color: EVO.branco }}>
               {t("mealAt", "{h} h").replace("{h}", String(m.at))}
             </span>
@@ -1528,6 +1546,7 @@ function AttributesC({ life, t }: PageProps) {
     [<Brain key="i" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceShort", "Sobe estudando (até 5 h/dia). Nunca cai abaixo de 90% do pico."), ""],
     [<Dumbbell key="f" />, EVO.perigo, t("atStrength", "Força"), at.strength, max, at.floors?.strength, t("atStrengthShort", "Sobe treinando (até 4 h/dia); suplementos aceleram. Sem treino cai até 60% do pico."), ""],
     [<Wind key="v" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedShort", "Sobe treinando. Sem treino cai até 60% do pico; voltar é mais rápido."), ""],
+    [<Crosshair key="d" />, "#3FE6D2", t("attrDexterity", "Destreza"), at.dexterity ?? 0, max, at.floors?.dexterity, t("atDexterityShort", "Sobe nos minijogos e lutas; poupa fôlego e melhora golpes."), ""],
     [<Sprout key="r" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, 100, undefined, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade."), "%"],
   ] as const
   const effects = c.effects.slice(0, EFFECTS_MAX_C)

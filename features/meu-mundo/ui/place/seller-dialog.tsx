@@ -76,7 +76,7 @@ export function SellerDialog({ placeName, onClose, onToast }: SellerDialogProps)
     <button
       type="button"
       onClick={() => setTab(id)}
-      className="flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-[14px] font-semibold"
+      className="flex flex-1 items-center justify-center gap-2 rounded-none px-3 py-2 text-[14px] font-semibold"
       style={{ background: tab === id ? MM.rubyBorder : "transparent", color: tab === id ? MM.text : MM.muted, boxShadow: `inset 0 0 0 1px ${MM.border}` }}
     >
       {icon}
@@ -139,7 +139,7 @@ export function SellerDialog({ placeName, onClose, onToast }: SellerDialogProps)
           {cat.paints.map((p) => {
             const current = cat.house?.paint === p.id
             return (
-              <div key={p.id} className="flex flex-col items-center gap-1.5 rounded-xl p-2" style={{ boxShadow: `inset 0 0 0 1px ${current ? MM.gold : MM.border}` }}>
+              <div key={p.id} className="flex flex-col items-center gap-1.5 rounded-none p-2" style={{ boxShadow: `inset 0 0 0 1px ${current ? MM.gold : MM.border}` }}>
                 <span className="h-9 w-9 rounded-full" style={{ background: p.hex, boxShadow: "inset 0 -6px 10px rgba(0,0,0,0.25)" }} />
                 <span className="text-[13px] font-semibold">{paintName(p.id, t)}</span>
                 {current ? (

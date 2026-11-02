@@ -29,7 +29,7 @@ export function WalletPair({ wallet, t, onBuy }: { wallet: Wallets | null; t: Tr
   const fmt = (n: number) => n.toLocaleString(locale)
   return (
     <div className="grid grid-cols-2 gap-2">
-      <div className="flex items-center gap-2.5 rounded-[14px] p-2.5" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+      <div className="flex items-center gap-2.5 rounded-none p-2.5" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(229,190,112,0.14)", color: MM.gold }} aria-hidden>
           <Coins className="h-5 w-5" />
         </span>
@@ -42,7 +42,7 @@ export function WalletPair({ wallet, t, onBuy }: { wallet: Wallets | null; t: Tr
           </span>
         </span>
       </div>
-      <div className="flex items-center gap-2.5 rounded-[14px] p-2.5" style={{ background: MM.card, border: `1px solid ${MM.goldBorder}` }}>
+      <div className="flex items-center gap-2.5 rounded-none p-2.5" style={{ background: MM.card, border: `1px solid ${MM.goldBorder}` }}>
         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-amber-300" style={{ background: "rgba(252,211,77,0.14)" }} aria-hidden>
           <PolenIcon className="h-5 w-5" />
         </span>
@@ -129,7 +129,7 @@ export default function PolensSheet({ onClose }: { onClose: () => void }) {
         ) : products === null ? (
           <div className="flex flex-col gap-2" aria-hidden>
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-16 rounded-[14px]" style={{ background: MM.card }} />
+              <div key={i} className="h-16 rounded-none" style={{ background: MM.card }} />
             ))}
           </div>
         ) : products.length === 0 ? (
@@ -139,7 +139,7 @@ export default function PolensSheet({ onClose }: { onClose: () => void }) {
         ) : (
           <ul className="flex flex-col gap-2">
             {products.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 rounded-[14px] p-2.5" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+              <li key={p.id} className="flex items-center gap-3 rounded-none p-2.5" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
                 <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-amber-300" style={{ background: "rgba(252,211,77,0.12)" }} aria-hidden>
                   <PolenIcon className="h-6 w-6" />
                 </span>

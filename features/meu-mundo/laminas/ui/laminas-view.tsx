@@ -30,6 +30,7 @@ import type { BodyId } from "../../types"
 import { finishFight, getLife, startFight, type FightOrigin, type FightTicket, type Receipt } from "../../data"
 import { getToken } from "@/lib/auth"
 import { ReceiptLines } from "../../ui/rewards/receipt-lines"
+import { celebrate, hold } from "../../ui/rewards/reward-bus"
 import { createLaminasGame, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
 import type { MobKind } from "../sim/fight"
 
@@ -48,6 +49,10 @@ export interface LaminasViewProps {
   onEncounterEnd?: (win: boolean) => void
   /** O lugar: coliseu (padrão) ou o ringue do prédio do Boxe (mm3d-56). */
   stage?: "arena" | "ring"
+  /** mm3d-59: a luta de treino do prólogo (sem custo; só abre nos passos de luta). */
+  tutorial?: boolean
+  /** O fim da luta conferida (recibo do servidor). */
+  onReceipt?: (r: Receipt) => void
 }
 
 const SAND = "#E9CF98"
@@ -84,8 +89,15 @@ export function useMobName(ring = false) {
   )
 }
 
-export function LaminasView({ body, look, onExit, encounter, onEncounterEnd, stage = "arena" }: LaminasViewProps) {
-  const [fight, setFight] = useState<{ key: number; choice: Choice } | null>(() => (encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : null))
+export function LaminasView({ body, look, onExit, encounter, onEncounterEnd, stage = "arena", tutorial = false, onReceipt }: LaminasViewProps) {
+  const [fight, setFight] = useState<{ key: number; choice: Choice } | null>(() =>
+    encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "soldier", level: 1 } } : null,
+  )
+  // a celebração (ganho/nível) espera a luta acabar: sai quando a tela fecha
+  useEffect(() => {
+    hold(true)
+    return () => hold(false)
+  }, [])
   const seq = useRef(1)
   const reported = useRef(false)
   const start = (c: Choice) => setFight({ key: ++seq.current, choice: c })
@@ -100,14 +112,19 @@ export function LaminasView({ body, look, onExit, encounter, onEncounterEnd, sta
           stage={stage}
           portal={!!encounter}
           mobId={encounter?.mobId}
+          tutorial={tutorial}
+          onReceipt={(r) => {
+            celebrate(r)
+            onReceipt?.(r)
+          }}
           onEnd={(win) => {
             if (encounter && !reported.current) {
               reported.current = true
               onEncounterEnd?.(win)
             }
           }}
-          onAgain={encounter ? undefined : () => start(fight.choice)}
-          onMenu={encounter ? onExit : () => setFight(null)}
+          onAgain={encounter || tutorial ? undefined : () => start(fight.choice)}
+          onMenu={encounter || tutorial ? onExit : () => setFight(null)}
         />
       ) : (
         <Menu onPick={start} onExit={onExit} ring={stage === "ring"} />
@@ -132,7 +149,7 @@ function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: (
   const opts = ring ? all.filter((o) => o.c.kind !== "harpy") : all
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
-      <div className="w-full max-w-[600px] rounded-[26px] p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+      <div className="w-full max-w-[600px] rounded-none p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: BRONZE }}>
@@ -157,7 +174,7 @@ function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: (
               key={`${c.kind}-${c.level}`}
               type="button"
               onClick={() => onPick(c)}
-              className="flex flex-col items-start rounded-[16px] px-3 py-2.5 text-left transition-transform active:scale-[0.98]"
+              className="flex flex-col items-start rounded-none px-3 py-2.5 text-left transition-transform active:scale-[0.98]"
               style={{ background: MM.card, border: `1.5px solid ${tone}55` }}
             >
               <span className="flex items-center gap-2 text-[15.5px] font-black italic" style={{ color: tone }}>
@@ -189,6 +206,8 @@ function LaminasScreen({
   stage,
   portal,
   mobId,
+  tutorial,
+  onReceipt,
   onEnd,
   onAgain,
   onMenu,
@@ -199,6 +218,8 @@ function LaminasScreen({
   stage: "arena" | "ring"
   portal: boolean
   mobId?: number
+  tutorial?: boolean
+  onReceipt?: (r: Receipt) => void
   onEnd: (win: boolean) => void
   onAgain?: () => void
   onMenu: () => void
@@ -230,7 +251,7 @@ function LaminasScreen({
       setTicket("offline")
       return
     }
-    const origin: FightOrigin = portal ? "mob" : stage === "ring" ? "boxe" : "laminas"
+    const origin: FightOrigin = portal ? "mob" : tutorial ? "tutorial" : stage === "ring" ? "boxe" : "laminas"
     const ask = async (tries: number): Promise<void> => {
       const r = await startFight(token, { origin, kind: choice.kind, level: choice.level, mobId })
       if (!alive) return
@@ -246,7 +267,11 @@ function LaminasScreen({
     return () => {
       alive = false
     }
-  }, [choice, stage, portal, mobId])
+  }, [choice, stage, portal, mobId, tutorial])
+  const receiptRef = useRef(onReceipt)
+  useEffect(() => {
+    receiptRef.current = onReceipt
+  }, [onReceipt])
   const ticketRef = useRef(ticket)
   useEffect(() => {
     ticketRef.current = ticket
@@ -283,7 +308,10 @@ function LaminasScreen({
             void finishFight(token, fromServer.ticket, frames).then((r) => {
               if (!alive) return
               setSettling(false)
-              if (r.ok) setReceipt(r.data.receipt)
+              if (r.ok) {
+                setReceipt(r.data.receipt)
+                receiptRef.current?.(r.data.receipt)
+              }
             })
           }
         },
@@ -460,7 +488,7 @@ function LaminasScreen({
             {status === "error" ? (
               <>
                 <p className="text-[18px] font-bold">{t("laminasError", "A arena não abriu neste aparelho.")}</p>
-                <button type="button" onClick={onMenu} className="mt-3 rounded-[14px] px-4 py-2 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+                <button type="button" onClick={onMenu} className="mt-3 rounded-none px-4 py-2 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
                   {t("laminasBack", "Voltar")}
                 </button>
               </>
@@ -477,7 +505,7 @@ function LaminasScreen({
       {/* fim */}
       {result !== null && (
         <div className="absolute inset-0 grid place-items-center p-4" style={{ background: "rgba(6,8,12,.55)" }}>
-          <div className="w-full max-w-[380px] rounded-[24px] p-5 text-center" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
+          <div className="w-full max-w-[380px] rounded-none p-5 text-center" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
             <h2 className="text-[30px] font-black italic" style={{ color: result ? "#FFD23F" : MM.danger }}>
               {result ? t("laminasWin", "VITÓRIA!") : t("laminasLose", "Você caiu")}
             </h2>
@@ -506,11 +534,11 @@ function LaminasScreen({
             </div>
             <div className="mt-4 grid gap-2">
               {onAgain && (
-                <button type="button" onClick={onAgain} className="rounded-[16px] px-3 py-3 text-[16px] font-black italic" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}`, color: "#fff" }}>
+                <button type="button" onClick={onAgain} className="rounded-none px-3 py-3 text-[16px] font-black italic" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}`, color: "#fff" }}>
                   {t("laminasAgain", "Lutar de novo")}
                 </button>
               )}
-              <button type="button" onClick={onMenu} className="rounded-[16px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+              <button type="button" onClick={onMenu} className="rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
                 {portal ? t("laminasBackCity", "Voltar à cidade") : t("laminasBackMenu", "Escolher outro")}
               </button>
             </div>

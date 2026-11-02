@@ -271,7 +271,7 @@ function NoticeCard({
           </button>
         )}
       </div>
-      <button type="button" onClick={leave} className="-my-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ color: MM.muted }} aria-label={t("close", "Fechar")}>
+      <button type="button" onClick={leave} className="-my-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none" style={{ color: MM.muted }} aria-label={t("close", "Fechar")}>
         <X className="h-4 w-4" />
       </button>
       {/* tempo restante (decorativo): encolhe por transform e para junto com o relógio */}

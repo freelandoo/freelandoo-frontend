@@ -189,7 +189,7 @@ function RaceLobby({ names, until, onCancel }: { names: string[]; until: number;
   const bots = Math.max(0, MAX_CARS - Math.max(1, names.length))
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: "radial-gradient(120% 90% at 50% 0%, #2b4a66 0%, #111820 60%, #0b0f14 100%)" }}>
-      <div className="w-full max-w-[440px] rounded-[22px] p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+      <div className="w-full max-w-[440px] rounded-none p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
         <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: "#5FE1FF" }}>
           <Users className="h-4 w-4" /> {t("corridaModeMulti", "Multiplayer")}
         </div>
@@ -206,7 +206,7 @@ function RaceLobby({ names, until, onCancel }: { names: string[]; until: number;
           {Array.from({ length: MAX_CARS }, (_, i) => {
             const n = names[i]
             return (
-              <li key={i} className="flex items-center gap-2 rounded-[10px] px-2.5 py-2 text-[13.5px]" style={{ background: n ? MM.rubySoft : MM.card, color: n ? MM.text : MM.muted }}>
+              <li key={i} className="flex items-center gap-2 rounded-none px-2.5 py-2 text-[13.5px]" style={{ background: n ? MM.rubySoft : MM.card, color: n ? MM.text : MM.muted }}>
                 {n ? <Flag className="h-4 w-4 shrink-0" style={{ color: MM.gold }} /> : <Bot className="h-4 w-4 shrink-0" />}
                 <span className="min-w-0 truncate font-semibold">{n || t("corridaBot", "computador")}</span>
               </li>
@@ -216,7 +216,7 @@ function RaceLobby({ names, until, onCancel }: { names: string[]; until: number;
         <p className="mt-2 text-[12.5px]" style={{ color: MM.muted }}>
           {t("corridaLobbyCount", "{n} de 6 pilotos · {b} computadores se ninguém mais entrar").replace("{n}", String(Math.max(1, names.length))).replace("{b}", String(bots))}
         </p>
-        <button type="button" onClick={onCancel} className="mt-4 w-full rounded-[14px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+        <button type="button" onClick={onCancel} className="mt-4 w-full rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
           {t("corridaLobbyCancel", "Sair da espera")}
         </button>
       </div>
@@ -256,7 +256,7 @@ function RaceMenu({
       className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4"
       style={{ background: "radial-gradient(120% 90% at 50% 0%, #2b4a66 0%, #111820 60%, #0b0f14 100%)" }}
     >
-      <div className="w-full max-w-[520px] rounded-[22px] p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+      <div className="w-full max-w-[520px] rounded-none p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: "#5FE1FF" }}>
@@ -277,7 +277,7 @@ function RaceMenu({
         <button
           type="button"
           onClick={onGarage}
-          className="mt-4 flex w-full items-center justify-between gap-3 rounded-[14px] px-3.5 py-2.5 text-left transition-transform active:scale-[0.99]"
+          className="mt-4 flex w-full items-center justify-between gap-3 rounded-none px-3.5 py-2.5 text-left transition-transform active:scale-[0.99]"
           style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}
         >
           <span className="flex items-center gap-2.5">
@@ -295,17 +295,17 @@ function RaceMenu({
         </button>
 
         <ul className="mt-3 grid grid-cols-3 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>
-          <li className="rounded-[12px] p-2.5" style={{ background: MM.card }}>
+          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
             <b style={{ color: "#5FE1FF" }}>{t("corridaHowPadTitle", "Faixa de turbo")}</b>
             <br />
             {t("corridaHowPad", "Passe por cima das setas azuis: arrancada na hora.")}
           </li>
-          <li className="rounded-[12px] p-2.5" style={{ background: MM.card }}>
+          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
             <b style={{ color: "#FF9A4D" }}>{t("corridaHowOrbTitle", "Cápsula de fogo")}</b>
             <br />
             {t("corridaHowOrb", "Guarda até 3 turbos. Use quando quiser.")}
           </li>
-          <li className="rounded-[12px] p-2.5" style={{ background: MM.card }}>
+          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
             <b style={{ color: "#FFD45C" }}>{t("corridaHowJumpTitle", "Penhascos")}</b>
             <br />
             {t("corridaHowJump", "Chegue rápido na rampa e segure acelerar no ar para planar.")}
@@ -318,7 +318,7 @@ function RaceMenu({
               key={m.mode}
               type="button"
               onClick={() => onPlay(m.mode)}
-              className="flex min-h-[64px] items-center gap-3 rounded-[14px] px-3.5 text-left transition-transform active:scale-[0.98]"
+              className="flex min-h-[64px] items-center gap-3 rounded-none px-3.5 text-left transition-transform active:scale-[0.98]"
               style={{ background: i === 0 ? MM.rubyFill : MM.card, border: `1px solid ${i === 0 ? MM.rubyBorder : MM.border}`, color: MM.text }}
             >
               <span className="shrink-0" style={{ color: i === 0 ? "#fff" : MM.gold }}>
@@ -335,7 +335,7 @@ function RaceMenu({
         </div>
 
         {error && (
-          <p role="alert" className="mt-3 rounded-[12px] px-3 py-2 text-[13px]" style={{ background: "rgba(110, 16, 34, 0.55)", color: "#FFD9DF" }}>
+          <p role="alert" className="mt-3 rounded-none px-3 py-2 text-[13px]" style={{ background: "rgba(110, 16, 34, 0.55)", color: "#FFD9DF" }}>
             {error}
           </p>
         )}
@@ -621,7 +621,7 @@ function Hud({ hud, path, muted, onMute, onLeave }: { hud: RaceHud; path: string
     <>
       {/* posição e volta */}
       <div className="pointer-events-none absolute flex flex-col gap-1.5" style={{ top: SAFE.top, left: SAFE.left }}>
-        <div className="flex items-end gap-3 rounded-[14px] px-3 py-2" style={{ background: glass, border: `1px solid ${MM.border}` }}>
+        <div className="flex items-end gap-3 rounded-none px-3 py-2" style={{ background: glass, border: `1px solid ${MM.border}` }}>
           {hud.total > 1 && (
             <div className="leading-none">
               <div className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: MM.muted }}>
@@ -647,7 +647,7 @@ function Hud({ hud, path, muted, onMute, onLeave }: { hud: RaceHud; path: string
             </div>
           </div>
         </div>
-        <div className="rounded-[12px] px-3 py-1.5 text-[12px] leading-tight" style={{ background: glass, border: `1px solid ${MM.border}`, color: MM.muted }}>
+        <div className="rounded-none px-3 py-1.5 text-[12px] leading-tight" style={{ background: glass, border: `1px solid ${MM.border}`, color: MM.muted }}>
           <div className="text-[17px] font-bold tabular-nums text-white max-[759px]:text-[15px]">{fmtRace(hud.time)}</div>
           <div className="tabular-nums">
             {t("corridaBest", "Melhor volta")} {hud.best !== null ? fmtRace(hud.best) : "—"}
@@ -657,7 +657,7 @@ function Hud({ hud, path, muted, onMute, onLeave }: { hud: RaceHud; path: string
 
       {/* minimapa + botões */}
       <div className="absolute flex items-start gap-2" style={{ top: SAFE.top, right: SAFE.right }}>
-        <div className="pointer-events-none rounded-[14px] p-1.5" style={{ background: glass, border: `1px solid ${MM.border}` }}>
+        <div className="pointer-events-none rounded-none p-1.5" style={{ background: glass, border: `1px solid ${MM.border}` }}>
           <svg viewBox="-6 -6 112 112" className="h-[112px] w-[112px] max-[759px]:h-[84px] max-[759px]:w-[84px]" aria-hidden>
             <path d={path} fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth={7} strokeLinejoin="round" />
             <path d={path} fill="none" stroke="#5FE1FF" strokeWidth={2.2} strokeLinejoin="round" />
@@ -682,7 +682,7 @@ function Hud({ hud, path, muted, onMute, onLeave }: { hud: RaceHud; path: string
           {Array.from({ length: TUNING.maxCharges }, (_, i) => (
             <span
               key={i}
-              className="grid h-6 w-9 place-items-center rounded-[8px]"
+              className="grid h-6 w-9 place-items-center rounded-none"
               style={{
                 background: i < hud.charges ? "linear-gradient(180deg, #FFB347, #F2541B)" : "rgba(12,16,22,0.62)",
                 border: `1px solid ${i < hud.charges ? "rgba(255,210,140,0.8)" : MM.border}`,
@@ -692,7 +692,7 @@ function Hud({ hud, path, muted, onMute, onLeave }: { hud: RaceHud; path: string
             </span>
           ))}
         </div>
-        <div className="rounded-[14px] px-3 py-1 text-right leading-none max-[759px]:hidden" style={{ background: glass, border: `1px solid ${MM.border}` }}>
+        <div className="rounded-none px-3 py-1 text-right leading-none max-[759px]:hidden" style={{ background: glass, border: `1px solid ${MM.border}` }}>
           <span className="text-[44px] font-black italic tabular-nums" style={{ color: hud.boost ? "#FFB347" : "#fff" }}>
             {hud.speed}
           </span>
@@ -735,7 +735,7 @@ function Results({ hud, mode, newRecord, onAgain, onMenu }: { hud: RaceHud; mode
   const group = mode === "multi"
   return (
     <div className="absolute inset-0 grid place-items-center p-4" style={{ background: MM.scrim }}>
-      <div className="w-full max-w-[420px] rounded-[20px] p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
+      <div className="w-full max-w-[420px] rounded-none p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
         <div className="flex items-center gap-2">
           <Trophy className="h-6 w-6" style={{ color: place === 1 || mode === "time" ? MM.gold : MM.muted }} />
           <h2 className="text-[24px] font-black italic leading-none">{title}</h2>
@@ -753,7 +753,7 @@ function Results({ hud, mode, newRecord, onAgain, onMenu }: { hud: RaceHud; mode
         {mode !== "time" && (
           <ol className="mt-3 flex flex-col gap-1">
             {rows.map((r, i) => (
-              <li key={r.id} className="flex items-center gap-2 rounded-[10px] px-2.5 py-1.5 text-[14px]" style={{ background: r.me ? MM.rubySoft : MM.card }}>
+              <li key={r.id} className="flex items-center gap-2 rounded-none px-2.5 py-1.5 text-[14px]" style={{ background: r.me ? MM.rubySoft : MM.card }}>
                 <span className="w-6 font-black italic tabular-nums">{i + 1}º</span>
                 <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: r.color }} />
                 <span className="min-w-0 flex-1 truncate font-semibold">{r.name}</span>
@@ -770,10 +770,10 @@ function Results({ hud, mode, newRecord, onAgain, onMenu }: { hud: RaceHud; mode
           </ol>
         )}
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <button type="button" onClick={onAgain} className="rounded-[14px] px-3 py-3 text-[15px] font-bold text-white" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}>
+          <button type="button" onClick={onAgain} className="rounded-none px-3 py-3 text-[15px] font-bold text-white" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}>
             {group ? t("corridaAgainMulti", "Nova largada") : t("corridaAgain", "Correr de novo")}
           </button>
-          <button type="button" onClick={onMenu} className="rounded-[14px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+          <button type="button" onClick={onMenu} className="rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
             {t("corridaBackMenu", "Voltar ao menu")}
           </button>
         </div>

@@ -151,7 +151,7 @@ function Lobby({ list, until, onCancel }: { list: GincanaLobbyEntry[]; until: nu
   const left = until ? Math.max(0, Math.ceil((until - now) / 1000)) : null
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
-      <div className="w-full max-w-[460px] rounded-[24px] p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+      <div className="w-full max-w-[460px] rounded-none p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
         <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: TEAL }}>
           <Users className="h-4 w-4" /> {t("gincanaModeMulti", "Multiplayer")}
         </div>
@@ -168,7 +168,7 @@ function Lobby({ list, until, onCancel }: { list: GincanaLobbyEntry[]; until: nu
           {Array.from({ length: SEATS }, (_, i) => {
             const e = list[i]
             return (
-              <li key={i} className="flex items-center gap-2 rounded-[12px] px-2.5 py-2 text-[13.5px]" style={{ background: e ? MM.rubySoft : MM.card, color: e ? MM.text : MM.muted }}>
+              <li key={i} className="flex items-center gap-2 rounded-none px-2.5 py-2 text-[13.5px]" style={{ background: e ? MM.rubySoft : MM.card, color: e ? MM.text : MM.muted }}>
                 <User className={`h-4 w-4 shrink-0 ${e ? "" : "opacity-50"}`} />
                 <span className="min-w-0 truncate font-semibold">{e ? e.name : t("gincanaLobbyFree", "vaga livre")}</span>
               </li>
@@ -178,7 +178,7 @@ function Lobby({ list, until, onCancel }: { list: GincanaLobbyEntry[]; until: nu
         <p className="mt-2 text-[12.5px]" style={{ color: MM.muted }}>
           {t("gincanaLobbyCount", "{n} de 8 na gincana").replace("{n}", String(Math.max(1, list.length)))}
         </p>
-        <button type="button" onClick={onCancel} className="mt-4 w-full rounded-[16px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+        <button type="button" onClick={onCancel} className="mt-4 w-full rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
           {t("gincanaLobbyCancel", "Sair da espera")}
         </button>
       </div>
@@ -202,7 +202,7 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
   ]
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
-      <div className="w-full max-w-[580px] rounded-[26px] p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+      <div className="w-full max-w-[580px] rounded-none p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: TEAL }}>
@@ -224,7 +224,7 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
 
         <ul className="mt-4 grid grid-cols-5 gap-1.5 max-[759px]:grid-cols-1 max-[759px]:gap-1 [@media(max-height:620px)]:hidden">
           {tips.map((x, i) => (
-            <li key={i} className="rounded-[14px] p-2.5 text-[12px] leading-snug max-[759px]:flex max-[759px]:items-baseline max-[759px]:gap-2 max-[759px]:py-1.5" style={{ background: MM.card, color: MM.muted, border: `1px solid ${MM.border}` }}>
+            <li key={i} className="rounded-none p-2.5 text-[12px] leading-snug max-[759px]:flex max-[759px]:items-baseline max-[759px]:gap-2 max-[759px]:py-1.5" style={{ background: MM.card, color: MM.muted, border: `1px solid ${MM.border}` }}>
               <b className="block text-[12.5px] max-[759px]:shrink-0" style={{ color: x.c }}>
                 {i + 1}. {x.title}
               </b>
@@ -233,7 +233,7 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
           ))}
         </ul>
 
-        <p className="mt-3 rounded-[14px] px-2.5 py-2 text-[12.5px] leading-snug [@media(max-height:620px)]:hidden" style={{ background: "rgba(242,183,5,0.1)", color: MM.muted, border: `1px solid ${MM.goldBorder}` }}>
+        <p className="mt-3 rounded-none px-2.5 py-2 text-[12.5px] leading-snug [@media(max-height:620px)]:hidden" style={{ background: "rgba(242,183,5,0.1)", color: MM.muted, border: `1px solid ${MM.goldBorder}` }}>
           <b style={{ color: YELLOW }}>{t("gincanaHowLogoTitle", "Logo da Freelandoo")}</b> · {t("gincanaHowLogo", "Pegou: brilha e corre 50% mais rápido por alguns segundos.")}
         </p>
         <div className="mt-3 flex items-center gap-2 text-[13px]" style={{ color: MM.muted }}>
@@ -242,7 +242,7 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
         </div>
 
         {error && (
-          <p className="mt-3 flex items-center gap-2 rounded-[14px] px-3 py-2 text-[13px]" style={{ background: "rgba(110,16,34,0.5)", color: "#ffd5dc" }} role="alert">
+          <p className="mt-3 flex items-center gap-2 rounded-none px-3 py-2 text-[13px]" style={{ background: "rgba(110,16,34,0.5)", color: "#ffd5dc" }} role="alert">
             <WifiOff className="h-4 w-4 shrink-0" /> {error}
           </p>
         )}
@@ -251,7 +251,7 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
           <button
             type="button"
             onClick={() => onPlay(false)}
-            className="flex w-full flex-col items-center justify-center rounded-[18px] px-3 py-2.5 transition-transform active:scale-[0.98]"
+            className="flex w-full flex-col items-center justify-center rounded-none px-3 py-2.5 transition-transform active:scale-[0.98]"
             style={{ background: `linear-gradient(180deg, ${PINK}, #d93a86)`, border: "1px solid rgba(255,255,255,0.3)", color: "#fff" }}
           >
             <span className="flex items-center gap-2 text-[18px] font-black italic tracking-wide max-[420px]:text-[15px]">
@@ -263,7 +263,7 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
             <button
               type="button"
               onClick={() => onPlay(true)}
-              className="flex w-full flex-col items-center justify-center rounded-[18px] px-3 py-2.5 transition-transform active:scale-[0.98]"
+              className="flex w-full flex-col items-center justify-center rounded-none px-3 py-2.5 transition-transform active:scale-[0.98]"
               style={{ background: MM.card, border: `1.5px solid ${TEAL}`, color: MM.text }}
             >
               <span className="flex items-center gap-2 text-[18px] font-black italic tracking-wide max-[420px]:text-[15px]">
@@ -437,7 +437,7 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
         <>
           {/* posição, tempo e o placar ao vivo */}
           <div className="pointer-events-none absolute flex flex-col items-start gap-1.5" style={{ top: SAFE.top, left: SAFE.left }}>
-            <div className="flex items-end gap-2 rounded-[16px] px-3 py-1.5 leading-none" style={{ background: glass, border: `1px solid ${MM.border}` }}>
+            <div className="flex items-end gap-2 rounded-none px-3 py-1.5 leading-none" style={{ background: glass, border: `1px solid ${MM.border}` }}>
               <span className="text-[34px] font-black italic tabular-nums text-white max-[759px]:text-[26px]">{ord(hud.place)}</span>
               <span className="pb-1 text-[13px] font-bold" style={{ color: MM.muted }}>
                 / {hud.total}
@@ -606,7 +606,7 @@ function BoardStrip({ rows, glass }: { rows: BoardRow[]; glass: string }) {
   const mine = rows.findIndex((r) => r.me)
   const shown = rows.map((r, i) => ({ r, i })).filter(({ i }) => i < 4 || i === mine)
   return (
-    <ol className="flex w-[176px] flex-col gap-0.5 rounded-[14px] px-2 py-1.5 max-[759px]:w-[140px]" style={{ background: glass, border: `1px solid ${MM.border}` }}>
+    <ol className="flex w-[176px] flex-col gap-0.5 rounded-none px-2 py-1.5 max-[759px]:w-[140px]" style={{ background: glass, border: `1px solid ${MM.border}` }}>
       {shown.map(({ r, i }) => (
         <li key={r.slot} className="flex items-center gap-1.5 text-[12px] leading-tight max-[759px]:text-[11px]" style={{ color: r.me ? YELLOW : MM.text }}>
           <span className="w-4 shrink-0 text-right font-black tabular-nums">{i + 1}</span>
@@ -655,7 +655,7 @@ function Results({
     result.time < 0 ? t("gincanaNoTime", "O tempo acabou!") : place === 1 ? t("gincanaWin", "1º lugar! Você venceu!") : t("gincanaPlaceTitle", "Você chegou em {n}º").replace("{n}", String(place))
   return (
     <div className="absolute inset-0 grid place-items-center p-4" style={{ background: MM.scrim }}>
-      <div className="w-full max-w-[420px] rounded-[24px] p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
+      <div className="w-full max-w-[420px] rounded-none p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
         <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: TEAL }}>
           <Flag className="h-4 w-4" /> {t("gincanaAria", "Gincana")}
         </div>
@@ -677,7 +677,7 @@ function Results({
             {t("gincanaRecord", "Seu recorde: {t}").replace("{t}", fmt(best))}
           </p>
         )}
-        <div className="mt-3 rounded-[14px] p-2" style={{ background: MM.card }}>
+        <div className="mt-3 rounded-none p-2" style={{ background: MM.card }}>
           <div className="flex items-center justify-between gap-2 px-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: MM.muted }}>
             <span>{t("gincanaStandings", "Classificação")}</span>
             {running > 0 && (
@@ -688,7 +688,7 @@ function Results({
           </div>
           <ol className="mt-1.5 flex max-h-[38vh] flex-col gap-1 overflow-y-auto">
             {rows.map((r, i) => (
-              <li key={r.slot} className="flex items-center gap-2 rounded-[10px] px-2 py-1 text-[13px]" style={{ background: r.me ? MM.rubySoft : "transparent" }}>
+              <li key={r.slot} className="flex items-center gap-2 rounded-none px-2 py-1 text-[13px]" style={{ background: r.me ? MM.rubySoft : "transparent" }}>
                 <span className="w-5 shrink-0 text-right font-black tabular-nums" style={{ color: i === 0 ? YELLOW : MM.muted }}>
                   {i + 1}
                 </span>
@@ -702,10 +702,10 @@ function Results({
           </ol>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <button type="button" onClick={onAgain} className="rounded-[16px] px-3 py-3 text-[15px] font-bold text-white" style={{ background: `linear-gradient(180deg, ${PINK}, #d93a86)` }}>
+          <button type="button" onClick={onAgain} className="rounded-none px-3 py-3 text-[15px] font-bold text-white" style={{ background: `linear-gradient(180deg, ${PINK}, #d93a86)` }}>
             {t("gincanaAgain", "De novo")}
           </button>
-          <button type="button" onClick={onMenu} className="rounded-[16px] px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+          <button type="button" onClick={onMenu} className="rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
             {t("gincanaBackMenu", "Voltar ao menu")}
           </button>
         </div>

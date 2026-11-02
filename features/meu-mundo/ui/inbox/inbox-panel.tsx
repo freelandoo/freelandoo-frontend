@@ -75,7 +75,7 @@ export default function InboxPanel({ initial, body, counts, onCounts, onClose, o
   const [tab, setTab] = useState<MailTab | "messages">(initial.view === "mail" ? (initial.tab ?? "gift") : "gift")
   return (
     <EvoDialog fixed z="z-[78]" labelId="mm-inbox" eyebrow={t("ibEyebrow", "Meu Mundo")} title={view === "notices" ? t("ibNoticesTitle", "Notificações") : t("ibMailTitle", "Caixa de entrada")} onClose={onClose} width="max-w-lg">
-      <div className="mb-3 grid grid-cols-2 gap-1 rounded-[14px] p-1" role="tablist" aria-label={t("ibViews", "Notificações e caixa de entrada")} style={{ background: "rgba(0,0,0,0.28)", border: `1px solid ${MM.border}` }}>
+      <div className="mb-3 grid grid-cols-2 gap-1 rounded-none p-1" role="tablist" aria-label={t("ibViews", "Notificações e caixa de entrada")} style={{ background: "rgba(0,0,0,0.28)", border: `1px solid ${MM.border}` }}>
         <Seg active={view === "notices"} onClick={() => setView("notices")} icon={<Bell className="h-4 w-4" />} count={counts?.notices ?? 0} label={t("ibNoticesTitle", "Notificações")} />
         <Seg
           active={view === "mail"}
@@ -122,7 +122,7 @@ function Seg({ active, onClick, icon, count, label }: { active: boolean; onClick
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`${archivo.className} flex h-10 items-center justify-center gap-2 rounded-[11px] text-[14px] font-semibold`}
+      className={`${archivo.className} flex h-10 items-center justify-center gap-2 rounded-none text-[14px] font-semibold`}
       style={{ background: active ? MM.rubySoft : "transparent", color: active ? MM.text : MM.muted, border: active ? `1px solid ${MM.rubyBorder}` : "1px solid transparent" }}
     >
       {icon}
@@ -280,7 +280,7 @@ function NoticeList({ t, body, onCounts, onOpen }: { t: Tr; body: BodyId; onCoun
                 <button
                   type="button"
                   onClick={() => void open(n)}
-                  className="flex w-full items-center gap-3 rounded-[14px] p-2 text-left"
+                  className="flex w-full items-center gap-3 rounded-none p-2 text-left"
                   style={{ background: n.read ? "transparent" : MM.card, border: `1px solid ${n.read ? "transparent" : MM.border}` }}
                 >
                   <NoticeAvatar n={n} body={body} />
@@ -432,7 +432,7 @@ function Letters({ t, tab, onOpen, onCounts }: { t: Tr; tab: MailTab; onOpen: (i
               <button
                 type="button"
                 onClick={() => onOpen(m.id)}
-                className="flex w-full items-center gap-3 rounded-[14px] p-2 text-left"
+                className="flex w-full items-center gap-3 rounded-none p-2 text-left"
                 style={{ background: m.read ? "transparent" : MM.card, border: `1px solid ${m.read ? "transparent" : MM.border}` }}
               >
                 <MailIcon m={m} />
@@ -535,7 +535,7 @@ function MailDetail({ id, t, onBack, onCounts, onClaimed }: { id: string; t: Tr;
       ) : !mail ? (
         <Skeleton rows={2} />
       ) : (
-        <article className="rounded-[14px] p-3" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+        <article className="rounded-none p-3" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
           <div className="flex items-center gap-3">
             <MailIcon m={mail} />
             <div className="min-w-0">
@@ -558,7 +558,7 @@ function MailDetail({ id, t, onBack, onCounts, onClaimed }: { id: string; t: Tr;
             </p>
           )}
           {mail.gift && (
-            <div className="mt-3 flex items-center gap-3 rounded-[14px] p-2.5" style={{ background: "rgba(0,0,0,0.25)", border: `1px solid ${MM.goldBorder}` }}>
+            <div className="mt-3 flex items-center gap-3 rounded-none p-2.5" style={{ background: "rgba(0,0,0,0.25)", border: `1px solid ${MM.goldBorder}` }}>
               <GiftThumb gift={mail.gift} />
               <div className="min-w-0 flex-1">
                 <div className="text-[14px] font-semibold" style={{ color: MM.text }}>
@@ -599,12 +599,12 @@ function GiftThumb({ gift }: { gift: NonNullable<MMMail["gift"]> }) {
   const src = giftThumb(gift)
   if (!src)
     return (
-      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px]" style={{ background: MM.card, color: MM.gold }} aria-hidden>
+      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-none" style={{ background: MM.card, color: MM.gold }} aria-hidden>
         <Gift className="h-6 w-6" />
       </span>
     )
   // eslint-disable-next-line @next/next/no-img-element -- miniatura estática do catálogo
-  return <img src={src} alt="" width={48} height={48} loading="lazy" className="h-12 w-12 shrink-0 rounded-[12px] object-cover" style={{ background: "#232733" }} />
+  return <img src={src} alt="" width={48} height={48} loading="lazy" className="h-12 w-12 shrink-0 rounded-none object-cover" style={{ background: "#232733" }} />
 }
 
 // ═══ mensagens (o chat que já existe) ══════════════════════════════════════
@@ -642,7 +642,7 @@ function Conversations({ t, onOpenConversation }: { t: Tr; onOpenConversation?: 
             <ConversationLink
               id={c.id}
               onOpen={onOpenConversation ? () => onOpenConversation(c.id, c.title) : undefined}
-              className="flex w-full items-center gap-3 rounded-[14px] p-2 text-left"
+              className="flex w-full items-center gap-3 rounded-none p-2 text-left"
               style={{ background: c.unread ? MM.card : "transparent", border: `1px solid ${c.unread ? MM.border : "transparent"}` }}
             >
               {c.avatar ? (
@@ -691,7 +691,7 @@ function Skeleton({ rows = 4 }: { rows?: number }) {
   return (
     <div className="flex flex-col gap-1.5" aria-hidden>
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-[14px] p-2" style={{ background: MM.card }}>
+        <div key={i} className="flex items-center gap-3 rounded-none p-2" style={{ background: MM.card }}>
           <span className="h-10 w-10 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }} />
           <span className="flex-1">
             <span className="block h-3 w-2/3 rounded-full" style={{ background: "rgba(255,255,255,0.1)" }} />

@@ -189,7 +189,7 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={placeName ?? t("hospitalAria", "Dentro do hospital")} />
 
       {status === "ready" && soon && (
-        <div className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 rounded-xl bg-black/70 px-4 py-2 text-[15px] font-semibold text-white">
+        <div className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 rounded-none bg-black/70 px-4 py-2 text-[15px] font-semibold text-white">
           {t("pvSoon", "Em breve")}
         </div>
       )}

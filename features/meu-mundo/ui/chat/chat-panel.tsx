@@ -53,7 +53,7 @@ export default function ChatPanel(props: ChatPanelProps) {
     <EvoDialog fixed z="z-[78]" width="max-w-lg" labelId="mm-chat-title" title={t("chTitle", "Chat")} onClose={onClose}>
       <div data-mm-panel className="flex flex-col" style={{ height: BODY_H }}>
         <div
-          className="mb-2 grid shrink-0 grid-cols-2 gap-1 rounded-[14px] p-1"
+          className="mb-2 grid shrink-0 grid-cols-2 gap-1 rounded-none p-1"
           role="tablist"
           aria-label={t("chTitle", "Chat")}
           style={{ background: "rgba(0,0,0,0.28)", border: `1px solid ${MM.border}` }}
@@ -92,7 +92,7 @@ function Tab({ id, panel, on, onClick, icon, label, count = 0 }: { id: string; p
       aria-selected={on}
       aria-controls={panel}
       onClick={onClick}
-      className={`${archivo.className} flex h-9 items-center justify-center gap-2 rounded-[11px] text-[14px] font-semibold max-[759px]:h-8 max-[759px]:text-[13px]`}
+      className={`${archivo.className} flex h-9 items-center justify-center gap-2 rounded-none text-[14px] font-semibold max-[759px]:h-8 max-[759px]:text-[13px]`}
       style={{ background: on ? MM.rubySoft : "transparent", color: on ? MM.text : MM.muted, border: on ? `1px solid ${MM.rubyBorder}` : "1px solid transparent" }}
     >
       {icon}
@@ -160,7 +160,7 @@ function Composer({ max, onSend, placeholder }: { max: number; onSend: (text: st
         placeholder={placeholder}
         aria-label={placeholder}
         enterKeyHint="send"
-        className="h-11 min-w-0 flex-1 rounded-[12px] px-3 text-sm outline-none placeholder:text-[#8d939c] focus-visible:ring-2 focus-visible:ring-[#E5BE70] max-[759px]:h-10"
+        className="h-11 min-w-0 flex-1 rounded-none px-3 text-sm outline-none placeholder:text-[#8d939c] focus-visible:ring-2 focus-visible:ring-[#E5BE70] max-[759px]:h-10"
         style={{ background: "rgba(0,0,0,0.35)", color: MM.text, border: `1px solid ${MM.border}` }}
       />
       <EvoButton type="submit" variant="primary" aria-label={t("chSend", "Enviar")} title={t("chSend", "Enviar")} disabled={!draft.trim()} icon={<Send className="h-4 w-4" />} />
@@ -278,7 +278,7 @@ function DmList({ token, onOpen }: { token: string | null; onOpen: (c: { id: str
           type="button"
           role="listitem"
           onClick={() => onOpen({ id: c.id, title: c.title })}
-          className="flex w-full items-center gap-3 rounded-[14px] p-2 text-left"
+          className="flex w-full items-center gap-3 rounded-none p-2 text-left"
           style={{ background: c.unread ? MM.card : "transparent", border: `1px solid ${c.unread ? MM.border : "transparent"}` }}
         >
           <Avatar url={c.avatar} size={36} />
@@ -352,7 +352,7 @@ function Thread({
             {items.map((m) => (
               <div key={m.id} className={m.mine ? "flex justify-end" : "flex"}>
                 <p
-                  className={`max-w-[80%] whitespace-pre-wrap break-words rounded-[14px] px-3 py-2 text-sm ${m.kind && m.kind !== "text" && !m.text ? "italic" : ""}`}
+                  className={`max-w-[80%] whitespace-pre-wrap break-words rounded-none px-3 py-2 text-sm ${m.kind && m.kind !== "text" && !m.text ? "italic" : ""}`}
                   style={{ background: m.mine ? MM.rubyFill : MM.card, color: m.pending ? MM.muted : "#fff", border: `1px solid ${m.mine ? MM.rubyBorder : MM.border}` }}
                 >
                   {textOf(m)}

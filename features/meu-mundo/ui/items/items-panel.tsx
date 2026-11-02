@@ -81,7 +81,7 @@ export default function ItemsPanel({ onClose, onChanged }: { onClose: () => void
       ) : !data ? (
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-6" aria-hidden>
           {Array.from({ length: 12 }, (_, i) => (
-            <div key={i} className="aspect-square rounded-[14px]" style={{ background: MM.card }} />
+            <div key={i} className="aspect-square rounded-none" style={{ background: MM.card }} />
           ))}
         </div>
       ) : (
@@ -160,11 +160,11 @@ function SlotThumb({ slot, big = false }: { slot: Slot; big?: boolean }) {
   if (slot.thumb)
     return (
       // eslint-disable-next-line @next/next/no-img-element -- miniatura estática local (mesmo arquivo da geladeira/retrato, em cache)
-      <img src={slot.thumb} alt="" loading="lazy" decoding="async" draggable={false} className={`${cls} object-cover ${slot.skin ? "rounded-full" : "rounded-[12px]"}`} />
+      <img src={slot.thumb} alt="" loading="lazy" decoding="async" draggable={false} className={`${cls} object-cover ${slot.skin ? "rounded-full" : "rounded-none"}`} />
     )
   const icon = slot.vehicle ? <VehicleIcon kind={slot.vehicle.kind} className="h-8 w-8" /> : slot.house ? <Home className="h-8 w-8" /> : <Shirt className="h-8 w-8" />
   return (
-    <span className={`${cls} inline-flex items-center justify-center rounded-[12px]`} style={{ color: MM.gold }} aria-hidden>
+    <span className={`${cls} inline-flex items-center justify-center rounded-none`} style={{ color: MM.gold }} aria-hidden>
       {icon}
     </span>
   )
@@ -234,8 +234,8 @@ function SlotDetail({ slot, t, busy, onEquip }: { slot: Slot; t: Tr; busy: boole
   }
   const fx = slot.item ? effectsOf(slot.item) : []
   return (
-    <section className="mt-3 flex gap-3 rounded-[14px] p-3" style={{ background: MM.card, border: `1px solid ${MM.border}` }} aria-live="polite">
-      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[12px]" style={{ background: "rgba(0,0,0,0.3)" }}>
+    <section className="mt-3 flex gap-3 rounded-none p-3" style={{ background: MM.card, border: `1px solid ${MM.border}` }} aria-live="polite">
+      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-none" style={{ background: "rgba(0,0,0,0.3)" }}>
         <SlotThumb slot={slot} big />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">

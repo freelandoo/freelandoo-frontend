@@ -247,6 +247,72 @@ export const startFight = (token: string, body: { origin: FightOrigin; kind?: Mo
 export const finishFight = (token: string, ticket: string, frames: FightFrames) =>
   call<{ receipt: Receipt; replay: boolean }>(token, "POST", "/fight/finish", { ticket, frames })
 export const getAdventure = (token: string) => call<AdventureState>(token, "GET", "/adventure")
+
+// ═══ mm3d-59 slice 3: equipamento (Armeiro, mochila, forja) ════════════════
+export type GearCategory = "weapon" | "armor" | "accessory" | "material" | "recipe" | "quest" | "cosmetic"
+export type GearSlot = "weapon" | "armor" | "acc1" | "acc2"
+export interface GearItem {
+  id: string
+  category: GearCategory
+  name: string
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
+  price: number | null
+  level: number
+  clan: Clan | null
+  bonus: Partial<GearBonus> | null
+  family: string | null
+  stack: boolean
+  sell: number
+}
+export interface GearRecipe {
+  id: string
+  out: string
+  needs: Record<string, number>
+  coins: number
+  recipe: string | null
+  level: number
+}
+export interface GearCatalog {
+  slots: GearSlot[]
+  cap: GearBonus
+  upgrade: { max: number; dmg: number; def: number }
+  items: GearItem[]
+  recipes: GearRecipe[]
+}
+export interface GearBag {
+  clan: Clan | null
+  level: number
+  coins: number
+  owned: Record<string, { qty: number; level: number }>
+  equipped: Partial<Record<GearSlot, string>>
+  bonus: GearBonus
+}
+type GearOut = { receipt: Receipt; replay: boolean; bag: GearBag }
+export const getGear = (token: string) => call<{ gear: GearCatalog; bag: GearBag }>(token, "GET", "/gear")
+export const buyGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/buy", { item, key })
+export const equipGear = (token: string, slot: GearSlot, item: string | null) => call<{ bag: GearBag }>(token, "POST", "/gear/equip", { slot, item })
+export const forgeGear = (token: string, recipe: string, key: string) => call<GearOut>(token, "POST", "/gear/forge", { recipe, key })
+export const upgradeGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/upgrade", { item, key })
+// ═══ mm3d-59 slice 5: missões (o prólogo) ══════════════════════════════════
+export interface QuestStepView {
+  key: string
+  where: string
+  xp: number
+  state: "done" | "current" | "locked"
+}
+export interface QuestView {
+  id: string
+  step: number
+  total: number
+  done: boolean
+  next: string
+  current: (QuestStepView & { check: string; index: number; ready: boolean }) | null
+  steps: QuestStepView[]
+}
+export const getQuest = (token: string) => call<{ quest: QuestView }>(token, "GET", "/quest")
+export const advanceQuest = (token: string, action: "ack" | "visit_armory" = "ack") =>
+  call<{ quest: QuestView; receipt?: Receipt; replay?: boolean }>(token, "POST", "/quest/advance", { action })
+export const recycleGear = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/recycle", { item, qty, key })
 /** Hospital do centro (mm3d-26): planta por dentro, leito do usuário, régua da alta e a vida agora. */
 export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "/hospital")
 /** Interior de um prédio do centro (mm3d-37): a planta, buscada ao entrar. */

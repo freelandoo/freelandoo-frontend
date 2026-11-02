@@ -22,7 +22,7 @@
 // dentro do jogo (card do jogador, caixa de entrada ou nome no Global).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send } from "lucide-react"
+import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Swords } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
@@ -40,12 +40,19 @@ import NoticeStack from "./inbox/notice-stack"
 import HudInbox from "./inbox/hud-inbox"
 import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
+import GearPanel from "./gear/gear-panel"
+import { QuestTracker } from "./quest/quest-ui"
+import { RewardOverlay } from "./rewards/reward-overlay"
+import { celebrate } from "./rewards/reward-bus"
 import PolensSheet, { PolensReturn } from "./polens/polens-sheet"
 import PlayerCard from "./player-card/player-card"
 import ChatPanel, { type ChatView } from "./chat/chat-panel"
 import { bubbleText, bumpUnread, confirmLine, dropPending, mergeLines, newClientId, pendingLine, type Line } from "./chat/chat-logic"
 import type { PlayerTap } from "../engine/player-select"
 import { compactFrameX, isCompactViewport } from "./player-card/place"
+import dynamic from "next/dynamic"
+// mm3d-59: a luta de treino do prólogo abre a mesma Arena (carregada só quando abre)
+const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 import {
   fetchAdminNeighborhood,
   getAccountProfileId,
@@ -114,6 +121,12 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [pushed, setPushed] = useState<MMNotice[]>([])
   const [inbox, setInbox] = useState<InboxView | null>(null)
   const [itemsOpen, setItemsOpen] = useState(false)
+  // mm3d-59: Mochila/Armeiro/Forja (null = fechado; senão a aba que abre)
+  const [gearTab, setGearTab] = useState<null | "bag" | "armory" | "forge">(null)
+  // mm3d-59: luta de treino do prólogo e quando reconferir a missão
+  const [tutorialFight, setTutorialFight] = useState(false)
+  const [questTick, setQuestTick] = useState(0)
+  const bumpQuest = useCallback(() => setQuestTick((n) => n + 1), [])
   const [polensOpen, setPolensOpen] = useState(false)
   // Card de perfil de outro jogador (mm3d-31): um por vez; `dismiss` sobe no
   // toque no vazio do mundo (o card sai com a animação dele).
@@ -432,7 +445,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
   // A cela (mm3d-37f) só com a planta na mão; internado, o hospital manda.
   const jailUp = !!jail.phase && !!jail.interior && !hospitalUp
-  const panelOpen = !!inbox || itemsOpen || polensOpen || !!chatView
+  const panelOpen = !!inbox || itemsOpen || polensOpen || !!chatView || !!gearTab
   const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || jailUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
   const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
@@ -577,6 +590,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         onSelect: () => openChat(),
       },
       { id: "items", label: t("itTitle", "Itens"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
+      { id: "gear", label: t("gearTitle", "Equipamento"), hint: t("menuGearHint", "Mochila, Armeiro e Forja"), icon: <Swords className="h-5 w-5" />, kind: "nav", onSelect: () => setGearTab("bag") },
       {
         id: "inbox",
         label: t("ibMailTitle", "Caixa de entrada"),
@@ -784,6 +798,35 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
       {itemsOpen && <ItemsPanel onClose={() => setItemsOpen(false)} onChanged={lifeChanged} />}
+      {gearTab && (
+        <GearPanel
+          initialTab={gearTab}
+          onClose={() => {
+            setGearTab(null)
+            bumpQuest()
+          }}
+          onReceipt={celebrate}
+        />
+      )}
+      {/* mm3d-59: missão acompanhada, luta de treino e a gramática dos ganhos */}
+      <QuestTracker
+        hidden={!!busy || !!statusBody || hospitalUp || jailUp || asleep || panelOpen || tutorialFight}
+        refreshKey={questTick + mount}
+        onTutorialFight={() => setTutorialFight(true)}
+        onOpenGear={(tab) => setGearTab(tab)}
+      />
+      {tutorialFight && (
+        <LaminasView
+          body={avatar}
+          tutorial
+          onReceipt={bumpQuest}
+          onExit={() => {
+            setTutorialFight(false)
+            bumpQuest()
+          }}
+        />
+      )}
+      <RewardOverlay />
       {polensOpen && <PolensSheet onClose={() => setPolensOpen(false)} />}
       <PolensReturn onPaid={() => void refreshCounts()} />
 
@@ -947,7 +990,7 @@ function InvitePanel({ onClose, onSent }: { onClose: () => void; onSent: (v: Vis
       }
     >
       <p style={{ color: EVO.mudo }}>{t("inviteRule", "Uma visita por vez. O convite expira em 5 minutos.")}</p>
-      <div className="mt-3 max-h-48 overflow-y-auto rounded-[14px]" style={{ border: `1px solid ${MM.border}`, background: MM.card }}>
+      <div className="mt-3 max-h-48 overflow-y-auto rounded-none" style={{ border: `1px solid ${MM.border}`, background: MM.card }}>
         {list === null ? (
           <div className={`${archivo.className} flex items-center gap-2 p-3 text-[14px] font-semibold max-[759px]:p-2.5 max-[759px]:text-[13px]`}>
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -984,7 +1027,7 @@ function InvitePanel({ onClose, onSent }: { onClose: () => void; onSent: (v: Vis
         }}
         placeholder={t("invitePlaceholder", "@usuario")}
         aria-label={t("invitePlaceholder", "@usuario")}
-        className="mt-2 h-11 w-full rounded-[12px] px-3 text-sm outline-none placeholder:text-[#8d939c] focus-visible:ring-2 focus-visible:ring-[#E5BE70]"
+        className="mt-2 h-11 w-full rounded-none px-3 text-sm outline-none placeholder:text-[#8d939c] focus-visible:ring-2 focus-visible:ring-[#E5BE70]"
         style={{ background: "rgba(0,0,0,0.35)", color: EVO.branco, border: `1px solid ${MM.border}` }}
       />
       {error && (

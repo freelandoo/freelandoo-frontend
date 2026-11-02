@@ -596,7 +596,7 @@ export default function MeuMundoView({
                 {open.house.isMine ? t("yourHouse", "Sua casa") : (open.house.ownerName ?? t("available", "Disponível"))}
               </InfoRow>
               {open.house.ownerName && (
-                <div className="mt-3 flex items-center gap-2 rounded-[12px] px-3 py-2.5 font-semibold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+                <div className="mt-3 flex items-center gap-2 rounded-none px-3 py-2.5 font-semibold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
                   <Lock className="h-4 w-4 shrink-0" style={{ color: EVO.douradoClaro }} />
                   {t("needsInvite", "Esta casa só abre com convite do morador.")}
                 </div>

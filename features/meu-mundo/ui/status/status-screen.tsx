@@ -195,14 +195,16 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       const y = (1 - en) * 90
       const alfa = e.alfa * Math.max(0, Math.min(1, en * 1.4))
       el.style.transform = `translate3d(${e.x}px, ${y}px, ${-z}px) rotateY(${e.giro}deg)`
-      el.style.opacity = String(alfa)
-      el.style.visibility = alfa > 0.003 ? "visible" : "hidden"
+      // mm3d-59: o card é SEMPRE opaco (o cenário não atravessa) — a profundidade
+      // e a entrada escurecem por cima (véu preto opaco), em vez de deixar transparente.
+      el.style.opacity = "1"
+      el.style.visibility = alfa > 0.02 ? "visible" : "hidden"
       el.style.zIndex = String(1000 - Math.round(z))
       el.style.pointerEvents = alfa > 0.2 ? "auto" : "none"
       const g = glowRefs.current[i]
       if (g) g.style.opacity = String(e.aceso * (aceita.current ? 1 : en))
       const d = dimRefs.current[i]
-      if (d) d.style.opacity = String(e.escuro)
+      if (d) d.style.opacity = String(Math.max(e.escuro, 1 - alfa))
     }
   }, [])
 
@@ -381,7 +383,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
         </div>
         {/* rodapé numa linha de 40 px: ‹ pontos › e fechar (o nome da página está no cabeçalho) */}
         <div className="mx-2 mt-1.5 flex h-10 shrink-0 items-center gap-1">
-          <button type="button" onClick={() => go(-1)} aria-label={t("stPrev", "Tela anterior")} className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ color: EVO.branco, borderRadius: 12, background: MM.card, border: `1px solid ${MM.border}` }}>
+          <button type="button" onClick={() => go(-1)} aria-label={t("stPrev", "Tela anterior")} className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ color: EVO.branco, background: MM.card, border: `1px solid ${MM.border}` }}>
             <ChevronLeft className="h-6 w-6" />
           </button>
           <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
@@ -390,7 +392,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
               {sel + 1}/{N}
             </span>
           </div>
-          <button type="button" onClick={() => go(1)} aria-label={t("stNext", "Próxima tela")} className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ color: EVO.branco, borderRadius: 12, background: MM.card, border: `1px solid ${MM.border}` }}>
+          <button type="button" onClick={() => go(1)} aria-label={t("stNext", "Próxima tela")} className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ color: EVO.branco, background: MM.card, border: `1px solid ${MM.border}` }}>
             <ChevronRight className="h-6 w-6" />
           </button>
           <BackButton onClick={close} t={t} icon />
@@ -548,7 +550,7 @@ function BackButton({ onClick, t, big = false, icon = false }: { onClick: () => 
         onClick={onClick}
         aria-label={t("stBack", "Voltar")}
         className="inline-flex h-10 w-10 shrink-0 items-center justify-center"
-        style={{ borderRadius: 12, background: MM.surface, color: EVO.branco, border: `1px solid ${MM.border}` }}
+        style={{ background: MM.surface, color: EVO.branco, border: `1px solid ${MM.border}` }}
       >
         <X className="h-5 w-5" />
       </button>

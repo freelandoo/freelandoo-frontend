@@ -47,9 +47,10 @@ export const EVO = {
  * grande atrás deles. Mudar a transparência do jogo = mudar aqui.
  */
 export const FUNDO = {
-  card: "rgba(30, 35, 43, 0.72)",
-  cardLiso: "rgba(30, 35, 43, 0.72)",
-  moldura: "rgba(18, 22, 28, 0.74)",
+  // mm3d-59: OPACOS (o cenário nunca atravessa card/modal)
+  card: "#1D2229",
+  cardLiso: "#1D2229",
+  moldura: "#14171C",
 } as const
 
 /** O tempo: resposta rápida, painel, tela, escalonamento. */
@@ -57,8 +58,12 @@ export const T = { rapido: 140, painel: 220, tela: 420, escalona: 45 } as const
 
 /** Raio do canto pelo antigo tamanho do chanfro (painéis 20, cards 14, miúdos 10). */
 export function radiusFor(cut: number) {
-  return cut >= 16 ? MM.radius.panel : cut <= 8 ? 10 : MM.radius.card
+  void cut
+  return 0
 }
+
+/** Canto chanfrado (os quatro), em px — o mesmo de ui/kit (AE.cut). */
+const clipCut = (c: number) => `polygon(${c}px 0, calc(100% - ${c}px) 0, 100% ${c}px, 100% calc(100% - ${c}px), calc(100% - ${c}px) 100%, ${c}px 100%, 0 calc(100% - ${c}px), 0 ${c}px)`
 
 /**
  * Caixa arredondada com borda fina (era a moldura chanfrada do EVO; nome e
@@ -82,10 +87,24 @@ export function Chamfer({
   style?: CSSProperties
   children?: ReactNode
 }) {
+  // mm3d-59: chanfro DE VERDADE — a borda é a camada de fora (cor da linha) e o
+  // recheio opaco vem por cima, recortado com o mesmo chanfro menos a espessura.
   const color = border.includes("gradient") ? MM.rubyBorder : border
+  const w = Math.min(width, 2)
+  const c = Math.max(4, Math.round(cut * 0.6))
+  // sombra dura: o recorte cortaria o box-shadow, então ela vira drop-shadow de um invólucro
+  const { boxShadow, ...rest } = style || {}
+  const box = (
+    <div className={`relative ${boxShadow ? "h-full w-full" : className}`} style={{ background: color, clipPath: clipCut(c), padding: w, ...rest }}>
+      <div className="relative h-full w-full" style={{ background: fill, clipPath: clipCut(Math.max(2, c - w)) }}>
+        {children}
+      </div>
+    </div>
+  )
+  if (!boxShadow) return box
   return (
-    <div className={`relative ${className}`} style={{ borderRadius: radiusFor(cut), background: fill, border: `${Math.min(width, 2)}px solid ${color}`, ...style }}>
-      <div className="relative h-full w-full">{children}</div>
+    <div className={`relative ${className}`} style={{ filter: "drop-shadow(4px 4px 0 #000)" }}>
+      {box}
     </div>
   )
 }

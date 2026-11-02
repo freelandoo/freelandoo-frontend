@@ -143,7 +143,7 @@ function PaintMenu({
   ]
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: "linear-gradient(180deg, #e9f0f6 0%, #f4ece0 100%)" }}>
-      <div className="w-full max-w-[520px] rounded-[22px] p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
+      <div className="w-full max-w-[520px] rounded-none p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-1.5">
@@ -163,7 +163,7 @@ function PaintMenu({
 
         <ul className="mt-4 grid grid-cols-2 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>
           {ALL_COLORS.map((c) => (
-            <li key={c} className="flex items-start gap-2 rounded-[12px] p-2.5" style={{ background: MM.card }}>
+            <li key={c} className="flex items-start gap-2 rounded-none p-2.5" style={{ background: MM.card }}>
               <Bubble c={c} size={22} />
               <span>
                 <b style={{ color: MM.text }}>{t(COLOR_KEYS[c], COLOR_FALLBACK[c])}</b>
@@ -193,7 +193,7 @@ function PaintMenu({
                 type="button"
                 disabled={off}
                 onClick={() => onPlay(m.mode)}
-                className="flex min-h-[64px] items-center gap-3 rounded-[14px] px-3.5 text-left transition-transform active:scale-[0.98]"
+                className="flex min-h-[64px] items-center gap-3 rounded-none px-3.5 text-left transition-transform active:scale-[0.98]"
                 style={{
                   background: m.mode === "solo" ? MM.rubyFill : MM.card,
                   border: `1px solid ${m.mode === "solo" ? MM.rubyBorder : MM.border}`,
@@ -220,7 +220,7 @@ function PaintMenu({
           })}
         </div>
         {joining && (
-          <button type="button" onClick={onCancel} className="mt-3 w-full rounded-[14px] py-2.5 text-[14px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}>
+          <button type="button" onClick={onCancel} className="mt-3 w-full rounded-none py-2.5 text-[14px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}>
             {t("paintCancel", "Cancelar")}
           </button>
         )}
@@ -581,7 +581,7 @@ function CatCount({ label, n, goal, open, dim }: { label: string | null; n: numb
   }, [n])
   return (
     <div
-      className={`flex items-center rounded-2xl ${dim ? "gap-2 p-1.5 pr-3" : "gap-3 p-2 pr-4 max-[759px]:gap-2 max-[759px]:p-1.5 max-[759px]:pr-3"}`}
+      className={`flex items-center rounded-none ${dim ? "gap-2 p-1.5 pr-3" : "gap-3 p-2 pr-4 max-[759px]:gap-2 max-[759px]:p-1.5 max-[759px]:pr-3"}`}
       style={{ background: dim ? "rgba(255,255,255,0.62)" : "rgba(255,255,255,0.9)", boxShadow: open ? `0 0 0 3px #F2C230, ${MM.shadowSoft}` : MM.shadowSoft, color: "#3b3127" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -589,7 +589,7 @@ function CatCount({ label, n, goal, open, dim }: { label: string | null; n: numb
         src={`${CAT_ASSETS}gatinho-card.webp`}
         alt=""
         draggable={false}
-        className={`shrink-0 rounded-xl object-cover ${dim ? "h-9 w-9" : "h-16 w-16 max-[759px]:h-12 max-[759px]:w-12"}`}
+        className={`shrink-0 rounded-none object-cover ${dim ? "h-9 w-9" : "h-16 w-16 max-[759px]:h-12 max-[759px]:w-12"}`}
       />
       <div className="flex flex-col items-start leading-none">
         {label && <span className="mb-1 text-[10px] font-semibold uppercase tracking-wide opacity-70">{label}</span>}
@@ -674,7 +674,7 @@ function Results({ hud, port, onAgain }: { hud: PaintHud; port: PaintPort; onAga
   const name = (slot: number) => (slot === port.me ? t("paintYou", "Você") : (port.info(slot)?.name ?? t("paintPlayer", "Jogador")))
   return (
     <div className="absolute inset-0 grid place-items-center p-4" style={{ background: MM.scrim }}>
-      <div className="w-full max-w-[420px] rounded-[20px] p-5" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
+      <div className="w-full max-w-[420px] rounded-none p-5" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
         <div className="flex items-center gap-2" style={{ color: MM.gold }}>
           <Trophy className="h-5 w-5" />
           <span className="text-[12px] font-bold uppercase tracking-wider">{t("paintResults", "Resultado")}</span>
@@ -694,7 +694,7 @@ function Results({ hud, port, onAgain }: { hud: PaintHud; port: PaintPort; onAga
           {rows.map((row) => (
             <li
               key={row.slot}
-              className="flex items-center justify-between rounded-[12px] px-3 py-2 text-[14px]"
+              className="flex items-center justify-between rounded-none px-3 py-2 text-[14px]"
               style={{ background: row.slot === r.winnerSlot ? MM.rubySoft : MM.card, border: `1px solid ${row.slot === r.winnerSlot ? MM.rubyBorder : MM.border}` }}
             >
               <span className="font-semibold">
@@ -717,7 +717,7 @@ function Results({ hud, port, onAgain }: { hud: PaintHud; port: PaintPort; onAga
             </li>
           ))}
         </ul>
-        <button type="button" onClick={onAgain} className="mt-4 w-full rounded-[14px] py-3 text-[15px] font-bold text-white" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}>
+        <button type="button" onClick={onAgain} className="mt-4 w-full rounded-none py-3 text-[15px] font-bold text-white" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}>
           {t("paintBackMenu", "Voltar ao menu")}
         </button>
       </div>

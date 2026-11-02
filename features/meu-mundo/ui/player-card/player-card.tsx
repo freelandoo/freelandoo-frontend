@@ -233,7 +233,7 @@ export default function PlayerCard({ tap, gone, dismiss, onClose, onMessage }: P
                 setLoad({ state: "loading" })
                 setAttempt((n) => n + 1)
               }}
-              className="inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3 font-semibold"
+              className="inline-flex h-9 items-center gap-1.5 rounded-none px-3 font-semibold"
               style={{ border: `1px solid ${MM.border}`, color: MM.text }}
             >
               <RotateCw className="h-4 w-4" />
@@ -380,7 +380,7 @@ function Stars({ avg, small }: { avg: number; small?: boolean }) {
 
 /** Botão da linha de ações: no celular o ícone vai em cima do texto (três cabem lado a lado). */
 const actionClass = (compact: boolean) =>
-  `inline-flex min-w-0 items-center justify-center rounded-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70] ${
+  `inline-flex min-w-0 items-center justify-center rounded-none font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5BE70] ${
     compact ? "h-[42px] flex-col gap-0.5 px-1 text-[10px]" : "h-11 gap-1 px-1 text-[12.5px]"
   }`
 
