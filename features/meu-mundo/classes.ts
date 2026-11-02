@@ -29,11 +29,12 @@ export const clanOfBody = (b: string | null | undefined): Clan | null => (!b || 
 /**
  * Arma de cada classe (MEU MUNDO 3D/pipeline/build_armas.py). -m63 (2026-11-02):
  * mais triângulos e os dois lados do material — com 1,8 mil e um lado só as armas
- * pareciam rachadas (dava para ver através).
+ * pareciam rachadas (dava para ver através). -m64: o mesmo passado no gltfpack
+ * (malha quantizada; ~26% menor, as texturas JPEG ficam como estão).
  */
 export const CLAN_WEAPON: Record<Clan, string> = {
-  raposa: "/meu-mundo/armas/v1/arma-cajado-m63.glb",
-  vampiro: "/meu-mundo/armas/v1/arma-espada-m63.glb",
+  raposa: "/meu-mundo/armas/v1/arma-cajado-m64.glb",
+  vampiro: "/meu-mundo/armas/v1/arma-espada-m64.glb",
 }
 
 /** Animações próprias da classe (golpes, guarda, morte), no esqueleto do Sergio. */

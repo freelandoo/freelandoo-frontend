@@ -54,8 +54,8 @@ const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
   // corpo de 4 m em escala 1 (Alex: "do tamanho do golem"; machado de 3 m)
   brute: { body: "brutamontes", scale: 1 },
 }
-/** O machado do Brutamontes (build_armas.py, 3 m no arquivo, origem na pegada). */
-export const AXE_URL = "/meu-mundo/armas/v1/arma-machado-m63.glb"
+/** O machado do Brutamontes (build_armas.py, 3 m no arquivo, origem na pegada; gltfpack). */
+export const AXE_URL = "/meu-mundo/armas/v1/arma-machado-m64.glb"
 /** Do punho às lâminas no eixo +Y do machado (m): o rastro roxo vai daqui até a ponta. */
 export const AXE_EDGE: [number, number] = [1.0, 2.05]
 type Seg = [number, number]
