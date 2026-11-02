@@ -9,6 +9,9 @@
 // Atributos da vida (0–1000) pesam com teto: força = dano (0,85×–1,35×),
 // velocidade = ritmo de ataque e passada, inteligência = aviso mais longo
 // (até +35%). Sem atributos, todos valem 300.
+// mm3d-59: DESTREZA = economia de fôlego (até 15% no ataque e na esquiva),
+// recuperação depois do golpe até 10% menor e 30% do peso no ranque do golpe
+// (a regra ÚNICA de golpe superior: inteligência 70% + destreza 30%).
 //
 // Coordenadas: x/z no chão, centro da arena na origem; rumo 0 = +z.
 
@@ -24,8 +27,9 @@ export interface Stats {
   strength: number
   speed: number
   intelligence: number
+  dexterity: number
 }
-const BASE_STATS: Stats = { strength: 300, speed: 300, intelligence: 300 }
+const BASE_STATS: Stats = { strength: 300, speed: 300, intelligence: 300, dexterity: 300 }
 
 // ── o jogador ──────────────────────────────────────────────────────────────
 /** Golpe do combo: duração, instante do corte, alcance, abertura (rad), dano, avanço (m/s até o corte). */
@@ -85,9 +89,9 @@ export const RANK = {
   /** Mais devagar no S (a preparação do golpe especial). */
   durK: [1, 1, 1, 1.15],
 }
-/** Chance de cada ranque para uma inteligência 0–1000. */
-export function rankOdds(intelligence: number): number[] {
-  const k = clamp(intelligence / 1000, 0, 1)
+/** Chance de cada ranque: inteligência (70%) e destreza (30%), 0–1000. Sem destreza = só a inteligência. */
+export function rankOdds(intelligence: number, dexterity: number = intelligence): number[] {
+  const k = 0.7 * clamp(intelligence / 1000, 0, 1) + 0.3 * clamp(dexterity / 1000, 0, 1)
   const w = RANK.weight0.map((a, i) => a + (RANK.weight1[i] - a) * k)
   const sum = w.reduce((a, b) => a + b, 0)
   return w.map((x) => x / sum)
@@ -342,6 +346,11 @@ export function statEffects(s: Stats) {
     move: 0.95 + 0.2 * k(s.speed),
     warn: 1 + 0.35 * k(s.intelligence),
     intelligence: clamp(s.intelligence, 0, 1000),
+    dexterity: clamp(s.dexterity ?? 300, 0, 1000),
+    /** Fôlego gasto (ataque e esquiva): até −15%. */
+    stamK: 1 - 0.15 * k(s.dexterity ?? 300),
+    /** Recuperação depois do corte: até −10%. */
+    recoverK: 1 - 0.1 * k(s.dexterity ?? 300),
   }
 }
 
@@ -559,8 +568,10 @@ export class Fight {
     if (p.state !== "dodge" && p.state !== "hurt" && p.state !== "down") p.stam = Math.min(PLAYER.stam, p.stam + PLAYER.stamRegen * DT * (p.state === "attack" ? 0.3 : 1))
 
     // Esquiva: corta o golpe (antes do corte) e a recuperação de qualquer golpe.
-    if (dodgePressed && p.stam >= DODGE.stam && (p.state === "idle" || (p.state === "attack" && (!p.struck || p.t > this.combo[p.combo].hitAt / p.rate + 0.08)))) {
-      p.stam -= DODGE.stam
+    const dodgeStam = DODGE.stam * this.fx.stamK
+    const atkStam = PLAYER.attackStam * this.fx.stamK
+    if (dodgePressed && p.stam >= dodgeStam && (p.state === "idle" || (p.state === "attack" && (!p.struck || p.t > this.combo[p.combo].hitAt / p.rate + 0.08)))) {
+      p.stam -= dodgeStam
       let dx = inp.mx
       let dz = inp.mz
       if (mag < 0.2) {
@@ -577,7 +588,7 @@ export class Fight {
 
     switch (p.state) {
       case "idle": {
-        if (attackPressed && p.stam >= PLAYER.attackStam) {
+        if (attackPressed && p.stam >= atkStam) {
           this.startSwing(0)
           faceTarget()
           break
@@ -591,8 +602,9 @@ export class Fight {
       }
       case "attack": {
         const sw = this.combo[p.combo]
-        const dur = (sw.dur * RANK.durK[p.rank]) / p.rate
         const hitAt = (sw.hitAt * RANK.durK[p.rank]) / p.rate
+        // Destreza encurta só a volta da arma (depois do corte), nunca o golpe.
+        const dur = hitAt + ((sw.dur * RANK.durK[p.rank]) / p.rate - hitAt) * this.fx.recoverK
         if (attackPressed && p.chain < MAX_CHAIN - 1) p.queued = true
         // Avança até o corte, depois para.
         const lunge = p.t < hitAt ? sw.lunge : 0
@@ -602,7 +614,7 @@ export class Fight {
           p.struck = true
           this.playerStrike(sw)
         }
-        if (p.struck && p.queued && p.t >= hitAt + CHAIN_AFTER && p.stam >= PLAYER.attackStam) {
+        if (p.struck && p.queued && p.t >= hitAt + CHAIN_AFTER && p.stam >= atkStam) {
           this.startSwing(p.chain + 1)
           faceTarget()
         } else if (p.t >= dur) this.setPlayer("idle")
@@ -646,8 +658,8 @@ export class Fight {
   /** Golpe novo: o ranque é sorteado (inteligência puxa para os fortes). `chain` = quantos já seguidos. */
   private startSwing(chain: number) {
     const p = this.me
-    p.stam -= PLAYER.attackStam
-    const odds = rankOdds(this.fx.intelligence)
+    p.stam -= PLAYER.attackStam * this.fx.stamK
+    const odds = rankOdds(this.fx.intelligence, this.fx.dexterity)
     let roll = this.R()
     let rank = 0 as Rank
     for (let i = 0; i < odds.length; i++) {

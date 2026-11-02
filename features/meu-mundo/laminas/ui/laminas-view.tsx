@@ -27,8 +27,9 @@ import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import { FightPlate, plateHeight, plateWidth, usePlateSize } from "../../ui/hud/fight-plate"
 import { PORTRAIT } from "../../ui/portraits"
 import type { BodyId } from "../../types"
-import { getLife } from "../../data"
+import { finishFight, getLife, startFight, type FightOrigin, type FightTicket, type Receipt } from "../../data"
 import { getToken } from "@/lib/auth"
+import { ReceiptLines } from "../../ui/rewards/receipt-lines"
 import { createLaminasGame, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
 import type { MobKind } from "../sim/fight"
 
@@ -98,6 +99,7 @@ export function LaminasView({ body, look, onExit, encounter, onEncounterEnd, sta
           choice={fight.choice}
           stage={stage}
           portal={!!encounter}
+          mobId={encounter?.mobId}
           onEnd={(win) => {
             if (encounter && !reported.current) {
               reported.current = true
@@ -186,6 +188,7 @@ function LaminasScreen({
   choice,
   stage,
   portal,
+  mobId,
   onEnd,
   onAgain,
   onMenu,
@@ -195,6 +198,7 @@ function LaminasScreen({
   choice: Choice
   stage: "arena" | "ring"
   portal: boolean
+  mobId?: number
   onEnd: (win: boolean) => void
   onAgain?: () => void
   onMenu: () => void
@@ -214,29 +218,80 @@ function LaminasScreen({
     endRef.current = onEnd
   }, [onEnd])
 
+  // ── mm3d-59: o servidor abre a luta (semente, atributos, kit) e confere o fim ──
+  // null = pedindo; "offline" = sem ticket (treino sem prêmio).
+  const [ticket, setTicket] = useState<FightTicket | "offline" | null>(null)
+  const [receipt, setReceipt] = useState<Receipt | null>(null)
+  const [settling, setSettling] = useState(false)
+  useEffect(() => {
+    let alive = true
+    const token = getToken()
+    if (!token) {
+      setTicket("offline")
+      return
+    }
+    const origin: FightOrigin = portal ? "mob" : stage === "ring" ? "boxe" : "laminas"
+    const ask = async (tries: number): Promise<void> => {
+      const r = await startFight(token, { origin, kind: choice.kind, level: choice.level, mobId })
+      if (!alive) return
+      if (r.ok) return setTicket(r.data.fight)
+      // o "Lutar" vai pela sala e o ticket por HTTP: a sala pode ainda não ter visto
+      if (r.code === "mob" && tries > 0) {
+        await new Promise((ok) => setTimeout(ok, 400))
+        return ask(tries - 1)
+      }
+      setTicket("offline")
+    }
+    void ask(3)
+    return () => {
+      alive = false
+    }
+  }, [choice, stage, portal, mobId])
+  const ticketRef = useRef(ticket)
+  useEffect(() => {
+    ticketRef.current = ticket
+  }, [ticket])
+
+  const armed = ticket !== null
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    const tk = ticketRef.current
+    if (!canvas || !armed) return
     let alive = true
     let endTimer: ReturnType<typeof setTimeout> | null = null
+    const fromServer = tk && tk !== "offline" ? tk : null
     try {
       gameRef.current = createLaminasGame({
         canvas,
         body,
         look,
-        setup: { kind: choice.kind, level: choice.level },
+        setup: fromServer
+          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats }
+          : { kind: choice.kind, level: choice.level },
+        kit: fromServer ? (fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         stage,
         onReady: () => alive && setStatus("ready"),
         onHud: (h) => alive && setHud(h),
         onEnd: (win) => {
           endRef.current(win)
           endTimer = setTimeout(() => alive && setResult(win), 1400)
+          // o prêmio é o do SERVIDOR: manda a gravação e espera o recibo
+          const token = getToken()
+          const frames = gameRef.current?.frames()
+          if (fromServer && token && frames) {
+            setSettling(true)
+            void finishFight(token, fromServer.ticket, frames).then((r) => {
+              if (!alive) return
+              setSettling(false)
+              if (r.ok) setReceipt(r.data.receipt)
+            })
+          }
         },
         onError: () => alive && setStatus("error"),
       })
       // atributos da vida (inteligência puxa os golpes fortes; força e velocidade no dano/ritmo)
       const token = getToken()
-      if (token)
+      if (token && !fromServer)
         void getLife(token).then((r) => {
           if (!alive || !r.ok || !r.data) return
           const at = r.data.character.attributes
@@ -252,7 +307,7 @@ function LaminasScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [body, look, choice, stage])
+  }, [body, look, choice, stage, armed])
 
   // a passagem violeta do portal some quando a cena está pronta
   useEffect(() => {
@@ -435,6 +490,20 @@ function LaminasScreen({
                   ? t("laminasLosePortal", "O monstro continua na cidade. Volte quando estiver pronto.")
                   : t("laminasLoseTrain", "Leia o chão vermelho, esquive e corte na brecha.")}
             </p>
+            {/* mm3d-59: o prêmio é o que o SERVIDOR conferiu (recibo) */}
+            <div className="mt-3">
+              {settling ? (
+                <p className="text-[13px]" style={{ color: MM.muted }}>
+                  {t("fightChecking", "Conferindo a luta…")}
+                </p>
+              ) : receipt ? (
+                <ReceiptLines receipt={receipt} />
+              ) : ticket === "offline" ? (
+                <p className="text-[12px]" style={{ color: MM.muted }}>
+                  {t("fightOffline", "Treino sem conexão com o servidor: sem prêmio desta vez.")}
+                </p>
+              ) : null}
+            </div>
             <div className="mt-4 grid gap-2">
               {onAgain && (
                 <button type="button" onClick={onAgain} className="rounded-[16px] px-3 py-3 text-[16px] font-black italic" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}`, color: "#fff" }}>

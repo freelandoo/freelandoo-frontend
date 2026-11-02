@@ -34,6 +34,9 @@ import type {
   WardrobeResult,
 } from "./types"
 import type { Clan, Sex } from "./classes"
+import type { PracticeAttr } from "./types"
+import type { MobKind } from "./laminas/sim/fight"
+import type { FightFrames } from "./laminas/sim/replay"
 
 export type NeighborhoodResult =
   | { ok: true; payload: ScenePayload }
@@ -192,6 +195,56 @@ export const postEndVisit = (token: string, id: string) =>
 // ═══ mm3d-13: vida do hóspede (tela de STATUS) ═══════════════════════════════
 /** Hóspede + carteira + diário + linha do tempo + catálogo (a tela de STATUS). */
 export const getLife = (token: string) => call<LifeFull>(token, "GET", "/life")
+
+// ═══ mm3d-59: luta conferida pelo servidor, recibos e XP de aventura ═══════
+export type FightOrigin = "laminas" | "boxe" | "mob" | "tutorial"
+export interface FightTicket {
+  ticket: string
+  origin: FightOrigin
+  setup: {
+    kind: MobKind
+    level: number
+    seed: number
+    stats: { strength: number; speed: number; intelligence: number; dexterity: number }
+    style: "mage" | null
+  }
+  expiresAt: string
+}
+export interface LevelDelta {
+  xp: number
+  total: number
+  from: number
+  to: number
+  into: number
+  need: number
+  unlocks: string[]
+}
+/** O recibo de uma concessão (o eventId é a identidade da celebração). */
+export interface Receipt {
+  eventId: string
+  source: string
+  actionKey: string
+  rules: string
+  activeMs: number
+  result: Record<string, unknown> & { win?: boolean; abandoned?: boolean; kind?: string }
+  deltas: {
+    xp?: LevelDelta
+    attrs?: Partial<Record<PracticeAttr, number>>
+    vitals?: Partial<Record<"energy" | "stress" | "satiety" | "mood" | "health", number>>
+    coins?: number
+  }
+  items: { id: string; qty: number; rarity?: string }[]
+  at: string
+}
+export interface AdventureState {
+  adventure: { level: number; into: number; need: number; total: number; unlocks: Record<string, string[]>; rules: string }
+  receipts: Receipt[]
+}
+export const startFight = (token: string, body: { origin: FightOrigin; kind?: MobKind; level?: number; mobId?: number }) =>
+  call<{ fight: FightTicket; abandoned: Receipt[] }>(token, "POST", "/fight/start", body)
+export const finishFight = (token: string, ticket: string, frames: FightFrames) =>
+  call<{ receipt: Receipt; replay: boolean }>(token, "POST", "/fight/finish", { ticket, frames })
+export const getAdventure = (token: string) => call<AdventureState>(token, "GET", "/adventure")
 /** Hospital do centro (mm3d-26): planta por dentro, leito do usuário, régua da alta e a vida agora. */
 export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "/hospital")
 /** Interior de um prédio do centro (mm3d-37): a planta, buscada ao entrar. */

@@ -38,6 +38,7 @@ import { BoxeAudio } from "./audio"
 import type { BodyId } from "../../types"
 import { COMBO, DT, Fight, MOBS, POWER, RANKS, mobAttack, type Rank, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
 import { buildArena } from "./arena-view"
+import { pushFrame, quantizeInput, type FightFrames } from "../sim/replay"
 import { buildRing } from "./ring-view"
 import { BoxingGloves } from "./gloves"
 import { MonsterModel, AXE_URL, AXE_EDGE } from "./monster-view"
@@ -70,6 +71,12 @@ export interface LaminasGameOptions {
   onHud?: (h: LaminasHud) => void
   onEnd?: (win: boolean) => void
   onError?: (reason: "context-lost") => void
+  /**
+   * mm3d-59: luta com ticket do servidor — a semente, os atributos e o kit vêm
+   * no `setup` e não mudam mais (o servidor re-simula a gravação).
+   * "mage" | "blade" decide o kit pela CLASSE; sem = o corpo decide (treino antigo).
+   */
+  kit?: "mage" | "blade"
 }
 
 export interface LaminasGameHandle {
@@ -82,6 +89,8 @@ export interface LaminasGameHandle {
   dodge: () => void
   /** Solta o poder (barra cheia). */
   power: () => void
+  /** mm3d-59: a entrada gravada (1 bloco por trecho igual) para o servidor conferir. */
+  frames: () => FightFrames
   dispose: () => void
 }
 
@@ -273,7 +282,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
 
   // ── a luta ───────────────────────────────────────────────────────────────
   // a raposa luta como MAGA (bolas de fogo); o resto corta (mm3d-58)
-  const fight = new Fight({ ...opts.setup, style: opts.stage !== "ring" && clanOfBody(opts.body) === "raposa" ? "mage" : undefined })
+  // mm3d-59: com ticket o kit é da CLASSE (vem do servidor); a skin só muda a aparência.
+  const mage = opts.kit ? opts.kit === "mage" : opts.stage !== "ring" && clanOfBody(opts.body) === "raposa"
+  const fight = new Fight({ ...opts.setup, style: mage ? "mage" : undefined })
+  const frames: FightFrames = []
 
   // ── o jogador e a espada ─────────────────────────────────────────────────
   const lib = new AvatarLibrary(scene, false, false, 30, false, false, true, false, true)
@@ -727,7 +739,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     simClock += dt
     let steps = 0
     while (ran + DT <= simClock && steps < 8) {
-      const inp = readInput()
+      // quantizada: o aparelho joga exatamente o que o servidor vai re-simular
+      const inp = quantizeInput(readInput())
+      if (!fight.over) pushFrame(frames, inp)
       wantAttack = false
       wantDodge = false
       wantPower = false
@@ -908,7 +922,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     attack,
     dodge,
     power,
-    setStats: (st) => fight.setStats(st),
+    setStats: (st) => {
+      // com ticket os atributos são os do servidor (a gravação depende deles)
+      if (!opts.kit) fight.setStats(st)
+    },
+    frames: () => frames,
     dispose() {
       if (disposed) return
       disposed = true

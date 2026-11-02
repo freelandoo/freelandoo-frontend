@@ -257,6 +257,8 @@ export interface NeighborhoodPayload {
 // traz só o hóspede e a carteira.
 
 export type LifeTrained = "intelligence" | "strength" | "speed"
+/** mm3d-59: os quatro atributos de prática. */
+export type PracticeAttr = "strength" | "intelligence" | "dexterity" | "speed"
 
 export type LifeActivity = "idle" | "lying" | "sleeping" | "studying" | "training" | "working" | "hospital" | "praying" | "jail"
 
@@ -281,9 +283,13 @@ export interface LifeCharacter {
   body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bmi: number; bodyHint: BodyId }
   /** Inteligência, força e velocidade 0–1000; fertilidade 0–100. */
   attributes: Record<"intelligence" | "strength" | "speed" | "fertility", number> & {
+    /** mm3d-59: destreza (0–1000). Servidor antigo não manda. */
+    dexterity?: number
     /** Maior valor já alcançado e o piso que não se perde mais (0–1000). */
-    peaks: Record<LifeTrained, number>
-    floors: Record<LifeTrained, number>
+    peaks: Record<LifeTrained, number> & { dexterity?: number }
+    floors: Record<LifeTrained, number> & { dexterity?: number }
+    /** mm3d-59: orçamento de prática do dia (pontos-base gastos / teto). */
+    budgetToday?: Record<PracticeAttr, { used: number; cap: number }>
     /** Horas que ainda rendem hoje (estudo e treino têm teto por dia). */
     usefulToday: Record<"studying" | "training", { done: number; cap: number }>
   }
