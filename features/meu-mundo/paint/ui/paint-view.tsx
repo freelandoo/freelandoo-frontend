@@ -13,12 +13,14 @@
 // o MURO turquesa, cuja munição vem do ícone da Freelandoo).
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
-import { ArrowBigUp, Cat, DoorOpen, Droplet, Loader2, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
+import { ArrowBigUp, Cat, DoorOpen, Loader2, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId } from "../../types"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
+import { FightPlate, usePlateSize } from "../../ui/hud/fight-plate"
+import { PORTRAIT } from "../../ui/portraits"
 import { createPaintGame, type PaintGameHandle, type PaintHud, type PaintNotice } from "../engine/paint-game"
 import { LocalPort, type PaintPort } from "../engine/port"
 import { CAT_ASSETS } from "../engine/cat-herd"
@@ -399,7 +401,7 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
 
       {status === "ready" && hud && (
         <>
-          <Hud hud={hud} touch={isTouch} hurt={hurt} onLeave={onLeave} />
+          <Hud hud={hud} touch={isTouch} hurt={hurt} body={body} onLeave={onLeave} />
           {isTouch ? <TouchControls gameRef={gameRef} hud={hud} /> : <DesktopColors hud={hud} onPick={(c) => gameRef.current?.selectColor(c)} />}
           {toast && (
             <div className="pointer-events-none absolute left-1/2 -translate-x-1/2" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 64px)" }}>
@@ -462,34 +464,35 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
   )
 }
 
-function Hud({ hud, touch, hurt, onLeave }: { hud: PaintHud; touch: boolean; hurt: number; onLeave: () => void }) {
+function Hud({ hud, touch, hurt, body, onLeave }: { hud: PaintHud; touch: boolean; hurt: number; body: BodyId; onLeave: () => void }) {
   const t = useTranslations("MeuMundo")
+  const { pw } = usePlateSize()
+  // tremida da placa no dano (antes era remontar pela key, o que apagaria o fantasma da barra)
+  const plateRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!hurt) return
+    plateRef.current?.animate(
+      [{ transform: "translateX(0)" }, { transform: "translateX(-5px)" }, { transform: "translateX(4px)" }, { transform: "translateX(-2px)" }, { transform: "translateX(0)" }],
+      { duration: 240, easing: "ease-out" },
+    )
+  }, [hurt])
   const goal = TUNING.catsToPortal
   const mine = hud.teamCats[hud.myTeam]
   const other = hud.teams > 1 ? hud.teamCats[1 - hud.myTeam] : null
   return (
     <>
-      {/* sangue (mm3d-38: barra no lugar dos corações) */}
+      {/* sangue: a placa do Cat demon (retrato + barra), sem fôlego — o Paint não tem */}
       <div
-        key={hurt}
+        ref={plateRef}
         role="meter"
         aria-label={t("paintBlood", "Sangue")}
         aria-valuemin={0}
         aria-valuemax={TUNING.hpMax}
         aria-valuenow={hud.hp}
-        className="pointer-events-none absolute flex items-center gap-1.5"
+        className="pointer-events-none absolute"
         style={{ top: SAFE.top, left: SAFE.left }}
       >
-        <Droplet className="h-6 w-6 drop-shadow max-[759px]:h-5 max-[759px]:w-5" strokeWidth={2.2} style={{ color: "#C8203F", fill: "#E0284A" }} />
-        <div className="overflow-hidden rounded-full" style={{ height: 14, width: "min(180px, 34vw)", background: "rgba(255,255,255,0.55)", boxShadow: "inset 0 0 0 1.5px rgba(80,60,50,0.45)" }}>
-          <div
-            className="h-full rounded-full"
-            style={{ transition: "width 200ms", width: `${(hud.hp / TUNING.hpMax) * 100}%`, background: hud.hp <= TUNING.hpMax * 0.3 ? "linear-gradient(90deg, #7a0f1e, #C8203F)" : "linear-gradient(90deg, #9E1B2B, #E0284A)" }}
-          />
-        </div>
-        <span className="text-[13px] font-bold tabular-nums drop-shadow" style={{ color: "#3b3127" }}>
-          {hud.hp}
-        </span>
+        <FightPlate pw={Math.max(52, Math.round(pw * 0.85))} barK={2.6} portrait={PORTRAIT[body]} name={t("fightYou", "VOCÊ")} hp={hud.hp} hpMax={TUNING.hpMax} />
       </div>
 
       {/* tempo / contagem / chefão */}

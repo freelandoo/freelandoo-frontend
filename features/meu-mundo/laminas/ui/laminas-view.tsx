@@ -24,6 +24,8 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
+import { FightPlate, plateHeight, plateWidth, usePlateSize } from "../../ui/hud/fight-plate"
+import { PORTRAIT } from "../../ui/portraits"
 import type { BodyId } from "../../types"
 import { getLife } from "../../data"
 import { getToken } from "@/lib/auth"
@@ -53,6 +55,10 @@ const VIOLET = "#B84DFF"
 const BG = "radial-gradient(120% 90% at 50% 0%, #f7b267 0%, #b5502b 50%, #3a1a12 100%)"
 
 type Choice = { kind: MobKind; level: number }
+
+/** Retrato do inimigo na placa: o corpo que a cena desenha (monster-view.ts RIGGED/HUMAN). */
+const MOB_BODY: Partial<Record<MobKind, BodyId>> = { soldier: "golem", golem: "ciborgue", harpy: "garras" }
+const RING_BODY: Record<MobKind, BodyId> = { soldier: "normal", wolf: "slim", golem: "fat", harpy: "female", brute: "strong" }
 
 export function useMobName(ring = false) {
   const t = useTranslations("MeuMundo")
@@ -259,51 +265,60 @@ function LaminasScreen({
   const stPct = hud ? Math.max(0, hud.stam) : 100
   const pwPct = hud ? Math.max(0, Math.min(100, hud.power)) : 0
   const pwFull = pwPct >= 100
+  const { pw, vw } = usePlateSize()
+  // celular em pé: as duas placas não cabem lado a lado — a do inimigo desce para a direita
+  const narrow = vw < plateWidth(pw) * 2 + 140
+  const foeBody = stage === "ring" ? RING_BODY[choice.kind] : MOB_BODY[choice.kind]
+  const foeHp = hud ? hud.mobs.reduce((s, m) => s + Math.max(0, m.hp), 0) : 0
+  const foeMax = hud ? hud.mobs.reduce((s, m) => s + m.hpMax, 0) : 1
+  const foeTop = narrow ? `calc(${SAFE.top} + 52px)` : SAFE.top
   return (
     <div className="absolute inset-0">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("laminasAria", "Arena das Lâminas")} />
 
-      {/* inimigos */}
+      {/* inimigos: a placa do Cat demon, espelhada (o retrato fica do lado de fora) */}
       {hud && (
-        <div className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 flex-col items-center gap-1" style={{ top: SAFE.top }}>
-          <div className="text-[13px] font-black uppercase italic tracking-[0.14em]" style={{ color: SAND, textShadow: "0 2px 0 rgba(0,0,0,.4)" }}>
-            {mobName(choice.kind)}
-            {choice.kind === "soldier" ? ` · ${t("laminasLevel", "Nível {n}").replace("{n}", String(choice.level))}` : ""}
-          </div>
-          <div className="flex gap-1.5">
-            {hud.mobs.map((m) => (
-              <div key={m.id} className="h-3 overflow-hidden rounded-full" style={{ width: hud.mobs.length > 1 ? 110 : 280, background: "rgba(0,0,0,.45)", border: `1px solid ${MM.border}` }}>
-                <div className="h-full rounded-full" style={{ width: `${(100 * m.hp) / m.hpMax}%`, background: `linear-gradient(90deg, ${VIOLET}, #7a2bd6)`, transition: "width 120ms linear" }} />
+        <div className="pointer-events-none absolute" style={narrow ? { top: foeTop, right: SAFE.right } : { top: foeTop, left: "50%", transform: "translateX(-50%)" }}>
+          <FightPlate
+            pw={pw}
+            mirrored
+            portrait={foeBody ? PORTRAIT[foeBody] : null}
+            name={`${mobName(choice.kind)}${choice.kind === "soldier" ? ` ${choice.level}` : ""}`}
+            hp={foeHp}
+            hpMax={foeMax}
+          >
+            {hud.mobs.length > 1 && (
+              <div className="mt-1 flex justify-end gap-1" style={{ paddingRight: pw * 0.62 }}>
+                {hud.mobs.map((m) => (
+                  <div key={m.id} className="h-1.5 overflow-hidden" style={{ width: pw * 0.7, background: "rgba(5,3,8,.82)", outline: "1px solid rgba(214,167,91,.6)", transform: "skewX(-20deg)" }}>
+                    <div className="ml-auto h-full" style={{ width: `${(100 * Math.max(0, m.hp)) / m.hpMax}%`, background: "linear-gradient(180deg, #ff168a, #bf0052)", transition: "width 140ms linear" }} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </FightPlate>
         </div>
       )}
 
       {/* aviso de golpe */}
       {hud?.danger && !hud.over && (
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[22px] font-black italic tracking-wide" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 44px)", color: "#FF5A5A", textShadow: "0 2px 0 rgba(0,0,0,.45)" }}>
+        <div
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[22px] font-black italic tracking-wide"
+          style={{ top: `calc(${foeTop} + ${Math.round(plateHeight(pw)) + 6}px)`, color: "#FF5A5A", textShadow: "0 2px 0 rgba(0,0,0,.45)" }}
+        >
           {t("laminasDodge", "ESQUIVE!")}
         </div>
       )}
 
-      {/* eu: vida e fôlego */}
-      <div className="pointer-events-none absolute flex w-[min(52vw,260px)] flex-col gap-1" style={{ left: SAFE.left, top: isTouch ? SAFE.top : undefined, bottom: isTouch ? undefined : SAFE.bottom }}>
-        <div className="h-4 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,.45)", border: `1px solid ${MM.border}` }}>
-          <div className="h-full rounded-full" style={{ width: `${hpPct}%`, background: "linear-gradient(90deg, #ff5a6e, #c3123a)", transition: "width 120ms linear" }} />
-        </div>
-        <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,.45)" }}>
-          <div className="h-full rounded-full" style={{ width: `${stPct}%`, background: "linear-gradient(90deg, #ffe08a, #e5be70)" }} />
-        </div>
-        {/* poder: enche com os acertos; cheia = brilha */}
-        <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,.45)", boxShadow: pwFull ? "0 0 10px 2px rgba(255,170,60,.85)" : undefined }}>
-          <div className="h-full rounded-full" style={{ width: `${pwPct}%`, background: "linear-gradient(90deg, #8a5cff, #ffb347)", transition: "width 160ms linear" }} />
-        </div>
-        {!isTouch && pwFull && (
-          <div className="text-[12px] font-black uppercase italic tracking-wide" style={{ color: "#ffb347", textShadow: "0 2px 0 rgba(0,0,0,.45)" }}>
-            {t("laminasPowerReady", "PODER pronto — Q")}
-          </div>
-        )}
+      {/* eu: a placa com retrato, sangue, fôlego e poder (no celular em cima, longe do joystick) */}
+      <div className="pointer-events-none absolute" style={{ left: SAFE.left, top: isTouch ? SAFE.top : undefined, bottom: isTouch ? undefined : SAFE.bottom }}>
+        <FightPlate pw={pw} portrait={PORTRAIT[body]} name={t("fightYou", "VOCÊ")} hp={hpPct} hpMax={100} stam={stPct / 100} power={{ v: pwPct / 100, ready: pwFull }}>
+          {!isTouch && pwFull && (
+            <div className="mt-1 text-[12px] font-black uppercase italic tracking-wide" style={{ paddingLeft: pw * 0.62, color: "#ffb347", textShadow: "0 2px 0 rgba(0,0,0,.45)" }}>
+              {t("laminasPowerReady", "PODER pronto — Q")}
+            </div>
+          )}
+        </FightPlate>
       </div>
 
       {/* som e sair */}

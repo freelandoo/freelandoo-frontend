@@ -889,6 +889,12 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   if (process.env.NODE_ENV !== "production") {
     w.__laminasFill = () => (fight.me.power = POWER.max)
     w.__laminasRank = (r: Rank | null) => (fight.forceRank = r)
+    // placa de luta (2026-11-02): põe vida/fôlego e a fração de vida dos inimigos
+    w.__laminasVitals = (hp: number, stam: number, mobFrac?: number) => {
+      fight.me.hp = hp
+      fight.me.stam = stam
+      if (mobFrac !== undefined) for (const m of fight.mobs) m.hp = Math.round(m.hpMax * mobFrac)
+    }
   }
 
   return {
