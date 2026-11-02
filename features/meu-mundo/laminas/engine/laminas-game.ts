@@ -268,11 +268,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       const thumb = hero.bone(GRIP_BONES.thumb)
       if (!hand || !index || !thumb) return
       grip = new WeaponGrip(scene, { hand, index, thumb }, weaponRoot, "laminas-weapon")
-      // Tamanho das armas (regra do Alex, 2026-11-01): espada 2,2 m adulto / 1 m
-      // jovem; cajado 2,5 m adulto / 1,5 m jovem. A escala vai na raiz da pegada,
-      // então o arco da lâmina e a pedra do cajado acompanham.
-      if (clan === "vampiro") grip.root.scaling.setAll((adult ? 2.2 : 1) / SWORD_LEN)
-      else if (clan === "raposa") grip.root.scaling.setAll((adult ? 2.5 : 1.5) / STAFF_LEN)
+      // Tamanho das armas (regra do Alex, 2026-11-01): espada e cajado 3 m no
+      // adulto / 1,8 m no jovem. A escala vai na raiz da pegada, então o arco da
+      // lâmina e a pedra do cajado acompanham.
+      if (clan === "vampiro") grip.root.scaling.setAll((adult ? 3 : 1.8) / SWORD_LEN)
+      else if (clan === "raposa") grip.root.scaling.setAll((adult ? 3 : 1.8) / STAFF_LEN)
       weaponRoot.setEnabled(true)
     }
   }
