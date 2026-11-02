@@ -21,7 +21,10 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { ChevronLeft, ChevronRight, Loader2, Wind, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { archivo } from "../status/evo-skin"
+import gsap from "gsap"
+import { archivo, cinzel } from "../status/evo-skin"
+import { Gear, SteamFrame } from "../kit/steam/steam-frame"
+import { currentUiFx } from "../kit/steam/fx-tier"
 import { MM } from "./tokens"
 import s from "./hud.module.css"
 
@@ -167,6 +170,28 @@ export function Drawer({
     if (navRef.current?.contains(document.activeElement)) pullRef.current?.focus({ preventScroll: true })
   }, [open])
 
+  // mm3d-60: abertura em coreografia (GSAP) — o painel desliza (CSS), o halo
+  // da borda acende, as engrenagens do título dão um giro curto, os cards
+  // entram em sequência e um reflexo corre o friso de cima. ~600 ms, só
+  // transform/opacity (os cards ficam opacos; só deslizam). Gráficos baixos
+  // ou movimento reduzido: sem coreografia.
+  useEffect(() => {
+    const nav = navRef.current
+    if (!open || !nav || currentUiFx() === "low") return
+    nav.dataset.anim = ""
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ onComplete: () => void delete nav.dataset.anim })
+      tl.fromTo(`.${s.drawerGlow}`, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power2.out" }, 0.05)
+      tl.fromTo(`.${s.headGear}`, { rotate: -120 }, { rotate: 0, duration: 0.6, ease: "power3.out" }, 0)
+      tl.fromTo(`.${s.item}`, { x: 38 }, { x: 0, duration: 0.42, ease: "power3.out", stagger: 0.045, clearProps: "transform" }, 0.06)
+      tl.fromTo(`.${s.drawerSweep}`, { xPercent: -110, opacity: 1 }, { xPercent: 300, opacity: 0, duration: 0.75, ease: "power2.inOut" }, 0.18)
+    }, nav)
+    return () => {
+      ctx.revert()
+      delete nav.dataset.anim
+    }
+  }, [open])
+
   const down = (from: "pull" | "drawer") => (e: React.PointerEvent) => {
     if (drag.current || (e.pointerType === "mouse" && e.button !== 0)) return
     drag.current = { id: e.pointerId, x: e.clientX, from }
@@ -236,12 +261,20 @@ export function Drawer({
         onPointerUp={up}
         onPointerCancel={up}
       >
+        <span aria-hidden className={s.drawerGlow} />
+        <span aria-hidden className={s.drawerSweep} />
         <div className={s.head}>
-          <div className="min-w-0">
-            <h2 className={s.title}>{heading}</h2>
-            <div className={s.titleRule} />
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Gear size={20} className={s.headGear} />
+            <h2 className={`${cinzel.className} ${s.title} min-w-0 truncate`}>{heading}</h2>
+            <Gear size={20} className={s.headGear} />
           </div>
-          <button type="button" onClick={close} className={s.close} aria-label={t("menuClose", "Fechar o menu")}>
+          <div className={s.crest} aria-hidden>
+            <span className={s.crestLine} />
+            <span className={s.crestDot} />
+            <span className={s.crestLineR} />
+          </div>
+          <button type="button" onClick={close} className={`${s.close} absolute right-0 top-1/2 -translate-y-1/2`} aria-label={t("menuClose", "Fechar o menu")}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -300,7 +333,7 @@ export function MenuItem({ label, icon, onSelect, hint, disabled, active, badge,
     >
       <span className={s.icon}>{icon}</span>
       <span className={s.text}>
-        <span className={s.label}>{label}</span>
+        <span className={`${cinzel.className} ${s.label}`}>{label}</span>
         {hint && <span className={s.hint}>{hint}</span>}
       </span>
       {badge && <span className={s.badge}>{badge}</span>}
@@ -414,15 +447,15 @@ export function EvoDialog({
         if (e.target === e.currentTarget) onClose?.()
       }}
     >
-      <div role="dialog" aria-modal="true" aria-labelledby={labelId} className={`${s.panel} ${s.enter} relative flex max-h-full w-full ${width} flex-col overflow-hidden`}>
-        <div className="flex max-h-[calc(100dvh-24px)] min-h-0 flex-col">
+      <div role="dialog" aria-modal="true" aria-labelledby={labelId} className={`${s.enter} relative flex max-h-full w-full ${width} flex-col`}>
+        <SteamFrame className="max-h-[calc(100dvh-24px)] min-h-0" cornerSize={42}>
           <div className="relative px-5 pb-3 pt-4 max-[759px]:px-4 max-[759px]:pb-2 max-[759px]:pt-3">
             {eyebrow && (
               <div className={`${archivo.className} text-[11px] font-semibold uppercase tracking-[0.2em]`} style={{ color: MM.gold }}>
                 {eyebrow}
               </div>
             )}
-            <h2 id={labelId} className={`${archivo.className} mt-0.5 pr-12 text-[20px] font-bold leading-tight max-[759px]:text-[17px]`} style={{ color: MM.text }}>
+            <h2 id={labelId} className={`${cinzel.className} mt-0.5 pr-12 text-[20px] font-bold uppercase leading-tight tracking-[0.06em] max-[759px]:text-[17px]`} style={{ color: "#FFD68A", textShadow: "0 2px 0 #000" }}>
               {title}
             </h2>
             {onClose && (
@@ -444,7 +477,7 @@ export function EvoDialog({
               {footer}
             </div>
           )}
-        </div>
+        </SteamFrame>
       </div>
     </div>
   )

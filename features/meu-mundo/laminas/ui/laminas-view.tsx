@@ -30,6 +30,7 @@ import type { BodyId } from "../../types"
 import { finishFight, getLife, startFight, type FightOrigin, type FightTicket, type Receipt } from "../../data"
 import { getToken } from "@/lib/auth"
 import { ReceiptLines } from "../../ui/rewards/receipt-lines"
+import { VictoryButton, VictoryPanel } from "../../ui/rewards/victory-panel"
 import { celebrate, hold } from "../../ui/rewards/reward-bus"
 import { createLaminasGame, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
 import type { MobKind } from "../sim/fight"
@@ -502,48 +503,42 @@ function LaminasScreen({
         </div>
       )}
 
-      {/* fim */}
+      {/* fim — mm3d-60: celebração steampunk (mesmos textos, mesmas ações) */}
       {result !== null && (
-        <div className="absolute inset-0 grid place-items-center p-4" style={{ background: "rgba(6,8,12,.55)" }}>
-          <div className="w-full max-w-[380px] rounded-none p-5 text-center" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
-            <h2 className="text-[30px] font-black italic" style={{ color: result ? "#FFD23F" : MM.danger }}>
-              {result ? t("laminasWin", "VITÓRIA!") : t("laminasLose", "Você caiu")}
-            </h2>
-            <p className="mt-2 text-[14px]" style={{ color: MM.muted }}>
-              {result
-                ? portal
-                  ? t("laminasWinPortal", "O monstro foi derrotado e sumiu da cidade.")
-                  : t("laminasWinTrain", "Mais um treino vencido. Os Sete estão de olho.")
-                : portal
-                  ? t("laminasLosePortal", "O monstro continua na cidade. Volte quando estiver pronto.")
-                  : t("laminasLoseTrain", "Leia o chão vermelho, esquive e corte na brecha.")}
-            </p>
-            {/* mm3d-59: o prêmio é o que o SERVIDOR conferiu (recibo) */}
-            <div className="mt-3">
-              {settling ? (
-                <p className="text-[13px]" style={{ color: MM.muted }}>
-                  {t("fightChecking", "Conferindo a luta…")}
-                </p>
-              ) : receipt ? (
-                <ReceiptLines receipt={receipt} />
-              ) : ticket === "offline" ? (
-                <p className="text-[12px]" style={{ color: MM.muted }}>
-                  {t("fightOffline", "Treino sem conexão com o servidor: sem prêmio desta vez.")}
-                </p>
-              ) : null}
-            </div>
-            <div className="mt-4 grid gap-2">
-              {onAgain && (
-                <button type="button" onClick={onAgain} className="rounded-none px-3 py-3 text-[16px] font-black italic" style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}`, color: "#fff" }}>
-                  {t("laminasAgain", "Lutar de novo")}
-                </button>
-              )}
-              <button type="button" onClick={onMenu} className="rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+        <VictoryPanel
+          win={result}
+          title={result ? t("laminasWin", "VITÓRIA!") : t("laminasLose", "Você caiu")}
+          subtitle={
+            result
+              ? portal
+                ? t("laminasWinPortal", "O monstro foi derrotado e sumiu da cidade.")
+                : t("laminasWinTrain", "Mais um treino vencido. Os Sete estão de olho.")
+              : portal
+                ? t("laminasLosePortal", "O monstro continua na cidade. Volte quando estiver pronto.")
+                : t("laminasLoseTrain", "Leia o chão vermelho, esquive e corte na brecha.")
+          }
+          actions={
+            <>
+              {onAgain && <VictoryButton onClick={onAgain}>{t("laminasAgain", "Lutar de novo")}</VictoryButton>}
+              <VictoryButton onClick={onMenu} alt={!!onAgain}>
                 {portal ? t("laminasBackCity", "Voltar à cidade") : t("laminasBackMenu", "Escolher outro")}
-              </button>
-            </div>
-          </div>
-        </div>
+              </VictoryButton>
+            </>
+          }
+        >
+          {/* mm3d-59: o prêmio é o que o SERVIDOR conferiu (recibo) */}
+          {settling ? (
+            <p className="text-[13px]" style={{ color: MM.muted }}>
+              {t("fightChecking", "Conferindo a luta…")}
+            </p>
+          ) : receipt ? (
+            <ReceiptLines receipt={receipt} />
+          ) : ticket === "offline" ? (
+            <p className="text-[12px]" style={{ color: MM.muted }}>
+              {t("fightOffline", "Treino sem conexão com o servidor: sem prêmio desta vez.")}
+            </p>
+          ) : null}
+        </VictoryPanel>
       )}
     </div>
   )

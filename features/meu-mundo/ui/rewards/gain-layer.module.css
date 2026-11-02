@@ -1,0 +1,366 @@
+/* features/meu-mundo/ui/rewards/gain-layer.module.css — números flutuantes e placas de drop (mm3d-60).
+ *
+ * NÚMERO: só o valor, sem fundo, sem nome, sem ícone — a cor é a identidade
+ * (FLOAT_COLOR). Fases: surge (0–130 ms, cresce com overshoot) → destaque
+ * (130–350, um reflexo corre o número) → flutua (350–900) → dissipa (900–1300).
+ * PLACA: a peça é opaca; entra desdobrando (scaleX) e sai fechando (scaleY) —
+ * só o texto e as faíscas usam opacidade.
+ */
+
+.layer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 95;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* ═══ números ═══ */
+.num {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: calc(-50% + var(--dx, 0px)) calc(-100% + var(--dy, 0px));
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--c);
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.92),
+    0 0 2px #000,
+    0 0 9px var(--c),
+    0 0 22px color-mix(in srgb, var(--c) 55%, transparent);
+  opacity: 0;
+  animation: g-float 1300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes g-float {
+  0% {
+    transform: translateY(10px) scale(0.35);
+    opacity: 0;
+  }
+  10% {
+    transform: translateY(0) scale(1.24);
+    opacity: 1;
+  }
+  18% {
+    transform: translateY(-2px) scale(0.95);
+  }
+  27% {
+    transform: translateY(-6px) scale(1);
+  }
+  69% {
+    transform: translateY(-44px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-74px) scale(0.94);
+    opacity: 0;
+  }
+}
+/* brilho interno (topo claro) + o reflexo que corre o número na fase de destaque */
+.glare {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  text-shadow: none;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 55%),
+    linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, 0.95) 50%, transparent 62%);
+  background-size:
+    100% 100%,
+    260% 100%;
+  background-position:
+    0 0,
+    130% 0;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: g-glare 1300ms linear both;
+  animation-delay: inherit;
+}
+@keyframes g-glare {
+  0%,
+  10% {
+    background-position:
+      0 0,
+      130% 0;
+  }
+  27%,
+  100% {
+    background-position:
+      0 0,
+      -30% 0;
+  }
+}
+/* faíscas discretas (só no XP e só com gráficos altos) */
+.spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: #fff6d8;
+  box-shadow: 0 0 6px 1px var(--c);
+  opacity: 0;
+  animation: g-spark 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--d, 0ms) + 90ms);
+}
+@keyframes g-spark {
+  0% {
+    transform: translate(0, 0) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--sx), var(--sy)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* ═══ placas de drop ═══ */
+.plates {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  translate: var(--px, 70px) -40%;
+}
+.plates[data-side="left"] {
+  align-items: flex-end;
+  translate: calc(-100% - var(--px, 70px)) -40%;
+}
+.plate {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 210px;
+  max-width: min(320px, 70vw);
+  padding: 6px 14px 6px 6px;
+  border: 1px solid var(--r);
+  background:
+    linear-gradient(180deg, rgba(255, 214, 138, 0.07) 0%, rgba(255, 214, 138, 0) 40%),
+    linear-gradient(165deg, #1e2630 0%, #141a21 46%, #0d1116 100%);
+  box-shadow:
+    inset 0 0 0 2px #0a0d11,
+    inset 0 0 0 3px color-mix(in srgb, var(--r) 45%, transparent),
+    0 0 0 1px #000,
+    3px 3px 0 #000,
+    0 0 18px color-mix(in srgb, var(--r) 45%, transparent);
+  transform-origin: left center;
+  animation:
+    g-plate-in 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    g-plate-out 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation-delay: var(--d, 0ms), calc(var(--d, 0ms) + var(--life, 2400ms));
+}
+.plates[data-side="left"] .plate {
+  transform-origin: right center;
+}
+.plates[data-side="top"] {
+  align-items: center;
+}
+.plates[data-side="top"] .plate {
+  transform-origin: center;
+}
+@keyframes g-plate-in {
+  0% {
+    transform: scale(0.2, 0.55);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes g-plate-out {
+  to {
+    transform: scale(1.02, 0);
+  }
+}
+/* cantos de latão (traços em L) */
+.plate::before,
+.plate::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: #ffd68a;
+  border-style: solid;
+  pointer-events: none;
+}
+.plate::before {
+  top: -3px;
+  right: -3px;
+  border-width: 2px 2px 0 0;
+}
+.plate::after {
+  bottom: -3px;
+  right: -3px;
+  border-width: 0 2px 2px 0;
+}
+.medal {
+  position: relative;
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #2c3540 0%, #12161b 70%);
+  box-shadow:
+    inset 0 0 0 2px var(--r),
+    inset 0 0 14px color-mix(in srgb, var(--r) 55%, transparent),
+    0 0 0 2px #07090c,
+    0 0 0 3px #8a6430,
+    0 0 16px color-mix(in srgb, var(--r) 60%, transparent);
+  animation: g-medal 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--d, 0ms) + 120ms);
+}
+@keyframes g-medal {
+  0% {
+    transform: scale(0) rotate(-90deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+.medalArt {
+  width: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.plateText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  animation: g-reveal 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--d, 0ms) + 220ms);
+}
+@keyframes g-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+.plateName {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #fff3cf;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 #000;
+}
+.plateQty {
+  margin-right: 6px;
+  color: var(--r);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 0.8;
+  text-shadow:
+    0 1px 0 #000,
+    0 0 10px var(--r);
+}
+.plateRarity {
+  color: var(--r);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.plateSpark {
+  position: absolute;
+  left: 29px;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff6d8;
+  box-shadow: 0 0 6px 1px var(--r);
+  opacity: 0;
+  animation: g-spark 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (max-width: 759px) {
+  .plate {
+    min-width: 170px;
+    padding: 4px 10px 4px 4px;
+    gap: 8px;
+  }
+  .medal {
+    width: 38px;
+    height: 38px;
+  }
+  .medalArt {
+    width: 28px;
+  }
+  .plateName {
+    font-size: 12px;
+  }
+  .plateQty {
+    font-size: 18px;
+  }
+}
+
+/* gráficos baixos / movimento reduzido: sem faísca, brilho menor, sem reflexo */
+:global(html[data-mm-fx="low"]) .num {
+  text-shadow:
+    0 2px 0 #000,
+    0 0 6px var(--c);
+}
+:global(html[data-mm-fx="low"]) .glare {
+  animation: none;
+  background-position:
+    0 0,
+    -30% 0;
+}
+:global(html[data-mm-fx="low"]) .spark,
+:global(html[data-mm-fx="low"]) .plateSpark {
+  display: none;
+}
+@keyframes g-float-still {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  15%,
+  80% {
+    transform: translateY(-20px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .num {
+    animation-name: g-float-still;
+  }
+  .glare {
+    animation: none;
+  }
+  .spark,
+  .plateSpark {
+    display: none;
+  }
+  .plate {
+    animation:
+      none,
+      g-plate-out 1ms linear forwards;
+    animation-delay: 0ms, calc(var(--d, 0ms) + var(--life, 2400ms));
+  }
+  .medal,
+  .plateText {
+    animation: none;
+  }
+}

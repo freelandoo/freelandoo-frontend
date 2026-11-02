@@ -39,7 +39,7 @@ import {
   Zap,
 } from "lucide-react"
 import type { LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
-import { Bar, Chamfer, EVO, Gauge, Plate, Ring, Tag, archivo, teko, toneFor } from "./evo-skin"
+import { Bar, Chamfer, CountUp, EVO, Gauge, Plate, Ring, Tag, archivo, cinzel, teko, toneFor } from "./evo-skin"
 import { MM } from "../hud/tokens"
 import { Arc, Card, effectText, toneColor } from "../fridge/shelf"
 import { effectsOf, thumbOf } from "../fridge/fridge-logic"
@@ -78,6 +78,8 @@ export interface PageProps {
 
 // ─── leitura das faixas (palavra e cor para cada número) ─────────────────────
 const r0 = (v: number) => Math.round(v)
+/** mm3d-60: título em ouro envelhecido (gradiente no texto). */
+const GOLD_TEXT = "bg-[linear-gradient(180deg,#FFF3CF_0%,#FFD68A_38%,#E8B65B_62%,#B67A31_100%)] bg-clip-text text-transparent [filter:drop-shadow(0_2px_0_#000)]"
 export function hoursText(h: number | null) {
   if (h == null) return ""
   const total = Math.max(0, Math.round(h * 60))
@@ -388,7 +390,7 @@ function Portrait({ src, size, round = false }: { src: string; size: number; rou
         height: round ? size : size * 1.25,
         borderRadius: round ? "50%" : 0,
         background: "radial-gradient(circle at 50% 40%, #ffe15a 0%, #ffc21a 45%, #ff8a00 100%)",
-        boxShadow: round ? `0 0 0 2px ${MM.ruby}` : undefined,
+        boxShadow: round ? "0 0 0 2px #0A0D11, 0 0 0 4px #E8B65B, 0 0 0 5px #5E3B12, 0 0 16px rgba(32,217,233,0.45)" : "inset 0 0 0 1px #8A6430",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- retrato pequeno, local, só no jogo (admin) */}
@@ -406,7 +408,7 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
       <div className="flex shrink-0 items-center gap-2 border-b pb-1.5" style={{ borderColor: MM.border }}>
         <Portrait src={portrait} size={28} round />
         <div className="min-w-0 flex-1">
-          <div className={`${teko.className} font-bold uppercase leading-[0.9]`} style={{ fontSize: 24, color: EVO.branco }}>
+          <div className={`${cinzel.className} ${GOLD_TEXT} font-bold uppercase leading-[1.1] pt-[0.1em]`} style={{ fontSize: 20, letterSpacing: "0.06em" }}>
             {t("stTitle", "Status")}
           </div>
           <div className={`${archivo.className} truncate text-[10.5px] font-medium uppercase leading-tight tracking-[0.08em]`} style={{ color: EVO.douradoClaro }}>
@@ -427,7 +429,7 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
   return (
     <div className="flex items-center gap-4 border-b pb-3" style={{ borderColor: MM.border }}>
       <div className="min-w-0 flex-1">
-        <div className={`${teko.className} font-bold uppercase leading-[0.85]`} style={{ fontSize: compact ? 54 : 92, color: EVO.branco, letterSpacing: "0.01em" }}>
+        <div className={`${cinzel.className} ${GOLD_TEXT} font-bold uppercase leading-[1.05] pt-[0.1em]`} style={{ fontSize: compact ? 44 : 76, letterSpacing: "0.06em" }}>
           {t("stTitle", "Status")}
         </div>
         <div
@@ -452,7 +454,7 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
         <div className="flex min-w-0 items-center gap-4">
           <Portrait src={portrait} size={110} round />
           <div className="min-w-0">
-            <div className={`${teko.className} truncate text-[58px] font-bold uppercase leading-[0.85]`} style={{ color: EVO.branco }}>
+            <div className={`${cinzel.className} truncate text-[44px] font-bold uppercase leading-[1]`} style={{ color: EVO.branco, textShadow: "0 2px 0 #000" }}>
               {name}
             </div>
             <div className={`${teko.className} text-[26px] font-medium uppercase tracking-[0.2em]`} style={{ color: EVO.ambar }}>
@@ -505,7 +507,7 @@ function Meter({
             {tag && <Tag>{tag}</Tag>}
           </div>
           <div className={`${teko.className} font-bold leading-none`} style={{ fontSize: compact ? 30 : 38, color: EVO.branco }}>
-            {r0(value)} <span style={{ color: EVO.mudo }}>/ {r0(max)}</span>
+            <CountUp value={r0(value)} /> <span style={{ color: EVO.mudo }}>/ {r0(max)}</span>
           </div>
           <div className="mt-1.5">
             <Bar value={value} max={max} color={barColor ?? color} />
@@ -1158,7 +1160,7 @@ function MiniPlate({ title, aside, children, className = "" }: { title?: string;
       <div className="h-full p-2">
         {title && (
           <div className="mb-1 flex items-baseline justify-between gap-2">
-            <h3 className={`${teko.className} truncate text-[16px] font-semibold uppercase leading-none tracking-wide`} style={{ color: EVO.ambar }}>
+            <h3 className={`${cinzel.className} truncate text-[12.5px] font-bold uppercase leading-none tracking-[0.06em]`} style={{ color: "#FFD68A", textShadow: "0 1px 0 #000" }}>
               {title}
             </h3>
             {aside}
@@ -1249,11 +1251,12 @@ function MiniGauge({ value, label, size = 64, color = EVO.ambar }: { value: numb
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="rgba(0,0,0,0.5)" stroke={EVO.fumaca} strokeWidth={5} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={5} strokeDasharray={`${c * p} ${c}`} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeOpacity={0.25} strokeWidth={9} strokeDasharray={`${c * p} ${c}`} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={5} strokeLinecap="round" strokeDasharray={`${c * p} ${c}`} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={`${teko.className} font-bold leading-[0.85]`} style={{ fontSize: Math.round(size * 0.36), color: EVO.branco }}>
-          {Math.round(value)}
+          <CountUp value={Math.round(value)} />
         </span>
         <span className={`${archivo.className} max-w-full truncate px-1 text-[8.5px] font-semibold uppercase`} style={{ color: EVO.douradoClaro }}>
           {label}
@@ -1277,7 +1280,7 @@ function MiniMeter({ icon, color, label, value, max = 100, barColor, tag }: { ic
           </div>
           <div className="flex items-center justify-between gap-1">
             <span className={`${teko.className} shrink-0 whitespace-nowrap font-bold leading-none`} style={{ fontSize: 18, color: EVO.branco }}>
-              {r0(value)}
+              <CountUp value={r0(value)} />
               {/* "/ 100" só quando o teto não é 100 (a saúde vai até a vitalidade) */}
               {r0(max) !== 100 && <span style={{ color: EVO.mudo, fontSize: 13 }}> / {r0(max)}</span>}
             </span>

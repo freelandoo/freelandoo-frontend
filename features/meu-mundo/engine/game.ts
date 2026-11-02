@@ -51,6 +51,8 @@ import {
   type NetStatus,
 } from "../types"
 import { bodyStride, myHeight, setMyHeight } from "../heights"
+import { setScreenAnchor } from "./screen-anchor"
+import { GainPillar, setGainFx } from "./gain-pillar"
 
 let live = 0
 export const liveGames = () => live
@@ -312,6 +314,14 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   ;(window as unknown as { __mmStreet?: typeof probe }).__mmStreet = probe
   const follow = new FollowCamera(scene)
   const select = new PlayerSelection(scene, canvas, () => scene.activeCamera ?? follow.camera)
+  // mm3d-60: cabeça do jogador na tela (números flutuantes e drops ancoram aqui)
+  const dropAnchor = setScreenAnchor(() => {
+    const b = select.screenBox(local.char)
+    return b ? { x: b.x, y: b.top } : null
+  })
+  // mm3d-60: tubo de luz (o do poder, bem mais leve) quando ganha status
+  const gainPillar = new GainPillar(scene, () => local.char.holder.getAbsolutePosition(), quality.tier === "low")
+  const gainFx = setGainFx((c) => gainPillar.play(c))
   follow.camera.maxZ = quality.maxZ
   scene.activeCamera = follow.camera
   follow.snapBehind(home.x, home.z, home.rotationY)
@@ -932,6 +942,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       engine.onContextLostObservable.remove(lost)
       instr?.dispose()
       instr = null
+      dropAnchor()
+      gainFx()
+      gainPillar.dispose()
       select.dispose()
       for (const r of remotes.values()) r.dispose()
       remotes.clear()

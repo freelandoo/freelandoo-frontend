@@ -14,40 +14,105 @@
 .item {
   position: relative;
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) 20px;
+  grid-template-columns: 40px minmax(0, 1fr) 20px;
   align-items: center;
   column-gap: 14px;
   width: 100%;
-  min-height: 60px;
-  padding: 9px 14px 9px 16px;
+  min-height: 64px;
+  padding: 9px 14px 9px 12px;
+  overflow: hidden;
   border: 1px solid #6e5426;
   border-radius: 0;
-  background: #1d2229;
-  color: #f4f5f7;
+  background: linear-gradient(180deg, #222a34 0%, #181e26 55%, #12171d 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 214, 138, 0.14),
+    inset 0 0 0 1px #05070a,
+    2px 2px 0 #000;
+  color: #f4eedf;
   cursor: pointer;
   text-align: left;
   -webkit-tap-highlight-color: transparent;
   outline: none;
-  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 160ms;
 }
 .item[data-hint] {
-  min-height: 64px;
+  min-height: 66px;
+}
+/* reflexo que atravessa a peça (só no hover; transform) */
+.item::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 233, 176, 0.16) 50%, transparent 100%);
+  transform: translateX(-120%);
+}
+/* filete de energia à esquerda (aceso no item ativo) */
+.item::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 3px;
+  background: #20d9e9;
+  box-shadow: 0 0 10px 1px rgba(32, 217, 233, 0.75);
+  transform: scaleY(0);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 @media (hover: hover) {
   .item:not(:disabled):hover {
-    background: #262c35;
-    border-color: rgba(255, 255, 255, 0.22);
+    background: linear-gradient(180deg, #2c3541 0%, #1e252e 55%, #161b22 100%);
+    border-color: #e8b65b;
+    transform: translateX(-3px);
+  }
+  .item:not(:disabled):hover::after {
+    transform: translateX(260%);
+    transition: transform 650ms cubic-bezier(0.45, 0, 0.2, 1);
+  }
+  .item:not(:disabled):hover .icon {
+    box-shadow:
+      inset 0 0 0 1.5px #ffd68a,
+      inset 0 0 12px rgba(32, 217, 233, 0.35),
+      0 0 0 2px #07090c,
+      0 0 0 3px #b67a31,
+      0 0 14px rgba(232, 182, 91, 0.55);
+    color: #fff3cf;
   }
 }
 .item:not(:disabled):active {
-  transform: scale(0.98);
+  transform: scale(0.975);
+}
+.item:not(:disabled):active .icon {
+  box-shadow:
+    inset 0 0 0 1.5px #fff3cf,
+    inset 0 0 16px rgba(32, 217, 233, 0.6),
+    0 0 0 2px #07090c,
+    0 0 0 3px #e8b65b,
+    0 0 22px rgba(32, 217, 233, 0.6);
 }
 .item:focus-visible {
-  box-shadow: 0 0 0 2px #e5be70;
+  border-color: #ffd68a;
+  box-shadow:
+    inset 0 0 0 1px #05070a,
+    0 0 0 2px #20d9e9;
 }
 .item[data-active] {
   background: linear-gradient(180deg, #3a2c12 0%, #251c0b 100%);
-  border-color: #f2b705;
+  border-color: #ffd68a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 233, 176, 0.3),
+    inset 0 0 0 1px #05070a,
+    2px 2px 0 #000,
+    0 0 16px rgba(232, 182, 91, 0.35);
+}
+.item[data-active]::before {
+  transform: scaleY(1);
 }
 .item:disabled {
   cursor: not-allowed;
@@ -59,14 +124,27 @@
 }
 .icon {
   display: flex;
+  width: 40px;
+  height: 40px;
   align-items: center;
   justify-content: center;
-  color: #e5be70;
+  border-radius: 50%;
+  color: #ffd68a;
+  background: radial-gradient(circle at 50% 30%, #2c3540 0%, #151a21 60%, #0b0e12 100%);
+  box-shadow:
+    inset 0 0 0 1.5px #c8913f,
+    inset 0 0 10px rgba(32, 217, 233, 0.12),
+    0 0 0 2px #07090c,
+    0 0 0 3px #6e5426;
+  transition:
+    box-shadow 180ms,
+    color 180ms;
 }
 .icon svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   stroke-width: 1.9;
+  filter: drop-shadow(0 1px 0 #000);
 }
 .item:disabled .icon {
   color: rgba(229, 190, 112, 0.42);
@@ -83,9 +161,11 @@
   text-overflow: ellipsis;
   font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   line-height: 1.2;
+  color: #fff3cf;
+  text-shadow: 0 1px 0 #000;
 }
 .hint {
   overflow: hidden;
@@ -102,14 +182,14 @@
 .arrow {
   display: flex;
   justify-content: flex-end;
-  color: #b8bec8;
+  color: #c8913f;
 }
 .arrow svg {
   width: 20px;
   height: 20px;
 }
 .item[data-active] .arrow {
-  color: #ff8fb3;
+  color: #20d9e9;
 }
 .spin {
   animation: mm-spin 900ms linear infinite;
@@ -126,8 +206,11 @@
   translate: 0 -50%;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #ad1644;
-  color: #f4f5f7;
+  background: linear-gradient(180deg, #ff6b7f, #c21f3a);
+  box-shadow:
+    0 0 0 1px #000,
+    0 0 10px rgba(255, 82, 106, 0.55);
+  color: #fff;
   font-size: 12px;
   font-weight: 700;
   line-height: 16px;
@@ -163,24 +246,33 @@
   flex-shrink: 0;
 }
 .primary {
-  color: #f4f5f7;
-  background: linear-gradient(180deg, #a8742e 0%, #6b4517 100%);
-  border-color: #f2b705;
-  box-shadow: 4px 4px 0 #000;
+  color: #ffe9b0;
+  background: linear-gradient(180deg, #5a3e16 0%, #3a2810 55%, #24180a 100%);
+  border-color: #ffd68a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 233, 176, 0.35),
+    inset 0 0 12px rgba(232, 182, 91, 0.18),
+    0 0 0 1px #000,
+    3px 3px 0 #000,
+    0 0 14px rgba(232, 182, 91, 0.3);
+  text-shadow: 0 1px 0 #000;
 }
 .primary:focus-visible {
   box-shadow:
-    0 0 0 2px #e5be70,
-    0 4px 14px rgba(0, 0, 0, 0.28);
+    0 0 0 2px #20d9e9,
+    3px 3px 0 #000;
 }
 .gold {
-  color: #f4f5f7;
-  background: #14171c;
-  border-color: rgba(229, 190, 112, 0.38);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  color: #f4eedf;
+  background: linear-gradient(180deg, #222a34 0%, #181e26 55%, #12171d 100%);
+  border-color: #8a6430;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 214, 138, 0.14),
+    0 0 0 1px #000,
+    2px 2px 0 #000;
 }
 .gold > svg {
-  color: #e5be70;
+  color: #ffd68a;
 }
 .gold[aria-pressed="true"] {
   background: linear-gradient(180deg, #3a2c12 0%, #251c0b 100%);
@@ -193,11 +285,17 @@
 }
 @media (hover: hover) {
   .primary:not(:disabled):hover {
-    background: linear-gradient(180deg, #c08838 0%, #7d521c 100%);
+    background: linear-gradient(180deg, #6e4c1c 0%, #4a3314 55%, #2e1f0c 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 233, 176, 0.45),
+      inset 0 0 16px rgba(232, 182, 91, 0.28),
+      0 0 0 1px #000,
+      3px 3px 0 #000,
+      0 0 22px rgba(232, 182, 91, 0.5);
   }
   .gold:not(:disabled):hover {
-    background: #262c35;
-    border-color: rgba(229, 190, 112, 0.6);
+    background: linear-gradient(180deg, #2c3541 0%, #1e252e 55%, #161b22 100%);
+    border-color: #e8b65b;
   }
   .ghost:not(:disabled):hover {
     color: #f4f5f7;
@@ -273,12 +371,15 @@
   width: 34px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #6e5426;
+  border: 1px solid #b67a31;
   border-right: 0;
   border-radius: 0;
-  background: #14171c;
-  color: #f4f5f7;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  background: linear-gradient(90deg, #222a34 0%, #12171d 100%);
+  color: #ffd68a;
+  box-shadow:
+    inset 2px 0 0 rgba(32, 217, 233, 0.45),
+    -3px 3px 0 #000,
+    0 0 12px rgba(232, 182, 91, 0.25);
   transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .tab svg {
@@ -287,7 +388,8 @@
 }
 @media (hover: hover) {
   .pull:hover .tab {
-    background: #262c35;
+    background: linear-gradient(90deg, #2c3541 0%, #161b22 100%);
+    color: #fff3cf;
   }
 }
 .pull:active .tab {
@@ -312,49 +414,120 @@
   bottom: 0;
   display: flex;
   flex-direction: column;
-  width: min(380px, 82vw);
-  border: 1px solid #6e5426;
-  border-right: 0;
+  width: min(390px, 84vw);
+  border: 0;
   border-radius: 0;
-  background: #121519;
-  box-shadow: -4px 0 14px rgba(0, 0, 0, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 214, 138, 0.05) 0%, rgba(255, 214, 138, 0) 22%),
+    linear-gradient(165deg, #1e2630 0%, #141a21 46%, #0d1116 100%);
+  /* aro de ouro, sulco e filete ciano na borda de dentro (camadas, sem filtro) */
+  box-shadow:
+    inset 2px 0 0 #e8b65b,
+    inset 3px 0 0 #5e3b12,
+    inset 6px 0 0 #10151b,
+    inset 7px 0 0 rgba(32, 217, 233, 0.5),
+    -6px 0 22px rgba(0, 0, 0, 0.55);
   transform: translateX(104%);
   visibility: hidden;
   transition:
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    visibility 0s linear 220ms;
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 260ms;
   touch-action: pan-y;
 }
 .drawer[data-open] {
   transform: none;
   visibility: visible;
   transition:
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
     visibility 0s;
   will-change: transform;
+}
+/* durante a coreografia de abertura (GSAP) o CSS não briga pelo transform */
+.drawer[data-anim] .item {
+  transition: none;
+}
+/* halo de energia da borda (acende na abertura; não é superfície) */
+.drawerGlow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 8px;
+  pointer-events: none;
+  box-shadow:
+    -2px 0 18px rgba(232, 182, 91, 0.45),
+    0 0 10px rgba(32, 217, 233, 0.25);
+}
+/* reflexo que corre o friso de cima uma vez */
+.drawerSweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 34%;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, #fff6d8 45%, #bdf8ff 55%, transparent);
+  opacity: 0;
+}
+.headGear {
+  flex-shrink: 0;
+}
+.crest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.crestLine {
+  height: 1px;
+  width: 64px;
+  background: linear-gradient(90deg, transparent, #b67a31);
+}
+.crestLineR {
+  height: 1px;
+  width: 64px;
+  background: linear-gradient(90deg, #b67a31, transparent);
+}
+.crestDot {
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  background: #20d9e9;
+  box-shadow: 0 0 8px rgba(32, 217, 233, 0.9);
+}
+.footGear {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
 }
 .head {
   position: relative;
   display: flex;
-  min-height: 52px;
+  min-height: 64px;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: center;
+  padding: 0 40px;
 }
 .title {
-  font-size: 16px;
+  padding-top: 0.12em;
+  font-size: 19px;
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   line-height: 1.2;
-  color: #f4f5f7;
+  text-align: center;
+  color: #ffd68a;
+  background: linear-gradient(180deg, #fff3cf 0%, #ffd68a 40%, #e8b65b 65%, #b67a31 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 0 #000);
 }
 .titleRule {
-  width: 28px;
-  height: 2px;
-  margin-top: 8px;
-  border-radius: 2px;
-  background: #e5be70;
+  display: none;
 }
 .close {
   display: inline-flex;
@@ -438,11 +611,18 @@
 
 /* ═══ painel (modal, aviso, painel técnico) ═══ */
 .panel {
-  border: 1px solid #6e5426;
+  border: 1px solid #b67a31;
   border-radius: 0;
-  background: #14171c;
-  box-shadow: 4px 4px 0 #000;
-  color: #f4f5f7;
+  background:
+    linear-gradient(180deg, rgba(255, 214, 138, 0.05) 0%, rgba(255, 214, 138, 0) 30%),
+    linear-gradient(165deg, #1e2630 0%, #141a21 46%, #0d1116 100%);
+  box-shadow:
+    inset 0 0 0 3px #10151b,
+    inset 0 0 0 4px rgba(32, 217, 233, 0.4),
+    0 0 0 1px #000,
+    4px 4px 0 #000,
+    0 0 16px rgba(232, 182, 91, 0.22);
+  color: #f4eedf;
 }
 .enter {
   animation: mm-rise 220ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -551,7 +731,16 @@
   }
 }
 
+:global(html[data-mm-fx="low"]) .drawerGlow,
+:global(html[data-mm-fx="low"]) .drawerSweep,
+:global(html[data-mm-fx="low"]) .item::after {
+  display: none;
+}
 @media (prefers-reduced-motion: reduce) {
+  .item::after,
+  .item::before {
+    transition: none;
+  }
   .drawer,
   .drawer[data-open],
   .pull,

@@ -12,8 +12,9 @@ import { useEffect, useId, useRef, type ReactNode } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import { X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { archivo, teko } from "../status/evo-skin"
+import { archivo, cinzel, teko } from "../status/evo-skin"
 import { AE, chamfer } from "./aether-tokens"
+import { SteamFrame } from "./steam/steam-frame"
 
 /** Pilha de modais abertos (o de cima recebe Escape). */
 const stack: string[] = []
@@ -106,33 +107,23 @@ export function AetherModal({
         aria-labelledby={`${id}-t`}
         tabIndex={-1}
         className="relative flex max-h-full w-full flex-col outline-none"
-        style={{ maxWidth: width, filter: `drop-shadow(${AE.hard.replace(" #000", "")} #000)` }}
+        style={{ maxWidth: width }}
         initial={reduce ? false : { y: 18, scale: 0.985 }}
         animate={{ y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 520, damping: 34, mass: 0.7 }}
       >
-        {/* borda de latão (camada de fora) + ferro opaco (camada de dentro) */}
-        <div className="flex max-h-[calc(100dvh-24px)] min-h-0 flex-col" style={{ background: AE.brass, clipPath: chamfer(AE.cut.modal), padding: 1.5 }}>
-          <div className="flex min-h-0 flex-1 flex-col" style={{ background: AE.iron, clipPath: chamfer(AE.cut.modal - 1) }}>
-            {/* filete de luz que corre o topo na abertura (detalhe; a base já está sólida) */}
-            {!reduce && (
-              <motion.span
-                aria-hidden
-                className="pointer-events-none absolute left-0 top-0 h-[2px] w-1/3"
-                style={{ background: `linear-gradient(90deg, transparent, ${AE.aether}, transparent)` }}
-                initial={{ x: "-100%" }}
-                animate={{ x: "320%" }}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
-              />
-            )}
-            <header className="relative flex items-start gap-3 px-5 pb-3 pt-4 max-[759px]:px-4" style={{ background: AE.brassPlate, borderBottom: `1px solid ${AE.brassLine}` }}>
+        {/* mm3d-60: moldura steampunk (aro de ouro, filete ciano, cantoneiras; o
+            reflexo do topo e o halo acendem na abertura — a base é opaca) */}
+        <SteamFrame className="max-h-[calc(100dvh-24px)] min-h-0" cornerSize={46}>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <header className="relative flex items-start gap-3 px-5 pb-3 pt-4 max-[759px]:px-4" style={{ background: AE.brassPlate, borderBottom: `1px solid ${AE.brassLine}`, boxShadow: "inset 0 -1px 0 rgba(32,217,233,0.35)" }}>
               <div className="min-w-0 flex-1">
                 {eyebrow && (
                   <div className={`${archivo.className} text-[11px] font-semibold uppercase tracking-[0.22em]`} style={{ color: AE.goldSoft }}>
                     {eyebrow}
                   </div>
                 )}
-                <h2 id={`${id}-t`} className={`${teko.className} text-[30px] font-semibold uppercase leading-none tracking-wide max-[759px]:text-[26px]`} style={{ color: AE.text }}>
+                <h2 id={`${id}-t`} className={`${cinzel.className} text-[24px] font-bold uppercase leading-tight tracking-[0.06em] max-[759px]:text-[20px]`} style={{ color: "#FFD68A", textShadow: "0 2px 0 #000" }}>
                   {title}
                 </h2>
               </div>
@@ -155,7 +146,7 @@ export function AetherModal({
               </footer>
             )}
           </div>
-        </div>
+        </SteamFrame>
       </motion.div>
     </div>
   )

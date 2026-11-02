@@ -3,10 +3,10 @@
 // features/meu-mundo/ui/rewards/reward-overlay.tsx — mm3d-59: a GRAMÁTICA DOS GANHOS na tela.
 //
 // Três escalas, nunca confundidas:
-//  • ganho cotidiano (XP, atributo, vital, item): centelhas e um arco breve
-//    junto ao personagem (centro da tela), número + símbolo + nome, ~1,8 s;
-//  • recompensa especial (item raro, missão): o mesmo com materialização e
-//    moldura de raridade, um pouco mais longa;
+//  • ganho cotidiano (XP, atributo, vital): mm3d-60 — SÓ O NÚMERO colorido
+//    flutuando acima da cabeça do personagem (gain-layer.tsx), ~1,3 s;
+//  • item: placa de drop ao lado do personagem (medalhão, nome, quantidade,
+//    raridade), ~2,4 s;
 //  • SUBIU DE NÍVEL: composição própria, MUITO maior — coluna de energia, anéis
 //    concêntricos que passam da tela, partículas coloridas, a luz de éter na
 //    GPU (AetherFx), "SUBIU DE NÍVEL!" ocupando ~70% da largura e o número do
@@ -22,14 +22,16 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { Receipt } from "../../data"
 import { AE, RARITY, type Rarity } from "../kit/aether-tokens"
 import { AetherFx } from "../kit/aether-fx"
+import { applyUiFx } from "../kit/steam/fx-tier"
+import { FLOAT_COLOR, type FloatKind } from "../kit/steam/steam-tokens"
 import { archivo, teko } from "../status/evo-skin"
-import { ATTR_META, VITAL_META, fmtDelta, toneOf } from "./reward-grammar"
+import { ATTR_META, VITAL_META, fmtDelta } from "./reward-grammar"
 import { onCelebrate } from "./reward-bus"
+import { GainLayer, MAX_NUMS, MAX_PLATES, type DropItem, type FloatNum } from "./gain-layer"
+import { playGainFx } from "../../engine/gain-pillar"
 
 const GROUP_MS = 600
-const GAIN_MS = 1900
 const LEVEL_MS = 3600
-const MAX_CHIPS = 5
 
 interface Bundle {
   xp: number
@@ -74,6 +76,10 @@ export function RewardOverlay() {
   const pending = useRef<Receipt[]>([])
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const seq = useRef(0)
+  // nível de efeito da interface (gráficos + movimento reduzido) no <html>
+  useEffect(() => {
+    applyUiFx()
+  }, [])
 
   const show = useCallback(() => {
     const list = pending.current.splice(0)
@@ -93,11 +99,7 @@ export function RewardOverlay() {
       }),
     [show],
   )
-  useEffect(() => {
-    if (!gain) return
-    const id = setTimeout(() => setGain((g) => (g && g.id === gain.id ? null : g)), GAIN_MS + (gain.b.special ? 700 : 0))
-    return () => clearTimeout(id)
-  }, [gain])
+  const gainDone = useCallback(() => setGain(null), [])
   const closeLevel = useCallback(() => setLevel(null), [])
   useEffect(() => {
     if (!level) return
@@ -112,7 +114,7 @@ export function RewardOverlay() {
 
   return (
     <>
-      <AnimatePresence>{gain && !level && <GainBurst key={gain.id} b={gain.b} reduce={!!reduce} t={t} />}</AnimatePresence>
+      {gain && <GainBurst key={gain.id} b={gain.b} t={t} onDone={gainDone} />}
       <AnimatePresence>{level && <LevelUp key={level.id} b={level.b} reduce={!!reduce} t={t} onClose={closeLevel} />}</AnimatePresence>
     </>
   )
@@ -120,63 +122,33 @@ export function RewardOverlay() {
 
 type T = (k: string, f: string) => string
 
-/** Ganho cotidiano: arco breve + chips junto ao personagem. */
-function GainBurst({ b, reduce, t }: { b: Bundle; reduce: boolean; t: T }) {
-  const chips = useMemo(() => {
-    const out: { key: string; icon: string; text: string; name: string; color: string; glow?: string }[] = []
-    if (b.xp > 0) out.push({ key: "xp", icon: "✦", text: `+${b.xp}`, name: t("rewardXpShort", "XP"), color: AE.gold })
+/** Ganho cotidiano: números coloridos (sem nome) + placas de drop (gain-layer.tsx). */
+function GainBurst({ b, t, onDone }: { b: Bundle; t: T; onDone: () => void }) {
+  const { nums, drops, more } = useMemo(() => {
+    const nums: FloatNum[] = []
+    if (b.xp > 0) nums.push({ key: "xp", kind: "xp", text: `+${b.xp}`, label: t("rewardXpShort", "XP") })
     for (const [k, v] of Object.entries(b.attrs)) {
       const m = ATTR_META[k as keyof typeof ATTR_META]
-      if (m && Math.abs(v) >= 0.005) out.push({ key: k, icon: m.icon, text: fmtDelta(v, 2), name: t(m.labelKey, m.label), color: m.color })
+      if (m && Math.abs(v) >= 0.005) nums.push({ key: k, kind: k as FloatKind, text: fmtDelta(v, 2), label: t(m.labelKey, m.label) })
     }
     for (const [k, v] of Object.entries(b.vitals)) {
       const m = VITAL_META[k as keyof typeof VITAL_META]
-      if (m && Math.abs(v) >= 0.5) out.push({ key: k, icon: m.icon, text: fmtDelta(v, 0), name: t(m.labelKey, m.label), color: toneOf(k, v) === "good" ? AE.good : AE.bad })
+      if (m && Math.abs(v) >= 0.5) nums.push({ key: k, kind: k as FloatKind, text: fmtDelta(v, 0), label: t(m.labelKey, m.label) })
     }
-    for (const it of b.items) {
-      const r = RARITY[it.rarity] || RARITY.common
-      out.push({ key: `i-${it.id}`, icon: "◆", text: `×${it.qty}`, name: t(`gear_${it.id}`, it.id), color: r.color, glow: r.glow })
-    }
-    if (out.length > MAX_CHIPS) {
-      const rest = out.length - (MAX_CHIPS - 1)
-      return [...out.slice(0, MAX_CHIPS - 1), { key: "more", icon: "+", text: String(rest), name: t("rewardMore", "mais"), color: AE.muted }]
-    }
-    return out
+    const all: DropItem[] = b.items.map((it) => ({ id: it.id, qty: it.qty, rarity: it.rarity, name: t(`gear_${it.id}`, it.id) }))
+    const drops = all.length > MAX_PLATES ? all.slice(0, MAX_PLATES - 1) : all
+    return { nums: nums.slice(0, MAX_NUMS), drops, more: all.length - drops.length }
   }, [b, t])
-  if (!chips.length) return null
-  return (
-    <motion.div className="pointer-events-none fixed inset-0 z-[95] grid place-items-center" aria-live="polite" initial={false} exit={{ y: -24 }} transition={{ duration: 0.25 }}>
-      {/* arco breve em volta do personagem (escala pequena — o nível é que é grande) */}
-      {!reduce && (
-        <motion.svg viewBox="0 0 200 200" className="absolute h-[220px] w-[220px]" initial={{ scale: 0.5, rotate: -40 }} animate={{ scale: 1.15, rotate: 30 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}>
-          <motion.circle cx="100" cy="100" r="80" fill="none" stroke={AE.gold} strokeWidth="3" strokeDasharray="160 340" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.7 }} />
-          <circle cx="100" cy="100" r="66" fill="none" stroke={AE.aether} strokeWidth="1.5" strokeDasharray="40 380" />
-        </motion.svg>
-      )}
-      <div className="relative -mt-24 flex flex-col items-center gap-1.5">
-        {chips.map((c, i) => (
-          <motion.div
-            key={c.key}
-            className={`${archivo.className} flex items-center gap-2 px-3 py-1`}
-            style={{ background: AE.iron, boxShadow: `inset 0 0 0 1px ${c.color}, ${AE.hardSm}${c.glow ? `, 0 0 18px ${c.glow}66` : ""}` }}
-            initial={reduce ? false : { y: 18, scale: 0.9 }}
-            animate={{ y: 0, scale: 1 }}
-            transition={{ delay: reduce ? 0 : 0.08 * i, type: "spring", stiffness: 520, damping: 30 }}
-          >
-            <span className="text-[16px]" style={{ color: c.color }} aria-hidden>
-              {c.icon}
-            </span>
-            <span className={`${teko.className} text-[24px] font-semibold leading-none tabular-nums`} style={{ color: c.color }}>
-              {c.text}
-            </span>
-            <span className="text-[13px] font-semibold uppercase tracking-wide" style={{ color: AE.text }}>
-              {c.name}
-            </span>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  )
+  useEffect(() => {
+    if (!nums.length && !drops.length && !more) onDone()
+  }, [nums.length, drops.length, more, onDone])
+  // o tubo de luz no personagem (cor do primeiro ganho; item raro pinta com a raridade)
+  useEffect(() => {
+    const color = nums.length ? FLOAT_COLOR[nums[0].kind] : drops.length ? (RARITY[drops[0].rarity] || RARITY.common).color : null
+    if (color) playGainFx(color)
+  }, [nums, drops])
+  if (!nums.length && !drops.length && !more) return null
+  return <GainLayer nums={nums} drops={drops} more={more} onDone={onDone} />
 }
 
 const PARTICLES = Array.from({ length: 40 }, (_, i) => {

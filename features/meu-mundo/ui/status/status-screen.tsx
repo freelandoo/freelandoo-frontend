@@ -21,11 +21,13 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
-import { EVO, FUNDO, archivo } from "./evo-skin"
+import { EVO, archivo } from "./evo-skin"
 import { MM } from "../hud/tokens"
 import { PAGES, StatusPage, type PageActions, type PageId } from "./status-pages"
 import SkinWardrobe from "./skin-wardrobe"
 import { PORTRAIT } from "../portraits"
+import { SteamFrame } from "../kit/steam/steam-frame"
+import { SP } from "../kit/steam/steam-tokens"
 
 const N = PAGES.length
 const W = 1460
@@ -65,6 +67,14 @@ function estado(r: number) {
     escuro: lerp("escuro"),
     aceso: Math.max(0, Math.min(1, 1 - a * 1.8)),
   }
+}
+
+/** Botão redondo de latão (setas, fechar). */
+const BRASS_ROUND: React.CSSProperties = {
+  color: "#FFD68A",
+  borderRadius: 999,
+  background: "radial-gradient(circle at 50% 30%, #2C3540 0%, #151A21 60%, #0B0E12 100%)",
+  boxShadow: "inset 0 0 0 1.5px #E8B65B, inset 0 0 12px rgba(32,217,233,0.18), 0 0 0 2px #07090C, 0 0 0 3px #8A6430, 3px 3px 0 #000",
 }
 
 const easeOutQuart = (x: number) => 1 - Math.pow(1 - x, 4)
@@ -345,7 +355,6 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       }}
     />
   )
-  const frameFill = FUNDO.moldura
 
   // ── estados de espera ────────────────────────────────────────────────────
   const shell = (children: React.ReactNode) => (
@@ -366,7 +375,6 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
   // levemente translúcida (alfa no fundo, nunca backdrop-filter).
   if (compact) {
     const page = PAGES[sel]
-    const compactFill = FUNDO.moldura
     return (
       <>
       <div
@@ -376,14 +384,14 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
       >
-        <div className="relative mx-2 min-h-0 flex-1" style={{ borderRadius: MM.radius.panel, background: compactFill, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
-          <div className="h-full overflow-hidden p-2.5">
+        <SteamFrame className="relative mx-2 min-h-0 flex-1" cornerSize={34}>
+          <div key={page} className="h-full overflow-hidden p-2.5">
             <StatusPage page={page} life={life} name={name} portrait={portrait} compact t={t} act={act} />
           </div>
-        </div>
+        </SteamFrame>
         {/* rodapé numa linha de 40 px: ‹ pontos › e fechar (o nome da página está no cabeçalho) */}
         <div className="mx-2 mt-1.5 flex h-10 shrink-0 items-center gap-1">
-          <button type="button" onClick={() => go(-1)} aria-label={t("stPrev", "Tela anterior")} className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ color: EVO.branco, background: MM.card, border: `1px solid ${MM.border}` }}>
+          <button type="button" onClick={() => go(-1)} aria-label={t("stPrev", "Tela anterior")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={BRASS_ROUND}>
             <ChevronLeft className="h-6 w-6" />
           </button>
           <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
@@ -392,7 +400,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
               {sel + 1}/{N}
             </span>
           </div>
-          <button type="button" onClick={() => go(1)} aria-label={t("stNext", "Próxima tela")} className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ color: EVO.branco, background: MM.card, border: `1px solid ${MM.border}` }}>
+          <button type="button" onClick={() => go(1)} aria-label={t("stNext", "Próxima tela")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={BRASS_ROUND}>
             <ChevronRight className="h-6 w-6" />
           </button>
           <BackButton onClick={close} t={t} icon />
@@ -443,9 +451,10 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
                 className="pointer-events-none absolute -inset-4"
                 style={{ opacity: 0 }}
               >
-                <div className="absolute inset-[13px]" style={{ borderRadius: MM.radius.panel + 3, border: `2px solid ${MM.rubyBorder}`, boxShadow: MM.shadow }} />
+                <div className="absolute inset-[12px]" style={{ border: `2px solid ${SP.goldHi}`, boxShadow: `0 0 26px rgba(232,182,91,0.55), 0 0 60px rgba(32,217,233,0.22)` }} />
               </div>
-              <div className="absolute inset-0 overflow-hidden" style={{ borderRadius: MM.radius.panel, background: frameFill, border: `1px solid ${MM.border}` }}>
+              <div className="absolute inset-0">
+              <SteamFrame className="h-full" cornerSize={88} glow={false} ignite={i === sel}>
                 <div className="relative h-full w-full overflow-hidden">
                   <div className="relative h-full px-9 pb-7 pt-6">
                     {rel(i) <= 1 && <StatusPage page={page} life={life} name={name} portrait={portrait} compact={false} t={t} act={act} />}
@@ -458,6 +467,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
                     style={{ opacity: 0 }}
                   />
                 </div>
+              </SteamFrame>
               </div>
             </div>
           ))}
@@ -468,7 +478,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
           onClick={() => go(-1)}
           aria-label={t("stPrev", "Tela anterior")}
           className="pointer-events-auto absolute flex items-center justify-center"
-          style={{ left: -W / 2 - 96, top: -32, width: 64, height: 64, color: EVO.branco, borderRadius: 999, background: MM.surface, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}
+          style={{ left: -W / 2 - 96, top: -32, width: 64, height: 64, ...BRASS_ROUND }}
         >
           <ChevronLeft className="h-8 w-8" strokeWidth={2} />
         </button>
@@ -477,7 +487,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
           onClick={() => go(1)}
           aria-label={t("stNext", "Próxima tela")}
           className="pointer-events-auto absolute flex items-center justify-center"
-          style={{ left: W / 2 + 32, top: -32, width: 64, height: 64, color: EVO.branco, borderRadius: 999, background: MM.surface, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}
+          style={{ left: W / 2 + 32, top: -32, width: 64, height: 64, ...BRASS_ROUND }}
         >
           <ChevronRight className="h-8 w-8" strokeWidth={2} />
         </button>
@@ -512,7 +522,7 @@ function Dots({ sel, onPick, small = false }: { sel: number; onPick: (i: number)
               className="block"
               style={
                 i === sel
-                  ? { width: 18, height: 6, borderRadius: 999, background: MM.ruby }
+                  ? { width: 18, height: 6, borderRadius: 999, background: SP.goldPlate, boxShadow: "0 0 8px rgba(32,217,233,0.6)" }
                   : { width: 6, height: 6, borderRadius: 999, background: `${EVO.branco}55` }
               }
             />
@@ -532,7 +542,7 @@ function Dots({ sel, onPick, small = false }: { sel: number; onPick: (i: number)
           className="block"
           style={
             i === sel
-              ? { width: 26, height: 8, borderRadius: 999, background: MM.ruby }
+              ? { width: 26, height: 8, borderRadius: 999, background: SP.goldPlate, boxShadow: "0 0 10px rgba(32,217,233,0.65)" }
               : { width: 8, height: 8, borderRadius: 999, background: `${EVO.branco}55` }
           }
         />
@@ -550,7 +560,7 @@ function BackButton({ onClick, t, big = false, icon = false }: { onClick: () => 
         onClick={onClick}
         aria-label={t("stBack", "Voltar")}
         className="inline-flex h-10 w-10 shrink-0 items-center justify-center"
-        style={{ background: MM.surface, color: EVO.branco, border: `1px solid ${MM.border}` }}
+        style={BRASS_ROUND}
       >
         <X className="h-5 w-5" />
       </button>
@@ -566,10 +576,10 @@ function BackButton({ onClick, t, big = false, icon = false }: { onClick: () => 
         padding: big ? "0 22px" : "0 16px",
         fontSize: big ? 16 : 15,
         borderRadius: MM.radius.button,
-        background: MM.surface,
+        background: SP.plate,
         color: EVO.branco,
-        border: `1px solid ${MM.goldBorder}`,
-        boxShadow: MM.shadowSoft,
+        border: `1px solid ${SP.gold}`,
+        boxShadow: "inset 0 1px 0 rgba(255,214,138,0.25), 0 0 0 1px #000, 3px 3px 0 #000, 0 0 14px rgba(232,182,91,0.25)",
       }}
     >
       <X className={big ? "h-5 w-5" : "h-4 w-4"} style={{ color: EVO.dourado }} /> {t("stBack", "Voltar")}

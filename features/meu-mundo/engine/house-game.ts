@@ -60,6 +60,8 @@ import {
   type NetStatus,
 } from "../types"
 import { bodyStride, myHeight, setMyHeight } from "../heights"
+import { setScreenAnchor } from "./screen-anchor"
+import { GainPillar, setGainFx } from "./gain-pillar"
 
 export interface HouseGameOptions {
   canvas: HTMLCanvasElement
@@ -263,6 +265,14 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
 
   const follow = new FollowCamera(scene, INDOOR_CAMERA)
   const select = new PlayerSelection(scene, canvas, () => scene.activeCamera ?? follow.camera)
+  // mm3d-60: cabeça do jogador na tela (números flutuantes e drops ancoram aqui)
+  const dropAnchor = setScreenAnchor(() => {
+    const b = select.screenBox(char)
+    return b ? { x: b.x, y: b.top } : null
+  })
+  // mm3d-60: tubo de luz (o do poder, bem mais leve) quando ganha status
+  const gainPillar = new GainPillar(scene, () => char.holder.getAbsolutePosition(), resolveQuality().tier === "low")
+  const gainFx = setGainFx((c) => gainPillar.play(c))
   scene.activeCamera = follow.camera
   follow.snapBehind(body.x, body.z, body.facing)
   follow.snapHeight(body.y)
@@ -832,6 +842,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       engine.onContextLostObservable.remove(lost)
       instr?.dispose()
       instr = null
+      dropAnchor()
+      gainFx()
+      gainPillar.dispose()
       select.dispose()
       for (const r of remotes.values()) r.dispose()
       remotes.clear()

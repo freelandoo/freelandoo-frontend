@@ -9,6 +9,7 @@ import { Gauge } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { detectTier, loadQualityChoice, saveQualityChoice, type QualityChoice } from "../../engine/quality"
 import type { DrawerItem } from "./hud-kit"
+import { applyUiFx } from "../kit/steam/fx-tier"
 
 const ORDER: QualityChoice[] = ["auto", "low", "mid", "high"]
 
@@ -42,6 +43,7 @@ export function useQualityItem(apply: (c: QualityChoice) => void): DrawerItem {
       const next = ORDER[(ORDER.indexOf(choice) + 1) % ORDER.length]
       setChoice(next)
       saveQualityChoice(next)
+      applyUiFx()
       apply(next)
     },
   }

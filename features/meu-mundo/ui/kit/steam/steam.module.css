@@ -1,0 +1,302 @@
+/* features/meu-mundo/ui/kit/steam/steam.module.css — pele "Steampunk UI" (mm3d-60).
+ *
+ * Cores espelham steam-tokens.ts (SP). Regras:
+ *  - superfície (o miolo) sempre OPACA; só halo/reflexo/faísca usam alfa;
+ *  - só transform/opacity animam; nada contínuo, exceto o que é focal e curto;
+ *  - html[data-mm-fx="low"] (gráficos baixos ou movimento reduzido) desliga
+ *    halo, reflexo, giro e faísca — fica o metal, as cores e o texto.
+ */
+
+/* ═══ moldura ═══ */
+.frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 2px;
+  background: linear-gradient(180deg, #ffe3a3 0%, #e8b65b 14%, #9a6424 46%, #c8913f 70%, #5e3b12 100%);
+  box-shadow:
+    0 0 0 1px #000,
+    5px 5px 0 rgba(0, 0, 0, 0.85);
+  isolation: isolate;
+}
+.frame[data-tone="bronze"] {
+  padding: 1px;
+  background: linear-gradient(180deg, #a97c3c 0%, #6a4a1e 45%, #4a3314 70%, #8a6430 100%);
+  box-shadow: 0 0 0 1px #000;
+}
+.inner {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  background:
+    linear-gradient(180deg, rgba(255, 214, 138, 0.06) 0%, rgba(255, 214, 138, 0) 30%),
+    linear-gradient(165deg, #1e2630 0%, #141a21 46%, #0d1116 100%);
+  /* sulco escuro + filete de energia ciano a 4 px da borda */
+  box-shadow:
+    inset 0 0 0 1px #05070a,
+    inset 0 0 0 4px #10151b,
+    inset 0 0 0 5px rgba(32, 217, 233, 0.5),
+    inset 0 0 18px 5px rgba(32, 217, 233, 0.07);
+}
+.frame[data-tone="bronze"] > .inner {
+  box-shadow:
+    inset 0 0 0 1px #05070a,
+    inset 0 1px 0 1px rgba(255, 214, 138, 0.12);
+}
+
+/* halo (energia): camada própria por fora — não é superfície, pode ter alfa */
+.glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  box-shadow:
+    0 0 16px rgba(232, 182, 91, 0.42),
+    0 0 40px rgba(32, 217, 233, 0.14);
+}
+.frame[data-tone="bronze"] > .glow {
+  box-shadow: 0 0 10px rgba(232, 182, 91, 0.18);
+}
+.frame[data-ignite] > .glow {
+  animation: sp-ignite 700ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+}
+@keyframes sp-ignite {
+  0% {
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* reflexo que corre o aro de cima uma vez */
+.sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  width: 26%;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, #fff6d8 45%, #bdf8ff 55%, transparent);
+  animation: sp-sweep 950ms cubic-bezier(0.45, 0, 0.2, 1) 160ms both;
+}
+@keyframes sp-sweep {
+  from {
+    transform: translateX(-110%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400%);
+    opacity: 0;
+  }
+}
+
+/* cantoneiras */
+.corner {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  overflow: visible;
+  filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.9));
+}
+.corner[data-pos="tl"] {
+  top: -7px;
+  left: -7px;
+}
+.corner[data-pos="tr"] {
+  top: -7px;
+  right: -7px;
+  transform: scaleX(-1);
+}
+.corner[data-pos="bl"] {
+  bottom: -7px;
+  left: -7px;
+  transform: scaleY(-1);
+}
+.corner[data-pos="br"] {
+  right: -7px;
+  bottom: -7px;
+  transform: scale(-1, -1);
+}
+.cornerGear {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.frame[data-ignite] .cornerGear {
+  animation: sp-gear-kick 900ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+}
+@keyframes sp-gear-kick {
+  from {
+    transform: rotate(-80deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+.crystal {
+  filter: drop-shadow(0 0 2.5px #20d9e9);
+}
+
+/* engrenagem solta */
+.gearSolo {
+  flex-shrink: 0;
+  transform-origin: center;
+  filter: drop-shadow(1px 1px 0 #000);
+}
+.gearSpin {
+  animation: sp-spin 14s linear infinite;
+}
+@keyframes sp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* título: Cinzel em ouro com ◆ dos lados (a fonte vem pela classe do evo-skin) */
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 0;
+  padding-top: 0.12em;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffd68a;
+  background: linear-gradient(180deg, #fff3cf 0%, #ffd68a 38%, #e8b65b 62%, #b67a31 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 0 #000);
+}
+.title::before,
+.title::after {
+  content: "◆";
+  font-size: 0.32em;
+  color: #20d9e9;
+  -webkit-text-fill-color: #20d9e9;
+}
+
+/* ═══ nível de efeito ═══ */
+:global(html[data-mm-fx="low"]) .glow,
+:global(html[data-mm-fx="low"]) .sweep {
+  display: none;
+}
+:global(html[data-mm-fx="low"]) .frame[data-ignite] .cornerGear,
+:global(html[data-mm-fx="low"]) .gearSpin {
+  animation: none;
+}
+:global(html[data-mm-fx="low"]) .crystal {
+  filter: none;
+}
+:global(html[data-mm-fx="mid"]) .gearSpin {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sweep,
+  .frame[data-ignite] > .glow,
+  .frame[data-ignite] .cornerGear,
+  .gearSpin {
+    animation: none;
+  }
+  .sweep {
+    display: none;
+  }
+}
+
+/* ═══ peças do STATUS (evo-skin) ═══ */
+.plateTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0;
+  color: #ffd68a;
+  text-shadow: 0 1px 0 #000;
+}
+.plateTitle::before {
+  content: "";
+  width: 0.5em;
+  height: 0.5em;
+  flex-shrink: 0;
+  transform: rotate(45deg);
+  background: #20d9e9;
+  box-shadow: 0 0 6px rgba(32, 217, 233, 0.8);
+}
+
+.barTrack {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #05070a 0%, #161c24 100%);
+  box-shadow:
+    inset 0 0 0 1px #3a2a12,
+    inset 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+.barFill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: sp-bar-in 900ms cubic-bezier(0.22, 1, 0.36, 1) 120ms backwards;
+}
+@keyframes sp-bar-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+.barShine {
+  position: absolute;
+  inset: 1px 2px 50% 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.04) 100%);
+}
+.barTip {
+  position: absolute;
+  top: 15%;
+  right: 1px;
+  bottom: 15%;
+  width: 3px;
+  border-radius: 999px;
+  background: #fffbe8;
+}
+.gaugeArc {
+  transition: stroke-dashoffset 800ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: sp-gauge-in 1000ms cubic-bezier(0.22, 1, 0.36, 1) 150ms backwards;
+}
+@keyframes sp-gauge-in {
+  from {
+    stroke-dashoffset: var(--len);
+  }
+}
+:global(html[data-mm-fx="low"]) .barFill,
+:global(html[data-mm-fx="low"]) .gaugeArc {
+  animation: none;
+}
+:global(html[data-mm-fx="low"]) .barTip {
+  box-shadow: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .barFill,
+  .gaugeArc {
+    animation: none;
+    transition: none;
+  }
+}
