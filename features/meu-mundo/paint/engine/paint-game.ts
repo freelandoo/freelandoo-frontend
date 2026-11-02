@@ -38,6 +38,7 @@ import { PickupsView } from "./pickups-view"
 import { CatHerd } from "./cat-herd"
 import { BossView } from "./boss-view"
 import { AimCamera } from "./aim-camera"
+import { createHitFeedback } from "./hit-feedback"
 import { PaintGun } from "./gun"
 import { attachPaintInput, clearPaintInput, createPaintInput, createReticle, paintMoveAxis, paintWantsRun, type PaintInput } from "./paint-input"
 import type { PaintPort, RemoteSample } from "./port"
@@ -224,6 +225,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const input = createPaintInput()
   // A mira do PC (o cursor vira a mira): desenhada por cima do canvas, colada no mouse.
   const reticle = canvas.parentElement ? createReticle(canvas.parentElement) : null
+  // mm3d-59: acerto confirmado (anel, número, X na mira, som) — só no meu tiro/soco
+  const hitFx = canvas.parentElement ? createHitFeedback(scene, cam.camera, canvas.parentElement, canvas) : null
+  const HIT_GOLD = Color3.FromHexString("#FFD23F")
   const detachInput = attachPaintInput(canvas, input, reticle)
 
   const posePacket = (): PaintPose => ({ x: body.x, y: body.y, z: body.z, facing: body.facing, ground: body.ground, gy: body.gy, e: epoch })
@@ -266,7 +270,11 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         if (e.slot === port.me) {
           knockBody(body, e.kx, e.ky, e.kz)
           notice({ kind: "hurt", how: e.how })
-        } else if (e.by === port.me) notice({ kind: "hitOther" })
+        } else if (e.by === port.me) {
+          notice({ kind: "hitOther" })
+          const tp = state.players.get(e.slot)?.pose
+          if (tp && hitFx) hitFx.confirm({ x: tp.x, y: tp.y + 1.15, z: tp.z }, e.how === "punch" ? TUNING.punchDmg : TUNING.harmDmg, e.how === "punch" ? Color3.White() : HIT_GOLD, e.hp === 0)
+        }
         break
       case "ko":
         bleed(e.slot, true)
@@ -679,6 +687,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     paint.tick(dt)
     pickups.tick(dt)
     herd.tick(dt, cam.camera)
+    hitFx?.update(dt)
     governor.tick(engine.getDeltaTime())
 
     hudAt -= dt
@@ -778,6 +787,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       engine.stopRenderLoop()
       detachInput()
       reticle?.dispose()
+      hitFx?.dispose()
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
       for (const k of ["__paint", "__paintTp", "__paintLook", "__paintState", "__paintFire", "__paintAim"]) delete w[k]
