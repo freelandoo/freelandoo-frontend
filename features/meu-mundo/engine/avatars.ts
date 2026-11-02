@@ -287,7 +287,7 @@ export type ClanClip = (typeof CLAN_CLIPS)[number]
 const BRUTE_FILE = "anim-brutamontes-sergio-m62.glb"
 const BRUTE_CLIPS = ["XIdle", "XLook", "XWalk", "XRun", "XSweep", "X360", "XBack", "XSmash", "XCombo1", "XCombo2", "XCombo3", "XJump", "XKick", "XBlock", "XHitL", "XHitR", "XHitG", "XTaunt", "XThump"] as const
 export type BruteClip = (typeof BRUTE_CLIPS)[number]
-const BRUTE_LOOP = new Set<string>(["XIdle", "XLook", "XWalk", "XRun", "XBlock"])
+const BRUTE_LOOP = new Set<string>(["XIdle", "XLook", "XWalk", "XRun", "XBlock", "XThump"])
 const CLAN_LOOP = new Set<string>(["RIdle", "VIdle", "VRun", "VStrafe", "VPower", "RBlock", "RRun", "RStrafe", "RCast"])
 /** Gincana (mm3d-47): GRun/GDive/GWin em laço; pulo pela fase do voo; tombo e levantar uma vez. */
 const GINCANA_CLIPS = ["GRun", "GJump", "GFall", "GRise", "GWin", "GDive", "GUp"] as const
@@ -305,7 +305,7 @@ export interface GincanaPose {
 const BOXE_STEP_SPEED = { BStepF: 0.91, BStepB: 0.79, BStepL: 0.61, BStepR: 0.61 } as const
 export type BoxeClip = (typeof BOXE_CLIPS)[number] | ClanClip | BruteClip
 /** Pose-base da luta: guarda, aquecimento, cansado, machucado, andando para o canto, vitória. */
-export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast" | "RIdle" | "XIdle" | "XWalk" | "XRun"
+export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast" | "RIdle" | "XIdle" | "XWalk" | "XRun" | "XThump"
 /** Golpes e reações tocam uma vez (quem dispara é o boxeAct, nunca o laço). */
 const BOXE_LOOP = new Set<string>(["BGuard", "BWarm", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"])
 const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp", ...CLAN_CLIPS.filter((c) => !CLAN_LOOP.has(c)), ...BRUTE_CLIPS.filter((c) => !BRUTE_LOOP.has(c))])
@@ -1219,9 +1219,10 @@ export class AvatarRig {
         const v = Math.hypot(fwd, side)
         const m = base === "BGuard" && this.groups.BStepF ? Math.min(1, v / 0.3) : 0
         // Classes: andando na guarda = a corrida da classe (frente) ou o passo de lado.
-        const cl = base === "VIdle" ? "V" : base === "RBlock" || base === "RIdle" ? "R" : null
+        const cl = base === "VIdle" ? "V" : base === "RBlock" || base === "RIdle" ? "R" : base === "XIdle" ? "X" : null
         if (cl && v > 0.3) {
-          const sideways = Math.abs(side) > Math.abs(fwd) * 1.2
+          // o machado (Brutamontes) não tem passo de lado: corre para qualquer direção
+          const sideways = cl !== "X" && Math.abs(side) > Math.abs(fwd) * 1.2
           const clip = (sideways ? `${cl}Strafe` : `${cl}Run`) as Clip
           const g = this.groups[clip]
           if (g) {

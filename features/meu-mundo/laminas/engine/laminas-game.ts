@@ -40,7 +40,7 @@ import { COMBO, DT, Fight, MOBS, POWER, RANKS, mobAttack, type Rank, type Stats,
 import { buildArena } from "./arena-view"
 import { buildRing } from "./ring-view"
 import { BoxingGloves } from "./gloves"
-import { MonsterModel } from "./monster-view"
+import { MonsterModel, AXE_URL, AXE_EDGE } from "./monster-view"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { clanOfBody, CLAN_WEAPON, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
@@ -165,6 +165,33 @@ const CLAN_MOVES: Record<Clan, { guard: BoxeBase; win: BoxeBase; swings: Seg[][]
     fall: ["RDie"],
   },
 }
+/**
+ * 2026-11-02 (Alex: "escolhi a skin do brutamontes … está com uma faquinha"): quem
+ * veste o BRUTAMONTES luta com o machado de 3 m e os golpes de machado (mesma
+ * tabela das classes; contato pelo peak.js — varrida 0,41, giro 0,36, revés
+ * 0,31, pancada 0,36, salto 0,47, combo 0,63). O pacote não tem passo de lado:
+ * a esquiva é a defesa com o machado. Roxo nos efeitos.
+ */
+const BRUTE_MOVES: (typeof CLAN_MOVES)[Clan] = {
+  guard: "XIdle",
+  win: "XThump",
+  swings: [
+    [{ clip: "XSweep", from: 0.24, to: 0.6 }],
+    [
+      { clip: "X360", from: 0.19, to: 0.55 },
+      { clip: "XBack", from: 0.14, to: 0.5 },
+    ],
+    [{ clip: "XSmash", from: 0.15, to: 0.59 }],
+  ],
+  special: [
+    { clip: "XJump", from: 0.19, to: 0.75 },
+    { clip: "XCombo1", from: 0.35, to: 0.91 },
+  ],
+  dodge: { clip: "XBlock", from: 0, to: 0.6 },
+  hit: { clip: "XHitG", from: 0, to: 0.7 },
+  hitHeavy: { clip: "XHitL", from: 0, to: 0.9 },
+  fall: ["BFall"],
+}
 /** Sorteia um da lista sem repetir o último que saiu (só visual). */
 const lastPick = new Map<readonly unknown[], number>()
 function pick<T>(list: readonly T[]): T {
@@ -252,7 +279,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const lib = new AvatarLibrary(scene, false, false, 30, false, false, true, false, true)
   // Corpo de classe (fora do ringue do Boxe): golpes e arma da classe.
   const clan = ring ? null : clanOfBody(opts.body)
-  const moves = clan ? CLAN_MOVES[clan] : null
+  // a skin do Brutamontes: machado e golpes de machado (fora do ringue)
+  const brute = !ring && opts.body === "brutamontes"
+  const moves = clan ? CLAN_MOVES[clan] : brute ? BRUTE_MOVES : null
   const GUARD: BoxeBase = moves ? moves.guard : "BGuard"
   const fallbackMat = new StandardMaterial("laminas-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
@@ -268,7 +297,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // guarda baixa dos corpos volumosos e a mão do cajado de mago.
   // Efeitos (mm3d-58): arco da arma, clarão e anel no acerto, raios na vitória, poeira.
   const vfx = createVfx(scene, low)
-  const fxColor = clan ? VFX_COLORS[clan] : VFX_COLORS.lamina
+  const fxColor = clan ? VFX_COLORS[clan] : brute ? VFX_COLORS.brutamontes : VFX_COLORS.lamina
   // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
   if (clan !== "vampiro") spirits.preload()
@@ -276,12 +305,12 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const adult = /adult/.test(opts.body)
   const adultK = adult ? 1.3 : 1
   let hitStop = 0
-  const heroFix = new PoseFix(scene, (n) => hero.bone(n), ring || clan ? null : (BULKY_GUARD[opts.body] ?? null))
+  const heroFix = new PoseFix(scene, (n) => hero.bone(n), ring || clan || brute ? null : (BULKY_GUARD[opts.body] ?? null))
   // A arma da classe (GLB do build_armas.py) presa pelos ossos da mão.
   let weaponRoot: TransformNode | null = null
   let grip: WeaponGrip | null = null
-  if (clan) {
-    LoadAssetContainerAsync(CLAN_WEAPON[clan], scene)
+  if (clan || brute) {
+    LoadAssetContainerAsync(clan ? CLAN_WEAPON[clan] : AXE_URL, scene)
       .then((c) => {
         if (disposed) return c.dispose()
         c.addAllToScene()
@@ -292,14 +321,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       .catch(() => {})
   }
   // pontos da lâmina/cabeça no eixo +Y da arma (build_armas.py: espada 0,15→0,93 m; cajado: a pedra 0,55→0,95 m)
-  const bladeLocal: [Vector3, Vector3] = clan === "raposa" ? [new Vector3(0, 0.55, 0), new Vector3(0, 0.95, 0)] : clan ? [new Vector3(0, 0.15, 0), new Vector3(0, 0.93, 0)] : [new Vector3(0, 0.15, 0), new Vector3(0, 1.15, 0)]
+  const bladeLocal: [Vector3, Vector3] = clan === "raposa" ? [new Vector3(0, 0.55, 0), new Vector3(0, 0.95, 0)] : clan ? [new Vector3(0, 0.15, 0), new Vector3(0, 0.93, 0)] : brute ? [new Vector3(0, AXE_EDGE[0], 0), new Vector3(0, AXE_EDGE[1], 0)] : [new Vector3(0, 0.15, 0), new Vector3(0, 1.15, 0)]
   // pedra do cajado (local +Y da arma): sempre acesa, carrega até o disparo
   const STONE = new Vector3(0, 0.82, 0)
   const SHOT_BLEND = 0.15
   const shotOff = new Map<number, { off: Vector3; t: number }>()
   const stone = clan === "raposa" ? vfx.orb(FIRE) : null
   const heroTrail = vfx.trail(() => {
-    const node = clan ? grip?.root : ring ? null : sword
+    const node = clan || brute ? grip?.root : ring ? null : sword
     if (!node || !node.isEnabled()) return null
     const m = node.getWorldMatrix()
     return [Vector3.TransformCoordinates(bladeLocal[0], m), Vector3.TransformCoordinates(bladeLocal[1], m)]
@@ -358,7 +387,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // Ringue do Boxe (mm3d-57): sem espada; luvas pretas no jogador.
   const heroGloves = ring ? new BoxingGloves(scene, hero, "black") : null
   const placeSword = () => {
-    const hand = ring || clan ? null : hero.bone(HAND)
+    const hand = ring || clan || brute ? null : hero.bone(HAND)
     if (!hand) {
       sword.setEnabled(false)
       return
@@ -597,6 +626,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           vfx.ground(new Vector3(e.x, 0, e.z), clan === "raposa" ? FIRE : fxColor, 3.2, POWER.dur + 0.4, true)
           if (clan === "raposa") hero.boxeAct("RCast", POWER.dur, 0, 1)
           else if (clan) hero.boxeAct("VPower", POWER.dur, 0, 1)
+          else if (brute) hero.boxeAct("XTaunt", POWER.dur, 0, 0.9)
           else hero.boxeAct("BBox2", POWER.dur, 0, 1)
           audio.excite(1)
           break
@@ -605,7 +635,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           const at = new Vector3(e.x, 1.2, e.z)
           const feet = new Vector3(e.x, 0, e.z)
           if (clan === "vampiro") spirits.bat(feet, e.facing, VFX_COLORS.vampiro.main)
-          else spirits.wolf(feet, e.facing, clan === "raposa" ? FIRE.main : VFX_COLORS.lamina.main)
+          else spirits.wolf(feet, e.facing, clan === "raposa" ? FIRE.main : brute ? VFX_COLORS.brutamontes.main : VFX_COLORS.lamina.main)
           if (clan === "raposa") {
             // explosão de fogo em volta
             vfx.burst(at, FIRE)
