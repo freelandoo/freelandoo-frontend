@@ -98,38 +98,82 @@ const SWING_CLIPS: { clip: BoxeClip; from: number; to: number }[] = [
  * `hitAt` da regra (0,29/0,62, 0,31/0,66, 0,42/0,86).
  */
 type Seg = { clip: BoxeClip; from: number; to: number }
-const CLAN_MOVES: Record<Clan, { guard: BoxeBase; win: BoxeBase; swings: Seg[]; special: Seg; dodge: Seg; hit: Seg; hitHeavy: Seg; fall: BoxeClip }> = {
+/**
+ * 2026-11-02 (pedido do Alex: "golpes das pastas de cada um"): cada passo do
+ * combo e o golpe S SORTEIAM entre vários clipes da pasta da classe (só o
+ * desenho — a regra de tempo/dano é a mesma). Contato medido pelo peak.js
+ * (harness das classes) e o trecho cortado para cair a ~47% (golpes 1–2,
+ * janela 0,36) ou ~49% (finalizador, janela 0,44).
+ */
+const CLAN_MOVES: Record<Clan, { guard: BoxeBase; win: BoxeBase; swings: Seg[][]; special: Seg[]; dodge: Seg; hit: Seg; hitHeavy: Seg; fall: BoxeClip[] }> = {
   vampiro: {
     guard: "VIdle",
     win: "VPower",
     swings: [
-      { clip: "VSlash3", from: 0.22, to: 0.58 },
-      { clip: "VSlash1", from: 0.25, to: 0.61 },
-      { clip: "VAtk2", from: 0.28, to: 0.72 },
+      [
+        { clip: "VSlash3", from: 0.22, to: 0.58 },
+        { clip: "VSlash5", from: 0.32, to: 0.68 }, // contato 0,49
+        { clip: "VSlash4", from: 0.02, to: 0.38 }, // giro: 1º corte a 0,19
+      ],
+      [
+        { clip: "VSlash1", from: 0.25, to: 0.61 },
+        { clip: "VSlash2", from: 0.36, to: 0.72 }, // 2º corte a 0,53
+        { clip: "VAtk1", from: 0.3, to: 0.66 }, // 0,47
+      ],
+      [
+        { clip: "VAtk2", from: 0.28, to: 0.72 },
+        { clip: "VCombo", from: 0.45, to: 0.89 }, // último corte do combo a 0,66
+      ],
     ],
-    // golpe S: o corte grande de espada (contato a 0,44 do clipe)
-    special: { clip: "VGSlash", from: 0.18, to: 0.72 },
+    // golpe S: o corte grande de espada (contato a 0,44) ou o combo de espada (cortes a 0,21/0,43/0,66)
+    special: [
+      { clip: "VGSlash", from: 0.18, to: 0.72 },
+      { clip: "VCombo", from: 0.15, to: 0.71 },
+    ],
     dodge: { clip: "VStrafe", from: 0, to: 0.6 },
     hit: { clip: "VHit", from: 0, to: 0.7 },
     hitHeavy: { clip: "VHit", from: 0, to: 1 },
-    fall: "VDie",
+    fall: ["VDie", "VDie2"],
   },
   raposa: {
     // parado = de pé com o cajado em pé, pedra para cima (PoseFix + WeaponGrip.upright)
     guard: "RIdle",
     win: "RCast",
     swings: [
-      { clip: "RAtk1", from: 0.25, to: 0.58 },
-      { clip: "RAtk2", from: 0.33, to: 0.67 },
-      { clip: "RAtk3", from: 0.12, to: 0.42 },
+      [
+        { clip: "RAtk1", from: 0.25, to: 0.58 },
+        { clip: "RShot", from: 0.06, to: 0.42 }, // disparo de uma mão, 0,23
+      ],
+      [
+        { clip: "RAtk2", from: 0.33, to: 0.67 },
+        { clip: "RAtk3", from: 0.12, to: 0.42 },
+      ],
+      [
+        { clip: "RArea1", from: 0.2, to: 0.64 }, // 0,41
+        { clip: "RArea2", from: 0.33, to: 0.77 }, // 0,54
+        { clip: "RAtk3", from: 0.05, to: 0.49 },
+      ],
     ],
-    // golpe S: o feitiço grande (Magic Attack 05, primeira explosão a 0,16)
-    special: { clip: "RAtk4", from: 0, to: 0.36 },
+    // golpe S: o feitiço grande (Magic Attack 05, primeira explosão a 0,16) ou a área 02
+    special: [
+      { clip: "RAtk4", from: 0, to: 0.36 },
+      { clip: "RArea2", from: 0.27, to: 0.83 },
+    ],
     dodge: { clip: "RStrafe", from: 0, to: 0.6 },
     hit: { clip: "RHitS", from: 0, to: 0.8 },
     hitHeavy: { clip: "RHitL", from: 0, to: 0.9 },
-    fall: "RDie",
+    fall: ["RDie"],
   },
+}
+/** Sorteia um da lista sem repetir o último que saiu (só visual). */
+const lastPick = new Map<readonly unknown[], number>()
+function pick<T>(list: readonly T[]): T {
+  if (list.length < 2) return list[0]
+  const prev = lastPick.get(list) ?? -1
+  let i = Math.floor(Math.random() * (list.length - 1))
+  if (i >= prev && prev >= 0) i++
+  lastPick.set(list, i)
+  return list[i]
 }
 /** Dano saltando por ranque (C, B, A, S): cor e tamanho. */
 const RANK_COLOR = ["#FF4FA3", "#FF8A3D", "#FFD23F", "#FFE45C"]
@@ -519,7 +563,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             if (clan !== "raposa") vfx.burst(new Vector3(fight.me.x, 1.2, fight.me.z), gc)
             pop(new Vector3(fight.me.x, 2.6, fight.me.z), "S!", "#FFE45C", 70, 3)
           }
-          const c = e.rank === 3 && moves ? moves.special : (moves ? moves.swings : SWING_CLIPS)[e.combo]
+          const c = !moves ? SWING_CLIPS[e.combo] : e.rank === 3 ? pick(moves.special) : pick(moves.swings[e.combo])
           hero.boxeAct(c.clip, dur, c.from, c.to)
           audio.whoosh()
           break
@@ -612,7 +656,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             audio.punch(e.heavy ? 1 : 0.5, false)
             shake = Math.max(shake, e.heavy ? 0.32 : 0.16)
             if (moves) {
-              if (e.dead) hero.boxeAct(moves.fall, 1.6, 0, 1, true)
+              if (e.dead) hero.boxeAct(pick(moves.fall), 1.6, 0, 1, true)
               else if (e.heavy) hero.boxeAct(moves.hitHeavy.clip, 0.7, moves.hitHeavy.from, moves.hitHeavy.to)
               else hero.boxeAct(moves.hit.clip, 0.36, moves.hit.from, moves.hit.to)
             } else if (e.dead) hero.boxeAct("BFall", 1.2, 0, 1, true)
