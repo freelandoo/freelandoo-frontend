@@ -97,7 +97,8 @@ const ASSETS = {
     noctis: "avatar-noctis-h320.glb",
     aeryn: "avatar-aeryn-h320.glb",
     golem: "avatar-golem-h400.glb",
-    ciborgue: "avatar-ciborgue-h400.glb",
+    // 2026-11-02 (-h401): rosto/queixo 100% na cabeça (`head_rigid` no build_deuses.py) — estava 70–84% no peito e esticava na corrida.
+    ciborgue: "avatar-ciborgue-h401.glb",
     // Alturas (regra do Alex, 2026-11-01): jovem 1,70 m (menino) / 1,65 m
     // (menina) (-m58f); adultos 2,70 m (-m58g) — escala da raiz.
     // 2026-11-02 (-m58h): vampiro adulto com as botas viradas para a frente (`feet_fwd` no build_deuses.py).
