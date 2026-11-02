@@ -59,6 +59,17 @@ export function HudChip({ tone = "escuro", icon, children, onClick, title }: { t
 /** Evento de janela: a gaveta abriu (true) ou fechou (false). */
 export const DRAWER_EVENT = "mm-drawer"
 
+/** A gaveta está aberta? (peças da casca que dividem o canto com ela se escondem.) */
+export function useDrawerOpen() {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    const on = (e: Event) => setOpen(!!(e as CustomEvent<boolean>).detail)
+    window.addEventListener(DRAWER_EVENT, on)
+    return () => window.removeEventListener(DRAWER_EVENT, on)
+  }, [])
+  return open
+}
+
 // ═══ a gaveta ══════════════════════════════════════════════════════════════
 export interface DrawerItem {
   id: string

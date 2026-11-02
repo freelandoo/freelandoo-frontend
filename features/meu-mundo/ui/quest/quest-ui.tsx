@@ -8,6 +8,7 @@
 // (MeuMundoQuestService). A recompensa chega como recibo e vai para a fila de
 // celebração (a primeira subida de nível acontece aqui dentro).
 
+import { useDrawerOpen } from "../hud/hud-kit"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Loader2, ScrollText } from "lucide-react"
 import { getToken } from "@/lib/auth"
@@ -101,6 +102,8 @@ export function QuestTracker({
   onTutorialFight: () => void
   onOpenGear: (tab: "bag" | "armory") => void
 }) {
+  // mm3d-60d: com a gaveta aberta o card sai (ela cobre o canto no celular)
+  const drawerOpen = useDrawerOpen()
   const t = useTranslations("MeuMundo") as T
   const [quest, setQuest] = useState<QuestView | null>(null)
   const [open, setOpen] = useState(false)
@@ -211,11 +214,11 @@ export function QuestTracker({
   if (!quest || quest.done || !cur) return null
   return (
     <>
-      {!hidden && (
+      {!hidden && !drawerOpen && (
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className={`${archivo.className} pointer-events-auto fixed z-[30] flex max-w-[min(300px,62vw)] items-start gap-2 p-2.5 text-left outline-none focus-visible:ring-2`}
+          className={`${archivo.className} pointer-events-auto fixed z-[64] flex max-w-[min(300px,62vw)] items-start gap-2 p-2.5 text-left outline-none focus-visible:ring-2`}
           style={{
             // mm3d-60d: logo abaixo do HUD do personagem (--mm-hud-h vem dele)
             top: "calc(max(10px, env(safe-area-inset-top)) + var(--mm-hud-h, 46px) + 10px)",

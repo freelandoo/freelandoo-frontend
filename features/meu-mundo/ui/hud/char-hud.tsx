@@ -23,6 +23,7 @@ import { PORTRAIT } from "../portraits"
 import { onCelebrate } from "../rewards/reward-bus"
 import { archivo } from "../status/evo-skin"
 import { FightPlate, plateHeight, plateWidth } from "./fight-plate"
+import { useDrawerOpen } from "./hud-kit"
 import c from "./char-hud.module.css"
 
 export interface HudVitals {
@@ -41,8 +42,11 @@ function hudPw() {
   return Math.round(Math.max(40, Math.min(76, window.innerWidth * 0.05, window.innerHeight * 0.095)))
 }
 
-export function CharHud({ name, body, vitals, hidden = false }: { name: string; body: BodyId; vitals: HudVitals | null; hidden?: boolean }) {
+export function CharHud({ name, body, vitals, hidden: hiddenProp = false }: { name: string; body: BodyId; vitals: HudVitals | null; hidden?: boolean }) {
   const t = useTranslations("MeuMundo")
+  // com a gaveta aberta o HUD sai (no celular ela cobre a tela quase toda)
+  const drawerOpen = useDrawerOpen()
+  const hidden = hiddenProp || drawerOpen
   const [level, setLevel] = useState<number | null>(null)
   const [pw, setPw] = useState(64)
 

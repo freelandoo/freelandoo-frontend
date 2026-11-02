@@ -6,7 +6,8 @@
   position: fixed;
   left: max(10px, env(safe-area-inset-left));
   top: max(10px, env(safe-area-inset-top));
-  z-index: 31;
+  /* acima da camada do jogo (z 60) e abaixo de interiores/lutas (70) e STATUS (80) */
+  z-index: 65;
   pointer-events: none;
   user-select: none;
   animation: ch-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
