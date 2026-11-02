@@ -94,7 +94,8 @@ const ASSETS = {
     kragor: "avatar-kragor-h320p.glb",
     zephyra: "avatar-zephyra-h320.glb",
     maru: "avatar-maru-h320.glb",
-    iris: "avatar-iris-h320p.glb",
+    // -h320q: ombreiras inteiras (ponta + corpo) com tronco + clavícula — a ponta estava na cabeça e ficava parada.
+    iris: "avatar-iris-h320q.glb",
     noctis: "avatar-noctis-h320p.glb",
     aeryn: "avatar-aeryn-h320p.glb",
     cavaleiro: "avatar-cavaleiro-p.glb",
