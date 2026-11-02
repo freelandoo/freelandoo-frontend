@@ -29,6 +29,7 @@ import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildInterior } from "./interior"
 import { Barbells } from "./barbell"
+import { Kettlebells } from "./kettlebell"
 import { Character } from "./player"
 import { AvatarLibrary, type PlacePose } from "./avatars"
 import { FollowCamera, INDOOR_CAMERA } from "./camera"
@@ -152,6 +153,8 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   const char = new Character(scene, lib, mats, opts.body, null, true, opts.look ?? "")
   // A barra do rack (2026-11-02): solta, vai para as mãos no agachamento.
   const barbells = new Barbells(scene, def)
+  // e o kettlebell do tapete, que vai para as mãos no balanço
+  const kettles = new Kettlebells(scene, def)
   let pose: PlacePose | null = null
 
   // NPCs (mm3d-37): parados no lugar, sentados ou em pé.
@@ -290,6 +293,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
     char.place(body.x, body.z, visualFacing, body.y)
     char.animate(dt, move, Math.hypot(body.vx, body.vz))
     if (barbells.count) barbells.update(dt, char, pose === "GymSquat", body.x, body.z, body.floor, visualFacing)
+    if (kettles.count) kettles.update(dt, char, pose === "GymKettle", body.x, body.z, body.floor)
     for (const n of npcs) n.char.animate(dt, n.npc.pose === "sit" ? 3 : 0, 0)
     follow.update(dt, body.x, body.z, viewBoxes(), body.y)
     governor.tick(engine.getDeltaTime())
@@ -357,6 +361,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
       barbells.dispose()
+      kettles.dispose()
       char.dispose()
       for (const n of npcs) n.char.dispose()
       lib.dispose()

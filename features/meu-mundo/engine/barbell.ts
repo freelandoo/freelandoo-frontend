@@ -44,7 +44,7 @@ interface Bar {
 }
 
 /** Posição de mundo do nó com a cadeia recalculada agora. */
-function wpos(n: TransformNode) {
+export function wpos(n: TransformNode) {
   const chain: TransformNode[] = []
   for (let p: TransformNode | null = n; p; p = p.parent as TransformNode | null) chain.push(p)
   for (let i = chain.length - 1; i >= 0; i--) chain[i].computeWorldMatrix(true)

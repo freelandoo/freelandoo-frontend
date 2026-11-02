@@ -121,6 +121,8 @@ const NO_THEME: Theme = { wall: C.wall, accent: C.fabricB, second: C.fabricA }
 const HOME_WALLS: RGB[] = [[0.42, 0.5, 0.42], [0.52, 0.3, 0.28], [0.34, 0.42, 0.5], [0.66, 0.56, 0.38], [0.48, 0.38, 0.5]]
 /** Cores das lombadas e dos produtos de cena (só desenho). */
 const STOCK: RGB[] = [C.red, [0.78, 0.6, 0.3], C.green, [0.24, 0.36, 0.5], [0.72, 0.42, 0.2], [0.86, 0.82, 0.7], [0.42, 0.24, 0.34]]
+/** Qual kettlebell do tapete é peça solta (engine/kettlebell.ts). */
+export const KETTLE_LOOSE = 1
 const FABRICS: RGB[] = [C.fabricA, C.fabricB, C.fabricC]
 /** Salão do Hall da Fama (mm3d-48): a pedra das estátuas e a cor de cada um dos Sete. */
 const HERO_STONE: RGB = SP.stoneLight
@@ -393,6 +395,8 @@ function furniture(g: SteamGeo, gl: SteamGeo, it: InteriorFurniture, y: number, 
     case "kettlebells":
       B(g, f, 0, 0, 0, w, 0.06, d, C.rubber)
       for (let k = 0; k < 4; k++) {
+        // o 2º (KETTLE_LOOSE) é peça solta do place-game: sai do tapete para as mãos (kettlebell.ts)
+        if (k === KETTLE_LOOSE) continue
         const kx = -w / 2 + 0.16 + k * ((w - 0.32) / 3)
         g.sphere(0.18 + k * 0.02, [1, 1, 1], Matrix.Translation(kx, 0.16, 0).multiply(f), C.black)
         B(g, f, kx, 0.26 + k * 0.02, 0, 0.12, 0.04, 0.03, C.black)
