@@ -208,18 +208,20 @@ const ASSETS = {
 }
 /**
  * Andar e correr das CLASSES (2026-11-02, pipeline/build_classes_locomotion.py,
- * animações do Mixamo que o Alex baixou): trocam só o Walk e o SlowRun do
- * conjunto do Sergio (o Idle segue a pose A). Meninos: "Walking (1)" +
- * "Running (1)"; meninas: "Standard Walk" + "Standard Run (1)". `walk`/`run` =
- * m/s que o clipe anda a 1× no tamanho do Sergio (pé de apoio,
- * build/classes_locomotion_report.json).
+ * animações do Mixamo que o Alex baixou): trocam só o Walk e o SlowRun (o
+ * Idle segue a pose A). O Alex gostou do andar/correr do vampiro adulto e
+ * pediu para TODOS: "Walking (1)" + "Running (1)" em cada esqueleto
+ * (MM_LOCO_TARGET). `walk`/`run` = m/s que o clipe anda a 1× no esqueleto
+ * do conjunto (pé de apoio, build/classes_locomotion*_report.json).
  */
-const CLAN_LOCO = {
-  "classe-m": { file: "anim-loco-classe-m-m60.glb", walk: 1.03, run: 3.394 },
-  "classe-f": { file: "anim-loco-classe-f-m60.glb", walk: 0.866, run: 2.5 },
-} as const
-type ClanLoco = keyof typeof CLAN_LOCO
-const clanLocoOf = (id: BodyId): ClanLoco | null => (!isClanBody(id) ? null : /^(raposa_f|vampira|raposa_adulta)/.test(id) ? "classe-f" : "classe-m")
+const LOCO = {
+  base: { file: "anim-loco-base-m60.glb", walk: 1.126, run: 3.827 },
+  fat: { file: "anim-loco-fat-m60.glb", walk: 1.126, run: 3.827 },
+  strong: { file: "anim-loco-strong-m60.glb", walk: 1.126, run: 3.827 },
+  // Sergio, deuses e classes (mesmo esqueleto)
+  sergio: { file: "anim-loco-classe-m-m60.glb", walk: 1.03, run: 3.394 },
+  ekaterina: { file: "anim-loco-ekaterina-m60.glb", walk: 1.32, run: 4.454 },
+} as const satisfies Record<keyof typeof ASSETS.anims, { file: string; walk: number; run: number }>
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
 export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
 type AnimSet = keyof typeof ASSETS.anims
@@ -340,7 +342,7 @@ export class AvatarLibrary {
   private readonly boxes = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly clans = new Map<Clan, Promise<AssetContainer>>()
   private readonly gincanas = new Map<AnimSet, Promise<AssetContainer>>()
-  private readonly clanLocos = new Map<ClanLoco, Promise<AssetContainer>>()
+  private readonly locos = new Map<AnimSet, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -495,14 +497,13 @@ export class AvatarLibrary {
     return p
   }
 
-  private clanLocoSet(id: BodyId) {
-    const key = clanLocoOf(id)
-    if (!key) return Promise.resolve(null)
-    let p = this.clanLocos.get(key)
+  private locoSet(id: BodyId) {
+    const key = ANIM_SET[id]
+    let p = this.locos.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + CLAN_LOCO[key].file, this.scene)
-      p.catch(() => this.clanLocos.delete(key))
-      this.clanLocos.set(key, p)
+      p = LoadAssetContainerAsync(BASE + LOCO[key].file, this.scene)
+      p.catch(() => this.locos.delete(key))
+      this.locos.set(key, p)
     }
     return p
   }
@@ -554,8 +555,8 @@ export class AvatarLibrary {
     const boxeP = this.withBoxe ? this.boxeSet(id).catch(() => null) : Promise.resolve(null)
     const gincanaP = this.withGincana ? this.gincanaSet(id).catch(() => null) : Promise.resolve(null)
     const clanP = this.withClan ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
-    // Andar/correr da classe: se falhar, fica o do Sergio.
-    const locoP = this.clanLocoSet(id).catch(() => null)
+    // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
+    const locoP = this.locoSet(id).catch(() => null)
     const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco] = await Promise.all([
       this.body(id),
       this.animSet(id),
@@ -587,15 +588,15 @@ export class AvatarLibrary {
     // escala do nó do esqueleto (pai do quadril) — sem isso o adulto de 2,7 m
     // tocava o passo rápido demais e o pé escorregava.
     let natural: { walk: number; run: number } = { ...ANIM_NATURAL_SPEED }
-    const locoKey = clanLocoOf(id)
     const locoWalk = loco?.animationGroups.find((g) => g.name === "Walk")
     const locoRun = loco?.animationGroups.find((g) => g.name === "SlowRun")
-    if (locoKey && locoWalk && locoRun) {
+    if (locoWalk && locoRun) {
       groups.Walk.dispose()
       groups.SlowRun.dispose()
       groups.Walk = locoWalk.clone(`Walk#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
       groups.SlowRun = locoRun.clone(`SlowRun#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
-      natural = { walk: CLAN_LOCO[locoKey].walk, run: CLAN_LOCO[locoKey].run }
+      const l = LOCO[ANIM_SET[id]]
+      natural = { walk: l.walk, run: l.run }
     }
     if (isClanBody(id) || isGod(id)) {
       const k = Math.abs((byName.get("mixamorig:Hips")?.parent as TransformNode | null)?.scaling.y ?? 1)
@@ -681,7 +682,7 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values(), ...this.clans.values(), ...this.clanLocos.values()]
+    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values(), ...this.clans.values(), ...this.locos.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.lods.clear()
@@ -694,7 +695,7 @@ export class AvatarLibrary {
     this.boxes.clear()
     this.gincanas.clear()
     this.clans.clear()
-    this.clanLocos.clear()
+    this.locos.clear()
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
