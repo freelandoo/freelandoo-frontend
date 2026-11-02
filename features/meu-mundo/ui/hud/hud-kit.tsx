@@ -23,10 +23,12 @@ import { ChevronLeft, ChevronRight, Loader2, Wind, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import gsap from "gsap"
 import { archivo, cinzel } from "../status/evo-skin"
-import { Gear, SteamFrame } from "../kit/steam/steam-frame"
+import { SteamFrame } from "../kit/steam/steam-frame"
 import { currentUiFx } from "../kit/steam/fx-tier"
 import { MM } from "./tokens"
 import s from "./hud.module.css"
+import d from "./drawer.module.css"
+import { DrawerMachine } from "./drawer-machine"
 
 export type ChipTone = "bom" | "ambar" | "perigo" | "ouro" | "escuro"
 const CHIP: Record<ChipTone, [string, string]> = {
@@ -170,21 +172,24 @@ export function Drawer({
     if (navRef.current?.contains(document.activeElement)) pullRef.current?.focus({ preventScroll: true })
   }, [open])
 
-  // mm3d-60: abertura em coreografia (GSAP) — o painel desliza (CSS), o halo
-  // da borda acende, as engrenagens do título dão um giro curto, os cards
-  // entram em sequência e um reflexo corre o friso de cima. ~600 ms, só
-  // transform/opacity (os cards ficam opacos; só deslizam). Gráficos baixos
-  // ou movimento reduzido: sem coreografia.
+  // mm3d-60c: abertura em coreografia (GSAP), menu "O BAIRRO" em prata + azul —
+  // o painel desliza (CSS); o halo azul da borda acende; relógio e engrenagens
+  // dão um micro giro; a câmara de energia acende; os botões entram em
+  // sequência. ~750 ms, só transform/opacity (as placas ficam opacas; só
+  // deslizam). Gráficos baixos ou movimento reduzido: sem coreografia.
   useEffect(() => {
     const nav = navRef.current
     if (!open || !nav || currentUiFx() === "low") return
     nav.dataset.anim = ""
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ onComplete: () => void delete nav.dataset.anim })
-      tl.fromTo(`.${s.drawerGlow}`, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power2.out" }, 0.05)
-      tl.fromTo(`.${s.headGear}`, { rotate: -120 }, { rotate: 0, duration: 0.6, ease: "power3.out" }, 0)
-      tl.fromTo(`.${s.item}`, { x: 38 }, { x: 0, duration: 0.42, ease: "power3.out", stagger: 0.045, clearProps: "transform" }, 0.06)
-      tl.fromTo(`.${s.drawerSweep}`, { xPercent: -110, opacity: 1 }, { xPercent: 300, opacity: 0, duration: 0.75, ease: "power2.inOut" }, 0.18)
+      tl.fromTo(`.${d.edgeGlow}`, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.05)
+      tl.fromTo(`.${d.plate}`, { y: -10 }, { y: 0, duration: 0.35, ease: "back.out(2)" }, 0.12)
+      tl.fromTo(`.${d.clockBox}`, { rotate: -28, scale: 0.86 }, { rotate: 0, scale: 1, duration: 0.55, ease: "back.out(1.8)" }, 0.22)
+      tl.fromTo(`.${d.gear}`, { rotate: -50 }, { rotate: 0, duration: 0.7, ease: "power3.out", stagger: 0.05 }, 0.22)
+      tl.fromTo(`.${d.tubeGlass}`, { opacity: 0.25 }, { opacity: 1, duration: 0.3, ease: "power1.in", yoyo: false }, 0.35)
+      tl.fromTo(`.${d.tubeCore}`, { scale: 0 }, { scale: 1, duration: 0.45, ease: "back.out(2.4)", clearProps: "transform" }, 0.42)
+      tl.fromTo(`.${d.item}`, { x: 40 }, { x: 0, duration: 0.4, ease: "power3.out", stagger: 0.04, clearProps: "transform" }, 0.4)
     }, nav)
     return () => {
       ctx.revert()
@@ -220,7 +225,7 @@ export function Drawer({
       <button
         ref={pullRef}
         type="button"
-        className={s.pull}
+        className={d.pull}
         data-hidden={open ? "" : undefined}
         onClick={() => onOpenChange(true)}
         onPointerDown={down("pull")}
@@ -232,24 +237,22 @@ export function Drawer({
         aria-controls="mm-drawer"
         tabIndex={open ? -1 : 0}
       >
-        <span className={s.tab}>
-          <ChevronLeft strokeWidth={2.4} />
+        <span className={d.tab}>
+          <span className={d.tabIn}>
+            <ChevronLeft strokeWidth={2.4} />
+          </span>
         </span>
       </button>
 
       {/* fora da gaveta: tocar fecha */}
-      {open && <div className={s.scrim} onPointerDown={close} aria-hidden />}
+      {open && <div className={d.scrim} onPointerDown={close} aria-hidden />}
 
       <nav
         ref={navRef}
         id="mm-drawer"
-        className={`${s.drawer} ${archivo.className} pointer-events-auto`}
+        className={`${d.drawer} ${archivo.className} pointer-events-auto`}
         data-open={open ? "" : undefined}
         style={{
-          paddingTop: "max(14px, env(safe-area-inset-top))",
-          paddingBottom: "max(14px, env(safe-area-inset-bottom))",
-          paddingRight: "max(16px, env(safe-area-inset-right))",
-          paddingLeft: 18,
           ...(dx ? { transform: `translateX(${dx}px)`, transition: "none" } : null),
           visibility: open || dx ? "visible" : undefined,
         }}
@@ -261,41 +264,62 @@ export function Drawer({
         onPointerUp={up}
         onPointerCancel={up}
       >
-        <span aria-hidden className={s.drawerGlow} />
-        <span aria-hidden className={s.drawerSweep} />
-        <div className={s.head}>
-          <div className="flex min-w-0 items-center gap-2.5">
-            <Gear size={20} className={s.headGear} />
-            <h2 className={`${cinzel.className} ${s.title} min-w-0 truncate`}>{heading}</h2>
-            <Gear size={20} className={s.headGear} />
+        <span aria-hidden className={d.edgeGlow} />
+        <DrawerMachine open={open} />
+        <div className={d.body}>
+          {/* placa do título (o relógio encaixa na ponta esquerda) */}
+          <div className={d.plate}>
+            <div className={`${d.oct} ${d.rimO}`}>
+              <div className={`${d.oct} ${d.rimGap}`}>
+                <div className={`${d.oct} ${d.rimLine}`}>
+                  <div className={`${d.oct} ${d.rimFill}`}>
+                    <span aria-hidden className={d.rivets} />
+                    <h2 className={`${cinzel.className} ${d.title}`}>{heading}</h2>
+                    <button type="button" onClick={close} className={d.close} aria-label={t("menuClose", "Fechar o menu")}>
+                      <X />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span aria-hidden className={d.plateGem} />
           </div>
-          <div className={s.crest} aria-hidden>
-            <span className={s.crestLine} />
-            <span className={s.crestDot} />
-            <span className={s.crestLineR} />
+          {/* a lista, dentro da moldura de aço */}
+          <div className={`${d.frame} ${d.oct} ${d.rimO}`}>
+            <div className={`${d.oct} ${d.rimGap}`}>
+              <div className={`${d.oct} ${d.rimLine}`}>
+                <div className={`${d.oct} ${d.rimFill}`}>
+                  <span aria-hidden className={d.rivets} />
+                  <div ref={listRef} className={d.list}>
+                    {items.map((it) => (
+                      <MenuItem
+                        key={it.id}
+                        {...it}
+                        onSelect={() => {
+                          if (!it.keepOpen) close()
+                          it.onSelect()
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <button type="button" onClick={close} className={`${s.close} absolute right-0 top-1/2 -translate-y-1/2`} aria-label={t("menuClose", "Fechar o menu")}>
-            <X className="h-5 w-5" />
-          </button>
+          {(presence || footer) && (
+            <div className={`${d.foot} ${d.oct} ${d.rimO}`}>
+              <div className={`${d.oct} ${d.rimGap}`}>
+                <div className={`${d.oct} ${d.rimLine}`}>
+                  <div className={`${d.oct} ${d.rimFill}`}>
+                    <span aria-hidden className={d.rivets} />
+                    {presence && <Presence {...presence} />}
+                    {footer && <div className={d.extra}>{footer}</div>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-        <div ref={listRef} className={s.list}>
-          {items.map((it) => (
-            <MenuItem
-              key={it.id}
-              {...it}
-              onSelect={() => {
-                if (!it.keepOpen) close()
-                it.onSelect()
-              }}
-            />
-          ))}
-        </div>
-        {(presence || footer) && (
-          <div className={s.foot}>
-            {presence && <Presence {...presence} />}
-            {footer && <div className={s.extra}>{footer}</div>}
-          </div>
-        )}
       </nav>
     </>
   )
@@ -311,10 +335,10 @@ function Presence({ count, scope, state }: DrawerPresence) {
       ? t("presenceOffline", "Sem conexão")
       : t("presenceConnecting", "Conectando…")
   return (
-    <div className={s.presence} data-state={live ? "online" : state === "offline" ? "offline" : "connecting"} role="status" aria-live="polite">
-      <span className={s.dot} aria-hidden />
-      <span className={s.count}>{text}</span>
-      <span className={s.scope}>{scope}</span>
+    <div className={d.presence} data-state={live ? "online" : state === "offline" ? "offline" : "connecting"} role="status" aria-live="polite">
+      <span className={d.dot} aria-hidden />
+      <span className={d.count}>{text}</span>
+      <span className={d.scope}>{scope}</span>
     </div>
   )
 }
@@ -323,7 +347,7 @@ export function MenuItem({ label, icon, onSelect, hint, disabled, active, badge,
   return (
     <button
       type="button"
-      className={s.item}
+      className={d.item}
       onClick={onSelect}
       disabled={disabled || loading}
       data-active={active ? "" : undefined}
@@ -331,14 +355,20 @@ export function MenuItem({ label, icon, onSelect, hint, disabled, active, badge,
       aria-pressed={active || undefined}
       aria-busy={loading || undefined}
     >
-      <span className={s.icon}>{icon}</span>
-      <span className={s.text}>
-        <span className={`${cinzel.className} ${s.label}`}>{label}</span>
-        {hint && <span className={s.hint}>{hint}</span>}
+      {/* placa: aro de prata (e o azul que acende), miolo grafite, reflexo e filete */}
+      <span aria-hidden className={d.itemRim} />
+      <span aria-hidden className={`${d.itemRim} ${d.itemRimOn}`} />
+      <span aria-hidden className={d.itemFill} />
+      <span aria-hidden className={d.itemShine} />
+      <span aria-hidden className={d.itemStrip} />
+      <span className={d.icon}>{icon}</span>
+      <span className={d.text}>
+        <span className={d.label}>{label}</span>
+        {hint && <span className={d.hint}>{hint}</span>}
       </span>
-      {badge && <span className={s.badge}>{badge}</span>}
-      <span className={s.arrow} aria-hidden>
-        {loading ? <Loader2 className={s.spin} /> : kind === "nav" ? <ChevronRight /> : null}
+      {badge ? <span className={d.badge}>{badge}</span> : <span />}
+      <span className={d.arrow} aria-hidden>
+        {loading ? <Loader2 className={d.spin} /> : kind === "nav" ? <ChevronRight /> : null}
       </span>
     </button>
   )

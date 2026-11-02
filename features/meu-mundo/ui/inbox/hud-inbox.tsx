@@ -8,7 +8,6 @@
 import { Bell, Mail, MessageCircle } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { InboxCounts } from "../../types"
-import { MM } from "../hud/tokens"
 
 export default function HudInbox({
   counts,
@@ -47,14 +46,17 @@ function HudButton({ onClick, count, label, icon }: { onClick: () => void; count
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="pointer-events-auto relative inline-flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E5BE70]"
-      style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadowSoft }}
+      className="pointer-events-auto relative inline-flex h-11 w-11 items-center justify-center rounded-full text-[#E7EDF2] shadow-[inset_0_0_0_2px_#C5CED6,inset_0_0_0_4px_#10161D,inset_0_0_0_5px_rgba(45,168,255,0.45),0_0_0_1px_#000,2px_3px_0_rgba(0,0,0,0.6)] transition-[color,box-shadow,transform] duration-200 hover:text-[#65D6FF] hover:shadow-[inset_0_0_0_2px_#65D6FF,inset_0_0_0_4px_#10161D,inset_0_0_10px_rgba(45,168,255,0.45),0_0_0_1px_#000,0_0_14px_rgba(45,168,255,0.6)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA8FF]"
+      style={{
+        // mm3d-60c: anel de prata escovada, grafite por dentro, filete azul
+        background: "radial-gradient(circle at 50% 30%, #2C3742 0%, #131A22 62%, #0A0E13 100%)",
+      }}
     >
       {icon}
       {count > 0 && (
         <span
           className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold leading-none tabular-nums"
-          style={{ background: MM.ruby, color: "#fff", boxShadow: `0 0 0 2px ${MM.drawer}` }}
+          style={{ background: "linear-gradient(180deg, #65D6FF, #1A7FD0)", color: "#fff", boxShadow: "0 0 0 2px #0B1016, 0 0 10px rgba(45,168,255,0.75)" }}
           aria-hidden
         >
           {count > 99 ? "99+" : count}
