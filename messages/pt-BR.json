@@ -8714,7 +8714,9 @@
     "quest_pista_why": "O cristal rachado pulsa perto das máquinas. Morkhan, o Sem-Nome, está acordando — e Aurion quer você na próxima missão.",
     "atDexterityText": "Sobe nos minijogos e nas lutas. Economiza fôlego, recupera a arma mais rápido e melhora a chance de golpe forte.",
     "atDexterityShort": "Sobe nos minijogos e lutas; poupa fôlego e melhora golpes.",
-    "atBudgetToday": "{attr}: {used}/{cap} de prática hoje"
+    "atBudgetToday": "{attr}: {used}/{cap} de prática hoje",
+    "hudAria": "Seu personagem",
+    "hudLevel": "Nv. {n}"
   },
   "Sports": {
     "eyebrow": "Esportes",

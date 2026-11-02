@@ -1,0 +1,74 @@
+/* features/meu-mundo/ui/hud/char-hud.module.css — HUD do personagem (mm3d-60d).
+ * A placa é a FightPlate (a mesma das lutas, menor); aqui só a posição, a
+ * entrada e a linha de baixo (nível + energia/estresse em número). */
+
+.hud {
+  position: fixed;
+  left: max(10px, env(safe-area-inset-left));
+  top: max(10px, env(safe-area-inset-top));
+  z-index: 31;
+  pointer-events: none;
+  user-select: none;
+  animation: ch-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ch-in {
+  from {
+    transform: translateX(-24px) scale(0.94);
+    opacity: 0;
+  }
+}
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 1px;
+  line-height: 1;
+}
+.level {
+  flex-shrink: 0;
+  white-space: nowrap;
+  color: #f5f1ed;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-shadow:
+    -1px 0 0 #000,
+    1px 0 0 #000,
+    0 -1px 0 #000,
+    0 1px 0 #000,
+    0 0 8px rgba(255, 0, 110, 0.6);
+  transform: skewX(-7deg);
+}
+.legend {
+  display: inline-flex;
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-items: center;
+  gap: 4px;
+  color: #f5f1ed;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-shadow:
+    -1px 0 0 #000,
+    1px 0 0 #000,
+    0 -1px 0 #000,
+    0 1px 0 #000;
+}
+.legend i {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.45em;
+  margin-left: 4px;
+  transform: skewX(-30deg);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8);
+}
+.legend i:first-child {
+  margin-left: 0;
+}
+:global(html[data-mm-fx="low"]) .hud {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud {
+    animation: none;
+  }
+}

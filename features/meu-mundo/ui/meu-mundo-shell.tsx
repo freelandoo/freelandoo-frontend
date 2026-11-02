@@ -42,6 +42,7 @@ import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
 import GearPanel from "./gear/gear-panel"
 import { QuestTracker } from "./quest/quest-ui"
+import { CharHud, type HudVitals } from "./hud/char-hud"
 import { RewardOverlay } from "./rewards/reward-overlay"
 import { celebrate } from "./rewards/reward-bus"
 import PolensSheet, { PolensReturn } from "./polens/polens-sheet"
@@ -116,6 +117,11 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [needsTick, setNeedsTick] = useState(0)
   const [asleep, setAsleep] = useState(() => initial.life?.character.activity.kind === "sleeping")
   const [avatar, setAvatar] = useState<BodyId>(() => initial.life?.avatar ?? initial.me.body)
+  // HUD do personagem (mm3d-60d): saúde/energia/estresse do login e de cada "life" da sala
+  const [vitals, setVitals] = useState<HudVitals | null>(() => {
+    const v = initial.life?.character.vitals
+    return v ? { health: v.health, energy: v.energy, stress: v.stress, vitality: v.vitality } : null
+  })
   const onLife = stay.onLife
   // Sino e caixa (mm3d-30): contadores do servidor + o que a sala empurrou.
   const [counts, setCounts] = useState<InboxCounts | null>(null)
@@ -312,7 +318,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       }
       if (type === "visits") setVisits(payload as VisitState)
       else if (type === "life") {
-        const p = payload as { status?: string; activity?: string; until?: string | null; needs?: LifeNeed[]; body?: string } | null
+        const p = payload as { status?: string; activity?: string; until?: string | null; needs?: LifeNeed[]; body?: string; vitals?: HudVitals | null } | null
+        if (p?.vitals && typeof p.vitals.health === "number") setVitals(p.vitals)
         if (typeof p?.activity === "string") setAsleep(p.activity === "sleeping")
         setLifeTick((n) => n + 1)
         onLife(p?.status)
@@ -818,6 +825,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onReceipt={celebrate}
         />
       )}
+      {/* mm3d-60d: HUD do personagem (canto de cima à esquerda) */}
+      <CharHud name={scene.me.name} body={avatar} vitals={vitals} hidden={overlayOpen || asleep || tutorialFight} />
       {/* mm3d-59: missão acompanhada, luta de treino e a gramática dos ganhos */}
       <QuestTracker
         hidden={!!busy || !!statusBody || hospitalUp || jailUp || asleep || panelOpen || tutorialFight}

@@ -9300,7 +9300,9 @@
     "quest_pista_why": "The cracked crystal pulses near the machines. Morkhan, the Nameless, is waking up, and Aurion wants you on the next mission.",
     "atDexterityText": "Grows in minigames and fights. Saves stamina, recovers your weapon faster and improves the odds of strong hits.",
     "atDexterityShort": "Grows in minigames and fights; saves stamina, improves hits.",
-    "atBudgetToday": "{attr}: {used}/{cap} practice today"
+    "atBudgetToday": "{attr}: {used}/{cap} practice today",
+    "hudAria": "Your character",
+    "hudLevel": "Lv. {n}"
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -9280,7 +9280,9 @@
     "quest_pista_why": "El cristal agrietado late cerca de las máquinas. Morkhan, el Sin Nombre, está despertando, y Aurion te quiere en la próxima misión.",
     "atDexterityText": "Sube en los minijuegos y las peleas. Ahorra aliento, recupera el arma más rápido y mejora la chance de golpe fuerte.",
     "atDexterityShort": "Sube en minijuegos y peleas; ahorra aliento y mejora golpes.",
-    "atBudgetToday": "{attr}: {used}/{cap} de práctica hoy"
+    "atBudgetToday": "{attr}: {used}/{cap} de práctica hoy",
+    "hudAria": "Tu personaje",
+    "hudLevel": "Nv. {n}"
   },
   "Sports": {
     "eyebrow": "Deportes",

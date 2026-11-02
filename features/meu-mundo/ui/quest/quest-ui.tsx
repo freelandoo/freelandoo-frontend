@@ -217,7 +217,8 @@ export function QuestTracker({
           onClick={() => setOpen(true)}
           className={`${archivo.className} pointer-events-auto fixed z-[30] flex max-w-[min(300px,62vw)] items-start gap-2 p-2.5 text-left outline-none focus-visible:ring-2`}
           style={{
-            top: "calc(max(10px, env(safe-area-inset-top)) + 56px)",
+            // mm3d-60d: logo abaixo do HUD do personagem (--mm-hud-h vem dele)
+            top: "calc(max(10px, env(safe-area-inset-top)) + var(--mm-hud-h, 46px) + 10px)",
             left: "max(10px, env(safe-area-inset-left))",
             background: AE.iron,
             boxShadow: `inset 0 0 0 1px ${cur.ready ? AE.gold : AE.brassLine}, ${AE.hardSm}`,
