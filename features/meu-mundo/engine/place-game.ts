@@ -28,6 +28,7 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildInterior } from "./interior"
+import { Barbells } from "./barbell"
 import { Character } from "./player"
 import { AvatarLibrary, type PlacePose } from "./avatars"
 import { FollowCamera, INDOOR_CAMERA } from "./camera"
@@ -149,6 +150,9 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   shadowMat.alpha = 0.22
   const mats = { fallback: fallbackMat, shadow: shadowMat }
   const char = new Character(scene, lib, mats, opts.body, null, true, opts.look ?? "")
+  // A barra do rack (2026-11-02): solta, vai para as mãos no agachamento.
+  const barbells = new Barbells(scene, def)
+  let pose: PlacePose | null = null
 
   // NPCs (mm3d-37): parados no lugar, sentados ou em pé.
   const npcs: { char: Character; npc: InteriorNpc }[] = (def.npcs ?? []).map((n) => {
@@ -194,6 +198,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   const getUp = () => {
     if (state.kind === "free" || locked) return
     char.setPose(null)
+    pose = null
     const from = state.kind === "seat" ? state.seat.stand : state.kind === "bed" ? state.bed.stand : null
     if (from) Object.assign(body, { x: from.x, z: from.z, vx: 0, vz: 0 })
     setState({ kind: "free" })
@@ -284,6 +289,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
     visualFacing = lerpAngle(visualFacing, body.facing, 1 - Math.exp(-12 * dt))
     char.place(body.x, body.z, visualFacing, body.y)
     char.animate(dt, move, Math.hypot(body.vx, body.vz))
+    if (barbells.count) barbells.update(dt, char, pose === "GymSquat", body.x, body.z, body.floor, visualFacing)
     for (const n of npcs) n.char.animate(dt, n.npc.pose === "sit" ? 3 : 0, 0)
     follow.update(dt, body.x, body.z, viewBoxes(), body.y)
     governor.tick(engine.getDeltaTime())
@@ -299,6 +305,9 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       else if (nearby && !input.blocked) interactWith(nearby)
     }
   })
+
+  // conferência (harness, só em desenvolvimento): posição de mundo de um osso
+  if (process.env.NODE_ENV !== "production") (window as unknown as Record<string, unknown>).__placeBone = (n: string) => char.bonePosition(n)?.asArray() ?? null
 
   scene.executeWhenReady(() => {
     if (!disposed) opts.onReady?.()
@@ -332,9 +341,10 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       else if (nearby && !input.blocked) interactWith(nearby)
     },
     stand: getUp,
-    setPose(pose, at) {
+    setPose(p, at) {
       if (at) settle({ ...at, floor: body.floor })
-      char.setPose(pose)
+      pose = p
+      char.setPose(p)
     },
     recenter() {
       follow.snapBehind(body.x, body.z, body.facing)
@@ -346,6 +356,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       detachInput()
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
+      barbells.dispose()
       char.dispose()
       for (const n of npcs) n.char.dispose()
       lib.dispose()

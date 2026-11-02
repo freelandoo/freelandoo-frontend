@@ -121,8 +121,6 @@ const NO_THEME: Theme = { wall: C.wall, accent: C.fabricB, second: C.fabricA }
 const HOME_WALLS: RGB[] = [[0.42, 0.5, 0.42], [0.52, 0.3, 0.28], [0.34, 0.42, 0.5], [0.66, 0.56, 0.38], [0.48, 0.38, 0.5]]
 /** Cores das lombadas e dos produtos de cena (só desenho). */
 const STOCK: RGB[] = [C.red, [0.78, 0.6, 0.3], C.green, [0.24, 0.36, 0.5], [0.72, 0.42, 0.2], [0.86, 0.82, 0.7], [0.42, 0.24, 0.34]]
-/** Cilindro deitado ao longo do X local do móvel. */
-const ALONG_X = Matrix.RotationZ(Math.PI / 2)
 const FABRICS: RGB[] = [C.fabricA, C.fabricB, C.fabricC]
 /** Salão do Hall da Fama (mm3d-48): a pedra das estátuas e a cor de cada um dos Sete. */
 const HERO_STONE: RGB = SP.stoneLight
@@ -376,9 +374,8 @@ function furniture(g: SteamGeo, gl: SteamGeo, it: InteriorFurniture, y: number, 
       for (const sx of [-1, 1]) for (const sz of [-1, 1]) B(g, f, sx * (w / 2 - 0.06), 0, sz * (d / 2 - 0.06), 0.08, h, 0.08, C.iron)
       for (const sz of [-1, 1]) B(g, f, 0, h - 0.06, sz * (d / 2 - 0.06), w, 0.06, 0.08, C.iron)
       B(g, f, 0, 0, 0, w, 0.04, d, C.rubber)
-      // Barra no meio, onde quem agacha fica, com as anilhas.
-      g.cylinder(0.035, w + 0.5, ALONG_X.multiply(Matrix.Translation(0, 1.45, 0)).multiply(f), C.steel, 6)
-      for (const sx of [-1, 1]) g.cylinder(0.42, 0.08, ALONG_X.multiply(Matrix.Translation(sx * (w / 2 + 0.12), 1.45, 0)).multiply(f), C.black, 10)
+      // A barra com as anilhas NÃO é desenhada aqui (2026-11-02): é peça solta do
+      // place-game (barbell.ts), que pousa no suporte e vai para as mãos no agachamento.
       break
     case "punching_bag":
       B(g, f, 0, h - 0.06, 0, 0.08, 0.06, 0.08, C.iron)
