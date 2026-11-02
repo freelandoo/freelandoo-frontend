@@ -110,8 +110,8 @@ const ASSETS = {
     // Alturas (regra do Alex, 2026-11-01): jovem 1,70 m (menino) / 1,65 m
     // (menina) (-m58f); adultos 2,70 m (-m58g) — escala da raiz.
     // 2026-11-02 (-m58h): botas viradas para a frente (`feet_fwd` no build_deuses.py) — todos menos o raposa adulto (medida não confiável).
-    // 2026-11-02 (-m58i): vampira jovem com o antebraço limpo (`clean_forearm`; a mão descolava correndo).
-    ...byClanBody((b) => (b === "vampira" ? "avatar-vampira-m58i.glb" : b !== "raposa_adulto" ? `avatar-${b}-m58h.glb` : `avatar-${b}-m58g.glb`)),
+    // 2026-11-02 (-m58i): vampira e raposa jovens com o antebraço limpo (`clean_forearm`; a mão descolava correndo).
+    ...byClanBody((b) => (b === "vampira" || b === "raposa" ? `avatar-${b}-m58i.glb` : b !== "raposa_adulto" ? `avatar-${b}-m58h.glb` : `avatar-${b}-m58g.glb`)),
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -123,7 +123,7 @@ const ASSETS = {
     fat: "avatar-fat-lod.glb",
     strong: "avatar-strong-lod.glb",
     female: "avatar-female-m36e-lod.glb",
-    ...byClanBody((b) => (b === "vampira" ? "avatar-vampira-m58i-lod.glb" : b !== "raposa_adulto" ? `avatar-${b}-m58h-lod.glb` : `avatar-${b}-m58g-lod.glb`)),
+    ...byClanBody((b) => (b === "vampira" || b === "raposa" ? `avatar-${b}-m58i-lod.glb` : b !== "raposa_adulto" ? `avatar-${b}-m58h-lod.glb` : `avatar-${b}-m58g-lod.glb`)),
   } as Partial<Record<BodyId, string>>,
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
