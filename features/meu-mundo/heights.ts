@@ -28,5 +28,15 @@ const HEIGHT: Partial<Record<BodyId, number>> = {
   garras: 2.0,
 }
 
+/** Altura de referência das velocidades a pé (os avatares do bairro). */
+const BASE_HEIGHT = 1.8
+
 /** Altura do corpo em metros (os avatares do bairro e as skins antigas ≈ 1,8). */
-export const bodyHeight = (b: BodyId): number => HEIGHT[b] ?? 1.8
+export const bodyHeight = (b: BodyId): number => HEIGHT[b] ?? BASE_HEIGHT
+
+/**
+ * Passada pelo tamanho (2026-11-02, pedido do Alex): corpo maior percorre mais
+ * chão no mesmo tempo — multiplica a velocidade a pé (≥ 1). Espelho de
+ * bodyStride em freelandoo-backend/src/utils/meuMundoHeights.js.
+ */
+export const bodyStride = (b: BodyId): number => Math.max(1, bodyHeight(b) / BASE_HEIGHT)

@@ -59,6 +59,7 @@ import {
   type MultiplayerSession,
   type NetStatus,
 } from "../types"
+import { bodyStride } from "../heights"
 
 export interface HouseGameOptions {
   canvas: HTMLCanvasElement
@@ -606,7 +607,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       body.vx = 0
       body.vz = 0
     } else {
-      move = stepInterior(body, winded && intent.run ? { ...intent, run: false } : intent, dt, def, paceSpeeds(myPace, speeds))
+      move = stepInterior(body, winded && intent.run ? { ...intent, run: false } : intent, dt, def, paceSpeeds(myPace, speeds, bodyStride(myBody)))
       if (server) {
         const moving = intent.x !== 0 || intent.z !== 0
         const ex = server.x - body.x

@@ -50,6 +50,7 @@ import {
   type NeighborhoodPayload,
   type NetStatus,
 } from "../types"
+import { bodyStride } from "../heights"
 
 let live = 0
 export const liveGames = () => live
@@ -670,7 +671,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     if (driving && veh) driveFrame(Math.min(engine.getDeltaTime() / 1000, 0.25), boxes, now)
     else {
       local.char.tired = myPace < 1 || winded
-      local.update(dt, winded && intent.run ? { ...intent, run: false } : intent, boxes, limit, paceSpeeds(myPace, speeds))
+      local.update(dt, winded && intent.run ? { ...intent, run: false } : intent, boxes, limit, paceSpeeds(myPace, speeds, bodyStride(myBody)))
     }
     // Dirigindo, a intenção a pé é zero (o controle a pé não age).
     local.char.tickBubble()

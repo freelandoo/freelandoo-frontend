@@ -25,12 +25,14 @@ export const MOTION = {
 /**
  * Velocidades a pé pelo RITMO do corpo que a sala manda (`pace`: 1 normal,
  * 0,7 cansado, 0,42 exausto). Espelho de paceSpeeds em
- * freelandoo-backend/src/utils/meuMundoMotion.js.
+ * freelandoo-backend/src/utils/meuMundoMotion.js. `stride` = passada pelo
+ * tamanho do corpo (bodyStride em heights.ts): corpo maior anda mais rápido.
  */
-export function paceSpeeds(pace = 1, base = { walk: MOTION.WALK_SPEED, run: MOTION.RUN_SPEED }) {
+export function paceSpeeds(pace = 1, base = { walk: MOTION.WALK_SPEED, run: MOTION.RUN_SPEED }, stride = 1) {
   const p = Number.isFinite(pace) && pace > 0 ? Math.min(1, pace) : 1
-  const walk = base.walk * p
-  return { walk, run: p >= MOTION.PACE_RUN_MIN ? base.run * p : walk }
+  const k = Number.isFinite(stride) && stride > 0 ? stride : 1
+  const walk = base.walk * p * k
+  return { walk, run: p >= MOTION.PACE_RUN_MIN ? base.run * p * k : walk }
 }
 
 /**

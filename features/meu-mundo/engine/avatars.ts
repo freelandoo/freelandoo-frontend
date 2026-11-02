@@ -38,8 +38,8 @@ import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import { tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
-import { byGod } from "../gods"
-import { byClanBody, clanOfBody, CLAN_ANIMS, type Clan } from "../classes"
+import { byGod, isGod } from "../gods"
+import { byClanBody, clanOfBody, isClanBody, CLAN_ANIMS, type Clan } from "../classes"
 
 export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
@@ -205,6 +205,20 @@ const ASSETS = {
     ekaterina: "anim-gincana-ekaterina-m47.glb",
   },
 }
+/**
+ * Andar e correr das CLASSES (2026-11-02, pipeline/build_classes_locomotion.py,
+ * animações do Mixamo que o Alex baixou): trocam só o Walk e o SlowRun do
+ * conjunto do Sergio (o Idle segue a pose A). Meninos: "Walking (1)" +
+ * "Running (1)"; meninas: "Standard Walk" + "Standard Run (1)". `walk`/`run` =
+ * m/s que o clipe anda a 1× no tamanho do Sergio (pé de apoio,
+ * build/classes_locomotion_report.json).
+ */
+const CLAN_LOCO = {
+  "classe-m": { file: "anim-loco-classe-m-m60.glb", walk: 1.03, run: 3.394 },
+  "classe-f": { file: "anim-loco-classe-f-m60.glb", walk: 0.866, run: 2.5 },
+} as const
+type ClanLoco = keyof typeof CLAN_LOCO
+const clanLocoOf = (id: BodyId): ClanLoco | null => (!isClanBody(id) ? null : /^(raposa_f|vampira|raposa_adulta)/.test(id) ? "classe-f" : "classe-m")
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
 export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
 type AnimSet = keyof typeof ASSETS.anims
@@ -325,6 +339,7 @@ export class AvatarLibrary {
   private readonly boxes = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly clans = new Map<Clan, Promise<AssetContainer>>()
   private readonly gincanas = new Map<AnimSet, Promise<AssetContainer>>()
+  private readonly clanLocos = new Map<ClanLoco, Promise<AssetContainer>>()
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -479,6 +494,18 @@ export class AvatarLibrary {
     return p
   }
 
+  private clanLocoSet(id: BodyId) {
+    const key = clanLocoOf(id)
+    if (!key) return Promise.resolve(null)
+    let p = this.clanLocos.get(key)
+    if (!p) {
+      p = LoadAssetContainerAsync(BASE + CLAN_LOCO[key].file, this.scene)
+      p.catch(() => this.clanLocos.delete(key))
+      this.clanLocos.set(key, p)
+    }
+    return p
+  }
+
   private gincanaSet(id: BodyId) {
     const key = ANIM_SET[id]
     let p = this.gincanas.get(key)
@@ -526,7 +553,9 @@ export class AvatarLibrary {
     const boxeP = this.withBoxe ? this.boxeSet(id).catch(() => null) : Promise.resolve(null)
     const gincanaP = this.withGincana ? this.gincanaSet(id).catch(() => null) : Promise.resolve(null)
     const clanP = this.withClan ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
-    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC] = await Promise.all([
+    // Andar/correr da classe: se falhar, fica o do Sergio.
+    const locoP = this.clanLocoSet(id).catch(() => null)
+    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco] = await Promise.all([
       this.body(id),
       this.animSet(id),
       sitP,
@@ -538,6 +567,7 @@ export class AvatarLibrary {
       boxeP,
       gincanaP,
       clanP,
+      locoP,
     ])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
@@ -550,6 +580,25 @@ export class AvatarLibrary {
       if (!src) throw new Error(`animação ${clip} ausente`)
       const g = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
       groups[clip] = g
+    }
+    // Velocidade natural do passo NESTE corpo: o clipe anda X m/s no tamanho do
+    // Sergio; os corpos do build_deuses.py (deuses e classes) crescem pela
+    // escala do nó do esqueleto (pai do quadril) — sem isso o adulto de 2,7 m
+    // tocava o passo rápido demais e o pé escorregava.
+    let natural: { walk: number; run: number } = { ...ANIM_NATURAL_SPEED }
+    const locoKey = clanLocoOf(id)
+    const locoWalk = loco?.animationGroups.find((g) => g.name === "Walk")
+    const locoRun = loco?.animationGroups.find((g) => g.name === "SlowRun")
+    if (locoKey && locoWalk && locoRun) {
+      groups.Walk.dispose()
+      groups.SlowRun.dispose()
+      groups.Walk = locoWalk.clone(`Walk#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+      groups.SlowRun = locoRun.clone(`SlowRun#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+      natural = { walk: CLAN_LOCO[locoKey].walk, run: CLAN_LOCO[locoKey].run }
+    }
+    if (isClanBody(id) || isGod(id)) {
+      const k = Math.abs((byName.get("mixamorig:Hips")?.parent as TransformNode | null)?.scaling.y ?? 1)
+      if (k > 0.5 && k < 5) natural = { walk: natural.walk * k, run: natural.run * k }
     }
     const sitSrc = sit?.animationGroups.find((g) => g.name === "Sit")
     if (sitSrc) groups.Sit = sitSrc.clone(`Sit#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
@@ -598,6 +647,7 @@ export class AvatarLibrary {
     const lod = lodC ? this.attachLod(lodC, meshes[0] as Mesh, id, look) : null
     this.live++
     const rig = new AvatarRig(this, id, entries, root, groups, meshes, feet, ANKLE_REST[ANIM_SET[id]], lod)
+    rig.natural = natural
     rig.setLodDistance(this.lodDistance)
     return rig
   }
@@ -630,7 +680,7 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values(), ...this.clans.values()]
+    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values(), ...this.clans.values(), ...this.clanLocos.values()]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.lods.clear()
@@ -643,6 +693,7 @@ export class AvatarLibrary {
     this.boxes.clear()
     this.gincanas.clear()
     this.clans.clear()
+    this.clanLocos.clear()
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
@@ -668,6 +719,8 @@ export class AvatarRig {
     RAtk4: 0, VGSlash: 0, RIdle: 0, RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
   }
   private readonly clips: Clip[]
+  /** m/s que o Walk e o SlowRun andam a 1× neste corpo (a biblioteca mede no create). */
+  natural: { walk: number; run: number } = { ...ANIM_NATURAL_SPEED }
   private disposed = false
   /** Longe ou fora da tela (mm3d-19): a pose fica parada, nada é avaliado. */
   private frozen = false
@@ -1202,8 +1255,8 @@ export class AvatarRig {
       else if (w > 0 && !g.isPlaying && !ONE_SHOT.has(clip)) g.play(true)
     }
     // Patins: o passo de saída anda no ritmo natural (um ciclo em ~1 s).
-    const walkRate = this.rideMove === 8 ? 1 : speed > 0.05 ? speed / ANIM_NATURAL_SPEED.walk : 1
-    const runRate = speed > 0.05 ? speed / ANIM_NATURAL_SPEED.run : 1
+    const walkRate = this.rideMove === 8 ? 1 : speed > 0.05 ? speed / this.natural.walk : 1
+    const runRate = speed > 0.05 ? speed / this.natural.run : 1
     this.groups.Walk.speedRatio = Math.max(0.5, Math.min(2.2, walkRate))
     if (this.groups.TiredWalk) this.groups.TiredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
     if (this.groups.InjuredWalk) this.groups.InjuredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
