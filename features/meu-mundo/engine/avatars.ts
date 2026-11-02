@@ -25,7 +25,8 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
-import type { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
+import type { Observer } from "@babylonjs/core/Misc/observable"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder"
 import type { AssetContainer, InstantiatedEntries } from "@babylonjs/core/assetContainer"
@@ -222,6 +223,19 @@ const LOCO = {
   sergio: { file: "anim-loco-classe-m-m60.glb", walk: 1.03, run: 3.394 },
   ekaterina: { file: "anim-loco-ekaterina-m60.glb", walk: 1.32, run: 4.454 },
 } as const satisfies Record<keyof typeof ASSETS.anims, { file: string; walk: number; run: number }>
+/**
+ * Corpos VOLUMOSOS andando/correndo (2026-11-02, "os braços do ciborgue ficam
+ * indo pra cima e cruzando"): o clipe do Sergio dobra o cotovelo e leva o
+ * punho à frente do peito — no Sergio fica natural, no tronco/ombreira enormes
+ * cruza a barriga. Depois das animações: braço abre do corpo e o cotovelo
+ * desdobra (rad, Z local; eixos do build_run_arms.py), pelo peso do Walk e do
+ * SlowRun — o Idle (pose A) não muda. Valores do harness (armfix60.js).
+ */
+const BULKY_LOCO: Partial<Record<BodyId, { walk: [number, number]; run: [number, number] }>> = {
+  ciborgue: { walk: [0.4, 0.55], run: [0.5, 1.0] },
+  golem: { walk: [0.4, 0.55], run: [0.5, 1.0] },
+}
+const Vector3Z = new Vector3(0, 0, 1)
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
 export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
 type AnimSet = keyof typeof ASSETS.anims
@@ -762,7 +776,31 @@ export class AvatarRig {
       g.start(true, 1)
       if (this.weights[clip] === 0) g.pause()
     }
+    const fix = BULKY_LOCO[body]
+    if (fix) {
+      const bones = ["LeftArm", "RightArm", "LeftForeArm", "RightForeArm"].map((n) => this.node(`mixamorig:${n}`))
+      if (bones.every((b) => b?.rotationQuaternion)) {
+        const [la, ra, lf, rf] = bones as TransformNode[]
+        const scene = root.getScene()
+        const rz = (a: number) => Quaternion.RotationAxis(Vector3Z, a)
+        this.armObs = scene.onAfterAnimationsObservable.add(() => {
+          // só quando as animações acabaram de reescrever os ossos (parado/longe = a pose fica, não acumula)
+          if (this.frozen || this.disposed) return
+          const ww = this.groups.Walk.isPlaying ? this.groups.Walk.weight : 0
+          const wr = this.groups.SlowRun.isPlaying ? this.groups.SlowRun.weight : 0
+          if (ww + wr < 0.01) return
+          const abd = fix.walk[0] * ww + fix.run[0] * wr
+          const unb = fix.walk[1] * ww + fix.run[1] * wr
+          la.rotationQuaternion!.multiplyInPlace(rz(-abd))
+          ra.rotationQuaternion!.multiplyInPlace(rz(abd))
+          lf.rotationQuaternion!.multiplyInPlace(rz(-unb))
+          rf.rotationQuaternion!.multiplyInPlace(rz(unb))
+        })
+      }
+    }
   }
+
+  private armObs: Observer<Scene> | null = null
 
   setParent(parent: TransformNode) {
     this.root.parent = parent
@@ -1270,6 +1308,8 @@ export class AvatarRig {
   dispose() {
     if (this.disposed) return
     this.disposed = true
+    this.armObs?.remove()
+    this.armObs = null
     for (const clip of this.clips) this.groups[clip]!.dispose()
     this.entries.dispose()
     this.lib.release()
