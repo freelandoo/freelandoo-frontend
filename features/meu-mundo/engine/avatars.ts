@@ -98,8 +98,9 @@ const ASSETS = {
     aeryn: "avatar-aeryn-h320.glb",
     golem: "avatar-golem-h400.glb",
     // 2026-11-02: -h401 rosto/queixo 100% na cabeça (`head_rigid` no build_deuses.py — estava 70–84% no peito);
-    // -h402 ombreiras e placas soltas do ombro andam como bloco (`rigid_pieces`) — esticavam na corrida.
-    ciborgue: "avatar-ciborgue-h402.glb",
+    // -h402 ombreiras e placas soltas do ombro andam como bloco (`rigid_pieces`) — esticavam na corrida;
+    // -h403 botas para a frente (`feet_fwd`, estavam 32° para fora), como o vampiro adulto.
+    ciborgue: "avatar-ciborgue-h403.glb",
     // Alturas (regra do Alex, 2026-11-01): jovem 1,70 m (menino) / 1,65 m
     // (menina) (-m58f); adultos 2,70 m (-m58g) — escala da raiz.
     // 2026-11-02 (-m58h): vampiro adulto com as botas viradas para a frente (`feet_fwd` no build_deuses.py).
