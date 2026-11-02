@@ -181,7 +181,7 @@ export class NetClient {
     })
     // Tipo que a sala manda e não está aqui é DESCARTADO pelo Colyseus (em
     // silêncio): "ride" (mm3d-15) e "fridge" (mm3d-28) ficaram de fora até 2026-10-25; "chat"/"say" = mm3d-32; "dm" = mm3d-33; "crime" = mm3d-37f; "mobs"/"mobwin" = mm3d-48b; "mcatch" = mm3d-57b.
-    for (const type of ["visits", "visit_ended", "seat", "stood", "bed", "life", "car_denied", "tuned", "ride", "fridge", "notice", "chat", "say", "dm", "crime", "mobs", "mobwin", "mcatch"]) {
+    for (const type of ["visits", "visit_ended", "seat", "stood", "bed", "life", "car_denied", "tuned", "ride", "fridge", "notice", "chat", "say", "dm", "crime", "mobs", "mobwin", "mcatch", "receipt"]) {
       room.onMessage(type, (p: unknown) => {
         if (!this.disposed) this.cb.onMessage?.(type, p)
       })

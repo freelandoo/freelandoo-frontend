@@ -49,6 +49,7 @@ import PlayerCard from "./player-card/player-card"
 import ChatPanel, { type ChatView } from "./chat/chat-panel"
 import { bubbleText, bumpUnread, confirmLine, dropPending, mergeLines, newClientId, pendingLine, type Line } from "./chat/chat-logic"
 import type { PlayerTap } from "../engine/player-select"
+import type { Receipt } from "../data"
 import { compactFrameX, isCompactViewport } from "./player-card/place"
 import dynamic from "next/dynamic"
 // mm3d-59: a luta de treino do prólogo abre a mesma Arena (carregada só quando abre)
@@ -289,6 +290,15 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         ])
         return
       }
+      // mm3d-59: recibo de minijogo medido pela sala → celebração (a fila ignora eventId repetido)
+      if (type === "receipt") {
+        const r = payload as Receipt | null
+        if (r && typeof r.eventId === "string") {
+          celebrate(r)
+          bumpQuest()
+        }
+        return
+      }
       if (type === "notice") {
         const n = payload as MMNotice | null
         if (!n || typeof n.id !== "string") return
@@ -351,7 +361,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         )
       }
     },
-    [say, t, onLife, onJailLife],
+    [say, t, onLife, onJailLife, bumpQuest],
   )
 
   // Estado das visitas ao trocar de ambiente (a sala nova pode demorar a mandar).
