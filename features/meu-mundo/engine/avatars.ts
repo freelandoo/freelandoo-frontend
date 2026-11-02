@@ -99,7 +99,8 @@ const ASSETS = {
     ciborgue: "avatar-ciborgue-h400.glb",
     // Alturas (regra do Alex, 2026-11-01): jovem 1,70 m (menino) / 1,65 m
     // (menina) (-m58f); adultos 2,70 m (-m58g) — escala da raiz.
-    ...byClanBody((b) => (/adult/.test(b) ? `avatar-${b}-m58g.glb` : `avatar-${b}-m58f.glb`)),
+    // 2026-11-02 (-m58h): vampiro adulto com as botas viradas para a frente (`feet_fwd` no build_deuses.py).
+    ...byClanBody((b) => (b === "vampiro_adulto" ? "avatar-vampiro_adulto-m58h.glb" : /adult/.test(b) ? `avatar-${b}-m58g.glb` : `avatar-${b}-m58f.glb`)),
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -111,7 +112,7 @@ const ASSETS = {
     fat: "avatar-fat-lod.glb",
     strong: "avatar-strong-lod.glb",
     female: "avatar-female-m36e-lod.glb",
-    ...byClanBody((b) => (/adult/.test(b) ? `avatar-${b}-m58g-lod.glb` : `avatar-${b}-m58f-lod.glb`)),
+    ...byClanBody((b) => (b === "vampiro_adulto" ? "avatar-vampiro_adulto-m58h-lod.glb" : /adult/.test(b) ? `avatar-${b}-m58g-lod.glb` : `avatar-${b}-m58f-lod.glb`)),
   } as Partial<Record<BodyId, string>>,
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
