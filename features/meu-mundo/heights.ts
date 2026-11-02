@@ -32,12 +32,34 @@ const HEIGHT: Partial<Record<BodyId, number>> = {
 /** Altura de referência das velocidades a pé (os avatares do bairro). */
 const BASE_HEIGHT = 1.8
 
-/** Altura do corpo em metros (os avatares do bairro e as skins antigas ≈ 1,8). */
+/** Altura do MODELO em metros (o GLB nasce assim; os avatares do bairro e as skins antigas ≈ 1,8). */
 export const bodyHeight = (b: BodyId): number => HEIGHT[b] ?? BASE_HEIGHT
+
+/**
+ * CRESCER (2026-11-02, regra do Alex): as classes não nascem do tamanho do
+ * modelo — jovem 1,40 → 1,70/1,65 no 1º mês, adulto 1,80 → 2,40 no mês depois
+ * da virada. Quem calcula é o servidor (meuMundoHeights.js grownHeight): a
+ * sala manda `h` (cm) de cada jogador e o Character escala o modelo.
+ * Aqui fica só a MINHA altura de agora, para toda cena que desenha o meu
+ * personagem (rua, casa, prédios, minijogos) usar a mesma.
+ */
+let myH = 0
+const myHSubs = new Set<() => void>()
+/** Minha altura de agora (m); 0 = ainda não veio (usa a do modelo). */
+export const myHeight = () => myH
+export function setMyHeight(h: number) {
+  if (!(h > 0) || Math.abs(h - myH) < 0.005) return
+  myH = h
+  for (const f of myHSubs) f()
+}
+export function onMyHeight(f: () => void) {
+  myHSubs.add(f)
+  return () => void myHSubs.delete(f)
+}
 
 /**
  * Passada pelo tamanho (2026-11-02, pedido do Alex): corpo maior percorre mais
  * chão no mesmo tempo — multiplica a velocidade a pé (≥ 1). Espelho de
  * bodyStride em freelandoo-backend/src/utils/meuMundoHeights.js.
  */
-export const bodyStride = (b: BodyId): number => Math.max(1, bodyHeight(b) / BASE_HEIGHT)
+export const bodyStride = (b: BodyId, h = 0): number => Math.max(1, (h > 0 ? h : bodyHeight(b)) / BASE_HEIGHT)

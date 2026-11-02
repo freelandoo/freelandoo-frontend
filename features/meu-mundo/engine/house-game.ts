@@ -59,7 +59,7 @@ import {
   type MultiplayerSession,
   type NetStatus,
 } from "../types"
-import { bodyStride } from "../heights"
+import { bodyStride, myHeight, setMyHeight } from "../heights"
 
 export interface HouseGameOptions {
   canvas: HTMLCanvasElement
@@ -173,6 +173,8 @@ interface RemoteHouseState {
   st?: number
   wd?: boolean
   sk?: boolean
+  /** Altura de agora em cm (2026-11-02); 0 = a do modelo. */
+  h?: number
 }
 
 /** Veículo guardado na casa (mm3d-15; chave = id do veículo). */
@@ -433,6 +435,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
           void char.setLook(p.look)
           opts.onLook?.(p.look)
         }
+        if ((p.h ?? 0) > 0) setMyHeight((p.h ?? 0) / 100)
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
         char.unwell = !!p.sk
         if (!!p.wd !== winded) {
@@ -456,6 +459,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       } else if (r.char.body !== b || r.char.look !== (p.look ?? "")) {
         void r.char.setBody(b, false, p.look ?? "")
       }
+      r.char.setHeight((p.h ?? 0) / 100)
       if (r.name !== p.name) {
         r.name = p.name
         select.rename(sid, p.name)
@@ -607,7 +611,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       body.vx = 0
       body.vz = 0
     } else {
-      move = stepInterior(body, winded && intent.run ? { ...intent, run: false } : intent, dt, def, paceSpeeds(myPace, speeds, bodyStride(myBody)))
+      move = stepInterior(body, winded && intent.run ? { ...intent, run: false } : intent, dt, def, paceSpeeds(myPace, speeds, bodyStride(myBody, myHeight())))
       if (server) {
         const moving = intent.x !== 0 || intent.z !== 0
         const ex = server.x - body.x

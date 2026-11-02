@@ -15,7 +15,7 @@
 import type { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
-import type { TransformNode } from "@babylonjs/core/Meshes/transformNode"
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import type { Camera } from "@babylonjs/core/Cameras/camera"
@@ -27,7 +27,7 @@ import { SpeechBubble } from "./speech-bubble"
 import { AvatarLibrary, AvatarRig, makeNameTag, makeShadow, newHolder, type BoxeBase, type BoxeClip, type GincanaPose, type PlacePose } from "./avatars"
 import { lerpAngle, step, type Body, type Intent, type MotionProfile, type MoveState } from "./motion"
 import type { BodyId } from "../types"
-import { bodyHeight } from "../heights"
+import { bodyHeight, myHeight, onMyHeight } from "../heights"
 
 /** Nome 30 cm acima da cabeça; balão de fala 82 cm (era 2,1 e 2,62 com 1,8 m). */
 const TAG_ABOVE = 0.3
@@ -47,6 +47,11 @@ let seq = 0
 
 export class Character {
   readonly holder: TransformNode
+  /** Escala da altura de agora (2026-11-02): o modelo fica aqui dentro; nome e balão ficam no holder. */
+  private readonly sizer: TransformNode
+  /** Altura de agora (m); 0 = a do modelo. */
+  private heightNow = 0
+  private unsubHeight: (() => void) | null = null
   private rig: AvatarRig | null = null
   private fallback: Mesh | null
   private readonly shadow: Mesh
@@ -83,8 +88,10 @@ export class Character {
   ) {
     const id = ++seq
     this.holder = newHolder(scene, `mm-char-${id}`)
+    this.sizer = new TransformNode(`mm-char-size-${id}`, scene)
+    this.sizer.parent = this.holder
     this.fallback = provisionalMesh(scene, mats.fallback, `mm-char-fallback-${id}`)
-    this.fallback.parent = this.holder
+    this.fallback.parent = this.sizer
     this.shadow = makeShadow(scene, mats.shadow, `mm-char-shadow-${id}`)
     if (name) {
       this.tag = makeNameTag(scene, name, mine)
@@ -93,16 +100,40 @@ export class Character {
     }
     this.body = body
     this.look = look
+    // O meu personagem: a minha altura de agora, em qualquer cena (heights.ts).
+    if (mine) {
+      this.heightNow = myHeight()
+      this.unsubHeight = onMyHeight(() => this.setHeight(myHeight()))
+    }
+    this.applyHeight()
     void this.setBody(body, true)
+  }
+
+  /** Altura de agora (m); quem cresce (jovem/adulto das classes) chega aqui pela sala. */
+  get height() {
+    return this.heightNow > 0 ? this.heightNow : bodyHeight(this.body)
+  }
+
+  setHeight(h: number) {
+    const v = h > 0 ? h : 0
+    if (Math.abs(v - this.heightNow) < 0.005) return
+    this.heightNow = v
+    this.applyHeight()
+  }
+
+  /** O modelo escala para a altura de agora; nome e balão vão para cima da cabeça. */
+  private applyHeight() {
+    this.sizer.scaling.setAll(this.heightNow > 0 ? this.heightNow / bodyHeight(this.body) : 1)
+    if (this.tag) this.tag.mesh.position.y = this.height + TAG_ABOVE
+    this.bubble?.setY(this.height + BUBBLE_ABOVE)
   }
 
   /** Troca o corpo (e/ou as cores) preservando posição, orientação e movimento. */
   async setBody(body: BodyId, force = false, look = this.look) {
     if (!force && body === this.body && look === this.look && this.rig) return
     this.body = body
-    // Nome e balão acompanham a altura do corpo (jovem 1,65 m … deus 2,40 m).
-    if (this.tag) this.tag.mesh.position.y = bodyHeight(body) + TAG_ABOVE
-    this.bubble?.setY(bodyHeight(body) + BUBBLE_ABOVE)
+    // Nome, balão e escala acompanham a altura (a do modelo muda com o corpo).
+    this.applyHeight()
     this.look = look
     const token = ++this.loadToken
     let next: AvatarRig
@@ -116,7 +147,7 @@ export class Character {
       next.dispose()
       return
     }
-    next.setParent(this.holder)
+    next.setParent(this.sizer)
     next.pose = this.pose
     next.boxe = this.boxeBase
     next.gincana = this.gincanaPose
@@ -270,7 +301,7 @@ export class Character {
    */
   say(text: string) {
     if (this.disposed) return
-    this.bubble ??= new SpeechBubble(this.scene, this.holder, bodyHeight(this.body) + BUBBLE_ABOVE)
+    this.bubble ??= new SpeechBubble(this.scene, this.holder, this.height + BUBBLE_ABOVE)
     this.bubble.say(text)
     this.tickBubble()
   }
@@ -342,6 +373,8 @@ export class Character {
     if (this.disposed) return
     this.disposed = true
     this.loadToken++
+    this.unsubHeight?.()
+    this.unsubHeight = null
     this.rig?.dispose()
     this.rig = null
     this.fallback?.dispose()

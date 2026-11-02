@@ -321,7 +321,17 @@ export interface LifeCharacter {
   /** Orçamento de vida em dias equivalentes (1 por dia bem cuidado). */
   life?: { budgetDays: number; wearDays: number; leftDays: number; wearRate: number }
   /** mm3d-58: jovem → adulto (o modelo da classe muda). Idade + treino; anabolizante adianta. */
-  growth?: { stage: "young" | "adult"; days: number; adultDays: number; pct: number }
+  /** Crescer (2026-11-02): adulto com 1 mês de idade E força/inteligência no alvo (ganho desde que nasceu). */
+  growth?: {
+    stage: "young" | "adult"
+    from: string
+    at: string | null
+    ageDays: number
+    minDays: number
+    target: { strength: number; intelligence: number }
+    gained: { strength: number; intelligence: number }
+    pct: number
+  }
   /** Fôlego de corrida: segundos cheios e segundos para encher. */
   stamina?: { maxS: number; refillS: number }
   /** Necessidades de agora, da mais urgente para a mais leve. */

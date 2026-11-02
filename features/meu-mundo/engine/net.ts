@@ -37,6 +37,8 @@ export interface RemoteState {
   body: string
   /** Cores (mm3d-36): código look; "" = textura original. */
   look?: string
+  /** Altura de agora em cm (2026-11-02, o jovem cresce); 0 = a do modelo. */
+  h?: number
   x: number
   z: number
   facing: number

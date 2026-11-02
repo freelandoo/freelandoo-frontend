@@ -50,7 +50,7 @@ import {
   type NeighborhoodPayload,
   type NetStatus,
 } from "../types"
-import { bodyStride } from "../heights"
+import { bodyStride, myHeight, setMyHeight } from "../heights"
 
 let live = 0
 export const liveGames = () => live
@@ -428,6 +428,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
           void local.char.setLook(p.look)
           opts.onLook?.(p.look)
         }
+        // Altura de agora (o jovem cresce, 2026-11-02): vale para todas as cenas.
+        if ((p.h ?? 0) > 0) setMyHeight((p.h ?? 0) / 100)
         if (carFromMessage !== null && ((p.car ?? 0) === carFromMessage || performance.now() - carFromMessageAt > 2000)) carFromMessage = null
         if (carFromMessage === null) setDriving(p.car ?? 0, p)
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
@@ -454,6 +456,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       } else if (r.char.body !== body || r.char.look !== (p.look ?? "")) {
         void r.char.setBody(body, false, p.look ?? "")
       }
+      r.char.setHeight((p.h ?? 0) / 100)
       if (r.name !== p.name) {
         r.name = p.name
         select.rename(sid, p.name)
@@ -671,7 +674,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     if (driving && veh) driveFrame(Math.min(engine.getDeltaTime() / 1000, 0.25), boxes, now)
     else {
       local.char.tired = myPace < 1 || winded
-      local.update(dt, winded && intent.run ? { ...intent, run: false } : intent, boxes, limit, paceSpeeds(myPace, speeds, bodyStride(myBody)))
+      local.update(dt, winded && intent.run ? { ...intent, run: false } : intent, boxes, limit, paceSpeeds(myPace, speeds, bodyStride(myBody, myHeight())))
     }
     // Dirigindo, a intenção a pé é zero (o controle a pé não age).
     local.char.tickBubble()

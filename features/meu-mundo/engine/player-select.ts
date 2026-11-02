@@ -24,7 +24,6 @@ import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTextur
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { Character } from "./player"
-import { bodyHeight } from "../heights"
 
 /** Altura da cabeça acima dos pés (m) — a mesma para todos os corpos, com folga. */
 const HEAD = 1.8
@@ -227,7 +226,7 @@ export class PlayerSelection {
     this.disc.setEnabled(true)
     if (this.tag) {
       this.tag.parent = char.holder
-      this.tag.position.set(0, bodyHeight(char.body) + 0.35, 0)
+      this.tag.position.set(0, char.height + 0.35, 0)
       this.tag.setEnabled(true)
     }
   }
