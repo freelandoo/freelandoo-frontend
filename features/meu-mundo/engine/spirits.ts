@@ -98,12 +98,26 @@ interface Live {
 export class Spirits {
   private wolfC: Promise<AssetContainer> | null = null
   private readonly live: Live[] = []
-  private readonly sceneClip: { prev: Plane | null } = { prev: null }
+  private readonly sceneClip: { prev: Plane | null; on: boolean } = { prev: null, on: false }
+  private disposed = false
+  /** Rede de segurança: o recorte do lobo NUNCA passa do fim do quadro (2026-11-02). */
+  private readonly endObs
 
   constructor(
     private readonly scene: Scene,
     private readonly glow: (m: AbstractMesh) => void,
-  ) {}
+  ) {
+    this.endObs = scene.onAfterRenderObservable.add(() => this.releaseClip())
+  }
+
+  /** Devolve o plano de recorte da cena. O Mesh.render pode sair cedo (efeito ainda
+   *  compilando) DEPOIS do onBeforeRender e sem chamar o onAfterRender: o recorte
+   *  ficava preso na cena e apagava a metade da arena do jogador (bug do Alex). */
+  private releaseClip() {
+    if (!this.sceneClip.on) return
+    this.sceneClip.on = false
+    this.scene.clipPlane = this.sceneClip.prev ?? (null as unknown as Plane)
+  }
 
   private wolfContainer() {
     this.wolfC ??= LoadAssetContainerAsync(WOLF_URL, this.scene)
@@ -118,7 +132,8 @@ export class Spirits {
   /** Cabeça de lobo de luz que avança de `at` na direção `yaw`. */
   wolf(at: Vector3, yaw: number, color: Color3) {
     void this.wolfContainer()
-      .then((c) => {
+      .then(async (c) => {
+        if (this.disposed) return
         const e = c.instantiateModelsToScene((n) => `spirit-wolf-${n}`, false, { doNotInstantiate: true })
         const root = new TransformNode("spirit-wolf", this.scene)
         const turn = new TransformNode("spirit-wolf-turn", this.scene)
@@ -154,6 +169,7 @@ export class Spirits {
           neck,
           base: 4.6,
           dispose: () => {
+            this.releaseClip()
             for (const g of e.animationGroups) g.dispose()
             e.dispose()
             root.dispose()
@@ -173,14 +189,21 @@ export class Spirits {
             if (len < 1e-4) return
             fwd.scaleInPlace(1 / len)
             const keepFrom = p0.subtract(fwd.scale(len * 0.55))
-            this.sceneClip.prev = this.scene.clipPlane ?? null
+            if (!this.sceneClip.on) this.sceneClip.prev = this.scene.clipPlane ?? null
+            this.sceneClip.on = true
             // recorta o lado de TRÁS (normal para trás: dot(n, p) + d > 0 some)
             this.scene.clipPlane = new Plane(-fwd.x, -fwd.y, -fwd.z, Vector3.Dot(fwd, keepFrom))
           })
-          m.onAfterRenderObservable.add(() => {
-            this.scene.clipPlane = this.sceneClip.prev ?? (null as unknown as Plane)
-          })
+          m.onAfterRenderObservable.add(() => this.releaseClip())
         }
+        // compila o material JÁ com o recorte: sem isso o 1º quadro sai cedo do render
+        root.setEnabled(false)
+        await Promise.all(meshes.map((m) => mat.forceCompilationAsync(m, { clipPlane: true }).catch(() => {})))
+        if (this.disposed) {
+          l.dispose()
+          return
+        }
+        root.setEnabled(true)
         this.live.push(l)
       })
       .catch(() => {})
@@ -279,6 +302,9 @@ export class Spirits {
   }
 
   dispose() {
+    this.disposed = true
+    this.scene.onAfterRenderObservable.remove(this.endObs)
+    this.releaseClip()
     for (const l of this.live) l.dispose()
     this.live.length = 0
     void this.wolfC?.then((c) => c.dispose()).catch(() => {})
