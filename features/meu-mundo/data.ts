@@ -35,7 +35,7 @@ import type {
 } from "./types"
 import type { Clan, Sex } from "./classes"
 import type { PracticeAttr } from "./types"
-import type { MobKind } from "./laminas/sim/fight"
+import type { GearBonus, MobKind } from "./laminas/sim/fight"
 import type { FightFrames } from "./laminas/sim/replay"
 
 export type NeighborhoodResult =
@@ -207,6 +207,8 @@ export interface FightTicket {
     seed: number
     stats: { strength: number; speed: number; intelligence: number; dexterity: number }
     style: "mage" | null
+    /** Bônus do equipamento (com teto); o Boxe é de luvas: null. */
+    gear: Partial<GearBonus> | null
   }
   expiresAt: string
 }
