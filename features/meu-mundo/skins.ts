@@ -10,7 +10,7 @@ import type { BodyId } from "./types"
 import { GOD_BODIES, GOD_NAMES, type GodBody } from "./gods"
 import { CLAN_SKINS, type ClanSkinId } from "./classes"
 
-export type SkinId = "standard" | "sergio" | "feminina" | "ekaterina" | GodBody | ClanSkinId
+export type SkinId = "standard" | "sergio" | "feminina" | "ekaterina" | GodBody | ClanSkinId | "brutamontes"
 
 /** Palco 1672×941 com o pedestal no meio (os dois têm a mesma geometria). */
 export interface SkinStage {
@@ -138,6 +138,19 @@ export const SKINS: SkinArt[] = [
       adminOnly: true,
     }),
   ),
+  // 2026-11-02 (Alex: "deixa ele como skin liberada para os admins"): o Brutamontes,
+  // monstro da Arena das Lâminas, 4 m — skin de teste, só administrador.
+  {
+    id: "brutamontes",
+    labelKey: "laminasMobBrute",
+    fallback: "Brutamontes",
+    taglineKey: "skinBruteLine",
+    taglineFallback: "O campeão da Arena das Lâminas. Machado de 3 m.",
+    body: "brutamontes",
+    stage: { src: `${BASE}/coliseu.webp`, small: `${BASE}/coliseu-1024.webp` },
+    holo: { color: "#9b30ff", accent: "#ead6ff" },
+    adminOnly: true,
+  },
 ]
 
 export const skinArt = (id: string | null | undefined) => SKINS.find((s) => s.id === id) ?? null

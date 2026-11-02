@@ -14,7 +14,9 @@
 // os clipes do boxe, como o jogador na arena) e o Lobo = a fera de 4 patas
 // (mm3d-54: GLB com esqueleto e clipes próprios — Idle/Walk/Run/Bite/Pounce/
 // Dodge/Hit/Die/Howl, pipeline/laminas/build_lobo_anim.py; os golpes tocam o
-// trecho do clipe esticado na duração da regra). O Brutamontes segue de formas.
+// trecho do clipe esticado na duração da regra). 2026-11-02: o Brutamontes é o
+// minotauro do Alex (4 m, "do tamanho do Golem") com o machado de 3 m e as
+// animações de machado (Pro Melee Axe Pack) — BRUTE abaixo.
 //
 // mm3d-57 (Alex, 30/10): no RINGUE do prédio do Boxe os adversários são GENTE
 // de luva marrom (`human`): o mesmo tipo da regra (golpes, vida, velocidade),
@@ -37,6 +39,9 @@ import type { MobKind, MobState } from "../sim/fight"
 import { AvatarLibrary, ensureLoaders } from "../../engine/avatars"
 import { Character } from "../../engine/player"
 import type { BodyId } from "../../types"
+import type { BoxeClip } from "../../engine/avatars"
+import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { BoxingGloves } from "./gloves"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 
@@ -46,7 +51,33 @@ const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
   soldier: { body: "golem", scale: 0.55 },
   golem: { body: "ciborgue", scale: 0.7 },
   harpy: { body: "garras", scale: 1.05 },
+  // corpo de 4 m em escala 1 (Alex: "do tamanho do golem"; machado de 3 m)
+  brute: { body: "brutamontes", scale: 1 },
 }
+/** O machado do Brutamontes (build_armas.py, 3 m no arquivo, origem na pegada). */
+const AXE_URL = "/meu-mundo/armas/v1/arma-machado-m62.glb"
+/** Do punho às lâminas no eixo +Y do machado (m): o rastro roxo vai daqui até a ponta. */
+export const AXE_EDGE: [number, number] = [1.0, 2.05]
+type Seg = [number, number]
+/**
+ * Golpes do Brutamontes (regra: sweep/charge/smash) → clipe de machado e o
+ * trecho de cada fase (0–1 do clipe). Contato medido no harness das classes
+ * (peak.js: a mão mais rápida) — varrida 0,41, giro 0,36, revés 0,31, pancada
+ * 0,36, salto 0,47 — e a fase `strike` em volta dele. Sorteia entre as opções.
+ */
+const BRUTE: Record<string, { clip: BoxeClip; windup: Seg; strike: Seg; recover: Seg }[]> = {
+  sweep: [
+    { clip: "XSweep", windup: [0, 0.36], strike: [0.36, 0.48], recover: [0.48, 0.85] },
+    { clip: "X360", windup: [0, 0.31], strike: [0.31, 0.43], recover: [0.43, 0.8] },
+    { clip: "XBack", windup: [0, 0.26], strike: [0.26, 0.38], recover: [0.38, 0.75] },
+  ],
+  charge: [{ clip: "XJump", windup: [0, 0.25], strike: [0.25, 0.49], recover: [0.49, 0.9] }],
+  smash: [{ clip: "XSmash", windup: [0, 0.31], strike: [0.31, 0.42], recover: [0.42, 0.85] }],
+}
+const BRUTE_HIT: BoxeClip[] = ["XHitG", "XHitL", "XHitR"]
+/** Corrida do Brutamontes no ritmo do passo (m/s com o clipe a 1×, no corpo de 4 m). */
+const BRUTE_RUN = 3.2
+
 /**
  * Lutadores do ringue (mm3d-57): corpo, escala e roupa (look = camiseta,
  * calça, pele, cabelo na paleta de avatar-colors.ts). O trio de lobos varia a
@@ -173,6 +204,11 @@ export class MonsterModel {
   private wolfClip = ""
   private dodgeLeft = 0
   private gloves: BoxingGloves | null = null
+  /** Brutamontes: o machado na mão e o golpe sorteado do ataque em curso. */
+  private axe: TransformNode | null = null
+  private axeGrip: WeaponGrip | null = null
+  private bruteMove: (typeof BRUTE)[string][number] | null = null
+  private bruteAtk = ""
 
   constructor(
     private readonly scene: Scene,
@@ -204,6 +240,18 @@ export class MonsterModel {
       this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rig.body, null, false)
       this.char.holder.scaling.setAll(rig.scale * scale)
       this.char.setBoxe("BGuard")
+      if (kind === "brute") {
+        ensureLoaders()
+        LoadAssetContainerAsync(AXE_URL, scene)
+          .then((c) => {
+            if (this.gone) return c.dispose()
+            c.addAllToScene()
+            this.axe = c.rootNodes[0] as TransformNode
+            for (const m of this.axe.getChildMeshes(false)) m.isPickable = false
+            this.axe.setEnabled(false)
+          })
+          .catch(() => {})
+      }
       const guard = BULKY_GUARD[rig.body]
       if (guard) {
         const ch = this.char
@@ -360,6 +408,7 @@ export class MonsterModel {
   private updateRigged(dt: number, p: MobPose) {
     const c = this.char!
     c.place(p.x, p.z, p.facing, p.y, 0)
+    if (this.kind === "brute" && !this.gloves) return this.updateBrute(dt, p)
     const heavy = this.kind === "golem" || (!!this.gloves && this.kind === "brute")
     if (p.state !== this.last) {
       if (p.state === "windup") c.boxeAct(heavy ? "BBox2" : "BJab", 0.55, 0, 0.42, true)
@@ -380,6 +429,55 @@ export class MonsterModel {
     }
     // guarda baixa dos corpos volumosos (Ciborgue/Golem): só parado na guarda
     if (this.fix) this.fix.guardWant = !p.calm && !(p.state === "chase" && p.speed > 0.2) && !c.boxeBusy && p.state !== "dead" ? 1 : 0
+    if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
+  }
+
+  /** Põe o machado na mão quando os ossos já existem (o corpo carrega depois). */
+  private holdAxe() {
+    if (this.axeGrip || !this.axe || !this.char) return
+    const hand = this.char.bone(GRIP_BONES.hand)
+    const index = this.char.bone(GRIP_BONES.index)
+    const thumb = this.char.bone(GRIP_BONES.thumb)
+    if (!hand || !index || !thumb) return
+    this.axeGrip = new WeaponGrip(this.scene, { hand, index, thumb }, this.axe, `mm-mob-axe-${this.root.name}`)
+    this.axeGrip.root.scaling.setAll(this.root.scaling.x)
+    this.axe.setEnabled(true)
+  }
+
+  /** Lâmina do machado no mundo (o rastro roxo da luta), ou null fora do golpe. */
+  axeEdge(): [Vector3, Vector3] | null {
+    const r = this.axeGrip?.root
+    if (!r || !r.isEnabled() || this.last !== "strike") return null
+    const m = r.getWorldMatrix()
+    return [Vector3.TransformCoordinates(new Vector3(0, AXE_EDGE[0], 0), m), Vector3.TransformCoordinates(new Vector3(0, AXE_EDGE[1], 0), m)]
+  }
+
+  /** Brutamontes (2026-11-02): golpes de machado pela regra; andar/correr de machado; grito ao surgir. */
+  private updateBrute(dt: number, p: MobPose) {
+    const c = this.char!
+    this.holdAxe()
+    if (p.attack && p.attack.id !== this.bruteAtk && p.state === "windup") {
+      const opts = BRUTE[p.attack.id] ?? BRUTE.sweep
+      this.bruteMove = opts[Math.floor(Math.random() * opts.length)]
+      this.bruteAtk = p.attack.id
+    }
+    if (p.state !== this.last) {
+      const mv = this.bruteMove
+      if (p.state === "spawn") c.boxeAct("XTaunt", 1.6, 0, 0.9)
+      else if (mv && p.attack && (p.state === "windup" || p.state === "strike" || p.state === "recover")) {
+        const seg = mv[p.state]
+        const dur = p.state === "windup" ? p.attack.windup : p.state === "strike" ? p.attack.active : p.attack.recover
+        c.boxeAct(mv.clip, dur, seg[0], seg[1], p.state === "windup")
+        if (p.state === "recover") this.bruteAtk = ""
+      } else if (p.state === "hurt") c.boxeAct(BRUTE_HIT[Math.floor(Math.random() * BRUTE_HIT.length)], 0.45, 0, 0.7)
+      else if (p.state === "dead") c.boxeAct("BFall", 1.2, 0, 1, true)
+      this.last = p.state
+    }
+    const moving = p.speed > 0.25 && (p.state === "chase" || p.state === "circle" || !!p.calm)
+    const base = moving ? (p.speed > 2.4 ? "XRun" : "XWalk") : "XIdle"
+    c.setBoxe(base)
+    if (moving) c.setClipRate(base, Math.max(0.6, Math.min(1.6, p.speed / (base === "XRun" ? BRUTE_RUN : BRUTE_RUN * 0.45))))
+    c.animate(dt, 0, 0)
     if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
   }
 
@@ -453,6 +551,7 @@ export class MonsterModel {
     this.root.setEnabled(v)
     this.char?.setVisible(v)
     this.gloves?.setVisible(v)
+    if (this.axeGrip) this.axeGrip.root.setEnabled(v)
   }
 
   dispose() {
@@ -464,6 +563,11 @@ export class MonsterModel {
     }
     this.gloves?.dispose()
     this.fix?.dispose()
+    // o machado: a pegada solta a arma junto; sem pegada ainda, a arma sozinha
+    if (this.axeGrip) this.axeGrip.dispose()
+    else this.axe?.dispose(false, true)
+    this.axeGrip = null
+    this.axe = null
     this.char?.dispose()
     for (const p of this.parts) p.mesh.dispose()
     this.flash.dispose()

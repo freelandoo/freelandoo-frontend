@@ -26,6 +26,7 @@ const HEIGHT: Partial<Record<BodyId, number>> = {
   cavaleiro: 2.0,
   golem: 4.0,
   garras: 2.0,
+  brutamontes: 4.0,
 }
 
 /** Altura de referência das velocidades a pé (os avatares do bairro). */

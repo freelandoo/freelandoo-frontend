@@ -34,6 +34,8 @@ export const VFX_COLORS = {
   raposa: { main: new Color3(1, 0.55, 0.12), edge: new Color3(1, 0.9, 0.35) },
   lamina: { main: new Color3(1, 0.92, 0.7), edge: new Color3(0.55, 0.85, 1) },
   dano: { main: new Color3(1, 0.25, 0.2), edge: new Color3(1, 0.7, 0.3) },
+  // 2026-11-02: o Brutamontes é roxo (Alex: "os poderes e brilhos são roxos")
+  brutamontes: { main: new Color3(0.66, 0.22, 1), edge: new Color3(0.9, 0.62, 1) },
 } as const
 export type VfxColor = { main: Color3; edge: Color3 }
 

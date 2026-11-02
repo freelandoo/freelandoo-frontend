@@ -42,7 +42,7 @@ export interface SkinWardrobeProps {
 }
 
 function conditionName(b: BodyId, t: Tr) {
-  return { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES, ...clanBodyNames(t) }[b]
+  return { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES, ...clanBodyNames(t), brutamontes: t("laminasMobBrute", "Brutamontes") }[b]
 }
 
 /**

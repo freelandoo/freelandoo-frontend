@@ -45,7 +45,7 @@ import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { clanOfBody, CLAN_WEAPON, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
-import { createVfx, FIRE, VFX_COLORS } from "../../engine/vfx"
+import { createVfx, FIRE, VFX_COLORS, type Trail } from "../../engine/vfx"
 import { Spirits } from "../../engine/spirits"
 
 export interface LaminasHud {
@@ -391,14 +391,17 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   warnMat.emissiveColor = new Color3(1, 0.3, 0.3)
   warnMat.disableLighting = true
   warnMat.backFaceCulling = false
-  const models = new Map<number, { model: MonsterModel; warn: Mesh; px: number; pz: number; speed: number }>()
+  const models = new Map<number, { model: MonsterModel; warn: Mesh; px: number; pz: number; speed: number; trail: Trail | null; prev: string }>()
   for (const m of fight.mobs) {
     const warn = CreateDisc(`laminas-warn-${m.id}`, { radius: 1, tessellation: 32 }, scene)
     warn.rotation.x = Math.PI / 2
     warn.material = warnMat
     warn.isPickable = false
     warn.setEnabled(false)
-    models.set(m.id, { model: new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : null), warn, px: m.x, pz: m.z, speed: 0 })
+    const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : null)
+    // Brutamontes: rastro roxo do machado no golpe (no ringue ele é gente de luva)
+    const trail = m.kind === "brute" && !ring ? vfx.trail(() => model.axeEdge(), VFX_COLORS.brutamontes) : null
+    models.set(m.id, { model, warn, px: m.x, pz: m.z, speed: 0, trail, prev: m.state })
   }
 
   // ── faíscas ──────────────────────────────────────────────────────────────
@@ -768,6 +771,19 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       const cur = m.state === "windup" || m.state === "strike" || m.state === "recover" ? MOBS[m.kind].attacks[m.atk] : undefined
       const attack = cur ? { id: cur.id, windup: m.windup, active: cur.active, recover: cur.recover } : undefined
       v.model.update(dt, { x: m.x, y: m.y, z: m.z, facing: m.facing, state: m.state, t: m.t, warn, speed: v.speed, attack })
+      if (v.trail) {
+        v.trail.active = m.state === "strike"
+        // o golpe do Brutamontes acerta: brilho ROXO onde cai (pancada/investida) ou à frente (varrida)
+        if (m.state === "strike" && v.prev !== "strike" && a) {
+          const reach = a.area ? (a.reach ?? 0) : a.range * 0.6
+          const at = new Vector3(m.x + Math.sin(m.facing) * reach, 0.2, m.z + Math.cos(m.facing) * reach)
+          const purple = VFX_COLORS.brutamontes
+          vfx.impact(at, purple, true, a.area ? 1.6 : 1.2)
+          if (a.area) vfx.ground(new Vector3(at.x, 0, at.z), purple, a.area, 0.9, true)
+          else vfx.burst(new Vector3(at.x, 1.2, at.z), purple)
+        }
+      }
+      v.prev = m.state
       // aviso no chão: área = onde vai cair; cone = à frente do monstro
       if (a && m.state === "windup") {
         danger = true

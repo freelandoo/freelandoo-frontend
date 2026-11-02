@@ -185,6 +185,11 @@ export class Character {
   }
 
   /** Golpe/reação tocando por cima da base (mm3d-58: os ajustes de IK só valem na base). */
+  /** Ritmo de um clipe base em laço (monstro andando na guarda). */
+  setClipRate(clip: BoxeClip | BoxeBase, rate: number) {
+    this.rig?.setClipRate(clip, rate)
+  }
+
   get boxeBusy() {
     return this.rig?.boxeBusy ?? false
   }

@@ -36,6 +36,8 @@ export const PORTRAIT: Record<BodyId, string> = {
   // mm3d-58: classes — retrato PROVISÓRIO renderizado do modelo (como os deuses).
   // 2026-11-01: refeitos (modelos novos, rosto e cabelo com mais detalhe).
   ...byClanBody((b) => `${V2}/classe-${b}_m58e.webp`),
+  // monstro (não aparece em card de jogador): o retrato do Golem
+  brutamontes: `${V2}/deus-golem.webp`,
 }
 
 /** Recorte do rosto para círculos (avatar, notificação). */
@@ -49,6 +51,7 @@ const FACE: Record<BodyId, string> = {
   ekaterina: EKATERINA_FACE,
   ...byGod((g) => `${V2}/deus-${g}-rosto.webp`),
   ...byClanBody((b) => `${V2}/classe-${b}_m58e-rosto.webp`),
+  brutamontes: `${V2}/deus-golem-rosto.webp`,
 }
 
 export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "normal"] ?? STANDARD_FACE

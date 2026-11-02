@@ -65,6 +65,8 @@ const ASSETS = {
     // Deuses (mm3d-50, pipeline/build_deuses.py): 7 mil tris, textura 1024
     // (2 m de altura e armadura detalhada), sem malha leve (como o Sergio).
     ...byGod((g) => `avatar-${g}-basecolor-1024.jpg`),
+    // 2026-11-02: o Brutamontes (só monstro, build_deuses.py com 4 m)
+    brutamontes: "avatar-brutamontes-basecolor-1024.jpg",
     // Classes (mm3d-58): mesma receita dos deuses (build_deuses.py), 1,8 m,
     // pesos pela difusão própria (diffuse_weights/tidy_weights).
     // 2026-11-01 (-m58e): modelos novos do Alex, rosto e cabelo com metade dos
@@ -104,6 +106,7 @@ const ASSETS = {
     // -h402 ombreiras e placas soltas do ombro andam como bloco (`rigid_pieces`) — esticavam na corrida;
     // -h403 botas para a frente (`feet_fwd`, estavam 32° para fora), como o vampiro adulto.
     ciborgue: "avatar-ciborgue-h403.glb",
+    brutamontes: "avatar-brutamontes-x400.glb",
     // Alturas (regra do Alex, 2026-11-01): jovem 1,70 m (menino) / 1,65 m
     // (menina) (-m58f); adultos 2,70 m (-m58g) — escala da raiz.
     // 2026-11-02 (-m58h): botas viradas para a frente (`feet_fwd` no build_deuses.py) — todos menos o raposa adulto (medida não confiável).
@@ -249,7 +252,7 @@ export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.14
 type AnimSet = keyof typeof ASSETS.anims
 // mm3d-50: os deuses usam TODAS as animações do Sergio (build_deuses.py: mesmo
 // repouso de rotação, quadril na mesma altura; os 2 m vêm da escala do nó raiz).
-const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina", ...byGod((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio") }
+const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina", ...byGod((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio"), brutamontes: "sergio" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 
 /** Arquivos de um corpo, para quem desenha o avatar fora do Babylon (o jetpack, mm3d-20). */
@@ -276,6 +279,15 @@ const BOXE_CLIPS = ["BGuard", "BWarm", "BJab", "BBox0", "BBox1", "BBox2", "BBox3
  */
 const CLAN_CLIPS = ["RAtk4", "VGSlash", "RIdle", "VIdle", "VRun", "VStrafe", "VSlash1", "VSlash3", "VAtk2", "VHit", "VDie", "VPower", "RBlock", "RRun", "RStrafe", "RAtk1", "RAtk2", "RAtk3", "RHitS", "RHitL", "RDie", "RCast", "VSlash2", "VSlash4", "VSlash5", "VAtk1", "VCombo", "VDie2", "RShot", "RArea1", "RArea2"] as const
 export type ClanClip = (typeof CLAN_CLIPS)[number]
+/**
+ * O BRUTAMONTES (2026-11-02, Arena das Lâminas): o "Pro Melee Axe Pack" do Alex
+ * no esqueleto do Sergio (build_classes_mocap.py, classe `brutamontes`). Só o corpo
+ * `brutamontes` baixa o arquivo. Parado/andar/correr/defesa em laço; o resto uma vez.
+ */
+const BRUTE_FILE = "anim-brutamontes-sergio-m62.glb"
+const BRUTE_CLIPS = ["XIdle", "XLook", "XWalk", "XRun", "XSweep", "X360", "XBack", "XSmash", "XCombo1", "XCombo2", "XCombo3", "XJump", "XKick", "XBlock", "XHitL", "XHitR", "XHitG", "XTaunt", "XThump"] as const
+export type BruteClip = (typeof BRUTE_CLIPS)[number]
+const BRUTE_LOOP = new Set<string>(["XIdle", "XLook", "XWalk", "XRun", "XBlock"])
 const CLAN_LOOP = new Set<string>(["RIdle", "VIdle", "VRun", "VStrafe", "VPower", "RBlock", "RRun", "RStrafe", "RCast"])
 /** Gincana (mm3d-47): GRun/GDive/GWin em laço; pulo pela fase do voo; tombo e levantar uma vez. */
 const GINCANA_CLIPS = ["GRun", "GJump", "GFall", "GRise", "GWin", "GDive", "GUp"] as const
@@ -291,12 +303,12 @@ export interface GincanaPose {
 }
 /** Passadas na guarda (mm3d-45): velocidade natural de cada clipe (m/s, build_boxe_steps.py). */
 const BOXE_STEP_SPEED = { BStepF: 0.91, BStepB: 0.79, BStepL: 0.61, BStepR: 0.61 } as const
-export type BoxeClip = (typeof BOXE_CLIPS)[number] | ClanClip
+export type BoxeClip = (typeof BOXE_CLIPS)[number] | ClanClip | BruteClip
 /** Pose-base da luta: guarda, aquecimento, cansado, machucado, andando para o canto, vitória. */
-export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast" | "RIdle"
+export type BoxeBase = "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast" | "RIdle" | "XIdle" | "XWalk" | "XRun"
 /** Golpes e reações tocam uma vez (quem dispara é o boxeAct, nunca o laço). */
 const BOXE_LOOP = new Set<string>(["BGuard", "BWarm", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"])
-const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp", ...CLAN_CLIPS.filter((c) => !CLAN_LOOP.has(c))])
+const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp", ...CLAN_CLIPS.filter((c) => !CLAN_LOOP.has(c)), ...BRUTE_CLIPS.filter((c) => !BRUTE_LOOP.has(c))])
 /** `anim` do ponto de uso (servidor) → clipe. */
 export const POSE_OF_ANIM: Record<string, PlacePose> = { run: "Run", squat: "GymSquat", punch: "GymPunch", boxjump: "GymBoxJump", situps: "GymSitups", kettlebell: "GymKettle", pray: "Pray" }
 /** Pulos do Paint: 0 parado/à frente, 1 de lado, 2 o segundo pulo (no ar). */
@@ -312,6 +324,7 @@ type Clip =
   | (typeof BOXE_CLIPS)[number]
   | (typeof GINCANA_CLIPS)[number]
   | ClanClip
+  | BruteClip
 /** Soco (mm3d-35): o jab toca acelerado e dura isto (s). */
 const PUNCH_RATE = 2.4
 const PUNCH_TIME = 0.7
@@ -365,6 +378,7 @@ export class AvatarLibrary {
   private readonly clans = new Map<Clan, Promise<AssetContainer>>()
   private readonly gincanas = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly locos = new Map<AnimSet, Promise<AssetContainer>>()
+  private brute: Promise<AssetContainer> | null = null
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -530,6 +544,14 @@ export class AvatarLibrary {
     return p
   }
 
+  private bruteSet() {
+    if (!this.brute) {
+      this.brute = LoadAssetContainerAsync(BASE + BRUTE_FILE, this.scene)
+      this.brute.catch(() => (this.brute = null))
+    }
+    return this.brute
+  }
+
   private gincanaSet(id: BodyId) {
     const key = ANIM_SET[id]
     let p = this.gincanas.get(key)
@@ -579,7 +601,8 @@ export class AvatarLibrary {
     const clanP = this.withClan ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
     // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
     const locoP = this.locoSet(id).catch(() => null)
-    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco] = await Promise.all([
+    const bruteP = id === "brutamontes" ? this.bruteSet().catch(() => null) : Promise.resolve(null)
+    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC] = await Promise.all([
       this.body(id),
       this.animSet(id),
       sitP,
@@ -592,6 +615,7 @@ export class AvatarLibrary {
       gincanaP,
       clanP,
       locoP,
+      bruteP,
     ])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
@@ -620,7 +644,7 @@ export class AvatarLibrary {
       const l = LOCO[ANIM_SET[id]]
       natural = { walk: l.walk, run: l.run }
     }
-    if (isClanBody(id) || isGod(id)) {
+    if (isClanBody(id) || isGod(id) || id === "brutamontes") {
       const k = Math.abs((byName.get("mixamorig:Hips")?.parent as TransformNode | null)?.scaling.y ?? 1)
       if (k > 0.5 && k < 5) natural = { walk: natural.walk * k, run: natural.run * k }
     }
@@ -648,6 +672,10 @@ export class AvatarLibrary {
     }
     for (const clip of CLAN_CLIPS) {
       const src = clanC?.animationGroups.find((g) => g.name === clip)
+      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+    }
+    for (const clip of BRUTE_CLIPS) {
+      const src = bruteC?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
     for (const clip of RIDE_CLIPS) {
@@ -704,7 +732,7 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values(), ...this.clans.values(), ...this.locos.values()]
+    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values(), ...this.clans.values(), ...this.locos.values(), ...(this.brute ? [this.brute] : [])]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.lods.clear()
@@ -718,6 +746,7 @@ export class AvatarLibrary {
     this.gincanas.clear()
     this.clans.clear()
     this.locos.clear()
+    this.brute = null
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
@@ -742,6 +771,7 @@ export class AvatarRig {
     VIdle: 0, VRun: 0, VStrafe: 0, VSlash1: 0, VSlash3: 0, VAtk2: 0, VHit: 0, VDie: 0, VPower: 0,
     RAtk4: 0, VGSlash: 0, RIdle: 0, RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
     VSlash2: 0, VSlash4: 0, VSlash5: 0, VAtk1: 0, VCombo: 0, VDie2: 0, RShot: 0, RArea1: 0, RArea2: 0,
+    ...(Object.fromEntries(BRUTE_CLIPS.map((c) => [c, 0])) as Record<BruteClip, number>),
   }
   private readonly clips: Clip[]
   /** m/s que o Walk e o SlowRun andam a 1× neste corpo (a biblioteca mede no create). */
@@ -777,7 +807,7 @@ export class AvatarRig {
     /** Malha leve (nível de LOD da primeira malha), se carregou. */
     private readonly lod: Mesh | null = null,
   ) {
-    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS, ...GINCANA_CLIPS, ...CLAN_CLIPS] as const).filter((c) => !!groups[c])]
+    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS, ...GINCANA_CLIPS, ...CLAN_CLIPS, ...BRUTE_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
       const g = groups[clip]!
       g.weight = this.weights[clip]
@@ -1150,6 +1180,12 @@ export class AvatarRig {
     return this.applyWeights(dt, target, 0, p.anim <= 1 ? 12 : 22)
   }
 
+  /** Ritmo de um clipe em laço (andar/correr de monstro na guarda). */
+  setClipRate(clip: BoxeClip | BoxeBase, rate: number) {
+    const g = this.groups[clip as Clip]
+    if (g) g.speedRatio = rate
+  }
+
   /** Há golpe/reação/queda tocando por cima da base? */
   get boxeBusy() {
     return this.boxeClip !== null
@@ -1275,6 +1311,7 @@ export class AvatarRig {
       VIdle: 0, VRun: 0, VStrafe: 0, VSlash1: 0, VSlash3: 0, VAtk2: 0, VHit: 0, VDie: 0, VPower: 0,
       RAtk4: 0, VGSlash: 0, RIdle: 0, RBlock: 0, RRun: 0, RStrafe: 0, RAtk1: 0, RAtk2: 0, RAtk3: 0, RHitS: 0, RHitL: 0, RDie: 0, RCast: 0,
     VSlash2: 0, VSlash4: 0, VSlash5: 0, VAtk1: 0, VCombo: 0, VDie2: 0, RShot: 0, RArea1: 0, RArea2: 0,
+    ...(Object.fromEntries(BRUTE_CLIPS.map((c) => [c, 0])) as Record<BruteClip, number>),
     }
     this.applyWeights(dt, target, speed)
   }

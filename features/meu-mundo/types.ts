@@ -174,8 +174,13 @@ export interface Neighborhood {
 // mm3d-30: "female" = skin "feminina"; "ekaterina" = skin "ekaterina".
 // mm3d-50: os deuses (gods.ts) — corpo e skin com o mesmo id.
 // mm3d-58: os corpos das classes (classes.ts) — a sala manda; nunca se escolhem direto.
-export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina" | GodBody | ClanBody
-export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina", ...GOD_BODIES, ...CLAN_BODIES]
+/**
+ * Monstros com corpo de avatar (2026-11-02: o Brutamontes, minotauro do Alex com o
+ * machado). Também é skin de teste de administrador, então está em BODY_IDS.
+ */
+export type MobBody = "brutamontes"
+export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina" | GodBody | ClanBody | MobBody
+export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina", ...GOD_BODIES, ...CLAN_BODIES, "brutamontes"]
 
 export interface SeatReservation {
   name: string
