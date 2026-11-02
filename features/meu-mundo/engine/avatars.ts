@@ -219,14 +219,16 @@ const ASSETS = {
  * pediu para TODOS: "Walking (1)" + "Running (1)" em cada esqueleto
  * (MM_LOCO_TARGET). `walk`/`run` = m/s que o clipe anda a 1× no esqueleto
  * do conjunto (pé de apoio, build/classes_locomotion*_report.json).
+ * -m61 (2026-11-02): mão reta na direção do antebraço (o punho chegava dobrado
+ * até 41°; `straight_hands` no build).
  */
 const LOCO = {
-  base: { file: "anim-loco-base-m60.glb", walk: 1.126, run: 3.827 },
-  fat: { file: "anim-loco-fat-m60.glb", walk: 1.126, run: 3.827 },
-  strong: { file: "anim-loco-strong-m60.glb", walk: 1.126, run: 3.827 },
+  base: { file: "anim-loco-base-m61.glb", walk: 1.126, run: 3.827 },
+  fat: { file: "anim-loco-fat-m61.glb", walk: 1.126, run: 3.827 },
+  strong: { file: "anim-loco-strong-m61.glb", walk: 1.126, run: 3.827 },
   // Sergio, deuses e classes (mesmo esqueleto)
-  sergio: { file: "anim-loco-classe-m-m60.glb", walk: 1.03, run: 3.394 },
-  ekaterina: { file: "anim-loco-ekaterina-m60.glb", walk: 1.32, run: 4.454 },
+  sergio: { file: "anim-loco-classe-m-m61.glb", walk: 1.03, run: 3.394 },
+  ekaterina: { file: "anim-loco-ekaterina-m61.glb", walk: 1.32, run: 4.454 },
 } as const satisfies Record<keyof typeof ASSETS.anims, { file: string; walk: number; run: number }>
 /**
  * Corpos VOLUMOSOS andando/correndo (2026-11-02, "os braços do ciborgue ficam
