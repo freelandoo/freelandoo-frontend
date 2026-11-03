@@ -48,6 +48,8 @@ export interface JetHud {
   fuel: number
   cans: number
   thrust: boolean
+  /** Fator de velocidade do personagem (atributo velocidade). */
+  k: number
   /** Em grupo: a classificação ao vivo. */
   field: FieldRow[] | null
 }
@@ -178,7 +180,9 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const pack = new PackRig(kit, char.holder, "jt-me")
 
   const mp = opts.mp ?? null
-  const flight = new Flight(mp ? mp.start.seed : ((Date.now() & 0xffffff) | 1) >>> 0)
+  // a velocidade do voo sai do atributo VELOCIDADE do personagem (a sala manda o fator)
+  const myK = mp ? (mp.start.seats.find((q) => q.slot === mp.start.me)?.k ?? 1) : 1
+  const flight = new Flight(mp ? mp.start.seed : ((Date.now() & 0xffffff) | 1) >>> 0, myK)
   const audio = new JetAudio()
 
   const cam = new FreeCamera("jt-cam", new Vector3(0, 5, -6), scene)
@@ -360,6 +364,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       fuel: flight.fuel / TUNING.fuelMax,
       cans: flight.cans,
       thrust: flight.thrusting,
+      k: flight.k,
       field,
     })
   }
@@ -522,7 +527,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
     camY += (wantY - camY) * Math.min(1, dt * 5)
     if (shake > 0) shake = Math.max(0, shake - dt)
     const jit = shake * 0.32
-    const pace = Math.min(1, (flight.v - TUNING.v0) / (TUNING.vMax - TUNING.v0))
+    const pace = Math.min(1, Math.max(0, (flight.v / flight.k - TUNING.v0) / (TUNING.vMax - TUNING.v0)))
     cam.position.set(camX + (Math.random() - 0.5) * jit, camY + (Math.random() - 0.5) * jit, z - 5.6 - tall * 1.6 - pace * 0.6)
     camTarget.set(x * 0.82, y + 0.1, z + 14)
     cam.setTarget(camTarget)
@@ -590,7 +595,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
 
   // conferência (harness)
   const w = window as unknown as Record<string, unknown>
-  w.__jetpack = () => ({ phase, z: flight.z, x: flight.x, y: flight.y, v: flight.v, vMax: speedAt(1e9), fuel: flight.fuel, cans: flight.cans, score: flight.score, alive: flight.alive, by: flight.crashedBy, obstacles: flight.course.obstacles.length })
+  w.__jetpack = () => ({ phase, z: flight.z, x: flight.x, y: flight.y, v: flight.v, vMax: speedAt(1e9, flight.k), k: flight.k, fuel: flight.fuel, cans: flight.cans, score: flight.score, alive: flight.alive, by: flight.crashedBy, obstacles: flight.course.obstacles.length })
   w.__jetpackFlight = flight
   w.__jetpackScene = scene
 

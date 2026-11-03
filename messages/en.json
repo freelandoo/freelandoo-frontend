@@ -9678,7 +9678,8 @@
     "jetToastCan": "+FUEL",
     "jetToastEmpty": "Tank empty! The flame died",
     "jetToastLow": "Low fuel! Grab the cans",
-    "jetTouch": "◀ ▶ bottom left to steer · hold THRUST bottom right to rise"
+    "jetTouch": "◀ ▶ bottom left to steer · hold THRUST bottom right to rise",
+    "jetSpeedK": "Character speed ×{k}"
   },
   "Sports": {
     "eyebrow": "Sports",

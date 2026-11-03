@@ -23,6 +23,8 @@ export interface JetpackSeat {
   name: string
   body: string
   look: string
+  /** Fator de velocidade pelo atributo velocidade do personagem (a sala calcula). */
+  k?: number
 }
 export interface JetpackStart {
   me: number

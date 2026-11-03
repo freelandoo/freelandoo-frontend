@@ -117,9 +117,22 @@ const { W, H } = TUNNEL
 const TAU = Math.PI * 2
 const OUT = 1.5 // folga para além das paredes (as peças "saem" de dentro delas)
 
-/** Velocidade na distância z (a mesma para todos). */
-export function speedAt(z: number) {
-  return TUNING.v0 + (TUNING.vMax - TUNING.v0) * (1 - Math.exp(-Math.max(0, z) / TUNING.vK))
+/**
+ * Fator de velocidade pelo ATRIBUTO velocidade do personagem (0–1000, regra do
+ * Alex): 0,85× (nasce ~25) até 1,35× (1000). Quem calcula na partida é a sala
+ * (src/realtime/meuMundoJetpack.js, a mesma conta) e manda na largada.
+ */
+export function speedFactor(attr: number) {
+  const a = Number.isFinite(attr) ? Math.max(0, Math.min(1000, attr)) : 0
+  return Math.round((0.85 + 0.5 * (a / 1000)) * 1000) / 1000
+}
+
+/**
+ * Velocidade na distância z. O túnel é gerado pela curva base (k = 1, o mesmo
+ * para todos); o voo de cada um usa o fator do personagem.
+ */
+export function speedAt(z: number, k = 1) {
+  return k * (TUNING.v0 + (TUNING.vMax - TUNING.v0) * (1 - Math.exp(-Math.max(0, z) / TUNING.vK)))
 }
 
 /** Dificuldade 0–1 pela distância. */
@@ -352,6 +365,8 @@ export class Flight {
   vx = 0
   vy = 0
   v: number = TUNING.v0
+  /** Fator de velocidade do personagem (speedFactor). */
+  readonly k: number
   /** s de voo (o relógio das prensas). */
   t = 0
   fuel: number = TUNING.fuelMax
@@ -367,7 +382,9 @@ export class Flight {
   private readonly rects: Rect[] = []
   private readonly discs: Disc[] = []
 
-  constructor(seed: number) {
+  constructor(seed: number, k = 1) {
+    this.k = Number.isFinite(k) && k > 0 ? k : 1
+    this.v = TUNING.v0 * this.k
     this.course = new Course(seed)
     this.course.ensure(300)
   }
@@ -377,7 +394,7 @@ export class Flight {
     const dt = TUNING.step
     this.t += dt
     const z0 = this.z
-    this.v = speedAt(this.z)
+    this.v = speedAt(this.z, this.k)
     this.z += this.v * dt
     // lados
     const want = Math.max(-1, Math.min(1, Number.isFinite(inp.side) ? inp.side : 0)) * TUNING.side

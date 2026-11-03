@@ -427,6 +427,11 @@ function JetScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId; lo
                 {hud.speed} km/h
               </span>
             </div>
+            {hud.phase === "countdown" && (
+              <div className="mt-1 text-center text-[11px] font-bold tabular-nums" style={{ color: ST.cyan }}>
+                {t("jetSpeedK", "Velocidade do personagem ×{k}").replace("{k}", hud.k.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
+              </div>
+            )}
           </div>
 
           {/* sair e som */}

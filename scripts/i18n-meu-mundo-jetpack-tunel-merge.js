@@ -82,6 +82,7 @@ const FILL = {
   jetScore: ["Pontos", "Score", "Puntos"],
   jetSoundOff: ["Desligar som", "Mute", "Silenciar"],
   jetSoundOn: ["Ligar som", "Unmute", "Activar sonido"],
+  jetSpeedK: ["Velocidade do personagem ×{k}", "Character speed ×{k}", "Velocidad del personaje ×{k}"],
   jetStillFlying: ["{n} ainda voando", "{n} still flying", "{n} todavía volando"],
   jetThrust: ["Propulsor", "Thrust", "Propulsor"],
   jetTime: ["Tempo", "Time", "Tiempo"],

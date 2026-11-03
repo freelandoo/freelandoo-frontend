@@ -9658,7 +9658,8 @@
     "jetToastCan": "+COMBUSTIBLE",
     "jetToastEmpty": "¡Tanque seco! El fuego se apagó",
     "jetToastLow": "¡Poco combustible! Toma los bidones",
-    "jetTouch": "◀ ▶ abajo a la izquierda para los lados · mantén PROPULSOR abajo a la derecha para subir"
+    "jetTouch": "◀ ▶ abajo a la izquierda para los lados · mantén PROPULSOR abajo a la derecha para subir",
+    "jetSpeedK": "Velocidad del personaje ×{k}"
   },
   "Sports": {
     "eyebrow": "Deportes",
