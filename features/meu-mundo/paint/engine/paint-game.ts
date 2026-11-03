@@ -139,7 +139,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
 
   const scene = new Scene(engine)
-  // mm3d-55: céu de fim de tarde dourado (os dirigíveis passam nele).
+  // Cor inicial; mm3d-62e: o céu, a neblina e as luzes ("mm-hemi"/"mm-sun")
+  // seguem o dia e a noite de Brasília (world-view.ts → atmosphere.ts).
   const sky = new Color4(0.93, 0.86, 0.74, 1)
   scene.clearColor = sky
   scene.ambientColor = new Color3(0.3, 0.3, 0.3)
@@ -150,11 +151,11 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
-  const hemi = new HemisphericLight("paint-hemi", new Vector3(0.15, 1, -0.1), scene)
+  const hemi = new HemisphericLight("mm-hemi", new Vector3(0.15, 1, -0.1), scene)
   hemi.intensity = 0.78
   hemi.diffuse = new Color3(1, 0.99, 0.97)
   hemi.groundColor = new Color3(0.78, 0.72, 0.64)
-  const sun = new DirectionalLight("paint-sun", new Vector3(-0.45, -1, 0.35), scene)
+  const sun = new DirectionalLight("mm-sun", new Vector3(-0.45, -1, 0.35), scene)
   sun.intensity = 0.85
   sun.diffuse = new Color3(1, 0.96, 0.9)
 

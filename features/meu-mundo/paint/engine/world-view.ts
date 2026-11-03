@@ -16,6 +16,15 @@
 // cantoneiras, portais com dentes de engrenagem e lanternas, nuvens douradas
 // e dirigíveis em volta.
 //
+// mm3d-62e (pedido do Alex): o Paint ganha DIA E NOITE pelo relógio de
+// Brasília (o mesmo céu, as mesmas luzes e a mesma virada do bairro/centro —
+// atmosphere.ts), POSTES DE LUZ da cidade em cima das ilhas (acendem de
+// noite, com poça de luz no chão), o chão das ilhas no calçamento da cidade
+// (lajes no miolo e pedra portuguesa na borda, os materiais do bairro) e os
+// pilares/caixotes no acabamento dos prédios (tijolo, cantaria, latão). Saem
+// os cristais (o material deles saía preto: os "pontos pretos" nas ilhas) e
+// as lanternas penduradas embaixo da borda.
+//
 // mm3d-62 (pedido do Alex: redesenhar as ilhas) — a colisão é a MESMA (a
 // regra não mudou), só o desenho: o topo ganhou um anel de lajes radiais em
 // arenito na borda (lê de longe onde a ilha acaba) com um sulco, o miolo segue
@@ -28,14 +37,14 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
-import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix } from "@babylonjs/core/Maths/math.vector"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { GeoBuilder, place, type RGB } from "../../engine/geometry"
-import { postLantern } from "../../engine/steampunk/kit"
+import { postLantern, steamLamp } from "../../engine/steampunk/kit"
+import { Sky, applyLights, brasiliaHour, nightFactor } from "../../engine/steampunk/atmosphere"
 import { AirshipFleet, SP, SteamStage, fleetRing, rivetRing, tierOf, xf } from "../../engine/steampunk/scenery"
 import type { Island, PaintMap } from "../sim/map"
 import { TUNING } from "../sim/tuning"
@@ -49,6 +58,12 @@ function rnd(n: number) {
   h = Math.imul(h, 3266489917) >>> 0
   h ^= h >>> 16
   return (h >>> 0) / 4294967296
+}
+
+/** Chão das ilhas = o calçamento da cidade (center.ts/neighborhood.ts). */
+const CITY = {
+  pave: [0.98, 0.93, 0.83] as RGB,
+  cobble: [0.82, 0.74, 0.64] as RGB,
 }
 
 export const STONE = {
@@ -76,73 +91,6 @@ export const STONE = {
   vineDark: [0.2, 0.38, 0.18] as RGB,
 }
 
-/** Cristais de éter (mm3d-62): turquesa e âmbar, acesos. */
-const CRYSTAL: RGB[] = [
-  [0.2, 0.95, 0.88],
-  [1, 0.72, 0.25],
-]
-
-/**
- * Lajes de pedra: células (uma semente por quadrado da grade, com repetição
- * nas bordas para emendar sem costura), junta escura e um leve chanfro claro.
- */
-function stoneTexture(scene: Scene, size: number) {
-  const tex = new DynamicTexture("paint-stone", { width: size, height: size }, scene, true)
-  const ctx = tex.getContext() as unknown as CanvasRenderingContext2D
-  const img = ctx.createImageData(size, size)
-  const G = 5
-  const cell = size / G
-  const seeds: [number, number, number][] = []
-  for (let gy = 0; gy < G; gy++) for (let gx = 0; gx < G; gx++) {
-    const i = gy * G + gx
-    seeds.push([(gx + 0.15 + rnd(i * 3 + 1) * 0.7) * cell, (gy + 0.15 + rnd(i * 3 + 2) * 0.7) * cell, rnd(i * 3 + 3)])
-  }
-  const [br, bg, bb] = STONE.top
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const cx = Math.floor(x / cell)
-      const cy = Math.floor(y / cell)
-      let d1 = Infinity
-      let d2 = Infinity
-      let tint = 0
-      for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) {
-        const gx = cx + ox
-        const gy = cy + oy
-        const wx = ((gx % G) + G) % G
-        const wy = ((gy % G) + G) % G
-        const s = seeds[wy * G + wx]
-        const sx = s[0] + (gx - wx) * cell
-        const sy = s[1] + (gy - wy) * cell
-        const d = Math.hypot(x - sx, y - sy)
-        if (d < d1) {
-          d2 = d1
-          d1 = d
-          tint = s[2]
-        } else if (d < d2) d2 = d
-      }
-      const edge = d2 - d1
-      let k = 0.965 + tint * 0.05
-      if (edge < 2.2) k *= 0.8
-      else if (edge < 4.5) k *= 0.8 + ((edge - 2.2) / 2.3) * 0.2
-      else if (edge < 9) k *= 1.03
-      // grão fino
-      k *= 0.985 + rnd(x * 7919 + y * 104729) * 0.03
-      const o = (y * size + x) * 4
-      img.data[o] = Math.min(255, br * 255 * k)
-      img.data[o + 1] = Math.min(255, bg * 255 * k)
-      img.data[o + 2] = Math.min(255, bb * 255 * k)
-      img.data[o + 3] = 255
-    }
-  }
-  ctx.putImageData(img, 0, 0)
-  tex.update(false)
-  tex.wrapU = Texture.WRAP_ADDRESSMODE
-  tex.wrapV = Texture.WRAP_ADDRESSMODE
-  tex.anisotropicFilteringLevel = 4
-  return tex
-}
-
-type TopBuf = { p: number[]; n: number[]; uv: number[]; c: number[]; i: number[] }
 type RockBuf = { p: number[]; c: number[]; i: number[] }
 
 /**
@@ -151,7 +99,7 @@ type RockBuf = { p: number[]; c: number[]; i: number[] }
  * Tudo na altura da colisão (o pé não afunda). Embaixo, pedra em camadas que
  * afina até a ponta, recortada, com estalactites.
  */
-function islandGeometry(isl: Island, top: TopBuf, rock: RockBuf) {
+function islandGeometry(isl: Island, rock: RockBuf) {
   const seg = Math.max(18, Math.min(60, Math.round(isl.r * 5)))
   const wob = (k: number) => 1 + (rnd(isl.id * 977 + k) - 0.5) * 0.05
   const ring: [number, number][] = []
@@ -160,41 +108,6 @@ function islandGeometry(isl: Island, top: TopBuf, rock: RockBuf) {
     const r = isl.r * wob(k)
     ring.push([isl.x + Math.sin(a) * r, isl.z + Math.cos(a) * r])
   }
-  const at = (k: number, f: number): [number, number] => [isl.x + (ring[k][0] - isl.x) * f, isl.z + (ring[k][1] - isl.z) * f]
-  const band = Math.min(0.85, Math.max(0.42, isl.r * 0.13))
-  const fIn = Math.max(0.35, 1 - band / isl.r)
-  const fGroove = Math.max(0.3, fIn - 0.06 / isl.r)
-  const vtx = (x: number, z: number, c: RGB) => {
-    top.p.push(x, isl.y, z)
-    top.n.push(0, 1, 0)
-    top.uv.push(x / 7, z / 7)
-    top.c.push(c[0], c[1], c[2], 1)
-    return top.p.length / 3 - 1
-  }
-  // miolo: leque até o sulco
-  const center = vtx(isl.x, isl.z, [1, 1, 1])
-  const inner: number[] = []
-  for (let k = 0; k < seg; k++) inner.push(vtx(...at(k, fGroove), [1, 1, 1]))
-  for (let k = 0; k < seg; k++) top.i.push(center, inner[(k + 1) % seg], inner[k])
-  // sulco (faixa fina escura) e lajes (quadriláteros próprios: cor por laje)
-  for (let k = 0; k < seg; k++) {
-    const k2 = (k + 1) % seg
-    const g0 = vtx(...at(k, fGroove), STONE.groove)
-    const g1 = vtx(...at(k2, fGroove), STONE.groove)
-    const g2 = vtx(...at(k2, fIn), STONE.groove)
-    const g3 = vtx(...at(k, fIn), STONE.groove)
-    top.i.push(g0, g1, g2, g0, g2, g3)
-    const c = k % 2 ? STONE.slab : STONE.slabDark
-    const sh = 0.95 + rnd(isl.id * 211 + k) * 0.08
-    const cc: RGB = [c[0] * sh, c[1] * sh, c[2] * sh]
-    // junta entre as lajes: 4% de cada lado mais escura
-    const s0 = vtx(...at(k, fIn), cc)
-    const s1 = vtx(...at(k2, fIn), cc)
-    const s2 = vtx(...at(k2, 1), cc)
-    const s3 = vtx(...at(k, 1), cc)
-    top.i.push(s0, s1, s2, s0, s2, s3)
-  }
-
   // pedra em camadas: anéis descendo até a ponta (facetada depois)
   const D = isl.depth
   const rings: { f: number; dy: number; c: RGB }[] = [
@@ -259,13 +172,6 @@ function islandGeometry(isl: Island, top: TopBuf, rock: RockBuf) {
   }
 }
 
-/** Cristal (bipirâmide de 6 lados) apontando na direção `dir`. */
-function crystal(g: GeoBuilder, x: number, y: number, z: number, h: number, w: number, tiltX: number, tiltZ: number, color: RGB) {
-  const m = Matrix.RotationYawPitchRoll(rnd(x * 13 + z) * Math.PI, tiltX, tiltZ).multiply(Matrix.Translation(x, y, z))
-  g.cylinder(w, h * 0.55, Matrix.Translation(0, h * 0.27, 0).multiply(m), color, 6)
-  g.sphere(w * 1.02, [1, (h * 0.9) / w, 1], Matrix.Translation(0, h * 0.55, 0).multiply(m), color, 4)
-}
-
 export interface PaintWorldView {
   setPortalOpen(team: number, open: boolean): void
   tick(dt: number): void
@@ -276,26 +182,8 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   const disposers: (() => void)[] = []
 
   // ── ilhas ──
-  const top: TopBuf = { p: [], n: [], uv: [], c: [], i: [] }
   const rock: RockBuf = { p: [], c: [], i: [] }
-  for (const isl of map.islands) islandGeometry(isl, top, rock)
-
-  const stone = stoneTexture(scene, lowEnd ? 256 : 512)
-  const topMat = new StandardMaterial("paint-top", scene)
-  topMat.diffuseTexture = stone
-  topMat.specularColor = new Color3(0.04, 0.04, 0.04)
-  topMat.emissiveColor = new Color3(0.2, 0.19, 0.17)
-  const topMesh = new Mesh("paint-tops", scene)
-  const vdTop = new VertexData()
-  vdTop.positions = top.p
-  vdTop.normals = top.n
-  vdTop.uvs = top.uv
-  vdTop.colors = top.c
-  vdTop.indices = top.i
-  vdTop.applyToMesh(topMesh, false)
-  topMesh.material = topMat
-  topMesh.isPickable = false
-  topMesh.freezeWorldMatrix()
+  for (const isl of map.islands) islandGeometry(isl, rock)
 
   const rockMat = new StandardMaterial("paint-rock", scene)
   rockMat.diffuseColor = new Color3(1, 1, 1)
@@ -315,34 +203,12 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   rockMesh.isPickable = false
   rockMesh.freezeWorldMatrix()
   disposers.push(() => {
-    topMesh.dispose()
     rockMesh.dispose()
-    topMat.dispose()
     rockMat.dispose()
-    stone.dispose()
   })
 
-  // ── enfeites (mesmos sólidos da regra) ──
-  const g = new GeoBuilder()
-  for (const p of map.props) {
-    if (p.kind === "pillar") {
-      g.cylinder(p.s * 2, p.h, place(p.x, p.y + p.h / 2, p.z), SP.ironHi, 10)
-      g.cylinder(p.s * 2.4, 0.16, place(p.x, p.y + p.h - 0.08, p.z), SP.brassDark, 10)
-      g.cylinder(p.s * 2.4, 0.2, place(p.x, p.y + 0.1, p.z), SP.iron, 10)
-      for (const fy of [0.45, 0.62]) g.cylinder(p.s * 2.12, 0.07, place(p.x, p.y + p.h * fy, p.z), STONE.rope, 10)
-    } else {
-      const s = p.s * 2
-      g.box(s, p.h, s, place(p.x, p.y + p.h / 2, p.z, p.rot), STONE.crate)
-      for (const sy of [0.06, p.h - 0.06]) g.box(s + 0.04, 0.1, s + 0.04, place(p.x, p.y + sy, p.z, p.rot), STONE.crateEdge)
-      g.box(s * 1.38, 0.08, 0.1, place(p.x, p.y + p.h / 2, p.z, p.rot + Math.PI / 4), STONE.crateEdge)
-    }
-  }
-  const propsMesh = g.build("paint-props", scene, rockMat)
-  disposers.push(() => propsMesh.dispose())
-
-  // ── mm3d-62: cipós caindo da borda e cristais de éter na rocha ──
+  // ── mm3d-62: cipós caindo da borda ──
   const vg = new GeoBuilder()
-  const xg = new GeoBuilder()
   for (const isl of map.islands) {
     const nv = Math.round(isl.r * (lowEnd ? 0.8 : 1.6))
     for (let n = 0; n < nv; n++) {
@@ -355,33 +221,9 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
       // folhinhas
       for (let k = 1; k <= 2; k++) vg.box(0.26, 0.05, 0.16, place(x, isl.y - 0.2 - len * (k / 3), z, a + k), STONE.vine)
     }
-    const nc = isl.r >= 6 ? (lowEnd ? 2 : 4) : isl.r >= 3.5 ? (lowEnd ? 1 : 2) : 0
-    for (let n = 0; n < nc; n++) {
-      const a = rnd(isl.id * 61 + n * 5) * Math.PI * 2
-      const dy = isl.depth * (0.12 + rnd(isl.id * 67 + n) * 0.3)
-      const f = 0.95 - (dy / isl.depth) * 0.7
-      const x = isl.x + Math.sin(a) * isl.r * f
-      const z = isl.z + Math.cos(a) * isl.r * f
-      const color = CRYSTAL[(isl.id + n) % 2]
-      // cachinho de 3: o maior para fora, dois menores tortos
-      const h = 1.4 + rnd(isl.id * 71 + n) * 1.3
-      crystal(xg, x, isl.y - dy, z, h, h * 0.36, Math.cos(a) * 1.1, -Math.sin(a) * 1.1, color)
-      crystal(xg, x + Math.cos(a) * 0.35, isl.y - dy - 0.15, z - Math.sin(a) * 0.35, h * 0.6, h * 0.24, Math.cos(a) * 1.4 + 0.3, -Math.sin(a) * 1.4, color)
-      crystal(xg, x - Math.cos(a) * 0.35, isl.y - dy - 0.1, z + Math.sin(a) * 0.35, h * 0.5, h * 0.2, Math.cos(a) * 0.8 - 0.3, -Math.sin(a) * 0.8, color)
-    }
   }
   const vines = vg.build("paint-vines", scene, rockMat)
-  const crystalMat = new StandardMaterial("paint-crystal", scene)
-  // acesos: sem luz, a cor por vértice inteira (o éter brilha no escuro da rocha)
-  crystalMat.disableLighting = true
-  crystalMat.diffuseColor = new Color3(1, 1, 1)
-  crystalMat.emissiveColor = new Color3(0, 0, 0)
-  const crystals = xg.build("paint-crystals", scene, crystalMat)
-  disposers.push(() => {
-    vines.dispose()
-    crystals.dispose()
-    crystalMat.dispose()
-  })
+  disposers.push(() => vines.dispose())
 
   // ── nuvens (embaixo e no horizonte) ──
   const cg = new GeoBuilder()
@@ -493,11 +335,19 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   const stage = new SteamStage(scene, tierOf(lowEnd))
   const { ctx } = stage
   for (const isl of map.islands) {
+    // chão da cidade (mm3d-62e): pedra portuguesa na borda, lajes no miolo —
+    // por cima da colisão só alguns milímetros (o pé não afunda)
+    const sides = Math.max(18, Math.min(56, Math.round(isl.r * 5)))
+    ctx.cobble.cylinder(isl.r * 2, 0.06, place(isl.x, isl.y - 0.025, isl.z), CITY.cobble, sides)
+    const inner = Math.max(isl.r * 0.55, isl.r - Math.min(0.9, Math.max(0.45, isl.r * 0.14)))
+    ctx.pavers.cylinder(inner * 2, 0.06, place(isl.x, isl.y - 0.02, isl.z), CITY.pave, sides)
     rivetRing(ctx.props, isl.x, isl.y + 0.03, isl.z, isl.r * 0.995, 0.16, 0, SP.brass)
-    const nl = isl.r >= 6 ? 4 : isl.r >= 3.5 ? 2 : 0
+    // postes de luz da cidade na borda de cima (sem colisão: é desenho)
+    const nl = isl.r >= 7 ? 4 : isl.r >= 4.5 ? 2 : isl.r >= 2.4 ? 1 : 0
     for (let k = 0; k < nl; k++) {
-      const a = (k / nl) * Math.PI * 2 + isl.id
-      postLantern(ctx, isl.x + Math.sin(a) * isl.r * 1.03, isl.y - 0.75, isl.z + Math.cos(a) * isl.r * 1.03, 0.6)
+      const a = (k / nl) * Math.PI * 2 + isl.id * 0.7 + Math.PI / 4
+      const rr = isl.r - 0.55
+      steamLamp(ctx, isl.x + Math.sin(a) * rr, isl.z + Math.cos(a) * rr, { y: isl.y, collide: false, gearSeed: isl.id * 7 + k })
     }
     if (isl.r < 5) continue
     // motor embaixo: eixo de ferro, a engrenagem girando e o vapor saindo do bico
@@ -520,8 +370,26 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
       const a = (k / 18) * Math.PI * 2
       ctx.props.box(0.3, 0.34, 0.26, xf(Math.cos(a) * R, cy + Math.sin(a) * R, 0, 0, f, 0, a), SP.brassDark)
     }
-    for (const s of [-1, 1]) postLantern(ctx, s * TUNING.portalR * 1.15, 0.3, 0, 0.8, f)
+    for (const s of [-1, 1]) postLantern(ctx, s * TUNING.portalR * 1.15, 0.3, 0, 0.8, f, p.y)
   })
+  // pilares = colunas de prédio (base de cantaria, fuste de tijolo, cornija de
+  // latão e uma lanterna em cima); caixotes de madeira com cantoneiras —
+  // mesmas medidas da colisão (sim/map.ts)
+  for (const p of map.props) {
+    if (p.kind === "pillar") {
+      const d = p.s * 2
+      ctx.props.cylinder(d * 1.18, 0.34, place(p.x, p.y + 0.17, p.z), SP.masonryDark, 8)
+      ctx.props.cylinder(d, p.h - 0.5, place(p.x, p.y + 0.34 + (p.h - 0.5) / 2, p.z), SP.brick, 8)
+      for (const fy of [0.38, 0.7]) ctx.props.cylinder(d * 1.06, 0.1, place(p.x, p.y + p.h * fy, p.z), SP.masonry, 8)
+      ctx.props.cylinder(d * 1.22, 0.16, place(p.x, p.y + p.h - 0.08, p.z), SP.brassDark, 8)
+      postLantern(ctx, p.x, p.y + p.h, p.z, 0.7, undefined, p.y)
+    } else {
+      const sz = p.s * 2
+      ctx.props.box(sz, p.h, sz, place(p.x, p.y + p.h / 2, p.z, p.rot), SP.woodLight)
+      for (const sy of [0.06, p.h - 0.06]) ctx.props.box(sz + 0.04, 0.1, sz + 0.04, place(p.x, p.y + sy, p.z, p.rot), SP.brassDark)
+      ctx.props.box(sz * 1.38, 0.08, 0.1, place(p.x, p.y + p.h / 2, p.z, p.rot + Math.PI / 4), SP.iron)
+    }
+  }
   stage.build("paint-steam")
   let cx = 0
   let cz = 0
@@ -535,6 +403,38 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   disposers.push(() => {
     fleet?.dispose()
     stage.dispose()
+  })
+
+  // ── dia e noite (mm3d-62e): relógio de Brasília, como no bairro e no centro ──
+  const sky = new Sky(scene, 380)
+  const cloudDay = new Color3(0.86, 0.8, 0.7)
+  const cloudNight = new Color3(0.16, 0.18, 0.3)
+  let night = -1
+  let forcedHour: number | null = null
+  const applyTime = () => {
+    const n = nightFactor(forcedHour ?? brasiliaHour())
+    if (Math.abs(n - night) < 0.005) return
+    night = n
+    applyLights(scene, n)
+    sky.set(n)
+    stage.setNight(n)
+    Color3.LerpToRef(cloudDay, cloudNight, n, cloudMat.emissiveColor)
+    const r = 1 - 0.75 * n
+    rockMat.emissiveColor.set(0.16 * r, 0.15 * r, 0.13 * r)
+  }
+  const timer = setInterval(applyTime, 20000)
+  const devHour = (h: number | null) => {
+    forcedHour = h
+    night = -1
+    applyTime()
+  }
+  const w = window as unknown as { __mmSetHour?: typeof devHour }
+  if (process.env.NODE_ENV !== "production") w.__mmSetHour = devHour
+  applyTime()
+  disposers.push(() => {
+    clearInterval(timer)
+    if (w.__mmSetHour === devHour) delete w.__mmSetHour
+    sky.dispose()
   })
 
   let clock = 0

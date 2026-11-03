@@ -53,12 +53,13 @@ export function lightPool(ctx: SteamCtx, x: number, z: number, r: number, y = 0.
 
 // ── Postes ───────────────────────────────────────────────────────────────────
 
-function lantern(ctx: SteamCtx, x: number, y: number, z: number, s = 1, frame?: Matrix) {
+function lantern(ctx: SteamCtx, x: number, y: number, z: number, s = 1, frame?: Matrix, groundY = 0) {
   const { props, glow } = ctx
   const at = (lx: number, ly: number, lz: number) => place(x + lx * s, y + ly * s, z + lz * s, 0, frame)
   const o = at(0, 0, 0).asArray()
   // Quanto mais alta a lanterna, maior a poça no chão.
-  lightPool(ctx, o[12], o[14], Math.min(5.5, 1.2 + o[13] * 1.15))
+  // `groundY`: chão embaixo (as ilhas do Paint ficam no alto — mm3d-62e)
+  lightPool(ctx, o[12], o[14], Math.min(5.5, 1.2 + (o[13] - groundY) * 1.15), groundY + 0.11)
   // Gaiola: base, 4 hastes, telhadinho em cone e o pináculo de latão.
   props.cone(0.36 * s, 0.22 * s, 0.1 * s, at(0, 0.05, 0), SP.iron, 8)
   for (const [dx, dz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
@@ -74,32 +75,34 @@ function lantern(ctx: SteamCtx, x: number, y: number, z: number, s = 1, frame?: 
  * Poste de rua: base octogonal de ferro fundido, fuste com anéis de bronze,
  * engrenagem ornamental e lanterna âmbar. Colisão = a do poste antigo.
  */
-export function steamLamp(ctx: SteamCtx, x: number, z: number, opts: { collide?: boolean; clock?: boolean; gearSeed?: number } = {}) {
+export function steamLamp(ctx: SteamCtx, x: number, z: number, opts: { collide?: boolean; clock?: boolean; gearSeed?: number; y?: number } = {}) {
   const { props } = ctx
-  props.cone(0.42, 0.62, 0.32, place(x, 0.16, z), SP.iron, 8)
-  props.cylinder(0.5, 0.06, place(x, 0.34, z), SP.brassDark, 8)
-  props.cone(0.16, 0.26, 0.5, place(x, 0.62, z), SP.ironHi, 8)
-  props.cylinder(0.15, 2.3, place(x, 2.0, z), SP.iron, 8)
-  for (const y of [0.9, 2.2]) props.cylinder(0.22, 0.08, place(x, y, z), SP.bronze, 8)
+  // `y`: altura do chão do poste (0 na cidade; o topo da ilha no Paint)
+  const Y = opts.y ?? 0
+  props.cone(0.42, 0.62, 0.32, place(x, Y + 0.16, z), SP.iron, 8)
+  props.cylinder(0.5, 0.06, place(x, Y + 0.34, z), SP.brassDark, 8)
+  props.cone(0.16, 0.26, 0.5, place(x, Y + 0.62, z), SP.ironHi, 8)
+  props.cylinder(0.15, 2.3, place(x, Y + 2.0, z), SP.iron, 8)
+  for (const y of [0.9, 2.2]) props.cylinder(0.22, 0.08, place(x, Y + y, z), SP.bronze, 8)
   if (opts.clock) {
     // Relógio de quatro faces a 2,7 m (o "relógio público" da praça).
-    props.box(0.74, 0.74, 0.74, place(x, 2.75, z), SP.iron)
+    props.box(0.74, 0.74, 0.74, place(x, Y + 2.75, z), SP.iron)
     for (let k = 0; k < 4; k++) {
       const a = (k * Math.PI) / 2
-      const f = (lx: number, ly: number, lz: number) => place(lx, ly, lz, a, place(x, 0, z))
+      const f = (lx: number, ly: number, lz: number) => place(lx, ly, lz, a, place(x, Y + 0, z))
       props.with("flat", () => props.cylinder(0.6, 0.04, facingY(f(0, 2.75, -0.38)), SP.board, 12))
       props.ring(0.62, 0.05, facingY(f(0, 2.75, -0.385)), SP.brass, 12, 3)
-      const F = place(0, 0, 0, a, place(x, 0, z))
+      const F = place(0, 0, 0, a, place(x, Y + 0, z))
       props.box(0.03, 0.22, 0.02, xf(0.05, 2.83, -0.41, 0, F, 0, -0.6), SP.iron)
       props.box(0.025, 0.16, 0.02, xf(-0.04, 2.72, -0.41, 0, F, 0, 2.1), SP.iron)
     }
-    props.cone(0.1, 0.9, 0.3, place(x, 3.27, z), SP.slate, 4)
-    lantern(ctx, x, 3.42, z, 0.85)
+    props.cone(0.1, 0.9, 0.3, place(x, Y + 3.27, z), SP.slate, 4)
+    lantern(ctx, x, Y + 3.42, z, 0.85, undefined, Y)
   } else {
     // Braço curto com a lanterna pendurada no topo.
-    lantern(ctx, x, 3.12, z, 1)
+    lantern(ctx, x, Y + 3.12, z, 1, undefined, Y)
     const r = rng(opts.gearSeed ?? Math.round(x * 31 + z * 17))
-    if (r() < 0.6) props.gear(0.2, 0.05, 8, facing(x, 1.55, z - 0.1, undefined, 0), SP.brass, SP.bronze)
+    if (r() < 0.6) props.gear(0.2, 0.05, 8, facing(x, Y + 1.55, z - 0.1, undefined, 0), SP.brass, SP.bronze)
   }
   if (opts.collide !== false) ctx.boxes.push({ x, z, hx: 0.2, hz: 0.2, rot: 0, h: 3.6 })
 }
@@ -110,8 +113,8 @@ function facingY(m: Matrix): Matrix {
 }
 
 /** Lanterna de muro/pilar (sem poste). */
-export function postLantern(ctx: SteamCtx, x: number, y: number, z: number, s = 0.8, frame?: Matrix) {
-  lantern(ctx, x, y, z, s, frame)
+export function postLantern(ctx: SteamCtx, x: number, y: number, z: number, s = 0.8, frame?: Matrix, groundY = 0) {
+  lantern(ctx, x, y, z, s, frame, groundY)
 }
 
 // ── Banco ────────────────────────────────────────────────────────────────────
