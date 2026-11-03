@@ -26,7 +26,7 @@ import { AvatarLibrary } from "../../engine/avatars"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
 import type { BodyId } from "../../types"
-import { PAINT_COLORS, TUNING, type PaintColor } from "../sim/tuning"
+import { PAINT, PAINT_COLORS, TUNING, type PaintColor } from "../sim/tuning"
 import { newBody, stepBody, knockBody, liftOnto, type BodyMove, type PaintBody } from "../sim/body"
 import { rayBody, supportAt, supportIndex } from "../sim/collide"
 import { muzzleOf } from "../sim/paint"
@@ -439,6 +439,35 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     shotAt = clock
     port.pose(posePacket())
     const o = muzzleOf(body, body.facing)
+    if (c === PAINT.WALL) {
+      // mm3d-62d (Alex: "olha onde a mira está e onde surgiu a parede"): o muro
+      // nasce no ponto da MIRA. Mirando o céu o ponto fica a 70 m — além do
+      // alcance; recua ao longo do raio da CÂMERA (não da arma) até caber,
+      // para continuar embaixo da mira na tela.
+      const R = TUNING.wallReach - 0.5
+      const far = Math.hypot(at.x - o.x, at.y - o.y, at.z - o.z)
+      if (far > R) {
+        const p = cam.camera.position
+        let ux = at.x - p.x
+        let uy = at.y - p.y
+        let uz = at.z - p.z
+        const ul = Math.hypot(ux, uy, uz) || 1
+        ux /= ul
+        uy /= ul
+        uz /= ul
+        const wx = p.x - o.x
+        const wy = p.y - o.y
+        const wz = p.z - o.z
+        const wu = wx * ux + wy * uy + wz * uz
+        const disc = wu * wu - (wx * wx + wy * wy + wz * wz) + R * R
+        if (disc >= 0) {
+          const t = -wu + Math.sqrt(disc)
+          at.x = p.x + ux * t
+          at.y = p.y + uy * t
+          at.z = p.z + uz * t
+        }
+      }
+    }
     const dir = { x: at.x - o.x, y: at.y - o.y, z: at.z - o.z }
     if (Math.hypot(dir.x, dir.y, dir.z) < 0.05) return
     shotSeq++
