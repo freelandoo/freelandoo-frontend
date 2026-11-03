@@ -9,7 +9,7 @@
 //   4. reflexo   — um brilho que corre o topo UMA vez ao abrir;
 //   5. ornamento — cantoneiras de latão com engrenagem, rebites e um cristal,
 //                  em SVG (a engrenagem dá um giro curto na abertura).
-// A superfície (o miolo) é OPACA; só halo/reflexo usam alfa e opacidade.
+// mm3d-60i: o miolo do tom ouro é translúcido como o menu lateral; o bronze é opaco.
 // Nível de efeito: `html[data-mm-fx]` (fx-tier.ts) — no baixo fica só o material.
 
 import { useId, type CSSProperties, type ReactNode } from "react"

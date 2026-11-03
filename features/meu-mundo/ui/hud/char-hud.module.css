@@ -12,6 +12,24 @@
   user-select: none;
   animation: ch-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+/* tocar no HUD abre o STATUS (pedido do Alex) */
+.hud[data-click] {
+  pointer-events: auto;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 140ms ease;
+}
+.hud[data-click]:hover {
+  filter: brightness(1.12);
+}
+.hud[data-click]:active {
+  filter: brightness(0.92);
+}
+.hud[data-click]:focus-visible {
+  outline: 2px solid #5fe9f5;
+  outline-offset: 3px;
+}
 @keyframes ch-in {
   from {
     transform: translateX(-24px) scale(0.94);

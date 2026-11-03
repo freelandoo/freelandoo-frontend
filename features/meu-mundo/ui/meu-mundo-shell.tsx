@@ -826,7 +826,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
       {/* mm3d-60d: HUD do personagem (canto de cima à esquerda) */}
-      <CharHud name={scene.me.name} body={avatar} vitals={vitals} hidden={overlayOpen || asleep || tutorialFight} />
+      <CharHud name={scene.me.name} body={avatar} vitals={vitals} hidden={overlayOpen || asleep || tutorialFight} onOpen={openStatus} />
       {/* mm3d-59: missão acompanhada, luta de treino e a gramática dos ganhos */}
       <QuestTracker
         hidden={!!busy || !!statusBody || hospitalUp || jailUp || asleep || panelOpen || tutorialFight}

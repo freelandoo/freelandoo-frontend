@@ -9282,7 +9282,8 @@
     "atDexterityShort": "Sube en minijuegos y peleas; ahorra aliento y mejora golpes.",
     "atBudgetToday": "{attr}: {used}/{cap} de práctica hoy",
     "hudAria": "Tu personaje",
-    "hudLevel": "Nv. {n}"
+    "hudLevel": "Nv. {n}",
+    "hudOpenStatus": "Tu personaje — abrir el STATUS"
   },
   "Sports": {
     "eyebrow": "Deportes",

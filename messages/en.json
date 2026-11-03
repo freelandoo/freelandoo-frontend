@@ -9302,7 +9302,8 @@
     "atDexterityShort": "Grows in minigames and fights; saves stamina, improves hits.",
     "atBudgetToday": "{attr}: {used}/{cap} practice today",
     "hudAria": "Your character",
-    "hudLevel": "Lv. {n}"
+    "hudLevel": "Lv. {n}",
+    "hudOpenStatus": "Your character — open STATUS"
   },
   "Sports": {
     "eyebrow": "Sports",

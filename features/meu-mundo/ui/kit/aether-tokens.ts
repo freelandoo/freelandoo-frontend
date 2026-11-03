@@ -4,7 +4,9 @@
 // Freelandoo, bronze, vidro fumê pequeno, instrumentos de precisão e energia de
 // éter. Superfícies RETAS/CHANFRADAS, sombra dura, tipografia industrial.
 //
-// REGRA: toda superfície de card/modal é 100% OPACA — inclusive os cards
+// mm3d-60i: a MOLDURA do modal (SteamFrame/AetherModal) ficou translúcida como o
+// menu lateral (pedido do Alex). Os tokens abaixo seguem para os cards internos.
+// REGRA antiga: toda superfície de card/modal é 100% OPACA — inclusive os cards
 // laterais do carrossel e durante entrada/swipe/saída. Nada de `opacity` < 1
 // no contêiner ou nos ancestrais; a animação mexe em transform e nos detalhes
 // por cima da base sólida. Por isso aqui NÃO existe cor de superfície com alfa.

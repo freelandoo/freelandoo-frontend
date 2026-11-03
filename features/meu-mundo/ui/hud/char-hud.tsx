@@ -43,7 +43,7 @@ function hudPw() {
   return Math.round(Math.max(40, Math.min(76, window.innerWidth * 0.05, window.innerHeight * 0.095)))
 }
 
-export function CharHud({ name, body, vitals, hidden: hiddenProp = false }: { name: string; body: BodyId; vitals: HudVitals | null; hidden?: boolean }) {
+export function CharHud({ name, body, vitals, hidden: hiddenProp = false, onOpen }: { name: string; body: BodyId; vitals: HudVitals | null; hidden?: boolean; onOpen?: () => void }) {
   const t = useTranslations("MeuMundo")
   // com a gaveta aberta o HUD sai (no celular ela cobre a tela quase toda)
   const drawerOpen = useDrawerOpen()
@@ -98,7 +98,22 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false }: { na
   const stress = v ? Math.max(0, Math.min(100, v.stress)) : 0
   const label = (k: string, f: string, n: number, m: number) => `${t(k, f)}: ${Math.round(n)} / ${m}`
   return (
-    <div className={`${c.hud} ${archivo.className}`} aria-label={t("hudAria", "Seu personagem")} role="group">
+    // tocar no HUD abre o STATUS (pedido do Alex)
+    <div
+      className={`${c.hud} ${archivo.className}`}
+      aria-label={t("hudOpenStatus", "Seu personagem — abrir o STATUS")}
+      role="button"
+      tabIndex={0}
+      data-click={onOpen ? "" : undefined}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (onOpen && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault()
+          onOpen()
+        }
+      }}
+    >
       <FightPlate
         pw={pw}
         barK={BAR_K}

@@ -2,7 +2,8 @@
 
 // features/meu-mundo/ui/kit/aether-modal.tsx — mm3d-59: a MOLDURA de todo modal novo.
 //
-// Superfície 100% opaca e chanfrada (ferro + filete de latão + sombra dura).
+// Superfície chanfrada (ferro + filete de latão + sombra dura). mm3d-60i: o
+// miolo tem a MESMA opacidade do menu lateral (pedido do Alex).
 // Abertura "encaixe mecânico": desloca poucos px, assenta, um filete de luz
 // corre o topo — só transform na moldura; a base nunca fica transparente
 // (o véu atrás é que escurece). Foco: entra no primeiro controle, fica preso
@@ -89,7 +90,7 @@ export function AetherModal({
       className="fixed inset-0 flex items-end justify-center sm:items-center"
       style={{
         zIndex: z,
-        background: "rgba(4, 5, 8, 0.62)",
+        background: "rgba(6, 8, 12, 0.38)",
         paddingTop: "max(12px, env(safe-area-inset-top))",
         paddingBottom: "max(12px, env(safe-area-inset-bottom))",
         paddingLeft: "max(12px, env(safe-area-inset-left))",
@@ -116,7 +117,7 @@ export function AetherModal({
             reflexo do topo e o halo acendem na abertura — a base é opaca) */}
         <SteamFrame className="max-h-[calc(100dvh-24px)] min-h-0" cornerSize={46}>
           <div className="flex min-h-0 flex-1 flex-col">
-            <header className="relative flex items-start gap-3 px-5 pb-3 pt-4 max-[759px]:px-4" style={{ background: AE.brassPlate, borderBottom: `1px solid ${AE.brassLine}`, boxShadow: "inset 0 -1px 0 rgba(32,217,233,0.35)" }}>
+            <header className="relative flex items-start gap-3 px-5 pb-3 pt-4 max-[759px]:px-4" style={{ background: "linear-gradient(180deg, rgba(74, 58, 28, 0.62) 0%, rgba(46, 36, 18, 0.58) 100%)", borderBottom: `1px solid ${AE.brassLine}`, boxShadow: "inset 0 -1px 0 rgba(32,217,233,0.35)" }}>
               <div className="min-w-0 flex-1">
                 {eyebrow && (
                   <div className={`${archivo.className} text-[11px] font-semibold uppercase tracking-[0.22em]`} style={{ color: AE.goldSoft }}>
@@ -141,7 +142,7 @@ export function AetherModal({
               {children}
             </div>
             {footer && (
-              <footer className="flex flex-wrap gap-2 px-5 py-3 max-[759px]:px-3" style={{ borderTop: `1px solid ${AE.brassLine}`, background: AE.well }}>
+              <footer className="flex flex-wrap gap-2 px-5 py-3 max-[759px]:px-3" style={{ borderTop: `1px solid ${AE.brassLine}`, background: "rgba(13, 15, 19, 0.5)" }}>
                 {footer}
               </footer>
             )}
