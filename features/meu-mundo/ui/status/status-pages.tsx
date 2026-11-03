@@ -46,6 +46,8 @@ import { effectsOf, thumbOf } from "../fridge/fridge-logic"
 import { faceForPortrait } from "../portraits"
 import { GOD_NAMES, isGod, type GodBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
+import { HERO_LEVEL, heroLevelScale } from "../../laminas/sim/fight"
+import { useLocale } from "@/components/i18n/I18nProvider"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -426,6 +428,48 @@ function XpLine({ adv, t, small = false }: { adv: AdvXp; t: Tr; small?: boolean 
   )
 }
 
+/** Cor da vida de luta (HP) — vermelho, para não confundir com a saúde da vida. */
+const HP_COLOR = "#FF3B4E"
+const DEF_COLOR = "#8FB8FF"
+const ATK_COLOR = "#FF9F45"
+
+/** Percentual com 1 casa no idioma de quem joga (0,045 → "4,5"). */
+function usePct() {
+  const locale = useLocale()
+  return (v: number) => (Math.round(v * 1000) / 10).toLocaleString(locale, { maximumFractionDigits: 1 })
+}
+
+/**
+ * Vida (HP), defesa e ataque de LUTA pelo nível de aventura (pedido do Alex,
+ * 2026-11-03: "quando aumenta o nível não aumenta o HP"). A conta é a da regra
+ * da luta (heroLevelScale) — o equipamento soma por cima dentro da luta.
+ */
+function CombatLine({ adv, t, small = false }: { adv: AdvXp; t: Tr; small?: boolean }) {
+  const h = heroLevelScale(adv.level)
+  const pct = usePct()
+  return (
+    <div className={`flex items-center ${small ? "mt-0.5 gap-1.5" : "mt-1 gap-2.5"}`}>
+      <span className={`${teko.className} shrink-0 font-semibold uppercase leading-none`} style={{ fontSize: small ? 13 : 22, color: HP_COLOR }}>
+        {t("stHp", "HP")}
+      </span>
+      <div className="min-w-0 flex-1" style={{ maxWidth: small ? 70 : 260 }}>
+        <Bar value={h.hp} max={h.hp} color={HP_COLOR} height={small ? 4 : 8} />
+      </div>
+      <span className={`${archivo.className} shrink-0 tabular-nums`} style={{ fontSize: small ? 9.5 : 13, color: EVO.mudo }}>
+        <span style={{ color: EVO.branco }}>{h.hp}</span>
+        {" · "}
+        <span style={{ color: DEF_COLOR }}>{t("stDefShort", "DEF {n}%").replace("{n}", pct(h.def))}</span>
+        {!small && (
+          <>
+            {" · "}
+            <span style={{ color: ATK_COLOR }}>{t("stAtkShort", "ATQ +{n}%").replace("{n}", pct(h.dmg - 1))}</span>
+          </>
+        )}
+      </span>
+    </div>
+  )
+}
+
 function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps, "act">) {
   const c = life.character
   const days = Math.max(1, Math.floor((new Date(life.now).getTime() - new Date(c.bornAt).getTime()) / 86400000) + 1)
@@ -450,6 +494,7 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
             {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {walletText(life, t)}
           </div>
           {adv && <XpLine adv={adv} t={t} small />}
+          {adv && <CombatLine adv={adv} t={t} small />}
         </div>
       </div>
     )
@@ -495,6 +540,7 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
             {adv && (
               <div className="mt-1.5">
                 <XpLine adv={adv} t={t} />
+                <CombatLine adv={adv} t={t} />
               </div>
             )}
           </div>
@@ -834,11 +880,32 @@ function BodyPage({ life, compact, t }: PageProps) {
   )
 }
 
-function Attributes({ life, compact, t }: PageProps) {
+/** "+N do nível" ao lado do valor de um atributo (o bônus vale na luta). */
+function LevelBonus({ n, t, small = false }: { n: number; t: Tr; small?: boolean }) {
+  if (n <= 0) return null
+  return (
+    <span className={`${archivo.className} shrink-0 font-semibold tabular-nums`} style={{ fontSize: small ? 9 : 13, color: "#FFD23F" }} title={t("atLevelBonusHint", "Bônus do nível de aventura (vale na luta)")}>
+      {t("atLevelBonus", "+{n} nv.").replace("{n}", String(n))}
+    </span>
+  )
+}
+
+/** Quanto cada nível soma (texto da placa de combate). */
+function perLevelText(t: Tr, pct: (v: number) => string) {
+  return t("stCombatPerLevel", "Cada nível: +{hp} HP · +{def}% defesa · +{atk}% ataque · +{attr} em cada atributo.")
+    .replace("{hp}", String(HERO_LEVEL.hp))
+    .replace("{def}", pct(HERO_LEVEL.def))
+    .replace("{atk}", pct(HERO_LEVEL.dmg))
+    .replace("{attr}", String(HERO_LEVEL.attr))
+}
+
+function Attributes({ life, compact, t, adv }: PageProps) {
   const c = life.character
   const at = c.attributes
   const max = life.catalog.attributes?.max ?? 1000
   const useful = at.usefulToday
+  const hero = adv ? heroLevelScale(adv.level) : null
+  const pct = usePct()
   // [ícone, cor, nome, valor, máximo da barra, piso (traço dourado), texto, sufixo]
   const rows = [
     [<Brain key="i" className="h-6 w-6" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceText2", "Sobe estudando (rende até 5 h por dia). O que ele aprende fica: nunca cai abaixo de 90% do maior valor."), ""],
@@ -864,6 +931,7 @@ function Attributes({ life, compact, t }: PageProps) {
                     {r0(value)}
                     {unit}
                   </span>
+                  {!unit && hero && <LevelBonus n={hero.attr} t={t} />}
                   <div className="flex-1">
                     <Bar value={value} max={top} mark={floor} color={color} />
                   </div>
@@ -905,16 +973,40 @@ function Attributes({ life, compact, t }: PageProps) {
         </div>
       </Plate>
       <div className="flex flex-col gap-4">
-        <Plate title={t("stPersonality", "Personalidade")}>
-          {TRAITS.map((k) => (
-            <div key={k} className="py-1.5">
+        {hero && adv && (
+          <Plate title={t("stCombat", "Combate")} aside={<span className={`${archivo.className} text-[14px]`} style={{ color: "#FFD23F" }}>{t("hudLevel", "Nv. {n}").replace("{n}", String(adv.level))}</span>}>
+            <div className="py-1">
               <div className={`${teko.className} flex justify-between text-[20px] uppercase tracking-[0.14em]`} style={{ color: EVO.branco }}>
-                <span>{traitName(k, t)}</span>
-                <span style={{ color: EVO.douradoClaro }}>{r0(c.personality[k] * 100)}</span>
+                <span>{t("stHpLong", "Vida (HP)")}</span>
+                <span style={{ color: HP_COLOR }}>{hero.hp}</span>
               </div>
-              <Bar value={c.personality[k] * 100} color={`linear-gradient(90deg, ${EVO.ritual}, ${EVO.magenta})`} height={8} />
+              <Bar value={hero.hp} max={hero.hp} color={HP_COLOR} height={8} />
             </div>
-          ))}
+            <div className={`${teko.className} flex pt-1 text-[20px] uppercase tracking-[0.12em]`} style={{ color: EVO.branco, gap: 24 }}>
+              <span>
+                {t("stDefense", "Defesa")} <span style={{ color: DEF_COLOR }}>{pct(hero.def)}%</span>
+              </span>
+              <span>
+                {t("stAttack", "Ataque")} <span style={{ color: ATK_COLOR }}>+{pct(hero.dmg - 1)}%</span>
+              </span>
+            </div>
+            <p className={`${archivo.className} text-[13px] leading-snug`} style={{ color: EVO.mudo }}>
+              {perLevelText(t, pct)} {t("stCombatGear", "O equipamento soma defesa e ataque por cima.")}
+            </p>
+          </Plate>
+        )}
+        <Plate title={t("stPersonality", "Personalidade")}>
+          <div className={hero ? "grid grid-cols-2 gap-x-4" : ""}>
+            {TRAITS.map((k) => (
+              <div key={k} className="py-1.5">
+                <div className={`${teko.className} flex justify-between text-[20px] uppercase tracking-[0.14em]`} style={{ color: EVO.branco }}>
+                  <span>{traitName(k, t)}</span>
+                  <span style={{ color: EVO.douradoClaro }}>{r0(c.personality[k] * 100)}</span>
+                </div>
+                <Bar value={c.personality[k] * 100} color={`linear-gradient(90deg, ${EVO.ritual}, ${EVO.magenta})`} height={8} />
+              </div>
+            ))}
+          </div>
         </Plate>
         <Plate title={t("stEffects", "Efeitos no corpo")}>
           {c.effects.length === 0 ? (
@@ -1572,11 +1664,13 @@ function BodyC({ life, t }: PageProps) {
 /** Quantos efeitos cabem na placa do celular (o resto vira "+n"). */
 const EFFECTS_MAX_C = 6
 
-function AttributesC({ life, t }: PageProps) {
+function AttributesC({ life, t, adv }: PageProps) {
   const c = life.character
   const at = c.attributes
   const max = life.catalog.attributes?.max ?? 1000
   const useful = at.usefulToday
+  const hero = adv ? heroLevelScale(adv.level) : null
+  const pct = usePct()
   // [ícone, cor, nome, valor, máximo da barra, piso, resumo, sufixo]
   const rows = [
     [<Brain key="i" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceShort", "Sobe estudando (até 5 h/dia). Nunca cai abaixo de 90% do pico."), ""],
@@ -1610,6 +1704,7 @@ function AttributesC({ life, t }: PageProps) {
                   {r0(value)}
                   {unit}
                 </span>
+                {!unit && hero && <LevelBonus n={hero.attr} t={t} small />}
               </div>
               <div className="my-1">
                 <Bar value={value} max={top} mark={floor} color={color} height={6} />
@@ -1619,6 +1714,35 @@ function AttributesC({ life, t }: PageProps) {
               </p>
             </div>
           ))}
+          {/* a 6ª casa da grade: combate pelo nível (HP, defesa, ataque) */}
+          {hero && (
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className={SM_ICON} style={{ color: HP_COLOR }}>
+                  <Heart />
+                </span>
+                <span className={`${archivo.className} truncate text-[10px] font-semibold uppercase`} style={{ color: EVO.branco }}>
+                  {t("stHpLong", "Vida (HP)")}
+                </span>
+                <span className={`${teko.className} ml-auto text-[18px] font-bold leading-none`} style={{ color: EVO.branco }}>
+                  {hero.hp}
+                </span>
+              </div>
+              <div className="my-1">
+                <Bar value={hero.hp} max={hero.hp} color={HP_COLOR} height={6} />
+              </div>
+              <p className={`${archivo.className} text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
+                <span style={{ color: DEF_COLOR }}>
+                  {t("stDefense", "Defesa")} {pct(hero.def)}%
+                </span>{" "}
+                ·{" "}
+                <span style={{ color: ATK_COLOR }}>
+                  {t("stAttack", "Ataque")} +{pct(hero.dmg - 1)}%
+                </span>
+                . {t("stCombatPerLevelShort", "Sobem a cada nível.")}
+              </p>
+            </div>
+          )}
         </div>
         {useful && (
           <div className="mt-1.5 flex flex-wrap gap-1">

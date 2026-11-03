@@ -292,7 +292,7 @@ function LaminasScreen({
         body,
         look,
         setup: fromServer
-          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined }
+          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1 }
           : { kind: choice.kind, level: choice.level },
         kit: fromServer ? (fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,
@@ -401,7 +401,7 @@ function LaminasScreen({
 
       {/* eu: a placa com retrato, sangue, fôlego e poder (no celular em cima, longe do joystick) */}
       <div className="pointer-events-none absolute" style={{ left: SAFE.left, top: isTouch ? SAFE.top : undefined, bottom: isTouch ? undefined : SAFE.bottom }}>
-        <FightPlate pw={pw} portrait={PORTRAIT[body]} name={t("fightYou", "VOCÊ")} hp={hpPct} hpMax={100} stam={stPct / 100} power={{ v: pwPct / 100, ready: pwFull }}>
+        <FightPlate pw={pw} portrait={PORTRAIT[body]} name={t("fightYou", "VOCÊ")} hp={hpPct} hpMax={hud?.hpMax ?? 100} stam={stPct / 100} power={{ v: pwPct / 100, ready: pwFull }}>
           {!isTouch && pwFull && (
             <div className="mt-1 text-[12px] font-black uppercase italic tracking-wide" style={{ paddingLeft: pw * 0.62, color: "#ffb347", textShadow: "0 2px 0 rgba(0,0,0,.45)" }}>
               {t("laminasPowerReady", "PODER pronto — Q")}

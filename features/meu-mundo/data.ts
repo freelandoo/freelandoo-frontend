@@ -209,6 +209,8 @@ export interface FightTicket {
     style: "mage" | null
     /** Bônus do equipamento (com teto); o Boxe é de luvas: null. */
     gear: Partial<GearBonus> | null
+    /** Nível de aventura de quem joga (vida/defesa/ataque crescem com ele). */
+    hero?: number
     appearance?: { weaponId: string | null; level: number; cosmetic: string | null }
   }
   expiresAt: string

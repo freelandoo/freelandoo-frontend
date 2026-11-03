@@ -53,6 +53,7 @@ import { Spirits } from "../../engine/spirits"
 
 export interface LaminasHud {
   hp: number
+  hpMax: number
   stam: number
   /** Barra do poder 0–100 (cheia = pode soltar). */
   power: number
@@ -875,6 +876,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       hudAt = 0.1
       opts.onHud?.({
         hp: p.hp,
+        hpMax: p.hpMax,
         stam: p.stam,
         power: p.power,
         mobs: fight.mobs.map((m) => ({ id: m.id, kind: m.kind, hp: m.hp, hpMax: m.hpMax })),

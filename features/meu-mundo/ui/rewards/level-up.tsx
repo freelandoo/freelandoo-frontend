@@ -9,8 +9,10 @@
 //  • na tela: "LEVEL UP" e o número do nível em letra grande, bold, branca,
 //    com sombra SÓLIDA (sem desfoque) para baixo e para a esquerda a 18°;
 //    não bloqueia o toque;
-//  • e só um modal PEQUENO de notificação com o que o nível liberou (se
-//    liberou algo) — fecha sozinho ou no X.
+//  • e só um modal PEQUENO de notificação — fecha sozinho ou no X — com o
+//    aumento de status do nível (2026-11-03: "todo level up tem um aumento de
+//    status geral": vida, defesa, ataque e os 4 atributos — heroLevelScale) e
+//    o que o nível liberou, se liberou algo.
 // Movimento reduzido: o texto aparece sem salto (o 3D já sai no nível baixo).
 
 import { useEffect, useState } from "react"
@@ -22,6 +24,8 @@ import { SteamFrame } from "../kit/steam/steam-frame"
 import { FLOAT_COLOR } from "../kit/steam/steam-tokens"
 import { archivo, cinzel } from "../status/evo-skin"
 import l from "./level-up.module.css"
+import { heroLevelScale } from "../../laminas/sim/fight"
+import { useLocale } from "@/components/i18n/I18nProvider"
 
 type T = (k: string, f: string) => string
 
@@ -33,9 +37,10 @@ const NOTE_MS = 6500
 const ALL_COLORS = Object.values(FLOAT_COLOR) as string[]
 
 export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: number; to: number; unlocks: string[]; reduce: boolean; t: T; onClose: () => void }) {
+  const locale = useLocale()
   const [text, setText] = useState(true)
   const [note, setNote] = useState(false)
-  const [noteDone, setNoteDone] = useState(!unlocks.length)
+  const [noteDone, setNoteDone] = useState(false)
 
   // o feixe no personagem (uma vez)
   useEffect(() => {
@@ -44,12 +49,12 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
 
   useEffect(() => {
     const a = setTimeout(() => setText(false), TEXT_MS)
-    const b = unlocks.length ? setTimeout(() => setNote(true), NOTE_IN_MS) : null
+    const b = setTimeout(() => setNote(true), NOTE_IN_MS)
     return () => {
       clearTimeout(a)
-      if (b) clearTimeout(b)
+      clearTimeout(b)
     }
-  }, [unlocks.length])
+  }, [])
 
   useEffect(() => {
     if (!note) return
@@ -64,6 +69,17 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
   useEffect(() => {
     if (!text && noteDone && !note) onClose()
   }, [text, note, noteDone, onClose])
+
+  // o que o(s) nível(is) somou
+  const a = heroLevelScale(from)
+  const b = heroLevelScale(to)
+  const pct = (v: number) => (Math.round(v * 1000) / 10).toLocaleString(locale, { maximumFractionDigits: 1 })
+  const gains: [string, string][] = [
+    [t("levelUpGainHp", "+{n} de vida máxima (HP)").replace("{n}", String(b.hp - a.hp)), "#FF3B4E"],
+    ...(b.def > a.def ? ([[t("levelUpGainDef", "+{n}% de defesa").replace("{n}", pct(b.def - a.def)), "#8FB8FF"]] as [string, string][]) : []),
+    [t("levelUpGainAtk", "+{n}% de ataque").replace("{n}", pct(b.dmg - a.dmg)), "#FF9F45"],
+    [t("levelUpGainAttr", "+{n} em força, velocidade, inteligência e destreza").replace("{n}", String(b.attr - a.attr)), "#FFD23F"],
+  ]
 
   const closeNote = () => {
     setNote(false)
@@ -115,16 +131,31 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
                   {t("levelUpNoteEyebrow", "Nível {n}").replace("{n}", String(to))}
                 </div>
                 <h3 id="mm-levelup-note" className={`${cinzel.className} pr-8 text-[15px] font-bold uppercase leading-tight tracking-[0.05em]`} style={{ color: "#FFD68A", textShadow: "0 2px 0 #000" }}>
-                  {t("levelUpNoteTitle", "Novo acesso liberado")}
+                  {t("levelUpStatsTitle", "Status aumentaram")}
                 </h3>
                 <ul className={`${archivo.className} mt-1.5 space-y-0.5 text-[13px] font-semibold`} style={{ color: "#F3EFE6" }}>
-                  {unlocks.map((u) => (
-                    <li key={u} className="flex items-center gap-2">
-                      <span aria-hidden className="h-1.5 w-1.5 shrink-0 rotate-45" style={{ background: "#FFD23F" }} />
-                      {t(`unlock_${u}`, u)}
+                  {gains.map(([g, c]) => (
+                    <li key={g} className="flex items-center gap-2">
+                      <span aria-hidden className="h-1.5 w-1.5 shrink-0 rotate-45" style={{ background: c }} />
+                      {g}
                     </li>
                   ))}
                 </ul>
+                {unlocks.length > 0 && (
+                  <>
+                    <div className={`${cinzel.className} mt-2 text-[13px] font-bold uppercase tracking-[0.05em]`} style={{ color: "#FFD68A", textShadow: "0 2px 0 #000" }}>
+                      {t("levelUpNoteTitle", "Novo acesso liberado")}
+                    </div>
+                    <ul className={`${archivo.className} mt-1 space-y-0.5 text-[13px] font-semibold`} style={{ color: "#F3EFE6" }}>
+                      {unlocks.map((u) => (
+                        <li key={u} className="flex items-center gap-2">
+                          <span aria-hidden className="h-1.5 w-1.5 shrink-0 rotate-45" style={{ background: "#FFD23F" }} />
+                          {t(`unlock_${u}`, u)}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
                 <button type="button" onClick={closeNote} aria-label={t("close", "Fechar")} className={l.close}>
                   <X className="h-4 w-4" />
                 </button>
