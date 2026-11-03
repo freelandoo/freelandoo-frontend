@@ -306,7 +306,7 @@ export interface Input {
   power?: boolean
 }
 
-/** Uma luta: quem entra e com que força. `level` 1–3 multiplica vida e dano. */
+/** Uma luta: quem entra e com que força. `level` (1–60; o Soldado só 1–2) multiplica vida, dano e firmeza. */
 export interface FightSetup {
   kind: MobKind
   level?: number
@@ -340,6 +340,18 @@ function clampGear(g?: Partial<GearBonus>): GearBonus {
 }
 
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v)
+
+// ═══ NÍVEL DO MONSTRO (mm3d-60m, regra do Alex) ═══ — o monstro da rua tem
+// nível sorteado (pode vir bem acima ou abaixo do seu) e os status crescem
+// com ele. Base = o nível 1 de hoje; 1–3 ficam EXATAMENTE como antes (a Arena
+// usa); do 3 em diante cada nível soma +0,25× vida, +0,08× dano, +0,25 firmeza.
+export const MOB_LEVEL_MAX = 60
+export function mobLevelScale(level: number): { hp: number; dmg: number; poise: number } {
+  const l = clamp(Math.round(level), 1, MOB_LEVEL_MAX)
+  const low = Math.min(l, 3) - 1
+  const over = Math.max(0, l - 3)
+  return { hp: 1 + 0.45 * low + 0.25 * over, dmg: 1 + 0.3 * low + 0.08 * over, poise: 2 * low + 0.25 * over }
+}
 const angDiff = (a: number, b: number) => {
   let d = a - b
   while (d > Math.PI) d -= 2 * Math.PI
@@ -413,7 +425,7 @@ export class Fight {
     this.kind = setup.kind
     this.combo = setup.style === "mage" ? MAGE_COMBO : COMBO
     // O Golem de Pedra (o antigo Soldado) tem só os níveis 1 e 2 (Alex, 29/10).
-    this.level = clamp(Math.round(setup.level ?? 1), 1, setup.kind === "soldier" ? 2 : 3)
+    this.level = clamp(Math.round(setup.level ?? 1), 1, setup.kind === "soldier" ? 2 : MOB_LEVEL_MAX)
     const stats = { ...BASE_STATS, ...(setup.stats ?? {}) }
     this.gear = clampGear(setup.gear)
     this.fx = this.withGear(statEffects(stats))
@@ -438,7 +450,8 @@ export class Fight {
       chain: 0,
     }
     const def = MOBS[setup.kind]
-    const scale = 1 + 0.45 * (this.level - 1)
+    const lv = mobLevelScale(this.level)
+    const scale = lv.hp
     spawnList(setup.kind).forEach((p, i) =>
       this.mobs.push({
         id: i + 1,
@@ -459,9 +472,9 @@ export class Fight {
         hits: 0,
         restLeft: 0.6 + 0.5 * i,
         side: i % 2 ? 1 : -1,
-        dmgMul: 1 + 0.3 * (this.level - 1),
+        dmgMul: lv.dmg,
         armorUntil: 0,
-        poise: def.poise + 2 * (this.level - 1),
+        poise: def.poise + lv.poise,
       }),
     )
   }

@@ -367,7 +367,11 @@ function LaminasScreen({
             pw={pw}
             mirrored
             portrait={foeBody ? PORTRAIT[foeBody] : null}
-            name={`${mobName(choice.kind)}${choice.kind === "soldier" ? ` ${choice.level}` : ""}`}
+            name={
+              portal && ticket && ticket !== "offline"
+                ? `${mobName(choice.kind)} · ${t("laminasFoeLevel", "Nv. {n}").replace("{n}", String(ticket.setup.level))}`
+                : `${mobName(choice.kind)}${choice.kind === "soldier" ? ` ${choice.level}` : ""}`
+            }
             hp={foeHp}
             hpMax={foeMax}
           >
