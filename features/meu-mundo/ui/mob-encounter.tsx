@@ -22,7 +22,7 @@ const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) 
 type MobKind = LaminasEncounter["kind"]
 const KINDS = new Set<string>(["wolf", "golem", "harpy", "brute"])
 
-export function useMobEncounter({ gameRef, busy, body, look }: { gameRef: RefObject<GameHandle | null>; busy: boolean; body: BodyId; look?: string }) {
+export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }: { gameRef: RefObject<GameHandle | null>; busy: boolean; body: BodyId; look?: string; /** mm3d-60l: o cenário da luta (elementos do bairro ou do centro). */ place?: "bairro" | "centro" }) {
   const t = useTranslations("MeuMundo")
   const [encounter, setEncounter] = useState<LaminasEncounter | null>(null)
   const [news, setNews] = useState<{ text: string; id: number } | null>(null)
@@ -101,6 +101,7 @@ export function useMobEncounter({ gameRef, busy, body, look }: { gameRef: RefObj
     <LaminasView
       body={body}
       look={look}
+      stage={place}
       encounter={encounter}
       onExit={() => {
         // Saiu no meio: conta como derrota (o monstro volta a andar).

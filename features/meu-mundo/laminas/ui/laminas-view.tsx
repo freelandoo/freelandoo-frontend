@@ -49,7 +49,7 @@ export interface LaminasViewProps {
   /** Fim da luta do portal (vitória = o monstro some da cidade). */
   onEncounterEnd?: (win: boolean) => void
   /** O lugar: coliseu (padrão) ou o ringue do prédio do Boxe (mm3d-56). */
-  stage?: "arena" | "ring"
+  stage?: "arena" | "ring" | "bairro" | "centro"
   /** mm3d-59: a luta de treino do prólogo (sem custo; só abre nos passos de luta). */
   tutorial?: boolean
   /** O fim da luta conferida (recibo do servidor). */
@@ -216,7 +216,7 @@ function LaminasScreen({
   body: BodyId
   look?: string
   choice: Choice
-  stage: "arena" | "ring"
+  stage: "arena" | "ring" | "bairro" | "centro"
   portal: boolean
   mobId?: number
   tutorial?: boolean

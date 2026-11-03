@@ -193,7 +193,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   // Cores (mm3d-36): o Paint, o Jetpack e o hospital desenham com elas.
   const [look, setLook] = useState(payload.me.look ?? "")
   // Monstros da rua (mm3d-48b/57b): aviso, luta quando ele te alcança ou no "Lutar".
-  const mob = useMobEncounter({ gameRef, busy: !!minigame || !!suspended || !!blocked, body, look })
+  const mob = useMobEncounter({ gameRef, busy: !!minigame || !!suspended || !!blocked, body, look, place: "centro" })
   const mobRef = useRef(mob)
   useEffect(() => {
     mobRef.current = mob
