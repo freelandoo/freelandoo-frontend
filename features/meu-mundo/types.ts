@@ -844,7 +844,7 @@ export type Interactable =
   | { kind: "spot"; id: string; x: number; z: number; radius: number; spot: InteriorSpot }
   | { kind: "portal"; id: string; x: number; z: number; radius: number }
   // Monstro de uma invasão (mm3d-48b): o portal aos pés dele leva à Arena das Lâminas.
-  | { kind: "monster"; id: string; x: number; z: number; radius: number; mobId: number; mobKind: "wolf" | "golem" | "harpy" | "brute" }
+  | { kind: "monster"; id: string; x: number; z: number; radius: number; mobId: number; mobKind: "soldier" | "wolf" | "golem" | "harpy" | "brute" }
 
 export interface GameStats {
   /** Carros desenhados no bairro (mm3d-11). */
