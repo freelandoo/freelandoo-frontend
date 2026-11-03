@@ -9715,7 +9715,15 @@
     "sgDexHow": "Playing the minigames and fighting.",
     "sgSpdWhere": "Attack rhythm (up to +30%) and footwork in fights (up to +20%); in the Jetpack, flight speed.",
     "sgSpdHow": "Training at the gym. Without training it drops to 60% of the peak; getting back is faster.",
-    "sgFoot": "Each adventure level also adds +{n} to strength, intelligence, dexterity and speed (in fights). Daily practice has a limit; winning pays more than losing, and high energy with low stress pays more."
+    "sgFoot": "Each adventure level also adds +{n} to strength, intelligence, dexterity and speed (in fights). Daily practice has a limit; winning pays more than losing, and high energy with low stress pays more.",
+    "atIntelligenceText3": "Grows by studying (up to 5 useful hours a day). After 1 day without studying it drops 1 point a day, never below 90% of the peak.",
+    "atStrengthText3": "Grows by training (up to 4 useful hours a day); whey, creatine, pre-workout and steroids speed it up. After 1 day without training it drops 5 points a day, down to 60% of the peak.",
+    "atSpeedText3": "Grows by training. After 1 day without training it drops 5 points a day, down to 60% of the peak; getting back is faster.",
+    "atDexterityText2": "Grows in minigames and fights; after 1 day without playing it drops 5 points a day, down to 60% of the peak. Saves stamina, recovers the weapon faster and improves the chance of a strong hit.",
+    "sgStrHow2": "Training at the gym (up to 4 useful hours a day); whey, creatine, pre-workout and steroids speed it up. After 1 day without training it drops 5 points a day, down to 60% of the peak.",
+    "sgIntHow2": "Studying at the school or university (up to 5 useful hours a day). After 1 day without studying it drops 1 point a day, never below 90% of the peak.",
+    "sgDexHow2": "Playing the minigames and fighting. After 1 day without playing it drops 5 points a day, down to 60% of the peak.",
+    "sgSpdHow2": "Training at the gym. After 1 day without training it drops 5 points a day, down to 60% of the peak; getting back is faster."
   },
   "Sports": {
     "eyebrow": "Sports",

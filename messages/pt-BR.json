@@ -9129,7 +9129,15 @@
     "sgDexHow": "Jogando os minijogos e lutando.",
     "sgSpdWhere": "Ritmo dos golpes (até +30%) e passo na luta (até +20%); no Jetpack, a velocidade do voo.",
     "sgSpdHow": "Treinando na academia. Sem treino cai até 60% do maior valor; voltar ao topo é mais rápido.",
-    "sgFoot": "Cada nível de aventura também soma +{n} em força, inteligência, destreza e velocidade (vale na luta). A prática de cada dia tem limite; vencer rende mais que perder, e com energia alta e estresse baixo rende mais."
+    "sgFoot": "Cada nível de aventura também soma +{n} em força, inteligência, destreza e velocidade (vale na luta). A prática de cada dia tem limite; vencer rende mais que perder, e com energia alta e estresse baixo rende mais.",
+    "atIntelligenceText3": "Sobe estudando (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor.",
+    "atStrengthText3": "Sobe treinando (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor.",
+    "atSpeedText3": "Sobe treinando. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido.",
+    "atDexterityText2": "Sobe nos minijogos e nas lutas; depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor. Economiza fôlego, recupera a arma mais rápido e melhora a chance de golpe forte.",
+    "sgStrHow2": "Treinando na academia (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor.",
+    "sgIntHow2": "Estudando na escola ou na universidade (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor.",
+    "sgDexHow2": "Jogando os minijogos e lutando. Depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor.",
+    "sgSpdHow2": "Treinando na academia. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido."
   },
   "Sports": {
     "eyebrow": "Esportes",

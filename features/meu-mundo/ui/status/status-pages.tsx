@@ -928,11 +928,11 @@ function Attributes({ life, compact, t, adv }: PageProps) {
   const pct = usePct()
   // [ícone, cor, nome, valor, máximo da barra, piso (traço dourado), texto, sufixo]
   const rows = [
-    [<Brain key="i" className="h-6 w-6" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceText2", "Sobe estudando (rende até 5 h por dia). O que ele aprende fica: nunca cai abaixo de 90% do maior valor."), ""],
-    [<Dumbbell key="f" className="h-6 w-6" />, EVO.perigo, t("atStrength", "Força"), at.strength, max, at.floors?.strength, t("atStrengthText2", "Sobe treinando (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Sem treino cai até 60% do maior valor."), ""],
-    [<Wind key="v" className="h-6 w-6" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedText2", "Sobe treinando. Sem treino cai até 60% do maior valor; voltar ao topo é mais rápido."), ""],
+    [<Brain key="i" className="h-6 w-6" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceText3", "Sobe estudando (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor."), ""],
+    [<Dumbbell key="f" className="h-6 w-6" />, EVO.perigo, t("atStrength", "Força"), at.strength, max, at.floors?.strength, t("atStrengthText3", "Sobe treinando (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor."), ""],
+    [<Wind key="v" className="h-6 w-6" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedText3", "Sobe treinando. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido."), ""],
     // mm3d-59: destreza (precisão, fôlego, golpes) — sobe nos minijogos e nas lutas
-    [<Crosshair key="d" className="h-6 w-6" />, "#3FE6D2", t("attrDexterity", "Destreza"), at.dexterity ?? 0, max, at.floors?.dexterity, t("atDexterityText", "Sobe nos minijogos e nas lutas. Economiza fôlego, recupera a arma mais rápido e melhora a chance de golpe forte."), ""],
+    [<Crosshair key="d" className="h-6 w-6" />, "#3FE6D2", t("attrDexterity", "Destreza"), at.dexterity ?? 0, max, at.floors?.dexterity, t("atDexterityText2", "Sobe nos minijogos e nas lutas; depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor. Economiza fôlego, recupera a arma mais rápido e melhora a chance de golpe forte."), ""],
     [<Sprout key="r" className="h-6 w-6" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, 100, undefined, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade."), "%"],
   ] as const
   return (

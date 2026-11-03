@@ -9695,7 +9695,15 @@
     "sgDexHow": "Jugando los minijuegos y peleando.",
     "sgSpdWhere": "Ritmo de los golpes (hasta +30%) y paso en la pelea (hasta +20%); en el Jetpack, la velocidad de vuelo.",
     "sgSpdHow": "Entrenando en el gimnasio. Sin entrenar baja hasta el 60% del máximo; volver arriba es más rápido.",
-    "sgFoot": "Cada nivel de aventura también suma +{n} en fuerza, inteligencia, destreza y velocidad (vale en la pelea). La práctica de cada día tiene límite; ganar rinde más que perder, y con energía alta y estrés bajo rinde más."
+    "sgFoot": "Cada nivel de aventura también suma +{n} en fuerza, inteligencia, destreza y velocidad (vale en la pelea). La práctica de cada día tiene límite; ganar rinde más que perder, y con energía alta y estrés bajo rinde más.",
+    "atIntelligenceText3": "Sube estudiando (rinde hasta 5 h al día). Tras 1 día sin estudiar baja 1 punto por día, nunca por debajo del 90% del máximo.",
+    "atStrengthText3": "Sube entrenando (rinde hasta 4 h al día); whey, creatina, pre-entreno y anabolizante aceleran. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo.",
+    "atSpeedText3": "Sube entrenando. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo; volver arriba es más rápido.",
+    "atDexterityText2": "Sube en los minijuegos y las peleas; tras 1 día sin jugar baja 5 puntos por día, hasta el 60% del máximo. Ahorra aliento, recupera el arma más rápido y mejora la probabilidad de golpe fuerte.",
+    "sgStrHow2": "Entrenando en el gimnasio (rinde hasta 4 h al día); whey, creatina, pre-entreno y anabolizante aceleran. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo.",
+    "sgIntHow2": "Estudiando en la escuela o la universidad (rinde hasta 5 h al día). Tras 1 día sin estudiar baja 1 punto por día, nunca por debajo del 90% del máximo.",
+    "sgDexHow2": "Jugando los minijuegos y peleando. Tras 1 día sin jugar baja 5 puntos por día, hasta el 60% del máximo.",
+    "sgSpdHow2": "Entrenando en el gimnasio. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo; volver arriba es más rápido."
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -8,6 +8,47 @@ const path = require("path")
 const dir = path.join(__dirname, "..", "messages")
 
 const FILL = {
+  // 2026-11-03: atributos caem por dia depois de 1 dia sem praticar
+  atIntelligenceText3: [
+    "Sobe estudando (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor.",
+    "Grows by studying (up to 5 useful hours a day). After 1 day without studying it drops 1 point a day, never below 90% of the peak.",
+    "Sube estudiando (rinde hasta 5 h al día). Tras 1 día sin estudiar baja 1 punto por día, nunca por debajo del 90% del máximo.",
+  ],
+  atStrengthText3: [
+    "Sobe treinando (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor.",
+    "Grows by training (up to 4 useful hours a day); whey, creatine, pre-workout and steroids speed it up. After 1 day without training it drops 5 points a day, down to 60% of the peak.",
+    "Sube entrenando (rinde hasta 4 h al día); whey, creatina, pre-entreno y anabolizante aceleran. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo.",
+  ],
+  atSpeedText3: [
+    "Sobe treinando. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido.",
+    "Grows by training. After 1 day without training it drops 5 points a day, down to 60% of the peak; getting back is faster.",
+    "Sube entrenando. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo; volver arriba es más rápido.",
+  ],
+  atDexterityText2: [
+    "Sobe nos minijogos e nas lutas; depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor. Economiza fôlego, recupera a arma mais rápido e melhora a chance de golpe forte.",
+    "Grows in minigames and fights; after 1 day without playing it drops 5 points a day, down to 60% of the peak. Saves stamina, recovers the weapon faster and improves the chance of a strong hit.",
+    "Sube en los minijuegos y las peleas; tras 1 día sin jugar baja 5 puntos por día, hasta el 60% del máximo. Ahorra aliento, recupera el arma más rápido y mejora la probabilidad de golpe fuerte.",
+  ],
+  sgStrHow2: [
+    "Treinando na academia (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor.",
+    "Training at the gym (up to 4 useful hours a day); whey, creatine, pre-workout and steroids speed it up. After 1 day without training it drops 5 points a day, down to 60% of the peak.",
+    "Entrenando en el gimnasio (rinde hasta 4 h al día); whey, creatina, pre-entreno y anabolizante aceleran. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo.",
+  ],
+  sgIntHow2: [
+    "Estudando na escola ou na universidade (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor.",
+    "Studying at the school or university (up to 5 useful hours a day). After 1 day without studying it drops 1 point a day, never below 90% of the peak.",
+    "Estudiando en la escuela o la universidad (rinde hasta 5 h al día). Tras 1 día sin estudiar baja 1 punto por día, nunca por debajo del 90% del máximo.",
+  ],
+  sgDexHow2: [
+    "Jogando os minijogos e lutando. Depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor.",
+    "Playing the minigames and fighting. After 1 day without playing it drops 5 points a day, down to 60% of the peak.",
+    "Jugando los minijuegos y peleando. Tras 1 día sin jugar baja 5 puntos por día, hasta el 60% del máximo.",
+  ],
+  sgSpdHow2: [
+    "Treinando na academia. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido.",
+    "Training at the gym. After 1 day without training it drops 5 points a day, down to 60% of the peak; getting back is faster.",
+    "Entrenando en el gimnasio. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo; volver arriba es más rápido.",
+  ],
   stCombatAttrs: ["Combate e atributos", "Combat and attributes", "Combate y atributos"],
   stStatScale: ["De 0 a {max}", "From 0 to {max}", "De 0 a {max}"],
   stLvShort: ["NV.", "LV.", "NV."],

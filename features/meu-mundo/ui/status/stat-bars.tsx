@@ -268,28 +268,28 @@ export function StatGuide({ t, small = false }: { t: Tr; small?: boolean }) {
       <BicepsFlexed key="i" />,
       t("atStrength", "Força"),
       t("sgStrWhere", "Dano dos golpes (até +50% com 1000). Conta para virar adulto."),
-      t("sgStrHow", "Treinando na academia (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Sem treino cai até 60% do maior valor."),
+      t("sgStrHow2", "Treinando na academia (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor."),
     ],
     [
       "int",
       <Brain key="i" />,
       t("atIntelligence", "Inteligência"),
       t("sgIntWhere", "Mostra o aviso do golpe do inimigo mais cedo (até +35%) e é o que mais pesa na chance de golpe forte."),
-      t("sgIntHow", "Estudando na escola ou na universidade (rende até 5 h por dia). Nunca cai abaixo de 90% do maior valor."),
+      t("sgIntHow2", "Estudando na escola ou na universidade (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor."),
     ],
     [
       "dex",
       <Crosshair key="i" />,
       t("attrDexterity", "Destreza"),
       t("sgDexWhere", "Gasta menos fôlego no ataque e na esquiva (até −15%), recupera a arma mais rápido e ajuda no golpe forte."),
-      t("sgDexHow", "Jogando os minijogos e lutando."),
+      t("sgDexHow2", "Jogando os minijogos e lutando. Depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor."),
     ],
     [
       "spd",
       <Feather key="i" />,
       t("atSpeed", "Velocidade"),
       t("sgSpdWhere", "Ritmo dos golpes (até +30%) e passo na luta (até +20%); no Jetpack, a velocidade do voo."),
-      t("sgSpdHow", "Treinando na academia. Sem treino cai até 60% do maior valor; voltar ao topo é mais rápido."),
+      t("sgSpdHow2", "Treinando na academia. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido."),
     ],
   ]
   return (
