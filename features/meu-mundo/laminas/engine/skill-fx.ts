@@ -108,7 +108,12 @@ function crescentMesh(scene: Scene, name: string): Mesh {
   return m
 }
 
-export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: () => [Vector3, Vector3] | null): SkillFx {
+/**
+ * `heroH()` = altura de agora de quem joga (m): a cúpula, os anéis e a carga do
+ * poder crescem com ela (jovem 1,7, adulto 2,7, deuses 3,2, Brutamontes 4 —
+ * pedido do Alex: "nos adultos está na cintura").
+ */
+export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: () => [Vector3, Vector3] | null, heroH: () => number = () => 1.8): SkillFx {
   const owned: { dispose: () => void }[] = []
   const glowAdd = (m: Mesh) => vfx.addGlow(m)
   const addMat = (name: string) => {
@@ -280,6 +285,8 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
   motes.gravity = new Vector3(0, 1.2, 0)
   motes.createCylinderEmitter(1.3, 0.1, 0.1, 0)
   const shield = { on: false, t: 0, off: 1, pulse: 0 }
+  /** Escala da cúpula: o alto dela (1,5 m no tamanho 1) passa ~25% da cabeça. */
+  const domeK = () => Math.max(1, (heroH() * 1.25) / 1.5)
 
   // ── PODER MÁXIMO ─────────────────────────────────────────────────────────
   const ultMat = addMat("sk-ult-mat")
@@ -395,8 +402,9 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
       dome.position.copyFrom(at)
       dome.setEnabled(true)
       for (const o of orbits) o.setEnabled(true)
+      motes.createCylinderEmitter(1.3 * domeK(), 0.1, 0.1, 0)
       motes.emitRate = 70 * k
-      vfx.ground(at, SKILL_COLORS.shield, 1.7, 0.9, false, !low)
+      vfx.ground(at, SKILL_COLORS.shield, 1.5 * domeK(), 0.9, false, !low)
     },
     shieldHit(at) {
       shield.pulse = 1
@@ -407,7 +415,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
       shield.on = false
       shield.off = 0.001
       motes.emitRate = 0
-      motes.emitter = dome.position.add(new Vector3(0, 1, 0))
+      motes.emitter = dome.position.add(new Vector3(0, 0.6 * heroH(), 0))
       motes.manualEmitCount = Math.round(70 * k)
     },
     ultCharge(at, fireAt) {
@@ -458,7 +466,8 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
         const open = 1 - Math.pow(1 - Math.min(1, shield.t / 0.25), 3)
         const fade = shield.on ? 1 : 1 - shield.off
         shield.pulse = Math.max(0, shield.pulse - dt * 3)
-        const s = (0.4 + 0.6 * open) * (1 + 0.1 * shield.pulse) * (shield.on ? 1 : 1 + 0.25 * shield.off)
+        const dk = domeK()
+        const s = dk * (0.4 + 0.6 * open) * (1 + 0.1 * shield.pulse) * (shield.on ? 1 : 1 + 0.25 * shield.off)
         dome.position.copyFrom(hero)
         dome.scaling.set(s, s * 1.08, s)
         dome.rotation.y += dt * 0.35
@@ -466,7 +475,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
         hexTex.vOffset += dt * 0.08
         domeMat.emissiveColor.copyFrom(SKILL_COLORS.shield.main).scaleInPlace(0.24 + 0.6 * shield.pulse)
         orbits.forEach((o, i) => {
-          o.position.set(hero.x, hero.y + 0.6 + i * 0.75, hero.z)
+          o.position.set(hero.x, hero.y + (0.6 + i * 0.75) * dk, hero.z)
           o.rotation.set(0.35 * (i ? -1 : 1) + Math.sin(shield.t * 1.6 + i) * 0.12, shield.t * (i ? -1.6 : 1.2), 0.25)
           o.scaling.setAll(s * (0.98 - i * 0.12))
           o.visibility = fade
@@ -482,19 +491,20 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
       if (ult.on) {
         ult.t += dt
         const u = Math.min(1, ult.t / ult.fireAt)
+        const hk = Math.max(1, heroH() / 1.8)
         ultRings.forEach((r, i) => {
           const phase = Math.min(1, Math.max(0, u * 1.3 - i * 0.15))
-          const rad = 3.4 * (1 - phase) + 0.5
-          r.position.set(hero.x, 0.4 + i * 0.55 + phase * 0.5, hero.z)
+          const rad = (3.4 * (1 - phase) + 0.5) * hk
+          r.position.set(hero.x, (0.4 + i * 0.55 + phase * 0.5) * hk, hero.z)
           r.scaling.setAll(rad)
           r.rotation.set(0.2 * Math.sin(ult.t * 3 + i), ult.t * (2 + i), 0.15 * i)
           r.visibility = Math.min(1, ult.t / 0.2) * (0.5 + 0.5 * phase)
         })
-        const c = 0.25 + 1.0 * u * u
-        core.position.set(hero.x, 1.25, hero.z)
+        const c = (0.25 + 1.0 * u * u) * hk
+        core.position.set(hero.x, 0.7 * heroH(), hero.z)
         core.scaling.setAll(c * (1 + Math.sin(ult.t * 40) * 0.06 * u))
         core.visibility = 0.35 + 0.45 * u
-        feed.emitter = new Vector3(hero.x, 1.2, hero.z)
+        feed.emitter = new Vector3(hero.x, 0.7 * heroH(), hero.z)
         feed.emitRate = u > 0.25 ? 150 * k * u : 0
       }
       // onda de choque no chão

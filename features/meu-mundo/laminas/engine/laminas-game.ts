@@ -342,8 +342,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // habilidades (2026-11-03): lâmina de luz, investida, escudo, poder máximo
   const skillFx = createSkillFx(scene, low, vfx, () => {
     const p = fight.me
-    return [new Vector3(p.x, 0.25, p.z), new Vector3(p.x, 1.75 * (adult ? 1.35 : 1), p.z)]
-  })
+    return [new Vector3(p.x, 0.25, p.z), new Vector3(p.x, hero.height * 0.95, p.z)]
+  }, () => hero.height)
   if (clan !== "vampiro") spirits.preload()
   // adultos: mais brilho e mais desenho (pedido do Alex)
   const adult = /adult/.test(opts.body)
@@ -803,7 +803,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             // o escudo segurou: onda no ponto da cúpula virado para quem bateu
             const src = fight.target()
             const dir = src ? new Vector3(src.x - e.x, 0, src.z - e.z).normalize() : new Vector3(0, 0, 1)
-            skillFx.shieldHit(new Vector3(e.x + dir.x * 1.3, 1.1, e.z + dir.z * 1.3))
+            const hr = Math.max(1.4, hero.height * 0.73)
+            skillFx.shieldHit(new Vector3(e.x + dir.x * hr, hero.height * 0.55, e.z + dir.z * hr))
             pop(new Vector3(e.x, 2.1, e.z), String(e.dmg), BLOCK_NUM, 40)
             audio.shieldHit()
             shake = Math.max(shake, 0.06)
