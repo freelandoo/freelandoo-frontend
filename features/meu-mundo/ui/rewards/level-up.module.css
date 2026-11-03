@@ -10,13 +10,25 @@
  * uma sombra borrada. Em em, cresce junto com a letra.
  */
 
-.big {
+/* a camada que segue a cabeça do personagem (como a dos números de status) */
+.anchor {
   position: fixed;
   left: 0;
-  right: 0;
-  top: max(13vh, calc(env(safe-area-inset-top) + 64px));
+  top: 0;
   z-index: 96;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+.big {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  translate: -50% 0;
+  transform-origin: 50% 100%;
   display: flex;
+  white-space: nowrap;
   flex-direction: column;
   align-items: center;
   pointer-events: none;
@@ -35,13 +47,13 @@
 }
 .title {
   position: relative;
-  font-size: clamp(64px, 14vw, 156px);
+  font-size: clamp(44px, 7vw, 88px);
   letter-spacing: 0.01em;
 }
 .num {
   position: relative;
   display: block;
-  font-size: clamp(96px, 22vw, 240px);
+  font-size: clamp(64px, 10.5vw, 132px);
   font-variant-numeric: tabular-nums;
 }
 /* o reflexo que corre o texto (o .glare dos números da luta); como a letra é

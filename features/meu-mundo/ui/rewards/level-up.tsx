@@ -15,10 +15,11 @@
 //    o que o nível liberou, se liberou algo.
 // Movimento reduzido: o texto aparece sem salto (o 3D já sai no nível baixo).
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 import { playLevelFx } from "../../engine/gain-pillar"
+import { screenAnchor } from "../../engine/screen-anchor"
 import { SteamFrame } from "../kit/steam/steam-frame"
 import { FLOAT_COLOR } from "../kit/steam/steam-tokens"
 import { archivo, cinzel, teko } from "../status/evo-skin"
@@ -40,6 +41,32 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
   const [text, setText] = useState(true)
   const [note, setNote] = useState(false)
   const [noteDone, setNoteDone] = useState(false)
+
+  // 2026-11-03 (Alex): o texto fica EM CIMA DO PERSONAGEM, como os números de
+  // status — a camada segue a cabeça (screen-anchor) enquanto o texto vive.
+  const anchor = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!text) return
+    let raf = 0
+    const tick = () => {
+      const el = anchor.current
+      if (el) {
+        const w = window.innerWidth
+        const h = window.innerHeight
+        const a = screenAnchor()
+        const box = el.firstElementChild as HTMLElement | null
+        const tall = box?.offsetHeight ?? 0
+        // inteiro dentro da tela (personagem perto da borda): meia largura de folga
+        const half = Math.min(w / 2, (box?.offsetWidth ?? 80) / 2 + 8)
+        const x = Math.min(w - half, Math.max(half, a ? a.x : w / 2))
+        const y = Math.min(h - 20, Math.max(tall + 16, a ? a.y - 8 : h * 0.42))
+        el.style.transform = `translate3d(${x}px, ${y}px, 0)`
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => cancelAnimationFrame(raf)
+  }, [text])
 
   // o feixe no personagem (uma vez)
   useEffect(() => {
@@ -90,16 +117,21 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
       <p className="sr-only" role="status">
         {t("levelUpAria", "Subiu para o nível {n}").replace("{n}", String(to))}
       </p>
-      <AnimatePresence>
-        {text && (
-          <motion.div
-            aria-hidden
-            className={`${teko.className} ${l.big}`}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.8, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, y: -24 }}
-            transition={reduce ? { duration: 0.2 } : { type: "spring", stiffness: 320, damping: 17 }}
-          >
+      <div ref={anchor} className={l.anchor} aria-hidden style={{ transform: "translate3d(-999px,-999px,0)" }}>
+        <AnimatePresence>
+          {text && (
+            <motion.div
+              aria-hidden
+              className={`${teko.className} ${l.big}`}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.35, y: 10 }}
+              animate={reduce ? { opacity: 1 } : { opacity: 1, scale: [0.35, 1.18, 1], y: [10, 0, -36] }}
+              exit={{ opacity: 0, y: -60 }}
+              transition={
+                reduce
+                  ? { duration: 0.2 }
+                  : { duration: TEXT_MS / 1000, times: [0, 0.08, 1], ease: [0.22, 1, 0.36, 1], opacity: { duration: 0.18 } }
+              }
+            >
             <span className={l.title}>
               {t("levelUpBig", "LEVEL UP")}
               <span className={l.glare}>{t("levelUpBig", "LEVEL UP")}</span>
@@ -113,9 +145,10 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
               {to - from > 1 ? `${from} → ${to}` : to}
               <span className={l.glare}>{to - from > 1 ? `${from} → ${to}` : to}</span>
             </motion.span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       <AnimatePresence>
         {note && (
           <motion.div
