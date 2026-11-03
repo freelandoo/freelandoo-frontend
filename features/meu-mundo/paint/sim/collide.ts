@@ -112,7 +112,7 @@ export function pushOut(
         p.x += w.x
         p.z += w.z
         hit = true
-        if (wall && s.b !== undefined) {
+        if (wall && s.b !== undefined && s.c === 3) {
           const wl = Math.hypot(w.x, w.z) || 1
           wall.nx = w.x / wl
           wall.nz = w.z / wl

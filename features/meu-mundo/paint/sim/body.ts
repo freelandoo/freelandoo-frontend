@@ -128,7 +128,7 @@ export function stepBody(b: PaintBody, it: BodyIntent, solids: readonly Solid[],
   if (b.vy <= 0 && fs && b.y <= floor + (wasGround ? 0.06 : 0)) {
     b.y = floor
     b.gy = floor
-    if (fs.k === 0 && fs.c === PAINT.STEP) {
+    if (fs.k !== 1 && fs.c === PAINT.STEP && fs.b !== undefined) {
       // cama elástica (mm3d-35e): lança para cima; no ar ainda tem um pulo
       b.vy = T.bounceV
       b.ground = false

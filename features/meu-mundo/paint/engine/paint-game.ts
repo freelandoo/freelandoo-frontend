@@ -260,7 +260,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
           paint.rename(-e.q, e.id, e.blob)
         } else {
           paint.add(e.id, e.blob)
-          if (e.owner === port.me) liftOnto(body, e.blob.x, e.blob.z, e.blob.r, e.blob.y1)
+          if (e.owner === port.me && e.blob.c !== 3) liftOnto(body, e.blob.x, e.blob.z, e.blob.r * 1.2, e.blob.y1)
         }
         break
       case "unblob":
@@ -557,7 +557,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         // saiu do chão de cima de uma cama elástica: ela afunda na tela de quem vê
         const pi = supportIndex(solids, s.x, s.z, s.y + 0.6)
         const pad = pi >= 0 ? solids[pi] : null
-        if (pad && pad.k === 0 && pad.c === 2 && pad.b !== undefined && vy > 9) paint.squash(pad.b)
+        if (pad && pad.k !== 1 && pad.c === 2 && pad.b !== undefined && vy > 9) paint.squash(pad.b)
       }
       else if (!s.g && r.air && r.vy < 0 && vy > 3) r.char.jump(2)
       // empurrado por um muro turquesa (mm3d-62): o muro balança na tela de quem vê

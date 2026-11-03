@@ -15,7 +15,6 @@
 import type { Scene } from "@babylonjs/core/scene"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
-import { CreateLathe } from "@babylonjs/core/Meshes/Builders/latheBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
@@ -98,7 +97,8 @@ export class PaintView {
         mat.specularPower = 36
       }
       this.mats.push(mat)
-      const base = c === PAINT.WALL ? jellySlab(`paint-blob-base-${c}`, scene, lowEnd ? 10 : 16) : puck(`paint-blob-base-${c}`, scene, lowEnd ? 18 : 28)
+      // mm3d-62c: ponte, cama elástica e muro = a mesma placa quadrada de gelatina
+      const base = jellySlab(`paint-blob-base-${c}`, scene, lowEnd ? 10 : 16)
       base.material = mat
       base.isPickable = false
       // Sem instância o Babylon desenharia a própria malha-base: desligada até a 1ª mancha.
@@ -225,44 +225,32 @@ export class PaintView {
   private matrixOf(l: Live, out: Float32Array, o: number) {
     const b = l.blob
     const h = b.y1 - b.y0
-    if (b.c === PAINT.WALL) {
-      // sobe do chão (passa um pouco e assenta) e desce ao sumir
-      const t = Math.min(1, (this.clock - l.born) / WALL_GROW)
-      let k = t < 1 ? 1 - (1 - t) ** 3 + Math.sin(t * Math.PI) * 0.08 : 1
-      if (l.dying) k *= Math.max(0, 1 - (this.clock - l.dying) / SHRINK)
-      // nasce tremendo (gelatina) e, quando alguém bate, afunda e balança
-      let wob = 1 + Math.sin((this.clock - l.born) * 17) * 0.07 * Math.max(0, 1 - (this.clock - l.born) / 0.7)
-      if (l.squashAt) {
-        const st = this.clock - l.squashAt
-        wob *= 1 + Math.exp(-5 * st) * Math.cos(st * 18) * 0.35
-      }
-      const hk = Math.max(0.02, h * k / Math.sqrt(wob))
-      Quaternion.RotationYawPitchRollToRef(b.a ?? 0, 0, 0, TMPQ)
-      // a placa engorda (espessura e comprimento) quando encolhe na altura
-      TMPV.set(b.r * 2 * wob, hk, TUNING.wallT * 1.5 * wob * wob)
-      TMPP.set(b.x, b.y0 + hk / 2, b.z)
-      Matrix.ComposeToRef(TMPV, TMPQ, TMPP, TMP).copyToArray(out, o)
-      return
-    }
-    let k = Math.min(1, (this.clock - l.born) / GROW)
-    k = 1 - (1 - k) * (1 - k) * (1 - k)
+    const wall = b.c === PAINT.WALL
+    // mm3d-62c: tudo placa quadrada de gelatina (cantos arredondados), girada
+    // para a mira; nasce estufando a partir do centro e encolhe ao sumir
+    const t = Math.min(1, (this.clock - l.born) / (wall ? WALL_GROW : GROW))
+    let k = t < 1 ? 1 - (1 - t) ** 3 + Math.sin(t * Math.PI) * 0.1 : 1
     if (l.dying) k *= Math.max(0, 1 - (this.clock - l.dying) / SHRINK)
-    // disco arredondado: topo plano na altura da colisão (o pé não afunda)
-    const sx = b.r * 1.04 * k
-    const sy = (h * 0.5 + 0.025) * Math.max(0.15, k)
-    const cy = b.y0 + h * 0.5
-    // leve "respiração" ao nascer
+    k = Math.max(0.02, k)
+    // treme ao nascer; quicou/bateu: afunda e balança amortecendo
     let wob = 1 + Math.sin((this.clock - l.born) * 18) * 0.06 * Math.max(0, 1 - (this.clock - l.born) / 0.6)
-    // quique: afunda forte e balança amortecendo (a base fica no lugar)
-    let base = 0
     if (l.squashAt) {
-      const t = this.clock - l.squashAt
-      const amp = Math.exp(-5.5 * t) * Math.cos(t * 19)
-      const k2 = 1 + amp * 0.45
-      wob *= k2
-      base = -(sy - sy / k2)
+      const st = this.clock - l.squashAt
+      wob *= 1 + Math.exp(-5.5 * st) * Math.cos(st * 19) * (wall ? 0.35 : 0.45)
     }
-    Matrix.ComposeToRef(new Vector3(sx * wob, sy / wob, sx * wob), Quaternion.Identity(), new Vector3(b.x, cy + base, b.z), TMP).copyToArray(out, o)
+    Quaternion.RotationYawPitchRollToRef(b.a ?? 0, 0, 0, TMPQ)
+    if (wall) {
+      // em pé, no ar onde a mira apontou: engorda quando encolhe na altura
+      TMPV.set(b.r * 2 * k * wob, h * k / Math.sqrt(wob), TUNING.wallT * k * wob * wob)
+      TMPP.set(b.x, (b.y0 + b.y1) / 2, b.z)
+    } else {
+      // deitada: a base fica no lugar e o topo na altura da colisão (o pé não afunda)
+      const side = b.r * 2 * k * wob
+      const hs = Math.max(0.03, (h + 0.02) * Math.max(0.2, k) / wob)
+      TMPV.set(side, hs, side)
+      TMPP.set(b.x, b.y0 + hs / 2, b.z)
+    }
+    Matrix.ComposeToRef(TMPV, TMPQ, TMPP, TMP).copyToArray(out, o)
   }
 
   // ── efeitos ───────────────────────────────────────────────────────────────
@@ -460,24 +448,4 @@ function jellySlab(name: string, scene: Scene, seg: number) {
   vd.indices = idx
   vd.applyToMesh(mesh, false)
   return mesh
-}
-
-/**
- * Disco de bordas arredondadas (raio 1, meia-altura 1): perfil superelíptico
- * girado em volta de Y. Topo e base quase planos, lado bojudo — a "bala de
- * goma" do vídeo, com o topo onde o pé pisa.
- */
-function puck(name: string, scene: Scene, tess: number) {
-  const shape: Vector3[] = []
-  const N = 14
-  const e = 2 / 4.5
-  for (let i = 0; i <= N; i++) {
-    const t = -Math.PI / 2 + (i / N) * Math.PI
-    const c = Math.cos(t)
-    const s = Math.sin(t)
-    shape.push(new Vector3(Math.sign(c) * Math.abs(c) ** e, Math.sign(s) * Math.abs(s) ** e, 0))
-  }
-  shape[0].x = 0
-  shape[N].x = 0
-  return CreateLathe(name, { shape, tessellation: tess, sideOrientation: 0 }, scene)
 }

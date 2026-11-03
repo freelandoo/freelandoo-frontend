@@ -64,25 +64,29 @@ export const TUNING = {
   /** Alcance (m) do raio de cada cor. */
   range: [13, 24, 9, 48] as readonly number[],
 
-  /** Ponte (laranja): disco achatado. */
+  /**
+   * Ponte (laranja): placa QUADRADA (mm3d-62c, pedido do Alex: laranja,
+   * vermelha e turquesa quadradas e do mesmo tamanho — a laranja de base com
+   * as pontas completas). `bridgeR` = meio lado; gira para a mira.
+   */
   bridgeR: 1.25,
   bridgeH: 0.34,
   /** A ponte cresce até esta distância horizontal de quem atira. */
   bridgeReach: 12,
   /** Cama elástica (amarelo, mm3d-35e): almofada baixa (dá para entrar andando) que lança para cima. */
-  stepR: 1.0,
-  stepH: 0.4,
+  stepR: 1.25,
+  stepH: 0.34,
   /** Velocidade do lançamento: ~4,6 m de altura (+ o pulo no ar; o topo pede 5,2 m). */
-  bounceV: 14.2,
+  bounceV: 14.6, // mm3d-62c: a placa ficou 6 cm mais baixa — ~4,85 m
   /**
    * Muro (mm3d-46): placa em pé atravessada na mira, nasce no chão onde ela
    * bate (ou logo à frente). Comprimento, espessura e altura (o pulo duplo
    * não passa por cima; a cama elástica passa). Começa sem munição: o ícone
    * da Freelandoo dá `wallGive`.
    */
-  wallLen: 2,
-  wallT: 0.36,
-  wallH: 3.2,
+  wallLen: 2.5,
+  wallT: 0.34,
+  wallH: 2.5,
   wallReach: 46, // mm3d-62b: o muro vai longe (ilha de cima, do outro lado do vão)
   /** Tiros pretos do outro time até o muro cair. */
   wallHits: 3,

@@ -454,7 +454,7 @@ export class NetPort implements PaintPort {
 }
 
 function toBlob(b: SBlob): NewBlob {
-  return { c: b.c as PaintColor, x: b.x, z: b.z, y0: b.y0, y1: b.y1, r: b.r, ...(b.c === PAINT.WALL ? { a: b.a ?? 0 } : {}) }
+  return { c: b.c as PaintColor, x: b.x, z: b.z, y0: b.y0, y1: b.y1, r: b.r, a: b.a ?? 0 }
 }
 
 const r3 = (v: number) => Math.round(v * 1000) / 1000
