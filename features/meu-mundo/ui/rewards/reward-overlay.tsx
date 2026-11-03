@@ -37,11 +37,13 @@ interface Bundle {
   attrs: Record<string, number>
   vitals: Record<string, number>
   items: { id: string; qty: number; rarity: Rarity }[]
+  /** mm3d-60k: moedas que a luta/minijogo dropou. */
+  coins: number
   special: boolean
 }
 
 function merge(list: Receipt[]): Bundle {
-  const b: Bundle = { xp: 0, from: Infinity, to: 0, unlocks: [], attrs: {}, vitals: {}, items: [], special: false }
+  const b: Bundle = { xp: 0, from: Infinity, to: 0, unlocks: [], attrs: {}, vitals: {}, items: [], coins: 0, special: false }
   for (const r of list) {
     const x = r.deltas.xp
     if (x) {
@@ -52,6 +54,7 @@ function merge(list: Receipt[]): Bundle {
     }
     for (const [k, v] of Object.entries(r.deltas.attrs || {})) b.attrs[k] = (b.attrs[k] || 0) + Number(v)
     for (const [k, v] of Object.entries(r.deltas.vitals || {})) b.vitals[k] = (b.vitals[k] || 0) + Number(v)
+    if (Number(r.deltas.coins) > 0) b.coins += Number(r.deltas.coins)
     for (const it of r.items || []) {
       if (it.qty <= 0) continue
       const cur = b.items.find((i) => i.id === it.id)
@@ -128,6 +131,8 @@ function GainBurst({ b, t, onDone }: { b: Bundle; t: T; onDone: () => void }) {
       if (m && Math.abs(v) >= 0.5) nums.push({ key: k, kind: k as FloatKind, text: fmtDelta(v, 0), label: t(m.labelKey, m.label) })
     }
     const all: DropItem[] = b.items.map((it) => ({ id: it.id, qty: it.qty, rarity: it.rarity, name: t(`gear_${it.id}`, it.id) }))
+    // moedas = uma placa de drop (a primeira)
+    if (b.coins > 0) all.unshift({ id: "coins", qty: Math.round(b.coins), rarity: "common", name: t("rewardCoins", "Moedas") })
     const drops = all.length > MAX_PLATES ? all.slice(0, MAX_PLATES - 1) : all
     return { nums: nums.slice(0, MAX_NUMS), drops, more: all.length - drops.length }
   }, [b, t])

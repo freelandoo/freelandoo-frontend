@@ -8720,7 +8720,8 @@
     "hudOpenStatus": "Seu personagem — abrir o STATUS",
     "levelUpBig": "LEVEL UP",
     "levelUpNoteEyebrow": "Nível {n}",
-    "levelUpNoteTitle": "Novo acesso liberado"
+    "levelUpNoteTitle": "Novo acesso liberado",
+    "rewardCoins": "Moedas"
   },
   "Sports": {
     "eyebrow": "Esportes",

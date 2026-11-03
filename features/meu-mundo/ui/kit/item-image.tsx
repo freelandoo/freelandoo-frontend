@@ -26,6 +26,8 @@ export type ItemCategory =
   | "skin"
   | "vehicle"
   | "house"
+  /** mm3d-60k: moedas do jogo (drop de luta/minijogo). */
+  | "coins"
 
 /** Desenho de cada categoria (viewBox 64×64, traço de latão sobre o poço). */
 const ART: Record<ItemCategory, ReactNode> = {
@@ -101,6 +103,15 @@ const ART: Record<ItemCategory, ReactNode> = {
     <>
       <path d="M10 30 32 12l22 18v24H10z" />
       <path d="M26 54V40h12v14" />
+    </>
+  ),
+  coins: (
+    <>
+      <ellipse cx="26" cy="40" rx="16" ry="6" />
+      <path d="M10 40v6c0 3.3 7.2 6 16 6s16-2.7 16-6v-6" />
+      <circle cx="38" cy="24" r="14" />
+      <circle cx="38" cy="24" r="9" />
+      <path d="M38 18v12" />
     </>
   ),
 }

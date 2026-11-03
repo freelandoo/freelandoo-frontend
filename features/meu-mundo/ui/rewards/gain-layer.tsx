@@ -48,6 +48,7 @@ const SLOT_X = [0, -18, 16, -10, 12, -4]
 
 /** Categoria do item pelo id do catálogo (só escolhe o desenho do medalhão). */
 export function dropCategory(id: string): ItemCategory {
+  if (id === "coins") return "coins"
   if (/^(espada|cajado|machado)_/.test(id)) return "weapon"
   if (/^(colete|couraca)_/.test(id)) return "armor"
   if (/^(relogio|luvas|amuleto)_/.test(id)) return "accessory"

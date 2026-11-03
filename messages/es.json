@@ -9286,7 +9286,8 @@
     "hudOpenStatus": "Tu personaje — abrir el STATUS",
     "levelUpBig": "LEVEL UP",
     "levelUpNoteEyebrow": "Nivel {n}",
-    "levelUpNoteTitle": "Nuevo acceso desbloqueado"
+    "levelUpNoteTitle": "Nuevo acceso desbloqueado",
+    "rewardCoins": "Monedas"
   },
   "Sports": {
     "eyebrow": "Deportes",

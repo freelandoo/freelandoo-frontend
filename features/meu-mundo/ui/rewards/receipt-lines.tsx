@@ -51,6 +51,8 @@ export function ReceiptLines({ receipt, delay = 550 }: { receipt: Receipt; delay
       valueColor: toneOf(k, n) === "good" ? SP.green : SP.red,
     })
   }
+  const coins = Math.round(Number(receipt.deltas.coins) || 0)
+  if (coins > 0) lines.push({ key: "coins", icon: "◉", label: t("rewardCoins", "Moedas"), value: `+${coins}`, color: "#F2B705" })
   for (const it of receipt.items || []) {
     if (it.qty <= 0) continue
     const r = RARITY[(it.rarity as Rarity) || "common"] || RARITY.common
