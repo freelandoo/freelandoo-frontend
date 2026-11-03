@@ -864,7 +864,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     if (tgt && p.state !== "win") camYaw += angDiff(Math.atan2(tgt.x - p.x, tgt.z - p.z), camYaw) * Math.min(1, dt * 3.5)
     // celular em pé (2026-11-03): mais longe e mais alto, como no Jetpack
     const tallK = tallness(scene)
-    const camD = CAM_DIST * (1 + 0.5 * tallK)
+    const camD = CAM_DIST * (1 + 0.85 * tallK)
     const wantPos = new Vector3(p.x - Math.sin(camYaw) * camD, CAM_H * (1 + 0.3 * tallK), p.z - Math.cos(camYaw) * camD)
     camPos.addInPlace(wantPos.subtract(camPos).scale(Math.min(1, dt * 6)))
     const lookAt = tgt ? new Vector3((p.x * 2 + tgt.x) / 3, 1.2 + tgt.y * 0.3, (p.z * 2 + tgt.z) / 3) : new Vector3(p.x + Math.sin(camYaw) * 3, 1.2, p.z + Math.cos(camYaw) * 3)

@@ -168,7 +168,7 @@ export class FollowCamera {
 
   /** Celular em pé (2026-11-03): a câmera da rua fica até 1,45× mais longe (como no Jetpack). */
   private portraitK() {
-    return this.lim === STREET_CAMERA ? 1 + 0.45 * tallness(this.camera.getScene()) : 1
+    return this.lim === STREET_CAMERA ? 1 + 0.75 * tallness(this.camera.getScene()) : 1
   }
 
   update(dt: number, px: number, pz: number, boxes: Box2[], py = 0) {
