@@ -287,6 +287,8 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
   const shield = { on: false, t: 0, off: 1, pulse: 0 }
   /** Escala da cúpula: o alto dela (1,5 m no tamanho 1) passa ~25% da cabeça. */
   const domeK = () => Math.max(1, (heroH() * 1.25) / 1.5)
+  /** Largura (raio da base, m): cresce bem menos que a altura — nos grandes a cúpula fica alta e estreita, sem tomar a tela. */
+  const domeW = () => Math.max(1.35, 0.95 + 0.3 * heroH())
 
   // ── PODER MÁXIMO ─────────────────────────────────────────────────────────
   const ultMat = addMat("sk-ult-mat")
@@ -402,9 +404,9 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
       dome.position.copyFrom(at)
       dome.setEnabled(true)
       for (const o of orbits) o.setEnabled(true)
-      motes.createCylinderEmitter(1.3 * domeK(), 0.1, 0.1, 0)
+      motes.createCylinderEmitter(domeW() * 0.9, 0.1, 0.1, 0)
       motes.emitRate = 70 * k
-      vfx.ground(at, SKILL_COLORS.shield, 1.5 * domeK(), 0.9, false, !low)
+      vfx.ground(at, SKILL_COLORS.shield, domeW() * 1.05, 0.9, false, !low)
     },
     shieldHit(at) {
       shield.pulse = 1
@@ -467,9 +469,10 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
         const fade = shield.on ? 1 : 1 - shield.off
         shield.pulse = Math.max(0, shield.pulse - dt * 3)
         const dk = domeK()
-        const s = dk * (0.4 + 0.6 * open) * (1 + 0.1 * shield.pulse) * (shield.on ? 1 : 1 + 0.25 * shield.off)
+        const wk = domeW() / 1.4
+        const s = (0.4 + 0.6 * open) * (1 + 0.1 * shield.pulse) * (shield.on ? 1 : 1 + 0.25 * shield.off)
         dome.position.copyFrom(hero)
-        dome.scaling.set(s, s * 1.08, s)
+        dome.scaling.set(s * wk, s * dk * 1.08, s * wk)
         dome.rotation.y += dt * 0.35
         dome.visibility = (0.32 + 0.45 * shield.pulse) * fade
         hexTex.vOffset += dt * 0.08
@@ -477,7 +480,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
         orbits.forEach((o, i) => {
           o.position.set(hero.x, hero.y + (0.6 + i * 0.75) * dk, hero.z)
           o.rotation.set(0.35 * (i ? -1 : 1) + Math.sin(shield.t * 1.6 + i) * 0.12, shield.t * (i ? -1.6 : 1.2), 0.25)
-          o.scaling.setAll(s * (0.98 - i * 0.12))
+          o.scaling.setAll(s * wk * (0.98 - i * 0.12))
           o.visibility = fade
         })
         motes.emitter = hero.clone()

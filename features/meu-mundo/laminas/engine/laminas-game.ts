@@ -803,7 +803,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             // o escudo segurou: onda no ponto da cúpula virado para quem bateu
             const src = fight.target()
             const dir = src ? new Vector3(src.x - e.x, 0, src.z - e.z).normalize() : new Vector3(0, 0, 1)
-            const hr = Math.max(1.4, hero.height * 0.73)
+            const hr = Math.max(1.35, 0.95 + 0.3 * hero.height)
             skillFx.shieldHit(new Vector3(e.x + dir.x * hr, hero.height * 0.55, e.z + dir.z * hr))
             pop(new Vector3(e.x, 2.1, e.z), String(e.dmg), BLOCK_NUM, 40)
             audio.shieldHit()
