@@ -9,6 +9,7 @@
 // servidor confirmou o acesso de administrador — abrir o perfil ou o feed não
 // baixa nem inicializa o motor 3D.
 
+import { setGameCover } from "./hud/game-cover"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { ScenePlayerProps } from "./player-card/player-card"
@@ -289,6 +290,12 @@ export default function MeuMundoView({
   useEffect(() => {
     gameRef.current?.setSuspended(!!suspended || !!mob.encounter)
   }, [suspended, status, mob.encounter])
+  // mm3d-60f: luta com monstro cobrindo a tela → o HUD do personagem sai
+  const covered = !!mob.encounter
+  useEffect(() => {
+    setGameCover("street", covered)
+  }, [covered])
+  useEffect(() => () => setGameCover("street", false), [])
 
   useEffect(() => {
     if (!open) return

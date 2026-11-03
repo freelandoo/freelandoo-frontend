@@ -9,6 +9,7 @@
 // celebração (a primeira subida de nível acontece aqui dentro).
 
 import { useDrawerOpen } from "../hud/hud-kit"
+import { useGameCovered } from "../hud/game-cover"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Loader2, ScrollText } from "lucide-react"
 import { getToken } from "@/lib/auth"
@@ -104,6 +105,7 @@ export function QuestTracker({
 }) {
   // mm3d-60d: com a gaveta aberta o card sai (ela cobre o canto no celular)
   const drawerOpen = useDrawerOpen()
+  const covered = useGameCovered()
   const t = useTranslations("MeuMundo") as T
   const [quest, setQuest] = useState<QuestView | null>(null)
   const [open, setOpen] = useState(false)
@@ -214,7 +216,7 @@ export function QuestTracker({
   if (!quest || quest.done || !cur) return null
   return (
     <>
-      {!hidden && !drawerOpen && (
+      {!hidden && !drawerOpen && !covered && (
         <button
           type="button"
           onClick={() => setOpen(true)}

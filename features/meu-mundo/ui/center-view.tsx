@@ -9,6 +9,7 @@
 // atravessar a fachada), e o portal "Bairros" (ou o menu) volta para casa.
 // Quem decide a sala, o bairro de casa e o veículo é o SERVIDOR.
 
+import { setGameCover } from "./hud/game-cover"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -358,6 +359,12 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   useEffect(() => {
     gameRef.current?.setSuspended(!!minigame || !!suspended || !!mob.encounter)
   }, [minigame, suspended, status, mob.encounter])
+  // mm3d-60f: luta/minijogo cobrindo a tela → o HUD do personagem sai (fica só a placa da luta)
+  const covered = !!minigame || !!mob.encounter
+  useEffect(() => {
+    setGameCover("center", covered)
+  }, [covered])
+  useEffect(() => () => setGameCover("center", false), [])
 
   useEffect(() => {
     if (!open) return

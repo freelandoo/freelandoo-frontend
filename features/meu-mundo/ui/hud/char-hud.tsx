@@ -24,6 +24,7 @@ import { onCelebrate } from "../rewards/reward-bus"
 import { archivo } from "../status/evo-skin"
 import { FightPlate, plateHeight, plateWidth } from "./fight-plate"
 import { useDrawerOpen } from "./hud-kit"
+import { useGameCovered } from "./game-cover"
 import c from "./char-hud.module.css"
 
 export interface HudVitals {
@@ -46,7 +47,9 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false }: { na
   const t = useTranslations("MeuMundo")
   // com a gaveta aberta o HUD sai (no celular ela cobre a tela quase toda)
   const drawerOpen = useDrawerOpen()
-  const hidden = hiddenProp || drawerOpen
+  // dentro das lutas e minijogos fica só a placa da luta (pedido do Alex)
+  const covered = useGameCovered()
+  const hidden = hiddenProp || drawerOpen || covered
   const [level, setLevel] = useState<number | null>(null)
   const [pw, setPw] = useState(64)
 
