@@ -1,7 +1,8 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import Script from "next/script"
-import { Geist, Geist_Mono, Anton, Archivo, Caveat } from "next/font/google"
+import { Geist, Geist_Mono, Anton, Caveat } from "next/font/google"
+import localFont from "next/font/local"
 import {
   PlatformChrome,
   PlatformChromeProvider,
@@ -23,7 +24,8 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 // Display condensado para as headlines em caixa-alta da landing (poster look).
 const anton = Anton({ subsets: ["latin"], weight: "400", variable: "--font-anton", display: "swap" })
 // Corpo/UI editorial e manuscrito (rabiscos/notas) da landing tabloide.
-const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo", display: "swap" })
+// Archivo local (lib/fonts): o build falhava às vezes baixando do Google.
+const archivo = localFont({ src: "../lib/fonts/Archivo-latin.woff2", weight: "100 900", variable: "--font-archivo", display: "swap", fallback: ["Arial", "sans-serif"] })
 const caveat = Caveat({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-caveat", display: "swap" })
 
 export const metadata: Metadata = {

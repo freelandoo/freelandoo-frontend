@@ -10,6 +10,7 @@
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
+import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
@@ -21,12 +22,61 @@ type MobKindCity = "wolf" | "golem" | "harpy" | "brute"
 const KINDS = new Set<MobKindCity>(["wolf", "golem", "harpy", "brute"])
 /** Raio de "Lutar" (m). */
 const REACH = 3.4
+/** mm3d-60o: altura da placa do nível (topo da cabeça na escala da rua, 1,15). */
+const LEVEL_Y: Record<MobKindCity, number> = { wolf: 3.1, golem: 5.3, harpy: 3.2, brute: 5.4 }
+
+/** Placa "Nv. N" em cima do monstro: grafite com a borda roxa da luz dele, sempre virada para a câmera. */
+function levelTag(scene: Scene, id: number, level: number) {
+  const W = 256
+  const H = 96
+  const tex = new DynamicTexture(`mm-mob-lv-${id}`, { width: W, height: H }, scene, false)
+  tex.hasAlpha = true
+  const g = tex.getContext() as unknown as CanvasRenderingContext2D
+  g.clearRect(0, 0, W, H)
+  const text = `Nv. ${level}`
+  g.font = "900 54px system-ui, -apple-system, Segoe UI, sans-serif"
+  const w = Math.min(W - 8, g.measureText(text).width + 44)
+  const x = (W - w) / 2
+  g.fillStyle = "rgba(14,10,22,0.86)"
+  g.fillRect(x, 12, w, 72)
+  g.strokeStyle = "#B66BFF"
+  g.lineWidth = 5
+  g.strokeRect(x + 2.5, 14.5, w - 5, 67)
+  g.textAlign = "center"
+  g.textBaseline = "middle"
+  g.fillStyle = "#000"
+  g.fillText(text, W / 2 - 3, 52, W - 30)
+  g.fillStyle = "#FFFFFF"
+  g.fillText(text, W / 2, 49, W - 30)
+  tex.update(true)
+  const mat = new StandardMaterial(`mm-mob-lv-mat-${id}`, scene)
+  mat.diffuseTexture = tex
+  mat.emissiveColor = new Color3(1, 1, 1)
+  mat.disableLighting = true
+  mat.useAlphaFromDiffuseTexture = true
+  mat.backFaceCulling = false
+  const plane = CreatePlane(`mm-mob-lv-${id}`, { width: 1.5, height: 0.56 }, scene)
+  plane.material = mat
+  plane.billboardMode = 7
+  plane.isPickable = false
+  return {
+    mesh: plane,
+    level,
+    dispose() {
+      plane.dispose()
+      mat.dispose()
+      tex.dispose()
+    },
+  }
+}
+type LevelTag = ReturnType<typeof levelTag>
 
 interface View {
   id: number
   kind: MobKindCity
   model: MonsterModel
   glow: Mesh
+  tag: LevelTag | null
   x: number
   z: number
   facing: number
@@ -64,13 +114,14 @@ export class CenterMobs {
     this.glowMat.disableDepthWrite = true
   }
 
-  /** Lista nova da sala: [id, tipo, x, z, rumo]. */
+  /** Lista nova da sala: [id, tipo, x, z, rumo, nível]. */
   set(list: unknown) {
     if (!Array.isArray(list)) return
     const stamp = ++this.stamp
     for (const row of list) {
       if (!Array.isArray(row) || row.length < 5) continue
-      const [id, kind, x, z, f] = row as [number, string, number, number, number]
+      const [id, kind, x, z, f, lvRaw] = row as [number, string, number, number, number, number?]
+      const level = Number.isFinite(lvRaw) && (lvRaw as number) > 0 ? Math.round(lvRaw as number) : 0
       if (!KINDS.has(kind as MobKindCity) || ![id, x, z, f].every(Number.isFinite)) continue
       let v = this.views.get(id)
       if (!v) {
@@ -79,8 +130,13 @@ export class CenterMobs {
         glow.rotation.x = Math.PI / 2
         glow.material = this.glowMat
         glow.isPickable = false
-        v = { id, kind: kind as MobKindCity, model, glow, x, z, facing: f, tx: x, tz: z, tf: f, speed: 0, seen: stamp }
+        v = { id, kind: kind as MobKindCity, model, glow, tag: null, x, z, facing: f, tx: x, tz: z, tf: f, speed: 0, seen: stamp }
         this.views.set(id, v)
+      }
+      // placa do nível (refeita só se o nível mudar; sala antiga sem nível = sem placa)
+      if (level && (!v.tag || v.tag.level !== level)) {
+        v.tag?.dispose()
+        v.tag = levelTag(this.scene, id, level)
       }
       v.tx = x
       v.tz = z
@@ -91,6 +147,7 @@ export class CenterMobs {
       if (v.seen === stamp) continue
       v.model.dispose()
       v.glow.dispose()
+      v.tag?.dispose()
       this.views.delete(id)
     }
   }
@@ -107,6 +164,7 @@ export class CenterMobs {
       v.facing += Math.atan2(Math.sin(v.tf - v.facing), Math.cos(v.tf - v.facing)) * k
       v.model.update(dt, { x: v.x, y: 0, z: v.z, facing: v.facing, state: "chase", t: this.time, warn: 0, speed: v.speed, calm: true })
       v.glow.position.set(v.x, 0.05, v.z)
+      v.tag?.mesh.position.set(v.x, LEVEL_Y[v.kind], v.z)
       const pulse = 1 + Math.sin(this.time * 2.5 + v.id) * 0.07
       v.glow.scaling.set(pulse, pulse, 1)
     }
@@ -124,6 +182,7 @@ export class CenterMobs {
     for (const v of this.views.values()) {
       v.model.setVisible(on)
       v.glow.setEnabled(on)
+      v.tag?.mesh.setEnabled(on)
     }
   }
 
@@ -131,6 +190,7 @@ export class CenterMobs {
     for (const v of this.views.values()) {
       v.model.dispose()
       v.glow.dispose()
+      v.tag?.dispose()
     }
     this.views.clear()
     this.glowMat.dispose()

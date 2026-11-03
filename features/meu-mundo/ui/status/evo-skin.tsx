@@ -7,15 +7,16 @@
 // Archivo. Cor escrita aqui e em tokens.ts — as páginas não digitam hex.
 
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react"
-import { Archivo, Teko } from "next/font/google"
 import localFont from "next/font/local"
 import { MM } from "../hud/tokens"
 import { SP } from "../kit/steam/steam-tokens"
 import { currentUiFx } from "../kit/steam/fx-tier"
 import sk from "../kit/steam/steam.module.css"
 
-export const teko = Teko({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" })
-export const archivo = Archivo({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" })
+// mm3d-60n: Teko e Archivo em arquivo local (lib/fonts) — o build da Vercel falhava
+// às vezes baixando do Google. Fontes variáveis, subconjunto latin.
+export const teko = localFont({ src: "../../../../lib/fonts/Teko-latin.woff2", weight: "300 700", display: "swap", fallback: ["Impact", "Arial Narrow", "sans-serif"] })
+export const archivo = localFont({ src: "../../../../lib/fonts/Archivo-latin.woff2", weight: "100 900", display: "swap", fallback: ["Arial", "sans-serif"] })
 /** mm3d-60: títulos ornamentados (a serifa das referências steampunk). Arquivo local (o build não
  * baixa do Google: o download falhou duas vezes no deploy). Fonte variável 600–800. */
 export const cinzel = localFont({ src: "./fonts/Cinzel-latin.woff2", weight: "600 800", display: "swap", fallback: ["Georgia", "serif"] })

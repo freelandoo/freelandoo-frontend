@@ -1,0 +1,5 @@
+Teko (Indian Type Foundry) e Archivo (Omnibus-Type) — SIL Open Font License 1.1.
+Fontes variáveis, subconjunto "latin" (U+0000-00FF, U+0131, U+0152-0153, U+02BB …),
+baixadas do Google Fonts em 2026-11-02. Ficam no repositório porque o build da
+Vercel falhava às vezes baixando-as do Google (next/font/google).
+Teko: peso 300–700. Archivo: peso 100–900.
