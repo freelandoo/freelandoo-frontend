@@ -18,12 +18,13 @@ import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { MonsterModel } from "../laminas/engine/monster-view"
 import type { Interactable } from "../types"
 
-type MobKindCity = "wolf" | "golem" | "harpy" | "brute"
-const KINDS = new Set<MobKindCity>(["wolf", "golem", "harpy", "brute"])
+// 2026-11-03: o Golem de Pedra ("soldier") também anda na rua
+type MobKindCity = "soldier" | "wolf" | "golem" | "harpy" | "brute"
+const KINDS = new Set<MobKindCity>(["soldier", "wolf", "golem", "harpy", "brute"])
 /** Raio de "Lutar" (m). */
 const REACH = 3.4
 /** mm3d-60o: altura da placa do nível (topo da cabeça na escala da rua, 1,15). */
-const LEVEL_Y: Record<MobKindCity, number> = { wolf: 3.1, golem: 5.3, harpy: 3.2, brute: 5.4 }
+const LEVEL_Y: Record<MobKindCity, number> = { soldier: 5.3, wolf: 3.1, golem: 5.3, harpy: 3.2, brute: 5.4 }
 
 /** Placa "Nv. N" em cima do monstro: grafite com a borda roxa da luz dele, sempre virada para a câmera. */
 function levelTag(scene: Scene, id: number, level: number) {

@@ -20,7 +20,7 @@ import { EvoToast } from "./hud/hud-kit"
 const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
 type MobKind = LaminasEncounter["kind"]
-const KINDS = new Set<string>(["wolf", "golem", "harpy", "brute"])
+const KINDS = new Set<string>(["soldier", "wolf", "golem", "harpy", "brute"])
 
 export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }: { gameRef: RefObject<GameHandle | null>; busy: boolean; body: BodyId; look?: string; /** mm3d-60l: o cenário da luta (elementos do bairro ou do centro). */ place?: "bairro" | "centro" }) {
   const t = useTranslations("MeuMundo")
