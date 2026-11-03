@@ -62,7 +62,7 @@ export const TUNING = {
   /** Custo em munição de cada tiro (índice = cor). */
   cost: [1, 1, 2, 1] as readonly number[],
   /** Alcance (m) do raio de cada cor. */
-  range: [13, 24, 9, 16] as readonly number[],
+  range: [13, 24, 9, 48] as readonly number[],
 
   /** Ponte (laranja): disco achatado. */
   bridgeR: 1.25,
@@ -83,7 +83,7 @@ export const TUNING = {
   wallLen: 2,
   wallT: 0.36,
   wallH: 3.2,
-  wallReach: 14,
+  wallReach: 46, // mm3d-62b: o muro vai longe (ilha de cima, do outro lado do vão)
   /** Tiros pretos do outro time até o muro cair. */
   wallHits: 3,
   wallStart: 0,
