@@ -9723,7 +9723,13 @@
     "sgStrHow2": "Training at the gym (up to 4 useful hours a day); whey, creatine, pre-workout and steroids speed it up. After 1 day without training it drops 5 points a day, down to 60% of the peak.",
     "sgIntHow2": "Studying at the school or university (up to 5 useful hours a day). After 1 day without studying it drops 1 point a day, never below 90% of the peak.",
     "sgDexHow2": "Playing the minigames and fighting. After 1 day without playing it drops 5 points a day, down to 60% of the peak.",
-    "sgSpdHow2": "Training at the gym. After 1 day without training it drops 5 points a day, down to 60% of the peak; getting back is faster."
+    "sgSpdHow2": "Training at the gym. After 1 day without training it drops 5 points a day, down to 60% of the peak; getting back is faster.",
+    "skillSlash": "Magic Slash",
+    "skillDash": "Lightning Dash",
+    "skillShield": "Shield of Light",
+    "skillUlt": "Max Power",
+    "laminasKeys2": "WASD moves · J, Space or click attacks (press again for the combo) · K, Shift or right click dodges · 1 Magic Slash · 2 Dash · 3 Shield · Q Max Power",
+    "laminasTouchHelp2": "Joystick moves · ATTACK, DODGE and the skills on the right"
   },
   "Sports": {
     "eyebrow": "Sports",

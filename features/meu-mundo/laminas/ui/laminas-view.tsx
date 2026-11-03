@@ -19,7 +19,7 @@
 // mesmos tipos da regra com nomes de boxeador; a harpia (voa) fica de fora.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Shield, Sparkles, Swords, Volume2, VolumeX, X } from "lucide-react"
+import { Swords, Volume2, VolumeX, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
@@ -33,7 +33,8 @@ import { ReceiptLines } from "../../ui/rewards/receipt-lines"
 import { VictoryButton, VictoryPanel } from "../../ui/rewards/victory-panel"
 import { celebrate, hold } from "../../ui/rewards/reward-bus"
 import { createLaminasGame, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
-import type { MobKind } from "../sim/fight"
+import type { MobKind, SkillId } from "../sim/fight"
+import { SkillHud } from "./skill-hud"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
 export interface LaminasEncounter {
@@ -188,10 +189,10 @@ function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: (
           ))}
         </div>
         <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden" style={{ color: MM.muted }}>
-          {t("laminasKeys", "WASD anda · J, Espaço ou clique ataca (aperte de novo para o combo) · K, Shift ou botão direito esquiva")}
+          {t("laminasKeys2", "WASD anda · J, Espaço ou clique ataca (aperte de novo para o combo) · K, Shift ou botão direito esquiva · 1 Corte Mágico · 2 Investida · 3 Escudo · Q Poder Máximo")}
         </p>
         <p className="mt-3 hidden text-[12px] leading-snug max-[759px]:block [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-          {t("laminasTouchHelp", "Joystick anda · ATACAR e ESQUIVAR na direita")}
+          {t("laminasTouchHelp2", "Joystick anda · ATACAR, ESQUIVAR e as habilidades na direita")}
         </p>
       </div>
     </div>
@@ -234,6 +235,7 @@ function LaminasScreen({
   const [result, setResult] = useState<boolean | null>(null)
   const [muted, setMuted] = useState(false)
   const [veil, setVeil] = useState(portal)
+  const [denied, setDenied] = useState<{ id: SkillId | "ult"; n: number } | null>(null)
   const [isTouch] = useState(() => typeof window !== "undefined" && (window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0))
   const endRef = useRef(onEnd)
   useEffect(() => {
@@ -319,6 +321,7 @@ function LaminasScreen({
         },
         onError: () => alive && setStatus("error"),
       })
+      gameRef.current.onDenied((id) => alive && setDenied((d) => ({ id, n: (d?.n ?? 0) + 1 })))
       // atributos da vida (inteligência puxa os golpes fortes; força e velocidade no dano/ritmo)
       const token = getToken()
       if (token && !fromServer)
@@ -401,13 +404,7 @@ function LaminasScreen({
 
       {/* eu: a placa com retrato, sangue, fôlego e poder (no celular em cima, longe do joystick) */}
       <div className="pointer-events-none absolute" style={{ left: SAFE.left, top: isTouch ? SAFE.top : undefined, bottom: isTouch ? undefined : SAFE.bottom }}>
-        <FightPlate pw={pw} portrait={PORTRAIT[body]} name={t("fightYou", "VOCÊ")} hp={hpPct} hpMax={hud?.hpMax ?? 100} stam={stPct / 100} power={{ v: pwPct / 100, ready: pwFull }}>
-          {!isTouch && pwFull && (
-            <div className="mt-1 text-[12px] font-black uppercase italic tracking-wide" style={{ paddingLeft: pw * 0.62, color: "#ffb347", textShadow: "0 2px 0 rgba(0,0,0,.45)" }}>
-              {t("laminasPowerReady", "PODER pronto — Q")}
-            </div>
-          )}
-        </FightPlate>
+        <FightPlate pw={pw} portrait={PORTRAIT[body]} name={t("fightYou", "VOCÊ")} hp={hpPct} hpMax={hud?.hpMax ?? 100} stam={stPct / 100} power={{ v: pwPct / 100, ready: pwFull }} />
       </div>
 
       {/* som e sair */}
@@ -430,53 +427,21 @@ function LaminasScreen({
         </button>
       </div>
 
-      {isTouch && status === "ready" && result === null && (
+      {/* 2026-11-03: botões de habilidade no desenho da referência do Alex (no computador com as teclas) */}
+      {status === "ready" && result === null && hud && (
         <>
-          <Joystick gameRef={gameRef} />
-          <div className="absolute flex items-end gap-3" style={{ right: SAFE.right, bottom: SAFE.bottom }}>
-            <button
-              type="button"
-              disabled={!pwFull}
-              onPointerDown={(e) => {
-                e.preventDefault()
-                gameRef.current?.power()
-              }}
-              className="mb-14 grid h-14 w-14 place-items-center rounded-full text-[10px] font-black"
-              style={{
-                background: pwFull ? "linear-gradient(135deg, #ffb347, #8a5cff)" : MM.surface,
-                border: `1.5px solid ${pwFull ? "#ffd27a" : MM.border}`,
-                color: pwFull ? "#fff" : MM.disabledText,
-                boxShadow: pwFull ? "0 0 16px 4px rgba(255,170,60,.7)" : undefined,
-              }}
-            >
-              <Sparkles className="h-5 w-5" />
-              {t("laminasBtnPower", "PODER")}
-            </button>
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault()
-                gameRef.current?.dodge()
-              }}
-              className="grid h-16 w-16 place-items-center rounded-full text-[11px] font-black"
-              style={{ background: MM.surface, border: `1.5px solid ${MM.borderStrong}`, color: MM.text }}
-            >
-              <Shield className="h-6 w-6" />
-              {t("laminasBtnDodge", "ESQUIVAR")}
-            </button>
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault()
-                gameRef.current?.attack()
-              }}
-              className="mb-6 grid h-20 w-20 place-items-center rounded-full text-[12px] font-black"
-              style={{ background: MM.rubyFill, border: `1.5px solid ${MM.rubyBorder}`, color: "#fff", boxShadow: MM.shadow }}
-            >
-              <Swords className="h-7 w-7" />
-              {t("laminasBtnAttack", "ATACAR")}
-            </button>
-          </div>
+          {isTouch && <Joystick gameRef={gameRef} skin="gold" />}
+          <SkillHud
+            cd={hud.cd}
+            power={hud.power}
+            shield={hud.shield}
+            keys={!isTouch}
+            denied={denied}
+            onAttack={() => gameRef.current?.attack()}
+            onDodge={() => gameRef.current?.dodge()}
+            onSkill={(id) => gameRef.current?.skill(id)}
+            onPower={() => gameRef.current?.power()}
+          />
         </>
       )}
 

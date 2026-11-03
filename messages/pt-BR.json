@@ -9137,7 +9137,13 @@
     "sgStrHow2": "Treinando na academia (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor.",
     "sgIntHow2": "Estudando na escola ou na universidade (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor.",
     "sgDexHow2": "Jogando os minijogos e lutando. Depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor.",
-    "sgSpdHow2": "Treinando na academia. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido."
+    "sgSpdHow2": "Treinando na academia. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido.",
+    "skillSlash": "Corte Mágico",
+    "skillDash": "Investida Relâmpago",
+    "skillShield": "Escudo de Luz",
+    "skillUlt": "Poder Máximo",
+    "laminasKeys2": "WASD anda · J, Espaço ou clique ataca (aperte de novo para o combo) · K, Shift ou botão direito esquiva · 1 Corte Mágico · 2 Investida · 3 Escudo · Q Poder Máximo",
+    "laminasTouchHelp2": "Joystick anda · ATACAR, ESQUIVAR e as habilidades na direita"
   },
   "Sports": {
     "eyebrow": "Esportes",

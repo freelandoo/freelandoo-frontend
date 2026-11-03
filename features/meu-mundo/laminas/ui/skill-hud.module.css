@@ -1,0 +1,310 @@
+/* features/meu-mundo/laminas/ui/skill-hud.module.css — botões de habilidade da luta (2026-11-03). */
+
+.root {
+  position: absolute;
+  pointer-events: none;
+  touch-action: none;
+}
+
+.btn {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: translate(50%, 50%);
+  border-radius: 50%;
+  user-select: none;
+}
+.btn:focus-visible {
+  outline: 2px solid #9fe4ff;
+  outline-offset: 2px;
+}
+
+/* aperto: encolhe e volta com um quique */
+.face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 200ms;
+}
+.btn[data-press="1"] .face {
+  transform: scale(0.88);
+  transition-duration: 60ms;
+}
+
+/* ── habilidade redonda ── */
+.art {
+  position: absolute;
+  inset: 9%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #120a10;
+  box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.7);
+}
+.art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: filter 220ms;
+}
+.cooling .art img {
+  filter: grayscale(0.75) brightness(0.55);
+}
+.shade {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(rgba(5, 4, 10, 0.72) var(--left, 0deg), transparent 0);
+  pointer-events: none;
+}
+.ringSvg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.gem {
+  position: absolute;
+  left: 50%;
+  top: 2.5%;
+  width: 11%;
+  height: 11%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: linear-gradient(135deg, #e8fbff, #39b9ff 55%, #0b5a8f);
+  box-shadow: 0 0 8px rgba(90, 200, 255, 0.9);
+  border: 1px solid #fff6d8;
+}
+.badge {
+  position: absolute;
+  left: 50%;
+  bottom: 1%;
+  transform: translate(-50%, 0);
+  display: flex;
+  align-items: center;
+  gap: 0.18em;
+  padding: 0.12em 0.55em 0.1em 0.45em;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #24191a, #0b0708);
+  border: 1.5px solid #b8823e;
+  color: #fff;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.badge svg {
+  width: 0.95em;
+  height: 0.95em;
+}
+.cooling .badge {
+  color: #ffe08a;
+}
+
+/* pronta de novo: pulso de luz e faíscas */
+.flash {
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+.btn[data-ready="1"] .flash {
+  animation: readyPulse 650ms ease-out;
+}
+@keyframes readyPulse {
+  0% {
+    opacity: 1;
+    transform: scale(0.85);
+    box-shadow: 0 0 0 3px var(--tone), 0 0 30px 10px var(--tone);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+    box-shadow: 0 0 0 1px var(--tone), 0 0 40px 18px transparent;
+  }
+}
+.spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6%;
+  height: 6%;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px 2px var(--tone);
+  opacity: 0;
+  pointer-events: none;
+}
+.btn[data-ready="1"] .spark {
+  animation: spark 600ms ease-out;
+}
+@keyframes spark {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--a)) translateY(-30%);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--a)) translateY(-640%);
+  }
+}
+
+/* pulsação leve de pronta */
+.idlePulse .art {
+  animation: idle 2.4s ease-in-out infinite;
+}
+@keyframes idle {
+  0%,
+  100% {
+    box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.7), 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.7), 0 0 14px 2px var(--tone);
+  }
+}
+
+/* recusada: treme */
+.btn[data-denied="1"] .face {
+  animation: shake 320ms;
+}
+@keyframes shake {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  20% {
+    translate: -6% 0;
+  }
+  40% {
+    translate: 6% 0;
+  }
+  60% {
+    translate: -4% 0;
+  }
+  80% {
+    translate: 3% 0;
+  }
+}
+
+/* ── PODER MÁXIMO cheio ── */
+.max .art {
+  box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.5), 0 0 22px 6px rgba(255, 170, 40, 0.85);
+  animation: maxPulse 1.4s ease-in-out infinite;
+}
+@keyframes maxPulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.25);
+  }
+}
+.orbit {
+  position: absolute;
+  inset: -6%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0 20%, rgba(255, 200, 80, 0.95) 28%, transparent 36% 62%, rgba(255, 120, 30, 0.95) 70%, transparent 78%);
+  -webkit-mask: radial-gradient(farthest-side, transparent 84%, #000 86% 100%);
+  mask: radial-gradient(farthest-side, transparent 84%, #000 86% 100%);
+  animation: spin 1.6s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(255, 170, 40, 0.9));
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.maxTag {
+  position: absolute;
+  left: 50%;
+  top: -10%;
+  transform: translate(-50%, 0);
+  padding: 0.1em 0.45em;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #ffe27a, #e08a12);
+  color: #2a1203;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  box-shadow: 0 0 10px rgba(255, 190, 60, 0.9);
+}
+
+/* ── ATACAR / ESQUIVAR (botão inteiro da referência) ── */
+.whole {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+}
+.label {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  line-height: 1;
+  pointer-events: none;
+  -webkit-text-stroke: 0.06em #1b0d06;
+  paint-order: stroke fill;
+  text-shadow: 0 0.08em 0 rgba(0, 0, 0, 0.5);
+}
+.btn[data-press="1"] .burst {
+  opacity: 1;
+  transform: scale(1);
+  transition-duration: 0ms;
+}
+.burst {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(1.15);
+  transition: opacity 280ms ease-out, transform 280ms ease-out;
+  box-shadow: 0 0 0 3px rgba(255, 236, 170, 0.95), 0 0 28px 8px rgba(255, 180, 60, 0.75);
+}
+.dodgeBurst {
+  box-shadow: 0 0 0 3px rgba(190, 235, 255, 0.95), 0 0 26px 8px rgba(60, 170, 255, 0.75);
+  border-radius: 40%;
+}
+
+/* tecla (computador) */
+.key {
+  position: absolute;
+  left: 4%;
+  top: 4%;
+  min-width: 1.5em;
+  padding: 0.15em 0.3em;
+  border-radius: 4px;
+  background: rgba(10, 8, 14, 0.85);
+  border: 1px solid rgba(255, 220, 150, 0.6);
+  color: #ffe9b8;
+  font-weight: 800;
+  font-size: 0.62em;
+  text-align: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idlePulse .art,
+  .max .art,
+  .orbit {
+    animation: none;
+  }
+}
+:global(html[data-mm-fx="low"]) .idlePulse .art,
+:global(html[data-mm-fx="low"]) .orbit {
+  animation: none;
+}

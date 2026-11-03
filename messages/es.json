@@ -9703,7 +9703,13 @@
     "sgStrHow2": "Entrenando en el gimnasio (rinde hasta 4 h al día); whey, creatina, pre-entreno y anabolizante aceleran. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo.",
     "sgIntHow2": "Estudiando en la escuela o la universidad (rinde hasta 5 h al día). Tras 1 día sin estudiar baja 1 punto por día, nunca por debajo del 90% del máximo.",
     "sgDexHow2": "Jugando los minijuegos y peleando. Tras 1 día sin jugar baja 5 puntos por día, hasta el 60% del máximo.",
-    "sgSpdHow2": "Entrenando en el gimnasio. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo; volver arriba es más rápido."
+    "sgSpdHow2": "Entrenando en el gimnasio. Tras 1 día sin entrenar baja 5 puntos por día, hasta el 60% del máximo; volver arriba es más rápido.",
+    "skillSlash": "Corte Mágico",
+    "skillDash": "Embestida Relámpago",
+    "skillShield": "Escudo de Luz",
+    "skillUlt": "Poder Máximo",
+    "laminasKeys2": "WASD camina · J, Espacio o clic ataca (presiona de nuevo para el combo) · K, Shift o clic derecho esquiva · 1 Corte Mágico · 2 Embestida · 3 Escudo · Q Poder Máximo",
+    "laminasTouchHelp2": "Joystick camina · ATACAR, ESQUIVAR y las habilidades a la derecha"
   },
   "Sports": {
     "eyebrow": "Deportes",

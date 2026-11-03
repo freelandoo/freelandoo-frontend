@@ -715,7 +715,11 @@ export function SceneCurtain({
 
 // Joystick virtual: escreve direto no estado de entrada do jogo, sem passar
 // por estado do React (seriam dezenas de renders por segundo).
-export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: (x: number, y: number) => void } | null> }) {
+/**
+ * `skin="gold"` (luta, 2026-11-03): o da referência do combate — anel externo
+ * dourado aceso de leve, setas nos quatro lados e o miolo claro.
+ */
+export function Joystick({ gameRef, skin }: { gameRef: React.RefObject<{ setJoystick: (x: number, y: number) => void } | null>; skin?: "gold" }) {
   const baseRef = useRef<HTMLDivElement | null>(null)
   const knobRef = useRef<HTMLDivElement | null>(null)
   const idRef = useRef<number | null>(null)
@@ -763,8 +767,8 @@ export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: 
         left: SAFE.left,
         touchAction: "none",
         borderRadius: "50%",
-        background: "rgba(255,255,255,0.14)",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
+        background: skin === "gold" ? "radial-gradient(circle, rgba(255,240,210,0.10) 0 58%, rgba(255,226,170,0.22) 70%, rgba(255,255,255,0.06) 100%)" : "rgba(255,255,255,0.14)",
+        boxShadow: skin === "gold" ? "0 0 0 2px rgba(232,186,104,0.75), 0 0 0 5px rgba(255,236,190,0.18), 0 0 18px 2px rgba(255,190,90,0.35), inset 0 0 18px rgba(255,220,150,0.25)" : "0 4px 16px rgba(0,0,0,0.16)",
       }}
       onPointerDown={(e) => {
         if (idRef.current !== null) return
@@ -776,11 +780,23 @@ export function Joystick({ gameRef }: { gameRef: React.RefObject<{ setJoystick: 
       onPointerUp={end}
       onPointerCancel={end}
     >
+      {skin === "gold" && (
+        <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" aria-hidden>
+          <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,226,170,0.35)" strokeWidth="0.8" />
+          {[0, 90, 180, 270].map((a) => (
+            <path key={a} d="M50 6 L45.5 11.5 L54.5 11.5 Z" fill="rgba(255,236,196,0.85)" transform={`rotate(${a} 50 50)`} />
+          ))}
+        </svg>
+      )}
       <div
         ref={knobRef}
         className="pointer-events-none relative h-16 w-16"
         data-dot=""
-        style={{ borderRadius: "50%", background: "rgba(255,255,255,0.42)", boxShadow: "0 3px 10px rgba(0,0,0,0.18)" }}
+        style={
+          skin === "gold"
+            ? { borderRadius: "50%", background: "radial-gradient(circle at 40% 35%, #fffaf0, #e9e1d2 60%, #c9bba2)", boxShadow: "0 3px 10px rgba(0,0,0,0.3), 0 0 0 1.5px rgba(232,186,104,0.6)" }
+            : { borderRadius: "50%", background: "rgba(255,255,255,0.42)", boxShadow: "0 3px 10px rgba(0,0,0,0.18)" }
+        }
       />
     </div>
   )

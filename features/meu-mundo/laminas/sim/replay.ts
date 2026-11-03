@@ -14,6 +14,11 @@ const BTN_RUN = 1
 const BTN_ATTACK = 2
 const BTN_DODGE = 4
 const BTN_POWER = 8
+/** 2026-11-03: as habilidades (Corte Mágico, Investida, Escudo). */
+const BTN_SLASH = 16
+const BTN_DASH = 32
+const BTN_SHIELD = 64
+const BTN_ALL = 127
 
 /** Um bloco: [quantos passos, mx (−127…127), mz (−127…127), botões]. */
 export type FightFrames = [number, number, number, number][]
@@ -29,14 +34,21 @@ const q127 = (v: number) => Math.max(-127, Math.min(127, Math.round((Number(v) |
 export function quantizeInput(inp: Input): Input {
   const mx = q127(inp.mx) / 127
   const mz = q127(inp.mz) / 127
-  return { mx, mz, run: !!inp.run, attack: !!inp.attack, dodge: !!inp.dodge, power: !!inp.power }
+  return { mx, mz, run: !!inp.run, attack: !!inp.attack, dodge: !!inp.dodge, power: !!inp.power, slash: !!inp.slash, dash: !!inp.dash, shield: !!inp.shield }
 }
 
 /** Grava um passo (já quantizado) no fim da lista. */
 export function pushFrame(frames: FightFrames, inp: Input) {
   const mx = q127(inp.mx)
   const mz = q127(inp.mz)
-  const b = (inp.run ? BTN_RUN : 0) | (inp.attack ? BTN_ATTACK : 0) | (inp.dodge ? BTN_DODGE : 0) | (inp.power ? BTN_POWER : 0)
+  const b =
+    (inp.run ? BTN_RUN : 0) |
+    (inp.attack ? BTN_ATTACK : 0) |
+    (inp.dodge ? BTN_DODGE : 0) |
+    (inp.power ? BTN_POWER : 0) |
+    (inp.slash ? BTN_SLASH : 0) |
+    (inp.dash ? BTN_DASH : 0) |
+    (inp.shield ? BTN_SHIELD : 0)
   const last = frames[frames.length - 1]
   if (last && last[1] === mx && last[2] === mz && last[3] === b && last[0] < 65535) last[0]++
   else frames.push([1, mx, mz, b])
@@ -65,7 +77,7 @@ export function replayFight(setup: FightSetup, frames: unknown): ReplayResult {
     if (!Array.isArray(f) || f.length !== 4) return fail("frames")
     const [n, mx, mz, b] = f as number[]
     if (!Number.isInteger(n) || n < 1 || n > 65535 || !Number.isInteger(mx) || !Number.isInteger(mz) || !Number.isInteger(b)) return fail("frames")
-    if (Math.abs(mx) > 127 || Math.abs(mz) > 127 || b < 0 || b > 15) return fail("frames")
+    if (Math.abs(mx) > 127 || Math.abs(mz) > 127 || b < 0 || b > BTN_ALL) return fail("frames")
     total += n
   }
   if (total > REPLAY_MAX_STEPS) return fail("long")
@@ -78,7 +90,7 @@ export function replayFight(setup: FightSetup, frames: unknown): ReplayResult {
   let hits = 0
   let hitsTaken = 0
   for (const [n, mx, mz, b] of frames as number[][]) {
-    const inp: Input = { mx: mx / 127, mz: mz / 127, run: !!(b & BTN_RUN), attack: !!(b & BTN_ATTACK), dodge: !!(b & BTN_DODGE), power: !!(b & BTN_POWER) }
+    const inp: Input = { mx: mx / 127, mz: mz / 127, run: !!(b & BTN_RUN), attack: !!(b & BTN_ATTACK), dodge: !!(b & BTN_DODGE), power: !!(b & BTN_POWER), slash: !!(b & BTN_SLASH), dash: !!(b & BTN_DASH), shield: !!(b & BTN_SHIELD) }
     const sig = (mx & 0xff) | ((mz & 0xff) << 8) | (b << 16)
     for (let i = 0; i < n; i++) {
       if (fight.over) break

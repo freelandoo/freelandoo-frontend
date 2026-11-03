@@ -151,6 +151,66 @@ export class BoxeAudio {
     this.excite(1)
   }
 
+  // ── habilidades (2026-11-03) ───────────────────────────────────────────
+  /** Corte Mágico: sopro que sobe + brilho metálico. */
+  slash() {
+    this.burst(0.28, 2400, 0.22, "bandpass", 1.6)
+    this.tone(500, 1500, 0.22, 0.14, "sawtooth")
+    this.tone(1800, 2600, 0.3, 0.06, "sine", 0.05)
+  }
+
+  /** Investida: estalo elétrico. */
+  dash() {
+    this.burst(0.16, 3800, 0.25, "highpass", 0.7)
+    this.tone(1400, 260, 0.18, 0.12, "square")
+  }
+
+  /** Escudo: acorde que abre. */
+  shieldUp() {
+    for (const [f, at] of [[523, 0], [659, 0.04], [784, 0.08], [1046, 0.12]] as const) this.tone(f, f * 1.01, 0.7, 0.07, "triangle", at)
+  }
+
+  /** Golpe batendo no escudo: plim de vidro grosso. */
+  shieldHit() {
+    this.tone(1320, 1250, 0.35, 0.14, "sine")
+    this.tone(1980, 1900, 0.25, 0.06, "triangle")
+    this.burst(0.06, 1200, 0.2, "bandpass", 2)
+  }
+
+  shieldDown() {
+    this.tone(880, 330, 0.4, 0.07, "triangle")
+  }
+
+  /** Poder máximo pronto (barra cheia). */
+  ready() {
+    this.tone(880, 880, 0.18, 0.08, "sine")
+    this.tone(1320, 1320, 0.3, 0.08, "sine", 0.1)
+  }
+
+  /** Carga do poder: tom que sobe até o disparo. */
+  charge(dur: number) {
+    this.tone(110, 520, dur, 0.12, "sawtooth")
+    this.tone(220, 1040, dur, 0.05, "sine")
+  }
+
+  /** Explosão suprema: estrondo grave longo. */
+  boom() {
+    this.burst(0.9, 380, 1.1)
+    this.burst(0.4, 2000, 0.35, "bandpass", 0.8)
+    this.tone(80, 30, 0.9, 0.7)
+    this.excite(1)
+  }
+
+  /** Golpe crítico: estalo agudo por cima da pancada. */
+  crit() {
+    this.tone(2400, 1800, 0.12, 0.09, "square")
+  }
+
+  /** Habilidade indisponível. */
+  denied() {
+    this.tone(180, 150, 0.12, 0.12, "square")
+  }
+
   dispose() {
     try {
       this.crowdSrc?.stop()

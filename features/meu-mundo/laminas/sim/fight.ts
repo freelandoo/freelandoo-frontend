@@ -104,15 +104,55 @@ const CHAIN_AFTER = 0.05
 const DODGE = { dur: 0.46, iframeFrom: 0.04, iframeTo: 0.36, speed: 8.2, stam: 24 }
 const PLAYER = { hp: 100, walk: 3.4, run: 5.6, stam: 100, stamRegen: 30, attackStam: 9, hurt: 0.32, heavyHurt: 0.7 }
 
-export type PlayerState = "idle" | "attack" | "dodge" | "hurt" | "down" | "win" | "power"
+export type PlayerState = "idle" | "attack" | "dodge" | "hurt" | "down" | "win" | "power" | "skill"
 
 /**
  * PODER (pedido do Alex em 2026-11-01: "poderes que brilham desde o chão"):
  * a barra enche com os acertos; cheia, o poder da classe. Durante ele quem
  * joga não leva dano. Maga = explosão de fogo em volta (área); lâmina =
  * golpe de sangue à frente que devolve vida.
+ * 2026-11-03 (combate premium): carga mais longa (1,6 s, dispara em 0,85 s)
+ * e recarga de SKILLS.ult.cd depois de usar.
  */
-export const POWER = { max: 100, perHit: 14, perHeavy: 22, dur: 1.3, fireAt: 0.6, mageR: 4.6, mageDmg: 46, bladeRange: 4.8, bladeArc: 2.0, bladeDmg: 42, heal: 22 }
+export const POWER = { max: 100, perHit: 14, perHeavy: 22, dur: 1.6, fireAt: 0.85, mageR: 4.6, mageDmg: 46, bladeRange: 4.8, bladeArc: 2.0, bladeDmg: 42, heal: 22 }
+
+/**
+ * HABILIDADES (pedido do Alex, 2026-11-03 — "combate mobile RPG premium"):
+ * números num lugar só. Todas contam no servidor (a gravação re-simula).
+ *  - slash  CORTE MÁGICO: lâmina de luz curva que sai à frente, atravessa e
+ *           acerta cada inimigo uma vez no caminho;
+ *  - dash   INVESTIDA RELÂMPAGO: avanço rápido na direção do joystick (sem
+ *           direção = para o alvo), sem levar golpe, acerta quem encostar;
+ *  - shield ESCUDO DE LUZ: cúpula por `dur` s que corta `cut` do dano e
+ *           impede a queda (não trava o movimento);
+ *  - ult    recarga do PODER depois de usar (a barra continua enchendo).
+ */
+export const SKILLS = {
+  slash: { cd: 8, dur: 0.55, fireAt: 0.22, speed: 17, range: 7.5, width: 1.7, dmg: 30 },
+  dash: { cd: 6, dur: 0.3, dist: 5.4, width: 0.9, dmg: 14 },
+  shield: { cd: 18, dur: 4, cut: 0.7 },
+  ult: { cd: 12 },
+}
+export type SkillId = "slash" | "dash" | "shield"
+/** Recarga restante de cada habilidade (s). */
+export interface Cooldowns {
+  slash: number
+  dash: number
+  shield: number
+  ult: number
+}
+/** Lâmina do Corte Mágico no ar. */
+export interface Wave {
+  id: number
+  x: number
+  z: number
+  dx: number
+  dz: number
+  left: number
+  dmg: number
+  /** Quem já levou (cada inimigo uma vez). */
+  hit: number[]
+}
 export interface PlayerBody {
   x: number
   z: number
@@ -141,6 +181,13 @@ export interface PlayerBody {
   /** Ranque do golpe em curso (0 C … 3 S) e quantos já encadeou. */
   rank: Rank
   chain: number
+  /** Habilidade em curso (estado "skill"). */
+  skill: SkillId | null
+  cd: Cooldowns
+  /** Escudo de luz ativo até (tempo da luta, s). */
+  shieldUntil: number
+  /** Investida: quem já levou. */
+  dashHit: number[]
 }
 
 // ── os inimigos ────────────────────────────────────────────────────────────
@@ -281,8 +328,8 @@ export interface Mob {
 
 export type FightEvent =
   | { t: "swing"; combo: number; rank: Rank }
-  | { t: "hit"; on: "mob"; id: number; dmg: number; x: number; y: number; z: number; heavy: boolean; dead: boolean; rank: Rank }
-  | { t: "hit"; on: "me"; dmg: number; x: number; z: number; heavy: boolean; dead: boolean }
+  | { t: "hit"; on: "mob"; id: number; dmg: number; x: number; y: number; z: number; heavy: boolean; dead: boolean; rank: Rank; src?: "skill" | "ult" }
+  | { t: "hit"; on: "me"; dmg: number; x: number; z: number; heavy: boolean; dead: boolean; shield?: boolean }
   | { t: "whiff"; id: number }
   | { t: "warn"; id: number; attack: string }
   | { t: "strike"; id: number; attack: string }
@@ -297,6 +344,15 @@ export type FightEvent =
   /** O poder começou (desenho: círculo e coluna de luz) e quando dispara. */
   | { t: "power"; x: number; z: number; facing: number }
   | { t: "powerFire"; x: number; z: number; facing: number; heal: number }
+  /** Habilidade começou (desenho e som). */
+  | { t: "skill"; id: SkillId; x: number; z: number; facing: number }
+  /** A lâmina do Corte Mágico saiu / sumiu. */
+  | { t: "wave"; id: number }
+  | { t: "waveEnd"; id: number; x: number; z: number }
+  /** O escudo acabou. */
+  | { t: "shieldEnd" }
+  /** Tocou numa habilidade ainda recarregando. */
+  | { t: "denied"; id: SkillId | "ult" }
 
 export interface Input {
   /** Direção no chão (mundo), módulo 0–1. */
@@ -307,6 +363,10 @@ export interface Input {
   dodge: boolean
   /** Soltar o poder (barra cheia). */
   power?: boolean
+  /** Habilidades (Corte Mágico, Investida, Escudo). */
+  slash?: boolean
+  dash?: boolean
+  shield?: boolean
 }
 
 /** Uma luta: quem entra e com que força. `level` (1–60; o Soldado só 1–2) multiplica vida, dano e firmeza. */
@@ -450,6 +510,10 @@ export class Fight {
   private prevAttack = false
   private prevDodge = false
   private prevPower = false
+  private prevSkill = { slash: false, dash: false, shield: false }
+  /** Lâminas do Corte Mágico no ar. */
+  readonly waves: Wave[] = []
+  private waveSeq = 0
   /** Só conferência (harness): força o ranque dos próximos golpes. */
   forceRank: Rank | null = null
   /** mm3d-59: bônus do equipamento (com teto). */
@@ -492,6 +556,10 @@ export class Fight {
       power: 0,
       rank: 0,
       chain: 0,
+      skill: null,
+      cd: { slash: 0, dash: 0, shield: 0, ult: 0 },
+      shieldUntil: 0,
+      dashHit: [],
     }
     const def = MOBS[setup.kind]
     const lv = mobLevelScale(this.level)
@@ -547,13 +615,27 @@ export class Fight {
     this.prevDodge = inp.dodge
     const powerPressed = !!inp.power && !this.prevPower
     this.prevPower = !!inp.power
+    const skillPressed: SkillId | null =
+      inp.slash && !this.prevSkill.slash ? "slash" : inp.dash && !this.prevSkill.dash ? "dash" : inp.shield && !this.prevSkill.shield ? "shield" : null
+    this.prevSkill = { slash: !!inp.slash, dash: !!inp.dash, shield: !!inp.shield }
     if (this.over) {
       this.stepPlayerIdle()
       return
     }
+    const cd = this.me.cd
+    cd.slash = Math.max(0, cd.slash - DT)
+    cd.dash = Math.max(0, cd.dash - DT)
+    cd.shield = Math.max(0, cd.shield - DT)
+    cd.ult = Math.max(0, cd.ult - DT)
+    if (this.me.shieldUntil > 0 && this.time >= this.me.shieldUntil) {
+      this.me.shieldUntil = 0
+      this.events.push({ t: "shieldEnd" })
+    }
     this.stepPower(powerPressed)
+    if (skillPressed) this.startSkill(skillPressed, inp)
     this.stepPlayer(inp, attackPressed, dodgePressed)
     this.stepShots()
+    this.stepWaves()
     this.pickToken()
     for (const m of this.mobs) this.stepMob(m)
     this.separate()
@@ -583,8 +665,11 @@ export class Fight {
   /** Poder: começa com a barra cheia (parado ou golpeando); dispara em fireAt. */
   private stepPower(pressed: boolean) {
     const p = this.me
-    if (pressed && p.power >= POWER.max && (p.state === "idle" || p.state === "attack")) {
+    if (pressed && (p.power < POWER.max || p.cd.ult > 0)) this.events.push({ t: "denied", id: "ult" })
+    else if (pressed && (p.state === "idle" || p.state === "attack")) {
       p.power = 0
+      // a recarga começa quando o poder termina
+      p.cd.ult = SKILLS.ult.cd + POWER.dur
       p.vx = 0
       p.vz = 0
       this.faceNearest()
@@ -611,6 +696,65 @@ export class Fight {
     }
   }
 
+  /** Toque numa habilidade: recarga, estado permitido e o começo de cada uma. */
+  private startSkill(id: SkillId, inp: Input) {
+    const p = this.me
+    if (p.cd[id] > 0) {
+      this.events.push({ t: "denied", id })
+      return
+    }
+    // escudo: a qualquer hora em pé (também levando pancada); as outras: parado ou na volta do golpe
+    const free = p.state === "idle" || (p.state === "attack" && p.struck)
+    if (id === "shield" ? p.state === "down" || p.state === "win" || p.state === "power" : !free) return
+    p.cd[id] = SKILLS[id].cd
+    if (id === "shield") {
+      p.shieldUntil = this.time + SKILLS.shield.dur
+      this.events.push({ t: "skill", id, x: p.x, z: p.z, facing: p.facing })
+      return
+    }
+    if (id === "dash") {
+      let dx = inp.mx
+      let dz = inp.mz
+      if (Math.hypot(dx, dz) < 0.2) {
+        this.faceNearest()
+        dx = Math.sin(p.facing)
+        dz = Math.cos(p.facing)
+      }
+      const l = Math.hypot(dx, dz) || 1
+      p.dodgeX = dx / l
+      p.dodgeZ = dz / l
+      p.facing = Math.atan2(p.dodgeX, p.dodgeZ)
+      p.dashHit = []
+    } else this.faceNearest()
+    p.vx = 0
+    p.vz = 0
+    p.struck = false
+    p.queued = false
+    this.setPlayer("skill")
+    p.skill = id
+    this.events.push({ t: "skill", id, x: p.x, z: p.z, facing: p.facing })
+  }
+
+  private stepWaves() {
+    const S = SKILLS.slash
+    for (let i = this.waves.length - 1; i >= 0; i--) {
+      const w = this.waves[i]
+      const step = S.speed * DT
+      w.x += w.dx * step
+      w.z += w.dz * step
+      w.left -= step
+      for (const m of this.mobs) {
+        if (m.state === "dead" || m.state === "spawn" || m.y > 1.6 || w.hit.includes(m.id)) continue
+        if (Math.hypot(m.x - w.x, m.z - w.z) > S.width / 2 + MOBS[m.kind].radius) continue
+        w.hit.push(m.id)
+        this.damageMob(m, w.dmg, true, w.dx, w.dz, 3, "skill")
+      }
+      if (w.left > 0 && Math.hypot(w.x, w.z) <= ARENA_R + 0.5) continue
+      this.waves.splice(i, 1)
+      this.events.push({ t: "waveEnd", id: w.id, x: w.x, z: w.z })
+    }
+  }
+
   private firePower() {
     const p = this.me
     const mage = this.combo === MAGE_COMBO
@@ -622,10 +766,10 @@ export class Fight {
       const d = Math.hypot(dx, dz) - MOBS[m.kind].radius
       if (mage) {
         if (d > POWER.mageR) continue
-        this.damageMob(m, Math.round(POWER.mageDmg * this.fx.dmg), true, dx, dz)
+        this.damageMob(m, Math.round(POWER.mageDmg * this.fx.dmg), true, dx, dz, 3, "ult")
       } else {
         if (d > POWER.bladeRange || Math.abs(angDiff(Math.atan2(dx, dz), p.facing)) > POWER.bladeArc / 2) continue
-        this.damageMob(m, Math.round(POWER.bladeDmg * this.fx.dmg), true, dx, dz)
+        this.damageMob(m, Math.round(POWER.bladeDmg * this.fx.dmg), true, dx, dz, 3, "ult")
         healed = POWER.heal
       }
     }
@@ -734,6 +878,35 @@ export class Fight {
         p.vz = 0
         if (p.t >= POWER.dur) this.setPlayer("idle")
         break
+      case "skill":
+        if (p.skill === "slash") {
+          p.vx = 0
+          p.vz = 0
+          if (!p.struck && p.t >= SKILLS.slash.fireAt) {
+            p.struck = true
+            this.castWave()
+          }
+          if (p.t >= SKILLS.slash.dur) this.endSkill()
+        } else {
+          const D = SKILLS.dash
+          const sp = D.dist / D.dur
+          p.vx = p.dodgeX * sp
+          p.vz = p.dodgeZ * sp
+          for (const m of this.mobs) {
+            if (m.state === "dead" || m.state === "spawn" || m.y > 1.6 || p.dashHit.includes(m.id)) continue
+            const dx = m.x - p.x
+            const dz = m.z - p.z
+            if (Math.hypot(dx, dz) > MOBS[m.kind].radius + PLAYER_R + D.width) continue
+            p.dashHit.push(m.id)
+            this.damageMob(m, Math.round(D.dmg * this.fx.dmg), false, dx, dz, 3, "skill")
+          }
+          if (p.t >= D.dur) {
+            p.vx *= 0.25
+            p.vz *= 0.25
+            this.endSkill()
+          }
+        }
+        break
     }
     p.x += p.vx * DT
     p.z += p.vz * DT
@@ -743,6 +916,20 @@ export class Fight {
       p.x *= max / r
       p.z *= max / r
     }
+  }
+
+  private endSkill() {
+    this.me.skill = null
+    this.setPlayer("idle")
+  }
+
+  /** Corte Mágico: a lâmina de luz sai à frente de quem joga. */
+  private castWave() {
+    const p = this.me
+    const S = SKILLS.slash
+    const w: Wave = { id: ++this.waveSeq, x: p.x + Math.sin(p.facing) * 0.8, z: p.z + Math.cos(p.facing) * 0.8, dx: Math.sin(p.facing), dz: Math.cos(p.facing), left: S.range, dmg: Math.round(S.dmg * this.fx.dmg), hit: [] }
+    this.waves.push(w)
+    this.events.push({ t: "wave", id: w.id })
   }
 
   /** Golpe novo: o ranque é sorteado (inteligência puxa para os fortes). `chain` = quantos já seguidos. */
@@ -841,13 +1028,13 @@ export class Fight {
   }
 
   /** Dano num inimigo (corte ou bola de fogo); (dx, dz) = de onde veio, para o empurrão. */
-  private damageMob(m: Mob, base: number, heavy: boolean, dx: number, dz: number, rank: Rank = 3) {
+  private damageMob(m: Mob, base: number, heavy: boolean, dx: number, dz: number, rank: Rank = 3, src?: "skill" | "ult") {
     // Pancada na brecha (logo depois do golpe dele) dói mais.
     const opening = m.state === "recover" ? 1.25 : 1
     const dmg = Math.round(base * opening)
     m.hp = Math.max(0, m.hp - dmg)
     const dead = m.hp <= 0
-    this.events.push({ t: "hit", on: "mob", id: m.id, dmg, x: m.x, y: m.y, z: m.z, heavy, dead, rank })
+    this.events.push({ t: "hit", on: "mob", id: m.id, dmg, x: m.x, y: m.y, z: m.z, heavy, dead, rank, src })
     if (this.me.state !== "power") this.me.power = Math.min(POWER.max, this.me.power + (heavy ? POWER.perHeavy : POWER.perHit) * (1 + this.gear.power))
     if (dead) {
       m.state = "dead"
@@ -1001,7 +1188,7 @@ export class Fight {
   private mobHit(m: Mob, a: MobAttack) {
     const p = this.me
     if (p.state === "dodge" && p.t >= DODGE.iframeFrom && p.t <= DODGE.iframeTo) return
-    if (p.state === "down" || p.state === "power") return
+    if (p.state === "down" || p.state === "power" || (p.state === "skill" && p.skill === "dash")) return
     let hit = false
     if (a.area) {
       // Área: só no primeiro quadro do ativo.
@@ -1016,12 +1203,19 @@ export class Fight {
     }
     if (!hit) return
     m.struck = true
-    const dmg = Math.max(1, Math.round(a.dmg * m.dmgMul * (1 - this.def)))
+    // Escudo de luz: corta o dano e segura de pé (sem queda nem pancada)
+    const shield = p.shieldUntil > this.time
+    const dmg = Math.max(1, Math.round(a.dmg * m.dmgMul * (1 - this.def) * (shield ? 1 - SKILLS.shield.cut : 1)))
     p.hp = Math.max(0, p.hp - dmg)
     const heavy = !!a.heavy
-    this.events.push({ t: "hit", on: "me", dmg, x: p.x, z: p.z, heavy, dead: p.hp <= 0 })
+    this.events.push({ t: "hit", on: "me", dmg, x: p.x, z: p.z, heavy, dead: p.hp <= 0, shield })
     // Empurrão para longe de quem bateu.
     const l = Math.hypot(p.x - m.x, p.z - m.z) || 1
+    if (shield && p.hp > 0) {
+      p.x += ((p.x - m.x) / l) * 0.3
+      p.z += ((p.z - m.z) / l) * 0.3
+      return
+    }
     const push = heavy ? 1.4 : 0.6
     p.x += ((p.x - m.x) / l) * push
     p.z += ((p.z - m.z) / l) * push

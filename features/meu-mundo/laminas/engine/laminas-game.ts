@@ -36,7 +36,8 @@ import { AvatarLibrary, type BoxeBase, type BoxeClip } from "../../engine/avatar
 import { Character } from "../../engine/player"
 import { BoxeAudio } from "./audio"
 import type { BodyId } from "../../types"
-import { COMBO, DT, Fight, MOBS, POWER, RANKS, mobAttack, type Rank, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
+import { ARENA_R, COMBO, DT, Fight, MOBS, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
+import { createSkillFx, SKILL_COLORS } from "./skill-fx"
 import { buildArena } from "./arena-view"
 import { buildStreet } from "./street-view"
 import { pushFrame, quantizeInput, type FightFrames } from "../sim/replay"
@@ -62,6 +63,9 @@ export interface LaminasHud {
   over: null | { win: boolean }
   /** Algum golpe vindo agora (a tela pisca a dica de esquiva). */
   danger: boolean
+  /** Recarga restante de cada habilidade (s) e o escudo ainda aceso (s). */
+  cd: Cooldowns
+  shield: number
 }
 
 export interface LaminasGameOptions {
@@ -96,6 +100,10 @@ export interface LaminasGameHandle {
   dodge: () => void
   /** Solta o poder (barra cheia). */
   power: () => void
+  /** Habilidades (2026-11-03): Corte Mágico, Investida, Escudo. */
+  skill: (id: SkillId) => void
+  /** Avisa quando uma habilidade foi recusada (recarga) — a tela treme o botão. */
+  onDenied: (fn: ((id: SkillId | "ult") => void) | null) => void
   /** mm3d-59: a entrada gravada (1 bloco por trecho igual) para o servidor conferir. */
   frames: () => FightFrames
   dispose: () => void
@@ -219,14 +227,22 @@ function pick<T>(list: readonly T[]): T {
   return list[i]
 }
 /** Dano saltando por ranque (C, B, A, S): cor e tamanho. */
-const RANK_COLOR = ["#FF4FA3", "#FF8A3D", "#FFD23F", "#FFE45C"]
-const RANK_SIZE = [50, 60, 74, 100]
+// 2026-11-03 (combate premium): normal branco, crítico (A/S) dourado,
+// habilidade violeta, poder máximo laranja-dourado e maior, bloqueado azul-claro.
+const RANK_COLOR = ["#FFFFFF", "#FFF3D6", "#FFD23F", "#FFE45C"]
+const RANK_SIZE = [50, 58, 74, 100]
+const SKILL_NUM = "#C77DFF"
+const ULT_NUM = "#FFA51F"
+const BLOCK_NUM = "#9EDCFF"
 /** Comprimento da espada no GLB (pomo → ponta, m). */
 const SWORD_LEN = 1.065
 /** Comprimento do cajado no GLB (ponta de lança → topo, m: −0,59 → 0,963). */
 const STAFF_LEN = 1.553
 const CAM_DIST = 6.4
 const CAM_H = 3.3
+const FOV = 0.9
+/** Até onde a câmera vai (raio a partir do centro): dentro do muro da arena. */
+const CAM_R = ARENA_R + 0.4
 const HAND = "mixamorig:RightHand"
 /** Giro da espada em relação ao osso da mão (a lâmina sai do lado do polegar). */
 const GRIP = Quaternion.RotationYawPitchRoll(0, 0, Math.PI / 2)
@@ -323,6 +339,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const weaponColor = weaponProfile && (weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
   // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
+  // habilidades (2026-11-03): lâmina de luz, investida, escudo, poder máximo
+  const skillFx = createSkillFx(scene, low, vfx, () => {
+    const p = fight.me
+    return [new Vector3(p.x, 0.25, p.z), new Vector3(p.x, 1.75 * (adult ? 1.35 : 1), p.z)]
+  })
   if (clan !== "vampiro") spirits.preload()
   // adultos: mais brilho e mais desenho (pedido do Alex)
   const adult = /adult/.test(opts.body)
@@ -511,6 +532,12 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let wantAttack = false
   let wantDodge = false
   let wantPower = false
+  const wantSkill = { slash: false, dash: false, shield: false }
+  let deniedFn: ((id: SkillId | "ult") => void) | null = null
+  const skill = (id: SkillId) => {
+    audio.resume()
+    wantSkill[id] = true
+  }
   const power = () => {
     audio.resume()
     wantPower = true
@@ -525,11 +552,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   }
   const onKey = (e: KeyboardEvent, down: boolean) => {
     const k = e.key.toLowerCase()
-    if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", " ", "j", "k", "shift", "q"].includes(k)) e.preventDefault()
+    if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", " ", "j", "k", "shift", "q", "1", "2", "3", "e", "r", "f"].includes(k)) e.preventDefault()
     if (down) {
       if ((k === "j" || k === " ") && !e.repeat) attack()
       else if ((k === "k" || k === "shift") && !e.repeat) dodge()
       else if (k === "q" && !e.repeat) power()
+      else if ((k === "1" || k === "e") && !e.repeat) skill("slash")
+      else if ((k === "2" || k === "r") && !e.repeat) skill("dash")
+      else if ((k === "3" || k === "f") && !e.repeat) skill("shield")
       keys.add(k)
     } else keys.delete(k)
   }
@@ -552,12 +582,13 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   cam.inputs.clear()
   cam.minZ = 0.1
   cam.maxZ = 220
-  cam.fov = 0.9
+  cam.fov = FOV
   scene.activeCamera = cam
   let camYaw = 0
   const camPos = cam.position.clone()
   const camLook = new Vector3(0, 1.2, 0)
   let shake = 0
+  let ultZoom = 1
   const angDiff = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b))
 
   const readInput = (): Input => {
@@ -577,7 +608,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const fz = Math.cos(camYaw)
     const mx = fx * y + fz * x
     const mz = fz * y - fx * x
-    const inp: Input = { mx, mz, run: n > 0.85 && !fight.target(), attack: wantAttack, dodge: wantDodge, power: wantPower }
+    const inp: Input = { mx, mz, run: n > 0.85 && !fight.target(), attack: wantAttack, dodge: wantDodge, power: wantPower, slash: wantSkill.slash, dash: wantSkill.dash, shield: wantSkill.shield }
     return inp
   }
 
@@ -610,6 +641,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
 
   // ── animação do jogador ──────────────────────────────────────────────────
   let lastState = fight.me.state
+  let wasDashing = false
+  let wasReady = false
   const onEvents = (evs: FightEvent[]) => {
     for (const e of evs) {
       switch (e.t) {
@@ -654,6 +687,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         case "power": {
           // o poder: círculo largo, coluna de luz e estrelas subindo do chão
           vfx.ground(new Vector3(e.x, 0, e.z), clan === "raposa" ? FIRE : fxColor, 3.2, POWER.dur + 0.4, true)
+          // fases do PODER MÁXIMO: anéis que se fecham, núcleo branco, energia convergindo
+          vfx.ground(new Vector3(e.x, 0, e.z), SKILL_COLORS.ult, 2.2, POWER.fireAt + 0.2, false, false)
+          skillFx.ultCharge(new Vector3(e.x, 0, e.z), POWER.fireAt)
+          audio.charge(POWER.fireAt)
           if (clan === "raposa") hero.boxeAct("RCast", POWER.dur, 0, 1)
           else if (clan) hero.boxeAct("VPower", POWER.dur, 0, 1)
           else if (brute) hero.boxeAct("XTaunt", POWER.dur, 0, 0.9)
@@ -679,11 +716,53 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             for (let i = 1; i <= 3; i++) vfx.impact(new Vector3(e.x + Math.sin(e.facing) * 1.5 * i, 1.1, e.z + Math.cos(e.facing) * 1.5 * i), fxColor, true)
             if (e.heal) pop(new Vector3(e.x, 2.4, e.z), `+${e.heal}`, "#7CFFB2", 40)
           }
-          shake = Math.max(shake, 0.35)
+          skillFx.ultFire(feet, clan === "raposa" ? POWER.mageR : POWER.bladeRange)
+          vfx.impact(at.add(new Vector3(0, 0.4, 0)), SKILL_COLORS.ult, true, 1.4)
+          audio.boom()
+          shake = Math.max(shake, 0.45)
           hitStop = Math.max(hitStop, 0.1)
           arena.cheer(0.8)
           break
         }
+        case "skill": {
+          const feet = new Vector3(e.x, 0, e.z)
+          if (e.id === "slash") {
+            vfx.ground(feet, SKILL_COLORS.slash, 1.3, SKILLS.slash.dur + 0.2)
+            const c = moves ? pick(moves.special) : SWING_CLIPS[2]
+            hero.boxeAct(c.clip, SKILLS.slash.dur, c.from, c.to)
+            audio.slash()
+          } else if (e.id === "dash") {
+            if (moves) hero.boxeAct(moves.dodge.clip, SKILLS.dash.dur, moves.dodge.from, moves.dodge.to)
+            else hero.boxeAct("BDodge", SKILLS.dash.dur, 0, 0.49)
+            vfx.impact(new Vector3(e.x, 1, e.z), SKILL_COLORS.dash, false, 1)
+            audio.dash()
+          } else {
+            skillFx.shieldOn(feet)
+            // gesto de proteção só parado (andando ele seguiria deslizando)
+            if (Math.hypot(fight.me.vx, fight.me.vz) < 0.5 && fight.me.state === "idle") {
+              if (clan === "raposa") hero.boxeAct("RCast", 0.5, 0, 0.35)
+              else if (clan) hero.boxeAct("VPower", 0.5, 0, 0.35)
+            }
+            audio.shieldUp()
+          }
+          break
+        }
+        case "wave": {
+          const w = fight.waves.find((x) => x.id === e.id)
+          if (w) skillFx.wave(e.id, new Vector3(w.x, 1.05, w.z), Math.atan2(w.dx, w.dz))
+          break
+        }
+        case "waveEnd":
+          skillFx.endWave(e.id, new Vector3(e.x, 1.05, e.z))
+          break
+        case "shieldEnd":
+          skillFx.shieldOff()
+          audio.shieldDown()
+          break
+        case "denied":
+          audio.denied()
+          deniedFn?.(e.id)
+          break
         case "dodge":
           vfx.dust(new Vector3(fight.me.x, 0.15, fight.me.z), 8)
           if (moves) hero.boxeAct(moves.dodge.clip, 0.46, moves.dodge.from, moves.dodge.to)
@@ -693,10 +772,20 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         case "hit":
           if (e.on === "mob") {
             const at = new Vector3(e.x, e.y + 1.3, e.z)
-            burst(sparks, at, e.heavy ? 40 : 22)
-            burst(ichor, at, e.heavy ? 18 : 8)
-            pop(at.add(new Vector3(0, 0.5, 0)), e.rank >= 2 ? `${RANKS[e.rank]} ${e.dmg}` : String(e.dmg), RANK_COLOR[e.rank], RANK_SIZE[e.rank], e.rank)
-            if (clan !== "raposa") vfx.impact(at, fxColor, e.heavy, (1 + e.rank * 0.35) * adultK)
+            // combo (2026-11-03): 1º golpe faísca pequena, 2º mais forte, o 3º fecha com explosão curta e tranco
+            const chain = !e.src && fight.me.state === "attack" ? fight.me.chain : 0
+            burst(sparks, at, (e.heavy ? 40 : 22) + chain * 14)
+            burst(ichor, at, (e.heavy ? 18 : 8) + chain * 6)
+            if (e.src === "ult") pop(at.add(new Vector3(0, 0.7, 0)), String(e.dmg), ULT_NUM, 112, 3)
+            else if (e.src === "skill") pop(at.add(new Vector3(0, 0.5, 0)), String(e.dmg), SKILL_NUM, 68, 2)
+            else pop(at.add(new Vector3(0, 0.5, 0)), e.rank >= 2 ? `${RANKS[e.rank]} ${e.dmg}` : String(e.dmg), RANK_COLOR[e.rank], RANK_SIZE[e.rank] + chain * 6, e.rank)
+            if (e.src === "skill") vfx.impact(at, SKILL_COLORS.slash, true, 1.2)
+            else if (clan !== "raposa") vfx.impact(at, fxColor, e.heavy, (1 + e.rank * 0.35 + chain * 0.2) * adultK)
+            if (chain === 2 && !e.src) {
+              vfx.burst(at, SKILL_COLORS.ult)
+              shake = Math.max(shake, 0.22)
+            }
+            if (e.rank >= 2 && !e.src) audio.crit()
             if (e.rank === 3) {
               vfx.burst(at, fxColor)
               hitStop = Math.max(hitStop, 0.12)
@@ -710,6 +799,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
               arena.cheer(1)
               audio.excite(0.9)
             } else arena.cheer(0.35)
+          } else if (e.shield && !e.dead) {
+            // o escudo segurou: onda no ponto da cúpula virado para quem bateu
+            const src = fight.target()
+            const dir = src ? new Vector3(src.x - e.x, 0, src.z - e.z).normalize() : new Vector3(0, 0, 1)
+            skillFx.shieldHit(new Vector3(e.x + dir.x * 1.3, 1.1, e.z + dir.z * 1.3))
+            pop(new Vector3(e.x, 2.1, e.z), String(e.dmg), BLOCK_NUM, 40)
+            audio.shieldHit()
+            shake = Math.max(shake, 0.06)
           } else {
             const at = new Vector3(e.x, 1.4, e.z)
             burst(sparks, at, 14)
@@ -763,6 +860,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       wantAttack = false
       wantDodge = false
       wantPower = false
+      wantSkill.slash = wantSkill.dash = wantSkill.shield = false
       fight.step(inp)
       onEvents(fight.events)
       ran += DT
@@ -797,7 +895,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     heroFix.staffWant = still && clan === "raposa" && base === GUARD && sp < 0.3 ? 1 : 0
     if (grip) grip.upright = heroFix.staffW
     // a maga não corta: sem arco; a pedra carrega até o disparo
-    heroTrail.active = p.state === "attack" && clan !== "raposa"
+    heroTrail.active = (p.state === "attack" || (p.state === "skill" && p.skill === "slash")) && clan !== "raposa"
     if (shotTrail) shotTrail.active = fight.shots.length > 0
     if (stone) {
       const node = grip?.root
@@ -817,6 +915,16 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       }
       vfx.moveShot(s.id, at)
     }
+    for (const w of fight.waves) skillFx.moveWave(w.id, new Vector3(w.x, 1.05, w.z))
+    const dashing = p.state === "skill" && p.skill === "dash"
+    if (!dashing && wasDashing) skillFx.dashEnd(new Vector3(p.x, 0, p.z))
+    wasDashing = dashing
+    skillFx.dash(dashing, new Vector3(p.x, 0, p.z))
+    skillFx.update(realDt, new Vector3(p.x, 0, p.z))
+    // poder pronto: um sinal curto quando a barra enche e a recarga acabou
+    const ready = p.power >= POWER.max && p.cd.ult <= 0
+    if (ready && !wasReady) audio.ready()
+    wasReady = ready
     vfx.update(realDt)
     spirits.update(realDt)
 
@@ -864,8 +972,18 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     if (tgt && p.state !== "win") camYaw += angDiff(Math.atan2(tgt.x - p.x, tgt.z - p.z), camYaw) * Math.min(1, dt * 3.5)
     // celular em pé (2026-11-03): mais longe e mais alto, como no Jetpack
     const tallK = tallness(scene)
-    const camD = CAM_DIST * (1 + 0.85 * tallK)
-    const wantPos = new Vector3(p.x - Math.sin(camYaw) * camD, CAM_H * (1 + 0.3 * tallK), p.z - Math.cos(camYaw) * camD)
+    // poder máximo: aproxima um pouco na carga (sem tirar o controle)
+    ultZoom += ((p.state === "power" && p.t < POWER.fireAt ? 0.82 : 1) - ultZoom) * Math.min(1, dt * 4)
+    const want = CAM_DIST * (1 + 0.85 * tallK) * ultZoom
+    // a câmera não sai do chão de luta (atrás dele ficam o portão e a arquibancada,
+    // que tampavam a tela): o que faltar de distância vira ângulo de visão.
+    const bx = -Math.sin(camYaw)
+    const bz = -Math.cos(camYaw)
+    const pb = p.x * bx + p.z * bz
+    const inside = Math.max(2.5, -pb + Math.sqrt(Math.max(0, pb * pb - (p.x * p.x + p.z * p.z) + CAM_R * CAM_R)))
+    const camD = Math.min(want, inside)
+    cam.fov += (Math.min(1.35, 2 * Math.atan(Math.tan(FOV / 2) * (want / camD))) - cam.fov) * Math.min(1, dt * 6)
+    const wantPos = new Vector3(p.x + bx * camD, CAM_H * (1 + 0.3 * tallK), p.z + bz * camD)
     camPos.addInPlace(wantPos.subtract(camPos).scale(Math.min(1, dt * 6)))
     const lookAt = tgt ? new Vector3((p.x * 2 + tgt.x) / 3, 1.2 + tgt.y * 0.3, (p.z * 2 + tgt.z) / 3) : new Vector3(p.x + Math.sin(camYaw) * 3, 1.2, p.z + Math.cos(camYaw) * 3)
     camLook.addInPlace(lookAt.subtract(camLook).scale(Math.min(1, dt * 6)))
@@ -886,6 +1004,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         mobs: fight.mobs.map((m) => ({ id: m.id, kind: m.kind, hp: m.hp, hpMax: m.hpMax })),
         over: fight.over ? { win: fight.over.win } : null,
         danger,
+        cd: { ...p.cd },
+        shield: Math.max(0, p.shieldUntil - fight.time),
       })
     }
     governor.tick(ms)
@@ -945,6 +1065,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     attack,
     dodge,
     power,
+    skill,
+    onDenied: (fn) => {
+      deniedFn = fn
+    },
     setStats: (st) => {
       // com ticket os atributos são os do servidor (a gravação depende deles)
       if (!opts.kit) fight.setStats(st)
@@ -985,6 +1109,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       grip?.dispose()
       heroFix.dispose()
       spirits.dispose()
+      skillFx.dispose()
       vfx.dispose()
       hero.dispose()
       lib.dispose()
