@@ -26,6 +26,7 @@ import { itemName } from "../status/status-pages"
 import { EvoButton, EvoDialog, EvoToast } from "../hud/hud-kit"
 import { PlaceView } from "../place-view"
 import { SellerDialog } from "./seller-dialog"
+import GearPanel, { type GearTab } from "../gear/gear-panel"
 
 /** Hora de aula (moedas do jogo) — espelho de PLACE_RULES em meuMundoLife.js. */
 const CLASS_FEE_H: Record<string, number> = { universidade: 8 }
@@ -71,6 +72,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   const [menu, setMenu] = useState<{ items: LifeItem[]; coins: number } | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [sellerOpen, setSellerOpen] = useState(false)
+  const [gearTab, setGearTab] = useState<GearTab | null>(null)
 
   useEffect(() => {
     doingRef.current = doing
@@ -150,6 +152,11 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   }
 
   const onUse = (use: PlaceUse, state: PlaceState) => {
+    if (use === "forge" || use === "refine" || use === "armory") {
+      stop()
+      setGearTab(use)
+      return
+    }
     if (use === "train" || use === "study" || use === "pray") {
       if (doingRef.current) return
       setAsk({ use, state })
@@ -188,7 +195,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
         onState={onState}
         pose={pose}
         poseAt={poseAt}
-        blocked={!!ask || menuOpen || sellerOpen}
+        blocked={!!ask || menuOpen || sellerOpen || !!gearTab}
         hideUse={!!doing}
         extra={
           doing ? (
@@ -198,6 +205,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
           ) : null
         }
       />
+      {gearTab && <GearPanel initialTab={gearTab} onClose={() => setGearTab(null)} />}
       {toast && (
         <div className="pointer-events-none fixed left-1/2 top-6 z-[75] -translate-x-1/2">
           <EvoToast tone={toast.tone}>{toast.text}</EvoToast>

@@ -295,6 +295,7 @@ function LaminasScreen({
           ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined }
           : { kind: choice.kind, level: choice.level },
         kit: fromServer ? (fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
+        appearance: fromServer?.setup.appearance,
         stage,
         onReady: () => alive && setStatus("ready"),
         onHud: (h) => alive && setHud(h),

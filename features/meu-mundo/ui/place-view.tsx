@@ -18,11 +18,13 @@ import {
   DoorOpen,
   Dumbbell,
   HandCoins,
+  Hammer,
   HeartPulse,
   MessagesSquare,
   ShieldCheck,
   ShoppingCart,
   Sparkles,
+  Swords,
   UtensilsCrossed,
 } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -37,6 +39,12 @@ type Tr = (key: string, fallback: string) => string
 /** Rótulo e ícone do que se faz em cada uso. */
 function actionOf(use: PlaceUse, t: Tr): { label: string; icon: ReactNode } {
   switch (use) {
+    case "forge":
+      return { label: t("pvForge", "Forjar peças e armas"), icon: <Hammer className="h-5 w-5" /> }
+    case "refine":
+      return { label: t("pvRefine", "Refinar equipamento"), icon: <Sparkles className="h-5 w-5" /> }
+    case "armory":
+      return { label: t("pvArmory", "Comprar equipamentos"), icon: <Swords className="h-5 w-5" /> }
     case "train":
       return { label: t("pvTrain", "Treinar"), icon: <Dumbbell className="h-5 w-5" /> }
     case "study":

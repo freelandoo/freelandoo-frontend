@@ -402,6 +402,8 @@ export class AvatarLibrary {
     private readonly withGincana = false,
     /** Na Arena das Lâminas (mm3d-58): os golpes da classe de quem tem corpo de classe. */
     private readonly withClan = false,
+    /** Ticket de luta: o kit mecânico prevalece sobre a skin vestida. */
+    private readonly combatClan: Clan | null = null,
   ) {
     ensureLoaders()
   }
@@ -523,7 +525,7 @@ export class AvatarLibrary {
   }
 
   private clanSet(id: BodyId) {
-    const clan = clanOfBody(id)
+    const clan = this.combatClan ?? clanOfBody(id)
     if (!clan) return Promise.resolve(null)
     let p = this.clans.get(clan)
     if (!p) {

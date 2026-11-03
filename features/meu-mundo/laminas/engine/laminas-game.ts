@@ -46,6 +46,7 @@ import { MonsterModel, AXE_URL, AXE_EDGE } from "./monster-view"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { clanOfBody, CLAN_WEAPON, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
+import { decorateWeapon, weaponAppearanceProfile, type WeaponAppearance } from "../../engine/weapon-appearance"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 import { createVfx, FIRE, VFX_COLORS, type Trail } from "../../engine/vfx"
 import { Spirits } from "../../engine/spirits"
@@ -79,6 +80,8 @@ export interface LaminasGameOptions {
    * "mage" | "blade" decide o kit pela CLASSE; sem = o corpo decide (treino antigo).
    */
   kit?: "mage" | "blade"
+  /** Equipamento/cosmético confirmado pelo servidor; ausente mantém a arma antiga. */
+  appearance?: WeaponAppearance | null
 }
 
 export interface LaminasGameHandle {
@@ -287,16 +290,16 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // ── a luta ───────────────────────────────────────────────────────────────
   // a raposa luta como MAGA (bolas de fogo); o resto corta (mm3d-58)
   // mm3d-59: com ticket o kit é da CLASSE (vem do servidor); a skin só muda a aparência.
-  const mage = opts.kit ? opts.kit === "mage" : opts.stage !== "ring" && clanOfBody(opts.body) === "raposa"
+  const mage = !ring && (opts.kit ? opts.kit === "mage" : clanOfBody(opts.body) === "raposa")
   const fight = new Fight({ ...opts.setup, style: mage ? "mage" : undefined })
   const frames: FightFrames = []
 
   // ── o jogador e a espada ─────────────────────────────────────────────────
-  const lib = new AvatarLibrary(scene, false, false, 30, false, false, true, false, true)
   // Corpo de classe (fora do ringue do Boxe): golpes e arma da classe.
-  const clan = ring ? null : clanOfBody(opts.body)
+  const clan = ring ? null : opts.kit ? (opts.kit === "mage" ? "raposa" : "vampiro") : clanOfBody(opts.body)
+  const lib = new AvatarLibrary(scene, false, false, 30, false, false, true, false, true, opts.kit ? clan : null)
   // a skin do Brutamontes: machado e golpes de machado (fora do ringue)
-  const brute = !ring && opts.body === "brutamontes"
+  const brute = !ring && !opts.kit && opts.body === "brutamontes"
   const moves = clan ? CLAN_MOVES[clan] : brute ? BRUTE_MOVES : null
   const GUARD: BoxeBase = moves ? moves.guard : "BGuard"
   const fallbackMat = new StandardMaterial("laminas-character", scene)
@@ -314,6 +317,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // Efeitos (mm3d-58): arco da arma, clarão e anel no acerto, raios na vitória, poeira.
   const vfx = createVfx(scene, low)
   const fxColor = clan ? VFX_COLORS[clan] : brute ? VFX_COLORS.brutamontes : VFX_COLORS.lamina
+  const weaponProfile = clan && opts.appearance ? weaponAppearanceProfile(clan, opts.appearance) : null
+  const weaponColor = weaponProfile && (weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
   // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
   if (clan !== "vampiro") spirits.preload()
@@ -325,6 +330,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // A arma da classe (GLB do build_armas.py) presa pelos ossos da mão.
   let weaponRoot: TransformNode | null = null
   let grip: WeaponGrip | null = null
+  let decoration: ReturnType<typeof decorateWeapon> | null = null
   if (clan || brute) {
     LoadAssetContainerAsync(clan ? CLAN_WEAPON[clan] : AXE_URL, scene)
       .then((c) => {
@@ -332,6 +338,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         c.addAllToScene()
         weaponRoot = c.rootNodes[0] as TransformNode
         for (const m of weaponRoot.getChildMeshes(false)) m.isPickable = false
+        if (clan && opts.appearance) decoration = decorateWeapon(scene, weaponRoot, clan, opts.appearance, low, (m) => vfx.addGlow(m))
         weaponRoot.setEnabled(false)
       })
       .catch(() => {})
@@ -342,13 +349,18 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const STONE = new Vector3(0, 0.82, 0)
   const SHOT_BLEND = 0.15
   const shotOff = new Map<number, { off: Vector3; t: number }>()
-  const stone = clan === "raposa" ? vfx.orb(FIRE) : null
+  const stone = clan === "raposa" ? vfx.orb(weaponProfile?.paint ? weaponColor : FIRE) : null
   const heroTrail = vfx.trail(() => {
     const node = clan || brute ? grip?.root : ring ? null : sword
     if (!node || !node.isEnabled()) return null
     const m = node.getWorldMatrix()
     return [Vector3.TransformCoordinates(bladeLocal[0], m), Vector3.TransformCoordinates(bladeLocal[1], m)]
-  }, fxColor)
+  }, weaponColor)
+  // O rastro de éter também acompanha o disparo do cajado, sem alterar o tiro.
+  const shotTrail = clan === "raposa" && weaponProfile?.trail ? vfx.trail(() => {
+    const shot = fight.shots[0]
+    return shot ? [new Vector3(shot.x - 0.055, shot.y, shot.z), new Vector3(shot.x + 0.055, shot.y, shot.z)] : null
+  }, weaponColor) : null
   const placeWeapon = () => {
     if (!weaponRoot) return
     if (!grip) {
@@ -784,6 +796,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     if (grip) grip.upright = heroFix.staffW
     // a maga não corta: sem arco; a pedra carrega até o disparo
     heroTrail.active = p.state === "attack" && clan !== "raposa"
+    if (shotTrail) shotTrail.active = fight.shots.length > 0
     if (stone) {
       const node = grip?.root
       let charge = 0
@@ -962,6 +975,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       for (const m of swordParts) m.dispose()
       sword.dispose()
       for (const m of Object.values(swordMats)) m.dispose()
+      decoration?.dispose()
       grip?.dispose()
       heroFix.dispose()
       spirits.dispose()

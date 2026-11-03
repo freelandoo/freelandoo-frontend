@@ -111,6 +111,8 @@ const THEMES: Record<string, Theme> = {
   biblioteca: { wall: [0.38, 0.22, 0.18], accent: [0.42, 0.18, 0.16], second: C.brass },
   escola: { wall: [0.68, 0.6, 0.4], accent: [0.22, 0.38, 0.48], second: C.brass },
   academia: { wall: SP.brickDark, accent: C.brass, second: C.red },
+  forja: { wall: SP.brickDark, accent: C.copper, second: C.brass },
+  arsenal: { wall: [0.25, 0.3, 0.31], accent: C.navy, second: C.brass },
   igreja: { wall: [0.74, 0.68, 0.56], accent: [0.36, 0.2, 0.4], second: C.brass },
   delegacia: { wall: [0.3, 0.36, 0.42], accent: C.navy, second: C.brass },
   // Salão do Hall da Fama (mm3d-48): mármore, vermelho dos Jogos Eternos e ouro.
@@ -528,6 +530,44 @@ function furniture(g: SteamGeo, gl: SteamGeo, it: InteriorFurniture, y: number, 
       B(g, f, 0, h, 0, w + 0.1, 0.07, d + 0.1, th.second)
       for (const [lx, lz, rw, rd] of [[0, -d / 2 - 0.005, w * 0.8, 0.01], [0, d / 2 + 0.005, w * 0.8, 0.01]] as const) B(g, f, lx, h * 0.4, lz, rw, 0.22, rd, th.accent)
       B(g, f, 0, h * 0.4 + 0.07, -d / 2 - 0.012, w * 0.55, 0.06, 0.01, th.second)
+      break
+    // ── oficinas de Lúmen: a malha é só desenho, o uso vem da planta ──
+    case "forge_anvil":
+      B(g, f, 0, 0, 0, w * 0.62, 0.18, d * 0.9, C.iron)
+      B(g, f, 0, 0.18, 0, w * 0.38, h * 0.55, d * 0.58, C.brassDark)
+      B(g, f, 0, h * 0.7, 0, w * 0.86, h * 0.3, d * 0.78, SP.steel)
+      B(g, f, w * 0.42, h * 0.8, 0, w * 0.32, h * 0.15, d * 0.36, SP.steelLight)
+      B(gl, f, -w * 0.2, h + 0.01, 0, 0.48, 0.025, 0.12, C.fire)
+      break
+    case "refining_bench":
+      legs(g, f, w, d, h * 0.72, C.iron, 0.1)
+      B(g, f, 0, h * 0.68, 0, w, 0.1, d, C.copper)
+      for (const sx of [-1, 0, 1]) {
+        g.cylinder(0.27, h * 0.22, Matrix.Translation(sx * w * 0.29, h * 0.87, 0).multiply(f), C.brass, 8)
+        B(gl, f, sx * w * 0.29, h * 0.8, -d * 0.18, 0.14, h * 0.12, 0.08, sx === 0 ? C.pulse : C.fire)
+      }
+      break
+    case "armory_counter":
+      B(g, f, 0, 0, 0, w, h - 0.08, d, C.woodDark)
+      B(g, f, 0, h - 0.08, 0, w + 0.04, 0.08, d + 0.04, C.brassDark)
+      B(g, f, 0, 0.16, -d / 2 - 0.01, w - 0.22, 0.54, 0.025, C.navy)
+      B(g, f, 0, h + 0.025, 0, 1.1, 0.035, 0.12, SP.steelLight)
+      B(g, f, -0.38, h + 0.01, 0, 0.06, 0.07, 0.4, C.brass)
+      break
+    case "forge_furnace":
+      B(g, f, 0, 0, 0, w, h * 0.72, d, C.brick)
+      B(g, f, 0, 0.38, -d / 2 - 0.01, w * 0.7, h * 0.42, 0.045, C.black)
+      B(gl, f, 0, 0.46, -d / 2 - 0.04, w * 0.52, h * 0.3, 0.025, C.fire)
+      for (const x of [-0.5, -0.25, 0, 0.25, 0.5]) B(g, f, x, 0.38, -d / 2 - 0.06, 0.045, h * 0.42, 0.04, C.iron)
+      g.cylinder(w * 0.28, h * 0.28, Matrix.Translation(0, h * 0.86, 0.1).multiply(f), C.iron, 8)
+      break
+    case "weapon_rack":
+      for (const sx of [-1, 1]) B(g, f, sx * w * 0.43, 0, 0, 0.1, h, d, C.woodDark)
+      for (const yy of [h * 0.24, h * 0.78]) B(g, f, 0, yy, 0, w, 0.12, d, C.brassDark)
+      for (const sx of [-0.55, 0, 0.55]) {
+        B(g, f, sx, h * 0.2, -d * 0.1, 0.09, h * 0.58, 0.06, SP.steelLight)
+        B(g, f, sx, h * 0.31, -d * 0.17, 0.32, 0.065, 0.08, C.brass)
+      }
       break
     // ── pizzaria e hamburgueria ──
     case "order_counter":

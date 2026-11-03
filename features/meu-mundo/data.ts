@@ -209,6 +209,7 @@ export interface FightTicket {
     style: "mage" | null
     /** Bônus do equipamento (com teto); o Boxe é de luvas: null. */
     gear: Partial<GearBonus> | null
+    appearance?: { weaponId: string | null; level: number; cosmetic: string | null }
   }
   expiresAt: string
 }
@@ -263,6 +264,13 @@ export interface GearItem {
   family: string | null
   stack: boolean
   sell: number
+  description?: string
+  source?: string[]
+  uses?: string[]
+  component?: boolean
+  assemblyParts?: string[]
+  use?: string
+  cosmeticEffect?: string
 }
 export interface GearRecipe {
   id: string
@@ -271,6 +279,35 @@ export interface GearRecipe {
   coins: number
   recipe: string | null
   level: number
+  kind?: "part" | "assembly" | "conversion" | "equipment"
+  qty?: number
+}
+export interface RefinementQuote {
+  id: string
+  item: string
+  from: number
+  toMax: number
+  version: number
+  cost: { coins: number; needs: Record<string, number> }
+  odds: { up: number; same: number; down: number }
+  floor: number
+  pity: { failures: number; guaranteeAt: number; guaranteed: boolean }
+  protection: { enabled: boolean; requested: boolean; cost: { coins: number; needs: Record<string, number> } }
+  bonusBefore: Partial<GearBonus>
+  candidates: { level: number; bonus: Partial<GearBonus>; delta: Partial<GearBonus> }[]
+  rulesVersion: string
+}
+export interface RefinementProposal {
+  id: string
+  item: string
+  fromLevel: number
+  candidateLevel: number
+  status: "pending" | "accepted" | "discarded" | "expired"
+  expiresAt: string
+  cost: RefinementQuote["cost"]
+  odds: RefinementQuote["odds"]
+  beforeBonus: Partial<GearBonus>
+  candidateBonus: Partial<GearBonus>
 }
 export interface GearCatalog {
   slots: GearSlot[]
@@ -283,16 +320,26 @@ export interface GearBag {
   clan: Clan | null
   level: number
   coins: number
-  owned: Record<string, { qty: number; level: number }>
+  owned: Record<string, { qty: number; level: number; version?: number; refineFailures?: number }>
   equipped: Partial<Record<GearSlot, string>>
   bonus: GearBonus
+  pendingProposals?: RefinementProposal[]
+  refinement?: Record<string, { standard: RefinementQuote | null; protected: RefinementQuote | null }>
+  learnedRecipes?: string[]
+  unlockedEmotes?: string[]
+  activeCosmetic?: string | null
 }
-type GearOut = { receipt: Receipt; replay: boolean; bag: GearBag }
+export type GearOut = { receipt?: Receipt; replay?: boolean; bag: GearBag; proposal?: RefinementProposal }
 export const getGear = (token: string) => call<{ gear: GearCatalog; bag: GearBag }>(token, "GET", "/gear")
 export const buyGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/buy", { item, key })
 export const equipGear = (token: string, slot: GearSlot, item: string | null) => call<{ bag: GearBag }>(token, "POST", "/gear/equip", { slot, item })
 export const forgeGear = (token: string, recipe: string, key: string) => call<GearOut>(token, "POST", "/gear/forge", { recipe, key })
 export const upgradeGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/upgrade", { item, key })
+export const refineGear = (token: string, item: string, quote: string, protect: boolean, key: string) =>
+  call<GearOut>(token, "POST", "/gear/refine", { item, quote, protect, key })
+export const resolveRefinement = (token: string, proposalId: string, accept: boolean, key: string) =>
+  call<GearOut>(token, "POST", "/gear/refine/resolve", { proposalId, accept, key })
+export const applyGearItem = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/use", { item, key })
 // ═══ mm3d-59 slice 5: missões (o prólogo) ══════════════════════════════════
 export interface QuestStepView {
   key: string

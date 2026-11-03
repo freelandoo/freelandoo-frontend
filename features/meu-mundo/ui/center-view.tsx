@@ -140,6 +140,8 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   igreja: "Igreja",
   delegacia: "Delegacia",
   hospital: "Hospital",
+  forja: "Forja das Engrenagens",
+  arsenal: "Arsenal de Lúmen",
 }
 
 export interface CenterSceneProps extends ScenePlayerProps {

@@ -331,7 +331,7 @@ export interface GearBonus {
 }
 const NO_GEAR: GearBonus = { dmg: 0, def: 0, stam: 0, warn: 0, power: 0 }
 /** Teto de segurança do lado da regra (o servidor já corta antes). */
-const GEAR_MAX: GearBonus = { dmg: 0.18, def: 0.12, stam: 0.08, warn: 0.08, power: 0.12 }
+const GEAR_MAX: GearBonus = { dmg: 0.35, def: 0.25, stam: 0.12, warn: 0.12, power: 0.18 }
 function clampGear(g?: Partial<GearBonus>): GearBonus {
   const out = { ...NO_GEAR }
   if (!g) return out

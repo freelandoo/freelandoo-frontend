@@ -546,7 +546,7 @@ export interface InteriorSeat {
 }
 
 /** O que se faz num ponto de um prédio do centro (mm3d-37). */
-export type PlaceUse = "train" | "study" | "pray" | "order" | "market" | "seller" | "police"
+export type PlaceUse = "train" | "study" | "pray" | "order" | "market" | "seller" | "police" | "forge" | "refine" | "armory"
 
 /** O vendedor do centro (mm3d-37e): GET /meu-mundo/admin/shop. */
 export interface ShopCatalog {
@@ -659,6 +659,8 @@ export type CenterPlaceId =
   | "biblioteca"
   | "escola"
   | "academia"
+  | "forja"
+  | "arsenal"
   | "jetpack"
   | "paint"
   | "corrida"

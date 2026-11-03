@@ -93,6 +93,8 @@ export type HospitalGameHandle = PlaceGameHandle
 const LIGHT: Record<string, { clear: [number, number, number]; ground: [number, number, number]; hemi: number }> = {
   hospital: { clear: [0.17, 0.16, 0.14], ground: [0.64, 0.6, 0.54], hemi: 1.05 },
   academia: { clear: [0.11, 0.09, 0.08], ground: [0.52, 0.46, 0.4], hemi: 1.05 },
+  forja: { clear: [0.13, 0.075, 0.035], ground: [0.55, 0.34, 0.16], hemi: 1.05 },
+  arsenal: { clear: [0.075, 0.095, 0.12], ground: [0.4, 0.43, 0.45], hemi: 1.05 },
   igreja: { clear: [0.14, 0.11, 0.09], ground: [0.66, 0.56, 0.46], hemi: 1.0 },
   delegacia: { clear: [0.13, 0.13, 0.14], ground: [0.6, 0.56, 0.52], hemi: 1.05 },
 }
@@ -113,6 +115,9 @@ const NPC_LOOK: Record<string, { body: BodyId; look: string }> = {
   padre: { body: "normal", look: "2207" },
   delegado: { body: "strong", look: "4210" },
   policial: { body: "normal", look: "4251" },
+  // Corpos de raposa existentes; não inventar o asset do Mestre de Armas javali.
+  forjador: { body: "raposa", look: "" },
+  armeira: { body: "raposa_f", look: "" },
 }
 
 export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
