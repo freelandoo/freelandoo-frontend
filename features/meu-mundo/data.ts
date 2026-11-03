@@ -169,9 +169,9 @@ export const postHouseExit = (token: string) => call<ScenePayload>(token, "POST"
 export const postCenterEnter = (token: string) => call<ScenePayload>(token, "POST", "/center/enter", {})
 /** Voltar para casa: o servidor decide o bairro (o da residência). */
 export const postCenterLeave = (token: string) => call<ScenePayload>(token, "POST", "/center/leave", {})
-/** Jetpack em grupo (mm3d-21): lugar na sala do centro (perto da porta). `roomId` = voltar à mesma. */
-export const postJetpackJoin = (token: string, roomId?: string | null) =>
-  call<JetpackSession>(token, "POST", "/center/jetpack", roomId ? { roomId } : {})
+/** Jetpack (mm3d-63): lugar numa sala do centro (perto da porta); `solo` = sala só sua, larga na hora. */
+export const postJetpackJoin = (token: string, solo: boolean, body: string) =>
+  call<JetpackSession>(token, "POST", "/center/jetpack", { solo, body })
 /** Paint (mm3d-35): lugar numa sala do centro (perto da porta), no modo pedido. */
 export const postPaintJoin = (token: string, mode: string, roomId?: string | null) =>
   call<PaintSession>(token, "POST", "/center/paint", roomId ? { mode, roomId } : { mode })

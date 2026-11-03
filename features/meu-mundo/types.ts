@@ -217,10 +217,9 @@ export interface PaintSession {
   mode: "solo" | "1v1" | "2v2" | "3v3"
 }
 
-/** Lugar na sala do jetpack em grupo (mm3d-21): POST /center/jetpack. */
+/** Lugar numa sala do jetpack (mm3d-63): POST /center/jetpack (grupo ou sozinho). */
 export interface JetpackSession {
   multiplayer: MultiplayerSession
-  party: { max: number }
 }
 
 export interface NeighborhoodPayload {

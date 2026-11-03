@@ -30,13 +30,14 @@ import { fetchSession, getCenterInterior, postCorridaJoin, postGincanaJoin, post
 import type { PaintJoin } from "../paint/ui/paint-view"
 import type { CorridaJoin } from "../corrida/ui/race-view"
 import type { NoturnoJoin } from "../noturno/ui/run-view"
+import type { JetpackJoin } from "../jetpack/ui/jetpack-view"
 import type { GincanaJoin } from "../gincana/ui/gincana-view"
 import { useMobEncounter } from "./mob-encounter"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
 const PlaceScreen = dynamic(() => import("./place/place-screen").then((m) => m.PlaceScreen), { ssr: false })
-const JetpackView = dynamic(() => import("../jetpack/jetpack-view").then((m) => m.JetpackView), { ssr: false })
+const JetpackView = dynamic(() => import("../jetpack/ui/jetpack-view").then((m) => m.JetpackView), { ssr: false })
 const PaintView = dynamic(() => import("../paint/ui/paint-view").then((m) => m.PaintView), { ssr: false })
 const RaceView = dynamic(() => import("../corrida/ui/race-view").then((m) => m.RaceView), { ssr: false })
 const RunView = dynamic(() => import("../noturno/ui/run-view").then((m) => m.RunView), { ssr: false })
@@ -82,13 +83,14 @@ const gincanaJoin: GincanaJoin = async (body, hooks) =>
   }, hooks)
 
 /** O local abre um minijogo agora (o registro do servidor decide). */
-/** Lugar na sala do jetpack em grupo (null = sem acesso: o jogo cai no sozinho). */
-async function fetchJetpackParty(roomId: string | null) {
-  const token = getToken()
-  if (!token) return null
-  const r = await postJetpackJoin(token, roomId)
-  return r.ok ? r.data : null
-}
+/** Jetpack (mm3d-63): a rede só baixa quando alguém vai voar (sozinho também passa pela sala). */
+const jetpackJoin: JetpackJoin = async (solo, body, hooks) =>
+  (await import("../jetpack/engine/net")).joinJetpack(async () => {
+    const token = getToken()
+    if (!token) return null
+    const r = await postJetpackJoin(token, solo, body)
+    return r.ok ? r.data : null
+  }, hooks)
 
 const gameOf = (p: CenterPlace) => (p.available && p.destination.startsWith("game:") ? p.destination.slice(5) : null)
 /** Interior que abre (mm3d-26 hospital; mm3d-37 todos os prédios). */
@@ -173,8 +175,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [nearby, setNearby] = useState<Interactable | null>(null)
   const [open, setOpen] = useState<CenterPlace | null>(null)
   const [minigame, setMinigame] = useState<string | null>(null)
-  /** O minijogo aberto aceita grupo (place.party, mm3d-21). */
-  const [minigameParty, setMinigameParty] = useState(false)
   // Salão do Hall da Fama: quem está no Muro; "fechado" = sem direito de entrar.
   const [hallInfo, setHallInfo] = useState<HallInfo | null>(null)
   const [hallClosed, setHallClosed] = useState(false)
@@ -294,10 +294,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             else if (it.kind === "monster") mobRef.current.fight(it)
             else if (it.kind === "place") {
               const g = gameOf(it.place)
-              if (g === "jetpack") {
-                setMinigameParty((it.place.party ?? 0) > 1)
-                setMinigame(g)
-              } else if (g === "paint" || g === "corrida" || g === "noturno" || g === "gincana") setMinigame(g)
+              if (g === "jetpack" || g === "paint" || g === "corrida" || g === "noturno" || g === "gincana") setMinigame(g)
               else if (g === "laminas" || g === "boxe") {
                 // mm3d-56: o prédio do Boxe abre a MESMA luta das Lâminas, no ringue.
                 setMinigame(g)
@@ -598,7 +595,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
 
       {/* Minijogo do local (mm3d-20): cobre a tela; ao sair, volta à porta do prédio */}
       {minigame === "jetpack" && (
-        <JetpackView body={body} look={look} onExit={() => setMinigame(null)} fetchParty={minigameParty ? fetchJetpackParty : undefined} />
+        <JetpackView body={body} look={look} name={payload.me.name} onExit={() => setMinigame(null)} join={jetpackJoin} />
       )}
       {/* Paint (mm3d-35): ilhas, tinta e gatinhos; ao sair, volta à porta */}
       {minigame === "paint" && <PaintView body={body} look={look} onExit={() => setMinigame(null)} join={paintJoin} />}

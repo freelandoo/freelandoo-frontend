@@ -1,0 +1,645 @@
+// features/meu-mundo/jetpack/engine/jetpack-game.ts — JETPACK (mm3d-63): a cena.
+//
+// Motor Babylon próprio (como o Paint e o Rolê): o túnel (tunnel-view), as
+// prensas e os galões (obstacles-view) e o jogador — o AVATAR dele (corpo,
+// skin e cores) com o jetpack de latão nas costas (pack-view), inclinado para
+// a frente como quem voa, deitando para o lado da curva.
+//
+// A regra é sim/flight.ts em passos de 1/120 s; o desenho interpola o jogador
+// entre os dois últimos passos. Controles: ←/→ (A/D) para os lados; Espaço,
+// ↑, W ou o botão do mouse seguram o propulsor. No celular, a tela chama
+// `setTouch` com os botões ◀ ▶ e PROPULSOR.
+//
+// Em grupo (a sala do backend), a semente é da sala: todos voam o MESMO túnel
+// e os outros aparecem nele, desenhados um pouco no passado entre duas
+// amostras. Aba escondida não pausa quando há sala (o voo dos outros segue);
+// escondida por muito tempo = bateu.
+
+import { Engine } from "@babylonjs/core/Engines/engine"
+import { Scene } from "@babylonjs/core/scene"
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
+import { PointLight } from "@babylonjs/core/Lights/pointLight"
+import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
+import type { Mesh } from "@babylonjs/core/Meshes/mesh"
+import { liveGamesBump } from "../../engine/game"
+import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
+import { AvatarLibrary } from "../../engine/avatars"
+import { Character } from "../../engine/player"
+import { BODY_IDS, type BodyId } from "../../types"
+import { Flight, TUNING, TUNNEL, crusherB, speedAt, type CrashBy, type FlightEvent, type FlightInput } from "../sim/flight"
+import { buildTunnel, SEG } from "./tunnel-view"
+import { buildObstacles } from "./obstacles-view"
+import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
+import { JetAudio } from "./audio"
+import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
+
+export interface JetHud {
+  phase: "countdown" | "run" | "end"
+  countdown: number
+  score: number
+  dist: number
+  /** km/h. */
+  speed: number
+  /** 0–1. */
+  fuel: number
+  cans: number
+  thrust: boolean
+  /** Em grupo: a classificação ao vivo. */
+  field: FieldRow[] | null
+}
+
+export interface FieldRow {
+  slot: number
+  name: string
+  dist: number
+  score: number
+  /** 1 = voando, 0 = bateu, 2 = saiu. */
+  alive: number
+  me: boolean
+}
+
+export interface JetResult {
+  score: number
+  dist: number
+  cans: number
+  /** Bateu no quê; "fuel" = o tanque secou e o chão pegou. */
+  by: CrashBy | "fuel"
+  /** s de voo. */
+  time: number
+}
+
+export type JetNotice = { kind: "go" } | { kind: "can"; n: number } | { kind: "low" } | { kind: "empty" }
+
+export interface JetGameOptions {
+  canvas: HTMLCanvasElement
+  body: BodyId
+  look?: string
+  name?: string
+  /** A sala (grupo ou "sozinho" pela sala); sem ela, voo local. */
+  mp?: { net: JetpackNet; start: JetpackStart }
+  onReady?: () => void
+  onHud?: (h: JetHud) => void
+  onNotice?: (n: JetNotice) => void
+  onEnd?: (r: JetResult) => void
+  onError?: (reason: "context-lost") => void
+}
+
+export interface JetGameHandle {
+  /** Botões do celular. */
+  setTouch: (t: { left?: boolean; right?: boolean; thrust?: boolean }) => void
+  setMuted: (m: boolean) => void
+  dispose: () => void
+}
+
+const COUNTDOWN = 3
+/** O meio do corpo fica a isto acima dos pés (corpo de 1,70 m). */
+const MID = 0.86
+const INTERP = 0.12
+const POSE_EVERY = 0.05
+const REMOTE_CUT = 260
+const AWAY_MS = 6000
+/** Inclinação para a frente no voo (rad). */
+const PITCH = 0.3
+
+const isBody = (b: string): b is BodyId => (BODY_IDS as string[]).includes(b)
+
+interface Remote {
+  seat: JetpackSeat
+  char: Character
+  pack: PackRig
+  fall: number
+  vy: number
+  y: number
+  lastX: number
+  roll: number
+}
+
+export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
+  const { canvas } = opts
+  const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, powerPreference: "high-performance" }, false)
+  const unlive = liveGamesBump()
+  let disposed = false
+  const quality = resolveQuality()
+  const low = quality.tier === "low"
+  const touch = window.matchMedia?.("(pointer: coarse)").matches ?? false
+  const capMs = frameCapMs()
+  const profile = touch ? { ...quality, maxRatio: Math.max(quality.maxRatio, low ? 1.5 : 2), minRatio: Math.max(quality.minRatio, 1) } : quality
+  const governor = new ResolutionGovernor(engine, profile, Math.min(window.devicePixelRatio || 1, touch ? 2 : 1.5))
+
+  const scene = new Scene(engine)
+  const FOG = new Color3(0.075, 0.052, 0.04)
+  scene.clearColor = new Color4(FOG.r, FOG.g, FOG.b, 1)
+  scene.ambientColor = new Color3(0.3, 0.26, 0.22)
+  scene.fogMode = Scene.FOGMODE_LINEAR
+  scene.fogColor = FOG
+  const fogEnd = low ? 115 : 160
+  scene.fogStart = low ? 30 : 45
+  scene.fogEnd = fogEnd
+  scene.skipPointerMovePicking = true
+  scene.skipPointerDownPicking = true
+  scene.skipPointerUpPicking = true
+  const hemi = new HemisphericLight("jt-hemi", new Vector3(0.1, 1, -0.4), scene)
+  hemi.intensity = touch ? 0.85 : 0.7
+  hemi.diffuse = new Color3(1, 0.86, 0.68)
+  hemi.groundColor = new Color3(0.32, 0.24, 0.2)
+  // luz que anda com o jogador (o túnel acende onde ele passa) e a do fogo
+  const lamp = new PointLight("jt-lamp", new Vector3(0, 6, 8), scene)
+  lamp.diffuse = new Color3(1, 0.78, 0.5)
+  lamp.specular = new Color3(0.2, 0.15, 0.1)
+  lamp.range = 34
+  lamp.intensity = 0.9
+  const fireLight = new PointLight("jt-fire", new Vector3(0, 3, 0), scene)
+  fireLight.diffuse = new Color3(1, 0.5, 0.15)
+  fireLight.specular = new Color3(0, 0, 0)
+  fireLight.range = 9
+  fireLight.intensity = 0
+
+  const tunnel = buildTunnel(scene, low, Math.ceil((fogEnd + SEG) / SEG) + 2)
+  const mats = { trim: tunnel.stage.mats.trim, glow: tunnel.stage.mats.glow }
+  const obstacles = buildObstacles(scene, mats)
+  const kit = buildPackKit(scene, mats)
+
+  // ── o jogador ──────────────────────────────────────────────────────────────
+  const lib = new AvatarLibrary(scene, false, false, 24)
+  const fallbackMat = new StandardMaterial("jt-character", scene)
+  fallbackMat.diffuseColor = new Color3(1, 1, 1)
+  fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
+  const shadowMat = new StandardMaterial("jt-shadow", scene)
+  shadowMat.diffuseColor = new Color3(0, 0, 0)
+  shadowMat.specularColor = new Color3(0, 0, 0)
+  shadowMat.disableLighting = true
+  shadowMat.alpha = 0.3
+  const char = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, opts.body, null, true, opts.look ?? "")
+  char.setHeight(PILOT_H)
+  const pack = new PackRig(kit, char.holder, "jt-me")
+
+  const mp = opts.mp ?? null
+  const flight = new Flight(mp ? mp.start.seed : ((Date.now() & 0xffffff) | 1) >>> 0)
+  const audio = new JetAudio()
+
+  const cam = new FreeCamera("jt-cam", new Vector3(0, 5, -6), scene)
+  cam.inputs.clear()
+  cam.minZ = 0.15
+  cam.maxZ = fogEnd + 40
+  cam.fov = 0.95
+  scene.activeCamera = cam
+
+  // brilho de pegar o galão (bolhas verdes que crescem e somem)
+  const flashMat = new StandardMaterial("jt-flash", scene)
+  flashMat.disableLighting = true
+  flashMat.emissiveColor = new Color3(0.35, 1, 0.65)
+  flashMat.alphaMode = Engine.ALPHA_ADD
+  flashMat.disableDepthWrite = true
+  flashMat.alpha = 0.7
+  const flashes: { mesh: Mesh; t: number }[] = []
+  for (let i = 0; i < 4; i++) {
+    const m = CreateSphere(`jt-flash-${i}`, { diameter: 1, segments: 8 }, scene)
+    m.material = flashMat.clone(`jt-flash-mat-${i}`)
+    m.isPickable = false
+    m.setEnabled(false)
+    flashes.push({ mesh: m, t: 1 })
+  }
+  let flashNext = 0
+  const flash = (x: number, y: number, z: number) => {
+    const f = flashes[flashNext++ % flashes.length]
+    f.t = 0
+    f.mesh.position.set(x, y, z)
+    f.mesh.setEnabled(true)
+  }
+
+  // ── os outros do grupo ─────────────────────────────────────────────────────
+  const remotes: Remote[] = []
+  if (mp) {
+    for (const seat of mp.start.seats) {
+      if (seat.slot === mp.start.me) continue
+      const ch = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, isBody(seat.body) ? seat.body : "normal", seat.name || null, false, seat.look ?? "")
+      ch.setHeight(PILOT_H)
+      remotes.push({ seat, char: ch, pack: new PackRig(kit, ch.holder, `jt-r${seat.slot}`), fall: 0, vy: 0, y: TUNING.startY, lastX: 0, roll: 0 })
+    }
+  }
+
+  // ── controles ──────────────────────────────────────────────────────────────
+  const keys = { left: false, right: false, thrust: false }
+  const tch = { left: false, right: false, thrust: false }
+  let mouse = false
+  const keyOf = (code: string): keyof typeof keys | null =>
+    code === "ArrowLeft" || code === "KeyA" ? "left" : code === "ArrowRight" || code === "KeyD" ? "right" : code === "Space" || code === "ArrowUp" || code === "KeyW" ? "thrust" : null
+  const onDown = (e: KeyboardEvent) => {
+    const k = keyOf(e.code)
+    if (!k) return
+    e.preventDefault()
+    audio.unlock()
+    keys[k] = true
+  }
+  const onUp = (e: KeyboardEvent) => {
+    const k = keyOf(e.code)
+    if (!k) return
+    e.preventDefault()
+    keys[k] = false
+  }
+  const onPd = (e: PointerEvent) => {
+    audio.unlock()
+    if (e.pointerType === "mouse" && e.button === 0) mouse = true
+  }
+  const onPu = (e: PointerEvent) => {
+    if (e.pointerType === "mouse") mouse = false
+  }
+  const onBlur = () => {
+    keys.left = keys.right = keys.thrust = false
+    mouse = false
+  }
+  window.addEventListener("keydown", onDown)
+  window.addEventListener("keyup", onUp)
+  canvas.addEventListener("pointerdown", onPd)
+  window.addEventListener("pointerup", onPu)
+  window.addEventListener("blur", onBlur)
+  const input = (): FlightInput => ({
+    side: (keys.right || tch.right ? 1 : 0) - (keys.left || tch.left ? 1 : 0),
+    thrust: keys.thrust || tch.thrust || mouse,
+  })
+
+  // ── laço ───────────────────────────────────────────────────────────────────
+  let phase: JetHud["phase"] = "countdown"
+  let clock = -(mp ? Math.max(0.5, mp.start.countdown) : COUNTDOWN)
+  let acc = 0
+  let hudAt = 0
+  let lastBeep = 99
+  let readyFired = false
+  let ended = false
+  let endAt = 0
+  const prev: { x: number; y: number; z: number } = { x: 0, y: TUNING.startY, z: 0 }
+  const cur: { x: number; y: number; z: number } = { x: 0, y: TUNING.startY, z: 0 }
+  let camX = 0
+  let camY = TUNING.startY + 1
+  let shake = 0
+  let roll = 0
+  let pitch = PITCH
+  let fallY = 0
+  let fallV = 0
+  let spin = 0
+  let poseAt = 0
+  let hiddenAt = 0
+  let crashSent = false
+  let fieldAt = 0
+  let field: FieldRow[] | null = null
+  const events: FlightEvent[] = []
+  const camTarget = new Vector3()
+  const lastB = new Map<number, number>()
+
+  const notice = (n: JetNotice) => opts.onNotice?.(n)
+  const handle = (e: FlightEvent) => {
+    switch (e.type) {
+      case "can": {
+        audio.play("can")
+        const c = obstacles.canAt(e.id)
+        flash(c ? c.x : flight.x, c ? c.y : flight.y, c ? c.z : flight.z + 1)
+        notice({ kind: "can", n: e.n })
+        break
+      }
+      case "low":
+        audio.play("low")
+        notice({ kind: "low" })
+        break
+      case "empty":
+        audio.play("empty")
+        notice({ kind: "empty" })
+        break
+      case "crash":
+        audio.play("crash")
+        shake = 0.8
+        phase = "end"
+        endAt = performance.now()
+        fallY = flight.y
+        fallV = Math.max(0, flight.vy) * 0.3 + 2
+        sendCrash()
+        try {
+          navigator.vibrate?.([80, 40, 140])
+        } catch {
+          /* sem vibração */
+        }
+        break
+    }
+  }
+
+  const byOf = (): JetResult["by"] => {
+    const b = flight.crashedBy ?? "floor"
+    return b === "floor" && flight.fuel <= 0 ? "fuel" : b
+  }
+  const sendCrash = () => {
+    if (!mp || crashSent) return
+    crashSent = true
+    mp.net.sendCrash({ z: flight.z, x: flight.x, y: flight.y, s: flight.score, c: flight.cans, by: byOf() })
+  }
+
+  const buildField = (): FieldRow[] | null => {
+    if (!mp || mp.start.solo) return null
+    const rows: FieldRow[] = []
+    for (const seat of mp.start.seats) {
+      if (seat.slot === mp.start.me) {
+        rows.push({ slot: seat.slot, name: opts.name || seat.name, dist: Math.floor(flight.z), score: flight.score, alive: flight.alive ? 1 : 0, me: true })
+        continue
+      }
+      const list = mp.net.samples.get(seat.slot)
+      const last = list?.[list.length - 1]
+      rows.push({ slot: seat.slot, name: seat.name, dist: Math.floor(last?.z ?? 0), score: last?.score ?? 0, alive: last ? last.alive : 1, me: false })
+    }
+    return rows.sort((a, b) => b.score - a.score || b.dist - a.dist)
+  }
+
+  const pushHud = () => {
+    opts.onHud?.({
+      phase,
+      countdown: Math.max(0, -clock),
+      score: flight.score,
+      dist: Math.floor(flight.z),
+      speed: Math.round(flight.v * 3.6),
+      fuel: flight.fuel / TUNING.fuelMax,
+      cans: flight.cans,
+      thrust: flight.thrusting,
+      field,
+    })
+  }
+
+  const sampleAt = (list: PilotSample[], t: number) => {
+    const last = list[list.length - 1]
+    if (list.length === 1 || t >= last.t) {
+      const p = list.length > 1 ? list[list.length - 2] : last
+      const v = last.t > p.t ? (last.z - p.z) / (last.t - p.t) : 0
+      const ahead = last.alive === 1 ? Math.min(0.4, Math.max(0, t - last.t)) : 0
+      return { z: last.z + v * ahead, x: last.x, y: last.y, f: last.f, alive: last.alive }
+    }
+    let i = list.length - 1
+    while (i > 0 && list[i - 1].t > t) i--
+    const a = list[Math.max(0, i - 1)]
+    const b = list[i]
+    const u = b.t > a.t ? Math.min(1, Math.max(0, (t - a.t) / (b.t - a.t))) : 1
+    return { z: a.z + (b.z - a.z) * u, x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, f: b.f, alive: b.alive }
+  }
+
+  const drawRemotes = (dt: number, now: number, myZ: number) => {
+    if (!mp) return
+    const st = mp.net.serverTime()
+    for (const r of remotes) {
+      const list = mp.net.samples.get(r.seat.slot)
+      const s = st !== null && list?.length ? sampleAt(list, st - INTERP) : null
+      const show = !!s && s.alive !== 2 && Math.abs(s.z - myZ) < REMOTE_CUT
+      if (!show || !s) {
+        r.char.setVisible(false)
+        r.pack.update(dt, now, false, false, false)
+        continue
+      }
+      r.char.setVisible(true)
+      if (s.alive === 1) {
+        r.fall = 0
+        r.y = s.y
+        r.roll += (Math.max(-0.4, Math.min(0.4, -(s.x - r.lastX) / Math.max(dt, 1e-3) / TUNING.side) * 0.4) - r.roll) * Math.min(1, dt * 8)
+        r.lastX = s.x
+        r.char.place(s.x, s.z, 0, s.y - MID, 0)
+        r.char.holder.rotation.x = PITCH
+        r.char.holder.rotation.z = r.roll
+        r.pack.update(dt, now, !!(s.f & FLAG.thrust), !!(s.f & FLAG.empty))
+      } else {
+        // bateu: cai rodando até o chão
+        r.fall += dt
+        r.vy -= TUNING.gravity * dt
+        r.y = Math.max(0.3, r.y + r.vy * dt)
+        r.char.place(s.x, s.z, 0, r.y - MID, 0)
+        r.char.holder.rotation.x = PITCH + r.fall * 5
+        r.pack.update(dt, now, false, true)
+      }
+      r.char.animate(dt, 0, 0)
+    }
+  }
+
+  const frame = (ms: number) => {
+    const dt = Math.min(0.1, ms / 1000)
+    const now = performance.now() / 1000
+    const hidden = typeof document !== "undefined" && document.hidden
+    if (hidden && !hiddenAt) hiddenAt = performance.now()
+    if (!hidden && hiddenAt) {
+      if (mp && phase === "run" && performance.now() - hiddenAt > AWAY_MS && flight.alive) {
+        flight.alive = false
+        flight.crashedBy = "floor"
+        handle({ type: "crash", by: "floor" })
+      }
+      hiddenAt = 0
+    }
+    const paused = hidden && !mp
+    audio.suspend(paused)
+    if (!paused) {
+      if (phase === "countdown") {
+        clock += dt
+        const s = Math.ceil(-clock)
+        if (s !== lastBeep && s >= 1 && s <= 3) {
+          audio.play("beep")
+          lastBeep = s
+        }
+        if (clock >= 0) {
+          phase = "run"
+          audio.play("go")
+          notice({ kind: "go" })
+        }
+      } else if (phase === "run") {
+        acc += dt
+        while (acc >= TUNING.step && phase === "run") {
+          acc -= TUNING.step
+          prev.x = cur.x
+          prev.y = cur.y
+          prev.z = cur.z
+          flight.step(input(), events)
+          cur.x = flight.x
+          cur.y = flight.y
+          cur.z = flight.z
+          for (const e of events) handle(e)
+          events.length = 0
+        }
+      }
+    }
+    const f = phase === "run" ? acc / TUNING.step : 1
+    const x = prev.x + (cur.x - prev.x) * f
+    let y = prev.y + (cur.y - prev.y) * f
+    const z = prev.z + (cur.z - prev.z) * f
+    if (phase === "countdown") y = TUNING.startY + Math.sin(now * 2.2) * 0.08
+
+    if (phase !== "end") {
+      roll += (-(flight.vx / TUNING.side) * 0.42 - roll) * Math.min(1, dt * 10)
+      pitch += (PITCH - flight.vy * 0.02 - pitch) * Math.min(1, dt * 6)
+      char.place(x, z, 0, y - MID, 0)
+      char.holder.rotation.x = pitch
+      char.holder.rotation.z = roll
+      pack.update(dt, now, phase === "run" ? flight.thrusting : false, flight.fuel <= 0)
+    } else {
+      // bateu: o corpo gira e cai até o chão; depois de um instante, o fim
+      fallV -= TUNING.gravity * 1.3 * dt
+      fallY = Math.max(0.35, fallY + fallV * dt)
+      if (fallY <= 0.35) fallV = 0
+      spin += dt * (fallY > 0.36 ? 7 : 0)
+      char.place(x, z, 0, fallY - MID * 0.4, 0)
+      char.holder.rotation.x = pitch + spin
+      pack.update(dt, now, false, true)
+      if (!ended && performance.now() - endAt > 1300) {
+        ended = true
+        opts.onEnd?.({ score: flight.score, dist: Math.floor(flight.z), cans: flight.cans, by: byOf(), time: flight.t })
+        pushHud()
+      }
+    }
+    char.animate(dt, 0, 0)
+    drawRemotes(dt, now, z)
+
+    // a luz do fogo e a lanterna que acompanha
+    fireLight.position.set(x, y - 0.4, z - 0.6)
+    fireLight.intensity += ((phase === "run" && flight.thrusting ? 1.4 : 0.25) * (0.85 + Math.sin(now * 40) * 0.15) - fireLight.intensity) * Math.min(1, dt * 14)
+    if (phase === "end") fireLight.intensity *= 0.9
+    lamp.position.set(x * 0.5, TUNNEL.H - 1.2, z + 9)
+
+    // prensas que batem por perto: tranco na câmera e pancada
+    for (const o of flight.course.obstacles) {
+      if (o.z > z + 45) break
+      if (o.kind !== "crusher" || o.z + o.d < z - 2) continue
+      for (const half of [-1, 1] as const) {
+        const key = o.id * 2 + (half > 0 ? 1 : 0)
+        const b = crusherB(o, flight.t, half)
+        const was = lastB.get(key)
+        if (was !== undefined && was > 0.4 && b <= 0.001) {
+          const k = Math.max(0, 1 - (o.z - z) / 45)
+          shake = Math.max(shake, 0.25 * k)
+          if (k > 0.3) audio.play("slam")
+        }
+        lastB.set(key, b)
+      }
+    }
+    if (lastB.size > 64) lastB.clear()
+
+    // câmera atrás e um pouco acima; tela em pé recua mais
+    const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
+    const tall = Math.min(1, Math.max(0, (1 - aspect) / 0.55))
+    camX += (x * 0.62 - camX) * Math.min(1, dt * 5)
+    const wantY = Math.max(1.3, Math.min(TUNNEL.H - 0.8, y + 1.15 + tall * 0.3))
+    camY += (wantY - camY) * Math.min(1, dt * 5)
+    if (shake > 0) shake = Math.max(0, shake - dt)
+    const jit = shake * 0.32
+    const pace = Math.min(1, (flight.v - TUNING.v0) / (TUNING.vMax - TUNING.v0))
+    cam.position.set(camX + (Math.random() - 0.5) * jit, camY + (Math.random() - 0.5) * jit, z - 5.6 - tall * 1.6 - pace * 0.6)
+    camTarget.set(x * 0.82, y + 0.1, z + 14)
+    cam.setTarget(camTarget)
+    const wantFov = 0.92 + pace * 0.28 + tall * 0.12
+    cam.fov += (wantFov - cam.fov) * Math.min(1, dt * 3)
+
+    tunnel.update(z)
+    obstacles.sync(flight, z - 9, z + fogEnd + 12, now)
+    for (const fl of flashes) {
+      if (fl.t >= 1) continue
+      fl.t = Math.min(1, fl.t + dt * 3.2)
+      fl.mesh.scaling.setAll(0.6 + fl.t * 2.2)
+      ;(fl.mesh.material as StandardMaterial).alpha = 0.7 * (1 - fl.t)
+      if (fl.t >= 1) fl.mesh.setEnabled(false)
+    }
+
+    if (mp && phase === "run" && flight.alive) {
+      poseAt -= dt
+      if (poseAt <= 0) {
+        poseAt = POSE_EVERY
+        mp.net.sendPose({ z: flight.z, x: flight.x, y: flight.y, f: (flight.thrusting ? FLAG.thrust : 0) | (flight.fuel <= 0 ? FLAG.empty : 0), s: flight.score, c: flight.cans })
+      }
+    }
+    if (mp) {
+      fieldAt -= dt
+      if (fieldAt <= 0) {
+        fieldAt = 0.25
+        field = buildField()
+      }
+    }
+    audio.engine(flight.thrusting, pace, phase === "run")
+    hudAt -= dt
+    if (hudAt <= 0) {
+      hudAt = 0.08
+      pushHud()
+    }
+    governor.tick(ms)
+  }
+
+  // pronto: o primeiro quadro com o túnel (o avatar chega quando carregar)
+  const fire = () => {
+    if (disposed || readyFired) return
+    readyFired = true
+    opts.onReady?.()
+    pushHud()
+  }
+  scene.executeWhenReady(fire)
+  setTimeout(fire, 2500)
+
+  const lost = engine.onContextLostObservable.add(() => opts.onError?.("context-lost"))
+  let lastFrame = performance.now()
+  engine.runRenderLoop(() => {
+    if (disposed) return
+    const t = performance.now()
+    if (capMs && t - lastFrame < capMs - 3) return
+    const ms = t - lastFrame
+    lastFrame = t
+    frame(ms)
+    scene.render()
+  })
+  const ro = new ResizeObserver(() => {
+    if (!disposed) engine.resize()
+  })
+  ro.observe(canvas)
+
+  // conferência (harness)
+  const w = window as unknown as Record<string, unknown>
+  w.__jetpack = () => ({ phase, z: flight.z, x: flight.x, y: flight.y, v: flight.v, vMax: speedAt(1e9), fuel: flight.fuel, cans: flight.cans, score: flight.score, alive: flight.alive, by: flight.crashedBy, obstacles: flight.course.obstacles.length })
+  w.__jetpackFlight = flight
+  w.__jetpackScene = scene
+
+  return {
+    setTouch(t) {
+      audio.unlock()
+      if (t.left !== undefined) tch.left = t.left
+      if (t.right !== undefined) tch.right = t.right
+      if (t.thrust !== undefined) tch.thrust = t.thrust
+    },
+    setMuted(m) {
+      audio.setEnabled(!m)
+    },
+    dispose() {
+      if (disposed) return
+      disposed = true
+      window.removeEventListener("keydown", onDown)
+      window.removeEventListener("keyup", onUp)
+      canvas.removeEventListener("pointerdown", onPd)
+      window.removeEventListener("pointerup", onPu)
+      window.removeEventListener("blur", onBlur)
+      ro.disconnect()
+      delete w.__jetpack
+      delete w.__jetpackFlight
+      delete w.__jetpackScene
+      engine.onContextLostObservable.remove(lost)
+      engine.stopRenderLoop()
+      audio.dispose()
+      pack.dispose()
+      char.dispose()
+      for (const r of remotes) {
+        r.pack.dispose()
+        r.char.dispose()
+      }
+      lib.dispose()
+      kit.dispose()
+      obstacles.dispose()
+      tunnel.dispose()
+      for (const fl of flashes) {
+        fl.mesh.material?.dispose()
+        fl.mesh.dispose()
+      }
+      flashMat.dispose()
+      fallbackMat.dispose()
+      shadowMat.dispose()
+      cam.dispose()
+      scene.dispose()
+      engine.dispose()
+      unlive()
+    },
+  }
+}
