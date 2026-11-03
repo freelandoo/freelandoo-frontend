@@ -1,5 +1,9 @@
 /* features/meu-mundo/ui/rewards/level-up.module.css — SUBIU DE NÍVEL (mm3d-60j).
  *
+ * 2026-11-03 (Alex): "LEVEL UP" e o nível com a LETRA e o ESTILO dos números
+ * de status que saem da luta (gain-layer: Teko bold, sombra preta embaixo,
+ * brilho em volta e o reflexo que corre o texto) — só que BRANCO e maior.
+ *
  * Texto branco, bold, grande, com sombra SÓLIDA para baixo e para a esquerda
  * a 18° da horizontal (pedido do Alex): passos de 0 de desfoque ao longo do
  * vetor (−cos 18°, sen 18°) = (−0,951, 0,309) — fica um bloco cheio, não
@@ -18,25 +22,68 @@
   pointer-events: none;
   user-select: none;
   color: #fff;
-  line-height: 0.92;
+  font-weight: 700;
+  line-height: 0.86;
   text-align: center;
   text-transform: uppercase;
+  /* a sombra dos números da luta, com o brilho branco no lugar da cor */
   text-shadow:
-    -0.012em 0.004em 0 #000,
-    -0.024em 0.008em 0 #000,
-    -0.036em 0.012em 0 #000,
-    -0.048em 0.016em 0 #000,
-    -0.059em 0.019em 0 #000,
-    -0.071em 0.023em 0 #000;
+    0 0.04em 0 rgba(0, 0, 0, 0.92),
+    0 0 0.03em #000,
+    0 0 0.16em rgba(255, 255, 255, 0.85),
+    0 0 0.4em rgba(255, 255, 255, 0.45);
 }
 .title {
-  font-size: clamp(44px, 11vw, 120px);
-  letter-spacing: 0.02em;
+  position: relative;
+  font-size: clamp(64px, 14vw, 156px);
+  letter-spacing: 0.01em;
 }
 .num {
+  position: relative;
   display: block;
-  font-size: clamp(64px, 17vw, 190px);
+  font-size: clamp(96px, 22vw, 240px);
   font-variant-numeric: tabular-nums;
+}
+/* o reflexo que corre o texto (o .glare dos números da luta); como a letra é
+ * branca, a metade de baixo leva uma sombra fria leve para o reflexo aparecer */
+.glare {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  text-shadow: none;
+  background-image:
+    linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, 1) 50%, transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 45%, rgba(150, 165, 190, 0.42) 100%);
+  background-size:
+    260% 100%,
+    100% 100%;
+  background-position:
+    130% 0,
+    0 0;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: lu-glare 900ms linear 350ms both;
+}
+.num .glare {
+  animation-delay: 650ms;
+}
+@keyframes lu-glare {
+  0% {
+    background-position:
+      130% 0,
+      0 0;
+  }
+  100% {
+    background-position:
+      -30% 0,
+      0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glare {
+    animation: none;
+  }
 }
 
 /* o modal pequeno do que foi liberado */

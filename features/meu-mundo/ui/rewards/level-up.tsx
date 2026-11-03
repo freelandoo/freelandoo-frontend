@@ -19,10 +19,9 @@ import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 import { playLevelFx } from "../../engine/gain-pillar"
-import { anton } from "../hud/fight-plate"
 import { SteamFrame } from "../kit/steam/steam-frame"
 import { FLOAT_COLOR } from "../kit/steam/steam-tokens"
-import { archivo, cinzel } from "../status/evo-skin"
+import { archivo, cinzel, teko } from "../status/evo-skin"
 import l from "./level-up.module.css"
 import { heroLevelScale } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
@@ -95,13 +94,16 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
         {text && (
           <motion.div
             aria-hidden
-            className={`${anton.className} ${l.big}`}
+            className={`${teko.className} ${l.big}`}
             initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.8, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, y: -24 }}
             transition={reduce ? { duration: 0.2 } : { type: "spring", stiffness: 320, damping: 17 }}
           >
-            <span className={l.title}>{t("levelUpBig", "LEVEL UP")}</span>
+            <span className={l.title}>
+              {t("levelUpBig", "LEVEL UP")}
+              <span className={l.glare}>{t("levelUpBig", "LEVEL UP")}</span>
+            </span>
             <motion.span
               className={l.num}
               initial={reduce ? false : { scale: 0, rotate: -10 }}
@@ -109,6 +111,7 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
               transition={{ type: "spring", stiffness: 280, damping: 13, delay: reduce ? 0 : 0.25 }}
             >
               {to - from > 1 ? `${from} → ${to}` : to}
+              <span className={l.glare}>{to - from > 1 ? `${from} → ${to}` : to}</span>
             </motion.span>
           </motion.div>
         )}
