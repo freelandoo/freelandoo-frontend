@@ -272,7 +272,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   })
   // mm3d-60: tubo de luz (o do poder, bem mais leve) quando ganha status
   const gainPillar = new GainPillar(scene, () => char.holder.getAbsolutePosition(), resolveQuality().tier === "low")
-  const gainFx = setGainFx((c) => gainPillar.play(c))
+  const gainFx = setGainFx(gainPillar)
   scene.activeCamera = follow.camera
   follow.snapBehind(body.x, body.z, body.facing)
   follow.snapHeight(body.y)

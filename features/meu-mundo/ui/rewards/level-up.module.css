@@ -1,0 +1,64 @@
+/* features/meu-mundo/ui/rewards/level-up.module.css — SUBIU DE NÍVEL (mm3d-60j).
+ *
+ * Texto branco, bold, grande, com sombra SÓLIDA para baixo e para a esquerda
+ * a 18° da horizontal (pedido do Alex): passos de 0 de desfoque ao longo do
+ * vetor (−cos 18°, sen 18°) = (−0,951, 0,309) — fica um bloco cheio, não
+ * uma sombra borrada. Em em, cresce junto com a letra.
+ */
+
+.big {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: max(13vh, calc(env(safe-area-inset-top) + 64px));
+  z-index: 96;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  user-select: none;
+  color: #fff;
+  line-height: 0.92;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow:
+    -0.012em 0.004em 0 #000,
+    -0.024em 0.008em 0 #000,
+    -0.036em 0.012em 0 #000,
+    -0.048em 0.016em 0 #000,
+    -0.059em 0.019em 0 #000,
+    -0.071em 0.023em 0 #000;
+}
+.title {
+  font-size: clamp(44px, 11vw, 120px);
+  letter-spacing: 0.02em;
+}
+.num {
+  display: block;
+  font-size: clamp(64px, 17vw, 190px);
+  font-variant-numeric: tabular-nums;
+}
+
+/* o modal pequeno do que foi liberado */
+.note {
+  position: fixed;
+  left: 50%;
+  bottom: max(110px, calc(env(safe-area-inset-bottom) + 96px));
+  z-index: 96;
+  width: min(340px, calc(100vw - 32px));
+  margin-left: calc(min(340px, calc(100vw - 32px)) / -2);
+}
+.close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: #e5be70;
+  outline: none;
+}
+.close:focus-visible {
+  outline: 2px solid #5fe9f5;
+}

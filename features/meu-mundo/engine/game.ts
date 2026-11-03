@@ -321,7 +321,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   })
   // mm3d-60: tubo de luz (o do poder, bem mais leve) quando ganha status
   const gainPillar = new GainPillar(scene, () => local.char.holder.getAbsolutePosition(), quality.tier === "low")
-  const gainFx = setGainFx((c) => gainPillar.play(c))
+  const gainFx = setGainFx(gainPillar)
   follow.camera.maxZ = quality.maxZ
   scene.activeCamera = follow.camera
   follow.snapBehind(home.x, home.z, home.rotationY)

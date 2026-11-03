@@ -9303,7 +9303,10 @@
     "atBudgetToday": "{attr}: {used}/{cap} practice today",
     "hudAria": "Your character",
     "hudLevel": "Lv. {n}",
-    "hudOpenStatus": "Your character — open STATUS"
+    "hudOpenStatus": "Your character — open STATUS",
+    "levelUpBig": "LEVEL UP",
+    "levelUpNoteEyebrow": "Level {n}",
+    "levelUpNoteTitle": "New access unlocked"
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -9283,7 +9283,10 @@
     "atBudgetToday": "{attr}: {used}/{cap} de práctica hoy",
     "hudAria": "Tu personaje",
     "hudLevel": "Nv. {n}",
-    "hudOpenStatus": "Tu personaje — abrir el STATUS"
+    "hudOpenStatus": "Tu personaje — abrir el STATUS",
+    "levelUpBig": "LEVEL UP",
+    "levelUpNoteEyebrow": "Nivel {n}",
+    "levelUpNoteTitle": "Nuevo acceso desbloqueado"
   },
   "Sports": {
     "eyebrow": "Deportes",

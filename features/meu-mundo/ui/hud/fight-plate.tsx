@@ -23,7 +23,7 @@ import { Anton, Knewave } from "next/font/google"
 import { VenetianMask } from "lucide-react"
 
 const knewave = Knewave({ subsets: ["latin"], weight: "400", display: "swap" })
-const anton = Anton({ subsets: ["latin"], weight: "400", display: "swap" })
+export const anton = Anton({ subsets: ["latin"], weight: "400", display: "swap" })
 
 // a paleta do Cat demon (ui/evo/evo.gd), sem o remapeamento para rubi do jogo
 const C = {
