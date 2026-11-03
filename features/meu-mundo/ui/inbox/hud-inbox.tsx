@@ -46,7 +46,7 @@ function HudButton({ onClick, count, label, icon }: { onClick: () => void; count
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="pointer-events-auto relative inline-flex h-11 w-11 items-center justify-center rounded-full text-[#FFD68A] shadow-[inset_0_0_0_2px_#E8B65B,inset_0_0_0_4px_#10161D,inset_0_0_0_5px_rgba(32,217,233,0.45),0_0_0_1px_#000,2px_3px_0_rgba(0,0,0,0.6)] transition-[color,box-shadow,transform] duration-200 hover:text-[#5FE9F5] hover:shadow-[inset_0_0_0_2px_#5FE9F5,inset_0_0_0_4px_#10161D,inset_0_0_10px_rgba(32,217,233,0.45),0_0_0_1px_#000,0_0_14px_rgba(32,217,233,0.6)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#20D9E9]"
+      className="pointer-events-auto relative inline-flex h-11 w-11 items-center justify-center rounded-full text-[#FFD68A] shadow-[inset_0_0_0_2px_#E8B65B,inset_0_0_0_4px_#10161D,inset_0_0_0_5px_rgba(255, 122, 26,0.45),0_0_0_1px_#000,2px_3px_0_rgba(0,0,0,0.6)] transition-[color,box-shadow,transform] duration-200 hover:text-[#FFB347] hover:shadow-[inset_0_0_0_2px_#FFB347,inset_0_0_0_4px_#10161D,inset_0_0_10px_rgba(255, 122, 26,0.45),0_0_0_1px_#000,0_0_14px_rgba(255, 122, 26,0.6)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A1F]"
       style={{
         // mm3d-60c: anel de prata escovada, grafite por dentro, filete azul
         background: "radial-gradient(circle at 50% 30%, #2C3742 0%, #131A22 62%, #0A0E13 100%)",
@@ -56,7 +56,7 @@ function HudButton({ onClick, count, label, icon }: { onClick: () => void; count
       {count > 0 && (
         <span
           className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold leading-none tabular-nums"
-          style={{ background: "linear-gradient(180deg, #5FE9F5, #12A2B0)", color: "#fff", boxShadow: "0 0 0 2px #0B1016, 0 0 10px rgba(32,217,233,0.75)" }}
+          style={{ background: "linear-gradient(180deg, #FFB347, #C2410C)", color: "#fff", boxShadow: "0 0 0 2px #0B1016, 0 0 10px rgba(255, 122, 26,0.75)" }}
           aria-hidden
         >
           {count > 99 ? "99+" : count}

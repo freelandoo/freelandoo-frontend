@@ -97,7 +97,7 @@
   }
 }
 .emblemCrystal {
-  filter: drop-shadow(0 0 5px var(--gem, #20d9e9));
+  filter: drop-shadow(0 0 5px var(--gem, #FF8A1F));
 }
 
 .titleBox {
@@ -193,8 +193,8 @@
   width: 7px;
   height: 7px;
   transform: rotate(45deg);
-  background: #20d9e9;
-  box-shadow: 0 0 8px rgba(32, 217, 233, 0.9);
+  background: #FF8A1F;
+  box-shadow: 0 0 8px rgba(255, 122, 26, 0.9);
 }
 .sub {
   margin: 0;
@@ -409,7 +409,7 @@
   transform: scale(0.975);
 }
 .cta:focus-visible {
-  outline: 2px solid #20d9e9;
+  outline: 2px solid #FF8A1F;
   outline-offset: 2px;
 }
 .ctaAlt {

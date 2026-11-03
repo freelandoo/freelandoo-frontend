@@ -23,7 +23,7 @@ const EMBERS = Array.from({ length: 12 }, (_, i) => ({
 /** Emblema mecânico: engrenagem de latão com o cristal (ciano na vitória, rubi na derrota). */
 function Emblem({ win }: { win: boolean }) {
   const id = useId().replace(/:/g, "")
-  const gem = win ? "#20D9E9" : "#FF526A"
+  const gem = win ? "#FF8A1F" : "#FF526A"
   return (
     <svg viewBox="0 0 80 80" className={v.emblem} aria-hidden style={{ "--gem": gem } as CSSProperties}>
       <defs>

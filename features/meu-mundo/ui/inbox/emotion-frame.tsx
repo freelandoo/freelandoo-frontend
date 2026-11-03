@@ -93,10 +93,11 @@ export function EmotionFrame({ message, extra, action, onClose, closeLabel, art,
             <stop offset="100%" stopColor="#8c4d0d" />
           </linearGradient>
           <linearGradient id={u("panel")} x1="0" y1="0" x2="1" y2="0.42">
-            <stop offset="0%" stopColor="#1c1e28" />
-            <stop offset="42%" stopColor="#171820" />
-            <stop offset="78%" stopColor="#251c27" />
-            <stop offset="100%" stopColor="#17141b" />
+            {/* opacidade padrão do jogo (a mesma do menu lateral e dos modais, ~0,6) */}
+            <stop offset="0%" stopColor="#1c1e28" stopOpacity="0.62" />
+            <stop offset="42%" stopColor="#171820" stopOpacity="0.58" />
+            <stop offset="78%" stopColor="#251c27" stopOpacity="0.62" />
+            <stop offset="100%" stopColor="#17141b" stopOpacity="0.64" />
           </linearGradient>
           <radialGradient id={u("panelRed")} cx="0.9" cy="1" r="0.6">
             <stop offset="0%" stopColor="#691b23" stopOpacity="0.45" />
@@ -107,8 +108,8 @@ export function EmotionFrame({ message, extra, action, onClose, closeLabel, art,
             <stop offset="100%" stopColor="#ff6a1a" stopOpacity="0.16" />
           </linearGradient>
           <radialGradient id={u("shieldFill")} cx="0.5" cy="0.35" r="0.75">
-            <stop offset="0%" stopColor="#2a2430" />
-            <stop offset="100%" stopColor="#111118" />
+            <stop offset="0%" stopColor="#2a2430" stopOpacity="0.62" />
+            <stop offset="100%" stopColor="#111118" stopOpacity="0.64" />
           </radialGradient>
           {/* fio de luz: forte em cima e à esquerda, some no meio (não é igual em toda a borda) */}
           <linearGradient id={u("hl")} x1="0" y1="0" x2="1" y2="1">

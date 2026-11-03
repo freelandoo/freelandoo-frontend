@@ -163,7 +163,7 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
           >
             <SteamFrame cornerSize={26} ignite={!reduce}>
               <div className="relative px-4 pb-3 pt-2.5">
-                <div className={`${archivo.className} text-[10px] font-semibold uppercase tracking-[0.2em]`} style={{ color: "#5fe9f5" }}>
+                <div className={`${archivo.className} text-[10px] font-semibold uppercase tracking-[0.2em]`} style={{ color: "#FFB347" }}>
                   {t("levelUpNoteEyebrow", "Nível {n}").replace("{n}", String(to))}
                 </div>
                 <h3 id="mm-levelup-note" className={`${cinzel.className} pr-8 text-[15px] font-bold uppercase leading-tight tracking-[0.05em]`} style={{ color: "#FFD68A", textShadow: "0 2px 0 #000" }}>

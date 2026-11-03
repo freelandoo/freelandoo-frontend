@@ -60,8 +60,8 @@
   bottom: 8px;
   left: 0;
   width: 3px;
-  background: #20d9e9;
-  box-shadow: 0 0 10px 1px rgba(32, 217, 233, 0.75);
+  background: #FF8A1F;
+  box-shadow: 0 0 10px 1px rgba(255, 122, 26, 0.75);
   transform: scaleY(0);
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -78,7 +78,7 @@
   .item:not(:disabled):hover .icon {
     box-shadow:
       inset 0 0 0 1.5px #ffd68a,
-      inset 0 0 12px rgba(32, 217, 233, 0.35),
+      inset 0 0 12px rgba(255, 122, 26, 0.35),
       0 0 0 2px #07090c,
       0 0 0 3px #b67a31,
       0 0 14px rgba(232, 182, 91, 0.55);
@@ -91,16 +91,16 @@
 .item:not(:disabled):active .icon {
   box-shadow:
     inset 0 0 0 1.5px #fff3cf,
-    inset 0 0 16px rgba(32, 217, 233, 0.6),
+    inset 0 0 16px rgba(255, 122, 26, 0.6),
     0 0 0 2px #07090c,
     0 0 0 3px #e8b65b,
-    0 0 22px rgba(32, 217, 233, 0.6);
+    0 0 22px rgba(255, 122, 26, 0.6);
 }
 .item:focus-visible {
   border-color: #ffd68a;
   box-shadow:
     inset 0 0 0 1px #05070a,
-    0 0 0 2px #20d9e9;
+    0 0 0 2px #FF8A1F;
 }
 .item[data-active] {
   background: linear-gradient(180deg, #3a2c12 0%, #251c0b 100%);
@@ -133,7 +133,7 @@
   background: radial-gradient(circle at 50% 30%, #2c3540 0%, #151a21 60%, #0b0e12 100%);
   box-shadow:
     inset 0 0 0 1.5px #c8913f,
-    inset 0 0 10px rgba(32, 217, 233, 0.12),
+    inset 0 0 10px rgba(255, 122, 26, 0.12),
     0 0 0 2px #07090c,
     0 0 0 3px #6e5426;
   transition:
@@ -189,7 +189,7 @@
   height: 20px;
 }
 .item[data-active] .arrow {
-  color: #20d9e9;
+  color: #FF8A1F;
 }
 .spin {
   animation: mm-spin 900ms linear infinite;
@@ -259,7 +259,7 @@
 }
 .primary:focus-visible {
   box-shadow:
-    0 0 0 2px #20d9e9,
+    0 0 0 2px #FF8A1F,
     3px 3px 0 #000;
 }
 .gold {
@@ -377,7 +377,7 @@
   background: linear-gradient(90deg, #222a34 0%, #12171d 100%);
   color: #ffd68a;
   box-shadow:
-    inset 2px 0 0 rgba(32, 217, 233, 0.45),
+    inset 2px 0 0 rgba(255, 122, 26, 0.45),
     -3px 3px 0 #000,
     0 0 12px rgba(232, 182, 91, 0.25);
   transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -425,7 +425,7 @@
     inset 2px 0 0 #e8b65b,
     inset 3px 0 0 #5e3b12,
     inset 6px 0 0 #10151b,
-    inset 7px 0 0 rgba(32, 217, 233, 0.5),
+    inset 7px 0 0 rgba(255, 122, 26, 0.5),
     -6px 0 22px rgba(0, 0, 0, 0.55);
   transform: translateX(104%);
   visibility: hidden;
@@ -456,7 +456,7 @@
   pointer-events: none;
   box-shadow:
     -2px 0 18px rgba(232, 182, 91, 0.45),
-    0 0 10px rgba(32, 217, 233, 0.25);
+    0 0 10px rgba(255, 122, 26, 0.25);
 }
 /* reflexo que corre o friso de cima uma vez */
 .drawerSweep {
@@ -466,7 +466,7 @@
   width: 34%;
   height: 2px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, #fff6d8 45%, #bdf8ff 55%, transparent);
+  background: linear-gradient(90deg, transparent, #fff6d8 45%, #FFF1AD 55%, transparent);
   opacity: 0;
 }
 .headGear {
@@ -493,8 +493,8 @@
   width: 7px;
   height: 7px;
   transform: rotate(45deg);
-  background: #20d9e9;
-  box-shadow: 0 0 8px rgba(32, 217, 233, 0.9);
+  background: #FF8A1F;
+  box-shadow: 0 0 8px rgba(255, 122, 26, 0.9);
 }
 .footGear {
   display: flex;
@@ -618,7 +618,7 @@
     linear-gradient(165deg, #1e2630 0%, #141a21 46%, #0d1116 100%);
   box-shadow:
     inset 0 0 0 3px #10151b,
-    inset 0 0 0 4px rgba(32, 217, 233, 0.4),
+    inset 0 0 0 4px rgba(255, 122, 26, 0.4),
     0 0 0 1px #000,
     4px 4px 0 #000,
     0 0 16px rgba(232, 182, 91, 0.22);

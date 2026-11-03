@@ -1,4 +1,4 @@
-/* features/meu-mundo/ui/hud/drawer.module.css — o menu lateral "O BAIRRO" em PRATA + AZUL METÁLICO (mm3d-60c).
+/* features/meu-mundo/ui/hud/drawer.module.css — o menu lateral "O BAIRRO" em PRATA + AZUL METÁLICO (mm3d-60c); 2026-11-03: paleta da notificação emocional (ouro + laranja/vermelho), mesma opacidade.
  *
  * Referência do Alex: máquina steampunk fria — aço prateado escovado, grafite,
  * energia azul. Relógio + engrenagens no topo, câmara de energia na lateral,
@@ -15,8 +15,8 @@
   --top: calc(66px + env(safe-area-inset-top));
   --silver: linear-gradient(180deg, #fff3cf 0%, #e8b65b 22%, #9a6424 52%, #d9a24e 78%, #5e3b12 100%);
   --silverSide: linear-gradient(90deg, #5e3b12 0%, #e8b65b 30%, #fff3cf 50%, #c8913f 75%, #4a2e0e 100%);
-  --blue: #20d9e9;
-  --neon: #5fe9f5;
+  --blue: #FF8A1F;
+  --neon: #FFB347;
   position: absolute;
   top: 0;
   right: 0;
@@ -27,12 +27,12 @@
   /* mm3d-60h: menos opaco (pedido do Alex) — o mundo aparece atrás */
   background:
     radial-gradient(120% 60% at 60% 0%, rgba(34, 26, 12, 0.5) 0%, rgba(34, 26, 12, 0) 60%),
-    linear-gradient(180deg, rgba(18, 25, 34, 0.62) 0%, rgba(15, 20, 26, 0.58) 55%, rgba(11, 15, 20, 0.64) 100%);
+    linear-gradient(180deg, rgba(28, 30, 40, 0.62) 0%, rgba(23, 24, 32, 0.58) 55%, rgba(37, 28, 39, 0.64) 100%);
   box-shadow:
     inset 2px 0 0 #e8b65b,
     inset 3px 0 0 #3a250c,
     inset 5px 0 0 #0b0f14,
-    inset 6px 0 0 rgba(32, 217, 233, 0.55),
+    inset 6px 0 0 rgba(255, 122, 26, 0.55),
     -8px 0 26px rgba(0, 0, 0, 0.6);
   color: #fff3cf;
   transform: translateX(104%);
@@ -62,8 +62,8 @@
   width: 8px;
   pointer-events: none;
   box-shadow:
-    -3px 0 20px rgba(32, 217, 233, 0.45),
-    0 0 8px rgba(95, 233, 245, 0.35);
+    -3px 0 20px rgba(255, 122, 26, 0.45),
+    0 0 8px rgba(255, 179, 71, 0.35);
 }
 
 /* ═══ a máquina (coluna da esquerda) ═══ */
@@ -124,7 +124,7 @@
   width: 116px;
   height: 116px;
   z-index: 2;
-  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.8)) drop-shadow(0 0 6px rgba(32, 217, 233, 0.35));
+  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.8)) drop-shadow(0 0 6px rgba(255, 122, 26, 0.35));
 }
 .clock {
   width: 100%;
@@ -170,11 +170,11 @@
   min-height: 40px;
   overflow: hidden;
   border-radius: 12px;
-  background: linear-gradient(90deg, #050b12 0%, #0b2a2e 30%, #11545c 50%, #0b2a2e 70%, #050b12 100%);
+  background: linear-gradient(90deg, #050b12 0%, #2E140B 30%, #5C2A11 50%, #2E140B 70%, #050b12 100%);
   box-shadow:
     inset 0 0 0 1px #9a6424,
-    inset 0 0 14px rgba(32, 217, 233, 0.55),
-    0 0 16px rgba(32, 217, 233, 0.35);
+    inset 0 0 14px rgba(255, 122, 26, 0.55),
+    0 0 16px rgba(255, 122, 26, 0.35);
 }
 .tubeFlow {
   position: absolute;
@@ -182,7 +182,7 @@
   right: 0;
   top: 0;
   height: 45%;
-  background: linear-gradient(180deg, transparent 0%, rgba(95, 233, 245, 0.5) 50%, transparent 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 179, 71, 0.5) 50%, transparent 100%);
   animation: dm-flow 2.8s linear infinite;
 }
 @keyframes dm-flow {
@@ -217,7 +217,7 @@
   width: 18px;
   height: 40px;
   margin: -20px 0 0 -9px;
-  filter: drop-shadow(0 0 5px #20d9e9) drop-shadow(0 0 12px rgba(95, 233, 245, 0.7));
+  filter: drop-shadow(0 0 5px #FF8A1F) drop-shadow(0 0 12px rgba(255, 179, 71, 0.7));
   animation: dm-pulse 2.6s ease-in-out infinite;
 }
 @keyframes dm-pulse {
@@ -269,7 +269,7 @@
 /* caixa com a forma em SVG (shape.tsx): miolo translúcido, ouro, filete ciano */
 .box {
   --sh-fill: rgba(14, 19, 26, 0.6);
-  --sh-line: rgba(32, 217, 233, 0.5);
+  --sh-line: rgba(255, 122, 26, 0.5);
   position: relative;
   display: flex;
   min-height: 0;
@@ -321,10 +321,10 @@
   height: 12px;
   margin-left: -6px;
   transform: rotate(45deg);
-  background: linear-gradient(135deg, #e9fdff, #5fe9f5 45%, #128a96);
+  background: linear-gradient(135deg, #e9fdff, #FFB347 45%, #C2410C);
   box-shadow:
     0 0 0 1.5px #e8b65b,
-    0 0 10px #20d9e9;
+    0 0 10px #FF8A1F;
   z-index: 3;
 }
 .close {
@@ -355,16 +355,16 @@
 }
 @media (hover: hover) {
   .close:hover {
-    color: #5fe9f5;
+    color: #FFB347;
     box-shadow:
-      inset 0 0 0 1.5px #5fe9f5,
-      0 0 10px rgba(32, 217, 233, 0.6);
+      inset 0 0 0 1.5px #FFB347,
+      0 0 10px rgba(255, 122, 26, 0.6);
   }
 }
 .close:focus-visible {
   box-shadow:
-    inset 0 0 0 1.5px #5fe9f5,
-    0 0 0 2px #20d9e9;
+    inset 0 0 0 1.5px #FFB347,
+    0 0 0 2px #FF8A1F;
 }
 
 /* moldura da lista */
@@ -396,7 +396,7 @@
   border: 2px solid #070b10;
   border-radius: 9px;
   background: linear-gradient(90deg, #9a6424, #ffd68a 50%, #9a6424);
-  box-shadow: inset 0 0 0 1px rgba(32, 217, 233, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 26, 0.6);
 }
 @supports not selector(::-webkit-scrollbar) {
   .list {
@@ -429,7 +429,7 @@
 }
 .itemShape {
   --sh-fill: rgba(22, 28, 36, 0.62);
-  --sh-line: rgba(32, 217, 233, 0.22);
+  --sh-line: rgba(255, 122, 26, 0.22);
 }
 .itemShape polygon {
   transition:
@@ -455,8 +455,8 @@
   left: 9px;
   width: 3px;
   border-radius: 3px;
-  background: #5fe9f5;
-  box-shadow: 0 0 10px 1px #20d9e9;
+  background: #FFB347;
+  box-shadow: 0 0 10px 1px #FF8A1F;
   transform: scaleY(0);
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -479,7 +479,7 @@
   box-shadow:
     inset 0 0 0 1.5px #d9a24e,
     inset 0 0 0 3px #10161d,
-    inset 0 0 0 4px rgba(32, 217, 233, 0.45),
+    inset 0 0 0 4px rgba(255, 122, 26, 0.45),
     0 0 0 1px #000;
   transition:
     color 200ms,
@@ -519,8 +519,8 @@
 .arrow {
   display: flex;
   justify-content: flex-end;
-  color: #5fe9f5;
-  filter: drop-shadow(0 0 4px rgba(32, 217, 233, 0.6));
+  color: #FFB347;
+  filter: drop-shadow(0 0 4px rgba(255, 122, 26, 0.6));
   transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .arrow svg {
@@ -531,10 +531,10 @@
 .badge {
   padding: 2px 8px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #5fe9f5, #12a2b0);
+  background: linear-gradient(180deg, #FFB347, #C2410C);
   box-shadow:
     0 0 0 1px #0b1016,
-    0 0 8px rgba(32, 217, 233, 0.7);
+    0 0 8px rgba(255, 122, 26, 0.7);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -551,20 +551,20 @@
   .item:not(:disabled):hover .itemShape {
     --sh-fill: rgba(30, 38, 48, 0.8);
     --sh-rim: #ffd68a;
-    --sh-line: rgba(95, 233, 245, 0.6);
+    --sh-line: rgba(255, 179, 71, 0.6);
   }
   .item:not(:disabled):hover .itemShine {
     transform: translateX(300%);
     transition: transform 600ms cubic-bezier(0.45, 0, 0.2, 1);
   }
   .item:not(:disabled):hover .icon {
-    color: #5fe9f5;
+    color: #FFB347;
     box-shadow:
       inset 0 0 0 1.5px #ffd68a,
       inset 0 0 0 3px #10161d,
-      inset 0 0 0 4px #5fe9f5,
-      inset 0 0 12px rgba(32, 217, 233, 0.5),
-      0 0 12px rgba(32, 217, 233, 0.55);
+      inset 0 0 0 4px #FFB347,
+      inset 0 0 12px rgba(255, 122, 26, 0.5),
+      0 0 12px rgba(255, 122, 26, 0.55);
   }
   .item:not(:disabled):hover .arrow {
     transform: translateX(3px);
@@ -576,24 +576,24 @@
 .item:not(:disabled):active .itemShape,
 .item:focus-visible .itemShape {
   --sh-rim: #fff3cf;
-  --sh-line: #5fe9f5;
+  --sh-line: #FFB347;
 }
 .item[data-active] .itemShape {
   --sh-fill: rgba(58, 44, 18, 0.74);
   --sh-rim: #ffe9b0;
-  --sh-line: rgba(95, 233, 245, 0.7);
+  --sh-line: rgba(255, 179, 71, 0.7);
 }
 .item[data-active] .itemStrip {
   transform: scaleY(1);
 }
 .item[data-active] .icon {
-  color: #bdf8ff;
+  color: #FFF1AD;
   box-shadow:
     inset 0 0 0 1.5px #ffd68a,
     inset 0 0 0 3px #10161d,
-    inset 0 0 0 4px #5fe9f5,
-    inset 0 0 14px rgba(32, 217, 233, 0.6),
-    0 0 14px rgba(32, 217, 233, 0.6);
+    inset 0 0 0 4px #FFB347,
+    inset 0 0 14px rgba(255, 122, 26, 0.6),
+    0 0 14px rgba(255, 122, 26, 0.6);
 }
 .item:disabled {
   cursor: not-allowed;
@@ -700,21 +700,21 @@
   justify-content: center;
   background: linear-gradient(90deg, #1d252e, #0f141a);
   clip-path: polygon(9px 0, 100% 0, 100% 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
-  box-shadow: inset 2px 0 0 rgba(32, 217, 233, 0.6);
-  color: #5fe9f5;
+  box-shadow: inset 2px 0 0 rgba(255, 122, 26, 0.6);
+  color: #FFB347;
 }
 .tabIn svg {
   width: 20px;
   height: 20px;
-  filter: drop-shadow(0 0 4px rgba(32, 217, 233, 0.7));
+  filter: drop-shadow(0 0 4px rgba(255, 122, 26, 0.7));
 }
 .pull:active .tab {
   transform: translateX(-2px);
 }
 .pull:focus-visible .tabIn {
   box-shadow:
-    inset 2px 0 0 #5fe9f5,
-    inset 0 0 0 2px #20d9e9;
+    inset 2px 0 0 #FFB347,
+    inset 0 0 0 2px #FF8A1F;
 }
 .scrim {
   position: absolute;

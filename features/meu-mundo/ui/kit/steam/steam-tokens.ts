@@ -35,8 +35,8 @@ export const SP = {
   goldPlate: "linear-gradient(180deg, #FFE7A8 0%, #F2C35C 30%, #C98A2E 72%, #8E5A16 100%)",
 
   // ── energia ──
-  cyan: "#20D9E9",
-  cyanSoft: "rgba(32, 217, 233, 0.38)",
+  cyan: "#FF8A1F",
+  cyanSoft: "rgba(255, 122, 26, 0.38)",
   violet: "#B75AFF",
   green: "#43E6AC",
   red: "#FF526A",

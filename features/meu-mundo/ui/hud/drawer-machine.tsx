@@ -53,7 +53,7 @@ function Clock({ open }: { open: boolean }) {
       </defs>
       {/* aro prateado, anel grafite com marcas azuis, rebites */}
       <circle cx="50" cy="50" r="49" fill={`url(#b${id})`} stroke="#1A222B" strokeWidth="1" />
-      <circle cx="50" cy="50" r="44" fill="#121A23" stroke="#20D9E9" strokeOpacity="0.55" strokeWidth="1" />
+      <circle cx="50" cy="50" r="44" fill="#121A23" stroke="#FF8A1F" strokeOpacity="0.55" strokeWidth="1" />
       {Array.from({ length: 12 }, (_, i) => {
         const a = (i / 12) * Math.PI * 2
         return <circle key={i} cx={50 + Math.sin(a) * 46.5} cy={50 - Math.cos(a) * 46.5} r="1.1" fill="#FFD68A" />
@@ -82,10 +82,10 @@ function Clock({ open }: { open: boolean }) {
         <path d="M49.2 53 L50 17 L50.8 53 Z" fill="#1F2933" />
       </g>
       <g ref={sRef}>
-        <line x1="50" y1="56" x2="50" y2="15" stroke="#20D9E9" strokeWidth="0.8" />
+        <line x1="50" y1="56" x2="50" y2="15" stroke="#FF8A1F" strokeWidth="0.8" />
       </g>
       <circle cx="50" cy="50" r="3.2" fill="#E8B65B" stroke="#1A222B" strokeWidth="0.8" />
-      <circle cx="50" cy="50" r="1.3" fill="#20D9E9" />
+      <circle cx="50" cy="50" r="1.3" fill="#FF8A1F" />
       {/* reflexo frio no vidro */}
       <path d="M22 34 A32 32 0 0 1 58 16" fill="none" stroke="#FFFFFF" strokeOpacity="0.55" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
@@ -113,7 +113,7 @@ function SteelGear({ teeth, r, className }: { teeth: number; r: number; classNam
           return <line key={i} x1="0" y1="0" x2={Math.cos(a) * (ri - 3)} y2={Math.sin(a) * (ri - 3)} stroke="#9A6424" strokeWidth={r > 20 ? 3.2 : 2.2} />
         })}
         <circle r={r * 0.22} fill="#E8B65B" stroke="#11181F" strokeWidth="0.8" />
-        <circle r={r * 0.09} fill="#20D9E9" />
+        <circle r={r * 0.09} fill="#FF8A1F" />
       </g>
     </svg>
   )
@@ -137,7 +137,7 @@ export function DrawerMachine({ open }: { open: boolean }) {
           <span className={d.tubeBand} style={{ top: "22%" }} />
           <span className={d.tubeBand} style={{ top: "76%" }} />
           <svg viewBox="0 0 20 44" className={d.tubeCore}>
-            <path d="M10 1 18 22 10 43 2 22Z" fill="#5FE9F5" />
+            <path d="M10 1 18 22 10 43 2 22Z" fill="#FFB347" />
             <path d="M10 1 12.5 22 10 43" fill="#E9FDFF" fillOpacity="0.7" />
             <path d="M2 22 18 22" stroke="#E9FDFF" strokeOpacity="0.6" strokeWidth="0.6" />
           </svg>
@@ -150,7 +150,7 @@ export function DrawerMachine({ open }: { open: boolean }) {
         <path d="M29 0 V64 Q29 90 52 90 H60" fill="none" stroke="#C8913F" strokeWidth="6" />
         <path d="M27.4 0 V64 Q27.4 91.6 52 91.6 H60" fill="none" stroke="#FFD68A" strokeOpacity="0.7" strokeWidth="1.3" />
         <rect x="22" y="30" width="14" height="7" fill="#E8B65B" stroke="#11181F" strokeWidth="0.8" />
-        <rect x="22" y="31.6" width="14" height="1.4" fill="#20D9E9" />
+        <rect x="22" y="31.6" width="14" height="1.4" fill="#FF8A1F" />
       </svg>
       <SteelGear teeth={12} r={26} className={`${d.gear} ${d.gearC}`} />
     </div>

@@ -10,43 +10,52 @@
  *    halo, reflexo, giro e faísca — fica o metal, as cores e o texto.
  */
 
-/* ═══ moldura ═══ */
+/* ═══ moldura ═══
+ * 2026-11-03 (Alex: "todos os modais e menus no padrão da notificação"): a peça
+ * da notificação emocional — cantos chanfrados, ouro metálico em camadas
+ * (volume escuro, degradê, fio de luz, filete de dentro), brilho dourado,
+ * vermelho/laranja embaixo, sombra preta, losango no alto e pontos de luz.
+ * O MIOLO mantém a opacidade de antes (a mesma do menu). */
 .frame {
+  --cut: 16px;
   position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 2px;
-  box-shadow:
-    0 0 0 1px #000,
-    5px 5px 0 rgba(0, 0, 0, 0.85);
+  padding: 4px;
   isolation: isolate;
 }
-/* aro de ouro = só o anel de 2 px (o miolo translúcido não deixa o ouro aparecer) */
+/* aro de ouro: anel chanfrado de 4 px (só o anel — o miolo translúcido não mostra ouro por baixo) */
 .frame::before {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 0;
-  padding: 2px;
+  z-index: 1;
   pointer-events: none;
-  background: linear-gradient(180deg, #ffe3a3 0%, #e8b65b 14%, #9a6424 46%, #c8913f 70%, #5e3b12 100%);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
+  background: linear-gradient(180deg, #fff0a0 0%, #ffc64f 13%, #b97715 35%, #edaa29 65%, #ffe07b 88%, #8c4d0d 100%);
+  clip-path: polygon(evenodd, var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut), var(--cut) 0, calc(var(--cut) + 1.6px) 4px, 4px calc(var(--cut) + 1.6px), 4px calc(100% - var(--cut) - 1.6px), calc(var(--cut) + 1.6px) calc(100% - 4px), calc(100% - var(--cut) - 1.6px) calc(100% - 4px), calc(100% - 4px) calc(100% - var(--cut) - 1.6px), calc(100% - 4px) calc(var(--cut) + 1.6px), calc(100% - var(--cut) - 1.6px) 4px, calc(var(--cut) + 1.6px) 4px);
+}
+/* filete de dentro (a "linha dupla") */
+.frame::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  z-index: 1;
+  pointer-events: none;
+  --cut: 12px;
+  background: linear-gradient(180deg, rgba(255, 225, 122, 0.85), rgba(167, 101, 13, 0.7));
+  clip-path: polygon(evenodd, var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut), var(--cut) 0, calc(var(--cut) + 0.5px) 1.2px, 1.2px calc(var(--cut) + 0.5px), 1.2px calc(100% - var(--cut) - 0.5px), calc(var(--cut) + 0.5px) calc(100% - 1.2px), calc(100% - var(--cut) - 0.5px) calc(100% - 1.2px), calc(100% - 1.2px) calc(100% - var(--cut) - 0.5px), calc(100% - 1.2px) calc(var(--cut) + 0.5px), calc(100% - var(--cut) - 0.5px) 1.2px, calc(var(--cut) + 0.5px) 1.2px);
 }
 .frame[data-tone="bronze"] {
-  padding: 1px;
-  box-shadow: 0 0 0 1px #000;
+  --cut: 9px;
+  padding: 2px;
 }
 .frame[data-tone="bronze"]::before {
-  padding: 1px;
-  background: linear-gradient(180deg, #a97c3c 0%, #6a4a1e 45%, #4a3314 70%, #8a6430 100%);
+  background: linear-gradient(180deg, #edaa29 0%, #a6650d 45%, #72400c 70%, #c48a2e 100%);
+  clip-path: polygon(evenodd, var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut), var(--cut) 0, calc(var(--cut) + 0.8px) 2px, 2px calc(var(--cut) + 0.8px), 2px calc(100% - var(--cut) - 0.8px), calc(var(--cut) + 0.8px) calc(100% - 2px), calc(100% - var(--cut) - 0.8px) calc(100% - 2px), calc(100% - 2px) calc(100% - var(--cut) - 0.8px), calc(100% - 2px) calc(var(--cut) + 0.8px), calc(100% - var(--cut) - 0.8px) 2px, calc(var(--cut) + 0.8px) 2px);
+}
+.frame[data-tone="bronze"]::after {
+  display: none;
 }
 .inner {
   position: relative;
@@ -54,38 +63,39 @@
   flex: 1;
   min-height: 0;
   flex-direction: column;
-  /* mesma opacidade do menu lateral (drawer.module.css, mm3d-60h) */
+  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+  /* mesma opacidade do menu lateral (drawer.module.css, mm3d-60h); tons do painel da notificação */
   background:
-    linear-gradient(180deg, rgba(255, 214, 138, 0.06) 0%, rgba(255, 214, 138, 0) 30%),
-    linear-gradient(165deg, rgba(30, 38, 48, 0.62) 0%, rgba(20, 26, 33, 0.58) 46%, rgba(13, 17, 22, 0.64) 100%);
-  /* sulco escuro + filete de energia ciano a 4 px da borda */
-  box-shadow:
-    inset 0 0 0 1px #05070a,
-    inset 0 0 0 4px #10151b,
-    inset 0 0 0 5px rgba(32, 217, 233, 0.5),
-    inset 0 0 18px 5px rgba(32, 217, 233, 0.07);
+    radial-gradient(ellipse at 90% 100%, rgba(105, 27, 35, 0.18), transparent 52%),
+    linear-gradient(180deg, rgba(255, 214, 138, 0.05) 0%, rgba(255, 214, 138, 0) 30%),
+    linear-gradient(165deg, rgba(28, 30, 40, 0.62) 0%, rgba(23, 24, 32, 0.58) 46%, rgba(37, 28, 39, 0.64) 100%);
+  /* luz quente subindo da borda de baixo */
+  box-shadow: inset 0 -18px 22px -16px rgba(255, 90, 20, 0.28);
 }
 .frame[data-tone="bronze"] > .inner {
   background:
     linear-gradient(180deg, rgba(255, 214, 138, 0.06) 0%, rgba(255, 214, 138, 0) 30%),
-    linear-gradient(165deg, #1e2630 0%, #141a21 46%, #0d1116 100%);
-  box-shadow:
-    inset 0 0 0 1px #05070a,
-    inset 0 1px 0 1px rgba(255, 214, 138, 0.12);
+    linear-gradient(165deg, #1c1e28 0%, #171820 46%, #17141b 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 214, 138, 0.12);
 }
 
-/* halo (energia): camada própria por fora — não é superfície, pode ter alfa */
+/* luz + sombra por FORA (sombra de caixa não pinta por baixo do miolo: a opacidade fica igual) */
 .glow {
   position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   box-shadow:
-    0 0 16px rgba(232, 182, 91, 0.42),
-    0 0 40px rgba(32, 217, 233, 0.14);
+    0 8px 7px rgba(0, 0, 0, 0.9),
+    0 18px 22px rgba(0, 0, 0, 0.7),
+    0 0 14px rgba(255, 185, 45, 0.55),
+    0 9px 14px -3px rgba(255, 72, 0, 0.6),
+    0 16px 26px -2px rgba(150, 0, 0, 0.45);
 }
 .frame[data-tone="bronze"] > .glow {
-  box-shadow: 0 0 10px rgba(232, 182, 91, 0.18);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.75),
+    0 0 8px rgba(255, 185, 45, 0.22);
 }
 .frame[data-ignite] > .glow {
   animation: sp-ignite 700ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
@@ -105,6 +115,61 @@
   }
 }
 
+/* losango no alto e ponto de luz embaixo */
+.diamond {
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  z-index: 4;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: #875011;
+  border: 1.5px solid #4a2a06;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(255, 190, 60, 0.85));
+}
+.diamond::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background: #ffcc45;
+  border: 1.5px solid #fff2a0;
+}
+.diamond::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  background: #fffbe0;
+}
+.hot {
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  z-index: 4;
+  width: 46%;
+  height: 22px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(255, 250, 190, 0.85) 0%, rgba(255, 173, 45, 0.6) 14%, rgba(255, 65, 14, 0.32) 36%, rgba(180, 0, 0, 0.1) 65%, transparent 100%);
+}
+.spark {
+  position: absolute;
+  z-index: 4;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  background: radial-gradient(circle, #fffef0 0%, rgba(255, 225, 124, 0.9) 18%, rgba(255, 155, 32, 0.35) 55%, transparent 100%);
+}
+.spark[data-pos="tl"] {
+  left: 9px;
+  top: 2px;
+}
+.spark[data-pos="br"] {
+  right: 9px;
+  bottom: 2px;
+}
+
 /* reflexo que corre o aro de cima uma vez */
 .sweep {
   position: absolute;
@@ -114,7 +179,7 @@
   width: 26%;
   height: 2px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, #fff6d8 45%, #bdf8ff 55%, transparent);
+  background: linear-gradient(90deg, transparent, #fff6d8 45%, #FFF1AD 55%, transparent);
   animation: sp-sweep 950ms cubic-bezier(0.45, 0, 0.2, 1) 160ms both;
 }
 @keyframes sp-sweep {
@@ -177,7 +242,7 @@
   }
 }
 .crystal {
-  filter: drop-shadow(0 0 2.5px #20d9e9);
+  filter: drop-shadow(0 0 2.5px #FF8A1F);
 }
 
 /* engrenagem solta */
@@ -217,13 +282,14 @@
 .title::after {
   content: "◆";
   font-size: 0.32em;
-  color: #20d9e9;
-  -webkit-text-fill-color: #20d9e9;
+  color: #ffcc45;
+  -webkit-text-fill-color: #ffcc45;
 }
 
 /* ═══ nível de efeito ═══ */
-:global(html[data-mm-fx="low"]) .glow,
-:global(html[data-mm-fx="low"]) .sweep {
+:global(html[data-mm-fx="low"]) .sweep,
+:global(html[data-mm-fx="low"]) .hot,
+:global(html[data-mm-fx="low"]) .spark {
   display: none;
 }
 :global(html[data-mm-fx="low"]) .frame[data-ignite] .cornerGear,
@@ -263,8 +329,8 @@
   height: 0.5em;
   flex-shrink: 0;
   transform: rotate(45deg);
-  background: #20d9e9;
-  box-shadow: 0 0 6px rgba(32, 217, 233, 0.8);
+  background: #FF8A1F;
+  box-shadow: 0 0 6px rgba(255, 122, 26, 0.8);
 }
 
 .barTrack {
