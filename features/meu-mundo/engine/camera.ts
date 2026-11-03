@@ -11,6 +11,7 @@ import { TargetCamera } from "@babylonjs/core/Cameras/targetCamera"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { Scene } from "@babylonjs/core/scene"
 import { pointBlocked, type Box2 } from "./collision"
+import { tallness } from "./portrait"
 
 const EYE = 1.3
 
@@ -156,12 +157,18 @@ export class FollowCamera {
     const dz = Math.sin(this.yaw) * sp
     // Folga pequena (0,2 m): o personagem pode estar colado na parede, e uma
     // folga maior já "encostaria" no próprio personagem e bloquearia tudo.
-    for (let d = 1; d <= this.dist; d += 0.3) {
+    const far = this.dist * this.portraitK()
+    for (let d = 1; d <= far; d += 0.3) {
       if (pointBlocked(this.tx + dx * d, this.ty + EYE + dy * d, this.tz + dz * d, boxes, 0.2)) {
         return Math.max(1, d - 0.4)
       }
     }
-    return this.dist
+    return far
+  }
+
+  /** Celular em pé (2026-11-03): a câmera da rua fica até 1,45× mais longe (como no Jetpack). */
+  private portraitK() {
+    return this.lim === STREET_CAMERA ? 1 + 0.45 * tallness(this.camera.getScene()) : 1
   }
 
   update(dt: number, px: number, pz: number, boxes: Box2[], py = 0) {

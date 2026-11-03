@@ -13,6 +13,7 @@ import "@babylonjs/core/Culling/ray"
 import type { Scene } from "@babylonjs/core/scene"
 import { raycast } from "../sim/collide"
 import type { Solid, Vec3 } from "../sim/map"
+import { tallness } from "../../engine/portrait"
 
 /** Distância atrás do ombro (mm3d-38c: um pouco mais longe; na ilha do chefão, `far`). */
 const DIST = 5
@@ -79,7 +80,8 @@ export class AimCamera {
     // perto do chão olhando para baixo: a câmera sobe um pouco
     const pivot = { x: x + r.x * SHOULDER, y: this.py + PIVOT_H + Math.max(0, this.pitch - 0.6) * 0.5, z: z + r.z * SHOULDER }
     const back = { x: -f.x, y: -f.y, z: -f.z }
-    const dist = this.far ? DIST_FAR : DIST
+    // celular em pé (2026-11-03, Alex: "deixa o Paint mais afastado"): até 1,7× mais longe
+    const dist = (this.far ? DIST_FAR : DIST) * (1 + 0.7 * tallness(this.camera.getScene()))
     const hit = raycast(solids, pivot, back, dist + 0.3)
     const want = hit ? Math.max(0.6, hit.t - 0.35) : dist
     if (want < this.actual) this.actual = want
