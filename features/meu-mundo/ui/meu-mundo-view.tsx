@@ -114,6 +114,7 @@ export default function MeuMundoView({
   const qualityItem = useQualityItem((c) => gameRef.current?.setQuality(c))
   const statsOpenRef = useRef(false)
   const exitLabelRef = useRef("")
+  const mapLabelsRef = useRef<{ home: string; plaza: string } | undefined>(undefined)
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [attempt, setAttempt] = useState(0)
@@ -190,6 +191,12 @@ export default function MeuMundoView({
   useEffect(() => {
     exitLabelRef.current = exitLabel
   }, [exitLabel])
+  // mm3d-60r: nomes do mapa do bairro (o jogo lê ao montar)
+  const mapHome = t("mapMyHouse", "Minha casa")
+  const mapPlaza = t("mapPlaza", "Praça de Aurion")
+  useEffect(() => {
+    mapLabelsRef.current = { home: mapHome, plaza: mapPlaza }
+  }, [mapHome, mapPlaza])
 
   // Página do jogo não rola: sem isso o arraste do dedo puxa a página junto.
   useEffect(() => {
@@ -220,6 +227,7 @@ export default function MeuMundoView({
           canvas,
           payload,
           exitLabel: exitLabelRef.current || nb.exit.label,
+          mapLabels: mapLabelsRef.current,
           fetchSession: async () => {
             const token = getToken()
             return token ? fetchSession(token) : null

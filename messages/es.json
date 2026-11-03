@@ -9582,7 +9582,13 @@
     "refineAttempt": "Preparar refinamiento",
     "refineMissing": "Faltan monedas o materiales",
     "refinePending": "Resolver refinamiento pendiente",
-    "laminasFoeLevel": "Nv. {n}"
+    "laminasFoeLevel": "Nv. {n}",
+    "mapOpen": "Abrir el mapa",
+    "mapTitleCenter": "Mapa del Centro",
+    "mapTitleBairro": "Mapa del Barrio",
+    "mapYouAreHere": "Estás aquí",
+    "mapMyHouse": "Mi casa",
+    "mapPlaza": "Plaza de Aurion"
   },
   "Sports": {
     "eyebrow": "Deportes",

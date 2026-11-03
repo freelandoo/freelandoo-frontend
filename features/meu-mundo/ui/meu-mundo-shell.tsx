@@ -43,6 +43,7 @@ import ItemsPanel from "./items/items-panel"
 import GearPanel from "./gear/gear-panel"
 import { QuestTracker } from "./quest/quest-ui"
 import { CharHud, type HudVitals } from "./hud/char-hud"
+import { CityMapHud } from "./map/city-map-ui"
 import { RewardOverlay } from "./rewards/reward-overlay"
 import { celebrate } from "./rewards/reward-bus"
 import PolensSheet, { PolensReturn } from "./polens/polens-sheet"
@@ -827,6 +828,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       )}
       {/* mm3d-60d: HUD do personagem (canto de cima à esquerda) */}
       <CharHud name={scene.me.name} body={avatar} vitals={vitals} hidden={overlayOpen || asleep || tutorialFight} onOpen={openStatus} />
+      {/* mm3d-60r: radar no canto de cima à direita; tocar abre o mapa da cidade */}
+      <CityMapHud hidden={overlayOpen || asleep || tutorialFight} />
       {/* mm3d-59: missão acompanhada, luta de treino e a gramática dos ganhos */}
       <QuestTracker
         hidden={!!busy || !!statusBody || hospitalUp || jailUp || asleep || panelOpen || tutorialFight}

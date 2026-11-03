@@ -9602,7 +9602,13 @@
     "refineAttempt": "Prepare refinement",
     "refineMissing": "Missing coins or materials",
     "refinePending": "Resolve pending refinement",
-    "laminasFoeLevel": "Lv. {n}"
+    "laminasFoeLevel": "Lv. {n}",
+    "mapOpen": "Open the map",
+    "mapTitleCenter": "Downtown Map",
+    "mapTitleBairro": "Neighborhood Map",
+    "mapYouAreHere": "You are here",
+    "mapMyHouse": "My house",
+    "mapPlaza": "Aurion Square"
   },
   "Sports": {
     "eyebrow": "Sports",

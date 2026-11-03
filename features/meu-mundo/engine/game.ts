@@ -53,6 +53,7 @@ import {
 import { bodyStride, myHeight, setMyHeight } from "../heights"
 import { setScreenAnchor } from "./screen-anchor"
 import { GainPillar, setGainFx } from "./gain-pillar"
+import { bairroMapModel, centerMapModel, setCityMap } from "./city-map"
 
 let live = 0
 export const liveGames = () => live
@@ -81,6 +82,8 @@ export interface GameOptions {
   exitLabel: string
   /** Centro: nomes já traduzidos para os letreiros. */
   centerLabels?: CenterLabels
+  /** Bairro: nomes do mapa (mm3d-60r) já traduzidos. */
+  mapLabels?: { home: string; plaza: string }
   /** Teto da resolução interna (pixels de tela por pixel CSS). */
   maxPixelRatio?: number
   fetchSession: () => Promise<(MultiplayerSession & { sceneKey?: string }) | null>
@@ -322,6 +325,13 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // mm3d-60: tubo de luz (o do poder, bem mais leve) quando ganha status
   const gainPillar = new GainPillar(scene, () => local.char.holder.getAbsolutePosition(), quality.tier === "low")
   const gainFx = setGainFx(gainPillar)
+  // mm3d-60r: o mapa (radar + modal) desta cena e onde eu estou
+  const dropMap = setCityMap(
+    centerP
+      ? centerMapModel(centerP.center, (p) => (opts.centerLabels ? opts.centerLabels.place(p) : p.id), opts.centerLabels?.portal ?? opts.exitLabel)
+      : bairroMapModel(payload as NeighborhoodPayload, { home: opts.mapLabels?.home ?? "Minha casa", plaza: opts.mapLabels?.plaza ?? "Praça", exit: opts.exitLabel }),
+    () => ({ x: local.x, z: local.z, facing: local.heading }),
+  )
   follow.camera.maxZ = quality.maxZ
   scene.activeCamera = follow.camera
   follow.snapBehind(home.x, home.z, home.rotationY)
@@ -943,6 +953,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       instr?.dispose()
       instr = null
       dropAnchor()
+      dropMap()
       gainFx()
       gainPillar.dispose()
       select.dispose()

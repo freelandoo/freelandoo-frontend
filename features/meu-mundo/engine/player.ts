@@ -404,6 +404,10 @@ export class LocalPlayer {
   get x() {
     return this.body.x
   }
+  /** Rumo desenhado (rad, 0 = norte) — o mapa (mm3d-60r) mostra a seta por ele. */
+  get heading() {
+    return this.visualFacing
+  }
   get z() {
     return this.body.z
   }
