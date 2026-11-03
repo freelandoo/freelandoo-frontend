@@ -48,6 +48,7 @@ import { GOD_NAMES, isGod, type GodBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
 import { HERO_LEVEL, heroLevelScale } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
+import { STAT_MAX, StatBars } from "./stat-bars"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -636,7 +637,39 @@ function GoldButton({ children, onClick, disabled, active }: { children: ReactNo
 }
 
 // ─── as páginas ───────────────────────────────────────────────────────────────
-function Overview({ life, portrait, compact, t, act }: PageProps) {
+/** Vital compacto da Visão Geral (2026-11-03): cabe 4 numa linha ao lado das barras de status. */
+function VitalCard({ icon, color, label, value, max = 100, barColor, tag }: { icon: ReactNode; color: string; label: string; value: number; max?: number; barColor?: string; tag?: string }) {
+  return (
+    <Chamfer cut={10}>
+      <div className="px-2.5 py-2">
+        <div className="flex items-center gap-1.5">
+          <span className="shrink-0" style={{ color }}>
+            {icon}
+          </span>
+          <span className={`${teko.className} min-w-0 truncate text-[16px] font-medium uppercase leading-none tracking-[0.12em]`} style={{ color: EVO.branco }}>
+            {label}
+          </span>
+        </div>
+        <div className="mt-1 flex items-baseline justify-between gap-1">
+          <span className={`${teko.className} font-bold leading-none`} style={{ fontSize: 26, color: EVO.branco }}>
+            <CountUp value={r0(value)} />
+            {r0(max) !== 100 && <span style={{ color: EVO.mudo, fontSize: 16 }}> / {r0(max)}</span>}
+          </span>
+          {tag && (
+            <span className={`${archivo.className} truncate text-[10px] font-bold uppercase`} style={{ color: EVO.mudo }}>
+              {tag}
+            </span>
+          )}
+        </div>
+        <div className="mt-1">
+          <Bar value={value} max={max} color={barColor ?? color} height={5} />
+        </div>
+      </div>
+    </Chamfer>
+  )
+}
+
+function Overview({ life, portrait, compact, t, act, adv }: PageProps) {
   const c = life.character
   const v = c.vitals
   const a = c.activity
@@ -735,57 +768,35 @@ function Overview({ life, portrait, compact, t, act }: PageProps) {
             </div>
           </div>
         </div>
-        <div className={`grid gap-3 ${compact ? "" : "grid-cols-2"}`}>
-          <Meter compact={compact} icon={<Heart className="h-6 w-6" />} color={EVO.perigo} label={t("stHealth", "Saúde")} value={v.health} max={Math.max(1, v.vitality)} barColor={toneFor(v.health)} tag={healthTag(v.health, t)} />
-          <Meter compact={compact} icon={<Zap className="h-6 w-6" />} color={EVO.ambar} label={t("stEnergy", "Energia")} value={v.energy} barColor={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} tag={energyTag(v.energy, t)} />
-          <Meter compact={compact} icon={<Activity className="h-6 w-6" />} color={EVO.roxo} label={t("stStress", "Estresse")} value={v.stress} barColor={toneFor(v.stress, "low")} tag={stressTag(v.stress, t)} />
-          <Meter compact={compact} icon={<Utensils className="h-6 w-6" />} color={EVO.bom} label={t("stSatiety", "Saciedade")} value={v.satiety} barColor={toneFor(v.satiety)} tag={satietyTag(v.satiety, t)} />
+        {/* 2026-11-03: as 6 barras de status no estilo da placa de luta (0–1000) */}
+        <Plate
+          title={t("stCombatAttrs", "Combate e atributos")}
+          aside={
+            <span className={`${archivo.className} text-[13px]`} style={{ color: EVO.mudo }}>
+              {t("stStatScale", "De 0 a {max}").replace("{max}", String(STAT_MAX))}
+            </span>
+          }
+        >
+          <div className="pb-1 pt-1">
+            <StatBars life={life} level={adv?.level} t={t} />
+          </div>
+        </Plate>
+        <div className="grid grid-cols-4 gap-2.5">
+          <VitalCard icon={<Heart className="h-4 w-4" />} color={EVO.perigo} label={t("stHealth", "Saúde")} value={v.health} max={Math.max(1, v.vitality)} barColor={toneFor(v.health)} tag={healthTag(v.health, t)} />
+          <VitalCard icon={<Zap className="h-4 w-4" />} color={EVO.ambar} label={t("stEnergy", "Energia")} value={v.energy} barColor={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} tag={energyTag(v.energy, t)} />
+          <VitalCard icon={<Activity className="h-4 w-4" />} color={EVO.roxo} label={t("stStress", "Estresse")} value={v.stress} barColor={toneFor(v.stress, "low")} tag={stressTag(v.stress, t)} />
+          <VitalCard icon={<Utensils className="h-4 w-4" />} color={EVO.bom} label={t("stSatiety", "Saciedade")} value={v.satiety} barColor={toneFor(v.satiety)} tag={satietyTag(v.satiety, t)} />
         </div>
-        <Chamfer cut={16}>
-          <div className="flex items-center gap-4 px-4 py-3">
-            <Ring color={EVO.douradoClaro} size={48}>
-              <Smile className="h-6 w-6" />
-            </Ring>
-            <div className={`${archivo.className} text-[17px]`} style={{ color: EVO.branco }}>
-              <span className={`${teko.className} text-[22px] font-semibold uppercase tracking-wider`} style={{ color: EVO.ambar }}>
-                {t("stPersonality", "Personalidade")}:{" "}
-              </span>
-              <span className={`${teko.className} text-[22px] font-semibold uppercase tracking-wider`}>{personalityLabel(c.personality, t)}</span>
-              <div style={{ color: EVO.mudo }}>
-                {t("stTodayLine", "Condição de hoje: {c} ({n}/100). Ritmo: {p}.")
-                  .replace("{c}", conditionLabel(c.today.label, t))
-                  .replace("{n}", String(c.today.score))
-                  .replace("{p}", c.pace >= 1 ? t("paceNormal", "normal") : c.pace >= 0.6 ? t("paceTired", "cansado") : t("paceExhausted", "exausto"))}
-              </div>
+        <Chamfer cut={12}>
+          <div className="flex items-center gap-3 px-3 py-2">
+            <span className={`${cinzel.className} shrink-0 text-[13px] font-bold uppercase tracking-[0.08em]`} style={{ color: "#FFD68A" }}>
+              {t("stMeals", "Refeições de hoje")}
+            </span>
+            <div className="min-w-0 flex-1">
+              <MealChips meals={c.meals} t={t} />
             </div>
           </div>
         </Chamfer>
-        <Plate title={t("stMeals", "Refeições de hoje")}>
-          <div className={`grid gap-3 ${compact ? "grid-cols-2" : "grid-cols-4"}`}>
-            {c.meals.map((m) => {
-              const color = m.state === "eaten" ? EVO.bom : m.state === "missed" ? EVO.perigo : m.state === "open" ? EVO.magenta : EVO.mudoEscuro
-              return (
-                <div key={m.at} className="flex items-center gap-3 rounded-none px-3 py-2" style={{ boxShadow: `inset 0 0 0 1px ${color}88`, background: "rgba(0,0,0,0.35)" }}>
-                  <Utensils className="h-5 w-5 shrink-0" style={{ color }} />
-                  <div>
-                    <div className={`${teko.className} text-[26px] font-bold leading-none`} style={{ color: EVO.branco }}>
-                      {t("mealAt", "{h} h").replace("{h}", String(m.at))}
-                    </div>
-                    <div className={`${teko.className} text-[16px] uppercase tracking-wider`} style={{ color }}>
-                      {m.state === "eaten"
-                        ? t("mealEaten", "Comeu")
-                        : m.state === "missed"
-                          ? t("mealMissed", "Perdeu")
-                          : m.state === "open"
-                            ? t("mealOpen", "Agora")
-                            : t("mealLater", "Depois")}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Plate>
       </div>
     </div>
   )
@@ -1451,7 +1462,7 @@ function MealChips({ meals, t }: { meals: LifeCharacter["meals"]; t: Tr }) {
   )
 }
 
-function OverviewC({ life, portrait, t, act }: PageProps) {
+function OverviewC({ life, portrait, t, act, adv }: PageProps) {
   const c = life.character
   const v = c.vitals
   const a = c.activity
@@ -1549,23 +1560,18 @@ function OverviewC({ life, portrait, t, act }: PageProps) {
         <MiniMeter icon={<Zap />} color={EVO.ambar} label={t("stEnergy", "Energia")} value={v.energy} barColor={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} tag={energyTag(v.energy, t)} />
         <MiniMeter icon={<Activity />} color={EVO.roxo} label={t("stStress", "Estresse")} value={v.stress} barColor={toneFor(v.stress, "low")} tag={stressTag(v.stress, t)} />
         <MiniMeter icon={<Utensils />} color={EVO.bom} label={t("stSatiety", "Saciedade")} value={v.satiety} barColor={toneFor(v.satiety)} tag={satietyTag(v.satiety, t)} />
-        <MiniMeter icon={<Smile />} color={EVO.douradoClaro} label={t("stMood", "Humor")} value={v.mood} barColor={toneFor(v.mood)} tag={moodTag(v.mood, t)} />
-        <MiniMeter icon={<HeartPulse />} color={EVO.rosa} label={t("stVitality", "Vitalidade")} value={v.vitality} barColor={toneFor(v.vitality)} />
       </div>
-      <Chamfer cut={9}>
-        <div className={`${archivo.className} px-2 py-1.5 text-[11px] leading-snug`} style={{ color: EVO.branco }}>
-          <span className="font-semibold uppercase" style={{ color: EVO.ambar }}>
-            {t("stPersonality", "Personalidade")}:
-          </span>{" "}
-          <span className="font-semibold uppercase">{personalityLabel(c.personality, t)}</span>
-          <div className="text-[10px]" style={{ color: EVO.mudo }}>
-            {t("stTodayLine", "Condição de hoje: {c} ({n}/100). Ritmo: {p}.")
-              .replace("{c}", conditionLabel(c.today.label, t))
-              .replace("{n}", String(c.today.score))
-              .replace("{p}", pace)}
-          </div>
-        </div>
-      </Chamfer>
+      {/* 2026-11-03: as 6 barras de status (0–1000) no estilo da placa de luta */}
+      <MiniPlate
+        title={t("stCombatAttrs", "Combate e atributos")}
+        aside={
+          <span className={`${archivo.className} text-[9.5px]`} style={{ color: EVO.mudo }}>
+            {personalityLabel(c.personality, t)} · {pace}
+          </span>
+        }
+      >
+        <StatBars life={life} level={adv?.level} t={t} small />
+      </MiniPlate>
       <MiniPlate title={t("stMeals", "Refeições de hoje")}>
         <MealChips meals={c.meals} t={t} />
       </MiniPlate>

@@ -9696,7 +9696,9 @@
     "levelUpGainHp": "+{n} max health (HP)",
     "levelUpGainDef": "+{n}% defense",
     "levelUpGainAtk": "+{n}% attack",
-    "levelUpGainAttr": "+{n} to strength, speed, intelligence and dexterity"
+    "levelUpGainAttr": "+{n} to strength, speed, intelligence and dexterity",
+    "stCombatAttrs": "Combat and attributes",
+    "stStatScale": "From 0 to {max}"
   },
   "Sports": {
     "eyebrow": "Sports",
