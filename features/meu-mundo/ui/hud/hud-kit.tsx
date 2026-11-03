@@ -29,6 +29,7 @@ import { MM } from "./tokens"
 import s from "./hud.module.css"
 import d from "./drawer.module.css"
 import { DrawerMachine } from "./drawer-machine"
+import { Shape } from "./shape"
 
 export type ChipTone = "bom" | "ambar" | "perigo" | "ouro" | "escuro"
 const CHIP: Record<ChipTone, [string, string]> = {
@@ -280,26 +281,22 @@ export function Drawer({
         <div className={d.body}>
           {/* placa do título (o relógio encaixa na ponta esquerda) */}
           <div className={d.plate}>
-            <div className={`${d.oct} ${d.rimO}`}>
-              <div className={`${d.oct} ${d.rimGap}`}>
-                <div className={`${d.oct} ${d.rimLine}`}>
-                  <div className={`${d.oct} ${d.rimFill}`}>
-                    <span aria-hidden className={d.rivets} />
-                    <h2 className={`${cinzel.className} ${d.title}`}>{heading}</h2>
-                    <button type="button" onClick={close} className={d.close} aria-label={t("menuClose", "Fechar o menu")}>
-                      <X />
-                    </button>
-                  </div>
-                </div>
+            <div className={d.box}>
+              <Shape c={14} />
+              <div className={d.boxIn}>
+                <span aria-hidden className={d.rivets} />
+                <h2 className={`${cinzel.className} ${d.title}`}>{heading}</h2>
+                <button type="button" onClick={close} className={d.close} aria-label={t("menuClose", "Fechar o menu")}>
+                  <X />
+                </button>
               </div>
             </div>
             <span aria-hidden className={d.plateGem} />
           </div>
           {/* a lista, dentro da moldura de aço */}
-          <div className={`${d.frame} ${d.oct} ${d.rimO}`}>
-            <div className={`${d.oct} ${d.rimGap}`}>
-              <div className={`${d.oct} ${d.rimLine}`}>
-                <div className={`${d.oct} ${d.rimFill}`}>
+          <div className={`${d.frame} ${d.box}`}>
+            <Shape c={14} />
+            <div className={d.boxIn}>
                   <span aria-hidden className={d.rivets} />
                   <div ref={listRef} className={d.list}>
                     {items.map((it) => (
@@ -312,21 +309,16 @@ export function Drawer({
                         }}
                       />
                     ))}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
           {(presence || footer) && (
-            <div className={`${d.foot} ${d.oct} ${d.rimO}`}>
-              <div className={`${d.oct} ${d.rimGap}`}>
-                <div className={`${d.oct} ${d.rimLine}`}>
-                  <div className={`${d.oct} ${d.rimFill}`}>
-                    <span aria-hidden className={d.rivets} />
-                    {presence && <Presence {...presence} />}
-                    {footer && <div className={d.extra}>{footer}</div>}
-                  </div>
-                </div>
+            <div className={`${d.foot} ${d.box}`}>
+              <Shape c={14} />
+              <div className={d.boxIn}>
+                <span aria-hidden className={d.rivets} />
+                {presence && <Presence {...presence} />}
+                {footer && <div className={d.extra}>{footer}</div>}
               </div>
             </div>
           )}
@@ -367,9 +359,7 @@ export function MenuItem({ label, icon, onSelect, hint, disabled, active, badge,
       aria-busy={loading || undefined}
     >
       {/* placa: aro de prata (e o azul que acende), miolo grafite, reflexo e filete */}
-      <span aria-hidden className={d.itemRim} />
-      <span aria-hidden className={`${d.itemRim} ${d.itemRimOn}`} />
-      <span aria-hidden className={d.itemFill} />
+      <Shape kind="point" c={16} className={d.itemShape} />
       <span aria-hidden className={d.itemShine} />
       <span aria-hidden className={d.itemStrip} />
       <span className={d.icon}>{icon}</span>

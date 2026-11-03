@@ -24,9 +24,10 @@
   display: flex;
   width: min(456px, 92vw);
   flex-direction: column;
+  /* mm3d-60h: menos opaco (pedido do Alex) — o mundo aparece atrás */
   background:
-    radial-gradient(120% 60% at 60% 0%, #221a0c 0%, rgba(34, 26, 12, 0) 60%),
-    linear-gradient(180deg, #121922 0%, #0f141a 55%, #0b0f14 100%);
+    radial-gradient(120% 60% at 60% 0%, rgba(34, 26, 12, 0.5) 0%, rgba(34, 26, 12, 0) 60%),
+    linear-gradient(180deg, rgba(18, 25, 34, 0.62) 0%, rgba(15, 20, 26, 0.58) 55%, rgba(11, 15, 20, 0.64) 100%);
   box-shadow:
     inset 2px 0 0 #e8b65b,
     inset 3px 0 0 #3a250c,
@@ -252,54 +253,6 @@
   padding: var(--top) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) var(--col);
 }
 
-/* moldura chanfrada em camadas: aço → sulco → filete azul → grafite */
-.oct {
-  clip-path: polygon(
-    var(--c) 0,
-    calc(100% - var(--c)) 0,
-    100% var(--c),
-    100% calc(100% - var(--c)),
-    calc(100% - var(--c)) 100%,
-    var(--c) 100%,
-    0 calc(100% - var(--c)),
-    0 var(--c)
-  );
-}
-.rimO {
-  --c: 14px;
-  position: relative;
-  padding: 2px;
-  background: var(--silver);
-}
-.rimGap {
-  --c: 13px;
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  padding: 2px;
-  background: #0b1016;
-}
-.rimLine {
-  --c: 12px;
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  padding: 1px;
-  background: linear-gradient(180deg, #5fe9f5, #14707a 50%, #5fe9f5);
-}
-.rimFill {
-  --c: 11px;
-  position: relative;
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  background:
-    linear-gradient(180deg, rgba(255, 214, 138, 0.06) 0%, rgba(255, 214, 138, 0) 30%),
-    linear-gradient(170deg, #1d252e 0%, #161d25 50%, #10161d 100%);
-}
 /* rebites nos quatro cantos */
 .rivets {
   position: absolute;
@@ -313,14 +266,32 @@
   z-index: 2;
 }
 
+/* caixa com a forma em SVG (shape.tsx): miolo translúcido, ouro, filete ciano */
+.box {
+  --sh-fill: rgba(14, 19, 26, 0.6);
+  --sh-line: rgba(32, 217, 233, 0.5);
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+.boxIn {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
 /* placa do título */
 .plate {
   position: relative;
   flex-shrink: 0;
   margin-left: 30px;
 }
-.plate .rimFill {
-  min-height: 52px;
+.plate .boxIn {
+  min-height: 56px;
   align-items: center;
   justify-content: center;
   padding: 6px 40px 6px 36px;
@@ -456,34 +427,19 @@
   -webkit-tap-highlight-color: transparent;
   transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.itemRim,
-.itemFill,
+.itemShape {
+  --sh-fill: rgba(22, 28, 36, 0.62);
+  --sh-line: rgba(32, 217, 233, 0.22);
+}
+.itemShape polygon {
+  transition:
+    fill 200ms,
+    stroke 200ms;
+}
 .itemShine,
 .itemStrip {
   position: absolute;
   pointer-events: none;
-}
-.itemRim {
-  inset: 0;
-  clip-path: var(--pt);
-  background: linear-gradient(180deg, #e8b65b 0%, #8a5a1e 48%, #2a3440 52%, #c8913f 100%);
-  transition: filter 200ms;
-}
-.itemRimOn {
-  inset: 0;
-  clip-path: var(--pt);
-  background: linear-gradient(180deg, #fff3cf 0%, #f2c35c 48%, #9a6424 52%, #ffd68a 100%);
-  opacity: 0;
-  transition: opacity 200ms;
-}
-.itemFill {
-  inset: 1.5px;
-  clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 15px 100%, 0 50%);
-  background:
-    linear-gradient(180deg, rgba(255, 233, 176, 0.08) 0%, rgba(255, 233, 176, 0) 45%),
-    linear-gradient(180deg, #1f2832 0%, #151c24 55%, #0f141a 100%);
-  box-shadow: inset 0 0 0 1px rgba(32, 217, 233, 0.16);
-  transition: box-shadow 200ms;
 }
 .itemShine {
   top: 0;
@@ -592,13 +548,10 @@
   .item:not(:disabled):hover {
     transform: scale(1.015);
   }
-  .item:not(:disabled):hover .itemRimOn {
-    opacity: 0.85;
-  }
-  .item:not(:disabled):hover .itemFill {
-    box-shadow:
-      inset 0 0 0 1px rgba(95, 233, 245, 0.45),
-      inset 0 0 18px rgba(32, 217, 233, 0.22);
+  .item:not(:disabled):hover .itemShape {
+    --sh-fill: rgba(30, 38, 48, 0.8);
+    --sh-rim: #ffd68a;
+    --sh-line: rgba(95, 233, 245, 0.6);
   }
   .item:not(:disabled):hover .itemShine {
     transform: translateX(300%);
@@ -620,23 +573,15 @@
 .item:not(:disabled):active {
   transform: scale(0.97);
 }
-.item:not(:disabled):active .itemRimOn {
-  opacity: 1;
-  transition-duration: 60ms;
+.item:not(:disabled):active .itemShape,
+.item:focus-visible .itemShape {
+  --sh-rim: #fff3cf;
+  --sh-line: #5fe9f5;
 }
-.item:focus-visible .itemRimOn {
-  opacity: 1;
-}
-.item[data-active] .itemRimOn {
-  opacity: 1;
-}
-.item[data-active] .itemFill {
-  background:
-    linear-gradient(90deg, rgba(232, 182, 91, 0.26) 0%, rgba(232, 182, 91, 0.06) 45%, rgba(232, 182, 91, 0) 100%),
-    linear-gradient(180deg, #3a2c12 0%, #251c0b 55%, #17110a 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(95, 233, 245, 0.5),
-    inset 0 0 22px rgba(32, 217, 233, 0.3);
+.item[data-active] .itemShape {
+  --sh-fill: rgba(58, 44, 18, 0.74);
+  --sh-rim: #ffe9b0;
+  --sh-line: rgba(95, 233, 245, 0.7);
 }
 .item[data-active] .itemStrip {
   transform: scaleY(1);
@@ -667,7 +612,7 @@
 .foot {
   flex-shrink: 0;
 }
-.foot .rimFill {
+.foot .boxIn {
   padding: 10px 18px;
 }
 .presence {
@@ -806,8 +751,8 @@
   .plate {
     margin-left: 24px;
   }
-  .plate .rimFill {
-    min-height: 46px;
+  .plate .boxIn {
+    min-height: 48px;
     padding-left: 30px;
   }
   .title {
@@ -857,13 +802,13 @@
     top: calc(var(--top) + 50px);
     bottom: 16px;
   }
-  .plate .rimFill {
-    min-height: 40px;
+  .plate .boxIn {
+    min-height: 42px;
   }
   .item {
     min-height: 50px;
   }
-  .foot .rimFill {
+  .foot .boxIn {
     padding: 6px 14px;
   }
 }
@@ -892,7 +837,6 @@
   .drawer,
   .drawer[data-open],
   .item,
-  .itemRimOn,
   .itemStrip,
   .arrow,
   .pull {
