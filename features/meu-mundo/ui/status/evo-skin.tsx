@@ -7,7 +7,8 @@
 // Archivo. Cor escrita aqui e em tokens.ts — as páginas não digitam hex.
 
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react"
-import { Archivo, Cinzel, Teko } from "next/font/google"
+import { Archivo, Teko } from "next/font/google"
+import localFont from "next/font/local"
 import { MM } from "../hud/tokens"
 import { SP } from "../kit/steam/steam-tokens"
 import { currentUiFx } from "../kit/steam/fx-tier"
@@ -15,8 +16,9 @@ import sk from "../kit/steam/steam.module.css"
 
 export const teko = Teko({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" })
 export const archivo = Archivo({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" })
-/** mm3d-60: títulos ornamentados (a serifa das referências steampunk). */
-export const cinzel = Cinzel({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" })
+/** mm3d-60: títulos ornamentados (a serifa das referências steampunk). Arquivo local (o build não
+ * baixa do Google: o download falhou duas vezes no deploy). Fonte variável 600–800. */
+export const cinzel = localFont({ src: "./fonts/Cinzel-latin.woff2", weight: "600 800", display: "swap", fallback: ["Georgia", "serif"] })
 
 // ═══ a paleta ═══
 // Os NOMES ficaram (as páginas usam EVO.x); as cores são as de MM: rubi no
