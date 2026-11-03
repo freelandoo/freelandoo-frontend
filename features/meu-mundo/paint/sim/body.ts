@@ -33,6 +33,8 @@ export interface PaintBody {
   jumps: number
   /** Quicou numa cama elástica NESTE passo (id da mancha; -1 sem id), senão null. */
   bounce: number | null
+  /** Bateu num muro de tinta NESTE passo e foi empurrado (id da mancha), senão null (mm3d-62). */
+  shove: number | null
 }
 
 export interface BodyIntent {
@@ -45,7 +47,7 @@ export interface BodyIntent {
 }
 
 export function newBody(x: number, y: number, z: number, facing: number): PaintBody {
-  return { x, y, z, vx: 0, vy: 0, vz: 0, ground: true, air: 0, gy: y, facing, jumps: 0, bounce: null }
+  return { x, y, z, vx: 0, vy: 0, vz: 0, ground: true, air: 0, gy: y, facing, jumps: 0, bounce: null, shove: null }
 }
 
 /** Movimento para a animação: 0 parado, 1 andando, 2 correndo, 5 no ar. */
@@ -54,6 +56,7 @@ export type BodyMove = 0 | 1 | 2 | 5
 export function stepBody(b: PaintBody, it: BodyIntent, solids: readonly Solid[], dt = TUNING.step): BodyMove {
   const T = TUNING
   b.bounce = null
+  b.shove = null
   let mx = it.mx
   let mz = it.mz
   const m = Math.hypot(mx, mz)
@@ -93,7 +96,17 @@ export function stepBody(b: PaintBody, it: BodyIntent, solids: readonly Solid[],
   // horizontal + empurrão de lado
   b.x += b.vx * dt
   b.z += b.vz * dt
-  pushOut(solids, b, T.bodyR, T.bodyH, T.stepUp)
+  const wall = { nx: 0, nz: 0, b: NaN }
+  pushOut(solids, b, T.bodyR, T.bodyH, T.stepUp, wall)
+  if (!Number.isNaN(wall.b) && b.vx * wall.nx + b.vz * wall.nz < T.wallBounce * 0.5) {
+    // muro de gelatina (mm3d-62): quem bate é jogado para trás e para cima
+    b.vx = wall.nx * T.wallBounce
+    b.vz = wall.nz * T.wallBounce
+    b.vy = Math.max(b.vy, T.wallBounceLift)
+    b.ground = false
+    b.air = T.coyote
+    b.shove = wall.b
+  }
 
   // vertical
   const wasGround = b.ground

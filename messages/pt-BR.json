@@ -9025,7 +9025,18 @@
     "mapTitleBairro": "Mapa do Bairro",
     "mapYouAreHere": "Você está aqui",
     "mapMyHouse": "Minha casa",
-    "mapPlaza": "Praça de Aurion"
+    "mapPlaza": "Praça de Aurion",
+    "paintHowWallJelly": "Muro de gelatina: quem bate nele voa para trás. Jogue no adversário quando ele pular! Ícone da Freelandoo: +{n}.",
+    "paintHowGoalGuardian": "20 gatinhos do seu time abrem o portal no topo. Na ilha do Guardião vence quem der mais dano — perdeu para ele (ou caiu de lá), acabou a partida para você.",
+    "paintToastShoved": "Na gelatina! Voou longe",
+    "paintToastOutFell": "Caiu da ilha do Guardião — fim da partida para você",
+    "paintToastOutBoss": "O Guardião venceu você — fim da partida",
+    "paintToastGuardian": "Ilha do Guardião: preto e soco nele — e muro nos outros!",
+    "paintGuardian": "Guardião",
+    "paintGuardianName": "GUARDIÃO",
+    "paintOut": "Fora da partida",
+    "paintOutWatching": "Assistindo · {n} ainda de pé",
+    "paintSoloOut": "O Guardião venceu"
   },
   "Sports": {
     "eyebrow": "Esportes",

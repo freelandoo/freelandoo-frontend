@@ -9591,7 +9591,18 @@
     "mapTitleBairro": "Mapa del Barrio",
     "mapYouAreHere": "Estás aquí",
     "mapMyHouse": "Mi casa",
-    "mapPlaza": "Plaza de Aurion"
+    "mapPlaza": "Plaza de Aurion",
+    "paintHowWallJelly": "Muro de gelatina: quien choca con él sale volando hacia atrás. ¡Lánzalo al rival cuando salte! Ícono de Freelandoo: +{n}.",
+    "paintHowGoalGuardian": "20 gatitos de tu equipo abren el portal en la cima. En la isla del Guardián gana quien haga más daño — si pierdes contra él (o te caes), se acabó la partida para ti.",
+    "paintToastShoved": "¡Gelatina! Salió volando",
+    "paintToastOutFell": "Te caíste de la isla del Guardián — fin de la partida para ti",
+    "paintToastOutBoss": "El Guardián te venció — fin de la partida",
+    "paintToastGuardian": "Isla del Guardián: negro y puñetazos en él — ¡y muros a los demás!",
+    "paintGuardian": "Guardián",
+    "paintGuardianName": "GUARDIÁN",
+    "paintOut": "Fuera de la partida",
+    "paintOutWatching": "Mirando · {n} aún en pie",
+    "paintSoloOut": "El Guardián ganó"
   },
   "Sports": {
     "eyebrow": "Deportes",

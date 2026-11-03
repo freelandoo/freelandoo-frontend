@@ -45,6 +45,7 @@ import type { PaintPort, RemoteSample } from "./port"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
+import { createVfx, VFX_COLORS, type VfxColor } from "../../engine/vfx"
 
 /** O que a interface mostra (atualizado ~10×/s e a cada acontecimento). */
 export interface PaintHud {
@@ -66,6 +67,10 @@ export interface PaintHud {
   dmg: number
   /** s de nocaute que faltam (0 = de pé). */
   ko: number
+  /** Perdi para o guardião: fora da partida (mm3d-62). */
+  out: boolean
+  /** Quantos ainda estão de pé (para o "assistindo"). */
+  alive: number
   result: MatchResult | null
 }
 
@@ -74,7 +79,11 @@ export type PaintNotice =
   | { kind: "cat"; mine: boolean; team: number }
   | { kind: "capsule"; c: PaintColor }
   | { kind: "empty"; c: PaintColor }
-  | { kind: "hurt"; how: "harm" | "punch" | "boss" }
+  | { kind: "hurt"; how: "harm" | "punch" | "boss" | "wall" }
+  /** Meu muro jogou alguém longe (mm3d-62). */
+  | { kind: "shoved" }
+  /** Perdi para o guardião (mm3d-62). */
+  | { kind: "out"; why: "boss" | "fell" }
   | { kind: "hitOther" }
   | { kind: "ko" }
   | { kind: "portal"; team: number; mine: boolean }
@@ -163,6 +172,15 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const herd = new CatHerd(scene, map.cats)
   // Chefão (mm3d-38): a sim decide onde está e o que faz; aqui só desenha.
   const bossView = new BossView(scene, map.boss.y)
+  // mm3d-62 (pedido do Alex): no guardião não sai sangue — sai LUZ, o kit de
+  // efeitos da Arena das Lâminas (arco nas garras, clarão em estrela, anel, faíscas).
+  const vfx = createVfx(scene, lowEnd)
+  const BOSS_FX: VfxColor = { main: new Color3(1, 0.9, 0.62), edge: new Color3(0.42, 0.86, 1) }
+  const HURT_FX: VfxColor = VFX_COLORS.dano
+  const clawTrails = [0, 1].map((side) => vfx.trail(() => bossView.claw(side), BOSS_FX))
+  for (const t of clawTrails) t.active = false
+  /** Muro turquesa tocado (empurrão): clarão na cor dele. */
+  const WALL_FX: VfxColor = { main: Color3.FromHexString(PAINT_COLORS[3]), edge: new Color3(0.75, 1, 0.97) }
   // O que já estava no mundo ao entrar (rede: gatinhos pegos, cápsulas fora, tinta).
   for (const id of state.catsTaken.keys()) herd.take(id, true)
   for (const id of state.capsuleBack.keys()) pickups.setCapsule(id, false)
@@ -266,18 +284,40 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         else if (e.from === port.me) notice({ kind: "steal", gained: false, n: e.n })
         break
       case "hit":
-        if (e.how !== "punch") bleed(e.slot, false)
+        if (e.how === "wall") {
+          // empurrão do muro: sem sangue, clarão turquesa e a gelatina balança
+          const tp = e.slot === port.me ? body : state.players.get(e.slot)?.pose
+          if (tp) vfx.impact(new Vector3(tp.x, tp.y + 1.1, tp.z), WALL_FX, true)
+        } else if (e.how === "boss") {
+          // o guardião bate: luz, não sangue
+          const tp = e.slot === port.me ? body : state.players.get(e.slot)?.pose
+          if (tp) vfx.impact(new Vector3(tp.x, tp.y + 1.2, tp.z), HURT_FX, true, 1.3)
+        } else if (e.how !== "punch") bleed(e.slot, false)
         if (e.slot === port.me) {
           knockBody(body, e.kx, e.ky, e.kz)
           notice({ kind: "hurt", how: e.how })
         } else if (e.by === port.me) {
-          notice({ kind: "hitOther" })
-          const tp = state.players.get(e.slot)?.pose
-          if (tp && hitFx) hitFx.confirm({ x: tp.x, y: tp.y + 1.15, z: tp.z }, e.how === "punch" ? TUNING.punchDmg : TUNING.harmDmg, e.how === "punch" ? Color3.White() : HIT_GOLD, e.hp === 0)
+          if (e.how === "wall") notice({ kind: "shoved" })
+          else {
+            notice({ kind: "hitOther" })
+            const tp = state.players.get(e.slot)?.pose
+            if (tp && hitFx) hitFx.confirm({ x: tp.x, y: tp.y + 1.15, z: tp.z }, e.how === "punch" ? TUNING.punchDmg : TUNING.harmDmg, e.how === "punch" ? Color3.White() : HIT_GOLD, e.hp === 0)
+          }
+        }
+        break
+      case "out":
+        {
+          const tp = e.slot === port.me ? body : state.players.get(e.slot)?.pose
+          if (tp && e.why === "boss") vfx.burst(new Vector3(tp.x, tp.y + 1.2, tp.z), HURT_FX)
+          if (e.slot === port.me) notice({ kind: "out", why: e.why })
         }
         break
       case "ko":
-        bleed(e.slot, true)
+        if (e.by === -1) {
+          // nocaute do guardião: estouro de luz no lugar do sangue
+          const tp = e.slot === port.me ? body : state.players.get(e.slot)?.pose
+          if (tp) vfx.burst(new Vector3(tp.x, tp.y + 1.2, tp.z), HURT_FX)
+        } else bleed(e.slot, true)
         if (e.slot === port.me) {
           knocked = true
           notice({ kind: "ko" })
@@ -323,6 +363,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         break
       case "capsule":
         pickups.setCapsule(e.id, false)
+        pickups.collect(e.id, e.slot === port.me)
         if (e.slot === port.me) notice({ kind: "capsule", c: e.c })
         break
       case "capsuleBack":
@@ -333,6 +374,13 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         notice({ kind: "portal", team: e.team, mine: e.team === me.team })
         break
       case "boss":
+        // acerto no guardião: clarão em estrela, anel e faíscas (como nas Lâminas)
+        if (me.inBoss && Number.isFinite(e.x)) {
+          const at = new Vector3(e.x, e.y, e.z)
+          if (e.hp <= 0) vfx.burst(at, BOSS_FX)
+          else vfx.impact(at, BOSS_FX, e.dmg >= TUNING.bossHarm, 1.2)
+          if (e.slot === port.me && hitFx) hitFx.confirm(e, e.dmg, HIT_GOLD, e.hp <= 0)
+        }
         if (e.slot === port.me) notice({ kind: "boss", dmg: e.dmg })
         break
       case "punch":
@@ -372,7 +420,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   }
 
   const tryFire = (c: PaintColor) => {
-    if (state.phase !== "play" || me.ko) return
+    if (state.phase !== "play" || me.ko || me.out) return
     if (clock < nextFire[c]) return
     if (me.ammo[c] < TUNING.cost[c]) {
       if (clock - emptyAt > 0.8) {
@@ -400,7 +448,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   }
 
   const doPunch = () => {
-    if (state.phase !== "play" || me.ko) return
+    if (state.phase !== "play" || me.ko || me.out) return
     aimYaw = cam.yaw
     body.facing = aimYaw
     aimHold = AIM_HOLD
@@ -450,6 +498,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     vy: number
     air: boolean
     v0: number
+    /** Muro que já balançou neste empurrão. */
+    shovedBy?: number
   }
   const remotes = new Map<number, Remote>()
   const DELAY = 120
@@ -488,7 +538,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         remotes.set(p.slot, r)
       }
       const s = sampleAt(port.samples?.get(p.slot), now) ?? { x: p.pose.x, y: p.pose.y, z: p.pose.z, f: p.pose.facing, g: p.pose.ground }
-      const seen = p.online && p.inBoss === me.inBoss && (!p.ko || Math.floor(clock * 8) % 2 === 0)
+      const seen = p.online && !p.out && p.inBoss === me.inBoss && (!p.ko || Math.floor(clock * 8) % 2 === 0)
       r.char.holder.setEnabled(seen)
       if (!seen) continue
       const kk = 1 - Math.exp(-10 * dt)
@@ -510,6 +560,15 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         if (pad && pad.k === 0 && pad.c === 2 && pad.b !== undefined && vy > 9) paint.squash(pad.b)
       }
       else if (!s.g && r.air && r.vy < 0 && vy > 3) r.char.jump(2)
+      // empurrado por um muro turquesa (mm3d-62): o muro balança na tela de quem vê
+      if (r.speed > TUNING.wallBounce * 0.8) {
+        for (let i = map.solids.length; i < solids.length; i++) {
+          const w = solids[i]
+          if (w.k !== 2 || w.b === undefined || Math.hypot(w.x - s.x, w.z - s.z) > 2.2) continue
+          if (r.shovedBy !== w.b) paint.squash(w.b)
+          r.shovedBy = w.b
+        }
+      } else r.shovedBy = undefined
       if (!s.g && !r.air) r.v0 = Math.max(4, vy)
       else if (!s.g && r.air && r.vy < 0 && vy > 3) r.v0 = Math.max(4, vy)
       r.air = !s.g
@@ -551,7 +610,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     inBoss: me.inBoss,
     bossHp: state.bossHp,
     dmg: me.dmg,
-    ko: me.ko ? Math.max(0, me.ko - state.time) : 0,
+    ko: me.ko && !me.out ? Math.max(0, me.ko - state.time) : 0,
+    out: me.out,
+    alive: [...state.players.values()].filter((p) => p.online && !p.out).length,
     result: state.result,
   })
 
@@ -567,7 +628,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     input.lookDX = 0
     input.lookDY = 0
 
-    const canMove = state.phase === "play" && !me.ko && !input.blocked
+    const canMove = state.phase === "play" && !me.ko && !me.out && !input.blocked
     const axis = canMove ? paintMoveAxis(input) : { x: 0, y: 0 }
     const f = { x: Math.sin(cam.yaw), z: Math.cos(cam.yaw) }
     const r = cam.right()
@@ -589,7 +650,13 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       const facingBefore = body.facing
       const jumpsBefore = body.jumps
       move = stepBody(body, { ...intent, jump }, solids)
-      if (body.bounce !== null) {
+      if (body.shove !== null) {
+        // bateu no muro turquesa: ele balança e o corpo sai voando para trás
+        paint.squash(body.shove)
+        vfx.impact(new Vector3(body.x, body.y + 1.1, body.z), WALL_FX, false)
+        char.jump(0)
+        launchV = body.vy
+      } else if (body.bounce !== null) {
         // cama elástica: a bolha afunda e o corpo sai no pulo
         paint.squash(body.bounce)
         char.jump(0)
@@ -670,7 +737,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       char.setPaintMove(body.vx * fx + body.vz * fz, body.vx * fz - body.vz * fx, clock - shotAt < 0.35)
     }
     char.animate(dt, me.ko ? 0 : move === 5 ? 0 : move, hs)
-    char.holder.setEnabled(!me.ko || Math.floor(clock * 8) % 2 === 0)
+    char.holder.setEnabled(!me.out && (!me.ko || Math.floor(clock * 8) % 2 === 0))
     holdGun(char, gun, visualFacing)
     gun.tick(dt, aimHold > 0 ? cam.pitch * 0.85 : 0.25)
 
@@ -684,6 +751,23 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     world.tick(dt)
     bossView.setVisible(me.inBoss)
     if (me.inBoss) bossView.tick(dt, state.boss, state.time, state.bossAlive())
+    {
+      // arco de luz nas garras só no golpe (do começo até logo depois de acertar)
+      const b = state.boss
+      const spec = b.act === "swipe" ? TUNING.bossSwipe : b.act === "slam" ? TUNING.bossSlam : null
+      const since = state.time - b.at
+      const on = me.inBoss && state.bossAlive() && !!spec && since > spec.hit - 0.45 && since < spec.hit + 0.18
+      // patada: a mão da frente (direita); tapa no chão: as duas
+      clawTrails[1].active = on
+      clawTrails[0].active = on && b.act === "slam"
+      if (on && spec && b.act === "slam" && since >= spec.hit && since < spec.hit + dt * 1.5) {
+        const fx = Math.sin(b.facing)
+        const fz = Math.cos(b.facing)
+        vfx.ground(new Vector3(b.x + fx * TUNING.bossSlam.ahead, map.boss.y + 0.05, b.z + fz * TUNING.bossSlam.ahead), BOSS_FX, TUNING.bossSlam.r * 0.6, 0.7)
+        vfx.dust(new Vector3(b.x + fx * TUNING.bossSlam.ahead, map.boss.y + 0.2, b.z + fz * TUNING.bossSlam.ahead), 14)
+      }
+    }
+    vfx.update(dt)
     paint.tick(dt)
     pickups.tick(dt)
     herd.tick(dt, cam.camera)
@@ -806,6 +890,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       pickups.dispose()
       herd.dispose()
       bossView.dispose()
+      vfx.dispose()
       paint.dispose()
       world.dispose()
       cam.dispose()

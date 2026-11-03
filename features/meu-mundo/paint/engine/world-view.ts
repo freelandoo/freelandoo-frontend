@@ -15,6 +15,13 @@
 // vapor); pilares de ferro com anéis de latão, caixotes de madeira com
 // cantoneiras, portais com dentes de engrenagem e lanternas, nuvens douradas
 // e dirigíveis em volta.
+//
+// mm3d-62 (pedido do Alex: redesenhar as ilhas) — a colisão é a MESMA (a
+// regra não mudou), só o desenho: o topo ganhou um anel de lajes radiais em
+// arenito na borda (lê de longe onde a ilha acaba) com um sulco, o miolo segue
+// claro para a tinta aparecer; a pedra de baixo virou camadas (arenito,
+// terracota, xisto) mais recortadas, com estalactites penduradas, cristais
+// acesos de éter (turquesa e âmbar) brotando da rocha e cipós caindo da borda.
 
 import type { Scene } from "@babylonjs/core/scene"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
@@ -23,6 +30,7 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
+import { Matrix } from "@babylonjs/core/Maths/math.vector"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
@@ -52,7 +60,27 @@ export const STONE = {
   rope: SP.brass,
   crate: [0.58, 0.4, 0.25] as RGB,
   crateEdge: SP.brassDark,
+  // mm3d-62: borda de lajes e camadas da rocha
+  slab: [0.98, 0.84, 0.62] as RGB,
+  slabDark: [0.86, 0.68, 0.46] as RGB,
+  groove: [0.52, 0.4, 0.3] as RGB,
+  strata: [
+    [0.94, 0.74, 0.5],
+    [0.62, 0.3, 0.2],
+    [0.88, 0.64, 0.42],
+    [0.42, 0.26, 0.22],
+    [0.74, 0.52, 0.36],
+    [0.28, 0.22, 0.24],
+  ] as RGB[],
+  vine: [0.3, 0.52, 0.24] as RGB,
+  vineDark: [0.2, 0.38, 0.18] as RGB,
 }
+
+/** Cristais de éter (mm3d-62): turquesa e âmbar, acesos. */
+const CRYSTAL: RGB[] = [
+  [0.2, 0.95, 0.88],
+  [1, 0.72, 0.25],
+]
 
 /**
  * Lajes de pedra: células (uma semente por quadrado da grade, com repetição
@@ -114,46 +142,81 @@ function stoneTexture(scene: Scene, size: number) {
   return tex
 }
 
-/** Topo (polígono com borda irregular de leve) + chanfro + pedra facetada embaixo. */
-function islandGeometry(isl: Island, top: { p: number[]; n: number[]; uv: number[]; i: number[] }, rock: { p: number[]; c: number[]; i: number[] }) {
-  const seg = Math.max(18, Math.min(56, Math.round(isl.r * 5)))
-  const wob = (k: number) => 1 + (rnd(isl.id * 977 + k) - 0.5) * 0.06
+type TopBuf = { p: number[]; n: number[]; uv: number[]; c: number[]; i: number[] }
+type RockBuf = { p: number[]; c: number[]; i: number[] }
+
+/**
+ * Topo (mm3d-62): miolo claro em leque + anel de lajes radiais na borda
+ * (arenito, uma laje sim outra não mais escura) com um sulco entre os dois.
+ * Tudo na altura da colisão (o pé não afunda). Embaixo, pedra em camadas que
+ * afina até a ponta, recortada, com estalactites.
+ */
+function islandGeometry(isl: Island, top: TopBuf, rock: RockBuf) {
+  const seg = Math.max(18, Math.min(60, Math.round(isl.r * 5)))
+  const wob = (k: number) => 1 + (rnd(isl.id * 977 + k) - 0.5) * 0.05
   const ring: [number, number][] = []
   for (let k = 0; k < seg; k++) {
     const a = (k / seg) * Math.PI * 2
     const r = isl.r * wob(k)
     ring.push([isl.x + Math.sin(a) * r, isl.z + Math.cos(a) * r])
   }
-  // topo: leque
-  const b = top.p.length / 3
-  top.p.push(isl.x, isl.y, isl.z)
-  top.n.push(0, 1, 0)
-  top.uv.push(isl.x / 7, isl.z / 7)
-  for (const [x, z] of ring) {
+  const at = (k: number, f: number): [number, number] => [isl.x + (ring[k][0] - isl.x) * f, isl.z + (ring[k][1] - isl.z) * f]
+  const band = Math.min(0.85, Math.max(0.42, isl.r * 0.13))
+  const fIn = Math.max(0.35, 1 - band / isl.r)
+  const fGroove = Math.max(0.3, fIn - 0.06 / isl.r)
+  const vtx = (x: number, z: number, c: RGB) => {
     top.p.push(x, isl.y, z)
     top.n.push(0, 1, 0)
     top.uv.push(x / 7, z / 7)
+    top.c.push(c[0], c[1], c[2], 1)
+    return top.p.length / 3 - 1
   }
-  for (let k = 0; k < seg; k++) top.i.push(b, b + 1 + ((k + 1) % seg), b + 1 + k)
+  // miolo: leque até o sulco
+  const center = vtx(isl.x, isl.z, [1, 1, 1])
+  const inner: number[] = []
+  for (let k = 0; k < seg; k++) inner.push(vtx(...at(k, fGroove), [1, 1, 1]))
+  for (let k = 0; k < seg; k++) top.i.push(center, inner[(k + 1) % seg], inner[k])
+  // sulco (faixa fina escura) e lajes (quadriláteros próprios: cor por laje)
+  for (let k = 0; k < seg; k++) {
+    const k2 = (k + 1) % seg
+    const g0 = vtx(...at(k, fGroove), STONE.groove)
+    const g1 = vtx(...at(k2, fGroove), STONE.groove)
+    const g2 = vtx(...at(k2, fIn), STONE.groove)
+    const g3 = vtx(...at(k, fIn), STONE.groove)
+    top.i.push(g0, g1, g2, g0, g2, g3)
+    const c = k % 2 ? STONE.slab : STONE.slabDark
+    const sh = 0.95 + rnd(isl.id * 211 + k) * 0.08
+    const cc: RGB = [c[0] * sh, c[1] * sh, c[2] * sh]
+    // junta entre as lajes: 4% de cada lado mais escura
+    const s0 = vtx(...at(k, fIn), cc)
+    const s1 = vtx(...at(k2, fIn), cc)
+    const s2 = vtx(...at(k2, 1), cc)
+    const s3 = vtx(...at(k, 1), cc)
+    top.i.push(s0, s1, s2, s0, s2, s3)
+  }
 
-  // pedra: anéis descendo até a ponta (facetada depois)
-  const rings = [
+  // pedra em camadas: anéis descendo até a ponta (facetada depois)
+  const D = isl.depth
+  const rings: { f: number; dy: number; c: RGB }[] = [
     { f: 1, dy: 0, c: STONE.rim },
-    { f: 1.015, dy: 0.22, c: STONE.rim },
-    { f: 0.97, dy: 0.55, c: STONE.rock },
-    { f: 0.86, dy: isl.depth * 0.3, c: STONE.rock },
-    { f: 0.64, dy: isl.depth * 0.58, c: STONE.rock },
-    { f: 0.36, dy: isl.depth * 0.82, c: STONE.deep },
+    { f: 1.02, dy: 0.24, c: STONE.rim },
+    { f: 0.99, dy: 0.5, c: STONE.strata[0] },
+    { f: 0.93, dy: D * 0.16, c: STONE.strata[1] },
+    { f: 0.84, dy: D * 0.3, c: STONE.strata[2] },
+    { f: 0.7, dy: D * 0.46, c: STONE.strata[3] },
+    { f: 0.52, dy: D * 0.62, c: STONE.strata[4] },
+    { f: 0.3, dy: D * 0.8, c: STONE.strata[5] },
   ]
   const base = rock.p.length / 3
   for (let ri = 0; ri < rings.length; ri++) {
     const R = rings[ri]
     for (let k = 0; k < seg; k++) {
       const [x, z] = ring[k]
-      const jit = ri >= 3 ? 1 + (rnd(isl.id * 131 + ri * 17 + k) - 0.5) * 0.24 : 1
-      const dyj = ri >= 3 ? (rnd(isl.id * 71 + ri * 5 + k) - 0.5) * isl.depth * 0.08 : 0
+      // camadas: cada uma salta para fora/dentro um pouco (ressalto de rocha)
+      const jit = ri >= 3 ? 1 + (rnd(isl.id * 131 + ri * 17 + k) - 0.5) * 0.3 : 1
+      const dyj = ri >= 3 ? (rnd(isl.id * 71 + ri * 5 + k) - 0.5) * D * 0.07 : 0
       rock.p.push(isl.x + (x - isl.x) * R.f * jit, isl.y - R.dy + dyj, isl.z + (z - isl.z) * R.f * jit)
-      const shade = 0.94 + rnd(isl.id * 53 + ri * 11 + k) * 0.08
+      const shade = 0.9 + rnd(isl.id * 53 + ri * 11 + k) * 0.14
       rock.c.push(R.c[0] * shade, R.c[1] * shade, R.c[2] * shade, 1)
     }
   }
@@ -167,10 +230,40 @@ function islandGeometry(isl: Island, top: { p: number[]; n: number[]; uv: number
     }
   }
   const tip = rock.p.length / 3
-  rock.p.push(isl.x + (rnd(isl.id) - 0.5) * isl.r * 0.2, isl.y - isl.depth, isl.z + (rnd(isl.id + 9) - 0.5) * isl.r * 0.2)
-  rock.c.push(STONE.deep[0] * 0.92, STONE.deep[1] * 0.92, STONE.deep[2] * 0.92, 1)
+  rock.p.push(isl.x + (rnd(isl.id) - 0.5) * isl.r * 0.2, isl.y - D, isl.z + (rnd(isl.id + 9) - 0.5) * isl.r * 0.2)
+  const dc = STONE.strata[5]
+  rock.c.push(dc[0] * 0.85, dc[1] * 0.85, dc[2] * 0.85, 1)
   const last = base + (rings.length - 1) * seg
   for (let k = 0; k < seg; k++) rock.i.push(last + k, last + ((k + 1) % seg), tip)
+
+  // estalactites: cones de pedra pendurados no meio da rocha
+  const nSt = isl.r >= 6 ? 6 : isl.r >= 3.5 ? 3 : 1
+  for (let n = 0; n < nSt; n++) {
+    const a = rnd(isl.id * 19 + n * 7) * Math.PI * 2
+    const rr = isl.r * (0.25 + rnd(isl.id * 23 + n) * 0.4)
+    const cx = isl.x + Math.sin(a) * rr
+    const cz = isl.z + Math.cos(a) * rr
+    const y0 = isl.y - D * (0.3 + (rr / isl.r) * -0.1 + 0.2)
+    const len = D * (0.25 + rnd(isl.id * 29 + n) * 0.35)
+    const w = Math.max(0.25, isl.r * 0.09)
+    const b0 = rock.p.length / 3
+    for (let k = 0; k < 5; k++) {
+      const t = (k / 5) * Math.PI * 2
+      rock.p.push(cx + Math.sin(t) * w, y0, cz + Math.cos(t) * w)
+      const c = STONE.strata[3 + (n % 3)]
+      rock.c.push(c[0], c[1], c[2], 1)
+    }
+    rock.p.push(cx, y0 - len, cz)
+    rock.c.push(dc[0] * 0.8, dc[1] * 0.8, dc[2] * 0.8, 1)
+    for (let k = 0; k < 5; k++) rock.i.push(b0 + k, b0 + ((k + 1) % 5), b0 + 5)
+  }
+}
+
+/** Cristal (bipirâmide de 6 lados) apontando na direção `dir`. */
+function crystal(g: GeoBuilder, x: number, y: number, z: number, h: number, w: number, tiltX: number, tiltZ: number, color: RGB) {
+  const m = Matrix.RotationYawPitchRoll(rnd(x * 13 + z) * Math.PI, tiltX, tiltZ).multiply(Matrix.Translation(x, y, z))
+  g.cylinder(w, h * 0.55, Matrix.Translation(0, h * 0.27, 0).multiply(m), color, 6)
+  g.sphere(w * 1.02, [1, (h * 0.9) / w, 1], Matrix.Translation(0, h * 0.55, 0).multiply(m), color, 4)
 }
 
 export interface PaintWorldView {
@@ -183,8 +276,8 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   const disposers: (() => void)[] = []
 
   // ── ilhas ──
-  const top = { p: [] as number[], n: [] as number[], uv: [] as number[], i: [] as number[] }
-  const rock = { p: [] as number[], c: [] as number[], i: [] as number[] }
+  const top: TopBuf = { p: [], n: [], uv: [], c: [], i: [] }
+  const rock: RockBuf = { p: [], c: [], i: [] }
   for (const isl of map.islands) islandGeometry(isl, top, rock)
 
   const stone = stoneTexture(scene, lowEnd ? 256 : 512)
@@ -197,6 +290,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   vdTop.positions = top.p
   vdTop.normals = top.n
   vdTop.uvs = top.uv
+  vdTop.colors = top.c
   vdTop.indices = top.i
   vdTop.applyToMesh(topMesh, false)
   topMesh.material = topMat
@@ -245,6 +339,49 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   }
   const propsMesh = g.build("paint-props", scene, rockMat)
   disposers.push(() => propsMesh.dispose())
+
+  // ── mm3d-62: cipós caindo da borda e cristais de éter na rocha ──
+  const vg = new GeoBuilder()
+  const xg = new GeoBuilder()
+  for (const isl of map.islands) {
+    const nv = Math.round(isl.r * (lowEnd ? 0.8 : 1.6))
+    for (let n = 0; n < nv; n++) {
+      const a = rnd(isl.id * 41 + n * 3) * Math.PI * 2
+      const len = 0.6 + rnd(isl.id * 43 + n) * Math.min(3, isl.depth * 0.3)
+      const r = isl.r * 1.0
+      const x = isl.x + Math.sin(a) * r
+      const z = isl.z + Math.cos(a) * r
+      vg.box(0.09, len, 0.09, place(x, isl.y - 0.2 - len / 2, z, a), n % 2 ? STONE.vine : STONE.vineDark)
+      // folhinhas
+      for (let k = 1; k <= 2; k++) vg.box(0.26, 0.05, 0.16, place(x, isl.y - 0.2 - len * (k / 3), z, a + k), STONE.vine)
+    }
+    const nc = isl.r >= 6 ? (lowEnd ? 2 : 4) : isl.r >= 3.5 ? (lowEnd ? 1 : 2) : 0
+    for (let n = 0; n < nc; n++) {
+      const a = rnd(isl.id * 61 + n * 5) * Math.PI * 2
+      const dy = isl.depth * (0.12 + rnd(isl.id * 67 + n) * 0.3)
+      const f = 0.95 - (dy / isl.depth) * 0.7
+      const x = isl.x + Math.sin(a) * isl.r * f
+      const z = isl.z + Math.cos(a) * isl.r * f
+      const color = CRYSTAL[(isl.id + n) % 2]
+      // cachinho de 3: o maior para fora, dois menores tortos
+      const h = 1.4 + rnd(isl.id * 71 + n) * 1.3
+      crystal(xg, x, isl.y - dy, z, h, h * 0.36, Math.cos(a) * 1.1, -Math.sin(a) * 1.1, color)
+      crystal(xg, x + Math.cos(a) * 0.35, isl.y - dy - 0.15, z - Math.sin(a) * 0.35, h * 0.6, h * 0.24, Math.cos(a) * 1.4 + 0.3, -Math.sin(a) * 1.4, color)
+      crystal(xg, x - Math.cos(a) * 0.35, isl.y - dy - 0.1, z + Math.sin(a) * 0.35, h * 0.5, h * 0.2, Math.cos(a) * 0.8 - 0.3, -Math.sin(a) * 0.8, color)
+    }
+  }
+  const vines = vg.build("paint-vines", scene, rockMat)
+  const crystalMat = new StandardMaterial("paint-crystal", scene)
+  // acesos: sem luz, a cor por vértice inteira (o éter brilha no escuro da rocha)
+  crystalMat.disableLighting = true
+  crystalMat.diffuseColor = new Color3(1, 1, 1)
+  crystalMat.emissiveColor = new Color3(0, 0, 0)
+  const crystals = xg.build("paint-crystals", scene, crystalMat)
+  disposers.push(() => {
+    vines.dispose()
+    crystals.dispose()
+    crystalMat.dispose()
+  })
 
   // ── nuvens (embaixo e no horizonte) ──
   const cg = new GeoBuilder()

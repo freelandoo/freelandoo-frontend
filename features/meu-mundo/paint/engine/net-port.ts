@@ -50,6 +50,8 @@ interface SPlayer {
   dmg: number
   ko: number
   boss: boolean
+  /** Perdeu para o guardião (mm3d-62). */
+  out?: boolean
 }
 interface SBlob {
   c: number
@@ -279,6 +281,7 @@ export class NetPort implements PaintPort {
       mp.dmg = p.dmg
       mp.ko = p.ko
       mp.inBoss = p.boss
+      mp.out = !!p.out
       mp.online = p.online
       if (p.slot === this.me) continue
       mp.epoch = p.e
@@ -327,7 +330,7 @@ export class NetPort implements PaintPort {
         m.result = { winnerSlot: -1, winnerTeam: -1, rows: [] }
       }
       m.phase = "end"
-      this.queue.push({ type: "end", reason: m.bossHp <= 0 ? "boss" : "time" })
+      this.queue.push({ type: "end", reason: m.bossHp <= 0 ? "boss" : [...m.players.values()].every((p) => p.out || !p.online) ? "wiped" : "time" })
     }
   }
 
@@ -360,6 +363,11 @@ export class NetPort implements PaintPort {
           }
           this.samples.delete(e.slot)
           break
+        case "out": {
+          const mp = m.players.get(e.slot)
+          if (mp) mp.out = true
+          break
+        }
         case "deny":
           if (this.predicted.delete(-e.q)) m.takeBlob(-e.q)
           break

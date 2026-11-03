@@ -16,12 +16,16 @@ export const PAINT = {
   HARM: 1,
   /** Vermelho: cama elástica (mm3d-35e: quem pisa é lançado para cima). */
   STEP: 2,
-  /** Amarelo (holograma): muro em pé, de frente para a mira — barra quem passa e o tiro preto. */
+  /**
+   * Turquesa (mm3d-62, pedido do Alex): muro de gelatina em pé, igual à cama
+   * elástica vermelha — quem bate nele é EMPURRADO para trás. Jogado num
+   * adversário (de preferência no ar) ele voa longe.
+   */
   WALL: 3,
 } as const
 export type PaintColor = 0 | 1 | 2 | 3
 
-export const PAINT_COLORS = ["#FF7A1A", "#1A161D", "#E5222E", "#FFD21F"] as const
+export const PAINT_COLORS = ["#FF7A1A", "#1A161D", "#E5222E", "#16D6C4"] as const
 
 export const TUNING = {
   /** Passo fixo da física do corpo. */
@@ -48,9 +52,9 @@ export const TUNING = {
   coyote: 0.12,
 
   /** Munição por cor: começa, máximo, recarga da cápsula. */
-  ammoStart: 24,
-  ammoMax: 40,
-  capsuleGive: 20,
+  ammoStart: 45,
+  ammoMax: 90,
+  capsuleGive: 35,
   capsuleRespawn: 10,
   capsuleR: 1.1,
   /** Tiros por segundo segurando o botão (índice = cor). */
@@ -83,8 +87,17 @@ export const TUNING = {
   /** Tiros pretos do outro time até o muro cair. */
   wallHits: 3,
   wallStart: 0,
-  wallGive: 10,
-  wallMax: 20,
+  wallGive: 15,
+  wallMax: 30,
+  /**
+   * Empurrão do muro (mm3d-62): quem encosta sai para trás (horizontal) e um
+   * pouco para cima; o tiro do muro que pega o adversário em cheio empurra
+   * para longe de quem atirou (no ar quase não há controle: cai da ilha).
+   */
+  wallBounce: 11,
+  wallBounceLift: 5,
+  wallShove: 12.5,
+  wallShoveLift: 6,
   /** O ícone volta depois de (s). */
   logoRespawn: 18,
   /** Tinta some depois de (s) e cada jogador tem no máximo N manchas. */

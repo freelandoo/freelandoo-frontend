@@ -21,7 +21,8 @@
 //    no chão vira só respingo.
 //  - TURQUESA (muro): placa em pé atravessada na mira, no chão onde a mira
 //    bate (perto) ou logo à frente; mirando o topo de um muro, empilha. Barra
-//    o corpo e o tiro (é sólido como a ilha).
+//    o corpo e o tiro (é sólido como a ilha) e EMPURRA quem bate (mm3d-62).
+//    Pegou um adversário em cheio: nasce na frente dele e ele voa para trás.
 
 import { PAINT, TUNING, type PaintColor } from "./tuning"
 import { raycast, rayBody, supportAt } from "./collide"
@@ -67,6 +68,8 @@ export interface NewBlob {
 export type ShotResult =
   | { kind: "blob"; blob: NewBlob }
   | { kind: "player"; slot: number; point: Vec3 }
+  /** mm3d-62: o muro pegou um adversário em cheio — ele voa para longe e o muro nasce na frente dele. */
+  | { kind: "shove"; slot: number; point: Vec3; blob: NewBlob }
   | { kind: "boss"; point: Vec3 }
   | { kind: "erase"; blob: number; point: Vec3 }
   | { kind: "splat"; point: Vec3; normal: Vec3 }
@@ -142,6 +145,19 @@ export function resolveShot(world: ShotWorld, s: Shooter, c: PaintColor, o: Vec3
     }
     const a = Math.atan2(hx, hz)
     const hit = raycast(world.solids, o, d, T.range[PAINT.WALL])
+    // adversário na mira antes da parede/chão: o muro nasce colado na frente
+    // dele (do lado de quem atirou) e ele é empurrado para longe
+    let near: ShotResult | null = null
+    let nearT = hit ? hit.t : T.range[PAINT.WALL]
+    for (const b of world.bodies) {
+      if (b.slot === s.slot || b.team === s.team) continue
+      const t = rayBody(o, d, b, T.hitR, T.bodyH, nearT)
+      if (t === null || t >= nearT) continue
+      nearT = t
+      const back = T.bodyR + T.wallT / 2 + 0.08
+      near = { kind: "shove", slot: b.slot, point: { x: o.x + d.x * t, y: o.y + d.y * t, z: o.z + d.z * t }, blob: wallOf(b.x - hx * back, b.z - hz * back, b.y - 0.4, a) }
+    }
+    if (near) return near
     if (hit && hit.normal.y > 0.5) {
       const far = Math.hypot(hit.point.x - s.x, hit.point.z - s.z)
       if (far <= T.wallReach && far > T.bodyR + T.wallT) return { kind: "blob", blob: wallOf(hit.point.x, hit.point.z, hit.point.y, a) }

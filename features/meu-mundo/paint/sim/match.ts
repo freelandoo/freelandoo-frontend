@@ -17,6 +17,11 @@
 // Depois de um renascimento a época sobe: pose de época velha é ignorada (é
 // do caminho de antes do teleporte).
 //
+// mm3d-62 (pedido do Alex): o muro virou gelatina TURQUESA que empurra quem
+// bate; o tiro dele num adversário o joga longe (na ilha do guardião também).
+// Perder para o guardião (nocaute dele ou cair da ilha dele) tira a pessoa da
+// partida; ninguém mais de pé = fim ("wiped").
+//
 // mm3d-46: quarta cor, o MURO — começa sem munição, o ícone da Freelandoo
 // (cápsula da cor 3) dá 10; o tiro preto do outro time derruba o muro no
 // terceiro acerto. O mapa sai do modo (2×2 e 3×3 com mais gatinhos).
@@ -54,6 +59,11 @@ export interface MatchPlayer {
   /** Sem tomar dano até (s). */
   shield: number
   inBoss: boolean
+  /**
+   * mm3d-62 (regra do Alex): perdeu para o guardião (nocaute dele ou caiu da
+   * ilha dele) = acabou a partida para esta pessoa. Não volta mais.
+   */
+  out: boolean
   epoch: number
   pose: PaintPose
   /** Próximo tiro permitido por cor (s) e próximo soco. */
@@ -79,7 +89,7 @@ export type MatchEvent =
   | { type: "shot"; slot: number; c: PaintColor; o: Vec3; to: Vec3; q: number }
   | { type: "deny"; slot: number; q: number }
   /** `by` = -1 quando quem bateu foi o chefão. */
-  | { type: "hit"; slot: number; by: number; hp: number; kx: number; ky: number; kz: number; how: "harm" | "punch" | "boss" }
+  | { type: "hit"; slot: number; by: number; hp: number; kx: number; ky: number; kz: number; how: "harm" | "punch" | "boss" | "wall" }
   | { type: "ko"; slot: number; by: number }
   /** Caiu nas nuvens com gatinhos: eles voltam ao mapa (um `catBack` por gatinho). */
   | { type: "drop"; slot: number; n: number }
@@ -95,9 +105,12 @@ export type MatchEvent =
   | { type: "capsule"; id: number; slot: number; c: PaintColor }
   | { type: "capsuleBack"; id: number }
   | { type: "portal"; team: number }
-  | { type: "boss"; slot: number; dmg: number; hp: number }
+  /** Dano no chefão; `x/y/z` = onde acertou (o clarão de luz nasce ali). */
+  | { type: "boss"; slot: number; dmg: number; hp: number; x: number; y: number; z: number }
+  /** Perdeu para o guardião: fora da partida (mm3d-62). */
+  | { type: "out"; slot: number; why: "boss" | "fell" }
   | { type: "punch"; slot: number }
-  | { type: "end"; reason: "boss" | "time" }
+  | { type: "end"; reason: "boss" | "time" | "wiped" }
 
 export interface MatchResult {
   /** Quem deu mais dano no chefão (-1 = ninguém deu dano). */
@@ -198,6 +211,7 @@ export class PaintMatch {
         ko: 0,
         shield: 0,
         inBoss: false,
+        out: false,
         epoch: 0,
         pose: { x: sp.x, y: sp.y, z: sp.z, facing: sp.facing, ground: true, gy: sp.y, e: 0 },
         nextFire: [0, 0, 0, 0],
@@ -237,7 +251,7 @@ export class PaintMatch {
   }
 
   private standing(p: MatchPlayer) {
-    return this.phase === "play" && !p.ko
+    return this.phase === "play" && !p.ko && !p.out
   }
 
   /** Corpos alvo (de pé, na arena). Na ilha do chefão jogador não atinge jogador. */
@@ -245,7 +259,17 @@ export class PaintMatch {
     const out: ShotTargetBody[] = []
     if (inBoss) return out
     for (const p of this.players.values()) {
-      if (p.ko || p.inBoss !== inBoss || !p.online) continue
+      if (p.ko || p.out || p.inBoss !== inBoss || !p.online) continue
+      out.push({ slot: p.slot, team: p.team, x: p.pose.x, y: p.pose.y, z: p.pose.z })
+    }
+    return out
+  }
+
+  /** Quem o muro pode empurrar: de pé, no mesmo lugar (na ilha do guardião também — mm3d-62). */
+  private shoveBodies(inBoss: boolean): ShotTargetBody[] {
+    const out: ShotTargetBody[] = []
+    for (const p of this.players.values()) {
+      if (p.ko || p.out || p.inBoss !== inBoss || !p.online) continue
       out.push({ slot: p.slot, team: p.team, x: p.pose.x, y: p.pose.y, z: p.pose.z })
     }
     return out
@@ -297,14 +321,14 @@ export class PaintMatch {
     p.ammo[c] -= cost
     p.nextFire[c] = Math.max(p.nextFire[c], this.time) + 1 / TUNING.fireRate[c]
     const res = resolveShot(
-      { solids: this.solids(), bodies: this.bodies(p.inBoss), boss: p.inBoss && this.bossAlive() ? this.bossBody() : null },
+      { solids: this.solids(), bodies: c === PAINT.WALL ? this.shoveBodies(p.inBoss) : this.bodies(p.inBoss), boss: p.inBoss && this.bossAlive() ? this.bossBody() : null },
       { slot, team: p.team, x: p.pose.x, y: p.pose.y, z: p.pose.z, ground: p.pose.ground, gy: p.pose.gy, facing: p.pose.facing },
       c,
       o,
       dir,
     )
     let to: Vec3 = { x: o.x + dir.x * 6, y: o.y + dir.y * 6, z: o.z + dir.z * 6 }
-    if (res.kind === "blob") {
+    if (res.kind === "blob" || res.kind === "shove") {
       const id = this.blobSeq++
       const solid = blobSolid(res.blob, id, p.team)
       this.blobs.set(id, { id, owner: slot, team: p.team, born: this.time, solid, blob: res.blob })
@@ -313,6 +337,11 @@ export class PaintMatch {
       while (p.blobs.length > TUNING.blobsPerPlayer) this.removeBlob(p.blobs[0])
       to = { x: res.blob.x, y: res.blob.y1, z: res.blob.z }
       this.emit({ type: "blob", id, owner: slot, team: p.team, blob: res.blob, q })
+      if (res.kind === "shove") {
+        to = res.point
+        const l = Math.hypot(dir.x, dir.z) || 1
+        this.shove(res.slot, dir.x / l, dir.z / l, slot)
+      }
     } else {
       if (q) this.emit({ type: "deny", slot, q }) // não virou tinta: o aparelho apaga a prevista, se houver
       if (res.kind === "player") {
@@ -320,7 +349,7 @@ export class PaintMatch {
         this.damage(res.slot, slot, "harm")
       } else if (res.kind === "boss") {
         to = res.point
-        this.hitBoss(slot, TUNING.bossHarm)
+        this.hitBoss(slot, TUNING.bossHarm, res.point)
       } else if (res.kind === "erase") {
         to = res.point
         const wall = this.blobs.get(res.blob)
@@ -350,7 +379,14 @@ export class PaintMatch {
     this.emit({ type: "punch", slot })
     const a = { slot, team: p.team, x: p.pose.x, y: p.pose.y, z: p.pose.z, facing: p.pose.facing }
     for (const t of punchTargets(a, this.bodies(p.inBoss))) this.damage(t.slot, slot, "punch", t.kx, t.kz)
-    if (p.inBoss && this.bossAlive() && punchReachesBoss(a, this.bossBody())) this.hitBoss(slot, TUNING.bossPunch)
+    if (p.inBoss && this.bossAlive() && punchReachesBoss(a, this.bossBody())) {
+      // o clarão nasce na pele do chefão, do lado de quem bateu
+      const b = this.boss
+      const dx = p.pose.x - b.x
+      const dz = p.pose.z - b.z
+      const d = Math.hypot(dx, dz) || 1
+      this.hitBoss(slot, TUNING.bossPunch, { x: b.x + (dx / d) * TUNING.bossR, y: p.pose.y + 1.3, z: b.z + (dz / d) * TUNING.bossR })
+    }
   }
 
   private damage(slot: number, by: number, how: "harm" | "punch", kx = 0, kz = 0) {
@@ -373,15 +409,36 @@ export class PaintMatch {
     }
   }
 
-  /** Golpe do chefão: lá em cima ninguém perde gatinho, só cai e volta. */
+  /**
+   * O muro pegou `slot` em cheio (mm3d-62): sem dano, voa na direção do tiro.
+   * Vale na ilha do guardião também — jogar o outro para cima dele é o jogo.
+   */
+  private shove(slot: number, ux: number, uz: number, by: number) {
+    const v = this.players.get(slot)
+    if (!v || v.ko || v.out) return
+    const T = TUNING
+    this.emit({ type: "hit", slot, by, hp: v.hp, kx: ux * T.wallShove, ky: T.wallShoveLift, kz: uz * T.wallShove, how: "wall" })
+  }
+
+  /** Golpe do chefão: lá em cima ninguém perde gatinho; nocaute dele = fora da partida (mm3d-62). */
   private bossDamage(v: MatchPlayer, dmg: number, kx: number, ky: number, kz: number) {
-    if (v.ko || this.time < v.shield) return
+    if (v.ko || v.out || this.time < v.shield) return
     v.hp = Math.max(0, v.hp - dmg)
     this.emit({ type: "hit", slot: v.slot, by: -1, hp: v.hp, kx, ky, kz, how: "boss" })
     if (v.hp === 0) {
       v.ko = this.time + TUNING.koTime
       this.emit({ type: "ko", slot: v.slot, by: -1 })
+      this.eliminate(v, "boss")
     }
+  }
+
+  /** Perdeu para o guardião: fora; se não sobrou ninguém de pé, a partida acaba. */
+  private eliminate(v: MatchPlayer, why: "boss" | "fell") {
+    if (v.out) return
+    v.out = true
+    this.emit({ type: "out", slot: v.slot, why })
+    for (const p of this.players.values()) if (p.online && !p.out) return
+    this.finish("wiped")
   }
 
   /**
@@ -405,13 +462,14 @@ export class PaintMatch {
     }
   }
 
-  private hitBoss(slot: number, dmg: number) {
+  private hitBoss(slot: number, dmg: number, at: Vec3) {
     const p = this.players.get(slot)
     if (!p || !this.bossAlive()) return
     const real = Math.min(dmg, this.bossHp)
     this.bossHp -= real
     p.dmg += real
-    this.emit({ type: "boss", slot, dmg: real, hp: this.bossHp })
+    const r2 = (v: number) => Math.round(v * 100) / 100
+    this.emit({ type: "boss", slot, dmg: real, hp: this.bossHp, x: r2(at.x), y: r2(at.y), z: r2(at.z) })
     if (!this.bossAlive()) this.finish("boss")
   }
 
@@ -441,7 +499,7 @@ export class PaintMatch {
   /** Quem está lá em cima e pode apanhar. */
   private bossVictims() {
     const out: MatchPlayer[] = []
-    for (const p of this.players.values()) if (p.inBoss && !p.ko && p.online) out.push(p)
+    for (const p of this.players.values()) if (p.inBoss && !p.ko && !p.out && p.online) out.push(p)
     return out
   }
 
@@ -605,12 +663,19 @@ export class PaintMatch {
       }
     }
     for (const p of this.players.values()) {
+      if (p.out) continue
       if (p.ko) {
         if (this.time >= p.ko) this.respawn(p)
         continue
       }
       const q = p.pose
       if (fellOut(q.y, p.inBoss)) {
+        // caiu da ilha do guardião: perdeu para ele (mm3d-62)
+        if (p.inBoss) {
+          this.eliminate(p, "fell")
+          if (this.result) return // era o último de pé: acabou
+          continue
+        }
         this.dropCats(p)
         this.respawn(p)
         continue
@@ -650,7 +715,7 @@ export class PaintMatch {
     if (this.time >= T.matchTime) this.finish("time")
   }
 
-  finish(reason: "boss" | "time") {
+  finish(reason: "boss" | "time" | "wiped") {
     if (this.phase === "end") return
     this.phase = "end"
     const rows = [...this.players.values()].map((p) => ({ slot: p.slot, team: p.team, dmg: p.dmg, cats: p.cats }))

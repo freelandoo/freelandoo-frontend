@@ -9611,7 +9611,18 @@
     "mapTitleBairro": "Neighborhood Map",
     "mapYouAreHere": "You are here",
     "mapMyHouse": "My house",
-    "mapPlaza": "Aurion Square"
+    "mapPlaza": "Aurion Square",
+    "paintHowWallJelly": "Jelly wall: whoever hits it gets bounced back. Throw it at a rival mid-jump! Freelandoo icon: +{n}.",
+    "paintHowGoalGuardian": "20 kittens from your team open the portal at the top. On the Guardian's island the most damage wins — lose to it (or fall off), and the match is over for you.",
+    "paintToastShoved": "Jelly hit! Sent flying",
+    "paintToastOutFell": "Fell off the Guardian's island — match over for you",
+    "paintToastOutBoss": "The Guardian beat you — match over",
+    "paintToastGuardian": "Guardian's island: black paint and punches on it — and walls on the others!",
+    "paintGuardian": "Guardian",
+    "paintGuardianName": "GUARDIAN",
+    "paintOut": "Out of the match",
+    "paintOutWatching": "Watching · {n} still standing",
+    "paintSoloOut": "The Guardian won"
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -76,7 +76,15 @@ export function supportIndex(solids: readonly Solid[], x: number, z: number, max
  * ele não consegue subir (topo acima de `y + up`). Mexe em `p` e devolve se
  * encostou em algo.
  */
-export function pushOut(solids: readonly Solid[], p: { x: number; y: number; z: number }, r: number, h: number, up: number) {
+export function pushOut(
+  solids: readonly Solid[],
+  p: { x: number; y: number; z: number },
+  r: number,
+  h: number,
+  up: number,
+  /** mm3d-62: encostou num muro de tinta → para onde ele empurrou (unitário) e o id da mancha. */
+  wall?: { nx: number; nz: number; b: number },
+) {
   let hit = false
   for (let pass = 0; pass < 2; pass++) {
     for (const s of solids) {
@@ -104,6 +112,12 @@ export function pushOut(solids: readonly Solid[], p: { x: number; y: number; z: 
         p.x += w.x
         p.z += w.z
         hit = true
+        if (wall && s.b !== undefined) {
+          const wl = Math.hypot(w.x, w.z) || 1
+          wall.nx = w.x / wl
+          wall.nz = w.z / wl
+          wall.b = s.b
+        }
       } else {
         const ox = s.hx + r - Math.abs(p.x - s.x)
         const oz = s.hz + r - Math.abs(p.z - s.z)

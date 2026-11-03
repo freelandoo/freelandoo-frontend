@@ -21,6 +21,9 @@ import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import { FightPlate, usePlateSize } from "../../ui/hud/fight-plate"
 import { PORTRAIT } from "../../ui/portraits"
+
+/** Retrato do Guardião (o gato-gorila de porcelana, renderizado do modelo — mm3d-62). */
+const GUARDIAN_PORTRAIT = "/meu-mundo/paint/v1/guardiao.webp"
 import { createPaintGame, type PaintGameHandle, type PaintHud, type PaintNotice } from "../engine/paint-game"
 import { LocalPort, type PaintPort } from "../engine/port"
 import { CAT_ASSETS } from "../engine/cat-herd"
@@ -174,13 +177,13 @@ function PaintMenu({
                     ? t("paintHowHarm", "Tira sangue do outro time e apaga a tinta dele.")
                     : c === 2
                       ? t("paintHowStep", "Atire no chão (ou no pé, pulando): pise nela e seja lançado para cima.")
-                      : t("paintHowWall", "Levanta um muro onde a mira bate: barra quem passa e o tiro preto. Pegue o ícone da Freelandoo: +10.")}
+                      : t("paintHowWallJelly", "Muro de gelatina: quem bate nele voa para trás. Jogue no adversário quando ele pular! Ícone da Freelandoo: +{n}.").replace("{n}", String(TUNING.wallGive))}
               </span>
             </li>
           ))}
         </ul>
         <p className="mt-2 text-[12.5px] leading-snug" style={{ color: MM.muted }}>
-          {t("paintHowGoal", "20 gatinhos do seu time abrem o portal no topo. Na ilha do chefão, vence quem der mais dano.")}
+          {t("paintHowGoalGuardian", "20 gatinhos do seu time abrem o portal no topo. Na ilha do Guardião vence quem der mais dano — perdeu para ele (ou caiu de lá), acabou a partida para você.")}
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -249,10 +252,10 @@ function Bubble({ c, size, ring }: { c: PaintColor; size: number; ring?: boolean
       }}
     >
       {c === PAINT.WALL && (
-        // o muro: um tijolinho de hexágono por cima da bolha
-        <svg viewBox="0 0 24 24" className="absolute inset-[22%]" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="2.4" strokeLinejoin="round">
-          <path d="M12 2.8 20 7.4v9.2L12 21.2 4 16.6V7.4Z" />
-          <path d="M4 12h16M12 7.4v4.6M8 12v4.6M16 12v4.6" />
+        // o muro (mm3d-62): placa de gelatina em pé e a seta de quem é empurrado
+        <svg viewBox="0 0 24 24" className="absolute inset-[20%]" fill="none" stroke="rgba(255,255,255,0.95)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="14.5" y="3" width="6.5" height="18" rx="3.2" fill="rgba(255,255,255,0.95)" />
+          <path d="M10 12H3M6 8.5 2.8 12 6 15.5" />
         </svg>
       )}
     </span>
@@ -322,6 +325,12 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
             "bad",
           )
           break
+        case "shoved":
+          say(tt("paintToastShoved", "Na gelatina! Voou longe"), "gold")
+          break
+        case "out":
+          say(n.why === "fell" ? tt("paintToastOutFell", "Caiu da ilha do Guardião — fim da partida para você") : tt("paintToastOutBoss", "O Guardião venceu você — fim da partida"), "bad")
+          break
         case "hurt":
           setHurt((h) => h + 1)
           try {
@@ -337,7 +346,7 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
           say(n.mine ? tt("paintToastPortalMine", "Portal aberto! Suba ao topo da sua torre") : tt("paintToastPortalOther", "O outro time abriu o portal!"), n.mine ? "gold" : "bad")
           break
         case "enterBoss":
-          say(tt("paintToastBoss", "Ilha do chefão: dano com vermelho e soco!"), "gold")
+          say(tt("paintToastGuardian", "Ilha do Guardião: preto e soco nele — e muro nos outros!"), "gold")
           break
         case "steal":
           say(
@@ -503,10 +512,9 @@ function Hud({ hud, touch, hurt, body, onLeave }: { hud: PaintHud; touch: boolea
           </span>
         )}
         {hud.inBoss && (
-          <div className="w-[min(320px,60vw)]">
-            <div className="h-3 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,0.25)" }}>
-              <div className="h-full rounded-full" style={{ width: `${(hud.bossHp / TUNING.bossHp) * 100}%`, background: "linear-gradient(90deg, #9E1B2B, #E0284A)" }} />
-            </div>
+          // mm3d-62 (pedido do Alex): o sangue do Guardião na MESMA placa de todo mundo, com o retrato dele
+          <div className="flex flex-col items-center" role="meter" aria-label={t("paintGuardian", "Guardião")} aria-valuemin={0} aria-valuemax={TUNING.bossHp} aria-valuenow={hud.bossHp}>
+            <FightPlate pw={Math.max(48, Math.round(pw * 0.78))} barK={2.6} mirrored portrait={GUARDIAN_PORTRAIT} name={t("paintGuardianName", "GUARDIÃO")} hp={hud.bossHp} hpMax={TUNING.bossHp} />
             <div className="mt-1 text-center text-[12px] font-bold" style={{ color: "#3b3127" }}>
               {t("paintYourDamage", "Seu dano: {n}").replace("{n}", String(hud.dmg))}
             </div>
@@ -542,6 +550,20 @@ function Hud({ hud, touch, hurt, body, onLeave }: { hud: PaintHud; touch: boolea
           <span className="text-[96px] font-black leading-none text-white" style={{ textShadow: "0 6px 24px rgba(0,0,0,0.35)" }}>
             {Math.ceil(hud.countdown) || t("paintGo", "VAI!")}
           </span>
+        </div>
+      )}
+
+      {/* perdeu para o Guardião (mm3d-62): fora da partida, assistindo */}
+      {hud.out && hud.phase === "play" && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center" style={{ background: "rgba(20, 10, 30, 0.35)" }}>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <span className="rounded-full px-5 py-2.5 text-[18px] font-black text-white" style={{ background: "rgba(80, 18, 60, 0.92)" }}>
+              {t("paintOut", "Fora da partida")}
+            </span>
+            <span className="rounded-full px-3 py-1 text-[13px] font-bold text-white" style={{ background: "rgba(0,0,0,0.45)" }}>
+              {t("paintOutWatching", "Assistindo · {n} ainda de pé").replace("{n}", String(hud.alive))}
+            </span>
+          </div>
         </div>
       )}
 
@@ -683,7 +705,9 @@ function Results({ hud, port, onAgain }: { hud: PaintHud; port: PaintPort; onAga
           {port.mode === "solo"
             ? hud.bossHp <= 0
               ? t("paintSoloBossDown", "Chefão derrotado!")
-              : t("paintSoloTime", "Tempo esgotado")
+              : hud.out
+                ? t("paintSoloOut", "O Guardião venceu")
+                : t("paintSoloTime", "Tempo esgotado")
             : won
               ? t("paintWin", "Vitória!")
               : r.winnerTeam < 0

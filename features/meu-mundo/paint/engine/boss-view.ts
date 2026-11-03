@@ -10,6 +10,7 @@ import type { Scene } from "@babylonjs/core/scene"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { AnimationGroup } from "@babylonjs/core/Animations/animationGroup"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { ensureLoaders } from "../../engine/avatars"
 import type { BossAct, BossState } from "../sim/match"
 import { CAT_ASSETS } from "./cat-herd"
@@ -43,6 +44,8 @@ export class BossView {
   private loopAct: BossAct = "idle"
   private loopSince = 0
   private clock = 0
+  /** Antebraço e mão de cada lado (o arco de luz do golpe sai das garras — mm3d-62). */
+  private arms: { fore: TransformNode; hand: TransformNode }[] = []
 
   constructor(private readonly scene: Scene, y: number) {
     ensureLoaders()
@@ -64,6 +67,12 @@ export class BossView {
       for (const m of c.meshes) {
         m.isPickable = false
         m.alwaysSelectAsActiveMesh = true // o boss é grande e se mexe muito: sem recorte pela caixa de repouso
+      }
+      const node = (n: string) => c.transformNodes.find((t) => t.name === n) ?? null
+      for (const side of ["Left", "Right"]) {
+        const fore = node(`mixamorig:${side}ForeArm`)
+        const hand = node(`mixamorig:${side}Hand`)
+        if (fore && hand) this.arms.push({ fore, hand })
       }
       for (const g of c.animationGroups) {
         g.stop()
@@ -133,6 +142,20 @@ export class BossView {
       return
     }
     this.play(CLIP[b.act], `${b.act}@${b.at.toFixed(3)}`, Math.max(0, time - b.at))
+  }
+
+  /**
+   * Garra `side` (0 esquerda, 1 direita) em coordenadas do mundo: [punho, ponta
+   * das garras] — o arco de luz do golpe é a fita entre os dois. null = ainda
+   * carregando ou escondido.
+   */
+  claw(side: number): [Vector3, Vector3] | null {
+    const a = this.arms[side]
+    if (!a || !this.root.isEnabled()) return null
+    const f = a.fore.getAbsolutePosition()
+    const h = a.hand.getAbsolutePosition()
+    const tip = h.add(h.subtract(f).scale(0.9))
+    return [h.clone(), tip]
   }
 
   dispose() {
