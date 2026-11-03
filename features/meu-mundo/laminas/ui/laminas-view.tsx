@@ -25,7 +25,7 @@ import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import { FightPlate, plateHeight, plateWidth, usePlateSize } from "../../ui/hud/fight-plate"
-import { PORTRAIT } from "../../ui/portraits"
+import { PORTRAIT, WOLF_PORTRAIT } from "../../ui/portraits"
 import type { BodyId } from "../../types"
 import { finishFight, getLife, startFight, type FightOrigin, type FightTicket, type Receipt } from "../../data"
 import { getToken } from "@/lib/auth"
@@ -65,7 +65,7 @@ const BG = "radial-gradient(120% 90% at 50% 0%, #f7b267 0%, #b5502b 50%, #3a1a12
 type Choice = { kind: MobKind; level: number }
 
 /** Retrato do inimigo na placa: o corpo que a cena desenha (monster-view.ts RIGGED/HUMAN). */
-const MOB_BODY: Partial<Record<MobKind, BodyId>> = { soldier: "golem", golem: "ciborgue", harpy: "garras" }
+const MOB_BODY: Partial<Record<MobKind, BodyId>> = { soldier: "golem", golem: "ciborgue", harpy: "garras", brute: "brutamontes" }
 const RING_BODY: Record<MobKind, BodyId> = { soldier: "normal", wolf: "slim", golem: "fat", harpy: "female", brute: "strong" }
 
 export function useMobName(ring = false) {
@@ -370,7 +370,7 @@ function LaminasScreen({
           <FightPlate
             pw={pw}
             mirrored
-            portrait={foeBody ? PORTRAIT[foeBody] : null}
+            portrait={foeBody ? PORTRAIT[foeBody] : stage !== "ring" && choice.kind === "wolf" ? WOLF_PORTRAIT : null}
             name={
               portal && ticket && ticket !== "offline"
                 ? `${mobName(choice.kind)} · ${t("laminasFoeLevel", "Nv. {n}").replace("{n}", String(ticket.setup.level))}`

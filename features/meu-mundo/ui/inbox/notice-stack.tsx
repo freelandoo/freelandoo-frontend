@@ -5,6 +5,8 @@
 // (needs-logic.ts decide QUANDO falar de cada necessidade); soma os avisos que
 // o servidor empurra pela sala ("notice": presente, comunicado, recibo, vida).
 //
+// 2026-11-03: cada card é a NOTIFICAÇÃO EMOCIONAL (emotion-frame.tsx, moldura
+// da referência do Alex) com o personagem na emoção do aviso (6 emoções).
 // Cada card: retrato (expressão do personagem padrão, retrato da skin, ou a
 // identidade da plataforma em comunicados), mensagem, ação e fechar. Entra
 // descendo, fica 15 s (a barra encolhe; pausa com o ponteiro em cima ou foco
@@ -13,29 +15,29 @@
 // Não bloqueia o jogo: só o card recebe toque (pointer-events).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Gift, Megaphone, MessageCircle, ReceiptText, Tag, X } from "lucide-react"
+import { Gift, Megaphone, MessageCircle, ReceiptText, Tag } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId, LifeNeed, MMNotice } from "../../types"
 import { archivo } from "../status/evo-skin"
 import { MM } from "../hud/tokens"
 import { DRAWER_EVENT } from "../hud/hud-kit"
-import { expressionSrc } from "../portraits"
+import { emotionArt } from "../portraits"
+import { EmotionFrame } from "./emotion-frame"
 import { freshNeedsMemory, pickNeed, type NeedLine } from "../needs/needs-logic"
 import {
   CARD_MS,
-  NEED_EXPRESSION,
+  NEED_EMOTION,
   dismiss,
   emptyQueue,
   enqueue,
   needTitle,
-  noticeExpression,
+  noticeEmotion,
   noticeText,
   promote,
   speaksAsCharacter,
   type Card,
   type Queue,
 } from "./inbox-logic"
-import s from "../hud/hud.module.css"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -164,7 +166,7 @@ function NoticeCard({
   const left = useRef(CARD_MS)
   const leave = useCallback(() => {
     setLeaving(true)
-    window.setTimeout(onClose, 180)
+    window.setTimeout(onClose, 300)
   }, [onClose])
   useEffect(() => {
     if (hold || leaving) return
@@ -180,20 +182,20 @@ function NoticeCard({
   const urgent = card.priority <= 1
   let title: string
   let extra: string | null = null
-  let img: string | null = null
+  let art: { src: string; cutout: boolean } | null = null
   let badge: React.ReactNode = null
   let action: { label: string; run: () => void } | null = null
   if (card.need) {
     const l = needLines(card.need, t)
     title = l.main
     extra = l.extra
-    img = expressionSrc(body, NEED_EXPRESSION[card.need.ids[0]])
+    art = emotionArt(body, NEED_EMOTION[card.need.ids[0]])
     action = { label: t("needOpenStatus", "Ver status"), run: onOpenStatus }
   } else if (n) {
     const txt = noticeText(n, t)
     title = txt.title
     extra = txt.line
-    if (speaksAsCharacter(n)) img = expressionSrc(body, noticeExpression(n))
+    if (speaksAsCharacter(n)) art = emotionArt(body, noticeEmotion(n))
     badge = n.kind === "gift" ? <Gift className="h-4 w-4" /> : n.kind === "purchase" ? <ReceiptText className="h-4 w-4" /> : n.kind === "dm" ? <MessageCircle className="h-4 w-4" /> : null
     action =
       n.kind === "life"
@@ -213,8 +215,8 @@ function NoticeCard({
 
   return (
     <div
-      className={`${archivo.className} ${leaving ? s.leaveTop : s.enterTop} pointer-events-auto relative flex w-[min(92vw,420px)] items-start gap-3 overflow-hidden p-3 pr-1.5 max-[759px]:w-[min(92vw,360px)] max-[759px]:gap-2.5 max-[759px]:p-2 max-[759px]:pr-1`}
-      style={{ borderRadius: MM.radius.panel, background: MM.surface, border: `1px solid ${urgent ? MM.rubyBorder : MM.border}`, boxShadow: MM.shadow }}
+      // só a ação e o fechar recebem toque: o resto da moldura não tampa o jogo
+      className={`${archivo.className} pointer-events-none`}
       role={urgent ? "alert" : "status"}
       onPointerEnter={() => setHold(true)}
       onPointerLeave={() => setHold(false)}
@@ -223,63 +225,29 @@ function NoticeCard({
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHold(false)
       }}
     >
-      <div className="relative shrink-0">
-        {img ? (
-          // eslint-disable-next-line @next/next/no-img-element -- retrato pequeno e estático, mesmo arquivo em todo o jogo (cache)
-          <img
-            src={img}
-            alt=""
-            width={56}
-            height={56}
-            decoding="async"
-            className="h-14 w-14 rounded-full object-cover max-[759px]:h-11 max-[759px]:w-11"
-            style={{ boxShadow: `0 0 0 2px ${MM.ruby}`, background: "radial-gradient(circle at 50% 35%, #3a2a30 0%, #1a1d24 70%)" }}
-          />
-        ) : (
-          <PlatformMark kind={n?.kind} />
-        )}
-        {badge && (
-          <span
-            className="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full max-[759px]:h-5 max-[759px]:w-5"
-            style={{ background: MM.drawer, color: MM.gold, border: `1px solid ${MM.border}` }}
-            aria-hidden
-          >
-            {badge}
-          </span>
-        )}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-0.5">
-        <p className="text-[15px] font-semibold leading-5 max-[759px]:text-[14px] max-[759px]:leading-[18px]" style={{ color: MM.text }}>
-          {title}
-        </p>
-        {extra && (
-          <p className="line-clamp-2 text-[13px] leading-[18px] max-[759px]:text-[12px] max-[759px]:leading-4" style={{ color: MM.muted }}>
-            {extra}
-          </p>
-        )}
-        {action && (
-          <button
-            type="button"
-            onClick={() => {
-              action.run()
-              leave()
-            }}
-            className="mt-0.5 self-start py-1 text-[13px] font-semibold underline decoration-1 underline-offset-[3px] max-[759px]:text-[12px]"
-            style={{ color: MM.gold }}
-          >
-            {action.label}
-          </button>
-        )}
-      </div>
-      <button type="button" onClick={leave} className="-my-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none" style={{ color: MM.muted }} aria-label={t("close", "Fechar")}>
-        <X className="h-4 w-4" />
-      </button>
-      {/* tempo restante (decorativo): encolhe por transform e para junto com o relógio */}
-      <span
-        aria-hidden
-        className={`${s.timer} absolute inset-x-3 bottom-0 h-[2px] rounded-full`}
-        data-paused={hold || undefined}
-        style={{ background: urgent ? MM.ruby : MM.goldBorder, animationDuration: `${CARD_MS}ms` }}
+      <EmotionFrame
+        message={title}
+        extra={extra}
+        art={art}
+        mark={art ? null : <PlatformMark kind={n?.kind} size={52} />}
+        badge={badge}
+        urgent={urgent}
+        leaving={leaving}
+        timerMs={CARD_MS}
+        paused={hold}
+        closeLabel={t("close", "Fechar")}
+        onClose={leave}
+        action={
+          action
+            ? {
+                label: action.label,
+                run: () => {
+                  action.run()
+                  leave()
+                },
+              }
+            : null
+        }
       />
     </div>
   )

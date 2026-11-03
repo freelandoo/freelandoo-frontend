@@ -13,6 +13,17 @@ import { byGod, isGod } from "../gods"
 import { byClanBody, isClanBody } from "../classes"
 
 const V2 = "/meu-mundo/retratos/v2"
+/**
+ * 2026-11-03: as fotos de perfil novas do Alex ("laminas de emoções/PERFIL"),
+ * recortadas por pipeline/build_emotions.py — valem para todo lugar que mostra
+ * o retrato (STATUS, placa de luta, HUD, escolha da classe) e o rosto.
+ */
+const V3 = "/meu-mundo/retratos/v3"
+const V3_BODIES = ["garras", "raposa_f", "vampiro_adulto", "cavaleiro", "vampira", "vampira_adulta", "maru", "morkhan", "zephyra", "golem", "iris", "vampiro", "kragor", "aeryn", "brutamontes", "aurion", "noctis", "raposa_adulta", "raposa", "raposa_adulto", "ciborgue"] as const
+const v3Portraits = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}.webp`])) as Record<(typeof V3_BODIES)[number], string>
+const v3Faces = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}-rosto.webp`])) as Record<(typeof V3_BODIES)[number], string>
+/** O Lobo (monstro da luta, sem corpo de jogador). */
+export const WOLF_PORTRAIT = `${V3}/lobo.webp`
 const STANDARD = `${V2}/padrao.webp`
 const STANDARD_FACE = `${V2}/padrao-rosto.webp`
 // A personagem feminina (mm3d-30): retrato e expressões próprios, mesmo fundo.
@@ -36,8 +47,8 @@ export const PORTRAIT: Record<BodyId, string> = {
   // mm3d-58: classes — retrato PROVISÓRIO renderizado do modelo (como os deuses).
   // 2026-11-01: refeitos (modelos novos, rosto e cabelo com mais detalhe).
   ...byClanBody((b) => `${V2}/classe-${b}_m58e.webp`),
-  // monstro (não aparece em card de jogador): o retrato do Golem
-  brutamontes: `${V2}/deus-golem.webp`,
+  // brutamontes (monstro e skin de admin): a foto nova vem no v3
+  ...v3Portraits,
 }
 
 /** Recorte do rosto para círculos (avatar, notificação). */
@@ -51,13 +62,13 @@ const FACE: Record<BodyId, string> = {
   ekaterina: EKATERINA_FACE,
   ...byGod((g) => `${V2}/deus-${g}-rosto.webp`),
   ...byClanBody((b) => `${V2}/classe-${b}_m58e-rosto.webp`),
-  brutamontes: `${V2}/deus-golem-rosto.webp`,
+  ...v3Faces,
 }
 
 export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "normal"] ?? STANDARD_FACE
 
 /** Para quem só tem a URL do retrato 4:5 (Portrait redondo do STATUS). */
-export const faceForPortrait = (src: string) => (src === STANDARD ? STANDARD_FACE : src === FEMALE ? FEMALE_FACE : src === EKATERINA ? EKATERINA_FACE : src === PORTRAIT.sergio ? FACE.sergio : src.replace(/\/(deus|classe)-([a-z0-9_]+)\.webp$/, "/$1-$2-rosto.webp"))
+export const faceForPortrait = (src: string) => (src === STANDARD ? STANDARD_FACE : src === FEMALE ? FEMALE_FACE : src === EKATERINA ? EKATERINA_FACE : src === PORTRAIT.sergio ? FACE.sergio : src.startsWith(`${V3}/`) ? src.replace(/\.webp$/, "-rosto.webp") : src.replace(/\/(deus|classe)-([a-z0-9_]+)\.webp$/, "/$1-$2-rosto.webp"))
 
 export type Expression =
   | "worried"
@@ -82,4 +93,64 @@ export function expressionSrc(body: BodyId | null | undefined, e: Expression | n
   // Deuses ainda sem folha de expressões: o rosto.
   if (isGod(body) || isClanBody(body)) return faceOf(body)
   return `${V2}/expr-${e}.webp`
+}
+
+// ═══ EMOÇÕES (2026-11-03, pedido do Alex: "agora serão apenas 6") ═══════════
+// Raiva, triste, feliz, doente, cansado e amando. As lâminas do Alex viraram
+// recortes de meio corpo SEM fundo (pipeline/build_emotions.py →
+// retratos/v3/emo/<corpo>-<emoção>.webp) — a notificação mostra o personagem
+// saindo da moldura. Quem ainda não tem a lâmina usa a expressão antiga mais
+// perto (padrão, feminina, Sergio, Ekaterina) ou o rosto.
+export type Emotion = "happy" | "sad" | "loving" | "angry" | "tired" | "sick"
+export const EMOTIONS: Emotion[] = ["happy", "sad", "loving", "angry", "tired", "sick"]
+
+const ALL6: Emotion[] = EMOTIONS
+/** Quais lâminas existem (o mesmo que retratos/v3/emo/manifest.json). */
+const EMOTION_ART: Partial<Record<BodyId, Emotion[]>> = {
+  aeryn: ALL6,
+  aurion: ALL6,
+  cavaleiro: ALL6,
+  ciborgue: ALL6,
+  garras: ALL6,
+  golem: ALL6,
+  iris: ALL6,
+  kragor: ALL6,
+  maru: ALL6,
+  morkhan: ["angry", "tired", "sick"],
+  noctis: ALL6,
+  raposa: ALL6,
+  vampira: ALL6,
+  vampira_adulta: ALL6,
+  vampiro: ALL6,
+  zephyra: ALL6,
+}
+
+/** A expressão antiga (folha de 12) mais perto de cada emoção. */
+const LEGACY: Record<Emotion, Expression> = { happy: "happy", sad: "crying", loving: "grateful", angry: "stressed", tired: "exhausted", sick: "fever" }
+
+/** As 12 expressões antigas caem nas 6 emoções (avisos que ainda falam em Expression). */
+export const EMOTION_OF: Record<Expression, Emotion> = {
+  worried: "sad",
+  fever: "sick",
+  happy: "happy",
+  satisfied: "happy",
+  grateful: "loving",
+  sleepy: "tired",
+  exhausted: "tired",
+  stressed: "angry",
+  thirsty: "sad",
+  nauseous: "sick",
+  crying: "sad",
+  determined: "happy",
+}
+
+/**
+ * A imagem da emoção: `cutout` = meio corpo sem fundo (sai da moldura);
+ * senão é um retrato quadrado (fica dentro da moldura).
+ */
+export function emotionArt(body: BodyId | null | undefined, e: Emotion | null): { src: string; cutout: boolean } {
+  const b = body ?? "normal"
+  if (e && EMOTION_ART[b]?.includes(e)) return { src: `${V3}/emo/${b}-${e}.webp`, cutout: true }
+  if (e && (b === "sergio" || b === "female" || b === "ekaterina" || b === "normal" || b === "slim" || b === "fat" || b === "strong")) return { src: expressionSrc(b, LEGACY[e]), cutout: false }
+  return { src: faceOf(b), cutout: false }
 }

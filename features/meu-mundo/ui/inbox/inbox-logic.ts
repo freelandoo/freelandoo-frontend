@@ -11,7 +11,7 @@
 // como lido — o histórico do sino é que guarda.
 
 import type { LifeNeedId, MMNotice } from "../../types"
-import type { Expression } from "../portraits"
+import { EMOTION_OF, type Emotion, type Expression } from "../portraits"
 
 export const CARD_MS = 15_000
 /** A mesma notificação (tipo + código) não volta como card antes disso. */
@@ -30,6 +30,33 @@ export const NEED_EXPRESSION: Record<LifeNeedId, Expression> = {
   tired: "exhausted",
   stressed: "stressed",
   aging: "exhausted",
+}
+
+/**
+ * 2026-11-03 (Alex): só 6 emoções — raiva, triste, feliz, doente, cansado e
+ * amando. "Com fome precisa mostrar ele triste." Nunca uma emoção feliz num
+ * aviso ruim.
+ */
+export const NEED_EMOTION: Record<LifeNeedId, Emotion> = {
+  hospital: "sick",
+  unwell: "sick",
+  exhausted: "tired",
+  starving: "sad",
+  hungry: "sad",
+  sleep: "tired",
+  tired: "tired",
+  stressed: "angry",
+  aging: "tired",
+}
+
+/** Emoção para as notificações do servidor (necessidade usa a tabela acima). */
+export function noticeEmotion(n: Pick<MMNotice, "kind" | "code"> & { data?: MMNotice["data"] }): Emotion | null {
+  if (n.kind === "need") return NEED_EMOTION[n.code as LifeNeedId] ?? "sad"
+  if (n.kind === "dm") return "happy"
+  const e = noticeExpression(n)
+  if (!e) return null
+  if (n.kind === "life" && (n.code === "fined" || n.code === "jailed")) return "angry"
+  return EMOTION_OF[e]
 }
 
 /** Expressão para as notificações do servidor (necessidade usa a tabela acima). */

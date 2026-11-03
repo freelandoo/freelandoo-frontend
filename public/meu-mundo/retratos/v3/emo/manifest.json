@@ -1,0 +1,127 @@
+{
+ "aeryn": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "aurion": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "cavaleiro": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "ciborgue": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "garras": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "golem": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "iris": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "kragor": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "maru": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "morkhan": [
+  "angry",
+  "sick",
+  "tired"
+ ],
+ "noctis": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "raposa": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "vampira": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "vampira_adulta": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "vampiro": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "zephyra": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ]
+}
