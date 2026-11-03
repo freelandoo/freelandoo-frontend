@@ -604,7 +604,8 @@ export class AvatarLibrary {
     const clanP = this.withClan ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
     // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
     const locoP = this.locoSet(id).catch(() => null)
-    const bruteP = id === "brutamontes" ? this.bruteSet().catch(() => null) : Promise.resolve(null)
+    // o Ciborgue da Arena (2026-11-03) usa os golpes pesados do Brutamontes, sem machado
+    const bruteP = id === "brutamontes" || id === "ciborgue" ? this.bruteSet().catch(() => null) : Promise.resolve(null)
     const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC] = await Promise.all([
       this.body(id),
       this.animSet(id),

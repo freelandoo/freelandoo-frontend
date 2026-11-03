@@ -75,6 +75,20 @@ const BRUTE: Record<string, { clip: BoxeClip; windup: Seg; strike: Seg; recover:
   smash: [{ clip: "XSmash", windup: [0, 0.31], strike: [0.31, 0.42], recover: [0.42, 0.85] }],
 }
 const BRUTE_HIT: BoxeClip[] = ["XHitG", "XHitL", "XHitR"]
+/**
+ * O CIBORGUE (Golem de Sucata, 2026-11-03 — Alex: "fica com os braços pra
+ * cima e nem dá pra saber quando ele vai atacar"): sai da guarda do boxe e
+ * luta com os golpes pesados do Brutamontes, sem machado — braços baixos
+ * parado, o preparo do golpe longo e congelado até a pancada.
+ * Regra: swipe (golpe largo) e slam (pancada no chão).
+ */
+const CIBORG: Record<string, { clip: BoxeClip; windup: Seg; strike: Seg; recover: Seg }[]> = {
+  swipe: [
+    { clip: "XSweep", windup: [0, 0.36], strike: [0.36, 0.48], recover: [0.48, 0.85] },
+    { clip: "XBack", windup: [0, 0.26], strike: [0.26, 0.38], recover: [0.38, 0.75] },
+  ],
+  slam: [{ clip: "XSmash", windup: [0, 0.31], strike: [0.31, 0.42], recover: [0.42, 0.85] }],
+}
 /** Corrida do Brutamontes no ritmo do passo (m/s com o clipe a 1×, no corpo de 4 m). */
 const BRUTE_RUN = 3.2
 
@@ -252,7 +266,7 @@ export class MonsterModel {
           })
           .catch(() => {})
       }
-      const guard = BULKY_GUARD[rig.body]
+      const guard = kind === "golem" ? undefined : BULKY_GUARD[rig.body]
       if (guard) {
         const ch = this.char
         this.fix = new PoseFix(scene, (n) => ch.bone(n), guard)
@@ -408,7 +422,7 @@ export class MonsterModel {
   private updateRigged(dt: number, p: MobPose) {
     const c = this.char!
     c.place(p.x, p.z, p.facing, p.y, 0)
-    if (this.kind === "brute" && !this.gloves) return this.updateBrute(dt, p)
+    if ((this.kind === "brute" || this.kind === "golem") && !this.gloves) return this.updateBrute(dt, p)
     const heavy = this.kind === "golem" || (!!this.gloves && this.kind === "brute")
     if (p.state !== this.last) {
       if (p.state === "windup") c.boxeAct(heavy ? "BBox2" : "BJab", 0.55, 0, 0.42, true)
@@ -455,9 +469,11 @@ export class MonsterModel {
   /** Brutamontes (2026-11-02): golpes de machado pela regra; andar/correr de machado; grito ao surgir. */
   private updateBrute(dt: number, p: MobPose) {
     const c = this.char!
-    this.holdAxe()
+    const cyborg = this.kind === "golem"
+    if (!cyborg) this.holdAxe()
     if (p.attack && p.attack.id !== this.bruteAtk && p.state === "windup") {
-      const opts = BRUTE[p.attack.id] ?? BRUTE.sweep
+      const table = cyborg ? CIBORG : BRUTE
+      const opts = table[p.attack.id] ?? (cyborg ? CIBORG.swipe : BRUTE.sweep)
       this.bruteMove = opts[Math.floor(Math.random() * opts.length)]
       this.bruteAtk = p.attack.id
     }
@@ -474,6 +490,18 @@ export class MonsterModel {
       this.last = p.state
     }
     const moving = p.speed > 0.25 && (p.state === "chase" || p.state === "circle" || !!p.calm)
+    if (cyborg) {
+      // sem machado: anda/corre com a locomoção dele; parado, a pose pesada (braços baixos)
+      if (moving) {
+        c.setBoxe(null)
+        c.animate(dt, p.speed > 2.4 ? 2 : 1, p.speed)
+      } else {
+        c.setBoxe(p.calm ? null : "XIdle")
+        c.animate(dt, 0, 0)
+      }
+      if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
+      return
+    }
     const base = moving ? (p.speed > 2.4 ? "XRun" : "XWalk") : "XIdle"
     c.setBoxe(base)
     if (moving) c.setClipRate(base, Math.max(0.6, Math.min(1.6, p.speed / (base === "XRun" ? BRUTE_RUN : BRUTE_RUN * 0.45))))
