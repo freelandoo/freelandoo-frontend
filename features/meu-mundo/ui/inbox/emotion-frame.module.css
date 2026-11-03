@@ -224,6 +224,11 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* com linha extra e ação o título fica em uma linha (o painel não estoura) */
+.msg[data-tight] {
+  font-size: calc(var(--w) * 0.036);
+  -webkit-line-clamp: 1;
+}
 .extra {
   margin: 0;
   color: rgba(255, 240, 220, 0.72);

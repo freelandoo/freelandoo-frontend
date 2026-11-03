@@ -194,7 +194,9 @@ export function EmotionFrame({ message, extra, action, onClose, closeLabel, art,
 
       {/* 5 · texto, ação e fechar */}
       <div className={s.body}>
-        <p className={s.msg}>{message}</p>
+        <p className={s.msg} data-tight={extra && action ? "" : undefined}>
+          {message}
+        </p>
         {extra && <p className={s.extra}>{extra}</p>}
         {action && (
           <button type="button" className={s.action} onClick={action.run}>

@@ -22,6 +22,7 @@ import { archivo } from "../status/evo-skin"
 import { MM } from "../hud/tokens"
 import { DRAWER_EVENT } from "../hud/hud-kit"
 import { emotionArt } from "../portraits"
+import { screenAnchor } from "../../engine/screen-anchor"
 import { EmotionFrame } from "./emotion-frame"
 import { freshNeedsMemory, pickNeed, type NeedLine } from "../needs/needs-logic"
 import {
@@ -77,7 +78,8 @@ export default function NoticeStack({ needs, needsTick, pushed, body, below = 0,
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
-    const fit = () => setMaxVisible(window.innerWidth >= 760 && window.innerHeight >= 520 ? 2 : 1)
+    // 2026-11-03: um card por vez (fica embaixo dos pés do personagem; o resto espera na fila)
+    const fit = () => setMaxVisible(1)
     fit()
     window.addEventListener("resize", fit)
     const on = (e: Event) => setDrawerOpen(!!(e as CustomEvent<boolean>).detail)
@@ -129,12 +131,58 @@ export default function NoticeStack({ needs, needsTick, pushed, body, below = 0,
 
   const close = useCallback((key: string) => setQueue((q) => dismiss(q, key)), [])
 
-  if (paused || !queue.visible.length) return null
+  // 2026-11-03 (Alex): a notificação fica logo ABAIXO DOS PÉS do personagem, entre
+  // os pés e o joystick (PC e celular). A posição é lida 4× por segundo só enquanto
+  // há card na tela; sem cena (ou personagem fora da tela) volta ao canto de cima.
+  const showing = !paused && queue.visible.length > 0
+  const [feet, setFeet] = useState<{ x: number; y: number } | null>(null)
+  useEffect(() => {
+    if (!showing) return
+    const read = () => {
+      const a = screenAnchor()
+      setFeet((prev) => {
+        const next = a && a.feet != null ? { x: Math.round(a.x), y: Math.round(a.feet) } : null
+        if (!next || !prev) return next
+        return Math.abs(next.x - prev.x) < 4 && Math.abs(next.y - prev.y) < 4 ? prev : next
+      })
+    }
+    read()
+    const id = window.setInterval(read, 250)
+    return () => window.clearInterval(id)
+  }, [showing])
+
+  if (!showing) return null
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  // mesma largura da moldura (emotion-frame.module.css: --w) e a altura dela
+  const fw = vw < 760 ? Math.min(vw * 0.94, 420) : Math.min(560, Math.max(320, vw * 0.34))
+  const head = fw * 0.18
+  const fh = fw * (380 / 1110)
+  const atFeet = feet != null && feet.y > 0 && feet.y < vh - 80
+  // não desce por cima do joystick (celular) nem sai pela borda de baixo
+  const floor = vh - (vw < 760 ? 176 : 16) - fh
+  const top = atFeet ? Math.min(feet.y + 6, floor) - head : 0
+  const cx = atFeet ? Math.max(fw / 2 + 8, Math.min(vw - fw / 2 - 8, feet.x)) : 0
   return (
     <div
-      // No celular desce abaixo do envelope e do sino (canto de cima à direita).
-      className="pointer-events-none fixed left-0 z-[72] flex flex-col gap-2 px-3 max-[759px]:mt-[52px]"
-      style={{ top: `calc(max(12px, env(safe-area-inset-top)) + ${below}px)`, paddingLeft: "max(12px, env(safe-area-inset-left))" }}
+      // No canto: no celular desce abaixo do envelope e do sino (canto de cima à direita).
+      className={`pointer-events-none fixed z-[72] flex flex-col gap-2 ${atFeet ? "items-center" : "left-0 items-start px-3 max-[759px]:mt-[52px]"}`}
+      style={
+        atFeet
+          ? {
+              position: "fixed",
+              zIndex: 72,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              width: fw,
+              left: cx - fw / 2,
+              // a moldura começa logo abaixo dos pés (o espaço de cima é o do retrato que sai da moldura)
+              top,
+              transition: "left 300ms ease-out, top 300ms ease-out",
+            }
+          : { top: `calc(max(12px, env(safe-area-inset-top)) + ${below}px)`, paddingLeft: "max(12px, env(safe-area-inset-left))" }
+      }
       role="region"
       aria-label={t("ntRegion", "Notificações")}
     >

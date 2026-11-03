@@ -73,6 +73,9 @@
  ],
  "morkhan": [
   "angry",
+  "happy",
+  "loving",
+  "sad",
   "sick",
   "tired"
  ],
@@ -85,6 +88,30 @@
   "tired"
  ],
  "raposa": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "raposa_adulta": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "raposa_adulto": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "raposa_f": [
   "angry",
   "happy",
   "loving",
@@ -109,6 +136,14 @@
   "tired"
  ],
  "vampiro": [
+  "angry",
+  "happy",
+  "loving",
+  "sad",
+  "sick",
+  "tired"
+ ],
+ "vampiro_adulto": [
   "angry",
   "happy",
   "loving",

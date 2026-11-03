@@ -320,7 +320,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // mm3d-60: cabeça do jogador na tela (números flutuantes e drops ancoram aqui)
   const dropAnchor = setScreenAnchor(() => {
     const b = select.screenBox(local.char)
-    return b ? { x: b.x, y: b.top } : null
+    return b ? { x: b.x, y: b.top, feet: b.bottom } : null
   })
   // mm3d-60: tubo de luz (o do poder, bem mais leve) quando ganha status
   const gainPillar = new GainPillar(scene, () => local.char.holder.getAbsolutePosition(), quality.tier === "low")

@@ -5,7 +5,8 @@
 // flutuantes, placas de drop) leem SÓ enquanto estão vivos — nada roda por
 // quadro quando não há efeito. Puramente local: nada disso vai pela rede.
 
-export type ScreenAnchor = () => { x: number; y: number } | null
+/** `y` = cabeça; `feet` = pés (2026-11-03: as notificações ficam logo abaixo dos pés). */
+export type ScreenAnchor = () => { x: number; y: number; feet?: number } | null
 
 let current: ScreenAnchor | null = null
 
@@ -18,7 +19,7 @@ export function setScreenAnchor(fn: ScreenAnchor): () => void {
 }
 
 /** Cabeça do jogador na janela (px), ou null (sem cena, atrás da câmera). */
-export function screenAnchor(): { x: number; y: number } | null {
+export function screenAnchor(): { x: number; y: number; feet?: number } | null {
   try {
     return current?.() ?? null
   } catch {

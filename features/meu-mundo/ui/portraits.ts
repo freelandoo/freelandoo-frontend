@@ -116,13 +116,18 @@ const EMOTION_ART: Partial<Record<BodyId, Emotion[]>> = {
   iris: ALL6,
   kragor: ALL6,
   maru: ALL6,
-  morkhan: ["angry", "tired", "sick"],
+  morkhan: ALL6,
   noctis: ALL6,
   raposa: ALL6,
   vampira: ALL6,
   vampira_adulta: ALL6,
   vampiro: ALL6,
   zephyra: ALL6,
+  // 2026-11-03 (2ª leva): vampiro adulto e as três raposas
+  vampiro_adulto: ALL6,
+  raposa_f: ALL6,
+  raposa_adulto: ALL6,
+  raposa_adulta: ALL6,
 }
 
 /** A expressão antiga (folha de 12) mais perto de cada emoção. */
