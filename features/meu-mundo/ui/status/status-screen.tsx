@@ -19,11 +19,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
+import { getAdventure, getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, archivo } from "./evo-skin"
 import { MM } from "../hud/tokens"
-import { PAGES, StatusPage, type PageActions, type PageId } from "./status-pages"
+import { PAGES, StatusPage, type AdvXp, type PageActions, type PageId } from "./status-pages"
 import SkinWardrobe from "./skin-wardrobe"
 import { PORTRAIT } from "../portraits"
 import { SteamFrame } from "../kit/steam/steam-frame"
@@ -98,6 +98,8 @@ export interface StatusScreenProps {
 export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpenPolens, initialPage, shopping = false }: StatusScreenProps) {
   const t = useTranslations("MeuMundo")
   const [life, setLife] = useState<LifeFull | null>(null)
+  // mm3d-60g: nível e XP de aventura no cabeçalho
+  const [adv, setAdv] = useState<AdvXp | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -120,7 +122,8 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
     if (!token) return
     // As duas moedas (mm3d-30): a vida traz as do jogo; Poléns vêm da carteira
     // oficial. Falha nos Poléns = null ("—"), nunca zero.
-    const [r, w] = await Promise.all([getLife(token), getWallets(token)])
+    const [r, w, a] = await Promise.all([getLife(token), getWallets(token), getAdventure(token)])
+    if (a.ok) setAdv({ level: a.data.adventure.level, into: a.data.adventure.into, need: a.data.adventure.need })
     if (r.ok) {
       setLife({ ...r.data, wallet: { ...r.data.wallet, polens: w.ok ? w.data.wallet.polens : null } })
       if (r.data.avatar) setAvatar(r.data.avatar)
@@ -386,7 +389,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       >
         <SteamFrame className="relative mx-2 min-h-0 flex-1" cornerSize={34}>
           <div key={page} className="h-full overflow-hidden p-2.5">
-            <StatusPage page={page} life={life} name={name} portrait={portrait} compact t={t} act={act} />
+            <StatusPage page={page} life={life} name={name} portrait={portrait} compact t={t} act={act} adv={adv} />
           </div>
         </SteamFrame>
         {/* rodapé numa linha de 40 px: ‹ pontos › e fechar (o nome da página está no cabeçalho) */}
@@ -457,7 +460,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
               <SteamFrame className="h-full" cornerSize={88} glow={false} ignite={i === sel}>
                 <div className="relative h-full w-full overflow-hidden">
                   <div className="relative h-full px-9 pb-7 pt-6">
-                    {rel(i) <= 1 && <StatusPage page={page} life={life} name={name} portrait={portrait} compact={false} t={t} act={act} />}
+                    {rel(i) <= 1 && <StatusPage page={page} life={life} name={name} portrait={portrait} compact={false} t={t} act={act} adv={adv} />}
                   </div>
                   <div
                     ref={(el) => {

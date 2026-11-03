@@ -66,7 +66,16 @@ export interface PageActions {
   openPolens?: () => void
 }
 
+/** Nível de aventura e o XP dentro dele (mm3d-60g). */
+export interface AdvXp {
+  level: number
+  into: number
+  need: number
+}
+
 export interface PageProps {
+  /** Nível e XP de aventura (null = ainda carregando). */
+  adv?: AdvXp | null
   page: PageId
   life: LifeFull
   name: string
@@ -399,7 +408,25 @@ function Portrait({ src, size, round = false }: { src: string; size: number; rou
   )
 }
 
-function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act">) {
+/** Nível + barra de XP dourada (a cor do XP nos ganhos). */
+function XpLine({ adv, t, small = false }: { adv: AdvXp; t: Tr; small?: boolean }) {
+  const p = adv.need > 0 ? Math.min(1, adv.into / adv.need) : 1
+  return (
+    <div className={`flex items-center ${small ? "gap-1.5" : "gap-2.5"}`}>
+      <span className={`${teko.className} shrink-0 font-semibold uppercase leading-none`} style={{ fontSize: small ? 13 : 22, color: "#FFD23F" }}>
+        {t("hudLevel", "Nv. {n}").replace("{n}", String(adv.level))}
+      </span>
+      <div className="min-w-0 flex-1" style={{ maxWidth: small ? 120 : 260 }}>
+        <Bar value={p * 100} color="#FFD23F" height={small ? 4 : 8} />
+      </div>
+      <span className={`${archivo.className} shrink-0 tabular-nums`} style={{ fontSize: small ? 9.5 : 13, color: EVO.mudo }}>
+        {adv.need > 0 ? `${adv.into} / ${adv.need} XP` : "MAX"}
+      </span>
+    </div>
+  )
+}
+
+function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps, "act">) {
   const c = life.character
   const days = Math.max(1, Math.floor((new Date(life.now).getTime() - new Date(c.bornAt).getTime()) / 86400000) + 1)
   // Celular: uma faixa só (~44 px) — retrato, STATUS e a página; nome à direita.
@@ -422,6 +449,7 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
           <div className={`${archivo.className} truncate text-[10px] leading-tight`} style={{ color: EVO.mudo }}>
             {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {walletText(life, t)}
           </div>
+          {adv && <XpLine adv={adv} t={t} small />}
         </div>
       </div>
     )
@@ -464,6 +492,11 @@ function Header({ life, name, portrait, page, compact, t }: Omit<PageProps, "act
               {t("stDaysLived", "{n} dias de vida").replace("{n}", String(days))} • {walletText(life, t)} •{" "}
               {t("stToday", "Hoje: {c}").replace("{c}", conditionLabel(c.today.label, t))}
             </div>
+            {adv && (
+              <div className="mt-1.5">
+                <XpLine adv={adv} t={t} />
+              </div>
+            )}
           </div>
         </div>
       )}

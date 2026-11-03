@@ -10,13 +10,13 @@
 
 import { useDrawerOpen } from "../hud/hud-kit"
 import { useGameCovered } from "../hud/game-cover"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Loader2, ScrollText } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { advanceQuest, getQuest, type QuestView } from "../../data"
 import { AetherModal, AetherButton } from "../kit/aether-modal"
-import { AetherCarousel, type CarouselItem } from "../kit/aether-carousel"
+import { Arc, Card } from "../fridge/shelf"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { AE, chamfer } from "../kit/aether-tokens"
 import { archivo, teko } from "../status/evo-skin"
@@ -145,73 +145,45 @@ export function QuestTracker({
   }, [onOpenGear])
 
   const cur = quest?.current
-  const items: CarouselItem[] = useMemo(() => {
-    if (!quest) return []
-    return quest.steps.map((s, i) => {
-      const text = STEP_TEXT[s.key]
-      const isCur = s.state === "current"
-      return {
-        key: s.key,
-        label: txt(s.key, "what", t),
-        render: () => (
-          <div className="flex h-full flex-col gap-2 p-3">
-            <ItemImage category={text?.art || "quest"} rarity={s.state === "done" ? "uncommon" : isCur ? "legendary" : "common"} alt={txt(s.key, "what", t)} ratio={16 / 9} />
-            <div className={`${archivo.className} text-[11px] font-bold uppercase tracking-[0.18em]`} style={{ color: s.state === "done" ? AE.good : isCur ? AE.gold : AE.dim }}>
-              {t("questStepN", "Passo {i} de {n}").replace("{i}", String(i + 1)).replace("{n}", String(quest.total))} ·{" "}
-              {s.state === "done" ? t("questDone", "Feito") : isCur ? t("questNow", "Agora") : t("questLocked", "Depois")}
-            </div>
-            <h4 className={`${teko.className} text-[26px] font-semibold uppercase leading-[0.95]`} style={{ color: AE.text }}>
-              {s.state === "locked" ? t("questHidden", "???") : txt(s.key, "what", t)}
-            </h4>
-            {s.state !== "locked" && (
-              <>
-                <p className="text-[12px] font-semibold" style={{ color: AE.aether }}>
-                  ⌖ {txt(s.key, "where", t)}
-                </p>
-                <p className="text-[13px] leading-snug" style={{ color: AE.muted }}>
-                  {txt(s.key, "why", t)}
-                </p>
-              </>
-            )}
-            <div className="mt-auto grid gap-1.5">
-              <p className="text-[12px] font-semibold" style={{ color: AE.goldSoft }}>
-                ✦ {s.xp} XP
-              </p>
-              {isCur && cur && (
-                <>
-                  {(cur.key === "aprender" || cur.key === "vitoria") && (
-                    <AetherButton
-                      tone={cur.ready ? "secondary" : "primary"}
-                      onClick={() => {
-                        setOpen(false)
-                        onTutorialFight()
-                      }}
-                    >
-                      {t("questFight", "Lutar no treino")}
-                    </AetherButton>
-                  )}
-                  {cur.key === "armeiro" && !cur.ready && <AetherButton onClick={() => void visitArmory()}>{t("questOpenArmory", "Abrir o Armeiro")}</AetherButton>}
-                  {(cur.key === "arma" || cur.key === "espolio") && !cur.ready && (
-                    <AetherButton
-                      onClick={() => {
-                        setOpen(false)
-                        onOpenGear("bag")
-                      }}
-                    >
-                      {t("questOpenBag", "Abrir a mochila")}
-                    </AetherButton>
-                  )}
-                  <AetherButton tone={cur.ready ? "primary" : "secondary"} busy={busy} onClick={() => void deliver()}>
-                    {cur.check === "ack" || cur.check === "minigame" ? t("questUnderstood", "Entendi") : t("questDeliver", "Entregar")}
-                  </AetherButton>
-                </>
-              )}
-            </div>
-          </div>
-        ),
-      }
-    })
-  }, [quest, cur, busy, t, deliver, visitArmory, onTutorialFight, onOpenGear])
+  // passo em foco no carrossel (abre no passo de agora)
+  const [sel, setSel] = useState(0)
+  const [openedAt, setOpenedAt] = useState(false)
+  if (open !== openedAt) {
+    setOpenedAt(open)
+    if (open && quest) setSel(Math.min(quest.step, quest.total - 1))
+  }
+
+  /** Botões do passo de agora (o servidor confere; aqui só pede). */
+  const actions = () =>
+    cur && (
+      <div className="grid gap-1.5">
+        {(cur.key === "aprender" || cur.key === "vitoria") && (
+          <AetherButton
+            tone={cur.ready ? "secondary" : "primary"}
+            onClick={() => {
+              setOpen(false)
+              onTutorialFight()
+            }}
+          >
+            {t("questFight", "Lutar no treino")}
+          </AetherButton>
+        )}
+        {cur.key === "armeiro" && !cur.ready && <AetherButton onClick={() => void visitArmory()}>{t("questOpenArmory", "Abrir o Armeiro")}</AetherButton>}
+        {(cur.key === "arma" || cur.key === "espolio") && !cur.ready && (
+          <AetherButton
+            onClick={() => {
+              setOpen(false)
+              onOpenGear("bag")
+            }}
+          >
+            {t("questOpenBag", "Abrir a mochila")}
+          </AetherButton>
+        )}
+        <AetherButton tone={cur.ready ? "primary" : "secondary"} busy={busy} onClick={() => void deliver()}>
+          {cur.check === "ack" || cur.check === "minigame" ? t("questUnderstood", "Entendi") : t("questDeliver", "Entregar")}
+        </AetherButton>
+      </div>
+    )
 
   if (!quest || quest.done || !cur) return null
   return (
@@ -225,7 +197,8 @@ export function QuestTracker({
             // mm3d-60d: logo abaixo do HUD do personagem (--mm-hud-h vem dele)
             top: "calc(max(10px, env(safe-area-inset-top)) + var(--mm-hud-h, 46px) + 10px)",
             left: "max(10px, env(safe-area-inset-left))",
-            background: AE.iron,
+            // pedido do Alex (2026-11-02): o card do canto um pouco transparente (o mundo aparece atrás)
+            background: "rgba(20, 23, 28, 0.66)",
             boxShadow: `inset 0 0 0 1px ${cur.ready ? AE.gold : AE.brassLine}, ${AE.hardSm}`,
             clipPath: chamfer(AE.cut.chip),
           }}
@@ -250,15 +223,109 @@ export function QuestTracker({
           {!quest ? (
             <Loader2 className="mx-auto h-6 w-6 animate-spin" />
           ) : (
-            <AetherCarousel title={t("questSteps", "Passos")} items={items} initial={Math.min(quest.step, quest.total - 1)} cardHeight={440} />
+            <QuestShelf quest={quest} sel={Math.min(sel, quest.steps.length - 1)} onSel={setSel} t={t} actions={actions} />
           )}
           {msg && (
-            <p role="status" className="mt-2 text-center text-[13px] font-semibold" style={{ color: AE.goldSoft }}>
+            <p role="status" className="mt-2 text-center text-[12px] font-semibold" style={{ color: AE.goldSoft }}>
               {msg}
             </p>
           )}
         </AetherModal>
       )}
     </>
+  )
+}
+
+// ═══ os passos em cards (mm3d-60g, pedido do Alex: "como os de comida no STATUS") ═══
+// Thumbnail GRANDE (66% do card) com slot de imagem: a arte de cada passo é
+// /meu-mundo/missoes/<chave>.webp (ex.: chegada.webp, recuperar.webp…). Sem o
+// arquivo, aparece o desenho da categoria — a composição não muda.
+const CARD_W = 150
+const CARD_H = 228
+const IMG_K = 0.66
+const thumbOf = (key: string) => `/meu-mundo/missoes/${key}.webp`
+
+function QuestShelf({ quest, sel, onSel, t, actions }: { quest: QuestView; sel: number; onSel: (i: number) => void; t: T; actions: () => React.ReactNode }) {
+  const s = quest.steps[sel]
+  const stateText = (st: string) => (st === "done" ? t("questDone", "Feito") : st === "current" ? t("questNow", "Agora") : t("questLocked", "Depois"))
+  const stateColor = (st: string) => (st === "done" ? AE.good : st === "current" ? AE.gold : AE.dim)
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between">
+        <span className={`${teko.className} text-[16px] font-semibold uppercase leading-none tracking-wide`} style={{ color: AE.goldSoft }}>
+          {t("questSteps", "Passos")}
+        </span>
+        <span className={`${archivo.className} text-[11px]`} style={{ color: AE.muted }}>
+          {t("questStepN", "Passo {i} de {n}").replace("{i}", String(sel + 1)).replace("{n}", String(quest.total))}
+        </span>
+      </div>
+      <Arc
+        count={quest.steps.length}
+        sel={sel}
+        onSel={onSel}
+        onPick={onSel}
+        cardW={CARD_W}
+        cardH={CARD_H}
+        spacing={126}
+        compact
+        t={t}
+        render={(i, active) => {
+          const st = quest.steps[i]
+          const locked = st.state === "locked"
+          const art = STEP_TEXT[st.key]?.art || "quest"
+          return (
+            <Card
+              active={active}
+              empty={locked}
+              art={
+                <ItemImage
+                  src={locked ? null : thumbOf(st.key)}
+                  category={art}
+                  rarity={st.state === "done" ? "uncommon" : st.state === "current" ? "legendary" : "common"}
+                  alt={locked ? t("questHidden", "???") : txt(st.key, "what", t)}
+                  ratio={CARD_W / Math.round(CARD_H * IMG_K)}
+                />
+              }
+              imgK={IMG_K}
+              badge={st.state === "done" ? "✓" : `+${st.xp} XP`}
+              w={CARD_W}
+              h={CARD_H}
+              compact
+            >
+              <div className={`${archivo.className} text-[9px] font-bold uppercase tracking-[0.14em]`} style={{ color: stateColor(st.state) }}>
+                {i + 1}/{quest.total} · {stateText(st.state)}
+              </div>
+              <div className={`${teko.className} line-clamp-2 text-[15px] font-semibold uppercase leading-[0.95]`} style={{ color: AE.text }}>
+                {locked ? t("questHidden", "???") : txt(st.key, "what", t)}
+              </div>
+            </Card>
+          )
+        }}
+      />
+      {/* o escolhido: onde, por quê, XP e os botões (só no passo de agora) */}
+      {s && (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className={`${archivo.className} min-w-0 text-[13px] font-bold leading-tight`} style={{ color: AE.text }}>
+              {s.state === "locked" ? t("questHidden", "???") : txt(s.key, "what", t)}
+            </span>
+            <span className={`${archivo.className} shrink-0 text-[11px] font-semibold`} style={{ color: AE.goldSoft }}>
+              ✦ {s.xp} XP
+            </span>
+          </div>
+          {s.state !== "locked" && (
+            <>
+              <p className={`${archivo.className} text-[11px] font-semibold`} style={{ color: AE.aether }}>
+                ⌖ {txt(s.key, "where", t)}
+              </p>
+              <p className={`${archivo.className} text-[11.5px] leading-snug`} style={{ color: AE.muted }}>
+                {txt(s.key, "why", t)}
+              </p>
+            </>
+          )}
+          {s.state === "current" && <div className="mt-1">{actions()}</div>}
+        </div>
+      )}
+    </div>
   )
 }

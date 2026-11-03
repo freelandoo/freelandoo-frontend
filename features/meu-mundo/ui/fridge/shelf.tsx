@@ -196,6 +196,8 @@ export function Card({
   active,
   empty,
   img,
+  art,
+  imgK = 0.6,
   badge,
   w,
   h,
@@ -204,7 +206,11 @@ export function Card({
 }: {
   active: boolean
   empty: boolean
-  img: string
+  img?: string
+  /** No lugar da foto: arte própria (ex.: slot com placeholder, mm3d-60g). */
+  art?: ReactNode
+  /** Fração da altura do card ocupada pela imagem (padrão 0,6). */
+  imgK?: number
   /** selo do canto (quantidade, preço); vazio = sem selo */
   badge?: string
   w: number
@@ -212,7 +218,7 @@ export function Card({
   compact: boolean
   children: ReactNode
 }) {
-  const imgH = Math.round(h * 0.6)
+  const imgH = Math.round(h * imgK)
   return (
     <div className="relative h-full w-full">
       {/* contorno rubi do escolhido: camada estática, só a opacidade muda */}
@@ -222,18 +228,24 @@ export function Card({
       />
       <Chamfer cut={14} border={active ? MM.rubyBorder : MM.border} className="h-full overflow-hidden" fill={FUNDO.card}>
         <div className="relative overflow-hidden" style={{ height: imgH, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail local pequena, só no jogo (admin) */}
-          <img
-            src={img}
-            alt=""
-            width={w}
-            height={imgH}
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            className="h-full w-full object-cover"
-            style={{ opacity: empty ? 0.35 : 1 }}
-          />
+          {art ? (
+            <div className="h-full w-full" style={{ opacity: empty ? 0.35 : 1 }}>
+              {art}
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element -- thumbnail local pequena, só no jogo (admin)
+            <img
+              src={img}
+              alt=""
+              width={w}
+              height={imgH}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              className="h-full w-full object-cover"
+              style={{ opacity: empty ? 0.35 : 1 }}
+            />
+          )}
           {badge && (
           <span
             className={`${archivo.className} absolute ${compact ? "right-1 top-1 px-1.5 py-[3px] text-[10px]" : "right-1.5 top-1.5 px-2 py-1 text-[12px]"} font-bold leading-none`}

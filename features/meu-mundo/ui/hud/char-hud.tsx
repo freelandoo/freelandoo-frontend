@@ -50,7 +50,8 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false }: { na
   // dentro das lutas e minijogos fica só a placa da luta (pedido do Alex)
   const covered = useGameCovered()
   const hidden = hiddenProp || drawerOpen || covered
-  const [level, setLevel] = useState<number | null>(null)
+  // nível + XP dentro do nível (into/need) — do servidor
+  const [adv, setAdv] = useState<{ level: number; into: number; need: number } | null>(null)
   const [pw, setPw] = useState(64)
 
   // tamanho pela tela
@@ -67,11 +68,11 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false }: { na
     const token = getToken()
     if (token)
       void getAdventure(token).then((r) => {
-        if (alive && r.ok) setLevel(r.data.adventure.level)
+        if (alive && r.ok) setAdv({ level: r.data.adventure.level, into: r.data.adventure.into, need: r.data.adventure.need })
       })
     const off = onCelebrate((r) => {
-      const to = r.deltas?.xp?.to
-      if (typeof to === "number" && to > 0) setLevel(to)
+      const x = r.deltas?.xp
+      if (x && typeof x.to === "number" && x.to > 0) setAdv({ level: x.to, into: x.into, need: x.need })
     })
     return () => {
       alive = false
@@ -80,7 +81,7 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false }: { na
   }, [])
 
   // o card de missão fica logo abaixo do HUD
-  const total = Math.ceil(plateHeight(pw) + pw * 0.34)
+  const total = Math.ceil(plateHeight(pw) + pw * 0.34 + Math.max(10, pw * 0.2) + 8)
   useEffect(() => {
     const el = document.documentElement
     el.style.setProperty("--mm-hud-h", hidden ? "0px" : `${total}px`)
@@ -110,7 +111,7 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false }: { na
         power={{ v: stress / 100, ready: stress >= 70 }}
       >
         <div className={c.foot} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 6, fontSize: Math.max(10, pw * 0.2) }}>
-          {level != null && <span className={c.level}>{t("hudLevel", "Nv. {n}").replace("{n}", String(level))}</span>}
+          {adv && <span className={c.level}>{t("hudLevel", "Nv. {n}").replace("{n}", String(adv.level))}</span>}
           {v && (
             <span className={c.legend} aria-hidden>
               <i style={{ background: "#ffaa4a" }} />
@@ -120,6 +121,15 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false }: { na
             </span>
           )}
         </div>
+        {/* barra de XP do nível de aventura (dourada, a cor do XP nos ganhos) */}
+        {adv && (
+          <div className={c.xp} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 10, height: Math.max(9, pw * 0.15) }}>
+            <span className={c.xpFill} style={{ transform: `translateX(${(adv.need > 0 ? Math.min(1, adv.into / adv.need) : 1) * 100 - 100}%)` }} />
+            <span className={c.xpText} style={{ fontSize: Math.max(8, pw * 0.13) }}>
+              {adv.need > 0 ? `${adv.into} / ${adv.need} XP` : "MAX"}
+            </span>
+          </div>
+        )}
       </FightPlate>
       {/* leitor de tela: os três valores por extenso */}
       {v && (
