@@ -48,7 +48,7 @@ import { GOD_NAMES, isGod, type GodBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
 import { HERO_LEVEL, heroLevelScale } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
-import { STAT_MAX, StatBars } from "./stat-bars"
+import { HpPlate, LevelBadge, StatBars, StatGuide } from "./stat-bars"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -534,14 +534,15 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
             <div className={`${teko.className} text-[26px] font-medium uppercase tracking-[0.2em]`} style={{ color: EVO.ambar }}>
               {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} • {personalityLabel(c.personality, t)}
             </div>
-            <div className={`${archivo.className} text-[16px]`} style={{ color: EVO.branco }}>
+            <div className={`${archivo.className} text-[13px]`} style={{ color: EVO.mudo }}>
               {t("stDaysLived", "{n} dias de vida").replace("{n}", String(days))} • {walletText(life, t)} •{" "}
               {t("stToday", "Hoje: {c}").replace("{c}", conditionLabel(c.today.label, t))}
             </div>
+            {/* 2026-11-03 (desenho do Alex): a placa NV e a placa de HP */}
             {adv && (
-              <div className="mt-1.5">
-                <XpLine adv={adv} t={t} />
-                <CombatLine adv={adv} t={t} />
+              <div className="mt-2 flex items-start gap-3" style={{ minWidth: 520 }}>
+                <LevelBadge level={adv.level} into={adv.into} need={adv.need} t={t} />
+                <HpPlate level={adv.level} t={t} />
               </div>
             )}
           </div>
@@ -719,7 +720,7 @@ function Overview({ life, portrait, compact, t, act, adv }: PageProps) {
     )
   }
   return (
-    <div className={`grid h-full gap-5 ${compact ? "" : "grid-cols-[minmax(0,560px)_1fr]"}`}>
+    <div className={`grid h-full gap-5 ${compact ? "" : "grid-cols-[minmax(0,480px)_1fr] grid-rows-[minmax(0,1fr)]"}`}>
       <div className="flex flex-col gap-4">
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <Portrait src={portrait} size={compact ? 200 : 330} />
@@ -754,49 +755,57 @@ function Overview({ life, portrait, compact, t, act, adv }: PageProps) {
           </div>
         </Chamfer>
       </div>
-      <div className="flex min-w-0 flex-col gap-3">
-        <div className="flex items-start gap-3 py-1">
-          <span className={`${teko.className} text-[54px] font-bold leading-[0.6]`} style={{ color: EVO.magenta }}>
-            “
-          </span>
-          <div>
-            <div className={`${teko.className} text-[30px] font-semibold uppercase leading-none`} style={{ color: EVO.branco }}>
-              {quote(c, t)}
-            </div>
-            <div className={`${archivo.className} mt-1 text-[17px] uppercase`} style={{ color: EVO.mudo }}>
-              {t("stMoodIs", "Humor: {m}").replace("{m}", moodTag(v.mood, t))} · {t("stHungerIs", "Fome: {m}").replace("{m}", satietyTag(v.satiety, t))}
+      {/* 2026-11-03 (desenho do Alex): as 6 barras, personalidade e refeições; rolando, os vitais e a explicação */}
+      <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "#8A6430 transparent" }}>
+        <StatBars life={life} level={adv?.level} t={t} />
+        <Chamfer cut={16}>
+          <div className="flex items-center gap-4 px-4 py-3">
+            <Ring color={EVO.douradoClaro} size={48}>
+              <Smile className="h-6 w-6" />
+            </Ring>
+            <div className={`${archivo.className} text-[16px]`} style={{ color: EVO.branco }}>
+              <span className={`${teko.className} text-[24px] font-semibold uppercase tracking-wider`} style={{ color: EVO.ambar }}>
+                {t("stPersonality", "Personalidade")}:{" "}
+              </span>
+              <span className={`${teko.className} text-[24px] font-semibold uppercase tracking-wider`}>{personalityLabel(c.personality, t)}</span>
+              <div style={{ color: EVO.mudo }}>
+                {t("stTodayLine", "Condição de hoje: {c} ({n}/100). Ritmo: {p}.")
+                  .replace("{c}", conditionLabel(c.today.label, t))
+                  .replace("{n}", String(c.today.score))
+                  .replace("{p}", c.pace >= 1 ? t("paceNormal", "normal") : c.pace >= 0.6 ? t("paceTired", "cansado") : t("paceExhausted", "exausto"))}
+              </div>
             </div>
           </div>
-        </div>
-        {/* 2026-11-03: as 6 barras de status no estilo da placa de luta (0–1000) */}
-        <Plate
-          title={t("stCombatAttrs", "Combate e atributos")}
-          aside={
-            <span className={`${archivo.className} text-[13px]`} style={{ color: EVO.mudo }}>
-              {t("stStatScale", "De 0 a {max}").replace("{max}", String(STAT_MAX))}
-            </span>
-          }
-        >
-          <div className="pb-1 pt-1">
-            <StatBars life={life} level={adv?.level} t={t} />
+        </Chamfer>
+        <Plate title={t("stMeals", "Refeições de hoje")}>
+          <div className="grid grid-cols-4 gap-3">
+            {c.meals.map((m) => {
+              const [color, word] = mealLook(m.state, t)
+              return (
+                <div key={m.at} className="flex items-center gap-3 px-3 py-2" style={{ boxShadow: `inset 0 0 0 1px ${color}88`, background: "rgba(0,0,0,0.35)" }}>
+                  <Utensils className="h-5 w-5 shrink-0" style={{ color }} />
+                  <div>
+                    <div className={`${teko.className} text-[26px] font-bold leading-none`} style={{ color: EVO.branco }}>
+                      {t("mealAt", "{h} h").replace("{h}", String(m.at))}
+                    </div>
+                    <div className={`${teko.className} text-[16px] uppercase tracking-wider`} style={{ color }}>
+                      {word}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </Plate>
-        <div className="grid grid-cols-4 gap-2.5">
+        <div className="grid shrink-0 grid-cols-4 gap-2.5">
           <VitalCard icon={<Heart className="h-4 w-4" />} color={EVO.perigo} label={t("stHealth", "Saúde")} value={v.health} max={Math.max(1, v.vitality)} barColor={toneFor(v.health)} tag={healthTag(v.health, t)} />
           <VitalCard icon={<Zap className="h-4 w-4" />} color={EVO.ambar} label={t("stEnergy", "Energia")} value={v.energy} barColor={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} tag={energyTag(v.energy, t)} />
           <VitalCard icon={<Activity className="h-4 w-4" />} color={EVO.roxo} label={t("stStress", "Estresse")} value={v.stress} barColor={toneFor(v.stress, "low")} tag={stressTag(v.stress, t)} />
           <VitalCard icon={<Utensils className="h-4 w-4" />} color={EVO.bom} label={t("stSatiety", "Saciedade")} value={v.satiety} barColor={toneFor(v.satiety)} tag={satietyTag(v.satiety, t)} />
         </div>
-        <Chamfer cut={12}>
-          <div className="flex items-center gap-3 px-3 py-2">
-            <span className={`${cinzel.className} shrink-0 text-[13px] font-bold uppercase tracking-[0.08em]`} style={{ color: "#FFD68A" }}>
-              {t("stMeals", "Refeições de hoje")}
-            </span>
-            <div className="min-w-0 flex-1">
-              <MealChips meals={c.meals} t={t} />
-            </div>
-          </div>
-        </Chamfer>
+        <div className="shrink-0">
+          <StatGuide t={t} />
+        </div>
       </div>
     </div>
   )
@@ -1561,20 +1570,18 @@ function OverviewC({ life, portrait, t, act, adv }: PageProps) {
         <MiniMeter icon={<Activity />} color={EVO.roxo} label={t("stStress", "Estresse")} value={v.stress} barColor={toneFor(v.stress, "low")} tag={stressTag(v.stress, t)} />
         <MiniMeter icon={<Utensils />} color={EVO.bom} label={t("stSatiety", "Saciedade")} value={v.satiety} barColor={toneFor(v.satiety)} tag={satietyTag(v.satiety, t)} />
       </div>
-      {/* 2026-11-03: as 6 barras de status (0–1000) no estilo da placa de luta */}
-      <MiniPlate
-        title={t("stCombatAttrs", "Combate e atributos")}
-        aside={
-          <span className={`${archivo.className} text-[9.5px]`} style={{ color: EVO.mudo }}>
-            {personalityLabel(c.personality, t)} · {pace}
-          </span>
-        }
-      >
-        <StatBars life={life} level={adv?.level} t={t} small />
-      </MiniPlate>
+      {/* 2026-11-03 (desenho do Alex): as 6 barras, uma embaixo da outra */}
+      <StatBars life={life} level={adv?.level} t={t} small />
+      <div className={`${archivo.className} px-1 text-[10.5px]`} style={{ color: EVO.mudo }}>
+        <span className="font-semibold uppercase" style={{ color: EVO.ambar }}>
+          {t("stPersonality", "Personalidade")}:
+        </span>{" "}
+        <span className="font-semibold uppercase" style={{ color: EVO.branco }}>{personalityLabel(c.personality, t)}</span> · {pace}
+      </div>
       <MiniPlate title={t("stMeals", "Refeições de hoje")}>
         <MealChips meals={c.meals} t={t} />
       </MiniPlate>
+      <StatGuide t={t} small />
     </div>
   )
 }
@@ -2075,7 +2082,8 @@ export function StatusPage(props: PageProps) {
     return (
       <div className={`${archivo.className} flex h-full flex-col gap-2`}>
         <Header {...props} />
-        <div className="min-h-0 flex-1">
+        {/* a Visão Geral rola até a explicação dos status; as outras cabem na tela */}
+        <div className={`min-h-0 flex-1 ${props.page === "overview" ? "overflow-y-auto" : ""}`}>
           <P {...props} />
         </div>
       </div>

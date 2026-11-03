@@ -1,9 +1,11 @@
 "use client"
 
 // features/meu-mundo/ui/status/stat-bars.tsx — as BARRAS DE STATUS da Visão
-// Geral (2026-11-03). Pedido do Alex: "barras como a placa de luta" (o sangue
-// em paralelogramo do fight-plate.tsx) para defesa, ataque, força,
-// inteligência, destreza e velocidade, cada uma de uma cor, de 0 a 1000.
+// Geral (2026-11-03). Pedido do Alex, com o desenho dele: uma linha por status
+// (moldura dourada, ícone grande, nome em itálico, barra inclinada com marcas,
+// "720 / 1000"), cada uma de uma cor — defesa, ataque, força, inteligência,
+// destreza e velocidade, de 0 a 1000; no cabeçalho a placa NV + HP; no fim,
+// a explicação de onde cada status influencia e como sobe.
 //
 // Força/inteligência/destreza/velocidade = o valor da vida (o mesmo da página
 // Atributos). Defesa e ataque não são pontos na regra (são % do nível de
@@ -11,24 +13,27 @@
 //   defesa = defesa / DEF_MAX (60%, o teto com equipamento) × 1000
 //   ataque = bônus de dano / bônus do nível máximo × 1000
 // e o % de verdade aparece pequeno ao lado do nome.
+// Os textos da explicação seguem laminas/sim/fight.ts (statEffects,
+// rankOdds, HERO_LEVEL) e o speedFactor do Jetpack.
 
 import { useEffect, useState, type ReactNode } from "react"
-import { Brain, Crosshair, Dumbbell, Shield, Swords, Wind } from "lucide-react"
+import { BicepsFlexed, Brain, Crosshair, Feather, Heart, Shield, Swords } from "lucide-react"
 import type { LifeFull } from "../../types"
-import { DEF_MAX, HERO_LEVEL_MAX, heroLevelScale } from "../../laminas/sim/fight"
+import { DEF_MAX, HERO_LEVEL, HERO_LEVEL_MAX, heroLevelScale } from "../../laminas/sim/fight"
 import { anton } from "../hud/fight-plate"
-import { archivo, EVO, teko } from "./evo-skin"
+import { archivo, cinzel, EVO, teko } from "./evo-skin"
 import { currentUiFx } from "../kit/steam/fx-tier"
 import { useLocale } from "@/components/i18n/I18nProvider"
 
 type Tr = (key: string, fallback: string) => string
 
 export const STAT_MAX = 1000
-const CORTE = 0.55 // inclinação do sangue da placa (corte = h × 0,55)
-const TRILHO = "rgba(5,3,8,.82)"
-const CONTORNO = "rgba(214,167,91,.75)"
+const TRILHO = "rgba(4,4,8,.9)"
+const CONTORNO = "rgba(196,200,214,.55)"
+const MOLDURA = "rgba(214,167,91,.55)"
+const CARD = "linear-gradient(180deg, rgba(22,26,34,.92), rgba(10,12,17,.92))"
 
-/** Escurece um #rrggbb (o "fundo" do degradê, como o magentaFundo da placa). */
+/** Escurece um #rrggbb (o "fundo" do degradê). */
 function darken(hex: string, k: number) {
   const n = parseInt(hex.slice(1), 16)
   const ch = (s: number) => Math.round(((n >> s) & 255) * (1 - k))
@@ -37,38 +42,38 @@ function darken(hex: string, k: number) {
 
 const slant = (c: number) => `polygon(${c}px 0, 100% 0, calc(100% - ${c}px) 100%, 0 100%)`
 
-/** Um paralelogramo: trilho escuro, contorno dourado, enchimento em degradê, vidro, marcas de 25%. */
-function SlantBar({ value, color, h }: { value: number; color: string; h: number }) {
-  const target = Math.max(0, Math.min(1, value / STAT_MAX))
+/** Barra inclinada: trilho escuro, contorno de metal, enchimento em degradê com brilho, marcas inclinadas. */
+function SlantBar({ f, color, h, ticks = 11 }: { f: number; color: string; h: number; ticks?: number }) {
+  const target = Math.max(0, Math.min(1, f))
   // enche ao abrir (só transform; no "low" já nasce cheia)
   const [p, setP] = useState(() => (currentUiFx() === "low" ? target : 0))
   useEffect(() => {
     const id = requestAnimationFrame(() => setP(target))
     return () => cancelAnimationFrame(id)
   }, [target])
-  const c = h * CORTE
+  const c = h * 0.7
   const b = 1.5
   return (
-    <div className="relative w-full" style={{ height: h }}>
+    <div className="relative w-full" style={{ height: h, filter: `drop-shadow(0 0 ${Math.round(h * 0.35)}px ${color}55)` }}>
       <div className="absolute inset-0" style={{ clipPath: slant(c), background: CONTORNO }} />
       <div className="absolute overflow-hidden" style={{ inset: b, clipPath: slant(c - b * 0.6), background: TRILHO }}>
         <div
           className="absolute inset-0"
           style={{
             clipPath: slant(c),
-            background: `linear-gradient(180deg, ${color}, ${darken(color, 0.55)})`,
+            background: `linear-gradient(180deg, ${color} 0%, ${color} 45%, ${darken(color, 0.45)} 100%)`,
             transform: `translateX(${(p - 1) * 100}%)`,
-            transition: "transform 700ms cubic-bezier(.2,.8,.2,1)",
+            transition: "transform 750ms cubic-bezier(.2,.8,.2,1)",
             willChange: "transform",
           }}
         >
-          <div className="absolute inset-x-0 top-0" style={{ height: "28%", background: "rgba(255,255,255,.22)" }} />
+          <div className="absolute inset-x-0 top-0" style={{ height: "34%", background: "linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.12))" }} />
         </div>
-        {[1, 2, 3].map((i) => (
+        {Array.from({ length: ticks }, (_, i) => (
           <div
             key={i}
-            className="absolute"
-            style={{ left: `${i * 25}%`, top: "62%", bottom: 0, width: 1.5, background: "rgba(0,0,0,.5)", transform: "skewX(-29deg)", transformOrigin: "bottom" }}
+            className="absolute inset-y-0"
+            style={{ left: `${((i + 1) * 100) / (ticks + 1)}%`, width: 1.5, background: "rgba(0,0,0,.42)", transform: "skewX(-32deg)" }}
           />
         ))}
       </div>
@@ -76,87 +81,248 @@ function SlantBar({ value, color, h }: { value: number; color: string; h: number
   )
 }
 
+/** "720 / 1000" em itálico (Anton). */
+function Value({ v, max, size }: { v: number; max: number; size: number }) {
+  return (
+    <span
+      className={`${anton.className} inline-block shrink-0 whitespace-nowrap tabular-nums leading-none`}
+      style={{ fontFamily: anton.style.fontFamily, fontSize: size, color: "#f5f1ed", transform: "skewX(-9deg)", textShadow: "0 2px 0 #000" }}
+    >
+      {v}
+      <span style={{ fontSize: size * 0.78, color: "#d9dce4" }}> / {max}</span>
+    </span>
+  )
+}
+
 export interface StatRow {
-  key: string
+  key: keyof typeof COLORS
   icon: ReactNode
   label: string
-  color: string
   value: number
   /** O valor de verdade quando não é ponto (o % da defesa/ataque). */
   note?: string
 }
 
+function usePct() {
+  const locale = useLocale()
+  return (v: number) => (Math.round(v * 1000) / 10).toLocaleString(locale, { maximumFractionDigits: 1 })
+}
+
+const COLORS = { def: "#2F8BFF", atk: "#FF2E55", str: "#FF9A1F", int: "#B04DFF", dex: "#2EE85A", spd: "#FFD21F" } as const
+
 /** As 6 linhas, na ordem pedida. `level` = nível de aventura (sem = nível 1). */
 export function useStatRows(life: LifeFull, level: number | undefined, t: Tr): StatRow[] {
-  const locale = useLocale()
-  const pct = (v: number) => (Math.round(v * 1000) / 10).toLocaleString(locale, { maximumFractionDigits: 1 })
+  const pct = usePct()
   const at = life.character.attributes
   const h = heroLevelScale(level ?? 1)
   const atkTop = heroLevelScale(HERO_LEVEL_MAX).dmg - 1
   return [
-    { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), color: "#5B9DFF", value: Math.round(Math.min(1, h.def / DEF_MAX) * STAT_MAX), note: `${pct(h.def)}%` },
-    { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), color: "#FF8A2A", value: Math.round(Math.min(1, (h.dmg - 1) / atkTop) * STAT_MAX), note: `+${pct(h.dmg - 1)}%` },
-    { key: "str", icon: <Dumbbell />, label: t("atStrength", "Força"), color: "#FF2D4B", value: at.strength },
-    { key: "int", icon: <Brain />, label: t("atIntelligence", "Inteligência"), color: "#B35CFF", value: at.intelligence },
-    { key: "dex", icon: <Crosshair />, label: t("attrDexterity", "Destreza"), color: "#2FE3C8", value: at.dexterity ?? 0 },
-    { key: "spd", icon: <Wind />, label: t("atSpeed", "Velocidade"), color: "#7CF05A", value: at.speed },
+    { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), value: Math.round(Math.min(1, h.def / DEF_MAX) * STAT_MAX), note: `${pct(h.def)}%` },
+    { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), value: Math.round(Math.min(1, (h.dmg - 1) / atkTop) * STAT_MAX), note: `+${pct(h.dmg - 1)}%` },
+    { key: "str", icon: <BicepsFlexed />, label: t("atStrength", "Força"), value: at.strength },
+    { key: "int", icon: <Brain />, label: t("atIntelligence", "Inteligência"), value: at.intelligence },
+    { key: "dex", icon: <Crosshair />, label: t("attrDexterity", "Destreza"), value: at.dexterity ?? 0 },
+    { key: "spd", icon: <Feather />, label: t("atSpeed", "Velocidade"), value: at.speed },
   ]
 }
 
-/** Uma linha: ícone + nome (+ %) à esquerda, a barra e o número grande na ponta. */
-function StatLine({ row, small }: { row: StatRow; small: boolean }) {
-  const h = small ? 13 : 22
-  const num = small ? 19 : 32
-  const v = Math.round(Math.max(0, Math.min(STAT_MAX, row.value)))
+/** Ícone colorido com brilho. */
+function Glyph({ color, size, children }: { color: string; size: number; children: ReactNode }) {
   return (
-    <div className="flex min-w-0 items-center" style={{ gap: small ? 6 : 10 }}>
-      <div className="flex shrink-0 items-center" style={{ width: small ? 132 : 210, gap: small ? 4 : 7 }}>
-        <span className="flex shrink-0 items-center justify-center" style={{ color: row.color, width: small ? 12 : 20, height: small ? 12 : 20, filter: `drop-shadow(0 0 4px ${row.color}88)` }}>
-          <span className="[&>svg]:h-full [&>svg]:w-full" style={{ width: "100%", height: "100%" }}>
-            {row.icon}
-          </span>
-        </span>
-        {/* nome e o % na MESMA linha: todas as linhas com a mesma altura */}
-        <div className="flex min-w-0 items-baseline leading-none" style={{ gap: small ? 4 : 6 }}>
-          <span className={`${teko.className} min-w-0 truncate font-semibold uppercase`} style={{ fontSize: small ? 14 : 20, letterSpacing: "0.06em", color: EVO.branco }}>
-            {row.label}
-          </span>
-          {row.note && (
-            <span className={`${archivo.className} shrink-0 font-semibold tabular-nums`} style={{ fontSize: small ? 9.5 : 12, color: row.color }}>
-              {row.note}
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="relative min-w-0 flex-1" style={{ paddingRight: small ? 40 : 64 }}>
-        <SlantBar value={v} color={row.color} h={h} />
+    <span className="flex shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full" style={{ width: size, height: size, color, filter: `drop-shadow(0 0 6px ${color}aa)` }}>
+      {children}
+    </span>
+  )
+}
+
+/** Uma linha do desenho do Alex: moldura, ícone, nome, barra e "N / 1000". */
+function StatLine({ row, small }: { row: StatRow; small: boolean }) {
+  const v = Math.round(Math.max(0, Math.min(STAT_MAX, row.value)))
+  const color = COLORS[row.key]
+  return (
+    <div
+      className="flex min-w-0 items-center"
+      style={{
+        gap: small ? 7 : 14,
+        padding: small ? "8px 10px" : "10px 18px 10px 16px",
+        borderRadius: small ? 8 : 10,
+        background: CARD,
+        boxShadow: `inset 0 0 0 1px ${MOLDURA}, inset 0 1px 0 rgba(255,255,255,.06), 0 2px 8px rgba(0,0,0,.4)`,
+      }}
+    >
+      <Glyph color={color} size={small ? 24 : 36}>
+        {row.icon}
+      </Glyph>
+      <div className="flex shrink-0 items-baseline" style={{ width: small ? 132 : 236, gap: small ? 4 : 8 }}>
         <span
-          className={`${anton.className} pointer-events-none absolute right-0 top-1/2 tabular-nums leading-none`}
-          style={{
-            fontFamily: anton.style.fontFamily,
-            fontSize: num,
-            color: "#f5f1ed",
-            transform: "translateY(-52%) skewX(-9deg)",
-            WebkitTextStroke: `${small ? 2.5 : 4}px rgba(0,0,0,.92)`,
-            paintOrder: "stroke fill",
-            textShadow: `0 0 ${small ? 5 : 9}px ${row.color}99`,
-          }}
+          className={`${teko.className} inline-block min-w-0 truncate font-semibold uppercase leading-none`}
+          style={{ fontSize: small ? 19 : 31, letterSpacing: "0.01em", color: EVO.branco, transform: "skewX(-8deg)", textShadow: "0 2px 0 #000", paddingTop: "0.12em" }}
         >
-          {v}
+          {row.label}
         </span>
+        {row.note && (
+          <span className={`${archivo.className} shrink-0 font-bold tabular-nums`} style={{ fontSize: small ? 9.5 : 12.5, color }}>
+            {row.note}
+          </span>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <SlantBar f={v / STAT_MAX} color={color} h={small ? 15 : 24} ticks={small ? 7 : 11} />
+      </div>
+      <div className="flex shrink-0 justify-end" style={{ width: small ? 70 : 118 }}>
+        <Value v={v} max={STAT_MAX} size={small ? 16 : 26} />
       </div>
     </div>
   )
 }
 
-/** As 6 barras, uma por linha (como a placa de luta). */
+/** As 6 barras, uma embaixo da outra. */
 export function StatBars({ life, level, t, small = false }: { life: LifeFull; level?: number; t: Tr; small?: boolean }) {
   const rows = useStatRows(life, level, t)
   return (
-    <div className="grid" style={{ rowGap: small ? 7 : 12 }}>
+    <div className="grid" style={{ rowGap: small ? 6 : 8 }}>
       {rows.map((r) => (
         <StatLine key={r.key} row={r} small={small} />
       ))}
+    </div>
+  )
+}
+
+/** A placa "NV. 6" do cabeçalho (com o XP do nível embaixo). */
+export function LevelBadge({ level, into, need, t }: { level: number; into: number; need: number; t: Tr }) {
+  return (
+    <div className="flex shrink-0 flex-col items-center gap-1">
+      <div
+        className="flex items-baseline gap-1.5 px-5 py-1.5"
+        style={{
+          clipPath: "polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)",
+          background: "linear-gradient(180deg, #2a2216, #0d0b08)",
+          boxShadow: "inset 0 0 0 2px #E8B65B",
+        }}
+      >
+        <span className={`${anton.className} inline-block leading-none`} style={{ fontFamily: anton.style.fontFamily, fontSize: 22, color: "#FFE9B8", transform: "skewX(-9deg)" }}>
+          {t("stLvShort", "NV.")}
+        </span>
+        <span className={`${anton.className} inline-block leading-none`} style={{ fontFamily: anton.style.fontFamily, fontSize: 38, color: "#FFD23F", transform: "skewX(-9deg)", textShadow: "0 2px 0 #000" }}>
+          {level}
+        </span>
+      </div>
+      <span className={`${archivo.className} tabular-nums`} style={{ fontSize: 11, color: EVO.mudo }}>
+        {need > 0 ? `${into} / ${need} XP` : "MAX"}
+      </span>
+    </div>
+  )
+}
+
+/** A placa de HP do cabeçalho: coração, "HP", "118 / 118" e a barra vermelha inclinada. */
+export function HpPlate({ level, t }: { level: number; t: Tr }) {
+  const hp = heroLevelScale(level).hp
+  return (
+    <div
+      className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-5 pr-7"
+      style={{
+        clipPath: "polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%)",
+        background: "linear-gradient(180deg, #2a0d14, #0e0609)",
+        boxShadow: "inset 0 0 0 2px #FF3B5C, inset 0 0 18px rgba(255,40,80,.35)",
+      }}
+    >
+      <Glyph color="#FF3B5C" size={30}>
+        <Heart />
+      </Glyph>
+      <span className={`${anton.className} inline-block shrink-0 leading-none`} style={{ fontFamily: anton.style.fontFamily, fontSize: 26, color: "#f5f1ed", transform: "skewX(-9deg)" }}>
+        {t("stHp", "HP")}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex justify-end">
+          <Value v={hp} max={hp} size={20} />
+        </div>
+        <SlantBar f={1} color="#FF2E55" h={12} ticks={0} />
+      </div>
+    </div>
+  )
+}
+
+/** O fim da página: onde cada status influencia e como sobe. */
+export function StatGuide({ t, small = false }: { t: Tr; small?: boolean }) {
+  const pct = usePct()
+  const items: [keyof typeof COLORS, ReactNode, string, string, string][] = [
+    [
+      "def",
+      <Shield key="i" />,
+      t("stDefense", "Defesa"),
+      t("sgDefWhere", "Reduz o dano que você leva nas lutas."),
+      t("sgDefHow", "Sobe {d}% a cada nível de aventura (até {lv}%) e com o equipamento do Armeiro e da Forja. O total nunca passa de {max}%.")
+        .replace("{d}", pct(HERO_LEVEL.def))
+        .replace("{lv}", pct(HERO_LEVEL.defMax))
+        .replace("{max}", pct(DEF_MAX)),
+    ],
+    [
+      "atk",
+      <Swords key="i" />,
+      t("stAttack", "Ataque"),
+      t("sgAtkWhere", "Multiplica o dano de cada golpe seu nas lutas."),
+      t("sgAtkHow", "Sobe +{d}% a cada nível de aventura. A arma e o refino na Forja somam por cima.").replace("{d}", pct(HERO_LEVEL.dmg)),
+    ],
+    [
+      "str",
+      <BicepsFlexed key="i" />,
+      t("atStrength", "Força"),
+      t("sgStrWhere", "Dano dos golpes (até +50% com 1000). Conta para virar adulto."),
+      t("sgStrHow", "Treinando na academia (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Sem treino cai até 60% do maior valor."),
+    ],
+    [
+      "int",
+      <Brain key="i" />,
+      t("atIntelligence", "Inteligência"),
+      t("sgIntWhere", "Mostra o aviso do golpe do inimigo mais cedo (até +35%) e é o que mais pesa na chance de golpe forte."),
+      t("sgIntHow", "Estudando na escola ou na universidade (rende até 5 h por dia). Nunca cai abaixo de 90% do maior valor."),
+    ],
+    [
+      "dex",
+      <Crosshair key="i" />,
+      t("attrDexterity", "Destreza"),
+      t("sgDexWhere", "Gasta menos fôlego no ataque e na esquiva (até −15%), recupera a arma mais rápido e ajuda no golpe forte."),
+      t("sgDexHow", "Jogando os minijogos e lutando."),
+    ],
+    [
+      "spd",
+      <Feather key="i" />,
+      t("atSpeed", "Velocidade"),
+      t("sgSpdWhere", "Ritmo dos golpes (até +30%) e passo na luta (até +20%); no Jetpack, a velocidade do voo."),
+      t("sgSpdHow", "Treinando na academia. Sem treino cai até 60% do maior valor; voltar ao topo é mais rápido."),
+    ],
+  ]
+  return (
+    <div style={{ padding: small ? 10 : "14px 18px", borderRadius: small ? 8 : 10, background: CARD, boxShadow: `inset 0 0 0 1px ${MOLDURA}` }}>
+      <h3 className={`${cinzel.className} font-bold uppercase leading-tight`} style={{ fontSize: small ? 12.5 : 15, letterSpacing: "0.08em", color: "#FFD68A", textShadow: "0 1px 0 #000" }}>
+        {t("sgTitle", "Como funcionam os status")}
+      </h3>
+      <div className={`mt-2 grid ${small ? "gap-2.5" : "grid-cols-2 gap-x-6 gap-y-3"}`}>
+        {items.map(([k, icon, label, where, how]) => (
+          <div key={k} className="flex items-start" style={{ gap: small ? 8 : 10 }}>
+            <Glyph color={COLORS[k]} size={small ? 18 : 22}>
+              {icon}
+            </Glyph>
+            <div className={`${archivo.className} min-w-0 leading-snug`} style={{ fontSize: small ? 11 : 13 }}>
+              <div className={`${teko.className} font-semibold uppercase leading-none`} style={{ fontSize: small ? 16 : 20, color: COLORS[k] }}>
+                {label}
+              </div>
+              <div style={{ color: EVO.branco }}>
+                <b>{t("sgWhere", "Onde vale:")}</b> {where}
+              </div>
+              <div style={{ color: EVO.mudo }}>
+                <b style={{ color: EVO.douradoClaro }}>{t("sgHow", "Como sobe:")}</b> {how}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className={`${archivo.className} mt-3 leading-snug`} style={{ fontSize: small ? 10.5 : 12.5, color: EVO.mudo }}>
+        {t(
+          "sgFoot",
+          "Cada nível de aventura também soma +{n} em força, inteligência, destreza e velocidade (vale na luta). A prática de cada dia tem limite; vencer rende mais que perder, e com energia alta e estresse baixo rende mais.",
+        ).replace("{n}", String(HERO_LEVEL.attr))}
+      </p>
     </div>
   )
 }
