@@ -13,8 +13,9 @@
 // são as skins de 2 m, rigadas com as animações do Sergio: andam e golpeiam com
 // os clipes do boxe, como o jogador na arena) e o Lobo = a fera de 4 patas
 // (mm3d-54: GLB com esqueleto e clipes próprios — Idle/Walk/Run/Bite/Pounce/
-// Dodge/Hit/Die/Howl, pipeline/laminas/build_lobo_anim.py; os golpes tocam o
-// trecho do clipe esticado na duração da regra). 2026-11-02: o Brutamontes é o
+// Dodge pelo pipeline/laminas/build_lobo_anim.py; 2026-11-03: Hit/Die/Howl e os
+// novos pelo build_lobo_aa.py, escolha do Alex, juntos no merge_lobo.py; os golpes
+// tocam o trecho do clipe esticado na duração da regra). 2026-11-02: o Brutamontes é o
 // minotauro do Alex (4 m, "do tamanho do Golem") com o machado de 3 m e as
 // animações de machado (Pro Melee Axe Pack) — BRUTE abaixo.
 //
@@ -109,7 +110,7 @@ const HUMAN: Record<MobKind, { body: BodyId; scale: number; looks: string[] }> =
   brute: { body: "strong", scale: 1.15, looks: ["2760"] },
 }
 /** O lobo (pipeline/laminas/build_lobo_anim.py): o focinho chega no +X do Babylon → −90° leva ao +Z (frente). */
-const WOLF_URL = "/meu-mundo/laminas/lobo-m54.glb"
+const WOLF_URL = "/meu-mundo/laminas/lobo-m65.glb"
 const WOLF_TURN = -Math.PI / 2
 /** 2,5 m de altura (Alex, 2026-11-03): na escala 2 o Idle mede 2,06 m (lobo-harness/probe.js). */
 const WOLF_SCALE = (2 * 2.5) / 2.06
@@ -117,12 +118,32 @@ const WOLF_SCALE = (2 * 2.5) / 2.06
  * Trechos de cada golpe no clipe (s), iguais aos de build_lobo_anim.py: o
  * preparo, o bote/mordida e a volta tocam esticados na duração da regra.
  */
-const WOLF_ATTACK: Record<string, { clip: string; len: number; windup: [number, number]; strike: [number, number]; recover: [number, number] }> = {
-  bite: { clip: "Bite", len: 1.3, windup: [0, 0.5], strike: [0.5, 0.68], recover: [0.68, 1.3] },
-  pounce: { clip: "Pounce", len: 1.85, windup: [0, 0.6], strike: [0.6, 0.95], recover: [0.95, 1.85] },
+type WolfMove = { clip: string; len: number; windup: [number, number]; strike: [number, number]; recover: [number, number] }
+/** 2026-11-03: cada golpe da regra sorteia o desenho (patada e mordida com avanço vêm do Animal Animator, build_lobo_aa.py). */
+const WOLF_ATTACK: Record<string, WolfMove[]> = {
+  bite: [
+    { clip: "Bite", len: 1.3, windup: [0, 0.5], strike: [0.5, 0.68], recover: [0.68, 1.3] },
+    { clip: "Claw", len: 0.87, windup: [0, 0.43], strike: [0.43, 0.63], recover: [0.63, 0.87] },
+  ],
+  pounce: [
+    { clip: "Pounce", len: 1.85, windup: [0, 0.6], strike: [0.6, 0.95], recover: [0.95, 1.85] },
+    { clip: "Lunge", len: 1.4, windup: [0, 0.47], strike: [0.47, 0.87], recover: [0.87, 1.4] },
+  ],
 }
+/** Na rua, parado: o que ele faz e por quantos segundos (repete o Idle de propósito). */
+const WOLF_STREET: [string, boolean, number][] = [
+  ["Idle", true, 5],
+  ["Sniff", false, 2.5],
+  ["Idle", true, 4],
+  ["Sit", false, 6],
+  ["Snarl", true, 3],
+  ["Shake", false, 1.6],
+  ["Idle", true, 5],
+  ["Sleep", true, 9],
+]
 /** Velocidade das patas no chão com o clipe a 1× (m/s; 1,12 e 8,5 na escala 2): o clipe acompanha o passo. */
 const WOLF_WALK = (1.12 * WOLF_SCALE) / 2
+const WOLF_TROT = (1.6 * WOLF_SCALE) / 2
 const WOLF_RUN = (8.5 * WOLF_SCALE) / 2
 
 /** Biblioteca de avatares com os clipes do boxe, uma por cena (monstros rigados). */
@@ -172,6 +193,8 @@ export interface MobPose {
   attack?: { id: string; windup: number; active: number; recover: number }
   /** Na rua (mm3d-57b): gente anda e para na pose de descanso, sem a guarda do boxe. */
   calm?: boolean
+  /** Pouca vida na luta: o lobo se encolhe quando para. */
+  weak?: boolean
 }
 
 const VIOLET = new Color3(0.72, 0.3, 1)
@@ -221,6 +244,9 @@ export class MonsterModel {
   private wolf: { anims: Map<string, AnimationGroup>; entries: InstantiatedEntries } | null = null
   private wolfClip = ""
   private dodgeLeft = 0
+  private wolfMove: WolfMove | null = null
+  private streetAt = Math.floor(Math.random() * WOLF_STREET.length)
+  private streetLeft = 0
   private gloves: BoxingGloves | null = null
   /** Brutamontes: o machado na mão e o golpe sorteado do ataque em curso. */
   private axe: TransformNode | null = null
@@ -539,12 +565,16 @@ export class MonsterModel {
     this.body.scaling.setAll(1)
     this.body.position.setAll(0)
     this.body.rotation.setAll(0)
-    const atk = p.attack ? WOLF_ATTACK[p.attack.id] : undefined
     const was = this.last
     this.last = p.state
+    if (p.attack && p.state === "windup" && was !== "windup") {
+      const opts = WOLF_ATTACK[p.attack.id]
+      this.wolfMove = opts ? opts[Math.floor(Math.random() * opts.length)] : null
+    }
+    const atk = this.wolfMove
     switch (p.state) {
       case "spawn":
-        this.playWolf("Howl", false)
+        this.playWolf("Howl", false, 1.8) // 3,6 s no clipe: cabe na chegada
         break
       case "windup":
       case "strike":
@@ -556,7 +586,7 @@ export class MonsterModel {
         break
       }
       case "hurt":
-        this.playWolf("Hit", false)
+        this.playWolf("Hit", false, 1.3)
         break
       case "dead":
         this.playWolf("Die", false)
@@ -572,9 +602,22 @@ export class MonsterModel {
           this.dodgeLeft -= dt
           break
         }
+        if (p.speed > 0.25) this.streetLeft = 0
         if (p.speed > 2.6) this.playWolf("Run", true, Math.min(1.6, Math.max(0.85, p.speed / WOLF_RUN)))
-        else if (p.speed > 0.25) this.playWolf("Walk", true, Math.min(2.2, Math.max(0.6, p.speed / WOLF_WALK)))
-        else this.playWolf("Idle", true)
+        else if (p.speed > 1.4) this.playWolf("Trot", true, Math.min(1.6, Math.max(0.7, p.speed / WOLF_TROT)))
+        else if (p.speed > 0.25) {
+          if (p.state === "circle" && !p.calm) this.playWolf("Stalk", true, Math.min(2.2, Math.max(0.8, p.speed / WOLF_WALK)))
+          else this.playWolf("Walk", true, Math.min(2.2, Math.max(0.6, p.speed / WOLF_WALK)))
+        } else if (p.calm) {
+          this.streetLeft -= dt
+          if (this.streetLeft <= 0) {
+            this.streetAt = (this.streetAt + 1) % WOLF_STREET.length
+            this.streetLeft = WOLF_STREET[this.streetAt][2]
+          }
+          const [clip, loop] = WOLF_STREET[this.streetAt]
+          this.playWolf(clip, loop)
+        } else if (p.weak) this.playWolf("Cower", false)
+        else this.playWolf(p.state === "circle" ? "Snarl" : "Idle", true)
       }
     }
   }

@@ -3,7 +3,7 @@
 // Pedido do Alex: no poder sai "um lobo — só uma cabeça grande com uma juba
 // pequena no pescoço" e nos vampiros "um morcego todo grandão". Os dois são
 // feitos de luz: brilham pelas bordas (fresnel), translúcidos, sem sombra.
-//  - Lobo: o lobo da Arena (lobo-m54.glb) tocando a mordida, cortado logo
+//  - Lobo: o lobo da Arena (lobo-m65.glb) tocando a mordida, cortado logo
 //    atrás do osso Head_0 por um plano de recorte que só vale para ele
 //    (liga antes de desenhar, desliga depois) — fica a cabeça e um pedaço
 //    da juba. Avança à frente de quem soltou o poder.
@@ -26,7 +26,7 @@ import type { AnimationGroup } from "@babylonjs/core/Animations/animationGroup"
 import type { AssetContainer } from "@babylonjs/core/assetContainer"
 import "@babylonjs/loaders/glTF"
 
-const WOLF_URL = "/meu-mundo/laminas/lobo-m54.glb"
+const WOLF_URL = "/meu-mundo/laminas/lobo-m65.glb"
 /** O lobo chega com o focinho para o lado (mesmo giro da monster-view). */
 const WOLF_TURN = -Math.PI / 2
 

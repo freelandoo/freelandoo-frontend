@@ -943,7 +943,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       const warn = m.state === "windup" ? Math.min(1, m.t / Math.max(0.05, m.windup)) : 0
       const cur = m.state === "windup" || m.state === "strike" || m.state === "recover" ? MOBS[m.kind].attacks[m.atk] : undefined
       const attack = cur ? { id: cur.id, windup: m.windup, active: cur.active, recover: cur.recover } : undefined
-      v.model.update(dt, { x: m.x, y: m.y, z: m.z, facing: m.facing, state: m.state, t: m.t, warn, speed: v.speed, attack })
+      v.model.update(dt, { x: m.x, y: m.y, z: m.z, facing: m.facing, state: m.state, t: m.t, warn, speed: v.speed, attack, weak: m.hp < m.hpMax * 0.3 })
       if (v.trail) {
         v.trail.active = m.state === "strike"
         // o golpe do Brutamontes acerta: brilho ROXO onde cai (pancada/investida) ou à frente (varrida)
