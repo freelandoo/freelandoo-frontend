@@ -49,6 +49,9 @@ export const SWORD_SKINS: readonly string[] = ["aurion", "morkhan", "zephyra"]
 /** Skins dos golpes do Brutamontes (espelho de HAMMER_SKINS em meuMundoClans.js). */
 export const HAMMER_SKINS: readonly string[] = ["golem", "maru", "kragor", "brutamontes"]
 
+/** As arqueiras (espelho de ARCHER_SKINS em meuMundoClans.js). */
+export const ARCHER_SKINS: readonly string[] = ["iris", "aeryn"]
+
 type Tr = (key: string, fallback: string) => string
 
 /** Nome visível do corpo de classe (traduzido; adulto não muda o nome). */

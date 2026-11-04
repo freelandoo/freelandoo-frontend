@@ -5,6 +5,7 @@
 // Quem decide quem pode ver é o SERVIDOR (auth + papel Administrator): 401 e
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
+import { serverErrorText } from "./server-errors"
 import type {
   CenterPayload,
   HospitalInfo,
@@ -142,7 +143,7 @@ async function call<T>(token: string, method: "GET" | "POST", path: string, body
     return { ok: false, status: 0, error: "network" }
   }
   const data = (await res.json().catch(() => null)) as (T & { error?: string; code?: string }) | null
-  if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}`, code: data?.code }
+  if (!res.ok || !data) return { ok: false, status: res.status, error: serverErrorText(data?.error || `http ${res.status}`), code: data?.code }
   return { ok: true, data }
 }
 
@@ -208,7 +209,8 @@ export interface FightTicket {
     stats: { strength: number; speed: number; intelligence: number; dexterity: number }
     style: "mage" | null
     /** "hammer" = golpes do Brutamontes (só desenho; a regra é a do corpo a corpo). */
-    kit?: "hammer" | null
+    /** "bow" = flechas de luz (só desenho; a regra é a do tiro da maga). */
+    kit?: "hammer" | "bow" | null
     /** Bônus do equipamento (com teto); o Boxe é de luvas: null. */
     gear: Partial<GearBonus> | null
     /** Nível de aventura de quem joga (vida/defesa/ataque crescem com ele). */
@@ -260,7 +262,7 @@ export interface GearItem {
   id: string
   category: GearCategory
   /** Aba do balcão de armas do Arsenal: espadas (mm3d-66) ou Hammers (mm3d-67). */
-  shop?: "shields" | "weapons" | "hammers" | null
+  shop?: "shields" | "weapons" | "hammers" | "bows" | null
   name: string
   rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
   price: number | null
@@ -327,6 +329,8 @@ export interface GearBag {
   warrior?: boolean
   /** Veste Soldado de Pedra, Marú ou Kragor: só ele usa as armas da aba Hammers. */
   hammer?: boolean
+  /** Veste Íris ou Aeryn: só ela usa os arcos. */
+  archer?: boolean
   clan: Clan | null
   level: number
   coins: number
@@ -472,7 +476,7 @@ export async function postFollow(
       cache: "no-store",
     })
     const data = (await res.json().catch(() => null)) as { is_following?: boolean; counts?: { followers_count?: number }; error?: string } | null
-    if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+    if (!res.ok || !data) return { ok: false, status: res.status, error: serverErrorText(data?.error || `http ${res.status}`) }
     const n = Number(data.counts?.followers_count)
     return { ok: true, data: { isFollowing: typeof data.is_following === "boolean" ? data.is_following : follow, followers: Number.isFinite(n) ? n : null } }
   } catch {
@@ -485,7 +489,7 @@ export async function getPolenProducts(): Promise<ApiResult<{ products: PolenPro
   try {
     const res = await fetch("/api/polens/products", { cache: "no-store" })
     const data = (await res.json().catch(() => null)) as { products?: PolenProduct[]; error?: string } | null
-    if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+    if (!res.ok || !data) return { ok: false, status: res.status, error: serverErrorText(data?.error || `http ${res.status}`) }
     return { ok: true, data: { products: data.products ?? [] } }
   } catch {
     return { ok: false, status: 0, error: "network" }
@@ -505,7 +509,7 @@ export async function postPolenCheckout(token: string, productId: string): Promi
       cache: "no-store",
     })
     const data = (await res.json().catch(() => null)) as { checkout_url?: string; session_id?: string; error?: string } | null
-    if (!res.ok || !data?.checkout_url) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+    if (!res.ok || !data?.checkout_url) return { ok: false, status: res.status, error: serverErrorText(data?.error || `http ${res.status}`) }
     return { ok: true, data: { checkout_url: data.checkout_url, session_id: data.session_id ?? "" } }
   } catch {
     return { ok: false, status: 0, error: "network" }
@@ -544,7 +548,7 @@ export async function getConversations(token: string): Promise<ApiResult<{ items
       other_entity: { display_name?: string | null; username?: string | null; avatar_url?: string | null } | null
     }
     const data = (await res.json().catch(() => null)) as { items?: Raw[]; error?: string } | null
-    if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+    if (!res.ok || !data) return { ok: false, status: res.status, error: serverErrorText(data?.error || `http ${res.status}`) }
     return {
       ok: true,
       data: {
@@ -633,7 +637,7 @@ export async function getDirectMessages(token: string, id: string, actorId: stri
   }).catch(() => null)
   if (!res) return { ok: false, status: 0, error: "network" }
   const data = (await res.json().catch(() => null)) as { items?: RawDm[]; error?: string } | null
-  if (!res.ok || !data) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+  if (!res.ok || !data) return { ok: false, status: res.status, error: serverErrorText(data?.error || `http ${res.status}`) }
   return { ok: true, data: { items: (data.items || []).map((m) => mapDm(m, actorId)).reverse() } }
 }
 /** `client_message_id` (UUID): repetir não duplica (mig 283). */
@@ -645,7 +649,7 @@ export async function postDirectMessage(token: string, id: string, actorId: stri
   }).catch(() => null)
   if (!res) return { ok: false, status: 0, error: "network" }
   const data = (await res.json().catch(() => null)) as { message?: RawDm; error?: string } | null
-  if (!res.ok || !data?.message) return { ok: false, status: res.status, error: data?.error || `http ${res.status}` }
+  if (!res.ok || !data?.message) return { ok: false, status: res.status, error: serverErrorText(data?.error || `http ${res.status}`) }
   return { ok: true, data: { message: { ...mapDm(data.message, actorId), mine: true } } }
 }
 export const postDirectRead = (token: string, id: string, actorId: string) =>
@@ -698,7 +702,7 @@ export async function postHouseLevel(token: string, level: number): Promise<Hous
   }
   const body = (await res.json().catch(() => null)) as { house?: number; level?: number; rev?: number; error?: string; code?: string } | null
   if (!res.ok || !body || typeof body.level !== "number" || typeof body.rev !== "number") {
-    return { ok: false, status: res.status, error: body?.error || `http ${res.status}`, code: body?.code }
+    return { ok: false, status: res.status, error: serverErrorText(body?.error || `http ${res.status}`), code: body?.code }
   }
   return { ok: true, house: Number(body.house), level: body.level, rev: body.rev }
 }

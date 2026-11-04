@@ -51,6 +51,46 @@ const HEAVY_COLORS: Record<string, [string, string]> = {
   neon: ["#3D5BFF", "#C2CEFF"],
 }
 
+/** Arcos (mm3d-69): 1 m no arquivo, build_arcos_loja.py. A cor é a da flecha de luz. */
+const BOW_COLORS: Record<string, [string, string]> = {
+  caca: ["#FFD27A", "#FFF3D0"],
+  teixo: ["#FFC46B", "#FFEBC4"],
+  ronda: ["#FF9A5A", "#FFDCC2"],
+  cobre: ["#FF8A3D", "#FFD2AE"],
+  aco_negro: ["#7FA8D6", "#D6E6F7"],
+  sentinela: ["#B5D66B", "#E8F5C4"],
+  galhos: ["#F0C04A", "#FFF0BE"],
+  safira: ["#3D7BFF", "#BFD6FF"],
+  lua: ["#A9B8FF", "#E4E9FF"],
+  mares: ["#2FE0C0", "#C4FFF2"],
+  celeste: ["#47C8FF", "#D0F2FF"],
+  eclipse: ["#FFB84A", "#FFE9C0"],
+  laminas: ["#9FB4D0", "#E2EAF4"],
+  asa_branca: ["#FFF2C8", "#FFFFFF"],
+  ametista: ["#B45CFF", "#EBD2FF"],
+  plumas: ["#FFD9A0", "#FFF4E0"],
+  estrelas: ["#5C8CFF", "#D0DEFF"],
+  dragao: ["#FF2B4A", "#FFC0CA"],
+  rubro: ["#FF3048", "#FFB8C2"],
+}
+/** Arco próprio da deusa (não está à venda): a skin atira com ele sem arco de loja. */
+const GOD_BOWS: Record<string, [string, string]> = {
+  iris: ["#FF4FD8", "#7DE8FF"],
+  aeryn: ["#FFC23D", "#FFF2C0"],
+}
+const bowOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
+  c ? { file: `${DIR}/arco-${k}-m69.glb`, thumb: `${DIR}/thumb/arco-${k}.webp`, main: c[0], edge: c[1] } : null
+
+/** O arco da loja por id do item; null = não é da aba Arcos. */
+export function shopBow(id: string | null | undefined): ShopSword | null {
+  const k = id?.startsWith("arco_") ? id.slice(5) : ""
+  return bowOf(k, BOW_COLORS[k])
+}
+
+export function godBow(body: string | null | undefined): ShopSword | null {
+  return body ? bowOf(body, GOD_BOWS[body]) : null
+}
+
 /** Escudos da loja (mm3d-68): 1 m no arquivo, build_escudos_loja.py. Espelho de `escudo_*` em meuMundoGear.js. */
 const SHIELDS = new Set(["ferro", "rebites", "azul", "cravos", "sol", "prata", "filigrana", "bosque", "ametista", "caveira", "lava", "lanterna", "demonio", "alvorada", "fe", "fera"])
 

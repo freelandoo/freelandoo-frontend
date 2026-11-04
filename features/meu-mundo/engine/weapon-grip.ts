@@ -16,6 +16,13 @@ import type { Observer } from "@babylonjs/core/Misc/observable"
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 
+/** Mão do arco: o pacote de arco longo segura o arco na esquerda. */
+export const BOW_GRIP_BONES = {
+  hand: "mixamorig:LeftHand",
+  index: "mixamorig:LeftHandIndex1",
+  thumb: "mixamorig:LeftHandThumb1",
+} as const
+
 export const GRIP_BONES = {
   hand: "mixamorig:RightHand",
   index: "mixamorig:RightHandIndex1",
@@ -78,6 +85,8 @@ export class WeaponGrip {
     private targets: GripTargets,
     weapon: TransformNode,
     name = "weapon-grip",
+    /** -1 = arma na mão esquerda (o arco): a palma fica do outro lado. */
+    private readonly side: 1 | -1 = 1,
   ) {
     this.root = new TransformNode(name, scene)
     this.root.rotationQuaternion = new Quaternion()
@@ -104,9 +113,10 @@ export class WeaponGrip {
     // ponto da pegada com os eixos da MÃO DIREITA (o ajuste abaixo só gira)
     Vector3.CrossToRef(f, s, this.n)
     this.n.normalize()
-    const px = h.x + (f.x * ALONG + this.n.x * PALM) * len
-    const py = h.y + (f.y * ALONG + this.n.y * PALM) * len
-    const pz = h.z + (f.z * ALONG + this.n.z * PALM) * len
+    const palm = PALM * this.side
+    const px = h.x + (f.x * ALONG + this.n.x * palm) * len
+    const py = h.y + (f.y * ALONG + this.n.y * palm) * len
+    const pz = h.z + (f.z * ALONG + this.n.z * palm) * len
     // duas mãos: o eixo (+Y = s) gira para a linha direita → palma esquerda
     this.twoHanded = 0
     if (this.second) {
