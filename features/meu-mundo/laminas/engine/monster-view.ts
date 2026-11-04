@@ -42,6 +42,7 @@ import { Character } from "../../engine/player"
 import type { BodyId } from "../../types"
 import type { BoxeClip } from "../../engine/avatars"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
+import { shineWeapon } from "../../engine/weapon-shine"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { BoxingGloves } from "./gloves"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
@@ -291,6 +292,7 @@ export class MonsterModel {
             if (this.gone) return c.dispose()
             c.addAllToScene()
             this.axe = c.rootNodes[0] as TransformNode
+            shineWeapon(this.axe)
             for (const m of this.axe.getChildMeshes(false)) m.isPickable = false
             this.axe.setEnabled(false)
           })

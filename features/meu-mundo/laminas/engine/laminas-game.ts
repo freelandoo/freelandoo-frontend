@@ -48,6 +48,7 @@ import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { ARCHER_SKINS, clanOfBody, CLAN_WEAPON, SWORD_SKINS, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES, BOW_GRIP_BONES } from "../../engine/weapon-grip"
 import { godBow, godHeavy, shopBow, shopHeavy, shopShield } from "../../engine/shop-swords"
+import { shineWeapon } from "../../engine/weapon-shine"
 import { LightArrows } from "./light-arrows"
 import { ShieldGrip, SHIELD_BONES } from "../../engine/shield-grip"
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
@@ -393,6 +394,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           if (heavy && m.material instanceof PBRMaterial) m.material.metallic = 0.25
         }
         if (clan && !bow && opts.appearance) decoration = decorateWeapon(scene, weaponRoot, clan, opts.appearance, low, (m) => vfx.addGlow(m))
+        shineWeapon(weaponRoot)
         weaponRoot.setEnabled(false)
       })
       .catch(() => {})
@@ -411,6 +413,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           m.isPickable = false
           if (m.material instanceof PBRMaterial) m.material.metallic = 0.25
         }
+        shineWeapon(shieldRoot)
         shieldRoot.setEnabled(false)
       })
       .catch(() => {})
