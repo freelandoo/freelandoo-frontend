@@ -91,6 +91,44 @@ export function godBow(body: string | null | undefined): ShopSword | null {
   return body ? bowOf(body, GOD_BOWS[body]) : null
 }
 
+/** Armas de fogo (mm3d-70): build_guns_loja.py. A cor é a do tiro de luz. */
+const GUN_COLORS: Record<string, [string, string]> = {
+  sucata: ["#FFB45A", "#FFE6C2"],
+  revolver: ["#8FC8FF", "#DCEEFF"],
+  patrulha: ["#FF8A4A", "#FFDCC6"],
+  dupla: ["#5CE0E8", "#CFF7FA"],
+  pistola: ["#FF4A4A", "#FFCACA"],
+  mira: ["#47B8FF", "#CBEBFF"],
+  trabuco: ["#5CE8C8", "#CFFAF0"],
+  raios: ["#FF6A4A", "#FFD2C6"],
+  tambor: ["#C86AFF", "#EDD2FF"],
+  garra: ["#FFB02E", "#FFE8BC"],
+  rubro: ["#FF3A4A", "#FFC4CA"],
+  neon: ["#2FE8D8", "#C6FAF4"],
+  pinca: ["#3DA8FF", "#C6E4FF"],
+  rosa: ["#FF3DC8", "#FFC6EE"],
+  serpente: ["#E8203C", "#FFB8C2"],
+  assalto: ["#FF8A1F", "#FFDCB4"],
+  sombra: ["#A99CFF", "#E4DEFF"],
+}
+/** Arma própria da skin (não está à venda): atira com ela sem arma de loja. */
+const GOD_GUNS: Record<string, [string, string]> = {
+  ciborgue: ["#FF8A1F", "#FFE0B8"],
+  noctis: ["#2FC2FF", "#CFEFFF"],
+}
+const gunOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
+  c ? { file: `${DIR}/fogo-${k}-m70.glb`, thumb: `${DIR}/thumb/fogo-${k}.webp`, main: c[0], edge: c[1] } : null
+
+/** A arma de fogo da loja por id do item; null = não é da aba Guns. */
+export function shopGun(id: string | null | undefined): ShopSword | null {
+  const k = id?.startsWith("fogo_") ? id.slice(5) : ""
+  return gunOf(k, GUN_COLORS[k])
+}
+
+export function godGun(body: string | null | undefined): ShopSword | null {
+  return body ? gunOf(body, GOD_GUNS[body]) : null
+}
+
 /** Escudos da loja (mm3d-68): 1 m no arquivo, build_escudos_loja.py. Espelho de `escudo_*` em meuMundoGear.js. */
 const SHIELDS = new Set(["ferro", "rebites", "azul", "cravos", "sol", "prata", "filigrana", "bosque", "ametista", "caveira", "lava", "lanterna", "demonio", "alvorada", "fe", "fera"])
 

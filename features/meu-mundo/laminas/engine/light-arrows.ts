@@ -30,7 +30,8 @@ export class LightArrows {
   private readonly meshes: Mesh[] = []
   private readonly mats: StandardMaterial[] = []
 
-  constructor(scene: Scene, vfx: Vfx, color: VfxColor) {
+  /** `size` < 1 = tiro curto de arma de fogo. */
+  constructor(scene: Scene, vfx: Vfx, color: VfxColor, private readonly size = 1) {
     const glow = (name: string, c: Color3) => {
       const m = new StandardMaterial(name, scene)
       m.disableLighting = true
@@ -72,7 +73,7 @@ export class LightArrows {
     const a = this.list.find((x) => !x.on) ?? this.list[0]
     a.id = id
     a.on = true
-    a.size = (heavy ? 1.5 : 1) * scale
+    a.size = (heavy ? 1.5 : 1) * scale * this.size
     a.node.scaling.setAll(a.size)
     a.node.position.copyFrom(at)
     a.last.copyFrom(at)

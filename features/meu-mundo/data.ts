@@ -210,7 +210,7 @@ export interface FightTicket {
     style: "mage" | null
     /** "hammer" = golpes do Brutamontes (só desenho; a regra é a do corpo a corpo). */
     /** "bow" = flechas de luz (só desenho; a regra é a do tiro da maga). */
-    kit?: "hammer" | "bow" | null
+    kit?: "hammer" | "bow" | "gun" | null
     /** Bônus do equipamento (com teto); o Boxe é de luvas: null. */
     gear: Partial<GearBonus> | null
     /** Nível de aventura de quem joga (vida/defesa/ataque crescem com ele). */
@@ -262,7 +262,7 @@ export interface GearItem {
   id: string
   category: GearCategory
   /** Aba do balcão de armas do Arsenal: espadas (mm3d-66) ou Hammers (mm3d-67). */
-  shop?: "shields" | "weapons" | "hammers" | "bows" | null
+  shop?: "shields" | "weapons" | "hammers" | "bows" | "guns" | null
   name: string
   rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
   price: number | null
@@ -331,6 +331,8 @@ export interface GearBag {
   hammer?: boolean
   /** Veste Íris ou Aeryn: só ela usa os arcos. */
   archer?: boolean
+  /** Veste Ciborgue ou Noctis: só ele usa as armas de fogo. */
+  gunner?: boolean
   clan: Clan | null
   level: number
   coins: number

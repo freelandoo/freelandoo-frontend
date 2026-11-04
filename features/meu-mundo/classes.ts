@@ -52,6 +52,9 @@ export const HAMMER_SKINS: readonly string[] = ["golem", "maru", "kragor", "brut
 /** As arqueiras (espelho de ARCHER_SKINS em meuMundoClans.js). */
 export const ARCHER_SKINS: readonly string[] = ["iris", "aeryn"]
 
+/** Quem usa arma de fogo (espelho de GUN_SKINS em meuMundoClans.js). */
+export const GUN_SKINS: readonly string[] = ["ciborgue", "noctis"]
+
 type Tr = (key: string, fallback: string) => string
 
 /** Nome visível do corpo de classe (traduzido; adulto não muda o nome). */

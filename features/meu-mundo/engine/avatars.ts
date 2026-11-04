@@ -40,7 +40,7 @@ import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import { tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
 import { byGod, isGod } from "../gods"
-import { ARCHER_SKINS, byClanBody, clanOfBody, isClanBody, CLAN_ANIMS, HAMMER_SKINS, type Clan } from "../classes"
+import { ARCHER_SKINS, byClanBody, clanOfBody, GUN_SKINS, isClanBody, CLAN_ANIMS, HAMMER_SKINS, type Clan } from "../classes"
 
 export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
@@ -288,9 +288,11 @@ export type ClanClip = (typeof CLAN_CLIPS)[number]
 const BRUTE_FILE = "anim-brutamontes-sergio-m62.glb"
 /** As arqueiras (mm3d-69): pacote de arco longo do Alex. Um corpo baixa ou um conjunto ou outro; os clipes Ar* vivem na mesma lista. */
 const ARCHER_FILE = "anim-arqueiro-sergio-m69.glb"
-const BRUTE_CLIPS = ["XIdle", "XLook", "XWalk", "XRun", "XSweep", "X360", "XBack", "XSmash", "XCombo1", "XCombo2", "XCombo3", "XJump", "XKick", "XBlock", "XHitL", "XHitR", "XHitG", "XTaunt", "XThump", "ArIdle", "ArRun", "ArWalkL", "ArWalkB", "ArDraw", "ArOver", "ArShot", "ArBlock", "ArDive", "ArPunch", "ArHitS", "ArHitL", "ArDie", "ArEquip"] as const
+/** Ciborgue e Noctis (mm3d-70): pacote de fuzil do Alex; clipes Fg*. O Ciborgue também é monstro na mesma luta, por isso este conjunto soma com o do Brutamontes. */
+const GUN_FILE = "anim-atirador-sergio-m70.glb"
+const BRUTE_CLIPS = ["XIdle", "XLook", "XWalk", "XRun", "XSweep", "X360", "XBack", "XSmash", "XCombo1", "XCombo2", "XCombo3", "XJump", "XKick", "XBlock", "XHitL", "XHitR", "XHitG", "XTaunt", "XThump", "ArIdle", "ArRun", "ArWalkL", "ArWalkB", "ArDraw", "ArOver", "ArShot", "ArBlock", "ArDive", "ArPunch", "ArHitS", "ArHitL", "ArDie", "ArEquip", "FgFire", "FgFire1", "FgPlay1", "FgPlay2", "FgPlay4", "FgRel", "FgWalk", "FgRun", "FgBack", "FgStrafe", "FgStrafe2"] as const
 export type BruteClip = (typeof BRUTE_CLIPS)[number]
-const BRUTE_LOOP = new Set<string>(["XIdle", "XLook", "XWalk", "XRun", "XBlock", "XThump", "ArIdle", "ArRun", "ArWalkL", "ArWalkB", "ArOver"])
+const BRUTE_LOOP = new Set<string>(["XIdle", "XLook", "XWalk", "XRun", "XBlock", "XThump", "ArIdle", "ArRun", "ArWalkL", "ArWalkB", "ArOver", "FgPlay4", "FgRel", "FgWalk", "FgRun", "FgBack", "FgStrafe", "FgStrafe2"])
 const CLAN_LOOP = new Set<string>(["RIdle", "VIdle", "VRun", "VStrafe", "VPower", "RBlock", "RRun", "RStrafe", "RCast"])
 /** Gincana (mm3d-47): GRun/GDive/GWin em laço; pulo pela fase do voo; tombo e levantar uma vez. */
 const GINCANA_CLIPS = ["GRun", "GJump", "GFall", "GRise", "GWin", "GDive", "GUp"] as const
@@ -308,7 +310,7 @@ export interface GincanaPose {
 const BOXE_STEP_SPEED = { BStepF: 0.91, BStepB: 0.79, BStepL: 0.61, BStepR: 0.61 } as const
 export type BoxeClip = (typeof BOXE_CLIPS)[number] | ClanClip | BruteClip
 /** Pose-base da luta: guarda, aquecimento, cansado, machucado, andando para o canto, vitória. */
-export type BoxeBase = "ArIdle" | "ArRun" | "ArWalkL" | "ArWalkB" | "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast" | "RIdle" | "XIdle" | "XWalk" | "XRun" | "XThump"
+export type BoxeBase = "ArIdle" | "ArRun" | "ArWalkL" | "ArWalkB" | "FgPlay4" | "FgRel" | "FgWalk" | "FgRun" | "FgBack" | "FgStrafe" | "FgStrafe2" | "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast" | "RIdle" | "XIdle" | "XWalk" | "XRun" | "XThump"
 /** Golpes e reações tocam uma vez (quem dispara é o boxeAct, nunca o laço). */
 const BOXE_LOOP = new Set<string>(["BGuard", "BWarm", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"])
 const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp", ...CLAN_CLIPS.filter((c) => !CLAN_LOOP.has(c)), ...BRUTE_CLIPS.filter((c) => !BRUTE_LOOP.has(c))])
@@ -383,6 +385,7 @@ export class AvatarLibrary {
   private readonly locos = new Map<AnimSet, Promise<AssetContainer>>()
   private brute: Promise<AssetContainer> | null = null
   private archer: Promise<AssetContainer> | null = null
+  private gun: Promise<AssetContainer> | null = null
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -550,6 +553,14 @@ export class AvatarLibrary {
     return p
   }
 
+  private gunSet() {
+    if (!this.gun) {
+      this.gun = LoadAssetContainerAsync(BASE + GUN_FILE, this.scene)
+      this.gun.catch(() => (this.gun = null))
+    }
+    return this.gun
+  }
+
   private archerSet() {
     if (!this.archer) {
       this.archer = LoadAssetContainerAsync(BASE + ARCHER_FILE, this.scene)
@@ -617,7 +628,8 @@ export class AvatarLibrary {
     const locoP = this.locoSet(id).catch(() => null)
     // o Ciborgue da Arena (2026-11-03) usa os golpes pesados do Brutamontes, sem machado
     const bruteP = this.withClan && ARCHER_SKINS.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || (this.withClan && HAMMER_SKINS.includes(id)) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
-    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC] = await Promise.all([
+    const gunP = this.withClan && GUN_SKINS.includes(id) ? this.gunSet().catch(() => null) : Promise.resolve(null)
+    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC, gunC] = await Promise.all([
       this.body(id),
       this.animSet(id),
       sitP,
@@ -631,6 +643,7 @@ export class AvatarLibrary {
       clanP,
       locoP,
       bruteP,
+      gunP,
     ])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
@@ -690,7 +703,7 @@ export class AvatarLibrary {
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
     for (const clip of BRUTE_CLIPS) {
-      const src = bruteC?.animationGroups.find((g) => g.name === clip)
+      const src = bruteC?.animationGroups.find((g) => g.name === clip) ?? gunC?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
     for (const clip of RIDE_CLIPS) {
@@ -747,7 +760,7 @@ export class AvatarLibrary {
 
   dispose() {
     this.disposed = true
-    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values(), ...this.clans.values(), ...this.locos.values(), ...(this.brute ? [this.brute] : []), ...(this.archer ? [this.archer] : [])]
+    const all = [...this.bodies.values(), ...this.lods.values(), ...this.anims.values(), ...this.sits.values(), ...this.rests.values(), ...this.rides.values(), ...this.paints.values(), ...this.places.values(), ...this.boxes.values(), ...this.gincanas.values(), ...this.clans.values(), ...this.locos.values(), ...(this.brute ? [this.brute] : []), ...(this.archer ? [this.archer] : []), ...(this.gun ? [this.gun] : [])]
     for (const p of all) p.then((c) => c.dispose()).catch(() => {})
     this.bodies.clear()
     this.lods.clear()
@@ -763,6 +776,7 @@ export class AvatarLibrary {
     this.locos.clear()
     this.brute = null
     this.archer = null
+    this.gun = null
     for (const m of this.materials.values()) {
       m.diffuseTexture?.dispose()
       m.dispose()
