@@ -213,7 +213,7 @@ export interface FightTicket {
     gear: Partial<GearBonus> | null
     /** Nível de aventura de quem joga (vida/defesa/ataque crescem com ele). */
     hero?: number
-    appearance?: { weaponId: string | null; level: number; cosmetic: string | null }
+    appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null }
   }
   expiresAt: string
 }
@@ -254,13 +254,13 @@ export const finishFight = (token: string, ticket: string, frames: FightFrames) 
 export const getAdventure = (token: string) => call<AdventureState>(token, "GET", "/adventure")
 
 // ═══ mm3d-59 slice 3: equipamento (Armeiro, mochila, forja) ════════════════
-export type GearCategory = "weapon" | "armor" | "accessory" | "material" | "recipe" | "quest" | "cosmetic"
-export type GearSlot = "weapon" | "armor" | "acc1" | "acc2"
+export type GearCategory = "weapon" | "shield" | "armor" | "accessory" | "material" | "recipe" | "quest" | "cosmetic"
+export type GearSlot = "weapon" | "shield" | "armor" | "acc1" | "acc2"
 export interface GearItem {
   id: string
   category: GearCategory
   /** Aba do balcão de armas do Arsenal: espadas (mm3d-66) ou Hammers (mm3d-67). */
-  shop?: "weapons" | "hammers" | null
+  shop?: "shields" | "weapons" | "hammers" | null
   name: string
   rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
   price: number | null

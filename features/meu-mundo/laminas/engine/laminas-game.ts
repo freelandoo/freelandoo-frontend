@@ -47,7 +47,8 @@ import { MonsterModel, AXE_URL, AXE_EDGE } from "./monster-view"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { clanOfBody, CLAN_WEAPON, SWORD_SKINS, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
-import { godHeavy, shopHeavy } from "../../engine/shop-swords"
+import { godHeavy, shopHeavy, shopShield } from "../../engine/shop-swords"
+import { ShieldGrip, SHIELD_BONES } from "../../engine/shield-grip"
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
 import { decorateWeapon, weaponAppearanceProfile, type WeaponAppearance } from "../../engine/weapon-appearance"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
@@ -376,6 +377,24 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       })
       .catch(() => {})
   }
+  // Escudo da loja (mm3d-68): só desenho, o bônus já vem no ticket.
+  const shieldItem = clan === "vampiro" ? shopShield(opts.appearance?.shieldId) : null
+  let shieldRoot: TransformNode | null = null
+  let shieldGrip: ShieldGrip | null = null
+  if (shieldItem) {
+    LoadAssetContainerAsync(shieldItem.file, scene)
+      .then((c) => {
+        if (disposed) return c.dispose()
+        c.addAllToScene()
+        shieldRoot = c.rootNodes[0] as TransformNode
+        for (const m of shieldRoot.getChildMeshes(false)) {
+          m.isPickable = false
+          if (m.material instanceof PBRMaterial) m.material.metallic = 0.25
+        }
+        shieldRoot.setEnabled(false)
+      })
+      .catch(() => {})
+  }
   // pontos da lâmina/cabeça no eixo +Y da arma (build_armas.py: espada 0,15→0,93 m; cajado: a pedra 0,55→0,95 m)
   const bladeLocal: [Vector3, Vector3] = clan === "raposa" ? [new Vector3(0, 0.55, 0), new Vector3(0, 0.95, 0)] : clan ? [new Vector3(0, 0.15, 0), new Vector3(0, 0.93, 0)] : brute ? [new Vector3(0, AXE_EDGE[0], 0), new Vector3(0, AXE_EDGE[1], 0)] : [new Vector3(0, 0.15, 0), new Vector3(0, 1.15, 0)]
   // pedra do cajado (local +Y da arma): sempre acesa, carrega até o disparo
@@ -395,6 +414,16 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     return shot ? [new Vector3(shot.x - 0.055, shot.y, shot.z), new Vector3(shot.x + 0.055, shot.y, shot.z)] : null
   }, weaponColor) : null
   const placeWeapon = () => {
+    if (shieldRoot && !shieldGrip) {
+      const arm = hero.bone(SHIELD_BONES.arm)
+      const hand = hero.bone(SHIELD_BONES.hand)
+      const index = hero.bone(SHIELD_BONES.index)
+      const thumb = hero.bone(SHIELD_BONES.thumb)
+      if (arm && hand && index && thumb) {
+        shieldGrip = new ShieldGrip(scene, { arm, hand, index, thumb }, shieldRoot, adult || SWORD_SKINS.includes(opts.body) ? 1.7 : 1.05)
+        shieldRoot.setEnabled(true)
+      }
+    }
     if (!weaponRoot) return
     if (!grip) {
       const hand = hero.bone(GRIP_BONES.hand)
@@ -1119,6 +1148,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       for (const m of Object.values(swordMats)) m.dispose()
       decoration?.dispose()
       grip?.dispose()
+      shieldGrip?.dispose()
       heroFix.dispose()
       spirits.dispose()
       skillFx.dispose()

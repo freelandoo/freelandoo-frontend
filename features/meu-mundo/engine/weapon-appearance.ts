@@ -18,6 +18,7 @@ import { shopSword } from "./shop-swords"
 
 export interface WeaponAppearance {
   weaponId: string | null
+  shieldId?: string | null
   level: number
   cosmetic: string | null
 }

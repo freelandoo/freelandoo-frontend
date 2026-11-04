@@ -24,7 +24,7 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   const [tab, setTab] = useState<GearTab>(initialTab)
   const [category, setCategory] = useState<Category>("all")
   const [kind, setKind] = useState<ForgeKind>("assembly")
-  const [shelf, setShelf] = useState<"weapons" | "hammers">("weapons")
+  const [shelf, setShelf] = useState<"weapons" | "hammers" | "shields">("weapons")
   const [confirm, setConfirm] = useState<string | null>(null)
   const byId = useMemo(() => new Map((catalog?.items || []).map(item => [item.id, item])), [catalog])
   const pending = (item: string) => bag?.pendingProposals?.some(proposal => proposal.item === item && proposal.status === "pending")
@@ -38,13 +38,13 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
     { id: "guide" as const, label: t("forgeGuideTab", "Catálogo") },
   ]
   const categoryNames: Record<Category, string> = {
-    all: t("forgeAll", "Todos"), weapon: t("forgeWeapons", "Armas"), armor: t("forgeArmor", "Proteções"),
+    all: t("forgeAll", "Todos"), weapon: t("forgeWeapons", "Armas"), shield: t("forgeShields", "Escudos"), armor: t("forgeArmor", "Proteções"),
     accessory: t("forgeAccessories", "Acessórios"), material: t("forgeMaterials", "Materiais e peças"),
     recipe: t("forgeRecipes", "Projetos"), quest: t("forgeQuestItems", "Missão"), cosmetic: t("forgeCosmetics", "Cosméticos"),
   }
   const changeTab = (next: GearTab) => { setTab(next); setConfirm(null); setMessage(null); setCategory("all") }
-  const slotsFor = (item: GearItem): GearSlot[] => item.category === "weapon" ? ["weapon"] : item.category === "armor" ? ["armor"] : item.category === "accessory" ? ["acc1", "acc2"] : []
-  const locked = (item: GearItem) => !bag ? null : bag.level < item.level ? t("gearNeedLevel", "Precisa do nível {n}").replace("{n}", String(item.level)) : item.shop === "weapons" ? (bag.warrior ? null : t("gearWarriorOnly", "Só guerreiros usam espadas")) : item.shop === "hammers" ? (bag.hammer ? null : t("gearHammerOnly", "Só Soldado de Pedra, Marú e Kragor usam estas armas")) : item.clan && item.clan !== bag.clan ? t("gearOtherClan", "Arma de outra classe") : null
+  const slotsFor = (item: GearItem): GearSlot[] => item.category === "weapon" ? ["weapon"] : item.category === "shield" ? ["shield"] : item.category === "armor" ? ["armor"] : item.category === "accessory" ? ["acc1", "acc2"] : []
+  const locked = (item: GearItem) => !bag ? null : bag.level < item.level ? t("gearNeedLevel", "Precisa do nível {n}").replace("{n}", String(item.level)) : item.shop === "weapons" ? (bag.warrior ? null : t("gearWarriorOnly", "Só guerreiros usam espadas")) : item.shop === "shields" ? (bag.warrior ? null : t("gearShieldOnly", "Só quem usa espada leva escudo")) : item.shop === "hammers" ? (bag.hammer ? null : t("gearHammerOnly", "Só Soldado de Pedra, Marú e Kragor usam estas armas")) : item.clan && item.clan !== bag.clan ? t("gearOtherClan", "Arma de outra classe") : null
 
   const inventoryCard = (item: GearItem, guide: boolean): CarouselItem => ({
     key: item.id, label: nameOf(item, t), render: () => {
@@ -104,8 +104,8 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   return (
     <AetherModal title={title} eyebrow={bag ? t("gearHeader", "Nível {lv} · {c} moedas").replace("{lv}", String(bag.level)).replace("{c}", String(bag.coins)) : undefined} onClose={onClose} width={680}>
       <AetherTabs label={t("gearTitle", "Equipamento")} tabs={tabs} value={tab} onChange={changeTab} />
-      {tab === "weapons" && <AetherTabs<"weapons" | "hammers"> label={t("weaponsShopTitle", "Loja de Armas")} value={shelf} onChange={setShelf} tabs={[
-        { id: "weapons", label: t("shopSwords", "Espadas") }, { id: "hammers", label: t("shopHammers", "Hammers") },
+      {tab === "weapons" && <AetherTabs<"weapons" | "hammers" | "shields"> label={t("weaponsShopTitle", "Loja de Armas")} value={shelf} onChange={setShelf} tabs={[
+        { id: "weapons", label: t("shopSwords", "Espadas") }, { id: "hammers", label: t("shopHammers", "Hammers") }, { id: "shields", label: t("shopShields", "Escudos") },
       ]} />}
       {tab === "forge" && <AetherTabs<ForgeKind> label={t("forgeKinds", "Bancadas da forja")} value={kind} onChange={setKind} tabs={[
         { id: "assembly", label: t("forgeWeapons", "Armas") }, { id: "part", label: t("forgeParts", "Peças") },

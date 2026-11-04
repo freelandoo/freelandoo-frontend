@@ -51,6 +51,15 @@ const HEAVY_COLORS: Record<string, [string, string]> = {
   neon: ["#3D5BFF", "#C2CEFF"],
 }
 
+/** Escudos da loja (mm3d-68): 1 m no arquivo, build_escudos_loja.py. Espelho de `escudo_*` em meuMundoGear.js. */
+const SHIELDS = new Set(["ferro", "rebites", "azul", "cravos", "sol", "prata", "filigrana", "bosque", "ametista", "caveira", "lava", "lanterna", "demonio", "alvorada", "fe", "fera"])
+
+/** O escudo da loja por id do item; null = sem escudo. */
+export function shopShield(id: string | null | undefined): { file: string; thumb: string } | null {
+  const k = id?.startsWith("escudo_") ? id.slice(7) : ""
+  return SHIELDS.has(k) ? { file: `${DIR}/escudo-${k}-m68.glb`, thumb: `${DIR}/thumb/escudo-${k}.webp` } : null
+}
+
 export interface ShopSword {
   file: string
   thumb: string
