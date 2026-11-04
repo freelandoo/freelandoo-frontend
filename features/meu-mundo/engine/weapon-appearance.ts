@@ -14,6 +14,7 @@ import type { Material } from "@babylonjs/core/Materials/material"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import type { Clan } from "../classes"
 import type { VfxColor } from "./vfx"
+import { shopSword } from "./shop-swords"
 
 export interface WeaponAppearance {
   weaponId: string | null
@@ -44,11 +45,13 @@ export function weaponAppearanceProfile(clan: Clan, appearance: WeaponAppearance
   const paint = appearance.cosmetic === "pintura_arma_eter"
   const trail = appearance.cosmetic === "rastro_eter"
   const palette = PALETTES[tier]
+  // Espada da loja: modelo e cor próprios, sem as guarnições da arma da classe.
+  const model = clan === "vampiro" ? shopSword(id) : null
   const color: VfxColor = {
-    main: Color3.FromHexString(paint || trail ? "#47E2DA" : palette.main),
-    edge: Color3.FromHexString(paint || trail ? "#B177FF" : palette.edge),
+    main: Color3.FromHexString(paint || trail ? "#47E2DA" : model?.main ?? palette.main),
+    edge: Color3.FromHexString(paint || trail ? "#B177FF" : model?.edge ?? palette.edge),
   }
-  return { tier, level, paint, trail, palette, color }
+  return { tier, level, paint, trail, palette, color, model }
 }
 
 export function decorateWeapon(
@@ -60,14 +63,17 @@ export function decorateWeapon(
   addGlow: (mesh: Mesh) => void,
 ) {
   const profile = weaponAppearanceProfile(clan, appearance)
-  const { tier, level, paint, palette, color } = profile
+  const { tier, level, paint, palette, color, model } = profile
   const root = new TransformNode("gear-weapon-trim", scene)
   root.parent = weapon
   const materials: Material[] = []
   // O material é clonado para esta arma; preserva textura e não tinge avatares.
   for (const mesh of weapon.getChildMeshes(false).filter((m) => m.parent !== root)) {
     const source = mesh.material
-    if (!source || (!paint && tier === "apprentice" && !level)) continue
+    // Sem mapa de ambiente, metal puro não tem o que refletir e sai preto. O
+    // material é só desta arma (cada luta carrega o seu).
+    if (model && source instanceof PBRMaterial) source.metallic = 0.25
+    if (!source || (!paint && (model || (tier === "apprentice" && !level)))) continue
     const mat = source.clone(`${source.name}-gear`)
     if (!mat) continue
     const tint = Color3.FromHexString(paint ? "#72DED8" : palette.metal)
@@ -133,7 +139,7 @@ export function decorateWeapon(
     }
   }
   // Marcas de têmpera crescem com o refino, sem mudar alcance ou colisão.
-  const marks = Math.min(low ? 3 : 5, Math.ceil(level / 2))
+  const marks = model ? 0 : Math.min(low ? 3 : 5, Math.ceil(level / 2))
   for (let i = 0; i < marks; i++) {
     const mark = attach(CreateBox("gear-refinement-mark", { width: staff ? 0.08 : 0.055, height: 0.018, depth: 0.018 }, scene), (staff ? 0.14 : 0.4) + i * 0.085, true)
     mark.position.z = staff ? 0.07 : 0.045

@@ -45,7 +45,7 @@ import { buildRing } from "./ring-view"
 import { BoxingGloves } from "./gloves"
 import { MonsterModel, AXE_URL, AXE_EDGE } from "./monster-view"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
-import { clanOfBody, CLAN_WEAPON, type Clan } from "../../classes"
+import { clanOfBody, CLAN_WEAPON, SWORD_SKINS, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
 import { decorateWeapon, weaponAppearanceProfile, type WeaponAppearance } from "../../engine/weapon-appearance"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
@@ -336,7 +336,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const vfx = createVfx(scene, low)
   const fxColor = clan ? VFX_COLORS[clan] : brute ? VFX_COLORS.brutamontes : VFX_COLORS.lamina
   const weaponProfile = clan && opts.appearance ? weaponAppearanceProfile(clan, opts.appearance) : null
-  const weaponColor = weaponProfile && (weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
+  const weaponColor = weaponProfile && (weaponProfile.model || weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
   // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
   // habilidades (2026-11-03): lâmina de luz, investida, escudo, poder máximo
@@ -344,7 +344,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const p = fight.me
     return [new Vector3(p.x, 0.25, p.z), new Vector3(p.x, hero.height * 0.95, p.z)]
   }, () => hero.height)
-  if (clan !== "vampiro") spirits.preload()
+  // Aurion, Morkhan e Zéphyra lutam de espada (mm3d-66), mas morcego é só de vampiro
+  const bat = clanOfBody(opts.body) === "vampiro"
+  if (!bat) spirits.preload()
   // adultos: mais brilho e mais desenho (pedido do Alex)
   const adult = /adult/.test(opts.body)
   const adultK = adult ? 1.3 : 1
@@ -355,7 +357,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let grip: WeaponGrip | null = null
   let decoration: ReturnType<typeof decorateWeapon> | null = null
   if (clan || brute) {
-    LoadAssetContainerAsync(clan ? CLAN_WEAPON[clan] : AXE_URL, scene)
+    LoadAssetContainerAsync(clan ? (weaponProfile?.model?.file ?? CLAN_WEAPON[clan]) : AXE_URL, scene)
       .then((c) => {
         if (disposed) return c.dispose()
         c.addAllToScene()
@@ -395,7 +397,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       // Tamanho das armas (regra do Alex, 2026-11-01): espada e cajado 3 m no
       // adulto / 1,8 m no jovem. A escala vai na raiz da pegada, então o arco da
       // lâmina e a pedra do cajado acompanham.
-      if (clan === "vampiro") grip.root.scaling.setAll((adult ? 3 : 1.8) / SWORD_LEN)
+      if (clan === "vampiro") grip.root.scaling.setAll((adult || SWORD_SKINS.includes(opts.body) ? 3 : 1.8) / SWORD_LEN)
       else if (clan === "raposa") grip.root.scaling.setAll((adult ? 3 : 1.8) / STAFF_LEN)
       weaponRoot.setEnabled(true)
     }
@@ -702,7 +704,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         case "powerFire": {
           const at = new Vector3(e.x, 1.2, e.z)
           const feet = new Vector3(e.x, 0, e.z)
-          if (clan === "vampiro") spirits.bat(feet, e.facing, VFX_COLORS.vampiro.main)
+          if (bat) spirits.bat(feet, e.facing, VFX_COLORS.vampiro.main)
           else spirits.wolf(feet, e.facing, clan === "raposa" ? FIRE.main : brute ? VFX_COLORS.brutamontes.main : VFX_COLORS.lamina.main)
           if (clan === "raposa") {
             // explosão de fogo em volta

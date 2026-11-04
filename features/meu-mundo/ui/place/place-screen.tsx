@@ -152,7 +152,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   }
 
   const onUse = (use: PlaceUse, state: PlaceState) => {
-    if (use === "forge" || use === "refine" || use === "armory") {
+    if (use === "forge" || use === "refine" || use === "armory" || use === "weapons") {
       stop()
       setGearTab(use)
       return

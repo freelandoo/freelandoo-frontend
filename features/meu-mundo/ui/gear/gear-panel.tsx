@@ -12,7 +12,7 @@ import { ForgeCard } from "./forge-card"
 import { RefinementCard } from "./refinement-card"
 import { useWorkshop } from "./use-workshop"
 
-export type GearTab = "bag" | "armory" | "forge" | "refine" | "guide"
+export type GearTab = "bag" | "weapons" | "armory" | "forge" | "refine" | "guide"
 type ForgeKind = "assembly" | "part" | "equipment" | "conversion"
 type Category = "all" | GearCategory
 
@@ -27,9 +27,10 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   const [confirm, setConfirm] = useState<string | null>(null)
   const byId = useMemo(() => new Map((catalog?.items || []).map(item => [item.id, item])), [catalog])
   const pending = (item: string) => bag?.pendingProposals?.some(proposal => proposal.item === item && proposal.status === "pending")
-  const title = tab === "armory" ? t("centerPlace_arsenal", "Arsenal de Lúmen") : tab === "forge" ? t("centerPlace_forja", "Forja das Engrenagens") : tab === "refine" ? t("refineTitle", "Bancada de refinamento") : t("gearTitle", "Equipamento")
+  const title = tab === "weapons" ? t("weaponsShopTitle", "Loja de Armas") : tab === "armory" ? t("centerPlace_arsenal", "Arsenal de Lúmen") : tab === "forge" ? t("centerPlace_forja", "Forja das Engrenagens") : tab === "refine" ? t("refineTitle", "Bancada de refinamento") : t("gearTitle", "Equipamento")
   const tabs = [
     { id: "bag" as const, label: t("gearTabBag", "Mochila") },
+    { id: "weapons" as const, label: t("gearTabWeapons", "Armas") },
     { id: "armory" as const, label: t("gearTabArmory", "Armeiro") },
     { id: "forge" as const, label: t("gearTabForge", "Forja") },
     { id: "refine" as const, label: t("refineTab", "Refinar") },
@@ -42,7 +43,7 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   }
   const changeTab = (next: GearTab) => { setTab(next); setConfirm(null); setMessage(null); setCategory("all") }
   const slotsFor = (item: GearItem): GearSlot[] => item.category === "weapon" ? ["weapon"] : item.category === "armor" ? ["armor"] : item.category === "accessory" ? ["acc1", "acc2"] : []
-  const locked = (item: GearItem) => !bag ? null : bag.level < item.level ? t("gearNeedLevel", "Precisa do nível {n}").replace("{n}", String(item.level)) : item.clan && item.clan !== bag.clan ? t("gearOtherClan", "Arma de outra classe") : null
+  const locked = (item: GearItem) => !bag ? null : bag.level < item.level ? t("gearNeedLevel", "Precisa do nível {n}").replace("{n}", String(item.level)) : item.shop === "weapons" ? (bag.warrior ? null : t("gearWarriorOnly", "Só guerreiros usam espadas")) : item.clan && item.clan !== bag.clan ? t("gearOtherClan", "Arma de outra classe") : null
 
   const inventoryCard = (item: GearItem, guide: boolean): CarouselItem => ({
     key: item.id, label: nameOf(item, t), render: () => {
@@ -79,7 +80,8 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   if (catalog && bag) {
     const filtered = catalog.items.filter(item => category === "all" || item.category === category)
     if (tab === "bag" || tab === "guide") items = filtered.filter(item => tab === "guide" || bag.owned[item.id]).map(item => inventoryCard(item, tab === "guide"))
-    if (tab === "armory") items = filtered.filter(item => item.price != null).map(item => ({
+    // Dois balcões do Arsenal: armas (mm3d-66) e o resto do Armeiro.
+    if (tab === "armory" || tab === "weapons") items = filtered.filter(item => item.price != null && (item.shop === "weapons") === (tab === "weapons")).map(item => ({
       key: item.id, label: nameOf(item, t), render: () => (
         <GearItemCard item={item} t={t} subtitle={t("gearPrice", "{p} moedas").replace("{p}", String(item.price))} lines={bonusLines(item.bonus, t)}>
           {!item.stack && bag.owned[item.id] ? <p style={{ color: AE.good }}>{t("gearOwned", "Já é seu")}</p> : locked(item) ? <p style={{ color: AE.bad }}>{locked(item)}</p> : confirm === item.id ? <>

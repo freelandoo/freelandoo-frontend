@@ -257,6 +257,8 @@ export type GearSlot = "weapon" | "armor" | "acc1" | "acc2"
 export interface GearItem {
   id: string
   category: GearCategory
+  /** "weapons" = vendido no balcão de armas do Arsenal (mm3d-66). */
+  shop?: "weapons" | null
   name: string
   rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
   price: number | null
@@ -319,6 +321,8 @@ export interface GearCatalog {
   recipes: GearRecipe[]
 }
 export interface GearBag {
+  /** Veste um guerreiro (vampiro, Aurion, Morkhan, Zéphyra): só ele usa as espadas da loja. */
+  warrior?: boolean
   clan: Clan | null
   level: number
   coins: number

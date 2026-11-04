@@ -121,6 +121,8 @@ const NPC_LOOK: Record<string, { body: BodyId; look: string }> = {
   // Corpos de raposa existentes; não inventar o asset do Mestre de Armas javali.
   forjador: { body: "raposa", look: "" },
   armeira: { body: "raposa_f", look: "" },
+  // vendedor do balcão de armas (mm3d-66): um guerreiro vende espadas
+  armeiro: { body: "vampiro", look: "" },
 }
 
 export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {

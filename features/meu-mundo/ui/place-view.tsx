@@ -45,6 +45,8 @@ function actionOf(use: PlaceUse, t: Tr): { label: string; icon: ReactNode } {
       return { label: t("pvRefine", "Refinar equipamento"), icon: <Sparkles className="h-5 w-5" /> }
     case "armory":
       return { label: t("pvArmory", "Comprar equipamentos"), icon: <Swords className="h-5 w-5" /> }
+    case "weapons":
+      return { label: t("pvWeapons", "Comprar armas"), icon: <Swords className="h-5 w-5" /> }
     case "train":
       return { label: t("pvTrain", "Treinar"), icon: <Dumbbell className="h-5 w-5" /> }
     case "study":

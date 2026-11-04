@@ -548,6 +548,7 @@ function furniture(g: SteamGeo, gl: SteamGeo, it: InteriorFurniture, y: number, 
       }
       break
     case "armory_counter":
+    case "weapons_counter":
       B(g, f, 0, 0, 0, w, h - 0.08, d, C.woodDark)
       B(g, f, 0, h - 0.08, 0, w + 0.04, 0.08, d + 0.04, C.brassDark)
       B(g, f, 0, 0.16, -d / 2 - 0.01, w - 0.22, 0.54, 0.025, C.navy)

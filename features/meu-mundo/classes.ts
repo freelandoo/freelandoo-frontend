@@ -43,6 +43,9 @@ export const CLAN_ANIMS: Record<Clan, string> = {
   vampiro: "anim-vampiro-sergio-m58.glb",
 }
 
+/** Skins que usam espada além dos vampiros (espelho de SWORD_SKINS em meuMundoClans.js). */
+export const SWORD_SKINS: readonly string[] = ["aurion", "morkhan", "zephyra"]
+
 type Tr = (key: string, fallback: string) => string
 
 /** Nome visível do corpo de classe (traduzido; adulto não muda o nome). */
