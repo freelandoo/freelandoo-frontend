@@ -65,6 +65,17 @@ export function shopHeavy(id: string | null | undefined): ShopSword | null {
   return c ? { file: `${DIR}/pesada-${k}-m67.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
 }
 
+/** Arma própria do deus (não está à venda): a skin luta com ela sem arma de loja equipada. */
+const GOD_HEAVY: Record<string, [string, string]> = {
+  maru: ["#2FC8F0", "#FFB4C4"],
+  kragor: ["#FF6A1F", "#FFC48A"],
+}
+
+export function godHeavy(body: string | null | undefined): ShopSword | null {
+  const c = body ? GOD_HEAVY[body] : undefined
+  return c ? { file: `${DIR}/pesada-${body}-m67.glb`, thumb: "", main: c[0], edge: c[1] } : null
+}
+
 const key = (id: string | null | undefined) => (id?.startsWith("espada_") ? id.slice(7) : "")
 
 /** A espada da loja por id do item; null = não é da loja (arma antiga da classe). */

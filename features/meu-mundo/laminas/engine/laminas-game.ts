@@ -47,7 +47,7 @@ import { MonsterModel, AXE_URL, AXE_EDGE } from "./monster-view"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { clanOfBody, CLAN_WEAPON, SWORD_SKINS, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
-import { shopHeavy } from "../../engine/shop-swords"
+import { godHeavy, shopHeavy } from "../../engine/shop-swords"
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
 import { decorateWeapon, weaponAppearanceProfile, type WeaponAppearance } from "../../engine/weapon-appearance"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
@@ -339,7 +339,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const vfx = createVfx(scene, low)
   const fxColor = clan ? VFX_COLORS[clan] : brute ? VFX_COLORS.brutamontes : VFX_COLORS.lamina
   const weaponProfile = clan && opts.appearance ? weaponAppearanceProfile(clan, opts.appearance) : null
-  const heavy = brute ? shopHeavy(opts.appearance?.weaponId) : null
+  const heavy = brute ? (shopHeavy(opts.appearance?.weaponId) ?? godHeavy(opts.body)) : null
   const weaponColor = heavy ? { main: Color3.FromHexString(heavy.main), edge: Color3.FromHexString(heavy.edge) } : weaponProfile && (weaponProfile.model || weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
   // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
