@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { fetchAdminNeighborhood } from "@/features/meu-mundo/data"
+import { useServerErrors } from "@/features/meu-mundo/server-errors"
 import type { ScenePayload } from "@/features/meu-mundo/types"
 
 const MeuMundoShell = dynamic(() => import("@/features/meu-mundo/ui/meu-mundo-shell"), {
@@ -47,6 +48,7 @@ function Splash({ children }: { children?: React.ReactNode }) {
 
 export default function MeuMundoAdminPage() {
   const t = useTranslations("MeuMundo")
+  useServerErrors()
   const router = useRouter()
   const [phase, setPhase] = useState<Phase>({ kind: "checking" })
   const [attempt, setAttempt] = useState(0)

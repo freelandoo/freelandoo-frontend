@@ -1,6 +1,5 @@
 "use client"
 
-import { useTransition } from "react"
 import { Globe } from "lucide-react"
 import {
   DropdownMenu,
@@ -12,9 +11,9 @@ import {
   LOCALE_FLAGS,
   LOCALE_LABELS,
   SUPPORTED_LOCALES,
-  type Locale,
 } from "@/lib/i18n/config"
-import { useI18n, useTranslations } from "@/components/i18n/I18nProvider"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useLocaleSwitch } from "@/components/i18n/use-locale-switch"
 
 interface LanguageSwitcherProps {
   variant?: "compact" | "full" | "icon"
@@ -22,31 +21,8 @@ interface LanguageSwitcherProps {
 }
 
 export function LanguageSwitcher({ variant = "compact", className }: LanguageSwitcherProps) {
-  const { locale, setLocale } = useI18n()
+  const { locale, pending, change } = useLocaleSwitch()
   const t = useTranslations("Common")
-  const [pending, startTransition] = useTransition()
-
-  const handleSelect = (next: Locale) => {
-    if (next === locale || pending) return
-    startTransition(async () => {
-      // 1. Cookie + estado do provider (a troca é client-side; o layout raiz
-      //    não lê mais cookie de locale — F3.S5).
-      setLocale(next)
-
-      // 2. Sync backend se autenticado (best-effort, não bloqueia UX)
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-      if (token) {
-        fetch("/api/users/me/locale", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ locale: next }),
-        }).catch(() => {})
-      }
-    })
-  }
 
   return (
     <DropdownMenu>
@@ -71,7 +47,7 @@ export function LanguageSwitcher({ variant = "compact", className }: LanguageSwi
         {SUPPORTED_LOCALES.map((code) => (
           <DropdownMenuItem
             key={code}
-            onSelect={() => handleSelect(code)}
+            onSelect={() => change(code)}
             className={code === locale ? "font-semibold" : undefined}
           >
             <span className="mr-2" aria-hidden="true">

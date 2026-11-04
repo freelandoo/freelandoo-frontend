@@ -10,6 +10,7 @@ import { useState } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { MM } from "../hud/tokens"
+import { LanguageButton } from "../hud/language-item"
 import { PORTRAIT } from "../portraits"
 import { CLANS, YOUNG_BODY, type Clan, type Sex } from "../../classes"
 import { postClanChoose } from "../../data"
@@ -51,6 +52,9 @@ export default function ClanChoice({ onChosen }: { onChosen: () => void }) {
       }}
     >
       <div className="flex h-full w-full max-w-[760px] min-h-0 flex-col gap-3">
+        <div className="flex shrink-0 justify-end">
+          <LanguageButton />
+        </div>
         <header className="shrink-0 text-center">
           <h1 className="text-[22px] font-black uppercase tracking-[0.08em] sm:text-[30px]">{t("clanTitle", "Escolha sua classe")}</h1>
           <p className="mx-auto mt-1 max-w-[560px] text-[12px] leading-snug sm:text-[14px]" style={{ color: MM.muted }}>

@@ -122,6 +122,13 @@ export interface GameOptions {
   onPlayerGone?: (sessionId: string) => void
 }
 
+/** Nomes que o motor desenha: letreiros 3D e mapa. */
+export interface SceneLabels {
+  exit: string
+  center?: CenterLabels
+  map?: { home: string; plaza: string }
+}
+
 export interface GameHandle {
   input: InputState
   /** Joystick virtual do celular: x = direita, y = frente, módulo até 1. */
@@ -130,6 +137,8 @@ export interface GameHandle {
   setBlocked: (blocked: boolean) => void
   /** Para de desenhar (um minijogo cobre a tela, mm3d-20); a sala e a presença seguem. */
   setSuspended: (on: boolean) => void
+  /** Idioma trocado: letreiros e mapa com os nomes novos. */
+  relabel: (labels: SceneLabels) => void
   interact: () => void
   /** Recoloca a câmera atrás do personagem (não move o personagem). */
   recenter: () => void
@@ -326,12 +335,12 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const gainPillar = new GainPillar(scene, () => local.char.holder.getAbsolutePosition(), quality.tier === "low")
   const gainFx = setGainFx(gainPillar)
   // mm3d-60r: o mapa (radar + modal) desta cena e onde eu estou
-  const dropMap = setCityMap(
+  const mapOf = (l: SceneLabels) =>
     centerP
-      ? centerMapModel(centerP.center, (p) => (opts.centerLabels ? opts.centerLabels.place(p) : p.id), opts.centerLabels?.portal ?? opts.exitLabel)
-      : bairroMapModel(payload as NeighborhoodPayload, { home: opts.mapLabels?.home ?? "Minha casa", plaza: opts.mapLabels?.plaza ?? "Praça", exit: opts.exitLabel }),
-    () => ({ x: local.x, z: local.z, facing: local.heading }),
-  )
+      ? centerMapModel(centerP.center, (p) => (l.center ? l.center.place(p) : p.id), l.center?.portal ?? l.exit)
+      : bairroMapModel(payload as NeighborhoodPayload, { home: l.map?.home ?? "Minha casa", plaza: l.map?.plaza ?? "Praça", exit: l.exit })
+  const whereOnMap = () => ({ x: local.x, z: local.z, facing: local.heading })
+  let dropMap = setCityMap(mapOf({ exit: opts.exitLabel, center: opts.centerLabels, map: opts.mapLabels }), whereOnMap)
   follow.camera.maxZ = quality.maxZ
   scene.activeCamera = follow.camera
   follow.snapBehind(home.x, home.z, home.rotationY)
@@ -881,6 +890,12 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     reconnect() {
       void net.retry()
+    },
+    relabel(l) {
+      if (disposed) return
+      const portal = l.center?.portal ?? l.exit
+      world.relabel(centerP ? [...centerP.center.places.map((p) => (l.center ? l.center.place(p) : p.id)), portal] : [l.exit])
+      dropMap = setCityMap(mapOf(l), whereOnMap)
     },
     applyHouseLevel(lot, level, rev) {
       if (!disposed) world.applyLevel(lot, level, rev)

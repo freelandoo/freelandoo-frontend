@@ -28,6 +28,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
 import MeuMundoView from "./meu-mundo-view"
 import { EvoButton, EvoDialog, EvoToast, type DrawerItem } from "./hud/hud-kit"
+import { useLanguageItem } from "./hud/language-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { MM } from "./hud/tokens"
 import HouseView from "./house-view"
@@ -595,6 +596,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   }, [overlayOpen, openChat])
 
   const chatBadge = chatUnread + dmUnread
+  const languageItem = useLanguageItem()
   // Entradas da gaveta (as três cenas): Chat, Itens e a caixa de entrada.
   const menuExtras: DrawerItem[] = useMemo(
     () => [
@@ -618,8 +620,9 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         badge: counts?.mail ? String(counts.mail > 99 ? "99+" : counts.mail) : undefined,
         onSelect: () => setInbox({ view: "mail", tab: counts?.gifts ? "gift" : "official" }),
       },
+      languageItem,
     ],
-    [t, counts, chatBadge, openChat],
+    [t, counts, chatBadge, openChat, languageItem],
   )
   const suspended = hospitalUp || jailUp
   const key = `${sceneKeyOf(scene)}#${mount}`

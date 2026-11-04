@@ -236,6 +236,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   useEffect(() => {
     labelsRef.current = { place: placeName, portal: portalSign }
   }, [placeName, portalSign])
+  useEffect(() => {
+    if (status === "ready") gameRef.current?.relabel({ exit: portalSign, center: { place: placeName, portal: portalSign } })
+  }, [status, placeName, portalSign])
 
   // Página do jogo não rola.
   useEffect(() => {

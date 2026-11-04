@@ -197,6 +197,9 @@ export default function MeuMundoView({
   useEffect(() => {
     mapLabelsRef.current = { home: mapHome, plaza: mapPlaza }
   }, [mapHome, mapPlaza])
+  useEffect(() => {
+    if (status === "ready") gameRef.current?.relabel({ exit: exitLabel, map: { home: mapHome, plaza: mapPlaza } })
+  }, [status, exitLabel, mapHome, mapPlaza])
 
   // Página do jogo não rola: sem isso o arraste do dedo puxa a página junto.
   useEffect(() => {

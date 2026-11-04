@@ -270,6 +270,8 @@ export interface BuiltWorld {
    * o modelo troca quando terminar de carregar — até lá a casa anterior fica.
    */
   applyLevel: (lot: number, level: number, rev: number) => boolean
+  /** Idioma trocado: redesenha os letreiros com os nomes novos. */
+  relabel: (names: string[]) => void
   /** Carrega de novo o modelo que falhou (o confirmado não muda). */
   retryVisual: (lot: number) => void
   visual: (lot: number) => HouseVisual | null
@@ -564,6 +566,7 @@ export function buildWorld(
     viewBoxes,
     interactables,
     catalog,
+    relabel: ([exit]) => drawAtlas(atlas, exit),
     applyLevel(lot, level, rev) {
       const sl = slots.get(lot)
       if (!sl || rev <= sl.rev) return false

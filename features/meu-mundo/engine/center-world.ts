@@ -331,6 +331,7 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
     viewBoxes,
     interactables,
     catalog: noCatalog,
+    relabel: (next) => drawLabels(atlas, next),
     applyLevel: () => false,
     retryVisual: () => {},
     visual: () => null,
