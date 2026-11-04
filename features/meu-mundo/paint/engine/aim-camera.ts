@@ -80,8 +80,8 @@ export class AimCamera {
     // perto do chão olhando para baixo: a câmera sobe um pouco
     const pivot = { x: x + r.x * SHOULDER, y: this.py + PIVOT_H + Math.max(0, this.pitch - 0.6) * 0.5, z: z + r.z * SHOULDER }
     const back = { x: -f.x, y: -f.y, z: -f.z }
-    // celular em pé (2026-11-03, Alex: "deixa o Paint mais afastado"): até 1,7× mais longe
-    const dist = (this.far ? DIST_FAR : DIST) * (1 + 1.0 * tallness(this.camera.getScene()))
+    // celular em pé (2026-11-03, Alex: "deixa o Paint mais afastado", 2 vezes): até 2,35× mais longe
+    const dist = (this.far ? DIST_FAR : DIST) * (1 + 1.35 * tallness(this.camera.getScene()))
     const hit = raycast(solids, pivot, back, dist + 0.3)
     const want = hit ? Math.max(0.6, hit.t - 0.35) : dist
     if (want < this.actual) this.actual = want

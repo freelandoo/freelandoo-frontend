@@ -54,7 +54,7 @@ export const SP = {
 /**
  * Cor de cada recurso nos NÚMEROS FLUTUANTES (só o número aparece — a cor é a
  * única identificação, então a mesma categoria tem SEMPRE a mesma cor, suba ou
- * desça). Distintas entre si de propósito.
+ * desça). Distintas entre si de propósito. Nos vitais vale FLOAT_TONE.
  */
 export const FLOAT_COLOR = {
   xp: "#FFD23F",
@@ -69,3 +69,5 @@ export const FLOAT_COLOR = {
   mood: "#FF7AD9",
 } as const
 export type FloatKind = keyof typeof FLOAT_COLOR
+/** Vitais (saciedade, estresse…) saem pelo efeito no personagem: verde = bom, vermelho = ruim (Alex, 2026-11-03). */
+export const FLOAT_TONE = { good: "#2BE08A", bad: "#FF4D6D" } as const

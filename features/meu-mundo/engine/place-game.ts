@@ -33,6 +33,9 @@ import { Kettlebells } from "./kettlebell"
 import { Character } from "./player"
 import { AvatarLibrary, type PlacePose } from "./avatars"
 import { FollowCamera, INDOOR_CAMERA } from "./camera"
+import { GainPillar, setGainFx } from "./gain-pillar"
+import { PlayerSelection } from "./player-select"
+import { setScreenAnchor } from "./screen-anchor"
 import { MOTION, lerpAngle, type Intent, type MoveState } from "./motion"
 import { stepInterior, type InteriorBody } from "./interior-motion"
 import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type InputState } from "./input"
@@ -223,6 +226,14 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
 
   const follow = new FollowCamera(scene, INDOOR_CAMERA)
   scene.activeCamera = follow.camera
+  // comeu no balcão (2026-11-03): números e tubo de luz também aqui dentro
+  const select = new PlayerSelection(scene, canvas, () => follow.camera)
+  const dropAnchor = setScreenAnchor(() => {
+    const b = select.screenBox(char)
+    return b ? { x: b.x, y: b.top, feet: b.bottom } : null
+  })
+  const gainPillar = new GainPillar(scene, () => char.holder.getAbsolutePosition(), resolveQuality().tier === "low")
+  const gainFx = setGainFx(gainPillar)
   // Deitado: a câmera olha a cama de lado, um pouco de cima.
   // (o TS estreita `state` para "free" — quem deitou foi lieOn, logo acima)
   follow.snapBehind(body.x, body.z, (state as PlaceState).kind === "bed" ? body.facing + Math.PI * 0.75 : body.facing)
@@ -365,6 +376,10 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       detachInput()
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
+      dropAnchor()
+      gainFx()
+      gainPillar.dispose()
+      select.dispose()
       barbells.dispose()
       kettles.dispose()
       char.dispose()

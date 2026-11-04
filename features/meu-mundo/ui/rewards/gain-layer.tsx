@@ -4,7 +4,7 @@
 //
 // NÚMEROS FLUTUANTES (regra do Alex): só o valor — "+50", "+0,04", "−5" — sem
 // placa, sem nome do atributo, sem ícone. A COR identifica a categoria
-// (FLOAT_COLOR; a mesma cor suba ou desça). Saem em coluna acima da cabeça do
+// (FLOAT_COLOR; vitais pelo efeito, FLOAT_TONE). Saem em coluna acima da cabeça do
 // personagem, um depois do outro, e acompanham a câmera (âncora projetada pela
 // cena, engine/screen-anchor.ts — lida só enquanto o efeito vive).
 // DROPS de item: esses SIM têm placa — medalhão com a arte, nome, quantidade e
@@ -27,6 +27,8 @@ import g from "./gain-layer.module.css"
 export interface FloatNum {
   key: string
   kind: FloatKind
+  /** Cor no lugar da da categoria. */
+  color?: string
   text: string
   /** Só para o leitor de tela (nunca aparece). */
   label: string
@@ -130,7 +132,7 @@ export function GainLayer({ nums, drops, more, onDone }: { nums: FloatNum[]; dro
           const big = n.kind === "xp"
           const d = i * NUM_STEP
           const style = {
-            "--c": FLOAT_COLOR[n.kind],
+            "--c": n.color ?? FLOAT_COLOR[n.kind],
             "--dx": `${SLOT_X[i % SLOT_X.length]}px`,
             "--dy": `calc(${-(nCount - 1 - i)} * var(--row) - 6px)`,
             "--row": "clamp(26px, 3.8vw, 34px)",

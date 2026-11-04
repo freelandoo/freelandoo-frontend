@@ -4,7 +4,8 @@
 //
 // Três escalas, nunca confundidas:
 //  • ganho cotidiano (XP, atributo, vital): mm3d-60 — SÓ O NÚMERO colorido
-//    flutuando acima da cabeça do personagem (gain-layer.tsx), ~1,3 s;
+//    flutuando acima da cabeça do personagem (gain-layer.tsx), ~1,3 s. Comer,
+//    tomar remédio e acordar vêm no recibo "care": vitais em verde/vermelho;
 //  • item: placa de drop ao lado do personagem (medalhão, nome, quantidade,
 //    raridade), ~2,4 s;
 //  • SUBIU DE NÍVEL (mm3d-60j): sem tela cheia — vários tubos de luz coloridos
@@ -20,8 +21,8 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { Receipt } from "../../data"
 import { RARITY, type Rarity } from "../kit/aether-tokens"
 import { applyUiFx } from "../kit/steam/fx-tier"
-import { FLOAT_COLOR, type FloatKind } from "../kit/steam/steam-tokens"
-import { ATTR_META, VITAL_META, fmtDelta } from "./reward-grammar"
+import { FLOAT_COLOR, FLOAT_TONE, type FloatKind } from "../kit/steam/steam-tokens"
+import { ATTR_META, VITAL_META, fmtDelta, toneOf } from "./reward-grammar"
 import { onCelebrate } from "./reward-bus"
 import { GainLayer, MAX_NUMS, MAX_PLATES, type DropItem, type FloatNum } from "./gain-layer"
 import { playGainFx } from "../../engine/gain-pillar"
@@ -40,11 +41,14 @@ interface Bundle {
   /** mm3d-60k: moedas que a luta/minijogo dropou. */
   coins: number
   special: boolean
+  /** Comeu, tomou remédio ou acordou: o tubo acende mesmo sem número (remédio de efeito longo). */
+  care: boolean
 }
 
 function merge(list: Receipt[]): Bundle {
-  const b: Bundle = { xp: 0, from: Infinity, to: 0, unlocks: [], attrs: {}, vitals: {}, items: [], coins: 0, special: false }
+  const b: Bundle = { xp: 0, from: Infinity, to: 0, unlocks: [], attrs: {}, vitals: {}, items: [], coins: 0, special: false, care: false }
   for (const r of list) {
+    if (r.source === "care") b.care = true
     const x = r.deltas.xp
     if (x) {
       b.xp += x.xp
@@ -126,9 +130,11 @@ function GainBurst({ b, t, onDone }: { b: Bundle; t: T; onDone: () => void }) {
       const m = ATTR_META[k as keyof typeof ATTR_META]
       if (m && Math.abs(v) >= 0.005) nums.push({ key: k, kind: k as FloatKind, text: fmtDelta(v, 2), label: t(m.labelKey, m.label) })
     }
-    for (const [k, v] of Object.entries(b.vitals)) {
+    // o bom primeiro: o tubo acende na cor do primeiro número
+    const vitals = Object.entries(b.vitals).sort(([ka, a], [kb, c]) => Number(toneOf(ka, a) === "bad") - Number(toneOf(kb, c) === "bad"))
+    for (const [k, v] of vitals) {
       const m = VITAL_META[k as keyof typeof VITAL_META]
-      if (m && Math.abs(v) >= 0.5) nums.push({ key: k, kind: k as FloatKind, text: fmtDelta(v, 0), label: t(m.labelKey, m.label) })
+      if (m && Math.abs(v) >= 0.5) nums.push({ key: k, kind: k as FloatKind, color: FLOAT_TONE[toneOf(k, v)], text: fmtDelta(v, 0), label: t(m.labelKey, m.label) })
     }
     const all: DropItem[] = b.items.map((it) => ({ id: it.id, qty: it.qty, rarity: it.rarity, name: t(`gear_${it.id}`, it.id) }))
     // moedas = uma placa de drop (a primeira)
@@ -141,9 +147,9 @@ function GainBurst({ b, t, onDone }: { b: Bundle; t: T; onDone: () => void }) {
   }, [nums.length, drops.length, more, onDone])
   // o tubo de luz no personagem (cor do primeiro ganho; item raro pinta com a raridade)
   useEffect(() => {
-    const color = nums.length ? FLOAT_COLOR[nums[0].kind] : drops.length ? (RARITY[drops[0].rarity] || RARITY.common).color : null
+    const color = nums.length ? (nums[0].color ?? FLOAT_COLOR[nums[0].kind]) : drops.length ? (RARITY[drops[0].rarity] || RARITY.common).color : b.care ? FLOAT_TONE.good : null
     if (color) playGainFx(color)
-  }, [nums, drops])
+  }, [nums, drops, b.care])
   if (!nums.length && !drops.length && !more) return null
   return <GainLayer nums={nums} drops={drops} more={more} onDone={onDone} />
 }

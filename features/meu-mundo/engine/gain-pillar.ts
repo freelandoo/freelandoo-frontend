@@ -33,17 +33,18 @@ export interface GainFxTarget {
   play(hex: string): void
   level(colors: string[]): void
 }
-let current: GainFxTarget | null = null
+const targets: GainFxTarget[] = []
 export function setGainFx(fx: GainFxTarget): () => void {
-  current = fx
+  targets.push(fx)
   return () => {
-    if (current === fx) current = null
+    const i = targets.indexOf(fx)
+    if (i >= 0) targets.splice(i, 1)
   }
 }
 /** Acende o tubo no meu personagem (sem cena aberta, não faz nada). */
 export function playGainFx(hex: string) {
   try {
-    current?.play(hex)
+    targets[targets.length - 1]?.play(hex)
   } catch {
     /* efeito decorativo: nunca derruba a interface */
   }
@@ -51,7 +52,7 @@ export function playGainFx(hex: string) {
 /** Subiu de nível: o feixe de tubos coloridos no meu personagem. */
 export function playLevelFx(colors: string[]) {
   try {
-    current?.level(colors)
+    targets[targets.length - 1]?.level(colors)
   } catch {
     /* efeito decorativo */
   }

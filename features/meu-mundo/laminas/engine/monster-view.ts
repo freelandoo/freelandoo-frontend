@@ -45,11 +45,14 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { BoxingGloves } from "./gloves"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 
-/** Monstros com corpo de gente: a skin rigada e a escala na luta. */
+/**
+ * Monstros com corpo de gente: a skin rigada e a escala. Tamanhos do Alex
+ * (2026-11-03), iguais na luta e na rua: Golem de Pedra, Ciborgue e
+ * Brutamontes 4 m (o tamanho do corpo), lobos 2,5 m de altura (WOLF_SCALE).
+ */
 const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
-  // o corpo do Golem/Ciborgue agora tem 4 m (era 2): escala pela metade = mesmo tamanho na luta
-  soldier: { body: "golem", scale: 0.55 },
-  golem: { body: "ciborgue", scale: 0.7 },
+  soldier: { body: "golem", scale: 1 },
+  golem: { body: "ciborgue", scale: 1 },
   harpy: { body: "garras", scale: 1.05 },
   // corpo de 4 m em escala 1 (Alex: "do tamanho do golem"; machado de 3 m)
   brute: { body: "brutamontes", scale: 1 },
@@ -107,8 +110,8 @@ const HUMAN: Record<MobKind, { body: BodyId; scale: number; looks: string[] }> =
 /** O lobo (pipeline/laminas/build_lobo_anim.py): o focinho chega no +X do Babylon → −90° leva ao +Z (frente). */
 const WOLF_URL = "/meu-mundo/laminas/lobo-m54.glb"
 const WOLF_TURN = -Math.PI / 2
-/** O lobo é GRANDE (Alex, 29/10): 4 m de focinho a rabo. */
-const WOLF_SCALE = 2
+/** 2,5 m de altura (Alex, 2026-11-03): na escala 2 o Idle mede 2,06 m (lobo-harness/probe.js). */
+const WOLF_SCALE = (2 * 2.5) / 2.06
 /**
  * Trechos de cada golpe no clipe (s), iguais aos de build_lobo_anim.py: o
  * preparo, o bote/mordida e a volta tocam esticados na duração da regra.
@@ -117,9 +120,9 @@ const WOLF_ATTACK: Record<string, { clip: string; len: number; windup: [number, 
   bite: { clip: "Bite", len: 1.3, windup: [0, 0.5], strike: [0.5, 0.68], recover: [0.68, 1.3] },
   pounce: { clip: "Pounce", len: 1.85, windup: [0, 0.6], strike: [0.6, 0.95], recover: [0.95, 1.85] },
 }
-/** Velocidade das patas no chão com o clipe a 1× (m/s, já na escala de 4 m): o clipe acompanha o passo. */
-const WOLF_WALK = 1.12
-const WOLF_RUN = 8.5
+/** Velocidade das patas no chão com o clipe a 1× (m/s; 1,12 e 8,5 na escala 2): o clipe acompanha o passo. */
+const WOLF_WALK = (1.12 * WOLF_SCALE) / 2
+const WOLF_RUN = (8.5 * WOLF_SCALE) / 2
 
 /** Biblioteca de avatares com os clipes do boxe, uma por cena (monstros rigados). */
 const libs = new WeakMap<Scene, { lib: AvatarLibrary; fallback: StandardMaterial; shadow: StandardMaterial }>()
@@ -227,7 +230,7 @@ export class MonsterModel {
   constructor(
     private readonly scene: Scene,
     readonly kind: MobKind,
-    /** Escala extra (a cidade mostra um pouco maior para ler de longe). */
+    /** Escala extra (1 = o tamanho do monstro, na luta e na rua). */
     scale = 1,
     /** Ringue (mm3d-57): gente de luva no lugar do monstro; o número varia a roupa. */
     human: { n: number } | null = null,

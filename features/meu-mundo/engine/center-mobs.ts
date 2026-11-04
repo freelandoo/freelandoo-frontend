@@ -23,8 +23,8 @@ type MobKindCity = "soldier" | "wolf" | "golem" | "harpy" | "brute"
 const KINDS = new Set<MobKindCity>(["soldier", "wolf", "golem", "harpy", "brute"])
 /** Raio de "Lutar" (m). */
 const REACH = 3.4
-/** mm3d-60o: altura da placa do nível (topo da cabeça na escala da rua, 1,15). */
-const LEVEL_Y: Record<MobKindCity, number> = { soldier: 5.3, wolf: 3.1, golem: 5.3, harpy: 3.2, brute: 5.4 }
+/** mm3d-60o: altura da placa do nível (um pouco acima da cabeça; o monstro na rua tem o tamanho da luta). */
+const LEVEL_Y: Record<MobKindCity, number> = { soldier: 4.6, wolf: 3.1, golem: 4.6, harpy: 2.7, brute: 4.7 }
 
 /** Placa "Nv. N" em cima do monstro: grafite com a borda roxa da luz dele, sempre virada para a câmera. */
 function levelTag(scene: Scene, id: number, level: number) {
@@ -126,7 +126,7 @@ export class CenterMobs {
       if (!KINDS.has(kind as MobKindCity) || ![id, x, z, f].every(Number.isFinite)) continue
       let v = this.views.get(id)
       if (!v) {
-        const model = new MonsterModel(this.scene, kind as MobKindCity, 1.15)
+        const model = new MonsterModel(this.scene, kind as MobKindCity)
         const glow = CreateDisc(`mm-mob-glow-${id}`, { radius: 2.4, tessellation: 32 }, this.scene)
         glow.rotation.x = Math.PI / 2
         glow.material = this.glowMat
