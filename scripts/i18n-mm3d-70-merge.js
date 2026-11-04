@@ -20,6 +20,9 @@ const GUNS = [["sucata",400,["Fuzil de sucata","Montado com peças do ferro-velh
   ["serpente",9000,["Fuzil da serpente","Corpo de escamas negras e vermelhas, com a coronha em forma de cauda."],["Serpent rifle","A body of black and red scales, with a tail-shaped stock."],["Fusil de la serpiente","Cuerpo de escamas negras y rojas, con la culata en forma de cola."]],
   ["assalto",11000,["Canhão de assalto","Longo, preto e aceso por dentro. Foi feito para derrubar portões."],["Assault cannon","Long, black and lit from within. It was made to bring down gates."],["Cañón de asalto","Largo, negro y encendido por dentro. Se hizo para derribar portones."]],
   ["sombra",15000,["Canhão de sombra","Encaixa no braço como uma fera de ferro. Ninguém ouve o disparo."],["Shadow cannon","It fits on the arm like an iron beast. No one hears the shot."],["Cañón de sombra","Encaja en el brazo como una fiera de hierro. Nadie oye el disparo."]]]
+// 2ª leva: duas armas novas
+GUNS.push(["vapor",4800,["Rifle a vapor","Bronze, cobre e tubos vermelhos pulsando. Cada tiro solta um suspiro de pressão."],["Steam rifle","Bronze, copper and pulsing red tubes. Every shot lets out a sigh of pressure."],["Rifle de vapor","Bronce, cobre y tubos rojos que laten. Cada disparo suelta un suspiro de presión."]],
+  ["pulso",10000,["Canhão de pulso","Garras de bronze seguram um núcleo violeta que pulsa antes de cada disparo."],["Pulse cannon","Bronze claws hold a violet core that pulses before every shot."],["Cañón de pulso","Garras de bronce sujetan un núcleo violeta que late antes de cada disparo."]])
 const UI = {
   "pt-BR": { i: 2, source: "Loja de Armas do Arsenal: {p} moedas.", ui: { shopGuns: "Guns", gearGunOnly: "Só Ciborgue e Noctis usam estas armas" } },
   en: { i: 3, source: "Arsenal Weapon Shop: {p} coins.", ui: { shopGuns: "Guns", gearGunOnly: "Only Cyborg and Noctis use these weapons" } },

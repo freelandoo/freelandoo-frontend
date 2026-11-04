@@ -10069,7 +10069,15 @@
     "gear_fogo_sombra": "Cañón de sombra",
     "gearDesc_fogo_sombra": "Encaja en el brazo como una fiera de hierro. Nadie oye el disparo.",
     "gearSource_fogo_sombra": "Tienda de Armas del Arsenal: 15000 monedas.",
-    "gearUses_fogo_sombra": "Equipar en una ranura compatible; las bonificaciones comparten los límites de equipo. · Refinar de +0 a +10 mediante una propuesta, con costes, pisos y protección opcional. · Reciclar por 1800 monedas por unidad cuando no está equipado."
+    "gearUses_fogo_sombra": "Equipar en una ranura compatible; las bonificaciones comparten los límites de equipo. · Refinar de +0 a +10 mediante una propuesta, con costes, pisos y protección opcional. · Reciclar por 1800 monedas por unidad cuando no está equipado.",
+    "gear_fogo_vapor": "Rifle de vapor",
+    "gearDesc_fogo_vapor": "Bronce, cobre y tubos rojos que laten. Cada disparo suelta un suspiro de presión.",
+    "gearSource_fogo_vapor": "Tienda de Armas del Arsenal: 4800 monedas.",
+    "gearUses_fogo_vapor": "Equipar en una ranura compatible; las bonificaciones comparten los límites de equipo. · Refinar de +0 a +10 mediante una propuesta, con costes, pisos y protección opcional. · Reciclar por 576 monedas por unidad cuando no está equipado.",
+    "gear_fogo_pulso": "Cañón de pulso",
+    "gearDesc_fogo_pulso": "Garras de bronce sujetan un núcleo violeta que late antes de cada disparo.",
+    "gearSource_fogo_pulso": "Tienda de Armas del Arsenal: 10000 monedas.",
+    "gearUses_fogo_pulso": "Equipar en una ranura compatible; las bonificaciones comparten los límites de equipo. · Refinar de +0 a +10 mediante una propuesta, con costes, pisos y protección opcional. · Reciclar por 1200 monedas por unidad cuando no está equipado."
   },
   "Sports": {
     "eyebrow": "Deportes",

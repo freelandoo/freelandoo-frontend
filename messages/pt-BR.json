@@ -9503,7 +9503,15 @@
     "gear_fogo_sombra": "Canhão de sombra",
     "gearDesc_fogo_sombra": "Encaixa no braço como uma fera de ferro. Ninguém ouve o disparo.",
     "gearSource_fogo_sombra": "Loja de Armas do Arsenal: 15000 moedas.",
-    "gearUses_fogo_sombra": "Equipar no slot compatível; bônus de aventura sujeitos ao teto. · Refinar de +0 a +10 mediante proposta, com custo, pisos e proteção opcionais. · Reciclar por 1800 moedas por unidade quando não estiver equipado."
+    "gearUses_fogo_sombra": "Equipar no slot compatível; bônus de aventura sujeitos ao teto. · Refinar de +0 a +10 mediante proposta, com custo, pisos e proteção opcionais. · Reciclar por 1800 moedas por unidade quando não estiver equipado.",
+    "gear_fogo_vapor": "Rifle a vapor",
+    "gearDesc_fogo_vapor": "Bronze, cobre e tubos vermelhos pulsando. Cada tiro solta um suspiro de pressão.",
+    "gearSource_fogo_vapor": "Loja de Armas do Arsenal: 4800 moedas.",
+    "gearUses_fogo_vapor": "Equipar no slot compatível; bônus de aventura sujeitos ao teto. · Refinar de +0 a +10 mediante proposta, com custo, pisos e proteção opcionais. · Reciclar por 576 moedas por unidade quando não estiver equipado.",
+    "gear_fogo_pulso": "Canhão de pulso",
+    "gearDesc_fogo_pulso": "Garras de bronze seguram um núcleo violeta que pulsa antes de cada disparo.",
+    "gearSource_fogo_pulso": "Loja de Armas do Arsenal: 10000 moedas.",
+    "gearUses_fogo_pulso": "Equipar no slot compatível; bônus de aventura sujeitos ao teto. · Refinar de +0 a +10 mediante proposta, com custo, pisos e proteção opcionais. · Reciclar por 1200 moedas por unidade quando não estiver equipado."
   },
   "Sports": {
     "eyebrow": "Esportes",

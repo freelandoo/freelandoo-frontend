@@ -274,6 +274,9 @@ const SWORD_LEN = 1.065
 const STAFF_LEN = 1.553
 /** Arco na mão, em metros (o arquivo tem 1 m). */
 const BOW_LEN = 2.4
+/** Arma de fogo na mão: fator sobre o arquivo (fuzil = 1 m). Piso para os menores, depois cresce com a altura. */
+const GUN_MIN = 2.2
+const GUN_PER_M = 0.75
 const CAM_DIST = 6.4
 const CAM_H = 3.3
 const FOV = 0.9
@@ -411,7 +414,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           if (heavy && m.material instanceof PBRMaterial) m.material.metallic = 0.25
         }
         if (clan && !ranged && opts.appearance) decoration = decorateWeapon(scene, weaponRoot, clan, opts.appearance, low, (m) => vfx.addGlow(m))
-        shineWeapon(weaponRoot)
+        shineWeapon(weaponRoot, (m) => vfx.addGlow(m))
         weaponRoot.setEnabled(false)
       })
       .catch(() => {})
@@ -480,7 +483,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       // lâmina e a pedra do cajado acompanham.
       if (clan === "vampiro") grip.root.scaling.setAll((adult || SWORD_SKINS.includes(opts.body) ? 3 : 1.8) / SWORD_LEN)
       else if (gun) {
-        grip.root.scaling.setAll(opts.body === "ciborgue" ? 2.6 : 2)
+        // pedido do Alex: quanto mais alto o personagem, maior a arma; já grande para os menores
+        grip.root.scaling.setAll(Math.max(GUN_MIN, hero.height * GUN_PER_M))
         // o glTF chega com o X invertido: meia-volta deixa o cano para a frente
         const turn = new TransformNode("laminas-gun-turn", scene)
         turn.parent = grip.root
