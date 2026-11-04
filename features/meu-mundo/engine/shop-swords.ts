@@ -29,11 +29,40 @@ const COLORS: Record<string, [string, string]> = {
   abismo: ["#7A3CFF", "#D6C2FF"],
 }
 
+/** Aba Hammers (mm3d-67): 3 m no arquivo, padrão do machado do Brutamontes. */
+const HEAVY_COLORS: Record<string, [string, string]> = {
+  ferreiro: ["#C98A4A", "#F0D2A8"],
+  lenhador: ["#A8927A", "#E6D8C6"],
+  caveira: ["#B5763E", "#EFCFA6"],
+  lava: ["#FF6A1F", "#FFC48A"],
+  noite: ["#4E6B8C", "#B6CCE4"],
+  lanca: ["#8FA4B8", "#DCE6EF"],
+  bigorna: ["#7C7F88", "#C2C5CC"],
+  cravos: ["#8A7F74", "#D2CABF"],
+  gume: ["#4FB4E8", "#CDEBFA"],
+  coral: ["#E8413A", "#FFB4AE"],
+  caldeira: ["#C8813A", "#F2D3A4"],
+  mares: ["#3FA88F", "#BFEADF"],
+  ornada: ["#B59A52", "#EFE0B0"],
+  eter: ["#47C8E8", "#C7F2FB"],
+  mitica: ["#D4183C", "#FFA0A8"],
+  espinhos: ["#B8243A", "#F5A8B2"],
+  praga: ["#C21F3A", "#F7A2AE"],
+  neon: ["#3D5BFF", "#C2CEFF"],
+}
+
 export interface ShopSword {
   file: string
   thumb: string
   main: string
   edge: string
+}
+
+/** A arma pesada da loja por id do item; null = não é da aba Hammers. */
+export function shopHeavy(id: string | null | undefined): ShopSword | null {
+  const k = id?.startsWith("pesada_") ? id.slice(7) : ""
+  const c = HEAVY_COLORS[k]
+  return c ? { file: `${DIR}/pesada-${k}-m67.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
 }
 
 const key = (id: string | null | undefined) => (id?.startsWith("espada_") ? id.slice(7) : "")

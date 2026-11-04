@@ -40,7 +40,7 @@ import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import { tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
 import { byGod, isGod } from "../gods"
-import { byClanBody, clanOfBody, isClanBody, CLAN_ANIMS, type Clan } from "../classes"
+import { byClanBody, clanOfBody, isClanBody, CLAN_ANIMS, HAMMER_SKINS, type Clan } from "../classes"
 
 export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
@@ -605,7 +605,7 @@ export class AvatarLibrary {
     // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
     const locoP = this.locoSet(id).catch(() => null)
     // o Ciborgue da Arena (2026-11-03) usa os golpes pesados do Brutamontes, sem machado
-    const bruteP = id === "brutamontes" || id === "ciborgue" ? this.bruteSet().catch(() => null) : Promise.resolve(null)
+    const bruteP = id === "brutamontes" || id === "ciborgue" || (this.withClan && HAMMER_SKINS.includes(id)) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
     const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC] = await Promise.all([
       this.body(id),
       this.animSet(id),

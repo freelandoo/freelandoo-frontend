@@ -46,6 +46,9 @@ export const CLAN_ANIMS: Record<Clan, string> = {
 /** Skins que usam espada além dos vampiros (espelho de SWORD_SKINS em meuMundoClans.js). */
 export const SWORD_SKINS: readonly string[] = ["aurion", "morkhan", "zephyra"]
 
+/** Skins dos golpes do Brutamontes (espelho de HAMMER_SKINS em meuMundoClans.js). */
+export const HAMMER_SKINS: readonly string[] = ["golem", "maru", "kragor", "brutamontes"]
+
 type Tr = (key: string, fallback: string) => string
 
 /** Nome visível do corpo de classe (traduzido; adulto não muda o nome). */

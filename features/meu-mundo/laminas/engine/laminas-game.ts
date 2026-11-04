@@ -47,6 +47,8 @@ import { MonsterModel, AXE_URL, AXE_EDGE } from "./monster-view"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { clanOfBody, CLAN_WEAPON, SWORD_SKINS, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
+import { shopHeavy } from "../../engine/shop-swords"
+import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
 import { decorateWeapon, weaponAppearanceProfile, type WeaponAppearance } from "../../engine/weapon-appearance"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 import { createVfx, FIRE, VFX_COLORS, type Trail } from "../../engine/vfx"
@@ -85,7 +87,7 @@ export interface LaminasGameOptions {
    * no `setup` e não mudam mais (o servidor re-simula a gravação).
    * "mage" | "blade" decide o kit pela CLASSE; sem = o corpo decide (treino antigo).
    */
-  kit?: "mage" | "blade"
+  kit?: "mage" | "blade" | "hammer"
   /** Equipamento/cosmético confirmado pelo servidor; ausente mantém a arma antiga. */
   appearance?: WeaponAppearance | null
 }
@@ -314,10 +316,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
 
   // ── o jogador e a espada ─────────────────────────────────────────────────
   // Corpo de classe (fora do ringue do Boxe): golpes e arma da classe.
-  const clan = ring ? null : opts.kit ? (opts.kit === "mage" ? "raposa" : "vampiro") : clanOfBody(opts.body)
+  const clan = ring || opts.kit === "hammer" ? null : opts.kit ? (opts.kit === "mage" ? "raposa" : "vampiro") : clanOfBody(opts.body)
   const lib = new AvatarLibrary(scene, false, false, 30, false, false, true, false, true, opts.kit ? clan : null)
   // a skin do Brutamontes: machado e golpes de machado (fora do ringue)
-  const brute = !ring && !opts.kit && opts.body === "brutamontes"
+  // mm3d-67: Soldado de Pedra, Marú e Kragor também; o servidor manda o kit
+  const brute = !ring && (opts.kit ? opts.kit === "hammer" : opts.body === "brutamontes")
   const moves = clan ? CLAN_MOVES[clan] : brute ? BRUTE_MOVES : null
   const GUARD: BoxeBase = moves ? moves.guard : "BGuard"
   const fallbackMat = new StandardMaterial("laminas-character", scene)
@@ -336,7 +339,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const vfx = createVfx(scene, low)
   const fxColor = clan ? VFX_COLORS[clan] : brute ? VFX_COLORS.brutamontes : VFX_COLORS.lamina
   const weaponProfile = clan && opts.appearance ? weaponAppearanceProfile(clan, opts.appearance) : null
-  const weaponColor = weaponProfile && (weaponProfile.model || weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
+  const heavy = brute ? shopHeavy(opts.appearance?.weaponId) : null
+  const weaponColor = heavy ? { main: Color3.FromHexString(heavy.main), edge: Color3.FromHexString(heavy.edge) } : weaponProfile && (weaponProfile.model || weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
   // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
   // habilidades (2026-11-03): lâmina de luz, investida, escudo, poder máximo
@@ -357,12 +361,16 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let grip: WeaponGrip | null = null
   let decoration: ReturnType<typeof decorateWeapon> | null = null
   if (clan || brute) {
-    LoadAssetContainerAsync(clan ? (weaponProfile?.model?.file ?? CLAN_WEAPON[clan]) : AXE_URL, scene)
+    LoadAssetContainerAsync(clan ? (weaponProfile?.model?.file ?? CLAN_WEAPON[clan]) : heavy?.file ?? AXE_URL, scene)
       .then((c) => {
         if (disposed) return c.dispose()
         c.addAllToScene()
         weaponRoot = c.rootNodes[0] as TransformNode
-        for (const m of weaponRoot.getChildMeshes(false)) m.isPickable = false
+        for (const m of weaponRoot.getChildMeshes(false)) {
+          m.isPickable = false
+          // sem mapa de ambiente, metal puro sai preto (mesma conta da espada da loja)
+          if (heavy && m.material instanceof PBRMaterial) m.material.metallic = 0.25
+        }
         if (clan && opts.appearance) decoration = decorateWeapon(scene, weaponRoot, clan, opts.appearance, low, (m) => vfx.addGlow(m))
         weaponRoot.setEnabled(false)
       })

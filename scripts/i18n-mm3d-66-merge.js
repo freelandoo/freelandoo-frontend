@@ -21,10 +21,31 @@ const SWORDS = [
   ["alvorada", 12000, ["Alvorada dourada", "Lâmina dourada que lembra a primeira luz de Aurion sobre Lúmen."], ["Golden dawn", "A golden blade that recalls Aurion's first light over Lúmen."], ["Alba dorada", "Hoja dorada que recuerda la primera luz de Aurion sobre Lúmen."]],
   ["morkhan", 15000, ["Fenda de Morkhan", "Fragmento violeta rachado pela mesma luz do cristal de Morkhan, o Sem-Nome."], ["Morkhan's Rift", "A violet shard cracked by the same light as the crystal of Morkhan, the Nameless."], ["Grieta de Morkhan", "Fragmento violeta agrietado por la misma luz del cristal de Morkhan, el Sin Nombre."]],
 ]
+// mm3d-67: aba Hammers (id, preço, pt, en, es)
+const HEAVY = [
+  ["ferreiro", 400, ["Machado do ferreiro", "Machado de oficina com cabo enfaixado. Foi feito para rachar lenha e serve para rachar o resto."], ["Smith's axe", "A workshop axe with a wrapped handle. Made to split wood, good for splitting everything else."], ["Hacha del herrero", "Hacha de taller con mango vendado. Hecha para partir leña y sirve para partir lo demás."]],
+  ["lenhador", 550, ["Machado duplo do lenhador", "Duas lâminas gastas num cabo de madeira: pesa menos do que parece."], ["Woodcutter's double axe", "Two worn blades on a wooden haft: lighter than it looks."], ["Hacha doble del leñador", "Dos hojas gastadas en un mango de madera: pesa menos de lo que parece."]],
+  ["caveira", 900, ["Martelo da caveira alada", "Martelo de latão com caveira alada na cabeça. Sua sombra avisa o golpe que vem."], ["Winged skull hammer", "A brass hammer with a winged skull on its head. Its shadow warns of the incoming blow."], ["Martillo de la calavera alada", "Martillo de latón con calavera alada en la cabeza. Su sombra avisa del golpe."]],
+  ["lava", 1100, ["Martelo de lava", "A cabeça ainda guarda o calor da forja, entre placas de cobre."], ["Lava hammer", "Its head still holds the heat of the forge, between copper plates."], ["Martillo de lava", "La cabeza aún guarda el calor de la forja, entre placas de cobre."]],
+  ["noite", 1500, ["Alabarda negra", "Alabarda negra de cabo fino e lâmina larga, das guardas noturnas."], ["Black halberd", "A black halberd with a slim haft and a broad blade, from the night guard."], ["Alabarda negra", "Alabarda negra de mango fino y hoja ancha, de las guardias nocturnas."]],
+  ["lanca", 2200, ["Lança-tridente de aço", "Lança de três pontas e cabo enfaixado: mantém o inimigo longe."], ["Steel trident spear", "A three-pointed spear with a wrapped haft: it keeps the enemy at bay."], ["Lanza tridente de acero", "Lanza de tres puntas y mango vendado: mantiene lejos al enemigo."]],
+  ["bigorna", 2800, ["Martelo bigorna", "Uma bigorna num cabo. Protege só por ocupar tanto espaço."], ["Anvil hammer", "An anvil on a stick. It protects you just by taking up so much space."], ["Martillo yunque", "Un yunque en un mango. Protege solo por ocupar tanto espacio."]],
+  ["cravos", 3100, ["Clava de cravos", "Clava de ferro cravejada, com fitas gastas de batalhas antigas."], ["Studded club", "A studded iron club with worn ribbons from old battles."], ["Maza de clavos", "Maza de hierro tachonada, con cintas gastadas de batallas antiguas."]],
+  ["gume", 3600, ["Machado gume de gelo", "Machado de lâmina dupla com gume azulado, frio ao toque."], ["Ice-edge axe", "A double-bladed axe with a bluish edge, cold to the touch."], ["Hacha filo de hielo", "Hacha de doble hoja con filo azulado, fría al tacto."]],
+  ["coral", 4200, ["Tridente de coral", "Tridente vermelho e leve, polido como coral. Quase não cansa."], ["Coral trident", "A light red trident, polished like coral. It barely tires the arm."], ["Tridente de coral", "Tridente rojo y ligero, pulido como coral. Casi no cansa."]],
+  ["caldeira", 5500, ["Martelo-caldeira", "Uma caldeira inteira presa num cabo, com pistões e rebites. Acumula pressão a cada golpe."], ["Boiler hammer", "A whole boiler on a haft, with pistons and rivets. Builds pressure with every blow."], ["Martillo caldera", "Una caldera entera en un mango, con pistones y remaches. Acumula presión con cada golpe."]],
+  ["mares", 6000, ["Tridente dos mares", "Tridente antigo de ferro escuro. Quem o segura sente a onda antes de ela quebrar."], ["Trident of the seas", "An ancient trident of dark iron. Its bearer feels the wave before it breaks."], ["Tridente de los mares", "Tridente antiguo de hierro oscuro. Quien lo sostiene siente la ola antes de que rompa."]],
+  ["ornada", 7000, ["Machado do juramento", "Machado de lâminas gravadas, feito para quem jurou não recuar."], ["Oath axe", "An axe with engraved blades, made for those who swore never to retreat."], ["Hacha del juramento", "Hacha de hojas grabadas, hecha para quien juró no retroceder."]],
+  ["eter", 8000, ["Machado de éter", "Lâmina de energia azul presa num núcleo de éter que nunca apaga."], ["Ether axe", "A blade of blue energy held by an ether core that never goes out."], ["Hacha de éter", "Hoja de energía azul sujeta a un núcleo de éter que nunca se apaga."]],
+  ["mitica", 9000, ["Martelo rubro-negro", "Cabeça de pedra negra rachada em vermelho, com fitas de guerra."], ["Red-black hammer", "A head of black stone cracked with red, tied with war ribbons."], ["Martillo rojinegro", "Cabeza de piedra negra agrietada en rojo, con cintas de guerra."]],
+  ["espinhos", 10500, ["Foice de espinhos", "Lâmina curva de espinhos e tiras vermelhas, torta como um galho morto."], ["Thorn scythe", "A curved blade of thorns and red strips, twisted like a dead branch."], ["Guadaña de espinas", "Hoja curva de espinas y tiras rojas, torcida como una rama muerta."]],
+  ["praga", 12500, ["Machado da praga", "Machado rubro de correntes e farpas. Dizem que a ferrugem dele nunca para de crescer."], ["Blight axe", "A crimson axe of chains and barbs. They say its rust never stops growing."], ["Hacha de la plaga", "Hacha roja de cadenas y púas. Dicen que su óxido nunca deja de crecer."]],
+  ["neon", 15000, ["Machado do abismo azul", "Cristal azul que brilha por dentro, em duas lâminas que ninguém sabe quem forjou."], ["Blue abyss axe", "Blue crystal glowing from within, in two blades nobody knows who forged."], ["Hacha del abismo azul", "Cristal azul que brilla por dentro, en dos hojas que nadie sabe quién forjó."]],
+]
 const UI = {
-  "pt-BR": { i: 2, source: "Loja de Armas do Arsenal: {p} moedas.", ui: { weaponsShopTitle: "Loja de Armas", gearTabWeapons: "Armas", gearWarriorOnly: "Só guerreiros usam espadas", pvWeapons: "Comprar armas" } },
-  en: { i: 3, source: "Arsenal Weapon Shop: {p} coins.", ui: { weaponsShopTitle: "Weapon Shop", gearTabWeapons: "Weapons", gearWarriorOnly: "Only warriors can use swords", pvWeapons: "Buy weapons" } },
-  es: { i: 4, source: "Tienda de Armas del Arsenal: {p} monedas.", ui: { weaponsShopTitle: "Tienda de Armas", gearTabWeapons: "Armas", gearWarriorOnly: "Solo los guerreros usan espadas", pvWeapons: "Comprar armas" } },
+  "pt-BR": { i: 2, source: "Loja de Armas do Arsenal: {p} moedas.", ui: { weaponsShopTitle: "Loja de Armas", gearTabWeapons: "Armas", gearWarriorOnly: "Só guerreiros usam espadas", pvWeapons: "Comprar armas", shopSwords: "Espadas", shopHammers: "Hammers", gearHammerOnly: "Só Soldado de Pedra, Marú e Kragor usam estas armas" } },
+  en: { i: 3, source: "Arsenal Weapon Shop: {p} coins.", ui: { weaponsShopTitle: "Weapon Shop", gearTabWeapons: "Weapons", gearWarriorOnly: "Only warriors can use swords", pvWeapons: "Buy weapons", shopSwords: "Swords", shopHammers: "Hammers", gearHammerOnly: "Only Stone Soldier, Marú and Kragor can use these weapons" } },
+  es: { i: 4, source: "Tienda de Armas del Arsenal: {p} monedas.", ui: { weaponsShopTitle: "Tienda de Armas", gearTabWeapons: "Armas", gearWarriorOnly: "Solo los guerreros usan espadas", pvWeapons: "Comprar armas", shopSwords: "Espadas", shopHammers: "Hammers", gearHammerOnly: "Solo el Soldado de Piedra, Marú y Kragor usan estas armas" } },
 }
 for (const [lang, L] of Object.entries(UI)) {
   const file = path.join(DIR, lang + ".json")
@@ -40,6 +61,13 @@ for (const [lang, L] of Object.entries(UI)) {
     add["gearDesc_espada_" + id] = s[L.i][1]
     add["gearSource_espada_" + id] = L.source.replace("{p}", String(price))
     add["gearUses_espada_" + id] = base.replace("35", String(Math.round(price * 0.12)))
+  }
+  for (const s of HEAVY) {
+    const [id, price] = s
+    add["gear_pesada_" + id] = s[L.i][0]
+    add["gearDesc_pesada_" + id] = s[L.i][1]
+    add["gearSource_pesada_" + id] = L.source.replace("{p}", String(price))
+    add["gearUses_pesada_" + id] = base.replace("35", String(Math.round(price * 0.12)))
   }
   let n = 0
   for (const [k, v] of Object.entries(add)) if (!(k in mm)) { mm[k] = v; n++ }

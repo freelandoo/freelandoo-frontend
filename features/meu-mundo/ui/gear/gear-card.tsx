@@ -5,7 +5,7 @@ import type { ApiResult, GearItem, GearOut } from "../../data"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { AE, RARITY } from "../kit/aether-tokens"
 import { teko } from "../status/evo-skin"
-import { shopSword } from "../../engine/shop-swords"
+import { shopHeavy, shopSword } from "../../engine/shop-swords"
 
 export type GearTr = (key: string, fallback: string) => string
 export type GearAction = (id: string, run: (token: string, key: string) => Promise<ApiResult<GearOut>>, message?: string) => Promise<void>
@@ -30,7 +30,7 @@ export function GearItemCard({ item, t, subtitle, lines, children }: {
   return (
     <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">
       <div className="shrink-0">
-        <ItemImage src={item.shop === "weapons" ? shopSword(item.id)?.thumb : null} category={item.category as ItemCategory} rarity={item.rarity} alt={nameOf(item, t)} ratio={16 / 7} />
+        <ItemImage src={(item.shop === "weapons" ? shopSword(item.id) : item.shop === "hammers" ? shopHeavy(item.id) : null)?.thumb} category={item.category as ItemCategory} rarity={item.rarity} alt={nameOf(item, t)} ratio={16 / 7} />
       </div>
       <div className="flex items-start justify-between gap-2">
         <h4 className={teko.className + " text-[24px] font-semibold uppercase leading-tight"} style={{ color: AE.text }}>{nameOf(item, t)}</h4>

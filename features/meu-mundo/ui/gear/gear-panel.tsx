@@ -24,6 +24,7 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   const [tab, setTab] = useState<GearTab>(initialTab)
   const [category, setCategory] = useState<Category>("all")
   const [kind, setKind] = useState<ForgeKind>("assembly")
+  const [shelf, setShelf] = useState<"weapons" | "hammers">("weapons")
   const [confirm, setConfirm] = useState<string | null>(null)
   const byId = useMemo(() => new Map((catalog?.items || []).map(item => [item.id, item])), [catalog])
   const pending = (item: string) => bag?.pendingProposals?.some(proposal => proposal.item === item && proposal.status === "pending")
@@ -43,7 +44,7 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   }
   const changeTab = (next: GearTab) => { setTab(next); setConfirm(null); setMessage(null); setCategory("all") }
   const slotsFor = (item: GearItem): GearSlot[] => item.category === "weapon" ? ["weapon"] : item.category === "armor" ? ["armor"] : item.category === "accessory" ? ["acc1", "acc2"] : []
-  const locked = (item: GearItem) => !bag ? null : bag.level < item.level ? t("gearNeedLevel", "Precisa do nível {n}").replace("{n}", String(item.level)) : item.shop === "weapons" ? (bag.warrior ? null : t("gearWarriorOnly", "Só guerreiros usam espadas")) : item.clan && item.clan !== bag.clan ? t("gearOtherClan", "Arma de outra classe") : null
+  const locked = (item: GearItem) => !bag ? null : bag.level < item.level ? t("gearNeedLevel", "Precisa do nível {n}").replace("{n}", String(item.level)) : item.shop === "weapons" ? (bag.warrior ? null : t("gearWarriorOnly", "Só guerreiros usam espadas")) : item.shop === "hammers" ? (bag.hammer ? null : t("gearHammerOnly", "Só Soldado de Pedra, Marú e Kragor usam estas armas")) : item.clan && item.clan !== bag.clan ? t("gearOtherClan", "Arma de outra classe") : null
 
   const inventoryCard = (item: GearItem, guide: boolean): CarouselItem => ({
     key: item.id, label: nameOf(item, t), render: () => {
@@ -81,7 +82,7 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
     const filtered = catalog.items.filter(item => category === "all" || item.category === category)
     if (tab === "bag" || tab === "guide") items = filtered.filter(item => tab === "guide" || bag.owned[item.id]).map(item => inventoryCard(item, tab === "guide"))
     // Dois balcões do Arsenal: armas (mm3d-66) e o resto do Armeiro.
-    if (tab === "armory" || tab === "weapons") items = filtered.filter(item => item.price != null && (item.shop === "weapons") === (tab === "weapons")).map(item => ({
+    if (tab === "armory" || tab === "weapons") items = filtered.filter(item => item.price != null && (tab === "weapons" ? item.shop === shelf : !item.shop)).map(item => ({
       key: item.id, label: nameOf(item, t), render: () => (
         <GearItemCard item={item} t={t} subtitle={t("gearPrice", "{p} moedas").replace("{p}", String(item.price))} lines={bonusLines(item.bonus, t)}>
           {!item.stack && bag.owned[item.id] ? <p style={{ color: AE.good }}>{t("gearOwned", "Já é seu")}</p> : locked(item) ? <p style={{ color: AE.bad }}>{locked(item)}</p> : confirm === item.id ? <>
@@ -103,6 +104,9 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   return (
     <AetherModal title={title} eyebrow={bag ? t("gearHeader", "Nível {lv} · {c} moedas").replace("{lv}", String(bag.level)).replace("{c}", String(bag.coins)) : undefined} onClose={onClose} width={680}>
       <AetherTabs label={t("gearTitle", "Equipamento")} tabs={tabs} value={tab} onChange={changeTab} />
+      {tab === "weapons" && <AetherTabs<"weapons" | "hammers"> label={t("weaponsShopTitle", "Loja de Armas")} value={shelf} onChange={setShelf} tabs={[
+        { id: "weapons", label: t("shopSwords", "Espadas") }, { id: "hammers", label: t("shopHammers", "Hammers") },
+      ]} />}
       {tab === "forge" && <AetherTabs<ForgeKind> label={t("forgeKinds", "Bancadas da forja")} value={kind} onChange={setKind} tabs={[
         { id: "assembly", label: t("forgeWeapons", "Armas") }, { id: "part", label: t("forgeParts", "Peças") },
         { id: "equipment", label: t("forgeArmor", "Proteções") }, { id: "conversion", label: t("forgeConversions", "Conversões") },
@@ -114,7 +118,7 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
         </select>
       </label>}
       {!catalog || !bag ? <div className="grid min-h-48 place-items-center" style={{ color: AE.muted }}>{error ? <AetherButton onClick={() => void load()}>{t("forgeReload", "Tentar abrir novamente")}</AetherButton> : <Loader2 className="h-6 w-6 animate-spin" aria-label={t("gearLoading", "Carregando…")} />}</div> : (
-        <AetherCarousel key={tab + "-" + category + "-" + kind} title={title} items={items} cardWidth={360} cardHeight={510} empty={tab === "bag" ? t("gearBagEmpty", "Mochila vazia. Lute e jogue para ganhar materiais.") : t("gearNothing", "Nada por aqui ainda.")} />
+        <AetherCarousel key={tab + "-" + category + "-" + kind + "-" + shelf} title={title} items={items} cardWidth={360} cardHeight={510} empty={tab === "bag" ? t("gearBagEmpty", "Mochila vazia. Lute e jogue para ganhar materiais.") : t("gearNothing", "Nada por aqui ainda.")} />
       )}
       {message && <p role="status" className="mt-3 text-center text-[13px]" style={{ color: AE.goldSoft }}>{message}</p>}
     </AetherModal>

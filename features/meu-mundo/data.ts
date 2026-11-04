@@ -207,6 +207,8 @@ export interface FightTicket {
     seed: number
     stats: { strength: number; speed: number; intelligence: number; dexterity: number }
     style: "mage" | null
+    /** "hammer" = golpes do Brutamontes (só desenho; a regra é a do corpo a corpo). */
+    kit?: "hammer" | null
     /** Bônus do equipamento (com teto); o Boxe é de luvas: null. */
     gear: Partial<GearBonus> | null
     /** Nível de aventura de quem joga (vida/defesa/ataque crescem com ele). */
@@ -257,8 +259,8 @@ export type GearSlot = "weapon" | "armor" | "acc1" | "acc2"
 export interface GearItem {
   id: string
   category: GearCategory
-  /** "weapons" = vendido no balcão de armas do Arsenal (mm3d-66). */
-  shop?: "weapons" | null
+  /** Aba do balcão de armas do Arsenal: espadas (mm3d-66) ou Hammers (mm3d-67). */
+  shop?: "weapons" | "hammers" | null
   name: string
   rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
   price: number | null
@@ -323,6 +325,8 @@ export interface GearCatalog {
 export interface GearBag {
   /** Veste um guerreiro (vampiro, Aurion, Morkhan, Zéphyra): só ele usa as espadas da loja. */
   warrior?: boolean
+  /** Veste Soldado de Pedra, Marú ou Kragor: só ele usa as armas da aba Hammers. */
+  hammer?: boolean
   clan: Clan | null
   level: number
   coins: number
