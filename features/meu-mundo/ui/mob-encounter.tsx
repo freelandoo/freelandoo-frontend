@@ -33,6 +33,7 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
   const mobName = useCallback(
     (k: string) =>
       ({
+        soldier: t("laminasMobStoneGolem", "Golem de Pedra"),
         wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
         golem: t("laminasMobGolem", "Ciborgue"),
         harpy: t("laminasMobHarpy", "Dama das Garras"),

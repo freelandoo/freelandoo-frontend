@@ -49,6 +49,7 @@ import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
  * Monstros com corpo de gente: a skin rigada e a escala. Tamanhos do Alex
  * (2026-11-03), iguais na luta e na rua: Golem de Pedra, Ciborgue e
  * Brutamontes 4 m (o tamanho do corpo), lobos 2,5 m de altura (WOLF_SCALE).
+ * O Soldado de Pedra é o "soldier" da Arena, 3 m: laminas-game passa a escala.
  */
 const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
   soldier: { body: "golem", scale: 1 },

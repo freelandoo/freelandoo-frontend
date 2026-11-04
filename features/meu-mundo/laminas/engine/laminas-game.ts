@@ -478,7 +478,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     warn.material = warnMat
     warn.isPickable = false
     warn.setEnabled(false)
-    const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : null)
+    // o Soldado de Pedra da Arena tem 3 m; o mesmo corpo na rua é o Golem, de 4 m
+    const model = new MonsterModel(scene, m.kind, m.kind === "soldier" && !ring && !street ? 0.75 : 1, ring ? { n: m.id } : null)
     // Brutamontes: rastro roxo do machado no golpe (no ringue ele é gente de luva)
     const trail = m.kind === "brute" && !ring ? vfx.trail(() => model.axeEdge(), VFX_COLORS.brutamontes) : null
     models.set(m.id, { model, warn, px: m.x, pz: m.z, speed: 0, trail, prev: m.state })

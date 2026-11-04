@@ -8431,7 +8431,7 @@
     "laminasPitch": "Treine a espada contra a máquina. Quando o chão acender vermelho, o golpe vem ali: esquive e corte na brecha.",
     "laminasLeave": "Voltar ao centro",
     "laminasLevel": "Nível {n}",
-    "laminasMobSoldier": "Golem de Pedra",
+    "laminasMobSoldier": "Soldado de Pedra",
     "laminasMobWolf": "Lobos de Ferrugem",
     "laminasMobGolem": "Ciborgue",
     "laminasMobHarpy": "Dama das Garras",
@@ -9143,7 +9143,8 @@
     "skillShield": "Escudo de Luz",
     "skillUlt": "Poder Máximo",
     "laminasKeys2": "WASD anda · J, Espaço ou clique ataca (aperte de novo para o combo) · K, Shift ou botão direito esquiva · 1 Corte Mágico · 2 Investida · 3 Escudo · Q Poder Máximo",
-    "laminasTouchHelp2": "Joystick anda · ATACAR, ESQUIVAR e as habilidades na direita"
+    "laminasTouchHelp2": "Joystick anda · ATACAR, ESQUIVAR e as habilidades na direita",
+    "laminasMobStoneGolem": "Golem de Pedra"
   },
   "Sports": {
     "eyebrow": "Esportes",

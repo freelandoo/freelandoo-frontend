@@ -68,7 +68,8 @@ type Choice = { kind: MobKind; level: number }
 const MOB_BODY: Partial<Record<MobKind, BodyId>> = { soldier: "golem", golem: "ciborgue", harpy: "garras", brute: "brutamontes" }
 const RING_BODY: Record<MobKind, BodyId> = { soldier: "normal", wolf: "slim", golem: "fat", harpy: "female", brute: "strong" }
 
-export function useMobName(ring = false) {
+/** `street`: na rua o de pedra é o Golem (4 m); na Arena, o Soldado (3 m). */
+export function useMobName(ring = false, street = false) {
   const t = useTranslations("MeuMundo")
   return useCallback(
     (k: MobKind) =>
@@ -81,13 +82,13 @@ export function useMobName(ring = false) {
             brute: t("ringMobBrute", "O Campeão"),
           }
         : {
-        soldier: t("laminasMobSoldier", "Golem de Pedra"),
+        soldier: street ? t("laminasMobStoneGolem", "Golem de Pedra") : t("laminasMobSoldier", "Soldado de Pedra"),
         wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
         golem: t("laminasMobGolem", "Ciborgue"),
         harpy: t("laminasMobHarpy", "Dama das Garras"),
             brute: t("laminasMobBrute", "Brutamontes"),
           })[k],
-    [t, ring],
+    [t, ring, street],
   )
 }
 
@@ -227,7 +228,7 @@ function LaminasScreen({
   onMenu: () => void
 }) {
   const t = useTranslations("MeuMundo")
-  const mobName = useMobName(stage === "ring")
+  const mobName = useMobName(stage === "ring", stage === "bairro" || stage === "centro")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<LaminasGameHandle | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")

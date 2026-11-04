@@ -9017,7 +9017,7 @@
     "laminasPitch": "Train your sword against the machine. When the floor glows red, the blow lands there: dodge and strike in the opening.",
     "laminasLeave": "Back to downtown",
     "laminasLevel": "Level {n}",
-    "laminasMobSoldier": "Stone Golem",
+    "laminasMobSoldier": "Stone Soldier",
     "laminasMobWolf": "Rust Wolves",
     "laminasMobGolem": "Cyborg",
     "laminasMobHarpy": "Lady of Claws",
@@ -9729,7 +9729,8 @@
     "skillShield": "Shield of Light",
     "skillUlt": "Max Power",
     "laminasKeys2": "WASD moves · J, Space or click attacks (press again for the combo) · K, Shift or right click dodges · 1 Magic Slash · 2 Dash · 3 Shield · Q Max Power",
-    "laminasTouchHelp2": "Joystick moves · ATTACK, DODGE and the skills on the right"
+    "laminasTouchHelp2": "Joystick moves · ATTACK, DODGE and the skills on the right",
+    "laminasMobStoneGolem": "Stone Golem"
   },
   "Sports": {
     "eyebrow": "Sports",

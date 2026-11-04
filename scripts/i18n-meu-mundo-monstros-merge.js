@@ -3,13 +3,13 @@
 // das Garras. OVERRIDE (o dicionário vence o fallback inline): estas chaves já
 // existiam com os nomes antigos. Idempotente.
 // Rodar: node scripts/i18n-meu-mundo-monstros-merge.js
+// Depois dele: i18n-meu-mundo-soldado-merge.js (o Soldado de Pedra voltou a existir).
 const fs = require("fs")
 const path = require("path")
 
 const dir = path.join(__dirname, "..", "messages")
 
 const OVERRIDE = {
-  laminasMobSoldier: ["Golem de Pedra", "Stone Golem", "Gólem de Piedra"],
   laminasMobGolem: ["Ciborgue", "Cyborg", "Cíborg"],
   laminasMobHarpy: ["Dama das Garras", "Lady of Claws", "Dama de las Garras"],
 }
