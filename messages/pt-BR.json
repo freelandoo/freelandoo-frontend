@@ -3133,7 +3133,8 @@
     "shopEyebrow": "Vitrine",
     "shopTitleOwner": "Seus produtos",
     "shopTitlePublic": "Produtos à venda",
-    "shopPickupNote": "Compra pela Freelandoo, retirada com o vendedor."
+    "shopPickupNote": "Compra pela Freelandoo, retirada com o vendedor.",
+    "sitePillViewAria": "Ver o site do negócio"
   },
   "Careers": {
     "hero.badge": "Carreiras",

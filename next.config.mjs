@@ -82,8 +82,13 @@ const nextConfig = {
       // entradas casando o mesmo caminho deixam a ordem decidir qual vale — e
       // essa ordem não está escrita em lugar nenhum. Aqui cada caminho casa
       // com exatamente uma regra.
-      { source: "/:path((?!site-preview).*)", headers: securityHeaders },
+      { source: "/:path((?!site-preview|(?:gs|hidrovap)(?:/|$)).*)", headers: securityHeaders },
       { source: "/site-preview/:path*", headers: previewHeaders },
+      // Sites externos aparecem em iframe na tela Site da comunidade (lib/external-sites.ts).
+      { source: "/gs", headers: previewHeaders },
+      { source: "/gs/:path*", headers: previewHeaders },
+      { source: "/hidrovap", headers: previewHeaders },
+      { source: "/hidrovap/:path*", headers: previewHeaders },
     ]
   },
   // Tree-shaking de barris grandes: framer-motion (29 arquivos) e date-fns não

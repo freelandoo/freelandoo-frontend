@@ -15,6 +15,7 @@ import { motion } from "framer-motion"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
+import { externalSitePath } from "@/lib/external-sites"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { PublishMenuButton, type PublishItem } from "@/components/composer/publish-menu-button"
 import { InviteShareButton } from "@/components/community/invite-share-button"
@@ -584,7 +585,10 @@ export default function CommunityDetailPage() {
   // é só o que a tela mostra AGORA — e é um valor só para as três portas, pela
   // mesma razão de sempre: separados, o preview esconderia uma e ofereceria as
   // outras duas.
-  const showSiteEntry = canBuildSite && edit
+  // Site externo (lib/external-sites.ts) não tem construtor: a entrada só mostra
+  // o site pronto, que é público, então vale para quem visita também.
+  const hasExternalSite = !!externalSitePath(id)
+  const showSiteEntry = hasExternalSite || (canBuildSite && edit)
 
   // Qual AMBIENTE esta página é (o dock lê isto pelo beacon lá embaixo).
   // `null` = comunidade comum-mas-não-negócio (condomínio, bairro, pet, carro):
@@ -1044,7 +1048,9 @@ export default function CommunityDetailPage() {
               key: "site",
               icon: Globe,
               label: t("tabSite", "Site"),
-              ariaLabel: t("sitePillAria", "Abrir o construtor do site do negócio"),
+              ariaLabel: hasExternalSite
+                ? t("sitePillViewAria", "Ver o site do negócio")
+                : t("sitePillAria", "Abrir o construtor do site do negócio"),
               bg: "#DB2777",
               bgHover: "#BE185D",
               href: sitePath,

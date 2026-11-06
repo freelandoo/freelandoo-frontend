@@ -21,6 +21,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { PageBackLink } from "@/components/tabloide/PageBackLink"
 import { CommunityShellBeacon } from "@/components/layout/community-shell"
 import { getStoredUser, getToken } from "@/lib/auth"
+import { externalSitePath } from "@/lib/external-sites"
 
 const CommunitySiteBuilder = dynamic(
   () =>
@@ -87,6 +88,7 @@ export default function CommunitySitePage() {
   const isLeader =
     !!community && !!currentUserId && community.id_leader_user === currentUserId
   const accent = ACCENTS[community?.community_theme?.accent || "gold"] || ACCENTS.gold
+  const externalSite = externalSitePath(id)
 
   return (
     <main className="fl-sharp min-h-[100dvh] bg-[#0b0804] px-3 py-4 md:px-6">
@@ -124,6 +126,12 @@ export default function CommunitySitePage() {
           <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center text-sm text-[#F5F1E8]/70">
             {error || t("notFound", "Comunidade não encontrada.")}
           </div>
+        ) : externalSite ? (
+          <iframe
+            src={externalSite}
+            title={community.display_name}
+            className="block h-[calc(100dvh-9rem)] min-h-[480px] w-full border-2 border-[#0B0B0D] bg-black"
+          />
         ) : (
           <CommunitySiteBuilder
             idProfile={community.id_profile}

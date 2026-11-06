@@ -3146,7 +3146,8 @@
     "shopEyebrow": "Storefront",
     "shopTitleOwner": "Your products",
     "shopTitlePublic": "Products for sale",
-    "shopPickupNote": "Buy through Freelandoo, pick up with the seller."
+    "shopPickupNote": "Buy through Freelandoo, pick up with the seller.",
+    "sitePillViewAria": "View the business website"
   },
   "Careers": {
     "hero.badge": "Careers",
