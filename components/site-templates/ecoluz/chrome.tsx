@@ -16,6 +16,7 @@ import { ADDRESS_LINE, BUSINESS, MAIL_HREF, TEL_HREF, WA_DEFAULT, whatsappLink }
 import { SERVICES } from "./content/services";
 import { Monogram } from "./icons";
 import { PAGE, pageHref, type TemplateLinks } from "./lib";
+import { TenkaCredit } from "../tenka-credit"
 
 /**
  * Os destinos da barra.
@@ -284,6 +285,7 @@ export function SiteFooter({ links }: { links: TemplateLinks }) {
         <span>© {new Date().getFullYear()} {BUSINESS.name}</span>
         <span>A economia depende de análise técnica individual.</span>
       </div>
+      <TenkaCredit />
     </footer>
   );
 }

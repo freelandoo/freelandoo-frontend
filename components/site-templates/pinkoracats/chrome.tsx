@@ -13,6 +13,7 @@ import { BRAND } from "./content/brand"
 import { CaseButton, SearchButton } from "./commerce"
 import { PAGE, pageHref, type TemplateLinks } from "./lib"
 import { useCatalog } from "./store"
+import { TenkaCredit } from "../tenka-credit"
 
 export function SiteHeader({ links }: { links: TemplateLinks }) {
   const catalog = useCatalog()
@@ -129,6 +130,7 @@ export function SiteFooter({ links }: { links: TemplateLinks }) {
       <p className="pk-footer__fine">
         © {BRAND.full} · feito à mão
       </p>
+      <TenkaCredit tone="light" />
     </footer>
   )
 }

@@ -82,13 +82,15 @@ const nextConfig = {
       // entradas casando o mesmo caminho deixam a ordem decidir qual vale — e
       // essa ordem não está escrita em lugar nenhum. Aqui cada caminho casa
       // com exatamente uma regra.
-      { source: "/:path((?!site-preview|(?:gs|hidrovap)(?:/|$)).*)", headers: securityHeaders },
+      { source: "/:path((?!site-preview|(?:gs|hidrovap|excelencia)(?:/|$)).*)", headers: securityHeaders },
       { source: "/site-preview/:path*", headers: previewHeaders },
       // Sites externos aparecem em iframe na tela Site da comunidade (lib/external-sites.ts).
       { source: "/gs", headers: previewHeaders },
       { source: "/gs/:path*", headers: previewHeaders },
       { source: "/hidrovap", headers: previewHeaders },
       { source: "/hidrovap/:path*", headers: previewHeaders },
+      { source: "/excelencia", headers: previewHeaders },
+      { source: "/excelencia/:path*", headers: previewHeaders },
     ]
   },
   // Tree-shaking de barris grandes: framer-motion (29 arquivos) e date-fns não
@@ -152,6 +154,9 @@ const nextConfig = {
         { source: "/gs/:path*", destination: "https://gs-refrigeracao.vercel.app/gs/:path*" },
         { source: "/hidrovap", destination: "https://hidrovap.vercel.app/hidrovap" },
         { source: "/hidrovap/:path*", destination: "https://hidrovap.vercel.app/hidrovap/:path*" },
+        // Excelência: exportação estática em public/excelencia (SITES/excelencia-refrigeracao, STATIC_EXPORT=1).
+        { source: "/excelencia", destination: "/excelencia/index.html" },
+        { source: "/excelencia/servicos/:slug", destination: "/excelencia/servicos/:slug.html" },
       ],
     }
   },

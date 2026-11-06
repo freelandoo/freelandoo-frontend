@@ -30,6 +30,7 @@ import { AREAS } from "./content/areas";
 import { SERVICES } from "./content/services";
 import { Monogram } from "./deco";
 import { PAGE, pageHref, type TemplateLinks } from "./lib";
+import { TenkaCredit } from "../tenka-credit"
 
 /* ───────────────────────────── BARRA FIXA ──────────────────────────────── */
 
@@ -360,6 +361,7 @@ export function SiteFooter({ links }: { links: TemplateLinks }) {
           </p>
         </div>
       </div>
+      <TenkaCredit />
     </footer>
   );
 }

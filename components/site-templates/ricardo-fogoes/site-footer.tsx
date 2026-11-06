@@ -20,6 +20,7 @@ import type { TemplateLinks } from "@/types/site-template";
 import { PAGE, pageHref } from "./lib";
 import { CITIES } from "./content/cities";
 import { SERVICES } from "./content/services";
+import { TenkaCredit } from "../tenka-credit"
 
 function Field({
   label,
@@ -169,6 +170,7 @@ export default function SiteFooter({ links }: { links: TemplateLinks }) {
           © {new Date().getFullYear()} {BUSINESS.name}. {BUSINESS.closedHuman}.
         </p>
       </div>
+      <TenkaCredit />
     </footer>
   );
 }

@@ -30,6 +30,7 @@ import {
 } from "./icons"
 import { BrandMark } from "./ui"
 import { cityLabel, pageHref, telHref, waLink, waMessageFor, type Ctx } from "./lib"
+import { TenkaCredit } from "../tenka-credit"
 
 /** Um item do menu, já com o endereço resolvido. */
 type NavItem = { label: string; href: string; anchor?: boolean }
@@ -479,6 +480,7 @@ export function SiteFooter({ ctx }: { ctx: Ctx }) {
           {b.subTagline ? <p>{b.subTagline}</p> : null}
         </div>
       </div>
+      <TenkaCredit />
     </footer>
   )
 }
