@@ -10106,7 +10106,11 @@
     "sgAtkHow2": "Starts at the character's value and rises with each adventure level. The weapon and Forge refining add on top.",
     "stDefShort2": "DEF {n}",
     "stAtkShort2": "ATK {n}",
-    "laminasSubStone": "Stone: high defense, low speed"
+    "laminasSubStone": "Stone: high defense, low speed",
+    "vsLife": "Health",
+    "vsTapTouch": "Tap the screen to fight",
+    "vsTapKey": "Click or press Space to fight",
+    "vsPack": "Health is the total of all {n}. Each one has a share."
   },
   "Sports": {
     "eyebrow": "Sports",

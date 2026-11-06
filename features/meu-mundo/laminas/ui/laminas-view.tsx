@@ -32,7 +32,8 @@ import { getToken } from "@/lib/auth"
 import { ReceiptLines } from "../../ui/rewards/receipt-lines"
 import { VictoryButton, VictoryPanel } from "../../ui/rewards/victory-panel"
 import { celebrate, hold } from "../../ui/rewards/reward-bus"
-import { createLaminasGame, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
+import { createLaminasGame, type FightSheet, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
+import { VersusScreen } from "./versus-screen"
 import { peerOf, type MobKind, type SkillId } from "../sim/fight"
 import { SkillHud } from "./skill-hud"
 
@@ -232,6 +233,12 @@ function LaminasScreen({
   const gameRef = useRef<LaminasGameHandle | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [hud, setHud] = useState<LaminasHud | null>(null)
+  const [sheet, setSheet] = useState<FightSheet | null>(null)
+  const [started, setStarted] = useState(false)
+  const begin = useCallback(() => {
+    gameRef.current?.begin()
+    setStarted(true)
+  }, [])
   const [result, setResult] = useState<boolean | null>(null)
   const [muted, setMuted] = useState(false)
   const [veil, setVeil] = useState(portal)
@@ -294,6 +301,7 @@ function LaminasScreen({
         canvas,
         body,
         look,
+        hold: true,
         labels: labelsRef.current,
         setup: fromServer
           ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined }
@@ -301,7 +309,11 @@ function LaminasScreen({
         kit: fromServer ? (fromServer.setup.kit === "hammer" ? "hammer" : fromServer.setup.kit === "bow" ? "bow" : fromServer.setup.kit === "gun" ? "gun" : fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,
         stage,
-        onReady: () => alive && setStatus("ready"),
+        onReady: () => {
+          if (!alive) return
+          setSheet(gameRef.current?.sheet() ?? null)
+          setStatus("ready")
+        },
         onHud: (h) => alive && setHud(h),
         onEnd: (win) => {
           endRef.current(win)
@@ -359,6 +371,8 @@ function LaminasScreen({
   // celular em pé: as duas placas não cabem lado a lado — a do inimigo desce para a direita
   const narrow = vw < plateWidth(pw) * 2 + 140
   const foeBody = stage === "ring" ? RING_BODY[choice.kind] : MOB_BODY[choice.kind]
+  const foePortrait = foeBody ? PORTRAIT[foeBody] : stage !== "ring" && choice.kind === "wolf" ? WOLF_PORTRAIT : null
+  const heroLevel = ticket && ticket !== "offline" ? (ticket.setup.hero ?? 1) : 1
   const foeHp = hud ? hud.mobs.reduce((s, m) => s + Math.max(0, m.hp), 0) : 0
   const foeMax = hud ? hud.mobs.reduce((s, m) => s + m.hpMax, 0) : 1
   const foeTop = narrow ? `calc(${SAFE.top} + 52px)` : SAFE.top
@@ -366,13 +380,24 @@ function LaminasScreen({
     <div className="absolute inset-0">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("laminasAria", "Arena das Lâminas")} />
 
+      {/* antes da luta: os status dos dois lados; a luta só anda com um toque */}
+      {status === "ready" && !veil && !started && sheet && (
+        <VersusScreen
+          me={{ name: t("fightYou", "VOCÊ"), level: heroLevel, portrait: PORTRAIT[body] }}
+          foe={{ name: mobName(choice.kind), level: portal && ticket && ticket !== "offline" ? ticket.setup.level : heroLevel, portrait: foePortrait }}
+          sheet={sheet}
+          touch={isTouch}
+          onStart={begin}
+        />
+      )}
+
       {/* inimigos: a placa do Cat demon, espelhada (o retrato fica do lado de fora) */}
-      {hud && (
+      {hud && started && (
         <div className="pointer-events-none absolute" style={narrow ? { top: foeTop, right: SAFE.right } : { top: foeTop, left: "50%", transform: "translateX(-50%)" }}>
           <FightPlate
             pw={pw}
             mirrored
-            portrait={foeBody ? PORTRAIT[foeBody] : stage !== "ring" && choice.kind === "wolf" ? WOLF_PORTRAIT : null}
+            portrait={foePortrait}
             name={
               portal && ticket && ticket !== "offline"
                 ? `${mobName(choice.kind)} · ${t("laminasFoeLevel", "Nv. {n}").replace("{n}", String(ticket.setup.level))}`
@@ -405,9 +430,11 @@ function LaminasScreen({
       )}
 
       {/* eu: a placa com retrato, sangue, fôlego e poder (no celular em cima, longe do joystick) */}
-      <div className="pointer-events-none absolute" style={{ left: SAFE.left, top: isTouch ? SAFE.top : undefined, bottom: isTouch ? undefined : SAFE.bottom }}>
-        <FightPlate pw={pw} portrait={PORTRAIT[body]} name={t("fightYou", "VOCÊ")} hp={hpPct} hpMax={hud?.hpMax ?? 100} stam={stPct / 100} power={{ v: pwPct / 100, ready: pwFull }} />
-      </div>
+      {started && (
+        <div className="pointer-events-none absolute" style={{ left: SAFE.left, top: isTouch ? SAFE.top : undefined, bottom: isTouch ? undefined : SAFE.bottom }}>
+          <FightPlate pw={pw} portrait={PORTRAIT[body]} name={t("fightYou", "VOCÊ")} hp={hpPct} hpMax={hud?.hpMax ?? 100} stam={stPct / 100} power={{ v: pwPct / 100, ready: pwFull }} />
+        </div>
+      )}
 
       {/* som e sair */}
       <div className="absolute flex gap-2" style={{ top: SAFE.top, right: SAFE.right }}>
@@ -430,7 +457,7 @@ function LaminasScreen({
       </div>
 
       {/* 2026-11-03: botões de habilidade no desenho da referência do Alex (no computador com as teclas) */}
-      {status === "ready" && result === null && hud && (
+      {status === "ready" && started && result === null && hud && (
         <>
           {isTouch && <Joystick gameRef={gameRef} skin="gold" />}
           <SkillHud

@@ -10086,7 +10086,11 @@
     "sgAtkHow2": "Empieza en el valor del personaje y sube con cada nivel de aventura. El arma y el refinado en la Forja suman encima.",
     "stDefShort2": "DEF {n}",
     "stAtkShort2": "ATQ {n}",
-    "laminasSubStone": "Piedra: mucha defensa, poca velocidad"
+    "laminasSubStone": "Piedra: mucha defensa, poca velocidad",
+    "vsLife": "Vida",
+    "vsTapTouch": "Toca la pantalla para luchar",
+    "vsTapKey": "Haz clic o pulsa Espacio para luchar",
+    "vsPack": "La vida es la suma de los {n}. Cada uno tiene su parte."
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -75,6 +75,8 @@ export interface LaminasHud {
 
 export interface LaminasGameOptions {
   canvas: HTMLCanvasElement
+  /** A luta nasce parada até `begin()` (tela de versus). */
+  hold?: boolean
   /** Textos que saltam na luta (já traduzidos). */
   labels?: { evade: string; miss: string }
   body: BodyId
@@ -97,7 +99,17 @@ export interface LaminasGameOptions {
   appearance?: WeaponAppearance | null
 }
 
+/** Os status dos dois lados, como a regra vai usar. `count` = quantos inimigos. */
+export interface FightSheet {
+  me: { hp: number; atk: number; def: number; acc: number; spd: number }
+  foe: { hp: number; atk: number; def: number; acc: number; spd: number }
+  count: number
+}
+
 export interface LaminasGameHandle {
+  /** Solta a luta que nasceu parada. */
+  begin: () => void
+  sheet: () => FightSheet
   setMuted: (m: boolean) => void
   /** Atributos da vida (chegam do servidor depois de a luta abrir). */
   setStats: (s: Partial<Stats>) => void
@@ -970,6 +982,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let ran = 0
   let hudAt = 0
   let readyFired = false
+  let held = !!opts.hold
   const frame = (ms: number) => {
     const realDt = Math.min(ms / 1000, 0.1)
     // pausa de impacto: o mundo quase para por um instante no golpe forte
@@ -977,7 +990,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     hitStop = Math.max(0, hitStop - realDt)
     scene.animationTimeScale = slow ? 0.08 : 1
     const dt = slow ? realDt * 0.08 : realDt
-    simClock += dt
+    if (!held) simClock += dt
     let steps = 0
     while (ran + DT <= simClock && steps < 8) {
       // quantizada: o aparelho joga exatamente o que o servidor vai re-simular
@@ -1189,6 +1202,18 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   }
 
   return {
+    begin: () => {
+      held = false
+      wantAttack = false
+      wantDodge = false
+      wantPower = false
+      wantSkill.slash = wantSkill.dash = wantSkill.shield = false
+    },
+    sheet: () => ({
+      me: { hp: fight.me.hpMax, ...fight.rate },
+      foe: { hp: fight.mobs.reduce((a, x) => a + x.hpMax, 0), ...fight.mobs[0].rate },
+      count: fight.mobs.length,
+    }),
     setMuted(m) {
       audio.setMuted(m)
     },
