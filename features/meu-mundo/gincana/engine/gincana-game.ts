@@ -524,9 +524,12 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     const me4 = seats.get(me)!
     aura.setEnabled(mine.boost > 0)
     if (mine.boost > 0) {
-      aura.position.set(me4.vx, me4.vy + 0.9, me4.vz)
+      // a bola acompanha a altura do corpo (1,8 m = o tamanho de base)
+      const tall = seats.get(me)!.char.height
+      const auraK = tall / 1.8
+      aura.position.set(me4.vx, me4.vy + tall / 2, me4.vz)
       const pulse = 1 + Math.sin(clock * 18) * 0.08
-      aura.scaling.set(1.05 * pulse, 1.35 * pulse, 1.05 * pulse)
+      aura.scaling.set(1.05 * pulse * auraK, 1.35 * pulse * auraK, 1.05 * pulse * auraK)
       auraMat.alpha = 0.08 + Math.min(1, mine.boost) * 0.1
     }
     cam.fov += ((mine.boost > 0 ? baseFov + 0.12 : baseFov) - cam.fov) * Math.min(1, dt * 6)
