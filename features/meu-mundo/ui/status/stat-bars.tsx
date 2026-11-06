@@ -17,7 +17,7 @@
 // rankOdds, HERO_LEVEL) e o speedFactor do Jetpack.
 
 import { useEffect, useState, type ReactNode } from "react"
-import { BicepsFlexed, Brain, Crosshair, Feather, Heart, Shield, Swords } from "lucide-react"
+import { Brain, Crosshair, Feather, Heart, Shield, Swords, Target } from "lucide-react"
 import type { LifeFull } from "../../types"
 import { DEF_MAX, HERO_LEVEL, HERO_LEVEL_MAX, heroLevelScale } from "../../laminas/sim/fight"
 import { anton } from "../hud/fight-plate"
@@ -119,7 +119,7 @@ export function useStatRows(life: LifeFull, level: number | undefined, t: Tr): S
   return [
     { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), value: Math.round(Math.min(1, h.def / DEF_MAX) * STAT_MAX), note: `${pct(h.def)}%` },
     { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), value: Math.round(Math.min(1, (h.dmg - 1) / atkTop) * STAT_MAX), note: `+${pct(h.dmg - 1)}%` },
-    { key: "str", icon: <BicepsFlexed />, label: t("atStrength", "Força"), value: at.strength },
+    { key: "str", icon: <Target />, label: t("atStrength", "Acuracidade"), value: at.strength },
     { key: "int", icon: <Brain />, label: t("atIntelligence", "Inteligência"), value: at.intelligence },
     { key: "dex", icon: <Crosshair />, label: t("attrDexterity", "Destreza"), value: at.dexterity ?? 0 },
     { key: "spd", icon: <Feather />, label: t("atSpeed", "Velocidade"), value: at.speed },
@@ -250,7 +250,7 @@ export function StatGuide({ t, small = false }: { t: Tr; small?: boolean }) {
       "def",
       <Shield key="i" />,
       t("stDefense", "Defesa"),
-      t("sgDefWhere", "Reduz o dano que você leva nas lutas."),
+      t("sgDefWhere", "Amortece o dano: disputa com o ataque de quem bate. Ataque 100 contra defesa 1000 passa só 10%."),
       t("sgDefHow", "Sobe {d}% a cada nível de aventura (até {lv}%) e com o equipamento do Armeiro e da Forja. O total nunca passa de {max}%.")
         .replace("{d}", pct(HERO_LEVEL.def))
         .replace("{lv}", pct(HERO_LEVEL.defMax))
@@ -260,14 +260,14 @@ export function StatGuide({ t, small = false }: { t: Tr; small?: boolean }) {
       "atk",
       <Swords key="i" />,
       t("stAttack", "Ataque"),
-      t("sgAtkWhere", "Multiplica o dano de cada golpe seu nas lutas."),
+      t("sgAtkWhere", "A força do golpe: multiplica o dano e fura a defesa de quem apanha."),
       t("sgAtkHow", "Sobe +{d}% a cada nível de aventura. A arma e o refino na Forja somam por cima.").replace("{d}", pct(HERO_LEVEL.dmg)),
     ],
     [
       "str",
-      <BicepsFlexed key="i" />,
-      t("atStrength", "Força"),
-      t("sgStrWhere", "Dano dos golpes (até +50% com 1000). Conta para virar adulto."),
+      <Target key="i" />,
+      t("atStrength", "Acuracidade"),
+      t("sgStrWhere", "Chance de acertar: disputa com a velocidade de quem apanha. 100 contra 1000 acerta 10%. Conta para virar adulto."),
       t("sgStrHow2", "Treinando na academia (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor."),
     ],
     [
@@ -288,7 +288,7 @@ export function StatGuide({ t, small = false }: { t: Tr; small?: boolean }) {
       "spd",
       <Feather key="i" />,
       t("atSpeed", "Velocidade"),
-      t("sgSpdWhere", "Ritmo dos golpes (até +30%) e passo na luta (até +20%); no Jetpack, a velocidade do voo."),
+      t("sgSpdWhere", "Esquiva, até sem apertar: disputa com a acuracidade de quem bate. Também dá ritmo aos golpes e ao passo; no Jetpack, a velocidade do voo."),
       t("sgSpdHow2", "Treinando na academia. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido."),
     ],
   ]
@@ -320,7 +320,7 @@ export function StatGuide({ t, small = false }: { t: Tr; small?: boolean }) {
       <p className={`${archivo.className} mt-3 leading-snug`} style={{ fontSize: small ? 10.5 : 12.5, color: EVO.mudo }}>
         {t(
           "sgFoot",
-          "Cada nível de aventura também soma +{n} em força, inteligência, destreza e velocidade (vale na luta). A prática de cada dia tem limite; vencer rende mais que perder, e com energia alta e estresse baixo rende mais.",
+          "Cada nível de aventura também soma +{n} em acuracidade, inteligência, destreza e velocidade (vale na luta). A prática de cada dia tem limite; vencer rende mais que perder, e com energia alta e estresse baixo rende mais.",
         ).replace("{n}", String(HERO_LEVEL.attr))}
       </p>
     </div>

@@ -271,6 +271,7 @@ function LaminasScreen({
       alive = false
     }
   }, [choice, stage, portal, mobId, tutorial])
+  const labelsRef = useRef({ evade: t("laminasEvade", "ESQUIVOU!"), miss: t("laminasMiss", "ERROU!") })
   const receiptRef = useRef(onReceipt)
   useEffect(() => {
     receiptRef.current = onReceipt
@@ -293,6 +294,7 @@ function LaminasScreen({
         canvas,
         body,
         look,
+        labels: labelsRef.current,
         setup: fromServer
           ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined }
           : { kind: choice.kind, level: choice.level, peer: tutorial ? undefined : peerOf(choice.kind) },

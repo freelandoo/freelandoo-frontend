@@ -75,6 +75,8 @@ export interface LaminasHud {
 
 export interface LaminasGameOptions {
   canvas: HTMLCanvasElement
+  /** Textos que saltam na luta (já traduzidos). */
+  labels?: { evade: string; miss: string }
   body: BodyId
   look?: string
   setup: FightSetup
@@ -880,6 +882,16 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           vfx.dust(new Vector3(fight.me.x, 0.15, fight.me.z), 8)
           if (moves) hero.boxeAct(moves.dodge.clip, 0.46, moves.dodge.from, moves.dodge.to)
           else hero.boxeAct("BDodge", 0.46, 0, 0.49)
+          audio.whoosh()
+          break
+        case "miss":
+          if (e.on === "me") {
+            pop(new Vector3(e.x, hero.height * 0.8, e.z), opts.labels?.evade ?? "ESQUIVOU!", "#7CFFB2", 40)
+            if (e.auto && !hero.boxeBusy) {
+              if (moves) hero.boxeAct(moves.dodge.clip, 0.36, moves.dodge.from, moves.dodge.to)
+              else hero.boxeAct("BDodge", 0.36, 0, 0.49)
+            }
+          } else pop(new Vector3(e.x, e.y + 2, e.z), opts.labels?.miss ?? "ERROU!", "#E8E2D5", 38)
           audio.whoosh()
           break
         case "hit":
