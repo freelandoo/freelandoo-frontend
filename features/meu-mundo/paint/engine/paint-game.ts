@@ -503,7 +503,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     const rh = c.bonePosition("mixamorig:RightHand")
     const lh = c.bonePosition("mixamorig:LeftHand")
     if (!rh || !lh) return g.unmount(c.holder)
-    g.mount(rh, lh, new Vector3(Math.sin(facing), 0, Math.cos(facing)))
+    g.mount(rh, lh, new Vector3(Math.sin(facing), 0, Math.cos(facing)), c.height)
   }
 
   // ── outros jogadores (rede) ─────────────────────────────────────────────────

@@ -363,7 +363,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // a skin do Brutamontes: machado e golpes de machado (fora do ringue)
   // mm3d-67: Soldado de Pedra, Marú e Kragor também; o servidor manda o kit
   const brute = !ring && (opts.kit ? opts.kit === "hammer" : opts.body === "brutamontes")
-  const moves = bow ? ARCHER_MOVES : gun ? GUN_MOVES : clan ? CLAN_MOVES[clan] : brute ? BRUTE_MOVES : null
+  // o Ciborgue não fica de arma erguida: parado, a pose pesada de braços baixos; ergue para atirar
+  const moves = bow ? ARCHER_MOVES : gun ? (opts.body === "ciborgue" ? { ...GUN_MOVES, guard: "XIdle" as const } : GUN_MOVES) : clan ? CLAN_MOVES[clan] : brute ? BRUTE_MOVES : null
   const GUARD: BoxeBase = moves ? moves.guard : "BGuard"
   const fallbackMat = new StandardMaterial("laminas-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
@@ -445,8 +446,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // o que a magia da raposa pinta de fogo, a arqueira pinta na cor do arco
   const SHOT = ranged ? weaponColor : FIRE
   const arrows = ranged ? new LightArrows(scene, vfx, weaponColor, gun ? 0.55 : 1) : null
-  const SHOT_BLEND = 0.15
-  const shotOff = new Map<number, { off: Vector3; t: number }>()
+  // Tiro reto (pedido do Alex): a imagem sai da boca da arma e segue na MESMA altura; a regra
+  // voa a SHOT.y, mais baixo que a arma dos corpos altos. No plano, a sobra some aos poucos
+  // até o fim do alcance: o caminho inteiro é uma linha só, sem descer nem dobrar.
+  const shotOff = new Map<number, { off: Vector3; range: number; at: Vector3 }>()
   const stone = clan === "raposa" ? vfx.orb(weaponProfile?.paint ? weaponColor : SHOT) : null
   const heroTrail = vfx.trail(() => {
     const node = clan || brute ? grip?.root : ring ? null : sword
@@ -457,7 +460,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // O rastro de éter também acompanha o disparo do cajado, sem alterar o tiro.
   const shotTrail = clan === "raposa" && weaponProfile?.trail ? vfx.trail(() => {
     const shot = fight.shots[0]
-    return shot ? [new Vector3(shot.x - 0.055, shot.y, shot.z), new Vector3(shot.x + 0.055, shot.y, shot.z)] : null
+    const at = shot && shotOff.get(shot.id)?.at
+    return at ? [at.add(new Vector3(-0.055, 0, 0)), at.add(new Vector3(0.055, 0, 0))] : null
   }, weaponColor) : null
   const placeWeapon = () => {
     if (shieldRoot && !shieldGrip) {
@@ -774,10 +778,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           const s = fight.shots.find((x) => x.id === e.id)
           if (s) {
             // S: a bola é maior (o tamanho segue o ranque)
-            // a imagem sai da PEDRA e encontra a trajetória da regra em SHOT_BLEND s
+            // a imagem sai da PEDRA em linha reta (shotOff)
             const node = grip?.root
             const from = node ? Vector3.TransformCoordinates(STONE, node.getWorldMatrix()) : new Vector3(s.x, s.y, s.z)
-            shotOff.set(e.id, { off: from.subtract(new Vector3(s.x, s.y, s.z)), t: 0 })
+            shotOff.set(e.id, { off: from.subtract(new Vector3(s.x, s.y, s.z)), range: Math.max(s.left, 0.01), at: from.clone() })
             if (arrows) {
               arrows.shot(e.id, from, e.heavy, e.rank === 3 ? 1.6 : 1)
               if (bow) hero.boxeAct("ArShot", 0.34, 0, 0.9)
@@ -790,8 +794,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         case "boom": {
           if (arrows) arrows.end(e.id)
           else vfx.endShot(e.id)
+          const at = shotOff.get(e.id)?.at ?? new Vector3(e.x, e.y, e.z)
           shotOff.delete(e.id)
-          const at = new Vector3(e.x, e.y, e.z)
           vfx.impact(at, SHOT, e.heavy, (1 + e.rank * 0.4) * adultK)
           if (e.rank >= 2) vfx.burst(at, SHOT)
           break
@@ -1029,8 +1033,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       const o = shotOff.get(s.id)
       const at = new Vector3(s.x, s.y, s.z)
       if (o) {
-        o.t += realDt
-        at.addInPlace(o.off.scale(Math.max(0, 1 - o.t / SHOT_BLEND)))
+        const k = Math.max(0, s.left / o.range)
+        at.set(s.x + o.off.x * k, s.y + o.off.y, s.z + o.off.z * k)
+        o.at.copyFrom(at)
       }
       if (arrows) arrows.move(s.id, at)
       else vfx.moveShot(s.id, at)

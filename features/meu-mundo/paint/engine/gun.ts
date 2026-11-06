@@ -37,6 +37,11 @@ const WHITE: RGB = [1, 1, 1]
 /** Cilindro deitado ao longo de +z (cano, anéis). */
 const alongZ = (x: number, y: number, z: number) => Matrix.RotationX(Math.PI / 2).multiply(Matrix.Translation(x, y, z))
 
+/** Tamanho da arma: cresce com quem segura (regra do Alex), já grande para os menores. */
+const BASE_SIZE = 0.86
+const MIN_SIZE = 1.15
+const SIZE_PER_M = 0.62
+
 let seq = 0
 
 export class PaintGun {
@@ -54,11 +59,12 @@ export class PaintGun {
   private kick = 0
   private clock = Math.random() * 10
   private mounted = false
+  private size = BASE_SIZE
 
   constructor(scene: Scene) {
     const id = ++seq
     this.root = new TransformNode(`paint-gun-${id}`, scene)
-    this.root.scaling.setAll(0.86)
+    this.root.scaling.setAll(BASE_SIZE)
     this.frame = new TransformNode(`paint-gun-frame-${id}`, scene)
     this.frame.parent = this.root
 
@@ -171,16 +177,25 @@ export class PaintGun {
   /**
    * Nas mãos (mm3d-35b): o cabo na mão direita, o cano para a esquerda (as
    * animações de arma seguram um fuzil à frente do corpo). Posições de mundo.
+   * `height` = altura de quem segura: nas mãos de um corpo alto a arma do
+   * tamanho antigo sumia dentro do punho e só o brilho aparecia.
    */
-  mount(right: Vector3, left: Vector3, fallbackDir: Vector3) {
+  mount(right: Vector3, left: Vector3, fallbackDir: Vector3, height: number) {
     if (!this.mounted) {
       this.root.parent = null
       this.mounted = true
     }
+    this.size = Math.max(MIN_SIZE, height * SIZE_PER_M)
+    this.root.scaling.setAll(this.size)
     let dir = left.subtract(right)
     if (dir.length() < 0.08) dir = fallbackDir
     dir.normalize()
-    this.root.position.copyFrom(right).addInPlace(dir.scale(0.06)).addInPlaceFromFloats(0, 0.07, 0)
+    // Corpo largo fecha as mãos no peito e a linha entre elas atravessa o tronco
+    // (a arma ficava dentro dele): quanto mais longe da frente, mais a frente manda.
+    const along = Math.max(0, Math.min(1, (Vector3.Dot(dir, fallbackDir) - 0.6) / 0.3))
+    dir = Vector3.Lerp(fallbackDir, dir, along).normalize()
+    const k = this.size / BASE_SIZE
+    this.root.position.copyFrom(right).addInPlace(dir.scale(0.06 * k)).addInPlaceFromFloats(0, 0.07 * k, 0)
     this.root.lookAt(this.root.position.add(dir))
   }
 
@@ -188,6 +203,8 @@ export class PaintGun {
   unmount(holder: TransformNode) {
     if (!this.mounted) return
     this.mounted = false
+    this.size = BASE_SIZE
+    this.root.scaling.setAll(BASE_SIZE)
     this.root.rotationQuaternion = null
     this.root.parent = holder
     this.root.position.set(0.3, 1.12, 0.32)

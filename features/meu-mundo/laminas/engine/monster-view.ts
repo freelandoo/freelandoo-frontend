@@ -284,7 +284,7 @@ export class MonsterModel {
       const k = rigKit(scene)
       this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rig.body, null, false)
       this.char.holder.scaling.setAll(rig.scale * scale)
-      this.char.setBoxe("BGuard")
+      this.char.setBoxe(kind === "golem" ? "XIdle" : "BGuard")
       if (kind === "brute") {
         ensureLoaders()
         LoadAssetContainerAsync(AXE_URL, scene)
@@ -518,7 +518,8 @@ export class MonsterModel {
         c.boxeAct(mv.clip, dur, seg[0], seg[1], p.state === "windup")
         if (p.state === "recover") this.bruteAtk = ""
       } else if (p.state === "hurt") c.boxeAct(BRUTE_HIT[Math.floor(Math.random() * BRUTE_HIT.length)], 0.45, 0, 0.7)
-      else if (p.state === "dead") c.boxeAct("BFall", 1.2, 0, 1, true)
+      // o Ciborgue não usa clipe de boxe (nem na queda)
+      else if (p.state === "dead") c.boxeAct(cyborg ? "XHitG" : "BFall", 1.2, 0, 1, true)
       this.last = p.state
     }
     const moving = p.speed > 0.25 && (p.state === "chase" || p.state === "circle" || !!p.calm)
