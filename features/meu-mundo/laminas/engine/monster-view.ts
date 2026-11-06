@@ -40,7 +40,7 @@ import type { MobKind, MobState } from "../sim/fight"
 import { AvatarLibrary, ensureLoaders } from "../../engine/avatars"
 import { Character } from "../../engine/player"
 import type { BodyId } from "../../types"
-import type { BoxeClip } from "../../engine/avatars"
+import type { BoxeBase, BoxeClip } from "../../engine/avatars"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
 import { shineWeapon } from "../../engine/weapon-shine"
 import { godGun, gunSize } from "../../engine/shop-swords"
@@ -48,6 +48,9 @@ import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { BoxingGloves } from "./gloves"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
+import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
+import { FloatStones } from "./float-stones"
+import "@babylonjs/core/Rendering/outlineRenderer"
 
 /**
  * Monstros com corpo de gente: a skin rigada e a escala. Tamanhos do Alex
@@ -83,9 +86,6 @@ const BRUTE: Record<string, { clip: BoxeClip; windup: Seg; strike: Seg; recover:
   charge: [{ clip: "XJump", windup: [0, 0.25], strike: [0.25, 0.49], recover: [0.49, 0.9] }],
   smash: [{ clip: "XSmash", windup: [0, 0.31], strike: [0.31, 0.42], recover: [0.42, 0.85] }],
 }
-/** O Golem de Pedra luta como a skin dele: os golpes do Soldado saem nos clipes de machado. */
-BRUTE.cut = BRUTE.sweep
-BRUTE.thrust = BRUTE.smash
 const BRUTE_HIT: BoxeClip[] = ["XHitG", "XHitL", "XHitR"]
 /**
  * O CIBORGUE atira como a skin (GUN_MOVES): braços baixos parado (2026-11-03, Alex: "nem dá
@@ -95,10 +95,48 @@ const CIBORG: Record<string, { clip: BoxeClip; windup: Seg; strike: Seg; recover
   shot: [{ clip: "FgFire1", windup: [0, 0.1], strike: [0.1, 0.45], recover: [0.45, 0.6] }],
   blast: [{ clip: "FgFire", windup: [0, 0.1], strike: [0.1, 0.4], recover: [0.4, 0.7] }],
 }
+type Move = { clip: BoxeClip; windup: Seg; strike: Seg; recover: Seg }
+/**
+ * Regra do Alex (2026-11-06): o Golem de Pedra pula como o Brutamontes e dá socos de boxe; as
+ * pedras (float-stones.ts) soltam o raio. Socos pelo trecho dos clipes do boxe (mesmos cortes
+ * da luta do jogador, build_boxe_mocap).
+ */
+const STONE: Record<string, Move[]> = {
+  jab: [{ clip: "BJab", windup: [0, 0.42], strike: [0.42, 0.7], recover: [0.7, 1] }],
+  hook: [
+    { clip: "BBox3", windup: [0.1, 0.33], strike: [0.33, 0.53], recover: [0.53, 0.8] },
+    { clip: "BBox1", windup: [0.08, 0.32], strike: [0.32, 0.55], recover: [0.55, 0.8] },
+    { clip: "BBox4", windup: [0.1, 0.34], strike: [0.34, 0.56], recover: [0.56, 0.8] },
+  ],
+  leap: BRUTE.charge,
+  zap: [{ clip: "XTaunt", windup: [0, 0.2], strike: [0.2, 0.3], recover: [0.3, 0.45] }],
+  max: [{ clip: "XTaunt", windup: [0, 0.35], strike: [0.35, 0.6], recover: [0.6, 0.9] }],
+}
+/** A Dama (build_garras_anim.py): nunca guarda fechada, garras abertas, sorteia entre os cortes. */
+const CLAW: Record<string, Move[]> = {
+  claw: [
+    { clip: "GaSlashR", windup: [0, 0.3], strike: [0.3, 0.46], recover: [0.46, 1] },
+    { clip: "GaSlashL", windup: [0, 0.3], strike: [0.3, 0.46], recover: [0.46, 1] },
+    { clip: "GaUpper", windup: [0, 0.29], strike: [0.29, 0.46], recover: [0.46, 1] },
+    { clip: "GaStab", windup: [0, 0.3], strike: [0.3, 0.44], recover: [0.44, 1] },
+  ],
+  rake: [
+    { clip: "GaCross", windup: [0, 0.29], strike: [0.29, 0.46], recover: [0.46, 1] },
+    { clip: "GaSpin", windup: [0, 0.21], strike: [0.21, 0.6], recover: [0.6, 1] },
+  ],
+  leap: [{ clip: "GaLeap", windup: [0, 0.22], strike: [0.22, 0.6], recover: [0.6, 1] }],
+}
+/** Como cada um que luta de arma ou garra se desenha. `walk` null = a locomoção normal. */
+const LOOK: Partial<Record<MobKind, { table: Record<string, Move[]>; idle: BoxeBase; walk: BoxeBase | null; run: BoxeBase | null; hit: BoxeClip[]; fall: BoxeClip; roar: [BoxeClip, number, number, number]; hop: number }>> = {
+  soldier: { table: STONE, idle: "XIdle", walk: "XWalk", run: "XRun", hit: BRUTE_HIT, fall: "BFall", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0.9 },
+  golem: { table: CIBORG, idle: "XIdle", walk: "FgWalk", run: "FgRun", hit: BRUTE_HIT, fall: "XHitG", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0 },
+  brute: { table: BRUTE, idle: "XIdle", walk: "XWalk", run: "XRun", hit: BRUTE_HIT, fall: "BFall", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0 },
+  harpy: { table: CLAW, idle: "GaIdle", walk: null, run: null, hit: ["GaHit"], fall: "BFall", roar: ["GaRoar", 1.6, 0, 1], hop: 1.7 },
+}
 /** Boca da arma de fogo no eixo da pegada (o mesmo ponto da skin). */
 const MUZZLE = new Vector3(0.6, 0.1, 0)
 /** Quem luta com arma na mão, nos golpes do Brutamontes ou no tiro do Ciborgue. */
-const ARMED: Partial<Record<MobKind, string>> = { soldier: AXE_URL, brute: AXE_URL, golem: godGun("ciborgue")?.file }
+const ARMED: Partial<Record<MobKind, string>> = { brute: AXE_URL, golem: godGun("ciborgue")?.file }
 /** Corrida do Brutamontes no ritmo do passo (m/s com o clipe a 1×, no corpo de 4 m). */
 const BRUTE_RUN = 3.2
 
@@ -126,6 +164,9 @@ const WOLF_SCALE = (2 * 2.5) / 2.06
 type WolfMove = { clip: string; len: number; windup: [number, number]; strike: [number, number]; recover: [number, number] }
 /** 2026-11-03: cada golpe da regra sorteia o desenho (patada e mordida com avanço vêm do Animal Animator, build_lobo_aa.py). */
 const WOLF_ATTACK: Record<string, WolfMove[]> = {
+  // raio pela boca: abre como na mordida; a investida rosna e o resto é a corrida
+  breath: [{ clip: "Bite", len: 1.3, windup: [0, 0.5], strike: [0.5, 0.68], recover: [0.68, 1.3] }],
+  rush: [{ clip: "Lunge", len: 1.4, windup: [0, 0.47], strike: [0.47, 0.87], recover: [0.87, 1.4] }],
   bite: [
     { clip: "Bite", len: 1.3, windup: [0, 0.5], strike: [0.5, 0.68], recover: [0.68, 1.3] },
     { clip: "Claw", len: 0.87, windup: [0, 0.43], strike: [0.43, 0.63], recover: [0.63, 0.87] },
@@ -203,6 +244,16 @@ export interface MobPose {
 }
 
 const VIOLET = new Color3(0.72, 0.3, 1)
+const WOLF_LIGHT = new Color3(0.7, 0.2, 1)
+
+/** Do pulso à ponta do indicador, esticado até onde a garra chega. */
+export function handEdge(c: Character | null, side: "Left" | "Right"): [Vector3, Vector3] | null {
+  const a = c?.bonePosition(`mixamorig:${side}Hand`)
+  const b = c?.bonePosition(`mixamorig:${side}HandIndex3`)
+  if (!a || !b) return null
+  // as garras da Dama passam muito da mão: o rastro vai até a ponta delas (30% do corpo)
+  return [a, a.add(b.subtract(a).normalize().scale(c!.height * 0.3))]
+}
 
 type Part = { mesh: Mesh; base: { x: number; y: number; z: number }; sy: number; role: string }
 
@@ -256,7 +307,10 @@ export class MonsterModel {
   /** Brutamontes: o machado na mão e o golpe sorteado do ataque em curso. */
   private axe: TransformNode | null = null
   private axeGrip: WeaponGrip | null = null
-  private bruteMove: (typeof BRUTE)[string][number] | null = null
+  private bruteMove: Move | null = null
+  private stones: FloatStones | null = null
+  private wolfBones: { jaw: TransformNode | null; meshes: AbstractMesh[] } | null = null
+  private wolfLight = 0
   private bruteAtk = ""
 
   constructor(
@@ -266,6 +320,7 @@ export class MonsterModel {
     scale = 1,
     /** Ringue (mm3d-57): gente de luva no lugar do monstro; o número varia a roupa. */
     human: { n: number } | null = null,
+    addGlow?: (m: AbstractMesh) => void,
   ) {
     const id = ++seq
     this.root = new TransformNode(`mm-mob-${kind}-${id}`, scene)
@@ -289,7 +344,8 @@ export class MonsterModel {
       this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rig.body, null, false)
       this.char.holder.scaling.setAll(rig.scale * scale)
       const weapon = ARMED[kind]
-      this.char.setBoxe(weapon ? "XIdle" : "BGuard")
+      this.char.setBoxe(LOOK[kind]?.idle ?? "BGuard")
+      if (kind === "soldier") this.stones = new FloatStones(scene, this.char, addGlow)
       if (weapon) {
         ensureLoaders()
         LoadAssetContainerAsync(weapon, scene)
@@ -307,7 +363,7 @@ export class MonsterModel {
           })
           .catch(() => {})
       }
-      const guard = weapon ? undefined : BULKY_GUARD[rig.body]
+      const guard = LOOK[kind] ? undefined : BULKY_GUARD[rig.body]
       if (guard || kind === "golem") {
         const ch = this.char
         this.fix = new PoseFix(scene, (n) => ch.bone(n), guard ?? null)
@@ -335,6 +391,11 @@ export class MonsterModel {
               anims.set(g.name.replace(`-${id}`, ""), g)
             }
             this.wolf = { anims, entries: e }
+            const nodes = e.rootNodes.flatMap((n) => n.getDescendants(false))
+            this.wolfBones = {
+              jaw: (nodes.find((n) => n.name.startsWith("tripo::Head_3")) as TransformNode | undefined) ?? null,
+              meshes: nodes.filter((n): n is AbstractMesh => "renderOverlay" in n),
+            }
             this.playWolf("Idle", true)
           }
         })
@@ -463,7 +524,7 @@ export class MonsterModel {
   private updateRigged(dt: number, p: MobPose) {
     const c = this.char!
     c.place(p.x, p.z, p.facing, p.y, 0)
-    if (ARMED[this.kind] && !this.gloves) return this.updateBrute(dt, p)
+    if (LOOK[this.kind] && !this.gloves) return this.updateBrute(dt, p)
     const heavy = this.kind === "golem" || (!!this.gloves && this.kind === "brute")
     if (p.state !== this.last) {
       if (p.state === "windup") c.boxeAct(heavy ? "BBox2" : "BJab", 0.55, 0, 0.42, true)
@@ -507,6 +568,38 @@ export class MonsterModel {
     this.axe.setEnabled(true)
   }
 
+  /** As pedras do Golem (null nos outros). */
+  get floatStones() {
+    return this.stones
+  }
+
+  /** O rastro da garra de uma das mãos. */
+  clawEdge(side: "Left" | "Right"): [Vector3, Vector3] | null {
+    if (this.last !== "strike") return null
+    return handEdge(this.char, side)
+  }
+
+  /** Boca do lobo no mundo (de onde sai o raio). */
+  wolfMouth(): Vector3 | null {
+    const j = this.wolfBones?.jaw
+    if (!j) return null
+    j.computeWorldMatrix(true)
+    const at = j.getAbsolutePosition()
+    const f = this.root.rotation.y
+    return new Vector3(at.x + Math.sin(f) * 0.5, at.y, at.z + Math.cos(f) * 0.5)
+  }
+
+  /** Brilho roxo do corpo do lobo: 0 apagado, 1 no golpe máximo. */
+  wolfGlow(k: number, dt: number) {
+    if (!this.wolfBones) return
+    this.wolfLight += (k - this.wolfLight) * Math.min(1, dt * 10)
+    for (const m of this.wolfBones.meshes) {
+      m.renderOverlay = this.wolfLight > 0.02
+      m.overlayColor = WOLF_LIGHT
+      m.overlayAlpha = this.wolfLight * 0.5
+    }
+  }
+
   /** Boca da arma de fogo no mundo (de onde sai o tiro), ou null sem a arma na mão. */
   muzzle(): Vector3 | null {
     const r = this.axeGrip?.root
@@ -521,28 +614,38 @@ export class MonsterModel {
     return [Vector3.TransformCoordinates(new Vector3(0, AXE_EDGE[0], 0), m), Vector3.TransformCoordinates(new Vector3(0, AXE_EDGE[1], 0), m)]
   }
 
+  /** Salto: a altura do arco na fase do golpe (o avanço é da regra). */
+  private hop(p: MobPose, high: number) {
+    if (!high || p.state !== "strike" || p.attack?.id !== "leap") return 0
+    return Math.sin(Math.PI * Math.min(1, p.t / Math.max(0.05, p.attack.active))) * high
+  }
+
   /** Quem luta armado: golpes pela regra; andar/correr com a arma; grito ao surgir. */
   private updateBrute(dt: number, p: MobPose) {
     const c = this.char!
-    const cyborg = this.kind === "golem"
+    const look = LOOK[this.kind]!
+    c.place(p.x, p.z, p.facing, p.y + this.hop(p, look.hop), 0)
     this.holdAxe()
     if (p.attack && p.attack.id !== this.bruteAtk && p.state === "windup") {
-      const table = cyborg ? CIBORG : BRUTE
-      const opts = table[p.attack.id] ?? (cyborg ? CIBORG.swipe : BRUTE.sweep)
+      const opts = look.table[p.attack.id] ?? Object.values(look.table)[0]
       this.bruteMove = opts[Math.floor(Math.random() * opts.length)]
       this.bruteAtk = p.attack.id
     }
+    if (this.stones) {
+      this.stones.join = p.attack?.id === "max" && p.state !== "recover" ? 1 : 0
+      this.stones.update(dt, p.facing, p.x, p.z)
+    }
     if (p.state !== this.last) {
       const mv = this.bruteMove
-      if (p.state === "spawn") c.boxeAct("XTaunt", 1.6, 0, 0.9)
+      if (p.state === "spawn") c.boxeAct(look.roar[0], look.roar[1], look.roar[2], look.roar[3])
       else if (mv && p.attack && (p.state === "windup" || p.state === "strike" || p.state === "recover")) {
         const seg = mv[p.state]
         const dur = p.state === "windup" ? p.attack.windup : p.state === "strike" ? p.attack.active : p.attack.recover
         c.boxeAct(mv.clip, dur, seg[0], seg[1], p.state === "windup")
         if (p.state === "recover") this.bruteAtk = ""
-      } else if (p.state === "hurt") c.boxeAct(BRUTE_HIT[Math.floor(Math.random() * BRUTE_HIT.length)], 0.45, 0, 0.7)
+      } else if (p.state === "hurt") c.boxeAct(look.hit[Math.floor(Math.random() * look.hit.length)], 0.45, 0, look.hit.length > 1 ? 0.7 : 1)
       // o Ciborgue não usa clipe de boxe (nem na queda)
-      else if (p.state === "dead") c.boxeAct(cyborg ? "XHitG" : "BFall", 1.2, 0, 1, true)
+      else if (p.state === "dead") c.boxeAct(look.fall, 1.2, 0, 1, true)
       this.last = p.state
     }
     const moving = p.speed > 0.25 && (p.state === "chase" || p.state === "circle" || !!p.calm)
@@ -556,10 +659,16 @@ export class MonsterModel {
       }
     }
     const run = p.speed > 2.4
-    const base = moving ? (cyborg ? (run ? "FgRun" : "FgWalk") : run ? "XRun" : "XWalk") : "XIdle"
-    c.setBoxe(base)
-    if (moving) c.setClipRate(base, Math.max(0.6, Math.min(1.6, p.speed / (run ? BRUTE_RUN : BRUTE_RUN * 0.45))))
-    c.animate(dt, 0, 0)
+    if (moving && !look.walk) {
+      // sem guarda: anda e corre como gente, e para de garras abertas
+      c.setBoxe(null)
+      c.animate(dt, run ? 2 : 1, p.speed)
+    } else {
+      const base = moving ? (run ? look.run! : look.walk!) : look.idle
+      c.setBoxe(base)
+      if (moving) c.setClipRate(base, Math.max(0.6, Math.min(1.6, p.speed / (run ? BRUTE_RUN : BRUTE_RUN * 0.45))))
+      c.animate(dt, 0, 0)
+    }
     if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
   }
 
@@ -596,6 +705,9 @@ export class MonsterModel {
       this.wolfMove = opts ? opts[Math.floor(Math.random() * opts.length)] : null
     }
     const atk = this.wolfMove
+    // investida: rosna brilhando e dispara na corrida
+    if (p.attack?.id === "rush" && p.state === "windup") return this.playWolf("Snarl", true, 1.4)
+    if (p.attack?.id === "rush" && p.state === "strike") return this.playWolf("Run", true, 2)
     switch (p.state) {
       case "spawn":
         this.playWolf("Howl", false, 1.8) // 3,6 s no clipe: cabe na chegada
@@ -650,6 +762,7 @@ export class MonsterModel {
     this.root.setEnabled(v)
     this.char?.setVisible(v)
     this.gloves?.setVisible(v)
+    this.stones?.setVisible(v)
     if (this.axeGrip) this.axeGrip.root.setEnabled(v)
   }
 
@@ -661,6 +774,7 @@ export class MonsterModel {
       this.wolf = null
     }
     this.gloves?.dispose()
+    this.stones?.dispose()
     this.fix?.dispose()
     // o machado: a pegada solta a arma junto; sem pegada ainda, a arma sozinha
     if (this.axeGrip) this.axeGrip.dispose()

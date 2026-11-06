@@ -290,6 +290,11 @@ const BRUTE_FILE = "anim-brutamontes-sergio-m62.glb"
 const ARCHER_FILE = "anim-arqueiro-sergio-m69.glb"
 /** Ciborgue e Noctis (mm3d-70): pacote de fuzil do Alex; clipes Fg*. O Ciborgue também é monstro na mesma luta, por isso este conjunto soma com o do Brutamontes. */
 const GUN_FILE = "anim-atirador-sergio-m70.glb"
+/** A Dama das Garras (2026-11-06): golpes calculados em pipeline/laminas/build_garras_anim.py. Skin e monstro. */
+const GARRAS_FILE = "anim-garras-sergio-m71.glb"
+/** A textura do Golem com os cristais verdes acesos (pipeline/armas/build_golem_luz.py). */
+const GOLEM_LIGHT = "avatar-golem-luz-1024.jpg"
+const GARRAS_CLIPS = ["GaIdle", "GaSlashR", "GaSlashL", "GaCross", "GaUpper", "GaSpin", "GaStab", "GaLeap", "GaHit", "GaDodge", "GaRoar"] as const
 const BRUTE_CLIPS = ["XIdle", "XLook", "XWalk", "XRun", "XSweep", "X360", "XBack", "XSmash", "XCombo1", "XCombo2", "XCombo3", "XJump", "XKick", "XBlock", "XHitL", "XHitR", "XHitG", "XTaunt", "XThump", "ArIdle", "ArRun", "ArWalkL", "ArWalkB", "ArDraw", "ArOver", "ArShot", "ArBlock", "ArDive", "ArPunch", "ArHitS", "ArHitL", "ArDie", "ArEquip", "FgFire", "FgFire1", "FgPlay1", "FgPlay2", "FgPlay4", "FgRel", "FgWalk", "FgRun", "FgBack", "FgStrafe", "FgStrafe2"] as const
 export type BruteClip = (typeof BRUTE_CLIPS)[number]
 const BRUTE_LOOP = new Set<string>(["XIdle", "XLook", "XWalk", "XRun", "XBlock", "XThump", "ArIdle", "ArRun", "ArWalkL", "ArWalkB", "ArOver", "FgPlay4", "FgRel", "FgWalk", "FgRun", "FgBack", "FgStrafe", "FgStrafe2"])
@@ -308,12 +313,12 @@ export interface GincanaPose {
 }
 /** Passadas na guarda (mm3d-45): velocidade natural de cada clipe (m/s, build_boxe_steps.py). */
 const BOXE_STEP_SPEED = { BStepF: 0.91, BStepB: 0.79, BStepL: 0.61, BStepR: 0.61 } as const
-export type BoxeClip = (typeof BOXE_CLIPS)[number] | ClanClip | BruteClip
+export type BoxeClip = (typeof BOXE_CLIPS)[number] | ClanClip | BruteClip | (typeof GARRAS_CLIPS)[number]
 /** Pose-base da luta: guarda, aquecimento, cansado, machucado, andando para o canto, vitória. */
-export type BoxeBase = "ArIdle" | "ArRun" | "ArWalkL" | "ArWalkB" | "FgPlay4" | "FgRel" | "FgWalk" | "FgRun" | "FgBack" | "FgStrafe" | "FgStrafe2" | "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast" | "RIdle" | "XIdle" | "XWalk" | "XRun" | "XThump"
+export type BoxeBase = "GaIdle" | "GaRoar" | "ArIdle" | "ArRun" | "ArWalkL" | "ArWalkB" | "FgPlay4" | "FgRel" | "FgWalk" | "FgRun" | "FgBack" | "FgStrafe" | "FgStrafe2" | "BGuard" | "BWarm" | "BWin" | "TiredIdle" | "InjuredIdle" | "Idle" | "Walk" | "VIdle" | "VPower" | "RBlock" | "RCast" | "RIdle" | "XIdle" | "XWalk" | "XRun" | "XThump"
 /** Golpes e reações tocam uma vez (quem dispara é o boxeAct, nunca o laço). */
 const BOXE_LOOP = new Set<string>(["BGuard", "BWarm", "BWin", "BStepF", "BStepB", "BStepL", "BStepR"])
-const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp", ...CLAN_CLIPS.filter((c) => !CLAN_LOOP.has(c)), ...BRUTE_CLIPS.filter((c) => !BRUTE_LOOP.has(c))])
+const ONE_SHOT = new Set<string>(["SkatePush", "Air", "AirSide", "Air2", ...BOXE_CLIPS.filter((c) => !BOXE_LOOP.has(c)), "GJump", "GFall", "GRise", "GUp", ...CLAN_CLIPS.filter((c) => !CLAN_LOOP.has(c)), ...BRUTE_CLIPS.filter((c) => !BRUTE_LOOP.has(c)), ...GARRAS_CLIPS.filter((c) => c !== "GaIdle")])
 /** `anim` do ponto de uso (servidor) → clipe. */
 export const POSE_OF_ANIM: Record<string, PlacePose> = { run: "Run", squat: "GymSquat", punch: "GymPunch", boxjump: "GymBoxJump", situps: "GymSitups", kettlebell: "GymKettle", pray: "Pray" }
 /** Pulos do Paint: 0 parado/à frente, 1 de lado, 2 o segundo pulo (no ar). */
@@ -328,6 +333,7 @@ type Clip =
   | (typeof PLACE_CLIPS)[number]
   | (typeof BOXE_CLIPS)[number]
   | (typeof GINCANA_CLIPS)[number]
+  | (typeof GARRAS_CLIPS)[number]
   | ClanClip
   | BruteClip
 /** Soco (mm3d-35): o jab toca acelerado e dura isto (s). */
@@ -386,6 +392,7 @@ export class AvatarLibrary {
   private brute: Promise<AssetContainer> | null = null
   private archer: Promise<AssetContainer> | null = null
   private gun: Promise<AssetContainer> | null = null
+  private claws: Promise<AssetContainer> | null = null
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
@@ -435,6 +442,11 @@ export class AvatarLibrary {
       mat.emissiveColor = new Color3(0.42, 0.42, 0.42)
       mat.diffuseColor = new Color3(0.72, 0.72, 0.72)
       mat.specularColor = new Color3(0, 0, 0)
+      // regra do Alex (2026-11-06): todas as luzes do Golem são verdes; os cristais acendem sozinhos
+      if (id === "golem") {
+        mat.emissiveTexture = new Texture(BASE + GOLEM_LIGHT, this.scene, false, false)
+        mat.emissiveColor = new Color3(1, 1, 1)
+      }
       this.materials.set(key, mat)
       m = mat
       tint
@@ -553,6 +565,14 @@ export class AvatarLibrary {
     return p
   }
 
+  private clawSet() {
+    if (!this.claws) {
+      this.claws = LoadAssetContainerAsync(BASE + GARRAS_FILE, this.scene)
+      this.claws.catch(() => (this.claws = null))
+    }
+    return this.claws
+  }
+
   private gunSet() {
     if (!this.gun) {
       this.gun = LoadAssetContainerAsync(BASE + GUN_FILE, this.scene)
@@ -629,7 +649,8 @@ export class AvatarLibrary {
     // quem aparece como monstro (2026-11-06) tem os clipes da skin mesmo sem kit: Golem e Brutamontes de machado, Ciborgue também atira
     const bruteP = this.withClan && ARCHER_SKINS.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || id === "golem" || (this.withClan && HAMMER_SKINS.includes(id)) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
     const gunP = id === "ciborgue" || (this.withClan && GUN_SKINS.includes(id)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
-    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC, gunC] = await Promise.all([
+    const clawP = id === "garras" && this.withBoxe ? this.clawSet().catch(() => null) : Promise.resolve(null)
+    const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC, gunC, clawC] = await Promise.all([
       this.body(id),
       this.animSet(id),
       sitP,
@@ -644,6 +665,7 @@ export class AvatarLibrary {
       locoP,
       bruteP,
       gunP,
+      clawP,
     ])
     if (this.disposed) throw new Error("disposed")
     const entries = container.instantiateModelsToScene((n) => n, false, { doNotInstantiate: true })
@@ -704,6 +726,10 @@ export class AvatarLibrary {
     }
     for (const clip of BRUTE_CLIPS) {
       const src = bruteC?.animationGroups.find((g) => g.name === clip) ?? gunC?.animationGroups.find((g) => g.name === clip)
+      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
+    }
+    for (const clip of GARRAS_CLIPS) {
+      const src = clawC?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
     for (const clip of RIDE_CLIPS) {
@@ -790,6 +816,7 @@ let cloneSeq = 0
 /** Um corpo animado. Não sabe de rede nem de colisão: recebe estado e toca. */
 export class AvatarRig {
   private weights: Record<Clip, number> = {
+    ...(Object.fromEntries(GARRAS_CLIPS.map((c) => [c, 0])) as Record<(typeof GARRAS_CLIPS)[number], number>),
     Idle: 1, Walk: 0, SlowRun: 0, Sit: 0, Lie: 0, Sleep: 0, TiredIdle: 0, TiredWalk: 0, InjuredIdle: 0, InjuredWalk: 0,
     BikeA: 0, BikeB: 0, BikePedal: 0, SkateRide: 0, SkatePush: 0, SkatesGlide: 0, SkatesStride: 0,
     PIdle: 0, PFire: 0, PWalk: 0, PRun: 0, PStrafe: 0, Air: 0, AirSide: 0, Air2: 0, Punch: 0,
@@ -837,7 +864,7 @@ export class AvatarRig {
     /** Malha leve (nível de LOD da primeira malha), se carregou. */
     private readonly lod: Mesh | null = null,
   ) {
-    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS, ...GINCANA_CLIPS, ...CLAN_CLIPS, ...BRUTE_CLIPS] as const).filter((c) => !!groups[c])]
+    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS, ...GINCANA_CLIPS, ...CLAN_CLIPS, ...BRUTE_CLIPS, ...GARRAS_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
       const g = groups[clip]!
       g.weight = this.weights[clip]
@@ -1322,6 +1349,7 @@ export class AvatarRig {
     const tiredIdle = tired && !sickIdle && !!have.TiredIdle
     const tiredWalk = tired && !sickWalk && !!have.TiredWalk
     const target: Record<Clip, number> = {
+      ...(Object.fromEntries(GARRAS_CLIPS.map((c) => [c, 0])) as Record<(typeof GARRAS_CLIPS)[number], number>),
       Idle: still && !tiredIdle && !sickIdle ? 1 : 0,
       Walk: move === 1 && !tiredWalk && !sickWalk ? 1 : 0,
       SlowRun: move === 2 ? 1 : 0,

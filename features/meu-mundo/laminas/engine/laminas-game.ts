@@ -43,7 +43,9 @@ import { buildStreet } from "./street-view"
 import { pushFrame, quantizeInput, type FightFrames } from "../sim/replay"
 import { buildRing } from "./ring-view"
 import { BoxingGloves } from "./gloves"
-import { MonsterModel, AXE_URL, AXE_EDGE } from "./monster-view"
+import { MonsterModel, AXE_URL, AXE_EDGE, handEdge } from "./monster-view"
+import { FloatStones } from "./float-stones"
+import { Ray } from "./ray"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { ARCHER_SKINS, clanOfBody, CLAN_WEAPON, GUN_SKINS, SWORD_SKINS, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES, BOW_GRIP_BONES } from "../../engine/weapon-grip"
@@ -264,6 +266,51 @@ const GUN_MOVES: (typeof CLAN_MOVES)[Clan] = {
   hitHeavy: { clip: "RHitL", from: 0, to: 0.9 },
   fall: ["RDie"],
 }
+/**
+ * A Dama das Garras (2026-11-06, build_garras_anim.py): garras abertas, nunca guarda fechada.
+ * Corte a ~47% do trecho, como os outros.
+ */
+const GARRAS_MOVES: (typeof CLAN_MOVES)[Clan] = {
+  guard: "GaIdle",
+  win: "GaRoar",
+  swings: [
+    [{ clip: "GaSlashR", from: 0.2, to: 0.7 }],
+    [
+      { clip: "GaSlashL", from: 0.2, to: 0.7 },
+      { clip: "GaUpper", from: 0.2, to: 0.7 },
+    ],
+    [
+      { clip: "GaCross", from: 0.2, to: 0.7 },
+      { clip: "GaStab", from: 0.2, to: 0.66 },
+    ],
+  ],
+  special: [
+    { clip: "GaLeap", from: 0.15, to: 0.75 },
+    { clip: "GaSpin", from: 0.15, to: 0.65 },
+  ],
+  dodge: { clip: "GaDodge", from: 0, to: 0.8 },
+  hit: { clip: "GaHit", from: 0, to: 1 },
+  hitHeavy: { clip: "GaHit", from: 0, to: 1 },
+  fall: ["BFall"],
+}
+/** O Golem de Pedra sem martelo da loja (2026-11-06): socos de boxe e as pedras. */
+const GOLEM_MOVES: (typeof CLAN_MOVES)[Clan] = {
+  guard: "XIdle",
+  win: "XThump",
+  swings: [
+    [{ clip: "BJab", from: 0.1, to: 0.8 }],
+    [
+      { clip: "BBox3", from: 9 / 66, to: 35 / 66 },
+      { clip: "BBox1", from: 7 / 64, to: 35 / 64 },
+    ],
+    [{ clip: "BBox4", from: 9 / 66, to: 37 / 66 }],
+  ],
+  special: [{ clip: "XJump", from: 0.19, to: 0.75 }],
+  dodge: { clip: "XBlock", from: 0, to: 0.6 },
+  hit: { clip: "XHitG", from: 0, to: 0.7 },
+  hitHeavy: { clip: "XHitL", from: 0, to: 0.9 },
+  fall: ["BFall"],
+}
 /** Sorteia um da lista sem repetir o último que saiu (só visual). */
 const lastPick = new Map<readonly unknown[], number>()
 function pick<T>(list: readonly T[]): T {
@@ -373,9 +420,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const lib = new AvatarLibrary(scene, false, false, 30, false, false, true, false, true, opts.kit || ranged ? clan : null)
   // a skin do Brutamontes: machado e golpes de machado (fora do ringue)
   // mm3d-67: Soldado de Pedra, Marú e Kragor também; o servidor manda o kit
-  const brute = !ring && (opts.kit ? opts.kit === "hammer" : opts.body === "brutamontes")
+  const brute = !ring && (opts.kit ? opts.kit === "hammer" : opts.body === "brutamontes" || opts.body === "golem")
   // o Ciborgue não fica de arma erguida: parado, a pose pesada de braços baixos; ergue para atirar
-  const moves = bow ? ARCHER_MOVES : gun ? (opts.body === "ciborgue" ? { ...GUN_MOVES, guard: "XIdle" as const } : GUN_MOVES) : clan ? CLAN_MOVES[clan] : brute ? BRUTE_MOVES : null
+  const claws = !ring && !mage && opts.body === "garras"
+  const stoneHero = brute && opts.body === "golem" && !shopHeavy(opts.appearance?.weaponId)
+  const moves = claws ? GARRAS_MOVES : stoneHero ? GOLEM_MOVES : bow ? ARCHER_MOVES : gun ? (opts.body === "ciborgue" ? { ...GUN_MOVES, guard: "XIdle" as const } : GUN_MOVES) : clan ? CLAN_MOVES[clan] : brute ? BRUTE_MOVES : null
   const GUARD: BoxeBase = moves ? moves.guard : "BGuard"
   const fallbackMat = new StandardMaterial("laminas-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
@@ -391,9 +440,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // guarda baixa dos corpos volumosos e a mão do cajado de mago.
   // Efeitos (mm3d-58): arco da arma, clarão e anel no acerto, raios na vitória, poeira.
   const vfx = createVfx(scene, low)
-  const fxColor = clan ? VFX_COLORS[clan] : brute ? VFX_COLORS.brutamontes : VFX_COLORS.lamina
+  const fxColor = claws ? VFX_COLORS.brutamontes : stoneHero ? VFX_COLORS.golem : clan ? VFX_COLORS[clan] : brute ? VFX_COLORS.brutamontes : VFX_COLORS.lamina
   const weaponProfile = clan && !ranged && opts.appearance ? weaponAppearanceProfile(clan, opts.appearance) : null
-  const heavy = brute ? (shopHeavy(opts.appearance?.weaponId) ?? godHeavy(opts.body)) : bow ? (shopBow(opts.appearance?.weaponId) ?? godBow(opts.body)) : gun ? (shopGun(opts.appearance?.weaponId) ?? godGun(opts.body)) : null
+  const heavy = stoneHero ? null : brute ? (shopHeavy(opts.appearance?.weaponId) ?? godHeavy(opts.body)) : bow ? (shopBow(opts.appearance?.weaponId) ?? godBow(opts.body)) : gun ? (shopGun(opts.appearance?.weaponId) ?? godGun(opts.body)) : null
   const weaponColor = heavy ? { main: Color3.FromHexString(heavy.main), edge: Color3.FromHexString(heavy.edge) } : weaponProfile && (weaponProfile.model || weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
   // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
@@ -414,7 +463,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let weaponRoot: TransformNode | null = null
   let grip: WeaponGrip | null = null
   let decoration: ReturnType<typeof decorateWeapon> | null = null
-  if (clan || brute) {
+  if ((clan || brute) && !claws && !stoneHero) {
     LoadAssetContainerAsync(heavy?.file ?? (clan ? (weaponProfile?.model?.file ?? CLAN_WEAPON[clan]) : AXE_URL), scene)
       .then((c) => {
         if (disposed) return c.dispose()
@@ -474,6 +523,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const at = shot && shotOff.get(shot.id)?.at
     return at ? [at.add(new Vector3(-0.055, 0, 0)), at.add(new Vector3(0.055, 0, 0))] : null
   }, weaponColor) : null
+  // garras: o rastro sai das duas mãos; o Golem: as pedras atrás dos ombros e o raio do poder
+  const clawTrails = claws ? [vfx.trail(() => handEdge(hero, "Right"), fxColor), vfx.trail(() => handEdge(hero, "Left"), fxColor)] : []
+  const heroStones = stoneHero ? new FloatStones(scene, hero, (m) => vfx.addGlow(m)) : null
+  const heroRay = stoneHero ? new Ray(scene, VFX_COLORS.golem.main, (m) => vfx.addGlow(m)) : null
+  let heroRayLeft = 0
   const placeWeapon = () => {
     if (shieldRoot && !shieldGrip) {
       const arm = hero.bone(SHIELD_BONES.arm)
@@ -593,7 +647,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   warnMat.emissiveColor = new Color3(1, 0.3, 0.3)
   warnMat.disableLighting = true
   warnMat.backFaceCulling = false
-  const models = new Map<number, { model: MonsterModel; warn: Mesh; px: number; pz: number; speed: number; trail: Trail | null; prev: string; beam: Mesh | null; beamLife: number }>()
+  const models = new Map<number, { model: MonsterModel; warn: Mesh; px: number; pz: number; speed: number; trail: Trail | null; prev: string; beam: Mesh | null; beamLife: number; rays: Ray[]; claws: Trail[]; dash: Trail | null; fxAt: number; landed: boolean }>()
   // tiro do Ciborgue: a luz da arma dele, uma linha reta da boca até o peito de quem joga
   const gunColor = godGun("ciborgue")
   const beamMat = new StandardMaterial("laminas-mob-beam", scene)
@@ -621,10 +675,15 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     warn.isPickable = false
     warn.setEnabled(false)
     // o Soldado de Pedra da Arena tem 3 m; o mesmo corpo na rua é o Golem, de 4 m
-    const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : null)
+    const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : null, (x) => vfx.addGlow(x))
     // Quem luta de machado: rastro roxo no golpe (no ringue é gente de luva)
-    const trail = (m.kind === "brute" || m.kind === "soldier") && !ring ? vfx.trail(() => model.axeEdge(), VFX_COLORS.brutamontes) : null
-    models.set(m.id, { model, warn, px: m.x, pz: m.z, speed: 0, trail, prev: m.state, beam: null, beamLife: 0 })
+    const trail = m.kind === "brute" && !ring ? vfx.trail(() => model.axeEdge(), VFX_COLORS.brutamontes) : null
+    const glow = (x: Parameters<typeof vfx.addGlow>[0]) => vfx.addGlow(x)
+    const rays = ring ? [] : m.kind === "soldier" ? [new Ray(scene, VFX_COLORS.golem.main, glow), new Ray(scene, VFX_COLORS.golem.main, glow)] : m.kind === "wolf" ? [new Ray(scene, VFX_COLORS.brutamontes.main, glow)] : []
+    const claws = m.kind === "harpy" && !ring ? [vfx.trail(() => model.clawEdge("Right"), VFX_COLORS.brutamontes), vfx.trail(() => model.clawEdge("Left"), VFX_COLORS.brutamontes)] : []
+    // a investida do lobo deixa o rastro roxo na altura do corpo
+    const dash = m.kind === "wolf" && !ring ? vfx.trail(() => [new Vector3(m.x, 0.5, m.z), new Vector3(m.x, 2, m.z)], VFX_COLORS.brutamontes) : null
+    models.set(m.id, { model, warn, px: m.x, pz: m.z, speed: 0, trail, prev: m.state, beam: null, beamLife: 0, rays, claws, dash, fxAt: 0, landed: false })
   }
 
   // ── faíscas ──────────────────────────────────────────────────────────────
@@ -839,7 +898,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           vfx.ground(new Vector3(e.x, 0, e.z), SKILL_COLORS.ult, 2.2, POWER.fireAt + 0.2, false, false)
           skillFx.ultCharge(new Vector3(e.x, 0, e.z), POWER.fireAt)
           audio.charge(POWER.fireAt)
-          if (clan === "raposa") hero.boxeAct(bow ? "ArOver" : gun ? "FgFire" : "RCast", POWER.dur, 0, bow ? 0.5 : 1)
+          if (claws) hero.boxeAct("GaRoar", POWER.dur, 0, 1)
+          else if (clan === "raposa") hero.boxeAct(bow ? "ArOver" : gun ? "FgFire" : "RCast", POWER.dur, 0, bow ? 0.5 : 1)
           else if (clan) hero.boxeAct("VPower", POWER.dur, 0, 1)
           else if (brute) hero.boxeAct("XTaunt", POWER.dur, 0, 0.9)
           else hero.boxeAct("BBox2", POWER.dur, 0, 1)
@@ -847,6 +907,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           break
         }
         case "powerFire": {
+          heroRayLeft = stoneHero ? POWER.dur - POWER.fireAt : 0
           const at = new Vector3(e.x, 1.2, e.z)
           const feet = new Vector3(e.x, 0, e.z)
           if (bat) spirits.bat(feet, e.facing, VFX_COLORS.vampiro.main)
@@ -1044,7 +1105,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       const left = (p.vz * Math.sin(p.facing) - p.vx * Math.cos(p.facing)) / sp
       if (bow) base = fwd < -0.5 ? "ArWalkB" : left > 0.6 ? "ArWalkL" : "ArRun"
       else base = fwd < -0.5 ? "FgBack" : left > 0.6 ? "FgStrafe2" : left < -0.6 ? "FgStrafe" : sp > 4 ? "FgRun" : "FgWalk"
-    } else if (p.state === "idle" && !near && sp > 0.3) base = null
+    } else if (p.state === "idle" && (claws || !near) && sp > 0.3) base = null
     hero.setBoxe(base)
     if (base === GUARD) {
       const sf = Math.sin(p.facing)
@@ -1073,6 +1134,17 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     // a maga não corta: sem arco; a pedra carrega até o disparo
     heroTrail.active = (p.state === "attack" || (p.state === "skill" && p.skill === "slash")) && clan !== "raposa"
     if (shotTrail) shotTrail.active = fight.shots.length > 0
+    for (const c of clawTrails) c.active = p.state === "attack" || (p.state === "skill" && p.skill === "slash")
+    if (heroStones) {
+      heroStones.join = p.state === "power" ? 1 : 0
+      heroStones.update(dt, p.facing, p.x, p.z)
+      heroRayLeft = Math.max(0, heroRayLeft - dt)
+      if (heroRayLeft > 0 && heroStones.ready) {
+        const end = new Vector3(p.x + Math.sin(p.facing) * 9, hero.height * 0.4, p.z + Math.cos(p.facing) * 9)
+        heroRay?.fire(heroStones.mid, end, 1.4)
+      }
+      heroRay?.update(dt)
+    }
     if (stone) {
       const node = grip?.root
       let charge = 0
@@ -1139,6 +1211,60 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         if (gunColor) vfx.impact(muzzle, { main: Color3.FromHexString(gunColor.main), edge: Color3.FromHexString(gunColor.edge) }, !!a.heavy)
         audio.whoosh()
       }
+      // raios, salto e investida dos monstros (2026-11-06)
+      const entered = m.state === "strike" && v.prev !== "strike"
+      if (m.state === "windup" && v.prev !== "windup") {
+        v.landed = false
+        if (cur?.max) audio.charge(m.windup)
+      }
+      if (a && m.state === "strike") {
+        const sx = Math.sin(m.facing)
+        const sz = Math.cos(m.facing)
+        const dx = p.x - m.x
+        const dz = p.z - m.z
+        const along = dx * sx + dz * sz
+        const onLine = along > 0 && !!a.line && Math.abs(dx * sz - dz * sx) <= a.line + 0.5
+        const far = onLine ? Math.min(a.range, along) : a.range
+        const end = new Vector3(m.x + sx * far, hero.height * 0.55, m.z + sz * far)
+        const stones = v.model.floatStones
+        if (a.id === "zap" && stones?.ready) {
+          stones.mouths.forEach((from, i) => v.rays[i]?.fire(from, end, 0.34, 0.16))
+          if (entered) {
+            vfx.impact(end, VFX_COLORS.golem, false)
+            audio.whoosh()
+          }
+        } else if (a.flow && stones?.ready) {
+          v.rays[0]?.fire(stones.mid, end, 1.6)
+          v.fxAt -= dt
+          if (v.fxAt <= 0) {
+            v.fxAt = 0.2
+            vfx.impact(end, VFX_COLORS.golem, false, 0.55)
+            shake = Math.max(shake, 0.07)
+          }
+          if (entered) audio.boom()
+        } else if (a.id === "breath") {
+          const mouth = v.model.wolfMouth()
+          if (mouth) v.rays[0]?.fire(mouth, end, 0.38, 0.16)
+          if (entered) {
+            vfx.impact(end, VFX_COLORS.brutamontes, false)
+            audio.whoosh()
+          }
+        }
+        if (a.leap && !v.landed && m.t >= a.active * 0.75) {
+          v.landed = true
+          const c = m.kind === "soldier" ? VFX_COLORS.golem : VFX_COLORS.brutamontes
+          vfx.ground(new Vector3(m.x, 0, m.z), c, a.range, 0.7, false)
+          vfx.impact(new Vector3(m.x, 0.3, m.z), c, true, m.kind === "soldier" ? 1.6 : 1.1)
+          vfx.dust(new Vector3(m.x, 0.15, m.z), 14)
+          shake = Math.max(shake, m.kind === "soldier" ? 0.3 : 0.14)
+          audio.punch(1, true)
+        }
+      }
+      for (const r of v.rays) r.update(dt)
+      for (const c of v.claws) c.active = m.state === "strike"
+      const rushing = cur?.id === "rush" && (m.state === "windup" || m.state === "strike")
+      v.model.wolfGlow(rushing ? 1 : 0, dt)
+      if (v.dash) v.dash.active = rushing && m.state === "strike"
       if (v.beam && v.beamLife > 0) {
         v.beamLife -= dt
         if (v.beamLife <= 0) v.beam.setEnabled(false)
@@ -1147,14 +1273,16 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       // aviso no chão: área = onde vai cair; cone = à frente do monstro; tiro = a linha dele
       if (a && m.state === "windup") {
         danger = true
-        const line = !a.area && m.engage > 5
-        const reach = a.area ? (a.reach ?? 0) : line ? a.range / 2 : a.range / 2 + MOBS[m.kind].radius * 0.5
-        const r = a.area ? a.area : Math.max(0.9, a.range * 0.65)
+        const line = !a.area && !a.leap && (m.engage > 5 || !!a.line || !!a.ram)
+        // o salto marca onde vai pousar
+        const hop = a.leap ? Math.max(0, Math.hypot(p.x - m.x, p.z - m.z) - MOBS[m.kind].radius - 0.95) : 0
+        const reach = a.area ? (a.reach ?? 0) : a.leap ? hop : line ? a.range / 2 : a.range / 2 + MOBS[m.kind].radius * 0.5
+        const r = a.area ? a.area : a.leap ? a.range : Math.max(0.9, a.range * 0.65)
         v.warn.setEnabled(true)
         v.warn.position.set(m.x + Math.sin(m.facing) * reach, 0.03, m.z + Math.cos(m.facing) * reach)
         v.warn.rotation.y = line ? m.facing : 0
         const k = 0.35 + 0.65 * warn
-        if (line) v.warn.scaling.set((a.heavy ? 1.3 : 0.9) * k, a.range / 2, 1)
+        if (line) v.warn.scaling.set((a.line ? a.line + 0.5 : a.heavy ? 1.3 : 0.9) * k, (a.ram ? a.lunge * a.active : a.range) / 2, 1)
         else v.warn.scaling.set(r * k, r * k, 1)
         warnMat.alpha = 0.55 + 0.45 * Math.sin(m.t * 20) * warn
       } else v.warn.setEnabled(false)
@@ -1304,10 +1432,13 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         v.model.dispose()
         v.warn.dispose()
         v.beam?.dispose()
+        for (const r of v.rays) r.dispose()
       }
       warnMat.dispose()
       warnTex.dispose()
       heroGloves?.dispose()
+      heroStones?.dispose()
+      heroRay?.dispose()
       for (const m of swordParts) m.dispose()
       sword.dispose()
       for (const m of Object.values(swordMats)) m.dispose()
