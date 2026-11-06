@@ -10101,7 +10101,12 @@
     "laminasSubPeer": "Matches your stats",
     "laminasSubChampion": "20% stronger than you",
     "laminasEvade": "DODGED!",
-    "laminasMiss": "MISS!"
+    "laminasMiss": "MISS!",
+    "sgDefHow2": "Starts at the character's value and rises with each adventure level. Gear from the Armorer and the Forge adds on top.",
+    "sgAtkHow2": "Starts at the character's value and rises with each adventure level. The weapon and Forge refining add on top.",
+    "stDefShort2": "DEF {n}",
+    "stAtkShort2": "ATK {n}",
+    "laminasSubStone": "Stone: high defense, low speed"
   },
   "Sports": {
     "eyebrow": "Sports",

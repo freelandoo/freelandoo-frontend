@@ -216,6 +216,8 @@ export interface FightTicket {
     /** Nível de aventura de quem joga (vida/defesa/ataque crescem com ele). */
     hero?: number
     peer?: number | null
+    tier?: "arena" | "street" | null
+    body?: string | null
     appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null }
   }
   expiresAt: string

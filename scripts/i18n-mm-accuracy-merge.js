@@ -46,3 +46,16 @@ for (const [loc, words] of Object.entries(WORD)) {
   Object.assign(mm, TEXT[loc])
   fs.writeFileSync(file, JSON.stringify(dict, null, 2) + "\n")
 }
+
+// Fichas dos personagens (2026-11-06)
+const SHEET = {
+  "pt-BR": { sgDefHow2: "Começa no valor do personagem e sobe a cada nível de aventura. O equipamento do Armeiro e da Forja soma por cima.", sgAtkHow2: "Começa no valor do personagem e sobe a cada nível de aventura. A arma e o refino na Forja somam por cima.", stDefShort2: "DEF {n}", stAtkShort2: "ATQ {n}", laminasSubStone: "Pedra: muita defesa, pouca velocidade" },
+  en: { sgDefHow2: "Starts at the character's value and rises with each adventure level. Gear from the Armorer and the Forge adds on top.", sgAtkHow2: "Starts at the character's value and rises with each adventure level. The weapon and Forge refining add on top.", stDefShort2: "DEF {n}", stAtkShort2: "ATK {n}", laminasSubStone: "Stone: high defense, low speed" },
+  es: { sgDefHow2: "Empieza en el valor del personaje y sube con cada nivel de aventura. El equipo del Armero y de la Forja suma encima.", sgAtkHow2: "Empieza en el valor del personaje y sube con cada nivel de aventura. El arma y el refinado en la Forja suman encima.", stDefShort2: "DEF {n}", stAtkShort2: "ATQ {n}", laminasSubStone: "Piedra: mucha defensa, poca velocidad" },
+}
+for (const [loc, keys] of Object.entries(SHEET)) {
+  const file = path.join(DIR, `${loc}.json`)
+  const dict = JSON.parse(fs.readFileSync(file, "utf8"))
+  Object.assign(dict.MeuMundo, keys)
+  fs.writeFileSync(file, JSON.stringify(dict, null, 2) + "\n")
+}

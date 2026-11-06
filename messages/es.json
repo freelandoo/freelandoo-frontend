@@ -10081,7 +10081,12 @@
     "laminasSubPeer": "Con tus estadísticas",
     "laminasSubChampion": "20% más fuerte que tú",
     "laminasEvade": "¡ESQUIVÓ!",
-    "laminasMiss": "¡FALLÓ!"
+    "laminasMiss": "¡FALLÓ!",
+    "sgDefHow2": "Empieza en el valor del personaje y sube con cada nivel de aventura. El equipo del Armero y de la Forja suma encima.",
+    "sgAtkHow2": "Empieza en el valor del personaje y sube con cada nivel de aventura. El arma y el refinado en la Forja suman encima.",
+    "stDefShort2": "DEF {n}",
+    "stAtkShort2": "ATQ {n}",
+    "laminasSubStone": "Piedra: mucha defensa, poca velocidad"
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -395,10 +395,14 @@ export interface FightSetup {
    */
   hero?: number
   /**
-   * Adversário à altura (pedido do Alex, 2026-11-05): vida, dano e defesa saem de
-   * quem joga, vezes este fator — peerOf. Sem ele (prólogo), valem as do nível.
+   * Ringue do Boxe (pedido do Alex, 2026-11-05): o adversário copia os status de
+   * quem joga, vezes este fator — peerOf.
    */
   peer?: number
+  /** Monstros pela ficha (MOB_SHEETS): "arena" no nível de quem joga, "street" no nível dele. */
+  tier?: "arena" | "street"
+  /** Corpo vestido: dá os status de nascença (BODY_SHEETS). */
+  body?: string
 }
 
 export interface GearBonus {
@@ -458,24 +462,70 @@ export function heroStats(stats: Stats, level: number): Stats {
   return { strength: up(stats.strength), speed: up(stats.speed), intelligence: up(stats.intelligence), dexterity: up(stats.dexterity ?? 300) }
 }
 
-// ═══ ADVERSÁRIO À ALTURA (regra do Alex, 2026-11-05) ═══ — no Boxe, na Arena e na
-// rua o adversário tem a vida, o dano médio e a defesa de quem joga; o Campeão
-// (Brutamontes) tem 20% a mais. A velocidade e os golpes seguem os de cada monstro;
-// o bando divide a vida entre si.
+// ═══ ADVERSÁRIO À ALTURA (regra do Alex, 2026-11-05) ═══ — no ringue do Boxe o
+// adversário copia os status de quem joga; o Campeão tem 20% a mais.
 export const PEER_ELITE = 1.2
 export function peerOf(kind: MobKind): number {
   return kind === "brute" ? PEER_ELITE : 1
 }
 
-// ═══ ACERTO, ESQUIVA E DANO (regra do Alex, 2026-11-06) ═══ — vale nas lutas com
-// adversário à altura, para os dois lados. A acuracidade (o antigo atributo força)
+// ═══ FICHAS (regra do Alex, 2026-11-06) ═══ — cada personagem nasce com os seus
+// status: vida, ataque, defesa, acuracidade, velocidade. Quem não está aqui nasce
+// com 100 em tudo. Nível, treino e equipamento somam por cima.
+export type Sheet = readonly [number, number, number, number, number]
+export const BASE_SHEET: Sheet = [100, 100, 100, 100, 100]
+export const BODY_SHEETS: Record<string, Sheet> = {
+  aurion: [160, 140, 150, 140, 120],
+  morkhan: [130, 180, 90, 150, 130],
+  kragor: [220, 150, 160, 100, 70],
+  zephyra: [100, 120, 80, 120, 200],
+  maru: [180, 100, 100, 90, 120],
+  iris: [90, 120, 80, 200, 110],
+  noctis: [100, 130, 90, 150, 170],
+  aeryn: [90, 110, 90, 180, 150],
+  cavaleiro: [140, 110, 180, 110, 80],
+  golem: [160, 110, 150, 80, 50],
+  ciborgue: [130, 130, 130, 150, 70],
+  garras: [90, 120, 80, 160, 140],
+  brutamontes: [200, 160, 140, 120, 90],
+}
+/** Monstros: ficha sobre os status normais do nível. `stone` = o Golem de Pedra da rua; o bando divide a vida. */
+export const MOB_SHEETS: Record<MobKind | "stone", Sheet> = {
+  soldier: [130, 100, 130, 90, 70],
+  stone: BODY_SHEETS.golem,
+  wolf: [120, 70, 70, 110, 160],
+  golem: BODY_SHEETS.ciborgue,
+  harpy: BODY_SHEETS.garras,
+  brute: BODY_SHEETS.brutamontes,
+}
+/** O que o nível soma em ataque, defesa e, nos monstros, acuracidade e velocidade (0 no 1, 900 no 60). */
+const levelRate = (level: number) => (900 * (clamp(Math.round(Number(level) || 1), 1, HERO_LEVEL_MAX) - 1)) / (HERO_LEVEL_MAX - 1)
+/** Equipamento no teto soma isto em ataque e em defesa. */
+const GEAR_RATE = 150
+/** Status de luta de quem joga: nascença + nível + treino + equipamento. */
+export function heroSheet(body: string | null | undefined, level: number, stats: Omit<Stats, "dexterity"> & { dexterity?: number }, gear?: Partial<GearBonus>) {
+  const [hp, atk, def, acc, spd] = BODY_SHEETS[body ?? ""] ?? BASE_SHEET
+  const h = heroLevelScale(level)
+  const f = heroStats({ ...stats, dexterity: stats.dexterity ?? 0 }, level)
+  const g = clampGear(gear)
+  return {
+    hp: hp + h.hp - PLAYER.hp,
+    atk: atk + levelRate(level) + (g.dmg / GEAR_MAX.dmg) * GEAR_RATE,
+    def: def + levelRate(level) + (g.def / GEAR_MAX.def) * GEAR_RATE,
+    acc: Math.min(1000, acc + f.strength),
+    spd: Math.min(1000, spd + f.speed),
+  }
+}
+
+// ═══ ACERTO, ESQUIVA E DANO (regra do Alex, 2026-11-06) ═══ — vale para os dois
+// lados. A acuracidade (o antigo atributo força)
 // disputa com a velocidade: 100 contra 1000 acerta 10%, 1000 contra 100 sempre acerta.
 // Quem não aperta esquivar escapa sozinho do que sobra (90% no exemplo). Apertar
 // esquivar escapa na razão inversa, até 90%: no empate funciona e, contra 1000 de
 // acuracidade com 100 de velocidade, quase nunca. Quem tem menos de 50% não acerta 2
 // seguidos. O dano segue a mesma conta, em porcentagem pura: um golpe de 200 com
-// ataque 50 tira 100 em defesa 100 e 10 em defesa 1000. Ataque e defesa nascem em 100
-// (sem isso, no nível 1 seria 0 contra 0) e vão a 1000.
+// ataque 50 tira 100 em defesa 100 e 10 em defesa 1000; ataque 100 contra defesa 50
+// tira 400. Em luta igual o golpe médio tira a mesma fatia da vida em todo nível.
 export interface FightRate {
   acc: number
   spd: number
@@ -483,16 +533,6 @@ export interface FightRate {
   def: number
 }
 export const DODGE_MAX = 0.9
-const RATE_BASE = 100
-const rateOf = (f: number) => RATE_BASE + (1000 - RATE_BASE) * clamp(f, 0, 1)
-/** Ataque na escala 0–1000; `dmg` = multiplicador de dano (nível e equipamento). */
-export function attackRate(dmg: number) {
-  return rateOf((dmg - 1) / (heroLevelScale(HERO_LEVEL_MAX).dmg - 1))
-}
-/** Defesa na escala 0–1000; `def` = fração (nível e equipamento). */
-export function defenseRate(def: number) {
-  return rateOf(def / DEF_MAX)
-}
 export function hitChance(acc: number, spd: number) {
   return clamp(acc / Math.max(1, spd), 0, 1)
 }
@@ -500,7 +540,7 @@ export function dodgeChance(acc: number, spd: number) {
   return Math.max(1 - hitChance(acc, spd), Math.min(DODGE_MAX, spd / Math.max(1, acc)))
 }
 export function damageRatio(atk: number, def: number) {
-  return clamp(atk / Math.max(1, def), 0, 1)
+  return Math.max(0, atk) / Math.max(1, def)
 }
 
 const angDiff = (a: number, b: number) => {
@@ -598,18 +638,19 @@ export class Fight {
     this.hero = heroLevelScale(this.heroLevel)
     this.def = clamp(this.gear.def + this.hero.def, 0, DEF_MAX)
     const peer = clamp(Number(setup.peer) || 0, 0, 2)
-    this.rated = peer > 0
-    const fought = heroStats(stats, this.heroLevel)
-    this.fx = this.withGear(statEffects(fought))
-    this.rate = { acc: Math.max(1, fought.strength), spd: Math.max(1, fought.speed), atk: attackRate(this.fx.dmg), def: defenseRate(this.def) }
+    this.rated = peer > 0 || !!setup.tier
+    this.fx = this.withGear(statEffects(heroStats(stats, this.heroLevel)))
+    const sheet = heroSheet(setup.body, this.heroLevel, stats, this.gear)
+    this.rate = { acc: Math.max(1, sheet.acc), spd: Math.max(1, sheet.spd), atk: sheet.atk, def: sheet.def }
+    const hpMax = this.rated ? sheet.hp : this.hero.hp
     this.me = {
       x: 0,
       z: -5,
       vx: 0,
       vz: 0,
       facing: 0,
-      hp: this.hero.hp,
-      hpMax: this.hero.hp,
+      hp: hpMax,
+      hpMax,
       stam: PLAYER.stam,
       state: "idle",
       t: 0,
@@ -631,8 +672,15 @@ export class Fight {
     const lv = mobLevelScale(this.level)
     const spots = spawnList(setup.kind)
     const mean = (list: number[]) => list.reduce((a, b) => a + b, 0) / list.length
-    const hp = Math.round(peer ? (this.me.hpMax * peer) / spots.length : def.hp * lv.hp)
-    const dmgMul = peer ? (mean(this.combo.map((c) => c.dmg)) * this.fx.dmg * peer) / mean(def.attacks.map((a) => a.dmg)) : lv.dmg
+    const foeLevel = setup.tier === "street" ? this.level : this.heroLevel
+    const normal = heroLevelScale(foeLevel).hp
+    const rated = 100 + levelRate(foeLevel)
+    const ms = MOB_SHEETS[setup.tier === "street" && setup.kind === "soldier" ? "stone" : setup.kind]
+    const foe: FightRate = peer
+      ? { acc: this.rate.acc * peer, spd: this.rate.spd * peer, atk: this.rate.atk * peer, def: this.rate.def * peer }
+      : { acc: (rated * ms[3]) / 100, spd: (rated * ms[4]) / 100, atk: (rated * ms[1]) / 100, def: (rated * ms[2]) / 100 }
+    const hp = Math.round(peer ? (this.me.hpMax * peer) / spots.length : setup.tier ? (normal * ms[0]) / 100 / spots.length : def.hp * lv.hp)
+    const dmgMul = this.rated ? (mean(this.combo.map((c) => c.dmg)) * (normal / PLAYER.hp)) / mean(def.attacks.map((a) => a.dmg)) : lv.dmg
     spots.forEach((p, i) =>
       this.mobs.push({
         id: i + 1,
@@ -655,8 +703,8 @@ export class Fight {
         side: i % 2 ? 1 : -1,
         dmgMul,
         armorUntil: 0,
-        poise: peer ? def.poise : def.poise + lv.poise,
-        rate: { acc: this.rate.acc * peer, spd: this.rate.spd * peer, atk: this.rate.atk * peer, def: this.rate.def * peer },
+        poise: this.rated ? def.poise : def.poise + lv.poise,
+        rate: { ...foe },
         landed: false,
       }),
     )
@@ -725,8 +773,8 @@ export class Fight {
   /** Os bônus do equipamento por cima do que os atributos dão. */
   private withGear(fx: ReturnType<typeof statEffects>) {
     const g = this.gear
-    // com adversário à altura o dano vem do ataque (nível e equipamento), não da acuracidade
-    return { ...fx, dmg: (this.rated ? 1 : fx.dmg) * (1 + g.dmg) * this.hero.dmg, warn: fx.warn * (1 + g.warn), stamK: fx.stamK * (1 - g.stam) }
+    // nas lutas por status o golpe acompanha a vida do nível; quem pesa é ataque contra defesa
+    return { ...fx, dmg: this.rated ? this.hero.hp / PLAYER.hp : fx.dmg * (1 + g.dmg) * this.hero.dmg, warn: fx.warn * (1 + g.warn), stamK: fx.stamK * (1 - g.stam) }
   }
 
   setStats(stats: Partial<Stats>) {

@@ -10,7 +10,7 @@
 // Força/inteligência/destreza/velocidade = o valor da vida (o mesmo da página
 // Atributos). Defesa e ataque não são pontos na regra (são % do nível de
 // aventura, heroLevelScale) — aqui viram 0–1000 só para a barra:
-//   defenseRate e attackRate de fight.ts: os mesmos números que a luta usa
+//   heroSheet de fight.ts: os mesmos números que a luta usa (sem o equipamento)
 // e o % de verdade aparece pequeno ao lado do nome.
 // Os textos da explicação seguem laminas/sim/fight.ts (statEffects,
 // rankOdds, HERO_LEVEL) e o speedFactor do Jetpack.
@@ -18,11 +18,10 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { Brain, Crosshair, Feather, Heart, Shield, Swords, Target } from "lucide-react"
 import type { LifeFull } from "../../types"
-import { DEF_MAX, HERO_LEVEL, attackRate, defenseRate, heroLevelScale } from "../../laminas/sim/fight"
+import { HERO_LEVEL, heroSheet } from "../../laminas/sim/fight"
 import { anton } from "../hud/fight-plate"
 import { archivo, cinzel, EVO, teko } from "./evo-skin"
 import { currentUiFx } from "../kit/steam/fx-tier"
-import { useLocale } from "@/components/i18n/I18nProvider"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -102,25 +101,19 @@ export interface StatRow {
   note?: string
 }
 
-function usePct() {
-  const locale = useLocale()
-  return (v: number) => (Math.round(v * 1000) / 10).toLocaleString(locale, { maximumFractionDigits: 1 })
-}
-
 const COLORS = { def: "#2F8BFF", atk: "#FF2E55", str: "#FF9A1F", int: "#B04DFF", dex: "#2EE85A", spd: "#FFD21F" } as const
 
 /** As 6 linhas, na ordem pedida. `level` = nível de aventura (sem = nível 1). */
 export function useStatRows(life: LifeFull, level: number | undefined, t: Tr): StatRow[] {
-  const pct = usePct()
   const at = life.character.attributes
-  const h = heroLevelScale(level ?? 1)
+  const h = heroSheet(life.avatar, level ?? 1, at)
   return [
-    { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), value: Math.round(defenseRate(h.def)), note: `${pct(h.def)}%` },
-    { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), value: Math.round(attackRate(h.dmg)), note: `+${pct(h.dmg - 1)}%` },
-    { key: "str", icon: <Target />, label: t("atStrength", "Acuracidade"), value: at.strength },
+    { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), value: Math.round(h.def) },
+    { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), value: Math.round(h.atk) },
+    { key: "str", icon: <Target />, label: t("atStrength", "Acuracidade"), value: h.acc },
     { key: "int", icon: <Brain />, label: t("atIntelligence", "Inteligência"), value: at.intelligence },
     { key: "dex", icon: <Crosshair />, label: t("attrDexterity", "Destreza"), value: at.dexterity ?? 0 },
-    { key: "spd", icon: <Feather />, label: t("atSpeed", "Velocidade"), value: at.speed },
+    { key: "spd", icon: <Feather />, label: t("atSpeed", "Velocidade"), value: h.spd },
   ]
 }
 
@@ -213,8 +206,7 @@ export function LevelBadge({ level, into, need, t }: { level: number; into: numb
 }
 
 /** A placa de HP do cabeçalho: coração, "HP", "118 / 118" e a barra vermelha inclinada. */
-export function HpPlate({ level, t }: { level: number; t: Tr }) {
-  const hp = heroLevelScale(level).hp
+export function HpPlate({ level, hp, t }: { level: number; hp: number; t: Tr }) {
   return (
     <div
       className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-5 pr-7"
@@ -242,24 +234,20 @@ export function HpPlate({ level, t }: { level: number; t: Tr }) {
 
 /** O fim da página: onde cada status influencia e como sobe. */
 export function StatGuide({ t, small = false }: { t: Tr; small?: boolean }) {
-  const pct = usePct()
   const items: [keyof typeof COLORS, ReactNode, string, string, string][] = [
     [
       "def",
       <Shield key="i" />,
       t("stDefense", "Defesa"),
       t("sgDefWhere", "Amortece o dano: disputa com o ataque de quem bate. Ataque 100 contra defesa 1000 passa só 10%."),
-      t("sgDefHow", "Sobe {d}% a cada nível de aventura (até {lv}%) e com o equipamento do Armeiro e da Forja. O total nunca passa de {max}%.")
-        .replace("{d}", pct(HERO_LEVEL.def))
-        .replace("{lv}", pct(HERO_LEVEL.defMax))
-        .replace("{max}", pct(DEF_MAX)),
+      t("sgDefHow2", "Começa no valor do personagem e sobe a cada nível de aventura. O equipamento do Armeiro e da Forja soma por cima."),
     ],
     [
       "atk",
       <Swords key="i" />,
       t("stAttack", "Ataque"),
       t("sgAtkWhere", "A força do golpe: multiplica o dano e fura a defesa de quem apanha."),
-      t("sgAtkHow", "Sobe +{d}% a cada nível de aventura. A arma e o refino na Forja somam por cima.").replace("{d}", pct(HERO_LEVEL.dmg)),
+      t("sgAtkHow2", "Começa no valor do personagem e sobe a cada nível de aventura. A arma e o refino na Forja somam por cima."),
     ],
     [
       "str",

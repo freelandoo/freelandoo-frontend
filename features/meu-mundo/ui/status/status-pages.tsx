@@ -46,7 +46,7 @@ import { effectsOf, thumbOf } from "../fridge/fridge-logic"
 import { faceForPortrait } from "../portraits"
 import { GOD_NAMES, isGod, type GodBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
-import { HERO_LEVEL, heroLevelScale } from "../../laminas/sim/fight"
+import { HERO_LEVEL, heroLevelScale, heroSheet } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
 import { HpPlate, LevelBadge, StatBars, StatGuide } from "./stat-bars"
 
@@ -445,9 +445,8 @@ function usePct() {
  * 2026-11-03: "quando aumenta o nível não aumenta o HP"). A conta é a da regra
  * da luta (heroLevelScale) — o equipamento soma por cima dentro da luta.
  */
-function CombatLine({ adv, t, small = false }: { adv: AdvXp; t: Tr; small?: boolean }) {
-  const h = heroLevelScale(adv.level)
-  const pct = usePct()
+function CombatLine({ adv, life, t, small = false }: { adv: AdvXp; life: LifeFull; t: Tr; small?: boolean }) {
+  const h = heroSheet(life.avatar, adv.level, life.character.attributes)
   return (
     <div className={`flex items-center ${small ? "mt-0.5 gap-1.5" : "mt-1 gap-2.5"}`}>
       <span className={`${teko.className} shrink-0 font-semibold uppercase leading-none`} style={{ fontSize: small ? 13 : 22, color: HP_COLOR }}>
@@ -459,11 +458,11 @@ function CombatLine({ adv, t, small = false }: { adv: AdvXp; t: Tr; small?: bool
       <span className={`${archivo.className} shrink-0 tabular-nums`} style={{ fontSize: small ? 9.5 : 13, color: EVO.mudo }}>
         <span style={{ color: EVO.branco }}>{h.hp}</span>
         {" · "}
-        <span style={{ color: DEF_COLOR }}>{t("stDefShort", "DEF {n}%").replace("{n}", pct(h.def))}</span>
+        <span style={{ color: DEF_COLOR }}>{t("stDefShort2", "DEF {n}").replace("{n}", String(Math.round(h.def)))}</span>
         {!small && (
           <>
             {" · "}
-            <span style={{ color: ATK_COLOR }}>{t("stAtkShort", "ATQ +{n}%").replace("{n}", pct(h.dmg - 1))}</span>
+            <span style={{ color: ATK_COLOR }}>{t("stAtkShort2", "ATQ {n}").replace("{n}", String(Math.round(h.atk)))}</span>
           </>
         )}
       </span>
@@ -495,7 +494,7 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
             {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {walletText(life, t)}
           </div>
           {adv && <XpLine adv={adv} t={t} small />}
-          {adv && <CombatLine adv={adv} t={t} small />}
+          {adv && <CombatLine adv={adv} life={life} t={t} small />}
         </div>
       </div>
     )
@@ -542,7 +541,7 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
             {adv && (
               <div className="mt-2 flex items-start gap-3" style={{ minWidth: 520 }}>
                 <LevelBadge level={adv.level} into={adv.into} need={adv.need} t={t} />
-                <HpPlate level={adv.level} t={t} />
+                <HpPlate level={adv.level} hp={heroSheet(life.avatar, adv.level, life.character.attributes).hp} t={t} />
               </div>
             )}
           </div>
@@ -925,6 +924,7 @@ function Attributes({ life, compact, t, adv }: PageProps) {
   const max = life.catalog.attributes?.max ?? 1000
   const useful = at.usefulToday
   const hero = adv ? heroLevelScale(adv.level) : null
+  const sheet = adv ? heroSheet(life.avatar, adv.level, life.character.attributes) : null
   const pct = usePct()
   // [ícone, cor, nome, valor, máximo da barra, piso (traço dourado), texto, sufixo]
   const rows = [
@@ -998,16 +998,16 @@ function Attributes({ life, compact, t, adv }: PageProps) {
             <div className="py-1">
               <div className={`${teko.className} flex justify-between text-[20px] uppercase tracking-[0.14em]`} style={{ color: EVO.branco }}>
                 <span>{t("stHpLong", "Vida (HP)")}</span>
-                <span style={{ color: HP_COLOR }}>{hero.hp}</span>
+                <span style={{ color: HP_COLOR }}>{sheet!.hp}</span>
               </div>
-              <Bar value={hero.hp} max={hero.hp} color={HP_COLOR} height={8} />
+              <Bar value={sheet!.hp} max={sheet!.hp} color={HP_COLOR} height={8} />
             </div>
             <div className={`${teko.className} flex pt-1 text-[20px] uppercase tracking-[0.12em]`} style={{ color: EVO.branco, gap: 24 }}>
               <span>
-                {t("stDefense", "Defesa")} <span style={{ color: DEF_COLOR }}>{pct(hero.def)}%</span>
+                {t("stDefense", "Defesa")} <span style={{ color: DEF_COLOR }}>{Math.round(sheet!.def)}</span>
               </span>
               <span>
-                {t("stAttack", "Ataque")} <span style={{ color: ATK_COLOR }}>+{pct(hero.dmg - 1)}%</span>
+                {t("stAttack", "Ataque")} <span style={{ color: ATK_COLOR }}>{Math.round(sheet!.atk)}</span>
               </span>
             </div>
             <p className={`${archivo.className} text-[13px] leading-snug`} style={{ color: EVO.mudo }}>
@@ -1683,6 +1683,7 @@ function AttributesC({ life, t, adv }: PageProps) {
   const max = life.catalog.attributes?.max ?? 1000
   const useful = at.usefulToday
   const hero = adv ? heroLevelScale(adv.level) : null
+  const sheet = adv ? heroSheet(life.avatar, adv.level, life.character.attributes) : null
   const pct = usePct()
   // [ícone, cor, nome, valor, máximo da barra, piso, resumo, sufixo]
   const rows = [
@@ -1738,19 +1739,19 @@ function AttributesC({ life, t, adv }: PageProps) {
                   {t("stHpLong", "Vida (HP)")}
                 </span>
                 <span className={`${teko.className} ml-auto text-[18px] font-bold leading-none`} style={{ color: EVO.branco }}>
-                  {hero.hp}
+                  {sheet!.hp}
                 </span>
               </div>
               <div className="my-1">
-                <Bar value={hero.hp} max={hero.hp} color={HP_COLOR} height={6} />
+                <Bar value={sheet!.hp} max={sheet!.hp} color={HP_COLOR} height={6} />
               </div>
               <p className={`${archivo.className} text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
                 <span style={{ color: DEF_COLOR }}>
-                  {t("stDefense", "Defesa")} {pct(hero.def)}%
+                  {t("stDefense", "Defesa")} {Math.round(sheet!.def)}
                 </span>{" "}
                 ·{" "}
                 <span style={{ color: ATK_COLOR }}>
-                  {t("stAttack", "Ataque")} +{pct(hero.dmg - 1)}%
+                  {t("stAttack", "Ataque")} {Math.round(sheet!.atk)}
                 </span>
                 . {t("stCombatPerLevelShort", "Sobem a cada nível.")}
               </p>
