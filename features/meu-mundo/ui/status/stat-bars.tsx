@@ -10,8 +10,7 @@
 // Força/inteligência/destreza/velocidade = o valor da vida (o mesmo da página
 // Atributos). Defesa e ataque não são pontos na regra (são % do nível de
 // aventura, heroLevelScale) — aqui viram 0–1000 só para a barra:
-//   defesa = defesa / DEF_MAX (60%, o teto com equipamento) × 1000
-//   ataque = bônus de dano / bônus do nível máximo × 1000
+//   defenseRate e attackRate de fight.ts: os mesmos números que a luta usa
 // e o % de verdade aparece pequeno ao lado do nome.
 // Os textos da explicação seguem laminas/sim/fight.ts (statEffects,
 // rankOdds, HERO_LEVEL) e o speedFactor do Jetpack.
@@ -19,7 +18,7 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { Brain, Crosshair, Feather, Heart, Shield, Swords, Target } from "lucide-react"
 import type { LifeFull } from "../../types"
-import { DEF_MAX, HERO_LEVEL, HERO_LEVEL_MAX, heroLevelScale } from "../../laminas/sim/fight"
+import { DEF_MAX, HERO_LEVEL, attackRate, defenseRate, heroLevelScale } from "../../laminas/sim/fight"
 import { anton } from "../hud/fight-plate"
 import { archivo, cinzel, EVO, teko } from "./evo-skin"
 import { currentUiFx } from "../kit/steam/fx-tier"
@@ -115,10 +114,9 @@ export function useStatRows(life: LifeFull, level: number | undefined, t: Tr): S
   const pct = usePct()
   const at = life.character.attributes
   const h = heroLevelScale(level ?? 1)
-  const atkTop = heroLevelScale(HERO_LEVEL_MAX).dmg - 1
   return [
-    { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), value: Math.round(Math.min(1, h.def / DEF_MAX) * STAT_MAX), note: `${pct(h.def)}%` },
-    { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), value: Math.round(Math.min(1, (h.dmg - 1) / atkTop) * STAT_MAX), note: `+${pct(h.dmg - 1)}%` },
+    { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), value: Math.round(defenseRate(h.def)), note: `${pct(h.def)}%` },
+    { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), value: Math.round(attackRate(h.dmg)), note: `+${pct(h.dmg - 1)}%` },
     { key: "str", icon: <Target />, label: t("atStrength", "Acuracidade"), value: at.strength },
     { key: "int", icon: <Brain />, label: t("atIntelligence", "Inteligência"), value: at.intelligence },
     { key: "dex", icon: <Crosshair />, label: t("attrDexterity", "Destreza"), value: at.dexterity ?? 0 },
