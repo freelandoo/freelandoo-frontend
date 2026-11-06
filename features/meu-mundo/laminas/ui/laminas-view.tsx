@@ -33,7 +33,7 @@ import { ReceiptLines } from "../../ui/rewards/receipt-lines"
 import { VictoryButton, VictoryPanel } from "../../ui/rewards/victory-panel"
 import { celebrate, hold } from "../../ui/rewards/reward-bus"
 import { createLaminasGame, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
-import type { MobKind, SkillId } from "../sim/fight"
+import { peerOf, type MobKind, type SkillId } from "../sim/fight"
 import { SkillHud } from "./skill-hud"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
@@ -142,12 +142,11 @@ function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: (
   const t = useTranslations("MeuMundo")
   const mobName = useMobName(ring)
   const all: { c: Choice; sub: string; tone: string }[] = [
-    { c: { kind: "soldier", level: 1 }, sub: t("laminasLevel", "Nível {n}").replace("{n}", "1"), tone: "#C9A46A" },
-    { c: { kind: "soldier", level: 2 }, sub: t("laminasLevel", "Nível {n}").replace("{n}", "2"), tone: "#B9BCC4" },
+    { c: { kind: "soldier", level: 1 }, sub: t("laminasSubPeer", "Com os seus status"), tone: "#C9A46A" },
     { c: { kind: "wolf", level: 1 }, sub: ring ? t("ringSubWolf", "Três de uma vez, rápidos") : t("laminasSubWolf", "Bando de 3, rápidos"), tone: "#C2693A" },
     { c: { kind: "golem", level: 1 }, sub: t("laminasSubGolem", "Lento, bate em área"), tone: "#8D95A3" },
     { c: { kind: "harpy", level: 1 }, sub: t("laminasSubHarpy", "Voa e mergulha"), tone: "#7C89A3" },
-    { c: { kind: "brute", level: 1 }, sub: t("laminasSubBrute", "Elite: investida e pancada"), tone: VIOLET },
+    { c: { kind: "brute", level: 1 }, sub: t("laminasSubChampion", "20% mais forte que você"), tone: VIOLET },
   ]
   const opts = ring ? all.filter((o) => o.c.kind !== "harpy") : all
   return (
@@ -295,8 +294,8 @@ function LaminasScreen({
         body,
         look,
         setup: fromServer
-          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1 }
-          : { kind: choice.kind, level: choice.level },
+          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined }
+          : { kind: choice.kind, level: choice.level, peer: tutorial ? undefined : peerOf(choice.kind) },
         kit: fromServer ? (fromServer.setup.kit === "hammer" ? "hammer" : fromServer.setup.kit === "bow" ? "bow" : fromServer.setup.kit === "gun" ? "gun" : fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,
         stage,
@@ -341,7 +340,7 @@ function LaminasScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [body, look, choice, stage, armed])
+  }, [body, look, choice, stage, armed, tutorial])
 
   // a passagem violeta do portal some quando a cena está pronta
   useEffect(() => {

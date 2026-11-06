@@ -10077,7 +10077,9 @@
     "gear_fogo_pulso": "Cañón de pulso",
     "gearDesc_fogo_pulso": "Garras de bronce sujetan un núcleo violeta que late antes de cada disparo.",
     "gearSource_fogo_pulso": "Tienda de Armas del Arsenal: 10000 monedas.",
-    "gearUses_fogo_pulso": "Equipar en una ranura compatible; las bonificaciones comparten los límites de equipo. · Refinar de +0 a +10 mediante una propuesta, con costes, pisos y protección opcional. · Reciclar por 1200 monedas por unidad cuando no está equipado."
+    "gearUses_fogo_pulso": "Equipar en una ranura compatible; las bonificaciones comparten los límites de equipo. · Refinar de +0 a +10 mediante una propuesta, con costes, pisos y protección opcional. · Reciclar por 1200 monedas por unidad cuando no está equipado.",
+    "laminasSubPeer": "Con tus estadísticas",
+    "laminasSubChampion": "20% más fuerte que tú"
   },
   "Sports": {
     "eyebrow": "Deportes",

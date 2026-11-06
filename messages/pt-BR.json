@@ -9511,7 +9511,9 @@
     "gear_fogo_pulso": "Canhão de pulso",
     "gearDesc_fogo_pulso": "Garras de bronze seguram um núcleo violeta que pulsa antes de cada disparo.",
     "gearSource_fogo_pulso": "Loja de Armas do Arsenal: 10000 moedas.",
-    "gearUses_fogo_pulso": "Equipar no slot compatível; bônus de aventura sujeitos ao teto. · Refinar de +0 a +10 mediante proposta, com custo, pisos e proteção opcionais. · Reciclar por 1200 moedas por unidade quando não estiver equipado."
+    "gearUses_fogo_pulso": "Equipar no slot compatível; bônus de aventura sujeitos ao teto. · Refinar de +0 a +10 mediante proposta, com custo, pisos e proteção opcionais. · Reciclar por 1200 moedas por unidade quando não estiver equipado.",
+    "laminasSubPeer": "Com os seus status",
+    "laminasSubChampion": "20% mais forte que você"
   },
   "Sports": {
     "eyebrow": "Esportes",

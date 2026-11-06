@@ -10097,7 +10097,9 @@
     "gear_fogo_pulso": "Pulse cannon",
     "gearDesc_fogo_pulso": "Bronze claws hold a violet core that pulses before every shot.",
     "gearSource_fogo_pulso": "Arsenal Weapon Shop: 10000 coins.",
-    "gearUses_fogo_pulso": "Equip in a compatible slot; adventure bonuses share the equipment caps. · Refine from +0 to +10 through a proposal, with costs, floors and optional protection. · Recycle for 1200 coins per unit when unequipped."
+    "gearUses_fogo_pulso": "Equip in a compatible slot; adventure bonuses share the equipment caps. · Refine from +0 to +10 through a proposal, with costs, floors and optional protection. · Recycle for 1200 coins per unit when unequipped.",
+    "laminasSubPeer": "Matches your stats",
+    "laminasSubChampion": "20% stronger than you"
   },
   "Sports": {
     "eyebrow": "Sports",

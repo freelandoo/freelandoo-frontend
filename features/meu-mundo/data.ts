@@ -215,6 +215,7 @@ export interface FightTicket {
     gear: Partial<GearBonus> | null
     /** Nível de aventura de quem joga (vida/defesa/ataque crescem com ele). */
     hero?: number
+    peer?: number | null
     appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null }
   }
   expiresAt: string
