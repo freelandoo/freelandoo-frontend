@@ -1087,7 +1087,7 @@ export default function CommunityDetailPage() {
           ] as PillSpec[])
         : []),
     ]
-  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader, isSubjectPlatform])
+  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, hasExternalSite, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader, isSubjectPlatform])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
