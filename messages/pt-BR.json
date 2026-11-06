@@ -8437,8 +8437,8 @@
     "laminasMobHarpy": "Dama das Garras",
     "laminasMobBrute": "Brutamontes",
     "laminasSubWolf": "Bando de 3, rápidos",
-    "laminasSubGolem": "Lento, bate em área",
-    "laminasSubHarpy": "Voa e mergulha",
+    "laminasSubGolem": "Lento, atira de longe",
+    "laminasSubHarpy": "Rápida, ataca com as garras",
     "laminasSubBrute": "Elite: investida e pancada",
     "laminasKeys": "WASD anda · J, Espaço ou clique ataca (aperte de novo para o combo) · K, Shift ou botão direito esquiva",
     "laminasTouchHelp": "Joystick anda · ATACAR e ESQUIVAR na direita",
@@ -9522,7 +9522,8 @@
     "stAtkShort2": "ATQ {n}",
     "laminasSubStone": "Pedra: muita defesa, pouca velocidade",
     "vsLife": "Vida",
-    "vsStart": "Iniciar luta"
+    "vsStart": "Iniciar luta",
+    "ringSubGolem": "Lento e pesado"
   },
   "Sports": {
     "eyebrow": "Esportes",

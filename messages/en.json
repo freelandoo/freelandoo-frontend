@@ -9023,8 +9023,8 @@
     "laminasMobHarpy": "Lady of Claws",
     "laminasMobBrute": "Brute",
     "laminasSubWolf": "Pack of 3, fast",
-    "laminasSubGolem": "Slow, hits an area",
-    "laminasSubHarpy": "Flies and dives",
+    "laminasSubGolem": "Slow, shoots from afar",
+    "laminasSubHarpy": "Fast, strikes with her claws",
     "laminasSubBrute": "Elite: charge and smash",
     "laminasKeys": "WASD moves · J, Space or click attacks (press again to combo) · K, Shift or right click dodges",
     "laminasTouchHelp": "Joystick moves · ATTACK and DODGE on the right",
@@ -10108,7 +10108,8 @@
     "stAtkShort2": "ATK {n}",
     "laminasSubStone": "Stone: high defense, low speed",
     "vsLife": "Health",
-    "vsStart": "Start fight"
+    "vsStart": "Start fight",
+    "ringSubGolem": "Slow and heavy"
   },
   "Sports": {
     "eyebrow": "Sports",

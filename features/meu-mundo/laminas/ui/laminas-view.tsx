@@ -147,8 +147,8 @@ function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: (
   const all: { c: Choice; sub: string; tone: string }[] = [
     { c: { kind: "soldier", level: 1 }, sub: ring ? t("laminasSubPeer", "Com os seus status") : t("laminasSubStone", "Pedra: muita defesa, pouca velocidade"), tone: "#C9A46A" },
     { c: { kind: "wolf", level: 1 }, sub: ring ? t("ringSubWolf", "Três de uma vez, rápidos") : t("laminasSubWolf", "Bando de 3, rápidos"), tone: "#C2693A" },
-    { c: { kind: "golem", level: 1 }, sub: t("laminasSubGolem", "Lento, bate em área"), tone: "#8D95A3" },
-    { c: { kind: "harpy", level: 1 }, sub: t("laminasSubHarpy", "Voa e mergulha"), tone: "#7C89A3" },
+    { c: { kind: "golem", level: 1 }, sub: ring ? t("ringSubGolem", "Lento e pesado") : t("laminasSubGolem", "Lento, atira de longe"), tone: "#8D95A3" },
+    { c: { kind: "harpy", level: 1 }, sub: t("laminasSubHarpy", "Rápida, ataca com as garras"), tone: "#7C89A3" },
     { c: { kind: "brute", level: 1 }, sub: ring ? t("laminasSubChampion", "20% mais forte que você") : t("laminasSubBrute", "Elite: investida e pancada"), tone: VIOLET },
   ]
   const opts = ring ? all.filter((o) => o.c.kind !== "harpy") : all

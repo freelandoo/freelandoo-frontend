@@ -626,9 +626,9 @@ export class AvatarLibrary {
     const clanP = this.withClan ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
     // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
     const locoP = this.locoSet(id).catch(() => null)
-    // o Ciborgue da Arena (2026-11-03) usa os golpes pesados do Brutamontes, sem machado
-    const bruteP = this.withClan && ARCHER_SKINS.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || (this.withClan && HAMMER_SKINS.includes(id)) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
-    const gunP = this.withClan && GUN_SKINS.includes(id) ? this.gunSet().catch(() => null) : Promise.resolve(null)
+    // quem aparece como monstro (2026-11-06) tem os clipes da skin mesmo sem kit: Golem e Brutamontes de machado, Ciborgue também atira
+    const bruteP = this.withClan && ARCHER_SKINS.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || id === "golem" || (this.withClan && HAMMER_SKINS.includes(id)) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
+    const gunP = id === "ciborgue" || (this.withClan && GUN_SKINS.includes(id)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
     const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC, gunC] = await Promise.all([
       this.body(id),
       this.animSet(id),

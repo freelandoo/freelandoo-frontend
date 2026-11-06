@@ -43,6 +43,8 @@ import type { BodyId } from "../../types"
 import type { BoxeClip } from "../../engine/avatars"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
 import { shineWeapon } from "../../engine/weapon-shine"
+import { godGun, gunSize } from "../../engine/shop-swords"
+import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { BoxingGloves } from "./gloves"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
@@ -51,12 +53,13 @@ import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
  * Monstros com corpo de gente: a skin rigada e a escala. Tamanhos do Alex
  * (2026-11-03), iguais na luta e na rua: Golem de Pedra, Ciborgue e
  * Brutamontes 4 m (o tamanho do corpo), lobos 2,5 m de altura (WOLF_SCALE).
- * O Soldado de Pedra é o "soldier" da Arena, 3 m: laminas-game passa a escala.
+ * Regra do Alex (2026-11-06): quem aparece como monstro é igual à skin em altura, arma e
+ * golpes: Golem de Pedra e Brutamontes de machado, Ciborgue com a arma de fogo.
  */
 const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
   soldier: { body: "golem", scale: 1 },
   golem: { body: "ciborgue", scale: 1 },
-  harpy: { body: "garras", scale: 1.05 },
+  harpy: { body: "garras", scale: 1 },
   // corpo de 4 m em escala 1 (Alex: "do tamanho do golem"; machado de 3 m)
   brute: { body: "brutamontes", scale: 1 },
 }
@@ -80,21 +83,22 @@ const BRUTE: Record<string, { clip: BoxeClip; windup: Seg; strike: Seg; recover:
   charge: [{ clip: "XJump", windup: [0, 0.25], strike: [0.25, 0.49], recover: [0.49, 0.9] }],
   smash: [{ clip: "XSmash", windup: [0, 0.31], strike: [0.31, 0.42], recover: [0.42, 0.85] }],
 }
+/** O Golem de Pedra luta como a skin dele: os golpes do Soldado saem nos clipes de machado. */
+BRUTE.cut = BRUTE.sweep
+BRUTE.thrust = BRUTE.smash
 const BRUTE_HIT: BoxeClip[] = ["XHitG", "XHitL", "XHitR"]
 /**
- * O CIBORGUE (Golem de Sucata, 2026-11-03 — Alex: "fica com os braços pra
- * cima e nem dá pra saber quando ele vai atacar"): sai da guarda do boxe e
- * luta com os golpes pesados do Brutamontes, sem machado — braços baixos
- * parado, o preparo do golpe longo e congelado até a pancada.
- * Regra: swipe (golpe largo) e slam (pancada no chão).
+ * O CIBORGUE atira como a skin (GUN_MOVES): braços baixos parado (2026-11-03, Alex: "nem dá
+ * pra saber quando ele vai atacar"), ergue a arma no aviso e dispara no golpe da regra.
  */
 const CIBORG: Record<string, { clip: BoxeClip; windup: Seg; strike: Seg; recover: Seg }[]> = {
-  swipe: [
-    { clip: "XSweep", windup: [0, 0.36], strike: [0.36, 0.48], recover: [0.48, 0.85] },
-    { clip: "XBack", windup: [0, 0.26], strike: [0.26, 0.38], recover: [0.38, 0.75] },
-  ],
-  slam: [{ clip: "XSmash", windup: [0, 0.31], strike: [0.31, 0.42], recover: [0.42, 0.85] }],
+  shot: [{ clip: "FgFire1", windup: [0, 0.1], strike: [0.1, 0.45], recover: [0.45, 0.6] }],
+  blast: [{ clip: "FgFire", windup: [0, 0.1], strike: [0.1, 0.4], recover: [0.4, 0.7] }],
 }
+/** Boca da arma de fogo no eixo da pegada (o mesmo ponto da skin). */
+const MUZZLE = new Vector3(0.6, 0.1, 0)
+/** Quem luta com arma na mão, nos golpes do Brutamontes ou no tiro do Ciborgue. */
+const ARMED: Partial<Record<MobKind, string>> = { soldier: AXE_URL, brute: AXE_URL, golem: godGun("ciborgue")?.file }
 /** Corrida do Brutamontes no ritmo do passo (m/s com o clipe a 1×, no corpo de 4 m). */
 const BRUTE_RUN = 3.2
 
@@ -284,21 +288,26 @@ export class MonsterModel {
       const k = rigKit(scene)
       this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rig.body, null, false)
       this.char.holder.scaling.setAll(rig.scale * scale)
-      this.char.setBoxe(kind === "golem" ? "XIdle" : "BGuard")
-      if (kind === "brute") {
+      const weapon = ARMED[kind]
+      this.char.setBoxe(weapon ? "XIdle" : "BGuard")
+      if (weapon) {
         ensureLoaders()
-        LoadAssetContainerAsync(AXE_URL, scene)
+        LoadAssetContainerAsync(weapon, scene)
           .then((c) => {
             if (this.gone) return c.dispose()
             c.addAllToScene()
             this.axe = c.rootNodes[0] as TransformNode
             shineWeapon(this.axe)
-            for (const m of this.axe.getChildMeshes(false)) m.isPickable = false
+            for (const m of this.axe.getChildMeshes(false)) {
+              m.isPickable = false
+              // sem mapa de ambiente, metal puro sai preto (a mesma conta da arma da skin)
+              if (kind === "golem" && m.material instanceof PBRMaterial) m.material.metallic = 0.25
+            }
             this.axe.setEnabled(false)
           })
           .catch(() => {})
       }
-      const guard = kind === "golem" ? undefined : BULKY_GUARD[rig.body]
+      const guard = weapon ? undefined : BULKY_GUARD[rig.body]
       if (guard) {
         const ch = this.char
         this.fix = new PoseFix(scene, (n) => ch.bone(n), guard)
@@ -454,7 +463,7 @@ export class MonsterModel {
   private updateRigged(dt: number, p: MobPose) {
     const c = this.char!
     c.place(p.x, p.z, p.facing, p.y, 0)
-    if ((this.kind === "brute" || this.kind === "golem") && !this.gloves) return this.updateBrute(dt, p)
+    if (ARMED[this.kind] && !this.gloves) return this.updateBrute(dt, p)
     const heavy = this.kind === "golem" || (!!this.gloves && this.kind === "brute")
     if (p.state !== this.last) {
       if (p.state === "windup") c.boxeAct(heavy ? "BBox2" : "BJab", 0.55, 0, 0.42, true)
@@ -487,7 +496,21 @@ export class MonsterModel {
     if (!hand || !index || !thumb) return
     this.axeGrip = new WeaponGrip(this.scene, { hand, index, thumb }, this.axe, `mm-mob-axe-${this.root.name}`)
     this.axeGrip.root.scaling.setAll(this.root.scaling.x)
+    if (this.kind === "golem") {
+      this.axeGrip.root.scaling.setAll(gunSize(this.char.height) * this.root.scaling.x)
+      // o glTF chega com o X invertido: meia-volta deixa o cano para a frente
+      const turn = new TransformNode(`mm-mob-gun-turn-${this.root.name}`, this.scene)
+      turn.parent = this.axeGrip.root
+      turn.rotation.y = Math.PI
+      this.axe.parent = turn
+    }
     this.axe.setEnabled(true)
+  }
+
+  /** Boca da arma de fogo no mundo (de onde sai o tiro), ou null sem a arma na mão. */
+  muzzle(): Vector3 | null {
+    const r = this.axeGrip?.root
+    return r && this.kind === "golem" ? Vector3.TransformCoordinates(MUZZLE, r.getWorldMatrix()) : null
   }
 
   /** Lâmina do machado no mundo (o rastro roxo da luta), ou null fora do golpe. */
@@ -498,11 +521,11 @@ export class MonsterModel {
     return [Vector3.TransformCoordinates(new Vector3(0, AXE_EDGE[0], 0), m), Vector3.TransformCoordinates(new Vector3(0, AXE_EDGE[1], 0), m)]
   }
 
-  /** Brutamontes (2026-11-02): golpes de machado pela regra; andar/correr de machado; grito ao surgir. */
+  /** Quem luta armado: golpes pela regra; andar/correr com a arma; grito ao surgir. */
   private updateBrute(dt: number, p: MobPose) {
     const c = this.char!
     const cyborg = this.kind === "golem"
-    if (!cyborg) this.holdAxe()
+    this.holdAxe()
     if (p.attack && p.attack.id !== this.bruteAtk && p.state === "windup") {
       const table = cyborg ? CIBORG : BRUTE
       const opts = table[p.attack.id] ?? (cyborg ? CIBORG.swipe : BRUTE.sweep)
@@ -523,21 +546,10 @@ export class MonsterModel {
       this.last = p.state
     }
     const moving = p.speed > 0.25 && (p.state === "chase" || p.state === "circle" || !!p.calm)
-    if (cyborg) {
-      // sem machado: anda/corre com a locomoção dele; parado, a pose pesada (braços baixos)
-      if (moving) {
-        c.setBoxe(null)
-        c.animate(dt, p.speed > 2.4 ? 2 : 1, p.speed)
-      } else {
-        c.setBoxe(p.calm ? null : "XIdle")
-        c.animate(dt, 0, 0)
-      }
-      if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
-      return
-    }
-    const base = moving ? (p.speed > 2.4 ? "XRun" : "XWalk") : "XIdle"
+    const run = p.speed > 2.4
+    const base = moving ? (cyborg ? (run ? "FgRun" : "FgWalk") : run ? "XRun" : "XWalk") : "XIdle"
     c.setBoxe(base)
-    if (moving) c.setClipRate(base, Math.max(0.6, Math.min(1.6, p.speed / (base === "XRun" ? BRUTE_RUN : BRUTE_RUN * 0.45))))
+    if (moving) c.setClipRate(base, Math.max(0.6, Math.min(1.6, p.speed / (run ? BRUTE_RUN : BRUTE_RUN * 0.45))))
     c.animate(dt, 0, 0)
     if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
   }

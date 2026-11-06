@@ -559,7 +559,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // Ringue do Boxe (mm3d-57): sem espada; luvas pretas no jogador.
   const heroGloves = ring ? new BoxingGloves(scene, hero, "black") : null
   const placeSword = () => {
-    const hand = ring || clan || brute ? null : hero.bone(HAND)
+    // a Dama luta com as garras, como quando aparece como monstro
+    const hand = ring || clan || brute || opts.body === "garras" ? null : hero.bone(HAND)
     if (!hand) {
       sword.setEnabled(false)
       return
@@ -592,7 +593,27 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   warnMat.emissiveColor = new Color3(1, 0.3, 0.3)
   warnMat.disableLighting = true
   warnMat.backFaceCulling = false
-  const models = new Map<number, { model: MonsterModel; warn: Mesh; px: number; pz: number; speed: number; trail: Trail | null; prev: string }>()
+  const models = new Map<number, { model: MonsterModel; warn: Mesh; px: number; pz: number; speed: number; trail: Trail | null; prev: string; beam: Mesh | null; beamLife: number }>()
+  // tiro do Ciborgue: a luz da arma dele, uma linha reta da boca até o peito de quem joga
+  const gunColor = godGun("ciborgue")
+  const beamMat = new StandardMaterial("laminas-mob-beam", scene)
+  beamMat.emissiveColor = Color3.FromHexString(gunColor?.main ?? "#FF8A1F")
+  beamMat.disableLighting = true
+  const fireBeam = (v: { beam: Mesh | null; beamLife: number }, from: Vector3, to: Vector3, heavy: boolean) => {
+    if (!v.beam) {
+      v.beam = CreateCylinder("laminas-mob-beam", { height: 1, diameter: 1, tessellation: 6 }, scene)
+      v.beam.material = beamMat
+      v.beam.isPickable = false
+      vfx.addGlow(v.beam)
+    }
+    const d = heavy ? 0.26 : 0.14
+    const path = to.subtract(from)
+    v.beam.scaling.set(d, path.length(), d)
+    v.beam.rotationQuaternion = Quaternion.FromUnitVectorsToRef(Vector3.Up(), path.normalize(), v.beam.rotationQuaternion ?? new Quaternion())
+    v.beam.position.copyFrom(from.add(to).scale(0.5))
+    v.beam.setEnabled(true)
+    v.beamLife = 0.14
+  }
   for (const m of fight.mobs) {
     const warn = CreateDisc(`laminas-warn-${m.id}`, { radius: 1, tessellation: 32 }, scene)
     warn.rotation.x = Math.PI / 2
@@ -600,10 +621,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     warn.isPickable = false
     warn.setEnabled(false)
     // o Soldado de Pedra da Arena tem 3 m; o mesmo corpo na rua é o Golem, de 4 m
-    const model = new MonsterModel(scene, m.kind, m.kind === "soldier" && !ring && !street ? 0.75 : 1, ring ? { n: m.id } : null)
-    // Brutamontes: rastro roxo do machado no golpe (no ringue ele é gente de luva)
-    const trail = m.kind === "brute" && !ring ? vfx.trail(() => model.axeEdge(), VFX_COLORS.brutamontes) : null
-    models.set(m.id, { model, warn, px: m.x, pz: m.z, speed: 0, trail, prev: m.state })
+    const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : null)
+    // Quem luta de machado: rastro roxo no golpe (no ringue é gente de luva)
+    const trail = (m.kind === "brute" || m.kind === "soldier") && !ring ? vfx.trail(() => model.axeEdge(), VFX_COLORS.brutamontes) : null
+    models.set(m.id, { model, warn, px: m.x, pz: m.z, speed: 0, trail, prev: m.state, beam: null, beamLife: 0 })
   }
 
   // ── faíscas ──────────────────────────────────────────────────────────────
@@ -1086,7 +1107,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       v.pz = m.z
       const a = mobAttack(m)
       const warn = m.state === "windup" ? Math.min(1, m.t / Math.max(0.05, m.windup)) : 0
-      const cur = m.state === "windup" || m.state === "strike" || m.state === "recover" ? MOBS[m.kind].attacks[m.atk] : undefined
+      const cur = m.state === "windup" || m.state === "strike" || m.state === "recover" ? m.attacks[m.atk] : undefined
       const attack = cur ? { id: cur.id, windup: m.windup, active: cur.active, recover: cur.recover } : undefined
       v.model.update(dt, { x: m.x, y: m.y, z: m.z, facing: m.facing, state: m.state, t: m.t, warn, speed: v.speed, attack, weak: m.hp < m.hpMax * 0.3 })
       if (v.trail) {
@@ -1101,16 +1122,30 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           else vfx.burst(new Vector3(at.x, 1.2, at.z), purple)
         }
       }
+      const muzzle = m.state === "strike" && v.prev !== "strike" && a ? v.model.muzzle() : null
+      if (muzzle && a) {
+        const far = Math.min(a.range, Math.hypot(p.x - m.x, p.z - m.z))
+        fireBeam(v, muzzle, new Vector3(m.x + Math.sin(m.facing) * far, hero.height * 0.55, m.z + Math.cos(m.facing) * far), !!a.heavy)
+        if (gunColor) vfx.impact(muzzle, { main: Color3.FromHexString(gunColor.main), edge: Color3.FromHexString(gunColor.edge) }, !!a.heavy)
+        audio.whoosh()
+      }
+      if (v.beam && v.beamLife > 0) {
+        v.beamLife -= dt
+        if (v.beamLife <= 0) v.beam.setEnabled(false)
+      }
       v.prev = m.state
-      // aviso no chão: área = onde vai cair; cone = à frente do monstro
+      // aviso no chão: área = onde vai cair; cone = à frente do monstro; tiro = a linha dele
       if (a && m.state === "windup") {
         danger = true
-        const reach = a.area ? (a.reach ?? 0) : a.range / 2 + MOBS[m.kind].radius * 0.5
+        const line = !a.area && m.engage > 5
+        const reach = a.area ? (a.reach ?? 0) : line ? a.range / 2 : a.range / 2 + MOBS[m.kind].radius * 0.5
         const r = a.area ? a.area : Math.max(0.9, a.range * 0.65)
         v.warn.setEnabled(true)
         v.warn.position.set(m.x + Math.sin(m.facing) * reach, 0.03, m.z + Math.cos(m.facing) * reach)
+        v.warn.rotation.y = line ? m.facing : 0
         const k = 0.35 + 0.65 * warn
-        v.warn.scaling.set(r * k, r * k, 1)
+        if (line) v.warn.scaling.set((a.heavy ? 1.3 : 0.9) * k, a.range / 2, 1)
+        else v.warn.scaling.set(r * k, r * k, 1)
         warnMat.alpha = 0.55 + 0.45 * Math.sin(m.t * 20) * warn
       } else v.warn.setEnabled(false)
     }
@@ -1258,6 +1293,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       for (const v of models.values()) {
         v.model.dispose()
         v.warn.dispose()
+        v.beam?.dispose()
       }
       warnMat.dispose()
       warnTex.dispose()
