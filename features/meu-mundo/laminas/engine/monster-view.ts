@@ -308,9 +308,9 @@ export class MonsterModel {
           .catch(() => {})
       }
       const guard = weapon ? undefined : BULKY_GUARD[rig.body]
-      if (guard) {
+      if (guard || kind === "golem") {
         const ch = this.char
-        this.fix = new PoseFix(scene, (n) => ch.bone(n), guard)
+        this.fix = new PoseFix(scene, (n) => ch.bone(n), guard ?? null)
       }
     } else if (kind === "wolf") {
       wolfContainer(scene)
@@ -546,6 +546,15 @@ export class MonsterModel {
       this.last = p.state
     }
     const moving = p.speed > 0.25 && (p.state === "chase" || p.state === "circle" || !!p.calm)
+    if (this.kind === "golem" && this.fix) {
+      this.fix.gunWant = p.state === "hurt" || p.state === "dead" ? 0 : 1
+      this.fix.gunYaw = p.facing
+      if (this.axeGrip) {
+        this.axeGrip.front = this.fix.front
+        this.axeGrip.shift = this.fix.gunShift
+        this.axeGrip.level = this.fix.gunW
+      }
+    }
     const run = p.speed > 2.4
     const base = moving ? (cyborg ? (run ? "FgRun" : "FgWalk") : run ? "XRun" : "XWalk") : "XIdle"
     c.setBoxe(base)

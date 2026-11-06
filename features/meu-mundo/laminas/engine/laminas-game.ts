@@ -1060,6 +1060,16 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     heroFix.guardWant = still && base === "BGuard" ? 1 : 0
     heroFix.staffWant = still && !ranged && clan === "raposa" && base === GUARD && sp < 0.3 ? 1 : 0
     if (grip) grip.upright = heroFix.staffW
+    // a skin do Ciborgue carrega a arma como o monstro: cintura, cotovelo em L
+    if (gun && opts.body === "ciborgue") {
+      heroFix.gunWant = p.hp > 0 && p.state !== "win" && p.state !== "hurt" && p.state !== "down" && p.state !== "dodge" ? 1 : 0
+      heroFix.gunYaw = p.facing
+      if (grip) {
+        grip.front = heroFix.front
+        grip.shift = heroFix.gunShift
+        grip.level = heroFix.gunW
+      }
+    }
     // a maga não corta: sem arco; a pedra carrega até o disparo
     heroTrail.active = (p.state === "attack" || (p.state === "skill" && p.skill === "slash")) && clan !== "raposa"
     if (shotTrail) shotTrail.active = fight.shots.length > 0

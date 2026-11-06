@@ -71,6 +71,11 @@ export class WeaponGrip {
    * com referências em 2026-11-01). O eixo da arma vai para o "cima" do mundo.
    */
   upright = 0
+  /** 0–1: arma NIVELADA para `front` (mundo), cano à frente e topo para cima. */
+  level = 0
+  front: Vector3 | null = null
+  /** Com `level`: leva a arma do pulso até o punho visível (mundo). */
+  shift: Vector3 | null = null
   second: SecondHand | null = null
   private obs: Observer<Scene> | null
   private readonly h = new Vector3()
@@ -145,11 +150,18 @@ export class WeaponGrip {
       if (f.lengthSquared() < 1e-6) f.set(1, 0, 0)
       f.normalize()
     }
+    if (this.level > 0 && this.front) {
+      const w = Math.min(1, this.level)
+      f.scaleInPlace(1 - w).addInPlace(this.front.scale(w)).normalize()
+      s.scaleInPlace(1 - w).addInPlace(Vector3.Up().scale(w))
+      s.subtractInPlace(f.scale(Vector3.Dot(s, f))).normalize()
+    }
     Vector3.CrossToRef(f, s, this.n)
     const n = this.n.normalize()
     Matrix.FromXYZAxesToRef(f, s, n, this.m)
     Quaternion.FromRotationMatrixToRef(this.m, this.root.rotationQuaternion!)
     this.root.position.set(px, py, pz)
+    if (this.level > 0 && this.shift) this.root.position.addInPlace(this.shift.scale(Math.min(1, this.level)))
   }
 
   dispose() {

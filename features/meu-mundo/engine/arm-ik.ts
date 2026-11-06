@@ -199,6 +199,18 @@ export const BULKY_GUARD: Partial<Record<string, [number, number, number]>> = {
   golem: [1.0, 1.0, -0.9],
 }
 
+/** Braço com a arma de fogo: quanto vai para trás (rad) e para fora do tronco largo. */
+const GUN_ARM_BACK = 0.26
+const GUN_ARM_OUT = 0.14
+/**
+ * A mão do Ciborgue nasce dobrada ~68° para a frente do osso: o punho visível fica a 0,86 m do
+ * pulso, nesta direção no quadro do osso da mão (medido no GLB: pesos da mão × bind).
+ */
+const GUN_FIST = { Right: new Vector3(0.627, 0.373, -0.684), Left: new Vector3(-0.639, 0.383, -0.667) }
+const GUN_FIST_REACH = 0.7
+/** Quanto a mão de apoio entra para baixo do cano. */
+const GUN_HAND_IN = 0.45
+
 /**
  * Ajustes depois das animações num personagem: guarda baixa (corpos
  * volumosos) e mão do cajado em pé. Peso suave (`want` 0/1 → `w`).
@@ -211,6 +223,15 @@ export class PoseFix {
   /** Cajado em pé: 1 parado na pose de mago. */
   staffWant = 0
   staffW = 0
+  /** Arma de fogo do Ciborgue na cintura: 1 enquanto carrega ou atira. */
+  gunWant = 0
+  gunW = 0
+  /** Rumo do personagem (rad): os clipes de fuzil giram o tronco, a linha dos ombros não serve de frente. */
+  gunYaw = 0
+  /** Frente do corpo no mundo, para a arma ficar nivelada (WeaponGrip.front). */
+  readonly front = new Vector3(0, 0, 1)
+  /** Do pulso até o punho visível, no mundo: é ali que a arma fica (WeaponGrip.shift). */
+  readonly gunShift = new Vector3()
   private last = performance.now()
 
   constructor(
@@ -228,6 +249,7 @@ export class PoseFix {
     const k = 1 - Math.exp(-10 * dt)
     this.guardW += (this.guardWant - this.guardW) * k
     this.staffW += (this.staffWant - this.staffW) * k
+    this.gunW += (this.gunWant - this.gunW) * k
     if (this.guard && this.guardW > 0.01) {
       const g = guardFists(this.bone, ...this.guard)
       if (g) {
@@ -254,6 +276,58 @@ export class PoseFix {
         reachPole(c, T, this.staffW, Vector3.Down().add(fwd.scale(-0.6)).add(right.scale(0.4)).normalize())
       }
     }
+    if (this.gunW > 0.01) this.holdGun()
+  }
+
+  /**
+   * Regra do Alex (2026-11-06): quem carrega a arma de fogo não ergue a mão. Ombro baixo, braço
+   * levemente para trás, cotovelo em L (90°) e antebraço para a frente, nos dois braços; a outra
+   * mão fica por baixo do cano. Quem aponta é o punho visível, não o osso da mão (GUN_FIST).
+   */
+  private holdGun() {
+    const c = armChain(this.bone, "Right")
+    const o = armChain(this.bone, "Left")
+    if (!c || !o) return
+    const fwd = this.front.set(Math.sin(this.gunYaw), 0, Math.cos(this.gunYaw))
+    const right = Vector3.Cross(Vector3.Up(), fwd)
+    this.squareChest(c, o, right)
+    refresh(c)
+    refresh(o)
+    const back = GUN_ARM_BACK
+    const fore = fwd.scale(Math.cos(back)).add(Vector3.Down().scale(Math.sin(back))).normalize()
+    const pole = Vector3.Down().add(fwd.scale(-1)).normalize()
+    const place = (arm: ArmChain, side: number, dir: Vector3, fist: Vector3) => {
+      const S = pos(arm.upper)
+      const upperLen = pos(arm.lower).subtract(S).length()
+      const foreLen = pos(arm.end).subtract(pos(arm.lower)).length()
+      const upper = Vector3.Down().scale(Math.cos(back)).add(fwd.scale(-Math.sin(back))).add(right.scale(side * GUN_ARM_OUT)).normalize()
+      reachPole(arm, S.add(upper.scale(upperLen)).add(dir.scale(foreLen)), this.gunW, pole.add(right.scale(side * 0.4)).normalize())
+      arm.end.computeWorldMatrix(true)
+      const now = Vector3.TransformNormal(fist, arm.end.getWorldMatrix()).normalize()
+      turn(arm.end, now, now.scale(1 - this.gunW).add(dir.scale(this.gunW)))
+      arm.end.computeWorldMatrix(true)
+    }
+    place(c, 1, fore, GUN_FIST.Right)
+    place(o, -1, fore.add(right.scale(GUN_HAND_IN)).normalize(), GUN_FIST.Left)
+    this.gunShift.copyFrom(fore).scaleInPlace(GUN_FIST_REACH)
+  }
+
+  /** Desfaz o giro do tronco da postura de tiro: o peito volta a olhar para onde o corpo anda. */
+  private squareChest(c: ArmChain, o: ArmChain, right: Vector3) {
+    const chest = this.bone("mixamorig:Spine2")
+    if (!chest) return
+    const links = ["mixamorig:RightShoulder", "mixamorig:LeftShoulder", "mixamorig:Neck", "mixamorig:Head"].map((n) => this.bone(n))
+    chest.computeWorldMatrix(true)
+    for (const n of links) n?.computeWorldMatrix(true)
+    refresh(c)
+    refresh(o)
+    const now = pos(c.upper).subtract(pos(o.upper))
+    now.y = 0
+    if (now.lengthSquared() < 1e-8) return
+    now.normalize()
+    turn(chest, now, now.scale(1 - this.gunW).add(right.scale(this.gunW)))
+    chest.computeWorldMatrix(true)
+    for (const n of links) n?.computeWorldMatrix(true)
   }
 
   dispose() {
