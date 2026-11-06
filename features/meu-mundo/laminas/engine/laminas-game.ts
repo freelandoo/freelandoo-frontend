@@ -1204,6 +1204,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   return {
     begin: () => {
       held = false
+      audio.whoosh()
       wantAttack = false
       wantDodge = false
       wantPower = false

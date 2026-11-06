@@ -10108,9 +10108,7 @@
     "stAtkShort2": "ATK {n}",
     "laminasSubStone": "Stone: high defense, low speed",
     "vsLife": "Health",
-    "vsTapTouch": "Tap the screen to fight",
-    "vsTapKey": "Click or press Space to fight",
-    "vsPack": "Health is the total of all {n}. Each one has a share."
+    "vsStart": "Start fight"
   },
   "Sports": {
     "eyebrow": "Sports",

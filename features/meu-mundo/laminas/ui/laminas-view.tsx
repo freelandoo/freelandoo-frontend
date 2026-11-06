@@ -67,6 +67,8 @@ type Choice = { kind: MobKind; level: number }
 
 /** Retrato do inimigo na placa: o corpo que a cena desenha (monster-view.ts RIGGED/HUMAN). */
 const MOB_BODY: Partial<Record<MobKind, BodyId>> = { soldier: "golem", golem: "ciborgue", harpy: "garras", brute: "brutamontes" }
+/** Cor da energia do card do inimigo na tela de versus. */
+const FOE_ACCENT: Record<MobKind, string> = { soldier: "#86FF22", wolf: "#FF7A2F", golem: "#FF315A", harpy: "#C05CFF", brute: "#B84DFF" }
 const RING_BODY: Record<MobKind, BodyId> = { soldier: "normal", wolf: "slim", golem: "fat", harpy: "female", brute: "strong" }
 
 /** `street`: na rua o de pedra é o Golem (4 m); na Arena, o Soldado (3 m). */
@@ -383,10 +385,9 @@ function LaminasScreen({
       {/* antes da luta: os status dos dois lados; a luta só anda com um toque */}
       {status === "ready" && !veil && !started && sheet && (
         <VersusScreen
-          me={{ name: t("fightYou", "VOCÊ"), level: heroLevel, portrait: PORTRAIT[body] }}
-          foe={{ name: mobName(choice.kind), level: portal && ticket && ticket !== "offline" ? ticket.setup.level : heroLevel, portrait: foePortrait }}
+          me={{ name: t("fightYou", "VOCÊ"), level: heroLevel, portrait: PORTRAIT[body], accent: "#FFB43B" }}
+          foe={{ name: mobName(choice.kind), level: portal && ticket && ticket !== "offline" ? ticket.setup.level : heroLevel, portrait: foePortrait, accent: FOE_ACCENT[choice.kind] }}
           sheet={sheet}
-          touch={isTouch}
           onStart={begin}
         />
       )}

@@ -9522,9 +9522,7 @@
     "stAtkShort2": "ATQ {n}",
     "laminasSubStone": "Pedra: muita defesa, pouca velocidade",
     "vsLife": "Vida",
-    "vsTapTouch": "Toque na tela para lutar",
-    "vsTapKey": "Clique ou aperte Espaço para lutar",
-    "vsPack": "A vida é a soma dos {n}. Cada um tem a sua parte."
+    "vsStart": "Iniciar luta"
   },
   "Sports": {
     "eyebrow": "Esportes",
