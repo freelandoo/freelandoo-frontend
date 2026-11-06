@@ -61,7 +61,7 @@ function rnd(n: number) {
 }
 
 /** Chão das ilhas = o calçamento da cidade (center.ts/neighborhood.ts). */
-const CITY = {
+export const CITY = {
   pave: [0.98, 0.93, 0.83] as RGB,
   cobble: [0.82, 0.74, 0.64] as RGB,
 }
@@ -91,7 +91,7 @@ export const STONE = {
   vineDark: [0.2, 0.38, 0.18] as RGB,
 }
 
-type RockBuf = { p: number[]; c: number[]; i: number[] }
+export type RockBuf = { p: number[]; c: number[]; i: number[] }
 
 /**
  * Topo (mm3d-62): miolo claro em leque + anel de lajes radiais na borda
@@ -99,7 +99,7 @@ type RockBuf = { p: number[]; c: number[]; i: number[] }
  * Tudo na altura da colisão (o pé não afunda). Embaixo, pedra em camadas que
  * afina até a ponta, recortada, com estalactites.
  */
-function islandGeometry(isl: Island, rock: RockBuf) {
+export function islandGeometry(isl: Pick<Island, "id" | "x" | "y" | "z" | "r" | "depth">, rock: RockBuf) {
   const seg = Math.max(18, Math.min(60, Math.round(isl.r * 5)))
   const wob = (k: number) => 1 + (rnd(isl.id * 977 + k) - 0.5) * 0.05
   const ring: [number, number][] = []

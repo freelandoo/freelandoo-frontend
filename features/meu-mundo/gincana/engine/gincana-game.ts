@@ -139,24 +139,16 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   const governor = new ResolutionGovernor(engine, profile, Math.min(window.devicePixelRatio || 1, touch ? 2 : 1.5))
 
   const scene = new Scene(engine)
-  // mm3d-55: horizonte dourado (o mesmo do céu da prova).
-  const haze = new Color3(0.99, 0.86, 0.64)
-  scene.clearColor = new Color4(haze.r, haze.g, haze.b, 1)
+  // céu, neblina e luzes seguem o relógio de Brasília (CourseView, como na cidade)
   scene.ambientColor = new Color3(0.35, 0.35, 0.35)
   scene.fogMode = Scene.FOGMODE_LINEAR
-  scene.fogColor = haze
-  scene.fogStart = low ? 110 : 150
-  scene.fogEnd = low ? 330 : 460
+  scene.fogStart = low ? 130 : 190
+  scene.fogEnd = low ? 400 : 640
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
-  const hemi = new HemisphericLight("gincana-hemi", new Vector3(0.2, 1, -0.2), scene)
-  hemi.intensity = 0.82
-  hemi.diffuse = new Color3(1, 0.99, 0.97)
-  hemi.groundColor = new Color3(0.62, 0.7, 0.85)
-  const sun = new DirectionalLight("gincana-sun", new Vector3(-0.45, -1, 0.55), scene)
-  sun.intensity = 0.72
-  sun.diffuse = new Color3(1, 0.96, 0.9)
+  new HemisphericLight("mm-hemi", new Vector3(0.2, 1, -0.2), scene)
+  new DirectionalLight("mm-sun", new Vector3(-0.45, -1, 0.55), scene)
 
   const cam = new FreeCamera("gincana-cam", new Vector3(0, DECK_CAM, -12), scene)
   cam.minZ = 0.2

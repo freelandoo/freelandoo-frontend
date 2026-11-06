@@ -17,6 +17,10 @@
 // latão, pórticos de ferro com engrenagem na largada e na chegada, faróis de
 // tijolo e latão no lugar das torres de doce, céu dourado e dirigíveis. O mar
 // continua turquesa (e turquesa nunca no tampo).
+//
+// 2026-11-05 — ESTÉTICA DA CIDADE (pedido do Alex): tampos no calçamento da cidade,
+// obstáculos de ferro e latão, céu e luz pelo relógio de Brasília e a cidade em
+// volta (city-view.ts). Os tamanhos e a posição de tudo seguem os de sim/course.ts.
 
 import type { Scene } from "@babylonjs/core/scene"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
@@ -51,17 +55,21 @@ import {
 } from "../sim/course"
 import { SoftGeo, at, hex, mix, stripesY, type RGB } from "./shapes"
 import { AirshipFleet, SP, SteamStage, fleetRing, gearArch, place, tierOf } from "../../engine/steampunk/scenery"
+import { postLantern, steamLamp } from "../../engine/steampunk/kit"
+import { Sky, applyLights, brasiliaHour, nightFactor } from "../../engine/steampunk/atmosphere"
+import { CITY } from "../../paint/engine/world-view"
+import { buildCity, type GincanaCity } from "./city-view"
 
 /** A paleta da regra em laca e metal (mesmos índices de GINCANA_COLORS). */
 const STEAM_COLORS: RGB[] = [
-  [0.86, 0.42, 0.18], // laranja → cobre
-  [0.95, 0.72, 0.2], // amarelo → latão
-  [0.82, 0.16, 0.22], // rosa → vermelho-laca
-  [0.3, 0.62, 0.52], // turquesa → pátina
-  [0.46, 0.2, 0.42], // roxo → ameixa
-  [0.52, 0.62, 0.22], // verde → oliva
-  [0.22, 0.38, 0.62], // azul → azul-aço
-  [0.96, 0.9, 0.78], // branco → marfim
+  SP.copper, // laranja → cobre
+  SP.brass, // amarelo → latão
+  [0.56, 0.14, 0.15], // rosa → vermelho-laca
+  [0.26, 0.48, 0.42], // turquesa → pátina
+  [0.34, 0.17, 0.32], // roxo → ameixa
+  [0.4, 0.46, 0.2], // verde → oliva
+  [0.2, 0.3, 0.44], // azul → azul-aço
+  SP.masonryLight, // branco → marfim
 ]
 const C = GINCANA_COLORS.map((h, i) => STEAM_COLORS[i] ?? hex(h))
 const WHITE: RGB = STEAM_COLORS[7]
@@ -90,7 +98,19 @@ export class CourseView {
   private readonly gate: Mesh
   private readonly logos: LogoView
   private readonly clouds: Mesh
+  private readonly cloudMat: StandardMaterial
+  private readonly waterMat: StandardMaterial
   private readonly stage: SteamStage
+  private readonly city: GincanaCity
+  private readonly sky: Sky
+  private readonly timer: ReturnType<typeof setInterval>
+  private night = -1
+  private forcedHour: number | null = null
+  private readonly devHour = (h: number | null) => {
+    this.forcedHour = h
+    this.night = -1
+    this.applyTime()
+  }
   private readonly fleet: AirshipFleet | null
   private readonly balls: number[] = []
   private readonly q = new Quaternion()
@@ -106,18 +126,11 @@ export class CourseView {
     toy.diffuseColor = new Color3(1, 1, 1)
     toy.specularColor = new Color3(0.32, 0.32, 0.32)
     toy.specularPower = 42
-    toy.emissiveColor = new Color3(0.16, 0.16, 0.16)
     this.toy = toy
+    this.stage = new SteamStage(scene, tierOf(low), { wall: true })
 
-    // ── céu (gradiente) e nuvens ──
-    const skyG = new SoftGeo()
-    const top: RGB = [0.4, 0.58, 0.78]
-    const horizon: RGB = [0.99, 0.86, 0.64]
-    skyG.sphere(1400, at(0, 0, 130), (_x, y) => mix(horizon, top, Math.max(0, Math.min(1, (y + 40) / 520))), 24)
-    const sky = skyG.build("gincana-sky", scene, this.unlit("gincana-sky-mat"), true)
-    sky.material!.backFaceCulling = false
-    sky.infiniteDistance = true
-    this.meshes.push(sky)
+    // ── céu e nuvens ──
+    this.sky = new Sky(scene, 900)
     const cloudG = new SoftGeo()
     for (let i = 0; i < 18; i++) {
       const a = (i / 18) * Math.PI * 2 + Math.sin(i * 7.1) * 0.2
@@ -131,7 +144,8 @@ export class CourseView {
         cloudG.sphere(s, at(cx + (k - n / 2) * 8, cy + Math.sin(k * 2.1 + i) * 3, cz + Math.cos(k * 1.7) * 5), WHITE, 8, 1, 0.62, 1)
       }
     }
-    this.clouds = cloudG.build("gincana-clouds", scene, this.unlit("gincana-cloud-mat", 0.94), false)
+    this.cloudMat = this.unlit("gincana-cloud-mat", 0.94)
+    this.clouds = cloudG.build("gincana-clouds", scene, this.cloudMat, false)
     this.meshes.push(this.clouds)
 
     // ── mar: turquesa com reflexos que andam ──
@@ -157,7 +171,7 @@ export class CourseView {
     this.waterTex.vScale = 70
     const wm = new StandardMaterial("gincana-water-mat", scene)
     wm.diffuseTexture = this.waterTex
-    wm.emissiveColor = new Color3(0.25, 0.32, 0.34)
+    this.waterMat = wm
     wm.specularColor = new Color3(0.5, 0.55, 0.6)
     wm.specularPower = 90
     this.water = CreateGround("gincana-sea", { width: 1100, height: 1100, subdivisions: 1 }, scene)
@@ -197,7 +211,6 @@ export class CourseView {
       for (let k = -4; k <= 4; k++) st.torus(1.0, 0.16, at(k * 2.2, py + 0.35, z, 0, 0, Math.PI / 2), YELLOW, 16)
     }
     // arcos de balões: largada (ciano/rosa) e chegada (amarelo/laranja)
-    this.stage = new SteamStage(scene, tierOf(low))
     gearArch(this.stage.ctx, 0, DECK, 8.4, 0, 15.2, 7.4, 1.15)
     gearArch(this.stage.ctx, 0, FINISH_Y, FINISH_Z, 0, 15.2, 7.4, 1.15)
     // Rebites de latão na borda de cada disco (a borda inflável vira um aro rebitado).
@@ -222,9 +235,11 @@ export class CourseView {
       const side = i % 2 ? 1 : -1
       const z = -10 + i * 11
       const x = side * (17 + ((i * 7) % 11))
-      const col = [PINK, YELLOW, LIME, ORANGE, PURPLE][i % 5]
-      if (i % 3 === 0) st.torus(3.2, 1.1, at(x, 0.15, z), stripesY(col, WHITE, 0.6, 1.1), 24)
-      else st.sphere(1.6, at(x, 0.4, z), stripesY(col, WHITE, 0.5, 1.6), 10)
+      // boias de ferro do canal, com lanterna
+      const col = [PINK, ORANGE, PURPLE][i % 3]
+      st.cylinder(2.6, 1.2, at(x, 0.5, z), stripesY(col, SP.iron, 0.4, 0), 12)
+      st.sphere(1.4, at(x, 1.2, z), SP.iron, 10, 1, 0.7, 1)
+      postLantern(this.stage.ctx, x, 1.55, z, 1.2)
     }
     // faróis de tijolo e latão ao longe (a silhueta do horizonte), com a lanterna acesa
     {
@@ -251,6 +266,7 @@ export class CourseView {
     }
     const stat = st.build("gincana-course", scene, toy, true)
     this.meshes.push(stat)
+    this.city = buildCity(scene, this.stage.ctx, low)
     this.stage.build("gincana-steam")
     this.fleet = low ? null : new AirshipFleet(scene, this.stage.mats, fleetRing(6, 150, 240, 40, 80, 34, 47), 0, 130)
 
@@ -279,10 +295,8 @@ export class CourseView {
       const pg = new SoftGeo()
       pg.cylinder(0.16, p.len, at(0, -p.len / 2, 0), IRON, 8)
       pg.cylinder(0.5, 0.3, at(0, -p.len + p.R * 1.02, 0), YELLOW, 12)
-      const ballPaint = (x: number, y: number, z: number): RGB => {
-        if (Math.abs(y) < p.R * 0.18) return WHITE
-        return y > 0 ? YELLOW : Math.atan2(x, z) > 0 ? PURPLE : PINK
-      }
+      // bola de demolição: ferro com cinta de latão e metade de cobre
+      const ballPaint = (_x: number, y: number): RGB => (Math.abs(y) < p.R * 0.16 ? SP.brass : y > 0 ? SP.steel : SP.copper)
       pg.sphere(p.R * 2, at(0, -p.len, 0), ballPaint, 16)
       const m = pg.build("gincana-swing", scene, toy, false)
       m.position.set(p.x, p.py, p.z)
@@ -293,10 +307,10 @@ export class CourseView {
     // ── luvas: punho vermelho + dedão + punho branco e o braço do pistão ──
     for (const gv of GLOVES) {
       const gg = new SoftGeo()
-      const red = hex("#E8232F")
+      const red = PINK
       gg.sphere(gv.R * 2, at(0, 0, 0), red, 16, 1.05, 0.92, 1)
       gg.sphere(gv.R * 0.75, at(-gv.dir * 0.2, gv.R * 0.35, gv.R * 0.72), red, 10, 1, 0.8, 1.2)
-      gg.cylinder(gv.R * 1.5, 0.7, at(-gv.dir * gv.R * 0.95, 0, 0, 0, 0, Math.PI / 2), WHITE, 18)
+      gg.cylinder(gv.R * 1.5, 0.7, at(-gv.dir * gv.R * 0.95, 0, 0, 0, 0, Math.PI / 2), SP.iron, 18)
       gg.torus(gv.R * 1.5, 0.22, at(-gv.dir * gv.R * 1.25, 0, 0, 0, 0, Math.PI / 2), YELLOW, 18)
       const glove = gg.build("gincana-glove", scene, toy, false)
       glove.position.set(gv.x0, gv.y, gv.z)
@@ -330,7 +344,7 @@ export class CourseView {
     bb.sphere(BALLS.R * 2, at(0, 0, 0), (x, y, z) => {
       const a = Math.atan2(x, y) + Math.PI
       const k = Math.floor(a / (Math.PI / 3)) % 6
-      return [PINK, WHITE, TEAL, WHITE, YELLOW, WHITE][k]
+      return [SP.copper, SP.iron, SP.brass, SP.iron, SP.copperDark, SP.iron][k]
     }, 18)
     this.ballBase = bb.build("gincana-ball", scene, toy, false)
     this.ballBase.isVisible = false
@@ -344,6 +358,27 @@ export class CourseView {
     // logo da Freelandoo girando sobre o arco da chegada
     this.logos = buildLogos(scene, [{ id: 1, at: new Vector3(0, FINISH_Y + 9.6, FINISH_Z) }], low, 1.6)
     void CHECKPOINTS
+
+    // ── dia e noite: relógio de Brasília, como no bairro, no centro e no Paint ──
+    this.timer = setInterval(() => this.applyTime(), 20000)
+    if (process.env.NODE_ENV !== "production") (window as unknown as { __mmSetHour?: (h: number | null) => void }).__mmSetHour = this.devHour
+    this.applyTime()
+  }
+
+  private applyTime() {
+    const n = nightFactor(this.forcedHour ?? brasiliaHour())
+    if (Math.abs(n - this.night) < 0.005) return
+    this.night = n
+    applyLights(this.scene, n)
+    this.sky.set(n)
+    this.stage.setNight(n)
+    this.city.setNight(n)
+    Color3.LerpToRef(new Color3(0.94, 0.88, 0.8), new Color3(0.16, 0.18, 0.3), n, this.cloudMat.emissiveColor)
+    // o mar segue turquesa de dia; de noite escurece
+    Color3.LerpToRef(new Color3(0.25, 0.32, 0.34), new Color3(0.01, 0.05, 0.08), n, this.waterMat.emissiveColor)
+    Color3.LerpToRef(new Color3(1, 1, 1), new Color3(0.2, 0.32, 0.38), n, this.waterMat.diffuseColor)
+    const k = 0.14 - 0.08 * n
+    this.toy.emissiveColor.set(k, k, k)
   }
 
   private unlit(name: string, k = 1) {
@@ -361,12 +396,17 @@ export class CourseView {
     const top = C[p.c]
     const rim = C[p.rim]
     const body = darker(top, 0.62)
+    const { pavers, cobble } = this.stage.ctx
     if (p.k === 0) {
       g.cylinder(p.r * 2, 0.5, at(p.x, p.y - 0.25, p.z), top, 48)
-      // colchão inflável: anel claro e miolo um pouco mais escuro no tampo
-      if (p.r > 3) {
-        g.torus(p.r * 1.25, 0.16, at(p.x, p.y - 0.06, p.z), mix(top, WHITE, 0.32), 40)
-        g.cylinder(p.r * 0.7, 0.04, at(p.x, p.y + 0.0, p.z), mix(top, [0, 0, 0], 0.08), 32)
+      // tampo no calçamento da cidade: pedra portuguesa na borda, lajes no miolo
+      cobble.cylinder(p.r * 2, 0.05, place(p.x, p.y - 0.02, p.z), CITY.cobble, 32)
+      if (p.r > 2.5) pavers.cylinder((p.r - 0.5) * 2, 0.05, place(p.x, p.y - 0.015, p.z), CITY.pave, 32)
+      if (p.r >= 5) {
+        for (let k = 0; k < 3; k++) {
+          const a = (k / 3) * Math.PI * 2 + p.z
+          steamLamp(this.stage.ctx, p.x + Math.sin(a) * (p.r - 0.25), p.z + Math.cos(a) * (p.r - 0.25), { y: p.y, collide: false, gearSeed: Math.round(p.z) + k })
+        }
       }
       g.torus(p.r * 2 + 0.1, 0.62, at(p.x, p.y - 0.12, p.z), rim, 48)
       g.cylinder(p.r * 1.84, p.d - 0.4, at(p.x, p.y - 0.4 - (p.d - 0.4) / 2, p.z), body, 32, p.r * 1.9)
@@ -386,8 +426,12 @@ export class CourseView {
     // tampo, contorno (borda um pouco abaixo e mais larga) e corpo
     const m = (dy: number) => at(p.x, yc + dy, p.z, p.rot, -pitch)
     g.roundBox(p.hx * 2, 0.5, L, r, m(-0.25), top, 12)
-    // friso claro no meio do tampo (vigas e pisos parecem infláveis costurados)
-    if (L > 3) g.roundBox(Math.max(0.3, p.hx * 0.5), 0.06, L - 1.2, 0.03, m(-0.015), mix(top, WHITE, 0.28), 4)
+    // calçamento: lajes nos pisos largos, pedra portuguesa nas vigas
+    ;(p.hx >= 2 ? pavers : cobble).box(p.hx * 2, 0.05, L, m(-0.015), p.hx >= 2 ? CITY.pave : CITY.cobble)
+    // postes nas bordas dos pisos largos
+    if (p.hx >= 5 && Math.abs(p.rot) < 0.01 && rise === 0) {
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) steamLamp(this.stage.ctx, p.x + sx * (p.hx + 0.05), p.z + sz * (p.hz - 0.5), { y: p.y, collide: false, gearSeed: Math.round(p.z) })
+    }
     g.roundBox(p.hx * 2 + 0.34, 0.5, L + 0.34, r + 0.12, m(-0.33), rim, 10)
     g.roundBox(Math.max(0.6, p.hx * 2 - 0.3), p.d - 0.3, Math.max(0.6, L - 0.3), Math.min(0.3, p.hx * 0.4), m(-0.4 - (p.d - 0.3) / 2), body, 8)
     // colunas: uma a cada ~8 m no comprimento
@@ -481,6 +525,11 @@ export class CourseView {
   }
 
   dispose() {
+    clearInterval(this.timer)
+    const w = window as unknown as { __mmSetHour?: (h: number | null) => void }
+    if (w.__mmSetHour === this.devHour) delete w.__mmSetHour
+    this.sky.dispose()
+    this.city.dispose()
     this.logos.dispose()
     this.fleet?.dispose()
     this.stage.dispose()
