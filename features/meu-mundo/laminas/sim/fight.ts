@@ -499,14 +499,27 @@ export const BODY_SHEETS: Record<string, Sheet> = {
   vampiro_adulto: [130, 150, 110, 110, 140],
   vampira_adulta: [120, 145, 105, 115, 150],
 }
-/** Monstros: ficha sobre os status normais do nível. `stone` = o Golem de Pedra da rua; o bando divide a vida. */
+/**
+ * Monstros: ficha sobre os status do nível (mobBase). `stone` = o Golem de Pedra da rua; o
+ * bando divide a vida. Regra do Alex (2026-11-06): todas as raças na dificuldade do Brutamontes,
+ * cada uma com o seu jeito. Números medidos com robô lutando (vitórias próximas às do Brutamontes
+ * com os mesmos heróis). Esta ficha é da LUTA; a de quem veste a skin é BODY_SHEETS.
+ */
 export const MOB_SHEETS: Record<MobKind | "stone", Sheet> = {
-  soldier: [130, 100, 130, 90, 70],
-  stone: BODY_SHEETS.golem,
-  wolf: [120, 70, 70, 110, 160],
-  golem: BODY_SHEETS.ciborgue,
-  harpy: BODY_SHEETS.garras,
-  brute: BODY_SHEETS.brutamontes,
+  soldier: [170, 130, 170, 90, 70],
+  stone: [175, 120, 165, 95, 60],
+  wolf: [225, 125, 125, 75, 100],
+  golem: [145, 185, 145, 205, 80],
+  harpy: [115, 180, 120, 155, 135],
+  brute: [200, 160, 140, 120, 90],
+}
+/**
+ * Status normais de um monstro do nível (regra do Alex, 2026-11-06): o nível 15 vale o que o 27
+ * valia (Brutamontes do 15 = 668/795/695/596/447). O nível 1 não muda; segue nesse passo, sem teto.
+ */
+export function mobBase(level: number): { hp: number; rate: number } {
+  const n = ((Math.max(1, Math.round(Number(level) || 1)) - 1) * 26) / 14
+  return { hp: PLAYER.hp + HERO_LEVEL.hp * n, rate: 100 + (900 * n) / 59 }
 }
 /** O que o nível soma em ataque, defesa e, nos monstros, acuracidade e velocidade (0 no 1, 900 no 60, e segue). */
 const levelRate = (level: number) => (900 * (Math.max(1, Math.round(Number(level) || 1)) - 1)) / 59
@@ -683,8 +696,9 @@ export class Fight {
     const spots = spawnList(setup.kind)
     const mean = (list: number[]) => list.reduce((a, b) => a + b, 0) / list.length
     const foeLevel = setup.tier === "street" ? this.level : this.heroLevel
-    const normal = heroLevelScale(foeLevel).hp
-    const rated = 100 + levelRate(foeLevel)
+    const base = setup.tier ? mobBase(foeLevel) : { hp: heroLevelScale(foeLevel).hp, rate: 100 + levelRate(foeLevel) }
+    const normal = base.hp
+    const rated = base.rate
     const ms = MOB_SHEETS[setup.tier === "street" && setup.kind === "soldier" ? "stone" : setup.kind]
     const foe: FightRate = peer
       ? { acc: this.rate.acc * peer, spd: this.rate.spd * peer, atk: this.rate.atk * peer, def: this.rate.def * peer }
