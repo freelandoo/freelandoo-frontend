@@ -141,6 +141,12 @@ const nextConfig = {
         // Deck de investidores: HTML estatico em public/, servido em URL limpa.
         // Fica fora do chrome da plataforma de proposito (e um documento, nao uma tela).
         { source: "/investidores", destination: "/investidores.html" },
+        // Sites de clientes que têm projeto próprio na Vercel (3D em tela cheia não
+        // cabe no contrato de tema). Cada um roda com basePath igual a este caminho.
+        { source: "/gs", destination: "https://gs-refrigeracao.vercel.app/gs" },
+        { source: "/gs/:path*", destination: "https://gs-refrigeracao.vercel.app/gs/:path*" },
+        { source: "/hidrovap", destination: "https://hidrovap.vercel.app/hidrovap" },
+        { source: "/hidrovap/:path*", destination: "https://hidrovap.vercel.app/hidrovap/:path*" },
       ],
     }
   },

@@ -183,8 +183,11 @@ export function BirthdateGate() {
         return
       }
       // data_nascimento existe se for não nula. Idade também é fornecida.
-      const hasBirthdate = !!me?.data_nascimento || !!me?.idade
-      const hasCpf = !!me?.has_cpf
+      // Dispensa dos admins (mig 326): conta provisória não vê o passo de
+      // identidade até a data de fim; depois o gate volta sozinho.
+      const identityWaived = !!me?.cpf_waived
+      const hasBirthdate = identityWaived || !!me?.data_nascimento || !!me?.idade
+      const hasCpf = identityWaived || !!me?.has_cpf
       // Sem perfil-conta no /me não dá pra pedir taxonomia — não travar o user.
       const acc = me?.account_profile
       const hasTaxonomy = academyAccount || !acc?.id_profile || !!acc?.has_taxonomy
