@@ -8060,7 +8060,7 @@
     "menuExitGame": "Leave the game",
     "helpTouch3": "Joystick: walk · Run: slow jog · Drag the screen: turn the camera · Button: interact · Pull the right tab: menu",
     "helpDesktop3": "WASD or arrows: walk · Shift: slow jog · Drag: turn the camera · Wheel: zoom · E: interact · M: menu",
-    "stAttrScale2": "From 0 to {max} · mark = floor",
+    "stAttrScale2": "No limit · mark = floor",
     "atIntelligenceText2": "Rises by studying (up to 5 useful hours a day). What he learns stays: never below 90% of his best.",
     "atStrengthText2": "Rises by training (up to 4 useful hours a day); whey, creatine, pre-workout and steroids speed it up. Without training it drops to 60% of his best.",
     "atSpeedText2": "Rises by training. Without training it drops to 60% of his best; getting back to the top is faster.",

@@ -48,7 +48,7 @@ import { GOD_NAMES, isGod, type GodBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
 import { HERO_LEVEL, heroLevelScale, heroSheet } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
-import { HpPlate, LevelBadge, StatBars, StatGuide } from "./stat-bars"
+import { HpPlate, LevelBadge, StatBars, StatGuide, statTop } from "./stat-bars"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -937,7 +937,7 @@ function Attributes({ life, compact, t, adv }: PageProps) {
   ] as const
   return (
     <div className={`grid gap-4 ${compact ? "" : "grid-cols-[1.3fr_1fr]"}`}>
-      <Plate title={t("stAttributes", "Atributos")} aside={<span className={`${archivo.className} text-[14px]`} style={{ color: EVO.mudo }}>{t("stAttrScale2", "De 0 a {max} · traço = piso").replace("{max}", String(max))}</span>}>
+      <Plate title={t("stAttributes", "Atributos")} aside={<span className={`${archivo.className} text-[14px]`} style={{ color: EVO.mudo }}>{t("stAttrScale2", "Sem limite · traço = piso").replace("{max}", String(max))}</span>}>
         <div className="grid">
           {rows.map(([icon, color, label, value, top, floor, text, unit]) => (
             <div key={label} className="flex items-center gap-4 border-b py-3" style={{ borderColor: EVO.linha }}>
@@ -953,7 +953,7 @@ function Attributes({ life, compact, t, adv }: PageProps) {
                   </span>
                   {!unit && hero && <LevelBonus n={hero.attr} t={t} />}
                   <div className="flex-1">
-                    <Bar value={value} max={top} mark={floor} color={color} />
+                    <Bar value={value} max={statTop(value, top)} mark={floor} color={color} />
                   </div>
                 </div>
                 <div className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
@@ -1700,7 +1700,7 @@ function AttributesC({ life, t, adv }: PageProps) {
         title={t("stAttributes", "Atributos")}
         aside={
           <span className={`${archivo.className} truncate text-[10px]`} style={{ color: EVO.mudo }}>
-            {t("stAttrScale2", "De 0 a {max} · traço = piso").replace("{max}", String(max))}
+            {t("stAttrScale2", "Sem limite · traço = piso").replace("{max}", String(max))}
           </span>
         }
       >
@@ -1721,7 +1721,7 @@ function AttributesC({ life, t, adv }: PageProps) {
                 {!unit && hero && <LevelBonus n={hero.attr} t={t} small />}
               </div>
               <div className="my-1">
-                <Bar value={value} max={top} mark={floor} color={color} height={6} />
+                <Bar value={value} max={statTop(value, top)} mark={floor} color={color} height={6} />
               </div>
               <p className={`${archivo.className} text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
                 {text}

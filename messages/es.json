@@ -8040,7 +8040,7 @@
     "menuExitGame": "Salir del juego",
     "helpTouch3": "Joystick: caminar · Correr: trote lento · Arrastra la pantalla: girar la cámara · Botón: interactuar · Tira de la pestaña derecha: menú",
     "helpDesktop3": "WASD o flechas: caminar · Shift: trote lento · Arrastra: girar la cámara · Rueda: zoom · E: interactuar · M: menú",
-    "stAttrScale2": "De 0 a {max} · marca = piso",
+    "stAttrScale2": "Sin límite · marca = piso",
     "atIntelligenceText2": "Sube estudiando (rinde hasta 5 h al día). Lo que aprende se queda: nunca baja del 90% de su máximo.",
     "atStrengthText2": "Sube entrenando (rinde hasta 4 h al día); whey, creatina, pre-entreno y anabolizante aceleran. Sin entrenar baja hasta el 60% de su máximo.",
     "atSpeedText2": "Sube entrenando. Sin entrenar baja hasta el 60% de su máximo; volver a la cima es más rápido.",

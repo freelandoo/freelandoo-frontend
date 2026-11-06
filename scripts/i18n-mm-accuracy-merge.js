@@ -59,3 +59,12 @@ for (const [loc, keys] of Object.entries(SHEET)) {
   Object.assign(dict.MeuMundo, keys)
   fs.writeFileSync(file, JSON.stringify(dict, null, 2) + "\n")
 }
+
+// Status sem teto (2026-11-06)
+const NOCAP = { "pt-BR": "Sem limite · traço = piso", en: "No limit · mark = floor", es: "Sin límite · marca = piso" }
+for (const [loc, v] of Object.entries(NOCAP)) {
+  const file = path.join(DIR, `${loc}.json`)
+  const dict = JSON.parse(fs.readFileSync(file, "utf8"))
+  dict.MeuMundo.stAttrScale2 = v
+  fs.writeFileSync(file, JSON.stringify(dict, null, 2) + "\n")
+}

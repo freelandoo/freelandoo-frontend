@@ -4,7 +4,7 @@
 // Geral (2026-11-03). Pedido do Alex, com o desenho dele: uma linha por status
 // (moldura dourada, ícone grande, nome em itálico, barra inclinada com marcas,
 // "720 / 1000"), cada uma de uma cor — defesa, ataque, força, inteligência,
-// destreza e velocidade, de 0 a 1000; no cabeçalho a placa NV + HP; no fim,
+// destreza e velocidade, sem teto (a barra vai por faixas de 1000); no cabeçalho a placa NV + HP; no fim,
 // a explicação de onde cada status influencia e como sobe.
 //
 // Força/inteligência/destreza/velocidade = o valor da vida (o mesmo da página
@@ -26,6 +26,8 @@ import { currentUiFx } from "../kit/steam/fx-tier"
 type Tr = (key: string, fallback: string) => string
 
 export const STAT_MAX = 1000
+/** Fim da faixa da barra: 1000, 2000, 3000… (os status não têm teto). */
+export const statTop = (v: number, step = STAT_MAX) => Math.max(step, Math.ceil(v / step) * step)
 const TRILHO = "rgba(4,4,8,.9)"
 const CONTORNO = "rgba(196,200,214,.55)"
 const MOLDURA = "rgba(214,167,91,.55)"
@@ -128,7 +130,8 @@ function Glyph({ color, size, children }: { color: string; size: number; childre
 
 /** Uma linha do desenho do Alex: moldura, ícone, nome, barra e "N / 1000". */
 function StatLine({ row, small }: { row: StatRow; small: boolean }) {
-  const v = Math.round(Math.max(0, Math.min(STAT_MAX, row.value)))
+  const v = Math.round(Math.max(0, row.value))
+  const top = statTop(v)
   const color = COLORS[row.key]
   return (
     <div
@@ -158,10 +161,10 @@ function StatLine({ row, small }: { row: StatRow; small: boolean }) {
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <SlantBar f={v / STAT_MAX} color={color} h={small ? 15 : 24} ticks={small ? 7 : 11} />
+        <SlantBar f={v / top} color={color} h={small ? 15 : 24} ticks={small ? 7 : 11} />
       </div>
       <div className="flex shrink-0 justify-end" style={{ width: small ? 70 : 118 }}>
-        <Value v={v} max={STAT_MAX} size={small ? 16 : 26} />
+        <Value v={v} max={top} size={small ? 16 : 26} />
       </div>
     </div>
   )
