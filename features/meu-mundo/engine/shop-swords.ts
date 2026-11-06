@@ -91,6 +91,9 @@ export function godBow(body: string | null | undefined): ShopSword | null {
   return body ? bowOf(body, GOD_BOWS[body]) : null
 }
 
+/** Arma de fogo na mão: fator sobre o arquivo (fuzil = 1 m). Piso para os menores, depois cresce com a altura. */
+export const gunSize = (height: number) => Math.max(2.2, height * 0.75)
+
 /** Armas de fogo (mm3d-70): build_guns_loja.py. A cor é a do tiro de luz. */
 const GUN_COLORS: Record<string, [string, string]> = {
   sucata: ["#FFB45A", "#FFE6C2"],

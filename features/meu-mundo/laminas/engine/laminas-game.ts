@@ -47,7 +47,7 @@ import { MonsterModel, AXE_URL, AXE_EDGE } from "./monster-view"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { ARCHER_SKINS, clanOfBody, CLAN_WEAPON, GUN_SKINS, SWORD_SKINS, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES, BOW_GRIP_BONES } from "../../engine/weapon-grip"
-import { godBow, godGun, godHeavy, shopBow, shopGun, shopHeavy, shopShield } from "../../engine/shop-swords"
+import { godBow, godGun, godHeavy, gunSize, shopBow, shopGun, shopHeavy, shopShield } from "../../engine/shop-swords"
 import { shineWeapon } from "../../engine/weapon-shine"
 import { LightArrows } from "./light-arrows"
 import { ShieldGrip, SHIELD_BONES } from "../../engine/shield-grip"
@@ -274,9 +274,6 @@ const SWORD_LEN = 1.065
 const STAFF_LEN = 1.553
 /** Arco na mão, em metros (o arquivo tem 1 m). */
 const BOW_LEN = 2.4
-/** Arma de fogo na mão: fator sobre o arquivo (fuzil = 1 m). Piso para os menores, depois cresce com a altura. */
-const GUN_MIN = 2.2
-const GUN_PER_M = 0.75
 const CAM_DIST = 6.4
 const CAM_H = 3.3
 const FOV = 0.9
@@ -488,7 +485,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       if (clan === "vampiro") grip.root.scaling.setAll((adult || SWORD_SKINS.includes(opts.body) ? 3 : 1.8) / SWORD_LEN)
       else if (gun) {
         // pedido do Alex: quanto mais alto o personagem, maior a arma; já grande para os menores
-        grip.root.scaling.setAll(Math.max(GUN_MIN, hero.height * GUN_PER_M))
+        grip.root.scaling.setAll(gunSize(hero.height))
         // o glTF chega com o X invertido: meia-volta deixa o cano para a frente
         const turn = new TransformNode("laminas-gun-turn", scene)
         turn.parent = grip.root

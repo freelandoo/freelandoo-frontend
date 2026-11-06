@@ -42,6 +42,7 @@ import { createHitFeedback } from "./hit-feedback"
 import { PaintGun } from "./gun"
 import { attachPaintInput, clearPaintInput, createPaintInput, createReticle, paintMoveAxis, paintWantsRun, type PaintInput } from "./paint-input"
 import type { PaintPort, RemoteSample } from "./port"
+import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
@@ -202,12 +203,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   // Brilho do neon das armas (mm3d-46): só o que as armas pedem entra.
   const glow = lowEnd ? null : new GlowLayer("paint-gun-glow", scene, { mainTextureRatio: 0.5, blurKernelSize: 32 })
   if (glow) glow.intensity = 0.85
-  const glowGun = (g: PaintGun) => {
-    if (glow) for (const m of g.glowMeshes) glow.addIncludedOnlyMesh(m)
-  }
+  const glowGun = (m: AbstractMesh) => glow?.addIncludedOnlyMesh(m as Mesh)
   if (glow) for (const m of paint.glowMeshes) glow.addIncludedOnlyMesh(m)
-  const gun = new PaintGun(scene)
-  glowGun(gun)
+  const gun = new PaintGun(scene, glowGun)
   // Ao lado do peito, apontando para a frente (a pose de mira com a mão vem com as animações do Paint).
   gun.root.parent = char.holder
   gun.root.position.set(0.3, 1.12, 0.32)
@@ -555,8 +553,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         const info = port.info(p.slot)
         if (!info) continue
         const c = new Character(scene, lib, mats, info.body, info.name, false, info.look ?? "")
-        const g = new PaintGun(scene)
-        glowGun(g)
+        const g = new PaintGun(scene, glowGun)
         g.root.parent = c.holder
         g.root.position.set(0.3, 1.12, 0.32)
         const ring = CreateTorus(`paint-ring-${p.slot}`, { diameter: 1.05, thickness: 0.06, tessellation: 24 }, scene)
