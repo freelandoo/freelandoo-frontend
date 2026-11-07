@@ -17,6 +17,24 @@ export function preloadCutIn(src: string) {
   img.src = src
 }
 
+/** Clarão do impacto: a tela inteira acende e desfaz em manchas de cor. Só opacity e transform. */
+export function playFlash(layer: HTMLElement) {
+  const el = document.createElement("div")
+  el.style.cssText =
+    "position:absolute;inset:-8%;will-change:transform,opacity;background:radial-gradient(circle at 58% 46%,#fff 0,#ffe3ec 16%,transparent 44%),radial-gradient(circle at 26% 28%,rgba(178,107,255,.9),transparent 32%),radial-gradient(circle at 82% 70%,rgba(211,23,63,.95),transparent 38%),radial-gradient(circle at 72% 18%,rgba(255,90,140,.8),transparent 26%),rgba(120,6,36,.5)"
+  layer.appendChild(el)
+  const anim = el.animate(
+    [
+      { transform: "scale(1)", opacity: 1 },
+      { transform: "scale(1.06)", opacity: 0.92, offset: 0.2 },
+      { transform: "scale(1.24)", opacity: 0 },
+    ],
+    { duration: 520, easing: "ease-out" },
+  )
+  anim.onfinish = () => el.remove()
+  anim.oncancel = () => el.remove()
+}
+
 export function playCutIn(layer: HTMLElement, o: CutIn) {
   const narrow = layer.clientWidth < layer.clientHeight
   const h = Math.round(layer.clientHeight * (narrow ? 0.15 : 0.26))

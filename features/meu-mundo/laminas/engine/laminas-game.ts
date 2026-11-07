@@ -63,7 +63,7 @@ import { probeNote } from "../../crash-probe"
 import { FxStage } from "../../engine/fx/fx-core"
 import { AbilityDirector } from "../abilities/director"
 import { bloodCut, BLOOD_TUNE } from "../abilities/blood-cut"
-import { playCutIn, preloadCutIn } from "../abilities/cut-in"
+import { playCutIn, playFlash, preloadCutIn } from "../abilities/cut-in"
 import { abilityKit } from "../abilities/registry"
 
 export interface LaminasHud {
@@ -888,6 +888,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         cutIn: () => playCutIn(layer, { src: cutInArt, name: opts.labels?.bloodCut ?? "Golpe de Sangue", color: "#a3102f", eyes: CUT_EYES[opts.body] ?? [0.25, 0.5] }),
         shake: (n) => (shake = Math.max(shake, calm ? n * 0.3 : n)),
         hitStop: (t) => (hitStop = Math.max(hitStop, calm ? 0 : t)),
+        pace: () => director.scale(),
+        flash: () => {
+          if (!calm) playFlash(layer)
+        },
         dim: (k) => {
           hemi.intensity = light0.hemi * k
           sun.intensity = light0.sun * k
@@ -1137,6 +1141,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let ran = 0
   let hudAt = 0
   let readyFired = false
+  let heroBound = false
   let held = !!opts.hold
   const frame = (ms: number) => {
     const realDt = Math.min(ms / 1000, 0.1)
@@ -1413,6 +1418,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       })
     }
     governor.tick(ms)
+    // a luz do apagão só pega no corpo e na arma: liga quando os dois existem
+    if (blood && !heroBound && hero.hasAvatar && grip) {
+      heroBound = true
+      blood.bind([...hero.bodyMeshes, ...grip.root.getChildMeshes(false)])
+    }
     if (!readyFired && hero.hasAvatar) {
       readyFired = true
       opts.onReady?.()
@@ -1517,6 +1527,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       canvas.removeEventListener("pointerdown", click)
       canvas.removeEventListener("contextmenu", noMenu)
       director.dispose()
+      blood?.dispose()
       fxStage.dispose()
       layer.remove()
       delete w.__laminas

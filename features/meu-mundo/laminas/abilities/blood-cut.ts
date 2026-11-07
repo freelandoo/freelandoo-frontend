@@ -3,47 +3,58 @@
 // A mecânica é a do poder de lâmina em sim/fight.ts, sem mudança: cone à frente (bladeRange,
 // bladeArc), dano em POWER.fireAt, cura e sem levar golpe. Este arquivo é só a apresentação.
 //
-//   preparação  coração bate, círculo de luas abre no chão, o mundo escurece, close no rosto
-//   carga       asas de sangue abrem nas costas, gotas sobem em espiral até a lâmina
-//   antecipação a câmera sobe para o lado, as asas fecham e queimam, o tempo quase para
-//   golpe       a LUA (malha com volume, corpo opaco) sai da lâmina na diagonal e cresce
-//   impacto     no passo do dano: onda, rachaduras e espinhos saindo do chão pelo cone
+//   preparação  APAGÃO: o mundo vai para o preto e só o corpo fica aceso; cut-in e círculo de luas
+//   carga       asas de energia abrem nas costas, faíscas fecham na lâmina, a luz cresce nela
+//   antecipação o mundo volta, a câmera sobe para o lado, as asas se desfazem, o tempo quase para
+//   golpe       a LUA sai da lâmina na diagonal e cresce até tomar a tela
+//   impacto     no passo do dano: clarão de tela cheia, estrela, onda, rachaduras, espinhos,
+//               destroços pretos, névoa e faíscas
 //   resto       a lua segue voando e se desfaz, o sangue volta de quem foi atingido
 //
-// A arena é clara: luz somada estoura em branco e apaga a forma (era o poder antigo). Aqui
-// o corpo de cada peça é escuro e opaco e só a borda acende.
+// COMO É DESENHADO. Nenhuma peça tem contorno: a forma sai de ruído erodido (abilities/fx,
+// por pipeline/laminas/abilities/build_blood_textures.py) passando por uma rampa de cor, com
+// a borda se desfazendo. O brilho é pré-multiplicado: a mesma peça cobre o fundo com sangue
+// escuro e soma luz por cima. A arena é clara, e luz só somada estoura em branco.
 
 import type { Scene } from "@babylonjs/core/scene"
-import { Color3 } from "@babylonjs/core/Maths/math.color"
+import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
+import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder"
+import { CreatePolyhedron } from "@babylonjs/core/Meshes/Builders/polyhedronBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
+import { PointLight } from "@babylonjs/core/Lights/pointLight"
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { FresnelParameters } from "@babylonjs/core/Materials/fresnelParameters"
 import { Effect } from "@babylonjs/core/Materials/effect"
+import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
+import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
+import "@babylonjs/core/Particles/particleSystemComponent"
 import { Constants } from "@babylonjs/core/Engines/constants"
 import "@babylonjs/core/Meshes/thinInstanceMesh"
 import { POWER } from "../sim/fight"
 import type { BoxeAudio } from "../engine/audio"
 import type { BoxeClip } from "../../engine/avatars"
 import type { FxBuilder, FxContext, FxEffect, FxStage } from "../../engine/fx/fx-core"
-import type { Vfx, VfxColor } from "../../engine/vfx"
+import type { Vfx } from "../../engine/vfx"
 import type { AbilityScript, Subject } from "./director"
 
 /** Ajustes do laboratório (harness); os valores daqui são os que valem no jogo. */
 export const BLOOD_TUNE = { density: 1, gain: 1 }
 
-const DEEP = new Color3(0.1, 0.004, 0.03)
-const BLOOD = new Color3(0.62, 0.02, 0.12)
-const HOT = new Color3(1, 0.2, 0.42)
-/** Borda: o violeta dos olhos e do cristal dos vampiros. */
+const ART = "/meu-mundo/laminas/abilities/fx"
+const DEEP = new Color3(0.13, 0.005, 0.05)
+const BLOOD = new Color3(0.72, 0.03, 0.16)
+const HOT = new Color3(1, 0.22, 0.42)
+/** Violeta dos olhos e do cristal dos vampiros. */
 const EDGE = new Color3(0.72, 0.3, 1)
-const SPARK: VfxColor = { main: new Color3(0.85, 0.05, 0.2), edge: EDGE }
 
 const FIRE_AT = POWER.fireAt
 /** Até quando as sobras ficam na tela, depois que a pessoa já voltou a jogar (s). */
@@ -52,11 +63,12 @@ const FX_END = POWER.dur + 0.35
 const MOON_FROM = 0.73
 const MOON_END = 1.22
 /** Raio da lua: no nascimento, no dano e no fim do voo (m). */
-const MOON_R = [1.3, 3.5, 4.5]
+const MOON_R = [1.8, 5.2, 7.4]
 /** Quanto ela avança à frente: no nascimento, no dano e no fim do voo (m). */
 const MOON_Z = [0.8, POWER.bladeRange * 0.55, POWER.bladeRange + 3.4]
 /** Inclinação do corte (rad). */
 const MOON_ROLL = 0.72
+const MOON_SPAN = 1.18
 const WING_FINGERS = 5
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
@@ -74,35 +86,26 @@ uniform mat4 world;
 uniform mat4 viewProjection;
 uniform float uOpen;
 uniform float uTime;
-varying vec3 vP;
-varying vec3 vN;
 varying vec2 vUV;
 void main() {
   vec3 p = position;
-  vec3 n = normal;
 #ifdef WING
   // As asas abrem aqui: cada dedo gira do ombro e a membrana acompanha, sem refazer a malha.
   float side = sign(position.x);
   float u = uv.x;
   float v = uv.y;
   float ang = mix(1.5, mix(1.28, -0.8, u), uOpen);
-  float scallop = pow(abs(sin(u * ${WING_FINGERS}.0 * 3.14159)), 1.4) * 0.26 * v * v;
-  float len = (1.0 - 0.34 * u) * (1.0 - scallop) * (0.3 + 0.7 * uOpen);
+  float len = (1.0 - 0.34 * u) * (0.3 + 0.7 * uOpen);
   float r = v * len;
   float flap = 0.08 * sin(uTime * 7.0 + v * 3.0 + u * 2.0) * v;
   p = vec3(side * cos(ang) * r, sin(ang) * r, -0.42 * v * v * (1.0 - 0.5 * u) + flap);
-  n = vec3(0.0, 0.0, 1.0);
 #endif
-  vec4 w = world * vec4(p, 1.0);
-  vP = w.xyz;
-  vN = normalize(mat3(world) * n);
   vUV = uv;
-  gl_Position = viewProjection * w;
+  gl_Position = viewProjection * (world * vec4(p, 1.0));
 }`
 
 const FRAGMENT = /* glsl */ `
 precision highp float;
-uniform vec3 uEye;
 uniform vec3 uDeep;
 uniform vec3 uBlood;
 uniform vec3 uHot;
@@ -110,78 +113,108 @@ uniform vec3 uEdge;
 uniform float uTime;
 uniform float uFade;
 uniform float uCut;
-uniform float uHead;
 uniform float uR;
 uniform float uGain;
+uniform sampler2D uNoise;
 uniform sampler2D uTex;
-varying vec3 vP;
-varying vec3 vN;
 varying vec2 vUV;
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float noise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+// A rampa: escuro → sangue → quente → quase branco. Toda peça passa por aqui.
+vec3 ramp(float x) {
+  vec3 c = mix(uDeep, uBlood, smoothstep(0.0, 0.38, x));
+  c = mix(c, uHot, smoothstep(0.34, 0.72, x));
+  return mix(c, vec3(1.0, 0.88, 0.93), smoothstep(0.74, 1.0, x));
 }
-float fbm(vec2 p) { return noise(p) * 0.6 + noise(p * 2.1 + 3.7) * 0.3 + noise(p * 4.3 + 9.1) * 0.1; }
 void main() {
+  // rgb já multiplicado: o alfa cobre o fundo, o que passar dele é luz somada
   vec4 outc = vec4(0.0);
-#ifdef SICKLE
-  // Corpo opaco: o sangue corre pela lâmina, a borda de corte acende, some queimando.
-  vec3 V = normalize(uEye - vP);
-  float rim = pow(1.0 - abs(dot(normalize(vN), V)), 2.2);
-  float n = fbm(vec2(vUV.x * 9.0 - uTime * 3.2, vUV.y * 3.0));
-  if (n < uCut) discard;
-  float burn = uCut > 0.001 ? smoothstep(uCut + 0.1, uCut, n) : 0.0;
-  float edge = smoothstep(0.2, 0.0, min(vUV.y, 1.0 - vUV.y));
-  // fios de energia correndo pelo arco: é o que tira a cara de peça sólida
-  float streak = fbm(vec2(vUV.x * 30.0 - uTime * 9.0, vUV.y * 2.2 + 1.7));
-  vec3 c = mix(uDeep, uBlood, smoothstep(0.3, 0.75, n));
-  c = mix(c, uHot, smoothstep(0.5, 0.74, streak) * 0.9);
-  c = mix(c, uHot, pow(rim, 1.6) * 0.5);
-  c = mix(c, uEdge + 0.3, edge * 0.9);
-  c = mix(c, uHot + 0.2, burn);
-  outc = vec4(c * uGain, 1.0);
+#ifdef MOON
+  float u = vUV.x;
+  float y = vUV.y;
+  float tip = pow(sin(3.14159 * clamp(u, 0.0, 1.0)), 0.7);
+  float fiber = texture2D(uNoise, vec2(y * 0.8 + 0.1, u * 1.3 - uTime * 1.5)).g;
+  float cloud = texture2D(uNoise, vec2(u * 1.1 - uTime * 0.5, y * 0.8)).r;
+  float yy = max(y, 0.0);
+  float blade = exp(-yy * 24.0) * 1.2;
+  float inner = pow(1.0 - clamp(yy, 0.0, 1.0), 2.1);
+  float wisp = 0.38 + 0.62 * smoothstep(0.26, 0.8, fiber * 0.72 + cloud * 0.5);
+  float v = (blade + inner * wisp * 0.95) * tip;
+  v -= uCut * (0.45 + 1.0 * (1.0 - cloud));
+  float inside = step(0.0, y);
+  float body = smoothstep(0.05, 0.32, v) * inside;
+  float halo = (1.0 - inside) * exp(y * 15.0) * 0.5 * tip * (1.0 - uCut);
+  float light = smoothstep(0.2, 0.95, v) * inside + halo;
+  vec3 c = ramp(min(v, 1.0));
+  c = mix(c, uEdge, (1.0 - inside) * 0.55 + smoothstep(0.55, 0.95, yy) * 0.35);
+  outc = vec4(c * (body * 0.75 + light) * uGain, body * 0.8 * (1.0 - 0.45 * smoothstep(0.6, 1.0, v))) * uFade;
+#endif
+#ifdef WAKE
+  // Fios que saem da lua e somem para trás; u corre o arco, v vai da lua ao fim.
+  float tip = pow(sin(3.14159 * vUV.x), 0.8);
+  float fiber = texture2D(uNoise, vec2(vUV.y * 0.5, vUV.x * 2.6 + uTime * 0.2)).g;
+  float tail = pow(1.0 - vUV.y, 1.5);
+  float v = smoothstep(0.5, 0.95, fiber + 0.25 * tail) * tail * tip;
+  outc = vec4(ramp(v) * v * 1.4 * uGain, v * 0.3) * uFade;
 #endif
 #ifdef WING
-  float n = fbm(vec2(vUV.x * 7.0, vUV.y * 5.0 - uTime * 1.3));
-  if (n < uCut) discard;
-  float rib = smoothstep(0.1, 0.0, abs(fract(vUV.x * ${WING_FINGERS}.0 + 0.5) - 0.5));
-  float rim = smoothstep(0.72, 1.0, vUV.y);
-  vec3 c = mix(uDeep, uBlood, n);
-  c = mix(c, uHot, rib * 0.55);
-  c = mix(c, uEdge, rim * 0.8);
-  outc = vec4(c * uGain, (0.82 + 0.18 * rib) * uFade);
-#endif
-#ifdef SWEEP
-  // Rastro: fios que saem da lua e somem para trás; u corre o arco, v vai da lua ao fim.
-  float tip = pow(sin(vUV.x * 3.14159), 0.8);
-  float n = fbm(vec2(vUV.x * 34.0, vUV.y * 1.6 + uTime * 2.4));
-  float tail = pow(1.0 - vUV.y, 1.6);
-  float a = smoothstep(0.34, 0.74, n + 0.3 * (1.0 - vUV.y)) * tail * tip;
-  outc = vec4(mix(uBlood, uHot, tail * 0.8) * uGain, a * uFade);
+  float u = vUV.x;
+  float v = vUV.y;
+  float veins = texture2D(uNoise, vec2(u * 0.42, v * 0.3 - uTime * 0.06)).b;
+  float cloud = texture2D(uNoise, vec2(u * 1.2 + 0.3, v * 0.9 - uTime * 0.35)).r;
+  float fiber = texture2D(uNoise, vec2(u * 2.0, v * 0.6 - uTime * 0.6)).g;
+  float rib = smoothstep(0.14, 0.0, abs(fract(u * ${WING_FINGERS}.0 + 0.5) - 0.5)) * (1.0 - 0.6 * v);
+  // a ponta não tem borda: vira fumaça conforme o ruído
+  float end = smoothstep(1.0, 0.6, v + (cloud - 0.5) * 0.6) * smoothstep(0.0, 0.1, v);
+  float memb = end * (0.5 + 0.5 * fiber) - uCut * (1.3 - cloud);
+  float body = smoothstep(0.03, 0.5, memb);
+  float val = 0.16 + cloud * 0.22 + veins * 0.35 + rib * 0.62;
+  float light = (veins * 0.3 + rib * 0.85 + smoothstep(0.55, 0.9, cloud) * 0.16) * body;
+  vec3 c = mix(ramp(val), uEdge, smoothstep(0.5, 0.95, v) * 0.6);
+  outc = vec4(c * (body * 0.55 + light) * uGain, body * 0.78) * uFade;
 #endif
 #ifdef RING
-  // Onda no chão: anel fino, com o lado de dentro rasgado.
   float r = length(vUV - 0.5) * 2.0;
-  float ang = atan(vUV.y - 0.5, vUV.x - 0.5);
-  float n = fbm(vec2(ang * 3.0, r * 4.0 - uTime));
-  float band = smoothstep(uR - 0.07 - 0.12 * n, uR - 0.01, r) * smoothstep(uR + 0.012, uR - 0.004, r);
-  outc = vec4(mix(uDeep, uHot, band * band) * uGain, band * 0.85 * uFade);
+  float ang = atan(vUV.y - 0.5, vUV.x - 0.5) / 6.2832;
+  float n = texture2D(uNoise, vec2(ang * 2.0, r * 0.6 - uTime * 0.3)).r;
+  float band = smoothstep(uR - 0.05 - 0.16 * n, uR - 0.006, r) * smoothstep(uR + 0.008, uR - 0.002, r);
+  band *= 0.55 + 0.45 * n;
+  outc = vec4(ramp(band * 0.72) * band * 0.85 * uGain, band * 0.5) * uFade;
 #endif
 #ifdef DECAL
-  // Desenho no chão: aparece do centro para fora (uR) e pulsa.
+  // Desenho no chão: traço nítido no R, brilho no G; abre do centro e a frente da abertura acende.
   float r = length(vUV - 0.5) * 2.0;
   vec4 t = texture2D(uTex, vUV);
-  float show = smoothstep(uR, uR - 0.08, r);
-  float pulse = 0.75 + 0.25 * sin(uTime * 9.0 - r * 10.0);
-  outc = vec4(mix(uBlood, uHot, t.a * pulse) * uGain, t.a * show * uFade);
+  float n = texture2D(uNoise, vUV * 1.4 + vec2(uTime * 0.05, -uTime * 0.08)).r;
+  float show = smoothstep(uR, uR - 0.1, r);
+  float front = smoothstep(uR - 0.2, uR - 0.06, r) * show;
+  float line = t.r;
+  float glow = t.g * (0.6 + 0.6 * n);
+  vec3 c = ramp(0.4 + line * 0.55 + front * 0.3);
+  outc = vec4(c * (line * 1.25 + glow * 0.75) * show * uGain, (line * 0.85 + glow * 0.3) * show) * uFade;
+#endif
+#ifdef POOL
+  // Mancha no chão: escurece a areia em volta e a luz do círculo fica de pé.
+  float r = length(vUV - 0.5) * 2.0;
+  float n = texture2D(uNoise, vUV * 0.9 + uTime * 0.02).r;
+  float a = smoothstep(uR, uR * 0.25, r + (n - 0.5) * 0.3);
+  outc = vec4(uBlood * a * 0.16 * uGain, a * 0.62) * uFade;
+#endif
+#ifdef FLASH
+  // Estrela do impacto: pontas desiguais a partir do ruído, miolo branco.
+  vec2 p = vUV - 0.5;
+  float r = length(p) * 2.0;
+  float ang = atan(p.y, p.x) / 6.2832 + 0.5;
+  float s = texture2D(uNoise, vec2(ang * 3.0, 0.37)).g;
+  float spike = 0.16 + 0.84 * pow(s, 3.2);
+  float rays = smoothstep(spike, 0.0, r);
+  float v = rays * 0.9 + exp(-r * 8.0);
+  outc = vec4(mix(ramp(min(v, 1.0)), uEdge, smoothstep(0.1, 0.8, r) * 0.5) * v * 1.5 * uGain, smoothstep(0.1, 0.7, v) * 0.45) * uFade;
 #endif
   gl_FragColor = outc;
 }`
 
-function shaderOf(scene: Scene, name: string, kind: "SICKLE" | "WING" | "SWEEP" | "RING" | "DECAL", alpha: boolean) {
+type ShaderKind = "MOON" | "WAKE" | "WING" | "RING" | "DECAL" | "POOL" | "FLASH"
+
+function shaderOf(scene: Scene, name: string, kind: ShaderKind, noise: Texture) {
   Effect.ShadersStore.mmBloodVertexShader = VERTEX
   Effect.ShadersStore.mmBloodFragmentShader = FRAGMENT
   const m = new ShaderMaterial(
@@ -190,79 +223,67 @@ function shaderOf(scene: Scene, name: string, kind: "SICKLE" | "WING" | "SWEEP" 
     { vertex: "mmBlood", fragment: "mmBlood" },
     {
       attributes: ["position", "normal", "uv"],
-      uniforms: ["world", "viewProjection", "uEye", "uDeep", "uBlood", "uHot", "uEdge", "uTime", "uFade", "uCut", "uHead", "uR", "uGain", "uOpen"],
-      samplers: ["uTex"],
+      uniforms: ["world", "viewProjection", "uDeep", "uBlood", "uHot", "uEdge", "uTime", "uFade", "uCut", "uR", "uGain", "uOpen"],
+      samplers: ["uNoise", "uTex"],
       defines: [`#define ${kind}`],
-      needAlphaBlending: alpha,
+      needAlphaBlending: true,
     },
   )
   m.backFaceCulling = false
+  m.alphaMode = Constants.ALPHA_PREMULTIPLIED
+  m.disableDepthWrite = true
   m.setColor3("uDeep", DEEP)
   m.setColor3("uBlood", BLOOD)
   m.setColor3("uHot", HOT)
   m.setColor3("uEdge", EDGE)
-  for (const [k, v] of [["uFade", 1], ["uCut", 0], ["uHead", 1], ["uR", 1], ["uGain", 1], ["uOpen", 0], ["uTime", 0]] as const) m.setFloat(k, v)
-  if (alpha) {
-    m.alphaMode = Constants.ALPHA_COMBINE
-    m.disableDepthWrite = true
-  }
+  m.setTexture("uNoise", noise)
+  m.setTexture("uTex", noise)
+  for (const [k, v] of [["uFade", 1], ["uCut", 0], ["uR", 1], ["uGain", 1], ["uOpen", 0], ["uTime", 0]] as const) m.setFloat(k, v)
   return m
 }
 
-/** A foice: arco fechado com seção em losango; afina até virar ponta nos dois lados. */
-function sickleMesh(scene: Scene) {
-  const N = 44
-  const span = 1.02
-  const ring: [number, number, number][] = [
-    [0.56, 0, 0],
-    [0.12, 0.8, 0.25],
-    [-0.38, 1, 0.42],
-    [-0.46, 0, 0.5],
-    [-0.38, -1, 0.58],
-    [0.12, -0.8, 0.75],
-    [0.56, 0, 1],
-  ]
-  const pos: number[] = []
-  const uv: number[] = []
-  const idx: number[] = []
-  for (let i = 0; i <= N; i++) {
-    const u = i / N
-    const a = -span + 2 * span * u
-    const taper = Math.pow(Math.sin(Math.PI * u), 0.72)
-    const R = 1 - 0.1 * (1 - taper)
-    const w = 0.36 * taper + 0.003
-    const h = 0.07 * taper + 0.002
-    for (const [dr, dy, v] of ring) {
-      const r = R + dr * w
-      pos.push(Math.sin(a) * r, dy * h, Math.cos(a) * r)
-      uv.push(u, v)
-    }
-  }
-  const M = ring.length
-  for (let i = 0; i < N; i++)
-    for (let j = 0; j < M - 1; j++) {
-      const a = i * M + j
-      const b = a + M
-      idx.push(a, b, a + 1, a + 1, b, b + 1)
-    }
-  const normals: number[] = []
-  VertexData.ComputeNormals(pos, idx, normals)
-  const m = new Mesh("bc-sickle", scene)
-  Object.assign(new VertexData(), { positions: pos, indices: idx, uvs: uv, normals }).applyToMesh(m)
-  return m
-}
-
-/** Rastro da lua: casca que parte do arco e vai para trás (y −1). u corre o arco, v vai para trás. */
-function wakeMesh(scene: Scene) {
-  const N = 36
-  const span = 1.02
+/** A lua: fita em arco. y = 0 é o fio de corte, y > 0 entra na lua, y < 0 é o halo por fora. */
+function moonMesh(scene: Scene, name: string) {
+  const N = 56
+  const rows = [-0.24, -0.1, -0.02, 0, 0.03, 0.08, 0.16, 0.3, 0.5, 0.75, 1]
   const pos: number[] = []
   const uv: number[] = []
   const nor: number[] = []
   const idx: number[] = []
   for (let i = 0; i <= N; i++) {
     const u = i / N
-    const a = -span + 2 * span * u
+    const a = -MOON_SPAN + 2 * MOON_SPAN * u
+    const taper = Math.pow(Math.sin(Math.PI * u), 0.8)
+    for (const y of rows) {
+      const r = 1 - y * 0.74 * taper
+      // a fita bojuda dá volume sem precisar de borda dura
+      pos.push(Math.sin(a) * r, 0.16 * y * taper, Math.cos(a) * r)
+      uv.push(u, y)
+      nor.push(0, 1, 0)
+    }
+  }
+  const M = rows.length
+  for (let i = 0; i < N; i++)
+    for (let j = 0; j < M - 1; j++) {
+      const a = i * M + j
+      const b = a + M
+      idx.push(a, b, a + 1, a + 1, b, b + 1)
+    }
+  const m = new Mesh(name, scene)
+  Object.assign(new VertexData(), { positions: pos, indices: idx, uvs: uv, normals: nor }).applyToMesh(m)
+  return m
+}
+
+/** Rastro da lua: casca que parte do arco e vai para trás (y −1). */
+function wakeMesh(scene: Scene) {
+  const N = 40
+  const pos: number[] = []
+  const uv: number[] = []
+  const nor: number[] = []
+  const idx: number[] = []
+  for (let i = 0; i <= N; i++) {
+    const u = i / N
+    const a = -MOON_SPAN + 2 * MOON_SPAN * u
     for (const v of [0, 1]) {
       pos.push(Math.sin(a), -v, Math.cos(a))
       uv.push(u, v)
@@ -277,8 +298,8 @@ function wakeMesh(scene: Scene) {
 
 /** As duas asas numa malha só (um desenho). A forma sai do shader; aqui só a grade. */
 function wingsMesh(scene: Scene) {
-  const U = WING_FINGERS * 4
-  const V = 8
+  const U = WING_FINGERS * 8
+  const V = 12
   const pos: number[] = []
   const uv: number[] = []
   const nor: number[] = []
@@ -305,86 +326,6 @@ function wingsMesh(scene: Scene) {
   return m
 }
 
-function canvasTexture(scene: Scene, name: string, draw: (g: CanvasRenderingContext2D, s: number) => void) {
-  const s = 512
-  const t = new DynamicTexture(name, { width: s, height: s }, scene, true)
-  const g = t.getContext() as CanvasRenderingContext2D
-  g.clearRect(0, 0, s, s)
-  draw(g, s)
-  t.hasAlpha = true
-  t.update()
-  return t
-}
-
-/** Círculo de luas: duas voltas, doze luas crescentes e seis lâminas apontando para dentro. */
-function drawRune(g: CanvasRenderingContext2D, s: number) {
-  const c = s / 2
-  g.strokeStyle = g.fillStyle = "#fff"
-  for (const [r, w] of [[0.97, 7], [0.9, 2], [0.56, 3], [0.5, 1.5]] as const) {
-    g.lineWidth = w
-    g.beginPath()
-    g.arc(c, c, c * r, 0, Math.PI * 2)
-    g.stroke()
-  }
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2
-    const x = c + Math.cos(a) * c * 0.73
-    const y = c + Math.sin(a) * c * 0.73
-    g.save()
-    g.translate(x, y)
-    g.rotate(a + Math.PI / 2)
-    g.beginPath()
-    g.arc(0, 0, 26, 0.5, Math.PI * 2 - 0.5)
-    g.arc(13, 0, 21, Math.PI * 2 - 1.05, 1.05, true)
-    g.closePath()
-    g.fill()
-    g.restore()
-  }
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2 + 0.26
-    g.save()
-    g.translate(c, c)
-    g.rotate(a)
-    g.beginPath()
-    g.moveTo(0, -c * 0.5)
-    g.lineTo(13, -c * 0.2)
-    g.lineTo(0, -c * 0.08)
-    g.lineTo(-13, -c * 0.2)
-    g.closePath()
-    g.fill()
-    g.restore()
-  }
-}
-
-/** Rachaduras em leque, do centro para a frente (topo da imagem = +z). */
-function drawCracks(g: CanvasRenderingContext2D, s: number) {
-  const c = s / 2
-  let seed = 7
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647
-  g.strokeStyle = "#fff"
-  g.lineCap = "round"
-  const branch = (x: number, y: number, a: number, len: number, w: number) => {
-    if (len < 18 || w < 0.8) return
-    let px = x
-    let py = y
-    let ang = a
-    const parts = 5
-    g.lineWidth = w
-    g.beginPath()
-    g.moveTo(px, py)
-    for (let i = 0; i < parts; i++) {
-      ang += (rnd() - 0.5) * 0.7
-      px += Math.sin(ang) * (len / parts)
-      py -= Math.cos(ang) * (len / parts)
-      g.lineTo(px, py)
-    }
-    g.stroke()
-    branch(px, py, ang + 0.5 + rnd() * 0.3, len * 0.62, w * 0.66)
-    branch(px, py, ang - 0.5 - rnd() * 0.3, len * 0.62, w * 0.66)
-  }
-  for (let i = 0; i < 9; i++) branch(c, c, -1 + (i / 8) * 2 + (rnd() - 0.5) * 0.1, 92 + rnd() * 40, 7)
-}
-
 export interface BloodRig {
   stage: FxStage
   vfx: Vfx
@@ -398,6 +339,10 @@ export interface BloodRig {
   hitStop: (s: number) => void
   /** Luz do mundo (1 = normal). */
   dim: (k: number) => void
+  /** Ritmo da apresentação: as partículas andam nele. */
+  pace: () => number
+  /** Clarão de tela cheia no impacto. */
+  flash: () => void
 }
 
 interface Live {
@@ -419,86 +364,221 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
   const { scene, budget } = ctx
   const k = budget.particles * BLOOD_TUNE.density
   const dropN = Math.max(10, Math.round(44 * k))
-  const thornN = Math.max(9, Math.round(30 * Math.sqrt(k)))
+  const thornN = Math.max(12, Math.round(38 * Math.sqrt(k)))
+
+  const noise = new Texture(`${ART}/noise.webp`, scene)
+  const runeTex = new Texture(`${ART}/rune.webp`, scene)
+  const crackTex = new Texture(`${ART}/crack.webp`, scene)
+  const smokeTex = new Texture(`${ART}/smoke.webp`, scene)
+  for (const t of [runeTex, crackTex]) t.wrapU = t.wrapV = Texture.CLAMP_ADDRESSMODE
 
   // a lua fica de pé dentro do nó: o nó dá a direção e a inclinação do corte
   const moon = new TransformNode("bc-moon", scene)
-  const sickle = sickleMesh(scene)
-  const sickleMat = shaderOf(scene, "bc-sickle-mat", "SICKLE", false)
-  sickle.material = sickleMat
-  sickle.parent = moon
-  sickle.rotation.x = -Math.PI / 2
-  const sweep = wakeMesh(scene)
-  const sweepMat = shaderOf(scene, "bc-sweep-mat", "SWEEP", true)
-  sweep.material = sweepMat
-  sweep.parent = moon
-  sweep.rotation.x = -Math.PI / 2
+  const blade = moonMesh(scene, "bc-blade")
+  const bladeMat = shaderOf(scene, "bc-blade-mat", "MOON", noise)
+  blade.material = bladeMat
+  const ghost = moonMesh(scene, "bc-ghost")
+  const ghostMat = shaderOf(scene, "bc-ghost-mat", "MOON", noise)
+  ghost.material = ghostMat
+  const wake = wakeMesh(scene)
+  const wakeMat = shaderOf(scene, "bc-wake-mat", "WAKE", noise)
+  wake.material = wakeMat
+  for (const m of [blade, ghost, wake]) {
+    m.parent = moon
+    m.rotation.x = -Math.PI / 2
+  }
   const wings = wingsMesh(scene)
-  const wingMat = shaderOf(scene, "bc-wings-mat", "WING", true)
+  const wingMat = shaderOf(scene, "bc-wings-mat", "WING", noise)
   wings.material = wingMat
   const ring = CreateGround("bc-ring", { width: 2, height: 2 }, scene)
-  const ringMat = shaderOf(scene, "bc-ring-mat", "RING", true)
+  const ringMat = shaderOf(scene, "bc-ring-mat", "RING", noise)
   ring.material = ringMat
-  const runeTex = canvasTexture(scene, "bc-rune-tex", drawRune)
+  const pool = CreateGround("bc-pool", { width: 2, height: 2 }, scene)
+  const poolMat = shaderOf(scene, "bc-pool-mat", "POOL", noise)
+  pool.material = poolMat
   const rune = CreateGround("bc-rune", { width: 2, height: 2 }, scene)
-  const runeMat = shaderOf(scene, "bc-rune-mat", "DECAL", true)
+  const runeMat = shaderOf(scene, "bc-rune-mat", "DECAL", noise)
   runeMat.setTexture("uTex", runeTex)
   rune.material = runeMat
-  const crackTex = canvasTexture(scene, "bc-crack-tex", drawCracks)
   const crack = CreateGround("bc-crack", { width: 2, height: 2 }, scene)
-  const crackMat = shaderOf(scene, "bc-crack-mat", "DECAL", true)
+  const crackMat = shaderOf(scene, "bc-crack-mat", "DECAL", noise)
   crackMat.setTexture("uTex", crackTex)
   crack.material = crackMat
+  const flash = CreatePlane("bc-flash", { size: 2 }, scene)
+  const flashMat = shaderOf(scene, "bc-flash-mat", "FLASH", noise)
+  flash.material = flashMat
+  flash.billboardMode = Mesh.BILLBOARDMODE_ALL
 
-  // espinhos: cristal facetado, com luz da cena (têm volume de verdade)
+  // espinhos: cristal facetado escuro, a borda acende pelo ângulo e a luz da cena bate neles
   const thorn = CreateCylinder("bc-thorn", { height: 1, diameterTop: 0, diameterBottom: 1, tessellation: 5, subdivisions: 1 }, scene)
   thorn.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
   thorn.convertToFlatShadedMesh()
   const thornMat = new StandardMaterial("bc-thorn-mat", scene)
-  thornMat.diffuseColor = new Color3(0.42, 0.02, 0.07)
-  thornMat.emissiveColor = new Color3(0.2, 0.005, 0.05)
-  thornMat.specularColor = new Color3(0.9, 0.4, 0.9)
-  thornMat.specularPower = 48
+  thornMat.diffuseColor = new Color3(0.5, 0.03, 0.09)
+  thornMat.emissiveColor = new Color3(0.42, 0.015, 0.09)
+  thornMat.specularColor = new Color3(1, 0.5, 0.9)
+  thornMat.specularPower = 64
+  thornMat.emissiveFresnelParameters = Object.assign(new FresnelParameters(), { leftColor: new Color3(1, 0.3, 0.5), rightColor: new Color3(0.3, 0.008, 0.07), bias: 0.16, power: 1.7 })
   thorn.material = thornMat
   thorn.alwaysSelectAsActiveMesh = true
   const thornBuf = new Float32Array(thornN * 16)
   thorn.thinInstanceSetBuffer("matrix", thornBuf, 16, false)
 
-  // gotas: sobem em espiral até a lâmina e depois voltam de quem foi atingido
+  // gotas de luz: voltam de quem foi atingido para o corpo (a cura aparecendo)
   const drop = CreateSphere("bc-drop", { diameter: 1, segments: 3 }, scene)
   const dropMat = new StandardMaterial("bc-drop-mat", scene)
   dropMat.disableLighting = true
-  dropMat.emissiveColor = new Color3(0.85, 0.05, 0.2)
+  dropMat.emissiveColor = new Color3(1, 0.3, 0.5)
   drop.material = dropMat
   drop.alwaysSelectAsActiveMesh = true
   const dropBuf = new Float32Array(dropN * 16)
   drop.thinInstanceSetBuffer("matrix", dropBuf, 16, false)
 
-  const meshes = [sickle, sweep, wings, ring, rune, crack, thorn, drop]
-  const mats = [sickleMat, sweepMat, wingMat, ringMat, runeMat, crackMat]
+  // destroços: pedaços pretos voando dão escala e peso ao impacto
+  const rockN = Math.max(10, Math.round(34 * Math.sqrt(k)))
+  // octaedro esticado por pedaço: lasca angulosa, nunca bola
+  const rock = CreatePolyhedron("bc-rock", { type: 1, size: 0.6 }, scene)
+  rock.convertToFlatShadedMesh()
+  const rockMat = new StandardMaterial("bc-rock-mat", scene)
+  rockMat.diffuseColor = new Color3(0.05, 0.03, 0.04)
+  rockMat.specularColor = new Color3(0.3, 0.1, 0.15)
+  rock.material = rockMat
+  rock.alwaysSelectAsActiveMesh = true
+  const rockBuf = new Float32Array(rockN * 16)
+  rock.thinInstanceSetBuffer("matrix", rockBuf, 16, false)
+
+  // ── partículas ─────────────────────────────────────────────────────────────
+  const dot = new DynamicTexture("bc-dot", { width: 64, height: 64 }, scene, false)
+  {
+    const g = dot.getContext() as CanvasRenderingContext2D
+    const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32)
+    gr.addColorStop(0, "rgba(255,255,255,1)")
+    gr.addColorStop(0.28, "rgba(255,255,255,.7)")
+    gr.addColorStop(1, "rgba(255,255,255,0)")
+    g.fillStyle = gr
+    g.fillRect(0, 0, 64, 64)
+    dot.hasAlpha = true
+    dot.update()
+  }
+  const hot = new Color4(1, 0.5, 0.62, 1)
+  const red = new Color4(1, 0.1, 0.26, 1)
+  const violet = new Color4(0.62, 0.22, 1, 0)
+  const spark = (name: string, cap: number) => {
+    const p = new ParticleSystem(name, Math.max(16, Math.round(cap * k)), scene)
+    p.particleTexture = dot
+    p.blendMode = ParticleSystem.BLENDMODE_ADD
+    p.color1 = hot
+    p.color2 = red
+    p.colorDead = violet
+    p.emitRate = 0
+    p.emitter = Vector3.Zero()
+    return p
+  }
+  // brasas soltas subindo em volta do corpo
+  const embers = spark("bc-embers", 200)
+  embers.minSize = 0.03
+  embers.maxSize = 0.09
+  embers.minLifeTime = 0.6
+  embers.maxLifeTime = 1.3
+  embers.minEmitPower = 0.3
+  embers.maxEmitPower = 1.4
+  embers.gravity = new Vector3(0, 1.8, 0)
+  embers.createCylinderEmitter(1.9, 0.1, 1, 0)
+  // riscos de luz fechando na lâmina
+  const inflow = spark("bc-inflow", 170)
+  inflow.billboardMode = ParticleSystem.BILLBOARDMODE_STRETCHED
+  inflow.minSize = 0.03
+  inflow.maxSize = 0.07
+  inflow.minScaleY = 3
+  inflow.maxScaleY = 7
+  inflow.minLifeTime = 0.26
+  inflow.maxLifeTime = 0.42
+  inflow.minEmitPower = -9
+  inflow.maxEmitPower = -6
+  inflow.createSphereEmitter(2.7, 0)
+  // faíscas riscando para fora no impacto e soltas pela lua
+  const burst = spark("bc-burst", 260)
+  burst.billboardMode = ParticleSystem.BILLBOARDMODE_STRETCHED
+  burst.minSize = 0.03
+  burst.maxSize = 0.09
+  burst.minScaleY = 2
+  burst.maxScaleY = 6
+  burst.minLifeTime = 0.3
+  burst.maxLifeTime = 0.8
+  burst.minEmitPower = 4
+  burst.maxEmitPower = 15
+  burst.gravity = new Vector3(0, -9, 0)
+  burst.createSphereEmitter(0.7, 1)
+  // névoa de sangue: quadros da textura, cobre o fundo em vez de somar luz
+  const mist = new ParticleSystem("bc-mist", Math.max(10, Math.round(46 * k)), scene, null, true)
+  mist.particleTexture = smokeTex
+  mist.blendMode = ParticleSystem.BLENDMODE_STANDARD
+  mist.startSpriteCellID = 0
+  mist.endSpriteCellID = 15
+  mist.spriteCellWidth = 128
+  mist.spriteCellHeight = 128
+  mist.spriteCellLoop = false
+  mist.color1 = new Color4(0.62, 0.05, 0.14, 0.95)
+  mist.color2 = new Color4(0.3, 0.02, 0.1, 0.9)
+  mist.colorDead = new Color4(0.14, 0.01, 0.08, 0)
+  mist.minSize = 1.4
+  mist.maxSize = 3.4
+  mist.minLifeTime = 0.8
+  mist.maxLifeTime = 1.3
+  mist.minEmitPower = 0.5
+  mist.maxEmitPower = 2.6
+  mist.minAngularSpeed = -0.6
+  mist.maxAngularSpeed = 0.6
+  mist.gravity = new Vector3(0, 0.7, 0)
+  mist.emitRate = 0
+  mist.emitter = Vector3.Zero()
+  mist.createSphereEmitter(2.4, 1)
+  const systems = [embers, inflow, burst, mist]
+
+  // uma luz de verdade: ilumina o corpo e o chão; no perfil fraco fica de fora
+  const light = budget.layers ? new PointLight("bc-light", new Vector3(0, 1, 0), scene) : null
+  if (light) {
+    light.diffuse = new Color3(1, 0.1, 0.22)
+    light.specular = new Color3(1, 0.3, 0.5)
+    light.range = 17
+    light.intensity = 0
+  }
+
+  const meshes = [blade, ghost, wake, wings, ring, pool, rune, crack, flash, thorn, drop, rock]
+  const mats = [bladeMat, ghostMat, wakeMat, wingMat, ringMat, poolMat, runeMat, crackMat, flashMat]
   for (const m of meshes) {
     m.isPickable = false
     m.setEnabled(false)
   }
 
-  const noise = (i: number, s: number) => {
+  const hash = (i: number, s: number) => {
     const v = Math.sin(i * 127.1 + s * 311.7) * 43758.5453
     return v - Math.floor(v)
   }
   const thorns = Array.from({ length: thornN }, (_, i) => {
-    const d = 1.25 + Math.pow(noise(i, 1), 0.7) * (POWER.bladeRange - 0.6)
+    const d = 1.25 + Math.pow(hash(i, 1), 0.7) * (POWER.bladeRange - 0.6)
     return {
-      a: (noise(i, 2) * 2 - 1) * (POWER.bladeArc / 2 + 0.08),
+      a: (hash(i, 2) * 2 - 1) * (POWER.bladeArc / 2 + 0.08),
       d,
-      h: (0.95 + noise(i, 3) * 1.9) * (1.3 - d / 9),
-      w: 0.2 + noise(i, 4) * 0.26,
-      tilt: (noise(i, 5) - 0.5) * 0.5,
-      out: 0.22 + noise(i, 6) * 0.28,
-      sink: 1.3 + noise(i, 7) * 0.22,
+      h: (0.95 + hash(i, 3) * 2.1) * (1.3 - d / 9),
+      w: 0.13 + hash(i, 4) * 0.2,
+      tilt: (hash(i, 5) - 0.5) * 0.5,
+      out: 0.22 + hash(i, 6) * 0.28,
+      sink: 1.3 + hash(i, 7) * 0.22,
       at: FIRE_AT + 0.015 + d / 26,
     }
   })
-  const drops = Array.from({ length: dropN }, (_, i) => ({ a: noise(i, 8) * Math.PI * 2, r: 1.1 + noise(i, 9) * 1.3, at: 0.08 + noise(i, 10) * 0.42, s: 0.05 + noise(i, 11) * 0.08, back: 0.98 + noise(i, 12) * 0.28 }))
+  const drops = Array.from({ length: dropN }, (_, i) => ({ s: 0.03 + hash(i, 11) * 0.05, back: 0.98 + hash(i, 12) * 0.28 }))
+  const rocks = Array.from({ length: rockN }, (_, i) => ({
+    a: (hash(i, 13) * 2 - 1) * 1.1,
+    d: 1 + hash(i, 14) * 4,
+    out: 3 + hash(i, 15) * 9,
+    up: 7 + hash(i, 16) * 13,
+    size: 0.09 + Math.pow(hash(i, 17), 2.2) * 0.5,
+    spin: 5 + hash(i, 18) * 14,
+    flat: 0.25 + hash(i, 19) * 0.5,
+    long: 1 + hash(i, 20) * 1.3,
+  }))
 
   const mat = new Matrix()
   const q = new Quaternion()
@@ -507,11 +587,19 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
   const dir = new Vector3()
   const up = Vector3.Up()
   const zero = new Vector3(0, 0, 0)
+  const belly = new Vector3()
+  const emitAt = new Vector3()
   let S: Live | null = null
   let clock = 0
+  let flashed = false
 
   const hideAll = () => {
     for (const m of meshes) m.setEnabled(false)
+    for (const p of systems) {
+      p.emitRate = 0
+      p.stop()
+    }
+    if (light) light.intensity = 0
   }
 
   const stepThorns = (s: Live) => {
@@ -523,8 +611,7 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
       const on = s.t >= o.at && gone < 1
       any ||= on
       const a = s.facing + o.a
-      const lean = o.out * (1 - gone)
-      Quaternion.RotationYawPitchRollToRef(a, lean, o.tilt, q)
+      Quaternion.RotationYawPitchRollToRef(a, o.out * (1 - gone), o.tilt, q)
       sv.set(on ? o.w * (1 - gone * 0.5) : 0, on ? o.h * Math.max(0.001, grow) * (1 - gone) : 0, on ? o.w * (1 - gone * 0.5) : 0)
       pv.set(s.x + Math.sin(a) * o.d, -0.04, s.z + Math.cos(a) * o.d)
       Matrix.ComposeToRef(sv, q, pv, mat)
@@ -534,41 +621,39 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
     if (any) thorn.thinInstanceBufferUpdated("matrix")
   }
 
+  const stepRocks = (s: Live) => {
+    const tau = s.t - FIRE_AT
+    const on = s.impacted && tau < 0.85
+    rock.setEnabled(on)
+    if (!on) return
+    for (let i = 0; i < rockN; i++) {
+      const o = rocks[i]
+      const a = s.facing + o.a
+      const y = 0.1 + o.up * tau - 13 * tau * tau
+      const gone = y < -0.2
+      pv.set(s.x + Math.sin(a) * (o.d + o.out * tau), y, s.z + Math.cos(a) * (o.d + o.out * tau))
+      Quaternion.RotationYawPitchRollToRef(tau * o.spin, tau * o.spin * 0.7, o.a, q)
+      sv.set(gone ? 0 : o.size * o.long, gone ? 0 : o.size * o.flat, gone ? 0 : o.size)
+      Matrix.ComposeToRef(sv, q, pv, mat)
+      mat.copyToArray(rockBuf, i * 16)
+    }
+    rock.thinInstanceBufferUpdated("matrix")
+  }
+
   const stepDrops = (s: Live) => {
     let any = false
     const chestY = s.height * 0.62
     for (let i = 0; i < dropN; i++) {
       const o = drops[i]
-      let on = false
-      sv.setAll(0)
-      const rise = seg(s.t, o.at, o.at + 0.34)
-      if (s.t >= o.at && rise < 1) {
-        // sobe girando e fecha no ponto da lâmina
-        on = true
-        const ease = rise * rise
-        const a = o.a + rise * 4.2
-        const r = o.r * (1 - ease)
-        pv.set(s.x + Math.sin(a) * r, 0.05, s.z + Math.cos(a) * r)
-        Vector3.LerpToRef(pv, s.bladeAt, ease, pv)
-        pv.y = 0.05 + (s.bladeAt.y - 0.05) * Math.pow(rise, 1.4)
-        dir.set(Math.cos(a), 0.9, -Math.sin(a)).normalize()
-        const size = o.s * (1 - 0.4 * rise)
-        sv.set(size, size * 2.6, size)
-      } else if (s.hits.length && s.t >= o.back) {
-        const back = seg(s.t, o.back, o.back + 0.3)
-        if (back < 1) {
-          // volta de quem foi atingido: é a cura do golpe aparecendo
-          on = true
-          const from = s.hits[i % s.hits.length]
-          const u = easeInOut(back)
-          pv.set(from.x + (s.x - from.x) * u, from.y + (chestY - from.y) * u + Math.sin(u * Math.PI) * 1.1, from.z + (s.z - from.z) * u)
-          dir.set(s.x - from.x, 0.3, s.z - from.z).normalize()
-          const size = o.s * (1.1 - 0.7 * u)
-          sv.set(size, size * 2.8, size)
-        }
-      }
-      if (on) {
+      const back = seg(s.t, o.back, o.back + 0.3)
+      if (s.hits.length && s.t >= o.back && back < 1) {
         any = true
+        const from = s.hits[i % s.hits.length]
+        const u = easeInOut(back)
+        pv.set(from.x + (s.x - from.x) * u, from.y + (chestY - from.y) * u + Math.sin(u * Math.PI) * 1.1, from.z + (s.z - from.z) * u)
+        dir.set(s.x - from.x, 0.3, s.z - from.z).normalize()
+        const size = o.s * (1.1 - 0.7 * u)
+        sv.set(size, size * 3.4, size)
         Quaternion.FromUnitVectorsToRef(up, dir, q)
         Matrix.ComposeToRef(sv, q, pv, mat)
       } else Matrix.ComposeToRef(zero, Quaternion.Identity(), zero, mat)
@@ -582,8 +667,11 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
     play(s) {
       S = s
       clock = 0
+      flashed = false
       rune.setEnabled(true)
+      pool.setEnabled(true)
       wings.setEnabled(true)
+      for (const p of systems) p.start()
     },
     step(dt) {
       const s = S
@@ -598,38 +686,54 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
         hideAll()
         return false
       }
-      const eye = scene.activeCamera?.globalPosition
       const gain = BLOOD_TUNE.gain
       for (const m of mats) {
         m.setFloat("uTime", clock)
         m.setFloat("uGain", gain)
-        if (eye) m.setVector3("uEye", eye)
       }
+      // partículas no ritmo da câmera lenta
+      const speed = Math.max(0.002, rig.pace() / 60)
+      for (const p of systems) p.updateSpeed = speed
 
-      // círculo de luas: abre rápido, gira, some depois do golpe
+      // chão: mancha escura e círculo de luas
       const runeFade = 1 - seg(t, 1.05, 1.5)
+      const runeR = Math.max(2.6, s.height * 1.3)
+      const open = 1.12 * easeOut(seg(t, 0, 0.22))
       rune.setEnabled(runeFade > 0)
+      pool.setEnabled(runeFade > 0)
       rune.position.set(s.x, 0.05, s.z)
-      rune.rotation.y = clock * 0.9
-      rune.scaling.setAll(Math.max(2.2, s.height * 1.15))
-      runeMat.setFloat("uR", 1.1 * easeOut(seg(t, 0, 0.2)))
-      runeMat.setFloat("uFade", 0.92 * runeFade)
+      rune.rotation.y = clock * 0.7
+      rune.scaling.setAll(runeR)
+      runeMat.setFloat("uR", open)
+      runeMat.setFloat("uFade", runeFade)
+      pool.position.set(s.x, 0.04, s.z)
+      pool.scaling.setAll(runeR * 1.7)
+      poolMat.setFloat("uR", Math.max(0.05, open * 0.9))
+      poolMat.setFloat("uFade", runeFade)
 
-      // asas: abrem na carga, fecham na antecipação e queimam antes do golpe (a câmera vem de trás)
-      const open = easeOut(seg(t, 0.14, 0.5)) * (1 - 0.45 * easeInOut(seg(t, 0.6, 0.74)))
+      // asas: abrem na carga, fecham na antecipação e viram fumaça antes do golpe
+      const wingOpen = easeOut(seg(t, 0.14, 0.5)) * (1 - 0.45 * easeInOut(seg(t, 0.6, 0.74)))
       const wingCut = seg(t, 0.62, 0.76)
       wings.setEnabled(wingCut < 1)
       wings.position.set(s.x - Math.sin(s.facing) * 0.28, s.height * 0.76, s.z - Math.cos(s.facing) * 0.28)
       wings.rotation.y = s.facing
       wings.scaling.setAll(s.height * 1.42)
-      wingMat.setFloat("uOpen", open)
+      wingMat.setFloat("uOpen", wingOpen)
       wingMat.setFloat("uCut", wingCut)
-      wingMat.setFloat("uFade", Math.min(1, t / 0.12) * (1 - seg(t, 0.66, 0.76)))
+      wingMat.setFloat("uFade", Math.min(1, t / 0.12) * (1 - seg(t, 0.68, 0.76)))
+
+      // partículas da carga
+      embers.emitter = emitAt.set(s.x, 0.1, s.z).clone()
+      embers.emitRate = t < 0.8 ? 120 * k : t < 1.3 ? 40 * k : 0
+      inflow.emitter = s.bladeAt
+      inflow.emitRate = t > 0.14 && t < 0.72 ? 200 * k : 0
 
       // lua: sai da lâmina, cruza o meio do cone no passo do dano, segue voando e queima
       const moonOn = t >= MOON_FROM && t < MOON_END
-      sickle.setEnabled(moonOn)
-      sweep.setEnabled(moonOn)
+      blade.setEnabled(moonOn)
+      ghost.setEnabled(moonOn)
+      wake.setEnabled(moonOn)
+      burst.emitRate = 0
       if (moonOn) {
         const out = easeOut(seg(t, MOON_FROM, FIRE_AT))
         const fly = seg(t, FIRE_AT, MOON_END)
@@ -637,18 +741,51 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
         const z = out < 1 ? MOON_Z[0] + (MOON_Z[1] - MOON_Z[0]) * out : MOON_Z[1] + (MOON_Z[2] - MOON_Z[1]) * fly
         // o nó é o centro do círculo da lua: fica ao lado e abaixo, para o BOJO passar no eixo do golpe
         const side = r * Math.sin(MOON_ROLL)
-        const belly = 1.3 + s.height * 0.22
-        moon.position.set(s.x + Math.sin(s.facing) * z + Math.cos(s.facing) * side, belly - r * Math.cos(MOON_ROLL), s.z + Math.cos(s.facing) * z - Math.sin(s.facing) * side)
+        const top = 1.3 + s.height * 0.22
+        const fx = Math.sin(s.facing)
+        const fz = Math.cos(s.facing)
+        moon.position.set(s.x + fx * z + fz * side, top - r * Math.cos(MOON_ROLL), s.z + fz * z - fx * side)
         moon.rotation.set(0, s.facing, MOON_ROLL)
-        sickle.scaling.setAll(r)
-        // o rastro alonga até onde a lua nasceu
-        sweep.scaling.set(r, Math.max(0.5, z - 0.4), r)
-        sickleMat.setFloat("uCut", easeInOut(seg(t, 1.0, MOON_END)) * 1.02)
-        sweepMat.setFloat("uFade", 1 - seg(t, 0.98, MOON_END))
+        blade.scaling.setAll(r)
+        ghost.scaling.setAll(r * 0.97)
+        ghost.position.y = 0
+        ghost.position.z = -Math.min(1.1, 0.5 + z * 0.12)
+        wake.scaling.set(r, Math.max(0.5, z - 0.4), r)
+        const cut = easeInOut(seg(t, 0.98, MOON_END)) * 1.05
+        bladeMat.setFloat("uCut", cut)
+        ghostMat.setFloat("uCut", Math.min(1.1, cut + 0.3))
+        ghostMat.setFloat("uFade", 0.5)
+        wakeMat.setFloat("uFade", 1 - seg(t, 0.98, MOON_END))
+        belly.set(s.x + fx * z, top, s.z + fz * z)
+        burst.emitter = belly.clone()
+        burst.emitRate = 160 * k
+      }
+
+      // luz: cresce na lâmina, acompanha a lua, estoura no dano e apaga
+      if (light) {
+        const charge = 0.55 + 0.8 * seg(t, 0.14, 0.72)
+        const peak = 2.4 * (1 - seg(t, FIRE_AT, 1.2))
+        light.position.copyFrom(t >= MOON_FROM ? belly : s.bladeAt)
+        light.intensity = (t < FIRE_AT ? charge : 0.3 + peak) * (1 - seg(t, 1.25, 1.6)) * gain
       }
 
       // no chão, a partir do impacto
       if (s.impacted) {
+        if (!flashed) {
+          flashed = true
+          const at = s.hits[0] ?? new Vector3(s.x + Math.sin(s.facing) * 2.6, s.height * 0.6, s.z + Math.cos(s.facing) * 2.6)
+          flash.position.copyFrom(at)
+          flash.setEnabled(true)
+          burst.emitter = at.clone()
+          burst.manualEmitCount = Math.round(170 * k)
+          mist.emitter = new Vector3(s.x + Math.sin(s.facing) * 2.8, 0.9, s.z + Math.cos(s.facing) * 2.8)
+          mist.manualEmitCount = Math.round(30 * k)
+        }
+        const f = seg(t, FIRE_AT, FIRE_AT + 0.13)
+        flash.setEnabled(f < 1)
+        flash.scaling.setAll(1.6 + 3 * easeOut(f))
+        flash.rotation.z = clock * 1.4
+        flashMat.setFloat("uFade", 1 - f * f)
         const wave = seg(t, FIRE_AT, FIRE_AT + 0.32)
         ring.setEnabled(wave < 1)
         ring.position.set(s.x, 0.07, s.z)
@@ -664,6 +801,7 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
         crackMat.setFloat("uFade", crackFade)
       }
       stepThorns(s)
+      stepRocks(s)
       stepDrops(s)
       return true
     },
@@ -680,11 +818,12 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
       }
     },
     dispose() {
+      for (const p of systems) p.dispose()
+      light?.dispose()
       for (const m of meshes) m.dispose()
       moon.dispose()
-      for (const m of [...mats, thornMat, dropMat]) m.dispose()
-      runeTex.dispose()
-      crackTex.dispose()
+      for (const m of [...mats, thornMat, dropMat, rockMat]) m.dispose()
+      for (const t of [noise, runeTex, crackTex, smokeTex, dot]) t.dispose()
     },
   }
 }
@@ -695,14 +834,31 @@ export interface BloodCut {
   /** Um inimigo foi pego pelo poder (evento da regra, antes do impacto). */
   hit: (at: Vector3) => void
   warm: () => void
+  /** O corpo (e a arma) que fica aceso no apagão: a luz própria só pega neles. */
+  bind: (meshes: AbstractMesh[]) => void
+  dispose: () => void
 }
 
 export function bloodCut(rig: BloodRig): BloodCut {
   const build: FxBuilder<Live> = (ctx) => buildEffect(ctx, rig)
   let live: Live | null = null
+  let rim: PointLight | null = null
   return {
     warm: () => rig.stage.warm("blood-cut", build),
     hit: (at) => live?.hits.push(at.clone()),
+    bind(meshes) {
+      if (rim || !meshes.length) return
+      rim = new PointLight("bc-rim", new Vector3(0, 1, 0), meshes[0].getScene())
+      rim.diffuse = new Color3(0.92, 0.74, 1)
+      rim.specular = new Color3(1, 0.8, 1)
+      rim.range = 9
+      rim.intensity = 0
+      rim.includedOnlyMeshes = meshes
+    },
+    dispose() {
+      rim?.dispose()
+      rim = null
+    },
     script() {
       const me = rig.subject()
       const s: Live = { t: 0, facing: me.facing, x: me.x, z: me.z, height: me.height, free: false, cut: false, hits: [], impacted: false, bladeAt: new Vector3(me.x, me.height, me.z) }
@@ -747,10 +903,10 @@ export function bloodCut(rig: BloodRig): BloodCut {
               s.impacted = true
               rig.hitStop(0.07)
               rig.shake(0.55)
+              rig.flash()
               rig.audio.boom()
               rig.audio.thorns()
               rig.vfx.dust(new Vector3(s.x + Math.sin(s.facing) * 2.4, 0.1, s.z + Math.cos(s.facing) * 2.4), 18)
-              for (const at of s.hits) rig.vfx.impact(at, SPARK, false, 0.35)
             },
           },
         ],
@@ -762,11 +918,19 @@ export function bloodCut(rig: BloodRig): BloodCut {
           const tip = rig.blade()
           if (tip) s.bladeAt.copyFrom(tip)
           else s.bladeAt.set(me.x + Math.sin(me.facing) * 0.5, me.height * 0.85, me.z + Math.cos(me.facing) * 0.5)
-          rig.dim(1 - 0.52 * easeOut(seg(t, 0, 0.2)) * (1 - easeInOut(seg(t, 1.0, 1.45))))
+          // apagão na carga; o mundo volta escuro para o golpe e clareia depois do impacto
+          const black = easeOut(seg(t, 0.03, 0.13)) * (1 - easeInOut(seg(t, 0.66, 0.74)))
+          const after = seg(t, 0.66, 0.74) * (1 - easeInOut(seg(t, 1.0, 1.45)))
+          rig.dim((1 - 0.97 * black) * (1 - 0.42 * after))
+          if (rim) {
+            rim.position.set(me.x + Math.sin(me.facing) * 1.5, me.height * 0.85, me.z + Math.cos(me.facing) * 1.5)
+            rim.intensity = 2.4 * black
+          }
         },
         finish() {
           s.free = true
           rig.dim(1)
+          if (rim) rim.intensity = 0
         },
       }
     },

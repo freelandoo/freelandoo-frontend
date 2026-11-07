@@ -337,6 +337,11 @@ export class Character {
     }
   }
 
+  /** Malhas do corpo agora (vazio antes de carregar). */
+  get bodyMeshes() {
+    return this.rig?.root.getChildMeshes(false) ?? []
+  }
+
   get hasAvatar() {
     return !!this.rig
   }
