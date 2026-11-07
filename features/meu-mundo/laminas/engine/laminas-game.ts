@@ -347,8 +347,9 @@ const SWORD_LEN = 1.065
 const STAFF_LEN = 1.553
 /** Arco na mão, em metros (o arquivo tem 1 m). */
 const BOW_LEN = 2.4
-const CAM_DIST = 6.4
-const CAM_H = 3.3
+// 2026-11-07 (pedido do Alex): todas as lutas com a câmera mais afastada
+const CAM_DIST = 7.7
+const CAM_H = 3.8
 const FOV = 0.9
 /** Até onde a câmera vai (raio a partir do centro): dentro do muro da arena. */
 const CAM_R = ARENA_R + 0.4
