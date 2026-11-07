@@ -574,7 +574,7 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
     d: 1 + hash(i, 14) * 4,
     out: 3 + hash(i, 15) * 9,
     up: 7 + hash(i, 16) * 13,
-    size: 0.09 + Math.pow(hash(i, 17), 2.2) * 0.5,
+    size: 0.07 + Math.pow(hash(i, 17), 2.6) * 0.24,
     spin: 5 + hash(i, 18) * 14,
     flat: 0.25 + hash(i, 19) * 0.5,
     long: 1 + hash(i, 20) * 1.3,
