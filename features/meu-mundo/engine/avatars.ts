@@ -700,10 +700,6 @@ export class AvatarLibrary {
     }
     const sitSrc = sit?.animationGroups.find((g) => g.name === "Sit")
     if (sitSrc) groups.Sit = sitSrc.clone(`Sit#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
-    for (const clip of REST_CLIPS) {
-      const src = rest?.animationGroups.find((g) => g.name === clip)
-      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
-    }
     for (const clip of PAINT_CLIPS) {
       const src = paint?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
@@ -732,10 +728,6 @@ export class AvatarLibrary {
       const src = clawC?.animationGroups.find((g) => g.name === clip)
       if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
     }
-    for (const clip of RIDE_CLIPS) {
-      const src = ride?.animationGroups.find((g) => g.name === clip)
-      if (src) groups[clip] = src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
-    }
     const feet = [byName.get("mixamorig:LeftFoot"), byName.get("mixamorig:RightFoot")] as (TransformNode | undefined)[]
     const meshes = root.getChildMeshes(false) as AbstractMesh[]
     for (const mesh of meshes) {
@@ -754,6 +746,14 @@ export class AvatarLibrary {
     this.live++
     const rig = new AvatarRig(this, id, entries, root, groups, meshes, feet, ANKLE_REST[ANIM_SET[id]], lod)
     rig.natural = natural
+    // Descanso e veículo só viram cópia quando o corpo precisa: com 26 na rua, as 13
+    // cópias paradas de cada um eram a maior parte da memória das animações.
+    for (const [set, clips] of [[rest, REST_CLIPS], [ride, RIDE_CLIPS]] as const) {
+      for (const clip of clips) {
+        const src = set?.animationGroups.find((g) => g.name === clip)
+        if (src) rig.lazy(clip, () => src.clone(`${clip}#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true))
+      }
+    }
     rig.setLodDistance(this.lodDistance)
     return rig
   }
@@ -864,7 +864,7 @@ export class AvatarRig {
     /** Malha leve (nível de LOD da primeira malha), se carregou. */
     private readonly lod: Mesh | null = null,
   ) {
-    this.clips = [...CLIPS, ...(["Sit", ...REST_CLIPS, ...RIDE_CLIPS, ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS, ...GINCANA_CLIPS, ...CLAN_CLIPS, ...BRUTE_CLIPS, ...GARRAS_CLIPS] as const).filter((c) => !!groups[c])]
+    this.clips = [...CLIPS, ...(["Sit", ...PAINT_CLIPS, ...PLACE_CLIPS, ...BOXE_CLIPS, ...GINCANA_CLIPS, ...CLAN_CLIPS, ...BRUTE_CLIPS, ...GARRAS_CLIPS] as const).filter((c) => !!groups[c])]
     for (const clip of this.clips) {
       const g = groups[clip]!
       g.weight = this.weights[clip]
@@ -916,6 +916,28 @@ export class AvatarRig {
 
   get lodDistance() {
     return this.lod ? this.lodAt : Infinity
+  }
+
+  /** Clipe que só é copiado no primeiro uso; até lá não existe na cena (`peek` olha sem criar). */
+  lazy(clip: Clip, make: () => AnimationGroup) {
+    const groups = this.groups
+    Object.defineProperty(groups, clip, {
+      configurable: true,
+      enumerable: true,
+      get: () => {
+        const g = make()
+        Object.defineProperty(groups, clip, { value: g, writable: true, configurable: true, enumerable: true })
+        this.clips.push(clip)
+        g.weight = 0
+        g.start(true, 1)
+        g.pause()
+        return g
+      },
+    })
+  }
+
+  private peek(clip: Clip) {
+    return this.clips.includes(clip) ? this.groups[clip] : undefined
   }
 
   /** Parar/retomar a animação. Retomando, o próximo update volta a tocar o que tem peso. */
@@ -1387,8 +1409,10 @@ export class AvatarRig {
     const k = 1 - Math.exp(-(rate || (this.rideMove === 6 ? 7 : 10)) * dt)
     let sum = 0
     for (const clip of this.clips) {
-      let w = this.weights[clip] + (target[clip] - this.weights[clip]) * k
-      if (Math.abs(w - target[clip]) < 0.01) w = target[clip]
+      // clipe que acabou de nascer (lazy) pode não estar no alvo deste quadro
+      const want = target[clip] ?? 0
+      let w = this.weights[clip] + (want - this.weights[clip]) * k
+      if (Math.abs(w - want) < 0.01) w = want
       this.weights[clip] = w
       sum += w
     }
@@ -1404,8 +1428,10 @@ export class AvatarRig {
     const walkRate = this.rideMove === 8 ? 1 : speed > 0.05 ? speed / this.natural.walk : 1
     const runRate = speed > 0.05 ? speed / this.natural.run : 1
     this.groups.Walk.speedRatio = Math.max(0.5, Math.min(2.2, walkRate))
-    if (this.groups.TiredWalk) this.groups.TiredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
-    if (this.groups.InjuredWalk) this.groups.InjuredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
+    const tiredWalk = this.peek("TiredWalk")
+    const injuredWalk = this.peek("InjuredWalk")
+    if (tiredWalk) tiredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
+    if (injuredWalk) injuredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
     this.groups.SlowRun.speedRatio = Math.max(0.6, Math.min(2.2, runRate))
   }
 
