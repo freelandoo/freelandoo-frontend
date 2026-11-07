@@ -10110,7 +10110,8 @@
     "laminasSubStone": "Stone: high defense, low speed",
     "vsLife": "Health",
     "vsStart": "Start fight",
-    "ringSubGolem": "Slow and heavy"
+    "ringSubGolem": "Slow and heavy",
+    "abilityBloodCut": "Blood Cut"
   },
   "Sports": {
     "eyebrow": "Sports",

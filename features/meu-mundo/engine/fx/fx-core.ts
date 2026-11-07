@@ -34,6 +34,8 @@ export interface FxEffect<A> {
   step: (dt: number) => boolean
   /** Corta na hora (sem partícula viva e sem emissor ligado). */
   stop: () => void
+  /** Compila o que for preciso antes do primeiro disparo (o quadro do golpe não pode engasgar). */
+  warm?: () => void
   dispose: () => void
 }
 
@@ -82,6 +84,18 @@ export class FxStage {
 
   private liveCount() {
     return this.slots.reduce((n, s) => n + (s.live ? 1 : 0), 0)
+  }
+
+  /** Monta e compila `id` sem disparar: para poderes com hora marcada, antes de precisar. */
+  warm<A>(id: string, build: FxBuilder<A>) {
+    if (this.disposed || this.slots.some((s) => s.id === id)) return
+    try {
+      const fx = build({ scene: this.scene, budget: this.budget })
+      this.slots.push({ id, fx: fx as FxEffect<never>, live: false, order: 0 })
+      fx.warm?.()
+    } catch (err) {
+      console.warn("[meu-mundo] efeito não aqueceu", id, err)
+    }
   }
 
   /** Dispara `id`. `perId` = quantos desse efeito existem no máximo. */
@@ -135,6 +149,15 @@ export class FxStage {
     if (!any && this.obs) {
       this.scene.onBeforeRenderObservable.remove(this.obs)
       this.obs = null
+    }
+  }
+
+  /** Corta tudo o que está no ar (a cena continua). */
+  stopAll() {
+    for (const s of this.slots) {
+      if (!s.live) continue
+      s.fx.stop()
+      s.live = false
     }
   }
 

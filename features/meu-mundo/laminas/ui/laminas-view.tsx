@@ -36,6 +36,7 @@ import { createLaminasGame, type FightSheet, type LaminasGameHandle, type Lamina
 import { VersusScreen } from "./versus-screen"
 import { peerOf, type MobKind, type SkillId } from "../sim/fight"
 import { SkillHud } from "./skill-hud"
+import { abilityKit } from "../abilities/registry"
 import { probeClose, probeNote, probeOpen } from "../../crash-probe"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
@@ -285,7 +286,7 @@ function LaminasScreen({
       alive = false
     }
   }, [choice, stage, portal, mobId, tutorial])
-  const labelsRef = useRef({ evade: t("laminasEvade", "ESQUIVOU!"), miss: t("laminasMiss", "ERROU!") })
+  const labelsRef = useRef({ evade: t("laminasEvade", "ESQUIVOU!"), miss: t("laminasMiss", "ERROU!"), bloodCut: t("abilityBloodCut", "Golpe de Sangue") })
   const receiptRef = useRef(onReceipt)
   useEffect(() => {
     receiptRef.current = onReceipt
@@ -471,6 +472,9 @@ function LaminasScreen({
         <>
           {isTouch && <Joystick gameRef={gameRef} skin="gold" />}
           <SkillHud
+            kit={abilityKit(body, stage)}
+            casting={hud.casting}
+            locked={hud.locked}
             cd={hud.cd}
             power={hud.power}
             shield={hud.shield}

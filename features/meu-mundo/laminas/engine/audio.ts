@@ -193,6 +193,29 @@ export class BoxeAudio {
     this.tone(220, 1040, dur, 0.05, "sine")
   }
 
+  /** Coração batendo antes do golpe de sangue. */
+  heartbeat() {
+    this.tone(72, 38, 0.2, 0.75)
+    this.tone(64, 34, 0.24, 0.6, "sine", 0.24)
+  }
+
+  /** Ar sugado para dentro da lâmina. */
+  inhale(dur: number) {
+    this.tone(160, 900, dur, 0.06, "triangle")
+    this.burst(dur, 2400, 0.1, "bandpass", 1.4)
+  }
+
+  /** A lâmina de sangue rasgando o ar. */
+  rend() {
+    this.burst(0.34, 3200, 0.42, "bandpass", 0.9)
+    this.tone(900, 120, 0.3, 0.16, "sawtooth")
+  }
+
+  /** Espinhos saindo do chão. */
+  thorns() {
+    for (let i = 0; i < 4; i++) this.tone(260 - i * 40, 90, 0.11, 0.2, "square", i * 0.05)
+  }
+
   /** Explosão suprema: estrondo grave longo. */
   boom() {
     this.burst(0.9, 380, 1.1)

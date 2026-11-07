@@ -13,14 +13,19 @@
 // A recarga é a da REGRA (hud.cd, vem do fight.ts) — o botão só mostra; quem
 // decide se a habilidade sai é a luta (e o servidor, na re-simulação).
 // Cada botão é um elemento próprio: joystick e botões aceitam vários dedos.
+//
+// 2026-11-07: uma tela só para todos; ícone, nome, cor e o efeito do botão cheio vêm do kit do
+// personagem (abilities/registry). Estados: pronto, soltando, recarga, carregando, cheio,
+// bloqueado e ligado. A arte do ícone não leva aro: tudo isso é camada do botão.
 
 import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { anton } from "../../ui/hud/fight-plate"
 import { POWER, SKILLS, type Cooldowns, type SkillId } from "../sim/fight"
+import type { AbilityKit, AbilitySlot } from "../abilities/registry"
 import s from "./skill-hud.module.css"
 
-const ICON = "/meu-mundo/laminas/skills"
+const ICON = "/meu-mundo/laminas"
 
 /** Posições na imagem de referência (941 × 1672): centro e diâmetro, contados do canto de baixo à direita. */
 const LAYOUT = {
@@ -41,6 +46,12 @@ export interface SkillHudProps {
   power: number
   /** Escudo ainda aceso (s). */
   shield: number
+  /** Identidade de quem joga: ícones, nomes e o efeito do botão cheio. */
+  kit: AbilityKit
+  /** O que está saindo agora. */
+  casting: AbilitySlot | null
+  /** Caído ou fim de luta: os botões apagam. */
+  locked: boolean
   /** Computador: mostra as teclas. */
   keys: boolean
   /** Habilidade recusada agora (o botão treme). */
@@ -113,6 +124,10 @@ function SkillButton({
   max,
   denied,
   active,
+  casting,
+  locked,
+  family,
+  toneOf,
   onFire,
 }: {
   id: SkillId | "ult"
@@ -129,6 +144,12 @@ function SkillButton({
   denied: number
   /** Escudo aceso (anel violeta). */
   active: boolean
+  casting: boolean
+  locked: boolean
+  /** Família do personagem: muda o efeito do botão cheio. */
+  family: string
+  /** Cor do poder deste personagem. */
+  toneOf: string
   onFire: () => void
 }) {
   const L = LAYOUT[id]
@@ -142,13 +163,20 @@ function SkillButton({
   const C = 2 * Math.PI * R
   // aro azul: na recarga mostra o que já voltou; o poder mostra a carga
   const arc = fill !== null && !cooling ? fill : cooling ? 1 - frac : 1
-  const tone = TONE[id]
+  const tone = id === "ult" ? toneOf : TONE[id]
+  // a carga pulsa a cada quarto da barra, sem esperar encher
+  const quarter = fill === null ? 0 : Math.floor(fill * 4)
+  const step = usePulse(quarter, 420, fill !== null && quarter > 0 && !max)
+  const state = locked ? "disabled" : casting ? "casting" : cooling ? "cooldown" : max ? "max" : active ? "active" : fill !== null ? "charging" : "ready"
   const shown = cooling ? `${Math.ceil(left)}s` : fill !== null && !max ? `${Math.round(fill * 100)}%` : `${total}s`
   return (
     <button
       type="button"
       aria-label={label}
       className={`${s.btn} ${cooling ? s.cooling : !max && fill === null ? s.idlePulse : ""} ${max ? s.max : ""}`}
+      data-state={state}
+      data-family={family}
+      data-step={step ? "1" : "0"}
       data-ready={ready ? "1" : "0"}
       data-denied={shake ? "1" : "0"}
       style={{ right: (L.r - REF_MARGIN) * k, bottom: (L.b - REF_MARGIN) * k, width: size, height: size, ["--tone" as string]: tone, fontSize: Math.max(11, size * 0.2) }}
@@ -164,9 +192,11 @@ function SkillButton({
     >
       <div className={s.face}>
         {max && <div className={s.orbit} />}
+        {max && <div className={s.maxFx} />}
         <div className={s.art}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`${ICON}/${icon}.webp`} alt="" draggable={false} />
+          {fill !== null && !cooling && !max && <div className={s.fillGlow} style={{ opacity: fill * 0.8 }} />}
           {cooling && <div className={s.shade} style={{ ["--left" as string]: `${frac * 360}deg` }} />}
         </div>
         <svg className={s.ringSvg} viewBox="0 0 100 100">
@@ -209,7 +239,7 @@ function SkillButton({
   )
 }
 
-export function SkillHud({ cd, power, shield, keys, denied, onAttack, onDodge, onSkill, onPower }: SkillHudProps) {
+export function SkillHud({ kit, casting, locked, cd, power, shield, keys, denied, onAttack, onDodge, onSkill, onPower }: SkillHudProps) {
   const t = useTranslations("MeuMundo")
   const k = useScale()
   const atk = usePress()
@@ -217,14 +247,19 @@ export function SkillHud({ cd, power, shield, keys, denied, onAttack, onDodge, o
   const fill = Math.max(0, Math.min(1, power / POWER.max))
   const max = fill >= 1 && cd.ult <= 0.05
   const deniedN = (id: SkillId | "ult") => (denied && denied.id === id ? denied.n : 0)
+  const nameOf = (slot: AbilitySlot, key: string, fallback: string) => {
+    const own = kit.slots[slot].name
+    return own ? t(own.key, own.fallback) : t(key, fallback)
+  }
+  const common = (slot: AbilitySlot) => ({ icon: kit.slots[slot].icon, casting: casting === slot, locked, family: kit.family, toneOf: kit.tone })
   const A = LAYOUT.attack
   const D = LAYOUT.dodge
   return (
     <div className={s.root} style={{ right: "max(16px, env(safe-area-inset-right))", bottom: "max(16px, env(safe-area-inset-bottom))", width: 1, height: 1 }}>
-      <SkillButton id="dash" k={k} icon="dash" label={t("skillDash", "Investida Relâmpago")} keyName={keys ? "2" : null} left={cd.dash} total={SKILLS.dash.cd} fill={null} max={false} denied={deniedN("dash")} active={false} onFire={() => onSkill("dash")} />
-      <SkillButton id="slash" k={k} icon="slash" label={t("skillSlash", "Corte Mágico")} keyName={keys ? "1" : null} left={cd.slash} total={SKILLS.slash.cd} fill={null} max={false} denied={deniedN("slash")} active={false} onFire={() => onSkill("slash")} />
-      <SkillButton id="ult" k={k} icon="ult" label={t("skillUlt", "Poder Máximo")} keyName={keys ? "Q" : null} left={cd.ult} total={SKILLS.ult.cd} fill={fill} max={max} denied={deniedN("ult")} active={false} onFire={onPower} />
-      <SkillButton id="shield" k={k} icon="shield" label={t("skillShield", "Escudo de Luz")} keyName={keys ? "3" : null} left={cd.shield} total={SKILLS.shield.cd} fill={null} max={false} denied={deniedN("shield")} active={shield > 0} onFire={() => onSkill("shield")} />
+      <SkillButton id="dash" k={k} {...common("dash")} label={nameOf("dash", "skillDash", "Investida Relâmpago")} keyName={keys ? "2" : null} left={cd.dash} total={SKILLS.dash.cd} fill={null} max={false} denied={deniedN("dash")} active={false} onFire={() => onSkill("dash")} />
+      <SkillButton id="slash" k={k} {...common("slash")} label={nameOf("slash", "skillSlash", "Corte Mágico")} keyName={keys ? "1" : null} left={cd.slash} total={SKILLS.slash.cd} fill={null} max={false} denied={deniedN("slash")} active={false} onFire={() => onSkill("slash")} />
+      <SkillButton id="ult" k={k} {...common("ult")} label={nameOf("ult", "skillUlt", "Poder Máximo")} keyName={keys ? "Q" : null} left={cd.ult} total={SKILLS.ult.cd} fill={fill} max={max} denied={deniedN("ult")} active={false} onFire={onPower} />
+      <SkillButton id="shield" k={k} {...common("shield")} label={nameOf("shield", "skillShield", "Escudo de Luz")} keyName={keys ? "3" : null} left={cd.shield} total={SKILLS.shield.cd} fill={null} max={false} denied={deniedN("shield")} active={shield > 0} onFire={() => onSkill("shield")} />
       <button
         type="button"
         aria-label={t("laminasBtnDodge", "ESQUIVAR")}
@@ -242,7 +277,7 @@ export function SkillHud({ cd, power, shield, keys, denied, onAttack, onDodge, o
       >
         <div className={s.face}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={s.whole} src={`${ICON}/dodge.webp`} alt="" draggable={false} />
+          <img className={s.whole} src={`${ICON}/skills/dodge.webp`} alt="" draggable={false} />
           <span className={`${s.label} ${anton.className}`} style={{ top: "66.5%", fontSize: D.h * k * 0.19 }}>
             {t("laminasBtnDodge", "ESQUIVAR")}
           </span>
@@ -267,7 +302,7 @@ export function SkillHud({ cd, power, shield, keys, denied, onAttack, onDodge, o
       >
         <div className={s.face}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={s.whole} src={`${ICON}/attack.webp`} alt="" draggable={false} />
+          <img className={s.whole} src={`${ICON}/skills/attack.webp`} alt="" draggable={false} />
           <span className={`${s.label} ${anton.className}`} style={{ top: "66%", fontSize: A.h * k * 0.135 }}>
             {t("laminasBtnAttack", "ATACAR")}
           </span>

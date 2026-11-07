@@ -40,7 +40,7 @@ import { ARENA_R, COMBO, DT, Fight, MOBS, POWER, RANKS, SKILLS, mobAttack, type 
 import { createSkillFx, SKILL_COLORS } from "./skill-fx"
 import { buildArena } from "./arena-view"
 import { buildStreet } from "./street-view"
-import { pushFrame, quantizeInput, type FightFrames } from "../sim/replay"
+import { pushFrame, quantizeInput, replayFight, type FightFrames } from "../sim/replay"
 import { buildRing } from "./ring-view"
 import { BoxingGloves } from "./gloves"
 import { MonsterModel, AXE_URL, AXE_EDGE, handEdge } from "./monster-view"
@@ -60,6 +60,11 @@ import { createVfx, FIRE, VFX_COLORS, type Trail } from "../../engine/vfx"
 import { Spirits } from "../../engine/spirits"
 import { tallness } from "../../engine/portrait"
 import { probeNote } from "../../crash-probe"
+import { FxStage } from "../../engine/fx/fx-core"
+import { AbilityDirector } from "../abilities/director"
+import { bloodCut, BLOOD_TUNE } from "../abilities/blood-cut"
+import { playCutIn, preloadCutIn } from "../abilities/cut-in"
+import { abilityKit } from "../abilities/registry"
 
 export interface LaminasHud {
   hp: number
@@ -71,6 +76,10 @@ export interface LaminasHud {
   over: null | { win: boolean }
   /** Algum golpe vindo agora (a tela pisca a dica de esquiva). */
   danger: boolean
+  /** O que quem joga está soltando agora (o botão acende). */
+  casting: SkillId | "ult" | null
+  /** Caído ou fora de ação: os botões apagam. */
+  locked: boolean
   /** Recarga restante de cada habilidade (s) e o escudo ainda aceso (s). */
   cd: Cooldowns
   shield: number
@@ -81,7 +90,7 @@ export interface LaminasGameOptions {
   /** A luta nasce parada até `begin()` (tela de versus). */
   hold?: boolean
   /** Textos que saltam na luta (já traduzidos). */
-  labels?: { evade: string; miss: string }
+  labels?: { evade: string; miss: string; bloodCut?: string }
   body: BodyId
   look?: string
   setup: FightSetup
@@ -414,7 +423,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const gun = !ring && (opts.kit ? opts.kit === "gun" : GUN_SKINS.includes(opts.body))
   const ranged = bow || gun
   const mage = ranged || (!ring && (opts.kit ? opts.kit === "mage" : clanOfBody(opts.body) === "raposa"))
-  const fight = new Fight({ ...opts.setup, style: mage ? "mage" : undefined })
+  // com ticket a semente vem do servidor; sem ticket (treino) ela é sorteada aqui para poder ser refeita
+  const seed = opts.setup.seed ?? (Date.now() & 0x7fffffff)
+  const fight = new Fight({ ...opts.setup, seed, style: mage ? "mage" : undefined })
   const frames: FightFrames = []
 
   // ── o jogador e a espada ─────────────────────────────────────────────────
@@ -794,6 +805,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const camLook = new Vector3(0, 1.2, 0)
   let shake = 0
   let ultZoom = 1
+  let baseFov = FOV
   const angDiff = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b))
 
   const readInput = (): Input => {
@@ -842,6 +854,53 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       { duration: rank >= 3 ? 1300 : 950, easing: "ease-out" },
     )
     anim.onfinish = () => el.remove()
+  }
+
+  // ── habilidade cinematográfica (2026-11-07) ──────────────────────────────
+  // Só o desenho: a regra do poder segue igual. Sem `cinematic` no kit, nada disso existe.
+  const fxStage = new FxStage(scene, quality.tier)
+  const subject = () => ({ x: fight.me.x, z: fight.me.z, facing: fight.me.facing, height: hero.height })
+  const director = new AbilityDirector({
+    subject,
+    obstacles: () => fight.mobs.filter((m) => m.state !== "dead").map((m) => ({ x: m.x, z: m.z, r: MOBS[m.kind].radius + 1.1 })),
+    limit: CAM_R,
+    far: () => 1 + 0.6 * tallness(scene),
+  })
+  // movimento reduzido: sem câmera lenta nem câmera voando, o efeito continua
+  const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+  if (calm) director.slow = 0
+  // a lâmina precisa ser a da regra: quem veste o corpo com outro kit segue o poder dele
+  const bloodOn = !ring && bat && clan === "vampiro" && abilityKit(opts.body).cinematic === "blood-cut"
+  const light0 = { hemi: hemi.intensity, sun: sun.intensity, clear: scene.clearColor.clone(), fog: scene.fogColor.clone() }
+  const cutInArt = `/meu-mundo/retratos/v3/emo/${opts.body}-angry.webp`
+  const CUT_EYES: Record<string, [number, number]> = { vampiro: [0.235, 0.5], vampira: [0.185, 0.49], vampiro_adulto: [0.225, 0.5], vampira_adulta: [0.19, 0.5] }
+  const blood = bloodOn
+    ? bloodCut({
+        stage: fxStage,
+        vfx,
+        audio,
+        subject,
+        blade: () => {
+          const node = grip?.root
+          return node?.isEnabled() ? Vector3.TransformCoordinates(bladeLocal[1], node.getWorldMatrix()) : null
+        },
+        act: (clip, dur, from, to) => hero.boxeAct(clip, dur, from, to),
+        cutIn: () => playCutIn(layer, { src: cutInArt, name: opts.labels?.bloodCut ?? "Golpe de Sangue", color: "#a3102f", eyes: CUT_EYES[opts.body] ?? [0.25, 0.5] }),
+        shake: (n) => (shake = Math.max(shake, calm ? n * 0.3 : n)),
+        hitStop: (t) => (hitStop = Math.max(hitStop, calm ? 0 : t)),
+        dim: (k) => {
+          hemi.intensity = light0.hemi * k
+          sun.intensity = light0.sun * k
+          scene.clearColor.r = light0.clear.r * k
+          scene.clearColor.g = light0.clear.g * k
+          scene.clearColor.b = light0.clear.b * k
+          scene.fogColor.copyFrom(light0.fog).scaleInPlace(k)
+        },
+      })
+    : null
+  if (blood) {
+    blood.warm()
+    preloadCutIn(cutInArt)
   }
 
   // ── animação do jogador ──────────────────────────────────────────────────
@@ -895,6 +954,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           break
         }
         case "power": {
+          if (blood) {
+            director.start(blood.script())
+            audio.excite(1)
+            break
+          }
           // o poder: círculo largo, coluna de luz e estrelas subindo do chão
           vfx.ground(new Vector3(e.x, 0, e.z), clan === "raposa" ? SHOT : fxColor, 3.2, POWER.dur + 0.4, true)
           // fases do PODER MÁXIMO: anéis que se fecham, núcleo branco, energia convergindo
@@ -910,6 +974,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           break
         }
         case "powerFire": {
+          if (blood) {
+            if (e.heal) pop(new Vector3(e.x, 2.4, e.z), `+${e.heal}`, "#7CFFB2", 40)
+            arena.cheer(0.8)
+            break
+          }
           heroRayLeft = stoneHero ? POWER.dur - POWER.fireAt : 0
           const at = new Vector3(e.x, 1.2, e.z)
           const feet = new Vector3(e.x, 0, e.z)
@@ -1001,7 +1070,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             if (e.src === "ult") pop(at.add(new Vector3(0, 0.7, 0)), String(e.dmg), ULT_NUM, 112, 3)
             else if (e.src === "skill") pop(at.add(new Vector3(0, 0.5, 0)), String(e.dmg), SKILL_NUM, 68, 2)
             else pop(at.add(new Vector3(0, 0.5, 0)), e.rank >= 2 ? `${RANKS[e.rank]} ${e.dmg}` : String(e.dmg), RANK_COLOR[e.rank], RANK_SIZE[e.rank] + chain * 6, e.rank)
-            if (e.src === "skill") vfx.impact(at, SKILL_COLORS.slash, true, 1.2)
+            if (e.src === "ult" && blood) blood.hit(at)
+            else if (e.src === "skill") vfx.impact(at, SKILL_COLORS.slash, true, 1.2)
             else if (clan !== "raposa") vfx.impact(at, fxColor, e.heavy, (1 + e.rank * 0.35 + chain * 0.2) * adultK)
             if (chain === 2 && !e.src) {
               vfx.burst(at, SKILL_COLORS.ult)
@@ -1073,8 +1143,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     // pausa de impacto: o mundo quase para por um instante no golpe forte
     const slow = hitStop > 0
     hitStop = Math.max(0, hitStop - realDt)
-    scene.animationTimeScale = slow ? 0.08 : 1
-    const dt = slow ? realDt * 0.08 : realDt
+    // câmera lenta: só o ritmo desta luta, que é local e passo a passo (ver abilities/director.ts)
+    const pace = slow ? 0.08 : director.scale()
+    scene.animationTimeScale = pace
+    const dt = realDt * pace
     if (!held) simClock += dt
     let steps = 0
     while (ran + DT <= simClock && steps < 8) {
@@ -1091,6 +1163,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       steps++
     }
     if (steps >= 8) ran = simClock
+    // a sequência anda no tempo da regra enquanto o poder dura; depois fecha sozinha
+    director.update(realDt, fight.me.state === "power" && !fight.over ? fight.me.t : null)
     arena.update(dt)
     audio.tick(dt)
 
@@ -1135,7 +1209,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       }
     }
     // a maga não corta: sem arco; a pedra carrega até o disparo
-    heroTrail.active = (p.state === "attack" || (p.state === "skill" && p.skill === "slash")) && clan !== "raposa"
+    heroTrail.active = (p.state === "attack" || (p.state === "skill" && p.skill === "slash") || (!!blood && p.state === "power" && p.t > 0.62 && p.t < POWER.fireAt + 0.1)) && clan !== "raposa"
     if (shotTrail) shotTrail.active = fight.shots.length > 0
     for (const c of clawTrails) c.active = p.state === "attack" || (p.state === "skill" && p.skill === "slash")
     if (heroStones) {
@@ -1207,7 +1281,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           else vfx.burst(new Vector3(at.x, 1.2, at.z), purple)
         }
       }
-      const muzzle = m.state === "strike" && v.prev !== "strike" && a ? v.model.muzzle() : null
+      // no close do poder quem joga não leva dano: raio e tiro de monstro só estourariam a tela
+      const quiet = director.playing
+      const muzzle = !quiet && m.state === "strike" && v.prev !== "strike" && a ? v.model.muzzle() : null
       if (muzzle && a) {
         const far = Math.min(a.range, Math.hypot(p.x - m.x, p.z - m.z))
         fireBeam(v, muzzle, new Vector3(m.x + Math.sin(m.facing) * far, hero.height * 0.55, m.z + Math.cos(m.facing) * far), !!a.heavy)
@@ -1220,7 +1296,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         v.landed = false
         if (cur?.max) audio.charge(m.windup)
       }
-      if (a && m.state === "strike") {
+      if (a && m.state === "strike" && !quiet) {
         const sx = Math.sin(m.facing)
         const sz = Math.cos(m.facing)
         const dx = p.x - m.x
@@ -1296,7 +1372,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     // celular em pé (2026-11-03): mais longe e mais alto, como no Jetpack
     const tallK = tallness(scene)
     // poder máximo: aproxima um pouco na carga (sem tirar o controle)
-    ultZoom += ((p.state === "power" && p.t < POWER.fireAt ? 0.82 : 1) - ultZoom) * Math.min(1, dt * 4)
+    ultZoom += ((p.state === "power" && p.t < POWER.fireAt && !blood ? 0.82 : 1) - ultZoom) * Math.min(1, dt * 4)
     const want = CAM_DIST * (1 + 0.85 * tallK) * ultZoom
     // a câmera não sai do chão de luta (atrás dele ficam o portão e a arquibancada,
     // que tampavam a tela): o que faltar de distância vira ângulo de visão.
@@ -1305,7 +1381,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const pb = p.x * bx + p.z * bz
     const inside = Math.max(2.5, -pb + Math.sqrt(Math.max(0, pb * pb - (p.x * p.x + p.z * p.z) + CAM_R * CAM_R)))
     const camD = Math.min(want, inside)
-    cam.fov += (Math.min(1.35, 2 * Math.atan(Math.tan(FOV / 2) * (want / camD))) - cam.fov) * Math.min(1, dt * 6)
+    baseFov += (Math.min(1.35, 2 * Math.atan(Math.tan(FOV / 2) * (want / camD))) - baseFov) * Math.min(1, dt * 6)
     const wantPos = new Vector3(p.x + bx * camD, CAM_H * (1 + 0.3 * tallK), p.z + bz * camD)
     camPos.addInPlace(wantPos.subtract(camPos).scale(Math.min(1, dt * 6)))
     const lookAt = tgt ? new Vector3((p.x * 2 + tgt.x) / 3, 1.2 + tgt.y * 0.3, (p.z * 2 + tgt.z) / 3) : new Vector3(p.x + Math.sin(camYaw) * 3, 1.2, p.z + Math.cos(camYaw) * 3)
@@ -1313,8 +1389,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     shake = Math.max(0, shake - dt * 1.4)
     const sx = (Math.random() - 0.5) * shake
     const sy = (Math.random() - 0.5) * shake
-    cam.position.set(camPos.x + sx, camPos.y + sy, camPos.z)
-    cam.setTarget(camLook)
+    // a habilidade mistura o enquadramento dela por cima; sem habilidade sai a câmera do jogo
+    const view = calm ? { pos: camPos, look: camLook, fov: baseFov } : director.view(camPos, camLook, baseFov, realDt)
+    cam.fov = view.fov
+    cam.position.set(view.pos.x + sx, view.pos.y + sy, view.pos.z)
+    cam.setTarget(view.look)
 
     hudAt -= dt
     if (hudAt <= 0) {
@@ -1327,6 +1406,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         mobs: fight.mobs.map((m) => ({ id: m.id, kind: m.kind, hp: m.hp, hpMax: m.hpMax })),
         over: fight.over ? { win: fight.over.win } : null,
         danger,
+        casting: p.state === "power" ? "ult" : p.state === "skill" ? p.skill : null,
+        locked: p.state === "down" || p.state === "win" || p.hp <= 0,
         cd: { ...p.cd },
         shield: Math.max(0, p.shieldUntil - fight.time),
       })
@@ -1372,6 +1453,16 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   if (process.env.NODE_ENV !== "production") {
     w.__laminasFill = () => (fight.me.power = POWER.max)
     w.__laminasRank = (r: Rank | null) => (fight.forceRank = r)
+    // laboratório de habilidades (harness/ability-lab.js)
+    w.__laminasAbility = {
+      tune: BLOOD_TUNE,
+      director,
+      /** Só a sequência, sem luta: do segundo `from` até `until` do tempo da regra. */
+      preview: (from = 0, until = Infinity) => blood && director.start(blood.script(), from, until),
+      stats: () => ({ fx: fxStage.stats(), meshes: scene.getActiveMeshes().length, fps: engine.getFps(), playing: director.playing, t: director.position, pace: director.scale() }),
+      replay: () => replayFight({ ...opts.setup, seed, style: mage ? "mage" : undefined }, frames),
+      now: () => ({ over: fight.over, mobs: fight.mobs.map((m) => m.hp), hp: fight.me.hp, time: fight.time }),
+    }
     // placa de luta (2026-11-02): põe vida/fôlego e a fração de vida dos inimigos
     w.__laminasVitals = (hp: number, stam: number, mobFrac?: number) => {
       fight.me.hp = hp
@@ -1425,11 +1516,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       window.removeEventListener("blur", blur)
       canvas.removeEventListener("pointerdown", click)
       canvas.removeEventListener("contextmenu", noMenu)
+      director.dispose()
+      fxStage.dispose()
       layer.remove()
       delete w.__laminas
       delete w.__laminasScene
       delete w.__laminasFill
       delete w.__laminasRank
+      delete w.__laminasAbility
       audio.dispose()
       sparks.dispose()
       ichor.dispose()
