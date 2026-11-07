@@ -259,7 +259,8 @@ const ARCHER_MOVES: (typeof CLAN_MOVES)[Clan] = {
   win: "ArIdle",
   swings: [[{ clip: "ArDraw", from: 0.15, to: 0.95 }], [{ clip: "ArDraw", from: 0.15, to: 0.95 }], [{ clip: "ArDraw", from: 0.05, to: 0.95 }]],
   special: [{ clip: "ArOver", from: 0, to: 0.3 }],
-  dodge: { clip: "ArDive", from: 0.08, to: 0.8 },
+  // regra do Alex (2026-11-07): sem cambalhota; esquiva como a raposa
+  dodge: { clip: "RStrafe", from: 0, to: 0.6 },
   hit: { clip: "ArHitS", from: 0, to: 0.7 },
   hitHeavy: { clip: "ArHitL", from: 0, to: 0.9 },
   fall: ["ArDie"],
@@ -1231,11 +1232,12 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       // anda de costas e de lado mirando (o arco só tem o passo para a esquerda)
       const fwd = (p.vx * Math.sin(p.facing) + p.vz * Math.cos(p.facing)) / sp
       const left = (p.vz * Math.sin(p.facing) - p.vx * Math.cos(p.facing)) / sp
-      if (bow) base = fwd < -0.5 ? "ArWalkB" : left > 0.6 ? "ArWalkL" : "ArRun"
+      // as arqueiras andam como a raposa (corrida e passo de lado dela), sem andar agachadas
+      if (bow) base = "RIdle"
       else base = fwd < -0.5 ? "FgBack" : left > 0.6 ? "FgStrafe2" : left < -0.6 ? "FgStrafe" : sp > 4 ? "FgRun" : "FgWalk"
     } else if (p.state === "idle" && (claws || !near) && sp > 0.3) base = null
     hero.setBoxe(base)
-    if (base === GUARD) {
+    if (base === GUARD || (bow && base === "RIdle")) {
       const sf = Math.sin(p.facing)
       const cf = Math.cos(p.facing)
       hero.setBoxeMove(p.vx * sf + p.vz * cf, p.vx * cf - p.vz * sf)
