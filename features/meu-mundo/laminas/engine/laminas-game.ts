@@ -63,6 +63,7 @@ import { probeNote } from "../../crash-probe"
 import { FxStage } from "../../engine/fx/fx-core"
 import { AbilityDirector } from "../abilities/director"
 import { bloodCut, BLOOD_TUNE } from "../abilities/blood-cut"
+import { bloodHits } from "../abilities/blood-hit"
 import { playCutIn, playFlash, preloadCutIn } from "../abilities/cut-in"
 import { abilityKit } from "../abilities/registry"
 
@@ -874,6 +875,18 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const light0 = { hemi: hemi.intensity, sun: sun.intensity, clear: scene.clearColor.clone(), fog: scene.fogColor.clone() }
   const cutInArt = `/meu-mundo/retratos/v3/emo/${opts.body}-angry.webp`
   const CUT_EYES: Record<string, [number, number]> = { vampiro: [0.235, 0.5], vampira: [0.185, 0.49], vampiro_adulto: [0.225, 0.5], vampira_adulta: [0.19, 0.5] }
+  const setDim = (k: number) => {
+    hemi.intensity = light0.hemi * k
+    sun.intensity = light0.sun * k
+    scene.clearColor.r = light0.clear.r * k
+    scene.clearColor.g = light0.clear.g * k
+    scene.clearColor.b = light0.clear.b * k
+    scene.fogColor.copyFrom(light0.fog).scaleInPlace(k)
+  }
+  // o acerto dos vampiros, e o instante em que o fundo escurece nos golpes fortes
+  const hits = bloodOn ? bloodHits(fxStage) : null
+  hits?.warm()
+  let hitDark = 0
   const blood = bloodOn
     ? bloodCut({
         stage: fxStage,
@@ -892,14 +905,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         flash: () => {
           if (!calm) playFlash(layer)
         },
-        dim: (k) => {
-          hemi.intensity = light0.hemi * k
-          sun.intensity = light0.sun * k
-          scene.clearColor.r = light0.clear.r * k
-          scene.clearColor.g = light0.clear.g * k
-          scene.clearColor.b = light0.clear.b * k
-          scene.fogColor.copyFrom(light0.fog).scaleInPlace(k)
-        },
+        dim: setDim,
       })
     : null
   if (blood) {
@@ -1075,19 +1081,23 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             else if (e.src === "skill") pop(at.add(new Vector3(0, 0.5, 0)), String(e.dmg), SKILL_NUM, 68, 2)
             else pop(at.add(new Vector3(0, 0.5, 0)), e.rank >= 2 ? `${RANKS[e.rank]} ${e.dmg}` : String(e.dmg), RANK_COLOR[e.rank], RANK_SIZE[e.rank] + chain * 6, e.rank)
             if (e.src === "ult" && blood) blood.hit(at)
-            else if (e.src === "skill") vfx.impact(at, SKILL_COLORS.slash, true, 1.2)
+            else if (hits) {
+              const force = e.src === "skill" ? 3 : Math.min(3, e.rank + chain)
+              hits.hit(at, force, chain)
+              if (force >= 2 && !calm) hitDark = 0.12
+            } else if (e.src === "skill") vfx.impact(at, SKILL_COLORS.slash, true, 1.2)
             else if (clan !== "raposa") vfx.impact(at, fxColor, e.heavy, (1 + e.rank * 0.35 + chain * 0.2) * adultK)
             if (chain === 2 && !e.src) {
-              vfx.burst(at, SKILL_COLORS.ult)
+              if (!hits) vfx.burst(at, SKILL_COLORS.ult)
               shake = Math.max(shake, 0.22)
             }
             if (e.rank >= 2 && !e.src) audio.crit()
             if (e.rank === 3) {
-              vfx.burst(at, fxColor)
+              if (!hits) vfx.burst(at, fxColor)
               hitStop = Math.max(hitStop, 0.12)
               shake = Math.max(shake, 0.3)
             } else if (e.heavy) hitStop = Math.max(hitStop, 0.07)
-            if (e.dead) vfx.burst(new Vector3(e.x, e.y + 1.2, e.z), fxColor)
+            if (e.dead && !hits) vfx.burst(new Vector3(e.x, e.y + 1.2, e.z), fxColor)
             audio.punch(e.heavy ? 1 : 0.6, e.heavy)
             shake = Math.max(shake, e.heavy ? 0.18 : 0.08)
             if (e.dead) {
@@ -1150,6 +1160,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     hitStop = Math.max(0, hitStop - realDt)
     // câmera lenta: só o ritmo desta luta, que é local e passo a passo (ver abilities/director.ts)
     const pace = slow ? 0.08 : director.scale()
+    if (hitDark > 0 && !director.playing) {
+      hitDark -= realDt
+      setDim(hitDark > 0 ? 0.5 : 1)
+    }
     scene.animationTimeScale = pace
     const dt = realDt * pace
     if (!held) simClock += dt

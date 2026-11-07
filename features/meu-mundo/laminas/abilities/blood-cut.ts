@@ -31,7 +31,6 @@ import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { PointLight } from "@babylonjs/core/Lights/pointLight"
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
-import { FresnelParameters } from "@babylonjs/core/Materials/fresnelParameters"
 import { Effect } from "@babylonjs/core/Materials/effect"
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
@@ -86,9 +85,20 @@ uniform mat4 world;
 uniform mat4 viewProjection;
 uniform float uOpen;
 uniform float uTime;
+uniform float uT;
 varying vec2 vUV;
+varying float vSeed;
 void main() {
   vec3 p = position;
+  vSeed = 0.0;
+#ifdef THORN
+  // normal = (base x, base z, hora de subir): a lâmina nasce de um ponto no chão e estica
+  float g = clamp((uT - normal.z) / 0.1, 0.0, 1.0);
+  float grow = 1.0 + 2.4 * pow(g - 1.0, 3.0) + 1.4 * pow(g - 1.0, 2.0);
+  vec3 base = vec3(normal.x, 0.0, normal.y);
+  p = base + (position - base) * (g > 0.0 ? grow : 0.0);
+  vSeed = fract(normal.z * 37.0 + normal.x * 3.1);
+#endif
 #ifdef WING
   // As asas abrem aqui: cada dedo gira do ombro e a membrana acompanha, sem refazer a malha.
   float side = sign(position.x);
@@ -115,9 +125,12 @@ uniform float uFade;
 uniform float uCut;
 uniform float uR;
 uniform float uGain;
+uniform float uBoost;
+uniform float uSeed;
 uniform sampler2D uNoise;
 uniform sampler2D uTex;
 varying vec2 vUV;
+varying float vSeed;
 // A rampa: escuro → sangue → quente → quase branco. Toda peça passa por aqui.
 vec3 ramp(float x) {
   vec3 c = mix(uDeep, uBlood, smoothstep(0.0, 0.38, x));
@@ -146,6 +159,41 @@ void main() {
   vec3 c = ramp(min(v, 1.0));
   c = mix(c, uEdge, (1.0 - inside) * 0.55 + smoothstep(0.55, 0.95, yy) * 0.35);
   outc = vec4(c * (body * 0.75 + light) * uGain, body * 0.8 * (1.0 - 0.45 * smoothstep(0.6, 1.0, v))) * uFade;
+#endif
+#ifdef THORN
+  // A mesma receita da lua: fio aceso numa beira, fios de energia, sem contorno, bem translúcido.
+  float u = vUV.x;
+  float y = vUV.y;
+  float fiber = texture2D(uNoise, vec2(u * 0.7 + vSeed, y * 0.8 - uTime * 1.3)).g;
+  float cloud = texture2D(uNoise, vec2(u * 0.9 + vSeed * 3.0, y * 0.7 - uTime * 0.5)).r;
+  float blade = exp(-u * 9.0) * 1.15;
+  float inner = pow(1.0 - u, 1.7) * (0.3 + 0.7 * smoothstep(0.26, 0.8, fiber * 0.72 + cloud * 0.5));
+  float v = (blade + inner * 0.85) * (1.0 - 0.25 * y) * smoothstep(0.0, 0.05, y);
+  v -= uCut * (0.45 + 1.0 * (1.0 - cloud));
+  float body = smoothstep(0.05, 0.34, v);
+  float light = smoothstep(0.22, 0.95, v);
+  outc = vec4(ramp(min(v, 1.0)) * (body * 0.55 + light * 1.05) * uGain, body * 0.36) * uFade;
+#endif
+#ifdef CURTAIN
+  // Luz subindo da borda do desenho: fios verticais que somem para o alto.
+  float y = vUV.y;
+  float fiber = texture2D(uNoise, vec2(vUV.x * 3.0, y * 0.3 - uTime * 0.9)).g;
+  float v = pow(1.0 - y, 2.4) * smoothstep(0.34, 0.86, fiber);
+  outc = vec4(ramp(0.45 + v * 0.5) * v * 1.2 * uGain, v * 0.22) * uFade;
+#endif
+#ifdef STAR
+  // Estrela de recorte duro, em faixas chapadas: nada de degradê.
+  vec2 p = vUV - 0.5;
+  float r = length(p) * 2.0;
+  float ang = atan(p.y, p.x) / 6.2832 + 0.5;
+  float tri = abs(fract(ang * 9.0 + uSeed * 7.0) - 0.5) * 2.0;
+  float wob = texture2D(uNoise, vec2(ang * 2.0 + uSeed, 0.37 + uSeed)).g;
+  float len = (0.26 + 0.74 * tri * tri * (0.45 + wob)) * uR;
+  float outer = smoothstep(len, len - 0.012, r);
+  float mid = smoothstep(len * 0.66, len * 0.66 - 0.012, r);
+  float core = smoothstep(len * 0.36, len * 0.36 - 0.012, r);
+  vec3 c = mix(mix(uEdge, uHot, mid), vec3(1.0, 0.96, 0.9), core);
+  outc = vec4(c * uGain, 1.0) * outer;
 #endif
 #ifdef WAKE
   // Fios que saem da lua e somem para trás; u corre o arco, v vai da lua ao fim.
@@ -188,8 +236,9 @@ void main() {
   float front = smoothstep(uR - 0.2, uR - 0.06, r) * show;
   float line = t.r;
   float glow = t.g * (0.6 + 0.6 * n);
-  vec3 c = ramp(0.4 + line * 0.55 + front * 0.3);
-  outc = vec4(c * (line * 1.25 + glow * 0.75) * show * uGain, (line * 0.85 + glow * 0.3) * show) * uFade;
+  vec3 c = ramp(0.4 + line * 0.55 + front * 0.3 + uBoost * 0.3);
+  // uBoost: o desenho inteiro acende no impacto, com o brilho alargando em volta do traço
+  outc = vec4(c * (line * (1.25 + uBoost) + glow * (0.75 + 2.4 * uBoost)) * show * uGain, (line * 0.85 + glow * 0.3) * show) * uFade;
 #endif
 #ifdef POOL
   // Mancha no chão: escurece a areia em volta e a luz do círculo fica de pé.
@@ -212,9 +261,9 @@ void main() {
   gl_FragColor = outc;
 }`
 
-type ShaderKind = "MOON" | "WAKE" | "WING" | "RING" | "DECAL" | "POOL" | "FLASH"
+type ShaderKind = "MOON" | "WAKE" | "WING" | "RING" | "DECAL" | "POOL" | "FLASH" | "THORN" | "CURTAIN" | "STAR"
 
-function shaderOf(scene: Scene, name: string, kind: ShaderKind, noise: Texture) {
+export function shaderOf(scene: Scene, name: string, kind: ShaderKind, noise: Texture) {
   Effect.ShadersStore.mmBloodVertexShader = VERTEX
   Effect.ShadersStore.mmBloodFragmentShader = FRAGMENT
   const m = new ShaderMaterial(
@@ -223,7 +272,7 @@ function shaderOf(scene: Scene, name: string, kind: ShaderKind, noise: Texture) 
     { vertex: "mmBlood", fragment: "mmBlood" },
     {
       attributes: ["position", "normal", "uv"],
-      uniforms: ["world", "viewProjection", "uDeep", "uBlood", "uHot", "uEdge", "uTime", "uFade", "uCut", "uR", "uGain", "uOpen"],
+      uniforms: ["world", "viewProjection", "uDeep", "uBlood", "uHot", "uEdge", "uTime", "uFade", "uCut", "uR", "uGain", "uOpen", "uT", "uBoost", "uSeed"],
       samplers: ["uNoise", "uTex"],
       defines: [`#define ${kind}`],
       needAlphaBlending: true,
@@ -238,12 +287,12 @@ function shaderOf(scene: Scene, name: string, kind: ShaderKind, noise: Texture) 
   m.setColor3("uEdge", EDGE)
   m.setTexture("uNoise", noise)
   m.setTexture("uTex", noise)
-  for (const [k, v] of [["uFade", 1], ["uCut", 0], ["uR", 1], ["uGain", 1], ["uOpen", 0], ["uTime", 0]] as const) m.setFloat(k, v)
+  for (const [k, v] of [["uFade", 1], ["uCut", 0], ["uR", 1], ["uGain", 1], ["uOpen", 0], ["uTime", 0], ["uT", 0], ["uBoost", 0], ["uSeed", 0]] as const) m.setFloat(k, v)
   return m
 }
 
 /** A lua: fita em arco. y = 0 é o fio de corte, y > 0 entra na lua, y < 0 é o halo por fora. */
-function moonMesh(scene: Scene, name: string) {
+export function moonMesh(scene: Scene, name: string) {
   const N = 56
   const rows = [-0.24, -0.1, -0.02, 0, 0.03, 0.08, 0.16, 0.3, 0.5, 0.75, 1]
   const pos: number[] = []
@@ -271,6 +320,58 @@ function moonMesh(scene: Scene, name: string) {
     }
   const m = new Mesh(name, scene)
   Object.assign(new VertexData(), { positions: pos, indices: idx, uvs: uv, normals: nor }).applyToMesh(m)
+  return m
+}
+
+interface ThornSpec {
+  a: number
+  d: number
+  h: number
+  w: number
+  bend: number
+  lean: number
+  at: number
+}
+
+/**
+ * Todas as lâminas numa malha, em volta de quem joga (+z = frente do golpe). Cada uma são duas
+ * fitas curvas em cruz, para ter corpo de qualquer lado. normal guarda a base e a hora de subir.
+ */
+function thornsMesh(scene: Scene, specs: ThornSpec[]) {
+  const R = 7
+  const pos: number[] = []
+  const uv: number[] = []
+  const nor: number[] = []
+  const idx: number[] = []
+  for (const o of specs) {
+    const bx = Math.sin(o.a) * o.d
+    const bz = Math.cos(o.a) * o.d
+    const rx = Math.sin(o.a)
+    const rz = Math.cos(o.a)
+    for (const [ax, az] of [[rz, -rx], [rx, rz]]) {
+      const first = pos.length / 3
+      for (let j = 0; j <= R; j++) {
+        const y = j / R
+        const w = o.w * Math.pow(1 - y, 0.75) + 0.002
+        // a ponta curva para o lado e para fora: forma de corte, não de cone
+        const cx = bx + (ax * o.bend + rx * o.lean) * y * y
+        const cz = bz + (az * o.bend + rz * o.lean) * y * y
+        for (const u of [0, 1]) {
+          pos.push(cx + ax * (u - 0.2) * w, o.h * y, cz + az * (u - 0.2) * w)
+          uv.push(u, y)
+          nor.push(bx, bz, o.at)
+        }
+        if (j < R) {
+          const a = first + j * 2
+          idx.push(a, a + 1, a + 2, a + 2, a + 1, a + 3)
+        }
+      }
+    }
+  }
+  const m = new Mesh("bc-thorns", scene)
+  Object.assign(new VertexData(), { positions: pos, indices: idx, uvs: uv, normals: nor }).applyToMesh(m)
+  // a forma real depende do shader: a caixa da malha não vale
+  m.alwaysSelectAsActiveMesh = true
   return m
 }
 
@@ -366,6 +467,11 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
   const dropN = Math.max(10, Math.round(44 * k))
   const thornN = Math.max(12, Math.round(38 * Math.sqrt(k)))
 
+  const hash = (i: number, s: number) => {
+    const v = Math.sin(i * 127.1 + s * 311.7) * 43758.5453
+    return v - Math.floor(v)
+  }
+
   const noise = new Texture(`${ART}/noise.webp`, scene)
   const runeTex = new Texture(`${ART}/rune.webp`, scene)
   const crackTex = new Texture(`${ART}/crack.webp`, scene)
@@ -409,20 +515,22 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
   flash.material = flashMat
   flash.billboardMode = Mesh.BILLBOARDMODE_ALL
 
-  // espinhos: cristal facetado escuro, a borda acende pelo ângulo e a luz da cena bate neles
-  const thorn = CreateCylinder("bc-thorn", { height: 1, diameterTop: 0, diameterBottom: 1, tessellation: 5, subdivisions: 1 }, scene)
-  thorn.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
-  thorn.convertToFlatShadedMesh()
-  const thornMat = new StandardMaterial("bc-thorn-mat", scene)
-  thornMat.diffuseColor = new Color3(0.5, 0.03, 0.09)
-  thornMat.emissiveColor = new Color3(0.42, 0.015, 0.09)
-  thornMat.specularColor = new Color3(1, 0.5, 0.9)
-  thornMat.specularPower = 64
-  thornMat.emissiveFresnelParameters = Object.assign(new FresnelParameters(), { leftColor: new Color3(1, 0.3, 0.5), rightColor: new Color3(0.3, 0.008, 0.07), bias: 0.16, power: 1.7 })
+  // espinhos: lâminas de energia, feitas como os cortes; uma malha só, a subida sai do shader
+  const thorns = Array.from({ length: thornN }, (_, i) => {
+    const d = 1.25 + Math.pow(hash(i, 1), 0.7) * (POWER.bladeRange - 0.6)
+    return {
+      a: (hash(i, 2) * 2 - 1) * (POWER.bladeArc / 2 + 0.08),
+      d,
+      h: (1.1 + hash(i, 3) * 2.3) * (1.3 - d / 9),
+      w: 0.34 + hash(i, 4) * 0.42,
+      bend: (hash(i, 5) - 0.5) * 1.1,
+      lean: 0.3 + hash(i, 6) * 0.7,
+      at: FIRE_AT + 0.015 + d / 26,
+    }
+  })
+  const thorn = thornsMesh(scene, thorns)
+  const thornMat = shaderOf(scene, "bc-thorn-mat", "THORN", noise)
   thorn.material = thornMat
-  thorn.alwaysSelectAsActiveMesh = true
-  const thornBuf = new Float32Array(thornN * 16)
-  thorn.thinInstanceSetBuffer("matrix", thornBuf, 16, false)
 
   // gotas de luz: voltam de quem foi atingido para o corpo (a cura aparecendo)
   const drop = CreateSphere("bc-drop", { diameter: 1, segments: 3 }, scene)
@@ -544,30 +652,19 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
     light.intensity = 0
   }
 
-  const meshes = [blade, ghost, wake, wings, ring, pool, rune, crack, flash, thorn, drop, rock]
-  const mats = [bladeMat, ghostMat, wakeMat, wingMat, ringMat, poolMat, runeMat, crackMat, flashMat]
+  // cortina de luz que sobe da borda do desenho quando os espinhos saem
+  const curtain = CreateCylinder("bc-curtain", { height: 1, diameter: 2, tessellation: 56, cap: Mesh.NO_CAP }, scene)
+  curtain.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
+  const curtainMat = shaderOf(scene, "bc-curtain-mat", "CURTAIN", noise)
+  curtain.material = curtainMat
+
+  const meshes = [blade, ghost, wake, wings, ring, pool, rune, crack, flash, thorn, drop, rock, curtain]
+  const mats = [bladeMat, ghostMat, wakeMat, wingMat, ringMat, poolMat, runeMat, crackMat, flashMat, thornMat, curtainMat]
   for (const m of meshes) {
     m.isPickable = false
     m.setEnabled(false)
   }
 
-  const hash = (i: number, s: number) => {
-    const v = Math.sin(i * 127.1 + s * 311.7) * 43758.5453
-    return v - Math.floor(v)
-  }
-  const thorns = Array.from({ length: thornN }, (_, i) => {
-    const d = 1.25 + Math.pow(hash(i, 1), 0.7) * (POWER.bladeRange - 0.6)
-    return {
-      a: (hash(i, 2) * 2 - 1) * (POWER.bladeArc / 2 + 0.08),
-      d,
-      h: (0.95 + hash(i, 3) * 2.1) * (1.3 - d / 9),
-      w: 0.13 + hash(i, 4) * 0.2,
-      tilt: (hash(i, 5) - 0.5) * 0.5,
-      out: 0.22 + hash(i, 6) * 0.28,
-      sink: 1.3 + hash(i, 7) * 0.22,
-      at: FIRE_AT + 0.015 + d / 26,
-    }
-  })
   const drops = Array.from({ length: dropN }, (_, i) => ({ s: 0.03 + hash(i, 11) * 0.05, back: 0.98 + hash(i, 12) * 0.28 }))
   const rocks = Array.from({ length: rockN }, (_, i) => ({
     a: (hash(i, 13) * 2 - 1) * 1.1,
@@ -600,25 +697,6 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
       p.stop()
     }
     if (light) light.intensity = 0
-  }
-
-  const stepThorns = (s: Live) => {
-    let any = false
-    for (let i = 0; i < thornN; i++) {
-      const o = thorns[i]
-      const grow = backOut(seg(s.t, o.at, o.at + 0.1))
-      const gone = easeInOut(seg(s.t, o.sink, o.sink + 0.3))
-      const on = s.t >= o.at && gone < 1
-      any ||= on
-      const a = s.facing + o.a
-      Quaternion.RotationYawPitchRollToRef(a, o.out * (1 - gone), o.tilt, q)
-      sv.set(on ? o.w * (1 - gone * 0.5) : 0, on ? o.h * Math.max(0.001, grow) * (1 - gone) : 0, on ? o.w * (1 - gone * 0.5) : 0)
-      pv.set(s.x + Math.sin(a) * o.d, -0.04, s.z + Math.cos(a) * o.d)
-      Matrix.ComposeToRef(sv, q, pv, mat)
-      mat.copyToArray(thornBuf, i * 16)
-    }
-    thorn.setEnabled(any)
-    if (any) thorn.thinInstanceBufferUpdated("matrix")
   }
 
   const stepRocks = (s: Live) => {
@@ -696,8 +774,11 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
       for (const p of systems) p.updateSpeed = speed
 
       // chão: mancha escura e círculo de luas
-      const runeFade = 1 - seg(t, 1.05, 1.5)
-      const runeR = Math.max(2.6, s.height * 1.3)
+      const runeFade = 1 - seg(t, 1.32, 1.66)
+      // quando os espinhos saem o desenho abre até o alcance deles e acende inteiro
+      const spread = easeOut(seg(t, FIRE_AT, FIRE_AT + 0.14))
+      const runeR = Math.max(2.6, s.height * 1.3) + (POWER.bladeRange + 1.2 - Math.max(2.6, s.height * 1.3)) * spread
+      const boost = seg(t, FIRE_AT, FIRE_AT + 0.05) * (1 - 0.72 * seg(t, FIRE_AT + 0.1, 1.5)) * (0.86 + 0.14 * Math.sin(clock * 34))
       const open = 1.12 * easeOut(seg(t, 0, 0.22))
       rune.setEnabled(runeFade > 0)
       pool.setEnabled(runeFade > 0)
@@ -706,6 +787,7 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
       rune.scaling.setAll(runeR)
       runeMat.setFloat("uR", open)
       runeMat.setFloat("uFade", runeFade)
+      runeMat.setFloat("uBoost", boost)
       pool.position.set(s.x, 0.04, s.z)
       pool.scaling.setAll(runeR * 1.7)
       poolMat.setFloat("uR", Math.max(0.05, open * 0.9))
@@ -800,7 +882,19 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
         crackMat.setFloat("uR", 0.18 + 1.05 * easeOut(seg(t, FIRE_AT, FIRE_AT + 0.16)))
         crackMat.setFloat("uFade", crackFade)
       }
-      stepThorns(s)
+      // lâminas: sobem em onda, a partir da mesma hora do dano, e queimam como a lua
+      const thornOn = s.impacted && t < 1.62
+      thorn.setEnabled(thornOn)
+      curtain.setEnabled(s.impacted && t < 1.34)
+      if (thornOn) {
+        thorn.position.set(s.x, 0.02, s.z)
+        thorn.rotation.y = s.facing
+        thornMat.setFloat("uT", t)
+        thornMat.setFloat("uCut", easeInOut(seg(t, 1.24, 1.6)) * 1.05)
+        curtain.position.set(s.x, 0.02, s.z)
+        curtain.scaling.set(runeR * 0.985, 2.8 + 1.8 * easeOut(seg(t, FIRE_AT, 1.1)), runeR * 0.985)
+        curtainMat.setFloat("uFade", seg(t, FIRE_AT, FIRE_AT + 0.05) * (1 - seg(t, 1.0, 1.34)))
+      }
       stepRocks(s)
       stepDrops(s)
       return true
@@ -822,7 +916,7 @@ function buildEffect(ctx: FxContext, rig: BloodRig): FxEffect<Live> {
       light?.dispose()
       for (const m of meshes) m.dispose()
       moon.dispose()
-      for (const m of [...mats, thornMat, dropMat, rockMat]) m.dispose()
+      for (const m of [...mats, dropMat, rockMat]) m.dispose()
       for (const t of [noise, runeTex, crackTex, smokeTex, dot]) t.dispose()
     },
   }
