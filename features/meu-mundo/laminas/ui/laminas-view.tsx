@@ -286,7 +286,8 @@ function LaminasScreen({
       alive = false
     }
   }, [choice, stage, portal, mobId, tutorial])
-  const labelsRef = useRef({ evade: t("laminasEvade", "ESQUIVOU!"), miss: t("laminasMiss", "ERROU!"), bloodCut: t("abilityBloodCut", "Golpe de Sangue") })
+  const ultName = abilityKit(body, stage).slots.ult.name
+  const labelsRef = useRef({ evade: t("laminasEvade", "ESQUIVOU!"), miss: t("laminasMiss", "ERROU!"), ult: t(ultName.key, ultName.fallback) })
   const receiptRef = useRef(onReceipt)
   useEffect(() => {
     receiptRef.current = onReceipt

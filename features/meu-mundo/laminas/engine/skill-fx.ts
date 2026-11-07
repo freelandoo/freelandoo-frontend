@@ -36,6 +36,9 @@ export const SKILL_COLORS = {
   ult: { main: new Color3(1, 0.62, 0.12), edge: new Color3(1, 0.95, 0.7) },
 } satisfies Record<string, VfxColor>
 
+/** Cores das habilidades: cada personagem traz as suas (abilities/signatures). */
+export type SkillPalette = Record<"slash" | "dash" | "shield" | "ult", VfxColor>
+
 export interface SkillFx {
   wave: (id: number, at: Vector3, facing: number) => void
   moveWave: (id: number, at: Vector3) => void
@@ -113,7 +116,7 @@ function crescentMesh(scene: Scene, name: string): Mesh {
  * poder crescem com ela (jovem 1,7, adulto 2,7, deuses 3,2, Brutamontes 4 —
  * pedido do Alex: "nos adultos está na cintura").
  */
-export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: () => [Vector3, Vector3] | null, heroH: () => number = () => 1.8): SkillFx {
+export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: () => [Vector3, Vector3] | null, heroH: () => number = () => 1.8, C: SkillPalette = SKILL_COLORS): SkillFx {
   const owned: { dispose: () => void }[] = []
   const glowAdd = (m: Mesh) => vfx.addGlow(m)
   const addMat = (name: string) => {
@@ -209,7 +212,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
     halo.material = waveMat
     halo.setEnabled(false)
     glowAdd(mesh)
-    const sparks = ps(`sk-wave-sparks-${i}`, 160, sparkTex, SKILL_COLORS.slash)
+    const sparks = ps(`sk-wave-sparks-${i}`, 160, sparkTex, C.slash)
     sparks.minSize = 0.05
     sparks.maxSize = 0.16
     sparks.minLifeTime = 0.25
@@ -225,14 +228,14 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
 
   // ── INVESTIDA ────────────────────────────────────────────────────────────
   let dashOn = false
-  const dashBody: Trail = vfx.trail(() => (dashOn ? bodyTrail() : null), SKILL_COLORS.dash)
+  const dashBody: Trail = vfx.trail(() => (dashOn ? bodyTrail() : null), C.dash)
   const dashFeet = { at: new Vector3(), prev: new Vector3(), dir: new Vector3(1, 0, 0) }
   const dashGround: Trail = vfx.trail(() => {
     if (!dashOn) return null
     const s = dashFeet.dir.scale(0.4)
     return [dashFeet.at.add(s).addInPlaceFromFloats(0, 0.05, 0), dashFeet.at.subtract(s).addInPlaceFromFloats(0, 0.05, 0)]
-  }, SKILL_COLORS.dash)
-  const bolts = ps("sk-bolts", 120, boltTex, SKILL_COLORS.dash)
+  }, C.dash)
+  const bolts = ps("sk-bolts", 120, boltTex, C.dash)
   bolts.minSize = 0.15
   bolts.maxSize = 0.4
   bolts.minLifeTime = 0.1
@@ -253,19 +256,19 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
   domeMat.emissiveTexture = hexTex
   hexTex.uScale = 5
   hexTex.vScale = 3
-  domeMat.emissiveColor = SKILL_COLORS.shield.main.clone()
+  domeMat.emissiveColor = C.shield.main.clone()
   domeMat.opacityTexture = hexTex
   domeMat.alphaMode = Constants.ALPHA_ADD
   domeMat.disableDepthWrite = true
   domeMat.backFaceCulling = false
   // borda acesa (violeta → dourado no meio)
-  domeMat.emissiveFresnelParameters = Object.assign(new FresnelParameters(), { leftColor: new Color3(0.75, 0.48, 1), rightColor: new Color3(0.2, 0.15, 0.05), bias: 0.05, power: 2.6 })
+  domeMat.emissiveFresnelParameters = Object.assign(new FresnelParameters(), { leftColor: C.shield.edge.clone(), rightColor: C.shield.main.scale(0.2), bias: 0.05, power: 2.6 })
   domeMat.opacityFresnelParameters = Object.assign(new FresnelParameters(), { leftColor: new Color3(0.9, 0.9, 0.9), rightColor: new Color3(0.05, 0.05, 0.05), bias: 0.02, power: 2.4 })
   dome.material = domeMat
   dome.setEnabled(false)
   owned.push(dome, domeMat)
   const orbitMat = addMat("sk-orbit-mat")
-  orbitMat.emissiveColor = SKILL_COLORS.shield.main
+  orbitMat.emissiveColor = C.shield.main
   const orbits = [0, 1].map((i) => {
     const t = CreateTorus(`sk-orbit-${i}`, { diameter: 3, thickness: 0.035, tessellation: low ? 32 : 64 }, scene)
     t.material = orbitMat
@@ -275,7 +278,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
     owned.push(t)
     return t
   })
-  const motes = ps("sk-motes", 140, sparkTex, SKILL_COLORS.shield)
+  const motes = ps("sk-motes", 140, sparkTex, C.shield)
   motes.minSize = 0.05
   motes.maxSize = 0.13
   motes.minLifeTime = 0.8
@@ -292,7 +295,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
 
   // ── PODER MÁXIMO ─────────────────────────────────────────────────────────
   const ultMat = addMat("sk-ult-mat")
-  ultMat.emissiveColor = SKILL_COLORS.ult.main
+  ultMat.emissiveColor = C.ult.main
   const ultRings = [0, 1, 2].map((i) => {
     const t = CreateTorus(`sk-ult-ring-${i}`, { diameter: 2, thickness: 0.05, tessellation: low ? 32 : 64 }, scene)
     t.material = ultMat
@@ -312,7 +315,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
   core.setEnabled(false)
   glowAdd(core)
   owned.push(core)
-  const feed = ps("sk-ult-feed", 220, sparkTex, SKILL_COLORS.ult)
+  const feed = ps("sk-ult-feed", 220, sparkTex, C.ult)
   feed.minSize = 0.05
   feed.maxSize = 0.14
   feed.minLifeTime = 0.3
@@ -322,13 +325,13 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
   feed.createSphereEmitter(2.6, 0)
   const shockMat = addMat("sk-shock-mat")
   shockMat.opacityTexture = ringTex
-  shockMat.emissiveColor = SKILL_COLORS.ult.main
+  shockMat.emissiveColor = C.ult.main
   const shock = CreateGround("sk-shock", { width: 2, height: 2 }, scene)
   shock.material = shockMat
   shock.isPickable = false
   shock.setEnabled(false)
   owned.push(shock)
-  const embers = ps("sk-embers", 260, sparkTex, SKILL_COLORS.ult)
+  const embers = ps("sk-embers", 260, sparkTex, C.ult)
   embers.minSize = 0.08
   embers.maxSize = 0.18
   embers.minLifeTime = 0.5
@@ -371,7 +374,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
       w.sparks.emitRate = 0
       w.sparks.emitter = at.clone()
       w.sparks.manualEmitCount = Math.round(40 * k)
-      vfx.impact(at, SKILL_COLORS.slash, true, 1.2)
+      vfx.impact(at, C.slash, true, 1.2)
     },
     dash(on, at) {
       if (on) {
@@ -391,7 +394,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
       dashGround.active = on
     },
     dashEnd(at) {
-      vfx.impact(at.add(new Vector3(0, 1, 0)), SKILL_COLORS.dash, true, 1.3)
+      vfx.impact(at.add(new Vector3(0, 1, 0)), C.dash, true, 1.3)
       vfx.dust(at, 10)
       bolts.emitter = at.add(new Vector3(0, 0.8, 0))
       bolts.manualEmitCount = Math.round(30 * k)
@@ -406,11 +409,11 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
       for (const o of orbits) o.setEnabled(true)
       motes.createCylinderEmitter(domeW() * 0.9, 0.1, 0.1, 0)
       motes.emitRate = 70 * k
-      vfx.ground(at, SKILL_COLORS.shield, domeW() * 1.05, 0.9, false, !low)
+      vfx.ground(at, C.shield, domeW() * 1.05, 0.9, false, !low)
     },
     shieldHit(at) {
       shield.pulse = 1
-      vfx.impact(at, SKILL_COLORS.shield, true, 1.1)
+      vfx.impact(at, C.shield, true, 1.1)
     },
     shieldOff() {
       if (!shield.on) return
@@ -476,7 +479,7 @@ export function createSkillFx(scene: Scene, low: boolean, vfx: Vfx, bodyTrail: (
         dome.rotation.y += dt * 0.35
         dome.visibility = (0.32 + 0.45 * shield.pulse) * fade
         hexTex.vOffset += dt * 0.08
-        domeMat.emissiveColor.copyFrom(SKILL_COLORS.shield.main).scaleInPlace(0.24 + 0.6 * shield.pulse)
+        domeMat.emissiveColor.copyFrom(C.shield.main).scaleInPlace(0.24 + 0.6 * shield.pulse)
         orbits.forEach((o, i) => {
           o.position.set(hero.x, hero.y + (0.6 + i * 0.75) * dk, hero.z)
           o.rotation.set(0.35 * (i ? -1 : 1) + Math.sin(shield.t * 1.6 + i) * 0.12, shield.t * (i ? -1.6 : 1.2), 0.25)

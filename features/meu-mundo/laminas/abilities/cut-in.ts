@@ -18,10 +18,10 @@ export function preloadCutIn(src: string) {
 }
 
 /** Clarão do impacto: a tela inteira acende e desfaz em manchas de cor. Só opacity e transform. */
-export function playFlash(layer: HTMLElement) {
+export function playFlash(layer: HTMLElement, pal: readonly string[]) {
   const el = document.createElement("div")
-  el.style.cssText =
-    "position:absolute;inset:-8%;will-change:transform,opacity;background:radial-gradient(circle at 58% 46%,#fff 0,#ffe3ec 16%,transparent 44%),radial-gradient(circle at 26% 28%,rgba(178,107,255,.9),transparent 32%),radial-gradient(circle at 82% 70%,rgba(211,23,63,.95),transparent 38%),radial-gradient(circle at 72% 18%,rgba(255,90,140,.8),transparent 26%),rgba(120,6,36,.5)"
+  const [, mid, hot, edge, top] = pal
+  el.style.cssText = `position:absolute;inset:-8%;will-change:transform,opacity;background:radial-gradient(circle at 58% 46%,#fff 0,${top} 16%,transparent 44%),radial-gradient(circle at 26% 28%,${edge}e6,transparent 32%),radial-gradient(circle at 82% 70%,${hot}f2,transparent 38%),radial-gradient(circle at 72% 18%,${hot}cc,transparent 26%),${mid}80`
   layer.appendChild(el)
   const anim = el.animate(
     [
@@ -46,6 +46,8 @@ export function playCutIn(layer: HTMLElement, o: CutIn) {
   const img = document.createElement("img")
   // os olhos enchem a faixa: o retrato fica bem maior que ela
   const size = h * (narrow ? 5 : 4.6)
+  // quem não tem retrato bravo fica só com a faixa e o nome
+  img.onerror = () => img.remove()
   img.src = o.src
   img.alt = ""
   img.draggable = false

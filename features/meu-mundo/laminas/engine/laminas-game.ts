@@ -37,7 +37,7 @@ import { Character } from "../../engine/player"
 import { BoxeAudio } from "./audio"
 import type { BodyId } from "../../types"
 import { ARENA_R, COMBO, DT, Fight, MOBS, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
-import { createSkillFx, SKILL_COLORS } from "./skill-fx"
+import { createSkillFx, SKILL_COLORS, type SkillPalette } from "./skill-fx"
 import { buildArena } from "./arena-view"
 import { buildStreet } from "./street-view"
 import { pushFrame, quantizeInput, replayFight, type FightFrames } from "../sim/replay"
@@ -62,8 +62,9 @@ import { tallness } from "../../engine/portrait"
 import { probeNote } from "../../crash-probe"
 import { FxStage } from "../../engine/fx/fx-core"
 import { AbilityDirector } from "../abilities/director"
-import { bloodCut, BLOOD_TUNE } from "../abilities/blood-cut"
-import { bloodHits } from "../abilities/blood-hit"
+import { signatureFx, FX_TUNE, type SignatureClip } from "../abilities/signature-fx"
+import { CUT_EYES } from "../abilities/signatures"
+import { bloodHits, slashWave } from "../abilities/blood-hit"
 import { playCutIn, playFlash, preloadCutIn } from "../abilities/cut-in"
 import { abilityKit } from "../abilities/registry"
 
@@ -91,7 +92,7 @@ export interface LaminasGameOptions {
   /** A luta nasce parada até `begin()` (tela de versus). */
   hold?: boolean
   /** Textos que saltam na luta (já traduzidos). */
-  labels?: { evade: string; miss: string; bloodCut?: string }
+  labels?: { evade: string; miss: string; ult?: string }
   body: BodyId
   look?: string
   setup: FightSetup
@@ -461,14 +462,21 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const weaponColor = heavy ? { main: Color3.FromHexString(heavy.main), edge: Color3.FromHexString(heavy.edge) } : weaponProfile && (weaponProfile.model || weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
   // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
-  // habilidades (2026-11-03): lâmina de luz, investida, escudo, poder máximo
+  // habilidades (2026-11-03): lâmina de luz, investida, escudo, poder máximo; a cor é a do personagem
+  const sig = abilityKit(opts.body, opts.stage).sig
+  const skillColors: SkillPalette = sig
+    ? (() => {
+        const [, mid, hot, edge, top] = sig.pal.map((c) => Color3.FromHexString(c))
+        return { slash: { main: hot, edge: top }, dash: { main: hot, edge }, shield: { main: hot, edge }, ult: { main: mid, edge: top } }
+      })()
+    : SKILL_COLORS
   const skillFx = createSkillFx(scene, low, vfx, () => {
     const p = fight.me
     return [new Vector3(p.x, 0.25, p.z), new Vector3(p.x, hero.height * 0.95, p.z)]
-  }, () => hero.height)
+  }, () => hero.height, skillColors)
   // Aurion, Morkhan e Zéphyra lutam de espada (mm3d-66), mas morcego é só de vampiro
   const bat = clanOfBody(opts.body) === "vampiro"
-  if (!bat) spirits.preload()
+  if (!bat && ring) spirits.preload()
   // adultos: mais brilho e mais desenho (pedido do Alex)
   const adult = /adult/.test(opts.body)
   const adultK = adult ? 1.3 : 1
@@ -870,11 +878,24 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // movimento reduzido: sem câmera lenta nem câmera voando, o efeito continua
   const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
   if (calm) director.slow = 0
-  // a lâmina precisa ser a da regra: quem veste o corpo com outro kit segue o poder dele
-  const bloodOn = !ring && bat && clan === "vampiro" && abilityKit(opts.body).cinematic === "blood-cut"
   const light0 = { hemi: hemi.intensity, sun: sun.intensity, clear: scene.clearColor.clone(), fog: scene.fogColor.clone() }
   const cutInArt = `/meu-mundo/retratos/v3/emo/${opts.body}-angry.webp`
-  const CUT_EYES: Record<string, [number, number]> = { vampiro: [0.235, 0.5], vampira: [0.185, 0.49], vampiro_adulto: [0.225, 0.5], vampira_adulta: [0.19, 0.5] }
+  // o gesto do poder sai do kit de quem joga; `hit` = [clipe, de, até] e a fração do contato no trecho
+  const powerClips: { pre: SignatureClip; hit: SignatureClip; contact: number; dur: number } = claws
+    ? { pre: ["GaRoar", 0, 0.8], hit: ["GaCross", 0.2, 0.7], contact: 0.47, dur: 0.5 }
+    : stoneHero
+      ? { pre: ["XTaunt", 0, 0.9], hit: ["XJump", 0.19, 0.75], contact: 0.5, dur: 0.56 }
+      : bow
+        ? { pre: ["ArOver", 0, 0.5], hit: ["ArShot", 0, 0.9], contact: 0.2, dur: 0.34 }
+        : gun
+          ? { pre: ["FgPlay1", 0, 0.9], hit: ["FgFire", 0, 0.6], contact: 0.2, dur: 0.5 }
+          : clan === "raposa"
+            ? { pre: ["RCast", 0, 0.8], hit: ["RArea1", 0.2, 0.64], contact: 0.47, dur: 0.5 }
+            : clan
+              ? { pre: ["VPower", 0, 0.8], hit: ["VGSlash", 0.18, 0.72], contact: 0.48, dur: 0.5 }
+              : brute
+                ? { pre: ["XTaunt", 0, 0.9], hit: ["XSmash", 0.15, 0.59], contact: 0.47, dur: 0.5 }
+                : { pre: ["BBox2", 0, 0.6], hit: ["BBox4", 9 / 66, 37 / 66], contact: 0.5, dur: 0.46 }
   const setDim = (k: number) => {
     hemi.intensity = light0.hemi * k
     sun.intensity = light0.sun * k
@@ -884,26 +905,31 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     scene.fogColor.copyFrom(light0.fog).scaleInPlace(k)
   }
   // o acerto dos vampiros, e o instante em que o fundo escurece nos golpes fortes
-  const hits = bloodOn ? bloodHits(fxStage) : null
+  const hits = sig ? bloodHits(fxStage, sig) : null
+  const waveFx = sig ? slashWave(scene, sig) : null
   hits?.warm()
   let hitDark = 0
-  const blood = bloodOn
-    ? bloodCut({
+  const blood = sig
+    ? signatureFx({
         stage: fxStage,
         vfx,
         audio,
+        sig,
+        area: mage,
         subject,
         blade: () => {
           const node = grip?.root
           return node?.isEnabled() ? Vector3.TransformCoordinates(bladeLocal[1], node.getWorldMatrix()) : null
         },
-        act: (clip, dur, from, to) => hero.boxeAct(clip, dur, from, to),
-        cutIn: () => playCutIn(layer, { src: cutInArt, name: opts.labels?.bloodCut ?? "Golpe de Sangue", color: "#a3102f", eyes: CUT_EYES[opts.body] ?? [0.25, 0.5] }),
+        pre: () => hero.boxeAct(powerClips.pre[0], POWER.fireAt - powerClips.dur * powerClips.contact, powerClips.pre[1], powerClips.pre[2]),
+        strike: () => hero.boxeAct(powerClips.hit[0], powerClips.dur, powerClips.hit[1], powerClips.hit[2]),
+        strikeAt: POWER.fireAt - powerClips.dur * powerClips.contact,
+        cutIn: () => playCutIn(layer, { src: cutInArt, name: opts.labels?.ult ?? "", color: sig.pal[1], eyes: CUT_EYES[opts.body] ?? [0.25, 0.5] }),
         shake: (n) => (shake = Math.max(shake, calm ? n * 0.3 : n)),
         hitStop: (t) => (hitStop = Math.max(hitStop, calm ? 0 : t)),
         pace: () => director.scale(),
         flash: () => {
-          if (!calm) playFlash(layer)
+          if (!calm && sig) playFlash(layer, sig.pal)
         },
         dim: setDim,
       })
@@ -985,6 +1011,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         }
         case "powerFire": {
           if (blood) {
+            heroRayLeft = stoneHero ? POWER.dur - POWER.fireAt : 0
             if (e.heal) pop(new Vector3(e.x, 2.4, e.z), `+${e.heal}`, "#7CFFB2", 40)
             arena.cheer(0.8)
             break
@@ -1018,14 +1045,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         case "skill": {
           const feet = new Vector3(e.x, 0, e.z)
           if (e.id === "slash") {
-            vfx.ground(feet, SKILL_COLORS.slash, 1.3, SKILLS.slash.dur + 0.2)
+            vfx.ground(feet, skillColors.slash, 1.3, SKILLS.slash.dur + 0.2)
             const c = moves ? pick(moves.special) : SWING_CLIPS[2]
             hero.boxeAct(c.clip, SKILLS.slash.dur, c.from, c.to)
             audio.slash()
           } else if (e.id === "dash") {
             if (moves) hero.boxeAct(moves.dodge.clip, SKILLS.dash.dur, moves.dodge.from, moves.dodge.to)
             else hero.boxeAct("BDodge", SKILLS.dash.dur, 0, 0.49)
-            vfx.impact(new Vector3(e.x, 1, e.z), SKILL_COLORS.dash, false, 1)
+            vfx.impact(new Vector3(e.x, 1, e.z), skillColors.dash, false, 1)
             audio.dash()
           } else {
             skillFx.shieldOn(feet)
@@ -1040,11 +1067,15 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         }
         case "wave": {
           const w = fight.waves.find((x) => x.id === e.id)
-          if (w) skillFx.wave(e.id, new Vector3(w.x, 1.05, w.z), Math.atan2(w.dx, w.dz))
+          if (w && waveFx) waveFx.start(e.id, new Vector3(w.x, 1.05 + hero.height * 0.12, w.z), Math.atan2(w.dx, w.dz))
+          else if (w) skillFx.wave(e.id, new Vector3(w.x, 1.05, w.z), Math.atan2(w.dx, w.dz))
           break
         }
         case "waveEnd":
-          skillFx.endWave(e.id, new Vector3(e.x, 1.05, e.z))
+          if (waveFx) {
+            waveFx.end(e.id)
+            hits?.hit(new Vector3(e.x, 1.2, e.z), 1, 0)
+          } else skillFx.endWave(e.id, new Vector3(e.x, 1.05, e.z))
           break
         case "shieldEnd":
           skillFx.shieldOff()
@@ -1261,7 +1292,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       if (arrows) arrows.move(s.id, at)
       else vfx.moveShot(s.id, at)
     }
-    for (const w of fight.waves) skillFx.moveWave(w.id, new Vector3(w.x, 1.05, w.z))
+    for (const w of fight.waves) {
+      if (waveFx) waveFx.move(w.id, new Vector3(w.x, 1.05 + hero.height * 0.12, w.z))
+      else skillFx.moveWave(w.id, new Vector3(w.x, 1.05, w.z))
+    }
     const dashing = p.state === "skill" && p.skill === "dash"
     if (!dashing && wasDashing) skillFx.dashEnd(new Vector3(p.x, 0, p.z))
     wasDashing = dashing
@@ -1433,9 +1467,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     }
     governor.tick(ms)
     // a luz do apagão só pega no corpo e na arma: liga quando os dois existem
-    if (blood && !heroBound && hero.hasAvatar && grip) {
+    if (blood && !heroBound && hero.hasAvatar && (grip || claws || stoneHero || !(clan || brute))) {
       heroBound = true
-      blood.bind([...hero.bodyMeshes, ...grip.root.getChildMeshes(false)])
+      blood.bind([...hero.bodyMeshes, ...(grip?.root.getChildMeshes(false) ?? [])])
     }
     if (!readyFired && hero.hasAvatar) {
       readyFired = true
@@ -1479,7 +1513,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     w.__laminasRank = (r: Rank | null) => (fight.forceRank = r)
     // laboratório de habilidades (harness/ability-lab.js)
     w.__laminasAbility = {
-      tune: BLOOD_TUNE,
+      tune: FX_TUNE,
       director,
       /** Só a sequência, sem luta: do segundo `from` até `until` do tempo da regra. */
       preview: (from = 0, until = Infinity) => blood && director.start(blood.script(), from, until),
@@ -1542,6 +1576,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       canvas.removeEventListener("contextmenu", noMenu)
       director.dispose()
       blood?.dispose()
+      waveFx?.dispose()
       fxStage.dispose()
       layer.remove()
       delete w.__laminas

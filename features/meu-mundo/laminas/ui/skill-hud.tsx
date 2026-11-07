@@ -258,19 +258,16 @@ export function SkillHud({ kit, casting, locked, cd, power, shield, keys, denied
   const fill = Math.max(0, Math.min(1, power / POWER.max))
   const max = fill >= 1 && cd.ult <= 0.05
   const deniedN = (id: SkillId | "ult") => (denied && denied.id === id ? denied.n : 0)
-  const nameOf = (slot: AbilitySlot, key: string, fallback: string) => {
-    const own = kit.slots[slot].name
-    return own ? t(own.key, own.fallback) : t(key, fallback)
-  }
+  const nameOf = (slot: AbilitySlot) => t(kit.slots[slot].name.key, kit.slots[slot].name.fallback)
   const common = (slot: AbilitySlot) => ({ icon: kit.slots[slot].icon, casting: casting === slot, locked, family: kit.family, toneOf: kit.tone })
   const A = LAYOUT.attack
   const D = LAYOUT.dodge
   return (
     <div className={s.root} style={{ right: "max(16px, env(safe-area-inset-right))", bottom: "max(16px, env(safe-area-inset-bottom))", width: 1, height: 1 }}>
-      <SkillButton id="dash" k={k} {...common("dash")} label={nameOf("dash", "skillDash", "Investida Relâmpago")} keyName={keys ? "2" : null} left={cd.dash} total={SKILLS.dash.cd} fill={null} max={false} denied={deniedN("dash")} active={false} onFire={() => onSkill("dash")} />
-      <SkillButton id="slash" k={k} {...common("slash")} label={nameOf("slash", "skillSlash", "Corte Mágico")} keyName={keys ? "1" : null} left={cd.slash} total={SKILLS.slash.cd} fill={null} max={false} denied={deniedN("slash")} active={false} onFire={() => onSkill("slash")} />
-      <SkillButton id="ult" k={k} {...common("ult")} label={nameOf("ult", "skillUlt", "Poder Máximo")} keyName={keys ? "Q" : null} left={cd.ult} total={SKILLS.ult.cd} fill={fill} max={max} denied={deniedN("ult")} active={false} onFire={onPower} />
-      <SkillButton id="shield" k={k} {...common("shield")} label={nameOf("shield", "skillShield", "Escudo de Luz")} keyName={keys ? "3" : null} left={cd.shield} total={SKILLS.shield.cd} fill={null} max={false} denied={deniedN("shield")} active={shield > 0} onFire={() => onSkill("shield")} />
+      <SkillButton id="dash" k={k} {...common("dash")} label={nameOf("dash")} keyName={keys ? "2" : null} left={cd.dash} total={SKILLS.dash.cd} fill={null} max={false} denied={deniedN("dash")} active={false} onFire={() => onSkill("dash")} />
+      <SkillButton id="slash" k={k} {...common("slash")} label={nameOf("slash")} keyName={keys ? "1" : null} left={cd.slash} total={SKILLS.slash.cd} fill={null} max={false} denied={deniedN("slash")} active={false} onFire={() => onSkill("slash")} />
+      <SkillButton id="ult" k={k} {...common("ult")} label={nameOf("ult")} keyName={keys ? "Q" : null} left={cd.ult} total={SKILLS.ult.cd} fill={fill} max={max} denied={deniedN("ult")} active={false} onFire={onPower} />
+      <SkillButton id="shield" k={k} {...common("shield")} label={nameOf("shield")} keyName={keys ? "3" : null} left={cd.shield} total={SKILLS.shield.cd} fill={null} max={false} denied={deniedN("shield")} active={shield > 0} onFire={() => onSkill("shield")} />
       <button
         type="button"
         aria-label={t("laminasBtnDodge", "ESQUIVAR")}

@@ -9,7 +9,7 @@
 // pausa de impacto. Sem nada no ar não custa nada (FxStage).
 
 import type { Scene } from "@babylonjs/core/scene"
-import { Color4 } from "@babylonjs/core/Maths/math.color"
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
@@ -20,7 +20,8 @@ import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTextur
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
 import "@babylonjs/core/Particles/particleSystemComponent"
 import type { FxBuilder, FxEffect, FxStage } from "../../engine/fx/fx-core"
-import { moonMesh, shaderOf } from "./blood-cut"
+import { moonMesh, shaderOf } from "./signature-fx"
+import type { Signature } from "./signatures"
 
 const SLOTS = 4
 /** Quanto dura a estrela e o corte, por força do golpe (s). */
@@ -51,13 +52,13 @@ export interface HitArgs {
   chain: number
 }
 
-function buildHits(scene: Scene, density: number): FxEffect<HitArgs> {
+function buildHits(scene: Scene, density: number, sig: Signature): FxEffect<HitArgs> {
   const noise = new Texture("/meu-mundo/laminas/abilities/fx/noise.webp", scene)
   const slots: Slot[] = []
   for (let i = 0; i < SLOTS; i++) {
     const star = CreatePlane(`bh-star-${i}`, { size: 2 }, scene)
     star.billboardMode = Mesh.BILLBOARDMODE_ALL
-    const starMat = shaderOf(scene, `bh-star-mat-${i}`, "STAR", noise)
+    const starMat = shaderOf(scene, `bh-star-mat-${i}`, "STAR", noise, sig)
     star.material = starMat
     // o nó vira de frente para a câmera; dentro dele a lua gira no próprio plano
     const node = new TransformNode(`bh-node-${i}`, scene)
@@ -65,7 +66,7 @@ function buildHits(scene: Scene, density: number): FxEffect<HitArgs> {
     const roll = new TransformNode(`bh-roll-${i}`, scene)
     roll.parent = node
     const slash = moonMesh(scene, `bh-slash-${i}`)
-    const slashMat = shaderOf(scene, `bh-slash-mat-${i}`, "MOON", noise)
+    const slashMat = shaderOf(scene, `bh-slash-mat-${i}`, "MOON", noise, sig)
     slash.material = slashMat
     slash.parent = roll
     slash.rotation.x = -Math.PI / 2
@@ -92,9 +93,13 @@ function buildHits(scene: Scene, density: number): FxEffect<HitArgs> {
   shards.renderingGroupId = 1
   shards.blendMode = ParticleSystem.BLENDMODE_STANDARD
   shards.billboardMode = ParticleSystem.BILLBOARDMODE_STRETCHED
-  shards.color1 = new Color4(1, 0.95, 0.97, 1)
-  shards.color2 = new Color4(0.86, 0.1, 0.3, 1)
-  shards.colorDead = new Color4(0.55, 0.2, 1, 0)
+  const tint = (hex: string, a: number) => {
+    const c = Color3.FromHexString(hex)
+    return new Color4(c.r, c.g, c.b, a)
+  }
+  shards.color1 = tint(sig.pal[4], 1)
+  shards.color2 = tint(sig.pal[2], 1)
+  shards.colorDead = tint(sig.pal[3], 0)
   shards.minSize = 0.018
   shards.maxSize = 0.05
   shards.minScaleY = 3
@@ -196,8 +201,66 @@ export interface BloodHits {
   warm: () => void
 }
 
-export function bloodHits(stage: FxStage): BloodHits {
-  const build: FxBuilder<HitArgs> = ({ scene, budget }) => buildHits(scene, budget.particles)
+export interface SlashWave {
+  start: (id: number, at: Vector3, facing: number) => void
+  move: (id: number, at: Vector3) => void
+  end: (id: number) => void
+  dispose: () => void
+}
+
+/** A lâmina da habilidade de corte: a mesma lua do poder, pequena, na paleta de quem joga. */
+export function slashWave(scene: Scene, sig: Signature): SlashWave {
+  const noise = new Texture("/meu-mundo/laminas/abilities/fx/noise.webp", scene)
+  const R = 1.5
+  const pool = [0, 1].map((i) => {
+    const node = new TransformNode(`sw-node-${i}`, scene)
+    const mesh = moonMesh(scene, `sw-moon-${i}`)
+    const mat = shaderOf(scene, `sw-mat-${i}`, "MOON", noise, sig)
+    mesh.material = mat
+    mesh.parent = node
+    mesh.rotation.x = -Math.PI / 2
+    mesh.position.y = -R
+    mesh.scaling.setAll(R)
+    mesh.isPickable = false
+    mesh.alwaysSelectAsActiveMesh = true
+    mesh.setEnabled(false)
+    return { id: -1, node, mesh, mat, t: 0 }
+  })
+  return {
+    start(id, at, facing) {
+      const w = pool.find((x) => x.id < 0) ?? pool[0]
+      w.id = id
+      w.t = 0
+      w.node.position.copyFrom(at)
+      w.node.rotation.set(0, facing, id % 2 ? 0.62 : -0.62)
+      w.mesh.setEnabled(true)
+    },
+    move(id, at) {
+      const w = pool.find((x) => x.id === id)
+      if (!w) return
+      w.t += 1 / 60
+      w.node.position.copyFrom(at)
+      w.mat.setFloat("uTime", w.t)
+    },
+    end(id) {
+      const w = pool.find((x) => x.id === id)
+      if (!w) return
+      w.id = -1
+      w.mesh.setEnabled(false)
+    },
+    dispose() {
+      for (const w of pool) {
+        w.mesh.dispose()
+        w.mat.dispose()
+        w.node.dispose()
+      }
+      noise.dispose()
+    },
+  }
+}
+
+export function bloodHits(stage: FxStage, sig: Signature): BloodHits {
+  const build: FxBuilder<HitArgs> = ({ scene, budget }) => buildHits(scene, budget.particles, sig)
   return {
     warm: () => stage.warm("blood-hit", build),
     hit: (at, power, chain) => stage.play("blood-hit", build, { at, power, chain }),
