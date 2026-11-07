@@ -353,156 +353,271 @@
   transition: opacity 180ms linear;
 }
 
-/* ── botão cheio: cada família com o seu movimento (nunca o mesmo fogo em todos) ── */
-.maxFx {
+/* ── botão cheio: luz de verdade, em camadas. A família troca a cor e o ritmo. ──
+   atrás do botão: halo forte e raios; no aro: dois cometas com cabeça branca;
+   no ícone: um reflexo varrendo; em volta: faíscas saindo. */
+.btn[data-family] {
+  --c1: #ffd58a;
+  --c2: #e08a12;
+  --beat: bloomBreath;
+  --beatT: 1.8s;
+  --spinT: 1.25s;
+}
+.btn[data-family="blood"] {
+  --c1: #ff2a5c;
+  --c2: #a30a3f;
+  --beat: bloomHeart;
+  --beatT: 1.15s;
+}
+.btn[data-family="ember"] {
+  --c1: #ffc23a;
+  --c2: #ff4a12;
+  --beat: bloomFlicker;
+  --beatT: 0.7s;
+  --spinT: 1s;
+}
+.btn[data-family="storm"] {
+  --c1: #a8ecff;
+  --c2: #1f76ff;
+  --beat: bloomStrike;
+  --beatT: 1.3s;
+  --spinT: 0.7s;
+}
+.btn[data-family="stone"] {
+  --c1: var(--tone);
+  --c2: #2c5a2e;
+  --beatT: 2.6s;
+  --spinT: 2.4s;
+}
+.btn[data-family="shadow"] {
+  --c1: #c88bff;
+  --c2: #4a12a0;
+  --beatT: 2.4s;
+  --spinT: 1.9s;
+}
+.btn[data-family="solar"] {
+  --c1: #ffe98a;
+  --c2: #ff9a1a;
+  --beatT: 2s;
+}
+.btn[data-family="tide"] {
+  --c1: #8ff7e6;
+  --c2: #0f8fa0;
+  --beatT: 2.2s;
+  --spinT: 1.7s;
+}
+.btn[data-family="prism"] {
+  --c1: #ff7be0;
+  --c2: #6a4dff;
+  --beatT: 1.6s;
+}
+.btn[data-family="gear"] {
+  --c1: #ffc98a;
+  --c2: #c4561a;
+  --beat: bloomStrike;
+  --beatT: 1.9s;
+}
+
+.aura {
   position: absolute;
-  inset: -16%;
+  inset: -78%;
   border-radius: 50%;
   pointer-events: none;
+}
+.bloom,
+.rays {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
   will-change: transform, opacity;
 }
-.btn[data-family]:not([data-family="steel"]) .orbit {
-  display: none;
+.bloom {
+  background: radial-gradient(circle, var(--c1) 0 22%, color-mix(in srgb, var(--c1) 62%, transparent) 32%, color-mix(in srgb, var(--c2) 42%, transparent) 46%, transparent 68%);
+  animation: var(--beat) var(--beatT) ease-in-out infinite;
 }
-.btn[data-family="steel"] .maxFx {
-  display: none;
+.rays {
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--c1) 85%, #fff) 0 2.5deg, transparent 2.5deg 11deg, color-mix(in srgb, var(--c1) 55%, transparent) 11deg 12.5deg, transparent 12.5deg 26deg);
+  -webkit-mask: radial-gradient(circle, transparent 30%, #000 36%, transparent 70%);
+  mask: radial-gradient(circle, transparent 30%, #000 36%, transparent 70%);
+  animation: spin 11s linear infinite;
 }
-/* sangue: coração batendo, dois pulsos e uma pausa, e gotas descendo pelo aro */
-.btn[data-family="blood"] .maxFx {
-  background:
-    radial-gradient(circle at 50% 96%, #ff2c55 0 4%, transparent 5%),
-    radial-gradient(circle at 22% 84%, #d3173f 0 3%, transparent 4%),
-    radial-gradient(circle at 78% 84%, #a3102f 0 3%, transparent 4%),
-    conic-gradient(from 200deg, #3a0312, #d3173f 18%, #6a0a24 34%, #b26bff 46%, #3a0312 60%, #d3173f 80%, #3a0312);
-  -webkit-mask: radial-gradient(farthest-side, transparent 72%, #000 75% 100%);
-  mask: radial-gradient(farthest-side, transparent 72%, #000 75% 100%);
-  animation: heart 1.15s ease-in-out infinite;
-  filter: drop-shadow(0 0 7px rgba(211, 23, 63, 0.95));
-}
-@keyframes heart {
+@keyframes bloomBreath {
   0%,
-  42%,
   100% {
-    transform: scale(1);
-    opacity: 0.85;
+    transform: scale(0.92);
+    opacity: 0.82;
   }
-  10% {
-    transform: scale(1.09);
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+/* dois batimentos e uma pausa */
+@keyframes bloomHeart {
+  0%,
+  46%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.78;
+  }
+  12% {
+    transform: scale(1.14);
+    opacity: 1;
+  }
+  24% {
+    transform: scale(0.96);
+    opacity: 0.86;
+  }
+  34% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+@keyframes bloomFlicker {
+  0%,
+  100% {
+    transform: scale(0.96, 1);
+    opacity: 0.86;
+  }
+  30% {
+    transform: scale(1.02, 1.12);
+    opacity: 1;
+  }
+  65% {
+    transform: scale(0.94, 1.04);
+    opacity: 0.8;
+  }
+}
+/* apagado e de repente aceso */
+@keyframes bloomStrike {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  8% {
+    transform: scale(1.16);
     opacity: 1;
   }
   20% {
-    transform: scale(1.01);
-    opacity: 0.9;
+    transform: scale(0.94);
+    opacity: 0.74;
   }
-  30% {
-    transform: scale(1.06);
+  28% {
+    transform: scale(1.1);
     opacity: 1;
   }
-}
-/* brasa: língua de fogo subindo e tremendo */
-.btn[data-family="ember"] .maxFx {
-  background: conic-gradient(from 150deg, transparent 0 8%, #ffcf4d 16%, #ff6a12 26%, transparent 36% 64%, #ff6a12 74%, #ffcf4d 84%, transparent 92%);
-  -webkit-mask: radial-gradient(farthest-side, transparent 70%, #000 76% 100%);
-  mask: radial-gradient(farthest-side, transparent 70%, #000 76% 100%);
-  animation: flame 620ms ease-in-out infinite alternate;
-  filter: drop-shadow(0 -3px 7px rgba(255, 120, 20, 0.95));
-}
-@keyframes flame {
-  from {
-    transform: scale(1, 1) rotate(-4deg);
+  44% {
+    transform: scale(0.9);
+    opacity: 0.7;
   }
+}
+
+/* cometa: rastro longo que afina até a cabeça branca */
+.comet,
+.comet2 {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+}
+.comet {
+  inset: -8%;
+  background: conic-gradient(from 0deg, transparent 0 42%, color-mix(in srgb, var(--c2) 70%, transparent) 66%, var(--c1) 90%, #fff 99%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent 83%, #000 87% 98%, transparent 100%);
+  mask: radial-gradient(farthest-side, transparent 83%, #000 87% 98%, transparent 100%);
+  animation: spin var(--spinT) linear infinite;
+  filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px var(--c1));
+}
+.comet2 {
+  inset: -14%;
+  background: conic-gradient(from 180deg, transparent 0 62%, color-mix(in srgb, var(--c1) 60%, transparent) 86%, #fff 99%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent 91%, #000 93% 98%, transparent 100%);
+  mask: radial-gradient(farthest-side, transparent 91%, #000 93% 98%, transparent 100%);
+  animation: spinBack calc(var(--spinT) * 1.7) linear infinite;
+  filter: drop-shadow(0 0 4px var(--c1));
+}
+@keyframes spinBack {
   to {
-    transform: scale(1.03, 1.11) rotate(4deg);
+    transform: rotate(-360deg);
   }
 }
-/* tempestade: descargas curtas que mudam de lugar aos saltos */
-.btn[data-family="storm"] .maxFx {
-  background: conic-gradient(#fff 0 2%, transparent 2% 21%, #8fe0ff 21% 23%, transparent 23% 53%, #fff 53% 54%, transparent 54% 77%, #8fe0ff 77% 79%, transparent 79%);
-  -webkit-mask: radial-gradient(farthest-side, transparent 74%, #000 76% 100%);
-  mask: radial-gradient(farthest-side, transparent 74%, #000 76% 100%);
-  animation: arc 900ms steps(7) infinite;
-  filter: drop-shadow(0 0 6px #58c6ff);
+.btn[data-family="prism"] .aura {
+  animation: prism 3s linear infinite;
 }
-@keyframes arc {
+@keyframes prism {
   to {
-    transform: rotate(360deg);
+    filter: hue-rotate(360deg);
   }
 }
-/* pedra: lascas orbitando devagar, com peso */
-.btn[data-family="stone"] .maxFx {
-  background: repeating-conic-gradient(var(--tone) 0 7deg, transparent 7deg 45deg);
-  -webkit-mask: radial-gradient(farthest-side, transparent 78%, #000 80% 94%, transparent 96%);
-  mask: radial-gradient(farthest-side, transparent 78%, #000 80% 94%, transparent 96%);
-  animation: spin 4.2s linear infinite;
-  filter: drop-shadow(0 0 5px var(--tone));
+
+/* reflexo varrendo o ícone */
+.glint {
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(112deg, transparent 38%, rgba(255, 255, 255, 0.2) 44%, rgba(255, 255, 255, 0.92) 50%, rgba(255, 255, 255, 0.2) 56%, transparent 62%);
+  transform: translateX(-90%);
+  animation: glint 2.3s cubic-bezier(0.4, 0, 0.3, 1) infinite;
+  pointer-events: none;
 }
-/* sombra: fumaça que gira ao contrário e encolhe */
-.btn[data-family="shadow"] .maxFx {
-  background: conic-gradient(from 0deg, #16072c, var(--tone) 22%, transparent 40%, #16072c 60%, var(--tone) 78%, transparent 95%);
-  -webkit-mask: radial-gradient(farthest-side, transparent 66%, #000 80%, transparent 100%);
-  mask: radial-gradient(farthest-side, transparent 66%, #000 80%, transparent 100%);
-  animation: smoke 2.6s ease-in-out infinite;
+@keyframes glint {
+  0%,
+  45% {
+    transform: translateX(-90%);
+  }
+  85%,
+  100% {
+    transform: translateX(90%);
+  }
 }
-@keyframes smoke {
-  50% {
-    transform: rotate(-180deg) scale(1.08);
+
+/* faíscas saindo do aro */
+.ember {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6%;
+  height: 6%;
+  margin: -3%;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 5px 1px var(--c1);
+  pointer-events: none;
+  opacity: 0;
+  animation: emberOut 1.5s ease-out infinite;
+  animation-delay: var(--d);
+}
+@keyframes emberOut {
+  0% {
+    transform: rotate(var(--a)) translateY(-520%) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
   }
   100% {
-    transform: rotate(-360deg) scale(1);
+    transform: rotate(var(--a)) translateY(-1350%) scale(0.2);
+    opacity: 0;
   }
 }
-/* sol: raios finos que respiram */
-.btn[data-family="solar"] .maxFx {
-  background: repeating-conic-gradient(rgba(255, 226, 122, 0.95) 0 5deg, transparent 5deg 30deg);
-  -webkit-mask: radial-gradient(farthest-side, transparent 72%, #000 76%, transparent 100%);
-  mask: radial-gradient(farthest-side, transparent 72%, #000 76%, transparent 100%);
-  animation: rays 2.4s ease-in-out infinite;
-}
-@keyframes rays {
-  50% {
-    transform: rotate(30deg) scale(1.1);
-    opacity: 0.75;
-  }
-  100% {
-    transform: rotate(60deg) scale(1);
-  }
-}
-/* maré: anel que sobe e desce como água */
-.btn[data-family="tide"] .maxFx {
-  background: radial-gradient(farthest-side, transparent 74%, var(--tone) 78%, transparent 92%);
-  animation: tide 1.5s ease-in-out infinite;
-}
-@keyframes tide {
-  50% {
-    transform: translateY(-5%) scale(1.07, 0.96);
-  }
-}
-/* prisma: as cores correm pelo aro */
-.btn[data-family="prism"] .maxFx {
-  background: conic-gradient(#ff5ec4, #ffd24d, #4dffa6, #4dc3ff, #b26bff, #ff5ec4);
-  -webkit-mask: radial-gradient(farthest-side, transparent 76%, #000 78% 92%, transparent 95%);
-  mask: radial-gradient(farthest-side, transparent 76%, #000 78% 92%, transparent 95%);
-  animation: spin 2.2s linear infinite;
-}
-/* engrenagem: dentes que andam aos cliques */
-.btn[data-family="gear"] .maxFx {
-  background: repeating-conic-gradient(var(--tone) 0 10deg, transparent 10deg 20deg);
-  -webkit-mask: radial-gradient(farthest-side, transparent 80%, #000 82% 96%, transparent 98%);
-  mask: radial-gradient(farthest-side, transparent 80%, #000 82% 96%, transparent 98%);
-  animation: tick 2.4s steps(18) infinite;
-}
-@keyframes tick {
-  to {
-    transform: rotate(360deg);
-  }
-}
+
 @media (prefers-reduced-motion: reduce) {
-  .maxFx,
+  .bloom,
+  .rays,
+  .comet,
+  .comet2,
   .btn[data-state="casting"] .face,
   .btn[data-step="1"] .face {
     animation: none;
   }
+  .ember,
+  .glint {
+    display: none;
+  }
 }
-:global(html[data-mm-fx="low"]) .maxFx {
-  animation: none;
+/* aparelho fraco: fica o halo e um cometa */
+:global(html[data-mm-fx="low"]) .rays,
+:global(html[data-mm-fx="low"]) .comet2,
+:global(html[data-mm-fx="low"]) .ember {
+  display: none;
 }

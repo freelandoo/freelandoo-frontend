@@ -39,6 +39,9 @@ const LAYOUT = {
 /** A referência tem a margem do aparelho embutida (~16 px na tela dela). */
 const REF_MARGIN = 36
 
+/** Faíscas do botão cheio: ângulo e atraso. */
+const EMBERS = [[20, 0], [75, 0.5], [130, 0.95], [190, 0.25], [245, 0.75], [305, 1.2], [345, 0.6]] as const
+
 const TONE: Record<SkillId | "ult", string> = { slash: "#ff8a2a", dash: "#3aa8ff", shield: "#b26bff", ult: "#ffb02e" }
 
 export interface SkillHudProps {
@@ -191,12 +194,17 @@ function SkillButton({
       onPointerLeave={p.onPointerLeave}
     >
       <div className={s.face}>
-        {max && <div className={s.orbit} />}
-        {max && <div className={s.maxFx} />}
+        {max && (
+          <div className={s.aura}>
+            <span className={s.bloom} />
+            <span className={s.rays} />
+          </div>
+        )}
         <div className={s.art}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`${ICON}/${icon}.webp`} alt="" draggable={false} />
           {fill !== null && !cooling && !max && <div className={s.fillGlow} style={{ opacity: fill * 0.8 }} />}
+          {max && <div className={s.glint} />}
           {cooling && <div className={s.shade} style={{ ["--left" as string]: `${frac * 360}deg` }} />}
         </div>
         <svg className={s.ringSvg} viewBox="0 0 100 100">
@@ -223,6 +231,9 @@ function SkillButton({
             style={{ filter: `drop-shadow(0 0 2px ${max ? "#ffb02e" : "#3ab8ff"})`, transition: "stroke-dasharray 120ms linear" }}
           />
         </svg>
+        {max && <div className={s.comet} />}
+        {max && <div className={s.comet2} />}
+        {max && EMBERS.map(([a, d]) => <i key={a} className={s.ember} style={{ ["--a" as string]: `${a}deg`, ["--d" as string]: `${d}s` }} />)}
         <div className={s.gem} />
         <div className={`${s.badge} ${anton.className}`}>
           {fill !== null && !cooling && !max ? null : <Stopwatch />}
