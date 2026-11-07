@@ -549,14 +549,7 @@
     transform: rotate(-360deg);
   }
 }
-.btn[data-family="prism"] /* o halo passa por baixo dos botões vizinhos, nunca por cima deles */
-.btn {
-  z-index: 2;
-}
-.btn[data-state="max"] {
-  z-index: 1;
-}
-.aura {
+.btn[data-family="prism"] .aura {
   animation: prism 3s linear infinite;
 }
 @keyframes prism {
