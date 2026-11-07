@@ -113,7 +113,12 @@ export class NetClient {
   private lastSentAt = 0
   status: NetStatus = "connecting"
 
-  constructor(private readonly cb: NetCallbacks) {}
+  constructor(private cb: NetCallbacks) {}
+
+  /** A conexão muda de dono sem cair (a rua saiu ou voltou, ui/offstage.ts). */
+  rebind(cb: NetCallbacks) {
+    this.cb = cb
+  }
 
   private setStatus(s: NetStatus) {
     if (this.status === s) return

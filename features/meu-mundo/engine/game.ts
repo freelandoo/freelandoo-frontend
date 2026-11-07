@@ -31,7 +31,7 @@ import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
 import { PlayerSelection, type PlayerTap } from "./player-select"
-import { NetClient } from "./net"
+import { NetClient, type NetCallbacks } from "./net"
 import { MOTION, RIDE_KINDS, kindOfId, lerpAngle, paceSpeeds, type Intent, type MoveState, type RideKind } from "./motion"
 import { CarFleet, type CarPose } from "./cars"
 import { placeRider } from "./ride"
@@ -75,8 +75,19 @@ export function liveGamesBump() {
 }
 liveGamesBump.count = liveGames
 
+/** O que sobra da rua enquanto a pessoa está em outro ambiente (ui/offstage.ts). */
+export interface ParkedGame {
+  net: NetClient
+  at: { x: number; z: number; facing: number }
+  body: BodyId
+  look: string
+  tune: Tuning | null
+}
+
 export interface GameOptions {
   canvas: HTMLCanvasElement
+  /** A rua voltando: a mesma sala, sem conectar de novo. */
+  parked?: ParkedGame | null
   /** Rua de um bairro ou o Centro da cidade (mm3d-17). */
   payload: NeighborhoodPayload | CenterPayload
   exitLabel: string
@@ -135,8 +146,6 @@ export interface GameHandle {
   setJoystick: (x: number, y: number) => void
   setRun: (on: boolean) => void
   setBlocked: (blocked: boolean) => void
-  /** Para de desenhar (um minijogo cobre a tela, mm3d-20); a sala e a presença seguem. */
-  setSuspended: (on: boolean) => void
   /** Idioma trocado: letreiros e mapa com os nomes novos. */
   relabel: (labels: SceneLabels) => void
   interact: () => void
@@ -167,6 +176,8 @@ export interface GameHandle {
   reportMob: (mobId: number, win: boolean, busy?: boolean) => void
   /** "Lutar" apertado perto do monstro: a sala o segura parado durante a luta. */
   engageMob: (mobId: number) => void
+  /** Tira a rua da memória e devolve a sala viva, agora falando com `cb`. */
+  detach: (cb: Pick<NetCallbacks, "onStatus" | "onMessage">) => ParkedGame
   dispose: () => void
 }
 
@@ -185,7 +196,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const engine = new Engine(
     canvas,
     true,
-    { stencil: false, preserveDrawingBuffer: false, powerPreference: "default" },
+    // loseContextOnDispose: a memória de vídeo volta na hora de sair; o canvas nunca é reusado
+    { stencil: false, preserveDrawingBuffer: false, powerPreference: "default", loseContextOnDispose: true },
     false,
   )
   const unlive = liveGamesBump()
@@ -238,7 +250,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // previsão converge suavemente para o estado da sala.
   let veh: VehicleState | null = null
   const prevPose = { x: 0, z: 0, yaw: 0 }
-  let tune: Tuning | null = null
+  let tune: Tuning | null = opts.parked?.tune ?? null
   let serverErr = 0
   const recon = new CarReconciler()
   // Passos de física desde que montou e o volante em uso (mm3d-22: a sala
@@ -291,8 +303,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const home = centerP
     ? { x: centerP.center.arrival.x, z: centerP.center.arrival.z, rotationY: centerP.center.arrival.facing }
     : (payload as NeighborhoodPayload).me.home
-  let myBody: BodyId = isBody(payload.me.body) ? payload.me.body : "normal"
-  const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, payload.me.look ?? ""), home.x, home.z, home.rotationY)
+  let myBody: BodyId = opts.parked?.body ?? (isBody(payload.me.body) ? payload.me.body : "normal")
+  const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, opts.parked?.look ?? payload.me.look ?? ""), home.x, home.z, home.rotationY)
   // Conferência (como __mmHouse): onde estou e se estou dirigindo.
   const probe = () => ({
     x: local.x,
@@ -370,7 +382,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // Sem fôlego (mm3d-28): a sala para a corrida; aqui a previsão também não corre.
   let winded = false
   let residentCount = nb?.residents ?? 0
-  const net = new NetClient({
+  const netEvents: NetCallbacks = {
     onStatus: (s) => {
       if (disposed) return
       opts.onNet?.(s)
@@ -418,9 +430,11 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       if (type === "mobs") mobs.set((p as { l?: unknown } | null)?.l)
       opts.onServerMessage?.(type, p)
     },
-  })
+  }
+  const net = opts.parked?.net ?? new NetClient(netEvents)
   const mp = payload.multiplayer
-  if (mp && "reservation" in mp) void net.connect(mp)
+  if (opts.parked) net.rebind(netEvents)
+  else if (mp && "reservation" in mp) void net.connect(mp)
   else void net.retry()
 
   const syncNetwork = (now: number, intent: Intent) => {
@@ -851,9 +865,17 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     if (!disposed) opts.onReady?.()
   })
 
-  let suspended = false
+  // Voltando de outro ambiente: a sala já sabe onde a pessoa está.
+  if (opts.parked) {
+    const me = net.sessionId ? net.players()?.get(net.sessionId) : null
+    const at = me ?? opts.parked.at
+    local.teleport(at.x, at.z, at.facing)
+    follow.snapBehind(at.x, at.z, at.facing)
+    welcomed = true
+  }
+
   engine.runRenderLoop(() => {
-    if (!disposed && !suspended) scene.render()
+    if (!disposed) scene.render()
   })
 
   const ro = new ResizeObserver(() => {
@@ -873,10 +895,6 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     setRun(on) {
       input.runToggle = on
-    },
-    setSuspended(on) {
-      suspended = on
-      if (on) clearInput(input)
     },
     setBlocked(blocked) {
       input.blocked = blocked
@@ -951,7 +969,21 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         instr = null
       }
     },
+    detach(cb) {
+      const out: ParkedGame = { net, at: { x: local.x, z: local.z, facing: local.heading }, body: myBody, look: local.char.look, tune }
+      if (driving && veh) net.send("drive", { t: 0, b: 1, s: 0, h: 0, k: driveN + 1, e: driveEpoch, z: 1 })
+      else net.send("in", { x: 0, z: 0, r: 0 })
+      net.rebind({ ...cb, onWelcome: () => {}, fetchSession: opts.fetchSession, sceneKey: payload.sceneKey })
+      teardown()
+      return out
+    },
     dispose() {
+      if (disposed) return
+      teardown()
+      net.dispose()
+    },
+  }
+  function teardown() {
       if (disposed) return
       disposed = true
       const w = window as unknown as { __mmStreet?: typeof probe }
@@ -960,7 +992,6 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       if (wb.__mmBubbles === bubbles) delete wb.__mmBubbles
       document.removeEventListener("visibilitychange", onVisibility)
       mobs.dispose()
-      net.dispose()
       engine.stopRenderLoop()
       detachInput()
       ro.disconnect()
@@ -983,7 +1014,6 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       scene.dispose()
       engine.dispose()
       unlive()
-    },
   }
   return handle
 }

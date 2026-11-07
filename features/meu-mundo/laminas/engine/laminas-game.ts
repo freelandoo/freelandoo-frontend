@@ -59,6 +59,7 @@ import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 import { createVfx, FIRE, VFX_COLORS, type Trail } from "../../engine/vfx"
 import { Spirits } from "../../engine/spirits"
 import { tallness } from "../../engine/portrait"
+import { probeNote } from "../../crash-probe"
 
 export interface LaminasHud {
   hp: number
@@ -347,7 +348,9 @@ const GRIP_OFFSET = new Vector3(0.0, 0.085, 0.03)
 
 export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const { canvas } = opts
-  const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, powerPreference: "high-performance" }, false)
+  // loseContextOnDispose: a memória de vídeo volta na hora; sem isso a luta seguinte
+  // abria com a anterior ainda presa e a aba do celular caía (em dev o StrictMode recria no mesmo canvas)
+  const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, powerPreference: "high-performance", loseContextOnDispose: process.env.NODE_ENV === "production" }, false)
   const unlive = liveGamesBump()
   let disposed = false
   const quality = resolveQuality()
@@ -1342,7 +1345,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     }
   }, 6000)
 
-  const lost = engine.onContextLostObservable.add(() => opts.onError?.("context-lost"))
+  const lost = engine.onContextLostObservable.add(() => {
+    probeNote("context-lost")
+    opts.onError?.("context-lost")
+  })
   let lastFrame = performance.now()
   engine.runRenderLoop(() => {
     if (disposed) return

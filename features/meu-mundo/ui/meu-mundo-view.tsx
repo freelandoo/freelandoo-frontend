@@ -46,6 +46,7 @@ import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
 import { useMobEncounter } from "./mob-encounter"
+import { useOffstage, useRoomLink } from "./offstage"
 import {
   type BodyId,
   type GameStats,
@@ -146,7 +147,8 @@ export default function MeuMundoView({
   })
   const [levelOpen, setLevelOpen] = useState(false)
   // Monstros da rua (mm3d-57b): também no bairro, só de noite; a luta abre quando um te alcança.
-  const mob = useMobEncounter({ gameRef, busy: !!suspended || !!blocked || levelOpen, body, look })
+  const link = useRoomLink(gameRef)
+  const mob = useMobEncounter({ gameRef: link.room, busy: !!suspended || !!blocked || levelOpen, body, look })
   const mobRef = useRef(mob)
   useEffect(() => {
     mobRef.current = mob
@@ -178,6 +180,22 @@ export default function MeuMundoView({
   }, [status, sayRef])
 
   const cbRef = useRef({ onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot })
+  // Regra do Alex (2026-11-07): um ambiente por vez. Luta, minijogo e prédio tiram a rua da memória.
+  const off = !!suspended || !!mob.encounter
+  const stage = useOffstage(off, link.parked, {
+    setNet,
+    onMessage: (type, p) => {
+      mobRef.current.onServerMessage(type, p)
+      cbRef.current.onServerMessage(type, p)
+    },
+    onMoved: () => cbRef.current.onMoved(),
+  })
+  useEffect(() => {
+    if (!off) return
+    setStatus("loading")
+    setNearby(null)
+    setDrivingLot(0)
+  }, [off])
   useEffect(() => {
     cbRef.current = { onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot }
   }, [onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot])
@@ -228,6 +246,7 @@ export default function MeuMundoView({
       try {
         handle = createMeuMundoGame({
           canvas,
+          parked: stage.takeParked(),
           payload,
           exitLabel: exitLabelRef.current || nb.exit.label,
           mapLabels: mapLabelsRef.current,
@@ -236,9 +255,7 @@ export default function MeuMundoView({
             return token ? fetchSession(token) : null
           },
           onNet: (s) => {
-            if (!alive) return
-            setNet(s)
-            if (s === "moved") cbRef.current.onMoved()
+            if (alive) stage.netStatus(s)
           },
           onServerMessage: (type, p) => {
             if (!alive) return
@@ -284,10 +301,10 @@ export default function MeuMundoView({
     return () => {
       alive = false
       cancelAnimationFrame(raf)
-      handle?.dispose()
       gameRef.current = null
+      if (handle) stage.release(handle)
     }
-  }, [nb, payload, attempt, myLot])
+  }, [nb, payload, attempt, myLot, off, stage])
 
   useEffect(() => {
     statsOpenRef.current = statsOpen
@@ -298,9 +315,6 @@ export default function MeuMundoView({
     gameRef.current?.setBlocked(!!open || levelOpen || menuOpen || !!blocked || !!mob.encounter)
   }, [open, levelOpen, menuOpen, blocked, mob.encounter])
 
-  useEffect(() => {
-    gameRef.current?.setSuspended(!!suspended || !!mob.encounter)
-  }, [suspended, status, mob.encounter])
   // mm3d-60f: luta com monstro cobrindo a tela → o HUD do personagem sai
   const covered = !!mob.encounter
   useEffect(() => {
@@ -396,12 +410,15 @@ export default function MeuMundoView({
 
   return (
     <div className="fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#A8D4F2]">
-      <canvas
-        ref={canvasRef}
-        className="block h-full w-full outline-none"
-        style={{ touchAction: "none" }}
-        aria-label={t("canvasAria", "Bairro do Meu Mundo")}
-      />
+      {!off && (
+        <canvas
+          key={attempt}
+          ref={canvasRef}
+          className="block h-full w-full outline-none"
+          style={{ touchAction: "none" }}
+          aria-label={t("canvasAria", "Bairro do Meu Mundo")}
+        />
+      )}
 
       {/* Painel técnico (leitura ao vivo; não bloqueia o jogo) */}
       {statsOpen && (

@@ -33,6 +33,7 @@ import type { NoturnoJoin } from "../noturno/ui/run-view"
 import type { JetpackJoin } from "../jetpack/ui/jetpack-view"
 import type { GincanaJoin } from "../gincana/ui/gincana-view"
 import { useMobEncounter } from "./mob-encounter"
+import { useOffstage, useRoomLink } from "./offstage"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
 // Minijogos dos locais (mm3d-20): só baixam (three.js incluso) quando alguém vai jogar.
@@ -195,7 +196,15 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   // Cores (mm3d-36): o Paint, o Jetpack e o hospital desenham com elas.
   const [look, setLook] = useState(payload.me.look ?? "")
   // Monstros da rua (mm3d-48b/57b): aviso, luta quando ele te alcança ou no "Lutar".
-  const mob = useMobEncounter({ gameRef, busy: !!minigame || !!suspended || !!blocked, body, look, place: "centro" })
+  const link = useRoomLink(gameRef)
+  const mob = useMobEncounter({ gameRef: link.room, busy: !!minigame || !!suspended || !!blocked, body, look, place: "centro" })
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const mobRef = useRef(mob)
   useEffect(() => {
     mobRef.current = mob
@@ -223,6 +232,22 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   }, [status, sayRef])
 
   const cbRef = useRef({ onGoHome, onMoved, onServerMessage })
+  // Regra do Alex (2026-11-07): um ambiente por vez. Luta, minijogo e prédio tiram a rua da memória.
+  const off = !!minigame || !!suspended || !!mob.encounter
+  const stage = useOffstage(off, link.parked, {
+    setNet,
+    onMessage: (type, p) => {
+      mobRef.current.onServerMessage(type, p)
+      cbRef.current.onServerMessage(type, p)
+    },
+    onMoved: () => cbRef.current.onMoved(),
+  })
+  useEffect(() => {
+    if (!off) return
+    setStatus("loading")
+    setNearby(null)
+    setDrivingLot(0)
+  }, [off])
   useEffect(() => {
     cbRef.current = { onGoHome, onMoved, onServerMessage }
   }, [onGoHome, onMoved, onServerMessage])
@@ -265,6 +290,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       try {
         handle = createMeuMundoGame({
           canvas,
+          parked: stage.takeParked(),
           payload,
           exitLabel: labelsRef.current.portal || "Bairros",
           centerLabels: { place: (p) => labelsRef.current.place(p), portal: labelsRef.current.portal || "Bairros" },
@@ -273,9 +299,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             return token ? fetchSession(token) : null
           },
           onNet: (s) => {
-            if (!alive) return
-            setNet(s)
-            if (s === "moved") cbRef.current.onMoved()
+            if (alive) stage.netStatus(s)
           },
           onServerMessage: (type, p) => {
             if (!alive) return
@@ -306,7 +330,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
                 setInside({ id: "hall", interior: null, failed: false })
                 setMinigame("interior")
                 void loadHall().then((got) => {
-                  if (!alive) return
+                  if (!mounted.current) return
                   if (got === "closed") {
                     setInside(null)
                     setMinigame(null)
@@ -324,7 +348,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
                 setMinigame("interior")
                 if (!ready)
                   void loadInterior(id).then((def) => {
-                    if (alive) setInside((cur) => (cur && cur.id === id ? { id, interior: def, failed: !def } : cur))
+                    if (mounted.current) setInside((cur) => (cur && cur.id === id ? { id, interior: def, failed: !def } : cur))
                   })
               }
               else setOpen(it.place)
@@ -343,10 +367,10 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     return () => {
       alive = false
       cancelAnimationFrame(raf)
-      handle?.dispose()
       gameRef.current = null
+      if (handle) stage.release(handle)
     }
-  }, [payload, attempt])
+  }, [payload, attempt, off, stage])
 
   useEffect(() => {
     statsOpenRef.current = statsOpen
@@ -357,10 +381,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     gameRef.current?.setBlocked(!!open || menuOpen || !!blocked || !!minigame || !!mob.encounter)
   }, [open, menuOpen, blocked, minigame, mob.encounter])
 
-  // Minijogo aberto: o centro para de desenhar (dois 3D ao mesmo tempo pesam no celular).
-  useEffect(() => {
-    gameRef.current?.setSuspended(!!minigame || !!suspended || !!mob.encounter)
-  }, [minigame, suspended, status, mob.encounter])
   // mm3d-60f: luta/minijogo cobrindo a tela → o HUD do personagem sai (fica só a placa da luta)
   const covered = !!minigame || !!mob.encounter
   useEffect(() => {
@@ -434,7 +454,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
 
   return (
     <div className="fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#A8D4F2]">
-      <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("canvasAriaCenter", "Centro da cidade do Meu Mundo")} />
+      {!off && <canvas key={attempt} ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("canvasAriaCenter", "Centro da cidade do Meu Mundo")} />}
 
       {statsOpen && (
         <div className="pointer-events-auto absolute left-0 max-w-[min(92vw,320px)]" style={{ top: "max(12px, env(safe-area-inset-top))", marginLeft: SAFE.left }}>

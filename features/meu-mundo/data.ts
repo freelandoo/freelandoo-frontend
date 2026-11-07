@@ -256,6 +256,8 @@ export const startFight = (token: string, body: { origin: FightOrigin; kind?: Mo
   call<{ fight: FightTicket; abandoned: Receipt[] }>(token, "POST", "/fight/start", body)
 export const finishFight = (token: string, ticket: string, frames: FightFrames) =>
   call<{ receipt: Receipt; replay: boolean }>(token, "POST", "/fight/finish", { ticket, frames })
+/** Sonda de queda (crash-probe.ts): o que sobrou no aparelho da luta que não terminou. */
+export const postClientReport = (token: string, body: Record<string, unknown>) => call<{ ok: true }>(token, "POST", "/client-report", body)
 export const getAdventure = (token: string) => call<AdventureState>(token, "GET", "/adventure")
 
 // ═══ mm3d-59 slice 3: equipamento (Armeiro, mochila, forja) ════════════════

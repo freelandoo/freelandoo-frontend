@@ -55,6 +55,7 @@ import type { PlayerTap } from "../engine/player-select"
 import type { Receipt } from "../data"
 import { compactFrameX, isCompactViewport } from "./player-card/place"
 import dynamic from "next/dynamic"
+import { probeReport } from "../crash-probe"
 // mm3d-59: a luta de treino do prólogo abre a mesma Arena (carregada só quando abre)
 const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 import {
@@ -98,6 +99,7 @@ const sceneKeyOf = (p: ScenePayload) =>
 
 export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const t = useTranslations("MeuMundo")
+  useEffect(() => probeReport(), [])
   const [scene, setScene] = useState<ScenePayload>(initial)
   // Conta as montagens: a mesma sala recarregada também remonta o 3D.
   const [mount, setMount] = useState(0)
@@ -624,7 +626,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     ],
     [t, counts, chatBadge, openChat, languageItem],
   )
-  const suspended = hospitalUp || jailUp
+  const suspended = hospitalUp || jailUp || tutorialFight
   const key = `${sceneKeyOf(scene)}#${mount}`
   // Outra cena = outras sessões: o card da anterior não vale mais.
   useEffect(() => setPlayerCard(null), [key])

@@ -36,6 +36,7 @@ import { createLaminasGame, type FightSheet, type LaminasGameHandle, type Lamina
 import { VersusScreen } from "./versus-screen"
 import { peerOf, type MobKind, type SkillId } from "../sim/fight"
 import { SkillHud } from "./skill-hud"
+import { probeClose, probeNote, probeOpen } from "../../crash-probe"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
 export interface LaminasEncounter {
@@ -95,7 +96,10 @@ export function useMobName(ring = false, street = false) {
   )
 }
 
-export function LaminasView({ body, look, onExit, encounter, onEncounterEnd, stage = "arena", tutorial = false, onReceipt }: LaminasViewProps) {
+export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, onEncounterEnd, stage = "arena", tutorial = false, onReceipt }: LaminasViewProps) {
+  // Corpo e cores ficam os da abertura: se a sala mandar outros no meio, recriar a cena
+  // deixaria a luta parada para sempre (ela nasce esperando o botão, que já foi apertado).
+  const [{ body, look }] = useState({ body: bodyNow, look: lookNow })
   const [fight, setFight] = useState<{ key: number; choice: Choice } | null>(() =>
     encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "soldier", level: 1 } } : null,
   )
@@ -239,6 +243,7 @@ function LaminasScreen({
   const [started, setStarted] = useState(false)
   const begin = useCallback(() => {
     gameRef.current?.begin()
+    probeNote("begin")
     setStarted(true)
   }, [])
   const [result, setResult] = useState<boolean | null>(null)
@@ -298,6 +303,7 @@ function LaminasScreen({
     let alive = true
     let endTimer: ReturnType<typeof setTimeout> | null = null
     const fromServer = tk && tk !== "offline" ? tk : null
+    probeOpen(`${stage}:${choice.kind}`)
     try {
       gameRef.current = createLaminasGame({
         canvas,
@@ -313,11 +319,13 @@ function LaminasScreen({
         stage,
         onReady: () => {
           if (!alive) return
+          probeNote("ready")
           setSheet(gameRef.current?.sheet() ?? null)
           setStatus("ready")
         },
         onHud: (h) => alive && setHud(h),
         onEnd: (win) => {
+          probeNote("end")
           endRef.current(win)
           endTimer = setTimeout(() => alive && setResult(win), 1400)
           // o prêmio é o do SERVIDOR: manda a gravação e espera o recibo
@@ -352,6 +360,7 @@ function LaminasScreen({
     }
     return () => {
       alive = false
+      probeClose()
       if (endTimer) clearTimeout(endTimer)
       gameRef.current?.dispose()
       gameRef.current = null
