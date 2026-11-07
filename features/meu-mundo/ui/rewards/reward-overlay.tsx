@@ -148,7 +148,7 @@ function GainBurst({ b, t, onDone }: { b: Bundle; t: T; onDone: () => void }) {
   // o tubo de luz no personagem (cor do primeiro ganho; item raro pinta com a raridade)
   useEffect(() => {
     const color = nums.length ? (nums[0].color ?? FLOAT_COLOR[nums[0].kind]) : drops.length ? (RARITY[drops[0].rarity] || RARITY.common).color : b.care ? FLOAT_TONE.good : null
-    if (color) playGainFx(color)
+    if (color) playGainFx(color, nums[0]?.kind)
   }, [nums, drops, b.care])
   if (!nums.length && !drops.length && !more) return null
   return <GainLayer nums={nums} drops={drops} more={more} onDone={onDone} />

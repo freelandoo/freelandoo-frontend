@@ -17,6 +17,8 @@
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Observer } from "@babylonjs/core/Misc/observable"
+import { FxStage, type FxBuilder } from "./fx/fx-core"
+import { resolveQuality } from "./quality"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
@@ -30,7 +32,7 @@ import { Constants } from "@babylonjs/core/Engines/constants"
 
 // ── registro (a cena aberta) ───────────────────────────────────────────────
 export interface GainFxTarget {
-  play(hex: string): void
+  play(hex: string, kind?: string): void
   level(colors: string[]): void
 }
 const targets: GainFxTarget[] = []
@@ -42,9 +44,9 @@ export function setGainFx(fx: GainFxTarget): () => void {
   }
 }
 /** Acende o tubo no meu personagem (sem cena aberta, não faz nada). */
-export function playGainFx(hex: string) {
+export function playGainFx(hex: string, kind?: string) {
   try {
-    targets[targets.length - 1]?.play(hex)
+    targets[targets.length - 1]?.play(hex, kind)
   } catch {
     /* efeito decorativo: nunca derruba a interface */
   }
@@ -355,68 +357,164 @@ class LevelBurst {
   }
 }
 
-// ── o tubo do ganho ────────────────────────────────────────────────────────
+// ── a aura do ganho (2026-11-07) ───────────────────────────────────────────
+// A cor e o jeito de subir dizem qual status ganhou; o tubo segue leve (regra do Alex).
+interface AuraStyle {
+  /** Estrelas por segundo (antes do orçamento da qualidade). */
+  rate: number
+  /** Empuxo para cima. */
+  lift: number
+  size: [number, number]
+  /** Pulsos do anel no chão. */
+  pulses: number
+  /** A saída das estrelas gira em volta do corpo. */
+  spiral?: boolean
+  /** Riscos esticados no sentido do movimento. */
+  streak?: boolean
+}
+const AURA: Record<string, AuraStyle> = {
+  strength: { rate: 90, lift: 3.4, size: [0.12, 0.3], pulses: 2 },
+  dexterity: { rate: 70, lift: 1.5, size: [0.08, 0.2], pulses: 1, spiral: true },
+  intelligence: { rate: 45, lift: 0.8, size: [0.1, 0.24], pulses: 1, spiral: true },
+  speed: { rate: 80, lift: 5, size: [0.05, 0.12], pulses: 1, streak: true },
+  health: { rate: 45, lift: 1, size: [0.12, 0.28], pulses: 3 },
+  xp: { rate: 60, lift: 1.6, size: [0.09, 0.26], pulses: 1 },
+}
+const AURA_BASE = AURA.xp
+
+interface AuraArgs {
+  hex: string
+  kind?: string
+}
+
+function statusAura(feet: () => Vector3 | null): FxBuilder<AuraArgs> {
+  return ({ scene, budget }) => {
+    const owned: Owned = []
+    const beamTex = beamTexture(scene, "mm-gain-beam")
+    const ringTex = ringTexture(scene)
+    const starTex = starTexture(scene, "mm-gain-star")
+    owned.push(beamTex, ringTex, starTex)
+    const ring = CreateGround("mm-gain-ring", { width: 2, height: 2 }, scene)
+    const ringMat = addMat(scene, "mm-gain-ring-mat", ringTex, owned)
+    ring.material = ringMat
+    // o tubo é a camada grande e transparente: fica de fora na qualidade baixa
+    const beam = budget.layers ? CreateCylinder("mm-gain-beam", { height: 1, diameter: 2, tessellation: 24, cap: 0 }, scene) : null
+    const beamMat = beam ? addMat(scene, "mm-gain-beam-mat", beamTex, owned) : null
+    if (beam) beam.material = beamMat
+    for (const m of beam ? [beam, ring] : [ring]) {
+      m.isPickable = false
+      m.setEnabled(false)
+      owned.push(m)
+    }
+    const at = new Vector3()
+    const emit = new Vector3()
+    const sparks = new ParticleSystem("mm-gain-sparks", Math.max(16, Math.round(110 * budget.particles)), scene)
+    sparks.particleTexture = starTex
+    sparks.blendMode = ParticleSystem.BLENDMODE_ADD
+    sparks.updateSpeed = 1 / 60
+    sparks.emitter = emit
+    sparks.createCylinderEmitter(RADIUS * 0.8, 0.1, 0.2, 0)
+    sparks.minLifeTime = 0.7
+    sparks.maxLifeTime = 1.4
+    sparks.minEmitPower = 0.4
+    sparks.maxEmitPower = 1.1
+    sparks.minAngularSpeed = -3
+    sparks.maxAngularSpeed = 3
+    sparks.emitRate = 0
+    owned.push(sparks)
+    let style = AURA_BASE
+    let t = DUR
+
+    const place = () => {
+      const p = feet()
+      if (p) at.copyFrom(p)
+    }
+    const off = () => {
+      beam?.setEnabled(false)
+      ring.setEnabled(false)
+      sparks.emitRate = 0
+      sparks.stop()
+      sparks.reset()
+    }
+    return {
+      play({ hex, kind }) {
+        style = (kind && AURA[kind]) || AURA_BASE
+        const c = color3(hex)
+        if (beamMat) beamMat.emissiveColor = c
+        ringMat.emissiveColor = c
+        sparks.color1 = new Color4(1, 1, 1, 1)
+        sparks.color2 = new Color4(c.r, c.g, c.b, 1)
+        sparks.colorDead = new Color4(c.r, c.g, c.b, 0)
+        sparks.minSize = style.size[0]
+        sparks.maxSize = style.size[1]
+        sparks.gravity.set(0, style.lift, 0)
+        sparks.billboardMode = style.streak ? ParticleSystem.BILLBOARDMODE_STRETCHED : ParticleSystem.BILLBOARDMODE_ALL
+        sparks.emitRate = style.rate * budget.particles
+        if (!sparks.isStarted()) sparks.start()
+        beam?.setEnabled(true)
+        ring.setEnabled(true)
+        t = 0
+        place()
+        emit.copyFrom(at)
+      },
+      step(dt) {
+        t += dt
+        place()
+        const k = t / DUR
+        // apagou: só desliga de vez quando a última estrela sumir
+        if (k >= 1) {
+          beam?.setEnabled(false)
+          ring.setEnabled(false)
+          sparks.emitRate = 0
+          if (sparks.getActiveCount() > 0) return true
+          off()
+          return false
+        }
+        // sobe rápido, fica, apaga no fim (mesma curva do tubo do poder)
+        const grow = 1 - Math.pow(1 - Math.min(1, t / 0.35), 2)
+        const fade = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3
+        if (beam) {
+          const h = HEIGHT * grow
+          beam.scaling.set(RADIUS, h, RADIUS)
+          beam.position.set(at.x, at.y + 0.03 + h / 2, at.z)
+          beam.visibility = BEAM_ALPHA * fade
+          beamTex.vOffset -= dt * 0.9
+        }
+        // o anel abre uma vez por pulso
+        const beat = (k * style.pulses) % 1
+        const open = 1 - Math.pow(1 - Math.min(1, beat / 0.4), 3)
+        ring.scaling.setAll(RADIUS * 1.5 * (0.5 + 0.5 * open))
+        ring.position.set(at.x, at.y + 0.04, at.z)
+        ring.rotation.y += dt * 1.2
+        ring.visibility = RING_ALPHA * fade * (style.pulses > 1 ? 1 - beat * 0.6 : 1)
+        if (style.spiral) {
+          const a = t * 7
+          emit.set(at.x + Math.sin(a) * RADIUS * 0.7, at.y, at.z + Math.cos(a) * RADIUS * 0.7)
+        } else emit.copyFrom(at)
+        if (k > 0.6) sparks.emitRate = 0
+        return true
+      },
+      stop: off,
+      dispose() {
+        for (const o of owned) o.dispose()
+      },
+    }
+  }
+}
+
 export class GainPillar implements GainFxTarget {
-  private built: {
-    beam: Mesh
-    ring: Mesh
-    beamMat: StandardMaterial
-    ringMat: StandardMaterial
-    beamTex: DynamicTexture
-    sparks: ParticleSystem
-    owned: Owned
-  } | null = null
+  private readonly fx: FxStage
+  private readonly aura: FxBuilder<AuraArgs>
   private lv: LevelBurst | null = null
-  private t = DUR
-  private obs: Observer<Scene> | null = null
-  private readonly at = new Vector3()
 
   constructor(
     private readonly scene: Scene,
     /** Pés do meu personagem (mundo). */
     private readonly feet: () => Vector3 | null,
     private readonly low: boolean,
-  ) {}
-
-  private build() {
-    if (this.built) return this.built
-    const scene = this.scene
-    const owned: Owned = []
-    const beamTex = beamTexture(scene, "mm-gain-beam")
-    const ringTex = ringTexture(scene)
-    const starTex = starTexture(scene, "mm-gain-star")
-    owned.push(beamTex, ringTex, starTex)
-    const beam = CreateCylinder("mm-gain-beam", { height: 1, diameter: 2, tessellation: 24, cap: 0 }, scene)
-    const beamMat = addMat(scene, "mm-gain-beam-mat", beamTex, owned)
-    beam.material = beamMat
-    const ring = CreateGround("mm-gain-ring", { width: 2, height: 2 }, scene)
-    const ringMat = addMat(scene, "mm-gain-ring-mat", ringTex, owned)
-    ring.material = ringMat
-    for (const m of [beam, ring]) {
-      m.isPickable = false
-      m.setEnabled(false)
-      owned.push(m)
-    }
-    // brilhos: estrelinhas subindo de dentro do tubo
-    const sparks = new ParticleSystem("mm-gain-sparks", this.low ? 30 : 110, scene)
-    sparks.particleTexture = starTex
-    sparks.blendMode = ParticleSystem.BLENDMODE_ADD
-    sparks.updateSpeed = 1 / 60
-    sparks.emitter = this.at
-    sparks.createCylinderEmitter(RADIUS * 0.8, 0.1, 0.2, 0)
-    sparks.minSize = 0.09
-    sparks.maxSize = 0.26
-    sparks.minLifeTime = 0.7
-    sparks.maxLifeTime = 1.4
-    sparks.minEmitPower = 0.4
-    sparks.maxEmitPower = 1.1
-    sparks.gravity = new Vector3(0, 1.6, 0)
-    sparks.minAngularSpeed = -3
-    sparks.maxAngularSpeed = 3
-    sparks.emitRate = 0
-    owned.push(sparks)
-    this.built = { beam, ring, beamMat, ringMat, beamTex, sparks, owned }
-    return this.built
+  ) {
+    this.fx = new FxStage(scene, low ? "low" : resolveQuality().tier)
+    this.aura = statusAura(feet)
   }
 
   /** Subiu de nível: o feixe colorido (criado só no 1º nível). */
@@ -425,65 +523,16 @@ export class GainPillar implements GainFxTarget {
     this.lv.play(colors)
   }
 
-  play(hex: string) {
-    const b = this.build()
-    const c = color3(hex)
-    b.beamMat.emissiveColor = c
-    b.ringMat.emissiveColor = c
-    const c4 = new Color4(c.r, c.g, c.b, 1)
-    b.sparks.color1 = new Color4(1, 1, 1, 1)
-    b.sparks.color2 = c4
-    b.sparks.colorDead = new Color4(c.r, c.g, c.b, 0)
-    b.sparks.emitRate = this.low ? 18 : 60
-    if (!b.sparks.isStarted()) b.sparks.start()
-    b.beam.setEnabled(true)
-    b.ring.setEnabled(true)
-    this.t = 0
-    this.place()
-    if (!this.obs) this.obs = this.scene.onBeforeRenderObservable.add(() => this.step())
+  play(hex: string, kind?: string) {
+    this.fx.play("status-aura", this.aura, { hex, kind })
   }
 
-  private place() {
-    const p = this.feet()
-    if (p) this.at.copyFrom(p)
-  }
-
-  private step() {
-    const b = this.built
-    if (!b) return
-    const dt = Math.min(0.05, this.scene.getEngine().getDeltaTime() / 1000)
-    this.t += dt
-    this.place()
-    const k = this.t / DUR
-    if (k >= 1) {
-      b.beam.setEnabled(false)
-      b.ring.setEnabled(false)
-      b.sparks.emitRate = 0
-      if (this.obs) this.scene.onBeforeRenderObservable.remove(this.obs)
-      this.obs = null
-      return
-    }
-    // sobe rápido, fica, apaga no fim (mesma curva do tubo do poder)
-    const grow = 1 - Math.pow(1 - Math.min(1, this.t / 0.35), 2)
-    const fade = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3
-    const h = HEIGHT * grow
-    b.beam.scaling.set(RADIUS, h, RADIUS)
-    b.beam.position.set(this.at.x, this.at.y + 0.03 + h / 2, this.at.z)
-    b.beam.visibility = BEAM_ALPHA * fade
-    b.beamTex.vOffset -= dt * 0.9
-    const open = 1 - Math.pow(1 - Math.min(1, this.t / 0.25), 3)
-    b.ring.scaling.setAll(RADIUS * 1.5 * (0.5 + 0.5 * open))
-    b.ring.position.set(this.at.x, this.at.y + 0.04, this.at.z)
-    b.ring.rotation.y += dt * 1.2
-    b.ring.visibility = RING_ALPHA * fade
-    if (k > 0.6) b.sparks.emitRate = 0
+  stats() {
+    return this.fx.stats()
   }
 
   dispose() {
-    if (this.obs) this.scene.onBeforeRenderObservable.remove(this.obs)
-    this.obs = null
-    for (const o of this.built?.owned ?? []) o.dispose()
-    this.built = null
+    this.fx.dispose()
     this.lv?.dispose()
     this.lv = null
   }
