@@ -101,7 +101,8 @@ const ASSETS = {
     noctis: "avatar-noctis-h320p.glb",
     aeryn: "avatar-aeryn-h320p.glb",
     cavaleiro: "avatar-cavaleiro-p.glb",
-    golem: "avatar-golem-h400.glb",
+    // 2026-11-07 (-h400b): queixo inteiro na cabeça (`head_rigid` do Golem) — deformava com o pescoço.
+    golem: "avatar-golem-h400b.glb",
     // 2026-11-02: -h401 rosto/queixo 100% na cabeça (`head_rigid` no build_deuses.py — estava 70–84% no peito);
     // -h402 ombreiras e placas soltas do ombro andam como bloco (`rigid_pieces`) — esticavam na corrida;
     // -h403 botas para a frente (`feet_fwd`, estavam 32° para fora), como o vampiro adulto.
@@ -111,7 +112,9 @@ const ASSETS = {
     // (menina) (-m58f); adultos 2,70 m (-m58g) — escala da raiz.
     // 2026-11-02 (-m58h): botas viradas para a frente (`feet_fwd` no build_deuses.py) — todos menos o raposa adulto (medida não confiável).
     // 2026-11-02 (-m58i): vampira e raposa jovens com o antebraço limpo (`clean_forearm`; a mão descolava correndo).
-    ...byClanBody((b) => (b === "vampira" || b === "raposa" ? `avatar-${b}-m58i.glb` : b !== "raposa_adulto" ? `avatar-${b}-m58h.glb` : `avatar-${b}-m58g.glb`)),
+    // 2026-11-07 (-m58j): vampiro jovem com os dedos presos à mão (`stiff_fingers`; no skate dobravam) e
+    // vampira adulta com a bota de salto inteira no pé (`rigid_feet`; o salto esticava).
+    ...byClanBody((b) => (b === "vampiro" || b === "vampira_adulta" ? `avatar-${b}-m58j.glb` : b === "vampira" || b === "raposa" ? `avatar-${b}-m58i.glb` : b !== "raposa_adulto" ? `avatar-${b}-m58h.glb` : `avatar-${b}-m58g.glb`)),
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -123,7 +126,7 @@ const ASSETS = {
     fat: "avatar-fat-lod.glb",
     strong: "avatar-strong-lod.glb",
     female: "avatar-female-m36e-lod.glb",
-    ...byClanBody((b) => (b === "vampira" || b === "raposa" ? `avatar-${b}-m58i-lod.glb` : b !== "raposa_adulto" ? `avatar-${b}-m58h-lod.glb` : `avatar-${b}-m58g-lod.glb`)),
+    ...byClanBody((b) => (b === "vampiro" || b === "vampira_adulta" ? `avatar-${b}-m58j-lod.glb` : b === "vampira" || b === "raposa" ? `avatar-${b}-m58i-lod.glb` : b !== "raposa_adulto" ? `avatar-${b}-m58h-lod.glb` : `avatar-${b}-m58g-lod.glb`)),
   } as Partial<Record<BodyId, string>>,
   // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
   // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
