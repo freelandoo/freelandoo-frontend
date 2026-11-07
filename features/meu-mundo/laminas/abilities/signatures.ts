@@ -11,9 +11,24 @@ export type FxFamily = "blood" | "ember" | "storm" | "stone" | "shadow" | "solar
 /** O que abre atrás do corpo na carga. */
 export type BackForm = "wings" | "feathers" | "tails" | "claws" | "sun" | "moon" | "gear" | "wheel" | "horns" | "crest"
 /** O golpe em si. */
-export type StrikeForm = "moon" | "cross" | "spin" | "bolt" | "spokes" | "rain" | "blast" | "disc" | "wave" | "smash" | "sword"
+export type StrikeForm = "none" | "moon" | "cross" | "spin" | "bolt" | "spokes" | "rain" | "blast" | "disc" | "wave" | "smash" | "sword"
 /** O que sobe do chão no impacto. */
 export type RiseForm = "blades" | "flames" | "columns" | "water" | "crystals"
+
+/**
+ * A aparição gigante do poder (modelo do Tripo, sem textura, desenhado como holograma).
+ * fall = cai do céu; rise = sobe do chão; loom = cresce atrás de quem joga e avança no golpe.
+ * Com aparição o que sobe do chão sai de cena: ela é o grande final.
+ */
+export interface Summon {
+  mode: "fall" | "rise" | "loom"
+  /** Altura em metros. */
+  size: number
+  /** Cai girando (pedra, martelo); sem = cai reto, de frente (espada, águia). */
+  tumble?: boolean
+  /** Giro extra para a frente do modelo bater com a de quem joga (rad). */
+  turn?: number
+}
 
 export interface NameText {
   key: string
@@ -30,6 +45,7 @@ export interface Signature {
   back: BackForm
   strike: StrikeForm
   rise: RiseForm
+  summon?: Summon
   /** Desenho do chão (abilities/fx/glyph-<nome>.webp). */
   glyph: string
   /** Pasta dos ícones em /meu-mundo/laminas/abilities. */
@@ -55,6 +71,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "wings",
     strike: "moon",
     rise: "blades",
+    summon: { mode: "loom", size: 9 },
     glyph: "moons",
     art: "vampiro",
     names: n("vampiro", "Golpe de Sangue", "Foice Carmesim", "Passo de Morcego", "Véu de Sangue"),
@@ -66,6 +83,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "tails",
     strike: "blast",
     rise: "flames",
+    summon: { mode: "loom", size: 12 },
     glyph: "foxfire",
     art: "raposa",
     names: n("raposa", "Coroa de Brasas", "Rabo de Fogo", "Salto da Raposa", "Círculo de Brasas"),
@@ -75,8 +93,9 @@ export const SIGNATURES: Record<string, Signature> = {
     family: "solar",
     pal: ["#2c1a02", "#d68a12", "#ffd24d", "#fff0a8", "#fffdf0"],
     back: "sun",
-    strike: "disc",
+    strike: "none",
     rise: "crystals",
+    summon: { mode: "fall", size: 11, tumble: true },
     glyph: "sun",
     art: "aurion",
     names: n("aurion", "Sentença Solar", "Lâmina do Meio-Dia", "Passo do Invicto", "Égide de Mármore"),
@@ -88,6 +107,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "horns",
     strike: "cross",
     rise: "flames",
+    summon: { mode: "loom", size: 13 },
     glyph: "pact",
     art: "morkhan",
     names: n("morkhan", "Fogo Sem Nome", "Corte Violeta", "Sombra Rasgada", "Pacto de Cinzas"),
@@ -99,6 +119,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "wheel",
     strike: "bolt",
     rise: "crystals",
+    summon: { mode: "fall", size: 8 },
     glyph: "storm",
     art: "zephyra",
     names: n("zephyra", "Carruagem do Trovão", "Corte de Vento", "Rastro de Raio", "Olho da Tormenta"),
@@ -110,6 +131,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "horns",
     strike: "smash",
     rise: "columns",
+    summon: { mode: "rise", size: 10, turn: Math.PI / 2 },
     glyph: "basalt",
     art: "kragor",
     names: n("kragor", "Punho de Basalto", "Golpe de Lava", "Carga do Touro", "Muralha de Basalto"),
@@ -121,6 +143,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "crest",
     strike: "wave",
     rise: "water",
+    summon: { mode: "rise", size: 10 },
     glyph: "tide",
     art: "maru",
     names: n("maru", "Maré Centésima", "Corte da Ressaca", "Salto do Tritão", "Bolha da Maré"),
@@ -133,6 +156,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "claws",
     strike: "rain",
     rise: "crystals",
+    summon: { mode: "loom", size: 8 },
     glyph: "prism",
     art: "iris",
     names: n("iris", "Prisma das Cores", "Flecha Espectral", "Passo Camaleão", "Véu Prismático"),
@@ -144,6 +168,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "feathers",
     strike: "rain",
     rise: "blades",
+    summon: { mode: "fall", size: 8 },
     glyph: "cog",
     art: "aeryn",
     names: n("aeryn", "Asa de Bronze", "Pena Cortante", "Voo Rasante", "Asas Fechadas"),
@@ -155,6 +180,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "moon",
     strike: "spin",
     rise: "blades",
+    summon: { mode: "loom", size: 8 },
     glyph: "lunar",
     art: "noctis",
     names: n("noctis", "Corredor da Lua", "Tiro de Prata", "Rastro Noturno", "Eclipse"),
@@ -166,6 +192,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "gear",
     strike: "spokes",
     rise: "columns",
+    summon: { mode: "loom", size: 12 },
     glyph: "circuit",
     art: "ciborgue",
     names: n("ciborgue", "Sobrecarga", "Rajada Térmica", "Propulsão", "Campo de Força"),
@@ -177,6 +204,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "gear",
     strike: "bolt",
     rise: "columns",
+    summon: { mode: "rise", size: 11 },
     glyph: "runestone",
     art: "golem",
     names: n("golem", "Pedras Gêmeas", "Soco de Pedra", "Avanço do Colosso", "Casca de Rocha"),
@@ -188,6 +216,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "claws",
     strike: "cross",
     rise: "blades",
+    summon: { mode: "rise", size: 10, turn: Math.PI / 2 },
     glyph: "talon",
     art: "garras",
     names: n("garras", "Rasgo em Cruz", "Garra Dupla", "Bote da Dama", "Plumas de Aço"),
@@ -199,6 +228,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "horns",
     strike: "smash",
     rise: "columns",
+    summon: { mode: "fall", size: 10, turn: Math.PI / 2 },
     glyph: "labyrinth",
     art: "brutamontes",
     names: n("brutamontes", "Queda do Minotauro", "Machado Roxo", "Estouro da Manada", "Couraça do Touro"),
@@ -208,8 +238,9 @@ export const SIGNATURES: Record<string, Signature> = {
     family: "solar",
     pal: ["#241402", "#b8780f", "#ffc23a", "#fff0b0", "#ffffff"],
     back: "sun",
-    strike: "sword",
+    strike: "none",
     rise: "crystals",
+    summon: { mode: "fall", size: 11, turn: Math.PI / 2 },
     glyph: "crest",
     art: "cavaleiro",
     names: n("cavaleiro", "Juramento Dourado", "Corte Real", "Investida da Ordem", "Baluarte de Ouro"),
@@ -232,6 +263,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "feathers",
     strike: "rain",
     rise: "crystals",
+    summon: { mode: "rise", size: 9 },
     glyph: "frost",
     art: "ekaterina",
     names: n("ekaterina", "Rosa de Gelo", "Corte Frio", "Passo na Neve", "Espelho de Gelo"),
@@ -243,6 +275,7 @@ export const SIGNATURES: Record<string, Signature> = {
     back: "wheel",
     strike: "smash",
     rise: "blades",
+    summon: { mode: "fall", size: 10, turn: Math.PI / 2 },
     glyph: "compass",
     art: "aventura",
     names: n("aventura", "Golpe do Herói", "Corte Firme", "Arranque", "Guarda do Bairro"),

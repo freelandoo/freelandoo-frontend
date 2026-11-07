@@ -31,6 +31,8 @@ import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder"
 import { CreatePolyhedron } from "@babylonjs/core/Meshes/Builders/polyhedronBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { PointLight } from "@babylonjs/core/Lights/pointLight"
+import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
+import "@babylonjs/loaders/glTF"
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Effect } from "@babylonjs/core/Materials/effect"
@@ -46,7 +48,7 @@ import type { BoxeClip } from "../../engine/avatars"
 import type { FxBuilder, FxContext, FxEffect, FxStage } from "../../engine/fx/fx-core"
 import type { Vfx } from "../../engine/vfx"
 import type { AbilityScript, CamKey, Subject } from "./director"
-import type { BackForm, RiseForm, Signature, StrikeForm } from "./signatures"
+import type { BackForm, RiseForm, Signature, StrikeForm, Summon } from "./signatures"
 
 /** Ajustes do laboratório (harness); os valores daqui são os que valem no jogo. */
 export const FX_TUNE = { density: 1, gain: 1 }
@@ -83,6 +85,8 @@ uniform float uCount;
 uniform float uCurl;
 varying vec2 vUV;
 varying float vSeed;
+varying vec3 vN;
+varying vec3 vP;
 void main() {
   vec3 p = position;
   vec2 tuv = uv;
@@ -160,10 +164,14 @@ void main() {
   p = vec3(side * u * 1.25, (v * 1.4 - curl * 0.26) * h * (1.0 - 0.42 * u * u), -0.42 + curl * 1.05 * h + 0.05 * sin(v * 9.0 + uTime * 4.0));
 #endif
   vUV = tuv;
-  gl_Position = viewProjection * (world * vec4(p, 1.0));
+  vec4 wp = world * vec4(p, 1.0);
+  vP = wp.xyz;
+  vN = mat3(world) * normal;
+  gl_Position = viewProjection * wp;
 }`
 
 const FRAGMENT = /* glsl */ `
+#extension GL_OES_standard_derivatives : enable
 precision highp float;
 uniform vec3 uDeep;
 uniform vec3 uBlood;
@@ -179,10 +187,13 @@ uniform float uGain;
 uniform float uBoost;
 uniform float uSeed;
 uniform float uStyle;
+uniform vec3 uEye;
 uniform sampler2D uNoise;
 uniform sampler2D uTex;
 varying vec2 vUV;
 varying float vSeed;
+varying vec3 vN;
+varying vec3 vP;
 // A rampa: escuro → corpo → quente → topo. Toda peça passa por aqui.
 vec3 ramp(float x) {
   vec3 c = mix(uDeep, uBlood, smoothstep(0.0, 0.38, x));
@@ -211,6 +222,28 @@ void main() {
   vec3 c = ramp(min(v, 1.0));
   c = mix(c, uEdge, (1.0 - inside) * 0.55 + smoothstep(0.55, 0.95, yy) * 0.35);
   outc = vec4(c * (body * 0.75 + light) * uGain, body * 0.8 * (1.0 - 0.45 * smoothstep(0.6, 1.0, v))) * uFade;
+#endif
+#ifdef HOLO
+  // Aparição: só a forma, sem grade. Face de frente quase some, a volta acende na mesma cor.
+  vec3 N = normalize(vN);
+  vec3 V = normalize(uEye - vP);
+  float f = 1.0 - abs(dot(N, V));
+  float facet = 0.5 + 0.5 * dot(N, normalize(vec3(0.35, 0.85, 0.4)));
+  float cloud = texture2D(uNoise, vP.xz * 0.05 + vP.y * 0.04 + uTime * 0.03).r;
+  float flow = texture2D(uNoise, vec2(vP.x * 0.04 + vP.z * 0.04, vP.y * 0.05 - uTime * 0.16)).g;
+  if (cloud + flow * 0.3 < uCut * 1.4) discard;
+  float burn = smoothstep(uCut * 1.4 + 0.1, uCut * 1.4, cloud + flow * 0.3) * step(0.001, uCut);
+  float rim = pow(f, 2.4);
+  // linhas: vinco do modelo (a normal muda rápido) acende; não é grade, é o desenho da forma
+  float crease = clamp(length(fwidth(N)) * 3.0 - 0.12, 0.0, 1.0);
+  // brilho branco onde a luz bate, e uma faixa de luz subindo pelo corpo
+  float spec = pow(max(dot(reflect(-V, N), normalize(vec3(0.3, 0.9, 0.35))), 0.0), 22.0);
+  float sweep = smoothstep(0.07, 0.0, abs(fract(vP.y * 0.07 - uTime * 0.4) - 0.5));
+  float v = 0.34 + 0.32 * facet * facet + rim * 0.5 + flow * 0.12 + crease * 0.3;
+  vec3 c = ramp(min(v, 0.82));
+  float a = 0.3 + 0.3 * facet * facet + 0.45 * rim + crease * 0.5 + burn * 0.4;
+  vec3 white = vec3(1.0) * (spec * 0.85 + crease * 0.55 + pow(rim, 4.0) * 0.7 + sweep * 0.3);
+  outc = vec4((c * (a * 1.35 + rim * 0.8 + burn * 0.8) + white * (0.4 + 0.6 * a)) * uGain, min(1.0, a)) * uFade;
 #endif
 #ifdef THORN
   float u = vUV.x;
@@ -461,7 +494,7 @@ void main() {
   gl_FragColor = outc;
 }`
 
-export type ShaderKind = "MOON" | "WAKE" | "WING" | "TAILS" | "POLAR" | "HORNS" | "CREST" | "RING" | "DECAL" | "POOL" | "FLASH" | "THORN" | "CURTAIN" | "STAR" | "RAIN" | "BEAM" | "BLAST"
+export type ShaderKind = "HOLO" | "MOON" | "WAKE" | "WING" | "TAILS" | "POLAR" | "HORNS" | "CREST" | "RING" | "DECAL" | "POOL" | "FLASH" | "THORN" | "CURTAIN" | "STAR" | "RAIN" | "BEAM" | "BLAST"
 
 export function shaderOf(scene: Scene, name: string, kind: ShaderKind, noise: Texture, sig: Signature) {
   Effect.ShadersStore.mmSigVertexShader = VERTEX
@@ -472,7 +505,7 @@ export function shaderOf(scene: Scene, name: string, kind: ShaderKind, noise: Te
     { vertex: "mmSig", fragment: "mmSig" },
     {
       attributes: ["position", "normal", "uv"],
-      uniforms: ["world", "viewProjection", "uDeep", "uBlood", "uHot", "uEdge", "uTop", "uPrism", "uTime", "uFade", "uCut", "uR", "uGain", "uOpen", "uT", "uBoost", "uSeed", "uStyle", "uCount", "uCurl"],
+      uniforms: ["world", "viewProjection", "uDeep", "uBlood", "uHot", "uEdge", "uTop", "uPrism", "uTime", "uFade", "uCut", "uR", "uGain", "uOpen", "uT", "uBoost", "uSeed", "uStyle", "uCount", "uCurl", "uEye"],
       samplers: ["uNoise", "uTex"],
       defines: [`#define ${kind}`],
       needAlphaBlending: true,
@@ -743,6 +776,8 @@ interface Env {
   focus: Vector3
   /** Soltando faíscas neste quadro. */
   sparks: boolean
+  /** Onde a aparição está (a parede de fogo dela abre daqui); null sem aparição em cena. */
+  summonAt: Vector3 | null
 }
 
 interface Piece {
@@ -917,24 +952,29 @@ function rainStrike(env: Env): Piece {
   }
 }
 
-/** Parede de fogo que abre em volta até o fim da área. */
-function blastStrike(env: Env): Piece {
-  const cyl = CreateCylinder("sg-blast", { height: 1, diameter: 2, tessellation: 64, cap: Mesh.NO_CAP }, env.scene)
+/**
+ * Parede de fogo que abre em volta até o fim da área. Sem `from`: em volta de quem joga (a
+ * raposa); com `from`: abre de onde a aparição chega, um pouco depois dela.
+ */
+function blastStrike(env: Env, from?: () => Vector3 | null, t0 = 0.74): Piece {
+  const cyl = CreateCylinder(`sg-blast-${from ? "summon" : "hero"}`, { height: 1, diameter: 2, tessellation: 64, cap: Mesh.NO_CAP }, env.scene)
   cyl.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
-  const m = env.add(cyl, env.mat("sg-blast-mat", "BLAST"))
+  const m = env.add(cyl, env.mat(`sg-blast-mat-${from ? "summon" : "hero"}`, "BLAST"))
   const mat = m.material as ShaderMaterial
+  const end = t0 + 0.6
   return {
     step(s, t) {
-      const on = t >= 0.74 && t < 1.34
+      const at = from ? from() : null
+      const on = t >= t0 && t < end && (!from || !!at)
       m.setEnabled(on)
       if (!on) return
-      const u = easeOut(seg(t, 0.74, FIRE_AT + 0.03))
-      const r = 0.9 + (env.reach + 0.5) * u + 1.1 * seg(t, FIRE_AT, 1.34)
-      m.position.set(s.x, 0.02, s.z)
-      m.scaling.set(r, 3 + 4.4 * easeOut(seg(t, 0.78, 1.0)), r)
-      mat.setFloat("uCut", easeInOut(seg(t, 1.02, 1.34)) * 1.1)
-      env.focus.set(s.x, 2, s.z)
-      env.sparks = t < 1.1
+      const u = easeOut(seg(t, t0, t0 + 0.14))
+      const r = 0.9 + (env.reach + 0.5) * u + 1.1 * seg(t, t0 + 0.11, end)
+      m.position.set(at ? at.x : s.x, 0.02, at ? at.z : s.z)
+      m.scaling.set(r, 3 + 4.4 * easeOut(seg(t, t0 + 0.04, t0 + 0.26)), r)
+      mat.setFloat("uCut", easeInOut(seg(t, t0 + 0.28, end)) * 1.1)
+      if (!from) env.focus.set(s.x, 2, s.z)
+      env.sparks = env.sparks || t < t0 + 0.36
     },
   }
 }
@@ -986,6 +1026,7 @@ function waveStrike(env: Env): Piece {
 }
 
 const STRIKES: Record<StrikeForm, (env: Env) => Piece> = {
+  none: () => ({ step() {} }),
   moon: (env) => moonStrike(env, [0.72]),
   cross: (env) => moonStrike(env, [0.78, -0.78], 0.94),
   // pancada de cima: lua quase em pé, mais baixa, que acaba no chão
@@ -998,6 +1039,101 @@ const STRIKES: Record<StrikeForm, (env: Env) => Piece> = {
   disc: discStrike,
   wave: waveStrike,
   sword: swordStrike,
+}
+
+/**
+ * A aparição gigante: modelo sem textura, desenhado como holograma. Carrega em segundo plano ao
+ * abrir a luta; se o arquivo faltar, o poder segue com o que sobe do chão.
+ */
+function summonPiece(env: Env, ready: () => void): Piece {
+  // o harness troca o modelo para montar o catálogo de candidatas
+  const lab = process.env.NODE_ENV !== "production" ? (globalThis as unknown as { __mmSummon?: Summon & { file: string } }).__mmSummon : undefined
+  const sum = lab ?? env.sig.summon!
+  const holder = new TransformNode("sg-summon", env.scene)
+  holder.setEnabled(false)
+  const mat = env.mat("sg-holo-mat", "HOLO")
+  // desenha a profundidade antes: só a face da frente aparece, sem ver o avesso da malha
+  mat.needDepthPrePass = true
+  mat.disableDepthWrite = false
+  let parts: AbstractMesh[] = []
+  let gone = false
+  let dispose: (() => void) | null = null
+  LoadAssetContainerAsync(lab?.file ?? `${ART.replace("/fx", "")}/summon/${env.sig.id}.glb`, env.scene)
+    .then((c) => {
+      if (gone) return c.dispose()
+      c.addAllToScene()
+      for (const n of c.rootNodes) n.parent = holder
+      parts = c.meshes.filter((m) => m.getTotalVertices() > 0)
+      for (const m of parts) {
+        m.material = mat
+        m.isPickable = false
+        m.alwaysSelectAsActiveMesh = true
+      }
+      dispose = () => c.dispose()
+      ready()
+    })
+    .catch(() => {})
+  const size = sum.size
+  return {
+    step(s, t, clock) {
+      if (!parts.length) return
+      const fx = Math.sin(s.facing)
+      const fz = Math.cos(s.facing)
+      const ahead = env.area ? 0 : env.reach * 0.6
+      let x = s.x
+      let z = s.z
+      let y = 0
+      let on = false
+      let cut = 0
+      if (sum.mode === "fall") {
+        // vem de longe, em diagonal, e chega no passo do dano
+        on = t >= 0.5 && t < 1.42
+        const u = seg(t, 0.5, FIRE_AT)
+        const far = (1 - u * u) * 34
+        x += fx * ahead - fz * far * 0.5
+        z += fz * ahead + fx * far * 0.5
+        // pedra e martelo caem girando; espada, machado e águia caem retos e cravam
+        y = far * 1.05 + (sum.tumble ? size * 0.1 - size * 0.42 * seg(t, FIRE_AT, FIRE_AT + 0.1) : -size * 0.18 * easeOut(seg(t, FIRE_AT, FIRE_AT + 0.08)))
+        if (sum.tumble) holder.rotation.set(clock * 0.9, s.facing + clock * 0.6, 0.4)
+        else holder.rotation.set(0.35 * (1 - u), s.facing + (sum.turn ?? 0), 0)
+        cut = easeInOut(seg(t, 1.02, 1.42))
+      } else if (sum.mode === "rise") {
+        on = t >= 0.6 && t < 1.48
+        x += fx * ahead
+        z += fz * ahead
+        y = -size * (1 - easeOut(seg(t, 0.66, FIRE_AT)))
+        holder.rotation.set(0, s.facing + Math.PI + (sum.turn ?? 0), 0)
+        cut = easeInOut(seg(t, 1.1, 1.48))
+      } else {
+        // cresce atrás de quem joga na carga e avança no golpe
+        on = t >= 0.12 && t < 1.34
+        const go = easeInOut(seg(t, 0.74, FIRE_AT))
+        const off = -3.4 + (ahead + 3.4) * go
+        x += fx * off
+        z += fz * off
+        holder.rotation.set(0, s.facing + (sum.turn ?? 0), 0)
+        cut = Math.max(1 - easeOut(seg(t, 0.12, 0.44)), easeInOut(seg(t, 1.0, 1.34)))
+      }
+      holder.setEnabled(on)
+      env.summonAt = on ? holder.position : null
+      if (!on) return
+      const grow = sum.mode === "loom" ? 0.72 + 0.28 * easeOut(seg(t, 0.12, 0.6)) : 1
+      holder.position.set(x, y, z)
+      holder.scaling.setAll(size * grow)
+      mat.setFloat("uCut", cut)
+      const eye = env.scene.activeCamera?.globalPosition
+      if (eye) mat.setVector3("uEye", eye)
+      if (t >= 0.74) {
+        env.focus.set(x, Math.max(1.2, y + size * 0.3), z)
+        env.sparks = env.sparks || sum.mode === "fall"
+      }
+    },
+    dispose() {
+      gone = true
+      dispose?.()
+      holder.dispose()
+    },
+  }
 }
 
 /** Forma das costas. `kind` é o desenho; `style`, `count` e `curl` são a variação dele. */
@@ -1057,9 +1193,15 @@ function buildEffect(ctx: FxContext, rig: SignatureRig): FxEffect<Live> {
     },
     focus: new Vector3(),
     sparks: false,
+    summonAt: null,
   }
 
   const strike = STRIKES[sig.strike](env)
+  let summoned = false
+  const labOn = process.env.NODE_ENV !== "production" && !!(globalThis as unknown as { __mmSummon?: unknown }).__mmSummon
+  const summon = sig.summon || labOn ? summonPiece(env, () => (summoned = true)) : null
+  // a parede de fogo da raposa, na cor de cada um, saindo de onde o gigante chega
+  const summonBlast = summon && sig.strike !== "blast" ? blastStrike(env, () => (summoned ? env.summonAt : null), FIRE_AT - 0.02) : null
 
   const form = BACKS[sig.back]
   const backMat = env.mat("sg-back-mat", form.kind)
@@ -1383,6 +1525,8 @@ function buildEffect(ctx: FxContext, rig: SignatureRig): FxEffect<Live> {
 
       env.sparks = false
       strike.step(s, t, clock)
+      summon?.step(s, t, clock)
+      summonBlast?.step(s, t, clock)
       burst.emitter = env.focus.clone()
       burst.emitRate = env.sparks ? 160 * k : 0
 
@@ -1428,7 +1572,7 @@ function buildEffect(ctx: FxContext, rig: SignatureRig): FxEffect<Live> {
         crackMat.setFloat("uFade", crackFade)
       }
       // o que sobe do chão: em onda, a partir da mesma hora do dano, e queima como o golpe
-      const riseOn = s.impacted && t < 1.62
+      const riseOn = s.impacted && t < 1.62 && !summoned
       rise.setEnabled(riseOn)
       curtain.setEnabled(s.impacted && t < 1.34)
       if (riseOn) {
@@ -1460,6 +1604,7 @@ function buildEffect(ctx: FxContext, rig: SignatureRig): FxEffect<Live> {
       for (const p of systems) p.dispose()
       light?.dispose()
       strike.dispose?.()
+      summon?.dispose?.()
       for (const m of meshes) m.dispose()
       for (const m of [...mats, dropMat, rockMat]) m.dispose()
       for (const t of [noise, runeTex, crackTex, smokeTex, dot]) t.dispose()
@@ -1506,6 +1651,18 @@ export function signatureFx(rig: SignatureRig): SignatureFx {
       const f = FIRE_AT
       // golpe em área: a câmera fica mais longe e olha para quem joga, não para a frente
       const wide = (c: CamKey): CamKey => (rig.area && c.t >= 0.76 ? { ...c, lead: c.lead * 0.2, dist: c.dist * 1.22, high: c.high * 1.2, yaw: c.yaw + 26 } : c)
+      // com o gigante em cena a câmera recua e olha para cima: ele tem 8 a 16 m e o corpo, 2
+      const sum = rig.sig.summon
+      const giant = (c: CamKey): CamKey => {
+        if (!sum) return c
+        const loomNow = sum.mode === "loom" && c.t >= 0.25
+        const later = c.t >= 0.72
+        if (!loomNow && !later) return c
+        // longe o bastante para o gigante caber de pé, olhando para o meio dele
+        const h = Math.max(1.6, me.height)
+        const bodyK = Math.max(1, me.height / 1.8)
+        return { ...c, dist: Math.max(c.dist, (sum.size * 0.95) / bodyK), high: (sum.size * 0.46) / h, look: (sum.size * 0.4) / h, yaw: loomNow && !later ? 156 : c.yaw + 8, fov: Math.max(c.fov, 1.02) }
+      }
       return {
         id: `signature-${rig.sig.id}`,
         dur: POWER.dur,
@@ -1531,7 +1688,9 @@ export function signatureFx(rig: SignatureRig): SignatureFx {
             { t: 1.08, yaw: 18, dist: 6.9, high: 1.15, look: 0.46, lead: 3.1, fov: 0.9 },
             { t: POWER.dur, yaw: 0, dist: 6.6, high: 1.3, look: 0.5, lead: 1.6, fov: 0.9 },
           ] as CamKey[]
-        ).map(wide),
+        )
+          .map(wide)
+          .map(giant),
         cues: [
           { at: 0, run: () => (rig.audio.heartbeat(), rig.pre()) },
           { at: 0.1, run: () => rig.audio.inhale(0.75) },

@@ -146,6 +146,8 @@ export class AbilityDirector {
   slow = 1
   /** Laboratório: anda mais devagar para ver quadro a quadro. */
   speed = 1
+  /** Laboratório: fica na câmera do jogo. */
+  off = false
 
   constructor(private readonly rig: DirectorRig) {}
 
@@ -229,7 +231,7 @@ export class AbilityDirector {
     if (this.weight < 0.004 && !s) this.weight = 0
     const out = this.out
     const c = this.lastCam
-    if (this.weight === 0 || !c) {
+    if (this.weight === 0 || !c || this.off) {
       out.pos.copyFrom(gamePos)
       out.look.copyFrom(gameLook)
       out.fov = gameFov
