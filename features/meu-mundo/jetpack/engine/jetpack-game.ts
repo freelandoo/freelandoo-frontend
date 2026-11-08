@@ -43,6 +43,7 @@ import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
 import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
+import { loadCanyonAssets, type CanyonAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -179,6 +180,25 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const seed = mp ? mp.start.seed : ((Date.now() & 0xffffff) | 1) >>> 0
   const tunnel = buildPhaseEnv(scene, level, low, Math.ceil((fogEnd + SEG) / SEG) + 2, seed)
   const vfx = createJetVfx(scene, quality.tier, level)
+  // Cânion: as peças esculpidas (GLB do Tripo) chegam depois e entram no cenário e nos obstáculos
+  let canyonAssets: CanyonAssets | null = null
+  if (level === "canion") {
+    void loadCanyonAssets(scene, () => !disposed).then((a) => {
+      if (disposed) return a.dispose()
+      canyonAssets = a
+      tunnel.provide?.(a)
+      const ring = a.meshes.get("anel")
+      if (ring) obstacles.useModel("rim", ring, { zScale: 0.55 })
+      const rock = a.meshes.get("rocha")
+      if (rock) obstacles.useModel("rock", rock)
+      // as barreiras de faixa, os penhascos e as vigas viram a pedra esculpida do paredão
+      const wall = a.meshes.get("paredao")
+      if (wall) {
+        obstacles.useModel("panel", wall, { fitBox: true })
+        obstacles.useModel("petal", wall, { fitBox: true })
+      }
+    })
+  }
   const mats = tunnel.mats
   const obstacles = buildObstacles(scene, mats, level)
   const kit = buildPackKit(scene, mats)
@@ -668,6 +688,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       engine.stopRenderLoop()
       audio.dispose()
       vfx.dispose()
+      canyonAssets?.dispose()
       pack.dispose()
       char.dispose()
       for (const r of remotes) {

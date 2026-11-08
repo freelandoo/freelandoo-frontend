@@ -33,10 +33,23 @@ export interface SpinSpot {
   ry: number
 }
 
+/** Uma peça de modelo (GLB) no trecho: tipo, posição, escala por eixo e giro em y. Chega depois (provide). */
+export interface PropSpot {
+  kind: string
+  x: number
+  y: number
+  z: number
+  sx: number
+  sy: number
+  sz: number
+  ry: number
+}
+
 export interface PoolModule {
   /** As malhas do módulo (uma por material), já montadas. */
   meshes: Mesh[]
   spins: SpinSpot[]
+  props?: PropSpot[]
 }
 
 interface Live {
@@ -44,6 +57,8 @@ interface Live {
   node: TransformNode
   insts: InstancedMesh[]
   spins: { inst: InstancedMesh; spot: SpinSpot; ph: number }[]
+  /** Peças de modelo já postas (por índice em `props` do módulo). */
+  props: (InstancedMesh | null)[]
 }
 
 export class SegmentPool {
@@ -51,6 +66,8 @@ export class SegmentPool {
   private readonly live = new Map<number, Live>()
   private readonly free: Live[][]
   private seq = 0
+  /** Malhas das peças de modelo que já chegaram (tipo → malha). */
+  private readonly propSrc = new Map<string, Mesh>()
 
   constructor(
     private readonly scene: Scene,
@@ -87,7 +104,34 @@ export class SegmentPool {
       inst.rotation.y = spot.ry
       return { inst, spot, ph: k * 1.7 + id }
     })
-    return { m, node, insts, spins }
+    const l: Live = { m, node, insts, spins, props: (this.modules[m].props ?? []).map(() => null) }
+    this.fillProps(l)
+    return l
+  }
+
+  /** Põe as peças de modelo que já chegaram e ainda faltam neste trecho. */
+  private fillProps(l: Live) {
+    const spots = this.modules[l.m].props ?? []
+    for (let k = 0; k < spots.length; k++) {
+      if (l.props[k]) continue
+      const src = this.propSrc.get(spots[k].kind)
+      if (!src) continue
+      const p = spots[k]
+      const inst = src.createInstance(`${src.name}-p${this.seq}-${k}`)
+      inst.parent = l.node
+      inst.isPickable = false
+      inst.position.set(p.x, p.y, p.z)
+      inst.scaling.set(p.sx, p.sy, p.sz)
+      inst.rotation.y = p.ry
+      l.props[k] = inst
+    }
+  }
+
+  /** Chegou a malha de uma peça de modelo: entra em todos os trechos (vivos e guardados). */
+  provide(kind: string, mesh: Mesh) {
+    this.propSrc.set(kind, mesh)
+    for (const l of this.live.values()) this.fillProps(l)
+    for (const list of this.free) for (const l of list) this.fillProps(l)
   }
 
   /** Põe os trechos em volta de z; anima os giradores. */
@@ -125,6 +169,7 @@ export class SegmentPool {
     for (const l of all) {
       for (const i of l.insts) i.dispose()
       for (const sp of l.spins) sp.inst.dispose()
+      for (const p of l.props) p?.dispose()
       l.node.dispose()
     }
     this.live.clear()

@@ -99,6 +99,8 @@ export interface ObstaclesView {
   sync: (f: Flight, zFrom: number, zTo: number, now: number) => void
   /** Onde estava um galão (para o brilho de pegar). */
   canAt: (id: number) => Can | null
+  /** Troca o molde de uma peça por um modelo (GLB do Tripo): o anel e a rocha do Cânion. */
+  useModel: (key: "rim" | "rock" | "panel" | "petal", mesh: Mesh, opts?: { zScale?: number; fitBox?: boolean }) => void
   dispose: () => void
 }
 
@@ -237,6 +239,7 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
   })
 
   const free = new Map<Key, Part[]>()
+  let rimZ = 1
   let seq = 0
   const take = (key: Key): Part => {
     const list = free.get(key)
@@ -369,7 +372,7 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         parts[0].body.position.set(c.x, c.y, o.z)
         parts[0].body.scaling.set(c.r, c.r, o.d)
         parts[1].body.position.set(c.x, c.y, o.z)
-        parts[1].body.scaling.set(c.r, c.r, 1)
+        parts[1].body.scaling.set(c.r, c.r, rimZ)
         parts[1].body.rotation.set(0, 0, t * 0.6)
         rects.length = 0
         windowRects(c.x, c.y, 2 * c.r, 2 * c.r, rects)
@@ -447,6 +450,49 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
     },
     canAt(id) {
       return cans.get(id)?.can ?? null
+    },
+    useModel(key, mesh, opts = {}) {
+      const old = molds.get(key)
+      // as cópias guardadas do molde antigo saem
+      for (const p of free.get(key) ?? []) p.body.dispose()
+      free.set(key, [])
+      let body: Mesh
+      if (opts.fitBox) {
+        // placa: o modelo é encaixado na caixa do molde (x e y de −0,5 a 0,5, z de 0 a 1) e passa 6% da
+        // borda — o desenho nunca fica MENOR que a colisão
+        body = mesh.clone(`jt-${key}-model`, null, false)!
+        body.makeGeometryUnique()
+        body.refreshBoundingInfo()
+        const b = body.getBoundingInfo().boundingBox
+        const sz = b.maximum.subtract(b.minimum)
+        const k = 1.06
+        const m = Matrix.Translation(-(b.minimum.x + b.maximum.x) / 2, -(b.minimum.y + b.maximum.y) / 2, -b.minimum.z).multiply(Matrix.Scaling(k / sz.x, k / sz.y, 1 / sz.z))
+        body.bakeTransformIntoVertices(m)
+        body.refreshBoundingInfo()
+      } else body = mesh.clone(`jt-${key}-model`, null, true)!
+      body.setEnabled(false)
+      body.isPickable = false
+      body.position.set(0, 0, 0)
+      molds.set(key, { body, glow: null })
+      if (key === "rim") rimZ = opts.zScale ?? 1
+      // as que já estão à vista também trocam (nasceram antes do modelo chegar)
+      for (const parts of shown.values()) {
+        for (let i = 0; i < parts.length; i++) {
+          const p = parts[i]
+          if (p.key !== key) continue
+          const fresh = take(key)
+          fresh.body.position.copyFrom(p.body.position)
+          fresh.body.rotation.copyFrom(p.body.rotation)
+          fresh.body.scaling.copyFrom(p.body.scaling)
+          fresh.body.setEnabled(p.body.isEnabled())
+          p.body.dispose()
+          parts[i] = fresh
+        }
+      }
+      if (old) {
+        old.body.dispose()
+        old.glow?.dispose()
+      }
     },
     dispose() {
       for (const parts of shown.values()) for (const p of parts) give(p)

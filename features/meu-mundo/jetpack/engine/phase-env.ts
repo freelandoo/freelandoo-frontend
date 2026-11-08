@@ -52,8 +52,8 @@ export const PHASE_LOOK: Record<PhaseId, PhaseLook> = {
     fog: [0.7, 0.8, 0.92],
     fogStart: 70,
     fogEnd: 230,
-    hemi: [1, 0.92, 0.78],
-    ground: [0.85, 0.55, 0.38],
+    hemi: [0.95, 0.96, 1],
+    ground: [0.7, 0.55, 0.45],
     hemiK: 1.05,
     lamp: [1, 0.9, 0.7],
     lampK: 0.2,
@@ -71,6 +71,8 @@ export interface PhaseEnv {
   /** Acabamento e brilho (a mochila e os obstáculos usam os mesmos). */
   mats: { trim: StandardMaterial; glow: StandardMaterial }
   update: (z: number, sets: readonly { z0: number; z1: number; kind: SetPiece }[], now: number) => void
+  /** Cânion: chegaram as peças esculpidas (GLB). */
+  provide?: (a: import("./canyon-assets").CanyonAssets) => void
   dispose: () => void
 }
 
@@ -346,7 +348,7 @@ export function buildPhaseEnv(scene: Scene, id: PhaseId, low: boolean, slots: nu
   // Jetpack 2.0: o Cânion é a primeira fase no cenário novo (módulos variados pela semente)
   if (id === "canion") {
     const c = buildCanyonEnv(scene, low, slots, seed)
-    return { mats: c.mats, update: (z, _sets, now) => c.update(z, now), dispose: () => c.dispose() }
+    return { mats: c.mats, update: (z, _sets, now) => c.update(z, now), provide: (a) => c.provide(a), dispose: () => c.dispose() }
   }
   if (id === "industrial" || !SEGMENTS[id]) {
     const t = buildTunnel(scene, low, slots)

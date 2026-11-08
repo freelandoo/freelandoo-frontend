@@ -36,7 +36,8 @@ import { createTrimMaterials } from "../../engine/steampunk/materials"
 import { place, xf, rng, mix, type RGB } from "../../engine/steampunk/scenery"
 import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
-import { SEG, SegmentPool, hash32, weighted, type PoolModule, type SpinSpot } from "./env-pool"
+import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
+import { PIECE, type CanyonAssets } from "./canyon-assets"
 
 const { W, H } = TUNNEL
 
@@ -60,7 +61,7 @@ const C = {
   white: [1, 1, 1] as RGB,
 }
 
-type Ctx = { body: JetGeo; glow: JetGeo; water: JetGeo; spins: SpinSpot[] }
+type Ctx = { body: JetGeo; glow: JetGeo; water: JetGeo; spins: SpinSpot[]; props: PropSpot[] }
 
 const S = (x: number, y: number, z: number) => Matrix.Scaling(x, y, z)
 
@@ -71,48 +72,37 @@ function boulder(g: Ctx, seed: number, x: number, y: number, z: number, sx: numb
 }
 
 /**
- * Um paredão de um lado (sx = −1 esquerda, 1 direita) de z0 a z1: pilha de
- * blocos facetados cuja face de dentro fica sempre em |x| ≥ 5,35, com
- * camadas, saliências e topo com grama e cactos. `top` = altura do topo.
- */
-/**
  * Um paredão de um lado (sx = −1 esquerda, 1 direita) de z0 a z1, em V como na
- * referência: o bloco de dentro (face em |x| ≥ inner) só sobe um pouco acima
- * da caixa; atrás dele um terraço mais alto e, longe, o paredão de fundo. Tudo
- * desce até o abismo (−50). `top` = altura do bloco de dentro.
+ * referência, com o bloco de PEDRA ESCULPIDA (paredao.glb, do Tripo) em três
+ * camadas: a encosta de dentro (face em |x| ≥ inner) só um pouco acima da
+ * caixa, o terraço recuado e mais alto e, longe, o paredão de fundo. Todas
+ * descem para dentro das nuvens. `top` = altura da encosta de dentro.
  */
 function cliff(g: Ctx, r: () => number, sx: number, z0: number, z1: number, top: number, inner = W / 2 + 0.35) {
+  const P = PIECE.paredao
+  const put = (x: number, yTop: number, h: number, w: number, d: number, z: number) =>
+    // o bloco tem 1 m de altura com a origem embaixo; giro só de meia-volta (a caixa de largura não muda)
+    g.props.push({ kind: "paredao", x, y: yTop - h, z, sx: w / P.w, sy: h, sz: d / P.d, ry: r() < 0.5 ? 0 : Math.PI })
   let z = z0
   let k = 0
   while (z < z1) {
-    const len = 2.6 + r() * 3.4
-    const half = Math.min(len, z1 - z) / 2 + 0.5
-    const zc = z + half - 0.5
-    // 1) o bloco de dentro: coluna até o abismo + o topo facetado
-    const in1 = inner + (r() < 0.3 ? r() * 1.2 : 0)
-    const w1 = 1.3 + r() * 1.1
-    const t1 = top + (r() - 0.3) * 2.4
-    boulder(g, k * 7 + z, sx * (in1 + w1 * 1.4), -28, zc, w1 * 1.3, 24, half * 1.05, C.rockDeep)
-    boulder(g, k * 7 + z + 1, sx * (in1 + w1 * 1.16), t1 / 2 - 3, zc, w1, t1 / 2 + 3, half, k % 2 ? C.rock : C.rockDark)
-    if (r() < 0.5) g.body.box(0.5, 0.16, half * 1.4, place(sx * (in1 + 0.3), 1 + r() * (t1 - 2), zc), mix(C.sand, C.rockHi, r()))
-    if (r() < 0.45) g.body.cone(0.42, 0.06, 0.8, place(sx * (in1 + w1 * 1.1), t1 + 1.45, zc), C.grassDark, 5)
-    // 2) o terraço: recuado e mais alto
-    const in2 = in1 + w1 * 2.3 + 2.5 + r() * 3
-    const w2 = 2 + r() * 1.8
-    const t2 = Math.max(t1 + 4, H + 2) + r() * 7
-    boulder(g, k * 7 + z + 3, sx * (in2 + w2 * 1.16), (t2 - 30) / 2, zc, w2, (t2 + 30) / 2, half * 1.1, k % 2 ? C.rockHi : C.rock)
-    // tufos de grama no alto do terraço (nada de laje verde)
-    for (let q = 0; q < 2; q++) g.body.cone(0.5, 0.05, 0.9, place(sx * (in2 + w2 * (0.7 + r())), t2 + 0.9, zc + (r() - 0.5) * half), q ? C.grass : C.grassDark, 5)
-    if (r() < 0.35) {
-      const cxx = sx * (in2 + w2 * 0.9)
-      g.body.cylinder(0.34, 1.7, place(cxx, t2 + 1.8, zc), C.cactus, 6)
-      g.body.cylinder(0.2, 0.7, xf(cxx + 0.3, t2 + 2, zc, 0, undefined, 0, -0.9), C.cactus, 5)
-    }
-    // 3) o paredão de fundo, alto e longe
+    // blocos compridos: menos cópias à vista (cada cópia é uma pedra esculpida inteira)
+    const len = Math.min(7 + r() * 4, z1 - z + 1.5)
+    const zc = z + len / 2
+    // 1) a encosta de dentro
+    const t1 = top + (r() - 0.3) * 2
+    const w1 = 4.5 + r() * 2.5
+    put(sx * (inner + w1 / 2), t1, t1 + 16, w1, len + 0.8, zc)
+    // 2) o terraço
+    const w2 = 6 + r() * 4
+    const in2 = inner + w1 + 1.5 + r() * 3
+    const t2 = Math.max(t1 + 4, H + 2) + r() * 8
+    put(sx * (in2 + w2 / 2), t2, t2 + 30, w2, len * 1.2 + 1, zc + (r() - 0.5) * 2)
+    // 3) o paredão de fundo, alto e longe (um a cada dois)
     if (k % 2 === 0) {
-      const w3 = 4 + r() * 4
-      const t3 = t2 + 8 + r() * 14
-      boulder(g, k * 7 + z + 5, sx * (in2 + w2 * 2.4 + 6 + w3 * 1.1), (t3 - 50) / 2, zc + half, w3, (t3 + 50) / 2, half * 2.2, k % 4 ? C.rockDark : C.rock)
+      const w3 = 10 + r() * 8
+      const t3 = t2 + 8 + r() * 16
+      put(sx * (in2 + w2 + 4 + r() * 6 + w3 / 2), t3, t3 + 50, w3, len * 2.2, zc + len / 2)
     }
     z += len
     k++
@@ -202,18 +192,6 @@ function bridge(g: Ctx, z: number, span = 20) {
   }
 }
 
-/** Arco natural de pedra cruzando por cima: pés nos paredões, o vão acima do teto. */
-function arch(g: Ctx, seed: number, z: number) {
-  const r = rng(seed)
-  for (const sx of [-1, 1]) boulder(g, seed + sx, sx * 8.6, 6, z, 3, 9, 2.6, C.rockDark)
-  for (let i = 0; i < 6; i++) {
-    const x = -8 + i * 3.2
-    const ry = 1.4 + r() * 0.6
-    boulder(g, seed + 10 + i, x, H + 0.6 + ry * 1.2 + Math.sin((i / 5) * Math.PI) * 1.2, z + (r() - 0.5), 2.2, ry, 2.2, i % 2 ? C.rock : C.rockHi)
-  }
-  g.body.box(14, 0.4, 3, place(0, H + 5.6, z), C.grass)
-}
-
 /** Cachoeira descendo do paredão para as nuvens, com a espuma embaixo. */
 function waterfall(g: Ctx, sx: number, z: number, top: number, w = 3.2) {
   const x = sx * (W / 2 + 1.1)
@@ -247,11 +225,9 @@ function village(g: Ctx, sx: number, z: number, top: number) {
   g.body.box(0.1, 3, 0.1, place(sx * (W / 2 + 0.9), top - 1, z - 0.5), C.woodDark)
   g.spins.push({ kind: "banner", x: sx * (W / 2 + 0.9), y: top + 0.4, z: z - 0.5, speed: 1.6, sway: 0.18, ry: sx > 0 ? 0 : Math.PI })
   // o moinho no topo do paredão
-  const mx = sx * (W / 2 + 4.5)
-  const my = top
-  g.body.cone(1.4, 2.4, 4.5, place(mx, my + 2.25, z + 4), C.woodDark, 6)
-  g.body.box(1.2, 1, 1.4, place(mx, my + 4.9, z + 4), C.wood)
-  g.spins.push({ kind: "mill", x: mx - sx * 0.2, y: my + 5, z: z + 3.2, speed: 0.9 * sx, sway: 0, ry: 0 })
+  // o moinho (moinho.glb) num degrau da encosta, atrás da vila
+  const mh = 11
+  g.props.push({ kind: "moinho", x: sx * (W / 2 + 4.6 + PIECE.moinho.w * mh * 0.5), y: top - 1, z: z + 4, sx: mh, sy: mh, sz: mh, ry: sx > 0 ? -Math.PI / 2 : Math.PI / 2 })
 }
 
 // ── os módulos ──────────────────────────────────────────────────────────────
@@ -311,7 +287,8 @@ const MODULES: { id: string; build: Mod }[] = [
     build(g, v) {
       const r = rng(53 + v)
       for (const sx of [-1, 1]) cliff(g, r, sx, 0, SEG, 2.8 + r() * 2)
-      arch(g, 60 + v, 12)
+      // o arco esculpido (arco.glb): 56 m de vão; no meio da caixa (|x| ≤ 5,35) o vão fica acima de 0,31 × 56 − 3 ≈ 14 m
+      g.props.push({ kind: "arco", x: 0, y: -3, z: 12, sx: 56, sy: 56, sz: 22, ry: v ? Math.PI : 0 })
       ceilingRopes(g)
     },
   },
@@ -327,7 +304,7 @@ const MODULES: { id: string; build: Mod }[] = [
       // rochas soltas no ar do lado aberto (fora da caixa)
       for (let i = 0; i < 4; i++) {
         const s = 0.8 + r() * 1.6
-        boulder(g, 90 + i + v, open * (8 + r() * 14), -1 + r() * 14, r() * SEG, s, s * 0.8, s, i % 2 ? C.rock : C.rockDark, r() * 3)
+        g.props.push({ kind: "rocha", x: open * (8 + s + r() * 14), y: -1 + r() * 14, z: r() * SEG, sx: s, sy: s, sz: s, ry: r() * 6 })
       }
     },
   },
@@ -470,6 +447,8 @@ function island(g: Ctx, kind: number) {
 export interface CanyonEnv {
   mats: { trim: StandardMaterial; glow: StandardMaterial }
   update: (z: number, now: number) => void
+  /** Chegaram as peças esculpidas (GLB): entram nos trechos e as ilhas trocam pela do modelo. */
+  provide: (a: CanyonAssets) => void
   dispose: () => void
 }
 
@@ -483,8 +462,8 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
   waterMat.backFaceCulling = false
   const all: Mesh[] = []
 
-  const buildGeo = (name: string, fn: (g: Ctx) => void): { meshes: Mesh[]; spins: SpinSpot[] } => {
-    const g: Ctx = { body: new JetGeo(), glow: new JetGeo(), water: new JetGeo(), spins: [] }
+  const buildGeo = (name: string, fn: (g: Ctx) => void): { meshes: Mesh[]; spins: SpinSpot[]; props: PropSpot[] } => {
+    const g: Ctx = { body: new JetGeo(), glow: new JetGeo(), water: new JetGeo(), spins: [], props: [] }
     g.glow.uv = "flat"
     fn(g)
     const meshes: Mesh[] = []
@@ -499,7 +478,7 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
       meshes.push(m)
       all.push(m)
     }
-    return { meshes, spins: g.spins }
+    return { meshes, spins: g.spins, props: g.props }
   }
 
   // os módulos (cada um em 2 variantes) e os giradores
@@ -580,9 +559,9 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
   sky.infiniteDistance = true
   sky.isPickable = false
   const sun = new DirectionalLight("jt-sun", new Vector3(-0.55, -0.7, 0.45), scene)
-  sun.diffuse = new Color3(1, 0.9, 0.74)
+  sun.diffuse = new Color3(1, 0.97, 0.92)
   sun.specular = new Color3(0.15, 0.12, 0.1)
-  sun.intensity = 1.35
+  sun.intensity = 1.1
   const TILE = 60
   cloudTex.uScale = SEA / TILE
   cloudTex.vScale = SEA / TILE
@@ -614,6 +593,24 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
 
   return {
     mats,
+    provide(a) {
+      for (const kind of ["paredao", "moinho", "arco", "rocha"] as const) {
+        const m = a.meshes.get(kind)
+        if (m) pool.provide(kind, m)
+      }
+      const ilha = a.meshes.get("ilha")
+      if (ilha) {
+        for (const it of islands) {
+          for (const i of it.insts) i.dispose()
+          const inst = ilha.createInstance(`jt-cn-ilha-${it.oz | 0}`)
+          inst.isPickable = false
+          // a ilha do modelo tem 1 m de altura: 14 a 30 m no céu
+          inst.scaling.setAll(it.s * 9)
+          inst.rotation.y = it.ph
+          it.insts = [inst]
+        }
+      }
+    },
     update(z, now) {
       pool.update(z, now)
       sea.position.set(0, -48, z + SEA * 0.3)
