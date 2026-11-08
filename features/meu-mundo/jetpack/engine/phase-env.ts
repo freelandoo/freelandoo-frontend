@@ -25,6 +25,7 @@ import { TUNNEL } from "../sim/flight"
 import type { PhaseId, SetPiece } from "../sim/phases"
 import { buildTunnel, SEG } from "./tunnel-view"
 import { JetGeo } from "./jet-geo"
+import { buildCanyonEnv } from "./canyon-env"
 
 const { W, H } = TUNNEL
 
@@ -55,7 +56,7 @@ export const PHASE_LOOK: Record<PhaseId, PhaseLook> = {
 export interface PhaseEnv {
   /** Acabamento e brilho (a mochila e os obstáculos usam os mesmos). */
   mats: { trim: StandardMaterial; glow: StandardMaterial }
-  update: (z: number, sets: readonly { z0: number; z1: number; kind: SetPiece }[]) => void
+  update: (z: number, sets: readonly { z0: number; z1: number; kind: SetPiece }[], now: number) => void
   dispose: () => void
 }
 
@@ -118,45 +119,6 @@ function boxMarks(g: Ctx, metal: RGB, light: RGB, every: number, roof = true) {
 }
 
 // ── um trecho de cada fase ──────────────────────────────────────────────────
-
-function canion(g: Ctx, v: number) {
-  const r = rng(101 + v * 17)
-  // o rio (a água é o chão: encostou, bateu)
-  g.body.box(W + 24, 0.4, SEG, place(0, -0.2, SEG / 2), C.water)
-  for (let i = 0; i < 9; i++) g.glow.box(0.06 + r() * 0.1, 0.02, 1.5 + r() * 3, place(-W / 2 - 4 + r() * (W + 8), 0.01, r() * SEG), mix(C.foam, C.water, 0.4))
-  // os penhascos dos dois lados, em camadas
-  for (const sx of [-1, 1]) {
-    let z = 0
-    while (z < SEG) {
-      const len = 3 + r() * 6
-      const w = 4 + r() * 9
-      const h = (r() < 0.7 ? 1.5 + r() * 3.5 : 8 + r() * 10) * (v === 2 && sx > 0 ? 0.5 : 1)
-      const x = sx * (W / 2 + 0.8 + w / 2 + r() * 1.5)
-      g.body.box(w, h, len, place(x, h / 2 - 0.4, z + len / 2), r() < 0.5 ? C.rock : C.rockDark)
-      for (let y = 2 + r() * 2; y < h - 1; y += 2.5 + r() * 2) g.body.box(w + 0.15, 0.25, len + 0.1, place(x, y, z + len / 2), mix(C.sand, C.rock, r()))
-      z += len
-    }
-    // a margem de pedra junto do rio
-    g.body.box(1.2, 0.5, SEG, place(sx * (W / 2 + 1.2), 0.05, SEG / 2), C.rockDark)
-  }
-  boxMarks(g, C.metal, C.yellow, 12)
-  // ao longe: mesas, um arco natural, cachoeiras e rochas no céu
-  for (const sx of [-1, 1]) {
-    const x = sx * (34 + r() * 18)
-    const w = 10 + r() * 14
-    const h = 22 + r() * 26
-    g.body.box(w, h, 10 + r() * 8, place(x, h / 2 - 2, SEG / 2), mix(C.rock, C.sand, r() * 0.5))
-    if (r() < 0.7) g.glow.box(2.5 + r() * 2, h - 2, 0.4, place(x - sx * (w / 2 + 0.3), h / 2 - 2, SEG / 2 - 2), mix(C.foam, C.water, 0.25))
-  }
-  if (v === 0) {
-    for (const sx of [-1, 1]) g.body.box(5, 30, 5, place(sx * 20, 13, 12), C.rockDark)
-    g.body.box(46, 5, 6, place(0, 30, 12), C.rock)
-  }
-  for (let i = 0; i < 3; i++) {
-    const s = 2 + r() * 4
-    g.body.rock(i + v, Matrix.Scaling(s, s, s).multiply(xf((r() < 0.5 ? -1 : 1) * (12 + r() * 25), 14 + r() * 14, r() * SEG, r(), undefined, r(), 0)), mix(C.rock, C.rockDark, r()))
-  }
-}
 
 function orbital(g: Ctx, v: number) {
   const r = rng(202 + v * 31)
@@ -308,7 +270,7 @@ function artico(g: Ctx, v: number) {
   for (let i = 0; i < 6; i++) g.glow.box(0.08, 0.08, 0.08, place((r() < 0.5 ? -1 : 1) * (W / 2 + 0.5 + r()), r() * H, r() * SEG), C.snow)
 }
 
-const SEGMENTS: Partial<Record<PhaseId, (g: Ctx, v: number) => void>> = { canion, orbital, floresta, forja, artico, vacuo: orbital }
+const SEGMENTS: Partial<Record<PhaseId, (g: Ctx, v: number) => void>> = { orbital, floresta, forja, artico, vacuo: orbital }
 
 // ── o marco do trecho especial ──────────────────────────────────────────────
 
@@ -366,7 +328,12 @@ function landmark(g: Ctx, id: PhaseId, len: number) {
 
 // ── montar ──────────────────────────────────────────────────────────────────
 
-export function buildPhaseEnv(scene: Scene, id: PhaseId, low: boolean, slots: number): PhaseEnv {
+export function buildPhaseEnv(scene: Scene, id: PhaseId, low: boolean, slots: number, seed = 1): PhaseEnv {
+  // Jetpack 2.0: o Cânion é a primeira fase no cenário novo (módulos variados pela semente)
+  if (id === "canion") {
+    const c = buildCanyonEnv(scene, low, slots, seed)
+    return { mats: c.mats, update: (z, _sets, now) => c.update(z, now), dispose: () => c.dispose() }
+  }
   if (id === "industrial" || !SEGMENTS[id]) {
     const t = buildTunnel(scene, low, slots)
     return { mats: { trim: t.stage.mats.trim, glow: t.stage.mats.glow }, update: (z) => t.update(z), dispose: () => t.dispose() }

@@ -34,13 +34,15 @@ import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/qua
 import { AvatarLibrary } from "../../engine/avatars"
 import { Character } from "../../engine/player"
 import { BODY_IDS, type BodyId } from "../../types"
-import { Flight, TUNING, TUNNEL, crusherB, speedAt, type CrashBy, type FlightEvent, type FlightInput } from "../sim/flight"
+import { Flight, TUNING, TUNNEL, crusherB, ringAt, speedAt, type CrashBy, type FlightEvent, type FlightInput } from "../sim/flight"
 import { SEG } from "./tunnel-view"
 import { buildObstacles } from "./obstacles-view"
 import { buildPhaseEnv, PHASE_LOOK } from "./phase-env"
 import { phaseRule, type PhaseId } from "../sim/phases"
 import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
 import { JetAudio } from "./audio"
+import { createPerfProbe } from "./jet-perf"
+import { createJetVfx } from "./jet-vfx"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -172,7 +174,9 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   fireLight.range = 9
   fireLight.intensity = 0
 
-  const tunnel = buildPhaseEnv(scene, level, low, Math.ceil((fogEnd + SEG) / SEG) + 2)
+  const seed = mp ? mp.start.seed : ((Date.now() & 0xffffff) | 1) >>> 0
+  const tunnel = buildPhaseEnv(scene, level, low, Math.ceil((fogEnd + SEG) / SEG) + 2, seed)
+  const vfx = createJetVfx(scene, quality.tier, level)
   const mats = tunnel.mats
   const obstacles = buildObstacles(scene, mats, level)
   const kit = buildPackKit(scene, mats)
@@ -193,7 +197,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
 
   // a velocidade do voo sai do atributo VELOCIDADE do personagem (a sala manda o fator)
   const myK = mp ? (mp.start.seats.find((q) => q.slot === mp.start.me)?.k ?? 1) : 1
-  const flight = new Flight(mp ? mp.start.seed : ((Date.now() & 0xffffff) | 1) >>> 0, myK, level)
+  const flight = new Flight(seed, myK, level)
   const audio = new JetAudio()
 
   const cam = new FreeCamera("jt-cam", new Vector3(0, 5, -6), scene)
@@ -304,6 +308,8 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const events: FlightEvent[] = []
   const camTarget = new Vector3()
   const lastB = new Map<number, number>()
+  const ringsPassed = new Set<number>()
+  let fovKick = 0
 
   const notice = (n: JetNotice) => opts.onNotice?.(n)
   const handle = (e: FlightEvent) => {
@@ -312,6 +318,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
         audio.play("can")
         const c = obstacles.canAt(e.id)
         flash(c ? c.x : flight.x, c ? c.y : flight.y, c ? c.z : flight.z + 1)
+        vfx.fuel(c ? c.x : flight.x, c ? c.y : flight.y, c ? c.z : flight.z + 1)
         notice({ kind: "can", n: e.n })
         break
       }
@@ -325,6 +332,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
         break
       case "crash":
         audio.play("crash")
+        vfx.crash(flight.x, flight.y, flight.z)
         shake = 0.8
         phase = "end"
         endAt = performance.now()
@@ -542,10 +550,27 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
     cam.position.set(camX + (Math.random() - 0.5) * jit, camY + (Math.random() - 0.5) * jit, z - 5.6 - tall * 1.6 - pace * 0.6)
     camTarget.set(x * 0.82, y + 0.1, z + 14)
     cam.setTarget(camTarget)
-    const wantFov = 0.92 + pace * 0.28 + tall * 0.12
+    fovKick = Math.max(0, fovKick - dt * 0.12)
+    const wantFov = 0.92 + pace * 0.28 + tall * 0.12 + fovKick
     cam.fov += (wantFov - cam.fov) * Math.min(1, dt * 3)
 
-    tunnel.update(z, flight.course.sets)
+    tunnel.update(z, flight.course.sets, now)
+    vfx.update(x, y, z, phase === "run" && flight.thrusting, flight.v)
+    // anel atravessado: aro de faíscas e um empurrão no campo de visão (só desenho; não vale ponto)
+    if (phase === "run" && flight.alive) {
+      for (const o of flight.course.obstacles) {
+        if (o.z > z + 2) break
+        if (o.kind !== "ring" || ringsPassed.has(o.id)) continue
+        if (o.z + o.d / 2 <= z) {
+          ringsPassed.add(o.id)
+          const rc = ringAt(o, flight.t)
+          vfx.ring(rc.x, rc.y, o.z + o.d / 2, rc.r)
+          fovKick = 0.07
+          audio.play("can")
+        }
+      }
+      if (ringsPassed.size > 64) ringsPassed.clear()
+    }
     obstacles.sync(flight, z - 9, z + fogEnd + 12, now)
     for (const fl of flashes) {
       if (fl.t >= 1) continue
@@ -588,6 +613,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   scene.executeWhenReady(fire)
   setTimeout(fire, 2500)
 
+  const perf = createPerfProbe(scene, engine, canvas.parentElement)
   const lost = engine.onContextLostObservable.add(() => opts.onError?.("context-lost"))
   let lastFrame = performance.now()
   engine.runRenderLoop(() => {
@@ -609,6 +635,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   w.__jetpack = () => ({ phase, level, z: flight.z, x: flight.x, y: flight.y, v: flight.v, vMax: speedAt(1e9, flight.k), k: flight.k, fuel: flight.fuel, cans: flight.cans, score: flight.score, alive: flight.alive, by: flight.crashedBy, obstacles: flight.course.obstacles.length })
   w.__jetpackFlight = flight
   w.__jetpackScene = scene
+  w.__jetPerf = () => perf.sample()
 
   return {
     setTouch(t) {
@@ -632,9 +659,12 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       delete w.__jetpack
       delete w.__jetpackFlight
       delete w.__jetpackScene
+      delete w.__jetPerf
+      perf.dispose()
       engine.onContextLostObservable.remove(lost)
       engine.stopRenderLoop()
       audio.dispose()
+      vfx.dispose()
       pack.dispose()
       char.dispose()
       for (const r of remotes) {

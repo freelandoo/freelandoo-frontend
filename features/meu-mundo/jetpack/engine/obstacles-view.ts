@@ -76,7 +76,7 @@ interface Skin {
 }
 const SKINS: Record<PhaseId, Skin> = {
   industrial: { panel: SP.iron, petal: SP.brass, edge: [1, 0.7, 0.3], field: [1, 0.6, 0.2], ringField: false, windowField: false, rim: SP.brass, rock: SP.stone, gem: [0.8, 0.9, 1], log: false },
-  canion: { panel: [0.62, 0.34, 0.2], petal: [0.42, 0.45, 0.5], edge: [1, 0.78, 0.18], field: [1, 0.72, 0.2], ringField: true, windowField: false, rim: [0.3, 0.32, 0.36], rock: [0.66, 0.36, 0.2], gem: [0.9, 0.7, 0.5], log: false },
+  canion: { panel: [0.62, 0.34, 0.2], petal: [0.42, 0.45, 0.5], edge: [1, 0.8, 0.25], field: [1, 0.78, 0.3], ringField: true, windowField: false, rim: [0.56, 0.55, 0.56], rock: [0.66, 0.36, 0.2], gem: [0.9, 0.7, 0.5], log: false },
   orbital: { panel: [0.1, 0.12, 0.22], petal: [0.16, 0.2, 0.32], edge: [0.25, 0.9, 1], field: [1, 0.25, 0.85], ringField: true, windowField: true, rim: [0.2, 0.24, 0.34], rock: [0.3, 0.32, 0.4], gem: [0.6, 0.9, 1], log: false },
   floresta: { panel: [0.27, 0.17, 0.11], petal: [0.62, 0.22, 0.6], edge: [0.2, 1, 0.85], field: [0.45, 1, 0.5], ringField: false, windowField: false, rim: [0.2, 0.12, 0.08], rock: [0.3, 0.28, 0.24], gem: [0.7, 0.4, 1], log: true },
   forja: { panel: [0.17, 0.14, 0.13], petal: [0.3, 0.24, 0.2], edge: [1, 0.5, 0.12], field: [1, 0.4, 0.1], ringField: false, windowField: false, rim: [0.32, 0.27, 0.24], rock: [0.14, 0.1, 0.08], gem: [1, 0.6, 0.3], log: false },
@@ -212,11 +212,17 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
   make("bar", (g) => g.box(1, 0.16, 0.16, place(0, 0, -0.06), skin.edge), mats.glow)
   make("hole", (g) => g.holePlate(1, place(0, 0, 0), skin.ringField ? skin.field : skin.panel), skin.ringField ? fieldMat : mats.trim)
   make("rim", (g, l) => {
-    g.ring(2, 0.24, xf(0, 0, -0.08, 0, undefined, Math.PI / 2), skin.rim, 40, 6)
-    l.ring(2.04, 0.07, xf(0, 0, -0.22, 0, undefined, Math.PI / 2), skin.edge, 40, 4)
+    // o aro começa na borda do vão (raio 1): nada do desenho entra no furo
+    g.ring(2.26, 0.24, xf(0, 0, -0.08, 0, undefined, Math.PI / 2), skin.rim, 40, 6)
+    l.ring(2.3, 0.07, xf(0, 0, -0.22, 0, undefined, Math.PI / 2), skin.edge, 40, 4)
     for (let k = 0; k < 8; k++) {
       const a = (k / 8) * Math.PI * 2
-      l.box(0.16, 0.16, 0.08, place(Math.cos(a) * 1.1, Math.sin(a) * 1.1, -0.24), skin.edge)
+      l.box(0.16, 0.16, 0.08, place(Math.cos(a) * 1.15, Math.sin(a) * 1.15, -0.24), skin.edge)
+    }
+    // quatro grampos de pedra/metal no aro (como na arte do Alex)
+    for (let k = 0; k < 4; k++) {
+      const a = (k / 4) * Math.PI * 2 + Math.PI / 4
+      g.box(0.42, 0.34, 0.5, xf(Math.cos(a) * 1.22, Math.sin(a) * 1.22, -0.08, 0, undefined, 0, a), skin.rim)
     }
   })
   make("rock", (g) => g.rock(3, place(0, 0, 0), skin.rock))
