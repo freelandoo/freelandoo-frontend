@@ -60,7 +60,7 @@ export interface LaminasViewProps {
   /** O fim da luta conferida (recibo do servidor). */
   onReceipt?: (r: Receipt) => void
   /** B8: luta já aberta pelo servidor (o desafio do Hall) e o nome de quem defende. */
-  opened?: { ticket: FightTicket; foe: string } | null
+  opened?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null } | null
 }
 
 const SAND = "#E9CF98"
@@ -106,7 +106,7 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
   const [{ body, look }] = useState({ body: bodyNow, look: lookNow })
   // 2026-11-08 (pedido do Alex): a Arena abre no HALL DA FAMA (pódio + top 10); o treino
   // contra a máquina fica no botão "Treinar". `duel` = o desafio aberto pelo servidor.
-  const [fight, setFight] = useState<{ key: number; choice: Choice; duel?: { ticket: FightTicket; foe: string } } | null>(() =>
+  const [fight, setFight] = useState<{ key: number; choice: Choice; duel?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null } } | null>(() =>
     opened ? { key: 1, choice: { kind: opened.ticket.setup.kind, level: opened.ticket.setup.level }, duel: opened } : encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "soldier", level: 1 } } : null,
   )
   // a celebração (ganho/nível) espera a luta acabar: sai quando a tela fecha
@@ -116,9 +116,8 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
   }, [])
   const seq = useRef(1)
   const reported = useRef(false)
-  const [training, setTraining] = useState(false)
   const start = (c: Choice) => setFight({ key: ++seq.current, choice: c })
-  const duel = (ticket: FightTicket, foe: string) => setFight({ key: ++seq.current, choice: { kind: ticket.setup.kind, level: ticket.setup.level }, duel: { ticket, foe } })
+  const duel = (ticket: FightTicket, foe: string, foeBody?: BodyId | null) => setFight({ key: ++seq.current, choice: { kind: ticket.setup.kind, level: ticket.setup.level }, duel: { ticket, foe, foeBody } })
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#3a1a12" }}>
       {fight ? (
@@ -145,10 +144,11 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
           onAgain={encounter || tutorial || fight.duel ? undefined : () => start(fight.choice)}
           onMenu={encounter || tutorial || opened ? onExit : () => setFight(null)}
         />
-      ) : stage === "arena" && !training ? (
-        <HallOfFame onExit={onExit} onTrain={() => setTraining(true)} onFight={duel} />
+      ) : stage === "arena" ? (
+        // Arena: só o Hall da Fama (Alex, 2026-11-08: a tela de treino "Arena das Lâminas" saiu)
+        <HallOfFame onExit={onExit} onFight={duel} />
       ) : (
-        <Menu onPick={start} onExit={onExit} onBack={stage === "arena" ? () => setTraining(false) : undefined} ring={stage === "ring"} />
+        <Menu onPick={start} onExit={onExit} ring={stage === "ring"} />
       )}
     </div>
   )
@@ -247,7 +247,7 @@ function LaminasScreen({
   portal: boolean
   mobId?: number
   tutorial?: boolean
-  opened?: { ticket: FightTicket; foe: string } | null
+  opened?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null } | null
   onReceipt?: (r: Receipt) => void
   onEnd: (win: boolean) => void
   onAgain?: () => void
@@ -342,6 +342,7 @@ function LaminasScreen({
   }, [ticket])
 
   const armed = ticket !== null
+  const foeBodyOpened = opened?.foeBody ?? null
   useEffect(() => {
     const canvas = canvasRef.current
     const tk = ticketRef.current
@@ -355,6 +356,7 @@ function LaminasScreen({
         canvas,
         body,
         look,
+        foe: foeBodyOpened ? { body: foeBodyOpened } : undefined,
         hold: true,
         labels: { ...labelsRef.current, foeSkills: labelsRef.current.foes[fromServer ? fromServer.setup.kind : choice.kind] },
         setup: fromServer
@@ -411,7 +413,7 @@ function LaminasScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [body, look, choice, stage, armed, tutorial, portal])
+  }, [body, look, choice, stage, armed, tutorial, portal, foeBodyOpened])
 
   // a passagem violeta do portal some quando a cena está pronta
   useEffect(() => {
@@ -427,7 +429,8 @@ function LaminasScreen({
   const { pw, vw } = usePlateSize()
   // celular em pé: as duas placas não cabem lado a lado — a do inimigo desce para a direita
   const narrow = vw < plateWidth(pw) * 2 + 140
-  const foeBody = stage === "ring" ? RING_BODY[choice.kind] : MOB_BODY[choice.kind]
+  // desafio do Hall: o retrato é o do personagem de quem foi desafiado
+  const foeBody = opened?.foeBody ?? (stage === "ring" ? RING_BODY[choice.kind] : MOB_BODY[choice.kind])
   const foePortrait = foeBody ? PORTRAIT[foeBody] : stage !== "ring" && choice.kind === "wolf" ? WOLF_PORTRAIT : null
   const heroLevel = ticket && ticket !== "offline" ? (ticket.setup.hero ?? 1) : 1
   const foeHp = hud ? hud.mobs.reduce((s, m) => s + Math.max(0, m.hp), 0) : 0

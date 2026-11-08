@@ -21,6 +21,7 @@ import { archivo, teko } from "../../ui/status/evo-skin"
 import { faceOf } from "../../ui/portraits"
 import PlayerCard from "../../ui/player-card/player-card"
 import type { PlayerTap } from "../../engine/player-select"
+import type { BodyId } from "../../types"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -50,7 +51,7 @@ function Photo({ r, w, ring, label, onOpen }: { r: HallRank; w: number; ring: st
   )
 }
 
-export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; onTrain: () => void; onFight: (ticket: FightTicket, foe: string) => void }) {
+export function HallOfFame({ onExit, onFight }: { onExit: () => void; onFight: (ticket: FightTicket, foe: string, foeBody?: BodyId | null) => void }) {
   const t = useTranslations("MeuMundo") as Tr
   const locale = useLocale()
   const [board, setBoard] = useState<HallBoard | null>(null)
@@ -126,7 +127,8 @@ export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; o
       void load()
       return
     }
-    onFight(res.data.fight, p.name)
+    // o adversário aparece com o personagem dele (o corpo que o quadro do Hall já mostra)
+    onFight(res.data.fight, p.name, (p.body as BodyId | null) ?? null)
   }
 
   // o card de perfil (o mesmo de tocar num personagem), encostado na foto tocada
@@ -172,9 +174,6 @@ export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; o
           </h1>
         </div>
         <div className="pointer-events-auto flex shrink-0 items-center gap-2">
-          <EvoButton variant="gold" size="sm" icon={<Swords className="h-4 w-4" />} onClick={onTrain} aria-label={t("hfTrain", "Treinar")}>
-            <span className="max-[759px]:hidden">{t("hfTrain", "Treinar")}</span>
-          </EvoButton>
           <button type="button" aria-label={t("laminasLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 place-items-center rounded-full" style={{ background: MM.surface, border: `1px solid ${MM.border}`, color: MM.text }}>
             <X className="h-5 w-5" />
           </button>

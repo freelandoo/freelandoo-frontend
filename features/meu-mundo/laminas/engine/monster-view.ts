@@ -314,6 +314,8 @@ export class MonsterModel {
   private streetAt = Math.floor(Math.random() * WOLF_STREET.length)
   private streetLeft = 0
   private gloves: BoxingGloves | null = null
+  /** Gente lutando de mão (ringue e desafio do Hall): golpes de boxe, com ou sem luva. */
+  private boxer = false
   /** Brutamontes: o machado na mão e o golpe sorteado do ataque em curso. */
   private axe: TransformNode | null = null
   private axeGrip: WeaponGrip | null = null
@@ -328,8 +330,12 @@ export class MonsterModel {
     readonly kind: MobKind,
     /** Escala extra (1 = o tamanho do monstro, na luta e na rua). */
     scale = 1,
-    /** Ringue (mm3d-57): gente de luva no lugar do monstro; o número varia a roupa. */
-    human: { n: number } | null = null,
+    /**
+     * Ringue (mm3d-57): gente de luva no lugar do monstro; o número varia a roupa.
+     * Hall (2026-11-08, Alex): `body`/`look` = o personagem de quem foi desafiado, no
+     * tamanho dele; `bare` = sem luvas (mesmos golpes de mão do ringue).
+     */
+    human: { n: number; body?: BodyId; look?: string; bare?: boolean } | null = null,
     addGlow?: (m: AbstractMesh) => void,
   ) {
     const id = ++seq
@@ -345,10 +351,13 @@ export class MonsterModel {
     if (human) {
       const k = rigKit(scene)
       const h = HUMAN[kind]
-      this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, h.body, null, false, h.looks[human.n % h.looks.length])
-      this.char.holder.scaling.setAll(h.scale * scale)
+      const own = !!human.body
+      const size = own ? scale : h.scale * scale
+      this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, human.body ?? h.body, null, false, own ? (human.look ?? "") : h.looks[human.n % h.looks.length])
+      this.char.holder.scaling.setAll(size)
       this.char.setBoxe("BGuard")
-      this.gloves = new BoxingGloves(scene, this.char, "brown", h.scale * scale)
+      this.boxer = true
+      if (!human.bare) this.gloves = new BoxingGloves(scene, this.char, "brown", size)
     } else if (rig) {
       const k = rigKit(scene)
       this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rig.body, null, false)
@@ -534,8 +543,8 @@ export class MonsterModel {
   private updateRigged(dt: number, p: MobPose) {
     const c = this.char!
     c.place(p.x, p.z, p.facing, p.y, 0)
-    if (LOOK[this.kind] && !this.gloves) return this.updateBrute(dt, p)
-    const heavy = this.kind === "golem" || (!!this.gloves && this.kind === "brute")
+    if (LOOK[this.kind] && !this.boxer) return this.updateBrute(dt, p)
+    const heavy = this.kind === "golem" || (this.boxer && this.kind === "brute")
     if (p.state !== this.last) {
       if (p.state === "windup") c.boxeAct(heavy ? "BBox2" : "BJab", 0.55, 0, 0.42, true)
       else if (p.state === "strike") c.boxeAct(heavy ? "BBox2" : "BJab", 0.32, 0.42, 1)

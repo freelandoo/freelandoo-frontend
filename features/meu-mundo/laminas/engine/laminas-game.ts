@@ -103,6 +103,8 @@ export interface LaminasGameOptions {
   }
   body: BodyId
   look?: string
+  /** Desafio do Hall (Alex, 2026-11-08): o adversário aparece com o personagem de quem foi desafiado (a regra segue a do Campeão). */
+  foe?: { body: BodyId; look?: string }
   setup: FightSetup
   /** O lugar: o coliseu (prédio das Lâminas e portal) ou o ringue (prédio do Boxe, mm3d-56). */
   /** mm3d-60l: "bairro"/"centro" = o cenário da rua (luta do monstro que pegou o jogador). */
@@ -714,9 +716,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     warn.isPickable = false
     warn.setEnabled(false)
     // o Soldado de Pedra da Arena tem 3 m; o mesmo corpo na rua é o Golem, de 4 m
-    const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : null, (x) => vfx.addGlow(x))
-    // Quem luta de machado: rastro roxo no golpe (no ringue é gente de luva)
-    const trail = m.kind === "brute" && !ring ? vfx.trail(() => model.axeEdge(), VFX_COLORS.brutamontes) : null
+    const foe = opts.foe
+    const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : foe ? { n: 0, body: foe.body, look: foe.look, bare: true } : null, (x) => vfx.addGlow(x))
+    // Quem luta de machado: rastro roxo no golpe (no ringue e no Hall é gente de mão)
+    const trail = m.kind === "brute" && !ring && !foe ? vfx.trail(() => model.axeEdge(), VFX_COLORS.brutamontes) : null
     const glow = (x: Parameters<typeof vfx.addGlow>[0]) => vfx.addGlow(x)
     const rays = ring ? [] : m.kind === "soldier" ? [new Ray(scene, VFX_COLORS.golem.main, glow), new Ray(scene, VFX_COLORS.golem.main, glow)] : m.kind === "wolf" ? [new Ray(scene, VFX_COLORS.brutamontes.main, glow)] : []
     const claws = m.kind === "harpy" && !ring ? [vfx.trail(() => model.clawEdge("Right"), VFX_COLORS.brutamontes), vfx.trail(() => model.clawEdge("Left"), VFX_COLORS.brutamontes)] : []
