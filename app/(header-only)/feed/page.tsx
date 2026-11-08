@@ -302,9 +302,10 @@ function FeedPageInner() {
           </div>
         ) : (
           <div className="mx-auto flex w-full max-w-[470px] flex-col pb-10">
-            {items.map((post) => (
+            {/* feed infinito: o mesmo post volta numa volta seguinte — a chave leva a posição (a lista só cresce no fim) */}
+            {items.map((post, i) => (
               <PortfolioPostCard
-                key={post.post_id}
+                key={`${post.post_id}:${i}`}
                 post={post}
                 filters={filtersForEvents}
                 commentsCount={post.comments_count ?? 0}
