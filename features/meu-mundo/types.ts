@@ -457,6 +457,17 @@ export interface LifeEvent {
   data: Record<string, unknown>
 }
 
+/** B10: um aparelho/curso (meuMundoLife.js STATIONS). `min[i]` = atributo para o nível i+1; `mul[i]` = rendimento. */
+export interface LifeStationDef {
+  kind: "training" | "studying"
+  attr: "strength" | "speed" | "intelligence" | null
+  places: string[]
+  maxTier: number
+  placeMax: Record<string, number> | null
+  min: number[]
+  mul: number[]
+}
+
 /** GET /meu-mundo/admin/life */
 export interface LifeFull extends LifeSummary {
   days: LifeDay[]
@@ -464,6 +475,8 @@ export interface LifeFull extends LifeSummary {
   catalog: {
     items: LifeItem[]
     activityHours: Record<string, [number, number]>
+    /** B10: aparelhos e cursos por nível (servidor antigo não manda). */
+    stations?: Record<string, LifeStationDef>
     attributes: { max: number; usefulH: Record<"studying" | "training", number>; floor: Record<LifeTrained, number> }
     clock: { offsetMin: number; meals: number[]; beforeH: number; afterH: number; penaltyH: number }
     mealPenalty?: Record<"satiety" | "energy" | "stress" | "health", number>

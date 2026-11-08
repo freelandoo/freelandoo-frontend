@@ -10691,7 +10691,22 @@
     "shopSpOwned": "Tienes {n}",
     "shopSpNone": "Aún no tienes",
     "shopSpHowClan": "Nace con tu clase.",
-    "shopSpHow": "No se compra: viene de fusionar dos adultos, de un premio del top o del mercado entre jugadores (pronto)."
+    "shopSpHow": "No se compra: viene de fusionar dos adultos, de un premio del top o del mercado entre jugadores (pronto).",
+    "stnPick": "Aparato",
+    "stnTier": "Nivel",
+    "stnTierN": "Nv. {n}",
+    "stnWeights": "Pesas",
+    "stnTreadmill": "Cinta",
+    "stnBag": "Saco de boxeo",
+    "stnCourse": "Curso",
+    "stnBook": "Libros",
+    "stnWeightsGives": "Fuerza",
+    "stnTreadmillGives": "Velocidad",
+    "stnBagGives": "Velocidad y precisión",
+    "stnCourseGives": "Inteligencia",
+    "stnBookGives": "Inteligencia",
+    "stnNeed": "Necesita {n} de {attr}",
+    "stnNext": "Siguiente nivel con {n} de {attr} (tienes {v})."
   },
   "Sports": {
     "eyebrow": "Deportes",
@@ -10886,7 +10901,9 @@
     "Esse personagem não está vivo nem na cápsula": "Ese personaje no está vivo ni en la cápsula",
     "Não autenticado": "No autenticado",
     "Seu cadastro de afiliado está suspenso": "Tu registro de afiliado está suspendido",
-    "Não foi possível gerar seu código": "No fue posible generar tu código"
+    "Não foi possível gerar seu código": "No fue posible generar tu código",
+    "Esse aparelho ou curso não existe aqui": "Ese aparato o curso no existe aquí",
+    "Ainda não dá para esse nível: falta atributo": "Aún no puedes ese nivel: falta atributo"
   },
   "Moedas": {
     "walletTitle": "Cartera",
