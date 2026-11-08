@@ -81,6 +81,7 @@ const PLACE_ICON: Record<string, string> = {
   academia: "gym",
   forja: "hammer",
   arsenal: "shield",
+  criolab: "snow",
   jetpack: "rocket",
   paint: "paint",
   corrida: "car",

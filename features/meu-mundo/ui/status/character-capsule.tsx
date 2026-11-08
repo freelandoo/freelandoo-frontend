@@ -33,9 +33,14 @@ export interface CharacterCapsuleProps {
   onClose: () => void
   /** Trocou o ativo (ou nasceu um filho): o STATUS atualiza retrato e vida. */
   onChanged: (r: CharactersResult) => void
+  /** B12: aberta no Laboratório de Criogenia — os da cápsula aparecem CONGELADOS (gelo e geada). */
+  frozen?: boolean
 }
 
-export default function CharacterCapsule({ t, admin = false, onClose, onChanged }: CharacterCapsuleProps) {
+/** B12: o gelo das cápsulas do laboratório. */
+const ICE = { glow: "#73E0FF", deep: "#0B1E2C", panel: "#0F2636", frost: "#D6EEF6", line: "rgba(115,224,255,.45)" }
+
+export default function CharacterCapsule({ t, admin = false, onClose, onChanged, frozen = false }: CharacterCapsuleProps) {
   const [data, setData] = useState<CharactersResult | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -98,11 +103,22 @@ export default function CharacterCapsule({ t, admin = false, onClose, onChanged 
 
   const card = (c: CharacterSummary, slot: "active" | "capsule") => {
     const picked = fusing?.includes(c.id)
+    // no laboratório, quem está na cápsula aparece dentro do gelo
+    const ice = frozen && slot === "capsule"
     return (
       <Chamfer key={c.id} cut={12}>
-        <div className="flex gap-3 p-3" style={picked ? { boxShadow: `inset 0 0 0 2px ${EVO.dourado}` } : undefined}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={PORTRAIT[c.body] ?? PORTRAIT.normal} alt="" className="h-24 w-16 shrink-0 object-cover" style={{ borderRadius: MM.radius.card }} />
+        <div className="flex gap-3 p-3" style={picked ? { boxShadow: `inset 0 0 0 2px ${EVO.dourado}` } : ice ? { boxShadow: `inset 0 0 0 1px ${ICE.line}, inset 0 0 22px rgba(115,224,255,.16)` } : undefined}>
+          <div className="relative h-24 w-16 shrink-0 overflow-hidden" style={{ borderRadius: MM.radius.card }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={PORTRAIT[c.body] ?? PORTRAIT.normal} alt="" className="h-full w-full object-cover" style={ice ? { filter: "saturate(.35) hue-rotate(165deg) brightness(1.15) contrast(.95)" } : undefined} />
+            {ice && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{ background: "linear-gradient(160deg, rgba(214,238,246,.55) 0%, rgba(115,224,255,.18) 38%, rgba(115,224,255,.05) 60%, rgba(214,238,246,.45) 100%)", boxShadow: `inset 0 0 0 2px ${ICE.line}` }}
+              />
+            )}
+          </div>
           <div className="min-w-0 flex-1">
             <div className={`${teko.className} text-[22px] uppercase leading-none tracking-[0.06em]`} style={{ color: EVO.douradoClaro }}>
               {c.petName || speciesName(c.species, t)}
@@ -154,12 +170,12 @@ export default function CharacterCapsule({ t, admin = false, onClose, onChanged 
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/60 p-3" onClick={onClose}>
       <div
         className={`${archivo.className} relative max-h-[92dvh] w-full max-w-[720px] overflow-y-auto p-4`}
-        style={{ background: EVO.carvao, border: `1px solid ${MM.border}`, borderRadius: MM.radius.card }}
+        style={frozen ? { background: `linear-gradient(180deg, ${ICE.panel}, ${ICE.deep})`, border: `1px solid ${ICE.line}`, borderRadius: MM.radius.card } : { background: EVO.carvao, border: `1px solid ${MM.border}`, borderRadius: MM.radius.card }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3">
           <h2 className={`${teko.className} text-[30px] uppercase tracking-[0.08em]`} style={{ color: EVO.douradoClaro }}>
-            {t("chTitle", "Personagens")}
+            {frozen ? t("chCryoTitle", "Cápsulas criogênicas") : t("chTitle", "Personagens")}
           </h2>
           <button type="button" onClick={onClose} aria-label={t("chClose", "Fechar")} className="p-2" style={{ color: EVO.branco }}>
             <X className="h-5 w-5" />

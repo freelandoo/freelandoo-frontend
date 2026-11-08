@@ -552,7 +552,7 @@ export interface InteriorSeat {
 }
 
 /** O que se faz num ponto de um prédio do centro (mm3d-37). */
-export type PlaceUse = "train" | "study" | "pray" | "order" | "market" | "seller" | "police" | "forge" | "refine" | "armory" | "weapons"
+export type PlaceUse = "train" | "study" | "pray" | "order" | "market" | "seller" | "police" | "forge" | "refine" | "armory" | "weapons" | "cryo" | "lab" | "embryo" | "accelerate"
 
 /** O vendedor do centro (mm3d-37e): GET /meu-mundo/admin/shop. */
 export interface ShopCatalog {
@@ -667,6 +667,7 @@ export type CenterPlaceId =
   | "academia"
   | "forja"
   | "arsenal"
+  | "criolab"
   | "jetpack"
   | "paint"
   | "corrida"
@@ -1028,10 +1029,20 @@ export interface CharacterSummary {
   power: number | null
   frozenAt: string | null
   bornAt: string | null
+  /** B12: o acelerador do Laboratório de Criogenia serve para ele (ainda não tem 15 anos). */
+  canAccel?: boolean
+}
+
+/** B12: o que o Laboratório de Criogenia vende (preços em Esmeralda; admin = grátis). */
+export interface CharacterLab {
+  free: boolean
+  accelPrice: number
+  accelYears: number
+  embryos: { species: string; kind: "clan" | "god" | "special"; sex: "m" | "f" | null; price: number }[]
 }
 
 export interface CharactersResult extends LifeSummary {
-  characters: { list: CharacterSummary[]; capsule: { used: number; slots: number }; species: string[] }
+  characters: { list: CharacterSummary[]; capsule: { used: number; slots: number }; species: string[]; lab?: CharacterLab }
   avatar?: BodyId
   height?: number
   swapped?: { from: string; to: string }

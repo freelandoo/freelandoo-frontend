@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ComponentType } from "react"
 import {
+  Snowflake,
   BookOpen,
   Car,
   Church,
@@ -56,6 +57,7 @@ const ICONS: Record<string, ComponentType<LucideProps>> = {
   gym: Dumbbell,
   hammer: Hammer,
   shield: Shield,
+  snow: Snowflake,
   rocket: Rocket,
   paint: Paintbrush,
   car: Car,

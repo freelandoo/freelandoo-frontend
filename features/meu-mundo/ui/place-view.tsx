@@ -17,12 +17,15 @@ import {
   BookOpen,
   DoorOpen,
   Dumbbell,
+  Egg,
+  FastForward,
   HandCoins,
   Hammer,
   HeartPulse,
   MessagesSquare,
   ShieldCheck,
   ShoppingCart,
+  Snowflake,
   Sparkles,
   Swords,
   UtensilsCrossed,
@@ -61,6 +64,15 @@ function actionOf(use: PlaceUse, t: Tr): { label: string; icon: ReactNode } {
       return { label: t("pvSeller", "Conversar"), icon: <MessagesSquare className="h-5 w-5" /> }
     case "police":
       return { label: t("pvPolice", "Falar com o delegado"), icon: <ShieldCheck className="h-5 w-5" /> }
+    // B12: Laboratório de Criogenia
+    case "cryo":
+      return { label: t("pvCryo", "Ver as cápsulas"), icon: <Snowflake className="h-5 w-5" /> }
+    case "lab":
+      return { label: t("pvLab", "Falar com a criogenista"), icon: <MessagesSquare className="h-5 w-5" /> }
+    case "embryo":
+      return { label: t("pvEmbryo", "Comprar embrião"), icon: <Egg className="h-5 w-5" /> }
+    case "accelerate":
+      return { label: t("pvAccelerate", "Usar o acelerador"), icon: <FastForward className="h-5 w-5" /> }
   }
 }
 

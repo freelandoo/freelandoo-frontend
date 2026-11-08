@@ -27,6 +27,8 @@ import { EvoButton, EvoDialog, EvoToast } from "../hud/hud-kit"
 import { PlaceView } from "../place-view"
 import { SellerDialog } from "./seller-dialog"
 import GearPanel, { type GearTab } from "../gear/gear-panel"
+import LabPanel, { type LabMode } from "../lab/lab-panel"
+import CharacterCapsule from "../status/character-capsule"
 
 /** Hora de aula (moedas do jogo) — espelho de PLACE_RULES em meuMundoLife.js. */
 const CLASS_FEE_H: Record<string, number> = { universidade: 8 }
@@ -73,6 +75,8 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   const [menuOpen, setMenuOpen] = useState(false)
   const [sellerOpen, setSellerOpen] = useState(false)
   const [gearTab, setGearTab] = useState<GearTab | null>(null)
+  // B12: Laboratório de Criogenia (conversa, embriões, acelerador e as cápsulas congeladas)
+  const [lab, setLab] = useState<LabMode | "cryo" | null>(null)
 
   useEffect(() => {
     doingRef.current = doing
@@ -165,6 +169,9 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
     if (use === "order") return void openMenu()
     if (use === "market" && onOpenMarket) return onOpenMarket()
     if (use === "seller") return setSellerOpen(true)
+    if (use === "cryo") return setLab("cryo")
+    if (use === "lab") return setLab("talk")
+    if (use === "embryo" || use === "accelerate") return setLab(use)
     setToast({ text: t("pvSoon", "Em breve"), tone: "ouro" })
   }
 
@@ -195,7 +202,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
         onState={onState}
         pose={pose}
         poseAt={poseAt}
-        blocked={!!ask || menuOpen || sellerOpen || !!gearTab}
+        blocked={!!ask || menuOpen || sellerOpen || !!gearTab || !!lab}
         hideUse={!!doing}
         extra={
           doing ? (
@@ -206,6 +213,8 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
         }
       />
       {gearTab && <GearPanel initialTab={gearTab} onClose={() => setGearTab(null)} />}
+      {lab === "cryo" && <CharacterCapsule t={t} frozen onClose={() => setLab(null)} onChanged={() => {}} />}
+      {lab && lab !== "cryo" && <LabPanel t={t} mode={lab} onMode={setLab} onClose={() => setLab(null)} />}
       {toast && (
         <div className="pointer-events-none fixed left-1/2 top-6 z-[75] -translate-x-1/2">
           <EvoToast tone={toast.tone}>{toast.text}</EvoToast>

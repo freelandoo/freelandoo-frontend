@@ -174,6 +174,13 @@ const ROWS = [
   ["A cápsula está cheia", "The capsule is full", "La cápsula está llena"],
   ["Espécie inválida", "Invalid species", "Especie inválida"],
   ["Só para administrador", "Administrators only", "Solo para administradores"],
+  // A8: compartilhar o Meu Mundo (afiliado)
+  ["Não autenticado", "Not authenticated", "No autenticado"],
+  ["Seu cadastro de afiliado está suspenso", "Your affiliate account is suspended", "Tu registro de afiliado está suspendido"],
+  ["Não foi possível gerar seu código", "Could not generate your code", "No fue posible generar tu código"],
+  // B12: Laboratório de Criogenia
+  ["Ele já tem 15 anos ou mais", "They are already 15 or older", "Ya tiene 15 años o más"],
+  ["Esse personagem não está vivo nem na cápsula", "That character is neither alive nor in the capsule", "Ese personaje no está vivo ni en la cápsula"],
   // Vendedor e Salão
   ["Converse com o vendedor na sala dele, no supermercado do centro", "Talk to the salesman in his office, at the downtown supermarket", "Habla con el vendedor en su sala, en el supermercado del centro"],
   ["Você ainda não tem casa no bairro", "You don't have a house in the neighborhood yet", "Aún no tienes casa en el barrio"],

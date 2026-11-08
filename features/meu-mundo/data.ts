@@ -454,6 +454,13 @@ export const postCharacterFuse = (token: string, a: string, b: string, species: 
 /** TESTE (só admin joga hoje): ganha um personagem da espécie na cápsula. */
 export const postCharacterTestGrant = (token: string, species: string, sex?: "m" | "f") =>
   call<CharactersResult>(token, "POST", "/characters/test-grant", { species, ...(sex ? { sex } : {}) })
+// ═══ B12 (mig 410): Laboratório de Criogenia — embrião e acelerador ═══
+/** Compra o embrião da espécie (entra na cápsula com 1 m). `key` = chave do pedido (clique duplo não compra 2×). */
+export const postCharacterEmbryo = (token: string, species: string, key: string, sex?: "m" | "f") =>
+  call<CharactersResult & { granted?: string[]; repeat?: boolean; paid?: number }>(token, "POST", "/characters/embryo", { species, key, ...(sex ? { sex } : {}) })
+/** Acelerador: leva o personagem (ativo ou na cápsula) aos 15 anos. */
+export const postCharacterAccelerate = (token: string, id: string) =>
+  call<CharactersResult>(token, "POST", `/characters/${encodeURIComponent(id)}/accelerate`, {})
 /** Certificado público (sem login) pelo código da página. */
 export async function fetchCertificate(code: string): Promise<CharacterCertificate | null> {
   try {

@@ -117,7 +117,13 @@ const THEMES: Record<string, Theme> = {
   delegacia: { wall: [0.3, 0.36, 0.42], accent: C.navy, second: C.brass },
   // Salão do Hall da Fama (mm3d-48): mármore, vermelho dos Jogos Eternos e ouro.
   hall: { wall: [0.84, 0.8, 0.72], accent: [0.56, 0.1, 0.14], second: C.brass },
+  // B12: Laboratório de Criogenia — azul gelo, ciano aceso e aço
+  criolab: { wall: [0.5, 0.62, 0.7], accent: [0.3, 0.85, 1], second: SP.steelLight },
 }
+/** B12: o gelo aceso das cápsulas e a silhueta do personagem congelado. */
+const ICE: RGB = [0.45, 0.88, 1]
+const FROST: RGB = [0.84, 0.92, 0.96]
+const FROZEN: RGB = [0.12, 0.2, 0.32]
 const NO_THEME: Theme = { wall: C.wall, accent: C.fabricB, second: C.fabricA }
 /** Casas: o papel de parede muda de casa em casa (a mesma planta não fica igual em todo lote). */
 const HOME_WALLS: RGB[] = [[0.42, 0.5, 0.42], [0.52, 0.3, 0.28], [0.34, 0.42, 0.5], [0.66, 0.56, 0.38], [0.48, 0.38, 0.5]]
@@ -570,6 +576,58 @@ function furniture(g: SteamGeo, gl: SteamGeo, it: InteriorFurniture, y: number, 
         B(g, f, sx, h * 0.31, -d * 0.17, 0.32, 0.065, 0.08, C.brass)
       }
       break
+    // ── Laboratório de Criogenia (B12): só desenho, o uso vem da planta ──
+    case "cryo_pod": {
+      // cápsula de gelo em pé: base de aço, tubo aceso, o personagem congelado na frente do gelo
+      g.cylinder(w * 0.84, 0.32, Matrix.Translation(0, 0.16, 0).multiply(f), SP.steel, 12)
+      gl.cylinder(w * 0.68, h - 0.62, Matrix.Translation(0, 0.32 + (h - 0.62) / 2, 0).multiply(f), ICE, 12)
+      g.cylinder(w * 0.84, 0.3, Matrix.Translation(0, h - 0.15, 0).multiply(f), SP.steel, 12)
+      for (const yy of [0.9, 1.55]) g.cylinder(w * 0.72, 0.05, Matrix.Translation(0, yy, 0).multiply(f), FROST, 12)
+      B(g, f, 0, 0.45, -w * 0.34 - 0.01, 0.3, 1.05, 0.02, FROZEN)
+      g.sphere(0.26, [1, 1.15, 0.4], Matrix.Translation(0, 1.68, -w * 0.34 - 0.01).multiply(f), FROZEN)
+      B(gl, f, 0, h - 0.4, -w * 0.42 - 0.01, 0.4, 0.06, 0.02, ICE)
+      break
+    }
+    case "cryo_console":
+      legs(g, f, w, d, h * 0.62, SP.steel, 0.08)
+      B(g, f, 0, h * 0.62, 0, w, 0.12, d, SP.steelLight)
+      B(g, f, 0, h * 0.74, d * 0.22, w * 0.9, h * 0.26, 0.08, SP.steel)
+      B(gl, f, 0, h * 0.76, d * 0.17, w * 0.8, h * 0.22, 0.02, ICE)
+      for (const sx of [-0.5, -0.25, 0, 0.25, 0.5]) B(g, f, sx, h * 0.74, -d * 0.2, 0.08, 0.05, 0.08, C.brass)
+      break
+    case "lab_counter":
+      B(g, f, 0, 0, 0, w, h - 0.07, d, FROST)
+      B(g, f, 0, h - 0.07, 0, w + 0.04, 0.07, d + 0.04, SP.steelLight)
+      B(gl, f, 0, 0.3, -d / 2 - 0.01, w - 0.3, 0.06, 0.02, ICE)
+      B(g, f, 0, 0.5, -d / 2 - 0.012, w * 0.3, 0.3, 0.02, th.second)
+      g.sphere(0.24, [1, 1, 1], Matrix.Translation(w * 0.32, h + 0.12, 0).multiply(f), ICE)
+      break
+    case "embryo_tank":
+      B(g, f, 0, 0, 0, w, 0.4, d, SP.steel)
+      for (const sx of [-1, 1]) B(g, f, sx * (w / 2 - 0.06), 0.4, 0, 0.1, h - 0.6, d * 0.8, SP.steelLight)
+      B(g, f, 0, h - 0.2, 0, w, 0.2, d, SP.steel)
+      for (const sx of [-0.38, 0, 0.38]) {
+        gl.cylinder(0.34, h - 0.85, Matrix.Translation(sx, 0.42 + (h - 0.85) / 2, 0).multiply(f), [0.42, 1, 0.82], 10)
+        g.sphere(0.14, [1, 1.2, 1], Matrix.Translation(sx, 0.95, -0.18).multiply(f), [0.86, 0.5, 0.56])
+      }
+      B(g, f, 0, 0.12, -d / 2 - 0.01, w * 0.8, 0.14, 0.02, C.brass)
+      break
+    case "accelerator": {
+      // anel do acelerador em pé, com o assento no meio e os capacitores acesos
+      B(g, f, 0, 0, 0, w, 0.18, d, SP.steel)
+      const R = Math.min(w, h) * 0.45
+      const cy = 0.18 + R + 0.1
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2
+        const seg = Matrix.RotationZ(a).multiply(Matrix.Translation(Math.cos(a) * R, cy + Math.sin(a) * R, 0))
+        g.box(0.18, 2 * R * Math.sin(Math.PI / 16) + 0.04, 0.3, seg.multiply(f), SP.steelLight)
+        gl.box(0.06, 2 * R * Math.sin(Math.PI / 16), 0.32, Matrix.RotationZ(a).multiply(Matrix.Translation(Math.cos(a) * (R - 0.12), cy + Math.sin(a) * (R - 0.12), 0)).multiply(f), ICE)
+      }
+      B(g, f, 0, 0.18, 0.2, 0.6, 0.45, 0.5, C.leather)
+      B(g, f, 0, 0.63, 0.42, 0.6, 0.55, 0.1, C.leather)
+      for (const sx of [-1, 1]) g.cylinder(0.32, 1.1, Matrix.Translation(sx * (w / 2 - 0.2), 0.73, d * 0.3).multiply(f), C.copper, 8)
+      break
+    }
     // ── pizzaria e hamburgueria ──
     case "order_counter":
       B(g, f, 0, 0, 0, w, h - 0.05, d, C.woodDark)

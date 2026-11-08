@@ -98,6 +98,8 @@ const LIGHT: Record<string, { clear: [number, number, number]; ground: [number, 
   academia: { clear: [0.11, 0.09, 0.08], ground: [0.52, 0.46, 0.4], hemi: 1.05 },
   forja: { clear: [0.13, 0.075, 0.035], ground: [0.55, 0.34, 0.16], hemi: 1.05 },
   arsenal: { clear: [0.075, 0.095, 0.12], ground: [0.4, 0.43, 0.45], hemi: 1.05 },
+  // B12: o frio do laboratório (fundo azul-escuro, chão gelo)
+  criolab: { clear: [0.04, 0.08, 0.12], ground: [0.5, 0.62, 0.7], hemi: 1.1 },
   igreja: { clear: [0.14, 0.11, 0.09], ground: [0.66, 0.56, 0.46], hemi: 1.0 },
   delegacia: { clear: [0.13, 0.13, 0.14], ground: [0.6, 0.56, 0.52], hemi: 1.05 },
 }
@@ -123,6 +125,8 @@ const NPC_LOOK: Record<string, { body: BodyId; look: string }> = {
   armeira: { body: "raposa_f", look: "" },
   // vendedor do balcão de armas (mm3d-66): um guerreiro vende espadas
   armeiro: { body: "vampiro", look: "" },
+  // B12: a criogenista do laboratório (jaleco branco)
+  criogenista: { body: "female", look: "1032" },
 }
 
 export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {

@@ -192,6 +192,40 @@ export function fusionTemper(temperA: string | null | undefined, temperB: string
   return opts[Math.floor(r() * opts.length) % opts.length]
 }
 
+// ═══ LABORATÓRIO DE CRIOGENIA (B12) ═══
+// Pedido do Alex (08/11): o laboratório vende o EMBRIÃO de um personagem e o ACELERADOR
+// que o leva aos 15 anos. Embrião = personagem recém-nascido (1,00 m, 0 dia de vida
+// ativa) entregue na cápsula, congelado; descongelado, cresce como qualquer um até a
+// altura de jovem em GROW.YOUNG_DAYS. O acelerador pula essa fase na hora: deixa o
+// personagem com GROW.YOUNG_DAYS dias de vida ativa (o "jovem de 15 anos", a idade com que
+// os iniciais nascem). Preços em Esmeralda (a moeda do jogo, A7); admin não paga (testes).
+/** Preço do embrião por tipo de espécie (Esmeralda; 1 Gold = 1.000). */
+const EMBRYO_PRICE: Readonly<Record<SpeciesDef["kind"], number>> = Object.freeze({ clan: 10000, special: 150000, god: 900000 })
+export const LAB = Object.freeze({
+  EMBRYO_PRICE,
+  /** Preço de uma dose do acelerador (Esmeralda). */
+  ACCEL_PRICE: 5000,
+  /** Idade (anos) que o acelerador dá — só texto; a regra é a vida ativa abaixo. */
+  ACCEL_YEARS: 15,
+})
+
+/** Preço do embrião da espécie (null = espécie desconhecida). */
+export function embryoPrice(species: string | null | undefined): number | null {
+  const d = speciesById(species)
+  return d ? LAB.EMBRYO_PRICE[d.kind] : null
+}
+
+/** O acelerador serve para este personagem? Só para quem ainda não chegou aos 15 anos (jovem incompleto). */
+export function canAccelerate(growth: GrowthLike | null | undefined, t: number): boolean {
+  if (!growth || growth.stage === "adult") return false
+  return activeDays(growth, t) < GROW.YOUNG_DAYS
+}
+
+/** Crescimento depois do acelerador: nascimento recuado até completar a fase de jovem no instante `t`. */
+export function accelerated(growth: GrowthLike | null | undefined, t: number): GrowthLike {
+  return { ...(growth || {}), stage: "young", from: t - GROW.YOUNG_DAYS * DAY_MS }
+}
+
 // ═══ CERTIFICADO ═══
 /** Número de série visível: MM-000123. */
 export const serialText = (n: number | string | null | undefined): string => `MM-${String(Number(n) || 0).padStart(6, "0")}`

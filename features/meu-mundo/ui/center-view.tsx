@@ -145,6 +145,7 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   hospital: "Hospital",
   forja: "Forja das Engrenagens",
   arsenal: "Arsenal de Lúmen",
+  criolab: "Laboratório de Criogenia",
 }
 
 export interface CenterSceneProps extends ScenePlayerProps {
