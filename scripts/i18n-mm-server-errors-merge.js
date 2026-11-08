@@ -162,6 +162,18 @@ const ROWS = [
   ["Este convite já foi aceito", "This invite was already accepted", "Esta invitación ya fue aceptada"],
   ["O anfitrião não mora mais nesta casa", "The host no longer lives in this house", "El anfitrión ya no vive en esta casa"],
   ["O anfitrião está visitando outra casa", "The host is visiting another house", "El anfitrión está visitando otra casa"],
+  // B3 (mig 340): personagens, cápsula e fusão
+  ["Personagem não encontrado", "Character not found", "Personaje no encontrado"],
+  ["Esse personagem não está na cápsula", "That character is not in the capsule", "Ese personaje no está en la cápsula"],
+  ["Ele está internado ou preso: espere sair para trocar", "They are in hospital or jail: wait until they're out to swap", "Está internado o preso: espera a que salga para cambiar"],
+  ["Escolha dois personagens diferentes", "Pick two different characters", "Elige dos personajes distintos"],
+  ["Só personagens vivos podem fundir", "Only living characters can fuse", "Solo los personajes vivos pueden fusionarse"],
+  ["Só dois adultos podem fundir", "Only two adults can fuse", "Solo dos adultos pueden fusionarse"],
+  ["A espécie do filho tem que ser a de um dos pais", "The child's species must be one of the parents'", "La especie del hijo tiene que ser la de uno de los padres"],
+  ["Sexo inválido", "Invalid sex", "Sexo inválido"],
+  ["A cápsula está cheia", "The capsule is full", "La cápsula está llena"],
+  ["Espécie inválida", "Invalid species", "Especie inválida"],
+  ["Só para administrador", "Administrators only", "Solo para administradores"],
   // Vendedor e Salão
   ["Converse com o vendedor na sala dele, no supermercado do centro", "Talk to the salesman in his office, at the downtown supermarket", "Habla con el vendedor en su sala, en el supermercado del centro"],
   ["Você ainda não tem casa no bairro", "You don't have a house in the neighborhood yet", "Aún no tienes casa en el barrio"],

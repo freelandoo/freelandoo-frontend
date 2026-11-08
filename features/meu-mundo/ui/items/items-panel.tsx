@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Gift, Home, Loader2, PackageOpen, RefreshCw, Search, Shirt } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getInventory, postSkinEquip } from "../../data"
+import { getInventory } from "../../data"
 import type { InventoryResult } from "../../types"
 import { MM } from "../hud/tokens"
 import { EvoButton, EvoDialog } from "../hud/hud-kit"
@@ -58,15 +58,10 @@ export default function ItemsPanel({ onClose, onChanged }: { onClose: () => void
   )
   const selected = slots.find((s) => s.key === pick) ?? null
 
-  const equip = async (id: string) => {
-    const token = getToken()
-    if (!token || busy) return
-    setBusy(true)
-    const r = await postSkinEquip(token, id)
-    setBusy(false)
-    if (!r.ok) return setNotice(r.status === 0 ? t("levelNetError", "Sem conexão. Tente de novo.") : r.error)
-    setData((d) => (d ? { ...d, inventory: { ...d.inventory, wardrobe: r.data.wardrobe } } : d))
-    onChanged()
+  // B3 (mig 340): o vestuário saiu — as skins viraram personagens (STATUS → Personagens).
+  // Só um servidor antigo ainda manda skins; aí "Vestir" só avisa onde elas foram parar.
+  const equip = async (_id: string) => {
+    setNotice(t("itSkinsMoved", "As skins viraram personagens: veja em STATUS → Personagens."))
   }
 
   return (

@@ -32,7 +32,8 @@ import type {
   ShopCatalog,
   VisitState,
   Wallets,
-  WardrobeResult,
+  CharactersResult,
+  CharacterCertificate,
 } from "./types"
 import type { Clan, Sex } from "./classes"
 import type { BodyId, PracticeAttr } from "./types"
@@ -436,16 +437,29 @@ export const postLifeNewcomer = (token: string) => call<LifeSummary>(token, "POS
 export const postLifeNickname = (token: string, nickname: string) => call<LifeSummary>(token, "POST", "/life/nickname", { nickname })
 export const postLifePetName = (token: string, name: string) => call<LifeSummary>(token, "POST", "/life/pet-name", { name })
 
-// ═══ mm3d-16: vestuário (skins compradas com as moedas do jogo) ═════════════
-export const getSkins = (token: string) => call<WardrobeResult>(token, "GET", "/skins")
-export const postSkinBuy = (token: string, id: string) =>
-  call<WardrobeResult>(token, "POST", `/skins/${encodeURIComponent(id)}/buy`, {})
-/** Vestir uma skin sua, ou voltar ao padrão ("standard"). */
-export const postSkinEquip = (token: string, id: string) =>
-  call<WardrobeResult>(token, "POST", `/skins/${encodeURIComponent(id)}/equip`, {})
-/** Cores do personagem (mm3d-36): de graça, grava o código look da skin. */
-export const postSkinColors = (token: string, id: string, look: string) =>
-  call<WardrobeResult>(token, "POST", `/skins/${encodeURIComponent(id)}/colors`, { look })
+// ═══ B3 (mig 340): personagens — o ativo e a cápsula, trocar, fundir, certificado ═══
+// (o vestuário de skins da mm3d-16 saiu: as skins viraram espécies de personagem)
+export const getCharacters = (token: string) => call<CharactersResult>(token, "GET", "/characters")
+/** Guarda o ativo na cápsula (congelado) e tira este de lá. */
+export const postCharacterUse = (token: string, id: string) =>
+  call<CharactersResult>(token, "POST", `/characters/${encodeURIComponent(id)}/use`, {})
+/** Funde dois adultos vivos: os pais viram histórico e nasce o filho da espécie escolhida. */
+export const postCharacterFuse = (token: string, a: string, b: string, species: string, sex?: "m" | "f") =>
+  call<CharactersResult>(token, "POST", "/characters/fuse", { a, b, species, ...(sex ? { sex } : {}) })
+/** TESTE (só admin joga hoje): ganha um personagem da espécie na cápsula. */
+export const postCharacterTestGrant = (token: string, species: string, sex?: "m" | "f") =>
+  call<CharactersResult>(token, "POST", "/characters/test-grant", { species, ...(sex ? { sex } : {}) })
+/** Certificado público (sem login) pelo código da página. */
+export async function fetchCertificate(code: string): Promise<CharacterCertificate | null> {
+  try {
+    const res = await fetch(`/api/meu-mundo/public/certificado/${encodeURIComponent(code)}`)
+    if (!res.ok) return null
+    const data = (await res.json()) as { certificate?: CharacterCertificate }
+    return data.certificate ?? null
+  } catch {
+    return null
+  }
+}
 
 // ═══ mm3d-30: sino, correio interno, presentes, itens e Poléns ══════════════
 export const getNoticeSummary = (token: string) =>

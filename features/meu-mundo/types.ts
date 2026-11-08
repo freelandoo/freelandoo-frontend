@@ -897,7 +897,8 @@ export type Currency = "coins" | "polens"
 export type NoticeKind = "need" | "life" | "gift" | "official" | "promo" | "purchase" | "dm"
 
 export interface MailGift {
-  type: "item" | "skin" | "coins"
+  /** B3: "character" = personagem na cápsula (o "skin" de antes chega como character). */
+  type: "item" | "skin" | "coins" | "character"
   id: string
   qty: number
 }
@@ -947,7 +948,8 @@ export interface InventoryResult extends LifeSummary {
   /** catálogo da vida (nomes, tipo, efeitos) para os slots da geladeira */
   items: LifeItem[]
   inventory: {
-    wardrobe: { condition: BodyId; admin: boolean; skins: WardrobeSkin[] }
+    /** Saiu no B3 (skins viraram espécies de personagem); servidor antigo ainda manda. */
+    wardrobe?: { condition: BodyId; admin: boolean; skins: WardrobeSkin[] }
     vehicles: { kind: VehicleKind; where: "spot" | "street" | "house" }[]
     house: { level: number; lot: number; neighborhood: string } | null
     recentGifts: { gift: MailGift; claimedAt: string }[]
@@ -997,4 +999,73 @@ export interface PlayerProfile {
   viewerProfileId?: string | null
   /** T3 (mig 334): poder do hóspede dele (null = sem hóspede ainda) */
   power?: number | null
+}
+
+// ═══ B3 (mig 340): PERSONAGENS no lugar das skins ═══════════════════════════
+export type CharacterStatus = "alive" | "capsule" | "dead" | "fused"
+
+/** Um personagem (o ativo ou um da cápsula), como GET /characters devolve. */
+export interface CharacterSummary {
+  id: string
+  serial: number
+  serialText: string
+  certCode: string
+  status: CharacterStatus
+  species: string | null
+  sex: "m" | "f"
+  body: BodyId
+  height: number
+  stage: "young" | "adult"
+  adult: boolean
+  activeDays: number
+  lifeLeftDays: number
+  lineage: number
+  origin: string
+  petName: string | null
+  temper: string | null
+  attrs: Record<string, number>
+  peaks: Record<string, number>
+  power: number | null
+  frozenAt: string | null
+  bornAt: string | null
+}
+
+export interface CharactersResult extends LifeSummary {
+  characters: { list: CharacterSummary[]; capsule: { used: number; slots: number }; species: string[] }
+  avatar?: BodyId
+  height?: number
+  swapped?: { from: string; to: string }
+  fused?: { child: string; species: string; sex: "m" | "f"; inherited: Record<string, number> }
+  granted?: string[]
+}
+
+export interface CertificateParent {
+  serialText: string
+  certCode: string
+  species: string | null
+  sex: "m" | "f" | null
+  lineage: number
+  status: CharacterStatus
+  parents: CertificateParent[]
+}
+
+export interface CharacterCertificate {
+  serial: number
+  serialText: string
+  species: string | null
+  sex: "m" | "f"
+  name: string | null
+  owner: string | null
+  bornAt: string | null
+  status: CharacterStatus
+  diedAt: string | null
+  deathCause: string | null
+  origin: string
+  lineage: number
+  stage: "young" | "adult"
+  activeDays: number
+  height: number
+  genetics: { seed: number; personality: Record<string, number>; temper: string | null; attrs: Record<string, number>; birthHeight: number; inherited?: Record<string, number>; legacy?: boolean }
+  peaks: Record<string, number>
+  parents: CertificateParent[]
 }

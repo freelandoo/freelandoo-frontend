@@ -9,6 +9,9 @@ import type { FridgeStock, InventoryResult, LifeItem, MailGift, VehicleKind, War
 import { thumbOf } from "../fridge/fridge-logic"
 import { faceOf } from "../portraits"
 import { skinArt } from "../../skins"
+import { speciesName } from "../../characters/names"
+import type { BodyId } from "../../types"
+import { speciesBody } from "../../characters/rules"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -56,7 +59,9 @@ export function buildSlots(inv: InventoryResult["inventory"], items: LifeItem[],
       out.push({ key: `item:${it.id}`, group: g, qty: fridge[it.id] ?? 0, thumb: thumbOf(it.id), fresh: fresh.has(`item:${it.id}`), item: it })
     }
   }
-  for (const sk of inv.wardrobe.skins.filter((x) => x.owned)) {
+  // B3 (mig 340): o vestuário saiu (skins viraram espécies de personagem, no STATUS).
+  // Servidor antigo ainda manda `wardrobe`; enquanto mandar, mostra o que a pessoa tem.
+  for (const sk of (inv.wardrobe?.skins ?? []).filter((x) => x.owned)) {
     const art = skinArt(sk.id)
     out.push({ key: `skin:${sk.id}`, group: "wardrobe", qty: null, thumb: faceOf(art?.body ?? "normal"), fresh: fresh.has(`skin:${sk.id}`), skin: sk })
   }
@@ -86,6 +91,8 @@ export function giftLabel(g: MailGift, t: Tr): string {
     const art = skinArt(g.id)
     return t("itSkinGift", "Skin: {name}").replace("{name}", art ? t(art.labelKey, art.fallback) : g.id)
   }
+  // B3: personagem novo (vai para a cápsula)
+  if (g.type === "character") return t("itCharacterGift", "Personagem: {name}").replace("{name}", speciesName(g.id, t))
   const name = t(`item_${g.id}`, g.id)
   return g.qty > 1 ? `${name} × ${g.qty}` : name
 }
@@ -93,5 +100,6 @@ export function giftLabel(g: MailGift, t: Tr): string {
 export function giftThumb(g: MailGift): string | null {
   if (g.type === "item") return thumbOf(g.id)
   if (g.type === "skin") return faceOf(skinArt(g.id)?.body ?? "normal")
+  if (g.type === "character") return faceOf((speciesBody(g.id, null, "young") ?? "normal") as BodyId)
   return null
 }

@@ -38,6 +38,7 @@ import {
   Crosshair,
   LocateFixed,
   Zap,
+  Users,
 } from "lucide-react"
 import type { LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
 import { Bar, Chamfer, CountUp, EVO, Gauge, Plate, Ring, Tag, archivo, cinzel, teko, toneFor } from "./evo-skin"
@@ -66,7 +67,7 @@ export interface PageActions {
   /** Está no supermercado (mm3d-37c): fora dele o Mercado só mostra. */
   canBuy: boolean
   newcomer: () => void
-  /** Abre o vestuário (botão SKIN embaixo da foto, mm3d-16). */
+  /** Abre os PERSONAGENS (B3; antes o vestuário de skins, mm3d-16). */
   openSkins: () => void
   /** Adquirir Poléns pelo checkout oficial (mm3d-30). */
   openPolens?: () => void
@@ -742,7 +743,7 @@ function Overview({ life, portrait, compact, t, act, adv }: PageProps) {
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <Portrait src={portrait} size={compact ? 200 : 330} />
           <GoldButton onClick={act.openSkins} active>
-            <Shirt className="h-5 w-5" /> {t("stSkin", "Skin")}
+            <Users className="h-5 w-5" /> {t("stCharacters", "Personagens")}
           </GoldButton>
         </div>
         <Chamfer cut={16}>
@@ -1544,7 +1545,7 @@ function OverviewC({ life, portrait, t, act, adv }: PageProps) {
         <div className="flex flex-col items-center gap-1">
           <Portrait src={portrait} size={112} />
           <MiniButton onClick={act.openSkins} active h={26} className="w-full">
-            <Shirt className="h-3.5 w-3.5" /> {t("stSkin", "Skin")}
+            <Users className="h-3.5 w-3.5" /> {t("stCharacters", "Personagens")}
           </MiniButton>
         </div>
         <div className="flex min-w-0 flex-col gap-2">
