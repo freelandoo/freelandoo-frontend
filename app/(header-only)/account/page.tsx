@@ -1996,6 +1996,22 @@ export default function PerfilPage() {
             </section>
           )}
 
+          {/* A6 (migs 395/396): a prova de Classificação e o perfil de personalidade. */}
+          <section className="mb-20">
+            <Link
+              href="/classificacao"
+              className="fl-sharp flex items-center justify-between gap-4 border-2 border-[#0B0B0D] bg-[#15120E] p-5 transition hover:bg-[#1D1810]"
+            >
+              <div>
+                <h2 className="fl-display text-2xl text-[#F5F1E8]">{t("classTitle", "Classificação")}</h2>
+                <p className="mt-1 text-sm text-[#9A938A]">
+                  {t("classSubtitle", "Prova de economia, finanças e conhecimentos gerais com nota de 0 a 100, e um perfil de personalidade só seu.")}
+                </p>
+              </div>
+              <ArrowRight className="h-5 w-5 shrink-0 text-[#F2B705]" />
+            </Link>
+          </section>
+
         </div>
       </main>
 
