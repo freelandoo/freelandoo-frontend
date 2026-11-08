@@ -42,7 +42,6 @@ import HudInbox from "./inbox/hud-inbox"
 import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
 import RankingPanel from "./ranking/ranking-panel"
-import HallPanel from "./hall/hall-panel"
 import type { FightTicket } from "../data"
 import GearPanel from "./gear/gear-panel"
 import ShopPanel, { type ShopTab, type GearShelf } from "./shop/shop-panel"
@@ -154,10 +153,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [shop, setShop] = useState<null | { tab: ShopTab; shelf?: GearShelf; atMarket?: boolean }>(null)
   // mm3d-59: luta de treino do prólogo e quando reconferir a missão
   const [tutorialFight, setTutorialFight] = useState(false)
-  // B8: Hall das Lâminas (painel e a luta do desafio, com o ticket aberto pelo servidor)
-  const [hallOpen, setHallOpen] = useState(false)
-  const [hallFight, setHallFight] = useState<{ ticket: FightTicket; foe: string } | null>(null)
-  const fightUp = tutorialFight || !!hallFight
+  // (2026-11-08: o Hall das Lâminas saiu da gaveta — virou o Hall da Fama da própria Arena)
+  const fightUp = tutorialFight
   const [questTick, setQuestTick] = useState(0)
   const bumpQuest = useCallback(() => setQuestTick((n) => n + 1), [])
   const [polensOpen, setPolensOpen] = useState(false)
@@ -490,7 +487,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
   // A cela (mm3d-37f) só com a planta na mão; internado, o hospital manda.
   const jailUp = !!jail.phase && !!jail.interior && !hospitalUp
-  const panelOpen = !!inbox || itemsOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab || !!shop || hallOpen
+  const panelOpen = !!inbox || itemsOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab || !!shop
   const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || jailUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
   const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
@@ -638,7 +635,6 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       { id: "items", label: t("itTitle", "Itens"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
       { id: "shop", label: t("shopTitle", "Loja"), hint: t("menuShopHint", "Equipamento, monstros, personagens e comidas"), icon: <Store className="h-5 w-5" />, kind: "nav", onSelect: () => setShop({ tab: "gear" }) },
       { id: "gear", label: t("gearTitle", "Equipamento"), hint: t("menuGearHint2", "Mochila, Forja e refino"), icon: <Swords className="h-5 w-5" />, kind: "nav", onSelect: () => setGearTab("bag") },
-      { id: "hall", label: t("hlTitle", "Hall das Lâminas"), hint: t("menuHallHint", "Desafie pela cadeira"), icon: <Crown className="h-5 w-5" />, kind: "nav", onSelect: () => setHallOpen(true) },
       { id: "ranking", label: t("rkTitle", "Ranking"), hint: t("menuRankingHint", "Poder, nível e Freelandoo"), icon: <Trophy className="h-5 w-5" />, kind: "nav", onSelect: () => setRankingOpen(true) },
       {
         id: "inbox",
@@ -877,25 +873,6 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         onTutorialFight={() => setTutorialFight(true)}
         onOpenGear={(tab) => (tab === "armory" ? setShop({ tab: "gear", shelf: "armory" }) : setGearTab(tab))}
       />
-      {hallOpen && (
-        <HallPanel
-          onClose={() => setHallOpen(false)}
-          onFight={(ticket, foe) => {
-            setHallOpen(false)
-            setHallFight({ ticket, foe })
-          }}
-        />
-      )}
-      {hallFight && (
-        <LaminasView
-          body={avatar}
-          opened={hallFight}
-          onExit={() => {
-            setHallFight(null)
-            setHallOpen(true)
-          }}
-        />
-      )}
       {tutorialFight && (
         <LaminasView
           body={avatar}

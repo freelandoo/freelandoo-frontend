@@ -688,7 +688,6 @@ export type CenterPlaceId =
   | "boxe"
   | "gincana"
   | "laminas"
-  | "hall"
   | "igreja"
   | "delegacia"
   | "hospital"

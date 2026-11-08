@@ -19,7 +19,7 @@
 // mesmos tipos da regra com nomes de boxeador; a harpia (voa) fica de fora.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Flag, Swords, Volume2, VolumeX, X } from "lucide-react"
+import { Crown, Flag, Swords, Volume2, VolumeX, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
@@ -36,6 +36,7 @@ import { createLaminasGame, type FightSheet, type LaminasGameHandle, type Lamina
 import { VersusScreen } from "./versus-screen"
 import { MOB_KINDS, peerOf, type MobKind, type SkillId } from "../sim/fight"
 import { SkillHud } from "./skill-hud"
+import { HallOfFame } from "./hall-of-fame"
 import { abilityKit } from "../abilities/registry"
 import { probeClose, probeNote, probeOpen } from "../../crash-probe"
 
@@ -103,8 +104,10 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
   // Corpo e cores ficam os da abertura: se a sala mandar outros no meio, recriar a cena
   // deixaria a luta parada para sempre (ela nasce esperando o botão, que já foi apertado).
   const [{ body, look }] = useState({ body: bodyNow, look: lookNow })
-  const [fight, setFight] = useState<{ key: number; choice: Choice } | null>(() =>
-    opened ? { key: 1, choice: { kind: opened.ticket.setup.kind, level: opened.ticket.setup.level } } : encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "soldier", level: 1 } } : null,
+  // 2026-11-08 (pedido do Alex): a Arena abre no HALL DA FAMA (pódio + top 10); o treino
+  // contra a máquina fica no botão "Treinar". `duel` = o desafio aberto pelo servidor.
+  const [fight, setFight] = useState<{ key: number; choice: Choice; duel?: { ticket: FightTicket; foe: string } } | null>(() =>
+    opened ? { key: 1, choice: { kind: opened.ticket.setup.kind, level: opened.ticket.setup.level }, duel: opened } : encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "soldier", level: 1 } } : null,
   )
   // a celebração (ganho/nível) espera a luta acabar: sai quando a tela fecha
   useEffect(() => {
@@ -113,7 +116,9 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
   }, [])
   const seq = useRef(1)
   const reported = useRef(false)
+  const [training, setTraining] = useState(false)
   const start = (c: Choice) => setFight({ key: ++seq.current, choice: c })
+  const duel = (ticket: FightTicket, foe: string) => setFight({ key: ++seq.current, choice: { kind: ticket.setup.kind, level: ticket.setup.level }, duel: { ticket, foe } })
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#3a1a12" }}>
       {fight ? (
@@ -126,7 +131,7 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
           portal={!!encounter}
           mobId={encounter?.mobId}
           tutorial={tutorial}
-          opened={opened}
+          opened={fight.duel ?? null}
           onReceipt={(r) => {
             celebrate(r)
             onReceipt?.(r)
@@ -137,11 +142,13 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
               onEncounterEnd?.(win)
             }
           }}
-          onAgain={encounter || tutorial || opened ? undefined : () => start(fight.choice)}
+          onAgain={encounter || tutorial || fight.duel ? undefined : () => start(fight.choice)}
           onMenu={encounter || tutorial || opened ? onExit : () => setFight(null)}
         />
+      ) : stage === "arena" && !training ? (
+        <HallOfFame onExit={onExit} onTrain={() => setTraining(true)} onFight={duel} />
       ) : (
-        <Menu onPick={start} onExit={onExit} ring={stage === "ring"} />
+        <Menu onPick={start} onExit={onExit} onBack={stage === "arena" ? () => setTraining(false) : undefined} ring={stage === "ring"} />
       )}
     </div>
   )
@@ -149,7 +156,7 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
 
 // ═══ menu de treino ══════════════════════════════════════════════════════════
 
-function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: () => void; ring: boolean }) {
+function Menu({ onPick, onExit, onBack, ring }: { onPick: (c: Choice) => void; onExit: () => void; onBack?: () => void; ring: boolean }) {
   const t = useTranslations("MeuMundo")
   const mobName = useMobName(ring)
   const all: { c: Choice; sub: string; tone: string }[] = [
@@ -177,9 +184,16 @@ function Menu({ onPick, onExit, ring }: { onPick: (c: Choice) => void; onExit: (
                 : t("laminasPitch", "Treine a espada contra a máquina. Quando o chão acender vermelho, o golpe vem ali: esquive e corte na brecha.")}
             </p>
           </div>
-          <button type="button" aria-label={t("laminasLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {onBack && (
+              <button type="button" aria-label={t("hfBack", "Voltar ao Hall da Fama")} onClick={onBack} className="grid h-10 w-10 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+                <Crown className="h-5 w-5" style={{ color: MM.gold }} />
+              </button>
+            )}
+            <button type="button" aria-label={t("laminasLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 max-[420px]:grid-cols-1 [@media(max-height:520px)]:grid-cols-4">
           {opts.map(({ c, sub, tone }) => (

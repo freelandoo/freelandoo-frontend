@@ -276,8 +276,16 @@ export interface HallPerson {
   /** já desafiei nas últimas 24 h */
   cooldown: boolean
 }
+/** Uma posição do top 10 da Arena (Hall da Fama): `seated` false = vaga preenchida pelo Poder. */
+export interface HallRank {
+  pos: number
+  seated: boolean
+  person: (HallPerson & { defenses: number }) | null
+}
 export interface HallBoard {
   seats: number
+  /** do 1º ao 10º (pódio 1–3, lista 4–10) */
+  top: HallRank[]
   hall: (HallPerson & { seat: number; since: string; defenses: number })[]
   contenders: (HallPerson & { position: number })[]
   me: { seat: number | null; power: number; left: number; perDay: number }
@@ -285,7 +293,7 @@ export interface HallBoard {
 }
 export const getHallBoard = (token: string) => call<HallBoard>(token, "GET", "/hall/board")
 export const postHallChallenge = (token: string, defender: string) =>
-  call<{ fight: FightTicket; challenge: { defender: string; defenderSeat: number | null; peer: number; myPower: number; defenderPower: number } }>(token, "POST", "/hall/challenge", { defender })
+  call<{ fight: FightTicket; challenge: { defender: string; defenderSeat: number | null; targetSeat: number | null; peer: number; myPower: number; defenderPower: number } }>(token, "POST", "/hall/challenge", { defender })
 
 // ═══ mm3d-59 slice 3: equipamento (Armeiro, mochila, forja) ════════════════
 export type GearCategory = "weapon" | "shield" | "armor" | "accessory" | "material" | "recipe" | "quest" | "cosmetic"

@@ -110,17 +110,6 @@ async function loadInterior(id: string): Promise<InteriorDef | null> {
   return r.data.interior
 }
 
-/** Salão do Hall da Fama (mm3d-48): planta + quem está no Muro; "closed" = não tem direito. */
-type HallInfo = { member: boolean; admin: boolean; members: { name: string; game: string; since: string }[] }
-async function loadHall(): Promise<{ interior: InteriorDef; hall: HallInfo } | "closed" | null> {
-  const token = getToken()
-  if (!token) return null
-  const r = await getCenterInterior(token, "hall")
-  if (!r.ok) return r.status === 403 || r.code === "hall_closed" ? "closed" : null
-  const d = r.data as { interior: InteriorDef; hall?: HallInfo }
-  return { interior: d.interior, hall: d.hall ?? { member: false, admin: false, members: [] } }
-}
-
 const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
 
 /** Nome em português (fallback do dicionário). */
@@ -138,8 +127,7 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   noturno: "Rolê Noturno",
   boxe: "Arena de Boxe",
   gincana: "Gincana",
-  laminas: "Arena das Lâminas",
-  hall: "Salão do Hall da Fama",
+  laminas: "Hall da Fama",
   igreja: "Igreja",
   delegacia: "Delegacia",
   hospital: "Hospital",
@@ -178,8 +166,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [open, setOpen] = useState<CenterPlace | null>(null)
   const [minigame, setMinigame] = useState<string | null>(null)
   // Salão do Hall da Fama: quem está no Muro; "fechado" = sem direito de entrar.
-  const [hallInfo, setHallInfo] = useState<HallInfo | null>(null)
-  const [hallClosed, setHallClosed] = useState(false)
   // Prédio aberto (mm3d-37): qual e a planta (null = ainda buscando).
   const [inside, setInside] = useState<{ id: string; interior: InteriorDef | null; failed: boolean } | null>(null)
   const insidePlace = inside ? (payload.center.places.find((p) => p.id === inside.id) ?? null) : null
@@ -326,22 +312,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               else if (g === "laminas" || g === "boxe") {
                 // mm3d-56: o prédio do Boxe abre a MESMA luta das Lâminas, no ringue.
                 setMinigame(g)
-              } else if (it.place.id === "hall") {
-                // Salão do Hall da Fama: a porta pergunta ao servidor quem pode entrar.
-                setInside({ id: "hall", interior: null, failed: false })
-                setMinigame("interior")
-                void loadHall().then((got) => {
-                  if (!mounted.current) return
-                  if (got === "closed") {
-                    setInside(null)
-                    setMinigame(null)
-                    setHallClosed(true)
-                  } else if (!got) setInside((cur) => (cur && cur.id === "hall" ? { id: "hall", interior: null, failed: true } : cur))
-                  else {
-                    setHallInfo(got.hall)
-                    setInside((cur) => (cur && cur.id === "hall" ? { id: "hall", interior: got.interior, failed: false } : cur))
-                  }
-                })
               } else if (interiorOf(it.place)) {
                 const id = it.place.id
                 const ready = id === "hospital" ? (payload.center.interiors?.hospital ?? null) : (interiorCache.get(id) ?? null)
@@ -636,34 +606,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           look={look}
           onExit={() => setMinigame(null)}
         />
-      )}
-      {/* Salão do Hall da Fama (mm3d-48): quem está dentro vê o Muro; o admin vê com o aviso */}
-      {minigame === "interior" && inside?.id === "hall" && inside.interior && hallInfo && (
-        <div className="pointer-events-none fixed inset-x-0 z-[75] flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
-          <EvoToast icon={<Crown className="h-4 w-4" />}>
-            {hallInfo.members.length
-              ? t("hallWall", "Muro dos Herdeiros: {names}").replace("{names}", hallInfo.members.slice(0, 6).map((m) => m.name).join(", "))
-              : hallInfo.admin
-                ? t("hallAdmin", "Você entrou como administrador. O Muro ainda não tem nomes.")
-                : t("hallEmpty", "O Muro ainda não tem nomes. O seu pode ser o primeiro.")}
-          </EvoToast>
-        </div>
-      )}
-      {hallClosed && (
-        <EvoDialog
-          labelId="mm-hall-closed"
-          eyebrow={t("hallEyebrow", "Os Jogos Eternos de Lúmen")}
-          title={t("centerPlace_hall", "Salão do Hall da Fama")}
-          onClose={() => setHallClosed(false)}
-          width="max-w-sm"
-          footer={
-            <EvoButton variant="primary" className="w-full" onClick={() => setHallClosed(false)}>
-              {t("ok", "Entendi")}
-            </EvoButton>
-          }
-        >
-          <p style={{ color: EVO.mudo }}>{t("hallClosed", "O Salão é de quem ficou em 1º lugar no ranking por três meses seguidos. Treine, vença e volte com o seu nome.")}</p>
-        </EvoDialog>
       )}
       {/* Gincana (mm3d-47): corrida de obstáculos sobre o mar; ao sair, volta à porta */}
       {minigame === "gincana" && <GincanaView body={body} look={look} name={payload.me.name} onExit={() => setMinigame(null)} join={gincanaJoin} />}
