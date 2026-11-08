@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AdminPolensSettings } from "@/components/polens/AdminPolensSettings"
 import { AdminPolensMetrics } from "@/components/polens/AdminPolensMetrics"
 import { AdminPolenProducts } from "@/components/polens/AdminPolenProducts"
+import { AdminEmeraldSettings } from "@/components/moedas/AdminEmeraldSettings"
 
 function token() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -92,6 +93,7 @@ export default function AdminPolensPage() {
             <AdminPolensSettings onSaved={loadMetrics} />
           </CardContent>
         </Card>
+        <AdminEmeraldSettings />
       </div>
     </main>
   )

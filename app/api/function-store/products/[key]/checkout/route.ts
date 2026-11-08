@@ -16,9 +16,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ key
     }
 
     const url = `${getBackendApiUrl()}/function-store/products/${encodeURIComponent(key)}/checkout`
+    // A7: o corpo leva o cupom Gold escolhido (gold_coupon_id).
+    const body = await request.text()
     const response = await fetch(url, {
       method: "POST",
-      headers: { Authorization: authHeader },
+      headers: { Authorization: authHeader, "Content-Type": "application/json" },
+      body: body || "{}",
     })
     log.backendFetch("POST", url, response.status)
     const text = await response.text()

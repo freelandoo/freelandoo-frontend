@@ -57,6 +57,7 @@ type Product = {
   tag_icon: string | null
   price_cents: number
   price_polens: number
+  price_emerald?: number | null
   duration_days: number
   stock: number | null
   is_featured: boolean
@@ -116,6 +117,8 @@ const EMPTY_PRODUCT_FORM = {
   tag_icon: "Sparkles",
   price_cents: 0,
   price_polens: 0,
+  // A7: "" = Gold × 1.000 (regra padrão), 0 = não vende em Esmeralda.
+  price_emerald: "",
   duration_days: 365,
   stock: "",
   sort_order: 0,
@@ -332,6 +335,7 @@ function ManifestationAdminInner({ embedded = false }: { embedded?: boolean }) {
       tag_icon: p.tag_icon || "",
       price_cents: p.price_cents,
       price_polens: p.price_polens,
+      price_emerald: p.price_emerald == null ? "" : String(p.price_emerald),
       duration_days: p.duration_days,
       stock: p.stock == null ? "" : String(p.stock),
       sort_order: p.sort_order,
@@ -354,6 +358,7 @@ function ManifestationAdminInner({ embedded = false }: { embedded?: boolean }) {
         if (v == null || v === "") return
         fd.append(k, String(v))
       })
+      fd.set("price_emerald", prodForm.price_emerald === "" ? "auto" : String(prodForm.price_emerald))
       if (prodFile) fd.append("banner", prodFile)
 
       const url = prodEditing
@@ -981,12 +986,22 @@ function ManifestationAdminInner({ embedded = false }: { embedded?: boolean }) {
                 <p className="mt-1 text-[10px] text-white/40">{fmtBRL(prodForm.price_cents)}</p>
               </div>
               <div>
-                <Label>Preço (Poléns)</Label>
+                <Label>Preço (Gold)</Label>
                 <Input
                   type="number"
                   value={prodForm.price_polens}
                   onChange={(e) => setProdForm({ ...prodForm, price_polens: Number(e.target.value) })}
                 />
+              </div>
+              <div>
+                <Label>Preço (Esmeralda)</Label>
+                <Input
+                  inputMode="numeric"
+                  placeholder={String((Number(prodForm.price_polens) || 0) * 1000)}
+                  value={prodForm.price_emerald}
+                  onChange={(e) => setProdForm({ ...prodForm, price_emerald: e.target.value.replace(/D/g, "") })}
+                />
+                <p className="mt-1 text-[10px] text-white/40">Vazio = Gold × 1.000 · 0 = não vende</p>
               </div>
               <div>
                 <Label>Vigência (dias)</Label>
