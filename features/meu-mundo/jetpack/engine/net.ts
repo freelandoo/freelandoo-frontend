@@ -33,6 +33,8 @@ export interface JetpackStart {
   countdown: number
   seats: JetpackSeat[]
   solo: boolean
+  /** Fase da sala (mm3d-75); sem ela, o túnel original. */
+  phase?: string
 }
 export interface JetpackResultRow {
   slot: number

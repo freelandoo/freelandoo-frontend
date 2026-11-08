@@ -9,13 +9,43 @@
 // A borda que esmaga fica exatamente onde a regra bate: a placa é desenhada
 // com a borda de trabalho em y = 0 do molde e o corpo "para dentro" do teto,
 // do chão ou da parede (lá dentro a pedra esconde o resto).
+//
+// FASES (mm3d-75): os tipos novos têm moldes simples que ESCALAM até o tamanho
+// da regra — placa (cubo 1×1×1), filete aceso, placa com furo redondo, aro,
+// rocha, cristal e tronco — com a pele da fase (cores e material). O desenho
+// bate com a colisão: as placas de uma janela são os mesmos retângulos de
+// windowRects; o anel é a placa com furo do raio da regra; rocha e cristal
+// cobrem o disco.
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
-import type { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { Color3 } from "@babylonjs/core/Maths/math.color"
+import { Matrix } from "@babylonjs/core/Maths/math.vector"
 import { SteamGeo } from "../../engine/steampunk/geo"
 import { SP, place, xf, facing, type RGB } from "../../engine/steampunk/scenery"
-import { TUNNEL, PIPE_R, DEPTH, crusherB, gearAt, pistonE, pressH, pressV, type Can, type Flight, type Obstacle } from "../sim/flight"
+import {
+  TUNNEL,
+  PIPE_R,
+  DEPTH,
+  WINDOW_KINDS,
+  beamY,
+  crusherB,
+  discAt,
+  gearAt,
+  pistonE,
+  pressH,
+  pressV,
+  ringAt,
+  windowAt,
+  windowRects,
+  type Can,
+  type Flight,
+  type Obstacle,
+  type Rect,
+} from "../sim/flight"
+import type { PhaseId } from "../sim/phases"
+import { JetGeo } from "./jet-geo"
 
 const { W, H } = TUNNEL
 const YELLOW: RGB = [0.95, 0.72, 0.02]
@@ -23,7 +53,36 @@ const BLACK: RGB = [0.07, 0.07, 0.08]
 const RED_LAMP: RGB = [1, 0.25, 0.12]
 const FUEL: RGB = [0.29, 0.98, 0.64]
 
-type Key = "slab" | "hammer" | "pipe" | "gear" | "can"
+type Key = "slab" | "hammer" | "pipe" | "gear" | "can" | "panel" | "petal" | "energy" | "bar" | "hole" | "rim" | "rock" | "gem" | "log"
+
+/** A pele dos obstáculos novos em cada fase (mm3d-75). */
+interface Skin {
+  panel: RGB
+  /** Pétala da flor / placa da viga. */
+  petal: RGB
+  /** Filete aceso em volta dos vãos. */
+  edge: RGB
+  /** Cor da membrana de energia. */
+  field: RGB
+  /** O anel é uma membrana de energia (true) ou parede sólida. */
+  ringField: boolean
+  /** As placas das janelas da fase são de energia (barreira de energia, cidade). */
+  windowField: boolean
+  rim: RGB
+  rock: RGB
+  gem: RGB
+  /** Viga desenhada como tronco. */
+  log: boolean
+}
+const SKINS: Record<PhaseId, Skin> = {
+  industrial: { panel: SP.iron, petal: SP.brass, edge: [1, 0.7, 0.3], field: [1, 0.6, 0.2], ringField: false, windowField: false, rim: SP.brass, rock: SP.stone, gem: [0.8, 0.9, 1], log: false },
+  canion: { panel: [0.62, 0.34, 0.2], petal: [0.42, 0.45, 0.5], edge: [1, 0.78, 0.18], field: [1, 0.72, 0.2], ringField: true, windowField: false, rim: [0.3, 0.32, 0.36], rock: [0.66, 0.36, 0.2], gem: [0.9, 0.7, 0.5], log: false },
+  orbital: { panel: [0.1, 0.12, 0.22], petal: [0.16, 0.2, 0.32], edge: [0.25, 0.9, 1], field: [1, 0.25, 0.85], ringField: true, windowField: true, rim: [0.2, 0.24, 0.34], rock: [0.3, 0.32, 0.4], gem: [0.6, 0.9, 1], log: false },
+  floresta: { panel: [0.27, 0.17, 0.11], petal: [0.62, 0.22, 0.6], edge: [0.2, 1, 0.85], field: [0.45, 1, 0.5], ringField: false, windowField: false, rim: [0.2, 0.12, 0.08], rock: [0.3, 0.28, 0.24], gem: [0.7, 0.4, 1], log: true },
+  forja: { panel: [0.17, 0.14, 0.13], petal: [0.3, 0.24, 0.2], edge: [1, 0.5, 0.12], field: [1, 0.4, 0.1], ringField: false, windowField: false, rim: [0.32, 0.27, 0.24], rock: [0.14, 0.1, 0.08], gem: [1, 0.6, 0.3], log: false },
+  artico: { panel: [0.36, 0.56, 0.76], petal: [0.7, 0.85, 0.95], edge: [0.55, 0.95, 1], field: [0.6, 0.95, 1], ringField: false, windowField: false, rim: [0.82, 0.92, 0.98], rock: [0.7, 0.86, 0.96], gem: [0.75, 0.92, 1], log: false },
+  vacuo: { panel: [0.16, 0.14, 0.26], petal: [0.3, 0.2, 0.5], edge: [0.7, 0.5, 1], field: [0.6, 0.4, 1], ringField: true, windowField: false, rim: [0.3, 0.3, 0.4], rock: [0.3, 0.28, 0.3], gem: [0.8, 0.7, 1], log: false },
+}
 /** Um molde: a malha do corpo e a do brilho (lâmpadas, janela do galão). */
 interface Mold {
   body: Mesh
@@ -117,14 +176,25 @@ function can(g: SteamGeo, l: SteamGeo) {
   l.cylinder(0.65, 0.3, place(0, 0, 0), FUEL, 12)
 }
 
-export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glow: StandardMaterial }): ObstaclesView {
+export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glow: StandardMaterial }, phase: PhaseId = "industrial"): ObstaclesView {
+  const skin = SKINS[phase] ?? SKINS.industrial
+  // membrana de energia: emissiva, translúcida, sem escrever profundidade
+  const fieldMat = new StandardMaterial("jt-field", scene)
+  fieldMat.disableLighting = true
+  fieldMat.emissiveColor = new Color3(1, 1, 1)
+  fieldMat.diffuseColor = new Color3(0, 0, 0)
+  fieldMat.specularColor = new Color3(0, 0, 0)
+  fieldMat.alpha = 0.36
+  fieldMat.backFaceCulling = false
+  fieldMat.disableDepthWrite = true
   const molds = new Map<Key, Mold>()
-  const make = (key: Key, fn: (g: SteamGeo, l: SteamGeo) => void) => {
-    const g = new SteamGeo()
-    const l = new SteamGeo()
+  const make = (key: Key, fn: (g: JetGeo, l: JetGeo) => void, bodyMat: StandardMaterial = mats.trim) => {
+    const g = new JetGeo()
+    const l = new JetGeo()
     l.uv = "flat"
+    if (bodyMat !== mats.trim) g.uv = "flat"
     fn(g, l)
-    const body = g.build(`jt-${key}`, scene, mats.trim, false)
+    const body = g.build(`jt-${key}`, scene, bodyMat, false)
     body.setEnabled(false)
     const glow = l.vertexCount ? l.build(`jt-${key}-glow`, scene, mats.glow, false) : null
     glow?.setEnabled(false)
@@ -135,6 +205,29 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
   make("pipe", (g) => pipe(g, DEPTH.pipes))
   make("gear", (g) => gear(g, DEPTH.gears))
   make("can", can)
+  // moldes das fases: tudo de tamanho 1, escalado pela regra (frente em z = 0, fundo em z = 1)
+  make("panel", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.panel))
+  make("petal", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.petal))
+  make("energy", (g) => g.box(1, 1, 0.25, place(0, 0, 0.5), skin.field), fieldMat)
+  make("bar", (g) => g.box(1, 0.16, 0.16, place(0, 0, -0.06), skin.edge), mats.glow)
+  make("hole", (g) => g.holePlate(1, place(0, 0, 0), skin.ringField ? skin.field : skin.panel), skin.ringField ? fieldMat : mats.trim)
+  make("rim", (g, l) => {
+    g.ring(2, 0.24, xf(0, 0, -0.08, 0, undefined, Math.PI / 2), skin.rim, 40, 6)
+    l.ring(2.04, 0.07, xf(0, 0, -0.22, 0, undefined, Math.PI / 2), skin.edge, 40, 4)
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2
+      l.box(0.16, 0.16, 0.08, place(Math.cos(a) * 1.1, Math.sin(a) * 1.1, -0.24), skin.edge)
+    }
+  })
+  make("rock", (g) => g.rock(3, place(0, 0, 0), skin.rock))
+  make("gem", (g, l) => {
+    g.gem(0.9, place(0, 0, 0), skin.gem)
+    l.gem(1.05, Matrix.Scaling(0.42, 0.42, 1), skin.edge)
+  })
+  make("log", (g, l) => {
+    g.cylinder(1, 1, xf(0, 0, 0, 0, undefined, 0, Math.PI / 2), skin.panel, 10)
+    for (const x of [-0.3, 0.1, 0.38]) l.cylinder(1.03, 0.015, xf(x, 0, 0, 0, undefined, 0, Math.PI / 2), skin.edge, 10)
+  })
 
   const free = new Map<Key, Part[]>()
   let seq = 0
@@ -178,7 +271,51 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         return Number.isFinite(o.x0) ? [take("pipe"), take("pipe")] : [take("pipe")]
       case "gears":
         return o.gears.map(() => take("gear"))
+      case "ring":
+        return [take("hole"), take("rim"), ...frame(skin.ringField)]
+      case "beam":
+        return [take(skin.log ? "log" : "petal"), take("bar"), take("bar")]
+      case "rocks":
+        return o.gears.map(() => take("rock"))
+      case "crystals":
+        return o.gears.map(() => take("gem"))
+      default:
+        // janelas: 4 placas + 4 filetes em volta do vão
+        return [...frame(o.kind === "energy" || (skin.windowField && o.kind !== "slider"), o.kind === "iris"), take("bar"), take("bar"), take("bar"), take("bar")]
     }
+  }
+  /** As 4 placas de uma janela (de energia, de pétala ou a placa da fase). */
+  function frame(field: boolean, petal = false): Part[] {
+    const k: Key = field ? "energy" : petal ? "petal" : "panel"
+    return [take(k), take(k), take(k), take(k)]
+  }
+  const rects: Rect[] = []
+  /** Placa no retângulo r (frente na face do obstáculo, fundo `d`); some se não houver retângulo. */
+  const slabAt = (p: Part, r: Rect | undefined, z: number, d: number) => {
+    if (!r) {
+      p.body.setEnabled(false)
+      return
+    }
+    p.body.setEnabled(true)
+    p.body.position.set((r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, z)
+    p.body.rotation.set(0, 0, 0)
+    p.body.scaling.set(Math.max(0.01, r.x1 - r.x0), Math.max(0.01, r.y1 - r.y0), d)
+  }
+  /** Filete aceso centrado em (x, y), deitado ou de pé, preso dentro do túnel. */
+  const barAt = (p: Part, x: number, y: number, len: number, vertical: boolean, z: number) => {
+    const lo = vertical ? -0.2 : -W / 2 - 0.2
+    const hi = vertical ? H + 0.2 : W / 2 + 0.2
+    const c = vertical ? y : x
+    const a = Math.max(lo, c - len / 2)
+    const b = Math.min(hi, c + len / 2)
+    if (b - a < 0.05) {
+      p.body.setEnabled(false)
+      return
+    }
+    p.body.setEnabled(true)
+    p.body.position.set(vertical ? x : (a + b) / 2, vertical ? (a + b) / 2 : y, z)
+    p.body.rotation.set(0, 0, vertical ? Math.PI / 2 : 0)
+    p.body.scaling.set(b - a, 1, 1)
   }
   const pose = (o: Obstacle, parts: Part[], t: number) => {
     const set = (p: Part, x: number, y: number, rz: number, sx = 1, sy = 1, sz = 1) => {
@@ -220,6 +357,49 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
           set(parts[i], g.x, g.y, g.ang, g.r, g.r, 1)
         }
         break
+      case "ring": {
+        const c = ringAt(o, t)
+        parts[0].body.position.set(c.x, c.y, o.z)
+        parts[0].body.scaling.set(c.r, c.r, o.d)
+        parts[1].body.position.set(c.x, c.y, o.z)
+        parts[1].body.scaling.set(c.r, c.r, 1)
+        parts[1].body.rotation.set(0, 0, t * 0.6)
+        rects.length = 0
+        windowRects(c.x, c.y, 2 * c.r, 2 * c.r, rects)
+        for (let i = 0; i < 4; i++) slabAt(parts[2 + i], rects[i], o.z, o.d)
+        break
+      }
+      case "beam": {
+        const y = beamY(o, t)
+        const len = o.x1 - o.x0
+        if (skin.log) {
+          parts[0].body.position.set((o.x0 + o.x1) / 2, y, o.z + o.d / 2)
+          parts[0].body.scaling.set(len, o.h, o.d)
+        } else slabAt(parts[0], { x0: o.x0, x1: o.x1, y0: y - o.h / 2, y1: y + o.h / 2 }, o.z, o.d)
+        barAt(parts[1], 0, y + o.h / 2, len, false, o.z)
+        barAt(parts[2], 0, y - o.h / 2, len, false, o.z)
+        break
+      }
+      case "rocks":
+      case "crystals":
+        for (let i = 0; i < parts.length; i++) {
+          const c = discAt(o, t, i)
+          parts[i].body.position.set(c.x, c.y, o.z + o.d / 2)
+          parts[i].body.scaling.set(c.r, c.r, o.kind === "rocks" ? Math.min(c.r, o.d / 2 + 0.3) : o.d / 1.8)
+          parts[i].body.rotation.set(0, 0, o.kind === "rocks" ? o.id * 0.7 + i : (i * Math.PI) / 8)
+        }
+        break
+      default: {
+        if (!WINDOW_KINDS.has(o.kind)) break
+        const v = windowAt(o, t)
+        rects.length = 0
+        windowRects(v.cx, v.cy, v.w, v.h, rects)
+        for (let i = 0; i < 4; i++) slabAt(parts[i], rects[i], o.z, o.d)
+        barAt(parts[4], v.cx, v.cy + v.h / 2, v.w, false, o.z)
+        barAt(parts[5], v.cx, v.cy - v.h / 2, v.w, false, o.z)
+        barAt(parts[6], v.cx - v.w / 2, v.cy, v.h, true, o.z)
+        barAt(parts[7], v.cx + v.w / 2, v.cy, v.h, true, o.z)
+      }
     }
   }
 
@@ -269,6 +449,7 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         m.body.dispose()
         m.glow?.dispose()
       }
+      fieldMat.dispose()
     },
   }
 }

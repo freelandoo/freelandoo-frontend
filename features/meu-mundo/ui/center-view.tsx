@@ -85,11 +85,11 @@ const gincanaJoin: GincanaJoin = async (body, hooks) =>
 
 /** O local abre um minijogo agora (o registro do servidor decide). */
 /** Jetpack (mm3d-63): a rede só baixa quando alguém vai voar (sozinho também passa pela sala). */
-const jetpackJoin: JetpackJoin = async (solo, body, hooks) =>
+const jetpackJoin: JetpackJoin = async (solo, body, hooks, phase) =>
   (await import("../jetpack/engine/net")).joinJetpack(async () => {
     const token = getToken()
     if (!token) return null
-    const r = await postJetpackJoin(token, solo, body)
+    const r = await postJetpackJoin(token, solo, body, phase)
     return r.ok ? r.data : null
   }, hooks)
 

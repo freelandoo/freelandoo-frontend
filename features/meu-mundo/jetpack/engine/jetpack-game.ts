@@ -14,6 +14,10 @@
 // e os outros aparecem nele, desenhados um pouco no passado entre duas
 // amostras. Aba escondida não pausa quando há sala (o voo dos outros segue);
 // escondida por muito tempo = bateu.
+//
+// FASES (mm3d-75): a fase escolhida (em grupo, a da sala) decide o túnel que a
+// semente gera (sim/phases.ts), o cenário (phase-env.ts), a pele dos
+// obstáculos e o céu/névoa/luz. O voo é o mesmo em todas.
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -31,8 +35,10 @@ import { AvatarLibrary } from "../../engine/avatars"
 import { Character } from "../../engine/player"
 import { BODY_IDS, type BodyId } from "../../types"
 import { Flight, TUNING, TUNNEL, crusherB, speedAt, type CrashBy, type FlightEvent, type FlightInput } from "../sim/flight"
-import { buildTunnel, SEG } from "./tunnel-view"
+import { SEG } from "./tunnel-view"
 import { buildObstacles } from "./obstacles-view"
+import { buildPhaseEnv, PHASE_LOOK } from "./phase-env"
+import { phaseRule, type PhaseId } from "../sim/phases"
 import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
 import { JetAudio } from "./audio"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
@@ -65,6 +71,8 @@ export interface FieldRow {
 }
 
 export interface JetResult {
+  /** Fase voada (mm3d-75). */
+  phase: PhaseId
   score: number
   dist: number
   cans: number
@@ -81,6 +89,8 @@ export interface JetGameOptions {
   body: BodyId
   look?: string
   name?: string
+  /** Fase escolhida (mm3d-75); em grupo vale a da sala. */
+  phase?: PhaseId
   /** A sala (grupo ou "sozinho" pela sala); sem ela, voo local. */
   mp?: { net: JetpackNet; start: JetpackStart }
   onReady?: () => void
@@ -132,37 +142,39 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const profile = touch ? { ...quality, maxRatio: Math.max(quality.maxRatio, low ? 1.5 : 2), minRatio: Math.max(quality.minRatio, 1) } : quality
   const governor = new ResolutionGovernor(engine, profile, Math.min(window.devicePixelRatio || 1, touch ? 2 : 1.5))
 
+  const mp = opts.mp ?? null
+  const level: PhaseId = phaseRule(mp?.start.phase ?? opts.phase).id
+  const look = PHASE_LOOK[level]
   const scene = new Scene(engine)
-  const FOG = new Color3(0.075, 0.052, 0.04)
-  scene.clearColor = new Color4(FOG.r, FOG.g, FOG.b, 1)
-  scene.ambientColor = new Color3(0.3, 0.26, 0.22)
+  scene.clearColor = new Color4(look.clear[0], look.clear[1], look.clear[2], 1)
+  scene.ambientColor = new Color3(look.ambient[0], look.ambient[1], look.ambient[2])
   scene.fogMode = Scene.FOGMODE_LINEAR
-  scene.fogColor = FOG
-  const fogEnd = low ? 115 : 160
-  scene.fogStart = low ? 30 : 45
+  scene.fogColor = new Color3(look.fog[0], look.fog[1], look.fog[2])
+  const fogEnd = low ? Math.round(look.fogEnd * 0.72) : look.fogEnd
+  scene.fogStart = low ? Math.round(look.fogStart * 0.67) : look.fogStart
   scene.fogEnd = fogEnd
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
   const hemi = new HemisphericLight("jt-hemi", new Vector3(0.1, 1, -0.4), scene)
-  hemi.intensity = touch ? 0.85 : 0.7
-  hemi.diffuse = new Color3(1, 0.86, 0.68)
-  hemi.groundColor = new Color3(0.32, 0.24, 0.2)
+  hemi.intensity = look.hemiK * (touch ? 1.2 : 1)
+  hemi.diffuse = new Color3(look.hemi[0], look.hemi[1], look.hemi[2])
+  hemi.groundColor = new Color3(look.ground[0], look.ground[1], look.ground[2])
   // luz que anda com o jogador (o túnel acende onde ele passa) e a do fogo
   const lamp = new PointLight("jt-lamp", new Vector3(0, 6, 8), scene)
-  lamp.diffuse = new Color3(1, 0.78, 0.5)
+  lamp.diffuse = new Color3(look.lamp[0], look.lamp[1], look.lamp[2])
   lamp.specular = new Color3(0.2, 0.15, 0.1)
   lamp.range = 34
-  lamp.intensity = 0.9
+  lamp.intensity = look.lampK
   const fireLight = new PointLight("jt-fire", new Vector3(0, 3, 0), scene)
   fireLight.diffuse = new Color3(1, 0.5, 0.15)
   fireLight.specular = new Color3(0, 0, 0)
   fireLight.range = 9
   fireLight.intensity = 0
 
-  const tunnel = buildTunnel(scene, low, Math.ceil((fogEnd + SEG) / SEG) + 2)
-  const mats = { trim: tunnel.stage.mats.trim, glow: tunnel.stage.mats.glow }
-  const obstacles = buildObstacles(scene, mats)
+  const tunnel = buildPhaseEnv(scene, level, low, Math.ceil((fogEnd + SEG) / SEG) + 2)
+  const mats = tunnel.mats
+  const obstacles = buildObstacles(scene, mats, level)
   const kit = buildPackKit(scene, mats)
 
   // ── o jogador ──────────────────────────────────────────────────────────────
@@ -179,10 +191,9 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   char.setHeight(PILOT_H)
   const pack = new PackRig(kit, char.holder, "jt-me")
 
-  const mp = opts.mp ?? null
   // a velocidade do voo sai do atributo VELOCIDADE do personagem (a sala manda o fator)
   const myK = mp ? (mp.start.seats.find((q) => q.slot === mp.start.me)?.k ?? 1) : 1
-  const flight = new Flight(mp ? mp.start.seed : ((Date.now() & 0xffffff) | 1) >>> 0, myK)
+  const flight = new Flight(mp ? mp.start.seed : ((Date.now() & 0xffffff) | 1) >>> 0, myK, level)
   const audio = new JetAudio()
 
   const cam = new FreeCamera("jt-cam", new Vector3(0, 5, -6), scene)
@@ -488,7 +499,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       pack.update(dt, now, false, true)
       if (!ended && performance.now() - endAt > 1300) {
         ended = true
-        opts.onEnd?.({ score: flight.score, dist: Math.floor(flight.z), cans: flight.cans, by: byOf(), time: flight.t })
+        opts.onEnd?.({ phase: level, score: flight.score, dist: Math.floor(flight.z), cans: flight.cans, by: byOf(), time: flight.t })
         pushHud()
       }
     }
@@ -534,7 +545,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
     const wantFov = 0.92 + pace * 0.28 + tall * 0.12
     cam.fov += (wantFov - cam.fov) * Math.min(1, dt * 3)
 
-    tunnel.update(z)
+    tunnel.update(z, flight.course.sets)
     obstacles.sync(flight, z - 9, z + fogEnd + 12, now)
     for (const fl of flashes) {
       if (fl.t >= 1) continue
@@ -595,7 +606,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
 
   // conferência (harness)
   const w = window as unknown as Record<string, unknown>
-  w.__jetpack = () => ({ phase, z: flight.z, x: flight.x, y: flight.y, v: flight.v, vMax: speedAt(1e9, flight.k), k: flight.k, fuel: flight.fuel, cans: flight.cans, score: flight.score, alive: flight.alive, by: flight.crashedBy, obstacles: flight.course.obstacles.length })
+  w.__jetpack = () => ({ phase, level, z: flight.z, x: flight.x, y: flight.y, v: flight.v, vMax: speedAt(1e9, flight.k), k: flight.k, fuel: flight.fuel, cans: flight.cans, score: flight.score, alive: flight.alive, by: flight.crashedBy, obstacles: flight.course.obstacles.length })
   w.__jetpackFlight = flight
   w.__jetpackScene = scene
 

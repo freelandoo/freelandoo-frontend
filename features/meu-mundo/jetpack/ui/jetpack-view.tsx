@@ -3,19 +3,20 @@
 // features/meu-mundo/jetpack/ui/jetpack-view.tsx — JETPACK (mm3d-63): a tela.
 //
 // Cobre o centro (suspenso por baixo, como o Paint e o Rolê). Telas:
-//  - MENU: "Sozinho" ou "Multiplayer", como jogar e o recorde do aparelho;
+//  - SELECIONAR FASE (mm3d-75, phase-select.tsx): os cartões das fases, a
+//    escolhida em destaque, o modo (Treino ou Multiplayer) e CORRER;
 //  - ESPERA (grupo): até 1 minuto, 6 largam na hora;
 //  - JOGO: a cena (jetpack-game.ts) com o TANQUE de combustível à esquerda,
 //    distância/velocidade/pontos no alto, o placar do grupo, e no celular os
 //    botões ◀ ▶ (embaixo à esquerda) e PROPULSOR (embaixo à direita, segurar);
-//  - FIM: no que bateu, pontos, distância, galões, tempo, o recorde e a
-//    classificação do grupo.
+//  - FIM: no que bateu, pontos, distância, galões, tempo, as estrelas da
+//    fase, o recorde (por fase) e a classificação do grupo.
 //
 // "Sozinho" também passa pela sala (só sua, larga na hora) para a prática
 // contar; se a sala não abrir, voa assim mesmo no aparelho.
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as RPointerEvent } from "react"
-import { ChevronLeft, ChevronRight, Flame, Loader2, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Flame, Loader2, Star, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
@@ -25,12 +26,16 @@ import { SP as ST } from "../../ui/kit/steam/steam-tokens"
 import type { BodyId } from "../../types"
 import { createJetpackGame, type FieldRow, type JetGameHandle, type JetHud, type JetNotice, type JetResult } from "../engine/jetpack-game"
 import type { JetpackNet, JetpackNetStatus, JetpackResultRow, JetpackStart } from "../engine/net"
+import { phaseArt, starsFor } from "../engine/phase-art"
+import { phaseRule, type PhaseId } from "../sim/phases"
+import { PhaseSelect, type PhaseRecord } from "./phase-select"
 
-/** Entrar numa sala (sozinho = sala só sua). null = não abriu. */
+/** Entrar numa sala (sozinho = sala só sua) da fase escolhida. null = não abriu. */
 export type JetpackJoin = (
   solo: boolean,
   body: BodyId,
   hooks: { signal: AbortSignal; onLobby: (list: string[], until: number) => void; onStatus: (s: JetpackNetStatus) => void },
+  phase?: PhaseId,
 ) => Promise<{ net: JetpackNet; start: JetpackStart } | null>
 
 export interface JetpackViewProps {
@@ -49,20 +54,36 @@ const HOT = "#FF8A2A"
 type Mp = { net: JetpackNet; start: JetpackStart }
 type Stage = { kind: "menu" } | { kind: "joining"; solo: boolean; ac: AbortController } | { kind: "game"; key: number; mp?: Mp; solo: boolean }
 
-type Rec = { score: number; dist: number }
-const REC_KEY = "mm-jetpack-recorde-v2"
-function loadRecord(): Rec | null {
+// recordes POR FASE no aparelho (mm3d-75); o do túnel original herda o recorde antigo
+type Rec = PhaseRecord
+const REC_KEY = "mm-jetpack-recorde-v3:"
+const OLD_KEY = "mm-jetpack-recorde-v2"
+const LAST_KEY = "mm-jetpack-fase"
+function loadRecord(phase: PhaseId): Rec | null {
   try {
-    return JSON.parse(localStorage.getItem(REC_KEY) || "null") as Rec | null
+    const raw = localStorage.getItem(REC_KEY + phase)
+    if (raw) return JSON.parse(raw) as Rec
+    if (phase === "industrial") {
+      const old = JSON.parse(localStorage.getItem(OLD_KEY) || "null") as { score: number; dist: number } | null
+      if (old) return { score: old.score, dist: old.dist, stars: starsFor(phase, old.dist), runs: 0 }
+    }
+    return null
   } catch {
     return null
   }
 }
-function saveRecord(r: Rec) {
+function saveRecord(phase: PhaseId, r: Rec) {
   try {
-    localStorage.setItem(REC_KEY, JSON.stringify(r))
+    localStorage.setItem(REC_KEY + phase, JSON.stringify(r))
   } catch {
     /* sem armazenamento */
+  }
+}
+function loadLast(): PhaseId {
+  try {
+    return phaseRule(localStorage.getItem(LAST_KEY)).id
+  } catch {
+    return "industrial"
   }
 }
 
@@ -71,10 +92,19 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
   const [stage, setStage] = useState<Stage>({ kind: "menu" })
   const [lobby, setLobby] = useState<{ list: string[]; until: number }>({ list: [], until: 0 })
   const [error, setError] = useState<string | null>(null)
+  const [phase, setPhase] = useState<PhaseId>("industrial")
+  const [recs, setRecs] = useState(0)
+  useEffect(() => setPhase(loadLast()), [])
   const seq = useRef(0)
   const play = useCallback(
-    async (solo: boolean) => {
+    async (solo: boolean, ph: PhaseId) => {
       setError(null)
+      setPhase(ph)
+      try {
+        localStorage.setItem(LAST_KEY, ph)
+      } catch {
+        /* sem armazenamento */
+      }
       if (!join) {
         setStage({ kind: "game", key: ++seq.current, solo: true })
         return
@@ -84,7 +114,7 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
       setStage({ kind: "joining", solo, ac })
       let got: Mp | null = null
       try {
-        got = await join(solo, body, { signal: ac.signal, onLobby: (list, until) => setLobby({ list, until }), onStatus: () => {} })
+        got = await join(solo, body, { signal: ac.signal, onLobby: (list, until) => setLobby({ list, until }), onStatus: () => {} }, ph)
       } catch {
         got = null
       }
@@ -104,7 +134,19 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#080504" }}>
       {stage.kind === "game" ? (
-        <JetScreen key={stage.key} body={body} look={look} name={name} mp={stage.mp} onAgain={() => void play(stage.solo)} onMenu={() => setStage({ kind: "menu" })} />
+        <JetScreen
+          key={stage.key}
+          body={body}
+          look={look}
+          name={name}
+          phase={phase}
+          mp={stage.mp}
+          onAgain={() => void play(stage.solo, phase)}
+          onMenu={() => {
+            setRecs((n) => n + 1)
+            setStage({ kind: "menu" })
+          }}
+        />
       ) : stage.kind === "joining" ? (
         <JetLobby
           solo={stage.solo}
@@ -116,7 +158,7 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
           }}
         />
       ) : (
-        <JetMenu onPlay={(solo) => void play(solo)} onExit={onExit} multi={!!join} error={error} />
+        <PhaseSelect key={recs} current={phase} records={loadRecord} onPlay={(solo, ph) => void play(solo, ph)} onExit={onExit} multi={!!join} error={error} />
       )}
     </div>
   )
@@ -181,99 +223,9 @@ function JetLobby({ solo, list, until, onCancel }: { solo: boolean; list: string
   )
 }
 
-// ═══ menu ════════════════════════════════════════════════════════════════════
-
-function JetMenu({ onPlay, onExit, multi, error }: { onPlay: (solo: boolean) => void; onExit: () => void; multi: boolean; error: string | null }) {
-  const t = useTranslations("MeuMundo")
-  const [rec, setRec] = useState<Rec | null>(null)
-  useEffect(() => setRec(loadRecord()), [])
-  const tips: [string, string, string][] = [
-    [t("jetHowThrustTitle", "Propulsor"), t("jetHowThrust", "Segure para subir, solte para cair. Gasta combustível."), HOT],
-    [t("jetHowFuelTitle", "Galões"), t("jetHowFuel", "Os galões verdes enchem o tanque. Tanque seco = o fogo apaga e você cai."), FUEL],
-    [t("jetHowPressTitle", "Prensas"), t("jetHowPress", "Prensas, pilões, pistões e engrenagens se mexem. Encostou em qualquer coisa, acabou."), ST.gold],
-  ]
-  return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
-      <SteamFrame className="w-full max-w-[560px]" cornerSize={46}>
-        <div className="p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ color: ST.text }}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: ST.cyan }}>
-                {t("jetKicker", "Túneis de Lúmen")}
-              </div>
-              <SteamTitle as="h1" size={34} className="mt-1.5 max-[759px]:!text-[27px]">
-                JETPACK
-              </SteamTitle>
-              <p className="mt-2 text-[14px] leading-snug max-[759px]:text-[13px] [@media(max-height:520px)]:hidden" style={{ color: ST.muted }}>
-                {t("jetPitch", "Voe sem parar pelas galerias de vapor debaixo da cidade. Não encoste em nada e não deixe o tanque secar.")}
-              </p>
-            </div>
-            <button type="button" aria-label={t("jetLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: ST.text }}>
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <ul className="mt-4 grid grid-cols-3 gap-2 text-[12.5px] leading-snug max-[560px]:grid-cols-1 [@media(max-height:620px)]:hidden" style={{ color: ST.muted }}>
-            {tips.map(([title, body, c]) => (
-              <li key={title} className="p-2.5" style={{ background: MM.card, borderTop: `2px solid ${c}` }}>
-                <b style={{ color: c }}>{title}</b>
-                <br />
-                {body}
-              </li>
-            ))}
-          </ul>
-          {rec && (
-            <p className="mt-3 flex items-center gap-1.5 text-[13px] font-bold" style={{ color: ST.gold }}>
-              <Trophy className="h-4 w-4" /> {t("jetBest", "Seu recorde: {n} m").replace("{n}", rec.dist.toLocaleString())}
-            </p>
-          )}
-          {error && (
-            <p className="mt-3 flex items-center gap-2 px-3 py-2 text-[13px]" style={{ background: "rgba(110,16,34,0.5)", color: "#ffd5dc" }} role="alert">
-              <WifiOff className="h-4 w-4 shrink-0" /> {error}
-            </p>
-          )}
-
-          <div className={`mt-4 grid gap-2 [@media(max-height:520px)]:mt-2.5 ${multi ? "grid-cols-2" : "grid-cols-1"}`}>
-            <button
-              type="button"
-              onClick={() => onPlay(true)}
-              className="flex w-full items-center justify-center gap-2 px-3 py-3.5 text-[17px] font-black italic tracking-wide transition-transform active:scale-[0.98] max-[420px]:text-[15px] [@media(max-height:520px)]:py-2.5"
-              style={{ background: ST.goldPlate, color: ST.ink, border: `1px solid ${ST.goldHi}` }}
-            >
-              <Flame className="h-5 w-5 shrink-0" /> {multi ? t("jetModeSolo", "Sozinho") : t("jetPlay", "Voar")}
-            </button>
-            {multi && (
-              <button
-                type="button"
-                onClick={() => onPlay(false)}
-                className="flex w-full flex-col items-center justify-center px-3 py-2 transition-transform active:scale-[0.98] [@media(max-height:520px)]:py-1.5"
-                style={{ background: MM.card, border: `1.5px solid ${ST.cyan}`, color: ST.text }}
-              >
-                <span className="flex items-center gap-2 text-[17px] font-black italic tracking-wide max-[420px]:text-[15px]">
-                  <Users className="h-5 w-5 shrink-0" style={{ color: ST.cyan }} /> {t("jetModeMulti", "Multiplayer")}
-                </span>
-                <span className="text-[11px] leading-tight [@media(max-height:520px)]:hidden" style={{ color: ST.muted }}>
-                  {t("jetModeMultiSub", "Espera até 1 minuto · mesmo túnel")}
-                </span>
-              </button>
-            )}
-          </div>
-
-          <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden [@media(max-height:520px)]:hidden" style={{ color: ST.muted }}>
-            {t("jetKeys", "← → ou A D para os lados · Espaço, ↑, W ou o botão do mouse seguram o propulsor")}
-          </p>
-          <p className="mt-3 hidden text-[12px] leading-snug max-[759px]:block" style={{ color: ST.muted }}>
-            {t("jetTouch", "◀ ▶ embaixo à esquerda para os lados · segure PROPULSOR embaixo à direita para subir")}
-          </p>
-        </div>
-      </SteamFrame>
-    </div>
-  )
-}
-
 // ═══ jogo ════════════════════════════════════════════════════════════════════
 
-function JetScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId; look?: string; name?: string; mp?: Mp; onAgain: () => void; onMenu: () => void }) {
+function JetScreen({ body, look, name, phase, mp, onAgain, onMenu }: { body: BodyId; look?: string; name?: string; phase: PhaseId; mp?: Mp; onAgain: () => void; onMenu: () => void }) {
   const t = useTranslations("MeuMundo")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<JetGameHandle | null>(null)
@@ -312,14 +264,16 @@ function JetScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId; lo
     }
     const onEnd = (r: JetResult) => {
       if (!alive) return
-      if (group) {
-        setResult({ r, record: false, best: null })
-        return
-      }
-      const prev = loadRecord()
+      // o recorde e as estrelas valem por fase (em grupo também conta: o voo é o mesmo)
+      const prev = loadRecord(r.phase)
       const record = !prev || r.dist > prev.dist
-      saveRecord({ score: Math.max(prev?.score ?? 0, r.score), dist: Math.max(prev?.dist ?? 0, r.dist) })
-      setResult({ r, record: record && r.dist > 0, best: prev })
+      saveRecord(r.phase, {
+        score: Math.max(prev?.score ?? 0, r.score),
+        dist: Math.max(prev?.dist ?? 0, r.dist),
+        stars: Math.max(prev?.stars ?? 0, starsFor(r.phase, r.dist)),
+        runs: (prev?.runs ?? 0) + 1,
+      })
+      setResult({ r, record: !group && record && r.dist > 0, best: prev })
     }
     try {
       gameRef.current = createJetpackGame({
@@ -327,6 +281,7 @@ function JetScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId; lo
         body,
         look,
         name,
+        phase,
         mp,
         onReady: () => alive && setStatus("ready"),
         onHud: (h) => alive && setHud(h),
@@ -346,7 +301,7 @@ function JetScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId; lo
     }
     // a largada (mp) é fixa durante a vida desta tela
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [body, look])
+  }, [body, look, phase])
 
   useEffect(() => {
     if (!mp) return
@@ -426,6 +381,9 @@ function JetScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId; lo
               <span className="ml-1.5 text-[11px] tabular-nums" style={{ color: ST.muted }}>
                 {hud.speed} km/h
               </span>
+            </div>
+            <div className="mt-1 text-center text-[10.5px] font-black uppercase italic tracking-[0.1em]" style={{ color: phaseArt(mp?.start.phase ?? phase).accent, textShadow: "0 1px 0 #000" }}>
+              {phaseArt(mp?.start.phase ?? phase).num} · {t(phaseArt(mp?.start.phase ?? phase).nameKey, phaseArt(mp?.start.phase ?? phase).name)}
             </div>
             {hud.phase === "countdown" && (
               <div className="mt-1 text-center text-[11px] font-bold tabular-nums" style={{ color: ST.cyan }}>
@@ -605,6 +563,17 @@ function Results({
     piston: t("jetByPiston", "Bateu no pistão!"),
     pipes: t("jetByPipes", "Bateu no cano!"),
     gears: t("jetByGears", "Pego pela engrenagem!"),
+    band: t("jetByBarrier", "Bateu na barreira!"),
+    cliff: t("jetByCliff", "Raspou no penhasco!"),
+    slider: t("jetBySlider", "O portão te pegou!"),
+    energy: t("jetByEnergy", "Tocou na barreira de energia!"),
+    roots: t("jetByRoots", "Preso nas raízes!"),
+    narrow: t("jetByNarrow", "Não passou no vão estreito!"),
+    iris: t("jetByIris", "A flor mecânica fechou!"),
+    ring: t("jetByRing", "Errou o anel!"),
+    beam: t("jetByBeam", "Bateu na viga!"),
+    rocks: t("jetByRocks", "Bateu na rocha!"),
+    crystals: t("jetByCrystals", "Bateu no cristal!"),
     wall: t("jetByWall", "Raspou na parede!"),
     floor: t("jetByFloor", "Encostou no chão!"),
     ceiling: t("jetByCeiling", "Bateu no teto!"),
@@ -628,7 +597,11 @@ function Results({
     <div className="absolute inset-0 grid place-items-center p-4" style={{ background: MM.scrim }}>
       <SteamFrame className="w-full max-w-[400px]" cornerSize={38}>
         <div className="p-4" style={{ color: ST.text }}>
+          <div className="text-[11px] font-black uppercase italic tracking-[0.12em]" style={{ color: phaseArt(result.phase).accent }}>
+            {phaseArt(result.phase).num} · {t(phaseArt(result.phase).nameKey, phaseArt(result.phase).name)}
+          </div>
           <h2 className="text-[24px] font-black italic leading-tight">{by[result.by]}</h2>
+          <StarRow phase={result.phase} dist={result.dist} />
           {record ? (
             <p className="mt-1 flex items-center gap-1.5 text-[14px] font-bold" style={{ color: ST.gold }}>
               <Trophy className="h-4 w-4" /> {t("jetNewRecord", "Novo recorde!")}
@@ -690,6 +663,24 @@ function Results({
           </div>
         </div>
       </SteamFrame>
+    </div>
+  )
+}
+
+/** As 3 estrelas de desempenho da fase (metas em metros embaixo). */
+function StarRow({ phase, dist }: { phase: PhaseId; dist: number }) {
+  const art = phaseArt(phase)
+  const got = starsFor(phase, dist)
+  return (
+    <div className="mt-2 grid grid-cols-3 gap-1.5">
+      {art.stars.map((m, i) => (
+        <div key={i} className="flex flex-col items-center px-1 py-1" style={{ background: MM.card, border: `1px solid ${i < got ? "#FFC21A" : MM.border}` }}>
+          <Star className="h-5 w-5" style={{ color: i < got ? "#FFC21A" : "rgba(255,255,255,0.25)" }} fill={i < got ? "#FFC21A" : "transparent"} />
+          <span className="text-[11px] font-bold tabular-nums" style={{ color: i < got ? ST.text : ST.muted }}>
+            {m.toLocaleString()} m
+          </span>
+        </div>
+      ))}
     </div>
   )
 }
