@@ -1508,7 +1508,7 @@ function SavedSection() {
             <Bookmark className="mb-3 h-7 w-7 opacity-60" />
             <p className="text-sm font-medium text-[#F5F1E8]">{tr("noSavedBeesTitle", "Nenhum bee salvo")}</p>
             <p className="mt-1 text-xs text-[#9A938A]">
-              {tr("noSavedBees", "Bees salvos somem quando expiram — os melhores ficam no ar por até 7 dias.")}
+              {tr("noSavedBees", "Bees salvos somem quando expiram — um bee fica no ar enquanto continua ganhando engajamento.")}
             </p>
           </div>
         ) : (

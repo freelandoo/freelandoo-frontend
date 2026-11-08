@@ -57,3 +57,38 @@ export function HeatRing({ tier, shape = "square" }: HeatRingProps) {
     </>
   )
 }
+
+// ── Anel do PATAMAR DE ALCANCE (regra do Alex, 2026-11-08) ─────────────────
+// O post e o bee sobem cidade → área → região → estado → Brasil (feedReach no
+// back) e a cor mostra para TODO MUNDO até onde chegou: na cidade, sem cor;
+// área = prata brilhante; região = azul elétrico; estado = roxo; Brasil = o
+// colorido (viral). Mesmo mecanismo do anel de "em alta" (que vence quando os
+// dois valem: é o pico do dia).
+export type ReachTier = 1 | 2 | 3 | 4
+
+const REACH_GRADIENTS: Record<ReachTier, string> = {
+  1: "conic-gradient(from 0deg, #8E979F, #DDE3E8 55deg, #FFFFFF 80deg, #B7C0C8 105deg, #6B737B 180deg, #C9D0D6 270deg, #8E979F 360deg)",
+  2: "conic-gradient(from 0deg, #0A6CFF, #5CC8FF 55deg, #F0FBFF 80deg, #2E9BFF 105deg, #0047B3 180deg, #38B6FF 270deg, #0A6CFF 360deg)",
+  3: "conic-gradient(from 0deg, #8A2BE2, #C77DFF 55deg, #FBF2FF 80deg, #A64DFF 105deg, #5A0FA0 180deg, #E04DFF 270deg, #8A2BE2 360deg)",
+  4: "conic-gradient(from 0deg, #FF3B30, #FF9500 50deg, #FFCC00 100deg, #34C759 150deg, #00C7FF 200deg, #5856D6 250deg, #FF2D92 305deg, #FF3B30 360deg)",
+}
+
+export function reachTierOf(v: unknown): ReachTier | null {
+  const n = Number(v)
+  return n === 1 || n === 2 || n === 3 || n === 4 ? n : null
+}
+
+export function ReachRing({ tier, shape = "square" }: { tier: ReachTier; shape?: "square" | "circle" }) {
+  const radius = shape === "circle" ? "rounded-full" : ""
+  const background = REACH_GRADIENTS[tier]
+  return (
+    <>
+      <span aria-hidden className={cn("pointer-events-none absolute -inset-[7px] overflow-hidden blur-[6px]", tier === 1 ? "opacity-60" : "opacity-80", radius)}>
+        <span className="fl-heat-spin absolute -inset-[120%] block" style={{ background }} />
+      </span>
+      <span aria-hidden className={cn("pointer-events-none absolute -inset-[3px] overflow-hidden", radius)}>
+        <span className="fl-heat-spin absolute -inset-[120%] block" style={{ background }} />
+      </span>
+    </>
+  )
+}

@@ -96,6 +96,8 @@ export interface FeedPost {
   /** "Não gostei" do leitor (o número não é público). */
   viewer_has_disliked?: boolean
   my_reach?: FeedReach | null
+  /** Patamar do alcance para todos (0 cidade … 4 Brasil) = a cor do anel. */
+  reach_tier?: number
   public_profile_url: string | null
   whatsapp_url: string | null
   social_links: FeedSocialLink[]
@@ -199,6 +201,8 @@ export interface BeeItem {
   viewer_has_bookmarked: boolean
   viewer_has_disliked?: boolean
   my_reach?: FeedReach | null
+  /** Patamar do alcance para todos (0 cidade … 4 Brasil) = a cor do anel. */
+  reach_tier?: number
   public_profile_url: string | null
 }
 

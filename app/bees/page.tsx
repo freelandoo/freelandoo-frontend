@@ -27,9 +27,12 @@ const PREFETCH_THRESHOLD = 2
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// Timeline INFINITA (o servidor recomeça a volta com outra ordem): o mesmo bee
+// pode voltar. Só não deixa o mesmo colado no anterior (troca de volta).
 function dedupeBees(prev: BeeItem[], next: BeeItem[]) {
-  const seen = new Set(prev.map((b) => b.id_story))
-  return [...prev, ...next.filter((b) => !seen.has(b.id_story))]
+  const out = [...prev]
+  for (const b of next) if (out[out.length - 1]?.id_story !== b.id_story) out.push(b)
+  return out
 }
 
 export default function BeesPage() {
@@ -207,7 +210,7 @@ function BeesPageInner() {
       {needsLogin ? (
         <LoginState
           title={t("loginTitle", "Entre pra ver os bees")}
-          description={t("loginDescription", "Os bees são os stories da Freelandoo — vídeos que duram de 24h a 7 dias, dependendo do engajamento.")}
+          description={t("loginDescription", "Os bees são os stories da Freelandoo — vídeos que ficam no ar enquanto ganham engajamento (sem nenhum, somem em 24 h).")}
           cta={t("loginCta", "Entrar")}
           onLogin={() => router.push(`/login?next=${encodeURIComponent("/bees")}`)}
         />
@@ -218,7 +221,7 @@ function BeesPageInner() {
       ) : items.length === 0 ? (
         <EmptyState
           title={t("emptyTimelineTitle", "Ainda não tem bees por aqui")}
-          description={t("emptyTimelineDescription", "Bees são os stories da Freelandoo. Quando alguém publicar, eles aparecem aqui — os melhores ficam no ar por até 7 dias.")}
+          description={t("emptyTimelineDescription", "Bees são os stories da Freelandoo. Quando alguém publicar, eles aparecem aqui — e ficam no ar enquanto continuam ganhando engajamento.")}
         />
       ) : (
         <>
@@ -298,9 +301,10 @@ function BeesScroller({
           display: none;
         }
       `}</style>
+      {/* infinito: o mesmo bee volta numa volta seguinte — a chave leva a posição */}
       {items.map((bee, idx) => (
         <BeePost
-          key={bee.id_story}
+          key={`${bee.id_story}:${idx}`}
           bee={bee}
           isActive={idx === activeIndex}
           muted={muted}

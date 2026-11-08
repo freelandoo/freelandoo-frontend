@@ -17,7 +17,7 @@ import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { ReportPostDialog } from "./report-post-dialog"
-import { HeatRing, type HeatTier } from "./heat-ring"
+import { HeatRing, ReachRing, reachTierOf, type HeatTier } from "./heat-ring"
 import { VerifiedBadge } from "@/components/profile/verified-badge"
 import { MarkdownText } from "@/components/ui/markdown-text"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -158,6 +158,19 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
   const hotTier: HeatTier | null =
     post.hot_tier === "leader" || post.hot_tier === "rising" ? post.hot_tier : null
   const isHot = hotTier !== null
+  // Patamar de alcance (área … Brasil) acende a cor do anel para todos; "em alta" vence.
+  const reachTier = hotTier ? null : reachTierOf(post.reach_tier)
+  const ringed = isHot || reachTier !== null
+  const reachLabel =
+    reachTier === 4
+      ? t("reachTierViral", "Viral: chegou ao Brasil todo")
+      : reachTier === 3
+        ? t("reachTierState", "Alcance: o estado")
+        : reachTier === 2
+          ? t("reachTierRegion", "Alcance: a região")
+          : reachTier === 1
+            ? t("reachTierArea", "Alcance: a área")
+            : undefined
   const hotLabel =
     hotTier === "leader"
       ? t("hotPostLeaderAria", "Líder do dia em engajamento")
@@ -556,11 +569,11 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
         {/* Header */}
         <div className="flex w-full min-w-0 items-center gap-2.5 border-b border-[#F5F1E8]/10 bg-[#15120E] px-3 py-2.5">
           <Link href={post.public_profile_url || "#"} onClick={handleProfileClick} className="flex min-w-0 flex-1 items-center gap-2.5">
-            <div className="relative shrink-0 -rotate-2" title={isHot ? hotLabel : undefined}>
-              {hotTier && <HeatRing tier={hotTier} />}
+            <div className="relative shrink-0 -rotate-2" title={isHot ? hotLabel : reachLabel}>
+              {hotTier ? <HeatRing tier={hotTier} /> : reachTier && <ReachRing tier={reachTier} />}
               <div
                 className="relative overflow-hidden border-2 border-[#0B0B0D]"
-                style={isHot ? undefined : { outline: "2px solid #F2B705", outlineOffset: "1px" }}
+                style={ringed ? undefined : { outline: "2px solid #F2B705", outlineOffset: "1px" }}
               >
                 <Avatar className="h-9 w-9 rounded-none">
                   {post.avatar_url ? <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} className="object-cover" /> : null}
@@ -646,8 +659,8 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
               style={{ backgroundColor: machineColor }}
               title={post.machine?.name || ""}
             />
-            <div className="relative shrink-0" title={isHot ? hotLabel : undefined}>
-              {hotTier && <HeatRing tier={hotTier} shape="circle" />}
+            <div className="relative shrink-0" title={isHot ? hotLabel : reachLabel}>
+              {hotTier ? <HeatRing tier={hotTier} shape="circle" /> : reachTier && <ReachRing tier={reachTier} shape="circle" />}
               <Avatar
                 className="relative h-10 w-10 shrink-0 ring-1 transition"
                 style={{ "--tw-ring-color": `${machineColor}38` } as React.CSSProperties}
@@ -721,11 +734,11 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
               style={{ backgroundColor: machineColor }}
               title={post.machine?.name || ""}
             />
-            <div className="relative shrink-0 -rotate-2" title={isHot ? hotLabel : undefined}>
-              {hotTier && <HeatRing tier={hotTier} />}
+            <div className="relative shrink-0 -rotate-2" title={isHot ? hotLabel : reachLabel}>
+              {hotTier ? <HeatRing tier={hotTier} /> : reachTier && <ReachRing tier={reachTier} />}
               <div
                 className="relative overflow-hidden border-2 border-[#0B0B0D]"
-                style={isHot ? undefined : { outline: "2px solid #F2B705", outlineOffset: "1px" }}
+                style={ringed ? undefined : { outline: "2px solid #F2B705", outlineOffset: "1px" }}
               >
                 <Avatar className="h-10 w-10 rounded-none">
                   {post.avatar_url ? (

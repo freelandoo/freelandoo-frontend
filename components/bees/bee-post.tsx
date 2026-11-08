@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import type { BeeItem, BeeLink } from "@/lib/types/portfolio-feed"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ReachRing, reachTierOf } from "@/components/feed/heat-ring"
 import { getFeedSessionId } from "@/lib/feed-events"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
@@ -69,6 +70,17 @@ export function BeePost({
 }: BeePostProps) {
   const t = useTranslations("Bees")
   const tPost = useTranslations("Post")
+  const beeTier = reachTierOf(bee.reach_tier)
+  const beeReachLabel =
+    beeTier === 4
+      ? tPost("reachTierViral", "Viral: chegou ao Brasil todo")
+      : beeTier === 3
+        ? tPost("reachTierState", "Alcance: o estado")
+        : beeTier === 2
+          ? tPost("reachTierRegion", "Alcance: a região")
+          : beeTier === 1
+            ? tPost("reachTierArea", "Alcance: a área")
+            : undefined
   const router = useRouter()
   const sectionRef = useRef<HTMLElement | null>(null)
   const viewFired = useRef(false)
@@ -459,14 +471,18 @@ export function BeePost({
                 href={bee.public_profile_url || "#"}
                 className="flex items-center gap-2.5"
               >
-                <Avatar className="h-10 w-10 ring-2 ring-white/60">
-                  {bee.avatar_url ? (
-                    <AvatarImage src={bee.avatar_url} alt={bee.profile_name || ""} />
-                  ) : null}
-                  <AvatarFallback className="bg-white/15 text-xs text-white">
-                    {initials(bee.profile_name)}
-                  </AvatarFallback>
-                </Avatar>
+                {/* a cor do patamar de alcance (área … Brasil), igual à do post */}
+                <span className="relative shrink-0" title={beeReachLabel}>
+                  {beeTier && <ReachRing tier={beeTier} shape="circle" />}
+                  <Avatar className={beeTier ? "relative h-10 w-10" : "h-10 w-10 ring-2 ring-white/60"}>
+                    {bee.avatar_url ? (
+                      <AvatarImage src={bee.avatar_url} alt={bee.profile_name || ""} />
+                    ) : null}
+                    <AvatarFallback className="bg-white/15 text-xs text-white">
+                      {initials(bee.profile_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </span>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-white drop-shadow-md">
                     @{bee.username || t("profileWord", "perfil")}
