@@ -21,9 +21,11 @@ import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { PostProcess } from "@babylonjs/core/PostProcesses/postProcess"
+import { Effect } from "@babylonjs/core/Materials/effect"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
-import { buildTrack, BAIA, type Track } from "../sim/track"
+import { buildTrack, BAIA, trackAt, surfaceY, type Track, type TrackPoint } from "../sim/track"
 import { Race, TUNING, CAR_COLORS, SHIPS, DEFAULT_SHIP, carPose, type CarInput, type CarPose, type RaceEvent, type RaceSeat, type RemoteCar } from "../sim/race"
 import { buildTrackView, NIGHT_HORIZON } from "./track-view"
 import { CarFleet, HOVER } from "./car-view"
@@ -119,6 +121,28 @@ function soloSeats(opts: RaceGameOptions): RaceSeat[] {
   if (opts.mode !== "race") return [me]
   return [me, ...Array.from({ length: 5 }, (_, i): RaceSeat => ({ name: "", kind: "bot", ship: others[i % others.length] }))]
 }
+
+// mm3d-73b (pedido do Alex): no TURBO a nave se afasta da tela e um desfoque
+// radial BEM leve nas bordas (o centro, onde está a nave, fica nítido). Uma
+// passada de 4 amostras, só presa à câmera enquanto o turbo dura; fora no
+// aparelho fraco.
+Effect.ShadersStore["corridaTurboBlurFragmentShader"] = `
+precision mediump float;
+varying vec2 vUV;
+uniform sampler2D textureSampler;
+uniform float strength;
+void main(void) {
+  vec2 d = vUV - vec2(0.5, 0.55);
+  float w = smoothstep(0.15, 0.7, length(d)) * strength;
+  vec2 o = d * 0.014 * w;
+  vec4 c = texture2D(textureSampler, vUV);
+  c += texture2D(textureSampler, vUV - o);
+  c += texture2D(textureSampler, vUV - o * 2.0);
+  c += texture2D(textureSampler, vUV - o * 3.0);
+  gl_FragColor = c * 0.25;
+}`
+/** Quanto a câmera recua no turbo (m) — a nave anda para a frente e fica menor. */
+const TURBO_PULL = 4.5
 
 let trackCache: Track | null = null
 export function corridaTrack(): Track {
@@ -247,6 +271,11 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   const camPos = new Vector3()
   const camTarget = new Vector3()
   let shake = 0
+  /** 0 → 1 enquanto o turbo está ligado (sobe rápido, volta devagar). */
+  let turboK = 0
+  const camTp = {} as TrackPoint
+  let turboBlur: PostProcess | null = null
+  let blurOn = false
   let lastBeep = 99
   let readyFired = false
   let finishedSeen = false
@@ -488,7 +517,22 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     const v = p.v
     const lag = p.down > 0 ? 0 : 1
     camYaw += wrapPi(pose.yaw - camYaw) * Math.min(1, dt * (p.air ? 3 : 5.5)) * lag
-    const back = 7.4 + Math.min(1, v / TUNING.boostMax) * 2.2
+    // turbo (botão ou placa da pista): a câmera fica para trás e a nave dispara
+    const wantTurbo = p.boost > 0 && p.down <= 0 ? 1 : 0
+    turboK += (wantTurbo - turboK) * Math.min(1, dt * (wantTurbo > turboK ? 3.2 : 1.6))
+    const back = 7.4 + Math.min(1, v / TUNING.boostMax) * 2.2 + turboK * TURBO_PULL
+    if (!low) {
+      const want = turboK > 0.03
+      if (want && !turboBlur) {
+        turboBlur = new PostProcess("corrida-turbo-blur", "corridaTurboBlur", ["strength"], null, 1, null, undefined, engine)
+        turboBlur.onApply = (e) => e.setFloat("strength", turboK)
+      }
+      if (turboBlur && want !== blurOn) {
+        if (want) cam.attachPostProcess(turboBlur)
+        else cam.detachPostProcess(turboBlur)
+        blurOn = want
+      }
+    }
     const up = 2.5 + (p.air ? 1.2 : 0)
     const wantY = pose.y + HOVER + up
     camY += (wantY - camY) * Math.min(1, dt * (p.air ? 3.5 : 8))
@@ -499,6 +543,26 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       camY + (Math.random() - 0.5) * jit,
       pose.z - Math.cos(camYaw) * back,
     )
+    // mm3d-73b: a câmera não entra na barreira (2,5 m) nas curvas: fica dentro da
+    // largura da pista e acima do chão inclinado no ponto em que está
+    // (também no ar: numa crista a nave decola por um instante e a câmera
+    // ficava colada na capa da barreira; nos vãos não há parede)
+    if (p.down <= 0) {
+      const tp = trackAt(track, p.dist - back, camTp)
+      if (!tp.gap) {
+        const rx = Math.cos(tp.yaw)
+        const rz = -Math.sin(tp.yaw)
+        const u = (camPos.x - tp.x) * rx + (camPos.z - tp.z) * rz
+        const lim = track.width / 2 - 3
+        if (Math.abs(u) > lim) {
+          const fix = Math.sign(u) * lim - u
+          camPos.x += rx * fix
+          camPos.z += rz * fix
+        }
+        const floor = surfaceY(tp, Math.max(-lim, Math.min(lim, u))) + HOVER + 1.6
+        if (camPos.y < floor) camPos.y = floor
+      }
+    }
     camTarget.set(pose.x + Math.sin(camYaw) * 9, pose.y + HOVER + 0.9, pose.z + Math.cos(camYaw) * 9)
     cam.position.copyFrom(camPos)
     cam.setTarget(camTarget)
@@ -581,6 +645,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       audio.dispose()
       fleet.dispose()
       view.dispose()
+      turboBlur?.dispose()
       cam.dispose()
       scene.dispose()
       engine.dispose()
