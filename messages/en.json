@@ -10288,7 +10288,9 @@
     "laminasPsycho": "PSYCHO",
     "laminasFleeWarn": "I'm scared of this fight, I'm getting out.",
     "laminasGiveUp": "Give up",
-    "laminasGiveUpConfirm": "Confirm?"
+    "laminasGiveUpConfirm": "Confirm?",
+    "mobPsycho": "Ah, let's go beat up that loser!",
+    "mobCowardRefuse": "I'm not fighting! I'm scared! Let's get out of here!"
   },
   "Sports": {
     "eyebrow": "Sports",

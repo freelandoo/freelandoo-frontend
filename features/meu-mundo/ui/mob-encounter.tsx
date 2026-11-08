@@ -16,6 +16,7 @@ import type { GameHandle } from "../engine/game"
 import type { LaminasEncounter } from "../laminas/ui/laminas-view"
 import type { BodyId, Interactable } from "../types"
 import { EvoToast } from "./hud/hud-kit"
+import { cowardRefuses, currentSoul } from "../soul"
 
 const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
@@ -44,11 +45,14 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
   const alertText = t("mobAlertNight", "Monstros à solta! Se um deles te encarar, ele vem atrás.")
   const winTpl = t("mobWin", "{name} derrotou: {mob}!")
   const caughtTpl = t("mobCaught", "{mob} te alcançou!")
-  const labels = useRef({ mobName, alertText, winTpl, caughtTpl })
+  // mm3d-72: o psicopata puxa briga sozinho; o covarde às vezes recusa
+  const psychoText = t("mobPsycho", "Ah, vamos dar uma porrada naquele trouxa!")
+  const refuseText = t("mobCowardRefuse", "Não vou lutar! Tô com medo! Vamos embora daqui!")
+  const labels = useRef({ mobName, alertText, winTpl, caughtTpl, psychoText, refuseText })
   useEffect(() => {
     live.current = { busy, encounter }
-    labels.current = { mobName, alertText, winTpl, caughtTpl }
-  }, [busy, encounter, mobName, alertText, winTpl, caughtTpl])
+    labels.current = { mobName, alertText, winTpl, caughtTpl, psychoText, refuseText }
+  }, [busy, encounter, mobName, alertText, winTpl, caughtTpl, psychoText, refuseText])
 
   useEffect(() => {
     if (!news) return
@@ -76,11 +80,18 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
         const w = p as { kind?: string; name?: string }
         setNews({ text: L.winTpl.replace("{name}", w.name || "Alguém").replace("{mob}", L.mobName(w.kind || "")), id: Date.now() })
       } else if (type === "mcatch") {
-        const c = p as { id?: number; kind?: string }
+        const c = p as { id?: number; kind?: string; psycho?: boolean }
         if (!Number.isFinite(c?.id) || !KINDS.has(c?.kind ?? "")) return
         if (live.current.busy || live.current.encounter) return gameRef.current?.reportMob(c.id!, false, true)
-        setNews({ text: L.caughtTpl.replace("{mob}", L.mobName(c.kind!)), id: Date.now() })
-        start(c.id!, c.kind as MobKind)
+        if (!c.psycho && cowardRefuses(currentSoul())) {
+          // o covarde foge: a sala deixa ele em paz um tempo (como "ocupado")
+          setNews({ text: L.refuseText, id: Date.now() })
+          return gameRef.current?.reportMob(c.id!, false, true)
+        }
+        setNews({ text: c.psycho ? L.psychoText : L.caughtTpl.replace("{mob}", L.mobName(c.kind!)), id: Date.now() })
+        // a frase do psicopata aparece antes da luta abrir (o aviso some com a luta na tela)
+        if (c.psycho) setTimeout(() => !live.current.encounter && start(c.id!, c.kind as MobKind), 1800)
+        else start(c.id!, c.kind as MobKind)
       }
     },
     [gameRef, start],
@@ -90,6 +101,10 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
   const fight = useCallback(
     (it: Interactable) => {
       if (it.kind !== "monster" || live.current.encounter) return
+      if (cowardRefuses(currentSoul())) {
+        setNews({ text: labels.current.refuseText, id: Date.now() })
+        return
+      }
       gameRef.current?.engageMob(it.mobId)
       start(it.mobId, it.mobKind)
     },

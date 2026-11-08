@@ -9702,7 +9702,9 @@
     "laminasPsycho": "PSICOPATA",
     "laminasFleeWarn": "Tô com medo dessa luta, vou sair.",
     "laminasGiveUp": "Desistir",
-    "laminasGiveUpConfirm": "Confirmar?"
+    "laminasGiveUpConfirm": "Confirmar?",
+    "mobPsycho": "Ah, vamos dar uma porrada naquele trouxa!",
+    "mobCowardRefuse": "Não vou lutar! Tô com medo! Vamos embora daqui!"
   },
   "Sports": {
     "eyebrow": "Esportes",

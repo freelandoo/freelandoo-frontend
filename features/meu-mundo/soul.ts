@@ -116,3 +116,23 @@ export function wishLine(id: WishId, t: Tr) {
     minigame: t("soulWishMinigame", "Bora jogar um minijogo? Quero ganhar!"),
   }[id]
 }
+
+// ── a alma de agora, para quem não recebe o aviso "life" (a rua, mob-encounter.tsx) ──
+let current: LifeSoul | null = null
+/** A casca do jogo grava a cada "life". */
+export function setCurrentSoul(s: LifeSoul | null) {
+  current = s
+}
+export function currentSoul() {
+  return current
+}
+
+/**
+ * mm3d-72 (regra do Alex): o COVARDE às vezes recusa a luta na rua. Quanto mais
+ * ele gosta do dono, menor a chance (afeto 0: 40%; 100: 20%; 300: 10%).
+ */
+export const COWARD_REFUSE = { p: 0.4, affHalf: 100 }
+export function cowardRefuses(s: LifeSoul | null, roll = Math.random()) {
+  if (!s || s.temper !== "covarde") return false
+  return roll < COWARD_REFUSE.p / (1 + Math.max(0, s.affection) / COWARD_REFUSE.affHalf)
+}

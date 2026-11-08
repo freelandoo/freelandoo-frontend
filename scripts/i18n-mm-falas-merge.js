@@ -46,6 +46,8 @@ const CHATTER = {
     laminasFleeWarn: "Tô com medo dessa luta, vou sair.",
     laminasGiveUp: "Desistir",
     laminasGiveUpConfirm: "Confirmar?",
+    mobPsycho: "Ah, vamos dar uma porrada naquele trouxa!",
+    mobCowardRefuse: "Não vou lutar! Tô com medo! Vamos embora daqui!",
   },
   en: {
     chPsyEnter1: "Today I want to beat the living daylights out of everyone!",
@@ -88,6 +90,8 @@ const CHATTER = {
     laminasFleeWarn: "I'm scared of this fight, I'm getting out.",
     laminasGiveUp: "Give up",
     laminasGiveUpConfirm: "Confirm?",
+    mobPsycho: "Ah, let's go beat up that loser!",
+    mobCowardRefuse: "I'm not fighting! I'm scared! Let's get out of here!",
   },
   es: {
     chPsyEnter1: "¡Hoy quiero darle una paliza a todo el mundo!",
@@ -130,6 +134,8 @@ const CHATTER = {
     laminasFleeWarn: "Me da miedo esta pelea, me voy.",
     laminasGiveUp: "Rendirse",
     laminasGiveUpConfirm: "¿Confirmar?",
+    mobPsycho: "¡Ah, vamos a darle una paliza a ese tonto!",
+    mobCowardRefuse: "¡No voy a pelear! ¡Tengo miedo! ¡Vámonos de aquí!",
   },
 }
 

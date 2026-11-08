@@ -10268,7 +10268,9 @@
     "laminasPsycho": "PSICÓPATA",
     "laminasFleeWarn": "Me da miedo esta pelea, me voy.",
     "laminasGiveUp": "Rendirse",
-    "laminasGiveUpConfirm": "¿Confirmar?"
+    "laminasGiveUpConfirm": "¿Confirmar?",
+    "mobPsycho": "¡Ah, vamos a darle una paliza a ese tonto!",
+    "mobCowardRefuse": "¡No voy a pelear! ¡Tengo miedo! ¡Vámonos de aquí!"
   },
   "Sports": {
     "eyebrow": "Deportes",
