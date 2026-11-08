@@ -46,7 +46,7 @@ import { GeoBuilder, place, type RGB } from "../../engine/geometry"
 import { postLantern, steamLamp } from "../../engine/steampunk/kit"
 import { Sky, applyLights, brasiliaHour, nightFactor } from "../../engine/steampunk/atmosphere"
 import { AirshipFleet, SP, SteamStage, fleetRing, rivetRing, tierOf, xf } from "../../engine/steampunk/scenery"
-import type { Island, PaintMap } from "../sim/map"
+import type { Island, PaintMap, Solid } from "../sim/map"
 import { TUNING } from "../sim/tuning"
 
 /** Pseudo-aleatório fixo (mesma cara a cada partida). */
@@ -173,6 +173,8 @@ export function islandGeometry(isl: Pick<Island, "id" | "x" | "y" | "z" | "r" | 
 }
 
 export interface PaintWorldView {
+  /** mm3d-77: peças altas de enfeite que a câmera não atravessa (não colidem com ninguém). */
+  camBlockers?: Solid[]
   setPortalOpen(team: number, open: boolean): void
   tick(dt: number): void
   dispose(): void

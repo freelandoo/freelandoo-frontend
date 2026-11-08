@@ -168,11 +168,18 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   // senão ela entra embaixo das ilhas; a tinta entra por cima.
   // mm3d-76: ilha de forma (mapas novos) = o prisma dela, mais fundo
   const camRock: Solid[] = map.islands.map((i) => (i.poly ? polySolid(i.poly, i.y - i.depth * 0.8, i.y) : { k: 0, x: i.x, z: i.z, y0: i.y - i.depth * 0.8, y1: i.y, r: i.r * 0.92 }))
+  // mm3d-77 (P0 da auditoria): a câmera também não atravessa os enfeites ALTOS
+  // da regra (tronco, fornalha, colunas) — antes eles tapavam o personagem.
+  // Os baixos (caixote, toco) ficam de fora: olhando para baixo a câmera não
+  // pode ficar pulando para perto por causa deles.
+  for (const s of map.solids.slice(map.islands.length)) if (s.y1 - s.y0 >= 2.4) camRock.push(s)
   let camSolids: Solid[] = camRock
   let camFrom: Solid[] | null = null
   // mm3d-76: a Cidade tem o desenho dela; os mapas novos, o do tema
   const theme = paintMapArt(map.id).theme
-  const world = theme ? buildArenaWorld(scene, map, lowEnd, theme) : buildPaintWorld(scene, map, lowEnd)
+  const world = theme ? buildArenaWorld(scene, map, quality.tier, theme) : buildPaintWorld(scene, map, lowEnd)
+  // e as peças altas que são só desenho (colunas do templo, moldura do portal, arcos)
+  if (world.camBlockers) camRock.push(...world.camBlockers)
   const paint = new PaintView(scene, lowEnd)
   const pickups = new PickupsView(scene, map.capsules, lowEnd)
   // Gatinhos leves (mm3d-35g): no mapa e em fila atrás de quem pegou.

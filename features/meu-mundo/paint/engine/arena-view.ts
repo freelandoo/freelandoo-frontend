@@ -13,7 +13,16 @@
 // Poucas chamadas de desenho (o que pesa no celular): chão (1–2 malhas, com
 // textura de canvas), rocha (1), detalhes acesos e apagados (2), cachoeiras
 // de água/lava (1, transparente), céu (1), nuvens ou lava (1–2) e os portais.
-// Sem sombra, sem shader próprio, sem partícula: brilho é material sem luz.
+// Sem sombra, sem shader próprio: brilho é material sem luz.
+//
+// mm3d-77 (direção de arte, vertical slice na Floresta de Cristal): KIT
+// modular (arena-kit.ts) nos mesmos buffers — moldura de borda com 3
+// variantes, rocha com 3 perfis, corrimão só nas bordas sem ilha à frente,
+// lampiões, pedestais de cristal, arcos, círculos rúnicos, marco ao longe em
+// duas camadas, pólen (só mid/high) e cristais que pulsam. O que é alto e
+// pode tapar a câmera volta em `camBlockers` (sólido só da câmera). Nuvens
+// com menos segmentos (eram 123 mil triângulos). Qualidade low/mid/high
+// decide a densidade.
 
 import type { Scene } from "@babylonjs/core/scene"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
@@ -25,13 +34,15 @@ import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
-import { CreateCylinderVertexData } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { CreateSphereVertexData } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
-import { GeoBuilder, place, type RGB } from "../../engine/geometry"
-import type { Island, PaintMap, PaintProp } from "../sim/map"
+import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
+import { place, type RGB } from "../../engine/geometry"
+import type { QualityTier } from "../../engine/quality"
+import type { Island, PaintMap, PaintProp, Solid } from "../sim/map"
+import { ArenaGeo, Clearance, arch, banner, camCyl, crystalPedestal, deadEdge, edgeFrame, edgesOf, krnd, lamp, railing, runeCircle } from "./arena-kit"
 import { TUNING } from "../sim/tuning"
 import type { PaintTheme } from "./paint-map-art"
 import type { PaintWorldView } from "./world-view"
@@ -50,24 +61,6 @@ function rnd(n: number) {
 const mul = (c: RGB, k: number): RGB => [c[0] * k, c[1] * k, c[2] * k]
 const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
 const c3 = (c: RGB) => new Color3(c[0], c[1], c[2])
-
-/** Construtor com cone e malha livre (o chão das ilhas leva UV de mundo). */
-class ArenaGeo extends GeoBuilder {
-  cone(dTop: number, dBottom: number, h: number, m: Matrix, color: RGB, sides = 8) {
-    const vd = CreateCylinderVertexData({ height: h, diameterTop: dTop, diameterBottom: dBottom, tessellation: sides })
-    vd.transform(m)
-    this.append(vd, color)
-  }
-  /** Esfera achatada/esticada sem recalcular normal (nuvem, copa, cogumelo). */
-  blob(d: number, sx: number, sy: number, sz: number, x: number, y: number, z: number, color: RGB, seg = 6) {
-    const vd = CreateSphereVertexData({ diameter: d, segments: seg })
-    vd.transform(Matrix.Scaling(sx, sy, sz).multiply(Matrix.Translation(x, y, z)))
-    this.append(vd, color)
-  }
-  raw(vd: VertexData, color: RGB) {
-    this.append(vd, color)
-  }
-}
 
 /** Tipos de ilha de METAL (chão de chapa, borda listrada) — o resto é pedra/terra/folha. */
 const METAL = new Set(["dock", "plate", "conveyor", "chain", "gear", "ring", "grate", "hexpad", "forgetop", "anvil", "crane"])
@@ -217,8 +210,12 @@ function fallTexture(scene: Scene, lava: boolean): DynamicTexture {
   return tex
 }
 
-export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th: PaintTheme): PaintWorldView {
+export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, th: PaintTheme): PaintWorldView {
+  const lowEnd = tier === "low"
+  const high = tier === "high"
   const disposers: (() => void)[] = []
+  /** Sólidos só da câmera (peças altas de enfeite: não colidem com ninguém). */
+  const camBlockers: Solid[] = []
   const own = <T extends { dispose(): void }>(x: T) => {
     disposers.push(() => x.dispose())
     return x
@@ -374,6 +371,17 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
         { f: 1, dy: 2.6, c: strata[1], jit: 0 },
         { f: 0.55, dy: 3.8, c: strata[3], jit: 0.1 },
       ]
+    } else if (krnd(isl.id * 17 + 5) < 0.34 && isl.kind !== "boss") {
+      // B: mesa — paredão reto e depois afina (ilha "de pedra cortada")
+      rings = [
+        { f: 1, dy: 0, c: th.rim, jit: 0 },
+        { f: 1.02, dy: 0.28, c: th.rim, jit: 0 },
+        { f: 1, dy: 0.55, c: strata[0], jit: 0 },
+        { f: 0.98, dy: D * 0.32, c: strata[1], jit: 0.12 },
+        { f: 0.95, dy: D * 0.46, c: strata[2], jit: 0.14 },
+        { f: 0.62, dy: D * 0.62, c: strata[3], jit: 0.3 },
+        { f: 0.34, dy: D * 0.82, c: strata[5], jit: 0.25 },
+      ]
     } else {
       rings = [
         { f: 1, dy: 0, c: th.rim, jit: 0 },
@@ -411,6 +419,22 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
     rock.c.push(...mul(strata[5], 0.85), 1)
     const lb = base + (rings.length - 1) * seg
     for (let k = 0; k < seg; k++) rock.i.push(lb + k, lb + ((k + 1) % seg), tip)
+    // C: segunda ponta pendurada (estalactite grande) nas ilhas de pedra médias
+    if (!METAL.has(tag) && !LEAF.has(tag) && tag !== "stair" && isl.r > 2.6 && krnd(isl.id * 23 + 9) > 0.62) {
+      const a = krnd(isl.id * 29) * Math.PI * 2
+      const ox = isl.x + Math.sin(a) * isl.r * 0.45
+      const oz = isl.z + Math.cos(a) * isl.r * 0.45
+      const w = isl.r * 0.32
+      const b2 = rock.p.length / 3
+      for (let k = 0; k < 6; k++) {
+        const t = (k / 6) * Math.PI * 2
+        rock.p.push(ox + Math.sin(t) * w, isl.y - D * 0.3, oz + Math.cos(t) * w)
+        rock.c.push(...strata[3], 1)
+      }
+      rock.p.push(ox, isl.y - D * 1.05, oz)
+      rock.c.push(...mul(strata[5], 0.8), 1)
+      for (let k = 0; k < 6; k++) rock.i.push(b2 + k, b2 + ((k + 1) % 6), b2 + 6)
+    }
   }
 
   // ── ilhas ──
@@ -487,6 +511,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
           const p = edgePoint(isl, (k / nc) * Math.PI * 2 + id, 0.45)
           const h = tag === "temple" ? 4.4 : 0.6 + R(id * 7 + k) * 1.2
           deco.cylinder(0.62, h, place(p.x, isl.y + h / 2, p.z), mix(th.top, [1, 1, 1], 0.3), 10)
+          if (h > 2) camBlockers.push(camCyl(p.x, p.z, isl.y, isl.y + h, 0.36))
           deco.cylinder(0.8, 0.22, place(p.x, isl.y + 0.11, p.z), th.trim, 10)
           if (tag === "temple") deco.cylinder(0.84, 0.26, place(p.x, isl.y + h, p.z), th.trim, 10)
         }
@@ -622,13 +647,13 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
         glow.blob(0.22, 1, 1, 1, p.x, isl.y - 0.3 - len, p.z, th.glow, 4)
       }
     }
-    if (tag === "crystal" || tag === "canopy" || tag === "roots" || (isl.kind === "boss" && th.tile === "moss")) {
+    if (tag === "crystal" || tag === "roots" || (isl.kind === "boss" && th.tile === "moss")) {
       // cristais acesos na borda (cones de 5 lados)
       const n = Math.round((tag === "crystal" ? 4 : 6) * dens) + 1
       for (let k = 0; k < n; k++) {
         const p = edgePoint(isl, R(id * 61 + k) * Math.PI * 2, 0.5)
-        const h = 0.9 + R(id * 67 + k) * 1.6
-        glow.cone(0, 0.55 + R(id + k) * 0.3, h, Matrix.RotationZ((R(id * 71 + k) - 0.5) * 0.5).multiply(Matrix.Translation(p.x, isl.y + h / 2, p.z)), k % 2 ? th.glow : th.glow2, 5)
+        const h = 0.6 + R(id * 67 + k) * 0.7
+        glow.cone(0, 0.32 + R(id + k) * 0.18, h, Matrix.RotationZ((R(id * 71 + k) - 0.5) * 0.5).multiply(Matrix.Translation(p.x, isl.y + h / 2, p.z)), k % 2 ? th.glow : th.glow2, 5)
       }
     }
     if (tag === "mushroom") {
@@ -684,6 +709,17 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
         for (let k = 0; k < 8; k++) {
           const a = (k / 8) * Math.PI * 2 + 0.3
           deco.box(1.3, 1.6, 4.5, Matrix.RotationX(0.5).multiply(Matrix.RotationY(a)).multiply(Matrix.Translation(p.x + Math.sin(a) * (p.s + 1.2), p.y + 0.5, p.z + Math.cos(a) * (p.s + 1.2))), [0.36, 0.26, 0.2])
+        }
+        for (let k = 0; k < 6; k++) {
+          // entalhes de runa acesos subindo o tronco
+          const a = (k / 6) * Math.PI * 2 + 0.25
+          const r0 = p.s * 1.0
+          for (let q = 0; q < 3; q++) glow.box(0.12, 1.4, 0.06, place(p.x + Math.sin(a) * r0, p.y + 4 + k * 3.2 + q * 1.6, p.z + Math.cos(a) * r0, a), q % 2 ? th.glow : mix(th.glow, [1, 1, 1], 0.3))
+        }
+        for (let k = 0; k < 6; k++) {
+          // raízes grandes que descem pela borda do chão de raízes
+          const a = (k / 6) * Math.PI * 2 + 0.6
+          deco.box(1.5, 1.2, 6.5, Matrix.RotationX(0.32).multiply(Matrix.RotationY(a)).multiply(Matrix.Translation(p.x + Math.sin(a) * (p.s + 3.2), p.y - 0.5, p.z + Math.cos(a) * (p.s + 3.2))), [0.34, 0.25, 0.19])
         }
         for (let k = 0; k < 10; k++) {
           const a = rnd(k * 13 + 5) * Math.PI * 2
@@ -784,7 +820,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
     }
   } else {
     const cg = new ArenaGeo()
-    const puffs = lowEnd ? 60 : 120
+    const puffs = lowEnd ? 40 : high ? 100 : 70
     const col: RGB = th.floorColor
     for (let i = 0; i < puffs; i++) {
       const a = rnd(i * 3 + 101) * Math.PI * 2
@@ -794,12 +830,12 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
       const z = Math.cos(a) * d * 0.75
       const y = far ? -12 + rnd(i + 3) * 18 : -24 + rnd(i + 3) * 10
       const s = (far ? 26 : 14) * (0.6 + rnd(i * 7 + 2) * 0.8)
-      for (let k = 0; k < 3; k++) cg.blob(s * (0.55 + rnd(i * 41 + k) * 0.4), 1, 0.42, 0.8, x + (rnd(i * 31 + k) - 0.5) * s * 0.9, y, z + (rnd(i * 37 + k) - 0.5) * s * 0.5, col, 7)
+      for (let k = 0; k < 3; k++) cg.blob(s * (0.55 + rnd(i * 41 + k) * 0.4), 1, 0.42, 0.8, x + (rnd(i * 31 + k) - 0.5) * s * 0.9, y, z + (rnd(i * 37 + k) - 0.5) * s * 0.5, col, 4)
     }
     for (let i = 0; i < 20; i++) {
       const a = (i / 20) * Math.PI * 2
       const d = 30 + rnd(i + 900) * 40
-      cg.blob(18 + rnd(i + 950) * 14, 1, 0.42, 0.8, bi.x + Math.sin(a) * d, bi.y - 18 - rnd(i + 990) * 8, bi.z + Math.cos(a) * d, col, 7)
+      cg.blob(18 + rnd(i + 950) * 14, 1, 0.42, 0.8, bi.x + Math.sin(a) * d, bi.y - 18 - rnd(i + 990) * 8, bi.z + Math.cos(a) * d, col, 4)
     }
     cg.cylinder(520, 0.5, place(0, -28, 0), col, 32)
     cg.cylinder(260, 0.5, place(bi.x, bi.y - 28, bi.z), col, 32)
@@ -833,6 +869,195 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
       deco.cone(4, 7, 50, place(x, y - 6, z), [0.32, 0.24, 0.2], 8)
       deco.blob(30, 1, 0.6, 1, x, y + 22, z, mix(th.top, th.accent, rnd(i) * 0.4), 8)
     }
+  }
+
+  // ── mm3d-77: kit modular — moldura de borda em toda ilha ──
+  const seed = map.id.length * 131 + map.islands.length
+  const clear = new Clearance(map)
+  const frameStyle = {
+    band: th.tile === "moss" ? ([0.36, 0.27, 0.2] as RGB) : th.tile === "basalt" ? mul(th.strata[0], 1.2) : th.tile === "plate" ? mul(th.top, 0.7) : mix(th.top, th.strata[1], 0.35),
+    corbel: th.tile === "moss" ? ([0.3, 0.22, 0.17] as RGB) : th.strata[2],
+    line: th.tile === "basalt" || th.tile === "rune" ? th.trim : undefined,
+  }
+  for (const isl of map.islands) {
+    const tag = isl.tag ?? ""
+    if (METAL.has(tag) || LEAF.has(tag) || tag === "stair") continue
+    edgeFrame(deco, glow, isl, frameStyle, seed)
+  }
+
+  // ── mm3d-77: PÓRTICO dos portais (todos os mapas novos) ──
+  // Cada portal ganha pilares, verga, degrau e joia acesa; entre os dois (eles
+  // ficam lado a lado no alto do meio, de costas um para o outro) entra uma
+  // LAJE que esconde o portal do outro time — sem ela quem chegava via um aro
+  // dentro do outro. Só desenho (a câmera não atravessa: `camBlockers`).
+  {
+    const gateStone: RGB = th.tile === "moss" ? [0.5, 0.47, 0.42] : th.tile === "basalt" ? mul(th.strata[0], 1.6) : mix(th.top, th.strata[1], 0.4)
+    const R = TUNING.portalR
+    for (const pt of map.portals) {
+      const sx = Math.sign(pt.x) || 1
+      const H = R * 2 + 0.6
+      for (const s2 of [-1, 1]) {
+        const z = pt.z + s2 * (R + 0.55)
+        deco.box(0.95, 0.35, 0.95, place(pt.x, pt.y + 0.17, z), mul(gateStone, 0.85))
+        deco.box(0.62, H, 0.62, place(pt.x, pt.y + H / 2, z), gateStone)
+        for (const f of [0.3, 0.7]) glow.box(0.66, 0.08, 0.66, place(pt.x, pt.y + H * f, z), th.trim)
+        deco.box(0.82, 0.22, 0.82, place(pt.x, pt.y + H, z), th.trim)
+        camBlockers.push(camCyl(pt.x, z, pt.y, pt.y + H + 0.6, 0.45))
+      }
+      deco.box(0.7, 0.55, R * 2 + 2.2, place(pt.x, pt.y + H + 0.38, pt.z), gateStone)
+      deco.box(0.76, 0.14, R * 2 + 2.4, place(pt.x, pt.y + H + 0.72, pt.z), th.trim)
+      glow.cone(0, 0.5, 0.9, place(pt.x + sx * 0.36, pt.y + H + 0.38, pt.z, Math.PI / 4), th.glow, 4)
+      deco.box(1.6, 0.16, R * 2 + 1.2, place(pt.x, pt.y + 0.08, pt.z), mul(gateStone, 0.75))
+    }
+    if (map.portals.length === 2 && Math.abs(map.portals[0].x - map.portals[1].x) < 8) {
+      const [a, b] = map.portals
+      const cx = (a.x + b.x) / 2
+      const cz = (a.z + b.z) / 2
+      const gap = Math.abs(a.x - b.x) - 0.6
+      const H = R * 2 + 1.4
+      deco.box(Math.max(0.6, gap * 0.45), H, R * 2 + 1.4, place(cx, a.y + H / 2, cz), mul(gateStone, 0.9))
+      deco.box(Math.max(0.7, gap * 0.45) + 0.2, 0.2, R * 2 + 1.6, place(cx, a.y + H, cz), th.trim)
+      for (const s2 of [-1, 1]) {
+        // runa em losango com dois filetes, nas duas faces da laje
+        const fx = cx + s2 * (Math.max(0.6, gap * 0.45) / 2 + 0.03)
+        const rot = Math.PI / 2
+        glow.raw(diamond(fx, a.y + H * 0.58, cz, 0.55, s2), th.glow)
+        glow.box(0.04, 0.06, R * 2 + 0.6, place(fx, a.y + H * 0.2, cz, rot - Math.PI / 2), th.trim)
+        glow.box(0.04, 0.06, R * 2 + 0.6, place(fx, a.y + H * 0.9, cz, rot - Math.PI / 2), th.trim)
+      }
+      camBlockers.push({ k: 1, x: cx, z: cz, y0: a.y, y1: a.y + H, hx: Math.max(0.6, gap * 0.45) / 2, hz: R + 0.7 })
+    }
+  }
+
+  // ── mm3d-77: a FLORESTA DE CRISTAL (vertical slice) ──
+  if (th.tile === "moss") dressForest()
+  function dressForest() {
+    const wood: RGB = [0.42, 0.3, 0.2]
+    const rope: RGB = [0.66, 0.54, 0.36]
+    const iron: RGB = [0.22, 0.2, 0.2]
+    const warm: RGB = [1, 0.78, 0.4]
+    const stone: RGB = [0.56, 0.56, 0.54]
+    const moss: RGB = [0.3, 0.5, 0.28]
+    const n = lowEnd ? 0.5 : high ? 1.3 : 1
+    /** Ponto livre perto da borda na direção `a` (recua até achar). */
+    const spot = (isl: Island, a: number, inset: number, r: number) => {
+      for (let k = 0; k < 4; k++) {
+        const p = edgePoint(isl, a + k * 0.35, inset + k * 0.25)
+        if (clear.free(p.x, isl.y, p.z, r)) return p
+      }
+      return null
+    }
+    for (const isl of map.islands) {
+      const tag = isl.tag ?? ""
+      const sx = Math.sign(isl.x) || 1
+      // corrimão de corda com lampião nas bordas sem ilha à frente
+      if (isl.kind === "base" || isl.kind === "summit" || tag === "roots" || isl.kind === "boss") {
+        for (const e of edgesOf(isl)) {
+          const mx = (e.ax + e.bx) / 2
+          const mz = (e.az + e.bz) / 2
+          if (e.len < 3 || !deadEdge(map, isl, mx, mz, e.nx, e.nz) || !clear.free(mx - e.nx * 0.4, isl.y, mz - e.nz * 0.4, 0.6)) continue
+          railing(deco, glow, isl.y, e.ax, e.az, e.bx, e.bz, e.nx, e.nz, "rope", wood, rope, 2, warm)
+        }
+      }
+      if (isl.kind === "base") {
+        // spawn "cartão-postal": círculo rúnico, arco de cristal atrás, lampiões, cogumelos e pedestais
+        runeCircle(glow, isl.x, isl.y, isl.z, 3.4, th.glow, mix(th.glow, th.accent, 0.5))
+        const back = edgePoint(isl, sx > 0 ? Math.PI / 2 : -Math.PI / 2, 1.6)
+        if (clear.free(back.x, isl.y, back.z, 1.6)) {
+          arch(deco, glow, back.x, isl.y, back.z, Math.PI / 2, 3.2, 3.4, stone, moss, th.glow)
+          for (const s2 of [-1, 1]) camBlockers.push(camCyl(back.x, back.z + s2 * 1.6, isl.y, isl.y + 4.2, 0.4))
+        }
+        for (let k = 0; k < Math.round(4 * n) + 1; k++) {
+          const p = spot(isl, (k / 5) * Math.PI * 2 + 0.4, 1.1, 0.5)
+          if (p) lamp(deco, glow, p.x, isl.y, p.z, wood, iron, warm)
+        }
+        for (const a of [0.9, -0.9]) {
+          const p = spot(isl, (sx > 0 ? Math.PI / 2 : -Math.PI / 2) + a, 1.8, 0.8)
+          if (p) crystalPedestal(deco, glow, p.x, isl.y, p.z, stone, moss, k2(a) ? th.glow : th.glow2)
+        }
+      } else if (tag === "leaf" || tag === "root") {
+        const p = spot(isl, krnd(isl.id * 41) * Math.PI * 2, 0.8, 0.5)
+        if (p && krnd(isl.id * 43) < 0.7 * n) lamp(deco, glow, p.x, isl.y, p.z, wood, iron, warm, 1.6)
+      } else if (tag === "roots") {
+        runeCircle(glow, isl.x, isl.y, isl.z, 7.2, th.glow, mix(th.glow, th.accent, 0.5))
+        for (let k = 0; k < 6; k++) {
+          const a = (k / 6) * Math.PI * 2 + 0.5
+          const x = isl.x + Math.sin(a) * 6.1
+          const z = isl.z + Math.cos(a) * 6.1
+          if (clear.free(x, isl.y, z, 0.5)) lamp(deco, glow, x, isl.y, z, wood, iron, warm, 1.8)
+        }
+      } else if (isl.kind === "summit") {
+        // a copa: só o círculo rúnico (o pórtico do portal é o de todos os mapas)
+        runeCircle(glow, isl.x, isl.y, isl.z, 4.8, th.glow, th.accent)
+      } else if (isl.kind === "boss") {
+        runeCircle(glow, isl.x, isl.y, isl.z, 10, th.glow, th.accent)
+        runeCircle(glow, isl.x, isl.y, isl.z, 18.5, mix(th.glow, [1, 1, 1], 0.2), th.glow)
+        for (let k = 0; k < 10; k++) {
+          const p = spot(isl, (k / 10) * Math.PI * 2, 1.4, 0.6)
+          if (p) lamp(deco, glow, p.x, isl.y, p.z, wood, iron, warm, 2.4)
+        }
+        for (let k = 0; k < 4; k++) {
+          const p = spot(isl, (k / 4) * Math.PI * 2 + 0.4, 3.2, 1)
+          if (p) crystalPedestal(deco, glow, p.x, isl.y, p.z, stone, moss, k % 2 ? th.glow : th.glow2, 1.4)
+        }
+      }
+      if ((tag === "leafbase" || tag === "leaf" || tag === "crystal" || tag === "mushroom") && isl.kind !== "base") {
+        // cogumelos acesos em cachos na borda
+        for (let k = 0; k < Math.round(2 * n); k++) {
+          const p = spot(isl, krnd(isl.id * 59 + k) * Math.PI * 2, 0.5, 0.4)
+          if (!p) continue
+          const h = 0.4 + krnd(isl.id + k) * 0.5
+          deco.cylinder(0.14, h, place(p.x, isl.y + h / 2, p.z), [0.9, 0.88, 0.8], 6)
+          glow.blob(0.6, 1, 0.45, 1, p.x, isl.y + h, p.z, k % 2 ? th.accent : th.glow2, 5)
+        }
+      }
+    }
+    // a base também ganha cogumelos (fora do círculo dos nascimentos)
+    for (const b of map.bases) {
+      const isl = map.islands[b.island]
+      for (let k = 0; k < Math.round(5 * n); k++) {
+        const p = spot(isl, krnd(k * 7 + isl.id) * Math.PI * 2, 0.6, 0.4)
+        if (!p) continue
+        const h = 0.5 + krnd(k + 3) * 0.7
+        deco.cylinder(0.16, h, place(p.x, isl.y + h / 2, p.z), [0.92, 0.9, 0.82], 6)
+        glow.blob(0.75, 1, 0.45, 1, p.x, isl.y + h, p.z, k % 2 ? th.accent : th.glow2, 5)
+      }
+    }
+    // copa alta da árvore: FORA da área de jogo (raio ≥ 30 m e bem acima da
+    // copa onde se joga) — só a silhueta ao fundo, nunca no caminho da câmera
+    for (let k = 0; k < Math.round(9 * n) + 3; k++) {
+      const a = (k / 12) * Math.PI * 2 + krnd(k) * 0.3
+      const d = 32 + krnd(k * 3) * 8
+      const c: RGB = k % 3 === 0 ? mix(th.accent, [1, 0.8, 0.95], 0.4) : mix(th.top, [0.2, 0.5, 0.3], 0.4)
+      deco.blob(12 + krnd(k * 5) * 7, 1, 0.55, 1, Math.sin(a) * d, 46 + krnd(k * 7) * 8, Math.cos(a) * d, c, 6)
+    }
+    // marco ao longe em duas camadas: ilhas com casas na árvore (perto) e árvores gigantes (fundo)
+    for (let k = 0; k < (lowEnd ? 5 : 9); k++) {
+      const a = (k / 9) * Math.PI * 2 + 0.2
+      const d = 92 + krnd(k * 11) * 22
+      const x = Math.sin(a) * d
+      const z = Math.cos(a) * d * 0.85
+      const y = 2 + krnd(k * 13) * 16
+      deco.cone(12, 1.5, 16, place(x, y - 8, z), th.strata[1], 7)
+      deco.cylinder(13, 1.1, place(x, y, z), moss, 10)
+      deco.cone(1.6, 2.4, 9, place(x, y + 4.5, z), wood, 6)
+      deco.blob(9, 1, 0.65, 1, x, y + 10, z, mix(th.top, th.accent, krnd(k) * 0.5), 6)
+      deco.box(3.2, 2.2, 3.2, place(x + 1.4, y + 6.5, z), [0.5, 0.36, 0.24])
+      deco.cone(0.2, 4.6, 2, place(x + 1.4, y + 8.6, z, Math.PI / 4), [0.3, 0.42, 0.3], 4)
+      glow.box(0.7, 0.7, 0.1, place(x + 1.4, y + 6.5, z - 1.62), warm)
+      fallList.push({ x: x + 6, z, y: y - 0.3, len: 22, w: 2.2, a: Math.PI / 2 })
+    }
+    for (let k = 0; k < (lowEnd ? 6 : 12); k++) {
+      const a = (k / 12) * Math.PI * 2 + 0.5
+      const d = 150 + krnd(k * 17) * 25
+      const x = Math.sin(a) * d
+      const z = Math.cos(a) * d * 0.85
+      deco.cone(6, 11, 90, place(x, 10, z), [0.28, 0.22, 0.24], 7)
+      deco.blob(55, 1, 0.55, 1, x, 58, z, mix(th.fog, th.top, 0.35), 7)
+    }
+  }
+  function k2(a: number) {
+    return a > 0
   }
 
   // ── monta as malhas ──
@@ -940,6 +1165,16 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
     bm.alpha = 0.55
     base.material = bm
     base.isPickable = false
+    // filete aceso por dentro do aro (lê de longe, aberto ou fechado)
+    const inner = CreateTorus(`paint-arena-portal-inner-${team}`, { diameter: TUNING.portalR * 2 - 0.34, thickness: 0.09, tessellation: 40 }, scene)
+    inner.rotation.x = Math.PI / 2
+    inner.position.y = TUNING.portalR + 0.15
+    inner.parent = root
+    const im = own(new StandardMaterial(`paint-arena-portal-inner-${team}`, scene))
+    im.disableLighting = true
+    im.emissiveColor = c3(th.glow)
+    inner.material = im
+    inner.isPickable = false
     portalNodes.push({ ring: ringMat, swirl, open: false })
     disposers.push(() => root.dispose(false, true))
   })
@@ -967,6 +1202,36 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
     bolt.setEnabled(false)
   }
 
+  // pólen leve em volta de quem joga (Floresta; só mid/high)
+  let pollen: ParticleSystem | null = null
+  if (th.tile === "moss" && !lowEnd) {
+    const ptex = own(new DynamicTexture("paint-arena-pollen", { width: 32, height: 32 }, scene, false))
+    const g = ptex.getContext() as unknown as CanvasRenderingContext2D
+    const grd = g.createRadialGradient(16, 16, 0, 16, 16, 16)
+    grd.addColorStop(0, "rgba(255,255,255,1)")
+    grd.addColorStop(1, "rgba(255,255,255,0)")
+    g.fillStyle = grd
+    g.fillRect(0, 0, 32, 32)
+    ptex.hasAlpha = true
+    ptex.update(false)
+    pollen = own(new ParticleSystem("paint-arena-pollen", high ? 220 : 120, scene))
+    pollen.particleTexture = ptex
+    pollen.emitter = new Vector3(0, 0, 0)
+    pollen.createBoxEmitter(new Vector3(-0.3, 0.1, -0.3), new Vector3(0.3, 0.4, 0.3), new Vector3(-14, -3, -14), new Vector3(14, 8, 14))
+    pollen.minEmitPower = 0.2
+    pollen.maxEmitPower = 0.6
+    pollen.minLifeTime = 4
+    pollen.maxLifeTime = 8
+    pollen.emitRate = high ? 30 : 16
+    pollen.minSize = 0.06
+    pollen.maxSize = 0.16
+    pollen.color1 = new Color4(th.glow[0], th.glow[1], th.glow[2], 0.9)
+    pollen.color2 = new Color4(th.glow2[0], th.glow2[1], th.glow2[2], 0.8)
+    pollen.colorDead = new Color4(1, 1, 1, 0)
+    pollen.blendMode = ParticleSystem.BLENDMODE_ADD
+    pollen.start()
+  }
+
   let clock = 0
   let nextBolt = 3
   let boltOff = 0
@@ -978,8 +1243,18 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
       p.swirl.setEnabled(open)
       p.ring.emissiveColor = open ? c3(mul(th.portalSwirl, 0.7)) : new Color3(0, 0, 0)
     },
+    camBlockers,
     tick(dt) {
       clock += dt
+      if (pollen) {
+        const cam = scene.activeCamera
+        if (cam) (pollen.emitter as Vector3).copyFrom(cam.position)
+      }
+      // cristais e runas respiram (só na floresta: o resto do brilho fica parado)
+      if (th.tile === "moss") {
+        const k = 0.86 + Math.sin(clock * 1.6) * 0.14
+        glowMat.emissiveColor.set(k, k, k)
+      }
       for (const p of portalNodes) if (p.open) p.swirl.rotation.z = -clock * 1.6
       if (fallTex) fallTex.vOffset = (fallTex.vOffset - dt * (th.floor === "lava" ? 0.35 : 0.9)) % 1
       if (lavaTex) {
@@ -1006,4 +1281,13 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, lowEnd: boolean, th
       for (const d of disposers.splice(0).reverse()) d()
     },
   }
+}
+
+/** Losango aceso numa face vertical de normal ±x (runa da laje entre os portais). */
+function diamond(x: number, y: number, z: number, r: number, side: number): VertexData {
+  const vd = new VertexData()
+  vd.positions = [x, y + r, z, x, y, z + r * 0.7, x, y - r, z, x, y, z - r * 0.7]
+  vd.indices = side > 0 ? [0, 1, 2, 0, 2, 3] : [0, 2, 1, 0, 3, 2]
+  vd.normals = [side, 0, 0, side, 0, 0, side, 0, 0, side, 0, 0]
+  return vd
 }

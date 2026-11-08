@@ -14,7 +14,9 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
 import "@babylonjs/core/Meshes/instancedMesh"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
-import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
+import { Mesh as BMesh } from "@babylonjs/core/Meshes/mesh"
+import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
+import type { Scene as BScene } from "@babylonjs/core/scene"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
@@ -66,7 +68,8 @@ export class CatHerd {
     this.ringMat.emissiveColor = new Color3(0.95, 0.72, 0.2)
     this.ringMat.diffuseColor = new Color3(0.95, 0.75, 0.3)
     this.ringMat.disableLighting = true
-    this.ringBase = CreateTorus("paint-cat-ring", { diameter: 0.6, thickness: 0.04, tessellation: 24 }, scene)
+    // mm3d-77: anel chato de 32 lados (o toro de 24×24 dava ~2,4 mil triângulos POR gatinho)
+    this.ringBase = flatRing(scene, 0.28, 0.32, 32)
     this.ringBase.material = this.ringMat
     this.ringBase.isPickable = false
     this.ringBase.position.y = -1000
@@ -237,4 +240,22 @@ export class CatHerd {
     this.ringBase.dispose()
     this.ringMat.dispose()
   }
+}
+
+/** Anel chato no chão (mm3d-77), virado para cima e visto dos dois lados. */
+function flatRing(scene: BScene, r0: number, r1: number, n: number): BMesh {
+  const pos: number[] = []
+  const idx: number[] = []
+  for (let i = 0; i <= n; i++) {
+    const a = (i / n) * Math.PI * 2
+    pos.push(Math.sin(a) * r0, 0, Math.cos(a) * r0, Math.sin(a) * r1, 0, Math.cos(a) * r1)
+    if (i < n) idx.push(i * 2, i * 2 + 1, i * 2 + 3, i * 2, i * 2 + 3, i * 2 + 2)
+  }
+  const vd = new VertexData()
+  vd.positions = pos
+  vd.indices = idx
+  vd.normals = pos.map((_, k) => (k % 3 === 1 ? 1 : 0))
+  const m = new BMesh("paint-cat-ring", scene)
+  vd.applyToMesh(m)
+  return m
 }
