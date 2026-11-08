@@ -10198,7 +10198,8 @@
     "hfTop": "Top 10",
     "hfMyPos": "Você está em {n}º",
     "hfAnyone": "Desafie qualquer um, até o 1º. A ficha dele luta por ele; vencendo, você fica com o lugar.",
-    "hfBack": "Voltar ao Hall da Fama"
+    "hfBack": "Voltar ao Hall da Fama",
+    "hfOpenProfile": "Ver o perfil de {name}"
   },
   "Sports": {
     "eyebrow": "Esportes",

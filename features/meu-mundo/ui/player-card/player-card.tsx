@@ -201,10 +201,13 @@ export default function PlayerCard({ tap, gone, dismiss, onClose, onMessage }: P
         <div className={`flex px-1.5 ${compact ? "gap-2" : "gap-3"}`} style={{ marginTop: -overlap }}>
           <div className="flex shrink-0 flex-col items-center gap-1">
             <Avatar url={usable ? p?.avatarUrl : null} name={title} width={photoW} alt={t("pcAvatarAlt", "Foto de {name}").replace("{name}", title)} />
-            <span className={`inline-flex items-center gap-1 font-semibold ${compact ? "text-[10px]" : "text-[12px]"}`} style={{ color: gone ? MM.muted : MM.text }}>
-              <span className="inline-block h-2 w-2 rounded-full" style={{ background: gone ? MM.muted : MM.online }} aria-hidden />
-              {gone ? t("pcLeft", "Saiu daqui") : t("pcOnline", "Online")}
-            </span>
+            {/* aberto pelo Hall da Fama (sem boneco na cena): sem a linha de Online */}
+            {!tap.sessionId.startsWith("hall:") && (
+              <span className={`inline-flex items-center gap-1 font-semibold ${compact ? "text-[10px]" : "text-[12px]"}`} style={{ color: gone ? MM.muted : MM.text }}>
+                <span className="inline-block h-2 w-2 rounded-full" style={{ background: gone ? MM.muted : MM.online }} aria-hidden />
+                {gone ? t("pcLeft", "Saiu daqui") : t("pcOnline", "Online")}
+              </span>
+            )}
           </div>
           <div className="min-w-0 flex-1" style={{ paddingTop: overlap + (compact ? 4 : 8) }}>
             <h2 className={`truncate font-bold leading-tight ${compact ? "text-[15px]" : "text-[19px]"}`}>{title}</h2>

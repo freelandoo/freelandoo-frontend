@@ -275,6 +275,8 @@ export interface HallPerson {
   body: BodyId | null
   /** já desafiei nas últimas 24 h */
   cooldown: boolean
+  /** foto do perfil da Freelandoo (Hall da Fama: toque abre o card do perfil) */
+  photo?: string | null
 }
 /** Uma posição do top 10 da Arena (Hall da Fama): `seated` false = vaga preenchida pelo Poder. */
 export interface HallRank {
@@ -565,7 +567,10 @@ export const getPolensPurchase = (token: string, session: string) =>
 // ═══ mm3d-31: card de perfil de outro jogador ═══════════════════════════════
 /** Quem está por trás do boneco tocado — só se ele está na MESMA sala agora. */
 export const getPlayerProfile = (token: string, session: string) =>
-  call<{ player: PlayerProfile }>(token, "GET", `/players/${encodeURIComponent(session)}`)
+  session.startsWith("hall:")
+    ? // Hall da Fama (2026-11-08): o card de quem está no top 10 da Arena, pela conta
+      call<{ player: PlayerProfile }>(token, "GET", `/hall/player/${encodeURIComponent(session.slice(5))}`)
+    : call<{ player: PlayerProfile }>(token, "GET", `/players/${encodeURIComponent(session)}`)
 
 /**
  * Seguir/deixar de seguir pelo /entity-follows que o site já usa (o mesmo do

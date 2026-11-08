@@ -19,6 +19,7 @@ const KEYS = [
   ["hfTop", "Top 10", "Top 10", "Top 10"],
   ["hfMyPos", "Você está em {n}º", "You are #{n}", "Estás en el puesto {n}"],
   ["hfAnyone", "Desafie qualquer um, até o 1º. A ficha dele luta por ele; vencendo, você fica com o lugar.", "Challenge anyone, even #1. Their record fights for them; win and the place is yours.", "Desafía a cualquiera, incluso al 1.º. Su ficha pelea por él; si ganas, el puesto es tuyo."],
+  ["hfOpenProfile", "Ver o perfil de {name}", "View {name}'s profile", "Ver el perfil de {name}"],
   ["hfBack", "Voltar ao Hall da Fama", "Back to the Hall of Fame", "Volver al Salón de la Fama"],
 ]
 // o prédio das Lâminas virou o Hall da Fama (vence o valor antigo)

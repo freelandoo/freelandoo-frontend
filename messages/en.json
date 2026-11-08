@@ -10784,7 +10784,8 @@
     "hfTop": "Top 10",
     "hfMyPos": "You are #{n}",
     "hfAnyone": "Challenge anyone, even #1. Their record fights for them; win and the place is yours.",
-    "hfBack": "Back to the Hall of Fame"
+    "hfBack": "Back to the Hall of Fame",
+    "hfOpenProfile": "View {name}'s profile"
   },
   "Sports": {
     "eyebrow": "Sports",

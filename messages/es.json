@@ -10764,7 +10764,8 @@
     "hfTop": "Top 10",
     "hfMyPos": "Estás en el puesto {n}",
     "hfAnyone": "Desafía a cualquiera, incluso al 1.º. Su ficha pelea por él; si ganas, el puesto es tuyo.",
-    "hfBack": "Volver al Salón de la Fama"
+    "hfBack": "Volver al Salón de la Fama",
+    "hfOpenProfile": "Ver el perfil de {name}"
   },
   "Sports": {
     "eyebrow": "Deportes",

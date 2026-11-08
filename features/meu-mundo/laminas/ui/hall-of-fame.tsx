@@ -19,6 +19,8 @@ import { MM } from "../../ui/hud/tokens"
 import { EvoButton } from "../../ui/hud/hud-kit"
 import { archivo, teko } from "../../ui/status/evo-skin"
 import { faceOf } from "../../ui/portraits"
+import PlayerCard from "../../ui/player-card/player-card"
+import type { PlayerTap } from "../../engine/player-select"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -26,6 +28,27 @@ const STAGE_IMG = "/meu-mundo/skins/v1/coliseu.webp"
 const STAGE_SMALL = "/meu-mundo/skins/v1/coliseu-1024.webp"
 /** Ouro, prata e bronze do pódio. */
 const MEDAL = ["#F2B705", "#C9D1DA", "#C98A45"] as const
+
+/** A foto do perfil da Freelandoo (sem foto: o rosto do personagem). Tocar abre o card do perfil. */
+function Photo({ r, w, ring, label, onOpen }: { r: HallRank; w: number; ring: string; label: string; onOpen: (r: HallRank, el: HTMLElement) => void }) {
+  const [broken, setBroken] = useState(false)
+  const p = r.person
+  const h = Math.round(w * 1.5)
+  if (!p) {
+    return (
+      <span className="grid shrink-0 place-items-center" style={{ width: w, height: h, background: "rgba(0,0,0,0.35)", border: `1px dashed ${MM.border}`, color: MM.muted }} aria-hidden>
+        <Shield className="h-4 w-4" />
+      </span>
+    )
+  }
+  const src = p.photo && !broken ? p.photo : faceOf(p.body)
+  return (
+    <button type="button" onClick={(e) => onOpen(r, e.currentTarget)} aria-label={label} className="relative block shrink-0 overflow-hidden transition-transform active:scale-[0.97]" style={{ width: w, height: h, border: `2px solid ${ring}`, background: "#232733", boxShadow: MM.shadowSoft }}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- foto de pessoa (regra 4: <img> lazy) */}
+      <img src={src} alt="" width={w} height={h} loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover" onError={() => setBroken(true)} />
+    </button>
+  )
+}
 
 export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; onTrain: () => void; onFight: (ticket: FightTicket, foe: string) => void }) {
   const t = useTranslations("MeuMundo") as Tr
@@ -35,6 +58,11 @@ export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; o
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [idx, setIdx] = useState(0)
+  const [card, setCard] = useState<PlayerTap | null>(null)
+  const cardOpen = useRef(false)
+  useEffect(() => {
+    cardOpen.current = !!card
+  }, [card])
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const stageRef = useRef<SkinStage | null>(null)
 
@@ -78,7 +106,8 @@ export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; o
     const key = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") go(-1)
       else if (e.key === "ArrowRight") go(1)
-      else if (e.key === "Escape") onExit()
+      // Esc com o card aberto fecha só o card (ele mesmo escuta o Esc)
+      else if (e.key === "Escape" && !cardOpen.current) onExit()
     }
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
@@ -100,6 +129,13 @@ export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; o
     onFight(res.data.fight, p.name)
   }
 
+  // o card de perfil (o mesmo de tocar num personagem), encostado na foto tocada
+  const openCard = (r: HallRank, el: HTMLElement) => {
+    if (!r.person || r.person.isMe) return
+    const b = el.getBoundingClientRect()
+    setCard({ sessionId: `hall:${r.person.id}`, name: r.person.name, box: { x: b.left + b.width / 2, top: b.top, bottom: b.bottom } })
+  }
+  const photoLabel = (name: string) => t("hfOpenProfile", "Ver o perfil de {name}").replace("{name}", name)
   const fmt = (n: number) => Math.round(n).toLocaleString(locale)
   const left = board?.me.left ?? 0
   const can = (r: HallRank) => !!r.person && !r.person.isMe && !r.person.cooldown && left > 0 && (board?.me.power ?? 0) > 0
@@ -181,9 +217,18 @@ export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; o
           {cur && (
             <div className="absolute bottom-0 left-0 right-0 flex justify-center px-3 pb-[max(14px,env(safe-area-inset-bottom))] min-[760px]:right-[380px] max-[759px]:bottom-auto max-[759px]:top-[60px] max-[759px]:pb-0">
               <div className="flex w-full max-w-[520px] items-center gap-4 p-4 max-[759px]:gap-3 max-[759px]:p-2.5" style={{ background: MM.surface, border: `1px solid ${MEDAL[idx]}`, boxShadow: MM.shadow }}>
-                <div className={`${teko.className} flex shrink-0 flex-col items-center leading-none`} style={{ color: MEDAL[idx] }}>
-                  <Crown className="h-6 w-6 max-[759px]:h-5 max-[759px]:w-5" aria-hidden />
-                  <span className="text-[54px] font-bold max-[759px]:text-[38px]">{cur.pos}º</span>
+                {/* a foto do perfil (toque = card do perfil) com a medalha do lugar no canto */}
+                <div className="relative shrink-0">
+                  <span className="max-[759px]:hidden">
+                    <Photo r={cur} w={60} ring={MEDAL[idx]} label={photoLabel(cur.person?.name ?? "")} onOpen={openCard} />
+                  </span>
+                  <span className="hidden max-[759px]:block">
+                    <Photo r={cur} w={44} ring={MEDAL[idx]} label={photoLabel(cur.person?.name ?? "")} onOpen={openCard} />
+                  </span>
+                  <span className={`${teko.className} pointer-events-none absolute -bottom-2 -right-3 flex items-center gap-0.5 px-1.5 pt-0.5 text-[20px] font-bold leading-none max-[759px]:text-[16px]`} style={{ background: MM.surface, border: `1px solid ${MEDAL[idx]}`, color: MEDAL[idx] }}>
+                    <Crown className="h-3.5 w-3.5" aria-hidden />
+                    {cur.pos}º
+                  </span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className={`${teko.className} truncate text-[36px] font-bold uppercase leading-none max-[759px]:text-[24px]`} style={{ color: MM.text }}>
@@ -240,14 +285,7 @@ export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; o
                   <span className={`${teko.className} w-8 shrink-0 text-center text-[24px] leading-none tabular-nums`} style={{ color: MM.gold }}>
                     {r.pos}
                   </span>
-                  {r.person ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- retrato local em lista (regra 4: <img> lazy)
-                    <img src={faceOf(r.person.body)} alt="" loading="lazy" decoding="async" draggable={false} className="h-9 w-9 shrink-0 rounded-full object-cover" style={{ background: "rgba(0,0,0,0.35)" }} />
-                  ) : (
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: "rgba(0,0,0,0.35)", color: MM.muted }} aria-hidden>
-                      <Shield className="h-4 w-4" />
-                    </span>
-                  )}
+                  <Photo r={r} w={26} ring={r.person?.isMe ? MM.rubyBorder : MM.border} label={photoLabel(r.person?.name ?? "")} onOpen={openCard} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14px] font-semibold">
                       {r.person ? r.person.name : t("hfEmpty", "Vaga")}
@@ -264,6 +302,7 @@ export function HallOfFame({ onExit, onTrain, onFight }: { onExit: () => void; o
           </aside>
         </>
       )}
+      {card && <PlayerCard key={card.sessionId} tap={card} gone={false} dismiss={0} onClose={() => setCard(null)} />}
     </div>
   )
 }
