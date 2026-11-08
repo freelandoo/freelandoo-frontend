@@ -22,7 +22,7 @@ const HEIGHT: Partial<Record<BodyId, number>> = {
   iris: 3.2,
   noctis: 3.2,
   aeryn: 3.2,
-  ciborgue: 4.0,
+  ciborgue: 2.7, // 2026-11-07 (Alex): todos os ciborgues, skin e monstro
   cavaleiro: 2.0,
   golem: 4.0,
   garras: 2.0,

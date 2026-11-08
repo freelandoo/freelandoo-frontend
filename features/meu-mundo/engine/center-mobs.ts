@@ -24,7 +24,7 @@ const KINDS = new Set<MobKindCity>(["soldier", "wolf", "golem", "harpy", "brute"
 /** Raio de "Lutar" (m). */
 const REACH = 3.4
 /** mm3d-60o: altura da placa do nível (um pouco acima da cabeça; o monstro na rua tem o tamanho da luta). */
-const LEVEL_Y: Record<MobKindCity, number> = { soldier: 4.6, wolf: 3.1, golem: 4.6, harpy: 2.7, brute: 4.7 }
+const LEVEL_Y: Record<MobKindCity, number> = { soldier: 4.6, wolf: 3.1, golem: 3.3, harpy: 2.7, brute: 4.7 }
 
 /** Placa "Nv. N" em cima do monstro: grafite com a borda roxa da luz dele, sempre virada para a câmera. */
 function levelTag(scene: Scene, id: number, level: number) {

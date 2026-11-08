@@ -106,8 +106,9 @@ const ASSETS = {
     // 2026-11-02: -h401 rosto/queixo 100% na cabeça (`head_rigid` no build_deuses.py — estava 70–84% no peito);
     // -h402 ombreiras e placas soltas do ombro andam como bloco (`rigid_pieces`) — esticavam na corrida;
     // -h403 botas para a frente (`feet_fwd`, estavam 32° para fora), como o vampiro adulto.
-    // 2026-11-07 -h404: ombro, pulso, pescoço, cabeça e joelho onde o Alex marcou na silhueta (`sh_joint`, `knee_x`).
-    ciborgue: "avatar-ciborgue-h404.glb",
+    // 2026-11-07 -h404: ombro, pulso, pescoço, cabeça e joelho onde o Alex marcou na silhueta (`sh_joint`, `knee_x`);
+    // -h405: 2,7 m (era 4 m), skin e monstro.
+    ciborgue: "avatar-ciborgue-h405.glb",
     brutamontes: "avatar-brutamontes-x400.glb",
     // Alturas (regra do Alex, 2026-11-01): jovem 1,70 m (menino) / 1,65 m
     // (menina) (-m58f); adultos 2,70 m (-m58g) — escala da raiz.
@@ -250,12 +251,55 @@ const LOCO = {
  * cruza a barriga. Depois das animações: braço abre do corpo e o cotovelo
  * desdobra (rad, Z local; eixos do build_run_arms.py), pelo peso do Walk e do
  * SlowRun — o Idle (pose A) não muda. Valores do harness (armfix60.js).
+ * `open` (graus, 2026-11-07, Alex: "quando ele andar, deixa 20 graus aberto os braços em relação à cintura"):
+ * andando, braço e antebraço ficam a esse ângulo do plano do lado do corpo (absoluto, em toda fase do passo;
+ * o balanço para a frente/trás do clipe fica) no lugar do `walk` somado.
  */
-const BULKY_LOCO: Partial<Record<BodyId, { walk: [number, number]; run: [number, number] }>> = {
-  ciborgue: { walk: [0.4, 0.55], run: [0.5, 1.0] },
+const BULKY_LOCO: Partial<Record<BodyId, { walk: [number, number]; run: [number, number]; open?: number }>> = {
+  ciborgue: { walk: [0.4, 0.55], run: [0.5, 1.0], open: 20 },
   golem: { walk: [0.4, 0.55], run: [0.5, 1.0] },
 }
 const Vector3Z = new Vector3(0, 0, 1)
+const _X = new Vector3(1, 0, 0)
+/**
+ * Braço e antebraço a `th` rad do plano do lado do corpo (lado = eixo X do nó do esqueleto, pai do quadril),
+ * mantendo o balanço para a frente/trás; `w` = quanto da correção (peso do Walk). Giro aplicado no espaço do
+ * pai de cada osso (a direção é medida no mundo, depois das animações). Conferido no harness das classes:
+ * 20° exatos nas 4 fases do Walk, dos dois lados.
+ */
+function openArms(hips: TransformNode, segs: TransformNode[], hands: readonly (TransformNode | null)[], th: number, w: number) {
+  const top = hips.parent as TransformNode
+  const chain: TransformNode[] = []
+  for (let n: Node | null = segs[0].parent; n; n = n.parent) chain.unshift(n as TransformNode)
+  for (const n of chain) n.computeWorldMatrix?.(true)
+  for (let n: Node | null = segs[2].parent; n && !chain.includes(n as TransformNode); n = n.parent) (n as TransformNode).computeWorldMatrix?.(true)
+  hips.computeWorldMatrix(true)
+  const X = Vector3.TransformNormal(_X, top.getWorldMatrix()).normalize()
+  const hp = hips.getAbsolutePosition()
+  for (let i = 0; i < 4; i++) {
+    const a = segs[i]
+    const b = i % 2 === 0 ? segs[i + 1] : hands[i >> 1]
+    if (!b || !a.parent || !a.rotationQuaternion) continue
+    ;(a.parent as TransformNode).computeWorldMatrix(true) // antebraço: o braço de cima acabou de girar
+    a.computeWorldMatrix(true)
+    b.computeWorldMatrix(true)
+    const ap = a.getAbsolutePosition()
+    const d = b.getAbsolutePosition().subtract(ap).normalize()
+    const o = X.scale(Vector3.Dot(ap.subtract(hp), X) >= 0 ? 1 : -1)
+    const s = Vector3.Dot(d, o)
+    const r = d.subtract(o.scale(s))
+    const rl = r.length()
+    if (rl < 1e-4) continue
+    const dt = o.scale(Math.sin(th)).addInPlace(r.scaleInPlace(Math.cos(th) / rl))
+    const inv = (a.parent as TransformNode).getWorldMatrix().clone().invert()
+    const dp = Vector3.TransformNormal(d, inv).normalize()
+    const dtp = Vector3.TransformNormal(dt, inv).normalize()
+    const ax = Vector3.Cross(dp, dtp)
+    const len = ax.length()
+    if (len < 1e-6) continue
+    a.rotationQuaternion = Quaternion.RotationAxis(ax.scaleInPlace(1 / len), Math.atan2(len, Vector3.Dot(dp, dtp)) * w).multiply(a.rotationQuaternion)
+  }
+}
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
 export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
 type AnimSet = keyof typeof ASSETS.anims
@@ -884,6 +928,8 @@ export class AvatarRig {
       const bones = ["LeftArm", "RightArm", "LeftForeArm", "RightForeArm"].map((n) => this.node(`mixamorig:${n}`))
       if (bones.every((b) => b?.rotationQuaternion)) {
         const [la, ra, lf, rf] = bones as TransformNode[]
+        const hips = this.node("mixamorig:Hips")
+        const hands = [this.node("mixamorig:LeftHand"), this.node("mixamorig:RightHand")] as const
         const scene = root.getScene()
         const rz = (a: number) => Quaternion.RotationAxis(Vector3Z, a)
         this.armObs = scene.onAfterAnimationsObservable.add(() => {
@@ -892,12 +938,14 @@ export class AvatarRig {
           const ww = this.groups.Walk.isPlaying ? this.groups.Walk.weight : 0
           const wr = this.groups.SlowRun.isPlaying ? this.groups.SlowRun.weight : 0
           if (ww + wr < 0.01) return
-          const abd = fix.walk[0] * ww + fix.run[0] * wr
-          const unb = fix.walk[1] * ww + fix.run[1] * wr
+          const wa = fix.open ? 0 : ww
+          const abd = fix.walk[0] * wa + fix.run[0] * wr
+          const unb = fix.walk[1] * wa + fix.run[1] * wr
           la.rotationQuaternion!.multiplyInPlace(rz(-abd))
           ra.rotationQuaternion!.multiplyInPlace(rz(abd))
           lf.rotationQuaternion!.multiplyInPlace(rz(-unb))
           rf.rotationQuaternion!.multiplyInPlace(rz(unb))
+          if (fix.open && ww > 0.01 && hips?.parent) openArms(hips, [la, lf, ra, rf], hands, (fix.open * Math.PI) / 180, ww)
         })
       }
     }
