@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowBigUp, Cat, DoorOpen, Loader2, Skull, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
+import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId } from "../../types"
 import { MM } from "../../ui/hud/tokens"
@@ -209,9 +210,7 @@ function PaintMenu({
               {t("paintPitch", "Suba pelas ilhas pintando o caminho, ache os gatinhos e abra o portal do chefão.")}
             </p>
           </div>
-          <button type="button" aria-label={t("paintLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
-            <X className="h-5 w-5" />
-          </button>
+          <BackToCity onExit={onExit} className="pointer-events-auto" />
         </div>
 
         <ul className="mt-4 grid grid-cols-2 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>

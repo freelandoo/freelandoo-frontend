@@ -10211,7 +10211,8 @@
     "paintLobbyTitle": "Esperando jogadores…",
     "paintLobbyHow": "Vote no mapa enquanto espera: o mais votado é o da partida.",
     "paintLobbyYou": "Você",
-    "paintLobbyPlayer": "Jogador {k}"
+    "paintLobbyPlayer": "Jogador {k}",
+    "mmBackToCity": "Voltar à cidade"
   },
   "Sports": {
     "eyebrow": "Esportes",

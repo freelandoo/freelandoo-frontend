@@ -19,6 +19,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Bike, Loader2, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
+import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { WaitingRoom } from "../../ui/kit/waiting-room"
 import { MM } from "../../ui/hud/tokens"
@@ -260,9 +261,7 @@ function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi
               {t("noturnoPitch", "A rua é sua de noite. Desvie dos carros e caminhões, salte das rampas e pegue as moedas — cada vez mais rápido.")}
             </p>
           </div>
-          <button type="button" aria-label={t("noturnoLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
-            <X className="h-5 w-5" />
-          </button>
+          <BackToCity onExit={onExit} className="pointer-events-auto" />
         </div>
 
         <div className="mt-4 text-[12px] font-bold uppercase tracking-[0.14em] [@media(max-height:520px)]:mt-2" style={{ color: MM.muted }}>

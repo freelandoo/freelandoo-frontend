@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, Crown, Loader2, RefreshCw, Shield, Swords, X } from "lucide-react"
+import { BackToCity } from "../../ui/kit/back-to-city"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getHallBoard, postHallChallenge, type FightTicket, type HallBoard, type HallRank } from "../../data"
@@ -174,9 +175,7 @@ export function HallOfFame({ onExit, onFight }: { onExit: () => void; onFight: (
           </h1>
         </div>
         <div className="pointer-events-auto flex shrink-0 items-center gap-2">
-          <button type="button" aria-label={t("laminasLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 place-items-center rounded-full" style={{ background: MM.surface, border: `1px solid ${MM.border}`, color: MM.text }}>
-            <X className="h-5 w-5" />
-          </button>
+          <BackToCity onExit={onExit} className="pointer-events-auto" />
         </div>
       </div>
 

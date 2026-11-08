@@ -13,6 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Lock, Play, Star, Trophy, Users, WifiOff, X } from "lucide-react"
+import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { menuPhases, phaseArt, starsFor, type PhaseArt } from "../engine/phase-art"
 import type { PhaseId } from "../sim/phases"
@@ -110,9 +111,7 @@ export function PhaseSelect({
             {t("jetSelectTitle", "Selecionar fase")}
           </div>
         </div>
-        <button type="button" aria-label={t("jetLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: JT.card, border: `1px solid ${JT.line}` }}>
-          <X className="h-5 w-5" />
-        </button>
+        <BackToCity onExit={onExit} className="pointer-events-auto" />
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-3 max-[759px]:px-3">

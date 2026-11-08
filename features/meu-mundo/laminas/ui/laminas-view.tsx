@@ -20,6 +20,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Crown, Flag, Swords, Volume2, VolumeX, X } from "lucide-react"
+import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
@@ -190,9 +191,7 @@ function Menu({ onPick, onExit, onBack, ring }: { onPick: (c: Choice) => void; o
                 <Crown className="h-5 w-5" style={{ color: MM.gold }} />
               </button>
             )}
-            <button type="button" aria-label={t("laminasLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
-              <X className="h-5 w-5" />
-            </button>
+            <BackToCity onExit={onExit} className="pointer-events-auto" />
           </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 max-[420px]:grid-cols-1 [@media(max-height:520px)]:grid-cols-4">

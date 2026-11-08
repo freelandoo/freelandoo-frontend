@@ -12,6 +12,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Check, ChevronLeft, ChevronRight, Gauge, Rocket, RotateCw, X, Zap } from "lucide-react"
+import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
@@ -151,15 +152,7 @@ export function GarageView({ current, onChoose, onExit }: GarageViewProps) {
           </div>
           <div className={`text-[20px] font-black italic leading-tight ${archivo.className}`}>{t("corridaGarageTitle", "Escolha sua nave")}</div>
         </div>
-        <button
-          type="button"
-          aria-label={t("corridaLeave", "Voltar ao centro")}
-          onClick={onExit}
-          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full"
-          style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}` }}
-        >
-          <X className="h-5 w-5" />
-        </button>
+        <BackToCity onExit={onExit} className="pointer-events-auto" />
       </div>
 
       {/* setas em volta da nave */}

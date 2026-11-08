@@ -39,6 +39,7 @@ import { AmbulanceCurtain, useHospitalStay } from "./hospital-stay"
 import { JailTimer, useJailStay } from "./jail-stay"
 import NoticeStack from "./inbox/notice-stack"
 import HudInbox from "./inbox/hud-inbox"
+import { useGameCovered } from "./hud/game-cover"
 import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
 import RankingPanel from "./ranking/ranking-panel"
@@ -164,6 +165,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [playerCard, setPlayerCard] = useState<{ tap: PlayerTap; gone: boolean; dismiss: number; frame: number | null } | null>(null)
   // Chat (mm3d-32): linhas do Global (teto em chat-logic), não lidas e a vista aberta.
   const [chatView, setChatView] = useState<ChatView | null>(null)
+  const gameCovered = useGameCovered()
   const [chatLines, setChatLines] = useState<Line[]>([])
   const [chatUnread, setChatUnread] = useState(0)
   // Perfil-conta de quem joga: o "ator" das conversas (do /users/me).
@@ -766,7 +768,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           setInbox(n.mailId ? { view: "mail", tab: n.kind === "gift" ? "gift" : n.kind === "promo" ? "promo" : n.kind === "purchase" ? "receipt" : "official", open: n.mailId } : { view: "notices" })
         }}
       />
-      {!overlayOpen && (
+      {/* some com um minijogo/luta aberto: ficava por cima da saída do jogo (Alex, 2026-11-08) */}
+      {!overlayOpen && !gameCovered && (
         <HudInbox
           counts={counts}
           onBell={() => setInbox({ view: "notices" })}

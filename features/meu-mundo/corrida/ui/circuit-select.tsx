@@ -10,6 +10,7 @@
 
 import { useMemo, useState } from "react"
 import { ArrowLeft, Flag, Lock, Timer, Trophy, Users, X } from "lucide-react"
+import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { menuCircuits, tagLabel, type CircuitArt } from "../engine/circuit-art"
@@ -114,15 +115,7 @@ export function CircuitSelect({
             {t("corridaSelectSwap", "Trocar")}
           </span>
         </button>
-        <button
-          type="button"
-          aria-label={t("corridaLeave", "Voltar ao centro")}
-          onClick={onExit}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full"
-          style={{ background: MM.card, border: `1px solid ${MM.border}` }}
-        >
-          <X className="h-5 w-5" />
-        </button>
+        <BackToCity onExit={onExit} className="pointer-events-auto" />
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 max-[759px]:px-3">

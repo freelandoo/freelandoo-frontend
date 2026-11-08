@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Flag, Loader2, Timer, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
+import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { WaitingRoom } from "../../ui/kit/waiting-room"
 import { MM } from "../../ui/hud/tokens"
@@ -190,9 +191,7 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
               {t("gincanaPitch", "Oito na largada, cinco trechos malucos e uma linha de chegada. Caiu na água? Volta ao último posto e segue.")}
             </p>
           </div>
-          <button type="button" aria-label={t("gincanaLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
-            <X className="h-5 w-5" />
-          </button>
+          <BackToCity onExit={onExit} className="pointer-events-auto" />
         </div>
 
         <ul className="mt-4 grid grid-cols-5 gap-1.5 max-[759px]:grid-cols-1 max-[759px]:gap-1 [@media(max-height:620px)]:hidden">
