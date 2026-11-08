@@ -58,6 +58,8 @@ export interface LaminasViewProps {
   tutorial?: boolean
   /** O fim da luta conferida (recibo do servidor). */
   onReceipt?: (r: Receipt) => void
+  /** B8: luta já aberta pelo servidor (o desafio do Hall) e o nome de quem defende. */
+  opened?: { ticket: FightTicket; foe: string } | null
 }
 
 const SAND = "#E9CF98"
@@ -97,12 +99,12 @@ export function useMobName(ring = false, street = false) {
   )
 }
 
-export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, onEncounterEnd, stage = "arena", tutorial = false, onReceipt }: LaminasViewProps) {
+export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, onEncounterEnd, stage = "arena", tutorial = false, onReceipt, opened = null }: LaminasViewProps) {
   // Corpo e cores ficam os da abertura: se a sala mandar outros no meio, recriar a cena
   // deixaria a luta parada para sempre (ela nasce esperando o botão, que já foi apertado).
   const [{ body, look }] = useState({ body: bodyNow, look: lookNow })
   const [fight, setFight] = useState<{ key: number; choice: Choice } | null>(() =>
-    encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "soldier", level: 1 } } : null,
+    opened ? { key: 1, choice: { kind: opened.ticket.setup.kind, level: opened.ticket.setup.level } } : encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "soldier", level: 1 } } : null,
   )
   // a celebração (ganho/nível) espera a luta acabar: sai quando a tela fecha
   useEffect(() => {
@@ -124,6 +126,7 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
           portal={!!encounter}
           mobId={encounter?.mobId}
           tutorial={tutorial}
+          opened={opened}
           onReceipt={(r) => {
             celebrate(r)
             onReceipt?.(r)
@@ -134,8 +137,8 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
               onEncounterEnd?.(win)
             }
           }}
-          onAgain={encounter || tutorial ? undefined : () => start(fight.choice)}
-          onMenu={encounter || tutorial ? onExit : () => setFight(null)}
+          onAgain={encounter || tutorial || opened ? undefined : () => start(fight.choice)}
+          onMenu={encounter || tutorial || opened ? onExit : () => setFight(null)}
         />
       ) : (
         <Menu onPick={start} onExit={onExit} ring={stage === "ring"} />
@@ -217,6 +220,7 @@ function LaminasScreen({
   portal,
   mobId,
   tutorial,
+  opened = null,
   onReceipt,
   onEnd,
   onAgain,
@@ -229,6 +233,7 @@ function LaminasScreen({
   portal: boolean
   mobId?: number
   tutorial?: boolean
+  opened?: { ticket: FightTicket; foe: string } | null
   onReceipt?: (r: Receipt) => void
   onEnd: (win: boolean) => void
   onAgain?: () => void
@@ -276,6 +281,11 @@ function LaminasScreen({
       setTicket("offline")
       return
     }
+    // B8: o desafio do Hall chega com o ticket aberto pelo servidor
+    if (opened) {
+      setTicket(opened.ticket)
+      return
+    }
     const origin: FightOrigin = portal ? "mob" : tutorial ? "tutorial" : stage === "ring" ? "boxe" : "laminas"
     const ask = async (tries: number): Promise<void> => {
       const r = await startFight(token, { origin, kind: choice.kind, level: choice.level, mobId })
@@ -292,7 +302,7 @@ function LaminasScreen({
     return () => {
       alive = false
     }
-  }, [choice, stage, portal, mobId, tutorial])
+  }, [choice, stage, portal, mobId, tutorial, opened])
   const ultName = abilityKit(body, stage).slots.ult.name
   const labelsRef = useRef({
     evade: t("laminasEvade", "ESQUIVOU!"),
@@ -417,7 +427,7 @@ function LaminasScreen({
       {status === "ready" && !veil && !started && sheet && (
         <VersusScreen
           me={{ name: t("fightYou", "VOCÊ"), level: heroLevel, portrait: PORTRAIT[body], accent: "#FFB43B" }}
-          foe={{ name: mobName(choice.kind), level: portal && ticket && ticket !== "offline" ? ticket.setup.level : heroLevel, portrait: foePortrait, accent: FOE_ACCENT[choice.kind] }}
+          foe={{ name: opened ? opened.foe : mobName(choice.kind), level: portal && ticket && ticket !== "offline" ? ticket.setup.level : heroLevel, portrait: foePortrait, accent: FOE_ACCENT[choice.kind] }}
           sheet={sheet}
           onStart={begin}
         />

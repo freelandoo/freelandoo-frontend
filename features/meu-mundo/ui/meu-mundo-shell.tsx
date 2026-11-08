@@ -22,7 +22,7 @@
 // dentro do jogo (card do jogador, caixa de entrada ou nome no Global).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Share2, Swords, Trophy } from "lucide-react"
+import { Backpack, Crown, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Share2, Swords, Trophy } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
@@ -42,6 +42,8 @@ import HudInbox from "./inbox/hud-inbox"
 import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
 import RankingPanel from "./ranking/ranking-panel"
+import HallPanel from "./hall/hall-panel"
+import type { FightTicket } from "../data"
 import GearPanel from "./gear/gear-panel"
 import { QuestTracker } from "./quest/quest-ui"
 import { CharHud, type HudVitals } from "./hud/char-hud"
@@ -151,6 +153,10 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [gearTab, setGearTab] = useState<null | "bag" | "armory" | "forge">(null)
   // mm3d-59: luta de treino do prólogo e quando reconferir a missão
   const [tutorialFight, setTutorialFight] = useState(false)
+  // B8: Hall das Lâminas (painel e a luta do desafio, com o ticket aberto pelo servidor)
+  const [hallOpen, setHallOpen] = useState(false)
+  const [hallFight, setHallFight] = useState<{ ticket: FightTicket; foe: string } | null>(null)
+  const fightUp = tutorialFight || !!hallFight
   const [questTick, setQuestTick] = useState(0)
   const bumpQuest = useCallback(() => setQuestTick((n) => n + 1), [])
   const [polensOpen, setPolensOpen] = useState(false)
@@ -483,7 +489,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
   // A cela (mm3d-37f) só com a planta na mão; internado, o hospital manda.
   const jailUp = !!jail.phase && !!jail.interior && !hospitalUp
-  const panelOpen = !!inbox || itemsOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab
+  const panelOpen = !!inbox || itemsOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab || hallOpen
   const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || jailUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
   const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
@@ -630,6 +636,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       },
       { id: "items", label: t("itTitle", "Itens"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
       { id: "gear", label: t("gearTitle", "Equipamento"), hint: t("menuGearHint", "Mochila, Armeiro e Forja"), icon: <Swords className="h-5 w-5" />, kind: "nav", onSelect: () => setGearTab("bag") },
+      { id: "hall", label: t("hlTitle", "Hall das Lâminas"), hint: t("menuHallHint", "Desafie pela cadeira"), icon: <Crown className="h-5 w-5" />, kind: "nav", onSelect: () => setHallOpen(true) },
       { id: "ranking", label: t("rkTitle", "Ranking"), hint: t("menuRankingHint", "Poder, nível e Freelandoo"), icon: <Trophy className="h-5 w-5" />, kind: "nav", onSelect: () => setRankingOpen(true) },
       {
         id: "inbox",
@@ -645,7 +652,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     ],
     [t, counts, chatBadge, openChat, languageItem],
   )
-  const suspended = hospitalUp || jailUp || tutorialFight
+  const suspended = hospitalUp || jailUp || fightUp
   const key = `${sceneKeyOf(scene)}#${mount}`
   // Outra cena = outras sessões: o card da anterior não vale mais.
   useEffect(() => setPlayerCard(null), [key])
@@ -853,16 +860,35 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
       {/* mm3d-60d: HUD do personagem (canto de cima à esquerda) */}
-      <CharHud name={scene.me.name} body={avatar} vitals={vitals} power={power} hidden={overlayOpen || asleep || tutorialFight} onOpen={openStatus} />
+      <CharHud name={scene.me.name} body={avatar} vitals={vitals} power={power} hidden={overlayOpen || asleep || fightUp} onOpen={openStatus} />
       {/* mm3d-60r: radar no canto de cima à direita; tocar abre o mapa da cidade */}
-      <CityMapHud hidden={overlayOpen || asleep || tutorialFight} />
+      <CityMapHud hidden={overlayOpen || asleep || fightUp} />
       {/* mm3d-59: missão acompanhada, luta de treino e a gramática dos ganhos */}
       <QuestTracker
-        hidden={!!busy || !!statusBody || hospitalUp || jailUp || asleep || panelOpen || tutorialFight}
+        hidden={!!busy || !!statusBody || hospitalUp || jailUp || asleep || panelOpen || fightUp}
         refreshKey={questTick + mount}
         onTutorialFight={() => setTutorialFight(true)}
         onOpenGear={(tab) => setGearTab(tab)}
       />
+      {hallOpen && (
+        <HallPanel
+          onClose={() => setHallOpen(false)}
+          onFight={(ticket, foe) => {
+            setHallOpen(false)
+            setHallFight({ ticket, foe })
+          }}
+        />
+      )}
+      {hallFight && (
+        <LaminasView
+          body={avatar}
+          opened={hallFight}
+          onExit={() => {
+            setHallFight(null)
+            setHallOpen(true)
+          }}
+        />
+      )}
       {tutorialFight && (
         <LaminasView
           body={avatar}
