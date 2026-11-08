@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, Loader2, Play, Trophy, Users, Vote } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
+import { WaitingRoom } from "../../ui/kit/waiting-room"
 import { paintMapArts, type PaintMapArt } from "../engine/paint-map-art"
 import type { PaintMode } from "../sim/tuning"
 
@@ -97,6 +98,8 @@ export function PaintMapSelect({
   })
   const chosen = list.find((m) => m.id === sel) ?? list[0]
   const multi = mode !== "solo"
+  // na espera (sala aberta, sem aviso de versão velha) entra o cartão de espera de todos os minijogos
+  const waiting = !!joining && !stale
   // relógio da espera (20 s; depois as vagas vazias viram computadores)
   const [now, setNow] = useState(() => Date.now())
   const waitUntil = lobby?.until ?? 0
@@ -137,7 +140,7 @@ export function PaintMapSelect({
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 max-[759px]:px-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 max-[759px]:px-3" style={waiting ? { paddingBottom: 360 } : undefined}>
         {/* prévia grande do selecionado */}
         <Preview m={chosen} rec={records[chosen.id]} votes={votes[chosen.id] ?? 0} showVotes={!!joining} />
         <div className="mx-auto mt-3 grid max-w-[1180px] grid-cols-3 gap-3 max-[1020px]:grid-cols-2 max-[600px]:grid-cols-1">
@@ -147,7 +150,21 @@ export function PaintMapSelect({
         </div>
       </div>
 
-      <footer className="flex shrink-0 flex-wrap items-center gap-3 px-5 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3 max-[759px]:px-3" style={{ background: "rgba(8,11,16,0.9)", borderTop: `1px solid ${MM.border}` }}>
+      {/* a espera de todos os minijogos (ui/kit/waiting-room), presa embaixo: dá para votar no mapa enquanto espera */}
+      {waiting && lobby && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 pb-[env(safe-area-inset-bottom)]">
+          <WaitingRoom
+            docked
+            title={t("paintLobbyTitle", "Esperando jogadores…")}
+            text={t("paintLobbyHow", "Vote no mapa enquanto espera: o mais votado é o da partida.")}
+            seats={Array.from({ length: Math.max(1, lobby.n) }, (_, i) => ({ name: i === 0 ? t("paintLobbyYou", "Você") : t("paintLobbyPlayer", "Jogador {k}").replace("{k}", String(i + 1)) }))}
+            cap={lobby.cap}
+            until={lobby.until ?? 0}
+            onCancel={onCancel}
+          />
+        </div>
+      )}
+      <footer className={`flex shrink-0 flex-wrap items-center gap-3 px-5 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3 max-[759px]:px-3 ${waiting && lobby ? "hidden" : ""}`} style={{ background: "rgba(8,11,16,0.9)", borderTop: `1px solid ${MM.border}` }}>
         {joining ? (
           <>
             <div className="flex min-w-0 flex-1 items-center gap-2 text-[13px]" style={{ color: MM.muted }}>

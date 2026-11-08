@@ -22,6 +22,7 @@ import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { SAFE } from "../../ui/meu-mundo-view"
 import { SteamFrame, SteamTitle, Gear } from "../../ui/kit/steam/steam-frame"
+import { WaitingRoom } from "../../ui/kit/waiting-room"
 import { SP as ST } from "../../ui/kit/steam/steam-tokens"
 import type { BodyId } from "../../types"
 import { createJetpackGame, type FieldRow, type JetGameHandle, type JetHud, type JetNotice, type JetResult } from "../engine/jetpack-game"
@@ -169,11 +170,6 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
 
 function JetLobby({ solo, list, until, onCancel }: { solo: boolean; list: string[]; until: number; onCancel: () => void }) {
   const t = useTranslations("MeuMundo")
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 250)
-    return () => clearInterval(id)
-  }, [])
   if (solo) {
     return (
       <div className="absolute inset-0 grid place-items-center" style={{ background: BG, color: MM.text }}>
@@ -184,43 +180,17 @@ function JetLobby({ solo, list, until, onCancel }: { solo: boolean; list: string
       </div>
     )
   }
-  const left = until ? Math.max(0, Math.ceil((until - now) / 1000)) : null
   return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
-      <SteamFrame className="w-full max-w-[440px]" cornerSize={40}>
-        <div className="p-5 text-left max-[759px]:p-4" style={{ color: ST.text }}>
-          <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: ST.cyan }}>
-            <Users className="h-4 w-4" /> {t("jetModeMulti", "Multiplayer")}
-          </div>
-          <div className="mt-2 flex items-end justify-between gap-3">
-            <h2 className="text-[22px] font-black italic leading-tight">{t("jetLobbyTitle", "Esperando os pilotos…")}</h2>
-            <span className="text-[34px] font-black italic tabular-nums leading-none" style={{ color: ST.gold }} aria-live="polite">
-              {left === null ? <Loader2 className="h-7 w-7 animate-spin" /> : `0:${String(left).padStart(2, "0")}`}
-            </span>
-          </div>
-          <p className="mt-2 text-[13px] leading-snug [@media(max-height:520px)]:hidden" style={{ color: ST.muted }}>
-            {t("jetLobbyHowBots", "Quem entrar até o fim do tempo voa junto, no mesmo túnel. As vagas que sobrarem viram computadores. Ganha quem for mais longe.")}
-          </p>
-          <ol className="mt-3 grid grid-cols-2 gap-1.5 max-[420px]:grid-cols-1">
-            {Array.from({ length: MAX_PILOTS }, (_, i) => {
-              const e = list[i]
-              return (
-                <li key={i} className="flex items-center gap-2 px-2.5 py-2 text-[13.5px]" style={{ background: e ? MM.rubySoft : MM.card, color: e ? ST.text : ST.muted }}>
-                  {e ? <Flame className="h-4 w-4 shrink-0" style={{ color: HOT }} /> : <User className="h-4 w-4 shrink-0 opacity-50" />}
-                  <span className="min-w-0 truncate font-semibold">{e ?? t("jetLobbyBot", "computador, se ninguém entrar")}</span>
-                </li>
-              )
-            })}
-          </ol>
-          <p className="mt-2 text-[12.5px]" style={{ color: ST.muted }}>
-            {t("jetLobbyCount4", "{n} de 4 no túnel").replace("{n}", String(Math.max(1, list.length)))}
-          </p>
-          <button type="button" onClick={onCancel} className="mt-4 w-full px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: ST.text }}>
-            {t("jetLobbyCancel", "Sair da espera")}
-          </button>
-        </div>
-      </SteamFrame>
-    </div>
+    <WaitingRoom
+      background={BG}
+      title={t("jetLobbyTitle", "Esperando os pilotos…")}
+      text={t("jetLobbyHow20", "Quem entrar até o fim do tempo voa junto, no mesmo túnel. Ganha quem for mais longe.")}
+      seats={list.map((name) => ({ name, icon: <Flame className="h-4 w-4 shrink-0" style={{ color: HOT }} /> }))}
+      cap={MAX_PILOTS}
+      count={t("jetLobbyCount4", "{n} de 4 no túnel").replace("{n}", String(Math.max(1, list.length)))}
+      until={until}
+      onCancel={onCancel}
+    />
   )
 }
 

@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Bot, Flag, Flame, Loader2, Trophy, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { WaitingRoom } from "../../ui/kit/waiting-room"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
@@ -219,47 +220,18 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
 
 function RaceLobby({ names, until, onCancel }: { names: string[]; until: number; onCancel: () => void }) {
   const t = useTranslations("MeuMundo")
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 250)
-    return () => clearInterval(id)
-  }, [])
-  const left = until ? Math.max(0, Math.ceil((until - now) / 1000)) : null
-  const bots = Math.max(0, MAX_CARS - Math.max(1, names.length))
+  // a mesma espera de todos os minijogos (ui/kit/waiting-room)
   return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: "radial-gradient(120% 90% at 50% 0%, #2b4a66 0%, #111820 60%, #0b0f14 100%)" }}>
-      <div className="w-full max-w-[440px] rounded-none p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
-        <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: "#5FE1FF" }}>
-          <Users className="h-4 w-4" /> {t("corridaModeMulti", "Multiplayer")}
-        </div>
-        <div className="mt-2 flex items-end justify-between gap-3">
-          <h2 className="text-[22px] font-black italic leading-tight">{t("corridaLobbyTitle", "Esperando pilotos…")}</h2>
-          <span className="text-[34px] font-black italic tabular-nums leading-none" style={{ color: "#FF7A2F" }} aria-live="polite">
-            {left === null ? <Loader2 className="h-7 w-7 animate-spin" /> : `0:${String(left).padStart(2, "0")}`}
-          </span>
-        </div>
-        <p className="mt-2 text-[13px] leading-snug" style={{ color: MM.muted }}>
-          {t("corridaLobbyHow", "Quem entrar até o fim do tempo corre junto. As vagas que sobrarem viram computador — sempre 6 naves.")}
-        </p>
-        <ol className="mt-3 grid grid-cols-2 gap-1.5 max-[420px]:grid-cols-1">
-          {Array.from({ length: MAX_CARS }, (_, i) => {
-            const n = names[i]
-            return (
-              <li key={i} className="flex items-center gap-2 rounded-none px-2.5 py-2 text-[13.5px]" style={{ background: n ? MM.rubySoft : MM.card, color: n ? MM.text : MM.muted }}>
-                {n ? <Flag className="h-4 w-4 shrink-0" style={{ color: MM.gold }} /> : <Bot className="h-4 w-4 shrink-0" />}
-                <span className="min-w-0 truncate font-semibold">{n || t("corridaBot", "computador")}</span>
-              </li>
-            )
-          })}
-        </ol>
-        <p className="mt-2 text-[12.5px]" style={{ color: MM.muted }}>
-          {t("corridaLobbyCount", "{n} de 6 pilotos · {b} computadores se ninguém mais entrar").replace("{n}", String(Math.max(1, names.length))).replace("{b}", String(bots))}
-        </p>
-        <button type="button" onClick={onCancel} className="mt-4 w-full rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
-          {t("corridaLobbyCancel", "Sair da espera")}
-        </button>
-      </div>
-    </div>
+    <WaitingRoom
+      background="radial-gradient(120% 90% at 50% 0%, #2b4a66 0%, #111820 60%, #0b0f14 100%)"
+      title={t("corridaLobbyTitle", "Esperando pilotos…")}
+      text={t("corridaLobbyHow20", "Quem entrar até o fim do tempo corre junto.")}
+      seats={names.map((name) => ({ name, icon: <Flag className="h-4 w-4 shrink-0" style={{ color: MM.gold }} /> }))}
+      cap={MAX_CARS}
+      count={t("corridaLobbyCount20", "{n} de 6 pilotos").replace("{n}", String(Math.max(1, names.length)))}
+      until={until}
+      onCancel={onCancel}
+    />
   )
 }
 
