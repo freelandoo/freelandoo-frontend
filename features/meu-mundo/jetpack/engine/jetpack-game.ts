@@ -26,7 +26,7 @@ import { PointLight } from "@babylonjs/core/Lights/pointLight"
 import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
-import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { liveGamesBump } from "../../engine/game"
@@ -119,6 +119,14 @@ const REMOTE_CUT = 260
 const AWAY_MS = 6000
 /** Inclinação para a frente no voo (rad). */
 const PITCH = 0.3
+/**
+ * Pose do voo (pedido do Alex, como o astronauta do jetpack antigo): na
+ * largada o corpo fica em pé pedalando no ar, como quem vai cair; quando o voo
+ * começa de verdade ele DEITA para a frente (~55°, como na arte) e as pernas
+ * só balançam. O giro é em volta do meio do corpo (a caixa da regra não muda).
+ */
+const PITCH_UP = 0.08
+const PITCH_FLY = 1.1
 
 const isBody = (b: string): b is BodyId => (BODY_IDS as string[]).includes(b)
 
@@ -131,6 +139,41 @@ interface Remote {
   y: number
   lastX: number
   roll: number
+  legs: LegRig
+}
+
+/** Inclina o corpo em volta do MEIO (não dos pés): depois de place(), corrige a posição do invólucro. */
+function tiltAroundMiddle(char: Character, pitch: number) {
+  char.holder.rotation.x = pitch
+  char.holder.position.y += MID * (1 - Math.cos(pitch))
+  char.holder.position.z -= MID * Math.sin(pitch)
+}
+
+/** Pernas por cima da animação: pedalada (tread 1) ou balanço leve do voo (tread 0). */
+interface LegRig {
+  char: Character
+  tread: number
+  t: number
+}
+const LEG_BONES = ["mixamorig:LeftUpLeg", "mixamorig:RightUpLeg", "mixamorig:LeftLeg", "mixamorig:RightLeg"]
+const qTmp = new Quaternion()
+function applyLegs(r: LegRig) {
+  for (let i = 0; i < 4; i++) {
+    const n = r.char.bone(LEG_BONES[i])
+    if (!n) continue
+    if (!n.rotationQuaternion) n.rotationQuaternion = Quaternion.FromEulerVector(n.rotation)
+    const side = i % 2 ? Math.PI : 0
+    const ph = r.t * 9 + side
+    let a: number
+    if (i < 2) {
+      // coxa: pedalada grande na largada, balanço curto no voo (deitado, perna um pouco para trás)
+      a = r.tread * Math.sin(ph) * 0.65 + (1 - r.tread) * (Math.sin(r.t * 4.5 + side) * 0.1 + 0.22)
+    } else {
+      // joelho: dobra junto da pedalada; no voo, quase reto
+      a = -(r.tread * (0.55 + 0.5 * Math.sin(ph + 1.2)) + (1 - r.tread) * (0.12 + Math.sin(r.t * 4.5 + side + 1) * 0.06))
+    }
+    n.rotationQuaternion.multiplyInPlace(Quaternion.RotationAxisToRef(Vector3.Right(), a, qTmp))
+  }
 }
 
 export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
@@ -264,6 +307,10 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const char = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, opts.body, null, true, opts.look ?? "")
   char.setHeight(PILOT_H)
   const pack = new PackRig(kit, char.holder, "jt-me")
+  const legs: LegRig[] = [{ char, tread: 1, t: 0 }]
+  const legObs = scene.onAfterAnimationsObservable.add(() => {
+    for (const l of legs) applyLegs(l)
+  })
 
   // a velocidade do voo sai do atributo VELOCIDADE do personagem (a sala manda o fator)
   const myK = mp ? (mp.start.seats.find((q) => q.slot === mp.start.me)?.k ?? 1) : 1
@@ -307,7 +354,8 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (seat.slot === mp.start.me) continue
       const ch = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, isBody(seat.body) ? seat.body : "normal", seat.name || null, false, seat.look ?? "")
       ch.setHeight(PILOT_H)
-      remotes.push({ seat, char: ch, pack: new PackRig(kit, ch.holder, `jt-r${seat.slot}`), fall: 0, vy: 0, y: TUNING.startY, lastX: 0, roll: 0 })
+      remotes.push({ seat, char: ch, pack: new PackRig(kit, ch.holder, `jt-r${seat.slot}`), fall: 0, vy: 0, y: TUNING.startY, lastX: 0, roll: 0, legs: { char: ch, tread: 1, t: Math.random() * 3 } })
+      legs.push(remotes[remotes.length - 1].legs)
     }
   }
 
@@ -493,7 +541,11 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
         r.roll += (Math.max(-0.4, Math.min(0.4, -(s.x - r.lastX) / Math.max(dt, 1e-3) / TUNING.side) * 0.4) - r.roll) * Math.min(1, dt * 8)
         r.lastX = s.x
         r.char.place(s.x, s.z, 0, s.y - MID, 0)
-        r.char.holder.rotation.x = PITCH
+        // os outros: em pé pedalando na contagem, deitados no voo (como o meu)
+        const rf = phase !== "countdown"
+        r.legs.t += dt
+        r.legs.tread += ((rf ? 0 : 1) - r.legs.tread) * Math.min(1, dt * 3)
+        tiltAroundMiddle(r.char, rf ? PITCH_FLY : PITCH_UP)
         r.char.holder.rotation.z = r.roll
         r.pack.update(dt, now, !!(s.f & FLAG.thrust), !!(s.f & FLAG.empty))
       } else {
@@ -561,9 +613,14 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
 
     if (phase !== "end") {
       roll += (-(flight.vx / TUNING.side) * 0.42 - roll) * Math.min(1, dt * 10)
-      pitch += (PITCH - flight.vy * 0.02 - pitch) * Math.min(1, dt * 6)
+      // em pé pedalando até o voo começar de verdade (contagem e o pairar do começo); depois, deitado
+      const flying = phase === "run" && flight.armed
+      const wantPitch = flying ? Math.max(0.8, Math.min(1.3, PITCH_FLY - flight.vy * 0.02)) : PITCH_UP
+      pitch += (wantPitch - pitch) * Math.min(1, dt * (flying ? 3.2 : 6))
+      legs[0].t += dt
+      legs[0].tread += ((flying ? 0 : 1) - legs[0].tread) * Math.min(1, dt * 3)
       char.place(x, z, 0, y - MID, 0)
-      char.holder.rotation.x = pitch
+      tiltAroundMiddle(char, pitch)
       char.holder.rotation.z = roll
       pack.update(dt, now, phase === "run" ? flight.thrusting : false, flight.fuel <= 0)
     } else {
@@ -574,6 +631,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       spin += dt * (fallY > 0.36 ? 7 : 0)
       char.place(x, z, 0, fallY - MID * 0.4, 0)
       char.holder.rotation.x = pitch + spin
+      legs[0].tread = 0
       pack.update(dt, now, false, true)
       if (!ended && performance.now() - endAt > 1300) {
         ended = true
@@ -703,7 +761,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
 
   // conferência (harness)
   const w = window as unknown as Record<string, unknown>
-  w.__jetpack = () => ({ phase, level, z: flight.z, x: flight.x, y: flight.y, v: flight.v, vMax: speedAt(1e9, flight.k), k: flight.k, fuel: flight.fuel, cans: flight.cans, score: flight.score, alive: flight.alive, by: flight.crashedBy, obstacles: flight.course.obstacles.length })
+  w.__jetpack = () => ({ phase, level, pitch, holderRx: char.holder.rotation.x, armed: flight.armed, z: flight.z, x: flight.x, y: flight.y, v: flight.v, vMax: speedAt(1e9, flight.k), k: flight.k, fuel: flight.fuel, cans: flight.cans, score: flight.score, alive: flight.alive, by: flight.crashedBy, obstacles: flight.course.obstacles.length })
   w.__jetpackFlight = flight
   w.__jetpackScene = scene
   w.__jetPerf = () => perf.sample()
@@ -733,6 +791,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       delete w.__jetPerf
       perf.dispose()
       engine.onContextLostObservable.remove(lost)
+      scene.onAfterAnimationsObservable.remove(legObs)
       engine.stopRenderLoop()
       audio.dispose()
       vfx.dispose()
