@@ -56,14 +56,14 @@ async function fetchPaintSession(mode: string, roomId: string | null) {
 const paintJoin: PaintJoin = async (mode, hooks) => (await import("../paint/engine/join")).makePaintJoin(fetchPaintSession)(mode, hooks)
 
 /** Corrida em grupo (mm3d-39b): lugar na próxima largada (null = sem acesso). */
-async function fetchCorridaSession(ship: string) {
+async function fetchCorridaSession(ship: string, track?: string) {
   const token = getToken()
   if (!token) return null
-  const r = await postCorridaJoin(token, ship)
+  const r = await postCorridaJoin(token, ship, track)
   return r.ok ? r.data : null
 }
 /** A rede da corrida só baixa quando alguém escolhe Multiplayer (a nave da garagem vai junto, mm3d-49). */
-const corridaJoin: CorridaJoin = async (hooks) => (await import("../corrida/engine/net")).joinCorrida(() => fetchCorridaSession(hooks.ship), hooks)
+const corridaJoin: CorridaJoin = async (hooks) => (await import("../corrida/engine/net")).joinCorrida(() => fetchCorridaSession(hooks.ship, hooks.track), hooks)
 
 /** Rolê Noturno em grupo (mm3d-42): a rede só baixa quando alguém escolhe Multiplayer. */
 const noturnoJoin: NoturnoJoin = async (ride, body, hooks) =>

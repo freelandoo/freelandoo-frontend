@@ -31,6 +31,8 @@ export interface CorridaSeat {
 export interface CorridaStart {
   me: number
   seats: CorridaSeat[]
+  /** Circuito da sala (mm3d-74; servidor antigo não manda = a Baía). */
+  track?: string
 }
 export interface CorridaResultRow {
   car: number

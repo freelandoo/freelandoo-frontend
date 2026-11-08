@@ -25,6 +25,9 @@ import { createRaceGame, type RaceGameHandle, type RaceHud, type RaceMode, type 
 import { DEFAULT_SHIP, SHIPS, TUNING } from "../sim/race"
 import { shipArt } from "../engine/ship-art"
 import { GarageView } from "./garage-view"
+import { CircuitSelect } from "./circuit-select"
+import { circuitArt } from "../engine/circuit-art"
+import { DEFAULT_TRACK, TRACK_DEFS } from "../sim/circuits"
 import type { CorridaNet, CorridaNetStatus, CorridaStart } from "../engine/net"
 
 /** Entrar numa largada em grupo (null = a sala não abriu). */
@@ -34,6 +37,8 @@ export type CorridaJoin = (hooks: {
   onStatus: (s: CorridaNetStatus) => void
   /** Nave da garagem (os outros a veem; mm3d-49). */
   ship: string
+  /** Circuito escolhido (mm3d-74): a sala é por circuito. */
+  track: string
 }) => Promise<{ net: CorridaNet; start: CorridaStart } | null>
 
 export interface RaceViewProps {
@@ -50,8 +55,9 @@ const MAX_CARS = 6
 type Stage =
   | { kind: "garage" }
   | { kind: "menu" }
+  | { kind: "circuit"; mode: RaceMode }
   | { kind: "lobby"; ac: AbortController }
-  | { kind: "game"; mode: RaceMode; key: number; mp?: { net: CorridaNet; start: CorridaStart } }
+  | { kind: "game"; mode: RaceMode; track: string; key: number; mp?: { net: CorridaNet; start: CorridaStart } }
 
 /** Recorde do aparelho (conveniência local; some se o navegador limpar). */
 interface Records {
@@ -60,8 +66,27 @@ interface Records {
   lap: number | null
 }
 const REC_KEY = "mm-corrida-recordes-v1"
+/** Recorde por circuito (mm3d-74): a Baía segue na chave de antes. */
+const recKey = (track: string) => (track === DEFAULT_TRACK ? REC_KEY : `${REC_KEY}:${track}`)
 /** Nave escolhida na garagem (conveniência do aparelho; sem ela, a padrão). */
 const SHIP_KEY = "mm-corrida-nave-v1"
+/** Último circuito escolhido (conveniência do aparelho). */
+const TRACK_KEY = "mm-corrida-pista-v1"
+function loadTrack(): string {
+  try {
+    const id = localStorage.getItem(TRACK_KEY)
+    return id && TRACK_DEFS.some((d) => d.id === id) ? id : DEFAULT_TRACK
+  } catch {
+    return DEFAULT_TRACK
+  }
+}
+function saveTrack(id: string) {
+  try {
+    localStorage.setItem(TRACK_KEY, id)
+  } catch {
+    /* sem armazenamento */
+  }
+}
 function loadShip(): string {
   try {
     const id = localStorage.getItem(SHIP_KEY)
@@ -77,17 +102,17 @@ function saveShip(id: string) {
     /* sem armazenamento */
   }
 }
-function loadRecords(): Records {
+function loadRecords(track: string = DEFAULT_TRACK): Records {
   try {
-    const r = JSON.parse(localStorage.getItem(REC_KEY) || "null") as Partial<Records> | null
+    const r = JSON.parse(localStorage.getItem(recKey(track)) || "null") as Partial<Records> | null
     return { race: r?.race ?? null, time: r?.time ?? null, lap: r?.lap ?? null }
   } catch {
     return { race: null, time: null, lap: null }
   }
 }
-function saveRecords(r: Records) {
+function saveRecords(r: Records, track: string = DEFAULT_TRACK) {
   try {
-    localStorage.setItem(REC_KEY, JSON.stringify(r))
+    localStorage.setItem(recKey(track), JSON.stringify(r))
   } catch {
     /* sem armazenamento */
   }
@@ -104,15 +129,17 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
   const [stage, setStage] = useState<Stage>({ kind: "garage" })
   const [ship, setShip] = useState(DEFAULT_SHIP)
   useEffect(() => setShip(loadShip()), [])
+  const [track, setTrack] = useState(DEFAULT_TRACK)
+  useEffect(() => setTrack(loadTrack()), [])
   const [lobby, setLobby] = useState<{ names: string[]; until: number }>({ names: [], until: 0 })
   const [error, setError] = useState<string | null>(null)
   const seq = useRef(0)
 
   const play = useCallback(
-    async (mode: RaceMode) => {
+    async (mode: RaceMode, trackId: string) => {
       setError(null)
       if (mode !== "multi") {
-        setStage({ kind: "game", mode, key: ++seq.current })
+        setStage({ kind: "game", mode, track: trackId, key: ++seq.current })
         return
       }
       if (!join) return
@@ -124,13 +151,13 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
         setStage({ kind: "menu" })
       }
       try {
-        const got = await join({ signal: ac.signal, onLobby: (names, until) => setLobby({ names, until }), onStatus: () => {}, ship })
+        const got = await join({ signal: ac.signal, onLobby: (names, until) => setLobby({ names, until }), onStatus: () => {}, ship, track: trackId })
         if (ac.signal.aborted) {
           got?.net.dispose()
           return
         }
         if (!got) return fail()
-        setStage({ kind: "game", mode: "multi", key: ++seq.current, mp: got })
+        setStage({ kind: "game", mode: "multi", track: got.start.track ?? trackId, key: ++seq.current, mp: got })
       } catch {
         if (!ac.signal.aborted) fail()
       }
@@ -146,9 +173,22 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
           mode={stage.mode}
           name={name}
           ship={ship}
+          track={stage.track}
           mp={stage.mp}
-          onAgain={() => void play(stage.mode)}
+          onAgain={() => void play(stage.mode, stage.track)}
           onMenu={() => setStage({ kind: "menu" })}
+        />
+      ) : stage.kind === "circuit" ? (
+        <CircuitSelect
+          mode={stage.mode}
+          current={track}
+          records={(id) => loadRecords(id)}
+          onBack={() => setStage({ kind: "menu" })}
+          onRun={(id) => {
+            setTrack(id)
+            saveTrack(id)
+            void play(stage.mode, id)
+          }}
         />
       ) : stage.kind === "lobby" ? (
         <RaceLobby
@@ -170,7 +210,7 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
           onExit={onExit}
         />
       ) : (
-        <RaceMenu onPlay={(mode) => void play(mode)} onExit={onExit} multi={!!join} error={error} ship={ship} onGarage={() => setStage({ kind: "garage" })} />
+        <RaceMenu onPlay={(mode) => setStage({ kind: "circuit", mode })} onExit={onExit} multi={!!join} error={error} ship={ship} track={track} onGarage={() => setStage({ kind: "garage" })} />
       )}
     </div>
   )
@@ -232,6 +272,7 @@ function RaceMenu({
   multi,
   error,
   ship,
+  track,
   onGarage,
 }: {
   onPlay: (m: RaceMode) => void
@@ -239,11 +280,13 @@ function RaceMenu({
   multi: boolean
   error: string | null
   ship: string
+  track: string
   onGarage: () => void
 }) {
   const t = useTranslations("MeuMundo")
   const [rec, setRec] = useState<Records>({ race: null, time: null, lap: null })
-  useEffect(() => setRec(loadRecords()), [])
+  useEffect(() => setRec(loadRecords(track)), [track])
+  const art = circuitArt(track)
   const modes: { mode: RaceMode; icon: React.ReactNode; title: string; sub: string }[] = [
     { mode: "race", icon: <Flag className="h-5 w-5" />, title: t("corridaModeSolo", "Sozinho"), sub: t("corridaModeRaceSub", "Você contra 5 computadores · 3 voltas") },
     ...(multi
@@ -260,13 +303,13 @@ function RaceMenu({
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: "#5FE1FF" }}>
-              <Rocket className="h-4 w-4" /> {t("corridaKicker", "Baía Suspensa")}
+              <Rocket className="h-4 w-4" /> {t(art.nameKey, art.name)}
             </div>
             <h1 className="mt-1.5 text-[30px] font-black italic leading-none tracking-tight max-[759px]:text-[25px]">
               ANTI<span style={{ color: "#FF7A2F" }}>GRAVIDADE</span>
             </h1>
             <p className="mt-2 text-[14px] leading-snug" style={{ color: MM.muted }}>
-              {t("corridaPitch", "Naves que flutuam sobre a pista. Pegue o turbo, salte dos penhascos e voe até a chegada.")}
+              {t("corridaPitch2", "Naves que flutuam sobre a pista. Escolha o modo e depois o circuito: seis pistas com loops, quedas e túneis.")}
             </p>
           </div>
           <button type="button" aria-label={t("corridaLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
@@ -363,6 +406,7 @@ function RaceMenu({
 
 function RaceScreen({
   mode,
+  track,
   name,
   ship,
   mp,
@@ -372,6 +416,7 @@ function RaceScreen({
   mode: RaceMode
   name?: string
   ship: string
+  track: string
   mp?: { net: CorridaNet; start: CorridaStart }
   onAgain: () => void
   onMenu: () => void
@@ -431,14 +476,14 @@ function RaceScreen({
           break
         case "finish": {
           if (mode === "multi") break // em grupo o recorde não conta (o resultado é da sala)
-          const rec = loadRecords()
+          const rec = loadRecords(track)
           const key = mode === "race" ? "race" : "time"
           let better = false
           if (rec[key] === null || n.time < (rec[key] as number)) {
             rec[key] = n.time
             better = true
           }
-          saveRecords(rec)
+          saveRecords(rec, track)
           setNewRecord(better)
           break
         }
@@ -459,6 +504,7 @@ function RaceScreen({
         mode,
         playerName: name || textRef.current("corridaYou", "Você"),
         ship,
+        track,
         touch: touchRef.current,
         net: mp,
         onReady: () => alive && setStatus("ready"),
@@ -466,8 +512,8 @@ function RaceScreen({
           if (!alive) return
           setHud(h)
           if (h.best !== null) {
-            const rec = loadRecords()
-            if (rec.lap === null || h.best < rec.lap) saveRecords({ ...rec, lap: h.best })
+            const rec = loadRecords(track)
+            if (rec.lap === null || h.best < rec.lap) saveRecords({ ...rec, lap: h.best }, track)
           }
         },
         onNotice,
@@ -490,7 +536,7 @@ function RaceScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [mode, name, mp, ship])
+  }, [mode, name, mp, ship, track])
 
   const toggleMute = useCallback(() => {
     setMuted((m) => {

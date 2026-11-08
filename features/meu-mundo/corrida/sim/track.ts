@@ -16,7 +16,12 @@ export const STEP = 2
 export const BANK_MAX = 0.52
 export const BANK_K = 46
 
-export type PieceKind = "road" | "ramp" | "gap"
+/**
+ * mm3d-74: "loop" = volta vertical inteira (360°) com um deslocamento de lado
+ * (`side`), a nave fica PRESA à pista; "drop" = estrada (descida/subida
+ * íngreme, espiral) em que a nave não decola — a antigravidade segura.
+ */
+export type PieceKind = "road" | "ramp" | "gap" | "loop" | "drop"
 
 export interface Piece {
   len: number
@@ -31,6 +36,10 @@ export interface Piece {
   orbs?: [number, number][]
   /** Arco de neon na posição (m) dentro da peça. */
   gates?: number[]
+  /** Loop: metros para a direita no fim da volta (−: esquerda). Padrão 22. */
+  side?: number
+  /** Túnel holográfico em toda a peça (só desenho). */
+  tunnel?: boolean
 }
 
 export interface TrackDef {
@@ -63,6 +72,12 @@ export interface Gap {
   ramp: number
 }
 
+/** Trecho (início e fim em s). */
+export interface Span {
+  s0: number
+  s1: number
+}
+
 export interface Track {
   id: string
   width: number
@@ -79,8 +94,13 @@ export interface Track {
   bank: Float32Array
   /** Curvatura com sinal (1/m, + = para a direita). */
   curv: Float32Array
-  /** 1 = sem chão (vão), 2 = rampa. */
+  /** 1 = sem chão (vão), 2 = rampa, 3 = loop (presa), 4 = estrada presa (queda, espiral). */
   flag: Uint8Array
+  /** Ângulo do loop (rad, −π…π; 0 fora do loop): o quanto a pista girou para cima em volta do eixo lateral. */
+  loop: Float32Array
+  /** Túneis holográficos e loops (desenho e câmera). */
+  tunnels: Span[]
+  loops: (Span & { r: number })[]
   startS: number
   pads: Pad[]
   orbs: Orb[]
@@ -100,6 +120,11 @@ export interface TrackPoint {
   curv: number
   gap: boolean
   ramp: boolean
+  /** mm3d-74: no loop ou numa queda presa a nave não decola. */
+  glue: boolean
+  /** Ângulo do loop (0 fora). */
+  loop: number
+  inLoop: boolean
 }
 
 const DEG = Math.PI / 180
@@ -122,6 +147,10 @@ interface Dense {
   z: number
   y: number
   flag: number
+  /** Rumo da tartaruga (no loop é o rumo da volta, não a tangente). */
+  head: number
+  /** Ângulo do loop (0 fora). */
+  la: number
 }
 
 export function buildTrack(def: TrackDef): Track {
@@ -143,6 +172,29 @@ export function buildTrack(def: TrackDef): Track {
     const turn = (p.turn ?? 0) * DEG
     const dy = p.dy ?? 0
     const y0 = y
+    if (kind === "loop") {
+      // volta vertical: frente R·senθ, cima R·(1−cosθ), de lado suave até `side`
+      const R = p.len / (2 * Math.PI)
+      const side = p.side ?? 22
+      const x0 = x
+      const z0 = z
+      const fx = Math.sin(yaw)
+      const fz = Math.cos(yaw)
+      const rx = Math.cos(yaw)
+      const rz = -Math.sin(yaw)
+      for (let k = 0; k < n; k++) {
+        const tt = (k + 1) / n
+        const th = 2 * Math.PI * tt
+        const lat = side * smooth(tt)
+        x = x0 + fx * R * Math.sin(th) + rx * lat
+        z = z0 + fz * R * Math.sin(th) + rz * lat
+        y = y0 + R * (1 - Math.cos(th))
+        dense.push({ x, z, y, flag: 3, head: yaw, la: wrapAngle(th) })
+      }
+      y = y0
+      run += n * fine
+      return
+    }
     for (let k = 0; k < n; k++) {
       yaw += turn / n
       x += Math.sin(yaw) * fine
@@ -151,7 +203,7 @@ export function buildTrack(def: TrackDef): Track {
       // estrada: sobe/desce suave (inclinação zero nas pontas); rampa: cada vez mais
       // íngreme (decola no fim); vão: linha reta até o pouso (só para referência).
       y = kind === "ramp" ? y0 + dy * tt * tt : kind === "gap" ? y0 + dy * tt : y0 + dy * smooth(tt)
-      dense.push({ x, z, y, flag: kind === "gap" ? 1 : kind === "ramp" ? 2 : 0 })
+      dense.push({ x, z, y, flag: kind === "gap" ? 1 : kind === "ramp" ? 2 : kind === "drop" ? 4 : 0, head: yaw, la: 0 })
     }
     run += n * fine
   })
@@ -176,6 +228,11 @@ export function buildTrack(def: TrackDef): Track {
         z: h00 * ez + h10 * t0.z + h11 * t1.z,
         y: ey + (def.startY - ey) * smooth(t),
         flag: 0,
+        head: Math.atan2(
+          (6 * t * t - 6 * t) * ex + (3 * t * t - 4 * t + 1) * t0.x + (3 * t * t - 2 * t) * t1.x,
+          (6 * t * t - 6 * t) * ez + (3 * t * t - 4 * t + 1) * t0.z + (3 * t * t - 2 * t) * t1.z,
+        ),
+        la: 0,
       })
     }
   }
@@ -183,11 +240,14 @@ export function buildTrack(def: TrackDef): Track {
   const cum = new Float64Array(dense.length + 1)
   let px = 0
   let pz = 0
+  let py = def.startY
   for (let i = 0; i < dense.length; i++) {
     const d = dense[i]
-    cum[i + 1] = cum[i] + Math.hypot(d.x - px, d.z - pz)
+    // no loop o comprimento é o de verdade (a pista sobe na vertical)
+    cum[i + 1] = cum[i] + (d.flag === 3 ? Math.hypot(d.x - px, d.z - pz, d.y - py) : Math.hypot(d.x - px, d.z - pz))
     px = d.x
     pz = d.z
+    py = d.y
   }
   const total = cum[dense.length]
   const n = Math.round(total / STEP)
@@ -206,6 +266,9 @@ export function buildTrack(def: TrackDef): Track {
     bank: new Float32Array(n),
     curv: new Float32Array(n),
     flag: new Uint8Array(n),
+    loop: new Float32Array(n),
+    tunnels: [],
+    loops: [],
     startS: def.startS,
     pads: [],
     orbs: [],
@@ -216,10 +279,11 @@ export function buildTrack(def: TrackDef): Track {
   /** Posição na volta (m) de uma distância da tartaruga (antes da reamostragem). */
   const toS = (d: number) => Math.min(length - STEP, d / scale)
   let j = 0
+  const head = new Float32Array(n)
   for (let i = 0; i < n; i++) {
     const want = i * STEP * scale
     while (j < dense.length - 1 && cum[j + 1] < want) j++
-    const a = j === 0 ? { x: 0, z: 0, y: def.startY, flag: dense[0].flag } : dense[j - 1]
+    const a = j === 0 ? { x: 0, z: 0, y: def.startY, flag: dense[0].flag, head: 0, la: 0 } : dense[j - 1]
     const b = dense[j]
     const span = cum[j + 1] - cum[j] || 1
     const f = Math.min(1, Math.max(0, (want - cum[j]) / span))
@@ -227,6 +291,8 @@ export function buildTrack(def: TrackDef): Track {
     T.z[i] = a.z + (b.z - a.z) * f
     T.y[i] = a.y + (b.y - a.y) * f
     T.flag[i] = b.flag
+    head[i] = a.head + wrapAngle(b.head - a.head) * f
+    T.loop[i] = b.flag === 3 ? a.la + wrapAngle(b.la - a.la) * f : 0
   }
   // rumo, inclinação e curvatura por diferenças centradas
   for (let i = 0; i < n; i++) {
@@ -235,6 +301,17 @@ export function buildTrack(def: TrackDef): Track {
     T.yaw[i] = Math.atan2(T.x[q] - T.x[p], T.z[q] - T.z[p])
     T.slope[i] = (T.y[q] - T.y[p]) / (2 * STEP)
   }
+  // mm3d-74: no loop (e encostado nele) o rumo é o da tartaruga — a tangente
+  // vira para trás no alto — e a inclinação "da estrada" não existe
+  const nearLoop = (i: number, m: number) => {
+    for (let k = -m; k <= m; k++) if (T.flag[(i + k + n) % n] === 3) return true
+    return false
+  }
+  for (let i = 0; i < n; i++)
+    if (nearLoop(i, 2)) {
+      T.yaw[i] = head[i]
+      if (T.flag[i] === 3) T.slope[i] = 0
+    }
   // na ponta da rampa a diferença é para trás (a da frente já é o vão) e, no
   // vão, a inclinação "da pista" é a da rampa que acabou (o voo é balístico)
   for (let i = 0; i < n; i++) {
@@ -264,6 +341,12 @@ export function buildTrack(def: TrackDef): Track {
     for (let k = -win2; k <= win2; k++) c += raw[(i + k + n) % n]
     T.bank[i] = c / (2 * win2 + 1)
   }
+  // o loop é reto (sem inclinação lateral); some aos poucos na entrada e na saída
+  for (let i = 0; i < n; i++) {
+    let d = 99
+    for (let k = -15; k <= 15; k++) if (T.flag[(i + k + n) % n] === 3) d = Math.min(d, Math.abs(k))
+    if (d < 99) T.bank[i] *= Math.min(1, d / 15)
+  }
   for (let i = 0; i < n; i++) {
     const b = T.bounds
     b.x0 = Math.min(b.x0, T.x[i])
@@ -286,6 +369,8 @@ export function buildTrack(def: TrackDef): Track {
     }
     for (const [at, u] of p.orbs ?? []) T.orbs.push({ id: orbId++, s: toS(base + at), u })
     for (const at of p.gates ?? []) T.gates.push(toS(base + at))
+    if (p.tunnel) T.tunnels.push({ s0: toS(base), s1: toS(base + p.len) })
+    if (p.kind === "loop") T.loops.push({ s0: toS(base), s1: toS(base + p.len), r: p.len / (2 * Math.PI) })
     if (p.kind === "gap") {
       const prev = def.pieces[m.i - 1]
       const ramp = prev && prev.kind === "ramp" ? prev.len : 0
@@ -314,6 +399,9 @@ export function trackAt(t: Track, s: number, out?: TrackPoint): TrackPoint {
   // vão: só quando as duas amostras são vão (as bordas ainda têm chão)
   o.gap = t.flag[i] === 1 && t.flag[k] === 1
   o.ramp = t.flag[i] === 2
+  o.inLoop = t.flag[i] === 3 || t.flag[k] === 3
+  o.glue = o.inLoop || t.flag[i] === 4 || t.flag[k] === 4
+  o.loop = o.inLoop ? t.loop[i] + wrapAngle(t.loop[k] - t.loop[i]) * f : 0
   return o
 }
 

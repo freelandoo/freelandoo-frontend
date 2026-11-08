@@ -399,8 +399,10 @@ export class CarFleet {
     const visible = !look.down
     if (s.root.isEnabled() !== visible) s.root.setEnabled(visible)
     const bob = look.air ? 0 : Math.sin(s.flicker * 0.12 + i) * 0.05
-    s.root.position.set(pose.x, pose.y + HOVER + bob, pose.z)
     Quaternion.RotationYawPitchRollToRef(pose.yaw, -pose.pitch, -pose.roll, this.tmpQ)
+    // mm3d-74: flutua no "cima" da nave (no loop, de cabeça para baixo, para dentro do anel)
+    this.tmpV.set(0, 1, 0).applyRotationQuaternionInPlace(this.tmpQ)
+    s.root.position.set(pose.x + this.tmpV.x * (HOVER + bob), pose.y + this.tmpV.y * (HOVER + bob), pose.z + this.tmpV.z * (HOVER + bob))
     if (!s.root.rotationQuaternion) s.root.rotationQuaternion = new Quaternion()
     s.root.rotationQuaternion.copyFrom(this.tmpQ)
     s.root.computeWorldMatrix(true)
@@ -472,7 +474,7 @@ export class CarFleet {
       this.trails.feed(f, this.tmpV.x, this.tmpV.y, this.tmpV.z, st, look.boost, dt)
     }
     // brilho da flutuação (deitado no chão, perto quando no chão)
-    const hs = look.down ? 0.0001 : look.air ? 0.0001 : 3.4
+    const hs = look.down || look.air || Math.abs(pose.pitch) > 0.6 ? 0.0001 : 3.4
     Quaternion.FromEulerAnglesToRef(-pose.pitch, pose.yaw, 0, this.tmpQ)
     Matrix.ComposeToRef(this.sc.set(hs * 0.8, 1, hs * 1.4), this.tmpQ, this.at.set(pose.x, pose.y + 0.06, pose.z), this.tmpM)
     this.tmpM.copyToArray(this.hoverBuf, i * 16)

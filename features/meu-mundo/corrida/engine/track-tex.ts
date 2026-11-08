@@ -31,6 +31,8 @@ export interface TrackTextures {
   ramp: DynamicTexture
   pad: DynamicTexture
   rail: DynamicTexture
+  inset: DynamicTexture
+  holo: DynamicTexture
   dispose(): void
 }
 
@@ -256,31 +258,38 @@ function drawSide(g: G, w: number, h: number, r: () => number, height: boolean) 
 }
 
 // ── barreira: rodapé, faixa amarela/preta, painéis cinza, capa ───────────
-// Linhas de v (de baixo para cima): 0–0.14 rodapé escuro (com o trilho
-// ciano na geometria), 0.14–0.44 faixa de alerta, 0.44–0.9 painéis, 0.9–1 capa.
-export const WALL_V = { base: 0.14, hazard: 0.44, panel: 0.9 }
+// Linhas de v (de baixo para cima): 0–0.12 rodapé escuro (com o trilho
+// ciano na geometria), 0.12–0.62 chevrons amarelos e pretos apontando para a
+// FRENTE (mm3d-74, como nas referências do Alex), 0.62–0.9 painéis, 0.9–1 capa.
+export const WALL_V = { base: 0.12, hazard: 0.62, panel: 0.9 }
 function drawWall(g: G, w: number, h: number, r: () => number, height: boolean) {
   const Y = (v: number) => h - v * h // v para cima
   // rodapé
   g.fillStyle = height ? "#606060" : "#24272b"
   g.fillRect(0, Y(WALL_V.base), w, Y(0) - Y(WALL_V.base))
-  // faixa de alerta: diagonais amarelas e pretas (inclinadas "para a frente")
+  // faixa de alerta: chevrons ">" amarelos sobre preto, apontando para +u (a
+  // frente da pista nos dois lados: o u da barreira cresce com s)
   const y0 = Y(WALL_V.hazard)
   const y1 = Y(WALL_V.base)
   g.save()
   g.beginPath()
   g.rect(0, y0, w, y1 - y0)
   g.clip()
-  g.fillStyle = height ? "#909090" : "#e6b012"
-  g.fillRect(0, y0, w, y1 - y0)
-  const band = (y1 - y0) * 0.9
   g.fillStyle = height ? "#707070" : "#141414"
-  for (let x = -band * 2; x < w + band * 2; x += band * 2) {
+  g.fillRect(0, y0, w, y1 - y0)
+  const hh = y1 - y0
+  const ym = (y0 + y1) / 2
+  const step = w / 4
+  const thick = step * 0.42
+  g.fillStyle = height ? "#9a9a9a" : "#e8b014"
+  for (let x = -step; x < w + step; x += step) {
     g.beginPath()
-    g.moveTo(x, y1)
-    g.lineTo(x + band, y1)
-    g.lineTo(x + band + (y1 - y0), y0)
-    g.lineTo(x + (y1 - y0), y0)
+    g.moveTo(x, y0 + hh * 0.08)
+    g.lineTo(x + thick, y0 + hh * 0.08)
+    g.lineTo(x + thick + hh * 0.42, ym)
+    g.lineTo(x + thick, y1 - hh * 0.08)
+    g.lineTo(x, y1 - hh * 0.08)
+    g.lineTo(x + hh * 0.42, ym)
     g.closePath()
     g.fill()
   }
@@ -302,7 +311,7 @@ function drawWall(g: G, w: number, h: number, r: () => number, height: boolean) 
       g.fillRect(x0 + 2, p0 + 2, pw - 4, p1 - p0 - 4)
       // grelha de ventilação e plaqueta
       g.fillStyle = "rgba(0,0,0,0.35)"
-      for (let k2 = 0; k2 < 5; k2++) g.fillRect(x0 + pw * 0.12, p0 + (p1 - p0) * (0.28 + k2 * 0.09), pw * 0.22, 2)
+      for (let k2 = 0; k2 < 3; k2++) g.fillRect(x0 + pw * 0.12, p0 + (p1 - p0) * (0.3 + k2 * 0.18), pw * 0.22, 2)
       g.fillStyle = "rgba(0,0,0,0.22)"
       g.fillRect(x0 + pw * 0.5, p0 + (p1 - p0) * 0.3, pw * 0.38, (p1 - p0) * 0.4)
       g.fillStyle = "rgba(0,223,255,0.55)"
@@ -314,7 +323,7 @@ function drawWall(g: G, w: number, h: number, r: () => number, height: boolean) 
       g.fillStyle = "#909090"
       g.fillRect(x0 + 2, p0 + 2, pw - 4, p1 - p0 - 4)
       g.fillStyle = "#6a6a6a"
-      for (let k2 = 0; k2 < 5; k2++) g.fillRect(x0 + pw * 0.12, p0 + (p1 - p0) * (0.28 + k2 * 0.09), pw * 0.22, 2)
+      for (let k2 = 0; k2 < 3; k2++) g.fillRect(x0 + pw * 0.12, p0 + (p1 - p0) * (0.3 + k2 * 0.18), pw * 0.22, 2)
     }
     g.fillStyle = height ? "#303030" : "#1a1c1f"
     g.fillRect(x0, p0, 2, p1 - p0)
@@ -419,6 +428,53 @@ function drawPad(g: G, w: number, h: number) {
   g.fillRect(w - 3, 0, 3, h)
 }
 
+// ── painel ciano embutido nas laterais (sem setas: não é placa de turbo) ──
+function drawInset(g: G, w: number, h: number) {
+  g.fillStyle = "#03080d"
+  g.fillRect(0, 0, w, h)
+  const cell = w / 6
+  for (let y = cell * 0.5; y < h - cell * 0.3; y += cell)
+    for (let x = cell * 0.5; x < w - cell * 0.3; x += cell) {
+      g.fillStyle = "rgba(0,200,240,0.55)"
+      g.fillRect(x - cell * 0.38, y - cell * 0.38, cell * 0.76, cell * 0.76)
+      g.fillStyle = "rgba(170,250,255,0.35)"
+      g.fillRect(x - cell * 0.38, y - cell * 0.38, cell * 0.76, cell * 0.12)
+    }
+  g.strokeStyle = "#7ff3ff"
+  g.lineWidth = 3
+  g.strokeRect(2, 2, w - 4, h - 4)
+}
+
+// ── painel do túnel holográfico: grade fina + hexágonos, fundo preto (soma) ─
+function drawHolo(g: G, w: number, h: number) {
+  g.fillStyle = "#000"
+  g.fillRect(0, 0, w, h)
+  g.strokeStyle = "rgba(0,200,255,0.55)"
+  g.lineWidth = 1.5
+  const r = w / 10
+  for (let row = 0, y = 0; y < h + r; row++, y += r * 1.5)
+    for (let x = row % 2 ? r * 0.866 : 0; x < w + r; x += r * 1.732) {
+      g.beginPath()
+      for (let k = 0; k <= 6; k++) {
+        const a = (Math.PI / 3) * k + Math.PI / 6
+        const px = x + Math.cos(a) * r * 0.92
+        const py = y + Math.sin(a) * r * 0.92
+        if (k === 0) g.moveTo(px, py)
+        else g.lineTo(px, py)
+      }
+      g.stroke()
+    }
+  // faixas de luz ao longo (as "costuras" do túnel)
+  for (const fx of [0.02, 0.5, 0.98]) {
+    const grad = g.createLinearGradient(fx * w - 8, 0, fx * w + 8, 0)
+    grad.addColorStop(0, "rgba(0,0,0,0)")
+    grad.addColorStop(0.5, "rgba(140,245,255,0.95)")
+    grad.addColorStop(1, "rgba(0,0,0,0)")
+    g.fillStyle = grad
+    g.fillRect(fx * w - 8, 0, 16, h)
+  }
+}
+
 // ── trilho de luz: degradê transversal (meio branco-ciano, bordas apagadas) ─
 function drawRail(g: G, w: number, h: number) {
   const grad = g.createLinearGradient(0, 0, w, 0)
@@ -474,6 +530,10 @@ export function createTrackTextures(scene: Scene, mobile: boolean): TrackTexture
   drawPad(padT.g, S / 2, S)
   const railT = make(scene, "corrida-rail", 32, 128, false)
   drawRail(railT.g, 32, 128)
+  const insetT = make(scene, "corrida-inset", 64, 192, false)
+  drawInset(insetT.g, 64, 192)
+  const holoT = make(scene, "corrida-holo", mobile ? 128 : 256, mobile ? 128 : 256)
+  drawHolo(holoT.g, mobile ? 128 : 256, mobile ? 128 : 256)
   return {
     deck: done(deckT.tex),
     deckN,
@@ -485,6 +545,8 @@ export function createTrackTextures(scene: Scene, mobile: boolean): TrackTexture
     ramp: done(rampT.tex),
     pad: done(padT.tex),
     rail: done(railT.tex),
+    inset: done(insetT.tex),
+    holo: done(holoT.tex),
     dispose() {
       for (const t of all) t.dispose()
     },

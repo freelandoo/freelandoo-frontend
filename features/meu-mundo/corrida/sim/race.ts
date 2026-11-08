@@ -393,8 +393,9 @@ export class Race {
       const g = inp.throttle > 0 ? TUNING.glideGravity : TUNING.gravity
       c.vy -= g * dt
       c.Y += c.vy * dt
-      if (!q.gap && c.Y <= ground) {
-        if (c.Y < ground - 2.2) {
+      // mm3d-74: entrar no ar num trecho preso (loop, queda) = a pista puxa a nave
+      if (!q.gap && (c.Y <= ground || q.glue)) {
+        if (!q.glue && c.Y < ground - 2.2) {
           this.fall(c, out) // passou por baixo da pista
           return
         }
@@ -417,7 +418,7 @@ export class Race {
       const vy = c.v * p.slope
       const bankDrop = surfaceY(q, c.u) - q.y - (surfaceY(p, uFrom) - p.y)
       const next = c.Y + vy * dt - 0.5 * TUNING.gravity * dt * dt + Math.min(0, bankDrop)
-      if (q.gap || next > ground + 0.04) {
+      if (!q.glue && (q.gap || next > ground + 0.04)) {
         c.air = true
         c.vy = vy
         c.Y = next
@@ -688,7 +689,8 @@ export function carPose(race: Race, c: Car, out: CarPose): CarPose {
   out.z = w.z
   out.y = c.Y
   out.yaw = c.yaw
-  out.pitch = c.air ? Math.max(-0.45, Math.min(0.35, Math.atan2(c.vy, Math.max(8, c.v)) * 0.7)) : Math.atan(p.slope)
+  // mm3d-74: no loop a nave gira junto com a pista (nariz para cima até a volta inteira)
+  out.pitch = p.inLoop ? p.loop : c.air ? Math.max(-0.45, Math.min(0.35, Math.atan2(c.vy, Math.max(8, c.v)) * 0.7)) : Math.atan(p.slope)
   out.roll = (c.air ? 0 : p.bank) + c.steerNow * Math.min(1, c.v / 30) * 0.16
   return out
 }

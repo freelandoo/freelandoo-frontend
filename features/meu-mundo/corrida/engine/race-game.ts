@@ -25,9 +25,12 @@ import { PostProcess } from "@babylonjs/core/PostProcesses/postProcess"
 import { Effect } from "@babylonjs/core/Materials/effect"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
-import { buildTrack, BAIA, trackAt, surfaceY, type Track, type TrackPoint } from "../sim/track"
+import { trackAt, surfaceY, type Track, type TrackPoint } from "../sim/track"
+import { trackOf, DEFAULT_TRACK } from "../sim/circuits"
+import { circuitArt } from "./circuit-art"
+import { buildEnvironment, groundYOf } from "./track-env"
 import { Race, TUNING, CAR_COLORS, SHIPS, DEFAULT_SHIP, carPose, type CarInput, type CarPose, type RaceEvent, type RaceSeat, type RemoteCar } from "../sim/race"
-import { buildTrackView, NIGHT_HORIZON } from "./track-view"
+import { buildTrackView } from "./track-view"
 import { CarFleet, HOVER } from "./car-view"
 import { RaceAudio } from "./audio"
 import type { CorridaNet, CorridaNetStatus, CorridaStart } from "./net"
@@ -89,6 +92,8 @@ export interface RaceGameOptions {
   playerName: string
   /** Nave escolhida na garagem (mm3d-49). */
   ship?: string
+  /** Circuito escolhido (mm3d-74; sem = a Baía Suspensa). Em grupo vale o da sala. */
+  track?: string
   /** Celular: a nave acelera sozinha (puxar o joystick para trás freia). */
   touch?: boolean
   /** Em grupo: a sala e a largada que ela mandou. */
@@ -144,10 +149,9 @@ void main(void) {
 /** Quanto a câmera recua no turbo (m) — a nave anda para a frente e fica menor. */
 const TURBO_PULL = 4.5
 
-let trackCache: Track | null = null
-export function corridaTrack(): Track {
-  if (!trackCache) trackCache = buildTrack(BAIA)
-  return trackCache
+/** A pista montada de um circuito (mm3d-74). */
+export function corridaTrack(id: string = DEFAULT_TRACK): Track {
+  return trackOf(id)
 }
 
 export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
@@ -160,14 +164,10 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
 
   const scene = new Scene(engine)
-  // mm3d-41: noite. A neblina é a cor do horizonte do céu (track-view).
-  const haze = new Color3(...NIGHT_HORIZON)
-  scene.clearColor = new Color4(haze.r, haze.g, haze.b, 1)
+  // céu, neblina e luzes vêm do tema do circuito (track-env.ts, mm3d-74)
+  scene.clearColor = new Color4(0, 0, 0, 1)
   scene.ambientColor = new Color3(0.3, 0.3, 0.3)
   scene.fogMode = Scene.FOGMODE_LINEAR
-  scene.fogColor = haze
-  scene.fogStart = low ? 160 : 260
-  scene.fogEnd = low ? 650 : 1100
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
@@ -181,8 +181,10 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   moon.intensity = 0.45
   moon.diffuse = new Color3(0.65, 0.75, 1)
 
-  const track = corridaTrack()
   const mp = opts.net ?? null
+  const trackId = (mp ? mp.start.track : undefined) ?? opts.track ?? DEFAULT_TRACK
+  const track = corridaTrack(trackId)
+  const art = circuitArt(track.id)
   const race = mp
     ? new Race({
         track,
@@ -197,7 +199,9 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   // mm3d-73: celular (toque) ou aparelho fraco = texturas menores, sem relevo,
   // menos partículas e rastro mais curto
   const mobile = low || !!opts.touch
-  const view = buildTrackView(scene, track, low, mobile)
+  const env = buildEnvironment(scene, track, art.theme, low, { hemi, sun: moon })
+  const day = art.theme === "abismo" || art.theme === "neon"
+  const view = buildTrackView(scene, track, low, mobile, { groundY: groundYOf(art.theme, track), bigRings: art.theme === "forja", holoLevel: day ? 0.55 : 0.9 })
   const fleet = new CarFleet(
     scene,
     race.cars.map((c) => c.color),
@@ -274,6 +278,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   /** 0 → 1 enquanto o turbo está ligado (sobe rápido, volta devagar). */
   let turboK = 0
   const camTp = {} as TrackPoint
+  const camLp = {} as TrackPoint
   let turboBlur: PostProcess | null = null
   let blurOn = false
   let lastBeep = 99
@@ -485,7 +490,8 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       draw.y = a.y + (c.y - a.y) * k
       draw.z = a.z + (c.z - a.z) * k
       draw.yaw = a.yaw + wrapPi(c.yaw - a.yaw) * k
-      draw.pitch = a.pitch + (c.pitch - a.pitch) * k
+      // o loop dá a volta inteira: interpola pelo caminho curto (π → −π não gira ao contrário)
+      draw.pitch = a.pitch + wrapPi(c.pitch - a.pitch) * k
       draw.roll = a.roll + (c.roll - a.roll) * k
       const car = race.cars[i]
       fleet.place(i, draw, { throttle: car.throttleNow, speed: Math.min(1, Math.max(0, car.v / TUNING.boostMax)), boost: car.boost > 0, air: car.air, down: car.down > 0 || car.gone }, dt)
@@ -500,6 +506,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       }
     }
     view.tick(dt)
+    env.tick(dt)
     const p = race.player
     audio.engine(p.v, p.boost > 0, p.air, race.phase !== "countdown" && p.down <= 0)
     hudAt -= dt
@@ -549,7 +556,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     // ficava colada na capa da barreira; nos vãos não há parede)
     if (p.down <= 0) {
       const tp = trackAt(track, p.dist - back, camTp)
-      if (!tp.gap) {
+      if (!tp.gap && !tp.inLoop) {
         const rx = Math.cos(tp.yaw)
         const rz = -Math.sin(tp.yaw)
         const u = (camPos.x - tp.x) * rx + (camPos.z - tp.z) * rz
@@ -564,6 +571,28 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       }
     }
     camTarget.set(pose.x + Math.sin(camYaw) * 9, pose.y + HOVER + 0.9, pose.z + Math.cos(camYaw) * 9)
+    // mm3d-74: no loop a câmera gira junto (atrás e "acima" no quadro da pista)
+    const lp = trackAt(track, p.dist, camLp)
+    if (lp.inLoop && p.down <= 0) {
+      const sy = Math.sin(lp.yaw)
+      const cy = Math.cos(lp.yaw)
+      const c = Math.cos(lp.loop)
+      const sn = Math.sin(lp.loop)
+      const fx = sy * c
+      const fy = sn
+      const fz = cy * c
+      const ux = -sy * sn
+      const uy = c
+      const uz = -cy * sn
+      const bx = pose.x + ux * HOVER
+      const by = pose.y + uy * HOVER
+      const bz = pose.z + uz * HOVER
+      camPos.set(bx - fx * back + ux * 2.6, by - fy * back + uy * 2.6, bz - fz * back + uz * 2.6)
+      camTarget.set(bx + fx * 9 + ux * 0.9, by + fy * 9 + uy * 0.9, bz + fz * 9 + uz * 0.9)
+      cam.upVector.set(ux, uy, uz)
+      camYaw = lp.yaw
+      camY = camPos.y
+    } else cam.upVector.set(0, 1, 0)
     cam.position.copyFrom(camPos)
     cam.setTarget(camTarget)
     const wantFov = 0.92 + Math.min(1, v / TUNING.boostMax) * 0.26 + (p.boost > 0 ? 0.08 : 0)
@@ -602,7 +631,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   const w = window as unknown as Record<string, unknown>
   w.__corrida = () => {
     const p = race.player
-    return { phase: race.phase, time: race.time, dist: p.dist, s: ((p.dist % track.length) + track.length) % track.length, u: p.u, v: p.v, Y: p.Y, air: p.air, down: p.down, lap: race.lapOf(p), place: race.placeOf(p), charges: p.charges, gaps: track.gaps, orbs: track.orbs }
+    return { track: track.id, length: track.length, phase: race.phase, time: race.time, dist: p.dist, s: ((p.dist % track.length) + track.length) % track.length, u: p.u, v: p.v, Y: p.Y, air: p.air, down: p.down, lap: race.lapOf(p), place: race.placeOf(p), charges: p.charges, gaps: track.gaps, orbs: track.orbs, tunnels: track.tunnels, loops: track.loops }
   }
   w.__corridaTp = (s: number, v: number) => {
     const p = race.player
@@ -645,6 +674,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       audio.dispose()
       fleet.dispose()
       view.dispose()
+      env.dispose()
       turboBlur?.dispose()
       cam.dispose()
       scene.dispose()
