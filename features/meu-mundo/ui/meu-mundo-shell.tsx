@@ -22,7 +22,7 @@
 // dentro do jogo (card do jogador, caixa de entrada ou nome no Global).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Share2, Swords, Trophy } from "lucide-react"
+import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Share2, Store, Swords, Trophy } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
@@ -43,6 +43,7 @@ import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
 import RankingPanel from "./ranking/ranking-panel"
 import GearPanel from "./gear/gear-panel"
+import ShopPanel, { type ShopTab, type GearShelf } from "./shop/shop-panel"
 import { QuestTracker } from "./quest/quest-ui"
 import { CharHud, type HudVitals } from "./hud/char-hud"
 import { CityMapHud } from "./map/city-map-ui"
@@ -113,8 +114,6 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [inviteOpen, setInviteOpen] = useState(false)
   // Tela de STATUS do hóspede (mm3d-13): o corpo em cena vai para o retrato.
   const [statusBody, setStatusBody] = useState<BodyId | null>(null)
-  // Aberto pelo caixa do supermercado (mm3d-37c): no Mercado, comprando.
-  const [statusShop, setStatusShop] = useState(false)
   const [lifeTick, setLifeTick] = useState(0)
   const stay = useHospitalStay(initial.life)
   // Prisão (mm3d-37f): a cela da delegacia, pela mesma régua da internação.
@@ -148,7 +147,9 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // A8: Compartilhar (link de afiliado, 10% do que o convidado gastar)
   const [shareOpen, setShareOpen] = useState(false)
   // mm3d-59: Mochila/Armeiro/Forja (null = fechado; senão a aba que abre)
-  const [gearTab, setGearTab] = useState<null | "bag" | "armory" | "forge">(null)
+  const [gearTab, setGearTab] = useState<null | "bag" | "forge">(null)
+  // B5: a Loja única (gaveta, caixa do supermercado e o Armeiro da missão)
+  const [shop, setShop] = useState<null | { tab: ShopTab; shelf?: GearShelf; atMarket?: boolean }>(null)
   // mm3d-59: luta de treino do prólogo e quando reconferir a missão
   const [tutorialFight, setTutorialFight] = useState(false)
   const [questTick, setQuestTick] = useState(0)
@@ -483,7 +484,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
   // A cela (mm3d-37f) só com a planta na mão; internado, o hospital manda.
   const jailUp = !!jail.phase && !!jail.interior && !hospitalUp
-  const panelOpen = !!inbox || itemsOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab
+  const panelOpen = !!inbox || itemsOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab || !!shop
   const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || jailUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
   const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
@@ -629,7 +630,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         onSelect: () => openChat(),
       },
       { id: "items", label: t("itTitle", "Itens"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
-      { id: "gear", label: t("gearTitle", "Equipamento"), hint: t("menuGearHint", "Mochila, Armeiro e Forja"), icon: <Swords className="h-5 w-5" />, kind: "nav", onSelect: () => setGearTab("bag") },
+      { id: "shop", label: t("shopTitle", "Loja"), hint: t("menuShopHint", "Equipamento, monstros, personagens e comidas"), icon: <Store className="h-5 w-5" />, kind: "nav", onSelect: () => setShop({ tab: "gear" }) },
+      { id: "gear", label: t("gearTitle", "Equipamento"), hint: t("menuGearHint2", "Mochila, Forja e refino"), icon: <Swords className="h-5 w-5" />, kind: "nav", onSelect: () => setGearTab("bag") },
       { id: "ranking", label: t("rkTitle", "Ranking"), hint: t("menuRankingHint", "Poder, nível e Freelandoo"), icon: <Trophy className="h-5 w-5" />, kind: "nav", onSelect: () => setRankingOpen(true) },
       {
         id: "inbox",
@@ -674,10 +676,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onServerMessage={onServerMessage}
           blocked={overlayOpen}
           onOpenStatus={setStatusBody}
-          onOpenMarket={(b) => {
-            setStatusShop(true)
-            setStatusBody(b)
-          }}
+          onOpenMarket={() => setShop({ tab: "food", atMarket: true })}
           suspended={suspended}
           menuExtras={menuExtras}
           {...scenePlayer}
@@ -796,13 +795,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           name={scene.me.name}
           body={statusBody}
           lifeTick={lifeTick}
-          onClose={() => {
-            setStatusBody(null)
-            setStatusShop(false)
-          }}
+          onClose={() => setStatusBody(null)}
           onOpenPolens={() => setPolensOpen(true)}
-          initialPage={statusShop ? "market" : undefined}
-          shopping={statusShop}
         />
       )}
 
@@ -852,6 +846,19 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onReceipt={celebrate}
         />
       )}
+      {shop && (
+        <ShopPanel
+          initialTab={shop.tab}
+          initialShelf={shop.shelf}
+          atMarket={!!shop.atMarket}
+          onClose={() => {
+            setShop(null)
+            bumpQuest()
+          }}
+          onReceipt={celebrate}
+          onChanged={lifeChanged}
+        />
+      )}
       {/* mm3d-60d: HUD do personagem (canto de cima à esquerda) */}
       <CharHud name={scene.me.name} body={avatar} vitals={vitals} power={power} hidden={overlayOpen || asleep || tutorialFight} onOpen={openStatus} />
       {/* mm3d-60r: radar no canto de cima à direita; tocar abre o mapa da cidade */}
@@ -861,7 +868,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         hidden={!!busy || !!statusBody || hospitalUp || jailUp || asleep || panelOpen || tutorialFight}
         refreshKey={questTick + mount}
         onTutorialFight={() => setTutorialFight(true)}
-        onOpenGear={(tab) => setGearTab(tab)}
+        onOpenGear={(tab) => (tab === "armory" ? setShop({ tab: "gear", shelf: "armory" }) : setGearTab(tab))}
       />
       {tutorialFight && (
         <LaminasView

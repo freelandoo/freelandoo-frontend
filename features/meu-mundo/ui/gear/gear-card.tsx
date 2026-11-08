@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { ApiResult, GearItem, GearOut } from "../../data"
+import type { ApiResult, GearBag, GearItem, GearOut } from "../../data"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { AE, RARITY } from "../kit/aether-tokens"
 import { teko } from "../status/evo-skin"
@@ -23,6 +23,23 @@ export function bonusLines(bonus: GearItem["bonus"], t: GearTr): string[] {
   ].filter((line): line is string => !!line)
 }
 
+/** Miniatura do item de loja (as abas do Arsenal); null = desenho da categoria. */
+export function gearThumb(item: GearItem): string | null {
+  return (item.shop === "weapons" ? shopSword(item.id) : item.shop === "hammers" ? shopHeavy(item.id) : item.shop === "shields" ? shopShield(item.id) : item.shop === "bows" ? shopBow(item.id) : item.shop === "guns" ? shopGun(item.id) : null)?.thumb ?? null
+}
+
+/** Por que não dá para usar/comprar (nível, quem usa a arma, classe); null = pode. Peça única da Mochila e da Loja (B5). */
+export function gearLock(item: GearItem, bag: GearBag | null, t: GearTr): string | null {
+  if (!bag) return null
+  if (bag.level < item.level) return t("gearNeedLevel", "Precisa do nível {n}").replace("{n}", String(item.level))
+  if (item.shop === "weapons") return bag.warrior ? null : t("gearWarriorOnly", "Só guerreiros usam espadas")
+  if (item.shop === "shields") return bag.warrior ? null : t("gearShieldOnly", "Só quem usa espada leva escudo")
+  if (item.shop === "bows") return bag.archer ? null : t("gearBowOnly", "Só Íris e Aeryn usam arcos")
+  if (item.shop === "guns") return bag.gunner ? null : t("gearGunOnly", "Só Ciborgue e Noctis usam estas armas")
+  if (item.shop === "hammers") return bag.hammer ? null : t("gearHammerOnly", "Só Soldado de Pedra, Marú e Kragor usam estas armas")
+  return item.clan && item.clan !== bag.clan ? t("gearOtherClan", "Arma de outra classe") : null
+}
+
 export function GearItemCard({ item, t, subtitle, lines, children }: {
   item: GearItem; t: GearTr; subtitle?: string; lines?: string[]; children?: ReactNode
 }) {
@@ -30,7 +47,7 @@ export function GearItemCard({ item, t, subtitle, lines, children }: {
   return (
     <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">
       <div className="shrink-0">
-        <ItemImage src={(item.shop === "weapons" ? shopSword(item.id) : item.shop === "hammers" ? shopHeavy(item.id) : item.shop === "shields" ? shopShield(item.id) : item.shop === "bows" ? shopBow(item.id) : item.shop === "guns" ? shopGun(item.id) : null)?.thumb} category={(item.category === "shield" ? "armor" : item.category) as ItemCategory} rarity={item.rarity} alt={nameOf(item, t)} ratio={16 / 7} />
+        <ItemImage src={gearThumb(item)} category={(item.category === "shield" ? "armor" : item.category) as ItemCategory} rarity={item.rarity} alt={nameOf(item, t)} ratio={16 / 7} />
       </div>
       <div className="flex items-start justify-between gap-2">
         <h4 className={teko.className + " text-[24px] font-semibold uppercase leading-tight"} style={{ color: AE.text }}>{nameOf(item, t)}</h4>

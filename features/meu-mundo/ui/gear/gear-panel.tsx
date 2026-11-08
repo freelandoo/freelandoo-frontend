@@ -3,16 +3,17 @@
 import { useMemo, useState } from "react"
 import { Loader2 } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { buyGear, equipGear, recycleGear, applyGearItem, type GearCategory, type GearItem, type GearSlot, type Receipt } from "../../data"
+import { equipGear, recycleGear, applyGearItem, type GearCategory, type GearItem, type GearSlot, type Receipt } from "../../data"
 import { AetherModal, AetherButton } from "../kit/aether-modal"
 import { AetherCarousel, AetherTabs, type CarouselItem } from "../kit/aether-carousel"
 import { AE } from "../kit/aether-tokens"
-import { GearItemCard, bonusLines, nameOf, type GearTr } from "./gear-card"
+import { GearItemCard, bonusLines, gearLock, nameOf, type GearTr } from "./gear-card"
 import { ForgeCard } from "./forge-card"
 import { RefinementCard } from "./refinement-card"
 import { useWorkshop } from "./use-workshop"
 
-export type GearTab = "bag" | "weapons" | "armory" | "forge" | "refine" | "guide"
+/** B5: comprar (Armeiro e Loja de Armas) saiu daqui para a Loja única (ui/shop/shop-panel.tsx). */
+export type GearTab = "bag" | "forge" | "refine" | "guide"
 type ForgeKind = "assembly" | "part" | "equipment" | "conversion"
 type Category = "all" | GearCategory
 
@@ -24,15 +25,12 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   const [tab, setTab] = useState<GearTab>(initialTab)
   const [category, setCategory] = useState<Category>("all")
   const [kind, setKind] = useState<ForgeKind>("assembly")
-  const [shelf, setShelf] = useState<"weapons" | "hammers" | "bows" | "guns" | "shields">("weapons")
   const [confirm, setConfirm] = useState<string | null>(null)
   const byId = useMemo(() => new Map((catalog?.items || []).map(item => [item.id, item])), [catalog])
   const pending = (item: string) => bag?.pendingProposals?.some(proposal => proposal.item === item && proposal.status === "pending")
-  const title = tab === "weapons" ? t("weaponsShopTitle", "Loja de Armas") : tab === "armory" ? t("centerPlace_arsenal", "Arsenal de Lúmen") : tab === "forge" ? t("centerPlace_forja", "Forja das Engrenagens") : tab === "refine" ? t("refineTitle", "Bancada de refinamento") : t("gearTitle", "Equipamento")
+  const title = tab === "forge" ? t("centerPlace_forja", "Forja das Engrenagens") : tab === "refine" ? t("refineTitle", "Bancada de refinamento") : t("gearTitle", "Equipamento")
   const tabs = [
     { id: "bag" as const, label: t("gearTabBag", "Mochila") },
-    { id: "weapons" as const, label: t("gearTabWeapons", "Armas") },
-    { id: "armory" as const, label: t("gearTabArmory", "Armeiro") },
     { id: "forge" as const, label: t("gearTabForge", "Forja") },
     { id: "refine" as const, label: t("refineTab", "Refinar") },
     { id: "guide" as const, label: t("forgeGuideTab", "Catálogo") },
@@ -44,7 +42,7 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   }
   const changeTab = (next: GearTab) => { setTab(next); setConfirm(null); setMessage(null); setCategory("all") }
   const slotsFor = (item: GearItem): GearSlot[] => item.category === "weapon" ? ["weapon"] : item.category === "shield" ? ["shield"] : item.category === "armor" ? ["armor"] : item.category === "accessory" ? ["acc1", "acc2"] : []
-  const locked = (item: GearItem) => !bag ? null : bag.level < item.level ? t("gearNeedLevel", "Precisa do nível {n}").replace("{n}", String(item.level)) : item.shop === "weapons" ? (bag.warrior ? null : t("gearWarriorOnly", "Só guerreiros usam espadas")) : item.shop === "shields" ? (bag.warrior ? null : t("gearShieldOnly", "Só quem usa espada leva escudo")) : item.shop === "bows" ? (bag.archer ? null : t("gearBowOnly", "Só Íris e Aeryn usam arcos")) : item.shop === "guns" ? (bag.gunner ? null : t("gearGunOnly", "Só Ciborgue e Noctis usam estas armas")) : item.shop === "hammers" ? (bag.hammer ? null : t("gearHammerOnly", "Só Soldado de Pedra, Marú e Kragor usam estas armas")) : item.clan && item.clan !== bag.clan ? t("gearOtherClan", "Arma de outra classe") : null
+  const locked = (item: GearItem) => gearLock(item, bag, t)
 
   const inventoryCard = (item: GearItem, guide: boolean): CarouselItem => ({
     key: item.id, label: nameOf(item, t), render: () => {
@@ -81,18 +79,6 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   if (catalog && bag) {
     const filtered = catalog.items.filter(item => category === "all" || item.category === category)
     if (tab === "bag" || tab === "guide") items = filtered.filter(item => tab === "guide" || bag.owned[item.id]).map(item => inventoryCard(item, tab === "guide"))
-    // Dois balcões do Arsenal: armas (mm3d-66) e o resto do Armeiro.
-    if (tab === "armory" || tab === "weapons") items = filtered.filter(item => item.price != null && (tab === "weapons" ? item.shop === shelf : !item.shop)).map(item => ({
-      key: item.id, label: nameOf(item, t), render: () => (
-        <GearItemCard item={item} t={t} subtitle={t("gearPrice", "{p} moedas").replace("{p}", String(item.price))} lines={bonusLines(item.bonus, t)}>
-          {!item.stack && bag.owned[item.id] ? <p style={{ color: AE.good }}>{t("gearOwned", "Já é seu")}</p> : locked(item) ? <p style={{ color: AE.bad }}>{locked(item)}</p> : confirm === item.id ? <>
-            <p className="text-[12px]" style={{ color: AE.goldSoft }}>{t("forgeBuyConfirm", "Confirmar compra por {n} moedas?").replace("{n}", String(item.price))}</p>
-            <AetherButton disabled={bag.coins < (item.price || 0)} busy={!!busy} onClick={() => void act("buy-" + item.id, (tk, key) => buyGear(tk, item.id, key), t("gearBought", "Comprado! Está na mochila."))}>{t("gearConfirm", "Confirmar")}</AetherButton>
-            <AetherButton tone="secondary" disabled={!!busy} onClick={() => setConfirm(null)}>{t("gearCancel", "Voltar")}</AetherButton>
-          </> : <AetherButton disabled={!!busy || bag.coins < (item.price || 0)} onClick={() => setConfirm(item.id)}>{bag.coins < (item.price || 0) ? t("gearPoor", "Moedas insuficientes") : t("gearBuy", "Comprar")}</AetherButton>}
-        </GearItemCard>
-      ),
-    }))
     if (tab === "forge") items = catalog.recipes.filter(recipe => (recipe.kind || "equipment") === kind).filter(recipe => !byId.get(recipe.out)?.clan || byId.get(recipe.out)?.clan === bag.clan).map(recipe => ({
       key: recipe.id, label: byId.has(recipe.out) ? nameOf(byId.get(recipe.out)!, t) : recipe.out,
       render: () => byId.has(recipe.out) ? <ForgeCard item={byId.get(recipe.out)!} recipe={recipe} bag={bag} byId={byId} t={t} busy={!!busy} act={act} /> : null,
@@ -104,21 +90,18 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   return (
     <AetherModal title={title} eyebrow={bag ? t("gearHeader", "Nível {lv} · {c} moedas").replace("{lv}", String(bag.level)).replace("{c}", String(bag.coins)) : undefined} onClose={onClose} width={680}>
       <AetherTabs label={t("gearTitle", "Equipamento")} tabs={tabs} value={tab} onChange={changeTab} />
-      {tab === "weapons" && <AetherTabs<"weapons" | "hammers" | "bows" | "guns" | "shields"> label={t("weaponsShopTitle", "Loja de Armas")} value={shelf} onChange={setShelf} tabs={[
-        { id: "weapons", label: t("shopSwords", "Espadas") }, { id: "hammers", label: t("shopHammers", "Hammers") }, { id: "bows", label: t("shopBows", "Arcos") }, { id: "guns", label: t("shopGuns", "Guns") }, { id: "shields", label: t("shopShields", "Escudos") },
-      ]} />}
       {tab === "forge" && <AetherTabs<ForgeKind> label={t("forgeKinds", "Bancadas da forja")} value={kind} onChange={setKind} tabs={[
         { id: "assembly", label: t("forgeWeapons", "Armas") }, { id: "part", label: t("forgeParts", "Peças") },
         { id: "equipment", label: t("forgeArmor", "Proteções") }, { id: "conversion", label: t("forgeConversions", "Conversões") },
       ]} />}
-      {(tab === "bag" || tab === "armory" || tab === "guide") && <label className="mb-3 flex min-h-11 items-center gap-3 text-[13px]" style={{ color: AE.text }}>
+      {(tab === "bag" || tab === "guide") && <label className="mb-3 flex min-h-11 items-center gap-3 text-[13px]" style={{ color: AE.text }}>
         {t("forgeCategory", "Categoria")}
         <select value={category} onChange={event => setCategory(event.target.value as Category)} className="min-h-11 min-w-0 flex-1 px-2" style={{ color: AE.text, background: AE.well, border: "1px solid " + AE.brassLine }}>
           {Object.entries(categoryNames).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
         </select>
       </label>}
       {!catalog || !bag ? <div className="grid min-h-48 place-items-center" style={{ color: AE.muted }}>{error ? <AetherButton onClick={() => void load()}>{t("forgeReload", "Tentar abrir novamente")}</AetherButton> : <Loader2 className="h-6 w-6 animate-spin" aria-label={t("gearLoading", "Carregando…")} />}</div> : (
-        <AetherCarousel key={tab + "-" + category + "-" + kind + "-" + shelf} title={title} items={items} cardWidth={360} cardHeight={510} empty={tab === "bag" ? t("gearBagEmpty", "Mochila vazia. Lute e jogue para ganhar materiais.") : t("gearNothing", "Nada por aqui ainda.")} />
+        <AetherCarousel key={tab + "-" + category + "-" + kind} title={title} items={items} cardWidth={360} cardHeight={510} empty={tab === "bag" ? t("gearBagEmpty", "Mochila vazia. Lute e jogue para ganhar materiais.") : t("gearNothing", "Nada por aqui ainda.")} />
       )}
       {message && <p role="status" className="mt-3 text-center text-[13px]" style={{ color: AE.goldSoft }}>{message}</p>}
     </AetherModal>

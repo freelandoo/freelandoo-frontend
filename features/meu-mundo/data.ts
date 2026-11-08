@@ -359,6 +359,20 @@ export interface GearBag {
 export type GearOut = { receipt?: Receipt; replay?: boolean; bag: GearBag; proposal?: RefinementProposal }
 export const getGear = (token: string) => call<{ gear: GearCatalog; bag: GearBag }>(token, "GET", "/gear")
 
+// ═══ B5 (mig 365): inventário de monstros (Arena e rua) ═════════════════════
+/** `stone` = o Golem de Pedra da rua (na Arena o mesmo corpo é o Soldado de Pedra, `soldier`). */
+export type TrophyKind = "soldier" | "stone" | "wolf" | "golem" | "harpy" | "brute"
+export interface MonsterTrophy {
+  kind: TrophyKind
+  wins: number
+  losses: number
+  /** Maior nível já vencido (0 = nunca venceu). */
+  bestLevel: number
+  firstWinAt: string | null
+  lastAt: string | null
+}
+export const getMonsters = (token: string) => call<{ monsters: MonsterTrophy[] }>(token, "GET", "/monsters")
+
 // ═══ B7: aba Ranking (Poder, Nível, Freelandoo) ═════════════════════════════
 export type RankingTab = "poder" | "nivel" | "freelandoo"
 /** Parcelas do Poder (o servidor calcula): os 5 atributos, o HP máx do nível e o equipamento. */
