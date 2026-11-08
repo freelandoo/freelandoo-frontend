@@ -96,6 +96,8 @@ const ROWS = [
   ["Isso não tem no cardápio", "That's not on the menu", "Eso no está en el menú"],
   ["Você precisa estar lá dentro", "You need to be inside", "Tienes que estar adentro"],
   ["Compras para a geladeira são no supermercado do centro", "Fridge shopping is at the downtown supermarket", "Las compras para la nevera son en el supermercado del centro"],
+  // mm3d-72: apelidos
+  ["O apelido precisa ter de 2 a 20 letras", "The nickname must have 2 to 20 letters", "El apodo debe tener de 2 a 20 letras"],
   // Missões
   ["Ação inválida", "Invalid action", "Acción no válida"],
   ["Missão concluída", "Quest completed", "Misión completada"],

@@ -11,6 +11,7 @@
 // como lido — o histórico do sino é que guarda.
 
 import type { LifeNeedId, MMNotice } from "../../types"
+import { wishLine, type WishId } from "../../soul"
 import { EMOTION_OF, type Emotion, type Expression } from "../portraits"
 
 export const CARD_MS = 15_000
@@ -30,6 +31,7 @@ export const NEED_EXPRESSION: Record<LifeNeedId, Expression> = {
   tired: "exhausted",
   stressed: "stressed",
   aging: "exhausted",
+  fridge_empty: "worried",
 }
 
 /**
@@ -47,6 +49,8 @@ export const NEED_EMOTION: Record<LifeNeedId, Emotion> = {
   tired: "tired",
   stressed: "angry",
   aging: "tired",
+  // mm3d-72: "Putz! A geladeira tá vazia! Ah, meu Deus!"
+  fridge_empty: "sad",
 }
 
 /** Emoção para as notificações do servidor (necessidade usa a tabela acima). */
@@ -117,6 +121,10 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
       // mm3d-36: aviso único (uma vez por conta) de que as cores existem.
       if (n.code === "colors_hint")
         return { title: t("ntColorsTitle", "Você pode mudar as cores do seu personagem"), line: t("ntColorsLine", "No STATUS → SKIN → Cores: camiseta, calça, pele e cabelo.") }
+      // mm3d-72: o que ele quer (pela personalidade) e se o dono atendeu
+      if (n.code === "wish" && n.data.wish) return { title: wishLine(n.data.wish as WishId, t), line: t("ntWishLine", "Se você fizer, ele vai gostar mais de você.") }
+      if (n.code === "wish_ok") return { title: t("ntWishOk", "Você fez o que eu queria! Valeu!"), line: t("ntWishOkLine", "Ele gostou mais de você.") }
+      if (n.code === "wish_fail") return { title: t("ntWishFail", "Você nem ligou pro que eu pedi…"), line: t("ntWishFailLine", "Ele gostou menos de você.") }
       return { title: lifeTitle(n.code, t, n.data.generation), line: null }
     case "dm":
       return { title: t("ntDmTitle", "Recebemos uma mensagem"), line: n.data.from ? t("ntDmFrom", "De {name}").replace("{name}", n.data.from) : null }
@@ -132,7 +140,7 @@ export function needTitle(id: LifeNeedId, t: Tr, hours?: number): string {
     case "exhausted":
       return t("needExhausted", "Estou exausto. Preciso descansar.")
     case "starving":
-      return t("needStarving", "Nossa, estou com muita fome!")
+      return t("needStarving2", "Estou morrendo de fome! Você vai me deixar passar fome assim?")
     case "hungry":
       return t("needHungry", "Estou ficando com fome.")
     case "sleep":
@@ -143,6 +151,8 @@ export function needTitle(id: LifeNeedId, t: Tr, hours?: number): string {
       return t("needStressed", "Estou muito estressado. Preciso de uma pausa.")
     case "aging":
       return t("needAging", "Sinto o peso da idade.")
+    case "fridge_empty":
+      return t("needFridgeEmpty", "Putz! A geladeira tá vazia! Ah, meu Deus!")
   }
 }
 

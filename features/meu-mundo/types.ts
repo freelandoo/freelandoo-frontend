@@ -6,6 +6,7 @@
 // orientação dos lotes e a lista de obstáculos de colisão vêm do servidor;
 // ruas e casas são desenhadas pelo cliente a partir do layout.
 
+import type { LifeSoul } from "./soul"
 import { GOD_BODIES, type GodBody } from "./gods"
 import { CLAN_BODIES, type ClanBody } from "./classes"
 
@@ -278,6 +279,8 @@ export interface LifeCharacter {
     inherit: Record<LifeTrained, number> | null
   } | null
   personality: Record<"discipline" | "anxiety" | "optimism" | "appetite" | "resilience" | "metabolism", number>
+  /** mm3d-72: personalidade nova, afeto, gosta/odeia, desejo e apelidos. Servidor antigo não manda. */
+  soul?: LifeSoul
   vitals: Record<"energy" | "satiety" | "mood" | "stress" | "health" | "vitality", number>
   body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bmi: number; bodyHint: BodyId }
   /** Inteligência, força e velocidade 0–1000; fertilidade 0–100. */
@@ -358,7 +361,7 @@ export interface LifeMeal {
   state: LifeMealState
 }
 
-export type LifeNeedId = "hospital" | "unwell" | "exhausted" | "starving" | "hungry" | "sleep" | "tired" | "stressed" | "aging"
+export type LifeNeedId = "hospital" | "unwell" | "exhausted" | "starving" | "hungry" | "sleep" | "tired" | "stressed" | "aging" | "fridge_empty"
 
 /** level: 1 emergência, 2 saúde/exaustão, 3 fome intensa, 4 sono, 5 leves. */
 export interface LifeNeed {
@@ -903,7 +906,7 @@ export interface MMNotice {
   code: string
   /** 1 = mais urgente */
   priority: number
-  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string; paidBy?: "freelandoo" | "player"; coins?: number; minutes?: number; reason?: string }
+  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string; paidBy?: "freelandoo" | "player"; coins?: number; minutes?: number; reason?: string; wish?: string }
   mailId: string | null
   createdAt: string
   read: boolean

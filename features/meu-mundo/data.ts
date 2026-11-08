@@ -402,6 +402,9 @@ export const postLifeOrder = (token: string, place: string, item: string) => cal
 export const postLifeBuy = (token: string, item: string, qty = 1) => call<LifeSummary>(token, "POST", "/life/buy", { item, qty })
 /** Depois da morte: o próximo hóspede chega. */
 export const postLifeNewcomer = (token: string) => call<LifeSummary>(token, "POST", "/life/newcomer", {})
+/** mm3d-72: o apelido que a pessoa escolhe para si e o que ela dá ao hóspede. */
+export const postLifeNickname = (token: string, nickname: string) => call<LifeSummary>(token, "POST", "/life/nickname", { nickname })
+export const postLifePetName = (token: string, name: string) => call<LifeSummary>(token, "POST", "/life/pet-name", { name })
 
 // ═══ mm3d-16: vestuário (skins compradas com as moedas do jogo) ═════════════
 export const getSkins = (token: string) => call<WardrobeResult>(token, "GET", "/skins")

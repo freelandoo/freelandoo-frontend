@@ -13,9 +13,10 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { fetchAdminNeighborhood } from "@/features/meu-mundo/data"
+import { fetchAdminNeighborhood, getLife } from "@/features/meu-mundo/data"
 import { useServerErrors } from "@/features/meu-mundo/server-errors"
 import type { ScenePayload } from "@/features/meu-mundo/types"
+import type { LifeSoul } from "@/features/meu-mundo/soul"
 
 const MeuMundoShell = dynamic(() => import("@/features/meu-mundo/ui/meu-mundo-shell"), {
   ssr: false,
@@ -26,11 +27,17 @@ const ClanChoice = dynamic(() => import("@/features/meu-mundo/ui/clan/clan-choic
   ssr: false,
   loading: () => <Splash />,
 })
+// mm3d-72: apelidos (o da pessoa e o do hóspede), depois da classe e antes do jogo.
+const NicknameChoice = dynamic(() => import("@/features/meu-mundo/ui/clan/nickname-choice"), {
+  ssr: false,
+  loading: () => <Splash />,
+})
 
 type Phase =
   | { kind: "checking" }
   | { kind: "ready"; payload: ScenePayload }
   | { kind: "clan" }
+  | { kind: "nickname"; payload: ScenePayload; soul: LifeSoul }
   | { kind: "forbidden" }
   | { kind: "error" }
 
@@ -63,7 +70,17 @@ export default function MeuMundoAdminPage() {
     fetchAdminNeighborhood(token, ac.signal)
       .then((r) => {
         if (ac.signal.aborted) return
-        if (r.ok) setPhase({ kind: "ready", payload: r.payload })
+        if (r.ok) {
+          // sem apelido ainda: a tela dos apelidos antes do jogo (servidor antigo/falha = entra direto)
+          const payload = r.payload
+          getLife(token)
+            .then((l) => {
+              if (ac.signal.aborted) return
+              const soul = l.ok ? l.data.character.soul : undefined
+              setPhase(soul && soul.nickname === null && l.ok && l.data.character.status !== "dead" ? { kind: "nickname", payload, soul } : { kind: "ready", payload })
+            })
+            .catch(() => !ac.signal.aborted && setPhase({ kind: "ready", payload }))
+        }
         else if (r.reason === "unauthenticated")
           router.replace(`/login?next=${encodeURIComponent("/meu-mundo/admin")}`)
         else if (r.reason === "forbidden") setPhase({ kind: "forbidden" })
@@ -78,6 +95,10 @@ export default function MeuMundoAdminPage() {
 
   if (phase.kind === "ready") return <MeuMundoShell initial={phase.payload} />
   if (phase.kind === "checking") return <Splash />
+  if (phase.kind === "nickname") {
+    const payload = phase.payload
+    return <NicknameChoice soul={phase.soul} onDone={() => setPhase({ kind: "ready", payload })} />
+  }
   if (phase.kind === "clan")
     return (
       <ClanChoice

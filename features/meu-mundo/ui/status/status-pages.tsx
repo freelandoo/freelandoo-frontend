@@ -49,6 +49,8 @@ import { clanBodyNames } from "../../classes"
 import { HERO_LEVEL, heroLevelScale, heroSheet } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
 import { HpPlate, LevelBadge, StatBars, StatGuide, statTop } from "./stat-bars"
+import { SoulPanel } from "./soul-panel"
+import { temperLabel } from "../../soul"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -217,6 +219,10 @@ function traitName(k: (typeof TRAITS)[number], t: Tr) {
     resilience: t("trResilience", "Resistência"),
     metabolism: t("trMetabolism", "Metabolismo"),
   }[k]
+}
+/** mm3d-72: a personalidade nova (psicopata, covarde…); servidor antigo cai no jeito pelos traços. */
+export function characterTemper(c: LifeCharacter, t: Tr) {
+  return c.soul ? temperLabel(c.soul.temper, t) : personalityLabel(c.personality, t)
 }
 /** O traço que mais se afasta do meio vira o "jeito" dele (como o CENTRADO do EVO). */
 export function personalityLabel(p: LifeCharacter["personality"], t: Tr) {
@@ -531,7 +537,7 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
               {name}
             </div>
             <div className={`${teko.className} text-[26px] font-medium uppercase tracking-[0.2em]`} style={{ color: EVO.ambar }}>
-              {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} • {personalityLabel(c.personality, t)}
+              {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} • {characterTemper(c, t)}
             </div>
             <div className={`${archivo.className} text-[13px]`} style={{ color: EVO.mudo }}>
               {t("stDaysLived", "{n} dias de vida").replace("{n}", String(days))} • {walletText(life, t)} •{" "}
@@ -766,7 +772,7 @@ function Overview({ life, portrait, compact, t, act, adv }: PageProps) {
               <span className={`${teko.className} text-[24px] font-semibold uppercase tracking-wider`} style={{ color: EVO.ambar }}>
                 {t("stPersonality", "Personalidade")}:{" "}
               </span>
-              <span className={`${teko.className} text-[24px] font-semibold uppercase tracking-wider`}>{personalityLabel(c.personality, t)}</span>
+              <span className={`${teko.className} text-[24px] font-semibold uppercase tracking-wider`}>{characterTemper(c, t)}</span>
               <div style={{ color: EVO.mudo }}>
                 {t("stTodayLine", "Condição de hoje: {c} ({n}/100). Ritmo: {p}.")
                   .replace("{c}", conditionLabel(c.today.label, t))
@@ -1016,6 +1022,9 @@ function Attributes({ life, compact, t, adv }: PageProps) {
           </Plate>
         )}
         <Plate title={t("stPersonality", "Personalidade")}>
+          {c.soul ? (
+            <SoulPanel soul={c.soul} t={t} />
+          ) : (
           <div className={hero ? "grid grid-cols-2 gap-x-4" : ""}>
             {TRAITS.map((k) => (
               <div key={k} className="py-1.5">
@@ -1027,6 +1036,7 @@ function Attributes({ life, compact, t, adv }: PageProps) {
               </div>
             ))}
           </div>
+          )}
         </Plate>
         <Plate title={t("stEffects", "Efeitos no corpo")}>
           {c.effects.length === 0 ? (
@@ -1576,7 +1586,7 @@ function OverviewC({ life, portrait, t, act, adv }: PageProps) {
         <span className="font-semibold uppercase" style={{ color: EVO.ambar }}>
           {t("stPersonality", "Personalidade")}:
         </span>{" "}
-        <span className="font-semibold uppercase" style={{ color: EVO.branco }}>{personalityLabel(c.personality, t)}</span> · {pace}
+        <span className="font-semibold uppercase" style={{ color: EVO.branco }}>{characterTemper(c, t)}</span> · {pace}
       </div>
       <MiniPlate title={t("stMeals", "Refeições de hoje")}>
         <MealChips meals={c.meals} t={t} />
@@ -1775,10 +1785,13 @@ function AttributesC({ life, t, adv }: PageProps) {
         title={t("stPersonality", "Personalidade")}
         aside={
           <span className={`${archivo.className} truncate text-[10px] font-semibold uppercase`} style={{ color: EVO.douradoClaro }}>
-            {personalityLabel(c.personality, t)}
+            {characterTemper(c, t)}
           </span>
         }
       >
+        {c.soul ? (
+          <SoulPanel soul={c.soul} t={t} compact />
+        ) : (
         <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
           {TRAITS.map((k) => (
             <div key={k} className="min-w-0">
@@ -1792,6 +1805,7 @@ function AttributesC({ life, t, adv }: PageProps) {
             </div>
           ))}
         </div>
+        )}
       </MiniPlate>
       <MiniPlate title={t("stEffects", "Efeitos no corpo")}>
         {effects.length === 0 ? (
