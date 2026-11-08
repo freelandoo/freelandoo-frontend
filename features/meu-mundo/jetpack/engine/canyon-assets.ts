@@ -32,6 +32,10 @@ const LOD: Partial<Record<CanyonPiece, number>> = { paredao: 60, ilha: 120 }
 
 export const FACTORY_PIECES = ["viga", "cano", "engrenagem", "pistao", "guindaste", "turbina"] as const
 export type FactoryPiece = (typeof FACTORY_PIECES)[number]
+/** Forja Vulcânica: peças do Tripo preparadas por build_forja_tripo.py (a rocha tem versão de longe). */
+export function loadForgeAssets(scene: Scene, isAlive: () => boolean) {
+  return loadPieces(scene, "/meu-mundo/jetpack/forja/", ["fornalha", "prensa", "rocha", "ponte", "portico", "caldeirao"] as const, { rocha: 70 }, isAlive)
+}
 /** Cidade Orbital: peças do Tripo preparadas por build_orbital_tripo.py (a torre tem versão de longe). */
 export function loadOrbitalAssets(scene: Scene, isAlive: () => boolean) {
   return loadPieces(scene, "/meu-mundo/jetpack/orbital/", ["torre", "portico", "drone", "painel", "jardineira", "elevador"] as const, { torre: 90 }, isAlive)

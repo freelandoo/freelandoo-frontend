@@ -43,7 +43,7 @@ import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
 import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
-import { loadCanyonAssets, loadFactoryAssets, loadOrbitalAssets, type PieceAssets } from "./canyon-assets"
+import { loadCanyonAssets, loadFactoryAssets, loadForgeAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -182,6 +182,24 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const vfx = createJetVfx(scene, quality.tier, level)
   // Cânion: as peças esculpidas (GLB do Tripo) chegam depois e entram no cenário e nos obstáculos
   let canyonAssets: PieceAssets<string> | null = null
+  let extraAssets: PieceAssets<string> | null = null
+  if (level === "forja") {
+    void loadForgeAssets(scene, () => !disposed).then((a) => {
+      if (disposed) return a.dispose()
+      canyonAssets = a
+      tunnel.provide?.(a)
+      // as placas mecânicas (vigas que sobem e descem) viram o trecho de ponte de grade do modelo
+      const bridge = a.meshes.get("ponte")
+      if (bridge) obstacles.useModel("petal", bridge, { fitBox: true })
+    })
+    // a engrenagem esculpida da Fábrica também serve aqui (obstáculo, raio 1, de frente)
+    void loadPieces(scene, "/meu-mundo/jetpack/fabrica/", ["engrenagem"] as const, {}, () => !disposed).then((g) => {
+      if (disposed) return g.dispose()
+      extraAssets = g
+      const gear = g.meshes.get("engrenagem")
+      if (gear) obstacles.useModel("gear", gear, { bake: Matrix.RotationY(Math.PI / 2).multiply(Matrix.Scaling(2, 2, 2)) })
+    })
+  }
   if (level === "orbital") {
     void loadOrbitalAssets(scene, () => !disposed).then((a) => {
       if (disposed) return a.dispose()
@@ -707,6 +725,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       audio.dispose()
       vfx.dispose()
       canyonAssets?.dispose()
+      extraAssets?.dispose()
       pack.dispose()
       char.dispose()
       for (const r of remotes) {

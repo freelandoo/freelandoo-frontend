@@ -206,6 +206,30 @@ export function createJetVfx(scene: Scene, tier: QualityTier, phase: PhaseId): J
     systems.push(dust)
   }
 
+  // brasas da Forja subindo do rio de lava (fora do miolo do caminho)
+  if (phase === "forja") {
+    const em = new ParticleSystem("jt-embers", Math.round(90 * k) + 10, scene)
+    em.particleTexture = dot
+    em.blendMode = ParticleSystem.BLENDMODE_ADD
+    em.emitter = windAt
+    em.minEmitBox = new Vector3(-16, -6, 0)
+    em.maxEmitBox = new Vector3(16, 0, 60)
+    em.direction1 = new Vector3(-0.3, 1, -0.3)
+    em.direction2 = new Vector3(0.3, 1.6, 0.3)
+    em.minEmitPower = 1.5
+    em.maxEmitPower = 4
+    em.minLifeTime = 2
+    em.maxLifeTime = 4
+    em.minSize = 0.06
+    em.maxSize = 0.16
+    em.color1 = new Color4(1, 0.7, 0.25, 1)
+    em.color2 = new Color4(1, 0.4, 0.1, 0.9)
+    em.colorDead = new Color4(0.6, 0.15, 0.05, 0)
+    em.emitRate = 30 * k + 4
+    em.updateSpeed = 1 / 60
+    em.start()
+    systems.push(em)
+  }
   const RING = burst(dot, { cap: 90, c1: new Color4(1, 0.88, 0.35, 1), c2: new Color4(1, 0.6, 0.15, 1), size: [0.08, 0.2], life: [0.35, 0.7], power: [3, 7], gravity: 0, ring: true })
   const FUEL = burst(dot, { cap: 50, c1: new Color4(0.4, 1, 0.7, 1), c2: new Color4(0.2, 0.9, 1, 1), size: [0.06, 0.16], life: [0.3, 0.6], power: [2, 5], gravity: 2 })
   const CRASH = burst(dot, { cap: 80, c1: new Color4(1, 0.7, 0.3, 1), c2: new Color4(0.7, 0.55, 0.45, 1), size: [0.1, 0.35], life: [0.4, 0.9], power: [3, 9], gravity: -9 })
