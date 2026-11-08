@@ -78,7 +78,7 @@ const SKINS: Record<PhaseId, Skin> = {
   industrial: { panel: SP.iron, petal: SP.brass, edge: [1, 0.7, 0.3], field: [1, 0.6, 0.2], ringField: false, windowField: false, rim: SP.brass, rock: SP.stone, gem: [0.8, 0.9, 1], log: false },
   canion: { panel: [0.62, 0.34, 0.2], petal: [0.42, 0.45, 0.5], edge: [1, 0.8, 0.25], field: [1, 0.78, 0.3], ringField: true, windowField: false, rim: [0.56, 0.55, 0.56], rock: [0.66, 0.36, 0.2], gem: [0.9, 0.7, 0.5], log: false },
   orbital: { panel: [0.62, 0.66, 0.78], petal: [0.5, 0.55, 0.68], edge: [0.25, 0.9, 1], field: [0.35, 0.85, 1], ringField: true, windowField: true, rim: [0.2, 0.24, 0.34], rock: [0.3, 0.32, 0.4], gem: [0.6, 0.9, 1], log: false },
-  floresta: { panel: [0.27, 0.17, 0.11], petal: [0.62, 0.22, 0.6], edge: [0.2, 1, 0.85], field: [0.45, 1, 0.5], ringField: false, windowField: false, rim: [0.2, 0.12, 0.08], rock: [0.3, 0.28, 0.24], gem: [0.7, 0.4, 1], log: true },
+  floresta: { panel: [0.2, 0.2, 0.36], petal: [0.24, 0.22, 0.42], edge: [0.2, 1, 0.85], field: [0.35, 1, 0.85], ringField: true, windowField: false, rim: [0.2, 0.12, 0.08], rock: [0.3, 0.28, 0.24], gem: [0.7, 0.4, 1], log: true },
   forja: { panel: [0.17, 0.14, 0.13], petal: [0.3, 0.24, 0.2], edge: [1, 0.5, 0.12], field: [1, 0.4, 0.1], ringField: false, windowField: false, rim: [0.32, 0.27, 0.24], rock: [0.14, 0.1, 0.08], gem: [1, 0.6, 0.3], log: false },
   artico: { panel: [0.36, 0.56, 0.76], petal: [0.7, 0.85, 0.95], edge: [0.55, 0.95, 1], field: [0.6, 0.95, 1], ringField: false, windowField: false, rim: [0.82, 0.92, 0.98], rock: [0.7, 0.86, 0.96], gem: [0.75, 0.92, 1], log: false },
   vacuo: { panel: [0.16, 0.14, 0.26], petal: [0.3, 0.2, 0.5], edge: [0.7, 0.5, 1], field: [0.6, 0.4, 1], ringField: true, windowField: false, rim: [0.3, 0.3, 0.4], rock: [0.3, 0.28, 0.3], gem: [0.8, 0.7, 1], log: false },
@@ -187,7 +187,7 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
   fieldMat.diffuseColor = new Color3(0, 0, 0)
   fieldMat.specularColor = new Color3(0, 0, 0)
   // a membrana é discreta nas fases abertas (o anel aparece "solto" como na arte), mas visível
-  fieldMat.alpha = phase === "canion" ? 0.14 : phase === "orbital" ? 0.2 : 0.36
+  fieldMat.alpha = phase === "canion" ? 0.14 : phase === "orbital" || phase === "floresta" ? 0.2 : 0.36
   fieldMat.backFaceCulling = false
   fieldMat.disableDepthWrite = true
   const molds = new Map<Key, Mold>()

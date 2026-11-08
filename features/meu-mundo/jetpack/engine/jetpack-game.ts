@@ -43,7 +43,7 @@ import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
 import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
-import { loadCanyonAssets, loadFactoryAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { loadCanyonAssets, loadFactoryAssets, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -236,6 +236,36 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       // o bloco de gelo como rocha do obstáculo: estreitado em x para não parecer maior que a colisão (raio 1,05)
       const block = a.meshes.get("bloco")
       if (block) obstacles.useModel("rock", block, { bake: Matrix.Scaling(2.1 / 3.14, 1, 2.1 / 3.75) })
+    })
+  }
+  if (level === "floresta") {
+    void loadForestAssets(scene, () => !disposed).then((a) => {
+      if (disposed) return a.dispose()
+      canyonAssets = a
+      // bioluminescência: a própria textura acende (cristais, chapéus e veios claros brilham na névoa)
+      for (const [name, m] of a.meshes) {
+        if (name === "paredao") continue
+        const mat = m.material as StandardMaterial | null
+        if (!mat) continue
+        // fica descongelado: congelado de novo antes de a peça aparecer, o shader guardaria a cor antiga
+        mat.unfreeze()
+        mat.emissiveTexture = mat.diffuseTexture
+        mat.emissiveColor = new Color3(0.42, 0.4, 0.5)
+      }
+      tunnel.provide?.(a)
+      // as barreiras de raízes e as pétalas: o paredão do Cânion em pedra azul-violeta (build_floresta_paredao.py)
+      const wall = a.meshes.get("paredao")
+      if (wall) {
+        obstacles.useModel("panel", wall, { fitBox: true })
+        obstacles.useModel("petal", wall, { fitBox: true })
+      }
+    })
+    // o anel dourado do Cânion também é o da Floresta (furo de raio 1, como a regra)
+    void loadPieces(scene, "/meu-mundo/jetpack/canion/", ["anel"] as const, {}, () => !disposed).then((g) => {
+      if (disposed) return g.dispose()
+      extraAssets = g
+      const ring = g.meshes.get("anel")
+      if (ring) obstacles.useModel("rim", ring, { zScale: 0.55 })
     })
   }
   if (level === "forja") {

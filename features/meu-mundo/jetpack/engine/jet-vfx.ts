@@ -254,6 +254,34 @@ export function createJetVfx(scene: Scene, tier: QualityTier, phase: PhaseId): J
     em.start()
     systems.push(em)
   }
+  // vaga-lumes e esporos da Floresta: pontos ciano e violeta flutuando devagar (o miolo do caminho fica livre)
+  if (phase === "floresta") {
+    const ff = new ParticleSystem("jt-fireflies", Math.round(110 * k) + 12, scene)
+    ff.particleTexture = dot
+    ff.blendMode = ParticleSystem.BLENDMODE_ADD
+    ff.emitter = windAt
+    ff.startPositionFunction = (_m, pos) => {
+      const side = Math.random() < 0.5 ? -1 : 1
+      const x = Math.random() < 0.75 ? side * (3 + Math.random() * 12) : (Math.random() - 0.5) * 6
+      const y = Math.abs(x) < 3 ? (Math.random() < 0.5 ? Math.random() * 1.2 : 7 + Math.random() * 5) : Math.random() * 12
+      pos.set(windAt.x + x, y, windAt.z + Math.random() * 60)
+    }
+    ff.direction1 = new Vector3(-0.4, -0.2, -0.4)
+    ff.direction2 = new Vector3(0.4, 0.5, 0.3)
+    ff.minEmitPower = 0.3
+    ff.maxEmitPower = 1.2
+    ff.minLifeTime = 2.5
+    ff.maxLifeTime = 5
+    ff.minSize = 0.07
+    ff.maxSize = 0.18
+    ff.color1 = new Color4(0.35, 1, 0.9, 1)
+    ff.color2 = new Color4(0.8, 0.45, 1, 0.9)
+    ff.colorDead = new Color4(0.3, 0.6, 1, 0)
+    ff.emitRate = 26 * k + 4
+    ff.updateSpeed = 1 / 60
+    ff.start()
+    systems.push(ff)
+  }
   const RING = burst(dot, { cap: 90, c1: new Color4(1, 0.88, 0.35, 1), c2: new Color4(1, 0.6, 0.15, 1), size: [0.08, 0.2], life: [0.35, 0.7], power: [3, 7], gravity: 0, ring: true })
   const FUEL = burst(dot, { cap: 50, c1: new Color4(0.4, 1, 0.7, 1), c2: new Color4(0.2, 0.9, 1, 1), size: [0.06, 0.16], life: [0.3, 0.6], power: [2, 5], gravity: 2 })
   const CRASH = burst(dot, { cap: 80, c1: new Color4(1, 0.7, 0.3, 1), c2: new Color4(0.7, 0.55, 0.45, 1), size: [0.1, 0.35], life: [0.4, 0.9], power: [3, 9], gravity: -9 })

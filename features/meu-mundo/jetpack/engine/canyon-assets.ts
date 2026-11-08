@@ -36,6 +36,10 @@ export type FactoryPiece = (typeof FACTORY_PIECES)[number]
 export function loadIceAssets(scene: Scene, isAlive: () => boolean) {
   return loadPieces(scene, "/meu-mundo/jetpack/gelo/", ["estalactites", "base", "anel", "cristal", "bloco", "portico"] as const, { cristal: 70 }, isAlive)
 }
+/** Floresta Bioluminescente: peças do Tripo preparadas por build_floresta_tripo.py (as que se repetem têm versão de longe). */
+export function loadForestAssets(scene: Scene, isAlive: () => boolean) {
+  return loadPieces(scene, "/meu-mundo/jetpack/floresta/", ["cristais", "cogumelo", "ilha", "arvore", "planta", "arco", "paredao"] as const, { cristais: 60, cogumelo: 80, arvore: 110, planta: 40 }, isAlive)
+}
 /** Forja Vulcânica: peças do Tripo preparadas por build_forja_tripo.py (a rocha tem versão de longe). */
 export function loadForgeAssets(scene: Scene, isAlive: () => boolean) {
   return loadPieces(scene, "/meu-mundo/jetpack/forja/", ["fornalha", "prensa", "rocha", "ponte", "portico", "caldeirao"] as const, { rocha: 70 }, isAlive)
