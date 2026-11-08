@@ -39,6 +39,9 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
+import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
+import "@babylonjs/loaders/glTF"
+import { Quaternion } from "@babylonjs/core/Maths/math.vector"
 import { place, type RGB } from "../../engine/geometry"
 import type { QualityTier } from "../../engine/quality"
 import type { Island, PaintMap, PaintProp, Solid } from "../sim/map"
@@ -267,8 +270,17 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   }
 
   // ── materiais ──
-  const topTex = own(tileTexture(scene, th.tile, th))
-  const metalTex = th.tile === "plate" ? topTex : own(tileTexture(scene, "plate", th))
+  // mm3d-77: texturas pintadas que repetem sem emenda (pipeline/paint/build_paint_textures.py)
+  const TEX = "/meu-mundo/paint/v1/tex/"
+  const fileTex = (name: string) => {
+    const t = own(new Texture(TEX + name + ".webp", scene))
+    t.wrapU = Texture.WRAP_ADDRESSMODE
+    t.wrapV = Texture.WRAP_ADDRESSMODE
+    return t
+  }
+  const forest = th.tile === "moss"
+  const topTex = forest ? fileTex("lajes-musgo") : th.tile === "garden" || th.tile === "rune" ? fileTex("lajes") : own(tileTexture(scene, th.tile, th))
+  const metalTex = fileTex("chapa")
   const topMat = own(new StandardMaterial("paint-arena-top", scene))
   topMat.diffuseTexture = topTex
   topMat.specularColor = new Color3(0.06, 0.06, 0.06)
@@ -281,6 +293,17 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   solidMat.diffuseColor = new Color3(1, 1, 1)
   solidMat.specularColor = new Color3(0.05, 0.05, 0.05)
   solidMat.emissiveColor = new Color3(0.1, 0.1, 0.1)
+  // floresta: folha e casca com textura própria (cor final, sem tingir)
+  const leafMat = own(new StandardMaterial("paint-arena-leaf", scene))
+  leafMat.specularColor = new Color3(0.05, 0.08, 0.06)
+  leafMat.emissiveColor = new Color3(0.1, 0.12, 0.12)
+  const barkMat = own(new StandardMaterial("paint-arena-bark", scene))
+  barkMat.specularColor = new Color3(0.03, 0.03, 0.03)
+  barkMat.emissiveColor = new Color3(0.08, 0.07, 0.06)
+  if (forest) {
+    leafMat.diffuseTexture = fileTex("folha")
+    barkMat.diffuseTexture = fileTex("casca")
+  }
   const glowMat = own(new StandardMaterial("paint-arena-glow", scene))
   glowMat.disableLighting = true
   glowMat.emissiveColor = new Color3(1, 1, 1)
@@ -288,6 +311,8 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   glowMat.specularColor = new Color3(0, 0, 0)
 
   const tops = new ArenaGeo()
+  const leaves = new ArenaGeo()
+  const barks = new ArenaGeo()
   const metal = new ArenaGeo()
   const deco = new ArenaGeo()
   const glow = new ArenaGeo()
@@ -306,7 +331,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       const k = Math.max(0.2, (d - rimW) / d)
       return [cx + (x - cx) * k, cz + (z - cz) * k] as [number, number]
     })
-    const uv = (x: number, z: number) => [x / 3.2, z / 3.2]
+    const uv = (x: number, z: number) => [x / 4, z / 4]
     // miolo (leque)
     {
       const pos: number[] = [cx, y, cz]
@@ -438,6 +463,12 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   }
 
   // ── ilhas ──
+  /** mm3d-77: ilhas que ganham a rocha esculpida (Blender/Tripo) em vez dos anéis. */
+  const rockSlots: Island[] = []
+  const rockIsland = (isl: Island) => {
+    const tag = isl.tag ?? ""
+    return !LEAF.has(tag) && tag !== "stair" && !METAL.has(tag)
+  }
   for (const isl of map.islands) {
     const tag = isl.tag ?? ""
     const metalTop = METAL.has(tag)
@@ -457,6 +488,16 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     else if (isl.kind === "boss") {
       topC = mix(th.top, [1, 1, 1], 0.1)
       rimC = th.trim
+    }
+    if (forest) {
+      // textura já tem a cor: o vértice só escurece de leve (borda) e varia
+      const v = 0.92 + krnd(isl.id * 3) * 0.08
+      if (LEAF.has(tag)) floorOf(isl, leaves, [v, v, v], [0.78, 0.92, 0.84], false)
+      else if (tag === "root" || tag === "roots") floorOf(isl, barks, [v, v, v], [0.7, 0.62, 0.55], false)
+      else floorOf(isl, tops, [v, v, v], [0.72, 0.8, 0.66], false)
+      if (rockIsland(isl)) rockSlots.push(isl)
+      else underOf(isl)
+      continue
     }
     floorOf(isl, metalTop ? metal : tops, topC, rimC, metalTop && tag !== "conveyor")
     underOf(isl)
@@ -1063,6 +1104,8 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   // ── monta as malhas ──
   const built: Mesh[] = []
   if (tops.vertexCount) built.push(tops.build("paint-arena-tops", scene, topMat))
+  if (leaves.vertexCount) built.push(leaves.build("paint-arena-leaves", scene, leafMat))
+  if (barks.vertexCount) built.push(barks.build("paint-arena-barks", scene, barkMat))
   if (metal.vertexCount) built.push(metal.build("paint-arena-metal", scene, metalMat))
   if (deco.vertexCount) built.push(deco.build("paint-arena-deco", scene, solidMat))
   if (glow.vertexCount) built.push(glow.build("paint-arena-glow", scene, glowMat))
@@ -1099,6 +1142,99 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     built.push(falls.build("paint-arena-falls", scene, fm))
   }
   for (const m of built) disposers.push(() => m.dispose())
+
+  // ── rochas esculpidas (GLB): uma instância fina por ilha, encaixada no contorno ──
+  let rockCancelled = false
+  disposers.push(() => {
+    rockCancelled = true
+  })
+  if (rockSlots.length) void loadRocks()
+  async function loadRocks() {
+    const rockMat = own(new StandardMaterial("paint-arena-rockglb", scene))
+    rockMat.diffuseColor = new Color3(1, 1, 1)
+    rockMat.specularColor = new Color3(0.03, 0.03, 0.03)
+    rockMat.emissiveColor = c3(mul(th.hemi, 0.16))
+    let got
+    try {
+      got = await LoadAssetContainerAsync("/meu-mundo/paint/v1/kit/rocks-floresta.glb", scene)
+    } catch {
+      // sem o arquivo (rede caiu): as ilhas ficam só com o chão e a moldura
+      return
+    }
+    if (rockCancelled) {
+      got.dispose()
+      return
+    }
+    got.addAllToScene()
+    const bodies: Mesh[] = []
+    const glows = new Map<string, Mesh>()
+    for (const m of got.meshes) {
+      if (!(m instanceof Mesh) || !m.getTotalVertices()) continue
+      // a raiz do glTF espelha z (mão direita → esquerda): assada a transformação,
+      // as faces ficam do avesso e somem — vira de volta
+      const mirrored = m.getWorldMatrix().determinant() < 0
+      m.setParent(null)
+      m.bakeCurrentTransformIntoVertices()
+      if (mirrored) m.flipFaces(true)
+      m.isPickable = false
+      if (m.name.endsWith("_glow")) {
+        m.material = glowMat
+        glows.set(m.name.replace(/_glow$/, ""), m)
+      } else {
+        m.material = rockMat
+        bodies.push(m)
+      }
+      disposers.push(() => m.dispose())
+    }
+    for (const n of got.transformNodes) n.dispose()
+    for (const n of got.meshes) if (!(n instanceof Mesh) || !n.getTotalVertices()) n.dispose()
+    bodies.sort((a, b) => a.name.localeCompare(b.name))
+    if (!bodies.length) return
+    const per = new Map<Mesh, Float32Array[]>()
+    for (const isl of rockSlots) {
+      const pts = outlineOf(isl, 10)
+      // eixo principal do contorno (covariância) → giro e meias-larguras
+      let sxx = 0
+      let szz = 0
+      let sxz = 0
+      for (const [x, z] of pts) {
+        sxx += (x - isl.x) ** 2
+        szz += (z - isl.z) ** 2
+        sxz += (x - isl.x) * (z - isl.z)
+      }
+      const th0 = 0.5 * Math.atan2(2 * sxz, sxx - szz)
+      const ux = Math.cos(th0)
+      const uz = Math.sin(th0)
+      let ea = 0
+      let eb = 0
+      for (const [x, z] of pts) {
+        ea = Math.max(ea, Math.abs((x - isl.x) * ux + (z - isl.z) * uz))
+        eb = Math.max(eb, Math.abs(-(x - isl.x) * uz + (z - isl.z) * ux))
+      }
+      const body = bodies[Math.floor(krnd(isl.id * 13 + 1) * bodies.length) % bodies.length]
+      const depth = Math.max(2.2, isl.depth * 0.95)
+      const mtx = Matrix.Compose(new Vector3(ea * 0.97, depth, eb * 0.97), Quaternion.RotationAxis(Vector3.Up(), Math.atan2(-uz, ux)), new Vector3(isl.x, isl.y - 0.3, isl.z))
+      const list = per.get(body) ?? []
+      list.push(Float32Array.from(mtx.toArray()))
+      per.set(body, list)
+    }
+    for (const body of bodies) {
+      const list = per.get(body)
+      const glowM = glows.get(body.name)
+      if (!list) {
+        body.setEnabled(false)
+        glowM?.setEnabled(false)
+        continue
+      }
+      for (const target of glowM ? [body, glowM] : [body]) {
+        const buf = new Float32Array(list.length * 16)
+        list.forEach((a, i) => buf.set(a, i * 16))
+        target.thinInstanceSetBuffer("matrix", buf, 16, true)
+        target.thinInstanceRefreshBoundingInfo(false)
+        target.alwaysSelectAsActiveMesh = true
+      }
+    }
+  }
 
   // ── portais (um por time, no alto do meio) ──
   const portalNodes: { ring: StandardMaterial; swirl: Mesh; open: boolean }[] = []
