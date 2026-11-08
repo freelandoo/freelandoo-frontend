@@ -10759,7 +10759,11 @@
     "ntHallBeaten": "{name} beat you in a Hall challenge.",
     "ntHallBeatenLine": "Challenge back in the Blades Hall.",
     "ntHallDefended": "You defended your seat against {name}!",
-    "ntHallDefendedLine": "Your sheet fought for you in the Blades Hall."
+    "ntHallDefendedLine": "Your sheet fought for you in the Blades Hall.",
+    "noturnoModeBotsSub": "Waits up to 1 minute · empty spots become computers",
+    "noturnoLobbyHowBots": "Whoever joins before time runs out rides together on the same street. Empty spots become computers. Most points before crashing wins.",
+    "noturnoLobbyBot": "computer, if nobody joins",
+    "noturnoJoinFail2": "The ride didn't open right now. Try again."
   },
   "Sports": {
     "eyebrow": "Sports",

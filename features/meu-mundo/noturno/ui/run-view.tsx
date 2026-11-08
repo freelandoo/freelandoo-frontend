@@ -148,7 +148,7 @@ export function RunView({ body, look, name, onExit, join }: RunViewProps) {
       setLobby({ list: [], until: 0 })
       setStage({ kind: "lobby", ride, ac })
       const fail = () => {
-        setError(t("noturnoJoinFail", "O rolê em grupo não abriu agora. Tente de novo ou ande sozinho."))
+        setError(t("noturnoJoinFail2", "O rolê não abriu agora. Tente de novo."))
         setStage({ kind: "menu" })
       }
       try {
@@ -218,7 +218,7 @@ function RunLobby({ list, until, onCancel }: { list: NoturnoLobbyEntry[]; until:
           </span>
         </div>
         <p className="mt-2 text-[13px] leading-snug [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-          {t("noturnoLobbyHow", "Quem entrar até o fim do tempo corre junto, na mesma rua. Ganha quem fizer mais pontos antes de cair.")}
+          {t("noturnoLobbyHowBots", "Quem entrar até o fim do tempo corre junto, na mesma rua. As vagas que sobrarem viram computadores. Ganha quem fizer mais pontos antes de cair.")}
         </p>
         <ol className="mt-3 grid grid-cols-2 gap-1.5 max-[420px]:grid-cols-1">
           {Array.from({ length: MAX_RIDERS }, (_, i) => {
@@ -226,7 +226,7 @@ function RunLobby({ list, until, onCancel }: { list: NoturnoLobbyEntry[]; until:
             return (
               <li key={i} className="flex items-center gap-2 rounded-none px-2.5 py-2 text-[13.5px]" style={{ background: e ? MM.rubySoft : MM.card, color: e ? MM.text : MM.muted }}>
                 {e ? <RideIcon ride={e.ride} className="h-4 w-4 shrink-0" /> : <User className="h-4 w-4 shrink-0 opacity-50" />}
-                <span className="min-w-0 truncate font-semibold">{e ? e.name : t("noturnoLobbyFree", "vaga livre")}</span>
+                <span className="min-w-0 truncate font-semibold">{e ? e.name : t("noturnoLobbyBot", "computador, se ninguém entrar")}</span>
                 {e && (
                   <span className="ml-auto shrink-0 text-[11px]" style={{ color: MM.muted }}>
                     {names[e.ride]}
@@ -370,31 +370,24 @@ function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi
           </p>
         )}
 
-        <div className={`mt-4 grid gap-2 [@media(max-height:520px)]:mt-2.5 ${multi ? "grid-cols-2" : "grid-cols-1"}`}>
+        {/* 2026-11-08 (regra do Alex): uma regra só — sempre a sala; espera 1 minuto e as vagas vazias viram computadores */}
+        <div className="mt-4 [@media(max-height:520px)]:mt-2.5">
           <button
             type="button"
-            onClick={() => onPlay(ride, false)}
-            className="flex w-full items-center justify-center gap-2 rounded-none px-3 py-3.5 text-[17px] [@media(max-height:520px)]:py-2.5 font-black italic tracking-wide text-white transition-transform active:scale-[0.98] max-[420px]:text-[15px]"
+            onClick={() => onPlay(ride, multi)}
+            className="flex w-full flex-col items-center justify-center rounded-none px-3 py-3 [@media(max-height:520px)]:py-2 font-black italic tracking-wide text-white transition-transform active:scale-[0.98]"
             style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}
           >
-            <RideIcon ride={ride} className="h-5 w-5 shrink-0" />
-            {multi ? t("noturnoModeSolo", "Sozinho") : t("noturnoPlay", "Andar de {ride}").replace("{ride}", names[ride].toLowerCase())}
+            <span className="flex items-center gap-2 text-[17px] max-[420px]:text-[15px]">
+              <RideIcon ride={ride} className="h-5 w-5 shrink-0" />
+              {t("noturnoPlay", "Andar de {ride}").replace("{ride}", names[ride].toLowerCase())}
+            </span>
+            {multi && (
+              <span className="text-[11px] font-semibold not-italic leading-tight [@media(max-height:520px)]:hidden" style={{ color: "rgba(255,255,255,0.8)" }}>
+                {t("noturnoModeBotsSub", "Espera até 1 minuto · vaga vazia vira computador")}
+              </span>
+            )}
           </button>
-          {multi && (
-            <button
-              type="button"
-              onClick={() => onPlay(ride, true)}
-              className="flex w-full flex-col items-center justify-center rounded-none px-3 py-2 [@media(max-height:520px)]:py-1.5 transition-transform active:scale-[0.98]"
-              style={{ background: MM.card, border: `1.5px solid ${CYAN}`, color: MM.text }}
-            >
-              <span className="flex items-center gap-2 text-[17px] font-black italic tracking-wide max-[420px]:text-[15px]">
-                <Users className="h-5 w-5 shrink-0" style={{ color: CYAN }} /> {t("noturnoModeMulti", "Multiplayer")}
-              </span>
-              <span className="text-[11px] leading-tight [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-                {t("noturnoModeMultiSub", "Espera até 1 minuto · mesma rua")}
-              </span>
-            </button>
-          )}
         </div>
 
         <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>

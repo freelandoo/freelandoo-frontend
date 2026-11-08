@@ -10173,7 +10173,11 @@
     "ntHallBeaten": "{name} venceu você num desafio do Hall.",
     "ntHallBeatenLine": "Desafie de volta no Hall das Lâminas.",
     "ntHallDefended": "Você defendeu sua vaga contra {name}!",
-    "ntHallDefendedLine": "Sua ficha lutou por você no Hall das Lâminas."
+    "ntHallDefendedLine": "Sua ficha lutou por você no Hall das Lâminas.",
+    "noturnoModeBotsSub": "Espera até 1 minuto · vaga vazia vira computador",
+    "noturnoLobbyHowBots": "Quem entrar até o fim do tempo corre junto, na mesma rua. As vagas que sobrarem viram computadores. Ganha quem fizer mais pontos antes de cair.",
+    "noturnoLobbyBot": "computador, se ninguém entrar",
+    "noturnoJoinFail2": "O rolê não abriu agora. Tente de novo."
   },
   "Sports": {
     "eyebrow": "Esportes",

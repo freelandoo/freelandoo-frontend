@@ -10739,7 +10739,11 @@
     "ntHallBeaten": "{name} te venció en un desafío del Salón.",
     "ntHallBeatenLine": "Desafía de vuelta en el Salón de las Láminas.",
     "ntHallDefended": "¡Defendiste tu lugar contra {name}!",
-    "ntHallDefendedLine": "Tu ficha peleó por ti en el Salón de las Láminas."
+    "ntHallDefendedLine": "Tu ficha peleó por ti en el Salón de las Láminas.",
+    "noturnoModeBotsSub": "Espera hasta 1 minuto · los lugares vacíos son de la computadora",
+    "noturnoLobbyHowBots": "Quien entre antes de que acabe el tiempo corre junto, en la misma calle. Los lugares vacíos son de la computadora. Gana quien haga más puntos antes de caer.",
+    "noturnoLobbyBot": "computadora, si nadie entra",
+    "noturnoJoinFail2": "El paseo no abrió ahora. Inténtalo de nuevo."
   },
   "Sports": {
     "eyebrow": "Deportes",
