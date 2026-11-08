@@ -331,7 +331,8 @@ export interface RefinementProposal {
 export interface GearCatalog {
   slots: GearSlot[]
   cap: GearBonus
-  upgrade: { max: number; dmg: number; def: number }
+  /** `secondary`: o que cada nível acima do +5 soma (arma e armadura). */
+  upgrade: { max: number; dmg: number; def: number; secondary?: Partial<GearBonus> }
   items: GearItem[]
   recipes: GearRecipe[]
 }

@@ -11,7 +11,7 @@
 // Por quadro só mudam `transform` e `opacity` (escritos direto no DOM, sem
 // re-render) — nada de animar filtro ou camada do tamanho da janela.
 //
-// Navegar: setas, A/D, Q/E, 1–6, roda, arrasto ou clique no modal de lado.
+// Navegar: setas, A/D, Q/E, 1–7, roda, arrasto ou clique no modal de lado.
 // ESC/VOLTAR fecha, e tocar fora dos modais também. Celular (tela estreita):
 // um card por vez em tela cheia, deslizar para trocar.
 
@@ -19,11 +19,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getAdventure, getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
+import { getAdventure, getCharacters, getGear, getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, archivo } from "./evo-skin"
 import { MM } from "../hud/tokens"
 import { PAGES, StatusPage, type AdvXp, type PageActions, type PageId } from "./status-pages"
+import type { LoadoutData } from "./loadout-page"
 import CharacterCapsule from "./character-capsule"
 import { PORTRAIT } from "../portraits"
 import { SteamFrame } from "../kit/steam/steam-frame"
@@ -101,6 +102,8 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
   // mm3d-60g: nível e XP de aventura no cabeçalho
   const [adv, setAdv] = useState<AdvXp | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // B6: equipamento e personagem para a página "Equipado e efeitos" (falha = segue "carregando").
+  const [loadout, setLoadout] = useState<LoadoutData>({ gear: null, chars: null })
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   // Página de partida (mm3d-37c: o caixa abre no Mercado); o carrossel nasce nela.
@@ -122,7 +125,8 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
     if (!token) return
     // As duas moedas (mm3d-30): a vida traz as do jogo; Poléns vêm da carteira
     // oficial. Falha nos Poléns = null ("—"), nunca zero.
-    const [r, w, a] = await Promise.all([getLife(token), getWallets(token), getAdventure(token)])
+    const [r, w, a, g, ch] = await Promise.all([getLife(token), getWallets(token), getAdventure(token), getGear(token), getCharacters(token)])
+    setLoadout((prev) => ({ gear: g.ok ? { catalog: g.data.gear, bag: g.data.bag } : prev.gear, chars: ch.ok ? ch.data : prev.chars }))
     if (a.ok) setAdv({ level: a.data.adventure.level, into: a.data.adventure.into, need: a.data.adventure.need })
     if (r.ok) {
       setLife({ ...r.data, wallet: { ...r.data.wallet, polens: w.ok ? w.data.wallet.polens : null } })
@@ -294,7 +298,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       if (k === "Escape") close()
       else if (k === "ArrowLeft" || k === "a" || k === "A" || k === "q" || k === "Q") go(-1)
       else if (k === "ArrowRight" || k === "d" || k === "D" || k === "e" || k === "E" || k === "Tab") go(1)
-      else if (/^[1-6]$/.test(k)) goTo(Number(k) - 1)
+      else if (k.length === 1 && k >= "1" && k <= String(N)) goTo(Number(k) - 1)
       else handled = false
       if (handled) {
         e.preventDefault()
@@ -392,7 +396,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       >
         <SteamFrame className="relative mx-2 min-h-0 flex-1" cornerSize={34}>
           <div key={page} className="h-full overflow-hidden p-2.5">
-            <StatusPage page={page} life={life} name={name} portrait={portrait} compact t={t} act={act} adv={adv} />
+            <StatusPage page={page} life={life} name={name} portrait={portrait} compact t={t} act={act} adv={adv} loadout={loadout} />
           </div>
         </SteamFrame>
         {/* rodapé numa linha de 40 px: ‹ pontos › e fechar (o nome da página está no cabeçalho) */}
@@ -463,7 +467,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
               <SteamFrame className="h-full" cornerSize={88} glow={false} ignite={i === sel}>
                 <div className="relative h-full w-full overflow-hidden">
                   <div className="relative h-full px-9 pb-7 pt-6">
-                    {rel(i) <= 1 && <StatusPage page={page} life={life} name={name} portrait={portrait} compact={false} t={t} act={act} adv={adv} />}
+                    {rel(i) <= 1 && <StatusPage page={page} life={life} name={name} portrait={portrait} compact={false} t={t} act={act} adv={adv} loadout={loadout} />}
                   </div>
                   <div
                     ref={(el) => {
@@ -501,7 +505,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
           className={`${archivo.className} absolute whitespace-nowrap text-[13px] font-medium`}
           style={{ left: -W / 2, top: H / 2 + 22, color: EVO.mudo }}
         >
-          ◀ ▶ {t("stHintSwap", "Trocar tela")} &nbsp;&nbsp; 1 – 6 {t("stHintDirect", "Ir direto")} &nbsp;&nbsp; ESC {t("stHintBack", "Voltar")}
+          ◀ ▶ {t("stHintSwap", "Trocar tela")} &nbsp;&nbsp; 1 – {N} {t("stHintDirect", "Ir direto")} &nbsp;&nbsp; ESC {t("stHintBack", "Voltar")}
         </div>
         <div className="pointer-events-auto absolute" style={{ left: -60, top: H / 2 + 24, width: 120 }}>
           <Dots sel={sel} onPick={goTo} />
