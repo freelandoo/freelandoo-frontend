@@ -1899,7 +1899,16 @@
     "hotPostAria": "Em alta: recebendo mais que a média do dia",
     "hotPostLeaderAria": "Líder do dia em engajamento",
     "hotPostRisingAria": "Em alta: perto do líder do dia",
-    "accessVaquinha": "Ver vaquinha"
+    "accessVaquinha": "Ver vaquinha",
+    "dislikeButton": "Não gostei",
+    "undoDislikeButton": "Desfazer não gostei",
+    "reachCity": "Seu post está na sua cidade · {place}",
+    "reachCityNoPlace": "Seu post está começando: cadastre sua cidade no perfil para ele subir",
+    "reachArea": "Seu post chegou à sua área · {place}",
+    "reachRegion": "Seu post chegou à sua região · {place}",
+    "reachState": "Seu post chegou ao seu estado · {place}",
+    "reachCountry": "Seu post chegou ao Brasil todo",
+    "reachHint": "Só você vê. O post sobe de cidade para área, região, estado e Brasil conforme as pessoas interagem."
   },
   "Stories": {
     "createStoryLabel": "Postar",

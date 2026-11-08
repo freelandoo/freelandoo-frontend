@@ -2,8 +2,9 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
+  ThumbsDown,
   Heart,
   Send,
   MessageSquare,
@@ -25,6 +26,7 @@ import { ReportPostDialog } from "@/components/feed/report-post-dialog"
 import { BeesVideo } from "./bees-video"
 import { TrackAudio } from "@/components/media/track-audio"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { ReachBadge, useDislike } from "@/components/feed/reach-badge"
 
 interface BeePostProps {
   bee: BeeItem
@@ -66,6 +68,7 @@ export function BeePost({
   commentsCount,
 }: BeePostProps) {
   const t = useTranslations("Bees")
+  const tPost = useTranslations("Post")
   const router = useRouter()
   const sectionRef = useRef<HTMLElement | null>(null)
   const viewFired = useRef(false)
@@ -75,6 +78,27 @@ export function BeePost({
   const [likePending, setLikePending] = useState(false)
   const [bookmarked, setBookmarked] = useState(!!bee.viewer_has_bookmarked)
   const [bookmarkPending, setBookmarkPending] = useState(false)
+  // "Não gostei" (alcance regional, A1): exclusivo com a curtida.
+  const likedRef = useRef(liked)
+  useEffect(() => {
+    likedRef.current = liked
+  }, [liked])
+  const onUnliked = useCallback((count: number | null) => {
+    if (!likedRef.current) return
+    setLiked(false)
+    setLikesCount((c) => (typeof count === "number" ? count : Math.max(0, c - 1)))
+  }, [])
+  const {
+    disliked,
+    setDisliked,
+    toggle: toggleDislike,
+    pending: dislikePending,
+  } = useDislike({
+    initial: !!bee.viewer_has_disliked,
+    endpoint: `/api/bees/${encodeURIComponent(bee.id_story)}/dislike`,
+    loginNext: "/bees",
+    onUnliked,
+  })
   const [reportOpen, setReportOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [expandCaption, setExpandCaption] = useState(false)
@@ -161,6 +185,7 @@ export function BeePost({
         typeof data.likes_count === "number" ? data.likes_count : optimisticCount
       setLiked(finalLiked)
       setLikesCount(finalCount)
+      if (finalLiked) setDisliked(false)
       onLikeChange?.(bee.id_story, finalLiked, finalCount)
     } catch {
       setLiked(wasLiked)
@@ -351,6 +376,16 @@ export function BeePost({
             </ActionButton>
 
             <ActionButton
+              ariaLabel={disliked ? tPost("undoDislikeButton", "Desfazer não gostei") : tPost("dislikeButton", "Não gostei")}
+              onClick={toggleDislike}
+              disabled={dislikePending}
+            >
+              <ThumbsDown
+                className={cn("h-6 w-6 text-white/80", disliked && "fill-current text-[#F2B705]")}
+              />
+            </ActionButton>
+
+            <ActionButton
               ariaLabel={t("comments", "Comentários")}
               onClick={() => onOpenComments?.(bee.id_story)}
             >
@@ -447,6 +482,13 @@ export function BeePost({
                 </div>
               </Link>
             </div>
+
+            {/* Alcance regional — só o dono vê. */}
+            {bee.my_reach && (
+              <div className="mt-2">
+                <ReachBadge reach={bee.my_reach} variant="overlay" />
+              </div>
+            )}
 
             {/* Localização + links estilizados do bee */}
             {(bee.location || bee.links.length > 0) && (

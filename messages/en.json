@@ -1899,7 +1899,16 @@
     "hotPostAria": "Trending: getting more than today's average",
     "hotPostLeaderAria": "Today's engagement leader",
     "hotPostRisingAria": "Trending: close to today's leader",
-    "accessVaquinha": "See fundraiser"
+    "accessVaquinha": "See fundraiser",
+    "dislikeButton": "Not for me",
+    "undoDislikeButton": "Undo not for me",
+    "reachCity": "Your post is live in your city · {place}",
+    "reachCityNoPlace": "Your post is just starting: add your city to your profile so it can grow",
+    "reachArea": "Your post reached your area · {place}",
+    "reachRegion": "Your post reached your region · {place}",
+    "reachState": "Your post reached your state · {place}",
+    "reachCountry": "Your post reached all of Brazil",
+    "reachHint": "Only you can see this. Your post climbs from city to area, region, state and all of Brazil as people engage."
   },
   "Stories": {
     "createStoryLabel": "Post",

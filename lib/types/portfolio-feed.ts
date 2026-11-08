@@ -1,5 +1,13 @@
 export type FeedMediaType = "image" | "video"
 
+/** Alcance regional (A1): até onde o post chegou. Só vem no post do DONO. */
+export interface FeedReach {
+  level: 0 | 1 | 2 | 3 | 4
+  key: "city" | "area" | "region" | "state" | "country"
+  /** Nome do lugar congelado no post (cidade, área, região ou UF). */
+  place: string | null
+}
+
 export interface FeedMedia {
   url: string
   type: FeedMediaType
@@ -85,6 +93,9 @@ export interface FeedPost {
   feed_kind: "feed" | "bees" | "recado"
   viewer_has_liked: boolean
   viewer_has_bookmarked?: boolean
+  /** "Não gostei" do leitor (o número não é público). */
+  viewer_has_disliked?: boolean
+  my_reach?: FeedReach | null
   public_profile_url: string | null
   whatsapp_url: string | null
   social_links: FeedSocialLink[]
@@ -186,6 +197,8 @@ export interface BeeItem {
   effective_expires_at: string
   viewer_has_liked: boolean
   viewer_has_bookmarked: boolean
+  viewer_has_disliked?: boolean
+  my_reach?: FeedReach | null
   public_profile_url: string | null
 }
 

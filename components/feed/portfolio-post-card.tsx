@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { memo, useEffect, useRef, useState } from "react"
-import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX, Users, Trash2, ArrowUpRight, Dumbbell, HeartHandshake } from "lucide-react"
+import { memo, useCallback, useEffect, useRef, useState } from "react"
+import { ThumbsDown, Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX, Users, Trash2, ArrowUpRight, Dumbbell, HeartHandshake } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { TrackAudio } from "@/components/media/track-audio"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -21,6 +21,7 @@ import { HeatRing, type HeatTier } from "./heat-ring"
 import { VerifiedBadge } from "@/components/profile/verified-badge"
 import { MarkdownText } from "@/components/ui/markdown-text"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { ReachBadge, useDislike } from "./reach-badge"
 
 function timeAgo(iso: string | null, t: (key: string, fallback?: string) => string): string {
   if (!iso) return ""
@@ -120,6 +121,29 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [likePending, setLikePending] = useState(false)
   const [bookmarkPending, setBookmarkPending] = useState(false)
+  // "Não gostei" (alcance regional, A1): exclusivo com a curtida — quando o
+  // servidor tira a curtida junto, o coração apaga aqui também.
+  const likedRef = useRef(liked)
+  useEffect(() => {
+    likedRef.current = liked
+  }, [liked])
+  const onUnliked = useCallback((count: number | null) => {
+    if (!likedRef.current) return
+    setLiked(false)
+    setLikesCount((c) => (typeof count === "number" ? count : Math.max(0, c - 1)))
+  }, [])
+  const {
+    disliked,
+    setDisliked,
+    toggle: toggleDislike,
+    pending: dislikePending,
+  } = useDislike({
+    initial: !!post.viewer_has_disliked,
+    endpoint: "/api/ranking/dislike",
+    body: { id_portfolio_item: post.post_id },
+    loginNext: "/feed",
+    onUnliked,
+  })
   const [copied, setCopied] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [audioInView, setAudioInView] = useState(false)
@@ -304,6 +328,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
         typeof data.likes_count === "number" ? data.likes_count : optimisticCount
       setLiked(finalLiked)
       setLikesCount(finalCount)
+      if (finalLiked) setDisliked(false)
       onLikeChange?.(post.post_id, finalLiked, finalCount)
       sendFeedEvent({
         post_id: post.post_id,
@@ -795,6 +820,12 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
               </div>
             )}
 
+            {post.my_reach && (
+              <div className="pointer-events-none mt-2">
+                <ReachBadge reach={post.my_reach} variant="overlay" />
+              </div>
+            )}
+
             {musicPill && <div className="pointer-events-auto mt-3">{musicPill}</div>}
 
             {(post.whatsapp_url || (post.social_links && post.social_links.length > 0)) && (
@@ -855,6 +886,21 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
               <span className="text-[11px] font-semibold tabular-nums text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
                 {likesCount.toLocaleString("pt-BR")}
               </span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                aria-label={disliked ? t("undoDislikeButton", "Desfazer não gostei") : t("dislikeButton", "Não gostei")}
+                aria-pressed={disliked}
+                onClick={toggleDislike}
+                disabled={dislikePending}
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/80 shadow ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95 disabled:opacity-60",
+                  disliked && "text-[#F2B705] ring-[#F2B705]/50"
+                )}
+              >
+                <ThumbsDown className={cn("h-5 w-5", disliked && "fill-current")} />
+              </button>
             </div>
             <div className="flex flex-col items-center gap-1">
               <button
@@ -962,6 +1008,19 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
               </button>
               <button
                 type="button"
+                aria-label={disliked ? t("undoDislikeButton", "Desfazer não gostei") : t("dislikeButton", "Não gostei")}
+                aria-pressed={disliked}
+                onClick={toggleDislike}
+                disabled={dislikePending}
+                className={cn(
+                  "rounded-full p-1.5 transition hover:bg-[#F5F1E8]/10 active:scale-90 disabled:opacity-60",
+                  disliked ? "text-[#F2B705]" : "text-[#9A938A]"
+                )}
+              >
+                <ThumbsDown className={cn("h-5 w-5", disliked && "fill-current")} />
+              </button>
+              <button
+                type="button"
                 aria-label={t("commentsButton", "Comentários")}
                 onClick={() => onOpenComments?.(post.post_id)}
                 className="rounded-full p-1.5 text-[#F5F1E8] transition hover:bg-[#F5F1E8]/10 active:scale-90"
@@ -1002,6 +1061,13 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
                 <Flag className="h-5 w-5" />
               </button>
             </div>
+
+            {/* Alcance regional — só o dono vê (my_reach vem null para os outros). */}
+            {post.my_reach && (
+              <div className="px-3 pt-1.5">
+                <ReachBadge reach={post.my_reach} />
+              </div>
+            )}
 
             {/* Contador de curtidas */}
             <div className="flex items-baseline gap-1.5 px-3 pt-1.5">

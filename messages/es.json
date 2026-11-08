@@ -1899,7 +1899,16 @@
     "hotPostAria": "En alza: recibiendo más que el promedio del día",
     "hotPostLeaderAria": "Líder del día en interacción",
     "hotPostRisingAria": "En alza: cerca del líder del día",
-    "accessVaquinha": "Ver vaquita"
+    "accessVaquinha": "Ver vaquita",
+    "dislikeButton": "No me gustó",
+    "undoDislikeButton": "Deshacer no me gustó",
+    "reachCity": "Tu post está en tu ciudad · {place}",
+    "reachCityNoPlace": "Tu post está empezando: agrega tu ciudad al perfil para que crezca",
+    "reachArea": "Tu post llegó a tu zona · {place}",
+    "reachRegion": "Tu post llegó a tu región · {place}",
+    "reachState": "Tu post llegó a tu estado · {place}",
+    "reachCountry": "Tu post llegó a todo Brasil",
+    "reachHint": "Solo tú lo ves. El post sube de ciudad a zona, región, estado y todo Brasil a medida que la gente interactúa."
   },
   "Stories": {
     "createStoryLabel": "Publicar",
