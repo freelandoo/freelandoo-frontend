@@ -13,6 +13,8 @@ import {
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useActionConsent } from "@/hooks/use-action-consent"
+import { EmeraldMark } from "@/components/moedas/coin-wallet"
+import { GoldCouponSelect } from "@/components/moedas/gold-coupon-select"
 
 type Quote = {
   profile?: {
@@ -25,6 +27,8 @@ type Quote = {
     duration_days: number
     price_cents: number
     price_polens: number
+    /** A7: já resolvido pelo servidor (0 = não vende em Esmeralda). */
+    price_emerald?: number
   }
   slots?: { total: number; taken: number; available: number }
   active?: { id: string; activated_at: string; expires_at: string } | null
@@ -59,7 +63,8 @@ export function PremiumProfileModal({
   const { ensureConsent } = useActionConsent()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [loading, setLoading] = useState(false)
-  const [buying, setBuying] = useState<"polens" | "stripe" | null>(null)
+  const [buying, setBuying] = useState<"polens" | "stripe" | "emerald" | null>(null)
+  const [goldCoupon, setGoldCoupon] = useState("")
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -81,7 +86,7 @@ export function PremiumProfileModal({
     if (open) void load()
   }, [open, load])
 
-  async function buy(method: "polens" | "stripe") {
+  async function buy(method: "polens" | "stripe" | "emerald") {
     const t = token()
     if (!t) {
       window.location.href = "/login?next=/account"
@@ -92,10 +97,17 @@ export function PremiumProfileModal({
     setError(null)
     try {
       const sharedCoupon = method === "stripe" ? getCapturedCoupon() : null
-      const res = await fetch(`/api/premium/checkout/${method}/${profileId}`, {
+      // A7: Esmeralda usa a mesma rota da carteira (polens) com currency.
+      const route = method === "emerald" ? "polens" : method
+      const body = {
+        ...(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
+        ...(method === "emerald" ? { currency: "emerald" } : {}),
+        ...(method === "stripe" && goldCoupon ? { gold_coupon_id: goldCoupon } : {}),
+      }
+      const res = await fetch(`/api/premium/checkout/${route}/${profileId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
-        body: JSON.stringify(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || tr("purchaseError", "Erro ao processar compra"))
@@ -227,6 +239,22 @@ export function PremiumProfileModal({
                 {tr("buyWithPolens", "Comprar com Poléns")}
               </Button>
             </div>
+            {pricing && (pricing.price_emerald ?? 0) > 0 && (
+              <Button
+                onClick={() => buy("emerald")}
+                disabled={buying !== null || noSlots || !!fatalError}
+                variant="outline"
+                className="w-full border-emerald-400/40 text-emerald-100 hover:bg-emerald-400/10"
+              >
+                {buying === "emerald" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <EmeraldMark className="mr-2 h-4 w-4" />
+                )}
+                {tr("buyWithEmerald", "Comprar com {n} Esmeraldas").replace("{n}", (pricing.price_emerald ?? 0).toLocaleString(locale))}
+              </Button>
+            )}
+            {pricing && <GoldCouponSelect priceCents={pricing.price_cents} value={goldCoupon} onChange={setGoldCoupon} />}
           </div>
         )}
       </DialogContent>

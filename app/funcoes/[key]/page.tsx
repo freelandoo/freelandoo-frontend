@@ -11,6 +11,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowRight, BadgeCheck, Loader2, Sparkles } from "lucide-react"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
+import { GoldCouponSelect } from "@/components/moedas/gold-coupon-select"
 import {
   PageShell,
   TabloidPageIntro,
@@ -40,6 +41,7 @@ export default function FunctionProductPage() {
   const [owned, setOwned] = useState<boolean | null>(null)
   const [hasToken, setHasToken] = useState(false)
   const [buying, setBuying] = useState(false)
+  const [goldCoupon, setGoldCoupon] = useState("")
   const [buyError, setBuyError] = useState<string | null>(null)
   const [checkoutReturn, setCheckoutReturn] = useState<CheckoutReturn>(null)
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -147,7 +149,8 @@ export default function FunctionProductPage() {
     try {
       const r = await fetch(`/api/function-store/products/${encodeURIComponent(key)}/checkout`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(goldCoupon ? { gold_coupon_id: goldCoupon } : {}),
       })
       const data = await r.json().catch(() => ({}))
       if (r.ok && data?.checkout_url) {
@@ -159,7 +162,7 @@ export default function FunctionProductPage() {
       setBuyError(t("buyError", "Erro ao iniciar a compra"))
     }
     setBuying(false)
-  }, [key, router, t])
+  }, [key, router, t, goldCoupon])
 
   // Compra pela carteira: liberação é imediata (sem webhook), então basta
   // reconsultar a posse e o saldo depois do 200.
@@ -337,6 +340,9 @@ export default function FunctionProductPage() {
                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0B0B0D]/60">
                   {t("lifetime", "Pagamento único — sua pra sempre.")}
                 </p>
+                {hasToken && product ? (
+                  <GoldCouponSelect light priceCents={Number(product.price_cents) || 0} value={goldCoupon} onChange={setGoldCoupon} />
+                ) : null}
                 <button
                   type="button"
                   onClick={startCheckout}

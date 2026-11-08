@@ -10,6 +10,8 @@ import { getStoredUser } from "@/lib/auth"
 import { PageShell, EmptyState, ErrorState } from "@/components/tabloide"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useActionConsent } from "@/hooks/use-action-consent"
+import { CoinWallet } from "@/components/moedas/coin-wallet"
+import { GoldCouponSelect } from "@/components/moedas/gold-coupon-select"
 
 type Product = {
   id: string
@@ -55,6 +57,7 @@ function LojaPolensContent() {
   const [boostProfiles, setBoostProfiles] = useState<BoostProfile[]>([])
   const [boostProfileId, setBoostProfileId] = useState<string>("")
   const [boostBuying, setBoostBuying] = useState(false)
+  const [boostCoupon, setBoostCoupon] = useState("")
 
   const [products, setProducts] = useState<Product[]>([])
   const [wallet, setWallet] = useState<Wallet | null>(null)
@@ -223,7 +226,7 @@ function LojaPolensContent() {
       const res = await fetch("/api/xp-boost/checkout", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ id_profile: boostProfileId }),
+        body: JSON.stringify({ id_profile: boostProfileId, ...(boostCoupon ? { gold_coupon_id: boostCoupon } : {}) }),
       })
       const data = await res.json()
       if (!res.ok || !data.checkout_url) throw new Error(data.error || t("openCheckoutError", "Não foi possível abrir o checkout"))
@@ -332,6 +335,9 @@ function LojaPolensContent() {
         </div>
       </section>
 
+      {/* A7: carteira das duas moedas (Gold e Verde Esmeralda) */}
+      <CoinWallet onChange={() => void loadWallet()} />
+
       {/* Booster de XP (nível 5) — UI nova nasce reta (.fl-sharp) */}
       <section className="fl-sharp mx-auto max-w-7xl px-4 pb-4 md:px-8">
         <div className="overflow-hidden border-2 border-[#F2B705]/40 bg-[#1D1810]">
@@ -374,6 +380,7 @@ function LojaPolensContent() {
                       </option>
                     ))}
                   </select>
+                  <GoldCouponSelect priceCents={1000} value={boostCoupon} onChange={setBoostCoupon} />
                   <button
                     type="button"
                     onClick={() => void buyBooster()}

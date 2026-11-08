@@ -24,6 +24,13 @@ import {
 } from "@/components/tabloide"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useActionConsent } from "@/hooks/use-action-consent"
+import { EmeraldMark } from "@/components/moedas/coin-wallet"
+
+/** A7: mesma regra do servidor (utils/currency.emeraldPrice) — só para mostrar. */
+function emeraldOf(p: { price_polens: number; price_emerald?: number | null }): number {
+  if (p.price_emerald != null) return Math.max(0, Math.floor(Number(p.price_emerald) || 0))
+  return Math.max(0, Math.floor(Number(p.price_polens) || 0)) * 1000
+}
 
 type TFn = (key: string, fallback?: string) => string
 
@@ -38,6 +45,8 @@ type Product = {
   description: string | null
   banner_url: string
   price_polens: number
+  /** A7: preço em Esmeralda — null = Gold × 1.000, 0 = não vende em Esmeralda. */
+  price_emerald?: number | null
   price_cents: number
   tag_label?: string | null
   tag_color?: string | null
@@ -241,18 +250,18 @@ export default function ManifestacaoPage() {
     return rows
   }, [mine, activeId])
 
-  async function buy(product: Product) {
+  async function buy(product: Product, currency: "gold" | "emerald" = "gold") {
     if (!token) {
       window.location.href = "/login?next=/manifestacao"
       return
     }
     if (!(await ensureConsent("platform_purchase"))) return
-    setBusy(`buy:${product.id}`)
+    setBusy(`${currency === "emerald" ? "emerald" : "buy"}:${product.id}`)
     try {
       const res = await fetch("/api/manifestations/checkout/polens", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id: product.id }),
+        body: JSON.stringify({ product_id: product.id, currency }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || t("purchaseNotCompleted", "Compra não concluída"))
@@ -265,7 +274,8 @@ export default function ManifestacaoPage() {
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : t("purchaseError", "Erro na compra")
-      const insufficient = message.toLowerCase().includes("pólens") || message.toLowerCase().includes("polens")
+      const lower = message.toLowerCase()
+      const insufficient = lower.includes("gold") || lower.includes("esmeralda") || lower.includes("pólens") || lower.includes("polens")
       setFeedback({
         ok: false,
         title: insufficient ? t("insufficientBalance", "Saldo insuficiente") : t("purchaseNotCompleted", "Compra não concluída"),
@@ -754,6 +764,21 @@ export default function ManifestacaoPage() {
                           ? `${t("buy", "Comprar")} · ${p.price_polens.toLocaleString(locale)} ${t("polens", "Poléns")}`
                           : t("redeemFree", "Resgatar grátis")}
                       </button>
+                      {p.price_polens > 0 && emeraldOf(p) > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => buy(p, "emerald")}
+                          disabled={busy != null}
+                          className="inline-flex w-full items-center justify-center rounded-none border-2 border-[#1FBF75] bg-[#0F1A14] py-3 text-sm font-bold uppercase tracking-wider text-[#BFF0D6] disabled:opacity-60"
+                        >
+                          {busy === `emerald:${p.id}` ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <EmeraldMark className="mr-2 h-4 w-4" />
+                          )}
+                          {`${t("buy", "Comprar")} · ${emeraldOf(p).toLocaleString(locale)} ${t("emeralds", "Esmeraldas")}`}
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
