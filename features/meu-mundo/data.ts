@@ -266,6 +266,27 @@ export const finishFight = (token: string, ticket: string, frames: FightFrames) 
 export const postClientReport = (token: string, body: Record<string, unknown>) => call<{ ok: true }>(token, "POST", "/client-report", body)
 export const getAdventure = (token: string) => call<AdventureState>(token, "GET", "/adventure")
 
+// ═══ B8 (mig 375): Lâminas = Hall — cadeiras e desafio pela vaga ═══════════
+export interface HallPerson {
+  id: string
+  name: string
+  isMe: boolean
+  power: number
+  body: BodyId | null
+  /** já desafiei nas últimas 24 h */
+  cooldown: boolean
+}
+export interface HallBoard {
+  seats: number
+  hall: (HallPerson & { seat: number; since: string; defenses: number })[]
+  contenders: (HallPerson & { position: number })[]
+  me: { seat: number | null; power: number; left: number; perDay: number }
+  history: { id: string; role: "challenger" | "defender"; other: string; status: "open" | "won" | "lost"; seatWon: number | null; defenderSeat: number | null; at: string }[]
+}
+export const getHallBoard = (token: string) => call<HallBoard>(token, "GET", "/hall/board")
+export const postHallChallenge = (token: string, defender: string) =>
+  call<{ fight: FightTicket; challenge: { defender: string; defenderSeat: number | null; peer: number; myPower: number; defenderPower: number } }>(token, "POST", "/hall/challenge", { defender })
+
 // ═══ mm3d-59 slice 3: equipamento (Armeiro, mochila, forja) ════════════════
 export type GearCategory = "weapon" | "shield" | "armor" | "accessory" | "material" | "recipe" | "quest" | "cosmetic"
 export type GearSlot = "weapon" | "shield" | "armor" | "acc1" | "acc2"

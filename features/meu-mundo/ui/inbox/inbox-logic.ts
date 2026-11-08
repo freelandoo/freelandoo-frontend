@@ -77,6 +77,8 @@ export function noticeExpression(n: Pick<MMNotice, "kind" | "code"> & { data?: M
     if (n.code === "hospital_out" || n.code === "adult" || n.code === "wish" || n.code === "wish_ok") return "happy"
     if (n.code === "chatter") return n.data?.emotion === "sad" ? "worried" : n.data?.emotion === "angry" ? "stressed" : "happy"
     if (n.code === "wish_fail") return "worried"
+    if (n.code === "hall_defended") return "happy"
+    if (n.code === "hall_lost" || n.code === "hall_beaten") return "worried"
     if (n.code === "born") return "determined"
     if (n.code === "death") return "crying"
     if (n.code === "funeral") return n.data?.paidBy === "freelandoo" ? "grateful" : "worried"
@@ -134,6 +136,13 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
       if (n.code === "wish" && n.data.wish) return { title: wishLine(n.data.wish as WishId, t), line: t("ntWishLine", "Se você fizer, ele vai gostar mais de você.") }
       if (n.code === "wish_ok") return { title: t("ntWishOk", "Você fez o que eu queria! Valeu!"), line: t("ntWishOkLine", "Ele gostou mais de você.") }
       if (n.code === "wish_fail") return { title: t("ntWishFail", "Você nem ligou pro que eu pedi…"), line: t("ntWishFailLine", "Ele gostou menos de você.") }
+      // B8: o Hall das Lâminas (desafiaram você pela cadeira)
+      if (n.code === "hall_lost")
+        return { title: t("ntHallLost", "{name} tomou a sua cadeira {seat} no Hall.").replace("{name}", String(n.data.name ?? "—")).replace("{seat}", String(n.data.seat ?? "")), line: t("ntHallLostLine", "Desafie de volta no Hall das Lâminas.") }
+      if (n.code === "hall_beaten")
+        return { title: t("ntHallBeaten", "{name} venceu você num desafio do Hall.").replace("{name}", String(n.data.name ?? "—")), line: t("ntHallBeatenLine", "Desafie de volta no Hall das Lâminas.") }
+      if (n.code === "hall_defended")
+        return { title: t("ntHallDefended", "Você defendeu sua vaga contra {name}!").replace("{name}", String(n.data.name ?? "—")), line: t("ntHallDefendedLine", "Sua ficha lutou por você no Hall das Lâminas.") }
       return { title: lifeTitle(n.code, t, n.data.generation), line: null }
     case "dm":
       return { title: t("ntDmTitle", "Recebemos uma mensagem"), line: n.data.from ? t("ntDmFrom", "De {name}").replace("{name}", n.data.from) : null }
