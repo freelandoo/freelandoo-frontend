@@ -24,7 +24,7 @@ import type { BodyId, LifeFull } from "../../types"
 import { EVO, archivo } from "./evo-skin"
 import { MM } from "../hud/tokens"
 import { PAGES, StatusPage, type AdvXp, type PageActions, type PageId } from "./status-pages"
-import SkinWardrobe from "./skin-wardrobe"
+import CharacterCapsule from "./character-capsule"
 import { PORTRAIT } from "../portraits"
 import { SteamFrame } from "../kit/steam/steam-frame"
 import { SP } from "../kit/steam/steam-tokens"
@@ -348,9 +348,12 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
 
   const portrait = PORTRAIT[avatar] ?? PORTRAIT.normal
   // Irmão (não filho) das telas: arrastar no palco não troca o card do STATUS.
+  // B3 (mig 340): o botão embaixo da foto abre os PERSONAGENS (o vestuário de skins saiu).
+  // "Ganhar de teste" aparece para todos porque hoje só administrador joga (o servidor confere).
   const skins = wardrobe && (
-    <SkinWardrobe
+    <CharacterCapsule
       t={t}
+      admin
       onClose={() => setWardrobe(false)}
       onChanged={(r) => {
         if (r.avatar) setAvatar(r.avatar)
