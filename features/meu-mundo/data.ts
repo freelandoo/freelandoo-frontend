@@ -6,6 +6,7 @@
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
 import { serverErrorText } from "./server-errors"
+import { meuMundoCheckoutCoupon } from "@/lib/share-coupon"
 import type {
   CenterPayload,
   HospitalInfo,
@@ -381,6 +382,10 @@ export interface RankingResult {
   top: RankingRow[]
   me: RankingRow | null
 }
+/** A8: código de afiliado + % do Meu Mundo para o botão Compartilhar. */
+export type ShareLink = { code: string; percent: number; enabled: boolean }
+export const getShareLink = (token: string) => call<ShareLink>(token, "GET", "/share")
+
 export const getRanking = (token: string, tab: RankingTab) => call<RankingResult>(token, "GET", `/ranking/${tab}`)
 export const buyGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/buy", { item, key })
 export const equipGear = (token: string, slot: GearSlot, item: string | null) => call<{ bag: GearBag }>(token, "POST", "/gear/equip", { slot, item })
@@ -545,7 +550,8 @@ export async function postPolenCheckout(token: string, productId: string): Promi
     const res = await fetch(`/api/polens/products/${encodeURIComponent(productId)}/checkout`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ return_to: "meu-mundo" }),
+      // A8: o cupom do link de quem convidou vai junto (só atribui a comissão).
+      body: JSON.stringify({ return_to: "meu-mundo", coupon_code: meuMundoCheckoutCoupon() ?? undefined }),
       cache: "no-store",
     })
     const data = (await res.json().catch(() => null)) as { checkout_url?: string; session_id?: string; error?: string } | null
