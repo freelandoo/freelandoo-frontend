@@ -53,10 +53,12 @@ import { useLocale } from "@/components/i18n/I18nProvider"
 import { HpPlate, LevelBadge, PowerPlate, StatBars, StatGuide, statTop } from "./stat-bars"
 import { SoulPanel } from "./soul-panel"
 import { temperLabel } from "../../soul"
+import { LoadoutPage, type LoadoutData } from "./loadout-page"
 
 type Tr = (key: string, fallback: string) => string
 
-export const PAGES = ["overview", "body", "attributes", "routine", "market", "history"] as const
+/** B6: "loadout" = Equipado e efeitos (equipamento, efeitos ativos, origem dos atributos, Poder, personagem). */
+export const PAGES = ["overview", "body", "attributes", "loadout", "routine", "market", "history"] as const
 export type PageId = (typeof PAGES)[number]
 
 export interface PageActions {
@@ -90,6 +92,8 @@ export interface PageProps {
   compact: boolean
   t: Tr
   act: PageActions
+  /** B6: equipamento e personagem (carregados pela tela; null = carregando). */
+  loadout?: LoadoutData
 }
 
 // ─── leitura das faixas (palavra e cor para cada número) ─────────────────────
@@ -395,6 +399,7 @@ const SUBTITLE: Record<PageId, [string, string]> = {
   overview: ["stPageOverview", "Visão geral"],
   body: ["stPageBody", "Corpo e saúde"],
   attributes: ["stPageAttributes", "Atributos e personalidade"],
+  loadout: ["stPageLoadout", "Equipado e efeitos"],
   routine: ["stPageRoutine", "Rotina de hoje"],
   market: ["stPageMarket", "Mercado e farmácia"],
   history: ["stPageHistory", "Diário e linha do tempo"],
@@ -2109,15 +2114,23 @@ function HistoryC({ life, t }: PageProps) {
   )
 }
 
+const NO_LOADOUT: LoadoutData = { gear: null, chars: null }
+function LoadoutD(p: PageProps) {
+  return <LoadoutPage life={p.life} adv={p.adv} data={p.loadout ?? NO_LOADOUT} compact={false} t={p.t} />
+}
+function LoadoutC(p: PageProps) {
+  return <LoadoutPage life={p.life} adv={p.adv} data={p.loadout ?? NO_LOADOUT} compact t={p.t} />
+}
+
 export function StatusPage(props: PageProps) {
   // Celular: cada página é desenhada para caber na tela, sem rolagem.
   if (props.compact) {
-    const P = { overview: OverviewC, body: BodyC, attributes: AttributesC, routine: RoutineC, market: MarketC, history: HistoryC }[props.page]
+    const P = { overview: OverviewC, body: BodyC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC }[props.page]
     return (
       <div className={`${archivo.className} flex h-full flex-col gap-2`}>
         <Header {...props} />
         {/* a Visão Geral rola até a explicação dos status; as outras cabem na tela */}
-        <div className={`min-h-0 flex-1 ${props.page === "overview" ? "overflow-y-auto" : ""}`}>
+        <div className={`min-h-0 flex-1 ${props.page === "overview" || props.page === "loadout" ? "overflow-y-auto" : ""}`}>
           <P {...props} />
         </div>
       </div>
@@ -2130,6 +2143,8 @@ export function StatusPage(props: PageProps) {
       <BodyPage {...props} />
     ) : props.page === "attributes" ? (
       <Attributes {...props} />
+    ) : props.page === "loadout" ? (
+      <LoadoutD {...props} />
     ) : props.page === "routine" ? (
       <Routine {...props} />
     ) : props.page === "market" ? (
