@@ -906,7 +906,7 @@ export interface MMNotice {
   code: string
   /** 1 = mais urgente */
   priority: number
-  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string; paidBy?: "freelandoo" | "player"; coins?: number; minutes?: number; reason?: string; wish?: string }
+  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string; paidBy?: "freelandoo" | "player"; coins?: number; minutes?: number; reason?: string; wish?: string; emotion?: string }
   mailId: string | null
   createdAt: string
   read: boolean

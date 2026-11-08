@@ -91,6 +91,8 @@ import {
   type ScenePayload,
   type VisitState,
 } from "../types"
+import type { LifeSoul } from "../soul"
+import { useChatter } from "./inbox/use-chatter"
 
 const isHouse = (p: ScenePayload): p is HousePayload => (p as HousePayload).scene === "house"
 const isCenter = (p: ScenePayload): p is CenterPayload => (p as CenterPayload).scene === "center"
@@ -130,6 +132,10 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // Sino e caixa (mm3d-30): contadores do servidor + o que a sala empurrou.
   const [counts, setCounts] = useState<InboxCounts | null>(null)
   const [pushed, setPushed] = useState<MMNotice[]>([])
+  // mm3d-72: a alma (personalidade, afeto, apelido) do login e de cada "life"; as falas saem dela
+  const [soul, setSoul] = useState<LifeSoul | null>(() => initial.life?.character.soul ?? null)
+  const pushLocal = useCallback((n: MMNotice) => setPushed((l) => [...l.slice(-30), n]), [])
+  useChatter(soul, t, pushLocal)
   const [inbox, setInbox] = useState<InboxView | null>(null)
   const [itemsOpen, setItemsOpen] = useState(false)
   // mm3d-59: Mochila/Armeiro/Forja (null = fechado; senão a aba que abre)
@@ -322,8 +328,9 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       }
       if (type === "visits") setVisits(payload as VisitState)
       else if (type === "life") {
-        const p = payload as { status?: string; activity?: string; until?: string | null; needs?: LifeNeed[]; body?: string; vitals?: HudVitals | null } | null
+        const p = payload as { status?: string; activity?: string; until?: string | null; needs?: LifeNeed[]; body?: string; vitals?: HudVitals | null; soul?: LifeSoul | null } | null
         if (p?.vitals && typeof p.vitals.health === "number") setVitals(p.vitals)
+        if (p?.soul && typeof p.soul.temper === "string") setSoul(p.soul)
         if (typeof p?.activity === "string") setAsleep(p.activity === "sleeping")
         setLifeTick((n) => n + 1)
         onLife(p?.status)

@@ -12,7 +12,7 @@
 
 import type { LifeNeedId, MMNotice } from "../../types"
 import { wishLine, type WishId } from "../../soul"
-import { EMOTION_OF, type Emotion, type Expression } from "../portraits"
+import { EMOTIONS, EMOTION_OF, type Emotion, type Expression } from "../portraits"
 
 export const CARD_MS = 15_000
 /** A mesma notificação (tipo + código) não volta como card antes disso. */
@@ -57,6 +57,11 @@ export const NEED_EMOTION: Record<LifeNeedId, Emotion> = {
 export function noticeEmotion(n: Pick<MMNotice, "kind" | "code"> & { data?: MMNotice["data"] }): Emotion | null {
   if (n.kind === "need") return NEED_EMOTION[n.code as LifeNeedId] ?? "sad"
   if (n.kind === "dm") return "happy"
+  // mm3d-72: a fala traz a emoção; desejo pedido/atendido/ignorado
+  if (n.kind === "life" && n.code === "chatter") return (EMOTIONS as string[]).includes(n.data?.emotion ?? "") ? (n.data!.emotion as Emotion) : "happy"
+  if (n.kind === "life" && n.code === "wish") return "happy"
+  if (n.kind === "life" && n.code === "wish_ok") return "loving"
+  if (n.kind === "life" && n.code === "wish_fail") return "sad"
   const e = noticeExpression(n)
   if (!e) return null
   if (n.kind === "life" && (n.code === "fined" || n.code === "jailed")) return "angry"
@@ -69,7 +74,9 @@ export function noticeExpression(n: Pick<MMNotice, "kind" | "code"> & { data?: M
   if (n.kind === "gift") return "grateful"
   if (n.kind === "purchase") return "happy"
   if (n.kind === "life") {
-    if (n.code === "hospital_out" || n.code === "adult") return "happy"
+    if (n.code === "hospital_out" || n.code === "adult" || n.code === "wish" || n.code === "wish_ok") return "happy"
+    if (n.code === "chatter") return n.data?.emotion === "sad" ? "worried" : n.data?.emotion === "angry" ? "stressed" : "happy"
+    if (n.code === "wish_fail") return "worried"
     if (n.code === "born") return "determined"
     if (n.code === "death") return "crying"
     if (n.code === "funeral") return n.data?.paidBy === "freelandoo" ? "grateful" : "worried"
@@ -106,6 +113,8 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
     case "promo":
       return { title: n.data.title ?? t("ntPromo", "Promoção"), line: t("ntPromoLine", "Promoção do Meu Mundo") }
     case "life":
+      // mm3d-72: fala do hóspede (montada no aparelho, já traduzida)
+      if (n.code === "chatter") return { title: n.data.title ?? "", line: null }
       if (n.code === "funeral")
         return n.data.paidBy === "freelandoo"
           ? { title: t("ntFuneralFree", "A Freelandoo pagou o funeral."), line: t("ntFuneralFreeLine", "Ele morreu de velhice. O novo hóspede herdou 20% dos atributos.") }

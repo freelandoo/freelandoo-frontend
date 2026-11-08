@@ -1,0 +1,137 @@
+// mm3d-72: as falas do hóspede pela personalidade (features/meu-mundo/ui/inbox/chatter.ts), 2026-11-08.
+// Fill-if-absent no namespace MeuMundo. Idempotente. node <script> [pasta]
+const fs = require("fs")
+const path = require("path")
+const DIR = process.argv[2] || path.join(__dirname, "..", "messages")
+
+const CHATTER = {
+  "pt-BR": {
+    chPsyEnter1: "Hoje eu quero meter uma surra em todo mundo!",
+    chPsyEnter2: "Acordei querendo briga. Quem vai ser o primeiro?",
+    chPsyNight1: "A noite é a melhor hora pra caçar monstro.",
+    chPsyNight2: "Escureceu… agora sim os monstros saem. Hehe.",
+    chPsyMorning1: "Bom dia. Tô com vontade de quebrar alguma coisa.",
+    chPsyIdle1: "Tá muito parado aqui. Bora arrumar briga?",
+    chPsyIdle2: "Se alguém passar perto de mim hoje, vai apanhar.",
+    chCowEnter1: "Espero que a gente não entre em nenhuma luta hoje.",
+    chCowEnter2: "Vamos com calma hoje, tá? Nada de monstro.",
+    chCowNight1: "Nossa, ficou de noite. Melhor nem sairmos de casa hoje.",
+    chCowNight2: "De noite os monstros aparecem… vamos pra casa?",
+    chCowMorning1: "Ufa, amanheceu. Os monstros já foram embora?",
+    chCowIdle1: "Ouviu esse barulho? Acho melhor a gente voltar.",
+    chCowIdle2: "Não gosto de ficar na rua muito tempo…",
+    chGluEnter1: "Antes de tudo: o que tem pra comer?",
+    chGluEnter2: "Que bom que você chegou! Tô com fome.",
+    chGluNight1: "Tá na hora de um lanchinho da madrugada!",
+    chGluMorning1: "Bom dia! Café da manhã reforçado, né?",
+    chGluIdle1: "Meu estômago tá roncando de novo…",
+    chGluIdle2: "Bem que a gente podia passar na pizzaria.",
+    chKindEnter1: "Que bom te ver! Vamos fazer um dia bonito hoje.",
+    chKindEnter2: "Oi! Senti sua falta.",
+    chKindNight1: "Vamos descansar? Amanhã a gente cuida de todo mundo.",
+    chKindMorning1: "Bom dia! Que tal passar na igreja hoje?",
+    chKindIdle1: "Será que alguém no bairro precisa de ajuda?",
+    chKindIdle2: "Obrigado por cuidar de mim.",
+    chCompEnter1: "Hoje eu vou ganhar tudo! Bora pros minijogos!",
+    chCompEnter2: "Bora! Tem recorde pra bater hoje.",
+    chCompNight1: "Ainda dá tempo de bater um recorde antes de dormir.",
+    chCompMorning1: "Novo dia, novo recorde. Partiu treinar!",
+    chCompIdle1: "Ficar parado não ganha campeonato…",
+    chCompIdle2: "Aposto que eu ganho de todo mundo no Paint.",
+    chLove1: "{nick}, você é o melhor dono do mundo!",
+    chLove2: "Eu gosto muito de você, {nick}.",
+    chHurt1: "Você nem liga pra mim, né, {nick}?",
+    chHurt2: "Tô chateado com você, {nick}.",
+  },
+  en: {
+    chPsyEnter1: "Today I want to beat the living daylights out of everyone!",
+    chPsyEnter2: "Woke up looking for a fight. Who's first?",
+    chPsyNight1: "Night is the best time to hunt monsters.",
+    chPsyNight2: "It's dark… now the monsters come out. Heh.",
+    chPsyMorning1: "Morning. I feel like breaking something.",
+    chPsyIdle1: "It's way too quiet here. Let's pick a fight?",
+    chPsyIdle2: "Anyone who walks near me today is getting hit.",
+    chCowEnter1: "I hope we don't get into any fights today.",
+    chCowEnter2: "Let's take it easy today, okay? No monsters.",
+    chCowNight1: "Oh no, it's dark already. We'd better not leave home tonight.",
+    chCowNight2: "Monsters come out at night… shall we go home?",
+    chCowMorning1: "Phew, it's morning. Are the monsters gone?",
+    chCowIdle1: "Did you hear that noise? I think we should go back.",
+    chCowIdle2: "I don't like staying out on the street too long…",
+    chGluEnter1: "First things first: what's there to eat?",
+    chGluEnter2: "So glad you're here! I'm hungry.",
+    chGluNight1: "Time for a midnight snack!",
+    chGluMorning1: "Good morning! A big breakfast, right?",
+    chGluIdle1: "My stomach is growling again…",
+    chGluIdle2: "We could totally stop by the pizzeria.",
+    chKindEnter1: "So good to see you! Let's make today a lovely day.",
+    chKindEnter2: "Hi! I missed you.",
+    chKindNight1: "Shall we rest? Tomorrow we'll take care of everyone.",
+    chKindMorning1: "Good morning! How about stopping by the church today?",
+    chKindIdle1: "I wonder if anyone in the neighborhood needs help?",
+    chKindIdle2: "Thank you for taking care of me.",
+    chCompEnter1: "Today I'm winning everything! Let's hit the minigames!",
+    chCompEnter2: "Let's go! There's a record to beat today.",
+    chCompNight1: "There's still time to break a record before bed.",
+    chCompMorning1: "New day, new record. Off to train!",
+    chCompIdle1: "Standing still never won a championship…",
+    chCompIdle2: "I bet I can beat everyone at Paint.",
+    chLove1: "{nick}, you're the best owner in the world!",
+    chLove2: "I really like you, {nick}.",
+    chHurt1: "You don't even care about me, do you, {nick}?",
+    chHurt2: "I'm upset with you, {nick}.",
+  },
+  es: {
+    chPsyEnter1: "¡Hoy quiero darle una paliza a todo el mundo!",
+    chPsyEnter2: "Me desperté con ganas de pelea. ¿Quién va primero?",
+    chPsyNight1: "La noche es la mejor hora para cazar monstruos.",
+    chPsyNight2: "Ya oscureció… ahora sí salen los monstruos. Jeje.",
+    chPsyMorning1: "Buenos días. Tengo ganas de romper algo.",
+    chPsyIdle1: "Está demasiado tranquilo. ¿Buscamos pelea?",
+    chPsyIdle2: "El que pase cerca de mí hoy se lleva una paliza.",
+    chCowEnter1: "Ojalá no nos metamos en ninguna pelea hoy.",
+    chCowEnter2: "Vamos con calma hoy, ¿sí? Nada de monstruos.",
+    chCowNight1: "Uy, ya es de noche. Mejor ni salgamos de casa hoy.",
+    chCowNight2: "De noche aparecen los monstruos… ¿vamos a casa?",
+    chCowMorning1: "Uf, amaneció. ¿Ya se fueron los monstruos?",
+    chCowIdle1: "¿Oíste ese ruido? Creo que mejor volvemos.",
+    chCowIdle2: "No me gusta quedarme mucho tiempo en la calle…",
+    chGluEnter1: "Antes que nada: ¿qué hay para comer?",
+    chGluEnter2: "¡Qué bueno que llegaste! Tengo hambre.",
+    chGluNight1: "¡Hora de un bocadillo de medianoche!",
+    chGluMorning1: "¡Buenos días! Un desayuno bien completo, ¿no?",
+    chGluIdle1: "Me está rugiendo la panza otra vez…",
+    chGluIdle2: "Podríamos pasar por la pizzería.",
+    chKindEnter1: "¡Qué bueno verte! Hagamos de hoy un día lindo.",
+    chKindEnter2: "¡Hola! Te extrañé.",
+    chKindNight1: "¿Descansamos? Mañana cuidamos de todos.",
+    chKindMorning1: "¡Buenos días! ¿Qué tal pasar por la iglesia hoy?",
+    chKindIdle1: "¿Alguien del barrio necesitará ayuda?",
+    chKindIdle2: "Gracias por cuidarme.",
+    chCompEnter1: "¡Hoy lo gano todo! ¡Vamos a los minijuegos!",
+    chCompEnter2: "¡Vamos! Hoy hay un récord que batir.",
+    chCompNight1: "Todavía hay tiempo de batir un récord antes de dormir.",
+    chCompMorning1: "Nuevo día, nuevo récord. ¡A entrenar!",
+    chCompIdle1: "Quedarse quieto no gana campeonatos…",
+    chCompIdle2: "Apuesto a que le gano a todos en el Paint.",
+    chLove1: "¡{nick}, eres el mejor dueño del mundo!",
+    chLove2: "Te quiero mucho, {nick}.",
+    chHurt1: "Ni te importo, ¿verdad, {nick}?",
+    chHurt2: "Estoy enojado contigo, {nick}.",
+  },
+}
+
+for (const [loc, keys] of Object.entries(CHATTER)) {
+  const file = path.join(DIR, `${loc}.json`)
+  const dict = JSON.parse(fs.readFileSync(file, "utf8"))
+  dict.MeuMundo = dict.MeuMundo || {}
+  let n = 0
+  for (const [k, v] of Object.entries(keys)) {
+    if (dict.MeuMundo[k] === undefined) {
+      dict.MeuMundo[k] = v
+      n++
+    }
+  }
+  fs.writeFileSync(file, JSON.stringify(dict, null, 2) + "\n")
+  console.log(loc, "falas +", n)
+}
