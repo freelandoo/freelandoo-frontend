@@ -257,8 +257,8 @@ export interface NeighborhoodPayload {
 // traz só o hóspede e a carteira.
 
 export type LifeTrained = "intelligence" | "strength" | "speed"
-/** mm3d-59: os quatro atributos de prática. */
-export type PracticeAttr = "strength" | "intelligence" | "dexterity" | "speed"
+/** mm3d-59: os atributos de prática (B7: + acurácia, que ainda nada treina). */
+export type PracticeAttr = "strength" | "intelligence" | "dexterity" | "speed" | "accuracy"
 
 export type LifeActivity = "idle" | "lying" | "sleeping" | "studying" | "training" | "working" | "hospital" | "praying" | "jail"
 
@@ -281,7 +281,7 @@ export interface LifeCharacter {
   personality: Record<"discipline" | "anxiety" | "optimism" | "appetite" | "resilience" | "metabolism", number>
   /** mm3d-72: personalidade nova, afeto, gosta/odeia, desejo e apelidos. Servidor antigo não manda. */
   soul?: LifeSoul
-  /** T3 (mig 334): poder gravado pelo servidor (regra única power/power.ts). Servidor antigo não manda. */
+  /** T3/B7 (migs 334/335): poder gravado pelo servidor (regra única power/power.ts, soma do permanente). Servidor antigo não manda. */
   power?: number | null
   vitals: Record<"energy" | "satiety" | "mood" | "stress" | "health" | "vitality", number>
   body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bmi: number; bodyHint: BodyId }
@@ -289,11 +289,13 @@ export interface LifeCharacter {
   attributes: Record<"intelligence" | "strength" | "speed" | "fertility", number> & {
     /** mm3d-59: destreza (0–1000). Servidor antigo não manda. */
     dexterity?: number
+    /** B7 (mig 334): acurácia (0–1000), nasce em 0; entra no Poder. Servidor antigo não manda. */
+    accuracy?: number
     /** Maior valor já alcançado e o piso que não se perde mais (0–1000). */
-    peaks: Record<LifeTrained, number> & { dexterity?: number }
-    floors: Record<LifeTrained, number> & { dexterity?: number }
+    peaks: Record<LifeTrained, number> & { dexterity?: number; accuracy?: number }
+    floors: Record<LifeTrained, number> & { dexterity?: number; accuracy?: number }
     /** mm3d-59: orçamento de prática do dia (pontos-base gastos / teto). */
-    budgetToday?: Record<PracticeAttr, { used: number; cap: number }>
+    budgetToday?: Partial<Record<PracticeAttr, { used: number; cap: number }>>
     /** Horas que ainda rendem hoje (estudo e treino têm teto por dia). */
     usefulToday: Record<"studying" | "training", { done: number; cap: number }>
   }

@@ -22,7 +22,7 @@
 // dentro do jogo (card do jogador, caixa de entrada ou nome no Global).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Swords } from "lucide-react"
+import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Swords, Trophy } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
@@ -41,6 +41,7 @@ import NoticeStack from "./inbox/notice-stack"
 import HudInbox from "./inbox/hud-inbox"
 import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
+import RankingPanel from "./ranking/ranking-panel"
 import GearPanel from "./gear/gear-panel"
 import { QuestTracker } from "./quest/quest-ui"
 import { CharHud, type HudVitals } from "./hud/char-hud"
@@ -139,6 +140,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   useChatter(soul, t, pushLocal)
   const [inbox, setInbox] = useState<InboxView | null>(null)
   const [itemsOpen, setItemsOpen] = useState(false)
+  // B7: aba Ranking (Poder, Nível, Freelandoo)
+  const [rankingOpen, setRankingOpen] = useState(false)
   // mm3d-59: Mochila/Armeiro/Forja (null = fechado; senão a aba que abre)
   const [gearTab, setGearTab] = useState<null | "bag" | "armory" | "forge">(null)
   // mm3d-59: luta de treino do prólogo e quando reconferir a missão
@@ -474,7 +477,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
   // A cela (mm3d-37f) só com a planta na mão; internado, o hospital manda.
   const jailUp = !!jail.phase && !!jail.interior && !hospitalUp
-  const panelOpen = !!inbox || itemsOpen || polensOpen || !!chatView || !!gearTab
+  const panelOpen = !!inbox || itemsOpen || rankingOpen || polensOpen || !!chatView || !!gearTab
   const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || jailUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
   const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
@@ -621,6 +624,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       },
       { id: "items", label: t("itTitle", "Itens"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
       { id: "gear", label: t("gearTitle", "Equipamento"), hint: t("menuGearHint", "Mochila, Armeiro e Forja"), icon: <Swords className="h-5 w-5" />, kind: "nav", onSelect: () => setGearTab("bag") },
+      { id: "ranking", label: t("rkTitle", "Ranking"), hint: t("menuRankingHint", "Poder, nível e Freelandoo"), icon: <Trophy className="h-5 w-5" />, kind: "nav", onSelect: () => setRankingOpen(true) },
       {
         id: "inbox",
         label: t("ibMailTitle", "Caixa de entrada"),
@@ -829,6 +833,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
       {itemsOpen && <ItemsPanel onClose={() => setItemsOpen(false)} onChanged={lifeChanged} />}
+      {rankingOpen && <RankingPanel onClose={() => setRankingOpen(false)} />}
       {gearTab && (
         <GearPanel
           initialTab={gearTab}

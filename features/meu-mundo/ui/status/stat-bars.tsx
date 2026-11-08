@@ -237,7 +237,7 @@ export function HpPlate({ level, hp, t }: { level: number; hp: number; t: Tr }) 
 }
 
 /**
- * T3 (2026-11-08): a placa de PODER do cabeçalho. O número é o que o servidor gravou
+ * T3/B7 (2026-11-08): a placa de PODER do cabeçalho (fórmula do B7). O número é o que o servidor gravou
  * (tb_mm_character.power, regra única features/meu-mundo/power/power.ts).
  */
 export function PowerPlate({ power, t, small = false }: { power: number; t: Tr; small?: boolean }) {
@@ -245,7 +245,7 @@ export function PowerPlate({ power, t, small = false }: { power: number; t: Tr; 
   return (
     <div
       className="flex shrink-0 items-center gap-2 py-1.5 pl-4 pr-6"
-      title={t("stPowerHint", "HP×0,5 + ataque×3 + defesa×2 + (acuracidade + velocidade + inteligência)×10 + equipamento")}
+      title={t("stPowerHint", "Força + velocidade + destreza + inteligência + acurácia + HP máx do nível + equipamento (1% de bônus = 10)")}
       style={{
         clipPath: "polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)",
         background: "linear-gradient(180deg, #2a2208, #0d0b04)",

@@ -35,7 +35,7 @@ import type {
   WardrobeResult,
 } from "./types"
 import type { Clan, Sex } from "./classes"
-import type { PracticeAttr } from "./types"
+import type { BodyId, PracticeAttr } from "./types"
 import type { FightTemper, GearBonus, MobKind } from "./laminas/sim/fight"
 import type { FightFrames } from "./laminas/sim/replay"
 
@@ -356,6 +356,32 @@ export interface GearBag {
 }
 export type GearOut = { receipt?: Receipt; replay?: boolean; bag: GearBag; proposal?: RefinementProposal }
 export const getGear = (token: string) => call<{ gear: GearCatalog; bag: GearBag }>(token, "GET", "/gear")
+
+// ═══ B7: aba Ranking (Poder, Nível, Freelandoo) ═════════════════════════════
+export type RankingTab = "poder" | "nivel" | "freelandoo"
+/** Parcelas do Poder (o servidor calcula): os 5 atributos, o HP máx do nível e o equipamento. */
+export type PoderParts = Partial<Record<"strength" | "speed" | "dexterity" | "intelligence" | "accuracy" | "hp" | "gear", number>>
+export interface RankingRow {
+  position: number
+  /** Poder, nível de aventura ou pontos da Freelandoo, conforme a aba. */
+  value: number
+  name: string
+  username: string | null
+  avatar: string | null
+  /** Corpo que o jogo desenha (retrato); null na aba Freelandoo. */
+  body: BodyId | null
+  idUser?: string
+  idProfile?: string
+  parts?: PoderParts
+  xp?: number
+}
+export interface RankingResult {
+  tab: RankingTab
+  scope: "br"
+  top: RankingRow[]
+  me: RankingRow | null
+}
+export const getRanking = (token: string, tab: RankingTab) => call<RankingResult>(token, "GET", `/ranking/${tab}`)
 export const buyGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/buy", { item, key })
 export const equipGear = (token: string, slot: GearSlot, item: string | null) => call<{ bag: GearBag }>(token, "POST", "/gear/equip", { slot, item })
 export const forgeGear = (token: string, recipe: string, key: string) => call<GearOut>(token, "POST", "/gear/forge", { recipe, key })

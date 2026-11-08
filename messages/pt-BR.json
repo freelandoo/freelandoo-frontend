@@ -9885,7 +9885,31 @@
     "stPower": "PODER",
     "pcPower": "Poder",
     "pcPowerHint": "Poder do personagem",
-    "stPowerHint": "HP×0,5 + ataque×3 + defesa×2 + (acuracidade + velocidade + inteligência)×10 + equipamento"
+    "stPowerHint": "Força + velocidade + destreza + inteligência + acurácia + HP máx do nível + equipamento (1% de bônus = 10)",
+    "rkTitle": "Ranking",
+    "rkEyebrow": "Brasil · top 100",
+    "menuRankingHint": "Poder, nível e Freelandoo",
+    "rkTabPoder": "Poder",
+    "rkTabNivel": "Nível",
+    "rkTabFreelandoo": "Freelandoo",
+    "rkUnitPoder": "de poder",
+    "rkUnitNivel": "nível",
+    "rkUnitPts": "pts",
+    "rkHintPoder": "Soma do que é permanente: atributos, HP máx do nível e equipamento. Entra o seu melhor personagem.",
+    "rkHintNivel": "Nível de aventura: sobe com as lutas, os minijogos e as missões.",
+    "rkHintFreelandoo": "Pontos do seu perfil na Freelandoo: posts, visitas, curtidas e avaliações.",
+    "rkLoadFail": "Não carregou o ranking.",
+    "rkEmpty": "Ninguém no ranking ainda.",
+    "rkMeNone": "Você ainda não está no ranking.",
+    "rkMeNoneSite": "Seu perfil ainda não entrou no ranking da Freelandoo.",
+    "rkYou": "Você",
+    "rkNoName": "Jogador",
+    "rkBreakdown": "Como o seu Poder se forma",
+    "rkPartHp": "HP máx",
+    "rkPartGear": "Equipamento",
+    "attrAccuracy": "Acurácia",
+    "atAccuracyText": "Atributo novo: começa em 0 e conta no Poder. O saco de pancada da academia vai treiná-la; depois de 1 dia sem praticar cai 5 pontos por dia, até 60% do maior valor.",
+    "atAccuracyShort": "Nova: começa em 0 e conta no Poder; o saco de pancada vai treiná-la."
   },
   "Sports": {
     "eyebrow": "Esportes",
@@ -10063,7 +10087,8 @@
     "Essa cor não existe": "Essa cor não existe",
     "Local sem interior": "Local sem interior",
     "O Salão é de quem ficou em 1º por três meses seguidos.": "O Salão é de quem ficou em 1º por três meses seguidos.",
-    "O apelido precisa ter de 2 a 20 letras": "O apelido precisa ter de 2 a 20 letras"
+    "O apelido precisa ter de 2 a 20 letras": "O apelido precisa ter de 2 a 20 letras",
+    "Ranking não encontrado": "Ranking não encontrado"
   },
   "Moedas": {
     "walletTitle": "Carteira",

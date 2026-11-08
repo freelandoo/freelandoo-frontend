@@ -10451,7 +10451,31 @@
     "stPower": "PODER",
     "pcPower": "Poder",
     "pcPowerHint": "Poder del personaje",
-    "stPowerHint": "PV×0,5 + ataque×3 + defensa×2 + (precisión + velocidad + inteligencia)×10 + equipo"
+    "stPowerHint": "Fuerza + velocidad + destreza + inteligencia + puntería + PV máx del nivel + equipo (1% de bono = 10)",
+    "rkTitle": "Ranking",
+    "rkEyebrow": "Brasil · top 100",
+    "menuRankingHint": "Poder, nivel y Freelandoo",
+    "rkTabPoder": "Poder",
+    "rkTabNivel": "Nivel",
+    "rkTabFreelandoo": "Freelandoo",
+    "rkUnitPoder": "de poder",
+    "rkUnitNivel": "nivel",
+    "rkUnitPts": "pts",
+    "rkHintPoder": "La suma de lo permanente: atributos, PV máx del nivel y equipo. Cuenta tu mejor personaje.",
+    "rkHintNivel": "Nivel de aventura: sube con las peleas, los minijuegos y las misiones.",
+    "rkHintFreelandoo": "Puntos de tu perfil en Freelandoo: publicaciones, visitas, me gusta y valoraciones.",
+    "rkLoadFail": "No se cargó el ranking.",
+    "rkEmpty": "Nadie en el ranking todavía.",
+    "rkMeNone": "Todavía no estás en el ranking.",
+    "rkMeNoneSite": "Tu perfil todavía no entró en el ranking de Freelandoo.",
+    "rkYou": "Tú",
+    "rkNoName": "Jugador",
+    "rkBreakdown": "Cómo se forma tu Poder",
+    "rkPartHp": "PV máx",
+    "rkPartGear": "Equipo",
+    "attrAccuracy": "Puntería",
+    "atAccuracyText": "Atributo nuevo: empieza en 0 y cuenta para el Poder. El saco de boxeo del gimnasio la va a entrenar; tras 1 día sin practicar baja 5 puntos por día, hasta el 60% del valor más alto.",
+    "atAccuracyShort": "Nueva: empieza en 0 y cuenta para el Poder; el saco de boxeo la va a entrenar."
   },
   "Sports": {
     "eyebrow": "Deportes",
@@ -10629,7 +10653,8 @@
     "Essa cor não existe": "Ese color no existe",
     "Local sem interior": "Lugar sin interior",
     "O Salão é de quem ficou em 1º por três meses seguidos.": "El Salón es de quienes quedaron 1.º durante tres meses seguidos.",
-    "O apelido precisa ter de 2 a 20 letras": "El apodo debe tener de 2 a 20 letras"
+    "O apelido precisa ter de 2 a 20 letras": "El apodo debe tener de 2 a 20 letras",
+    "Ranking não encontrado": "Ranking no encontrado"
   },
   "Moedas": {
     "walletTitle": "Cartera",

@@ -1,132 +1,76 @@
-// ═══ PODER DO PERSONAGEM (T3, decidido com o Alex em 2026-11-08) ═══
+// ═══ PODER DO PERSONAGEM (B7, decisão do Alex em 2026-11-08) ═══
 //
-//   poder = HP×0,5 + ataque×3 + defesa×2 + (força + velocidade + inteligência)×10
-//           + bônus de equipamento, arredondado para inteiro
+//   poder = força + velocidade + destreza + inteligência + acurácia
+//         + HP máx do nível de aventura
+//         + equipamento (cada 1% de bônus, somando todas as chaves já com teto, vale 10 pontos)
+//
+// Soma simples, SÓ do permanente: os atributos como a vida guarda (sem suplemento, fome, sono
+// ou efeito temporário; sem o bônus de nível que só vale na luta), o HP máx do nível
+// (heroLevelScale: 100 + 9 por nível, sem o peso da skin) e o equipamento equipado.
+// Substitui a fórmula do T3 (HP×0,5 + ataque×3 + …, suplemento multiplicando), que estava errada.
 //
 // FONTE ÚNICA: o back roda a cópia GERADA (freelandoo-backend/src/utils/meuMundoPower.js,
 // por scripts/build-power-sim.js) e grava o número em tb_mm_character.power a cada
 // mudança da vida. Mudou aqui → rodar o script e commitar os dois repos (o unit confere).
 //
-// Sem import: o módulo é puro. A ficha da luta (heroSheet/heroStats de laminas/sim/fight.ts)
-// entra por parâmetro em powerOf, assim front e back usam a MESMA regra da luta sem copiar.
+// Sem import: o módulo é puro. O HP do nível (heroLevelScale de laminas/sim/fight.ts) entra
+// por parâmetro, assim front e back usam a MESMA regra da luta sem copiar.
 //
-// HP, ataque e defesa são os da ficha de luta SEM equipamento (o equipamento entra só no
-// bônus, para não contar duas vezes). Força/velocidade/inteligência = os da vida + o bônus
-// do nível (os mesmos que a luta usa).
+// Nome: "power" na luta é a barra do golpe máximo (POWER do fight.ts e a chave `power` do
+// equipamento). Este número é o PODER do personagem — nunca misturar.
 
-export interface PowerStatus {
-  hp: number
-  atk: number
-  def: number
-  strength: number
-  speed: number
-  intelligence: number
+export const POWER_ATTRS = ["strength", "speed", "dexterity", "intelligence", "accuracy"] as const
+export type PowerAttr = (typeof POWER_ATTRS)[number]
+
+/** Pontos de poder por 1% de bônus de equipamento. */
+export const GEAR_PER_PCT = 10
+
+/** Frações de bônus do equipamento já com teto (meuMundoGear.gearBonus / GearBonus da luta). */
+export type PowerGear = Partial<Record<"dmg" | "def" | "stam" | "warn" | "power", number>>
+
+/** Parcelas do poder (para a tela): os 5 atributos, o HP do nível e o equipamento. */
+export type PowerParts = Record<PowerAttr | "hp" | "gear", number>
+
+/** O que o poder precisa da regra da luta (laminas/sim/fight.ts ou a cópia gerada no back). */
+export interface PowerFightRule {
+  heroLevelScale: (level: number) => { hp: number }
 }
 
-/** Frações de bônus do equipamento (as mesmas de meuMundoGear.gearBonus / GearBonus da luta). */
-export interface PowerGear {
-  dmg?: number
-  def?: number
-  stam?: number
-  warn?: number
-  power?: number
+export interface PowerInput {
+  /** Atributos como a vida guarda (sem o bônus do nível). Ausente = 0. */
+  attrs: Partial<Record<PowerAttr, number>>
+  /** Nível de aventura (ausente/0 = 1). */
+  level: number
+  gear?: PowerGear | null
 }
-
-export const POWER_WEIGHTS = { hp: 0.5, atk: 3, def: 2, attr: 10 }
-
-/**
- * Bônus de equipamento: pontos de poder por 1,00 (100%) de cada fração. Escolha minha
- * (o Alex decidiu só "+ bônus de equipamento"): o equipamento no teto vale ~1.200, o que
- * pesa como ~40 pontos de atributo somados.
- */
-export const GEAR_POWER: Required<PowerGear> = { dmg: 1500, def: 1500, stam: 1000, warn: 1000, power: 1200 }
-
-/**
- * Suplementos ativos somam uma porcentagem ao poder base (antes do equipamento). Escolha
- * minha; ids = efeitos da vida (meuMundoLife.js, s.effects). Teto 15% somado.
- */
-export const SUPPLEMENT_POWER: Record<string, number> = {
-  preworkout: 0.04,
-  creatine: 0.03,
-  anabolic: 0.06,
-  whey: 0.01,
-  albumin: 0.01,
-  multivit: 0.01,
-}
-export const SUPPLEMENT_MAX = 0.15
 
 const num = (v: unknown) => {
   const n = Number(v)
   return Number.isFinite(n) && n > 0 ? n : 0
 }
 
-/** Pontos de poder do equipamento (frações negativas ou lixo valem 0). */
-export function gearPower(gear?: PowerGear | null): number {
-  if (!gear) return 0
-  let sum = 0
-  for (const k of Object.keys(GEAR_POWER) as (keyof PowerGear)[]) sum += num(gear[k]) * GEAR_POWER[k]
-  return sum
-}
-
-/** Fator dos suplementos ativos (1 = nenhum). Repetido conta uma vez. */
-export function supplementFactor(supplements?: readonly string[] | null): number {
-  if (!supplements || !supplements.length) return 1
-  let add = 0
-  for (const id of new Set(supplements)) add += SUPPLEMENT_POWER[id] ?? 0
-  return 1 + Math.min(SUPPLEMENT_MAX, add)
-}
-
-/** A fórmula do poder. */
-export function computePower(status: PowerStatus, gear?: PowerGear | null, supplements?: readonly string[] | null): number {
-  const W = POWER_WEIGHTS
-  const base =
-    num(status.hp) * W.hp +
-    num(status.atk) * W.atk +
-    num(status.def) * W.def +
-    (num(status.strength) + num(status.speed) + num(status.intelligence)) * W.attr
-  return Math.round(base * supplementFactor(supplements) + gearPower(gear))
-}
-
-/** O que powerOf precisa da regra da luta (laminas/sim/fight.ts ou a cópia gerada no back). */
-export interface PowerFightRule {
-  heroSheet: (
-    body: string | null | undefined,
-    level: number,
-    stats: { strength: number; speed: number; intelligence: number; dexterity?: number },
-  ) => { hp: number; atk: number; def: number }
-  heroStats: (
-    stats: { strength: number; speed: number; intelligence: number; dexterity: number },
-    level: number,
-  ) => { strength: number; speed: number; intelligence: number }
-}
-
-export interface PowerInput {
-  /** Corpo vestido (skin ou condição). */
-  body: string | null | undefined
-  /** Nível de aventura. */
-  level: number
-  /** Atributos da vida (sem o bônus do nível). */
-  stats: { strength: number; speed: number; intelligence: number; dexterity?: number }
-  gear?: PowerGear | null
-  /** Ids dos efeitos ativos agora (a vida filtra os vencidos). */
-  supplements?: readonly string[] | null
-}
-
-/** Status do poder a partir da vida, do nível e do corpo. */
-export function powerStatus(rule: PowerFightRule, input: PowerInput): PowerStatus {
-  const stats = {
-    strength: num(input.stats.strength),
-    speed: num(input.stats.speed),
-    intelligence: num(input.stats.intelligence),
-    dexterity: num(input.stats.dexterity),
+/** Poder com as parcelas (arredondadas). */
+export function powerScore(rule: PowerFightRule, input: PowerInput): { total: number; parts: PowerParts } {
+  const parts = {} as PowerParts
+  let total = 0
+  for (const k of POWER_ATTRS) {
+    const v = num(input.attrs?.[k])
+    parts[k] = Math.round(v)
+    total += v
   }
   const level = Math.max(1, Math.round(num(input.level) || 1))
-  const sheet = rule.heroSheet(input.body, level, stats)
-  const f = rule.heroStats(stats, level)
-  return { hp: sheet.hp, atk: sheet.atk, def: sheet.def, strength: f.strength, speed: f.speed, intelligence: f.intelligence }
+  const hp = num(rule.heroLevelScale(level).hp)
+  parts.hp = Math.round(hp)
+  total += hp
+  let pct = 0
+  for (const v of Object.values(input.gear || {})) pct += num(v) * 100
+  const g = pct * GEAR_PER_PCT
+  parts.gear = Math.round(g)
+  total += g
+  return { total: Math.round(total), parts }
 }
 
-/** Poder completo de um personagem: o que o servidor grava e o que a tela confere. */
+/** Só o número: o que o servidor grava. */
 export function powerOf(rule: PowerFightRule, input: PowerInput): number {
-  return computePower(powerStatus(rule, input), input.gear, input.supplements)
+  return powerScore(rule, input).total
 }

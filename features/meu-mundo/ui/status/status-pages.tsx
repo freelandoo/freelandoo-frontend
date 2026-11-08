@@ -36,6 +36,7 @@ import {
   Utensils,
   Wind,
   Crosshair,
+  LocateFixed,
   Zap,
 } from "lucide-react"
 import type { LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
@@ -936,6 +937,7 @@ function perLevelText(t: Tr, pct: (v: number) => string) {
 }
 
 function Attributes({ life, compact, t, adv }: PageProps) {
+  const accLabel = t("attrAccuracy", "Acurácia")
   const c = life.character
   const at = c.attributes
   const max = life.catalog.attributes?.max ?? 1000
@@ -950,6 +952,8 @@ function Attributes({ life, compact, t, adv }: PageProps) {
     [<Wind key="v" className="h-6 w-6" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedText3", "Sobe treinando. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido."), ""],
     // mm3d-59: destreza (precisão, fôlego, golpes) — sobe nos minijogos e nas lutas
     [<Crosshair key="d" className="h-6 w-6" />, "#3FE6D2", t("attrDexterity", "Destreza"), at.dexterity ?? 0, max, at.floors?.dexterity, t("atDexterityText2", "Sobe nos minijogos e nas lutas; depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor. Economiza fôlego, recupera a arma mais rápido e melhora a chance de golpe forte."), ""],
+    // B7: acurácia (atributo novo, nasce em 0; o saco de pancada vai treiná-la) — conta no Poder
+    [<LocateFixed key="a" className="h-6 w-6" />, "#FFAD24", accLabel, at.accuracy ?? 0, max, at.floors?.accuracy, t("atAccuracyText", "Atributo novo: começa em 0 e conta no Poder. O saco de pancada da academia vai treiná-la; depois de 1 dia sem praticar cai 5 pontos por dia, até 60% do maior valor."), ""],
     [<Sprout key="r" className="h-6 w-6" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, 100, undefined, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade."), "%"],
   ] as const
   return (
@@ -968,7 +972,7 @@ function Attributes({ life, compact, t, adv }: PageProps) {
                     {r0(value)}
                     {unit}
                   </span>
-                  {!unit && hero && <LevelBonus n={hero.attr} t={t} />}
+                  {!unit && hero && label !== accLabel && <LevelBonus n={hero.attr} t={t} />}
                   <div className="flex-1">
                     <Bar value={value} max={statTop(value, top)} mark={floor} color={color} />
                   </div>
@@ -996,6 +1000,7 @@ function Attributes({ life, compact, t, adv }: PageProps) {
             <div className="flex flex-wrap gap-2 pt-2">
               {(["strength", "intelligence", "dexterity", "speed"] as const).map((k) => {
                 const b = at.budgetToday![k]
+                if (!b) return null
                 return (
                   <Tag key={k} tone={b.used >= b.cap ? "mudo" : "bom"}>
                     {t("atBudgetToday", "{attr}: {used}/{cap} de prática hoje")
@@ -1699,6 +1704,7 @@ function BodyC({ life, t }: PageProps) {
 const EFFECTS_MAX_C = 6
 
 function AttributesC({ life, t, adv }: PageProps) {
+  const accLabel = t("attrAccuracy", "Acurácia")
   const c = life.character
   const at = c.attributes
   const max = life.catalog.attributes?.max ?? 1000
@@ -1712,6 +1718,7 @@ function AttributesC({ life, t, adv }: PageProps) {
     [<Dumbbell key="f" />, EVO.perigo, t("atStrength", "Força"), at.strength, max, at.floors?.strength, t("atStrengthShort", "Sobe treinando (até 4 h/dia); suplementos aceleram. Sem treino cai até 60% do pico."), ""],
     [<Wind key="v" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedShort", "Sobe treinando. Sem treino cai até 60% do pico; voltar é mais rápido."), ""],
     [<Crosshair key="d" />, "#3FE6D2", t("attrDexterity", "Destreza"), at.dexterity ?? 0, max, at.floors?.dexterity, t("atDexterityShort", "Sobe nos minijogos e lutas; poupa fôlego e melhora golpes."), ""],
+    [<LocateFixed key="a" />, "#FFAD24", accLabel, at.accuracy ?? 0, max, at.floors?.accuracy, t("atAccuracyShort", "Nova: começa em 0 e conta no Poder; o saco de pancada vai treiná-la."), ""],
     [<Sprout key="r" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, 100, undefined, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade."), "%"],
   ] as const
   const effects = c.effects.slice(0, EFFECTS_MAX_C)
@@ -1739,7 +1746,7 @@ function AttributesC({ life, t, adv }: PageProps) {
                   {r0(value)}
                   {unit}
                 </span>
-                {!unit && hero && <LevelBonus n={hero.attr} t={t} small />}
+                {!unit && hero && label !== accLabel && <LevelBonus n={hero.attr} t={t} small />}
               </div>
               <div className="my-1">
                 <Bar value={value} max={statTop(value, top)} mark={floor} color={color} height={6} />

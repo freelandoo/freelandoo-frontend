@@ -100,6 +100,8 @@ const ROWS = [
   ["O apelido precisa ter de 2 a 20 letras", "The nickname must have 2 to 20 letters", "El apodo debe tener de 2 a 20 letras"],
   // Missões
   ["Ação inválida", "Invalid action", "Acción no válida"],
+  // B7: aba Ranking
+  ["Ranking não encontrado", "Ranking not found", "Ranking no encontrado"],
   ["Missão concluída", "Quest completed", "Misión completada"],
   ["O objetivo ainda não foi cumprido", "The objective hasn't been met yet", "El objetivo aún no se ha cumplido"],
   // Lugares e classes
