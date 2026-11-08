@@ -184,7 +184,8 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
   fieldMat.emissiveColor = new Color3(1, 1, 1)
   fieldMat.diffuseColor = new Color3(0, 0, 0)
   fieldMat.specularColor = new Color3(0, 0, 0)
-  fieldMat.alpha = 0.36
+  // a membrana é discreta nas fases abertas (o anel aparece "solto" como na arte), mas visível
+  fieldMat.alpha = phase === "canion" ? 0.14 : 0.36
   fieldMat.backFaceCulling = false
   fieldMat.disableDepthWrite = true
   const molds = new Map<Key, Mold>()

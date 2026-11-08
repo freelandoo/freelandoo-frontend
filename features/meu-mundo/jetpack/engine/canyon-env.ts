@@ -26,6 +26,10 @@ import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix } from "@babylonjs/core/Maths/math.vector"
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
+import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
+import { Mesh as BMesh } from "@babylonjs/core/Meshes/mesh"
+import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import "@babylonjs/core/Meshes/instancedMesh"
 import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
 import { createTrimMaterials } from "../../engine/steampunk/materials"
@@ -71,37 +75,83 @@ function boulder(g: Ctx, seed: number, x: number, y: number, z: number, sx: numb
  * blocos facetados cuja face de dentro fica sempre em |x| ≥ 5,35, com
  * camadas, saliências e topo com grama e cactos. `top` = altura do topo.
  */
+/**
+ * Um paredão de um lado (sx = −1 esquerda, 1 direita) de z0 a z1, em V como na
+ * referência: o bloco de dentro (face em |x| ≥ inner) só sobe um pouco acima
+ * da caixa; atrás dele um terraço mais alto e, longe, o paredão de fundo. Tudo
+ * desce até o abismo (−50). `top` = altura do bloco de dentro.
+ */
 function cliff(g: Ctx, r: () => number, sx: number, z0: number, z1: number, top: number, inner = W / 2 + 0.35) {
-  // a face de dentro de cada bloco fica em |x| ≥ inner: o raio da rocha facetada vai até 1,16× a meia-medida
   let z = z0
   let k = 0
   while (z < z1) {
-    const len = 2.4 + r() * 3.2
+    const len = 2.6 + r() * 3.4
     const half = Math.min(len, z1 - z) / 2 + 0.5
     const zc = z + half - 0.5
-    const h = top + (r() - 0.4) * 3
-    // 1) a base: bloco largo que desce até as nuvens, um pouco recuado às vezes
-    const in1 = inner + (r() < 0.3 ? r() * 1.6 : 0)
-    const w1 = 1.6 + r() * 1.4
-    boulder(g, k * 7 + z, sx * (in1 + w1 * 1.16), h * 0.45 - 5, zc, w1, h * 0.55 + 5, half, k % 2 ? C.rock : C.rockDark)
-    // 2) o meio: bloco mais estreito e mais alto, recuado (a silhueta quebra em degraus)
-    const w2 = 1.2 + r() * 1.2
-    const in2 = in1 + w1 * 0.5 + r() * 0.8
-    boulder(g, k * 7 + z + 3, sx * (in2 + w2 * 1.16), h * 0.78, zc + (r() - 0.5) * half * 0.6, w2, h * 0.3, half * 0.8, k % 2 ? C.rockHi : C.rock)
-    // 3) atrás e mais alto: o paredão de fundo
-    const w3 = 2 + r() * 3
-    boulder(g, k * 7 + z + 5, sx * (in2 + w2 * 2 + w3 * 1.1), h * 0.9, zc, w3, h * 0.55, half * 1.1, k % 3 ? C.rockDeep : C.rockDark)
-    // camada clara entalhada na base (fina) e, no topo do bloco do meio, um tufo de grama pequeno
-    if (r() < 0.6) g.body.box(0.6, 0.18, half * 1.6, place(sx * (in1 + 0.35), 1.2 + r() * (h * 0.5), zc), mix(C.sand, C.rockHi, r()))
-    const topY = h * 0.78 + h * 0.3 * 1.05
-    if (r() < 0.55) g.body.cone(0.45, 0.06, 0.8, place(sx * (in2 + w2 * 1.16), topY + 0.35, zc), C.grass, 5)
-    if (r() < 0.3) {
-      const cxx = sx * (in2 + w2 * 1.3)
-      g.body.cylinder(0.3, 1.5, place(cxx, topY + 0.7, zc), C.cactus, 6)
-      g.body.cylinder(0.18, 0.6, xf(cxx + 0.28, topY + 0.85, zc, 0, undefined, 0, -0.9), C.cactus, 5)
+    // 1) o bloco de dentro: coluna até o abismo + o topo facetado
+    const in1 = inner + (r() < 0.3 ? r() * 1.2 : 0)
+    const w1 = 1.3 + r() * 1.1
+    const t1 = top + (r() - 0.3) * 2.4
+    boulder(g, k * 7 + z, sx * (in1 + w1 * 1.4), -28, zc, w1 * 1.3, 24, half * 1.05, C.rockDeep)
+    boulder(g, k * 7 + z + 1, sx * (in1 + w1 * 1.16), t1 / 2 - 3, zc, w1, t1 / 2 + 3, half, k % 2 ? C.rock : C.rockDark)
+    if (r() < 0.5) g.body.box(0.5, 0.16, half * 1.4, place(sx * (in1 + 0.3), 1 + r() * (t1 - 2), zc), mix(C.sand, C.rockHi, r()))
+    if (r() < 0.45) g.body.cone(0.42, 0.06, 0.8, place(sx * (in1 + w1 * 1.1), t1 + 1.45, zc), C.grassDark, 5)
+    // 2) o terraço: recuado e mais alto
+    const in2 = in1 + w1 * 2.3 + 2.5 + r() * 3
+    const w2 = 2 + r() * 1.8
+    const t2 = Math.max(t1 + 4, H + 2) + r() * 7
+    boulder(g, k * 7 + z + 3, sx * (in2 + w2 * 1.16), (t2 - 30) / 2, zc, w2, (t2 + 30) / 2, half * 1.1, k % 2 ? C.rockHi : C.rock)
+    // tufos de grama no alto do terraço (nada de laje verde)
+    for (let q = 0; q < 2; q++) g.body.cone(0.5, 0.05, 0.9, place(sx * (in2 + w2 * (0.7 + r())), t2 + 0.9, zc + (r() - 0.5) * half), q ? C.grass : C.grassDark, 5)
+    if (r() < 0.35) {
+      const cxx = sx * (in2 + w2 * 0.9)
+      g.body.cylinder(0.34, 1.7, place(cxx, t2 + 1.8, zc), C.cactus, 6)
+      g.body.cylinder(0.2, 0.7, xf(cxx + 0.3, t2 + 2, zc, 0, undefined, 0, -0.9), C.cactus, 5)
+    }
+    // 3) o paredão de fundo, alto e longe
+    if (k % 2 === 0) {
+      const w3 = 4 + r() * 4
+      const t3 = t2 + 8 + r() * 14
+      boulder(g, k * 7 + z + 5, sx * (in2 + w2 * 2.4 + 6 + w3 * 1.1), (t3 - 50) / 2, zc + half, w3, (t3 + 50) / 2, half * 2.2, k % 4 ? C.rockDark : C.rock)
     }
     z += len
     k++
+  }
+}
+
+/** Andaime de madeira no alto de um terraço: postes, deque, corrimão e lanterna. */
+function scaffold(g: Ctx, sx: number, z: number, x: number, y: number) {
+  g.body.box(3.2, 0.2, 3, place(sx * x, y, z), C.wood)
+  for (const [dx, dz] of [
+    [-1.4, -1.3],
+    [1.4, -1.3],
+    [-1.4, 1.3],
+    [1.4, 1.3],
+  ]) g.body.box(0.18, 3, 0.18, place(sx * x + dx, y - 1.5, z + dz), C.woodDark)
+  g.body.box(3.2, 0.08, 0.08, place(sx * x, y + 0.9, z - 1.45), C.woodDark)
+  g.body.box(0.12, 1.4, 0.12, place(sx * x - sx * 1.4, y + 0.7, z - 1.4), C.woodDark)
+  g.glow.box(0.24, 0.3, 0.24, place(sx * x - sx * 1.4, y + 1.5, z - 1.4), C.lamp)
+  g.body.box(0.8, 0.7, 0.8, place(sx * x + sx * 0.6, y + 0.45, z + 0.6), C.wood)
+}
+
+/** Ponte de corda alta, longe, de um terraço ao outro (com barriga). */
+function farBridge(g: Ctx, z: number, y: number, span: number) {
+  const n = Math.round(span / 0.6)
+  for (let i = 0; i < n; i++) {
+    const u = i / (n - 1)
+    const x = -span / 2 + u * span
+    const sag = Math.sin(u * Math.PI) * 1.6
+    g.body.box(0.5, 0.1, 1.4, place(x, y - sag, z), i % 2 ? C.wood : C.woodDark)
+    if (i % 3 === 0) for (const dz of [-0.7, 0.7]) g.body.box(0.05, 1, 0.05, place(x, y - sag + 0.5, z + dz), C.rope)
+  }
+  for (const dz of [-0.7, 0.7]) {
+    for (let i = 0; i < 8; i++) {
+      const u0 = i / 8
+      const u1 = (i + 1) / 8
+      const xa = -span / 2 + u0 * span
+      const xb = -span / 2 + u1 * span
+      g.body.tube([xa, y + 1 - Math.sin(u0 * Math.PI) * 1.4, z + dz], [xb, y + 1 - Math.sin(u1 * Math.PI) * 1.4, z + dz], 0.035, C.rope, 4)
+    }
   }
 }
 
@@ -110,12 +160,17 @@ function ceilingRopes(g: Ctx, sides: number[] = [-1, 1]) {
   for (const sx of sides) {
     const x = sx * (W / 2 + 0.15)
     g.body.box(0.05, 0.05, SEG, place(x, H + 0.12, SEG / 2), C.rope)
-    for (let z = 6; z < SEG; z += 12) {
+    for (let z = sx > 0 ? 6 : 18; z < SEG; z += 24) {
       // poste fincado no paredão, braço por cima e lanterna pendurada (acima do teto)
-      g.body.box(0.18, 1.4, 0.18, place(sx * (W / 2 + 0.6), H + 0.4, z), C.woodDark)
-      g.body.box(0.6, 0.12, 0.12, place(sx * (W / 2 + 0.35), H + 1.05, z), C.woodDark)
+      g.body.box(0.12, 1.4, 0.12, place(sx * (W / 2 + 0.6), H + 0.4, z), C.woodDark)
+      g.body.box(0.6, 0.1, 0.1, place(sx * (W / 2 + 0.35), H + 1.05, z), C.woodDark)
       g.body.box(0.22, 0.06, 0.22, place(x, H + 0.66, z), C.woodDark)
       g.glow.box(0.16, 0.24, 0.16, place(x, H + 0.5, z), C.lamp)
+    }
+    // mastros na beira da encosta com flâmula (marcam o limite do lado de y = 0 a 8)
+    for (let z = sx > 0 ? 0 : 12; z < SEG; z += 12) {
+      g.body.box(0.1, H + 1.2, 0.1, place(sx * (W / 2 + 0.2), H / 2 + 0.3, z), C.woodDark)
+      g.body.box(0.03, 0.9, 0.9, place(sx * (W / 2 + 0.22), H + 0.3, z + 0.5), z % 24 < 12 ? C.banner : C.cloth)
     }
   }
 }
@@ -162,7 +217,7 @@ function arch(g: Ctx, seed: number, z: number) {
 /** Cachoeira descendo do paredão para as nuvens, com a espuma embaixo. */
 function waterfall(g: Ctx, sx: number, z: number, top: number, w = 3.2) {
   const x = sx * (W / 2 + 1.1)
-  g.water.box(0.25, top + 1, w, place(x, (top + 1) / 2 - 0.5, z), C.white)
+  g.water.box(0.25, top + 50, w, place(x, (top - 50) / 2, z), C.white)
   for (let i = 0; i < 5; i++) g.glow.sphere(1.2 + (i % 3) * 0.5, [1.4, 0.6, 1], place(x + sx * (1 + (i % 2) * 0.8), 0.15, z - w / 2 + i * (w / 4)), mix(C.white, [0.75, 0.9, 1], 0.4), 5)
 }
 
@@ -208,7 +263,8 @@ const MODULES: { id: string; build: Mod }[] = [
     id: "paredao",
     build(g, v) {
       const r = rng(11 + v)
-      for (const sx of [-1, 1]) cliff(g, r, sx, 0, SEG, 9 + r() * 4)
+      for (const sx of [-1, 1]) cliff(g, r, sx, 0, SEG, 2.5 + r() * 2)
+      scaffold(g, v % 2 ? 1 : -1, 10, 14, H + 5)
       ceilingRopes(g)
     },
   },
@@ -217,11 +273,11 @@ const MODULES: { id: string; build: Mod }[] = [
     build(g, v) {
       const r = rng(23 + v)
       const side = v % 2 ? 1 : -1
-      cliff(g, r, side, 0, SEG, 9, W / 2 + 4.9)
+      cliff(g, r, side, 0, SEG, 2.4, W / 2 + 4.9)
       // atrás da plataforma o paredão recua: a vila fica numa reentrância
-      cliff(g, r, side, 0, 6, 9)
-      cliff(g, r, side, 18, SEG, 9)
-      cliff(g, r, -side, 0, SEG, 12 + r() * 4)
+      cliff(g, r, side, 0, 6, 2.6)
+      cliff(g, r, side, 18, SEG, 2.6)
+      cliff(g, r, -side, 0, SEG, 2.5 + r() * 2)
       village(g, side, 12, 9)
       ceilingRopes(g)
     },
@@ -230,8 +286,9 @@ const MODULES: { id: string; build: Mod }[] = [
     id: "ponte",
     build(g, v) {
       const r = rng(37 + v)
-      for (const sx of [-1, 1]) cliff(g, r, sx, 0, SEG, 9.5 + r() * 2)
-      bridge(g, 12)
+      for (const sx of [-1, 1]) cliff(g, r, sx, 0, SEG, 2.2 + r() * 2)
+      bridge(g, 12, 26)
+      farBridge(g, 4, H + 9, 26)
       ceilingRopes(g)
     },
   },
@@ -240,12 +297,12 @@ const MODULES: { id: string; build: Mod }[] = [
     build(g, v) {
       const r = rng(41 + v)
       const side = v % 2 ? -1 : 1
-      cliff(g, r, side, 0, 9, 16)
-      cliff(g, r, side, 15, SEG, 16)
-      // a fenda da cachoeira: o paredão recua e a água cai rente a ele
-      cliff(g, r, side, 9, 15, 16, W / 2 + 2.4)
-      waterfall(g, side, 12, 15)
-      cliff(g, r, -side, 0, SEG, 11 + r() * 3)
+      cliff(g, r, side, 0, 9, 3)
+      cliff(g, r, side, 15, SEG, 3)
+      // a fenda da cachoeira: o paredão recua e a água cai rente a ele, do alto até o abismo
+      cliff(g, r, side, 9, 15, H + 8, W / 2 + 2.4)
+      waterfall(g, side, 12, H + 14, 3.6)
+      cliff(g, r, -side, 0, SEG, 2.5 + r() * 2)
       ceilingRopes(g)
     },
   },
@@ -253,7 +310,7 @@ const MODULES: { id: string; build: Mod }[] = [
     id: "arco",
     build(g, v) {
       const r = rng(53 + v)
-      for (const sx of [-1, 1]) cliff(g, r, sx, 0, SEG, 8 + r() * 3)
+      for (const sx of [-1, 1]) cliff(g, r, sx, 0, SEG, 2.8 + r() * 2)
       arch(g, 60 + v, 12)
       ceilingRopes(g)
     },
@@ -263,8 +320,9 @@ const MODULES: { id: string; build: Mod }[] = [
     build(g, v) {
       const r = rng(67 + v)
       const open = v % 2 ? 1 : -1
-      cliff(g, r, -open, 0, SEG, 12 + r() * 6)
+      cliff(g, r, -open, 0, SEG, 3 + r() * 2)
       openEdge(g, open)
+      farBridge(g, 14, H + 4, 30)
       ceilingRopes(g, [-open])
       // rochas soltas no ar do lado aberto (fora da caixa)
       for (let i = 0; i < 4; i++) {
@@ -286,17 +344,23 @@ const VARIANTS = 2
 
 // ── o que não é trecho: nuvens, ilhas ao longe ──────────────────────────────
 
-function cloudTexture(scene: Scene, low: boolean) {
+function cloudTexture(scene: Scene, low: boolean, alpha = false) {
   const S = low ? 256 : 512
-  const tex = new DynamicTexture("jt-clouds", { width: S, height: S }, scene, true)
+  const tex = new DynamicTexture(alpha ? "jt-clouds-veil" : "jt-clouds", { width: S, height: S }, scene, true)
   const c = tex.getContext() as CanvasRenderingContext2D
-  const g0 = c.createLinearGradient(0, 0, 0, S)
-  g0.addColorStop(0, "#9fbfe0")
-  g0.addColorStop(1, "#b9d2ea")
-  c.fillStyle = g0
-  c.fillRect(0, 0, S, S)
+  if (alpha) {
+    // véu: base quase transparente, só as nuvens aparecem
+    c.fillStyle = "rgba(225,236,250,0.06)"
+    c.fillRect(0, 0, S, S)
+  } else {
+    const g0 = c.createLinearGradient(0, 0, 0, S)
+    g0.addColorStop(0, "#9fbfe0")
+    g0.addColorStop(1, "#b9d2ea")
+    c.fillStyle = g0
+    c.fillRect(0, 0, S, S)
+  }
   const r = rng(5)
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < (alpha ? 26 : 70); i++) {
     const x = r() * S
     const y = r() * S
     const rad = (0.05 + r() * 0.12) * S
@@ -337,6 +401,44 @@ function waterTexture(scene: Scene) {
   tex.update()
   tex.wrapU = Texture.WRAP_ADDRESSMODE
   tex.wrapV = Texture.WRAP_ADDRESSMODE
+  return tex
+}
+
+/** O céu: azul fundo no alto, claro no horizonte, nuvens fofas na faixa do horizonte. */
+function skyTexture(scene: Scene, low: boolean) {
+  const W = low ? 512 : 1024
+  const Hh = W / 2
+  const tex = new DynamicTexture("jt-sky", { width: W, height: Hh }, scene, false)
+  const c = tex.getContext() as CanvasRenderingContext2D
+  const g = c.createLinearGradient(0, 0, 0, Hh)
+  g.addColorStop(0, "#2f63c4")
+  g.addColorStop(0.32, "#4d8ee0")
+  g.addColorStop(0.48, "#a9d1f5")
+  g.addColorStop(0.52, "#d8ecfb")
+  g.addColorStop(1, "#cfe4f7")
+  c.fillStyle = g
+  c.fillRect(0, 0, W, Hh)
+  const r = rng(77)
+  const puff = (x: number, y: number, rad: number, a: number) => {
+    for (const dx of [0, W, -W]) {
+      const gr = c.createRadialGradient(x + dx, y, 0, x + dx, y, rad)
+      gr.addColorStop(0, `rgba(255,255,255,${a})`)
+      gr.addColorStop(0.55, `rgba(250,252,255,${a * 0.7})`)
+      gr.addColorStop(1, "rgba(220,235,250,0)")
+      c.fillStyle = gr
+      c.beginPath()
+      c.arc(x + dx, y, rad, 0, Math.PI * 2)
+      c.fill()
+    }
+  }
+  // cúmulos: grupos de bolas na faixa logo acima do horizonte, e fiapos lá em cima
+  for (let i = 0; i < 26; i++) {
+    const cx = r() * W
+    const cy = Hh * (0.36 + r() * 0.12)
+    for (let k = 0; k < 7; k++) puff(cx + (r() - 0.5) * W * 0.08, cy + (r() - 0.6) * Hh * 0.06, W * (0.012 + r() * 0.02), 0.9)
+  }
+  for (let i = 0; i < 14; i++) puff(r() * W, Hh * (0.1 + r() * 0.2), W * (0.02 + r() * 0.03), 0.35)
+  tex.update()
   return tex
 }
 
@@ -427,7 +529,10 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
     return m
   }
   const pick = (s: number) => {
-    if (s < 3) return 0
+    // abertura como na referência: a vila, a cachoeira, o arco e a ponte logo de cara
+    const INTRO = [2, 1, 3, 4, 2]
+    if (s < 0) return 0
+    if (s < INTRO.length) return INTRO[s] * VARIANTS + (s % VARIANTS)
     let m = base(s)
     if (m === base(s - 1)) m = (m + 1 + (hash32(s, seed ^ 77) % (MODULES.length - 1))) % MODULES.length
     return m * VARIANTS + (hash32(s, seed ^ 13) % VARIANTS)
@@ -442,9 +547,42 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
   cloudMat.specularColor = new Color3(0, 0, 0)
   cloudMat.disableLighting = false
   const SEA = 420
+  // o abismo: mar de nuvens lá embaixo (os paredões descem até ele)
   const sea = CreateGround("jt-cloud-sea", { width: SEA, height: SEA, subdivisions: 1 }, scene)
   sea.material = cloudMat
   sea.isPickable = false
+  // o "chão" da caixa (y = 0): um véu de nuvens translúcido — encostou nele, caiu
+  const veilTex = cloudTexture(scene, low, true)
+  const veilMat = new StandardMaterial("jt-cloud-veil", scene)
+  veilMat.diffuseTexture = veilTex
+  veilMat.useAlphaFromDiffuseTexture = true
+  veilTex.hasAlpha = true
+  veilMat.emissiveColor = new Color3(0.85, 0.88, 0.94)
+  veilMat.specularColor = new Color3(0, 0, 0)
+  veilMat.backFaceCulling = false
+  veilMat.disableDepthWrite = true
+  const veil = CreateGround("jt-cloud-veil", { width: 160, height: 300, subdivisions: 1 }, scene)
+  // qualidade baixa: sem o véu (é uma camada translúcida do tamanho da tela); o chão continua sendo as nuvens de baixo
+  veil.setEnabled(!low)
+  veil.material = veilMat
+  veil.isPickable = false
+  veilTex.uScale = 160 / 18
+  veilTex.vScale = 300 / 18
+  // o céu e o sol
+  const skyTex = skyTexture(scene, low)
+  const skyMat = new StandardMaterial("jt-sky", scene)
+  skyMat.emissiveTexture = skyTex
+  skyMat.disableLighting = true
+  skyMat.backFaceCulling = false
+  skyMat.fogEnabled = false
+  const sky = CreateSphere("jt-sky", { diameter: 900, segments: 16, sideOrientation: BMesh.BACKSIDE }, scene)
+  sky.material = skyMat
+  sky.infiniteDistance = true
+  sky.isPickable = false
+  const sun = new DirectionalLight("jt-sun", new Vector3(-0.55, -0.7, 0.45), scene)
+  sun.diffuse = new Color3(1, 0.9, 0.74)
+  sun.specular = new Color3(0.15, 0.12, 0.1)
+  sun.intensity = 1.35
   const TILE = 60
   cloudTex.uScale = SEA / TILE
   cloudTex.vScale = SEA / TILE
@@ -454,11 +592,11 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
   const BAND = 520
   const islands: { insts: InstancedMesh[]; x: number; y: number; oz: number; s: number; ph: number }[] = []
   const ir = rng(seed ^ 0x51)
-  const ISLANDS = low ? 6 : 10
+  const ISLANDS = low ? 5 : 12
   for (let i = 0; i < ISLANDS; i++) {
     const kind = i % 2
     const side = i % 4 < 2 ? -1 : 1
-    const s = 0.8 + ir() * 1.4
+    const s = 1.4 + ir() * 1.8
     const insts = isl[kind].map((src) => {
       const inst = src.createInstance(`jt-cn-isl${i}-${src.name}`)
       inst.isPickable = false
@@ -466,7 +604,7 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
       inst.rotation.y = ir() * Math.PI * 2
       return inst
     })
-    islands.push({ insts, x: side * (26 + ir() * 50), y: 12 + ir() * 30, oz: (i / ISLANDS) * BAND + ir() * 30, s, ph: ir() * 6 })
+    islands.push({ insts, x: side * (22 + ir() * 40), y: 14 + ir() * 32, oz: (i / ISLANDS) * BAND + ir() * 30, s, ph: ir() * 6 })
   }
   // os moldes das ilhas longe da vista
   for (const list of isl) for (const m of list) m.position.y = -5000
@@ -478,7 +616,10 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
     mats,
     update(z, now) {
       pool.update(z, now)
-      sea.position.set(0, 0, z + SEA * 0.3)
+      sea.position.set(0, -48, z + SEA * 0.3)
+      veil.position.set(0, 0.02, z + 120)
+      veilTex.uOffset = -now * 0.006
+      veilTex.vOffset = (z + 120) / 18 + now * 0.02
       cloudTex.uOffset = now * 0.004
       cloudTex.vOffset = (z + SEA * 0.3) / TILE + now * 0.01
       waterTex.vOffset = now * 1.6
@@ -493,6 +634,13 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
       pool.dispose()
       for (const m of all) if (!m.isDisposed()) m.dispose()
       sea.dispose()
+      veil.dispose()
+      veilMat.dispose()
+      veilTex.dispose()
+      sky.dispose()
+      skyMat.dispose()
+      skyTex.dispose()
+      sun.dispose()
       cloudMat.dispose()
       cloudTex.dispose()
       waterMat.dispose()

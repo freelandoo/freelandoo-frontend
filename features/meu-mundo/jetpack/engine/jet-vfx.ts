@@ -202,7 +202,7 @@ export function createJetVfx(scene: Scene, tier: QualityTier, phase: PhaseId): J
     dust.colorDead = new Color4(1, 0.7, 0.3, 0)
     dust.emitRate = 14 * k + 2
     dust.updateSpeed = 1 / 60
-    dust.start()
+    if (stage.budget.layers) dust.start()
     systems.push(dust)
   }
 

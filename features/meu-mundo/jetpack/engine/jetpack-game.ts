@@ -168,6 +168,8 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   lamp.specular = new Color3(0.2, 0.15, 0.1)
   lamp.range = 34
   lamp.intensity = look.lampK
+  // céu aberto (Cânion): a lanterna que anda junto não aparece e custa uma luz por pixel
+  if (look.lampK < 0.3) lamp.setEnabled(false)
   const fireLight = new PointLight("jt-fire", new Vector3(0, 3, 0), scene)
   fireLight.diffuse = new Color3(1, 0.5, 0.15)
   fireLight.specular = new Color3(0, 0, 0)
@@ -542,13 +544,14 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
     const tall = Math.min(1, Math.max(0, (1 - aspect) / 0.55))
     camX += (x * 0.62 - camX) * Math.min(1, dt * 5)
-    const wantY = Math.max(1.3, Math.min(TUNNEL.H - 0.8, y + 1.15 + tall * 0.3))
+    const cp = look.cam
+    const wantY = Math.max(1.3, Math.min(cp ? cp.maxY : TUNNEL.H - 0.8, y + 1.15 + tall * 0.3 + (cp?.up ?? 0)))
     camY += (wantY - camY) * Math.min(1, dt * 5)
     if (shake > 0) shake = Math.max(0, shake - dt)
     const jit = shake * 0.32
     const pace = Math.min(1, Math.max(0, (flight.v / flight.k - TUNING.v0) / (TUNING.vMax - TUNING.v0)))
-    cam.position.set(camX + (Math.random() - 0.5) * jit, camY + (Math.random() - 0.5) * jit, z - 5.6 - tall * 1.6 - pace * 0.6)
-    camTarget.set(x * 0.82, y + 0.1, z + 14)
+    cam.position.set(camX + (Math.random() - 0.5) * jit, camY + (Math.random() - 0.5) * jit, z - 5.6 - tall * 1.6 - pace * 0.6 - (cp?.back ?? 0))
+    camTarget.set(x * 0.82, y + 0.1 - (cp?.down ?? 0), z + (cp?.ahead ?? 14))
     cam.setTarget(camTarget)
     fovKick = Math.max(0, fovKick - dt * 0.12)
     const wantFov = 0.92 + pace * 0.28 + tall * 0.12 + fovKick

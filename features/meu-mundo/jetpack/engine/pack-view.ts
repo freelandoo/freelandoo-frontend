@@ -17,14 +17,14 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { SteamGeo } from "../../engine/steampunk/geo"
-import { SP, place, facing } from "../../engine/steampunk/scenery"
+import { SP, place, xf } from "../../engine/steampunk/scenery"
 
 /** Altura do corpo no jetpack (m). */
 export const PILOT_H = 1.7
 /** Bocais (no quadro do personagem: pés na origem, frente +z). */
 const NOZZLES = [
-  [-0.12, 0.86, -0.33],
-  [0.12, 0.86, -0.33],
+  [-0.125, 0.8, -0.36],
+  [0.125, 0.8, -0.36],
 ] as const
 
 export interface PackKit {
@@ -40,24 +40,32 @@ export function buildPackKit(scene: Scene, mats: { trim: StandardMaterial; glow:
   const g = new SteamGeo()
   const l = new SteamGeo()
   l.uv = "flat"
-  // armação e placa das costas
-  g.box(0.4, 0.5, 0.08, place(0, 1.24, -0.2), SP.iron)
-  g.box(0.44, 0.06, 0.12, place(0, 1.5, -0.22), SP.brassDark)
-  g.box(0.44, 0.06, 0.12, place(0, 0.98, -0.22), SP.brassDark)
-  // dois tanques de latão com tampa de cobre e janela verde do combustível
+  // Jetpack 2.0 (referências do Alex): dois TANQUES dourados quadradões, lado a lado,
+  // com janela ciano acesa nas costas, faixas escuras, tampa e o bocal largo embaixo
+  const GOLD: [number, number, number] = [0.86, 0.6, 0.26]
+  const GOLD_HI: [number, number, number] = [0.98, 0.76, 0.36]
+  const BRONZE: [number, number, number] = [0.42, 0.26, 0.12]
+  const CYAN: [number, number, number] = [0.3, 1, 0.95]
+  // placa presa às costas e as alças
+  g.box(0.42, 0.5, 0.06, place(0, 1.24, -0.19), BRONZE)
+  for (const x of [-0.15, 0.15]) g.box(0.07, 0.06, 0.24, place(x, 1.5, -0.1), BRONZE)
   for (const [x] of NOZZLES) {
-    g.cylinder(0.2, 0.56, place(x, 1.22, -0.33), SP.brass, 12)
-    g.cylinder(0.14, 0.08, place(x, 1.54, -0.33), SP.copper, 10)
-    g.cylinder(0.22, 0.05, place(x, 1.38, -0.33), SP.bronze, 12)
-    g.cylinder(0.22, 0.05, place(x, 1.04, -0.33), SP.bronze, 12)
-    // bocal: funil de cobre virado para baixo
-    g.cone(0.13, 0.08, 0.14, place(x, 0.89, -0.33), SP.copperDark, 10)
-    l.box(0.05, 0.16, 0.05, place(x, 1.22, -0.43), [0.29, 0.98, 0.64])
+    // corpo do tanque (chanfro pela textura de acabamento) e as quinas mais claras
+    g.box(0.23, 0.56, 0.26, place(x, 1.2, -0.36), GOLD)
+    g.box(0.25, 0.06, 0.28, place(x, 1.46, -0.36), GOLD_HI)
+    g.box(0.25, 0.06, 0.28, place(x, 0.95, -0.36), GOLD_HI)
+    g.box(0.24, 0.04, 0.27, place(x, 1.2, -0.36), BRONZE)
+    // tampa
+    g.box(0.16, 0.06, 0.18, place(x, 1.51, -0.36), BRONZE)
+    // janela ciano nas costas (o que a câmera vê) com moldura escura
+    g.box(0.11, 0.3, 0.02, place(x, 1.2, -0.495), BRONZE)
+    l.box(0.07, 0.25, 0.02, place(x, 1.2, -0.505), CYAN)
+    // bocal: cilindro largo escuro com boca de cobre
+    g.cylinder(0.2, 0.12, place(x, 0.87, -0.36), BRONZE, 10)
+    g.cone(0.17, 0.12, 0.1, place(x, 0.78, -0.36), SP.copperDark, 10)
   }
-  // manômetro entre os tanques e as presilhas dos ombros
-  g.cylinder(0.12, 0.04, facing(0, 1.42, -0.42), SP.brass, 10)
-  l.cylinder(0.09, 0.045, facing(0, 1.42, -0.425), [1, 0.83, 0.48], 10)
-  for (const x of [-0.16, 0.16]) g.box(0.06, 0.05, 0.2, place(x, 1.52, -0.12), SP.ironHi)
+  // emblema aceso no meio, entre os tanques
+  l.box(0.05, 0.05, 0.04, xf(0, 1.36, -0.5, 0, undefined, 0, Math.PI / 4), [1, 0.85, 0.4])
   const body = g.build("jt-pack", scene, mats.trim, false)
   const glow = l.build("jt-pack-glow", scene, mats.glow, false)
   body.setEnabled(false)
@@ -81,8 +89,8 @@ export function buildPackKit(scene: Scene, mats: { trim: StandardMaterial; glow:
     m.setEnabled(false)
     return m
   }
-  const flameOuter = fire("jt-flame-o", 0.2, new Color3(1, 0.42, 0.08), 0.85)
-  const flameInner = fire("jt-flame-i", 0.1, new Color3(1, 0.9, 0.62), 0.95)
+  const flameOuter = fire("jt-flame-o", 0.18, new Color3(1, 0.55, 0.12), 0.8)
+  const flameInner = fire("jt-flame-i", 0.09, new Color3(1, 0.95, 0.7), 0.95)
   return {
     body,
     glow,
@@ -129,13 +137,14 @@ export class PackRig {
   update(dt: number, now: number, thrust: boolean, empty: boolean, visible = true) {
     this.root.setEnabled(visible)
     if (!visible) return
-    const want = empty ? 0.06 : thrust ? 1.25 : 0.28
+    // chama longa como nas referências (o fogo é só desenho)
+    const want = empty ? 0.06 : thrust ? 2.1 : 0.32
     this.len += (want - this.len) * Math.min(1, dt * (thrust ? 18 : 9))
     for (let i = 0; i < this.flames.length; i++) {
       const f = this.flames[i]
       const flick = 1 + Math.sin(now * 47 + this.seed + i * 1.7) * 0.12 + Math.sin(now * 83 + i) * 0.08
       const l = this.len * flick * (empty ? (Math.sin(now * 31 + i) > 0.6 ? 1 : 0.2) : 1)
-      const w = 0.75 + this.len * 0.35
+      const w = 0.9 + this.len * 0.22
       f.outer.scaling.set(w, l, w)
       f.inner.scaling.set(w * 0.9, l * 0.62, w * 0.9)
     }
