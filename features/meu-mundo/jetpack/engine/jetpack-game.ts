@@ -43,7 +43,7 @@ import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
 import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
-import { loadCanyonAssets, loadFactoryAssets, type PieceAssets } from "./canyon-assets"
+import { loadCanyonAssets, loadFactoryAssets, loadOrbitalAssets, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -182,6 +182,13 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const vfx = createJetVfx(scene, quality.tier, level)
   // Cânion: as peças esculpidas (GLB do Tripo) chegam depois e entram no cenário e nos obstáculos
   let canyonAssets: PieceAssets<string> | null = null
+  if (level === "orbital") {
+    void loadOrbitalAssets(scene, () => !disposed).then((a) => {
+      if (disposed) return a.dispose()
+      canyonAssets = a
+      tunnel.provide?.(a)
+    })
+  }
   if (level === "industrial") {
     void loadFactoryAssets(scene, () => !disposed).then((a) => {
       if (disposed) return a.dispose()

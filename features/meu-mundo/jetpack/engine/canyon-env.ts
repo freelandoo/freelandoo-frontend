@@ -321,7 +321,7 @@ const VARIANTS = 2
 
 // ── o que não é trecho: nuvens, ilhas ao longe ──────────────────────────────
 
-function cloudTexture(scene: Scene, low: boolean, alpha = false) {
+export function cloudTexture(scene: Scene, low: boolean, alpha = false) {
   const S = low ? 256 : 512
   const tex = new DynamicTexture(alpha ? "jt-clouds-veil" : "jt-clouds", { width: S, height: S }, scene, true)
   const c = tex.getContext() as CanvasRenderingContext2D
@@ -381,18 +381,22 @@ function waterTexture(scene: Scene) {
   return tex
 }
 
+const SKY_DAY: [number, string][] = [
+  [0, "#2f63c4"],
+  [0.32, "#4d8ee0"],
+  [0.48, "#a9d1f5"],
+  [0.52, "#d8ecfb"],
+  [1, "#cfe4f7"],
+]
+
 /** O céu: azul fundo no alto, claro no horizonte, nuvens fofas na faixa do horizonte. */
-function skyTexture(scene: Scene, low: boolean) {
+export function skyTexture(scene: Scene, low: boolean, stops: [number, string][] = SKY_DAY) {
   const W = low ? 512 : 1024
   const Hh = W / 2
   const tex = new DynamicTexture("jt-sky", { width: W, height: Hh }, scene, false)
   const c = tex.getContext() as CanvasRenderingContext2D
   const g = c.createLinearGradient(0, 0, 0, Hh)
-  g.addColorStop(0, "#2f63c4")
-  g.addColorStop(0.32, "#4d8ee0")
-  g.addColorStop(0.48, "#a9d1f5")
-  g.addColorStop(0.52, "#d8ecfb")
-  g.addColorStop(1, "#cfe4f7")
+  for (const [k, col] of stops) g.addColorStop(k, col)
   c.fillStyle = g
   c.fillRect(0, 0, W, Hh)
   const r = rng(77)

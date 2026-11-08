@@ -27,6 +27,7 @@ import { buildTunnel, SEG } from "./tunnel-view"
 import { JetGeo } from "./jet-geo"
 import { buildCanyonEnv } from "./canyon-env"
 import { buildFactoryEnv } from "./factory-env"
+import { buildOrbitalEnv, type OrbitalPiece } from "./orbital-env"
 import type { CanyonAssets, FactoryPiece, PieceAssets } from "./canyon-assets"
 
 const { W, H } = TUNNEL
@@ -74,7 +75,19 @@ export const PHASE_LOOK: Record<PhaseId, PhaseLook> = {
     ambient: [0.5, 0.42, 0.36],
     cam: { up: 1.7, back: -0.6, down: 1.3, ahead: 16, maxY: 11.5 },
   },
-  orbital: { clear: [0.04, 0.04, 0.12], fog: [0.07, 0.05, 0.16], fogStart: 50, fogEnd: 200, hemi: [0.62, 0.7, 1], ground: [0.3, 0.12, 0.34], hemiK: 0.75, lamp: [0.5, 0.9, 1], lampK: 0.8, ambient: [0.22, 0.22, 0.34] },
+  orbital: {
+    clear: [0.7, 0.72, 0.92],
+    fog: [0.74, 0.74, 0.92],
+    fogStart: 70,
+    fogEnd: 230,
+    hemi: [0.92, 0.94, 1],
+    ground: [0.55, 0.45, 0.65],
+    hemiK: 1,
+    lamp: [0.5, 0.9, 1],
+    lampK: 0.2,
+    ambient: [0.45, 0.45, 0.55],
+    cam: { up: 1.6, back: -0.6, down: 1.2, ahead: 16, maxY: 11 },
+  },
   floresta: { clear: [0.03, 0.08, 0.1], fog: [0.04, 0.1, 0.12], fogStart: 35, fogEnd: 150, hemi: [0.55, 0.8, 0.95], ground: [0.22, 0.1, 0.3], hemiK: 0.7, lamp: [0.55, 1, 0.85], lampK: 0.85, ambient: [0.18, 0.24, 0.26] },
   forja: { clear: [0.16, 0.05, 0.03], fog: [0.2, 0.06, 0.03], fogStart: 40, fogEnd: 160, hemi: [1, 0.62, 0.4], ground: [0.6, 0.18, 0.05], hemiK: 0.75, lamp: [1, 0.55, 0.25], lampK: 0.9, ambient: [0.3, 0.18, 0.14] },
   artico: { clear: [0.6, 0.72, 0.84], fog: [0.66, 0.76, 0.86], fogStart: 30, fogEnd: 145, hemi: [0.88, 0.95, 1], ground: [0.45, 0.58, 0.72], hemiK: 0.95, lamp: [0.7, 0.92, 1], lampK: 0.55, ambient: [0.42, 0.48, 0.55] },
@@ -363,6 +376,10 @@ export function buildPhaseEnv(scene: Scene, id: PhaseId, low: boolean, slots: nu
   if (id === "canion") {
     const c = buildCanyonEnv(scene, low, slots, seed)
     return { mats: c.mats, update: (z, _sets, now) => c.update(z, now), provide: (a) => c.provide(a as CanyonAssets), dispose: () => c.dispose() }
+  }
+  if (id === "orbital") {
+    const o = buildOrbitalEnv(scene, low, slots, seed)
+    return { mats: o.mats, update: (z, _sets, now) => o.update(z, now), provide: (a) => o.provide(a as PieceAssets<OrbitalPiece>), dispose: () => o.dispose() }
   }
   // Jetpack 2.0: o Túnel Industrial virou o galpão da referência (as prensas e a regra são as mesmas)
   if (id === "industrial") {
