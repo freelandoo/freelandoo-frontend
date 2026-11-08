@@ -25,6 +25,7 @@ import { resolveShot, type NewBlob } from "../sim/paint"
 import { PAINT, TUNING, modeCapacity, type PaintColor, type PaintMode } from "../sim/tuning"
 import { buildPaintMap, paintMapId, paintMapVersion } from "../sim/maps"
 import type { Vec3 } from "../sim/map"
+import type { MorkhanAct } from "../sim/morkhan"
 import type { PaintPort, PortPlayerInfo, RemoteSample } from "./port"
 
 export type { PaintSession }
@@ -74,6 +75,16 @@ interface SBlob {
   owner: number
   q: number
 }
+/** B11: o Morkhan (a sala manda; aqui só se copia para desenhar). */
+interface SMorkhan {
+  tg: number
+  x: number
+  y: number
+  z: number
+  f: number
+  a: string
+  t: number
+}
 interface SState {
   phase: NetPhase
   mode: string
@@ -92,6 +103,8 @@ interface SState {
   bf: number
   ba: string
   bt: number
+  /** B11: o Morkhan de cada time (chave = time). */
+  mk?: Map<string, SMorkhan>
   players: Map<string, SPlayer>
   blobs: Map<string, SBlob>
   result: string
@@ -294,6 +307,22 @@ export class NetPort implements PaintPort {
       m.boss.facing = s.bf
       m.boss.act = s.ba as BossAct
       m.boss.at = s.bt
+    }
+    // B11: o Morkhan de cada time (só desenho; quem decide é a sala)
+    for (const mk of m.morkhans) {
+      const sm = s.mk?.get(String(mk.team))
+      if (!sm || sm.tg < 0 || sm.a === "gone") {
+        mk.target = -1
+        mk.act = "gone"
+        continue
+      }
+      mk.target = sm.tg
+      mk.x = sm.x
+      mk.y = sm.y
+      mk.z = sm.z
+      mk.facing = sm.f
+      mk.act = sm.a as MorkhanAct
+      mk.at = sm.t
     }
     for (const p of s.players.values()) {
       const mp = m.players.get(p.slot)

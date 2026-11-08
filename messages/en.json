@@ -10495,7 +10495,14 @@
     "rkPartGear": "Equipment",
     "attrAccuracy": "Precision",
     "atAccuracyText": "New attribute: it starts at 0 and counts toward Power. The gym's punching bag will train it; after 1 day without practice it drops 5 points a day, down to 60% of the highest value.",
-    "atAccuracyShort": "New: starts at 0 and counts toward Power; the punching bag will train it."
+    "atAccuracyShort": "New: starts at 0 and counts toward Power; the punching bag will train it.",
+    "paintHowMorkhan": "Got all 20? Morkhan appears behind you and tries to throw you off the islands: fall, and the kittens go back to the map and the portal closes. Run for the portal!",
+    "paintToastMorkhanMine": "Morkhan woke up behind you! Run for the portal",
+    "paintToastMorkhanAlly": "Morkhan is hunting whoever carries your team's kittens",
+    "paintToastMorkhanOther": "Morkhan went after the other team",
+    "paintToastPortalShut": "The portal closed — gather 20 kittens again",
+    "paintMorkhanChasing": "Morkhan is right behind you!",
+    "paintMorkhanDist": "{n} m"
   },
   "Sports": {
     "eyebrow": "Sports",

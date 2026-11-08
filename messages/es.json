@@ -10475,7 +10475,14 @@
     "rkPartGear": "Equipo",
     "attrAccuracy": "Puntería",
     "atAccuracyText": "Atributo nuevo: empieza en 0 y cuenta para el Poder. El saco de boxeo del gimnasio la va a entrenar; tras 1 día sin practicar baja 5 puntos por día, hasta el 60% del valor más alto.",
-    "atAccuracyShort": "Nueva: empieza en 0 y cuenta para el Poder; el saco de boxeo la va a entrenar."
+    "atAccuracyShort": "Nueva: empieza en 0 y cuenta para el Poder; el saco de boxeo la va a entrenar.",
+    "paintHowMorkhan": "¿Juntaste los 20? Morkhan aparece detrás de ti e intenta tirarte de las islas: si caes, los gatitos vuelven al mapa y el portal se cierra. ¡Corre al portal!",
+    "paintToastMorkhanMine": "¡Morkhan despertó detrás de ti! Corre al portal",
+    "paintToastMorkhanAlly": "Morkhan está cazando a quien lleva los gatitos de tu equipo",
+    "paintToastMorkhanOther": "Morkhan salió tras el otro equipo",
+    "paintToastPortalShut": "El portal se cerró — junta 20 gatitos de nuevo",
+    "paintMorkhanChasing": "¡Morkhan está detrás de ti!",
+    "paintMorkhanDist": "{n} m"
   },
   "Sports": {
     "eyebrow": "Deportes",
