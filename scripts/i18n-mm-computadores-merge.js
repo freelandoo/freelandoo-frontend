@@ -16,6 +16,9 @@ const KEYS = [
   ["jetLobbyHowBots", "Quem entrar até o fim do tempo voa junto, no mesmo túnel. As vagas que sobrarem viram computadores. Ganha quem for mais longe.", "Whoever joins before time runs out flies together in the same tunnel. Empty spots become computers. Whoever goes farthest wins.", "Quien entre antes de que acabe el tiempo vuela junto, en el mismo túnel. Los lugares vacíos son de la computadora. Gana quien llegue más lejos."],
   ["jetLobbyBot", "computador, se ninguém entrar", "computer, if nobody joins", "computadora, si nadie entra"],
   ["jetLobbyCount4", "{n} de 4 no túnel", "{n} of 4 in the tunnel", "{n} de 4 en el túnel"],
+  ["paintWaitingBots", "Esperando jogadores {n}/{k} · {s} · vaga vazia vira computador", "Waiting for players {n}/{k} · {s} · empty spots become computers", "Esperando jugadores {n}/{k} · {s} · los lugares vacíos son de la computadora"],
+  ["paintJoinFail2", "A sala não abriu agora. Tente de novo.", "The room didn't open right now. Try again.", "La sala no abrió ahora. Inténtalo de nuevo."],
+  ["paintModeBotsNote", "Espera até 1 minuto · vaga vazia vira computador", "Waits up to 1 minute · empty spots become computers", "Espera hasta 1 minuto · los lugares vacíos son de la computadora"],
   ["noturnoJoinFail2", "O rolê não abriu agora. Tente de novo.", "The ride didn't open right now. Try again.", "El paseo no abrió ahora. Inténtalo de nuevo."],
 ]
 const COL = { "pt-BR": 1, en: 2, es: 3 }

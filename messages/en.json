@@ -10769,7 +10769,10 @@
     "jetJoinFail2": "The flight didn't open right now. Try again.",
     "jetLobbyHowBots": "Whoever joins before time runs out flies together in the same tunnel. Empty spots become computers. Whoever goes farthest wins.",
     "jetLobbyBot": "computer, if nobody joins",
-    "jetLobbyCount4": "{n} of 4 in the tunnel"
+    "jetLobbyCount4": "{n} of 4 in the tunnel",
+    "paintWaitingBots": "Waiting for players {n}/{k} · {s} · empty spots become computers",
+    "paintJoinFail2": "The room didn't open right now. Try again.",
+    "paintModeBotsNote": "Waits up to 1 minute · empty spots become computers"
   },
   "Sports": {
     "eyebrow": "Sports",

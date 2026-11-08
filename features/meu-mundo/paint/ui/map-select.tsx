@@ -8,7 +8,7 @@
 // cada cartão e tocar em outro troca o voto (a sala apura na largada; empate
 // = sorteio no servidor). Nada de 3D aqui: só as miniaturas.
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, Loader2, Play, Trophy, Users, Vote } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
@@ -79,7 +79,7 @@ export function PaintMapSelect({
   modeLabel: string
   /** Mapa em que se entrou (votando) — null = ainda escolhendo. */
   joining: string | null
-  lobby: { n: number; cap: number } | null
+  lobby: { n: number; cap: number; until?: number } | null
   votes: Record<string, number>
   stale: boolean
   error: string | null
@@ -97,6 +97,19 @@ export function PaintMapSelect({
   })
   const chosen = list.find((m) => m.id === sel) ?? list[0]
   const multi = mode !== "solo"
+  // relógio da espera (1 minuto; depois as vagas vazias viram computadores)
+  const [now, setNow] = useState(() => Date.now())
+  const waitUntil = lobby?.until ?? 0
+  useEffect(() => {
+    if (!waitUntil) return
+    const id = setInterval(() => setNow(Date.now()), 500)
+    return () => clearInterval(id)
+  }, [waitUntil])
+  const clock = (until?: number) => {
+    if (!until) return "…"
+    const left = Math.max(0, Math.ceil((until - now) / 1000))
+    return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`
+  }
   const pick = (id: string) => {
     setSel(id)
     rememberMap(id)
@@ -143,7 +156,7 @@ export function PaintMapSelect({
                 {stale
                   ? t("paintStale", "O Paint foi atualizado: recarregue a página para jogar.")
                   : lobby
-                    ? t("paintWaitingVote", "Esperando jogadores {n}/{k} · toque num mapa para trocar o voto").replace("{n}", String(lobby.n)).replace("{k}", String(lobby.cap))
+                    ? t("paintWaitingBots", "Esperando jogadores {n}/{k} · {s} · vaga vazia vira computador").replace("{n}", String(lobby.n)).replace("{k}", String(lobby.cap)).replace("{s}", clock(lobby.until))
                     : t("paintJoining", "Procurando sala…")}
               </span>
             </div>

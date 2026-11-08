@@ -10749,7 +10749,10 @@
     "jetJoinFail2": "El vuelo no abrió ahora. Inténtalo de nuevo.",
     "jetLobbyHowBots": "Quien entre antes de que acabe el tiempo vuela junto, en el mismo túnel. Los lugares vacíos son de la computadora. Gana quien llegue más lejos.",
     "jetLobbyBot": "computadora, si nadie entra",
-    "jetLobbyCount4": "{n} de 4 en el túnel"
+    "jetLobbyCount4": "{n} de 4 en el túnel",
+    "paintWaitingBots": "Esperando jugadores {n}/{k} · {s} · los lugares vacíos son de la computadora",
+    "paintJoinFail2": "La sala no abrió ahora. Inténtalo de nuevo.",
+    "paintModeBotsNote": "Espera hasta 1 minuto · los lugares vacíos son de la computadora"
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -41,7 +41,8 @@ export type PaintJoin = (
     signal: AbortSignal
     /** mm3d-76: o mapa em que se vota ao entrar. */
     map: string
-    onLobby: (n: number, cap: number, votes: Record<string, number>) => void
+    /** `until` = fim da espera (ms, 0 = sem relógio); depois as vagas vazias viram computadores. */
+    onLobby: (n: number, cap: number, votes: Record<string, number>, until: number) => void
     onStatus: (s: PaintNetStatus) => void
     /** Como trocar o voto na espera. */
     onRoom?: (api: { vote: (map: string) => void }) => void
@@ -71,7 +72,7 @@ export function PaintView({ body, look = "", onExit, join }: PaintViewProps) {
   const t = useTranslations("MeuMundo")
   const [stage, setStage] = useState<Stage>({ kind: "menu" })
   const [error, setError] = useState<string | null>(null)
-  const [lobby, setLobby] = useState<{ n: number; cap: number } | null>(null)
+  const [lobby, setLobby] = useState<{ n: number; cap: number; until: number } | null>(null)
   const [votes, setVotes] = useState<Record<string, number>>({})
   const [net, setNet] = useState<PaintNetStatus>("online")
   const seq = useRef(0)
@@ -95,8 +96,8 @@ export function PaintView({ body, look = "", onExit, join }: PaintViewProps) {
         const port = await join(mode, {
           signal: ac.signal,
           map,
-          onLobby: (n, cap, v) => {
-            setLobby({ n, cap })
+          onLobby: (n, cap, v, until) => {
+            setLobby({ n, cap, until })
             setVotes(v)
           },
           onStatus: setNet,
@@ -109,14 +110,14 @@ export function PaintView({ body, look = "", onExit, join }: PaintViewProps) {
           return
         }
         if (!port) {
-          setError(t("paintJoinFail", "A sala não abriu agora. Tente de novo ou treine sozinho."))
+          setError(t("paintJoinFail2", "A sala não abriu agora. Tente de novo."))
           setStage({ kind: "maps", mode })
           return
         }
         setStage({ kind: "game", port, key: ++seq.current, mode })
       } catch {
         if (ac.signal.aborted) return
-        setError(t("paintJoinFail", "A sala não abriu agora. Tente de novo ou treine sozinho."))
+        setError(t("paintJoinFail2", "A sala não abriu agora. Tente de novo."))
         setStage({ kind: "maps", mode })
       }
     },
@@ -188,7 +189,7 @@ function PaintMenu({
 }) {
   const t = useTranslations("MeuMundo")
   const modes: { mode: PaintMode; icon: ReactNode; title: string; sub: string }[] = [
-    { mode: "solo", icon: <User className="h-5 w-5" />, title: t("paintModeSolo", "Treinar"), sub: t("paintModeSoloSub", "Sozinho, no seu ritmo") },
+    // 2026-11-08 (regra do Alex): só 1×1, 2×2 e 3×3; vaga vazia depois de 1 minuto vira computador
     { mode: "1v1", icon: <Swords className="h-5 w-5" />, title: "1 × 1", sub: t("paintMode1Sub", "Um contra um") },
     { mode: "2v2", icon: <Users className="h-5 w-5" />, title: "2 × 2", sub: t("paintMode2Sub", "Duplas") },
     { mode: "3v3", icon: <Users className="h-5 w-5" />, title: "3 × 3", sub: t("paintMode3Sub", "Times de três") },
@@ -238,7 +239,7 @@ function PaintMenu({
           {t("paintHowMorkhan", "Completou os 20? O Morkhan surge atrás de você e tenta te jogar das ilhas: caiu, os gatinhos voltam ao mapa e o portal fecha. Corra para o portal!")}
         </p>
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-2 max-[420px]:grid-cols-1">
           {modes.map((m) => {
             const busy = joining === m.mode
             const off = (m.mode !== "solo" && !versus) || (!!joining && !busy)
@@ -274,6 +275,9 @@ function PaintMenu({
             )
           })}
         </div>
+        <p className="mt-2 text-[12px] leading-snug" style={{ color: MM.muted }}>
+          {t("paintModeBotsNote", "Espera até 1 minuto · vaga vazia vira computador")}
+        </p>
         {joining && (
           <button type="button" onClick={onCancel} className="mt-3 w-full rounded-none py-2.5 text-[14px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}>
             {t("paintCancel", "Cancelar")}

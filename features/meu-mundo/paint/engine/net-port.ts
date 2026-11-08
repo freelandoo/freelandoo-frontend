@@ -125,6 +125,8 @@ const PREDICT_TTL = 2.5
 
 export class NetPort implements PaintPort {
   me = -1
+  /** Fim da espera de 1 minuto (ms; 0 = sem relógio). */
+  lobbyUntil = 0
   mode: PaintMode
   readonly predicts = true
   /** Cópia da partida (existe depois da espera). */
@@ -152,7 +154,7 @@ export class NetPort implements PaintPort {
   constructor(
     session: PaintSession,
     private readonly refetch: (roomId: string | null) => Promise<PaintSession | null>,
-    private readonly hooks: { onLobby?: (n: number, cap: number, votes: PaintVotes) => void; onStatus?: (s: PaintNetStatus) => void } = {},
+    private readonly hooks: { onLobby?: (n: number, cap: number, votes: PaintVotes, until: number) => void; onStatus?: (s: PaintNetStatus) => void } = {},
   ) {
     this.mode = session.mode
     void this.connect(session)
@@ -200,8 +202,10 @@ export class NetPort implements PaintPort {
     this.lastRoomId = room.roomId
     this.attempt = 0
     let replaced = false
-    room.onMessage("welcome", (p: { slot: number }) => {
+    room.onMessage("welcome", (p: { slot: number; left?: number }) => {
       this.me = p.slot
+      // 2026-11-08: espera de 1 minuto; depois as vagas vazias viram computadores
+      this.lobbyUntil = p.left ? Date.now() + p.left : 0
     })
     room.onMessage("replaced", () => {
       replaced = true
@@ -256,7 +260,7 @@ export class NetPort implements PaintPort {
           const id = paintMapId(p.vote)
           votes[id] = (votes[id] ?? 0) + 1
         }
-        this.hooks.onLobby?.(players.length, modeCapacity(this.mode), votes)
+        this.hooks.onLobby?.(players.length, modeCapacity(this.mode), votes, this.lobbyUntil)
         return
       }
       // mm3d-76: o mapa que a sala apurou (versão diferente = esta página é velha)
