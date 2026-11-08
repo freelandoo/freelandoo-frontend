@@ -30,21 +30,34 @@ const DIR = "/meu-mundo/jetpack/canion/"
 /** Versão de longe (mesma forma e UV, 600–900 triângulos) e a distância da troca (m). */
 const LOD: Partial<Record<CanyonPiece, number>> = { paredao: 60, ilha: 120 }
 
-export interface CanyonAssets {
-  meshes: Map<CanyonPiece, Mesh>
-  dispose: () => void
+export const FACTORY_PIECES = ["viga", "cano", "engrenagem", "pistao", "guindaste", "turbina"] as const
+export type FactoryPiece = (typeof FACTORY_PIECES)[number]
+/** Fábrica (Túnel Industrial): peças do Tripo preparadas por build_fabrica_tripo.py. */
+export function loadFactoryAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<FactoryPiece>> {
+  return loadPieces(scene, "/meu-mundo/jetpack/fabrica/", FACTORY_PIECES, {}, isAlive)
 }
 
-/** Carrega as peças (as que falharem ficam de fora: o cenário procedural segue). */
-export async function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Promise<CanyonAssets> {
+export interface PieceAssets<P extends string = string> {
+  meshes: Map<P, Mesh>
+  dispose: () => void
+}
+export type CanyonAssets = PieceAssets<CanyonPiece>
+
+/** Carrega as peças do Cânion (as que falharem ficam de fora: o cenário procedural segue). */
+export function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Promise<CanyonAssets> {
+  return loadPieces(scene, DIR, CANYON_PIECES, LOD, isAlive)
+}
+
+/** Carrega peças de uma pasta (uma malha por arquivo), com a versão de longe quando houver. */
+export async function loadPieces<P extends string>(scene: Scene, dir: string, names: readonly P[], lodAt: Partial<Record<P, number>>, isAlive: () => boolean): Promise<PieceAssets<P>> {
   ensureLoaders()
   const containers: AssetContainer[] = []
-  const meshes = new Map<CanyonPiece, Mesh>()
+  const meshes = new Map<P, Mesh>()
   const mats: StandardMaterial[] = []
   await Promise.all(
-    CANYON_PIECES.map(async (name) => {
+    names.map(async (name) => {
       try {
-        const c = await LoadAssetContainerAsync(DIR + name + ".glb", scene)
+        const c = await LoadAssetContainerAsync(dir + name + ".glb", scene)
         if (!isAlive()) {
           c.dispose()
           return
@@ -59,7 +72,7 @@ export async function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Pr
         src.refreshBoundingInfo()
         const pbr = src.material as PBRMaterial | null
         const tex: BaseTexture | null = pbr?.albedoTexture ?? null
-        const mat = new StandardMaterial(`jt-cn-${name}`, scene)
+        const mat = new StandardMaterial(`jt-piece-${name}`, scene)
         mat.diffuseTexture = tex
         mat.specularColor = new Color3(0.06, 0.05, 0.04)
         // a textura do Tripo já vem pintada com luz: difusa puxada para o frio (tira o vermelho vivo) e
@@ -70,14 +83,14 @@ export async function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Pr
         src.material = mat
         src.isPickable = false
         src.position.set(0, -5000, 0)
-        src.name = `jt-cn-glb-${name}`
+        src.name = `jt-glb-${name}`
         for (const m of c.meshes) if (m !== src) m.setEnabled(false)
         meshes.set(name, src)
         mat.freeze()
-        const far = LOD[name]
+        const far = lodAt[name]
         if (far) {
           try {
-            const lc = await LoadAssetContainerAsync(DIR + name + "-lod.glb", scene)
+            const lc = await LoadAssetContainerAsync(dir + name + "-lod.glb", scene)
             if (!isAlive()) return lc.dispose()
             containers.push(lc)
             lc.addAllToScene()
@@ -98,7 +111,7 @@ export async function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Pr
           }
         }
       } catch (err) {
-        if (isAlive()) console.warn("[jetpack] peça do Cânion não carregou", name, err)
+        if (isAlive()) console.warn("[jetpack] peça não carregou", name, err)
       }
     }),
   )

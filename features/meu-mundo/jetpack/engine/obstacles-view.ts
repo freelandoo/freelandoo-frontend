@@ -100,7 +100,7 @@ export interface ObstaclesView {
   /** Onde estava um galão (para o brilho de pegar). */
   canAt: (id: number) => Can | null
   /** Troca o molde de uma peça por um modelo (GLB do Tripo): o anel e a rocha do Cânion. */
-  useModel: (key: "rim" | "rock" | "panel" | "petal", mesh: Mesh, opts?: { zScale?: number; fitBox?: boolean }) => void
+  useModel: (key: "rim" | "rock" | "panel" | "petal" | "gear", mesh: Mesh, opts?: { zScale?: number; fitBox?: boolean; bake?: Matrix }) => void
   dispose: () => void
 }
 
@@ -468,6 +468,11 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         const k = 1.06
         const m = Matrix.Translation(-(b.minimum.x + b.maximum.x) / 2, -(b.minimum.y + b.maximum.y) / 2, -b.minimum.z).multiply(Matrix.Scaling(k / sz.x, k / sz.y, 1 / sz.z))
         body.bakeTransformIntoVertices(m)
+        body.refreshBoundingInfo()
+      } else if (opts.bake) {
+        body = mesh.clone(`jt-${key}-model`, null, false)!
+        body.makeGeometryUnique()
+        body.bakeTransformIntoVertices(opts.bake)
         body.refreshBoundingInfo()
       } else body = mesh.clone(`jt-${key}-model`, null, true)!
       body.setEnabled(false)

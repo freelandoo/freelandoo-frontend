@@ -26,6 +26,8 @@ import type { PhaseId, SetPiece } from "../sim/phases"
 import { buildTunnel, SEG } from "./tunnel-view"
 import { JetGeo } from "./jet-geo"
 import { buildCanyonEnv } from "./canyon-env"
+import { buildFactoryEnv } from "./factory-env"
+import type { CanyonAssets, FactoryPiece, PieceAssets } from "./canyon-assets"
 
 const { W, H } = TUNNEL
 
@@ -46,7 +48,19 @@ export interface PhaseLook {
 }
 
 export const PHASE_LOOK: Record<PhaseId, PhaseLook> = {
-  industrial: { clear: [0.075, 0.052, 0.04], fog: [0.075, 0.052, 0.04], fogStart: 45, fogEnd: 160, hemi: [1, 0.86, 0.68], ground: [0.32, 0.24, 0.2], hemiK: 0.7, lamp: [1, 0.78, 0.5], lampK: 0.9, ambient: [0.3, 0.26, 0.22] },
+  industrial: {
+    clear: [0.17, 0.2, 0.27],
+    fog: [0.2, 0.23, 0.3],
+    fogStart: 40,
+    fogEnd: 170,
+    hemi: [1, 0.8, 0.58],
+    ground: [0.5, 0.36, 0.3],
+    hemiK: 1.15,
+    lamp: [1, 0.72, 0.4],
+    lampK: 1,
+    ambient: [0.3, 0.27, 0.26],
+    cam: { up: 1.3, back: -0.4, down: 0.9, ahead: 16, maxY: 10 },
+  },
   canion: {
     clear: [0.45, 0.68, 0.95],
     fog: [0.7, 0.8, 0.92],
@@ -72,7 +86,7 @@ export interface PhaseEnv {
   mats: { trim: StandardMaterial; glow: StandardMaterial }
   update: (z: number, sets: readonly { z0: number; z1: number; kind: SetPiece }[], now: number) => void
   /** Cânion: chegaram as peças esculpidas (GLB). */
-  provide?: (a: import("./canyon-assets").CanyonAssets) => void
+  provide?: (a: PieceAssets<string>) => void
   dispose: () => void
 }
 
@@ -348,9 +362,14 @@ export function buildPhaseEnv(scene: Scene, id: PhaseId, low: boolean, slots: nu
   // Jetpack 2.0: o Cânion é a primeira fase no cenário novo (módulos variados pela semente)
   if (id === "canion") {
     const c = buildCanyonEnv(scene, low, slots, seed)
-    return { mats: c.mats, update: (z, _sets, now) => c.update(z, now), provide: (a) => c.provide(a), dispose: () => c.dispose() }
+    return { mats: c.mats, update: (z, _sets, now) => c.update(z, now), provide: (a) => c.provide(a as CanyonAssets), dispose: () => c.dispose() }
   }
-  if (id === "industrial" || !SEGMENTS[id]) {
+  // Jetpack 2.0: o Túnel Industrial virou o galpão da referência (as prensas e a regra são as mesmas)
+  if (id === "industrial") {
+    const f = buildFactoryEnv(scene, low, slots, seed)
+    return { mats: f.mats, update: (z, _sets, now) => f.update(z, now), provide: (a) => f.provide(a as PieceAssets<FactoryPiece>), dispose: () => f.dispose() }
+  }
+  if (!SEGMENTS[id]) {
     const t = buildTunnel(scene, low, slots)
     return { mats: { trim: t.stage.mats.trim, glow: t.stage.mats.glow }, update: (z) => t.update(z), dispose: () => t.dispose() }
   }

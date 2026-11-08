@@ -31,6 +31,10 @@ export interface SpinSpot {
   speed: number
   sway: number
   ry: number
+  /** Eixo do giro: z (padrão, de frente para o jogador) ou x (de frente para o corredor, na parede). */
+  axis?: "x" | "z"
+  /** Escala do girador (modelos de 1 m). */
+  s?: number
 }
 
 /** Uma peça de modelo (GLB) no trecho: tipo, posição, escala por eixo e giro em y. Chega depois (provide). */
@@ -56,7 +60,7 @@ interface Live {
   m: number
   node: TransformNode
   insts: InstancedMesh[]
-  spins: { inst: InstancedMesh; spot: SpinSpot; ph: number }[]
+  spins: { inst: InstancedMesh | null; spot: SpinSpot; ph: number }[]
   /** Peças de modelo já postas (por índice em `props` do módulo). */
   props: (InstancedMesh | null)[]
 }
@@ -96,14 +100,7 @@ export class SegmentPool {
       i.isPickable = false
       return i
     })
-    const spins = this.modules[m].spins.map((spot, k) => {
-      const inst = this.spinners.get(spot.kind)!.createInstance(`${this.name}-spin${id}-${k}`)
-      inst.parent = node
-      inst.isPickable = false
-      inst.position.set(spot.x, spot.y, spot.z)
-      inst.rotation.y = spot.ry
-      return { inst, spot, ph: k * 1.7 + id }
-    })
+    const spins = this.modules[m].spins.map((spot, k) => ({ inst: null as InstancedMesh | null, spot, ph: k * 1.7 + id }))
     const l: Live = { m, node, insts, spins, props: (this.modules[m].props ?? []).map(() => null) }
     this.fillProps(l)
     return l
@@ -111,6 +108,19 @@ export class SegmentPool {
 
   /** Põe as peças de modelo que já chegaram e ainda faltam neste trecho. */
   private fillProps(l: Live) {
+    // giradores cujo modelo já chegou
+    for (const sp of l.spins) {
+      if (sp.inst) continue
+      const src = this.spinners.get(sp.spot.kind)
+      if (!src) continue
+      const inst = src.createInstance(`${src.name}-s${this.seq}`)
+      inst.parent = l.node
+      inst.isPickable = false
+      inst.position.set(sp.spot.x, sp.spot.y, sp.spot.z)
+      inst.rotation.y = sp.spot.ry
+      if (sp.spot.s) inst.scaling.setAll(sp.spot.s)
+      sp.inst = inst
+    }
     const spots = this.modules[l.m].props ?? []
     for (let k = 0; k < spots.length; k++) {
       if (l.props[k]) continue
@@ -128,8 +138,9 @@ export class SegmentPool {
   }
 
   /** Chegou a malha de uma peça de modelo: entra em todos os trechos (vivos e guardados). */
-  provide(kind: string, mesh: Mesh) {
-    this.propSrc.set(kind, mesh)
+  provide(kind: string, mesh: Mesh, spinner = false) {
+    if (spinner) this.spinners.set(kind, mesh)
+    else this.propSrc.set(kind, mesh)
     for (const l of this.live.values()) this.fillProps(l)
     for (const list of this.free) for (const l of list) this.fillProps(l)
   }
@@ -153,7 +164,9 @@ export class SegmentPool {
     }
     for (const l of this.live.values()) {
       for (const sp of l.spins) {
+        if (!sp.inst) continue
         if (sp.spot.sway) sp.inst.rotation.x = Math.sin(now * sp.spot.speed + sp.ph) * sp.spot.sway
+        else if (sp.spot.axis === "x") sp.inst.rotation.x = now * sp.spot.speed + sp.ph
         else sp.inst.rotation.z = now * sp.spot.speed + sp.ph
       }
     }
@@ -168,7 +181,7 @@ export class SegmentPool {
     const all = [...this.live.values(), ...this.free.flat()]
     for (const l of all) {
       for (const i of l.insts) i.dispose()
-      for (const sp of l.spins) sp.inst.dispose()
+      for (const sp of l.spins) sp.inst?.dispose()
       for (const p of l.props) p?.dispose()
       l.node.dispose()
     }

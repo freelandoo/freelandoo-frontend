@@ -26,7 +26,7 @@ import { PointLight } from "@babylonjs/core/Lights/pointLight"
 import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
-import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { liveGamesBump } from "../../engine/game"
@@ -43,7 +43,7 @@ import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
 import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
-import { loadCanyonAssets, type CanyonAssets } from "./canyon-assets"
+import { loadCanyonAssets, loadFactoryAssets, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -181,7 +181,18 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const tunnel = buildPhaseEnv(scene, level, low, Math.ceil((fogEnd + SEG) / SEG) + 2, seed)
   const vfx = createJetVfx(scene, quality.tier, level)
   // Cânion: as peças esculpidas (GLB do Tripo) chegam depois e entram no cenário e nos obstáculos
-  let canyonAssets: CanyonAssets | null = null
+  let canyonAssets: PieceAssets<string> | null = null
+  if (level === "industrial") {
+    void loadFactoryAssets(scene, () => !disposed).then((a) => {
+      if (disposed) return a.dispose()
+      canyonAssets = a
+      tunnel.provide?.(a)
+      // a engrenagem esculpida também vira o obstáculo: de frente para o jogador e com raio 1
+      // (o modelo tem 1 m de altura e olha para x)
+      const gear = a.meshes.get("engrenagem")
+      if (gear) obstacles.useModel("gear", gear, { bake: Matrix.RotationY(Math.PI / 2).multiply(Matrix.Scaling(2, 2, 2)) })
+    })
+  }
   if (level === "canion") {
     void loadCanyonAssets(scene, () => !disposed).then((a) => {
       if (disposed) return a.dispose()
