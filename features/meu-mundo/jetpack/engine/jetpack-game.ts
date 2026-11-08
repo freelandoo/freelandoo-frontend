@@ -34,7 +34,7 @@ import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/qua
 import { AvatarLibrary } from "../../engine/avatars"
 import { Character } from "../../engine/player"
 import { BODY_IDS, type BodyId } from "../../types"
-import { Flight, TUNING, TUNNEL, crusherB, ringAt, speedAt, type CrashBy, type FlightEvent, type FlightInput } from "../sim/flight"
+import { Flight, TUNING, TUNNEL, WINDOW_KINDS, crusherB, ringAt, speedAt, windowAt, type CrashBy, type FlightEvent, type FlightInput } from "../sim/flight"
 import { SEG } from "./tunnel-view"
 import { buildObstacles } from "./obstacles-view"
 import { buildPhaseEnv, PHASE_LOOK } from "./phase-env"
@@ -43,6 +43,7 @@ import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
 import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
+import { buildBoundary } from "./boundary-view"
 import { loadCanyonAssets, loadFactoryAssets, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
@@ -61,6 +62,11 @@ export interface JetHud {
   k: number
   /** Em grupo: a classificação ao vivo. */
   field: FieldRow[] | null
+  /** Jetpack 3.0: altura do meio do corpo entre o chão (0) e o teto (1), e a folga até o limite mais perto (m). */
+  alt: number
+  gap: number
+  /** Próxima passagem (até ~70 m): −1 = bem mais baixa (desça), 1 = bem mais alta (suba), 0 = na altura. */
+  cue: -1 | 0 | 1
 }
 
 export interface FieldRow {
@@ -222,6 +228,8 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
 
   const seed = mp ? mp.start.seed : ((Date.now() & 0xffffff) | 1) >>> 0
   const tunnel = buildPhaseEnv(scene, level, low, Math.ceil((fogEnd + SEG) / SEG) + 2, seed)
+  // Jetpack 3.0: o teto, o chão e as laterais da caixa do voo desenhados (iguais à regra, com a pele da fase)
+  const bounds = buildBoundary(scene, level, tunnel.mats.trim)
   const vfx = createJetVfx(scene, quality.tier, level)
   // Cânion: as peças esculpidas (GLB do Tripo) chegam depois e entram no cenário e nos obstáculos
   let canyonAssets: PieceAssets<string> | null = null
@@ -243,8 +251,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (disposed) return a.dispose()
       canyonAssets = a
       // bioluminescência: a própria textura acende (cristais, chapéus e veios claros brilham na névoa)
-      for (const [name, m] of a.meshes) {
-        if (name === "paredao") continue
+      for (const m of a.meshes.values()) {
         const mat = m.material as StandardMaterial | null
         if (!mat) continue
         // fica descongelado: congelado de novo antes de a peça aparecer, o shader guardaria a cor antiga
@@ -253,12 +260,6 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
         mat.emissiveColor = new Color3(0.42, 0.4, 0.5)
       }
       tunnel.provide?.(a)
-      // as barreiras de raízes e as pétalas: o paredão do Cânion em pedra azul-violeta (build_floresta_paredao.py)
-      const wall = a.meshes.get("paredao")
-      if (wall) {
-        obstacles.useModel("panel", wall, { fitBox: true })
-        obstacles.useModel("petal", wall, { fitBox: true })
-      }
     })
     // o anel dourado do Cânion também é o da Floresta (furo de raio 1, como a regra)
     void loadPieces(scene, "/meu-mundo/jetpack/canion/", ["anel"] as const, {}, () => !disposed).then((g) => {
@@ -273,9 +274,6 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (disposed) return a.dispose()
       canyonAssets = a
       tunnel.provide?.(a)
-      // as placas mecânicas (vigas que sobem e descem) viram o trecho de ponte de grade do modelo
-      const bridge = a.meshes.get("ponte")
-      if (bridge) obstacles.useModel("petal", bridge, { fitBox: true })
     })
     // a engrenagem esculpida da Fábrica também serve aqui (obstáculo, raio 1, de frente)
     void loadPieces(scene, "/meu-mundo/jetpack/fabrica/", ["engrenagem"] as const, {}, () => !disposed).then((g) => {
@@ -312,12 +310,6 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (ring) obstacles.useModel("rim", ring, { zScale: 0.55 })
       const rock = a.meshes.get("rocha")
       if (rock) obstacles.useModel("rock", rock)
-      // as barreiras de faixa, os penhascos e as vigas viram a pedra esculpida do paredão
-      const wall = a.meshes.get("paredao")
-      if (wall) {
-        obstacles.useModel("panel", wall, { fitBox: true })
-        obstacles.useModel("petal", wall, { fitBox: true })
-      }
     })
   }
   const mats = tunnel.mats
@@ -521,8 +513,25 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
     return rows.sort((a, b) => b.score - a.score || b.dist - a.dist)
   }
 
+  /** Onde abre a próxima passagem (anel ou janela) até 70 m: o sinal de subir/descer do HUD. */
+  const cueOf = (): -1 | 0 | 1 => {
+    for (const o of flight.course.obstacles) {
+      if (o.z < flight.z + 3) continue
+      if (o.z > flight.z + 70) break
+      let cy: number
+      if (o.kind === "ring") cy = ringAt(o, flight.t).y
+      else if (WINDOW_KINDS.has(o.kind)) cy = windowAt(o, flight.t).cy
+      else continue
+      const d = cy - flight.y
+      return d < -1.4 ? -1 : d > 1.4 ? 1 : 0
+    }
+    return 0
+  }
   const pushHud = () => {
     opts.onHud?.({
+      alt: Math.max(0, Math.min(1, flight.y / TUNNEL.H)),
+      gap: Math.min(TUNNEL.H - (flight.y + TUNING.hy), flight.y - TUNING.hy),
+      cue: phase === "run" ? cueOf() : 0,
       phase,
       countdown: Math.max(0, -clock),
       score: flight.score,
@@ -701,7 +710,9 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
     const tall = Math.min(1, Math.max(0, (1 - aspect) / 0.55))
     camX += (x * 0.62 - camX) * Math.min(1, dt * 5)
     const cp = look.cam
-    const wantY = Math.max(1.3, Math.min(cp ? cp.maxY : TUNNEL.H - 0.8, y + 1.15 + tall * 0.3 + (cp?.up ?? 0)))
+    // a câmera fica SEMPRE abaixo do teto (antes chegava a 10,5–11 m, acima do limite de 8 m, e o teto não
+    // aparecia nunca); o `maxY` da fase só pode baixar este teto
+    const wantY = Math.max(1.3, Math.min(Math.min(cp ? cp.maxY : 99, TUNNEL.H - 0.85), y + 1.15 + tall * 0.3 + (cp?.up ?? 0)))
     camY += (wantY - camY) * Math.min(1, dt * 5)
     if (shake > 0) shake = Math.max(0, shake - dt)
     const jit = shake * 0.32
@@ -714,6 +725,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
     cam.fov += (wantFov - cam.fov) * Math.min(1, dt * 3)
 
     tunnel.update(z, flight.course.sets, now)
+    bounds.update(z, y)
     vfx.update(x, y, z, phase === "run" && flight.thrusting, flight.v)
     // anel atravessado: aro de faíscas e um empurrão no campo de visão (só desenho; não vale ponto)
     if (phase === "run" && flight.alive) {
@@ -837,6 +849,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       kit.dispose()
       obstacles.dispose()
       tunnel.dispose()
+      bounds.dispose()
       for (const fl of flashes) {
         fl.mesh.material?.dispose()
         fl.mesh.dispose()

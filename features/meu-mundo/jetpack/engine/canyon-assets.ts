@@ -38,7 +38,7 @@ export function loadIceAssets(scene: Scene, isAlive: () => boolean) {
 }
 /** Floresta Bioluminescente: peças do Tripo preparadas por build_floresta_tripo.py (as que se repetem têm versão de longe). */
 export function loadForestAssets(scene: Scene, isAlive: () => boolean) {
-  return loadPieces(scene, "/meu-mundo/jetpack/floresta/", ["cristais", "cogumelo", "ilha", "arvore", "planta", "arco", "paredao"] as const, { cristais: 60, cogumelo: 80, arvore: 110, planta: 40 }, isAlive)
+  return loadPieces(scene, "/meu-mundo/jetpack/floresta/", ["cristais", "cogumelo", "ilha", "arvore", "planta", "arco"] as const, { cristais: 60, cogumelo: 80, arvore: 110, planta: 40 }, isAlive)
 }
 /** Forja Vulcânica: peças do Tripo preparadas por build_forja_tripo.py (a rocha tem versão de longe). */
 export function loadForgeAssets(scene: Scene, isAlive: () => boolean) {

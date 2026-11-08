@@ -10495,7 +10495,11 @@
     "rkPartGear": "Equipment",
     "attrAccuracy": "Precision",
     "atAccuracyText": "New attribute: it starts at 0 and counts toward Power. The gym's punching bag will train it; after 1 day without practice it drops 5 points a day, down to 60% of the highest value.",
-    "atAccuracyShort": "New: starts at 0 and counts toward Power; the punching bag will train it."
+    "atAccuracyShort": "New: starts at 0 and counts toward Power; the punching bag will train it.",
+    "jetAltitude": "Altitude",
+    "jetAltShort": "Alt",
+    "jetLimitTop": "Ceiling limit",
+    "jetLimitBottom": "Floor limit"
   },
   "Sports": {
     "eyebrow": "Sports",

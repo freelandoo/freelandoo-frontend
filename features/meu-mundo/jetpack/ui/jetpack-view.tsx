@@ -16,7 +16,7 @@
 // contar; se a sala não abrir, voa assim mesmo no aparelho.
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as RPointerEvent } from "react"
-import { ChevronLeft, ChevronRight, Flame, Loader2, Star, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Flame, Loader2, Star, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
@@ -356,6 +356,7 @@ function JetScreen({ body, look, name, phase, mp, onAgain, onMenu }: { body: Bod
                 {Math.round(fuel * 100)}
               </span>
             </div>
+            {hud.phase !== "countdown" && <AltGauge alt={hud.alt} gap={hud.gap} cue={hud.cue} glass={glass} />}
             <div className="flex flex-col gap-1.5">
               <div className="px-3 py-1.5 leading-none" style={{ background: glass, border: `1px solid ${ST.goldDeep}` }}>
                 <div className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: ST.muted }}>
@@ -385,6 +386,13 @@ function JetScreen({ body, look, name, phase, mp, onAgain, onMenu }: { body: Bod
             <div className="mt-1 text-center text-[10.5px] font-black uppercase italic tracking-[0.1em]" style={{ color: phaseArt(mp?.start.phase ?? phase).accent, textShadow: "0 1px 0 #000" }}>
               {phaseArt(mp?.start.phase ?? phase).num} · {t(phaseArt(mp?.start.phase ?? phase).nameKey, phaseArt(mp?.start.phase ?? phase).name)}
             </div>
+            {hud.phase === "run" && !result && hud.gap < 0.6 && (
+              <div className="mt-1.5 flex justify-center">
+                <span className="rounded-full px-3 py-0.5 text-[11px] font-black uppercase tracking-[0.12em]" style={{ background: "rgba(110, 16, 34, 0.85)", color: "#ffd5dc", border: "1px solid #ff5a4a" }}>
+                  {hud.alt > 0.5 ? t("jetLimitTop", "Limite superior") : t("jetLimitBottom", "Limite inferior")}
+                </span>
+              </div>
+            )}
             {hud.phase === "countdown" && (
               <div className="mt-1 text-center text-[11px] font-bold tabular-nums" style={{ color: ST.cyan }}>
                 {t("jetSpeedK", "Velocidade do personagem ×{k}").replace("{k}", hud.k.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
@@ -681,6 +689,39 @@ function StarRow({ phase, dist }: { phase: PhaseId; dist: number }) {
           </span>
         </div>
       ))}
+    </div>
+  )
+}
+
+/**
+ * Jetpack 3.0: ALTITUDE — onde o corpo está entre o chão e o teto da caixa do voo (a mesma conta da
+ * regra: bate quando o corpo, 0,68 m para cima e para baixo do meio, encosta em 0 ou 8 m). As faixas
+ * vermelhas são o último 0,8 m antes do limite; a seta avisa a próxima passagem bem mais baixa/alta.
+ */
+function AltGauge({ alt, gap, cue, glass }: { alt: number; gap: number; cue: -1 | 0 | 1; glass: string }) {
+  const t = useTranslations("MeuMundo")
+  const near = gap < 0.8
+  // o meio do corpo encosta no limite em 0,68/8 (8,5%) e 91,5%
+  const lim = (0.68 / 8) * 100
+  const warn = ((0.68 + 0.8) / 8) * 100
+  return (
+    <div className="flex flex-col items-center gap-1 px-1 py-2" style={{ background: glass, border: `1px solid ${near ? "#ff5a4a" : ST.goldDeep}` }} aria-label={t("jetAltitude", "Altitude")}>
+      <span className="text-[9px] font-black uppercase tracking-[0.1em]" style={{ color: ST.muted }}>
+        {t("jetAltShort", "Alt")}
+      </span>
+      <div className="relative h-[132px] w-[14px] max-[759px]:h-[96px]" style={{ background: ST.well, border: `1px solid ${ST.bronze}` }}>
+        <span className="absolute inset-x-0 top-0" style={{ height: `${warn}%`, background: "linear-gradient(180deg, rgba(255,70,50,0.75), rgba(255,70,50,0))" }} />
+        <span className="absolute inset-x-0 bottom-0" style={{ height: `${warn}%`, background: "linear-gradient(0deg, rgba(255,70,50,0.75), rgba(255,70,50,0))" }} />
+        <span className="absolute inset-x-0 h-[2px]" style={{ top: `${lim}%`, background: "#ff5a4a" }} />
+        <span className="absolute inset-x-0 h-[2px]" style={{ bottom: `${lim}%`, background: "#ff5a4a" }} />
+        <span
+          className="absolute -left-[5px] -right-[5px] h-[4px]"
+          style={{ bottom: `calc(${alt * 100}% - 2px)`, background: near ? "#ffd5dc" : "#fff", boxShadow: `0 0 6px ${near ? "#ff5a4a" : "rgba(255,255,255,0.8)"}`, transition: "bottom 80ms linear" }}
+        />
+      </div>
+      <span className="grid h-4 w-4 place-items-center" style={{ color: ST.cyan, opacity: cue ? 1 : 0, transition: "opacity 200ms" }}>
+        {cue > 0 ? <ChevronUp className="h-4 w-4 animate-bounce" /> : <ChevronDown className="h-4 w-4 animate-bounce" />}
+      </span>
     </div>
   )
 }

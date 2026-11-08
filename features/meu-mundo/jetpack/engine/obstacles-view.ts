@@ -52,8 +52,9 @@ const YELLOW: RGB = [0.95, 0.72, 0.02]
 const BLACK: RGB = [0.07, 0.07, 0.08]
 const RED_LAMP: RGB = [1, 0.25, 0.12]
 const FUEL: RGB = [0.29, 0.98, 0.64]
+const mixRGB = (a: RGB, b: RGB, k: number): RGB => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]
 
-type Key = "slab" | "hammer" | "pipe" | "gear" | "can" | "panel" | "petal" | "energy" | "bar" | "hole" | "rim" | "rock" | "gem" | "log"
+type Key = "slab" | "hammer" | "pipe" | "gear" | "can" | "panel" | "petal" | "energy" | "bar" | "hole" | "rim" | "rock" | "gem" | "log" | "frame" | "girder"
 
 /** A pele dos obstáculos novos em cada fase (mm3d-75). */
 interface Skin {
@@ -190,6 +191,23 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
   fieldMat.alpha = phase === "canion" ? 0.14 : phase === "orbital" || phase === "floresta" ? 0.2 : 0.36
   fieldMat.backFaceCulling = false
   fieldMat.disableDepthWrite = true
+  // Jetpack 3.0: a parede de uma janela/anel é VIDRO da fase (cor lisa, sem textura: escalar até o
+  // retângulo da regra não estica nada). Antes era um cubo com a textura do acabamento (ou o paredão
+  // esculpido do Tripo) escalado de 0,3 × 13 m a 13 × 9,5 m: forma e textura deformavam.
+  const wallGlass = new StandardMaterial("jt-wall-glass", scene)
+  wallGlass.diffuseColor = new Color3(1, 1, 1)
+  // tom da fase forte o bastante para a parede (que é colisão) ler contra céu claro (Ártico, Orbital)
+  wallGlass.emissiveColor = new Color3(0.5, 0.5, 0.52)
+  wallGlass.specularColor = new Color3(0.6, 0.6, 0.6)
+  wallGlass.specularPower = 48
+  wallGlass.alpha = 0.46
+  wallGlass.backFaceCulling = false
+  wallGlass.disableDepthWrite = true
+  // moldura e vigas: cor lisa (seção fixa; só o comprimento acompanha a regra)
+  const frameMat = new StandardMaterial("jt-frame", scene)
+  frameMat.diffuseColor = new Color3(1, 1, 1)
+  frameMat.specularColor = new Color3(0.25, 0.25, 0.25)
+  frameMat.emissiveColor = new Color3(0.08, 0.08, 0.08)
   const molds = new Map<Key, Mold>()
   const make = (key: Key, fn: (g: JetGeo, l: JetGeo) => void, bodyMat: StandardMaterial = mats.trim) => {
     const g = new JetGeo()
@@ -209,11 +227,19 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
   make("gear", (g) => gear(g, DEPTH.gears))
   make("can", can)
   // moldes das fases: tudo de tamanho 1, escalado pela regra (frente em z = 0, fundo em z = 1)
-  make("panel", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.panel))
-  make("petal", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.petal))
+  make("panel", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.panel), wallGlass)
+  make("petal", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.petal), wallGlass)
+  // perfil da moldura: 0,28 × 0,28, comprimento 1 (em x), frente em z = 0; chanfro de luz na frente
+  // (sem filete aceso próprio: o vão já tem os filetes `bar`; cada malha a mais é uma chamada por cópia)
+  make("frame", (g) => {
+    g.box(1, 0.28, 0.28, place(0, 0, 0.1), skin.rim)
+    g.box(1, 0.08, 0.06, place(0, 0.1, -0.06), mixRGB(skin.rim, [1, 1, 1], 0.25))
+  }, frameMat)
+  // viga sólida (a barra que corta o túnel): caixa de cor lisa + friso aceso; frente em z = 0
+  make("girder", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.petal), frameMat)
   make("energy", (g) => g.box(1, 1, 0.25, place(0, 0, 0.5), skin.field), fieldMat)
   make("bar", (g) => g.box(1, 0.16, 0.16, place(0, 0, -0.06), skin.edge), mats.glow)
-  make("hole", (g) => g.holePlate(1, place(0, 0, 0), skin.ringField ? skin.field : skin.panel), skin.ringField ? fieldMat : mats.trim)
+  make("hole", (g) => g.holePlate(1, place(0, 0, 0), skin.ringField ? skin.field : skin.panel), skin.ringField ? fieldMat : wallGlass)
   make("rim", (g, l) => {
     // o aro começa na borda do vão (raio 1): nada do desenho entra no furo
     g.ring(2.26, 0.24, xf(0, 0, -0.08, 0, undefined, Math.PI / 2), skin.rim, 40, 6)
@@ -282,16 +308,17 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
       case "gears":
         return o.gears.map(() => take("gear"))
       case "ring":
-        return [take("hole"), take("rim"), ...frame(skin.ringField)]
+        // + dois braços de fixação do aro até as laterais (dentro da área que já é colisão)
+        return [take("hole"), take("rim"), ...frame(skin.ringField), take("frame"), take("frame")]
       case "beam":
-        return [take(skin.log ? "log" : "petal"), take("bar"), take("bar")]
+        return [take(skin.log ? "log" : "girder"), take("bar"), take("bar")]
       case "rocks":
         return o.gears.map(() => take("rock"))
       case "crystals":
         return o.gears.map(() => take("gem"))
       default:
         // janelas: 4 placas + 4 filetes em volta do vão
-        return [...frame(o.kind === "energy" || (skin.windowField && o.kind !== "slider"), o.kind === "iris"), take("bar"), take("bar"), take("bar"), take("bar")]
+        return [...frame(o.kind === "energy" || (skin.windowField && o.kind !== "slider"), o.kind === "iris"), take("bar"), take("bar"), take("bar"), take("bar"), take("frame"), take("frame"), take("frame"), take("frame")]
     }
   }
   /** As 4 placas de uma janela (de energia, de pétala ou a placa da fase). */
@@ -319,6 +346,24 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
     const a = Math.max(lo, c - len / 2)
     const b = Math.min(hi, c + len / 2)
     if (b - a < 0.05) {
+      p.body.setEnabled(false)
+      return
+    }
+    p.body.setEnabled(true)
+    p.body.position.set(vertical ? x : (a + b) / 2, vertical ? (a + b) / 2 : y, z)
+    p.body.rotation.set(0, 0, vertical ? Math.PI / 2 : 0)
+    p.body.scaling.set(b - a, 1, 1)
+  }
+  /** Perfil da moldura de (x0, y0) a (x1, y1) — reto, só o comprimento escala; preso dentro de [lo, hi]. */
+  const frameAt = (p: Part, x: number, y: number, len: number, vertical: boolean, z: number) => {
+    const lo = vertical ? -0.4 : -W / 2 - 0.4
+    const hi = vertical ? H + 0.4 : W / 2 + 0.4
+    const c = vertical ? y : x
+    const a = Math.max(lo, c - len / 2)
+    const b = Math.min(hi, c + len / 2)
+    // fora da caixa (beirada além da parede/teto) ou curto demais: não desenha
+    const off = vertical ? x < -W / 2 - 0.2 || x > W / 2 + 0.2 : y < -0.2 || y > H + 0.2
+    if (b - a < 0.1 || off) {
       p.body.setEnabled(false)
       return
     }
@@ -377,6 +422,14 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         rects.length = 0
         windowRects(c.x, c.y, 2 * c.r, 2 * c.r, rects)
         for (let i = 0; i < 4; i++) slabAt(parts[2 + i], rects[i], o.z, o.d)
+        // braços do aro às laterais (fora do furo: começam na borda de fora do aro, 1,13 r)
+        {
+          const ro = c.r * 1.13 + 0.05
+          const lw = c.x - ro - (-W / 2 - 0.3)
+          const rw = W / 2 + 0.3 - (c.x + ro)
+          frameAt(parts[6], c.x - ro - lw / 2, c.y, lw, false, o.z)
+          frameAt(parts[7], c.x + ro + rw / 2, c.y, rw, false, o.z)
+        }
         break
       }
       case "beam": {
@@ -409,6 +462,12 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         barAt(parts[5], v.cx, v.cy - v.h / 2, v.w, false, o.z)
         barAt(parts[6], v.cx - v.w / 2, v.cy, v.h, true, o.z)
         barAt(parts[7], v.cx + v.w / 2, v.cy, v.h, true, o.z)
+        // a moldura do vão: perfil de 0,28 por fora da abertura (dentro da parede, que é colisão)
+        const fw = 0.14
+        frameAt(parts[8], v.cx, v.cy + v.h / 2 + fw, v.w + 4 * fw, false, o.z)
+        frameAt(parts[9], v.cx, v.cy - v.h / 2 - fw, v.w + 4 * fw, false, o.z)
+        frameAt(parts[10], v.cx - v.w / 2 - fw, v.cy, v.h, true, o.z)
+        frameAt(parts[11], v.cx + v.w / 2 + fw, v.cy, v.h, true, o.z)
       }
     }
   }
@@ -508,6 +567,8 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         m.glow?.dispose()
       }
       fieldMat.dispose()
+      wallGlass.dispose()
+      frameMat.dispose()
     },
   }
 }

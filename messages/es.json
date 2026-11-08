@@ -10475,7 +10475,11 @@
     "rkPartGear": "Equipo",
     "attrAccuracy": "Puntería",
     "atAccuracyText": "Atributo nuevo: empieza en 0 y cuenta para el Poder. El saco de boxeo del gimnasio la va a entrenar; tras 1 día sin practicar baja 5 puntos por día, hasta el 60% del valor más alto.",
-    "atAccuracyShort": "Nueva: empieza en 0 y cuenta para el Poder; el saco de boxeo la va a entrenar."
+    "atAccuracyShort": "Nueva: empieza en 0 y cuenta para el Poder; el saco de boxeo la va a entrenar.",
+    "jetAltitude": "Altitud",
+    "jetAltShort": "Alt",
+    "jetLimitTop": "Límite superior",
+    "jetLimitBottom": "Límite inferior"
   },
   "Sports": {
     "eyebrow": "Deportes",

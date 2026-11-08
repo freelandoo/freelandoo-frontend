@@ -9909,7 +9909,11 @@
     "rkPartGear": "Equipamento",
     "attrAccuracy": "Acurácia",
     "atAccuracyText": "Atributo novo: começa em 0 e conta no Poder. O saco de pancada da academia vai treiná-la; depois de 1 dia sem praticar cai 5 pontos por dia, até 60% do maior valor.",
-    "atAccuracyShort": "Nova: começa em 0 e conta no Poder; o saco de pancada vai treiná-la."
+    "atAccuracyShort": "Nova: começa em 0 e conta no Poder; o saco de pancada vai treiná-la.",
+    "jetAltitude": "Altitude",
+    "jetAltShort": "Alt",
+    "jetLimitTop": "Limite superior",
+    "jetLimitBottom": "Limite inferior"
   },
   "Sports": {
     "eyebrow": "Esportes",
