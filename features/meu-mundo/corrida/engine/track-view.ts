@@ -20,6 +20,15 @@
 // de tijolo, prédios de tijolo com janelas de lampião e chaminés, céu de
 // cobre e fumaça no horizonte, anéis de latão aceso, pórtico de largada de
 // latão e dirigíveis com lanternas.
+//
+// mm3d-73 — PISTA NOVA (prompt da reformulação visual do Alex): a seção da
+// pista virou estrutura de aço com espessura — piso de chapas com emendas,
+// parafusos e linhas de orientação, faixas laterais de bronze, barreira alta
+// (rodapé com trilho ciano, faixa amarela e preta, painéis técnicos, capa),
+// lateral e fundo de aço; rampas em chevrons; placas de aceleração com
+// moldura e grade ciano; curvas deitadas até ~28° (bank da regra). Texturas
+// desenhadas no canvas (track-tex.ts), materiais padrão, uma malha por
+// material (o traçado, as cápsulas, os vãos e as placas não mudaram).
 
 import type { Scene } from "@babylonjs/core/scene"
 import "@babylonjs/core/Meshes/instancedMesh"
@@ -37,6 +46,7 @@ import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
 import { STEP, type Track } from "../sim/track"
+import { createTrackTextures, DECK_REPEAT, SIDE_REPEAT, WALL_REPEAT, WALL_V } from "./track-tex"
 import { GridPlugin, WindowsPlugin } from "./night"
 import { buildLogos } from "./logos"
 import { buildBillboards, type BillboardSpot } from "./billboards"
@@ -51,23 +61,17 @@ type RGB = [number, number, number]
 export const NIGHT_HORIZON: RGB = [0.27, 0.13, 0.08]
 const NIGHT_MID: RGB = [0.09, 0.05, 0.06]
 const NIGHT_TOP: RGB = [0.015, 0.015, 0.035]
-const ROAD_A: RGB = [0.12, 0.105, 0.095]
-const ROAD_B: RGB = [0.145, 0.125, 0.105]
-const LINE: RGB = [0.9, 0.84, 0.7]
-/** Linha da faixa acesa (no brilho). */
-const LANE: RGB = [0.95, 0.62, 0.24]
-const ZEBRA_R: RGB = [0.66, 0.12, 0.12]
-const WALL_IN: RGB = [0.22, 0.18, 0.15]
-const WALL_OUT: RGB = [0.13, 0.11, 0.1]
-const SLAB: RGB = [0.09, 0.075, 0.065]
-const HAZARD_Y: RGB = [0.8, 0.6, 0.2]
-const HAZARD_K: RGB = [0.1, 0.09, 0.08]
-const CONCRETE: RGB = [0.3, 0.16, 0.11]
-const CONCRETE_D: RGB = [0.22, 0.13, 0.09]
-/** Antes neon; agora o latão aceso e o cobre aceso (o lampião). */
-const NEON: RGB = [1.0, 0.68, 0.28]
-const NEON_PINK: RGB = [0.92, 0.4, 0.16]
-const NEON_HOT: RGB = [1.0, 0.85, 0.42]
+const LINE: RGB = [0.9, 0.9, 0.88]
+const WALL_OUT: RGB = [0.16, 0.17, 0.19]
+const HAZARD_Y: RGB = [0.9, 0.69, 0.07]
+const HAZARD_K: RGB = [0.08, 0.08, 0.08]
+/** mm3d-73: aço dos pilares e penhascos, moldura das placas, a energia ciano. */
+const PILLAR: RGB = [0.24, 0.25, 0.28]
+const PILLAR_D: RGB = [0.17, 0.18, 0.2]
+const FRAME: RGB = [0.55, 0.58, 0.62]
+const FRAME_D: RGB = [0.25, 0.27, 0.3]
+const CYAN: RGB = [0, 0.87, 1]
+const CYAN_E: RGB = [0.14, 0.69, 1]
 
 /** Monta uma malha de quads com cor chapada por quad (vértices próprios). */
 class Quads {
@@ -90,6 +94,36 @@ class Quads {
     vd.positions = this.pos
     vd.indices = this.idx
     vd.colors = this.col
+    const normals: number[] = []
+    VertexData.ComputeNormals(this.pos, this.idx, normals)
+    vd.normals = normals
+    vd.applyToMesh(m)
+    m.material = mat
+    m.isPickable = false
+    m.freezeWorldMatrix()
+    m.doNotSyncBoundingInfo = true
+    return m
+  }
+}
+
+/** Malha de quads com UV (uma por material da pista nova, mm3d-73). */
+class Strip {
+  pos: number[] = []
+  uv: number[] = []
+  idx: number[] = []
+  quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, ua: [number, number], ub: [number, number], uc: [number, number], ud: [number, number]) {
+    const n = this.pos.length / 3
+    for (const p of [a, b, c, d]) this.pos.push(p.x, p.y, p.z)
+    for (const q of [ua, ub, uc, ud]) this.uv.push(q[0], q[1])
+    this.idx.push(n, n + 1, n + 2, n, n + 2, n + 3)
+  }
+  build(name: string, scene: Scene, mat: StandardMaterial): Mesh | null {
+    if (!this.idx.length) return null
+    const m = new Mesh(name, scene)
+    const vd = new VertexData()
+    vd.positions = this.pos
+    vd.indices = this.idx
+    vd.uvs = this.uv
     const normals: number[] = []
     VertexData.ComputeNormals(this.pos, this.idx, normals)
     vd.normals = normals
@@ -131,31 +165,6 @@ function vertexMat(name: string, scene: Scene, glow: boolean): StandardMaterial 
   return m
 }
 
-/** Textura das faixas de turbo: setas para a frente (v cresce para a frente). */
-function padTexture(scene: Scene): DynamicTexture {
-  const tex = new DynamicTexture("corrida-pad", { width: 128, height: 256 }, scene, true)
-  const g = tex.getContext() as CanvasRenderingContext2D
-  g.fillStyle = "#2a1a0e"
-  g.fillRect(0, 0, 128, 256)
-  for (let k = 0; k < 2; k++) {
-    const y0 = 40 + k * 128
-    g.beginPath()
-    g.moveTo(10, y0 + 60)
-    g.lineTo(64, y0 + 8)
-    g.lineTo(118, y0 + 60)
-    g.lineTo(118, y0 + 90)
-    g.lineTo(64, y0 + 38)
-    g.lineTo(10, y0 + 90)
-    g.closePath()
-    g.fillStyle = k === 0 ? "#ffb347" : "#ffe08a"
-    g.fill()
-  }
-  tex.update(false)
-  tex.wrapU = Texture.CLAMP_ADDRESSMODE
-  tex.wrapV = Texture.WRAP_ADDRESSMODE
-  return tex
-}
-
 /** Faixa xadrez do pórtico de largada. */
 function checkerTexture(scene: Scene): DynamicTexture {
   const tex = new DynamicTexture("corrida-checker", { width: 256, height: 64 }, scene, true)
@@ -175,7 +184,7 @@ export interface TrackView {
   dispose(): void
 }
 
-export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView {
+export function buildTrackView(scene: Scene, t: Track, low: boolean, mobile = low): TrackView {
   const disposables: { dispose(): void }[] = []
   const bodyMat = vertexMat("corrida-body", scene, false)
   const glowMat = vertexMat("corrida-glow", scene, true)
@@ -184,89 +193,183 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   const glow = new Quads()
   const W = t.width
   const hw = W / 2
-  const wall0 = hw + 0.15
-  const wall1 = hw + 0.5
-  const wallH = 1.1
-  const slab = -1.5
   const startI = Math.round(t.startS / STEP)
-
-  // colunas da faixa: zebra | asfalto | linha | asfalto | linha | asfalto | zebra
-  const lane = W / 3
-  const cols: [number, number, "zebra" | "road" | "line"][] = [
-    [-hw, -hw + 0.6, "zebra"],
-    [-hw + 0.6, -lane / 2 - 0.13, "road"],
-    [-lane / 2 - 0.13, -lane / 2 + 0.13, "line"],
-    [-lane / 2 + 0.13, lane / 2 - 0.13, "road"],
-    [lane / 2 - 0.13, lane / 2 + 0.13, "line"],
-    [lane / 2 + 0.13, hw - 0.6, "road"],
-    [hw - 0.6, hw, "zebra"],
-  ]
   const solid = (i: number) => t.flag[((i % t.n) + t.n) % t.n] !== 1
+  const isRamp = (i: number) => t.flag[((i % t.n) + t.n) % t.n] === 2
+
+  // ═══ mm3d-73: a PISTA NOVA ═══════════════════════════════════════════════
+  // Seção transversal (u = metros para a direita, h = altura no quadro
+  // inclinado da pista): piso de aço no meio, faixa de bronze de cada lado,
+  // barreira alta (rodapé com o trilho ciano, faixa amarela e preta,
+  // painéis, capa), a lateral da estrutura e o fundo de aço. Tudo segue a
+  // inclinação lateral (bank) da regra, então as curvas deitam inteiras.
+  const tex = createTrackTextures(scene, mobile)
+  disposables.push(tex)
+  const DECK = hw - 1.8
+  /** Perfil da barreira por dentro: [u, h, v da textura]. */
+  const WALL: [number, number, number][] = [
+    [hw, 0, 0],
+    [hw, 0.34, WALL_V.base],
+    [hw + 0.1, 1.05, WALL_V.hazard],
+    [hw + 0.06, 2.1, WALL_V.panel],
+    [hw - 0.12, 2.42, 0.985],
+  ]
+  const CAP_OUT = hw + 0.75
+  const CAP_H = 2.48
+  const SLAB_H = -1.7
+  const wall1 = CAP_OUT
+  const slab = SLAB_H
+
+  const surf = (name: string, mat: StandardMaterial) => ({ name, mat, s: new Strip() })
+  const steelMat = (name: string, diffuse: DynamicTexture, normal: DynamicTexture | null, lift: number, spec: number, power: number) => {
+    const m = new StandardMaterial(name, scene)
+    m.diffuseTexture = diffuse
+    m.diffuseColor = new Color3(1, 1, 1)
+    m.specularColor = new Color3(spec, spec * 1.03, spec * 1.08)
+    m.specularPower = power
+    // luz própria multiplicada pela textura: de noite o metal não vira breu
+    m.emissiveColor = new Color3(lift, lift, lift * 1.06)
+    if (normal) {
+      m.bumpTexture = normal
+      m.bumpTexture.level = 0.55
+    }
+    m.backFaceCulling = false
+    disposables.push(m)
+    return m
+  }
+  const deck = surf("corrida-deck", steelMat("corrida-deck", tex.deck, tex.deckN, 0.2, 0.42, 36))
+  const side = surf("corrida-side", steelMat("corrida-side", tex.side, tex.sideN, 0.3, 0.5, 28))
+  const wall = surf("corrida-wall", steelMat("corrida-wall", tex.wall, tex.wallN, 0.24, 0.35, 30))
+  const under = surf("corrida-under", steelMat("corrida-under", tex.under, null, 0.16, 0.15, 16))
+  const ramp = surf("corrida-ramp", steelMat("corrida-ramp", tex.ramp, null, 0.38, 0.3, 24))
+  const glowTex = (name: string, e: DynamicTexture) => {
+    const m = new StandardMaterial(name, scene)
+    m.diffuseColor = new Color3(0, 0, 0)
+    m.specularColor = new Color3(0, 0, 0)
+    m.emissiveTexture = e
+    m.disableLighting = true
+    m.backFaceCulling = false
+    disposables.push(m)
+    return m
+  }
+  const rail = surf("corrida-rail", glowTex("corrida-rail", tex.rail))
+  const pad = surf("corrida-pads", glowTex("corrida-pad", tex.pad))
 
   for (let i = 0; i < t.n; i++) {
     const j = (i + 1) % t.n
     if (!solid(i) || !solid(j)) continue
     const a = frameAt(t, i)
     const b = frameAt(t, j)
-    const ramp = t.flag[i] === 2
-    const panel = Math.floor(i / 5) % 2 ? ROAD_A : ROAD_B
+    const sa = i * STEP
+    const sb = (i + 1) * STEP
     const startLine = Math.abs(i - startI) <= 1
     if (startLine) {
-      // xadrez de 1 m na largada
+      // xadrez de 1,5 m na largada (cor por vértice)
       for (let u = -hw; u < hw - 1e-6; u += 1.5) {
         const c = (Math.floor((u + hw) / 1.5) + i) % 2 ? LINE : HAZARD_K
         body.quad(at(a, u, 0), at(a, u + 1.5, 0), at(b, u + 1.5, 0), at(b, u, 0), c)
       }
+    } else if (isRamp(i)) {
+      // rampa: chevrons amarelos e pretos, um por faixa
+      ramp.s.quad(at(a, -hw, 0), at(a, hw, 0), at(b, hw, 0), at(b, -hw, 0), [0, sa / 6], [3, sa / 6], [3, sb / 6], [0, sb / 6])
     } else {
-      cols.forEach(([u0, u1, kind], ci) => {
-        let c: RGB = panel
-        if (ramp) c = (i + ci) % 2 ? HAZARD_Y : HAZARD_K
-        else if (kind === "zebra") c = Math.floor(i / 2) % 2 ? ZEBRA_R : LINE
-        else if (kind === "line" && i % 4 < 2) {
-          // a linha tracejada acende (de noite ela é o guia da faixa)
-          glow.quad(at(a, u0, 0), at(a, u1, 0), at(b, u1, 0), at(b, u0, 0), LANE)
-          return
+      deck.s.quad(at(a, -DECK, 0), at(a, DECK, 0), at(b, DECK, 0), at(b, -DECK, 0), [0, sa / DECK_REPEAT], [1, sa / DECK_REPEAT], [1, sb / DECK_REPEAT], [0, sb / DECK_REPEAT])
+      for (const s of [-1, 1]) {
+        // u da textura: 0 junto do piso, 1 junto da barreira
+        side.s.quad(at(a, s * DECK, 0), at(a, s * hw, 0), at(b, s * hw, 0), at(b, s * DECK, 0), [0, sa / SIDE_REPEAT], [1, sa / SIDE_REPEAT], [1, sb / SIDE_REPEAT], [0, sb / SIDE_REPEAT])
+        // emenda acesa entre o piso e o bronze: tracejada (6 m acesa, 6 m não)
+        if (Math.floor(sa / 6) % 2 === 0) {
+          const u0 = s * (DECK - 0.09)
+          const u1 = s * (DECK + 0.09)
+          rail.s.quad(at(a, u0, 0.015), at(a, u1, 0.015), at(b, u1, 0.015), at(b, u0, 0.015), [0, sa / 4], [1, sa / 4], [1, sb / 4], [0, sb / 4])
         }
-        body.quad(at(a, u0, 0), at(a, u1, 0), at(b, u1, 0), at(b, u0, 0), c)
-      })
+      }
     }
     for (const s of [-1, 1]) {
-      const w0 = s * wall0
-      const w1 = s * wall1
-      // face de dentro, topo (neon), face de fora até a laje
-      body.quad(at(a, w0, 0), at(b, w0, 0), at(b, w0, wallH), at(a, w0, wallH), WALL_IN)
-      // faixa de neon na parede de dentro (um pouco à frente da face)
-      const wn = w0 - s * 0.02
-      glow.quad(at(a, wn, 0.42), at(b, wn, 0.42), at(b, wn, 0.6), at(a, wn, 0.6), ramp ? NEON_HOT : NEON_PINK)
-      glow.quad(at(a, w0, wallH), at(b, w0, wallH), at(b, w1, wallH), at(a, w1, wallH), ramp ? NEON_HOT : NEON)
-      body.quad(at(a, w1, wallH), at(b, w1, wallH), at(b, w1, slab), at(a, w1, slab), WALL_OUT)
-      // degrau entre a faixa e o guarda-corpo
-      body.quad(at(a, s * hw, 0), at(b, s * hw, 0), at(b, w0, 0), at(a, w0, 0), WALL_OUT)
-      // filete de neon embaixo do guarda-corpo (a pista "flutua")
-      glow.quad(at(a, w1 + s * 0.01, -0.5), at(b, w1 + s * 0.01, -0.5), at(b, w1 + s * 0.01, -0.3), at(a, w1 + s * 0.01, -0.3), NEON)
+      // barreira por dentro (perfil WALL), a capa e a lateral da estrutura
+      for (let k = 0; k < WALL.length - 1; k++) {
+        const [u0, h0, v0] = WALL[k]
+        const [u1, h1, v1] = WALL[k + 1]
+        wall.s.quad(at(a, s * u0, h0), at(b, s * u0, h0), at(b, s * u1, h1), at(a, s * u1, h1), [sa / WALL_REPEAT, v0], [sb / WALL_REPEAT, v0], [sb / WALL_REPEAT, v1], [sa / WALL_REPEAT, v1])
+      }
+      const [lu, lh] = WALL[WALL.length - 1]
+      wall.s.quad(at(a, s * lu, lh), at(b, s * lu, lh), at(b, s * CAP_OUT, CAP_H), at(a, s * CAP_OUT, CAP_H), [sa / WALL_REPEAT, 0.985], [sb / WALL_REPEAT, 0.985], [sb / WALL_REPEAT, 1], [sa / WALL_REPEAT, 1])
+      // trilho ciano no rodapé (um dedo à frente da face)
+      const ur = s * (hw - 0.02)
+      rail.s.quad(at(a, ur, 0.09), at(b, ur, 0.09), at(b, ur, 0.25), at(a, ur, 0.25), [0, sa / 4], [0, sb / 4], [1, sb / 4], [1, sa / 4])
+      // lateral da estrutura: da capa até a quina de baixo, depois o chanfro
+      under.s.quad(at(a, s * CAP_OUT, CAP_H), at(b, s * CAP_OUT, CAP_H), at(b, s * CAP_OUT, -0.35), at(a, s * CAP_OUT, -0.35), [0, sa / 8], [0, sb / 8], [0.5, sb / 8], [0.5, sa / 8])
+      under.s.quad(at(a, s * CAP_OUT, -0.35), at(b, s * CAP_OUT, -0.35), at(b, s * (hw + 0.2), SLAB_H), at(a, s * (hw + 0.2), SLAB_H), [0.5, sa / 8], [0.5, sb / 8], [0.75, sb / 8], [0.75, sa / 8])
+      // filete de luz na quina de baixo: a pista "flutua"
+      const ug = s * (CAP_OUT + 0.01)
+      rail.s.quad(at(a, ug, -0.45), at(b, ug, -0.45), at(b, ug, -0.25), at(a, ug, -0.25), [0, sa / 4], [0, sb / 4], [1, sb / 4], [1, sa / 4])
     }
-    body.quad(at(a, -wall1, slab), at(a, wall1, slab), at(b, wall1, slab), at(b, -wall1, slab), SLAB)
+    // fundo de aço com as travessas
+    under.s.quad(at(a, -(hw + 0.2), SLAB_H), at(a, hw + 0.2, SLAB_H), at(b, hw + 0.2, SLAB_H), at(b, -(hw + 0.2), SLAB_H), [0, sa / 8], [1, sa / 8], [1, sb / 8], [0, sb / 8])
   }
 
-  // pontas dos trechos (bordas dos vãos): parede listrada no corte
+  // pontas dos trechos (bordas dos vãos): parede listrada no corte + linha de luz
   for (let i = 0; i < t.n; i++) {
     const j = (i + 1) % t.n
     if (solid(i) === solid(j)) continue
     const f = frameAt(t, solid(i) ? i : j)
-    const stripes = 8
+    const stripes = 10
     for (let k = 0; k < stripes; k++) {
       const u0 = -wall1 + (2 * wall1 * k) / stripes
       const u1 = -wall1 + (2 * wall1 * (k + 1)) / stripes
       body.quad(at(f, u0, slab), at(f, u1, slab), at(f, u1, 0), at(f, u0, 0), k % 2 ? HAZARD_Y : HAZARD_K)
     }
-    glow.quad(at(f, -wall1, 0.02), at(f, wall1, 0.02), at(f, wall1, -0.18), at(f, -wall1, -0.18), solid(i) ? NEON_HOT : NEON)
+    glow.quad(at(f, -wall1, 0.02), at(f, wall1, 0.02), at(f, wall1, -0.18), at(f, -wall1, -0.18), CYAN)
+    // a barreira termina com uma tampa (não fica oca vista de frente)
+    for (const s of [-1, 1]) {
+      for (let k = 0; k < WALL.length - 1; k++) {
+        body.quad(at(f, s * WALL[k][0], WALL[k][1]), at(f, s * WALL[k + 1][0], WALL[k + 1][1]), at(f, s * CAP_OUT, WALL[k + 1][1]), at(f, s * CAP_OUT, WALL[k][1]), WALL_OUT)
+      }
+    }
+  }
+
+  // ── placas de aceleração: moldura de aço elevada + painel ciano ─────────
+  // (a função na regra não muda: só o desenho das faixas de turbo)
+  const FR = 0.28
+  const RISE = 0.07
+  for (const p of t.pads) {
+    const n = Math.ceil(p.len / STEP)
+    for (let k = 0; k < n; k++) {
+      const s0 = p.s + k * STEP
+      const i0 = Math.floor(s0 / STEP)
+      const fa = frameAt(t, i0)
+      const fb = frameAt(t, i0 + 1)
+      const v0 = (k * STEP) / 4.5
+      const v1 = ((k + 1) * STEP) / 4.5
+      pad.s.quad(at(fa, p.u0 + FR, 0.04), at(fa, p.u1 - FR, 0.04), at(fb, p.u1 - FR, 0.04), at(fb, p.u0 + FR, 0.04), [0, v0], [1, v0], [1, v1], [0, v1])
+      for (const [x0, x1, xi] of [[p.u0, p.u0 + FR, p.u0 + FR], [p.u1 - FR, p.u1, p.u1 - FR]]) {
+        body.quad(at(fa, x0, RISE), at(fa, x1, RISE), at(fb, x1, RISE), at(fb, x0, RISE), FRAME)
+        // o degrau da moldura até o painel
+        body.quad(at(fa, xi, RISE), at(fb, xi, RISE), at(fb, xi, 0.04), at(fa, xi, 0.04), FRAME_D)
+      }
+    }
+    // travessas da moldura na entrada e na saída (0,3 m de fundo)
+    for (const s of [p.s, p.s + n * STEP - 0.3]) {
+      const i0 = Math.floor(s / STEP)
+      const f = frameAt(t, i0)
+      const g2 = frameAt(t, i0 + 1)
+      const k = (s - i0 * STEP) / STEP
+      const k2 = Math.min(1, k + 0.3 / STEP)
+      const P = (fr: number, u: number) => at(f, u, RISE).scale(1 - fr).add(at(g2, u, RISE).scale(fr))
+      body.quad(P(k, p.u0), P(k, p.u1), P(k2, p.u1), P(k2, p.u0), FRAME)
+    }
+  }
+
+  for (const sf of [deck, side, wall, under, ramp, rail, pad]) {
+    const m = sf.s.build(sf.name, scene, sf.mat)
+    if (m) disposables.push(m)
   }
   for (const m of [body.build("corrida-track", scene, bodyMat), glow.build("corrida-track-glow", scene, glowMat)]) if (m) disposables.push(m)
 
-  // ── pilares e penhascos (caixas com instância fina) ──────────────────────
+  // ── pilares e penhascos (caixas com instância fina): aço escuro ─────────
   const pillarMat = new StandardMaterial("corrida-pillar", scene)
   pillarMat.diffuseColor = new Color3(1, 1, 1)
-  pillarMat.specularColor = new Color3(0.05, 0.05, 0.05)
+  pillarMat.specularColor = new Color3(0.12, 0.12, 0.14)
   disposables.push(pillarMat)
   const pillar = CreateBox("corrida-pillar", { size: 1 }, scene)
   pillar.bakeTransformIntoVertices(Matrix.Translation(0, -0.5, 0)) // topo em y = 0
@@ -288,65 +391,19 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   for (let i = 0; i < t.n; i += 25) {
     if (gapNear(i, 6)) continue
     const f = frameAt(t, i)
-    addBlock(f.c.x, f.c.y + slab, f.c.z, t.yaw[i], 3.2, 3.2, CONCRETE)
+    // o pilar entra no fundo da pista (pelo meio do fundo inclinado)
+    addBlock(f.c.x, at(f, 0, slab).y, f.c.z, t.yaw[i], 3.2, 3.2, PILLAR)
   }
   // penhascos: um bloco largo embaixo de cada borda de vão (a decolagem e o pouso)
   for (const g of t.gaps) {
     for (const [s, back] of [[g.s0, -1], [g.s1, 1]] as const) {
       const i = Math.round(s / STEP) % t.n
       const f = frameAt(t, i + back * 5)
-      addBlock(f.c.x, f.c.y + slab, f.c.z, t.yaw[i], W + 1.6, 20, CONCRETE_D)
+      addBlock(f.c.x, f.c.y + slab, f.c.z, t.yaw[i], W + 1.6, 20, PILLAR_D)
     }
   }
   pillar.thinInstanceSetBuffer("matrix", new Float32Array(mats), 16, true)
   pillar.thinInstanceSetBuffer("color", new Float32Array(cols4), 4, true)
-
-  // ── faixas de turbo ──────────────────────────────────────────────────────
-  const padTex = padTexture(scene)
-  const padMat = new StandardMaterial("corrida-pad", scene)
-  padMat.diffuseColor = new Color3(0, 0, 0)
-  padMat.specularColor = new Color3(0, 0, 0)
-  padMat.emissiveTexture = padTex
-  padMat.disableLighting = true
-  padMat.backFaceCulling = false
-  disposables.push(padTex, padMat)
-  {
-    const pos: number[] = []
-    const uv: number[] = []
-    const idx: number[] = []
-    for (const p of t.pads) {
-      const n = Math.ceil(p.len / STEP)
-      for (let k = 0; k < n; k++) {
-        const s0 = p.s + k * STEP
-        const i0 = Math.floor(s0 / STEP)
-        const fa = frameAt(t, i0)
-        const fb = frameAt(t, i0 + 1)
-        const base = pos.length / 3
-        for (const [f, v] of [[fa, (k * STEP) / 4.5], [fb, ((k + 1) * STEP) / 4.5]] as const) {
-          const l = at(f, p.u0, 0.05)
-          const r = at(f, p.u1, 0.05)
-          pos.push(l.x, l.y, l.z, r.x, r.y, r.z)
-          uv.push(0, v, 1, v)
-        }
-        idx.push(base, base + 1, base + 3, base, base + 3, base + 2)
-      }
-    }
-    if (idx.length) {
-      const m = new Mesh("corrida-pads", scene)
-      const vd = new VertexData()
-      vd.positions = pos
-      vd.indices = idx
-      vd.uvs = uv
-      const normals: number[] = []
-      VertexData.ComputeNormals(pos, idx, normals)
-      vd.normals = normals
-      vd.applyToMesh(m)
-      m.material = padMat
-      m.isPickable = false
-      m.freezeWorldMatrix()
-      disposables.push(m)
-    }
-  }
 
   // ── cápsulas de turbo = o logo da Freelandoo (logos.ts) ────────────────
   const logos = buildLogos(
@@ -379,11 +436,12 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   const gateMat = vertexMat("corrida-gate", scene, false)
   const neonMat = new StandardMaterial("corrida-neon", scene)
   neonMat.diffuseColor = new Color3(0, 0, 0)
-  neonMat.emissiveColor = new Color3(1, 0.7, 0.3)
+  // mm3d-73: anéis de energia ciano e azul elétrico
+  neonMat.emissiveColor = new Color3(...CYAN)
   neonMat.disableLighting = true
   const neonPinkMat = new StandardMaterial("corrida-neon-pink", scene)
   neonPinkMat.diffuseColor = new Color3(0, 0, 0)
-  neonPinkMat.emissiveColor = new Color3(...NEON_PINK)
+  neonPinkMat.emissiveColor = new Color3(...CYAN_E)
   neonPinkMat.disableLighting = true
   disposables.push(neonPinkMat)
   const checker = checkerTexture(scene)
@@ -394,9 +452,10 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
   bannerMat.backFaceCulling = false
   disposables.push(gateMat, neonMat, checker, bannerMat)
   const brassMat = new StandardMaterial("corrida-brass", scene)
-  brassMat.diffuseColor = new Color3(0.7, 0.52, 0.2)
-  brassMat.specularColor = new Color3(0.5, 0.42, 0.25)
-  brassMat.emissiveColor = new Color3(0.08, 0.05, 0.02)
+  // mm3d-73: o pórtico de largada em aço
+  brassMat.diffuseColor = new Color3(0.42, 0.45, 0.5)
+  brassMat.specularColor = new Color3(0.6, 0.62, 0.66)
+  brassMat.emissiveColor = new Color3(0.06, 0.065, 0.075)
   disposables.push(brassMat)
   t.gates.forEach((s, gi) => {
     const i = Math.round(s / STEP) % t.n
@@ -604,7 +663,9 @@ export function buildTrackView(scene: Scene, t: Track, low: boolean): TrackView 
     },
     tick(dt) {
       clock += dt
-      padTex.vOffset = (padTex.vOffset - dt * 2.6) % 1
+      tex.pad.vOffset = (tex.pad.vOffset - dt * 2.6) % 1
+      // os pulsos dos trilhos correm para trás (a pista "passa")
+      tex.rail.vOffset = (tex.rail.vOffset + dt * 1.8) % 1
       logos.tick(clock)
     },
     dispose() {

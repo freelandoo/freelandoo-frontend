@@ -170,7 +170,10 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   /** A nave deste aparelho. */
   const me = race.me
   const humans = mp ? mp.start.seats.map((s) => s.human) : race.cars.map((c) => c.kind === "local")
-  const view = buildTrackView(scene, track, low)
+  // mm3d-73: celular (toque) ou aparelho fraco = texturas menores, sem relevo,
+  // menos partículas e rastro mais curto
+  const mobile = low || !!opts.touch
+  const view = buildTrackView(scene, track, low, mobile)
   const fleet = new CarFleet(
     scene,
     race.cars.map((c) => c.color),
@@ -178,6 +181,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     (i) => i === me || !low,
     (i) => i === me,
     !low,
+    mobile,
   )
   const audio = new RaceAudio()
   audio.resume()

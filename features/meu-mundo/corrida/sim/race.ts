@@ -371,6 +371,7 @@ export class Race {
     if (!c.air && Math.abs(inp.steer) < 0.05) a -= a * Math.min(1, TUNING.assist * dt)
     c.yaw = p.yaw + a
     // avança
+    const uFrom = c.u
     const ds = c.v * Math.cos(a) * dt
     c.dist += ds
     c.u += c.v * Math.sin(a) * dt
@@ -409,9 +410,13 @@ export class Race {
         return
       }
     } else {
-      // crista ou fim da rampa: o balístico fica acima do chão → decola
+      // crista ou fim da rampa: o balístico fica acima do chão → decola.
+      // mm3d-73: o que o chão desce só pela inclinação lateral (entrar/sair da
+      // curva inclinada, ir para o lado de dentro) não é crista: a nave segue
+      // colada. Só a subida/descida do EIXO decide a decolagem.
       const vy = c.v * p.slope
-      const next = c.Y + vy * dt - 0.5 * TUNING.gravity * dt * dt
+      const bankDrop = surfaceY(q, c.u) - q.y - (surfaceY(p, uFrom) - p.y)
+      const next = c.Y + vy * dt - 0.5 * TUNING.gravity * dt * dt + Math.min(0, bankDrop)
       if (q.gap || next > ground + 0.04) {
         c.air = true
         c.vy = vy

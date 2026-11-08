@@ -18,6 +18,12 @@
 // material de vidro escuro e reflexo.
 //
 // Sem sombra: a única coisa embaixo da nave é o brilho azul da flutuação.
+//
+// mm3d-73: FOGO NOVO em camadas (flame.ts: núcleo claro + chama externa
+// laranja/vermelha, sem shader próprio), faíscas curtas e rápidas saindo dos
+// bocais e o RASTRO de luz em velocidade alta (trail.ts). Tudo só desenho: a
+// força real dos motores é da regra. Celular (`mobile`): menos faíscas e
+// rastro mais curto.
 
 import type { Scene } from "@babylonjs/core/scene"
 import "@babylonjs/core/Meshes/thinInstanceMesh"
@@ -44,6 +50,7 @@ import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { Constants } from "@babylonjs/core/Engines/constants"
 import { ensureLoaders } from "../../engine/avatars"
 import { createFlames, type FlameBank } from "./flame"
+import { TrailBank } from "./trail"
 import type { CarPose } from "../sim/race"
 import { SHIP_ASSETS, shipArt, type ShipArt } from "./ship-art"
 
@@ -209,6 +216,9 @@ export class CarFleet {
   private readonly textures = new Map<string, Texture>()
   private glass: StandardMaterial | null = null
   private readonly flames: FlameBank
+  private readonly trails: TrailBank
+  /** Os dois maiores bocais de cada nave puxam o rastro. */
+  private readonly trailNozzles: number[][]
   private clock = 0
   private readonly hover: Mesh
   private readonly hoverMat: StandardMaterial
@@ -238,11 +248,21 @@ export class CarFleet {
     private readonly fullFor: (i: number) => boolean,
     /** Mapa de normais na cheia (fora do celular fraco). */
     private readonly normals = true,
+    /** Celular: menos partículas e rastro mais curto (mm3d-73). */
+    private readonly mobile = false,
   ) {
     ensureLoaders()
     const arts = colors.map((_, i) => shipArt(ships[i]))
     const nozzles = arts.reduce((n, a) => n + a.nozzles.length, 0)
     this.flames = createFlames(scene, nozzles)
+    this.trailNozzles = arts.map((a) =>
+      a.nozzles
+        .map((nz, k) => [k, nz[3] * nz[4]] as const)
+        .sort((x, y) => y[1] - x[1])
+        .slice(0, 2)
+        .map(([k]) => k),
+    )
+    this.trails = new TrailBank(scene, colors.length * 2, mobile ? 8 : 12, mobile ? 0.24 : 0.3)
     // brilho da flutuação: um quadrado deitado com a bolinha azul (sem sombra)
     this.hoverTex = softDot(scene, "corrida-hover", "rgba(140,235,255,0.9)", "rgba(60,170,255,0.35)")
     this.hoverMat = new StandardMaterial("corrida-hover", scene)
@@ -304,24 +324,29 @@ export class CarFleet {
     let sparks: ParticleSystem | null = null
     const emitter = new Vector3()
     if (this.sparksFor(i)) {
-      // brasas: saem sempre, mais com a velocidade, uma chuva no turbo
-      sparks = new ParticleSystem(`corrida-sparks-${i}`, 320, this.scene)
+      // mm3d-73: partículas de energia — curtas, rápidas, saindo dos bocais
+      // (sem fumaça); mais com a velocidade, uma chuva no turbo
+      sparks = new ParticleSystem(`corrida-sparks-${i}`, this.mobile ? 110 : 260, this.scene)
       sparks.particleTexture = this.sparkTex
       sparks.emitter = emitter
-      sparks.minEmitBox = new Vector3(-1.1, -0.15, 0)
-      sparks.maxEmitBox = new Vector3(1.1, 0.15, 0)
-      sparks.color1 = new Color4(1, 0.75, 0.3, 1)
-      sparks.color2 = new Color4(1, 0.35, 0.08, 1)
-      sparks.colorDead = new Color4(0.3, 0.05, 0, 0)
-      sparks.minSize = 0.1
-      sparks.maxSize = 0.38
-      sparks.minLifeTime = 0.25
-      sparks.maxLifeTime = 0.7
+      const xs = art.nozzles.map((n) => n[0])
+      const ys = art.nozzles.map((n) => n[1])
+      sparks.minEmitBox = new Vector3(Math.min(...xs), Math.min(...ys) - 0.6, 0)
+      sparks.maxEmitBox = new Vector3(Math.max(...xs), Math.max(...ys) - 0.6, 0)
+      sparks.color1 = new Color4(1, 0.95, 0.75, 1)
+      sparks.color2 = new Color4(1, 0.55, 0.12, 1)
+      sparks.colorDead = new Color4(0.45, 0.05, 0, 0)
+      sparks.minSize = 0.05
+      sparks.maxSize = 0.22
+      sparks.minScaleY = 1.6
+      sparks.maxScaleY = 3.2
+      sparks.minLifeTime = 0.12
+      sparks.maxLifeTime = 0.38
       sparks.emitRate = 0
       sparks.blendMode = ParticleSystem.BLENDMODE_ADD
-      sparks.gravity = new Vector3(0, 1.5, 0)
-      sparks.minEmitPower = 4
-      sparks.maxEmitPower = 12
+      sparks.gravity = new Vector3(0, 0.6, 0)
+      sparks.minEmitPower = 6
+      sparks.maxEmitPower = 16
       sparks.updateSpeed = 1 / 60
       sparks.start()
     }
@@ -380,32 +405,52 @@ export class CarFleet {
     s.root.rotationQuaternion.copyFrom(this.tmpQ)
     s.root.computeWorldMatrix(true)
     const world = s.root.getWorldMatrix()
-    // chamas de gás (flame.ts): esticam com a velocidade, encolhem devagar,
-    // turbo dá mais 50%; sem acelerar ficam curtas. Comprimento suavizado
-    // (a chama não pula) e a ponta atrasa nas curvas pela velocidade de giro.
-    // mm3d-41c: 3× no normal e até 6× rápido (o rabo afina no perfil do tubo)
-    const old = (0.45 + 2.5 * Math.pow(look.speed, 1.15)) * (look.throttle > 0.05 ? 1 : 0.55)
-    const want = look.down ? 0 : old * (3 + 3 * look.speed) * (look.boost ? 1.25 : 1)
+    // mm3d-73: o fogo em camadas (flame.ts). Comprimento pela velocidade e o
+    // acelerador (parado: curto e fraco; rápido: longo; TURBO: bem mais longo
+    // e o núcleo branco), suavizado (a chama não pula); a ponta atrasa nas
+    // curvas pela velocidade de giro. Só desenho: a força é da regra.
+    const thr = look.throttle > 0.05 ? 1 : 0.5
+    // teto de 6,2 m: a câmera de perseguição fica ~8 m atrás, e uma chama que
+    // chegasse nela viraria linhas cortando a tela
+    const want = look.down ? 0 : Math.min(6.2, (0.6 + 4.6 * Math.pow(look.speed, 1.2)) * thr * (look.boost ? 1.5 : 1))
     s.flameLen += (want - s.flameLen) * Math.min(1, dt * (want > s.flameLen ? 9 : 4))
     const yawRate = s.lastYaw === null || dt <= 0 ? 0 : wrapPi(pose.yaw - s.lastYaw) / dt
     s.lastYaw = pose.yaw
     const wantBend = Math.max(-4, Math.min(4, yawRate * s.flameLen * 0.35))
     s.bend += (wantBend - s.bend) * Math.min(1, dt * 6)
-    const heat = look.boost ? 1 : 0
     const nozzles = s.art.nozzles
+    const fl = this.flames
+    const hot = look.boost ? 1 : 0
+    const outerK = look.down ? 0 : Math.min(1, 0.5 + 0.38 * look.speed + 0.3 * hot) * (look.throttle > 0.05 || hot ? 1 : 0.6)
+    const coreK = look.down ? 0 : Math.min(1, 0.65 + 0.3 * look.speed + 0.3 * hot)
     for (let k = 0; k < nozzles.length; k++) {
       const [x, y, z, radius, size] = nozzles[k]
-      const len = Math.max(0.001, s.flameLen * size)
-      const r = radius * (look.boost ? 1.45 : 1.2)
       const j = s.nz0 + k
-      Matrix.ComposeToRef(this.sc.set(r, r, len), IDENTITY, this.at.set(x, y, z), this.tmpM)
-      this.tmpM.multiplyToArray(world, this.flames.matrices, j * 16)
-      // curva em unidades locais (a escala do raio multiplica depois)
-      const p = this.flames.params
-      p[j * 4] = (s.bend * size) / r
-      p[j * 4 + 1] = (look.air ? 0.35 : 0) / r
-      p[j * 4 + 2] = look.down ? 0 : look.boost ? 1.05 : 0.85
-      p[j * 4 + 3] = heat
+      // oscilação: comprimento e largura tremem (mais rápido com velocidade)
+      const tw = s.flicker * (1 + look.speed)
+      const flick = 1 + 0.09 * Math.sin(tw * 1.13 + k * 1.7 + i) * Math.sin(tw * 0.61 + k)
+      const breathe = 1 + 0.06 * Math.sin(tw * 1.57 + k * 2.3)
+      const len = Math.max(0.001, s.flameLen * size * flick)
+      const r = radius * (look.boost ? 1.5 : 1.25) * breathe
+      // curva da ponta e o leve levantar no ar viram giro da chama
+      const yawK = -Math.atan2(s.bend * size, Math.max(0.5, len))
+      const pitK = look.air ? Math.atan2(0.35, Math.max(0.5, len)) : 0
+      Quaternion.RotationYawPitchRollToRef(yawK, pitK, 0, this.tmpQ)
+      Matrix.ComposeToRef(this.sc.set(r, r, len), this.tmpQ, this.at.set(x, y, z), this.tmpM)
+      this.tmpM.multiplyToArray(world, fl.outer.matrices, j * 16)
+      // o núcleo é mais curto que a chama de fora
+      Matrix.ComposeToRef(this.sc.set(r, r, len * (look.boost ? 0.72 : 0.6)), this.tmpQ, this.at.set(x, y, z - 0.02), this.tmpM)
+      this.tmpM.multiplyToArray(world, fl.core.matrices, j * 16)
+      const oc = fl.outer.colors
+      oc[j * 4] = outerK
+      oc[j * 4 + 1] = outerK * (look.boost ? 0.95 : 0.88)
+      oc[j * 4 + 2] = outerK * (look.boost ? 0.85 : 0.75)
+      oc[j * 4 + 3] = 1
+      const cc = fl.core.colors
+      cc[j * 4] = coreK
+      cc[j * 4 + 1] = coreK
+      cc[j * 4 + 2] = coreK
+      cc[j * 4 + 3] = 1
       // brilho da boca, de frente para a câmera
       const g = look.down ? 0.0001 : r * (look.boost ? 7 : 3.2 + 2.6 * look.speed) * (0.9 + 0.1 * Math.sin(s.flicker * 1.7 + k))
       Vector3.TransformCoordinatesFromFloatsToRef(x, y, z - 0.05, world, this.tmpV)
@@ -413,21 +458,34 @@ export class CarFleet {
       Matrix.ComposeToRef(this.sc.set(g, g, g), camQ, this.tmpV, this.tmpM)
       this.tmpM.copyToArray(this.glowBuf, j * 16)
     }
+    // rastro: nasce na boca dos dois bocais maiores, só em velocidade alta
+    const tn = this.trailNozzles[i]
+    for (let q = 0; q < tn.length; q++) {
+      const f = i * 2 + q
+      if (look.down) {
+        this.trails.hide(f)
+        continue
+      }
+      const [x, y, z] = nozzles[tn[q]]
+      Vector3.TransformCoordinatesFromFloatsToRef(x, y, z - 0.35, world, this.tmpV)
+      const st = Math.min(1, Math.max(0, (look.speed - 0.55) / 0.25) * (look.air ? 0.7 : 1) + hot)
+      this.trails.feed(f, this.tmpV.x, this.tmpV.y, this.tmpV.z, st, look.boost, dt)
+    }
     // brilho da flutuação (deitado no chão, perto quando no chão)
     const hs = look.down ? 0.0001 : look.air ? 0.0001 : 3.4
     Quaternion.FromEulerAnglesToRef(-pose.pitch, pose.yaw, 0, this.tmpQ)
     Matrix.ComposeToRef(this.sc.set(hs * 0.8, 1, hs * 1.4), this.tmpQ, this.at.set(pose.x, pose.y + 0.06, pose.z), this.tmpM)
     this.tmpM.copyToArray(this.hoverBuf, i * 16)
     if (s.sparks) {
-      Vector3.TransformCoordinatesFromFloatsToRef(0, 0.6, s.art.tailZ, world, s.emitter)
-      s.sparks.emitRate = look.down ? 0 : 30 + 200 * look.speed + (look.boost ? 280 : 0)
-      s.sparks.maxSize = look.boost ? 0.6 : 0.38
+      Vector3.TransformCoordinatesFromFloatsToRef(0, 0.6, s.art.nozzles[0][2] - 0.2, world, s.emitter)
+      s.sparks.emitRate = look.down ? 0 : (12 + 150 * look.speed * look.speed + (look.boost ? 240 : 0)) * (this.mobile ? 0.45 : 1)
+      s.sparks.maxSize = look.boost ? 0.32 : 0.22
       // passo real do quadro (a cena usa delta constante; a 30 FPS seria meia velocidade)
       s.sparks.updateSpeed = Math.max(0.001, dt)
       // as faíscas saem para trás da nave
-      Vector3.TransformNormalFromFloatsToRef(0, 0.2, -1, world, this.tmpV)
-      s.sparks.direction1 = this.tmpV.clone().addInPlaceFromFloats(-0.3, 0, -0.3)
-      s.sparks.direction2 = this.tmpV.clone().addInPlaceFromFloats(0.3, 0.4, 0.3)
+      Vector3.TransformNormalFromFloatsToRef(0, 0.05, -1, world, this.tmpV)
+      s.sparks.direction1 = this.tmpV.clone().addInPlaceFromFloats(-0.18, -0.05, -0.18)
+      s.sparks.direction2 = this.tmpV.clone().addInPlaceFromFloats(0.18, 0.15, 0.18)
     }
   }
 
@@ -435,7 +493,8 @@ export class CarFleet {
   flush(dt: number) {
     this.clock += dt
     const cam = this.scene.activeCamera
-    if (cam) this.flames.update(this.clock, cam.globalPosition)
+    if (cam) this.flames.update(dt)
+    this.trails.flush()
     this.hover.thinInstanceBufferUpdated("matrix")
     this.glow.thinInstanceBufferUpdated("matrix")
   }
@@ -457,6 +516,7 @@ export class CarFleet {
     for (const t of this.textures.values()) t.dispose()
     this.glass?.dispose()
     this.flames.dispose()
+    this.trails.dispose()
     this.hover.dispose()
     this.hoverMat.dispose()
     this.glow.dispose()

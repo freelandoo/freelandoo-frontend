@@ -12,6 +12,9 @@
 // Sem Babylon (testável no node; nada de enum nem parâmetro-propriedade).
 
 export const STEP = 2
+/** Inclinação lateral máxima (rad, 30°) e o ganho sobre a curvatura (mm3d-73). */
+export const BANK_MAX = 0.52
+export const BANK_K = 46
 
 export type PieceKind = "road" | "ramp" | "gap"
 
@@ -244,12 +247,22 @@ export function buildTrack(def: TrackDef): Track {
     const q = (i + 1) % n
     T.curv[i] = wrapAngle(T.yaw[q] - T.yaw[p]) / (2 * STEP)
   }
-  // inclinação lateral: curvatura suavizada (média de 30 m), até 16°
-  const win = Math.round(15 / STEP)
+  // inclinação lateral (mm3d-73): curvatura suavizada numa janela de 60 m, que
+  // faz a entrada e a saída da curva irem aos poucos; reta ≈ 0°, curva de 90°
+  // em 150 m ≈ 26°, teto BANK_MAX (30°). Mudou → regerar o back (build-corrida-sim).
+  const win = Math.round(30 / STEP)
+  const raw = new Float32Array(n)
   for (let i = 0; i < n; i++) {
     let c = 0
     for (let k = -win; k <= win; k++) c += T.curv[(i + k + n) % n]
-    T.bank[i] = Math.max(-0.28, Math.min(0.28, (c / (2 * win + 1)) * 22))
+    raw[i] = Math.max(-BANK_MAX, Math.min(BANK_MAX, (c / (2 * win + 1)) * BANK_K))
+  }
+  // segunda passada curta: tira a quina onde o teto corta
+  const win2 = Math.round(8 / STEP)
+  for (let i = 0; i < n; i++) {
+    let c = 0
+    for (let k = -win2; k <= win2; k++) c += raw[(i + k + n) % n]
+    T.bank[i] = c / (2 * win2 + 1)
   }
   for (let i = 0; i < n; i++) {
     const b = T.bounds
