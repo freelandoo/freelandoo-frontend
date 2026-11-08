@@ -16,7 +16,7 @@
 // voto e a espera mostra a contagem (a sala apura). Recorde por mapa no aparelho.
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
-import { ArrowBigUp, Cat, DoorOpen, Loader2, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
+import { ArrowBigUp, Cat, DoorOpen, Loader2, Skull, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId } from "../../types"
 import { MM } from "../../ui/hud/tokens"
@@ -234,6 +234,9 @@ function PaintMenu({
         <p className="mt-2 text-[12.5px] leading-snug" style={{ color: MM.muted }}>
           {t("paintHowGoalGuardian", "20 gatinhos do seu time abrem o portal no topo. Na ilha do Guardião vence quem der mais dano — perdeu para ele (ou caiu de lá), acabou a partida para você.")}
         </p>
+        <p className="mt-1 text-[12.5px] leading-snug" style={{ color: MM.muted }}>
+          {t("paintHowMorkhan", "Completou os 20? O Morkhan surge atrás de você e tenta te jogar das ilhas: caiu, os gatinhos voltam ao mapa e o portal fecha. Corra para o portal!")}
+        </p>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
           {modes.map((m) => {
@@ -411,6 +414,17 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
         case "drop":
           say(tt("paintToastDrop", "Caiu nas nuvens: {n} gatinhos voltaram para o mapa").replace("{n}", String(n.n)), "bad")
           break
+        case "morkhan":
+          // B11: o perseguidor
+          if (n.on) {
+            if (n.mine) say(tt("paintToastMorkhanMine", "O Morkhan acordou atrás de você! Corra para o portal"), "bad")
+            else if (n.ally) say(tt("paintToastMorkhanAlly", "O Morkhan está caçando quem leva os gatinhos do seu time"), "bad")
+            else say(tt("paintToastMorkhanOther", "O Morkhan saiu atrás do outro time"), "gold")
+          }
+          break
+        case "portalShut":
+          if (n.mine) say(tt("paintToastPortalShut", "O portal fechou — junte 20 gatinhos de novo"), "bad")
+          break
         case "bossAct":
           if (n.act === "slam") say(tt("paintToastBossSlam", "Tapa no chão — pule!"), "bad")
           else if (n.act === "roar") say(tt("paintToastBossRoar", "O chefão rugiu!"), "bad")
@@ -569,6 +583,18 @@ function Hud({ hud, touch, hurt, body, onLeave }: { hud: PaintHud; touch: boolea
         {hud.phase === "play" && (
           <span className="rounded-full px-3 py-1 text-[14px] font-bold tabular-nums" style={{ background: "rgba(255,255,255,0.78)", color: "#3b3127" }}>
             {fmtTime(hud.timeLeft)}
+          </span>
+        )}
+        {hud.chased && hud.phase === "play" && (
+          // B11: o aviso do perseguidor (some quando entra no portal ou cai)
+          <span
+            role="alert"
+            className="flex animate-pulse items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[14px] font-black max-[759px]:text-[12px]"
+            style={{ background: "rgba(74, 18, 110, 0.9)", color: "#F1E4FF", border: "1px solid rgba(226, 207, 255, 0.55)", boxShadow: "0 0 18px rgba(138, 59, 255, 0.55)" }}
+          >
+            <Skull className="h-4 w-4" />
+            {t("paintMorkhanChasing", "O Morkhan está atrás de você!")}
+            <span className="tabular-nums opacity-80">{t("paintMorkhanDist", "{n} m").replace("{n}", String(hud.chaseDist))}</span>
           </span>
         )}
         {hud.inBoss && (

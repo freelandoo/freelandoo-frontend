@@ -151,6 +151,42 @@ export const TUNING = {
   bossSlam: { ahead: 6, r: 7.5, hit: 1.15, dur: 2.4, dmg: 45, knock: 5.5, lift: 6.5 },
   bossRoar: { dur: 2.2 },
 
+  /**
+   * B11 (cronograma 2026-11): o MORKHAN persegue quem completa os 20 gatinhos
+   * do time até a pessoa entrar no portal ou cair. Segue o RASTRO de quem ele
+   * caça (os pontos em que ela pisou): não atravessa o vazio, salta só onde
+   * ela saltou. Corre a 90% da corrida e arranca de tempos em tempos; o golpe
+   * é o empurrão do muro (`wallShove`/`wallShoveLift`), sem dano.
+   */
+  morkhan: {
+    /** s parado surgindo antes de correr (a vantagem de quem foge). */
+    rise: 1.8,
+    /** Velocidade (m/s) = 90% da corrida; na arrancada × `dashK`. */
+    speed: 5.94,
+    dashK: 1.55,
+    dashEvery: 6.5,
+    dashDur: 1.1,
+    /** Nasce este tanto (m de rastro) atrás de quem caça. */
+    behind: 14,
+    /** Rastro: um ponto a cada `trailStep` m pisados; guarda `trailKeep` de cada um. */
+    trailStep: 0.6,
+    trailKeep: 60,
+    /** Passo andando entre dois pontos (o resto é salto). */
+    walkGap: 1.5,
+    walkRise: 0.7,
+    /** Salto: velocidade horizontal e altura extra do arco. */
+    leapV: 7.5,
+    leapLift: 1.4,
+    /** Golpe: alcance para começar, para acertar, quando acerta, duração e descanso. */
+    reach: 2.4,
+    hitReach: 3.1,
+    hit: 0.42,
+    dur: 0.95,
+    rest: 1.4,
+    /** Altura do corpo (o deus de 3,2 m). */
+    h: 3.2,
+  },
+
   /** Partida. */
   matchTime: 600,
   countdown: 5,

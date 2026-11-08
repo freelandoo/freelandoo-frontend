@@ -30,7 +30,7 @@ import { PAINT, PAINT_COLORS, TUNING, type PaintColor } from "../sim/tuning"
 import { newBody, stepBody, knockBody, liftOnto, type BodyMove, type PaintBody } from "../sim/body"
 import { rayBody, supportAt, supportIndex } from "../sim/collide"
 import { muzzleOf } from "../sim/paint"
-import type { BossAct, MatchEvent, MatchResult, PaintPose } from "../sim/match"
+import type { BossAct, MatchEvent, MatchResult, MorkhanWhy, PaintPose } from "../sim/match"
 import { polySolid, type Solid } from "../sim/map"
 import { buildPaintWorld } from "./world-view"
 import { buildArenaWorld } from "./arena-view"
@@ -39,6 +39,7 @@ import { PaintView } from "./paint-view"
 import { PickupsView } from "./pickups-view"
 import { CatHerd } from "./cat-herd"
 import { BossView } from "./boss-view"
+import { MorkhanView, MORKHAN_FX } from "./morkhan-view"
 import { AimCamera } from "./aim-camera"
 import { createHitFeedback } from "./hit-feedback"
 import { PaintGun } from "./gun"
@@ -74,6 +75,9 @@ export interface PaintHud {
   out: boolean
   /** Quantos ainda estão de pé (para o "assistindo"). */
   alive: number
+  /** B11: o Morkhan está atrás de mim (e a quantos metros). */
+  chased: boolean
+  chaseDist: number
   result: MatchResult | null
 }
 
@@ -82,7 +86,11 @@ export type PaintNotice =
   | { kind: "cat"; mine: boolean; team: number }
   | { kind: "capsule"; c: PaintColor }
   | { kind: "empty"; c: PaintColor }
-  | { kind: "hurt"; how: "harm" | "punch" | "boss" | "wall" }
+  | { kind: "hurt"; how: "harm" | "punch" | "boss" | "wall" | "morkhan" }
+  /** B11: o Morkhan surgiu (on) ou sumiu; `mine` = atrás de mim, `ally` = do meu time. */
+  | { kind: "morkhan"; on: boolean; mine: boolean; ally: boolean; why: MorkhanWhy }
+  /** B11: o portal do time fechou (quem ele caçava caiu abaixo de 20). */
+  | { kind: "portalShut"; mine: boolean }
   /** Meu muro jogou alguém longe (mm3d-62). */
   | { kind: "shoved" }
   /** Perdi para o guardião (mm3d-62). */
@@ -212,6 +220,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   shadowMat.alpha = 0.2
   const mats = { fallback: fallbackMat, shadow: shadowMat }
   const char = new Character(scene, lib, mats, opts.body, null, true, opts.look ?? "")
+  // B11: o Morkhan (um por time; só aparece caçando)
+  const morkhan = new MorkhanView(scene, lib, mats, vfx, "Morkhan")
   // Brilho do neon das armas (mm3d-46): só o que as armas pedem entra.
   const glow = lowEnd ? null : new GlowLayer("paint-gun-glow", scene, { mainTextureRatio: 0.5, blurKernelSize: 32 })
   if (glow) glow.intensity = 0.85
@@ -295,7 +305,11 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         else if (e.from === port.me) notice({ kind: "steal", gained: false, n: e.n })
         break
       case "hit":
-        if (e.how === "wall") {
+        if (e.how === "morkhan") {
+          // golpe do Morkhan (B11): o empurrão do muro, em luz roxa
+          const tp = e.slot === port.me ? body : state.players.get(e.slot)?.pose
+          if (tp) vfx.impact(new Vector3(tp.x, tp.y + 1.1, tp.z), MORKHAN_FX, true, 1.2)
+        } else if (e.how === "wall") {
           // empurrão do muro: sem sangue, clarão turquesa e a gelatina balança
           const tp = e.slot === port.me ? body : state.players.get(e.slot)?.pose
           if (tp) vfx.impact(new Vector3(tp.x, tp.y + 1.1, tp.z), WALL_FX, true)
@@ -383,6 +397,13 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       case "portal":
         world.setPortalOpen(e.team, true)
         notice({ kind: "portal", team: e.team, mine: e.team === me.team })
+        break
+      case "portalShut":
+        world.setPortalOpen(e.team, false)
+        notice({ kind: "portalShut", mine: e.team === me.team })
+        break
+      case "morkhan":
+        notice({ kind: "morkhan", on: e.on, mine: e.slot === port.me, ally: e.team === me.team, why: e.why })
         break
       case "boss":
         // acerto no guardião: clarão em estrela, anel e faíscas (como nas Lâminas)
@@ -653,7 +674,14 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     out: me.out,
     alive: [...state.players.values()].filter((p) => p.online && !p.out).length,
     result: state.result,
+    ...chaseHud(),
   })
+  /** B11: o Morkhan do meu time está atrás de mim? */
+  const chaseHud = () => {
+    const mk = state.morkhans[me.team]
+    const on = !!mk && mk.act !== "gone" && mk.target === port.me && !me.inBoss
+    return { chased: on, chaseDist: on ? Math.round(Math.hypot(mk.x - body.x, mk.z - body.z)) : 0 }
+  }
 
   // ── laço ───────────────────────────────────────────────────────────────────
   scene.onBeforeRenderObservable.add(() => {
@@ -790,6 +818,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     world.tick(dt)
     bossView.setVisible(me.inBoss)
     if (me.inBoss) bossView.tick(dt, state.boss, state.time, state.bossAlive())
+    morkhan.tick(dt, state.morkhans, state.time, solids, me.inBoss)
     {
       // arco de luz nas garras só no golpe (do começo até logo depois de acertar)
       const b = state.boss
@@ -929,6 +958,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       pickups.dispose()
       herd.dispose()
       bossView.dispose()
+      morkhan.dispose()
       vfx.dispose()
       paint.dispose()
       world.dispose()

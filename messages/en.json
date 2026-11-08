@@ -10527,7 +10527,14 @@
     "shareSend": "Send link",
     "shareClose": "Close",
     "shareText": "Come play Meu Mundo with me!",
-    "sharePaused": "The program is paused right now: the link works, but purchases won't earn until it's back."
+    "sharePaused": "The program is paused right now: the link works, but purchases won't earn until it's back.",
+    "paintHowMorkhan": "Got all 20? Morkhan appears behind you and tries to throw you off the islands: fall, and the kittens go back to the map and the portal closes. Run for the portal!",
+    "paintToastMorkhanMine": "Morkhan woke up behind you! Run for the portal",
+    "paintToastMorkhanAlly": "Morkhan is hunting whoever carries your team's kittens",
+    "paintToastMorkhanOther": "Morkhan went after the other team",
+    "paintToastPortalShut": "The portal closed — gather 20 kittens again",
+    "paintMorkhanChasing": "Morkhan is right behind you!",
+    "paintMorkhanDist": "{n} m"
   },
   "Sports": {
     "eyebrow": "Sports",

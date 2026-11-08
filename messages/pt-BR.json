@@ -9941,7 +9941,14 @@
     "shareSend": "Enviar link",
     "shareClose": "Fechar",
     "shareText": "Vem jogar o Meu Mundo comigo!",
-    "sharePaused": "O programa está pausado agora: o link funciona, mas as compras não rendem até ele voltar."
+    "sharePaused": "O programa está pausado agora: o link funciona, mas as compras não rendem até ele voltar.",
+    "paintHowMorkhan": "Completou os 20? O Morkhan surge atrás de você e tenta te jogar das ilhas: caiu, os gatinhos voltam ao mapa e o portal fecha. Corra para o portal!",
+    "paintToastMorkhanMine": "O Morkhan acordou atrás de você! Corra para o portal",
+    "paintToastMorkhanAlly": "O Morkhan está caçando quem leva os gatinhos do seu time",
+    "paintToastMorkhanOther": "O Morkhan saiu atrás do outro time",
+    "paintToastPortalShut": "O portal fechou — junte 20 gatinhos de novo",
+    "paintMorkhanChasing": "O Morkhan está atrás de você!",
+    "paintMorkhanDist": "{n} m"
   },
   "Sports": {
     "eyebrow": "Esportes",

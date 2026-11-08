@@ -30,6 +30,7 @@ import { PAINT, TUNING, ammoCap, modeTeams, type PaintColor, type PaintMode } fr
 import { fellOut, spawnPoint, type PaintMap, type Solid, type Vec3 } from "./map"
 import { buildPaintMap } from "./maps"
 import { blobSolid, muzzleOf, punchReachesBoss, punchTargets, resolveShot, type NewBlob, type ShotTargetBody } from "./paint"
+import { morkhanActive, morkhanSpawn, morkhanStep, morkhanTrailAdd, morkhanVanish, newMorkhan, type MorkhanState } from "./morkhan"
 
 export type MatchPhase = "countdown" | "play" | "end"
 
@@ -73,6 +74,8 @@ export interface MatchPlayer {
   /** Manchas desta pessoa, da mais velha para a mais nova (limite por jogador). */
   blobs: number[]
   online: boolean
+  /** B11: onde pisou por último (o Morkhan segue este rastro). */
+  trail: Vec3[]
 }
 
 export interface MatchBlob {
@@ -90,7 +93,7 @@ export type MatchEvent =
   | { type: "shot"; slot: number; c: PaintColor; o: Vec3; to: Vec3; q: number }
   | { type: "deny"; slot: number; q: number }
   /** `by` = -1 quando quem bateu foi o chefão. */
-  | { type: "hit"; slot: number; by: number; hp: number; kx: number; ky: number; kz: number; how: "harm" | "punch" | "boss" | "wall" }
+  | { type: "hit"; slot: number; by: number; hp: number; kx: number; ky: number; kz: number; how: "harm" | "punch" | "boss" | "wall" | "morkhan" }
   | { type: "ko"; slot: number; by: number }
   /** Caiu nas nuvens com gatinhos: eles voltam ao mapa (um `catBack` por gatinho). */
   | { type: "drop"; slot: number; n: number }
@@ -106,6 +109,13 @@ export type MatchEvent =
   | { type: "capsule"; id: number; slot: number; c: PaintColor }
   | { type: "capsuleBack"; id: number }
   | { type: "portal"; team: number }
+  /**
+   * B11: o portal do time FECHOU — quem o Morkhan caçava caiu (ou foi
+   * nocauteado) e o time ficou abaixo de 20 gatinhos.
+   */
+  | { type: "portalShut"; team: number }
+  /** B11: o Morkhan surgiu atrás de `slot` (on) ou sumiu (por quê). */
+  | { type: "morkhan"; team: number; slot: number; on: boolean; why: MorkhanWhy }
   /** Dano no chefão; `x/y/z` = onde acertou (o clarão de luz nasce ali). */
   | { type: "boss"; slot: number; dmg: number; hp: number; x: number; y: number; z: number }
   /** Perdeu para o guardião: fora da partida (mm3d-62). */
@@ -122,6 +132,9 @@ export interface MatchResult {
 }
 
 export type BossAct = "idle" | "walk" | "swipe" | "slam" | "roar"
+
+/** B11: por que o Morkhan surgiu ("cats") ou sumiu (entrou no portal, caiu, nocaute, saiu da sala, fim). */
+export type MorkhanWhy = "cats" | "portal" | "fell" | "ko" | "left" | "end"
 
 /** O chefão (a sala decide; o aparelho só desenha). `at` = s de partida em que o ato começou. */
 export interface BossState {
@@ -173,6 +186,8 @@ export class PaintMatch {
   readonly portalOpen: [boolean, boolean] = [false, false]
   bossHp: number = TUNING.bossHp
   readonly boss: BossState
+  /** B11: o Morkhan de cada time (caça quem completou os 20 gatinhos daquele time). */
+  readonly morkhans: [MorkhanState, MorkhanState] = [newMorkhan(0), newMorkhan(1)]
   result: MatchResult | null = null
   private events: MatchEvent[] = []
   private blobSeq = 1
@@ -219,6 +234,7 @@ export class PaintMatch {
         nextPunch: 0,
         blobs: [],
         online: true,
+        trail: [],
       })
     }
   }
@@ -407,6 +423,7 @@ export class PaintMatch {
       v.ko = this.time + TUNING.koTime
       this.emit({ type: "ko", slot, by })
       this.steal(v, a)
+      if (this.chased(v.team) === v.slot) this.endChase(v.team, "ko")
     }
   }
 
@@ -457,10 +474,44 @@ export class PaintMatch {
     this.teamCats[v.team] = Math.max(0, this.teamCats[v.team] - n)
     this.teamCats[a.team] += n
     this.emit({ type: "steal", from: v.slot, to: a.slot, n })
-    if (!this.portalOpen[a.team] && this.teamCats[a.team] >= TUNING.catsToPortal) {
-      this.portalOpen[a.team] = true
-      this.emit({ type: "portal", team: a.team })
+    this.checkPortal(a)
+  }
+
+  /**
+   * O time de `p` chegou aos 20: o portal abre e o Morkhan surge atrás de
+   * quem completou (B11). Um Morkhan por time; já caçando, nada muda.
+   */
+  private checkPortal(p: MatchPlayer) {
+    if (this.portalOpen[p.team] || this.teamCats[p.team] < TUNING.catsToPortal) return
+    this.portalOpen[p.team] = true
+    this.emit({ type: "portal", team: p.team })
+    const mk = this.morkhans[p.team]
+    if (morkhanActive(mk) || p.inBoss || p.out) return
+    morkhanSpawn(mk, p.slot, p.trail, p.pose, this.time)
+    this.emit({ type: "morkhan", team: p.team, slot: p.slot, on: true, why: "cats" })
+  }
+
+  /**
+   * O Morkhan some. Se quem ele caçava não chegou ao portal (caiu, foi
+   * nocauteado) e o time ficou abaixo de 20, o portal FECHA de novo: é preciso
+   * juntar os 20 outra vez — e ele volta.
+   */
+  private endChase(team: number, why: MorkhanWhy) {
+    const mk = this.morkhans[team]
+    if (!morkhanActive(mk)) return
+    const slot = mk.target
+    morkhanVanish(mk)
+    this.emit({ type: "morkhan", team, slot, on: false, why })
+    if ((why === "fell" || why === "ko") && this.portalOpen[team] && this.teamCats[team] < TUNING.catsToPortal) {
+      this.portalOpen[team] = false
+      this.emit({ type: "portalShut", team })
     }
+  }
+
+  /** Quem o Morkhan deste time está caçando agora (-1 = ninguém). */
+  chased(team: number) {
+    const mk = this.morkhans[team]
+    return morkhanActive(mk) ? mk.target : -1
   }
 
   private hitBoss(slot: number, dmg: number, at: Vec3) {
@@ -636,6 +687,7 @@ export class PaintMatch {
   private respawn(p: MatchPlayer) {
     const sp = spawnPoint(this.map, p.team, p.sit, p.inBoss)
     p.epoch++
+    p.trail = [] // teleporte: o rastro velho não leva a lugar nenhum
     p.ko = 0
     p.hp = TUNING.hpMax
     p.shield = this.time + TUNING.shield
@@ -679,7 +731,15 @@ export class PaintMatch {
         }
         this.dropCats(p)
         this.respawn(p)
+        if (this.chased(p.team) === p.slot) this.endChase(p.team, "fell")
         continue
+      }
+      // rastro (B11): onde pisou; quem o Morkhan caça alimenta o caminho dele
+      if (!p.inBoss && q.ground && morkhanTrailAdd(p.trail, q.x, q.y, q.z) && this.chased(p.team) === p.slot) {
+        const t = p.trail[p.trail.length - 1]
+        const path = this.morkhans[p.team].path
+        path.push({ x: t.x, y: t.y, z: t.z })
+        if (path.length > 900) path.shift()
       }
       // gatinhos (só na arena)
       if (!p.inBoss) {
@@ -691,15 +751,13 @@ export class PaintMatch {
           p.catIds.push(c.id)
           this.teamCats[p.team]++
           this.emit({ type: "cat", id: c.id, slot: p.slot, team: p.team })
-          if (!this.portalOpen[p.team] && this.teamCats[p.team] >= T.catsToPortal) {
-            this.portalOpen[p.team] = true
-            this.emit({ type: "portal", team: p.team })
-          }
+          this.checkPortal(p)
         }
         const portal = this.map.portals[p.team]
         if (this.portalOpen[p.team] && Math.abs(q.y - portal.y) < 2 && Math.hypot(q.x - portal.x, q.z - portal.z) <= T.portalR) {
           p.inBoss = true
           this.respawn(p)
+          if (this.chased(p.team) === p.slot) this.endChase(p.team, "portal")
           continue
         }
       }
@@ -712,12 +770,32 @@ export class PaintMatch {
         this.emit({ type: "capsule", id: cap.id, slot: p.slot, c: cap.c })
       }
     }
+    this.morkhanTick(dt)
     if (this.bossAlive()) this.bossTick(dt)
     if (this.time >= T.matchTime) this.finish("time")
   }
 
+  /** B11: o Morkhan de cada time corre atrás de quem caça e golpeia (empurrão do muro). */
+  private morkhanTick(dt: number) {
+    for (const mk of this.morkhans) {
+      if (!morkhanActive(mk)) continue
+      const v = this.players.get(mk.target)
+      if (!v || !v.online || v.out || v.inBoss) {
+        this.endChase(mk.team, "left")
+        continue
+      }
+      const q = v.pose
+      const hit = morkhanStep(mk, { x: q.x, y: q.y, z: q.z, ground: q.ground && !v.ko }, this.solids(), dt, this.time)
+      if (hit && !v.ko) {
+        const T = TUNING
+        this.emit({ type: "hit", slot: v.slot, by: -2, hp: v.hp, kx: hit.ux * T.wallShove, ky: T.wallShoveLift, kz: hit.uz * T.wallShove, how: "morkhan" })
+      }
+    }
+  }
+
   finish(reason: "boss" | "time" | "wiped") {
     if (this.phase === "end") return
+    for (const mk of this.morkhans) if (morkhanActive(mk)) this.endChase(mk.team, "end")
     this.phase = "end"
     const rows = [...this.players.values()].map((p) => ({ slot: p.slot, team: p.team, dmg: p.dmg, cats: p.cats }))
     let winnerSlot = -1
