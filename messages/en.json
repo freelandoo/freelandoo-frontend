@@ -10618,7 +10618,22 @@
     "labAccelNone": "No character needs the accelerator: they are all 15 or older.",
     "labAccelGo": "Accelerate",
     "labAccelerated": "Done: they are 15 now.",
-    "labBack": "Talk to the cryogenicist"
+    "labBack": "Talk to the cryogenicist",
+    "stnPick": "Equipment",
+    "stnTier": "Level",
+    "stnTierN": "Lv. {n}",
+    "stnWeights": "Weights",
+    "stnTreadmill": "Treadmill",
+    "stnBag": "Punching bag",
+    "stnCourse": "Course",
+    "stnBook": "Books",
+    "stnWeightsGives": "Strength",
+    "stnTreadmillGives": "Speed",
+    "stnBagGives": "Speed and accuracy",
+    "stnCourseGives": "Intelligence",
+    "stnBookGives": "Intelligence",
+    "stnNeed": "Needs {n} {attr}",
+    "stnNext": "Next level at {n} {attr} (you have {v})."
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -10813,7 +10828,9 @@
     "Esse personagem não está vivo nem na cápsula": "That character is neither alive nor in the capsule",
     "Não autenticado": "Not authenticated",
     "Seu cadastro de afiliado está suspenso": "Your affiliate account is suspended",
-    "Não foi possível gerar seu código": "Could not generate your code"
+    "Não foi possível gerar seu código": "Could not generate your code",
+    "Esse aparelho ou curso não existe aqui": "That equipment or course doesn't exist here",
+    "Ainda não dá para esse nível: falta atributo": "You can't use that level yet: attribute too low"
   },
   "Moedas": {
     "walletTitle": "Wallet",

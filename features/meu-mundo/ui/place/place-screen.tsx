@@ -29,6 +29,8 @@ import { SellerDialog } from "./seller-dialog"
 import GearPanel, { type GearTab } from "../gear/gear-panel"
 import LabPanel, { type LabMode } from "../lab/lab-panel"
 import CharacterCapsule from "../status/character-capsule"
+import { StationPicker, bestTier, stationOfAnim, stationParam, type StationChoice } from "./station-picker"
+import type { LifeStationDef } from "../../types"
 
 /** Hora de aula (moedas do jogo) — espelho de PLACE_RULES em meuMundoLife.js. */
 const CLASS_FEE_H: Record<string, number> = { universidade: 8 }
@@ -61,6 +63,14 @@ function doingText(kind: Doing["kind"], hours: number, t: Tr) {
   return k.replace("{h}", String(hours))
 }
 
+/** B10: os aparelhos/cursos que valem neste prédio, para treinar ou estudar. */
+function stationIds(use: PlaceUse, place: string, defs: Record<string, LifeStationDef>): string[] {
+  const kind = use === "train" ? "training" : "studying"
+  return Object.entries(defs)
+    .filter(([, d]) => d.kind === kind && d.places.includes(place))
+    .map(([id]) => id)
+}
+
 export function PlaceScreen({ placeId, placeName, interior, body, look = "", onExit, onOpenMarket }: PlaceScreenProps) {
   const t = useTranslations("MeuMundo") as Tr
   const [ask, setAsk] = useState<{ use: PlaceUse; state: PlaceState } | null>(null)
@@ -77,6 +87,9 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   const [gearTab, setGearTab] = useState<GearTab | null>(null)
   // B12: Laboratório de Criogenia (conversa, embriões, acelerador e as cápsulas congeladas)
   const [lab, setLab] = useState<LabMode | "cryo" | null>(null)
+  // B10: aparelho/curso e nível escolhidos no diálogo (null = servidor antigo, treino de sempre)
+  const [stations, setStations] = useState<{ defs: Record<string, LifeStationDef>; attrs: Record<string, number> } | null>(null)
+  const [station, setStation] = useState<StationChoice | null>(null)
 
   useEffect(() => {
     doingRef.current = doing
@@ -105,7 +118,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
     const token = getToken()
     if (!token) return
     setBusy(true)
-    const r = await postLifeActivity(token, kind, hours, placeId)
+    const r = await postLifeActivity(token, kind, hours, placeId, kind === "praying" ? undefined : stationParam(station))
     setBusy(false)
     setAsk(null)
     if (!r.ok) {
@@ -164,6 +177,23 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
     if (use === "train" || use === "study" || use === "pray") {
       if (doingRef.current) return
       setAsk({ use, state })
+      setStation(null)
+      // B10: o aparelho sugerido pelo ponto (esteira, saco ou pesos) e o maior nível liberado
+      if (use !== "pray") {
+        const token = getToken()
+        if (token)
+          void getLife(token).then((r) => {
+            const defs = r.ok ? r.data.catalog.stations : undefined
+            if (!r.ok || !defs) return
+            const a = r.data.character.attributes as unknown as Record<string, number>
+            const attrs = { strength: a.strength, speed: a.speed, intelligence: a.intelligence }
+            setStations({ defs, attrs })
+            const ids = stationIds(use, placeId, defs)
+            const want = use === "train" ? stationOfAnim(state.kind === "spot" ? state.spot.anim : null) : ids[0]
+            const id = ids.includes(want) ? want : ids[0]
+            if (id) setStation({ id, tier: bestTier(defs[id], placeId, attrs) })
+          })
+      }
       return
     }
     if (use === "order") return void openMenu()
@@ -284,6 +314,9 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
                   ? t("pvPrayText", "Rezando, o estresse cai rápido e o humor sobe. Levantar para.")
                   : t("pvStudyText", "A inteligência sobe nas primeiras 5 h do dia. Ele continua mesmo com o jogo fechado; levantar para.")}
             </p>
+            {!praying && stations && station && (
+              <StationPicker stations={stations.defs} ids={stationIds(ask.use, placeId, stations.defs)} place={placeId} attrs={stations.attrs} value={station} onChange={setStation} t={t} />
+            )}
             {!training && !praying && (STUDY_MUL[placeId] ?? 1) > 1 && (
               <p className="mt-2">
                 {t("pvUniText", "Na universidade rende 1,5× — a hora de aula custa {c} moedas.").replace("{c}", String(fee))}

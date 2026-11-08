@@ -10032,7 +10032,22 @@
     "labAccelNone": "Nenhum personagem precisa do acelerador: todos já têm 15 anos ou mais.",
     "labAccelGo": "Acelerar",
     "labAccelerated": "Pronto: agora ele tem 15 anos.",
-    "labBack": "Falar com a criogenista"
+    "labBack": "Falar com a criogenista",
+    "stnPick": "Aparelho",
+    "stnTier": "Nível",
+    "stnTierN": "Nv. {n}",
+    "stnWeights": "Pesos",
+    "stnTreadmill": "Esteira",
+    "stnBag": "Saco de pancada",
+    "stnCourse": "Curso",
+    "stnBook": "Livros",
+    "stnWeightsGives": "Força",
+    "stnTreadmillGives": "Velocidade",
+    "stnBagGives": "Velocidade e acurácia",
+    "stnCourseGives": "Inteligência",
+    "stnBookGives": "Inteligência",
+    "stnNeed": "Precisa de {n} de {attr}",
+    "stnNext": "Próximo nível com {n} de {attr} (você tem {v})."
   },
   "Sports": {
     "eyebrow": "Esportes",
@@ -10227,7 +10242,9 @@
     "Esse personagem não está vivo nem na cápsula": "Esse personagem não está vivo nem na cápsula",
     "Não autenticado": "Não autenticado",
     "Seu cadastro de afiliado está suspenso": "Seu cadastro de afiliado está suspenso",
-    "Não foi possível gerar seu código": "Não foi possível gerar seu código"
+    "Não foi possível gerar seu código": "Não foi possível gerar seu código",
+    "Esse aparelho ou curso não existe aqui": "Esse aparelho ou curso não existe aqui",
+    "Ainda não dá para esse nível: falta atributo": "Ainda não dá para esse nível: falta atributo"
   },
   "Moedas": {
     "walletTitle": "Carteira",

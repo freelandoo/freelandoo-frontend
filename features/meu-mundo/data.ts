@@ -423,8 +423,8 @@ export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "
 export const getCenterInterior = (token: string, id: string) =>
   call<{ id: string; interior: InteriorDef }>(token, "GET", `/center/interiors/${encodeURIComponent(id)}`)
 /** Estudar/treinar/trabalhar por `hours` (1–72) ou parar (`idle`). Treino e estudo só no prédio (`place`, mm3d-37b). Deitar/dormir é pela cama, na casa. */
-export const postLifeActivity = (token: string, activity: string, hours?: number, place?: string) =>
-  call<LifeSummary>(token, "POST", "/life/activity", { activity, hours, place })
+export const postLifeActivity = (token: string, activity: string, hours?: number, place?: string, station?: string) =>
+  call<LifeSummary>(token, "POST", "/life/activity", { activity, hours, place, ...(station ? { station } : {}) })
 /** Comer/tomar um item do catálogo (cobra as moedas do jogo). */
 export const postLifeConsume = (token: string, item: string) => call<LifeSummary>(token, "POST", "/life/consume", { item })
 /** Vendedor do centro (mm3d-37e): catálogo, casa (nível) e cor do carro. */
