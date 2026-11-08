@@ -10177,7 +10177,13 @@
     "noturnoModeBotsSub": "Espera até 1 minuto · vaga vazia vira computador",
     "noturnoLobbyHowBots": "Quem entrar até o fim do tempo corre junto, na mesma rua. As vagas que sobrarem viram computadores. Ganha quem fizer mais pontos antes de cair.",
     "noturnoLobbyBot": "computador, se ninguém entrar",
-    "noturnoJoinFail2": "O rolê não abriu agora. Tente de novo."
+    "noturnoJoinFail2": "O rolê não abriu agora. Tente de novo.",
+    "jetModeFour": "Sempre 4 no túnel · espera até 1 minuto · vaga vazia vira computador",
+    "jetModeOffline": "Sem conexão: voo de treino no aparelho",
+    "jetJoinFail2": "O voo não abriu agora. Tente de novo.",
+    "jetLobbyHowBots": "Quem entrar até o fim do tempo voa junto, no mesmo túnel. As vagas que sobrarem viram computadores. Ganha quem for mais longe.",
+    "jetLobbyBot": "computador, se ninguém entrar",
+    "jetLobbyCount4": "{n} de 4 no túnel"
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -10743,7 +10743,13 @@
     "noturnoModeBotsSub": "Espera hasta 1 minuto · los lugares vacíos son de la computadora",
     "noturnoLobbyHowBots": "Quien entre antes de que acabe el tiempo corre junto, en la misma calle. Los lugares vacíos son de la computadora. Gana quien haga más puntos antes de caer.",
     "noturnoLobbyBot": "computadora, si nadie entra",
-    "noturnoJoinFail2": "El paseo no abrió ahora. Inténtalo de nuevo."
+    "noturnoJoinFail2": "El paseo no abrió ahora. Inténtalo de nuevo.",
+    "jetModeFour": "Siempre 4 en el túnel · espera hasta 1 minuto · los lugares vacíos son de la computadora",
+    "jetModeOffline": "Sin conexión: vuelo de práctica en el dispositivo",
+    "jetJoinFail2": "El vuelo no abrió ahora. Inténtalo de nuevo.",
+    "jetLobbyHowBots": "Quien entre antes de que acabe el tiempo vuela junto, en el mismo túnel. Los lugares vacíos son de la computadora. Gana quien llegue más lejos.",
+    "jetLobbyBot": "computadora, si nadie entra",
+    "jetLobbyCount4": "{n} de 4 en el túnel"
   },
   "Sports": {
     "eyebrow": "Deportes",

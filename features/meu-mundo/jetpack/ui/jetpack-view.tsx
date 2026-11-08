@@ -46,7 +46,8 @@ export interface JetpackViewProps {
   join?: JetpackJoin
 }
 
-const MAX_PILOTS = 6
+// 2026-11-08: sempre 4 no túnel (você e mais 3)
+const MAX_PILOTS = 4
 const BG = "radial-gradient(120% 90% at 50% 0%, #4a2e17 0%, #1a110a 58%, #080504 100%)"
 const FUEL = "#43E6AC"
 const HOT = "#FF8A2A"
@@ -125,7 +126,7 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
       if (got) setStage({ kind: "game", key: ++seq.current, mp: got, solo })
       else if (solo) setStage({ kind: "game", key: ++seq.current, solo: true }) // sem sala: voa no aparelho
       else {
-        setError(t("jetJoinFail", "O voo em grupo não abriu agora. Tente de novo ou voe sozinho."))
+        setError(t("jetJoinFail2", "O voo não abriu agora. Tente de novo."))
         setStage({ kind: "menu" })
       }
     },
@@ -198,7 +199,7 @@ function JetLobby({ solo, list, until, onCancel }: { solo: boolean; list: string
             </span>
           </div>
           <p className="mt-2 text-[13px] leading-snug [@media(max-height:520px)]:hidden" style={{ color: ST.muted }}>
-            {t("jetLobbyHow", "Quem entrar até o fim do tempo voa junto, no mesmo túnel. Ganha quem for mais longe.")}
+            {t("jetLobbyHowBots", "Quem entrar até o fim do tempo voa junto, no mesmo túnel. As vagas que sobrarem viram computadores. Ganha quem for mais longe.")}
           </p>
           <ol className="mt-3 grid grid-cols-2 gap-1.5 max-[420px]:grid-cols-1">
             {Array.from({ length: MAX_PILOTS }, (_, i) => {
@@ -206,13 +207,13 @@ function JetLobby({ solo, list, until, onCancel }: { solo: boolean; list: string
               return (
                 <li key={i} className="flex items-center gap-2 px-2.5 py-2 text-[13.5px]" style={{ background: e ? MM.rubySoft : MM.card, color: e ? ST.text : ST.muted }}>
                   {e ? <Flame className="h-4 w-4 shrink-0" style={{ color: HOT }} /> : <User className="h-4 w-4 shrink-0 opacity-50" />}
-                  <span className="min-w-0 truncate font-semibold">{e ?? t("jetLobbyFree", "vaga livre")}</span>
+                  <span className="min-w-0 truncate font-semibold">{e ?? t("jetLobbyBot", "computador, se ninguém entrar")}</span>
                 </li>
               )
             })}
           </ol>
           <p className="mt-2 text-[12.5px]" style={{ color: ST.muted }}>
-            {t("jetLobbyCount", "{n} de 6 no túnel").replace("{n}", String(Math.max(1, list.length)))}
+            {t("jetLobbyCount4", "{n} de 4 no túnel").replace("{n}", String(Math.max(1, list.length)))}
           </p>
           <button type="button" onClick={onCancel} className="mt-4 w-full px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: ST.text }}>
             {t("jetLobbyCancel", "Sair da espera")}

@@ -11,8 +11,8 @@
 // Visual futurista da arte: azul-escuro e grafite, filetes ciano, destaque
 // amarelo. Miniaturas estáticas (nada de 3D aqui).
 
-import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { Lock, Play, Star, Trophy, User, Users, WifiOff, X } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { Lock, Play, Star, Trophy, Users, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { menuPhases, phaseArt, starsFor, type PhaseArt } from "../engine/phase-art"
 import type { PhaseId } from "../sim/phases"
@@ -81,10 +81,10 @@ export function PhaseSelect({
   const t = useTranslations("MeuMundo")
   const list = useMemo(() => menuPhases(), [])
   const [sel, setSel] = useState<PhaseId>(() => (list.some((p) => p.enabled && p.art.id === current) ? current : "industrial"))
-  const [solo, setSolo] = useState(true)
   const art = phaseArt(sel)
   const rec = records(sel)
-  const go = () => onPlay(multi ? solo : true, sel)
+  // 2026-11-08 (regra do Alex): sempre a largada em grupo de 4 (computadores completam)
+  const go = () => onPlay(false, sel)
   // Enter corre (PC)
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -183,7 +183,7 @@ export function PhaseSelect({
                   disabled={!enabled}
                   aria-pressed={on}
                   onClick={() => enabled && setSel(a.id)}
-                  onDoubleClick={() => enabled && onPlay(multi ? solo : true, a.id)}
+                  onDoubleClick={() => enabled && onPlay(false, a.id)}
                   className="relative flex flex-col overflow-hidden text-left transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed"
                   style={{
                     background: JT.card,
@@ -253,9 +253,9 @@ export function PhaseSelect({
             <div className="mb-1 text-[11px] font-black uppercase italic tracking-[0.12em] max-[759px]:hidden" style={{ color: JT.yellow }}>
               {t("jetModeTitle", "Modo de jogo")}
             </div>
-            <div className={`grid gap-2 ${multi ? "grid-cols-2" : "grid-cols-1"} max-w-[440px] max-[759px]:max-w-none`}>
-              <ModeButton on={!multi || solo} icon={<User className="h-5 w-5" />} title={t("jetModeTrain", "Treino")} sub={t("jetModeTrainSub", "Solo")} onClick={() => setSolo(true)} />
-              {multi && <ModeButton on={!solo} icon={<Users className="h-5 w-5" />} title={t("jetModeMulti", "Multiplayer")} sub={t("jetModeMultiSub2", "Grupo · até 6")} onClick={() => setSolo(false)} />}
+            <div className="flex max-w-[440px] items-center gap-2.5 text-[13px] font-semibold max-[759px]:max-w-none" style={{ color: JT.text }}>
+              <Users className="h-5 w-5 shrink-0" style={{ color: JT.yellow }} />
+              <span>{multi ? t("jetModeFour", "Sempre 4 no túnel · espera até 1 minuto · vaga vazia vira computador") : t("jetModeOffline", "Sem conexão: voo de treino no aparelho")}</span>
             </div>
           </div>
           <button
@@ -273,26 +273,6 @@ export function PhaseSelect({
         </p>
       </footer>
     </div>
-  )
-}
-
-function ModeButton({ on, icon, title, sub, onClick }: { on: boolean; icon: ReactNode; title: string; sub: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      onClick={onClick}
-      className="flex min-h-[50px] items-center justify-center gap-2.5 px-3 transition-transform active:scale-[0.98]"
-      style={{ background: on ? "linear-gradient(180deg, #16314d 0%, #0f2033 100%)" : JT.card, border: `1.5px solid ${on ? JT.cyan : JT.line}`, color: JT.text, clipPath: JT.cut(8) }}
-    >
-      <span style={{ color: on ? JT.cyan : JT.muted }}>{icon}</span>
-      <span className="flex flex-col items-start leading-tight">
-        <span className="text-[15px] font-black uppercase italic">{title}</span>
-        <span className="text-[10.5px]" style={{ color: JT.muted }}>
-          ({sub})
-        </span>
-      </span>
-    </button>
   )
 }
 

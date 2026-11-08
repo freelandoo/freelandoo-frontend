@@ -10763,7 +10763,13 @@
     "noturnoModeBotsSub": "Waits up to 1 minute · empty spots become computers",
     "noturnoLobbyHowBots": "Whoever joins before time runs out rides together on the same street. Empty spots become computers. Most points before crashing wins.",
     "noturnoLobbyBot": "computer, if nobody joins",
-    "noturnoJoinFail2": "The ride didn't open right now. Try again."
+    "noturnoJoinFail2": "The ride didn't open right now. Try again.",
+    "jetModeFour": "Always 4 in the tunnel · waits up to 1 minute · empty spots become computers",
+    "jetModeOffline": "Offline: practice flight on this device",
+    "jetJoinFail2": "The flight didn't open right now. Try again.",
+    "jetLobbyHowBots": "Whoever joins before time runs out flies together in the same tunnel. Empty spots become computers. Whoever goes farthest wins.",
+    "jetLobbyBot": "computer, if nobody joins",
+    "jetLobbyCount4": "{n} of 4 in the tunnel"
   },
   "Sports": {
     "eyebrow": "Sports",
