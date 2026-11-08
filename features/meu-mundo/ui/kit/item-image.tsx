@@ -123,6 +123,7 @@ export function ItemImage({
   alt,
   ratio = 1,
   size,
+  fit = "contain",
 }: {
   src?: string | null
   category: ItemCategory
@@ -132,6 +133,8 @@ export function ItemImage({
   ratio?: number
   /** px fixo da largura (sem = 100% do pai). */
   size?: number
+  /** B5: "cover" preenche o quadro (retratos); padrão "contain" (itens). */
+  fit?: "contain" | "cover"
 }) {
   const [state, setState] = useState<"loading" | "ok" | "fail">(src ? "loading" : "fail")
   const [shownSrc, setShownSrc] = useState(src)
@@ -179,7 +182,7 @@ export function ItemImage({
           draggable={false}
           onLoad={() => setState("ok")}
           onError={() => setState("fail")}
-          className="absolute inset-0 h-full w-full object-contain"
+          className={`absolute inset-0 h-full w-full ${fit === "cover" ? "object-cover object-top" : "object-contain"}`}
           style={{ visibility: state === "ok" ? "visible" : "hidden" }}
         />
       )}

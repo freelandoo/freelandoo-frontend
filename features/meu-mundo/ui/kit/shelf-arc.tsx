@@ -1,0 +1,237 @@
+"use client"
+
+// features/meu-mundo/ui/kit/shelf-arc.tsx — B5 (2026-11-08): a PRATELEIRA EM ARCO
+// (nasceu na geladeira, mm3d-28) virou peça do kit: a MESMA rolagem e o MESMO
+// card em todo menu com muitos itens (geladeira, Mercado, missões, a Loja e o
+// carrossel do kit, que agora desenha por aqui). Card escrito duas vezes diverge
+// em silêncio — mexeu aqui, muda em todos.
+
+import { useRef, useState, type ReactNode } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { Chamfer, EVO, FUNDO, archivo } from "../status/evo-skin"
+import { MM } from "../hud/tokens"
+
+type Tr = (key: string, fallback: string) => string
+
+export const ICE = "#bfe6ff"
+
+// ═══ a prateleira em arco ══════════════════════════════════════════════════
+const MOUNT = 3.2
+
+export function Arc({
+  count,
+  sel,
+  onSel,
+  onPick,
+  render,
+  cardW,
+  cardH,
+  spacing,
+  compact,
+  t,
+  touchAction = "none",
+}: {
+  count: number
+  sel: number
+  onSel: (i: number) => void
+  onPick: (i: number) => void
+  render: (i: number, active: boolean) => ReactNode
+  cardW: number
+  cardH: number
+  spacing: number
+  compact: boolean
+  t: Tr
+  /** "pan-y" deixa o card rolar na vertical com o dedo (o carrossel do kit). */
+  touchAction?: "none" | "pan-y"
+}) {
+  const [drag, setDrag] = useState(0)
+  const start = useRef<{ x: number; id: number; moved: boolean } | null>(null)
+  const movedAt = useRef(0)
+  const lastWheel = useRef(0)
+  const clamp = (i: number) => Math.max(0, Math.min(count - 1, i))
+  const live = sel - drag / spacing
+
+  // O arrasto é da prateleira: não chega a quem está por fora (no STATUS do
+  // celular, arrastar de lado troca de página).
+  const down = (e: React.PointerEvent) => {
+    e.stopPropagation()
+    if (start.current || (e.pointerType === "mouse" && e.button !== 0)) return
+    start.current = { x: e.clientX, id: e.pointerId, moved: false }
+  }
+  const move = (e: React.PointerEvent) => {
+    e.stopPropagation()
+    const s = start.current
+    if (!s || s.id !== e.pointerId) return
+    const dx = e.clientX - s.x
+    // Arrasto de verdade: captura o ponteiro (o dedo sai da prateleira e o
+    // soltar ainda chega aqui). Toque parado não captura — vira clique no card.
+    if (!s.moved && Math.abs(dx) > 8) {
+      s.moved = true
+      e.currentTarget.setPointerCapture?.(e.pointerId)
+    }
+    if (s.moved) setDrag(Math.max(-(count - 1 - sel) * spacing - 40, Math.min(sel * spacing + 40, dx)))
+  }
+  const up = (e: React.PointerEvent) => {
+    e.stopPropagation()
+    const s = start.current
+    if (!s || s.id !== e.pointerId) return
+    start.current = null
+    if (s.moved) {
+      movedAt.current = performance.now()
+      onSel(clamp(Math.round(sel - (e.clientX - s.x) / spacing)))
+    }
+    setDrag(0)
+  }
+  const wheel = (e: React.WheelEvent) => {
+    const now = performance.now()
+    if (now - lastWheel.current < 160) return
+    lastWheel.current = now
+    const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+    if (d) onSel(clamp(sel + (d > 0 ? 1 : -1)))
+  }
+
+  const cards: ReactNode[] = []
+  for (let i = 0; i < count; i++) {
+    const p = i - live
+    const a = Math.abs(p)
+    if (a > MOUNT) continue
+    const active = i === sel
+    cards.push(
+      <div
+        key={i}
+        className="absolute left-1/2 top-0"
+        style={{
+          width: cardW,
+          height: cardH,
+          marginLeft: -cardW / 2,
+          transform: `translate3d(${p * spacing}px, ${a * a * 9}px, ${-a * 150}px) rotateY(${-p * 26}deg)`,
+          opacity: Math.max(0, Math.min(1, 1 - (a - 2) * 0.8)),
+          zIndex: 100 - Math.round(a * 10),
+          transition: drag ? "none" : "transform 380ms cubic-bezier(.2,.8,.2,1), opacity 380ms",
+          willChange: "transform, opacity",
+          cursor: "pointer",
+        }}
+        onClick={() => {
+          if (performance.now() - movedAt.current < 250) return
+          if (active) onPick(i)
+          else onSel(i)
+        }}
+        aria-current={active || undefined}
+      >
+        {render(i, active)}
+      </div>,
+    )
+  }
+
+  return (
+    <div className="relative mx-auto w-full max-w-[980px]">
+      <div
+        className="relative w-full select-none overflow-hidden"
+        style={{ height: cardH + (compact ? 30 : 46), perspective: 1100, touchAction }}
+        onPointerDown={down}
+        onPointerMove={move}
+        onPointerUp={up}
+        onPointerCancel={up}
+        onWheel={wheel}
+      >
+        <div className={`absolute inset-x-0 ${compact ? "top-2" : "top-4"}`} style={{ transformStyle: "preserve-3d", height: cardH }}>
+          {cards}
+        </div>
+        {/* a prateleira: faixa fria acesa embaixo dos cards (estática) */}
+        <div
+          className="pointer-events-none absolute inset-x-[6%] bottom-2 h-[3px]"
+          style={{ background: `linear-gradient(90deg, transparent, ${ICE}, transparent)`, boxShadow: `0 0 18px ${ICE}` }}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => onSel(clamp(sel - 1))}
+        disabled={sel <= 0}
+        aria-label={t("frPrev", "Anterior")}
+        className={`absolute left-0 top-1/2 flex ${compact ? "h-10 w-8" : "h-14 w-11"} -translate-y-1/2 items-center justify-center disabled:opacity-25`}
+        style={{ color: EVO.branco, background: MM.surface, border: `1px solid ${MM.border}` }}
+      >
+        <ChevronLeft className={compact ? "h-6 w-6" : "h-8 w-8"} />
+      </button>
+      <button
+        type="button"
+        onClick={() => onSel(clamp(sel + 1))}
+        disabled={sel >= count - 1}
+        aria-label={t("frNext", "Próximo")}
+        className={`absolute right-0 top-1/2 flex ${compact ? "h-10 w-8" : "h-14 w-11"} -translate-y-1/2 items-center justify-center disabled:opacity-25`}
+        style={{ color: EVO.branco, background: MM.surface, border: `1px solid ${MM.border}` }}
+      >
+        <ChevronRight className={compact ? "h-6 w-6" : "h-8 w-8"} />
+      </button>
+    </div>
+  )
+}
+
+export function Card({
+  active,
+  empty,
+  img,
+  art,
+  imgK = 0.6,
+  badge,
+  w,
+  h,
+  compact,
+  children,
+}: {
+  active: boolean
+  empty: boolean
+  img?: string
+  /** No lugar da foto: arte própria (ex.: slot com placeholder, mm3d-60g). */
+  art?: ReactNode
+  /** Fração da altura do card ocupada pela imagem (padrão 0,6). */
+  imgK?: number
+  /** selo do canto (quantidade, preço); vazio = sem selo */
+  badge?: string
+  w: number
+  h: number
+  compact: boolean
+  children: ReactNode
+}) {
+  const imgH = Math.round(h * imgK)
+  return (
+    <div className="relative h-full w-full">
+      {/* contorno rubi do escolhido: camada estática, só a opacidade muda */}
+      <div
+        className="pointer-events-none absolute -inset-[3px]"
+        style={{ borderRadius: MM.radius.card + 3, boxShadow: `inset 0 0 0 2px ${MM.ruby}, ${MM.shadow}`, opacity: active ? 1 : 0, transition: "opacity 180ms" }}
+      />
+      <Chamfer cut={14} border={active ? MM.rubyBorder : MM.border} className="h-full overflow-hidden" fill={FUNDO.card}>
+        <div className="relative overflow-hidden" style={{ height: imgH, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
+          {art ? (
+            <div className="h-full w-full" style={{ opacity: empty ? 0.35 : 1 }}>
+              {art}
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element -- thumbnail local pequena, só no jogo (admin)
+            <img
+              src={img}
+              alt=""
+              width={w}
+              height={imgH}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              className="h-full w-full object-cover"
+              style={{ opacity: empty ? 0.35 : 1 }}
+            />
+          )}
+          {badge && (
+          <span
+            className={`${archivo.className} absolute ${compact ? "right-1 top-1 px-1.5 py-[3px] text-[10px]" : "right-1.5 top-1.5 px-2 py-1 text-[12px]"} font-bold leading-none`}
+            style={{ borderRadius: 999, background: empty ? "rgba(74,10,28,0.9)" : "rgba(12,15,20,0.82)", color: empty ? EVO.branco : EVO.douradoClaro, border: `1px solid ${empty ? MM.rubyBorder : MM.goldBorder}` }}
+          >
+            {badge}
+          </span>
+          )}
+        </div>
+        <div className={compact ? "px-2 pb-1.5 pt-1" : "px-2.5 pb-2 pt-1.5"}>{children}</div>
+      </Chamfer>
+    </div>
+  )
+}

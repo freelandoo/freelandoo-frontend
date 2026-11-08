@@ -27,6 +27,7 @@ import { EvoButton, EvoDialog, EvoToast } from "../hud/hud-kit"
 import { PlaceView } from "../place-view"
 import { SellerDialog } from "./seller-dialog"
 import GearPanel, { type GearTab } from "../gear/gear-panel"
+import ShopPanel from "../shop/shop-panel"
 import LabPanel, { type LabMode } from "../lab/lab-panel"
 import CharacterCapsule from "../status/character-capsule"
 
@@ -75,6 +76,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   const [menuOpen, setMenuOpen] = useState(false)
   const [sellerOpen, setSellerOpen] = useState(false)
   const [gearTab, setGearTab] = useState<GearTab | null>(null)
+  const [shelf, setShelf] = useState<"armory" | "weapons" | null>(null)
   // B12: Laboratório de Criogenia (conversa, embriões, acelerador e as cápsulas congeladas)
   const [lab, setLab] = useState<LabMode | "cryo" | null>(null)
 
@@ -156,9 +158,15 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   }
 
   const onUse = (use: PlaceUse, state: PlaceState) => {
-    if (use === "forge" || use === "refine" || use === "armory" || use === "weapons") {
+    if (use === "forge" || use === "refine") {
       stop()
       setGearTab(use)
+      return
+    }
+    // B5: os balcões do Arsenal abrem a Loja única (aba Equipamento)
+    if (use === "armory" || use === "weapons") {
+      stop()
+      setShelf(use)
       return
     }
     if (use === "train" || use === "study" || use === "pray") {
@@ -202,7 +210,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
         onState={onState}
         pose={pose}
         poseAt={poseAt}
-        blocked={!!ask || menuOpen || sellerOpen || !!gearTab || !!lab}
+        blocked={!!ask || menuOpen || sellerOpen || !!gearTab || !!shelf || !!lab}
         hideUse={!!doing}
         extra={
           doing ? (
@@ -213,6 +221,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
         }
       />
       {gearTab && <GearPanel initialTab={gearTab} onClose={() => setGearTab(null)} />}
+      {shelf && <ShopPanel initialTab="gear" initialShelf={shelf} onClose={() => setShelf(null)} />}
       {lab === "cryo" && <CharacterCapsule t={t} frozen onClose={() => setLab(null)} onChanged={() => {}} />}
       {lab && lab !== "cryo" && <LabPanel t={t} mode={lab} onMode={setLab} onClose={() => setLab(null)} />}
       {toast && (
