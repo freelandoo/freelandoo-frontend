@@ -29,6 +29,7 @@ import { buildCanyonEnv } from "./canyon-env"
 import { buildFactoryEnv } from "./factory-env"
 import { buildOrbitalEnv, type OrbitalPiece } from "./orbital-env"
 import { buildForgeEnv, type ForgePiece } from "./forge-env"
+import { buildIceEnv, type IcePiece } from "./ice-env"
 import type { CanyonAssets, FactoryPiece, PieceAssets } from "./canyon-assets"
 
 const { W, H } = TUNNEL
@@ -103,7 +104,19 @@ export const PHASE_LOOK: Record<PhaseId, PhaseLook> = {
     ambient: [0.35, 0.2, 0.16],
     cam: { up: 1.4, back: -0.4, down: 1.1, ahead: 16, maxY: 10.5 },
   },
-  artico: { clear: [0.6, 0.72, 0.84], fog: [0.66, 0.76, 0.86], fogStart: 30, fogEnd: 145, hemi: [0.88, 0.95, 1], ground: [0.45, 0.58, 0.72], hemiK: 0.95, lamp: [0.7, 0.92, 1], lampK: 0.55, ambient: [0.42, 0.48, 0.55] },
+  artico: {
+    clear: [0.45, 0.6, 0.78],
+    fog: [0.55, 0.68, 0.84],
+    fogStart: 60,
+    fogEnd: 220,
+    hemi: [0.88, 0.95, 1],
+    ground: [0.45, 0.6, 0.78],
+    hemiK: 1.05,
+    lamp: [0.7, 0.92, 1],
+    lampK: 0.2,
+    ambient: [0.42, 0.5, 0.6],
+    cam: { up: 1.4, back: -0.5, down: 1.1, ahead: 16, maxY: 10.5 },
+  },
   vacuo: { clear: [0.01, 0.01, 0.03], fog: [0.02, 0.02, 0.05], fogStart: 50, fogEnd: 200, hemi: [0.7, 0.7, 1], ground: [0.2, 0.1, 0.3], hemiK: 0.7, lamp: [0.8, 0.7, 1], lampK: 0.8, ambient: [0.2, 0.2, 0.3] },
 }
 
@@ -389,6 +402,10 @@ export function buildPhaseEnv(scene: Scene, id: PhaseId, low: boolean, slots: nu
   if (id === "canion") {
     const c = buildCanyonEnv(scene, low, slots, seed)
     return { mats: c.mats, update: (z, _sets, now) => c.update(z, now), provide: (a) => c.provide(a as CanyonAssets), dispose: () => c.dispose() }
+  }
+  if (id === "artico") {
+    const e = buildIceEnv(scene, low, slots, seed)
+    return { mats: e.mats, update: (z, _sets, now) => e.update(z, now), provide: (a) => e.provide(a as PieceAssets<IcePiece>), dispose: () => e.dispose() }
   }
   if (id === "forja") {
     const f = buildForgeEnv(scene, low, slots, seed)

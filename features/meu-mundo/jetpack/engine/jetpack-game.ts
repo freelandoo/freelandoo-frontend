@@ -43,7 +43,7 @@ import { buildPackKit, PackRig, PILOT_H } from "./pack-view"
 import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
-import { loadCanyonAssets, loadFactoryAssets, loadForgeAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { loadCanyonAssets, loadFactoryAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -183,6 +183,18 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   // Cânion: as peças esculpidas (GLB do Tripo) chegam depois e entram no cenário e nos obstáculos
   let canyonAssets: PieceAssets<string> | null = null
   let extraAssets: PieceAssets<string> | null = null
+  if (level === "artico") {
+    void loadIceAssets(scene, () => !disposed).then((a) => {
+      if (disposed) return a.dispose()
+      canyonAssets = a
+      tunnel.provide?.(a)
+      const ring = a.meshes.get("anel")
+      if (ring) obstacles.useModel("rim", ring, { zScale: 0.35 })
+      // o bloco de gelo como rocha do obstáculo: estreitado em x para não parecer maior que a colisão (raio 1,05)
+      const block = a.meshes.get("bloco")
+      if (block) obstacles.useModel("rock", block, { bake: Matrix.Scaling(2.1 / 3.14, 1, 2.1 / 3.75) })
+    })
+  }
   if (level === "forja") {
     void loadForgeAssets(scene, () => !disposed).then((a) => {
       if (disposed) return a.dispose()

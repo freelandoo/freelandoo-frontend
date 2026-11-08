@@ -206,6 +206,30 @@ export function createJetVfx(scene: Scene, tier: QualityTier, phase: PhaseId): J
     systems.push(dust)
   }
 
+  // neve soprando na Tempestade Ártica (fina, contra o voo)
+  if (phase === "artico") {
+    const sn = new ParticleSystem("jt-snow", Math.round(160 * k) + 20, scene)
+    sn.particleTexture = dot
+    sn.blendMode = ParticleSystem.BLENDMODE_STANDARD
+    sn.emitter = windAt
+    sn.minEmitBox = new Vector3(-18, -1, 0)
+    sn.maxEmitBox = new Vector3(18, 16, 50)
+    sn.direction1 = new Vector3(-0.6, -0.5, -1)
+    sn.direction2 = new Vector3(0.6, -0.2, -0.6)
+    sn.minEmitPower = 6
+    sn.maxEmitPower = 14
+    sn.minLifeTime = 1.2
+    sn.maxLifeTime = 2.4
+    sn.minSize = 0.05
+    sn.maxSize = 0.12
+    sn.color1 = new Color4(1, 1, 1, 0.85)
+    sn.color2 = new Color4(0.85, 0.95, 1, 0.7)
+    sn.colorDead = new Color4(1, 1, 1, 0)
+    sn.emitRate = 70 * k + 10
+    sn.updateSpeed = 1 / 60
+    sn.start()
+    systems.push(sn)
+  }
   // brasas da Forja subindo do rio de lava (fora do miolo do caminho)
   if (phase === "forja") {
     const em = new ParticleSystem("jt-embers", Math.round(90 * k) + 10, scene)
