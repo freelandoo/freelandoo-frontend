@@ -19,7 +19,7 @@
 // mesmos tipos da regra com nomes de boxeador; a harpia (voa) fica de fora.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Swords, Volume2, VolumeX, X } from "lucide-react"
+import { Flag, Swords, Volume2, VolumeX, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
@@ -34,7 +34,7 @@ import { VictoryButton, VictoryPanel } from "../../ui/rewards/victory-panel"
 import { celebrate, hold } from "../../ui/rewards/reward-bus"
 import { createLaminasGame, type FightSheet, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
 import { VersusScreen } from "./versus-screen"
-import { peerOf, type MobKind, type SkillId } from "../sim/fight"
+import { MOB_KINDS, peerOf, type MobKind, type SkillId } from "../sim/fight"
 import { SkillHud } from "./skill-hud"
 import { abilityKit } from "../abilities/registry"
 import { probeClose, probeNote, probeOpen } from "../../crash-probe"
@@ -249,6 +249,13 @@ function LaminasScreen({
   }, [])
   const [result, setResult] = useState<boolean | null>(null)
   const [muted, setMuted] = useState(false)
+  // mm3d-72: Desistir pede um segundo toque (3 s para confirmar)
+  const [quitArmed, setQuitArmed] = useState(false)
+  useEffect(() => {
+    if (!quitArmed) return
+    const id = setTimeout(() => setQuitArmed(false), 3000)
+    return () => clearTimeout(id)
+  }, [quitArmed])
   const [veil, setVeil] = useState(portal)
   const [denied, setDenied] = useState<{ id: SkillId | "ult"; n: number } | null>(null)
   const [isTouch] = useState(() => typeof window !== "undefined" && (window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0))
@@ -287,7 +294,20 @@ function LaminasScreen({
     }
   }, [choice, stage, portal, mobId, tutorial])
   const ultName = abilityKit(body, stage).slots.ult.name
-  const labelsRef = useRef({ evade: t("laminasEvade", "ESQUIVOU!"), miss: t("laminasMiss", "ERROU!"), ult: t(ultName.key, ultName.fallback) })
+  const labelsRef = useRef({
+    evade: t("laminasEvade", "ESQUIVOU!"),
+    miss: t("laminasMiss", "ERROU!"),
+    ult: t(ultName.key, ultName.fallback),
+    // mm3d-72: a personalidade na luta e os poderes dos monstros (com os nomes do corpo de cada um)
+    psycho: t("laminasPsycho", "PSICOPATA"),
+    fleeWarn: t("laminasFleeWarn", "Tô com medo dessa luta, vou sair."),
+    foes: Object.fromEntries(
+      MOB_KINDS.map((k) => {
+        const sl = abilityKit(MOB_BODY[k] ?? null).slots
+        return [k, { slash: t(sl.slash.name.key, sl.slash.name.fallback), dash: t(sl.dash.name.key, sl.dash.name.fallback), shield: t(sl.shield.name.key, sl.shield.name.fallback), ult: t(sl.ult.name.key, sl.ult.name.fallback) }]
+      }),
+    ) as Record<MobKind, Record<"slash" | "dash" | "shield" | "ult", string>>,
+  })
   const receiptRef = useRef(onReceipt)
   useEffect(() => {
     receiptRef.current = onReceipt
@@ -312,9 +332,9 @@ function LaminasScreen({
         body,
         look,
         hold: true,
-        labels: labelsRef.current,
+        labels: { ...labelsRef.current, foeSkills: labelsRef.current.foes[fromServer ? fromServer.setup.kind : choice.kind] },
         setup: fromServer
-          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined }
+          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined, temper: fromServer.setup.temper ?? undefined, affection: fromServer.setup.affection ?? undefined }
           : { kind: choice.kind, level: choice.level, body, peer: stage === "ring" ? peerOf(choice.kind) : undefined, tier: tutorial || stage === "ring" ? undefined : portal ? "street" : "arena" },
         kit: fromServer ? (fromServer.setup.kit === "hammer" ? "hammer" : fromServer.setup.kit === "bow" ? "bow" : fromServer.setup.kit === "gun" ? "gun" : fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,
@@ -463,6 +483,22 @@ function LaminasScreen({
         >
           {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </button>
+        {started && result === null && (
+          <button
+            type="button"
+            aria-label={t("laminasGiveUp", "Desistir")}
+            onClick={() => {
+              if (!quitArmed) return setQuitArmed(true)
+              setQuitArmed(false)
+              gameRef.current?.quit()
+            }}
+            className="flex h-10 items-center gap-1.5 rounded-full px-3 text-[11px] font-black uppercase tracking-[0.1em]"
+            style={{ background: quitArmed ? MM.rubyFill : MM.surface, border: `1px solid ${quitArmed ? MM.rubyBorder : MM.border}`, color: MM.text }}
+          >
+            <Flag className="h-4 w-4" />
+            {quitArmed ? t("laminasGiveUpConfirm", "Confirmar?") : t("laminasGiveUp", "Desistir")}
+          </button>
+        )}
         <button type="button" aria-label={t("laminasQuit", "Sair da luta")} onClick={onMenu} className="grid h-10 w-10 place-items-center rounded-full" style={{ background: MM.surface, border: `1px solid ${MM.border}`, color: MM.text }}>
           <X className="h-5 w-5" />
         </button>

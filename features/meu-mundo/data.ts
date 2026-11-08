@@ -36,7 +36,7 @@ import type {
 } from "./types"
 import type { Clan, Sex } from "./classes"
 import type { PracticeAttr } from "./types"
-import type { GearBonus, MobKind } from "./laminas/sim/fight"
+import type { FightTemper, GearBonus, MobKind } from "./laminas/sim/fight"
 import type { FightFrames } from "./laminas/sim/replay"
 
 export type NeighborhoodResult =
@@ -219,6 +219,9 @@ export interface FightTicket {
     tier?: "arena" | "street" | null
     body?: string | null
     appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null }
+    /** mm3d-72: personalidade e afeto (probabilidades da luta). */
+    temper?: FightTemper | null
+    affection?: number | null
   }
   expiresAt: string
 }

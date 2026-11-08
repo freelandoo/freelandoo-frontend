@@ -36,7 +36,7 @@ import { AvatarLibrary, type BoxeBase, type BoxeClip } from "../../engine/avatar
 import { Character } from "../../engine/player"
 import { BoxeAudio } from "./audio"
 import type { BodyId } from "../../types"
-import { ARENA_R, COMBO, DT, Fight, MOBS, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
+import { ARENA_R, COMBO, DT, Fight, MOBS, MOB_SHIELD, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
 import { createSkillFx, SKILL_COLORS, type SkillPalette } from "./skill-fx"
 import { buildArena } from "./arena-view"
 import { buildStreet } from "./street-view"
@@ -92,7 +92,15 @@ export interface LaminasGameOptions {
   /** A luta nasce parada até `begin()` (tela de versus). */
   hold?: boolean
   /** Textos que saltam na luta (já traduzidos). */
-  labels?: { evade: string; miss: string; ult?: string }
+  labels?: {
+    evade: string
+    miss: string
+    ult?: string
+    /** mm3d-72: "PSICOPATA", o aviso do covarde e os nomes dos poderes do monstro (pelo corpo dele). */
+    psycho?: string
+    fleeWarn?: string
+    foeSkills?: Partial<Record<"slash" | "dash" | "shield" | "ult", string>>
+  }
   body: BodyId
   look?: string
   setup: FightSetup
@@ -137,10 +145,16 @@ export interface LaminasGameHandle {
   skill: (id: SkillId) => void
   /** Avisa quando uma habilidade foi recusada (recarga) — a tela treme o botão. */
   onDenied: (fn: ((id: SkillId | "ult") => void) | null) => void
+  /** mm3d-72: Desistir (a luta acaba em derrota; vai na gravação). */
+  quit: () => void
   /** mm3d-59: a entrada gravada (1 bloco por trecho igual) para o servidor conferir. */
   frames: () => FightFrames
   dispose: () => void
 }
+
+/** mm3d-72: cor e altura (m) de cada monstro para os poderes dele. */
+const foeColor = (k: MobKind) => (k === "soldier" || k === "golem" ? VFX_COLORS.golem : VFX_COLORS.brutamontes)
+const FOE_H: Record<MobKind, number> = { soldier: 3, golem: 2.7, harpy: 2, brute: 4, wolf: 2.5 }
 
 /** Trecho do clipe do boxe para cada golpe do combo (0–1 do clipe; medidos em build_boxe_mocap). */
 const SWING_CLIPS: { clip: BoxeClip; from: number; to: number }[] = [
@@ -759,6 +773,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let wantAttack = false
   let wantDodge = false
   let wantPower = false
+  let wantQuit = false
   const wantSkill = { slash: false, dash: false, shield: false }
   let deniedFn: ((id: SkillId | "ult") => void) | null = null
   const skill = (id: SkillId) => {
@@ -768,6 +783,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const power = () => {
     audio.resume()
     wantPower = true
+  }
+  const quit = () => {
+    wantQuit = true
   }
   const attack = () => {
     audio.resume()
@@ -836,7 +854,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const fz = Math.cos(camYaw)
     const mx = fx * y + fz * x
     const mz = fz * y - fx * x
-    const inp: Input = { mx, mz, run: n > 0.85 && !fight.target(), attack: wantAttack, dodge: wantDodge, power: wantPower, slash: wantSkill.slash, dash: wantSkill.dash, shield: wantSkill.shield }
+    const inp: Input = { mx, mz, run: n > 0.85 && !fight.target(), attack: wantAttack, dodge: wantDodge, power: wantPower, slash: wantSkill.slash, dash: wantSkill.dash, shield: wantSkill.shield, quit: wantQuit }
     return inp
   }
 
@@ -1012,6 +1030,17 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           break
         }
         case "powerFire": {
+          if ((e.n ?? 1) > 1) {
+            // disparos extras do psicopata: estouro na frente e tranco a cada um
+            const at = new Vector3(e.x + Math.sin(e.facing) * 2, 1.2, e.z + Math.cos(e.facing) * 2)
+            vfx.burst(at, fxColor)
+            vfx.ground(new Vector3(e.x, 0, e.z), SKILL_COLORS.ult, 3.2, 0.6, true)
+            vfx.impact(at, SKILL_COLORS.ult, true, 1.5)
+            audio.boom()
+            shake = Math.max(shake, 0.5)
+            hitStop = Math.max(hitStop, 0.08)
+            break
+          }
           if (blood) {
             heroRayLeft = stoneHero ? POWER.dur - POWER.fireAt : 0
             if (e.heal) pop(new Vector3(e.x, 2.4, e.z), `+${e.heal}`, "#7CFFB2", 40)
@@ -1096,7 +1125,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         case "miss":
           if (e.on === "me") {
             pop(new Vector3(e.x, hero.height * 0.8, e.z), opts.labels?.evade ?? "ESQUIVOU!", "#7CFFB2", 40)
-            if (e.auto && !hero.boxeBusy) {
+            if (e.auto && !hero.boxeBusy && fight.me.state !== "dodge") {
               if (moves) hero.boxeAct(moves.dodge.clip, 0.36, moves.dodge.from, moves.dodge.to)
               else hero.boxeAct("BDodge", 0.36, 0, 0.49)
             }
@@ -1167,6 +1196,28 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         case "evade":
           pop(new Vector3(fight.me.x, 2.2, fight.me.z), "✓", "#7CFFB2", 30)
           break
+        // mm3d-72: a personalidade na luta
+        case "psycho": {
+          const at = new Vector3(fight.me.x, hero.height + 0.9, fight.me.z)
+          pop(at, opts.labels?.psycho ?? "PSICOPATA", "#FF2E4D", 84, 3)
+          shake = Math.max(shake, 0.35)
+          audio.excite(1)
+          break
+        }
+        case "fleeWarn":
+          pop(new Vector3(fight.me.x, hero.height + 0.6, fight.me.z), opts.labels?.fleeWarn ?? "Tô com medo dessa luta, vou sair.", "#9FB4FF", 34)
+          audio.denied()
+          break
+        case "mobShield": {
+          const m = fight.mobs.find((x) => x.id === e.id)
+          if (m) {
+            const c = foeColor(m.kind)
+            vfx.ground(new Vector3(m.x, 0, m.z), c, MOBS[m.kind].radius + 1.2, MOB_SHIELD.dur, true)
+            vfx.burst(new Vector3(m.x, 1.4, m.z), c)
+            audio.shieldUp()
+          }
+          break
+        }
         case "end":
           audio.bell(e.win ? 3 : 1)
           if (e.win) {
@@ -1208,6 +1259,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       wantAttack = false
       wantDodge = false
       wantPower = false
+      wantQuit = false
       wantSkill.slash = wantSkill.dash = wantSkill.shield = false
       fight.step(inp)
       onEvents(fight.events)
@@ -1351,6 +1403,35 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       if (m.state === "windup" && v.prev !== "windup") {
         v.landed = false
         if (cur?.max) audio.charge(m.windup)
+        // mm3d-72: poder de personagem — o nome do poder (o do corpo dele) e o aviso no chão
+        if (cur?.skill && cur.skill !== "shield") {
+          const c = foeColor(m.kind)
+          const name = opts.labels?.foeSkills?.[cur.skill]
+          if (name) pop(new Vector3(m.x, FOE_H[m.kind] + 0.5, m.z), name, "#FFE45C", cur.skill === "ult" ? 56 : 40, cur.skill === "ult" ? 3 : 1)
+          if (cur.skill === "ult") {
+            vfx.ground(new Vector3(m.x, 0, m.z), c, cur.area ?? 4, m.windup + 0.3, true)
+            audio.charge(m.windup)
+          } else vfx.ground(new Vector3(m.x, 0, m.z), c, 1.6, m.windup, false)
+        }
+      }
+      if (entered && cur?.skill && !quiet) {
+        const c = foeColor(m.kind)
+        const sx = Math.sin(m.facing)
+        const sz = Math.cos(m.facing)
+        if (cur.skill === "slash") {
+          for (let i = 1; i <= 4; i++) vfx.impact(new Vector3(m.x + sx * cur.range * (i / 4), 1.1, m.z + sz * cur.range * (i / 4)), c, i === 4, 1.1)
+          audio.slash()
+        } else if (cur.skill === "dash") {
+          vfx.dust(new Vector3(m.x, 0.15, m.z), 16)
+          vfx.impact(new Vector3(m.x, 1, m.z), c, false, 1.2)
+          audio.dash()
+        } else if (cur.skill === "ult") {
+          vfx.burst(new Vector3(m.x, 1.4, m.z), c)
+          vfx.impact(new Vector3(m.x, 0.4, m.z), c, true, 2.2)
+          vfx.ground(new Vector3(m.x, 0, m.z), c, cur.area ?? 4, 0.8, true)
+          shake = Math.max(shake, 0.45)
+          audio.boom()
+        }
       }
       if (a && m.state === "strike" && !quiet) {
         const sx = Math.sin(m.facing)
@@ -1557,6 +1638,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     dodge,
     power,
     skill,
+    quit,
     onDenied: (fn) => {
       deniedFn = fn
     },

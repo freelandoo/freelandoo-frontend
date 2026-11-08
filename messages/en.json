@@ -10284,7 +10284,11 @@
     "chLove1": "{nick}, you're the best owner in the world!",
     "chLove2": "I really like you, {nick}.",
     "chHurt1": "You don't even care about me, do you, {nick}?",
-    "chHurt2": "I'm upset with you, {nick}."
+    "chHurt2": "I'm upset with you, {nick}.",
+    "laminasPsycho": "PSYCHO",
+    "laminasFleeWarn": "I'm scared of this fight, I'm getting out.",
+    "laminasGiveUp": "Give up",
+    "laminasGiveUpConfirm": "Confirm?"
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -10264,7 +10264,11 @@
     "chLove1": "¡{nick}, eres el mejor dueño del mundo!",
     "chLove2": "Te quiero mucho, {nick}.",
     "chHurt1": "Ni te importo, ¿verdad, {nick}?",
-    "chHurt2": "Estoy enojado contigo, {nick}."
+    "chHurt2": "Estoy enojado contigo, {nick}.",
+    "laminasPsycho": "PSICÓPATA",
+    "laminasFleeWarn": "Me da miedo esta pelea, me voy.",
+    "laminasGiveUp": "Rendirse",
+    "laminasGiveUpConfirm": "¿Confirmar?"
   },
   "Sports": {
     "eyebrow": "Deportes",

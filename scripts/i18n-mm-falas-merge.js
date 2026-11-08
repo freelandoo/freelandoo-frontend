@@ -42,6 +42,10 @@ const CHATTER = {
     chLove2: "Eu gosto muito de você, {nick}.",
     chHurt1: "Você nem liga pra mim, né, {nick}?",
     chHurt2: "Tô chateado com você, {nick}.",
+    laminasPsycho: "PSICOPATA",
+    laminasFleeWarn: "Tô com medo dessa luta, vou sair.",
+    laminasGiveUp: "Desistir",
+    laminasGiveUpConfirm: "Confirmar?",
   },
   en: {
     chPsyEnter1: "Today I want to beat the living daylights out of everyone!",
@@ -80,6 +84,10 @@ const CHATTER = {
     chLove2: "I really like you, {nick}.",
     chHurt1: "You don't even care about me, do you, {nick}?",
     chHurt2: "I'm upset with you, {nick}.",
+    laminasPsycho: "PSYCHO",
+    laminasFleeWarn: "I'm scared of this fight, I'm getting out.",
+    laminasGiveUp: "Give up",
+    laminasGiveUpConfirm: "Confirm?",
   },
   es: {
     chPsyEnter1: "¡Hoy quiero darle una paliza a todo el mundo!",
@@ -118,6 +126,10 @@ const CHATTER = {
     chLove2: "Te quiero mucho, {nick}.",
     chHurt1: "Ni te importo, ¿verdad, {nick}?",
     chHurt2: "Estoy enojado contigo, {nick}.",
+    laminasPsycho: "PSICÓPATA",
+    laminasFleeWarn: "Me da miedo esta pelea, me voy.",
+    laminasGiveUp: "Rendirse",
+    laminasGiveUpConfirm: "¿Confirmar?",
   },
 }
 

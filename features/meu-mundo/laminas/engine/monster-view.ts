@@ -126,6 +126,16 @@ const CLAW: Record<string, Move[]> = {
   ],
   leap: [{ clip: "GaLeap", windup: [0, 0.22], strike: [0.22, 0.6], recover: [0.6, 1] }],
 }
+/**
+ * mm3d-72: os 4 poderes de personagem (fight.ts MOB_SKILLS) nas animações de cada corpo —
+ * Corte = o golpe largo, Investida = o salto/avanço, Escudo = o grito, Poder Máximo = a pancada.
+ */
+const TAUNT: Move = { clip: "XTaunt", windup: [0, 0.3], strike: [0.3, 0.45], recover: [0.45, 0.7] }
+Object.assign(BRUTE, { skSlash: BRUTE.sweep, skDash: BRUTE.charge, skShield: [TAUNT], skUlt: BRUTE.smash })
+Object.assign(CIBORG, { skSlash: CIBORG.blast, skDash: CIBORG.shot, skShield: [TAUNT], skUlt: CIBORG.blast })
+Object.assign(STONE, { skSlash: STONE.zap, skDash: STONE.leap, skShield: [TAUNT], skUlt: STONE.max })
+Object.assign(CLAW, { skSlash: CLAW.rake, skDash: CLAW.leap, skShield: CLAW.claw, skUlt: CLAW.rake })
+
 /** Como cada um que luta de arma ou garra se desenha. `walk` null = a locomoção normal. */
 const LOOK: Partial<Record<MobKind, { table: Record<string, Move[]>; idle: BoxeBase; walk: BoxeBase | null; run: BoxeBase | null; hit: BoxeClip[]; fall: BoxeClip; roar: [BoxeClip, number, number, number]; hop: number }>> = {
   soldier: { table: STONE, idle: "XIdle", walk: "XWalk", run: "XRun", hit: BRUTE_HIT, fall: "BFall", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0.9 },

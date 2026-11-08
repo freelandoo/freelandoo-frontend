@@ -18,7 +18,9 @@ const BTN_POWER = 8
 const BTN_SLASH = 16
 const BTN_DASH = 32
 const BTN_SHIELD = 64
-const BTN_ALL = 127
+/** mm3d-72: Desistir. */
+const BTN_QUIT = 128
+const BTN_ALL = 255
 
 /** Um bloco: [quantos passos, mx (−127…127), mz (−127…127), botões]. */
 export type FightFrames = [number, number, number, number][]
@@ -34,7 +36,7 @@ const q127 = (v: number) => Math.max(-127, Math.min(127, Math.round((Number(v) |
 export function quantizeInput(inp: Input): Input {
   const mx = q127(inp.mx) / 127
   const mz = q127(inp.mz) / 127
-  return { mx, mz, run: !!inp.run, attack: !!inp.attack, dodge: !!inp.dodge, power: !!inp.power, slash: !!inp.slash, dash: !!inp.dash, shield: !!inp.shield }
+  return { mx, mz, run: !!inp.run, attack: !!inp.attack, dodge: !!inp.dodge, power: !!inp.power, slash: !!inp.slash, dash: !!inp.dash, shield: !!inp.shield, quit: !!inp.quit }
 }
 
 /** Grava um passo (já quantizado) no fim da lista. */
@@ -48,7 +50,8 @@ export function pushFrame(frames: FightFrames, inp: Input) {
     (inp.power ? BTN_POWER : 0) |
     (inp.slash ? BTN_SLASH : 0) |
     (inp.dash ? BTN_DASH : 0) |
-    (inp.shield ? BTN_SHIELD : 0)
+    (inp.shield ? BTN_SHIELD : 0) |
+    (inp.quit ? BTN_QUIT : 0)
   const last = frames[frames.length - 1]
   if (last && last[1] === mx && last[2] === mz && last[3] === b && last[0] < 65535) last[0]++
   else frames.push([1, mx, mz, b])
@@ -90,7 +93,7 @@ export function replayFight(setup: FightSetup, frames: unknown): ReplayResult {
   let hits = 0
   let hitsTaken = 0
   for (const [n, mx, mz, b] of frames as number[][]) {
-    const inp: Input = { mx: mx / 127, mz: mz / 127, run: !!(b & BTN_RUN), attack: !!(b & BTN_ATTACK), dodge: !!(b & BTN_DODGE), power: !!(b & BTN_POWER), slash: !!(b & BTN_SLASH), dash: !!(b & BTN_DASH), shield: !!(b & BTN_SHIELD) }
+    const inp: Input = { mx: mx / 127, mz: mz / 127, run: !!(b & BTN_RUN), attack: !!(b & BTN_ATTACK), dodge: !!(b & BTN_DODGE), power: !!(b & BTN_POWER), slash: !!(b & BTN_SLASH), dash: !!(b & BTN_DASH), shield: !!(b & BTN_SHIELD), quit: !!(b & BTN_QUIT) }
     const sig = (mx & 0xff) | ((mz & 0xff) << 8) | (b << 16)
     for (let i = 0; i < n; i++) {
       if (fight.over) break
