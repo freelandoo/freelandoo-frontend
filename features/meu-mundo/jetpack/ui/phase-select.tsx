@@ -52,7 +52,8 @@ function Stars({ n, of = 5, size = 13, color = JT.yellow }: { n: number; of?: nu
 function Thumb({ art, className }: { art: PhaseArt; className?: string }) {
   const [ok, setOk] = useState(true)
   return (
-    <div className={`relative overflow-hidden ${className ?? ""}`} style={{ background: `linear-gradient(140deg, ${art.bg[0]}, ${art.bg[1]})` }}>
+    // `relative` só sem className: com "absolute inset-0" o relative vencia e o quadro ficava com altura 0
+    <div className={`overflow-hidden ${className ?? "relative"}`} style={{ background: `linear-gradient(140deg, ${art.bg[0]}, ${art.bg[1]})` }}>
       {ok && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={art.thumb} alt="" loading="lazy" onError={() => setOk(false)} className="absolute inset-0 h-full w-full object-cover" />
