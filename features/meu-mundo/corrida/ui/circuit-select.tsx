@@ -1,16 +1,19 @@
 // features/meu-mundo/corrida/ui/circuit-select.tsx — CORRIDA (mm3d-74): SELECIONAR CIRCUITO.
 //
-// Pedido do Alex: antes da corrida, os 6 circuitos em cartões — miniatura,
-// nome, subtítulo, ambiente, dificuldade, loops, destaque, etiquetas e o
-// melhor tempo do aparelho. Tocar seleciona; CORRER larga no modo escolhido
-// (sozinho, multiplayer ou contra o relógio); VOLTAR volta ao cardápio.
+// Pedido do Alex: logo depois de escolher a nave, os 6 circuitos em cartões —
+// miniatura, nome, subtítulo, ambiente, dificuldade, loops, destaque,
+// etiquetas e o melhor tempo do aparelho. Tocar seleciona; os botões de modo
+// embaixo (Sozinho = CORRER, Multiplayer, Contra o relógio) largam nele;
+// VOLTAR volta para a garagem. (mm3d-74b: antes o modo vinha antes da pista,
+// num cardápio no meio, e o Alex não achou a escolha da pista.)
 // O desenho da pista no canto sai da própria regra (sim/circuits.ts).
 
 import { useMemo, useState } from "react"
-import { ArrowLeft, Flag, Lock, Trophy } from "lucide-react"
+import { ArrowLeft, Flag, Lock, Timer, Trophy, Users, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { menuCircuits, tagLabel, type CircuitArt } from "../engine/circuit-art"
+import { shipArt } from "../engine/ship-art"
 import { trackOf } from "../sim/circuits"
 import type { RaceMode } from "../engine/race-game"
 
@@ -43,75 +46,124 @@ function fmt(s: number): string {
 }
 
 export function CircuitSelect({
-  mode,
   current,
   records,
-  onBack,
-  onRun,
+  multi,
+  error,
+  ship,
+  onGarage,
+  onExit,
+  onPlay,
 }: {
-  mode: RaceMode
   current: string
   records: (id: string) => CircuitRecord
-  onBack: () => void
-  onRun: (id: string) => void
+  /** Multiplayer disponível (no centro, perto da porta). */
+  multi: boolean
+  error: string | null
+  ship: string
+  /** Voltar para a garagem (trocar a nave). */
+  onGarage: () => void
+  onExit: () => void
+  onPlay: (mode: RaceMode, track: string) => void
 }) {
   const t = useTranslations("MeuMundo")
   const list = useMemo(() => menuCircuits(), [])
   const paths = useMemo(() => Object.fromEntries(list.map((c) => [c.id, outline(c.id)])), [list])
   const [sel, setSel] = useState(() => (list.some((c) => c.id === current) ? current : list[0].id))
   const chosen = list.find((c) => c.id === sel) ?? list[0]
-  const modeLabel = mode === "multi" ? t("corridaModeMulti", "Multiplayer") : mode === "time" ? t("corridaModeTime", "Contra o relógio") : t("corridaModeSolo", "Sozinho")
+  const art = shipArt(ship)
+  const modes: { mode: RaceMode; icon: React.ReactNode; title: string; sub: string }[] = [
+    { mode: "race", icon: <Flag className="h-5 w-5" />, title: t("corridaSelectRun", "Correr"), sub: t("corridaModeRaceSub", "Você contra 5 computadores · 3 voltas") },
+    ...(multi
+      ? [{ mode: "multi" as const, icon: <Users className="h-5 w-5" />, title: t("corridaModeMulti", "Multiplayer"), sub: t("corridaModeMultiSub", "Espera até 1 minuto · o resto é computador") }]
+      : []),
+    { mode: "time", icon: <Timer className="h-5 w-5" />, title: t("corridaModeTime", "Contra o relógio"), sub: t("corridaModeTimeSub", "Sozinho na pista · 3 voltas") },
+  ]
   return (
     <div className="absolute inset-0 flex flex-col" style={{ background: "radial-gradient(120% 90% at 50% 0%, #22405c 0%, #0f151d 62%, #0a0d12 100%)", color: MM.text }}>
-      <header className="flex shrink-0 items-center gap-3 px-5 pb-2 pt-4 max-[759px]:px-4">
+      <header className="flex shrink-0 items-center gap-3 px-5 pb-2 pt-4 max-[759px]:px-3">
         <button
           type="button"
-          onClick={onBack}
+          onClick={onGarage}
           aria-label={t("corridaSelectBack", "Voltar")}
           className="grid h-10 w-10 shrink-0 place-items-center rounded-full"
           style={{ background: MM.card, border: `1px solid ${MM.border}` }}
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "#5FE1FF" }}>
-            {modeLabel}
+            ANTI<span style={{ color: "#FF7A2F" }}>GRAVIDADE</span>
           </div>
-          <h1 className="text-[26px] font-black italic leading-none tracking-tight max-[759px]:text-[21px]">{t("corridaSelectTitle", "SELECIONAR CIRCUITO")}</h1>
+          <h1 className="text-[26px] font-black italic leading-none tracking-tight max-[759px]:text-[20px]">{t("corridaSelectTitle", "SELECIONAR CIRCUITO")}</h1>
         </div>
+        <button
+          type="button"
+          onClick={onGarage}
+          className="flex shrink-0 items-center gap-2 rounded-none px-3 py-1.5 text-left max-[520px]:hidden"
+          style={{ background: MM.card, border: `1px solid ${MM.border}` }}
+        >
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: art.holo.color, boxShadow: `0 0 8px ${art.holo.color}` }} />
+          <span className="leading-tight">
+            <span className="block text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: MM.muted }}>
+              {t("corridaMenuShip", "Sua nave")}
+            </span>
+            <span className="block text-[13px] font-bold">{t(art.labelKey, art.fallback)}</span>
+          </span>
+          <span className="ml-1 text-[12px] font-bold" style={{ color: "#5FE1FF" }}>
+            {t("corridaSelectSwap", "Trocar")}
+          </span>
+        </button>
+        <button
+          type="button"
+          aria-label={t("corridaLeave", "Voltar ao centro")}
+          onClick={onExit}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full"
+          style={{ background: MM.card, border: `1px solid ${MM.border}` }}
+        >
+          <X className="h-5 w-5" />
+        </button>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 max-[759px]:px-3">
         <div className="mx-auto grid max-w-[1180px] grid-cols-3 gap-3 max-[1020px]:grid-cols-2 max-[600px]:grid-cols-1">
           {list.map((c) => (
-            <Card key={c.id} c={c} path={paths[c.id]} selected={c.id === sel} rec={records(c.id)} onPick={() => setSel(c.id)} onRun={() => onRun(c.id)} />
+            <Card key={c.id} c={c} path={paths[c.id]} selected={c.id === sel} rec={records(c.id)} onPick={() => setSel(c.id)} onRun={() => onPlay("race", c.id)} />
           ))}
         </div>
       </div>
 
-      <footer className="flex shrink-0 items-center gap-3 px-5 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3 max-[759px]:px-3" style={{ background: "rgba(8,11,16,0.86)", borderTop: `1px solid ${MM.border}` }}>
-        <button
-          type="button"
-          onClick={onBack}
-          className="h-12 shrink-0 rounded-none px-5 text-[14px] font-black uppercase tracking-[0.12em]"
-          style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}
-        >
-          {t("corridaSelectBack", "Voltar")}
-        </button>
-        <div className="min-w-0 flex-1 truncate text-[13px] max-[480px]:hidden" style={{ color: MM.muted }}>
-          <span className="font-bold" style={{ color: chosen.accent }}>
-            {t(chosen.nameKey, chosen.name)}
-          </span>{" "}
-          · {t(chosen.envKey, chosen.env)}
+      <footer className="shrink-0 px-5 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 max-[759px]:px-3" style={{ background: "rgba(8,11,16,0.9)", borderTop: `1px solid ${MM.border}` }}>
+        {error && (
+          <p role="alert" className="mb-2 rounded-none px-3 py-2 text-[13px]" style={{ background: "rgba(110, 16, 34, 0.55)", color: "#FFD9DF" }}>
+            {error}
+          </p>
+        )}
+        <div className="mx-auto flex max-w-[1180px] items-center gap-3 max-[759px]:flex-col max-[759px]:items-stretch max-[759px]:gap-2">
+          <div className="min-w-0 flex-1 max-[759px]:text-center">
+            <div className="truncate text-[15px] font-black italic" style={{ color: chosen.accent }}>
+              {t(chosen.nameKey, chosen.name)}
+            </div>
+            <div className="truncate text-[12px] max-[759px]:hidden" style={{ color: MM.muted }}>
+              {t(chosen.envKey, chosen.env)} · {t("corridaKeys", "Setas ou WASD dirigem · Espaço ou Shift = turbo")}
+            </div>
+          </div>
+          <div className={`grid shrink-0 gap-2 ${modes.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+            {modes.map((m, i) => (
+              <button
+                key={m.mode}
+                type="button"
+                onClick={() => onPlay(m.mode, chosen.id)}
+                title={m.sub}
+                className="flex min-h-[52px] min-w-[150px] items-center justify-center gap-2 rounded-none px-4 text-[14px] font-black uppercase italic tracking-[0.06em] transition-transform active:scale-[0.98] max-[759px]:min-w-0 max-[759px]:flex-col max-[759px]:gap-0.5 max-[759px]:px-2 max-[759px]:text-[11.5px]"
+                style={{ background: i === 0 ? MM.rubyFill : MM.card, border: `1px solid ${i === 0 ? MM.rubyBorder : MM.border}`, color: i === 0 ? "#fff" : MM.text }}
+              >
+                <span style={{ color: i === 0 ? "#fff" : MM.gold }}>{m.icon}</span>
+                {m.title}
+              </button>
+            ))}
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onRun(chosen.id)}
-          className="ml-auto flex h-12 min-w-[160px] items-center justify-center gap-2 rounded-none px-6 text-[16px] font-black uppercase italic tracking-[0.08em] transition-transform active:scale-[0.98] max-[480px]:flex-1"
-          style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}`, color: "#fff" }}
-        >
-          <Flag className="h-5 w-5" /> {t("corridaSelectRun", "Correr")}
-        </button>
       </footer>
     </div>
   )

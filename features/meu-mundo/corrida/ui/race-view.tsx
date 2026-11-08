@@ -16,17 +16,15 @@
 //  - RESULTADO: a classificação, o tempo e o recorde do aparelho.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Bot, Flag, Flame, Loader2, Rocket, Timer, Trophy, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
+import { Bot, Flag, Flame, Loader2, Trophy, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import { createRaceGame, type RaceGameHandle, type RaceHud, type RaceMode, type RaceNotice } from "../engine/race-game"
 import { DEFAULT_SHIP, SHIPS, TUNING } from "../sim/race"
-import { shipArt } from "../engine/ship-art"
 import { GarageView } from "./garage-view"
 import { CircuitSelect } from "./circuit-select"
-import { circuitArt } from "../engine/circuit-art"
 import { DEFAULT_TRACK, TRACK_DEFS } from "../sim/circuits"
 import type { CorridaNet, CorridaNetStatus, CorridaStart } from "../engine/net"
 
@@ -54,8 +52,7 @@ const MAX_CARS = 6
 
 type Stage =
   | { kind: "garage" }
-  | { kind: "menu" }
-  | { kind: "circuit"; mode: RaceMode }
+  | { kind: "circuit" }
   | { kind: "lobby"; ac: AbortController }
   | { kind: "game"; mode: RaceMode; track: string; key: number; mp?: { net: CorridaNet; start: CorridaStart } }
 
@@ -148,7 +145,7 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
       setStage({ kind: "lobby", ac })
       const fail = () => {
         setError(t("corridaJoinFail", "A corrida em grupo não abriu agora. Tente de novo ou corra sozinho."))
-        setStage({ kind: "menu" })
+        setStage({ kind: "circuit" })
       }
       try {
         const got = await join({ signal: ac.signal, onLobby: (names, until) => setLobby({ names, until }), onStatus: () => {}, ship, track: trackId })
@@ -176,18 +173,21 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
           track={stage.track}
           mp={stage.mp}
           onAgain={() => void play(stage.mode, stage.track)}
-          onMenu={() => setStage({ kind: "menu" })}
+          onMenu={() => setStage({ kind: "circuit" })}
         />
       ) : stage.kind === "circuit" ? (
         <CircuitSelect
-          mode={stage.mode}
           current={track}
           records={(id) => loadRecords(id)}
-          onBack={() => setStage({ kind: "menu" })}
-          onRun={(id) => {
+          multi={!!join}
+          error={error}
+          ship={ship}
+          onGarage={() => setStage({ kind: "garage" })}
+          onExit={onExit}
+          onPlay={(mode, id) => {
             setTrack(id)
             saveTrack(id)
-            void play(stage.mode, id)
+            void play(mode, id)
           }}
         />
       ) : stage.kind === "lobby" ? (
@@ -196,21 +196,20 @@ export function RaceView({ name, onExit, join }: RaceViewProps) {
           until={lobby.until}
           onCancel={() => {
             stage.ac.abort()
-            setStage({ kind: "menu" })
+            setStage({ kind: "circuit" })
           }}
         />
-      ) : stage.kind === "garage" ? (
+      ) : (
         <GarageView
           current={ship}
           onChoose={(id) => {
             setShip(id)
             saveShip(id)
-            setStage({ kind: "menu" })
+            // mm3d-74b: da garagem direto para a escolha do circuito (o modo é escolhido lá)
+            setStage({ kind: "circuit" })
           }}
           onExit={onExit}
         />
-      ) : (
-        <RaceMenu onPlay={(mode) => setStage({ kind: "circuit", mode })} onExit={onExit} multi={!!join} error={error} ship={ship} track={track} onGarage={() => setStage({ kind: "garage" })} />
       )}
     </div>
   )
@@ -265,142 +264,6 @@ function RaceLobby({ names, until, onCancel }: { names: string[]; until: number;
 }
 
 // ═══ menu ════════════════════════════════════════════════════════════════════
-
-function RaceMenu({
-  onPlay,
-  onExit,
-  multi,
-  error,
-  ship,
-  track,
-  onGarage,
-}: {
-  onPlay: (m: RaceMode) => void
-  onExit: () => void
-  multi: boolean
-  error: string | null
-  ship: string
-  track: string
-  onGarage: () => void
-}) {
-  const t = useTranslations("MeuMundo")
-  const [rec, setRec] = useState<Records>({ race: null, time: null, lap: null })
-  useEffect(() => setRec(loadRecords(track)), [track])
-  const art = circuitArt(track)
-  const modes: { mode: RaceMode; icon: React.ReactNode; title: string; sub: string }[] = [
-    { mode: "race", icon: <Flag className="h-5 w-5" />, title: t("corridaModeSolo", "Sozinho"), sub: t("corridaModeRaceSub", "Você contra 5 computadores · 3 voltas") },
-    ...(multi
-      ? [{ mode: "multi" as const, icon: <Users className="h-5 w-5" />, title: t("corridaModeMulti", "Multiplayer"), sub: t("corridaModeMultiSub", "Espera até 1 minuto · o resto é computador") }]
-      : []),
-    { mode: "time", icon: <Timer className="h-5 w-5" />, title: t("corridaModeTime", "Contra o relógio"), sub: t("corridaModeTimeSub", "Sozinho na pista · 3 voltas") },
-  ]
-  return (
-    <div
-      className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4"
-      style={{ background: "radial-gradient(120% 90% at 50% 0%, #2b4a66 0%, #111820 60%, #0b0f14 100%)" }}
-    >
-      <div className="w-full max-w-[520px] rounded-none p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: "#5FE1FF" }}>
-              <Rocket className="h-4 w-4" /> {t(art.nameKey, art.name)}
-            </div>
-            <h1 className="mt-1.5 text-[30px] font-black italic leading-none tracking-tight max-[759px]:text-[25px]">
-              ANTI<span style={{ color: "#FF7A2F" }}>GRAVIDADE</span>
-            </h1>
-            <p className="mt-2 text-[14px] leading-snug" style={{ color: MM.muted }}>
-              {t("corridaPitch2", "Naves que flutuam sobre a pista. Escolha o modo e depois o circuito: seis pistas com loops, quedas e túneis.")}
-            </p>
-          </div>
-          <button type="button" aria-label={t("corridaLeave", "Voltar ao centro")} onClick={onExit} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <button
-          type="button"
-          onClick={onGarage}
-          className="mt-4 flex w-full items-center justify-between gap-3 rounded-none px-3.5 py-2.5 text-left transition-transform active:scale-[0.99]"
-          style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}
-        >
-          <span className="flex items-center gap-2.5">
-            <span className="h-3 w-3 rounded-full" style={{ background: shipArt(ship).holo.color, boxShadow: `0 0 10px ${shipArt(ship).holo.color}` }} />
-            <span>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: MM.muted }}>
-                {t("corridaMenuShip", "Sua nave")}
-              </span>
-              <span className="block text-[16px] font-bold leading-tight">{t(shipArt(ship).labelKey, shipArt(ship).fallback)}</span>
-            </span>
-          </span>
-          <span className="text-[13px] font-bold" style={{ color: "#5FE1FF" }}>
-            {t("corridaMenuGarage", "Trocar na garagem")}
-          </span>
-        </button>
-
-        <ul className="mt-3 grid grid-cols-3 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>
-          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
-            <b style={{ color: "#5FE1FF" }}>{t("corridaHowPadTitle", "Faixa de turbo")}</b>
-            <br />
-            {t("corridaHowPad", "Passe por cima das setas azuis: arrancada na hora.")}
-          </li>
-          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
-            <b style={{ color: "#FF9A4D" }}>{t("corridaHowOrbTitle", "Cápsula de fogo")}</b>
-            <br />
-            {t("corridaHowOrb", "Guarda até 3 turbos. Use quando quiser.")}
-          </li>
-          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
-            <b style={{ color: "#FFD45C" }}>{t("corridaHowJumpTitle", "Penhascos")}</b>
-            <br />
-            {t("corridaHowJump", "Chegue rápido na rampa e segure acelerar no ar para planar.")}
-          </li>
-        </ul>
-
-        <div className={`mt-4 grid gap-2 max-[420px]:grid-cols-1 ${modes.length === 3 ? "grid-cols-3 max-[759px]:grid-cols-1" : "grid-cols-2"}`}>
-          {modes.map((m, i) => (
-            <button
-              key={m.mode}
-              type="button"
-              onClick={() => onPlay(m.mode)}
-              className="flex min-h-[64px] items-center gap-3 rounded-none px-3.5 text-left transition-transform active:scale-[0.98]"
-              style={{ background: i === 0 ? MM.rubyFill : MM.card, border: `1px solid ${i === 0 ? MM.rubyBorder : MM.border}`, color: MM.text }}
-            >
-              <span className="shrink-0" style={{ color: i === 0 ? "#fff" : MM.gold }}>
-                {m.icon}
-              </span>
-              <span>
-                <span className="block text-[16px] font-bold leading-tight">{m.title}</span>
-                <span className="block text-[12px] leading-tight" style={{ color: i === 0 ? "rgba(255,255,255,0.8)" : MM.muted }}>
-                  {m.sub}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {error && (
-          <p role="alert" className="mt-3 rounded-none px-3 py-2 text-[13px]" style={{ background: "rgba(110, 16, 34, 0.55)", color: "#FFD9DF" }}>
-            {error}
-          </p>
-        )}
-
-        {(rec.race !== null || rec.time !== null || rec.lap !== null) && (
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]" style={{ color: MM.muted }}>
-            <span className="flex items-center gap-1.5" style={{ color: MM.gold }}>
-              <Trophy className="h-3.5 w-3.5" /> {t("corridaRecords", "Seus recordes")}
-            </span>
-            {rec.race !== null && <span>{t("corridaRecRace", "Corrida {t}").replace("{t}", fmtRace(rec.race))}</span>}
-            {rec.time !== null && <span>{t("corridaRecTime", "Relógio {t}").replace("{t}", fmtRace(rec.time))}</span>}
-            {rec.lap !== null && <span>{t("corridaRecLap", "Volta {t}").replace("{t}", fmtRace(rec.lap))}</span>}
-          </div>
-        )}
-
-        <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden" style={{ color: MM.muted }}>
-          {t("corridaKeys", "Setas ou WASD dirigem · Espaço ou Shift = turbo")}
-        </p>
-      </div>
-    </div>
-  )
-}
 
 // ═══ jogo ════════════════════════════════════════════════════════════════════
 

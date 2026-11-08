@@ -10342,7 +10342,8 @@
     "corridaTrackForja": "Infinite Forge",
     "corridaTrackForjaSub": "Inside a colossal machine.",
     "corridaEnvForja": "Industrial megastructure",
-    "corridaTrackForjaHi": "The giant loop and the monumental ring"
+    "corridaTrackForjaHi": "The giant loop and the monumental ring",
+    "corridaSelectSwap": "Change"
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -10322,7 +10322,8 @@
     "corridaTrackForja": "Forja Infinita",
     "corridaTrackForjaSub": "Dentro de una máquina colosal.",
     "corridaEnvForja": "Megaestructura industrial",
-    "corridaTrackForjaHi": "El loop gigante y el anillo monumental"
+    "corridaTrackForjaHi": "El loop gigante y el anillo monumental",
+    "corridaSelectSwap": "Cambiar"
   },
   "Sports": {
     "eyebrow": "Deportes",

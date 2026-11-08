@@ -1,5 +1,6 @@
 // mm3d-74: os 6 circuitos da Corrida Antigravidade e a tela SELECIONAR CIRCUITO
 // (features/meu-mundo/corrida/engine/circuit-art.ts, ui/circuit-select.tsx), 2026-11-08.
+// mm3d-74b: corridaSelectSwap (trocar a nave, na tela dos circuitos).
 // Fill-if-absent no namespace MeuMundo. Idempotente. node <script> [pasta]
 const fs = require("fs")
 const path = require("path")
@@ -10,6 +11,7 @@ const KEYS = {
     corridaSelectTitle: "SELECIONAR CIRCUITO",
     corridaSelectBack: "Voltar",
     corridaSelectRun: "Correr",
+    corridaSelectSwap: "Trocar",
     corridaDiff1: "Fácil",
     corridaDiff2: "Média",
     corridaDiff3: "Difícil",
@@ -55,6 +57,7 @@ const KEYS = {
     corridaSelectTitle: "SELECT CIRCUIT",
     corridaSelectBack: "Back",
     corridaSelectRun: "Race",
+    corridaSelectSwap: "Change",
     corridaDiff1: "Easy",
     corridaDiff2: "Medium",
     corridaDiff3: "Hard",
@@ -100,6 +103,7 @@ const KEYS = {
     corridaSelectTitle: "SELECCIONAR CIRCUITO",
     corridaSelectBack: "Volver",
     corridaSelectRun: "Correr",
+    corridaSelectSwap: "Cambiar",
     corridaDiff1: "Fácil",
     corridaDiff2: "Media",
     corridaDiff3: "Difícil",
