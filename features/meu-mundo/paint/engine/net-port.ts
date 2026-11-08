@@ -11,6 +11,11 @@
 // mesmo formato do treino. A tinta de quem joga é PREVISTA: a mancha aparece
 // (e já dá para pisar nela) na hora, com id negativo; a confirmada da sala
 // traz o número do tiro e toma o lugar dela (recusada: some).
+//
+// mm3d-76: o MAPA é da sala. Na espera cada um vota (`vote`) e a contagem
+// dos votos vai para a tela (`onLobby`); na largada a sala manda `map` e a
+// versão da regra dele (`mv`) — versão diferente da deste aparelho = página
+// desatualizada (status "stale"), nunca um mapa diferente do dos outros.
 
 import { Client, type Room } from "@colyseus/sdk"
 import { getPublicBackendUrl } from "@/lib/backend-public"
@@ -18,13 +23,14 @@ import type { BodyId, PaintSession } from "../../types"
 import { PaintMatch, capsuleRespawn, type BossAct, type MatchEvent, type PaintPose } from "../sim/match"
 import { resolveShot, type NewBlob } from "../sim/paint"
 import { PAINT, TUNING, modeCapacity, type PaintColor, type PaintMode } from "../sim/tuning"
+import { buildPaintMap, paintMapId, paintMapVersion } from "../sim/maps"
 import type { Vec3 } from "../sim/map"
 import type { PaintPort, PortPlayerInfo, RemoteSample } from "./port"
 
 export type { PaintSession }
 
 export type NetPhase = "lobby" | "countdown" | "play" | "end"
-export type PaintNetStatus = "connecting" | "online" | "reconnecting" | "replaced" | "offline"
+export type PaintNetStatus = "connecting" | "online" | "reconnecting" | "replaced" | "offline" | "stale"
 
 interface SPlayer {
   slot: number
@@ -52,6 +58,8 @@ interface SPlayer {
   boss: boolean
   /** Perdeu para o guardião (mm3d-62). */
   out?: boolean
+  /** Mapa em que votou (mm3d-76, espera). */
+  vote?: string
 }
 interface SBlob {
   c: number
@@ -87,7 +95,13 @@ interface SState {
   players: Map<string, SPlayer>
   blobs: Map<string, SBlob>
   result: string
+  /** mm3d-76: mapa da partida ("" na espera) e versão da regra dele. */
+  map?: string
+  mv?: number
 }
+
+/** Votos da espera: mapa → quantos (mm3d-76). */
+export type PaintVotes = Record<string, number>
 
 const BACKOFF_MS = [500, 1000, 2000, 4000, 8000]
 const CLOSE_REPLACED = 4009
@@ -125,7 +139,7 @@ export class NetPort implements PaintPort {
   constructor(
     session: PaintSession,
     private readonly refetch: (roomId: string | null) => Promise<PaintSession | null>,
-    private readonly hooks: { onLobby?: (n: number, cap: number) => void; onStatus?: (s: PaintNetStatus) => void } = {},
+    private readonly hooks: { onLobby?: (n: number, cap: number, votes: PaintVotes) => void; onStatus?: (s: PaintNetStatus) => void } = {},
   ) {
     this.mode = session.mode
     void this.connect(session)
@@ -139,7 +153,7 @@ export class NetPort implements PaintPort {
       const fail = () => reject(new Error("abort"))
       signal?.addEventListener("abort", fail, { once: true })
       const watch = setInterval(() => {
-        if (this.disposed || this.status === "offline" || this.status === "replaced") {
+        if (this.disposed || this.status === "offline" || this.status === "replaced" || this.status === "stale") {
           clearInterval(watch)
           fail()
         } else if (this.state) clearInterval(watch)
@@ -224,12 +238,24 @@ export class NetPort implements PaintPort {
     for (const p of players) this.names.set(p.slot, { name: p.name, body: (p.body || "normal") as BodyId, look: p.look || "" })
     if (!this.state) {
       if (s.phase === "lobby" || this.me < 0) {
-        this.hooks.onLobby?.(players.length, modeCapacity(this.mode))
+        const votes: PaintVotes = {}
+        for (const p of players) {
+          const id = paintMapId(p.vote)
+          votes[id] = (votes[id] ?? 0) + 1
+        }
+        this.hooks.onLobby?.(players.length, modeCapacity(this.mode), votes)
+        return
+      }
+      // mm3d-76: o mapa que a sala apurou (versão diferente = esta página é velha)
+      const mapId = paintMapId(s.map)
+      if (s.mv && s.mv !== paintMapVersion(mapId)) {
+        this.setStatus("stale")
         return
       }
       this.state = new PaintMatch(
         this.mode,
         players.map((p) => ({ slot: p.slot, team: p.team, sit: p.sit })),
+        buildPaintMap(this.mode, mapId),
       )
       for (const [id, team] of s.cats) this.state.catsTaken.set(Number(id), team)
       for (const [id, at] of s.caps) this.state.capsuleBack.set(Number(id), at)
@@ -441,6 +467,11 @@ export class NetPort implements PaintPort {
     const out = this.queue
     this.queue = []
     return out
+  }
+
+  /** Troca o voto do mapa (só vale na espera; a sala confere). */
+  vote(map: string) {
+    this.room?.send("vote", { map })
   }
 
   dispose() {

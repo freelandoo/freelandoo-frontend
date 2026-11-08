@@ -46,10 +46,10 @@ const GincanaView = dynamic(() => import("../gincana/ui/gincana-view").then((m) 
 const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
 /** Paint (mm3d-35): reserva numa sala do modo pedido (null = sem acesso). */
-async function fetchPaintSession(mode: string, roomId: string | null) {
+async function fetchPaintSession(mode: string, roomId: string | null, map: string) {
   const token = getToken()
   if (!token) return null
-  const r = await postPaintJoin(token, mode, roomId)
+  const r = await postPaintJoin(token, mode, roomId, map)
   return r.ok ? r.data : null
 }
 /** A rede do Paint só baixa quando alguém escolhe 1×1/2×2/3×3. */

@@ -7,7 +7,7 @@
 //  - empurrão: tirar o corpo de dentro de um sólido de lado;
 //  - raio: onde o tiro bate (ponto, normal, sólido).
 
-import type { Solid, SolidWall, Vec3 } from "./map"
+import type { Solid, SolidPoly, SolidWall, Vec3 } from "./map"
 
 /** Raio do "pé": anda até a borda sem cair antes (menor que o corpo). */
 export const FOOT_R = 0.18
@@ -28,7 +28,53 @@ function wallWorld(s: SolidWall, lx: number, lz: number) {
   return { x: lx * c + lz * n, z: -lx * n + lz * c }
 }
 
+/** Prisma convexo (mm3d-76): quanto o ponto passa do lado mais "de fora" (≤ 0 = dentro) e qual lado. */
+function polyDepth(s: SolidPoly, x: number, z: number) {
+  let best = -Infinity
+  let at = 0
+  for (let i = 0; i < s.d.length; i++) {
+    const v = s.n[i * 2] * x + s.n[i * 2 + 1] * z - s.d[i]
+    if (v > best) {
+      best = v
+      at = i
+    }
+  }
+  return { v: best, at }
+}
+
+/** Ponto do contorno do prisma mais perto de (x, z). */
+function polyClosest(s: SolidPoly, x: number, z: number) {
+  const m = s.pts.length / 2
+  let bx = s.x
+  let bz = s.z
+  let bd = Infinity
+  for (let i = 0; i < m; i++) {
+    const ax = s.pts[i * 2]
+    const az = s.pts[i * 2 + 1]
+    const ex = s.pts[((i + 1) % m) * 2] - ax
+    const ez = s.pts[((i + 1) % m) * 2 + 1] - az
+    const l2 = ex * ex + ez * ez || 1
+    const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2))
+    const px = ax + ex * t
+    const pz = az + ez * t
+    const dd = (px - x) * (px - x) + (pz - z) * (pz - z)
+    if (dd < bd) {
+      bd = dd
+      bx = px
+      bz = pz
+    }
+  }
+  return { x: bx, z: bz, d: Math.sqrt(bd) }
+}
+
 function inside(s: Solid, x: number, z: number, pad: number) {
+  if (s.k === 3) {
+    const dx = x - s.x
+    const dz = z - s.z
+    const R = s.r + pad
+    if (dx * dx + dz * dz > R * R) return false
+    return polyDepth(s, x, z).v <= pad
+  }
   if (s.k === 0) {
     const dx = x - s.x
     const dz = z - s.z
@@ -101,6 +147,30 @@ export function pushOut(
         } else {
           p.x = s.x + (dx / d) * R
           p.z = s.z + (dz / d) * R
+        }
+        hit = true
+      } else if (s.k === 3) {
+        const dx = p.x - s.x
+        const dz = p.z - s.z
+        const R = s.r + r
+        if (dx * dx + dz * dz >= R * R) continue
+        const dep = polyDepth(s, p.x, p.z)
+        if (dep.v >= r) continue
+        if (dep.v <= 0) {
+          // centro dentro: sai pelo lado mais perto
+          const k = r - dep.v
+          p.x += s.n[dep.at * 2] * k
+          p.z += s.n[dep.at * 2 + 1] * k
+        } else {
+          const c = polyClosest(s, p.x, p.z)
+          if (c.d >= r) continue
+          if (c.d < 1e-6) {
+            p.x += s.n[dep.at * 2] * r
+            p.z += s.n[dep.at * 2 + 1] * r
+          } else {
+            p.x = c.x + ((p.x - c.x) / c.d) * r
+            p.z = c.z + ((p.z - c.z) / c.d) * r
+          }
         }
         hit = true
       } else if (s.k === 2) {
@@ -240,13 +310,60 @@ function rayWall(o: Vec3, d: Vec3, s: SolidWall, maxT: number): { t: number; n: 
   return { t: h.t, n: { x: w.x, y: h.n.y, z: w.z } }
 }
 
+/** Raio × prisma convexo (mm3d-76): recorte pelos planos dos lados + tampas. */
+function rayPoly(o: Vec3, d: Vec3, s: SolidPoly, maxT: number): { t: number; n: Vec3 } | null {
+  let t0 = 0
+  let t1 = maxT
+  let n: Vec3 | null = null
+  // tampas
+  if (Math.abs(d.y) < 1e-12) {
+    if (o.y < s.y0 || o.y > s.y1) return null
+  } else {
+    let ta = (s.y0 - o.y) / d.y
+    let tb = (s.y1 - o.y) / d.y
+    let ny = -1
+    if (ta > tb) {
+      const tmp = ta
+      ta = tb
+      tb = tmp
+      ny = 1
+    }
+    if (ta > t0) {
+      t0 = ta
+      n = { x: 0, y: ny, z: 0 }
+    }
+    t1 = Math.min(t1, tb)
+    if (t0 > t1) return null
+  }
+  for (let i = 0; i < s.d.length; i++) {
+    const nx = s.n[i * 2]
+    const nz = s.n[i * 2 + 1]
+    const den = nx * d.x + nz * d.z
+    const num = s.d[i] - (nx * o.x + nz * o.z)
+    if (Math.abs(den) < 1e-12) {
+      if (num < 0) return null
+      continue
+    }
+    const t = num / den
+    if (den < 0) {
+      if (t > t0) {
+        t0 = t
+        n = { x: nx, y: 0, z: nz }
+      }
+    } else t1 = Math.min(t1, t)
+    if (t0 > t1) return null
+  }
+  if (!n) return null // começou dentro
+  return { t: t0, n }
+}
+
 /** Primeiro sólido que o raio (d unitário) toca até `maxT`. */
 export function raycast(solids: readonly Solid[], o: Vec3, d: Vec3, maxT: number): RayHit | null {
   let best: RayHit | null = null
   let limit = maxT
   for (let i = 0; i < solids.length; i++) {
     const s = solids[i]
-    const h = s.k === 0 ? rayCyl(o, d, s, limit) : s.k === 2 ? rayWall(o, d, s, limit) : rayBox(o, d, s, limit)
+    const h = s.k === 0 ? rayCyl(o, d, s, limit) : s.k === 2 ? rayWall(o, d, s, limit) : s.k === 3 ? rayPoly(o, d, s, limit) : rayBox(o, d, s, limit)
     if (!h) continue
     limit = h.t
     best = { t: h.t, point: { x: o.x + d.x * h.t, y: o.y + d.y * h.t, z: o.z + d.z * h.t }, normal: h.n, index: i }

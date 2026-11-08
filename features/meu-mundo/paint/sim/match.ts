@@ -27,7 +27,8 @@
 // terceiro acerto. O mapa sai do modo (2×2 e 3×3 com mais gatinhos).
 
 import { PAINT, TUNING, ammoCap, modeTeams, type PaintColor, type PaintMode } from "./tuning"
-import { buildPaintMap, fellOut, spawnPoint, type PaintMap, type Solid, type Vec3 } from "./map"
+import { fellOut, spawnPoint, type PaintMap, type Solid, type Vec3 } from "./map"
+import { buildPaintMap } from "./maps"
 import { blobSolid, muzzleOf, punchReachesBoss, punchTargets, resolveShot, type NewBlob, type ShotTargetBody } from "./paint"
 
 export type MatchPhase = "countdown" | "play" | "end"

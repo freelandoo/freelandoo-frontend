@@ -21,6 +21,11 @@
 // antigas (ids, enfeites e gatinhos de antes não mudam). Gatinhos por modo:
 // 2×2 tem o dobro e 3×3 o triplo (mais gente pegando). Ícones da Freelandoo
 // (cápsula da cor MURO) nas bases e nas asas.
+//
+// mm3d-76 (pedido do Alex): este é o mapa 1 do catálogo, a CIDADE SUSPENSA
+// (`buildCidadeMap`, igual ao de antes). Os outros 5 mapas e a escolha ficam
+// em sim/maps.ts; daqui saem os tipos, o prisma convexo das ilhas de forma
+// (`polySolid`), a ilha do chefão (a mesma em todo mapa) e a colisão parada.
 
 import { PAINT_MODES, TUNING, type PaintMode } from "./tuning"
 
@@ -70,7 +75,83 @@ export interface SolidWall {
   c?: number
   team?: number
 }
-export type Solid = SolidCyl | SolidBox | SolidWall
+/**
+ * Prisma CONVEXO vertical (mm3d-76: ilhas hexagonais, triangulares, em folha,
+ * em pedaço de arco...). `pts` = contorno no chão (x, z, x, z, ...), `n` = a
+ * normal de fora de cada lado e `d` o limite (n·p ≤ d dentro), `r` = raio que
+ * envolve tudo a partir de (x, z) (descarte rápido). Monte com `polySolid`.
+ */
+export interface SolidPoly {
+  k: 3
+  x: number
+  z: number
+  y0: number
+  y1: number
+  r: number
+  pts: number[]
+  n: number[]
+  d: number[]
+  b?: number
+  c?: number
+  team?: number
+}
+export type Solid = SolidCyl | SolidBox | SolidWall | SolidPoly
+
+/** Centro de área de um contorno convexo (a média dos cantos puxaria para o lado com mais cantos — o arco). */
+export function polyCenter(pts: readonly number[]) {
+  const n = pts.length / 2
+  let ax = 0
+  let az = 0
+  for (let i = 0; i < n; i++) {
+    ax += pts[i * 2]
+    az += pts[i * 2 + 1]
+  }
+  ax /= n
+  az /= n
+  let area = 0
+  let x = 0
+  let z = 0
+  for (let i = 0; i < n; i++) {
+    const x0 = pts[i * 2] - ax
+    const z0 = pts[i * 2 + 1] - az
+    const x1 = pts[((i + 1) % n) * 2] - ax
+    const z1 = pts[((i + 1) % n) * 2 + 1] - az
+    const cr = x0 * z1 - x1 * z0
+    area += cr
+    x += (x0 + x1) * cr
+    z += (z0 + z1) * cr
+  }
+  if (Math.abs(area) < 1e-9) return { x: ax, z: az }
+  return { x: ax + x / (3 * area), z: az + z / (3 * area) }
+}
+
+/** Prisma convexo de y0 a y1: normais de cada lado viradas para FORA (qualquer sentido do contorno). */
+export function polySolid(pts: readonly number[], y0: number, y1: number): SolidPoly {
+  const c = polyCenter(pts)
+  const n: number[] = []
+  const d: number[] = []
+  const m = pts.length / 2
+  let r = 0
+  for (let i = 0; i < m; i++) {
+    const ax = pts[i * 2]
+    const az = pts[i * 2 + 1]
+    const bx = pts[((i + 1) % m) * 2]
+    const bz = pts[((i + 1) % m) * 2 + 1]
+    let nx = bz - az
+    let nz = -(bx - ax)
+    const l = Math.hypot(nx, nz) || 1
+    nx /= l
+    nz /= l
+    if (nx * (c.x - ax) + nz * (c.z - az) > 0) {
+      nx = -nx
+      nz = -nz
+    }
+    n.push(Math.round(nx * 1e6) / 1e6, Math.round(nz * 1e6) / 1e6)
+    d.push(Math.round((nx * ax + nz * az) * 1e6) / 1e6)
+    r = Math.max(r, Math.hypot(ax - c.x, az - c.z))
+  }
+  return { k: 3, x: Math.round(c.x * 1000) / 1000, z: Math.round(c.z * 1000) / 1000, y0, y1, r: Math.round(r * 1000 + 1) / 1000, pts: pts.slice(), n, d }
+}
 
 export type IslandKind = "base" | "path" | "branch" | "summit" | "center" | "wing" | "boss"
 export interface Island {
@@ -84,6 +165,15 @@ export interface Island {
   r: number
   /** Profundidade da pedra embaixo (desenho). A colisão usa `colliderDepth`. */
   depth: number
+  /**
+   * mm3d-76: contorno CONVEXO no chão (x, z, x, z, ...) dos mapas novos —
+   * hexágono, triângulo, retângulo, folha, pedaço de arco. Sem ele a ilha é o
+   * círculo de raio `r`; com ele `r` é o raio do círculo que cabe dentro
+   * (gatinho, cápsula e enfeite ficam nele) e (x, z) o centro do contorno.
+   */
+  poly?: number[]
+  /** Desenho (mm3d-76): o que a ilha é no tema (templo, engrenagem, folha...). Não muda a regra. */
+  tag?: string
 }
 export interface PaintProp {
   kind: "pillar" | "crate"
@@ -94,6 +184,10 @@ export interface PaintProp {
   s: number
   h: number
   rot: number
+  /** mm3d-76: caixote comprido (meia-largura ao longo de `rot`; sem = quadrado de `s`). Só nos mapas novos. */
+  w?: number
+  /** Desenho (mm3d-76): coluna, cristal, máquina... A colisão é a do `kind`. */
+  tag?: string
 }
 export interface PaintCat {
   id: number
@@ -119,6 +213,9 @@ export interface PaintBase {
   spawns: { x: number; y: number; z: number; facing: number }[]
 }
 export interface PaintMap {
+  /** mm3d-76: qual mapa do catálogo (sim/maps.ts) e a versão da regra dele (a sala confere). */
+  id: string
+  v: number
   islands: Island[]
   props: PaintProp[]
   /** Colisão parada (ilhas + pilares + caixotes). Tinta entra por cima, na partida. */
@@ -128,10 +225,12 @@ export interface PaintMap {
   bases: PaintBase[]
   portals: Vec3[]
   boss: { x: number; y: number; z: number; island: number; spawns: { x: number; y: number; z: number; facing: number }[] }
+  /** mm3d-76: a rota principal de cada time (ids das ilhas, da base até o portal) — o robô dos testes sobe por ela. */
+  routes: number[][]
 }
 
 /** A pedra que colide embaixo do topo (o desenho desce mais). */
-const COLLIDER_DEPTH = 2.6
+export const COLLIDER_DEPTH = 2.6
 
 const COLUMN_X = 34
 const SPIRAL_R = 14
@@ -143,7 +242,7 @@ const BRANCH_AT = [2, 5, 8, 10]
 const SUMMIT_Y = 30
 const CENTER_Y = [7, 14, 21, 28]
 const CENTER_Z = [5, -5, 5, -5]
-const BOSS = { x: 0, y: 60, z: 320, r: 24 } // mm3d-38c: maior para o chefão de 10 m
+export const BOSS = { x: 0, y: 60, z: 320, r: 24 } // mm3d-38c: maior para o chefão de 10 m
 /**
  * Asa (mm3d-46): cadeia baixa do lado norte de cada torre até o meio, em
  * coordenadas do time 0 (x espelha para o time 1, z espelha para o sul).
@@ -163,10 +262,10 @@ const CENTER_EXTRA: [number, number, number][] = [
   [12, 22, 3.4],
 ]
 
-const round = (v: number) => Math.round(v * 1000) / 1000
+export const round = (v: number) => Math.round(v * 1000) / 1000
 
 /** Pseudo-aleatório fixo por número (enfeites do mapa). */
-function hash01(n: number) {
+export function hash01(n: number) {
   let h = (n * 2654435761) >>> 0
   h ^= h >>> 16
   h = Math.imul(h, 2246822519) >>> 0
@@ -174,7 +273,42 @@ function hash01(n: number) {
   return (h >>> 0) / 4294967296
 }
 
-export function buildPaintMap(mode: PaintMode = "solo"): PaintMap {
+/**
+ * A ilha do chefão (a mesma em todo mapa, mm3d-76: só o desenho muda pelo
+ * tema) com os nascimentos e as cápsulas dela. Entra DEPOIS das outras ilhas.
+ */
+export function bossIsland(islands: Island[], capsules: PaintCapsule[]) {
+  const bossIsl: Island = { id: islands.length, kind: "boss", team: -1, x: BOSS.x, y: BOSS.y, z: BOSS.z, r: BOSS.r, depth: round(BOSS.r * 1.25 + 1.5) }
+  islands.push(bossIsl)
+  const spawns = [0, 1].flatMap((team) => {
+    const sx = team === 0 ? -1 : 1
+    return [0, 1, 2].map((i) => ({ x: round(BOSS.x + sx * 12), y: BOSS.y, z: round(BOSS.z + (i - 1) * 2.2), facing: round(Math.atan2(-sx, 0)) }))
+  })
+  let capSeq = capsules.length
+  for (const [i, c] of ([0, 1, 2, 1, 1, 2] as const).entries()) {
+    const a = (i / 6) * Math.PI * 2 + 0.4
+    capsules.push({ id: capSeq++, c, x: round(BOSS.x + Math.sin(a) * 17), y: BOSS.y, z: round(BOSS.z + Math.cos(a) * 17) })
+  }
+  return { x: BOSS.x, y: BOSS.y, z: BOSS.z, island: bossIsl.id, spawns }
+}
+
+/** Colisão parada: ilhas (cilindro ou prisma) + pilares + caixotes. */
+export function staticSolids(islands: readonly Island[], props: readonly PaintProp[]): Solid[] {
+  const solids: Solid[] = []
+  for (const isl of islands) {
+    if (isl.poly) solids.push(polySolid(isl.poly, round(isl.y - COLLIDER_DEPTH), isl.y))
+    else solids.push({ k: 0, x: isl.x, z: isl.z, y0: round(isl.y - COLLIDER_DEPTH), y1: isl.y, r: isl.r })
+  }
+  for (const p of props) {
+    if (p.kind === "pillar") solids.push({ k: 0, x: p.x, z: p.z, y0: p.y, y1: round(p.y + p.h), r: p.s })
+    else if (p.rot) solids.push({ k: 2, x: p.x, z: p.z, y0: p.y, y1: round(p.y + p.h), hx: p.w ?? p.s, hz: p.s, a: p.rot })
+    else solids.push({ k: 1, x: p.x, z: p.z, y0: p.y, y1: round(p.y + p.h), hx: p.w ?? p.s, hz: p.s })
+  }
+  return solids
+}
+
+/** A Cidade Suspensa (o mapa de sempre, mm3d-35/46): quem chama é o catálogo (sim/maps.ts). */
+export function buildCidadeMap(mode: PaintMode = "solo"): PaintMap {
   const islands: Island[] = []
   const props: PaintProp[] = []
   const cats: PaintCat[] = []
@@ -330,7 +464,12 @@ export function buildPaintMap(mode: PaintMode = "solo"): PaintMap {
     else solids.push({ k: 1, x: p.x, z: p.z, y0: p.y, y1: round(p.y + p.h), hx: p.s, hz: p.s })
   }
 
+  // mm3d-76: a rota de cada time = base → espiral → topo (o que o robô sobe)
+  const routes = [0, 1].map((team) => [bases[team].island, ...islands.filter((i) => i.team === team && (i.kind === "path" || i.kind === "summit")).map((i) => i.id)])
+
   return {
+    id: "cidade",
+    v: 1,
     islands,
     props,
     solids,
@@ -339,6 +478,7 @@ export function buildPaintMap(mode: PaintMode = "solo"): PaintMap {
     bases,
     portals,
     boss: { x: BOSS.x, y: BOSS.y, z: BOSS.z, island: bossIsl.id, spawns: bossSpawns },
+    routes,
   }
 }
 

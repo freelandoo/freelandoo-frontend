@@ -9,11 +9,19 @@ import { NetPort, type PaintSession } from "./net-port"
 import type { PaintJoin } from "../ui/paint-view"
 import type { PaintMode } from "../sim/tuning"
 
-export function makePaintJoin(fetchSession: (mode: PaintMode, roomId: string | null) => Promise<PaintSession | null>): PaintJoin {
+/** mm3d-76: `map` = o voto de quem entra; `onRoom` dá à tela da espera como trocar o voto. */
+export function makePaintJoin(fetchSession: (mode: PaintMode, roomId: string | null, map: string) => Promise<PaintSession | null>): PaintJoin {
   return async (mode, hooks) => {
-    const first = await fetchSession(mode, null)
+    let vote = hooks.map
+    const first = await fetchSession(mode, null, vote)
     if (!first || hooks.signal.aborted) return null
-    const port = new NetPort(first, (roomId) => fetchSession(mode, roomId), { onLobby: hooks.onLobby, onStatus: hooks.onStatus })
+    const port = new NetPort(first, (roomId) => fetchSession(mode, roomId, vote), { onLobby: hooks.onLobby, onStatus: hooks.onStatus })
+    hooks.onRoom?.({
+      vote: (map) => {
+        vote = map
+        port.vote(map)
+      },
+    })
     try {
       await port.ready(hooks.signal)
     } catch {

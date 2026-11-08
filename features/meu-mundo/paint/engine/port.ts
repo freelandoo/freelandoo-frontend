@@ -6,6 +6,7 @@
 // devolve os acontecimentos no mesmo formato (`MatchEvent`).
 
 import { PaintMatch, type MatchEvent, type PaintPose } from "../sim/match"
+import { buildPaintMap } from "../sim/maps"
 import type { PaintColor, PaintMode } from "../sim/tuning"
 import type { Vec3 } from "../sim/map"
 import type { BodyId } from "../../types"
@@ -54,8 +55,9 @@ export class LocalPort implements PaintPort {
   readonly state: PaintMatch
   readonly predicts = false
 
-  constructor() {
-    this.state = new PaintMatch("solo", [{ slot: 0, team: 0, sit: 0 }])
+  /** mm3d-76: no treino o mapa é o escolhido no cartão. */
+  constructor(mapId = "cidade") {
+    this.state = new PaintMatch("solo", [{ slot: 0, team: 0, sit: 0 }], buildPaintMap("solo", mapId))
   }
 
   info() {

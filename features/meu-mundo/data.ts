@@ -174,8 +174,8 @@ export const postCenterLeave = (token: string) => call<ScenePayload>(token, "POS
 export const postJetpackJoin = (token: string, solo: boolean, body: string) =>
   call<JetpackSession>(token, "POST", "/center/jetpack", { solo, body })
 /** Paint (mm3d-35): lugar numa sala do centro (perto da porta), no modo pedido. */
-export const postPaintJoin = (token: string, mode: string, roomId?: string | null) =>
-  call<PaintSession>(token, "POST", "/center/paint", roomId ? { mode, roomId } : { mode })
+export const postPaintJoin = (token: string, mode: string, roomId?: string | null, map?: string) =>
+  call<PaintSession>(token, "POST", "/center/paint", { mode, ...(roomId ? { roomId } : {}), ...(map ? { map } : {}) })
 /** Corrida em grupo (mm3d-39b): a sala espera até 1 minuto e completa 6 naves com o computador. */
 export const postCorridaJoin = (token: string, ship?: string, track?: string) =>
   call<CorridaSession>(token, "POST", "/center/corrida", { ...(ship ? { ship } : {}), ...(track ? { track } : {}) })

@@ -31,8 +31,10 @@ import { newBody, stepBody, knockBody, liftOnto, type BodyMove, type PaintBody }
 import { rayBody, supportAt, supportIndex } from "../sim/collide"
 import { muzzleOf } from "../sim/paint"
 import type { BossAct, MatchEvent, MatchResult, PaintPose } from "../sim/match"
-import type { Solid } from "../sim/map"
+import { polySolid, type Solid } from "../sim/map"
 import { buildPaintWorld } from "./world-view"
+import { buildArenaWorld } from "./arena-view"
+import { paintMapArt } from "./paint-map-art"
 import { PaintView } from "./paint-view"
 import { PickupsView } from "./pickups-view"
 import { CatHerd } from "./cat-herd"
@@ -164,10 +166,13 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const map = state.map
   // Câmera colide com a PEDRA DESENHADA (mais funda que a colisão do corpo),
   // senão ela entra embaixo das ilhas; a tinta entra por cima.
-  const camRock: Solid[] = map.islands.map((i) => ({ k: 0, x: i.x, z: i.z, y0: i.y - i.depth * 0.8, y1: i.y, r: i.r * 0.92 }))
+  // mm3d-76: ilha de forma (mapas novos) = o prisma dela, mais fundo
+  const camRock: Solid[] = map.islands.map((i) => (i.poly ? polySolid(i.poly, i.y - i.depth * 0.8, i.y) : { k: 0, x: i.x, z: i.z, y0: i.y - i.depth * 0.8, y1: i.y, r: i.r * 0.92 }))
   let camSolids: Solid[] = camRock
   let camFrom: Solid[] | null = null
-  const world = buildPaintWorld(scene, map, lowEnd)
+  // mm3d-76: a Cidade tem o desenho dela; os mapas novos, o do tema
+  const theme = paintMapArt(map.id).theme
+  const world = theme ? buildArenaWorld(scene, map, lowEnd, theme) : buildPaintWorld(scene, map, lowEnd)
   const paint = new PaintView(scene, lowEnd)
   const pickups = new PickupsView(scene, map.capsules, lowEnd)
   // Gatinhos leves (mm3d-35g): no mapa e em fila atrás de quem pegou.

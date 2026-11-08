@@ -11,6 +11,9 @@
 //  - RESULTADO: quem deu mais dano no chefão, gatinhos de cada um.
 // mm3d-46: quatro cores (ponte laranja, dano preto, cama elástica vermelha e
 // o MURO turquesa, cuja munição vem do ícone da Freelandoo).
+// mm3d-76 (pedido do Alex): MODO → MAPA → PARTIDA. Depois do modo vem a
+// seleção de mapa (ui/map-select.tsx, 6 mapas); no multiplayer o cartão é o
+// voto e a espera mostra a contagem (a sala apura). Recorde por mapa no aparelho.
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowBigUp, Cat, DoorOpen, Loader2, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
@@ -25,15 +28,24 @@ import { PORTRAIT } from "../../ui/portraits"
 /** Retrato do Guardião (o gato-gorila de porcelana, renderizado do modelo — mm3d-62). */
 const GUARDIAN_PORTRAIT = "/meu-mundo/paint/v1/guardiao.webp"
 import { createPaintGame, type PaintGameHandle, type PaintHud, type PaintNotice } from "../engine/paint-game"
+import { PaintMapSelect, savePaintRecord } from "./map-select"
 import { LocalPort, type PaintPort } from "../engine/port"
 import { CAT_ASSETS } from "../engine/cat-herd"
 import { PAINT, PAINT_COLORS, TUNING, type PaintColor, type PaintMode } from "../sim/tuning"
 import { capsuleGive } from "../sim/match"
 
-export type PaintNetStatus = "connecting" | "online" | "reconnecting" | "replaced" | "offline"
+export type PaintNetStatus = "connecting" | "online" | "reconnecting" | "replaced" | "offline" | "stale"
 export type PaintJoin = (
   mode: Exclude<PaintMode, "solo">,
-  hooks: { signal: AbortSignal; onLobby: (n: number, cap: number) => void; onStatus: (s: PaintNetStatus) => void },
+  hooks: {
+    signal: AbortSignal
+    /** mm3d-76: o mapa em que se vota ao entrar. */
+    map: string
+    onLobby: (n: number, cap: number, votes: Record<string, number>) => void
+    onStatus: (s: PaintNetStatus) => void
+    /** Como trocar o voto na espera. */
+    onRoom?: (api: { vote: (map: string) => void }) => void
+  },
 ) => Promise<PaintPort | null>
 
 export interface PaintViewProps {
@@ -47,8 +59,9 @@ export interface PaintViewProps {
 
 type Stage =
   | { kind: "menu" }
-  | { kind: "joining"; mode: Exclude<PaintMode, "solo">; ac: AbortController }
-  | { kind: "game"; port: PaintPort; key: number }
+  | { kind: "maps"; mode: PaintMode }
+  | { kind: "joining"; mode: Exclude<PaintMode, "solo">; map: string; ac: AbortController }
+  | { kind: "game"; port: PaintPort; key: number; mode: PaintMode }
 
 const COLOR_KEYS = ["paintColorBridge", "paintColorHarm", "paintColorStep", "paintColorWall"] as const
 const COLOR_FALLBACK = ["Ponte", "Dano", "Cama elástica", "Muro"]
@@ -59,58 +72,94 @@ export function PaintView({ body, look = "", onExit, join }: PaintViewProps) {
   const [stage, setStage] = useState<Stage>({ kind: "menu" })
   const [error, setError] = useState<string | null>(null)
   const [lobby, setLobby] = useState<{ n: number; cap: number } | null>(null)
+  const [votes, setVotes] = useState<Record<string, number>>({})
   const [net, setNet] = useState<PaintNetStatus>("online")
   const seq = useRef(0)
+  const roomApi = useRef<{ vote: (map: string) => void } | null>(null)
 
   const play = useCallback(
-    async (mode: PaintMode) => {
+    async (mode: PaintMode, map: string) => {
       setError(null)
       if (mode === "solo") {
-        setStage({ kind: "game", port: new LocalPort(), key: ++seq.current })
+        setStage({ kind: "game", port: new LocalPort(map), key: ++seq.current, mode })
         return
       }
       if (!join) return
       const ac = new AbortController()
-      setStage({ kind: "joining", mode, ac })
+      setStage({ kind: "joining", mode, map, ac })
       setLobby(null)
+      setVotes({ [map]: 1 })
       setNet("online")
+      roomApi.current = null
       try {
-        const port = await join(mode, { signal: ac.signal, onLobby: (n, cap) => setLobby({ n, cap }), onStatus: setNet })
+        const port = await join(mode, {
+          signal: ac.signal,
+          map,
+          onLobby: (n, cap, v) => {
+            setLobby({ n, cap })
+            setVotes(v)
+          },
+          onStatus: setNet,
+          onRoom: (api) => {
+            roomApi.current = api
+          },
+        })
         if (ac.signal.aborted) {
           port?.dispose()
           return
         }
         if (!port) {
           setError(t("paintJoinFail", "A sala não abriu agora. Tente de novo ou treine sozinho."))
-          setStage({ kind: "menu" })
+          setStage({ kind: "maps", mode })
           return
         }
-        setStage({ kind: "game", port, key: ++seq.current })
+        setStage({ kind: "game", port, key: ++seq.current, mode })
       } catch {
         if (ac.signal.aborted) return
         setError(t("paintJoinFail", "A sala não abriu agora. Tente de novo ou treine sozinho."))
-        setStage({ kind: "menu" })
+        setStage({ kind: "maps", mode })
       }
     },
     [join, t],
   )
+  const modeLabel = (m: PaintMode) => (m === "solo" ? t("paintModeSolo", "Treinar") : m === "1v1" ? "1 × 1" : m === "2v2" ? "2 × 2" : "3 × 3")
 
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#e6edf3" }}>
       {stage.kind === "game" ? (
-        <PaintGameScreen key={stage.key} port={stage.port} body={body} look={look} net={stage.port.mode === "solo" ? "online" : net} onLeave={() => setStage({ kind: "menu" })} />
-      ) : (
-        <PaintMenu
-          joining={stage.kind === "joining" ? stage.mode : null}
+        <PaintGameScreen key={stage.key} port={stage.port} body={body} look={look} net={stage.port.mode === "solo" ? "online" : net} onLeave={() => setStage({ kind: "maps", mode: stage.mode })} />
+      ) : stage.kind === "maps" || stage.kind === "joining" ? (
+        <PaintMapSelect
+          mode={stage.mode}
+          modeLabel={modeLabel(stage.mode)}
+          joining={stage.kind === "joining" ? stage.map : null}
           lobby={lobby}
+          votes={votes}
+          stale={net === "stale"}
+          error={error}
+          onBack={() => {
+            setError(null)
+            setStage({ kind: "menu" })
+          }}
+          onRun={(map) => void play(stage.mode, map)}
+          onVote={(map) => roomApi.current?.vote(map)}
           onCancel={() => {
             if (stage.kind !== "joining") return
             stage.ac.abort()
-            setStage({ kind: "menu" })
+            setStage({ kind: "maps", mode: stage.mode })
           }}
+        />
+      ) : (
+        <PaintMenu
+          joining={null}
+          lobby={null}
+          onCancel={() => {}}
           versus={!!join}
           error={error}
-          onPlay={play}
+          onPlay={(mode) => {
+            setError(null)
+            setStage({ kind: "maps", mode })
+          }}
           onExit={onExit}
         />
       )}
@@ -398,6 +447,15 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
   useEffect(() => {
     gameRef.current?.setBlocked(ended)
   }, [ended])
+  // mm3d-76: recorde do mapa no aparelho (maior dano no Guardião e vitórias)
+  const recorded = useRef(false)
+  useEffect(() => {
+    if (!ended || recorded.current || !hud?.result) return
+    recorded.current = true
+    const row = hud.result.rows.find((r) => r.slot === port.me)
+    const myTeam = port.state.players.get(port.me)?.team ?? 0
+    savePaintRecord(port.state.map.id, row?.dmg ?? 0, hud.result.winnerTeam === myTeam)
+  }, [ended, hud, port])
 
   return (
     <>
@@ -437,7 +495,9 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
                   ? t("paintReconnecting", "Reconectando…")
                   : net === "replaced"
                     ? t("paintReplaced", "Aberto em outra janela")
-                    : t("paintOffline", "Sem conexão com a sala")}
+                    : net === "stale"
+                      ? t("paintStale", "O Paint foi atualizado: recarregue a página para jogar.")
+                      : t("paintOffline", "Sem conexão com a sala")}
                 {net !== "reconnecting" && (
                   <button type="button" onClick={onLeave} className="ml-1 rounded-full px-2.5 py-1 text-[12px]" style={{ background: MM.rubyFill }}>
                     {t("paintBackMenu", "Voltar ao menu")}
