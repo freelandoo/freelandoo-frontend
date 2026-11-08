@@ -8,7 +8,7 @@
 //  - ESPERA (grupo): até 1 minuto, 6 largam na hora;
 //  - JOGO: a cena (jetpack-game.ts) com o TANQUE de combustível à esquerda,
 //    distância/velocidade/pontos no alto, o placar do grupo, e no celular os
-//    botões ◀ ▶ (embaixo à esquerda) e PROPULSOR (embaixo à direita, segurar);
+//    arrastar o dedo em qualquer lugar dirige (sem ◀ ▶) e PROPULSOR (embaixo à direita, segurar);
 //  - FIM: no que bateu, pontos, distância, galões, tempo, as estrelas da
 //    fase, o recorde (por fase) e a classificação do grupo.
 //
@@ -16,7 +16,7 @@
 // contar; se a sala não abrir, voa assim mesmo no aparelho.
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as RPointerEvent } from "react"
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Flame, Loader2, Star, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
+import { ChevronDown, ChevronUp, Flame, Loader2, Star, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
@@ -410,7 +410,7 @@ function JetScreen({ body, look, name, phase, mp, onAgain, onMenu }: { body: Bod
             </button>
           </div>
 
-          {/* celular: ◀ ▶ e o propulsor */}
+          {/* celular: arrastar o dedo dirige; o propulsor no botão */}
           {isTouch && !result && <TouchPad game={gameRef} label={t("jetThrust", "Propulsor")} />}
 
           {hud.phase === "countdown" && (
@@ -419,7 +419,7 @@ function JetScreen({ body, look, name, phase, mp, onAgain, onMenu }: { body: Bod
                 {Math.max(1, Math.ceil(hud.countdown))}
               </span>
               <span className="max-w-[360px] rounded-full px-4 py-2 text-center text-[13px] font-semibold" style={{ background: glass, color: ST.text }}>
-                {isTouch ? t("jetHintTouch", "Segure PROPULSOR para subir · ◀ ▶ para os lados") : t("jetHintKeys", "Segure Espaço para subir · ← → para os lados")}
+                {isTouch ? t("jetHintTouch", "Segure PROPULSOR para subir · arraste o dedo para os lados") : t("jetHintKeys", "Segure Espaço para subir · ← → para os lados")}
               </span>
             </div>
           )}
@@ -476,53 +476,88 @@ function JetScreen({ body, look, name, phase, mp, onAgain, onMenu }: { body: Bod
   )
 }
 
-/** Botões do celular: segurar vale (solta ao tirar o dedo ou sair do botão). */
+/**
+ * Celular (pedido do Alex): sem botões de direção — a pessoa EMPURRA o personagem.
+ * Toca em qualquer lugar e desliza: dedo para a direita = vai para a direita, para a
+ * esquerda = vem para a esquerda; quanto mais longe do ponto do toque, mais forte
+ * (cheio a STEER_PX). Soltou = segue reto. Se o dedo passa do cheio, o ponto de
+ * partida vai junto: voltar o dedo um pouco já inverte. O PROPULSOR segue no botão.
+ */
+const STEER_PX = 56
 function TouchPad({ game, label }: { game: { current: JetGameHandle | null }; label: string }) {
-  const [on, setOn] = useState({ left: false, right: false, thrust: false })
-  const bind = (k: "left" | "right" | "thrust") => {
-    const set = (v: boolean) => {
-      setOn((o) => (o[k] === v ? o : { ...o, [k]: v }))
-      game.current?.setTouch({ [k]: v })
-    }
-    return {
-      onPointerDown: (e: RPointerEvent) => {
-        e.preventDefault()
-        ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
-        set(true)
-      },
-      onPointerUp: () => set(false),
-      onPointerCancel: () => set(false),
-      onLostPointerCapture: () => set(false),
-      onContextMenu: (e: { preventDefault: () => void }) => e.preventDefault(),
-    }
+  const [thrust, setThrust] = useState(false)
+  const drag = useRef<{ id: number; x0: number } | null>(null)
+  const [knob, setKnob] = useState<{ x: number; y: number; v: number } | null>(null)
+  const steer = (v: number) => game.current?.setTouch({ steer: v })
+  const end = (e: RPointerEvent) => {
+    if (drag.current?.id !== e.pointerId) return
+    drag.current = null
+    setKnob(null)
+    steer(0)
   }
-  const side = (k: "left" | "right") => (
-    <button
-      type="button"
-      aria-label={k === "left" ? "◀" : "▶"}
-      {...bind(k)}
-      className="grid h-[78px] w-[78px] place-items-center rounded-full"
-      style={{ background: on[k] ? "rgba(232,182,91,0.42)" : "rgba(16,10,6,0.55)", border: `2px solid ${on[k] ? ST.goldHi : ST.goldDeep}`, color: ST.text }}
-    >
-      {k === "left" ? <ChevronLeft className="h-9 w-9" /> : <ChevronRight className="h-9 w-9" />}
-    </button>
-  )
+  const setT = (v: boolean) => {
+    setThrust(v)
+    game.current?.setTouch({ thrust: v })
+  }
   return (
     <>
-      <div className="absolute flex gap-3" style={{ bottom: SAFE.bottom, left: SAFE.left }}>
-        {side("left")}
-        {side("right")}
-      </div>
+      <div
+        // a área do arrasto começa abaixo dos botões do topo (fechar, som)
+        className="absolute inset-x-0 bottom-0"
+        style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 104px)", touchAction: "none" }}
+        onPointerDown={(e) => {
+          e.preventDefault()
+          ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+          drag.current = { id: e.pointerId, x0: e.clientX }
+          setKnob({ x: e.clientX, y: e.clientY, v: 0 })
+          steer(0)
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current
+          if (!d || d.id !== e.pointerId) return
+          let dx = e.clientX - d.x0
+          if (Math.abs(dx) > STEER_PX) {
+            d.x0 = e.clientX - Math.sign(dx) * STEER_PX
+            dx = Math.sign(dx) * STEER_PX
+          }
+          const v = dx / STEER_PX
+          steer(v)
+          setKnob({ x: d.x0, y: e.clientY, v })
+        }}
+        onPointerUp={end}
+        onPointerCancel={end}
+        onLostPointerCapture={end}
+        onContextMenu={(e) => e.preventDefault()}
+      />
+      {knob && (
+        // onde o dedo começou e para que lado está empurrando
+        <div aria-hidden className="pointer-events-none absolute" style={{ left: knob.x - STEER_PX, top: knob.y - 4, width: STEER_PX * 2, height: 8 }}>
+          <div className="absolute inset-0 rounded-full" style={{ background: "rgba(16,10,6,0.45)", border: `1px solid ${ST.goldDeep}` }} />
+          <div
+            className="absolute top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{ left: STEER_PX + knob.v * STEER_PX, background: "rgba(232,182,91,0.55)", border: `2px solid ${ST.goldHi}` }}
+          />
+        </div>
+      )}
       <button
         type="button"
-        {...bind("thrust")}
+        onPointerDown={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+          setT(true)
+        }}
+        onPointerUp={() => setT(false)}
+        onPointerCancel={() => setT(false)}
+        onLostPointerCapture={() => setT(false)}
+        onContextMenu={(e) => e.preventDefault()}
         className="absolute grid h-[104px] w-[104px] place-items-center rounded-full"
         style={{
           bottom: SAFE.bottom,
           right: SAFE.right,
-          background: on.thrust ? "radial-gradient(circle at 50% 40%, #FFD27A, #FF7A1A 60%, #9A3A08)" : "radial-gradient(circle at 50% 40%, rgba(255,160,60,0.5), rgba(60,24,6,0.7))",
-          border: `2px solid ${on.thrust ? ST.goldHi : ST.goldDeep}`,
-          color: on.thrust ? ST.ink : ST.text,
+          background: thrust ? "radial-gradient(circle at 50% 40%, #FFD27A, #FF7A1A 60%, #9A3A08)" : "radial-gradient(circle at 50% 40%, rgba(255,160,60,0.5), rgba(60,24,6,0.7))",
+          border: `2px solid ${thrust ? ST.goldHi : ST.goldDeep}`,
+          color: thrust ? ST.ink : ST.text,
         }}
       >
         <span className="flex flex-col items-center gap-0.5 text-[11px] font-black uppercase tracking-[0.08em]">

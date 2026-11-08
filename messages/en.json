@@ -9670,7 +9670,7 @@
     "jetGo": "FLY!",
     "jetGone": "left",
     "jetHintKeys": "Hold Space to rise · ← → to steer",
-    "jetHintTouch": "Hold THRUST to rise · ◀ ▶ to steer",
+    "jetHintTouch": "Hold THRUST to climb · drag your finger sideways to steer",
     "jetHowFuel": "Green fuel cans refill the tank. Empty tank = the flame dies and you fall.",
     "jetHowFuelTitle": "Fuel cans",
     "jetHowPress": "Presses, pile drivers, pistons and gears move. Touch anything and it's over.",

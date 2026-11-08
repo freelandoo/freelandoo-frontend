@@ -111,7 +111,8 @@ export interface JetGameOptions {
 
 export interface JetGameHandle {
   /** Botões do celular. */
-  setTouch: (t: { left?: boolean; right?: boolean; thrust?: boolean }) => void
+  /** `steer`: arrasto do dedo no celular, −1 (esquerda) a 1 (direita); 0 = soltou. */
+  setTouch: (t: { left?: boolean; right?: boolean; thrust?: boolean; steer?: number }) => void
   setMuted: (m: boolean) => void
   dispose: () => void
 }
@@ -383,7 +384,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
 
   // ── controles ──────────────────────────────────────────────────────────────
   const keys = { left: false, right: false, thrust: false }
-  const tch = { left: false, right: false, thrust: false }
+  const tch = { left: false, right: false, thrust: false, steer: 0 }
   let mouse = false
   const keyOf = (code: string): keyof typeof keys | null =>
     code === "ArrowLeft" || code === "KeyA" ? "left" : code === "ArrowRight" || code === "KeyD" ? "right" : code === "Space" || code === "ArrowUp" || code === "KeyW" ? "thrust" : null
@@ -417,7 +418,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   window.addEventListener("pointerup", onPu)
   window.addEventListener("blur", onBlur)
   const input = (): FlightInput => ({
-    side: (keys.right || tch.right ? 1 : 0) - (keys.left || tch.left ? 1 : 0),
+    side: Math.max(-1, Math.min(1, (keys.right || tch.right ? 1 : 0) - (keys.left || tch.left ? 1 : 0) + tch.steer)),
     thrust: keys.thrust || tch.thrust || mouse,
   })
 
@@ -814,6 +815,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (t.left !== undefined) tch.left = t.left
       if (t.right !== undefined) tch.right = t.right
       if (t.thrust !== undefined) tch.thrust = t.thrust
+      if (t.steer !== undefined) tch.steer = Math.max(-1, Math.min(1, t.steer))
     },
     setMuted(m) {
       audio.setEnabled(!m)
