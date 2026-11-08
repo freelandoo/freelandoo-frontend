@@ -22,7 +22,7 @@
 // dentro do jogo (card do jogador, caixa de entrada ou nome no Global).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Swords, Trophy } from "lucide-react"
+import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Share2, Swords, Trophy } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
@@ -49,6 +49,7 @@ import { CityMapHud } from "./map/city-map-ui"
 import { RewardOverlay } from "./rewards/reward-overlay"
 import { celebrate } from "./rewards/reward-bus"
 import PolensSheet, { PolensReturn } from "./polens/polens-sheet"
+import ShareModal from "./share/share-modal"
 import PlayerCard from "./player-card/player-card"
 import ChatPanel, { type ChatView } from "./chat/chat-panel"
 import { bubbleText, bumpUnread, confirmLine, dropPending, mergeLines, newClientId, pendingLine, type Line } from "./chat/chat-logic"
@@ -142,6 +143,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [itemsOpen, setItemsOpen] = useState(false)
   // B7: aba Ranking (Poder, Nível, Freelandoo)
   const [rankingOpen, setRankingOpen] = useState(false)
+  // A8: Compartilhar (link de afiliado, 10% do que o convidado gastar)
+  const [shareOpen, setShareOpen] = useState(false)
   // mm3d-59: Mochila/Armeiro/Forja (null = fechado; senão a aba que abre)
   const [gearTab, setGearTab] = useState<null | "bag" | "armory" | "forge">(null)
   // mm3d-59: luta de treino do prólogo e quando reconferir a missão
@@ -477,7 +480,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
   // A cela (mm3d-37f) só com a planta na mão; internado, o hospital manda.
   const jailUp = !!jail.phase && !!jail.interior && !hospitalUp
-  const panelOpen = !!inbox || itemsOpen || rankingOpen || polensOpen || !!chatView || !!gearTab
+  const panelOpen = !!inbox || itemsOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab
   const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || jailUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
   const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
@@ -634,6 +637,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         badge: counts?.mail ? String(counts.mail > 99 ? "99+" : counts.mail) : undefined,
         onSelect: () => setInbox({ view: "mail", tab: counts?.gifts ? "gift" : "official" }),
       },
+      { id: "share", label: t("shareMenu", "Compartilhar"), hint: t("shareMenuHint", "Convide e ganhe 10%"), icon: <Share2 className="h-5 w-5" />, kind: "nav", onSelect: () => setShareOpen(true) },
       languageItem,
     ],
     [t, counts, chatBadge, openChat, languageItem],
@@ -834,6 +838,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       )}
       {itemsOpen && <ItemsPanel onClose={() => setItemsOpen(false)} onChanged={lifeChanged} />}
       {rankingOpen && <RankingPanel onClose={() => setRankingOpen(false)} />}
+      {shareOpen && <ShareModal onClose={() => setShareOpen(false)} />}
       {gearTab && (
         <GearPanel
           initialTab={gearTab}

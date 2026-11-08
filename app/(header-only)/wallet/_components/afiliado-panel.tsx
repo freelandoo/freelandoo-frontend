@@ -37,6 +37,15 @@ type DefaultRule = {
   approval_delay_days: number
 }
 
+// A8: comissões das compras do Meu Mundo (filtro `context=meu_mundo`).
+type MmConversion = {
+  id_conversion: string
+  status: "PENDING" | "APPROVED" | "PAID" | "REVERSED"
+  commission_cents: number
+  order_total_cents: number
+  created_at: string
+}
+
 type ReferralRow = {
   id_referral: string
   username: string | null
@@ -103,6 +112,7 @@ export function AfiliadoPanel() {
   const [referrals, setReferrals] = useState<ReferralRow[]>([])
   const [referralTotal, setReferralTotal] = useState(0)
   const [recurring30d, setRecurring30d] = useState(0)
+  const [mmRows, setMmRows] = useState<MmConversion[]>([])
   const [loading, setLoading] = useState(true)
 
   const [pixForm, setPixForm] = useState({ pix_key: "", pix_key_type: "", legal_name: "", tax_id: "" })
@@ -162,6 +172,26 @@ export function AfiliadoPanel() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    const t = token()
+    if (!t) return
+    let cancelled = false
+    fetch("/api/me/affiliate/conversions?context=meu_mundo&limit=100", { headers: { Authorization: `Bearer ${t}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d) setMmRows(Array.isArray(d.items) ? d.items : [])
+      })
+      .catch(() => {
+        /* silencioso */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const mmLive = mmRows.filter((r) => r.status !== "REVERSED")
+  const mmTotal = mmLive.reduce((n, r) => n + (Number(r.commission_cents) || 0), 0)
 
   const handleSavePix = async () => {
     const t = token()
@@ -287,6 +317,63 @@ export function AfiliadoPanel() {
                     style={{ color: GREEN_DEEP }}
                   >
                     {brl(r.earned_cents, locale)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Panel>
+
+      {/* A8: o que o Meu Mundo rendeu — 10% do dinheiro real que os convidados
+          gastam no jogo (Gold comprado lá dentro). */}
+      <Panel title={tr("mmTitle", "Meu Mundo")}>
+        <p className="mb-4 text-[12px] leading-relaxed text-[#6B6457]">
+          {tr(
+            "mmDesc",
+            "Quem entra pelo seu link do botão Compartilhar do jogo e gasta dinheiro de verdade no Meu Mundo rende 10% para você. Esmeralda não conta; compra estornada é desfeita."
+          )}
+        </p>
+        {mmRows.length === 0 ? (
+          <div className="border-2 border-dashed border-[#0B0B0D]/20 p-5 text-center text-[13px] text-[#6B6457]">
+            {tr("mmEmpty", "Nenhuma compra pelo seu link do Meu Mundo ainda.")}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-6">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
+                  {tr("mmCount", "Compras")}
+                </p>
+                <p className="fl-display text-2xl" style={{ color: GREEN_DEEP }}>
+                  {mmLive.length}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
+                  {tr("mmEarned", "Comissão")}
+                </p>
+                <p className="fl-display text-2xl" style={{ color: GREEN_DEEP }}>
+                  {brl(mmTotal, locale)}
+                </p>
+              </div>
+            </div>
+            <div className="divide-y-2 divide-[#0B0B0D]/10">
+              {mmRows.slice(0, 10).map((r) => (
+                <div key={r.id_conversion} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-[#0B0B0D]">
+                      {tr("mmRowSale", "Compra de {value}").replace("{value}", brl(r.order_total_cents, locale))}
+                    </p>
+                    <p className="truncate text-[11px] text-[#6B6457]">
+                      {new Date(r.created_at).toLocaleDateString(locale)} · {tr(`mmStatus${r.status}`, r.status)}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 text-sm font-black tabular-nums ${r.status === "REVERSED" ? "line-through opacity-50" : ""}`}
+                    style={{ color: GREEN_DEEP }}
+                  >
+                    {brl(r.commission_cents, locale)}
                   </span>
                 </div>
               ))}

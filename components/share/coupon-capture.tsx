@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
-import { sanitizeCouponCode, setCapturedCoupon } from "@/lib/share-coupon"
+import { sanitizeCouponCode, setCapturedCoupon, setMeuMundoInvite } from "@/lib/share-coupon"
 import { ensureVisitorToken } from "@/lib/visitor-token"
 
 /**
@@ -39,6 +39,8 @@ function CouponCaptureInner() {
     const landing = typeof window !== "undefined" ? window.location.href : pathname || ""
     // Último cupom vence — sobrescreve qualquer atribuição anterior da sessão.
     setCapturedCoupon(code, landing)
+    // A8: convite do Meu Mundo dura 30 dias no aparelho (até a 1ª compra de Gold).
+    if (pathname?.startsWith("/meu-mundo")) setMeuMundoInvite(code)
 
     // Atribuição PERSISTENTE do conteúdo: sobrevive a fechar a aba e a trocar
     // de dispositivo depois do login, ao contrário do sessionStorage acima.
