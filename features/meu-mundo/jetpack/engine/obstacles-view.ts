@@ -54,7 +54,7 @@ const RED_LAMP: RGB = [1, 0.25, 0.12]
 const FUEL: RGB = [0.29, 0.98, 0.64]
 const mixRGB = (a: RGB, b: RGB, k: number): RGB => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]
 
-type Key = "slab" | "hammer" | "pipe" | "gear" | "can" | "panel" | "petal" | "energy" | "bar" | "hole" | "rim" | "rock" | "gem" | "log" | "frame" | "girder"
+type Key = "slab" | "hammer" | "pipe" | "gear" | "can" | "panel" | "petal" | "energy" | "bar" | "hole" | "rim" | "rock" | "gem" | "log" | "frame" | "girder" | "rail" | "carriage"
 
 /** A pele dos obstáculos novos em cada fase (mm3d-75). */
 interface Skin {
@@ -235,6 +235,18 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
     g.box(1, 0.28, 0.28, place(0, 0, 0.1), skin.rim)
     g.box(1, 0.08, 0.06, place(0, 0.1, -0.06), mixRGB(skin.rim, [1, 1, 1], 0.25))
   }, frameMat)
+  // MECANISMO do que se mexe (Gate B): trilho fixo (perfil de 1 m em x, seção 0,2) e o carro com motor,
+  // amortecedores e a lâmpada âmbar de aviso. Ficam POR FORA da caixa do voo (paredes, teto, chão).
+  make("rail", (g) => {
+    g.box(1, 0.2, 0.34, place(0, 0, 0.17), mixRGB(skin.rim, [0, 0, 0], 0.35))
+    g.box(1, 0.06, 0.4, place(0, 0.12, 0.17), skin.rim)
+  }, frameMat)
+  make("carriage", (g, l) => {
+    g.box(0.62, 1.1, 0.7, place(0, 0, 0.35), skin.rim)
+    g.cylinder(0.42, 0.5, xf(0, 0.25, 0.35, 0, undefined, 0, Math.PI / 2), mixRGB(skin.rim, [0, 0, 0], 0.4), 10)
+    for (const y of [-0.62, 0.62]) g.box(0.5, 0.14, 0.5, place(0, y, 0.35), BLACK)
+    l.box(0.3, 0.18, 0.08, place(0, -0.28, -0.03), [1, 0.62, 0.12])
+  }, frameMat)
   // viga sólida (a barra que corta o túnel): caixa de cor lisa + friso aceso; frente em z = 0
   make("girder", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.petal), frameMat)
   make("energy", (g) => g.box(1, 1, 0.25, place(0, 0, 0.5), skin.field), fieldMat)
@@ -308,18 +320,24 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
       case "gears":
         return o.gears.map(() => take("gear"))
       case "ring":
-        // + dois braços de fixação do aro até as laterais (dentro da área que já é colisão)
-        return [take("hole"), take("rim"), ...frame(skin.ringField), take("frame"), take("frame")]
+        // + dois braços de fixação do aro até as laterais (dentro da área que já é colisão) e, se ele anda,
+        // o trilho e o carro nas duas paredes
+        return [take("hole"), take("rim"), ...frame(skin.ringField), take("frame"), take("frame"), ...mech(o)]
       case "beam":
-        return [take(skin.log ? "log" : "girder"), take("bar"), take("bar")]
+        return [take(skin.log ? "log" : "girder"), take("bar"), take("bar"), ...mech(o)]
       case "rocks":
         return o.gears.map(() => take("rock"))
       case "crystals":
         return o.gears.map(() => take("gem"))
       default:
         // janelas: 4 placas + 4 filetes em volta do vão
-        return [...frame(o.kind === "energy" || (skin.windowField && o.kind !== "slider"), o.kind === "iris"), take("bar"), take("bar"), take("bar"), take("bar"), take("frame"), take("frame"), take("frame"), take("frame")]
+        return [...frame(o.kind === "energy" || (skin.windowField && o.kind !== "slider"), o.kind === "iris"), take("bar"), take("bar"), take("bar"), take("bar"), take("frame"), take("frame"), take("frame"), take("frame"), ...mech(o)]
     }
+  }
+  /** Trilho + carro dos dois lados para o que sobe e desce (`a` ≠ 0); nada para o que é parado. */
+  function mech(o: Obstacle): Part[] {
+    if (!o.a || o.kind === "iris") return []
+    return [take("rail"), take("rail"), take("carriage"), take("carriage")]
   }
   /** As 4 placas de uma janela (de energia, de pétala ou a placa da fase). */
   function frame(field: boolean, petal = false): Part[] {
@@ -371,6 +389,31 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
     p.body.position.set(vertical ? x : (a + b) / 2, vertical ? (a + b) / 2 : y, z)
     p.body.rotation.set(0, 0, vertical ? Math.PI / 2 : 0)
     p.body.scaling.set(b - a, 1, 1)
+  }
+  /** Trilho e carro do que se mexe: `from` é o índice da 1ª peça; `y` a altura do meio agora; `x` (eixo 1) o meio em x. */
+  const mechAt = (o: Obstacle, parts: Part[], from: number, y: number, x: number) => {
+    if (parts.length < from + 4) return
+    const lateral = o.ax === 1
+    for (const k of [0, 1]) {
+      const sx = k ? 1 : -1
+      const rail = parts[from + k]
+      const car = parts[from + 2 + k]
+      if (!lateral) {
+        // de pé na parede (|x| = W/2 + 0,45), do chão ao teto; o carro sobe e desce com o vão
+        rail.body.position.set(sx * (W / 2 + 0.45), H / 2, o.z)
+        rail.body.rotation.set(0, 0, Math.PI / 2)
+        rail.body.scaling.set(H + 0.8, 1, 1)
+        car.body.position.set(sx * (W / 2 + 0.45), Math.max(0.6, Math.min(H - 0.6, y)), o.z - 0.05)
+        car.body.rotation.set(0, 0, 0)
+      } else {
+        // deitado no teto e no chão (fora da caixa); o carro anda de lado com o vão
+        rail.body.position.set(0, k ? H + 0.45 : -0.45, o.z)
+        rail.body.rotation.set(0, 0, 0)
+        rail.body.scaling.set(W + 0.8, 1, 1)
+        car.body.position.set(Math.max(-W / 2 + 0.5, Math.min(W / 2 - 0.5, x)), k ? H + 0.6 : -0.6, o.z - 0.05)
+        car.body.rotation.set(0, 0, Math.PI / 2)
+      }
+    }
   }
   const pose = (o: Obstacle, parts: Part[], t: number) => {
     const set = (p: Part, x: number, y: number, rz: number, sx = 1, sy = 1, sz = 1) => {
@@ -430,6 +473,7 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
           frameAt(parts[6], c.x - ro - lw / 2, c.y, lw, false, o.z)
           frameAt(parts[7], c.x + ro + rw / 2, c.y, rw, false, o.z)
         }
+        mechAt(o, parts, 8, c.y, c.x)
         break
       }
       case "beam": {
@@ -441,6 +485,7 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         } else slabAt(parts[0], { x0: o.x0, x1: o.x1, y0: y - o.h / 2, y1: y + o.h / 2 }, o.z, o.d)
         barAt(parts[1], 0, y + o.h / 2, len, false, o.z)
         barAt(parts[2], 0, y - o.h / 2, len, false, o.z)
+        mechAt(o, parts, 3, y, 0)
         break
       }
       case "rocks":
@@ -468,6 +513,7 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         frameAt(parts[9], v.cx, v.cy - v.h / 2 - fw, v.w + 4 * fw, false, o.z)
         frameAt(parts[10], v.cx - v.w / 2 - fw, v.cy, v.h, true, o.z)
         frameAt(parts[11], v.cx + v.w / 2 + fw, v.cy, v.h, true, o.z)
+        mechAt(o, parts, 12, v.cy, v.cx)
       }
     }
   }

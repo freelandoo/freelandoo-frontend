@@ -344,12 +344,16 @@ export class Course {
   private pw = 1.2
   private ph = 1.2
   private nextSet = Infinity
+  /** Jetpack 3.0: próxima sequência de DESCIDA (fases 02–06) e qual das duas vem. */
+  private nextDescent = Infinity
+  private descents = 0
 
   constructor(seed: number, phase: PhaseId | string = "industrial") {
     this.seed = seed
     this.phase = phaseRule(phase)
     this.r = rng(seed)
     if (this.phase.set) this.nextSet = this.phase.setAt
+    if (this.phase.id !== "industrial") this.nextDescent = DESCENT.at
     // galões do trecho limpo: uma fila para aprender a pegar
     for (let i = 0; i < 3; i++) this.can(0, 4.6, 34 + i * 4)
   }
@@ -509,6 +513,11 @@ export class Course {
     const ru = this.phase
     const h = Math.min(1, ru.h0 + z / ru.hK)
     const v = speedAt(z)
+    if (z >= this.nextDescent && Math.abs(z - this.nextSet) > 160) {
+      this.nextDescent = z + DESCENT.every
+      this.descent(z, h)
+      return
+    }
     if (ru.set && z >= this.nextSet) {
       this.nextSet = z + ru.setEvery
       this.setPiece(ru.set, z, h)
@@ -732,6 +741,62 @@ export class Course {
     } else this.can(x, y, cz)
   }
 
+  /**
+   * Jetpack 3.0 (mm3d-78): sequência de DESCIDA — as passagens não ficam só no meio nem só subindo.
+   * Alterna duas: ESCADA (três anéis, do alto até perto do chão, em dois degraus) e MERGULHO (anel
+   * alto → faixa livre embaixo → anel baixo do outro lado). Cada degrau desce no máximo `DESCENT.drop`
+   * no tempo entre duas passagens (≥ 1 s): a queda livre da regra faz ~5 m nesse tempo, então sobra.
+   * A entrada sobe no máximo `DESCENT.rise` a partir do caminho. Galão no meio de cada descida.
+   */
+  private descent(z0: number, h: number) {
+    let z = z0
+    const v = speedAt(z0)
+    const step = Math.max(15, 1.1 * v)
+    const hh = Math.min(h, 0.6)
+    const r = 2.2 - 0.25 * hh
+    const hiY = H - r - 0.45
+    const loY = r + 0.45
+    const y1 = Math.max(loY + 1.2, Math.min(hiY, this.py + DESCENT.rise))
+    const ring = (x: number, y: number) => {
+      const o = this.base("ring", z)
+      o.g = r
+      o.x0 = Math.max(-W / 2 + r + 0.3, Math.min(W / 2 - r - 0.3, x))
+      o.y0 = y
+      this.obstacles.push(o)
+      this.path(o.x0, y, r * 0.5, r * 0.5)
+      z += o.d
+      return o
+    }
+    const x0 = clampX(Math.max(-1.5, Math.min(1.5, this.px)))
+    if (this.descents++ % 2 === 0) {
+      // ESCADA: alto → meio → baixo, desviando um pouco de lado a cada degrau
+      const mid = (y1 + loY) / 2
+      const dir = x0 > 0 ? -1 : 1
+      ring(x0, y1)
+      this.can(x0 + dir * 0.4, (y1 + mid) / 2, z + step * 0.5)
+      z += step
+      ring(x0 + dir * 0.8, mid)
+      this.can(x0 + dir * 1.2, (mid + loY) / 2, z + step * 0.5)
+      z += step
+      ring(x0 + dir * 1.6, loY)
+    } else {
+      // MERGULHO: anel alto, a faixa livre embaixo (a parede fecha o alto) e o anel baixo do outro lado
+      ring(x0, y1)
+      z += step
+      const b = this.base("band", z)
+      b.h = 3.1 - 0.4 * hh
+      b.w = W + 2 * OUT + 2
+      b.x0 = 0
+      b.y0 = Math.max(b.h / 2 + 0.6, Math.min(y1 - DESCENT.drop, 1 + b.h / 2))
+      this.obstacles.push(b)
+      this.can(x0, b.y0, z + b.d + step * 0.4)
+      this.path(x0, b.y0, 2.5, b.h / 2 - 0.75)
+      z += b.d + step
+      ring(-Math.sign(x0 || 1) * 1.6, Math.max(loY, Math.min(b.y0 + 0.4, hiY)))
+    }
+    this.nextZ = z + step * 0.6
+  }
+
   /** Trecho especial (mm3d-75): uma sequência desenhada, sempre com galão. */
   private setPiece(kind: SetPiece, z0: number, h: number) {
     let z = z0
@@ -812,6 +877,9 @@ export class Course {
     this.nextZ = z + step * 0.5
   }
 }
+
+/** Sequências de descida (mm3d-78): a primeira em `at` m e depois a cada `every`; subida máxima na entrada e queda máxima por degrau (m). */
+export const DESCENT = { at: 420, every: 820, rise: 1.6, drop: 3.4 } as const
 
 const clampX = (x: number) => Math.max(-W / 2 + 1, Math.min(W / 2 - 1, x))
 const clampY = (y: number) => Math.max(1.2, Math.min(H - 1.2, y))
