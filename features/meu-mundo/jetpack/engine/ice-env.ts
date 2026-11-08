@@ -42,7 +42,7 @@ const C = {
 }
 
 type Ctx = { body: JetGeo; glow: JetGeo; spins: SpinSpot[]; props: PropSpot[] }
-const prop = (g: Ctx, kind: IcePiece, x: number, y: number, z: number, s: number, ry = 0, sx = s, sz = s) => g.props.push({ kind, x, y, z, sx, sy: s, sz, ry })
+const prop = (g: Ctx, kind: IcePiece, x: number, y: number, z: number, s: number, ry = 0) => g.props.push({ kind, x, y, z, sx: s, sy: s, sz: s, ry }) // escala SEMPRE uniforme (mm3d-78d: esticar deforma o modelo e a textura)
 
 /** A estrada de gelo (o chão da caixa) com as linhas ciano e os montes de neve nas beiras. */
 function road(g: Ctx, r: () => number) {
@@ -92,7 +92,7 @@ const MODULES: { id: string; build: Mod }[] = [
       const r = rng(410 + v)
       road(g, r)
       // o pórtico congelado: 32 m de vão, pé 0,3 m abaixo da estrada
-      prop(g, "portico", 0, -0.3, 12, 32, 0, 32, 12)
+      prop(g, "portico", 0, -0.3, 12, 32)
       sides(g, r, 2)
       caveRoof(g, r)
     },

@@ -40,7 +40,7 @@ const C = {
 }
 
 type Ctx = { body: JetGeo; glow: JetGeo; spins: SpinSpot[]; props: PropSpot[] }
-const prop = (g: Ctx, kind: FactoryPiece, x: number, y: number, z: number, s: number, ry = 0, sx = s, sz = s) => g.props.push({ kind, x, y, z, sx, sy: s, sz, ry })
+const prop = (g: Ctx, kind: FactoryPiece, x: number, y: number, z: number, s: number, ry = 0) => g.props.push({ kind, x, y, z, sx: s, sy: s, sz: s, ry }) // escala SEMPRE uniforme (mm3d-78d: esticar deforma o modelo e a textura)
 
 /** A passarela (o chão da caixa), o corrimão dos lados e a estrutura embaixo — em todo trecho. */
 function catwalk(g: Ctx, r: () => number) {
@@ -139,7 +139,7 @@ const MODULES: { id: string; build: Mod }[] = [
       // a viga de alerta cruzando por cima (a viga do modelo tem 1 m ao longo de z: giro de 90°)
       for (const sx of [-1, 1]) g.body.box(0.7, H + 4, 0.7, place(sx * 7, (H + 4) / 2 - 1, 10), C.steel)
       // altura ~2 m, espessura ~1,7 m, vão 14,5 m (o modelo tem o vão ao longo de z e 0,42 de altura)
-      prop(g, "viga", 0, H + 0.4, 10, 5, Math.PI / 2, 6, 14.5)
+      prop(g, "viga", 0, H + 0.4, 10, 14.5, Math.PI / 2)
       // guindastes pendurados fora da caixa, com a corrente até o teto
       for (const [sx, z] of [
         [-1, 4],

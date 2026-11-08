@@ -45,7 +45,7 @@ const C = {
 }
 
 type Ctx = { body: JetGeo; glow: JetGeo; glass: JetGeo; spins: SpinSpot[]; props: PropSpot[] }
-const prop = (g: Ctx, kind: OrbitalPiece, x: number, y: number, z: number, s: number, ry = 0, sx = s, sz = s) => g.props.push({ kind, x, y, z, sx, sy: s, sz, ry })
+const prop = (g: Ctx, kind: OrbitalPiece, x: number, y: number, z: number, s: number, ry = 0) => g.props.push({ kind, x, y, z, sx: s, sy: s, sz: s, ry }) // escala SEMPRE uniforme (mm3d-78d: esticar deforma o modelo e a textura)
 
 /** A passarela de vidro (o chão da caixa) com o corrimão de vidro e as bordas acesas — em todo trecho. */
 function skybridge(g: Ctx) {
@@ -75,10 +75,9 @@ function terrace(g: Ctx, sx: number, z: number, w = 5) {
 function towers(g: Ctx, r: () => number, n: number) {
   for (let i = 0; i < n; i++) {
     const sx = i % 2 ? 1 : -1
-    const h = 60 + r() * 70
-    // largura de 10 a 18 m (a torre do modelo tem 0,4 de largura para 1 m de altura): longe da caixa
-    const ws = 25 + r() * 20
-    prop(g, "torre", sx * (12 + ws * 0.21 + r() * 35), -60, r() * SEG, h, r() * 6, ws, ws)
+    // 70 a 110 m de altura na proporção do modelo (0,4 de largura por 1 de altura): meia largura até 22 m
+    const h = 70 + r() * 40
+    prop(g, "torre", sx * (8 + h * 0.21 + r() * 35), -60, r() * SEG, h, r() * 6)
   }
 }
 
@@ -90,7 +89,7 @@ const MODULES: { id: string; build: Mod }[] = [
       const r = rng(210 + v)
       skybridge(g)
       // o pórtico sobre o caminho: 30 m de vão, pé 7,8 m abaixo da passarela (a caixa fica na parte larga)
-      prop(g, "portico", 0, -7.8, 12, 30, 0, 30, 10)
+      prop(g, "portico", 0, -7.8, 12, 30)
       terrace(g, v ? 1 : -1, 4)
       towers(g, r, 3)
     },
@@ -100,8 +99,8 @@ const MODULES: { id: string; build: Mod }[] = [
     build(g, v) {
       const r = rng(220 + v)
       skybridge(g)
-      // tubos de 34 m de altura e ~2,6 m de largura (fora da caixa)
-      for (const sx of [-1, 1]) prop(g, "elevador", sx * 9.5, -20, v ? 6 : 16, 34, 0, 6, 6)
+      // tubos de 12 m na proporção do modelo (5,1 m de largura: beira de dentro em |x| 6,9), dois empilhados
+      for (const sx of [-1, 1]) for (const y of [-18, -6]) prop(g, "elevador", sx * 9.5, y, v ? 6 : 16, 12)
       prop(g, "painel", (v ? -1 : 1) * 13, 9, 14, 6, v ? Math.PI / 2 : -Math.PI / 2)
       towers(g, r, 4)
     },

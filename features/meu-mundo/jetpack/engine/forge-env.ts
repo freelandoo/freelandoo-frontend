@@ -46,7 +46,7 @@ const C = {
 }
 
 type Ctx = { body: JetGeo; glow: JetGeo; spins: SpinSpot[]; props: PropSpot[] }
-const prop = (g: Ctx, kind: ForgePiece, x: number, y: number, z: number, s: number, ry = 0, sx = s, sz = s) => g.props.push({ kind, x, y, z, sx, sy: s, sz, ry })
+const prop = (g: Ctx, kind: ForgePiece, x: number, y: number, z: number, s: number, ry = 0) => g.props.push({ kind, x, y, z, sx: s, sy: s, sz: s, ry }) // escala SEMPRE uniforme (mm3d-78d: esticar deforma o modelo e a textura)
 
 /** A passarela de grade (o chão da caixa) com os trilhos laranja acesos e a treliça até a lava. */
 function catwalk(g: Ctx) {
@@ -88,7 +88,7 @@ const MODULES: { id: string; build: Mod }[] = [
       const r = rng(310 + v)
       catwalk(g)
       // o pórtico aceso sobre o caminho: 28 m de vão, pé 0,5 m abaixo da passarela
-      prop(g, "portico", 0, -0.5, 12, 28, 0, 28, 14)
+      prop(g, "portico", 0, -0.5, 12, 28)
       rocks(g, r, 4)
       furnace(g, v ? 1 : -1, 20)
     },
@@ -128,7 +128,8 @@ const MODULES: { id: string; build: Mod }[] = [
       catwalk(g)
       rocks(g, r, 6)
       // passarela lateral (o trecho de ponte do modelo) atravessando a lava
-      prop(g, "ponte", (v ? 1 : -1) * 14, -3, 12, 1.4, 0, 12, 24)
+      // 14 m inteira (largura 4,9: beira de dentro em |x| 11,5), topo rente ao chão da caixa
+      prop(g, "ponte", (v ? 1 : -1) * 14, -5.5, 12, 14)
     },
   },
 ]

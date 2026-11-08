@@ -48,7 +48,7 @@ const C = {
 }
 
 type Ctx = { body: JetGeo; glow: JetGeo; spins: SpinSpot[]; props: PropSpot[] }
-const prop = (g: Ctx, kind: ForestPiece, x: number, y: number, z: number, s: number, ry = 0, sx = s, sz = s) => g.props.push({ kind, x, y, z, sx, sy: s, sz, ry })
+const prop = (g: Ctx, kind: ForestPiece, x: number, y: number, z: number, s: number, ry = 0) => g.props.push({ kind, x, y, z, sx: s, sy: s, sz: s, ry }) // escala SEMPRE uniforme (mm3d-78d: esticar deforma o modelo e a textura)
 
 /** O rio turquesa lá embaixo (fora da caixa), espuma e a beira de pedra com musgo. */
 function river(g: Ctx, r: () => number) {

@@ -80,9 +80,17 @@ function boulder(g: Ctx, seed: number, x: number, y: number, z: number, sx: numb
  */
 function cliff(g: Ctx, r: () => number, sx: number, z0: number, z1: number, top: number, inner = W / 2 + 0.35) {
   const P = PIECE.paredao
-  const put = (x: number, yTop: number, h: number, w: number, d: number, z: number) =>
-    // o bloco tem 1 m de altura com a origem embaixo; giro só de meia-volta (a caixa de largura não muda)
-    g.props.push({ kind: "paredao", x, y: yTop - h, z, sx: w / P.w, sy: h, sz: d / P.d, ry: r() < 0.5 ? 0 : Math.PI })
+  // mm3d-78d: o bloco segue a PROPORÇÃO do modelo (antes ficava 2× mais alto que largo e a pedra
+  // esculpida esticava). Altura = largura/0,56 = escala; só a profundidade ajusta, no máximo 30%,
+  // para o bloco caber no trecho. Devolve a largura usada. `edge` = beira de dentro (|x|).
+  const put = (edge: number, yTop: number, hMin: number, d: number, z: number) => {
+    const s = Math.max(hMin, d / P.d / 1.3)
+    const sz = Math.min(s * 1.3, Math.max(s / 1.3, d / P.d))
+    const w = P.w * s
+    // o bloco tem 1 m de altura com a origem embaixo; giro só de meia-volta (a largura não muda)
+    g.props.push({ kind: "paredao", x: sx * (edge + w / 2), y: yTop - s, z, sx: s, sy: s, sz, ry: r() < 0.5 ? 0 : Math.PI })
+    return w
+  }
   let z = z0
   let k = 0
   while (z < z1) {
@@ -91,18 +99,15 @@ function cliff(g: Ctx, r: () => number, sx: number, z0: number, z1: number, top:
     const zc = z + len / 2
     // 1) a encosta de dentro
     const t1 = top + (r() - 0.3) * 2
-    const w1 = 4.5 + r() * 2.5
-    put(sx * (inner + w1 / 2), t1, t1 + 16, w1, len + 0.8, zc)
+    const w1 = put(inner, t1, t1 + 16, len + 0.8, zc)
     // 2) o terraço
-    const w2 = 6 + r() * 4
     const in2 = inner + w1 + 1.5 + r() * 3
     const t2 = Math.max(t1 + 4, H + 2) + r() * 8
-    put(sx * (in2 + w2 / 2), t2, t2 + 30, w2, len * 1.2 + 1, zc + (r() - 0.5) * 2)
+    const w2 = put(in2, t2, t2 + 30, len * 1.2 + 1, zc + (r() - 0.5) * 2)
     // 3) o paredão de fundo, alto e longe (um a cada dois)
     if (k % 2 === 0) {
-      const w3 = 10 + r() * 8
       const t3 = t2 + 8 + r() * 16
-      put(sx * (in2 + w2 + 4 + r() * 6 + w3 / 2), t3, t3 + 50, w3, len * 2.2, zc + len / 2)
+      put(in2 + w2 + 4 + r() * 6, t3, t3 + 50, len * 2.2, zc + len / 2)
     }
     z += len
     k++
@@ -288,7 +293,7 @@ const MODULES: { id: string; build: Mod }[] = [
       const r = rng(53 + v)
       for (const sx of [-1, 1]) cliff(g, r, sx, 0, SEG, 2.8 + r() * 2)
       // o arco esculpido (arco.glb): 56 m de vão; no meio da caixa (|x| ≤ 5,35) o vão fica acima de 0,31 × 56 − 3 ≈ 14 m
-      g.props.push({ kind: "arco", x: 0, y: -3, z: 12, sx: 56, sy: 56, sz: 22, ry: v ? Math.PI : 0 })
+      g.props.push({ kind: "arco", x: 0, y: -3, z: 12, sx: 56, sy: 56, sz: 56, ry: v ? Math.PI : 0 })
       ceilingRopes(g)
     },
   },
