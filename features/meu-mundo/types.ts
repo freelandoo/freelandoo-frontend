@@ -281,6 +281,8 @@ export interface LifeCharacter {
   personality: Record<"discipline" | "anxiety" | "optimism" | "appetite" | "resilience" | "metabolism", number>
   /** mm3d-72: personalidade nova, afeto, gosta/odeia, desejo e apelidos. Servidor antigo não manda. */
   soul?: LifeSoul
+  /** T3 (mig 334): poder gravado pelo servidor (regra única power/power.ts). Servidor antigo não manda. */
+  power?: number | null
   vitals: Record<"energy" | "satiety" | "mood" | "stress" | "health" | "vitality", number>
   body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bmi: number; bodyHint: BodyId }
   /** Inteligência, força e velocidade 0–1000; fertilidade 0–100. */
@@ -991,4 +993,6 @@ export interface PlayerProfile {
   isFollowing?: boolean
   /** perfil-conta de quem olha: o "ator" do Seguir */
   viewerProfileId?: string | null
+  /** T3 (mig 334): poder do hóspede dele (null = sem hóspede ainda) */
+  power?: number | null
 }

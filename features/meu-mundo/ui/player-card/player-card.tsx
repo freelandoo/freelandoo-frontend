@@ -27,7 +27,7 @@
 // (input.ts); toque no card não chega ao canvas.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
-import { Loader2, MapPin, MessageCircle, RotateCw, Star, User, UserCheck, UserPlus, X } from "lucide-react"
+import { Loader2, MapPin, MessageCircle, RotateCw, Star, User, UserCheck, UserPlus, X, Zap } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import type { PlayerTap } from "../../engine/player-select"
@@ -212,6 +212,19 @@ export default function PlayerCard({ tap, gone, dismiss, onClose, onMessage }: P
               <div className={`mt-0.5 flex items-center gap-1 ${compact ? "text-[11px]" : "text-[13px]"}`} style={{ color: MM.gold }}>
                 <MapPin className={compact ? "h-3 w-3 shrink-0" : "h-3.5 w-3.5 shrink-0"} aria-hidden />
                 <span className="truncate">{p.city}</span>
+              </div>
+            )}
+            {/* T3: o poder do hóspede dele (o número gravado pelo servidor) */}
+            {usable && p?.power != null && (
+              <div
+                className={`mt-0.5 flex items-center gap-1 font-bold tabular-nums ${compact ? "text-[11px]" : "text-[13px]"}`}
+                style={{ color: MM.gold }}
+                title={t("pcPowerHint", "Poder do personagem")}
+              >
+                <Zap className={compact ? "h-3 w-3 shrink-0" : "h-3.5 w-3.5 shrink-0"} aria-hidden />
+                <span className="truncate">
+                  {t("pcPower", "Poder")} {num(p.power)}
+                </span>
               </div>
             )}
           </div>

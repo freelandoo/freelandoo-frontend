@@ -16,8 +16,9 @@
 // rankOdds, HERO_LEVEL) e o speedFactor do Jetpack.
 
 import { useEffect, useState, type ReactNode } from "react"
-import { Brain, Crosshair, Feather, Heart, Shield, Swords, Target } from "lucide-react"
+import { Brain, Crosshair, Feather, Heart, Shield, Swords, Target, Zap } from "lucide-react"
 import type { LifeFull } from "../../types"
+import { useLocale } from "@/components/i18n/I18nProvider"
 import { HERO_LEVEL, heroSheet } from "../../laminas/sim/fight"
 import { anton } from "../hud/fight-plate"
 import { archivo, cinzel, EVO, teko } from "./evo-skin"
@@ -231,6 +232,35 @@ export function HpPlate({ level, hp, t }: { level: number; hp: number; t: Tr }) 
         </div>
         <SlantBar f={1} color="#FF2E55" h={12} ticks={0} />
       </div>
+    </div>
+  )
+}
+
+/**
+ * T3 (2026-11-08): a placa de PODER do cabeçalho. O número é o que o servidor gravou
+ * (tb_mm_character.power, regra única features/meu-mundo/power/power.ts).
+ */
+export function PowerPlate({ power, t, small = false }: { power: number; t: Tr; small?: boolean }) {
+  const locale = useLocale()
+  return (
+    <div
+      className="flex shrink-0 items-center gap-2 py-1.5 pl-4 pr-6"
+      title={t("stPowerHint", "HP×0,5 + ataque×3 + defesa×2 + (acuracidade + velocidade + inteligência)×10 + equipamento")}
+      style={{
+        clipPath: "polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)",
+        background: "linear-gradient(180deg, #2a2208, #0d0b04)",
+        boxShadow: "inset 0 0 0 2px #FFD23F, inset 0 0 16px rgba(255,210,63,.3)",
+      }}
+    >
+      <Glyph color="#FFD23F" size={small ? 18 : 26}>
+        <Zap />
+      </Glyph>
+      <span className={`${anton.className} inline-block leading-none`} style={{ fontFamily: anton.style.fontFamily, fontSize: small ? 14 : 20, color: "#FFE9B8", transform: "skewX(-9deg)" }}>
+        {t("stPower", "PODER")}
+      </span>
+      <span className={`${anton.className} inline-block tabular-nums leading-none`} style={{ fontFamily: anton.style.fontFamily, fontSize: small ? 20 : 30, color: "#FFD23F", transform: "skewX(-9deg)", textShadow: "0 2px 0 #000" }}>
+        {Math.round(power).toLocaleString(locale)}
+      </span>
     </div>
   )
 }

@@ -10447,7 +10447,11 @@
     "jetTagReflex": "Reflejos",
     "jetTagIce": "Hielo",
     "jetTagNarrow": "Estrecho",
-    "jetTagSoon": "Próximamente"
+    "jetTagSoon": "Próximamente",
+    "stPower": "PODER",
+    "pcPower": "Poder",
+    "pcPowerHint": "Poder del personaje",
+    "stPowerHint": "PV×0,5 + ataque×3 + defensa×2 + (precisión + velocidad + inteligencia)×10 + equipo"
   },
   "Sports": {
     "eyebrow": "Deportes",

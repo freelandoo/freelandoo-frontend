@@ -9881,7 +9881,11 @@
     "jetTagReflex": "Reflexo",
     "jetTagIce": "Gelo",
     "jetTagNarrow": "Estreito",
-    "jetTagSoon": "Em breve"
+    "jetTagSoon": "Em breve",
+    "stPower": "PODER",
+    "pcPower": "Poder",
+    "pcPowerHint": "Poder do personagem",
+    "stPowerHint": "HP×0,5 + ataque×3 + defesa×2 + (acuracidade + velocidade + inteligência)×10 + equipamento"
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -48,7 +48,7 @@ import { GOD_NAMES, isGod, type GodBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
 import { HERO_LEVEL, heroLevelScale, heroSheet } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
-import { HpPlate, LevelBadge, StatBars, StatGuide, statTop } from "./stat-bars"
+import { HpPlate, LevelBadge, PowerPlate, StatBars, StatGuide, statTop } from "./stat-bars"
 import { SoulPanel } from "./soul-panel"
 import { temperLabel } from "../../soul"
 
@@ -501,6 +501,11 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
           </div>
           {adv && <XpLine adv={adv} t={t} small />}
           {adv && <CombatLine adv={adv} life={life} t={t} small />}
+          {c.power != null && (
+            <div className="mt-1 flex justify-end">
+              <PowerPlate power={c.power} t={t} small />
+            </div>
+          )}
         </div>
       </div>
     )
@@ -526,6 +531,7 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
             <span className={`${archivo.className} truncate text-[13px]`} style={{ color: EVO.mudo }}>
               {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {walletText(life, t)}
             </span>
+            {c.power != null && <PowerPlate power={c.power} t={t} small />}
           </div>
         )}
       </div>
@@ -548,6 +554,11 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
               <div className="mt-2 flex items-start gap-3" style={{ minWidth: 520 }}>
                 <LevelBadge level={adv.level} into={adv.into} need={adv.need} t={t} />
                 <HpPlate level={adv.level} hp={heroSheet(life.avatar, adv.level, life.character.attributes).hp} t={t} />
+              </div>
+            )}
+            {c.power != null && (
+              <div className="mt-2 flex">
+                <PowerPlate power={c.power} t={t} />
               </div>
             )}
           </div>
