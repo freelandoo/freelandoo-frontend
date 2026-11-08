@@ -130,6 +130,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     const v = initial.life?.character.vitals
     return v ? { health: v.health, energy: v.energy, stress: v.stress, vitality: v.vitality } : null
   })
+  // o PODER (B7) na barra grande do HUD: do login e de cada "life" da sala
+  const [power, setPower] = useState<number | null>(() => initial.life?.character.power ?? null)
   const onLife = stay.onLife
   // Sino e caixa (mm3d-30): contadores do servidor + o que a sala empurrou.
   const [counts, setCounts] = useState<InboxCounts | null>(null)
@@ -335,8 +337,9 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       }
       if (type === "visits") setVisits(payload as VisitState)
       else if (type === "life") {
-        const p = payload as { status?: string; activity?: string; until?: string | null; needs?: LifeNeed[]; body?: string; vitals?: HudVitals | null; soul?: LifeSoul | null } | null
+        const p = payload as { status?: string; activity?: string; until?: string | null; needs?: LifeNeed[]; body?: string; vitals?: HudVitals | null; soul?: LifeSoul | null; power?: number | null } | null
         if (p?.vitals && typeof p.vitals.health === "number") setVitals(p.vitals)
+        if (typeof p?.power === "number") setPower(p.power)
         if (p?.soul && typeof p.soul.temper === "string") setSoul(p.soul)
         if (typeof p?.activity === "string") setAsleep(p.activity === "sleeping")
         setLifeTick((n) => n + 1)
@@ -850,7 +853,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
       {/* mm3d-60d: HUD do personagem (canto de cima à esquerda) */}
-      <CharHud name={scene.me.name} body={avatar} vitals={vitals} hidden={overlayOpen || asleep || tutorialFight} onOpen={openStatus} />
+      <CharHud name={scene.me.name} body={avatar} vitals={vitals} power={power} hidden={overlayOpen || asleep || tutorialFight} onOpen={openStatus} />
       {/* mm3d-60r: radar no canto de cima à direita; tocar abre o mapa da cidade */}
       <CityMapHud hidden={overlayOpen || asleep || tutorialFight} />
       {/* mm3d-59: missão acompanhada, luta de treino e a gramática dos ganhos */}

@@ -6,7 +6,8 @@
 // de luta da Arena das Lâminas (FightPlate — retrato alto chanfrado, sangue em
 // paralelogramo com o número grande e o fantasma, tiras finas embaixo), numa
 // escala menor. O que cada peça mostra:
-//  • sangue = SAÚDE (o teto é a vitalidade);
+//  • a barra grande = o PODER do personagem (B7, pedido do Alex: no lugar da
+//    saúde, mesmo estilo); enche por faixas de 1.000, como as barras do STATUS;
 //  • tira âmbar = ENERGIA;  • tira violeta = ESTRESSE (alto = mais estresse);
 //  • embaixo, o nível de aventura.
 // Só apresentação — nenhum cálculo: saúde/energia/estresse são os valores que
@@ -22,6 +23,7 @@ import type { BodyId } from "../../types"
 import { PORTRAIT } from "../portraits"
 import { onCelebrate } from "../rewards/reward-bus"
 import { archivo } from "../status/evo-skin"
+import { statTop } from "../status/stat-bars"
 import { FightPlate, plateHeight, plateWidth } from "./fight-plate"
 import { useDrawerOpen } from "./hud-kit"
 import { useGameCovered } from "./game-cover"
@@ -43,7 +45,7 @@ function hudPw() {
   return Math.round(Math.max(40, Math.min(76, window.innerWidth * 0.05, window.innerHeight * 0.095)))
 }
 
-export function CharHud({ name, body, vitals, hidden: hiddenProp = false, onOpen }: { name: string; body: BodyId; vitals: HudVitals | null; hidden?: boolean; onOpen?: () => void }) {
+export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false, onOpen }: { name: string; body: BodyId; vitals: HudVitals | null; power: number | null; hidden?: boolean; onOpen?: () => void }) {
   const t = useTranslations("MeuMundo")
   // com a gaveta aberta o HUD sai (no celular ela cobre a tela quase toda)
   const drawerOpen = useDrawerOpen()
@@ -92,8 +94,7 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false, onOpen
 
   if (hidden) return null
   const v = vitals
-  const health = v ? Math.max(0, v.health) : 0
-  const vit = v ? Math.max(1, v.vitality || 100) : 100
+  const pow = Math.max(0, Math.round(power ?? 0))
   const energy = v ? Math.max(0, Math.min(100, v.energy)) : 0
   const stress = v ? Math.max(0, Math.min(100, v.stress)) : 0
   const label = (k: string, f: string, n: number, m: number) => `${t(k, f)}: ${Math.round(n)} / ${m}`
@@ -119,8 +120,9 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false, onOpen
         barK={BAR_K}
         portrait={PORTRAIT[body] ?? PORTRAIT.normal}
         name={name}
-        hp={health}
-        hpMax={vit}
+        hp={pow}
+        hpMax={statTop(pow)}
+        calm
         stam={energy / 100}
         // estresse = a tira violeta (a mesma cor do poder na luta); acende no alto
         power={{ v: stress / 100, ready: stress >= 70 }}
@@ -149,7 +151,7 @@ export function CharHud({ name, body, vitals, hidden: hiddenProp = false, onOpen
       {/* leitor de tela: os três valores por extenso */}
       {v && (
         <ul className="sr-only">
-          <li>{label("vitalHealth", "Saúde", health, Math.round(vit))}</li>
+          <li>{`${t("stPower", "PODER")}: ${pow}`}</li>
           <li>{label("vitalEnergy", "Energia", energy, 100)}</li>
           <li>{label("vitalStress", "Estresse", stress, 100)}</li>
         </ul>

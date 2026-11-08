@@ -84,6 +84,8 @@ export interface FightPlateProps {
   stam?: number
   /** Terceira tira (o poder da Lâminas), 0–1; `ready` acende. */
   power?: { v: number; ready: boolean }
+  /** Barra que não é vida (o PODER no HUD): nunca fica vermelha de perigo. */
+  calm?: boolean
   /** Algo embaixo da placa (as vidas de cada lobo, o aviso do poder). */
   children?: ReactNode
   style?: CSSProperties
@@ -192,7 +194,7 @@ function Portrait({ pw, ph, src, mirrored }: { pw: number; ph: number; src?: str
   )
 }
 
-export function FightPlate({ pw, barK = 2.9, mirrored = false, portrait, name, hp, hpMax, stam, power, children, style }: FightPlateProps) {
+export function FightPlate({ pw, barK = 2.9, mirrored = false, portrait, name, hp, hpMax, stam, power, calm = false, children, style }: FightPlateProps) {
   const ph = pw * TALL
   const entra = pw * ENTRA
   const larg = pw * barK
@@ -218,7 +220,7 @@ export function FightPlate({ pw, barK = 2.9, mirrored = false, portrait, name, h
     return () => clearTimeout(id)
   }, [v, ghost])
 
-  const low = v <= max * 0.34
+  const low = !calm && v <= max * 0.34
   const folegoTop = chao + altFolego * 0.22
   const powerTop = folegoTop + altFolego * 1.55
   const height = Math.max(ph, (power ? powerTop : folegoTop) + altFolego + 2)
