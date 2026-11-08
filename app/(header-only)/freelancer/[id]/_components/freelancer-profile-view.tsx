@@ -1,5 +1,6 @@
 "use client"
 
+import { ClassificacaoBadge } from "@/components/classificacao/score-badge"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
@@ -985,6 +986,13 @@ export default function FreelancerProfileView({
             }}
           />
         </section>
+
+        {/* A6: nota da Classificação, só se a pessoa pôs no perfil */}
+        {profile.username && (
+          <div className="mb-3 mt-3 flex justify-start">
+            <ClassificacaoBadge username={profile.username} />
+          </div>
+        )}
 
         {/* PORTFOLIO SECTION — abas retangulares, grudadas no headcard */}
         <section ref={portfolioSectionRef} className="-mt-px mb-16">
