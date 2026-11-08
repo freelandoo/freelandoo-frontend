@@ -134,7 +134,7 @@ const CondoResidence = dynamic(
 // pill Comunidade (`PanelTab`), e nada mais chama `setTab("members")`. Um
 // membro de união que ninguém produz é uma porta que só espera alguém religá-la
 // — e aí a página teria duas listas de membros de novo.
-type CommunityTab = "feed" | "services" | "products" | "shop" | "agenda"
+type CommunityTab = "feed" | "services" | "products" | "shop" | "agenda" | "jobs" | "debts"
 // "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
 // `/comunidades/<id>/site`. Ele monta uma página inteira, e encaixá-la numa
 // aba embaixo do feed mostrava um site diferente do que ia ao ar. As duas
@@ -148,6 +148,9 @@ const CondoExtras = dynamic(
 
 // As duas VITRINES territoriais (mig 198), agora como abas. Carregadas sob
 // demanda: quem abre uma comunidade comum — a maioria — nunca baixa este chunk.
+// A2 + A4 (mig 338): abas Empregos e Dívidas em toda comunidade.
+const CommunityJobs = dynamic(() => import("@/components/vitrines/vitrine-lists").then((m) => m.CommunityJobs), { ssr: false })
+const CommunityDebts = dynamic(() => import("@/components/vitrines/vitrine-lists").then((m) => m.CommunityDebts), { ssr: false })
 const CommunityListings = dynamic(
   () => import("./_components/community-listings").then((m) => m.CommunityListings),
   { ssr: false }
@@ -515,7 +518,14 @@ export default function CommunityDetailPage() {
    * `utils/territorialCommunity.js`. Errar para menos aqui esconde um botão;
    * errar para mais promete uma porta que não abre.
    */
-  const canPublishListing = isTerritorial && (isLeader || isResident)
+  // A4 (mig 338): a vitrine vale em TODA comunidade. Territorial pede morador;
+  // as de plataforma aberta (pet, carro, games, Financeiro, Fitness) aceitam
+  // qualquer conta; as outras pedem ser membro. Espelho de `vitrineContext`
+  // (utils/vitrineCommunity.js) — o servidor é quem decide.
+  const openVitrine = ["pet", "car", "games", "finance", "fitness"].includes(String(community?.kind || ""))
+  const canPublishListing = isTerritorial
+    ? isLeader || isResident
+    : !!currentUserId && (openVitrine || isMember || !!community?.viewer_is_admin)
 
   // ─── "Meu Site" (mig 212) ───────────────────────────────────────────────────
   // A flag `comunidade_site` é kill-switch de CONSTRUÇÃO: desligada, o líder
@@ -674,21 +684,21 @@ export default function CommunityDetailPage() {
   // ⚠️ A ABA "ESTANTE" (mig 220) SAIU DAQUI (2026-09-09). Ela só existia na
   // modalidade games e mostrava a biblioteca conectada da Steam; o componente
   // dela foi apagado junto com o resto do frontend daquele ambiente.
-  // ⚠️ AS VITRINES SÓ EXISTEM EM COMUNIDADE TERRITORIAL. Numa comunidade comum
-  // (ou pet/carro) elas não fazem sentido — quem vende ali tem a Loja e o
-  // perfil —, e a rota do backend responde 404 para modalidade não territorial.
-  // Oferecer a aba mesmo assim seria porta pintada.
+  // A4 (mig 338, decisão do Alex): TODA comunidade tem as quatro abas —
+  // Produtos, Serviços, Empregos e Dívidas —, grátis no começo. A comunidade de
+  // NEGÓCIO já tem "Produtos" (a Loja do dono, `shop`), então nela a vitrine
+  // entre membros entra só como Serviços (duas abas "Produtos" confundiriam).
   const showBusinessAgenda = isBusinessPlatform && isLeader && !!community?.leader_store_profile_id
   const communityTabs = useMemo(
     () =>
       [
         ["feed", t("tabFeed", "Feed")],
-        ...(isTerritorial
-          ? ([
+        ...(isBusinessPlatform
+          ? ([["services", t("tabServices", "Serviços")]] as [CommunityTab, string][])
+          : ([
               ["services", t("tabServices", "Serviços")],
               ["products", t("tabProducts", "Produtos")],
-            ] as [CommunityTab, string][])
-          : []),
+            ] as [CommunityTab, string][])),
         // A LOJA DO DONO (2026-09-27): só a comunidade de NEGÓCIO tem, e só o
         // líder vende nela — são os produtos do perfil-conta dele, o mesmo
         // catálogo do site. `shop` e não `products`: aquela é a vitrine
@@ -702,11 +712,13 @@ export default function CommunityDetailPage() {
         ...(showBusinessAgenda
           ? ([["agenda", t("tabAgenda", "Agenda")]] as [CommunityTab, string][])
           : []),
+        ["jobs", t("tabJobs", "Empregos")],
+        ["debts", t("tabDebts", "Dívidas")],
         // ⚠️ "Membros" SAIU DAQUI (2026-09-23): virou aba DENTRO do painel do
         // pill Comunidade, junto de Perfil, Mural e Números. Deixá-la nos dois
         // lugares daria duas telas listando os mesmos membros.
       ] as [CommunityTab, string][],
-    [t, isTerritorial, isBusinessPlatform, showBusinessAgenda]
+    [t, isBusinessPlatform, showBusinessAgenda]
   )
 
   // ─── DEEP-LINK DO DOCK ──────────────────────────────────────────────────────
@@ -736,8 +748,10 @@ export default function CommunityDetailPage() {
     // As vitrines só podem ser abertas por link onde elas existem: numa
     // comunidade comum a aba não está na fila, e abrir uma aba que a fila não
     // tem deixaria a tela mostrando algo que ninguém consegue fechar.
-    if (aba === "servicos" && isTerritorial) setTab("services")
-    if (aba === "produtos" && isTerritorial) setTab("products")
+    if (aba === "servicos") setTab("services")
+    if (aba === "produtos" && !isBusinessPlatform) setTab("products")
+    if (aba === "empregos") setTab("jobs")
+    if (aba === "dividas") setTab("debts")
     if (aba === "produtos" && isBusinessPlatform) setTab("shop")
     if (aba === "agenda" && showBusinessAgenda) setTab("agenda")
     if (painel === "perfil") {
@@ -2834,7 +2848,11 @@ export default function CommunityDetailPage() {
                   tela de tentar desenhá-las quando um deep-link antigo pedir
                   uma aba que a modalidade não tem. Quem publica é o MORADOR
                   (`canPost` já resolve as duas modalidades); quem não é, lê. */}
-              {isTerritorial && (tab === "services" || tab === "products") ? (
+              {tab === "jobs" ? (
+                <CommunityJobs communityId={id} accent={accent} />
+              ) : tab === "debts" ? (
+                <CommunityDebts communityId={id} accent={accent} />
+              ) : tab === "services" || (tab === "products" && !isBusinessPlatform) ? (
                 <>
                   {/* ⚠️ A PORTA DE "MINHAS COMPRAS" MORA AQUI, e sem ela a
                       venda não teria FIM: é naquela tela que quem comprou
@@ -2853,7 +2871,7 @@ export default function CommunityDetailPage() {
                       contestação — ou seja, PRENDERIA dinheiro que já entrou,
                       que é exatamente o que o kill-switch não pode fazer. A
                       própria página também não tem gate, pela mesma razão. */}
-                  {canPublishListing && (
+                  {canPublishListing && isTerritorial && (
                     <div className="mb-4 flex justify-end">
                       <Link
                         href={`/comunidades/${id}/compras`}

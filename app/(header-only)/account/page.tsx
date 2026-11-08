@@ -36,6 +36,7 @@ const AgendaBookingsExperience = dynamic(
 import { ProfileHeadCard } from "@/components/profile/profile-head-card"
 import { ProfileSwitcher } from "@/components/profile/profile-switcher"
 import { SpacesMenu } from "@/components/account/spaces-menu"
+import { NeedsSection } from "@/components/vitrines/needs-section"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
@@ -1971,6 +1972,9 @@ export default function PerfilPage() {
               </div>
             }
           />
+
+          {/* A2 (mig 338): "Preciso de emprego" e "Preciso pagar dívidas". */}
+          <NeedsSection />
 
           {/* AGENDA — paridade com a página de perfil, que já tinha esta seção
               (freelancer-profile-view). O /account não tinha nenhuma: a agenda
