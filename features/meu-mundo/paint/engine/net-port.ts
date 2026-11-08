@@ -204,7 +204,7 @@ export class NetPort implements PaintPort {
     let replaced = false
     room.onMessage("welcome", (p: { slot: number; left?: number }) => {
       this.me = p.slot
-      // 2026-11-08: espera de 1 minuto; depois as vagas vazias viram computadores
+      // 2026-11-08: espera de 20 s (antes 1 minuto); depois as vagas vazias viram computadores
       this.lobbyUntil = p.left ? Date.now() + p.left : 0
     })
     room.onMessage("replaced", () => {

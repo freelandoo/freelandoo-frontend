@@ -189,7 +189,7 @@ function PaintMenu({
 }) {
   const t = useTranslations("MeuMundo")
   const modes: { mode: PaintMode; icon: ReactNode; title: string; sub: string }[] = [
-    // 2026-11-08 (regra do Alex): só 1×1, 2×2 e 3×3; vaga vazia depois de 1 minuto vira computador
+    // 2026-11-08 (regra do Alex): só 1×1, 2×2 e 3×3; vaga vazia depois de 20 s vira computador (o texto não diz, pedido do Alex)
     { mode: "1v1", icon: <Swords className="h-5 w-5" />, title: "1 × 1", sub: t("paintMode1Sub", "Um contra um") },
     { mode: "2v2", icon: <Users className="h-5 w-5" />, title: "2 × 2", sub: t("paintMode2Sub", "Duplas") },
     { mode: "3v3", icon: <Users className="h-5 w-5" />, title: "3 × 3", sub: t("paintMode3Sub", "Times de três") },
@@ -276,7 +276,7 @@ function PaintMenu({
           })}
         </div>
         <p className="mt-2 text-[12px] leading-snug" style={{ color: MM.muted }}>
-          {t("paintModeBotsNote", "Espera até 1 minuto · vaga vazia vira computador")}
+          {t("paintModeBotsNote", "Espera até 20 segundos")}
         </p>
         {joining && (
           <button type="button" onClick={onCancel} className="mt-3 w-full rounded-none py-2.5 text-[14px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}>

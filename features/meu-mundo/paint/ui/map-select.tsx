@@ -97,7 +97,7 @@ export function PaintMapSelect({
   })
   const chosen = list.find((m) => m.id === sel) ?? list[0]
   const multi = mode !== "solo"
-  // relógio da espera (1 minuto; depois as vagas vazias viram computadores)
+  // relógio da espera (20 s; depois as vagas vazias viram computadores)
   const [now, setNow] = useState(() => Date.now())
   const waitUntil = lobby?.until ?? 0
   useEffect(() => {
@@ -156,7 +156,7 @@ export function PaintMapSelect({
                 {stale
                   ? t("paintStale", "O Paint foi atualizado: recarregue a página para jogar.")
                   : lobby
-                    ? t("paintWaitingBots", "Esperando jogadores {n}/{k} · {s} · vaga vazia vira computador").replace("{n}", String(lobby.n)).replace("{k}", String(lobby.cap)).replace("{s}", clock(lobby.until))
+                    ? t("paintWaitingBots", "Esperando jogadores {n}/{k} · {s}").replace("{n}", String(lobby.n)).replace("{k}", String(lobby.cap)).replace("{s}", clock(lobby.until))
                     : t("paintJoining", "Procurando sala…")}
               </span>
             </div>
