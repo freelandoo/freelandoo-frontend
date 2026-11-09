@@ -11,10 +11,10 @@
 //  - FIM: o que derrubou, pontos, moedas, distância, manobras e o recorde.
 //
 // mm3d-42: MULTIPLAYER (pedido do Alex, "na mesma tela como o Antigravidade"):
-// a sala espera até 1 minuto por quem está no centro (6 largam na hora), todos
+// a sala espera até 20 s por quem está no centro (4 largam na hora; vaga vazia vira computador), todos
 // correm na MESMA rua; o placar do grupo fica embaixo das moedas e o fim mostra
-// a classificação ao vivo até o último cair. Sem computador: no Rolê a graça é
-// a rua, quem corre junto é gente. O logo da Freelandoo (a cada 700 m) acende
+// a classificação ao vivo até o último cair. Até 4 no rolê: vaga vazia vira
+// computador (regra do Alex, 2026-11-09). O logo da Freelandoo (a cada 700 m) acende
 // a barra dourada do PODER embaixo da velocidade.
 
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -30,7 +30,10 @@ import { RIDES, type RideKind } from "../sim/run"
 import { createRunGame, type FieldRow, type RunGameHandle, type RunHud, type RunNotice, type RunResult } from "../engine/run-game"
 import type { NoturnoLobbyEntry, NoturnoNet, NoturnoNetStatus, NoturnoResultRow, NoturnoStart } from "../engine/net"
 
-/** Entrar numa largada em grupo (null = a sala não abriu). */
+/** O servidor recusou a entrada; a mensagem já vem traduzida. */
+export class JoinRefused extends Error {}
+
+/** Entrar numa largada em grupo (null = a sala não abriu; JoinRefused = recusou com motivo). */
 export type NoturnoJoin = (
   ride: RideKind,
   body: BodyId,
@@ -48,7 +51,7 @@ export interface RunViewProps {
 }
 
 /** Vagas da largada em grupo. */
-const MAX_RIDERS = 6
+const MAX_RIDERS = 4
 
 type Mp = { net: NoturnoNet; start: NoturnoStart }
 type Stage = { kind: "menu" } | { kind: "lobby"; ride: RideKind; ac: AbortController } | { kind: "game"; ride: RideKind; key: number; mp?: Mp }
@@ -149,8 +152,8 @@ export function RunView({ body, look, name, onExit, join }: RunViewProps) {
       const ac = new AbortController()
       setLobby({ list: [], until: 0 })
       setStage({ kind: "lobby", ride, ac })
-      const fail = () => {
-        setError(t("noturnoJoinFail2", "O rolê não abriu agora. Tente de novo."))
+      const fail = (why?: string) => {
+        setError(why || t("noturnoJoinFail2", "O rolê não abriu agora. Tente de novo."))
         setStage({ kind: "menu" })
       }
       try {
@@ -161,8 +164,9 @@ export function RunView({ body, look, name, onExit, join }: RunViewProps) {
         }
         if (!got) return fail()
         setStage({ kind: "game", ride, key: ++seq.current, mp: got })
-      } catch {
-        if (!ac.signal.aborted) fail()
+      } catch (err) {
+        // a recusa do servidor vem com o motivo (ex.: longe da porta) — mostra ele, não o genérico
+        if (!ac.signal.aborted) fail(err instanceof JoinRefused ? err.message : undefined)
       }
     },
     [join, body, t],
@@ -209,7 +213,7 @@ function RunLobby({ list, until, onCancel }: { list: NoturnoLobbyEntry[]; until:
       text={t("noturnoLobbyHow20", "Quem entrar até o fim do tempo corre junto, na mesma rua. Ganha quem fizer mais pontos antes de cair.")}
       seats={list.map((e) => ({ name: e.name, icon: <RideIcon ride={e.ride} className="h-4 w-4 shrink-0" />, note: names[e.ride] }))}
       cap={MAX_RIDERS}
-      count={t("noturnoLobbyCount", "{n} de 6 no rolê").replace("{n}", String(Math.max(1, list.length)))}
+      count={t("noturnoLobbyCount4", "{n} de 4 no rolê").replace("{n}", String(Math.max(1, list.length)))}
       until={until}
       onCancel={onCancel}
     />
@@ -351,7 +355,7 @@ function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi
             </span>
             {multi && (
               <span className="text-[11px] font-semibold not-italic leading-tight [@media(max-height:520px)]:hidden" style={{ color: "rgba(255,255,255,0.8)" }}>
-                {t("noturnoModeBotsSub", "Espera até 1 minuto · vaga vazia vira computador")}
+                {t("noturnoModeBotsSub4", "Espera até 20 segundos · até 4")}
               </span>
             )}
           </button>

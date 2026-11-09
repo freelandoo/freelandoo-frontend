@@ -71,7 +71,10 @@ const noturnoJoin: NoturnoJoin = async (ride, body, hooks) =>
     const token = getToken()
     if (!token) return null
     const r = await postNoturnoJoin(token, ride, body)
-    return r.ok ? r.data : null
+    if (r.ok) return r.data
+    // recusa com motivo (longe da porta, fora do centro): a tela mostra o motivo
+    if (r.status === 409) throw new (await import("../noturno/ui/run-view")).JoinRefused(r.error)
+    return null
   }, hooks)
 
 /** Gincana em grupo (mm3d-47): a rede só baixa quando alguém escolhe Multiplayer. */

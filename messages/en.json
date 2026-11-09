@@ -10874,7 +10874,9 @@
     "cdOriginMarket": "Market",
     "cdOriginGift": "Gift",
     "cdOriginTest": "Test",
-    "cdOriginLab": "Lab embryo"
+    "cdOriginLab": "Lab embryo",
+    "noturnoLobbyCount4": "{n} of 4 riding",
+    "noturnoModeBotsSub4": "Waits up to 20 seconds · up to 4"
   },
   "Sports": {
     "eyebrow": "Sports",

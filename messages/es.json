@@ -10854,7 +10854,9 @@
     "cdOriginMarket": "Mercado",
     "cdOriginGift": "Regalo",
     "cdOriginTest": "Prueba",
-    "cdOriginLab": "Embrión del laboratorio"
+    "cdOriginLab": "Embrión del laboratorio",
+    "noturnoLobbyCount4": "{n} de 4 en la ruta",
+    "noturnoModeBotsSub4": "Espera hasta 20 segundos · hasta 4"
   },
   "Sports": {
     "eyebrow": "Deportes",
