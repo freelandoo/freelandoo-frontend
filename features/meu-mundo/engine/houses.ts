@@ -24,8 +24,8 @@
 // ═══ O QUE É FEITO NO CARREGAMENTO ═══
 // O transform do glTF (mão direita → esquerda, dequantização do
 // KHR_mesh_quantization) é ASSADO nos vértices: a malha fica em coordenadas
-// locais do lote (frente no -Z, origem = frente dos degraus), e cada thin
-// instance só leva a posição e a rotação do lote. O material do arquivo é
+// locais do lote (frente no -Z, origem = frente dos degraus), e cada
+// instância (uma por lote) só leva a posição e a rotação do lote. O material do arquivo é
 // trocado por um StandardMaterial com os MESMOS ajustes do "mm-world" (difuso
 // branco × cor do vértice, sem brilho): a casa nível 02 é iluminada igual à 01
 // do lado. Modelo antigo com textura (Tripo) ainda funciona: usa a textura.
@@ -33,9 +33,9 @@
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
-import { Matrix } from "@babylonjs/core/Maths/math.vector"
+import { Matrix, Quaternion } from "@babylonjs/core/Maths/math.vector"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
-import "@babylonjs/core/Meshes/thinInstanceMesh"
+import "@babylonjs/core/Meshes/instancedMesh"
 import type { BaseTexture } from "@babylonjs/core/Materials/Textures/baseTexture"
 import type { Material } from "@babylonjs/core/Materials/material"
 import type { Node } from "@babylonjs/core/node"
@@ -160,6 +160,9 @@ export class HouseModels {
       m.rotationQuaternion = null
       m.rotation.setAll(0)
       m.scaling.setAll(1)
+      // A caixa ainda é a dos vértices QUANTIZADOS (centro a ~8 km): sem isto
+      // a instância de cada lote nunca sai do quadro.
+      m.refreshBoundingInfo()
     }
     // Tira do contêiner o que fica; o resto (nó raiz, material PBR) é descartado.
     const keepGeo = mesh.geometry
@@ -235,18 +238,30 @@ export class HouseModels {
     return true
   }
 
+  /**
+   * Uma instância por lote (V1 visual). Era thin instance: a caixa era a
+   * união de todos os lotes do nível, então um lote no quadro desenhava as
+   * casas daquele nível no bairro inteiro, inclusive atrás da câmera (44 mil
+   * triângulos na vista do jogador, 3 mil no quadro). Instância comum continua
+   * numa chamada de desenho por nível e é recortada casa a casa. A base fica
+   * invisível na origem: só desenha pelas instâncias.
+   */
   private syncLevel(level: number) {
     const e = this.entries.get(level)
     if (!e?.mesh) return
     const mats: Matrix[] = []
     for (const v of this.lots.values()) if (v.level === level) mats.push(v.matrix)
     if (mats.length) e.lastUsed = ++this.clock
-    const buf = new Float32Array(Math.max(1, mats.length) * 16)
-    mats.forEach((m, i) => m.copyToArray(buf, i * 16))
     for (const m of e.glow ? [e.mesh, e.glow] : [e.mesh]) {
-      m.thinInstanceSetBuffer("matrix", buf, 16, true)
-      m.thinInstanceCount = mats.length
-      m.thinInstanceRefreshBoundingInfo(false)
+      while (m.instances.length) m.instances[0].dispose()
+      mats.forEach((mx, i) => {
+        const inst = m.createInstance(`${m.name}-${i}`)
+        inst.rotationQuaternion = new Quaternion()
+        mx.decompose(inst.scaling, inst.rotationQuaternion, inst.position)
+        inst.isPickable = false
+        inst.freezeWorldMatrix()
+      })
+      m.isVisible = false
       m.setEnabled(mats.length > 0)
     }
   }

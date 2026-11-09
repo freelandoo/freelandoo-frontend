@@ -317,9 +317,12 @@ export function buildWorld(
     return g
   }
   // Um acumulador por material: o que cai em cada um vira uma malha só — as
-  // peças em blocos de 110 m, para a câmera recortar o que está atrás.
+  // peças em blocos (V1 visual: 32 m; com 110 m os 4 blocos ficavam sempre
+  // na tela), para a câmera recortar o que está atrás, e a peça fina some de
+  // longe (`propCut` do perfil de qualidade).
+  const q = QUALITY[tier]
   const chunked = (uv: SteamGeo["uv"]) => {
-    const g = new ChunkedGeo(110)
+    const g = new ChunkedGeo(q.propCell, q.propCut)
     g.uv = uv
     return g
   }

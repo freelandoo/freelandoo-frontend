@@ -253,12 +253,47 @@ export function facing(x: number, y: number, z: number, frame?: Matrix, ry = 0):
  */
 export class ChunkedGeo extends SteamGeo {
   private readonly parts = new Map<string, ChunkedGeo>()
+  /** Com corte por distância: nível i = o bloco sem as peças das classes < i (0 = cheio). */
+  private levels: ChunkedGeo[] | null = null
 
-  constructor(private readonly cell = 0) {
+  /**
+   * @param cut corte por distância (V1 visual): `[tamanho, metros]` do menor
+   * para o maior. Tamanho = √(as duas maiores medidas da caixa da peça), o
+   * quanto ela cobre na tela: haste de grade 3,5 cm × 0,5 m = 0,13 (pequena);
+   * mureta 0,24 × 20 m = 2,2 (fica — de longe é a linha que desenha o lote).
+   * A peça menor que `tamanho` some quando o bloco passa de `metros` + meia
+   * diagonal do bloco — nenhuma peça mais perto que `metros` some. Vazio = sem
+   * corte (o comportamento de antes).
+   */
+  constructor(
+    private readonly cell = 0,
+    private readonly cut: readonly (readonly [number, number])[] = [],
+  ) {
     super()
   }
 
   protected append(vd: VertexData, color: RGB) {
+    if (this.levels) {
+      const p = vd.positions as ArrayLike<number>
+      const lo = [Infinity, Infinity, Infinity]
+      const hi = [-Infinity, -Infinity, -Infinity]
+      for (let i = 0; i < p.length; i += 3) {
+        for (let k = 0; k < 3; k++) {
+          const v = p[i + k]
+          if (v < lo[k]) lo[k] = v
+          if (v > hi[k]) hi[k] = v
+        }
+      }
+      const ex = [hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]].sort((a, b) => a - b)
+      const e = Math.sqrt(ex[1] * ex[2])
+      let cls = this.cut.findIndex(([t]) => e < t)
+      if (cls < 0) cls = this.cut.length
+      for (let i = 0; i <= cls; i++) {
+        this.levels[i].uv = this.uv
+        this.levels[i].append(vd, color)
+      }
+      return
+    }
     if (!this.cell) {
       super.append(vd, color)
       return
@@ -273,23 +308,53 @@ export class ChunkedGeo extends SteamGeo {
     }
     const key = `${Math.floor(sx / n / this.cell)},${Math.floor(sz / n / this.cell)}`
     let part = this.parts.get(key)
-    if (!part) this.parts.set(key, (part = new ChunkedGeo(0)))
+    if (!part) {
+      part = new ChunkedGeo(0, this.cut) // a tabela vai junto: é o bloco que classifica a peça
+      if (this.cut.length) part.levels = this.cut.map(() => new ChunkedGeo(0)).concat(new ChunkedGeo(0))
+      this.parts.set(key, part)
+    }
     part.uv = this.uv
     part.append(vd, color)
   }
 
-  get vertexCount() {
+  get vertexCount(): number {
+    if (this.levels) return this.levels[0].vertexCount
     if (!this.cell) return super.vertexCount
     let t = 0
     for (const part of this.parts.values()) t += part.vertexCount
     return t
   }
 
-  /** Uma malha por bloco não vazio. */
+  /**
+   * Uma malha por bloco não vazio. Com corte, as malhas de distância vêm
+   * junto na lista (para o dispose de quem chamou); o Babylon só as desenha
+   * no lugar da mestra (`addLODLevel`), nunca sozinhas.
+   */
   buildChunks(name: string, scene: Scene, material: Material): Mesh[] {
     if (!this.cell) return this.vertexCount ? [this.build(name, scene, material)] : []
     const out: Mesh[] = []
-    for (const [key, part] of this.parts) if (part.vertexCount) out.push(part.build(`${name}-${key}`, scene, material))
+    const half = this.cell * Math.SQRT1_2
+    for (const [key, part] of this.parts) {
+      if (!part.vertexCount) continue
+      if (!part.levels) {
+        out.push(part.build(`${name}-${key}`, scene, material))
+        continue
+      }
+      const lv = part.levels
+      const counts = lv.map((g) => g.vertexCount) // antes do build, que esvazia o acumulador
+      const master = lv[0].build(`${name}-${key}`, scene, material)
+      out.push(master)
+      let prev = counts[0]
+      for (let i = 1; i < lv.length; i++) {
+        const n = counts[i]
+        if (n === prev) continue // classe vazia neste bloco: o nível seria igual ao anterior
+        const lod = n ? lv[i].build(`${name}-${key}-d${i}`, scene, material) : null
+        master.addLODLevel(this.cut[i - 1][1] + half, lod)
+        if (lod) out.push(lod)
+        prev = n
+        if (!n) break
+      }
+    }
     this.parts.clear()
     return out
   }

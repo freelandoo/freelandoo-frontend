@@ -37,12 +37,19 @@ export interface QualityProfile {
   avatarCut: number
   /** A partir daqui (m) o nome some (ilegível de longe). */
   tagCut: number
+  /**
+   * Bairro (V1 visual): lado do bloco de props (m) e o corte por distância
+   * das peças pequenas — `[tamanho (m), distância (m)]`, ver `ChunkedGeo`.
+   * A peça some com poucos pixels e já dentro da neblina.
+   */
+  propCell: number
+  propCut: readonly (readonly [number, number])[]
 }
 
 export const QUALITY: Record<QualityTier, QualityProfile> = {
-  low: { tier: "low", maxRatio: 1, minRatio: 0.5, fogStart: 45, fogEnd: 115, maxZ: 125, avatarLod: 10, avatarCut: 70, tagCut: 22 },
-  mid: { tier: "mid", maxRatio: 1.25, minRatio: 0.6, fogStart: 60, fogEnd: 150, maxZ: 165, avatarLod: 16, avatarCut: 110, tagCut: 30 },
-  high: { tier: "high", maxRatio: 1.5, minRatio: 0.75, fogStart: 70, fogEnd: 165, maxZ: 260, avatarLod: 24, avatarCut: 165, tagCut: 40 },
+  low: { tier: "low", maxRatio: 1, minRatio: 0.5, fogStart: 45, fogEnd: 115, maxZ: 125, avatarLod: 10, avatarCut: 70, tagCut: 22, propCell: 32, propCut: [[0.12, 25], [0.3, 45], [0.6, 70]] },
+  mid: { tier: "mid", maxRatio: 1.25, minRatio: 0.6, fogStart: 60, fogEnd: 150, maxZ: 165, avatarLod: 16, avatarCut: 110, tagCut: 30, propCell: 32, propCut: [[0.08, 40], [0.2, 65], [0.45, 105]] },
+  high: { tier: "high", maxRatio: 1.5, minRatio: 0.75, fogStart: 70, fogEnd: 165, maxZ: 260, avatarLod: 24, avatarCut: 165, tagCut: 40, propCell: 32, propCut: [[0.08, 55], [0.2, 90]] },
 }
 
 // GPUs de entrada (celular barato e computador velho) e renderizadores por
