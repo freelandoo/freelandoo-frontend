@@ -505,9 +505,9 @@ async function changedActive<T>(p: Promise<ApiResult<T>>): Promise<ApiResult<T>>
 export const postCharacterUse = (token: string, id: string) =>
   changedActive(call<CharactersResult>(token, "POST", `/characters/${encodeURIComponent(id)}/use`, {}))
 /** Funde dois adultos vivos: os pais viram histórico e nasce o filho da espécie escolhida. */
-/** 09/11: a MISTURA do laboratório — com outro personagem (`b`) ou com uma genética guardada (`gene`). */
-export const postCharacterFuse = (token: string, a: string, other: { b: string } | { gene: string }) =>
-  changedActive(call<CharactersResult>(token, "POST", "/characters/fuse", { a, ...other }))
+/** 09/11: a MISTURA do laboratório (resultado fixo) — `a` é o primeiro; o outro é um personagem (`b`) ou uma genética (`gene`); `species` = a escolhida. */
+export const postCharacterFuse = (token: string, a: string, other: { b: string } | { gene: string }, species: string) =>
+  changedActive(call<CharactersResult>(token, "POST", "/characters/fuse", { a, ...other, species }))
 
 /** 09/11: compra a genética de uma espécie (fica guardada até a mistura). */
 export const postCharacterGenetics = (token: string, species: string, key: string, sex?: "m" | "f") =>

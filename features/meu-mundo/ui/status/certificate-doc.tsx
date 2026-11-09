@@ -12,7 +12,7 @@ import { useEffect, useState, type ReactNode } from "react"
 import { ExternalLink, Loader2 } from "lucide-react"
 import { useLocale } from "@/components/i18n/I18nProvider"
 import { fetchCertificate } from "../../data"
-import type { CertificateMixSide, CharacterCertificate } from "../../types"
+import type { CertificateMix, CertificateMixSide, CharacterCertificate } from "../../types"
 import { speciesName } from "../../characters/names"
 import { serialText } from "../../characters/rules"
 import { temperLabel, type Temper } from "../../soul"
@@ -75,8 +75,15 @@ export function CertificateDoc({ code, t, compact = false }: { code: string | nu
   }
   const temper = (x: string | null | undefined) => (x ? (temperLabel(x as Temper, t) ?? x) : "—")
   const date = (v: string | null) => (v ? new Date(v).toLocaleDateString(locale) : "—")
-  const pct = (v: number) => `${Math.round(v * 100)}%`
-  const mix = cert.genetics.mix ?? null
+  // certidões das primeiras horas (09/11) vieram do sorteio: `drawn` no lugar de `species` e `temper` em objeto
+  const old = (cert.genetics.mix ?? null) as (CertificateMix & { drawn?: "a" | "b"; temper: unknown }) | null
+  const mix: CertificateMix | null = old
+    ? {
+        ...old,
+        species: old.species ?? old.drawn ?? "a",
+        temper: typeof old.temper === "object" && old.temper ? ((old.temper as { result?: string | null }).result ?? null) : ((old.temper as string | null) ?? null),
+      }
+    : null
   const origin = ORIGIN[cert.origin] ?? [`cdOrigin_${cert.origin}`, cert.origin]
   const sideName = (s: CertificateMixSide) =>
     s.kind === "genetics" ? t("cdGeneOf", "Genética de {s}").replace("{s}", speciesName(s.species, t)) : s.name || speciesName(s.species, t)
@@ -101,9 +108,10 @@ export function CertificateDoc({ code, t, compact = false }: { code: string | nu
   const side = (k: "a" | "b") => {
     if (!mix) return null
     const s = mix[k]
-    const won = mix.drawn === k
+    const first = k === "a"
+    const gaveSpecies = mix.species === k
     return (
-      <div className="relative min-w-0 flex-1 p-3" style={{ border: `1.5px solid ${won ? PAPER.seal : PAPER.line}`, background: won ? "rgba(156,42,36,.06)" : "transparent" }}>
+      <div className="relative min-w-0 flex-1 p-3" style={{ border: `1.5px solid ${first ? PAPER.seal : PAPER.line}`, background: first ? "rgba(156,42,36,.06)" : "transparent" }}>
         <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: PAPER.soft }}>
           {s.kind === "genetics" ? t("cdSideGene", "Genética comprada") : s.serialText || serialText(s.serial)}
         </div>
@@ -111,29 +119,21 @@ export function CertificateDoc({ code, t, compact = false }: { code: string | nu
           {sideName(s)}
         </div>
         <div className="mt-1 text-[12px]" style={{ color: PAPER.soft }}>
-          {speciesName(s.species, t)} · {t("cdPower", "Poder {n}").replace("{n}", String(Math.round(s.power)))}
-        </div>
-        <div className="text-[12px]" style={{ color: PAPER.soft }}>
-          {t("cdTemper", "Personalidade")}: {temper(s.temper)}
+          {speciesName(s.species, t)}
+          {s.kind === "character" && ` · ${t("cdTemper", "Personalidade")}: ${temper(s.temper)}`}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <span className="px-1.5 py-0.5 text-[11px] font-bold" style={{ background: PAPER.ink, color: PAPER.bg }}>
-            {t("cdChance", "Chance {p}").replace("{p}", pct(mix.odds[k]))}
-          </span>
-          {mix.stronger === k && (
+          {first && (
+            <span className="px-1.5 py-0.5 text-[11px] font-bold" style={{ background: PAPER.ink, color: PAPER.bg }}>
+              {t("cdFirstTag", "1º · personalidade e atributos")}
+            </span>
+          )}
+          {gaveSpecies && (
             <span className="px-1.5 py-0.5 text-[11px] font-bold" style={{ border: `1px solid ${PAPER.gold}`, color: PAPER.gold }}>
-              {t("cdStronger", "Mais forte")}
+              {t("cdSpeciesTag", "Espécie")}
             </span>
           )}
         </div>
-        {won && (
-          <span
-            className={`${cinzel.className} absolute -right-1 -top-3 rotate-[8deg] px-2 py-0.5 text-[12px] font-extrabold uppercase tracking-[0.12em]`}
-            style={{ border: `2px solid ${PAPER.seal}`, color: PAPER.seal, background: PAPER.bg }}
-          >
-            {t("cdDrawn", "Saiu")}
-          </span>
-        )}
         {s.kind === "character" && s.certCode && (
           <a href={`/meu-mundo/certificado/${s.certCode}`} target="_blank" rel="noopener" className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold underline" style={{ color: PAPER.soft }}>
             {t("cdParentCert", "Certidão dele")} <ExternalLink className="h-3 w-3" />
@@ -195,21 +195,20 @@ export function CertificateDoc({ code, t, compact = false }: { code: string | nu
             {side("b")}
           </div>
           <p className="mt-2 text-[13px]" style={{ color: PAPER.soft }}>
-            {t("cdDrawnLine", "Saiu {s}, com {p} de chance.").replace("{s}", speciesName(mix[mix.drawn].species, t)).replace("{p}", pct(mix.odds[mix.drawn]))}
+            {t("cdSpeciesLine", "Espécie escolhida: {s} (de {w}).").replace("{s}", speciesName(mix[mix.species].species, t)).replace("{w}", who(mix.species))}
           </p>
 
-          {heading(t("cdInherit", "Herança: 20% do maior de cada atributo"))}
+          {heading(t("cdInheritFirst", "Herança: 20% de cada atributo do primeiro"))}
           <ul className="mt-2 grid gap-1 text-[14px]">
             {ATTRS.map((k) => {
               const v = Math.round((cert.genetics.inherited?.[k] ?? 0) * 10) / 10
-              const from = mix.inheritFrom[k] ?? "a"
               return (
                 <li key={k} className="flex items-baseline justify-between gap-3 border-b pb-1" style={{ borderColor: PAPER.line }}>
                   <span>{attrName[k]}</span>
                   <span className="text-right">
                     <b>+{v.toLocaleString(locale)}</b>{" "}
                     <span className="text-[12px]" style={{ color: PAPER.soft }}>
-                      {v > 0 ? t("cdFrom", "de {s}").replace("{s}", who(from)) : t("cdNothing", "nada a herdar")}
+                      {v > 0 ? t("cdFrom", "de {s}").replace("{s}", who("a")) : t("cdNothing", "nada a herdar")}
                     </span>
                   </span>
                 </li>
@@ -218,21 +217,9 @@ export function CertificateDoc({ code, t, compact = false }: { code: string | nu
           </ul>
 
           {heading(t("cdPersonality", "Personalidade"))}
-          {mix.temper.mutated ? (
-            <p className="mt-2 text-[14px]">
-              <span className={`${cinzel.className} mr-2 inline-block rotate-[-4deg] px-2 py-0.5 text-[12px] font-extrabold uppercase`} style={{ border: `2px solid ${PAPER.seal}`, color: PAPER.seal }}>
-                {t("cdMutated", "Mudou")}
-              </span>
-              {t("cdMutatedLine", "Era para nascer {a} (de {s}), mas nasceu {b}.")
-                .replace("{a}", temper(mix.temper.base))
-                .replace("{s}", who(mix.temper.from))
-                .replace("{b}", temper(mix.temper.result))}
-            </p>
-          ) : (
-            <p className="mt-2 text-[14px]">
-              {t("cdKeptLine", "Herdou {a} de {s}, o mais forte.").replace("{a}", temper(mix.temper.result)).replace("{s}", who(mix.temper.from))}
-            </p>
-          )}
+          <p className="mt-2 text-[14px]">
+            {t("cdKeptFirst", "Herdou {a} de {s}, o primeiro da mistura.").replace("{a}", temper(mix.temper)).replace("{s}", who("a"))}
+          </p>
         </>
       )}
 

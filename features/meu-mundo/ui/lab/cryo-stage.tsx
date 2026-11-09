@@ -6,15 +6,15 @@
 // pessoa, um por vez, com setas. Os da cápsula aparecem CONGELADOS (holograma de gelo) e
 // têm "Descongelar": o ativo congela e o escolhido descongela na frente da pessoa (a linha
 // sobe e o gelo vira o personagem). Daqui também:
-//   • MISTURAR — dois adultos, ou um adulto e uma GENÉTICA comprada; antes de confirmar a
-//     tela mostra a probabilidade de cada espécie (pelo Poder), quem é o mais forte (a
-//     personalidade vem dele, com chance de mudar) e o que o filho herda (20% do maior de
-//     cada atributo e de quem). Os dois somem; o filho nasce e aparece no palco;
+//   • MISTURAR — dois adultos, ou um adulto e uma GENÉTICA comprada. RESULTADO FIXO (Alex,
+//     09/11): o primeiro passa a personalidade e 20% de cada atributo dele; a pessoa escolhe
+//     a espécie entre as dos dois. A tela mostra o resultado exato antes de confirmar. Os
+//     dois somem; o filho nasce e aparece no palco;
 //   • GENÉTICAS — a loja (metade do preço do embrião) e as que estão guardadas;
 //   • CERTIDÃO — o documento de nascimento de quem está no palco.
 // O fundo é provisório (o do vestuário); o Alex troca por um de gelo — só o arquivo CRYO_BG.
-// Só apresentação: a conta da probabilidade é a da regra (characters/rules.ts MIX) e o
-// sorteio é do servidor (MeuMundoCharacterService.fuse).
+// Só apresentação: a conta é a da regra (characters/rules.ts MIX), conferida no servidor
+// (MeuMundoCharacterService.fuse).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, Award, ChevronLeft, ChevronRight, Dna, FlaskConical, Loader2, Snowflake, X } from "lucide-react"
@@ -22,7 +22,7 @@ import { useLocale } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { getCharacters, postCharacterFuse, postCharacterGenetics, postCharacterUse } from "../../data"
 import type { BodyId, CharacterGene, CharacterSummary, CharactersResult } from "../../types"
-import { FUSION, MIX, fusionInherit, inheritFrom, mixOdds, mixStronger, speciesBody } from "../../characters/rules"
+import { FUSION, mixInherit, mixSpecies, speciesBody } from "../../characters/rules"
 import { speciesName } from "../../characters/names"
 import { temperLabel, type Temper } from "../../soul"
 import { SkinStage } from "../../engine/skin-stage"
@@ -168,9 +168,7 @@ export default function CryoStage({ t, initial = null, onClose }: { t: Tr; initi
         shown.current = { id: kid.id, holo: false }
       }
     }
-    const pct = `${Math.round((f.chance ?? 0) * 100)}%`
-    const base = t("cryBorn", "Nasceu: {s}! Tinha {p} de chance.").replace("{s}", speciesName(f.species, t)).replace("{p}", pct)
-    say(f.mutated ? `${base} ${t("cryMutated", "E a personalidade mudou!")}` : base, 5200)
+    say(t("cryBornFixed", "Nasceu: {s}!").replace("{s}", speciesName(f.species, t)), 5200)
   }
 
   const coins = data?.wallet?.coins ?? null
@@ -398,9 +396,17 @@ function MixPanel({
   const genes = data.characters.genetics ?? []
   const [a, setA] = useState<string | null>(null)
   const [b, setB] = useState<string | null>(null) // id de personagem ou "gene:<id>"
+  const [pick, setPick] = useState<string | null>(null)
   const A = chars.find((c) => c.id === a) ?? null
-  const B: Side | null = !b ? null : b.startsWith("gene:") ? (() => { const g = genes.find((x) => `gene:${x.id}` === b); return g ? { kind: "gene" as const, g } : null })() : (() => { const c = chars.find((x) => x.id === b); return c ? { kind: "character" as const, c } : null })()
-  const mutation = data.characters.lab?.mutation ?? MIX.MUTATION
+  const B: Side | null = (() => {
+    if (!b) return null
+    if (b.startsWith("gene:")) {
+      const g = genes.find((x) => `gene:${x.id}` === b)
+      return g ? { kind: "gene", g } : null
+    }
+    const c = chars.find((x) => x.id === b)
+    return c ? { kind: "character", c } : null
+  })()
   const inheritK = data.characters.lab?.inherit ?? FUSION.INHERIT
 
   const temper = (x: string | null | undefined) => (x ? (temperLabel(x as Temper, t) ?? x) : "—")
@@ -408,25 +414,19 @@ function MixPanel({
     [speciesName(c.species, t), c.adult ? null : t("chYoung", "Jovem"), c.power != null ? t("chPower", "Poder {n}").replace("{n}", String(c.power)) : null, c.status === "alive" ? t("cryActiveShort", "ativo") : t("cryFrozenShort", "congelado")]
       .filter(Boolean)
       .join(" · ")
-  const sideOf = (s: Side) =>
-    s.kind === "character"
-      ? { name: s.c.petName || speciesName(s.c.species, t), species: s.c.species ?? "", power: s.c.power ?? 0, temper: s.c.temper, peaks: s.c.peaks }
-      : { name: t("cdGeneOf", "Genética de {s}").replace("{s}", speciesName(s.g.species, t)), species: s.g.species, power: s.g.power, temper: s.g.temper, peaks: {} as Record<string, number> }
-
-  const pa = A ? sideOf({ kind: "character", c: A }) : null
-  const pb = B ? sideOf(B) : null
-  const odds = pa && pb ? mixOdds(pa.species, pa.power, pb.species, pb.power) : 0
-  const strong = pa && pb ? mixStronger(pa.power, pb.power) : "a"
-  const S = strong === "a" ? pa : pb
-  const inherit = pa && pb ? fusionInherit(pa.peaks, pb.peaks) : null
-  const from = pa && pb ? inheritFrom(pa.peaks, pb.peaks) : null
+  const bSpecies = B ? (B.kind === "character" ? (B.c.species ?? "") : B.g.species) : ""
+  const options = A && B ? mixSpecies(A.species, bSpecies) : []
+  // a espécie: a escolhida, ou a única possível
+  const species = options.length === 1 ? options[0] : pick && options.includes(pick) ? pick : null
+  const inherit = A ? mixInherit(A.peaks) : null
   const activeInMix = !!A && (A.status === "alive" || (B?.kind === "character" && B.c.status === "alive"))
+  const aName = A ? A.petName || speciesName(A.species, t) : ""
 
   const go = async () => {
     const token = getToken()
-    if (!token || busy || !A || !B) return
+    if (!token || busy || !A || !B || !species) return
     setBusy(true)
-    const r = await postCharacterFuse(token, A.id, B.kind === "gene" ? { gene: B.g.id } : { b: B.c.id })
+    const r = await postCharacterFuse(token, A.id, B.kind === "gene" ? { gene: B.g.id } : { b: B.c.id }, species)
     setBusy(false)
     if (!r.ok) return say(r.error)
     onDone(r.data)
@@ -443,11 +443,11 @@ function MixPanel({
   return (
     <IcePanel t={t} title={t("cryMixTitle", "Misturar")} icon={<FlaskConical className="h-6 w-6" style={{ color: ICE.glow }} />} onClose={onClose}>
       <p className="mt-1 text-[13px]" style={{ color: EVO.mudo }}>
-        {t("cryMixIntro", "Dois adultos, ou um adulto e uma genética. Os dois somem e nasce um filho de uma das duas espécies — quem tem mais Poder tem mais chance. Ele herda 20% do maior de cada atributo e a personalidade do mais forte, que pode mudar.")}
+        {t("cryMixIntroFixed", "Dois adultos, ou um adulto e uma genética. O primeiro passa a personalidade e 20% de cada atributo dele; você escolhe a espécie do filho entre as dos dois. Sem sorteio: o que aparece aqui é o que nasce. Os dois somem.")}
       </p>
 
       <h3 className={`${teko.className} mt-3 text-[18px] uppercase tracking-[0.16em]`} style={{ color: ICE.glow }}>
-        {t("cryMixFirst", "1. O primeiro")}
+        {t("cryMixFirstFixed", "1. O primeiro (personalidade e atributos)")}
       </h3>
       <div className="mt-1 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
         {chars.map((c) => (
@@ -467,7 +467,7 @@ function MixPanel({
             key={g.id}
             img={portraitOfSpecies(g.species, g.sex)}
             title={t("cdGeneOf", "Genética de {s}").replace("{s}", speciesName(g.species, t))}
-            sub={`${t("chPower", "Poder {n}").replace("{n}", String(g.power))} · ${temper(g.temper)}`}
+            sub={g.sex === "f" ? t("chFemale", "fêmea") : t("chMale", "macho")}
             on={b === `gene:${g.id}`}
             frozen
             onClick={() => setB(`gene:${g.id}`)}
@@ -483,65 +483,51 @@ function MixPanel({
         </p>
       )}
 
-      {pa && pb && inherit && from && S && (
+      {A && B && inherit && (
         <div className="mt-4 space-y-3 p-3" style={{ background: "rgba(0,0,0,.28)", border: `1px solid ${ICE.line}`, borderRadius: MM.radius.card }}>
-          {/* a probabilidade */}
+          {/* a espécie do filho: escolha da pessoa */}
           <div>
             <div className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: EVO.mudo }}>
-              {t("cryOdds", "Probabilidade da espécie")}
+              {t("cryMixSpecies", "3. A espécie do filho")}
             </div>
-            {odds >= 1 ? (
-              <p className={`${teko.className} mt-1 text-[24px] uppercase`} style={{ color: ICE.frost }}>
-                {speciesName(pa.species, t)} · 100%
-              </p>
-            ) : (
-              <>
-                <div className="mt-1.5 flex h-7 overflow-hidden" style={{ borderRadius: 6, border: `1px solid ${ICE.line}` }}>
-                  <div className="flex items-center justify-start px-2 text-[12px] font-bold" style={{ width: `${odds * 100}%`, background: "rgba(115,224,255,.55)", color: ICE.deep }}>
-                    {Math.round(odds * 100)}%
-                  </div>
-                  <div className="flex flex-1 items-center justify-end px-2 text-[12px] font-bold" style={{ background: "rgba(214,238,246,.18)", color: ICE.frost }}>
-                    {Math.round((1 - odds) * 100)}%
-                  </div>
-                </div>
-                <div className="mt-1 flex justify-between text-[12.5px]" style={{ color: ICE.frost }}>
-                  <span>{speciesName(pa.species, t)}</span>
-                  <span>{speciesName(pb.species, t)}</span>
-                </div>
-              </>
-            )}
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {options.map((sp) => (
+                <EvoButton key={sp} size="sm" variant={species === sp ? "gold" : "ghost"} onClick={() => setPick(sp)}>
+                  {speciesName(sp, t)}
+                </EvoButton>
+              ))}
+            </div>
           </div>
           {/* a personalidade */}
           <p className="text-[13px]" style={{ color: EVO.branco }}>
-            {t("cryTemperLine", "Mais forte: {s}. A personalidade vem dele ({p}), com {m} de chance de mudar.")
-              .replace("{s}", S.name)
-              .replace("{p}", temper(S.temper || (strong === "a" ? pb.temper : pa.temper)))
-              .replace("{m}", `${Math.round(mutation * 100)}%`)}
+            {t("cryTemperFirst", "Personalidade: {p}, a de {s}.").replace("{p}", temper(A.temper)).replace("{s}", aName)}
           </p>
           {/* a herança */}
           <div>
             <div className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: EVO.mudo }}>
-              {t("cryInherit", "Herança ({p} do maior de cada atributo)").replace("{p}", `${Math.round(inheritK * 100)}%`)}
+              {t("cryInheritFirst", "Herança ({p} de cada atributo de {s})").replace("{p}", `${Math.round(inheritK * 100)}%`).replace("{s}", aName)}
             </div>
             <ul className="mt-1 grid grid-cols-1 gap-x-4 gap-y-0.5 text-[13px] sm:grid-cols-2">
               {ATTRS.map((k) => (
                 <li key={k} className="flex justify-between gap-2" style={{ color: EVO.branco }}>
                   <span>{attrName[k]}</span>
-                  <span>
-                    <b>+{(Math.round((inherit[k] ?? 0) * 10) / 10).toLocaleString()}</b>{" "}
-                    <span style={{ color: EVO.mudo }}>{(inherit[k] ?? 0) > 0 ? t("cdFrom", "de {s}").replace("{s}", from[k] === "a" ? pa.name : pb.name) : ""}</span>
-                  </span>
+                  <b>+{(Math.round((inherit[k] ?? 0) * 10) / 10).toLocaleString()}</b>
                 </li>
               ))}
             </ul>
           </div>
+          {species && (
+            <p className={`${teko.className} text-[22px] uppercase leading-tight`} style={{ color: ICE.frost }}>
+              {t("cryResult", "Nasce: {s}").replace("{s}", speciesName(species, t))}
+            </p>
+          )}
           <p className="text-[12.5px]" style={{ color: "#FFB4A8" }}>
             {activeInMix
               ? t("cryMixWarnActive", "Os dois somem (ficam no histórico). Quem anda com você congela na mistura e o filho sai andando.")
               : t("cryMixWarn", "Os dois somem (ficam no histórico). O filho nasce na cápsula, congelado.")}
           </p>
-          <EvoButton variant="gold" size="md" icon={busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />} disabled={busy} onClick={() => void go()}>
-            {t("cryMixGo", "Misturar agora")}
+          <EvoButton variant="gold" size="md" icon={busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />} disabled={busy || !species} onClick={() => void go()}>
+            {species ? t("cryMixGo", "Misturar agora") : t("cryPickSpecies", "Escolha a espécie")}
           </EvoButton>
         </div>
       )}
@@ -601,7 +587,7 @@ function GenesPanel({
         <span>{t("cryGeneSlots", "Guardadas: {n} de {max}").replace("{n}", String(genes.length)).replace("{max}", String(slots))}</span>
       </div>
       <p className="mt-2 text-[13px]" style={{ color: EVO.mudo }}>
-        {t("cryGenesIntro", "A genética fica no congelador até você misturar com um adulto. Ela não tem atributos: entra com a espécie, o Poder genético (a chance) e uma personalidade.")}
+        {t("cryGenesIntroFixed", "A genética fica no congelador até você misturar com um adulto. Ela entra só com a espécie: a personalidade e os atributos vêm do personagem escolhido primeiro.")}
       </p>
 
       {genes.length > 0 && (
@@ -638,7 +624,7 @@ function GenesPanel({
                   {speciesName(g.species, t)}
                 </div>
                 <div className="mt-1 text-[12px]" style={{ color: EVO.mudo }}>
-                  {sx === "f" ? t("chFemale", "fêmea") : t("chMale", "macho")} · {t("cryGenePower", "Poder genético {n}").replace("{n}", String(g.power))}
+                  {sx === "f" ? t("chFemale", "fêmea") : t("chMale", "macho")}
                 </div>
                 <div className="mt-0.5 text-[12px]" style={{ color: ICE.frost }}>
                   {money(g.price)}

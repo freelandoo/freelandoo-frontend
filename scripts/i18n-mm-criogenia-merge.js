@@ -88,6 +88,21 @@ const ROWS = [
   ["cdOriginGift", "Presente", "Gift", "Regalo"],
   ["cdOriginTest", "Teste", "Test", "Prueba"],
   ["cdOriginLab", "Embrião do laboratório", "Lab embryo", "Embrión del laboratorio"],
+  // resultado fixo (Alex, 09/11): o primeiro passa personalidade e atributos, a espécie é escolhida
+  ["cryMixIntroFixed", "Dois adultos, ou um adulto e uma genética. O primeiro passa a personalidade e 20% de cada atributo dele; você escolhe a espécie do filho entre as dos dois. Sem sorteio: o que aparece aqui é o que nasce. Os dois somem.", "Two adults, or one adult and a genetics sample. The first one passes on its personality and 20% of each of its attributes; you choose the child's species from the two. No draw: what you see here is what is born. Both are gone.", "Dos adultos, o un adulto y una genética. El primero pasa su personalidad y el 20% de cada uno de sus atributos; tú eliges la especie del hijo entre las dos. Sin sorteo: lo que ves aquí es lo que nace. Los dos desaparecen."],
+  ["cryMixFirstFixed", "1. O primeiro (personalidade e atributos)", "1. The first (personality and attributes)", "1. El primero (personalidad y atributos)"],
+  ["cryMixSpecies", "3. A espécie do filho", "3. The child's species", "3. La especie del hijo"],
+  ["cryTemperFirst", "Personalidade: {p}, a de {s}.", "Personality: {p}, from {s}.", "Personalidad: {p}, la de {s}."],
+  ["cryInheritFirst", "Herança ({p} de cada atributo de {s})", "Inheritance ({p} of each of {s}'s attributes)", "Herencia ({p} de cada atributo de {s})"],
+  ["cryResult", "Nasce: {s}", "Born: {s}", "Nace: {s}"],
+  ["cryPickSpecies", "Escolha a espécie", "Choose the species", "Elige la especie"],
+  ["cryBornFixed", "Nasceu: {s}!", "Born: {s}!", "¡Nació: {s}!"],
+  ["cryGenesIntroFixed", "A genética fica no congelador até você misturar com um adulto. Ela entra só com a espécie: a personalidade e os atributos vêm do personagem escolhido primeiro.", "Genetics stay in the freezer until you mix them with an adult. They only bring the species: the personality and attributes come from the character chosen first.", "La genética queda en el congelador hasta que la mezcles con un adulto. Solo aporta la especie: la personalidad y los atributos vienen del personaje elegido primero."],
+  ["cdFirstTag", "1º · personalidade e atributos", "1st · personality and attributes", "1º · personalidad y atributos"],
+  ["cdSpeciesTag", "Espécie", "Species", "Especie"],
+  ["cdSpeciesLine", "Espécie escolhida: {s} (de {w}).", "Chosen species: {s} (from {w}).", "Especie elegida: {s} (de {w})."],
+  ["cdInheritFirst", "Herança: 20% de cada atributo do primeiro", "Inheritance: 20% of each attribute of the first", "Herencia: 20% de cada atributo del primero"],
+  ["cdKeptFirst", "Herdou {a} de {s}, o primeiro da mistura.", "Inherited {a} from {s}, the first in the mix.", "Heredó {a} de {s}, el primero de la mezcla."],
 ]
 
 const LOCS = ["pt-BR", "en", "es"]

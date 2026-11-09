@@ -10876,7 +10876,21 @@
     "cdOriginTest": "Test",
     "cdOriginLab": "Lab embryo",
     "noturnoLobbyCount4": "{n} of 4 riding",
-    "noturnoModeBotsSub4": "Waits up to 20 seconds · up to 4"
+    "noturnoModeBotsSub4": "Waits up to 20 seconds · up to 4",
+    "cryMixIntroFixed": "Two adults, or one adult and a genetics sample. The first one passes on its personality and 20% of each of its attributes; you choose the child's species from the two. No draw: what you see here is what is born. Both are gone.",
+    "cryMixFirstFixed": "1. The first (personality and attributes)",
+    "cryMixSpecies": "3. The child's species",
+    "cryTemperFirst": "Personality: {p}, from {s}.",
+    "cryInheritFirst": "Inheritance ({p} of each of {s}'s attributes)",
+    "cryResult": "Born: {s}",
+    "cryPickSpecies": "Choose the species",
+    "cryBornFixed": "Born: {s}!",
+    "cryGenesIntroFixed": "Genetics stay in the freezer until you mix them with an adult. They only bring the species: the personality and attributes come from the character chosen first.",
+    "cdFirstTag": "1st · personality and attributes",
+    "cdSpeciesTag": "Species",
+    "cdSpeciesLine": "Chosen species: {s} (from {w}).",
+    "cdInheritFirst": "Inheritance: 20% of each attribute of the first",
+    "cdKeptFirst": "Inherited {a} from {s}, the first in the mix."
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -10290,7 +10290,21 @@
     "cdOriginTest": "Teste",
     "cdOriginLab": "Embrião do laboratório",
     "noturnoLobbyCount4": "{n} de 4 no rolê",
-    "noturnoModeBotsSub4": "Espera até 20 segundos · até 4"
+    "noturnoModeBotsSub4": "Espera até 20 segundos · até 4",
+    "cryMixIntroFixed": "Dois adultos, ou um adulto e uma genética. O primeiro passa a personalidade e 20% de cada atributo dele; você escolhe a espécie do filho entre as dos dois. Sem sorteio: o que aparece aqui é o que nasce. Os dois somem.",
+    "cryMixFirstFixed": "1. O primeiro (personalidade e atributos)",
+    "cryMixSpecies": "3. A espécie do filho",
+    "cryTemperFirst": "Personalidade: {p}, a de {s}.",
+    "cryInheritFirst": "Herança ({p} de cada atributo de {s})",
+    "cryResult": "Nasce: {s}",
+    "cryPickSpecies": "Escolha a espécie",
+    "cryBornFixed": "Nasceu: {s}!",
+    "cryGenesIntroFixed": "A genética fica no congelador até você misturar com um adulto. Ela entra só com a espécie: a personalidade e os atributos vêm do personagem escolhido primeiro.",
+    "cdFirstTag": "1º · personalidade e atributos",
+    "cdSpeciesTag": "Espécie",
+    "cdSpeciesLine": "Espécie escolhida: {s} (de {w}).",
+    "cdInheritFirst": "Herança: 20% de cada atributo do primeiro",
+    "cdKeptFirst": "Herdou {a} de {s}, o primeiro da mistura."
   },
   "Sports": {
     "eyebrow": "Esportes",

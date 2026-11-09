@@ -10856,7 +10856,21 @@
     "cdOriginTest": "Prueba",
     "cdOriginLab": "Embrión del laboratorio",
     "noturnoLobbyCount4": "{n} de 4 en la ruta",
-    "noturnoModeBotsSub4": "Espera hasta 20 segundos · hasta 4"
+    "noturnoModeBotsSub4": "Espera hasta 20 segundos · hasta 4",
+    "cryMixIntroFixed": "Dos adultos, o un adulto y una genética. El primero pasa su personalidad y el 20% de cada uno de sus atributos; tú eliges la especie del hijo entre las dos. Sin sorteo: lo que ves aquí es lo que nace. Los dos desaparecen.",
+    "cryMixFirstFixed": "1. El primero (personalidad y atributos)",
+    "cryMixSpecies": "3. La especie del hijo",
+    "cryTemperFirst": "Personalidad: {p}, la de {s}.",
+    "cryInheritFirst": "Herencia ({p} de cada atributo de {s})",
+    "cryResult": "Nace: {s}",
+    "cryPickSpecies": "Elige la especie",
+    "cryBornFixed": "¡Nació: {s}!",
+    "cryGenesIntroFixed": "La genética queda en el congelador hasta que la mezcles con un adulto. Solo aporta la especie: la personalidad y los atributos vienen del personaje elegido primero.",
+    "cdFirstTag": "1º · personalidad y atributos",
+    "cdSpeciesTag": "Especie",
+    "cdSpeciesLine": "Especie elegida: {s} (de {w}).",
+    "cdInheritFirst": "Herencia: 20% de cada atributo del primero",
+    "cdKeptFirst": "Heredó {a} de {s}, el primero de la mezcla."
   },
   "Sports": {
     "eyebrow": "Deportes",
