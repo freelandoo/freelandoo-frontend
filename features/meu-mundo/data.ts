@@ -491,13 +491,23 @@ export const postLifePetName = (token: string, name: string) => call<LifeSummary
 // ═══ B3 (mig 340): personagens — o ativo e a cápsula, trocar, fundir, certificado ═══
 // (o vestuário de skins da mm3d-16 saiu: as skins viraram espécies de personagem)
 export const getCharacters = (token: string) => call<CharactersResult>(token, "GET", "/characters")
+/**
+ * O personagem ativo mudou (troca pela cápsula ou mistura): o nível de aventura é POR
+ * personagem (mig 435), então o HUD e o STATUS releem o nível quando ouvem isto.
+ */
+export const CHARACTER_CHANGED = "mm:character-changed"
+async function changedActive<T>(p: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
+  const r = await p
+  if (r.ok && typeof window !== "undefined") window.dispatchEvent(new Event(CHARACTER_CHANGED))
+  return r
+}
 /** Guarda o ativo na cápsula (congelado) e tira este de lá. */
 export const postCharacterUse = (token: string, id: string) =>
-  call<CharactersResult>(token, "POST", `/characters/${encodeURIComponent(id)}/use`, {})
+  changedActive(call<CharactersResult>(token, "POST", `/characters/${encodeURIComponent(id)}/use`, {}))
 /** Funde dois adultos vivos: os pais viram histórico e nasce o filho da espécie escolhida. */
 /** 09/11: a MISTURA do laboratório — com outro personagem (`b`) ou com uma genética guardada (`gene`). */
 export const postCharacterFuse = (token: string, a: string, other: { b: string } | { gene: string }) =>
-  call<CharactersResult>(token, "POST", "/characters/fuse", { a, ...other })
+  changedActive(call<CharactersResult>(token, "POST", "/characters/fuse", { a, ...other }))
 
 /** 09/11: compra a genética de uma espécie (fica guardada até a mistura). */
 export const postCharacterGenetics = (token: string, species: string, key: string, sex?: "m" | "f") =>

@@ -361,6 +361,12 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       onClose={() => setWardrobe(false)}
       onChanged={(r) => {
         if (r.avatar) setAvatar(r.avatar)
+        // o nível é de cada personagem (mig 435): trocou, relê
+        const tk = getToken()
+        if (tk)
+          void getAdventure(tk).then((a) => {
+            if (a.ok) setAdv({ level: a.data.adventure.level, into: a.data.adventure.into, need: a.data.adventure.need })
+          })
         setLife((l) => (l ? { ...l, wallet: { ...l.wallet, ...r.wallet }, character: r.character } : l))
       }}
     />

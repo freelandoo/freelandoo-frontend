@@ -18,7 +18,7 @@
 import { useEffect, useState } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
-import { getAdventure } from "../../data"
+import { CHARACTER_CHANGED, getAdventure } from "../../data"
 import type { BodyId } from "../../types"
 import { PORTRAIT } from "../portraits"
 import { onCelebrate } from "../rewards/reward-bus"
@@ -64,20 +64,26 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
     return () => window.removeEventListener("resize", on)
   }, [])
 
-  // nível de aventura: uma vez ao montar + cada recibo celebrado
+  // nível de aventura: ao montar, a cada recibo celebrado e quando o personagem ativo muda
+  // (o nível é de cada personagem, mig 435)
   useEffect(() => {
     let alive = true
-    const token = getToken()
-    if (token)
-      void getAdventure(token).then((r) => {
-        if (alive && r.ok) setAdv({ level: r.data.adventure.level, into: r.data.adventure.into, need: r.data.adventure.need })
-      })
+    const load = () => {
+      const token = getToken()
+      if (token)
+        void getAdventure(token).then((r) => {
+          if (alive && r.ok) setAdv({ level: r.data.adventure.level, into: r.data.adventure.into, need: r.data.adventure.need })
+        })
+    }
+    load()
+    window.addEventListener(CHARACTER_CHANGED, load)
     const off = onCelebrate((r) => {
       const x = r.deltas?.xp
       if (x && typeof x.to === "number" && x.to > 0) setAdv({ level: x.to, into: x.into, need: x.need })
     })
     return () => {
       alive = false
+      window.removeEventListener(CHARACTER_CHANGED, load)
       off()
     }
   }, [])
