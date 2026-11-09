@@ -1,6 +1,9 @@
 {
   "name": "views-stars-platform",
   "version": "0.1.0",
+  "engines": {
+    "node": "24.x"
+  },
   "private": true,
   "scripts": {
     "build": "next build",
@@ -15,7 +18,8 @@
     "check:site-chrome": "node scripts/check-site-chrome.mjs",
     "check:site-template": "node scripts/check-site-template.mjs",
     "frames:ecoluz": "node scripts/ecoluz-frames.mjs",
-    "check:safe-return": "node scripts/check-safe-return.mjs"
+    "check:safe-return": "node scripts/check-safe-return.mjs",
+    "audit:prod": "npm audit --omit=dev"
   },
   "dependencies": {
     "@babylonjs/core": "9.29.0",
