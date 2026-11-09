@@ -45,7 +45,8 @@ const uiImportRule = {
 const config = [
   // Testes e2e (Playwright) ficam fora do lint do app — dependência opcional,
   // instalada sob demanda (npm i + npm run test:e2e:install).
-  { ignores: ["e2e/**", "playwright.config.ts", "scripts/**"] },
+  // Sites exportados copiados em public/<site>/_next são saída de build minificada.
+  { ignores: ["e2e/**", "playwright.config.ts", "scripts/**", "public/**/_next/**"] },
   ...require("eslint-config-next/core-web-vitals"),
   {
     rules: {
