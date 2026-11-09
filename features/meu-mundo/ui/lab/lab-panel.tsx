@@ -13,7 +13,7 @@
 // (MeuMundoCharacterService.buyEmbryo/accelerate, regra em characters/rules.ts LAB).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Egg, FastForward, Loader2, MessagesSquare, Snowflake, X } from "lucide-react"
+import { Dna, Egg, FastForward, FlaskConical, Loader2, MessagesSquare, Snowflake, X } from "lucide-react"
 import { useLocale } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { getCharacters, postCharacterAccelerate, postCharacterEmbryo } from "../../data"
@@ -39,12 +39,15 @@ const LINES: [string, string][] = [
   ["labLine4", "O acelerador é seguro. Quase sempre. Brincadeira — é seguro sempre."],
   ["labLine5", "Cuidado com a geada no chão. O último estagiário ainda está na cápsula três."],
   ["labLine6", "Cada embrião tem certificado, número de série e genética própria. Nenhum é igual ao outro."],
+  ["labLine7", "Misturar é ciência… e um pouco de sorte. O mais forte tem mais chance de passar a espécie, mas nunca é certeza."],
+  ["labLine8", "Toda mistura vira certidão de nascimento: de quem veio cada atributo, quem era mais forte e se a personalidade mudou."],
 ]
 
 export interface LabPanelProps {
   t: Tr
   mode: LabMode
-  onMode: (m: LabMode | "cryo") => void
+  /** "cryo"/"mix"/"genes" abrem o palco da criogenia (ui/lab/cryo-stage.tsx). */
+  onMode: (m: LabMode | "cryo" | "mix" | "genes") => void
   onClose: () => void
 }
 
@@ -146,6 +149,12 @@ export default function LabPanel({ t, mode, onMode, onClose }: LabPanelProps) {
             <div className="mt-4 flex flex-wrap gap-2">
               <EvoButton size="sm" icon={<Snowflake className="h-4 w-4" />} onClick={() => onMode("cryo")}>
                 {t("pvCryo", "Ver as cápsulas")}
+              </EvoButton>
+              <EvoButton size="sm" variant="ghost" icon={<FlaskConical className="h-4 w-4" />} onClick={() => onMode("mix")}>
+                {t("pvMix", "Misturar personagens")}
+              </EvoButton>
+              <EvoButton size="sm" variant="ghost" icon={<Dna className="h-4 w-4" />} onClick={() => onMode("genes")}>
+                {t("pvGenes", "Comprar genética")}
               </EvoButton>
               <EvoButton size="sm" variant="ghost" icon={<Egg className="h-4 w-4" />} onClick={() => onMode("embryo")}>
                 {t("pvEmbryo", "Comprar embrião")}

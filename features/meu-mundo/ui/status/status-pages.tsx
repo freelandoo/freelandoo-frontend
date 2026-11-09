@@ -39,6 +39,7 @@ import {
   LocateFixed,
   Zap,
   Users,
+  Loader2,
 } from "lucide-react"
 import type { LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
 import { Bar, Chamfer, CountUp, EVO, Gauge, Plate, Ring, Tag, archivo, cinzel, teko, toneFor } from "./evo-skin"
@@ -54,11 +55,13 @@ import { HpPlate, LevelBadge, PowerPlate, StatBars, StatGuide, statTop } from ".
 import { SoulPanel } from "./soul-panel"
 import { temperLabel } from "../../soul"
 import { LoadoutPage, type LoadoutData } from "./loadout-page"
+import { CertificateDoc } from "./certificate-doc"
 
 type Tr = (key: string, fallback: string) => string
 
 /** B6: "loadout" = Equipado e efeitos (equipamento, efeitos ativos, origem dos atributos, Poder, personagem). */
-export const PAGES = ["overview", "body", "attributes", "loadout", "routine", "market", "history"] as const
+/** 09/11: "certificate" = a certidão de nascimento do personagem ativo (a bolinha da certidão). */
+export const PAGES = ["overview", "body", "attributes", "loadout", "routine", "market", "history", "certificate"] as const
 export type PageId = (typeof PAGES)[number]
 
 export interface PageActions {
@@ -403,6 +406,7 @@ const SUBTITLE: Record<PageId, [string, string]> = {
   routine: ["stPageRoutine", "Rotina de hoje"],
   market: ["stPageMarket", "Mercado e farmácia"],
   history: ["stPageHistory", "Diário e linha do tempo"],
+  certificate: ["stPageCertificate", "Certidão de nascimento"],
 }
 export const pageTitle = (p: PageId, t: Tr) => t(SUBTITLE[p][0], SUBTITLE[p][1])
 
@@ -2122,15 +2126,27 @@ function LoadoutC(p: PageProps) {
   return <LoadoutPage life={p.life} adv={p.adv} data={p.loadout ?? NO_LOADOUT} compact t={p.t} />
 }
 
+/** A certidão do personagem ativo (o código vem da lista de personagens do B6). */
+function CertificatePage(p: PageProps) {
+  const chars = p.loadout?.chars?.characters.list ?? null
+  const me = chars ? (chars.find((c) => c.status === "alive") ?? chars.find((c) => c.status === "dead") ?? null) : null
+  if (!chars) return <Loader2 className="mx-auto my-10 h-6 w-6 animate-spin" style={{ color: EVO.mudo }} />
+  return (
+    <div className={p.compact ? "pb-4" : "h-full overflow-y-auto pb-4 pr-1"}>
+      <CertificateDoc code={me?.certCode ?? null} t={p.t} compact={p.compact} />
+    </div>
+  )
+}
+
 export function StatusPage(props: PageProps) {
   // Celular: cada página é desenhada para caber na tela, sem rolagem.
   if (props.compact) {
-    const P = { overview: OverviewC, body: BodyC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC }[props.page]
+    const P = { overview: OverviewC, body: BodyC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC, certificate: CertificatePage }[props.page]
     return (
       <div className={`${archivo.className} flex h-full flex-col gap-2`}>
         <Header {...props} />
         {/* a Visão Geral rola até a explicação dos status; as outras cabem na tela */}
-        <div className={`min-h-0 flex-1 ${props.page === "overview" || props.page === "loadout" ? "overflow-y-auto" : ""}`}>
+        <div className={`min-h-0 flex-1 ${props.page === "overview" || props.page === "loadout" || props.page === "certificate" ? "overflow-y-auto" : ""}`}>
           <P {...props} />
         </div>
       </div>
@@ -2149,6 +2165,8 @@ export function StatusPage(props: PageProps) {
       <Routine {...props} />
     ) : props.page === "market" ? (
       <Market {...props} />
+    ) : props.page === "certificate" ? (
+      <CertificatePage {...props} />
     ) : (
       <History {...props} />
     )

@@ -6,18 +6,17 @@
 //   • um personagem ATIVO por vez; os outros ficam na CÁPSULA (5 vagas), congelados:
 //     não envelhecem, não perdem atributo, não têm fome. "Usar" guarda o ativo e tira
 //     o outro de onde parou.
-//   • FUSÃO de dois adultos vivos: os pais viram histórico; o filho nasce com 1 m e
-//     20% do maior pico de cada atributo; a espécie é escolhida entre as dos pais.
+//   • a MISTURA (antes "fusão") mudou para o Laboratório de Criogenia (09/11): lá estão
+//     as cápsulas, a genética e a probabilidade (ui/lab/cryo-stage.tsx).
 //   • cada um tem CERTIFICADO público por link (número de série, genética, pais e avós).
 //
 // Só leitura da regra: quem decide tudo é o servidor (MeuMundoCharacterService).
 
 import { useCallback, useEffect, useState } from "react"
-import { Award, GitMerge, Loader2, Plus, Snowflake, X } from "lucide-react"
+import { Award, FlaskConical, Loader2, Plus, Snowflake, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
-import { getCharacters, postCharacterFuse, postCharacterTestGrant, postCharacterUse } from "../../data"
+import { getCharacters, postCharacterTestGrant, postCharacterUse } from "../../data"
 import type { CharacterSummary, CharactersResult } from "../../types"
-import { speciesById } from "../../characters/rules"
 import { speciesName } from "../../characters/names"
 import { PORTRAIT } from "../portraits"
 import { EvoButton, EvoToast } from "../hud/hud-kit"
@@ -45,9 +44,6 @@ export default function CharacterCapsule({ t, admin = false, onClose, onChanged,
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
-  const [fusing, setFusing] = useState<string[] | null>(null)
-  const [childSpecies, setChildSpecies] = useState<string | null>(null)
-  const [childSex, setChildSex] = useState<"m" | "f">("m")
   const [grantSpecies, setGrantSpecies] = useState("aurion")
 
   const say = useCallback((msg: string) => {
@@ -84,30 +80,14 @@ export default function CharacterCapsule({ t, admin = false, onClose, onChanged,
   const list = data?.characters.list ?? []
   const active = list.find((c) => c.status === "alive" || c.status === "dead") ?? null
   const capsule = list.filter((c) => c.status === "capsule")
-  const pickable = list.filter((c) => (c.status === "alive" || c.status === "capsule") && c.adult)
-  const chosen = (fusing ?? []).map((id) => list.find((c) => c.id === id)).filter(Boolean) as CharacterSummary[]
-  const speciesOptions: string[] = []
-  for (const c of chosen) if (c.species && !speciesOptions.includes(c.species)) speciesOptions.push(c.species)
-  const childDef = childSpecies ? speciesById(childSpecies) : null
-
-  const toggleParent = (id: string) => {
-    setFusing((cur) => {
-      const v = cur ?? []
-      if (v.includes(id)) return v.filter((x) => x !== id)
-      return v.length >= 2 ? [v[1], id] : [...v, id]
-    })
-    setChildSpecies(null)
-  }
-
   const certHref = (c: CharacterSummary) => `/meu-mundo/certificado/${c.certCode}`
 
   const card = (c: CharacterSummary, slot: "active" | "capsule") => {
-    const picked = fusing?.includes(c.id)
     // no laboratório, quem está na cápsula aparece dentro do gelo
     const ice = frozen && slot === "capsule"
     return (
       <Chamfer key={c.id} cut={12}>
-        <div className="flex gap-3 p-3" style={picked ? { boxShadow: `inset 0 0 0 2px ${EVO.dourado}` } : ice ? { boxShadow: `inset 0 0 0 1px ${ICE.line}, inset 0 0 22px rgba(115,224,255,.16)` } : undefined}>
+        <div className="flex gap-3 p-3" style={ice ? { boxShadow: `inset 0 0 0 1px ${ICE.line}, inset 0 0 22px rgba(115,224,255,.16)` } : undefined}>
           <div className="relative h-24 w-16 shrink-0 overflow-hidden" style={{ borderRadius: MM.radius.card }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={PORTRAIT[c.body] ?? PORTRAIT.normal} alt="" className="h-full w-full object-cover" style={ice ? { filter: "saturate(.35) hue-rotate(165deg) brightness(1.15) contrast(.95)" } : undefined} />
@@ -137,17 +117,7 @@ export default function CharacterCapsule({ t, admin = false, onClose, onChanged,
               </div>
             )}
             <div className="mt-2 flex flex-wrap gap-2">
-              {fusing ? (
-                c.adult && (c.status === "alive" || c.status === "capsule") ? (
-                  <EvoButton size="sm" variant={picked ? "gold" : "ghost"} onClick={() => toggleParent(c.id)}>
-                    {picked ? t("chPicked", "Escolhido") : t("chPick", "Escolher")}
-                  </EvoButton>
-                ) : (
-                  <span className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
-                    {t("chOnlyAdults", "Só adultos fundem")}
-                  </span>
-                )
-              ) : (
+              {(
                 <>
                   {slot === "capsule" && (
                     <EvoButton size="sm" disabled={busy} onClick={() => run((tk) => postCharacterUse(tk, c.id), t("chSwapped", "Trocado. O outro foi para a cápsula."))}>
@@ -209,60 +179,10 @@ export default function CharacterCapsule({ t, admin = false, onClose, onChanged,
               )}
             </section>
 
-            {/* FUSÃO */}
-            <section>
-              {!fusing ? (
-                <EvoButton size="sm" variant="ghost" icon={<GitMerge className="h-4 w-4" />} disabled={pickable.length < 2} onClick={() => setFusing([])}>
-                  {pickable.length < 2 ? t("chFuseNeed", "Fusão: precisa de dois adultos") : t("chFuse", "Fundir dois personagens")}
-                </EvoButton>
-              ) : (
-                <Chamfer cut={12}>
-                  <div className="space-y-3 p-3">
-                    <p className="text-[13px]" style={{ color: EVO.branco }}>
-                      {t("chFuseHow", "Escolha dois adultos acima. Os dois somem (ficam no histórico) e nasce um filho com 1 m e 20% do maior valor de cada atributo deles.")}
-                    </p>
-                    {chosen.length === 2 && (
-                      <>
-                        <div className="flex flex-wrap gap-2">
-                          {speciesOptions.map((sp) => (
-                            <EvoButton key={sp} size="sm" variant={childSpecies === sp ? "gold" : "ghost"} onClick={() => setChildSpecies(sp)}>
-                              {speciesName(sp, t)}
-                            </EvoButton>
-                          ))}
-                        </div>
-                        {childDef && !childDef.sex && (
-                          <div className="flex gap-2">
-                            {(["m", "f"] as const).map((sx) => (
-                              <EvoButton key={sx} size="sm" variant={childSex === sx ? "gold" : "ghost"} onClick={() => setChildSex(sx)}>
-                                {sx === "f" ? t("chFemale", "fêmea") : t("chMale", "macho")}
-                              </EvoButton>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      <EvoButton
-                        size="sm"
-                        disabled={busy || chosen.length !== 2 || !childSpecies}
-                        loading={busy}
-                        onClick={() =>
-                          run(
-                            (tk) => postCharacterFuse(tk, chosen[0].id, chosen[1].id, childSpecies!, childDef && !childDef.sex ? childSex : undefined),
-                            t("chFused", "Nasceu um filho!")
-                          ).then(() => setFusing(null))
-                        }
-                      >
-                        {t("chFuseGo", "Fundir")}
-                      </EvoButton>
-                      <EvoButton size="sm" variant="ghost" onClick={() => setFusing(null)}>
-                        {t("chCancel", "Cancelar")}
-                      </EvoButton>
-                    </div>
-                  </div>
-                </Chamfer>
-              )}
-            </section>
+            <p className="flex items-center gap-2 text-[13px]" style={{ color: EVO.mudo }}>
+              <FlaskConical className="h-4 w-4 shrink-0" style={{ color: "#73E0FF" }} />
+              {t("chMixAtLab", "Misturar personagens e comprar genéticas: no Laboratório de Criogenia, atrás da academia.")}
+            </p>
 
             {admin && (
               <section className="flex flex-wrap items-center gap-2">

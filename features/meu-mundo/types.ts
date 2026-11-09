@@ -1043,6 +1043,18 @@ export interface CharacterSummary {
   bornAt: string | null
   /** B12: o acelerador do Laboratório de Criogenia serve para ele (ainda não tem 15 anos). */
   canAccel?: boolean
+  /** Quantas misturas tem a linha dele (0 = nunca misturado). */
+  mixCount?: number
+}
+
+/** 09/11: uma genética guardada no laboratório (para a mistura). */
+export interface CharacterGene {
+  id: string
+  species: string
+  sex: "m" | "f"
+  power: number
+  temper: string | null
+  boughtAt: string | null
 }
 
 /** B12: o que o Laboratório de Criogenia vende (preços em Esmeralda; admin = grátis). */
@@ -1051,14 +1063,21 @@ export interface CharacterLab {
   accelPrice: number
   accelYears: number
   embryos: { species: string; kind: "clan" | "god" | "special"; sex: "m" | "f" | null; price: number }[]
+  /** 09/11: genéticas à venda e a regra da mistura. */
+  genes?: { species: string; kind: "clan" | "god" | "special"; sex: "m" | "f" | null; price: number; power: number }[]
+  mutation?: number
+  inherit?: number
+  geneSlots?: number
 }
 
 export interface CharactersResult extends LifeSummary {
-  characters: { list: CharacterSummary[]; capsule: { used: number; slots: number }; species: string[]; lab?: CharacterLab }
+  characters: { list: CharacterSummary[]; capsule: { used: number; slots: number }; species: string[]; lab?: CharacterLab; genetics?: CharacterGene[] }
   avatar?: BodyId
   height?: number
   swapped?: { from: string; to: string }
-  fused?: { child: string; species: string; sex: "m" | "f"; inherited: Record<string, number> }
+  fused?: { child: string; certCode?: string; species: string; sex: "m" | "f"; inherited: Record<string, number>; chance?: number; drawn?: "a" | "b"; temper?: string | null; mutated?: boolean; active?: boolean }
+  gene?: string | null
+  repeat?: boolean
   granted?: string[]
 }
 
@@ -1070,6 +1089,29 @@ export interface CertificateParent {
   lineage: number
   status: CharacterStatus
   parents: CertificateParent[]
+}
+
+/** 09/11: a mistura que gerou o personagem (certidão). */
+export interface CertificateMixSide {
+  kind: "character" | "genetics"
+  serial?: number
+  serialText?: string
+  certCode?: string
+  species: string | null
+  sex: "m" | "f" | null
+  power: number
+  temper: string | null
+  name?: string | null
+}
+export interface CertificateMix {
+  count: number
+  a: CertificateMixSide
+  b: CertificateMixSide
+  odds: { a: number; b: number }
+  drawn: "a" | "b"
+  stronger: "a" | "b"
+  inheritFrom: Record<string, "a" | "b">
+  temper: { from: "a" | "b"; base: string | null; result: string | null; mutated: boolean }
 }
 
 export interface CharacterCertificate {
@@ -1088,7 +1130,7 @@ export interface CharacterCertificate {
   stage: "young" | "adult"
   activeDays: number
   height: number
-  genetics: { seed: number; personality: Record<string, number>; temper: string | null; attrs: Record<string, number>; birthHeight: number; inherited?: Record<string, number>; legacy?: boolean }
+  genetics: { seed: number; personality: Record<string, number>; temper: string | null; attrs: Record<string, number>; birthHeight: number; inherited?: Record<string, number>; legacy?: boolean; mix?: CertificateMix }
   peaks: Record<string, number>
   parents: CertificateParent[]
 }

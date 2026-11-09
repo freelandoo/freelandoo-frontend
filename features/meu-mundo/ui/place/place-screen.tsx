@@ -29,7 +29,7 @@ import { SellerDialog } from "./seller-dialog"
 import GearPanel, { type GearTab } from "../gear/gear-panel"
 import ShopPanel from "../shop/shop-panel"
 import LabPanel, { type LabMode } from "../lab/lab-panel"
-import CharacterCapsule from "../status/character-capsule"
+import CryoStage from "../lab/cryo-stage"
 import { StationPicker, bestTier, stationOfAnim, stationParam, type StationChoice } from "./station-picker"
 import type { LifeStationDef } from "../../types"
 
@@ -88,7 +88,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   const [gearTab, setGearTab] = useState<GearTab | null>(null)
   const [shelf, setShelf] = useState<"armory" | "weapons" | null>(null)
   // B12: Laboratório de Criogenia (conversa, embriões, acelerador e as cápsulas congeladas)
-  const [lab, setLab] = useState<LabMode | "cryo" | null>(null)
+  const [lab, setLab] = useState<LabMode | "cryo" | "mix" | "genes" | null>(null)
   // B10: aparelho/curso e nível escolhidos no diálogo (null = servidor antigo, treino de sempre)
   const [stations, setStations] = useState<{ defs: Record<string, LifeStationDef>; attrs: Record<string, number> } | null>(null)
   const [station, setStation] = useState<StationChoice | null>(null)
@@ -252,8 +252,8 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
       />
       {gearTab && <GearPanel initialTab={gearTab} onClose={() => setGearTab(null)} />}
       {shelf && <ShopPanel initialTab="gear" initialShelf={shelf} onClose={() => setShelf(null)} />}
-      {lab === "cryo" && <CharacterCapsule t={t} frozen onClose={() => setLab(null)} onChanged={() => {}} />}
-      {lab && lab !== "cryo" && <LabPanel t={t} mode={lab} onMode={setLab} onClose={() => setLab(null)} />}
+      {(lab === "cryo" || lab === "mix" || lab === "genes") && <CryoStage t={t} initial={lab === "cryo" ? null : lab} onClose={() => setLab(null)} />}
+      {(lab === "talk" || lab === "embryo" || lab === "accelerate") && <LabPanel t={t} mode={lab} onMode={setLab} onClose={() => setLab(null)} />}
       {toast && (
         <div className="pointer-events-none fixed left-1/2 top-6 z-[75] -translate-x-1/2">
           <EvoToast tone={toast.tone}>{toast.text}</EvoToast>

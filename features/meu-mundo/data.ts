@@ -495,8 +495,13 @@ export const getCharacters = (token: string) => call<CharactersResult>(token, "G
 export const postCharacterUse = (token: string, id: string) =>
   call<CharactersResult>(token, "POST", `/characters/${encodeURIComponent(id)}/use`, {})
 /** Funde dois adultos vivos: os pais viram histórico e nasce o filho da espécie escolhida. */
-export const postCharacterFuse = (token: string, a: string, b: string, species: string, sex?: "m" | "f") =>
-  call<CharactersResult>(token, "POST", "/characters/fuse", { a, b, species, ...(sex ? { sex } : {}) })
+/** 09/11: a MISTURA do laboratório — com outro personagem (`b`) ou com uma genética guardada (`gene`). */
+export const postCharacterFuse = (token: string, a: string, other: { b: string } | { gene: string }) =>
+  call<CharactersResult>(token, "POST", "/characters/fuse", { a, ...other })
+
+/** 09/11: compra a genética de uma espécie (fica guardada até a mistura). */
+export const postCharacterGenetics = (token: string, species: string, key: string, sex?: "m" | "f") =>
+  call<CharactersResult>(token, "POST", "/characters/genetics", { species, key, ...(sex ? { sex } : {}) })
 /** TESTE (só admin joga hoje): ganha um personagem da espécie na cápsula. */
 export const postCharacterTestGrant = (token: string, species: string, sex?: "m" | "f") =>
   call<CharactersResult>(token, "POST", "/characters/test-grant", { species, ...(sex ? { sex } : {}) })

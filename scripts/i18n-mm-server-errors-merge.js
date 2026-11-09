@@ -172,6 +172,8 @@ const ROWS = [
   ["A espécie do filho tem que ser a de um dos pais", "The child's species must be one of the parents'", "La especie del hijo tiene que ser la de uno de los padres"],
   ["Sexo inválido", "Invalid sex", "Sexo inválido"],
   ["A cápsula está cheia", "The capsule is full", "La cápsula está llena"],
+  ["Genética não encontrada", "Genetics not found", "Genética no encontrada"],
+  ["O congelador de genéticas está cheio", "The genetics freezer is full", "El congelador de genéticas está lleno"],
   ["Espécie inválida", "Invalid species", "Especie inválida"],
   ["Só para administrador", "Administrators only", "Solo para administradores"],
   // A8: compartilhar o Meu Mundo (afiliado)
