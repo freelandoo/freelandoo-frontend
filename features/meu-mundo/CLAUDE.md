@@ -1,6 +1,6 @@
 # Meu Mundo 3D — regras do jogo (front)
 
-Carrega só quando se abre arquivo desta pasta. **Teto 8 KB.** Histórico de cada entrega: `freelandoo/docs/historico-claude/meu-mundo-3d.md` (o fim tem as entregas recentes) e `freelandoo/MEU MUNDO 3D/REGISTRO.md`. Rede: `REDE.md` nesta pasta. Só admin joga; só abre ao público quando muito bem testado.
+Carrega só quando se abre arquivo desta pasta. **Teto 8 KB.** Histórico de cada entrega: `freelandoo/docs/historico-claude/meu-mundo-3d.md` (o fim tem as entregas recentes) e `freelandoo/MEU MUNDO 3D/REGISTRO.md`. Rede: `REDE.md` nesta pasta. **Histórico (250 KB) e REGISTRO: só por Grep, nunca inteiros.** Só admin joga; só abre ao público quando muito bem testado.
 
 ## Invariantes (quebram em silêncio)
 
