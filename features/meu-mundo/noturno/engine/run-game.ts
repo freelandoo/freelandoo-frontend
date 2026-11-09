@@ -20,6 +20,15 @@
 // segue). O LOGO da Freelandoo dá 5 s de poder (contorno dourado, faíscas,
 // obstáculo explode e empurra). Pós-processamento (fora do celular fraco):
 // brilho no neon (bloom), vinheta e, no poder, aberração cromática.
+//
+// ROLÊ NOTURNO 2.0 (fases): a mesma regra numa pista com FORMA — curvas,
+// subidas, descidas, banking e loops (sim/track.ts). O jogador, os outros do
+// grupo, obstáculos, moedas e o logo ficam no referencial da pista
+// (track-space.ts: P + R·x + U·y); a pista é extrudada pelo traçado
+// (track-mesh.ts) e o cenário é o da fase (biomes/). A câmera segue o "cima"
+// da pista (no alto do loop ela fica de cabeça para baixo, sem virar de
+// repente); com "reduzir movimento" do sistema o banking pesa menos nela e
+// não há tremor. A Clássica segue exatamente como era (referencial plano).
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -28,9 +37,9 @@ import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
-import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
-import type { TransformNode } from "@babylonjs/core/Meshes/transformNode"
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline"
 import "@babylonjs/core/PostProcesses/RenderPipeline/postProcessRenderPipelineManagerSceneComponent"
 import { liveGamesBump } from "../../engine/game"
@@ -44,6 +53,10 @@ import type { CarState } from "../../engine/net"
 import { BODY_IDS, type BodyId } from "../../types"
 import { POWER, Run, TUNING, type RideKind, type RunEvent, type RunInput, type ObstacleKind, type TrickKind } from "../sim/run"
 import { buildStreet, NIGHT_FOG } from "./street-view"
+import { isRunPhase, newFrame, type RunPhase } from "../sim/track"
+import { TrackSpace } from "./track-space"
+import { buildTrackMesh, type TrackMeshView } from "./track-mesh"
+import { buildBiome } from "./biomes"
 import { buildProps } from "./props-view"
 import { buildPower } from "./power-view"
 import { RunAudio } from "./audio"
@@ -105,6 +118,8 @@ export interface RunGameOptions {
   look?: string
   /** Nome do jogador (no placar do grupo). */
   name?: string
+  /** Fase (Rolê Noturno 2.0); sem isto, a Clássica. Em grupo vale a da sala. */
+  phase?: RunPhase
   /** Em grupo (mm3d-42): a sala e a largada. */
   mp?: { net: NoturnoNet; start: NoturnoStart }
   maxPixelRatio?: number
@@ -137,12 +152,24 @@ const REMOTE_CUT = 320
 /** Aba escondida por mais que isto no grupo = saiu do rolê (a sala já marcou). */
 const AWAY_MS = 6000
 
+const LOOK_R = new Vector3()
+const LOOK_U = new Vector3()
+/** Rotação de quem olha para `fwd` com o cima `up` (base direita = cima × frente, cima, frente — o +z local olha). */
+function lookRotation(fwd: Vector3, up: Vector3, out: Quaternion) {
+  Vector3.CrossToRef(up, fwd, LOOK_R)
+  LOOK_R.normalize()
+  Vector3.CrossToRef(fwd, LOOK_R, LOOK_U)
+  return Quaternion.RotationQuaternionFromAxisToRef(LOOK_R, LOOK_U, fwd, out)
+}
+
 const isBody = (b: string): b is BodyId => (BODY_IDS as string[]).includes(b)
 const isRide = (r: string): r is RideKind => r === "bike" || r === "skate" || r === "skates"
 
 /** Os outros do grupo na rua. */
 interface Remote {
   seat: NoturnoSeat
+  /** Rolê 2.0: o nó no referencial da pista, no z dele (null na Clássica). */
+  node: TransformNode | null
   ride: RideKind
   key: string
   char: Character
@@ -169,6 +196,14 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
   const profile = touch ? { ...quality, maxRatio: Math.max(quality.maxRatio, low ? 1.5 : 2), minRatio: Math.max(quality.minRatio, 1) } : quality
   const governor = new ResolutionGovernor(engine, profile, Math.min(window.devicePixelRatio || 1, touch ? 2 : (opts.maxPixelRatio ?? 1.5)))
 
+  // em grupo: a semente, a curva e a fase são da sala (todos na mesma pista)
+  const mp = opts.mp ?? null
+  const phaseId: RunPhase = mp ? (isRunPhase(mp.start.phase) ? mp.start.phase : "classica") : (opts.phase ?? "classica")
+  const seed = mp ? mp.start.seed : (Date.now() & 0xffff) | 1
+  const curved = phaseId !== "classica"
+  const space = TrackSpace.of(phaseId, seed)
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+
   const scene = new Scene(engine)
   scene.clearColor = NIGHT_FOG.clone()
   scene.ambientColor = new Color3(0.25, 0.25, 0.32)
@@ -189,9 +224,38 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
   moon.intensity = touch ? 0.6 : 0.45
   moon.diffuse = new Color3(0.75, 0.82, 1)
 
-  const street = buildStreet(scene, low)
-  const props = buildProps(scene)
-  const power = buildPower(scene, low)
+  const biome = buildBiome(scene, phaseId, quality.tier, () => !disposed)
+  if (biome) {
+    // luz, céu e neblina da fase
+    const L = biome.light
+    const c = Color3.FromHexString(L.clear)
+    scene.clearColor = new Color4(c.r, c.g, c.b, 1)
+    scene.fogColor = Color3.FromHexString(L.fog)
+    fogBase.start = L.fogStart
+    fogBase.end = L.fogEnd
+    scene.fogStart = L.fogStart
+    scene.fogEnd = L.fogEnd
+    hemi.direction = new Vector3(...L.hemi.dir)
+    hemi.diffuse = Color3.FromHexString(L.hemi.sky)
+    hemi.groundColor = Color3.FromHexString(L.hemi.ground)
+    hemi.intensity = L.hemi.k * (touch ? 1.15 : 1)
+    moon.direction = new Vector3(...L.sun.dir)
+    moon.diffuse = Color3.FromHexString(L.sun.color)
+    moon.intensity = L.sun.k * (touch ? 1.1 : 1)
+    scene.ambientColor = new Color3(0.3, 0.28, 0.32)
+  }
+  const street = curved ? null : buildStreet(scene, low)
+  const props = buildProps(scene, biome ? { space, dir: biome.obstacleDir, phase: phaseId, tier: quality.tier } : undefined)
+  const power = buildPower(scene, low, space)
+  let trackView: TrackMeshView | null = null
+  const trackReady = biome
+    ? biome.ready.then((look) => {
+        // perfil gráfico: o celular e o "baixo" desenham menos cenário (pista, obstáculos e coleta iguais)
+        if (!disposed) trackView = buildTrackMesh(scene, space, look, seed, low ? 0.45 : touch || quality.tier === "mid" ? 0.65 : 1)
+      })
+    : Promise.resolve()
+  /** O jogador fica pendurado aqui (no referencial da pista, no z dele). */
+  const riderNode = curved ? new TransformNode("rn2-rider", scene) : null
 
   // ── o jogador: avatar + veículo ────────────────────────────────────────────
   const lib = new AvatarLibrary(scene, false, true, 24)
@@ -204,23 +268,27 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
   shadowMat.disableLighting = true
   shadowMat.alpha = 0.32
   const char = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, opts.body, null, true, opts.look ?? "")
+  char.attach(riderNode)
   const fleet = new CarFleet(scene)
   const rideState: CarState = { lot: 0, kind: opts.ride, x: 0, z: 0, facing: 0, driver: "me", y: 0 }
   const rides = new Map<string, CarState>([[RIDE_KEY, rideState]])
   const pose: CarPose = { x: 0, z: 0, y: 0, facing: 0, sp: 0, st: 0, hb: 0, sl: 0, ax: 0, ay: 0 }
 
-  // em grupo: a semente e a curva da rua são da sala (todos na mesma rua)
-  const mp = opts.mp ?? null
-  const run = mp ? new Run(opts.ride, mp.start.seed, isRide(mp.start.street) ? mp.start.street : "bike") : new Run(opts.ride, (Date.now() & 0xffff) | 1)
+  const run = mp ? new Run(opts.ride, seed, isRide(mp.start.street) ? mp.start.street : "bike", phaseId) : new Run(opts.ride, seed, opts.ride, phaseId)
   const audio = new RunAudio()
   audio.resume()
 
   const cam = new FreeCamera("noturno-cam", new Vector3(0, 3.4, -6.5), scene)
   cam.inputs.clear()
   cam.minZ = 0.2
-  cam.maxZ = 600
+  cam.maxZ = curved ? 3200 : 600
   cam.fov = 0.92
   scene.activeCamera = cam
+  if (curved) {
+    // pista com forma: a câmera gira com o "cima" da pista (loop) — orientação por quaternion
+    cam.rotationQuaternion = new Quaternion()
+    cam.updateUpVectorFromRotation = true
+  }
 
   // brilho no neon, vinheta e aberração no poder (o celular fraco fica sem pós)
   let fx: DefaultRenderingPipeline | null = null
@@ -229,13 +297,13 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       fx = new DefaultRenderingPipeline("noturno-fx", true, scene, [cam])
       fx.samples = quality.tier === "high" ? 4 : 1
       fx.bloomEnabled = true
-      fx.bloomThreshold = 0.58
-      fx.bloomWeight = 0.62
+      fx.bloomThreshold = biome ? biome.light.bloom.threshold : 0.58
+      fx.bloomWeight = biome ? biome.light.bloom.weight : 0.62
       fx.bloomKernel = quality.tier === "high" ? 64 : 40
       fx.bloomScale = 0.5
       fx.imageProcessingEnabled = true
-      fx.imageProcessing.contrast = 1.12
-      fx.imageProcessing.exposure = 1.04
+      fx.imageProcessing.contrast = biome ? biome.light.contrast : 1.12
+      fx.imageProcessing.exposure = biome ? biome.light.exposure : 1.04
       fx.imageProcessing.vignetteEnabled = true
       fx.imageProcessing.vignetteWeight = 2.4
       fx.imageProcessing.vignetteColor = new Color4(0.02, 0, 0.06, 0)
@@ -258,8 +326,10 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       const ride: RideKind = isRide(seat.ride) ? seat.ride : "skate"
       const key = `r${seat.slot}`
       const ch = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, isBody(seat.body) ? seat.body : "normal", seat.name || null, false, seat.look ?? "")
+      const node = curved ? new TransformNode(`rn2-rider-${seat.slot}`, scene) : null
+      ch.attach(node)
       const st: CarState = { lot: 0, kind: ride, x: LANE_X0, z: 0, facing: 0, driver: key, y: 0 }
-      remotes.push({ seat, ride, key, char: ch, state: st, pose: { x: 0, z: 0, y: 0, facing: 0, sp: 0, st: 0, hb: 0, sl: 0, ax: 0, ay: 0 }, lean: 0, x: 0, fall: 0 })
+      remotes.push({ seat, ride, key, node, char: ch, state: st, pose: { x: 0, z: 0, y: 0, facing: 0, sp: 0, st: 0, hb: 0, sl: 0, ax: 0, ay: 0 }, lean: 0, x: 0, fall: 0 })
     }
   }
   const mySeat = mp ? mp.start.seats.find((q) => q.slot === mp.start.me) ?? null : null
@@ -355,6 +425,19 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
   let field: FieldRow[] | null = null
   const events: RunEvent[] = []
   const camTarget = new Vector3()
+  const camUp = new Vector3(0, 1, 0)
+  let loopK = 0
+  const wantUp = new Vector3(0, 1, 0)
+  const camFwd = new Vector3()
+  const fc = newFrame()
+  const ft = newFrame()
+  const fp = newFrame()
+  /** Pista com forma: o veículo de cada um vai pendurado no nó dele. */
+  const attachRides = () => {
+    if (!curved) return
+    fleet.attach(RIDE_KEY, riderNode)
+    for (const r of remotes) fleet.attach(r.key, r.node)
+  }
 
   const notice = (n: RunNotice) => opts.onNotice?.(n)
   const handle = (e: RunEvent) => {
@@ -535,18 +618,21 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       }
       const fy = FLIP_PIVOT * (1 - Math.cos(pitch))
       const fz = -FLIP_PIVOT * Math.sin(pitch)
+      // na pista com forma, z é local ao nó (que fica no z dele)
+      const z0 = r.node ? 0 : s.z
+      if (r.node) space.place(r.node, 0, 0, s.z)
       const px = s.x + fz * Math.sin(facing)
-      const pz = s.z + fz * Math.cos(facing)
-      Object.assign(r.state, { x: s.x, z: s.z, facing, y: s.y })
+      const pz = z0 + fz * Math.cos(facing)
+      Object.assign(r.state, { x: s.x, z: z0, facing, y: s.y })
       Object.assign(r.pose, { x: px, z: pz, y: s.y + fy, facing, flip: pitch, sp: s.alive === 1 ? s.v : 0, st: -r.lean * 0.6 })
       remotePoses.set(r.key, r.pose)
       if (s.alive === 1) {
         r.fall = 0
-        placeRider(fleet, r.char, r.key, r.ride, px, pz, facing, s.v, dt, s.y + fy, pitch)
+        placeRider(fleet, r.char, r.key, r.ride, px, pz, facing, s.v, dt, s.y + fy, pitch, r.node)
       } else {
         // caiu: voa por cima do veículo e fica de cara no chão
         r.fall = Math.min(1, r.fall + dt * 2.6)
-        r.char.place(s.x, s.z + r.fall * 1.1, 0, s.y + Math.sin(r.fall * Math.PI) * 0.7)
+        r.char.place(s.x, z0 + r.fall * 1.1, 0, s.y + Math.sin(r.fall * Math.PI) * 0.7)
         r.char.holder.rotation.x = r.fall * 1.45
         r.char.animate(dt, RIDE_KINDS[r.ride].move as MoveState, 0)
       }
@@ -576,7 +662,7 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
     const paused = hidden && !mp
     if (!paused) {
       if (phase === "countdown") {
-        clock += dt
+        if (readyFired || mp) clock += dt
         const s = Math.ceil(-clock)
         if (s !== lastBeep && s >= 1 && s <= 3) {
           audio.beep(620)
@@ -626,11 +712,14 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
     const fy = FLIP_PIVOT * (1 - Math.cos(pitch))
     const fz = -FLIP_PIVOT * Math.sin(pitch)
     drawRemotes(dt, z)
+    // pista com forma: o nó do jogador vai para o z dele e tudo abaixo é local (z = 0)
+    const zl = riderNode ? 0 : z
+    if (riderNode && phase !== "end") space.place(riderNode, 0, 0, z)
     if (phase !== "end") {
       const px = x + fz * Math.sin(facing)
-      const pz = z + fz * Math.cos(facing)
+      const pz = zl + fz * Math.cos(facing)
       rideState.x = x
-      rideState.z = z
+      rideState.z = zl
       rideState.facing = facing
       rideState.y = y
       pose.x = px
@@ -641,14 +730,16 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       pose.sp = v
       pose.st = -lean * 0.6
       fleet.sync(rides, dt, 1, pose, remotePoses)
-      placeRider(fleet, char, RIDE_KEY, opts.ride, px, pz, facing, v, dt, y + fy, pitch)
+      attachRides()
+      placeRider(fleet, char, RIDE_KEY, opts.ride, px, pz, facing, v, dt, y + fy, pitch, riderNode)
     } else {
       // bateu: o veículo fica, o boneco voa por cima e cai de cara
       fall = Math.min(1, fall + dt * 2.6)
       char.holder.rotation.x = fall * 1.45
       char.holder.position.y = y + Math.sin(fall * Math.PI) * 0.7
-      char.holder.position.z = z + fall * 1.1
+      char.holder.position.z = zl + fall * 1.1
       fleet.sync(rides, dt, 1, { ...pose, sp: 0, flip: 0 }, remotePoses)
+      attachRides()
       char.animate(dt, RIDE_KINDS[opts.ride].move as MoveState, 0)
       if (!ended && fall >= 1) {
         ended = true
@@ -667,22 +758,63 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
     // escuro — a câmera sobe e recua um pouco, olhando a rua acesa mais à frente
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
     const tall = Math.min(1, Math.max(0, (1 - aspect) / 0.55))
-    cam.position.set(
-      camX + (Math.random() - 0.5) * jit,
-      camY + tall * 0.9 + (Math.random() - 0.5) * jit,
-      z - 6.4 - tall * 0.6 - Math.min(1, v / 30) * 0.8 - (phase === "end" ? fall * 1.6 : 0),
-    )
-    camTarget.set(camX * 0.85, y + 1.05 + tall * 0.55, z + 10)
-    cam.setTarget(camTarget)
+    const back = 6.4 + tall * 0.6 + Math.min(1, v / 30) * 0.8 + (phase === "end" ? fall * 1.6 : 0)
+    if (curved) {
+      // a câmera fica na PISTA, atrás: P + R·lado + U·altura no z dela; olha para a pista 10 m à frente
+      const jx = reduceMotion ? 0 : (Math.random() - 0.5) * jit
+      const jy = reduceMotion ? 0 : (Math.random() - 0.5) * jit
+      const hc = camY - y + tall * 0.9
+      // curvatura à frente (o loop): quanto a direção gira em 10 m — lá a câmera chega mais perto e olha mais perto
+      space.frame(z, fp)
+      space.frame(z + 10, ft)
+      const bend = Math.min(1, Math.max(0, (1 - (fp.tx * ft.tx + fp.ty * ft.ty + fp.tz * ft.tz)) * 9))
+      loopK += (bend - loopK) * Math.min(1, dt * 4)
+      space.frame(z - back * (1 - 0.25 * loopK), fc)
+      space.frame(z + 10 - 6.5 * loopK, ft)
+      const ox = camX + jx
+      const oy = y + hc + jy
+      cam.position.set(fc.px + fc.rx * ox + fc.ux * oy, fc.py + fc.ry * ox + fc.uy * oy, fc.pz + fc.rz * ox + fc.uz * oy)
+      const tx = camX * 0.85
+      const ty = y + 1.05 + tall * 0.55 + loopK * 0.4
+      camTarget.set(ft.px + ft.rx * tx + ft.ux * ty, ft.py + ft.ry * tx + ft.uy * ty, ft.pz + ft.rz * tx + ft.uz * ty)
+      // cima: o da pista no jogador, suavizado; "reduzir movimento" tira parte do banking (fora do loop)
+      wantUp.set(fp.ux, fp.uy, fp.uz)
+      if (reduceMotion && fp.uy > 0.5) wantUp.set(fp.ux * 0.4, fp.uy * 0.4 + 0.6, fp.uz * 0.4).normalize()
+      Vector3.LerpToRef(camUp, wantUp, Math.min(1, dt * 7), camUp)
+      camUp.normalize()
+      camTarget.subtractToRef(cam.position, camFwd)
+      if (camFwd.lengthSquared() > 1e-6) lookRotation(camFwd.normalize(), camUp, cam.rotationQuaternion!)
+    } else {
+      cam.position.set(
+        camX + (Math.random() - 0.5) * jit,
+        camY + tall * 0.9 + (Math.random() - 0.5) * jit,
+        z - back,
+      )
+      camTarget.set(camX * 0.85, y + 1.05 + tall * 0.55, z + 10)
+      cam.setTarget(camTarget)
+    }
     // o empurrão do poder abre mais a lente
     const wantFov = 0.9 + Math.min(1, v / 30) * 0.22 + Math.min(1, Math.max(0, v - 30) / 70) * 0.16 + (run.boost - 1) * 0.3
     // a neblina recua com a velocidade: ~3,6 s de rua à vista
-    const fogEnd = Math.min(low ? 300 : 390, Math.max(fogBase.end, v * 3.6))
-    scene.fogEnd += (fogEnd - scene.fogEnd) * Math.min(1, dt)
-    scene.fogStart = fogBase.start + (scene.fogEnd - fogBase.end) * 0.55
+    if (!curved) {
+      const fogEnd = Math.min(low ? 300 : 390, Math.max(fogBase.end, v * 3.6))
+      scene.fogEnd += (fogEnd - scene.fogEnd) * Math.min(1, dt)
+      scene.fogStart = fogBase.start + (scene.fogEnd - fogBase.end) * 0.55
+    }
     cam.fov += (wantFov - cam.fov) * Math.min(1, dt * 3)
+    // conferência (harness): câmera fixa num ponto olhando para outro (vista externa, miniaturas do menu)
+    const over = (window as unknown as { __noturnoCamAt?: { p: number[]; t: number[]; fov?: number } }).__noturnoCamAt
+    if (over) {
+      cam.position.set(over.p[0], over.p[1], over.p[2])
+      camFwd.set(over.t[0] - over.p[0], over.t[1] - over.p[1], over.t[2] - over.p[2]).normalize()
+      if (cam.rotationQuaternion) lookRotation(camFwd, Vector3.UpReadOnly, cam.rotationQuaternion)
+      else cam.setTarget(new Vector3(over.t[0], over.t[1], over.t[2]))
+      if (over.fov) cam.fov = over.fov
+    }
 
-    street.update(z, cam.position)
+    street?.update(z, cam.position)
+    trackView?.update(z, Math.min(560, Math.max(300, v * 4.5)))
+    biome?.update(dt, cam.position, z, performance.now() / 1000)
     const now = performance.now() / 1000
     props.sync(run, now)
     power.sync(run, now, dt)
@@ -725,7 +857,7 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
     governor.tick(ms)
   }
 
-  void props.ready.then(() => {
+  void Promise.all([props.ready, trackReady]).then(() => {
     if (disposed || readyFired) return
     readyFired = true
     opts.onReady?.()
@@ -751,7 +883,9 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
 
   // conferência (harness)
   const w = window as unknown as Record<string, unknown>
-  w.__noturno = () => ({ phase, z: run.z, x: run.x, y: run.y, lane: run.lane, v: run.v, coins: run.coinsGot, score: run.score, alive: run.alive, grounded: run.grounded, obstacles: run.obstacles.length, crashedBy: run.crashedBy })
+  w.__noturnoSpace = space
+  w.__noturnoTrack = () => trackView?.stats() ?? null
+  w.__noturno = () => ({ stage: phaseId, phase, z: run.z, x: run.x, y: run.y, lane: run.lane, v: run.v, coins: run.coinsGot, score: run.score, alive: run.alive, grounded: run.grounded, obstacles: run.obstacles.length, crashedBy: run.crashedBy })
   w.__noturnoRun = run
   w.__noturnoScene = scene
   w.__noturnoField = () => buildField()
@@ -774,6 +908,8 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       delete w.__noturnoRun
       delete w.__noturnoScene
       delete w.__noturnoField
+      delete w.__noturnoSpace
+      delete w.__noturnoTrack
       engine.onContextLostObservable.remove(lost)
       engine.stopRenderLoop()
       audio.dispose()
@@ -784,7 +920,11 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       lib.dispose()
       props.dispose()
       power.dispose()
-      street.dispose()
+      street?.dispose()
+      trackView?.dispose()
+      biome?.dispose()
+      riderNode?.dispose()
+      for (const r of remotes) r.node?.dispose()
       fallbackMat.dispose()
       shadowMat.dispose()
       cam.dispose()

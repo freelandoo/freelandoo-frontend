@@ -480,6 +480,12 @@ export class CarFleet {
     }
   }
 
+  /** Rolê Noturno 2.0: pendura o veículo num nó (o referencial da pista); a pose vira local a ele. */
+  attach(key: string, node: TransformNode | null) {
+    const v = this.views.get(key)
+    if (v && v.holder.parent !== node) v.holder.parent = node
+  }
+
   /** Pose desenhada de um veículo (quem está montado acompanha sem atraso). */
   poseOf(key: string) {
     const v = this.views.get(key)

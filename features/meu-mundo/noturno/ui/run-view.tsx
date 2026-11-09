@@ -16,6 +16,11 @@
 // a classificação ao vivo até o último cair. Até 4 no rolê: vaga vazia vira
 // computador (regra do Alex, 2026-11-09). O logo da Freelandoo (a cada 700 m) acende
 // a barra dourada do PODER embaixo da velocidade.
+//
+// ROLÊ NOTURNO 2.0: o menu virou ESCOLHA SUA ROTA (route-select.tsx) — cinco
+// rotas novas com curvas, descidas e loops e a Clássica de antes; a rota vai
+// para a sala (largada só com quem escolheu a mesma) e para a cena. Recordes
+// por rota e veículo (a Clássica guarda os de antes, por veículo).
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Bike, Loader2, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
@@ -26,7 +31,10 @@ import { MM } from "../../ui/hud/tokens"
 import { archivo } from "../../ui/status/evo-skin"
 import { SAFE } from "../../ui/meu-mundo-view"
 import type { BodyId } from "../../types"
-import { RIDES, type RideKind } from "../sim/run"
+import type { RideKind } from "../sim/run"
+import { isRunPhase, type RunPhase } from "../sim/track"
+import { RouteSelect, type RouteRecord } from "./route-select"
+import { CRASH_TEXT } from "../engine/route-art"
 import { createRunGame, type FieldRow, type RunGameHandle, type RunHud, type RunNotice, type RunResult } from "../engine/run-game"
 import type { NoturnoLobbyEntry, NoturnoNet, NoturnoNetStatus, NoturnoResultRow, NoturnoStart } from "../engine/net"
 
@@ -38,6 +46,7 @@ export type NoturnoJoin = (
   ride: RideKind,
   body: BodyId,
   hooks: { signal: AbortSignal; onLobby: (list: NoturnoLobbyEntry[], until: number) => void; onStatus: (s: NoturnoNetStatus) => void },
+  phase: RunPhase,
 ) => Promise<{ net: NoturnoNet; start: NoturnoStart } | null>
 
 export interface RunViewProps {
@@ -54,7 +63,7 @@ export interface RunViewProps {
 const MAX_RIDERS = 4
 
 type Mp = { net: NoturnoNet; start: NoturnoStart }
-type Stage = { kind: "menu" } | { kind: "lobby"; ride: RideKind; ac: AbortController } | { kind: "game"; ride: RideKind; key: number; mp?: Mp }
+type Stage = { kind: "menu" } | { kind: "lobby"; ride: RideKind; ac: AbortController } | { kind: "game"; ride: RideKind; phase: RunPhase; key: number; mp?: Mp }
 
 const RIDE_ORDER: RideKind[] = ["bike", "skate", "skates"]
 const NEON = "#FF4FB3"
@@ -66,7 +75,53 @@ const BG = "radial-gradient(120% 90% at 50% 0%, #3a1f5c 0%, #140f26 58%, #07060d
 type Rec = { score: number; coins: number; dist: number }
 type Records = Partial<Record<RideKind, Rec>>
 const REC_KEY = "mm-noturno-recordes-v1"
+/** Rolê 2.0: recordes das rotas novas (rota → veículo → recorde). A Clássica segue em REC_KEY. */
+const REC2_KEY = "mm-noturno-recordes-v2"
 const RIDE_KEY = "mm-noturno-veiculo-v1"
+const ROUTE_KEY = "mm-noturno-rota-v1"
+type Records2 = Partial<Record<RunPhase, Records>>
+function loadRecords2(): Records2 {
+  try {
+    return (JSON.parse(localStorage.getItem(REC2_KEY) || "null") as Records2 | null) ?? {}
+  } catch {
+    return {}
+  }
+}
+/** Recorde de um veículo numa rota (a Clássica lê os de antes). */
+function recordOf(phase: RunPhase, ride: RideKind): Rec | null {
+  if (phase === "classica") return loadRecords()[ride] ?? null
+  return loadRecords2()[phase]?.[ride] ?? null
+}
+function saveRecordOf(phase: RunPhase, ride: RideKind, rec: Rec) {
+  try {
+    if (phase === "classica") {
+      const r = loadRecords()
+      r[ride] = rec
+      saveRecords(r)
+      return
+    }
+    const all = loadRecords2()
+    all[phase] = { ...(all[phase] ?? {}), [ride]: rec }
+    localStorage.setItem(REC2_KEY, JSON.stringify(all))
+  } catch {
+    /* sem armazenamento */
+  }
+}
+function loadRoute(): RunPhase {
+  try {
+    const r = localStorage.getItem(ROUTE_KEY)
+    return isRunPhase(r) ? r : "canion"
+  } catch {
+    return "canion"
+  }
+}
+function saveRoute(r: RunPhase) {
+  try {
+    localStorage.setItem(ROUTE_KEY, r)
+  } catch {
+    /* sem armazenamento */
+  }
+}
 function loadRecords(): Records {
   try {
     return (JSON.parse(localStorage.getItem(REC_KEY) || "null") as Records | null) ?? {}
@@ -140,13 +195,17 @@ export function RunView({ body, look, name, onExit, join }: RunViewProps) {
   const [stage, setStage] = useState<Stage>({ kind: "menu" })
   const [lobby, setLobby] = useState<{ list: NoturnoLobbyEntry[]; until: number }>({ list: [], until: 0 })
   const [error, setError] = useState<string | null>(null)
+  const [pref, setPref] = useState<{ ride: RideKind; phase: RunPhase } | null>(null)
+  useEffect(() => setPref({ ride: loadRide(), phase: loadRoute() }), [])
   const seq = useRef(0)
   const play = useCallback(
-    async (ride: RideKind, multi = false) => {
+    async (ride: RideKind, multi = false, phase: RunPhase = "classica") => {
       saveRide(ride)
+      saveRoute(phase)
+      setPref({ ride, phase })
       setError(null)
       if (!multi || !join) {
-        setStage({ kind: "game", ride, key: ++seq.current })
+        setStage({ kind: "game", ride, phase, key: ++seq.current })
         return
       }
       const ac = new AbortController()
@@ -157,13 +216,15 @@ export function RunView({ body, look, name, onExit, join }: RunViewProps) {
         setStage({ kind: "menu" })
       }
       try {
-        const got = await join(ride, body, { signal: ac.signal, onLobby: (list, until) => setLobby({ list, until }), onStatus: () => {} })
+        const got = await join(ride, body, { signal: ac.signal, onLobby: (list, until) => setLobby({ list, until }), onStatus: () => {} }, phase)
         if (ac.signal.aborted) {
           got?.net.dispose()
           return
         }
         if (!got) return fail()
-        setStage({ kind: "game", ride, key: ++seq.current, mp: got })
+        // a rota que vale é a da sala (o servidor junta quem escolheu a mesma)
+        const real = isRunPhase(got.start.phase) ? got.start.phase : "classica"
+        setStage({ kind: "game", ride, phase: real, key: ++seq.current, mp: got })
       } catch (err) {
         // a recusa do servidor vem com o motivo (ex.: longe da porta) — mostra ele, não o genérico
         if (!ac.signal.aborted) fail(err instanceof JoinRefused ? err.message : undefined)
@@ -177,11 +238,12 @@ export function RunView({ body, look, name, onExit, join }: RunViewProps) {
         <RunScreen
           key={stage.key}
           ride={stage.ride}
+          phase={stage.phase}
           body={body}
           look={look}
           name={name}
           mp={stage.mp}
-          onAgain={() => void play(stage.ride, !!stage.mp)}
+          onAgain={() => void play(stage.ride, !!stage.mp, stage.phase)}
           onMenu={() => setStage({ kind: "menu" })}
         />
       ) : stage.kind === "lobby" ? (
@@ -194,7 +256,17 @@ export function RunView({ body, look, name, onExit, join }: RunViewProps) {
           }}
         />
       ) : (
-        <RunMenu onPlay={(r, m) => void play(r, m)} onExit={onExit} multi={!!join} error={error} />
+        pref && (
+          <RouteSelect
+            phase={pref.phase}
+            ride={pref.ride}
+            records={(ph, r): RouteRecord | null => recordOf(ph, r)}
+            multi={!!join}
+            error={error}
+            onExit={onExit}
+            onPlay={(r, ph) => void play(r, !!join, ph)}
+          />
+        )
       )}
     </div>
   )
@@ -220,162 +292,11 @@ function RunLobby({ list, until, onCancel }: { list: NoturnoLobbyEntry[]; until:
   )
 }
 
-// ═══ menu ════════════════════════════════════════════════════════════════════
-
-function Bar({ value, color }: { value: number; color: string }) {
-  return (
-    <span className="block h-1.5 w-full overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.1)" }}>
-      <span className="block h-full rounded-full" style={{ width: `${Math.round(value * 100)}%`, background: color }} />
-    </span>
-  )
-}
-
-function RunMenu({ onPlay, onExit, multi, error }: { onPlay: (r: RideKind, multi: boolean) => void; onExit: () => void; multi: boolean; error: string | null }) {
-  const t = useTranslations("MeuMundo")
-  const names = useRideNames()
-  const [ride, setRide] = useState<RideKind>("skate")
-  const [rec, setRec] = useState<Records>({})
-  useEffect(() => {
-    setRide(loadRide())
-    setRec(loadRecords())
-  }, [])
-  // barras: velocidade máxima, altura do pulo e agilidade (troca de faixa)
-  const stats = (r: RideKind) => ({
-    speed: (RIDES[r].at[RIDES[r].at.length - 1] * 3.6 - 420) / 95,
-    jump: (RIDES[r].jumpH - 1.1) / 0.8,
-    agile: (0.26 - RIDES[r].laneTime) / 0.15,
-  })
-  const blurb: Record<RideKind, string> = {
-    bike: t("noturnoBikeSub", "A mais rápida. Pulo mais baixo."),
-    skate: t("noturnoSkateSub", "O pulo mais alto. Manobra nas rampas."),
-    skates: t("noturnoSkatesSub", "A mais ágil para trocar de faixa."),
-  }
-  return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
-      <div className="w-full max-w-[560px] rounded-none p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: CYAN }}>
-              {t("noturnoKicker", "Avenida da madrugada")}
-            </div>
-            <h1 className="mt-1.5 text-[30px] font-black italic leading-none tracking-tight max-[759px]:text-[25px]">
-              ROLÊ <span style={{ color: NEON }}>NOTURNO</span>
-            </h1>
-            <p className="mt-2 text-[14px] leading-snug max-[759px]:text-[13px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-              {t("noturnoPitch", "A rua é sua de noite. Desvie dos carros e caminhões, salte das rampas e pegue as moedas — cada vez mais rápido.")}
-            </p>
-          </div>
-          <BackToCity onExit={onExit} className="pointer-events-auto" />
-        </div>
-
-        <div className="mt-4 text-[12px] font-bold uppercase tracking-[0.14em] [@media(max-height:520px)]:mt-2" style={{ color: MM.muted }}>
-          {t("noturnoChoose", "Escolha o seu veículo")}
-        </div>
-        <div className="mt-2 grid grid-cols-3 gap-2" role="radiogroup" aria-label={t("noturnoChoose", "Escolha o seu veículo")}>
-          {RIDE_ORDER.map((r) => {
-            const on = r === ride
-            const s = stats(r)
-            const best = rec[r]
-            return (
-              <button
-                key={r}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                onClick={() => setRide(r)}
-                onDoubleClick={() => onPlay(r, false)}
-                className="flex flex-col gap-2 rounded-none p-3 text-left transition-transform active:scale-[0.98] max-[480px]:p-2"
-                style={{ background: on ? MM.rubySoft : MM.card, border: `1.5px solid ${on ? NEON : MM.border}`, boxShadow: on ? "0 0 18px rgba(255,79,179,0.25)" : "none" }}
-              >
-                <span className="flex items-center gap-2 max-[480px]:flex-col max-[480px]:gap-1">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: on ? NEON : "rgba(255,255,255,0.08)", color: on ? "#140f26" : MM.text }}>
-                    <RideIcon ride={r} className="h-6 w-6" />
-                  </span>
-                  <span className="text-[16px] font-bold leading-tight max-[480px]:text-[14px]">{names[r]}</span>
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-1 text-[11px]" style={{ color: MM.muted }}>
-                  <span className="max-[480px]:hidden [@media(max-height:520px)]:hidden">{blurb[r]}</span>
-                  <span className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 max-[480px]:grid-cols-1 max-[480px]:gap-y-0.5">
-                    <span>{t("noturnoStatSpeed", "Velocidade")}</span>
-                    <Bar value={s.speed} color={NEON} />
-                    <span>{t("noturnoStatJump", "Pulo")}</span>
-                    <Bar value={s.jump} color={CYAN} />
-                    <span>{t("noturnoStatAgile", "Agilidade")}</span>
-                    <Bar value={s.agile} color={GOLD} />
-                  </span>
-                  {best && (
-                    <span className="flex items-center gap-1" style={{ color: MM.gold }}>
-                      <Trophy className="h-3 w-3" /> {best.score.toLocaleString()}
-                    </span>
-                  )}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-
-        <ul className="mt-3 grid grid-cols-3 gap-2 text-[12.5px] leading-snug max-[759px]:hidden [@media(max-height:620px)]:hidden" style={{ color: MM.muted }}>
-          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
-            <b style={{ color: GOLD }}>{t("noturnoHowCoinsTitle", "Moedas")}</b>
-            <br />
-            {t("noturnoHowCoins", "Cada uma vale 10 pontos. Em fila, no ar e em cima dos caminhões.")}
-          </li>
-          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
-            <b style={{ color: CYAN }}>{t("noturnoHowRampTitle", "Rampas")}</b>
-            <br />
-            {t("noturnoHowRamp", "Te jogam para o alto: para o lado gira 360° (+100), para cima dá um mortal (+150). Caia em cima do caminhão!")}
-          </li>
-          <li className="rounded-none p-2.5" style={{ background: MM.card }}>
-            <b style={{ color: NEON }}>{t("noturnoHowCarsTitle", "Trânsito")}</b>
-            <br />
-            {t("noturnoHowCars", "De frente derruba. Pule o cavalete e suba no teto dos carros.")}
-          </li>
-        </ul>
-        <p className="mt-2 rounded-none px-2.5 py-2 text-[12.5px] leading-snug max-[759px]:hidden [@media(max-height:620px)]:hidden" style={{ background: "rgba(242,183,5,0.1)", color: MM.muted, border: `1px solid ${MM.goldBorder}` }}>
-          <b style={{ color: GOLD }}>{t("noturnoHowPowerTitle", "Logo da Freelandoo")}</b> · {t("noturnoHowPower", "A cada 700 m. Pegou: 5 s de poder — o que você bater explode e você acelera.")}
-        </p>
-
-        {error && (
-          <p className="mt-3 flex items-center gap-2 rounded-none px-3 py-2 text-[13px]" style={{ background: "rgba(110,16,34,0.5)", color: "#ffd5dc" }} role="alert">
-            <WifiOff className="h-4 w-4 shrink-0" /> {error}
-          </p>
-        )}
-
-        {/* 2026-11-08 (regra do Alex): uma regra só — sempre a sala; espera 1 minuto e as vagas vazias viram computadores */}
-        <div className="mt-4 [@media(max-height:520px)]:mt-2.5">
-          <button
-            type="button"
-            onClick={() => onPlay(ride, multi)}
-            className="flex w-full flex-col items-center justify-center rounded-none px-3 py-3 [@media(max-height:520px)]:py-2 font-black italic tracking-wide text-white transition-transform active:scale-[0.98]"
-            style={{ background: MM.rubyFill, border: `1px solid ${MM.rubyBorder}` }}
-          >
-            <span className="flex items-center gap-2 text-[17px] max-[420px]:text-[15px]">
-              <RideIcon ride={ride} className="h-5 w-5 shrink-0" />
-              {t("noturnoPlay", "Andar de {ride}").replace("{ride}", names[ride].toLowerCase())}
-            </span>
-            {multi && (
-              <span className="text-[11px] font-semibold not-italic leading-tight [@media(max-height:520px)]:hidden" style={{ color: "rgba(255,255,255,0.8)" }}>
-                {t("noturnoModeBotsSub4", "Espera até 20 segundos · até 4")}
-              </span>
-            )}
-          </button>
-        </div>
-
-        <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-          {t("noturnoKeys", "← → ou A D trocam de faixa · ↑, W ou Espaço pulam · ↓ ou S descem rápido · no ar da rampa: ← → giram 360° e ↑ dá um mortal")}
-        </p>
-        <p className="mt-3 hidden text-[12px] leading-snug max-[759px]:block" style={{ color: MM.muted }}>
-          {t("noturnoSwipe", "Deslize para os lados para trocar de faixa, para cima (ou toque) para pular e para baixo para descer rápido. No ar da rampa: para o lado gira 360° e para cima dá um mortal.")}
-        </p>
-      </div>
-    </div>
-  )
-}
-
 // ═══ jogo ════════════════════════════════════════════════════════════════════
 
 function RunScreen({
   ride,
+  phase,
   body,
   look,
   name,
@@ -384,6 +305,7 @@ function RunScreen({
   onMenu,
 }: {
   ride: RideKind
+  phase: RunPhase
   body: BodyId
   look?: string
   name?: string
@@ -453,18 +375,17 @@ function RunScreen({
         setResult({ r, record: false, best: null })
         return
       }
-      const recs = loadRecords()
-      const prev = recs[ride]
+      const prev = recordOf(phase, ride)
       const record = !prev || r.score > prev.score
       const best: Rec = { score: Math.max(prev?.score ?? 0, r.score), coins: Math.max(prev?.coins ?? 0, r.coins), dist: Math.max(prev?.dist ?? 0, r.dist) }
-      recs[ride] = best
-      saveRecords(recs)
+      saveRecordOf(phase, ride, best)
       setResult({ r, record: record && r.score > 0, best: prev ?? null })
     }
     try {
       const g = createRunGame({
         canvas,
         ride,
+        phase,
         body,
         look,
         name,
@@ -613,6 +534,7 @@ function RunScreen({
           {result && (
             <Results
               ride={ride}
+              phase={phase}
               result={result.r}
               record={result.record}
               best={result.best}
@@ -630,7 +552,7 @@ function RunScreen({
             {status === "loading" ? (
               <>
                 <Loader2 className="h-7 w-7 animate-spin" />
-                <span className="text-[15px] font-semibold">{t("noturnoLoading", "Acendendo os postes…")}</span>
+                <span className="text-[15px] font-semibold">{phase === "classica" ? t("noturnoLoading", "Acendendo os postes…") : t("rnLoading", "Montando a rota…")}</span>
               </>
             ) : (
               <>
@@ -668,6 +590,7 @@ function FieldStrip({ rows, glass }: { rows: FieldRow[]; glass: string }) {
 
 function Results({
   ride,
+  phase,
   result,
   record,
   best,
@@ -676,6 +599,7 @@ function Results({
   onMenu,
 }: {
   ride: RideKind
+  phase: RunPhase
   result: RunResult
   record: boolean
   best: Rec | null
@@ -693,6 +617,9 @@ function Results({
     ramp: t("noturnoByRamp", "Caiu da rampa!"),
     stumble: t("noturnoByStumble", "Dois esbarrões: caiu!"),
   }
+  // rota 2.0: o nome do obstáculo dela
+  const themed = CRASH_TEXT[phase]
+  if (themed) for (const k of Object.keys(themed) as (keyof typeof themed)[]) by[k] = t(themed[k].key, themed[k].label)
   const cells: [string, string][] = [
     [t("noturnoScore", "Pontos"), result.score.toLocaleString()],
     [t("noturnoCoins", "Moedas"), String(result.coins)],
@@ -772,7 +699,7 @@ function Results({
             {t("noturnoAgain", "De novo")}
           </button>
           <button type="button" onClick={onMenu} className="rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
-            {group ? t("noturnoBackMenu", "Voltar ao menu") : t("noturnoChange", "Trocar veículo")}
+            {group ? t("noturnoBackMenu", "Voltar ao menu") : t("rnChange", "Trocar rota ou veículo")}
           </button>
         </div>
       </div>

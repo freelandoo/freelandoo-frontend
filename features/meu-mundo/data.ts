@@ -182,7 +182,7 @@ export const postPaintJoin = (token: string, mode: string, roomId?: string | nul
 export const postCorridaJoin = (token: string, ship?: string, track?: string) =>
   call<CorridaSession>(token, "POST", "/center/corrida", { ...(ship ? { ship } : {}), ...(track ? { track } : {}) })
 /** Rolê Noturno em grupo (mm3d-42): espera até 1 minuto; todos na mesma rua. */
-export const postNoturnoJoin = (token: string, ride: string, body: string) => call<NoturnoSession>(token, "POST", "/center/noturno", { ride, body })
+export const postNoturnoJoin = (token: string, ride: string, body: string, phase?: string) => call<NoturnoSession>(token, "POST", "/center/noturno", { ride, body, phase })
 /** Gincana em grupo (mm3d-47): espera até 1 minuto; o computador completa as 8 vagas. */
 export const postGincanaJoin = (token: string, body: string) => call<GincanaSession>(token, "POST", "/center/gincana", { body })
 export const getVisits = (token: string) => call<VisitState>(token, "GET", "/visits")

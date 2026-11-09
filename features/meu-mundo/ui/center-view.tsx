@@ -66,11 +66,11 @@ async function fetchCorridaSession(ship: string, track?: string) {
 const corridaJoin: CorridaJoin = async (hooks) => (await import("../corrida/engine/net")).joinCorrida(() => fetchCorridaSession(hooks.ship, hooks.track), hooks)
 
 /** Rolê Noturno em grupo (mm3d-42): a rede só baixa quando alguém escolhe Multiplayer. */
-const noturnoJoin: NoturnoJoin = async (ride, body, hooks) =>
+const noturnoJoin: NoturnoJoin = async (ride, body, hooks, phase) =>
   (await import("../noturno/engine/net")).joinNoturno(async () => {
     const token = getToken()
     if (!token) return null
-    const r = await postNoturnoJoin(token, ride, body)
+    const r = await postNoturnoJoin(token, ride, body, phase)
     if (r.ok) return r.data
     // recusa com motivo (longe da porta, fora do centro): a tela mostra o motivo
     if (r.status === 409) throw new (await import("../noturno/ui/run-view")).JoinRefused(r.error)

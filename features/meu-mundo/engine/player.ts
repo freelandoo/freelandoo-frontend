@@ -173,6 +173,16 @@ export class Character {
     this.shadow.position.set(x, (Number.isFinite(groundY) ? groundY : y - 400) + 0.09, z)
   }
 
+  /**
+   * Pendura o personagem (e a sombra) num nó: o Rolê Noturno 2.0 põe o jogador
+   * no referencial da pista (curva, subida, loop) e usa place() em coordenadas
+   * locais. null solta de volta no mundo.
+   */
+  attach(node: TransformNode | null) {
+    this.holder.parent = node
+    this.shadow.parent = node
+  }
+
   /** Paint (mm3d-35): no ar (pose do pulo) e soco. */
   setAir(on: boolean) {
     if (this.rig) this.rig.air = on

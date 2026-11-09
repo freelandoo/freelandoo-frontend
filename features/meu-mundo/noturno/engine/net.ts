@@ -33,6 +33,8 @@ export interface NoturnoStart {
   me: number
   seed: number
   street: RideKind
+  /** Rolê 2.0: a fase da largada (a sala junta quem escolheu a mesma); ausente = Clássica. */
+  phase?: string
   /** s até o "vai". */
   countdown: number
   seats: NoturnoSeat[]

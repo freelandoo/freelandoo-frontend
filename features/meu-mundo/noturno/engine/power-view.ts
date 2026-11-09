@@ -17,6 +17,7 @@
 //    obstáculo (caixas em instância fina) voando com gravidade, girando e
 //    quicando no asfalto.
 
+import { TrackSpace } from "./track-space"
 import type { Scene } from "@babylonjs/core/scene"
 import "@babylonjs/core/Meshes/instancedMesh"
 import "@babylonjs/core/Meshes/thinInstanceMesh"
@@ -117,7 +118,8 @@ export interface PowerView {
   dispose(): void
 }
 
-export function buildPower(scene: Scene, low: boolean): PowerView {
+/** Rolê 2.0: `space` põe o logo e a explosão no referencial da pista (sem ele, a rua reta). */
+export function buildPower(scene: Scene, low: boolean, space: TrackSpace = TrackSpace.of("classica", 1)): PowerView {
   ensureLoaders()
   let disposed = false
   let container: AssetContainer | null = null
@@ -398,6 +400,7 @@ export function buildPower(scene: Scene, low: boolean): PowerView {
   const pieces: Piece[] = []
   const mtx = new Matrix()
   const q = new Quaternion()
+  const qw = new Quaternion()
   const at = new Vector3()
   const sc = new Vector3()
 
@@ -437,9 +440,8 @@ export function buildPower(scene: Scene, low: boolean): PowerView {
       p.ry += p.wy * dt
       const fade = Math.min(1, (p.life - p.t) / 0.35)
       Quaternion.RotationYawPitchRollToRef(p.ry, p.rx, 0, q)
-      at.set(p.x, p.y, p.z)
       sc.set(p.s * fade, p.s * 0.55 * fade, p.s * 0.8 * fade)
-      Matrix.ComposeToRef(sc, q, at, mtx)
+      space.matrix(p.x, p.y, p.z, sc, q, mtx, qw, at)
       mtx.copyToArray(pieceM, n * 16)
       pieceC.set([p.c[0], p.c[1], p.c[2], 1], n * 4)
       n++
@@ -465,13 +467,12 @@ export function buildPower(scene: Scene, low: boolean): PowerView {
         const y = p.y + 0.35 + Math.sin(clock * 2.6 + p.id) * 0.18
         if (s.logo) {
           s.logo.setEnabled(true)
-          s.logo.position.set(p.x, y, p.z)
-          s.logo.rotation.y = clock * 2.2 + p.id
+          space.place(s.logo, p.x, y, p.z, clock * 2.2 + p.id)
         }
         s.halo.setEnabled(true)
-        s.halo.position.set(p.x, y, p.z + 0.05)
+        space.point(p.x, y, p.z + 0.05, s.halo.position)
         s.beam.setEnabled(true)
-        s.beam.position.set(p.x, 0, p.z)
+        space.place(s.beam, p.x, 0, p.z)
       }
       for (; i < slots.length; i++) {
         const s = slots[i]
@@ -482,7 +483,7 @@ export function buildPower(scene: Scene, low: boolean): PowerView {
       step(dt)
     },
     take(x, y, z) {
-      glitterAt.set(x, y + 0.6, z)
+      space.point(x, y + 0.6, z, glitterAt)
       glitter.manualEmitCount = low ? 60 : 150
     },
     aura(list, clock) {
@@ -517,9 +518,9 @@ export function buildPower(scene: Scene, low: boolean): PowerView {
       const f = flashes.find((g) => g.t > 0.32) ?? flashes[0]
       f.t = 0
       f.size = 3 + Math.min(len, 9) * 0.55
-      f.mesh.position.set(x, cy, cz)
+      space.point(x, cy, cz, f.mesh.position)
       f.mesh.setEnabled(true)
-      fireAt.set(x, cy, cz)
+      space.point(x, cy, cz, fireAt)
       fire.minEmitBox = new Vector3(-0.9, -0.4, -len / 2)
       fire.maxEmitBox = new Vector3(0.9, 0.6, len / 2)
       smoke.minEmitBox = fire.minEmitBox

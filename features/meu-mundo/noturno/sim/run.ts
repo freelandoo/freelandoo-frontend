@@ -29,6 +29,12 @@
 //    pela curva de velocidade do veículo mais rápido (`street`) — quem vai de
 //    skate/patins só tem mais folga. A rua é igual para todos; cada aparelho
 //    roda a sua corrida.
+//  - FASES (Rolê Noturno 2.0): a pista ganha forma no mundo (sim/track.ts:
+//    curvas, subidas, descidas e loops) sem mudar nada daqui — só o gerador
+//    deixa a zona do LOOP sem obstáculo (uma fileira de moedas no lugar). A
+//    fase "classica" não tem traçado: a rua reta de antes, idêntica.
+
+import { TrackPlan, type RunPhase } from "./track"
 
 export type RideKind = "bike" | "skate" | "skates"
 export type ObstacleKind = "car" | "amb" | "truck" | "barrier" | "ramp"
@@ -212,6 +218,9 @@ export class Run {
   readonly ride: RideKind
   /** Curva de velocidade com que a rua é gerada (multiplayer: a do veículo mais rápido). */
   readonly street: RideKind
+  /** Fase (Rolê Noturno 2.0) e o traçado dela (null na Clássica). */
+  readonly phase: RunPhase
+  readonly track: TrackPlan | null
   private readonly rnd: () => number
   obstacles: Obstacle[] = []
   coins: Coin[] = []
@@ -261,9 +270,11 @@ export class Run {
   smashPts = 0
   private ticks = 0
 
-  constructor(ride: RideKind, seed = 1, street: RideKind = ride) {
+  constructor(ride: RideKind, seed = 1, street: RideKind = ride, phase: RunPhase = "classica") {
     this.ride = ride
     this.street = street
+    this.phase = phase
+    this.track = phase === "classica" ? null : new TrackPlan(phase, seed)
     this.rnd = mulberry(seed)
     this.v = speedAt(ride, 0)
     // começo: uma fileira de moedas no meio para chamar
@@ -342,6 +353,15 @@ export class Run {
         this.mark(l, z + 6)
         this.nextPower += POWER.every
         this.nextZ = z + 6 + v * 0.5
+        continue
+      }
+      // loop à frente (fases 2.0): nada de obstáculo até a saída, só moedas pela pista
+      const q = this.track ? this.track.quiet(z, z + 100) : null
+      if (q) {
+        const lane = free.includes(1) ? 1 : (free[0] ?? 1)
+        for (let c = Math.max(z, q.from + 6); c < q.to - 6; c += 4) this.addCoin(LANE_X[lane], 0.9, c)
+        this.mark(lane, q.to)
+        this.nextZ = q.to + 4
         continue
       }
       const h = this.hard(v)
@@ -740,6 +760,7 @@ export class Run {
       this.obstacles = this.obstacles.filter((o) => o.z + KINDS[o.kind].len > this.z - 80)
       this.coins = this.coins.filter((c) => !c.taken && this.coinZ(c) > cut)
       this.powers = this.powers.filter((p) => !p.taken && p.z > cut)
+      this.track?.forget(this.z - 400)
     }
     this.generate(this.z + Math.max(260, this.v * 4.5))
   }

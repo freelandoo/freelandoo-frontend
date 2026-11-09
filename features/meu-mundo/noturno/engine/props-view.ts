@@ -29,7 +29,23 @@ import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
 import { Constants } from "@babylonjs/core/Engines/constants"
 import { ensureLoaders } from "../../engine/avatars"
 import { CAR_ASSET_VERSION, CAR_PAINT_HEX, repaint } from "../../engine/cars"
-import type { Coin, Obstacle, ObstacleKind, Run } from "../sim/run"
+import { KINDS, type Coin, type Obstacle, type ObstacleKind, type Run } from "../sim/run"
+import { createTrimMaterials } from "../../engine/steampunk/materials"
+import type { QualityTier } from "../../engine/quality"
+import { TrackSpace } from "./track-space"
+
+/**
+ * Rolê Noturno 2.0: as fases novas trocam os modelos (um por tipo, nas mesmas
+ * medidas da regra — build_rn2.py) e põem tudo no referencial da pista
+ * (curva, subida, loop). Sem isto, a rua clássica de sempre.
+ */
+export interface PropsTheme {
+  space: TrackSpace
+  /** Pasta e prefixo: `${dir}rn2-${phase}-${kind}.glb`. */
+  dir: string
+  phase: string
+  tier: QualityTier
+}
 
 // v2 = steampunk (mm3d-55: pipeline/noturno/build_props.py + a ambulância do centro), mesmas medidas.
 const BASE = "/meu-mundo/noturno/v2/"
@@ -62,6 +78,8 @@ interface Model {
 interface View {
   key: ModelKey
   holder: TransformNode
+  /** Filho do holder: o modelo fica deslocado para o holder ficar no MEIO do obstáculo (cola melhor na curva). */
+  inner: TransformNode
   parts: InstancedMesh[]
   lights: InstancedMesh[]
   beam: InstancedMesh | null
@@ -97,13 +115,17 @@ function beamTexture(scene: Scene) {
   return tex
 }
 
-export function buildProps(scene: Scene): PropsView {
+export function buildProps(scene: Scene, theme?: PropsTheme): PropsView {
   ensureLoaders()
-  const bodyMat = new StandardMaterial("noturno-prop", scene)
-  bodyMat.diffuseColor = new Color3(1, 1, 1)
-  bodyMat.emissiveColor = new Color3(0.2, 0.2, 0.24)
-  bodyMat.specularColor = new Color3(0.3, 0.3, 0.32)
-  bodyMat.specularPower = 40
+  const space = theme?.space ?? TrackSpace.of("classica", 1)
+  const trim = theme ? createTrimMaterials(scene, theme.tier) : null
+  const bodyMat = trim ? trim.trim : new StandardMaterial("noturno-prop", scene)
+  if (!trim) {
+    bodyMat.diffuseColor = new Color3(1, 1, 1)
+    bodyMat.specularColor = new Color3(0.3, 0.3, 0.32)
+    bodyMat.specularPower = 40
+  }
+  bodyMat.emissiveColor = trim ? new Color3(0.17, 0.16, 0.18) : new Color3(0.2, 0.2, 0.24)
   const glowMat = new StandardMaterial("noturno-prop-glow", scene)
   glowMat.disableLighting = true
   glowMat.emissiveColor = new Color3(1, 1, 1)
@@ -173,14 +195,16 @@ export function buildProps(scene: Scene): PropsView {
   const want = (key: ModelKey) => {
     let p = loading.get(key)
     if (!p) {
-      if (key.startsWith("car:")) p = bake(key, CAR_URL, key.slice(4))
+      if (theme) p = bake(key, `${theme.dir}rn2-${theme.phase}-${key}.glb`)
+      else if (key.startsWith("car:")) p = bake(key, CAR_URL, key.slice(4))
       else p = bake(key, `${BASE}noturno-${key}.glb`)
       p.catch(() => {})
       loading.set(key, p)
     }
     return p
   }
-  const ready = Promise.all((["truck", "ramp", "barrier", "amb", ...PAINTS.map((p) => `car:${p}` as const)] as ModelKey[]).map((k) => want(k).catch(() => null))).then(() => {})
+  const keys: ModelKey[] = theme ? (["truck", "ramp", "barrier", "amb", "car"] as unknown as ModelKey[]) : ["truck", "ramp", "barrier", "amb", ...PAINTS.map((p) => `car:${p}` as const)]
+  const ready = Promise.all(keys.map((k) => want(k).catch(() => null))).then(() => {})
 
   // luzes dos carros (caixinhas acesas) e o facho do farol
   const tailMat = new StandardMaterial("noturno-tail", scene)
@@ -214,24 +238,24 @@ export function buildProps(scene: Scene): PropsView {
   const views = new Map<number, View>()
   const pool = new Map<ModelKey, View[]>()
 
-  const keyOf = (o: Obstacle): ModelKey => (o.kind === "car" ? `car:${PAINTS[o.tint % PAINTS.length]}` : o.kind)
+  const keyOf = (o: Obstacle): ModelKey => (o.kind === "car" ? (theme ? ("car" as unknown as ModelKey) : `car:${PAINTS[o.tint % PAINTS.length]}`) : o.kind)
 
   const mount = (v: View, m: Model, o: Obstacle) => {
     for (const src of [m.body, m.glow]) {
       if (!src) continue
       const inst = src.createInstance(`${src.name}-i`)
-      inst.parent = v.holder
+      inst.parent = v.inner
       inst.isPickable = false
       v.parts.push(inst)
     }
-    if (o.kind === "car") {
+    if (o.kind === "car" && !theme) {
       for (const s of [-1, 1]) {
         const t = tail.createInstance("noturno-tail-i")
-        t.parent = v.holder
+        t.parent = v.inner
         t.position.set(s * 0.72, 0.78, -2.27)
         v.lights.push(t)
         const h = headL.createInstance("noturno-head-i")
-        h.parent = v.holder
+        h.parent = v.inner
         h.position.set(s * 0.7, 0.62, 2.07)
         v.lights.push(h)
       }
@@ -246,7 +270,10 @@ export function buildProps(scene: Scene): PropsView {
       free.holder.setEnabled(true)
       return free
     }
-    const v: View = { key, holder: new TransformNode(`noturno-ob-${o.id}`, scene), parts: [], lights: [], beam: null, pending: true }
+    const holder = new TransformNode(`noturno-ob-${o.id}`, scene)
+    const inner = new TransformNode(`noturno-ob-in-${o.id}`, scene)
+    inner.parent = holder
+    const v: View = { key, holder, inner, parts: [], lights: [], beam: null, pending: true }
     const m = models.get(key)
     if (m) mount(v, m, o)
     else
@@ -284,6 +311,7 @@ export function buildProps(scene: Scene): PropsView {
   const bursts: { x: number; y: number; z: number; t: number }[] = []
   const mtx = new Matrix()
   const q = new Quaternion()
+  const qw = new Quaternion()
   const at = new Vector3()
   const sc = new Vector3(1, 1, 1)
   let lastT = 0
@@ -301,17 +329,22 @@ export function buildProps(scene: Scene): PropsView {
         if (!v) {
           v = viewFor(o)
           views.set(o.id, v)
-          if (o.kind === "car" && o.dir === -1 && !v.beam) {
+          if (o.kind === "car" && o.dir === -1 && !v.beam && !theme) {
             const b = beam.createInstance("noturno-beam-i")
-            b.parent = v.holder
+            b.parent = v.inner
             b.position.set(0, 0.03, 2.09 + 6)
             v.beam = b
           }
         }
-        const f = FIT[o.kind]
+        // o holder fica no MEIO do obstáculo (na pista curva ele assenta melhor); o modelo vai deslocado
+        const len = KINDS[o.kind].len
+        const f = theme ? { org: 0, flip: false } : FIT[o.kind]
         const back = o.dir === -1
-        v.holder.position.set(o.x, 0, o.z + (back ? CAR_FRONT : f.org))
-        v.holder.rotation.y = (f.flip ? Math.PI : 0) + (back ? Math.PI : 0)
+        const anchor = back ? (theme ? len : CAR_FRONT) : f.org
+        const turned = f.flip !== back
+        v.inner.position.z = anchor - len / 2
+        v.inner.rotation.y = turned ? Math.PI : 0
+        space.place(v.holder, o.x, 0, o.z + len / 2)
       }
       for (const [id, v] of views) {
         if (seen.has(id)) continue
@@ -329,9 +362,8 @@ export function buildProps(scene: Scene): PropsView {
         const z = run.coinZ(c)
         if (z < pz - 3 || z > pz + ahead) continue
         if (n >= COIN_CAP) break
-        at.set(c.x, c.y + Math.sin(time * 3 + z * 0.4) * 0.06, z)
         sc.set(1, 1, 1)
-        Matrix.ComposeToRef(sc, q, at, mtx)
+        space.matrix(c.x, c.y + Math.sin(time * 3 + z * 0.4) * 0.06, z, sc, q, mtx, qw, at)
         mtx.copyToArray(coinBuf, n * 16)
         n++
       }
@@ -343,11 +375,10 @@ export function buildProps(scene: Scene): PropsView {
           continue
         }
         const k = b.t / 0.28
-        at.set(b.x, b.y + k * 1.2, b.z + k * 2)
         const s = 1 + k * 0.6
         sc.set(s * (1 - k), s * (1 - k), s * (1 - k))
         Quaternion.RotationYawPitchRollToRef(spin * 4, 0, 0, q)
-        Matrix.ComposeToRef(sc, q, at, mtx)
+        space.matrix(b.x, b.y + k * 1.2, b.z + k * 2, sc, q, mtx, qw, at)
         mtx.copyToArray(coinBuf, n * 16)
         n++
       }
@@ -366,7 +397,9 @@ export function buildProps(scene: Scene): PropsView {
         m.glow?.dispose()
       }
       for (const x of [tail, headL, beam, coin]) x.dispose()
-      for (const m of [bodyMat, glowMat, tailMat, headMat, beamMat, coinMat]) m.dispose(true, true)
+      for (const m of [glowMat, tailMat, headMat, beamMat, coinMat]) m.dispose(true, true)
+      if (trim) trim.dispose()
+      else bodyMat.dispose(true, true)
     },
   }
 }
