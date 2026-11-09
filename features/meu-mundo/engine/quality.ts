@@ -16,6 +16,7 @@
 // navegador dele — é conveniência por aparelho, não estado do jogo.
 
 import type { Engine } from "@babylonjs/core/Engines/engine"
+import { markSceneStart } from "./scene-meter"
 
 export type QualityTier = "low" | "mid" | "high"
 export type QualityChoice = "auto" | QualityTier
@@ -148,6 +149,8 @@ export class ResolutionGovernor {
     this.min = Math.min(profile.minRatio, this.max)
     this.ratio = this.max
     engine.setHardwareScalingLevel(1 / this.ratio)
+    // Toda cena do jogo cria um governador: é aqui que o medidor único nasce.
+    markSceneStart(engine)
   }
 
   /** Troca de perfil (o jogador escolheu outra qualidade). */

@@ -21,6 +21,7 @@
 
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic"
+import { configureCodecs } from "./codecs"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
@@ -422,6 +423,7 @@ let loadersRegistered = false
 /** Registra os carregadores (glTF) uma vez por página. Avatares e casas usam. */
 export function ensureLoaders() {
   if (loadersRegistered) return
+  configureCodecs()
   registerBuiltInLoaders()
   loadersRegistered = true
 }

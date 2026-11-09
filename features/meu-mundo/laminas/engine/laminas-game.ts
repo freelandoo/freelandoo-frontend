@@ -47,6 +47,7 @@ import { MonsterModel, AXE_URL, AXE_EDGE, handEdge } from "./monster-view"
 import { FloatStones } from "./float-stones"
 import { Ray } from "./ray"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
+import { configureCodecs } from "../../engine/codecs"
 import { ARCHER_SKINS, clanOfBody, CLAN_WEAPON, GUN_SKINS, SWORD_SKINS, type Clan } from "../../classes"
 import { WeaponGrip, GRIP_BONES, BOW_GRIP_BONES } from "../../engine/weapon-grip"
 import { godBow, godGun, godHeavy, gunSize, shopBow, shopGun, shopHeavy, shopShield } from "../../engine/shop-swords"
@@ -504,6 +505,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let weaponRoot: TransformNode | null = null
   let grip: WeaponGrip | null = null
   let decoration: ReturnType<typeof decorateWeapon> | null = null
+  configureCodecs()
   if ((clan || brute) && !claws && !stoneHero) {
     LoadAssetContainerAsync(heavy?.file ?? (clan ? (weaponProfile?.model?.file ?? CLAN_WEAPON[clan]) : AXE_URL), scene)
       .then((c) => {

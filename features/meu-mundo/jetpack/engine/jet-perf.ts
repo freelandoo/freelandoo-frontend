@@ -8,6 +8,7 @@
 import type { Engine } from "@babylonjs/core/Engines/engine"
 import type { Scene } from "@babylonjs/core/scene"
 import { SceneInstrumentation } from "@babylonjs/core/Instrumentation/sceneInstrumentation"
+import { countDrawCalls } from "../../engine/scene-meter"
 
 export interface PerfSample {
   fps: number
@@ -21,26 +22,6 @@ export interface PerfSample {
 export interface PerfProbe {
   sample: () => PerfSample
   dispose: () => void
-}
-
-/**
- * Chamadas de desenho por quadro, contadas pelo que está à vista: cada malha
- * ativa desenha as suas submalhas; cópias instanciadas de uma mesma malha vão
- * numa chamada só; cada sistema de partículas ativo é mais uma. (O contador do
- * Babylon não roda com o laço de render manual deste jogo.)
- */
-function drawCalls(scene: Scene) {
-  const seen = new Set<unknown>()
-  let n = 0
-  for (const m of scene.getActiveMeshes().data) {
-    if (!m) continue
-    const src = (m as unknown as { sourceMesh?: unknown }).sourceMesh ?? m
-    if (seen.has(src)) continue
-    seen.add(src)
-    n += Math.max(1, m.subMeshes?.length ?? 1)
-  }
-  for (const ps of scene.particleSystems) if (ps.isStarted() && ps.getActiveCount() > 0) n++
-  return n
 }
 
 export function createPerfProbe(scene: Scene, engine: Engine, host: HTMLElement | null): PerfProbe {
@@ -60,7 +41,7 @@ export function createPerfProbe(scene: Scene, engine: Engine, host: HTMLElement 
     return {
       fps: Math.round(engine.getFps()),
       frameMs: Math.round(i.frameTimeCounter.lastSecAverage * 10) / 10,
-      drawCalls: drawCalls(scene),
+      drawCalls: countDrawCalls(scene),
       activeMeshes: scene.getActiveMeshes().length,
       particles,
       heapMB: mem ? Math.round(mem.usedJSHeapSize / 1048576) : null,
