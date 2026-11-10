@@ -32,6 +32,9 @@ export function ReceiptLines({ receipt, delay = 550 }: { receipt: Receipt; delay
   const xp = receipt.deltas.xp
   const lines: Line[] = []
   if (xp && xp.xp > 0) lines.push({ key: "xp", icon: "✦", label: t("rewardXp", "XP de aventura"), value: `+${xp.xp}`, color: FLOAT_COLOR.xp })
+  // F2: o treinador (a conta) também ganha — inteiro na missão, uma fração no resto
+  const tr = receipt.deltas.trainer
+  if (tr && tr.xp > 0) lines.push({ key: "trainer", icon: "✧", label: t("rewardTrainerXp", "XP do treinador"), value: `+${tr.xp}`, color: "#7FD8FF" })
   for (const [k, raw] of Object.entries(receipt.deltas.attrs || {})) {
     const n = Number(raw)
     const meta = ATTR_META[k as keyof typeof ATTR_META]

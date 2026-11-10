@@ -83,6 +83,8 @@ export interface AdvXp {
   level: number
   into: number
   need: number
+  /** F2: o nível do TREINADOR (a conta), ao lado do nível do personagem. */
+  trainer?: { level: number; into: number; need: number } | null
 }
 
 export interface PageProps {
@@ -446,6 +448,25 @@ function XpLine({ adv, t, small = false }: { adv: AdvXp; t: Tr; small?: boolean 
   )
 }
 
+/** F2: nível do TREINADOR (a conta) — mesma linha do XP, em ciano (não confunde com o dourado do personagem). */
+const TRAINER_COLOR = "#7FD8FF"
+function TrainerLine({ tr, t, small = false }: { tr: NonNullable<AdvXp["trainer"]>; t: Tr; small?: boolean }) {
+  const p = tr.need > 0 ? Math.min(1, tr.into / tr.need) : 1
+  return (
+    <div className={`flex items-center ${small ? "gap-1.5" : "gap-2.5"}`}>
+      <span className={`${teko.className} shrink-0 font-semibold uppercase leading-none`} style={{ fontSize: small ? 13 : 22, color: TRAINER_COLOR }}>
+        {t("hudTrainer", "Treinador {n}").replace("{n}", String(tr.level))}
+      </span>
+      <div className="min-w-0 flex-1" style={{ maxWidth: small ? 120 : 260 }}>
+        <Bar value={p * 100} color={TRAINER_COLOR} height={small ? 4 : 8} />
+      </div>
+      <span className={`${archivo.className} shrink-0 tabular-nums`} style={{ fontSize: small ? 9.5 : 13, color: EVO.mudo }}>
+        {tr.need > 0 ? `${tr.into} / ${tr.need} XP` : "MAX"}
+      </span>
+    </div>
+  )
+}
+
 /** Cor da vida de luta (HP) — vermelho, para não confundir com a saúde da vida. */
 const HP_COLOR = "#FF3B4E"
 const DEF_COLOR = "#8FB8FF"
@@ -511,6 +532,7 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
             {t("stGeneration", "Geração {n}").replace("{n}", String(c.generation))} · {walletText(life, t)}
           </div>
           {adv && <XpLine adv={adv} t={t} small />}
+          {adv?.trainer && <TrainerLine tr={adv.trainer} t={t} small />}
           {adv && <CombatLine adv={adv} life={life} t={t} small />}
           {c.power != null && (
             <div className="mt-1 flex justify-end">

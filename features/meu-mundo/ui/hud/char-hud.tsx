@@ -9,7 +9,7 @@
 //  • a barra grande = o PODER do personagem (B7, pedido do Alex: no lugar da
 //    saúde, mesmo estilo); enche por faixas de 1.000, como as barras do STATUS;
 //  • tira âmbar = ENERGIA;  • tira violeta = ESTRESSE (alto = mais estresse);
-//  • embaixo, o nível de aventura.
+//  • embaixo, o nível de aventura (do personagem) e o do TREINADOR (da conta, F2).
 // Só apresentação — nenhum cálculo: saúde/energia/estresse são os valores que
 // o servidor manda (login e cada aviso "life" da sala, que leva `vitals`); o
 // nível vem de GET /adventure uma vez e do `to` de cada recibo celebrado.
@@ -18,7 +18,7 @@
 import { useEffect, useState } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
-import { CHARACTER_CHANGED, getAdventure } from "../../data"
+import { CHARACTER_CHANGED, TRAINER_CHANGED, getAdventure, type TrainerDelta } from "../../data"
 import type { BodyId } from "../../types"
 import { PORTRAIT } from "../portraits"
 import { onCelebrate } from "../rewards/reward-bus"
@@ -54,6 +54,8 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
   const hidden = hiddenProp || drawerOpen || covered
   // nível + XP dentro do nível (into/need) — do servidor
   const [adv, setAdv] = useState<{ level: number; into: number; need: number } | null>(null)
+  // F2: nível do treinador (a conta; não zera ao trocar de personagem)
+  const [trainer, setTrainer] = useState<number | null>(null)
   const [pw, setPw] = useState(64)
 
   // tamanho pela tela
@@ -72,18 +74,29 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
       const token = getToken()
       if (token)
         void getAdventure(token).then((r) => {
-          if (alive && r.ok) setAdv({ level: r.data.adventure.level, into: r.data.adventure.into, need: r.data.adventure.need })
+          if (alive && r.ok) {
+            setAdv({ level: r.data.adventure.level, into: r.data.adventure.into, need: r.data.adventure.need })
+            if (r.data.trainer) setTrainer(r.data.trainer.level)
+          }
         })
     }
     load()
     window.addEventListener(CHARACTER_CHANGED, load)
+    const onTrainer = (e: Event) => {
+      const d = (e as CustomEvent<TrainerDelta>).detail
+      if (d && typeof d.to === "number" && d.to > 0) setTrainer(d.to)
+    }
+    window.addEventListener(TRAINER_CHANGED, onTrainer)
     const off = onCelebrate((r) => {
       const x = r.deltas?.xp
       if (x && typeof x.to === "number" && x.to > 0) setAdv({ level: x.to, into: x.into, need: x.need })
+      const tr = r.deltas?.trainer
+      if (tr && typeof tr.to === "number" && tr.to > 0) setTrainer(tr.to)
     })
     return () => {
       alive = false
       window.removeEventListener(CHARACTER_CHANGED, load)
+      window.removeEventListener(TRAINER_CHANGED, onTrainer)
       off()
     }
   }, [])
@@ -135,6 +148,11 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
       >
         <div className={c.foot} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 6, fontSize: Math.max(10, pw * 0.2) }}>
           {adv && <span className={c.level}>{t("hudLevel", "Nv. {n}").replace("{n}", String(adv.level))}</span>}
+          {trainer != null && (
+            <span className={c.level} style={{ color: "#7FD8FF" }} title={t("hudTrainerHint", "Nível do treinador: é da sua conta e abre os capítulos da história")}>
+              {t("hudTrainerShort", "Tr. {n}").replace("{n}", String(trainer))}
+            </span>
+          )}
           {v && (
             <span className={c.legend} aria-hidden>
               <i style={{ background: "#ffaa4a" }} />

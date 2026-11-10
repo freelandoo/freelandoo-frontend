@@ -247,6 +247,8 @@ export interface Receipt {
   result: Record<string, unknown> & { win?: boolean; abandoned?: boolean; kind?: string }
   deltas: {
     xp?: LevelDelta
+    /** F2 (lore v2): XP do TREINADOR (a conta) que este recibo concedeu. */
+    trainer?: TrainerDelta
     attrs?: Partial<Record<PracticeAttr, number>>
     vitals?: Partial<Record<"energy" | "stress" | "satiety" | "mood" | "health", number>>
     coins?: number
@@ -254,10 +256,28 @@ export interface Receipt {
   items: { id: string; qty: number; rarity?: string }[]
   at: string
 }
+/** F2 (lore v2): o nível do TREINADOR é da conta (não zera ao trocar de personagem). */
+export interface TrainerLevel {
+  level: number
+  into: number
+  need: number
+  total: number
+}
+export type TrainerDelta = Omit<LevelDelta, "unlocks">
 export interface AdventureState {
   adventure: { level: number; into: number; need: number; total: number; unlocks: Record<string, string[]>; rules: string }
+  trainer?: TrainerLevel
   receipts: Receipt[]
 }
+/** Os dois níveis para as telas (aventura = personagem; treinador = conta). */
+export const advXpOf = (a: AdventureState) => ({
+  level: a.adventure.level,
+  into: a.adventure.into,
+  need: a.adventure.need,
+  trainer: a.trainer ? { level: a.trainer.level, into: a.trainer.into, need: a.trainer.need } : null,
+})
+/** A sala avisou que o treinador ganhou XP (cuidar/treinar): `detail` = TrainerDelta. */
+export const TRAINER_CHANGED = "mm:trainer-changed"
 export const startFight = (token: string, body: { origin: FightOrigin; kind?: MobKind; level?: number; mobId?: number }) =>
   call<{ fight: FightTicket; abandoned: Receipt[] }>(token, "POST", "/fight/start", body)
 export const finishFight = (token: string, ticket: string, frames: FightFrames) =>

@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getAdventure, getCharacters, getGear, getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
+import { advXpOf, getAdventure, getCharacters, getGear, getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, archivo } from "./evo-skin"
 import { MM } from "../hud/tokens"
@@ -127,7 +127,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
     // oficial. Falha nos Poléns = null ("—"), nunca zero.
     const [r, w, a, g, ch] = await Promise.all([getLife(token), getWallets(token), getAdventure(token), getGear(token), getCharacters(token)])
     setLoadout((prev) => ({ gear: g.ok ? { catalog: g.data.gear, bag: g.data.bag } : prev.gear, chars: ch.ok ? ch.data : prev.chars }))
-    if (a.ok) setAdv({ level: a.data.adventure.level, into: a.data.adventure.into, need: a.data.adventure.need })
+    if (a.ok) setAdv(advXpOf(a.data))
     if (r.ok) {
       setLife({ ...r.data, wallet: { ...r.data.wallet, polens: w.ok ? w.data.wallet.polens : null } })
       if (r.data.avatar) setAvatar(r.data.avatar)
@@ -365,7 +365,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
         const tk = getToken()
         if (tk)
           void getAdventure(tk).then((a) => {
-            if (a.ok) setAdv({ level: a.data.adventure.level, into: a.data.adventure.into, need: a.data.adventure.need })
+            if (a.ok) setAdv(advXpOf(a.data))
           })
         setLife((l) => (l ? { ...l, wallet: { ...l.wallet, ...r.wallet }, character: r.character } : l))
       }}

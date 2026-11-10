@@ -10935,7 +10935,11 @@
     "mmTrainSubBots": "Contra la computadora · sin esperar",
     "laminasMobKnight": "Caballero Dorado",
     "laminasSubKnight": "Espada y armadura: mucha defensa",
-    "shopMobHowStone": "Aún no derrotado. Aparece en la calle, de noche (18 h a 6 h), y en la Arena de las Espadas."
+    "shopMobHowStone": "Aún no derrotado. Aparece en la calle, de noche (18 h a 6 h), y en la Arena de las Espadas.",
+    "hudTrainer": "Entrenador {n}",
+    "hudTrainerShort": "Ent. {n}",
+    "hudTrainerHint": "Nivel de entrenador: es de tu cuenta y abre los capítulos de la historia",
+    "rewardTrainerXp": "XP de entrenador"
   },
   "Sports": {
     "eyebrow": "Deportes",

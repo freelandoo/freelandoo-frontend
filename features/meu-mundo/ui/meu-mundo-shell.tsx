@@ -82,6 +82,7 @@ import {
   postHouseEnter,
   postHouseExit,
   postInvite,
+  TRAINER_CHANGED,
   type ChatLine,
 } from "../data"
 import {
@@ -328,6 +329,12 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           celebrate(r)
           bumpQuest()
         }
+        return
+      }
+      // F2: cuidar/treinar deu XP ao treinador (sem celebração: só o HUD atualiza)
+      if (type === "trainer") {
+        const p = payload as { trainer?: unknown } | null
+        if (p && p.trainer) window.dispatchEvent(new CustomEvent(TRAINER_CHANGED, { detail: p.trainer }))
         return
       }
       if (type === "notice") {

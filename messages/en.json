@@ -10955,7 +10955,11 @@
     "mmTrainSubBots": "Against the computer · no waiting",
     "laminasMobKnight": "Golden Knight",
     "laminasSubKnight": "Sword and armor: high defense",
-    "shopMobHowStone": "Not defeated yet. Shows up on the street at night (6 pm to 6 am) and in the Blade Arena."
+    "shopMobHowStone": "Not defeated yet. Shows up on the street at night (6 pm to 6 am) and in the Blade Arena.",
+    "hudTrainer": "Trainer {n}",
+    "hudTrainerShort": "Tr. {n}",
+    "hudTrainerHint": "Trainer level: it belongs to your account and unlocks the story chapters",
+    "rewardTrainerXp": "Trainer XP"
   },
   "Sports": {
     "eyebrow": "Sports",
