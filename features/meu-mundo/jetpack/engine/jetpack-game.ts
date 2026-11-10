@@ -44,7 +44,7 @@ import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
 import { buildBoundary } from "./boundary-view"
-import { loadCanyonAssets, loadFactoryAssets, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { loadCanyonAssets, loadFactoryAssets, loadFactoryGear, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -292,12 +292,12 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       canyonAssets = a
       tunnel.provide?.(a)
     })
-    // a engrenagem esculpida da Fábrica também serve aqui (obstáculo, raio 1, de frente)
-    void loadPieces(scene, "/meu-mundo/jetpack/fabrica/", ["engrenagem"] as const, {}, () => !disposed).then((g) => {
+    // a engrenagem nova da Fábrica (V3) também serve aqui (obstáculo, raio 1, já de frente)
+    void loadFactoryGear(scene, () => !disposed).then((g) => {
       if (disposed) return g.dispose()
       extraAssets = g
-      const gear = g.meshes.get("engrenagem")
-      if (gear) obstacles.useModel("gear", gear, { bake: Matrix.RotationY(Math.PI / 2).multiply(Matrix.Scaling(2, 2, 2)) })
+      const gear = g.meshes.get("engrenagem2")
+      if (gear) obstacles.useModel("gear", gear, { bake: Matrix.Scaling(2, 2, 2) })
     })
   }
   if (level === "orbital") {
@@ -312,10 +312,12 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (disposed) return a.dispose()
       canyonAssets = a
       tunnel.provide?.(a)
-      // a engrenagem esculpida também vira o obstáculo: de frente para o jogador e com raio 1
-      // (o modelo tem 1 m de altura e olha para x)
-      const gear = a.meshes.get("engrenagem")
-      if (gear) obstacles.useModel("gear", gear, { bake: Matrix.RotationY(Math.PI / 2).multiply(Matrix.Scaling(2, 2, 2)) })
+      // V3: a engrenagem NOVA do Tripo vira o obstáculo (1 m de altura, já de frente: raio 1 com 2×);
+      // a antiga segue girando nas paredes. Galão do Tripo.
+      const gear = a.meshes.get("engrenagem2")
+      if (gear) obstacles.useModel("gear", gear, { bake: Matrix.Scaling(2, 2, 2) })
+      const can = a.meshes.get("galao")
+      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
     })
   }
   if (level === "canion") {

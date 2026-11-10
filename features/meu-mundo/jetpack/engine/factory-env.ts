@@ -7,8 +7,9 @@
 // pendurados, a turbina gigante girando no alto, janelas em arco acesas nas
 // paredes do fundo e névoa azulada.
 //
-// As peças esculpidas (viga, cano, engrenagem, pistão, guindaste, turbina) são
-// do Tripo (build_fabrica_tripo.py) e chegam depois (provide); o resto é
+// As peças esculpidas (viga, cano, engrenagem, pistão, guindaste, turbina e, desde
+// 2026-11-09, caldeira, tanque, empilhadeira, relógio, esteira, painel e cabeça de
+// prensa) são do Tripo (build_industrial_v2.py) e chegam depois (provide); o resto é
 // desenhado aqui. A caixa do voo é a mesma (x ∈ [−5, 5], y ∈ [0, 8]): o chão é
 // a passarela, os lados têm o corrimão e os pilares, e o teto as vigas. A
 // regra e os obstáculos (prensas, pilões, pistões, engrenagens) não mudam.
@@ -21,7 +22,12 @@ import { place, xf, rng, mix, type RGB } from "../../engine/steampunk/scenery"
 import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
-import type { FactoryPiece, PieceAssets } from "./canyon-assets"
+import type { FactoryAsset, PieceAssets } from "./canyon-assets"
+
+type FactoryPiece = "viga" | "cano" | "pistao" | "guindaste" | "engrenagem" | "turbina" | "prensa-cabeca" | "relogio" | "empilhadeira" | "caldeira" | "tanque" | "esteira" | "painel"
+const NEW_PIECES = ["prensa-cabeca", "relogio", "empilhadeira", "caldeira", "tanque", "esteira", "painel"] as const
+/** Largura em x e fundura (z) das peças novas com 1 m de altura (fabrica2.json). */
+const DIM = { "prensa-cabeca": [1.22, 0.92], relogio: [0.73, 0.84], empilhadeira: [1.3, 0.97], caldeira: [0.93, 1.16], tanque: [0.79, 0.65], esteira: [1.28, 1.0], painel: [1.07, 0.76] } as const
 
 const { W, H } = TUNNEL
 
@@ -115,6 +121,20 @@ function pipes(g: Ctx, sx: number, z: number) {
   prop(g, "cano", sx * 11.5, 9, z + 9, 3.4, sx > 0 ? Math.PI : 0)
 }
 
+/**
+ * Peça nova num pedestal de aço, de frente para o corredor (as peças novas chegam de costas: meia-volta
+ * de base; `side` = de lado, olhando para o corredor). Beira de dentro em |x| ≥ edge (a caixa vai até 5).
+ */
+function deck(g: Ctx, kind: keyof typeof DIM, sx: number, edge: number, z: number, s: number, side = false) {
+  const [w, d] = DIM[kind]
+  const ex = (side ? d : w) * s
+  const ez = (side ? w : d) * s
+  g.body.box(ex + 0.8, 1.2, ez + 0.8, place(sx * (edge + ex / 2), -0.8, z), C.steelDark)
+  // de frente: meia-volta (a frente vira para −z, para quem chega); de lado: a frente vira para o corredor
+  const ry = side ? (sx < 0 ? Math.PI / 2 : -Math.PI / 2) : Math.PI
+  prop(g, kind, sx * (edge + ex / 2), -0.2, z, s, ry)
+}
+
 type Mod = (g: Ctx, v: number) => void
 
 const MODULES: { id: string; build: Mod }[] = [
@@ -174,14 +194,43 @@ const MODULES: { id: string; build: Mod }[] = [
       pipes(g, v ? 1 : -1, 12)
     },
   },
+  {
+    // o pátio: caldeira e tanque nos pedestais, a empilhadeira e o relógio da fábrica na parede
+    id: "patio",
+    build(g, v) {
+      const r = rng(150 + v)
+      catwalk(g, r)
+      hall(g, r)
+      const sx = v ? 1 : -1
+      deck(g, "caldeira", sx, 6.4, 6, 4.2)
+      deck(g, "tanque", -sx, 6.4, 9, 5.4)
+      deck(g, "empilhadeira", -sx, 6.6, 19, 3.2, true)
+      // o relógio grande pendurado na parede do galpão, virado para o corredor
+      prop(g, "relogio", sx * 11.4, 5, 17, 7, sx < 0 ? Math.PI / 2 : -Math.PI / 2)
+    },
+  },
+  {
+    // a linha de produção: esteira com caixas, painel de controle e a cabeça de prensa
+    id: "linha",
+    build(g, v) {
+      const r = rng(160 + v)
+      catwalk(g, r)
+      hall(g, r)
+      const sx = v ? -1 : 1
+      deck(g, "esteira", sx, 6.4, 7, 3.4, true)
+      deck(g, "painel", -sx, 6.4, 6, 3, true)
+      deck(g, "prensa-cabeca", sx, 6.6, 18, 4.2)
+      pipes(g, -sx, 14)
+    },
+  },
 ]
 const VARIANTS = 2
-const WEIGHTS = [3, 2, 1.5, 2]
+const WEIGHTS = [3, 2, 1.5, 2, 1.8, 1.8]
 
 export interface FactoryEnv {
   mats: { trim: StandardMaterial; glow: StandardMaterial }
   update: (z: number, now: number) => void
-  provide: (a: PieceAssets<FactoryPiece>) => void
+  provide: (a: PieceAssets<FactoryAsset>) => void
   dispose: () => void
 }
 
@@ -225,7 +274,7 @@ export function buildFactoryEnv(scene: Scene, low: boolean, slots: number, seed:
       pool.update(z, now)
     },
     provide(a) {
-      for (const kind of ["viga", "cano", "pistao", "guindaste"] as const) {
+      for (const kind of ["viga", "cano", "pistao", "guindaste", ...NEW_PIECES] as const) {
         const m = a.meshes.get(kind)
         if (m) pool.provide(kind, m)
       }

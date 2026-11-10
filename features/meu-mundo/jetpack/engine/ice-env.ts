@@ -95,7 +95,8 @@ function sides(g: Ctx, r: () => number, crystals: number) {
 
 /** Peça de cenário de pé na neve, com a beira de dentro em |x| ≥ edge. */
 function stand(g: Ctx, kind: keyof typeof WID, sx: number, edge: number, z: number, s: number, ry = 0, y = -0.3) {
-  prop(g, kind as IcePiece, sx * (edge + (s * WID[kind]) / 2), y, z, s, ry)
+  // as peças novas do Tripo chegam de costas (frente para +z): meia-volta para olhar quem chega
+  prop(g, kind as IcePiece, sx * (edge + (s * WID[kind]) / 2), y, z, s, ry + Math.PI)
 }
 
 type Mod = (g: Ctx, v: number) => void

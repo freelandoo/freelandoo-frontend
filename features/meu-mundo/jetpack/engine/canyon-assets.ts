@@ -80,9 +80,30 @@ export function loadForgeAssets(scene: Scene, isAlive: () => boolean) {
 export function loadOrbitalAssets(scene: Scene, isAlive: () => boolean) {
   return loadPieces(scene, "/meu-mundo/jetpack/orbital/", ["torre", "portico", "drone", "painel", "jardineira", "elevador"] as const, { torre: 90 }, isAlive)
 }
-/** Fábrica (Túnel Industrial): peças do Tripo preparadas por build_fabrica_tripo.py. */
-export function loadFactoryAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<FactoryPiece>> {
-  return loadPieces(scene, "/meu-mundo/jetpack/fabrica/", FACTORY_PIECES, {}, isAlive)
+/**
+ * Fábrica (Túnel Industrial) v2 (build_industrial_v2.py): grupos, como o Gelo. As peças novas do Tripo
+ * (kit_lib, giro −90°) chegam ao Babylon de COSTAS (frente para +z): quem posiciona soma meia-volta.
+ */
+export const FACTORY_GROUPS = {
+  viga: ["viga"],
+  cano: ["cano"],
+  engrenagem: ["engrenagem"],
+  pistao: ["pistao"],
+  guindaste: ["guindaste"],
+  turbina: ["turbina"],
+  "fab-maquinas": ["engrenagem2", "prensa-cabeca"],
+  "fab-patio": ["relogio", "empilhadeira", "caldeira", "tanque"],
+  "fab-linha": ["esteira", "painel"],
+  "fab-moldura": ["galao"],
+} as const
+export type FactoryAsset = (typeof FACTORY_GROUPS)[keyof typeof FACTORY_GROUPS][number]
+const FACTORY_LOD: Partial<Record<FactoryAsset, number>> = { viga: 50, cano: 45, engrenagem: 60, pistao: 45, guindaste: 50, turbina: 80, "prensa-cabeca": 45, relogio: 50, empilhadeira: 40, caldeira: 45, tanque: 45, esteira: 40, painel: 40 }
+export function loadFactoryAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<FactoryAsset>> {
+  return loadPieceGroups<FactoryAsset>(scene, "/meu-mundo/jetpack/fabrica2/", FACTORY_GROUPS, FACTORY_LOD, isAlive)
+}
+/** Só a engrenagem nova da fábrica (a Forja usa como obstáculo). */
+export function loadFactoryGear(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<"engrenagem2">> {
+  return loadPieceGroups(scene, "/meu-mundo/jetpack/fabrica2/", { "fab-maquinas": ["engrenagem2"] as const }, {}, isAlive)
 }
 
 export interface PieceAssets<P extends string = string> {
