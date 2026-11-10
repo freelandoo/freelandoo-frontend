@@ -10949,7 +10949,10 @@
     "rnByFactoryAmb": "Hit the sliding column!",
     "rnByFactoryTruck": "Hit the conveyor!",
     "rnByFactoryBarrier": "Hit the sliding bar!",
-    "rnByFactoryRamp": "Fell off the ramp!"
+    "rnByFactoryRamp": "Fell off the ramp!",
+    "mmTrain": "Practice",
+    "mmTrainSub": "Solo · no waiting",
+    "mmTrainSubBots": "Against the computer · no waiting"
   },
   "Sports": {
     "eyebrow": "Sports",

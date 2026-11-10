@@ -13,6 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Lock, Play, Star, Trophy, Users, WifiOff, X } from "lucide-react"
+import { TrainButton } from "../../ui/kit/train-button"
 import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { menuPhases, phaseArt, starsFor, type PhaseArt } from "../engine/phase-art"
@@ -69,7 +70,7 @@ export function PhaseSelect({
   multi,
   error,
   onExit,
-  onPlay,
+  onPlay, onTrain,
 }: {
   current: PhaseId
   records: (id: PhaseId) => PhaseRecord | null
@@ -78,6 +79,8 @@ export function PhaseSelect({
   error: string | null
   onExit: () => void
   onPlay: (solo: boolean, phase: PhaseId) => void
+  /** Treinar: voo sozinho no aparelho, sem espera (botão rosa). */
+  onTrain?: (phase: PhaseId) => void
 }) {
   const t = useTranslations("MeuMundo")
   const list = useMemo(() => menuPhases(), [])
@@ -257,6 +260,7 @@ export function PhaseSelect({
               <span>{multi ? t("jetModeFour", "Sempre 4 no túnel · espera até 1 minuto · vaga vazia vira computador") : t("jetModeOffline", "Sem conexão: voo de treino no aparelho")}</span>
             </div>
           </div>
+          {onTrain && multi && <TrainButton big onTrain={() => onTrain(sel)} className="min-w-[200px]" />}
           <button
             type="button"
             onClick={go}

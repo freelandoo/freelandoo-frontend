@@ -265,6 +265,7 @@ export function RunView({ body, look, name, onExit, join }: RunViewProps) {
             error={error}
             onExit={onExit}
             onPlay={(r, ph) => void play(r, !!join, ph)}
+            onTrain={(r, ph) => void play(r, false, ph)}
           />
         )
       )}

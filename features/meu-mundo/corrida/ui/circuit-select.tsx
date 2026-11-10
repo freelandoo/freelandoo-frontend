@@ -9,7 +9,8 @@
 // O desenho da pista no canto sai da própria regra (sim/circuits.ts).
 
 import { useMemo, useState } from "react"
-import { ArrowLeft, Flag, Lock, Timer, Trophy, Users, X } from "lucide-react"
+import { ArrowLeft, Flag, Lock, Trophy, Users, X } from "lucide-react"
+import { TrainButton } from "../../ui/kit/train-button"
 import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
@@ -78,7 +79,6 @@ export function CircuitSelect({
     ...(multi
       ? [{ mode: "multi" as const, icon: <Users className="h-5 w-5" />, title: t("corridaModeMulti", "Multiplayer"), sub: t("corridaModeMultiSub", "Espera até 1 minuto · o resto é computador") }]
       : []),
-    { mode: "time", icon: <Timer className="h-5 w-5" />, title: t("corridaModeTime", "Contra o relógio"), sub: t("corridaModeTimeSub", "Sozinho na pista · 3 voltas") },
   ]
   return (
     <div className="absolute inset-0 flex flex-col" style={{ background: "radial-gradient(120% 90% at 50% 0%, #22405c 0%, #0f151d 62%, #0a0d12 100%)", color: MM.text }}>
@@ -141,7 +141,9 @@ export function CircuitSelect({
               {t(chosen.envKey, chosen.env)} · {t("corridaKeys", "Setas ou WASD dirigem · Espaço ou Shift = turbo")}
             </div>
           </div>
-          <div className={`grid shrink-0 gap-2 ${modes.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+          <div className={`grid shrink-0 gap-2 ${modes.length === 2 ? "grid-cols-3" : "grid-cols-2"}`}>
+            {/* Treinar: sozinho na pista, contra o relógio (era o modo "Contra o relógio") */}
+            <TrainButton onTrain={() => onPlay("time", chosen.id)} className="min-w-[150px] max-[759px]:min-w-0" />
             {modes.map((m, i) => (
               <button
                 key={m.mode}

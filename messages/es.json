@@ -10929,7 +10929,10 @@
     "rnByFactoryAmb": "¡Chocaste con la columna deslizante!",
     "rnByFactoryTruck": "¡Chocaste con la cinta transportadora!",
     "rnByFactoryBarrier": "¡Chocaste con la barra deslizante!",
-    "rnByFactoryRamp": "¡Caíste de la rampa!"
+    "rnByFactoryRamp": "¡Caíste de la rampa!",
+    "mmTrain": "Entrenar",
+    "mmTrainSub": "Solo · sin esperar",
+    "mmTrainSubBots": "Contra la computadora · sin esperar"
   },
   "Sports": {
     "eyebrow": "Deportes",

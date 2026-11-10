@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Flag, Loader2, Timer, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
+import { TrainButton } from "../../ui/kit/train-button"
 import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { WaitingRoom } from "../../ui/kit/waiting-room"
@@ -220,17 +221,7 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
         )}
 
         <div className={`mt-4 grid gap-2 [@media(max-height:520px)]:mt-2.5 ${multi ? "grid-cols-2" : "grid-cols-1"}`}>
-          <button
-            type="button"
-            onClick={() => onPlay(false)}
-            className="flex w-full flex-col items-center justify-center rounded-none px-3 py-2.5 transition-transform active:scale-[0.98]"
-            style={{ background: `linear-gradient(180deg, ${PINK}, #d93a86)`, border: "1px solid rgba(255,255,255,0.3)", color: "#fff" }}
-          >
-            <span className="flex items-center gap-2 text-[18px] font-black italic tracking-wide max-[420px]:text-[15px]">
-              <Flag className="h-5 w-5 shrink-0" /> {t("gincanaModeSolo", "Sozinho")}
-            </span>
-            <span className="text-[11px] leading-tight opacity-90 [@media(max-height:520px)]:hidden">{t("gincanaModeSoloSub", "Contra 7 do computador")}</span>
-          </button>
+          <TrainButton onTrain={() => onPlay(false)} sub={t("mmTrainSubBots", "Contra o computador · sem esperar")} className="w-full" />
           {multi && (
             <button
               type="button"

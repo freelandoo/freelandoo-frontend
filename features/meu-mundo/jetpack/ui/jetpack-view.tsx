@@ -160,7 +160,21 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
           }}
         />
       ) : (
-        <PhaseSelect key={recs} current={phase} records={loadRecord} onPlay={(solo, ph) => void play(solo, ph)} onExit={onExit} multi={!!join} error={error} />
+        <PhaseSelect
+          key={recs}
+          current={phase}
+          records={loadRecord}
+          onPlay={(solo, ph) => void play(solo, ph)}
+          onTrain={(ph) => {
+            // Treinar: voo no aparelho, sem sala e sem espera (não dá prêmio: o resultado é só do aparelho)
+            setError(null)
+            setPhase(ph)
+            setStage({ kind: "game", key: ++seq.current, solo: true })
+          }}
+          onExit={onExit}
+          multi={!!join}
+          error={error}
+        />
       )}
     </div>
   )

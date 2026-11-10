@@ -10363,7 +10363,10 @@
     "rnByFactoryAmb": "Bateu na coluna deslizante!",
     "rnByFactoryTruck": "Bateu na esteira!",
     "rnByFactoryBarrier": "Bateu na barra deslizante!",
-    "rnByFactoryRamp": "Caiu da rampa!"
+    "rnByFactoryRamp": "Caiu da rampa!",
+    "mmTrain": "Treinar",
+    "mmTrainSub": "Sozinho · sem esperar",
+    "mmTrainSubBots": "Contra o computador · sem esperar"
   },
   "Sports": {
     "eyebrow": "Esportes",

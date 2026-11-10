@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowBigUp, Cat, DoorOpen, Loader2, Skull, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
+import { TrainButton } from "../../ui/kit/train-button"
 import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId } from "../../types"
@@ -238,7 +239,8 @@ function PaintMenu({
           {t("paintHowMorkhan", "Completou os 20? O Morkhan surge atrás de você e tenta te jogar das ilhas: caiu, os gatinhos voltam ao mapa e o portal fecha. Corra para o portal!")}
         </p>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 max-[420px]:grid-cols-1">
+        <TrainButton onTrain={() => onPlay("solo")} className="mt-4 w-full" />
+        <div className="mt-2 grid grid-cols-3 gap-2 max-[420px]:grid-cols-1">
           {modes.map((m) => {
             const busy = joining === m.mode
             const off = (m.mode !== "solo" && !versus) || (!!joining && !busy)

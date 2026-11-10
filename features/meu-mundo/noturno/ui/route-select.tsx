@@ -12,6 +12,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Bike, Play, Trophy, WifiOff } from "lucide-react"
+import { TrainButton } from "../../ui/kit/train-button"
 import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { MM } from "../../ui/hud/tokens"
@@ -76,6 +77,7 @@ export function RouteSelect({
   multi,
   error,
   onExit,
+  onTrain,
   onPlay,
 }: {
   phase: RunPhase
@@ -85,6 +87,8 @@ export function RouteSelect({
   error: string | null
   onExit: () => void
   onPlay: (ride: RideKind, phase: RunPhase) => void
+  /** Treinar: rolê sozinho no aparelho, sem espera (botão rosa). */
+  onTrain?: (ride: RideKind, phase: RunPhase) => void
 }) {
   const t = useTranslations("MeuMundo")
   const list = useMemo(() => menuRoutes(), [])
@@ -270,7 +274,8 @@ export function RouteSelect({
 
       {/* ── jogar ── */}
       <footer className="shrink-0 px-5 pb-[max(12px,env(safe-area-inset-bottom))] pt-2 max-[759px]:px-3" style={{ background: "linear-gradient(180deg, rgba(6,5,11,0) 0%, rgba(6,5,11,0.92) 40%)" }}>
-        <div className="mx-auto flex max-w-[1240px] items-center gap-3">
+        <div className="mx-auto flex max-w-[1240px] items-center gap-3 max-[759px]:flex-col max-[759px]:items-stretch max-[759px]:gap-2">
+          {onTrain && multi && <TrainButton big onTrain={() => onTrain(veh, sel)} className="min-w-[200px]" />}
           <button
             type="button"
             onClick={() => onPlay(veh, sel)}
