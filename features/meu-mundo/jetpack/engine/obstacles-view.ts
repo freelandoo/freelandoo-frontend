@@ -16,9 +16,18 @@
 // bate com a colisão: as placas de uma janela são os mesmos retângulos de
 // windowRects; o anel é a placa com furo do raio da regra; rocha e cristal
 // cobrem o disco.
+//
+// V3 visual (2026-11-09): as cópias são INSTÂNCIAS do molde (uma chamada de
+// desenho por tipo, não uma por cópia — o Orbital tinha 125 chamadas, 28 só de
+// molduras). Os moldes ficam longe da vista (y −5000), ligados: instância de
+// molde desligado não aparece. Moldura de peça do Tripo (useFrameKit): borda
+// repetida + 4 cantos, sempre INTEIRA por fora do vão (o vão é o caminho livre).
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
+import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
+import "@babylonjs/core/Meshes/instancedMesh"
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix } from "@babylonjs/core/Maths/math.vector"
@@ -54,7 +63,11 @@ const RED_LAMP: RGB = [1, 0.25, 0.12]
 const FUEL: RGB = [0.29, 0.98, 0.64]
 const mixRGB = (a: RGB, b: RGB, k: number): RGB => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]
 
-type Key = "slab" | "hammer" | "pipe" | "gear" | "can" | "panel" | "petal" | "energy" | "bar" | "hole" | "rim" | "rock" | "gem" | "log" | "frame" | "girder" | "rail" | "carriage"
+type Key = "slab" | "hammer" | "pipe" | "gear" | "can" | "panel" | "petal" | "energy" | "bar" | "hole" | "rim" | "rock" | "gem" | "log" | "frame" | "girder" | "rail" | "carriage" | "tile" | "corner"
+/** Pedaços de borda por lado da janela (no máximo). */
+const TILES = 3
+/** Pedaços de borda numa viga (12 m de lado a lado). */
+const BEAM_TILES = 6
 
 /** A pele dos obstáculos novos em cada fase (mm3d-75). */
 interface Skin {
@@ -92,8 +105,8 @@ interface Mold {
 /** Uma cópia em uso. */
 interface Part {
   key: Key
-  body: Mesh
-  glow: Mesh | null
+  body: AbstractMesh
+  glow: AbstractMesh | null
 }
 
 export interface ObstaclesView {
@@ -101,7 +114,14 @@ export interface ObstaclesView {
   /** Onde estava um galão (para o brilho de pegar). */
   canAt: (id: number) => Can | null
   /** Troca o molde de uma peça por um modelo (GLB do Tripo): o anel e a rocha do Cânion. */
-  useModel: (key: "rim" | "rock" | "panel" | "petal" | "gear", mesh: Mesh, opts?: { zScale?: number; fitBox?: boolean; bake?: Matrix }) => void
+  useModel: (key: "rim" | "rock" | "panel" | "petal" | "gear" | "gem" | "can", mesh: Mesh, opts?: { zScale?: number; fitBox?: boolean; bake?: Matrix; upright?: boolean }) => void
+  /**
+   * Moldura das janelas com peças do Tripo: `tile` = pedaço reto (altura 1, comprimento `len`, centro em
+   * x/y, frente em z 0; no lado de cima a parte de baixo do modelo — os pingentes — vira para o vão);
+   * `corner` = canto "┐" (canto de fora na origem, braços para −x e −y, altura 1, braço com `arm` de
+   * espessura e `armLen` de comprimento em x).
+   */
+  useFrameKit: (tile: Mesh, corner: Mesh, opts: { len: number; arm: number; armLen: number; profile?: number; beam?: boolean }) => void
   dispose: () => void
 }
 
@@ -209,6 +229,19 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
   frameMat.specularColor = new Color3(0.25, 0.25, 0.25)
   frameMat.emissiveColor = new Color3(0.08, 0.08, 0.08)
   const molds = new Map<Key, Mold>()
+  // os moldes ficam ligados e longe da vista: as instâncias é que aparecem
+  const hold = new TransformNode("jt-obstacle-molds", scene)
+  hold.position.y = -5000
+  const park = (m: Mesh) => {
+    m.parent = hold
+    m.position.set(0, 0, 0)
+    // o modelo do glTF vem com quaternion: com ele, `rotation` é ignorada (o pedaço de pé ficava deitado)
+    m.rotationQuaternion = null
+    m.rotation.set(0, 0, 0)
+    m.scaling.set(1, 1, 1)
+    m.isPickable = false
+    m.setEnabled(true)
+  }
   const make = (key: Key, fn: (g: JetGeo, l: JetGeo) => void, bodyMat: StandardMaterial = mats.trim) => {
     const g = new JetGeo()
     const l = new JetGeo()
@@ -216,9 +249,9 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
     if (bodyMat !== mats.trim) g.uv = "flat"
     fn(g, l)
     const body = g.build(`jt-${key}`, scene, bodyMat, false)
-    body.setEnabled(false)
+    park(body)
     const glow = l.vertexCount ? l.build(`jt-${key}-glow`, scene, mats.glow, false) : null
-    glow?.setEnabled(false)
+    if (glow) park(glow)
     molds.set(key, { body, glow })
   }
   make("slab", (g, l) => slab(g, l, DEPTH.pressV))
@@ -289,11 +322,17 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
     }
     const m = molds.get(key)!
     const id = ++seq
-    const body = m.body.clone(`jt-${key}-${id}`, null, true)!
-    body.setEnabled(true)
+    const body = m.body.createInstance(`jt-${key}-${id}`)
+    // a instância nasce com o PAI do molde (o nó a −5000): solta no mundo
+    body.parent = null
+    body.rotationQuaternion = null
     body.isPickable = false
-    const glow = m.glow ? m.glow.clone(`jt-${key}-glow-${id}`, body, true)! : null
-    glow?.setEnabled(true)
+    let glow: AbstractMesh | null = null
+    if (m.glow) {
+      glow = m.glow.createInstance(`jt-${key}-glow-${id}`)
+      glow.isPickable = false
+      glow.parent = body
+    }
     return { key, body, glow }
   }
   const give = (p: Part) => {
@@ -324,12 +363,25 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         // o trilho e o carro nas duas paredes
         return [take("hole"), take("rim"), ...frame(skin.ringField), take("frame"), take("frame"), ...mech(o)]
       case "beam":
+        if (kit?.beam) {
+          // viga de borda do Tripo repetida (a grossura é a da regra; o pedaço não estica mais que ~1,5×)
+          const out: Part[] = []
+          for (let i = 0; i < BEAM_TILES; i++) out.push(take("tile"))
+          return [...out, take("bar"), take("bar"), ...mech(o)]
+        }
         return [take(skin.log ? "log" : "girder"), take("bar"), take("bar"), ...mech(o)]
       case "rocks":
         return o.gears.map(() => take("rock"))
       case "crystals":
         return o.gears.map(() => take("gem"))
       default:
+        if (kit) {
+          // janelas com moldura do Tripo: 4 placas + 4 filetes + TILES pedaços por lado + 4 cantos
+          const out = [...frame(o.kind === "energy" || (skin.windowField && o.kind !== "slider"), o.kind === "iris"), take("bar"), take("bar"), take("bar"), take("bar")]
+          for (let i = 0; i < 4 * TILES; i++) out.push(take("tile"))
+          for (let i = 0; i < 4; i++) out.push(take("corner"))
+          return [...out, ...mech(o)]
+        }
         // janelas: 4 placas + 4 filetes em volta do vão
         return [...frame(o.kind === "energy" || (skin.windowField && o.kind !== "slider"), o.kind === "iris"), take("bar"), take("bar"), take("bar"), take("bar"), take("frame"), take("frame"), take("frame"), take("frame"), ...mech(o)]
     }
@@ -415,6 +467,70 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
       }
     }
   }
+  // moldura do Tripo (useFrameKit): espessura do perfil, comprimento do pedaço e o canto
+  let kit: { p: number; tileLen: number; cs: number; armX: number; len: number; beam: boolean } | null = null
+  let gemModel = false
+  const canMats: StandardMaterial[] = []
+  // rocha de modelo tem cima (neve) e baixo (pedra escura): só balança, não gira inteira
+  let rockModel = false
+  const inTunnel = (x: number, y: number) => x > -W / 2 - 0.3 && x < W / 2 + 0.3 && y > -0.3 && y < H + 0.3
+  /** Um lado da moldura: pedaços iguais de a até b (no eixo do lado), presos dentro do túnel. */
+  const kitSide = (parts: Part[], from: number, a: number, b: number, fixed: number, vertical: boolean, rz: number, z: number) => {
+    const k = kit!
+    const lo = vertical ? -0.3 : -W / 2 - 0.3
+    const hi = vertical ? H + 0.3 : W / 2 + 0.3
+    const off = vertical ? fixed < -W / 2 - 0.2 || fixed > W / 2 + 0.2 : fixed < -0.2 || fixed > H + 0.2
+    a = Math.max(lo, a)
+    b = Math.min(hi, b)
+    const len = b - a
+    const n = off || len < 0.2 ? 0 : Math.min(TILES, Math.max(1, Math.round(len / k.tileLen)))
+    const step = n ? len / n : 0
+    for (let i = 0; i < TILES; i++) {
+      const p = parts[from + i]
+      if (i >= n) {
+        p.body.setEnabled(false)
+        continue
+      }
+      p.body.setEnabled(true)
+      const c = a + step * (i + 0.5)
+      p.body.position.set(vertical ? fixed : c, vertical ? c : fixed, z)
+      p.body.rotation.set(0, 0, rz)
+      // altura = perfil; comprimento = o passo (o pedaço estica ou encolhe no máximo ~1,5×)
+      p.body.scaling.set((step / k.tileLen) * k.p, k.p, k.p)
+    }
+  }
+  /** Moldura inteira POR FORA do vão (cx, cy, w, h): nada do desenho entra no caminho livre. */
+  const kitFrame = (parts: Part[], from: number, cx: number, cy: number, w: number, h: number, z: number) => {
+    const { p, cs, armX } = kit!
+    const L = cx - w / 2 - p
+    const R = cx + w / 2 + p
+    const B = cy - h / 2 - p
+    const T = cy + h / 2 + p
+    // em cima os pingentes apontam para o vão; embaixo para fora; dos lados, para fora
+    kitSide(parts, from, L + armX, R - armX, T - p / 2, false, 0, z)
+    kitSide(parts, from + TILES, L + armX, R - armX, B + p / 2, false, 0, z)
+    kitSide(parts, from + 2 * TILES, B + armX, T - armX, L + p / 2, true, -Math.PI / 2, z)
+    kitSide(parts, from + 3 * TILES, B + armX, T - armX, R - p / 2, true, Math.PI / 2, z)
+    // o canto "┐" girado para os quatro cantos
+    const corners: [number, number, number][] = [
+      [R, T, 0],
+      [L, T, -Math.PI / 2],
+      [L, B, Math.PI],
+      [R, B, Math.PI / 2],
+    ]
+    for (let q = 0; q < 4; q++) {
+      const part = parts[from + 4 * TILES + q]
+      const [x, y, rz] = corners[q]
+      if (!inTunnel(x, y)) {
+        part.body.setEnabled(false)
+        continue
+      }
+      part.body.setEnabled(true)
+      part.body.position.set(x, y, z)
+      part.body.rotation.set(0, 0, rz)
+      part.body.scaling.set(cs, cs, cs)
+    }
+  }
   const pose = (o: Obstacle, parts: Part[], t: number) => {
     const set = (p: Part, x: number, y: number, rz: number, sx = 1, sy = 1, sz = 1) => {
       p.body.position.set(x, y, o.z)
@@ -479,6 +595,28 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
       case "beam": {
         const y = beamY(o, t)
         const len = o.x1 - o.x0
+        if (kit?.beam) {
+          // pedaços iguais de x0 a x1, altura = a grossura da regra (o.h), frente na face do obstáculo
+          const k = kit
+          const tl = k.len * o.h
+          const n = Math.min(BEAM_TILES, Math.max(1, Math.round(len / tl)))
+          const step = len / n
+          for (let i = 0; i < BEAM_TILES; i++) {
+            const p = parts[i]
+            if (i >= n) {
+              p.body.setEnabled(false)
+              continue
+            }
+            p.body.setEnabled(true)
+            p.body.position.set(o.x0 + step * (i + 0.5), y, o.z)
+            p.body.rotation.set(0, 0, i % 2 ? Math.PI : 0)
+            p.body.scaling.set(step / k.len, o.h, Math.max(o.h, o.d / 1.05))
+          }
+          barAt(parts[BEAM_TILES], 0, y + o.h / 2, len, false, o.z)
+          barAt(parts[BEAM_TILES + 1], 0, y - o.h / 2, len, false, o.z)
+          mechAt(o, parts, BEAM_TILES + 2, y, 0)
+          break
+        }
         if (skin.log) {
           parts[0].body.position.set((o.x0 + o.x1) / 2, y, o.z + o.d / 2)
           parts[0].body.scaling.set(len, o.h, o.d)
@@ -494,7 +632,8 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
           const c = discAt(o, t, i)
           parts[i].body.position.set(c.x, c.y, o.z + o.d / 2)
           parts[i].body.scaling.set(c.r, c.r, o.kind === "rocks" ? Math.min(c.r, o.d / 2 + 0.3) : o.d / 1.8)
-          parts[i].body.rotation.set(0, 0, o.kind === "rocks" ? o.id * 0.7 + i : (i * Math.PI) / 8)
+          // cristal de modelo: nasce do chão ou do teto (o do teto fica de ponta-cabeça)
+          parts[i].body.rotation.set(0, 0, o.kind === "rocks" ? (rockModel ? (((o.id + i) % 5) - 2) * 0.12 : o.id * 0.7 + i) : gemModel ? (c.y > H / 2 ? Math.PI : 0) : (i * Math.PI) / 8)
         }
         break
       default: {
@@ -507,6 +646,11 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         barAt(parts[5], v.cx, v.cy - v.h / 2, v.w, false, o.z)
         barAt(parts[6], v.cx - v.w / 2, v.cy, v.h, true, o.z)
         barAt(parts[7], v.cx + v.w / 2, v.cy, v.h, true, o.z)
+        if (kit) {
+          kitFrame(parts, 8, v.cx, v.cy, v.w, v.h, o.z)
+          mechAt(o, parts, 8 + 4 * TILES + 4, v.cy, v.cx)
+          break
+        }
         // a moldura do vão: perfil de 0,28 por fora da abertura (dentro da parede, que é colisão)
         const fw = 0.14
         frameAt(parts[8], v.cx, v.cy + v.h / 2 + fw, v.w + 4 * fw, false, o.z)
@@ -580,11 +724,22 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         body.bakeTransformIntoVertices(opts.bake)
         body.refreshBoundingInfo()
       } else body = mesh.clone(`jt-${key}-model`, null, true)!
-      body.setEnabled(false)
-      body.isPickable = false
-      body.position.set(0, 0, 0)
+      if (key === "can") {
+        // o galão é coleta: acende a própria textura (o modelo do Tripo some na névoa sem brilho)
+        const src = body.material as StandardMaterial | null
+        const lit = new StandardMaterial(`jt-can-lit-${++seq}`, scene)
+        lit.diffuseTexture = src?.diffuseTexture ?? null
+        lit.emissiveTexture = src?.diffuseTexture ?? null
+        lit.emissiveColor = new Color3(0.55, 0.55, 0.55)
+        lit.specularColor = new Color3(0.1, 0.1, 0.1)
+        body.material = lit
+        canMats.push(lit)
+      }
+      park(body)
       molds.set(key, { body, glow: null })
       if (key === "rim") rimZ = opts.zScale ?? 1
+      if (key === "gem") gemModel = true
+      if (key === "rock") rockModel = !!opts.upright
       // as que já estão à vista também trocam (nasceram antes do modelo chegar)
       for (const parts of shown.values()) {
         for (let i = 0; i < parts.length; i++) {
@@ -604,6 +759,29 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         old.glow?.dispose()
       }
     },
+    useFrameKit(tile, corner, { len, arm, armLen, profile = 0.5, beam = false }) {
+      for (const [key, src] of [["tile", tile], ["corner", corner]] as const) {
+        const old = molds.get(key)
+        for (const p of free.get(key) ?? []) p.body.dispose()
+        free.set(key, [])
+        // o glTF chega girado meia-volta (x espelhado, frente para +z): desvira e põe a frente em z 0
+        const body = src.clone(`jt-${key}-model`, null, false)!
+        body.makeGeometryUnique()
+        body.bakeTransformIntoVertices(Matrix.RotationY(Math.PI))
+        body.refreshBoundingInfo()
+        body.bakeTransformIntoVertices(Matrix.Translation(0, 0, -body.getBoundingInfo().boundingBox.minimum.z))
+        body.refreshBoundingInfo()
+        park(body)
+        molds.set(key, { body, glow: null })
+        if (old) old.body.dispose()
+      }
+      // o canto com o braço da mesma espessura do perfil
+      const cs = profile / arm
+      kit = { p: profile, tileLen: len * profile, cs, armX: cs * armLen, len, beam }
+      // as janelas à vista são remontadas no próximo quadro (com a moldura nova)
+      for (const parts of shown.values()) for (const p of parts) give(p)
+      shown.clear()
+    },
     dispose() {
       for (const parts of shown.values()) for (const p of parts) give(p)
       for (const v of cans.values()) give(v.part)
@@ -615,6 +793,8 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
       fieldMat.dispose()
       wallGlass.dispose()
       frameMat.dispose()
+      for (const m of canMats) m.dispose()
+      hold.dispose()
     },
   }
 }

@@ -7,8 +7,10 @@
 // o caminho, cipós e gotas de luz pendurados lá no alto e uma árvore gigante
 // de copa rosa ao fundo, tudo numa névoa ciano.
 //
-// Peças do Tripo (build_floresta_tripo.py): cristais, cogumelo, ilha (pedra
-// com plantas), árvore, planta e arco de raízes — chegam depois (provide).
+// Peças do Tripo (build_floresta_v2.py, em grupos): cristais, cogumelo, ilha (pedra
+// com plantas), árvore, planta, arco de raízes e, desde 2026-11-09, cogumelo-casa,
+// árvore 2, flor gigante, lanterna de vaga-lume, tronco caído, ninho e tronco —
+// chegam depois (provide). Cenário com a beira de dentro em |x| ≥ 6.
 // O ARCO tem o vão medido fatia a fatia: com 50 m de largura e o pé 5 m
 // abaixo do caminho, sobram ≥ 6,4 m de cada lado da caixa do voo até 9 m de
 // altura. A regra não muda.
@@ -28,13 +30,16 @@ import { place, rng, mix, type RGB } from "../../engine/steampunk/scenery"
 import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
-import type { PieceAssets } from "./canyon-assets"
+import type { ForestAsset, PieceAssets } from "./canyon-assets"
 import { cloudTexture, skyTexture } from "./canyon-env"
 
 const { W, H } = TUNNEL
 
-export const FOREST_PIECES = ["cristais", "cogumelo", "ilha", "arvore", "planta", "arco"] as const
+/** As peças que são CENÁRIO (borda, canto e galão vão para os obstáculos). */
+export const FOREST_PIECES = ["cristais", "cogumelo", "ilha", "arvore", "planta", "arco", "cogumelo-casa", "arvore2", "flor", "lanterna", "tronco-caido", "ninho", "tronco-viga"] as const
 export type ForestPiece = (typeof FOREST_PIECES)[number]
+/** Largura em x das peças novas com 1 m de altura (floresta2.json). */
+const WID = { "cogumelo-casa": 0.834, arvore2: 0.773, flor: 0.874, lanterna: 0.728, "tronco-caido": 1.04, ninho: 0.988, "tronco-viga": 1.64 } as const
 
 const C = {
   water: [0.1, 0.58, 0.68] as RGB,
@@ -48,6 +53,8 @@ const C = {
 }
 
 type Ctx = { body: JetGeo; glow: JetGeo; spins: SpinSpot[]; props: PropSpot[] }
+/** Nível `low`: metade das plantas, cristais e árvores do fundo (V3, 2026-11-09). */
+let lowQ = false
 const prop = (g: Ctx, kind: ForestPiece, x: number, y: number, z: number, s: number, ry = 0) => g.props.push({ kind, x, y, z, sx: s, sy: s, sz: s, ry }) // escala SEMPRE uniforme (mm3d-78d: esticar deforma o modelo e a textura)
 
 /** O rio turquesa lá embaixo (fora da caixa), espuma e a beira de pedra com musgo. */
@@ -72,12 +79,12 @@ function banks(g: Ctx, r: () => number, opts: { ledges: number; shrooms: number;
       prop(g, "ilha", sx * (6.2 + s * 0.52), -2.6, 3 + (i + r() * 0.5) * (SEG / opts.ledges), s, r() < 0.5 ? 0 : Math.PI)
     }
     // plantas de folha larga na beira (0,8 × 1,08; girada em qualquer ângulo ocupa até 0,68 de raio)
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < (lowQ ? 1 : 2); i++) {
       const s = 2 + r() * 1.6
       prop(g, "planta", sx * (5.4 + s * 0.7), -0.1, r() * SEG, s, r() * 6)
     }
   }
-  for (let i = 0; i < opts.crystals; i++) {
+  for (let i = 0; i < (lowQ ? Math.ceil(opts.crystals / 2) : opts.crystals); i++) {
     const sx = i % 2 ? 1 : -1
     const s = 2.2 + r() * 2.4
     // 1,1 × 1,2: girado ocupa até 0,82 de raio
@@ -93,7 +100,7 @@ function banks(g: Ctx, r: () => number, opts: { ledges: number; shrooms: number;
 
 /** Árvores gigantes atrás das beiras (1,27 de largura por 1,66 de fundo para s = 1). */
 function trees(g: Ctx, r: () => number, n: number) {
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < (lowQ ? Math.max(1, n - 1) : n); i++) {
     const sx = i % 2 ? 1 : -1
     const s = 20 + r() * 14
     // giro só de meia-volta: girada, a copa comprida entraria na caixa
@@ -120,6 +127,11 @@ function waterfall(g: Ctx, r: () => number, sx: number, x: number, w: number) {
   g.glow.box(w, 34, 0.5, place(sx * x, 10, z), mix(C.foam, C.water, 0.35))
   g.glow.box(w * 0.4, 34, 0.55, place(sx * x + w * 0.15, 10, z - 0.05), C.foam)
   g.glow.box(w + 3, 0.3, 3, place(sx * x, -6.8, z), C.foam)
+}
+
+/** Peça de pé na beira, com a beira de dentro em |x| ≥ edge. */
+function stand(g: Ctx, kind: keyof typeof WID, sx: number, edge: number, z: number, s: number, ry = 0, y = 0) {
+  prop(g, kind as ForestPiece, sx * (edge + (s * WID[kind]) / 2), y, z, s, ry)
 }
 
 type Mod = (g: Ctx, v: number) => void
@@ -167,9 +179,51 @@ const MODULES: { id: string; build: Mod }[] = [
       canopy(g, r)
     },
   },
+  {
+    // a vila: o cogumelo-casa na beira, lanternas de vaga-lume ao longo do caminho
+    id: "vila",
+    build(g, v) {
+      const r = rng(650 + v)
+      river(g, r)
+      const sx = v ? 1 : -1
+      stand(g, "cogumelo-casa", sx, 7, 12, 9, 0, -0.4)
+      for (let i = 0; i < 3; i++) stand(g, "lanterna", i % 2 ? sx : -sx, 6.1, 3 + i * 8, 3.2, i % 2 ? Math.PI : 0)
+      banks(g, r, { ledges: 1, shrooms: 1, crystals: 1 })
+      canopy(g, r)
+    },
+  },
+  {
+    // o jardim: flores gigantes acesas dos dois lados
+    id: "jardim",
+    build(g, v) {
+      const r = rng(660 + v)
+      river(g, r)
+      for (let i = 0; i < 4; i++) stand(g, "flor", i % 2 ? 1 : -1, 6.2 + r() * 2, 2 + i * 6 + r() * 2, 4 + r() * 3, r() * 6)
+      stand(g, "lanterna", v ? -1 : 1, 6.1, 14, 3.4)
+      banks(g, r, { ledges: 1, shrooms: 1, crystals: 2 })
+      trees(g, r, 1)
+      canopy(g, r)
+    },
+  },
+  {
+    // o ninho na árvore nova, troncos caídos ao longo da beira
+    id: "ninho",
+    build(g, v) {
+      const r = rng(670 + v)
+      river(g, r)
+      const sx = v ? -1 : 1
+      stand(g, "arvore2", sx, 8, 12, 16)
+      stand(g, "ninho", sx, 6.4, 4, 3.6)
+      // troncos deitados ao longo do caminho (girados 90°: o comprimento vai para z; em x fica a fundura)
+      prop(g, "tronco-caido", -sx * (6.2 + 1.81 * 1.1), 0, 8, 2.2, Math.PI / 2)
+      prop(g, "tronco-viga", -sx * (6.2 + 0.71 * 1.2), 0.2, 18, 2.4, Math.PI / 2)
+      banks(g, r, { ledges: 1, shrooms: 2, crystals: 1 })
+      canopy(g, r)
+    },
+  },
 ]
 const VARIANTS = 2
-const WEIGHTS = [1.5, 2, 2, 2]
+const WEIGHTS = [1.5, 2, 2, 2, 1.5, 1.5, 1.4]
 
 const SKY_FOREST: [number, string][] = [
   [0, "#160a36"],
@@ -182,12 +236,13 @@ const SKY_FOREST: [number, string][] = [
 export interface ForestEnv {
   mats: { trim: StandardMaterial; glow: StandardMaterial }
   update: (z: number, now: number) => void
-  provide: (a: PieceAssets<ForestPiece>) => void
+  provide: (a: PieceAssets<ForestAsset>) => void
   dispose: () => void
 }
 
 export function buildForestEnv(scene: Scene, low: boolean, slots: number, seed: number): ForestEnv {
   const mats = createTrimMaterials(scene, low ? "low" : "mid")
+  lowQ = low
   const all: Mesh[] = []
   const mods: PoolModule[] = []
   for (const mod of MODULES) {

@@ -242,9 +242,18 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       tunnel.provide?.(a)
       const ring = a.meshes.get("anel")
       if (ring) obstacles.useModel("rim", ring, { zScale: 0.35 })
-      // o bloco de gelo como rocha do obstáculo: estreitado em x para não parecer maior que a colisão (raio 1,05)
-      const block = a.meshes.get("bloco")
-      if (block) obstacles.useModel("rock", block, { bake: Matrix.Scaling(2.1 / 3.14, 1, 2.1 / 3.75) })
+      // V3 (2026-11-09): rocha, cristal, galão e moldura do Tripo (gelo2.json: medidas com 1 m de altura).
+      // rocha: cobre o disco da colisão (raio 1,05 no x–y); estreitada em x e na profundidade
+      const rock = a.meshes.get("rocha")
+      if (rock) obstacles.useModel("rock", rock, { bake: Matrix.Scaling(2.25 / 2.9, 1, 2.2 / 4.2), upright: true })
+      // cristal: 1 m de altura com a base em 0 → centrado e cobrindo o disco (2,1 de altura e de largura)
+      const gem = a.meshes.get("cristal")
+      if (gem) obstacles.useModel("gem", gem, { bake: Matrix.Translation(0, -0.5, 0).multiply(Matrix.Scaling(2.1 / 1.01, 2.1, 1.8 / 1.53)) })
+      const can = a.meshes.get("galao")
+      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
+      const tile = a.meshes.get("borda")
+      const corner = a.meshes.get("canto")
+      if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 3.329, arm: 0.475, armLen: 0.821 })
     })
   }
   if (level === "floresta") {
@@ -252,15 +261,22 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (disposed) return a.dispose()
       canyonAssets = a
       // bioluminescência: a própria textura acende (cristais, chapéus e veios claros brilham na névoa)
-      for (const m of a.meshes.values()) {
+      for (const [name, m] of a.meshes) {
         const mat = m.material as StandardMaterial | null
-        if (!mat) continue
+        // a moldura/viga de raízes não acende (acesa, a trança vira ruído colorido); o galão tem luz própria
+        if (!mat || name === "borda" || name === "canto" || name === "galao") continue
         // fica descongelado: congelado de novo antes de a peça aparecer, o shader guardaria a cor antiga
         mat.unfreeze()
         mat.emissiveTexture = mat.diffuseTexture
         mat.emissiveColor = new Color3(0.42, 0.4, 0.5)
       }
       tunnel.provide?.(a)
+      // V3 (2026-11-09): galão e moldura de raízes do Tripo (floresta2.json); a viga é a mesma borda repetida
+      const can = a.meshes.get("galao")
+      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
+      const tile = a.meshes.get("borda")
+      const corner = a.meshes.get("canto")
+      if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 2.578, arm: 0.437, armLen: 0.785, beam: true })
     })
     // o anel dourado do Cânion também é o da Floresta (furo de raio 1, como a regra)
     void loadPieces(scene, "/meu-mundo/jetpack/canion/", ["anel"] as const, {}, () => !disposed).then((g) => {
@@ -310,7 +326,8 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       const ring = a.meshes.get("anel")
       if (ring) obstacles.useModel("rim", ring, { zScale: 0.55 })
       const rock = a.meshes.get("rocha")
-      if (rock) obstacles.useModel("rock", rock)
+      // só balança (antes do V3 o giro do modelo era ignorado; rolando inteira, o musgo aparecia de lado)
+      if (rock) obstacles.useModel("rock", rock, { upright: true })
     })
   }
   const mats = tunnel.mats

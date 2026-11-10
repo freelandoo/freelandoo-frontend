@@ -6,8 +6,10 @@
 // cobertos de gelo sobre o caminho, o teto da caverna cheio de estalactites e
 // a abertura para o céu com aurora e montanhas.
 //
-// Peças do Tripo (build_gelo_tripo.py): estalactites, base, anel, cristal,
-// bloco e pórtico — chegam depois (provide). O PÓRTICO tem o vão ≥ ±0,17 da
+// Peças do Tripo (build_gelo_v2.py, em grupos): estalactites, base, anel, pórtico,
+// bloco2, cristal e, desde 2026-11-09, iglu, pinheiro, farol, mamute no gelo, navio
+// quebra-gelo e mamute — chegam depois (provide). Tudo que é cenário fica com a beira
+// de dentro em |x| ≥ 6 (a caixa do voo vai até 5). O PÓRTICO tem o vão ≥ ±0,17 da
 // largura de baixo até 40% da altura: com 32 m e o pé 0,3 m abaixo da
 // estrada, a caixa do voo inteira fica dentro. A regra não muda.
 
@@ -24,13 +26,16 @@ import { place, rng, type RGB } from "../../engine/steampunk/scenery"
 import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
-import type { PieceAssets } from "./canyon-assets"
+import type { IceAsset, PieceAssets } from "./canyon-assets"
 import { skyTexture } from "./canyon-env"
 
 const { W, H } = TUNNEL
 
-export const ICE_PIECES = ["estalactites", "base", "anel", "cristal", "bloco", "portico"] as const
+/** As peças que são CENÁRIO (rocha, borda, canto e galão vão para os obstáculos). */
+export const ICE_PIECES = ["estalactites", "base", "cristal", "bloco2", "portico", "iglu", "pinheiro", "farol", "mamute-gelo", "navio", "mamute"] as const
 export type IcePiece = (typeof ICE_PIECES)[number]
+/** Medidas das peças com 1 m de altura (gelo2.json): largura em x. */
+const WID = { bloco2: 1.86, iglu: 1.61, pinheiro: 0.87, farol: 0.67, "mamute-gelo": 1.15, navio: 1.25, mamute: 1.39 } as const
 
 const C = {
   road: [0.3, 0.52, 0.68] as RGB,
@@ -42,6 +47,8 @@ const C = {
 }
 
 type Ctx = { body: JetGeo; glow: JetGeo; spins: SpinSpot[]; props: PropSpot[] }
+/** Nível `low`: a fileira de blocos do fundo (dentro da neblina curta) não entra. */
+let lowQ = false
 const prop = (g: Ctx, kind: IcePiece, x: number, y: number, z: number, s: number, ry = 0) => g.props.push({ kind, x, y, z, sx: s, sy: s, sz: s, ry }) // escala SEMPRE uniforme (mm3d-78d: esticar deforma o modelo e a textura)
 
 /** A estrada de gelo (o chão da caixa) com as linhas ciano e os montes de neve nas beiras. */
@@ -60,7 +67,7 @@ function road(g: Ctx, r: () => number) {
 /** O teto da caverna lá no alto com estalactites (modelo); a abertura fica entre os blocos. */
 function caveRoof(g: Ctx, r: () => number, open = false) {
   if (!open) g.body.box(60, 3, SEG + 1, place(0, 22, SEG / 2), C.ice)
-  for (let i = 0; i < (open ? 2 : 4); i++) {
+  for (let i = 0; i < (open ? 1 : 2); i++) {
     const sx = i % 2 ? 1 : -1
     prop(g, "estalactites", sx * (4 + r() * 10), open ? 20 : 20.6, r() * SEG, 7 + r() * 4, r() * 6)
   }
@@ -69,12 +76,14 @@ function caveRoof(g: Ctx, r: () => number, open = false) {
 /** Laterais: blocos de gelo (modelo) perto e altos atrás, cristais acesos. */
 function sides(g: Ctx, r: () => number, crystals: number) {
   for (const sx of [-1, 1]) {
+    let k = 0
     for (let z = 2; z < SEG; z += 8 + r() * 4) {
       const s = 2.4 + r() * 1.6
-      // o bloco tem largura 3,1 por 2,1 de altura (para s = 1): a beira de dentro em |x| ≥ 6
-      // giro só de meia-volta: girado, o bloco comprido entraria na caixa
-      prop(g, "bloco", sx * (6 + s * 1.6), s * 0.6, z, s, r() < 0.5 ? 0 : Math.PI)
-      prop(g, "bloco", sx * (16 + r() * 8), 4 + r() * 6, z + 3, 6 + r() * 4, r() * 6)
+      // bloco2: 1 m de altura, 1,86 de largura, origem embaixo; a beira de dentro em |x| ≥ 6
+      // giro só de meia-volta: girado, o bloco entraria na caixa
+      prop(g, "bloco2", sx * (6 + (s * WID.bloco2) / 2), -0.3, z, s, r() < 0.5 ? 0 : Math.PI)
+      // o bloco grande de trás: um a cada dois (eram 100 cópias inteiras à vista)
+      if (!lowQ && k++ % 2 === 0) prop(g, "bloco2", sx * (17 + r() * 8), -1 + r() * 3, z + 3, 6 + r() * 3, r() * 6)
     }
   }
   for (let i = 0; i < crystals; i++) {
@@ -82,6 +91,11 @@ function sides(g: Ctx, r: () => number, crystals: number) {
     const s = 3.5 + r() * 3
     prop(g, "cristal", sx * (8 + s * 0.6 + r() * 6), -0.3, r() * SEG, s, r() * 6)
   }
+}
+
+/** Peça de cenário de pé na neve, com a beira de dentro em |x| ≥ edge. */
+function stand(g: Ctx, kind: keyof typeof WID, sx: number, edge: number, z: number, s: number, ry = 0, y = -0.3) {
+  prop(g, kind as IcePiece, sx * (edge + (s * WID[kind]) / 2), y, z, s, ry)
 }
 
 type Mod = (g: Ctx, v: number) => void
@@ -119,6 +133,49 @@ const MODULES: { id: string; build: Mod }[] = [
     },
   },
   {
+    // acampamento polar: iglu, farol de expedição e pinheiros nevados
+    id: "acampamento",
+    build(g, v) {
+      const r = rng(450 + v)
+      road(g, r)
+      const sx = v ? 1 : -1
+      stand(g, "iglu", sx, 7, 10, 5)
+      stand(g, "farol", -sx, 6.2, 6, 4.4)
+      stand(g, "farol", sx, 6.2, 20, 4.4)
+      for (let i = 0; i < 3; i++) stand(g, "pinheiro", i % 2 ? sx : -sx, 9 + r() * 8, 2 + i * 8 + r() * 3, 5 + r() * 3, r() * 6)
+      sides(g, r, 1)
+      caveRoof(g, r, true)
+    },
+  },
+  {
+    // o navio quebra-gelo preso na encosta
+    id: "navio",
+    build(g, v) {
+      const r = rng(460 + v)
+      road(g, r)
+      const sx = v ? -1 : 1
+      stand(g, "navio", sx, 8, 12, 9, sx > 0 ? -0.5 : 0.5, -1)
+      stand(g, "pinheiro", -sx, 10, 8, 6, r() * 6)
+      stand(g, "pinheiro", -sx, 14, 18, 7, r() * 6)
+      sides(g, r, 2)
+      caveRoof(g, r)
+    },
+  },
+  {
+    // o mamute congelado na parede e um mamute andando lá fora
+    id: "mamute",
+    build(g, v) {
+      const r = rng(470 + v)
+      road(g, r)
+      const sx = v ? 1 : -1
+      stand(g, "mamute-gelo", sx, 6.5, 12, 7)
+      // de lado (anda ao longo da estrada): a largura em x vira a profundidade (0,68)
+      prop(g, "mamute", -sx * (12 + r() * 4), -0.3, 10 + r() * 6, 5, Math.PI / 2)
+      sides(g, r, 2)
+      caveRoof(g, r, true)
+    },
+  },
+  {
     id: "abertura",
     build(g, v) {
       const r = rng(440 + v)
@@ -130,7 +187,8 @@ const MODULES: { id: string; build: Mod }[] = [
   },
 ]
 const VARIANTS = 2
-const WEIGHTS = [2, 1.5, 2, 2]
+const WEIGHTS = [2, 1.5, 2, 1.6, 1.4, 1.2, 1.4]
+const MOD_ABERTURA = 6
 
 const SKY_AURORA: [number, string][] = [
   [0, "#0a1240"],
@@ -168,12 +226,13 @@ function auroraSky(scene: Scene, low: boolean) {
 export interface IceEnv {
   mats: { trim: StandardMaterial; glow: StandardMaterial }
   update: (z: number, now: number) => void
-  provide: (a: PieceAssets<IcePiece>) => void
+  provide: (a: PieceAssets<IceAsset>) => void
   dispose: () => void
 }
 
 export function buildIceEnv(scene: Scene, low: boolean, slots: number, seed: number): IceEnv {
   const mats = createTrimMaterials(scene, low ? "low" : "mid")
+  lowQ = low
   const all: Mesh[] = []
   const mods: PoolModule[] = []
   for (const mod of MODULES) {
@@ -195,7 +254,7 @@ export function buildIceEnv(scene: Scene, low: boolean, slots: number, seed: num
       mods.push({ meshes, spins: g.spins, props: g.props })
     }
   }
-  const INTRO = [0, 2, 1, 3]
+  const INTRO = [0, 2, 1, MOD_ABERTURA]
   const base = (s: number) => weighted(hash32(s, seed), WEIGHTS)
   const pick = (s: number) => {
     if (s >= 0 && s < INTRO.length) return INTRO[s] * VARIANTS + (s % VARIANTS)
@@ -240,7 +299,6 @@ export function buildIceEnv(scene: Scene, low: boolean, slots: number, seed: num
     },
     provide(a) {
       for (const kind of ICE_PIECES) {
-        if (kind === "anel") continue
         const m = a.meshes.get(kind)
         if (m) pool.provide(kind, m)
       }

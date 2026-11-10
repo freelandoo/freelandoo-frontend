@@ -1,0 +1,271 @@
+{
+ "groups": {
+  "estalactites": {
+   "file": "estalactites.glb",
+   "pieces": [
+    "estalactites"
+   ],
+   "kb": 125,
+   "tex": 512
+  },
+  "base": {
+   "file": "base.glb",
+   "pieces": [
+    "base"
+   ],
+   "kb": 272,
+   "tex": 512
+  },
+  "anel": {
+   "file": "anel.glb",
+   "pieces": [
+    "anel"
+   ],
+   "kb": 173,
+   "tex": 512
+  },
+  "portico": {
+   "file": "portico.glb",
+   "pieces": [
+    "portico"
+   ],
+   "kb": 509,
+   "tex": 1024
+  },
+  "gelo-obstaculos": {
+   "file": "gelo-obstaculos.glb",
+   "pieces": [
+    "bloco2",
+    "rocha",
+    "cristal"
+   ],
+   "kb": 233,
+   "tex": 1024
+  },
+  "gelo-moldura": {
+   "file": "gelo-moldura.glb",
+   "pieces": [
+    "borda",
+    "canto"
+   ],
+   "kb": 197,
+   "tex": 1024
+  },
+  "galao": {
+   "file": "galao.glb",
+   "pieces": [
+    "galao"
+   ],
+   "kb": 90,
+   "tex": 512
+  },
+  "gelo-acampamento": {
+   "file": "gelo-acampamento.glb",
+   "pieces": [
+    "iglu",
+    "pinheiro",
+    "farol"
+   ],
+   "kb": 261,
+   "tex": 512
+  },
+  "gelo-congelados": {
+   "file": "gelo-congelados.glb",
+   "pieces": [
+    "mamute-gelo",
+    "navio"
+   ],
+   "kb": 400,
+   "tex": 512
+  },
+  "mamute": {
+   "file": "mamute.glb",
+   "pieces": [
+    "mamute"
+   ],
+   "kb": 215,
+   "tex": 512
+  }
+ },
+ "pieces": {
+  "estalactites": {
+   "group": "estalactites",
+   "size": [
+    1.1496,
+    1.0,
+    1.3043
+   ],
+   "tris": 1200,
+   "lodTris": 260
+  },
+  "base": {
+   "group": "base",
+   "size": [
+    1.0969,
+    1.0,
+    1.1377
+   ],
+   "tris": 3000,
+   "lodTris": 914
+  },
+  "anel": {
+   "group": "anel",
+   "inner": 1,
+   "size": [
+    4.2482,
+    4.2296,
+    2.0383
+   ],
+   "tris": 2000
+  },
+  "portico": {
+   "group": "portico",
+   "underMid": 0.0503,
+   "feetInner": 0.1701,
+   "vao": {
+    "0.0": 0.17,
+    "0.05": 0.191,
+    "0.1": 0.2,
+    "0.15": 0.232,
+    "0.2": 0.232,
+    "0.25": 0.249,
+    "0.3": 0.25,
+    "0.35": 0.291,
+    "0.4": 0.269,
+    "0.45": 0.126,
+    "0.5": 0.119,
+    "0.55": 0.042,
+    "0.6": 0.003,
+    "0.65": 0.002,
+    "0.7": 0.106,
+    "0.75": 0.005,
+    "0.8": 0.006
+   },
+   "size": [
+    1.0,
+    0.8643,
+    0.3517
+   ],
+   "tris": 5999,
+   "lodTris": 1499
+  },
+  "bloco2": {
+   "group": "gelo-obstaculos",
+   "size": [
+    1.8595,
+    1.0,
+    1.7703
+   ],
+   "tris": 900,
+   "lodTris": 160
+  },
+  "rocha": {
+   "group": "gelo-obstaculos",
+   "size": [
+    2.8954,
+    2.1,
+    3.0325
+   ],
+   "tris": 699
+  },
+  "cristal": {
+   "group": "gelo-obstaculos",
+   "size": [
+    1.0155,
+    1.0,
+    1.1012
+   ],
+   "tris": 599,
+   "lodTris": 199
+  },
+  "borda": {
+   "group": "gelo-moldura",
+   "len": 3.3294,
+   "size": [
+    3.3294,
+    1.0,
+    2.2409
+   ],
+   "tris": 360
+  },
+  "canto": {
+   "group": "gelo-moldura",
+   "arm": 0.8207,
+   "size": [
+    0.8207,
+    1.0,
+    0.6108
+   ],
+   "tris": 360
+  },
+  "galao": {
+   "group": "galao",
+   "size": [
+    0.8902,
+    1.0,
+    0.9312
+   ],
+   "tris": 699
+  },
+  "iglu": {
+   "group": "gelo-acampamento",
+   "size": [
+    1.6055,
+    1.0,
+    1.5781
+   ],
+   "tris": 1499,
+   "lodTris": 399
+  },
+  "pinheiro": {
+   "group": "gelo-acampamento",
+   "size": [
+    0.8708,
+    1.0,
+    0.8915
+   ],
+   "tris": 899,
+   "lodTris": 240
+  },
+  "farol": {
+   "group": "gelo-acampamento",
+   "size": [
+    0.6735,
+    1.0,
+    0.647
+   ],
+   "tris": 1099,
+   "lodTris": 361
+  },
+  "mamute-gelo": {
+   "group": "gelo-congelados",
+   "size": [
+    1.1476,
+    1.0,
+    1.0827
+   ],
+   "tris": 2400,
+   "lodTris": 600
+  },
+  "navio": {
+   "group": "gelo-congelados",
+   "size": [
+    1.2539,
+    1.0,
+    1.0585
+   ],
+   "tris": 2400,
+   "lodTris": 1686
+  },
+  "mamute": {
+   "group": "mamute",
+   "size": [
+    1.3846,
+    1.0,
+    0.6748
+   ],
+   "tris": 2400,
+   "lodTris": 600
+  }
+ }
+}

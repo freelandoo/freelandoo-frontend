@@ -32,13 +32,45 @@ const LOD: Partial<Record<CanyonPiece, number>> = { paredao: 60, ilha: 120 }
 
 export const FACTORY_PIECES = ["viga", "cano", "engrenagem", "pistao", "guindaste", "turbina"] as const
 export type FactoryPiece = (typeof FACTORY_PIECES)[number]
-/** Tempestade Ártica: peças do Tripo preparadas por build_gelo_tripo.py (o cristal tem versão de longe). */
-export function loadIceAssets(scene: Scene, isAlive: () => boolean) {
-  return loadPieces(scene, "/meu-mundo/jetpack/gelo/", ["estalactites", "base", "anel", "cristal", "bloco", "portico"] as const, { cristal: 70 }, isAlive)
+/**
+ * Tempestade Ártica v2 (build_gelo_v2.py): as peças vêm em GRUPOS — um GLB com várias peças e UMA
+ * textura (o Alex gera até 3 numa imagem do Tripo) — e a versão de longe dentro do mesmo arquivo.
+ */
+export const ICE_GROUPS = {
+  estalactites: ["estalactites"],
+  base: ["base"],
+  anel: ["anel"],
+  portico: ["portico"],
+  galao: ["galao"],
+  mamute: ["mamute"],
+  "gelo-obstaculos": ["bloco2", "rocha", "cristal"],
+  "gelo-moldura": ["borda", "canto"],
+  "gelo-acampamento": ["iglu", "pinheiro", "farol"],
+  "gelo-congelados": ["mamute-gelo", "navio"],
+} as const
+export type IceAsset = (typeof ICE_GROUPS)[keyof typeof ICE_GROUPS][number]
+/** Distância (m) da troca para a versão de longe. */
+const ICE_LOD: Partial<Record<IceAsset, number>> = { estalactites: 30, portico: 45, base: 60, bloco2: 40, cristal: 55, iglu: 70, pinheiro: 50, farol: 60, "mamute-gelo": 70, navio: 70, mamute: 60 }
+export function loadIceAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<IceAsset>> {
+  return loadPieceGroups<IceAsset>(scene, "/meu-mundo/jetpack/gelo2/", ICE_GROUPS, ICE_LOD, isAlive)
 }
-/** Floresta Bioluminescente: peças do Tripo preparadas por build_floresta_tripo.py (as que se repetem têm versão de longe). */
-export function loadForestAssets(scene: Scene, isAlive: () => boolean) {
-  return loadPieces(scene, "/meu-mundo/jetpack/floresta/", ["cristais", "cogumelo", "ilha", "arvore", "planta", "arco"] as const, { cristais: 60, cogumelo: 80, arvore: 110, planta: 40 }, isAlive)
+/** Floresta Bioluminescente v2 (build_floresta_v2.py): grupos, como o Gelo. Toda peça que se repete tem versão de longe. */
+export const FOREST_GROUPS = {
+  cristais: ["cristais"],
+  cogumelo: ["cogumelo"],
+  ilha: ["ilha"],
+  arvore: ["arvore"],
+  planta: ["planta"],
+  arco: ["arco"],
+  "flo-casa": ["cogumelo-casa", "arvore2"],
+  "flo-flores": ["flor", "lanterna"],
+  "flo-troncos": ["tronco-caido", "ninho", "tronco-viga"],
+  "flo-moldura": ["borda", "canto", "galao"],
+} as const
+export type ForestAsset = (typeof FOREST_GROUPS)[keyof typeof FOREST_GROUPS][number]
+const FOREST_LOD: Partial<Record<ForestAsset, number>> = { cristais: 55, cogumelo: 70, ilha: 50, arvore: 90, planta: 35, arco: 50, "cogumelo-casa": 70, arvore2: 80, flor: 45, lanterna: 40, "tronco-caido": 45, ninho: 45 }
+export function loadForestAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<ForestAsset>> {
+  return loadPieceGroups<ForestAsset>(scene, "/meu-mundo/jetpack/floresta2/", FOREST_GROUPS, FOREST_LOD, isAlive)
 }
 /** Forja Vulcânica: peças do Tripo preparadas por build_forja_tripo.py (a rocha tem versão de longe). */
 export function loadForgeAssets(scene: Scene, isAlive: () => boolean) {
@@ -62,6 +94,93 @@ export type CanyonAssets = PieceAssets<CanyonPiece>
 /** Carrega as peças do Cânion (as que falharem ficam de fora: o cenário procedural segue). */
 export function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Promise<CanyonAssets> {
   return loadPieces(scene, DIR, CANYON_PIECES, LOD, isAlive)
+}
+
+/** O material das peças do Tripo: StandardMaterial com a textura difusa (o PBR sem mapa de ambiente sai escuro). */
+function pieceMaterial(scene: Scene, name: string, tex: BaseTexture | null) {
+  const mat = new StandardMaterial(`jt-piece-${name}`, scene)
+  mat.diffuseTexture = tex
+  mat.specularColor = new Color3(0.06, 0.05, 0.04)
+  // a textura do Tripo já vem pintada com luz: difusa puxada para o frio e um pouco de luz própria
+  // para clarear as sombras
+  mat.emissiveColor = new Color3(0.13, 0.1, 0.09)
+  mat.diffuseColor = new Color3(0.8, 0.84, 0.92)
+  return mat
+}
+
+/** Solta a malha do nó do glTF e grava a transformação nos vértices (pronta para instanciar). */
+function bakePiece(m: Mesh) {
+  m.setParent(null)
+  m.bakeCurrentTransformIntoVertices()
+  m.refreshBoundingInfo()
+  m.isPickable = false
+}
+
+/**
+ * Carrega peças em GRUPOS: cada arquivo `<grupo>.glb` tem um nó por peça (com o nome dela) e, se houver,
+ * `<peça>-lod` (a versão de longe, mesma textura). Um material por arquivo, compartilhado pelas peças.
+ */
+export async function loadPieceGroups<P extends string>(scene: Scene, dir: string, groups: Record<string, readonly P[]>, lodAt: Partial<Record<P, number>>, isAlive: () => boolean): Promise<PieceAssets<P>> {
+  ensureLoaders()
+  const containers: AssetContainer[] = []
+  const meshes = new Map<P, Mesh>()
+  const mats: StandardMaterial[] = []
+  await Promise.all(
+    Object.entries(groups).map(async ([file, names]) => {
+      try {
+        const c = await LoadAssetContainerAsync(dir + file + ".glb", scene)
+        if (!isAlive()) return c.dispose()
+        containers.push(c)
+        c.addAllToScene()
+        const find = (n: string) => {
+          const node = c.transformNodes.find((t) => t.name === n) ?? c.meshes.find((m) => m.name === n)
+          if (!node) return undefined
+          if ((node as Mesh).getTotalVertices?.() > 0) return node as Mesh
+          return node.getChildMeshes(false).find((m) => m.getTotalVertices() > 0) as Mesh | undefined
+        }
+        let mat: StandardMaterial | null = null
+        const used = new Set<Mesh>()
+        for (const name of names as readonly P[]) {
+          const src = find(name)
+          if (!src) {
+            console.warn("[jetpack] peça ausente no grupo", file, name)
+            continue
+          }
+          if (!mat) {
+            const pbr = src.material as PBRMaterial | null
+            mat = pieceMaterial(scene, file, pbr?.albedoTexture ?? null)
+            mats.push(mat)
+          }
+          bakePiece(src)
+          src.material = mat
+          src.position.set(0, -5000, 0)
+          src.name = `jt-glb-${name}`
+          used.add(src)
+          meshes.set(name, src)
+          const far = lodAt[name]
+          const low = far ? find(`${name}-lod`) : undefined
+          if (low && far) {
+            bakePiece(low)
+            low.material = mat
+            used.add(low)
+            src.addLODLevel(far, low)
+          }
+        }
+        for (const m of c.meshes) if (!used.has(m as Mesh)) m.setEnabled(false)
+        mat?.freeze()
+      } catch (err) {
+        if (isAlive()) console.warn("[jetpack] grupo não carregou", file, err)
+      }
+    }),
+  )
+  return {
+    meshes,
+    dispose() {
+      for (const m of meshes.values()) m.dispose()
+      for (const m of mats) m.dispose()
+      for (const c of containers) c.dispose()
+    },
+  }
 }
 
 /** Carrega peças de uma pasta (uma malha por arquivo), com a versão de longe quando houver. */
