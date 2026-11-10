@@ -47,7 +47,7 @@ import { MM } from "../hud/tokens"
 import { Arc, Card, effectText, toneColor } from "../fridge/shelf"
 import { effectsOf, thumbOf } from "../fridge/fridge-logic"
 import { faceForPortrait } from "../portraits"
-import { GOD_NAMES, isGod, type GodBody } from "../../gods"
+import { TALL_NAMES, isTall, type TallBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
 import { HERO_LEVEL, heroLevelScale, heroSheet } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
@@ -372,7 +372,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
       return t("evAdult", "Virou adulto: +20% em inteligência, força e velocidade; saúde 100.")
     case "skin_bought":
       return (Number(data.price) > 0 ? t("evSkinAcquired", "Adquiriu a skin {skin} ({n} moedas).") : t("evSkinAcquiredFree", "Adquiriu a skin {skin}."))
-        .replace("{skin}", data.skin === "sergio" ? "Sergio" : data.skin === "feminina" ? t("skinFeminina", "Personagem feminina") : data.skin === "ekaterina" ? "Ekaterina" : isGod(String(data.skin)) ? GOD_NAMES[data.skin as GodBody] : String(data.skin ?? ""))
+        .replace("{skin}", data.skin === "sergio" ? "Sergio" : data.skin === "feminina" ? t("skinFeminina", "Personagem feminina") : data.skin === "ekaterina" ? "Ekaterina" : isTall(String(data.skin)) ? TALL_NAMES[data.skin as TallBody] : String(data.skin ?? ""))
         .replace("{n}", String(data.price ?? ""))
     case "death":
       return t("evDeath", "Morreu: {cause}.").replace("{cause}", causeLabel(String(data.cause ?? ""), t))
@@ -842,7 +842,7 @@ function BodyPage({ life, compact, t }: PageProps) {
   const c = life.character
   const b = c.body
   const h = c.health
-  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES, ...clanBodyNames(t), brutamontes: t("laminasMobBrute", "Brutamontes") }[b.bodyHint]
+  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...TALL_NAMES, ...clanBodyNames(t), brutamontes: t("laminasMobBrute", "Brutamontes") }[b.bodyHint]
   const dis = (s: "none" | "controlled" | "uncontrolled") =>
     s === "none" ? <Tag tone="bom">{t("disNone", "Não tem")}</Tag> : s === "controlled" ? <Tag>{t("disControlled", "Controlada")}</Tag> : <Tag tone="perigo">{t("disUncontrolled", "Sem remédio")}</Tag>
   return (
@@ -1626,7 +1626,7 @@ function BodyC({ life, t }: PageProps) {
   const c = life.character
   const b = c.body
   const h = c.health
-  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...GOD_NAMES, ...clanBodyNames(t), brutamontes: t("laminasMobBrute", "Brutamontes") }[b.bodyHint]
+  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...TALL_NAMES, ...clanBodyNames(t), brutamontes: t("laminasMobBrute", "Brutamontes") }[b.bodyHint]
   const dis = (s: "none" | "controlled" | "uncontrolled") =>
     s === "none" ? <MiniTag tone="bom">{t("disNone", "Não tem")}</MiniTag> : s === "controlled" ? <MiniTag>{t("disControlled", "Controlada")}</MiniTag> : <MiniTag tone="perigo">{t("disUncontrolled", "Sem remédio")}</MiniTag>
   const bar = (label: string, shown: string, value: number, max: number, color: string) => (

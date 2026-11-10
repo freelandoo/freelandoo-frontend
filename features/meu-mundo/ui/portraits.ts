@@ -9,7 +9,7 @@
 // pipeline/build_portraits_2d.py); os avisos falam com a expressão certa.
 
 import type { BodyId } from "../types"
-import { byGod, isGod } from "../gods"
+import { byTall, isTall } from "../gods"
 import { byClanBody, isClanBody } from "../classes"
 
 const V2 = "/meu-mundo/retratos/v2"
@@ -43,7 +43,7 @@ export const PORTRAIT: Record<BodyId, string> = {
   female: FEMALE,
   ekaterina: EKATERINA,
   // mm3d-50: deuses — retrato PROVISÓRIO renderizado do modelo (pipeline/build_portraits_deuses.py).
-  ...byGod((g) => `${V2}/deus-${g}.webp`),
+  ...byTall((g) => `${V2}/deus-${g}.webp`),
   // mm3d-58: classes — retrato PROVISÓRIO renderizado do modelo (como os deuses).
   // 2026-11-01: refeitos (modelos novos, rosto e cabelo com mais detalhe).
   ...byClanBody((b) => `${V2}/classe-${b}_m58e.webp`),
@@ -60,7 +60,7 @@ const FACE: Record<BodyId, string> = {
   sergio: `${V2}/sergio-rosto.webp`,
   female: FEMALE_FACE,
   ekaterina: EKATERINA_FACE,
-  ...byGod((g) => `${V2}/deus-${g}-rosto.webp`),
+  ...byTall((g) => `${V2}/deus-${g}-rosto.webp`),
   ...byClanBody((b) => `${V2}/classe-${b}_m58e-rosto.webp`),
   ...v3Faces,
 }
@@ -91,7 +91,7 @@ export function expressionSrc(body: BodyId | null | undefined, e: Expression | n
   if (body === "female") return `${V2}/expr-feminina-${e}.webp`
   if (body === "ekaterina") return `${V2}/expr-ekaterina-${e}.webp`
   // Deuses ainda sem folha de expressões: o rosto.
-  if (isGod(body) || isClanBody(body)) return faceOf(body)
+  if (isTall(body) || isClanBody(body)) return faceOf(body)
   return `${V2}/expr-${e}.webp`
 }
 

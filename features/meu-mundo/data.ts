@@ -392,8 +392,8 @@ export type GearOut = { receipt?: Receipt; replay?: boolean; bag: GearBag; propo
 export const getGear = (token: string) => call<{ gear: GearCatalog; bag: GearBag }>(token, "GET", "/gear")
 
 // ═══ B5 (mig 365): inventário de monstros (Arena e rua) ═════════════════════
-/** `stone` = o Golem de Pedra da rua (na Arena o mesmo corpo é o Soldado de Pedra, `soldier`). */
-export type TrophyKind = "soldier" | "stone" | "wolf" | "golem" | "harpy" | "brute"
+/** Os tipos de monstro da luta (F1: `cavaleiro` = Soldado de Pedra/Cavaleiro Dourado; `stone` = Golem de Pedra). */
+export type TrophyKind = "cavaleiro" | "stone" | "wolf" | "ciborgue" | "garras" | "brute"
 export interface MonsterTrophy {
   kind: TrophyKind
   wins: number

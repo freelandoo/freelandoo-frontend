@@ -7,10 +7,10 @@
 // cliente desenha: corpo, palco de fundo e cor do holograma.
 
 import type { BodyId } from "./types"
-import { GOD_BODIES, GOD_NAMES, type GodBody } from "./gods"
+import { TALL_BODIES, TALL_NAMES, type TallBody } from "./gods"
 import { CLAN_SKINS, type ClanSkinId } from "./classes"
 
-export type SkinId = "standard" | "sergio" | "feminina" | "ekaterina" | GodBody | ClanSkinId | "brutamontes"
+export type SkinId = "standard" | "sergio" | "feminina" | "ekaterina" | TallBody | ClanSkinId | "brutamontes"
 
 /** Palco 1672×941 com o pedestal no meio (os dois têm a mesma geometria). */
 export interface SkinStage {
@@ -38,23 +38,23 @@ const BASE = "/meu-mundo/skins/v1"
 /** Medidas do palco, em pixels da imagem: pés no topo do pedestal e altura da figura. */
 export const STAGE = { w: 1672, h: 941, feetX: 836, feetY: 548, figure: 380 } as const
 
-/** Frase de cada deus (lore aprovada, mm3d-48). */
-const GOD_LINES: Record<GodBody, string> = {
-  aurion: "O Titã Solar. Nunca perdeu uma prova.",
-  morkhan: "O Sem-Nome. Trapaceou na final e foi riscado da pedra.",
-  kragor: "O Minotauro de Basalto. Força que não cede.",
-  zephyra: "A Deusa das Tempestades. Ninguém a alcança.",
-  maru: "O Tritão das águas fundas.",
-  iris: "A Deusa das Cores. Cada golpe, um tom.",
-  noctis: "A Onça da Lua. Caça no escuro.",
-  aeryn: "A Águia de Bronze. Senhora dos céus.",
-  ciborgue: "Metade homem, metade máquina de guerra.",
-  cavaleiro: "Armadura de ouro e honra que não enferruja.",
-  golem: "Pedra viva com o coração de esmeralda.",
-  garras: "Chapéu de caçadora e garras que não erram.",
+/** Frase de cada um (lore v2, historia/v2/02-historias.md): os 8 deuses e os 4 monstros. */
+const TALL_LINES: Record<TallBody, string> = {
+  aurion: "O Titã Solar, rei do Céu. Quer um povo de joelhos.",
+  morkhan: "O Senhor do Abaixo. Prometeu a vida eterna e cobrou caro.",
+  kragor: "O Minotauro de Basalto. Vendeu armas aos dois lados.",
+  zephyra: "A Deusa-Chacal das Tempestades. Carrega as almas e cobra por elas.",
+  maru: "O Senhor do Mar. Fica com tudo o que cai.",
+  iris: "A Deusa-Camaleão. Toda cor do mundo passa por ela.",
+  noctis: "A Onça da Lua, filho de Morkhan. Não tem pressa.",
+  aeryn: "A Águia de Bronze. Não nasceu: foi feita.",
+  ciborgue: "Era uma Raposa. Segurou a ponte e foi refeito em ferro.",
+  cavaleiro: "Capitão da Ordem do Sol. Guarda um deus que não quer acordado.",
+  golem: "Uma vila inteira numa muralha só. Cento e oitenta vozes.",
+  garras: "A caçadora dos telhados. Não fala desde aquela manhã.",
 }
 
-const GOD_HOLO: Record<GodBody, SkinArt["holo"]> = {
+const TALL_HOLO: Record<TallBody, SkinArt["holo"]> = {
   aurion: { color: "#ffb800", accent: "#fff1c2" },
   morkhan: { color: "#8a3bff", accent: "#e2cfff" },
   kragor: { color: "#ff5a1f", accent: "#ffd6c2" },
@@ -112,17 +112,17 @@ export const SKINS: SkinArt[] = [
     stage: { src: `${BASE}/coliseu.webp`, small: `${BASE}/coliseu-1024.webp` },
     holo: { color: "#ff2b91", accent: "#ffd1e8" },
   },
-  // mm3d-50: os deuses de Lúmen (gods.ts), 2 m, no palco do Coliseu neon;
+  // mm3d-50: os deuses de Lúmen e (F1) os 4 monstros jogáveis (gods.ts), no palco do Coliseu neon;
   // o holograma tem a cor de cada um.
-  ...GOD_BODIES.map((g): SkinArt => ({
+  ...TALL_BODIES.map((g): SkinArt => ({
     id: g,
     labelKey: `skinGod_${g}`,
-    fallback: GOD_NAMES[g],
+    fallback: TALL_NAMES[g],
     taglineKey: `skinGodLine_${g}`,
-    taglineFallback: GOD_LINES[g],
+    taglineFallback: TALL_LINES[g],
     body: g,
     stage: { src: `${BASE}/coliseu.webp`, small: `${BASE}/coliseu-1024.webp` },
-    holo: GOD_HOLO[g],
+    holo: TALL_HOLO[g],
   })),
   // mm3d-58: os personagens das classes como skin de teste (só admin).
   ...CLAN_SKINS.map(

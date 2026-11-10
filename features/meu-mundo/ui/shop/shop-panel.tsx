@@ -39,11 +39,11 @@ export type GearShelf = "armory" | "weapons" | "hammers" | "bows" | "guns" | "sh
 type FoodGroup = "healthy" | "junk" | "supplement" | "medicine" | "stimulant" | "anabolic"
 
 const MOB_PORTRAIT: Record<TrophyKind, string> = {
-  soldier: PORTRAIT.golem,
+  cavaleiro: PORTRAIT.cavaleiro,
   stone: PORTRAIT.golem,
   wolf: WOLF_PORTRAIT,
-  golem: PORTRAIT.ciborgue,
-  harpy: PORTRAIT.garras,
+  ciborgue: PORTRAIT.ciborgue,
+  garras: PORTRAIT.garras,
   brute: PORTRAIT.brutamontes,
 }
 
@@ -55,11 +55,11 @@ function speciesBody(sp: SpeciesDef): BodyId {
 /** Os nomes da Arena (mesmas chaves de laminas-view; sem importar a cena da luta). */
 function mobName(k: TrophyKind, t: GearTr) {
   return {
-    soldier: t("laminasMobSoldier", "Soldado de Pedra"),
+    cavaleiro: t("laminasMobKnight", "Cavaleiro Dourado"),
     stone: t("laminasMobStoneGolem", "Golem de Pedra"),
     wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
-    golem: t("laminasMobGolem", "Ciborgue"),
-    harpy: t("laminasMobHarpy", "Dama das Garras"),
+    ciborgue: t("laminasMobGolem", "Ciborgue"),
+    garras: t("laminasMobHarpy", "Dama das Garras"),
     brute: t("laminasMobBrute", "Brutamontes"),
   }[k]
 }
@@ -214,7 +214,7 @@ export default function ShopPanel({
             <ShopCard
               img={MOB_PORTRAIT[m.kind]}
               category="skin"
-              rarity={m.kind === "brute" ? "legendary" : m.kind === "golem" || m.kind === "harpy" ? "epic" : "rare"}
+              rarity={m.kind === "brute" ? "legendary" : m.kind === "ciborgue" || m.kind === "garras" ? "epic" : "rare"}
               portrait
               dim={!won}
               title={name}
@@ -227,7 +227,7 @@ export default function ShopPanel({
                     ? t("shopMobFirst", "Primeira vitória em {d}").replace("{d}", new Date(m.firstWinAt).toLocaleDateString())
                     : undefined
                   : m.kind === "stone"
-                    ? t("shopMobHowStreet", "Ainda não derrotado. Aparece na rua, de noite (18h às 6h).")
+                    ? t("shopMobHowStone", "Ainda não derrotado. Aparece na rua, de noite (18h às 6h), e na Arena das Lâminas.")
                     : t("shopMobHowArena", "Ainda não derrotado. Enfrente na Arena das Lâminas.")
               }
             />

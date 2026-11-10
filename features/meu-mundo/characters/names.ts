@@ -2,7 +2,7 @@
 // Deuses e especiais têm nome próprio (não se traduz, como em gods.ts); as classes e o
 // Brutamontes passam pelo dicionário (mesmas chaves que o jogo já usa).
 
-import { GOD_NAMES, isGod } from "../gods"
+import { TALL_NAMES, isTall } from "../gods"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -13,6 +13,6 @@ export function speciesName(species: string | null | undefined, t: Tr): string {
   if (species === "brutamontes") return t("laminasMobBrute", "Brutamontes")
   if (species === "sergio") return "Sergio"
   if (species === "ekaterina") return "Ekaterina"
-  if (isGod(species)) return GOD_NAMES[species]
+  if (isTall(species)) return TALL_NAMES[species]
   return species
 }

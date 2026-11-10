@@ -44,6 +44,7 @@ import type { BoxeBase, BoxeClip } from "../../engine/avatars"
 import { WeaponGrip, GRIP_BONES } from "../../engine/weapon-grip"
 import { shineWeapon } from "../../engine/weapon-shine"
 import { godGun, gunSize } from "../../engine/shop-swords"
+import { CLAN_WEAPON } from "../../classes"
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { BoxingGloves } from "./gloves"
@@ -60,9 +61,11 @@ import "@babylonjs/core/Rendering/outlineRenderer"
  * golpes: Golem de Pedra e Brutamontes de machado, Ciborgue com a arma de fogo.
  */
 const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
-  soldier: { body: "golem", scale: 1 },
-  golem: { body: "ciborgue", scale: 1 },
-  harpy: { body: "garras", scale: 1 },
+  // F1 (lore v2): o Soldado de Pedra é o Cavaleiro Dourado (2 m, de espada); o Golem de Pedra tem tipo próprio
+  cavaleiro: { body: "cavaleiro", scale: 1 },
+  stone: { body: "golem", scale: 1 },
+  ciborgue: { body: "ciborgue", scale: 1 },
+  garras: { body: "garras", scale: 1 },
   // corpo de 4 m em escala 1 (Alex: "do tamanho do golem"; machado de 3 m)
   brute: { body: "brutamontes", scale: 1 },
 }
@@ -112,6 +115,20 @@ const STONE: Record<string, Move[]> = {
   zap: [{ clip: "XTaunt", windup: [0, 0.2], strike: [0.2, 0.3], recover: [0.3, 0.45] }],
   max: [{ clip: "XTaunt", windup: [0, 0.35], strike: [0.35, 0.6], recover: [0.6, 0.9] }],
 }
+/**
+ * O CAVALEIRO DOURADO (F1): os cortes de espada da classe dos Vampiros (mesmos trechos da luta
+ * do jogador, CLAN_MOVES.vampiro em laminas-game.ts; contato a ~47% do trecho).
+ */
+const KNIGHT: Record<string, Move[]> = {
+  cut: [
+    { clip: "VSlash3", windup: [0.22, 0.37], strike: [0.37, 0.45], recover: [0.45, 0.58] },
+    { clip: "VSlash1", windup: [0.25, 0.4], strike: [0.4, 0.48], recover: [0.48, 0.61] },
+  ],
+  thrust: [{ clip: "VAtk1", windup: [0.3, 0.45], strike: [0.45, 0.53], recover: [0.53, 0.66] }],
+  great: [{ clip: "VGSlash", windup: [0.18, 0.42], strike: [0.42, 0.5], recover: [0.5, 0.72] }],
+  combo: [{ clip: "VCombo", windup: [0.15, 0.43], strike: [0.43, 0.5], recover: [0.5, 0.71] }],
+  block: [{ clip: "VPower", windup: [0, 0.3], strike: [0.3, 0.45], recover: [0.45, 0.7] }],
+}
 /** A Dama (build_garras_anim.py): nunca guarda fechada, garras abertas, sorteia entre os cortes. */
 const CLAW: Record<string, Move[]> = {
   claw: [
@@ -134,19 +151,23 @@ const TAUNT: Move = { clip: "XTaunt", windup: [0, 0.3], strike: [0.3, 0.45], rec
 Object.assign(BRUTE, { skSlash: BRUTE.sweep, skDash: BRUTE.charge, skShield: [TAUNT], skUlt: BRUTE.smash })
 Object.assign(CIBORG, { skSlash: CIBORG.blast, skDash: CIBORG.shot, skShield: [TAUNT], skUlt: CIBORG.blast })
 Object.assign(STONE, { skSlash: STONE.zap, skDash: STONE.leap, skShield: [TAUNT], skUlt: STONE.max })
+Object.assign(KNIGHT, { skSlash: KNIGHT.great, skDash: KNIGHT.thrust, skShield: KNIGHT.block, skUlt: KNIGHT.combo })
 Object.assign(CLAW, { skSlash: CLAW.rake, skDash: CLAW.leap, skShield: CLAW.claw, skUlt: CLAW.rake })
 
 /** Como cada um que luta de arma ou garra se desenha. `walk` null = a locomoção normal. */
 const LOOK: Partial<Record<MobKind, { table: Record<string, Move[]>; idle: BoxeBase; walk: BoxeBase | null; run: BoxeBase | null; hit: BoxeClip[]; fall: BoxeClip; roar: [BoxeClip, number, number, number]; hop: number }>> = {
-  soldier: { table: STONE, idle: "XIdle", walk: "XWalk", run: "XRun", hit: BRUTE_HIT, fall: "BFall", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0.9 },
-  golem: { table: CIBORG, idle: "XIdle", walk: "FgWalk", run: "FgRun", hit: BRUTE_HIT, fall: "XHitG", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0 },
+  cavaleiro: { table: KNIGHT, idle: "VIdle", walk: null, run: null, hit: ["VHit"], fall: "VDie", roar: ["VPower", 1.6, 0, 0.9], hop: 0 },
+  stone: { table: STONE, idle: "XIdle", walk: "XWalk", run: "XRun", hit: BRUTE_HIT, fall: "BFall", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0.9 },
+  ciborgue: { table: CIBORG, idle: "XIdle", walk: "FgWalk", run: "FgRun", hit: BRUTE_HIT, fall: "XHitG", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0 },
   brute: { table: BRUTE, idle: "XIdle", walk: "XWalk", run: "XRun", hit: BRUTE_HIT, fall: "BFall", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0 },
-  harpy: { table: CLAW, idle: "GaIdle", walk: null, run: null, hit: ["GaHit"], fall: "BFall", roar: ["GaRoar", 1.6, 0, 1], hop: 1.7 },
+  garras: { table: CLAW, idle: "GaIdle", walk: null, run: null, hit: ["GaHit"], fall: "BFall", roar: ["GaRoar", 1.6, 0, 1], hop: 1.7 },
 }
 /** Boca da arma de fogo no eixo da pegada (o mesmo ponto da skin). */
 const MUZZLE = new Vector3(0.6, 0.1, 0)
 /** Quem luta com arma na mão, nos golpes do Brutamontes ou no tiro do Ciborgue. */
-const ARMED: Partial<Record<MobKind, string>> = { brute: AXE_URL, golem: godGun("ciborgue")?.file }
+const ARMED: Partial<Record<MobKind, string>> = { brute: AXE_URL, ciborgue: godGun("ciborgue")?.file, cavaleiro: CLAN_WEAPON.vampiro }
+/** Do punho à ponta no eixo +Y da espada do Cavaleiro (m): o rastro do corte. */
+const SWORD_EDGE: [number, number] = [0.2, 1.05]
 /** Corrida do Brutamontes no ritmo do passo (m/s com o clipe a 1×, no corpo de 4 m). */
 const BRUTE_RUN = 3.2
 
@@ -156,10 +177,12 @@ const BRUTE_RUN = 3.2
  * roupa pelo número do monstro.
  */
 const HUMAN: Record<MobKind, { body: BodyId; scale: number; looks: string[] }> = {
-  soldier: { body: "normal", scale: 1, looks: ["1240"] },
+  cavaleiro: { body: "normal", scale: 1, looks: ["1240"] },
+  // o Golem não luta no ringue (o menu do Boxe não o mostra); fica aqui só para o tipo fechar
+  stone: { body: "strong", scale: 1.15, looks: ["2760"] },
   wolf: { body: "slim", scale: 1, looks: ["4115", "6260", "b350"] },
-  golem: { body: "fat", scale: 1.12, looks: ["3527"] },
-  harpy: { body: "female", scale: 1, looks: ["8913"] },
+  ciborgue: { body: "fat", scale: 1.12, looks: ["3527"] },
+  garras: { body: "female", scale: 1, looks: ["8913"] },
   brute: { body: "strong", scale: 1.15, looks: ["2760"] },
 }
 /** O lobo (pipeline/laminas/build_lobo_anim.py): o focinho chega no +X do Babylon → −90° leva ao +Z (frente). */
@@ -373,7 +396,7 @@ export class MonsterModel {
       this.char.holder.scaling.setAll(rig.scale * scale)
       const weapon = ARMED[kind]
       this.char.setBoxe(LOOK[kind]?.idle ?? "BGuard")
-      if (kind === "soldier") this.stones = new FloatStones(scene, this.char, addGlow)
+      if (kind === "stone") this.stones = new FloatStones(scene, this.char, addGlow)
       if (weapon) {
         ensureLoaders()
         LoadAssetContainerAsync(weapon, scene)
@@ -385,14 +408,14 @@ export class MonsterModel {
             for (const m of this.axe.getChildMeshes(false)) {
               m.isPickable = false
               // sem mapa de ambiente, metal puro sai preto (a mesma conta da arma da skin)
-              if (kind === "golem" && m.material instanceof PBRMaterial) m.material.metallic = 0.25
+              if (kind === "ciborgue" && m.material instanceof PBRMaterial) m.material.metallic = 0.25
             }
             this.axe.setEnabled(false)
           })
           .catch(() => {})
       }
       const guard = LOOK[kind] ? undefined : BULKY_GUARD[rig.body]
-      if (guard || kind === "golem") {
+      if (guard || kind === "ciborgue") {
         const ch = this.char
         this.fix = new PoseFix(scene, (n) => ch.bone(n), guard ?? null)
       }
@@ -553,7 +576,7 @@ export class MonsterModel {
     const c = this.char!
     c.place(p.x, p.z, p.facing, p.y, 0)
     if (LOOK[this.kind] && !this.boxer) return this.updateBrute(dt, p)
-    const heavy = this.kind === "golem" || (this.boxer && this.kind === "brute")
+    const heavy = this.kind === "ciborgue" || (this.boxer && this.kind === "brute")
     if (p.state !== this.last) {
       if (p.state === "windup") c.boxeAct(heavy ? "BBox2" : "BJab", 0.55, 0, 0.42, true)
       else if (p.state === "strike") c.boxeAct(heavy ? "BBox2" : "BJab", 0.32, 0.42, 1)
@@ -585,7 +608,7 @@ export class MonsterModel {
     if (!hand || !index || !thumb) return
     this.axeGrip = new WeaponGrip(this.scene, { hand, index, thumb }, this.axe, `mm-mob-axe-${this.root.name}`)
     this.axeGrip.root.scaling.setAll(this.root.scaling.x)
-    if (this.kind === "golem") {
+    if (this.kind === "ciborgue") {
       this.axeGrip.root.scaling.setAll(gunSize(this.char.height) * this.root.scaling.x)
       // o glTF chega com o X invertido: meia-volta deixa o cano para a frente
       const turn = new TransformNode(`mm-mob-gun-turn-${this.root.name}`, this.scene)
@@ -631,7 +654,7 @@ export class MonsterModel {
   /** Boca da arma de fogo no mundo (de onde sai o tiro), ou null sem a arma na mão. */
   muzzle(): Vector3 | null {
     const r = this.axeGrip?.root
-    return r && this.kind === "golem" ? Vector3.TransformCoordinates(MUZZLE, r.getWorldMatrix()) : null
+    return r && this.kind === "ciborgue" ? Vector3.TransformCoordinates(MUZZLE, r.getWorldMatrix()) : null
   }
 
   /** Lâmina do machado no mundo (o rastro roxo da luta), ou null fora do golpe. */
@@ -639,7 +662,8 @@ export class MonsterModel {
     const r = this.axeGrip?.root
     if (!r || !r.isEnabled() || this.last !== "strike") return null
     const m = r.getWorldMatrix()
-    return [Vector3.TransformCoordinates(new Vector3(0, AXE_EDGE[0], 0), m), Vector3.TransformCoordinates(new Vector3(0, AXE_EDGE[1], 0), m)]
+    const edge = this.kind === "cavaleiro" ? SWORD_EDGE : AXE_EDGE
+    return [Vector3.TransformCoordinates(new Vector3(0, edge[0], 0), m), Vector3.TransformCoordinates(new Vector3(0, edge[1], 0), m)]
   }
 
   /** Salto: a altura do arco na fase do golpe (o avanço é da regra). */
@@ -677,7 +701,7 @@ export class MonsterModel {
       this.last = p.state
     }
     const moving = p.speed > 0.25 && (p.state === "chase" || p.state === "circle" || !!p.calm)
-    if (this.kind === "golem" && this.fix) {
+    if (this.kind === "ciborgue" && this.fix) {
       this.fix.gunWant = p.state === "hurt" || p.state === "dead" ? 0 : 1
       this.fix.gunYaw = p.facing
       if (this.axeGrip) {
@@ -821,7 +845,10 @@ export class MonsterModel {
 // Pernas e braços: cilindros com o pivô no meio — a rotação balança em volta do
 // meio, o que basta para um provisório.
 const BUILD: Record<MobKind, (m: MonsterModel) => void> = {
-  soldier(m) {
+  stone(m) {
+    BUILD.cavaleiro(m)
+  },
+  cavaleiro(m) {
     const SAND = "#C9A46A"
     m.add("cyl", [0.42, 0.9, 0.5], [0, 1.25, 0], SAND, "", { main: true })
     m.add("box", [0.62, 0.3, 0.36], [0, 1.62, 0], "#B08A52")
@@ -850,7 +877,7 @@ const BUILD: Record<MobKind, (m: MonsterModel) => void> = {
     m.add("box", [0.1, 0.1, 0.55], [0, 0.85, -0.78], "#5E3420", "tail", { rot: [0.4, 0, 0] })
     m.add("box", [0.06, 0.06, 0.6], [0, 0.95, 0.2], "#B84DFF", "", { glow: 0.8 })
   },
-  golem(m) {
+  ciborgue(m) {
     const SCRAP = "#6E7480"
     m.add("box", [1.5, 1.4, 0.95], [0, 2.1, 0], SCRAP, "", { main: true })
     m.add("box", [0.7, 0.5, 0.6], [0, 3.05, 0.1], "#5A5F68")
@@ -864,7 +891,7 @@ const BUILD: Record<MobKind, (m: MonsterModel) => void> = {
       m.add("box", [0.6, 0.6, 0.6], [s * 1.05, 1.3, 0.25], "#3E4249", s < 0 ? "armL" : "armR")
     }
   },
-  harpy(m) {
+  garras(m) {
     const SLATE = "#5B6475"
     m.add("sphere", [0.55, 0.9, 0.5], [0, 1.25, 0], SLATE, "", { main: true })
     m.add("sphere", [0.36, 0.38, 0.38], [0, 1.85, 0.08], "#4A5262")

@@ -40,7 +40,7 @@ import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import { tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
-import { byGod, isGod } from "../gods"
+import { byTall, isTall } from "../gods"
 import { ARCHER_SKINS, byClanBody, clanOfBody, GUN_SKINS, isClanBody, CLAN_ANIMS, HAMMER_SKINS, type Clan } from "../classes"
 
 export const AVATAR_ASSET_VERSION = "v3"
@@ -65,7 +65,7 @@ const ASSETS = {
     ekaterina: "avatar-ekaterina-basecolor-512.jpg",
     // Deuses (mm3d-50, pipeline/build_deuses.py): 7 mil tris, textura 1024
     // (2 m de altura e armadura detalhada), sem malha leve (como o Sergio).
-    ...byGod((g) => `avatar-${g}-basecolor-1024.jpg`),
+    ...byTall((g) => `avatar-${g}-basecolor-1024.jpg`),
     // 2026-11-02: o Brutamontes (só monstro, build_deuses.py com 4 m)
     brutamontes: "avatar-brutamontes-basecolor-1024.jpg",
     // Classes (mm3d-58): mesma receita dos deuses (build_deuses.py), 1,8 m,
@@ -88,7 +88,7 @@ const ASSETS = {
     // costuras do atlas e deformava o lado direito do rosto); pescoço refeito
     // (build_ekaterina.py 4b): rosto 100% na cabeça — o maxilar esticava na corrida.
     ekaterina: "avatar-ekaterina-pescoco.glb",
-    ...byGod((g) => `avatar-${g}.glb`),
+    ...byTall((g) => `avatar-${g}.glb`),
     // 2026-11-01 (regra do Alex, 2ª): DEUSES com 3,20 m e Golem/Ciborgue com 4 m
     // (só a escala da raiz; cavaleiro e garras seguem 2 m).
     // 2026-11-02 (-h320p / cavaleiro -p): botas para a frente (`feet_fwd` no build_deuses.py).
@@ -306,7 +306,7 @@ export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.14
 type AnimSet = keyof typeof ASSETS.anims
 // mm3d-50: os deuses usam TODAS as animações do Sergio (build_deuses.py: mesmo
 // repouso de rotação, quadril na mesma altura; os 2 m vêm da escala do nó raiz).
-const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina", ...byGod((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio"), brutamontes: "sergio" }
+const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina", ...byTall((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio"), brutamontes: "sergio" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 
 /** Arquivos de um corpo, para quem desenha o avatar fora do Babylon (o jetpack, mm3d-20). */
@@ -607,7 +607,8 @@ export class AvatarLibrary {
   }
 
   private clanSet(id: BodyId) {
-    const clan = this.combatClan ?? clanOfBody(id)
+    // F1: o Cavaleiro Dourado como monstro luta de espada (os cortes dos Vampiros)
+    const clan = this.combatClan ?? clanOfBody(id) ?? (id === "cavaleiro" ? "vampiro" : null)
     if (!clan) return Promise.resolve(null)
     let p = this.clans.get(clan)
     if (!p) {
@@ -707,7 +708,7 @@ export class AvatarLibrary {
     const placeP = this.withPlace ? this.placeSet(id).catch(() => null) : Promise.resolve(null)
     const boxeP = this.withBoxe ? this.boxeSet(id).catch(() => null) : Promise.resolve(null)
     const gincanaP = this.withGincana ? this.gincanaSet(id).catch(() => null) : Promise.resolve(null)
-    const clanP = this.withClan ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
+    const clanP = this.withClan || (this.withBoxe && id === "cavaleiro") ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
     // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
     const locoP = this.locoSet(id).catch(() => null)
     // quem aparece como monstro (2026-11-06) tem os clipes da skin mesmo sem kit: Golem e Brutamontes de machado, Ciborgue também atira
@@ -758,7 +759,7 @@ export class AvatarLibrary {
       const l = LOCO[ANIM_SET[id]]
       natural = { walk: l.walk, run: l.run }
     }
-    if (isClanBody(id) || isGod(id) || id === "brutamontes") {
+    if (isClanBody(id) || isTall(id) || id === "brutamontes") {
       const k = Math.abs((byName.get("mixamorig:Hips")?.parent as TransformNode | null)?.scaling.y ?? 1)
       if (k > 0.5 && k < 5) natural = { walk: natural.walk * k, run: natural.run * k }
     }

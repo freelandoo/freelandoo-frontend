@@ -21,7 +21,7 @@ import { cowardRefuses, currentSoul } from "../soul"
 const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
 type MobKind = LaminasEncounter["kind"]
-const KINDS = new Set<string>(["soldier", "wolf", "golem", "harpy", "brute"])
+const KINDS = new Set<string>(["cavaleiro", "wolf", "ciborgue", "garras", "brute", "stone"])
 
 export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }: { /** A sala (ui/offstage.ts): a rua pode nem estar montada. */ gameRef: RefObject<Pick<GameHandle, "reportMob" | "engageMob">>; busy: boolean; body: BodyId; look?: string; /** mm3d-60l: o cenário da luta (elementos do bairro ou do centro). */ place?: "bairro" | "centro" }) {
   const t = useTranslations("MeuMundo")
@@ -34,10 +34,11 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
   const mobName = useCallback(
     (k: string) =>
       ({
-        soldier: t("laminasMobStoneGolem", "Golem de Pedra"),
+        stone: t("laminasMobStoneGolem", "Golem de Pedra"),
+        cavaleiro: t("laminasMobKnight", "Cavaleiro Dourado"),
         wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
-        golem: t("laminasMobGolem", "Ciborgue"),
-        harpy: t("laminasMobHarpy", "Dama das Garras"),
+        ciborgue: t("laminasMobGolem", "Ciborgue"),
+        garras: t("laminasMobHarpy", "Dama das Garras"),
         brute: t("laminasMobBrute", "Brutamontes"),
       })[k] ?? k,
     [t],

@@ -20,8 +20,17 @@ export const DT = 1 / 60
 export const ARENA_R = 11
 export const PLAYER_R = 0.45
 
-export type MobKind = "soldier" | "wolf" | "golem" | "harpy" | "brute"
-export const MOB_KINDS: MobKind[] = ["soldier", "wolf", "golem", "harpy", "brute"]
+// Lore v2 (F1, 2026-11-10): ids renomeados — `cavaleiro` (o Soldado de Pedra/Cavaleiro Dourado, ex-"soldier"),
+// `ciborgue` (ex-"golem"), `garras` (ex-"harpy") e o novo `stone` (o Golem de Pedra, que antes
+// dividia o id com o Soldado). O servidor ainda aceita os ids antigos (LEGACY_MOB_KIND).
+export type MobKind = "cavaleiro" | "wolf" | "ciborgue" | "garras" | "brute" | "stone"
+export const MOB_KINDS: MobKind[] = ["cavaleiro", "wolf", "ciborgue", "garras", "brute", "stone"]
+/** Ids de antes da F1 → os de agora (aparelho com página antiga, recibos e troféus gravados). */
+export const LEGACY_MOB_KIND: Record<string, MobKind> = { soldier: "cavaleiro", golem: "ciborgue", harpy: "garras" }
+export const mobKindOf = (k: unknown): MobKind | null => {
+  const id = typeof k === "string" ? (LEGACY_MOB_KIND[k] ?? k) : ""
+  return (MOB_KINDS as string[]).includes(id) ? (id as MobKind) : null
+}
 
 export interface Stats {
   strength: number
@@ -249,7 +258,7 @@ export interface MobDef {
  * quem joga — Corte (raio reto), Investida (avanço que arrasta), Escudo (−70% por 4 s, só
  * machucado) e Poder Máximo (área em volta) —, cada um com a sua recarga.
  */
-export const MOB_SKILL_KINDS: readonly MobKind[] = ["soldier", "golem", "harpy", "brute"]
+export const MOB_SKILL_KINDS: readonly MobKind[] = ["cavaleiro", "ciborgue", "garras", "brute", "stone"]
 export const MOB_SKILLS: readonly MobAttack[] = [
   { id: "skSlash", windup: 0.6, active: 0.14, recover: 0.7, range: 7.5, arc: 0, line: 0.85, dmg: 16, lunge: 0, weight: 2, minD: 2.5, maxD: 7.5, heavy: true, skill: "slash", cd: 8 },
   { id: "skDash", windup: 0.45, active: 0.35, recover: 0.8, range: 1.8, arc: 1.8, dmg: 12, lunge: 15, ram: true, weight: 2, minD: 3, maxD: 8, skill: "dash", cd: 6 },
@@ -284,7 +293,8 @@ export const SOUL_FIGHT = {
 export type FightTemper = "psicopata" | "covarde" | "comilao" | "bondoso" | "competitivo"
 
 export const MOBS: Record<MobKind, MobDef> = {
-  soldier: {
+  // o Cavaleiro Dourado / Soldado de Pedra: espada (corte e estocada), na Arena, no treino e no ringue
+  cavaleiro: {
     hp: 60,
     radius: 0.5,
     speed: 2.3,
@@ -295,18 +305,6 @@ export const MOBS: Record<MobKind, MobDef> = {
       { id: "cut", windup: 0.7, active: 0.2, recover: 0.7, range: 2.0, arc: 1.4, dmg: 10, lunge: 1.5, weight: 3, minD: 0, maxD: 2.4 },
       { id: "thrust", windup: 0.85, active: 0.25, recover: 0.9, range: 2.6, arc: 0.7, dmg: 14, lunge: 4, weight: 1, minD: 1.4, maxD: 3.2 },
     ],
-    // regra do Alex (2026-11-06): o Golem salta para perto e dá socos de boxe; as duas pedras atrás
-    // dos ombros soltam raio verde, e o golpe máximo é o raio das duas juntas, em fluxo contínuo
-    arena: {
-      engage: 2.2,
-      attacks: [
-        { id: "jab", windup: 0.5, active: 0.16, recover: 0.45, range: 2.4, arc: 1.6, dmg: 9, lunge: 1.2, weight: 3, minD: 0, maxD: 3.0 },
-        { id: "hook", windup: 0.75, active: 0.2, recover: 0.7, range: 2.7, arc: 1.9, dmg: 14, lunge: 1.5, weight: 2, minD: 0, maxD: 3.2 },
-        { id: "leap", windup: 0.9, active: 0.6, recover: 0.8, range: 2.2, arc: 2.2, dmg: 18, lunge: 9, leap: true, weight: 3, minD: 3.4, maxD: 22, heavy: true },
-        { id: "zap", windup: 0.7, active: 0.14, recover: 0.6, range: 10, arc: 0, line: 0.35, dmg: 9, lunge: 0, weight: 2, minD: 3.4, maxD: 10 },
-        { id: "max", windup: 1.3, active: 2.4, recover: 1.0, range: 14, arc: 0, line: 0.75, flow: 0.3, dmg: 5, lunge: 0, weight: 12, minD: 0, maxD: 22, max: 11 },
-      ],
-    },
   },
   wolf: {
     hp: 34,
@@ -331,7 +329,7 @@ export const MOBS: Record<MobKind, MobDef> = {
       ],
     },
   },
-  golem: {
+  ciborgue: {
     hp: 220,
     radius: 1.0,
     speed: 1.5,
@@ -351,7 +349,7 @@ export const MOBS: Record<MobKind, MobDef> = {
       ],
     },
   },
-  harpy: {
+  garras: {
     hp: 80,
     radius: 0.55,
     speed: 3.2,
@@ -378,6 +376,31 @@ export const MOBS: Record<MobKind, MobDef> = {
       { id: "charge", windup: 1.0, active: 0.6, recover: 1.3, range: 1.8, arc: 1.4, dmg: 26, lunge: 9, weight: 2, minD: 3.2, maxD: 9, heavy: true },
       { id: "smash", windup: 1.25, active: 0.2, recover: 1.4, range: 0, arc: 0, area: 2.2, reach: 1.8, dmg: 30, lunge: 0, weight: 1, minD: 0, maxD: 3.5, heavy: true },
     ],
+  },
+  // o Golem de Pedra (F1): na Arena e na rua, com os golpes que eram do "soldier" nesses lugares
+  stone: {
+    hp: 60,
+    radius: 0.5,
+    speed: 2.3,
+    engage: 2.2,
+    poise: 0,
+    rest: [0.9, 1.6],
+    attacks: [
+      { id: "jab", windup: 0.5, active: 0.16, recover: 0.45, range: 2.4, arc: 1.6, dmg: 9, lunge: 1.2, weight: 3, minD: 0, maxD: 3.0 },
+      { id: "hook", windup: 0.75, active: 0.2, recover: 0.7, range: 2.7, arc: 1.9, dmg: 14, lunge: 1.5, weight: 2, minD: 0, maxD: 3.2 },
+    ],
+    // regra do Alex (2026-11-06): o Golem salta para perto e dá socos de boxe; as duas pedras atrás
+    // dos ombros soltam raio verde, e o golpe máximo é o raio das duas juntas, em fluxo contínuo
+    arena: {
+      engage: 2.2,
+      attacks: [
+        { id: "jab", windup: 0.5, active: 0.16, recover: 0.45, range: 2.4, arc: 1.6, dmg: 9, lunge: 1.2, weight: 3, minD: 0, maxD: 3.0 },
+        { id: "hook", windup: 0.75, active: 0.2, recover: 0.7, range: 2.7, arc: 1.9, dmg: 14, lunge: 1.5, weight: 2, minD: 0, maxD: 3.2 },
+        { id: "leap", windup: 0.9, active: 0.6, recover: 0.8, range: 2.2, arc: 2.2, dmg: 18, lunge: 9, leap: true, weight: 3, minD: 3.4, maxD: 22, heavy: true },
+        { id: "zap", windup: 0.7, active: 0.14, recover: 0.6, range: 10, arc: 0, line: 0.35, dmg: 9, lunge: 0, weight: 2, minD: 3.4, maxD: 10 },
+        { id: "max", windup: 1.3, active: 2.4, recover: 1.0, range: 14, arc: 0, line: 0.75, flow: 0.3, dmg: 5, lunge: 0, weight: 12, minD: 0, maxD: 22, max: 11 },
+      ],
+    },
   },
 }
 
@@ -611,17 +634,17 @@ export const BODY_SHEETS: Record<string, Sheet> = {
   vampira_adulta: [120, 145, 105, 115, 150],
 }
 /**
- * Monstros: ficha sobre os status do nível (mobBase). `stone` = o Golem de Pedra da rua; o
+ * Monstros: ficha sobre os status do nível (mobBase). `stone` = o Golem de Pedra; o
  * bando divide a vida. Regra do Alex (2026-11-06): todas as raças na dificuldade do Brutamontes,
  * cada uma com o seu jeito. Números medidos com robô lutando (vitórias próximas às do Brutamontes
  * com os mesmos heróis). Esta ficha é da LUTA; a de quem veste a skin é BODY_SHEETS.
  */
-export const MOB_SHEETS: Record<MobKind | "stone", Sheet> = {
-  soldier: [170, 130, 170, 90, 70],
+export const MOB_SHEETS: Record<MobKind, Sheet> = {
+  cavaleiro: [170, 130, 170, 90, 70],
   stone: [175, 120, 165, 95, 60],
   wolf: [225, 125, 125, 75, 100],
-  golem: [180, 170, 150, 180, 80],
-  harpy: [125, 150, 110, 120, 130],
+  ciborgue: [180, 170, 150, 180, 80],
+  garras: [125, 150, 110, 120, 130],
   brute: [200, 160, 140, 120, 90],
 }
 /**
@@ -769,6 +792,10 @@ export class Fight {
   readonly def: number
 
   constructor(setup: FightSetup) {
+    // luta aberta antes da F1 (ou aparelho com a página antiga): o id antigo vira o de agora;
+    // o "soldier" da Arena e da rua era o Golem de Pedra
+    const legacy = (setup.kind as string) === "soldier" && setup.tier ? "stone" : mobKindOf(setup.kind)
+    if (legacy && legacy !== setup.kind) setup = { ...setup, kind: legacy }
     this.R = rng(setup.seed ?? (Date.now() & 0x7fffffff))
     this.temper = setup.temper ?? null
     this.affection = Math.max(0, Number(setup.affection) || 0)
@@ -821,7 +848,7 @@ export class Fight {
     const base = setup.tier ? mobBase(foeLevel) : { hp: heroLevelScale(foeLevel).hp, rate: 100 + levelRate(foeLevel) }
     const normal = base.hp
     const rated = base.rate
-    const ms = MOB_SHEETS[setup.tier === "street" && setup.kind === "soldier" ? "stone" : setup.kind]
+    const ms = MOB_SHEETS[setup.kind]
     const foe: FightRate = peer
       ? { acc: this.rate.acc * peer, spd: this.rate.spd * peer, atk: this.rate.atk * peer, def: this.rate.def * peer }
       : { acc: (rated * ms[3]) / 100, spd: (rated * ms[4]) / 100, atk: (rated * ms[1]) / 100, def: (rated * ms[2]) / 100 }

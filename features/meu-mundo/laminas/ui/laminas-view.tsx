@@ -72,32 +72,34 @@ const BG = "radial-gradient(120% 90% at 50% 0%, #f7b267 0%, #b5502b 50%, #3a1a12
 type Choice = { kind: MobKind; level: number }
 
 /** Retrato do inimigo na placa: o corpo que a cena desenha (monster-view.ts RIGGED/HUMAN). */
-const MOB_BODY: Partial<Record<MobKind, BodyId>> = { soldier: "golem", golem: "ciborgue", harpy: "garras", brute: "brutamontes" }
+const MOB_BODY: Partial<Record<MobKind, BodyId>> = { cavaleiro: "cavaleiro", stone: "golem", ciborgue: "ciborgue", garras: "garras", brute: "brutamontes" }
 /** Cor da energia do card do inimigo na tela de versus. */
-const FOE_ACCENT: Record<MobKind, string> = { soldier: "#86FF22", wolf: "#FF7A2F", golem: "#FF315A", harpy: "#C05CFF", brute: "#B84DFF" }
-const RING_BODY: Record<MobKind, BodyId> = { soldier: "normal", wolf: "slim", golem: "fat", harpy: "female", brute: "strong" }
+const FOE_ACCENT: Record<MobKind, string> = { cavaleiro: "#FFB030", stone: "#86FF22", wolf: "#FF7A2F", ciborgue: "#FF315A", garras: "#C05CFF", brute: "#B84DFF" }
+const RING_BODY: Record<MobKind, BodyId> = { cavaleiro: "normal", stone: "strong", wolf: "slim", ciborgue: "fat", garras: "female", brute: "strong" }
 
-/** `street`: na rua o de pedra é o Golem (4 m); na Arena, o Soldado (3 m). */
-export function useMobName(ring = false, street = false) {
+/** F1 (lore v2): o Soldado de Pedra é o Cavaleiro Dourado; o Golem de Pedra tem tipo próprio (`stone`). */
+export function useMobName(ring = false) {
   const t = useTranslations("MeuMundo")
   return useCallback(
     (k: MobKind) =>
       (ring
         ? {
-            soldier: t("ringMobSoldier", "Boxeador da casa"),
+            cavaleiro: t("ringMobSoldier", "Boxeador da casa"),
+            stone: t("laminasMobStoneGolem", "Golem de Pedra"),
             wolf: t("ringMobWolf", "Trio da Rua"),
-            golem: t("ringMobGolem", "O Pesadão"),
-            harpy: t("ringMobHarpy", "A Ligeira"),
+            ciborgue: t("ringMobGolem", "O Pesadão"),
+            garras: t("ringMobHarpy", "A Ligeira"),
             brute: t("ringMobBrute", "O Campeão"),
           }
         : {
-        soldier: street ? t("laminasMobStoneGolem", "Golem de Pedra") : t("laminasMobSoldier", "Soldado de Pedra"),
+        cavaleiro: t("laminasMobKnight", "Cavaleiro Dourado"),
+        stone: t("laminasMobStoneGolem", "Golem de Pedra"),
         wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
-        golem: t("laminasMobGolem", "Ciborgue"),
-        harpy: t("laminasMobHarpy", "Dama das Garras"),
+        ciborgue: t("laminasMobGolem", "Ciborgue"),
+        garras: t("laminasMobHarpy", "Dama das Garras"),
             brute: t("laminasMobBrute", "Brutamontes"),
           })[k],
-    [t, ring, street],
+    [t, ring],
   )
 }
 
@@ -108,7 +110,7 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
   // 2026-11-08 (pedido do Alex): a Arena abre no HALL DA FAMA (pódio + top 10); o treino
   // contra a máquina fica no botão "Treinar". `duel` = o desafio aberto pelo servidor.
   const [fight, setFight] = useState<{ key: number; choice: Choice; duel?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null } } | null>(() =>
-    opened ? { key: 1, choice: { kind: opened.ticket.setup.kind, level: opened.ticket.setup.level }, duel: opened } : encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "soldier", level: 1 } } : null,
+    opened ? { key: 1, choice: { kind: opened.ticket.setup.kind, level: opened.ticket.setup.level }, duel: opened } : encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "cavaleiro", level: 1 } } : null,
   )
   // a celebração (ganho/nível) espera a luta acabar: sai quando a tela fecha
   useEffect(() => {
@@ -161,13 +163,14 @@ function Menu({ onPick, onExit, onBack, ring }: { onPick: (c: Choice) => void; o
   const t = useTranslations("MeuMundo")
   const mobName = useMobName(ring)
   const all: { c: Choice; sub: string; tone: string }[] = [
-    { c: { kind: "soldier", level: 1 }, sub: ring ? t("laminasSubPeer", "Com os seus status") : t("laminasSubStone", "Pedra: muita defesa, pouca velocidade"), tone: "#C9A46A" },
+    { c: { kind: "cavaleiro", level: 1 }, sub: ring ? t("laminasSubPeer", "Com os seus status") : t("laminasSubKnight", "Espada e armadura: muita defesa"), tone: "#C9A46A" },
     { c: { kind: "wolf", level: 1 }, sub: ring ? t("ringSubWolf", "Três de uma vez, rápidos") : t("laminasSubWolf", "Bando de 3, rápidos"), tone: "#C2693A" },
-    { c: { kind: "golem", level: 1 }, sub: ring ? t("ringSubGolem", "Lento e pesado") : t("laminasSubGolem", "Lento, atira de longe"), tone: "#8D95A3" },
-    { c: { kind: "harpy", level: 1 }, sub: t("laminasSubHarpy", "Rápida, ataca com as garras"), tone: "#7C89A3" },
+    { c: { kind: "ciborgue", level: 1 }, sub: ring ? t("ringSubGolem", "Lento e pesado") : t("laminasSubGolem", "Lento, atira de longe"), tone: "#8D95A3" },
+    { c: { kind: "garras", level: 1 }, sub: t("laminasSubHarpy", "Rápida, ataca com as garras"), tone: "#7C89A3" },
+    { c: { kind: "stone", level: 1 }, sub: t("laminasSubStone", "Pedra: muita defesa, pouca velocidade"), tone: "#7FA36A" },
     { c: { kind: "brute", level: 1 }, sub: ring ? t("laminasSubChampion", "20% mais forte que você") : t("laminasSubBrute", "Elite: investida e pancada"), tone: VIOLET },
   ]
-  const opts = ring ? all.filter((o) => o.c.kind !== "harpy") : all
+  const opts = ring ? all.filter((o) => o.c.kind !== "garras" && o.c.kind !== "stone") : all
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
       <div className="w-full max-w-[600px] rounded-none p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
@@ -253,7 +256,7 @@ function LaminasScreen({
   onMenu: () => void
 }) {
   const t = useTranslations("MeuMundo")
-  const mobName = useMobName(stage === "ring", stage === "bairro" || stage === "centro")
+  const mobName = useMobName(stage === "ring")
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<LaminasGameHandle | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
@@ -459,7 +462,7 @@ function LaminasScreen({
             name={
               portal && ticket && ticket !== "offline"
                 ? `${mobName(choice.kind)} · ${t("laminasFoeLevel", "Nv. {n}").replace("{n}", String(ticket.setup.level))}`
-                : `${mobName(choice.kind)}${choice.kind === "soldier" ? ` ${choice.level}` : ""}`
+                : `${mobName(choice.kind)}${choice.kind === "cavaleiro" ? ` ${choice.level}` : ""}`
             }
             hp={foeHp}
             hpMax={foeMax}

@@ -156,8 +156,8 @@ export interface LaminasGameHandle {
 }
 
 /** mm3d-72: cor e altura (m) de cada monstro para os poderes dele. */
-const foeColor = (k: MobKind) => (k === "soldier" || k === "golem" ? VFX_COLORS.golem : VFX_COLORS.brutamontes)
-const FOE_H: Record<MobKind, number> = { soldier: 3, golem: 2.7, harpy: 2, brute: 4, wolf: 2.5 }
+const foeColor = (k: MobKind) => (k === "stone" || k === "ciborgue" ? VFX_COLORS.golem : k === "cavaleiro" ? VFX_COLORS.lamina : VFX_COLORS.brutamontes)
+const FOE_H: Record<MobKind, number> = { cavaleiro: 2, ciborgue: 2.7, garras: 2, brute: 4, wolf: 2.5, stone: 4 }
 
 /** Trecho do clipe do boxe para cada golpe do combo (0–1 do clipe; medidos em build_boxe_mocap). */
 const SWING_CLIPS: { clip: BoxeClip; from: number; to: number }[] = [
@@ -717,14 +717,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     warn.material = warnMat
     warn.isPickable = false
     warn.setEnabled(false)
-    // o Soldado de Pedra da Arena tem 3 m; o mesmo corpo na rua é o Golem, de 4 m
+    // F1: o Cavaleiro Dourado (Soldado de Pedra) tem 2 m; o Golem de Pedra, 4 m, na Arena e na rua
     const foe = opts.foe
     const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : foe ? { n: 0, body: foe.body, look: foe.look, bare: true } : null, (x) => vfx.addGlow(x))
     // Quem luta de machado: rastro roxo no golpe (no ringue e no Hall é gente de mão)
-    const trail = m.kind === "brute" && !ring && !foe ? vfx.trail(() => model.axeEdge(), VFX_COLORS.brutamontes) : null
+    const trail = (m.kind === "brute" || m.kind === "cavaleiro") && !ring && !foe ? vfx.trail(() => model.axeEdge(), m.kind === "brute" ? VFX_COLORS.brutamontes : VFX_COLORS.lamina) : null
     const glow = (x: Parameters<typeof vfx.addGlow>[0]) => vfx.addGlow(x)
-    const rays = ring ? [] : m.kind === "soldier" ? [new Ray(scene, VFX_COLORS.golem.main, glow), new Ray(scene, VFX_COLORS.golem.main, glow)] : m.kind === "wolf" ? [new Ray(scene, VFX_COLORS.brutamontes.main, glow)] : []
-    const claws = m.kind === "harpy" && !ring ? [vfx.trail(() => model.clawEdge("Right"), VFX_COLORS.brutamontes), vfx.trail(() => model.clawEdge("Left"), VFX_COLORS.brutamontes)] : []
+    const rays = ring ? [] : m.kind === "stone" ? [new Ray(scene, VFX_COLORS.golem.main, glow), new Ray(scene, VFX_COLORS.golem.main, glow)] : m.kind === "wolf" ? [new Ray(scene, VFX_COLORS.brutamontes.main, glow)] : []
+    const claws = m.kind === "garras" && !ring ? [vfx.trail(() => model.clawEdge("Right"), VFX_COLORS.brutamontes), vfx.trail(() => model.clawEdge("Left"), VFX_COLORS.brutamontes)] : []
     // a investida do lobo deixa o rastro roxo na altura do corpo
     const dash = m.kind === "wolf" && !ring ? vfx.trail(() => [new Vector3(m.x, 0.5, m.z), new Vector3(m.x, 2, m.z)], VFX_COLORS.brutamontes) : null
     models.set(m.id, { model, warn, px: m.x, pz: m.z, speed: 0, trail, prev: m.state, beam: null, beamLife: 0, rays, claws, dash, fxAt: 0, landed: false })
@@ -1473,11 +1473,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         }
         if (a.leap && !v.landed && m.t >= a.active * 0.75) {
           v.landed = true
-          const c = m.kind === "soldier" ? VFX_COLORS.golem : VFX_COLORS.brutamontes
+          const c = m.kind === "stone" ? VFX_COLORS.golem : VFX_COLORS.brutamontes
           vfx.ground(new Vector3(m.x, 0, m.z), c, a.range, 0.7, false)
-          vfx.impact(new Vector3(m.x, 0.3, m.z), c, true, m.kind === "soldier" ? 1.6 : 1.1)
+          vfx.impact(new Vector3(m.x, 0.3, m.z), c, true, m.kind === "stone" ? 1.6 : 1.1)
           vfx.dust(new Vector3(m.x, 0.15, m.z), 14)
-          shake = Math.max(shake, m.kind === "soldier" ? 0.3 : 0.14)
+          shake = Math.max(shake, m.kind === "stone" ? 0.3 : 0.14)
           audio.punch(1, true)
         }
       }

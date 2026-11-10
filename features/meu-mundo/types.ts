@@ -7,7 +7,7 @@
 // ruas e casas são desenhadas pelo cliente a partir do layout.
 
 import type { LifeSoul } from "./soul"
-import { GOD_BODIES, type GodBody } from "./gods"
+import { TALL_BODIES, type TallBody } from "./gods"
 import { CLAN_BODIES, type ClanBody } from "./classes"
 
 export type Vec2 = { x: number; z: number }
@@ -180,8 +180,8 @@ export interface Neighborhood {
  * machado). Também é skin de teste de administrador, então está em BODY_IDS.
  */
 export type MobBody = "brutamontes"
-export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina" | GodBody | ClanBody | MobBody
-export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina", ...GOD_BODIES, ...CLAN_BODIES, "brutamontes"]
+export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina" | TallBody | ClanBody | MobBody
+export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina", ...TALL_BODIES, ...CLAN_BODIES, "brutamontes"]
 
 export interface SeatReservation {
   name: string
@@ -864,7 +864,7 @@ export type Interactable =
   | { kind: "spot"; id: string; x: number; z: number; radius: number; spot: InteriorSpot }
   | { kind: "portal"; id: string; x: number; z: number; radius: number }
   // Monstro de uma invasão (mm3d-48b): o portal aos pés dele leva à Arena das Lâminas.
-  | { kind: "monster"; id: string; x: number; z: number; radius: number; mobId: number; mobKind: "soldier" | "wolf" | "golem" | "harpy" | "brute" }
+  | { kind: "monster"; id: string; x: number; z: number; radius: number; mobId: number; mobKind: "cavaleiro" | "wolf" | "ciborgue" | "garras" | "brute" | "stone" }
 
 export interface GameStats {
   /** Carros desenhados no bairro (mm3d-11). */
