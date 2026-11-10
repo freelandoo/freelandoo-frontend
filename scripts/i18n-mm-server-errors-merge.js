@@ -104,6 +104,8 @@ const ROWS = [
   ["Ranking não encontrado", "Ranking not found", "Ranking no encontrado"],
   ["Missão concluída", "Quest completed", "Misión completada"],
   ["O objetivo ainda não foi cumprido", "The objective hasn't been met yet", "El objetivo aún no se ha cumplido"],
+  // lore v2 F3: capítulo abre pelo nível do treinador
+  ["O próximo capítulo abre num nível maior do treinador", "The next chapter opens at a higher trainer level", "El próximo capítulo se abre con un nivel mayor de entrenador"],
   // Lugares e classes
   ["Escolha sua classe", "Choose your class", "Elige tu clase"],
   ["Classe inválida", "Invalid class", "Clase no válida"],

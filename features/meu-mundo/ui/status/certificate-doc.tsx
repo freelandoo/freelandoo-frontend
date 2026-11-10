@@ -11,7 +11,8 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { ExternalLink, Loader2 } from "lucide-react"
 import { useLocale } from "@/components/i18n/I18nProvider"
-import { fetchCertificate } from "../../data"
+import { getToken } from "@/lib/auth"
+import { fetchCertificate, markQuest } from "../../data"
 import type { CertificateMix, CertificateMixSide, CharacterCertificate } from "../../types"
 import { speciesName } from "../../characters/names"
 import { serialText } from "../../characters/rules"
@@ -49,8 +50,12 @@ export function CertificateDoc({ code, t, compact = false }: { code: string | nu
     setMissing(false)
     void fetchCertificate(code).then((c) => {
       if (!alive) return
-      if (c) setCert(c)
-      else setMissing(true)
+      if (c) {
+        setCert(c)
+        // lore v2 F3: "leia a certidão" (cap. 7) — o servidor grava que ela foi aberta
+        const tk = getToken()
+        if (tk) void markQuest(tk, "certificate")
+      } else setMissing(true)
     })
     return () => {
       alive = false

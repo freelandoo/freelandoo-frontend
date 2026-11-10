@@ -463,25 +463,48 @@ export const refineGear = (token: string, item: string, quote: string, protect: 
 export const resolveRefinement = (token: string, proposalId: string, accept: boolean, key: string) =>
   call<GearOut>(token, "POST", "/gear/refine/resolve", { proposalId, accept, key })
 export const applyGearItem = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/use", { item, key })
-// ═══ mm3d-59 slice 5: missões (o prólogo) ══════════════════════════════════
+// ═══ lore v2 F3: missões = os 10 capítulos (abrem pelo nível do treinador) ═══
 export interface QuestStepView {
   key: string
   where: string
   xp: number
+  /** "× N" (vencer 3 lobos…) */
+  count: number
   state: "done" | "current" | "locked"
 }
 export interface QuestView {
+  /** "cap1" … "cap10" */
   id: string
+  chapter: number
+  minTrainerLevel: number
   step: number
   total: number
   done: boolean
-  next: string
-  current: (QuestStepView & { check: string; index: number; ready: boolean }) | null
+  next: string | null
+  /** capítulo esperando o nível do treinador */
+  locked: { level: number; trainer: number } | null
+  current:
+    | (QuestStepView & { check: string; index: number; ready: boolean; have: number; need: number; grant?: string; waiting: boolean })
+    | null
   steps: QuestStepView[]
 }
-export const getQuest = (token: string) => call<{ quest: QuestView }>(token, "GET", "/quest")
+export interface QuestChapterItem {
+  id: string
+  chapter: number
+  minTrainerLevel: number
+  state: "done" | "current" | "locked"
+}
+export interface QuestState {
+  quest: QuestView
+  chapters: QuestChapterItem[]
+  trainer: number
+  clan: "raposa" | "vampiro" | null
+}
+export const getQuest = (token: string) => call<QuestState>(token, "GET", "/quest")
 export const advanceQuest = (token: string, action: "ack" | "visit_armory" = "ack") =>
-  call<{ quest: QuestView; receipt?: Receipt; replay?: boolean }>(token, "POST", "/quest/advance", { action })
+  call<QuestState & { receipt?: Receipt; replay?: boolean }>(token, "POST", "/quest/advance", { action })
+/** O aparelho conta que abriu uma tela que é objetivo (hoje: a certidão); o servidor grava. */
+export const markQuest = (token: string, mark: "certificate") => call<{ ok: true }>(token, "POST", "/quest/mark", { mark })
 export const recycleGear = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/recycle", { item, qty, key })
 /** Hospital do centro (mm3d-26): planta por dentro, leito do usuário, régua da alta e a vida agora. */
 export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "/hospital")
