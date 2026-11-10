@@ -28,10 +28,10 @@ import { JetGeo } from "./jet-geo"
 import { buildCanyonEnv } from "./canyon-env"
 import { buildFactoryEnv } from "./factory-env"
 import { buildOrbitalEnv } from "./orbital-env"
-import { buildForgeEnv, type ForgePiece } from "./forge-env"
+import { buildForgeEnv } from "./forge-env"
 import { buildIceEnv, type IcePiece } from "./ice-env"
 import { buildForestEnv, type ForestPiece } from "./floresta-env"
-import type { CanyonAssets, FactoryAsset, OrbitalAsset, PieceAssets } from "./canyon-assets"
+import type { CanyonAssets, FactoryAsset, ForgeAsset, OrbitalAsset, PieceAssets } from "./canyon-assets"
 
 const { W, H } = TUNNEL
 
@@ -426,7 +426,7 @@ export function buildPhaseEnv(scene: Scene, id: PhaseId, low: boolean, slots: nu
   }
   if (id === "forja") {
     const f = buildForgeEnv(scene, low, slots, seed)
-    return { mats: f.mats, update: (z, _sets, now) => f.update(z, now), provide: (a) => f.provide(a as PieceAssets<ForgePiece>), dispose: () => f.dispose() }
+    return { mats: f.mats, update: (z, _sets, now) => f.update(z, now), provide: (a) => f.provide(a as PieceAssets<ForgeAsset>), dispose: () => f.dispose() }
   }
   if (id === "orbital") {
     const o = buildOrbitalEnv(scene, low, slots, seed)

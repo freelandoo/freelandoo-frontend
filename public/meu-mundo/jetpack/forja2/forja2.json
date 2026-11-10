@@ -1,0 +1,283 @@
+{
+ "groups": {
+  "fornalha": {
+   "file": "fornalha.glb",
+   "pieces": [
+    "fornalha"
+   ],
+   "kb": 289,
+   "tex": 1024
+  },
+  "prensa": {
+   "file": "prensa.glb",
+   "pieces": [
+    "prensa"
+   ],
+   "kb": 201,
+   "tex": 512
+  },
+  "rocha": {
+   "file": "rocha.glb",
+   "pieces": [
+    "rocha"
+   ],
+   "kb": 108,
+   "tex": 512
+  },
+  "ponte": {
+   "file": "ponte.glb",
+   "pieces": [
+    "ponte"
+   ],
+   "kb": 208,
+   "tex": 512
+  },
+  "portico": {
+   "file": "portico.glb",
+   "pieces": [
+    "portico"
+   ],
+   "kb": 458,
+   "tex": 1024
+  },
+  "caldeirao": {
+   "file": "caldeirao.glb",
+   "pieces": [
+    "caldeirao"
+   ],
+   "kb": 173,
+   "tex": 512
+  },
+  "for-ferreiro": {
+   "file": "for-ferreiro.glb",
+   "pieces": [
+    "estatua",
+    "cadinho"
+   ],
+   "kb": 218,
+   "tex": 512
+  },
+  "for-engrenagem": {
+   "file": "for-engrenagem.glb",
+   "pieces": [
+    "engrenagem3",
+    "viga3"
+   ],
+   "kb": 386,
+   "tex": 1024
+  },
+  "for-moldura": {
+   "file": "for-moldura.glb",
+   "pieces": [
+    "borda",
+    "canto",
+    "galao"
+   ],
+   "kb": 346,
+   "tex": 1024
+  },
+  "for-oficina": {
+   "file": "for-oficina.glb",
+   "pieces": [
+    "chamine",
+    "rocha-lava",
+    "bigorna",
+    "carrinho"
+   ],
+   "kb": 287,
+   "tex": 512
+  }
+ },
+ "pieces": {
+  "fornalha": {
+   "group": "fornalha",
+   "size": [
+    1.2113,
+    1.0,
+    1.275
+   ],
+   "tris": 3000,
+   "lodTris": 800
+  },
+  "prensa": {
+   "group": "prensa",
+   "size": [
+    0.8414,
+    1.0,
+    1.0232
+   ],
+   "tris": 2600,
+   "lodTris": 700
+  },
+  "rocha": {
+   "group": "rocha",
+   "size": [
+    1.1709,
+    1.0,
+    1.2139
+   ],
+   "tris": 1500,
+   "lodTris": 400
+  },
+  "ponte": {
+   "group": "ponte",
+   "size": [
+    0.3529,
+    0.3954,
+    1.0
+   ],
+   "tris": 1800,
+   "lodTris": 500
+  },
+  "portico": {
+   "group": "portico",
+   "underMid": 0.6126,
+   "feetInner": 0.1987,
+   "vao": {
+    "0.0": 0.199,
+    "0.05": 0.206,
+    "0.1": 0.227,
+    "0.15": 0.248,
+    "0.2": 0.249,
+    "0.25": 0.276,
+    "0.3": 0.29,
+    "0.35": 0.254,
+    "0.4": 0.272,
+    "0.45": 0.364,
+    "0.5": 0.258,
+    "0.55": 0.256,
+    "0.6": 0.041,
+    "0.65": 0.038,
+    "0.7": 0.001,
+    "0.75": 0.099,
+    "0.8": 0.01
+   },
+   "size": [
+    1.0,
+    0.887,
+    0.3053
+   ],
+   "tris": 5999,
+   "lodTris": 1499
+  },
+  "caldeirao": {
+   "group": "caldeirao",
+   "size": [
+    0.8601,
+    1.0,
+    0.8728
+   ],
+   "tris": 2199,
+   "lodTris": 599
+  },
+  "estatua": {
+   "group": "for-ferreiro",
+   "size": [
+    0.7069,
+    1.0,
+    0.6703
+   ],
+   "tris": 2000,
+   "lodTris": 500
+  },
+  "cadinho": {
+   "group": "for-ferreiro",
+   "size": [
+    1.0446,
+    1.0,
+    0.6837
+   ],
+   "tris": 1800,
+   "lodTris": 450
+  },
+  "engrenagem3": {
+   "group": "for-engrenagem",
+   "size": [
+    0.6849,
+    1.0,
+    0.9286
+   ],
+   "tris": 1499
+  },
+  "viga3": {
+   "group": "for-engrenagem",
+   "len": 4.4054,
+   "depth": 1.2965,
+   "size": [
+    4.4054,
+    1.0,
+    1.2965
+   ],
+   "tris": 800
+  },
+  "borda": {
+   "group": "for-moldura",
+   "len": 2.2516,
+   "size": [
+    2.2516,
+    1.0,
+    1.5415
+   ],
+   "tris": 400
+  },
+  "canto": {
+   "group": "for-moldura",
+   "arm": 0.741,
+   "size": [
+    0.741,
+    1.0,
+    0.668
+   ],
+   "tris": 400
+  },
+  "galao": {
+   "group": "for-moldura",
+   "size": [
+    0.9825,
+    1.0,
+    1.0278
+   ],
+   "tris": 700
+  },
+  "chamine": {
+   "group": "for-oficina",
+   "size": [
+    0.5887,
+    1.0,
+    1.2286
+   ],
+   "tris": 1199,
+   "lodTris": 300
+  },
+  "rocha-lava": {
+   "group": "for-oficina",
+   "size": [
+    0.7726,
+    1.0,
+    1.8212
+   ],
+   "tris": 999,
+   "lodTris": 259
+  },
+  "bigorna": {
+   "group": "for-oficina",
+   "size": [
+    0.8814,
+    1.0,
+    1.547
+   ],
+   "tris": 1200,
+   "lodTris": 299
+  },
+  "carrinho": {
+   "group": "for-oficina",
+   "size": [
+    0.7763,
+    1.0,
+    1.1613
+   ],
+   "tris": 1199,
+   "lodTris": 299
+  }
+ }
+}

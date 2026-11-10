@@ -69,9 +69,23 @@ const FOREST_LOD: Partial<Record<ForestAsset, number>> = { cristais: 55, cogumel
 export function loadForestAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<ForestAsset>> {
   return loadPieceGroups<ForestAsset>(scene, "/meu-mundo/jetpack/floresta2/", FOREST_GROUPS, FOREST_LOD, isAlive)
 }
-/** Forja Vulcânica: peças do Tripo preparadas por build_forja_tripo.py (a rocha tem versão de longe). */
-export function loadForgeAssets(scene: Scene, isAlive: () => boolean) {
-  return loadPieces(scene, "/meu-mundo/jetpack/forja/", ["fornalha", "prensa", "rocha", "ponte", "portico", "caldeirao"] as const, { rocha: 70 }, isAlive)
+/** Forja Vulcânica v2 (build_forja_v2.py): grupos, como o Gelo; toda peça com versão de longe. */
+export const FORGE_GROUPS = {
+  fornalha: ["fornalha"],
+  prensa: ["prensa"],
+  rocha: ["rocha"],
+  ponte: ["ponte"],
+  portico: ["portico"],
+  caldeirao: ["caldeirao"],
+  "for-ferreiro": ["estatua", "cadinho"],
+  "for-engrenagem": ["engrenagem3", "viga3"],
+  "for-moldura": ["borda", "canto", "galao"],
+  "for-oficina": ["chamine", "rocha-lava", "bigorna", "carrinho"],
+} as const
+export type ForgeAsset = (typeof FORGE_GROUPS)[keyof typeof FORGE_GROUPS][number]
+const FORGE_LOD: Partial<Record<ForgeAsset, number>> = { fornalha: 70, prensa: 50, rocha: 60, ponte: 60, portico: 50, caldeirao: 50, estatua: 60, cadinho: 55, chamine: 55, "rocha-lava": 45, bigorna: 40, carrinho: 40 }
+export function loadForgeAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<ForgeAsset>> {
+  return loadPieceGroups<ForgeAsset>(scene, "/meu-mundo/jetpack/forja2/", FORGE_GROUPS, FORGE_LOD, isAlive)
 }
 /** Cidade Orbital v2 (build_orbital_v2.py): grupos, como o Gelo; toda peça com versão de longe. */
 export const ORBITAL_GROUPS = {

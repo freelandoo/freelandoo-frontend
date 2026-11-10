@@ -26,13 +26,15 @@ import { place, rng, mix, type RGB } from "../../engine/steampunk/scenery"
 import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
-import type { PieceAssets } from "./canyon-assets"
+import type { ForgeAsset, PieceAssets } from "./canyon-assets"
 import { skyTexture } from "./canyon-env"
 
 const { W, H } = TUNNEL
 
-export const FORGE_PIECES = ["fornalha", "prensa", "rocha", "ponte", "portico", "caldeirao"] as const
+export const FORGE_PIECES = ["fornalha", "prensa", "rocha", "ponte", "portico", "caldeirao", "estatua", "cadinho", "chamine", "rocha-lava", "bigorna", "carrinho"] as const
 export type ForgePiece = (typeof FORGE_PIECES)[number]
+/** Largura em x e fundura (z) das peças novas com 1 m de altura (forja2.json). */
+const DIM = { estatua: [0.71, 0.67], cadinho: [1.04, 0.68], chamine: [0.59, 1.23], "rocha-lava": [0.77, 1.82], bigorna: [0.88, 1.55], carrinho: [0.78, 1.16] } as const
 
 const C = {
   grate: [0.16, 0.13, 0.13] as RGB,
@@ -78,6 +80,19 @@ function furnace(g: Ctx, sx: number, z: number) {
   g.body.cylinder(14, 6, place(x, -4, z), C.basalt, 9)
   prop(g, "fornalha", x, -1, z, 13, sx > 0 ? -Math.PI / 2 : Math.PI / 2)
   g.glow.box(2.4, 9, 0.6, place(x - sx * 5.5, -3, z), C.lava)
+}
+
+/**
+ * Peça nova num bloco de ferro, beira de dentro em |x| ≥ edge (a caixa vai até 5). As peças novas chegam
+ * de COSTAS: de frente = meia-volta; `side` = olhando para o corredor.
+ */
+function deck(g: Ctx, kind: keyof typeof DIM, sx: number, edge: number, z: number, s: number, side = false) {
+  const [w, d] = DIM[kind]
+  const ex = (side ? d : w) * s
+  const ez = (side ? w : d) * s
+  g.body.box(ex + 0.8, 1.2, ez + 0.8, place(sx * (edge + ex / 2), -0.9, z), C.iron)
+  const ry = side ? (sx < 0 ? Math.PI / 2 : -Math.PI / 2) : Math.PI
+  prop(g, kind, sx * (edge + ex / 2), -0.3, z, s, ry)
 }
 
 type Mod = (g: Ctx, v: number) => void
@@ -132,9 +147,37 @@ const MODULES: { id: string; build: Mod }[] = [
       prop(g, "ponte", (v ? 1 : -1) * 14, -5.5, 12, 14)
     },
   },
+  {
+    // o ferreiro: a estátua numa ilha de basalto e o cadinho derramando metal do outro lado
+    id: "ferreiro",
+    build(g, v) {
+      const r = rng(350 + v)
+      catwalk(g)
+      const sx = v ? 1 : -1
+      g.body.cylinder(12, 6, place(sx * 14, -4, 10), C.basalt, 9)
+      prop(g, "estatua", sx * 14, -1, 10, 11, Math.PI)
+      deck(g, "cadinho", -sx, 6.6, 16, 5.5, true)
+      g.glow.box(1.2, 0.2, 2.4, place(-sx * (6.6 + 1.9), -0.25, 16), C.lava)
+      rocks(g, r, 3)
+    },
+  },
+  {
+    // a oficina: bigorna, carrinho de minério, chaminé e rochas de lava ao lado da passarela
+    id: "oficina",
+    build(g, v) {
+      const r = rng(360 + v)
+      catwalk(g)
+      const sx = v ? -1 : 1
+      deck(g, "bigorna", sx, 6.4, 5, 3.2, true)
+      deck(g, "carrinho", -sx, 6.4, 9, 2.8, true)
+      deck(g, "chamine", sx, 7.5, 17, 7)
+      prop(g, "rocha-lava", -sx * (W / 2 + 4 + r() * 6), -2, 19, 4 + r() * 2, r() * 6)
+      rocks(g, r, 2)
+    },
+  },
 ]
 const VARIANTS = 2
-const WEIGHTS = [2, 2, 2, 1.5]
+const WEIGHTS = [2, 2, 2, 1.5, 1.6, 1.8]
 
 function lavaTexture(scene: Scene, low: boolean) {
   const S = low ? 256 : 512
@@ -180,7 +223,7 @@ const SKY_FORGE: [number, string][] = [
 export interface ForgeEnv {
   mats: { trim: StandardMaterial; glow: StandardMaterial }
   update: (z: number, now: number) => void
-  provide: (a: PieceAssets<ForgePiece>) => void
+  provide: (a: PieceAssets<ForgeAsset>) => void
   dispose: () => void
 }
 

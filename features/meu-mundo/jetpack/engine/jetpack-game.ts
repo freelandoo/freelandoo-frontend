@@ -44,7 +44,7 @@ import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
 import { buildBoundary } from "./boundary-view"
-import { loadCanyonAssets, loadFactoryAssets, loadFactoryGear, loadPieceGroups, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { loadCanyonAssets, loadFactoryAssets, loadPieceGroups, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -291,13 +291,15 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (disposed) return a.dispose()
       canyonAssets = a
       tunnel.provide?.(a)
-    })
-    // a engrenagem nova da Fábrica (V3) também serve aqui (obstáculo, raio 1, já de frente)
-    void loadFactoryGear(scene, () => !disposed).then((g) => {
-      if (disposed) return g.dispose()
-      extraAssets = g
-      const gear = g.meshes.get("engrenagem2")
-      if (gear) obstacles.useModel("gear", gear, { bake: Matrix.Scaling(2, 2, 2) })
+      // V3: engrenagem incandescente da Forja (1 m de altura: raio 1 com 2×), viga de ferro (borda
+      // repetida) e galão do Tripo
+      const gear = a.meshes.get("engrenagem3")
+      if (gear) obstacles.useModel("gear", gear, { bake: Matrix.RotationY(Math.PI / 2).multiply(Matrix.Scaling(2, 2, 2)) }) // a face do modelo olha para x
+      const can = a.meshes.get("galao")
+      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
+      const tile = a.meshes.get("borda")
+      const corner = a.meshes.get("canto")
+      if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 2.252, arm: 0.38, armLen: 0.741, beam: true })
     })
   }
   if (level === "orbital") {
