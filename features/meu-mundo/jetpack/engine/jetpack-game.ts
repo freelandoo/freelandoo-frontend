@@ -305,6 +305,12 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (disposed) return a.dispose()
       canyonAssets = a
       tunnel.provide?.(a)
+      // V3: galão e moldura do Tripo (orbital2.json); a viga dos obstáculos é a mesma borda repetida
+      const can = a.meshes.get("galao")
+      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
+      const tile = a.meshes.get("borda")
+      const corner = a.meshes.get("canto")
+      if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 3.554, arm: 0.407, armLen: 0.711, beam: true })
     })
   }
   if (level === "industrial") {

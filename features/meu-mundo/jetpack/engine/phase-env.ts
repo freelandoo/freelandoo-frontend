@@ -27,11 +27,11 @@ import { buildTunnel, SEG } from "./tunnel-view"
 import { JetGeo } from "./jet-geo"
 import { buildCanyonEnv } from "./canyon-env"
 import { buildFactoryEnv } from "./factory-env"
-import { buildOrbitalEnv, type OrbitalPiece } from "./orbital-env"
+import { buildOrbitalEnv } from "./orbital-env"
 import { buildForgeEnv, type ForgePiece } from "./forge-env"
 import { buildIceEnv, type IcePiece } from "./ice-env"
 import { buildForestEnv, type ForestPiece } from "./floresta-env"
-import type { CanyonAssets, FactoryAsset, PieceAssets } from "./canyon-assets"
+import type { CanyonAssets, FactoryAsset, OrbitalAsset, PieceAssets } from "./canyon-assets"
 
 const { W, H } = TUNNEL
 
@@ -430,7 +430,7 @@ export function buildPhaseEnv(scene: Scene, id: PhaseId, low: boolean, slots: nu
   }
   if (id === "orbital") {
     const o = buildOrbitalEnv(scene, low, slots, seed)
-    return { mats: o.mats, update: (z, _sets, now) => o.update(z, now), provide: (a) => o.provide(a as PieceAssets<OrbitalPiece>), dispose: () => o.dispose() }
+    return { mats: o.mats, update: (z, _sets, now) => o.update(z, now), provide: (a) => o.provide(a as PieceAssets<OrbitalAsset>), dispose: () => o.dispose() }
   }
   // Jetpack 2.0: o Túnel Industrial virou o galpão da referência (as prensas e a regra são as mesmas)
   if (id === "industrial") {

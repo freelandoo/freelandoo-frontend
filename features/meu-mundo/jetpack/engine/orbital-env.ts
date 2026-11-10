@@ -26,13 +26,15 @@ import { place, rng, mix, type RGB } from "../../engine/steampunk/scenery"
 import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
-import type { PieceAssets } from "./canyon-assets"
+import type { OrbitalAsset, PieceAssets } from "./canyon-assets"
 import { cloudTexture, skyTexture } from "./canyon-env"
 
 const { W, H } = TUNNEL
 
-export const ORBITAL_PIECES = ["torre", "portico", "drone", "painel", "jardineira", "elevador"] as const
+export const ORBITAL_PIECES = ["torre", "portico", "drone", "painel", "jardineira", "elevador", "antena", "holo", "torre2", "capsula", "viga2", "satelite", "jardim"] as const
 export type OrbitalPiece = (typeof ORBITAL_PIECES)[number]
+/** Largura em x das peças novas com 1 m de altura (orbital2.json; viga2 = comprimento). */
+const WID = { antena: 0.67, holo: 0.62, torre2: 0.54, capsula: 0.83, satelite: 1.73, jardim: 1.09 } as const
 
 const C = {
   deck: [0.55, 0.62, 0.75] as RGB,
@@ -81,6 +83,15 @@ function towers(g: Ctx, r: () => number, n: number) {
   }
 }
 
+/**
+ * Peça nova (chega de COSTAS: meia-volta de base) com a beira de dentro em |x| ≥ edge.
+ * `side`: de lado, olhando para o corredor.
+ */
+function stand(g: Ctx, kind: keyof typeof WID, sx: number, edge: number, y: number, z: number, s: number, side = false) {
+  const ry = side ? (sx < 0 ? Math.PI / 2 : -Math.PI / 2) : Math.PI
+  prop(g, kind, sx * (edge + (s * WID[kind]) / 2), y, z, s, ry)
+}
+
 type Mod = (g: Ctx, v: number) => void
 const MODULES: { id: string; build: Mod }[] = [
   {
@@ -117,14 +128,45 @@ const MODULES: { id: string; build: Mod }[] = [
       towers(g, r, 3)
     },
   },
+  {
+    // a estação: antena e painel holográfico nas plataformas, torres de cristal, jardim e satélite no céu
+    id: "estacao",
+    build(g, v) {
+      const r = rng(240 + v)
+      skybridge(g)
+      const sx = v ? 1 : -1
+      g.body.box(5, 0.6, 7, place(sx * (W / 2 + 3.7), -0.6, 6), C.deck)
+      stand(g, "antena", sx, 6.4, -0.3, 6, 3.6)
+      g.body.box(5, 0.6, 7, place(-sx * (W / 2 + 3.7), -0.6, 16), C.deck)
+      stand(g, "holo", -sx, 6.4, -0.3, 16, 3.4, true)
+      stand(g, "torre2", sx, 12 + r() * 6, -30, 18, 40)
+      stand(g, "jardim", -sx, 9, 3 + r() * 4, 6, 5)
+      stand(g, "satelite", sx, 10, 15 + r() * 6, 20, 4)
+      towers(g, r, 2)
+    },
+  },
+  {
+    // o transporte: a cápsula pendurada no trilho (a viga nova em pedaços ao longo do caminho)
+    id: "transporte",
+    build(g, v) {
+      const r = rng(250 + v)
+      skybridge(g)
+      const sx = v ? -1 : 1
+      // trilho: viga de 4,56 × 1,2 m girada para correr ao longo de z, por fora da caixa (|x| 9) e acima
+      for (let z = 3; z < SEG; z += 5.4) prop(g, "viga2", sx * 9, 9, z, 1.2, Math.PI / 2)
+      stand(g, "capsula", sx, 7, 3.6, 12, 4.2, true)
+      terrace(g, -sx, 14)
+      towers(g, r, 3)
+    },
+  },
 ]
 const VARIANTS = 2
-const WEIGHTS = [2, 2, 2]
+const WEIGHTS = [2, 2, 2, 1.8, 1.6]
 
 export interface OrbitalEnv {
   mats: { trim: StandardMaterial; glow: StandardMaterial }
   update: (z: number, now: number) => void
-  provide: (a: PieceAssets<OrbitalPiece>) => void
+  provide: (a: PieceAssets<OrbitalAsset>) => void
   dispose: () => void
 }
 

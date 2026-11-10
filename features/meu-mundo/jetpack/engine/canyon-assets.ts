@@ -76,9 +76,23 @@ export function loadForestAssets(scene: Scene, isAlive: () => boolean): Promise<
 export function loadForgeAssets(scene: Scene, isAlive: () => boolean) {
   return loadPieces(scene, "/meu-mundo/jetpack/forja/", ["fornalha", "prensa", "rocha", "ponte", "portico", "caldeirao"] as const, { rocha: 70 }, isAlive)
 }
-/** Cidade Orbital: peças do Tripo preparadas por build_orbital_tripo.py (a torre tem versão de longe). */
-export function loadOrbitalAssets(scene: Scene, isAlive: () => boolean) {
-  return loadPieces(scene, "/meu-mundo/jetpack/orbital/", ["torre", "portico", "drone", "painel", "jardineira", "elevador"] as const, { torre: 90 }, isAlive)
+/** Cidade Orbital v2 (build_orbital_v2.py): grupos, como o Gelo; toda peça com versão de longe. */
+export const ORBITAL_GROUPS = {
+  torre: ["torre"],
+  portico: ["portico"],
+  drone: ["drone"],
+  painel: ["painel"],
+  jardineira: ["jardineira"],
+  elevador: ["elevador"],
+  "orb-antenas": ["antena", "holo", "torre2"],
+  "orb-capsula": ["capsula", "viga2"],
+  "orb-moldura": ["borda", "canto", "galao"],
+  "orb-ceu": ["satelite", "jardim"],
+} as const
+export type OrbitalAsset = (typeof ORBITAL_GROUPS)[keyof typeof ORBITAL_GROUPS][number]
+const ORBITAL_LOD: Partial<Record<OrbitalAsset, number>> = { torre: 90, portico: 50, drone: 40, painel: 40, jardineira: 45, elevador: 50, antena: 45, holo: 40, torre2: 70, capsula: 50, satelite: 60, jardim: 60 }
+export function loadOrbitalAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<OrbitalAsset>> {
+  return loadPieceGroups<OrbitalAsset>(scene, "/meu-mundo/jetpack/orbital2/", ORBITAL_GROUPS, ORBITAL_LOD, isAlive)
 }
 /**
  * Fábrica (Túnel Industrial) v2 (build_industrial_v2.py): grupos, como o Gelo. As peças novas do Tripo
