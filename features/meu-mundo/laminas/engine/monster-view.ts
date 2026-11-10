@@ -204,6 +204,14 @@ const WOLF_RUN = (8.5 * WOLF_SCALE) / 2
 
 /** Biblioteca de avatares com os clipes do boxe, uma por cena (monstros rigados). */
 const libs = new WeakMap<Scene, { lib: AvatarLibrary; fallback: StandardMaterial; shadow: StandardMaterial }>()
+/** Lado da pele dos monstros por cena: a rua segue `QualityProfile.avatarSkin`; a luta (de perto) fica em 1024. */
+const skinByScene = new WeakMap<Scene, 512 | 1024>()
+/** Chamar ao montar a cena da rua/centro, antes do primeiro monstro. */
+export function setMonsterSkinMax(scene: Scene, side: 512 | 1024) {
+  skinByScene.set(scene, side)
+  const k = libs.get(scene)
+  if (k) k.lib.skinMax = side
+}
 function rigKit(scene: Scene) {
   let k = libs.get(scene)
   if (!k) {
@@ -216,6 +224,7 @@ function rigKit(scene: Scene) {
     shadow.disableLighting = true
     shadow.alpha = 0.35
     k = { lib: new AvatarLibrary(scene, false, false, 30, false, false, true), fallback, shadow }
+    k.lib.skinMax = skinByScene.get(scene) ?? 1024
     scene.onDisposeObservable.addOnce(() => k!.lib.dispose())
     libs.set(scene, k)
   }

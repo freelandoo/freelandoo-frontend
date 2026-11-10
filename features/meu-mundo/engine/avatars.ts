@@ -450,6 +450,16 @@ export class AvatarLibrary {
   private disposed = false
   /** Instâncias vivas (painel técnico e conferência de descarte). */
   live = 0
+  /**
+   * Lado máximo da pele (`QualityProfile.avatarSkin`): em 512, as peles de 1024
+   * carregam a cópia `-512.jpg` (mesmo desenho, 4× menos memória de GPU). Vale
+   * para os materiais criados depois — definir logo após o construtor.
+   */
+  skinMax: 512 | 1024 = 1024
+
+  private skinFile(file: string) {
+    return this.skinMax === 512 ? file.replace(/-1024\.jpg$/, "-512.jpg") : file
+  }
 
   constructor(
     private readonly scene: Scene,
@@ -484,7 +494,7 @@ export class AvatarLibrary {
    * original e troca pela pintada (avatar-tint.ts) quando ela fica pronta.
    */
   private materialFor(id: BodyId, look = "") {
-    const file = ASSETS.textures[id]
+    const file = this.skinFile(ASSETS.textures[id])
     const tint = tintedTexture(BASE, file, id, look)
     const key = tint ? `${file}|${look}` : file
     let m = this.materials.get(key)
@@ -498,7 +508,7 @@ export class AvatarLibrary {
       mat.specularColor = new Color3(0, 0, 0)
       // regra do Alex (2026-11-06): todas as luzes do Golem são verdes; os cristais acendem sozinhos
       if (id === "golem") {
-        mat.emissiveTexture = new Texture(BASE + GOLEM_LIGHT, this.scene, false, false)
+        mat.emissiveTexture = new Texture(BASE + this.skinFile(GOLEM_LIGHT), this.scene, false, false)
         mat.emissiveColor = new Color3(1, 1, 1)
       }
       this.materials.set(key, mat)

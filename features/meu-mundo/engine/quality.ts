@@ -44,12 +44,19 @@ export interface QualityProfile {
    */
   propCell: number
   propCut: readonly (readonly [number, number])[]
+  /**
+   * Lado da pele dos personagens na rua e no centro. A multidão (26 robôs, monstros,
+   * jogadores) usava ~21 peles de 1024 = ~111 MB de GPU, quase 80% da textura da cena,
+   * e o iPhone matava a aba ao entrar no centro. Em 512 cai para ~28 MB; o personagem
+   * na rua ocupa poucos pixels. A luta (de perto) segue com a de 1024.
+   */
+  avatarSkin: 512 | 1024
 }
 
 export const QUALITY: Record<QualityTier, QualityProfile> = {
-  low: { tier: "low", maxRatio: 1, minRatio: 0.5, fogStart: 45, fogEnd: 115, maxZ: 125, avatarLod: 10, avatarCut: 70, tagCut: 22, propCell: 32, propCut: [[0.12, 25], [0.3, 45], [0.6, 70]] },
-  mid: { tier: "mid", maxRatio: 1.25, minRatio: 0.6, fogStart: 60, fogEnd: 150, maxZ: 165, avatarLod: 16, avatarCut: 110, tagCut: 30, propCell: 32, propCut: [[0.08, 40], [0.2, 65], [0.45, 105]] },
-  high: { tier: "high", maxRatio: 1.5, minRatio: 0.75, fogStart: 70, fogEnd: 165, maxZ: 260, avatarLod: 24, avatarCut: 165, tagCut: 40, propCell: 32, propCut: [[0.08, 55], [0.2, 90]] },
+  low: { tier: "low", maxRatio: 1, minRatio: 0.5, fogStart: 45, fogEnd: 115, maxZ: 125, avatarLod: 10, avatarCut: 70, tagCut: 22, propCell: 32, propCut: [[0.12, 25], [0.3, 45], [0.6, 70]], avatarSkin: 512 },
+  mid: { tier: "mid", maxRatio: 1.25, minRatio: 0.6, fogStart: 60, fogEnd: 150, maxZ: 165, avatarLod: 16, avatarCut: 110, tagCut: 30, propCell: 32, propCut: [[0.08, 40], [0.2, 65], [0.45, 105]], avatarSkin: 512 },
+  high: { tier: "high", maxRatio: 1.5, minRatio: 0.75, fogStart: 70, fogEnd: 165, maxZ: 260, avatarLod: 24, avatarCut: 165, tagCut: 40, propCell: 32, propCut: [[0.08, 55], [0.2, 90]], avatarSkin: 1024 },
 }
 
 // GPUs de entrada (celular barato e computador velho) e renderizadores por

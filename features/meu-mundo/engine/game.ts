@@ -27,6 +27,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildWorld } from "./world"
 import { buildCenterWorld, type CenterLabels } from "./center-world"
 import { CenterMobs } from "./center-mobs"
+import { setMonsterSkinMax } from "../laminas/engine/monster-view"
 import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
@@ -239,6 +240,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       )
   // Na rua, os avatares também trazem as poses de bike, skate e patins (mm3d-14).
   const lib = new AvatarLibrary(scene, false, true, quality.avatarLod)
+  lib.skinMax = quality.avatarSkin
+  // Os monstros da rua usam a biblioteca da luta (uma por cena): mesma pele da multidão.
+  setMonsterSkinMax(scene, quality.avatarSkin)
   // Carros (mm3d-11): desenhados a partir do estado da sala.
   const fleet = new CarFleet(scene)
   /** Id do veículo que você usa (0 = a pé; mm3d-14: 1–80). Quem decide é a sala. */
