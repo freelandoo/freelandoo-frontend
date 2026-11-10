@@ -4,7 +4,8 @@
 // meuMundoBuildings do back confere linha a linha). Quem recusa é o SERVIDOR;
 // aqui só se desenha o cadeado ("abre no nível N do treinador").
 // 1ª sessão: Laboratório, casa, mercado e comida, academia (decisão do Alex);
-// nível 5: minijogos; nível 10: Hall (Arena das Lâminas), Laboratório completo
+// minijogos um a cada 2 níveis, o Paint por último (Gincana 3, Jetpack 5,
+// Corrida 7, Rolê 9, Boxe 11, Paint 13); nível 10: Hall (Arena das Lâminas), Laboratório completo
 // e mercado de personagens; o resto (meta longa) no nível 8, o do capítulo 4.
 
 export const BUILDING_LEVELS: Record<string, number> = {
@@ -15,12 +16,12 @@ export const BUILDING_LEVELS: Record<string, number> = {
   academia: 1,
   hospital: 1,
   delegacia: 1,
+  gincana: 3,
   jetpack: 5,
-  paint: 5,
-  corrida: 5,
-  noturno: 5,
-  gincana: 5,
-  boxe: 5,
+  corrida: 7,
+  noturno: 9,
+  boxe: 11,
+  paint: 13,
   universidade: 8,
   escola: 8,
   biblioteca: 8,
