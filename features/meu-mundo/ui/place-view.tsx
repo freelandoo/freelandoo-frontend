@@ -22,6 +22,7 @@ import {
   HandCoins,
   Hammer,
   HeartPulse,
+  MessageCircle,
   MessagesSquare,
   ShieldCheck,
   ShoppingCart,
@@ -36,6 +37,8 @@ import type { PlacePose } from "../engine/avatars"
 import type { BodyId, InteriorDef, Interactable, PlaceUse } from "../types"
 import { Joystick, SAFE, SceneCurtain } from "./meu-mundo-view"
 import { EvoButton } from "./hud/hud-kit"
+import { NpcTalk, npcTx } from "./talk/npc-talk"
+import { isNpcId, npcNameKey, type NpcId } from "../npcs"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -125,6 +128,8 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
   const [where, setWhere] = useState<PlaceState>({ kind: "free" })
   const [soon, setSoon] = useState(false)
   const [isTouch, setIsTouch] = useState(false)
+  // Lore v2 F4: conversa aberta com um NPC do prédio
+  const [talk, setTalk] = useState<NpcId | null>(null)
   // Internado/preso liberado: a cena reabre a pé (a cama deixa de prender).
   const sceneMode: PlaceMode = mode !== "visit" && discharged ? "visit" : mode
 
@@ -165,6 +170,7 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
           stateRef.current?.(s)
         },
         onExit: () => alive && exitRef.current?.(),
+        onTalk: (npc) => alive && isNpcId(npc) && setTalk(npc),
         onError: () => alive && setStatus("error"),
       })
       gameRef.current = handle
@@ -184,8 +190,8 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
   }, [pose, poseAt, status])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(blocked)
-  }, [blocked, status])
+    gameRef.current?.setBlocked(blocked || !!talk)
+  }, [blocked, talk, status])
 
   const patient = sceneMode === "patient"
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
@@ -198,7 +204,9 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
           ? { label: t("sit", "Sentar"), icon: <Armchair className="h-5 w-5" /> }
           : nearby?.kind === "spot"
             ? { label: t("pvGoTo", "Usar"), icon: actionOf(nearby.spot.use, t).icon }
-            : null
+            : nearby?.kind === "npc" && isNpcId(nearby.npc)
+              ? { label: npcTx(t, "npcTalkWith").replace("{name}", npcTx(t, npcNameKey(nearby.npc))), icon: <MessageCircle className="h-5 w-5" /> }
+              : null
   const use = placeUseOf(where)
   const doUse = () => {
     if (!use) return
@@ -234,7 +242,7 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
               {where.kind === "spot" ? t("pvLeaveSpot", "Sair daqui") : t("stand", "Levantar")}
             </EvoButton>
           )}
-          {!patient && where.kind === "free" && action && (
+          {!patient && where.kind === "free" && action && !talk && (
             <EvoButton variant="primary" icon={action.icon} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
               {action.label}
             </EvoButton>
@@ -242,7 +250,9 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
         </div>
       )}
 
-      {status === "ready" && isTouch && !patient && <Joystick gameRef={gameRef} />}
+      {status === "ready" && isTouch && !patient && !talk && <Joystick gameRef={gameRef} />}
+
+      {talk && <NpcTalk npc={talk} onClose={() => setTalk(null)} />}
 
       {status !== "ready" && (
         <SceneCurtain

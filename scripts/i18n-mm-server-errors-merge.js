@@ -106,6 +106,9 @@ const ROWS = [
   ["O objetivo ainda não foi cumprido", "The objective hasn't been met yet", "El objetivo aún no se ha cumplido"],
   // lore v2 F3: capítulo abre pelo nível do treinador
   ["O próximo capítulo abre num nível maior do treinador", "The next chapter opens at a higher trainer level", "El próximo capítulo se abre con un nivel mayor de entrenador"],
+  // lore v2 F4: conversa com NPC (talk:<npc>)
+  ["Pessoa desconhecida", "Unknown person", "Persona desconocida"],
+  ["Chegue perto dessa pessoa para conversar", "Get close to this person to talk", "Acércate a esta persona para hablar"],
   // Lugares e classes
   ["Escolha sua classe", "Choose your class", "Elige tu clase"],
   ["Classe inválida", "Invalid class", "Clase no válida"],

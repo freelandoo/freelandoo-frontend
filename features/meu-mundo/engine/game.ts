@@ -309,6 +309,14 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     : (payload as NeighborhoodPayload).me.home
   let myBody: BodyId = opts.parked?.body ?? (isBody(payload.me.body) ? payload.me.body : "normal")
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, opts.parked?.look ?? payload.me.look ?? ""), home.x, home.z, home.rotationY)
+  // Lore v2 F4: os NPCs da praça — corpo de classe, parados (a colisão vem na
+  // lista de obstáculos do servidor); "Falar" abre a conversa (talk:<id>).
+  const streetNpcs = (centerP?.center.npcs ?? []).map((n) => {
+    const c = new Character(scene, lib, mats, n.body, null, false, "")
+    c.place(n.x, n.z, n.facing, 0)
+    world.interactables.push({ kind: "npc", id: `npc-${n.id}`, x: n.x, z: n.z, radius: n.radius, npc: n.id })
+    return c
+  })
   // Conferência (como __mmHouse): onde estou e se estou dirigindo.
   const probe = () => ({
     x: local.x,
@@ -728,6 +736,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     syncNetwork(now, driving ? { x: 0, z: 0, run: false } : intent)
     fleet.sync(net.cars(), dt, driving, driving && veh ? pose : null)
     if (driving && veh && drivingKind !== "car") placeRider(fleet, local.char, String(driving), drivingKind, pose.x, pose.z, pose.facing, pose.sp, dt)
+    for (const c of streetNpcs) c.animate(dt, 0, 0)
     for (const r of remotes.values()) {
       const rk = r.car ? kindOfId(r.car) : null
       const vp = rk ? fleet.poseOf(String(r.car)) : null
@@ -1009,6 +1018,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       select.dispose()
       for (const r of remotes.values()) r.dispose()
       remotes.clear()
+      for (const c of streetNpcs) c.dispose()
       local.dispose()
       fleet.dispose()
       lib.dispose()

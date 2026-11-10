@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { ScenePlayerProps } from "./player-card/player-card"
-import { Activity, Crown, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, RefreshCw, Store, Swords, WifiOff, X } from "lucide-react"
+import { Activity, Crown, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, MessageCircle, RefreshCw, Store, Swords, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
@@ -33,6 +33,8 @@ import type { NoturnoJoin } from "../noturno/ui/run-view"
 import type { JetpackJoin } from "../jetpack/ui/jetpack-view"
 import type { GincanaJoin } from "../gincana/ui/gincana-view"
 import { useMobEncounter } from "./mob-encounter"
+import { NpcTalk, npcTx } from "./talk/npc-talk"
+import { isNpcId, npcNameKey, type NpcId } from "../npcs"
 import { useOffstage, useRoomLink } from "./offstage"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
@@ -168,6 +170,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [nearby, setNearby] = useState<Interactable | null>(null)
   const [open, setOpen] = useState<CenterPlace | null>(null)
   const [minigame, setMinigame] = useState<string | null>(null)
+  // Lore v2 F4: conversa aberta com um NPC da praça
+  const [talk, setTalk] = useState<NpcId | null>(null)
   // Salão do Hall da Fama: quem está no Muro; "fechado" = sem direito de entrar.
   // Prédio aberto (mm3d-37): qual e a planta (null = ainda buscando).
   const [inside, setInside] = useState<{ id: string; interior: InteriorDef | null; failed: boolean } | null>(null)
@@ -309,7 +313,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             if (!alive) return
             if (it.kind === "portal") cbRef.current.onGoHome()
             else if (it.kind === "monster") mobRef.current.fight(it)
-            else if (it.kind === "place") {
+            else if (it.kind === "npc") {
+              if (isNpcId(it.npc)) setTalk(it.npc)
+            } else if (it.kind === "place") {
               const g = gameOf(it.place)
               if (g === "jetpack" || g === "paint" || g === "corrida" || g === "noturno" || g === "gincana") setMinigame(g)
               else if (g === "laminas" || g === "boxe") {
@@ -352,8 +358,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   }, [statsOpen])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(!!open || menuOpen || !!blocked || !!minigame || !!mob.encounter)
-  }, [open, menuOpen, blocked, minigame, mob.encounter])
+    gameRef.current?.setBlocked(!!open || menuOpen || !!blocked || !!minigame || !!mob.encounter || !!talk)
+  }, [open, menuOpen, blocked, minigame, mob.encounter, talk])
 
   // mm3d-60f: luta/minijogo cobrindo a tela → o HUD do personagem sai (fica só a placa da luta)
   const covered = !!minigame || !!mob.encounter
@@ -387,8 +393,11 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const nearPlace = nearby?.kind === "place" ? nearby.place : null
   const nearCar = nearby?.kind === "car" || nearby?.kind === "car-exit"
   const nearMob = nearby?.kind === "monster" ? nearby : null
+  const nearNpc = nearby?.kind === "npc" && isNpcId(nearby.npc) ? nearby.npc : null
   const nearbyLabel = nearMob
     ? mob.label(nearMob)
+    : nearNpc
+      ? npcTx(t, "npcTalkWith").replace("{name}", npcTx(t, npcNameKey(nearNpc)))
     : nearby?.kind === "car"
       ? t("useVehicle", "Usar")
       : nearby?.kind === "car-exit"
@@ -500,7 +509,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       )}
 
       {/* Computador: nome do local + "Em breve", ou o botão do portal / do veículo */}
-      {status === "ready" && nearby && !open && !isTouch && !drivingLot && (
+      {status === "ready" && nearby && !open && !talk && !isTouch && !drivingLot && (
         <div className="absolute left-1/2 flex -translate-x-1/2 items-stretch gap-2" style={{ bottom: bottom(48) }}>
           {nearPlace ? (
             <EvoButton variant="gold" size="lg" kbd="E" icon={<Store className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} aria-label={nearbyLabel}>
@@ -511,7 +520,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               variant="primary"
               size="lg"
               kbd="E"
-              icon={nearMob ? <Swords className="h-5 w-5" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+              icon={nearMob ? <Swords className="h-5 w-5" /> : nearNpc ? <MessageCircle className="h-5 w-5" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5" /> : <Home className="h-5 w-5" />}
               onClick={() => gameRef.current?.interact()}
               aria-label={nearbyLabel}
             >
@@ -540,9 +549,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       )}
 
       {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
-      {status === "ready" && isTouch && !open && !menuOpen && <Joystick gameRef={gameRef} />}
+      {status === "ready" && isTouch && !open && !menuOpen && !talk && <Joystick gameRef={gameRef} />}
 
-      {status === "ready" && isTouch && !open && !menuOpen && !drivingLot && (
+      {status === "ready" && isTouch && !open && !menuOpen && !talk && !drivingLot && (
         <>
           {nearby && (
             <EvoButton
@@ -551,7 +560,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               aria-label={nearbyLabel}
               className="!absolute !min-h-12 max-w-[50vw]"
               style={{ bottom: bottom(20), right: SAFE.right }}
-              icon={nearMob ? <Swords className="h-5 w-5 shrink-0" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5 shrink-0" /> : nearPortal ? <Home className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
+              icon={nearMob ? <Swords className="h-5 w-5 shrink-0" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5 shrink-0" /> : nearPortal ? <Home className="h-5 w-5 shrink-0" /> : nearNpc ? <MessageCircle className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearPlace ? `${nearbyLabel} · ${placeTag}` : nearbyLabel}
             </EvoButton>
@@ -667,6 +676,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           <EvoToast icon={<WifiOff className="h-4 w-4" />}>{t("netOffline", "Conexão interrompida")}</EvoToast>
         </div>
       )}
+      {talk && <NpcTalk npc={talk} onClose={() => setTalk(null)} />}
     </div>
   )
 }

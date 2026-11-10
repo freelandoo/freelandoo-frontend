@@ -597,6 +597,18 @@ export interface InteriorNpc {
   z: number
   facing: number
   pose: "sit" | "stand"
+  /** Lore v2 F4: o NPC conversa ("Falar" → talk:<id>). */
+  talk?: string
+}
+
+/** Lore v2 F4: NPC parado na rua/praça (colisão vem na lista de obstáculos do servidor). */
+export interface StreetNpc {
+  id: string
+  x: number
+  z: number
+  facing: number
+  body: BodyId
+  radius: number
 }
 
 /** Lugar de deitar numa cama (mm3d-13): o personagem fica no chão, no ponto; a pose traz a altura do colchão. */
@@ -774,6 +786,8 @@ export interface CenterLayout {
   statueAssets?: StatueAssets | null
   arrival: CenterSpot
   portal: Vec2 & { id: string; radius: number; nameKey: string }
+  /** Lore v2 F4: os NPCs da praça. */
+  npcs?: StreetNpc[]
   obstacles: Box2Def[]
   limit: number
   /** Modelos publicados (null = só os blocos de reserva). */
@@ -863,6 +877,8 @@ export type Interactable =
   // Ponto de uso dentro de um prédio do centro (mm3d-37).
   | { kind: "spot"; id: string; x: number; z: number; radius: number; spot: InteriorSpot }
   | { kind: "portal"; id: string; x: number; z: number; radius: number }
+  // Lore v2 F4: conversar com um NPC (rua ou prédio).
+  | { kind: "npc"; id: string; x: number; z: number; radius: number; npc: string }
   // Monstro de uma invasão (mm3d-48b): o portal aos pés dele leva à Arena das Lâminas.
   | { kind: "monster"; id: string; x: number; z: number; radius: number; mobId: number; mobKind: "cavaleiro" | "wolf" | "ciborgue" | "garras" | "brute" | "stone" }
 

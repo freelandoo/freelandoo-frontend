@@ -1,0 +1,29 @@
+{
+  "npcTalk": ["Falar", "Talk", "Hablar"],
+  "npcTalkWith": ["Falar com {name}", "Talk to {name}", "Hablar con {name}"],
+  "npcNext": ["Continuar", "Continue", "Continuar"],
+  "npcEnd": ["Encerrar", "End", "Terminar"],
+  "npcFar": ["Chegue perto dessa pessoa para conversar.", "Get close to this person to talk.", "Acércate a esta persona para hablar."],
+
+  "npc_nivea_name": ["Dra. Nívea", "Dr. Nívea", "Dra. Nívea"],
+  "npc_nivea_despertar_1": ["Não levanta rápido. Seus ossos ainda não decidiram de quem são.", "Don't get up too fast. Your bones haven't decided who they belong to yet.", "No te levantes rápido. Tus huesos todavía no decidieron de quién son."],
+  "npc_nivea_despertar_2": ["Do sol ou da lua? Responde sem pensar. O corpo lembra antes da cabeça.", "Sun or moon? Answer without thinking. The body remembers before the head does.", "¿Del sol o de la luna? Responde sin pensar. El cuerpo recuerda antes que la cabeza."],
+  "npc_nivea_classe_1_raposa": ["Sol. Então você é dos nossos. Que pena para você.", "Sun. So you're one of ours. Too bad for you.", "Sol. Entonces eres de los nuestros. Qué pena por ti."],
+  "npc_nivea_classe_1_vampiro": ["Lua. Então você escolheu não morrer. Vamos ver quanto isso dura no meu laboratório.", "Moon. So you chose not to die. Let's see how long that lasts in my lab.", "Luna. Entonces elegiste no morir. Veamos cuánto dura eso en mi laboratorio."],
+  "npc_nivea_retorno_1": ["Você viu a pedra? Viu os rostos? Ninguém vê na primeira vez.", "Did you see the stone? Did you see the faces? Nobody sees them the first time.", "¿Viste la piedra? ¿Viste los rostros? Nadie los ve la primera vez."],
+  "npc_nivea_retorno_2": ["(ela anota) Interessante.", "(she takes notes) Interesting.", "(ella anota) Interesante."],
+  "npc_nivea_sempre_1": ["(ela anota, sem levantar os olhos)", "(she keeps writing, without looking up)", "(ella anota, sin levantar la vista)"],
+
+  "npc_delegado_name": ["Delegado", "Sheriff", "Comisario"],
+  "npc_delegado_tregua_1": ["Cada povo no seu bairro. O centro é de todos. Ninguém briga na rua.", "Each people in its own district. The center belongs to everyone. Nobody fights in the street.", "Cada pueblo en su barrio. El centro es de todos. Nadie pelea en la calle."],
+  "npc_delegado_tregua_2": ["Vinte anos de paz. Ninguém morreu na rua.", "Twenty years of peace. Nobody died in the street.", "Veinte años de paz. Nadie murió en la calle."],
+  "npc_delegado_tregua_3": ["(ele pausa, com a mão no cassetete) Na rua.", "(he pauses, hand on his baton) In the street.", "(hace una pausa, con la mano en la porra) En la calle."],
+
+  "npc_raposa_velha_name": ["Raposa velha", "Old Fox", "Zorra vieja"],
+  "npc_raposa_velha_pedra_1_raposa": ["Não olha muito para aquela coisa. Ela olha de volta.", "Don't stare at that thing too long. It stares back.", "No mires mucho a esa cosa. Te devuelve la mirada."],
+  "npc_raposa_velha_pedra_1_vampiro": ["(ela faz o sinal do sol no peito, com nojo, e vira o rosto)", "(she makes the sign of the sun on her chest, in disgust, and looks away)", "(hace la señal del sol en el pecho, con asco, y aparta la cara)"],
+
+  "npc_vampiro_velho_name": ["Vampiro velho", "Old Vampire", "Vampiro viejo"],
+  "npc_vampiro_velho_pedra_1_vampiro": ["(ele toca o seu ombro) Bem-vindo de volta, irmão. Ele está esperando.", "(he touches your shoulder) Welcome back, brother. He is waiting.", "(te toca el hombro) Bienvenido de vuelta, hermano. Él está esperando."],
+  "npc_vampiro_velho_pedra_1_raposa": ["(ele cospe no pé da estátua, olhando para você)", "(he spits at the foot of the statue, looking at you)", "(escupe al pie de la estatua, mirándote)"]
+}

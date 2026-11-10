@@ -71,6 +71,8 @@ export interface PlaceGameOptions {
   onExit?: () => void
   /** Mudou onde a pessoa está (sentou, deitou, chegou num ponto de uso, levantou). */
   onState?: (state: PlaceState) => void
+  /** Lore v2 F4: "Falar" com um NPC do prédio (id da conversa, talk:<id>). */
+  onTalk?: (npc: string) => void
   onError?: (reason: "context-lost") => void
 }
 
@@ -125,8 +127,9 @@ const NPC_LOOK: Record<string, { body: BodyId; look: string }> = {
   armeira: { body: "raposa_f", look: "" },
   // vendedor do balcão de armas (mm3d-66): um guerreiro vende espadas
   armeiro: { body: "vampiro", look: "" },
-  // B12: a criogenista do laboratório (jaleco branco)
-  criogenista: { body: "female", look: "1032" },
+  // B12 → lore v2 F4: a criogenista do laboratório é a Dra. Nívea, uma Raposa
+  // (historia/v2/03-capitulos.md, cap. 1): corpo de classe, sem modelo novo
+  criogenista: { body: "raposa_adulta", look: "" },
 }
 
 export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
@@ -271,6 +274,11 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       const d = Math.min(Math.hypot(sp.x - body.x, sp.z - body.z), Math.hypot(sp.center.x - body.x, sp.center.z - body.z) - 0.4)
       consider({ kind: "spot", id: sp.id, x: sp.x, z: sp.z, radius: 1.3, spot: sp }, Math.max(0, d))
     }
+    // Lore v2 F4: NPC que conversa (alcance maior: costuma estar atrás de um balcão)
+    for (const n of def.npcs ?? []) {
+      if (!n.talk || n.floor !== body.floor) continue
+      consider({ kind: "npc", id: `npc-${n.talk}`, x: n.x, z: n.z, radius: 2.6, npc: n.talk }, Math.hypot(n.x - body.x, n.z - body.z))
+    }
     return best
   }
   const interactWith = (it: Interactable) => {
@@ -282,7 +290,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
     } else if (it.kind === "spot") {
       settle(it.spot)
       setState({ kind: "spot", spot: it.spot })
-    }
+    } else if (it.kind === "npc") opts.onTalk?.(it.npc)
   }
 
   scene.onBeforeRenderObservable.add(() => {

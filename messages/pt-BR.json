@@ -10522,7 +10522,30 @@
     "qs_cap10_sombra_what": "Vença o monstro que saiu da pedra",
     "qs_cap10_sombra_where": "Rua, de noite",
     "qs_cap10_memoria_what": "Volte à cápsula três",
-    "qs_cap10_memoria_where": "Laboratório"
+    "qs_cap10_memoria_where": "Laboratório",
+    "npcTalk": "Falar",
+    "npcTalkWith": "Falar com {name}",
+    "npcNext": "Continuar",
+    "npcEnd": "Encerrar",
+    "npcFar": "Chegue perto dessa pessoa para conversar.",
+    "npc_nivea_name": "Dra. Nívea",
+    "npc_nivea_despertar_1": "Não levanta rápido. Seus ossos ainda não decidiram de quem são.",
+    "npc_nivea_despertar_2": "Do sol ou da lua? Responde sem pensar. O corpo lembra antes da cabeça.",
+    "npc_nivea_classe_1_raposa": "Sol. Então você é dos nossos. Que pena para você.",
+    "npc_nivea_classe_1_vampiro": "Lua. Então você escolheu não morrer. Vamos ver quanto isso dura no meu laboratório.",
+    "npc_nivea_retorno_1": "Você viu a pedra? Viu os rostos? Ninguém vê na primeira vez.",
+    "npc_nivea_retorno_2": "(ela anota) Interessante.",
+    "npc_nivea_sempre_1": "(ela anota, sem levantar os olhos)",
+    "npc_delegado_name": "Delegado",
+    "npc_delegado_tregua_1": "Cada povo no seu bairro. O centro é de todos. Ninguém briga na rua.",
+    "npc_delegado_tregua_2": "Vinte anos de paz. Ninguém morreu na rua.",
+    "npc_delegado_tregua_3": "(ele pausa, com a mão no cassetete) Na rua.",
+    "npc_raposa_velha_name": "Raposa velha",
+    "npc_raposa_velha_pedra_1_raposa": "Não olha muito para aquela coisa. Ela olha de volta.",
+    "npc_raposa_velha_pedra_1_vampiro": "(ela faz o sinal do sol no peito, com nojo, e vira o rosto)",
+    "npc_vampiro_velho_name": "Vampiro velho",
+    "npc_vampiro_velho_pedra_1_vampiro": "(ele toca o seu ombro) Bem-vindo de volta, irmão. Ele está esperando.",
+    "npc_vampiro_velho_pedra_1_raposa": "(ele cospe no pé da estátua, olhando para você)"
   },
   "Sports": {
     "eyebrow": "Esportes",
@@ -10728,7 +10751,9 @@
     "Seu personagem ainda não tem Poder": "Seu personagem ainda não tem Poder",
     "Genética não encontrada": "Genética não encontrada",
     "O congelador de genéticas está cheio": "O congelador de genéticas está cheio",
-    "O próximo capítulo abre num nível maior do treinador": "O próximo capítulo abre num nível maior do treinador"
+    "O próximo capítulo abre num nível maior do treinador": "O próximo capítulo abre num nível maior do treinador",
+    "Pessoa desconhecida": "Pessoa desconhecida",
+    "Chegue perto dessa pessoa para conversar": "Chegue perto dessa pessoa para conversar"
   },
   "Moedas": {
     "walletTitle": "Carteira",

@@ -503,8 +503,14 @@ export interface QuestState {
 export const getQuest = (token: string) => call<QuestState>(token, "GET", "/quest")
 export const advanceQuest = (token: string, action: "ack" | "visit_armory" = "ack") =>
   call<QuestState & { receipt?: Receipt; replay?: boolean }>(token, "POST", "/quest/advance", { action })
-/** O aparelho conta que abriu uma tela que é objetivo (hoje: a certidão); o servidor grava. */
-export const markQuest = (token: string, mark: "certificate") => call<{ ok: true }>(token, "POST", "/quest/mark", { mark })
+/**
+ * O aparelho conta que abriu uma tela que é objetivo (a certidão) ou uma conversa
+ * (lore v2 F4: "talk" + npc); o servidor confere o lugar pela última visita e grava.
+ */
+export const markQuest = (token: string, mark: "certificate" | "talk", npc?: string) =>
+  call<{ ok: true; npc?: string }>(token, "POST", "/quest/mark", npc ? { mark, npc } : { mark })
+/** Lore v2 F4: algo pode ter cumprido o passo da missão (a conversa fechou, a sala gravou visita). */
+export const QUEST_CHANGED = "mm:quest-changed"
 export const recycleGear = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/recycle", { item, qty, key })
 /** Hospital do centro (mm3d-26): planta por dentro, leito do usuário, régua da alta e a vida agora. */
 export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "/hospital")

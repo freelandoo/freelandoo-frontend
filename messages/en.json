@@ -11108,7 +11108,30 @@
     "qs_cap10_sombra_what": "Defeat the monster that came out of the stone",
     "qs_cap10_sombra_where": "Street, at night",
     "qs_cap10_memoria_what": "Go back to capsule three",
-    "qs_cap10_memoria_where": "Lab"
+    "qs_cap10_memoria_where": "Lab",
+    "npcTalk": "Talk",
+    "npcTalkWith": "Talk to {name}",
+    "npcNext": "Continue",
+    "npcEnd": "End",
+    "npcFar": "Get close to this person to talk.",
+    "npc_nivea_name": "Dr. Nívea",
+    "npc_nivea_despertar_1": "Don't get up too fast. Your bones haven't decided who they belong to yet.",
+    "npc_nivea_despertar_2": "Sun or moon? Answer without thinking. The body remembers before the head does.",
+    "npc_nivea_classe_1_raposa": "Sun. So you're one of ours. Too bad for you.",
+    "npc_nivea_classe_1_vampiro": "Moon. So you chose not to die. Let's see how long that lasts in my lab.",
+    "npc_nivea_retorno_1": "Did you see the stone? Did you see the faces? Nobody sees them the first time.",
+    "npc_nivea_retorno_2": "(she takes notes) Interesting.",
+    "npc_nivea_sempre_1": "(she keeps writing, without looking up)",
+    "npc_delegado_name": "Sheriff",
+    "npc_delegado_tregua_1": "Each people in its own district. The center belongs to everyone. Nobody fights in the street.",
+    "npc_delegado_tregua_2": "Twenty years of peace. Nobody died in the street.",
+    "npc_delegado_tregua_3": "(he pauses, hand on his baton) In the street.",
+    "npc_raposa_velha_name": "Old Fox",
+    "npc_raposa_velha_pedra_1_raposa": "Don't stare at that thing too long. It stares back.",
+    "npc_raposa_velha_pedra_1_vampiro": "(she makes the sign of the sun on her chest, in disgust, and looks away)",
+    "npc_vampiro_velho_name": "Old Vampire",
+    "npc_vampiro_velho_pedra_1_vampiro": "(he touches your shoulder) Welcome back, brother. He is waiting.",
+    "npc_vampiro_velho_pedra_1_raposa": "(he spits at the foot of the statue, looking at you)"
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -11314,7 +11337,9 @@
     "Seu personagem ainda não tem Poder": "Your character has no Power yet",
     "Genética não encontrada": "Genetics not found",
     "O congelador de genéticas está cheio": "The genetics freezer is full",
-    "O próximo capítulo abre num nível maior do treinador": "The next chapter opens at a higher trainer level"
+    "O próximo capítulo abre num nível maior do treinador": "The next chapter opens at a higher trainer level",
+    "Pessoa desconhecida": "Unknown person",
+    "Chegue perto dessa pessoa para conversar": "Get close to this person to talk"
   },
   "Moedas": {
     "walletTitle": "Wallet",

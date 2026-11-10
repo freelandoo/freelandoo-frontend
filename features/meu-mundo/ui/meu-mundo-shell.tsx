@@ -83,6 +83,7 @@ import {
   postHouseExit,
   postInvite,
   TRAINER_CHANGED,
+  QUEST_CHANGED,
   type ChatLine,
 } from "../data"
 import {
@@ -159,6 +160,11 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const fightUp = tutorialFight
   const [questTick, setQuestTick] = useState(0)
   const bumpQuest = useCallback(() => setQuestTick((n) => n + 1), [])
+  // lore v2 F4: a conversa com um NPC fechou (talk:<npc> pode ter cumprido o passo)
+  useEffect(() => {
+    window.addEventListener(QUEST_CHANGED, bumpQuest)
+    return () => window.removeEventListener(QUEST_CHANGED, bumpQuest)
+  }, [bumpQuest])
   const [polensOpen, setPolensOpen] = useState(false)
   // Card de perfil de outro jogador (mm3d-31): um por vez; `dismiss` sobe no
   // toque no vazio do mundo (o card sai com a animação dele).
@@ -329,6 +335,11 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           celebrate(r)
           bumpQuest()
         }
+        return
+      }
+      // lore v2 F4: a sala gravou que a pessoa chegou num lugar (visit:<lugar>) → a missão reconfere
+      if (type === "visited") {
+        bumpQuest()
         return
       }
       // F2: cuidar/treinar deu XP ao treinador (sem celebração: só o HUD atualiza)
