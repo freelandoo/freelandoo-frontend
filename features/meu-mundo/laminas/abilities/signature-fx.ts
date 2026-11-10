@@ -32,8 +32,7 @@ import { CreatePolyhedron } from "@babylonjs/core/Meshes/Builders/polyhedronBuil
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { PointLight } from "@babylonjs/core/Lights/pointLight"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
-import "@babylonjs/loaders/glTF"
-import { configureCodecs } from "../../engine/codecs"
+import { ensureLoaders } from "../../engine/avatars"
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Effect } from "@babylonjs/core/Materials/effect"
@@ -1059,7 +1058,7 @@ function summonPiece(env: Env, ready: () => void): Piece {
   let parts: AbstractMesh[] = []
   let gone = false
   let dispose: (() => void) | null = null
-  configureCodecs()
+  ensureLoaders()
   LoadAssetContainerAsync(lab?.file ?? `${ART.replace("/fx", "")}/summon/${env.sig.id}.glb`, env.scene)
     .then((c) => {
       if (gone) return c.dispose()

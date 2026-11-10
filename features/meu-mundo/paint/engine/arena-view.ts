@@ -40,8 +40,7 @@ import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
-import "@babylonjs/loaders/glTF"
-import { configureCodecs } from "../../engine/codecs"
+import { ensureLoaders } from "../../engine/avatars"
 import { Quaternion } from "@babylonjs/core/Maths/math.vector"
 import { place, type RGB } from "../../engine/geometry"
 import type { QualityTier } from "../../engine/quality"
@@ -1157,7 +1156,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     rockMat.emissiveColor = c3(mul(th.hemi, 0.16))
     let got
     try {
-      configureCodecs()
+      ensureLoaders()
       got = await LoadAssetContainerAsync("/meu-mundo/paint/v1/kit/rocks-floresta.glb", scene)
     } catch {
       // sem o arquivo (rede caiu): as ilhas ficam só com o chão e a moldura

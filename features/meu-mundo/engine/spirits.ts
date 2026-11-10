@@ -24,8 +24,7 @@ import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import type { AnimationGroup } from "@babylonjs/core/Animations/animationGroup"
 import type { AssetContainer } from "@babylonjs/core/assetContainer"
-import "@babylonjs/loaders/glTF"
-import { configureCodecs } from "./codecs"
+import { ensureLoaders } from "./avatars"
 
 const WOLF_URL = "/meu-mundo/laminas/lobo-m65.glb"
 /** O lobo chega com o focinho para o lado (mesmo giro da monster-view). */
@@ -121,7 +120,7 @@ export class Spirits {
   }
 
   private wolfContainer() {
-    configureCodecs()
+    ensureLoaders()
     this.wolfC ??= LoadAssetContainerAsync(WOLF_URL, this.scene)
     return this.wolfC
   }
