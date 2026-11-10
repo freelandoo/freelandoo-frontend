@@ -44,7 +44,7 @@ import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
 import { buildBoundary } from "./boundary-view"
-import { loadCanyonAssets, loadFactoryAssets, loadFactoryGear, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { loadCanyonAssets, loadFactoryAssets, loadFactoryGear, loadPieceGroups, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -279,7 +279,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 2.578, arm: 0.437, armLen: 0.785, beam: true })
     })
     // o anel dourado do Cânion também é o da Floresta (furo de raio 1, como a regra)
-    void loadPieces(scene, "/meu-mundo/jetpack/canion/", ["anel"] as const, {}, () => !disposed).then((g) => {
+    void loadPieceGroups(scene, "/meu-mundo/jetpack/canion2/", { anel: ["anel"] as const }, {}, () => !disposed).then((g) => {
       if (disposed) return g.dispose()
       extraAssets = g
       const ring = g.meshes.get("anel")
@@ -333,9 +333,14 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       tunnel.provide?.(a)
       const ring = a.meshes.get("anel")
       if (ring) obstacles.useModel("rim", ring, { zScale: 0.55 })
-      const rock = a.meshes.get("rocha")
-      // só balança (antes do V3 o giro do modelo era ignorado; rolando inteira, o musgo aparecia de lado)
-      if (rock) obstacles.useModel("rock", rock, { upright: true })
+      // V3: a rocha NOVA (rachaduras acesas) cobre o disco (x estreitado: 2,42 → 2,2); só balança
+      const rock = a.meshes.get("rocha2") ?? a.meshes.get("rocha")
+      if (rock) obstacles.useModel("rock", rock, { bake: Matrix.Scaling(2.2 / 2.42, 1, 1), upright: true })
+      const can = a.meshes.get("galao")
+      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
+      const tile = a.meshes.get("borda")
+      const corner = a.meshes.get("canto")
+      if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 2.571, arm: 0.37, armLen: 0.703, beam: true })
     })
   }
   const mats = tunnel.mats

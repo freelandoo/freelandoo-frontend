@@ -26,9 +26,6 @@ import { ensureLoaders } from "../../engine/avatars"
 export const CANYON_PIECES = ["paredao", "rocha", "moinho", "arco", "anel", "ilha"] as const
 export type CanyonPiece = (typeof CANYON_PIECES)[number]
 
-const DIR = "/meu-mundo/jetpack/canion/"
-/** Versão de longe (mesma forma e UV, 600–900 triângulos) e a distância da troca (m). */
-const LOD: Partial<Record<CanyonPiece, number>> = { paredao: 60, ilha: 120 }
 
 export const FACTORY_PIECES = ["viga", "cano", "engrenagem", "pistao", "guindaste", "turbina"] as const
 export type FactoryPiece = (typeof FACTORY_PIECES)[number]
@@ -124,11 +121,25 @@ export interface PieceAssets<P extends string = string> {
   meshes: Map<P, Mesh>
   dispose: () => void
 }
-export type CanyonAssets = PieceAssets<CanyonPiece>
+export type CanyonAssets = PieceAssets<CanyonAsset>
 
+/** Cânion v2 (build_canion_v2.py): grupos, como o Gelo; toda peça que se repete com versão de longe. */
+export const CANYON_GROUPS = {
+  paredao: ["paredao"],
+  rocha: ["rocha"],
+  moinho: ["moinho"],
+  arco: ["arco"],
+  anel: ["anel"],
+  ilha: ["ilha"],
+  "can-pedras": ["pedra-raizes", "rocha2", "cacto"],
+  "can-ponte": ["ponte", "torre-vigia"],
+  "can-moldura": ["borda", "canto", "galao"],
+} as const
+export type CanyonAsset = (typeof CANYON_GROUPS)[keyof typeof CANYON_GROUPS][number]
+const CANYON_LOD: Partial<Record<CanyonAsset, number>> = { paredao: 60, moinho: 55, arco: 60, ilha: 120, "pedra-raizes": 50, cacto: 45, ponte: 70, "torre-vigia": 55 }
 /** Carrega as peças do Cânion (as que falharem ficam de fora: o cenário procedural segue). */
-export function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Promise<CanyonAssets> {
-  return loadPieces(scene, DIR, CANYON_PIECES, LOD, isAlive)
+export function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<CanyonAsset>> {
+  return loadPieceGroups<CanyonAsset>(scene, "/meu-mundo/jetpack/canion2/", CANYON_GROUPS, CANYON_LOD, isAlive)
 }
 
 /** O material das peças do Tripo: StandardMaterial com a textura difusa (o PBR sem mapa de ambiente sai escuro). */

@@ -237,6 +237,13 @@ function village(g: Ctx, sx: number, z: number, top: number) {
 
 // ── os módulos ──────────────────────────────────────────────────────────────
 
+/** Largura em x das peças novas com 1 m de altura (canion2.json). */
+const WID = { "pedra-raizes": 0.74, cacto: 0.75, ponte: 1.81, "torre-vigia": 0.69 } as const
+/** Peça nova (chega de COSTAS: meia-volta de base) com a beira de dentro em |x| ≥ edge. */
+function stand(g: Ctx, kind: keyof typeof WID, sx: number, edge: number, y: number, z: number, s: number, ry = 0) {
+  g.props.push({ kind, x: sx * (edge + (s * WID[kind]) / 2), y, z, sx: s, sy: s, sz: s, ry: ry + Math.PI })
+}
+
 type Mod = (g: Ctx, v: number) => void
 
 const MODULES: { id: string; build: Mod }[] = [
@@ -313,14 +320,41 @@ const MODULES: { id: string; build: Mod }[] = [
       }
     },
   },
+  {
+    // o mirante: torre de vigia no alto do paredão e cactos gigantes do outro lado
+    id: "mirante",
+    build(g, v) {
+      const r = rng(71 + v)
+      const sx = v % 2 ? 1 : -1
+      const top = 2.4 + r() * 1.2
+      for (const s of [-1, 1]) cliff(g, r, s, 0, SEG, s === sx ? top : 2.6 + r() * 2)
+      stand(g, "torre-vigia", sx, W / 2 + 2.2, top - 0.3, 12, 7)
+      for (let i = 0; i < 2; i++) stand(g, "cacto", -sx, W / 2 + 2 + r() * 3, 2.4, 5 + i * 11, 4 + r() * 2.5, r() * 6)
+      ceilingRopes(g)
+    },
+  },
+  {
+    // pedras flutuantes com raízes do lado aberto e a ponte de cordas entre elas, ao longe
+    id: "pedras",
+    build(g, v) {
+      const r = rng(83 + v)
+      const open = v % 2 ? -1 : 1
+      cliff(g, r, -open, 0, SEG, 3 + r() * 2)
+      openEdge(g, open)
+      for (let i = 0; i < 3; i++) stand(g, "pedra-raizes", open, 8 + r() * 10, -2 + r() * 10, 3 + i * 8, 4 + r() * 3, r() * 6)
+      stand(g, "ponte", open, 16, 2 + r() * 4, 14, 10)
+      stand(g, "cacto", -open, W / 2 + 2.4, 3.2, 18, 4)
+      ceilingRopes(g, [-open])
+    },
+  },
 ]
 
 /** Pesos dos módulos por faixa de distância: [até 700 m, até 2000 m, depois]. */
 const WEIGHTS: number[][] = [
-  // paredão, vila, ponte, cachoeira, arco, abismo
-  [3, 3, 2, 1, 1, 0.5],
-  [2, 1, 2, 3, 2, 1.5],
-  [1.5, 0.5, 1, 2, 2, 3],
+  // paredão, vila, ponte, cachoeira, arco, abismo, mirante, pedras
+  [3, 3, 2, 1, 1, 0.5, 2, 1.5],
+  [2, 1, 2, 3, 2, 1.5, 2, 2],
+  [1.5, 0.5, 1, 2, 2, 3, 1.5, 2.5],
 ]
 const VARIANTS = 2
 
@@ -603,7 +637,7 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
   return {
     mats,
     provide(a) {
-      for (const kind of ["paredao", "moinho", "arco", "rocha"] as const) {
+      for (const kind of ["paredao", "moinho", "arco", "rocha", "pedra-raizes", "cacto", "ponte", "torre-vigia"] as const) {
         const m = a.meshes.get(kind)
         if (m) pool.provide(kind, m)
       }
