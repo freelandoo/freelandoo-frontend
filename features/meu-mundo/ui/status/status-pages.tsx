@@ -56,12 +56,14 @@ import { SoulPanel } from "./soul-panel"
 import { temperLabel } from "../../soul"
 import { LoadoutPage, type LoadoutData } from "./loadout-page"
 import { CertificateDoc } from "./certificate-doc"
+import { ArchivePage } from "../archive/archive-page"
 
 type Tr = (key: string, fallback: string) => string
 
 /** B6: "loadout" = Equipado e efeitos (equipamento, efeitos ativos, origem dos atributos, Poder, personagem). */
 /** 09/11: "certificate" = a certidão de nascimento do personagem ativo (a bolinha da certidão). */
-export const PAGES = ["overview", "body", "attributes", "loadout", "routine", "market", "history", "certificate"] as const
+/** Lore v2 F5: "archive" = o Arquivo (textos destravados pela história e os vídeos). */
+export const PAGES = ["overview", "body", "attributes", "loadout", "routine", "market", "history", "certificate", "archive"] as const
 export type PageId = (typeof PAGES)[number]
 
 export interface PageActions {
@@ -409,6 +411,7 @@ const SUBTITLE: Record<PageId, [string, string]> = {
   market: ["stPageMarket", "Mercado e farmácia"],
   history: ["stPageHistory", "Diário e linha do tempo"],
   certificate: ["stPageCertificate", "Certidão de nascimento"],
+  archive: ["arqTitle", "Arquivo"],
 }
 export const pageTitle = (p: PageId, t: Tr) => t(SUBTITLE[p][0], SUBTITLE[p][1])
 
@@ -2149,6 +2152,10 @@ function LoadoutC(p: PageProps) {
 }
 
 /** A certidão do personagem ativo (o código vem da lista de personagens do B6). */
+function ArchiveStatusPage(p: PageProps) {
+  return <ArchivePage t={p.t} compact={p.compact} />
+}
+
 function CertificatePage(p: PageProps) {
   const chars = p.loadout?.chars?.characters.list ?? null
   const me = chars ? (chars.find((c) => c.status === "alive") ?? chars.find((c) => c.status === "dead") ?? null) : null
@@ -2163,12 +2170,12 @@ function CertificatePage(p: PageProps) {
 export function StatusPage(props: PageProps) {
   // Celular: cada página é desenhada para caber na tela, sem rolagem.
   if (props.compact) {
-    const P = { overview: OverviewC, body: BodyC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC, certificate: CertificatePage }[props.page]
+    const P = { overview: OverviewC, body: BodyC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC, certificate: CertificatePage, archive: ArchiveStatusPage }[props.page]
     return (
       <div className={`${archivo.className} flex h-full flex-col gap-2`}>
         <Header {...props} />
         {/* a Visão Geral rola até a explicação dos status; as outras cabem na tela */}
-        <div className={`min-h-0 flex-1 ${props.page === "overview" || props.page === "loadout" || props.page === "certificate" ? "overflow-y-auto" : ""}`}>
+        <div className={`min-h-0 flex-1 ${props.page === "overview" || props.page === "loadout" || props.page === "certificate" || props.page === "archive" ? "overflow-y-auto" : ""}`}>
           <P {...props} />
         </div>
       </div>
@@ -2189,6 +2196,8 @@ export function StatusPage(props: PageProps) {
       <Market {...props} />
     ) : props.page === "certificate" ? (
       <CertificatePage {...props} />
+    ) : props.page === "archive" ? (
+      <ArchiveStatusPage {...props} />
     ) : (
       <History {...props} />
     )

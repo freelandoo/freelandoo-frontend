@@ -511,6 +511,35 @@ export const markQuest = (token: string, mark: "certificate" | "talk", npc?: str
   call<{ ok: true; npc?: string }>(token, "POST", "/quest/mark", npc ? { mark, npc } : { mark })
 /** Lore v2 F4: algo pode ter cumprido o passo da missão (a conversa fechou, a sala gravou visita). */
 export const QUEST_CHANGED = "mm:quest-changed"
+
+// ═══ lore v2 F5: o Arquivo e os vídeos ═══════════════════════════════════════
+/** Uma entrada do Arquivo (o texto mora no i18n: arq_<id>_title|body). */
+export interface ArchiveEntry {
+  id: string
+  chapter: number
+  unlocked: boolean
+  unlockedAt: string | null
+  readAt: string | null
+}
+/** O que o admin subiu para um capítulo/personagem (null = ainda não). */
+export interface LoreVideo {
+  video: string | null
+  poster: string | null
+  at?: string
+}
+export interface LoreVideos {
+  chapter: Record<string, LoreVideo>
+  character: Record<string, LoreVideo>
+}
+export interface ArchiveState {
+  entries: ArchiveEntry[]
+  videos: LoreVideos
+}
+export const getArchive = (token: string) => call<ArchiveState>(token, "GET", "/archive")
+/** Abriu o texto: o servidor grava a primeira leitura (é o que archive:<id> confere). */
+export const readArchive = (token: string, id: string) => call<ArchiveState>(token, "POST", "/archive/read", { id })
+/** Pedido para abrir o STATUS na página do Arquivo (o botão da missão). */
+export const OPEN_ARCHIVE = "mm:open-archive"
 export const recycleGear = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/recycle", { item, qty, key })
 /** Hospital do centro (mm3d-26): planta por dentro, leito do usuário, régua da alta e a vida agora. */
 export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "/hospital")

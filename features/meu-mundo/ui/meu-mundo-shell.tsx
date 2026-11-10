@@ -34,6 +34,7 @@ import { MM } from "./hud/tokens"
 import HouseView from "./house-view"
 import CenterView from "./center-view"
 import StatusScreen from "./status/status-screen"
+import type { PageId } from "./status/status-pages"
 import { HospitalView, PlaceView } from "./place-view"
 import { AmbulanceCurtain, useHospitalStay } from "./hospital-stay"
 import { JailTimer, useJailStay } from "./jail-stay"
@@ -84,6 +85,7 @@ import {
   postInvite,
   TRAINER_CHANGED,
   QUEST_CHANGED,
+  OPEN_ARCHIVE,
   type ChatLine,
 } from "../data"
 import {
@@ -118,6 +120,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [inviteOpen, setInviteOpen] = useState(false)
   // Tela de STATUS do hóspede (mm3d-13): o corpo em cena vai para o retrato.
   const [statusBody, setStatusBody] = useState<BodyId | null>(null)
+  // lore v2 F5: o STATUS pode abrir direto numa página (o Arquivo, pelo botão da missão)
+  const [statusPage, setStatusPage] = useState<PageId | undefined>(undefined)
   const [lifeTick, setLifeTick] = useState(0)
   const stay = useHospitalStay(initial.life)
   // Prisão (mm3d-37f): a cela da delegacia, pela mesma régua da internação.
@@ -510,6 +514,15 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const panelOpen = !!inbox || itemsOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab || !!shop
   const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || jailUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
+  // lore v2 F5: "Abrir o Arquivo" (missão) abre o STATUS direto na página do Arquivo
+  useEffect(() => {
+    const open = () => {
+      setStatusPage("archive")
+      setStatusBody(scene.me.body)
+    }
+    window.addEventListener(OPEN_ARCHIVE, open)
+    return () => window.removeEventListener(OPEN_ARCHIVE, open)
+  }, [scene.me.body])
   const onCounts = useCallback((c: InboxCounts) => setCounts(c), [])
   const lifeChanged = useCallback(() => setLifeTick((n) => n + 1), [])
 
@@ -819,7 +832,12 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           name={scene.me.name}
           body={statusBody}
           lifeTick={lifeTick}
-          onClose={() => setStatusBody(null)}
+          initialPage={statusPage}
+          onClose={() => {
+            setStatusBody(null)
+            setStatusPage(undefined)
+            bumpQuest()
+          }}
           onOpenPolens={() => setPolensOpen(true)}
         />
       )}

@@ -56,6 +56,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Conteúdo & Comunidade", hint: "admin-ranking", href: "/admin/ranking", icon: Trophy, title: "Ranking", body: "Configurar pesos, período e visualizar posições por enxame, cidade e geral." },
   { section: "Conteúdo & Comunidade", href: "/blog", icon: Newspaper, title: "Blog", body: "CMS do blog: criar, editar e publicar guias e conteúdo." },
   { section: "Conteúdo & Comunidade", href: "/administracao/clusters", icon: Radio, title: "Clusters de Live", body: "Sala de comando de lives sincronizadas: adicione usuários, aperte Iniciar pra todo mundo começar junto e dispare botões e textos gigantes na tela de todos.", badge: "novo" },
+  { section: "Conteúdo & Comunidade", href: "/administracao/meu-mundo-videos", icon: Radio, title: "Meu Mundo · vídeos", body: "Vídeo de cada capítulo da história e de cada personagem (deuses, povos, monstros). Sem vídeo, o jogo mostra a imagem de capa e o texto.", badge: "novo" },
 
   // Moderação
   { section: "Moderação", hint: "admin-chat-mod", href: "/administracao/moderacao", icon: ShieldAlert, title: "Moderação", body: "Chat (fila/mute/ban), termos bloqueados e posts denunciados — tudo em abas." },

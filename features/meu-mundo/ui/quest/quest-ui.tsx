@@ -16,7 +16,9 @@ import { useCallback, useEffect, useState } from "react"
 import { Loader2, Lock, ScrollText } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { advanceQuest, getQuest, type QuestState, type QuestView } from "../../data"
+import { OPEN_ARCHIVE, advanceQuest, getArchive, getQuest, type LoreVideo as LoreVideoData, type QuestState, type QuestView } from "../../data"
+import { LoreVideo } from "../archive/lore-video"
+import { arqTx } from "../archive/archive-page"
 import { AetherModal, AetherButton } from "../kit/aether-modal"
 import { Arc, Card } from "../fridge/shelf"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
@@ -66,6 +68,8 @@ export function QuestTracker({
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  // F5: o vídeo do capítulo (undefined = fechado; null = ainda não enviado)
+  const [video, setVideo] = useState<LoreVideoData | null | undefined>(undefined)
 
   const load = useCallback(async () => {
     const tk = getToken()
@@ -127,6 +131,16 @@ export function QuestTracker({
           </AetherButton>
         )}
         {type === "armory" && !cur.ready && <AetherButton onClick={() => void visitArmory()}>{t("questOpenArmory", "Abrir o Armeiro")}</AetherButton>}
+        {type === "archive" && !cur.ready && (
+          <AetherButton
+            onClick={() => {
+              setOpen(false)
+              window.dispatchEvent(new CustomEvent(OPEN_ARCHIVE))
+            }}
+          >
+            {arqTx(t, "arqOpen")}
+          </AetherButton>
+        )}
         {(type === "weapon" || type === "material") && !cur.ready && (
           <AetherButton
             onClick={() => {
@@ -196,7 +210,7 @@ export function QuestTracker({
         </button>
       )}
       {open && (
-        <AetherModal eyebrow={tx(t, "questChapterN").replace("{n}", String(quest.chapter))} title={tx(t, `qc_${quest.id}_title`)} onClose={() => setOpen(false)} width={560}>
+        <AetherModal eyebrow={tx(t, "questChapterN").replace("{n}", String(quest.chapter))} title={tx(t, `qc_${quest.id}_title`)} onClose={() => { setOpen(false); setVideo(undefined) }} width={560}>
           {!state ? (
             <Loader2 className="mx-auto h-6 w-6 animate-spin" />
           ) : (
@@ -204,6 +218,26 @@ export function QuestTracker({
               <p className={`${archivo.className} mb-2 text-[12px] leading-snug`} style={{ color: AE.muted }}>
                 {tx(t, `qc_${quest.id}_intro_${state.clan === "vampiro" ? "vampiro" : "raposa"}`)}
               </p>
+              {/* F5: o vídeo do capítulo (o Alex sobe pelo admin; sem ele, imagem + texto) */}
+              {video === undefined ? (
+                <button
+                  type="button"
+                  className={`${archivo.className} mb-2 min-h-11 text-[12px] font-bold uppercase tracking-wide underline-offset-4 hover:underline`}
+                  style={{ color: AE.goldSoft }}
+                  onClick={() => {
+                    const tk = getToken()
+                    if (!tk) return
+                    setVideo(null)
+                    void getArchive(tk).then((r) => r.ok && setVideo(r.data.videos.chapter[quest.id] ?? null))
+                  }}
+                >
+                  ▶ {arqTx(t, "arqChapterVideo")}
+                </button>
+              ) : (
+                <div className="mb-2">
+                  <LoreVideo data={video} title={tx(t, `qc_${quest.id}_title`)} t={t} soon={arqTx(t, "arqVideoSoon")} />
+                </div>
+              )}
               {lockedLine && (
                 <p className={`${archivo.className} mb-2 text-[12px] font-semibold`} style={{ color: AE.goldSoft }}>
                   {lockedLine} · {tx(t, "questTrainerNow").replace("{n}", String(state.trainer))}
