@@ -114,6 +114,10 @@ const ROWS = [
   ["Esse texto do Arquivo ainda está trancado", "That Archive text is still locked", "Ese texto del Archivo todavía está bloqueado"],
   ["Esse vídeo não tem lugar no jogo", "That video has no place in the game", "Ese video no tiene lugar en el juego"],
   ["Envie o vídeo ou a imagem", "Send the video or the image", "Envía el video o la imagen"],
+  // lore v2 F6: prédios por nível do treinador
+  ["Esse lugar ainda está fechado para o seu nível de treinador", "This place is still closed for your trainer level", "Este lugar todavía está cerrado para tu nivel de entrenador"],
+  ["Missão de prédio desconhecida", "Unknown building mission", "Misión de edificio desconocida"],
+  ["Essa missão abre junto com o prédio", "This mission opens along with the building", "Esta misión se abre junto con el edificio"],
   // Lugares e classes
   ["Escolha sua classe", "Choose your class", "Elige tu clase"],
   ["Classe inválida", "Invalid class", "Clase no válida"],

@@ -18,6 +18,8 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { OPEN_ARCHIVE, advanceQuest, getArchive, getQuest, type LoreVideo as LoreVideoData, type QuestState, type QuestView } from "../../data"
 import { LoreVideo } from "../archive/lore-video"
+import { deliverBuildingMission } from "../../data"
+import { bldTx, useBuildings } from "../buildings/use-buildings"
 import { arqTx } from "../archive/archive-page"
 import { AetherModal, AetherButton } from "../kit/aether-modal"
 import { Arc, Card } from "../fridge/shelf"
@@ -70,6 +72,27 @@ export function QuestTracker({
   const [msg, setMsg] = useState<string | null>(null)
   // F5: o vídeo do capítulo (undefined = fechado; null = ainda não enviado)
   const [video, setVideo] = useState<LoreVideoData | null | undefined>(undefined)
+  // F6: a missão curta de cada prédio que abriu (entregue aqui; o servidor confere)
+  const [bld, reloadBld] = useBuildings()
+  useEffect(() => {
+    reloadBld()
+  }, [reloadBld, refreshKey])
+  const bldMissions = (bld?.missions ?? []).filter((m) => m.state === "current")
+  const [bldBusy, setBldBusy] = useState<string | null>(null)
+  const deliverBld = useCallback(
+    async (id: string) => {
+      const tk = getToken()
+      if (!tk || bldBusy) return
+      setBldBusy(id)
+      setMsg(null)
+      const r = await deliverBuildingMission(tk, id)
+      setBldBusy(null)
+      if (!r.ok) return setMsg(r.code === "pending" ? bldTx(t, "bldPending") : r.error)
+      reloadBld()
+      if (r.data.receipt && !r.data.replay) celebrate(r.data.receipt)
+    },
+    [bldBusy, reloadBld, t],
+  )
 
   const load = useCallback(async () => {
     const tk = getToken()
@@ -195,6 +218,7 @@ export function QuestTracker({
             <span className="block text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: AE.goldSoft }}>
               {chapterLabel}
               {cur ? ` · ${quest.step + 1}/${quest.total}` : ""}
+              {bldMissions.length ? ` · +${bldMissions.length}` : ""}
             </span>
             <span className="block text-[13px] font-bold leading-tight" style={{ color: AE.text }}>
               {cur ? stepTxt(t, quest.id, cur.key, "what") : lockedLine}
@@ -244,6 +268,29 @@ export function QuestTracker({
                 </p>
               )}
               <QuestShelf quest={quest} sel={Math.min(sel, quest.steps.length - 1)} onSel={setSel} t={t} actions={actions} />
+              {/* F6: prédios que abriram com o nível do treinador — uma missão curta cada */}
+              {bldMissions.length > 0 && (
+                <section className="mt-3 grid gap-2">
+                  <p className={`${teko.className} text-[16px] font-semibold uppercase leading-none tracking-wide`} style={{ color: AE.goldSoft }}>
+                    {bldTx(t, "bldMissions")}
+                  </p>
+                  {bldMissions.map((m) => (
+                    <div key={m.id} className={`${archivo.className} flex items-center gap-3 p-2.5`} style={{ background: AE.steel, boxShadow: `inset 0 0 0 1px ${m.ready ? AE.gold : AE.brassLine}`, clipPath: chamfer(AE.cut.chip) }}>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[13px] font-bold leading-tight" style={{ color: AE.text }}>
+                          {bldTx(t, `bm_${m.id}_title`)}
+                        </span>
+                        <span className="block text-[11px] leading-snug" style={{ color: AE.muted }}>
+                          {bldTx(t, `bm_${m.id}_what`)}
+                        </span>
+                      </span>
+                      <AetherButton disabled={!m.ready} busy={bldBusy === m.id} onClick={() => void deliverBld(m.id)}>
+                        {bldTx(t, "bldDeliver")}
+                      </AetherButton>
+                    </div>
+                  ))}
+                </section>
+              )}
             </>
           )}
           {msg && (

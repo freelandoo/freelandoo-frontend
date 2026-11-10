@@ -32,6 +32,8 @@ import LabPanel, { type LabMode } from "../lab/lab-panel"
 import CryoStage from "../lab/cryo-stage"
 import { StationPicker, bestTier, stationOfAnim, stationParam, type StationChoice } from "./station-picker"
 import type { LifeStationDef } from "../../types"
+import { featureLockOf } from "../../buildings"
+import { bldTx, useBuildings } from "../buildings/use-buildings"
 
 /** Hora de aula (moedas do jogo) — espelho de PLACE_RULES em meuMundoLife.js. */
 const CLASS_FEE_H: Record<string, number> = { universidade: 8 }
@@ -74,6 +76,8 @@ function stationIds(use: PlaceUse, place: string, defs: Record<string, LifeStati
 
 export function PlaceScreen({ placeId, placeName, interior, body, look = "", onExit, onOpenMarket }: PlaceScreenProps) {
   const t = useTranslations("MeuMundo") as Tr
+  // Lore v2 F6: o Laboratório completo (embrião, genética, acelerador) abre no nível 10
+  const [bld] = useBuildings()
   const [ask, setAsk] = useState<{ use: PlaceUse; state: PlaceState } | null>(null)
   const [doing, setDoing] = useState<Doing | null>(null)
   const [pose, setPose] = useState<PlacePose | null>(null)
@@ -209,7 +213,11 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
     if (use === "seller") return setSellerOpen(true)
     if (use === "cryo") return setLab("cryo")
     if (use === "lab") return setLab("talk")
-    if (use === "embryo" || use === "accelerate") return setLab(use)
+    if (use === "embryo" || use === "accelerate") {
+      const lock = featureLockOf("lab_full", bld)
+      if (lock) return setToast({ text: bldTx(t, "bldLabFull").replace("{n}", String(lock)), tone: "magenta" })
+      return setLab(use)
+    }
     setToast({ text: t("pvSoon", "Em breve"), tone: "ouro" })
   }
 

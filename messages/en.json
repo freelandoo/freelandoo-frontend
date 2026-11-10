@@ -11188,7 +11188,28 @@
     "arq_zephyra_almas_title": "What Zéphyra told",
     "arq_zephyra_almas_body": "On the Sky Track, Zéphyra tells the truth, because someone paid: the gods' stone isn't stone. It is the souls of the war dead, which she released on the night of the trap and which clung to Aurion and Morkhan. Every drop of nectar feeds the god, and he pushes one of the dead out. The freed dead have nowhere to go. The Ash takes them, and they become monsters. \"Every wolf you killed this week came out of your god's statue.\"",
     "arq_maldicao_pedra_title": "The Curse of Stone",
-    "arq_maldicao_pedra_body": "Aurion and Morkhan clashed in the square on the night of the trap and turned to stone together. What fell from the sky that night was the Ash, which still falls, fine, every night, and only takes those at the edge of their pain. The monster's shape is the shape of the pain. The whole city plays to give nectar to the gods and set them free. Whoever gets there first will see their god open his eyes inside the stone. Nobody asked what he will want afterwards."
+    "arq_maldicao_pedra_body": "Aurion and Morkhan clashed in the square on the night of the trap and turned to stone together. What fell from the sky that night was the Ash, which still falls, fine, every night, and only takes those at the edge of their pain. The monster's shape is the shape of the pain. The whole city plays to give nectar to the gods and set them free. Whoever gets there first will see their god open his eyes inside the stone. Nobody asked what he will want afterwards.",
+    "bldLocked": "Opens at trainer level {n}",
+    "bldLockedShort": "Level {n}",
+    "bldLabFull": "The embryo, genetics and accelerator open at trainer level {n}.",
+    "bldMissions": "Buildings opened",
+    "bldDeliver": "Turn in",
+    "bldDone": "Done",
+    "bldPending": "The objective isn't done yet.",
+    "bm_pr_minijogos_title": "The minigames opened",
+    "bm_pr_minijogos_what": "Finish a match of any minigame in the center: Jetpack, Paint, Antigravity, Night Ride, Gymkhana or Boxing.",
+    "bm_pr_estudo_title": "The university opened",
+    "bm_pr_estudo_what": "Study at the university, the school or the library: intelligence rises as time goes by.",
+    "bm_pr_forja_title": "The Forge opened",
+    "bm_pr_forja_what": "Make a recipe at the Forge with the materials in your bag.",
+    "bm_pr_arsenal_title": "The Arsenal opened",
+    "bm_pr_arsenal_what": "Go to the Arsenal's door, on Craftsmen Street: weapons are bought and swapped there.",
+    "bm_pr_igreja_title": "The church opened",
+    "bm_pr_igreja_what": "Pray on a church pew: stress drops fast.",
+    "bm_pr_hall_title": "The Hall of Fame opened",
+    "bm_pr_hall_what": "Challenge someone in the Hall of Fame, at the Arena of Blades.",
+    "bm_pr_laboratorio_title": "The full Laboratory opened",
+    "bm_pr_laboratorio_what": "At the Cryogenics Lab you can now buy the embryo, work on genetics and use the accelerator. Confirm once you've read it."
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -11400,7 +11421,10 @@
     "Texto do Arquivo desconhecido": "Unknown Archive text",
     "Esse texto do Arquivo ainda está trancado": "That Archive text is still locked",
     "Esse vídeo não tem lugar no jogo": "That video has no place in the game",
-    "Envie o vídeo ou a imagem": "Send the video or the image"
+    "Envie o vídeo ou a imagem": "Send the video or the image",
+    "Esse lugar ainda está fechado para o seu nível de treinador": "This place is still closed for your trainer level",
+    "Missão de prédio desconhecida": "Unknown building mission",
+    "Essa missão abre junto com o prédio": "This mission opens along with the building"
   },
   "Moedas": {
     "walletTitle": "Wallet",

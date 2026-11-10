@@ -11168,7 +11168,28 @@
     "arq_zephyra_almas_title": "Lo que contó Zéphyra",
     "arq_zephyra_almas_body": "En la Pista del Cielo, Zéphyra cuenta la verdad, porque alguien pagó: la piedra de los dioses no es piedra. Son las almas de los muertos de la guerra, que ella soltó la noche de la trampa y que se aferraron a Aurion y a Morkhan. Cada gota de néctar alimenta al dios, y él empuja a un muerto hacia afuera. El muerto liberado no tiene adónde ir. La Ceniza lo toma, y se vuelve monstruo. \"Cada lobo que mataste esta semana salió de la estatua de tu dios.\"",
     "arq_maldicao_pedra_title": "La Maldición de la Piedra",
-    "arq_maldicao_pedra_body": "Aurion y Morkhan chocaron en la plaza la noche de la trampa y se volvieron piedra juntos. Lo que cayó del cielo esa noche fue la Ceniza, que todavía cae, fina, cada noche, y solo toma a quien está al límite de su dolor. La forma del monstruo es la forma del dolor. Toda la ciudad juega para dar néctar a los dioses y liberarlos. Quien llegue primero verá a su dios abrir los ojos dentro de la piedra. Nadie preguntó qué va a querer después."
+    "arq_maldicao_pedra_body": "Aurion y Morkhan chocaron en la plaza la noche de la trampa y se volvieron piedra juntos. Lo que cayó del cielo esa noche fue la Ceniza, que todavía cae, fina, cada noche, y solo toma a quien está al límite de su dolor. La forma del monstruo es la forma del dolor. Toda la ciudad juega para dar néctar a los dioses y liberarlos. Quien llegue primero verá a su dios abrir los ojos dentro de la piedra. Nadie preguntó qué va a querer después.",
+    "bldLocked": "Se abre en el nivel {n} de entrenador",
+    "bldLockedShort": "Nivel {n}",
+    "bldLabFull": "El embrión, la genética y el acelerador se abren en el nivel {n} de entrenador.",
+    "bldMissions": "Edificios abiertos",
+    "bldDeliver": "Entregar",
+    "bldDone": "Hecho",
+    "bldPending": "Todavía falta cumplir el objetivo.",
+    "bm_pr_minijogos_title": "Se abrieron los minijuegos",
+    "bm_pr_minijogos_what": "Termina una partida de cualquier minijuego del centro: Jetpack, Paint, Antigravedad, Paseo Nocturno, Gincana o Boxeo.",
+    "bm_pr_estudo_title": "Se abrió la universidad",
+    "bm_pr_estudo_what": "Estudia en la universidad, la escuela o la biblioteca: la inteligencia sube mientras pasa el tiempo.",
+    "bm_pr_forja_title": "Se abrió la Forja",
+    "bm_pr_forja_what": "Haz una receta en la Forja con los materiales de la mochila.",
+    "bm_pr_arsenal_title": "Se abrió el Arsenal",
+    "bm_pr_arsenal_what": "Ve hasta la puerta del Arsenal, en la Calle de los Oficios: allí se compran y cambian armas.",
+    "bm_pr_igreja_title": "Se abrió la iglesia",
+    "bm_pr_igreja_what": "Reza en un banco de la iglesia: el estrés baja rápido.",
+    "bm_pr_hall_title": "Se abrió el Salón de la Fama",
+    "bm_pr_hall_what": "Desafía a alguien del Salón de la Fama, en la Arena de las Espadas.",
+    "bm_pr_laboratorio_title": "Se abrió el Laboratorio completo",
+    "bm_pr_laboratorio_what": "En el Laboratorio de Criogenia ahora se puede comprar el embrión, trabajar la genética y usar el acelerador. Confirma cuando lo hayas leído."
   },
   "Sports": {
     "eyebrow": "Deportes",
@@ -11380,7 +11401,10 @@
     "Texto do Arquivo desconhecido": "Texto del Archivo desconocido",
     "Esse texto do Arquivo ainda está trancado": "Ese texto del Archivo todavía está bloqueado",
     "Esse vídeo não tem lugar no jogo": "Ese video no tiene lugar en el juego",
-    "Envie o vídeo ou a imagem": "Envía el video o la imagen"
+    "Envie o vídeo ou a imagem": "Envía el video o la imagen",
+    "Esse lugar ainda está fechado para o seu nível de treinador": "Este lugar todavía está cerrado para tu nivel de entrenador",
+    "Missão de prédio desconhecida": "Misión de edificio desconocida",
+    "Essa missão abre junto com o prédio": "Esta misión se abre junto con el edificio"
   },
   "Moedas": {
     "walletTitle": "Cartera",

@@ -10602,7 +10602,28 @@
     "arq_zephyra_almas_title": "O que Zéphyra contou",
     "arq_zephyra_almas_body": "Na Pista do Céu, Zéphyra conta a verdade, porque alguém pagou: a pedra dos deuses não é pedra. São as almas dos mortos da guerra, que ela soltou na noite da armadilha e que se agarraram em Aurion e em Morkhan. Cada gota de néctar alimenta o deus, e ele empurra um morto para fora. O morto solto não tem para onde ir. A Cinza o pega, e ele vira monstro. \"Todo lobo que você matou esta semana saiu da estátua do seu deus.\"",
     "arq_maldicao_pedra_title": "A Maldição da Pedra",
-    "arq_maldicao_pedra_body": "Aurion e Morkhan se chocaram na praça na noite da armadilha e viraram pedra juntos. O que caiu do céu naquela noite foi a Cinza, que ainda cai, fina, toda noite, e só pega quem está no limite da dor. A forma do monstro é a forma da dor. A cidade inteira joga para dar néctar aos deuses e libertá-los. Quem chegar primeiro vai ver o seu deus abrir os olhos dentro da pedra. Ninguém perguntou o que ele vai querer depois."
+    "arq_maldicao_pedra_body": "Aurion e Morkhan se chocaram na praça na noite da armadilha e viraram pedra juntos. O que caiu do céu naquela noite foi a Cinza, que ainda cai, fina, toda noite, e só pega quem está no limite da dor. A forma do monstro é a forma da dor. A cidade inteira joga para dar néctar aos deuses e libertá-los. Quem chegar primeiro vai ver o seu deus abrir os olhos dentro da pedra. Ninguém perguntou o que ele vai querer depois.",
+    "bldLocked": "Abre no nível {n} do treinador",
+    "bldLockedShort": "Nível {n}",
+    "bldLabFull": "O embrião, a genética e o acelerador abrem no nível {n} do treinador.",
+    "bldMissions": "Prédios abertos",
+    "bldDeliver": "Entregar",
+    "bldDone": "Feito",
+    "bldPending": "Ainda falta cumprir o objetivo.",
+    "bm_pr_minijogos_title": "Os minijogos abriram",
+    "bm_pr_minijogos_what": "Termine uma partida de qualquer minijogo do centro: Jetpack, Paint, Antigravidade, Rolê Noturno, Gincana ou Boxe.",
+    "bm_pr_estudo_title": "A universidade abriu",
+    "bm_pr_estudo_what": "Estude na universidade, na escola ou na biblioteca: a inteligência sobe enquanto o tempo passa.",
+    "bm_pr_forja_title": "A Forja abriu",
+    "bm_pr_forja_what": "Faça uma receita na Forja com os materiais da mochila.",
+    "bm_pr_arsenal_title": "O Arsenal abriu",
+    "bm_pr_arsenal_what": "Vá até a porta do Arsenal, na Rua dos Ofícios: lá se compram e trocam armas.",
+    "bm_pr_igreja_title": "A igreja abriu",
+    "bm_pr_igreja_what": "Reze num banco da igreja: o estresse cai rápido.",
+    "bm_pr_hall_title": "O Hall da Fama abriu",
+    "bm_pr_hall_what": "Desafie alguém do Hall da Fama, na Arena das Lâminas.",
+    "bm_pr_laboratorio_title": "O Laboratório completo abriu",
+    "bm_pr_laboratorio_what": "No Laboratório de Criogenia agora dá para comprar o embrião, mexer na genética e usar o acelerador. Confirme quando tiver lido."
   },
   "Sports": {
     "eyebrow": "Esportes",
@@ -10814,7 +10835,10 @@
     "Texto do Arquivo desconhecido": "Texto do Arquivo desconhecido",
     "Esse texto do Arquivo ainda está trancado": "Esse texto do Arquivo ainda está trancado",
     "Esse vídeo não tem lugar no jogo": "Esse vídeo não tem lugar no jogo",
-    "Envie o vídeo ou a imagem": "Envie o vídeo ou a imagem"
+    "Envie o vídeo ou a imagem": "Envie o vídeo ou a imagem",
+    "Esse lugar ainda está fechado para o seu nível de treinador": "Esse lugar ainda está fechado para o seu nível de treinador",
+    "Missão de prédio desconhecida": "Missão de prédio desconhecida",
+    "Essa missão abre junto com o prédio": "Essa missão abre junto com o prédio"
   },
   "Moedas": {
     "walletTitle": "Carteira",

@@ -1,0 +1,24 @@
+{
+  "bldLocked": ["Abre no nível {n} do treinador", "Opens at trainer level {n}", "Se abre en el nivel {n} de entrenador"],
+  "bldLockedShort": ["Nível {n}", "Level {n}", "Nivel {n}"],
+  "bldLabFull": ["O embrião, a genética e o acelerador abrem no nível {n} do treinador.", "The embryo, genetics and accelerator open at trainer level {n}.", "El embrión, la genética y el acelerador se abren en el nivel {n} de entrenador."],
+  "bldMissions": ["Prédios abertos", "Buildings opened", "Edificios abiertos"],
+  "bldDeliver": ["Entregar", "Turn in", "Entregar"],
+  "bldDone": ["Feito", "Done", "Hecho"],
+  "bldPending": ["Ainda falta cumprir o objetivo.", "The objective isn't done yet.", "Todavía falta cumplir el objetivo."],
+
+  "bm_pr_minijogos_title": ["Os minijogos abriram", "The minigames opened", "Se abrieron los minijuegos"],
+  "bm_pr_minijogos_what": ["Termine uma partida de qualquer minijogo do centro: Jetpack, Paint, Antigravidade, Rolê Noturno, Gincana ou Boxe.", "Finish a match of any minigame in the center: Jetpack, Paint, Antigravity, Night Ride, Gymkhana or Boxing.", "Termina una partida de cualquier minijuego del centro: Jetpack, Paint, Antigravedad, Paseo Nocturno, Gincana o Boxeo."],
+  "bm_pr_estudo_title": ["A universidade abriu", "The university opened", "Se abrió la universidad"],
+  "bm_pr_estudo_what": ["Estude na universidade, na escola ou na biblioteca: a inteligência sobe enquanto o tempo passa.", "Study at the university, the school or the library: intelligence rises as time goes by.", "Estudia en la universidad, la escuela o la biblioteca: la inteligencia sube mientras pasa el tiempo."],
+  "bm_pr_forja_title": ["A Forja abriu", "The Forge opened", "Se abrió la Forja"],
+  "bm_pr_forja_what": ["Faça uma receita na Forja com os materiais da mochila.", "Make a recipe at the Forge with the materials in your bag.", "Haz una receta en la Forja con los materiales de la mochila."],
+  "bm_pr_arsenal_title": ["O Arsenal abriu", "The Arsenal opened", "Se abrió el Arsenal"],
+  "bm_pr_arsenal_what": ["Vá até a porta do Arsenal, na Rua dos Ofícios: lá se compram e trocam armas.", "Go to the Arsenal's door, on Craftsmen Street: weapons are bought and swapped there.", "Ve hasta la puerta del Arsenal, en la Calle de los Oficios: allí se compran y cambian armas."],
+  "bm_pr_igreja_title": ["A igreja abriu", "The church opened", "Se abrió la iglesia"],
+  "bm_pr_igreja_what": ["Reze num banco da igreja: o estresse cai rápido.", "Pray on a church pew: stress drops fast.", "Reza en un banco de la iglesia: el estrés baja rápido."],
+  "bm_pr_hall_title": ["O Hall da Fama abriu", "The Hall of Fame opened", "Se abrió el Salón de la Fama"],
+  "bm_pr_hall_what": ["Desafie alguém do Hall da Fama, na Arena das Lâminas.", "Challenge someone in the Hall of Fame, at the Arena of Blades.", "Desafía a alguien del Salón de la Fama, en la Arena de las Espadas."],
+  "bm_pr_laboratorio_title": ["O Laboratório completo abriu", "The full Laboratory opened", "Se abrió el Laboratorio completo"],
+  "bm_pr_laboratorio_what": ["No Laboratório de Criogenia agora dá para comprar o embrião, mexer na genética e usar o acelerador. Confirme quando tiver lido.", "At the Cryogenics Lab you can now buy the embryo, work on genetics and use the accelerator. Confirm once you've read it.", "En el Laboratorio de Criogenia ahora se puede comprar el embrión, trabajar la genética y usar el acelerador. Confirma cuando lo hayas leído."]
+}

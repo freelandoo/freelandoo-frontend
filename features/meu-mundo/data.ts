@@ -6,6 +6,7 @@
 // 403 voltam como estado, e a tela não carrega o motor 3D sem resposta válida.
 
 import { serverErrorText } from "./server-errors"
+import type { BuildingsState } from "./buildings"
 import { meuMundoCheckoutCoupon } from "@/lib/share-coupon"
 import type {
   CenterPayload,
@@ -540,6 +541,12 @@ export const getArchive = (token: string) => call<ArchiveState>(token, "GET", "/
 export const readArchive = (token: string, id: string) => call<ArchiveState>(token, "POST", "/archive/read", { id })
 /** Pedido para abrir o STATUS na página do Arquivo (o botão da missão). */
 export const OPEN_ARCHIVE = "mm:open-archive"
+
+// ═══ lore v2 F6: prédios por nível do treinador ══════════════════════════════
+export const getBuildings = (token: string) => call<BuildingsState>(token, "GET", "/buildings")
+/** Entrega a missão de prédio (o servidor confere o objetivo). */
+export const deliverBuildingMission = (token: string, id: string) =>
+  call<BuildingsState & { receipt?: Receipt; replay?: boolean }>(token, "POST", "/buildings/mission", { id })
 export const recycleGear = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/recycle", { item, qty, key })
 /** Hospital do centro (mm3d-26): planta por dentro, leito do usuário, régua da alta e a vida agora. */
 export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "/hospital")

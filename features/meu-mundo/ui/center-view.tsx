@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { ScenePlayerProps } from "./player-card/player-card"
-import { Activity, Crown, Gamepad2, Hand, HeartPulse, Home, LocateFixed, LogOut, MessageCircle, RefreshCw, Store, Swords, WifiOff, X } from "lucide-react"
+import { Activity, Crown, Gamepad2, Hand, HeartPulse, Home, LocateFixed, Lock, LogOut, MessageCircle, RefreshCw, Store, Swords, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
@@ -35,6 +35,8 @@ import type { GincanaJoin } from "../gincana/ui/gincana-view"
 import { useMobEncounter } from "./mob-encounter"
 import { NpcTalk, npcTx } from "./talk/npc-talk"
 import { isNpcId, npcNameKey, type NpcId } from "../npcs"
+import { lockOf } from "../buildings"
+import { bldTx, useBuildings } from "./buildings/use-buildings"
 import { useOffstage, useRoomLink } from "./offstage"
 import type { BodyId, CenterPayload, CenterPlace, GameStats, Interactable, InteriorDef, NetStatus, VisitState } from "../types"
 
@@ -203,6 +205,19 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   useEffect(() => {
     mobRef.current = mob
   })
+  // Lore v2 F6: prédio fechado pelo nível do treinador (o servidor recusa; aqui o cadeado)
+  const [bld] = useBuildings()
+  const bldRef = useRef(bld)
+  useEffect(() => {
+    bldRef.current = bld
+  }, [bld])
+  // o nível que abre o prédio em que a pessoa tentou entrar (aviso curto)
+  const [lockMsg, setLockMsg] = useState<number | null>(null)
+  useEffect(() => {
+    if (!lockMsg) return
+    const id = window.setTimeout(() => setLockMsg(null), 2800)
+    return () => window.clearTimeout(id)
+  }, [lockMsg])
   // Sem fôlego (mm3d-28): a sala parou a corrida até ele recuperar.
   const [winded, setWinded] = useState(false)
   const [drivingLot, setDrivingLot] = useState(0)
@@ -316,6 +331,11 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             else if (it.kind === "npc") {
               if (isNpcId(it.npc)) setTalk(it.npc)
             } else if (it.kind === "place") {
+              const lock = lockOf(it.place.id, bldRef.current)
+              if (lock) {
+                setLockMsg(lock)
+                return
+              }
               const g = gameOf(it.place)
               if (g === "jetpack" || g === "paint" || g === "corrida" || g === "noturno" || g === "gincana") setMinigame(g)
               else if (g === "laminas" || g === "boxe") {
@@ -407,9 +427,11 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           : nearPlace
             ? placeName(nearPlace)
             : ""
-  // "Jogar" nos locais com minijogo; "Em breve" nos outros.
-  const placeTag =
-    nearPlace && gameOf(nearPlace)
+  // "Jogar" nos locais com minijogo; "Em breve" nos outros; fechado = o nível que abre (F6).
+  const nearLock = nearPlace ? lockOf(nearPlace.id, bld) : null
+  const placeTag = nearLock
+    ? bldTx(t, "bldLockedShort").replace("{n}", String(nearLock))
+    : nearPlace && gameOf(nearPlace)
       ? t("centerPlay", "Jogar")
       : nearPlace && interiorOf(nearPlace)
         ? t("centerEnter", "Entrar")
@@ -512,7 +534,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {status === "ready" && nearby && !open && !talk && !isTouch && !drivingLot && (
         <div className="absolute left-1/2 flex -translate-x-1/2 items-stretch gap-2" style={{ bottom: bottom(48) }}>
           {nearPlace ? (
-            <EvoButton variant="gold" size="lg" kbd="E" icon={<Store className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} aria-label={nearbyLabel}>
+            <EvoButton variant="gold" size="lg" kbd="E" icon={nearLock ? <Lock className="h-5 w-5" /> : <Store className="h-5 w-5" />} onClick={() => gameRef.current?.interact()} aria-label={nearbyLabel}>
               {nearbyLabel} · {placeTag}
             </EvoButton>
           ) : (
@@ -560,7 +582,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               aria-label={nearbyLabel}
               className="!absolute !min-h-12 max-w-[50vw]"
               style={{ bottom: bottom(20), right: SAFE.right }}
-              icon={nearMob ? <Swords className="h-5 w-5 shrink-0" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5 shrink-0" /> : nearPortal ? <Home className="h-5 w-5 shrink-0" /> : nearNpc ? <MessageCircle className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
+              icon={nearMob ? <Swords className="h-5 w-5 shrink-0" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5 shrink-0" /> : nearPortal ? <Home className="h-5 w-5 shrink-0" /> : nearNpc ? <MessageCircle className="h-5 w-5 shrink-0" /> : nearLock ? <Lock className="h-4 w-4 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearPlace ? `${nearbyLabel} · ${placeTag}` : nearbyLabel}
             </EvoButton>
@@ -677,6 +699,11 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
         </div>
       )}
       {talk && <NpcTalk npc={talk} onClose={() => setTalk(null)} />}
+      {status === "ready" && lockMsg && (
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 56px)" }}>
+          <EvoToast icon={<Lock className="h-4 w-4" />}>{bldTx(t, "bldLocked").replace("{n}", String(lockMsg))}</EvoToast>
+        </div>
+      )}
     </div>
   )
 }
