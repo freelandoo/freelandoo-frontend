@@ -17,6 +17,11 @@ import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Color3 } from "@babylonjs/core/Maths/math.color"
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder"
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
+import { Constants } from "@babylonjs/core/Engines/constants"
 import { FxStage, type FxBuilder, type FxBudget } from "../../engine/fx/fx-core"
 import type { QualityTier } from "../../engine/quality"
 import type { PhaseId } from "../sim/phases"
@@ -48,6 +53,10 @@ export interface JetVfx {
   update: (x: number, y: number, z: number, thrust: boolean, v: number) => void
   ring: (x: number, y: number, z: number, r: number) => void
   fuel: (x: number, y: number, z: number) => void
+  /** Os galões à vista (faíscas verdes subindo em volta deles). */
+  cans: (pts: readonly Vector3[]) => void
+  /** Pegou combustível: o jogador brilha e as faíscas entram nele. */
+  absorb: () => void
   crash: (x: number, y: number, z: number) => void
   /** Partículas no ar (sonda). */
   stats: () => { live: number }
@@ -282,6 +291,80 @@ export function createJetVfx(scene: Scene, tier: QualityTier, phase: PhaseId): J
     ff.start()
     systems.push(ff)
   }
+  // ── faíscas em volta dos galões: UM sistema para todos (nasce perto de um galão sorteado)
+  let canList: readonly Vector3[] = []
+  const sp = new ParticleSystem("jt-can-sparks", Math.round(70 * k) + 12, scene)
+  sp.particleTexture = dot
+  sp.blendMode = ParticleSystem.BLENDMODE_ADD
+  sp.color1 = new Color4(0.45, 1, 0.7, 1)
+  sp.color2 = new Color4(0.75, 1, 0.55, 1)
+  sp.colorDead = new Color4(0.3, 1, 0.6, 0)
+  sp.minSize = 0.05
+  sp.maxSize = 0.13
+  sp.minLifeTime = 0.6
+  sp.maxLifeTime = 1.1
+  sp.minEmitPower = 0.3
+  sp.maxEmitPower = 0.8
+  sp.gravity = new Vector3(0, 0.9, 0)
+  sp.updateSpeed = 1 / 60
+  sp.emitter = new Vector3(0, -5000, 0)
+  sp.startPositionFunction = (_m, pos) => {
+    const c = canList[Math.floor(Math.random() * canList.length)]
+    if (!c) return pos.set(0, -5000, 0)
+    const a = Math.random() * Math.PI * 2
+    const r = 0.45 + Math.random() * 0.4
+    pos.set(c.x + Math.cos(a) * r, c.y - 0.4 + Math.random() * 0.8, c.z + Math.sin(a) * r)
+  }
+  sp.startDirectionFunction = (_m, dir) => dir.set((Math.random() - 0.5) * 0.4, 1, (Math.random() - 0.5) * 0.4)
+  sp.emitRate = 0
+  sp.start()
+  systems.push(sp)
+
+  // ── "absorvi": halo verde que cresce e some em volta do jogador + faíscas que CONVERGEM para ele
+  const aura = CreatePlane("jt-absorb-aura", { size: 1 }, scene)
+  const auraMat = new StandardMaterial("jt-absorb-aura", scene)
+  auraMat.disableLighting = true
+  auraMat.emissiveColor = new Color3(0.35, 1, 0.65)
+  auraMat.diffuseColor = new Color3(0, 0, 0)
+  auraMat.specularColor = new Color3(0, 0, 0)
+  auraMat.opacityTexture = dot
+  auraMat.alphaMode = Constants.ALPHA_ADD
+  auraMat.disableDepthWrite = true
+  auraMat.backFaceCulling = false
+  aura.material = auraMat
+  aura.billboardMode = TransformNode.BILLBOARDMODE_ALL
+  aura.isPickable = false
+  aura.setEnabled(false)
+  const me = new Vector3()
+  const ab = new ParticleSystem("jt-absorb", Math.round(60 * k) + 12, scene)
+  ab.particleTexture = dot
+  ab.blendMode = ParticleSystem.BLENDMODE_ADD
+  ab.color1 = new Color4(0.5, 1, 0.75, 1)
+  ab.color2 = new Color4(0.85, 1, 0.6, 1)
+  ab.colorDead = new Color4(0.4, 1, 0.7, 0)
+  ab.minSize = 0.07
+  ab.maxSize = 0.17
+  ab.minLifeTime = 0.28
+  ab.maxLifeTime = 0.38
+  ab.minEmitPower = 3
+  ab.maxEmitPower = 4
+  ab.gravity = new Vector3(0, 0, 0)
+  ab.updateSpeed = 1 / 60
+  ab.emitter = me
+  // nascem numa esfera de 1,2 m em volta do corpo e vão para o centro
+  ab.startPositionFunction = (_m, pos) => {
+    const u = Math.random() * 2 - 1
+    const a = Math.random() * Math.PI * 2
+    const s = Math.sqrt(1 - u * u)
+    pos.set(me.x + s * Math.cos(a) * 1.2, me.y + u * 1.2, me.z + s * Math.sin(a) * 1.2)
+  }
+  ab.startDirectionFunction = (_m, dir, p) => dir.set(me.x - p.position.x, me.y - p.position.y, me.z - p.position.z).normalize()
+  ab.emitRate = 0
+  ab.start()
+  systems.push(ab)
+  let absorbT = -1
+  const ABSORB = 0.75
+
   const RING = burst(dot, { cap: 90, c1: new Color4(1, 0.88, 0.35, 1), c2: new Color4(1, 0.6, 0.15, 1), size: [0.08, 0.2], life: [0.35, 0.7], power: [3, 7], gravity: 0, ring: true })
   const FUEL = burst(dot, { cap: 50, c1: new Color4(0.4, 1, 0.7, 1), c2: new Color4(0.2, 0.9, 1, 1), size: [0.06, 0.16], life: [0.3, 0.6], power: [2, 5], gravity: 2 })
   const CRASH = burst(dot, { cap: 80, c1: new Color4(1, 0.7, 0.3, 1), c2: new Color4(0.7, 0.55, 0.45, 1), size: [0.1, 0.35], life: [0.4, 0.9], power: [3, 9], gravity: -9 })
@@ -292,6 +375,21 @@ export function createJetVfx(scene: Scene, tier: QualityTier, phase: PhaseId): J
       exAt.set(x, y - 0.1, z - 0.4)
       ex.emitRate = thrust ? 160 * k + 20 : 0
       windAt.set(x * 0.5, 0, z + 18)
+      me.set(x, y, z)
+      sp.emitRate = canList.length ? Math.min(6, canList.length) * 7 * k + 2 : 0
+      if (absorbT >= 0) {
+        // pelo relógio (o celular desenha a 30 quadros: contar quadros dobraria a duração)
+        const u = Math.min(1, (performance.now() - absorbT) / 1000 / ABSORB)
+        aura.position.set(x, y, z + 0.05)
+        aura.scaling.setAll(1.4 + u * 1.8)
+        auraMat.alpha = (1 - u) * 0.95
+        ab.emitRate = u < 0.45 ? 240 * k + 30 : 0
+        if (u >= 1) {
+          absorbT = -1
+          aura.setEnabled(false)
+          ab.emitRate = 0
+        }
+      }
       if (wind) wind.emitRate = (30 + v * 1.2) * k + 6
     },
     ring(x, y, z, r) {
@@ -299,6 +397,13 @@ export function createJetVfx(scene: Scene, tier: QualityTier, phase: PhaseId): J
     },
     fuel(x, y, z) {
       stage.play("fuel", FUEL, { x, y, z }, 3)
+    },
+    cans(pts) {
+      canList = pts
+    },
+    absorb() {
+      absorbT = performance.now()
+      aura.setEnabled(true)
     },
     crash(x, y, z) {
       stage.play("crash", CRASH, { x, y, z }, 1)
@@ -311,6 +416,8 @@ export function createJetVfx(scene: Scene, tier: QualityTier, phase: PhaseId): J
     dispose() {
       stage.dispose()
       for (const s of systems) s.dispose(false)
+      aura.dispose()
+      auraMat.dispose()
       dot.dispose()
       streak.dispose()
     },

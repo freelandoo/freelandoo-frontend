@@ -477,6 +477,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
         const c = obstacles.canAt(e.id)
         flash(c ? c.x : flight.x, c ? c.y : flight.y, c ? c.z : flight.z + 1)
         vfx.fuel(c ? c.x : flight.x, c ? c.y : flight.y, c ? c.z : flight.z + 1)
+        vfx.absorb()
         notice({ kind: "can", n: e.n })
         break
       }
@@ -761,6 +762,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (ringsPassed.size > 64) ringsPassed.clear()
     }
     obstacles.sync(flight, z - 9, z + fogEnd + 12, now)
+    vfx.cans(obstacles.canPoints())
     for (const fl of flashes) {
       if (fl.t >= 1) continue
       fl.t = Math.min(1, fl.t + dt * 3.2)

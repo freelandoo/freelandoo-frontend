@@ -28,6 +28,10 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import "@babylonjs/core/Meshes/instancedMesh"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
+import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder"
+import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Constants } from "@babylonjs/core/Engines/constants"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix } from "@babylonjs/core/Maths/math.vector"
@@ -63,7 +67,7 @@ const RED_LAMP: RGB = [1, 0.25, 0.12]
 const FUEL: RGB = [0.29, 0.98, 0.64]
 const mixRGB = (a: RGB, b: RGB, k: number): RGB => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]
 
-type Key = "slab" | "hammer" | "pipe" | "gear" | "can" | "panel" | "petal" | "energy" | "bar" | "hole" | "rim" | "rock" | "gem" | "log" | "frame" | "girder" | "rail" | "carriage" | "tile" | "corner"
+type Key = "slab" | "hammer" | "pipe" | "gear" | "can" | "panel" | "petal" | "energy" | "bar" | "hole" | "rim" | "rock" | "gem" | "log" | "frame" | "girder" | "rail" | "carriage" | "tile" | "corner" | "halo"
 /** Pedaços de borda por lado da janela (no máximo). */
 const TILES = 3
 /** Pedaços de borda numa viga (12 m de lado a lado). */
@@ -113,6 +117,8 @@ export interface ObstaclesView {
   sync: (f: Flight, zFrom: number, zTo: number, now: number) => void
   /** Onde estava um galão (para o brilho de pegar). */
   canAt: (id: number) => Can | null
+  /** Galões à vista agora (para as faíscas em volta deles). Mesmo array a cada quadro. */
+  canPoints: () => readonly Vector3[]
   /** Troca o molde de uma peça por um modelo (GLB do Tripo): o anel e a rocha do Cânion. */
   useModel: (key: "rim" | "rock" | "panel" | "petal" | "gear" | "gem" | "can", mesh: Mesh, opts?: { zScale?: number; fitBox?: boolean; bake?: Matrix; upright?: boolean }) => void
   /**
@@ -259,6 +265,33 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
   make("pipe", (g) => pipe(g, DEPTH.pipes))
   make("gear", (g) => gear(g, DEPTH.gears))
   make("can", can)
+  // halo do galão: placa sempre de frente, textura radial somada à cena (brilho sem GlowLayer)
+  const haloTex = new DynamicTexture("jt-halo-tex", { width: 64, height: 64 }, scene, false)
+  {
+    const c = haloTex.getContext() as CanvasRenderingContext2D
+    const g = c.createRadialGradient(32, 32, 0, 32, 32, 32)
+    g.addColorStop(0, "rgba(255,255,255,1)")
+    g.addColorStop(0.35, "rgba(255,255,255,0.55)")
+    g.addColorStop(1, "rgba(255,255,255,0)")
+    c.fillStyle = g
+    c.fillRect(0, 0, 64, 64)
+    haloTex.hasAlpha = true
+    haloTex.update()
+  }
+  const haloMat = new StandardMaterial("jt-halo", scene)
+  haloMat.disableLighting = true
+  haloMat.emissiveColor = new Color3(FUEL[0], FUEL[1], FUEL[2])
+  haloMat.diffuseColor = new Color3(0, 0, 0)
+  haloMat.specularColor = new Color3(0, 0, 0)
+  haloMat.opacityTexture = haloTex
+  haloMat.alphaMode = Constants.ALPHA_ADD
+  haloMat.disableDepthWrite = true
+  haloMat.backFaceCulling = false
+  const haloMold = CreatePlane("jt-halo", { size: 1 }, scene)
+  haloMold.material = haloMat
+  haloMold.billboardMode = TransformNode.BILLBOARDMODE_ALL
+  park(haloMold)
+  molds.set("halo", { body: haloMold, glow: null })
   // moldes das fases: tudo de tamanho 1, escalado pela regra (frente em z = 0, fundo em z = 1)
   make("panel", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.panel), wallGlass)
   make("petal", (g) => g.box(1, 1, 1, place(0, 0, 0.5), skin.petal), wallGlass)
@@ -345,7 +378,8 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
 
   /** Cópias de cada obstáculo à vista (id → peças). */
   const shown = new Map<number, Part[]>()
-  const cans = new Map<number, { part: Part; can: Can }>()
+  const cans = new Map<number, { part: Part; halo: Part; can: Can }>()
+  const canPts: Vector3[] = []
   const partsFor = (o: Obstacle): Part[] => {
     switch (o.kind) {
       case "pressV":
@@ -687,15 +721,35 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         if (c.z < zFrom || c.taken) continue
         seen.add(c.id)
         let v = cans.get(c.id)
-        if (!v) cans.set(c.id, (v = { part: take("can"), can: c }))
-        v.part.body.position.set(c.x, c.y + Math.sin(now * 2.4 + c.id) * 0.12, c.z)
+        if (!v) {
+          const halo = take("halo")
+          halo.body.billboardMode = TransformNode.BILLBOARDMODE_ALL
+          cans.set(c.id, (v = { part: take("can"), halo, can: c }))
+        }
+        const cy = c.y + Math.sin(now * 2.4 + c.id) * 0.12
+        v.part.body.position.set(c.x, cy, c.z)
+        // o halo fica logo atrás do galão e pulsa
+        v.halo.body.position.set(c.x, cy, c.z + 0.35)
+        v.halo.body.scaling.setAll(2.3 + Math.sin(now * 4 + c.id) * 0.35)
         v.part.body.rotation.set(0.25, now * 1.8 + c.id, 0)
       }
       for (const [id, v] of cans) {
         if (seen.has(id)) continue
         give(v.part)
+        give(v.halo)
         cans.delete(id)
       }
+    },
+    canPoints() {
+      let i = 0
+      for (const v of cans.values()) {
+        if (!v.part.body.isEnabled()) continue
+        const p = canPts[i] ?? (canPts[i] = new Vector3())
+        p.copyFrom(v.part.body.position)
+        i++
+      }
+      canPts.length = i
+      return canPts
     },
     canAt(id) {
       return cans.get(id)?.can ?? null
@@ -754,6 +808,17 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
           parts[i] = fresh
         }
       }
+      // os galões à vista também (instância morre com o molde: sem isto ficavam INVISÍVEIS e pegáveis)
+      if (key === "can") {
+        for (const v of cans.values()) {
+          const fresh = take("can")
+          fresh.body.position.copyFrom(v.part.body.position)
+          fresh.body.rotation.copyFrom(v.part.body.rotation)
+          fresh.body.setEnabled(v.part.body.isEnabled())
+          v.part.body.dispose()
+          v.part = fresh
+        }
+      }
       if (old) {
         old.body.dispose()
         old.glow?.dispose()
@@ -784,7 +849,12 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
     },
     dispose() {
       for (const parts of shown.values()) for (const p of parts) give(p)
-      for (const v of cans.values()) give(v.part)
+      for (const v of cans.values()) {
+        give(v.part)
+        give(v.halo)
+      }
+      haloMat.dispose()
+      haloTex.dispose()
       for (const list of free.values()) for (const p of list) p.body.dispose()
       for (const m of molds.values()) {
         m.body.dispose()
