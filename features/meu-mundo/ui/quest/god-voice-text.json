@@ -41,5 +41,8 @@
   "qn_golem_3": ["Ninguém entra.", "No one comes in.", "Nadie entra."],
   "qn_golem_4": ["Quem é? Quem é? Ele tá sem arma.", "Who is it? Who is it? They're unarmed.", "¿Quién es? ¿Quién es? Viene sin arma."],
   "qn_golem_5": ["FECHA.", "CLOSE.", "CIERRA."],
-  "qn_golem_armado": ["Larga o ferro ou volta.", "Drop the iron or turn back.", "Suelta el hierro o vuélvete."]
+  "qn_golem_armado": ["Larga o ferro ou volta.", "Drop the iron or turn back.", "Suelta el hierro o vuélvete."],
+  "qv_noctis_cap10_1": ["Meu pai, meu tio. Que os dois durmam.", "My father, my uncle. Let them both sleep.", "Mi padre, mi tío. Que los dos duerman."],
+  "qv_noctis_cap10_2": ["Corre. Joga. Dá néctar para os dois. Quanto mais empatados, mais eu ganho.", "Run. Play. Give nectar to both. The closer the tie, the more I win.", "Corre. Juega. Dale néctar a los dos. Cuanto más empatados, más gano yo."],
+  "qv_noctis_cap10_3": ["Os Vampiros rezam para ele de dia. De noite, obedecem a mim. Ninguém nunca percebeu a diferença.", "The Vampires pray to him by day. By night, they obey me. No one ever noticed the difference.", "Los Vampiros le rezan a él de día. De noche, me obedecen a mí. Nadie notó nunca la diferencia."]
 }

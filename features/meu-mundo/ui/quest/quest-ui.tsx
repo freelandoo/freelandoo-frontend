@@ -51,7 +51,9 @@ export function storyBeat(chapter: string, step: string, clan: "raposa" | "vampi
   const pick = (base: string) => [`${base}_${c}`, base].filter(has)
   const lines = pick(`qs_${chapter}_${step}_done`)
   const hook = chapterDone ? (pick(`qc_${chapter}_hook`)[0] ?? null) : null
-  return lines.length || hook ? { chapter, lines, hook } : null
+  // C6: o último capítulo fecha a temporada (`qc_cap10_season`, depois do gancho)
+  const season = chapterDone ? (pick(`qc_${chapter}_season`)[0] ?? null) : null
+  return lines.length || hook ? { chapter, lines, hook, season } : null
 }
 type Beat = NonNullable<ReturnType<typeof storyBeat>>
 
@@ -281,6 +283,11 @@ export function QuestTracker({
                         {tx(t, "questChapterEnd").replace("{n}", String(beat.n))}
                       </span>
                       {tx(t, beat.hook)}
+                    </p>
+                  )}
+                  {beat.season && (
+                    <p className="mt-1 text-[13px] font-bold leading-snug" style={{ color: AE.text }}>
+                      {tx(t, beat.season)}
                     </p>
                   )}
                 </div>

@@ -89,9 +89,14 @@ export function clawAfterWin(q: FightQuest | null | undefined, clan: "raposa" | 
 // 07-falas §9. Só apresentação: os passos são a vitória conferida e a visita que o
 // SERVIDOR grava (visit:golem só sem arma equipada, POST /domains/place).
 
+const NOCTIS_CAP10 = ["qv_noctis_cap10_1", "qv_noctis_cap10_2", "qv_noctis_cap10_3"] as const
+
 /** No cap. 8 (aberto), Kragor troca o sorteio de sempre pelas falas do capítulo. */
 export function voiceKeyFor(god: VoiceGod, q: { chapter: number; locked: unknown } | null | undefined, rnd: () => number = Math.random): string {
   if (god === "kragor" && q && q.chapter === 8 && !q.locked) return rnd() < 0.5 ? "qv_kragor_cap8_1" : "qv_kragor_cap8_2"
+  // C6 (cap. 10, 07-falas §11): Noctis, no Rolê Noturno, troca o sorteio pelas três falas
+  // do capítulo — não quer nenhum dos dois deuses acordado
+  if (god === "noctis" && q && q.chapter === 10 && !q.locked) return NOCTIS_CAP10[Math.min(NOCTIS_CAP10.length - 1, Math.floor(rnd() * NOCTIS_CAP10.length))]
   return voiceKey(god, rnd)
 }
 

@@ -10,7 +10,7 @@
 
 import type { BodyId } from "./types"
 
-export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto" | "forjador" | "armeiro" | "bibliotecaria" | "ciborgue" | "fulvo" | "pipa"
+export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto" | "forjador" | "armeiro" | "bibliotecaria" | "ciborgue" | "fulvo" | "pipa" | "cavaleiro"
 
 /** Onde a pessoa está na história quando abre a conversa. */
 export interface TalkMoment {
@@ -84,6 +84,15 @@ export const NPCS: Record<NpcId, NpcDef> = {
         lines: [{ key: "material_1" }, { key: "material_2" }, { key: "material_you", me: true }, { key: "material_3" }, { key: "material_4" }, { key: "material_5" }],
       },
       { id: "cap7", when: at("cap7"), idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }, { key: "idle_3" }] },
+      // C6 (cap. 10, 07-falas §11): de volta à cápsula três. A memória de quem joga é pela
+      // classe (fixa); a fala 4 também (§12, pergunta 5, pela recomendação: ela conta — ao
+      // Vampiro, que o homem da vala era o pai dela; à Raposa, que soldou as garras). A
+      // personalidade responde no fim, à pergunta "Vai jogar também?".
+      {
+        id: "memoria",
+        when: at("cap10", "memoria"),
+        lines: [{ key: "memoria_1" }, { key: "memoria_you", me: true, byClan: true }, { key: "memoria_3" }, { key: "memoria_4", byClan: true }, { key: "memoria_5" }],
+      },
       { id: "sempre", lines: [{ key: "sempre_1" }] },
     ],
   },
@@ -133,6 +142,8 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ambient: true,
     conversations: [
       { id: "rival", when: rival("vampiro"), lines: [{ key: "idle_vampiro" }] },
+      // C6 (cap. 9): a mesma ordem que Fulvo dá do outro lado (07-falas §10)
+      { id: "cap9", when: at("cap9"), lines: [{ key: "cap9_1" }] },
       { id: "cap3", when: at("cap3"), lines: [{ key: "cap3_1" }, { key: "cap3_2" }, { key: "cap3_3" }] },
       { id: "cap3", idle: true, lines: [{ key: "cap3_1" }, { key: "cap3_2" }, { key: "cap3_3" }] },
     ],
@@ -204,6 +215,8 @@ export const NPCS: Record<NpcId, NpcDef> = {
     look: "",
     conversations: [
       { id: "fulvo", when: at("cap6", "fulvo"), lines: [{ key: "fulvo_1", byClan: true }, { key: "fulvo_2" }, { key: "fulvo_3" }, { key: "fulvo_4" }, { key: "fulvo_5" }] },
+      // C6 (cap. 9): ao Vampiro, a mesma ordem da Sacerdotisa, do lado oposto (07-falas §10)
+      { id: "cap9", when: (m) => m.clan === "vampiro" && at("cap9")(m), lines: [{ key: "cap9_1" }] },
       { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
     ],
   },
@@ -217,6 +230,22 @@ export const NPCS: Record<NpcId, NpcDef> = {
     conversations: [
       { id: "pipa", when: at("cap8", "pipa"), lines: [{ key: "pipa_1" }, { key: "pipa_2" }, { key: "pipa_3" }, { key: "pipa_4" }, { key: "pipa_5" }] },
       { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
+  // C6 (cap. 9, 07-falas §10): o Cavaleiro Dourado (Aldo), corpo `cavaleiro`, de noite na
+  // calçada do portal dos Bairros, "vigiando quem chega" (meuMundoCenter.js; §12, pergunta 3).
+  // No passo "aldo" a conversa inteira; a última fala é pela classe de quem ouve (à Raposa,
+  // "não me peça para sair da frente"; ao Vampiro, "somos aliados"). A personalidade comenta no fim.
+  cavaleiro: {
+    body: "cavaleiro",
+    look: "",
+    conversations: [
+      {
+        id: "aldo",
+        when: at("cap9", "aldo"),
+        lines: [{ key: "aldo_1" }, { key: "aldo_2" }, { key: "aldo_3" }, { key: "aldo_4" }, { key: "aldo_5" }, { key: "aldo_6", byClan: true }],
+      },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }] },
     ],
   },
 }
