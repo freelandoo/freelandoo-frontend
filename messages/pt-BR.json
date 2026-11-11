@@ -11816,7 +11816,16 @@
     "gearSource_sentinela_luvas": "Conjunto Sentinela de Bronze: setores 7 a 10 do Domínio Fábrica de Bronze.",
     "gear_sentinela_botas": "Botas da Sentinela de Bronze",
     "gearDesc_sentinela_botas": "Peça do conjunto Sentinela de Bronze. Com 2 peças o conjunto já soma; com as 4, soma inteiro.",
-    "gearSource_sentinela_botas": "Conjunto Sentinela de Bronze: setores 7 a 10 do Domínio Fábrica de Bronze."
+    "gearSource_sentinela_botas": "Conjunto Sentinela de Bronze: setores 7 a 10 do Domínio Fábrica de Bronze.",
+    "domFoe_abutre": "Abutres de Pó",
+    "domFoe_chacal": "Chacais de Vento",
+    "domFoe_mensageiro": "Mensageiro Sem Rosto",
+    "domFoe_escorpiao": "Escorpião Para-raios",
+    "domFoe_harpia": "Harpias",
+    "domFoe_carta": "A Carta",
+    "domFoe_zephyra": "Zéphyra",
+    "laminasZephyraPhase2": "VENTO QUE DERRUBA",
+    "laminasZephyraPhase3": "RASTRO DE RAIO"
   },
   "Sports": {
     "eyebrow": "Esportes",

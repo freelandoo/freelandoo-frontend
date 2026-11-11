@@ -14,6 +14,12 @@
 //  • "palacio": o setor do guardião e do deus — colunata de arcos de raízes em
 //    volta do círculo, coroa de cristais e as ilhas da floresta no alto.
 //
+// Lore v2 D5: o Cânion das Tempestades (kit do tema `temas/canion/v2`) tem os SEUS três palcos
+// (RINGS_BY_KIT.canion): paredões de pedra vermelha em anel no lugar das árvores, cactos e pedras
+// com raízes na beira, torres de vigia e o moinho no fundo; no palácio, a colunata de arcos de
+// pedra e os anéis da Pista do Céu no alto. Na troca de fase de Zéphyra, além de escurecer, o
+// céu pisca um relâmpago ciano (`flash`, só números de luz).
+//
 // Lore v2 D4: o deus chefão luta em fases e "a arena escurece a cada fase" (Noctis).
 // `phase(n)` desce a luz do céu e da lua, fecha a névoa e escurece o fundo em ~1 s;
 // o filete do círculo segue aceso (é ele que mostra onde a luta prende). Custo zero:
@@ -34,8 +40,8 @@ export interface DomainStageSpec {
   spot: DomainSpot
 }
 
-/** Anel em volta do círculo: [peça, raio, altura, quantas, deslocamento do ângulo]. */
-type Ring = [KitPiece, number, number, number, number]
+/** Anel em volta do círculo: [peça, raio, altura, quantas, deslocamento do ângulo, fica fora do low?]. */
+type Ring = [KitPiece, number, number, number, number, boolean?]
 
 const RINGS: Record<DomainSpot, Ring[]> = {
   entrada: [
@@ -63,6 +69,34 @@ const RINGS: Record<DomainSpot, Ring[]> = {
   ],
 }
 
+/** D5: os palcos do Cânion (as medidas das pedras e do anel são as da regra do Jetpack × a escala). */
+// No Cânion o paredão É o lugar: no low sai o anel de fora marcado (`true`), nunca o paredão de dentro.
+const CANYON_RINGS: Record<DomainSpot, Ring[]> = {
+  entrada: [
+    ["rocha2", ARENA_R + 2, 1.1, 7, 0],
+    ["cacto", ARENA_R + 2.6, 2.4, 6, 0.2],
+    ["pedra-raizes", ARENA_R + 3.6, 2.8, 6, 0.55, true],
+    ["torre-vigia", ARENA_R + 12, 7, 3, 0.35],
+    ["paredao", ARENA_R + 17, 18, 12, 0.1],
+    ["paredao", ARENA_R + 27, 26, 8, 0.45, true],
+  ],
+  fundo: [
+    ["rocha", ARENA_R + 2.6, 1.4, 6, 0.3],
+    ["pedra-raizes", ARENA_R + 3, 3.2, 6, 0.8],
+    ["cacto", ARENA_R + 4.4, 3, 5, 0.05, true],
+    ["moinho", ARENA_R + 11, 9, 2, 0.15],
+    ["paredao", ARENA_R + 14, 20, 14, 0.6],
+    ["paredao", ARENA_R + 23, 28, 10, 0.25, true],
+  ],
+  palacio: [
+    ["rocha2", ARENA_R + 1.8, 1.2, 10, 0],
+    ["cacto", ARENA_R + 3.2, 2.2, 6, 0.5, true],
+    ["torre-vigia", ARENA_R + 12, 8, 4, 0.35, true],
+    ["paredao", ARENA_R + 18, 24, 14, 0.2],
+  ],
+}
+const RINGS_BY_KIT: Record<DomainKitId, Record<DomainSpot, Ring[]>> = { floresta: RINGS, canion: CANYON_RINGS }
+
 /** Monta o palco do Domínio na cena da luta. Luzes: "mm-hemi"/"mm-sun" (achadas pelo nome). */
 export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSpec): ArenaView {
   let disposed = false
@@ -75,15 +109,18 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   const DARK: Record<number, { light: number; sky: number; fog: number }> = { 1: { light: 1, sky: 1, fog: 1 }, 2: { light: 0.72, sky: 0.55, fog: 0.82 }, 3: { light: 0.48, sky: 0.25, fog: 0.62 } }
   let dark = 1
   let darkTo = 1
+  // D5: o relâmpago da troca de fase de Zéphyra (some em ~0,5 s)
+  const storm = spec.kit === "canion"
+  let flash = 0
   const applyDark = (k: number) => {
     const d2 = DARK[2]
     const d3 = DARK[3]
     // k: 1 (fase 1) → 2 → 3, contínuo para a transição
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t
     const at = (key: "light" | "sky" | "fog") => (k <= 2 ? lerp(1, d2[key], k - 1) : lerp(d2[key], d3[key], k - 2))
-    if (hemi) hemi.intensity = base.hemi * at("light")
-    if (moon) moon.intensity = base.moon * at("light")
-    const sk = at("sky")
+    if (hemi) hemi.intensity = base.hemi * at("light") * (1 + flash * 1.6)
+    if (moon) moon.intensity = base.moon * at("light") * (1 + flash * 2.2)
+    const sk = at("sky") + flash * 0.9
     scene.clearColor.set(base.clear.r * sk, base.clear.g * sk, base.clear.b * sk, base.clear.a)
     scene.fogColor.set(base.fog.r * sk, base.fog.g * sk, base.fog.b * sk)
     scene.fogEnd = base.fogEnd * at("fog")
@@ -104,16 +141,17 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   let placer: KitPlacer | null = null
   let dropKit: (() => void) | null = null
   // no low: menos peças por anel e sem o anel de árvores de fora (a névoa já fecha)
-  const rings = RINGS[spec.spot]
+  const rings = (RINGS_BY_KIT[spec.kit] ?? RINGS)[spec.spot]
   const far = Math.max(...rings.map((x) => x[1]))
-  const used = rings.filter((x) => !(low && rings.length > 3 && x[1] === far))
+  const marked = rings.some((x) => x[5])
+  const used = rings.filter((x) => !(low && (marked ? x[5] : rings.length > 3 && x[1] === far)))
   // só os arquivos das peças deste palco (cada arquivo é uma textura a mais na luta)
   // o arco tem textura de 1024: no low só o palácio (a colunata é a cara dele) o carrega
   const arch = spec.spot === "palacio" || (spec.spot === "entrada" && !low)
-  const pieces: KitPiece[] = [...used.map((x) => x[0]), ...(arch ? (["arco"] as KitPiece[]) : []), ...(spec.spot === "palacio" && !low ? (["ilha"] as KitPiece[]) : [])]
+  const pieces: KitPiece[] = [...used.map((x) => x[0]), ...(arch ? (["arco"] as KitPiece[]) : []), ...(spec.spot === "palacio" && !low ? (["ilha"] as KitPiece[]) : []), ...(storm && spec.spot === "palacio" ? (["anel"] as KitPiece[]) : [])]
   // a câmera da luta fica a 20–35 m das árvores. B6 (tema v2): a versão de longe delas deixou de ser
   // serrilhada (2.000 tri, mais bonita que a de perto da v1, 3.000) e a de perto subiu para 3.600: troca a 30 m
-  void loadDomainKit(scene, spec.kit, () => !disposed, pieces, { arvore: 30, arvore2: 30 }).then((kit) => {
+  void loadDomainKit(scene, spec.kit, () => !disposed, pieces, storm ? (low ? { paredao: 24, arco: 22, "torre-vigia": 24, moinho: 24 } : { paredao: 34 }) : { arvore: 30, arvore2: 30 }).then((kit) => {
     if (disposed) return kit.dispose()
     dropKit = kit.dispose
     const p = new KitPlacer(kit, `dom-stage-${spec.spot}`)
@@ -121,18 +159,27 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
     const r = seeded(spec.spot.length * 97 + 13)
     const thin = low ? 0.5 : 1
     for (const [piece, rad, h, n0, off] of used) {
-      const n = Math.max(3, Math.round(n0 * thin))
+      // D5: o paredão do Cânion não rareia no low (com buraco o cânion vira deserto); troca de longe mais cedo
+      const n = Math.max(3, Math.round(n0 * (storm && piece === "paredao" ? 1 : thin)))
       for (let i = 0; i < n; i++) {
         const a = ((i + off) / n) * Math.PI * 2 + (r() - 0.5) * 0.18
         const rr = rad + (r() - 0.5) * 1.2
         p.put(piece, Math.cos(a) * rr, Math.sin(a) * rr, h * (0.85 + r() * 0.3), r() * Math.PI * 2)
       }
     }
-    // entrada: o arco de raízes atrás de quem chega (−z), virado para o círculo
+    // entrada: o arco (de raízes / de pedra) atrás de quem chega (−z), virado para o círculo
     if (spec.spot === "entrada" && arch) p.put("arco", 0, -(ARENA_R + 7), 9, 0)
+    // D5: os anéis da Pista do Céu no alto do palácio de Zéphyra (o trilho por onde ela corre)
+    if (storm && spec.spot === "palacio") {
+      const n = low ? 2 : 4
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + 0.3
+        p.put("anel", Math.cos(a) * (ARENA_R + 14), Math.sin(a) * (ARENA_R + 14), 3.2, -a, 9 + (i % 2) * 3)
+      }
+    }
     // palácio: colunata de arcos em volta, todos olhando para o meio, e as ilhas no alto
     if (spec.spot === "palacio") {
-      const arches = low ? 4 : 7
+      const arches = low ? (storm ? 2 : 4) : 7
       for (let i = 0; i < arches; i++) {
         const a = (i / arches) * Math.PI * 2 + Math.PI / arches
         const R = ARENA_R + 6
@@ -150,13 +197,15 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
       /* mata não tem plateia */
     },
     update(dt: number) {
-      // a lua não se mexe; só a escuridão das fases do chefão anda (~1 s por fase)
-      if (dark === darkTo) return
+      // a lua não se mexe; só a escuridão das fases do chefão anda (~1 s por fase) e o relâmpago some
+      if (dark === darkTo && flash === 0) return
       dark = darkTo > dark ? Math.min(darkTo, dark + dt) : Math.max(darkTo, dark - dt)
+      flash = Math.max(0, flash - dt * 2)
       applyDark(dark)
     },
     phase(n: number) {
       darkTo = Math.max(1, Math.min(3, n))
+      if (storm && n > 1) flash = 1
     },
     dispose() {
       disposed = true

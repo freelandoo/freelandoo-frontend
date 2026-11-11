@@ -358,8 +358,11 @@ function LaminasScreen({
     armored: t("laminasArmored", "BLINDADO"),
     guard: t("laminasGuard", "EM GUARDA"),
     // lore v2 D4: as fases do deus chefão (a arena escurece a cada uma)
-    phase2: t("laminasBossPhase2", "LUA MINGUANTE"),
-    phase3: t("laminasBossPhase3", "LUA NOVA"),
+    phases: {
+      noctis: [t("laminasBossPhase2", "LUA MINGUANTE"), t("laminasBossPhase3", "LUA NOVA")] as [string, string],
+      // lore v2 D5: Zéphyra — o vento que derruba e o rastro de raio no trilho
+      zephyra: [t("laminasZephyraPhase2", "VENTO QUE DERRUBA"), t("laminasZephyraPhase3", "RASTRO DE RAIO")] as [string, string],
+    },
     fleeWarn: t("laminasFleeWarn", "Tô com medo dessa luta, vou sair."),
     // apresentação 11: o letreiro que passa na saída da vitória
     sign: t("fightSign", "VITÓRIA"),

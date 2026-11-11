@@ -12402,7 +12402,16 @@
     "gearSource_sentinela_luvas": "Bronze Sentinel set: sectors 7 to 10 of the Bronze Factory Domain.",
     "gear_sentinela_botas": "Bronze Sentinel Boots",
     "gearDesc_sentinela_botas": "Piece of the Bronze Sentinel set. With 2 pieces the set already counts; with all 4, it counts in full.",
-    "gearSource_sentinela_botas": "Bronze Sentinel set: sectors 7 to 10 of the Bronze Factory Domain."
+    "gearSource_sentinela_botas": "Bronze Sentinel set: sectors 7 to 10 of the Bronze Factory Domain.",
+    "domFoe_abutre": "Dust Vultures",
+    "domFoe_chacal": "Wind Jackals",
+    "domFoe_mensageiro": "Faceless Messenger",
+    "domFoe_escorpiao": "Lightning-Rod Scorpion",
+    "domFoe_harpia": "Harpies",
+    "domFoe_carta": "The Letter",
+    "domFoe_zephyra": "Zéphyra",
+    "laminasZephyraPhase2": "TOPPLING WIND",
+    "laminasZephyraPhase3": "LIGHTNING TRAIL"
   },
   "Sports": {
     "eyebrow": "Sports",

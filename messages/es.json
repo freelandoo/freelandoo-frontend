@@ -12382,7 +12382,16 @@
     "gearSource_sentinela_luvas": "Conjunto Centinela de Bronce: sectores 7 a 10 del Dominio Fábrica de Bronce.",
     "gear_sentinela_botas": "Botas de la Centinela de Bronce",
     "gearDesc_sentinela_botas": "Pieza del conjunto Centinela de Bronce. Con 2 piezas el conjunto ya suma; con las 4, suma completo.",
-    "gearSource_sentinela_botas": "Conjunto Centinela de Bronce: sectores 7 a 10 del Dominio Fábrica de Bronce."
+    "gearSource_sentinela_botas": "Conjunto Centinela de Bronce: sectores 7 a 10 del Dominio Fábrica de Bronce.",
+    "domFoe_abutre": "Buitres de Polvo",
+    "domFoe_chacal": "Chacales de Viento",
+    "domFoe_mensageiro": "Mensajero Sin Rostro",
+    "domFoe_escorpiao": "Escorpión Pararrayos",
+    "domFoe_harpia": "Arpías",
+    "domFoe_carta": "La Carta",
+    "domFoe_zephyra": "Zéphyra",
+    "laminasZephyraPhase2": "VIENTO QUE DERRIBA",
+    "laminasZephyraPhase3": "ESTELA DE RAYO"
   },
   "Sports": {
     "eyebrow": "Deportes",

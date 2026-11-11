@@ -57,6 +57,14 @@ const FOE_PT: Record<string, string> = {
   lobo: "Lobos de Ferrugem",
   selene: "Selene de Sombra",
   noctis: "Noctis",
+  // D5: o Cânion das Tempestades (§2)
+  abutre: "Abutres de Pó",
+  chacal: "Chacais de Vento",
+  mensageiro: "Mensageiro Sem Rosto",
+  escorpiao: "Escorpião Para-raios",
+  harpia: "Harpias",
+  carta: "A Carta",
+  zephyra: "Zéphyra",
 }
 export const foeName = (t: Tr, id: string) => t(`domFoe_${id}`, FOE_PT[id] ?? id)
 

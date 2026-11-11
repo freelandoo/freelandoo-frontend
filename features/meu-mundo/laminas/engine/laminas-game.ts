@@ -38,7 +38,7 @@ import { Character } from "../../engine/player"
 import { BoxeAudio } from "./audio"
 import { StrikeAudio } from "./strike-audio"
 import type { BodyId } from "../../types"
-import { BOSS_ROAR, ARENA_R, COMBO, DT, Fight, MOBS, MOB_SHIELD, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
+import { BOSS_ROAR, ARENA_R, COMBO, DT, Fight, MOBS, MOB_SHIELD, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind, type BossId } from "../sim/fight"
 import { createSkillFx, SKILL_COLORS, type SkillPalette } from "./skill-fx"
 import { buildArena } from "./arena-view"
 import { buildStreet } from "./street-view"
@@ -133,9 +133,8 @@ export interface LaminasGameOptions {
     stun?: string
     armored?: string
     guard?: string
-    /** Lore v2 D4: o nome de cada fase do deus chefão (2 e 3). */
-    phase2?: string
-    phase3?: string
+    /** Lore v2 D4/D5: os nomes das fases 2 e 3 de cada deus chefão. */
+    phases?: Partial<Record<BossId, [string, string]>>
     foeSkills?:Partial<Record<"slash" | "dash" | "shield" | "ult", string>>
   }
   body: BodyId
@@ -421,6 +420,9 @@ const HAND = "mixamorig:RightHand"
 /** Giro da espada em relação ao osso da mão (a lâmina sai do lado do polegar). */
 const GRIP = Quaternion.RotationYawPitchRoll(0, 0, Math.PI / 2)
 const GRIP_OFFSET = new Vector3(0.0, 0.085, 0.03)
+
+/** Os nomes das fases 2 e 3 de cada deus chefão, quando a tela não manda os traduzidos (laminas-view manda). */
+const BOSS_PHASE_PT: Record<BossId, [string, string]> = { noctis: ["LUA MINGUANTE", "LUA NOVA"], zephyra: ["VENTO QUE DERRUBA", "RASTRO DE RAIO"] }
 
 export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const { canvas } = opts
@@ -1423,8 +1425,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           vfx.ground(new Vector3(m.x, 0, m.z), c, 4.5, BOSS_ROAR + 0.4, true)
           vfx.burst(new Vector3(m.x, 1.6, m.z), c)
           vfx.impact(new Vector3(m.x, 1.4, m.z), c, true, 2.4)
-          const name = e.phase >= 3 ? opts.labels?.phase3 : opts.labels?.phase2
-          pop(new Vector3(m.x, FOE_H[m.kind] + 0.9, m.z), name ?? (e.phase >= 3 ? "LUA NOVA" : "LUA MINGUANTE"), bp[3], 40, 3)
+          // D5: cada deus tem os nomes das próprias fases (Noctis: as luas; Zéphyra: a tempestade)
+          const boss = fight.boss ?? "noctis"
+          const names = opts.labels?.phases?.[boss] ?? BOSS_PHASE_PT[boss]
+          pop(new Vector3(m.x, FOE_H[m.kind] + 0.9, m.z), names[e.phase >= 3 ? 1 : 0], bp[3], 40, 3)
           arena.phase?.(e.phase)
           shake = Math.max(shake, 0.55)
           hitStop = Math.max(hitStop, 0.12)
@@ -1742,6 +1746,24 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             shake = Math.max(shake, 0.07)
           }
           if (entered) audio.boom()
+        } else if (a.id === "gale" || a.id === "boltRush") {
+          // lore v2 D5: Zéphyra — a rajada reta que sai da lâmina e o rastro de raio do avanço (paleta dela)
+          const zp = signatureOf("zephyra").pal
+          const zc = { main: Color3.FromHexString(zp[2]), edge: Color3.FromHexString(zp[3]) }
+          if (entered && a.id === "gale") {
+            for (let i = 1; i <= 5; i++) vfx.impact(new Vector3(m.x + sx * far * (i / 5), 1.2, m.z + sz * far * (i / 5)), zc, i === 5, 1.2)
+            shake = Math.max(shake, 0.18)
+            audio.whoosh()
+          }
+          if (a.id === "boltRush") {
+            v.fxAt -= dt
+            if (entered || v.fxAt <= 0) {
+              v.fxAt = 0.08
+              vfx.impact(new Vector3(m.x, 1, m.z), zc, false, 0.9)
+              vfx.dust(new Vector3(m.x, 0.15, m.z), 6)
+            }
+            if (entered) audio.dash()
+          }
         } else if (a.id === "breath") {
           const mouth = v.model.wolfMouth()
           if (mouth) v.rays[0]?.fire(mouth, end, 0.38, 0.16)

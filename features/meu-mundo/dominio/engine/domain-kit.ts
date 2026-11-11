@@ -45,7 +45,7 @@ export type DomainSpot = "entrada" | "fundo" | "palacio"
 /** Distância (m) da versão de longe: a câmera está a ~9 m do personagem, no chão. */
 // B6: árvores trocam mais cedo (22/24 m, eram 26/28): a versão de longe do tema v2 já é boa e a de perto subiu
 const FOREST_LOD_NEAR: Partial<Record<ForestAsset, number>> = { cristais: 28, cogumelo: 30, ilha: 60, arvore: 22, planta: 22, arco: 24, "cogumelo-casa": 30, arvore2: 24, flor: 20, lanterna: 22, "tronco-caido": 26, ninho: 24 }
-const CANYON_LOD_NEAR: Partial<Record<CanyonAsset, number>> = { paredao: 45, moinho: 40, arco: 45, ilha: 70, "pedra-raizes": 30, cacto: 28, ponte: 50, "torre-vigia": 40 }
+const CANYON_LOD_NEAR: Partial<Record<CanyonAsset, number>> = { paredao: 45, moinho: 40, arco: 45, ilha: 70, "pedra-raizes": 30, cacto: 28, ponte: 50, "torre-vigia": 40, rocha2: 24, rocha: 30, anel: 45 }
 
 export type KitPiece = ForestAsset | CanyonAsset
 
@@ -145,7 +145,7 @@ export interface DomainLook {
   hemi: { sky: [number, number, number]; ground: [number, number, number]; k: number }
   moon: { color: [number, number, number]; k: number }
   /** Chão pintado: terra, musgo e o caminho. */
-  ground: { soil: string; moss: string; path: string; glow: string }
+  ground: { soil: string; moss: string; path: string; glow: string; track?: string }
 }
 
 export const LOOKS: Record<DomainKitId, DomainLook> = {
@@ -165,7 +165,8 @@ export const LOOKS: Record<DomainKitId, DomainLook> = {
     fogEnd: 110,
     hemi: { sky: [1, 0.82, 0.7], ground: [0.4, 0.2, 0.15], k: 1 },
     moon: { color: [1, 0.85, 0.7], k: 0.8 },
-    ground: { soil: "#6a3424", moss: "#7a4430", path: "#8a5a3a", glow: "#5fe0ff" },
+    // D5: o trilho da Pista do Céu esculpido na rocha — dois sulcos acesos de ciano no caminho
+    ground: { soil: "#6a3424", moss: "#7a4430", path: "#8a5a3a", glow: "#5fe0ff", track: "#5fe0ff" },
   },
 }
 
@@ -227,6 +228,17 @@ export function paintedGround(scene: Scene, name: string, look: DomainLook, w: n
       g.fillRect(x0 + wob, y, pw, 4)
     }
     g.globalAlpha = 1
+    // D5: os sulcos do trilho (Cânion), rentes às duas beiras do caminho
+    if (look.ground.track) {
+      g.fillStyle = look.ground.track
+      g.globalAlpha = 0.55
+      for (let y = 0; y < H; y += 4) {
+        const wob = Math.sin(y / 37) * 6 + Math.sin(y / 11) * 2
+        g.fillRect(x0 + wob + pw * 0.14, y, 3, 4)
+        g.fillRect(x0 + wob + pw * 0.86 - 3, y, 3, 4)
+      }
+      g.globalAlpha = 1
+    }
     // pedras pisadas no caminho
     for (let i = 0; i < 90; i++) {
       g.fillStyle = `rgba(150,140,120,${0.18 + r() * 0.2})`

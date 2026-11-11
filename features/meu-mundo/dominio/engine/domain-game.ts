@@ -51,6 +51,7 @@ import type { BodyId, InteriorDef } from "../../types"
 import type { DomainInfo, DomainId } from "../../data"
 import { GodFigure, GOD_HUNT } from "../../engine/god-view"
 import type { GodId } from "../../laminas/sim/fight"
+import { PIECE } from "../../jetpack/engine/canyon-assets"
 import { KitPlacer, LOOKS, applyDomainLook, loadDomainKit, paintedGround, seeded, type DomainKitId, type KitPiece } from "./domain-kit"
 
 /** Medidas da cena (metros). */
@@ -217,15 +218,24 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
     if (m) groups[g].push(m)
   }
   // só os arquivos das peças que a cena usa (a moldura do Jetpack, 1024, fica de fora)
-  const scenePieces: KitPiece[] = ["arco", "lanterna", "cogumelo", "arvore", "arvore2", "planta", "flor", "cogumelo-casa", "ninho", "cristais", "tronco-caido", ...(low ? [] : (["ilha"] as KitPiece[]))]
+  const canyon = opts.kit === "canion"
+  const scenePieces: KitPiece[] = canyon
+    ? ["arco", "paredao", "pedra-raizes", "rocha2", "cacto", "torre-vigia", "moinho", "rocha", "anel", ...(low ? [] : (["ilha"] as KitPiece[]))]
+    : ["arco", "lanterna", "cogumelo", "arvore", "arvore2", "planta", "flor", "cogumelo-casa", "ninho", "cristais", "tronco-caido", ...(low ? [] : (["ilha"] as KitPiece[]))]
   /** Peça da beira que cairia dentro de uma clareira (ou na boca dela) fica de fora. */
   const clear = (x: number, z: number) => !inClearing(x, z, 2.5)
-  void loadDomainKit(scene, opts.kit, alive, scenePieces).then((kit) => {
+  // D5: no low o paredão e o arco do Cânion trocam pela versão de longe mais cedo (são as peças grandes)
+  void loadDomainKit(scene, opts.kit, alive, scenePieces, canyon && low ? { paredao: 26, arco: 30, "torre-vigia": 26 } : undefined).then((kit) => {
     if (disposed) return kit.dispose()
     drops.push(kit.dispose)
     const p = new KitPlacer(kit, "dom")
     placer = p
     const thin = low ? 0.6 : 1
+    if (canyon) {
+      dressCanyon(p, thin)
+      refresh(true)
+      return
+    }
     // entrada: clareira com o arco de volta para a praça (de frente para quem chega)
     dress(p, 0, "arco", 0, DOMAIN_SCENE.entry + 3.5, 10, Math.PI)
     for (const s of [-1, 1]) {
@@ -300,6 +310,65 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
     dress(p, 11, "arco", 0, PASS_END - 4, 12, 0)
     refresh(true)
   })
+  /**
+   * D5: o Cânion das Tempestades (historia/v2/04-mundo-exploravel.md §2) — "paredes de pedra
+   * vermelha cortadas por raios ciano, vento que derruba e trilhos de corrida esculpidos na rocha
+   * (a Pista do Céu)". O corredor é o fundo do cânion: paredões nas duas bordas (no lugar das
+   * árvores da Floresta), pedras com raízes, cactos e pedras soltas na beira do trilho, uma torre
+   * de vigia ou um moinho por setor num recuo do paredão, o arco de pedra como portão e, no
+   * palácio (9–10), os anéis da Pista do Céu no alto. Peças novas do kit chegam de costas (+π).
+   */
+  function dressCanyon(p: KitPlacer, thin: number) {
+    const P = PIECE.paredao // medida para 1 m de altura
+    const wall = (g: number, side: number, z: number, h: number, back = 0) => dress(p, g, "paredao", side * (HALF + 1.4 + back + (P.w * h) / 2), z, h, side > 0 ? Math.PI : 0)
+    // entrada: o arco de pedra de volta para a praça, torres de vigia e o paredão fechando
+    dress(p, 0, "arco", 0, DOMAIN_SCENE.entry + 3.5, 13, Math.PI)
+    for (const s of [-1, 1]) {
+      dress(p, 0, "torre-vigia", s * (HALF + 3.5), -5, 7, Math.PI + s * 0.4)
+      dress(p, 0, "cacto", s * (HALF + 0.9), -9.5, 2.2, s)
+      wall(0, s, -11, 18, 1.5)
+    }
+    for (let sec = 1; sec <= 10; sec++) {
+      const r = seeded(sec * 131 + 7)
+      const z0 = (sec - 1) * L
+      // portão no fim do setor: o arco de pedra (1 m de largura por unidade: 14 m de vão)
+      dress(p, sec, "arco", 0, sec * L, 15, 0)
+      // a peça-herói do setor num recuo do paredão: torre de vigia ou moinho, um lado por vez
+      const hs = sec % 2 ? 1 : -1
+      const heroZ = z0 + L * 0.55
+      // paredões: três por lado (cada um ~9 m de fundo), alturas variando — o recuo do herói fica aberto
+      for (const side of [-1, 1]) {
+        const n = 3
+        for (let i = 0; i < n; i++) {
+          const z = z0 + ((i + 0.5) / n) * L
+          const recess = side === hs && i === 1
+          const h = 17 + r() * 9
+          wall(sec, side, z, recess ? h + 6 : h, recess ? 5.5 : r() * 1.2)
+        }
+      }
+      dress(p, sec, sec % 3 === 2 ? "moinho" : "torre-vigia", hs * (HALF + 3.4), heroZ, sec % 3 === 2 ? 7 : 8.5, hs > 0 ? -Math.PI / 2 + Math.PI : Math.PI / 2 + Math.PI)
+      // beira do trilho: pedras com raízes, cactos e pedras soltas
+      const small: KitPiece[] = ["cacto", "pedra-raizes", "rocha2", "cacto", "pedra-raizes", "rocha2"]
+      const n = Math.round(small.length * thin)
+      for (let i = 0; i < n; i++) {
+        const s = r() < 0.5 ? -1 : 1
+        const piece = small[i]
+        const h = piece === "cacto" ? 1.8 + r() * 1.2 : piece === "pedra-raizes" ? 1.6 + r() * 1.4 : 0.6 + r() * 0.5
+        const pz = z0 + 3 + r() * (L - 6)
+        if (s === hs && Math.abs(pz - heroZ) < 5) continue
+        dress(p, sec, piece, s * (HALF + 0.6 + r() * 0.8), pz, h, r() * 6, piece === "rocha2" ? h * 0.5 : 0)
+      }
+      // palácio (9–10): os anéis da Pista do Céu no alto, sobre o portão (longe do guardião, que fica no meio)
+      if (sec >= 9) dress(p, sec, "anel", 0, sec * L - 3, 2, 0, 13)
+    }
+    // pedras flutuando no alto, longe (o vento as leva) — fora do low
+    if (!low) for (let i = 0; i < 4; i++) dress(p, 11, "ilha", (i % 2 ? 1 : -1) * 60, i * 80 + 20, 20, i, 26)
+    // o trecho de passagem (o Mar de Gelo ainda não tem kit): o cânion se abre até o último arco
+    for (const s of [-1, 1]) for (let i = 0; i < 2; i++) wall(11, s, END + 8 + i * 12, 20 - i * 4, 2 + i * 3)
+    dress(p, 11, "rocha", HALF - 1, END + 14, 1.2, 0.4, 1.4)
+    dress(p, 11, "arco", 0, PASS_END - 4, 13, 0)
+  }
+
   // a outra metade da passagem vem do kit do Domínio seguinte (Cânion depois da Floresta);
   // só carrega perto dela (setor 10 em diante) e fora do low: no low a passagem fica com o
   // kit daqui (o segundo kit dobraria a memória de textura)
@@ -658,12 +727,12 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
 
 /**
  * O kit da cena de cada Domínio. D1: a cena genérica é montada com o kit da Floresta
- * (o mesmo do Jetpack) para os seis; D5…D9 trocam aqui quando a cena de cada tema
+ * (o mesmo do Jetpack) para os seis; D5 (Cânion) já troca, D6…D9 trocam aqui quando a cena de cada tema
  * existir (o kit do Cânion já entra no trecho de passagem da Floresta).
  */
 export function sceneKitOf(id: DomainId | string | null | undefined): DomainKitId {
-  void id
-  return "floresta"
+  // D5: o Cânion tem cena própria; os outros quatro caem na Floresta até a fatia de cada um
+  return id === "canion" ? "canion" : "floresta"
 }
 /** O kit do Domínio seguinte, que entra no trecho de passagem. */
 export function passageKitOf(id: DomainId | string | null | undefined): DomainKitId | null {

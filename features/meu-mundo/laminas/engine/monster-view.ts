@@ -154,6 +154,8 @@ Object.assign(CIBORG, { skSlash: CIBORG.blast, skDash: CIBORG.shot, skShield: [T
 Object.assign(CIBORG, { eclipse: CIBORG.blast, moonClaw: BRUTE.sweep, moonPounce: BRUTE.charge })
 Object.assign(STONE, { skSlash: STONE.zap, skDash: STONE.leap, skShield: [TAUNT], skUlt: STONE.max })
 Object.assign(KNIGHT, { skSlash: KNIGHT.great, skDash: KNIGHT.thrust, skShield: KNIGHT.block, skUlt: KNIGHT.combo })
+// lore v2 D5: os golpes das fases de Zéphyra (espada): rajada = o corte largo, avanço = a estocada, giro = o combo
+Object.assign(KNIGHT, { gale: KNIGHT.great, boltRush: KNIGHT.thrust, stormCut: KNIGHT.combo })
 Object.assign(CLAW, { skSlash: CLAW.rake, skDash: CLAW.leap, skShield: CLAW.claw, skUlt: CLAW.rake })
 
 /** Como cada um que luta de arma ou garra se desenha. `walk` null = a locomoção normal. */
