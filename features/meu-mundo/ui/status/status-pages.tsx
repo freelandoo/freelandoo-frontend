@@ -16,7 +16,6 @@ import {
   Briefcase,
   Clock,
   Coffee,
-  Droplet,
   Dumbbell,
   Flame,
   FlaskConical,
@@ -54,7 +53,7 @@ import { useLocale } from "@/components/i18n/I18nProvider"
 import { HpPlate, LevelBadge, PowerPlate, StatBars, StatCard, StatGuide, statTop, useStatRows, type StatRow } from "./stat-bars"
 import { SoulPanel } from "./soul-panel"
 import { temperLabel } from "../../soul"
-import { Active, Equipped, LoadoutPage, type LoadoutData } from "./loadout-page"
+import { Active, Equipped, LoadoutPage, shownEffects, type LoadoutData } from "./loadout-page"
 import { CertificateDoc } from "./certificate-doc"
 import { ArchivePage } from "../archive/archive-page"
 
@@ -192,13 +191,14 @@ function causeLabel(c: string | null, t: Tr) {
   if (!c) return ""
   return (
     {
-      infarto: t("causeInfarct", "Infarto"),
-      overdose: t("causeOverdose", "Overdose"),
+      infarto: t("causeInfarct", "Coração vencido pelo Desgaste"),
+      overdose: t("causeOverdose", "Corrosão por tônico demais"),
       exaustao: t("causeExhaustion", "Exaustão"),
       fome: t("causeHunger", "Fome"),
       sono: t("causeSleep", "Dias sem dormir"),
-      diabetes: t("causeDiabetes", "Diabetes sem tratamento"),
-      hipertensao: t("causeHypertension", "Pressão alta sem tratamento"),
+      // D9: diabetes e pressão alta saíram da regra; mortes antigas por elas viram "mal antigo"
+      diabetes: t("causeOldIllness", "Um mal antigo"),
+      hipertensao: t("causeOldIllness", "Um mal antigo"),
       dieta: t("causeDiet", "Má alimentação"),
       estresse: t("causeStress", "Estresse extremo"),
       complicacoes: t("causeComplications", "Complicações no hospital"),
@@ -292,8 +292,6 @@ function effectName(id: string, t: Tr) {
       preworkout: t("effPreworkout", "Pré-treino"),
       creatine: t("effCreatine", "Creatina"),
       multivit: t("effMultivit", "Multivitamínico"),
-      metformin: t("effMetformin", "Metformina"),
-      losartan: t("effLosartan", "Losartana"),
       calm: t("effCalm", "Calmante"),
       coffee: t("effCoffee", "Café"),
       energy_drink: t("effEnergyDrink", "Energético"),
@@ -371,12 +369,8 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
         .concat(Number(data.coins) > 0 ? " " + t("evBoxeCoins", "+{n} moedas.").replace("{n}", String(data.coins)) : "")
     case "hospital_out":
       return t("evHospitalOut", "Teve alta do hospital.")
-    case "diabetes":
-      return t("evDiabetes", "Desenvolveu diabetes.")
-    case "hypertension":
-      return t("evHypertension", "Desenvolveu pressão alta.")
     case "heart_attack":
-      return t("evHeartAttack", "Teve um infarto.")
+      return t("evHeartAttack", "O coração cedeu ao Desgaste.")
     case "adult":
       return t("evAdult", "Virou adulto: +20% em inteligência, força e velocidade; saúde 100.")
     case "skin_bought":
@@ -414,8 +408,7 @@ function eventIcon(kind: string) {
   if (kind === "meal" || kind === "meal_missed" || kind === "meal_part" || kind === "meal_lost" || kind === "consume" || kind === "routine_meal" || kind === "buy")
     return <Utensils className="h-5 w-5" />
   if (kind === "hospital_in" || kind === "hospital_out") return <Hospital className="h-5 w-5" />
-  if (kind === "heart_attack" || kind === "hypertension") return <HeartPulse className="h-5 w-5" />
-  if (kind === "diabetes") return <Droplet className="h-5 w-5" />
+  if (kind === "heart_attack") return <HeartPulse className="h-5 w-5" />
   if (kind === "death") return <Skull className="h-5 w-5" />
   if (kind === "collapse") return <Zap className="h-5 w-5" />
   if (kind === "skin_bought") return <Shirt className="h-5 w-5" />
@@ -887,95 +880,6 @@ function Overview({ life, portrait, compact, t, act, adv }: PageProps) {
         <div className="shrink-0">
           <StatGuide t={t} />
         </div>
-      </div>
-    </div>
-  )
-}
-
-function BodyPage({ life, compact, t }: PageProps) {
-  const c = life.character
-  const b = c.body
-  const h = c.health
-  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...TALL_NAMES, ...clanBodyNames(t), brutamontes: t("laminasMobBrute", "Brutamontes") }[b.bodyHint]
-  const dis = (s: "none" | "controlled" | "uncontrolled") =>
-    s === "none" ? <Tag tone="bom">{t("disNone", "Não tem")}</Tag> : s === "controlled" ? <Tag>{t("disControlled", "Controlada")}</Tag> : <Tag tone="perigo">{t("disUncontrolled", "Sem remédio")}</Tag>
-  return (
-    <div className={`grid gap-4 ${compact ? "" : "grid-cols-[1.05fr_1fr]"}`}>
-      <div className="flex flex-col gap-4">
-        <Plate title={t("stBody", "Corpo")}>
-          <div className={`grid gap-x-6 ${compact ? "" : "grid-cols-2"}`}>
-            <Row label={t("stWeight", "Peso")} value={`${b.weightKg.toFixed(1)} kg`} />
-            <Row label={t("stHeight", "Altura")} value={`${b.heightM.toFixed(2)} m`} />
-            <Row label={t("stBmi", "IMC")} value={b.bmi.toFixed(1)} tone={b.bmi >= 30 || b.bmi < 18.5 ? EVO.perigo : b.bmi >= 25 ? EVO.ambar : EVO.bom} />
-            <Row label={t("stFat", "Gordura corporal")} value={`${b.fatPct.toFixed(1)}%`} tone={b.fatPct >= 30 ? EVO.perigo : b.fatPct >= 22 ? EVO.ambar : EVO.bom} />
-            <Row label={t("stLean", "Massa magra")} value={`${b.leanKg.toFixed(1)} kg`} />
-            <Row label={t("stBodyHint", "Tipo físico")} value={hint} />
-          </div>
-        </Plate>
-        <Plate title={t("stExams", "Exames")}>
-          <div className={`grid gap-x-6 ${compact ? "" : "grid-cols-2"}`}>
-            <Row label={t("stGlucose", "Glicemia")} value={`${h.glucose} mg/dL`} tone={h.glucose >= 180 ? EVO.perigo : h.glucose >= 126 ? EVO.ambar : EVO.bom} />
-            <Row label={t("stPressure", "Pressão")} value={`${h.systolic}/${h.diastolic}`} tone={h.systolic >= 150 ? EVO.perigo : h.systolic >= 130 ? EVO.ambar : EVO.bom} />
-            <Row label={t("stAwake", "Acordado há")} value={hoursText(h.awakeHours)} tone={h.awakeHours > 30 ? EVO.perigo : h.awakeHours > 18 ? EVO.ambar : undefined} />
-            <Row label={t("stDiet", "Qualidade da dieta")} value={`${h.diet > 0 ? "+" : ""}${r0(h.diet)}`} tone={h.diet < -30 ? EVO.perigo : h.diet < 0 ? EVO.ambar : EVO.bom} />
-          </div>
-          <div className="mt-3 grid gap-3">
-            <div>
-              <div className={`${teko.className} flex justify-between text-[20px] uppercase tracking-[0.16em]`} style={{ color: EVO.branco }}>
-                <span>{t("stCardiac", "Carga no coração")}</span>
-                <span style={{ color: EVO.douradoClaro }}>{r0(h.cardiac)}%</span>
-              </div>
-              <Bar value={h.cardiac} color={toneFor(h.cardiac, "low")} />
-            </div>
-            <div>
-              <div className={`${teko.className} flex justify-between text-[20px] uppercase tracking-[0.16em]`} style={{ color: EVO.branco }}>
-                <span>{t("stToxicity", "Toxicidade")}</span>
-                <span style={{ color: EVO.douradoClaro }}>{r0(h.toxicity)}</span>
-              </div>
-              <Bar value={h.toxicity} max={120} color={toneFor((h.toxicity / 120) * 100, "low")} />
-            </div>
-          </div>
-        </Plate>
-      </div>
-      <div className="flex flex-col gap-4">
-        <Plate title={t("stDiseases", "Doenças")}>
-          <div className="grid gap-3">
-            {(
-              [
-                [<Droplet key="d" className="h-6 w-6" />, t("stDiabetes", "Diabetes"), h.diabetes, h.diabetesRisk],
-                [<HeartPulse key="p" className="h-6 w-6" />, t("stHypertension", "Pressão alta"), h.hypertension, h.bpRisk],
-              ] as const
-            ).map(([icon, label, state, risk]) => (
-              <div key={label} className="flex items-center gap-4">
-                <Ring color={state === "uncontrolled" ? EVO.perigo : EVO.rosa}>{icon}</Ring>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`${teko.className} text-[22px] font-semibold uppercase tracking-[0.14em]`} style={{ color: EVO.branco }}>
-                      {label}
-                    </span>
-                    {dis(state)}
-                  </div>
-                  {state === "none" && (
-                    <>
-                      <div className={`${archivo.className} mb-1 text-[15px]`} style={{ color: EVO.mudo }}>
-                        {t("stRisk", "Risco: {n}%").replace("{n}", String(r0(risk)))}
-                      </div>
-                      <Bar value={risk} color={toneFor(risk, "low")} />
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Plate>
-        <Plate title={t("stVitality", "Vitalidade")}>
-          <div className="flex items-center gap-5">
-            <Gauge value={c.vitals.vitality} label={t("stVitalityUnit", "de 100")} color={toneFor(c.vitals.vitality)} />
-            <p className={`${archivo.className} text-[16px]`} style={{ color: EVO.mudo }}>
-              {t("stVitalityText", "É o teto da saúde. Cada internação deixa uma sequela (−8) e um infarto, −20. Volta devagar com a saúde acima de 80. Internado com vitalidade 20 ou menos, ele não resiste.")}
-            </p>
-          </div>
-        </Plate>
       </div>
     </div>
   )
@@ -1672,94 +1576,6 @@ function OverviewC({ life, portrait, t, act, adv }: PageProps) {
   )
 }
 
-function BodyC({ life, t }: PageProps) {
-  const c = life.character
-  const b = c.body
-  const h = c.health
-  const hint = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...TALL_NAMES, ...clanBodyNames(t), brutamontes: t("laminasMobBrute", "Brutamontes") }[b.bodyHint]
-  const dis = (s: "none" | "controlled" | "uncontrolled") =>
-    s === "none" ? <MiniTag tone="bom">{t("disNone", "Não tem")}</MiniTag> : s === "controlled" ? <MiniTag>{t("disControlled", "Controlada")}</MiniTag> : <MiniTag tone="perigo">{t("disUncontrolled", "Sem remédio")}</MiniTag>
-  const bar = (label: string, shown: string, value: number, max: number, color: string) => (
-    <div className="min-w-0">
-      <div className={`${archivo.className} flex justify-between gap-1 text-[10px] uppercase`} style={{ color: EVO.branco }}>
-        <span className="truncate">{label}</span>
-        <span className="font-semibold" style={{ color: EVO.douradoClaro }}>
-          {shown}
-        </span>
-      </div>
-      <Bar value={value} max={max} color={color} height={6} />
-    </div>
-  )
-  return (
-    <div className="flex flex-col gap-2">
-      <MiniPlate title={t("stBody", "Corpo")}>
-        <div className="grid grid-cols-2 gap-x-3">
-          <MiniRow label={t("stWeight", "Peso")} value={`${b.weightKg.toFixed(1)} kg`} />
-          <MiniRow label={t("stHeight", "Altura")} value={`${b.heightM.toFixed(2)} m`} />
-          <MiniRow label={t("stBmi", "IMC")} value={b.bmi.toFixed(1)} tone={b.bmi >= 30 || b.bmi < 18.5 ? EVO.perigo : b.bmi >= 25 ? EVO.ambar : EVO.bom} />
-          <MiniRow label={t("stFat", "Gordura corporal")} value={`${b.fatPct.toFixed(1)}%`} tone={b.fatPct >= 30 ? EVO.perigo : b.fatPct >= 22 ? EVO.ambar : EVO.bom} />
-          <MiniRow label={t("stLean", "Massa magra")} value={`${b.leanKg.toFixed(1)} kg`} />
-          <MiniRow label={t("stBodyHint", "Tipo físico")} value={hint} />
-        </div>
-      </MiniPlate>
-      <MiniPlate title={t("stExams", "Exames")}>
-        <div className="grid grid-cols-2 gap-x-3">
-          <MiniRow label={t("stGlucose", "Glicemia")} value={`${h.glucose} mg/dL`} tone={h.glucose >= 180 ? EVO.perigo : h.glucose >= 126 ? EVO.ambar : EVO.bom} />
-          <MiniRow label={t("stPressure", "Pressão")} value={`${h.systolic}/${h.diastolic}`} tone={h.systolic >= 150 ? EVO.perigo : h.systolic >= 130 ? EVO.ambar : EVO.bom} />
-          <MiniRow label={t("stAwake", "Acordado há")} value={hoursText(h.awakeHours)} tone={h.awakeHours > 30 ? EVO.perigo : h.awakeHours > 18 ? EVO.ambar : undefined} />
-          <MiniRow label={t("stDiet", "Qualidade da dieta")} value={`${h.diet > 0 ? "+" : ""}${r0(h.diet)}`} tone={h.diet < -30 ? EVO.perigo : h.diet < 0 ? EVO.ambar : EVO.bom} />
-        </div>
-        <div className="mt-1.5 grid grid-cols-2 gap-3">
-          {bar(t("stCardiac", "Carga no coração"), `${r0(h.cardiac)}%`, h.cardiac, 100, toneFor(h.cardiac, "low"))}
-          {bar(t("stToxicity", "Toxicidade"), String(r0(h.toxicity)), h.toxicity, 120, toneFor((h.toxicity / 120) * 100, "low"))}
-        </div>
-      </MiniPlate>
-      <MiniPlate title={t("stDiseases", "Doenças")}>
-        <div className="grid grid-cols-2 gap-3">
-          {(
-            [
-              [<Droplet key="d" className="h-3.5 w-3.5" />, t("stDiabetes", "Diabetes"), h.diabetes, h.diabetesRisk],
-              [<HeartPulse key="p" className="h-3.5 w-3.5" />, t("stHypertension", "Pressão alta"), h.hypertension, h.bpRisk],
-            ] as const
-          ).map(([icon, label, state, risk]) => (
-            <div key={label} className="flex min-w-0 items-center gap-1.5">
-              <Ring color={state === "uncontrolled" ? EVO.perigo : EVO.rosa} size={24}>
-                {icon}
-              </Ring>
-              <div className="min-w-0 flex-1">
-                <div className={`${archivo.className} truncate text-[11px] font-semibold uppercase`} style={{ color: EVO.branco }}>
-                  {label}
-                </div>
-                <div className="flex items-center gap-1">
-                  {dis(state)}
-                  {state === "none" && (
-                    <span className={`${archivo.className} truncate text-[10px]`} style={{ color: EVO.mudo }}>
-                      {t("stRisk", "Risco: {n}%").replace("{n}", String(r0(risk)))}
-                    </span>
-                  )}
-                </div>
-                {state === "none" && (
-                  <div className="mt-0.5">
-                    <Bar value={risk} color={toneFor(risk, "low")} height={4} />
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </MiniPlate>
-      <MiniPlate title={t("stVitality", "Vitalidade")}>
-        <div className="flex items-center gap-2.5">
-          <MiniGauge value={c.vitals.vitality} label={t("stVitalityUnit", "de 100")} size={60} color={toneFor(c.vitals.vitality)} />
-          <p className={`${archivo.className} text-[10.5px] leading-snug`} style={{ color: EVO.mudo }}>
-            {t("stVitalityText", "É o teto da saúde. Cada internação deixa uma sequela (−8) e um infarto, −20. Volta devagar com a saúde acima de 80. Internado com vitalidade 20 ou menos, ele não resiste.")}
-          </p>
-        </div>
-      </MiniPlate>
-    </div>
-  )
-}
-
 /** Quantos efeitos cabem na placa do celular (o resto vira "+n"). */
 const EFFECTS_MAX_C = 6
 
@@ -2364,7 +2180,7 @@ function SheetPage(props: PageProps) {
       <MiniPlate title={t("lkEquipped", "Equipado")}>
         <Equipped data={data} t={t} />
       </MiniPlate>
-      {c.effects.length > 0 && (
+      {shownEffects(life).length > 0 && (
         <MiniPlate title={t("lkActive", "Efeitos ativos")}>
           <Active life={life} t={t} />
         </MiniPlate>
@@ -2551,8 +2367,8 @@ export function StatusPage(props: PageProps) {
  * limpeza 03-b, conferido por Grep que nada mais aponta para elas).
  */
 export function LegacyStatusPage(props: PageProps & { legacy: string }) {
-  const C: Record<string, (p: PageProps) => ReactNode> = { overview: OverviewC, body: BodyC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC, certificate: CertificatePage, archive: ArchiveStatusPage }
-  const D: Record<string, (p: PageProps) => ReactNode> = { overview: Overview, body: BodyPage, attributes: Attributes, loadout: LoadoutD, routine: Routine, market: Market, history: History, certificate: CertificatePage, archive: ArchiveStatusPage }
+  const C: Record<string, (p: PageProps) => ReactNode> = { overview: OverviewC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC, certificate: CertificatePage, archive: ArchiveStatusPage }
+  const D: Record<string, (p: PageProps) => ReactNode> = { overview: Overview, attributes: Attributes, loadout: LoadoutD, routine: Routine, market: Market, history: History, certificate: CertificatePage, archive: ArchiveStatusPage }
   const P = (props.compact ? C : D)[props.legacy] ?? OverviewC
   return <P {...props} />
 }

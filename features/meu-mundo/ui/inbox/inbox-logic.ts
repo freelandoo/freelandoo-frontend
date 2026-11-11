@@ -86,10 +86,11 @@ export function noticeExpression(n: Pick<MMNotice, "kind" | "code"> & { data?: M
     if (n.code === "wish_fail") return "worried"
     if (n.code === "hall_defended" || n.code === "nectar_week") return "happy"
     if (n.code === "hall_lost" || n.code === "hall_beaten") return "worried"
+    if (n.code === "diabetes" || n.code === "hypertension") return "happy" // D9: aviso antigo = curado
     if (n.code === "born") return "determined"
     if (n.code === "death") return "crying"
     if (n.code === "funeral") return n.data?.paidBy === "freelandoo" ? "grateful" : "worried"
-    if (n.code === "diabetes" || n.code === "hypertension" || n.code === "fined" || n.code === "jailed") return "worried"
+    if (n.code === "fined" || n.code === "jailed") return "worried"
     return "fever"
   }
   return null // oficial e promoção: identidade da plataforma, não o rosto
@@ -195,15 +196,15 @@ function lifeTitle(code: string, t: Tr, generation?: number): string {
     case "death":
       return t("ntDeath", "Seu hóspede morreu.")
     case "heart_attack":
-      return t("ntHeartAttack", "Ele teve um infarto!")
+      return t("ntHeartAttack", "O coração dele cedeu ao Desgaste!")
     case "hospital_in":
       return t("ntHospitalIn", "Fui levado ao hospital.")
     case "hospital_out":
       return t("ntHospitalOut", "Recebi alta do hospital!")
+    // D9: diabetes e pressão alta saíram da regra (mig 443 curou todos); aviso antigo diz isso
     case "diabetes":
-      return t("ntDiabetes", "Fui diagnosticado com diabetes.")
     case "hypertension":
-      return t("ntHypertension", "Fui diagnosticado com pressão alta.")
+      return t("ntOldIllnessGone", "Um mal antigo passou: estou curado.")
     case "adult":
       return t("ntAdult", "Virei adulto! Fiquei 20% mais forte, rápido e esperto, e a saúde voltou a 100.")
     case "born":

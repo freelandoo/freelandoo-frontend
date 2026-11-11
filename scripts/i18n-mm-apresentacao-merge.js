@@ -726,7 +726,44 @@ const OVERRIDE_06B = {
   "soulFoodSoda": "Sidra", "soulFoodCoconut": "Agua de manantial"
  }
 }
-const OVERRIDE = { "pt-BR": { ...OVERRIDE_06["pt-BR"], ...OVERRIDE_06B["pt-BR"] }, en: { ...OVERRIDE_06.en, ...OVERRIDE_06B.en }, es: { ...OVERRIDE_06.es, ...OVERRIDE_06B.es } }
+// 05 — vida sem medicina moderna (D9, D10): diabetes e pressão alta saíram da regra; infarto vira
+// Desgaste e overdose vira Corrosão. Chaves novas (NEW_05) = fill-if-absent; valor trocado = OVERRIDE.
+const NEW_05 = {
+ "pt-BR": { "causeOldIllness": "Um mal antigo", "ntOldIllnessGone": "Um mal antigo passou: estou curado." },
+ en: { "causeOldIllness": "An old illness", "ntOldIllnessGone": "An old illness is gone: I am cured." },
+ es: { "causeOldIllness": "Un mal antiguo", "ntOldIllnessGone": "Un mal antiguo pasó: estoy curado." }
+}
+for (const loc of Object.keys(NEW_05)) Object.assign(KEYS[loc], NEW_05[loc])
+const OVERRIDE_05 = {
+ "pt-BR": {
+  "causeInfarct": "Coração vencido pelo Desgaste", "causeOverdose": "Corrosão por tônico demais",
+  "evHeartAttack": "O coração cedeu ao Desgaste.", "ntHeartAttack": "O coração dele cedeu ao Desgaste!",
+  "stVitalityText": "É o teto da saúde. Cada internação deixa uma sequela (−8) e o coração cedendo ao Desgaste, −20. Volta devagar com a saúde acima de 80. Internado com vitalidade 20 ou menos, ele não resiste.",
+  "atFertilityText": "Cai com Elixir de Ferro, obesidade, estresse, saúde baixa e Corrosão.",
+  "lkFxPreworkout": "Treino rende 15% mais força e velocidade; a energia cai mais devagar.",
+  "lkFxStim": "Estudo rende 15% mais; não deixa dormir. Pesa no Desgaste.",
+  "lkFxAnabolic": "Força no treino em dobro e cresce mais rápido. A fertilidade cai e pesa no Desgaste."
+ },
+ en: {
+  "causeInfarct": "Heart worn out by Wear", "causeOverdose": "Corrosion from too many tonics",
+  "evHeartAttack": "His heart gave in to Wear.", "ntHeartAttack": "His heart gave in to Wear!",
+  "stVitalityText": "It is the health ceiling. Each Infirmary stay leaves a scar (−8), and the heart giving in to Wear, −20. It slowly comes back while health is above 80. In the Infirmary with vitality 20 or less, he does not make it.",
+  "atFertilityText": "Drops with the Iron Elixir, obesity, stress, low health and Corrosion.",
+  "lkFxPreworkout": "Training yields 15% more strength and speed; energy drops more slowly.",
+  "lkFxStim": "Studying yields 15% more; can't sleep. Adds to Wear.",
+  "lkFxAnabolic": "Double strength from training and faster growth. Fertility drops and it adds to Wear."
+ },
+ es: {
+  "causeInfarct": "Corazón vencido por el Desgaste", "causeOverdose": "Corrosión por exceso de tónicos",
+  "evHeartAttack": "El corazón cedió al Desgaste.", "ntHeartAttack": "¡Su corazón cedió al Desgaste!",
+  "stVitalityText": "Es el techo de la salud. Cada internación deja una secuela (−8) y el corazón cediendo al Desgaste, −20. Vuelve despacio con la salud por encima de 80. Internado con vitalidad 20 o menos, no resiste.",
+  "atFertilityText": "Baja con el Elixir de Hierro, la obesidad, el estrés, la salud baja y la Corrosión.",
+  "lkFxPreworkout": "El entrenamiento rinde 15% más fuerza y velocidad; la energía baja más despacio.",
+  "lkFxStim": "El estudio rinde 15% más; no deja dormir. Suma Desgaste.",
+  "lkFxAnabolic": "Fuerza del entrenamiento al doble y crece más rápido. Baja la fertilidad y suma Desgaste."
+ }
+}
+const OVERRIDE = { "pt-BR": { ...OVERRIDE_06["pt-BR"], ...OVERRIDE_06B["pt-BR"], ...OVERRIDE_05["pt-BR"] }, en: { ...OVERRIDE_06.en, ...OVERRIDE_06B.en, ...OVERRIDE_05.en }, es: { ...OVERRIDE_06.es, ...OVERRIDE_06B.es, ...OVERRIDE_05.es } }
 // 06 — as mensagens do SERVIDOR (namespace MeuMundoServer: a chave é o texto em pt do back,
 // que não muda; só o que aparece na tela)
 const SERVER_06 = [

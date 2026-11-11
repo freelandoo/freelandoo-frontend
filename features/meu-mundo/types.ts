@@ -314,7 +314,7 @@ export interface LifeCharacter {
   /** T3/B7 (migs 334/335): poder gravado pelo servidor (regra única power/power.ts, soma do permanente). Servidor antigo não manda. */
   power?: number | null
   vitals: Record<"energy" | "satiety" | "mood" | "stress" | "health" | "vitality", number>
-  body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bmi: number; bodyHint: BodyId }
+  body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bodyHint: BodyId }
   /** Inteligência, força e velocidade 0–1000; fertilidade 0–100. */
   attributes: Record<"intelligence" | "strength" | "speed" | "fertility", number> & {
     /** mm3d-59: destreza (0–1000). Servidor antigo não manda. */
@@ -329,14 +329,12 @@ export interface LifeCharacter {
     /** Horas que ainda rendem hoje (estudo e treino têm teto por dia). */
     usefulToday: Record<"studying" | "training", { done: number; cap: number }>
   }
+  /**
+   * D8/D9/D10 (apresentação 05): glicemia, pressão, IMC, diabetes e pressão alta saíram
+   * da tela e da regra (o servidor ainda manda os campos velhos para cliente antigo).
+   * toxicity = Corrosão e cardiac = Desgaste na tela.
+   */
   health: {
-    diabetes: "none" | "controlled" | "uncontrolled"
-    hypertension: "none" | "controlled" | "uncontrolled"
-    diabetesRisk: number
-    bpRisk: number
-    glucose: number
-    systolic: number
-    diastolic: number
     toxicity: number
     cardiac: number
     diet: number

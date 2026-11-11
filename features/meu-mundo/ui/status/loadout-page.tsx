@@ -79,16 +79,14 @@ function effectLine(id: string, t: Tr) {
     {
       albumin: t("lkFxAlbumin", "Treino rende 15% mais força."),
       whey: t("lkFxWhey", "Treino rende 25% mais força."),
-      preworkout: t("lkFxPreworkout", "Treino rende 15% mais força e velocidade; a energia cai mais devagar. Sobe a pressão."),
+      preworkout: t("lkFxPreworkout", "Treino rende 15% mais força e velocidade; a energia cai mais devagar."),
       creatine: t("lkFxCreatine", "Treino rende 10% mais força. Com multivitamínico, a saúde volta mais rápido."),
       multivit: t("lkFxMultivit", "A saúde volta 30% mais rápido (70% com creatina)."),
-      metformin: t("lkFxMetformin", "Segura o diabetes: açúcar não tira saúde."),
-      losartan: t("lkFxLosartan", "Segura a pressão alta."),
       calm: t("lkFxCalm", "O estresse sobe pela metade."),
       coffee: t("lkFxCoffee", "A energia cai mais devagar."),
       energy_drink: t("lkFxEnergyDrink", "A energia cai mais devagar."),
-      stim: t("lkFxStim", "Estudo rende 15% mais; não deixa dormir. Sobe a pressão."),
-      anabolic: t("lkFxAnabolic", "Força no treino em dobro e cresce mais rápido. Fertilidade e pressão pioram."),
+      stim: t("lkFxStim", "Estudo rende 15% mais; não deixa dormir. Pesa no Desgaste."),
+      anabolic: t("lkFxAnabolic", "Força no treino em dobro e cresce mais rápido. A fertilidade cai e pesa no Desgaste."),
       injury: t("lkFxInjury", "Fora do hospital, a saúde volta pela metade."),
     } as Record<string, string>
   )[id] ?? ""
@@ -194,8 +192,11 @@ export function Equipped({ data, t }: { data: LoadoutData; t: Tr }) {
 }
 
 // ─── Ativos ──────────────────────────────────────────────────────────────────
+/** D9 (apresentação 05): os remédios saíram do jogo; um efeito que ainda corria quando o servidor mudou não aparece. */
+const RETIRED_FX = new Set(["metformin", "losartan"])
+export const shownEffects = (life: LifeFull) => life.character.effects.filter((e) => !RETIRED_FX.has(e.id))
 export function Active({ life, t }: { life: LifeFull; t: Tr }) {
-  const fx = life.character.effects
+  const fx = shownEffects(life)
   if (!fx.length) return <Small>{t("lkNoEffects", "Nenhum suplemento, remédio, estimulante ou lesão agindo agora.")}</Small>
   const total = new Map<string, number>()
   for (const it of life.catalog.items) {
@@ -234,8 +235,6 @@ export function effectLabel(id: string, t: Tr) {
       preworkout: t("effPreworkout", "Pré-treino"),
       creatine: t("effCreatine", "Creatina"),
       multivit: t("effMultivit", "Multivitamínico"),
-      metformin: t("effMetformin", "Metformina"),
-      losartan: t("effLosartan", "Losartana"),
       calm: t("effCalm", "Calmante"),
       coffee: t("effCoffee", "Café"),
       energy_drink: t("effEnergyDrink", "Energético"),
