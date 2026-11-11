@@ -376,6 +376,8 @@ export interface GearItem {
   fragment?: { of: string; need: number; powder: number; set?: string }
   /** E8: onde o fragmento cai (região, chefão, tabela de saque) — para o Índice. */
   origin?: { region: string; boss: string | null; table: string; kind: "boss" | "activity" | "sector" }
+  /** E11: entra numa transmutação (3 → 1 do mesmo tier). */
+  transmutable?: boolean
 }
 export interface GearRecipe {
   id: string
@@ -427,6 +429,8 @@ export interface GearCatalog {
   cap: GearBonus
   /** E9: aprimoramento garantido +0…`max`; do `ascendFrom` em diante só ascendida. */
   upgrade: { max: number; ascendFrom: number; stone: string; rulesVersion: string }
+  /** E11: desmontar devolve `share` da receita; raro ou acima (`confirmTier`) pede confirmação; transmutar `transmuteIn` → 1. */
+  salvage?: { share: number; confirmTier: number; transmuteIn: number; transmuteCoins: number }
   items: GearItem[]
   recipes: GearRecipe[]
   /** E7: conjuntos de 4 peças; `steps` = { nº de peças: fração da fatia do conjunto }. */
@@ -462,7 +466,8 @@ export interface GearBag {
   /** O que empilha (materiais, missão, projetos): quantidade. */
   stacks?: Record<string, number>
   /** E9: a bancada de cada cópia (próximo passo garantido). */
-  forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null }>
+  /** E9/E10/E11: próximo passo garantido, próximo grau e o que a desmontagem devolve. */
+  forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null; salvage?: Record<string, number> | null }>
   bonus: GearBonus
   /** E7: bônus de cada slot vestido pela régua (plus e grau da cópia). */
   pieces?: Partial<Record<GearSlot, Partial<GearBonus>>>
@@ -652,6 +657,14 @@ export const forgeGear = (token: string, recipe: string, key: string) => call<Ge
 /** E9: aprimoramento garantido da cópia (`instance`; sem ela, a representante do item). */
 export const upgradeGear = (token: string, item: string, key: string, instance?: string | null) =>
   call<GearOut>(token, "POST", "/gear/upgrade", instance ? { item, instance, key } : { item, key })
+/** E11: desmontar a cópia (raro ou acima pede `confirm`). */
+export const salvageGear = (token: string, item: string, instance: string, key: string, confirm = false) =>
+  call<GearOut>(token, "POST", "/gear/salvage", { item, instance, key, confirm })
+/** E11: 3 × `qty` de `from` → `qty` de `to` (mesmo tier). */
+export const transmuteGear = (token: string, from: string, to: string, qty: number, key: string) =>
+  call<GearOut>(token, "POST", "/gear/transmute", { from, to, qty, key })
+/** E11: trava/destrava a cópia (não desmonta nem recicla). */
+export const lockGear = (token: string, instance: string, locked: boolean) => call<GearOut>(token, "POST", "/gear/lock", { instance, locked })
 /** E10: refinamento I–V da cópia. */
 export const gradeGear = (token: string, item: string, key: string, instance?: string | null) =>
   call<GearOut>(token, "POST", "/gear/grade", instance ? { item, instance, key } : { item, key })

@@ -12488,7 +12488,28 @@
     "gradeStep": "Grado {from} → {to}",
     "gradeConfirm": "¿Gastar el costo de arriba y refinar al grado {to}?",
     "gradeDone": "¡Refinado!",
-    "gradeGo": "Refinar al grado {to}"
+    "gradeGo": "Refinar al grado {to}",
+    "salvageTab": "Desmontar",
+    "transmuteTab": "Transmutar",
+    "salvageGives": "Desmontar devuelve",
+    "salvageNoEmerald": "Nunca devuelve Esmeraldas. La copia sale de la mochila.",
+    "salvageWorn": "Alguien lleva esta copia: quítala antes de desmontar.",
+    "salvageLock": "Bloquear (no se desmonta ni recicla)",
+    "salvageUnlock": "Desbloquear",
+    "salvageLocked": "Copia bloqueada.",
+    "salvageUnlocked": "Copia desbloqueada.",
+    "salvageConfirmRare": "Pieza {rarity}: desmontar no tiene vuelta. ¿Confirmar?",
+    "salvageConfirm": "¿Desmontar esta copia?",
+    "salvageDone": "Desmontada.",
+    "salvageGo": "Desmontar",
+    "transmuteNone": "Junta al menos {n} de un material para transmutar.",
+    "transmuteRule": "{n} de un material se vuelven 1 de otro del mismo nivel, más Esmeraldas.",
+    "transmuteFrom": "Gastar",
+    "transmuteTo": "Recibir",
+    "transmuteTimes": "Cuántas (máx. {n})",
+    "transmuteSummary": "{a} {from} → {b} {to} · {c} Esmeraldas",
+    "transmuteDone": "Transmutado.",
+    "transmuteGo": "Transmutar"
   },
   "Sports": {
     "eyebrow": "Deportes",
@@ -12724,7 +12745,11 @@
     "Sua arma usa as duas mãos": "Tu arma usa las dos manos",
     "Esse item não é um fragmento": "Ese objeto no es un fragmento",
     "A peça precisa da Ascensão para passar do +10": "La pieza necesita la Ascensión para pasar de +10",
-    "O refino sorteado acabou: use o aprimoramento garantido": "El refinado al azar terminó: usa la mejora garantizada"
+    "O refino sorteado acabou: use o aprimoramento garantido": "El refinado al azar terminó: usa la mejora garantizada",
+    "Peça travada: destrave antes de desmontar": "Pieza bloqueada: desbloquéala antes de desmontar",
+    "Tire a peça de quem a veste antes de desmontar": "Quítale la pieza a quien la lleva antes de desmontar",
+    "Confirme a desmontagem de uma peça rara ou acima": "Confirma el desmontaje de una pieza rara o superior",
+    "Esses materiais não se transmutam um no outro": "Estos materiales no se transmutan entre sí"
   },
   "Moedas": {
     "walletTitle": "Cartera",

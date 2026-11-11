@@ -12508,7 +12508,28 @@
     "gradeStep": "Grade {from} → {to}",
     "gradeConfirm": "Spend the cost above and refine to grade {to}?",
     "gradeDone": "Refined!",
-    "gradeGo": "Refine to grade {to}"
+    "gradeGo": "Refine to grade {to}",
+    "salvageTab": "Salvage",
+    "transmuteTab": "Transmute",
+    "salvageGives": "Salvaging gives back",
+    "salvageNoEmerald": "Never gives Emeralds back. The copy leaves your bag.",
+    "salvageWorn": "Someone is wearing this copy: take it off before salvaging.",
+    "salvageLock": "Lock (no salvage or recycling)",
+    "salvageUnlock": "Unlock",
+    "salvageLocked": "Copy locked.",
+    "salvageUnlocked": "Copy unlocked.",
+    "salvageConfirmRare": "{rarity} item: salvaging can't be undone. Confirm?",
+    "salvageConfirm": "Salvage this copy?",
+    "salvageDone": "Salvaged.",
+    "salvageGo": "Salvage",
+    "transmuteNone": "Collect at least {n} of a material to transmute.",
+    "transmuteRule": "{n} of one material become 1 of another of the same tier, plus Emeralds.",
+    "transmuteFrom": "Spend",
+    "transmuteTo": "Receive",
+    "transmuteTimes": "How many (max {n})",
+    "transmuteSummary": "{a} {from} → {b} {to} · {c} Emeralds",
+    "transmuteDone": "Transmuted.",
+    "transmuteGo": "Transmute"
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -12744,7 +12765,11 @@
     "Sua arma usa as duas mãos": "Your weapon takes both hands",
     "Esse item não é um fragmento": "That item isn't a fragment",
     "A peça precisa da Ascensão para passar do +10": "The item needs Ascension to go past +10",
-    "O refino sorteado acabou: use o aprimoramento garantido": "Random refining is gone: use guaranteed enhancement"
+    "O refino sorteado acabou: use o aprimoramento garantido": "Random refining is gone: use guaranteed enhancement",
+    "Peça travada: destrave antes de desmontar": "Locked item: unlock it before salvaging",
+    "Tire a peça de quem a veste antes de desmontar": "Take the item off whoever wears it before salvaging",
+    "Confirme a desmontagem de uma peça rara ou acima": "Confirm salvaging a rare or better item",
+    "Esses materiais não se transmutam um no outro": "These materials can't be transmuted into each other"
   },
   "Moedas": {
     "walletTitle": "Wallet",

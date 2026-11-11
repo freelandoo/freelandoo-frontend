@@ -236,6 +236,11 @@ const ROWS = [
   // trilha E9
   ["A peça precisa da Ascensão para passar do +10", "The item needs Ascension to go past +10", "La pieza necesita la Ascensión para pasar de +10"],
   ["O refino sorteado acabou: use o aprimoramento garantido", "Random refining is gone: use guaranteed enhancement", "El refinado al azar terminó: usa la mejora garantizada"],
+  // trilha E11
+  ["Peça travada: destrave antes de desmontar", "Locked item: unlock it before salvaging", "Pieza bloqueada: desbloquéala antes de desmontar"],
+  ["Tire a peça de quem a veste antes de desmontar", "Take the item off whoever wears it before salvaging", "Quítale la pieza a quien la lleva antes de desmontar"],
+  ["Confirme a desmontagem de uma peça rara ou acima", "Confirm salvaging a rare or better item", "Confirma el desmontaje de una pieza rara o superior"],
+  ["Esses materiais não se transmutam um no outro", "These materials can't be transmuted into each other", "Estos materiales no se transmutan entre sí"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

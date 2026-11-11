@@ -138,6 +138,28 @@ const MEU_MUNDO = {
   gradeConfirm: ["Gastar o custo acima e refinar para o grau {to}?", "Spend the cost above and refine to grade {to}?", "¿Gastar el costo de arriba y refinar al grado {to}?"],
   gradeDone: ["Refinado!", "Refined!", "¡Refinado!"],
   gradeGo: ["Refinar para o grau {to}", "Refine to grade {to}", "Refinar al grado {to}"],
+  // E11
+  salvageTab: ["Desmontar", "Salvage", "Desmontar"],
+  transmuteTab: ["Transmutar", "Transmute", "Transmutar"],
+  salvageGives: ["Desmontar devolve", "Salvaging gives back", "Desmontar devuelve"],
+  salvageNoEmerald: ["Nunca devolve Esmeralda. A cópia some da mochila.", "Never gives Emeralds back. The copy leaves your bag.", "Nunca devuelve Esmeraldas. La copia sale de la mochila."],
+  salvageWorn: ["Alguém veste esta cópia: tire antes de desmontar.", "Someone is wearing this copy: take it off before salvaging.", "Alguien lleva esta copia: quítala antes de desmontar."],
+  salvageLock: ["Travar (não desmonta nem recicla)", "Lock (no salvage or recycling)", "Bloquear (no se desmonta ni recicla)"],
+  salvageUnlock: ["Destravar", "Unlock", "Desbloquear"],
+  salvageLocked: ["Cópia travada.", "Copy locked.", "Copia bloqueada."],
+  salvageUnlocked: ["Cópia destravada.", "Copy unlocked.", "Copia desbloqueada."],
+  salvageConfirmRare: ["Peça {rarity}: desmontar não tem volta. Confirmar?", "{rarity} item: salvaging can't be undone. Confirm?", "Pieza {rarity}: desmontar no tiene vuelta. ¿Confirmar?"],
+  salvageConfirm: ["Desmontar esta cópia?", "Salvage this copy?", "¿Desmontar esta copia?"],
+  salvageDone: ["Desmontada.", "Salvaged.", "Desmontada."],
+  salvageGo: ["Desmontar", "Salvage", "Desmontar"],
+  transmuteNone: ["Junte pelo menos {n} de um material para transmutar.", "Collect at least {n} of a material to transmute.", "Junta al menos {n} de un material para transmutar."],
+  transmuteRule: ["{n} de um material viram 1 de outro do mesmo tier, mais Esmeraldas.", "{n} of one material become 1 of another of the same tier, plus Emeralds.", "{n} de un material se vuelven 1 de otro del mismo nivel, más Esmeraldas."],
+  transmuteFrom: ["Gastar", "Spend", "Gastar"],
+  transmuteTo: ["Receber", "Receive", "Recibir"],
+  transmuteTimes: ["Quantas (máx. {n})", "How many (max {n})", "Cuántas (máx. {n})"],
+  transmuteSummary: ["{a} {from} → {b} {to} · {c} Esmeraldas", "{a} {from} → {b} {to} · {c} Emeralds", "{a} {from} → {b} {to} · {c} Esmeraldas"],
+  transmuteDone: ["Transmutado.", "Transmuted.", "Transmutado."],
+  transmuteGo: ["Transmutar", "Transmute", "Transmutar"],
 }
 const OVERRIDE = {}
 
