@@ -11906,7 +11906,12 @@
     "sttRaceLive": "Sunday at the statue · live",
     "sttRaceLast": "Last Sunday at the statue",
     "sttWhereRaposa": "On Sunday, bring your nectar to Aurion's feet, in the middle of your neighborhood.",
-    "sttWhereVampiro": "On Sunday, bring your nectar to Morkhan's feet, in the downtown square."
+    "sttWhereVampiro": "On Sunday, bring your nectar to Morkhan's feet, in the downtown square.",
+    "tbBack": "Back",
+    "tbHome": "Back to the game",
+    "tbCoins": "Emeralds",
+    "tbPolens": "Gold",
+    "tbAdd": "Get more"
   },
   "Sports": {
     "eyebrow": "Sports",

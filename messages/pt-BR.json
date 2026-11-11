@@ -11320,7 +11320,12 @@
     "sttRaceLive": "Domingo na estátua · ao vivo",
     "sttRaceLast": "Último domingo na estátua",
     "sttWhereRaposa": "No domingo, leve o néctar ao pé de Aurion, no meio do seu bairro.",
-    "sttWhereVampiro": "No domingo, leve o néctar ao pé de Morkhan, na praça do centro."
+    "sttWhereVampiro": "No domingo, leve o néctar ao pé de Morkhan, na praça do centro.",
+    "tbBack": "Voltar",
+    "tbHome": "Voltar ao jogo",
+    "tbCoins": "Esmeraldas",
+    "tbPolens": "Gold",
+    "tbAdd": "Conseguir mais"
   },
   "Sports": {
     "eyebrow": "Esportes",
