@@ -11911,7 +11911,16 @@
     "tbHome": "Back to the game",
     "tbCoins": "Emeralds",
     "tbPolens": "Gold",
-    "tbAdd": "Get more"
+    "tbAdd": "Get more",
+    "menuBack": "Back",
+    "menuCharacter": "Character",
+    "menuCharacterHint": "Sheet, soul, routine and record",
+    "menuSettings": "Settings",
+    "menuSettingsHint": "Language, graphics, invite and exit",
+    "menuBag": "Backpack",
+    "menuBagHint": "Weapons, food, clothes and house",
+    "menuBagArms": "Weapons and armor",
+    "menuBagThings": "Food, clothes and house"
   },
   "Sports": {
     "eyebrow": "Sports",

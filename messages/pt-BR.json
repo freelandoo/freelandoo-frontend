@@ -11325,7 +11325,16 @@
     "tbHome": "Voltar ao jogo",
     "tbCoins": "Esmeraldas",
     "tbPolens": "Gold",
-    "tbAdd": "Conseguir mais"
+    "tbAdd": "Conseguir mais",
+    "menuBack": "Voltar",
+    "menuCharacter": "Personagem",
+    "menuCharacterHint": "Ficha, alma, rotina e registro",
+    "menuSettings": "Ajustes",
+    "menuSettingsHint": "Idioma, gráficos, convidar e sair",
+    "menuBag": "Mochila",
+    "menuBagHint": "Armas, comida, roupas e casa",
+    "menuBagArms": "Armas e armadura",
+    "menuBagThings": "Comida, roupas e casa"
   },
   "Sports": {
     "eyebrow": "Esportes",

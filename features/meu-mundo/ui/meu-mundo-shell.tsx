@@ -22,7 +22,7 @@
 // dentro do jogo (card do jogador, caixa de entrada ou nome no Global).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Backpack, DoorOpen, Home, Loader2, Mail, MessageCircle, Send, Share2, Crown, Store, Swords, Trophy } from "lucide-react"
+import { Backpack, DoorOpen, Home, Loader2, Send, Share2, Crown, Store, Swords, Trophy } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
@@ -656,35 +656,29 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
 
   const chatBadge = chatUnread + dmUnread
   const languageItem = useLanguageItem()
-  // Entradas da gaveta (as três cenas): Chat, Itens e a caixa de entrada.
+  // Portões comuns da gaveta (apresentação 02, D6): Mochila, Loja e Ranking viram portão;
+  // Compartilhar e Idioma vão para Ajustes (ver hud/drawer-gates.tsx). Chat e Correio
+  // ficam só na barra de cima (HudInbox).
   const menuExtras: DrawerItem[] = useMemo(
     () => [
       {
-        id: "chat",
-        label: t("chTitle", "Chat"),
-        hint: t("menuChatHint", "Global e conversas"),
-        icon: <MessageCircle className="h-5 w-5" />,
+        id: "bag",
+        label: t("menuBag", "Mochila"),
+        hint: t("menuBagHint", "Armas, comida, roupas e casa"),
+        icon: <Backpack className="h-5 w-5" />,
         kind: "nav",
-        badge: chatBadge ? String(chatBadge > 99 ? "99+" : chatBadge) : undefined,
-        onSelect: () => openChat(),
+        onSelect: () => setGearTab("bag"),
+        children: [
+          { id: "gear", label: t("menuBagArms", "Armas e armadura"), hint: t("menuGearHint2", "Mochila, Forja e refino"), icon: <Swords className="h-5 w-5" />, kind: "nav", onSelect: () => setGearTab("bag") },
+          { id: "items", label: t("menuBagThings", "Comida, roupas e casa"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
+        ],
       },
-      { id: "items", label: t("itTitle", "Itens"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
       { id: "shop", label: t("shopTitle", "Loja"), hint: t("menuShopHint", "Equipamento, monstros, personagens e comidas"), icon: <Store className="h-5 w-5" />, kind: "nav", onSelect: () => setShop({ tab: "gear" }) },
-      { id: "gear", label: t("gearTitle", "Equipamento"), hint: t("menuGearHint2", "Mochila, Forja e refino"), icon: <Swords className="h-5 w-5" />, kind: "nav", onSelect: () => setGearTab("bag") },
       { id: "ranking", label: t("rkTitle", "Ranking"), hint: t("menuRankingHint", "Poder, nível e Freelandoo"), icon: <Trophy className="h-5 w-5" />, kind: "nav", onSelect: () => setRankingOpen(true) },
-      {
-        id: "inbox",
-        label: t("ibMailTitle", "Caixa de entrada"),
-        hint: t("menuInboxHint", "Presentes, comunicados e compras"),
-        icon: <Mail className="h-5 w-5" />,
-        kind: "nav",
-        badge: counts?.mail ? String(counts.mail > 99 ? "99+" : counts.mail) : undefined,
-        onSelect: () => setInbox({ view: "mail", tab: counts?.gifts ? "gift" : "official" }),
-      },
       { id: "share", label: t("shareMenu", "Compartilhar"), hint: t("shareMenuHint", "Convide e ganhe 10%"), icon: <Share2 className="h-5 w-5" />, kind: "nav", onSelect: () => setShareOpen(true) },
       languageItem,
     ],
-    [t, counts, chatBadge, openChat, languageItem],
+    [t, languageItem],
   )
   const suspended = hospitalUp || jailUp || fightUp
   const key = `${sceneKeyOf(scene)}#${mount}`

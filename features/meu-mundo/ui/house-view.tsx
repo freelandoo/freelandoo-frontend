@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { ScenePlayerProps } from "./player-card/player-card"
-import { DoorOpen, Info, Armchair, ArrowUpFromLine, BedDouble, HeartPulse, Moon, Refrigerator, RefreshCw, Send, Sun, WifiOff } from "lucide-react"
+import { DoorOpen, Info, Armchair, ArrowUpFromLine, BedDouble, Moon, Refrigerator, RefreshCw, Send, Sun, WifiOff } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { createHouseGame, type FridgeReply, type HouseGameHandle } from "../engine/house-game"
@@ -25,6 +25,7 @@ import type { BodyId, FridgeStock, GameStats, HousePayload, Interactable, LifeCh
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
 import { Drawer, EvoButton, EvoDialog, EvoToast, InfoRow, WindedToast, presenceState, type DrawerItem } from "./hud/hud-kit"
 import { useQualityItem } from "./hud/quality-item"
+import type { DrawerGates } from "./hud/drawer-gates"
 import { EVO } from "./status/evo-skin"
 import { itemName } from "./status/status-pages"
 import FridgePanel from "./fridge/fridge-panel"
@@ -383,19 +384,11 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   })()
 
   const nearDoor = nearby?.kind === "door"
-  const menuItems: DrawerItem[] = [
-    ...(onOpenStatus
-      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, kind: "nav" as const, onSelect: () => onOpenStatus(body) }]
-      : []),
-    ...(menuExtras ?? []),
-    ...(isOwner
-      ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, kind: "nav" as const, onSelect: onOpenInvite }]
-      : []),
-    qualityItem,
-    { id: "info", label: t("houseInfoShort", "Casa"), hint: t("houseInfo", "Informações da casa"), icon: <Info className="h-5 w-5" />, kind: "nav", active: infoOpen, onSelect: () => setInfoOpen(true) },
-    ...(net === "offline" || net === "replaced"
-      ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
-      : []),
+  // apresentação 02: 5 portões; o que é deste lugar e do sistema vai para Ajustes
+  const menuGates: DrawerGates = {
+    status: onOpenStatus ? () => onOpenStatus(body) : undefined,
+    extras: menuExtras,
+    here: [
     // Sair é na porta (o servidor confere); longe dela o item só orienta.
     {
       id: "exit",
@@ -405,7 +398,18 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
       disabled: !nearDoor,
       onSelect: onExit,
     },
-  ]
+    ...(isOwner
+      ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, kind: "nav" as const, onSelect: onOpenInvite }]
+      : []),
+    { id: "info", label: t("houseInfoShort", "Casa"), hint: t("houseInfo", "Informações da casa"), icon: <Info className="h-5 w-5" />, kind: "nav", active: infoOpen, onSelect: () => setInfoOpen(true) },
+    ],
+    system: [
+    qualityItem,
+    ...(net === "offline" || net === "replaced"
+      ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
+      : []),
+    ],
+  }
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
   const overlay = infoOpen || menuOpen || !!fridge
 
@@ -514,7 +518,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
             open={menuOpen}
             onOpenChange={setMenuOpen}
             heading={t("menuHouse", "A casa")}
-            items={menuItems}
+            gates={menuGates}
             hotkeys={!blocked && !infoOpen && !fridge}
             presence={{ count: online, scope: t("presenceHouse", "Nesta casa"), state: presenceState(net) }}
           />

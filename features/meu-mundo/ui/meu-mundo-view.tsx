@@ -23,7 +23,6 @@ import {
   Footprints,
   Gamepad2,
   Hand,
-  HeartPulse,
   Loader2,
   LocateFixed,
   Lock,
@@ -46,6 +45,7 @@ import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, WindedToast, InfoRow, 
 import { MM } from "./hud/tokens"
 import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
+import type { DrawerGates } from "./hud/drawer-gates"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
 import { useMobEncounter } from "./mob-encounter"
@@ -417,11 +417,11 @@ export default function MeuMundoView({
           : exitLabel
         : ""
 
-  const menuItems: DrawerItem[] = [
-    ...(onOpenStatus
-      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, kind: "nav" as const, onSelect: () => onOpenStatus(body) }]
-      : []),
-    ...(menuExtras ?? []),
+  // apresentação 02: 5 portões; o que é deste lugar e do sistema vai para Ajustes
+  const menuGates: DrawerGates = {
+    status: onOpenStatus ? () => onOpenStatus(body) : undefined,
+    extras: menuExtras,
+    here: [
     ...(!payload.me.visitor
       ? [{ id: "invite", label: t("invite", "Convidar"), hint: t("menuInviteHint", "Chamar alguém para a sua casa"), icon: <Send className="h-5 w-5" />, kind: "nav" as const, onSelect: onOpenInvite }]
       : []),
@@ -431,6 +431,8 @@ export default function MeuMundoView({
     ...(drivingLot
       ? [{ id: "recover", label: t("recoverCar", "Recuperar"), hint: t("recoverHintAny", "Preso? Volta para a vaga da casa (parado, a cada 15 s)."), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.recoverCar() }]
       : []),
+    ],
+    system: [
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: recenter },
     { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, kind: "nav", active: helpOpen, onSelect: () => setHelpOpen(true) },
     qualityItem,
@@ -439,7 +441,8 @@ export default function MeuMundoView({
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
       : []),
     { id: "leave", label: t("menuExitGame", "Sair do jogo"), hint: t("back", "Voltar ao perfil"), icon: <LogOut className="h-5 w-5" />, onSelect: () => router.push("/account") },
-  ]
+    ],
+  }
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
 
   return (
@@ -631,7 +634,7 @@ export default function MeuMundoView({
             open={menuOpen}
             onOpenChange={setMenuOpen}
             heading={t("menuStreet", "O bairro")}
-            items={menuItems}
+            gates={menuGates}
             hotkeys={!blocked && !open && !reading && !levelOpen}
             presence={{ count: online, scope: t("presenceStreet", "Neste bairro"), state: presenceState(net) }}
           />

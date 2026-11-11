@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { ScenePlayerProps } from "./player-card/player-card"
-import { Activity, Crown, Droplet, Gamepad2, Hand, HeartPulse, Home, LocateFixed, Lock, LogOut, MessageCircle, RefreshCw, Store, Swords, WifiOff, X } from "lucide-react"
+import { Activity, Crown, Droplet, Gamepad2, Hand, Home, LocateFixed, Lock, LogOut, MessageCircle, RefreshCw, Store, Swords, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
@@ -24,6 +24,7 @@ import { Drawer, EvoButton, EvoDialog, EvoToast, WindedToast, presenceState, typ
 import { MM } from "./hud/tokens"
 import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
+import type { DrawerGates } from "./hud/drawer-gates"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
 import { fetchSession, getCenterInterior, postCorridaJoin, postGincanaJoin, postJetpackJoin, postNoturnoJoin, postPaintJoin } from "../data"
@@ -454,15 +455,17 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
         : t("centerSoon", "Em breve")
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
 
-  const menuItems: DrawerItem[] = [
+  // apresentação 02: 5 portões; o que é deste lugar e do sistema vai para Ajustes
+  const menuGates: DrawerGates = {
+    status: onOpenStatus ? () => onOpenStatus(body) : undefined,
+    extras: menuExtras,
+    here: [
     { id: "home", label: t("backHome", "Voltar para casa"), hint: t("centerHomeHint", "Para a frente da sua casa, no seu bairro"), icon: <Home className="h-5 w-5" />, onSelect: onGoHome },
-    ...(onOpenStatus
-      ? [{ id: "status", label: t("stTitle", "Status"), hint: t("menuStatusHint", "Vida, mercado e rotina"), icon: <HeartPulse className="h-5 w-5" />, kind: "nav" as const, onSelect: () => onOpenStatus(body) }]
-      : []),
-    ...(menuExtras ?? []),
     ...(drivingLot
       ? [{ id: "recover", label: t("recoverCar", "Recuperar"), hint: t("centerRecoverHint", "Preso? Volta para uma vaga livre (parado, a cada 15 s)."), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.recoverCar() }]
       : []),
+    ],
+    system: [
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: () => gameRef.current?.recenter() },
     { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, kind: "nav", active: helpOpen, onSelect: () => setHelpOpen(true) },
     qualityItem,
@@ -471,7 +474,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
       : []),
     { id: "leave", label: t("menuExitGame", "Sair do jogo"), hint: t("back", "Voltar ao perfil"), icon: <LogOut className="h-5 w-5" />, onSelect: () => router.push("/account") },
-  ]
+    ],
+  }
 
   return (
     <div className="fixed inset-0 z-[60] touch-none select-none overflow-hidden bg-[#A8D4F2]">
@@ -612,7 +616,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             open={menuOpen}
             onOpenChange={setMenuOpen}
             heading={t("menuCenter", "O centro")}
-            items={menuItems}
+            gates={menuGates}
             hotkeys={!blocked && !open && !minigame}
             presence={{ count: online, scope: t("presenceCenter", "No centro"), state: presenceState(net) }}
           />

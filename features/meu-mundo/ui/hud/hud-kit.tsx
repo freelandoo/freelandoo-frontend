@@ -30,6 +30,7 @@ import s from "./hud.module.css"
 import d from "./drawer.module.css"
 import { DrawerMachine } from "./drawer-machine"
 import { Shape } from "./shape"
+import { drawerGates, type DrawerGates } from "./drawer-gates"
 
 export type ChipTone = "bom" | "ambar" | "perigo" | "ouro" | "escuro"
 const CHIP: Record<ChipTone, [string, string]> = {
@@ -88,6 +89,11 @@ export interface DrawerItem {
   loading?: boolean
   /** Não fecha a gaveta ao escolher (ex.: Gráficos troca e mostra o valor). */
   keepOpen?: boolean
+  /**
+   * Portão com lista própria (apresentação 02: Ajustes, Mochila): tocar troca a lista da
+   * gaveta pela dele, com "Voltar" no topo; `onSelect` não é chamado.
+   */
+  children?: DrawerItem[]
 }
 
 /** Presença da sala desta cena: `count` só vale com `state: "online"`. */
@@ -115,7 +121,8 @@ export function Drawer({
   open,
   onOpenChange,
   heading,
-  items,
+  items: plainItems,
+  gates,
   presence,
   footer,
   hotkeys = true,
@@ -123,7 +130,10 @@ export function Drawer({
   open: boolean
   onOpenChange: (v: boolean) => void
   heading: string
-  items: DrawerItem[]
+  /** Lista solta (minijogos etc.). */
+  items?: DrawerItem[]
+  /** Cenas do mundo: os 5 portões montados aqui (apresentação 02). */
+  gates?: DrawerGates
   presence?: DrawerPresence
   /** Linha miúda extra embaixo da presença (opcional). */
   footer?: ReactNode
@@ -131,13 +141,32 @@ export function Drawer({
   hotkeys?: boolean
 }) {
   const t = useTranslations("MeuMundo")
+  const items = gates ? drawerGates(t, gates) : (plainItems ?? [])
   const listRef = useRef<HTMLDivElement | null>(null)
   const navRef = useRef<HTMLElement | null>(null)
   const pullRef = useRef<HTMLButtonElement | null>(null)
   const drag = useRef<{ id: number; x: number; from: "pull" | "drawer" } | null>(null)
   const [dx, setDx] = useState(0)
+  // portão aberto dentro da gaveta (Ajustes, Mochila…): a lista é a dele
+  const [sub, setSub] = useState<string | null>(null)
+  const subItem = sub ? items.find((it) => it.id === sub && it.children?.length) : undefined
+  const list = subItem?.children ?? items
 
   const close = useCallback(() => onOpenChange(false), [onOpenChange])
+  // fechou: a próxima abertura começa nos portões
+  useEffect(() => {
+    if (!open) setSub(null)
+  }, [open])
+  // trocou de lista: o foco vai para o primeiro card e os cards entram da direita (~300 ms)
+  useEffect(() => {
+    if (!open) return
+    const id = requestAnimationFrame(() => listRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus({ preventScroll: true }))
+    const el = listRef.current
+    if (el && currentUiFx() !== "low") gsap.fromTo(el.children, { x: 28, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, ease: "power3.out", stagger: 0.03, clearProps: "transform,opacity" })
+    if (el) el.scrollTop = 0
+    return () => cancelAnimationFrame(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sub])
 
   useEffect(() => {
     if (!hotkeys) return
@@ -150,7 +179,8 @@ export function Drawer({
         onOpenChange(!open)
       } else if (open && e.key === "Escape") {
         e.preventDefault()
-        close()
+        if (sub) setSub(null)
+        else close()
       } else if (open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
         const list = [...(listRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [])]
         if (!list.length) return
@@ -162,7 +192,7 @@ export function Drawer({
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [hotkeys, open, onOpenChange, close])
+  }, [hotkeys, open, onOpenChange, close, sub])
 
   // Gaveta aberta: o balão de avisos (que mora na casca, acima da cena) se
   // esconde para não cobrir o topo do menu (os cards de notificação ouvem este evento).
@@ -285,7 +315,7 @@ export function Drawer({
               <Shape c={14} />
               <div className={d.boxIn}>
                 <span aria-hidden className={d.rivets} />
-                <h2 className={`${cinzel.className} ${d.title}`}>{heading}</h2>
+                <h2 className={`${cinzel.className} ${d.title}`}>{subItem ? subItem.label : heading}</h2>
                 <button type="button" onClick={close} className={d.close} aria-label={t("menuClose", "Fechar o menu")}>
                   <X />
                 </button>
@@ -299,12 +329,17 @@ export function Drawer({
             <div className={d.boxIn}>
                   <span aria-hidden className={d.rivets} />
                   <div ref={listRef} className={d.list}>
-                    {items.map((it) => (
+                    {subItem && (
+                      <MenuItem key="__back" label={t("menuBack", "Voltar")} hint={heading} icon={<ChevronLeft className="h-5 w-5" />} onSelect={() => setSub(null)} />
+                    )}
+                    {list.map(({ children: inner, keepOpen, id, ...it }) => (
                       <MenuItem
-                        key={it.id}
+                        key={id}
                         {...it}
+                        kind={inner?.length ? "nav" : it.kind}
                         onSelect={() => {
-                          if (!it.keepOpen) close()
+                          if (inner?.length) return setSub(id)
+                          if (!keepOpen) close()
                           it.onSelect()
                         }}
                       />
@@ -346,7 +381,7 @@ function Presence({ count, scope, state }: DrawerPresence) {
   )
 }
 
-export function MenuItem({ label, icon, onSelect, hint, disabled, active, badge, kind = "action", loading }: Omit<DrawerItem, "id" | "keepOpen">) {
+export function MenuItem({ label, icon, onSelect, hint, disabled, active, badge, kind = "action", loading }: Omit<DrawerItem, "id" | "keepOpen" | "children">) {
   return (
     <button
       type="button"
