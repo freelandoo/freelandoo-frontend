@@ -17,6 +17,7 @@ Carrega só quando se abre arquivo desta pasta. **Teto 8 KB.** Histórico de cad
 - Superfície de card/modal: material da notificação (`SteamFrame`), mesma opacidade do menu (~0,6). Ganho de status = só o número colorido acima da cabeça.
 - Erro novo em `MeuMundo*Service` = linha em `scripts/i18n-mm-server-errors-merge.js` + `node scripts/check-mm-server-errors.js` (chave = texto em pt).
 - Controles no celular: UM joystick anda e dirige (`driveAxis`); não recriar pedal/volante/freio na tela.
+- Cenário em código (Domínios v2): kit e cenas aprovadas em `engine/cena-codigo/` (`montarCena`), fonte única com a vitrine `MEU MUNDO 3D/pipeline/pecas-codigo` (que só reexporta). Mudou o kit = a geometria das cenas aprovadas muda junto: conferir as folhas.
 - Harness de cada área em `MEU MUNDO 3D/pipeline/**/harness*` (ver o CLAUDE.md de lá). Ícones/miniaturas provisórios: troca por arquivo, não refazer render.
 
 ## Regras do Alex (decisões de produto — valem até ele mudar)
