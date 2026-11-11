@@ -15,6 +15,7 @@
 import type { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
+import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { Plane } from "@babylonjs/core/Maths/math.plane"
@@ -54,7 +55,7 @@ export class Character {
   private unsubHeight: (() => void) | null = null
   private rig: AvatarRig | null = null
   private fallback: Mesh | null
-  private readonly shadow: Mesh
+  private readonly shadow: InstancedMesh
   private tag: { mesh: Mesh; dispose: () => void } | null = null
   /** Balão de fala (mm3d-32): criado só na primeira fala. */
   private bubble: SpeechBubble | null = null

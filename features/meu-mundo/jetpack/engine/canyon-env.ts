@@ -36,7 +36,7 @@ import { createTrimMaterials } from "../../engine/steampunk/materials"
 import { place, xf, rng, mix, type RGB } from "../../engine/steampunk/scenery"
 import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
-import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
+import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot, fusedLayers } from "./env-pool"
 import { PIECE, type CanyonAssets } from "./canyon-assets"
 
 const { W, H } = TUNNEL
@@ -509,10 +509,9 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
     const g: Ctx = { body: new JetGeo(), glow: new JetGeo(), water: new JetGeo(), spins: [], props: [] }
     g.glow.uv = "flat"
     fn(g)
-    const meshes: Mesh[] = []
+    const meshes: Mesh[] = fusedLayers(g, mats, name, scene)
+    all.push(...meshes)
     for (const [geo, mat, layer] of [
-      [g.body, mats.trim, "body"],
-      [g.glow, mats.glow, "glow"],
       [g.water, waterMat, "water"],
     ] as const) {
       if (!geo.vertexCount) continue

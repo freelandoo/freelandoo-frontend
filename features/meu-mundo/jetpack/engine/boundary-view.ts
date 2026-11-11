@@ -30,6 +30,7 @@ import { TUNNEL, TUNING } from "../sim/flight"
 import type { PhaseId } from "../sim/phases"
 import { JetGeo } from "./jet-geo"
 import { SEG } from "./env-pool"
+import { fuseGlow } from "../../engine/steampunk/glow-fuse"
 
 const { W, H } = TUNNEL
 
@@ -112,13 +113,14 @@ export function buildBoundary(scene: Scene, phase: PhaseId, trim: StandardMateri
   glassMat.backFaceCulling = false
   glassMat.disableDepthWrite = true
 
-  const meshes: Mesh[] = [body.build(`jt-bound-body`, scene, trim, false), glow.build(`jt-bound-glow`, scene, glowMat, false), glass.build(`jt-bound-glass`, scene, glassMat, false)]
+  // V3 chamadas: o filete aceso vai dentro do corpo (fuseGlow: 2 chamadas → 1)
+  const meshes: Mesh[] = [fuseGlow(body.build(`jt-bound-body`, scene, trim, false), glow.build(`jt-bound-glow`, scene, glowMat, false)), glass.build(`jt-bound-glass`, scene, glassMat, false)]
   for (const m of meshes) {
     m.isPickable = false
     m.alwaysSelectAsActiveMesh = true
   }
   // o vidro desenha depois do resto (sem ordenar por pedaço)
-  meshes[2].alphaIndex = 10
+  meshes[1].alphaIndex = 10
   let warm = 0
   return {
     update(z, y) {

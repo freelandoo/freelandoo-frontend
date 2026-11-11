@@ -25,6 +25,7 @@ import { TUNNEL } from "../sim/flight"
 import type { PhaseId, SetPiece } from "../sim/phases"
 import { buildTunnel, SEG } from "./tunnel-view"
 import { JetGeo } from "./jet-geo"
+import { fusedLayers } from "./env-pool"
 import { buildCanyonEnv } from "./canyon-env"
 import { buildFactoryEnv } from "./factory-env"
 import { buildOrbitalEnv } from "./orbital-env"
@@ -458,10 +459,9 @@ export function buildPhaseEnv(scene: Scene, id: PhaseId, low: boolean, slots: nu
     g.glow.uv = "flat"
     g.glass.uv = "flat"
     fn(g)
-    const list: Mesh[] = []
+    const list: Mesh[] = fusedLayers(g, mats, name, scene)
+    all.push(...list)
     for (const [geo, mat, layer] of [
-      [g.body, mats.trim, "body"],
-      [g.glow, mats.glow, "glow"],
       [g.glass, glassMat, "glass"],
     ] as const) {
       if (!geo.vertexCount) continue

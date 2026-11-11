@@ -25,7 +25,7 @@ import { createTrimMaterials } from "../../engine/steampunk/materials"
 import { place, rng, mix, type RGB } from "../../engine/steampunk/scenery"
 import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
-import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
+import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot, fusedLayers } from "./env-pool"
 import type { OrbitalAsset, PieceAssets } from "./canyon-assets"
 import { cloudTexture, skyTexture } from "./canyon-env"
 
@@ -195,10 +195,9 @@ export function buildOrbitalEnv(scene: Scene, low: boolean, slots: number, seed:
       g.glow.uv = "flat"
       g.glass.uv = "flat"
       mod.build(g, v)
-      const meshes: Mesh[] = []
+      const meshes: Mesh[] = fusedLayers(g, mats, `jt-or-${mod.id}${v}`, scene)
+      all.push(...meshes)
       for (const [geo, mat, layer] of [
-        [g.body, mats.trim, "body"],
-        [g.glow, mats.glow, "glow"],
         [g.glass, glassMat, "glass"],
       ] as const) {
         if (!geo.vertexCount) continue

@@ -34,6 +34,8 @@ import type { AssetContainer, InstantiatedEntries } from "@babylonjs/core/assetC
 import type { AnimationGroup } from "@babylonjs/core/Animations/animationGroup"
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
+import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
+import "@babylonjs/core/Meshes/instancedMesh"
 import type { Node } from "@babylonjs/core/node"
 import type { Scene } from "@babylonjs/core/scene"
 import type { Plane } from "@babylonjs/core/Maths/math.plane"
@@ -1555,10 +1557,24 @@ export class AvatarRig {
 }
 
 /** Disco translúcido no chão: a cena não tem sombras dinâmicas. */
-export function makeShadow(scene: Scene, mat: StandardMaterial, name: string): Mesh {
-  const d = MeshBuilder.CreateDisc(name, { radius: 0.48, tessellation: 18 }, scene)
+/**
+ * V3 chamadas: o disco é um molde por cena e material (ligado, longe da vista) e cada
+ * personagem leva uma INSTÂNCIA — com 26 na rua eram 26 chamadas de desenho, agora 1.
+ */
+const shadowMolds = new WeakMap<Scene, Map<StandardMaterial, Mesh>>()
+export function makeShadow(scene: Scene, mat: StandardMaterial, name: string): InstancedMesh {
+  let byMat = shadowMolds.get(scene)
+  if (!byMat) shadowMolds.set(scene, (byMat = new Map()))
+  let src = byMat.get(mat)
+  if (!src || src.isDisposed()) {
+    src = MeshBuilder.CreateDisc(`mm-char-shadow-mold`, { radius: 0.48, tessellation: 18 }, scene)
+    src.material = mat
+    src.isPickable = false
+    src.position.y = -5000
+    byMat.set(mat, src)
+  }
+  const d = src.createInstance(name)
   d.rotation.x = Math.PI / 2
-  d.material = mat
   d.isPickable = false
   return d
 }

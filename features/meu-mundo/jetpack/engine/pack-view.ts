@@ -13,11 +13,14 @@ import type { Scene } from "@babylonjs/core/scene"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
+import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
+import "@babylonjs/core/Meshes/instancedMesh"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { SteamGeo } from "../../engine/steampunk/geo"
 import { SP, place, xf } from "../../engine/steampunk/scenery"
+import { fuseGlow } from "../../engine/steampunk/glow-fuse"
 
 /** Altura do corpo no jetpack (m). */
 export const PILOT_H = 1.7
@@ -28,8 +31,8 @@ const NOZZLES = [
 ] as const
 
 export interface PackKit {
+  /** Corpo com o brilho dentro (`fuseGlow`: 1 chamada). */
   body: Mesh
-  glow: Mesh
   flameOuter: Mesh
   flameInner: Mesh
   dispose: () => void
@@ -66,10 +69,12 @@ export function buildPackKit(scene: Scene, mats: { trim: StandardMaterial; glow:
   }
   // emblema aceso no meio, entre os tanques
   l.box(0.05, 0.05, 0.04, xf(0, 1.36, -0.5, 0, undefined, 0, Math.PI / 4), [1, 0.85, 0.4])
-  const body = g.build("jt-pack", scene, mats.trim, false)
-  const glow = l.build("jt-pack-glow", scene, mats.glow, false)
-  body.setEnabled(false)
-  glow.setEnabled(false)
+  const body = fuseGlow(g.build("jt-pack", scene, mats.trim, false), l.build("jt-pack-glow", scene, mats.glow, false))
+  // V3 chamadas: os moldes ficam ligados e longe da vista; cada jogador é INSTÂNCIA deles
+  // (eram clones: 6 chamadas por jogador — mochila, brilho e 2×2 chamas — e agora são 4 no total)
+  const hold = new TransformNode("jt-pack-molds", scene)
+  hold.position.y = -5000
+  body.parent = hold
 
   // fogo: cone com a ponta para baixo (origem na boca do bocal)
   const fire = (name: string, d: number, color: Color3, alpha: number) => {
@@ -86,21 +91,21 @@ export function buildPackKit(scene: Scene, mats: { trim: StandardMaterial; glow:
     mat.disableDepthWrite = true
     m.material = mat
     m.isPickable = false
-    m.setEnabled(false)
+    m.parent = hold
     return m
   }
   const flameOuter = fire("jt-flame-o", 0.18, new Color3(1, 0.55, 0.12), 0.8)
   const flameInner = fire("jt-flame-i", 0.09, new Color3(1, 0.95, 0.7), 0.95)
   return {
     body,
-    glow,
     flameOuter,
     flameInner,
     dispose() {
-      for (const m of [body, glow, flameOuter, flameInner]) {
+      for (const m of [body, flameOuter, flameInner]) {
         m.material && m.material !== mats.trim && m.material !== mats.glow && m.material.dispose()
         m.dispose()
       }
+      hold.dispose()
     },
   }
 }
@@ -108,27 +113,29 @@ export function buildPackKit(scene: Scene, mats: { trim: StandardMaterial; glow:
 /** A mochila de UM personagem (presa ao nó dele). */
 export class PackRig {
   private readonly root: TransformNode
-  private readonly parts: Mesh[] = []
-  private readonly flames: { node: TransformNode; outer: Mesh; inner: Mesh }[] = []
+  private readonly parts: InstancedMesh[] = []
+  private readonly flames: { node: TransformNode; outer: InstancedMesh; inner: InstancedMesh }[] = []
   private len = 0.3
   private seed = Math.random() * 100
 
   constructor(kit: PackKit, parent: TransformNode, name: string) {
     this.root = new TransformNode(`${name}-pack`, parent.getScene())
     this.root.parent = parent
-    for (const src of [kit.body, kit.glow]) {
-      const m = src.clone(`${name}-${src.name}`, this.root, true)!
-      m.setEnabled(true)
+    for (const src of [kit.body]) {
+      const m = src.createInstance(`${name}-${src.name}`)
+      m.parent = this.root
+      m.isPickable = false
       this.parts.push(m)
     }
     for (const [x, y, z] of NOZZLES) {
       const node = new TransformNode(`${name}-nozzle`, parent.getScene())
       node.parent = this.root
       node.position.set(x, y - 0.06, z)
-      const outer = kit.flameOuter.clone(`${name}-fo`, node, true)!
-      const inner = kit.flameInner.clone(`${name}-fi`, node, true)!
-      outer.setEnabled(true)
-      inner.setEnabled(true)
+      const outer = kit.flameOuter.createInstance(`${name}-fo`)
+      const inner = kit.flameInner.createInstance(`${name}-fi`)
+      outer.parent = node
+      inner.parent = node
+      outer.isPickable = inner.isPickable = false
       this.flames.push({ node, outer, inner })
     }
   }

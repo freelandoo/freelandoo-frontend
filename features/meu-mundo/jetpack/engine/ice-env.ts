@@ -25,7 +25,7 @@ import { createTrimMaterials } from "../../engine/steampunk/materials"
 import { place, rng, type RGB } from "../../engine/steampunk/scenery"
 import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
-import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
+import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot, fusedLayers } from "./env-pool"
 import type { IceAsset, PieceAssets } from "./canyon-assets"
 import { skyTexture } from "./canyon-env"
 
@@ -241,17 +241,8 @@ export function buildIceEnv(scene: Scene, low: boolean, slots: number, seed: num
       const g: Ctx = { body: new JetGeo(), glow: new JetGeo(), spins: [], props: [] }
       g.glow.uv = "flat"
       mod.build(g, v)
-      const meshes: Mesh[] = []
-      for (const [geo, mat, layer] of [
-        [g.body, mats.trim, "body"],
-        [g.glow, mats.glow, "glow"],
-      ] as const) {
-        if (!geo.vertexCount) continue
-        const m = geo.build(`jt-ic-${mod.id}${v}-${layer}`, scene, mat, false)
-        m.isPickable = false
-        meshes.push(m)
-        all.push(m)
-      }
+      const meshes: Mesh[] = fusedLayers(g, mats, `jt-ic-${mod.id}${v}`, scene)
+      all.push(...meshes)
       mods.push({ meshes, spins: g.spins, props: g.props })
     }
   }

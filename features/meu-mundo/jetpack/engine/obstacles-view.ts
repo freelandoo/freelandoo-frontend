@@ -59,6 +59,7 @@ import {
 } from "../sim/flight"
 import type { PhaseId } from "../sim/phases"
 import { JetGeo } from "./jet-geo"
+import { fuseGlow } from "../../engine/steampunk/glow-fuse"
 
 const { W, H } = TUNNEL
 const YELLOW: RGB = [0.95, 0.72, 0.02]
@@ -254,9 +255,15 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
     l.uv = "flat"
     if (bodyMat !== mats.trim) g.uv = "flat"
     fn(g, l)
-    const body = g.build(`jt-${key}`, scene, bodyMat, false)
+    let body = g.build(`jt-${key}`, scene, bodyMat, false)
+    let glow = l.vertexCount ? l.build(`jt-${key}-glow`, scene, mats.glow, false) : null
+    // V3 chamadas: com o corpo de acabamento, o brilho vai dentro dele (2 chamadas → 1);
+    // corpo de vidro ou de brilho fica como era (a cor do brilho não pode ficar transparente)
+    if (glow && bodyMat === mats.trim) {
+      body = fuseGlow(body, glow)
+      glow = null
+    }
     park(body)
-    const glow = l.vertexCount ? l.build(`jt-${key}-glow`, scene, mats.glow, false) : null
     if (glow) park(glow)
     molds.set(key, { body, glow })
   }

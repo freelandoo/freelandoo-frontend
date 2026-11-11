@@ -17,6 +17,9 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import "@babylonjs/core/Meshes/instancedMesh"
 import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
+import type { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { fuseGlow } from "../../engine/steampunk/glow-fuse"
+import type { JetGeo } from "./jet-geo"
 
 /** Comprimento de um trecho (m) — o mesmo do túnel original. */
 export const SEG = 24
@@ -212,4 +215,16 @@ export function weighted(h: number, weights: readonly number[]) {
     if (u <= 0) return i
   }
   return weights.length - 1
+}
+
+/**
+ * V3 chamadas: as camadas de um módulo (corpo iluminado + brilho) viram UMA malha
+ * (`fuseGlow`; eram 2 chamadas de desenho por módulo). `${name}-body` leva o brilho dentro.
+ */
+export function fusedLayers(g: { body: JetGeo; glow: JetGeo }, mats: { trim: StandardMaterial; glow: StandardMaterial }, name: string, scene: Scene): Mesh[] {
+  const body = g.body.vertexCount ? g.body.build(`${name}-body`, scene, mats.trim, false) : null
+  const glow = g.glow.vertexCount ? g.glow.build(`${name}-glow`, scene, mats.glow, false) : null
+  const out = body ? [fuseGlow(body, glow)] : glow ? [glow] : []
+  for (const m of out) m.isPickable = false
+  return out
 }

@@ -73,6 +73,8 @@ export function countDrawCalls(scene: Scene) {
     const src = (m as unknown as { sourceMesh?: unknown }).sourceMesh ?? m
     if (seen.has(src)) continue
     seen.add(src)
+    // nó sem malha (o `__root__` de todo glTF) entra na lista e não desenha nada
+    if (!m.getTotalVertices()) continue
     n += Math.max(1, m.subMeshes?.length ?? 1)
   }
   for (const ps of scene.particleSystems) if (ps.isStarted() && ps.getActiveCount() > 0) n++
