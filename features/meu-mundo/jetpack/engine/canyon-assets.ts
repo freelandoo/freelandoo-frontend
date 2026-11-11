@@ -112,7 +112,11 @@ export function loadOrbitalAssets(scene: Scene, isAlive: () => boolean): Promise
 /**
  * Fábrica (Túnel Industrial) v2 (build_industrial_v2.py): grupos, como o Gelo. As peças novas do Tripo
  * (kit_lib, giro −90°) chegam ao Babylon de COSTAS (frente para +z): quem posiciona soma meia-volta.
+ * B6 (2026-11-11): o kit é o TEMA v2 (`pipeline/temas/build_fabrica_tema_v2.py`): faces do Tripo para
+ * fora, UV refeita, cor e mapa de normal assados, KTX2 1024 em cano, pistão, máquinas, pátio e moldura.
+ * Mesmas peças, medidas e triângulos do fabrica2. O Rolê Noturno (bioma Fábrica) lê daqui também.
  */
+export const FACTORY_DIR = "/meu-mundo/temas/fabrica/v2/"
 export const FACTORY_GROUPS = {
   viga: ["viga"],
   cano: ["cano"],
@@ -128,11 +132,11 @@ export const FACTORY_GROUPS = {
 export type FactoryAsset = (typeof FACTORY_GROUPS)[keyof typeof FACTORY_GROUPS][number]
 const FACTORY_LOD: Partial<Record<FactoryAsset, number>> = { viga: 50, cano: 45, engrenagem: 60, pistao: 45, guindaste: 50, turbina: 80, "prensa-cabeca": 45, relogio: 50, empilhadeira: 40, caldeira: 45, tanque: 45, esteira: 40, painel: 40 }
 export function loadFactoryAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<FactoryAsset>> {
-  return loadPieceGroups<FactoryAsset>(scene, "/meu-mundo/jetpack/fabrica2/", FACTORY_GROUPS, FACTORY_LOD, isAlive)
+  return loadPieceGroups<FactoryAsset>(scene, FACTORY_DIR, FACTORY_GROUPS, FACTORY_LOD, isAlive)
 }
 /** Só a engrenagem nova da fábrica (a Forja usa como obstáculo). */
 export function loadFactoryGear(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<"engrenagem2">> {
-  return loadPieceGroups(scene, "/meu-mundo/jetpack/fabrica2/", { "fab-maquinas": ["engrenagem2"] as const }, {}, isAlive)
+  return loadPieceGroups(scene, FACTORY_DIR, { "fab-maquinas": ["engrenagem2"] as const }, {}, isAlive)
 }
 
 export interface PieceAssets<P extends string = string> {

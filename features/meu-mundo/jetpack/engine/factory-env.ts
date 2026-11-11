@@ -26,7 +26,7 @@ import type { FactoryAsset, PieceAssets } from "./canyon-assets"
 
 type FactoryPiece = "viga" | "cano" | "pistao" | "guindaste" | "engrenagem" | "turbina" | "prensa-cabeca" | "relogio" | "empilhadeira" | "caldeira" | "tanque" | "esteira" | "painel"
 const NEW_PIECES = ["prensa-cabeca", "relogio", "empilhadeira", "caldeira", "tanque", "esteira", "painel"] as const
-/** Largura em x e fundura (z) das peças novas com 1 m de altura (fabrica2.json). */
+/** Largura em x e fundura (z) das peças novas com 1 m de altura (fabrica-tema2.json; iguais às do fabrica2). */
 const DIM = { "prensa-cabeca": [1.22, 0.92], relogio: [0.73, 0.84], empilhadeira: [1.3, 0.97], caldeira: [0.93, 1.16], tanque: [0.79, 0.65], esteira: [1.28, 1.0], painel: [1.07, 0.76] } as const
 
 const { W, H } = TUNNEL

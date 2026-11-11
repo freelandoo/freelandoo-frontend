@@ -1,0 +1,298 @@
+{
+ "groups": {
+  "fab-maquinas": {
+   "file": "fab-maquinas.glb",
+   "pieces": [
+    "engrenagem2",
+    "prensa-cabeca"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1769,
+   "srcTris": 41055
+  },
+  "viga": {
+   "file": "viga.glb",
+   "pieces": [
+    "viga"
+   ],
+   "tex": 512,
+   "normal": 512,
+   "kb": 992,
+   "srcTris": 40073
+  },
+  "cano": {
+   "file": "cano.glb",
+   "pieces": [
+    "cano"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1860,
+   "srcTris": 40853
+  },
+  "engrenagem": {
+   "file": "engrenagem.glb",
+   "pieces": [
+    "engrenagem"
+   ],
+   "tex": 512,
+   "normal": 512,
+   "kb": 1046,
+   "srcTris": 41371
+  },
+  "pistao": {
+   "file": "pistao.glb",
+   "pieces": [
+    "pistao"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1764,
+   "srcTris": 39998
+  },
+  "guindaste": {
+   "file": "guindaste.glb",
+   "pieces": [
+    "guindaste"
+   ],
+   "tex": 512,
+   "normal": 512,
+   "kb": 1029,
+   "srcTris": 41322
+  },
+  "turbina": {
+   "file": "turbina.glb",
+   "pieces": [
+    "turbina"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1839,
+   "srcTris": 40492
+  },
+  "fab-patio": {
+   "file": "fab-patio.glb",
+   "pieces": [
+    "relogio",
+    "empilhadeira",
+    "caldeira",
+    "tanque"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1962,
+   "srcTris": 41190
+  },
+  "fab-linha": {
+   "file": "fab-linha.glb",
+   "pieces": [
+    "esteira",
+    "painel"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1811,
+   "srcTris": 41968
+  },
+  "fab-moldura": {
+   "file": "fab-moldura.glb",
+   "pieces": [
+    "borda",
+    "canto",
+    "galao"
+   ],
+   "tex": 1024,
+   "normal": 0,
+   "kb": 1138,
+   "srcTris": 38858
+  }
+ },
+ "pieces": {
+  "engrenagem2": {
+   "group": "fab-maquinas",
+   "size": [
+    0.9013,
+    0.9994,
+    0.7142
+   ],
+   "tris": 1498,
+   "srcTris": 14661
+  },
+  "prensa-cabeca": {
+   "group": "fab-maquinas",
+   "size": [
+    1.2163,
+    0.9989,
+    0.9162
+   ],
+   "tris": 1500,
+   "srcTris": 26394,
+   "lodTris": 400
+  },
+  "viga": {
+   "group": "viga",
+   "size": [
+    0.2784,
+    0.4112,
+    0.9955
+   ],
+   "tris": 1998,
+   "srcTris": 40073,
+   "lodTris": 500
+  },
+  "cano": {
+   "group": "cano",
+   "size": [
+    0.7241,
+    0.998,
+    1.4403
+   ],
+   "tris": 2398,
+   "srcTris": 40853,
+   "lodTris": 600
+  },
+  "engrenagem": {
+   "group": "engrenagem",
+   "size": [
+    0.3664,
+    0.9993,
+    0.9979
+   ],
+   "tris": 1995,
+   "srcTris": 41371,
+   "lodTris": 499
+  },
+  "pistao": {
+   "group": "pistao",
+   "size": [
+    0.3617,
+    0.9954,
+    0.4659
+   ],
+   "tris": 1998,
+   "srcTris": 39998,
+   "lodTris": 498
+  },
+  "guindaste": {
+   "group": "guindaste",
+   "size": [
+    0.3121,
+    1.0006,
+    0.4816
+   ],
+   "tris": 2000,
+   "srcTris": 41322,
+   "lodTris": 500
+  },
+  "turbina": {
+   "group": "turbina",
+   "size": [
+    0.3344,
+    0.9904,
+    1.0382
+   ],
+   "tris": 2996,
+   "srcTris": 40492,
+   "lodTris": 2160
+  },
+  "relogio": {
+   "group": "fab-patio",
+   "size": [
+    0.7197,
+    0.9867,
+    0.8306
+   ],
+   "tris": 1200,
+   "srcTris": 9324,
+   "lodTris": 439
+  },
+  "empilhadeira": {
+   "group": "fab-patio",
+   "size": [
+    1.3017,
+    0.9978,
+    0.9705
+   ],
+   "tris": 1200,
+   "srcTris": 14370,
+   "lodTris": 297
+  },
+  "caldeira": {
+   "group": "fab-patio",
+   "size": [
+    0.9128,
+    0.986,
+    1.1441
+   ],
+   "tris": 1200,
+   "srcTris": 10308,
+   "lodTris": 300
+  },
+  "tanque": {
+   "group": "fab-patio",
+   "size": [
+    0.7954,
+    1.0015,
+    0.6462
+   ],
+   "tris": 1200,
+   "srcTris": 7492,
+   "lodTris": 300
+  },
+  "esteira": {
+   "group": "fab-linha",
+   "size": [
+    1.2666,
+    0.9926,
+    0.9882
+   ],
+   "tris": 1186,
+   "srcTris": 20542,
+   "lodTris": 293
+  },
+  "painel": {
+   "group": "fab-linha",
+   "size": [
+    1.0593,
+    0.9939,
+    0.7368
+   ],
+   "tris": 1190,
+   "srcTris": 21700,
+   "lodTris": 300
+  },
+  "borda": {
+   "group": "fab-moldura",
+   "len": 4.2196,
+   "size": [
+    4.2176,
+    0.997,
+    0.864
+   ],
+   "tris": 600,
+   "srcTris": 13184
+  },
+  "canto": {
+   "group": "fab-moldura",
+   "arm": 0.8913,
+   "size": [
+    0.8905,
+    0.9999,
+    0.368
+   ],
+   "tris": 600,
+   "srcTris": 7564
+  },
+  "galao": {
+   "group": "fab-moldura",
+   "size": [
+    0.9171,
+    1.0042,
+    0.8996
+   ],
+   "tris": 700,
+   "srcTris": 18110
+  }
+ }
+}
