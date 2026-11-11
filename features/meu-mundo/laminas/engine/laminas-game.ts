@@ -36,6 +36,7 @@ import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/qua
 import { AvatarLibrary, type BoxeBase, type BoxeClip } from "../../engine/avatars"
 import { Character } from "../../engine/player"
 import { BoxeAudio } from "./audio"
+import { StrikeAudio } from "./strike-audio"
 import type { BodyId } from "../../types"
 import { BOSS_ROAR, ARENA_R, COMBO, DT, Fight, MOBS, MOB_SHIELD, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
 import { createSkillFx, SKILL_COLORS, type SkillPalette } from "./skill-fx"
@@ -480,6 +481,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const arena = ring ? buildRing(scene, low) : street ? buildStreet(scene, low, street) : dominio ? buildDomainStage(scene, low, dominio) : buildArena(scene, low)
   const audio = new BoxeAudio()
   audio.resume()
+  // som por família de golpe e por poder (lv2-B3), no canal de efeitos da luta
+  const sfx = new StrikeAudio(audio.fxBus())
 
   // ── a luta ───────────────────────────────────────────────────────────────
   // a raposa luta como MAGA (bolas de fogo); o resto corta (mm3d-58)
@@ -1231,6 +1234,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           skillFx.ultFire(feet, clan === "raposa" ? POWER.mageR : POWER.bladeRange)
           vfx.impact(at.add(new Vector3(0, 0.4, 0)), SKILL_COLORS.ult, true, 1.4)
           audio.boom()
+          if (sig) sfx.power(sig.family, !!e.heal)
           shake = Math.max(shake, 0.45)
           hitStop = Math.max(hitStop, 0.1)
           arena.cheer(0.8)
@@ -1243,11 +1247,13 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             const c = moves ? pick(moves.special) : SWING_CLIPS[2]
             hero.boxeAct(c.clip, SKILLS.slash.dur, c.from, c.to)
             audio.slash()
+            sfx.family(strike, "slash")
           } else if (e.id === "dash") {
             if (moves) hero.boxeAct(moves.dodge.clip, SKILLS.dash.dur, moves.dodge.from, moves.dodge.to)
             else hero.boxeAct("BDodge", SKILLS.dash.dur, 0, 0.49)
             vfx.impact(new Vector3(e.x, 1, e.z), skillColors.dash, false, 1)
             audio.dash()
+            sfx.family(strike, "dash")
           } else {
             skillFx.shieldOn(feet)
             // apresentação 08: estado aceso = o mundo muda de cor enquanto dura, e a palavra em cima
@@ -1259,6 +1265,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
               else if (clan) hero.boxeAct("VPower", 0.5, 0, 0.35)
             }
             audio.shieldUp()
+            sfx.family(strike, "shield")
           }
           break
         }

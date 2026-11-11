@@ -7,10 +7,14 @@
 // parciais de metal; contagem = um tique seco. O contexto nasce no toque que
 // abre a luta e morre no dispose.
 
+import type { FxBus } from "./strike-audio"
+
 export class BoxeAudio {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
   private crowdGain: GainNode | null = null
+  /** Canal dos efeitos (golpes, poderes), separado da multidão (lv2-B3). */
+  private fx: GainNode | null = null
   private noise: AudioBuffer | null = null
   private crowdSrc: AudioBufferSourceNode | null = null
   private hype = 0.25
@@ -25,6 +29,9 @@ export class BoxeAudio {
       this.master = ctx.createGain()
       this.master.gain.value = 0.55
       this.master.connect(ctx.destination)
+      this.fx = ctx.createGain()
+      this.fx.gain.value = 1
+      this.fx.connect(this.master)
       const len = ctx.sampleRate * 3
       this.noise = ctx.createBuffer(1, len, ctx.sampleRate)
       const d = this.noise.getChannelData(0)
@@ -55,6 +62,12 @@ export class BoxeAudio {
     } catch {
       this.ctx = null
     }
+  }
+
+  /** O canal de efeitos para o StrikeAudio (null sem Web Audio). */
+  fxBus(): FxBus | null {
+    if (!this.ctx || !this.fx || !this.noise) return null
+    return { ctx: this.ctx, out: this.fx, noise: this.noise, muted: () => this.muted }
   }
 
   resume() {
@@ -93,7 +106,7 @@ export class BoxeAudio {
     g.gain.exponentialRampToValueAtTime(0.001, t + dur)
     src.connect(f)
     f.connect(g)
-    g.connect(this.master)
+    g.connect(this.fx ?? this.master)
     src.start(t, Math.random() * 2, dur + 0.05)
   }
 
@@ -109,7 +122,7 @@ export class BoxeAudio {
     g.gain.setValueAtTime(gain, t)
     g.gain.exponentialRampToValueAtTime(0.001, t + dur)
     o.connect(g)
-    g.connect(this.master)
+    g.connect(this.fx ?? this.master)
     o.start(t)
     o.stop(t + dur + 0.05)
   }
