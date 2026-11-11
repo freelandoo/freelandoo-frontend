@@ -26,6 +26,17 @@ const MEU_MUNDO = {
   lkBonusSpd: ["Velocidade", "Speed", "Velocidad"],
   lkBonusInt: ["Inteligência", "Intelligence", "Inteligencia"],
   lkBonusDex: ["Destreza", "Dexterity", "Destreza"],
+  // E6: os 8 slots
+  lkSlotOffhand: ["Mão secundária", "Off-hand", "Mano secundaria"],
+  lkSlotHelm: ["Cabeça", "Head", "Cabeza"],
+  lkSlotChest: ["Peito", "Chest", "Pecho"],
+  lkSlotGloves: ["Mãos", "Hands", "Manos"],
+  lkSlotBoots: ["Pés", "Feet", "Pies"],
+  lkSlotAmulet: ["Amuleto", "Amulet", "Amuleto"],
+  lkSlotRelic: ["Relíquia", "Relic", "Reliquia"],
+  lkPickSlot: ["Escolher peça para {slot}", "Choose an item for {slot}", "Elegir pieza para {slot}"],
+  bagOnlySlot: ["Só: {slot}", "Only: {slot}", "Solo: {slot}"],
+  bagClearSlot: ["Mostrar todos", "Show all", "Mostrar todos"],
 }
 const OVERRIDE = {}
 

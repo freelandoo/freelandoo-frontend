@@ -45,7 +45,8 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
   }
   const presentCategories = new Set<string>((catalog?.items || []).map(item => item.category))
   const changeTab = (next: GearTab) => { setTab(next); setConfirm(null); setMessage(null); setCategory("all") }
-  const slotsFor = (item: GearItem): GearSlot[] => item.category === "weapon" ? ["weapon"] : item.category === "shield" ? ["shield"] : item.category === "armor" ? ["armor"] : item.category === "accessory" ? ["acc1", "acc2"] : []
+  // E6: o slot vem do catálogo (um só por peça)
+  const slotsFor = (item: GearItem): GearSlot[] => (item.slot ? [item.slot] : [])
   const locked = (item: GearItem) => gearLock(item, bag, t)
 
   const inventoryCard = (item: GearItem, guide: boolean): CarouselItem => ({

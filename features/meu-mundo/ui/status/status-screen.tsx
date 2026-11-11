@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { advXpOf, getAdventure, getCharacters, getGear, getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer } from "../../data"
+import { advXpOf, getAdventure, getCharacters, getGear, getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer, type GearSlot } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, archivo } from "./evo-skin"
 import { MM } from "../hud/tokens"
@@ -94,9 +94,11 @@ export interface StatusScreenProps {
   initialPage?: PageId
   /** No supermercado (mm3d-37c): o Mercado compra; fora dele, só mostra. */
   shopping?: boolean
+  /** E6: tocar um slot do Equipado abre a mochila filtrada por ele. */
+  onOpenBag?: (slot: GearSlot) => void
 }
 
-export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpenPolens, initialPage, shopping = false }: StatusScreenProps) {
+export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpenPolens, initialPage, shopping = false, onOpenBag }: StatusScreenProps) {
   const t = useTranslations("MeuMundo")
   const [life, setLife] = useState<LifeFull | null>(null)
   // mm3d-60g: nível e XP de aventura no cabeçalho
@@ -172,8 +174,9 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       newcomer: () => void run((tk) => postLifeNewcomer(tk)),
       openSkins: () => setWardrobe(true),
       openPolens: onOpenPolens,
+      openBag: onOpenBag,
     }),
-    [busy, run, t, onOpenPolens, shopping],
+    [busy, run, t, onOpenPolens, shopping, onOpenBag],
   )
 
   // ── tamanho: carrossel no computador, card único no celular ─────────────

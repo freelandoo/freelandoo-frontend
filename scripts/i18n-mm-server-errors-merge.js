@@ -229,6 +229,8 @@ const ROWS = [
   ["O deus não te alcançou", "The god hasn’t caught you", "El dios no te alcanzó"],
   ["Escolha a sua classe antes", "Choose your class first", "Elige tu clase primero"],
   ["Povo inválido", "Invalid people", "Pueblo no válido"],
+  // trilha E6: arma de duas mãos
+  ["Sua arma usa as duas mãos", "Your weapon takes both hands", "Tu arma usa las dos manos"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

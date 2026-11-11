@@ -52,11 +52,24 @@ interface Cell {
   slot?: Slot
 }
 
-const tabOfGear = (g: GearItem): Tab => (g.category === "weapon" ? "weapons" : g.category === "shield" || g.category === "armor" || g.category === "accessory" ? "armor" : "materials")
-const slotsFor = (item: GearItem): GearSlot[] =>
-  item.category === "weapon" ? ["weapon"] : item.category === "shield" ? ["shield"] : item.category === "armor" ? ["armor"] : item.category === "accessory" ? ["acc1", "acc2"] : []
+const tabOfGear = (g: GearItem): Tab => (g.category === "weapon" ? "weapons" : g.slot ? "armor" : "materials")
+/** E6: nome do slot (as mesmas chaves da página Equipado). */
+const gearSlotName = (s: GearSlot, t: GearTr) =>
+  ({
+    weapon: t("lkSlotWeapon", "Arma"),
+    offhand: t("lkSlotOffhand", "Mão secundária"),
+    helm: t("lkSlotHelm", "Cabeça"),
+    chest: t("lkSlotChest", "Peito"),
+    gloves: t("lkSlotGloves", "Mãos"),
+    boots: t("lkSlotBoots", "Pés"),
+    amulet: t("lkSlotAmulet", "Amuleto"),
+    relic: t("lkSlotRelic", "Relíquia"),
+  })[s]
+/** E6: o slot vem do catálogo (um só por peça). */
+const slotsFor = (item: GearItem): GearSlot[] => (item.slot ? [item.slot] : [])
 
 export default function BagPanel({
+  slotFilter = null,
   onClose,
   onOpenShop,
   onOpenPolens,
@@ -64,6 +77,8 @@ export default function BagPanel({
   onChanged,
   onReceipt,
 }: {
+  /** E6: aberta a partir de um slot do Equipado — só as peças desse slot (tira-se no chip). */
+  slotFilter?: GearSlot | null
   onClose: () => void
   /** "+" das Esmeraldas: a Loja. */
   onOpenShop: () => void
@@ -79,7 +94,8 @@ export default function BagPanel({
   const [inv, setInv] = useState<InventoryResult | null>(null)
   const [invError, setInvError] = useState(false)
   const [gold, setGold] = useState<number | null>(null)
-  const [tab, setTab] = useState<Tab>("weapons")
+  const [tab, setTab] = useState<Tab>(slotFilter && slotFilter !== "weapon" ? "armor" : "weapons")
+  const [onlySlot, setOnlySlot] = useState<GearSlot | null>(slotFilter)
   const [pick, setPick] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<string | null>(null)
 
@@ -115,6 +131,7 @@ export default function BagPanel({
       for (const g of catalog.items) {
         const own = bag.owned[g.id]
         if (!own) continue
+        if (onlySlot && g.slot !== onlySlot) continue
         out[tabOfGear(g)].push({ key: "g:" + g.id, name: nameOf(g, t), qty: g.stack ? own.qty : null, rarity: g.rarity, equipped: equipped.has(g.id), fresh: false, gear: g })
       }
     }
@@ -123,7 +140,7 @@ export default function BagPanel({
       out[tb].push({ key: "s:" + s.key, name: slotName(s, t), qty: s.qty, rarity: null, equipped: !!s.skin?.equipped, fresh: s.fresh, slot: s })
     }
     return out
-  }, [catalog, bag, slots, t])
+  }, [catalog, bag, slots, t, onlySlot])
 
   const list = cells[tab]
   const filled = Math.max(MIN_CELLS, Math.ceil(list.length / COLS) * COLS)
@@ -194,6 +211,12 @@ export default function BagPanel({
               </div>
             ) : (
               <>
+                {onlySlot && (tab === "weapons" || tab === "armor") && (
+                  <button type="button" onClick={() => setOnlySlot(null)} className={`${TX.label} mb-3 inline-flex min-h-9 items-center gap-2 px-3 uppercase`} style={{ background: AE.well, color: AE.goldSoft, clipPath: chamfer(AE.cut.chip) }}>
+                    {t("bagOnlySlot", "Só: {slot}").replace("{slot}", gearSlotName(onlySlot, t))} <span aria-hidden>✕</span>
+                    <span className="sr-only">{t("bagClearSlot", "Mostrar todos")}</span>
+                  </button>
+                )}
                 {list.length === 0 && (
                   <p className={`${TX.body} mb-3 flex items-center gap-2`} style={{ color: AE.muted }}>
                     <PackageOpen className="h-5 w-5 shrink-0" style={{ color: AE.goldSoft }} />

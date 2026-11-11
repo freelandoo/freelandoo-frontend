@@ -335,10 +335,15 @@ export type GearCategory =
   | "weapon" | "shield" | "armor" | "accessory" | "material" | "recipe" | "quest" | "cosmetic"
   | "offhand" | "relic" | "fragment" | "rune" | "consumable" | "currency"
 export type GearRarity = "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic"
-export type GearSlot = "weapon" | "shield" | "armor" | "acc1" | "acc2"
+/** Trilha E6 (A4): os 8 slots. O servidor ainda aceita os nomes de antes (shield/armor/acc1/acc2) no equip. */
+export type GearSlot = "weapon" | "offhand" | "helm" | "chest" | "gloves" | "boots" | "amulet" | "relic"
 export interface GearItem {
   id: string
   category: GearCategory
+  /** E6: o slot da peça (null = não se equipa). */
+  slot?: GearSlot | null
+  /** E6 (A5): ocupa as duas mãos (pesadas, arcos, armas de fogo): tira o offhand. */
+  twoHanded?: boolean
   /** Aba do balcão de armas do Arsenal: espadas (mm3d-66) ou Hammers (mm3d-67). */
   shop?: "shields" | "weapons" | "hammers" | "bows" | "guns" | null
   name: string

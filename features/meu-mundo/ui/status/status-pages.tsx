@@ -41,6 +41,7 @@ import {
   Loader2,
 } from "lucide-react"
 import type { BodyId, LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
+import type { GearSlot } from "../../data"
 import { SheetStage } from "./sheet-stage"
 import { Bar, Chamfer, CountUp, EVO, Gauge, Plate, Ring, Tag, archivo, cinzel, teko, toneFor } from "./evo-skin"
 import { MM } from "../hud/tokens"
@@ -83,6 +84,8 @@ export interface PageActions {
   openSkins: () => void
   /** Adquirir Poléns pelo checkout oficial (mm3d-30). */
   openPolens?: () => void
+  /** E6: abre a mochila filtrada por um slot (tocar o slot no Equipado). */
+  openBag?: (slot: GearSlot) => void
 }
 
 /** Nível de aventura e o XP dentro dele (mm3d-60g). */
@@ -2160,7 +2163,7 @@ function SheetPage(props: PageProps) {
     <>
       <StatBars life={life} level={adv?.level} t={t} small onPick={setPick} />
       <MiniPlate title={t("lkEquipped", "Equipado")}>
-        <Equipped data={data} t={t} />
+        <Equipped data={data} t={t} onPickSlot={props.act.openBag} />
       </MiniPlate>
       {shownEffects(life).length > 0 && (
         <MiniPlate title={t("lkActive", "Efeitos ativos")}>

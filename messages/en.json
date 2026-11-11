@@ -12349,7 +12349,17 @@
     "godDown": "{name} defeated {god}! The god went back to the statue.",
     "godFightFail": "The fight with the god didn't open: {e}",
     "godYouWon": "You defeated {god}! He went back to the statue.",
-    "godYouLost": "{god} won. You only lost energy; he'll be hunting you again soon."
+    "godYouLost": "{god} won. You only lost energy; he'll be hunting you again soon.",
+    "lkSlotOffhand": "Off-hand",
+    "lkSlotHelm": "Head",
+    "lkSlotChest": "Chest",
+    "lkSlotGloves": "Hands",
+    "lkSlotBoots": "Feet",
+    "lkSlotAmulet": "Amulet",
+    "lkSlotRelic": "Relic",
+    "lkPickSlot": "Choose an item for {slot}",
+    "bagOnlySlot": "Only: {slot}",
+    "bagClearSlot": "Show all"
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -12581,7 +12591,8 @@
     "Esse deus não caça o seu povo": "That god doesn’t hunt your people",
     "O deus não te alcançou": "The god hasn’t caught you",
     "Escolha a sua classe antes": "Choose your class first",
-    "Povo inválido": "Invalid people"
+    "Povo inválido": "Invalid people",
+    "Sua arma usa as duas mãos": "Your weapon takes both hands"
   },
   "Moedas": {
     "walletTitle": "Wallet",

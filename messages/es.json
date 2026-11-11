@@ -12329,7 +12329,17 @@
     "godDown": "¡{name} derrotó a {god}! El dios volvió a la estatua.",
     "godFightFail": "La pelea con el dios no se abrió: {e}",
     "godYouWon": "¡Derrotaste a {god}! Volvió a la estatua.",
-    "godYouLost": "{god} ganó. Solo perdiste energía; volverá a cazarte en un rato."
+    "godYouLost": "{god} ganó. Solo perdiste energía; volverá a cazarte en un rato.",
+    "lkSlotOffhand": "Mano secundaria",
+    "lkSlotHelm": "Cabeza",
+    "lkSlotChest": "Pecho",
+    "lkSlotGloves": "Manos",
+    "lkSlotBoots": "Pies",
+    "lkSlotAmulet": "Amuleto",
+    "lkSlotRelic": "Reliquia",
+    "lkPickSlot": "Elegir pieza para {slot}",
+    "bagOnlySlot": "Solo: {slot}",
+    "bagClearSlot": "Mostrar todos"
   },
   "Sports": {
     "eyebrow": "Deportes",
@@ -12561,7 +12571,8 @@
     "Esse deus não caça o seu povo": "Ese dios no caza a tu pueblo",
     "O deus não te alcançou": "El dios no te alcanzó",
     "Escolha a sua classe antes": "Elige tu clase primero",
-    "Povo inválido": "Pueblo no válido"
+    "Povo inválido": "Pueblo no válido",
+    "Sua arma usa as duas mãos": "Tu arma usa las dos manos"
   },
   "Moedas": {
     "walletTitle": "Cartera",

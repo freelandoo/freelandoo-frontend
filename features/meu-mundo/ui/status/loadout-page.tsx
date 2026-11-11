@@ -31,17 +31,21 @@ export interface LoadoutData {
   chars: CharactersResult | null
 }
 
-const SLOTS: GearSlot[] = ["weapon", "shield", "armor", "acc1", "acc2"]
+/** E6: os 8 slots (antes: arma, escudo, armadura e dois acessórios). */
+const SLOTS: GearSlot[] = ["weapon", "offhand", "helm", "chest", "gloves", "boots", "amulet", "relic"]
 /** E4: + as chaves proporcionais (hp, acc, spd, int, dex); linha zerada não aparece. */
 const BONUS_KEYS: (keyof GearBonus)[] = ["dmg", "def", "hp", "acc", "spd", "int", "dex", "stam", "warn", "power"]
 
 function slotName(s: GearSlot, t: Tr) {
   return {
     weapon: t("lkSlotWeapon", "Arma"),
-    shield: t("lkSlotShield", "Escudo"),
-    armor: t("lkSlotArmor", "Armadura"),
-    acc1: t("lkSlotAcc1", "Acessório 1"),
-    acc2: t("lkSlotAcc2", "Acessório 2"),
+    offhand: t("lkSlotOffhand", "Mão secundária"),
+    helm: t("lkSlotHelm", "Cabeça"),
+    chest: t("lkSlotChest", "Peito"),
+    gloves: t("lkSlotGloves", "Mãos"),
+    boots: t("lkSlotBoots", "Pés"),
+    amulet: t("lkSlotAmulet", "Amuleto"),
+    relic: t("lkSlotRelic", "Relíquia"),
   }[s]
 }
 function bonusName(k: keyof GearBonus, t: Tr) {
@@ -129,7 +133,7 @@ function Small({ children, tone }: { children: ReactNode; tone?: string }) {
 }
 
 // ─── Equipado ────────────────────────────────────────────────────────────────
-export function Equipped({ data, t }: { data: LoadoutData; t: Tr }) {
+export function Equipped({ data, t, onPickSlot }: { data: LoadoutData; t: Tr; onPickSlot?: (slot: GearSlot) => void }) {
   if (!data.gear) return <Small>{t("lkGearLoading", "Carregando o equipamento…")}</Small>
   const { catalog, bag } = data.gear
   const byId = new Map(catalog.items.map((i) => [i.id, i]))
@@ -145,7 +149,14 @@ export function Equipped({ data, t }: { data: LoadoutData; t: Tr }) {
         return (
           <div key={s} className="border-b pb-2" style={{ borderColor: EVO.linha }}>
             <div className="flex items-baseline justify-between gap-2">
-              <H>{slotName(s, t)}</H>
+              {onPickSlot ? (
+                // E6: tocar o slot abre a mochila filtrada por ele
+                <button type="button" onClick={() => onPickSlot(s)} className="min-h-8 text-left underline-offset-2 hover:underline" aria-label={t("lkPickSlot", "Escolher peça para {slot}").replace("{slot}", slotName(s, t))}>
+                  <H>{slotName(s, t)}</H>
+                </button>
+              ) : (
+                <H>{slotName(s, t)}</H>
+              )}
               {item ? (
                 <span className={`${archivo.className} min-w-0 truncate text-[15px] font-semibold`} style={{ color: r?.color ?? EVO.branco }}>
                   {nameOf(item, t)}

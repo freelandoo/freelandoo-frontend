@@ -59,7 +59,7 @@ import PlayerCard from "./player-card/player-card"
 import ChatPanel, { type ChatView } from "./chat/chat-panel"
 import { bubbleText, bumpUnread, confirmLine, dropPending, mergeLines, newClientId, pendingLine, type Line } from "./chat/chat-logic"
 import type { PlayerTap } from "../engine/player-select"
-import type { Receipt } from "../data"
+import type { GearSlot, Receipt } from "../data"
 import { compactFrameX, isCompactViewport } from "./player-card/place"
 import dynamic from "next/dynamic"
 import { probeReport } from "../crash-probe"
@@ -156,6 +156,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [itemsOpen, setItemsOpen] = useState(false)
   // apresentação 04: a Mochila única (Itens + Equipamento)
   const [bagOpen, setBagOpen] = useState(false)
+  // E6: a mochila aberta a partir de um slot do Equipado mostra só as peças daquele slot
+  const [bagSlot, setBagSlot] = useState<GearSlot | null>(null)
   // B7: aba Ranking (Poder, Nível, Freelandoo)
   const [rankingOpen, setRankingOpen] = useState(false)
   // A8: Compartilhar (link de afiliado, 10% do que o convidado gastar)
@@ -836,6 +838,12 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
             bumpQuest()
           }}
           onOpenPolens={() => setPolensOpen(true)}
+          onOpenBag={(slot) => {
+            setStatusBody(null)
+            setStatusPage(undefined)
+            setBagSlot(slot)
+            setBagOpen(true)
+          }}
         />
       )}
 
@@ -875,8 +883,10 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
       {itemsOpen && <ItemsPanel onClose={() => setItemsOpen(false)} onChanged={lifeChanged} />}
       {bagOpen && (
         <BagPanel
+          slotFilter={bagSlot}
           onClose={() => {
             setBagOpen(false)
+            setBagSlot(null)
             bumpQuest()
           }}
           onOpenShop={() => {
