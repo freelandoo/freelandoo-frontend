@@ -12116,7 +12116,10 @@
     "qw_garras_1": "YO ERA LA VOZ DE MI PUEBLO. ME LA QUITARON.",
     "qw_garras_2": "QUÍTATE LA CAPUCHA.",
     "qw_garras_3_raposa": "TÚ.",
-    "qw_garras_3_vampiro": "FUERON ELLOS."
+    "qw_garras_3_vampiro": "FUERON ELLOS.",
+    "laminasStun": "ATURDIDO",
+    "laminasArmored": "BLINDADO",
+    "laminasGuard": "EN GUARDIA"
   },
   "Sports": {
     "eyebrow": "Deportes",

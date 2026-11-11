@@ -34,6 +34,7 @@ import { ReceiptLines } from "../../ui/rewards/receipt-lines"
 import { VictoryButton, VictoryPanel } from "../../ui/rewards/victory-panel"
 import { celebrate, hold } from "../../ui/rewards/reward-bus"
 import { createLaminasGame, type FightSheet, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
+import { HEAVY_WARN } from "../engine/impact-fx"
 import { VersusScreen } from "./versus-screen"
 import { MOB_KINDS, peerOf, type MobKind, type SkillId } from "../sim/fight"
 import { SkillHud, skillZoneTop, useSkillScale } from "./skill-hud"
@@ -340,6 +341,10 @@ function LaminasScreen({
     psycho: t("laminasPsycho", "PSICOPATA"),
     hits: t("laminasHits", "GOLPES"),
     damage: t("laminasDamage", "DANO"),
+    // apresentação 08: palavras de estado
+    stun: t("laminasStun", "ATORDOADO"),
+    armored: t("laminasArmored", "BLINDADO"),
+    guard: t("laminasGuard", "EM GUARDA"),
     fleeWarn: t("laminasFleeWarn", "Tô com medo dessa luta, vou sair."),
     foes: Object.fromEntries(
       MOB_KINDS.map((k) => {
@@ -510,7 +515,7 @@ function LaminasScreen({
         <div
           data-fight-hud=""
           className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[24px] font-black italic tracking-wide"
-          style={{ top: `calc(${foeTop} + ${Math.round(plateHeight(pw)) + 6}px)`, color: "#FF5A5A", textShadow: "0 2px 0 rgba(0,0,0,.45)", ...hudFade }}
+          style={{ top: `calc(${foeTop} + ${Math.round(plateHeight(pw)) + 6}px)`, color: hud.dangerHeavy ? HEAVY_WARN : "#FF5A5A", textShadow: "0 2px 0 rgba(0,0,0,.45)", ...hudFade }}
         >
           {t("laminasDodge", "ESQUIVE!")}
         </div>

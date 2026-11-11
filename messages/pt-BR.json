@@ -11550,7 +11550,10 @@
     "qw_garras_1": "EU ERA A VOZ DO MEU POVO. TIRARAM.",
     "qw_garras_2": "TIRA O CAPUZ.",
     "qw_garras_3_raposa": "VOCÊ.",
-    "qw_garras_3_vampiro": "FORAM ELES."
+    "qw_garras_3_vampiro": "FORAM ELES.",
+    "laminasStun": "ATORDOADO",
+    "laminasArmored": "BLINDADO",
+    "laminasGuard": "EM GUARDA"
   },
   "Sports": {
     "eyebrow": "Esportes",

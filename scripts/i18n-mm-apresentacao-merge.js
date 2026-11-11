@@ -67,6 +67,10 @@ const KEYS = {
     // 07 — contador da luta (golpes seguidos / dano do Poder Máximo)
     laminasHits: "GOLPES",
     laminasDamage: "DANO",
+    // 08 — palavras de estado da luta
+    laminasStun: "ATORDOADO",
+    laminasArmored: "BLINDADO",
+    laminasGuard: "EM GUARDA",
   },
   en: {
     tbBack: "Back",
@@ -124,6 +128,9 @@ const KEYS = {
     bagNew: "new",
     laminasHits: "HITS",
     laminasDamage: "DAMAGE",
+    laminasStun: "STUNNED",
+    laminasArmored: "ARMORED",
+    laminasGuard: "ON GUARD",
   },
   es: {
     tbBack: "Volver",
@@ -181,6 +188,9 @@ const KEYS = {
     bagNew: "nuevo",
     laminasHits: "GOLPES",
     laminasDamage: "DAÑO",
+    laminasStun: "ATURDIDO",
+    laminasArmored: "BLINDADO",
+    laminasGuard: "EN GUARDIA",
   },
 }
 // 06 — palavras do mundo de hoje (D11) e catálogo de taverna e alquimia (D12): valor trocado = OVERRIDE.

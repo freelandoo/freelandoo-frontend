@@ -27,6 +27,7 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder"
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
+import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import "@babylonjs/core/Particles/particleSystemComponent"
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
@@ -69,6 +70,7 @@ import { bloodHits, slashWave } from "../abilities/blood-hit"
 import { playCutIn, playFlash, preloadCutIn } from "../abilities/cut-in"
 import { abilityKit } from "../abilities/registry"
 import { createHitCounter } from "./hit-counter"
+import { flatFrame, groundArcs, HEAVY_WARN, stateWord } from "./impact-fx"
 import { anton } from "../../ui/hud/fight-plate"
 
 export interface LaminasHud {
@@ -81,6 +83,8 @@ export interface LaminasHud {
   over: null | { win: boolean }
   /** Algum golpe vindo agora (a tela pisca a dica de esquiva). */
   danger: boolean
+  /** Apresentação 08: o golpe que vem é pesado (aviso na cor exclusiva). */
+  dangerHeavy: boolean
   /** O que quem joga está soltando agora (o botão acende). */
   casting: SkillId | "ult" | null
   /** Caído ou fora de ação: os botões apagam. */
@@ -107,7 +111,11 @@ export interface LaminasGameOptions {
     /** Apresentação 07: legenda do contador da esquerda (golpes seguidos / dano do poder). */
     hits?: string
     damage?: string
-    foeSkills?: Partial<Record<"slash" | "dash" | "shield" | "ult", string>>
+    /** Apresentação 08: palavras de estado (monstro atordoado, monstro de escudo, eu de escudo). */
+    stun?: string
+    armored?: string
+    guard?: string
+    foeSkills?:Partial<Record<"slash" | "dash" | "shield" | "ult", string>>
   }
   body: BodyId
   look?: string
@@ -679,26 +687,41 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   }
 
   // ── monstros e avisos no chão ────────────────────────────────────────────
-  const warnTex = new DynamicTexture("laminas-warn", { width: 128, height: 128 }, scene, false)
-  {
-    const g = warnTex.getContext() as CanvasRenderingContext2D
+  const warnTexOf = (name: string, core: string, rim: string) => {
+    const tex = new DynamicTexture(name, { width: 128, height: 128 }, scene, false)
+    const g = tex.getContext() as CanvasRenderingContext2D
     const gr = g.createRadialGradient(64, 64, 10, 64, 64, 64)
-    gr.addColorStop(0, "rgba(255,40,40,0.55)")
-    gr.addColorStop(0.82, "rgba(255,40,40,0.35)")
-    gr.addColorStop(0.9, "rgba(255,80,80,0.95)")
-    gr.addColorStop(1, "rgba(255,80,80,0)")
+    gr.addColorStop(0, `rgba(${core},0.55)`)
+    gr.addColorStop(0.82, `rgba(${core},0.35)`)
+    gr.addColorStop(0.9, `rgba(${rim},0.95)`)
+    gr.addColorStop(1, `rgba(${rim},0)`)
     g.fillStyle = gr
     g.fillRect(0, 0, 128, 128)
-    warnTex.hasAlpha = true
-    warnTex.update()
+    tex.hasAlpha = true
+    tex.update()
+    return tex
   }
+  const warnTex = warnTexOf("laminas-warn", "255,40,40", "255,80,80")
+  const warnHeavyTex = warnTexOf("laminas-warn-heavy", "200,255,36", "232,255,150")
   const warnMat = new StandardMaterial("laminas-warn-mat", scene)
   warnMat.diffuseTexture = warnTex
   warnMat.useAlphaFromDiffuseTexture = true
   warnMat.emissiveColor = new Color3(1, 0.3, 0.3)
   warnMat.disableLighting = true
   warnMat.backFaceCulling = false
-  const models = new Map<number, { model: MonsterModel; warn: Mesh; px: number; pz: number; speed: number; trail: Trail | null; prev: string; beam: Mesh | null; beamLife: number; rays: Ray[]; claws: Trail[]; dash: Trail | null; fxAt: number; landed: boolean }>()
+  // apresentação 08: golpe PESADO avisa na cor exclusiva (verde-alarme), com a linha do monstro até quem joga
+  const heavyCol = Color3.FromHexString(HEAVY_WARN)
+  const warnHeavyMat = new StandardMaterial("laminas-warn-heavy-mat", scene)
+  warnHeavyMat.diffuseTexture = warnHeavyTex
+  warnHeavyMat.useAlphaFromDiffuseTexture = true
+  warnHeavyMat.emissiveColor = heavyCol.scale(0.6)
+  warnHeavyMat.disableLighting = true
+  warnHeavyMat.backFaceCulling = false
+  const warnLineMat = new StandardMaterial("laminas-warn-line-mat", scene)
+  warnLineMat.emissiveColor = heavyCol
+  warnLineMat.disableLighting = true
+  warnLineMat.backFaceCulling = false
+  const models = new Map<number, { model: MonsterModel; warn: Mesh; line: Mesh; px: number; pz: number; speed: number; trail: Trail | null; prev: string; beam: Mesh | null; beamLife: number; rays: Ray[]; claws: Trail[]; dash: Trail | null; fxAt: number; landed: boolean }>()
   // tiro do Ciborgue: a luz da arma dele, uma linha reta da boca até o peito de quem joga
   const gunColor = godGun("ciborgue")
   const beamMat = new StandardMaterial("laminas-mob-beam", scene)
@@ -725,6 +748,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     warn.material = warnMat
     warn.isPickable = false
     warn.setEnabled(false)
+    const line = CreateGround(`laminas-warn-line-${m.id}`, { width: 1, height: 1 }, scene)
+    line.material = warnLineMat
+    line.isPickable = false
+    line.setEnabled(false)
     // F1: o Cavaleiro Dourado (Soldado de Pedra) tem 2 m; o Golem de Pedra, 4 m, na Arena e na rua
     const foe = opts.foe
     const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : foe ? { n: 0, body: foe.body, look: foe.look, bare: true } : null, (x) => vfx.addGlow(x))
@@ -735,7 +762,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const claws = m.kind === "garras" && !ring ? [vfx.trail(() => model.clawEdge("Right"), VFX_COLORS.brutamontes), vfx.trail(() => model.clawEdge("Left"), VFX_COLORS.brutamontes)] : []
     // a investida do lobo deixa o rastro roxo na altura do corpo
     const dash = m.kind === "wolf" && !ring ? vfx.trail(() => [new Vector3(m.x, 0.5, m.z), new Vector3(m.x, 2, m.z)], VFX_COLORS.brutamontes) : null
-    models.set(m.id, { model, warn, px: m.x, pz: m.z, speed: 0, trail, prev: m.state, beam: null, beamLife: 0, rays, claws, dash, fxAt: 0, landed: false })
+    models.set(m.id, { model, warn, line, px: m.x, pz: m.z, speed: 0, trail, prev: m.state, beam: null, beamLife: 0, rays, claws, dash, fxAt: 0, landed: false })
   }
 
   // ── faíscas ──────────────────────────────────────────────────────────────
@@ -944,6 +971,54 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const waveFx = sig ? slashWave(scene, sig) : null
   hits?.warm()
   let hitDark = 0
+  // ── apresentação 08: impacto dos golpes comuns ───────────────────────────
+  // fita em meia-lua no chão (só quem bate de perto), que sai no meio do gesto
+  const melee = !mage && clan !== "raposa"
+  const arcs = sig && melee ? groundArcs(fxStage, sig) : null
+  arcs?.warm()
+  let arcAt = -1
+  let arcArgs: Parameters<NonNullable<typeof arcs>["play"]>[0] | null = null
+  const toScreen = (at: Vector3) => {
+    const p = Vector3.Project(at, Matrix.Identity(), scene.getTransformMatrix(), cam.viewport.toGlobal(canvas.clientWidth, canvas.clientHeight))
+    return p.z < 0 || p.z > 1 ? null : p
+  }
+  // palavras empilham quando caem juntas no mesmo alvo
+  const wordStack = new Map<string, { n: number; until: number }>()
+  const word = (key: string, at: Vector3, text: string | undefined, color: string) => {
+    if (!text || director.playing) return
+    const s = toScreen(at)
+    if (!s) return
+    const now = performance.now()
+    const w = wordStack.get(key)
+    const n = w && w.until > now ? w.n + 1 : 0
+    wordStack.set(key, { n, until: now + 600 })
+    stateWord(layer, s.x, s.y, text, color, anton.style.fontFamily, n)
+  }
+  const flat = (colors: string[], alpha: number) => {
+    if (!calm && !director.playing) flatFrame(layer, colors, alpha)
+  }
+  const pal = sig?.pal ?? ["#1a1208", "#a8761e", "#ffb02e", "#ffe09a", "#fff8e8"]
+  // o mundo muda de cor enquanto o MEU escudo dura (só a cor das luzes; intensidade é do setDim)
+  const tintTo = { hemi: Color3.FromHexString(pal[1]), ground: Color3.FromHexString(pal[0]), sun: Color3.FromHexString(pal[2]) }
+  let tintK = 0
+  let tintGoal = 0
+  let tintBase: { hemi: Color3; ground: Color3; sun: Color3 } | null = null
+  const stepTint = (dt: number) => {
+    if (tintK === tintGoal && tintK === 0) return
+    if (!tintBase) tintBase = { hemi: hemi.diffuse.clone(), ground: hemi.groundColor.clone(), sun: sun.diffuse.clone() }
+    // entra em 0,3 s, sai em 0,4 s
+    tintK = tintGoal > tintK ? Math.min(tintGoal, tintK + dt / 0.3) : Math.max(tintGoal, tintK - dt / 0.4)
+    const k = tintK * tintK * (3 - 2 * tintK)
+    Color3.LerpToRef(tintBase.hemi, tintTo.hemi, 0.55 * k, hemi.diffuse)
+    Color3.LerpToRef(tintBase.ground, tintTo.ground, 0.6 * k, hemi.groundColor)
+    Color3.LerpToRef(tintBase.sun, tintTo.sun, 0.35 * k, sun.diffuse)
+    if (tintK === 0) {
+      hemi.diffuse.copyFrom(tintBase.hemi)
+      hemi.groundColor.copyFrom(tintBase.ground)
+      sun.diffuse.copyFrom(tintBase.sun)
+      tintBase = null
+    }
+  }
   const blood = sig
     ? signatureFx({
         stage: fxStage,
@@ -996,6 +1071,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           const c = !moves ? SWING_CLIPS[e.combo] : e.rank === 3 ? pick(moves.special) : pick(moves.swings[e.combo])
           hero.boxeAct(c.clip, dur, c.from, c.to)
           audio.whoosh()
+          // apresentação 08: a fita no chão nasce quando a lâmina passa (≈ 35% do gesto)
+          if (arcs) {
+            arcAt = dur * 0.35
+            arcArgs = { at: feet, facing: 0, radius: [1.5, 1.7, 1.95, 2.6][e.rank] * adultK, mirror: e.combo % 2 === 1, life: e.rank === 3 ? 0.34 : 0.26 }
+          }
           break
         }
         case "cast": {
@@ -1103,6 +1183,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             audio.dash()
           } else {
             skillFx.shieldOn(feet)
+            // apresentação 08: estado aceso = o mundo muda de cor enquanto dura, e a palavra em cima
+            tintGoal = 1
+            word("me", new Vector3(e.x, hero.height + 0.5, e.z), opts.labels?.guard, pal[3])
             // gesto de proteção só parado (andando ele seguiria deslizando)
             if (Math.hypot(fight.me.vx, fight.me.vz) < 0.5 && fight.me.state === "idle") {
               if (clan === "raposa") hero.boxeAct(bow ? "ArDraw" : gun ? "FgFire1" : "RCast", 0.5, 0, bow ? 0.9 : 0.35)
@@ -1125,6 +1208,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           } else skillFx.endWave(e.id, new Vector3(e.x, 1.05, e.z))
           break
         case "shieldEnd":
+          tintGoal = 0
           skillFx.shieldOff()
           audio.shieldDown()
           break
@@ -1154,8 +1238,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             // combo (2026-11-03): 1º golpe faísca pequena, 2º mais forte, o 3º fecha com explosão curta e tranco
             const chain = !e.src && fight.me.state === "attack" ? fight.me.chain : 0
             counter.hit(e.dmg, e.src === "ult")
-            burst(sparks, at, (e.heavy ? 40 : 22) + chain * 14)
-            burst(ichor, at, (e.heavy ? 18 : 8) + chain * 6)
+            // apresentação 08: com o acerto de personagem, as 4–8 faíscas compridas dele bastam
+            if (!hits) {
+              burst(sparks, at, (e.heavy ? 40 : 22) + chain * 14)
+              burst(ichor, at, (e.heavy ? 18 : 8) + chain * 6)
+            }
             if (e.src === "ult") pop(at.add(new Vector3(0, 0.7, 0)), String(e.dmg), ULT_NUM, 24, 3)
             else if (e.src === "skill") pop(at.add(new Vector3(0, 0.5, 0)), String(e.dmg), SKILL_NUM, 24, 2)
             else pop(at.add(new Vector3(0, 0.5, 0)), e.rank >= 2 ? `${RANKS[e.rank]} ${e.dmg}` : String(e.dmg), RANK_COLOR[e.rank], RANK_SIZE[e.rank], e.rank)
@@ -1173,9 +1260,15 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             if (e.rank >= 2 && !e.src) audio.crit()
             if (e.rank === 3) {
               if (!hits) vfx.burst(at, fxColor)
-              hitStop = Math.max(hitStop, 0.12)
               shake = Math.max(shake, 0.3)
-            } else if (e.heavy) hitStop = Math.max(hitStop, 0.07)
+            }
+            // apresentação 08: pausa escalonada — curta no contato, mais longa no golpe que fecha
+            if (e.src !== "ult" && !calm) hitStop = Math.max(hitStop, e.dead ? 0.14 : e.rank === 3 ? 0.12 : e.heavy ? 0.07 : e.src ? 0.05 : ([0.03, 0.045, 0.07][chain] ?? 0.03))
+            // quadro de cor chapada: só no nocaute (2 quadros), no S e no golpe que fecha o combo (1 quadro)
+            if (e.src !== "ult") {
+              if (e.dead) flat([pal[2], pal[0]], 0.5)
+              else if (e.rank === 3 || (chain === 2 && !e.src)) flat([pal[1]], 0.38)
+            }
             if (e.dead && !hits) vfx.burst(new Vector3(e.x, e.y + 1.2, e.z), fxColor)
             audio.punch(e.heavy ? 1 : 0.6, e.heavy)
             shake = Math.max(shake, e.heavy ? 0.18 : 0.08)
@@ -1211,6 +1304,13 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             else hero.boxeAct("BHitLite", 0.32, 0, 0.66)
           }
           break
+        case "stagger": {
+          // apresentação 08: o monstro perdeu a postura — palavra de estado na cor de quem bateu
+          const m = fight.mobs.find((x) => x.id === e.id)
+          // sem postura (poise 0) ele cambaleia a cada pancada: palavra só quando a postura QUEBROU
+          if (m && m.hp > 0 && m.poise > 0) word(`m${m.id}`, new Vector3(m.x, FOE_H[m.kind] + 0.4, m.z), opts.labels?.stun, pal[3])
+          break
+        }
         case "evade":
           pop(new Vector3(fight.me.x, 2.2, fight.me.z), "✓", "#7CFFB2", 24)
           break
@@ -1232,6 +1332,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             const c = foeColor(m.kind)
             vfx.ground(new Vector3(m.x, 0, m.z), c, MOBS[m.kind].radius + 1.2, MOB_SHIELD.dur, true)
             vfx.burst(new Vector3(m.x, 1.4, m.z), c)
+            word(`m${m.id}`, new Vector3(m.x, FOE_H[m.kind] + 0.4, m.z), opts.labels?.armored, c.edge.toHexString())
             audio.shieldUp()
           }
           break
@@ -1263,6 +1364,17 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     counter.tick(realDt, director.playing)
     // câmera lenta: só o ritmo desta luta, que é local e passo a passo (ver abilities/director.ts)
     const pace = slow ? 0.08 : director.scale()
+    if (arcAt >= 0 && arcs && arcArgs) {
+      // no tempo do jogo: a pausa de impacto segura a fita junto com o gesto
+      arcAt -= realDt * pace
+      if (arcAt < 0) {
+        arcArgs.at = new Vector3(fight.me.x, 0, fight.me.z)
+        arcArgs.facing = fight.me.facing
+        arcs.play(arcArgs)
+        arcArgs = null
+      }
+    }
+    stepTint(realDt)
     if (hitDark > 0 && !director.playing) {
       hitDark -= realDt
       setDim(hitDark > 0 ? 0.5 : 1)
@@ -1384,6 +1496,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
 
     // monstros
     let danger = false
+    let dangerHeavy = false
     for (const m of fight.mobs) {
       const v = models.get(m.id)
       if (!v) continue
@@ -1519,8 +1632,29 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         const k = 0.35 + 0.65 * warn
         if (line) v.warn.scaling.set((a.line ? a.line + 0.5 : a.heavy ? 1.3 : 0.9) * k, (a.ram ? a.lunge * a.active : a.range) / 2, 1)
         else v.warn.scaling.set(r * k, r * k, 1)
-        warnMat.alpha = 0.55 + 0.45 * Math.sin(m.t * 20) * warn
-      } else v.warn.setEnabled(false)
+        const pulse = 0.55 + 0.45 * Math.sin(m.t * 20) * warn
+        if (a.heavy) {
+          // apresentação 08: a cor exclusiva do golpe pesado e a linha até quem joga (nasce fina, engrossa)
+          dangerHeavy = true
+          v.warn.material = warnHeavyMat
+          warnHeavyMat.alpha = pulse
+          const dx = p.x - m.x
+          const dz = p.z - m.z
+          const d = Math.hypot(dx, dz)
+          v.line.setEnabled(d > 0.5)
+          v.line.position.set((m.x + p.x) / 2, 0.05, (m.z + p.z) / 2)
+          v.line.rotation.y = Math.atan2(dx, dz)
+          v.line.scaling.set(0.04 + 0.1 * warn, 1, d)
+          warnLineMat.alpha = 0.35 + 0.55 * warn
+        } else {
+          v.warn.material = warnMat
+          warnMat.alpha = pulse
+          v.line.setEnabled(false)
+        }
+      } else {
+        v.warn.setEnabled(false)
+        v.line.setEnabled(false)
+      }
     }
 
     // câmera: atrás do jogador, olhando para o alvo
@@ -1562,6 +1696,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         mobs: fight.mobs.map((m) => ({ id: m.id, kind: m.kind, hp: m.hp, hpMax: m.hpMax })),
         over: fight.over ? { win: fight.over.win } : null,
         danger,
+        dangerHeavy,
         casting: p.state === "power" ? "ult" : p.state === "skill" ? p.skill : null,
         locked: p.state === "down" || p.state === "win" || p.hp <= 0,
         cd: { ...p.cd },
@@ -1696,11 +1831,15 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       for (const v of models.values()) {
         v.model.dispose()
         v.warn.dispose()
+        v.line.dispose()
         v.beam?.dispose()
         for (const r of v.rays) r.dispose()
       }
       warnMat.dispose()
+      warnHeavyMat.dispose()
+      warnLineMat.dispose()
       warnTex.dispose()
+      warnHeavyTex.dispose()
       heroGloves?.dispose()
       heroStones?.dispose()
       heroRay?.dispose()

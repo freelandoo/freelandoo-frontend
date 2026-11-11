@@ -12136,7 +12136,10 @@
     "qw_garras_1": "I WAS THE VOICE OF MY PEOPLE. THEY TOOK IT.",
     "qw_garras_2": "TAKE OFF THE HOOD.",
     "qw_garras_3_raposa": "YOU.",
-    "qw_garras_3_vampiro": "IT WAS THEM."
+    "qw_garras_3_vampiro": "IT WAS THEM.",
+    "laminasStun": "STUNNED",
+    "laminasArmored": "ARMORED",
+    "laminasGuard": "ON GUARD"
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -27,6 +27,8 @@ const SLOTS = 4
 /** Quanto dura a estrela e o corte, por força do golpe (s). */
 const LIFE = [0.13, 0.15, 0.18, 0.22]
 const SIZE = [1.25, 1.55, 2, 2.7]
+/** Faíscas por força do golpe (apresentação 08: 4 a 8, iguais em todo nível de qualidade). */
+const SHARDS = [4, 5, 6, 8]
 /** Quadros entre uma forma e outra da estrela. */
 const STEP = 2 / 60
 
@@ -52,7 +54,7 @@ export interface HitArgs {
   chain: number
 }
 
-function buildHits(scene: Scene, density: number, sig: Signature): FxEffect<HitArgs> {
+function buildHits(scene: Scene, sig: Signature): FxEffect<HitArgs> {
   const noise = new Texture("/meu-mundo/laminas/abilities/fx/noise.webp", scene)
   const slots: Slot[] = []
   for (let i = 0; i < SLOTS; i++) {
@@ -88,7 +90,7 @@ function buildHits(scene: Scene, density: number, sig: Signature): FxEffect<HitA
     g.fillRect(0, 0, 8, 8)
     chip.update()
   }
-  const shards = new ParticleSystem("bh-shards", Math.max(40, Math.round(180 * density)), scene)
+  const shards = new ParticleSystem("bh-shards", 40, scene)
   shards.particleTexture = chip
   shards.renderingGroupId = 1
   shards.blendMode = ParticleSystem.BLENDMODE_STANDARD
@@ -100,14 +102,15 @@ function buildHits(scene: Scene, density: number, sig: Signature): FxEffect<HitA
   shards.color1 = tint(sig.pal[4], 1)
   shards.color2 = tint(sig.pal[2], 1)
   shards.colorDead = tint(sig.pal[3], 0)
-  shards.minSize = 0.018
-  shards.maxSize = 0.05
-  shards.minScaleY = 3
-  shards.maxScaleY = 9
+  // apresentação 08: poucas faíscas compridas (4 a 8), não uma nuvem
+  shards.minSize = 0.03
+  shards.maxSize = 0.06
+  shards.minScaleY = 7
+  shards.maxScaleY = 15
   shards.minLifeTime = 0.12
-  shards.maxLifeTime = 0.32
-  shards.minEmitPower = 5
-  shards.maxEmitPower = 15
+  shards.maxLifeTime = 0.26
+  shards.minEmitPower = 8
+  shards.maxEmitPower = 17
   shards.gravity = new Vector3(0, -7, 0)
   shards.emitRate = 0
   shards.updateSpeed = 1 / 60
@@ -141,7 +144,7 @@ function buildHits(scene: Scene, density: number, sig: Signature): FxEffect<HitA
       s.slash.scaling.setAll(r)
       s.slash.setEnabled(true)
       shards.emitter = at.clone()
-      shards.manualEmitCount = Math.round((26 + p * 30) * density)
+      shards.manualEmitCount = SHARDS[p]
     },
     step(dt) {
       clock += dt
@@ -260,7 +263,7 @@ export function slashWave(scene: Scene, sig: Signature): SlashWave {
 }
 
 export function bloodHits(stage: FxStage, sig: Signature): BloodHits {
-  const build: FxBuilder<HitArgs> = ({ scene, budget }) => buildHits(scene, budget.particles, sig)
+  const build: FxBuilder<HitArgs> = ({ scene }) => buildHits(scene, sig)
   return {
     warm: () => stage.warm("blood-hit", build),
     hit: (at, power, chain) => stage.play("blood-hit", build, { at, power, chain }),
