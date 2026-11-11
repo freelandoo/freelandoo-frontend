@@ -17,6 +17,9 @@ import * as gelo3 from "./gelo-3"
 import * as fabrica1 from "./fabrica-1"
 import * as fabrica2 from "./fabrica-2"
 import * as fabrica3 from "./fabrica-3"
+import * as vulcao1 from "./vulcao-1"
+import * as vulcao2 from "./vulcao-2"
+import * as vulcao3 from "./vulcao-3"
 
 export interface CenaMeta {
   ceu: RGB
@@ -56,4 +59,7 @@ export const CENAS: Record<string, CenaModulo> = {
   "fabrica-1": fabrica1,
   "fabrica-2": fabrica2,
   "fabrica-3": fabrica3,
+  "vulcao-1": vulcao1,
+  "vulcao-2": vulcao2,
+  "vulcao-3": vulcao3,
 }
