@@ -32,7 +32,11 @@ export type FactoryPiece = (typeof FACTORY_PIECES)[number]
 /**
  * Tempestade Ártica v2 (build_gelo_v2.py): as peças vêm em GRUPOS — um GLB com várias peças e UMA
  * textura (o Alex gera até 3 numa imagem do Tripo) — e a versão de longe dentro do mesmo arquivo.
+ * B6 (2026-11-11): o kit é o TEMA v2 (`pipeline/temas/build_gelo_tema_v2.py`): faces do Tripo para fora,
+ * UV refeita, cor e mapa de normal assados, KTX2 1024 no pórtico, obstáculos e moldura. Mesmas peças,
+ * medidas e triângulos do gelo2.
  */
+export const ICE_DIR = "/meu-mundo/temas/gelo/v2/"
 export const ICE_GROUPS = {
   estalactites: ["estalactites"],
   base: ["base"],
@@ -49,7 +53,7 @@ export type IceAsset = (typeof ICE_GROUPS)[keyof typeof ICE_GROUPS][number]
 /** Distância (m) da troca para a versão de longe. */
 const ICE_LOD: Partial<Record<IceAsset, number>> = { estalactites: 30, portico: 45, base: 60, bloco2: 40, cristal: 55, iglu: 70, pinheiro: 50, farol: 60, "mamute-gelo": 70, navio: 70, mamute: 60 }
 export function loadIceAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<IceAsset>> {
-  return loadPieceGroups<IceAsset>(scene, "/meu-mundo/jetpack/gelo2/", ICE_GROUPS, ICE_LOD, isAlive)
+  return loadPieceGroups<IceAsset>(scene, ICE_DIR, ICE_GROUPS, ICE_LOD, isAlive)
 }
 /** Floresta Bioluminescente v2 (build_floresta_v2.py): grupos, como o Gelo. Toda peça que se repete tem versão de longe. */
 export const FOREST_GROUPS = {

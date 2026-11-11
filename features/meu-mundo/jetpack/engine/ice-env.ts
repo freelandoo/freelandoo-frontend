@@ -34,7 +34,7 @@ const { W, H } = TUNNEL
 /** As peças que são CENÁRIO (rocha, borda, canto e galão vão para os obstáculos). */
 export const ICE_PIECES = ["estalactites", "base", "cristal", "bloco2", "portico", "iglu", "pinheiro", "farol", "mamute-gelo", "navio", "mamute"] as const
 export type IcePiece = (typeof ICE_PIECES)[number]
-/** Medidas das peças com 1 m de altura (gelo2.json): largura em x. */
+/** Medidas das peças com 1 m de altura (gelo2.json; o tema v2 do B6 mede igual): largura em x. */
 const WID = { bloco2: 1.86, iglu: 1.61, pinheiro: 0.87, farol: 0.67, "mamute-gelo": 1.15, navio: 1.25, mamute: 1.39 } as const
 
 const C = {
