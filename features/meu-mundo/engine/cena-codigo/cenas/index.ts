@@ -8,6 +8,9 @@ import * as fatiaCidade from "./fatia-cidade"
 import * as floresta1 from "./floresta-1"
 import * as floresta2 from "./floresta-2"
 import * as floresta3 from "./floresta-3"
+import * as canion1 from "./canion-1"
+import * as canion2 from "./canion-2"
+import * as canion3 from "./canion-3"
 
 export interface CenaMeta {
   ceu: RGB
@@ -36,4 +39,7 @@ export const CENAS: Record<string, CenaModulo> = {
   "floresta-1": floresta1,
   "floresta-2": floresta2,
   "floresta-3": floresta3,
+  "canion-1": canion1,
+  "canion-2": canion2,
+  "canion-3": canion3,
 }
