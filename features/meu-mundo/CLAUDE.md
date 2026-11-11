@@ -32,6 +32,7 @@ Carrega só quando se abre arquivo desta pasta. **Teto 8 KB.** Histórico de cad
 - Golem: duas pedras atrás dos ombros com raio verde. Dama das Garras não voa e não fecha a guarda. Lobos: raio roxo pela boca.
 - Pose de descanso de todos: braço aberto 22° do corpo.
 - Só 6 emoções (feliz/triste/amando/raiva/cansado/doente; fome = triste). Notificação logo abaixo dos pés, um card por vez.
+- Falas sempre pela personalidade (`banter.ts`): humanas e informais, só o bondoso é formal; o psicopata xinga, é sarcástico e irônico. Fala nova de personagem, resposta a NPC ou comentário de capítulo = as 5 personalidades. O sino guarda só o importante (médico, energia no chão); o resto é interação.
 - Celular: câmera mais afastada (como no Jetpack).
 - Minijogos: sala espera até 1 min e vagas vazias viram computadores. Rolê Noturno até 4. Jetpack sempre 4. Paint 1×1/2×2/3×3.
 - Jetpack: o voo não muda entre fases; a velocidade depende do atributo VELOCIDADE. Desenho nunca entra na caixa do voo nem é menor que a colisão.
