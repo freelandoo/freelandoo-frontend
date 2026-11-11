@@ -12265,7 +12265,14 @@
     "domPrizes": "Adventure XP, Emeralds and a chance of an item",
     "domPrizeCross": "Opens the passage: {name}",
     "domSectorLocked": "Clear sector {n} first",
-    "domStartNote": "The crossing starts at the entrance; sectors come in order along the way."
+    "domStartNote": "The crossing starts at the entrance; sectors come in order along the way.",
+    "rarityMythic": "Mythic",
+    "forgeOffhands": "Off-hand",
+    "forgeRelics": "Relics",
+    "forgeFragments": "Fragments",
+    "forgeRunes": "Runes",
+    "forgeConsumables": "Consumables",
+    "forgeCurrency": "Tokens"
   },
   "Sports": {
     "eyebrow": "Sports",

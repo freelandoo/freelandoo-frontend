@@ -39,7 +39,11 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
     all: t("forgeAll", "Todos"), weapon: t("forgeWeapons", "Armas"), shield: t("forgeShields", "Escudos"), armor: t("forgeArmor", "Proteções"),
     accessory: t("forgeAccessories", "Acessórios"), material: t("forgeMaterials", "Materiais e peças"),
     recipe: t("forgeRecipes", "Projetos"), quest: t("forgeQuestItems", "Missão"), cosmetic: t("forgeCosmetics", "Cosméticos"),
+    // trilha E1: categorias novas (o filtro só mostra as que têm item no catálogo)
+    offhand: t("forgeOffhands", "Mão secundária"), relic: t("forgeRelics", "Relíquias"), fragment: t("forgeFragments", "Fragmentos"),
+    rune: t("forgeRunes", "Runas"), consumable: t("forgeConsumables", "Consumíveis"), currency: t("forgeCurrency", "Fichas"),
   }
+  const presentCategories = new Set<string>((catalog?.items || []).map(item => item.category))
   const changeTab = (next: GearTab) => { setTab(next); setConfirm(null); setMessage(null); setCategory("all") }
   const slotsFor = (item: GearItem): GearSlot[] => item.category === "weapon" ? ["weapon"] : item.category === "shield" ? ["shield"] : item.category === "armor" ? ["armor"] : item.category === "accessory" ? ["acc1", "acc2"] : []
   const locked = (item: GearItem) => gearLock(item, bag, t)
@@ -97,7 +101,7 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
       {(tab === "bag" || tab === "guide") && <label className="mb-3 flex min-h-11 items-center gap-3 text-[13px]" style={{ color: AE.text }}>
         {t("forgeCategory", "Categoria")}
         <select value={category} onChange={event => setCategory(event.target.value as Category)} className="min-h-11 min-w-0 flex-1 px-2" style={{ color: AE.text, background: AE.well, border: "1px solid " + AE.brassLine }}>
-          {Object.entries(categoryNames).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+          {Object.entries(categoryNames).filter(([id]) => id === "all" || presentCategories.has(id)).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
         </select>
       </label>}
       {!catalog || !bag ? <div className="grid min-h-48 place-items-center" style={{ color: AE.muted }}>{error ? <AetherButton onClick={() => void load()}>{t("forgeReload", "Tentar abrir novamente")}</AetherButton> : <Loader2 className="h-6 w-6 animate-spin" aria-label={t("gearLoading", "Carregando…")} />}</div> : (

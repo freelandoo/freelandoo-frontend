@@ -71,6 +71,8 @@ export const RARITY = {
   rare: { color: "#3FA9FF", glow: "#3FA9FF", labelKey: "rarityRare", label: "Raro" },
   epic: { color: "#A05CFF", glow: "#A05CFF", labelKey: "rarityEpic", label: "Épico" },
   legendary: { color: "#F2B705", glow: "#FFD23F", labelKey: "rarityLegendary", label: "Lendário" },
+  /** Trilha E1: Mítica (T6) — só peça de chefão e de desafio. */
+  mythic: { color: "#FF3B5C", glow: "#FF6A82", labelKey: "rarityMythic", label: "Mítico" },
 } as const
 export type Rarity = keyof typeof RARITY
 

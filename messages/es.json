@@ -12245,7 +12245,14 @@
     "domPrizes": "XP de aventura, Esmeraldas y probabilidad de objeto",
     "domPrizeCross": "Abre el paso: {name}",
     "domSectorLocked": "Vence antes el sector {n}",
-    "domStartNote": "La travesía empieza en la entrada; los sectores van en orden por el camino."
+    "domStartNote": "La travesía empieza en la entrada; los sectores van en orden por el camino.",
+    "rarityMythic": "Mítico",
+    "forgeOffhands": "Mano secundaria",
+    "forgeRelics": "Reliquias",
+    "forgeFragments": "Fragmentos",
+    "forgeRunes": "Runas",
+    "forgeConsumables": "Consumibles",
+    "forgeCurrency": "Fichas"
   },
   "Sports": {
     "eyebrow": "Deportes",

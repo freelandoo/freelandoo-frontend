@@ -11679,7 +11679,14 @@
     "domPrizes": "XP de aventura, Esmeraldas e chance de item",
     "domPrizeCross": "Abre a passagem: {name}",
     "domSectorLocked": "Vença o setor {n} antes",
-    "domStartNote": "A travessia começa na entrada; os setores ficam em ordem no caminho."
+    "domStartNote": "A travessia começa na entrada; os setores ficam em ordem no caminho.",
+    "rarityMythic": "Mítico",
+    "forgeOffhands": "Mão secundária",
+    "forgeRelics": "Relíquias",
+    "forgeFragments": "Fragmentos",
+    "forgeRunes": "Runas",
+    "forgeConsumables": "Consumíveis",
+    "forgeCurrency": "Fichas"
   },
   "Sports": {
     "eyebrow": "Esportes",
