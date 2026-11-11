@@ -1,0 +1,110 @@
+/* features/meu-mundo/ui/quest/quest-hud.module.css — a missão atual na HUD da cidade
+ * (apresentação 12). Três linhas logo abaixo do minimapa, alinhadas à direita, SEM
+ * placa: texto sobre o jogo lê só pela sombra. Sublinhado em âmbar = dá para tocar.
+ * `--mm-radar-h` vem do radar (0 quando ele não está na tela: a missão sobe). */
+
+.mission {
+  position: fixed;
+  top: calc(max(12px, env(safe-area-inset-top)) + 48px + var(--mm-radar-h, 0px));
+  right: max(12px, env(safe-area-inset-right));
+  /* abaixo do HUD do personagem (65) e acima da cena (60) */
+  z-index: 64;
+  display: flex;
+  max-width: min(200px, 52vw);
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 2px 0 4px;
+  border: 0;
+  background: none;
+  color: #f3efe6;
+  text-align: right;
+  cursor: pointer;
+  pointer-events: auto;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  text-shadow:
+    0 1px 0 #000,
+    0 0 4px rgba(0, 0, 0, 0.95),
+    0 0 10px rgba(0, 0, 0, 0.7);
+  animation: qh-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes qh-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+.mission:focus-visible {
+  outline: 2px solid #ffb347;
+  outline-offset: 4px;
+}
+.mission:active {
+  opacity: 0.8;
+}
+.name {
+  max-width: 100%;
+  overflow: hidden;
+  color: #e5be70;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.goal {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+/* marcador do objetivo: losango de latão (verde quando está pronto para entregar) */
+.mark {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  background: #f2b705;
+  box-shadow: 0 0 0 1px #000;
+  transform: translateY(-1px) rotate(45deg);
+}
+.mission[data-ready] .mark {
+  background: #4be38a;
+}
+.lock {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-right: 5px;
+  color: #e5be70;
+  vertical-align: -2px;
+}
+.where {
+  max-width: 100%;
+  overflow: hidden;
+  color: #ffb347;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-overflow: ellipsis;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.mission[data-ready] .where {
+  color: #4be38a;
+}
+:global(html[data-mm-fx="low"]) .mission {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mission {
+    animation: none;
+  }
+}

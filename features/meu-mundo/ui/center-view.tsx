@@ -21,6 +21,7 @@ import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId } from "../engine/motion"
 import { CarTuningPanel } from "./drive-controls"
 import { Drawer, EvoButton, EvoDialog, EvoToast, WindedToast, presenceState, type DrawerItem } from "./hud/hud-kit"
+import { CityDock, dockShortcuts } from "./hud/city-dock"
 import { MM } from "./hud/tokens"
 import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
@@ -607,21 +608,23 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
       {status === "ready" && isTouch && !open && !menuOpen && !talk && !statue && !portalOpen && <Joystick gameRef={gameRef} />}
 
-      {status === "ready" && isTouch && !open && !menuOpen && !talk && !statue && !portalOpen && !drivingLot && (
-        <>
-          {nearby && (
-            <EvoButton
-              variant={nearPlace ? "gold" : "primary"}
-              onClick={() => gameRef.current?.interact()}
-              aria-label={nearbyLabel}
-              className="!absolute !min-h-12 max-w-[50vw]"
-              style={{ bottom: bottom(20), right: SAFE.right }}
-              icon={nearMob || nearDomains ? <Swords className="h-5 w-5 shrink-0" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5 shrink-0" /> : nearPortal ? <Home className="h-5 w-5 shrink-0" /> : nearNpc ? <MessageCircle className="h-5 w-5 shrink-0" /> : nearStatue ? <Droplet className="h-5 w-5 shrink-0" /> : nearLock ? <Lock className="h-4 w-4 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
-            >
-              {nearPlace ? `${nearbyLabel} · ${placeTag}` : nearbyLabel}
-            </EvoButton>
-          )}
-        </>
+      {/* Apresentação 12 — canto de baixo à direita: atalhos (Loja, Mochila) e, no celular, a
+          ação do momento uma fileira acima (rubi e pulsando quando é luta). */}
+      {status === "ready" && !open && !menuOpen && !talk && !statue && !portalOpen && !drivingLot && !minigame && (
+        <CityDock
+          shortcuts={dockShortcuts(menuExtras)}
+          main={
+            isTouch && nearby
+              ? {
+                  id: "interact",
+                  label: nearPlace ? `${nearbyLabel} · ${placeTag}` : nearbyLabel,
+                  tone: nearMob || nearDomains ? "fight" : "main",
+                  icon: nearMob || nearDomains ? <Swords /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} /> : nearPortal ? <Home /> : nearNpc ? <MessageCircle /> : nearStatue ? <Droplet /> : nearLock ? <Lock /> : nearPlace ? <Store /> : <Hand />,
+                  onSelect: () => gameRef.current?.interact(),
+                }
+              : null
+          }
+        />
       )}
 
       {status === "ready" && (

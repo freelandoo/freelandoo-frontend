@@ -124,6 +124,15 @@ export function CityMapHud({ hidden = false }: { hidden?: boolean }) {
     window.addEventListener("resize", on)
     return () => window.removeEventListener("resize", on)
   }, [])
+  // a missão mora logo abaixo do radar (apresentação 12): ele diz a altura que ocupa
+  useEffect(() => {
+    const el = document.documentElement
+    if (show) el.style.setProperty("--mm-radar-h", `${size + 8}px`)
+    else el.style.removeProperty("--mm-radar-h")
+    return () => {
+      el.style.removeProperty("--mm-radar-h")
+    }
+  }, [show, size])
   // fechou a cena (casa, luta): o modal fecha junto
   useEffect(() => {
     if (!model) setOpen(false)

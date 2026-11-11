@@ -675,6 +675,10 @@
   -webkit-tap-highlight-color: transparent;
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+/* cenas do mundo (apresentação 12): um pouco abaixo, livre da missão que mora sob o radar */
+.pull[data-world] {
+  top: 46%;
+}
 .pull[data-hidden] {
   transform: translateX(48px);
   pointer-events: none;

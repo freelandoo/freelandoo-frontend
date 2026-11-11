@@ -42,6 +42,7 @@ import { createMeuMundoGame, type GameHandle } from "../engine/game"
 import { kindOfId, type RideKind } from "../engine/motion"
 import { CarTuningPanel } from "./drive-controls"
 import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, WindedToast, InfoRow, presenceState, type DrawerItem } from "./hud/hud-kit"
+import { CityDock, dockShortcuts } from "./hud/city-dock"
 import { MM } from "./hud/tokens"
 import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
@@ -602,32 +603,25 @@ export default function MeuMundoView({
       {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
       {status === "ready" && isTouch && !open && !reading && !levelOpen && !menuOpen && <Joystick gameRef={gameRef} />}
 
-      {status === "ready" && isTouch && !open && !reading && !levelOpen && !menuOpen && !drivingLot && (
-        <>
-          {nearbyMine && (
-            <EvoButton
-              variant="gold"
-              onClick={() => setLevelOpen(true)}
-              className="!absolute max-w-[46vw]"
-              style={{ bottom: bottom(80), right: SAFE.right }}
-              icon={<Construction className="h-5 w-5 shrink-0" />}
-            >
-              {t("changeHouse", "Alterar casa")}
-            </EvoButton>
-          )}
-          {nearby && (
-            <EvoButton
-              variant="primary"
-              onClick={() => gameRef.current?.interact()}
-              aria-label={nearbyLabel}
-              className="!absolute !min-h-12 max-w-[46vw]"
-              style={{ bottom: bottom(20), right: SAFE.right }}
-              icon={nearbyMob ? <Swords className="h-5 w-5 shrink-0" /> : nearbyNpc ? <MessageCircle className="h-5 w-5 shrink-0" /> : nearbySign ? <ScrollText className="h-5 w-5 shrink-0" /> : nearbyStatue ? <Droplet className="h-5 w-5 shrink-0" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5 shrink-0" /> : nearbyExit ? <Building2 className="h-5 w-5 shrink-0" /> : nearbyAction ? <DoorOpen className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
-            >
-              {nearbyLabel}
-            </EvoButton>
-          )}
-        </>
+      {/* Apresentação 12 — canto de baixo à direita: atalhos (Loja, Mochila) e, no celular, a
+          ação do momento uma fileira acima (maior; rubi e pulsando quando é luta). No
+          computador a ação continua no meio de baixo, com a tecla E. */}
+      {status === "ready" && !open && !reading && !levelOpen && !menuOpen && !drivingLot && (
+        <CityDock
+          shortcuts={dockShortcuts(menuExtras)}
+          second={isTouch && nearbyMine ? { id: "house-level", label: t("changeHouse", "Alterar casa"), icon: <Construction />, onSelect: () => setLevelOpen(true) } : null}
+          main={
+            isTouch && nearby
+              ? {
+                  id: "interact",
+                  label: nearbyLabel,
+                  tone: nearbyMob ? "fight" : "main",
+                  icon: nearbyMob ? <Swords /> : nearbyNpc ? <MessageCircle /> : nearbySign ? <ScrollText /> : nearbyStatue ? <Droplet /> : nearbyCar ? <VehicleIcon kind={vehicleKind} /> : nearbyExit ? <Building2 /> : nearbyAction ? <DoorOpen /> : <Hand />,
+                  onSelect: () => gameRef.current?.interact(),
+                }
+              : null
+          }
+        />
       )}
 
       {/* A gaveta do menu (direita) */}

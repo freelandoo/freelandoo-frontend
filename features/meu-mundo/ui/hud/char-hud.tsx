@@ -24,7 +24,8 @@ import { PORTRAIT } from "../portraits"
 import { onCelebrate } from "../rewards/reward-bus"
 import { archivo } from "../status/evo-skin"
 import { statTop } from "../status/stat-bars"
-import { FightPlate, plateHeight, plateWidth } from "./fight-plate"
+import { TYPE } from "../kit/type-scale"
+import { FightPlate, plateWidth } from "./fight-plate"
 import { useDrawerOpen } from "./hud-kit"
 import { useGameCovered } from "./game-cover"
 import c from "./char-hud.module.css"
@@ -101,16 +102,6 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
     }
   }, [])
 
-  // o card de missão fica logo abaixo do HUD
-  const total = Math.ceil(plateHeight(pw) + pw * 0.34 + Math.max(10, pw * 0.2) + 8)
-  useEffect(() => {
-    const el = document.documentElement
-    el.style.setProperty("--mm-hud-h", hidden ? "0px" : `${total}px`)
-    return () => {
-      el.style.removeProperty("--mm-hud-h")
-    }
-  }, [hidden, total])
-
   if (hidden) return null
   const v = vitals
   const pow = Math.max(0, Math.round(power ?? 0))
@@ -146,7 +137,7 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
         // estresse = a tira violeta (a mesma cor do poder na luta); acende no alto
         power={{ v: stress / 100, ready: stress >= 70 }}
       >
-        <div className={c.foot} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 6, fontSize: Math.max(10, pw * 0.2) }}>
+        <div className={c.foot} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 6, fontSize: Math.max(TYPE.label, Math.min(TYPE.body, pw * 0.2)) }}>
           {adv && <span className={c.level}>{t("hudLevel", "Nv. {n}").replace("{n}", String(adv.level))}</span>}
           {trainer != null && (
             <span className={c.level} style={{ color: "#7FD8FF" }} title={t("hudTrainerHint", "Nível do treinador: é da sua conta e abre os capítulos da história")}>
@@ -162,13 +153,11 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
             </span>
           )}
         </div>
-        {/* barra de XP do nível de aventura (dourada, a cor do XP nos ganhos) */}
+        {/* XP do nível de aventura: um fio dourado, sem texto (apresentação 12 — nada abaixo
+            de 11 px; o número está na Ficha e no rótulo do leitor de tela) */}
         {adv && (
-          <div className={c.xp} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 10, height: Math.max(9, pw * 0.15) }}>
+          <div className={c.xp} title={adv.need > 0 ? `${adv.into} / ${adv.need} XP` : "MAX"} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 10, height: Math.max(6, Math.round(pw * 0.1)) }}>
             <span className={c.xpFill} style={{ transform: `translateX(${(adv.need > 0 ? Math.min(1, adv.into / adv.need) : 1) * 100 - 100}%)` }} />
-            <span className={c.xpText} style={{ fontSize: Math.max(8, pw * 0.13) }}>
-              {adv.need > 0 ? `${adv.into} / ${adv.need} XP` : "MAX"}
-            </span>
           </div>
         )}
       </FightPlate>
@@ -178,6 +167,7 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
           <li>{`${t("stPower", "PODER")}: ${pow}`}</li>
           <li>{label("vitalEnergy", "Energia", energy, 100)}</li>
           <li>{label("vitalStress", "Estresse", stress, 100)}</li>
+          {adv && adv.need > 0 && <li>{`XP: ${adv.into} / ${adv.need}`}</li>}
         </ul>
       )}
     </div>

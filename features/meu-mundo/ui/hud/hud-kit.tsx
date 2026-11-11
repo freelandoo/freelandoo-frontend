@@ -269,6 +269,7 @@ export function Drawer({
         type="button"
         className={d.pull}
         data-hidden={open ? "" : undefined}
+        data-world={gates ? "" : undefined}
         onClick={() => onOpenChange(true)}
         onPointerDown={down("pull")}
         onPointerMove={move}

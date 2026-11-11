@@ -13,7 +13,7 @@
 import { useDrawerOpen } from "../hud/hud-kit"
 import { useGameCovered } from "../hud/game-cover"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Loader2, Lock, ScrollText } from "lucide-react"
+import { Loader2, Lock } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { OPEN_ARCHIVE, advanceQuest, getArchive, getQuest, type LoreVideo as LoreVideoData, type QuestState, type QuestView } from "../../data"
@@ -28,6 +28,7 @@ import { AE, chamfer } from "../kit/aether-tokens"
 import { archivo, teko } from "../status/evo-skin"
 import { celebrate } from "../rewards/reward-bus"
 import TEXT from "./chapters-text.json"
+import q from "./quest-hud.module.css"
 import { currentSoul } from "../../soul"
 import { temperSuffix } from "../../banter"
 
@@ -225,7 +226,8 @@ export function QuestTracker({
   }
 
   if (!quest || quest.done) return null
-  const chapterLabel = `${tx(t, "questChapterN").replace("{n}", String(quest.chapter))} · ${tx(t, `qc_${quest.id}_title`)}`
+  // o número do capítulo fica no cabeçalho do modal; na HUD, só o nome
+  const missionName = tx(t, `qc_${quest.id}_title`)
   const lockedLine = quest.locked ? tx(t, "questLockedLevel").replace("{n}", String(quest.locked.level)) : null
   const progress = cur && cur.need > 1 ? ` · ${tx(t, "questProgress").replace("{have}", String(cur.have)).replace("{need}", String(cur.need))}` : ""
   return (
@@ -234,39 +236,28 @@ export function QuestTracker({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className={`${archivo.className} pointer-events-auto fixed z-[64] flex max-w-[min(300px,62vw)] items-start gap-2 p-2.5 text-left outline-none focus-visible:ring-2`}
-          style={{
-            // logo abaixo do HUD do personagem (--mm-hud-h vem dele)
-            top: "calc(max(10px, env(safe-area-inset-top)) + var(--mm-hud-h, 46px) + 10px)",
-            left: "max(10px, env(safe-area-inset-left))",
-            // pedido do Alex (2026-11-02): o card do canto um pouco transparente (o mundo aparece atrás)
-            background: "rgba(20, 23, 28, 0.66)",
-            boxShadow: `inset 0 0 0 1px ${cur?.ready ? AE.gold : AE.brassLine}, ${AE.hardSm}`,
-            clipPath: chamfer(AE.cut.chip),
-          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className={`${archivo.className} ${q.mission}`}
+          data-ready={cur?.ready ? "" : undefined}
           aria-label={t("questOpen", "Abrir a missão")}
         >
-          {quest.locked ? (
-            <Lock className="mt-0.5 h-5 w-5 shrink-0" style={{ color: AE.goldSoft }} aria-hidden />
-          ) : (
-            <ScrollText className="mt-0.5 h-5 w-5 shrink-0" style={{ color: AE.gold }} aria-hidden />
-          )}
-          <span className="min-w-0">
-            <span className="block text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: AE.goldSoft }}>
-              {chapterLabel}
-              {cur ? ` · ${quest.step + 1}/${quest.total}` : ""}
-              {bldMissions.length ? ` · +${bldMissions.length}` : ""}
-            </span>
-            <span className="block text-[13px] font-bold leading-tight" style={{ color: AE.text }}>
-              {cur ? stepTxt(t, quest.id, cur.key, "what") : lockedLine}
-            </span>
-            <span className="block truncate text-[11px]" style={{ color: cur?.ready ? AE.good : AE.muted }}>
-              {cur
-                ? cur.ready
-                  ? t("questReady", "Pronto para entregar")
-                  : `${stepTxt(t, quest.id, cur.key, "where")}${progress}`
-                : tx(t, "questTrainerNow").replace("{n}", String(state?.trainer ?? 1))}
-            </span>
+          {/* apresentação 12: três linhas sob o minimapa, SEM placa (só sombra) —
+              nome do capítulo · objetivo com marcador · onde (sublinhado = toque) */}
+          <span className={q.name}>
+            {missionName}
+            {cur ? ` · ${quest.step + 1}/${quest.total}` : ""}
+            {bldMissions.length ? ` · +${bldMissions.length}` : ""}
+          </span>
+          <span className={q.goal}>
+            {quest.locked ? <Lock className={q.lock} aria-hidden /> : <i className={q.mark} aria-hidden />}
+            {cur ? stepTxt(t, quest.id, cur.key, "what") : lockedLine}
+          </span>
+          <span className={q.where}>
+            {cur
+              ? cur.ready
+                ? t("questReady", "Pronto para entregar")
+                : `${stepTxt(t, quest.id, cur.key, "where")}${progress}`
+              : tx(t, "questTrainerNow").replace("{n}", String(state?.trainer ?? 1))}
           </span>
         </button>
       )}

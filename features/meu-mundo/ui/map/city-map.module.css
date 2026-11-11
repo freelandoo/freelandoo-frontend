@@ -6,7 +6,8 @@
 .radar {
   position: fixed;
   right: max(12px, env(safe-area-inset-right));
-  top: calc(max(12px, env(safe-area-inset-top)) + 58px);
+  /* logo abaixo dos ícones de 44 px (apresentação 12: sem aro, o radar subiu 10 px) */
+  top: calc(max(12px, env(safe-area-inset-top)) + 48px);
   z-index: 65;
   padding: 0;
   border: 0;

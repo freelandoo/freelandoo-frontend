@@ -1,0 +1,170 @@
+/* features/meu-mundo/ui/hud/city-dock.module.css — atalhos e ação principal da cidade
+ * (apresentação 12). Canto de baixo à direita: a fileira de atalhos (Loja, Mochila) e,
+ * uma fileira acima, a ação do momento — maior; rubi e pulsando quando é luta.
+ * Só transform/opacity animam. Forma: chanfro de oito lados, latão por fora. */
+
+.dock {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+  user-select: none;
+}
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 12px;
+}
+/* a ação secundária alinha pelo pé do botão principal */
+.row[data-acts] {
+  align-items: flex-end;
+}
+
+.key {
+  --k: 48px;
+  --cut: 13px;
+  display: flex;
+  min-width: var(--k);
+  max-width: 104px;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  animation: cd-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.key[data-tone="main"] {
+  --k: 64px;
+  --cut: 17px;
+}
+.key[data-tone="fight"] {
+  --k: 72px;
+  --cut: 19px;
+}
+@keyframes cd-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+.wrap {
+  position: relative;
+  width: var(--k);
+  height: var(--k);
+}
+.face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #ffd68a;
+  background: linear-gradient(160deg, #fff3cf 0%, #e8b65b 24%, #9a6424 58%, #d9a24e 82%, #5e3b12 100%);
+  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+  transition: transform 120ms ease;
+}
+.face::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: radial-gradient(circle at 50% 28%, rgba(44, 55, 66, 0.86) 0%, rgba(16, 22, 29, 0.8) 62%, rgba(8, 11, 15, 0.8) 100%);
+  clip-path: polygon(calc(var(--cut) - 1px) 0, calc(100% - var(--cut) + 1px) 0, 100% calc(var(--cut) - 1px), 100% calc(100% - var(--cut) + 1px), calc(100% - var(--cut) + 1px) 100%, calc(var(--cut) - 1px) 100%, 0 calc(100% - var(--cut) + 1px), 0 calc(var(--cut) - 1px));
+}
+.face > svg {
+  position: relative;
+  width: 46%;
+  height: 46%;
+}
+/* botão principal: claro com ícone escuro (um por tela) */
+.key[data-tone="main"] .face {
+  color: #1b1407;
+}
+.key[data-tone="main"] .face::before {
+  background: linear-gradient(180deg, #ffe08a 0%, #f2b705 52%, #b88400 100%);
+}
+/* luta: rubi, ícone branco */
+.key[data-tone="fight"] .face {
+  color: #fff;
+}
+.key[data-tone="fight"] .face::before {
+  background: linear-gradient(180deg, #e0245e 0%, #a3123f 52%, #4d0a22 100%);
+}
+.pulse {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 60, 110, 0.6);
+  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+  animation: cd-pulse 1400ms cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+@keyframes cd-pulse {
+  from {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.38);
+  }
+}
+.key:hover .face {
+  transform: scale(1.05);
+}
+.key:active .face {
+  transform: scale(0.93);
+}
+.key:focus-visible .wrap {
+  outline: 2px solid #ffb347;
+  outline-offset: 3px;
+}
+.cap {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #f3efe6;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-shadow:
+    0 1px 0 #000,
+    0 0 4px rgba(0, 0, 0, 0.95),
+    0 0 10px rgba(0, 0, 0, 0.6);
+}
+.dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffb347, #e0411b);
+  box-shadow:
+    0 0 0 1.5px #0b1016,
+    0 0 8px rgba(255, 122, 26, 0.8);
+}
+:global(html[data-mm-fx="low"]) .key,
+:global(html[data-mm-fx="low"]) .pulse {
+  animation: none;
+}
+:global(html[data-mm-fx="low"]) .pulse {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .key {
+    animation: none;
+  }
+  .pulse {
+    display: none;
+  }
+}

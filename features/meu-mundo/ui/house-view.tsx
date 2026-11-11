@@ -24,6 +24,7 @@ import { fetchSession } from "../data"
 import type { BodyId, FridgeStock, GameStats, HousePayload, Interactable, LifeCharacter, LifeItem, NetStatus, VisitState } from "../types"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
 import { Drawer, EvoButton, EvoDialog, EvoToast, InfoRow, WindedToast, presenceState, type DrawerItem } from "./hud/hud-kit"
+import { CityDock, dockShortcuts } from "./hud/city-dock"
 import { useQualityItem } from "./hud/quality-item"
 import type { DrawerGates } from "./hud/drawer-gates"
 import { EVO } from "./status/evo-skin"
@@ -455,7 +456,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
       )}
 
       {/* Deitado: dormir (8 h). Computador e celular. */}
-      {status === "ready" && canSleep && !overlay && (
+      {status === "ready" && canSleep && !overlay && !isTouch && (
         <EvoButton
           variant="gold"
           size="lg"
@@ -470,7 +471,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
       )}
 
       {/* Montado e perto da porta: descer aqui dentro (o E sai com ele) */}
-      {status === "ready" && rideAtDoor && !overlay && (
+      {status === "ready" && rideAtDoor && !overlay && !isTouch && (
         <EvoButton
           variant="gold"
           size="lg"
@@ -493,22 +494,24 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
         </div>
       )}
 
-      {status === "ready" && isTouch && !overlay && (
-        <>
-          {!seat && !rest && <Joystick gameRef={gameRef} />}
-          {hasAction && (
-            <EvoButton
-              variant="primary"
-              onClick={() => gameRef.current?.interact()}
-              aria-label={actionLabel}
-              className="!absolute !min-h-12 max-w-[46vw]"
-              style={{ bottom: bottom(20), right: SAFE.right }}
-              icon={actionIcon}
-            >
-              {actionLabel}
-            </EvoButton>
-          )}
-        </>
+      {status === "ready" && isTouch && !overlay && !seat && !rest && <Joystick gameRef={gameRef} />}
+
+      {/* Apresentação 12 — canto de baixo à direita: atalhos (Loja, Mochila) e, no celular, a
+          ação do momento uma fileira acima; Dormir/Descer ao lado dela. */}
+      {status === "ready" && !overlay && (
+        <CityDock
+          shortcuts={dockShortcuts(menuExtras)}
+          second={
+            !isTouch
+              ? null
+              : canSleep
+                ? { id: "sleep", label: t("bedSleep", "Dormir"), icon: <Moon />, onSelect: () => gameRef.current?.sleep(8) }
+                : rideAtDoor
+                  ? { id: "leave-ride", label: t("leaveVehicle", "Descer"), icon: <VehicleIcon kind={rideKind} />, onSelect: () => gameRef.current?.leaveRide() }
+                  : null
+          }
+          main={isTouch && hasAction ? { id: "interact", label: actionLabel, icon: actionIcon, onSelect: () => gameRef.current?.interact() } : null}
+        />
       )}
 
       {/* A gaveta do menu (direita); some com a geladeira aberta (a aba ficava por cima dela) */}
