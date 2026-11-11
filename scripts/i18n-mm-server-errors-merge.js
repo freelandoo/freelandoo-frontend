@@ -231,6 +231,8 @@ const ROWS = [
   ["Povo inválido", "Invalid people", "Pueblo no válido"],
   // trilha E6: arma de duas mãos
   ["Sua arma usa as duas mãos", "Your weapon takes both hands", "Tu arma usa las dos manos"],
+  // trilha E8: conversão de fragmento
+  ["Esse item não é um fragmento", "That item isn't a fragment", "Ese objeto no es un fragmento"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

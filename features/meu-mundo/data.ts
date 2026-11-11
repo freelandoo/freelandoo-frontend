@@ -368,6 +368,14 @@ export interface GearItem {
   assemblyParts?: string[]
   use?: string
   cosmeticEffect?: string
+  /** E8: deus ou Domínio de origem (aurion, noctis, floresta…). */
+  domain?: string
+  /** E8: arma de linha (fabricada por fragmentos, não se vende). */
+  line?: boolean
+  /** E8: fragmento — junta `need` para fabricar `of` (de conjunto: `set`); sobra vira `powder` de Pó de Refino cada. */
+  fragment?: { of: string; need: number; powder: number; set?: string }
+  /** E8: onde o fragmento cai (região, chefão, tabela de saque) — para o Índice. */
+  origin?: { region: string; boss: string | null; table: string; kind: "boss" | "activity" | "sector" }
 }
 export interface GearRecipe {
   id: string
@@ -376,7 +384,7 @@ export interface GearRecipe {
   coins: number
   recipe: string | null
   level: number
-  kind?: "part" | "assembly" | "conversion" | "equipment"
+  kind?: "part" | "assembly" | "conversion" | "equipment" | "fragment"
   qty?: number
 }
 export interface RefinementQuote {
@@ -636,6 +644,8 @@ export const refineGear = (token: string, item: string, quote: string, protect: 
   call<GearOut>(token, "POST", "/gear/refine", instance ? { item, instance, quote, protect, key } : { item, quote, protect, key })
 export const resolveRefinement = (token: string, proposalId: string, accept: boolean, key: string) =>
   call<GearOut>(token, "POST", "/gear/refine/resolve", { proposalId, accept, key })
+/** E8: fragmento que sobra vira Pó de Refino (o servidor diz quanto). */
+export const convertFragments = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/fragment/convert", { item, qty, key })
 export const applyGearItem = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/use", { item, key })
 // ═══ lore v2 F3: missões = os 10 capítulos (abrem pelo nível do treinador) ═══
 export interface QuestStepView {

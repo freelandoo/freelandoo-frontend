@@ -11,10 +11,11 @@ import { GearItemCard, bonusLines, gearLock, nameOf, type GearTr } from "./gear-
 import { ForgeCard } from "./forge-card"
 import { RefinementCard } from "./refinement-card"
 import { useWorkshop } from "./use-workshop"
+import { FragmentIndex } from "./fragment-index"
 
 /** B5: comprar (Armeiro e Loja de Armas) saiu daqui para a Loja única (ui/shop/shop-panel.tsx). */
-export type GearTab = "bag" | "forge" | "refine" | "guide"
-type ForgeKind = "assembly" | "part" | "equipment" | "conversion"
+export type GearTab = "bag" | "forge" | "refine" | "guide" | "fragments"
+type ForgeKind = "assembly" | "part" | "equipment" | "conversion" | "fragment"
 type Category = "all" | GearCategory
 
 export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: {
@@ -34,6 +35,8 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
     { id: "forge" as const, label: t("gearTabForge", "Forja") },
     { id: "refine" as const, label: t("refineTab", "Refinar") },
     { id: "guide" as const, label: t("forgeGuideTab", "Catálogo") },
+    // E8: Índice de fragmentos
+    { id: "fragments" as const, label: t("fragIndexTab", "Fragmentos") },
   ]
   const categoryNames: Record<Category, string> = {
     all: t("forgeAll", "Todos"), weapon: t("forgeWeapons", "Armas"), shield: t("forgeShields", "Escudos"), armor: t("forgeArmor", "Proteções"),
@@ -98,6 +101,7 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
       {tab === "forge" && <AetherTabs<ForgeKind> label={t("forgeKinds", "Bancadas da forja")} value={kind} onChange={setKind} tabs={[
         { id: "assembly", label: t("forgeWeapons", "Armas") }, { id: "part", label: t("forgeParts", "Peças") },
         { id: "equipment", label: t("forgeArmor", "Proteções") }, { id: "conversion", label: t("forgeConversions", "Conversões") },
+        { id: "fragment", label: t("forgeByFragment", "Por fragmento") },
       ]} />}
       {(tab === "bag" || tab === "guide") && <label className="mb-3 flex min-h-11 items-center gap-3 text-[13px]" style={{ color: AE.text }}>
         {t("forgeCategory", "Categoria")}
@@ -105,7 +109,7 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
           {Object.entries(categoryNames).filter(([id]) => id === "all" || presentCategories.has(id)).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
         </select>
       </label>}
-      {!catalog || !bag ? <div className="grid min-h-48 place-items-center" style={{ color: AE.muted }}>{error ? <AetherButton onClick={() => void load()}>{t("forgeReload", "Tentar abrir novamente")}</AetherButton> : <Loader2 className="h-6 w-6 animate-spin" aria-label={t("gearLoading", "Carregando…")} />}</div> : (
+      {tab === "fragments" && catalog && bag ? <FragmentIndex items={catalog.items} byId={byId} bag={bag} t={t} busy={!!busy} act={act} /> : !catalog || !bag ? <div className="grid min-h-48 place-items-center" style={{ color: AE.muted }}>{error ? <AetherButton onClick={() => void load()}>{t("forgeReload", "Tentar abrir novamente")}</AetherButton> : <Loader2 className="h-6 w-6 animate-spin" aria-label={t("gearLoading", "Carregando…")} />}</div> : (
         <AetherCarousel key={tab + "-" + category + "-" + kind} title={title} items={items} cardWidth={360} cardHeight={510} empty={tab === "bag" ? t("gearBagEmpty", "Mochila vazia. Lute e jogue para ganhar materiais.") : t("gearNothing", "Nada por aqui ainda.")} />
       )}
       {message && <p role="status" className="mt-3 text-center text-[13px]" style={{ color: AE.goldSoft }}>{message}</p>}

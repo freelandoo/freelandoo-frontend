@@ -81,8 +81,19 @@ const GOD_BOWS: Record<string, [string, string]> = {
 const bowOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
   c ? { file: `${DIR}/arco-${k}-m69.glb`, thumb: `${DIR}/thumb/arco-${k}.webp`, main: c[0], edge: c[1] } : null
 
+/**
+ * Trilha E8: as 9 armas de linha (fabricadas por fragmento) usam o modelo mais próximo da família
+ * até o Alex mandar os próprios (§10 do plano). Espada → espada da loja; pesada, arco e arma de
+ * fogo → a arma do próprio deus; cajado → o solar da classe (engine/weapon-appearance.ts).
+ */
+const LINE_SWORD: Record<string, string> = { linha_primeira_chama: "espada_alvorada", linha_lamina_correntes: "espada_morkhan", linha_sabre_vendaval: "espada_celeste" }
+const LINE_HEAVY: Record<string, [string, string]> = { linha_tridente_mares: ["maru", "mares"], linha_martelo_incandescente: ["kragor", "lava"] }
+const LINE_BOW: Record<string, string> = { linha_arco_prismatico: "iris", linha_arco_bronze_vivo: "aeryn" }
+const LINE_GUN: Record<string, string> = { linha_garras_lunares: "noctis" }
+
 /** O arco da loja por id do item; null = não é da aba Arcos. */
 export function shopBow(id: string | null | undefined): ShopSword | null {
+  if (id && LINE_BOW[id]) return godBow(LINE_BOW[id])
   const k = id?.startsWith("arco_") ? id.slice(5) : ""
   return bowOf(k, BOW_COLORS[k])
 }
@@ -126,6 +137,7 @@ const gunOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
 
 /** A arma de fogo da loja por id do item; null = não é da aba Guns. */
 export function shopGun(id: string | null | undefined): ShopSword | null {
+  if (id && LINE_GUN[id]) return godGun(LINE_GUN[id])
   const k = id?.startsWith("fogo_") ? id.slice(5) : ""
   return gunOf(k, GUN_COLORS[k])
 }
@@ -152,6 +164,8 @@ export interface ShopSword {
 
 /** A arma pesada da loja por id do item; null = não é da aba Hammers. */
 export function shopHeavy(id: string | null | undefined): ShopSword | null {
+  const line = id ? LINE_HEAVY[id] : undefined
+  if (line) { const god = godHeavy(line[0]); return god && { ...god, thumb: `${DIR}/thumb/${line[1]}.webp` } }
   const k = id?.startsWith("pesada_") ? id.slice(7) : ""
   const c = HEAVY_COLORS[k]
   return c ? { file: `${DIR}/pesada-${k}-m67.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
@@ -172,7 +186,7 @@ const key = (id: string | null | undefined) => (id?.startsWith("espada_") ? id.s
 
 /** A espada da loja por id do item; null = não é da loja (arma antiga da classe). */
 export function shopSword(id: string | null | undefined): ShopSword | null {
-  const k = key(id)
+  const k = key((id && LINE_SWORD[id]) || id)
   const c = COLORS[k]
   return c ? { file: `${DIR}/espada-${k}-m66.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
 }
