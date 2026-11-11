@@ -30,6 +30,7 @@ import { DEFAULT_TRACK, TRACK_DEFS } from "../sim/circuits"
 import type { CorridaNet, CorridaNetStatus, CorridaStart } from "../engine/net"
 import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
+import { GodVoice } from "../../ui/quest/god-voice"
 
 /** Entrar numa largada em grupo (null = a sala não abriu). */
 export type CorridaJoin = (hooks: {
@@ -391,6 +392,7 @@ function RaceScreen({
       {status === "ready" && hud && (
         <>
           <MinigameBanter running={hud.phase === "race" && !ended} />
+          <GodVoice god="zephyra" show={ended} />
           <SpeedLines on={hud.boost && !hud.down} />
           <Hud hud={hud} path={path} muted={muted} onMute={toggleMute} onLeave={onMenu} />
           {isTouch && !ended && (

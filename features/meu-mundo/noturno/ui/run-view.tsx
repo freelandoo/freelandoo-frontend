@@ -39,6 +39,7 @@ import { createRunGame, type FieldRow, type RunGameHandle, type RunHud, type Run
 import type { NoturnoLobbyEntry, NoturnoNet, NoturnoNetStatus, NoturnoResultRow, NoturnoStart } from "../engine/net"
 import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
+import { GodVoice } from "../../ui/quest/god-voice"
 
 /** O servidor recusou a entrada; a mensagem já vem traduzida. */
 export class JoinRefused extends Error {}
@@ -443,6 +444,7 @@ function RunScreen({
       {status === "ready" && hud && (
         <>
           <MinigameBanter running={hud.phase === "run"} body={body} />
+          <GodVoice god="noctis" show={!!result || !!final} />
           {/* borda vermelha: o próximo esbarrão derruba */}
           <div
             aria-hidden

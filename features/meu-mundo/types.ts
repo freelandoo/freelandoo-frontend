@@ -637,6 +637,10 @@ export interface StreetNpc {
   facing: number
   body: BodyId
   radius: number
+  /** lore v2 C2: em pé em cima de um pedestal (altura da base, m); sem = no chão */
+  y?: number
+  /** lore v2 C2: só aparece de noite (18h–6h, Brasília); sem = sempre */
+  hours?: "night"
 }
 
 /** Lugar de deitar numa cama (mm3d-13): o personagem fica no chão, no ponto; a pose traz a altura do colchão. */

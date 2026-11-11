@@ -36,6 +36,7 @@ import { FollowCamera } from "./camera"
 import { PlayerSelection, type PlayerTap } from "./player-select"
 import { NetClient, type NetCallbacks } from "./net"
 import { StatueGlow, isStatueGod } from "./statue-glow"
+import { brasiliaHour } from "./steampunk/atmosphere"
 import { MOTION, RIDE_KINDS, kindOfId, lerpAngle, paceSpeeds, type Intent, type MoveState, type RideKind } from "./motion"
 import { CarFleet, type CarPose } from "./cars"
 import { placeRider } from "./ride"
@@ -335,12 +336,29 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       if (side) statueGlow.set(god, side.s, side.g > 0 ? side.d / side.g : 0)
     }
   }
+  // Lore v2 C2: NPC com `hours: "night"` (o Arauto) só existe de noite: de dia some e
+  // não abre conversa (alcance -1). Fica em cima do pedestal (`y`), sem caixa própria.
+  const npcHours: { c: Character; it: { radius: number }; radius: number }[] = []
   const streetNpcs = (centerP?.center.npcs ?? nb?.npcs ?? []).map((n) => {
     const c = new Character(scene, lib, mats, n.body, null, false, "")
-    c.place(n.x, n.z, n.facing, 0)
-    world.interactables.push({ kind: "npc", id: `npc-${n.id}`, x: n.x, z: n.z, radius: n.radius, npc: n.id })
+    c.place(n.x, n.z, n.facing, n.y ?? 0)
+    const it = { kind: "npc" as const, id: `npc-${n.id}`, x: n.x, z: n.z, radius: n.radius, npc: n.id }
+    world.interactables.push(it)
+    if (n.hours === "night") npcHours.push({ c, it, radius: n.radius })
     return c
   })
+  let npcHoursAt = -Infinity
+  const applyNpcHours = (now: number) => {
+    if (!npcHours.length || now - npcHoursAt < 20_000) return
+    npcHoursAt = now
+    const h = brasiliaHour()
+    const on = h >= 18 || h < 6 // a noite dos monstros da rua (18h–6h)
+    for (const n of npcHours) {
+      n.c.setVisible(on)
+      n.it.radius = on ? n.radius : -1
+    }
+  }
+  applyNpcHours(performance.now())
   // Conferência (como __mmHouse): onde estou e se estou dirigindo.
   const probe = () => ({
     x: local.x,
@@ -769,6 +787,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     fleet.sync(net.cars(), dt, driving, driving && veh ? pose : null)
     if (driving && veh && drivingKind !== "car") placeRider(fleet, local.char, String(driving), drivingKind, pose.x, pose.z, pose.facing, pose.sp, dt)
     for (const c of streetNpcs) c.animate(dt, 0, 0)
+    applyNpcHours(now)
     for (const r of remotes.values()) {
       const rk = r.car ? kindOfId(r.car) : null
       const vp = rk ? fleet.poseOf(String(r.car)) : null

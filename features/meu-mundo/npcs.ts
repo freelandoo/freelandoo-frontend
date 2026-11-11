@@ -10,12 +10,14 @@
 
 import type { BodyId } from "./types"
 
-export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro"
+export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto"
 
 /** Onde a pessoa está na história quando abre a conversa. */
 export interface TalkMoment {
   chapter: string | null
   step: string | null
+  /** classe de quem ouve (C2: o líder do outro povo responde com desprezo) */
+  clan?: "raposa" | "vampiro" | null
 }
 
 export interface NpcLine {
@@ -46,6 +48,7 @@ export interface NpcDef {
   ambient?: boolean
 }
 
+const rival = (clan: "raposa" | "vampiro") => (m: TalkMoment) => m.clan === clan
 const at = (chapter: string, ...steps: string[]) => (m: TalkMoment) => m.chapter === chapter && (!steps.length || (m.step !== null && steps.includes(m.step)))
 
 export const NPCS: Record<NpcId, NpcDef> = {
@@ -99,6 +102,33 @@ export const NPCS: Record<NpcId, NpcDef> = {
     look: "",
     ambient: true,
     conversations: [{ id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] }],
+  },
+  // C2 (cap. 3, "Néctar"): os dois líderes da corrida do néctar (07-falas §4). Só
+  // ambiente: o cap. 3 não tem passo de conversa. No cap. 3 a fala inteira; depois,
+  // uma delas solta (mesmas respostas da personalidade: a conversa é a mesma). Quem
+  // é do outro povo ouve o desprezo. Corpo de classe (sem arte nova; a túnica dourada
+  // e a azul-noite pedem máscara de cor do corpo de classe, que ainda não existe).
+  // A Sacerdotisa do Sol: Bairro das Matas, em cima do pedestal do Aurion.
+  sacerdotisa: {
+    body: "raposa_adulta",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "rival", when: rival("vampiro"), lines: [{ key: "idle_vampiro" }] },
+      { id: "cap3", when: at("cap3"), lines: [{ key: "cap3_1" }, { key: "cap3_2" }, { key: "cap3_3" }] },
+      { id: "cap3", idle: true, lines: [{ key: "cap3_1" }, { key: "cap3_2" }, { key: "cap3_3" }] },
+    ],
+  },
+  // O Arauto da Lua: praça, em cima do pedestal de Morkhan, só de noite.
+  arauto: {
+    body: "vampiro_adulto",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "rival", when: rival("raposa"), lines: [{ key: "idle_raposa" }] },
+      { id: "cap3", when: at("cap3"), lines: [{ key: "cap3_1" }, { key: "cap3_2" }, { key: "cap3_3" }] },
+      { id: "cap3", idle: true, lines: [{ key: "cap3_1" }, { key: "cap3_2" }, { key: "cap3_3" }] },
+    ],
   },
 }
 

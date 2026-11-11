@@ -25,6 +25,7 @@ import { createGincanaGame, type BoardRow, type GincanaGameHandle, type GincanaH
 import type { GincanaLobbyEntry, GincanaNet, GincanaNetStatus, GincanaResultRow, GincanaStart } from "../engine/net"
 import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
+import { GodVoice } from "../../ui/quest/god-voice"
 
 /** Entrar numa largada em grupo (null = a sala não abriu). */
 export type GincanaJoin = (
@@ -402,6 +403,7 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
       {status === "ready" && hud && (
         <>
           <MinigameBanter running={hud.phase === "run" && !hud.finished} body={body} />
+          <GodVoice god="maru" show={!!result || !!final} />
           {/* posição, tempo e o placar ao vivo */}
           <div className="pointer-events-none absolute flex flex-col items-start gap-1.5" style={{ top: SAFE.top, left: SAFE.left }}>
             <div className="flex items-end gap-2 rounded-none px-3 py-1.5 leading-none" style={{ background: glass, border: `1px solid ${MM.border}` }}>

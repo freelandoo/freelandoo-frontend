@@ -50,11 +50,12 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
       if (!alive) return
       const quest = q && q.ok ? q.data.quest : null
       const cur = quest && quest.current ? quest.current : null
-      const conv = conversationFor(npc, { chapter: quest && !quest.locked ? quest.id : null, step: cur ? cur.key : null })
+      const clan = q && q.ok ? q.data.clan : null
+      const conv = conversationFor(npc, { chapter: quest && !quest.locked ? quest.id : null, step: cur ? cur.key : null, clan })
       // cada personalidade responde do seu jeito (sem personalidade, a conversa acaba no NPC)
       const temper = currentSoul()?.temper
       const replyKey = temper ? `npc_${npc}_${conv.id}_re_${temperSuffix(temper)}` : ""
-      const pages = talkPages(npc, conv, q && q.ok ? q.data.clan : null, PT[replyKey] ? replyKey : null)
+      const pages = talkPages(npc, conv, clan, PT[replyKey] ? replyKey : null)
       setReady({ pages, far: !!(m && !m.ok && cur && cur.check === `talk:${npc}`) })
     })()
     return () => {

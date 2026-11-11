@@ -42,6 +42,7 @@ import { abilityKit } from "../abilities/registry"
 import { probeClose, probeNote, probeOpen } from "../../crash-probe"
 import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
+import { GodVoice } from "../../ui/quest/god-voice"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
 export interface LaminasEncounter {
@@ -594,6 +595,8 @@ function LaminasScreen({
         </div>
       )}
 
+      {/* C2: a voz de Kragor no fim da luta do ringue (cap. 3 em diante) */}
+      {stage === "ring" && !tutorial && !portal && <GodVoice god="kragor" show={result !== null} />}
       {/* fim — mm3d-60: celebração steampunk (mesmos textos, mesmas ações) */}
       {result !== null && (
         <VictoryPanel
