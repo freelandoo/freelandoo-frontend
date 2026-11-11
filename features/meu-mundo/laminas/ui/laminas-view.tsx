@@ -42,7 +42,7 @@ import { abilityKit } from "../abilities/registry"
 import { probeClose, probeNote, probeOpen } from "../../crash-probe"
 import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
-import { GodVoice } from "../../ui/quest/god-voice"
+import { ClawWriting, EcoVoice, GodVoice } from "../../ui/quest/god-voice"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
 export interface LaminasEncounter {
@@ -611,6 +611,10 @@ function LaminasScreen({
 
       {/* C2: a voz de Kragor no fim da luta do ringue (cap. 3 em diante) */}
       {stage === "ring" && !tutorial && !portal && <GodVoice god="kragor" show={result !== null} />}
+      {/* C4: na Arena, o adversário é um Eco (cap. 6, passo "ecos") */}
+      {stage === "arena" && !tutorial && !portal && !opened && <EcoVoice show={started && result === null} />}
+      {/* C4: a Dama das Garras escreve na parede (cap. 7, passo "telhados"; Arena ou rua) */}
+      {choice.kind === "garras" && stage !== "ring" && !tutorial && !opened && <ClawWriting fighting={started && result === null} won={result === true} />}
       {/* fim — mm3d-60: celebração steampunk (mesmos textos, mesmas ações) */}
       {result !== null && (
         <VictoryPanel

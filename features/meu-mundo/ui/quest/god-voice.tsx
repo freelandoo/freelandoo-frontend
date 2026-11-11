@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { getQuest } from "../../data"
-import { BASTOR_NAME_KEY, VOICE_MS, bastorLines, voiceKey, voiceNameKey, voiceOpen, type VoiceGod } from "../../god-voice"
+import { BASTOR_NAME_KEY, ECO_NAME_KEY, VOICE_MS, bastorLines, clawAfterWin, clawWritings, ecoLine, voiceKey, voiceNameKey, voiceOpen, type FightQuest, type VoiceGod } from "../../god-voice"
 import { AE, chamfer } from "../kit/aether-tokens"
 import { archivo } from "../status/evo-skin"
 import TEXT from "./god-voice-text.json"
@@ -129,4 +129,89 @@ export function GodVoice({ god, show }: { god: VoiceGod; show: boolean }) {
 
   if (!line || !show) return null
   return <VoiceBubble name={tx(t, voiceNameKey(god))} line={tx(t, line)} top={6} />
+}
+
+/** O capítulo e a classe de quem luta (uma consulta por luta; falhou = ninguém fala). */
+async function fightQuest(): Promise<{ q: FightQuest | null; clan: "raposa" | "vampiro" | null }> {
+  const tk = getToken()
+  const r = tk ? await getQuest(tk) : null
+  return r && r.ok ? { q: r.data.quest, clan: r.data.clan } : { q: null, clan: null }
+}
+
+/**
+ * C4 (cap. 6): o Eco da ponte fala quando a luta da Arena começa (`show` = a luta
+ * começou), uma vez por luta, só no passo "ecos". Mesma moldura da voz dos deuses.
+ */
+export function EcoVoice({ show }: { show: boolean }) {
+  const t = useTranslations("MeuMundo") as T
+  const [line, setLine] = useState<string | null>(null)
+  const spoke = useRef(false)
+
+  useEffect(() => {
+    if (!show || spoke.current) return
+    spoke.current = true
+    void fightQuest().then(({ q }) => setLine(ecoLine(q)))
+  }, [show])
+
+  useEffect(() => {
+    if (!line) return
+    const id = setTimeout(() => setLine(null), VOICE_MS)
+    return () => clearTimeout(id)
+  }, [line])
+
+  if (!line || !show) return null
+  return <VoiceBubble name={tx(t, ECO_NAME_KEY)} line={tx(t, line)} top={96} />
+}
+
+/** Quanto tempo cada frase riscada fica na parede (ms). */
+const CLAW_MS = 5_000
+
+/**
+ * C4 (cap. 7): a Dama das Garras escreve. Durante a luta (`fighting`), as duas frases
+ * riscadas, uma depois da outra; depois da vitória (`won`), a terceira, pela classe.
+ * Só no passo "telhados". PROVISÓRIO: letra riscada sobre uma faixa de pedra, até a
+ * arte da parede com escrita de garra (Alex, roteiro §4).
+ */
+export function ClawWriting({ fighting, won }: { fighting: boolean; won: boolean }) {
+  const t = useTranslations("MeuMundo") as T
+  const [got, setGot] = useState<{ during: string[]; after: string | null } | null>(null)
+  const [i, setI] = useState(0)
+  const asked = useRef(false)
+
+  useEffect(() => {
+    if (!fighting || asked.current) return
+    asked.current = true
+    void fightQuest().then(({ q, clan }) => setGot({ during: clawWritings(q), after: clawAfterWin(q, clan) }))
+  }, [fighting])
+
+  useEffect(() => {
+    if (!got || !fighting || i >= got.during.length) return
+    const id = setTimeout(() => setI((n) => n + 1), CLAW_MS)
+    return () => clearTimeout(id)
+  }, [got, fighting, i])
+
+  const key = won ? got?.after ?? null : fighting && got && i < got.during.length ? got.during[i] : null
+  if (!key) return null
+  return (
+    <div className="pointer-events-none fixed inset-x-0 z-[96] flex justify-center px-4" style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 96px)" }} role="status" aria-live="polite">
+      <div
+        key={key}
+        className="w-full max-w-[520px] px-5 py-4 text-center"
+        style={{
+          background: "linear-gradient(180deg, rgba(58,52,60,0.9), rgba(30,26,34,0.9))",
+          boxShadow: "inset 0 0 0 1px rgba(192,92,255,0.35), inset 0 -6px 18px rgba(0,0,0,0.5)",
+          clipPath: chamfer(AE.cut.card),
+          animation: `mm-claw ${CLAW_MS}ms ${AE.ease} both`,
+        }}
+      >
+        <p
+          className="text-[26px] font-black uppercase leading-tight tracking-[0.08em] sm:text-[32px]"
+          style={{ color: "#E8D2FF", fontFamily: "Impact, 'Arial Narrow', sans-serif", transform: "rotate(-2deg) skewX(-8deg)", textShadow: "0 0 10px rgba(192,92,255,0.75), 2px 2px 0 rgba(0,0,0,0.6)" }}
+        >
+          {tx(t, key)}
+        </p>
+      </div>
+      <style>{`@keyframes mm-claw { 0% { opacity: 0; clip-path: inset(0 100% 0 0) } 25% { opacity: 1; clip-path: inset(0 0 0 0) } 88% { opacity: 1 } 100% { opacity: ${won ? 1 : 0} } }`}</style>
+    </div>
+  )
 }

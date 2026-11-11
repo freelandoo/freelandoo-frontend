@@ -10,7 +10,7 @@
 
 import type { BodyId } from "./types"
 
-export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto" | "forjador" | "armeiro" | "bibliotecaria"
+export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto" | "forjador" | "armeiro" | "bibliotecaria" | "ciborgue" | "fulvo"
 
 /** Onde a pessoa está na história quando abre a conversa. */
 export interface TalkMoment {
@@ -76,6 +76,14 @@ export const NPCS: Record<NpcId, NpcDef> = {
         when: at("cap5", "numeros"),
         lines: [{ key: "numeros_you", you: true }, { key: "numeros_1" }, { key: "numeros_2" }, { key: "numeros_you2", me: true }, { key: "numeros_3" }, { key: "numeros_4" }],
       },
+      // C4 (cap. 7): por que você foi congelado. A pergunta de quem joga é fixa; a
+      // personalidade responde no fim, ao "você é a cola"
+      {
+        id: "material",
+        when: at("cap7", "material"),
+        lines: [{ key: "material_1" }, { key: "material_2" }, { key: "material_you", me: true }, { key: "material_3" }, { key: "material_4" }, { key: "material_5" }],
+      },
+      { id: "cap7", when: at("cap7"), idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }, { key: "idle_3" }] },
       { id: "sempre", lines: [{ key: "sempre_1" }] },
     ],
   },
@@ -170,6 +178,32 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ambient: true,
     conversations: [
       { id: "ninho", when: at("cap5", "ninho"), lines: [{ key: "ninho_1" }, { key: "ninho_2" }], archive: "registro_ninho" },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
+  // C4 (cap. 6, 07-falas §7): o Ciborgue treina sozinho no fundo da Arena das Lâminas
+  // (meuMundoCenter.js). No passo "porta_azul" a conversa inteira; a última fala é a
+  // memória de quem joga, pela classe (fixa); a personalidade comenta no fim.
+  ciborgue: {
+    body: "ciborgue",
+    look: "",
+    conversations: [
+      {
+        id: "porta_azul",
+        when: at("cap6", "porta_azul"),
+        lines: [{ key: "porta_azul_1" }, { key: "porta_azul_2" }, { key: "porta_azul_3" }, { key: "porta_azul_4" }, { key: "porta_azul_you", me: true, byClan: true }],
+      },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
+  // Fulvo: Vampiro, líder da corrida do néctar; de noite, no pedestal de Morkhan (07-falas
+  // §12, pergunta 3). Corpo de Vampiro adulto: a farda velha das Raposas com medalhas
+  // é arte do Alex (o corpo de classe não tem máscara de cor).
+  fulvo: {
+    body: "vampiro_adulto",
+    look: "",
+    conversations: [
+      { id: "fulvo", when: at("cap6", "fulvo"), lines: [{ key: "fulvo_1", byClan: true }, { key: "fulvo_2" }, { key: "fulvo_3" }, { key: "fulvo_4" }, { key: "fulvo_5" }] },
       { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
     ],
   },

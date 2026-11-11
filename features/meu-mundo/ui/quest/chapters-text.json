@@ -123,7 +123,7 @@
   "qs_cap6_porta_azul_what": ["Ouça o Ciborgue", "Listen to the Cyborg", "Escucha al Ciborg"],
   "qs_cap6_porta_azul_where": ["Lâminas", "Blades", "Espadas"],
   "qs_cap6_fulvo_what": ["Encontre Fulvo", "Find Fulvo", "Encuentra a Fulvo"],
-  "qs_cap6_fulvo_where": ["Cidade Baixa, de noite", "Lowtown, at night", "Ciudad Baja, de noche"],
+  "qs_cap6_fulvo_where": ["Praça, de noite", "Plaza, at night", "Plaza, de noche"],
   "qs_cap6_forca_what": ["Leve um atributo a 120", "Raise an attribute to 120", "Lleva un atributo a 120"],
   "qs_cap6_forca_where": ["Treino", "Training", "Entrenamiento"],
 
@@ -237,5 +237,14 @@
   "qh_cap10_cow": ["Eu preferia não saber. Agora eu sei e não tem como esquecer.", "I'd rather not have known. Now I know and there's no forgetting it.", "Prefería no saberlo. Ahora lo sé y no hay forma de olvidarlo."],
   "qh_cap10_glu": ["Depois disso tudo eu mereço um banquete. E um abraço. Mas primeiro o banquete.", "After all this I deserve a feast. And a hug. But the feast first.", "Después de todo esto merezco un banquete. Y un abrazo. Pero primero el banquete."],
   "qh_cap10_kind": ["A verdade pesa, mas é melhor carregá-la juntos.", "The truth is heavy, but it is better carried together.", "La verdad pesa, pero es mejor cargarla juntos."],
-  "qh_cap10_comp": ["Fim da temporada? Tudo bem. Na próxima eu chego em primeiro de novo.", "End of the season? Fine. Next one I finish first again.", "¿Fin de la temporada? Bien. En la próxima vuelvo a llegar primero."]
+  "qh_cap10_comp": ["Fim da temporada? Tudo bem. Na próxima eu chego em primeiro de novo.", "End of the season? Fine. Next one I finish first again.", "¿Fin de la temporada? Bien. En la próxima vuelvo a llegar primero."],
+  "qs_cap6_aco_done": ["O Ciborgue cai de joelhos, mas não solta a arma. Ele olha para você como quem tenta lembrar onde já viu esse rosto.", "The Cyborg falls to his knees but doesn't let go of his weapon. He looks at you like someone trying to remember where he's seen that face.", "El Cíborg cae de rodillas, pero no suelta el arma. Te mira como quien intenta recordar dónde ha visto esa cara."],
+  "qs_cap6_porta_azul_done_vampiro": ["Memória: você segura a maçaneta. Lá dentro, alguém conta até onze. Você era guarda. Ouviu os onze dias. Não fez nada.", "Memory: you're holding the doorknob. Inside, someone counts to eleven. You were a guard. You heard all eleven days. You did nothing.", "Recuerdo: sostienes el picaporte. Adentro, alguien cuenta hasta once. Eras guardia. Oíste los once días. No hiciste nada."],
+  "qs_cap6_fulvo_done_raposa": ["Memória: \"Ponte da Maré. Sem reforço.\" Você ouviu a ordem. Achou estranho. Bateu continência.", "Memory: \"Tide Bridge. No reinforcements.\" You heard the order. You found it strange. You saluted.", "Recuerdo: \"Puente de la Marea. Sin refuerzos.\" Oíste la orden. Te pareció extraño. Hiciste el saludo."],
+  "qs_cap6_fulvo_done_vampiro": ["Fulvo é um herói para o seu povo. Você lembra da porta e não consegue sorrir de volta.", "Fulvo is a hero to your people. You remember the door and can't smile back.", "Fulvo es un héroe para tu pueblo. Recuerdas la puerta y no logras devolverle la sonrisa."],
+  "qc_cap6_hook": ["Você também está nessa história, e não do lado bom.", "You're in this story too, and not on the good side.", "Tú también estás en esta historia, y no del lado bueno."],
+  "qs_cap7_telhados_done_raposa": ["Memória: o telhado. A manhã. O arame na sua mão. Você segurou enquanto os outros costuravam. A Dama reconhece você pelo cheiro.", "Memory: the rooftop. The morning. The wire in your hand. You held on while the others sewed. The Lady recognizes you by your scent.", "Recuerdo: el tejado. La mañana. El alambre en tu mano. Sostuviste mientras los otros cosían. La Dama te reconoce por el olor."],
+  "qs_cap7_telhados_done_vampiro": ["A Dama era Vampira, do seu povo. Foram as Raposas que fizeram isso com ela. Pela primeira vez, você sente ódio de verdade.", "The Lady was a Vampire, one of your people. It was the Foxes who did this to her. For the first time, you feel real hatred.", "La Dama era Vampira, de tu pueblo. Fueron los Zorros quienes le hicieron eso. Por primera vez, sientes odio de verdad."],
+  "qs_cap7_mistura_done": ["Duas vidas viram uma. O tubo esquenta na sua mão como se reconhecesse você.", "Two lives become one. The tube warms in your hand as if it recognized you.", "Dos vidas se vuelven una. El tubo se calienta en tu mano como si te reconociera."],
+  "qc_cap7_hook": ["Ninguém congelou você para salvar você.", "Nobody froze you to save you.", "Nadie te congeló para salvarte."]
 }

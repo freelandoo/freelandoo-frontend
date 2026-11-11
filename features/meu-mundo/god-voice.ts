@@ -50,3 +50,37 @@ export function bastorLines(q: { chapter: number; locked: unknown } | null | und
   if (q && q.chapter === 5 && !q.locked) return ["qn_bastor_cap5_1", "qn_bastor_cap5_2"]
   return ["qn_bastor_idle_1"]
 }
+
+// ── C4 (cap. 6): o ECO da ponte, na Arena das Lâminas ─────────────────────────
+// Os adversários da Arena são Ecos (almas presas repetindo a última luta). No passo
+// "ecos" do cap. 6, o Eco da luta diz uma das frases da ponte quando a luta começa
+// (07-falas §7). Só apresentação: o passo é a vitória conferida pelo servidor.
+export const ECO_NAME_KEY = "qn_eco_name"
+export const ECO_LINES = ["qn_eco_1", "qn_eco_2", "qn_eco_3"] as const
+
+/** O pedaço do GET /quest que decide quem fala na luta. */
+export interface FightQuest {
+  id: string
+  locked: unknown
+  current: { key: string } | null
+}
+const atStep = (q: FightQuest | null | undefined, chapter: string, step: string) => !!q && q.id === chapter && !q.locked && !!q.current && q.current.key === step
+
+/** A fala do Eco nesta luta (chave i18n) ou null fora do passo. */
+export function ecoLine(q: FightQuest | null | undefined, rnd: () => number = Math.random): string | null {
+  if (!atStep(q, "cap6", "ecos")) return null
+  return ECO_LINES[Math.min(ECO_LINES.length - 1, Math.floor(rnd() * ECO_LINES.length))]
+}
+
+// ── C4 (cap. 7): a Dama das Garras não fala; ESCREVE ─────────────────────────
+// No passo "telhados", a luta contra ela mostra o que ela risca na parede (as duas
+// frases, uma depois da outra) e, se quem joga vence, a terceira, pela classe de quem
+// lê: "VOCÊ." para a Raposa, "FORAM ELES." para o Vampiro (07-falas §8).
+/** O que ela escreve durante a luta (chaves i18n, em ordem) — vazio fora do passo. */
+export function clawWritings(q: FightQuest | null | undefined): string[] {
+  return atStep(q, "cap7", "telhados") ? ["qw_garras_1", "qw_garras_2"] : []
+}
+/** O que ela escreve depois da derrota dela, ou null fora do passo. */
+export function clawAfterWin(q: FightQuest | null | undefined, clan: "raposa" | "vampiro" | null): string | null {
+  return atStep(q, "cap7", "telhados") ? `qw_garras_3_${clan === "vampiro" ? "vampiro" : "raposa"}` : null
+}

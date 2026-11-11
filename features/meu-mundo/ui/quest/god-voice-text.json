@@ -22,5 +22,13 @@
   "qn_bastor_name": ["Bastor", "Bastor", "Bastor"],
   "qn_bastor_cap5_1": ["Meus. Não toca.", "Mine. Don't touch.", "Míos. No toques."],
   "qn_bastor_cap5_2": ["Os de ferro gritam de noite. Eu canto para eles. Eles gostam.", "The iron ones scream at night. I sing to them. They like it.", "Los de hierro gritan de noche. Yo les canto. Les gusta."],
-  "qn_bastor_idle_1": ["Bicho é meu. O que não é bicho, eu apago.", "Beasts are mine. What isn't a beast, I wipe out.", "Las bestias son mías. Lo que no es bestia, lo borro."]
+  "qn_bastor_idle_1": ["Bicho é meu. O que não é bicho, eu apago.", "Beasts are mine. What isn't a beast, I wipe out.", "Las bestias son mías. Lo que no es bestia, lo borro."],
+  "qn_eco_name": ["Eco da ponte", "Echo of the bridge", "Eco del puente"],
+  "qn_eco_1": ["Segura a ponte. O reforço vem.", "Hold the bridge. Reinforcements are coming.", "Aguanta el puente. Los refuerzos vienen."],
+  "qn_eco_2": ["O reforço vem. O reforço vem. O reforço...", "Reinforcements are coming. Reinforcements are coming. Reinforce...", "Los refuerzos vienen. Los refuerzos vienen. Los refuer..."],
+  "qn_eco_3": ["Comandante? Comandante, eles estão do outro lado.", "Commander? Commander, they're on the other side.", "¿Comandante? Comandante, están del otro lado."],
+  "qw_garras_1": ["EU ERA A VOZ DO MEU POVO. TIRARAM.", "I WAS THE VOICE OF MY PEOPLE. THEY TOOK IT.", "YO ERA LA VOZ DE MI PUEBLO. ME LA QUITARON."],
+  "qw_garras_2": ["TIRA O CAPUZ.", "TAKE OFF THE HOOD.", "QUÍTATE LA CAPUCHA."],
+  "qw_garras_3_raposa": ["VOCÊ.", "YOU.", "TÚ."],
+  "qw_garras_3_vampiro": ["FORAM ELES.", "IT WAS THEM.", "FUERON ELLOS."]
 }
