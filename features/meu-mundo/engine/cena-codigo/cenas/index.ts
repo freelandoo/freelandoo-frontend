@@ -11,6 +11,9 @@ import * as floresta3 from "./floresta-3"
 import * as canion1 from "./canion-1"
 import * as canion2 from "./canion-2"
 import * as canion3 from "./canion-3"
+import * as gelo1 from "./gelo-1"
+import * as gelo2 from "./gelo-2"
+import * as gelo3 from "./gelo-3"
 
 export interface CenaMeta {
   ceu: RGB
@@ -26,6 +29,8 @@ export interface CenaMeta {
   luz?: { hemi?: number; sol?: number; ceu?: RGB; chao?: RGB; solCor?: RGB }
   /** Lua/sol desenhado no céu (disco aceso, sem névoa): direção (para onde olhar), raio angular, cor. */
   astro?: { dir: RGB; r: number; cor: RGB }
+  /** Aurora no céu (cortinas de luz sem névoa). */
+  aurora?: boolean
 }
 
 export interface CenaModulo {
@@ -42,4 +47,7 @@ export const CENAS: Record<string, CenaModulo> = {
   "canion-1": canion1,
   "canion-2": canion2,
   "canion-3": canion3,
+  "gelo-1": gelo1,
+  "gelo-2": gelo2,
+  "gelo-3": gelo3,
 }

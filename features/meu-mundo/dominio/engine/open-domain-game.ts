@@ -43,7 +43,7 @@ import type { BodyId, InteriorDef } from "../../types"
 import type { DomainInfo, DomainScene } from "../../data"
 import { GodFigure, GOD_HUNT } from "../../engine/god-view"
 import type { GodId } from "../../laminas/sim/fight"
-import { CENAS, astroDaCena, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
+import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
 
 /** Alcance do "Lutar", das passagens e do aviso de selado (m). */
 const REACH = 3.4
@@ -167,6 +167,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   sun.intensity = luz?.sol ?? 0.55
   if (luz?.solCor) sun.diffuse = new Color3(luz.solCor[0], luz.solCor[1], luz.solCor[2])
   const dropAstro = astroDaCena(scene, meta)
+  const dropAurora = auroraDaCena(scene, meta)
 
   /** Blocos: centro + as duas malhas (o pano de fundo de longe sai: o de perto basta). */
   const S = cena.cell
@@ -675,6 +676,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       near0.dispose()
       far1.dispose()
       dropAstro()
+      dropAurora()
       fallbackMat.dispose()
       shadowMat.dispose()
       scene.dispose()

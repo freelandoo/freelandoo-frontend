@@ -4,6 +4,8 @@
 // `kit-natureza.ts` (mesa, árvore, pedra), `kit-cidade.ts` (torre, rua). Skill `meu-mundo-cenario-codigo`.
 import type { Scene } from "@babylonjs/core/scene"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
+import { Mesh } from "@babylonjs/core/Meshes/mesh"
+import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
@@ -80,5 +82,52 @@ export function astroDaCena(scene: Scene, meta: CenaMeta): () => void {
     halo.dispose()
     mat.dispose()
     hm.dispose()
+  }
+}
+
+/**
+ * Aurora (Mar de Gelo, cena 3): cortinas de luz verde → violeta no céu, sem névoa, que acompanham a
+ * câmera. Devolve o `dispose`.
+ */
+export function auroraDaCena(scene: Scene, meta: CenaMeta): () => void {
+  if (!meta.aurora) return () => {}
+  const m = new Mesh("cena-aurora", scene)
+  const p: number[] = [], col: number[] = [], idx: number[] = []
+  const curtains = [[-0.9, 260, 70], [-0.2, 270, 85], [0.55, 255, 75]] as const
+  for (const [a0, D, y0] of curtains) {
+    const base = p.length / 3
+    const n = 26
+    for (let i = 0; i <= n; i++) {
+      const a = a0 + (i / n) * 1.1
+      const wav = Math.sin(i * 0.7 + a0 * 3) * 18
+      const x = Math.sin(a) * (D + wav), z = Math.cos(a) * (D + wav)
+      const h = 55 + Math.sin(i * 0.45 + a0) * 20
+      p.push(x, y0, z, x, y0 + h, z)
+      col.push(0.35, 1, 0.6, 0.55, 0.7, 0.4, 1, 0)
+    }
+    for (let i = 0; i < n; i++) {
+      const k = base + i * 2
+      idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2, k, k + 2, k + 1, k + 1, k + 2, k + 3)
+    }
+  }
+  const vd = new VertexData()
+  vd.positions = p
+  vd.colors = col
+  vd.indices = idx
+  vd.applyToMesh(m)
+  const mat = new StandardMaterial("cena-aurora", scene)
+  mat.disableLighting = true
+  mat.emissiveColor = new Color3(1, 1, 1)
+  mat.backFaceCulling = false
+  mat.fogEnabled = false
+  mat.alpha = 0.99
+  m.hasVertexAlpha = true
+  m.material = mat
+  m.applyFog = false
+  m.infiniteDistance = true
+  m.isPickable = false
+  return () => {
+    m.dispose()
+    mat.dispose()
   }
 }
