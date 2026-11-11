@@ -12,7 +12,7 @@ import { useEffect, useRef } from "react"
 import type { MMNotice } from "../../types"
 import type { LifeSoul } from "../../soul"
 import { CHATTER_GAP_MS, brtHour, chatterLine, chatterNotice, isNight, type ChatterMoment } from "./chatter"
-import { banterGate, banterLine, emptyBanterMemory, onBanter } from "../../banter"
+import { banterGate, banterLine, emptyBanterMemory, isMinigameTopic, onBanter } from "../../banter"
 
 type Tr = (key: string, fallback: string) => string
 const ENTER_DELAY_MS = 8_000
@@ -57,6 +57,8 @@ export function useChatter(soul: LifeSoul | null, t: Tr, push: (n: MMNotice) => 
       if (!s) return
       const now = Date.now()
       for (const e of events) {
+        // dentro do minijogo quem fala é o balão de lá (minigame-banter.tsx)
+        if (isMinigameTopic(e.topic)) continue
         const line = banterLine(s.temper, e, tRef.current)
         if (!line || !banterGate(memory.current, e, now)) continue
         st.last = now

@@ -62,6 +62,7 @@ import {
 import { bodyStride, myHeight, setMyHeight } from "../heights"
 import { setScreenAnchor } from "./screen-anchor"
 import { GainPillar, setGainFx } from "./gain-pillar"
+import { emitBanter } from "../banter"
 
 export interface HouseGameOptions {
   canvas: HTMLCanvasElement
@@ -680,6 +681,8 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     if (next?.id !== nearby?.id) {
       nearby = next
       opts.onNearbyChange?.(nearby)
+      // chegou na geladeira: ele comenta (banter.ts)
+      if (nearby?.kind === "fridge") emitBanter({ topic: "fridge", target: `fridge:${nearby.id}` })
     }
     if (input.interactQueued) {
       input.interactQueued = false

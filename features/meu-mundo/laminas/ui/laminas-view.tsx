@@ -40,6 +40,8 @@ import { SkillHud } from "./skill-hud"
 import { HallOfFame } from "./hall-of-fame"
 import { abilityKit } from "../abilities/registry"
 import { probeClose, probeNote, probeOpen } from "../../crash-probe"
+import { emitMinigame } from "../../banter"
+import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
 export interface LaminasEncounter {
@@ -261,6 +263,15 @@ function LaminasScreen({
   const gameRef = useRef<LaminasGameHandle | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [hud, setHud] = useState<LaminasHud | null>(null)
+  // o personagem comenta a luta (banter.ts): vida no fim e golpe vindo
+  const lowHp = !!hud && !hud.over && hud.hpMax > 0 && hud.hp / hud.hpMax < 0.3
+  const danger = !!hud && !hud.over && hud.danger
+  useEffect(() => {
+    if (lowHp) emitMinigame("luta", { kind: "low" })
+  }, [lowHp])
+  useEffect(() => {
+    if (danger) emitMinigame("luta", { kind: "danger" })
+  }, [danger])
   const [sheet, setSheet] = useState<FightSheet | null>(null)
   const [started, setStarted] = useState(false)
   const begin = useCallback(() => {
@@ -536,6 +547,7 @@ function LaminasScreen({
       {/* 2026-11-03: botões de habilidade no desenho da referência do Alex (no computador com as teclas) */}
       {status === "ready" && started && result === null && hud && (
         <>
+          <MinigameBanter running={!hud.over} />
           {isTouch && <Joystick gameRef={gameRef} skin="gold" />}
           <SkillHud
             kit={abilityKit(body, stage)}

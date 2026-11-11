@@ -30,6 +30,8 @@ import type { JetpackNet, JetpackNetStatus, JetpackResultRow, JetpackStart } fro
 import { phaseArt, starsFor } from "../engine/phase-art"
 import { phaseRule, type PhaseId } from "../sim/phases"
 import { PhaseSelect, type PhaseRecord } from "./phase-select"
+import { emitMinigame } from "../../banter"
+import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 
 /** Entrar numa sala (sozinho = sala só sua) da fase escolhida. null = não abriu. */
 export type JetpackJoin = (
@@ -242,6 +244,7 @@ function JetScreen({ body, look, name, phase, mp, onAgain, onMenu }: { body: Bod
     }
     const onNotice = (n: JetNotice) => {
       if (!alive) return
+      emitMinigame("jetpack", n) // o personagem comenta a jogada (banter.ts)
       const tt = textRef.current
       if (n.kind === "can") say(tt("jetToastCan", "+COMBUSTÍVEL"), "fuel", 700)
       else if (n.kind === "low") say(tt("jetToastLow", "Pouco combustível! Pegue os galões"), "bad", 1800)
@@ -316,6 +319,7 @@ function JetScreen({ body, look, name, phase, mp, onAgain, onMenu }: { body: Bod
 
       {status === "ready" && hud && (
         <>
+          <MinigameBanter running={hud.phase === "run"} body={body} />
           {/* borda vermelha: tanque quase seco */}
           <div aria-hidden className="pointer-events-none absolute inset-0" style={{ opacity: lowFuel && !result ? 1 : 0, transition: "opacity 300ms", boxShadow: "inset 0 0 90px rgba(255,60,40,0.5)" }} />
 

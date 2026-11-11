@@ -35,6 +35,8 @@ import { LocalPort, type PaintPort } from "../engine/port"
 import { CAT_ASSETS } from "../engine/cat-herd"
 import { PAINT, PAINT_COLORS, TUNING, type PaintColor, type PaintMode } from "../sim/tuning"
 import { capsuleGive } from "../sim/match"
+import { emitMinigame } from "../../banter"
+import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 
 export type PaintNetStatus = "connecting" | "online" | "reconnecting" | "replaced" | "offline" | "stale"
 export type PaintJoin = (
@@ -366,6 +368,7 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
     }
     const onNotice = (n: PaintNotice) => {
       if (!alive) return
+      emitMinigame("paint", n) // o personagem comenta a jogada (banter.ts)
       const tt = textRef.current
       switch (n.kind) {
         case "cat":
@@ -487,6 +490,7 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
 
       {status === "ready" && hud && (
         <>
+          <MinigameBanter running={hud.phase === "play"} body={body} />
           <Hud hud={hud} touch={isTouch} hurt={hurt} body={body} onLeave={onLeave} />
           {isTouch ? <TouchControls gameRef={gameRef} hud={hud} /> : <DesktopColors hud={hud} onPick={(c) => gameRef.current?.selectColor(c)} />}
           {toast && (

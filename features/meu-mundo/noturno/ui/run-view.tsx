@@ -37,6 +37,8 @@ import { RouteSelect, type RouteRecord } from "./route-select"
 import { CRASH_TEXT } from "../engine/route-art"
 import { createRunGame, type FieldRow, type RunGameHandle, type RunHud, type RunNotice, type RunResult } from "../engine/run-game"
 import type { NoturnoLobbyEntry, NoturnoNet, NoturnoNetStatus, NoturnoResultRow, NoturnoStart } from "../engine/net"
+import { emitMinigame } from "../../banter"
+import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 
 /** O servidor recusou a entrada; a mensagem já vem traduzida. */
 export class JoinRefused extends Error {}
@@ -344,6 +346,7 @@ function RunScreen({
     }
     const onNotice = (n: RunNotice) => {
       if (!alive) return
+      emitMinigame("noturno", n) // o personagem comenta a jogada (banter.ts)
       const tt = textRef.current
       switch (n.kind) {
         case "trick":
@@ -439,6 +442,7 @@ function RunScreen({
 
       {status === "ready" && hud && (
         <>
+          <MinigameBanter running={hud.phase === "run"} body={body} />
           {/* borda vermelha: o próximo esbarrão derruba */}
           <div
             aria-hidden
