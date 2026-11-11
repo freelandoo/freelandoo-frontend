@@ -39,7 +39,7 @@ import type {
 } from "./types"
 import type { Clan, Sex } from "./classes"
 import type { BodyId, PracticeAttr } from "./types"
-import type { BossId, FightTemper, GearBonus, MobKind } from "./laminas/sim/fight"
+import type { BossId, FightTemper, GearBonus, GodId, MobKind } from "./laminas/sim/fight"
 import type { FightFrames } from "./laminas/sim/replay"
 
 export type NeighborhoodResult =
@@ -202,7 +202,7 @@ export const postEndVisit = (token: string, id: string) =>
 export const getLife = (token: string) => call<LifeFull>(token, "GET", "/life")
 
 // ═══ mm3d-59: luta conferida pelo servidor, recibos e XP de aventura ═══════
-export type FightOrigin = "laminas" | "boxe" | "mob" | "tutorial" | "domain"
+export type FightOrigin = "laminas" | "boxe" | "mob" | "tutorial" | "domain" | "god"
 export interface FightTicket {
   ticket: string
   origin: FightOrigin
@@ -226,6 +226,8 @@ export interface FightTicket {
     sector?: number | null
     /** Lore v2 D4: o deus chefão do setor 10 (luta em fases; a regra lê daqui). */
     boss?: BossId | null
+    /** Lore v2 N4: o deus solto (a regra dá a ele 2× a ficha de quem enfrenta). */
+    god?: GodId | null
     body?: string | null
     appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null }
     /** mm3d-72: personalidade e afeto (probabilidades da luta). */
@@ -285,7 +287,10 @@ export const advXpOf = (a: AdventureState) => ({
 })
 /** A sala avisou que o treinador ganhou XP (cuidar/treinar): `detail` = TrainerDelta. */
 export const TRAINER_CHANGED = "mm:trainer-changed"
-export const startFight = (token: string, body: { origin: FightOrigin; kind?: MobKind; level?: number; mobId?: number; domain?: DomainId; sector?: number }) =>
+export const startFight = (
+  token: string,
+  body: { origin: FightOrigin; kind?: MobKind; level?: number; mobId?: number; domain?: DomainId; sector?: number; god?: GodId; where?: "street" | "domain" },
+) =>
   call<{ fight: FightTicket; abandoned: Receipt[] }>(token, "POST", "/fight/start", body)
 export const finishFight = (token: string, ticket: string, frames: FightFrames) =>
   call<{ receipt: Receipt; replay: boolean }>(token, "POST", "/fight/finish", { ticket, frames })
@@ -567,6 +572,29 @@ export interface StatueDelivery extends StatueRace {
   filled?: boolean
 }
 export const getStatueRace = (token: string) => call<StatueRace>(token, "GET", "/estatua")
+
+// ═══ Lore v2 N4: o deus solto ═══════════════════════════════════════════════
+/** Uma caçada (estátua cheia no domingo → o deus daquele povo caça a raça oposta). */
+export interface GodHunt {
+  id: number
+  god: GodId
+  /** O povo que encheu a estátua (o do deus). */
+  clan: Clan
+  /** A raça que ele caça. */
+  prey: Clan
+  looseAt: string
+}
+export interface GodState {
+  loose: (GodHunt & { huntsMe: boolean })[]
+  upcoming: GodHunt[]
+  fallen: { god: GodId; clan: Clan; defeatedAt: string; winner: string | null }[]
+  me: { clan: Clan | null }
+  peer: number
+}
+/** Aviso do socket `mm:god` (todo mundo): soltou ou caiu. */
+export type GodWire = ({ e: "loose" } & GodHunt) | { e: "down"; god: GodId; name: string }
+export const getGods = (token: string) => call<GodState>(token, "GET", "/deus")
+export const releaseGod = (token: string, clan: Clan) => call<{ hunt: GodHunt; fresh: boolean }>(token, "POST", "/deus/soltar", { clan })
 export const deliverNectar = (token: string, key: string) => call<StatueDelivery>(token, "POST", "/estatua/entregar", { key })
 export interface StatueConfig {
   baseL: number

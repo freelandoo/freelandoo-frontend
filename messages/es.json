@@ -12322,7 +12322,14 @@
     "npc_nivea_memoria_re_comp": "Voy a jugar. Y voy a ganar. Pero esta vez decido yo qué hacer con el premio.",
     "qv_noctis_cap10_1": "Mi padre, mi tío. Que los dos duerman.",
     "qv_noctis_cap10_2": "Corre. Juega. Dale néctar a los dos. Cuanto más empatados, más gano yo.",
-    "qv_noctis_cap10_3": "Los Vampiros le rezan a él de día. De noche, me obedecen a mí. Nadie notó nunca la diferencia."
+    "qv_noctis_cap10_3": "Los Vampiros le rezan a él de día. De noche, me obedecen a mí. Nadie notó nunca la diferencia.",
+    "godHereAurion": "¡Aurion anda suelto y caza Vampiros! Corre más que tú.",
+    "godHereMorkhan": "¡Morkhan anda suelto y caza Zorros! Corre más que tú.",
+    "godCaught": "¡{god} te alcanzó! Tiene el doble de tu fuerza.",
+    "godDown": "¡{name} derrotó a {god}! El dios volvió a la estatua.",
+    "godFightFail": "La pelea con el dios no se abrió: {e}",
+    "godYouWon": "¡Derrotaste a {god}! Volvió a la estatua.",
+    "godYouLost": "{god} ganó. Solo perdiste energía; volverá a cazarte en un rato."
   },
   "Sports": {
     "eyebrow": "Deportes",
@@ -12549,7 +12556,12 @@
     "Esse setor ainda está fechado": "Este sector todavía está cerrado",
     "Lugar desconhecido": "Lugar desconocido",
     "Chegue à clareira primeiro": "Llega primero al claro",
-    "Equipamento não encontrado": "Equipo no encontrado"
+    "Equipamento não encontrado": "Equipo no encontrado",
+    "Esse deus não está solto": "Ese dios no está suelto",
+    "Esse deus não caça o seu povo": "Ese dios no caza a tu pueblo",
+    "O deus não te alcançou": "El dios no te alcanzó",
+    "Escolha a sua classe antes": "Elige tu clase primero",
+    "Povo inválido": "Pueblo no válido"
   },
   "Moedas": {
     "walletTitle": "Cartera",

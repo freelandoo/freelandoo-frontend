@@ -18,6 +18,22 @@ import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { MonsterModel } from "../laminas/engine/monster-view"
 import { MOB_KINDS, type MobKind } from "../laminas/sim/fight"
 import type { Interactable } from "../types"
+import { GodFigure } from "./god-view"
+import { godIdOf, type GodId } from "../laminas/sim/fight"
+
+/** Lore v2 N4: o deus solto na rua (a sala manda "gods": [deus, x, z, rumo, modo]). */
+interface GodView {
+  fig: GodFigure
+  x: number
+  z: number
+  facing: number
+  tx: number
+  tz: number
+  tf: number
+  speed: number
+  mode: number
+  seen: number
+}
 
 // 2026-11-03: o Golem de Pedra (`stone`) também anda na rua
 type MobKindCity = MobKind
@@ -91,6 +107,9 @@ interface View {
 
 export class CenterMobs {
   private readonly views = new Map<number, View>()
+  private readonly gods = new Map<GodId, GodView>()
+  private godStamp = 0
+  private enabled = true
   private time = 0
   private stamp = 0
   private readonly glowMat: StandardMaterial
@@ -155,8 +174,54 @@ export class CenterMobs {
     }
   }
 
+  /** N4: lista nova dos deuses soltos nesta sala: [deus, x, z, rumo, modo (0 anda, 1 caça, 2 luta)]. */
+  setGods(list: unknown) {
+    if (!Array.isArray(list)) return
+    const stamp = ++this.godStamp
+    for (const row of list) {
+      if (!Array.isArray(row) || row.length < 4) continue
+      const god = godIdOf(row[0])
+      const [x, z, f, mode] = [Number(row[1]), Number(row[2]), Number(row[3]), Number(row[4] ?? 0)]
+      if (!god || ![x, z, f].every(Number.isFinite)) continue
+      let v = this.gods.get(god)
+      if (!v) {
+        const fig = new GodFigure(this.scene, god)
+        fig.setVisible(this.enabled)
+        fig.setTagVisible(this.enabled && this.tagsOn)
+        v = { fig, x, z, facing: f, tx: x, tz: z, tf: f, speed: 0, mode, seen: stamp }
+        this.gods.set(god, v)
+      }
+      v.tx = x
+      v.tz = z
+      v.tf = f
+      v.mode = mode
+      v.seen = stamp
+    }
+    for (const [god, v] of this.gods) {
+      if (v.seen === stamp) continue
+      v.fig.dispose()
+      this.gods.delete(god)
+    }
+  }
+
+  /** N4: deuses na sala agora (para o personagem comentar e para conferência). */
+  godsSeen(x: number, z: number) {
+    return [...this.gods.entries()].map(([god, v]) => ({ god, mode: v.mode, d: Math.hypot(v.x - x, v.z - z) }))
+  }
+
   update(dt: number) {
     this.time += dt
+    for (const v of this.gods.values()) {
+      // o deus corre a 4,4 m/s: segue a posição da sala mais de perto que os monstros
+      const k = Math.min(1, dt * 6)
+      const nx = v.x + (v.tx - v.x) * k
+      const nz = v.z + (v.tz - v.z) * k
+      v.speed += (Math.hypot(nx - v.x, nz - v.z) / Math.max(dt, 1e-3) - v.speed) * Math.min(1, dt * 6)
+      v.x = nx
+      v.z = nz
+      v.facing += Math.atan2(Math.sin(v.tf - v.facing), Math.cos(v.tf - v.facing)) * k
+      v.fig.update(dt, v.x, v.z, v.facing, v.mode === 2 ? 0 : v.speed)
+    }
     for (const v of this.views.values()) {
       const k = Math.min(1, dt * 4)
       const nx = v.x + (v.tx - v.x) * k
@@ -190,10 +255,16 @@ export class CenterMobs {
   setTagsVisible(on: boolean) {
     this.tagsOn = on
     for (const v of this.views.values()) v.tag?.mesh.setEnabled(on)
+    for (const v of this.gods.values()) v.fig.setTagVisible(on && this.enabled)
   }
 
   /** Pausa o desenho (um minijogo cobre a tela). */
   setEnabled(on: boolean) {
+    this.enabled = on
+    for (const v of this.gods.values()) {
+      v.fig.setVisible(on)
+      v.fig.setTagVisible(on && this.tagsOn)
+    }
     for (const v of this.views.values()) {
       v.model.setVisible(on)
       v.glow.setEnabled(on)
@@ -208,6 +279,8 @@ export class CenterMobs {
       v.tag?.dispose()
     }
     this.views.clear()
+    for (const v of this.gods.values()) v.fig.dispose()
+    this.gods.clear()
     this.glowMat.dispose()
     this.glowTex.dispose()
   }

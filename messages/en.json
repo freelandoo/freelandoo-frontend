@@ -12342,7 +12342,14 @@
     "npc_nivea_memoria_re_comp": "I'll play. And I'll win. But this time I decide what to do with the prize.",
     "qv_noctis_cap10_1": "My father, my uncle. Let them both sleep.",
     "qv_noctis_cap10_2": "Run. Play. Give nectar to both. The closer the tie, the more I win.",
-    "qv_noctis_cap10_3": "The Vampires pray to him by day. By night, they obey me. No one ever noticed the difference."
+    "qv_noctis_cap10_3": "The Vampires pray to him by day. By night, they obey me. No one ever noticed the difference.",
+    "godHereAurion": "Aurion is loose and hunting Vampires! He runs faster than you.",
+    "godHereMorkhan": "Morkhan is loose and hunting Foxes! He runs faster than you.",
+    "godCaught": "{god} caught you! He has twice your strength.",
+    "godDown": "{name} defeated {god}! The god went back to the statue.",
+    "godFightFail": "The fight with the god didn't open: {e}",
+    "godYouWon": "You defeated {god}! He went back to the statue.",
+    "godYouLost": "{god} won. You only lost energy; he'll be hunting you again soon."
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -12569,7 +12576,12 @@
     "Esse setor ainda está fechado": "This sector is still closed",
     "Lugar desconhecido": "Unknown place",
     "Chegue à clareira primeiro": "Reach the clearing first",
-    "Equipamento não encontrado": "Equipment not found"
+    "Equipamento não encontrado": "Equipment not found",
+    "Esse deus não está solto": "That god isn’t loose",
+    "Esse deus não caça o seu povo": "That god doesn’t hunt your people",
+    "O deus não te alcançou": "The god hasn’t caught you",
+    "Escolha a sua classe antes": "Choose your class first",
+    "Povo inválido": "Invalid people"
   },
   "Moedas": {
     "walletTitle": "Wallet",

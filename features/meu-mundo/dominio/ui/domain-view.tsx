@@ -15,7 +15,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DoorOpen, Footprints, Shield, Swords } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { enterDomain, equipGear, getDomains, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainPact, type DomainInfo, type FightTicket, type Receipt } from "../../data"
+import { onRealtime } from "@/lib/realtime"
+import { GOD_HUNT, GOD_NAME } from "../../engine/god-view"
+import { godIdOf, type GodId } from "../../laminas/sim/fight"
+import { enterDomain, equipGear, getDomains, getGods, type GodWire, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainPact, type DomainInfo, type FightTicket, type Receipt } from "../../data"
 import { createDomainGame, passageKitOf, sceneKitOf, type DomainGameHandle, type DomainNear } from "../engine/domain-game"
 import { Joystick, SAFE, SceneCurtain } from "../../ui/meu-mundo-view"
 import { EvoButton, EvoToast } from "../../ui/hud/hud-kit"
@@ -52,6 +55,11 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const [fight, setFight] = useState<{ ticket: FightTicket; sector: number; foe: string; foeBody: BodyId | null; foeRig: boolean } | null>(null)
   const [opening, setOpening] = useState(false)
   const [news, setNews] = useState<{ text: string; id: number } | null>(null)
+  // Lore v2 N4: o deus solto que caça o povo desta conta (caça também aqui dentro)
+  const [god, setGod] = useState<GodId | null>(null)
+  const godDelay = useRef<number>(GOD_HUNT.DOMAIN_DELAY_MS)
+  const godFightRef = useRef<GodId | null>(null)
+  const sectorRef = useRef(0)
   const [isTouch, setIsTouch] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<DomainGameHandle | null>(null)
@@ -90,6 +98,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
     infoRef.current = info
   }, [info])
   const askFight = useRef<(s: number) => void>(() => {})
+  const askGod = useRef<(g: GodId) => void>(() => {})
   const cross = useRef<() => void>(() => {})
   useEffect(() => {
     const canvas = canvasRef.current
@@ -112,6 +121,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         onSector: (s) => alive && setSector(s),
         onPlace: (p) => alive && setPlace(p),
         onSpot: (s) => alive && setSpot(s),
+        onGodCatch: (g) => alive && askGod.current(g),
         onInteract: (n) => {
           if (!alive) return
           if (n.kind === "exit") onExit()
@@ -135,6 +145,29 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
     }
     // a cena remonta ao trocar de Domínio, ao voltar da luta e no "tentar de novo"
   }, [ready, body, look, spawn, attempt, onExit])
+
+  // ── N4: quem está solto e caça o meu povo (a queda chega pelo socket mm:god) ──
+  const loadGods = useCallback(async () => {
+    const token = getToken()
+    if (!token) return
+    const r = await getGods(token)
+    if (r.ok) setGod(r.data.loose.find((h) => h.huntsMe)?.god ?? null)
+  }, [])
+  useEffect(() => {
+    void loadGods()
+    return onRealtime("mm:god", (p: unknown) => {
+      const w = p as GodWire | null
+      if (w?.e === "down" && godIdOf(w.god)) setGod((cur) => (cur === w.god ? null : cur))
+      else if (w?.e === "loose") void loadGods()
+    })
+  }, [loadGods])
+  useEffect(() => {
+    sectorRef.current = sector
+  }, [sector])
+  // a cena (re)montada recebe o deus: aparece atrás, depois de um tempo, e corre atrás
+  useEffect(() => {
+    if (status === "ready") gameRef.current?.setGod(god, godDelay.current)
+  }, [god, status])
 
   // o portão abre na hora em que o servidor diz (sem remontar)
   useEffect(() => {
@@ -193,6 +226,26 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
       const foe = d.sectors[s - 1]?.foe ?? null
       setFight({ ticket: r.data.fight, sector: s, foe: foe ? foeName(t, foe.id) : mobName(r.data.fight.setup.kind), foeBody: foe?.body ?? null, foeRig: !!foe?.rig })
     }
+    // N4: o deus alcançou — o servidor confere (solto, caça o meu povo, Domínio aberto) e abre a luta
+    askGod.current = async (g: GodId) => {
+      const token = getToken()
+      const d = labels.current.info
+      if (!token || !d || openingRef.current) return
+      openingRef.current = true
+      setNews({ text: t("godCaught", "{god} te alcançou! Ele tem o dobro da sua força.").replace("{god}", GOD_NAME[g]), id: Date.now() })
+      const r = await startFight(token, { origin: "god", god: g, where: "domain", domain: d.id })
+      openingRef.current = false
+      if (!r.ok) {
+        setNews({ text: t("godFightFail", "A luta com o deus não abriu: {e}").replace("{e}", r.error), id: Date.now() })
+        godDelay.current = GOD_HUNT.CALM_MS
+        gameRef.current?.setGod(g, godDelay.current)
+        return
+      }
+      const s = sectorRef.current
+      godFightRef.current = g
+      setSpawn(s >= 1 && s <= 10 ? s : 0)
+      setFight({ ticket: r.data.fight, sector: s, foe: GOD_NAME[g], foeBody: g, foeRig: true })
+    }
     cross.current = () => {
       const d = labels.current.info
       if (!d?.passage) return
@@ -219,6 +272,19 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   // o recibo da luta conferida: o setor vencido abre o portão
   const onReceipt = useCallback(
     (r: Receipt) => {
+      // N4: a luta contra o deus solto (vitória = ele cai para todos; derrota = só energia)
+      const g = godFightRef.current
+      if (g) {
+        godFightRef.current = null
+        if (r.result?.win) {
+          setGod(null)
+          setNews({ text: t("godYouWon", "Você derrotou {god}! Ele voltou para a estátua.").replace("{god}", GOD_NAME[g]), id: Date.now() })
+        } else {
+          godDelay.current = GOD_HUNT.CALM_MS
+          setNews({ text: t("godYouLost", "{god} venceu. Você só perdeu energia; ele volta a te caçar daqui a pouco.").replace("{god}", GOD_NAME[g]), id: Date.now() })
+        }
+        return
+      }
       const adv = (r as Receipt & { domain?: DomainAdvance }).domain
       if (!adv) return
       setInfo((cur) => (cur && cur.id === adv.domain ? { ...cur, best: Math.max(cur.best, adv.best), crossed: adv.crossed } : cur))
@@ -236,6 +302,11 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
     [t],
   )
   const closeFight = useCallback(() => {
+    // N4: saiu da luta do deus sem recibo (desistiu): ele volta a caçar depois da paz
+    if (godFightRef.current) {
+      godFightRef.current = null
+      godDelay.current = GOD_HUNT.CALM_MS
+    }
     setFight(null)
     // recarrega pelo servidor (setores, passagem e travas do próximo)
     void load(id)

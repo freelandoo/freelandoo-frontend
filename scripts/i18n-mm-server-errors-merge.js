@@ -223,6 +223,12 @@ const ROWS = [
   ["Chegue à clareira primeiro", "Reach the clearing first", "Llega primero al claro"],
   // trilha E2: instâncias de equipamento
   ["Equipamento não encontrado", "Equipment not found", "Equipo no encontrado"],
+  // lore v2 N4: o deus solto
+  ["Esse deus não está solto", "That god isn’t loose", "Ese dios no está suelto"],
+  ["Esse deus não caça o seu povo", "That god doesn’t hunt your people", "Ese dios no caza a tu pueblo"],
+  ["O deus não te alcançou", "The god hasn’t caught you", "El dios no te alcanzó"],
+  ["Escolha a sua classe antes", "Choose your class first", "Elige tu clase primero"],
+  ["Povo inválido", "Invalid people", "Pueblo no válido"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

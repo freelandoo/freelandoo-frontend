@@ -11756,7 +11756,14 @@
     "npc_nivea_memoria_re_comp": "Vou jogar. E vou ganhar. Mas desta vez sou eu que decido o que fazer com o prêmio.",
     "qv_noctis_cap10_1": "Meu pai, meu tio. Que os dois durmam.",
     "qv_noctis_cap10_2": "Corre. Joga. Dá néctar para os dois. Quanto mais empatados, mais eu ganho.",
-    "qv_noctis_cap10_3": "Os Vampiros rezam para ele de dia. De noite, obedecem a mim. Ninguém nunca percebeu a diferença."
+    "qv_noctis_cap10_3": "Os Vampiros rezam para ele de dia. De noite, obedecem a mim. Ninguém nunca percebeu a diferença.",
+    "godHereAurion": "Aurion está solto e caça Vampiros! Ele corre mais que você.",
+    "godHereMorkhan": "Morkhan está solto e caça Raposas! Ele corre mais que você.",
+    "godCaught": "{god} te alcançou! Ele tem o dobro da sua força.",
+    "godDown": "{name} derrotou {god}! O deus voltou para a estátua.",
+    "godFightFail": "A luta com o deus não abriu: {e}",
+    "godYouWon": "Você derrotou {god}! Ele voltou para a estátua.",
+    "godYouLost": "{god} venceu. Você só perdeu energia; ele volta a te caçar daqui a pouco."
   },
   "Sports": {
     "eyebrow": "Esportes",
@@ -11983,7 +11990,12 @@
     "Esse setor ainda está fechado": "Esse setor ainda está fechado",
     "Lugar desconhecido": "Lugar desconhecido",
     "Chegue à clareira primeiro": "Chegue à clareira primeiro",
-    "Equipamento não encontrado": "Equipamento não encontrado"
+    "Equipamento não encontrado": "Equipamento não encontrado",
+    "Esse deus não está solto": "Esse deus não está solto",
+    "Esse deus não caça o seu povo": "Esse deus não caça o seu povo",
+    "O deus não te alcançou": "O deus não te alcançou",
+    "Escolha a sua classe antes": "Escolha a sua classe antes",
+    "Povo inválido": "Povo inválido"
   },
   "Moedas": {
     "walletTitle": "Carteira",

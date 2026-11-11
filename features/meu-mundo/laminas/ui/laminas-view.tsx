@@ -399,7 +399,7 @@ function LaminasScreen({
         hold: true,
         labels: { ...labelsRef.current, foeSkills: labelsRef.current.foes[fromServer ? fromServer.setup.kind : choice.kind] },
         setup: fromServer
-          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined, temper: fromServer.setup.temper ?? undefined, affection: fromServer.setup.affection ?? undefined, boss: fromServer.setup.boss ?? undefined }
+          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined, temper: fromServer.setup.temper ?? undefined, affection: fromServer.setup.affection ?? undefined, boss: fromServer.setup.boss ?? undefined, god: fromServer.setup.god ?? undefined }
           : { kind: choice.kind, level: choice.level, body, peer: stage === "ring" ? peerOf(choice.kind) : undefined, tier: tutorial || stage === "ring" ? undefined : portal ? "street" : "arena" },
         kit: fromServer ? (fromServer.setup.kit === "hammer" ? "hammer" : fromServer.setup.kit === "bow" ? "bow" : fromServer.setup.kit === "gun" ? "gun" : fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,

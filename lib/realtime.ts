@@ -164,6 +164,8 @@ async function ensureSocket(): Promise<Socket | null> {
     // Meu Mundo, lore v2 N3: a corrida das estátuas (alguém entregou néctar no
     // domingo). Fora desta lista o placar Raposas × Vampiros só mudaria no F5.
     "mm:statue",
+    // Meu Mundo, lore v2 N4: o deus solto (soltou / caiu) — aviso para todos.
+    "mm:god",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))

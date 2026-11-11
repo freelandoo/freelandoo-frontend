@@ -315,6 +315,20 @@ export const BOSSES: Record<BossId, readonly BossPhase[]> = {
 export const bossIdOf = (b: unknown): BossId | null => (BOSS_IDS.includes(b as BossId) ? (b as BossId) : null)
 
 /**
+ * Lore v2 N4 — O DEUS SOLTO: estátua cheia no domingo → na semana seguinte o deus daquele povo
+ * anda e caça a raça oposta. Alcançou = luta um contra um em que o deus tem 2× o status de QUEM
+ * ENFRENTA (decisão D1 do Alex, 10/11): a ficha dele é a do herói × GOD_PEER (vida, acuracidade,
+ * velocidade, ataque e defesa), como o adversário à altura do ringue. Os golpes são os do tipo de
+ * GOD_KINDS (Aurion = espada e escudo do Cavaleiro Dourado; Morkhan = a força do Brutamontes).
+ * Só vale com `setup.god` (o servidor grava no ticket): luta antiga não tem, sem RULES_VERSION.
+ */
+export type GodId = "aurion" | "morkhan"
+export const GOD_IDS: readonly GodId[] = ["aurion", "morkhan"]
+export const GOD_PEER = 2
+export const GOD_KINDS: Record<GodId, MobKind> = { aurion: "cavaleiro", morkhan: "brute" }
+export const godIdOf = (g: unknown): GodId | null => (GOD_IDS.includes(g as GodId) ? (g as GodId) : null)
+
+/**
  * mm3d-72 (regras do Alex, 2026-11-08): a PERSONALIDADE mexe na luta por probabilidade, e o
  * afeto pelo dono muda a chance.
  *  - Psicopata: o Poder Máximo pode sair 3 vezes seguidas ("PSICOPATA" na tela). Contra
@@ -594,6 +608,8 @@ export interface FightSetup {
   affection?: number
   /** Lore v2 D4: o deus chefão do setor 10 (fases pela vida, BOSSES). O servidor grava no ticket. */
   boss?: BossId
+  /** Lore v2 N4: o deus solto (ficha = a de quem enfrenta × GOD_PEER). O servidor grava no ticket. */
+  god?: GodId
 }
 
 /**
@@ -886,7 +902,8 @@ export class Fight {
     this.heroLevel = Math.max(1, Math.round(Number(setup.hero) || 1))
     this.hero = heroLevelScale(this.heroLevel)
     this.def = clamp(this.gear.def + this.hero.def, 0, DEF_MAX)
-    const peer = clamp(Number(setup.peer) || 0, 0, 2)
+    // N4: o deus solto entra com 2× o status de quem enfrenta (o "peer" do ringue, fixo)
+    const peer = godIdOf(setup.god) ? GOD_PEER : clamp(Number(setup.peer) || 0, 0, 2)
     this.rated = peer > 0 || !!setup.tier
     this.fx = this.withGear(statEffects(gearMind(heroStats(stats, this.heroLevel), this.gear, this.rated)))
     const sheet = heroSheet(setup.body, this.heroLevel, stats, this.gear)

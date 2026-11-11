@@ -14,7 +14,7 @@ import type { NetStatus } from "../types"
 /** A sala, com ou sem a rua montada. Vem antes do `useMobEncounter`. */
 export function useRoomLink(gameRef: RefObject<GameHandle | null>) {
   const parked = useRef<ParkedGame | null>(null)
-  const room = useRef<Pick<GameHandle, "reportMob" | "engageMob">>({
+  const room = useRef<Pick<GameHandle, "reportMob" | "engageMob" | "reportGod">>({
     reportMob(id, win, busy = false) {
       if (gameRef.current) gameRef.current.reportMob(id, win, busy)
       else parked.current?.net.send("mfight", busy ? { id, r: 0, b: 1 } : { id, r: win ? 1 : 0 })
@@ -22,6 +22,11 @@ export function useRoomLink(gameRef: RefObject<GameHandle | null>) {
     engageMob(id) {
       if (gameRef.current) gameRef.current.engageMob(id)
       else parked.current?.net.send("mfight", { id, s: 1 })
+    },
+    // lore v2 N4: o deus solto (a vitória é do servidor; aqui só derrota/ocupado)
+    reportGod(god, busy = false) {
+      if (gameRef.current) gameRef.current.reportGod(god, busy)
+      else parked.current?.net.send("gfight", busy ? { g: god, r: 0, b: 1 } : { g: god, r: 0 })
     },
   })
   return { parked, room }

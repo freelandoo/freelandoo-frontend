@@ -49,6 +49,8 @@ import type { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/Ren
 import { MonsterModel, setMonsterSkinMax } from "../../laminas/engine/monster-view"
 import type { BodyId, InteriorDef } from "../../types"
 import type { DomainInfo, DomainId } from "../../data"
+import { GodFigure, GOD_HUNT } from "../../engine/god-view"
+import type { GodId } from "../../laminas/sim/fight"
 import { KitPlacer, LOOKS, applyDomainLook, loadDomainKit, paintedGround, seeded, type DomainKitId, type KitPiece } from "./domain-kit"
 
 /** Medidas da cena (metros). */
@@ -96,6 +98,8 @@ export interface DomainGameOptions {
   /** C5: chegou perto de um ponto do lugar (o Golem sentado) — null = longe. */
   onSpot?: (spot: string | null) => void
   onInteract?: (n: Exclude<DomainNear, null>) => void
+  /** Lore v2 N4: o deus solto alcançou a pessoa aqui dentro (a tela pede a luta ao servidor). */
+  onGodCatch?: (god: GodId) => void
   onError?: (reason: "context-lost") => void
 }
 
@@ -113,6 +117,11 @@ export interface DomainGameHandle {
    * Corte seco a cada chamada; o jogador vira de frente para o Golem e fica parado.
    */
   story: (shot: StoryShot | null) => void
+  /**
+   * N4: o deus solto que caça a pessoa (null = nenhum). Ele aparece `GOD_HUNT.DOMAIN_BEHIND` m
+   * atrás depois de `delayMs` e corre atrás dela; alcançou = `onGodCatch` (uma vez por chamada).
+   */
+  setGod: (god: GodId | null, delayMs?: number) => void
   dispose: () => void
 }
 
@@ -478,9 +487,38 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
     return null
   }
 
+  // ── N4: o deus solto dentro do Domínio ──
+  let hunter: { god: GodId; fig: GodFigure | null; at: number; x: number; z: number; facing: number; caught: boolean } | null = null
+  const setGod = (god: GodId | null, delayMs: number = GOD_HUNT.DOMAIN_DELAY_MS) => {
+    hunter?.fig?.dispose()
+    hunter = god ? { god, fig: null, at: performance.now() + delayMs, x: 0, z: 0, facing: 0, caught: false } : null
+  }
+  const stepGod = (dt: number) => {
+    const h = hunter
+    if (!h || h.caught || story) return
+    if (!h.fig) {
+      if (performance.now() < h.at || input.blocked) return
+      // aparece atrás, no caminho (nunca antes da entrada)
+      h.x = 0
+      h.z = Math.max(DOMAIN_SCENE.entry + 2, body.z - GOD_HUNT.DOMAIN_BEHIND)
+      h.fig = new GodFigure(scene, h.god)
+    }
+    const d = Math.hypot(body.x - h.x, body.z - h.z)
+    h.facing = Math.atan2(body.x - h.x, body.z - h.z)
+    const step = Math.min(GOD_HUNT.CHASE_V * dt, Math.max(0, d - GOD_HUNT.CATCH * 0.5))
+    h.x += Math.sin(h.facing) * step
+    h.z += Math.cos(h.facing) * step
+    h.fig.update(dt, h.x, h.z, h.facing, step / Math.max(dt, 1e-3))
+    if (d <= GOD_HUNT.CATCH && !input.blocked) {
+      h.caught = true
+      opts.onGodCatch?.(h.god)
+    }
+  }
+
   scene.onBeforeRenderObservable.add(() => {
     const dt = Math.min(engine.getDeltaTime() / 1000, 0.1)
     time += dt
+    stepGod(dt)
     let intent: Intent = { x: 0, z: 0, run: false }
     if (!input.blocked) {
       if (input.camDX || input.camDY) {
@@ -579,6 +617,7 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       follow.snapBehind(body.x, body.z, body.facing)
     },
     story: setStory,
+    setGod,
     setProgress(b) {
       best = Math.max(best, Math.max(0, Math.min(10, b)))
       rebuildBoxes()
@@ -595,6 +634,8 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       engine.onContextLostObservable.remove(lost)
       for (const g of guards.values()) g.dispose()
       guards.clear()
+      hunter?.fig?.dispose()
+      hunter = null
       for (const gm of golems) gm.char.dispose()
       placer?.dispose()
       nextPlacer?.dispose()

@@ -182,6 +182,8 @@ export interface GameHandle {
   reportMob: (mobId: number, win: boolean, busy?: boolean) => void
   /** "Lutar" apertado perto do monstro: a sala o segura parado durante a luta. */
   engageMob: (mobId: number) => void
+  /** Lore v2 N4: o deus solto alcançou e a luta não aconteceu/acabou sem vitória (`busy` = ocupado). A vitória é do servidor. */
+  reportGod: (god: string, busy?: boolean) => void
   /** Lore v2 N3: estado da corrida das estátuas (a tela busca; a sala manda "statue"). */
   setStatues: (w: StatueWire | null) => void
   /** Tira a rua da memória e devolve a sala viva, agora falando com `cb`. */
@@ -482,6 +484,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
       // Invasões (mm3d-48b): a lista inteira de monstros no centro.
       if (type === "mobs") mobs.set((p as { l?: unknown } | null)?.l)
+      // Lore v2 N4: o deus solto nesta sala
+      if (type === "gods") mobs.setGods((p as { l?: unknown } | null)?.l)
       // Lore v2 N3: alguém entregou néctar — a estátua acende o estágio
       if (type === "statue") applyStatues(p as StatueWire | null)
       opts.onServerMessage?.(type, p)
@@ -1027,6 +1031,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     engageMob(mobId) {
       if (!disposed) net.send("mfight", { id: mobId, s: 1 })
+    },
+    reportGod(god, busy = false) {
+      if (!disposed) net.send("gfight", busy ? { g: god, r: 0, b: 1 } : { g: god, r: 0 })
     },
     setQuality(c) {
       quality = resolveQuality(c)
