@@ -12,7 +12,7 @@
 
 import { useDrawerOpen } from "../hud/hud-kit"
 import { useGameCovered } from "../hud/game-cover"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Loader2, Lock, ScrollText } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -38,6 +38,21 @@ const PT: Record<string, string[]> = TEXT
 /** Texto com o pt do JSON de fallback (a chave é a mesma do merge). */
 const tx = (t: T, key: string) => t(key, PT[key]?.[0] ?? key)
 const stepTxt = (t: T, chapter: string, step: string, part: "what" | "where") => tx(t, `qs_${chapter}_${step}_${part}`)
+
+/**
+ * Lore v2 C1: o que a história conta quando um passo é entregue (o "fecho": sonho,
+ * memória, o que se vê) e, no último passo, o gancho do capítulo. Chaves de
+ * historia/v2/07-falas-e-arquivo.md: a da classe (`_raposa`/`_vampiro`) vem antes
+ * da comum quando as duas existem; passo sem fecho não mostra nada.
+ */
+export function storyBeat(chapter: string, step: string, clan: "raposa" | "vampiro" | null, chapterDone: boolean, has: (k: string) => boolean = (k) => !!PT[k]) {
+  const c = clan === "vampiro" ? "vampiro" : "raposa"
+  const pick = (base: string) => [`${base}_${c}`, base].filter(has)
+  const lines = pick(`qs_${chapter}_${step}_done`)
+  const hook = chapterDone ? (pick(`qc_${chapter}_hook`)[0] ?? null) : null
+  return lines.length || hook ? { chapter, lines, hook } : null
+}
+type Beat = NonNullable<ReturnType<typeof storyBeat>>
 
 /** Desenho de cada passo pelo tipo do objetivo (sem arte própria do passo). */
 function artOf(check: string | undefined): ItemCategory {
@@ -72,6 +87,13 @@ export function QuestTracker({
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  // C1: o fecho do passo que acabou de ser entregue (+ o gancho, se fechou o capítulo)
+  const [beat, setBeat] = useState<(Beat & { n: number }) | null>(null)
+  // o botão de entregar fica embaixo do modal: o fecho aparece em cima, então rola até ele
+  const beatRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (beat) beatRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" })
+  }, [beat])
   // F5: o vídeo do capítulo (undefined = fechado; null = ainda não enviado)
   const [video, setVideo] = useState<LoreVideoData | null | undefined>(undefined)
   // F6: a missão curta de cada prédio que abriu (entregue aqui; o servidor confere)
@@ -111,12 +133,21 @@ export function QuestTracker({
     if (!tk || busy) return
     setBusy(true)
     setMsg(null)
+    const before = state?.quest ?? null
     const r = await advanceQuest(tk, "ack")
     setBusy(false)
     if (!r.ok) return setMsg(r.code === "pending" ? t("questPending", "Ainda falta cumprir o objetivo.") : r.error)
     setState(r.data)
     if (r.data.receipt) celebrate(r.data.receipt)
-  }, [busy, t])
+    // o fecho só aparece quando o servidor de fato avançou (recibo novo ou passo mudou)
+    const after = r.data.quest
+    if (before?.current) {
+      const moved = !after || after.id !== before.id || after.step !== before.step || after.done
+      const chapterDone = !after || after.id !== before.id || !!after.done
+      const b = moved ? storyBeat(before.id, before.current.key, r.data.clan, chapterDone) : null
+      setBeat(b ? { ...b, n: before.chapter } : null)
+    }
+  }, [busy, state, t])
 
   const visitArmory = useCallback(async () => {
     const tk = getToken()
@@ -240,11 +271,29 @@ export function QuestTracker({
         </button>
       )}
       {open && (
-        <AetherModal eyebrow={tx(t, "questChapterN").replace("{n}", String(quest.chapter))} title={tx(t, `qc_${quest.id}_title`)} onClose={() => { setOpen(false); setVideo(undefined) }} width={560}>
+        <AetherModal eyebrow={tx(t, "questChapterN").replace("{n}", String(quest.chapter))} title={tx(t, `qc_${quest.id}_title`)} onClose={() => { setOpen(false); setVideo(undefined); setBeat(null) }} width={560}>
           {!state ? (
             <Loader2 className="mx-auto h-6 w-6 animate-spin" />
           ) : (
             <>
+              {/* C1: o que a história conta na entrega do passo (e o gancho no fim do capítulo) */}
+              {beat && (
+                <div ref={beatRef} role="status" aria-live="polite" className={`${archivo.className} mb-3 grid gap-1.5 p-3`} style={{ background: AE.well, boxShadow: `inset 0 0 0 1px ${AE.brassLine}`, clipPath: chamfer(AE.cut.chip) }}>
+                  {beat.lines.map((k) => (
+                    <p key={k} className="text-[14px] italic leading-snug" style={{ color: AE.text }}>
+                      {tx(t, k)}
+                    </p>
+                  ))}
+                  {beat.hook && (
+                    <p className="text-[13px] font-semibold leading-snug" style={{ color: AE.goldSoft }}>
+                      <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: AE.dim }}>
+                        {tx(t, "questChapterEnd").replace("{n}", String(beat.n))}
+                      </span>
+                      {tx(t, beat.hook)}
+                    </p>
+                  )}
+                </div>
+              )}
               <p className={`${archivo.className} mb-2 text-[12px] leading-snug`} style={{ color: AE.muted }}>
                 {tx(t, `qc_${quest.id}_intro_${state.clan === "vampiro" ? "vampiro" : "raposa"}`)}
               </p>

@@ -6,6 +6,7 @@
   "questWaiting": ["Este objetivo chega numa próxima atualização", "This objective arrives in an upcoming update", "Este objetivo llega en una próxima actualización"],
   "questProgress": ["{have} de {need}", "{have} of {need}", "{have} de {need}"],
   "questAllDone": ["Você terminou todos os capítulos desta temporada.", "You finished every chapter of this season.", "Terminaste todos los capítulos de esta temporada."],
+  "questChapterEnd": ["Fim do capítulo {n}", "End of chapter {n}", "Fin del capítulo {n}"],
 
   "qc_cap1_title": ["A Cápsula Três", "Capsule Three", "La Cápsula Tres"],
   "qc_cap1_intro_raposa": ["Você acorda na cápsula 3 do Laboratório de Criogenia. A Dra. Nívea anota tudo o que você sente. Lá fora, um Vampiro cospe no pé da estátua de Morkhan quando vê você olhando.", "You wake up in capsule 3 of the Cryogenics Lab. Dr. Nívea writes down everything you feel. Outside, a Vampire spits at the foot of Morkhan's statue when he sees you looking.", "Despiertas en la cápsula 3 del Laboratorio de Criogenia. La Dra. Nívea anota todo lo que sientes. Afuera, un Vampiro escupe al pie de la estatua de Morkhan cuando te ve mirando."],
@@ -22,6 +23,11 @@
   "qs_cap1_pedra_where": ["Praça", "Square", "Plaza"],
   "qs_cap1_retorno_what": ["Volte ao Laboratório e fale com a Dra. Nívea", "Go back to the Lab and talk to Dr. Nívea", "Vuelve al Laboratorio y habla con la Dra. Nívea"],
   "qs_cap1_retorno_where": ["Laboratório", "Lab", "Laboratorio"],
+  "qs_cap1_degelo_done": ["O gelo racha. O ar do laboratório tem cheiro de ferro e remédio.", "The ice cracks. The lab air smells of iron and medicine.", "El hielo se agrieta. El aire del laboratorio huele a hierro y a medicina."],
+  "qs_cap1_pedra_done_raposa": ["Um Vampiro cospe no pé da estátua quando vê você olhando. Outro, do lado, reza ajoelhado.", "A Vampire spits at the foot of the statue when he sees you looking. Another, beside him, prays on his knees.", "Un Vampiro escupe al pie de la estatua cuando te ve mirando. Otro, a su lado, reza de rodillas."],
+  "qs_cap1_pedra_done_vampiro": ["Uma Raposa passa, faz o sinal do sol no peito e cospe no chão. Você não sabe por que, mas isso dói.", "A Fox walks by, makes the sign of the sun on her chest and spits on the ground. You don't know why, but it hurts.", "Una Zorra pasa, hace la señal del sol en el pecho y escupe al suelo. No sabes por qué, pero duele."],
+  "qs_cap1_pedra_done": ["De perto, a pedra não é lisa. Tem mãos. Tem costas. Tem rostos.", "Up close, the stone isn't smooth. There are hands. Backs. Faces.", "De cerca, la piedra no es lisa. Hay manos. Hay espaldas. Hay rostros."],
+  "qc_cap1_hook": ["Por que a Dra. Nívea anota tudo o que você sente?", "Why does Dr. Nívea write down everything you feel?", "¿Por qué la Dra. Nívea anota todo lo que sientes?"],
 
   "qc_cap2_title": ["O Bairro", "The Neighborhood", "El Barrio"],
   "qc_cap2_intro_raposa": ["O Bairro das Matas é verde e cheio de crianças. Os muros têm listas de nomes riscados: famílias que viraram Vampiros. \"Esses não existem mais.\"", "The Woods Quarter is green and full of children. The walls hold lists of crossed-out names: families that became Vampires. \"Those don't exist anymore.\"", "El Barrio de las Matas es verde y lleno de niños. Los muros tienen listas de nombres tachados: familias que se volvieron Vampiros. \"Esos ya no existen.\""],
@@ -38,6 +44,13 @@
   "qs_cap2_tregua_where": ["Delegacia", "Police station", "Comisaría"],
   "qs_cap2_sonho_what": ["Durma em casa", "Sleep at home", "Duerme en casa"],
   "qs_cap2_sonho_where": ["Sua casa", "Your house", "Tu casa"],
+  "qs_cap2_portal_done_raposa": ["O Bairro das Matas é verde, cheio de crianças, e todo mundo cumprimenta você. No meio, Aurion de pedra, com flores no pé.", "The Woods Quarter is green, full of children, and everyone says hello to you. In the middle, a stone Aurion with flowers at his feet.", "El Barrio de las Matas es verde, lleno de niños, y todo el mundo te saluda. En el medio, Aurion de piedra, con flores a sus pies."],
+  "qs_cap2_portal_done_vampiro": ["A Cidade Baixa é bonita de noite e morta de dia. No meio do bairro, só um pedestal vazio.", "Lowtown is beautiful at night and dead by day. In the middle of the district, only an empty pedestal.", "La Ciudad Baja es hermosa de noche y muerta de día. En el medio del barrio, solo un pedestal vacío."],
+  "qs_cap2_lar_done": ["Uma casa. Uma cama. Uma geladeira vazia. Faz vinte anos que ninguém pergunta se você está com fome.", "A house. A bed. An empty fridge. For twenty years nobody has asked if you're hungry.", "Una casa. Una cama. Una nevera vacía. Hace veinte años que nadie te pregunta si tienes hambre."],
+  "qs_cap2_sonho_done_raposa": ["Um telhado de madrugada. Alguém segura os braços de uma mulher. Você tem um rolo de arame na mão. Você acorda com as mãos tremendo.", "A rooftop before dawn. Someone holds a woman's arms. You have a coil of wire in your hand. You wake up with your hands shaking.", "Un tejado de madrugada. Alguien sujeta los brazos de una mujer. Tienes un rollo de alambre en la mano. Despiertas con las manos temblando."],
+  "qs_cap2_sonho_done_vampiro": ["Uma porta de ferro com uma grade. Do outro lado, alguém grita o número de um canhão que não existe. Você segura a maçaneta. Você acorda com as mãos tremendo.", "An iron door with a grate. On the other side, someone shouts the number of a cannon that doesn't exist. You hold the handle. You wake up with your hands shaking.", "Una puerta de hierro con una reja. Del otro lado, alguien grita el número de un cañón que no existe. Sujetas la manija. Despiertas con las manos temblando."],
+  "qc_cap2_hook_raposa": ["De quem são os braços? Para que era o arame?", "Whose arms are those? What was the wire for?", "¿De quién son los brazos? ¿Para qué era el alambre?"],
+  "qc_cap2_hook_vampiro": ["De quem é o grito? Por que você não soltava a maçaneta?", "Whose scream is it? Why wouldn't you let go of the handle?", "¿De quién es el grito? ¿Por qué no soltabas la manija?"],
 
   "qc_cap3_title": ["Néctar", "Nectar", "Néctar"],
   "qc_cap3_intro_raposa": ["A Sacerdotisa do Sol explica a corrida: cada jogo rende néctar. Leve ao pé de Aurion e ele empurra a pedra para fora.", "The Sun Priestess explains the race: every game yields nectar. Bring it to Aurion's feet and he pushes the stone away.", "La Sacerdotisa del Sol explica la carrera: cada juego da néctar. Llévalo a los pies de Aurion y él empuja la piedra hacia afuera."],

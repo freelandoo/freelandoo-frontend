@@ -28,7 +28,9 @@ import {
   LocateFixed,
   Lock,
   LogOut,
+  MessageCircle,
   RefreshCw,
+  ScrollText,
   Send,
   Swords,
   WifiOff,
@@ -46,6 +48,9 @@ import { useQualityItem } from "./hud/quality-item"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
 import { useMobEncounter } from "./mob-encounter"
+import { NpcTalk, npcTx } from "./talk/npc-talk"
+import { AetherModal } from "./kit/aether-modal"
+import { isNpcId, npcNameKey, type NpcId } from "../npcs"
 import { useOffstage, useRoomLink } from "./offstage"
 import {
   type BodyId,
@@ -121,6 +126,10 @@ export default function MeuMundoView({
   const [attempt, setAttempt] = useState(0)
   const [nearby, setNearby] = useState<Interactable | null>(null)
   const [open, setOpen] = useState<Interactable | null>(null)
+  // Lore v2 C1: o vizinho da praça (conversa) e a placa do pedestal vazio (texto)
+  const [talk, setTalk] = useState<NpcId | null>(null)
+  const [sign, setSign] = useState<string | null>(null)
+  const reading = !!talk || !!sign
   const [statsOpen, setStatsOpen] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
   // Tela limpa: a ajuda dos controles só abre pelo menu.
@@ -281,6 +290,8 @@ export default function MeuMundoView({
           onInteract: (it) => {
             if (!alive) return
             if (it.kind === "monster") return mobRef.current.fight(it)
+            if (it.kind === "npc") return void (isNpcId(it.npc) && setTalk(it.npc))
+            if (it.kind === "sign") return setSign(it.text)
             // Portão do bairro (mm3d-17): agora leva ao centro (o servidor decide a sala).
             if (it.kind === "exit" && cbRef.current.onGoCenter) return cbRef.current.onGoCenter()
             if (it.kind === "house" && ((it.house.isMine && !payload.me.visitor) || it.lot.number === cbRef.current.visitingLot))
@@ -312,8 +323,8 @@ export default function MeuMundoView({
   }, [statsOpen])
 
   useEffect(() => {
-    gameRef.current?.setBlocked(!!open || levelOpen || menuOpen || !!blocked || !!mob.encounter)
-  }, [open, levelOpen, menuOpen, blocked, mob.encounter])
+    gameRef.current?.setBlocked(!!open || levelOpen || menuOpen || !!blocked || !!mob.encounter || reading)
+  }, [open, levelOpen, menuOpen, blocked, mob.encounter, reading])
 
   // mm3d-60f: luta com monstro cobrindo a tela → o HUD do personagem sai
   const covered = !!mob.encounter
@@ -362,11 +373,17 @@ export default function MeuMundoView({
   const nearbyCar = nearby?.kind === "car" || nearby?.kind === "car-exit"
   const nearbyExit = nearby?.kind === "exit" && !!onGoCenter
   const nearbyMob = nearby?.kind === "monster"
-  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar || nearbyExit || nearbyMob
+  const nearbyNpc = nearby?.kind === "npc" && isNpcId(nearby.npc) ? nearby.npc : null
+  const nearbySign = nearby?.kind === "sign"
+  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar || nearbyExit || nearbyMob || !!nearbyNpc || nearbySign
   const vehicleKind = nearby?.kind === "car" ? nearby.vkind : drivingKind
   // Veículos (mm3d-14): "Usar" para todos — carro, bike, skate e patins — e "Descer".
   const nearbyLabel = nearby?.kind === "monster"
     ? mob.label(nearby)
+    : nearbyNpc
+    ? npcTx(t, "npcTalkWith").replace("{name}", npcTx(t, npcNameKey(nearbyNpc)))
+    : nearbySign
+    ? npcTx(t, "signRead")
     : nearby?.kind === "car"
     ? t("useVehicle", "Usar")
     : nearby?.kind === "car-exit"
@@ -504,14 +521,14 @@ export default function MeuMundoView({
       )}
 
       {/* Aviso de interação (só leitura: casa alheia, saída) */}
-      {status === "ready" && nearby && !nearbyAction && !open && !levelOpen && !isTouch && (
+      {status === "ready" && nearby && !nearbyAction && !open && !reading && !levelOpen && !isTouch && (
         <div className="pointer-events-none absolute left-1/2 -translate-x-1/2" style={{ bottom: bottom(48) }}>
           <EvoToast icon={<kbd className={s.kbd}>E</kbd>}>{nearbyLabel}</EvoToast>
         </div>
       )}
 
       {/* Computador: a própria casa (e a casa visitada) ganha botão clicável, com o atalho E nele */}
-      {status === "ready" && nearbyAction && !open && !levelOpen && !isTouch && !drivingLot && (
+      {status === "ready" && nearbyAction && !open && !reading && !levelOpen && !isTouch && !drivingLot && (
         <div className="absolute left-1/2 flex -translate-x-1/2 items-stretch gap-2" style={{ bottom: bottom(48) }}>
           {nearbyMine && (
             <EvoButton variant="gold" size="lg" icon={<Construction className="h-5 w-5" />} onClick={() => setLevelOpen(true)}>
@@ -522,7 +539,7 @@ export default function MeuMundoView({
             variant="primary"
             size="lg"
             kbd="E"
-            icon={nearbyMob ? <Swords className="h-5 w-5" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : nearbyExit ? <Building2 className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
+            icon={nearbyMob ? <Swords className="h-5 w-5" /> : nearbyNpc ? <MessageCircle className="h-5 w-5" /> : nearbySign ? <ScrollText className="h-5 w-5" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : nearbyExit ? <Building2 className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
             onClick={() => gameRef.current?.interact()}
             aria-label={nearbyLabel}
           >
@@ -533,7 +550,7 @@ export default function MeuMundoView({
 
       {/* Dirigindo: descer — e, montado perto de casa, entrar com o veículo. No
           celular fica embaixo à direita (o joystick dirige); "Recuperar" mora no menu. */}
-      {status === "ready" && !!drivingLot && !open && !levelOpen && (!isTouch || !menuOpen) && (
+      {status === "ready" && !!drivingLot && !open && !reading && !levelOpen && (!isTouch || !menuOpen) && (
         <div
           className={isTouch ? "absolute flex flex-col items-end gap-2" : "absolute left-1/2 flex -translate-x-1/2 gap-2"}
           style={isTouch ? { bottom: bottom(24), right: SAFE.right } : { top: "max(12px, env(safe-area-inset-top))" }}
@@ -560,9 +577,9 @@ export default function MeuMundoView({
       )}
 
       {/* Celular: o MESMO joystick anda e dirige (mm3d-25) */}
-      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && <Joystick gameRef={gameRef} />}
+      {status === "ready" && isTouch && !open && !reading && !levelOpen && !menuOpen && <Joystick gameRef={gameRef} />}
 
-      {status === "ready" && isTouch && !open && !levelOpen && !menuOpen && !drivingLot && (
+      {status === "ready" && isTouch && !open && !reading && !levelOpen && !menuOpen && !drivingLot && (
         <>
           {nearbyMine && (
             <EvoButton
@@ -582,7 +599,7 @@ export default function MeuMundoView({
               aria-label={nearbyLabel}
               className="!absolute !min-h-12 max-w-[46vw]"
               style={{ bottom: bottom(20), right: SAFE.right }}
-              icon={nearbyMob ? <Swords className="h-5 w-5 shrink-0" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5 shrink-0" /> : nearbyExit ? <Building2 className="h-5 w-5 shrink-0" /> : nearbyAction ? <DoorOpen className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
+              icon={nearbyMob ? <Swords className="h-5 w-5 shrink-0" /> : nearbyNpc ? <MessageCircle className="h-5 w-5 shrink-0" /> : nearbySign ? <ScrollText className="h-5 w-5 shrink-0" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5 shrink-0" /> : nearbyExit ? <Building2 className="h-5 w-5 shrink-0" /> : nearbyAction ? <DoorOpen className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearbyLabel}
             </EvoButton>
@@ -598,10 +615,20 @@ export default function MeuMundoView({
             onOpenChange={setMenuOpen}
             heading={t("menuStreet", "O bairro")}
             items={menuItems}
-            hotkeys={!blocked && !open && !levelOpen}
+            hotkeys={!blocked && !open && !reading && !levelOpen}
             presence={{ count: online, scope: t("presenceStreet", "Neste bairro"), state: presenceState(net) }}
           />
         </div>
+      )}
+
+      {/* Lore v2 C1: a conversa com o vizinho da praça e a placa do pedestal vazio */}
+      {talk && <NpcTalk npc={talk} onClose={() => setTalk(null)} />}
+      {sign && (
+        <AetherModal eyebrow={npcTx(t, "signTitle")} title={npcTx(t, "signRead")} onClose={() => setSign(null)} width={460} z={90}>
+          <p className={`${archivo.className} text-center text-[17px] font-bold uppercase leading-snug tracking-[0.06em]`} style={{ color: EVO.branco }}>
+            {npcTx(t, sign)}
+          </p>
+        </AetherModal>
       )}
 
       {/* Ficha da casa / da saída */}

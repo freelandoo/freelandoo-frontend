@@ -246,6 +246,14 @@ function pedestal(ctx: NbCtx, s: StatueDef) {
     const ry = Math.atan2(-ox, -oz)
     const y = 0.34 + (b.h - 0.52) / 2 + 0.05
     const m = facing(s.x + ox * (apo + 0.04), y, s.z + oz * (apo + 0.04), undefined, ry)
+    // Lore v2 C1: o pedestal VAZIO da Cidade Baixa troca a engrenagem da frente (−Z,
+    // de onde se chega) por uma placa de bronze: "O nosso deus mora no centro. Eles
+    // não deixaram trazer." (o texto se lê pelo "Ler a placa", qw_pedestal)
+    if (s.id === "pedestal_vazio" && k === 6) {
+      props.box(1.12, 0.5, 0.05, place(s.x, y, s.z - apo - 0.03), SP.brassDark)
+      props.box(1.0, 0.4, 0.06, place(s.x, y, s.z - apo - 0.04), SP.bronze)
+      continue
+    }
     if (k % 2 === 0) {
       props.cylinder(0.98, 0.04, facing(s.x + ox * (apo + 0.01), y, s.z + oz * (apo + 0.01), undefined, ry), SP.iron, 16)
       ctx.gears.push({ m, r: 0.4, thick: 0.07, speed: k % 4 ? 0.35 : -0.35 })

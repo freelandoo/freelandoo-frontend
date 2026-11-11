@@ -170,6 +170,20 @@ export interface Neighborhood {
   houseCatalog?: HouseCatalog
   statueAssets?: StatueAssets | null
   limit: number
+  /** Lore v2 C1: a classe do bairro (null = bairro antigo sem classe). */
+  clan?: "raposa" | "vampiro" | null
+  /** Lore v2 C1: o vizinho da praça (Vizinha nas Matas, Vizinho na Cidade Baixa). */
+  npcs?: StreetNpc[]
+  /** Lore v2 C1: placa que se lê (o pedestal vazio da Cidade Baixa); `text` = chave de i18n. */
+  signs?: StreetSign[]
+}
+
+export interface StreetSign {
+  id: string
+  text: string
+  x: number
+  z: number
+  radius: number
 }
 
 // mm3d-30: "female" = skin "feminina"; "ekaterina" = skin "ekaterina".
@@ -879,6 +893,8 @@ export type Interactable =
   | { kind: "portal"; id: string; x: number; z: number; radius: number }
   // Lore v2 F4: conversar com um NPC (rua ou prédio).
   | { kind: "npc"; id: string; x: number; z: number; radius: number; npc: string }
+  // Lore v2 C1: ler uma placa (texto do cenário, `qw_*`).
+  | { kind: "sign"; id: string; x: number; z: number; radius: number; text: string }
   // Monstro de uma invasão (mm3d-48b): o portal aos pés dele leva à Arena das Lâminas.
   | { kind: "monster"; id: string; x: number; z: number; radius: number; mobId: number; mobKind: "cavaleiro" | "wolf" | "ciborgue" | "garras" | "brute" | "stone" }
 

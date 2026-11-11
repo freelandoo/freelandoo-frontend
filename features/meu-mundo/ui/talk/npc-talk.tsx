@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { QUEST_CHANGED, getQuest, markQuest } from "../../data"
-import { NPCS, conversationFor, lineKeys, npcNameKey, type NpcId } from "../../npcs"
+import { NPCS, conversationFor, npcNameKey, talkPages, type NpcId, type TalkPage } from "../../npcs"
 import { PORTRAIT } from "../portraits"
 import { currentSoul } from "../../soul"
 import { temperSuffix } from "../../banter"
@@ -28,9 +28,8 @@ const PT: Record<string, string[]> = TEXT
 export const npcTx = (t: T, key: string) => t(key, PT[key]?.[0] ?? key)
 
 interface Ready {
-  lines: string[]
-  /** a resposta do personagem de quem joga, pela personalidade (última página) */
-  reply: string | null
+  /** as falas em ordem; `you` = pensamento/resposta de quem joga (pela personalidade) */
+  pages: TalkPage[]
   /** o passo de agora pede esta conversa e o servidor não gravou (longe) */
   far: boolean
 }
@@ -46,30 +45,32 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
     let alive = true
     const tk = getToken()
     void (async () => {
-      const [q, m] = tk ? await Promise.all([getQuest(tk), markQuest(tk, "talk", npc)]) : [null, null]
+      // NPC só de ambiente (nenhum passo pede talk: dele) não pede gravação ao servidor
+      const [q, m] = tk ? await Promise.all([getQuest(tk), def.ambient ? Promise.resolve(null) : markQuest(tk, "talk", npc)]) : [null, null]
       if (!alive) return
       const quest = q && q.ok ? q.data.quest : null
       const cur = quest && quest.current ? quest.current : null
       const conv = conversationFor(npc, { chapter: quest && !quest.locked ? quest.id : null, step: cur ? cur.key : null })
-      const lines = lineKeys(npc, conv, q && q.ok ? q.data.clan : null)
       // cada personalidade responde do seu jeito (sem personalidade, a conversa acaba no NPC)
       const temper = currentSoul()?.temper
       const replyKey = temper ? `npc_${npc}_${conv.id}_re_${temperSuffix(temper)}` : ""
-      setReady({ lines, reply: PT[replyKey] ? replyKey : null, far: !!(m && !m.ok && cur && cur.check === `talk:${npc}`) })
+      const pages = talkPages(npc, conv, q && q.ok ? q.data.clan : null, PT[replyKey] ? replyKey : null)
+      setReady({ pages, far: !!(m && !m.ok && cur && cur.check === `talk:${npc}`) })
     })()
     return () => {
       alive = false
     }
-  }, [npc])
+  }, [npc, def.ambient])
 
   const close = () => {
     // a missão reconfere (a conversa pode ter cumprido o passo)
     window.dispatchEvent(new CustomEvent(QUEST_CHANGED))
     onClose()
   }
-  const pages = ready ? [...ready.lines, ...(ready.reply ? [ready.reply] : [])] : []
+  const pages = ready ? ready.pages : []
   const at = Math.min(i, pages.length - 1)
-  const replying = !!ready?.reply && at === pages.length - 1
+  const page = pages[at]
+  const replying = !!page?.you
   const last = !!ready && i >= pages.length - 1
 
   return (
@@ -90,13 +91,12 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
             <Loader2 className="mt-6 h-6 w-6 animate-spin" style={{ color: AE.goldSoft }} aria-label={npcTx(t, "npcTalk")} />
           ) : (
             <div key={i} role="status" aria-live="polite">
-              {replying && (
-                <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: AE.goldSoft }}>
-                  {npcTx(t, "npcReply")}
-                </p>
-              )}
-              <p className="text-[16px] leading-snug" style={{ color: replying ? AE.goldSoft : AE.text }}>
-                {npcTx(t, pages[at])}
+              {/* quem fala, em cima do balão (07-falas §0.1, regra 5): o NPC ou "Você" */}
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: replying ? AE.goldSoft : AE.dim }}>
+                {replying ? npcTx(t, "npcYou") : name}
+              </p>
+              <p className={`text-[16px] leading-snug ${replying ? "italic" : ""}`} style={{ color: replying ? AE.goldSoft : AE.text }}>
+                {page ? npcTx(t, page.key) : ""}
               </p>
             </div>
           )}

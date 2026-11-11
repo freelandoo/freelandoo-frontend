@@ -313,7 +313,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, opts.parked?.look ?? payload.me.look ?? ""), home.x, home.z, home.rotationY)
   // Lore v2 F4: os NPCs da praça — corpo de classe, parados (a colisão vem na
   // lista de obstáculos do servidor); "Falar" abre a conversa (talk:<id>).
-  const streetNpcs = (centerP?.center.npcs ?? []).map((n) => {
+  // Lore v2 C1: no bairro, o vizinho da praça e a placa do pedestal vazio (o servidor
+  // manda pela classe do bairro; a colisão do vizinho já está nos obstáculos).
+  for (const s of nb?.signs ?? []) world.interactables.push({ kind: "sign", id: `sign-${s.id}`, x: s.x, z: s.z, radius: s.radius, text: s.text })
+  const streetNpcs = (centerP?.center.npcs ?? nb?.npcs ?? []).map((n) => {
     const c = new Character(scene, lib, mats, n.body, null, false, "")
     c.place(n.x, n.z, n.facing, 0)
     world.interactables.push({ kind: "npc", id: `npc-${n.id}`, x: n.x, z: n.z, radius: n.radius, npc: n.id })
