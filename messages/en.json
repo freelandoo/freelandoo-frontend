@@ -12289,7 +12289,11 @@
     "pactGodIris": "Íris",
     "rkNcPact": "{n} from the pact",
     "domPactSealed": "Pact sealed: your people earn extra nectar for 7 days.",
-    "domPactKept": "Your people's pact with this god is already in place."
+    "domPactKept": "Your people's pact with this god is already in place.",
+    "storyAria": "Story scene",
+    "storySkip": "Skip",
+    "storyGolemMem1": "A village of Foxes that refused to pick a side.",
+    "storyGolemMem2": "On the last night, the grown-ups asked Kragor to turn them into a wall."
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -12269,7 +12269,11 @@
     "pactGodIris": "Íris",
     "rkNcPact": "{n} del pacto",
     "domPactSealed": "Pacto sellado: tu pueblo gana néctar extra durante 7 días.",
-    "domPactKept": "El pacto de tu pueblo con este dios ya está en pie."
+    "domPactKept": "El pacto de tu pueblo con este dios ya está en pie.",
+    "storyAria": "Escena de la historia",
+    "storySkip": "Saltar",
+    "storyGolemMem1": "Una aldea de Zorros que no quiso elegir bando.",
+    "storyGolemMem2": "La última noche, los adultos le pidieron a Kragor convertirse en muralla."
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -842,6 +842,13 @@ const NEW_15 = {
   es: { domTrainerShort: "Entrenador {n}", domChapters: "Dominios de la travesía", domTrack: "Sectores", domGuardian: "Guardián del sector {n}", domBoss: "Jefe", domTheEnd: "Fin de la travesía", domStage_entrada: "Entrada", domStage_fundo: "Fondo", domStage_palacio: "Palacio", domPlaceTag: "Lugar de la historia · junto al sector {n}", domPlaceAbout_pedraverde: "El claro donde está sentado el Gólem. La historia del capítulo pasa por aquí.", domPlaceLocked: "Se abre junto con el sector {n}", domPanelAbout: "Qué es", domPanelGoal: "Objetivo", domPanelRec: "Recomendado", domPanelEnv: "Ambiente", domPanelPrize: "Premios", domGoal: "Vencer a {foe}", domGoalBoss: "Vencer a {foe} y cruzar", domRecLine: "Poder {p} · Nv. {lv}", domYourPowerShort: "el tuyo {n}", domPrizes: "XP de aventura, Esmeraldas y probabilidad de objeto", domPrizeCross: "Abre el paso: {name}", domSectorLocked: "Vence antes el sector {n}", domStartNote: "La travesía empieza en la entrada; los sectores van en orden por el camino." },
 }
 for (const loc of Object.keys(NEW_15)) Object.assign(KEYS[loc], NEW_15[loc])
+// 16 — cena de história no motor (piloto: a primeira chegada ao Golem): chaves novas, fill-if-absent
+const NEW_16 = {
+  "pt-BR": { storyAria: "Cena da história", storySkip: "Pular", storyGolemMem1: "Uma vila de Raposas que não quis escolher lado.", storyGolemMem2: "Na última noite, os adultos pediram a Kragor para virar muralha." },
+  en: { storyAria: "Story scene", storySkip: "Skip", storyGolemMem1: "A village of Foxes that refused to pick a side.", storyGolemMem2: "On the last night, the grown-ups asked Kragor to turn them into a wall." },
+  es: { storyAria: "Escena de la historia", storySkip: "Saltar", storyGolemMem1: "Una aldea de Zorros que no quiso elegir bando.", storyGolemMem2: "La última noche, los adultos le pidieron a Kragor convertirse en muralla." },
+}
+for (const loc of Object.keys(NEW_16)) Object.assign(KEYS[loc], NEW_16[loc])
 for (const loc of Object.keys(KEYS)) {
   const file = path.join(DIR, `${loc}.json`)
   const dict = JSON.parse(fs.readFileSync(file, "utf8"))

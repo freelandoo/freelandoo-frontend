@@ -24,6 +24,8 @@ import type { DomainStageSpec } from "../../laminas/engine/domain-stage"
 import type { BodyId } from "../../types"
 import { domainName, foeName, lockText } from "./domain-portal"
 import { GolemVoices } from "../../ui/quest/god-voice"
+import { StoryScene } from "../../ui/story/story-scene"
+import { GOLEM_STORY, markGolemScene, seenGolemScene } from "../../ui/story/golem-scene"
 
 const LaminasView = dynamic(() => import("../../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
@@ -44,6 +46,8 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const [spot, setSpot] = useState<string | null>(null)
   const [golem, setGolem] = useState<{ run: number; armed: boolean }>({ run: 0, armed: false })
   const [stowing, setStowing] = useState(false)
+  // apresentação 16: a primeira chegada ao Golem vira cena de história (depois, as vozes)
+  const [story, setStory] = useState(false)
   const [spawn, setSpawn] = useState(0)
   const [fight, setFight] = useState<{ ticket: FightTicket; sector: number; foe: string; foeBody: BodyId | null; foeRig: boolean } | null>(null)
   const [opening, setOpening] = useState(false)
@@ -149,7 +153,10 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
     const token = getToken()
     if (!token || !domainId || !place || !spot) return
     const r = await reachDomainPlace(token, domainId, place, spot)
-    if (r.ok && (r.data.recorded || r.data.armed)) setGolem((g) => ({ run: g.run + 1, armed: r.data.armed }))
+    if (r.ok && r.data.recorded && !r.data.armed && !seenGolemScene() && gameRef.current) {
+      gameRef.current.setBlocked(true)
+      setStory(true)
+    } else if (r.ok && (r.data.recorded || r.data.armed)) setGolem((g) => ({ run: g.run + 1, armed: r.data.armed }))
   }, [domainId, place, spot])
   useEffect(() => {
     void reachSpot()
@@ -294,7 +301,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         </div>
       )}
 
-      {status === "ready" && (
+      {status === "ready" && !story && (
         <div className="absolute flex flex-col items-end gap-2" style={{ bottom: bottom(isTouch ? 24 : 16), right: SAFE.right }}>
           {action && (
             <EvoButton variant="primary" icon={action.icon} loading={opening} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
@@ -307,7 +314,18 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         </div>
       )}
 
-      {status === "ready" && isTouch && <Joystick gameRef={gameRef} />}
+      {status === "ready" && isTouch && !story && <Joystick gameRef={gameRef} />}
+      {status === "ready" && story && (
+        <StoryScene
+          beats={GOLEM_STORY}
+          onShot={(shot) => gameRef.current?.story(shot)}
+          onDone={() => {
+            markGolemScene()
+            setStory(false)
+            gameRef.current?.setBlocked(false)
+          }}
+        />
+      )}
 
       {/* C5: as vozes do Golem (ou "Larga o ferro") e o botão de guardar a arma */}
       {status === "ready" && <GolemVoices run={golem.run} armed={golem.armed} />}

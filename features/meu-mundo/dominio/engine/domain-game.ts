@@ -44,6 +44,8 @@ import type { Box2 } from "../../engine/collision"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
 import { markSceneStart } from "../../engine/scene-meter"
+import { shotPose, type StoryShot, type StorySubject } from "../../engine/story-camera"
+import type { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline"
 import { MonsterModel, setMonsterSkinMax } from "../../laminas/engine/monster-view"
 import type { BodyId, InteriorDef } from "../../types"
 import type { DomainInfo, DomainId } from "../../data"
@@ -106,6 +108,11 @@ export interface DomainGameHandle {
   recenter: () => void
   /** O servidor devolveu o maior setor vencido: abre os portões. */
   setProgress: (best: number) => void
+  /**
+   * Apresentação 16: plano da cena de história com o Golem (null = volta a câmera do jogo).
+   * Corte seco a cada chamada; o jogador vira de frente para o Golem e fica parado.
+   */
+  story: (shot: StoryShot | null) => void
   dispose: () => void
 }
 
@@ -386,6 +393,74 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
   }
   refresh(true)
 
+  // ── apresentação 16: a cena de história (planos com corte seco; fundo desfocado fora do low) ──
+  let story: { shot: StoryShot; t: number; a: StorySubject; b: StorySubject } | null = null
+  let dof: DefaultRenderingPipeline | null = null
+  let dofWanted = false
+  const baseFov = follow.camera.fov
+  const STORY_SEP = 7.2
+  const SHOT_S = 3.2 // o avanço dentro do plano leva ~um plano inteiro (a cena corta antes)
+  const golemHead = () => {
+    const gm = golems[0]
+    if (!gm) return 2.6
+    const { max } = gm.char.holder.getHierarchyBoundingVectors(true)
+    // a caixa é da pose de pé (o esqueleto sentado não mexe nela): a cabeça sentada fica a ~2/3
+    return Math.max(1.6, max.y * 0.68)
+  }
+  function storyFrame(dt: number) {
+    if (!story) return
+    story.t += dt
+    const p = shotPose(story.shot, story.a, story.b, story.t / SHOT_S)
+    const cam = follow.camera
+    cam.position.copyFrom(p.pos)
+    cam.setTarget(p.target)
+    cam.rotation.z = p.roll
+    cam.fov = p.fov
+    if (dof) dof.depthOfField.focusDistance = p.focus * 1000
+  }
+  function setStory(shot: StoryShot | null) {
+    const gm = golems[0]
+    if (!shot || !gm) {
+      story = null
+      dofWanted = false
+      dof?.dispose()
+      dof = null
+      follow.camera.rotation.z = 0
+      follow.camera.fov = baseFov
+      follow.snapBehind(body.x, body.z, body.facing)
+      return
+    }
+    // primeiro plano: o jogador para a 7,2 m (STORY_SEP) do Golem, na linha em que chegou (o corte seco
+    // esconde o passo). Os planos foram conferidos dessa distância: mais perto, a câmera
+    // entra no galho da árvore colossal que desce na frente dele.
+    if (!story) {
+      const sep = Math.hypot(body.x - gm.x, body.z - gm.z) || 1
+      const k = STORY_SEP / sep
+      body.x = gm.x + (body.x - gm.x) * k
+      body.z = gm.z + (body.z - gm.z) * k
+      char.place(body.x, body.z, body.facing, 0)
+    }
+    // de frente para o Golem, parado
+    body.facing = Math.atan2(gm.x - body.x, gm.z - body.z)
+    visualFacing = body.facing
+    body.vx = 0
+    body.vz = 0
+    const a: StorySubject = { x: body.x, z: body.z, head: 1.55 }
+    story = { shot, t: 0, a, b: story?.b ?? { x: gm.x, z: gm.z, head: golemHead() } }
+    storyFrame(0)
+    if (!low && !dof && !dofWanted) {
+      dofWanted = true
+      void import("@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline").then(({ DefaultRenderingPipeline }) => {
+        if (disposed || !story || dof) return
+        dof = new DefaultRenderingPipeline("mm-story", false, scene, [follow.camera])
+        dof.depthOfFieldEnabled = true
+        dof.depthOfField.fStop = 1.4
+        dof.depthOfField.focalLength = 50
+        dof.depthOfField.focusDistance = 3000
+      })
+    }
+  }
+
   // ── andar, câmera e o que está perto ────────────────────────────────────
   const input = createInputState()
   const detachInput = attachInput(canvas, input)
@@ -441,7 +516,8 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       const face = Math.atan2(body.x - p.x, body.z - p.z)
       g.update(dt, { x: p.x, y: 0, z: p.z, facing: face, state: "chase", t: time, warn: 0, speed: 0, calm: true })
     }
-    follow.update(dt, body.x, body.z, boxes, 0)
+    if (story) storyFrame(dt)
+    else follow.update(dt, body.x, body.z, boxes, 0)
     governor.tick(engine.getDeltaTime())
     refresh()
     const next = findNearby()
@@ -478,6 +554,7 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
         follow.snapBehind(body.x, body.z, 0)
       },
       turn: (yaw: number) => follow.snapBehind(body.x, body.z, yaw),
+      story: () => (story ? { a: story.a, b: story.b, cam: follow.camera.position.asArray(), bbox: golems[0] ? golems[0].char.holder.getHierarchyBoundingVectors(true) : null } : null),
     }
 
   return {
@@ -499,6 +576,7 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
     recenter() {
       follow.snapBehind(body.x, body.z, body.facing)
     },
+    story: setStory,
     setProgress(b) {
       best = Math.max(best, Math.max(0, Math.min(10, b)))
       rebuildBoxes()
@@ -509,6 +587,7 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       if (disposed) return
       disposed = true
       engine.stopRenderLoop()
+      dof?.dispose()
       detachInput()
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
