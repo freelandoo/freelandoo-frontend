@@ -24,6 +24,8 @@ const ROWS = [
   // Chat e jogadores
   ["Chat indisponível", "Chat unavailable", "Chat no disponible"],
   ["Cursor inválido", "Invalid cursor", "Cursor no válido"],
+  // Placar semanal (lore v2 N1)
+  ["Semana inválida", "Invalid week", "Semana no válida"],
   ["Mensagem não enviada", "Message not sent", "Mensaje no enviado"],
   ["Mensagem não encontrada", "Message not found", "Mensaje no encontrado"],
   ["Jogador não encontrado", "Player not found", "Jugador no encontrado"],

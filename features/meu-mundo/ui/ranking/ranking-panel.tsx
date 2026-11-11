@@ -4,9 +4,10 @@
 // Três abas: PODER (número calculado pelo servidor: os 5 atributos + HP máx do nível +
 // equipamento), NÍVEL (nível de aventura) e FREELANDOO (pontos do perfil no site). Top 100 do
 // Brasil e, embaixo, a minha posição. Nada é calculado aqui: a tela só mostra o que vem pronto.
+// Lore v2 N1: a aba SEMANA (weekly-board.tsx) — o placar semanal de cada jogável.
 
 import { useCallback, useEffect, useState } from "react"
-import { Crown, RefreshCw, Trophy, Zap, Star } from "lucide-react"
+import { CalendarDays, Crown, RefreshCw, Trophy, Zap, Star } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getRanking, type RankingResult, type RankingRow, type RankingTab, type PoderParts } from "../../data"
@@ -14,10 +15,13 @@ import { MM } from "../hud/tokens"
 import { EvoButton, EvoDialog } from "../hud/hud-kit"
 import { archivo, teko } from "../status/evo-skin"
 import { faceOf } from "../portraits"
+import { WeeklyBoard } from "./weekly-board"
 
 type Tr = (key: string, fallback: string) => string
 
-const TABS: { id: RankingTab; key: string; label: string; icon: React.ReactNode }[] = [
+type PanelTab = RankingTab | "semana"
+const TABS: { id: PanelTab; key: string; label: string; icon: React.ReactNode }[] = [
+  { id: "semana", key: "rkTabSemana", label: "Semana", icon: <CalendarDays className="h-3.5 w-3.5" /> },
   { id: "poder", key: "rkTabPoder", label: "Poder", icon: <Zap className="h-3.5 w-3.5" /> },
   { id: "nivel", key: "rkTabNivel", label: "Nível", icon: <Star className="h-3.5 w-3.5" /> },
   { id: "freelandoo", key: "rkTabFreelandoo", label: "Freelandoo", icon: <Trophy className="h-3.5 w-3.5" /> },
@@ -37,7 +41,7 @@ const PARTS: { k: keyof PoderParts; key: string; label: string }[] = [
 export default function RankingPanel({ onClose }: { onClose: () => void }) {
   const t = useTranslations("MeuMundo")
   const locale = useLocale()
-  const [tab, setTab] = useState<RankingTab>("poder")
+  const [tab, setTab] = useState<PanelTab>("semana")
   const [data, setData] = useState<Partial<Record<RankingTab, RankingResult>>>({})
   const [error, setError] = useState<RankingTab | null>(null)
 
@@ -50,10 +54,10 @@ export default function RankingPanel({ onClose }: { onClose: () => void }) {
     else setError(which)
   }, [])
   useEffect(() => {
-    if (!data[tab]) void load(tab)
+    if (tab !== "semana" && !data[tab]) void load(tab)
   }, [tab, data, load])
 
-  const cur = data[tab]
+  const cur = tab === "semana" ? undefined : data[tab]
   const fmt = (n: number) => Math.round(n).toLocaleString(locale)
   const unit = tab === "poder" ? t("rkUnitPoder", "de poder") : tab === "nivel" ? t("rkUnitNivel", "nível") : t("rkUnitPts", "pts")
   const meInTop = !!cur?.me && cur.top.some((r) => r.position === cur.me!.position)
@@ -77,6 +81,10 @@ export default function RankingPanel({ onClose }: { onClose: () => void }) {
         ))}
       </div>
 
+      {tab === "semana" ? (
+        <WeeklyBoard t={t} locale={locale} />
+      ) : (
+        <>
       <p className="mb-2 text-[12px]" style={{ color: MM.muted }}>
         {tab === "poder"
           ? t("rkHintPoder", "Soma do que é permanente: atributos, HP máx do nível e equipamento. Entra o seu melhor personagem.")
@@ -107,13 +115,13 @@ export default function RankingPanel({ onClose }: { onClose: () => void }) {
           <ol className="flex max-h-[50vh] flex-col gap-1.5 overflow-y-auto pr-1" aria-label={t(TABS.find((x) => x.id === tab)!.key, TABS.find((x) => x.id === tab)!.label)}>
             {cur.top.map((r) => (
               <li key={`${r.position}-${r.idUser ?? r.idProfile ?? r.name}`}>
-                <Row row={r} mine={!!cur.me && cur.me.position === r.position} value={fmt(r.value)} unit={unit} t={t} />
+                <RankingRowView row={r} mine={!!cur.me && cur.me.position === r.position} value={fmt(r.value)} unit={unit} t={t} />
               </li>
             ))}
           </ol>
           {cur.me && !meInTop && (
             <div className="mt-2 border-t pt-2" style={{ borderColor: MM.border }}>
-              <Row row={cur.me} mine value={fmt(cur.me.value)} unit={unit} t={t} />
+              <RankingRowView row={cur.me} mine value={fmt(cur.me.value)} unit={unit} t={t} />
             </div>
           )}
           {!cur.me && (
@@ -124,11 +132,13 @@ export default function RankingPanel({ onClose }: { onClose: () => void }) {
           {tab === "poder" && cur.me?.parts && <PoderBreakdown parts={cur.me.parts} fmt={fmt} t={t} />}
         </>
       )}
+        </>
+      )}
     </EvoDialog>
   )
 }
 
-function Row({ row, mine, value, unit, t }: { row: RankingRow; mine: boolean; value: string; unit: string; t: Tr }) {
+export function RankingRowView({ row, mine, value, unit, t }: { row: RankingRow; mine: boolean; value: string; unit: string; t: Tr }) {
   const top3 = row.position <= 3
   const face = row.body ? faceOf(row.body) : row.avatar
   const name = mine && !row.name ? t("rkYou", "Você") : row.name || t("rkNoName", "Jogador")

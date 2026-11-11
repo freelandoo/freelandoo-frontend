@@ -455,6 +455,33 @@ export type ShareLink = { code: string; percent: number; enabled: boolean }
 export const getShareLink = (token: string) => call<ShareLink>(token, "GET", "/share")
 
 export const getRanking = (token: string, tab: RankingTab) => call<RankingResult>(token, "GET", `/ranking/${tab}`)
+// ═══ lore v2 N1: o placar SEMANAL de cada jogável (o néctar da N2 sai da posição nele) ═══
+export const WEEKLY_GAMES = ["jetpack", "noturno", "corrida", "gincana", "paint", "laminas", "boxe", "hall", "poder"] as const
+export type WeeklyGame = (typeof WEEKLY_GAMES)[number]
+export interface WeeklyRankingRow extends RankingRow {
+  /** partidas (ou vitórias) que contaram na semana */
+  plays?: number
+}
+export interface WeeklyRanking {
+  tab: "semana"
+  game: WeeklyGame
+  /** best = melhor marca da semana; sum = soma de vitórias; live = o Poder de agora */
+  kind: "best" | "sum" | "live"
+  /** desc = maior é melhor; asc = menor é melhor (tempo) */
+  dir: "asc" | "desc"
+  unit: "pts" | "ms" | "wins"
+  /** domingo da semana (AAAA-MM-DD, Brasília) */
+  week: string
+  current: boolean
+  /** quando a semana fecha (sábado 23:59 de Brasília) */
+  endsAt: string
+  scope: "br"
+  games: WeeklyGame[]
+  top: WeeklyRankingRow[]
+  me: WeeklyRankingRow | null
+}
+export const getWeeklyRanking = (token: string, game: WeeklyGame, week?: string) =>
+  call<WeeklyRanking>(token, "GET", `/ranking/semana/${game}${week ? `?week=${encodeURIComponent(week)}` : ""}`)
 export const buyGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/buy", { item, key })
 export const equipGear = (token: string, slot: GearSlot, item: string | null) => call<{ bag: GearBag }>(token, "POST", "/gear/equip", { slot, item })
 export const forgeGear = (token: string, recipe: string, key: string) => call<GearOut>(token, "POST", "/gear/forge", { recipe, key })
