@@ -19,6 +19,7 @@ import { MonsterModel } from "../laminas/engine/monster-view"
 import { MOB_KINDS, type MobKind } from "../laminas/sim/fight"
 import type { Interactable } from "../types"
 import { GodFigure } from "./god-view"
+import { MobTrack } from "./mob-track"
 import { godIdOf, type GodId } from "../laminas/sim/fight"
 
 /** Lore v2 N4: o deus solto na rua (a sala manda "gods": [deus, x, z, rumo, modo]). */
@@ -95,13 +96,8 @@ interface View {
   model: MonsterModel
   glow: Mesh
   tag: LevelTag | null
-  x: number
-  z: number
-  facing: number
-  tx: number
-  tz: number
-  tf: number
-  speed: number
+  /** Lore v2 B5: a posição entre pacotes (velocidade medida, sem andar aos trancos). */
+  track: MobTrack
   seen: number
 }
 
@@ -151,7 +147,7 @@ export class CenterMobs {
         glow.rotation.x = Math.PI / 2
         glow.material = this.glowMat
         glow.isPickable = false
-        v = { id, kind: kind as MobKindCity, model, glow, tag: null, x, z, facing: f, tx: x, tz: z, tf: f, speed: 0, seen: stamp }
+        v = { id, kind: kind as MobKindCity, model, glow, tag: null, track: new MobTrack(performance.now() / 1000, x, z, f), seen: stamp }
         this.views.set(id, v)
       }
       // placa do nível (refeita só se o nível mudar; sala antiga sem nível = sem placa)
@@ -160,9 +156,7 @@ export class CenterMobs {
         v.tag = levelTag(this.scene, id, level)
         v.tag.mesh.setEnabled(this.tagsOn)
       }
-      v.tx = x
-      v.tz = z
-      v.tf = f
+      v.track.push(performance.now() / 1000, x, z, f)
       v.seen = stamp
     }
     for (const [id, v] of this.views) {
@@ -222,17 +216,13 @@ export class CenterMobs {
       v.facing += Math.atan2(Math.sin(v.tf - v.facing), Math.cos(v.tf - v.facing)) * k
       v.fig.update(dt, v.x, v.z, v.facing, v.mode === 2 ? 0 : v.speed)
     }
+    const now = performance.now() / 1000
     for (const v of this.views.values()) {
-      const k = Math.min(1, dt * 4)
-      const nx = v.x + (v.tx - v.x) * k
-      const nz = v.z + (v.tz - v.z) * k
-      v.speed += (Math.hypot(nx - v.x, nz - v.z) / Math.max(dt, 1e-3) - v.speed) * Math.min(1, dt * 6)
-      v.x = nx
-      v.z = nz
-      v.facing += Math.atan2(Math.sin(v.tf - v.facing), Math.cos(v.tf - v.facing)) * k
-      v.model.update(dt, { x: v.x, y: 0, z: v.z, facing: v.facing, state: "chase", t: this.time, warn: 0, speed: v.speed, calm: true })
-      v.glow.position.set(v.x, 0.05, v.z)
-      v.tag?.mesh.position.set(v.x, LEVEL_Y[v.kind], v.z)
+      const tr = v.track
+      tr.update(now, dt)
+      v.model.update(dt, { x: tr.x, y: 0, z: tr.z, facing: tr.facing, state: "chase", t: this.time, warn: 0, speed: tr.speed, calm: true })
+      v.glow.position.set(tr.x, 0.05, tr.z)
+      v.tag?.mesh.position.set(tr.x, LEVEL_Y[v.kind], tr.z)
       const pulse = 1 + Math.sin(this.time * 2.5 + v.id) * 0.07
       v.glow.scaling.set(pulse, pulse, 1)
     }
@@ -240,13 +230,13 @@ export class CenterMobs {
 
   /** Onde cada monstro está agora (para o personagem comentar quem vê: banter.ts). */
   seen(x: number, z: number) {
-    return [...this.views.values()].map((v) => ({ id: v.id, kind: v.kind as string, d: Math.hypot(v.x - x, v.z - z) }))
+    return [...this.views.values()].map((v) => ({ id: v.id, kind: v.kind as string, d: Math.hypot(v.track.x - x, v.track.z - z) }))
   }
 
   /** "Lutar": um por monstro. */
   interactables(): Interactable[] {
     const out: Interactable[] = []
-    for (const v of this.views.values()) out.push({ kind: "monster", id: `mob-${v.id}`, x: v.x, z: v.z, radius: REACH, mobId: v.id, mobKind: v.kind })
+    for (const v of this.views.values()) out.push({ kind: "monster", id: `mob-${v.id}`, x: v.track.x, z: v.track.z, radius: REACH, mobId: v.id, mobKind: v.kind })
     return out
   }
 

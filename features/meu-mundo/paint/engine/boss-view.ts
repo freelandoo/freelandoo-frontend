@@ -31,12 +31,23 @@ const FPS = 30
 const BOSS_SCALE = 2
 /** O clipe Walk foi feito para 2,4 m/s no tamanho do GLB: na escala anda 2,4 × BOSS_SCALE sem escorregar. */
 const WALK_SPEED = 2.4 * BOSS_SCALE
+/**
+ * Lore v2 B5: troca de clipe com mistura (era seca: o gato-gorila de 10 m estalava de uma
+ * pose para outra). Entrar num golpe é rápido (o golpe aparece quando acerta); parado ↔
+ * andando e a morte entram mais devagar; quem sai, sai em 0,2 s.
+ */
+const FADE_IN_ACT = 0.06
+const FADE_IN_LOOP = 0.15
+const FADE_OUT = 0.2
 
 export class BossView {
   private readonly root: TransformNode
   private clips = new Map<string, AnimationGroup>()
   private playing: AnimationGroup | null = null
   private playingKey = ""
+  /** B5: clipes saindo (peso caindo até 0) e o tempo de entrada do que toca. */
+  private fading: AnimationGroup[] = []
+  private fadeIn = 0
   private disposed = false
   private placed = false
   private dead = false
@@ -93,10 +104,15 @@ export class BossView {
     const g = this.clips.get(name)
     if (!g) return
     if (this.playingKey === key) return
-    this.playing?.stop()
+    const old = this.playing
+    if (old && old !== g && !this.fading.includes(old)) this.fading.push(old)
+    this.fading = this.fading.filter((o) => o !== g)
     const loop = LOOP.has(name)
     const len = (g.to - g.from) / FPS
     const at = loop ? t % len : Math.min(t, len)
+    // sem nada tocando (primeira vez) entra inteiro; senão sobe do zero
+    g.weight = old ? 0 : 1
+    this.fadeIn = loop || name === CLIP.die ? FADE_IN_LOOP : FADE_IN_ACT
     g.start(loop, name === CLIP.walk ? TUNING.bossWalk / WALK_SPEED : 1, g.from, g.to, false)
     g.goToFrame(g.from + at * FPS)
     if (!loop) g.onAnimationGroupEndObservable.addOnce(() => g.goToFrame(g.to))
@@ -104,8 +120,21 @@ export class BossView {
     this.playingKey = key
   }
 
+  /** B5: sobe o peso do clipe que entra e desce o dos que saem (a soma fica perto de 1). */
+  private blend(dt: number) {
+    const g = this.playing
+    if (g && g.weight < 1) g.weight = Math.min(1, g.weight + dt / Math.max(1e-3, this.fadeIn))
+    if (!this.fading.length) return
+    for (const o of this.fading) {
+      o.weight = Math.max(0, o.weight - dt / FADE_OUT)
+      if (o.weight <= 0) o.stop()
+    }
+    this.fading = this.fading.filter((o) => o.weight > 0)
+  }
+
   /** `time` = s de partida; `alive` = vida do chefão > 0. */
   tick(dt: number, b: BossState, time: number, alive: boolean) {
+    this.blend(dt)
     const r = this.root
     if (!this.placed) {
       r.position.x = b.x

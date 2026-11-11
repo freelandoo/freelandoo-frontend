@@ -226,6 +226,19 @@ const WOLF_STREET: [string, boolean, number][] = [
 const WOLF_WALK = (1.12 * WOLF_SCALE) / 2
 const WOLF_TROT = (1.6 * WOLF_SCALE) / 2
 const WOLF_RUN = (8.5 * WOLF_SCALE) / 2
+/** Lore v2 B5: clipes de passo em laço (a troca entre eles mantém a fase). */
+const WOLF_GAITS = new Set(["Walk", "Stalk", "Trot", "Run"])
+/** B5: fronteiras do passo (m/s): parado | andar | trote | corrida. */
+const WOLF_GAIT_AT = [0.25, 1.4, 2.6] as const
+/** Folga em volta de cada fronteira (fração): sobe acima de ×1,15, desce abaixo de ×0,85. */
+const GAIT_SLACK = 0.15
+/** O passo pela velocidade, com folga: só troca quando passa da fronteira com sobra. */
+export function gaitWithSlack(cur: number, speed: number, at: readonly number[]) {
+  let g = cur
+  while (g < at.length && speed > at[g] * (1 + GAIT_SLACK)) g++
+  while (g > 0 && speed < at[g - 1] * (1 - GAIT_SLACK)) g--
+  return g
+}
 
 /** Biblioteca de avatares com os clipes do boxe, uma por cena (monstros rigados). */
 const libs = new WeakMap<Scene, { lib: AvatarLibrary; fallback: StandardMaterial; shadow: StandardMaterial }>()
@@ -350,6 +363,10 @@ export class MonsterModel {
   /** Lobo rigado: os clipes (nome → grupo) e o que está tocando. */
   private wolf: { anims: Map<string, AnimationGroup>; entries: InstantiatedEntries } | null = null
   private wolfClip = ""
+  /** Lore v2 B5: passo do lobo agora (0 parado, 1 andar, 2 trote, 3 corrida), com folga na troca. */
+  private wolfGait = 0
+  /** B5: andar ou correr do corpo rigado na rua (1/2), com folga na troca. */
+  private rigGait: 1 | 2 = 1
   private dodgeLeft = 0
   private wolfMove: WolfMove | null = null
   private streetAt = Math.floor(Math.random() * WOLF_STREET.length)
@@ -607,7 +624,9 @@ export class MonsterModel {
     }
     if (p.calm) {
       c.setBoxe(null)
-      c.animate(dt, p.speed > 0.2 ? (p.speed > 2.4 ? 2 : 1) : 0, p.speed)
+      // B5: andar ↔ correr com folga em volta de 2,4 m/s (sem piscar entre os dois)
+      this.rigGait = p.speed > 2.7 ? 2 : p.speed < 2.1 ? 1 : this.rigGait
+      c.animate(dt, p.speed > 0.2 ? this.rigGait : 0, p.speed)
     } else if (p.state === "chase" && p.speed > 0.2) {
       c.setBoxe(null)
       c.animate(dt, p.speed > 3.2 ? 2 : 1, p.speed)
@@ -755,12 +774,18 @@ export class MonsterModel {
       g.speedRatio = speed
       return
     }
+    // B5: de um passo em laço para outro (andar → trote → corrida), o novo entra na mesma
+    // fração do ciclo do anterior: a pata que estava no chão continua no chão
+    const prev = this.wolfClip.split(":")[0]
+    const old = WOLF_GAITS.has(prev) && WOLF_GAITS.has(name) && loop ? this.wolf!.anims.get(prev) : undefined
+    const phase = old ? ((old.animatables[0]?.masterFrame ?? old.from) - old.from) / Math.max(1e-3, old.to - old.from) : 0
     for (const o of this.wolf!.anims.values()) if (o !== g) o.stop()
     this.wolfClip = key
     const span = g.to - g.from
     const from = part && len ? g.from + span * (part[0] / len) : g.from
     const to = part && len ? g.from + span * (part[1] / len) : g.to
     g.start(loop, speed, from, to)
+    if (old && phase > 0) g.goToFrame(from + (to - from) * (phase % 1))
   }
 
   /** Lobo rigado: a regra diz o estado; o clipe e a velocidade saem dele. */
@@ -812,10 +837,13 @@ export class MonsterModel {
           this.dodgeLeft -= dt
           break
         }
-        if (p.speed > 0.25) this.streetLeft = 0
-        if (p.speed > 2.6) this.playWolf("Run", true, Math.min(1.6, Math.max(0.85, p.speed / WOLF_RUN)))
-        else if (p.speed > 1.4) this.playWolf("Trot", true, Math.min(1.6, Math.max(0.7, p.speed / WOLF_TROT)))
-        else if (p.speed > 0.25) {
+        // B5: o passo só troca depois de passar a fronteira com folga (a velocidade medida
+        // oscila em volta dela e o lobo piscava entre dois clipes)
+        this.wolfGait = gaitWithSlack(this.wolfGait, p.speed, WOLF_GAIT_AT)
+        if (this.wolfGait) this.streetLeft = 0
+        if (this.wolfGait === 3) this.playWolf("Run", true, Math.min(1.6, Math.max(0.85, p.speed / WOLF_RUN)))
+        else if (this.wolfGait === 2) this.playWolf("Trot", true, Math.min(1.6, Math.max(0.7, p.speed / WOLF_TROT)))
+        else if (this.wolfGait === 1) {
           if (p.state === "circle" && !p.calm) this.playWolf("Stalk", true, Math.min(2.2, Math.max(0.8, p.speed / WOLF_WALK)))
           else this.playWolf("Walk", true, Math.min(2.2, Math.max(0.6, p.speed / WOLF_WALK)))
         } else if (p.calm) {

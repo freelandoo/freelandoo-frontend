@@ -497,6 +497,8 @@ export class RemotePlayer {
   z: number
   facing: number
   private tMove: MoveState = 0
+  /** B5: o estado do instante desenhado (null = a linha do tempo ainda não tem). */
+  private drawMove: MoveState | null = null
   y = 0
   private lastX: number
   private lastZ: number
@@ -516,7 +518,7 @@ export class RemotePlayer {
 
   setTarget(x: number, z: number, facing: number, move: MoveState, y = 0) {
     this.tMove = move
-    this.track.push(performance.now() / 1000, x, z, facing, y)
+    this.track.push(performance.now() / 1000, x, z, facing, y, move)
   }
 
   update(dt: number) {
@@ -525,13 +527,16 @@ export class RemotePlayer {
       this.z = this.at.z
       this.y = this.at.y
       this.facing = this.at.facing
+      // Lore v2 B5: o corpo é desenhado ~150 ms no passado; o clipe vinha do pacote MAIS NOVO e
+      // começava a andar antes do corpo sair (e parava antes dele parar: o pé escorregava)
+      if (this.at.move !== undefined && this.at.move >= 0) this.drawMove = this.at.move as MoveState
     }
     const inst = dt > 0 ? Math.hypot(this.x - this.lastX, this.z - this.lastZ) / dt : 0
     this.speed += (inst - this.speed) * (1 - Math.exp(-8 * dt))
     this.lastX = this.x
     this.lastZ = this.z
     this.char.place(this.x, this.z, this.facing, this.y)
-    this.char.animate(dt, this.tMove, this.speed)
+    this.char.animate(dt, this.drawMove ?? this.tMove, this.speed)
   }
 
   dispose() {

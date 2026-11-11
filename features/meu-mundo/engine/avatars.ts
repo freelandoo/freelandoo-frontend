@@ -246,6 +246,13 @@ const LOCO = {
   ekaterina: { file: "anim-loco-ekaterina-m61.glb", walk: 1.32, run: 4.454 },
 } as const satisfies Record<keyof typeof ASSETS.anims, { file: string; walk: number; run: number }>
 /**
+ * Lore v2 B5: onde o pé pisa em cada clipe, em fração do ciclo (Blender, pé mais baixo de
+ * cada lado). No m61 o correr pisa ~0,12 do ciclo antes do andar nos cinco conjuntos
+ * (esquerdo: andar 0,50–0,52, correr 0,37; direito 0,96–1,00 × 0,87–0,93). `fallback` =
+ * o Walk/SlowRun do arquivo de animações base (m59), quando a locomoção não carregou.
+ */
+const GAIT_OFFSET = { loco: { base: -0.12, fat: -0.12, strong: -0.12, sergio: -0.11, ekaterina: -0.11 }, fallback: -0.03 } as const
+/**
  * Corpos VOLUMOSOS andando/correndo (2026-11-02, "os braços do ciborgue ficam
  * indo pra cima e cruzando"): o clipe do Sergio dobra o cotovelo e leva o
  * punho à frente do peito — no Sergio fica natural, no tronco/ombreira enormes
@@ -754,6 +761,7 @@ export class AvatarLibrary {
     // escala do nó do esqueleto (pai do quadril) — sem isso o adulto de 2,7 m
     // tocava o passo rápido demais e o pé escorregava.
     let natural: { walk: number; run: number } = { ...ANIM_NATURAL_SPEED }
+    let gaitOffset: number = GAIT_OFFSET.fallback
     const locoWalk = loco?.animationGroups.find((g) => g.name === "Walk")
     const locoRun = loco?.animationGroups.find((g) => g.name === "SlowRun")
     if (locoWalk && locoRun) {
@@ -763,6 +771,7 @@ export class AvatarLibrary {
       groups.SlowRun = locoRun.clone(`SlowRun#${++cloneSeq}`, (old: Node) => byName.get(old.name) ?? null, true)
       const l = LOCO[ANIM_SET[id]]
       natural = { walk: l.walk, run: l.run }
+      gaitOffset = GAIT_OFFSET.loco[ANIM_SET[id]]
     }
     if (isClanBody(id) || isTall(id) || id === "brutamontes") {
       const k = Math.abs((byName.get("mixamorig:Hips")?.parent as TransformNode | null)?.scaling.y ?? 1)
@@ -816,6 +825,7 @@ export class AvatarLibrary {
     this.live++
     const rig = new AvatarRig(this, id, entries, root, groups, meshes, feet, ANKLE_REST[ANIM_SET[id]], lod)
     rig.natural = natural
+    rig.gaitOffset = gaitOffset
     // Descanso e veículo só viram cópia quando o corpo precisa: com 26 na rua, as 13
     // cópias paradas de cada um eram a maior parte da memória das animações.
     for (const [set, clips] of [[rest, REST_CLIPS], [ride, RIDE_CLIPS]] as const) {
@@ -903,6 +913,8 @@ export class AvatarRig {
   private readonly clips: Clip[]
   /** m/s que o Walk e o SlowRun andam a 1× neste corpo (a biblioteca mede no create). */
   natural: { walk: number; run: number } = { ...ANIM_NATURAL_SPEED }
+  /** B5: fração do ciclo do correr = a do andar + isto (o mesmo pé no chão; GAIT_OFFSET). */
+  gaitOffset: number = GAIT_OFFSET.fallback
   private disposed = false
   /** Longe ou fora da tela (mm3d-19): a pose fica parada, nada é avaliado. */
   private frozen = false
@@ -1507,6 +1519,28 @@ export class AvatarRig {
     if (tiredWalk) tiredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
     if (injuredWalk) injuredWalk.speedRatio = Math.max(0.4, Math.min(2.2, walkRate))
     this.groups.SlowRun.speedRatio = Math.max(0.6, Math.min(2.2, runRate))
+    this.syncGait()
+  }
+
+  /**
+   * Lore v2 B5: andar ↔ correr EM FASE. Os dois clipes tocam soltos (durações e ritmos
+   * diferentes); na mistura cada um estava num ponto do passo e o pé de apoio escorregava.
+   * Enquanto os dois têm peso, o de menor peso segue a fração do ciclo do outro, com o
+   * deslocamento medido (o mesmo pé no chão no mesmo instante, `gaitOffset`).
+   */
+  private syncGait() {
+    const ww = this.weights.Walk
+    const wr = this.weights.SlowRun
+    if (ww <= 0 || wr <= 0) return
+    const walk = this.groups.Walk
+    const run = this.groups.SlowRun
+    const lead = ww >= wr ? walk : run
+    const follow = lead === walk ? run : walk
+    const span = (g: AnimationGroup) => Math.max(1e-3, g.to - g.from)
+    const at = lead.animatables[0]?.masterFrame ?? lead.from
+    const ph = (at - lead.from) / span(lead) + (lead === walk ? this.gaitOffset : -this.gaitOffset)
+    const u = ((ph % 1) + 1) % 1
+    follow.goToFrame(follow.from + u * span(follow))
   }
 
   dispose() {

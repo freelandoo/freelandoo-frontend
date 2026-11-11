@@ -27,6 +27,8 @@ interface Sample {
   z: number
   y: number
   facing: number
+  /** Lore v2 B5: o estado de movimento do pacote (andar, correr, sentar…); -1 = não veio. */
+  move: number
 }
 
 export interface WalkerPose {
@@ -34,6 +36,8 @@ export interface WalkerPose {
   z: number
   y: number
   facing: number
+  /** B5: o estado do pacote do instante desenhado (o clipe anda junto com o corpo). */
+  move?: number
 }
 
 const wrap = (a: number) => {
@@ -47,8 +51,8 @@ export class RemoteWalker {
   private key = ""
 
   /** Estado da sala (chamar a cada quadro; só conta quando muda). `now` em s. */
-  push(now: number, x: number, z: number, facing: number, y = 0) {
-    const key = `${x}|${z}|${facing}|${y}`
+  push(now: number, x: number, z: number, facing: number, y = 0, move = -1) {
+    const key = `${x}|${z}|${facing}|${y}|${move}`
     if (key === this.key) return
     this.key = key
     const prev = this.s[this.s.length - 1]
@@ -67,7 +71,7 @@ export class RemoteWalker {
       const expect = last.t + NOMINAL
       t = Math.abs(now - expect) < 0.08 ? expect + (now - expect) * 0.1 : Math.max(now, last.t + 0.02)
     }
-    this.s.push({ t, x, z, y, facing })
+    this.s.push({ t, x, z, y, facing, move })
     if (this.s.length > KEEP) this.s.shift()
   }
 
@@ -84,6 +88,7 @@ export class RemoteWalker {
       out.z = last.z
       out.y = last.y
       out.facing = last.facing
+      out.move = last.move
       return true
     }
     if (rt <= s[0].t) {
@@ -91,6 +96,7 @@ export class RemoteWalker {
       out.z = s[0].z
       out.y = s[0].y
       out.facing = s[0].facing
+      out.move = s[0].move
       return true
     }
     let i = s.length - 2
@@ -102,6 +108,8 @@ export class RemoteWalker {
     out.z = a.z + (b.z - a.z) * u
     out.y = a.y + (b.y - a.y) * u
     out.facing = wrap(a.facing + wrap(b.facing - a.facing) * u)
+    // o estado vale a partir do pacote: até chegar ao próximo, é o do anterior
+    out.move = a.move
     return true
   }
 
