@@ -12182,7 +12182,9 @@
     "domErrorTitle": "The Domain didn't open",
     "domWon": "Sector {n} beaten! The gate is open.",
     "domCrossedNow": "You crossed {name}! The passage is open.",
-    "domFightFail": "The fight didn't start: {e}"
+    "domFightFail": "The fight didn't start: {e}",
+    "fightNotCounted": "The server didn't confirm this fight — the result hasn't counted yet.",
+    "fightRetry": "Try again"
   },
   "Sports": {
     "eyebrow": "Sports",

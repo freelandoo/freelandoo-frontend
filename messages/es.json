@@ -12162,7 +12162,9 @@
     "domErrorTitle": "El Dominio no se abrió",
     "domWon": "¡Sector {n} vencido! La puerta se abrió.",
     "domCrossedNow": "¡Cruzaste {name}! El paso se abrió.",
-    "domFightFail": "La pelea no empezó: {e}"
+    "domFightFail": "La pelea no empezó: {e}",
+    "fightNotCounted": "El servidor no confirmó esta pelea — el resultado aún no cuenta.",
+    "fightRetry": "Intentar de nuevo"
   },
   "Sports": {
     "eyebrow": "Deportes",

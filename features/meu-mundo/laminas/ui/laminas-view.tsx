@@ -309,6 +309,11 @@ function LaminasScreen({
   const [ticket, setTicket] = useState<FightTicket | "offline" | null>(null)
   const [receipt, setReceipt] = useState<Receipt | null>(null)
   const [settling, setSettling] = useState(false)
+  // 2026-11-11: o servidor recusou/não respondeu o fim da luta. Antes isso sumia em
+  // silêncio (a tela dizia "vitória" e a luta virava abandono na seguinte); agora
+  // aparece, com "Tentar de novo" (o mesmo ticket: o servidor é idempotente).
+  const [finishError, setFinishError] = useState<string | null>(null)
+  const retryFinishRef = useRef<(() => void) | null>(null)
   useEffect(() => {
     let alive = true
     const token = getToken()
@@ -408,15 +413,24 @@ function LaminasScreen({
           const token = getToken()
           const frames = gameRef.current?.frames()
           if (fromServer && token && frames) {
-            setSettling(true)
-            void finishFight(token, fromServer.ticket, frames).then((r) => {
-              if (!alive) return
-              setSettling(false)
-              if (r.ok) {
-                setReceipt(r.data.receipt)
-                receiptRef.current?.(r.data.receipt)
-              }
-            })
+            const send = () => {
+              setSettling(true)
+              setFinishError(null)
+              void finishFight(token, fromServer.ticket, frames).then((r) => {
+                if (!alive) return
+                setSettling(false)
+                if (r.ok) {
+                  retryFinishRef.current = null
+                  setReceipt(r.data.receipt)
+                  receiptRef.current?.(r.data.receipt)
+                } else {
+                  console.error("[meu-mundo] o servidor não conferiu a luta", r.status, r.code, r.error)
+                  setFinishError(r.error || "erro")
+                }
+              })
+            }
+            retryFinishRef.current = send
+            send()
           }
         },
         onError: () => alive && setStatus("error"),
@@ -657,6 +671,15 @@ function LaminasScreen({
             </p>
           ) : receipt ? (
             <ReceiptLines receipt={receipt} />
+          ) : finishError ? (
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-[13px]" style={{ color: MM.muted }}>
+                {t("fightNotCounted", "O servidor não conferiu esta luta — o resultado ainda não valeu.")}
+              </p>
+              <VictoryButton onClick={() => retryFinishRef.current?.()} alt>
+                {t("fightRetry", "Tentar de novo")}
+              </VictoryButton>
+            </div>
           ) : ticket === "offline" ? (
             <p className="text-[12px]" style={{ color: MM.muted }}>
               {t("fightOffline", "Treino sem conexão com o servidor: sem prêmio desta vez.")}

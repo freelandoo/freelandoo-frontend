@@ -11596,7 +11596,9 @@
     "domErrorTitle": "O Domínio não abriu",
     "domWon": "Setor {n} vencido! O portão abriu.",
     "domCrossedNow": "Você atravessou {name}! A passagem abriu.",
-    "domFightFail": "A luta não abriu: {e}"
+    "domFightFail": "A luta não abriu: {e}",
+    "fightNotCounted": "O servidor não conferiu esta luta — o resultado ainda não valeu.",
+    "fightRetry": "Tentar de novo"
   },
   "Sports": {
     "eyebrow": "Esportes",
