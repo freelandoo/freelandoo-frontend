@@ -3,7 +3,7 @@
 // A mecânica é a de sim/fight.ts, sem mudança: dano em POWER.fireAt, sem levar golpe; lâmina =
 // cone à frente com cura, maga/arco/arma = área em volta. Este arquivo é só a apresentação.
 //
-//   preparação  APAGÃO: o mundo vai para o preto e só o corpo fica aceso; cut-in e desenho no chão
+//   preparação  APAGÃO: o mundo vai para o preto e só o corpo fica aceso; close 3D e desenho no chão
 //   carga       a forma das costas abre (asas, caudas, sol...), faíscas fecham na arma
 //   antecipação o mundo volta, a câmera sobe para o lado, a forma se desfaz, o tempo quase para
 //   golpe       a peça do personagem (lua, raio, onda, chuva...) cresce até tomar a tela
@@ -740,17 +740,14 @@ export interface SignatureRig {
   strike: () => void
   /** Quando o clipe do golpe começa (tempo da regra). */
   strikeAt: number
-  cutIn: () => void
   shake: (n: number) => void
   hitStop: (s: number) => void
   /** Luz do mundo (1 = normal). */
   dim: (k: number) => void
   /** Ritmo da apresentação: as partículas andam nele. */
   pace: () => number
-  /** Clarão de tela cheia no impacto. */
-  flash: () => void
-  /** Peças de tela do Poder Máximo de cinema (apresentação 09); sem = o poder de antes. */
-  cine?: CineRig
+  /** Peças de tela do Poder Máximo de cinema (apresentações 09 e 10). */
+  cine: CineRig
 }
 
 /** O que a sequência de cinema pede à tela (laminas-game desenha; ver abilities/cinema-fx.ts). */
@@ -1712,11 +1709,10 @@ export function signatureFx(rig: SignatureRig): SignatureFx {
         return { ...c, dist: Math.max(c.dist, (sum.size * 0.95) / bodyK), high: (sum.size * 0.46) / h, look: (sum.size * 0.4) / h, yaw: loomNow && !later ? 156 : c.yaw + 8, fov: Math.max(c.fov, 1.02) }
       }
       /** O contato do poder (o mesmo nas duas formas); `stop` = a pausa no contato. */
-      const impact = (stop: number, flash = true) => {
+      const impact = (stop: number) => {
         s.impacted = true
         rig.hitStop(stop)
         rig.shake(0.55)
-        if (flash) rig.flash()
         rig.audio.boom()
         rig.audio.thorns()
         rig.vfx.dust(new Vector3(s.x + Math.sin(s.facing) * 2.4, 0.1, s.z + Math.cos(s.facing) * 2.4), 18)
@@ -1748,8 +1744,8 @@ export function signatureFx(rig: SignatureRig): SignatureFx {
       // close 3D de frente → recuo contínuo até o corpo inteiro com o gigante atrás → três golpes do
       // tamanho da tela → pausa de aviso com a cruz de luz → golpe final com clímax → resto.
       // A regra (sim/fight.ts) não muda: só o ritmo da tela, a câmera e o desenho.
-      const cine = rig.cine ?? null
-      if (cine) {
+      const cine = rig.cine
+      {
         const pal = rig.sig.pal
         // close (0–0,28 da regra) e recuo (0,28–0,58) escritos aqui; do golpe em diante segue o
         // enquadramento de sempre, com o gigante e a área
@@ -1820,53 +1816,13 @@ export function signatureFx(rig: SignatureRig): SignatureFx {
             // pausa de aviso: o tempo quase para e a cruz de luz marca o alvo
             { at: 0.8, run: () => cine.cross() },
             // o clímax substitui o clarão: cores deslocadas + borrão, não tela lavada
-            { at: f, run: () => (impact(0.14, false), cine.climax(), cine.pillar()) },
+            { at: f, run: () => (impact(0.14), cine.climax(), cine.pillar()) },
           ],
           step,
           finish,
         }
       }
 
-      return {
-        id: `signature-${rig.sig.id}`,
-        dur: POWER.dur,
-        // o tempo aperta até o golpe e solta rápido depois: dá ~2,4 s de tela para 1,6 s de regra
-        time: [
-          { t: 0, k: 1 },
-          { t: 0.2, k: 0.85 },
-          { t: 0.6, k: 0.7 },
-          { t: 0.72, k: 0.4 },
-          { t: f, k: 0.28 },
-          { t: 0.93, k: 0.3 },
-          { t: 1.06, k: 0.8 },
-          { t: 1.2, k: 1 },
-        ],
-        // close no rosto → sobe para o lado no golpe → acompanha o golpe → devolve a câmera do jogo
-        camera: (
-          [
-            { t: 0, yaw: 62, dist: 3.1, high: 0.82, look: 0.78, lead: 0, fov: 0.78 },
-            { t: 0.3, yaw: 128, dist: 2.1, high: 0.84, look: 0.84, lead: 0, fov: 0.66 },
-            { t: 0.6, yaw: 152, dist: 2.3, high: 0.76, look: 0.82, lead: 0, fov: 0.66 },
-            { t: 0.76, yaw: 34, dist: 5, high: 0.95, look: 0.62, lead: 2.1, fov: 0.92 },
-            { t: f, yaw: 25, dist: 6.2, high: 0.95, look: 0.56, lead: 3, fov: 0.88 },
-            { t: 1.08, yaw: 18, dist: 6.9, high: 1.15, look: 0.46, lead: 3.1, fov: 0.9 },
-            { t: POWER.dur, yaw: 0, dist: 6.6, high: 1.3, look: 0.5, lead: 1.6, fov: 0.9 },
-          ] as CamKey[]
-        )
-          .map(wide)
-          .map(giant),
-        cues: [
-          { at: 0, run: () => (rig.audio.heartbeat(), rig.pre()) },
-          { at: 0.1, run: () => rig.audio.inhale(0.75) },
-          { at: 0.14, run: () => rig.cutIn() },
-          { at: 0.42, run: () => rig.audio.heartbeat() },
-          { at: rig.strikeAt, run: () => rig.strike() },
-          { at: MOON_FROM, run: () => rig.audio.rend() },
-          { at: f, run: () => impact(0.07) },
-        ],
-        step,
-        finish,
-      }
     },
   }
 }

@@ -66,9 +66,7 @@ import { probeNote } from "../../crash-probe"
 import { FxStage } from "../../engine/fx/fx-core"
 import { AbilityDirector } from "../abilities/director"
 import { signatureFx, FX_TUNE, type SignatureClip } from "../abilities/signature-fx"
-import { CUT_EYES } from "../abilities/signatures"
 import { bloodHits, slashWave } from "../abilities/blood-hit"
-import { playCutIn, playFlash, preloadCutIn } from "../abilities/cut-in"
 import { CLIMAX_MS, climaxStreaks, lightCross, screenArc } from "../abilities/cinema-fx"
 import { createClimaxPass } from "./climax-pass"
 import { abilityKit } from "../abilities/registry"
@@ -947,7 +945,6 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
   if (calm) director.slow = 0
   const light0 = { hemi: hemi.intensity, sun: sun.intensity, clear: scene.clearColor.clone(), fog: scene.fogColor.clone() }
-  const cutInArt = `/meu-mundo/retratos/v3/emo/${opts.body}-angry.webp`
   // o gesto do poder sai do kit de quem joga; `hit` = [clipe, de, até] e a fração do contato no trecho
   const powerClips: { pre: SignatureClip; hit: SignatureClip; contact: number; dur: number } = claws
     ? { pre: ["GaRoar", 0, 0.8], hit: ["GaCross", 0.2, 0.7], contact: 0.47, dur: 0.5 }
@@ -1077,20 +1074,15 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         pre: () => hero.boxeAct(powerClips.pre[0], POWER.fireAt - powerClips.dur * powerClips.contact, powerClips.pre[1], powerClips.pre[2]),
         strike: () => hero.boxeAct(powerClips.hit[0], powerClips.dur, powerClips.hit[1], powerClips.hit[2]),
         strikeAt: POWER.fireAt - powerClips.dur * powerClips.contact,
-        cutIn: () => playCutIn(layer, { src: cutInArt, name: opts.labels?.ult ?? "", color: sig.pal[1], eyes: CUT_EYES[opts.body] ?? [0.25, 0.5] }),
         shake: (n) => (shake = Math.max(shake, calm ? n * 0.3 : n)),
         hitStop: (t) => (hitStop = Math.max(hitStop, calm ? 0 : t)),
         pace: () => director.scale(),
-        flash: () => {
-          if (!calm && sig) playFlash(layer, sig.pal)
-        },
         dim: setDim,
         cine: cineRig,
       })
     : null
   if (blood) {
     blood.warm()
-    preloadCutIn(cutInArt)
     climaxPass?.warm()
   }
 

@@ -310,27 +310,3 @@ const OF_BODY: Record<string, string> = {
 
 /** Corpo → assinatura. Quem não tem a sua (normal, magro, gordo, forte, feminina) é o aventureiro. */
 export const signatureOf = (body: string | null | undefined): Signature => SIGNATURES[OF_BODY[body ?? ""] ?? "aventura"]
-
-/** Altura dos olhos e centro do rosto no retrato bravo de cada corpo. */
-export const CUT_EYES: Record<string, [number, number]> = {
-  vampiro: [0.235, 0.5],
-  vampira: [0.185, 0.49],
-  vampiro_adulto: [0.225, 0.5],
-  vampira_adulta: [0.19, 0.5],
-  raposa: [0.28, 0.5],
-  raposa_f: [0.31, 0.5],
-  raposa_adulto: [0.29, 0.5],
-  raposa_adulta: [0.31, 0.52],
-  aurion: [0.32, 0.5],
-  morkhan: [0.22, 0.5],
-  kragor: [0.17, 0.5],
-  zephyra: [0.3, 0.5],
-  maru: [0.25, 0.5],
-  iris: [0.19, 0.47],
-  noctis: [0.23, 0.5],
-  aeryn: [0.21, 0.68],
-  cavaleiro: [0.29, 0.5],
-  ciborgue: [0.15, 0.5],
-  golem: [0.27, 0.5],
-  garras: [0.2, 0.5],
-}
