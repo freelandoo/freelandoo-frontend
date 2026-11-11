@@ -68,6 +68,8 @@ import { signatureFx, FX_TUNE, type SignatureClip } from "../abilities/signature
 import { CUT_EYES } from "../abilities/signatures"
 import { bloodHits, slashWave } from "../abilities/blood-hit"
 import { playCutIn, playFlash, preloadCutIn } from "../abilities/cut-in"
+import { CLIMAX_MS, climaxStreaks, lightCross, screenArc } from "../abilities/cinema-fx"
+import { createClimaxPass } from "./climax-pass"
 import { abilityKit } from "../abilities/registry"
 import { createHitCounter } from "./hit-counter"
 import { flatFrame, groundArcs, HEAVY_WARN, stateWord } from "./impact-fx"
@@ -1019,6 +1021,40 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       tintBase = null
     }
   }
+  // ── apresentação 09: Poder Máximo de cinema ───────────────────────────────
+  // o passe do clímax (cores deslocadas + borrão radial) só existe fora do `low` e só fica preso à
+  // câmera na janela do clímax; no `low` a imitação em DOM (dois planos de riscos) faz o papel
+  const climaxPass = !low && !calm ? createClimaxPass(cam, engine) : null
+  /** Onde o poder mira na tela: o alvo, ou 2,4 m à frente na altura do peito. */
+  const aimScreen = () => {
+    const tg = fight.target()
+    const at = tg ? new Vector3(tg.x, 1, tg.z) : new Vector3(fight.me.x + Math.sin(fight.me.facing) * 2.4, 1, fight.me.z + Math.cos(fight.me.facing) * 2.4)
+    return { at, s: toScreen(at) }
+  }
+  const cineRig = {
+    arc: (i: number) => {
+      if (!calm && sig) screenArc(layer, i, sig.pal)
+    },
+    flat: (colors: string[], alpha: number) => {
+      if (!calm) flatFrame(layer, colors, alpha)
+    },
+    cross: () => {
+      const s = aimScreen().s
+      if (!calm && s) lightCross(layer, s.x, s.y, pal[3])
+    },
+    climax: () => {
+      if (calm) return
+      const s = aimScreen().s
+      const x = s?.x ?? layer.clientWidth / 2
+      const y = s?.y ?? layer.clientHeight / 2
+      if (climaxPass) climaxPass.play(x / Math.max(1, layer.clientWidth), 1 - y / Math.max(1, layer.clientHeight), CLIMAX_MS)
+      else climaxStreaks(layer, x, y)
+    },
+    pillar: () => {
+      const at = aimScreen().at
+      vfx.ground(new Vector3(at.x, 0, at.z), fxColor, 1.6, 1.4, true)
+    },
+  }
   const blood = sig
     ? signatureFx({
         stage: fxStage,
@@ -1042,11 +1078,13 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           if (!calm && sig) playFlash(layer, sig.pal)
         },
         dim: setDim,
+        cine: cineRig,
       })
     : null
   if (blood) {
     blood.warm()
     preloadCutIn(cutInArt)
+    climaxPass?.warm()
   }
 
   // ── animação do jogador ──────────────────────────────────────────────────
@@ -1353,6 +1391,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let simClock = 0
   let ran = 0
   let hudAt = 0
+  const framedOut = new Set<number>()
+  let hudClose = false
   let readyFired = false
   let heroBound = false
   let held = !!opts.hold
@@ -1362,6 +1402,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const slow = hitStop > 0
     hitStop = Math.max(0, hitStop - realDt)
     counter.tick(realDt, director.playing)
+    climaxPass?.tick(realDt)
     // câmera lenta: só o ritmo desta luta, que é local e passo a passo (ver abilities/director.ts)
     const pace = slow ? 0.08 : director.scale()
     if (arcAt >= 0 && arcs && arcArgs) {
@@ -1684,8 +1725,38 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     cam.fov = view.fov
     cam.position.set(view.pos.x + sx, view.pos.y + sy, view.pos.z)
     cam.setTarget(view.look)
+    // apresentação 09: no close e no recuo, monstro entre a câmera e quem joga sai de quadro
+    // (o fundo está apagado; volta assim que a câmera passa)
+    if (director.framing) {
+      const ax = cam.position.x
+      const az = cam.position.z
+      const dx = p.x - ax
+      const dz = p.z - az
+      const len2 = Math.max(1e-6, dx * dx + dz * dz)
+      for (const [id, v] of models) {
+        const rp = v.model.root.position
+        const u = Math.max(0, Math.min(1, ((rp.x - ax) * dx + (rp.z - az) * dz) / len2))
+        const gap = Math.hypot(rp.x - (ax + dx * u), rp.z - (az + dz * u))
+        const block = gap < 1.3 && u < 0.92
+        if (block && !framedOut.has(id)) {
+          framedOut.add(id)
+          v.model.setVisible(false)
+        } else if (!block && framedOut.has(id)) {
+          framedOut.delete(id)
+          v.model.setVisible(true)
+        }
+      }
+    } else if (framedOut.size) {
+      for (const id of framedOut) models.get(id)?.model.setVisible(true)
+      framedOut.clear()
+    }
 
     hudAt -= dt
+    // o fim do close avisa a HUD na hora (em câmera lenta 0,1 s de jogo são ~0,3 s de tela)
+    if (director.closeUp !== hudClose) {
+      hudClose = director.closeUp
+      hudAt = 0
+    }
     if (hudAt <= 0) {
       hudAt = 0.1
       opts.onHud?.({
@@ -1701,7 +1772,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         locked: p.state === "down" || p.state === "win" || p.hp <= 0,
         cd: { ...p.cd },
         shield: Math.max(0, p.shieldUntil - fight.time),
-        cinema: !calm && director.playing,
+        cinema: !calm && director.closeUp,
       })
     }
     governor.tick(ms)
@@ -1756,7 +1827,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       director,
       /** Só a sequência, sem luta: do segundo `from` até `until` do tempo da regra. */
       preview: (from = 0, until = Infinity) => blood && director.start(blood.script(), from, until),
-      stats: () => ({ fx: fxStage.stats(), meshes: scene.getActiveMeshes().length, fps: engine.getFps(), playing: director.playing, t: director.position, pace: director.scale() }),
+      stats: () => ({ fx: fxStage.stats(), meshes: scene.getActiveMeshes().length, fps: engine.getFps(), playing: director.playing, t: director.position, pace: director.scale(), close: director.closeUp, climax: !!climaxPass?.on, cam: [cam.position.x, cam.position.y, cam.position.z], me: [fight.me.x, fight.me.z] }),
       replay: () => replayFight({ ...opts.setup, seed, style: mage ? "mage" : undefined }, frames),
       now: () => ({ over: fight.over, mobs: fight.mobs.map((m) => m.hp), hp: fight.me.hp, time: fight.time }),
     }
@@ -1815,6 +1886,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       canvas.removeEventListener("pointerdown", click)
       canvas.removeEventListener("contextmenu", noMenu)
       director.dispose()
+      climaxPass?.dispose()
       blood?.dispose()
       waveFx?.dispose()
       fxStage.dispose()

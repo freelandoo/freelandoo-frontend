@@ -57,6 +57,13 @@ export interface AbilityScript {
   step: (t: number) => void
   /** Sempre roda ao fechar, inclusive se foi cortada no meio. */
   finish: () => void
+  /**
+   * Até quando (tempo da regra) dura o close: a HUD inteira some só nessa janela e volta com o
+   * recuo (apresentação 09). Sem = a sequência inteira, como antes.
+   */
+  closeUntil?: number
+  /** Entra cortando (sem mistura): o close não passa por dentro do corpo vindo das costas. */
+  cut?: boolean
 }
 
 export interface Subject {
@@ -114,6 +121,9 @@ export interface DirectorRig {
   far: () => number
 }
 
+/** Quanto do tempo da regra o recuo leva depois do close. */
+const RECOIL = 0.3
+
 /** Velocidade da entrada e da saída do enquadramento (1/s). */
 const CAM_IN = 9
 const CAM_OUT = 3.6
@@ -159,6 +169,18 @@ export class AbilityDirector {
     return this.t
   }
 
+  /** Close ou recuo no ar: quem está entre a câmera e o corpo sai de quadro (laminas-game). */
+  get framing() {
+    const s = this.script
+    return !!s && s.closeUntil !== undefined && this.t < s.closeUntil + RECOIL
+  }
+
+  /** O close está no ar (a HUD some). */
+  get closeUp() {
+    const s = this.script
+    return !!s && this.t < (s.closeUntil ?? s.dur)
+  }
+
   start(script: AbilityScript, from = 0, until = Infinity) {
     this.cancel()
     this.script = script
@@ -168,6 +190,7 @@ export class AbilityDirector {
     while (this.next < script.cues.length && script.cues[this.next].at < from) this.next++
     this.lastCam = null
     this.arm = 1
+    if (script.cut) this.weight = 1
     this.side = this.gapOf(script, 1) >= this.gapOf(script, -1) ? 1 : -1
   }
 
@@ -240,10 +263,12 @@ export class AbilityDirector {
     const me = this.rig.subject()
     this.place(c, this.side, me, this.cineLook, this.cinePos)
     // algo entrou na frente: a câmera desliza para perto do corpo até sair de dentro
+    // (no close e no recuo não: lá quem está na frente sai de quadro, e encostar enfiaria a câmera no corpo)
     let want = 1
-    for (const o of this.rig.obstacles()) {
-      while (want > 0.35 && Math.hypot(me.x + (this.cinePos.x - me.x) * want - o.x, me.z + (this.cinePos.z - me.z) * want - o.z) < o.r) want -= 0.08
-    }
+    if (!this.framing)
+      for (const o of this.rig.obstacles()) {
+        while (want > 0.35 && Math.hypot(me.x + (this.cinePos.x - me.x) * want - o.x, me.z + (this.cinePos.z - me.z) * want - o.z) < o.r) want -= 0.08
+      }
     this.arm += (want - this.arm) * Math.min(1, realDt * 10)
     this.cinePos.x = me.x + (this.cinePos.x - me.x) * this.arm
     this.cinePos.z = me.z + (this.cinePos.z - me.z) * this.arm

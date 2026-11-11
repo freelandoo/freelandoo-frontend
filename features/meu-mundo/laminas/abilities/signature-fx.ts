@@ -234,8 +234,10 @@ void main() {
   if (cloud + flow * 0.3 < uCut * 1.4) discard;
   float burn = smoothstep(uCut * 1.4 + 0.1, uCut * 1.4, cloud + flow * 0.3) * step(0.001, uCut);
   float rim = pow(f, 2.4);
-  // linhas: vinco do modelo (a normal muda rápido) acende; não é grade, é o desenho da forma
-  float crease = clamp(length(fwidth(N)) * 3.0 - 0.12, 0.0, 1.0);
+  // linhas: vinco do modelo (a normal muda rápido) acende; não é grade, é o desenho da forma.
+  // Só dobra de verdade: abaixo de 0,16 por pixel é a aresta de um triângulo, e acender isso
+  // deixava o gigante facetado ("quadrado") — polimento de 11/11
+  float crease = smoothstep(0.16, 0.5, length(fwidth(N)));
   // brilho branco onde a luz bate, e uma faixa de luz subindo pelo corpo
   float spec = pow(max(dot(reflect(-V, N), normalize(vec3(0.3, 0.9, 0.35))), 0.0), 22.0);
   float sweep = smoothstep(0.07, 0.0, abs(fract(vP.y * 0.07 - uTime * 0.4) - 0.5));
@@ -745,7 +747,31 @@ export interface SignatureRig {
   pace: () => number
   /** Clarão de tela cheia no impacto. */
   flash: () => void
+  /** Peças de tela do Poder Máximo de cinema (apresentação 09); sem = o poder de antes. */
+  cine?: CineRig
 }
+
+/** O que a sequência de cinema pede à tela (laminas-game desenha; ver abilities/cinema-fx.ts). */
+export interface CineRig {
+  /** Golpe do tamanho da tela; `i` = o lado (0, 1, 2). */
+  arc: (i: number) => void
+  /** Quadros de cor chapada, um por cor. */
+  flat: (colors: string[], alpha: number) => void
+  /** Cruz de luz no alvo: a pausa de aviso. */
+  cross: () => void
+  /** Cores deslocadas + borrão radial (≤ 0,4 s), ou a imitação no `low`. */
+  climax: () => void
+  /** Pilar de luz no alvo. */
+  pillar: () => void
+}
+
+/**
+ * Quem já tem o Poder Máximo de cinema (close 3D → recuo → golpes do tamanho da tela → aviso →
+ * clímax). Etapa 09 = piloto; a 10 leva a mesma gramática aos demais.
+ */
+export const CINEMA_PILOT: ReadonlySet<string> = new Set(["vampiro"])
+/** Até quando (tempo da regra) dura o close: a HUD volta no recuo. */
+const CINE_CLOSE = 0.28
 
 interface Live {
   t: number
@@ -1664,6 +1690,115 @@ export function signatureFx(rig: SignatureRig): SignatureFx {
         const bodyK = Math.max(1, me.height / 1.8)
         return { ...c, dist: Math.max(c.dist, (sum.size * 0.95) / bodyK), high: (sum.size * 0.46) / h, look: (sum.size * 0.4) / h, yaw: loomNow && !later ? 156 : c.yaw + 8, fov: Math.max(c.fov, 1.02) }
       }
+      /** O contato do poder (o mesmo nas duas formas); `stop` = a pausa no contato. */
+      const impact = (stop: number, flash = true) => {
+        s.impacted = true
+        rig.hitStop(stop)
+        rig.shake(0.55)
+        if (flash) rig.flash()
+        rig.audio.boom()
+        rig.audio.thorns()
+        rig.vfx.dust(new Vector3(s.x + Math.sin(s.facing) * 2.4, 0.1, s.z + Math.cos(s.facing) * 2.4), 18)
+      }
+      const step = (t: number) => {
+        s.t = t
+        const me = rig.subject()
+        s.x = me.x
+        s.z = me.z
+        const tip = rig.blade()
+        if (tip) s.bladeAt.copyFrom(tip)
+        else s.bladeAt.set(me.x + Math.sin(me.facing) * 0.5, me.height * 0.85, me.z + Math.cos(me.facing) * 0.5)
+        // apagão na carga; o mundo volta escuro para o golpe e clareia depois do impacto
+        const black = easeOut(seg(t, 0.03, 0.13)) * (1 - easeInOut(seg(t, 0.66, 0.74)))
+        const after = seg(t, 0.66, 0.74) * (1 - easeInOut(seg(t, 1.0, 1.45)))
+        rig.dim((1 - 0.97 * black) * (1 - 0.42 * after))
+        if (rim) {
+          rim.position.set(me.x + Math.sin(me.facing) * 1.5, me.height * 0.85, me.z + Math.cos(me.facing) * 1.5)
+          rim.intensity = 2.4 * black
+        }
+      }
+      const finish = () => {
+        s.free = true
+        rig.dim(1)
+        if (rim) rim.intensity = 0
+      }
+
+      // ── apresentação 09: o Poder Máximo de cinema (piloto) ──────────────────
+      // close 3D de frente → recuo contínuo até o corpo inteiro com o gigante atrás → três golpes do
+      // tamanho da tela → pausa de aviso com a cruz de luz → golpe final com clímax → resto.
+      // A regra (sim/fight.ts) não muda: só o ritmo da tela, a câmera e o desenho.
+      const cine = rig.cine && CINEMA_PILOT.has(rig.sig.id) ? rig.cine : null
+      if (cine) {
+        const pal = rig.sig.pal
+        // close (0–0,28 da regra) e recuo (0,28–0,58) escritos aqui; do golpe em diante segue o
+        // enquadramento de sempre, com o gigante e a área
+        const close: CamKey[] = [
+          // quase de frente (20° do rosto), um pouco de baixo, lente fechada: do peito à cabeça em pé,
+          // rosto e ombros deitado. As asas abrem atrás do corpo, fora do caminho; monstro entre a
+          // câmera e o corpo sai de quadro (laminas-game, `director.framing`)
+          { t: 0, yaw: 160, dist: 1.55, high: 0.74, look: 0.9, lead: 0, fov: 0.5 },
+          // empurra devagar e gira 14° enquanto as asas abrem atrás
+          { t: 0.26, yaw: 146, dist: 1.3, high: 0.76, look: 0.92, lead: 0, fov: 0.46 },
+          // recuo sem corte: abre a lente, sobe por cima de quem está na frente e gira para o lado
+          { t: 0.42, yaw: 118, dist: 3.4, high: 1.25, look: 1.0, lead: 0, fov: 0.8 },
+        ]
+        const later = (
+          [
+            { t: 0.58, yaw: 150, dist: 6, high: 1.2, look: 1.1, lead: 0, fov: 0.95 },
+            { t: 0.76, yaw: 34, dist: 5, high: 0.95, look: 0.62, lead: 2.1, fov: 0.92 },
+            { t: f, yaw: 25, dist: 6.2, high: 0.95, look: 0.56, lead: 3, fov: 0.88 },
+            { t: 1.08, yaw: 18, dist: 6.9, high: 1.15, look: 0.46, lead: 3.1, fov: 0.9 },
+            { t: POWER.dur, yaw: 0, dist: 6.6, high: 1.3, look: 0.5, lead: 1.6, fov: 0.9 },
+          ] as CamKey[]
+        )
+          .map(wide)
+          .map(giant)
+        // o pulo de abertura da lente no golpe final (em todo nível)
+        const at = later.findIndex((c) => c.t === f)
+        if (at >= 0) later.splice(at + 1, 0, { ...later[at], t: f + 0.03, fov: later[at].fov + 0.16 })
+        return {
+          id: `signature-${rig.sig.id}-cine`,
+          dur: POWER.dur,
+          closeUntil: CINE_CLOSE,
+          cut: true,
+          // regra → tela: close 0,28 → 0,8 s · recuo 0,30 → 0,65 s · golpes 0,17 → 0,47 s ·
+          // aviso 0,05 → 0,24 s · clímax e resto 0,75 → 1,1 s. ≈ 3,4 s de tela para 1,6 s de regra.
+          time: [
+            { t: 0, k: 0.34 },
+            { t: 0.26, k: 0.34 },
+            { t: 0.3, k: 0.46 },
+            { t: 0.58, k: 0.5 },
+            { t: 0.62, k: 0.36 },
+            { t: 0.79, k: 0.36 },
+            { t: 0.8, k: 0.2 },
+            { t: 0.845, k: 0.2 },
+            { t: f, k: 0.3 },
+            { t: 0.95, k: 0.32 },
+            { t: 1.08, k: 0.8 },
+            { t: 1.2, k: 1 },
+          ],
+          camera: [...close, ...later],
+          cues: [
+            { at: 0, run: () => (rig.audio.heartbeat(), rig.pre()) },
+            { at: 0.1, run: () => rig.audio.inhale(0.75) },
+            { at: 0.42, run: () => rig.audio.heartbeat() },
+            { at: rig.strikeAt, run: () => rig.strike() },
+            // três golpes do tamanho da tela, um a cada ~0,17 s de tela, cada um de um lado
+            { at: 0.63, run: () => cine.arc(0) },
+            // quadro de cor chapada: borda 1 quadro, depois corpo 2 quadros ("soco no olho")
+            { at: 0.69, run: () => (cine.arc(1), cine.flat([pal[3]], 0.42)) },
+            { at: MOON_FROM, run: () => rig.audio.rend() },
+            { at: 0.75, run: () => (cine.arc(2), cine.flat([pal[1], pal[1]], 0.5)) },
+            // pausa de aviso: o tempo quase para e a cruz de luz marca o alvo
+            { at: 0.8, run: () => cine.cross() },
+            // o clímax substitui o clarão: cores deslocadas + borrão, não tela lavada
+            { at: f, run: () => (impact(0.14, false), cine.climax(), cine.pillar()) },
+          ],
+          step,
+          finish,
+        }
+      }
+
       return {
         id: `signature-${rig.sig.id}`,
         dur: POWER.dur,
@@ -1699,41 +1834,10 @@ export function signatureFx(rig: SignatureRig): SignatureFx {
           { at: 0.42, run: () => rig.audio.heartbeat() },
           { at: rig.strikeAt, run: () => rig.strike() },
           { at: MOON_FROM, run: () => rig.audio.rend() },
-          {
-            at: f,
-            run: () => {
-              s.impacted = true
-              rig.hitStop(0.07)
-              rig.shake(0.55)
-              rig.flash()
-              rig.audio.boom()
-              rig.audio.thorns()
-              rig.vfx.dust(new Vector3(s.x + Math.sin(s.facing) * 2.4, 0.1, s.z + Math.cos(s.facing) * 2.4), 18)
-            },
-          },
+          { at: f, run: () => impact(0.07) },
         ],
-        step(t) {
-          s.t = t
-          const me = rig.subject()
-          s.x = me.x
-          s.z = me.z
-          const tip = rig.blade()
-          if (tip) s.bladeAt.copyFrom(tip)
-          else s.bladeAt.set(me.x + Math.sin(me.facing) * 0.5, me.height * 0.85, me.z + Math.cos(me.facing) * 0.5)
-          // apagão na carga; o mundo volta escuro para o golpe e clareia depois do impacto
-          const black = easeOut(seg(t, 0.03, 0.13)) * (1 - easeInOut(seg(t, 0.66, 0.74)))
-          const after = seg(t, 0.66, 0.74) * (1 - easeInOut(seg(t, 1.0, 1.45)))
-          rig.dim((1 - 0.97 * black) * (1 - 0.42 * after))
-          if (rim) {
-            rim.position.set(me.x + Math.sin(me.facing) * 1.5, me.height * 0.85, me.z + Math.cos(me.facing) * 1.5)
-            rim.intensity = 2.4 * black
-          }
-        },
-        finish() {
-          s.free = true
-          rig.dim(1)
-          if (rim) rim.intensity = 0
-        },
+        step,
+        finish,
       }
     },
   }
