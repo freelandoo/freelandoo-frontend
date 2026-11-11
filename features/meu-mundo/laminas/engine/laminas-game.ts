@@ -41,6 +41,7 @@ import { ARENA_R, COMBO, DT, Fight, MOBS, MOB_SHIELD, POWER, RANKS, SKILLS, mobA
 import { createSkillFx, SKILL_COLORS, type SkillPalette } from "./skill-fx"
 import { buildArena } from "./arena-view"
 import { buildStreet } from "./street-view"
+import { buildDomainStage, type DomainStageSpec } from "./domain-stage"
 import { pushFrame, quantizeInput, replayFight, type FightFrames } from "../sim/replay"
 import { buildRing } from "./ring-view"
 import { BoxingGloves } from "./gloves"
@@ -126,7 +127,9 @@ export interface LaminasGameOptions {
   setup: FightSetup
   /** O lugar: o coliseu (prédio das Lâminas e portal) ou o ringue (prédio do Boxe, mm3d-56). */
   /** mm3d-60l: "bairro"/"centro" = o cenário da rua (luta do monstro que pegou o jogador). */
-  stage?: "arena" | "ring" | "bairro" | "centro"
+  /** Lore v2 D1: "dominio" = o palco de um Domínio (kit do tema + entrada/fundo/palácio em `domain`). */
+  stage?: "arena" | "ring" | "bairro" | "centro" | "dominio"
+  domain?: DomainStageSpec
   onReady?: () => void
   onHud?: (h: LaminasHud) => void
   onEnd?: (win: boolean) => void
@@ -410,6 +413,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
 
   const ring = opts.stage === "ring"
   const street = opts.stage === "bairro" || opts.stage === "centro" ? opts.stage : null
+  const dominio = opts.stage === "dominio" ? (opts.domain ?? { kit: "floresta", spot: "entrada" }) : null
   const scene = new Scene(engine)
   if (ring) {
     // mm3d-56: o ginásio do ringue à luz de lampião (fundo escuro, a lona acesa).
@@ -431,11 +435,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true
   // na rua as luzes levam os nomes da atmosfera do bairro (applyLights acha pelo nome)
-  const hemi = new HemisphericLight(street ? "mm-hemi" : "laminas-hemi", new Vector3(0, 1, 0), scene)
+  const hemi = new HemisphericLight(street || dominio ? "mm-hemi" : "laminas-hemi", new Vector3(0, 1, 0), scene)
   hemi.intensity = 0.7
   hemi.diffuse = new Color3(1, 0.95, 0.88)
   hemi.groundColor = new Color3(0.35, 0.26, 0.2)
-  const sun = new DirectionalLight(street ? "mm-sun" : "laminas-sun", new Vector3(-0.5, -1, 0.35), scene)
+  const sun = new DirectionalLight(street || dominio ? "mm-sun" : "laminas-sun", new Vector3(-0.5, -1, 0.35), scene)
   sun.intensity = 0.75
   sun.diffuse = new Color3(1, 0.88, 0.7)
   if (ring) {
@@ -449,7 +453,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     spot.diffuse = new Color3(1, 0.9, 0.74)
   }
 
-  const arena = ring ? buildRing(scene, low) : street ? buildStreet(scene, low, street) : buildArena(scene, low)
+  const arena = ring ? buildRing(scene, low) : street ? buildStreet(scene, low, street) : dominio ? buildDomainStage(scene, low, dominio) : buildArena(scene, low)
   const audio = new BoxeAudio()
   audio.resume()
 

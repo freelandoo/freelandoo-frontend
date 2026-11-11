@@ -41,7 +41,7 @@ import { steamSkyline } from "./steampunk/neighborhood"
 import { SP } from "./steampunk/palette"
 import type { GearSpec } from "./steampunk/kit"
 import type { V3 } from "./steampunk/geo"
-import { centerBoundary, centerFronts, centerGround, centerPlaza, centerPortal, centerStreets, type CenterCtx } from "./steampunk/center"
+import { centerBoundary, centerDomainPortal, centerFronts, centerGround, centerPlaza, centerPortal, centerStreets, type CenterCtx } from "./steampunk/center"
 import type { CenterLayout, CenterPlace, HouseCatalog, Interactable } from "../types"
 
 export interface CenterLabels {
@@ -191,6 +191,7 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
   centerPlaza(ctx)
   centerBoundary(ctx)
   centerPortal(ctx, cellUV(c.places.length), BOARD_H)
+  centerDomainPortal(ctx)
   centerFronts(ctx, cellUV, BOARD_Y, BOARD_H, boardWidth)
   steamSkyline(ctx, c.dims.bound)
 
@@ -315,6 +316,8 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
     place: p,
   }))
   interactables.push({ kind: "portal", id: c.portal.id, x: c.portal.x + 1.5, z: c.portal.z, radius: c.portal.radius })
+  // Lore v2 D1: o Portal dos Domínios (debaixo do anel)
+  if (c.domainPortal) interactables.push({ kind: "domains", id: c.domainPortal.id, x: c.domainPortal.x, z: c.domainPortal.z, radius: c.domainPortal.radius })
 
   const noCatalog: HouseCatalog = { assetVersion: "centro", basePath: "", levels: [] }
   ;(window as unknown as { __mmCenter?: () => unknown }).__mmCenter = () => ({

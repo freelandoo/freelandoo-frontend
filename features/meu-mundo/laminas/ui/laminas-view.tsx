@@ -44,6 +44,7 @@ import { probeClose, probeNote, probeOpen } from "../../crash-probe"
 import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 import { ClawWriting, EcoVoice, GodVoice } from "../../ui/quest/god-voice"
+import type { DomainStageSpec } from "../engine/domain-stage"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
 export interface LaminasEncounter {
@@ -59,7 +60,9 @@ export interface LaminasViewProps {
   /** Fim da luta do portal (vitória = o monstro some da cidade). */
   onEncounterEnd?: (win: boolean) => void
   /** O lugar: coliseu (padrão) ou o ringue do prédio do Boxe (mm3d-56). */
-  stage?: "arena" | "ring" | "bairro" | "centro"
+  stage?: "arena" | "ring" | "bairro" | "centro" | "dominio"
+  /** Lore v2 D1: o palco do Domínio (kit do tema e qual dos três: entrada, fundo, palácio). */
+  domain?: DomainStageSpec
   /** mm3d-59: a luta de treino do prólogo (sem custo; só abre nos passos de luta). */
   tutorial?: boolean
   /** O fim da luta conferida (recibo do servidor). */
@@ -107,7 +110,7 @@ export function useMobName(ring = false) {
   )
 }
 
-export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, onEncounterEnd, stage = "arena", tutorial = false, onReceipt, opened = null }: LaminasViewProps) {
+export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, onEncounterEnd, stage = "arena", domain, tutorial = false, onReceipt, opened = null }: LaminasViewProps) {
   // Corpo e cores ficam os da abertura: se a sala mandar outros no meio, recriar a cena
   // deixaria a luta parada para sempre (ela nasce esperando o botão, que já foi apertado).
   const [{ body, look }] = useState({ body: bodyNow, look: lookNow })
@@ -134,6 +137,7 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
           look={look}
           choice={fight.choice}
           stage={stage}
+          domain={domain}
           portal={!!encounter}
           mobId={encounter?.mobId}
           tutorial={tutorial}
@@ -237,6 +241,7 @@ function LaminasScreen({
   look,
   choice,
   stage,
+  domain,
   portal,
   mobId,
   tutorial,
@@ -249,7 +254,8 @@ function LaminasScreen({
   body: BodyId
   look?: string
   choice: Choice
-  stage: "arena" | "ring" | "bairro" | "centro"
+  stage: "arena" | "ring" | "bairro" | "centro" | "dominio"
+  domain?: DomainStageSpec
   portal: boolean
   mobId?: number
   tutorial?: boolean
@@ -386,6 +392,7 @@ function LaminasScreen({
         kit: fromServer ? (fromServer.setup.kit === "hammer" ? "hammer" : fromServer.setup.kit === "bow" ? "bow" : fromServer.setup.kit === "gun" ? "gun" : fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,
         stage,
+        domain,
         onReady: () => {
           if (!alive) return
           probeNote("ready")
@@ -434,7 +441,7 @@ function LaminasScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [body, look, choice, stage, armed, tutorial, portal, foeBodyOpened])
+  }, [body, look, choice, stage, domain, armed, tutorial, portal, foeBodyOpened])
 
   // a passagem violeta do portal some quando a cena está pronta
   useEffect(() => {
@@ -475,7 +482,7 @@ function LaminasScreen({
       {status === "ready" && !veil && !started && sheet && (
         <VersusScreen
           me={{ name: t("fightYou", "VOCÊ"), level: heroLevel, portrait: PORTRAIT[body], accent: "#FFB43B" }}
-          foe={{ name: opened ? opened.foe : mobName(choice.kind), level: portal && ticket && ticket !== "offline" ? ticket.setup.level : heroLevel, portrait: foePortrait, accent: FOE_ACCENT[choice.kind] }}
+          foe={{ name: opened ? opened.foe : mobName(choice.kind), level: (portal || stage === "dominio") && ticket && ticket !== "offline" ? ticket.setup.level : heroLevel, portrait: foePortrait, accent: FOE_ACCENT[choice.kind] }}
           sheet={sheet}
           onStart={begin}
         />

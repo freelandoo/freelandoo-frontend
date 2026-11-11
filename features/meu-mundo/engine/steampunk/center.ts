@@ -415,6 +415,45 @@ export function centerPortal(ctx: CenterCtx, uv: [number, number, number, number
   for (const z of [-1.4, 1.4]) props.gear(0.5, 0.1, 10, xf(x, 7.45, z, 0, undefined, 0, Math.PI / 2), SP.bronze, SP.brassDark)
 }
 
+/**
+ * Lore v2 D1: o Portal dos Domínios, no lado leste da praça. Um anel de pedra em pé
+ * (a "porta da lua") entre dois pilares de tijolo com cintas de ferro, o aro de latão
+ * por dentro, um filete aceso e a engrenagem que gira no alto. Mesmo kit do portal dos
+ * Bairros; a colisão são só os dois pilares (lista do servidor).
+ */
+export function centerDomainPortal(ctx: CenterCtx) {
+  const p = ctx.c.domainPortal
+  if (!p) return
+  const { props, glow, pavers } = ctx
+  const R = p.span
+  const cy = 2.55
+  // laje do chão debaixo do anel e degrau baixo
+  pavers.box(1.8, 0.06, 2 * R + 1.6, place(p.x, 0.05, p.z), SP.stoneDark)
+  for (const s of [-1, 1]) {
+    const z = p.z + s * R
+    props.box(1.2, 0.45, 1.2, place(p.x, 0.22, z), SP.stoneDark)
+    props.box(0.9, p.h - 0.6, 0.9, place(p.x, 0.45 + (p.h - 0.6) / 2, z), SP.brick)
+    for (const y of [1.3, 2.6, 3.7]) props.box(0.98, 0.1, 0.98, place(p.x, y, z), SP.iron)
+    props.box(1.08, 0.16, 1.08, place(p.x, p.h - 0.08, z), SP.stoneLight)
+    postLantern(ctx, p.x, p.h, z, 0.8)
+  }
+  // o anel: pedra por fora, latão por dentro e o filete aceso
+  const ringAt = xf(p.x, cy, p.z, 0, undefined, 0, Math.PI / 2)
+  props.ring(2 * R + 0.4, 0.34, ringAt, SP.stone, 40, 6)
+  props.ring(2 * R - 0.15, 0.12, ringAt, SP.brass, 40)
+  glow.with("flat", () => glow.ring(2 * R - 0.42, 0.05, ringAt, SP.lampGlass, 40))
+  // rebites de latão em volta do anel
+  for (let k = 0; k < 16; k++) {
+    const a = (k / 16) * Math.PI * 2
+    props.cylinder(0.12, 0.08, xf(p.x - 0.2, cy + Math.sin(a) * (R + 0.08), p.z + Math.cos(a) * (R + 0.08), 0, undefined, 0, Math.PI / 2), SP.brassDark, 6)
+  }
+  // engrenagem que gira no alto, sobre a viga entre os pilares
+  props.box(0.5, 0.22, 2 * R + 0.9, place(p.x, p.h + 0.02, p.z), SP.iron)
+  ctx.gears.push({ m: xf(p.x, p.h + 0.95, p.z, 0, undefined, 0, Math.PI / 2), r: 0.8, thick: 0.12, speed: 0.4 })
+  props.box(0.2, 0.7, 0.2, place(p.x, p.h + 0.45, p.z), SP.iron)
+  lightPool(ctx, p.x, p.z, 4.2, 0.07)
+}
+
 /** Na frente de cada prédio: laje, capacho de latão e a moldura do letreiro. */
 export function centerFronts(ctx: CenterCtx, cellUV: (i: number) => [number, number, number, number], boardY: number, boardH: number, boardWidth: (p: CenterPlace) => number) {
   const { c, pavers, props, signs } = ctx

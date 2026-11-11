@@ -530,8 +530,12 @@ export interface FightSetup {
    * quem joga, vezes este fator — peerOf.
    */
   peer?: number
-  /** Monstros pela ficha (MOB_SHEETS): "arena" no nível de quem joga, "street" no nível dele. */
-  tier?: "arena" | "street"
+  /**
+   * Monstros pela ficha (MOB_SHEETS): "arena" no nível de quem joga, "street" no nível dele.
+   * Lore v2 D1: "domain" = o monstro de um setor dos Domínios, no nível que o servidor
+   * escolhe pelo setor (como a rua: o nível é o dele, não o de quem joga).
+   */
+  tier?: "arena" | "street" | "domain"
   /** Corpo vestido: os pesos que multiplicam os status (BODY_SHEETS). */
   body?: string
   /** mm3d-72: personalidade do hóspede e quanto ele gosta do dono (o servidor grava no ticket). */
@@ -844,7 +848,7 @@ export class Fight {
     const lv = mobLevelScale(this.level)
     const spots = spawnList(setup.kind)
     const mean = (list: number[]) => list.reduce((a, b) => a + b, 0) / list.length
-    const foeLevel = setup.tier === "street" ? this.level : this.heroLevel
+    const foeLevel = setup.tier === "street" || setup.tier === "domain" ? this.level : this.heroLevel
     const base = setup.tier ? mobBase(foeLevel) : { hp: heroLevelScale(foeLevel).hp, rate: 100 + levelRate(foeLevel) }
     const normal = base.hp
     const rated = base.rate

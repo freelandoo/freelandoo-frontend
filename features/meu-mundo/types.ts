@@ -818,6 +818,8 @@ export interface CenterLayout {
   statueAssets?: StatueAssets | null
   arrival: CenterSpot
   portal: Vec2 & { id: string; radius: number; nameKey: string }
+  /** Lore v2 D1: o Portal dos Domínios (lado leste da praça; pilares a ±span em z). */
+  domainPortal?: Vec2 & { id: string; facing: number; radius: number; span: number; h: number; nameKey: string }
   /** Lore v2 F4: os NPCs da praça. */
   npcs?: StreetNpc[]
   obstacles: Box2Def[]
@@ -909,6 +911,8 @@ export type Interactable =
   // Ponto de uso dentro de um prédio do centro (mm3d-37).
   | { kind: "spot"; id: string; x: number; z: number; radius: number; spot: InteriorSpot }
   | { kind: "portal"; id: string; x: number; z: number; radius: number }
+  // Lore v2 D1: o Portal dos Domínios (abre a tela da travessia).
+  | { kind: "domains"; id: string; x: number; z: number; radius: number }
   // Lore v2 F4: conversar com um NPC (rua ou prédio).
   | { kind: "npc"; id: string; x: number; z: number; radius: number; npc: string }
   // Lore v2 C1: ler uma placa (texto do cenário, `qw_*`).

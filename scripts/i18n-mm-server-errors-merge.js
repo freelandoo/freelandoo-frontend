@@ -214,6 +214,10 @@ const ROWS = [
   ["Chegue ao pé da estátua do seu deus", "Get to the foot of your god's statue", "Llega al pie de la estatua de tu dios"],
   ["Você não tem néctar para entregar", "You have no nectar to deliver", "No tienes néctar para entregar"],
   ["Valores inválidos para a meta", "Invalid values for the goal", "Valores inválidos para la meta"],
+  // Lore v2 D1: os Domínios
+  ["Domínio desconhecido", "Unknown Domain", "Dominio desconocido"],
+  ["Esse Domínio ainda está fechado", "This Domain is still closed", "Este Dominio todavía está cerrado"],
+  ["Esse setor ainda está fechado", "This sector is still closed", "Este sector todavía está cerrado"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

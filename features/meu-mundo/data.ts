@@ -202,7 +202,7 @@ export const postEndVisit = (token: string, id: string) =>
 export const getLife = (token: string) => call<LifeFull>(token, "GET", "/life")
 
 // ═══ mm3d-59: luta conferida pelo servidor, recibos e XP de aventura ═══════
-export type FightOrigin = "laminas" | "boxe" | "mob" | "tutorial"
+export type FightOrigin = "laminas" | "boxe" | "mob" | "tutorial" | "domain"
 export interface FightTicket {
   ticket: string
   origin: FightOrigin
@@ -220,7 +220,10 @@ export interface FightTicket {
     /** Nível de aventura de quem joga (vida/defesa/ataque crescem com ele). */
     hero?: number
     peer?: number | null
-    tier?: "arena" | "street" | null
+    tier?: "arena" | "street" | "domain" | null
+    /** Lore v2 D1: o setor do Domínio (o servidor escolhe monstro e nível por ele). */
+    domain?: DomainId | null
+    sector?: number | null
     body?: string | null
     appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null }
     /** mm3d-72: personalidade e afeto (probabilidades da luta). */
@@ -279,7 +282,7 @@ export const advXpOf = (a: AdventureState) => ({
 })
 /** A sala avisou que o treinador ganhou XP (cuidar/treinar): `detail` = TrainerDelta. */
 export const TRAINER_CHANGED = "mm:trainer-changed"
-export const startFight = (token: string, body: { origin: FightOrigin; kind?: MobKind; level?: number; mobId?: number }) =>
+export const startFight = (token: string, body: { origin: FightOrigin; kind?: MobKind; level?: number; mobId?: number; domain?: DomainId; sector?: number }) =>
   call<{ fight: FightTicket; abandoned: Receipt[] }>(token, "POST", "/fight/start", body)
 export const finishFight = (token: string, ticket: string, frames: FightFrames) =>
   call<{ receipt: Receipt; replay: boolean }>(token, "POST", "/fight/finish", { ticket, frames })
@@ -631,6 +634,55 @@ export const OPEN_ARCHIVE = "mm:open-archive"
 
 // ═══ lore v2 F6: prédios por nível do treinador ══════════════════════════════
 export const getBuildings = (token: string) => call<BuildingsState>(token, "GET", "/buildings")
+
+// ═══ Lore v2 D1 (mig 444): os Domínios — o servidor manda tudo pronto ═══════
+export type DomainId = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital"
+export interface DomainSector {
+  n: number
+  kind: MobKind
+  level: number
+  /** Poder recomendado do setor. */
+  power: number
+  stage: "entrada" | "fundo" | "palacio"
+  open: boolean
+  cleared: boolean
+}
+export interface DomainInfo {
+  id: DomainId
+  god: string
+  kit: string
+  /** Nível do treinador que abre. */
+  need: number
+  open: boolean
+  /** Por que está fechado: falta o nível ("trainer") ou atravessar o anterior ("crossing"). */
+  lock: { code: "trainer"; level: number } | { code: "crossing"; from: DomainId } | null
+  /** Maior setor vencido (0–10). */
+  best: number
+  crossed: boolean
+  /** O trecho de passagem para o próximo (depois do setor 10). */
+  passage: { to: DomainId; open: boolean } | null
+  sectors: DomainSector[]
+}
+export interface DomainsState {
+  trainer: number
+  bypass: boolean
+  /** Poder do personagem vivo (B7). */
+  power: number
+  sectors: number
+  domains: DomainInfo[]
+}
+/** O progresso que a luta do setor devolve no recibo (`receipt.domain`). */
+export interface DomainAdvance {
+  domain: DomainId
+  sector: number
+  best: number
+  crossed: boolean
+  opened: number | null
+  crossedNow: boolean
+}
+export const getDomains = (token: string) => call<DomainsState>(token, "GET", "/domains")
+export const enterDomain = (token: string, domain: DomainId) =>
+  call<{ trainer: number; bypass: boolean; power: number; domain: DomainInfo }>(token, "POST", "/domains/enter", { domain })
 /** Entrega a missão de prédio (o servidor confere o objetivo). */
 export const deliverBuildingMission = (token: string, id: string) =>
   call<BuildingsState & { receipt?: Receipt; replay?: boolean }>(token, "POST", "/buildings/mission", { id })
