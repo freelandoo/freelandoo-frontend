@@ -221,6 +221,8 @@ const ROWS = [
   // lore v2 C5: Pedraverde e o Golem (POST /domains/place)
   ["Lugar desconhecido", "Unknown place", "Lugar desconocido"],
   ["Chegue à clareira primeiro", "Reach the clearing first", "Llega primero al claro"],
+  // trilha E2: instâncias de equipamento
+  ["Equipamento não encontrado", "Equipment not found", "Equipo no encontrado"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

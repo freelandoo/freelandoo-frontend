@@ -411,14 +411,34 @@ export interface GearBag {
   clan: Clan | null
   level: number
   coins: number
-  owned: Record<string, { qty: number; level: number; version?: number; refineFailures?: number }>
+  /** Pilha + equipamento. Equipamento (E2): qty = nº de cópias; level/version da cópia REPRESENTANTE (`instance`). */
+  owned: Record<string, { qty: number; level: number; version?: number; refineFailures?: number; instance?: string }>
   equipped: Partial<Record<GearSlot, string>>
+  /** Trilha E2 (mig 446): cada equipamento é uma cópia com o seu `plus`. */
+  instances?: GearInstance[]
+  /** Cópia em cada slot do personagem vivo. */
+  equippedInstances?: Partial<Record<GearSlot, string>>
+  /** O que empilha (materiais, missão, projetos): quantidade. */
+  stacks?: Record<string, number>
+  refinementInstances?: Record<string, { standard: RefinementQuote | null; protected: RefinementQuote | null }>
   bonus: GearBonus
   pendingProposals?: RefinementProposal[]
   refinement?: Record<string, { standard: RefinementQuote | null; protected: RefinementQuote | null }>
   learnedRecipes?: string[]
   unlockedEmotes?: string[]
   activeCosmetic?: string | null
+}
+export interface GearInstance {
+  id: string
+  item: string
+  plus: number
+  grade: number
+  locked: boolean
+  /** Personagem que segura a cópia (vivo ou na cápsula); null = solta na mochila. */
+  equippedBy: string | null
+  equippedSlot: GearSlot | null
+  /** Equipada pelo personagem vivo. */
+  equippedHere: boolean
 }
 export type GearOut = { receipt?: Receipt; replay?: boolean; bag: GearBag; proposal?: RefinementProposal }
 export const getGear = (token: string) => call<{ gear: GearCatalog; bag: GearBag }>(token, "GET", "/gear")
@@ -557,11 +577,13 @@ export interface StatueConfig {
 export const getStatueConfig = (token: string) => call<StatueConfig>(token, "GET", "/estatua/config")
 export const saveStatueConfig = (token: string, baseL: number, perActiveL: number) => call<StatueConfig>(token, "POST", "/estatua/config", { baseL, perActiveL })
 export const buyGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/buy", { item, key })
-export const equipGear = (token: string, slot: GearSlot, item: string | null) => call<{ bag: GearBag }>(token, "POST", "/gear/equip", { slot, item })
+/** E2: `instance` escolhe a cópia; sem ela, o servidor usa a representante. */
+export const equipGear = (token: string, slot: GearSlot, item: string | null, instance?: string | null) =>
+  call<{ bag: GearBag }>(token, "POST", "/gear/equip", instance ? { slot, item, instance } : { slot, item })
 export const forgeGear = (token: string, recipe: string, key: string) => call<GearOut>(token, "POST", "/gear/forge", { recipe, key })
 export const upgradeGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/upgrade", { item, key })
-export const refineGear = (token: string, item: string, quote: string, protect: boolean, key: string) =>
-  call<GearOut>(token, "POST", "/gear/refine", { item, quote, protect, key })
+export const refineGear = (token: string, item: string, quote: string, protect: boolean, key: string, instance?: string | null) =>
+  call<GearOut>(token, "POST", "/gear/refine", instance ? { item, instance, quote, protect, key } : { item, quote, protect, key })
 export const resolveRefinement = (token: string, proposalId: string, accept: boolean, key: string) =>
   call<GearOut>(token, "POST", "/gear/refine/resolve", { proposalId, accept, key })
 export const applyGearItem = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/use", { item, key })
@@ -733,7 +755,8 @@ export const reachDomainPlace = (token: string, domain: DomainId, place: string,
 /** Entrega a missão de prédio (o servidor confere o objetivo). */
 export const deliverBuildingMission = (token: string, id: string) =>
   call<BuildingsState & { receipt?: Receipt; replay?: boolean }>(token, "POST", "/buildings/mission", { id })
-export const recycleGear = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/recycle", { item, qty, key })
+export const recycleGear = (token: string, item: string, qty: number, key: string, instance?: string | null) =>
+  call<GearOut>(token, "POST", "/gear/recycle", instance ? { item, qty, key, instance } : { item, qty, key })
 /** Hospital do centro (mm3d-26): planta por dentro, leito do usuário, régua da alta e a vida agora. */
 export const getHospital = (token: string) => call<HospitalInfo>(token, "GET", "/hospital")
 /** Interior de um prédio do centro (mm3d-37): a planta, buscada ao entrar. */

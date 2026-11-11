@@ -12515,7 +12515,8 @@
     "Esse Domínio ainda está fechado": "This Domain is still closed",
     "Esse setor ainda está fechado": "This sector is still closed",
     "Lugar desconhecido": "Unknown place",
-    "Chegue à clareira primeiro": "Reach the clearing first"
+    "Chegue à clareira primeiro": "Reach the clearing first",
+    "Equipamento não encontrado": "Equipment not found"
   },
   "Moedas": {
     "walletTitle": "Wallet",

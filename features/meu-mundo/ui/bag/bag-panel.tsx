@@ -237,7 +237,7 @@ export default function BagPanel({
                 onRefine={onOpenRefine}
                 equip={(item, slot) => {
                   const target = slot || slotsFor(item).find((s) => !bag?.equipped[s]) || slotsFor(item)[0]
-                  void act("equip-" + item.id, (tk) => equipGear(tk, target, slot ? null : item.id), t("gearEquippedOk", "Equipamento atualizado.")).then(() => onChanged?.())
+                  void act("equip-" + item.id, (tk) => equipGear(tk, target, slot ? null : item.id, slot ? null : bag?.owned[item.id]?.instance), t("gearEquippedOk", "Equipamento atualizado.")).then(() => onChanged?.())
                 }}
                 use={(item) => void act("use-" + item.id, (tk, key) => applyGearItem(tk, item.id, key), t("forgeUsed", "Uso registrado."))}
                 recycle={(item) => {

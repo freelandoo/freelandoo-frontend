@@ -81,7 +81,7 @@ export function RefinementCard({ item, bag, byId, t, act, busy }: {
           {confirmQuote === quote.id ? (
             <>
               <p className="text-[12px]" style={{ color: AE.bad }}>{t("refineConsent", "Gastar os recursos e sortear? Você poderá aceitar ou recusar o resultado; o custo não é reembolsado.")}</p>
-              <AetherButton disabled={!affordable} busy={busy} onClick={() => void act("refine-" + item.id + "-" + quote.id, (tk, key) => refineGear(tk, item.id, quote.id, protect, key))}>{t("refinePay", "Pagar e revelar resultado")}</AetherButton>
+              <AetherButton disabled={!affordable} busy={busy} onClick={() => void act("refine-" + item.id + "-" + quote.id, (tk, key) => refineGear(tk, item.id, quote.id, protect, key, bag.owned[item.id]?.instance))}>{t("refinePay", "Pagar e revelar resultado")}</AetherButton>
               <AetherButton tone="secondary" disabled={busy} onClick={() => setConfirmQuote(null)}>{t("gearCancel", "Voltar")}</AetherButton>
             </>
           ) : <AetherButton disabled={!affordable || busy} onClick={() => setConfirmQuote(quote.id)}>{affordable ? t("refineAttempt", "Preparar refinamento") : t("refineMissing", "Faltam moedas ou materiais")}</AetherButton>}
