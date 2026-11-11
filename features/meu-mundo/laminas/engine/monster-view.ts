@@ -156,6 +156,12 @@ Object.assign(STONE, { skSlash: STONE.zap, skDash: STONE.leap, skShield: [TAUNT]
 Object.assign(KNIGHT, { skSlash: KNIGHT.great, skDash: KNIGHT.thrust, skShield: KNIGHT.block, skUlt: KNIGHT.combo })
 // lore v2 D5: os golpes das fases de Zéphyra (espada): rajada = o corte largo, avanço = a estocada, giro = o combo
 Object.assign(KNIGHT, { gale: KNIGHT.great, boltRush: KNIGHT.thrust, stormCut: KNIGHT.combo })
+// Domínios v2: Marú (espada) — onda = o corte largo, estocada no gelo = a estocada, redemoinho = o combo
+Object.assign(KNIGHT, { tide: KNIGHT.great, icePike: KNIGHT.thrust, whirlpool: KNIGHT.combo })
+// Aeryn e Íris (tiro): flechada/feixe = a rajada, mergulho/avanço = a carga, garras/explosão = o golpe largo
+Object.assign(CIBORG, { bronzeVolley: CIBORG.blast, eagleDive: BRUTE.charge, talon: BRUTE.sweep, prismBeam: CIBORG.blast, chromaDash: BRUTE.charge, rainbowBurst: BRUTE.sweep })
+// Kragor (machado): pancada = o golpe de cima, carga = a carga, giro = o golpe largo
+Object.assign(BRUTE, { basaltSlam: BRUTE.smash, lavaCharge: BRUTE.charge, magmaSweep: BRUTE.sweep })
 Object.assign(CLAW, { skSlash: CLAW.rake, skDash: CLAW.leap, skShield: CLAW.claw, skUlt: CLAW.rake })
 
 /** Como cada um que luta de arma ou garra se desenha. `walk` null = a locomoção normal. */

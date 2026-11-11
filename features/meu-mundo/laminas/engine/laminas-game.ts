@@ -422,7 +422,14 @@ const GRIP = Quaternion.RotationYawPitchRoll(0, 0, Math.PI / 2)
 const GRIP_OFFSET = new Vector3(0.0, 0.085, 0.03)
 
 /** Os nomes das fases 2 e 3 de cada deus chefão, quando a tela não manda os traduzidos (laminas-view manda). */
-const BOSS_PHASE_PT: Record<BossId, [string, string]> = { noctis: ["LUA MINGUANTE", "LUA NOVA"], zephyra: ["VENTO QUE DERRUBA", "RASTRO DE RAIO"] }
+const BOSS_PHASE_PT: Record<BossId, [string, string]> = {
+  noctis: ["LUA MINGUANTE", "LUA NOVA"],
+  zephyra: ["VENTO QUE DERRUBA", "RASTRO DE RAIO"],
+  maru: ["MARÉ ALTA", "GELO PARTIDO"],
+  aeryn: ["CHUVA DE BRONZE", "VOO DA ÁGUIA"],
+  kragor: ["MARTELO DE BASALTO", "CHIFRES DE LAVA"],
+  iris: ["PRISMA", "MIL CORES"],
+}
 
 export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const { canvas } = opts

@@ -362,6 +362,11 @@ function LaminasScreen({
       noctis: [t("laminasBossPhase2", "LUA MINGUANTE"), t("laminasBossPhase3", "LUA NOVA")] as [string, string],
       // lore v2 D5: Zéphyra — o vento que derruba e o rastro de raio no trilho
       zephyra: [t("laminasZephyraPhase2", "VENTO QUE DERRUBA"), t("laminasZephyraPhase3", "RASTRO DE RAIO")] as [string, string],
+      // Domínios v2: os quatro últimos deuses
+      maru: [t("laminasMaruPhase2", "MARÉ ALTA"), t("laminasMaruPhase3", "GELO PARTIDO")] as [string, string],
+      aeryn: [t("laminasAerynPhase2", "CHUVA DE BRONZE"), t("laminasAerynPhase3", "VOO DA ÁGUIA")] as [string, string],
+      kragor: [t("laminasKragorPhase2", "MARTELO DE BASALTO"), t("laminasKragorPhase3", "CHIFRES DE LAVA")] as [string, string],
+      iris: [t("laminasIrisPhase2", "PRISMA"), t("laminasIrisPhase3", "MIL CORES")] as [string, string],
     },
     fleeWarn: t("laminasFleeWarn", "Tô com medo dessa luta, vou sair."),
     // apresentação 11: o letreiro que passa na saída da vitória
