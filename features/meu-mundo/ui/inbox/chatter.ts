@@ -14,7 +14,7 @@ type Tr = (key: string, fallback: string) => string
 export type ChatterMoment = "enter" | "night" | "morning" | "idle"
 
 /** Intervalo mínimo entre duas falas soltas (ms). */
-export const CHATTER_GAP_MS = 20 * 60_000
+export const CHATTER_GAP_MS = 6 * 60_000
 /** Abaixo disto ele está magoado e a fala muda. */
 const HURT_AT = 10
 
@@ -119,9 +119,9 @@ export function chatterLine(soul: LifeSoul, moment: ChatterMoment, t: Tr, roll =
 }
 
 /** O card local da fala (mesmo molde dos avisos; não vai ao sino). */
-export function chatterNotice(line: { title: string; emotion: Emotion }, at = new Date()): MMNotice {
+export function chatterNotice(line: { title: string; emotion: Emotion }, at = new Date(), topic?: string): MMNotice {
   const iso = at.toISOString()
-  return { id: `chat:${iso}`, kind: "life", code: "chatter", priority: 4, data: { title: line.title, emotion: line.emotion }, mailId: null, createdAt: iso, read: false }
+  return { id: `chat:${topic ?? ""}:${iso}`, kind: "life", code: "chatter", priority: 4, data: { title: line.title, emotion: line.emotion, topic }, mailId: null, createdAt: iso, read: false }
 }
 
 /** Todas as chaves (o script de i18n confere). */

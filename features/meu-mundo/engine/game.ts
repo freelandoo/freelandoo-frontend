@@ -29,6 +29,8 @@ import { buildCenterWorld, type CenterLabels } from "./center-world"
 import { CenterMobs } from "./center-mobs"
 import { setMonsterSkinMax } from "../laminas/engine/monster-view"
 import { Character, LocalPlayer, RemotePlayer } from "./player"
+import { emitBanter, placeTopic, sightEvents } from "../banter"
+import { GOD_BODIES, MONSTER_BODIES, TALL_NAMES } from "../gods"
 import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
 import { PlayerSelection, type PlayerTap } from "./player-select"
@@ -535,6 +537,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
 
   // ── Interação ─────────────────────────────────────────────────────────────
   let nearby: Interactable | null = null
+  let sightAt = 0
   let myLot = payload.me.house || 0
   const visitor = !!(payload.me as { visitor?: boolean }).visitor
   const exitCar: Interactable = { kind: "car-exit", id: "car-exit", x: 0, z: 0, radius: 99 }
@@ -765,6 +768,16 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     if (next?.id !== nearby?.id) {
       nearby = next
       opts.onNearbyChange?.(nearby)
+      // chegou na porta de um prédio: o personagem comenta o lugar (banter.ts)
+      const topic = nearby?.kind === "place" ? placeTopic(nearby.place.id) : null
+      if (topic && nearby) emitBanter({ topic, target: `place:${nearby.id}` })
+    }
+    // O que ele vê em volta (deus, monstro, outro povo): só apresentação, ~1,5 s.
+    sightAt += dt
+    if (sightAt >= 1.5 && !input.blocked) {
+      sightAt = 0
+      const seenPlayers = [...remotes].filter(([, r]) => r.char.holder.isEnabled()).map(([sid, r]) => ({ sid, body: r.char.body as string, d: Math.hypot(r.x - local.x, r.z - local.z) }))
+      emitBanter(...sightEvents(myBody, seenPlayers, mobs.seen(local.x, local.z), GOD_BODIES, MONSTER_BODIES, TALL_NAMES))
     }
     if (input.interactQueued) {
       input.interactQueued = false

@@ -5,12 +5,14 @@
 // Uma fala ao entrar no jogo (alguns segundos depois, para não brigar com a
 // tela de entrada), uma na virada para a noite e para o dia (hora de Brasília)
 // e, fora isso, no máximo uma a cada CHATTER_GAP_MS. Só desenho: as falas
-// viram cards locais (`chatterNotice`), não vão ao sino.
+// viram cards locais (`chatterNotice`), não vão ao sino. Além dessas, ele
+// REAGE ao que está em volta (deus, monstro, outro povo, prédio, fim de luta).
 
 import { useEffect, useRef } from "react"
 import type { MMNotice } from "../../types"
 import type { LifeSoul } from "../../soul"
 import { CHATTER_GAP_MS, brtHour, chatterLine, chatterNotice, isNight, type ChatterMoment } from "./chatter"
+import { banterGate, banterLine, emptyBanterMemory, onBanter } from "../../banter"
 
 type Tr = (key: string, fallback: string) => string
 const ENTER_DELAY_MS = 8_000
@@ -21,6 +23,7 @@ export function useChatter(soul: LifeSoul | null, t: Tr, push: (n: MMNotice) => 
   const tRef = useRef(t)
   const pushRef = useRef(push)
   const state = useRef({ entered: false, last: 0, hour: brtHour() })
+  const memory = useRef(emptyBanterMemory())
   useEffect(() => {
     soulRef.current = soul
     tRef.current = t
@@ -47,9 +50,24 @@ export function useChatter(soul: LifeSoul | null, t: Tr, push: (n: MMNotice) => 
       else if (!isNight(h) && isNight(prev)) say("morning")
       else if (Date.now() - st.last >= CHATTER_GAP_MS) say("idle")
     }, TICK_MS)
+    // Reações ao que está em volta (banter.ts): o motor e as telas avisam o que
+    // aconteceu; fala o primeiro candidato que a memória deixar passar.
+    const off = onBanter((events) => {
+      const s = soulRef.current
+      if (!s) return
+      const now = Date.now()
+      for (const e of events) {
+        const line = banterLine(s.temper, e, tRef.current)
+        if (!line || !banterGate(memory.current, e, now)) continue
+        st.last = now
+        pushRef.current(chatterNotice(line, new Date(now), e.topic))
+        return
+      }
+    })
     return () => {
       clearTimeout(enter)
       clearInterval(tick)
+      off()
       st.entered = false
     }
   }, [hasSoul])

@@ -172,6 +172,11 @@ export class CenterMobs {
     }
   }
 
+  /** Onde cada monstro está agora (para o personagem comentar quem vê: banter.ts). */
+  seen(x: number, z: number) {
+    return [...this.views.values()].map((v) => ({ id: v.id, kind: v.kind as string, d: Math.hypot(v.x - x, v.z - z) }))
+  }
+
   /** "Lutar": um por monstro. */
   interactables(): Interactable[] {
     const out: Interactable[] = []

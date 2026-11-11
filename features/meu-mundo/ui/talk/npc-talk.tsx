@@ -15,6 +15,8 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { QUEST_CHANGED, getQuest, markQuest } from "../../data"
 import { NPCS, conversationFor, lineKeys, npcNameKey, type NpcId } from "../../npcs"
 import { PORTRAIT } from "../portraits"
+import { currentSoul } from "../../soul"
+import { temperSuffix } from "../../banter"
 import { AetherModal, AetherButton } from "../kit/aether-modal"
 import { AE, chamfer } from "../kit/aether-tokens"
 import { archivo } from "../status/evo-skin"
@@ -27,6 +29,8 @@ export const npcTx = (t: T, key: string) => t(key, PT[key]?.[0] ?? key)
 
 interface Ready {
   lines: string[]
+  /** a resposta do personagem de quem joga, pela personalidade (última página) */
+  reply: string | null
   /** o passo de agora pede esta conversa e o servidor não gravou (longe) */
   far: boolean
 }
@@ -48,7 +52,10 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
       const cur = quest && quest.current ? quest.current : null
       const conv = conversationFor(npc, { chapter: quest && !quest.locked ? quest.id : null, step: cur ? cur.key : null })
       const lines = lineKeys(npc, conv, q && q.ok ? q.data.clan : null)
-      setReady({ lines, far: !!(m && !m.ok && cur && cur.check === `talk:${npc}`) })
+      // cada personalidade responde do seu jeito (sem personalidade, a conversa acaba no NPC)
+      const temper = currentSoul()?.temper
+      const replyKey = temper ? `npc_${npc}_${conv.id}_re_${temperSuffix(temper)}` : ""
+      setReady({ lines, reply: PT[replyKey] ? replyKey : null, far: !!(m && !m.ok && cur && cur.check === `talk:${npc}`) })
     })()
     return () => {
       alive = false
@@ -60,7 +67,10 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
     window.dispatchEvent(new CustomEvent(QUEST_CHANGED))
     onClose()
   }
-  const last = !!ready && i >= ready.lines.length - 1
+  const pages = ready ? [...ready.lines, ...(ready.reply ? [ready.reply] : [])] : []
+  const at = Math.min(i, pages.length - 1)
+  const replying = !!ready?.reply && at === pages.length - 1
+  const last = !!ready && i >= pages.length - 1
 
   return (
     <AetherModal eyebrow={npcTx(t, "npcTalk")} title={name} onClose={close} width={520} z={90}>
@@ -79,13 +89,20 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
           {!ready ? (
             <Loader2 className="mt-6 h-6 w-6 animate-spin" style={{ color: AE.goldSoft }} aria-label={npcTx(t, "npcTalk")} />
           ) : (
-            <p key={i} role="status" aria-live="polite" className="text-[16px] leading-snug" style={{ color: AE.text }}>
-              {npcTx(t, ready.lines[Math.min(i, ready.lines.length - 1)])}
-            </p>
+            <div key={i} role="status" aria-live="polite">
+              {replying && (
+                <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: AE.goldSoft }}>
+                  {npcTx(t, "npcReply")}
+                </p>
+              )}
+              <p className="text-[16px] leading-snug" style={{ color: replying ? AE.goldSoft : AE.text }}>
+                {npcTx(t, pages[at])}
+              </p>
+            </div>
           )}
-          {ready && ready.lines.length > 1 && (
+          {ready && pages.length > 1 && (
             <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: AE.dim }}>
-              {Math.min(i, ready.lines.length - 1) + 1}/{ready.lines.length}
+              {at + 1}/{pages.length}
             </p>
           )}
           {ready && ready.far && (
