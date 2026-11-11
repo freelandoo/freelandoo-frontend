@@ -730,6 +730,8 @@ export interface SignatureRig {
   sig: Signature
   /** Regra de área (maga, arco, arma): o golpe é em volta de quem joga, não à frente. */
   area: boolean
+  /** O gesto de carga põe o punho na frente do rosto (boxe): o close gira para o lado. */
+  guard?: boolean
   subject: () => Subject
   /** Ponta da arma agora (null se não houver). */
   blade: () => Vector3 | null
@@ -766,10 +768,29 @@ export interface CineRig {
 }
 
 /**
- * Quem já tem o Poder Máximo de cinema (close 3D → recuo → golpes do tamanho da tela → aviso →
- * clímax). Etapa 09 = piloto; a 10 leva a mesma gramática aos demais.
+ * O close de abertura do Poder Máximo de cinema, pela forma que abre nas costas (apresentação 10).
+ * Cada linha é [yaw, dist, alto, olhar, lente] no início e no fim do close (0 → 0,26 da regra);
+ * dist, alto e olhar são relativos ao corpo (director.ts). O motivo de cada uma:
+ *  - asas, penas, garras: abrem atrás dos ombros → quase de frente (20°), do peito à cabeça (piloto 09);
+ *  - chifres: sobem acima da cabeça → mesma lente, câmera e olhar um pouco mais altos;
+ *  - sol, lua, engrenagem, roda: disco atrás da cabeça → de frente (8°), o disco vira auréola;
+ *  - caudas: leque a partir do quadril → mais longe e mais baixo, cintura à cabeça, 3/4 para o leque
+ *    sair dos dois lados;
+ *  - crista: onda no chão atrás → de baixo para cima, a onda subindo atrás do corpo.
  */
-export const CINEMA_PILOT: ReadonlySet<string> = new Set(["vampiro"])
+type CloseKey = [yaw: number, dist: number, high: number, look: number, fov: number]
+const CLOSE_BY_BACK: Record<BackForm, [from: CloseKey, to: CloseKey]> = {
+  wings: [[160, 1.55, 0.74, 0.9, 0.5], [146, 1.3, 0.76, 0.92, 0.46]],
+  feathers: [[160, 1.55, 0.74, 0.9, 0.5], [146, 1.3, 0.76, 0.92, 0.46]],
+  claws: [[160, 1.6, 0.76, 0.9, 0.5], [146, 1.35, 0.78, 0.92, 0.46]],
+  horns: [[160, 1.6, 0.82, 0.95, 0.52], [148, 1.35, 0.84, 0.97, 0.48]],
+  sun: [[172, 1.7, 0.84, 0.94, 0.56], [164, 1.45, 0.86, 0.95, 0.52]],
+  moon: [[172, 1.7, 0.82, 0.92, 0.56], [164, 1.45, 0.84, 0.93, 0.52]],
+  gear: [[172, 1.65, 0.8, 0.88, 0.56], [164, 1.42, 0.82, 0.9, 0.52]],
+  wheel: [[172, 1.65, 0.8, 0.88, 0.56], [164, 1.42, 0.82, 0.9, 0.52]],
+  tails: [[166, 2.1, 0.6, 0.66, 0.6], [150, 1.8, 0.62, 0.7, 0.56]],
+  crest: [[162, 2.0, 0.42, 0.72, 0.62], [148, 1.7, 0.44, 0.76, 0.56]],
+}
 /** Até quando (tempo da regra) dura o close: a HUD volta no recuo. */
 const CINE_CLOSE = 0.28
 
@@ -1723,24 +1744,31 @@ export function signatureFx(rig: SignatureRig): SignatureFx {
         if (rim) rim.intensity = 0
       }
 
-      // ── apresentação 09: o Poder Máximo de cinema (piloto) ──────────────────
+      // ── apresentação 09/10: o Poder Máximo de cinema (todos os personagens) ──
       // close 3D de frente → recuo contínuo até o corpo inteiro com o gigante atrás → três golpes do
       // tamanho da tela → pausa de aviso com a cruz de luz → golpe final com clímax → resto.
       // A regra (sim/fight.ts) não muda: só o ritmo da tela, a câmera e o desenho.
-      const cine = rig.cine && CINEMA_PILOT.has(rig.sig.id) ? rig.cine : null
+      const cine = rig.cine ?? null
       if (cine) {
         const pal = rig.sig.pal
         // close (0–0,28 da regra) e recuo (0,28–0,58) escritos aqui; do golpe em diante segue o
         // enquadramento de sempre, com o gigante e a área
+        const [a, z] = CLOSE_BY_BACK[rig.sig.back]
+        // o close segue a cabeça de agora (quem se curva no gesto não perde o rosto); com o punho na
+        // frente do rosto (boxe) a câmera vai 34° mais para o lado
+        const turn = rig.guard ? -34 : 0
+        const key = (t: number, [yaw, dist, high, look, fov]: CloseKey): CamKey => ({ t, yaw: yaw + turn, dist, high, look, lead: 0, fov, head: 1 })
         const close: CamKey[] = [
-          // quase de frente (20° do rosto), um pouco de baixo, lente fechada: do peito à cabeça em pé,
-          // rosto e ombros deitado. As asas abrem atrás do corpo, fora do caminho; monstro entre a
-          // câmera e o corpo sai de quadro (laminas-game, `director.framing`)
-          { t: 0, yaw: 160, dist: 1.55, high: 0.74, look: 0.9, lead: 0, fov: 0.5 },
-          // empurra devagar e gira 14° enquanto as asas abrem atrás
-          { t: 0.26, yaw: 146, dist: 1.3, high: 0.76, look: 0.92, lead: 0, fov: 0.46 },
-          // recuo sem corte: abre a lente, sobe por cima de quem está na frente e gira para o lado
-          { t: 0.42, yaw: 118, dist: 3.4, high: 1.25, look: 1.0, lead: 0, fov: 0.8 },
+          // corte seco no close, enquadrado pela forma das costas (CLOSE_BY_BACK); empurra devagar e
+          // gira enquanto ela abre atrás. Monstro entre a câmera e o corpo sai de quadro
+          // (laminas-game, `director.framing`)
+          key(0, a),
+          key(0.26, z),
+          // recuo sem corte: abre a lente, sobe por cima de quem está na frente e gira para o lado.
+          // Regra de área (maga, arco, arma): mais longe e mais alto, o círculo do chão entra em quadro
+          rig.area
+            ? { t: 0.42, yaw: 124, dist: 4.2, high: 1.5, look: 0.9, lead: 0, fov: 0.86 }
+            : { t: 0.42, yaw: 118, dist: 3.4, high: 1.25, look: 1.0, lead: 0, fov: 0.8 },
         ]
         const later = (
           [

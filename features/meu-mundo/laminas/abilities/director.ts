@@ -25,6 +25,9 @@ export interface TimeKey {
   k: number
 }
 
+/** Altura da cabeça no corpo em pé, em frações da altura (referência do `head` do CamKey). */
+const STAND_HEAD = 0.9
+
 /** Enquadramento em volta de quem joga. */
 export interface CamKey {
   t: number
@@ -39,6 +42,11 @@ export interface CamKey {
   /** Quanto o ponto olhado avança à frente (m). */
   lead: number
   fov: number
+  /**
+   * 0–1: quanto o enquadramento segue a cabeça DE AGORA em vez da do corpo em pé (apresentação 10).
+   * Close de quem se curva no gesto (martelo, boxe): o rosto não sai de quadro. Sem = 0.
+   */
+  head?: number
 }
 
 export interface AbilityCue {
@@ -71,6 +79,8 @@ export interface Subject {
   z: number
   facing: number
   height: number
+  /** Onde está a cabeça agora (osso); sem = a do corpo em pé. */
+  head?: () => Vector3 | null
 }
 
 export interface View {
@@ -100,7 +110,7 @@ export function camAt(keys: CamKey[], t: number): CamKey {
     if (t > b.t) continue
     const u = smooth(clamp01((t - a.t) / Math.max(1e-4, b.t - a.t)))
     const mix = (x: number, y: number) => x + (y - x) * u
-    return { t, yaw: mix(a.yaw, b.yaw), dist: mix(a.dist, b.dist), high: mix(a.high, b.high), look: mix(a.look, b.look), lead: mix(a.lead, b.lead), fov: mix(a.fov, b.fov) }
+    return { t, yaw: mix(a.yaw, b.yaw), dist: mix(a.dist, b.dist), high: mix(a.high, b.high), look: mix(a.look, b.look), lead: mix(a.lead, b.lead), fov: mix(a.fov, b.fov), head: mix(a.head ?? 0, b.head ?? 0) }
   }
   return keys[keys.length - 1]
 }
@@ -201,6 +211,16 @@ export class AbilityDirector {
     const a = me.facing + Math.PI + (side * c.yaw * Math.PI) / 180
     look.set(me.x + Math.sin(me.facing) * c.lead, c.look * me.height, me.z + Math.cos(me.facing) * c.lead)
     pos.set(look.x + Math.sin(a) * dist, Math.max(0.5, c.high * me.height), look.z + Math.cos(a) * dist)
+    // segue a cabeça de agora: desloca câmera e ponto olhado juntos (o enquadramento não muda, muda o lugar)
+    const hw = c.head ?? 0
+    const hd = hw > 0 ? me.head?.() : null
+    if (hd) {
+      const dx = (hd.x - me.x) * hw
+      const dy = (hd.y - STAND_HEAD * me.height) * hw
+      const dz = (hd.z - me.z) * hw
+      look.addInPlaceFromFloats(dx, dy, dz)
+      pos.addInPlaceFromFloats(dx, dy, dz)
+    }
     // nunca atrás do muro nem do portão
     const r = Math.hypot(pos.x, pos.z)
     if (r > this.rig.limit) {

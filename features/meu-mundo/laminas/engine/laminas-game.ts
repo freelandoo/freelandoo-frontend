@@ -936,7 +936,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // ── habilidade cinematográfica (2026-11-07) ──────────────────────────────
   // Só o desenho: a regra do poder segue igual. Sem `cinematic` no kit, nada disso existe.
   const fxStage = new FxStage(scene, quality.tier)
-  const subject = () => ({ x: fight.me.x, z: fight.me.z, facing: fight.me.facing, height: hero.height })
+  const subject = () => ({ x: fight.me.x, z: fight.me.z, facing: fight.me.facing, height: hero.height, head: () => hero.bonePosition("mixamorig:Head") })
   const director = new AbilityDirector({
     subject,
     obstacles: () => fight.mobs.filter((m) => m.state !== "dead").map((m) => ({ x: m.x, z: m.z, r: MOBS[m.kind].radius + 1.1 })),
@@ -1037,7 +1037,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   }
   const cineRig = {
     arc: (i: number) => {
-      if (!calm && sig) screenArc(layer, i, sig.pal)
+      // quem atira (maga, arco, arma) corta reto: todo tiro do jogo é reto
+      if (!calm && sig) screenArc(layer, i, sig.pal, mage)
     },
     flat: (colors: string[], alpha: number) => {
       if (!calm) flatFrame(layer, colors, alpha)
@@ -1066,6 +1067,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         audio,
         sig,
         area: mage,
+        // o gesto de carga do boxe ergue o punho na frente do rosto: o close vai mais de lado
+        guard: powerClips.pre[0] === "BBox2",
         subject,
         blade: () => {
           const node = grip?.root

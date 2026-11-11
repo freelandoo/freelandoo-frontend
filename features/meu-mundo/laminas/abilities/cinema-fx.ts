@@ -21,7 +21,8 @@ let arcSeq = 0
  * 1 = de baixo-direita para cima-esquerda, 2 = por cima. Em pé a meia-lua corre na diagonal
  * (cobre mais área); deitado ela fica mais perto do horizontal.
  */
-export function screenArc(layer: HTMLElement, i: number, pal: readonly string[]) {
+export function screenArc(layer: HTMLElement, i: number, pal: readonly string[], straight = false) {
+  if (straight) return screenStreak(layer, i, pal)
   const w = layer.clientWidth
   const h = layer.clientHeight
   if (!w || !h) return
@@ -57,6 +58,51 @@ export function screenArc(layer: HTMLElement, i: number, pal: readonly string[])
       { transform: `${base} rotate(0deg) scale(1)`, opacity: 1, offset: 0.16 },
       { transform: `${base} rotate(5deg) scale(1.02)`, opacity: 0.9, offset: 0.5 },
       { transform: `${base} rotate(9deg) scale(1.05)`, opacity: 0 },
+    ],
+    { duration: ARC_MS, easing: "cubic-bezier(.2,.8,.2,1)" },
+  )
+  anim.onfinish = () => el.remove()
+  anim.oncancel = () => el.remove()
+}
+
+/**
+ * O golpe do tamanho da tela de quem atira (maga, arco, arma — apresentação 10): risco RETO de canto
+ * a canto, porque todo tiro do jogo é reto. Mesmos lados, tempo e cores da meia-lua; a ponta corre
+ * (translação ao longo do risco) em vez de girar.
+ */
+function screenStreak(layer: HTMLElement, i: number, pal: readonly string[]) {
+  const w = layer.clientWidth
+  const h = layer.clientHeight
+  if (!w || !h) return
+  const diag = Math.hypot(w, h)
+  const tilt = (Math.atan2(h, w) * 180) / Math.PI
+  const side = i % 3
+  const rot = side === 2 ? -8 : side === 0 ? -tilt * 0.82 : 180 + tilt * 0.82
+  const lift = side === 2 ? -0.18 * h : side === 0 ? 0.03 * h : -0.03 * h
+  const id = `mm-arc-${++arcSeq}`
+  const [, body, hot, edge, top] = pal
+  const el = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+  el.setAttribute("viewBox", "0 0 200 20")
+  el.setAttribute("preserveAspectRatio", "none")
+  const W = diag * 1.18
+  const H = Math.max(14, W * 0.05)
+  el.style.cssText = `position:absolute;left:${w / 2 - W / 2}px;top:${h / 2 - H / 2 + lift}px;width:${W}px;height:${H}px;overflow:visible;pointer-events:none;will-change:transform,opacity;opacity:0`
+  // rabo escuro que some → cor de quem joga → ponta quase branca (corre da esquerda para a direita)
+  el.innerHTML =
+    `<defs><linearGradient id="${id}" x1="0%" x2="100%" y1="0" y2="0">` +
+    `<stop offset="0" stop-color="${body}" stop-opacity="0"/><stop offset=".3" stop-color="${body}" stop-opacity=".85"/>` +
+    `<stop offset=".7" stop-color="${hot}"/><stop offset=".92" stop-color="${top}"/><stop offset="1" stop-color="#fff"/></linearGradient></defs>` +
+    `<path d="M0,10 L188,1 L200,10 L188,19Z" fill="url(#${id})"/>` +
+    `<path d="M50,10 L190,6.5 L200,10 L190,13.5Z" fill="#fff" fill-opacity=".85"/>` +
+    `<path d="M0,10 L188,1 L200,10" fill="none" stroke="${edge}" stroke-opacity=".55" stroke-width=".6"/>`
+  layer.appendChild(el)
+  const base = `rotate(${rot}deg)`
+  const anim = el.animate(
+    [
+      { transform: `${base} translateX(-22%) scaleX(.55)`, opacity: 0 },
+      { transform: `${base} translateX(0) scaleX(1)`, opacity: 1, offset: 0.16 },
+      { transform: `${base} translateX(4%) scaleX(1.02)`, opacity: 0.9, offset: 0.5 },
+      { transform: `${base} translateX(10%) scaleX(1.04)`, opacity: 0 },
     ],
     { duration: ARC_MS, easing: "cubic-bezier(.2,.8,.2,1)" },
   )
