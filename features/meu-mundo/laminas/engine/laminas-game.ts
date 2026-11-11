@@ -68,6 +68,8 @@ import { CUT_EYES } from "../abilities/signatures"
 import { bloodHits, slashWave } from "../abilities/blood-hit"
 import { playCutIn, playFlash, preloadCutIn } from "../abilities/cut-in"
 import { abilityKit } from "../abilities/registry"
+import { createHitCounter } from "./hit-counter"
+import { anton } from "../../ui/hud/fight-plate"
 
 export interface LaminasHud {
   hp: number
@@ -86,6 +88,8 @@ export interface LaminasHud {
   /** Recarga restante de cada habilidade (s) e o escudo ainda aceso (s). */
   cd: Cooldowns
   shield: number
+  /** Apresentação 07: o close do Poder Máximo está no ar (a HUD inteira some e volta com o controle). */
+  cinema: boolean
 }
 
 export interface LaminasGameOptions {
@@ -100,6 +104,9 @@ export interface LaminasGameOptions {
     /** mm3d-72: "PSICOPATA", o aviso do covarde e os nomes dos poderes do monstro (pelo corpo dele). */
     psycho?: string
     fleeWarn?: string
+    /** Apresentação 07: legenda do contador da esquerda (golpes seguidos / dano do poder). */
+    hits?: string
+    damage?: string
     foeSkills?: Partial<Record<"slash" | "dash" | "shield" | "ult", string>>
   }
   body: BodyId
@@ -355,7 +362,8 @@ function pick<T>(list: readonly T[]): T {
 // 2026-11-03 (combate premium): normal branco, crítico (A/S) dourado,
 // habilidade violeta, poder máximo laranja-dourado e maior, bloqueado azul-claro.
 const RANK_COLOR = ["#FFFFFF", "#FFF3D6", "#FFD23F", "#FFE45C"]
-const RANK_SIZE = [50, 58, 74, 100]
+// apresentação 07: escada única (11·13·16·24·40·72) — dano 16–24 px pelo ranque; S, o raro, 40
+const RANK_SIZE = [16, 24, 24, 40]
 const SKILL_NUM = "#C77DFF"
 const ULT_NUM = "#FFA51F"
 const BLOCK_NUM = "#9EDCFF"
@@ -875,8 +883,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     const el = document.createElement("span")
     el.textContent = text
     // números grossos e grandes (pedido do Alex); A/S com brilho
-    const glowCss = rank >= 3 ? `,0 0 18px ${color},0 0 36px ${color}` : rank >= 2 ? `,0 0 12px ${color}` : ""
-    el.style.cssText = `position:absolute;left:${p.x + (Math.random() - 0.5) * 30}px;top:${p.y}px;font:italic 900 ${size}px/1 "Arial Black",system-ui,sans-serif;letter-spacing:-0.02em;color:${color};-webkit-text-stroke:${size >= 70 ? 5 : 4}px #1b0d22;paint-order:stroke fill;text-shadow:0 4px 0 rgba(0,0,0,.45)${glowCss};transform:translate(-50%,-50%);will-change:transform,opacity;white-space:nowrap`
+    const glowCss = rank >= 3 ? `,0 0 12px ${color},0 0 24px ${color}` : rank >= 2 ? `,0 0 8px ${color}` : ""
+    el.style.cssText = `position:absolute;left:${p.x + (Math.random() - 0.5) * 30}px;top:${p.y}px;font:italic 900 ${size}px/1 "Arial Black",system-ui,sans-serif;letter-spacing:-0.02em;color:${color};-webkit-text-stroke:${Math.max(2, Math.round(size * 0.1))}px #1b0d22;paint-order:stroke fill;text-shadow:0 ${size >= 40 ? 3 : 2}px 0 rgba(0,0,0,.45)${glowCss};transform:translate(-50%,-50%);will-change:transform,opacity;white-space:nowrap`
     layer.appendChild(el)
     const anim = el.animate(
       [
@@ -889,6 +897,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     )
     anim.onfinish = () => el.remove()
   }
+  // apresentação 07: o contador da esquerda (golpes seguidos / dano acumulado do poder)
+  const counter = createHitCounter(layer, { font: anton.style.fontFamily, hitsLabel: opts.labels?.hits ?? "GOLPES", damageLabel: opts.labels?.damage ?? "DANO" })
 
   // ── habilidade cinematográfica (2026-11-07) ──────────────────────────────
   // Só o desenho: a regra do poder segue igual. Sem `cinematic` no kit, nada disso existe.
@@ -981,7 +991,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           if (e.rank === 3) {
             // a maga já explode no alvo: no início só o círculo e a coluna (senão a luz a esconde)
             if (clan !== "raposa") vfx.burst(new Vector3(fight.me.x, 1.2, fight.me.z), gc)
-            pop(new Vector3(fight.me.x, 2.6, fight.me.z), "S!", "#FFE45C", 70, 3)
+            pop(new Vector3(fight.me.x, 2.6, fight.me.z), "S!", "#FFE45C", 40, 3)
           }
           const c = !moves ? SWING_CLIPS[e.combo] : e.rank === 3 ? pick(moves.special) : pick(moves.swings[e.combo])
           hero.boxeAct(c.clip, dur, c.from, c.to)
@@ -1015,6 +1025,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           break
         }
         case "power": {
+          counter.power()
           if (blood) {
             director.start(blood.script())
             audio.excite(1)
@@ -1048,7 +1059,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           }
           if (blood) {
             heroRayLeft = stoneHero ? POWER.dur - POWER.fireAt : 0
-            if (e.heal) pop(new Vector3(e.x, 2.4, e.z), `+${e.heal}`, "#7CFFB2", 40)
+            if (e.heal) pop(new Vector3(e.x, 2.4, e.z), `+${e.heal}`, "#7CFFB2", 24)
             arena.cheer(0.8)
             break
           }
@@ -1068,7 +1079,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             // golpe de sangue à frente
             vfx.burst(at, fxColor)
             for (let i = 1; i <= 3; i++) vfx.impact(new Vector3(e.x + Math.sin(e.facing) * 1.5 * i, 1.1, e.z + Math.cos(e.facing) * 1.5 * i), fxColor, true)
-            if (e.heal) pop(new Vector3(e.x, 2.4, e.z), `+${e.heal}`, "#7CFFB2", 40)
+            if (e.heal) pop(new Vector3(e.x, 2.4, e.z), `+${e.heal}`, "#7CFFB2", 24)
           }
           skillFx.ultFire(feet, clan === "raposa" ? POWER.mageR : POWER.bladeRange)
           vfx.impact(at.add(new Vector3(0, 0.4, 0)), SKILL_COLORS.ult, true, 1.4)
@@ -1129,12 +1140,12 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           break
         case "miss":
           if (e.on === "me") {
-            pop(new Vector3(e.x, hero.height * 0.8, e.z), opts.labels?.evade ?? "ESQUIVOU!", "#7CFFB2", 40)
+            pop(new Vector3(e.x, hero.height * 0.8, e.z), opts.labels?.evade ?? "ESQUIVOU!", "#7CFFB2", 24)
             if (e.auto && !hero.boxeBusy && fight.me.state !== "dodge") {
               if (moves) hero.boxeAct(moves.dodge.clip, 0.36, moves.dodge.from, moves.dodge.to)
               else hero.boxeAct("BDodge", 0.36, 0, 0.49)
             }
-          } else pop(new Vector3(e.x, e.y + 2, e.z), opts.labels?.miss ?? "ERROU!", "#E8E2D5", 38)
+          } else pop(new Vector3(e.x, e.y + 2, e.z), opts.labels?.miss ?? "ERROU!", "#E8E2D5", 24)
           audio.whoosh()
           break
         case "hit":
@@ -1142,11 +1153,12 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             const at = new Vector3(e.x, e.y + 1.3, e.z)
             // combo (2026-11-03): 1º golpe faísca pequena, 2º mais forte, o 3º fecha com explosão curta e tranco
             const chain = !e.src && fight.me.state === "attack" ? fight.me.chain : 0
+            counter.hit(e.dmg, e.src === "ult")
             burst(sparks, at, (e.heavy ? 40 : 22) + chain * 14)
             burst(ichor, at, (e.heavy ? 18 : 8) + chain * 6)
-            if (e.src === "ult") pop(at.add(new Vector3(0, 0.7, 0)), String(e.dmg), ULT_NUM, 112, 3)
-            else if (e.src === "skill") pop(at.add(new Vector3(0, 0.5, 0)), String(e.dmg), SKILL_NUM, 68, 2)
-            else pop(at.add(new Vector3(0, 0.5, 0)), e.rank >= 2 ? `${RANKS[e.rank]} ${e.dmg}` : String(e.dmg), RANK_COLOR[e.rank], RANK_SIZE[e.rank] + chain * 6, e.rank)
+            if (e.src === "ult") pop(at.add(new Vector3(0, 0.7, 0)), String(e.dmg), ULT_NUM, 24, 3)
+            else if (e.src === "skill") pop(at.add(new Vector3(0, 0.5, 0)), String(e.dmg), SKILL_NUM, 24, 2)
+            else pop(at.add(new Vector3(0, 0.5, 0)), e.rank >= 2 ? `${RANKS[e.rank]} ${e.dmg}` : String(e.dmg), RANK_COLOR[e.rank], RANK_SIZE[e.rank], e.rank)
             if (e.src === "ult" && blood) blood.hit(at)
             else if (hits) {
               const force = e.src === "skill" ? 3 : Math.min(3, e.rank + chain)
@@ -1178,13 +1190,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             const dir = src ? new Vector3(src.x - e.x, 0, src.z - e.z).normalize() : new Vector3(0, 0, 1)
             const hr = Math.max(1.35, 0.95 + 0.3 * hero.height)
             skillFx.shieldHit(new Vector3(e.x + dir.x * hr, hero.height * 0.55, e.z + dir.z * hr))
-            pop(new Vector3(e.x, 2.1, e.z), String(e.dmg), BLOCK_NUM, 40)
+            pop(new Vector3(e.x, 2.1, e.z), String(e.dmg), BLOCK_NUM, 16)
             audio.shieldHit()
             shake = Math.max(shake, 0.06)
           } else {
             const at = new Vector3(e.x, 1.4, e.z)
+            counter.hurt()
             burst(sparks, at, 14)
-            pop(at.add(new Vector3(0, 0.6, 0)), String(e.dmg), "#FF3B3B", 44)
+            pop(at.add(new Vector3(0, 0.6, 0)), String(e.dmg), "#FF3B3B", 24)
             vfx.impact(at, VFX_COLORS.dano, e.heavy)
             if (e.heavy) hitStop = Math.max(hitStop, 0.06)
             audio.punch(e.heavy ? 1 : 0.5, false)
@@ -1199,18 +1212,18 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           }
           break
         case "evade":
-          pop(new Vector3(fight.me.x, 2.2, fight.me.z), "✓", "#7CFFB2", 30)
+          pop(new Vector3(fight.me.x, 2.2, fight.me.z), "✓", "#7CFFB2", 24)
           break
         // mm3d-72: a personalidade na luta
         case "psycho": {
           const at = new Vector3(fight.me.x, hero.height + 0.9, fight.me.z)
-          pop(at, opts.labels?.psycho ?? "PSICOPATA", "#FF2E4D", 84, 3)
+          pop(at, opts.labels?.psycho ?? "PSICOPATA", "#FF2E4D", 40, 3)
           shake = Math.max(shake, 0.35)
           audio.excite(1)
           break
         }
         case "fleeWarn":
-          pop(new Vector3(fight.me.x, hero.height + 0.6, fight.me.z), opts.labels?.fleeWarn ?? "Tô com medo dessa luta, vou sair.", "#9FB4FF", 34)
+          pop(new Vector3(fight.me.x, hero.height + 0.6, fight.me.z), opts.labels?.fleeWarn ?? "Tô com medo dessa luta, vou sair.", "#9FB4FF", 16)
           audio.denied()
           break
         case "mobShield": {
@@ -1247,6 +1260,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     // pausa de impacto: o mundo quase para por um instante no golpe forte
     const slow = hitStop > 0
     hitStop = Math.max(0, hitStop - realDt)
+    counter.tick(realDt, director.playing)
     // câmera lenta: só o ritmo desta luta, que é local e passo a passo (ver abilities/director.ts)
     const pace = slow ? 0.08 : director.scale()
     if (hitDark > 0 && !director.playing) {
@@ -1412,7 +1426,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         if (cur?.skill && cur.skill !== "shield") {
           const c = foeColor(m.kind)
           const name = opts.labels?.foeSkills?.[cur.skill]
-          if (name) pop(new Vector3(m.x, FOE_H[m.kind] + 0.5, m.z), name, "#FFE45C", cur.skill === "ult" ? 56 : 40, cur.skill === "ult" ? 3 : 1)
+          if (name) pop(new Vector3(m.x, FOE_H[m.kind] + 0.5, m.z), name, "#FFE45C", cur.skill === "ult" ? 40 : 24, cur.skill === "ult" ? 3 : 1)
           if (cur.skill === "ult") {
             vfx.ground(new Vector3(m.x, 0, m.z), c, cur.area ?? 4, m.windup + 0.3, true)
             audio.charge(m.windup)
@@ -1552,6 +1566,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         locked: p.state === "down" || p.state === "win" || p.hp <= 0,
         cd: { ...p.cd },
         shield: Math.max(0, p.shieldUntil - fight.time),
+        cinema: !calm && director.playing,
       })
     }
     governor.tick(ms)

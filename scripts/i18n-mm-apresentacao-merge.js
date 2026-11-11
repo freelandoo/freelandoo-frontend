@@ -64,6 +64,9 @@ const KEYS = {
     bagPickHint: "Toque numa casa para ver o item.",
     bagEquipped: "Equipado",
     bagNew: "novo",
+    // 07 — contador da luta (golpes seguidos / dano do Poder Máximo)
+    laminasHits: "GOLPES",
+    laminasDamage: "DANO",
   },
   en: {
     tbBack: "Back",
@@ -119,6 +122,8 @@ const KEYS = {
     bagPickHint: "Tap a slot to see the item.",
     bagEquipped: "Equipped",
     bagNew: "new",
+    laminasHits: "HITS",
+    laminasDamage: "DAMAGE",
   },
   es: {
     tbBack: "Volver",
@@ -174,6 +179,8 @@ const KEYS = {
     bagPickHint: "Toca una casilla para ver el objeto.",
     bagEquipped: "Equipado",
     bagNew: "nuevo",
+    laminasHits: "GOLPES",
+    laminasDamage: "DAÑO",
   },
 }
 // 06 — palavras do mundo de hoje (D11) e catálogo de taverna e alquimia (D12): valor trocado = OVERRIDE.

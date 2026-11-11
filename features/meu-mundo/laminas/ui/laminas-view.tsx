@@ -36,7 +36,7 @@ import { celebrate, hold } from "../../ui/rewards/reward-bus"
 import { createLaminasGame, type FightSheet, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
 import { VersusScreen } from "./versus-screen"
 import { MOB_KINDS, peerOf, type MobKind, type SkillId } from "../sim/fight"
-import { SkillHud } from "./skill-hud"
+import { SkillHud, skillZoneTop, useSkillScale } from "./skill-hud"
 import { HallOfFame } from "./hall-of-fame"
 import { abilityKit } from "../abilities/registry"
 import { probeClose, probeNote, probeOpen } from "../../crash-probe"
@@ -338,6 +338,8 @@ function LaminasScreen({
     ult: t(ultName.key, ultName.fallback),
     // mm3d-72: a personalidade na luta e os poderes dos monstros (com os nomes do corpo de cada um)
     psycho: t("laminasPsycho", "PSICOPATA"),
+    hits: t("laminasHits", "GOLPES"),
+    damage: t("laminasDamage", "DANO"),
     fleeWarn: t("laminasFleeWarn", "Tô com medo dessa luta, vou sair."),
     foes: Object.fromEntries(
       MOB_KINDS.map((k) => {
@@ -443,13 +445,23 @@ function LaminasScreen({
   const { pw, vw } = usePlateSize()
   // celular em pé: as duas placas não cabem lado a lado — a do inimigo desce para a direita
   const narrow = vw < plateWidth(pw) * 2 + 140
+  // apresentação 07 (D2 + Anexo A §9.4): a placa NÃO afina — só o encaixe muda.
+  // Inimigo: em cima, logo abaixo da fileira de som/desistir/sair, barra esticada pela largura
+  // (72% da tela em pé, 36% deitado, como a referência) sem mudar a espessura (que sai de `pw`).
+  // Eu: no celular desce para logo acima da zona dos botões (o que só se lê fica em cima, o que se
+  // toca no terço de baixo — a placa fica no limite, longe do rosto do inimigo e do centro).
+  const foeBarK = Math.max(2.9, Math.min(5, (vw * (narrow ? 0.72 : 0.36) - pw * 0.62) / pw))
+  const sk = useSkillScale()
+  // a HUD inteira some durante o close do Poder Máximo e volta junto com o controle (Anexo A §4.4)
+  const cinema = !!hud?.cinema
+  const hudFade = { opacity: cinema ? 0 : 1, transition: `opacity ${cinema ? 140 : 220}ms ease-out` }
   // desafio do Hall: o retrato é o do personagem de quem foi desafiado
   const foeBody = opened?.foeBody ?? (stage === "ring" ? RING_BODY[choice.kind] : MOB_BODY[choice.kind])
   const foePortrait = foeBody ? PORTRAIT[foeBody] : stage !== "ring" && choice.kind === "wolf" ? WOLF_PORTRAIT : null
   const heroLevel = ticket && ticket !== "offline" ? (ticket.setup.hero ?? 1) : 1
   const foeHp = hud ? hud.mobs.reduce((s, m) => s + Math.max(0, m.hp), 0) : 0
   const foeMax = hud ? hud.mobs.reduce((s, m) => s + m.hpMax, 0) : 1
-  const foeTop = narrow ? `calc(${SAFE.top} + 52px)` : SAFE.top
+  const foeTop = narrow ? `calc(${SAFE.top} + 48px)` : `calc(${SAFE.top} + 4px)`
   return (
     <div className="absolute inset-0">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={t("laminasAria", "Arena das Lâminas")} />
@@ -466,9 +478,10 @@ function LaminasScreen({
 
       {/* inimigos: a placa do Cat demon, espelhada (o retrato fica do lado de fora) */}
       {hud && started && (
-        <div className="pointer-events-none absolute" style={narrow ? { top: foeTop, right: SAFE.right } : { top: foeTop, left: "50%", transform: "translateX(-50%)" }}>
+        <div data-plate="foe" data-fight-hud="" className="pointer-events-none absolute" style={{ ...(narrow ? { top: foeTop, right: SAFE.right } : { top: foeTop, left: "50%", transform: "translateX(-50%)" }), ...hudFade }}>
           <FightPlate
             pw={pw}
+            barK={foeBarK}
             mirrored
             portrait={foePortrait}
             name={
@@ -495,8 +508,9 @@ function LaminasScreen({
       {/* aviso de golpe */}
       {hud?.danger && !hud.over && (
         <div
-          className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[22px] font-black italic tracking-wide"
-          style={{ top: `calc(${foeTop} + ${Math.round(plateHeight(pw)) + 6}px)`, color: "#FF5A5A", textShadow: "0 2px 0 rgba(0,0,0,.45)" }}
+          data-fight-hud=""
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[24px] font-black italic tracking-wide"
+          style={{ top: `calc(${foeTop} + ${Math.round(plateHeight(pw)) + 6}px)`, color: "#FF5A5A", textShadow: "0 2px 0 rgba(0,0,0,.45)", ...hudFade }}
         >
           {t("laminasDodge", "ESQUIVE!")}
         </div>
@@ -504,13 +518,13 @@ function LaminasScreen({
 
       {/* eu: a placa com retrato, sangue, fôlego e poder (no celular em cima, longe do joystick) */}
       {started && (
-        <div className="pointer-events-none absolute" style={{ left: SAFE.left, top: isTouch ? SAFE.top : undefined, bottom: isTouch ? undefined : SAFE.bottom }}>
+        <div data-plate="me" data-fight-hud="" className="pointer-events-none absolute" style={{ left: SAFE.left, bottom: isTouch ? `calc(${SAFE.bottom} + ${skillZoneTop(sk) + 8}px)` : SAFE.bottom, ...hudFade }}>
           <FightPlate pw={pw} portrait={PORTRAIT[body]} name={t("fightYou", "VOCÊ")} hp={hpPct} hpMax={hud?.hpMax ?? 100} stam={stPct / 100} power={{ v: pwPct / 100, ready: pwFull }} />
         </div>
       )}
 
       {/* som e sair */}
-      <div className="absolute flex gap-2" style={{ top: SAFE.top, right: SAFE.right }}>
+      <div data-fight-hud="" className="absolute flex gap-2" style={{ top: SAFE.top, right: SAFE.right, ...hudFade, pointerEvents: cinema ? "none" : undefined }}>
         <button
           type="button"
           aria-label={muted ? t("laminasSoundOn", "Ligar som") : t("laminasSoundOff", "Desligar som")}
@@ -547,7 +561,7 @@ function LaminasScreen({
 
       {/* 2026-11-03: botões de habilidade no desenho da referência do Alex (no computador com as teclas) */}
       {status === "ready" && started && result === null && hud && (
-        <>
+        <div data-fight-hud="" style={hudFade}>
           <MinigameBanter running={!hud.over} />
           {isTouch && <Joystick gameRef={gameRef} skin="gold" />}
           <SkillHud
@@ -564,7 +578,7 @@ function LaminasScreen({
             onSkill={(id) => gameRef.current?.skill(id)}
             onPower={() => gameRef.current?.power()}
           />
-        </>
+        </div>
       )}
 
       {/* carregando / passagem do portal */}

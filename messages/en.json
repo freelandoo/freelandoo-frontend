@@ -12075,7 +12075,9 @@
     "qn_bastor_idle_1": "Beasts are mine. What isn't a beast, I wipe out.",
     "arqFar": "This book is at the Nest ruins (Woods Quarter) and in the Library downtown. The first reading happens there.",
     "causeOldIllness": "An old illness",
-    "ntOldIllnessGone": "An old illness is gone: I am cured."
+    "ntOldIllnessGone": "An old illness is gone: I am cured.",
+    "laminasHits": "HITS",
+    "laminasDamage": "DAMAGE"
   },
   "Sports": {
     "eyebrow": "Sports",

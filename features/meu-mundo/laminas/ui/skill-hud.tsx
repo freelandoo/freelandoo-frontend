@@ -19,6 +19,7 @@
 // bloqueado e ligado. A arte do ícone não leva aro: tudo isso é camada do botão.
 
 import { useEffect, useRef, useState } from "react"
+import { Swords, Wind } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { anton } from "../../ui/hud/fight-plate"
 import { POWER, SKILLS, type Cooldowns, type SkillId } from "../sim/fight"
@@ -65,8 +66,35 @@ export interface SkillHudProps {
   onPower: () => void
 }
 
+/**
+ * Apresentação 07 (D5): variante SEM a placa dourada — círculo escuro translúcido com o desenho
+ * dentro; a cor só aparece quando está pronto. Fica atrás de uma chave até o Alex escolher entre o
+ * par: `localStorage["mm-fight-buttons"] = "plain"` ou `?mmbtn=plain`. Sem a chave, o desenho atual.
+ * Medidas da variante (Anexo A §9.4, em px num celular de 390): ATACAR 72, habilidades 50, ESQUIVAR 52.
+ */
+export type ButtonLook = "gold" | "plain"
+const PLAIN = { attack: 72, skill: 50, dodge: 52 }
+export function useButtonLook(): ButtonLook {
+  const [look, setLook] = useState<ButtonLook>("gold")
+  useEffect(() => {
+    let v: string | null = null
+    try {
+      v = new URLSearchParams(window.location.search).get("mmbtn") ?? window.localStorage.getItem("mm-fight-buttons")
+    } catch {
+      v = null
+    }
+    if (v === "plain") setLook("plain")
+  }, [])
+  return look
+}
+
+/** Onde acaba (de baixo para cima, em px, sem a margem segura) a zona dos botões: a borda de cima do botão mais alto. */
+export function skillZoneTop(k: number) {
+  return Math.round((LAYOUT.ult.b - REF_MARGIN + LAYOUT.ult.d / 2) * k)
+}
+
 /** Escala: px da tela por px da referência (celular em pé ≈ largura/941). */
-function useScale() {
+export function useSkillScale() {
   const [k, setK] = useState(0.42)
   useEffect(() => {
     const f = () => setK(Math.min(window.innerWidth / 941, window.innerHeight / 1500, 0.46))
@@ -131,6 +159,7 @@ function SkillButton({
   locked,
   family,
   toneOf,
+  plain,
   onFire,
 }: {
   id: SkillId | "ult"
@@ -153,10 +182,12 @@ function SkillButton({
   family: string
   /** Cor do poder deste personagem. */
   toneOf: string
+  /** Variante sem placa (D5). */
+  plain: boolean
   onFire: () => void
 }) {
   const L = LAYOUT[id]
-  const size = L.d * k
+  const size = plain ? PLAIN.skill : L.d * k
   const cooling = left > 0.05
   const ready = usePulse(cooling, 650, !cooling)
   const shake = usePulse(denied, 320, denied > 0)
@@ -252,18 +283,20 @@ function SkillButton({
 
 export function SkillHud({ kit, casting, locked, cd, power, shield, keys, denied, onAttack, onDodge, onSkill, onPower }: SkillHudProps) {
   const t = useTranslations("MeuMundo")
-  const k = useScale()
+  const k = useSkillScale()
+  const look = useButtonLook()
+  const plain = look === "plain"
   const atk = usePress()
   const dg = usePress()
   const fill = Math.max(0, Math.min(1, power / POWER.max))
   const max = fill >= 1 && cd.ult <= 0.05
   const deniedN = (id: SkillId | "ult") => (denied && denied.id === id ? denied.n : 0)
   const nameOf = (slot: AbilitySlot) => t(kit.slots[slot].name.key, kit.slots[slot].name.fallback)
-  const common = (slot: AbilitySlot) => ({ icon: kit.slots[slot].icon, casting: casting === slot, locked, family: kit.family, toneOf: kit.tone })
+  const common = (slot: AbilitySlot) => ({ icon: kit.slots[slot].icon, casting: casting === slot, locked, family: kit.family, toneOf: kit.tone, plain })
   const A = LAYOUT.attack
   const D = LAYOUT.dodge
   return (
-    <div className={s.root} style={{ right: "max(16px, env(safe-area-inset-right))", bottom: "max(16px, env(safe-area-inset-bottom))", width: 1, height: 1 }}>
+    <div className={s.root} data-look={look} style={{ right: "max(16px, env(safe-area-inset-right))", bottom: "max(16px, env(safe-area-inset-bottom))", width: 1, height: 1 }}>
       <SkillButton id="dash" k={k} {...common("dash")} label={nameOf("dash")} keyName={keys ? "2" : null} left={cd.dash} total={SKILLS.dash.cd} fill={null} max={false} denied={deniedN("dash")} active={false} onFire={() => onSkill("dash")} />
       <SkillButton id="slash" k={k} {...common("slash")} label={nameOf("slash")} keyName={keys ? "1" : null} left={cd.slash} total={SKILLS.slash.cd} fill={null} max={false} denied={deniedN("slash")} active={false} onFire={() => onSkill("slash")} />
       <SkillButton id="ult" k={k} {...common("ult")} label={nameOf("ult")} keyName={keys ? "Q" : null} left={cd.ult} total={SKILLS.ult.cd} fill={fill} max={max} denied={deniedN("ult")} active={false} onFire={onPower} />
@@ -273,7 +306,7 @@ export function SkillHud({ kit, casting, locked, cd, power, shield, keys, denied
         aria-label={t("laminasBtnDodge", "ESQUIVAR")}
         className={s.btn}
         data-press={dg["data-press"]}
-        style={{ right: (D.r - REF_MARGIN) * k, bottom: (D.b - REF_MARGIN) * k, width: D.w * k, height: D.h * k, borderRadius: "45%" }}
+        style={{ right: (D.r - REF_MARGIN) * k, bottom: (D.b - REF_MARGIN) * k, width: plain ? PLAIN.dodge : D.w * k, height: plain ? PLAIN.dodge : D.h * k, borderRadius: plain ? "50%" : "45%" }}
         onPointerDown={(e) => {
           e.preventDefault()
           dg.press()
@@ -284,11 +317,20 @@ export function SkillHud({ kit, casting, locked, cd, power, shield, keys, denied
         onPointerLeave={dg.onPointerLeave}
       >
         <div className={s.face}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={s.whole} src={`${ICON}/skills/dodge.webp`} alt="" draggable={false} />
-          <span className={`${s.label} ${anton.className}`} style={{ top: "66.5%", fontSize: D.h * k * 0.19 }}>
-            {t("laminasBtnDodge", "ESQUIVAR")}
-          </span>
+          {plain ? (
+            <div className={s.plainFace}>
+              <Wind className={s.plainIcon} style={{ width: "46%", height: "46%", marginTop: "-14%" }} aria-hidden />
+              <span className={`${s.plainLabel} ${anton.className}`}>{t("laminasBtnDodge", "ESQUIVAR")}</span>
+            </div>
+          ) : (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className={s.whole} src={`${ICON}/skills/dodge.webp`} alt="" draggable={false} />
+              <span className={`${s.label} ${anton.className}`} style={{ top: "66.5%", fontSize: D.h * k * 0.19 }}>
+                {t("laminasBtnDodge", "ESQUIVAR")}
+              </span>
+            </>
+          )}
           <div className={`${s.burst} ${s.dodgeBurst}`} />
           {keys && <span className={s.key}>K</span>}
         </div>
@@ -298,7 +340,7 @@ export function SkillHud({ kit, casting, locked, cd, power, shield, keys, denied
         aria-label={t("laminasBtnAttack", "ATACAR")}
         className={s.btn}
         data-press={atk["data-press"]}
-        style={{ right: (A.r - REF_MARGIN) * k, bottom: (A.b - REF_MARGIN) * k, width: A.w * k, height: A.h * k }}
+        style={{ right: (A.r - REF_MARGIN) * k, bottom: (A.b - REF_MARGIN) * k, width: plain ? PLAIN.attack : A.w * k, height: plain ? PLAIN.attack : A.h * k }}
         onPointerDown={(e) => {
           e.preventDefault()
           atk.press()
@@ -309,11 +351,20 @@ export function SkillHud({ kit, casting, locked, cd, power, shield, keys, denied
         onPointerLeave={atk.onPointerLeave}
       >
         <div className={s.face}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={s.whole} src={`${ICON}/skills/attack.webp`} alt="" draggable={false} />
-          <span className={`${s.label} ${anton.className}`} style={{ top: "66%", fontSize: A.h * k * 0.135 }}>
-            {t("laminasBtnAttack", "ATACAR")}
-          </span>
+          {plain ? (
+            <div className={s.plainFace}>
+              <Swords className={s.plainIcon} style={{ width: "50%", height: "50%" }} aria-hidden />
+              <span className={s.plainRing} />
+            </div>
+          ) : (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className={s.whole} src={`${ICON}/skills/attack.webp`} alt="" draggable={false} />
+              <span className={`${s.label} ${anton.className}`} style={{ top: "66%", fontSize: A.h * k * 0.135 }}>
+                {t("laminasBtnAttack", "ATACAR")}
+              </span>
+            </>
+          )}
           <div className={s.burst} />
           {keys && <span className={s.key} style={{ left: "14%", top: "14%" }}>J</span>}
         </div>

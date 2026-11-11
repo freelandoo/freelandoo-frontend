@@ -12055,7 +12055,9 @@
     "qn_bastor_idle_1": "Las bestias son mías. Lo que no es bestia, lo borro.",
     "arqFar": "Este libro está en las Ruinas del Nido (Barrio de las Matas) y en la Biblioteca del centro. La primera lectura es allí.",
     "causeOldIllness": "Un mal antiguo",
-    "ntOldIllnessGone": "Un mal antiguo pasó: estoy curado."
+    "ntOldIllnessGone": "Un mal antiguo pasó: estoy curado.",
+    "laminasHits": "GOLPES",
+    "laminasDamage": "DAÑO"
   },
   "Sports": {
     "eyebrow": "Deportes",

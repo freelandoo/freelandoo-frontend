@@ -11489,7 +11489,9 @@
     "qn_bastor_idle_1": "Bicho é meu. O que não é bicho, eu apago.",
     "arqFar": "Este livro está na Ruína do Ninho (Bairro das Matas) e na Biblioteca do centro. A primeira leitura é lá.",
     "causeOldIllness": "Um mal antigo",
-    "ntOldIllnessGone": "Um mal antigo passou: estou curado."
+    "ntOldIllnessGone": "Um mal antigo passou: estou curado.",
+    "laminasHits": "GOLPES",
+    "laminasDamage": "DANO"
   },
   "Sports": {
     "eyebrow": "Esportes",
