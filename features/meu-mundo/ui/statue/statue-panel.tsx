@@ -18,6 +18,8 @@ import { AE } from "../kit/aether-tokens"
 import { archivo, teko } from "../status/evo-skin"
 import { liters } from "../ranking/nectar-card"
 import { StatueRaceBars } from "./statue-race"
+import { PactList } from "./pact-list"
+import { GAME_LABEL } from "../ranking/weekly-board"
 import { setStatueRace, useStatueRace } from "./statue-store"
 
 type Tr = (key: string, fallback: string) => string
@@ -77,6 +79,8 @@ export function StatuePanel({ god, onClose }: { god: "aurion" | "morkhan"; onClo
             {race.sunday ? t("sttHowLive", "Cada litro que um povo entrega empurra o seu deus para fora da pedra. A meta cresce com o número de jogadores de cada povo.") : t("sttHowLast", "Resultado do último domingo. A meta cresce com o número de jogadores de cada povo.")}
           </p>
           <StatueRaceBars race={race} t={t} locale={locale} mine={me?.clan} />
+          {/* D4: os pactos de pé (o povo que venceu o deus ganha néctar extra no jogo dele) */}
+          <PactList pacts={race.pacts} t={t} locale={locale} gameName={(g) => t(GAME_LABEL[g][0], GAME_LABEL[g][1])} mine={me?.clan} colors={{ text: AE.text, muted: AE.muted, accent: AE.gold, line: AE.brassLine, bg: AE.well }} />
           {me?.clan && (
             <div className="flex items-center gap-3 px-2.5 py-2" style={{ background: AE.well, border: `1px solid ${AE.brassLine}` }}>
               <Droplet className="h-6 w-6 shrink-0" style={{ color: AE.gold }} aria-hidden />

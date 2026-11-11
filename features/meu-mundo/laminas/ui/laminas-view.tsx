@@ -357,6 +357,9 @@ function LaminasScreen({
     stun: t("laminasStun", "ATORDOADO"),
     armored: t("laminasArmored", "BLINDADO"),
     guard: t("laminasGuard", "EM GUARDA"),
+    // lore v2 D4: as fases do deus chefão (a arena escurece a cada uma)
+    phase2: t("laminasBossPhase2", "LUA MINGUANTE"),
+    phase3: t("laminasBossPhase3", "LUA NOVA"),
     fleeWarn: t("laminasFleeWarn", "Tô com medo dessa luta, vou sair."),
     // apresentação 11: o letreiro que passa na saída da vitória
     sign: t("fightSign", "VITÓRIA"),
@@ -396,7 +399,7 @@ function LaminasScreen({
         hold: true,
         labels: { ...labelsRef.current, foeSkills: labelsRef.current.foes[fromServer ? fromServer.setup.kind : choice.kind] },
         setup: fromServer
-          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined, temper: fromServer.setup.temper ?? undefined, affection: fromServer.setup.affection ?? undefined }
+          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined, temper: fromServer.setup.temper ?? undefined, affection: fromServer.setup.affection ?? undefined, boss: fromServer.setup.boss ?? undefined }
           : { kind: choice.kind, level: choice.level, body, peer: stage === "ring" ? peerOf(choice.kind) : undefined, tier: tutorial || stage === "ring" ? undefined : portal ? "street" : "arena" },
         kit: fromServer ? (fromServer.setup.kit === "hammer" ? "hammer" : fromServer.setup.kit === "bow" ? "bow" : fromServer.setup.kit === "gun" ? "gun" : fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,

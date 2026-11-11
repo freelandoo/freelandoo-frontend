@@ -37,7 +37,7 @@ import { AvatarLibrary, type BoxeBase, type BoxeClip } from "../../engine/avatar
 import { Character } from "../../engine/player"
 import { BoxeAudio } from "./audio"
 import type { BodyId } from "../../types"
-import { ARENA_R, COMBO, DT, Fight, MOBS, MOB_SHIELD, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
+import { BOSS_ROAR, ARENA_R, COMBO, DT, Fight, MOBS, MOB_SHIELD, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind } from "../sim/fight"
 import { createSkillFx, SKILL_COLORS, type SkillPalette } from "./skill-fx"
 import { buildArena } from "./arena-view"
 import { buildStreet } from "./street-view"
@@ -71,6 +71,7 @@ import { CLIMAX_MS, climaxStreaks, lightCross, screenArc } from "../abilities/ci
 import { createClimaxPass } from "./climax-pass"
 import { glitchFrame, grayVeil, introScript, OUTRO_LEAD_S, OUTRO_LOSE_S, OUTRO_WIN_S, outroScript, victorySign, whipStreaks } from "./fight-frame"
 import { abilityKit } from "../abilities/registry"
+import { signatureOf } from "../abilities/signatures"
 import { createHitCounter } from "./hit-counter"
 import { flatFrame, groundArcs, HEAVY_WARN, stateWord } from "./impact-fx"
 import { anton } from "../../ui/hud/fight-plate"
@@ -129,6 +130,9 @@ export interface LaminasGameOptions {
     stun?: string
     armored?: string
     guard?: string
+    /** Lore v2 D4: o nome de cada fase do deus chefão (2 e 3). */
+    phase2?: string
+    phase3?: string
     foeSkills?:Partial<Record<"slash" | "dash" | "shield" | "ult", string>>
   }
   body: BodyId
@@ -1398,6 +1402,24 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           }
           break
         }
+        // lore v2 D4: o deus chefão trocou de fase — grita, a arena muda e o nome da fase salta
+        case "phase": {
+          const m = fight.mobs.find((x) => x.id === e.id)
+          if (!m) break
+          const bp = signatureOf(fight.boss ?? "noctis").pal
+          const c = { main: Color3.FromHexString(bp[2]), edge: Color3.FromHexString(bp[3]) }
+          vfx.ground(new Vector3(m.x, 0, m.z), c, 4.5, BOSS_ROAR + 0.4, true)
+          vfx.burst(new Vector3(m.x, 1.6, m.z), c)
+          vfx.impact(new Vector3(m.x, 1.4, m.z), c, true, 2.4)
+          const name = e.phase >= 3 ? opts.labels?.phase3 : opts.labels?.phase2
+          pop(new Vector3(m.x, FOE_H[m.kind] + 0.9, m.z), name ?? (e.phase >= 3 ? "LUA NOVA" : "LUA MINGUANTE"), bp[3], 40, 3)
+          arena.phase?.(e.phase)
+          shake = Math.max(shake, 0.55)
+          hitStop = Math.max(hitStop, 0.12)
+          audio.boom()
+          audio.excite(1)
+          break
+        }
         case "end":
           // apresentação 11: a saída espera o poder que encerrou a luta fechar (o clímax não é cortado)
           outro = { win: e.win, wait: OUTRO_LEAD_S, started: false, left: 0 }
@@ -1640,7 +1662,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       }
       // no close do poder quem joga não leva dano: raio e tiro de monstro só estourariam a tela
       const quiet = director.playing
-      const muzzle = !quiet && m.state === "strike" && v.prev !== "strike" && a ? v.model.muzzle() : null
+      // D4: garra e salto do chefão de arma de fogo não disparam (o tiro é só de longe)
+      const muzzle = !quiet && m.state === "strike" && v.prev !== "strike" && a && !a.leap && a.range >= 5 ? v.model.muzzle() : null
       if (muzzle && a) {
         const far = Math.min(a.range, Math.hypot(p.x - m.x, p.z - m.z))
         fireBeam(v, muzzle, new Vector3(m.x + Math.sin(m.facing) * far, hero.height * 0.55, m.z + Math.cos(m.facing) * far), !!a.heavy)
@@ -1898,6 +1921,19 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   if (process.env.NODE_ENV !== "production") {
     w.__laminasFill = () => (fight.me.power = POWER.max)
     w.__laminasRank = (r: Rank | null) => (fight.forceRank = r)
+    // D4: põe a vida do chefão numa fração e deixa a regra trocar a fase (fotos das fases)
+    w.__laminasBossPhase = (frac: number) => {
+      const m = fight.mobs[0]
+      if (!m || !fight.boss) return false
+      m.hp = Math.max(1, Math.round(m.hpMax * frac))
+      const before = fight.events
+      fight.events = []
+      const ok = (fight as unknown as { bossPhase: (x: typeof m) => boolean }).bossPhase(m)
+      const evs = fight.events
+      fight.events = before
+      onEvents(evs)
+      return ok
+    }
     // laboratório de habilidades (harness/ability-lab.js)
     w.__laminasAbility = {
       tune: FX_TUNE,

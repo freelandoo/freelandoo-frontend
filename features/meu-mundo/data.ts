@@ -39,7 +39,7 @@ import type {
 } from "./types"
 import type { Clan, Sex } from "./classes"
 import type { BodyId, PracticeAttr } from "./types"
-import type { FightTemper, GearBonus, MobKind } from "./laminas/sim/fight"
+import type { BossId, FightTemper, GearBonus, MobKind } from "./laminas/sim/fight"
 import type { FightFrames } from "./laminas/sim/replay"
 
 export type NeighborhoodResult =
@@ -224,6 +224,8 @@ export interface FightTicket {
     /** Lore v2 D1: o setor do Domínio (o servidor escolhe monstro e nível por ele). */
     domain?: DomainId | null
     sector?: number | null
+    /** Lore v2 D4: o deus chefão do setor 10 (luta em fases; a regra lê daqui). */
+    boss?: BossId | null
     body?: string | null
     appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null }
     /** mm3d-72: personalidade e afeto (probabilidades da luta). */
@@ -504,7 +506,10 @@ export interface NectarWallet {
   week: string
   closesAt: string
   /** o que a semana passada rendeu, por jogo */
-  last: { week: string; closed: boolean; ml: number; awards: { game: WeeklyGame; position: number; value: number; ml: number }[] }
+  last: { week: string; closed: boolean; ml: number; awards: { game: WeeklyGame; position: number; value: number; ml: number; pactMl?: number }[] }
+  /** D4: os pactos de pé (os dois povos) e o bônus com a semana inteira (0,5 = +50%). */
+  pacts?: DomainPact[]
+  pactBonus?: number
 }
 export const getNectarWallet = (token: string) => call<NectarWallet>(token, "GET", "/nectar")
 // ═══ lore v2 N3: domingo na estátua (entrega, corrida Raposas × Vampiros, meta no admin) ═══
@@ -532,6 +537,8 @@ export interface StatueRace {
   endsAt: string
   race: Record<StatueClan, StatueSide>
   me: { clan: StatueClan | null; god: "aurion" | "morkhan" | null; pendingMl: number; deliveredMl: number; atStatue: boolean }
+  /** D4: os pactos de pé. */
+  pacts?: DomainPact[]
 }
 export interface StatueDelivery extends StatueRace {
   delivery: { id: number; ml: number; at: string; clan: StatueClan; place: string }
@@ -657,6 +664,8 @@ export interface DomainSector {
   kind: MobKind
   /** D2: a criatura da lore (null = Domínio ainda sem fatia própria). */
   foe?: DomainFoe | null
+  /** D4: o deus chefão com fases (só o setor 10 de um Domínio com a fatia). */
+  boss?: BossId | null
   level: number
   /** Poder recomendado do setor. */
   power: number
@@ -689,6 +698,22 @@ export interface DomainsState {
   power: number
   sectors: number
   domains: DomainInfo[]
+  /** D4: os pactos de pé. */
+  pacts?: DomainPact[]
+}
+/**
+ * D4 (mig 445): o pacto do deus vencido — 7 dias de néctar extra no jogável do deus para o
+ * POVO de quem venceu o chefão do setor 10.
+ */
+export interface DomainPact {
+  domain: DomainId
+  god: string
+  game: WeeklyGame
+  clan: StatueClan
+  startsAt: string
+  endsAt: string
+  /** No recibo da vitória: true = este pacto nasceu agora; false = o povo já tinha um de pé. */
+  fresh?: boolean
 }
 /** O progresso que a luta do setor devolve no recibo (`receipt.domain`). */
 export interface DomainAdvance {

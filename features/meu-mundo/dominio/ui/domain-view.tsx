@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DoorOpen, Footprints, Shield, Swords } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { enterDomain, equipGear, getDomains, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainInfo, type FightTicket, type Receipt } from "../../data"
+import { enterDomain, equipGear, getDomains, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainPact, type DomainInfo, type FightTicket, type Receipt } from "../../data"
 import { createDomainGame, passageKitOf, sceneKitOf, type DomainGameHandle, type DomainNear } from "../engine/domain-game"
 import { Joystick, SAFE, SceneCurtain } from "../../ui/meu-mundo-view"
 import { EvoButton, EvoToast } from "../../ui/hud/hud-kit"
@@ -216,7 +216,15 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
       if (!adv) return
       setInfo((cur) => (cur && cur.id === adv.domain ? { ...cur, best: Math.max(cur.best, adv.best), crossed: adv.crossed } : cur))
       const name = domainName(t, adv.domain)
-      setNews({ text: adv.crossedNow ? t("domCrossedNow", "Você atravessou {name}! A passagem abriu.").replace("{name}", name) : t("domWon", "Setor {n} vencido! O portão abriu.").replace("{n}", String(adv.sector)), id: Date.now() })
+      // D4: vencer o deus chefão sela o pacto do povo (7 dias de néctar extra no jogo dele)
+      const pact = (r as Receipt & { pact?: DomainPact }).pact
+      const won = adv.crossedNow ? t("domCrossedNow", "Você atravessou {name}! A passagem abriu.").replace("{name}", name) : t("domWon", "Setor {n} vencido! O portão abriu.").replace("{n}", String(adv.sector))
+      const sealed = pact
+        ? pact.fresh
+          ? t("domPactSealed", "Pacto selado: o seu povo ganha néctar extra por 7 dias.")
+          : t("domPactKept", "O pacto do seu povo com este deus já está de pé.")
+        : ""
+      setNews({ text: sealed ? `${won} ${sealed}` : won, id: Date.now() })
     },
     [t],
   )

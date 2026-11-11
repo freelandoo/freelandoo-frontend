@@ -150,6 +150,8 @@ const CLAW: Record<string, Move[]> = {
 const TAUNT: Move = { clip: "XTaunt", windup: [0, 0.3], strike: [0.3, 0.45], recover: [0.45, 0.7] }
 Object.assign(BRUTE, { skSlash: BRUTE.sweep, skDash: BRUTE.charge, skShield: [TAUNT], skUlt: BRUTE.smash })
 Object.assign(CIBORG, { skSlash: CIBORG.blast, skDash: CIBORG.shot, skShield: [TAUNT], skUlt: CIBORG.blast })
+// lore v2 D4: os golpes das fases do deus chefão (Noctis, no corpo de arma de fogo)
+Object.assign(CIBORG, { eclipse: CIBORG.blast, moonClaw: BRUTE.sweep, moonPounce: BRUTE.charge })
 Object.assign(STONE, { skSlash: STONE.zap, skDash: STONE.leap, skShield: [TAUNT], skUlt: STONE.max })
 Object.assign(KNIGHT, { skSlash: KNIGHT.great, skDash: KNIGHT.thrust, skShield: KNIGHT.block, skUlt: KNIGHT.combo })
 Object.assign(CLAW, { skSlash: CLAW.rake, skDash: CLAW.leap, skShield: CLAW.claw, skUlt: CLAW.rake })
@@ -529,6 +531,10 @@ export class MonsterModel {
         shake = Math.sin(p.t * 60) * 0.06 * Math.max(0, 1 - p.t * 2)
         lean = -0.15
         break
+      case "roar":
+        shake = Math.sin(p.t * 40) * 0.05
+        lean = -0.3
+        break
       case "dead":
         sink = Math.min(1, p.t / 1.1)
         lean = -0.5 * sink
@@ -704,7 +710,8 @@ export class MonsterModel {
     }
     if (p.state !== this.last) {
       const mv = this.bruteMove
-      if (p.state === "spawn") c.boxeAct(look.roar[0], look.roar[1], look.roar[2], look.roar[3])
+      // D4: na troca de fase o deus chefão grita como ao surgir
+      if (p.state === "spawn" || p.state === "roar") c.boxeAct(look.roar[0], look.roar[1], look.roar[2], look.roar[3])
       else if (mv && p.attack && (p.state === "windup" || p.state === "strike" || p.state === "recover")) {
         const seg = mv[p.state]
         const dur = p.state === "windup" ? p.attack.windup : p.state === "strike" ? p.attack.active : p.attack.recover

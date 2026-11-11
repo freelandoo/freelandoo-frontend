@@ -13,6 +13,11 @@
 //    acesos; as árvores mais perto e mais altas.
 //  • "palacio": o setor do guardião e do deus — colunata de arcos de raízes em
 //    volta do círculo, coroa de cristais e as ilhas da floresta no alto.
+//
+// Lore v2 D4: o deus chefão luta em fases e "a arena escurece a cada fase" (Noctis).
+// `phase(n)` desce a luz do céu e da lua, fecha a névoa e escurece o fundo em ~1 s;
+// o filete do círculo segue aceso (é ele que mostra onde a luta prende). Custo zero:
+// só números das duas luzes e da névoa, nenhuma malha nova.
 
 import type { Scene } from "@babylonjs/core/scene"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
@@ -62,7 +67,27 @@ const RINGS: Record<DomainSpot, Ring[]> = {
 export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSpec): ArenaView {
   let disposed = false
   const look = LOOKS[spec.kit] ?? LOOKS.floresta
-  const sky = applyDomainLook(scene, look, scene.getLightByName("mm-hemi") as HemisphericLight | null, scene.getLightByName("mm-sun") as DirectionalLight | null)
+  const hemi = scene.getLightByName("mm-hemi") as HemisphericLight | null
+  const moon = scene.getLightByName("mm-sun") as DirectionalLight | null
+  const sky = applyDomainLook(scene, look, hemi, moon)
+  // D4: a luz de partida (fase 1) e para onde cada fase leva
+  const base = { hemi: hemi?.intensity ?? 0, moon: moon?.intensity ?? 0, clear: scene.clearColor.clone(), fog: scene.fogColor.clone(), fogEnd: scene.fogEnd }
+  const DARK: Record<number, { light: number; sky: number; fog: number }> = { 1: { light: 1, sky: 1, fog: 1 }, 2: { light: 0.72, sky: 0.55, fog: 0.82 }, 3: { light: 0.48, sky: 0.25, fog: 0.62 } }
+  let dark = 1
+  let darkTo = 1
+  const applyDark = (k: number) => {
+    const d2 = DARK[2]
+    const d3 = DARK[3]
+    // k: 1 (fase 1) → 2 → 3, contínuo para a transição
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+    const at = (key: "light" | "sky" | "fog") => (k <= 2 ? lerp(1, d2[key], k - 1) : lerp(d2[key], d3[key], k - 2))
+    if (hemi) hemi.intensity = base.hemi * at("light")
+    if (moon) moon.intensity = base.moon * at("light")
+    const sk = at("sky")
+    scene.clearColor.set(base.clear.r * sk, base.clear.g * sk, base.clear.b * sk, base.clear.a)
+    scene.fogColor.set(base.fog.r * sk, base.fog.g * sk, base.fog.b * sk)
+    scene.fogEnd = base.fogEnd * at("fog")
+  }
   const ground = paintedGround(scene, `dom-stage-${spec.spot}`, look, 170, 170, 0, 0, 0, 6, spec.spot === "palacio" ? 23 : spec.spot === "fundo" ? 17 : 11)
   // a borda do círculo: filete aceso na cor do tema (a regra prende a luta nele)
   const ringMat = new StandardMaterial("dom-stage-ring", scene)
@@ -123,8 +148,14 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
     cheer() {
       /* mata não tem plateia */
     },
-    update() {
-      /* tudo parado: a lua não se mexe */
+    update(dt: number) {
+      // a lua não se mexe; só a escuridão das fases do chefão anda (~1 s por fase)
+      if (dark === darkTo) return
+      dark = darkTo > dark ? Math.min(darkTo, dark + dt) : Math.max(darkTo, dark - dt)
+      applyDark(dark)
+    },
+    phase(n: number) {
+      darkTo = Math.max(1, Math.min(3, n))
     },
     dispose() {
       disposed = true

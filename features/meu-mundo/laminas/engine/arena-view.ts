@@ -47,6 +47,8 @@ export interface ArenaView {
   cheer: (k: number) => void
   update: (dt: number) => void
   dispose: () => void
+  /** Lore v2 D4: o deus chefão entrou na fase `n` (2, 3): o palco muda (a Floresta escurece). */
+  phase?: (n: number) => void
 }
 
 /** Areia clara com a rosa dos Sete em latão no meio e o anel de bronze na borda. */

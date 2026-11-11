@@ -16,6 +16,7 @@ import { MM } from "../hud/tokens"
 import { archivo, teko } from "../status/evo-skin"
 import { StatueRaceBars } from "../statue/statue-race"
 import { useStatueRace } from "../statue/statue-store"
+import { PactList } from "../statue/pact-list"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -67,9 +68,17 @@ export function NectarCard({ t, locale, gameName }: { t: Tr; locale: string; gam
           {w.last.awards.map((a) => (
             <li key={a.game} className={`${archivo.className} px-2 py-0.5 text-[11px] font-semibold`} style={{ background: MM.card, color: MM.text, border: `1px solid ${MM.border}` }}>
               {gameName(a.game)} · {ordinal(a.position)} · <span style={{ color: MM.gold }}>+{liters(a.ml, locale)}</span>
+              {a.pactMl ? <span style={{ color: MM.muted }}> ({t("rkNcPact", "{n} do pacto").replace("{n}", liters(a.pactMl, locale))})</span> : null}
             </li>
           ))}
         </ul>
+      )}
+
+      {/* D4: os pactos dos deuses vencidos (néctar extra no jogo do deus para um povo) */}
+      {w.pacts && w.pacts.length > 0 && (
+        <div className="mt-2.5">
+          <PactList pacts={w.pacts} bonus={w.pactBonus} t={t} locale={locale} gameName={gameName} mine={race?.me.clan ?? null} colors={{ text: MM.text, muted: MM.muted, accent: MM.gold, line: MM.border, bg: MM.card }} />
+        </div>
       )}
 
       {race && (
