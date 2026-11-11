@@ -113,7 +113,7 @@ export function loadOrbitalAssets(scene: Scene, isAlive: () => boolean): Promise
  * Fábrica (Túnel Industrial) v2 (build_industrial_v2.py): grupos, como o Gelo. As peças novas do Tripo
  * (kit_lib, giro −90°) chegam ao Babylon de COSTAS (frente para +z): quem posiciona soma meia-volta.
  * B6 (2026-11-11): o kit é o TEMA v2 (`pipeline/temas/build_fabrica_tema_v2.py`): faces do Tripo para
- * fora, UV refeita, cor e mapa de normal assados, KTX2 1024 em cano, pistão, máquinas, pátio e moldura.
+ * fora, UV refeita, cor e mapa de normal assados, KTX2 1024 em cano, pistão, máquinas e pátio.
  * Mesmas peças, medidas e triângulos do fabrica2. O Rolê Noturno (bioma Fábrica) lê daqui também.
  */
 export const FACTORY_DIR = "/meu-mundo/temas/fabrica/v2/"
