@@ -64,20 +64,22 @@ function bonusName(k: keyof GearBonus, t: Tr) {
 }
 
 /**
- * Bônus de UMA peça com o refino (só para mostrar a parcela; o total que vale é o
- * `bag.bonus` do servidor). Espelho de meuMundoGear.gearBonus: arma soma dano por
- * nível, armadura soma defesa, e do +6 em diante as duas somam o secundário.
+ * Bônus de UMA peça vestida (só para mostrar a parcela; o total que vale é o `bag.bonus`).
+ * E7: vem pronto do servidor pela régua (`bag.pieces`, com o plus e o grau da cópia); sem
+ * ele, o do catálogo (a cópia +0).
  */
-function pieceBonus(item: GearItem, level: number, up: GearCatalog["upgrade"]): Partial<GearBonus> {
-  const out: Partial<GearBonus> = { ...(item.bonus || {}) }
-  const lv = Math.max(0, Math.min(up.max, level || 0))
-  if (item.category === "weapon") out.dmg = (out.dmg || 0) + lv * up.dmg
-  if (item.category === "armor") out.def = (out.def || 0) + lv * up.def
-  if ((item.category === "weapon" || item.category === "armor") && up.secondary) {
-    const extra = Math.max(0, lv - 5)
-    for (const [k, v] of Object.entries(up.secondary)) out[k as keyof GearBonus] = (out[k as keyof GearBonus] || 0) + extra * (Number(v) || 0)
+function pieceBonus(bag: GearBag, slot: GearSlot, item: GearItem): Partial<GearBonus> {
+  return bag.pieces?.[slot] ?? item.bonus ?? {}
+}
+
+/** E7: conjuntos com peça vestida → { set, n } (o "2/4" da tela de equipar). */
+function wornSets(catalog: GearCatalog, bag: GearBag, byId: Map<string, GearItem>) {
+  const count = new Map<string, number>()
+  for (const s of SLOTS) {
+    const it = bag.equipped[s] ? byId.get(bag.equipped[s] as string) : null
+    if (it?.set) count.set(it.set, (count.get(it.set) || 0) + 1)
   }
-  return out
+  return (catalog.sets || []).filter((s) => count.has(s.id)).map((s) => ({ set: s, n: count.get(s.id) || 0 }))
 }
 
 // O que cada efeito faz (texto). Os números são os de meuMundoLife.js (a regra é
@@ -144,7 +146,7 @@ export function Equipped({ data, t, onPickSlot }: { data: LoadoutData; t: Tr; on
         const id = bag.equipped[s]
         const item = id ? byId.get(id) : null
         const lv = id ? bag.owned[id]?.level || 0 : 0
-        const b = item ? pieceBonus(item, lv, catalog.upgrade) : {}
+        const b = item ? pieceBonus(bag, s, item) : {}
         const r = item ? RARITY[item.rarity] : null
         return (
           <div key={s} className="border-b pb-2" style={{ borderColor: EVO.linha }}>
@@ -178,6 +180,21 @@ export function Equipped({ data, t, onPickSlot }: { data: LoadoutData; t: Tr; on
                 {!BONUS_KEYS.some((k) => b[k]) && <Tag tone="mudo">{t("lkNoBonus", "sem bônus")}</Tag>}
               </div>
             )}
+          </div>
+        )
+      })}
+      {wornSets(catalog, bag, byId).map(({ set, n }) => {
+        const step = set.steps[String(Math.min(4, n))] || 0
+        return (
+          <div key={set.id} className="flex items-baseline justify-between gap-2 border-b pb-2" style={{ borderColor: EVO.linha }}>
+            <H>{t("gearSetLine", "Conjunto {name}").replace("{name}", t("gearSet_" + set.id, set.name))}</H>
+            <span className={`${teko.className} text-[17px] tabular-nums`} style={{ color: step >= 1 ? EVO.ambar : step > 0 ? EVO.bom : EVO.mudo }}>
+              {n}/{set.pieces.length}
+              {" · "}
+              {step > 0
+                ? set.keys.map((k) => bonusName(k, t)).join(" + ") + " " + (step >= 1 ? t("lkSetFull", "inteiro") : t("lkSetPart", "{p}%").replace("{p}", String(Math.round(step * 100))))
+                : t("lkSetNeed", "faltam {n} para somar").replace("{n}", String(2 - n))}
+            </span>
           </div>
         )
       })}

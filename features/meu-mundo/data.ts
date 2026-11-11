@@ -344,6 +344,10 @@ export interface GearItem {
   slot?: GearSlot | null
   /** E6 (A5): ocupa as duas mãos (pesadas, arcos, armas de fogo): tira o offhand. */
   twoHanded?: boolean
+  /** E7: as duas chaves da peça (principal, secundária); o `bonus` é o da régua na cópia +0. */
+  keys?: (keyof GearBonus)[]
+  /** E7: conjunto da peça. */
+  set?: string
   /** Aba do balcão de armas do Arsenal: espadas (mm3d-66) ou Hammers (mm3d-67). */
   shop?: "shields" | "weapons" | "hammers" | "bows" | "guns" | null
   name: string
@@ -409,6 +413,16 @@ export interface GearCatalog {
   upgrade: { max: number; dmg: number; def: number; secondary?: Partial<GearBonus> }
   items: GearItem[]
   recipes: GearRecipe[]
+  /** E7: conjuntos de 4 peças; `steps` = { nº de peças: fração da fatia do conjunto }. */
+  sets?: GearSet[]
+}
+export interface GearSet {
+  id: string
+  name: string
+  domain: string
+  keys: (keyof GearBonus)[]
+  pieces: string[]
+  steps: Record<string, number>
 }
 export interface GearBag {
   /** Veste um guerreiro (vampiro, Aurion, Morkhan, Zéphyra): só ele usa as espadas da loja. */
@@ -433,6 +447,8 @@ export interface GearBag {
   stacks?: Record<string, number>
   refinementInstances?: Record<string, { standard: RefinementQuote | null; protected: RefinementQuote | null }>
   bonus: GearBonus
+  /** E7: bônus de cada slot vestido pela régua (plus e grau da cópia). */
+  pieces?: Partial<Record<GearSlot, Partial<GearBonus>>>
   pendingProposals?: RefinementProposal[]
   refinement?: Record<string, { standard: RefinementQuote | null; protected: RefinementQuote | null }>
   learnedRecipes?: string[]

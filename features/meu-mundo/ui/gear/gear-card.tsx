@@ -62,6 +62,7 @@ export function GearItemCard({ item, t, subtitle, lines, children }: {
         </span>
       </div>
       {subtitle && <p className="text-[12px]" style={{ color: AE.muted }}>{subtitle}</p>}
+      {item.set && <p className="text-[12px] font-semibold" style={{ color: AE.goldSoft }}>{t("gearSetLine", "Conjunto {name}").replace("{name}", t("gearSet_" + item.set, item.set))}</p>}
       {!!lines?.length && <ul className="grid gap-1 text-[13px] font-semibold" style={{ color: AE.aether }}>{lines.map(line => <li key={line}>{line}</li>)}</ul>}
       {item.description && <p className="text-[12px]" style={{ color: AE.muted }}>{t("gearDesc_" + item.id, item.description)}</p>}
       {(item.source || item.uses?.length) && (
