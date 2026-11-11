@@ -68,7 +68,7 @@ export interface LaminasViewProps {
   /** O fim da luta conferida (recibo do servidor). */
   onReceipt?: (r: Receipt) => void
   /** B8: luta já aberta pelo servidor (o desafio do Hall) e o nome de quem defende. */
-  opened?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null } | null
+  opened?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null; foeRig?: boolean } | null
 }
 
 const SAND = "#E9CF98"
@@ -259,7 +259,7 @@ function LaminasScreen({
   portal: boolean
   mobId?: number
   tutorial?: boolean
-  opened?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null } | null
+  opened?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null; foeRig?: boolean } | null
   onReceipt?: (r: Receipt) => void
   onEnd: (win: boolean) => void
   onAgain?: () => void
@@ -378,6 +378,7 @@ function LaminasScreen({
 
   const armed = ticket !== null
   const foeBodyOpened = opened?.foeBody ?? null
+  const foeRigOpened = !!opened?.foeRig
   useEffect(() => {
     const canvas = canvasRef.current
     const tk = ticketRef.current
@@ -391,7 +392,7 @@ function LaminasScreen({
         canvas,
         body,
         look,
-        foe: foeBodyOpened ? { body: foeBodyOpened } : undefined,
+        foe: foeBodyOpened ? { body: foeBodyOpened, rig: foeRigOpened } : undefined,
         hold: true,
         labels: { ...labelsRef.current, foeSkills: labelsRef.current.foes[fromServer ? fromServer.setup.kind : choice.kind] },
         setup: fromServer
@@ -471,7 +472,7 @@ function LaminasScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [body, look, choice, stage, domain, armed, tutorial, portal, foeBodyOpened])
+  }, [body, look, choice, stage, domain, armed, tutorial, portal, foeBodyOpened, foeRigOpened])
 
   // a passagem violeta do portal some quando a cena está pronta
   useEffect(() => {

@@ -36,6 +36,18 @@ const TINT: Record<DomainId, string> = { floresta: "#3FF2C4", canion: "#FF7A59",
 export const domainName = (t: Tr, id: DomainId | string) => t(`domName_${id}`, NAME_PT[id as DomainId] ?? id)
 export const godName = (t: Tr, god: string) => t(`domGod_${god}`, GOD_PT[god] ?? god)
 
+/** D2: as criaturas da lore (historia/v2/04-mundo-exploravel.md). */
+const FOE_PT: Record<string, string> = {
+  mariposa: "Mariposas Cinzentas",
+  cervo: "Cervo Oco",
+  coruja: "Coruja de Mil Olhos",
+  sonambulo: "Sonâmbulo",
+  lobo: "Lobos de Ferrugem",
+  selene: "Selene de Sombra",
+  noctis: "Noctis",
+}
+export const foeName = (t: Tr, id: string) => t(`domFoe_${id}`, FOE_PT[id] ?? id)
+
 /** Por que está fechado, em uma linha (null = aberto). */
 export function lockText(t: Tr, d: DomainInfo): string | null {
   if (!d.lock) return null

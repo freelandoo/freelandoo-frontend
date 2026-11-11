@@ -10,6 +10,12 @@
 // luz de lua parada. Nada colide aqui: a colisão do Domínio é a do jogo.
 //
 // Tema novo (D5…D9) = uma entrada em KITS + o `look`; o motor não muda.
+//
+// D2 (2026-11-11): a Floresta do Domínio lê o kit do TEMA (`public/meu-mundo/temas/floresta/v1/`):
+// as mesmas peças do Jetpack (crus de `build/jetpack/floresta2`), empacotadas pelo
+// `pipeline/pack.js --kind cenario -- -kn -kv -vtf` com textura KTX2 UASTC de 512 (era JPEG de
+// 512–1024: ~2 MB de placa por arquivo, agora ~0,3 MB). Os palcos de luta passavam do teto de
+// 32 MB no low por causa disso. O Jetpack segue no floresta2 até a trilha visual migrar.
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
@@ -36,6 +42,10 @@ const FOREST_LOD_NEAR: Partial<Record<ForestAsset, number>> = { cristais: 28, co
 const CANYON_LOD_NEAR: Partial<Record<CanyonAsset, number>> = { paredao: 45, moinho: 40, arco: 45, ilha: 70, "pedra-raizes": 30, cacto: 28, ponte: 50, "torre-vigia": 40 }
 
 export type KitPiece = ForestAsset | CanyonAsset
+
+/** O kit da Floresta no tema (sem a moldura do Jetpack, que o Domínio não usa). */
+const FOREST_THEME_DIR = "/meu-mundo/temas/floresta/v1/"
+const FOREST_THEME_GROUPS = Object.fromEntries(Object.entries(FOREST_GROUPS).filter(([file]) => file !== "flo-moldura")) as Record<string, readonly ForestAsset[]>
 
 /** Só os arquivos (grupos) que têm alguma das peças pedidas: cada grupo é uma textura a menos. */
 function only<P extends string>(groups: Record<string, readonly P[]>, pieces?: readonly KitPiece[]): Record<string, readonly P[]> {
@@ -73,7 +83,7 @@ export async function loadDomainKit(scene: Scene, kit: DomainKitId, isAlive: () 
   const out =
     kit === "canion"
       ? ((await loadPieceGroups<CanyonAsset>(scene, "/meu-mundo/jetpack/canion2/", only(CANYON_GROUPS, pieces), { ...CANYON_LOD_NEAR, ...lod }, isAlive)) as PieceAssets<KitPiece>)
-      : ((await loadPieceGroups<ForestAsset>(scene, "/meu-mundo/jetpack/floresta2/", only(FOREST_GROUPS, pieces), { ...FOREST_LOD_NEAR, ...lod }, isAlive)) as PieceAssets<KitPiece>)
+      : ((await loadPieceGroups<ForestAsset>(scene, FOREST_THEME_DIR, only(FOREST_THEME_GROUPS, pieces), { ...FOREST_LOD_NEAR, ...lod }, isAlive)) as PieceAssets<KitPiece>)
   if (isAlive()) dropUnusedMaps(scene, out)
   return out
 }

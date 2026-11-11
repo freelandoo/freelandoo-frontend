@@ -229,11 +229,17 @@ const WOLF_RUN = (8.5 * WOLF_SCALE) / 2
 const libs = new WeakMap<Scene, { lib: AvatarLibrary; fallback: StandardMaterial; shadow: StandardMaterial }>()
 /** Lado da pele dos monstros por cena: a rua segue `QualityProfile.avatarSkin`; a luta (de perto) fica em 1024. */
 const skinByScene = new WeakMap<Scene, 512 | 1024>()
+/** D2: distância da malha leve dos monstros por cena (a cena do Domínio segue `QualityProfile.avatarLod`). */
+const lodByScene = new WeakMap<Scene, number>()
 /** Chamar ao montar a cena da rua/centro, antes do primeiro monstro. */
-export function setMonsterSkinMax(scene: Scene, side: 512 | 1024) {
+export function setMonsterSkinMax(scene: Scene, side: 512 | 1024, lod?: number) {
   skinByScene.set(scene, side)
+  if (lod) lodByScene.set(scene, lod)
   const k = libs.get(scene)
-  if (k) k.lib.skinMax = side
+  if (k) {
+    k.lib.skinMax = side
+    if (lod) k.lib.lodDistance = lod
+  }
 }
 function rigKit(scene: Scene) {
   let k = libs.get(scene)
@@ -246,8 +252,9 @@ function rigKit(scene: Scene) {
     shadow.specularColor = new Color3(0, 0, 0)
     shadow.disableLighting = true
     shadow.alpha = 0.35
-    k = { lib: new AvatarLibrary(scene, false, false, 30, false, false, true), fallback, shadow }
+    k = { lib: new AvatarLibrary(scene, false, false, lodByScene.get(scene) ?? 30, false, false, true), fallback, shadow }
     k.lib.skinMax = skinByScene.get(scene) ?? 1024
+    k.lib.foeRig = true
     scene.onDisposeObservable.addOnce(() => k!.lib.dispose())
     libs.set(scene, k)
   }
@@ -369,6 +376,12 @@ export class MonsterModel {
      */
     human: { n: number; body?: BodyId; look?: string; bare?: boolean } | null = null,
     addGlow?: (m: AbstractMesh) => void,
+    /**
+     * Lore v2 D2: outro corpo com os golpes e a arma DESTE tipo (quem é ≠ como luta): Selene
+     * de Sombra = Vampira adulta de espada (regra do Cavaleiro), Noctis = o deus de arma de
+     * fogo (regra do Ciborgue, com a arma dele). Só para tipo rigado.
+     */
+    skin?: BodyId,
   ) {
     const id = ++seq
     this.root = new TransformNode(`mm-mob-${kind}-${id}`, scene)
@@ -392,9 +405,11 @@ export class MonsterModel {
       if (!human.bare) this.gloves = new BoxingGloves(scene, this.char, "brown", size)
     } else if (rig) {
       const k = rigKit(scene)
-      this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rig.body, null, false)
-      this.char.holder.scaling.setAll(rig.scale * scale)
-      const weapon = ARMED[kind]
+      const rigBody = skin ?? rig.body
+      this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rigBody, null, false)
+      this.char.holder.scaling.setAll(skin ? scale : rig.scale * scale)
+      // a arma de fogo é a do corpo (Noctis tem a dele); espada e machado seguem os do tipo
+      const weapon = kind === "ciborgue" && skin ? (godGun(skin)?.file ?? ARMED[kind]) : ARMED[kind]
       this.char.setBoxe(LOOK[kind]?.idle ?? "BGuard")
       if (kind === "stone") this.stones = new FloatStones(scene, this.char, addGlow)
       if (weapon) {
@@ -414,7 +429,7 @@ export class MonsterModel {
           })
           .catch(() => {})
       }
-      const guard = LOOK[kind] ? undefined : BULKY_GUARD[rig.body]
+      const guard = LOOK[kind] ? undefined : BULKY_GUARD[rigBody]
       if (guard || kind === "ciborgue") {
         const ch = this.char
         this.fix = new PoseFix(scene, (n) => ch.bone(n), guard ?? null)

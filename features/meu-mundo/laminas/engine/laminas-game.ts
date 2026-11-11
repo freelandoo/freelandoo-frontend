@@ -134,7 +134,7 @@ export interface LaminasGameOptions {
   body: BodyId
   look?: string
   /** Desafio do Hall (Alex, 2026-11-08): o adversário aparece com o personagem de quem foi desafiado (a regra segue a do Campeão). */
-  foe?: { body: BodyId; look?: string }
+  foe?: { body: BodyId; look?: string; rig?: boolean }
   setup: FightSetup
   /** O lugar: o coliseu (prédio das Lâminas e portal) ou o ringue (prédio do Boxe, mm3d-56). */
   /** mm3d-60l: "bairro"/"centro" = o cenário da rua (luta do monstro que pegou o jogador). */
@@ -778,9 +778,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     line.setEnabled(false)
     // F1: o Cavaleiro Dourado (Soldado de Pedra) tem 2 m; o Golem de Pedra, 4 m, na Arena e na rua
     const foe = opts.foe
-    const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : foe ? { n: 0, body: foe.body, look: foe.look, bare: true } : null, (x) => vfx.addGlow(x))
+    // D2: `rig` = outro corpo com os golpes e a arma do tipo (Selene de espada, Noctis de arma de fogo)
+    const model = new MonsterModel(scene, m.kind, 1, ring ? { n: m.id } : foe && !foe.rig ? { n: 0, body: foe.body, look: foe.look, bare: true } : null, (x) => vfx.addGlow(x), foe?.rig ? foe.body : undefined)
     // Quem luta de machado: rastro roxo no golpe (no ringue e no Hall é gente de mão)
-    const trail = (m.kind === "brute" || m.kind === "cavaleiro") && !ring && !foe ? vfx.trail(() => model.axeEdge(), m.kind === "brute" ? VFX_COLORS.brutamontes : VFX_COLORS.lamina) : null
+    const trail = (m.kind === "brute" || m.kind === "cavaleiro") && !ring && (!foe || foe.rig) ? vfx.trail(() => model.axeEdge(), m.kind === "brute" ? VFX_COLORS.brutamontes : VFX_COLORS.lamina) : null
     const glow = (x: Parameters<typeof vfx.addGlow>[0]) => vfx.addGlow(x)
     const rays = ring ? [] : m.kind === "stone" ? [new Ray(scene, VFX_COLORS.golem.main, glow), new Ray(scene, VFX_COLORS.golem.main, glow)] : m.kind === "wolf" ? [new Ray(scene, VFX_COLORS.brutamontes.main, glow)] : []
     const claws = m.kind === "garras" && !ring ? [vfx.trail(() => model.clawEdge("Right"), VFX_COLORS.brutamontes), vfx.trail(() => model.clawEdge("Left"), VFX_COLORS.brutamontes)] : []

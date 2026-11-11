@@ -22,7 +22,7 @@ import { EvoButton, EvoToast } from "../../ui/hud/hud-kit"
 import { useMobName } from "../../laminas/ui/laminas-view"
 import type { DomainStageSpec } from "../../laminas/engine/domain-stage"
 import type { BodyId } from "../../types"
-import { domainName, lockText } from "./domain-portal"
+import { domainName, foeName, lockText } from "./domain-portal"
 
 const LaminasView = dynamic(() => import("../../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
@@ -38,8 +38,9 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const [attempt, setAttempt] = useState(0)
   const [near, setNear] = useState<DomainNear>(null)
   const [sector, setSector] = useState(0)
+  const [place, setPlace] = useState<string | null>(null)
   const [spawn, setSpawn] = useState(0)
-  const [fight, setFight] = useState<{ ticket: FightTicket; sector: number; foe: string } | null>(null)
+  const [fight, setFight] = useState<{ ticket: FightTicket; sector: number; foe: string; foeBody: BodyId | null; foeRig: boolean } | null>(null)
   const [opening, setOpening] = useState(false)
   const [news, setNews] = useState<{ text: string; id: number } | null>(null)
   const [isTouch, setIsTouch] = useState(false)
@@ -100,6 +101,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         onReady: () => alive && setStatus("ready"),
         onNearbyChange: (n) => alive && setNear(n),
         onSector: (s) => alive && setSector(s),
+        onPlace: (p) => alive && setPlace(p),
         onInteract: (n) => {
           if (!alive) return
           if (n.kind === "exit") onExit()
@@ -143,7 +145,9 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         return
       }
       setSpawn(s)
-      setFight({ ticket: r.data.fight, sector: s, foe: mobName(r.data.fight.setup.kind) })
+      // D2: o nome e o corpo da criatura da lore (a regra é a do tipo que o servidor escolheu)
+      const foe = d.sectors[s - 1]?.foe ?? null
+      setFight({ ticket: r.data.fight, sector: s, foe: foe ? foeName(t, foe.id) : mobName(r.data.fight.setup.kind), foeBody: foe?.body ?? null, foeRig: !!foe?.rig })
     }
     cross.current = () => {
       const d = labels.current.info
@@ -190,14 +194,21 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const name = domainName(t, id)
   const guard = near?.kind === "guard" && info ? info.sectors[near.sector - 1] : null
   const action = guard
-    ? { label: t("domFight", "Lutar · {mob}").replace("{mob}", mobName(guard.kind)), icon: <Swords className="h-5 w-5" /> }
+    ? { label: t("domFight", "Lutar · {mob}").replace("{mob}", guard.foe ? foeName(t, guard.foe.id) : mobName(guard.kind)), icon: <Swords className="h-5 w-5" /> }
     : near?.kind === "exit"
       ? { label: t("domExit", "Voltar à praça"), icon: <DoorOpen className="h-5 w-5" /> }
       : near?.kind === "passage" && info?.passage
         ? { label: t("domCross", "Atravessar para {name}").replace("{name}", domainName(t, info.passage.to)), icon: <Footprints className="h-5 w-5" /> }
         : null
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
-  const here = sector === 0 ? t("domEntrance", "Entrada") : sector === 11 ? t("domPassage", "Passagem") : t("domSectorTag", "Setor {n}").replace("{n}", String(sector))
+  const here =
+    place === "pedraverde"
+      ? t("domPlace_pedraverde", "Pedraverde")
+      : sector === 0
+        ? t("domEntrance", "Entrada")
+        : sector === 11
+          ? t("domPassage", "Passagem")
+          : t("domSectorTag", "Setor {n}").replace("{n}", String(sector))
 
   if (fight) {
     return (
@@ -206,7 +217,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         look={look}
         stage="dominio"
         domain={stageSpec}
-        opened={{ ticket: fight.ticket, foe: fight.foe, foeBody: null }}
+        opened={{ ticket: fight.ticket, foe: fight.foe, foeBody: fight.foeBody, foeRig: fight.foeRig }}
         onReceipt={onReceipt}
         onExit={closeFight}
       />

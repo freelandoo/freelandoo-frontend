@@ -456,6 +456,11 @@ export class AvatarLibrary {
    * para os materiais criados depois — definir logo após o construtor.
    */
   skinMax: 512 | 1024 = 1024
+  /**
+   * Lore v2 D2: biblioteca dos MONSTROS — uma skin que aparece lutando com os golpes de um
+   * tipo (Selene de espada, Noctis de arma de fogo) baixa os clipes da classe e os de arma.
+   */
+  foeRig = false
 
   private skinFile(file: string) {
     return this.skinMax === 512 ? file.replace(/-1024\.jpg$/, "-512.jpg") : file
@@ -708,12 +713,12 @@ export class AvatarLibrary {
     const placeP = this.withPlace ? this.placeSet(id).catch(() => null) : Promise.resolve(null)
     const boxeP = this.withBoxe ? this.boxeSet(id).catch(() => null) : Promise.resolve(null)
     const gincanaP = this.withGincana ? this.gincanaSet(id).catch(() => null) : Promise.resolve(null)
-    const clanP = this.withClan || (this.withBoxe && id === "cavaleiro") ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
+    const clanP = this.withClan || (this.withBoxe && id === "cavaleiro") || (this.foeRig && isClanBody(id)) ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
     // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
     const locoP = this.locoSet(id).catch(() => null)
     // quem aparece como monstro (2026-11-06) tem os clipes da skin mesmo sem kit: Golem e Brutamontes de machado, Ciborgue também atira
-    const bruteP = this.withClan && ARCHER_SKINS.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || id === "golem" || (this.withClan && HAMMER_SKINS.includes(id)) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
-    const gunP = id === "ciborgue" || (this.withClan && GUN_SKINS.includes(id)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
+    const bruteP = this.withClan && ARCHER_SKINS.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || id === "golem" || (this.withClan && HAMMER_SKINS.includes(id)) || (this.foeRig && GUN_SKINS.includes(id)) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
+    const gunP = id === "ciborgue" || ((this.withClan || this.foeRig) && GUN_SKINS.includes(id)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
     const clawP = id === "garras" && this.withBoxe ? this.clawSet().catch(() => null) : Promise.resolve(null)
     const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC, gunC, clawC] = await Promise.all([
       this.body(id),

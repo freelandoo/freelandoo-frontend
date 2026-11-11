@@ -637,9 +637,20 @@ export const getBuildings = (token: string) => call<BuildingsState>(token, "GET"
 
 // ═══ Lore v2 D1 (mig 444): os Domínios — o servidor manda tudo pronto ═══════
 export type DomainId = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital"
+/** D2: quem o monstro do setor É (lore) e o corpo que o desenha (skin que existe). */
+export interface DomainFoe {
+  id: string
+  body: BodyId | null
+  /** Luta com os golpes e a arma do tipo (espada, arma de fogo); sem = de mão, como o Hall. */
+  rig: boolean
+  /** false = corpo de placeholder até a arte do Alex. */
+  art: boolean
+}
 export interface DomainSector {
   n: number
   kind: MobKind
+  /** D2: a criatura da lore (null = Domínio ainda sem fatia própria). */
+  foe?: DomainFoe | null
   level: number
   /** Poder recomendado do setor. */
   power: number
@@ -659,6 +670,8 @@ export interface DomainInfo {
   /** Maior setor vencido (0–10). */
   best: number
   crossed: boolean
+  /** D2: lugares da cena (Pedraverde, ao lado de um setor). */
+  places?: { id: string; sector: number }[]
   /** O trecho de passagem para o próximo (depois do setor 10). */
   passage: { to: DomainId; open: boolean } | null
   sectors: DomainSector[]

@@ -12193,7 +12193,15 @@
     "fightResLv": "Lv.",
     "fightResPrizes": "Rewards",
     "fightTapGo": "Tap to continue",
-    "fightTapSkip": "Tap to skip"
+    "fightTapSkip": "Tap to skip",
+    "domFoe_mariposa": "Grey Moths",
+    "domFoe_cervo": "Hollow Stag",
+    "domFoe_coruja": "Thousand-Eyed Owl",
+    "domFoe_sonambulo": "Sleepwalker",
+    "domFoe_lobo": "Rust Wolves",
+    "domFoe_selene": "Shadow Selene",
+    "domFoe_noctis": "Noctis",
+    "domPlace_pedraverde": "Greenstone"
   },
   "Sports": {
     "eyebrow": "Sports",

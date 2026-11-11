@@ -11,6 +11,11 @@
 //                aceso + colisão) até o setor ser vencido
 //   z 280…316    o trecho de passagem para o próximo Domínio (mistura os dois kits),
 //                aberto só depois do setor 10; no fim, o arco da travessia
+// D2: lugares que o SERVIDOR manda (`domain.places`) abrem uma clareira ao lado do setor:
+// Pedraverde (Floresta, setor 6) = vão na mata à direita, anel de cristais e o Golem de
+// Pedra SENTADO num tronco, olhando para o caminho (o peito aberto é arte do Alex; o
+// capítulo 8, C5, usa este lugar). O guardião usa o corpo da criatura da lore
+// (`sectors[].foe`): Sonâmbulo = Raposa adulta, Selene = Vampira adulta, Noctis = o deus.
 // Andar = a regra do interior (stepInterior) com a colisão daqui: nada é decidido
 // aqui além de onde a pessoa está. Quem abre o setor é a luta re-simulada no
 // servidor; a tela chama `setProgress` com o que o servidor devolveu.
@@ -39,7 +44,7 @@ import type { Box2 } from "../../engine/collision"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
 import { markSceneStart } from "../../engine/scene-meter"
-import { MonsterModel } from "../../laminas/engine/monster-view"
+import { MonsterModel, setMonsterSkinMax } from "../../laminas/engine/monster-view"
 import type { BodyId, InteriorDef } from "../../types"
 import type { DomainInfo, DomainId } from "../../data"
 import { KitPlacer, LOOKS, applyDomainLook, loadDomainKit, paintedGround, seeded, type DomainKitId, type KitPiece } from "./domain-kit"
@@ -57,9 +62,14 @@ const END = 10 * L
 const PASS_END = END + DOMAIN_SCENE.passage
 /** Alcance do "Lutar" e dos arcos. */
 const REACH = 3.4
+/** O Golem de Pedra sentado: tronco a `dx` do centro da clareira; `y` baixa a pose de cadeira até ele. */
+const GOLEM_SEAT = { dx: 4.6, y: 0 }
 
 /** Onde a pessoa pode agir agora. */
 export type DomainNear = { kind: "guard"; sector: number } | { kind: "exit" } | { kind: "passage" } | null
+
+/** D2: a clareira de um lugar ao lado do setor (centro e meia-largura do quadrado andável). */
+export const CLEARING = { dx: 9.5, half: 8 } as const
 
 export interface DomainGameOptions {
   canvas: HTMLCanvasElement
@@ -77,6 +87,8 @@ export interface DomainGameOptions {
   onNearbyChange?: (n: DomainNear) => void
   /** Em que setor a pessoa está (0 = entrada, 11 = passagem). */
   onSector?: (s: number) => void
+  /** D2: entrou/saiu de um lugar (clareira de Pedraverde) — null = no caminho. */
+  onPlace?: (id: string | null) => void
   onInteract?: (n: Exclude<DomainNear, null>) => void
   onError?: (reason: "context-lost") => void
 }
@@ -118,15 +130,33 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
   // ── chão e colisão ──────────────────────────────────────────────────────
   const ground = paintedGround(scene, "dom-ground", look, 44, PASS_END - DOMAIN_SCENE.entry + 30, 0, (PASS_END + DOMAIN_SCENE.entry) / 2, 4.2, 26)
   let best = Math.max(0, Math.min(10, domain.best))
+  // D2: as clareiras (à direita do caminho, no meio do setor) — o vão na parede e a caixa delas
+  const places = (domain.places ?? []).filter((p) => p.sector >= 1 && p.sector <= 10).map((p) => ({ ...p, x: HALF + CLEARING.dx, z: (p.sector - 0.5) * L }))
+  const inClearing = (x: number, z: number, pad = 0) => places.find((p) => Math.abs(x - p.x) < CLEARING.half + pad && Math.abs(z - p.z) < CLEARING.half + pad) ?? null
+  const zA = DOMAIN_SCENE.entry - 1
+  const zB = PASS_END + 1
+  /** Parede direita em pedaços, com o vão de cada clareira (8 m de boca). */
+  const rightWall: Box2[] = []
+  {
+    let from = zA
+    for (const p of [...places].sort((a, b) => a.z - b.z)) {
+      const to = p.z - 4
+      if (to > from) rightWall.push({ x: HALF + 0.5, z: (from + to) / 2, hx: 0.5, hz: (to - from) / 2, rot: 0, h: 4 })
+      from = p.z + 4
+      const C = CLEARING.half
+      // a borda da clareira: fundo, frente e trás (a mata fecha; quem desenha é o kit)
+      rightWall.push({ x: p.x + C + 0.5, z: p.z, hx: 0.5, hz: C + 1, rot: 0, h: 4 })
+      rightWall.push({ x: p.x, z: p.z - C - 0.5, hx: C + 1, hz: 0.5, rot: 0, h: 4 })
+      rightWall.push({ x: p.x, z: p.z + C + 0.5, hx: C + 1, hz: 0.5, rot: 0, h: 4 })
+    }
+    if (zB > from) rightWall.push({ x: HALF + 0.5, z: (from + zB) / 2, hx: 0.5, hz: (zB - from) / 2, rot: 0, h: 4 })
+  }
   /** Paredes laterais (invisíveis: quem desenha a borda é a mata) e os portões fechados. */
-  const walls: Box2[] = [
-    { x: -(HALF + 0.5), z: (PASS_END + DOMAIN_SCENE.entry) / 2, hx: 0.5, hz: (PASS_END - DOMAIN_SCENE.entry) / 2 + 1, rot: 0, h: 4 },
-    { x: HALF + 0.5, z: (PASS_END + DOMAIN_SCENE.entry) / 2, hx: 0.5, hz: (PASS_END - DOMAIN_SCENE.entry) / 2 + 1, rot: 0, h: 4 },
-  ]
+  const walls: Box2[] = [{ x: -(HALF + 0.5), z: (PASS_END + DOMAIN_SCENE.entry) / 2, hx: 0.5, hz: (PASS_END - DOMAIN_SCENE.entry) / 2 + 1, rot: 0, h: 4 }, ...rightWall]
   const gateBox = (s: number): Box2 => ({ x: 0, z: s * L, hx: HALF + 1, hz: 0.6, rot: 0, h: 6 })
   let boxes: Box2[] = []
   const def = {
-    floors: [{ y: 0, bounds: { minX: -HALF, maxX: HALF, minZ: DOMAIN_SCENE.entry + 1, maxZ: PASS_END - 1 }, boxes }],
+    floors: [{ y: 0, bounds: { minX: -HALF, maxX: places.length ? HALF + CLEARING.dx + CLEARING.half : HALF, minZ: DOMAIN_SCENE.entry + 1, maxZ: PASS_END - 1 }, boxes }],
     stairs: [],
   } as unknown as InteriorDef
   const rebuildBoxes = () => {
@@ -168,6 +198,8 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
   }
   // só os arquivos das peças que a cena usa (a moldura do Jetpack, 1024, fica de fora)
   const scenePieces: KitPiece[] = ["arco", "lanterna", "cogumelo", "arvore", "arvore2", "planta", "flor", "cogumelo-casa", "ninho", "cristais", "tronco-caido", ...(low ? [] : (["ilha"] as KitPiece[]))]
+  /** Peça da beira que cairia dentro de uma clareira (ou na boca dela) fica de fora. */
+  const clear = (x: number, z: number) => !inClearing(x, z, 2.5)
   void loadDomainKit(scene, opts.kit, alive, scenePieces).then((kit) => {
     if (disposed) return kit.dispose()
     drops.push(kit.dispose)
@@ -191,7 +223,13 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       const trees = Math.round(6 * thin)
       for (let i = 0; i < trees; i++) {
         const s = i % 2 ? 1 : -1
-        dress(p, sec, i % 3 ? "arvore" : "arvore2", s * (16 + r() * 8), z0 + ((i + 0.5) / trees) * L, 22 + r() * 8, r() * 6)
+        const tx = s * (16 + r() * 8)
+        const tz = z0 + ((i + 0.5) / trees) * L
+        const th = 22 + r() * 8
+        const ty = r() * 6
+        // ao lado de uma clareira as árvores vão para trás dela (a mata em volta)
+        // (a copa das colossais tem ~8 m de raio: o tronco fica a 18 m além)
+        dress(p, sec, i % 3 ? "arvore" : "arvore2", clear(tx, tz) && !inClearing(tx, tz, 10) ? tx : tx + 18, tz, th, ty)
       }
       // beira do caminho: plantas, flores, lanternas, cogumelos
       const small: KitPiece[] = ["planta", "flor", "lanterna", "cogumelo", "planta", "flor"]
@@ -200,7 +238,10 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
         const s = r() < 0.5 ? -1 : 1
         const piece = small[i]
         const h = piece === "cogumelo" ? 3 + r() * 2 : piece === "lanterna" ? 1.6 : 1.4 + r() * 1.2
-        dress(p, sec, piece, s * (HALF + 1.2 + r() * 2.2), z0 + 3 + r() * (L - 6), h, r() * 6)
+        const px = s * (HALF + 1.2 + r() * 2.2)
+        const pz = z0 + 3 + r() * (L - 6)
+        const py = r() * 6
+        if (clear(px, pz)) dress(p, sec, piece, px, pz, h, py)
       }
       // a peça-herói do setor (uma por setor conta a história; a D2 troca pelas da lore)
       const hero: KitPiece[] = ["cogumelo-casa", "ninho", "cristais", "tronco-caido", "cogumelo-casa", "cristais", "ninho", "tronco-caido", "cristais", "cogumelo-casa"]
@@ -208,6 +249,27 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       dress(p, sec, hero[sec - 1], hs * (HALF + 4.5), z0 + L * 0.55, hero[sec - 1] === "cogumelo-casa" ? 7 : hero[sec - 1] === "tronco-caido" ? 2.2 : 3.4, r() * 6)
       // fundos 9–10: o palácio — cristais em coroa perto do portão
       if (sec >= 9) for (const s of [-1, 1]) dress(p, sec, "cristais", s * (HALF - 0.6), sec * L - 3, 3.2, s)
+    }
+    // D2: as clareiras (Pedraverde): anel de cristais acesos e mata baixa na borda, lanternas
+    // na boca e o tronco em que o Golem senta, no fundo, de frente para o caminho
+    for (const pl of places) {
+      const g = pl.sector
+      const C = CLEARING.half
+      const r = seeded(pl.sector * 977 + 3)
+      const ringN = low ? 7 : 11
+      for (let i = 0; i < ringN; i++) {
+        const a = -Math.PI * 0.42 + (i / (ringN - 1)) * Math.PI * 0.84
+        dress(p, g, i % 2 ? "cristais" : "planta", pl.x + Math.cos(a) * (C - 0.6), pl.z + Math.sin(a) * (C - 0.6) * 1.05, 2.2 + r(), r() * 6)
+      }
+      for (const s of [-1, 1]) {
+        dress(p, g, "lanterna", HALF + 1.4, pl.z + s * 4.6, 1.7, 0)
+        dress(p, g, "cogumelo", pl.x + C - 1.5, pl.z + s * (C - 1.6), 3.4, s)
+        // mata alta atrás da clareira: casas-cogumelo e a árvore grande bem atrás (a copa não entra)
+        dress(p, g, "cogumelo-casa", pl.x + C + 3, pl.z + s * 6, 9, s * 0.8)
+      }
+      dress(p, g, "arvore2", pl.x + C + 14, pl.z, 30, 1.2)
+      // o assento do Golem: tronco caído atravessado, ~1,2 m (a pose de sentar é de cadeira)
+      dress(p, g, "tronco-caido", pl.x + GOLEM_SEAT.dx, pl.z, 1.2, Math.PI / 2)
     }
     // ilhas da floresta no alto, longe (horizonte) — ficam com a passagem
     if (!low) for (let i = 0; i < 4; i++) dress(p, 11, "ilha", (i % 2 ? 1 : -1) * 60, i * 80 + 20, 20, i, 26)
@@ -244,7 +306,11 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
   }
 
   // ── quem joga ───────────────────────────────────────────────────────────
-  const lib = new AvatarLibrary(scene, true, false, 24, false, false)
+  // D2: como na rua — pele e malha leve pela qualidade (guardiões de skin e o Golem sentado
+  // estouravam os 60 mil triângulos do low com a malha cheia a 30 m)
+  const lib = new AvatarLibrary(scene, true, false, quality.avatarLod, false, false)
+  lib.skinMax = quality.avatarSkin
+  setMonsterSkinMax(scene, quality.avatarSkin, quality.avatarLod)
   const fallbackMat = new StandardMaterial("mm-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
   fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
@@ -265,9 +331,20 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
   follow.snapBehind(body.x, body.z, body.facing)
   follow.update(1, body.x, body.z, boxes, 0)
 
+  // ── D2: o Golem de Pedra sentado em Pedraverde (corpo `golem`, pose "Sit") ──
+  const golems = places
+    .filter((p) => p.id === "pedraverde")
+    .map((p) => {
+      const g = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, "golem", null, false)
+      // de frente para o caminho (−x); a pose de sentar desce até o tronco
+      g.place(p.x + GOLEM_SEAT.dx + 0.35, p.z, -Math.PI / 2, GOLEM_SEAT.y)
+      return { char: g, sector: p.sector }
+    })
+
   // ── guardiões: o do setor aberto e os já vencidos (para lutar de novo) ──
   const guards = new Map<number, MonsterModel>()
   let time = 0
+  let place: string | null = null
   const guardAt = (s: number) => ({ x: 0, z: (s - 0.5) * L })
   const wantGuard = (s: number) => s >= 1 && s <= 10 && s <= best + 1 && !!domain.sectors[s - 1]
 
@@ -286,12 +363,16 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       const on = g === 0 ? s <= 1 : g === 11 ? s >= (low ? 10 : 9) : near(g)
       for (const m of groups[g]) m.setEnabled(on)
     }
+    for (const gm of golems) gm.char.holder.setEnabled(near(gm.sector))
     for (let k = 1; k <= 10; k++) {
       const on = wantGuard(k) && near(k)
       const g = guards.get(k)
       if (on && !g) {
-        const kind = domain.sectors[k - 1].kind
-        guards.set(k, new MonsterModel(scene, kind))
+        const sec = domain.sectors[k - 1]
+        // D2: o corpo da criatura da lore (de mão como o Hall, ou com a arma do tipo)
+        const fb = sec.foe?.body ?? null
+        const rig = !!sec.foe?.rig
+        guards.set(k, new MonsterModel(scene, sec.kind, 1, fb && !rig ? { n: 0, body: fb, bare: true } : null, undefined, fb && rig ? fb : undefined))
       } else if (!on && g) {
         g.dispose()
         guards.delete(k)
@@ -338,6 +419,12 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
     visualFacing = lerpAngle(visualFacing, body.facing, 1 - Math.exp(-12 * dt))
     char.place(body.x, body.z, visualFacing, 0)
     char.animate(dt, move, Math.hypot(body.vx, body.vz))
+    for (const gm of golems) if (gm.char.holder.isEnabled()) gm.char.animate(dt, 3, 0)
+    const pl = inClearing(body.x, body.z)?.id ?? null
+    if (pl !== place) {
+      place = pl
+      opts.onPlace?.(place)
+    }
     for (const [k, g] of guards) {
       const p = guardAt(k)
       // o guardião olha para quem chega
@@ -374,10 +461,10 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
   // conferência (harness): onde está e quantos guardiões há
   if (process.env.NODE_ENV !== "production")
     (window as unknown as Record<string, unknown>).__mmDomain = {
-      where: () => ({ x: body.x, z: body.z, sector: sectorAt(body.z), best, guards: [...guards.keys()], near: nearby }),
-      teleport: (z: number) => {
+      where: () => ({ x: body.x, z: body.z, sector: sectorAt(body.z), best, guards: [...guards.keys()], near: nearby, place }),
+      teleport: (z: number, x = 0) => {
         body.z = z
-        body.x = 0
+        body.x = x
         follow.snapBehind(body.x, body.z, 0)
       },
       turn: (yaw: number) => follow.snapBehind(body.x, body.z, yaw),
@@ -417,6 +504,7 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       engine.onContextLostObservable.remove(lost)
       for (const g of guards.values()) g.dispose()
       guards.clear()
+      for (const gm of golems) gm.char.dispose()
       placer?.dispose()
       nextPlacer?.dispose()
       for (const d of drops) d()

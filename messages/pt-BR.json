@@ -11607,7 +11607,15 @@
     "fightResLv": "Nv.",
     "fightResPrizes": "Prêmios",
     "fightTapGo": "Toque para continuar",
-    "fightTapSkip": "Toque para pular"
+    "fightTapSkip": "Toque para pular",
+    "domFoe_mariposa": "Mariposas Cinzentas",
+    "domFoe_cervo": "Cervo Oco",
+    "domFoe_coruja": "Coruja de Mil Olhos",
+    "domFoe_sonambulo": "Sonâmbulo",
+    "domFoe_lobo": "Lobos de Ferrugem",
+    "domFoe_selene": "Selene de Sombra",
+    "domFoe_noctis": "Noctis",
+    "domPlace_pedraverde": "Pedraverde"
   },
   "Sports": {
     "eyebrow": "Esportes",
