@@ -43,7 +43,7 @@ import type { BodyId, InteriorDef } from "../../types"
 import type { DomainInfo, DomainScene } from "../../data"
 import { GodFigure, GOD_HUNT } from "../../engine/god-view"
 import type { GodId } from "../../laminas/sim/fight"
-import { CENAS, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
+import { CENAS, astroDaCena, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
 
 /** Alcance do "Lutar", das passagens e do aviso de selado (m). */
 const REACH = 3.4
@@ -127,7 +127,8 @@ type Mob = {
   wait: number
   chasing: boolean
   model: MonsterModel | null
-  sealedLook: boolean
+  /** Quantas malhas já receberam o "selado" (o corpo carrega aos poucos: reaplica quando muda). */
+  sealedLook: number
 }
 
 export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle {
@@ -165,6 +166,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const sun = new DirectionalLight("mm-dom-sun", new Vector3(-0.55, -1, -0.35), scene)
   sun.intensity = luz?.sol ?? 0.55
   if (luz?.solCor) sun.diffuse = new Color3(luz.solCor[0], luz.solCor[1], luz.solCor[2])
+  const dropAstro = astroDaCena(scene, meta)
 
   /** Blocos: centro + as duas malhas (o pano de fundo de longe sai: o de perto basta). */
   const S = cena.cell
@@ -176,7 +178,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       const k = keyOf(m)
       if (k === "fundo") continue
       const [a, b] = k.split(",").map(Number)
-      byKey.set(k, { cx: (a + 0.5) * S, cz: (b + 0.5) * S, m0: m, m1: null })
+      byKey.set(k, { cx: (a + 0.5) * S + cena.off, cz: (b + 0.5) * S + cena.off, m0: m, m1: null })
     }
     for (const m of far1.meshes as Mesh[]) {
       const k = keyOf(m)
@@ -206,10 +208,10 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
   for (const k of cena.cells.keys()) {
     const [a, b] = k.split(",").map(Number)
-    minX = Math.min(minX, a * S)
-    maxX = Math.max(maxX, (a + 1) * S)
-    minZ = Math.min(minZ, b * S)
-    maxZ = Math.max(maxZ, (b + 1) * S)
+    minX = Math.min(minX, a * S + cena.off)
+    maxX = Math.max(maxX, (a + 1) * S + cena.off)
+    minZ = Math.min(minZ, b * S + cena.off)
+    maxZ = Math.max(maxZ, (b + 1) * S + cena.off)
   }
   const boxes: Box2[] = cena.blockers.map((b) => ({ x: b.x, z: b.z, hx: b.hx, hz: b.hz, rot: b.rot, h: b.h }))
   const def = { floors: [{ y: 0, bounds: { minX: minX + 0.5, maxX: maxX - 0.5, minZ: minZ + 0.5, maxZ: maxZ - 0.5 }, boxes }], stairs: [] } as unknown as InteriorDef
@@ -329,10 +331,10 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
           z = z0 + rnd() * (z1 - z0)
           if (inPoly(x, z, q.poly) && free(x, z, 1)) break
         }
-        mobs.push({ id: `${s}:${i}`, sector: s, boss: false, x, z, hx: x, hz: z, facing: rnd() * 6.28, tx: x, tz: z, wait: rnd() * 3, chasing: false, model: null, sealedLook: false })
+        mobs.push({ id: `${s}:${i}`, sector: s, boss: false, x, z, hx: x, hz: z, facing: rnd() * 6.28, tx: x, tz: z, wait: rnd() * 3, chasing: false, model: null, sealedLook: 0 })
       }
     }
-    for (const b of bossSpots) mobs.push({ id: `${b.sector}:chefe`, sector: b.sector, boss: true, x: b.x, z: b.z, hx: b.x, hz: b.z, facing: b.ang, tx: b.x, tz: b.z, wait: 0, chasing: false, model: null, sealedLook: false })
+    for (const b of bossSpots) mobs.push({ id: `${b.sector}:chefe`, sector: b.sector, boss: true, x: b.x, z: b.z, hx: b.x, hz: b.z, facing: b.ang, tx: b.x, tz: b.z, wait: 0, chasing: false, model: null, sealedLook: 0 })
   }
   const pickTarget = (m: Mob) => {
     const q = zoneOf(m.sector)
@@ -356,11 +358,12 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     return new MonsterModel(scene, sec?.kind ?? "cavaleiro", 1, fb && !rig ? { n: 0, body: fb, bare: true } : null, undefined, fb && rig ? fb : undefined)
   }
   const setSealedLook = (m: Mob, on: boolean) => {
-    if (!m.model || m.sealedLook === on) return
+    if (!m.model) return
     const meshes = m.model.root.getChildMeshes(false)
-    if (!meshes.length) return
+    const want = on ? meshes.length : 0
+    if (m.sealedLook === want) return
     for (const x of meshes) x.visibility = on ? 0.32 : 1
-    m.sealedLook = on
+    m.sealedLook = want
   }
   let engaged = false
   let time = 0
@@ -373,7 +376,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       else if (!want && m.model) {
         m.model.dispose()
         m.model = null
-        m.sealedLook = false
+        m.sealedLook = 0
       }
       if (!m.model) continue
       const open = sectorOpen(m.sector)
@@ -671,6 +674,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       lib.dispose()
       near0.dispose()
       far1.dispose()
+      dropAstro()
       fallbackMat.dispose()
       shadowMat.dispose()
       scene.dispose()

@@ -47,10 +47,16 @@ export class Cena {
     /** 0 = perto (tudo); 1 = longe (sem capim, árvore de 1 bolha, mesa sem prateleira). */
     readonly lod = 0,
     readonly cell = 32,
+    /** Origem da grade de blocos (área de 5 blocos centrada: −16, para os blocos caírem em ±80). */
+    readonly off = 0,
   ) {}
+  /** Chave do bloco de (x, z). */
+  key(x: number, z: number) {
+    return `${Math.floor((x - this.off) / this.cell)},${Math.floor((z - this.off) / this.cell)}`
+  }
   /** O `Geo` do bloco que contém (x, z). Cada objeto entra no bloco do PÉ dele. */
   geo(x: number, z: number): Geo {
-    const k = `${Math.floor(x / this.cell)},${Math.floor(z / this.cell)}`
+    const k = this.key(x, z)
     let g = this.cells.get(k)
     if (!g) this.cells.set(k, (g = new Geo()))
     return g
@@ -58,7 +64,7 @@ export class Cena {
   /** O `Geo` de luz acesa do bloco de (x, z). Tudo aqui fica 2–15 cm À FRENTE da face do corpo. */
   glow(x: number, z: number): Geo {
     this.geo(x, z)
-    const k = `${Math.floor(x / this.cell)},${Math.floor(z / this.cell)}`
+    const k = this.key(x, z)
     let g = this.glows.get(k)
     if (!g) this.glows.set(k, (g = new Geo()))
     return g
@@ -134,9 +140,9 @@ export function ground(c: Cena, o: { x0: number; z0: number; x1: number; z1: num
     put(c.fundo, hx1, hz0, o.x1, hz1)
     return
   }
-  const S = c.cell
-  for (let cz = Math.floor(o.z0 / S); cz * S < o.z1; cz++)
-    for (let cx = Math.floor(o.x0 / S); cx * S < o.x1; cx++) put(c.geo(cx * S + 1, cz * S + 1), Math.max(o.x0, cx * S), Math.max(o.z0, cz * S), Math.min(o.x1, (cx + 1) * S), Math.min(o.z1, (cz + 1) * S))
+  const S = c.cell, O = c.off
+  for (let cz = Math.floor((o.z0 - O) / S); cz * S + O < o.z1; cz++)
+    for (let cx = Math.floor((o.x0 - O) / S); cx * S + O < o.x1; cx++) put(c.geo(cx * S + O + 1, cz * S + O + 1), Math.max(o.x0, cx * S + O), Math.max(o.z0, cz * S + O), Math.min(o.x1, (cx + 1) * S + O), Math.min(o.z1, (cz + 1) * S + O))
 }
 
 /**
@@ -233,7 +239,7 @@ export function inPoly(x: number, z: number, poly: readonly XZ[]) {
  */
 export function checkMarcas(c: Cena, exige: { pontos?: readonly string[]; setores?: readonly number[] } = {}) {
   const bad: string[] = []
-  const dentro = (x: number, z: number) => c.cells.has(`${Math.floor(x / c.cell)},${Math.floor(z / c.cell)}`)
+  const dentro = (x: number, z: number) => c.cells.has(c.key(x, z))
   const livre = (x: number, z: number, pad: number) => dentro(x, z) && !blocked(c, x, z, pad) && Math.abs(c.height(x, z)) <= 0.03
   for (const n of exige.pontos ?? []) if (!c.pontos[n]) bad.push(`falta o ponto "${n}"`)
   for (const s of exige.setores ?? []) if (!c.zonas.some((q) => q.setor === s)) bad.push(`falta a zona do setor ${s}`)

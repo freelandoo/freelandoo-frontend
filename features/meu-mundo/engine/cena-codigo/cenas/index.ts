@@ -5,6 +5,9 @@ import type { RGB } from "../kit"
 import type { Cena } from "../kit-cena"
 import * as fatiaOutono from "./fatia-outono"
 import * as fatiaCidade from "./fatia-cidade"
+import * as floresta1 from "./floresta-1"
+import * as floresta2 from "./floresta-2"
+import * as floresta3 from "./floresta-3"
 
 export interface CenaMeta {
   ceu: RGB
@@ -18,6 +21,8 @@ export interface CenaMeta {
   setores?: readonly number[]
   /** Luz da cena no jogo (padrão = a do bairro: céu 0,78 + sol 0,55). Noite = céu baixo e azulado. */
   luz?: { hemi?: number; sol?: number; ceu?: RGB; chao?: RGB; solCor?: RGB }
+  /** Lua/sol desenhado no céu (disco aceso, sem névoa): direção (para onde olhar), raio angular, cor. */
+  astro?: { dir: RGB; r: number; cor: RGB }
 }
 
 export interface CenaModulo {
@@ -28,4 +33,7 @@ export interface CenaModulo {
 export const CENAS: Record<string, CenaModulo> = {
   "fatia-outono": fatiaOutono,
   "fatia-cidade": fatiaCidade,
+  "floresta-1": floresta1,
+  "floresta-2": floresta2,
+  "floresta-3": floresta3,
 }
