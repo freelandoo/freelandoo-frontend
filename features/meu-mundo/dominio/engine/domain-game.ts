@@ -239,8 +239,10 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
         const th = 22 + r() * 8
         const ty = r() * 6
         // ao lado de uma clareira as árvores vão para trás dela (a mata em volta)
-        // (a copa das colossais tem ~8 m de raio: o tronco fica a 18 m além)
-        dress(p, sec, i % 3 ? "arvore" : "arvore2", clear(tx, tz) && !inClearing(tx, tz, 10) ? tx : tx + 18, tz, th, ty)
+        // B6: a copa e as raízes da colossal têm raio de ~0,66 × a altura (até 20 m). Na v1 do kit metade
+        // das faces estava com o sentido trocado e não era desenhada, e 18 m pareciam bastar; com o tema v2
+        // a peça aparece inteira e entrava na clareira (tapava o Golem): o tronco vai 26 m além
+        dress(p, sec, i % 3 ? "arvore" : "arvore2", clear(tx, tz) && !inClearing(tx, tz, 10) ? tx : tx + 26, tz, th, ty)
       }
       // beira do caminho: plantas, flores, lanternas, cogumelos
       const small: KitPiece[] = ["planta", "flor", "lanterna", "cogumelo", "planta", "flor"]

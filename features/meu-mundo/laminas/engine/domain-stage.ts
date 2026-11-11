@@ -111,8 +111,9 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   // o arco tem textura de 1024: no low só o palácio (a colunata é a cara dele) o carrega
   const arch = spec.spot === "palacio" || (spec.spot === "entrada" && !low)
   const pieces: KitPiece[] = [...used.map((x) => x[0]), ...(arch ? (["arco"] as KitPiece[]) : []), ...(spec.spot === "palacio" && !low ? (["ilha"] as KitPiece[]) : [])]
-  // a câmera da luta fica a 20–35 m das árvores: a versão de longe delas (serrilhada) só bem depois
-  void loadDomainKit(scene, spec.kit, () => !disposed, pieces, { arvore: 48, arvore2: 48 }).then((kit) => {
+  // a câmera da luta fica a 20–35 m das árvores. B6 (tema v2): a versão de longe delas deixou de ser
+  // serrilhada (2.000 tri, mais bonita que a de perto da v1, 3.000) e a de perto subiu para 3.600: troca a 30 m
+  void loadDomainKit(scene, spec.kit, () => !disposed, pieces, { arvore: 30, arvore2: 30 }).then((kit) => {
     if (disposed) return kit.dispose()
     dropKit = kit.dispose
     const p = new KitPlacer(kit, `dom-stage-${spec.spot}`)

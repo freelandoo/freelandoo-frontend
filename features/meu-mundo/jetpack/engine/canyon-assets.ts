@@ -156,10 +156,19 @@ export function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Promise<
   return loadPieceGroups<CanyonAsset>(scene, "/meu-mundo/jetpack/canion2/", CANYON_GROUPS, CANYON_LOD, isAlive)
 }
 
-/** O material das peças do Tripo: StandardMaterial com a textura difusa (o PBR sem mapa de ambiente sai escuro). */
-function pieceMaterial(scene: Scene, name: string, tex: BaseTexture | null) {
+/**
+ * O material das peças do Tripo: StandardMaterial com a textura difusa (o PBR sem mapa de ambiente sai escuro).
+ * B6 (2026-11-11): se o arquivo traz MAPA DE NORMAL (kit de tema assado, `pipeline/temas/bake_lib.py`), ele
+ * vai junto, com a mesma inversão de eixos que o carregador de glTF pôs no PBR. Kit sem normal: igual a antes.
+ */
+function pieceMaterial(scene: Scene, name: string, pbr: PBRMaterial | null) {
   const mat = new StandardMaterial(`jt-piece-${name}`, scene)
-  mat.diffuseTexture = tex
+  mat.diffuseTexture = pbr?.albedoTexture ?? null
+  if (pbr?.bumpTexture) {
+    mat.bumpTexture = pbr.bumpTexture
+    mat.invertNormalMapX = pbr.invertNormalMapX
+    mat.invertNormalMapY = pbr.invertNormalMapY
+  }
   mat.specularColor = new Color3(0.06, 0.05, 0.04)
   // a textura do Tripo já vem pintada com luz: difusa puxada para o frio e um pouco de luz própria
   // para clarear as sombras
@@ -208,7 +217,7 @@ export async function loadPieceGroups<P extends string>(scene: Scene, dir: strin
           }
           if (!mat) {
             const pbr = src.material as PBRMaterial | null
-            mat = pieceMaterial(scene, file, pbr?.albedoTexture ?? null)
+            mat = pieceMaterial(scene, file, pbr)
             mats.push(mat)
           }
           bakePiece(src)

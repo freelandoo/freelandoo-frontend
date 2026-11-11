@@ -16,6 +16,11 @@
 // `pipeline/pack.js --kind cenario -- -kn -kv -vtf` com textura KTX2 UASTC de 512 (era JPEG de
 // 512–1024: ~2 MB de placa por arquivo, agora ~0,3 MB). Os palcos de luta passavam do teto de
 // 32 MB no low por causa disso. O Jetpack segue no floresta2 até a trilha visual migrar.
+//
+// B6 (2026-11-11): tema v2 (`pipeline/temas/build_floresta_tema_v2.py`): sombreamento suave com vinco nas
+// quinas (a v1 tinha normal por face: árvore colossal facetada de perto), UV refeita com margem (a do Tripo
+// era um mosaico sem margem que vazava ao reduzir), cor reassada e MAPA DE NORMAL assado do Tripo inteiro
+// nas peças grandes; árvores, casa e portão com cor 1024. O carregador passa o mapa adiante (canyon-assets).
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
@@ -38,13 +43,14 @@ export type DomainKitId = "floresta" | "canion"
 export type DomainSpot = "entrada" | "fundo" | "palacio"
 
 /** Distância (m) da versão de longe: a câmera está a ~9 m do personagem, no chão. */
-const FOREST_LOD_NEAR: Partial<Record<ForestAsset, number>> = { cristais: 28, cogumelo: 30, ilha: 60, arvore: 26, planta: 22, arco: 24, "cogumelo-casa": 30, arvore2: 28, flor: 20, lanterna: 22, "tronco-caido": 26, ninho: 24 }
+// B6: árvores trocam mais cedo (22/24 m, eram 26/28): a versão de longe do tema v2 já é boa e a de perto subiu
+const FOREST_LOD_NEAR: Partial<Record<ForestAsset, number>> = { cristais: 28, cogumelo: 30, ilha: 60, arvore: 22, planta: 22, arco: 24, "cogumelo-casa": 30, arvore2: 24, flor: 20, lanterna: 22, "tronco-caido": 26, ninho: 24 }
 const CANYON_LOD_NEAR: Partial<Record<CanyonAsset, number>> = { paredao: 45, moinho: 40, arco: 45, ilha: 70, "pedra-raizes": 30, cacto: 28, ponte: 50, "torre-vigia": 40 }
 
 export type KitPiece = ForestAsset | CanyonAsset
 
 /** O kit da Floresta no tema (sem a moldura do Jetpack, que o Domínio não usa). */
-const FOREST_THEME_DIR = "/meu-mundo/temas/floresta/v1/"
+const FOREST_THEME_DIR = "/meu-mundo/temas/floresta/v2/"
 const FOREST_THEME_GROUPS = Object.fromEntries(Object.entries(FOREST_GROUPS).filter(([file]) => file !== "flo-moldura")) as Record<string, readonly ForestAsset[]>
 
 /** Só os arquivos (grupos) que têm alguma das peças pedidas: cada grupo é uma textura a menos. */
@@ -63,6 +69,7 @@ function dropUnusedMaps(scene: Scene, kit: PieceAssets<KitPiece>) {
   for (const m of kit.meshes.values()) {
     const mat = m.material as StandardMaterial | null
     if (mat?.diffuseTexture) used.add(mat.diffuseTexture)
+    if (mat?.bumpTexture) used.add(mat.bumpTexture)
   }
   for (const mat of scene.materials) {
     const pbr = mat as PBRMaterial
