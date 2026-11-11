@@ -138,7 +138,7 @@ export default function RankingPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
-export function RankingRowView({ row, mine, value, unit, t }: { row: RankingRow; mine: boolean; value: string; unit: string; t: Tr }) {
+export function RankingRowView({ row, mine, value, unit, t, badge }: { row: RankingRow; mine: boolean; value: string; unit: string; t: Tr; badge?: string }) {
   const top3 = row.position <= 3
   const face = row.body ? faceOf(row.body) : row.avatar
   const name = mine && !row.name ? t("rkYou", "Você") : row.name || t("rkNoName", "Jogador")
@@ -165,6 +165,11 @@ export function RankingRowView({ row, mine, value, unit, t }: { row: RankingRow;
         {name}
         {mine && row.name ? <span style={{ color: MM.gold }}> · {t("rkYou", "Você")}</span> : null}
       </span>
+      {badge ? (
+        <span className={`${archivo.className} shrink-0 text-[11px] font-semibold tabular-nums`} style={{ color: MM.gold }}>
+          {badge}
+        </span>
+      ) : null}
       <span className="shrink-0 text-right">
         <span className={`${teko.className} block text-[22px] leading-none tabular-nums`} style={{ color: MM.text }}>
           {value}

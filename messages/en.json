@@ -11864,7 +11864,17 @@
     "rkWkMeNone": "You haven't scored in this game this week yet.",
     "rkUnitTime": "time",
     "rkUnitWins": "wins",
-    "rkUnitDmg": "damage"
+    "rkUnitDmg": "damage",
+    "rkNcTitle": "Nectar to deliver",
+    "rkNcLast": "Last week earned you {n}.",
+    "rkNcHow": "Every week, your place in each game turns into nectar. Games add up.",
+    "rkNcLastList": "What each game earned",
+    "rkNcPos": "#{n}",
+    "rkNcTable": "What each place is worth",
+    "rkNcOutside": "Outside the top 10",
+    "rkNcRules": "In each game only your place counts; across games, the liters add up. Ties go to whoever got there first. The week closes Saturday 11:59 PM (Brasília time) and the nectar lands here.",
+    "ntNectarWeek": "Your week earned {n} L of nectar!",
+    "ntNectarWeekLine": "It's saved for you to deliver at the statue. See Ranking → Week."
   },
   "Sports": {
     "eyebrow": "Sports",

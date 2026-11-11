@@ -461,6 +461,8 @@ export type WeeklyGame = (typeof WEEKLY_GAMES)[number]
 export interface WeeklyRankingRow extends RankingRow {
   /** partidas (ou vitórias) que contaram na semana */
   plays?: number
+  /** N2: néctar que a posição vale (mL; o servidor calcula) */
+  ml?: number
 }
 export interface WeeklyRanking {
   tab: "semana"
@@ -482,6 +484,20 @@ export interface WeeklyRanking {
 }
 export const getWeeklyRanking = (token: string, game: WeeklyGame, week?: string) =>
   call<WeeklyRanking>(token, "GET", `/ranking/semana/${game}${week ? `?week=${encodeURIComponent(week)}` : ""}`)
+// ═══ lore v2 N2: o néctar da semana (litros pela posição; a carteira é da conta) ═══
+export interface NectarWallet {
+  /** néctar para entregar na estátua (mL) */
+  pendingMl: number
+  /** tudo o que a conta já ganhou (mL) */
+  earnedMl: number
+  /** quanto vale cada posição; a última (`outside`) é "fora do top 10, pontuou" */
+  table: { position: number; outside: boolean; ml: number }[]
+  week: string
+  closesAt: string
+  /** o que a semana passada rendeu, por jogo */
+  last: { week: string; closed: boolean; ml: number; awards: { game: WeeklyGame; position: number; value: number; ml: number }[] }
+}
+export const getNectarWallet = (token: string) => call<NectarWallet>(token, "GET", "/nectar")
 export const buyGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/buy", { item, key })
 export const equipGear = (token: string, slot: GearSlot, item: string | null) => call<{ bag: GearBag }>(token, "POST", "/gear/equip", { slot, item })
 export const forgeGear = (token: string, recipe: string, key: string) => call<GearOut>(token, "POST", "/gear/forge", { recipe, key })

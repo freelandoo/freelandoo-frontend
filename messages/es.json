@@ -11844,7 +11844,17 @@
     "rkWkMeNone": "Todavía no puntuaste en este juego esta semana.",
     "rkUnitTime": "tiempo",
     "rkUnitWins": "victorias",
-    "rkUnitDmg": "de daño"
+    "rkUnitDmg": "de daño",
+    "rkNcTitle": "Néctar para entregar",
+    "rkNcLast": "La semana pasada te dio {n}.",
+    "rkNcHow": "Cada semana, tu posición en cada juego se convierte en néctar. Los juegos se suman.",
+    "rkNcLastList": "Lo que dio cada juego",
+    "rkNcPos": "{n}º",
+    "rkNcTable": "Cuánto vale cada posición",
+    "rkNcOutside": "Fuera del top 10",
+    "rkNcRules": "En cada juego solo cuenta la posición; entre juegos, los litros se suman. Empate: quien lo hizo primero. La semana cierra el sábado 23:59 (hora de Brasilia) y el néctar cae aquí.",
+    "ntNectarWeek": "¡Tu semana te dio {n} L de néctar!",
+    "ntNectarWeekLine": "Está guardado para entregar en la estatua. Míralo en Ranking → Semana."
   },
   "Sports": {
     "eyebrow": "Deportes",

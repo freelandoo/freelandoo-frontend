@@ -5,7 +5,8 @@
 // Um ranking por jogável (Jetpack, Rolê, Antigravidade, Gincana, Paint, Lâminas,
 // Boxe, Hall e Poder), da semana de agora ou da passada. A semana vai de domingo
 // a sábado 23:59 (Brasília); quem grava a marca é o servidor, no recibo da
-// partida (utils/meuMundoScores.js no back). A N2 transforma a posição em néctar.
+// partida (utils/meuMundoScores.js no back). N2: a posição vira néctar (o
+// servidor manda quanto cada linha vale) e a carteira fica no topo (nectar-card).
 // Nada é calculado aqui além do formato do número.
 
 import { useCallback, useEffect, useState } from "react"
@@ -16,6 +17,7 @@ import { MM } from "../hud/tokens"
 import { EvoButton } from "../hud/hud-kit"
 import { archivo } from "../status/evo-skin"
 import { RankingRowView } from "./ranking-panel"
+import { NectarCard, liters } from "./nectar-card"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -93,8 +95,11 @@ export function WeeklyBoard({ t, locale }: { t: Tr; locale: string }) {
   const meInTop = !!cur?.me && cur.top.some((r) => r.position === cur.me!.position)
   const closes = cur ? new Date(cur.endsAt) : null
 
+  const badge = (ml?: number) => (ml ? `+${liters(ml, locale)}` : undefined)
+
   return (
     <div>
+      <NectarCard t={t} locale={locale} gameName={(g) => t(GAME_LABEL[g][0], GAME_LABEL[g][1])} />
       {/* os jogáveis */}
       <div className="-mx-1 mb-2 flex gap-1.5 overflow-x-auto px-1 pb-1" role="tablist" aria-label={t("rkWkGames", "Jogos")}>
         {WEEKLY_GAMES.map((g) => (
@@ -169,13 +174,13 @@ export function WeeklyBoard({ t, locale }: { t: Tr; locale: string }) {
           <ol className="flex max-h-[44vh] flex-col gap-1.5 overflow-y-auto pr-1" aria-label={t(GAME_LABEL[game][0], GAME_LABEL[game][1])}>
             {cur.top.map((r) => (
               <li key={`${r.position}-${r.idUser ?? r.name}`}>
-                <RankingRowView row={r} mine={!!cur.me && cur.me.position === r.position} value={fmt(r.value)} unit={unit} t={t} />
+                <RankingRowView row={r} mine={!!cur.me && cur.me.position === r.position} value={fmt(r.value)} unit={unit} t={t} badge={badge(r.ml)} />
               </li>
             ))}
           </ol>
           {cur.me && !meInTop && (
             <div className="mt-2 border-t pt-2" style={{ borderColor: MM.border }}>
-              <RankingRowView row={cur.me} mine value={fmt(cur.me.value)} unit={unit} t={t} />
+              <RankingRowView row={cur.me} mine value={fmt(cur.me.value)} unit={unit} t={t} badge={badge(cur.me.ml)} />
             </div>
           )}
           {!cur.me && (

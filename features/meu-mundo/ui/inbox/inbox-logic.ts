@@ -84,7 +84,7 @@ export function noticeExpression(n: Pick<MMNotice, "kind" | "code"> & { data?: M
     if (n.code === "hospital_out" || n.code === "adult" || n.code === "wish" || n.code === "wish_ok") return "happy"
     if (n.code === "chatter") return n.data?.emotion === "sad" ? "worried" : n.data?.emotion === "angry" ? "stressed" : "happy"
     if (n.code === "wish_fail") return "worried"
-    if (n.code === "hall_defended") return "happy"
+    if (n.code === "hall_defended" || n.code === "nectar_week") return "happy"
     if (n.code === "hall_lost" || n.code === "hall_beaten") return "worried"
     if (n.code === "born") return "determined"
     if (n.code === "death") return "crying"
@@ -148,6 +148,12 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
         return { title: t("ntHallLost", "{name} tomou a sua cadeira {seat} no Hall.").replace("{name}", String(n.data.name ?? "—")).replace("{seat}", String(n.data.seat ?? "")), line: t("ntHallLostLine", "Desafie de volta no Hall das Lâminas.") }
       if (n.code === "hall_beaten")
         return { title: t("ntHallBeaten", "{name} venceu você num desafio do Hall.").replace("{name}", String(n.data.name ?? "—")), line: t("ntHallBeatenLine", "Desafie de volta no Hall das Lâminas.") }
+      // lore v2 N2: a semana fechou e a posição nos rankings virou néctar
+      if (n.code === "nectar_week")
+        return {
+          title: t("ntNectarWeek", "Sua semana rendeu {n} L de néctar!").replace("{n}", (Number(n.data.ml ?? 0) / 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })),
+          line: t("ntNectarWeekLine", "Está guardado para entregar na estátua. Veja no Ranking → Semana."),
+        }
       if (n.code === "hall_defended")
         return { title: t("ntHallDefended", "Você defendeu sua vaga contra {name}!").replace("{name}", String(n.data.name ?? "—")), line: t("ntHallDefendedLine", "Sua ficha lutou por você no Hall das Lâminas.") }
       return { title: lifeTitle(n.code, t, n.data.generation), line: null }
