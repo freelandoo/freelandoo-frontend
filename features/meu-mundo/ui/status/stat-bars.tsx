@@ -306,33 +306,6 @@ export function LevelBadge({ level, into, need, t }: { level: number; into: numb
   )
 }
 
-/** A placa de HP do cabeçalho: coração, "HP", "118 / 118" e a barra vermelha inclinada. */
-export function HpPlate({ level, hp, t }: { level: number; hp: number; t: Tr }) {
-  return (
-    <div
-      className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-5 pr-7"
-      style={{
-        clipPath: "polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%)",
-        background: "linear-gradient(180deg, #2a0d14, #0e0609)",
-        boxShadow: "inset 0 0 0 2px #FF3B5C, inset 0 0 18px rgba(255,40,80,.35)",
-      }}
-    >
-      <Glyph color="#FF3B5C" size={30}>
-        <Heart />
-      </Glyph>
-      <span className={`${anton.className} inline-block shrink-0 leading-none`} style={{ fontFamily: anton.style.fontFamily, fontSize: 26, color: "#f5f1ed", transform: "skewX(-9deg)" }}>
-        {t("stHp", "HP")}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex justify-end">
-          <Value v={hp} max={hp} size={20} />
-        </div>
-        <SlantBar f={1} color="#FF2E55" h={12} ticks={0} />
-      </div>
-    </div>
-  )
-}
-
 /**
  * T3/B7 (2026-11-08): a placa de PODER do cabeçalho (fórmula do B7). O número é o que o servidor gravou
  * (tb_mm_character.power, regra única features/meu-mundo/power/power.ts).

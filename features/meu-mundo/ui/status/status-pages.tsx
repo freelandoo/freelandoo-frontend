@@ -51,7 +51,7 @@ import { TALL_NAMES, isTall, type TallBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
 import { HERO_LEVEL, heroLevelScale, heroSheet } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
-import { HpPlate, LevelBadge, PowerPlate, StatBars, StatCard, StatGuide, statTop, useStatRows, type StatRow } from "./stat-bars"
+import { LevelBadge, PowerPlate, StatBars, StatCard, StatGuide, statTop, useStatRows, type StatRow } from "./stat-bars"
 import { SoulPanel } from "./soul-panel"
 import { temperLabel } from "../../soul"
 import { Active, Equipped, LoadoutPage, shownEffects, type LoadoutData } from "./loadout-page"
@@ -504,36 +504,6 @@ const ATK_COLOR = "#FF9F45"
 function usePct() {
   const locale = useLocale()
   return (v: number) => (Math.round(v * 1000) / 10).toLocaleString(locale, { maximumFractionDigits: 1 })
-}
-
-/**
- * Vida (HP), defesa e ataque de LUTA pelo nível de aventura (pedido do Alex,
- * 2026-11-03: "quando aumenta o nível não aumenta o HP"). A conta é a da regra
- * da luta (heroLevelScale) — o equipamento soma por cima dentro da luta.
- */
-function CombatLine({ adv, life, t, small = false }: { adv: AdvXp; life: LifeFull; t: Tr; small?: boolean }) {
-  const h = heroSheet(life.avatar, adv.level, life.character.attributes)
-  return (
-    <div className={`flex items-center ${small ? "mt-0.5 gap-1.5" : "mt-1 gap-2.5"}`}>
-      <span className={`${teko.className} shrink-0 font-semibold uppercase leading-none`} style={{ fontSize: small ? 13 : 22, color: HP_COLOR }}>
-        {t("stHp", "HP")}
-      </span>
-      <div className="min-w-0 flex-1" style={{ maxWidth: small ? 70 : 260 }}>
-        <Bar value={h.hp} max={h.hp} color={HP_COLOR} height={small ? 4 : 8} />
-      </div>
-      <span className={`${archivo.className} shrink-0 tabular-nums`} style={{ fontSize: small ? 9.5 : 13, color: EVO.mudo }}>
-        <span style={{ color: EVO.branco }}>{h.hp}</span>
-        {" · "}
-        <span style={{ color: DEF_COLOR }}>{t("stDefShort2", "DEF {n}").replace("{n}", String(Math.round(h.def)))}</span>
-        {!small && (
-          <>
-            {" · "}
-            <span style={{ color: ATK_COLOR }}>{t("stAtkShort2", "ATQ {n}").replace("{n}", String(Math.round(h.atk)))}</span>
-          </>
-        )}
-      </span>
-    </div>
-  )
 }
 
 function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps, "act">) {
