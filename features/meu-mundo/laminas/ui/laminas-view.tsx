@@ -31,9 +31,9 @@ import type { BodyId } from "../../types"
 import { finishFight, getLife, startFight, type FightOrigin, type FightTicket, type Receipt } from "../../data"
 import { getToken } from "@/lib/auth"
 import { ReceiptLines } from "../../ui/rewards/receipt-lines"
-import { VictoryButton, VictoryPanel } from "../../ui/rewards/victory-panel"
+import { FightResult } from "../../ui/rewards/fight-result"
 import { celebrate, hold } from "../../ui/rewards/reward-bus"
-import { createLaminasGame, type FightSheet, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
+import { createLaminasGame, type FightSheet, type FightSummary, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
 import { HEAVY_WARN } from "../engine/impact-fx"
 import { VersusScreen } from "./versus-screen"
 import { MOB_KINDS, peerOf, type MobKind, type SkillId } from "../sim/fight"
@@ -288,6 +288,7 @@ function LaminasScreen({
     setStarted(true)
   }, [])
   const [result, setResult] = useState<boolean | null>(null)
+  const [summary, setSummary] = useState<FightSummary | null>(null)
   const [muted, setMuted] = useState(false)
   // mm3d-72: Desistir pede um segundo toque (3 s para confirmar)
   const [quitArmed, setQuitArmed] = useState(false)
@@ -357,6 +358,8 @@ function LaminasScreen({
     armored: t("laminasArmored", "BLINDADO"),
     guard: t("laminasGuard", "EM GUARDA"),
     fleeWarn: t("laminasFleeWarn", "Tô com medo dessa luta, vou sair."),
+    // apresentação 11: o letreiro que passa na saída da vitória
+    sign: t("fightSign", "VITÓRIA"),
     foes: Object.fromEntries(
       MOB_KINDS.map((k) => {
         const sl = abilityKit(MOB_BODY[k] ?? null).slots
@@ -398,6 +401,14 @@ function LaminasScreen({
         appearance: fromServer?.setup.appearance,
         stage,
         domain,
+        victoryText: labelsRef.current.sign,
+        // apresentação 11: o resultado entra quando a saída (sem cor, letreiro) termina
+        onCurtain: (win) => {
+          if (!alive) return
+          if (endTimer) clearTimeout(endTimer)
+          setSummary(gameRef.current?.summary() ?? null)
+          setResult(win)
+        },
         onReady: () => {
           if (!alive) return
           probeNote("ready")
@@ -408,7 +419,12 @@ function LaminasScreen({
         onEnd: (win) => {
           probeNote("end")
           endRef.current(win)
-          endTimer = setTimeout(() => alive && setResult(win), 1400)
+          // reserva: se a saída não avisar (aba escondida, laço parado), o resultado entra assim mesmo
+          endTimer = setTimeout(() => {
+            if (!alive) return
+            setSummary(gameRef.current?.summary() ?? null)
+            setResult(win)
+          }, 6000)
           // o prêmio é o do SERVIDOR: manda a gravação e espera o recibo
           const token = getToken()
           const frames = gameRef.current?.frames()
@@ -480,7 +496,10 @@ function LaminasScreen({
   const sk = useSkillScale()
   // a HUD inteira some durante o close do Poder Máximo e volta junto com o controle (Anexo A §4.4)
   const cinema = !!hud?.cinema
-  const hudFade = { opacity: cinema ? 0 : 1, transition: `opacity ${cinema ? 140 : 220}ms ease-out` }
+  // apresentação 11: também some no plano de abertura (a regra ainda parada) e no fim da regra
+  const intro = started && !hud?.live && !hud?.over
+  const hide = cinema || intro || !!hud?.over
+  const hudFade = { opacity: hide ? 0 : 1, transition: `opacity ${hide ? 140 : 220}ms ease-out` }
   // desafio do Hall: o retrato é o do personagem de quem foi desafiado
   const foeBody = opened?.foeBody ?? (stage === "ring" ? RING_BODY[choice.kind] : MOB_BODY[choice.kind])
   const foePortrait = foeBody ? PORTRAIT[foeBody] : stage !== "ring" && choice.kind === "wolf" ? WOLF_PORTRAIT : null
@@ -550,7 +569,7 @@ function LaminasScreen({
       )}
 
       {/* som e sair */}
-      <div data-fight-hud="" className="absolute flex gap-2" style={{ top: SAFE.top, right: SAFE.right, ...hudFade, pointerEvents: cinema ? "none" : undefined }}>
+      <div data-fight-hud="" className="absolute flex gap-2" style={{ top: SAFE.top, right: SAFE.right, ...hudFade, pointerEvents: hide ? "none" : undefined }}>
         <button
           type="button"
           aria-label={muted ? t("laminasSoundOn", "Ligar som") : t("laminasSoundOff", "Desligar som")}
@@ -607,6 +626,9 @@ function LaminasScreen({
         </div>
       )}
 
+      {/* apresentação 11: um toque (ou tecla) pula o plano de abertura */}
+      {intro && <SkipIntro label={t("fightTapSkip", "Toque para pular")} onSkip={() => gameRef.current?.skipIntro()} />}
+
       {/* carregando / passagem do portal */}
       {(status !== "ready" || veil) && (
         <div
@@ -641,11 +663,11 @@ function LaminasScreen({
       {stage === "arena" && !tutorial && !portal && !opened && <EcoVoice show={started && result === null} />}
       {/* C4: a Dama das Garras escreve na parede (cap. 7, passo "telhados"; Arena ou rua) */}
       {choice.kind === "garras" && stage !== "ring" && !tutorial && !opened && <ClawWriting fighting={started && result === null} won={result === true} />}
-      {/* fim — mm3d-60: celebração steampunk (mesmos textos, mesmas ações) */}
+      {/* fim — apresentação 11: o resultado em coluna (mesmos textos, mesmas ações; toque continua) */}
       {result !== null && (
-        <VictoryPanel
+        <FightResult
           win={result}
-          title={result ? t("laminasWin", "VITÓRIA!") : t("laminasLose", "Você caiu")}
+          sign={result ? t("fightSign", "VITÓRIA") : t("fightSignLose", "DERROTA")}
           subtitle={
             result
               ? portal
@@ -655,14 +677,11 @@ function LaminasScreen({
                 ? t("laminasLosePortal", "O monstro continua na cidade. Volte quando estiver pronto.")
                 : t("laminasLoseTrain", "Leia o chão vermelho, esquive e corte na brecha.")
           }
-          actions={
-            <>
-              {onAgain && <VictoryButton onClick={onAgain}>{t("laminasAgain", "Lutar de novo")}</VictoryButton>}
-              <VictoryButton onClick={onMenu} alt={!!onAgain}>
-                {portal ? t("laminasBackCity", "Voltar à cidade") : t("laminasBackMenu", "Escolher outro")}
-              </VictoryButton>
-            </>
-          }
+          me={{ portrait: PORTRAIT[body], name: t("fightYou", "VOCÊ"), level: receipt?.deltas.xp?.to ?? heroLevel }}
+          stats={summary}
+          onContinue={onMenu}
+          continueLabel={`${t("fightTapGo", "Toque para continuar")} · ${portal ? t("laminasBackCity", "Voltar à cidade") : t("laminasBackMenu", "Escolher outro")}`}
+          again={onAgain ? { label: t("laminasAgain", "Lutar de novo"), onClick: onAgain } : undefined}
         >
           {/* mm3d-59: o prêmio é o que o SERVIDOR conferiu (recibo) */}
           {settling ? (
@@ -670,23 +689,52 @@ function LaminasScreen({
               {t("fightChecking", "Conferindo a luta…")}
             </p>
           ) : receipt ? (
-            <ReceiptLines receipt={receipt} />
+            <ReceiptLines receipt={receipt} delay={400} />
           ) : finishError ? (
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-start gap-2">
               <p className="text-[13px]" style={{ color: MM.muted }}>
                 {t("fightNotCounted", "O servidor não conferiu esta luta — o resultado ainda não valeu.")}
               </p>
-              <VictoryButton onClick={() => retryFinishRef.current?.()} alt>
+              <button
+                type="button"
+                onClick={(e) => {
+                  // o toque no fundo continua; este não
+                  e.stopPropagation()
+                  retryFinishRef.current?.()
+                }}
+                className="min-h-[48px] px-5 text-[16px] font-bold uppercase tracking-[0.06em]"
+                style={{ color: "#FFE9B8", background: "#1c1e28", border: "2px solid #b97715", boxShadow: "3px 3px 0 #000" }}
+              >
                 {t("fightRetry", "Tentar de novo")}
-              </VictoryButton>
+              </button>
             </div>
           ) : ticket === "offline" ? (
-            <p className="text-[12px]" style={{ color: MM.muted }}>
+            <p className="text-[13px]" style={{ color: MM.muted }}>
               {t("fightOffline", "Treino sem conexão com o servidor: sem prêmio desta vez.")}
             </p>
           ) : null}
-        </VictoryPanel>
+        </FightResult>
       )}
+    </div>
+  )
+}
+
+/** Apresentação 11: camada invisível do plano de abertura — um toque ou uma tecla pula. */
+function SkipIntro({ label, onSkip }: { label: string; onSkip: () => void }) {
+  const ref = useRef(onSkip)
+  useEffect(() => {
+    ref.current = onSkip
+  }, [onSkip])
+  useEffect(() => {
+    const key = () => ref.current()
+    window.addEventListener("keydown", key)
+    return () => window.removeEventListener("keydown", key)
+  }, [])
+  return (
+    <div className="absolute inset-0 z-[3]" onPointerDown={() => ref.current()}>
+      <span className="pointer-events-none absolute right-4 text-[11px] uppercase tracking-[0.16em]" style={{ bottom: `calc(${SAFE.bottom} + 16px)`, color: "rgba(246,239,226,.72)", textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>
+        {label}
+      </span>
     </div>
   )
 }

@@ -11598,7 +11598,16 @@
     "domCrossedNow": "Você atravessou {name}! A passagem abriu.",
     "domFightFail": "A luta não abriu: {e}",
     "fightNotCounted": "O servidor não conferiu esta luta — o resultado ainda não valeu.",
-    "fightRetry": "Tentar de novo"
+    "fightRetry": "Tentar de novo",
+    "fightSign": "VITÓRIA",
+    "fightSignLose": "DERROTA",
+    "fightResTime": "Tempo",
+    "fightResCombo": "Maior sequência",
+    "fightResHp": "Vida restante",
+    "fightResLv": "Nv.",
+    "fightResPrizes": "Prêmios",
+    "fightTapGo": "Toque para continuar",
+    "fightTapSkip": "Toque para pular"
   },
   "Sports": {
     "eyebrow": "Esportes",

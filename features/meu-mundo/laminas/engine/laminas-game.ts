@@ -69,6 +69,7 @@ import { signatureFx, FX_TUNE, type SignatureClip } from "../abilities/signature
 import { bloodHits, slashWave } from "../abilities/blood-hit"
 import { CLIMAX_MS, climaxStreaks, lightCross, screenArc } from "../abilities/cinema-fx"
 import { createClimaxPass } from "./climax-pass"
+import { glitchFrame, grayVeil, introScript, OUTRO_LEAD_S, OUTRO_LOSE_S, OUTRO_WIN_S, outroScript, victorySign, whipStreaks } from "./fight-frame"
 import { abilityKit } from "../abilities/registry"
 import { createHitCounter } from "./hit-counter"
 import { flatFrame, groundArcs, HEAVY_WARN, stateWord } from "./impact-fx"
@@ -95,6 +96,18 @@ export interface LaminasHud {
   shield: number
   /** Apresentação 07: o close do Poder Máximo está no ar (a HUD inteira some e volta com o controle). */
   cinema: boolean
+  /** Apresentação 11: a regra está andando (falso na tela de versus e no plano de abertura). */
+  live: boolean
+}
+
+/** Apresentação 11: o resumo da luta para a tela do resultado (só leitura da regra). */
+export interface FightSummary {
+  /** Tempo da regra até o fim (s). */
+  time: number
+  /** Maior sequência de acertos sem levar golpe. */
+  combo: number
+  /** Vida no fim (0–1). */
+  hp: number
 }
 
 export interface LaminasGameOptions {
@@ -131,6 +144,10 @@ export interface LaminasGameOptions {
   onReady?: () => void
   onHud?: (h: LaminasHud) => void
   onEnd?: (win: boolean) => void
+  /** Apresentação 11: a saída da luta acabou — a tela do resultado entra agora. */
+  onCurtain?: (win: boolean) => void
+  /** Apresentação 11: o letreiro que passa na saída da vitória. */
+  victoryText?: string
   onError?: (reason: "context-lost") => void
   /**
    * mm3d-59: luta com ticket do servidor — a semente, os atributos e o kit vêm
@@ -152,6 +169,9 @@ export interface FightSheet {
 export interface LaminasGameHandle {
   /** Solta a luta que nasceu parada. */
   begin: () => void
+  /** Apresentação 11: pula o plano de abertura (um toque). */
+  skipIntro: () => void
+  summary: () => FightSummary
   sheet: () => FightSheet
   setMuted: (m: boolean) => void
   /** Atributos da vida (chegam do servidor depois de a luta abrir). */
@@ -1275,6 +1295,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             // combo (2026-11-03): 1º golpe faísca pequena, 2º mais forte, o 3º fecha com explosão curta e tranco
             const chain = !e.src && fight.me.state === "attack" ? fight.me.chain : 0
             counter.hit(e.dmg, e.src === "ult")
+            combo++
+            bestCombo = Math.max(bestCombo, combo)
             // apresentação 08: com o acerto de personagem, as 4–8 faíscas compridas dele bastam
             if (!hits) {
               burst(sparks, at, (e.heavy ? 40 : 22) + chain * 14)
@@ -1326,6 +1348,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           } else {
             const at = new Vector3(e.x, 1.4, e.z)
             counter.hurt()
+            combo = 0
             burst(sparks, at, 14)
             pop(at.add(new Vector3(0, 0.6, 0)), String(e.dmg), "#FF3B3B", 24)
             vfx.impact(at, VFX_COLORS.dano, e.heavy)
@@ -1375,6 +1398,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           break
         }
         case "end":
+          // apresentação 11: a saída espera o poder que encerrou a luta fechar (o clímax não é cortado)
+          outro = { win: e.win, wait: OUTRO_LEAD_S, started: false, left: 0 }
           audio.bell(e.win ? 3 : 1)
           if (e.win) {
             arena.cheer(1)
@@ -1395,6 +1420,56 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let readyFired = false
   let heroBound = false
   let held = !!opts.hold
+  // apresentação 11: entrada (a regra só anda quando o plano de abertura fecha) e saída
+  let intro = false
+  let combo = 0
+  let bestCombo = 0
+  let outro: { win: boolean; wait: number; started: boolean; left: number } | null = null
+  let curtainFired = false
+  const curtain = (win: boolean) => {
+    if (curtainFired || disposed) return
+    curtainFired = true
+    opts.onCurtain?.(win)
+  }
+  const release = () => {
+    if (!intro) return
+    intro = false
+    held = false
+    wantAttack = false
+    wantDodge = false
+    wantPower = false
+    wantSkill.slash = wantSkill.dash = wantSkill.shield = false
+  }
+  const stepOutro = (realDt: number) => {
+    if (!outro) return
+    const o = outro
+    if (!o.started) {
+      o.wait -= realDt
+      // o roteiro do poder que deu o golpe final segue sozinho até fechar
+      if (o.wait > 0 || (director.playing && !calm)) return
+      o.started = true
+      o.left = o.win ? OUTRO_WIN_S - OUTRO_LEAD_S : OUTRO_LOSE_S - OUTRO_LEAD_S
+      if (calm) return
+      director.start(outroScript(o.win))
+      const ms = o.left * 1000
+      const s = toScreen(new Vector3(fight.me.x, hero.height * 0.6, fight.me.z))
+      const u = s ? s.x / Math.max(1, layer.clientWidth) : 0.5
+      const v = s ? 1 - s.y / Math.max(1, layer.clientHeight) : 0.5
+      if (o.win) glitchFrame(layer)
+      if (climaxPass) climaxPass.outro(u, v, ms, o.win ? 0.55 : 0.01)
+      else {
+        grayVeil(layer, ms)
+        if (o.win && s) climaxStreaks(layer, s.x, s.y)
+      }
+      if (o.win) victorySign(layer, opts.victoryText ?? "VITÓRIA", anton.style.fontFamily)
+      return
+    }
+    o.left -= realDt
+    if (o.left <= 0) {
+      outro = null
+      curtain(o.win)
+    }
+  }
   const frame = (ms: number) => {
     const realDt = Math.min(ms / 1000, 0.1)
     // pausa de impacto: o mundo quase para por um instante no golpe forte
@@ -1402,6 +1477,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     hitStop = Math.max(0, hitStop - realDt)
     counter.tick(realDt, director.playing)
     climaxPass?.tick(realDt)
+    stepOutro(realDt)
     // câmera lenta: só o ritmo desta luta, que é local e passo a passo (ver abilities/director.ts)
     const pace = slow ? 0.08 : director.scale()
     if (arcAt >= 0 && arcs && arcArgs) {
@@ -1772,6 +1848,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         cd: { ...p.cd },
         shield: Math.max(0, p.shieldUntil - fight.time),
         cinema: !calm && director.closeUp,
+        live: !held,
       })
     }
     governor.tick(ms)
@@ -1840,13 +1917,24 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
 
   return {
     begin: () => {
-      held = false
       audio.whoosh()
       wantAttack = false
       wantDodge = false
       wantPower = false
       wantSkill.slash = wantSkill.dash = wantSkill.shield = false
+      // apresentação 11: chicote + plano de abertura; a regra anda quando ele fecha (ou no toque)
+      if (calm || intro || !held) {
+        held = false
+        return
+      }
+      intro = true
+      director.start(introScript(tallness(scene) > 0.5, release))
+      whipStreaks(layer, tallness(scene) > 0.5 ? -1 : 1)
     },
+    skipIntro: () => {
+      if (intro) director.cancel()
+    },
+    summary: () => ({ time: fight.over?.at ?? fight.time, combo: bestCombo, hp: Math.max(0, fight.me.hp) / Math.max(1, fight.me.hpMax) }),
     sheet: () => ({
       me: { hp: fight.me.hpMax, ...fight.rate },
       foe: { hp: fight.mobs.reduce((a, x) => a + x.hpMax, 0), ...fight.mobs[0].rate },

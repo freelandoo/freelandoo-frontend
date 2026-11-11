@@ -12164,7 +12164,16 @@
     "domCrossedNow": "¡Cruzaste {name}! El paso se abrió.",
     "domFightFail": "La pelea no empezó: {e}",
     "fightNotCounted": "El servidor no confirmó esta pelea — el resultado aún no cuenta.",
-    "fightRetry": "Intentar de nuevo"
+    "fightRetry": "Intentar de nuevo",
+    "fightSign": "VICTORIA",
+    "fightSignLose": "DERROTA",
+    "fightResTime": "Tiempo",
+    "fightResCombo": "Mejor racha",
+    "fightResHp": "Vida restante",
+    "fightResLv": "Nv.",
+    "fightResPrizes": "Premios",
+    "fightTapGo": "Toca para continuar",
+    "fightTapSkip": "Toca para saltar"
   },
   "Sports": {
     "eyebrow": "Deportes",

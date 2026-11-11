@@ -17,6 +17,7 @@ varying vec2 vUV;
 uniform sampler2D textureSampler;
 uniform float uK;
 uniform vec2 uC;
+uniform float uGray;
 void main(void) {
   vec2 d = vUV - uC;
   vec3 acc = vec3(0.0);
@@ -29,7 +30,11 @@ void main(void) {
   vec3 c = acc / 6.0;
   // o miolo estoura um pouco: a luz do golpe
   float core = 1.0 - smoothstep(0.0, 0.35, length(d));
-  gl_FragColor = vec4(c + core * uK * 0.18, 1.0);
+  c += core * uK * 0.18;
+  // apresentação 11: a cena da vitória perde a cor (luma) com um fio de latão nas sombras
+  float l = dot(c, vec3(0.299, 0.587, 0.114));
+  c = mix(c, vec3(l * 1.04, l, l * 0.93), uGray);
+  gl_FragColor = vec4(c, 1.0);
 }
 `
 
@@ -38,6 +43,11 @@ export interface ClimaxPass {
   warm: () => void
   /** Liga por `ms` com centro (u, v) em 0–1 da tela (v para cima). */
   play: (u: number, v: number, ms: number) => void
+  /**
+   * Apresentação 11: a saída da luta. A cena perde a cor em 0,12 s e fica sem cor por `ms`,
+   * com o borrão radial (força `k`) soltando devagar; volta a cor nos últimos 0,25 s.
+   */
+  outro: (u: number, v: number, ms: number, k: number) => void
   /** A cada quadro, com o tempo real. */
   tick: (realDt: number) => void
   readonly on: boolean
@@ -53,11 +63,15 @@ export function createClimaxPass(camera: Camera, engine: AbstractEngine): Climax
   let cu = 0.5
   let cv = 0.5
   let warming = 0
+  let gray = 0
+  /** Saída da luta: 0 = clímax do poder; > 0 = força do borrão na saída. */
+  let outroK = 0
   const make = () => {
     if (pp) return pp
-    pp = new PostProcess("mm-climax", "mmClimax", ["uK", "uC"], null, 1, null, undefined, engine)
+    pp = new PostProcess("mm-climax", "mmClimax", ["uK", "uC", "uGray"], null, 1, null, undefined, engine)
     pp.onApply = (e) => {
       e.setFloat("uK", k)
+      e.setFloat("uGray", gray)
       e.setFloat2("uC", cu, cv)
     }
     return pp
@@ -83,6 +97,17 @@ export function createClimaxPass(camera: Camera, engine: AbstractEngine): Climax
       cv = v
       dur = left = Math.max(0.05, ms / 1000)
       warming = 0
+      outroK = 0
+      gray = 0
+      attach(true)
+    },
+    outro(u, v, ms, strength) {
+      make()
+      cu = u
+      cv = v
+      dur = left = Math.max(0.3, ms / 1000)
+      warming = 0
+      outroK = Math.max(0.01, strength)
       attach(true)
     },
     tick(realDt) {
@@ -93,10 +118,19 @@ export function createClimaxPass(camera: Camera, engine: AbstractEngine): Climax
       if (left <= 0) return
       left -= realDt
       const u = 1 - Math.max(0, left) / dur
-      // entra em 15% da janela e solta até o fim
-      k = u < 0.15 ? u / 0.15 : 1 - (u - 0.15) / 0.85
+      if (outroK > 0) {
+        // saída: sem cor em 0,12 s, borrão soltando devagar, cor de volta nos últimos 0,25 s
+        const el = dur - Math.max(0, left)
+        gray = Math.min(1, el / 0.12) * Math.min(1, Math.max(0, left) / 0.25)
+        k = outroK * (1 - u) * (1 - u)
+      } else {
+        // entra em 15% da janela e solta até o fim
+        k = u < 0.15 ? u / 0.15 : 1 - (u - 0.15) / 0.85
+      }
       if (left <= 0) {
         k = 0
+        gray = 0
+        outroK = 0
         attach(false)
       }
     },

@@ -1,0 +1,209 @@
+/* features/meu-mundo/ui/rewards/fight-result.module.css — resultado da luta em coluna (apresentação 11).
+   Escada de letra D14: 11 · 13 · 16 · 24 · 40 · 72. Só transform/opacity animam. */
+
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top) + 56px) max(16px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 20px) max(16px, env(safe-area-inset-left));
+  background: linear-gradient(90deg, rgba(9, 9, 12, 0.95) 0%, rgba(9, 9, 12, 0.9) 55%, rgba(9, 9, 12, 0.74) 100%);
+  color: #f6efe2;
+  overflow-y: auto;
+  cursor: pointer;
+  animation: rootIn 240ms ease-out both;
+}
+
+@keyframes rootIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 520px;
+}
+
+.in {
+  animation: blockIn 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(120ms + var(--d, 0ms));
+}
+
+@keyframes blockIn {
+  from {
+    opacity: 0;
+    transform: translate3d(-16px, 0, 0);
+  }
+}
+
+.sign {
+  margin: 0;
+  font-size: 72px;
+  line-height: 0.95;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.6);
+  overflow-wrap: anywhere;
+}
+
+.signWin {
+  color: #ffd68a;
+}
+
+.signLose {
+  color: #ff6b7d;
+}
+
+.rule {
+  margin-top: 10px;
+  width: 64%;
+  height: 2px;
+  background: linear-gradient(90deg, #ffc64f, #8c4d0d 70%, transparent);
+}
+
+.sub {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #c9bba3;
+}
+
+.stats {
+  margin: 20px 0 0;
+  display: flex;
+  gap: 24px;
+}
+
+.stats dt {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a8987c;
+}
+
+.stats dd {
+  margin: 4px 0 0;
+  font-size: 24px;
+  line-height: 1;
+  color: #f6efe2;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 0;
+  border-top: 1px solid rgba(214, 167, 91, 0.35);
+  border-bottom: 1px solid rgba(214, 167, 91, 0.35);
+}
+
+.lv {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 56px;
+  font-size: 24px;
+  line-height: 1;
+  color: #ffd68a;
+}
+
+.lv small {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #c9bba3;
+}
+
+.face {
+  width: 132px;
+  height: 40px;
+  background: #0a0d11 center 18% / cover no-repeat;
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.prizes {
+  margin-top: 16px;
+  width: 100%;
+}
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a8987c;
+  margin-bottom: 6px;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.again {
+  min-height: 48px;
+  padding: 0 20px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffe9b8;
+  background: #1c1e28;
+  border: 2px solid #b97715;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.tap {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #c9bba3;
+  opacity: 0.25;
+  transition: opacity 240ms ease-out;
+}
+
+.tap[data-armed] {
+  opacity: 1;
+  animation: tapPulse 1.4s ease-in-out 240ms infinite;
+}
+
+@keyframes tapPulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .in,
+  .tap[data-armed] {
+    animation: none;
+  }
+}
+
+@media (min-aspect-ratio: 1/1) {
+  .root {
+    padding-left: max(48px, env(safe-area-inset-left));
+  }
+}

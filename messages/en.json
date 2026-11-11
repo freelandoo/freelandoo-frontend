@@ -12184,7 +12184,16 @@
     "domCrossedNow": "You crossed {name}! The passage is open.",
     "domFightFail": "The fight didn't start: {e}",
     "fightNotCounted": "The server didn't confirm this fight — the result hasn't counted yet.",
-    "fightRetry": "Try again"
+    "fightRetry": "Try again",
+    "fightSign": "VICTORY",
+    "fightSignLose": "DEFEAT",
+    "fightResTime": "Time",
+    "fightResCombo": "Best streak",
+    "fightResHp": "HP left",
+    "fightResLv": "Lv.",
+    "fightResPrizes": "Rewards",
+    "fightTapGo": "Tap to continue",
+    "fightTapSkip": "Tap to skip"
   },
   "Sports": {
     "eyebrow": "Sports",
