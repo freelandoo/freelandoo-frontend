@@ -28,6 +28,36 @@ function stoneFile(scene: Scene) {
   return p
 }
 
+/**
+ * As mesmas pedras soltas (lv2-B1: Corte e Escudo da família pedra). Nascem desligadas, com
+ * ~1 m; quem pede escala e liga. Mesmo arquivo do Golem: a cena já tem em memória.
+ */
+export async function loadGolemStones(scene: Scene, n: number, tag: string, addGlow?: (m: AbstractMesh) => void): Promise<TransformNode[]> {
+  const c = await stoneFile(scene)
+  const out: TransformNode[] = []
+  for (let i = 0; i < n; i++) {
+    const e = c.instantiateModelsToScene((nm) => `${nm}-${tag}-${i}`, false, { doNotInstantiate: true })
+    const node = new TransformNode(`mm-${tag}-${i}`, scene)
+    // o arquivo não vem com 1 m: normaliza pela caixa, para quem pede escala falar em metros
+    const fit = new TransformNode(`mm-${tag}-fit-${i}`, scene)
+    fit.parent = node
+    for (const r of e.rootNodes) {
+      r.parent = fit
+      shineWeapon(r as TransformNode, addGlow)
+      for (const m of (r as TransformNode).getChildMeshes(false)) {
+        m.isPickable = false
+        if (m.material instanceof PBRMaterial) m.material.metallic = 0.25
+      }
+    }
+    const { min, max } = fit.getHierarchyBoundingVectors(true)
+    const ext = Math.max(max.x - min.x, max.y - min.y, max.z - min.z)
+    if (ext > 1e-3) fit.scaling.setAll(1 / ext)
+    node.setEnabled(false)
+    out.push(node)
+  }
+  return out
+}
+
 export class FloatStones {
   private readonly nodes: TransformNode[] = []
   private readonly entries: InstantiatedEntries[] = []

@@ -66,7 +66,9 @@ import { probeNote } from "../../crash-probe"
 import { FxStage } from "../../engine/fx/fx-core"
 import { AbilityDirector } from "../abilities/director"
 import { signatureFx, FX_TUNE, type SignatureClip } from "../abilities/signature-fx"
-import { bloodHits, slashWave } from "../abilities/blood-hit"
+import { bloodHits } from "../abilities/blood-hit"
+import { familyWave } from "../abilities/family-wave"
+import { strikeStyle } from "../abilities/families"
 import { CLIMAX_MS, climaxStreaks, lightCross, screenArc } from "../abilities/cinema-fx"
 import { createClimaxPass } from "./climax-pass"
 import { glitchFrame, grayVeil, introScript, OUTRO_LEAD_S, OUTRO_LOSE_S, OUTRO_WIN_S, outroScript, victorySign, whipStreaks } from "./fight-frame"
@@ -527,6 +529,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
   // habilidades (2026-11-03): lâmina de luz, investida, escudo, poder máximo; a cor é a do personagem
   const sig = abilityKit(opts.body, opts.stage).sig
+  // lv2-B1: a família do golpe sai da skin (os mesmos sinais que escolhem os golpes do corpo)
+  const strike = strikeStyle({ ring, claws, bow, gun, brute, mage, body: opts.body })
   const skillColors: SkillPalette = sig
     ? (() => {
         const [, mid, hot, edge, top] = sig.pal.map((c) => Color3.FromHexString(c))
@@ -536,7 +540,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const skillFx = createSkillFx(scene, low, vfx, () => {
     const p = fight.me
     return [new Vector3(p.x, 0.25, p.z), new Vector3(p.x, hero.height * 0.95, p.z)]
-  }, () => hero.height, skillColors)
+  }, () => hero.height, skillColors, strike)
   // Aurion, Morkhan e Zéphyra lutam de espada (mm3d-66), mas morcego é só de vampiro
   const bat = clanOfBody(opts.body) === "vampiro"
   if (!bat && ring) spirits.preload()
@@ -996,7 +1000,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   }
   // o acerto dos vampiros, e o instante em que o fundo escurece nos golpes fortes
   const hits = sig ? bloodHits(fxStage, sig) : null
-  const waveFx = sig ? slashWave(scene, sig) : null
+  // lv2-B1: o Corte voa com a cara da família da skin (lâmina, maga, martelo, arco, arma de fogo, garras, pedra)
+  const waveFx = sig ? familyWave(scene, sig, strike, skillColors.slash, vfx, low, () => hero.height) : null
   hits?.warm()
   let hitDark = 0
   // ── apresentação 08: impacto dos golpes comuns ───────────────────────────
@@ -1943,6 +1948,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       stats: () => ({ fx: fxStage.stats(), meshes: scene.getActiveMeshes().length, fps: engine.getFps(), playing: director.playing, t: director.position, pace: director.scale(), close: director.closeUp, climax: !!climaxPass?.on, cam: [cam.position.x, cam.position.y, cam.position.z], me: [fight.me.x, fight.me.z] }),
       replay: () => replayFight({ ...opts.setup, seed, style: mage ? "mage" : undefined }, frames),
       now: () => ({ over: fight.over, mobs: fight.mobs.map((m) => m.hp), hp: fight.me.hp, time: fight.time }),
+      /** lv2-B1: o Corte da família solto num ponto (foto de lado, sem a regra). */
+      wave: waveFx,
+      style: strike,
     }
     // placa de luta (2026-11-02): põe vida/fôlego e a fração de vida dos inimigos
     w.__laminasVitals = (hp: number, stam: number, mobFrac?: number) => {

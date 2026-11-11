@@ -204,64 +204,6 @@ export interface BloodHits {
   warm: () => void
 }
 
-export interface SlashWave {
-  start: (id: number, at: Vector3, facing: number) => void
-  move: (id: number, at: Vector3) => void
-  end: (id: number) => void
-  dispose: () => void
-}
-
-/** A lâmina da habilidade de corte: a mesma lua do poder, pequena, na paleta de quem joga. */
-export function slashWave(scene: Scene, sig: Signature): SlashWave {
-  const noise = new Texture("/meu-mundo/laminas/abilities/fx/noise.webp", scene)
-  const R = 1.5
-  const pool = [0, 1].map((i) => {
-    const node = new TransformNode(`sw-node-${i}`, scene)
-    const mesh = moonMesh(scene, `sw-moon-${i}`)
-    const mat = shaderOf(scene, `sw-mat-${i}`, "MOON", noise, sig)
-    mesh.material = mat
-    mesh.parent = node
-    mesh.rotation.x = -Math.PI / 2
-    mesh.position.y = -R
-    mesh.scaling.setAll(R)
-    mesh.isPickable = false
-    mesh.alwaysSelectAsActiveMesh = true
-    mesh.setEnabled(false)
-    return { id: -1, node, mesh, mat, t: 0 }
-  })
-  return {
-    start(id, at, facing) {
-      const w = pool.find((x) => x.id < 0) ?? pool[0]
-      w.id = id
-      w.t = 0
-      w.node.position.copyFrom(at)
-      w.node.rotation.set(0, facing, id % 2 ? 0.62 : -0.62)
-      w.mesh.setEnabled(true)
-    },
-    move(id, at) {
-      const w = pool.find((x) => x.id === id)
-      if (!w) return
-      w.t += 1 / 60
-      w.node.position.copyFrom(at)
-      w.mat.setFloat("uTime", w.t)
-    },
-    end(id) {
-      const w = pool.find((x) => x.id === id)
-      if (!w) return
-      w.id = -1
-      w.mesh.setEnabled(false)
-    },
-    dispose() {
-      for (const w of pool) {
-        w.mesh.dispose()
-        w.mat.dispose()
-        w.node.dispose()
-      }
-      noise.dispose()
-    },
-  }
-}
-
 export function bloodHits(stage: FxStage, sig: Signature): BloodHits {
   const build: FxBuilder<HitArgs> = ({ scene }) => buildHits(scene, sig)
   return {
