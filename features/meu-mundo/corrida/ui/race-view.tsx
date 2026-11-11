@@ -28,6 +28,8 @@ import { GarageView } from "./garage-view"
 import { CircuitSelect } from "./circuit-select"
 import { DEFAULT_TRACK, TRACK_DEFS } from "../sim/circuits"
 import type { CorridaNet, CorridaNetStatus, CorridaStart } from "../engine/net"
+import { emitMinigame } from "../../banter"
+import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 
 /** Entrar numa largada em grupo (null = a sala não abriu). */
 export type CorridaJoin = (hooks: {
@@ -287,6 +289,7 @@ function RaceScreen({
     }
     const onNotice = (n: RaceNotice) => {
       if (!alive) return
+      emitMinigame("corrida", n) // o personagem comenta a jogada (banter.ts)
       const tt = textRef.current
       switch (n.kind) {
         case "pad":
@@ -387,6 +390,7 @@ function RaceScreen({
 
       {status === "ready" && hud && (
         <>
+          <MinigameBanter running={hud.phase === "race" && !ended} />
           <SpeedLines on={hud.boost && !hud.down} />
           <Hud hud={hud} path={path} muted={muted} onMute={toggleMute} onLeave={onMenu} />
           {isTouch && !ended && (

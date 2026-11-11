@@ -23,6 +23,8 @@ import { Joystick, SAFE } from "../../ui/meu-mundo-view"
 import type { BodyId } from "../../types"
 import { createGincanaGame, type BoardRow, type GincanaGameHandle, type GincanaHud, type GincanaNotice, type GincanaResult } from "../engine/gincana-game"
 import type { GincanaLobbyEntry, GincanaNet, GincanaNetStatus, GincanaResultRow, GincanaStart } from "../engine/net"
+import { emitMinigame } from "../../banter"
+import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 
 /** Entrar numa largada em grupo (null = a sala não abriu). */
 export type GincanaJoin = (
@@ -291,6 +293,7 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
     }
     const onNotice = (n: GincanaNotice) => {
       if (!alive) return
+      emitMinigame("gincana", n) // o personagem comenta a jogada (banter.ts)
       const tt = textRef.current
       switch (n.kind) {
         case "go":
@@ -398,6 +401,7 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
 
       {status === "ready" && hud && (
         <>
+          <MinigameBanter running={hud.phase === "run" && !hud.finished} body={body} />
           {/* posição, tempo e o placar ao vivo */}
           <div className="pointer-events-none absolute flex flex-col items-start gap-1.5" style={{ top: SAFE.top, left: SAFE.left }}>
             <div className="flex items-end gap-2 rounded-none px-3 py-1.5 leading-none" style={{ background: glass, border: `1px solid ${MM.border}` }}>

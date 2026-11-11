@@ -32,7 +32,15 @@ export const PLACE_TOPICS = [
   "place_police",
   "place_hospital",
 ] as const
-export const BANTER_TOPICS = ["see_god", "see_monster_skin", "see_rival", "see_kin", "see_crowd", ...MOB_TOPICS, "fight_win", "fight_lose", ...PLACE_TOPICS] as const
+/** Em volta, fora dos prédios: NPC, casa (a dele e a dos outros), geladeira, carro. */
+export const LIFE_TOPICS = ["see_npc", "house_mine", "house_other", "fridge", "ride_car", "ride_crash"] as const
+/**
+ * Dentro dos minijogos e da luta (prefixo `mg_`): quem fala é o balão do
+ * minijogo (ui/inbox/minigame-banter.tsx), não o card da rua. Aqui o personagem
+ * comenta o JEITO de quem joga: bateu, caiu, tá parado, tá ruim de controle.
+ */
+export const MINIGAME_TOPICS = ["mg_start", "mg_crash", "mg_fall", "mg_careful", "mg_good", "mg_boost", "mg_fuel", "mg_hurt", "mg_cat", "mg_bad", "mg_idle", "mg_win", "mg_lose"] as const
+export const BANTER_TOPICS = ["see_god", "see_monster_skin", "see_rival", "see_kin", "see_crowd", ...MOB_TOPICS, "fight_win", "fight_lose", ...PLACE_TOPICS, ...LIFE_TOPICS, ...MINIGAME_TOPICS] as const
 export type BanterTopic = (typeof BANTER_TOPICS)[number]
 
 export interface BanterEvent {
@@ -80,21 +88,25 @@ export function banterKeys(topic: BanterTopic, temper: Temper): string[] {
 /** O rosto que acompanha a fala (só as 6 emoções do jogo). */
 export function banterEmotion(topic: BanterTopic, temper: Temper): Emotion {
   const mob = topic.startsWith("mob_")
+  const is = (...list: BanterTopic[]) => list.includes(topic)
+  /** Deu ruim: bateu, caiu, apanhou, perdeu, acabou o combustível. */
+  const bad = is("fight_lose", "mg_lose", "mg_crash", "mg_fall", "mg_hurt", "mg_fuel", "ride_crash")
   switch (temper) {
     case "psicopata":
-      return topic === "fight_win" ? "happy" : "angry"
+      // regra do Alex: o psicopata tem cara de raiva quase sempre; só ri quando ganha
+      return is("fight_win", "mg_win") ? "happy" : "angry"
     case "covarde":
-      if (topic === "fight_win" || topic === "see_kin" || topic === "place_church" || topic === "place_study" || topic === "place_food") return "happy"
+      if (is("fight_win", "see_kin", "place_church", "place_study", "place_food", "mg_win", "mg_good", "house_mine", "fridge", "see_npc", "mg_cat")) return "happy"
       return "sad"
     case "comilao":
-      if (topic === "fight_lose" || topic === "place_hospital" || topic === "mob_stone" || topic === "mob_wolf") return "sad"
+      if (bad || is("place_hospital", "mob_stone", "mob_wolf", "mg_bad")) return "sad"
       return "happy"
     case "bondoso":
-      if (topic === "fight_lose" || mob) return "sad"
-      if (topic === "see_kin" || topic === "see_god" || topic === "place_church" || topic === "place_lab") return "loving"
+      if (bad || mob) return "sad"
+      if (is("see_kin", "see_god", "place_church", "place_lab", "house_mine", "see_npc", "mg_cat")) return "loving"
       return "happy"
     case "competitivo":
-      return topic === "fight_lose" || topic === "see_rival" ? "angry" : "happy"
+      return bad || is("see_rival", "mg_bad", "mg_idle", "mg_careful") ? "angry" : "happy"
   }
 }
 
@@ -124,8 +136,21 @@ export const BANTER_GAP_MS = 25_000
 export const BANTER_TOPIC_MS = 3 * 60_000
 /** O mesmo alvo (aquele jogador, aquele monstro, aquele prédio) de novo. */
 export const BANTER_TARGET_MS = 10 * 60_000
-/** Fim de luta fala sempre (é a reação que a pessoa espera). */
-const ALWAYS = new Set<BanterTopic>(["fight_win", "fight_lose"])
+/** Fim de luta e de partida falam sempre (é a reação que a pessoa espera). */
+const ALWAYS = new Set<BanterTopic>(["fight_win", "fight_lose", "mg_win", "mg_lose"])
+
+/** O ritmo de quem fala: `gap` entre duas falas, `topic` para repetir o assunto, `target` o alvo. */
+export interface BanterPace {
+  gap: number
+  topic: number
+  target: number
+  /** Assuntos com espera própria (a bronca não pode virar ladainha). */
+  slow?: Partial<Record<BanterTopic, number>>
+}
+export const WORLD_PACE: BanterPace = { gap: BANTER_GAP_MS, topic: BANTER_TOPIC_MS, target: BANTER_TARGET_MS }
+/** Minijogo é rápido: ele fala mais, mas a bronca ("ruim de controle", "olha pra tela") demora a voltar. */
+export const MINIGAME_PACE: BanterPace = { gap: 7_000, topic: 30_000, target: 30_000, slow: { mg_bad: 75_000, mg_idle: 60_000, mg_start: 0 } }
+export const isMinigameTopic = (topic: BanterTopic) => topic.startsWith("mg_")
 
 export interface BanterMemory {
   last: number
@@ -135,11 +160,11 @@ export interface BanterMemory {
 export const emptyBanterMemory = (): BanterMemory => ({ last: -Infinity, topics: {}, targets: {} })
 
 /** Pode falar agora? Se pode, já anota na memória. */
-export function banterGate(m: BanterMemory, e: BanterEvent, now: number): boolean {
+export function banterGate(m: BanterMemory, e: BanterEvent, now: number, pace: BanterPace = WORLD_PACE): boolean {
   if (!ALWAYS.has(e.topic)) {
-    if (now - m.last < BANTER_GAP_MS) return false
-    if (now - (m.topics[e.topic] ?? -Infinity) < BANTER_TOPIC_MS) return false
-    if (e.target && now - (m.targets[e.target] ?? -Infinity) < BANTER_TARGET_MS) return false
+    if (now - m.last < pace.gap) return false
+    if (now - (m.topics[e.topic] ?? -Infinity) < (pace.slow?.[e.topic] ?? pace.topic)) return false
+    if (e.target && now - (m.targets[e.target] ?? -Infinity) < pace.target) return false
   }
   m.last = now
   m.topics[e.topic] = now
@@ -164,6 +189,96 @@ export function onBanter(l: Listener) {
     listeners.delete(l)
   }
 }
+
+// ── dentro dos minijogos: o que a partida avisou → o assunto da fala ────────
+export type MinigameId = "corrida" | "noturno" | "jetpack" | "gincana" | "paint" | "luta"
+/** O aviso do minijogo, só com o que interessa aqui (cada jogo tem o seu tipo completo). */
+export interface MinigameNotice {
+  kind: string
+  place?: number
+  best?: boolean
+  mine?: boolean
+  on?: boolean
+}
+
+const placeTopicOf = (place: number | undefined): BanterTopic | null => (place === 1 ? "mg_win" : place !== undefined && place >= 3 ? "mg_lose" : null)
+
+/** Puro: o assunto de um aviso (null = ele não comenta). */
+export function minigameTopic(game: MinigameId, n: MinigameNotice): BanterTopic | null {
+  if (n.kind === "go") return "mg_start"
+  switch (game) {
+    case "corrida":
+      if (n.kind === "wall") return "mg_crash"
+      if (n.kind === "fell") return "mg_fall"
+      if (n.kind === "pad" || n.kind === "turbo") return "mg_boost"
+      if (n.kind === "lap") return n.best ? "mg_good" : null
+      if (n.kind === "finish") return placeTopicOf(n.place)
+      return null
+    case "noturno":
+      if (n.kind === "stumble") return "mg_crash"
+      if (n.kind === "trick") return "mg_good"
+      if (n.kind === "power" || n.kind === "smash") return "mg_boost"
+      return null
+    case "jetpack":
+      if (n.kind === "low" || n.kind === "empty") return "mg_fuel"
+      if (n.kind === "can") return "mg_good"
+      return null
+    case "gincana":
+      if (n.kind === "hit") return "mg_crash"
+      if (n.kind === "splash") return "mg_fall"
+      if (n.kind === "cp") return "mg_good"
+      if (n.kind === "logo") return "mg_boost"
+      if (n.kind === "finish") return placeTopicOf(n.place)
+      if (n.kind === "timeout") return "mg_lose"
+      return null
+    case "paint":
+      if (n.kind === "hurt") return "mg_hurt"
+      if (n.kind === "fell") return "mg_fall"
+      if (n.kind === "cat") return n.mine ? "mg_cat" : null
+      if (n.kind === "ko") return "mg_good"
+      if (n.kind === "out") return "mg_lose"
+      if (n.kind === "morkhan") return n.on && n.mine ? "mg_careful" : null
+      return null
+    case "luta":
+      if (n.kind === "low") return "mg_hurt"
+      if (n.kind === "danger") return "mg_careful"
+      return null
+  }
+}
+
+/** Erros seguidos que viram bronca: BAD.n em BAD.ms = "nossa, você é ruim de controle". */
+export const BAD = { n: 3, ms: 25_000 } as const
+const MISTAKES = new Set<BanterTopic>(["mg_crash", "mg_fall", "mg_hurt"])
+export interface PlayWatch {
+  mistakes: number[]
+}
+export const emptyPlayWatch = (): PlayWatch => ({ mistakes: [] })
+
+/** Puro: os candidatos de um aviso, com a bronca na frente quando os erros se acumulam. */
+export function minigameEvents(watch: PlayWatch, game: MinigameId, n: MinigameNotice, now: number): BanterEvent[] {
+  const topic = minigameTopic(game, n)
+  if (!topic) return []
+  if (topic === "mg_start") watch.mistakes = []
+  if (!MISTAKES.has(topic)) return [{ topic }]
+  watch.mistakes = [...watch.mistakes.filter((at) => now - at < BAD.ms), now]
+  return watch.mistakes.length >= BAD.n ? [{ topic: "mg_bad" }, { topic }] : [{ topic }]
+}
+
+const playWatch = emptyPlayWatch()
+/** As telas dos minijogos chamam no `onNotice` (uma linha por jogo). */
+export function emitMinigame(game: MinigameId, n: MinigameNotice, now = Date.now()) {
+  emitBanter(...minigameEvents(playWatch, game, n, now))
+}
+
+/** Parado há IDLE_MS com a partida rodando = "olha pra tela, para de conversar aí". */
+export const IDLE_MS = 9_000
+
+// ── o rosto de quem fala (a Corrida não recebe o corpo: a casca do jogo avisa) ──
+let face: string | null = null
+export function setBanterBody(body: string | null) {
+  face = body
+}
+export const banterBody = () => face
 
 // ── o que ele VÊ (o motor chama a cada ~1,5 s; puro, para dar para testar) ──
 export interface SeenPlayer {

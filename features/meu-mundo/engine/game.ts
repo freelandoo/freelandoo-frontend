@@ -598,6 +598,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     // No carro você some; nos outros aparece montado.
     local.char.setVisible(!lot || drivingKind !== "car")
     input.driving = !!lot
+    // entrou no carro: ele comenta o aperto (banter.ts)
+    if (lot && drivingKind === "car") emitBanter({ topic: "ride_car" })
     input.keys.delete("Space")
     if (lot) {
       const c = fleet.latest.get(String(lot))
@@ -651,7 +653,10 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       prevPose.x = v.x
       prevPose.z = v.z
       prevPose.yaw = v.yaw
+      const before = Math.hypot(v.vx, v.vz)
       stepVehicle(v, heldDrive, boxes, limit, P)
+      // perdeu mais da metade da velocidade num passo = bateu: o personagem reclama
+      if (before > 6 && Math.hypot(v.vx, v.vz) < before * 0.5) emitBanter({ topic: "ride_crash" })
       driveN++
       v.acc -= STEP
     }
@@ -771,6 +776,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       // chegou na porta de um prédio: o personagem comenta o lugar (banter.ts)
       const topic = nearby?.kind === "place" ? placeTopic(nearby.place.id) : null
       if (topic && nearby) emitBanter({ topic, target: `place:${nearby.id}` })
+      // NPC por perto e porta de casa (a dele ou a de um vizinho)
+      else if (nearby?.kind === "npc") emitBanter({ topic: "see_npc", target: `npc:${nearby.npc}` })
+      else if (nearby?.kind === "house") emitBanter({ topic: nearby.lot.number === myLot ? "house_mine" : "house_other", target: `house:${nearby.id}` })
     }
     // O que ele vê em volta (deus, monstro, outro povo): só apresentação, ~1,5 s.
     sightAt += dt

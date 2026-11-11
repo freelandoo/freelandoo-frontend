@@ -101,6 +101,7 @@ import {
   type VisitState,
 } from "../types"
 import { setCurrentSoul, type LifeSoul } from "../soul"
+import { setBanterBody } from "../banter"
 import { useChatter } from "./inbox/use-chatter"
 
 const isHouse = (p: ScenePayload): p is HousePayload => (p as HousePayload).scene === "house"
@@ -147,6 +148,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const [soul, setSoul] = useState<LifeSoul | null>(() => initial.life?.character.soul ?? null)
   const pushLocal = useCallback((n: MMNotice) => setPushed((l) => [...l.slice(-30), n]), [])
   useEffect(() => setCurrentSoul(soul), [soul])
+  // o rosto de quem fala dentro dos minijogos (minigame-banter.tsx)
+  useEffect(() => setBanterBody(avatar), [avatar])
   useChatter(soul, t, pushLocal)
   const [inbox, setInbox] = useState<InboxView | null>(null)
   const [itemsOpen, setItemsOpen] = useState(false)
