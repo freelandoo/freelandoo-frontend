@@ -62,24 +62,24 @@ export function temperLine(x: Temper, t: Tr) {
 /** Nome curto da comida (é também o apelido que ele usa: "Ei, Pizza!"). */
 export function foodShort(id: string, t: Tr) {
   const m: Record<string, [string, string]> = {
-    salmao_legumes: ["soulFoodSalmon", "Salmão"],
+    salmao_legumes: ["soulFoodSalmon", "Peixe defumado"],
     frango_salada: ["soulFoodChicken", "Frango"],
-    prato_integral: ["soulFoodWholegrain", "Integral"],
+    prato_integral: ["soulFoodWholegrain", "Prato do ferreiro"],
     bowl_frutas: ["soulFoodFruit", "Frutinha"],
     omelete_legumes: ["soulFoodOmelette", "Omelete"],
-    iogurte_aveia: ["soulFoodYogurt", "Iogurte"],
+    iogurte_aveia: ["soulFoodYogurt", "Mingau"],
     sopa_legumes: ["soulFoodSoup", "Sopinha"],
-    prato_feito: ["soulFoodPF", "PF"],
+    prato_feito: ["soulFoodPF", "Prato da taverna"],
     hamburguer: ["soulFoodBurger", "Hambúrguer"],
     pizza: ["soulFoodPizza", "Pizza"],
-    cachorro_quente: ["soulFoodHotdog", "Cachorro-quente"],
-    coxinha: ["soulFoodCoxinha", "Coxinha"],
-    chocolate: ["soulFoodChocolate", "Chocolate"],
+    cachorro_quente: ["soulFoodHotdog", "Espeto"],
+    coxinha: ["soulFoodCoxinha", "Bolinho"],
+    chocolate: ["soulFoodChocolate", "Cacau"],
     miojo: ["soulFoodNoodles", "Miojo"],
-    salgadinho: ["soulFoodChips", "Salgadinho"],
+    salgadinho: ["soulFoodChips", "Cascas fritas"],
     biscoito_recheado: ["soulFoodCookie", "Biscoito"],
-    refrigerante: ["soulFoodSoda", "Refri"],
-    agua_coco: ["soulFoodCoconut", "Água de coco"],
+    refrigerante: ["soulFoodSoda", "Sidra"],
+    agua_coco: ["soulFoodCoconut", "Água da fonte"],
   }
   const e = m[id]
   return e ? t(e[0], e[1]) : id

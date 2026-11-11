@@ -1292,7 +1292,6 @@ function Market({ life, compact, t, act }: PageProps) {
                   const main = effectsOf(it)[0]
                   const poor = life.wallet.coins < it.price
                   const extra = [
-                    it.kcal ? `${it.kcal} kcal` : null,
                     it.effect ? t("mkLasts", "dura {h}").replace("{h}", hoursText(it.effect.hours)) : null,
                     it.tox ? t("mkTox", "tóxico") : null,
                   ]

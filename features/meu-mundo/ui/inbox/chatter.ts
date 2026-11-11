@@ -60,7 +60,7 @@ const LINES: Record<Temper, Record<ChatterMoment, Line[]>> = {
     morning: [["chGluMorning1", "Bom dia! Café da manhã reforçado, né?", "happy"]],
     idle: [
       ["chGluIdle1", "Meu estômago tá roncando de novo…", "sad"],
-      ["chGluIdle2", "Bem que a gente podia passar na pizzaria.", "happy"],
+      ["chGluIdle2", "Bem que a gente podia passar na taverna.", "happy"],
     ],
   },
   bondoso: {
