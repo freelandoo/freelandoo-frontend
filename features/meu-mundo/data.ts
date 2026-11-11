@@ -259,7 +259,8 @@ export interface Receipt {
     vitals?: Partial<Record<"energy" | "stress" | "satiety" | "mood" | "health", number>>
     coins?: number
   }
-  items: { id: string; qty: number; rarity?: string }[]
+  /** E3: fragmento traz `progress` (quanto tem / quanto pede o item `of`). */
+  items: { id: string; qty: number; rarity?: string; progress?: { of: string; have: number; need: number } }[]
   at: string
 }
 /** F2 (lore v2): o nível do TREINADOR é da conta (não zera ao trocar de personagem). */

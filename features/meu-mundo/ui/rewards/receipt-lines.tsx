@@ -59,7 +59,9 @@ export function ReceiptLines({ receipt, delay = 550 }: { receipt: Receipt; delay
   for (const it of receipt.items || []) {
     if (it.qty <= 0) continue
     const r = RARITY[(it.rarity as Rarity) || "common"] || RARITY.common
-    lines.push({ key: `i-${it.id}`, icon: "◆", label: t(`gear_${it.id}`, it.id), value: `×${it.qty}`, color: r.color })
+    // E3: fragmento mostra quanto falta para o item ("×3 · 42/60")
+    const progress = it.progress && it.progress.need > 0 ? ` · ${Math.min(it.progress.have, it.progress.need)}/${it.progress.need}` : ""
+    lines.push({ key: `i-${it.id}`, icon: it.progress ? "◈" : "◆", label: t(`gear_${it.id}`, it.id), value: `×${it.qty}${progress}`, color: r.color })
   }
   const leveled = !!xp && xp.to > xp.from
   return (
