@@ -828,6 +828,13 @@ const NEW_13 = {
   es: { opLogo: "Meu Mundo", opTagline: "Observatorio de Éter", opStart: "Toca para empezar", opStartPc: "Haz clic para empezar", opPreparing: "Preparando el mundo", opReady: "Mundo listo" },
 }
 for (const loc of Object.keys(NEW_13)) Object.assign(KEYS[loc], NEW_13[loc])
+// 14 — Ficha com palco 3D + HP nas barras (pedido do Alex, 11/11): chaves novas, fill-if-absent
+const NEW_14 = {
+  "pt-BR": { stStageTabs: "O que mostrar no palco", stStageBody: "Corpo", sgHpWhere: "É a vida na luta: cada golpe que passa pela defesa tira daqui. Zerou, a luta acaba.", sgHpHow: "Começa no valor do personagem e sobe a cada nível de aventura." },
+  en: { stStageTabs: "What to show on the stage", stStageBody: "Body", sgHpWhere: "Your life in a fight: every hit that gets past defense takes from it. At zero, the fight is over.", sgHpHow: "Starts at the character's value and grows with each adventure level." },
+  es: { stStageTabs: "Qué mostrar en el escenario", stStageBody: "Cuerpo", sgHpWhere: "Es la vida en la pelea: cada golpe que pasa la defensa quita de aquí. En cero, la pelea termina.", sgHpHow: "Empieza en el valor del personaje y sube con cada nivel de aventura." },
+}
+for (const loc of Object.keys(NEW_14)) Object.assign(KEYS[loc], NEW_14[loc])
 for (const loc of Object.keys(KEYS)) {
   const file = path.join(DIR, `${loc}.json`)
   const dict = JSON.parse(fs.readFileSync(file, "utf8"))

@@ -11650,7 +11650,11 @@
     "opStart": "Toque para começar",
     "opStartPc": "Clique para começar",
     "opPreparing": "Preparando o mundo",
-    "opReady": "Mundo pronto"
+    "opReady": "Mundo pronto",
+    "stStageTabs": "O que mostrar no palco",
+    "stStageBody": "Corpo",
+    "sgHpWhere": "É a vida na luta: cada golpe que passa pela defesa tira daqui. Zerou, a luta acaba.",
+    "sgHpHow": "Começa no valor do personagem e sobe a cada nível de aventura."
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -12236,7 +12236,11 @@
     "opStart": "Tap to start",
     "opStartPc": "Click to start",
     "opPreparing": "Preparing the world",
-    "opReady": "World ready"
+    "opReady": "World ready",
+    "stStageTabs": "What to show on the stage",
+    "stStageBody": "Body",
+    "sgHpWhere": "Your life in a fight: every hit that gets past defense takes from it. At zero, the fight is over.",
+    "sgHpHow": "Starts at the character's value and grows with each adventure level."
   },
   "Sports": {
     "eyebrow": "Sports",

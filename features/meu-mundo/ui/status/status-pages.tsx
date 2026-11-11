@@ -40,7 +40,8 @@ import {
   Users,
   Loader2,
 } from "lucide-react"
-import type { LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
+import type { BodyId, LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
+import { SheetStage } from "./sheet-stage"
 import { Bar, Chamfer, CountUp, EVO, Gauge, Plate, Ring, Tag, archivo, cinzel, teko, toneFor } from "./evo-skin"
 import { MM } from "../hud/tokens"
 import { Arc, Card, effectText, toneColor } from "../fridge/shelf"
@@ -100,6 +101,8 @@ export interface PageProps {
   life: LifeFull
   name: string
   portrait: string
+  /** Apresentação 14: com o corpo, a Ficha mostra o palco 3D no lugar do retrato. */
+  body?: BodyId
   compact: boolean
   t: Tr
   act: PageActions
@@ -558,12 +561,6 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
           </div>
           {adv && <XpLine adv={adv} t={t} small />}
           {adv?.trainer && <TrainerLine tr={adv.trainer} t={t} small />}
-          {adv && <CombatLine adv={adv} life={life} t={t} small />}
-          {c.power != null && (
-            <div className="mt-1 flex justify-end">
-              <PowerPlate power={c.power} t={t} small />
-            </div>
-          )}
         </div>
       </div>
     )
@@ -607,16 +604,16 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
               {t("stDaysLived", "{n} dias de vida").replace("{n}", String(days))} • {walletText(life, t)} •{" "}
               {t("stToday", "Hoje: {c}").replace("{c}", conditionLabel(c.today.label, t))}
             </div>
-            {/* 2026-11-03 (desenho do Alex): a placa NV e a placa de HP */}
+            {/* pedido do Alex (11/11): no cabeçalho só o nível e o nível do treinador —
+                o HP foi para as barras (com defesa e ataque) e o Poder para o palco da Ficha */}
             {adv && (
-              <div className="mt-2 flex items-start gap-3" style={{ minWidth: 520 }}>
+              <div className="mt-2 flex items-center gap-4">
                 <LevelBadge level={adv.level} into={adv.into} need={adv.need} t={t} />
-                <HpPlate level={adv.level} hp={heroSheet(life.avatar, adv.level, life.character.attributes).hp} t={t} />
-              </div>
-            )}
-            {c.power != null && (
-              <div className="mt-2 flex">
-                <PowerPlate power={c.power} t={t} />
+                {adv.trainer && (
+                  <div className="shrink-0" style={{ width: 300 }}>
+                    <TrainerLine tr={adv.trainer} t={t} />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -2013,20 +2010,22 @@ function porteName(hint: string, t: Tr) {
 }
 
 /** Retrato + Personagens + "agora" + a fala (o topo da Ficha). */
-function NowBlock({ life, portrait, t, act }: PageProps) {
+function NowBlock({ life, portrait, t, act, body }: PageProps) {
   const c = life.character
   const v = c.vitals
   const a = c.activity
   const total = a.until ? (new Date(a.until).getTime() - new Date(a.startedAt).getTime()) / 3600000 : null
   const progress = total && a.remainingH != null ? Math.max(0, Math.min(1, 1 - a.remainingH / total)) : null
   return (
-    <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-2.5">
-      <div className="flex flex-col items-center gap-1">
-        <Portrait src={portrait} size={112} />
-        <MiniButton onClick={act.openSkins} active h={28} className="w-full">
-          <Users className="h-3.5 w-3.5" /> {t("stCharacters", "Personagens")}
-        </MiniButton>
-      </div>
+    <div className={body ? "flex flex-col" : "grid grid-cols-[112px_minmax(0,1fr)] gap-2.5"}>
+      {!body && (
+        <div className="flex flex-col items-center gap-1">
+          <Portrait src={portrait} size={112} />
+          <MiniButton onClick={act.openSkins} active h={28} className="w-full">
+            <Users className="h-3.5 w-3.5" /> {t("stCharacters", "Personagens")}
+          </MiniButton>
+        </div>
+      )}
       <div className="flex min-w-0 flex-col gap-2">
         <Chamfer cut={9}>
           <div className="flex items-center gap-2 px-2 py-1.5">
@@ -2132,6 +2131,12 @@ function statOrigin(key: StatRow["key"], life: LifeFull, adv: AdvXp | null | und
   const lv = heroSheet(life.avatar, level, stats)
   const full = heroSheet(life.avatar, level, stats, gear || undefined)
   const sign = (n: number) => (Math.round(n) > 0 ? `+${Math.round(n)}` : Math.round(n) < 0 ? String(Math.round(n)) : "—")
+  if (key === "hp") {
+    return [
+      [t("lkBase", "Personagem"), String(Math.round(base.hp))],
+      [t("lkLevelFight2", "Nível"), sign(lv.hp - base.hp)],
+    ]
+  }
   if (key === "def" || key === "atk") {
     return [
       [t("lkBase", "Personagem"), String(Math.round(base[key]))],
@@ -2170,6 +2175,13 @@ function SheetPage(props: PageProps) {
   const data = loadout ?? NO_LOADOUT
   const left = (
     <>
+      {props.body && (
+        <SheetStage body={props.body} portrait={props.portrait} name={props.name} temper={characterTemper(c, t)} power={c.power ?? null} level={adv?.level ?? null} height={compact ? 300 : 340} t={t}>
+          <MiniButton onClick={props.act.openSkins} active h={28}>
+            <Users className="h-3.5 w-3.5" /> {t("stCharacters", "Personagens")}
+          </MiniButton>
+        </SheetStage>
+      )}
       <NowBlock {...props} />
       <VitalsBlock {...props} />
     </>

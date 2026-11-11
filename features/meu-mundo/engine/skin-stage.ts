@@ -205,6 +205,20 @@ export interface StageLook {
   look?: string
 }
 
+/**
+ * Enquadramento sem imagem de fundo (apresentação 14, palco da Ficha): frações do canvas.
+ * feetX/feetY = onde ficam os pés; figure = altura do personagem.
+ */
+export interface StageFrame {
+  feetX: number
+  feetY: number
+  figure: number
+  /** Sem giro sozinho nem na entrada: o personagem fica de frente (só gira arrastando). */
+  still?: boolean
+  /** Ângulo "de frente" quando `still` (rad). */
+  face?: number
+}
+
 export class SkinStage {
   private readonly engine: Engine
   private readonly scene: Scene
@@ -242,6 +256,7 @@ export class SkinStage {
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly reduced: boolean,
+    private readonly frameBox?: StageFrame,
   ) {
     // premultipliedAlpha: o holograma escreve cor já multiplicada pela
     // transparência e o canvas fica por cima da imagem do palco.
@@ -378,6 +393,10 @@ export class SkinStage {
     this.sinceShow = 0
     this.enter = this.reduced ? 1 : 0
     this.idle = 4
+    if (this.frameBox?.still) {
+      this.spin.rotation.y = this.frameBox.face ?? 0
+      this.velocity = 0
+    }
   }
 
   /** "Comprou": a linha sobe e o holograma vira o personagem. */
@@ -449,9 +468,10 @@ export class SkinStage {
     const H = this.canvas.clientHeight || window.innerHeight
     this.engine.resize()
     const s = Math.max(W / STAGE.w, H / STAGE.h)
-    const feetX = (W - STAGE.w * s) / 2 + STAGE.feetX * s
-    const feetY = (H - STAGE.h * s) / 2 + STAGE.feetY * s
-    const figurePx = STAGE.figure * s
+    const fb = this.frameBox
+    const feetX = fb ? W * fb.feetX : (W - STAGE.w * s) / 2 + STAGE.feetX * s
+    const feetY = fb ? H * fb.feetY : (H - STAGE.h * s) / 2 + STAGE.feetY * s
+    const figurePx = fb ? H * fb.figure : STAGE.figure * s
     const dist = H / (figurePx * 2 * Math.tan(FOV / 2))
     this.camera.position.set(0, 0, -dist)
     this.camera.setTarget(Vector3.Zero())
@@ -467,14 +487,14 @@ export class SkinStage {
       if (!this.dragging) {
         this.idle += dt
         this.velocity *= Math.exp(-dt * 3)
-        const auto = this.idle > 2.5 && !this.reduced ? 0.5 : 0
+        const auto = this.idle > 2.5 && !this.reduced && !this.frameBox?.still ? 0.5 : 0
         this.spin.rotation.y += (this.velocity + auto * Math.min(1, (this.idle - 2.5) / 1.5)) * dt
       }
       if (this.enter < 1) {
         this.enter = Math.min(1, this.enter + dt / 0.9)
         const e = easeOutCubic(this.enter)
         this.spin.scaling.setAll(0.6 + 0.4 * e)
-        this.spin.rotation.y += (1 - e) * dt * 9
+        if (!this.frameBox?.still) this.spin.rotation.y += (1 - e) * dt * 9
       }
       const t = (this.sinceShow += dt)
       const solid = this.plugins[0]?.solid ?? 1

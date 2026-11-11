@@ -105,13 +105,16 @@ export interface StatRow {
   note?: string
 }
 
-const COLORS = { def: "#2F8BFF", atk: "#FF2E55", str: "#FF9A1F", int: "#B04DFF", dex: "#2EE85A", spd: "#FFD21F" } as const
+// hp = o rosa da barra de vida da luta (fight-plate)
+const COLORS = { hp: "#FF168A", def: "#2F8BFF", atk: "#FF2E55", str: "#FF9A1F", int: "#B04DFF", dex: "#2EE85A", spd: "#FFD21F" } as const
 
 /** As 6 linhas, na ordem pedida. `level` = nível de aventura (sem = nível 1). */
 export function useStatRows(life: LifeFull, level: number | undefined, t: Tr): StatRow[] {
   const at = life.character.attributes
   const h = heroSheet(life.avatar, level ?? 1, at)
   return [
+    // pedido do Alex (11/11): o HP mora aqui, com defesa e ataque (saiu do cabeçalho)
+    { key: "hp", icon: <Heart />, label: t("stHp", "HP"), value: Math.round(h.hp) },
     { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), value: Math.round(h.def) },
     { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), value: Math.round(h.atk) },
     { key: "str", icon: <Target />, label: t("atStrength", "Acuracidade"), value: h.acc },
@@ -193,6 +196,8 @@ export function StatBars({ life, level, t, small = false, onPick }: { life: Life
 /** Onde vale e como sobe, por atributo (o texto que antes ficava todo no fim da Visão geral). */
 export function statGuideText(k: StatRow["key"], t: Tr): { where: string; how: string } {
   switch (k) {
+    case "hp":
+      return { where: t("sgHpWhere", "É a vida na luta: cada golpe que passa pela defesa tira daqui. Zerou, a luta acaba."), how: t("sgHpHow", "Começa no valor do personagem e sobe a cada nível de aventura.") }
     case "def":
       return { where: t("sgDefWhere", "Amortece o dano: disputa com o ataque de quem bate. Ataque 100 contra defesa 1000 passa só 10%."), how: t("sgDefHow2", "Começa no valor do personagem e sobe a cada nível de aventura. O equipamento do Armeiro e da Forja soma por cima.") }
     case "atk":
@@ -360,6 +365,13 @@ export function PowerPlate({ power, t, small = false }: { power: number; t: Tr; 
 /** O fim da página: onde cada status influencia e como sobe. */
 export function StatGuide({ t, small = false }: { t: Tr; small?: boolean }) {
   const items: [keyof typeof COLORS, ReactNode, string, string, string][] = [
+    [
+      "hp",
+      <Heart key="i" />,
+      t("stHp", "HP"),
+      t("sgHpWhere", "É a vida na luta: cada golpe que passa pela defesa tira daqui. Zerou, a luta acaba."),
+      t("sgHpHow", "Começa no valor do personagem e sobe a cada nível de aventura."),
+    ],
     [
       "def",
       <Shield key="i" />,

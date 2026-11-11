@@ -402,7 +402,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       >
         <SteamFrame className="relative mx-2 min-h-0 flex-1" cornerSize={34}>
           <div key={page} className="h-full overflow-hidden p-2.5">
-            <StatusPage page={page} life={life} name={name} portrait={portrait} compact t={t} act={act} adv={adv} loadout={loadout} />
+            <StatusPage page={page} life={life} name={name} portrait={portrait} body={avatar} compact t={t} act={act} adv={adv} loadout={loadout} />
           </div>
         </SteamFrame>
         {/* rodapé numa linha de 40 px: ‹ pontos › e fechar (o nome da página está no cabeçalho) */}
@@ -473,7 +473,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
               <SteamFrame className="h-full" cornerSize={88} glow={false} ignite={i === sel}>
                 <div className="relative h-full w-full overflow-hidden">
                   <div className="relative h-full px-9 pb-7 pt-6">
-                    {rel(i) <= 1 && <StatusPage page={page} life={life} name={name} portrait={portrait} compact={false} t={t} act={act} adv={adv} loadout={loadout} />}
+                    {rel(i) <= 1 && <StatusPage page={page} life={life} name={name} portrait={portrait} body={avatar} compact={false} t={t} act={act} adv={adv} loadout={loadout} />}
                   </div>
                   <div
                     ref={(el) => {

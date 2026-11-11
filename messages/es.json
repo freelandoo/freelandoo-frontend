@@ -12216,7 +12216,11 @@
     "opStart": "Toca para empezar",
     "opStartPc": "Haz clic para empezar",
     "opPreparing": "Preparando el mundo",
-    "opReady": "Mundo listo"
+    "opReady": "Mundo listo",
+    "stStageTabs": "Qué mostrar en el escenario",
+    "stStageBody": "Cuerpo",
+    "sgHpWhere": "Es la vida en la pelea: cada golpe que pasa la defensa quita de aquí. En cero, la pelea termina.",
+    "sgHpHow": "Empieza en el valor del personaje y sube con cada nivel de aventura."
   },
   "Sports": {
     "eyebrow": "Deportes",
