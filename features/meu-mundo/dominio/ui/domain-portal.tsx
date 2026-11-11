@@ -11,8 +11,8 @@
 // com o ícone de livro; depois do 10, a passagem para o próximo Domínio. Tocar numa
 // placa abre o PAINEL da fase: objetivo, recomendado (Poder e nível, contra o seu),
 // ambiente e prêmios — e o botão de entrar. Tudo vem do servidor (GET /domains): o
-// aparelho não decide se está aberto. Prêmio por setor não existe na regra: o painel
-// diz o que a luta do setor já dá (XP, Esmeraldas, chance de item) e o que o 10 abre.
+// aparelho não decide se está aberto. Trilha E, E12: o painel mostra a TABELA DE SAQUE do
+// setor que o servidor sorteia (garantido, chance e o bônus da primeira vitória) e o que o 10 abre.
 //
 // Custo: DOM parado; só a placa do próximo setor anima (transform/opacity) e nada no
 // `low` nem com movimento reduzido.
@@ -21,7 +21,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { ArrowRight, BookOpen, Check, Crown, Loader2, Lock, Swords } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getDomains, type DomainId, type DomainInfo, type DomainSector, type DomainsState } from "../../data"
+import { getDomains, type DomainId, type DomainInfo, type DomainLootRow, type DomainSector, type DomainSectorLoot, type DomainsState } from "../../data"
 import { TopBar } from "../../ui/kit/top-bar"
 import { SP } from "../../ui/kit/steam/steam-tokens"
 import { TAP, TX, TYPE } from "../../ui/kit/type-scale"
@@ -415,6 +415,34 @@ function Row({ k, children }: { k: string; children: React.ReactNode }) {
   )
 }
 
+const qtyText = (q: [number, number]) => (q[0] === q[1] ? `${q[0]}×` : `${q[0]}–${q[1]}×`)
+const pctText = (p: number) => `${Math.round(p * 1000) / 10}%`.replace(".", ",")
+const itemName = (t: Tr, r: DomainLootRow) => t(`gear_${r.id}`, r.name)
+
+/** E12: a tabela do setor em três linhas curtas (por vitória · chance · primeira vitória). */
+function LootRows({ loot, tint, t }: { loot: DomainSectorLoot; tint: string; t: Tr }) {
+  return (
+    <>
+      <span className="block">
+        <span className="font-bold" style={{ color: SP.muted }}>{t("domLootSure", "Por vitória")}: </span>
+        {loot.sure.map((r) => `${qtyText(r.qty)} ${itemName(t, r)}`).join(" · ")}
+      </span>
+      {loot.chance.length > 0 && (
+        <span className="block">
+          <span className="font-bold" style={{ color: SP.muted }}>{t("domLootChance", "Chance")}: </span>
+          {loot.chance.map((r) => `${itemName(t, r)} ${pctText(r.p ?? 0)}`).join(" · ")}
+        </span>
+      )}
+      {loot.first.length > 0 && (
+        <span className="block" style={{ color: loot.firstDone ? SP.muted : tint }}>
+          <span className="font-bold">{t("domLootFirst", "Primeira vitória")}: </span>
+          {loot.firstDone ? t("domLootFirstDone", "já recebida") : loot.first.map((r) => `${qtyText(r.qty)} ${itemName(t, r)}`).join(" · ")}
+        </span>
+      )}
+    </>
+  )
+}
+
 /** O painel da fase (Anexo A §7.3): objetivos · recomendado · ambiente · prêmios · entrar. */
 function PhasePanel({ d, pick, power, next, t, onEnter }: { d: DomainInfo; pick: Pick; power: number; next: DomainInfo | null; t: Tr; onEnter: () => void }) {
   const lock = lockText(t, d)
@@ -454,7 +482,14 @@ function PhasePanel({ d, pick, power, next, t, onEnter }: { d: DomainInfo; pick:
         </Row>
         <Row k={t("domPanelEnv", "Ambiente")}>{`${t(`domStage_${s.stage}`, STAGE_PT[s.stage])} · ${dn}`}</Row>
         <Row k={t("domPanelPrize", "Prêmios")}>
-          {t("domPrizes", "XP de aventura, Esmeraldas e chance de item")}
+          {s.loot ? (
+            <>
+              <span className="block">{t("domPrizesXp", "XP de aventura e Esmeraldas")}</span>
+              <LootRows loot={s.loot} tint={TINT[d.id]} t={t} />
+            </>
+          ) : (
+            t("domPrizes", "XP de aventura, Esmeraldas e chance de item")
+          )}
           {boss && (
             <span className="block font-bold" style={{ color: TINT[d.id] }}>
               {next ? t("domPrizeCross", "Abre a passagem: {name}").replace("{name}", domainName(t, next.id)) : t("domTheEnd", "Fim da travessia")}

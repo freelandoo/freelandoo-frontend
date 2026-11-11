@@ -160,6 +160,12 @@ const MEU_MUNDO = {
   transmuteSummary: ["{a} {from} → {b} {to} · {c} Esmeraldas", "{a} {from} → {b} {to} · {c} Emeralds", "{a} {from} → {b} {to} · {c} Esmeraldas"],
   transmuteDone: ["Transmutado.", "Transmuted.", "Transmutado."],
   transmuteGo: ["Transmutar", "Transmute", "Transmutar"],
+  // E12: a tabela do setor no portal dos Domínios
+  domPrizesXp: ["XP de aventura e Esmeraldas", "Adventure XP and Emeralds", "XP de aventura y Esmeraldas"],
+  domLootSure: ["Por vitória", "Per win", "Por victoria"],
+  domLootChance: ["Chance", "Chance", "Probabilidad"],
+  domLootFirst: ["Primeira vitória", "First win", "Primera victoria"],
+  domLootFirstDone: ["já recebida", "already claimed", "ya recibida"],
 }
 const OVERRIDE = {}
 

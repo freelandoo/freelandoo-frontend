@@ -11943,7 +11943,12 @@
     "transmuteTimes": "Quantas (máx. {n})",
     "transmuteSummary": "{a} {from} → {b} {to} · {c} Esmeraldas",
     "transmuteDone": "Transmutado.",
-    "transmuteGo": "Transmutar"
+    "transmuteGo": "Transmutar",
+    "domPrizesXp": "XP de aventura e Esmeraldas",
+    "domLootSure": "Por vitória",
+    "domLootChance": "Chance",
+    "domLootFirst": "Primeira vitória",
+    "domLootFirstDone": "já recebida"
   },
   "Sports": {
     "eyebrow": "Esportes",

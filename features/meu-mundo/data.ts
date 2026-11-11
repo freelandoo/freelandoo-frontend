@@ -778,6 +778,26 @@ export interface DomainSector {
   stage: "entrada" | "fundo" | "palacio"
   open: boolean
   cleared: boolean
+  /** E12: a tabela de saque do setor (por vitória), consultável antes de lutar. */
+  loot?: DomainSectorLoot | null
+}
+/** E12: uma linha da tabela do setor (nome em pt de reserva; a tela traduz por `gear_<id>`). */
+export interface DomainLootRow {
+  id: string
+  name: string
+  rarity: string
+  qty: [number, number]
+  /** Chance (0–1) das linhas de sorteio. */
+  p?: number
+}
+export interface DomainSectorLoot {
+  table: string
+  sure: DomainLootRow[]
+  chance: DomainLootRow[]
+  /** Bônus da primeira vitória (mig 449). */
+  first: DomainLootRow[]
+  /** A primeira vitória deste setor já foi paga para a conta. */
+  firstDone: boolean
 }
 export interface DomainInfo {
   id: DomainId

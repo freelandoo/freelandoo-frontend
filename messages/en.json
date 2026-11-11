@@ -12529,7 +12529,12 @@
     "transmuteTimes": "How many (max {n})",
     "transmuteSummary": "{a} {from} → {b} {to} · {c} Emeralds",
     "transmuteDone": "Transmuted.",
-    "transmuteGo": "Transmute"
+    "transmuteGo": "Transmute",
+    "domPrizesXp": "Adventure XP and Emeralds",
+    "domLootSure": "Per win",
+    "domLootChance": "Chance",
+    "domLootFirst": "First win",
+    "domLootFirstDone": "already claimed"
   },
   "Sports": {
     "eyebrow": "Sports",
