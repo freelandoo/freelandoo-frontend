@@ -36,7 +36,7 @@ import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { Scene as SceneClass } from "@babylonjs/core/scene"
 import type { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
-import { FOREST_GROUPS, CANYON_GROUPS, loadPieceGroups, type ForestAsset, type CanyonAsset, type PieceAssets } from "../../jetpack/engine/canyon-assets"
+import { FOREST_GROUPS, CANYON_GROUPS, CANYON_DIR, loadPieceGroups, type ForestAsset, type CanyonAsset, type PieceAssets } from "../../jetpack/engine/canyon-assets"
 import { Sky } from "../../engine/steampunk/atmosphere"
 
 export type DomainKitId = "floresta" | "canion"
@@ -89,7 +89,7 @@ function dropUnusedMaps(scene: Scene, kit: PieceAssets<KitPiece>) {
 export async function loadDomainKit(scene: Scene, kit: DomainKitId, isAlive: () => boolean, pieces?: readonly KitPiece[], lod?: Partial<Record<KitPiece, number>>): Promise<PieceAssets<KitPiece>> {
   const out =
     kit === "canion"
-      ? ((await loadPieceGroups<CanyonAsset>(scene, "/meu-mundo/jetpack/canion2/", only(CANYON_GROUPS, pieces), { ...CANYON_LOD_NEAR, ...lod }, isAlive)) as PieceAssets<KitPiece>)
+      ? ((await loadPieceGroups<CanyonAsset>(scene, CANYON_DIR, only(CANYON_GROUPS, pieces), { ...CANYON_LOD_NEAR, ...lod }, isAlive)) as PieceAssets<KitPiece>)
       : ((await loadPieceGroups<ForestAsset>(scene, FOREST_THEME_DIR, only(FOREST_THEME_GROUPS, pieces), { ...FOREST_LOD_NEAR, ...lod }, isAlive)) as PieceAssets<KitPiece>)
   if (isAlive()) dropUnusedMaps(scene, out)
   return out

@@ -137,7 +137,13 @@ export interface PieceAssets<P extends string = string> {
 }
 export type CanyonAssets = PieceAssets<CanyonAsset>
 
-/** Cânion v2 (build_canion_v2.py): grupos, como o Gelo; toda peça que se repete com versão de longe. */
+/**
+ * Cânion (grupos, como o Gelo; toda peça que se repete com versão de longe). B6 (2026-11-11): o kit é o
+ * TEMA v2 (`pipeline/temas/build_canion_tema_v2.py`): faces do Tripo para fora, UV refeita, cor e mapa de
+ * normal assados, KTX2 1024 nas peças grandes. Mesmas peças, medidas e triângulos do canion2 (Jetpack e
+ * Domínio leem daqui).
+ */
+export const CANYON_DIR = "/meu-mundo/temas/canion/v2/"
 export const CANYON_GROUPS = {
   paredao: ["paredao"],
   rocha: ["rocha"],
@@ -153,7 +159,7 @@ export type CanyonAsset = (typeof CANYON_GROUPS)[keyof typeof CANYON_GROUPS][num
 const CANYON_LOD: Partial<Record<CanyonAsset, number>> = { paredao: 60, moinho: 55, arco: 60, ilha: 120, "pedra-raizes": 50, cacto: 45, ponte: 70, "torre-vigia": 55 }
 /** Carrega as peças do Cânion (as que falharem ficam de fora: o cenário procedural segue). */
 export function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<CanyonAsset>> {
-  return loadPieceGroups<CanyonAsset>(scene, "/meu-mundo/jetpack/canion2/", CANYON_GROUPS, CANYON_LOD, isAlive)
+  return loadPieceGroups<CanyonAsset>(scene, CANYON_DIR, CANYON_GROUPS, CANYON_LOD, isAlive)
 }
 
 /**

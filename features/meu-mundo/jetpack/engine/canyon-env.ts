@@ -237,7 +237,7 @@ function village(g: Ctx, sx: number, z: number, top: number) {
 
 // ── os módulos ──────────────────────────────────────────────────────────────
 
-/** Largura em x das peças novas com 1 m de altura (canion2.json). */
+/** Largura em x das peças novas com 1 m de altura (canion2.json; o tema v2 do B6 mede igual). */
 const WID = { "pedra-raizes": 0.74, cacto: 0.75, ponte: 1.81, "torre-vigia": 0.69 } as const
 /** Peça nova (chega de COSTAS: meia-volta de base) com a beira de dentro em |x| ≥ edge. */
 function stand(g: Ctx, kind: keyof typeof WID, sx: number, edge: number, y: number, z: number, s: number, ry = 0) {

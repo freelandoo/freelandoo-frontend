@@ -44,7 +44,7 @@ import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
 import { buildBoundary } from "./boundary-view"
-import { loadCanyonAssets, loadFactoryAssets, loadPieceGroups, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { CANYON_DIR, loadCanyonAssets, loadFactoryAssets, loadPieceGroups, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 
 export interface JetHud {
@@ -279,7 +279,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 2.578, arm: 0.437, armLen: 0.785, beam: true })
     })
     // o anel dourado do Cânion também é o da Floresta (furo de raio 1, como a regra)
-    void loadPieceGroups(scene, "/meu-mundo/jetpack/canion2/", { anel: ["anel"] as const }, {}, () => !disposed).then((g) => {
+    void loadPieceGroups(scene, CANYON_DIR, { anel: ["anel"] as const }, {}, () => !disposed).then((g) => {
       if (disposed) return g.dispose()
       extraAssets = g
       const ring = g.meshes.get("anel")
