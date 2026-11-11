@@ -233,6 +233,9 @@ const ROWS = [
   ["Sua arma usa as duas mãos", "Your weapon takes both hands", "Tu arma usa las dos manos"],
   // trilha E8: conversão de fragmento
   ["Esse item não é um fragmento", "That item isn't a fragment", "Ese objeto no es un fragmento"],
+  // trilha E9
+  ["A peça precisa da Ascensão para passar do +10", "The item needs Ascension to go past +10", "La pieza necesita la Ascensión para pasar de +10"],
+  ["O refino sorteado acabou: use o aprimoramento garantido", "Random refining is gone: use guaranteed enhancement", "El refinado al azar terminó: usa la mejora garantizada"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

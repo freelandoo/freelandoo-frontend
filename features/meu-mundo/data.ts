@@ -387,20 +387,19 @@ export interface GearRecipe {
   kind?: "part" | "assembly" | "conversion" | "equipment" | "fragment"
   qty?: number
 }
-export interface RefinementQuote {
-  id: string
-  item: string
-  from: number
-  toMax: number
-  version: number
-  cost: { coins: number; needs: Record<string, number> }
-  odds: { up: number; same: number; down: number }
-  floor: number
-  pity: { failures: number; guaranteeAt: number; guaranteed: boolean }
-  protection: { enabled: boolean; requested: boolean; cost: { coins: number; needs: Record<string, number> } }
-  bonusBefore: Partial<GearBonus>
-  candidates: { level: number; bonus: Partial<GearBonus>; delta: Partial<GearBonus> }[]
+/** Trilha E9 (forge-v2): o próximo passo garantido de uma cópia, como o servidor calcula. */
+export interface UpgradeView {
   rulesVersion: string
+  from: number
+  to: number
+  coins: number
+  needs: Record<string, number>
+  /** Passo que pede a peça ascendida (+11 em diante). */
+  ascension: boolean
+  /** Por que não dá agora ("ascend" = falta a Ascensão); null = pode. */
+  blocked: "ascend" | null
+  bonusBefore: Partial<GearBonus>
+  bonusAfter: Partial<GearBonus>
 }
 export interface RefinementProposal {
   id: string
@@ -409,16 +408,16 @@ export interface RefinementProposal {
   candidateLevel: number
   status: "pending" | "accepted" | "discarded" | "expired"
   expiresAt: string
-  cost: RefinementQuote["cost"]
-  odds: RefinementQuote["odds"]
+  cost: { coins: number; needs: Record<string, number> }
+  odds: { up: number; same: number; down: number }
   beforeBonus: Partial<GearBonus>
   candidateBonus: Partial<GearBonus>
 }
 export interface GearCatalog {
   slots: GearSlot[]
   cap: GearBonus
-  /** `secondary`: o que cada nível acima do +5 soma (arma e armadura). */
-  upgrade: { max: number; dmg: number; def: number; secondary?: Partial<GearBonus> }
+  /** E9: aprimoramento garantido +0…`max`; do `ascendFrom` em diante só ascendida. */
+  upgrade: { max: number; ascendFrom: number; stone: string; rulesVersion: string }
   items: GearItem[]
   recipes: GearRecipe[]
   /** E7: conjuntos de 4 peças; `steps` = { nº de peças: fração da fatia do conjunto }. */
@@ -453,12 +452,12 @@ export interface GearBag {
   equippedInstances?: Partial<Record<GearSlot, string>>
   /** O que empilha (materiais, missão, projetos): quantidade. */
   stacks?: Record<string, number>
-  refinementInstances?: Record<string, { standard: RefinementQuote | null; protected: RefinementQuote | null }>
+  /** E9: a bancada de cada cópia (próximo passo garantido). */
+  forge?: Record<string, { upgrade: UpgradeView | null }>
   bonus: GearBonus
   /** E7: bônus de cada slot vestido pela régua (plus e grau da cópia). */
   pieces?: Partial<Record<GearSlot, Partial<GearBonus>>>
   pendingProposals?: RefinementProposal[]
-  refinement?: Record<string, { standard: RefinementQuote | null; protected: RefinementQuote | null }>
   learnedRecipes?: string[]
   unlockedEmotes?: string[]
   activeCosmetic?: string | null
@@ -468,6 +467,8 @@ export interface GearInstance {
   item: string
   plus: number
   grade: number
+  /** E9: ascendida (libera +11…+15). */
+  ascended?: boolean
   locked: boolean
   /** Personagem que segura a cópia (vivo ou na cápsula); null = solta na mochila. */
   equippedBy: string | null
@@ -639,11 +640,9 @@ export const buyGear = (token: string, item: string, key: string) => call<GearOu
 export const equipGear = (token: string, slot: GearSlot, item: string | null, instance?: string | null) =>
   call<{ bag: GearBag }>(token, "POST", "/gear/equip", instance ? { slot, item, instance } : { slot, item })
 export const forgeGear = (token: string, recipe: string, key: string) => call<GearOut>(token, "POST", "/gear/forge", { recipe, key })
-export const upgradeGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/upgrade", { item, key })
-export const refineGear = (token: string, item: string, quote: string, protect: boolean, key: string, instance?: string | null) =>
-  call<GearOut>(token, "POST", "/gear/refine", instance ? { item, instance, quote, protect, key } : { item, quote, protect, key })
-export const resolveRefinement = (token: string, proposalId: string, accept: boolean, key: string) =>
-  call<GearOut>(token, "POST", "/gear/refine/resolve", { proposalId, accept, key })
+/** E9: aprimoramento garantido da cópia (`instance`; sem ela, a representante do item). */
+export const upgradeGear = (token: string, item: string, key: string, instance?: string | null) =>
+  call<GearOut>(token, "POST", "/gear/upgrade", instance ? { item, instance, key } : { item, key })
 /** E8: fragmento que sobra vira Pó de Refino (o servidor diz quanto). */
 export const convertFragments = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/fragment/convert", { item, qty, key })
 export const applyGearItem = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/use", { item, key })

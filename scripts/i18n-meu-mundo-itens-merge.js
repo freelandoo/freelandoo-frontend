@@ -116,6 +116,21 @@ const MEU_MUNDO = {
   gear_barro_primordial: ["Barro Primordial", "Primordial Clay", "Barro Primordial"],
   gear_po_refino: ["Pó de Refino", "Refining Dust", "Polvo de Refinado"],
   gear_selo_dominio: ["Selo de Domínio", "Domain Seal", "Sello de Dominio"],
+  // E9
+  upgradeTitle: ["Aprimoramento garantido", "Guaranteed enhancement", "Mejora garantizada"],
+  upgradeState: ["+{plus} · grau {grade}", "+{plus} · grade {grade}", "+{plus} · grado {grade}"],
+  upgradeWorn: ["equipada", "equipped", "equipada"],
+  upgradeAscended: ["ascendida", "ascended", "ascendida"],
+  upgradeMax: ["No +15: o máximo.", "At +15: the maximum.", "En +15: el máximo."],
+  upgradeStep: ["+{from} → +{to}", "+{from} → +{to}", "+{from} → +{to}"],
+  upgradeNext: ["Depois", "After", "Después"],
+  upgradeEmeralds: ["Esmeraldas", "Emeralds", "Esmeraldas"],
+  upgradeNeedAscend: ["Do +11 em diante, só depois da Ascensão da peça.", "From +11 on, only after the item is Ascended.", "Desde +11, solo después de la Ascensión de la pieza."],
+  upgradeSure: ["Sempre sobe: o custo é fixo e nada se perde.", "It always goes up: the cost is fixed and nothing is lost.", "Siempre sube: el costo es fijo y no se pierde nada."],
+  upgradeConfirm: ["Gastar o custo acima e subir para +{to}?", "Spend the cost above and go up to +{to}?", "¿Gastar el costo de arriba y subir a +{to}?"],
+  upgradeDone: ["Aprimorado!", "Enhanced!", "¡Mejorado!"],
+  upgradeGo: ["Aprimorar para +{to}", "Enhance to +{to}", "Mejorar a +{to}"],
+  upgradeBlocked: ["Precisa da Ascensão", "Needs Ascension", "Necesita la Ascensión"],
 }
 const OVERRIDE = {}
 

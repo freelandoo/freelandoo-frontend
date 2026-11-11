@@ -11902,7 +11902,21 @@
     "gear_cinza_das_correntes": "Cinza das Correntes",
     "gear_barro_primordial": "Barro Primordial",
     "gear_po_refino": "Pó de Refino",
-    "gear_selo_dominio": "Selo de Domínio"
+    "gear_selo_dominio": "Selo de Domínio",
+    "upgradeTitle": "Aprimoramento garantido",
+    "upgradeState": "+{plus} · grau {grade}",
+    "upgradeWorn": "equipada",
+    "upgradeAscended": "ascendida",
+    "upgradeMax": "No +15: o máximo.",
+    "upgradeStep": "+{from} → +{to}",
+    "upgradeNext": "Depois",
+    "upgradeEmeralds": "Esmeraldas",
+    "upgradeNeedAscend": "Do +11 em diante, só depois da Ascensão da peça.",
+    "upgradeSure": "Sempre sobe: o custo é fixo e nada se perde.",
+    "upgradeConfirm": "Gastar o custo acima e subir para +{to}?",
+    "upgradeDone": "Aprimorado!",
+    "upgradeGo": "Aprimorar para +{to}",
+    "upgradeBlocked": "Precisa da Ascensão"
   },
   "Sports": {
     "eyebrow": "Esportes",
@@ -12136,7 +12150,9 @@
     "Escolha a sua classe antes": "Escolha a sua classe antes",
     "Povo inválido": "Povo inválido",
     "Sua arma usa as duas mãos": "Sua arma usa as duas mãos",
-    "Esse item não é um fragmento": "Esse item não é um fragmento"
+    "Esse item não é um fragmento": "Esse item não é um fragmento",
+    "A peça precisa da Ascensão para passar do +10": "A peça precisa da Ascensão para passar do +10",
+    "O refino sorteado acabou: use o aprimoramento garantido": "O refino sorteado acabou: use o aprimoramento garantido"
   },
   "Moedas": {
     "walletTitle": "Carteira",

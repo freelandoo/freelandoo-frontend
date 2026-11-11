@@ -91,9 +91,12 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
       key: recipe.id, label: byId.has(recipe.out) ? nameOf(byId.get(recipe.out)!, t) : recipe.out,
       render: () => byId.has(recipe.out) ? <ForgeCard item={byId.get(recipe.out)!} recipe={recipe} bag={bag} byId={byId} t={t} busy={!!busy} act={act} /> : null,
     }))
-    if (tab === "refine") items = catalog.items.filter(item => bag.owned[item.id] && (item.category === "weapon" || item.category === "armor")).sort((a, b) => Number(!!pending(b.id)) - Number(!!pending(a.id))).map(item => ({
-      key: item.id, label: nameOf(item, t), render: () => <RefinementCard item={item} bag={bag} byId={byId} t={t} busy={!!busy} act={act} />,
-    }))
+    // E9: a bancada é por CÓPIA (cada uma tem o seu +N); vestidas primeiro
+    if (tab === "refine") items = (bag.instances || []).filter(inst => bag.forge?.[inst.id] && byId.has(inst.item))
+      .sort((a, b) => Number(b.equippedHere) - Number(a.equippedHere) || b.plus - a.plus)
+      .map(inst => ({
+        key: inst.id, label: nameOf(byId.get(inst.item)!, t), render: () => <RefinementCard item={byId.get(inst.item)!} inst={inst} bag={bag} byId={byId} t={t} busy={!!busy} act={act} />,
+      }))
   }
   return (
     <AetherModal title={title} eyebrow={bag ? t("gearHeader", "Nível {lv} · {c} moedas").replace("{lv}", String(bag.level)).replace("{c}", String(bag.coins)) : undefined} onClose={onClose} width={680}>

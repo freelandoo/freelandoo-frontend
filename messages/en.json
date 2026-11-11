@@ -12488,7 +12488,21 @@
     "gear_cinza_das_correntes": "Chain Ash",
     "gear_barro_primordial": "Primordial Clay",
     "gear_po_refino": "Refining Dust",
-    "gear_selo_dominio": "Domain Seal"
+    "gear_selo_dominio": "Domain Seal",
+    "upgradeTitle": "Guaranteed enhancement",
+    "upgradeState": "+{plus} · grade {grade}",
+    "upgradeWorn": "equipped",
+    "upgradeAscended": "ascended",
+    "upgradeMax": "At +15: the maximum.",
+    "upgradeStep": "+{from} → +{to}",
+    "upgradeNext": "After",
+    "upgradeEmeralds": "Emeralds",
+    "upgradeNeedAscend": "From +11 on, only after the item is Ascended.",
+    "upgradeSure": "It always goes up: the cost is fixed and nothing is lost.",
+    "upgradeConfirm": "Spend the cost above and go up to +{to}?",
+    "upgradeDone": "Enhanced!",
+    "upgradeGo": "Enhance to +{to}",
+    "upgradeBlocked": "Needs Ascension"
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -12722,7 +12736,9 @@
     "Escolha a sua classe antes": "Choose your class first",
     "Povo inválido": "Invalid people",
     "Sua arma usa as duas mãos": "Your weapon takes both hands",
-    "Esse item não é um fragmento": "That item isn't a fragment"
+    "Esse item não é um fragmento": "That item isn't a fragment",
+    "A peça precisa da Ascensão para passar do +10": "The item needs Ascension to go past +10",
+    "O refino sorteado acabou: use o aprimoramento garantido": "Random refining is gone: use guaranteed enhancement"
   },
   "Moedas": {
     "walletTitle": "Wallet",
