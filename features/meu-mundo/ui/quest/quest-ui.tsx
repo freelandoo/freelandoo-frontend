@@ -28,6 +28,8 @@ import { AE, chamfer } from "../kit/aether-tokens"
 import { archivo, teko } from "../status/evo-skin"
 import { celebrate } from "../rewards/reward-bus"
 import TEXT from "./chapters-text.json"
+import { currentSoul } from "../../soul"
+import { temperSuffix } from "../../banter"
 
 type T = (k: string, f: string) => string
 
@@ -128,6 +130,10 @@ export function QuestTracker({
 
   const quest = state?.quest ?? null
   const cur = quest?.current ?? null
+  // o comentário do personagem sobre o capítulo, pela personalidade (sem personalidade, não aparece)
+  const temper = currentSoul()?.temper
+  const heroId = quest && temper ? `qh_${quest.id}_${temperSuffix(temper)}` : ""
+  const heroKey = PT[heroId] ? heroId : null
   // passo em foco no carrossel (abre no passo de agora)
   const [sel, setSel] = useState(0)
   const [openedAt, setOpenedAt] = useState(false)
@@ -242,6 +248,15 @@ export function QuestTracker({
               <p className={`${archivo.className} mb-2 text-[12px] leading-snug`} style={{ color: AE.muted }}>
                 {tx(t, `qc_${quest.id}_intro_${state.clan === "vampiro" ? "vampiro" : "raposa"}`)}
               </p>
+              {/* o que o personagem acha do capítulo, pela personalidade dele */}
+              {heroKey && (
+                <p className={`${archivo.className} mb-2 border-l-2 pl-2 text-[13px] leading-snug`} style={{ color: AE.goldSoft, borderColor: AE.brassLine }}>
+                  <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: AE.dim }}>
+                    {tx(t, "questHeroSays")}
+                  </span>
+                  {tx(t, heroKey)}
+                </p>
+              )}
               {/* F5: o vídeo do capítulo (o Alex sobe pelo admin; sem ele, imagem + texto) */}
               {video === undefined ? (
                 <button

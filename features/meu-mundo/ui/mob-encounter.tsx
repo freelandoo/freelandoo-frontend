@@ -17,6 +17,7 @@ import type { LaminasEncounter } from "../laminas/ui/laminas-view"
 import type { BodyId, Interactable } from "../types"
 import { EvoToast } from "./hud/hud-kit"
 import { cowardRefuses, currentSoul } from "../soul"
+import { emitBanter } from "../banter"
 
 const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
@@ -127,6 +128,8 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
         setEncounter(null)
       }}
       onEncounterEnd={(win) => {
+        // o personagem comenta a luta do jeito dele (banter.ts)
+        emitBanter({ topic: win ? "fight_win" : "fight_lose" })
         reported.current = true
         gameRef.current?.reportMob(encounter.mobId, win)
       }}

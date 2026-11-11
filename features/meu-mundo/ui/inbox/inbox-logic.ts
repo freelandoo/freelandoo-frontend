@@ -11,10 +11,17 @@
 // como lido — o histórico do sino é que guarda.
 
 import type { LifeNeedId, MMNotice } from "../../types"
-import { wishLine, type WishId } from "../../soul"
+import { wishLine, type Temper, type WishId } from "../../soul"
+import { needVoice } from "../../banter"
 import { EMOTIONS, EMOTION_OF, type Emotion, type Expression } from "../portraits"
 
 export const CARD_MS = 15_000
+/** Fala do personagem (uma frase curta): sai mais rápido, para a próxima caber. */
+export const CHATTER_CARD_MS = 8_000
+/** Tempo de tela de um card. */
+export const cardMs = (c: { notice: Pick<MMNotice, "kind" | "code"> | null }) => (c.notice?.kind === "life" && c.notice.code === "chatter" ? CHATTER_CARD_MS : CARD_MS)
+/** Grupo de repetição de um aviso: a fala do personagem agrupa por assunto (banter.ts cuida da espera). */
+export const noticeGroup = (n: Pick<MMNotice, "kind" | "code" | "data">) => (n.kind === "life" && n.code === "chatter" && n.data.topic ? `chatter:${n.data.topic}` : `${n.kind}:${n.code}`)
 /** A mesma notificação (tipo + código) não volta como card antes disso. */
 export const SAME_CARD_MS = 2 * 60_000
 /** Fila de espera: além disso, os mais antigos de menor prioridade caem (ficam no sino). */
@@ -149,7 +156,10 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
   }
 }
 
-export function needTitle(id: LifeNeedId, t: Tr, hours?: number): string {
+export function needTitle(id: LifeNeedId, t: Tr, hours?: number, temper?: Temper | null): string {
+  // cada personalidade reclama do seu jeito (banter-text.json); sem personalidade, a frase padrão
+  const voice = needVoice(id, temper, t)
+  if (voice) return voice
   switch (id) {
     case "hospital":
       return t("needHospital", "Estou internado. Preciso me recuperar.")

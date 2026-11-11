@@ -24,9 +24,12 @@ import { DRAWER_EVENT } from "../hud/hud-kit"
 import { emotionArt } from "../portraits"
 import { screenAnchor } from "../../engine/screen-anchor"
 import { EmotionFrame } from "./emotion-frame"
+import { currentSoul } from "../../soul"
+import { needVoice } from "../../banter"
 import { freshNeedsMemory, pickNeed, type NeedLine } from "../needs/needs-logic"
 import {
-  CARD_MS,
+  cardMs,
+  noticeGroup,
   NEED_EMOTION,
   dismiss,
   emptyQueue,
@@ -46,9 +49,10 @@ type Tr = (key: string, fallback: string) => string
 function needLines(line: NonNullable<Card["need"]>, t: Tr): { main: string; extra: string | null } {
   const [first, second] = line.ids
   const awake = line.hours != null ? t("needAwakeHours", "Já estou há {h} horas acordado.").replace("{h}", String(line.hours)) : null
-  if (first === "sleep") return { main: t("needSleepMain", "Preciso dormir."), extra: awake }
-  if (second === "sleep") return { main: needTitle(first, t), extra: awake }
-  return { main: needTitle(first, t), extra: null }
+  const temper = currentSoul()?.temper
+  if (first === "sleep") return { main: needVoice("sleep", temper, t) ?? t("needSleepMain", "Preciso dormir."), extra: awake }
+  if (second === "sleep") return { main: needTitle(first, t, undefined, temper), extra: awake }
+  return { main: needTitle(first, t, undefined, temper), extra: null }
 }
 
 /** Prioridade do card de necessidade pelo nível da vida (1 emergência … 5 leve). */
@@ -119,7 +123,7 @@ export default function NoticeStack({ needs, needsTick, pushed, body, below = 0,
       fresh
         .filter((n) => n.kind !== "need" && !n.read)
         // Mensagem (dm): um card por conversa na tela; saiu, a próxima mensagem já ganha outro.
-        .reduce((acc, n) => enqueue(acc, { key: n.id, group: `${n.kind}:${n.code}`, priority: n.priority, at: now, notice: n, need: null, repeatMs: n.kind === "dm" ? 0 : undefined }, now), q),
+        .reduce((acc, n) => enqueue(acc, { key: n.id, group: noticeGroup(n), priority: n.priority, at: now, notice: n, need: null, repeatMs: n.kind === "dm" || n.data.topic ? 0 : undefined }, now), q),
     )
   }, [pushed])
 
@@ -211,7 +215,8 @@ function NoticeCard({
   const [leaving, setLeaving] = useState(false)
   const [hold, setHold] = useState(false)
   // Tempo restante: conta só enquanto ninguém está lendo (ponteiro/foco no card).
-  const left = useRef(CARD_MS)
+  const total = cardMs(card)
+  const left = useRef(total)
   const leave = useCallback(() => {
     setLeaving(true)
     window.setTimeout(onClose, 300)
@@ -281,7 +286,7 @@ function NoticeCard({
         badge={badge}
         urgent={urgent}
         leaving={leaving}
-        timerMs={CARD_MS}
+        timerMs={total}
         paused={hold}
         closeLabel={t("close", "Fechar")}
         onClose={leave}
