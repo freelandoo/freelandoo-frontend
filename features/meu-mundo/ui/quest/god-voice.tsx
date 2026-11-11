@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { getQuest } from "../../data"
-import { VOICE_MS, voiceKey, voiceNameKey, voiceOpen, type VoiceGod } from "../../god-voice"
+import { BASTOR_NAME_KEY, VOICE_MS, bastorLines, voiceKey, voiceNameKey, voiceOpen, type VoiceGod } from "../../god-voice"
 import { AE, chamfer } from "../kit/aether-tokens"
 import { archivo } from "../status/evo-skin"
 import TEXT from "./god-voice-text.json"
@@ -32,6 +32,73 @@ async function heard(): Promise<boolean> {
   const open = r.ok ? voiceOpen(r.data.quest) : false
   if (r.ok) cache = { at: Date.now(), open }
   return open
+}
+
+/** O balão (mesma moldura da voz dos deuses). `top` = distância do topo da tela (px). */
+function VoiceBubble({ name, line, top }: { name: string; line: string; top: number }) {
+  return (
+    <div
+      className={`${archivo.className} pointer-events-none fixed inset-x-0 z-[95] flex justify-center px-4`}
+      style={{ top: `calc(max(12px, env(safe-area-inset-top)) + ${top}px)` }}
+      role="status"
+      aria-live="polite"
+    >
+      <div
+        key={line}
+        className="w-full max-w-[460px] px-4 py-3"
+        style={{
+          background: "rgba(13,15,19,0.62)",
+          clipPath: chamfer(AE.cut.card),
+          boxShadow: `inset 0 0 0 1px ${AE.brassLine}`,
+          backdropFilter: "blur(6px)",
+          animation: `mm-god-voice ${VOICE_MS}ms ${AE.ease} both`,
+        }}
+      >
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: AE.goldSoft }}>
+          {name}
+        </p>
+        <p className="mt-1 text-[16px] italic leading-snug" style={{ color: AE.text }}>
+          {line}
+        </p>
+      </div>
+      <style>{`@keyframes mm-god-voice { 0% { opacity: 0; transform: translateY(-8px) } 10% { opacity: 1; transform: none } 85% { opacity: 1 } 100% { opacity: 0 } }`}</style>
+    </div>
+  )
+}
+
+/**
+ * C3 (cap. 5): Bastor fala quando quem joga chega à ilha dele no Paint (`show` =
+ * a pessoa está na ilha do Guardião). Uma vez por subida; cada fala fica VOICE_MS.
+ * Desce abaixo da placa de vida do Guardião (que ocupa o topo na luta).
+ */
+export function BastorVoice({ show }: { show: boolean }) {
+  const t = useTranslations("MeuMundo") as T
+  const [lines, setLines] = useState<string[]>([])
+  const [i, setI] = useState(0)
+  const spoke = useRef(false)
+
+  useEffect(() => {
+    if (!show) {
+      spoke.current = false
+      return
+    }
+    if (spoke.current) return
+    spoke.current = true
+    const tk = getToken()
+    void (tk ? getQuest(tk) : Promise.resolve(null)).then((r) => {
+      setI(0)
+      setLines(bastorLines(r && r.ok ? r.data.quest : null))
+    })
+  }, [show])
+
+  useEffect(() => {
+    if (i >= lines.length) return
+    const id = setTimeout(() => setI((n) => n + 1), VOICE_MS)
+    return () => clearTimeout(id)
+  }, [i, lines])
+
+  if (!show || i >= lines.length) return null
+  return <VoiceBubble name={tx(t, BASTOR_NAME_KEY)} line={tx(t, lines[i])} top={96} />
 }
 
 export function GodVoice({ god, show }: { god: VoiceGod; show: boolean }) {
@@ -61,31 +128,5 @@ export function GodVoice({ god, show }: { god: VoiceGod; show: boolean }) {
   }, [line])
 
   if (!line || !show) return null
-  return (
-    <div
-      className={`${archivo.className} pointer-events-none fixed inset-x-0 z-[95] flex justify-center px-4`}
-      style={{ top: "calc(max(12px, env(safe-area-inset-top)) + 6px)" }}
-      role="status"
-      aria-live="polite"
-    >
-      <div
-        className="w-full max-w-[460px] px-4 py-3"
-        style={{
-          background: "rgba(13,15,19,0.62)",
-          clipPath: chamfer(AE.cut.card),
-          boxShadow: `inset 0 0 0 1px ${AE.brassLine}`,
-          backdropFilter: "blur(6px)",
-          animation: `mm-god-voice ${VOICE_MS}ms ${AE.ease} both`,
-        }}
-      >
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: AE.goldSoft }}>
-          {tx(t, voiceNameKey(god))}
-        </p>
-        <p className="mt-1 text-[16px] italic leading-snug" style={{ color: AE.text }}>
-          {tx(t, line)}
-        </p>
-      </div>
-      <style>{`@keyframes mm-god-voice { 0% { opacity: 0; transform: translateY(-8px) } 10% { opacity: 1; transform: none } 85% { opacity: 1 } 100% { opacity: 0 } }`}</style>
-    </div>
-  )
+  return <VoiceBubble name={tx(t, voiceNameKey(god))} line={tx(t, line)} top={6} />
 }

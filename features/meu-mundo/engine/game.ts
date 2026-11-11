@@ -320,7 +320,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // lista de obstáculos do servidor); "Falar" abre a conversa (talk:<id>).
   // Lore v2 C1: no bairro, o vizinho da praça e a placa do pedestal vazio (o servidor
   // manda pela classe do bairro; a colisão do vizinho já está nos obstáculos).
-  for (const s of nb?.signs ?? []) world.interactables.push({ kind: "sign", id: `sign-${s.id}`, x: s.x, z: s.z, radius: s.radius, text: s.text })
+  for (const s of nb?.signs ?? []) world.interactables.push({ kind: "sign", id: `sign-${s.id}`, x: s.x, z: s.z, radius: s.radius, text: s.text, archive: s.archive })
   // Lore v2 N3: a estátua do deus abre a entrega do domingo (o servidor confere a
   // visita: o alcance fica dentro do ponto de visita, 7 m no bairro e 8 m na praça).
   const statueDefs = (centerP ? centerP.center.plaza.statues : nb?.dims?.statues) ?? []

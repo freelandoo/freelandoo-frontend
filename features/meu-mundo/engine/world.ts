@@ -40,6 +40,7 @@ import {
   steamLotStatic,
   steamOutskirts,
   steamPlaza,
+  steamNinho,
   steamSkyline,
   steamStreets,
   type NbCtx,
@@ -352,6 +353,9 @@ export function buildWorld(
   steamGround(ctx, nb.limit ?? 70)
   steamStreets(ctx)
   steamPlaza(ctx, nb.spawn)
+  // lore v2 C3: a ruína do Ninho (só nas Matas: o servidor manda a placa "ninho")
+  const ninho = nb.signs?.find((s) => s.id === "ninho")
+  if (ninho) steamNinho(ctx, ninho.x, ninho.z)
   steamBoundary(ctx)
   steamOutskirts(ctx)
   steamSkyline(ctx, d.hedge)

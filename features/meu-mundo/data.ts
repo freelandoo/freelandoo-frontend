@@ -606,6 +606,8 @@ export interface ArchiveEntry {
   unlocked: boolean
   unlockedAt: string | null
   readAt: string | null
+  /** C3: lugares onde o texto está (o livro do Ninho); a 1ª leitura só vale lá */
+  at?: string[] | null
 }
 /** O que o admin subiu para um capítulo/personagem (null = ainda não). */
 export interface LoreVideo {

@@ -38,3 +38,15 @@ export function voiceKey(god: VoiceGod, rnd: () => number = Math.random): string
 }
 
 export const voiceNameKey = (god: VoiceGod) => `qv_${god}_name`
+
+// ── C3 (cap. 5): BASTOR no topo do Paint ────────────────────────────────────
+// Não é voz de placar: quem chega à ilha do Guardião (a sala grava paintTop) ouve
+// o deus dos bichos, em cima da luta. No cap. 5 as duas falas do capítulo, em
+// sequência; fora dele, a solta (07-falas §6). Só apresentação.
+export const BASTOR_NAME_KEY = "qn_bastor_name"
+
+/** As falas de Bastor para quem está neste capítulo (chaves i18n, em ordem). */
+export function bastorLines(q: { chapter: number; locked: unknown } | null | undefined): string[] {
+  if (q && q.chapter === 5 && !q.locked) return ["qn_bastor_cap5_1", "qn_bastor_cap5_2"]
+  return ["qn_bastor_idle_1"]
+}

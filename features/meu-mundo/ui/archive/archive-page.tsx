@@ -51,6 +51,8 @@ export function ArchivePage({ t, compact }: { t: T; compact: boolean }) {
   const [tab, setTab] = useState<"texts" | "videos">("texts")
   const [open, setOpen] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
+  // C3: texto que mora num lugar, aberto longe dele (o servidor respondeu "far")
+  const [far, setFar] = useState<string | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -68,10 +70,13 @@ export function ArchivePage({ t, compact }: { t: T; compact: boolean }) {
 
   const openEntry = useCallback(async (e: ArchiveEntry) => {
     setOpen(e.id)
+    setFar(e.at && !e.readAt ? e.id : null) // até o servidor responder, o livro fica fechado
     if (e.readAt) return
     const tk = getToken()
     if (!tk) return
     const r = await readArchive(tk, e.id)
+    if (!r.ok && r.code === "far") return setFar(e.id)
+    setFar(null)
     if (r.ok) {
       setState(r.data)
       // o passo da missão pode ter sido este texto
@@ -102,9 +107,15 @@ export function ArchivePage({ t, compact }: { t: T; compact: boolean }) {
             <LoreVideo data={chapterVideo} title={arqTx(t, `qc_cap${entry.chapter}_title`)} t={t} soon={arqTx(t, "arqVideoSoon")} />
           </div>
         )}
-        <p className="whitespace-pre-line text-[15px] leading-relaxed" style={{ color: AE.text }}>
-          {arqTx(t, `arq_${entry.id}_body`)}
-        </p>
+        {far === entry.id ? (
+          <p className="text-[14px] font-semibold leading-snug" style={{ color: AE.goldSoft }}>
+            {arqTx(t, "arqFar")}
+          </p>
+        ) : (
+          <p className="whitespace-pre-line text-[15px] leading-relaxed" style={{ color: AE.text }}>
+            {arqTx(t, `arq_${entry.id}_body`)}
+          </p>
+        )}
       </div>
     )
   }

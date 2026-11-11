@@ -37,7 +37,7 @@ import { PAINT, PAINT_COLORS, TUNING, type PaintColor, type PaintMode } from "..
 import { capsuleGive } from "../sim/match"
 import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
-import { GodVoice } from "../../ui/quest/god-voice"
+import { BastorVoice, GodVoice } from "../../ui/quest/god-voice"
 
 export type PaintNetStatus = "connecting" | "online" | "reconnecting" | "replaced" | "offline" | "stale"
 export type PaintJoin = (
@@ -493,6 +493,8 @@ function PaintGameScreen({ port, body, look, net, onLeave }: { port: PaintPort; 
         <>
           <MinigameBanter running={hud.phase === "play"} body={body} />
           <GodVoice god="iris" show={ended} />
+          {/* C3 (cap. 5): chegou à ilha do Guardião — Bastor fala (a sala grava paintTop) */}
+          <BastorVoice show={hud.inBoss && !ended} />
           <Hud hud={hud} touch={isTouch} hurt={hurt} body={body} onLeave={onLeave} />
           {isTouch ? <TouchControls gameRef={gameRef} hud={hud} /> : <DesktopColors hud={hud} onPick={(c) => gameRef.current?.selectColor(c)} />}
           {toast && (

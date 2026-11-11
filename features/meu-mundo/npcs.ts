@@ -10,7 +10,7 @@
 
 import type { BodyId } from "./types"
 
-export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto"
+export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto" | "forjador" | "armeiro" | "bibliotecaria"
 
 /** Onde a pessoa está na história quando abre a conversa. */
 export interface TalkMoment {
@@ -29,6 +29,8 @@ export interface NpcLine {
    *  dela (`npc_<npc>_<conversa>_re_<p>`) no lugar desta fala, e a conversa não
    *  repete a resposta no fim (C1). */
   you?: boolean
+  /** C3: também é "Você", mas fala FIXA (não troca pela resposta da personalidade) */
+  me?: boolean
 }
 
 export interface NpcConversation {
@@ -38,6 +40,8 @@ export interface NpcConversation {
   lines: NpcLine[]
   /** fala solta: sorteia UMA das falas a cada vez que abre (07-falas §0.1, regra 3) */
   idle?: boolean
+  /** C3: no fim, o NPC entrega um texto do Arquivo para ler ali (o livro do Ninho) */
+  archive?: string
 }
 
 export interface NpcDef {
@@ -66,6 +70,12 @@ export const NPCS: Record<NpcId, NpcDef> = {
       },
       { id: "classe", when: at("cap1", "praca", "pedra"), lines: [{ key: "classe_1", byClan: true }, { key: "despertar_5" }] },
       { id: "retorno", when: at("cap1", "retorno"), lines: [{ key: "retorno_1" }, { key: "retorno_you", you: true }, { key: "retorno_2" }, { key: "retorno_3" }] },
+      // C3 (cap. 5): quem joga mostra o que notou; com personalidade, a resposta dela diz o mesmo
+      {
+        id: "numeros",
+        when: at("cap5", "numeros"),
+        lines: [{ key: "numeros_you", you: true }, { key: "numeros_1" }, { key: "numeros_2" }, { key: "numeros_you2", me: true }, { key: "numeros_3" }, { key: "numeros_4" }],
+      },
       { id: "sempre", lines: [{ key: "sempre_1" }] },
     ],
   },
@@ -130,6 +140,39 @@ export const NPCS: Record<NpcId, NpcDef> = {
       { id: "cap3", idle: true, lines: [{ key: "cap3_1" }, { key: "cap3_2" }, { key: "cap3_3" }] },
     ],
   },
+  // C3 (cap. 4, "Ferro"; 07-falas §5): o Forjador (Forja) e o Armeiro (Arsenal), só
+  // ambiente. Corpo = o do prédio (NPC_LOOK de engine/place-game.ts). No cap. 4 a fala
+  // inteira; fora dele, a solta. Um Armeiro só: a fala muda pela classe de quem ouve.
+  forjador: {
+    body: "raposa",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "cap4", when: at("cap4"), lines: [{ key: "cap4_1" }, { key: "cap4_2" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }] },
+    ],
+  },
+  armeiro: {
+    body: "vampiro",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "cap4", when: at("cap4"), lines: [{ key: "cap4_1", byClan: true }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }] },
+    ],
+  },
+  // C3 (cap. 5): a bibliotecária guarda o livro do Ninho (para quem não entra nas
+  // Matas, o Vampiro). No passo "ninho" ela o entrega; o servidor só grava a leitura
+  // com a visita à Biblioteca (ou à ruína) — o aparelho não decide nada.
+  bibliotecaria: {
+    body: "female",
+    look: "3546",
+    ambient: true,
+    conversations: [
+      { id: "ninho", when: at("cap5", "ninho"), lines: [{ key: "ninho_1" }, { key: "ninho_2" }], archive: "registro_ninho" },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
 }
 
 export const isNpcId = (id: string): id is NpcId => Object.prototype.hasOwnProperty.call(NPCS, id)
@@ -154,7 +197,7 @@ export interface TalkPage {
 export function talkPages(npc: NpcId, conv: NpcConversation, clan: "raposa" | "vampiro" | null, replyKey: string | null, rnd: () => number = Math.random): TalkPage[] {
   const lines = conv.idle ? [conv.lines[Math.min(conv.lines.length - 1, Math.floor(rnd() * conv.lines.length))]] : conv.lines
   const keyOf = (l: NpcLine) => `npc_${npc}_${l.key}${l.byClan ? `_${clan ?? "raposa"}` : ""}`
-  const out: TalkPage[] = lines.map((l) => (l.you ? { key: replyKey ?? keyOf(l), you: true } : { key: keyOf(l), you: false }))
+  const out: TalkPage[] = lines.map((l) => (l.me ? { key: keyOf(l), you: true } : l.you ? { key: replyKey ?? keyOf(l), you: true } : { key: keyOf(l), you: false }))
   if (replyKey && !lines.some((l) => l.you)) out.push({ key: replyKey, you: true })
   return out
 }

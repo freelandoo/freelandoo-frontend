@@ -195,6 +195,8 @@ export interface Neighborhood {
 export interface StreetSign {
   id: string
   text: string
+  /** C3: a placa guarda um texto do Arquivo para ler ali (o livro do Ninho) */
+  archive?: string
   x: number
   z: number
   radius: number
@@ -912,7 +914,7 @@ export type Interactable =
   // Lore v2 F4: conversar com um NPC (rua ou prédio).
   | { kind: "npc"; id: string; x: number; z: number; radius: number; npc: string }
   // Lore v2 C1: ler uma placa (texto do cenário, `qw_*`).
-  | { kind: "sign"; id: string; x: number; z: number; radius: number; text: string }
+  | { kind: "sign"; id: string; x: number; z: number; radius: number; text: string; archive?: string }
   // Lore v2 N3: a estátua do deus (Aurion no bairro, Morkhan na praça) — abre a entrega do domingo.
   | { kind: "statue"; id: string; x: number; z: number; radius: number; god: "aurion" | "morkhan" }
   // Monstro de uma invasão (mm3d-48b): o portal aos pés dele leva à Arena das Lâminas.

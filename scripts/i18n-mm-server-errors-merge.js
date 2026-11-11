@@ -114,6 +114,7 @@ const ROWS = [
   // lore v2 F5: o Arquivo e os vídeos
   ["Texto do Arquivo desconhecido", "Unknown Archive text", "Texto del Archivo desconocido"],
   ["Esse texto do Arquivo ainda está trancado", "That Archive text is still locked", "Ese texto del Archivo todavía está bloqueado"],
+  ["Esse texto só se abre no lugar dele", "This text only opens where it is kept", "Este texto solo se abre en su lugar"],
   ["Esse vídeo não tem lugar no jogo", "That video has no place in the game", "Ese video no tiene lugar en el juego"],
   ["Envie o vídeo ou a imagem", "Send the video or the image", "Envía el video o la imagen"],
   // lore v2 F6: prédios por nível do treinador

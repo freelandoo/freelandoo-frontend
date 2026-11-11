@@ -214,6 +214,31 @@ export function steamPlaza(ctx: NbCtx, spawn: { x: number; z: number }) {
   props.gear(0.9, 0.03, 14, place(spawn.x, 0.085, spawn.z), SP.brass, SP.bronze)
 }
 
+/**
+ * Lore v2 C3 (cap. 5): a RUÍNA DO NINHO — PROVISÓRIO até a arte do Alex (ruína,
+ * pilha de armaduras de criança e o livro; roteiro §4). Só o essencial para achar
+ * o lugar: um atril de pedra com o livro aberto, virado para quem chega do sul, e
+ * dois blocos de muro caídos. Sem caixa de colisão (a sala não sabe de classe).
+ * (x, z) = a placa do servidor (sign "ninho"); o livro fica logo ao norte dela.
+ */
+export function steamNinho(ctx: NbCtx, x: number, z: number) {
+  const { props } = ctx
+  const bz = z + 0.3 // fora da base da caldeira do canteiro
+  props.box(0.62, 0.12, 0.5, place(x, 0.06, bz), SP.stoneDark)
+  props.box(0.34, 0.95, 0.3, place(x, 0.6, bz), SP.stone)
+  // tampo inclinado para o sul (quem lê fica de frente para o norte)
+  const top = Matrix.RotationX(-0.42).multiply(place(x, 1.12, bz))
+  props.box(0.74, 0.07, 0.52, top, SP.woodDark)
+  // o livro aberto: duas páginas e a capa inchada
+  const page = (dx: number, rz: number) => Matrix.RotationZ(rz).multiply(Matrix.Translation(dx, 0.06, 0)).multiply(top)
+  props.box(0.3, 0.03, 0.4, page(-0.16, 0.06), SP.amber)
+  props.box(0.3, 0.03, 0.4, page(0.16, -0.06), SP.amber)
+  props.box(0.66, 0.02, 0.44, Matrix.Translation(0, 0.045, 0).multiply(top), SP.woodLight)
+  // muro caído do orfanato (blocos baixos, não fecham passagem)
+  props.box(1.1, 0.42, 0.34, place(x - 1.3, 0.21, bz - 0.15, 0.35), SP.masonryDark)
+  props.box(0.8, 0.26, 0.3, place(x + 1.2, 0.13, bz - 0.1, -0.5), SP.masonry)
+}
+
 /** Disco/anel deitado no chão (matriz sem rotação, achatada em Y). */
 function flat(x: number, y: number, z: number): Matrix {
   return Matrix.Scaling(1, 0.12, 1).multiply(place(x, y, z))

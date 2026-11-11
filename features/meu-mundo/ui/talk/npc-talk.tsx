@@ -20,6 +20,7 @@ import { temperSuffix } from "../../banter"
 import { AetherModal, AetherButton } from "../kit/aether-modal"
 import { AE, chamfer } from "../kit/aether-tokens"
 import { archivo } from "../status/evo-skin"
+import { ArchiveBook } from "../archive/archive-book"
 import TEXT from "./npc-text.json"
 
 type T = (k: string, f: string) => string
@@ -32,12 +33,15 @@ interface Ready {
   pages: TalkPage[]
   /** o passo de agora pede esta conversa e o servidor não gravou (longe) */
   far: boolean
+  /** C3: o NPC entrega um texto do Arquivo no fim (o livro do Ninho) */
+  archive: string | null
 }
 
 export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
   const t = useTranslations("MeuMundo") as T
   const [ready, setReady] = useState<Ready | null>(null)
   const [i, setI] = useState(0)
+  const [book, setBook] = useState<string | null>(null)
   const def = NPCS[npc]
   const name = npcTx(t, npcNameKey(npc))
 
@@ -56,7 +60,7 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
       const temper = currentSoul()?.temper
       const replyKey = temper ? `npc_${npc}_${conv.id}_re_${temperSuffix(temper)}` : ""
       const pages = talkPages(npc, conv, clan, PT[replyKey] ? replyKey : null)
-      setReady({ pages, far: !!(m && !m.ok && cur && cur.check === `talk:${npc}`) })
+      setReady({ pages, far: !!(m && !m.ok && cur && cur.check === `talk:${npc}`), archive: conv.archive ?? null })
     })()
     return () => {
       alive = false
@@ -74,6 +78,8 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
   const replying = !!page?.you
   const last = !!ready && i >= pages.length - 1
 
+  // C3: o livro abre no lugar da conversa (fechar o livro fecha tudo)
+  if (book) return <ArchiveBook id={book} onClose={close} />
   return (
     <AetherModal eyebrow={npcTx(t, "npcTalk")} title={name} onClose={close} width={520} z={90}>
       <div className={`${archivo.className} flex items-start gap-3`}>
@@ -114,9 +120,13 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
         </div>
       </div>
       <div className="mt-4 flex justify-end">
-        <AetherButton disabled={!ready} onClick={() => (last ? close() : setI((n) => n + 1))}>
-          {last ? npcTx(t, "npcEnd") : npcTx(t, "npcNext")}
-        </AetherButton>
+        {last && ready?.archive ? (
+          <AetherButton onClick={() => setBook(ready.archive)}>{npcTx(t, "bookOpen")}</AetherButton>
+        ) : (
+          <AetherButton disabled={!ready} onClick={() => (last ? close() : setI((n) => n + 1))}>
+            {last ? npcTx(t, "npcEnd") : npcTx(t, "npcNext")}
+          </AetherButton>
+        )}
       </div>
     </AetherModal>
   )

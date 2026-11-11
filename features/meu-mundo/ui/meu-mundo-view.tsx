@@ -52,7 +52,8 @@ import { useMobEncounter } from "./mob-encounter"
 import { NpcTalk, npcTx } from "./talk/npc-talk"
 import { StatuePanel } from "./statue/statue-panel"
 import { pushStatueWire, useStatueRace, wireOf } from "./statue/statue-store"
-import { AetherModal } from "./kit/aether-modal"
+import { AetherModal, AetherButton } from "./kit/aether-modal"
+import { ArchiveBook } from "./archive/archive-book"
 import { isNpcId, npcNameKey, type NpcId } from "../npcs"
 import { useOffstage, useRoomLink } from "./offstage"
 import {
@@ -131,7 +132,9 @@ export default function MeuMundoView({
   const [open, setOpen] = useState<Interactable | null>(null)
   // Lore v2 C1: o vizinho da praça (conversa) e a placa do pedestal vazio (texto)
   const [talk, setTalk] = useState<NpcId | null>(null)
-  const [sign, setSign] = useState<string | null>(null)
+  // C1: a placa (texto do cenário); C3: a placa pode guardar um livro do Arquivo
+  const [sign, setSign] = useState<{ text: string; archive: string | null } | null>(null)
+  const [book, setBook] = useState<string | null>(null)
   // Lore v2 N3: a tela da estátua (entrega do domingo) e a corrida que acende a pedra
   const [statue, setStatue] = useState<"aurion" | "morkhan" | null>(null)
   const { race: statueRace } = useStatueRace()
@@ -298,7 +301,7 @@ export default function MeuMundoView({
             if (!alive) return
             if (it.kind === "monster") return mobRef.current.fight(it)
             if (it.kind === "npc") return void (isNpcId(it.npc) && setTalk(it.npc))
-            if (it.kind === "sign") return setSign(it.text)
+            if (it.kind === "sign") return setSign({ text: it.text, archive: it.archive ?? null })
             if (it.kind === "statue") return setStatue(it.god)
             // Portão do bairro (mm3d-17): agora leva ao centro (o servidor decide a sala).
             if (it.kind === "exit" && cbRef.current.onGoCenter) return cbRef.current.onGoCenter()
@@ -644,12 +647,27 @@ export default function MeuMundoView({
       {/* Lore v2 C1: a conversa com o vizinho da praça e a placa do pedestal vazio */}
       {talk && <NpcTalk npc={talk} onClose={() => setTalk(null)} />}
       {statue && <StatuePanel god={statue} onClose={() => setStatue(null)} />}
-      {sign && (
-        <AetherModal eyebrow={npcTx(t, "signTitle")} title={npcTx(t, "signRead")} onClose={() => setSign(null)} width={460} z={90}>
+      {sign && !book && (
+        <AetherModal eyebrow={npcTx(t, sign.archive ? "signRuin" : "signTitle")} title={npcTx(t, "signRead")} onClose={() => setSign(null)} width={460} z={90}>
           <p className={`${archivo.className} text-center text-[17px] font-bold uppercase leading-snug tracking-[0.06em]`} style={{ color: EVO.branco }}>
-            {npcTx(t, sign)}
+            {npcTx(t, sign.text)}
           </p>
+          {/* C3: a ruína do Ninho guarda o livro (o servidor confere que a pessoa está lá) */}
+          {sign.archive && (
+            <div className="mt-4 flex justify-center">
+              <AetherButton onClick={() => setBook(sign.archive)}>{npcTx(t, "bookOpen")}</AetherButton>
+            </div>
+          )}
         </AetherModal>
+      )}
+      {book && (
+        <ArchiveBook
+          id={book}
+          onClose={() => {
+            setBook(null)
+            setSign(null)
+          }}
+        />
       )}
 
       {/* Ficha da casa / da saída */}
