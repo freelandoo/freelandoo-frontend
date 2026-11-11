@@ -401,6 +401,15 @@ export interface UpgradeView {
   bonusBefore: Partial<GearBonus>
   bonusAfter: Partial<GearBonus>
 }
+/** Trilha E10: o próximo grau (I…V) de uma cópia — Pó de Refino e Catalisador, nunca Esmeralda. */
+export interface GradeView {
+  from: number
+  to: number
+  coins: number
+  needs: Record<string, number>
+  bonusBefore: Partial<GearBonus>
+  bonusAfter: Partial<GearBonus>
+}
 export interface RefinementProposal {
   id: string
   item: string
@@ -453,7 +462,7 @@ export interface GearBag {
   /** O que empilha (materiais, missão, projetos): quantidade. */
   stacks?: Record<string, number>
   /** E9: a bancada de cada cópia (próximo passo garantido). */
-  forge?: Record<string, { upgrade: UpgradeView | null }>
+  forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null }>
   bonus: GearBonus
   /** E7: bônus de cada slot vestido pela régua (plus e grau da cópia). */
   pieces?: Partial<Record<GearSlot, Partial<GearBonus>>>
@@ -643,6 +652,9 @@ export const forgeGear = (token: string, recipe: string, key: string) => call<Ge
 /** E9: aprimoramento garantido da cópia (`instance`; sem ela, a representante do item). */
 export const upgradeGear = (token: string, item: string, key: string, instance?: string | null) =>
   call<GearOut>(token, "POST", "/gear/upgrade", instance ? { item, instance, key } : { item, key })
+/** E10: refinamento I–V da cópia. */
+export const gradeGear = (token: string, item: string, key: string, instance?: string | null) =>
+  call<GearOut>(token, "POST", "/gear/grade", instance ? { item, instance, key } : { item, key })
 /** E8: fragmento que sobra vira Pó de Refino (o servidor diz quanto). */
 export const convertFragments = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/fragment/convert", { item, qty, key })
 export const applyGearItem = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/use", { item, key })

@@ -131,6 +131,13 @@ const MEU_MUNDO = {
   upgradeDone: ["Aprimorado!", "Enhanced!", "¡Mejorado!"],
   upgradeGo: ["Aprimorar para +{to}", "Enhance to +{to}", "Mejorar a +{to}"],
   upgradeBlocked: ["Precisa da Ascensão", "Needs Ascension", "Necesita la Ascensión"],
+  // E10
+  gradeTitle: ["Refinamento I–V", "Refining I–V", "Refinado I–V"],
+  gradeMax: ["No grau V: o máximo.", "At grade V: the maximum.", "En grado V: el máximo."],
+  gradeStep: ["Grau {from} → {to}", "Grade {from} → {to}", "Grado {from} → {to}"],
+  gradeConfirm: ["Gastar o custo acima e refinar para o grau {to}?", "Spend the cost above and refine to grade {to}?", "¿Gastar el costo de arriba y refinar al grado {to}?"],
+  gradeDone: ["Refinado!", "Refined!", "¡Refinado!"],
+  gradeGo: ["Refinar para o grau {to}", "Refine to grade {to}", "Refinar al grado {to}"],
 }
 const OVERRIDE = {}
 

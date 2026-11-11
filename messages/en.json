@@ -12502,7 +12502,13 @@
     "upgradeConfirm": "Spend the cost above and go up to +{to}?",
     "upgradeDone": "Enhanced!",
     "upgradeGo": "Enhance to +{to}",
-    "upgradeBlocked": "Needs Ascension"
+    "upgradeBlocked": "Needs Ascension",
+    "gradeTitle": "Refining I–V",
+    "gradeMax": "At grade V: the maximum.",
+    "gradeStep": "Grade {from} → {to}",
+    "gradeConfirm": "Spend the cost above and refine to grade {to}?",
+    "gradeDone": "Refined!",
+    "gradeGo": "Refine to grade {to}"
   },
   "Sports": {
     "eyebrow": "Sports",

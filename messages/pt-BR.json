@@ -11916,7 +11916,13 @@
     "upgradeConfirm": "Gastar o custo acima e subir para +{to}?",
     "upgradeDone": "Aprimorado!",
     "upgradeGo": "Aprimorar para +{to}",
-    "upgradeBlocked": "Precisa da Ascensão"
+    "upgradeBlocked": "Precisa da Ascensão",
+    "gradeTitle": "Refinamento I–V",
+    "gradeMax": "No grau V: o máximo.",
+    "gradeStep": "Grau {from} → {to}",
+    "gradeConfirm": "Gastar o custo acima e refinar para o grau {to}?",
+    "gradeDone": "Refinado!",
+    "gradeGo": "Refinar para o grau {to}"
   },
   "Sports": {
     "eyebrow": "Esportes",

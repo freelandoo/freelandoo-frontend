@@ -1,8 +1,9 @@
 "use client"
 // Bancada da Forja, por CÓPIA (trilha E2). Trilha E9: aprimoramento garantido (forge-v2) — custo fixo
-// do próximo passo, bônus antes e depois e um botão; sempre sobe. O servidor diz o custo e confere tudo.
+// do próximo passo, bônus antes e depois e um botão; sempre sobe. Trilha E10: refinamento I–V (grau
+// de qualidade, separado do +N), mesmo desenho. O servidor diz o custo e confere tudo.
 import { useState } from "react"
-import { upgradeGear, type GearBag, type GearInstance, type GearItem, type UpgradeView } from "../../data"
+import { gradeGear, upgradeGear, type GearBag, type GearInstance, type GearItem, type UpgradeView } from "../../data"
 import { AetherButton } from "../kit/aether-modal"
 import { AE } from "../kit/aether-tokens"
 import { GearItemCard, bonusLines, nameOf, type GearAction, type GearTr } from "./gear-card"
@@ -37,6 +38,30 @@ export function BeforeAfter({ before, after, t, left, right }: { before: Upgrade
 export const affordable = (bag: GearBag, coins: number, needs: Record<string, number>) =>
   bag.coins >= coins && Object.entries(needs).every(([id, n]) => (bag.owned[id]?.qty || 0) >= n)
 
+/** E10: o grau de qualidade da cópia (I…V). */
+function GradeSection({ item, inst, bag, byId, t, act, busy }: {
+  item: GearItem; inst: GearInstance; bag: GearBag; byId: Map<string, GearItem>; t: GearTr; act: GearAction; busy: boolean
+}) {
+  const [confirm, setConfirm] = useState(false)
+  const view = bag.forge?.[inst.id]?.grade ?? null
+  const can = !!view && affordable(bag, view.coins, view.needs)
+  return (
+    <div className="grid gap-2 pt-2" style={{ borderTop: "1px solid " + AE.brassLine }}>
+      <p className="text-[13px] font-bold" style={{ color: AE.goldSoft }}>{t("gradeTitle", "Refinamento I–V")}</p>
+      {!view ? <p className="text-[13px]" style={{ color: AE.muted }}>{t("gradeMax", "No grau V: o máximo.")}</p> : <>
+        <p className="text-[14px] font-bold" style={{ color: AE.text }}>{t("gradeStep", "Grau {from} → {to}").replace("{from}", gradeName(view.from)).replace("{to}", gradeName(view.to))}</p>
+        <BeforeAfter before={view.bonusBefore} after={view.bonusAfter} t={t} left={t("refineCurrent", "Atual")} right={t("upgradeNext", "Depois")} />
+        <Costs coins={view.coins} needs={view.needs} bag={bag} byId={byId} t={t} />
+        {confirm ? <>
+          <p className="text-[12px]" style={{ color: AE.goldSoft }}>{t("gradeConfirm", "Gastar o custo acima e refinar para o grau {to}?").replace("{to}", gradeName(view.to))}</p>
+          <AetherButton disabled={!can} busy={busy} onClick={() => { setConfirm(false); void act("grade-" + inst.id + "-" + view.to, (tk, key) => gradeGear(tk, item.id, key, inst.id), t("gradeDone", "Refinado!")) }}>{t("gearConfirm", "Confirmar")}</AetherButton>
+          <AetherButton tone="secondary" disabled={busy} onClick={() => setConfirm(false)}>{t("gearCancel", "Voltar")}</AetherButton>
+        </> : <AetherButton tone="secondary" disabled={!can || busy} onClick={() => setConfirm(true)}>{can ? t("gradeGo", "Refinar para o grau {to}").replace("{to}", gradeName(view.to)) : t("refineMissing", "Faltam moedas ou materiais")}</AetherButton>}
+      </>}
+    </div>
+  )
+}
+
 export function RefinementCard({ item, inst, bag, byId, t, act, busy }: {
   item: GearItem; inst: GearInstance; bag: GearBag; byId: Map<string, GearItem>; t: GearTr; act: GearAction; busy: boolean
 }) {
@@ -60,6 +85,7 @@ export function RefinementCard({ item, inst, bag, byId, t, act, busy }: {
           <AetherButton tone="secondary" disabled={busy} onClick={() => setConfirm(false)}>{t("gearCancel", "Voltar")}</AetherButton>
         </> : <AetherButton disabled={!can || busy} onClick={() => setConfirm(true)}>{can ? t("upgradeGo", "Aprimorar para +{to}").replace("{to}", String(view.to)) : view.blocked ? t("upgradeBlocked", "Precisa da Ascensão") : t("refineMissing", "Faltam moedas ou materiais")}</AetherButton>}
       </>}
+      <GradeSection item={item} inst={inst} bag={bag} byId={byId} t={t} act={act} busy={busy} />
     </GearItemCard>
   )
 }
