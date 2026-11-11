@@ -12230,7 +12230,13 @@
     "qn_golem_5": "CLOSE.",
     "qn_golem_armado": "Drop the iron or turn back.",
     "domStowWeapon": "Put the weapon away",
-    "domWeaponStowed": "Weapon put away in the backpack."
+    "domWeaponStowed": "Weapon put away in the backpack.",
+    "opLogo": "Meu Mundo",
+    "opTagline": "Aether Observatory",
+    "opStart": "Tap to start",
+    "opStartPc": "Click to start",
+    "opPreparing": "Preparing the world",
+    "opReady": "World ready"
   },
   "Sports": {
     "eyebrow": "Sports",

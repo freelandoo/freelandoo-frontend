@@ -11644,7 +11644,13 @@
     "qn_golem_5": "FECHA.",
     "qn_golem_armado": "Larga o ferro ou volta.",
     "domStowWeapon": "Guardar a arma",
-    "domWeaponStowed": "Arma guardada na mochila."
+    "domWeaponStowed": "Arma guardada na mochila.",
+    "opLogo": "Meu Mundo",
+    "opTagline": "Observatório de Éter",
+    "opStart": "Toque para começar",
+    "opStartPc": "Clique para começar",
+    "opPreparing": "Preparando o mundo",
+    "opReady": "Mundo pronto"
   },
   "Sports": {
     "eyebrow": "Esportes",

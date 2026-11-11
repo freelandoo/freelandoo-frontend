@@ -821,6 +821,13 @@ const SERVER_06 = [
   ["Compras para a geladeira são no supermercado do centro", "Compras para a despensa são no Empório do centro", "Pantry shopping is at the downtown Emporium", "Las compras para la despensa son en el Emporio del centro"],
   ["Converse com o vendedor na sala dele, no supermercado do centro", "Converse com o vendedor na sala dele, no Empório do centro", "Talk to the salesman in his office, at the downtown Emporium", "Habla con el vendedor en su sala, en el Emporio del centro"],
 ]
+// 13 — abertura: tela de título e cartão de personagem (chaves novas, fill-if-absent)
+const NEW_13 = {
+  "pt-BR": { opLogo: "Meu Mundo", opTagline: "Observatório de Éter", opStart: "Toque para começar", opStartPc: "Clique para começar", opPreparing: "Preparando o mundo", opReady: "Mundo pronto" },
+  en: { opLogo: "Meu Mundo", opTagline: "Aether Observatory", opStart: "Tap to start", opStartPc: "Click to start", opPreparing: "Preparing the world", opReady: "World ready" },
+  es: { opLogo: "Meu Mundo", opTagline: "Observatorio de Éter", opStart: "Toca para empezar", opStartPc: "Haz clic para empezar", opPreparing: "Preparando el mundo", opReady: "Mundo listo" },
+}
+for (const loc of Object.keys(NEW_13)) Object.assign(KEYS[loc], NEW_13[loc])
 for (const loc of Object.keys(KEYS)) {
   const file = path.join(DIR, `${loc}.json`)
   const dict = JSON.parse(fs.readFileSync(file, "utf8"))

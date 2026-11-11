@@ -43,6 +43,7 @@ import { kindOfId, type RideKind } from "../engine/motion"
 import { CarTuningPanel } from "./drive-controls"
 import { Drawer, EvoButton, EvoDialog, EvoToast, HudChip, WindedToast, InfoRow, presenceState, type DrawerItem } from "./hud/hud-kit"
 import { CityDock, dockShortcuts } from "./hud/city-dock"
+import { CharacterCard } from "./opening/character-card"
 import { MM } from "./hud/tokens"
 import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
@@ -763,11 +764,12 @@ export function SceneCurtain({
   leaveLabel: string
 }) {
   const t = useTranslations("MeuMundo")
+  // apresentação 13: carregando = o cartão do personagem (o que está montando vira o
+  // indicador discreto do canto); o erro continua no cartão de sempre.
+  if (status === "loading") return <CharacterCard text={text} inline />
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center" style={{ background: "radial-gradient(ellipse at 50% 40%, #232a35, #0c0f14 70%)" }}>
-      {status === "loading" ? (
-        <EvoToast icon={<Loader2 className="h-4 w-4 animate-spin" />}>{text}</EvoToast>
-      ) : (
+      {(
         <Chamfer cut={16} fill={MM.surface} className="w-full max-w-sm">
           <div className="p-5 text-left">
             <div className={`${archivo.className} text-[20px] font-bold leading-tight`} style={{ color: EVO.branco }}>

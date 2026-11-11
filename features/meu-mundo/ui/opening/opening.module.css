@@ -1,0 +1,324 @@
+/* features/meu-mundo/ui/opening — tela de título e cartão de personagem (apresentação 13).
+   Tempos (início · duração · curva):
+     título: arte 0 · 0,6 s ease-out (opacidade) + deriva 14 s em laço; logo 0,15 · 0,5 s;
+             chamada pisca 1,6 s em laço; ao tocar, preto 0 · 0,3 s e só então troca.
+     cartão: sai do preto 0 · 0,3 s; retrato 0,05 · 0,45 s (x +24 → 0); nome 0,12 · 0,35 s
+             (escala 1,08 → 1); fio do indicador corre 1,2 s em laço.
+   low e movimento reduzido: tudo parado, só o preto. Só transform e opacity. */
+
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 70% 30%, #1d2630 0%, #0d1117 58%, #07090c 100%);
+  color: #f3ead8;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* a cortina da cena (SceneCurtain) mora dentro do container da cena, não na janela */
+.screen[data-inline] {
+  position: absolute;
+  z-index: auto;
+}
+.black {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms linear;
+}
+.black[data-on] {
+  opacity: 1;
+}
+.fromBlack {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  animation: op-out 300ms linear both;
+}
+
+/* ── título ── */
+.art {
+  position: absolute;
+  inset: 0;
+  animation: op-fade 600ms ease-out both;
+}
+.artImg {
+  position: absolute;
+  bottom: 0;
+  height: 78%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 70%, transparent 100%), linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 70%, transparent 100%), linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  mask-composite: intersect;
+  animation: op-drift 14s ease-in-out infinite alternate;
+}
+.artImg[data-side="a"] {
+  left: -18%;
+  opacity: 0.55;
+}
+.artImg[data-side="b"] {
+  right: -14%;
+  height: 88%;
+  animation-direction: alternate-reverse;
+}
+.shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 9, 12, 0.85) 0%, rgba(7, 9, 12, 0) 30%, rgba(7, 9, 12, 0) 62%, rgba(7, 9, 12, 0.92) 100%);
+}
+.logo {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left));
+  top: calc(max(16px, env(safe-area-inset-top)) + 8px);
+  pointer-events: none;
+  animation: op-rise 500ms 150ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.logoName {
+  display: block;
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #ffe2a6;
+  text-shadow:
+    0 2px 0 #000,
+    0 0 18px rgba(255, 170, 60, 0.35);
+}
+.logoTag {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #e8b65b;
+  text-shadow: 0 1px 0 #000;
+}
+.corner {
+  position: absolute;
+  z-index: 2;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  color: #ffe2a6;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  filter: drop-shadow(0 1px 0 #000) drop-shadow(0 0 3px rgba(0, 0, 0, 0.9));
+}
+.corner svg {
+  width: 24px;
+  height: 24px;
+}
+.start {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  outline: none;
+}
+.call {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + 12%);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #fff4dc;
+  text-shadow:
+    0 1px 0 #000,
+    0 0 10px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  animation: op-blink 1600ms ease-in-out infinite;
+}
+
+/* indicador discreto (canto de baixo à esquerda): texto 11 px + fio de 1 px */
+.meter {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: 140px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: rgba(243, 234, 216, 0.7);
+  text-shadow: 0 1px 0 #000;
+  pointer-events: none;
+}
+.meterBar {
+  position: relative;
+  display: block;
+  height: 1px;
+  margin-top: 4px;
+  overflow: hidden;
+  background: rgba(255, 226, 166, 0.18);
+}
+.meterFill {
+  position: absolute;
+  inset: 0;
+  background: #e8b65b;
+  transform-origin: 0 50%;
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.meterRun {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #e8b65b, transparent);
+  animation: op-run 1200ms linear infinite;
+}
+
+/* ── cartão de personagem ── */
+.portrait {
+  position: absolute;
+  right: -6%;
+  top: 6%;
+  height: 72%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 72%, transparent 100%), linear-gradient(90deg, transparent 0%, #000 22%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 72%, transparent 100%), linear-gradient(90deg, transparent 0%, #000 22%);
+  mask-composite: intersect;
+  animation: op-slide 450ms 50ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cardShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(7, 9, 12, 0.9) 0%, rgba(7, 9, 12, 0.35) 55%, rgba(7, 9, 12, 0) 100%);
+}
+.cardText {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 44px);
+  transform-origin: 0 100%;
+  animation: op-name 350ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cardEyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #e8b65b;
+  text-shadow: 0 1px 0 #000;
+}
+.cardName {
+  display: block;
+  margin-top: 4px;
+  line-height: 0.95;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  color: #fff4dc;
+  text-shadow:
+    0 3px 0 #000,
+    0 0 24px rgba(0, 0, 0, 0.7);
+}
+
+@keyframes op-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes op-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes op-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-12px, -6px, 0) scale(1.03);
+  }
+}
+@keyframes op-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes op-blink {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes op-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+@keyframes op-slide {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes op-name {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+:global(html[data-mm-fx="low"]) .art,
+:global(html[data-mm-fx="low"]) .artImg,
+:global(html[data-mm-fx="low"]) .logo,
+:global(html[data-mm-fx="low"]) .call,
+:global(html[data-mm-fx="low"]) .meterRun,
+:global(html[data-mm-fx="low"]) .portrait,
+:global(html[data-mm-fx="low"]) .cardText {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .art,
+  .artImg,
+  .logo,
+  .call,
+  .meterRun,
+  .portrait,
+  .cardText {
+    animation: none;
+  }
+}

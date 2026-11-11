@@ -17,10 +17,15 @@ import { fetchAdminNeighborhood, getLife } from "@/features/meu-mundo/data"
 import { useServerErrors } from "@/features/meu-mundo/server-errors"
 import type { ScenePayload } from "@/features/meu-mundo/types"
 import type { LifeSoul } from "@/features/meu-mundo/soul"
+import { TitleScreen } from "@/features/meu-mundo/ui/opening/title-screen"
+import { CharacterCard } from "@/features/meu-mundo/ui/opening/character-card"
+import { setHero } from "@/features/meu-mundo/ui/opening/hero"
 
-const MeuMundoShell = dynamic(() => import("@/features/meu-mundo/ui/meu-mundo-shell"), {
+// apresentação 13: o mesmo import que a tela de título dispara para baixar o motor por trás
+const loadShell = () => import("@/features/meu-mundo/ui/meu-mundo-shell")
+const MeuMundoShell = dynamic(loadShell, {
   ssr: false,
-  loading: () => <Splash />,
+  loading: () => <Loading />,
 })
 // mm3d-58: escolha da classe, antes do jogo (sem Babylon).
 const ClanChoice = dynamic(() => import("@/features/meu-mundo/ui/clan/clan-choice"), {
@@ -41,6 +46,20 @@ type Phase =
   | { kind: "forbidden" }
   | { kind: "error" }
 
+/** Entre a tela de título e o jogo: o cartão do personagem (o mesmo das cenas). */
+function Loading() {
+  const t = useTranslations("MeuMundo")
+  return <CharacterCard text={t("opPreparing", "Preparando o mundo")} />
+}
+
+/** Pré-carga do que o primeiro ambiente vai pedir: o modelo do próprio personagem
+ *  (corpo, animações, textura) no cache do navegador. O motor já veio com loadShell. */
+async function preloadHero(payload: ScenePayload) {
+  const { avatarFiles } = await import("@/features/meu-mundo/engine/avatars")
+  const f = avatarFiles(payload.life?.avatar ?? payload.me.body)
+  await Promise.all([f.body, f.anims, f.texture].filter((u) => u && !u.endsWith("undefined")).map((u) => fetch(u).catch(() => null)))
+}
+
 function Splash({ children }: { children?: React.ReactNode }) {
   return (
     <div className="fl-sharp fixed inset-0 flex items-center justify-center bg-[#A8D4F2] p-6 text-center">
@@ -59,6 +78,27 @@ export default function MeuMundoAdminPage() {
   const router = useRouter()
   const [phase, setPhase] = useState<Phase>({ kind: "checking" })
   const [attempt, setAttempt] = useState(0)
+  // apresentação 13: tela de título até o toque; a pré-carga roda por trás dela
+  const [started, setStarted] = useState(false)
+  const [loaded, setLoaded] = useState(0)
+  const payload = phase.kind === "ready" || phase.kind === "nickname" ? phase.payload : null
+  useEffect(() => {
+    if (!payload) return
+    setHero({ name: payload.me.name, body: payload.life?.avatar ?? payload.me.body })
+    let live = true
+    loadShell()
+      .then(() => {
+        if (live) setLoaded(1)
+        return preloadHero(payload)
+      })
+      .catch(() => null)
+      .then(() => {
+        if (live) setLoaded(2)
+      })
+    return () => {
+      live = false
+    }
+  }, [payload])
 
   useEffect(() => {
     const token = getToken()
@@ -93,8 +133,10 @@ export default function MeuMundoAdminPage() {
     return () => ac.abort()
   }, [router, attempt])
 
+  if (!started && phase.kind !== "forbidden" && phase.kind !== "error")
+    return <TitleScreen done={(phase.kind === "checking" ? 0 : 1) + loaded} total={3} onStart={() => setStarted(true)} onExit={() => router.push("/account")} />
   if (phase.kind === "ready") return <MeuMundoShell initial={phase.payload} />
-  if (phase.kind === "checking") return <Splash />
+  if (phase.kind === "checking") return <Loading />
   if (phase.kind === "nickname") {
     const payload = phase.payload
     return <NicknameChoice soul={phase.soul} onDone={() => setPhase({ kind: "ready", payload })} />

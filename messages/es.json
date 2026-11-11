@@ -12210,7 +12210,13 @@
     "qn_golem_5": "CIERRA.",
     "qn_golem_armado": "Suelta el hierro o vuélvete.",
     "domStowWeapon": "Guardar el arma",
-    "domWeaponStowed": "Arma guardada en la mochila."
+    "domWeaponStowed": "Arma guardada en la mochila.",
+    "opLogo": "Meu Mundo",
+    "opTagline": "Observatorio de Éter",
+    "opStart": "Toca para empezar",
+    "opStartPc": "Haz clic para empezar",
+    "opPreparing": "Preparando el mundo",
+    "opReady": "Mundo listo"
   },
   "Sports": {
     "eyebrow": "Deportes",
