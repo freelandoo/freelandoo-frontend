@@ -57,7 +57,7 @@ const FUEL = "#43E6AC"
 const HOT = "#FF8A2A"
 
 type Mp = { net: JetpackNet; start: JetpackStart }
-type Stage = { kind: "menu" } | { kind: "joining"; solo: boolean; ac: AbortController } | { kind: "game"; key: number; mp?: Mp; solo: boolean }
+type Stage = { kind: "menu" } | { kind: "joining"; solo: boolean; ac: AbortController } | { kind: "game"; key: number; mp?: Mp; solo: boolean; train?: boolean }
 
 // recordes POR FASE no aparelho (mm3d-75); o do túnel original herda o recorde antigo
 type Rec = PhaseRecord
@@ -146,7 +146,12 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
           name={name}
           phase={phase}
           mp={stage.mp}
-          onAgain={() => void play(stage.solo, phase)}
+          onAgain={() => {
+            // Treinar de novo = outro voo no aparelho, sem sala (antes passava pela sala de grupo
+            // e ficava 20 s em "Acendendo as caldeiras…", sem contador nem como cancelar)
+            if (stage.train) setStage({ kind: "game", key: ++seq.current, solo: true, train: true })
+            else void play(stage.solo, phase)
+          }}
           onMenu={() => {
             setRecs((n) => n + 1)
             setStage({ kind: "menu" })
@@ -172,7 +177,7 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
             // Treinar: voo no aparelho, sem sala e sem espera (não dá prêmio: o resultado é só do aparelho)
             setError(null)
             setPhase(ph)
-            setStage({ kind: "game", key: ++seq.current, solo: true })
+            setStage({ kind: "game", key: ++seq.current, solo: true, train: true })
           }}
           onExit={onExit}
           multi={!!join}
@@ -185,14 +190,18 @@ export function JetpackView({ body, look, name, onExit, join }: JetpackViewProps
 
 // ═══ espera ══════════════════════════════════════════════════════════════════
 
-function JetLobby({ solo, list, until, onCancel }: { solo: boolean; list: string[]; until: number; onCancel: () => void }) {
+function JetLobby({ list, until, onCancel }: { solo: boolean; list: string[]; until: number; onCancel: () => void }) {
   const t = useTranslations("MeuMundo")
-  if (solo) {
+  // até a sala responder (sem prazo ainda): a engrenagem, mas já com como sair
+  if (!until) {
     return (
       <div className="absolute inset-0 grid place-items-center" style={{ background: BG, color: MM.text }}>
         <div className="flex flex-col items-center gap-3">
           <Gear size={40} spin color={ST.gold} />
           <span className="text-[15px] font-semibold">{t("jetLoading", "Acendendo as caldeiras…")}</span>
+          <button type="button" onClick={onCancel} className="mt-2 px-4 py-2 text-[13px] font-bold" style={{ color: MM.text, border: `1px solid ${ST.goldDeep}` }}>
+            {t("mmWaitCancel", "Sair da espera")}
+          </button>
         </div>
       </div>
     )

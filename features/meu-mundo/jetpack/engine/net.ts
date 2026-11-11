@@ -75,6 +75,8 @@ interface SState {
 }
 
 const CLOSE_REPLACED = 4009
+/** Prazo para a largada chegar depois de pedir a vaga (espera do grupo 20 s + contagem + folga). */
+const START_WAIT_MS = 45_000
 const PING_MS = 2000
 const FIELDS = 7
 const KEEP = 24
@@ -106,8 +108,10 @@ export class JetpackNet {
       this.startResolve = resolve
       const fail = () => reject(new Error("abort"))
       signal?.addEventListener("abort", fail, { once: true })
+      const t0 = Date.now()
       const watch = setInterval(() => {
-        if (this.disposed || this.status === "offline" || this.status === "replaced") {
+        // sem largada em START_WAIT_MS (a espera do grupo é de 20 s): desiste em vez de prender a tela
+        if (this.disposed || this.status === "offline" || this.status === "replaced" || Date.now() - t0 > START_WAIT_MS) {
           clearInterval(watch)
           fail()
         } else if (this.start) clearInterval(watch)
