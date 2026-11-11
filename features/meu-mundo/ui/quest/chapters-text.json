@@ -53,8 +53,8 @@
   "qc_cap2_hook_vampiro": ["De quem é o grito? Por que você não soltava a maçaneta?", "Whose scream is it? Why wouldn't you let go of the handle?", "¿De quién es el grito? ¿Por qué no soltabas la manija?"],
 
   "qc_cap3_title": ["Néctar", "Nectar", "Néctar"],
-  "qc_cap3_intro_raposa": ["A Sacerdotisa do Sol explica a corrida: cada jogo rende néctar. Leve ao pé de Aurion e ele empurra a pedra para fora.", "The Sun Priestess explains the race: every game yields nectar. Bring it to Aurion's feet and he pushes the stone away.", "La Sacerdotisa del Sol explica la carrera: cada juego da néctar. Llévalo a los pies de Aurion y él empuja la piedra hacia afuera."],
-  "qc_cap3_intro_vampiro": ["O Arauto da Lua explica a corrida: cada jogo rende néctar. Leve ao pé de Morkhan, na praça. Ele está com fome há vinte anos.", "The Moon Herald explains the race: every game yields nectar. Bring it to Morkhan's feet, in the square. He has been hungry for twenty years.", "El Heraldo de la Luna explica la carrera: cada juego da néctar. Llévalo a los pies de Morkhan, en la plaza. Tiene hambre desde hace veinte años."],
+  "qc_cap3_intro_raposa": ["A Sacerdotisa do Sol explica a corrida: toda semana, a sua posição em cada jogo vira néctar. No domingo, leve ao pé de Aurion.", "The Sun Priestess explains the race: every week, your place in each game turns into nectar. On Sunday, bring it to Aurion's feet.", "La Sacerdotisa del Sol explica la carrera: cada semana, tu posición en cada juego se convierte en néctar. El domingo, llévalo a los pies de Aurion."],
+  "qc_cap3_intro_vampiro": ["O Arauto da Lua explica a corrida: toda semana, a sua posição em cada jogo vira néctar. No domingo, leve ao pé de Morkhan, na praça. Ele tem fome há vinte anos.", "The Moon Herald explains the race: every week, your place in each game turns into nectar. On Sunday, bring it to Morkhan's feet, in the square. He has been hungry for twenty years.", "El Heraldo de la Luna explica la carrera: cada semana, tu posición en cada juego se convierte en néctar. El domingo, llévalo a los pies de Morkhan, en la plaza. Tiene hambre desde hace veinte años."],
   "qs_cap3_jogos_what": ["Conheça os minijogos", "Get to know the minigames", "Conoce los minijuegos"],
   "qs_cap3_jogos_where": ["Centro", "Downtown", "Centro"],
   "qs_cap3_primeira_what": ["Termine uma partida de qualquer jogo", "Finish a match of any game", "Termina una partida de cualquier juego"],
@@ -155,7 +155,7 @@
   "qs_cap9_ouro_where": ["Lâminas", "Blades", "Espadas"],
   "qs_cap9_aldo_what": ["Ouça o Cavaleiro", "Listen to the Knight", "Escucha al Caballero"],
   "qs_cap9_aldo_where": ["Pé da estátua de Aurion", "Foot of Aurion's statue", "Pie de la estatua de Aurion"],
-  "qs_cap9_corrida_what": ["Leve 500 de néctar à estátua", "Bring 500 nectar to the statue", "Lleva 500 de néctar a la estatua"],
+  "qs_cap9_corrida_what": ["Leve 30 L de néctar à estátua", "Bring 30 L of nectar to the statue", "Lleva 30 L de néctar a la estatua"],
   "qs_cap9_corrida_where": ["Estátua do seu deus", "Your god's statue", "Estatua de tu dios"],
 
   "qc_cap10_title": ["O Peso dos Mortos", "The Weight of the Dead", "El Peso de los Muertos"],

@@ -57,6 +57,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Conteúdo & Comunidade", href: "/blog", icon: Newspaper, title: "Blog", body: "CMS do blog: criar, editar e publicar guias e conteúdo." },
   { section: "Conteúdo & Comunidade", href: "/administracao/clusters", icon: Radio, title: "Clusters de Live", body: "Sala de comando de lives sincronizadas: adicione usuários, aperte Iniciar pra todo mundo começar junto e dispare botões e textos gigantes na tela de todos.", badge: "novo" },
   { section: "Conteúdo & Comunidade", href: "/administracao/meu-mundo-videos", icon: Radio, title: "Meu Mundo · vídeos", body: "Vídeo de cada capítulo da história e de cada personagem (deuses, povos, monstros). Sem vídeo, o jogo mostra a imagem de capa e o texto.", badge: "novo" },
+  { section: "Conteúdo & Comunidade", href: "/administracao/meu-mundo-estatua", icon: Trophy, title: "Meu Mundo · estátuas", body: "Meta de néctar das estátuas no domingo (Raposas × Vampiros): base e litros por jogador ativo. A corrida de agora e se alguma estátua encheu.", badge: "novo" },
 
   // Moderação
   { section: "Moderação", hint: "admin-chat-mod", href: "/administracao/moderacao", icon: ShieldAlert, title: "Moderação", body: "Chat (fila/mute/ban), termos bloqueados e posts denunciados — tudo em abas." },

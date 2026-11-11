@@ -35,6 +35,7 @@ import { AvatarLibrary } from "./avatars"
 import { FollowCamera } from "./camera"
 import { PlayerSelection, type PlayerTap } from "./player-select"
 import { NetClient, type NetCallbacks } from "./net"
+import { StatueGlow, isStatueGod } from "./statue-glow"
 import { MOTION, RIDE_KINDS, kindOfId, lerpAngle, paceSpeeds, type Intent, type MoveState, type RideKind } from "./motion"
 import { CarFleet, type CarPose } from "./cars"
 import { placeRider } from "./ride"
@@ -52,6 +53,7 @@ import {
   type MultiplayerSession,
   type NeighborhoodPayload,
   type NetStatus,
+  type StatueWire,
 } from "../types"
 import { bodyStride, myHeight, setMyHeight } from "../heights"
 import { setScreenAnchor } from "./screen-anchor"
@@ -179,6 +181,8 @@ export interface GameHandle {
   reportMob: (mobId: number, win: boolean, busy?: boolean) => void
   /** "Lutar" apertado perto do monstro: a sala o segura parado durante a luta. */
   engageMob: (mobId: number) => void
+  /** Lore v2 N3: estado da corrida das estátuas (a tela busca; a sala manda "statue"). */
+  setStatues: (w: StatueWire | null) => void
   /** Tira a rua da memória e devolve a sala viva, agora falando com `cb`. */
   detach: (cb: Pick<NetCallbacks, "onStatus" | "onMessage">) => ParkedGame
   dispose: () => void
@@ -316,6 +320,21 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // Lore v2 C1: no bairro, o vizinho da praça e a placa do pedestal vazio (o servidor
   // manda pela classe do bairro; a colisão do vizinho já está nos obstáculos).
   for (const s of nb?.signs ?? []) world.interactables.push({ kind: "sign", id: `sign-${s.id}`, x: s.x, z: s.z, radius: s.radius, text: s.text })
+  // Lore v2 N3: a estátua do deus abre a entrega do domingo (o servidor confere a
+  // visita: o alcance fica dentro do ponto de visita, 7 m no bairro e 8 m na praça).
+  const statueDefs = (centerP ? centerP.center.plaza.statues : nb?.dims?.statues) ?? []
+  for (const s of statueDefs) {
+    if (!isStatueGod(s.id)) continue
+    world.interactables.push({ kind: "statue", id: `statue-${s.id}`, x: s.x, z: s.z, radius: s.id === "morkhan" ? 7.5 : 6.5, god: s.id })
+  }
+  const statueGlow = new StatueGlow(scene, statueDefs)
+  const applyStatues = (w: StatueWire | null | undefined) => {
+    if (!w) return
+    for (const [clan, god] of [["raposa", "aurion"], ["vampiro", "morkhan"]] as const) {
+      const side = w[clan]
+      if (side) statueGlow.set(god, side.s, side.g > 0 ? side.d / side.g : 0)
+    }
+  }
   const streetNpcs = (centerP?.center.npcs ?? nb?.npcs ?? []).map((n) => {
     const c = new Character(scene, lib, mats, n.body, null, false, "")
     c.place(n.x, n.z, n.facing, 0)
@@ -445,6 +464,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
       // Invasões (mm3d-48b): a lista inteira de monstros no centro.
       if (type === "mobs") mobs.set((p as { l?: unknown } | null)?.l)
+      // Lore v2 N3: alguém entregou néctar — a estátua acende o estágio
+      if (type === "statue") applyStatues(p as StatueWire | null)
       opts.onServerMessage?.(type, p)
     },
   }
@@ -1014,6 +1035,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       teardown()
       return out
     },
+    setStatues(w) {
+      if (!disposed) applyStatues(w)
+    },
     dispose() {
       if (disposed) return
       teardown()
@@ -1039,6 +1063,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       dropMap()
       gainFx()
       gainPillar.dispose()
+      statueGlow.dispose()
       select.dispose()
       for (const r of remotes.values()) r.dispose()
       remotes.clear()

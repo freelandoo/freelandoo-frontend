@@ -208,6 +208,11 @@ const ROWS = [
   ["Essa cor não existe", "That color doesn't exist", "Ese color no existe"],
   ["Local sem interior", "This place has no interior", "Lugar sin interior"],
   ["O Salão é de quem ficou em 1º por três meses seguidos.", "The Hall belongs to those who came 1st for three months in a row.", "El Salón es de quienes quedaron 1.º durante tres meses seguidos."],
+  // Lore v2 N3: domingo na estátua
+  ["A estátua só recebe néctar no domingo", "The statue only takes nectar on Sunday", "La estatua solo recibe néctar el domingo"],
+  ["Chegue ao pé da estátua do seu deus", "Get to the foot of your god's statue", "Llega al pie de la estatua de tu dios"],
+  ["Você não tem néctar para entregar", "You have no nectar to deliver", "No tienes néctar para entregar"],
+  ["Valores inválidos para a meta", "Invalid values for the goal", "Valores inválidos para la meta"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

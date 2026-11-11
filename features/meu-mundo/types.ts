@@ -130,6 +130,20 @@ export interface NeighborhoodDims {
   squares?: [number, number][]
 }
 
+/** Lore v2 N3: um lado da corrida das estátuas (mL entregues, meta, estágio 0–4, cheia). */
+export interface StatueWireSide {
+  d: number
+  g: number
+  s: number
+  f: boolean
+}
+/** Lore v2 N3: a corrida das estátuas como chega pelo socket (`mm:statue`) e pela sala (`statue`). */
+export interface StatueWire {
+  week: string
+  raposa: StatueWireSide
+  vampiro: StatueWireSide
+}
+
 /** Estátua de um deus (mm3d-50, src/utils/meuMundoStatues.js). Frente no −Z local. */
 export interface StatueDef {
   id: string
@@ -895,6 +909,8 @@ export type Interactable =
   | { kind: "npc"; id: string; x: number; z: number; radius: number; npc: string }
   // Lore v2 C1: ler uma placa (texto do cenário, `qw_*`).
   | { kind: "sign"; id: string; x: number; z: number; radius: number; text: string }
+  // Lore v2 N3: a estátua do deus (Aurion no bairro, Morkhan na praça) — abre a entrega do domingo.
+  | { kind: "statue"; id: string; x: number; z: number; radius: number; god: "aurion" | "morkhan" }
   // Monstro de uma invasão (mm3d-48b): o portal aos pés dele leva à Arena das Lâminas.
   | { kind: "monster"; id: string; x: number; z: number; radius: number; mobId: number; mobKind: "cavaleiro" | "wolf" | "ciborgue" | "garras" | "brute" | "stone" }
 

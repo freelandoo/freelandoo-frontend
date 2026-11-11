@@ -14,6 +14,8 @@ import { getToken } from "@/lib/auth"
 import { getNectarWallet, type NectarWallet, type WeeklyGame } from "../../data"
 import { MM } from "../hud/tokens"
 import { archivo, teko } from "../status/evo-skin"
+import { StatueRaceBars } from "../statue/statue-race"
+import { useStatueRace } from "../statue/statue-store"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -23,6 +25,8 @@ export const liters = (ml: number, locale: string) => `${(ml / 1000).toLocaleStr
 export function NectarCard({ t, locale, gameName }: { t: Tr; locale: string; gameName: (g: WeeklyGame) => string }) {
   const [w, setW] = useState<NectarWallet | null>(null)
   const [open, setOpen] = useState(false)
+  // N3: a corrida das estátuas, ao vivo (socket mm:statue)
+  const { race } = useStatueRace()
 
   useEffect(() => {
     const token = getToken()
@@ -66,6 +70,20 @@ export function NectarCard({ t, locale, gameName }: { t: Tr; locale: string; gam
             </li>
           ))}
         </ul>
+      )}
+
+      {race && (
+        <div className="mt-2.5">
+          <p className={`${archivo.className} mb-1 text-[11px] font-semibold uppercase tracking-wide`} style={{ color: MM.gold }}>
+            {race.sunday ? t("sttRaceLive", "Domingo na estátua · ao vivo") : t("sttRaceLast", "Último domingo na estátua")}
+          </p>
+          <StatueRaceBars race={race} t={t} locale={locale} mine={race.me.clan} />
+          <p className="mt-1 text-[11px] leading-snug" style={{ color: MM.muted }}>
+            {race.me.clan === "vampiro"
+              ? t("sttWhereVampiro", "No domingo, leve o néctar ao pé de Morkhan, na praça do centro.")
+              : t("sttWhereRaposa", "No domingo, leve o néctar ao pé de Aurion, no meio do seu bairro.")}
+          </p>
+        </div>
       )}
 
       <button

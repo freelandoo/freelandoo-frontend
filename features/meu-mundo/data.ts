@@ -498,6 +498,48 @@ export interface NectarWallet {
   last: { week: string; closed: boolean; ml: number; awards: { game: WeeklyGame; position: number; value: number; ml: number }[] }
 }
 export const getNectarWallet = (token: string) => call<NectarWallet>(token, "GET", "/nectar")
+// ═══ lore v2 N3: domingo na estátua (entrega, corrida Raposas × Vampiros, meta no admin) ═══
+export type StatueClan = "raposa" | "vampiro"
+export interface StatueSide {
+  god: "aurion" | "morkhan"
+  /** mL entregues neste domingo */
+  deliveredMl: number
+  /** meta do domingo (mL; D4: ajusta-se aos jogadores ativos) */
+  goalMl: number
+  active: number
+  donors: number
+  /** 0 dormindo · 1 racha · 2 pedaços soltos · 3 olhos acesos · 4 cheia */
+  stage: number
+  fullAt: string | null
+}
+export interface StatueRace {
+  /** o domingo da corrida (AAAA-MM-DD) */
+  week: string
+  /** hoje é domingo em Brasília (a estátua recebe) */
+  sunday: boolean
+  /** quando abre o próximo domingo */
+  opensAt: string
+  /** quando este domingo termina */
+  endsAt: string
+  race: Record<StatueClan, StatueSide>
+  me: { clan: StatueClan | null; god: "aurion" | "morkhan" | null; pendingMl: number; deliveredMl: number; atStatue: boolean }
+}
+export interface StatueDelivery extends StatueRace {
+  delivery: { id: number; ml: number; at: string; clan: StatueClan; place: string }
+  replay: boolean
+  filled?: boolean
+}
+export const getStatueRace = (token: string) => call<StatueRace>(token, "GET", "/estatua")
+export const deliverNectar = (token: string, key: string) => call<StatueDelivery>(token, "POST", "/estatua/entregar", { key })
+export interface StatueConfig {
+  baseL: number
+  perActiveL: number
+  updatedAt: string | null
+  week: string
+  race: Record<StatueClan, StatueSide>
+}
+export const getStatueConfig = (token: string) => call<StatueConfig>(token, "GET", "/estatua/config")
+export const saveStatueConfig = (token: string, baseL: number, perActiveL: number) => call<StatueConfig>(token, "POST", "/estatua/config", { baseL, perActiveL })
 export const buyGear = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/buy", { item, key })
 export const equipGear = (token: string, slot: GearSlot, item: string | null) => call<{ bag: GearBag }>(token, "POST", "/gear/equip", { slot, item })
 export const forgeGear = (token: string, recipe: string, key: string) => call<GearOut>(token, "POST", "/gear/forge", { recipe, key })

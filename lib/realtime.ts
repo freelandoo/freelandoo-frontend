@@ -161,6 +161,9 @@ async function ensureSocket(): Promise<Socket | null> {
     // Fila de treinos (mig 305): o "Avisar professores" do Coliseu reabre o
     // modal do professor na hora. Fora desta lista, só na próxima entrada.
     "training-queue:remind",
+    // Meu Mundo, lore v2 N3: a corrida das estátuas (alguém entregou néctar no
+    // domingo). Fora desta lista o placar Raposas × Vampiros só mudaria no F5.
+    "mm:statue",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))

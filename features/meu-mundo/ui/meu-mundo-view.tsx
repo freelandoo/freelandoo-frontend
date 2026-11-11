@@ -30,6 +30,7 @@ import {
   LogOut,
   MessageCircle,
   RefreshCw,
+  Droplet,
   ScrollText,
   Send,
   Swords,
@@ -49,6 +50,8 @@ import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
 import { useMobEncounter } from "./mob-encounter"
 import { NpcTalk, npcTx } from "./talk/npc-talk"
+import { StatuePanel } from "./statue/statue-panel"
+import { pushStatueWire, useStatueRace, wireOf } from "./statue/statue-store"
 import { AetherModal } from "./kit/aether-modal"
 import { isNpcId, npcNameKey, type NpcId } from "../npcs"
 import { useOffstage, useRoomLink } from "./offstage"
@@ -129,7 +132,10 @@ export default function MeuMundoView({
   // Lore v2 C1: o vizinho da praça (conversa) e a placa do pedestal vazio (texto)
   const [talk, setTalk] = useState<NpcId | null>(null)
   const [sign, setSign] = useState<string | null>(null)
-  const reading = !!talk || !!sign
+  // Lore v2 N3: a tela da estátua (entrega do domingo) e a corrida que acende a pedra
+  const [statue, setStatue] = useState<"aurion" | "morkhan" | null>(null)
+  const { race: statueRace } = useStatueRace()
+  const reading = !!talk || !!sign || !!statue
   const [statsOpen, setStatsOpen] = useState(false)
   const [stats, setStats] = useState<GameStats | null>(null)
   // Tela limpa: a ajuda dos controles só abre pelo menu.
@@ -268,6 +274,7 @@ export default function MeuMundoView({
           },
           onServerMessage: (type, p) => {
             if (!alive) return
+            if (type === "statue") pushStatueWire(p)
             mobRef.current.onServerMessage(type, p)
             cbRef.current.onServerMessage(type, p)
           },
@@ -292,6 +299,7 @@ export default function MeuMundoView({
             if (it.kind === "monster") return mobRef.current.fight(it)
             if (it.kind === "npc") return void (isNpcId(it.npc) && setTalk(it.npc))
             if (it.kind === "sign") return setSign(it.text)
+            if (it.kind === "statue") return setStatue(it.god)
             // Portão do bairro (mm3d-17): agora leva ao centro (o servidor decide a sala).
             if (it.kind === "exit" && cbRef.current.onGoCenter) return cbRef.current.onGoCenter()
             if (it.kind === "house" && ((it.house.isMine && !payload.me.visitor) || it.lot.number === cbRef.current.visitingLot))
@@ -325,6 +333,10 @@ export default function MeuMundoView({
   useEffect(() => {
     gameRef.current?.setBlocked(!!open || levelOpen || menuOpen || !!blocked || !!mob.encounter || reading)
   }, [open, levelOpen, menuOpen, blocked, mob.encounter, reading])
+  // Lore v2 N3: a estátua acende pelo estágio da corrida (a sala manda "statue" ao vivo)
+  useEffect(() => {
+    if (status === "ready") gameRef.current?.setStatues(wireOf(statueRace))
+  }, [statueRace, status])
 
   // mm3d-60f: luta com monstro cobrindo a tela → o HUD do personagem sai
   const covered = !!mob.encounter
@@ -375,7 +387,8 @@ export default function MeuMundoView({
   const nearbyMob = nearby?.kind === "monster"
   const nearbyNpc = nearby?.kind === "npc" && isNpcId(nearby.npc) ? nearby.npc : null
   const nearbySign = nearby?.kind === "sign"
-  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar || nearbyExit || nearbyMob || !!nearbyNpc || nearbySign
+  const nearbyStatue = nearby?.kind === "statue" ? nearby.god : null
+  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar || nearbyExit || nearbyMob || !!nearbyNpc || nearbySign || !!nearbyStatue
   const vehicleKind = nearby?.kind === "car" ? nearby.vkind : drivingKind
   // Veículos (mm3d-14): "Usar" para todos — carro, bike, skate e patins — e "Descer".
   const nearbyLabel = nearby?.kind === "monster"
@@ -384,6 +397,10 @@ export default function MeuMundoView({
     ? npcTx(t, "npcTalkWith").replace("{name}", npcTx(t, npcNameKey(nearbyNpc)))
     : nearbySign
     ? npcTx(t, "signRead")
+    : nearbyStatue
+    ? nearbyStatue === "aurion"
+      ? t("sttTitleAurion", "Estátua de Aurion")
+      : t("sttTitleMorkhan", "Estátua de Morkhan")
     : nearby?.kind === "car"
     ? t("useVehicle", "Usar")
     : nearby?.kind === "car-exit"
@@ -539,7 +556,7 @@ export default function MeuMundoView({
             variant="primary"
             size="lg"
             kbd="E"
-            icon={nearbyMob ? <Swords className="h-5 w-5" /> : nearbyNpc ? <MessageCircle className="h-5 w-5" /> : nearbySign ? <ScrollText className="h-5 w-5" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : nearbyExit ? <Building2 className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
+            icon={nearbyMob ? <Swords className="h-5 w-5" /> : nearbyNpc ? <MessageCircle className="h-5 w-5" /> : nearbySign ? <ScrollText className="h-5 w-5" /> : nearbyStatue ? <Droplet className="h-5 w-5" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : nearbyExit ? <Building2 className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
             onClick={() => gameRef.current?.interact()}
             aria-label={nearbyLabel}
           >
@@ -599,7 +616,7 @@ export default function MeuMundoView({
               aria-label={nearbyLabel}
               className="!absolute !min-h-12 max-w-[46vw]"
               style={{ bottom: bottom(20), right: SAFE.right }}
-              icon={nearbyMob ? <Swords className="h-5 w-5 shrink-0" /> : nearbyNpc ? <MessageCircle className="h-5 w-5 shrink-0" /> : nearbySign ? <ScrollText className="h-5 w-5 shrink-0" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5 shrink-0" /> : nearbyExit ? <Building2 className="h-5 w-5 shrink-0" /> : nearbyAction ? <DoorOpen className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
+              icon={nearbyMob ? <Swords className="h-5 w-5 shrink-0" /> : nearbyNpc ? <MessageCircle className="h-5 w-5 shrink-0" /> : nearbySign ? <ScrollText className="h-5 w-5 shrink-0" /> : nearbyStatue ? <Droplet className="h-5 w-5 shrink-0" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5 shrink-0" /> : nearbyExit ? <Building2 className="h-5 w-5 shrink-0" /> : nearbyAction ? <DoorOpen className="h-5 w-5 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
             >
               {nearbyLabel}
             </EvoButton>
@@ -623,6 +640,7 @@ export default function MeuMundoView({
 
       {/* Lore v2 C1: a conversa com o vizinho da praça e a placa do pedestal vazio */}
       {talk && <NpcTalk npc={talk} onClose={() => setTalk(null)} />}
+      {statue && <StatuePanel god={statue} onClose={() => setStatue(null)} />}
       {sign && (
         <AetherModal eyebrow={npcTx(t, "signTitle")} title={npcTx(t, "signRead")} onClose={() => setSign(null)} width={460} z={90}>
           <p className={`${archivo.className} text-center text-[17px] font-bold uppercase leading-snug tracking-[0.06em]`} style={{ color: EVO.branco }}>
