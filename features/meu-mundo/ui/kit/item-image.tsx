@@ -28,6 +28,13 @@ export type ItemCategory =
   | "house"
   /** mm3d-60k: moedas do jogo (drop de luta/minijogo). */
   | "coins"
+  /** Trilha E1: categorias novas do catálogo. */
+  | "offhand"
+  | "relic"
+  | "fragment"
+  | "rune"
+  | "consumable"
+  | "currency"
 
 /** Desenho de cada categoria (viewBox 64×64, traço de latão sobre o poço). */
 const ART: Record<ItemCategory, ReactNode> = {
@@ -112,6 +119,46 @@ const ART: Record<ItemCategory, ReactNode> = {
       <circle cx="38" cy="24" r="14" />
       <circle cx="38" cy="24" r="9" />
       <path d="M38 18v12" />
+    </>
+  ),
+  // ── Trilha E1 ──
+  offhand: (
+    <>
+      <path d="M20 10h24v20c0 12-6 20-12 24-6-4-12-12-12-24z" />
+      <path d="M32 18v26M24 28h16" />
+    </>
+  ),
+  relic: (
+    <>
+      <path d="M32 6 44 22 32 58 20 22z" />
+      <path d="M20 22h24M32 6v52" />
+      <circle cx="32" cy="22" r="4" />
+    </>
+  ),
+  fragment: (
+    <>
+      <path d="M14 20 30 10l6 14-14 10z" />
+      <path d="M36 30 52 26l-4 18-14-2z" />
+      <path d="M20 42l12 4-6 10-10-6z" />
+    </>
+  ),
+  rune: (
+    <>
+      <path d="M18 8h28l6 24-6 24H18l-6-24z" />
+      <path d="M32 18v28M24 24l16 16M40 24 24 40" />
+    </>
+  ),
+  consumable: (
+    <>
+      <path d="M26 8h12v10l10 16v16a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6V34l10-16z" />
+      <path d="M18 38h28" />
+    </>
+  ),
+  currency: (
+    <>
+      <path d="M12 14h40v36H12z" />
+      <circle cx="32" cy="32" r="9" />
+      <path d="M12 22h6M46 22h6M12 42h6M46 42h6" />
     </>
   ),
 }

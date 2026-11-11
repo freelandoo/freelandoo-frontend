@@ -12216,7 +12216,14 @@
     "opStart": "Toca para empezar",
     "opStartPc": "Haz clic para empezar",
     "opPreparing": "Preparando el mundo",
-    "opReady": "Mundo listo"
+    "opReady": "Mundo listo",
+    "rarityMythic": "Mítico",
+    "forgeOffhands": "Mano secundaria",
+    "forgeRelics": "Reliquias",
+    "forgeFragments": "Fragmentos",
+    "forgeRunes": "Runas",
+    "forgeConsumables": "Consumibles",
+    "forgeCurrency": "Fichas"
   },
   "Sports": {
     "eyebrow": "Deportes",

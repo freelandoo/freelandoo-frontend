@@ -12236,7 +12236,14 @@
     "opStart": "Tap to start",
     "opStartPc": "Click to start",
     "opPreparing": "Preparing the world",
-    "opReady": "World ready"
+    "opReady": "World ready",
+    "rarityMythic": "Mythic",
+    "forgeOffhands": "Off-hand",
+    "forgeRelics": "Relics",
+    "forgeFragments": "Fragments",
+    "forgeRunes": "Runes",
+    "forgeConsumables": "Consumables",
+    "forgeCurrency": "Tokens"
   },
   "Sports": {
     "eyebrow": "Sports",

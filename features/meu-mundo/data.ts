@@ -322,7 +322,11 @@ export const postHallChallenge = (token: string, defender: string) =>
   call<{ fight: FightTicket; challenge: { defender: string; defenderSeat: number | null; targetSeat: number | null; peer: number; myPower: number; defenderPower: number } }>(token, "POST", "/hall/challenge", { defender })
 
 // ═══ mm3d-59 slice 3: equipamento (Armeiro, mochila, forja) ════════════════
-export type GearCategory = "weapon" | "shield" | "armor" | "accessory" | "material" | "recipe" | "quest" | "cosmetic"
+/** Trilha E1: + offhand, relic, fragment, rune, consumable, currency (o back já aceita; itens chegam nas fatias seguintes). */
+export type GearCategory =
+  | "weapon" | "shield" | "armor" | "accessory" | "material" | "recipe" | "quest" | "cosmetic"
+  | "offhand" | "relic" | "fragment" | "rune" | "consumable" | "currency"
+export type GearRarity = "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic"
 export type GearSlot = "weapon" | "shield" | "armor" | "acc1" | "acc2"
 export interface GearItem {
   id: string
@@ -330,7 +334,9 @@ export interface GearItem {
   /** Aba do balcão de armas do Arsenal: espadas (mm3d-66) ou Hammers (mm3d-67). */
   shop?: "shields" | "weapons" | "hammers" | "bows" | "guns" | null
   name: string
-  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
+  rarity: GearRarity
+  /** Trilha E1: 1…6 pela raridade (Mítica = 6). */
+  tier?: number
   price: number | null
   level: number
   clan: Clan | null
