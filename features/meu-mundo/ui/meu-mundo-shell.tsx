@@ -43,6 +43,7 @@ import HudInbox from "./inbox/hud-inbox"
 import { useGameCovered } from "./hud/game-cover"
 import InboxPanel, { type InboxView } from "./inbox/inbox-panel"
 import ItemsPanel from "./items/items-panel"
+import BagPanel from "./bag/bag-panel"
 import RankingPanel from "./ranking/ranking-panel"
 import type { FightTicket } from "../data"
 import GearPanel from "./gear/gear-panel"
@@ -153,12 +154,14 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   useChatter(soul, t, pushLocal)
   const [inbox, setInbox] = useState<InboxView | null>(null)
   const [itemsOpen, setItemsOpen] = useState(false)
+  // apresentação 04: a Mochila única (Itens + Equipamento)
+  const [bagOpen, setBagOpen] = useState(false)
   // B7: aba Ranking (Poder, Nível, Freelandoo)
   const [rankingOpen, setRankingOpen] = useState(false)
   // A8: Compartilhar (link de afiliado, 10% do que o convidado gastar)
   const [shareOpen, setShareOpen] = useState(false)
   // mm3d-59: Mochila/Armeiro/Forja (null = fechado; senão a aba que abre)
-  const [gearTab, setGearTab] = useState<null | "bag" | "forge">(null)
+  const [gearTab, setGearTab] = useState<null | "bag" | "forge" | "refine">(null)
   // B5: a Loja única (gaveta, caixa do supermercado e o Armeiro da missão)
   const [shop, setShop] = useState<null | { tab: ShopTab; shelf?: GearShelf; atMarket?: boolean }>(null)
   // mm3d-59: luta de treino do prólogo e quando reconferir a missão
@@ -514,7 +517,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   const hospitalUp = stay.phase === "ambulance" || (!!stay.phase && !!stay.info)
   // A cela (mm3d-37f) só com a planta na mão; internado, o hospital manda.
   const jailUp = !!jail.phase && !!jail.interior && !hospitalUp
-  const panelOpen = !!inbox || itemsOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab || !!shop
+  const panelOpen = !!inbox || itemsOpen || bagOpen || rankingOpen || shareOpen || polensOpen || !!chatView || !!gearTab || !!shop
   const overlayOpen = !!busy || inviteOpen || !!incoming || !!statusBody || hospitalUp || jailUp || panelOpen
   const openStatus = useCallback(() => setStatusBody(scene.me.body), [scene.me.body])
   // lore v2 F5: "Abrir o Arquivo" (missão) abre o STATUS direto na página do Arquivo
@@ -667,11 +670,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         hint: t("menuBagHint", "Armas, comida, roupas e casa"),
         icon: <Backpack className="h-5 w-5" />,
         kind: "nav",
-        onSelect: () => setGearTab("bag"),
-        children: [
-          { id: "gear", label: t("menuBagArms", "Armas e armadura"), hint: t("menuGearHint2", "Mochila, Forja e refino"), icon: <Swords className="h-5 w-5" />, kind: "nav", onSelect: () => setGearTab("bag") },
-          { id: "items", label: t("menuBagThings", "Comida, roupas e casa"), hint: t("menuItemsHint", "Comida, vestuário, veículos e casa"), icon: <Backpack className="h-5 w-5" />, kind: "nav", onSelect: () => setItemsOpen(true) },
-        ],
+        // apresentação 04: Itens + Equipamento numa Mochila só
+        onSelect: () => setBagOpen(true),
       },
       { id: "shop", label: t("shopTitle", "Loja"), hint: t("menuShopHint", "Equipamento, monstros, personagens e comidas"), icon: <Store className="h-5 w-5" />, kind: "nav", onSelect: () => setShop({ tab: "gear" }) },
       { id: "ranking", label: t("rkTitle", "Ranking"), hint: t("menuRankingHint", "Poder, nível e Freelandoo"), icon: <Trophy className="h-5 w-5" />, kind: "nav", onSelect: () => setRankingOpen(true) },
@@ -873,6 +873,25 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         />
       )}
       {itemsOpen && <ItemsPanel onClose={() => setItemsOpen(false)} onChanged={lifeChanged} />}
+      {bagOpen && (
+        <BagPanel
+          onClose={() => {
+            setBagOpen(false)
+            bumpQuest()
+          }}
+          onOpenShop={() => {
+            setBagOpen(false)
+            setShop({ tab: "gear" })
+          }}
+          onOpenPolens={() => setPolensOpen(true)}
+          onOpenRefine={() => {
+            setBagOpen(false)
+            setGearTab("refine")
+          }}
+          onChanged={lifeChanged}
+          onReceipt={celebrate}
+        />
+      )}
       {rankingOpen && <RankingPanel onClose={() => setRankingOpen(false)} />}
       {shareOpen && <ShareModal onClose={() => setShareOpen(false)} />}
       {gearTab && (
@@ -896,6 +915,10 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           }}
           onReceipt={celebrate}
           onChanged={lifeChanged}
+          onOpenWorkshop={(tab) => {
+            setShop(null)
+            setGearTab(tab)
+          }}
         />
       )}
       {/* mm3d-60d: HUD do personagem (canto de cima à esquerda) */}
@@ -907,7 +930,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         hidden={!!busy || !!statusBody || hospitalUp || jailUp || asleep || panelOpen || fightUp}
         refreshKey={questTick + mount}
         onTutorialFight={() => setTutorialFight(true)}
-        onOpenGear={(tab) => (tab === "armory" ? setShop({ tab: "gear", shelf: "armory" }) : setGearTab(tab))}
+        onOpenGear={(tab) => (tab === "armory" ? setShop({ tab: "gear", shelf: "armory" }) : setBagOpen(true))}
       />
       {tutorialFight && (
         <LaminasView

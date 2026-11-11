@@ -79,8 +79,11 @@ export default function ShopPanel({
   atMarket = false,
   onReceipt,
   onChanged,
+  onOpenWorkshop,
 }: {
   onClose: () => void
+  /** Apresentação 04: Forja e Refinar moram dentro da Loja (abrem a bancada). */
+  onOpenWorkshop?: (tab: "forge" | "refine") => void
   initialTab?: ShopTab
   initialShelf?: GearShelf
   /** Aberta pelo caixa do supermercado: a aba de comidas compra. */
@@ -127,7 +130,8 @@ export default function ShopPanel({
     void loadTab("food")
   }, [loadTab])
 
-  const changeTab = (next: ShopTab) => {
+  const changeTab = (next: ShopTab | "forge" | "refine") => {
+    if (next === "forge" || next === "refine") return onOpenWorkshop?.(next)
     setTab(next)
     setConfirm(null)
     setMessage(null)
@@ -315,6 +319,12 @@ export default function ShopPanel({
     { id: "monsters" as const, label: t("shopTabMonsters", "Monstros") },
     { id: "characters" as const, label: t("shopTabCharacters", "Personagens") },
     { id: "food" as const, label: t("shopTabFood", "Comidas e itens") },
+    ...(onOpenWorkshop
+      ? [
+          { id: "forge" as const, label: t("gearTabForge", "Forja") },
+          { id: "refine" as const, label: t("refineTab", "Refinar") },
+        ]
+      : []),
   ]
   const loading = tab === "gear" ? !catalog || !bag : tab === "monsters" ? !monsters : tab === "characters" ? !chars : !life
   const coins = life?.wallet.coins ?? bag?.coins

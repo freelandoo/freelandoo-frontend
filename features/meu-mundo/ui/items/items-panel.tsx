@@ -150,7 +150,7 @@ function GroupChip({ active, onClick, label, icon }: { active: boolean; onClick:
   )
 }
 
-function SlotThumb({ slot, big = false }: { slot: Slot; big?: boolean }) {
+export function SlotThumb({ slot, big = false }: { slot: Slot; big?: boolean }) {
   const cls = big ? "h-20 w-20" : "h-full w-full"
   if (slot.thumb)
     return (
@@ -201,7 +201,7 @@ function SlotButton({ slot, t, active, onClick }: { slot: Slot; t: Tr; active: b
   )
 }
 
-function SlotDetail({ slot, t, busy, onEquip }: { slot: Slot; t: Tr; busy: boolean; onEquip: (id: string) => void }) {
+export function SlotDetail({ slot, t, busy, onEquip }: { slot: Slot; t: Tr; busy: boolean; onEquip: (id: string) => void }) {
   const name = slotName(slot, t)
   let lines: string[] = []
   let action: React.ReactNode = null

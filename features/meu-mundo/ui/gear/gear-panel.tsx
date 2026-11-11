@@ -17,7 +17,7 @@ export type GearTab = "bag" | "forge" | "refine" | "guide"
 type ForgeKind = "assembly" | "part" | "equipment" | "conversion"
 type Category = "all" | GearCategory
 
-export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
+export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: {
   onClose: () => void; initialTab?: GearTab; onReceipt?: (receipt: Receipt) => void
 }) {
   const t = useTranslations("MeuMundo") as GearTr
@@ -29,8 +29,8 @@ export default function GearPanel({ onClose, initialTab = "bag", onReceipt }: {
   const byId = useMemo(() => new Map((catalog?.items || []).map(item => [item.id, item])), [catalog])
   const pending = (item: string) => bag?.pendingProposals?.some(proposal => proposal.item === item && proposal.status === "pending")
   const title = tab === "forge" ? t("centerPlace_forja", "Forja das Engrenagens") : tab === "refine" ? t("refineTitle", "Bancada de refinamento") : t("gearTitle", "Equipamento")
+  // apresentação 04: a mochila virou tela própria (ui/bag/bag-panel.tsx); aqui é a bancada
   const tabs = [
-    { id: "bag" as const, label: t("gearTabBag", "Mochila") },
     { id: "forge" as const, label: t("gearTabForge", "Forja") },
     { id: "refine" as const, label: t("refineTab", "Refinar") },
     { id: "guide" as const, label: t("forgeGuideTab", "Catálogo") },

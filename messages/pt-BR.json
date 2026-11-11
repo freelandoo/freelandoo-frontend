@@ -11415,7 +11415,19 @@
     "qv_zephyra_2": "Os mortos não têm casa. Eu tenho a chave. Quanto vale uma chave?",
     "qv_noctis_name": "Noctis",
     "qv_noctis_1": "Corre de noite. A noite é minha. Você também.",
-    "qv_noctis_2": "Que os dois durmam. Joga mais."
+    "qv_noctis_2": "Que os dois durmam. Joga mais.",
+    "bagTitle": "Mochila",
+    "bagTabWeapons": "Armas",
+    "bagTabArmor": "Proteção",
+    "bagTabMaterials": "Materiais",
+    "bagTabFood": "Comida e tônicos",
+    "bagTabThings": "Roupas e casa",
+    "bagEmptyFood": "Nada aqui. O Empório vende comida e tônicos.",
+    "bagEmptyThings": "Nada aqui ainda.",
+    "bagEmptyCell": "vazio",
+    "bagPickHint": "Toque numa casa para ver o item.",
+    "bagEquipped": "Equipado",
+    "bagNew": "novo"
   },
   "Sports": {
     "eyebrow": "Esportes",

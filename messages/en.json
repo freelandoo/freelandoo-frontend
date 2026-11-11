@@ -12001,7 +12001,19 @@
     "qv_zephyra_2": "The dead have no home. I have the key. What is a key worth?",
     "qv_noctis_name": "Noctis",
     "qv_noctis_1": "Run at night. The night is mine. So are you.",
-    "qv_noctis_2": "Let both of them sleep. Play more."
+    "qv_noctis_2": "Let both of them sleep. Play more.",
+    "bagTitle": "Backpack",
+    "bagTabWeapons": "Weapons",
+    "bagTabArmor": "Protection",
+    "bagTabMaterials": "Materials",
+    "bagTabFood": "Food and tonics",
+    "bagTabThings": "Clothes and house",
+    "bagEmptyFood": "Nothing here. The Emporium sells food and tonics.",
+    "bagEmptyThings": "Nothing here yet.",
+    "bagEmptyCell": "empty",
+    "bagPickHint": "Tap a slot to see the item.",
+    "bagEquipped": "Equipped",
+    "bagNew": "new"
   },
   "Sports": {
     "eyebrow": "Sports",
