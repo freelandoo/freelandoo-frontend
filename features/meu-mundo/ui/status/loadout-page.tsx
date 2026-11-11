@@ -32,7 +32,8 @@ export interface LoadoutData {
 }
 
 const SLOTS: GearSlot[] = ["weapon", "shield", "armor", "acc1", "acc2"]
-const BONUS_KEYS: (keyof GearBonus)[] = ["dmg", "def", "stam", "warn", "power"]
+/** E4: + as chaves proporcionais (hp, acc, spd, int, dex); linha zerada não aparece. */
+const BONUS_KEYS: (keyof GearBonus)[] = ["dmg", "def", "hp", "acc", "spd", "int", "dex", "stam", "warn", "power"]
 
 function slotName(s: GearSlot, t: Tr) {
   return {
@@ -50,6 +51,11 @@ function bonusName(k: keyof GearBonus, t: Tr) {
     stam: t("lkBonusStam", "Fôlego"),
     warn: t("lkBonusWarn", "Aviso"),
     power: t("lkBonusPower", "Poder máximo"),
+    hp: t("lkBonusHp", "Vida"),
+    acc: t("lkBonusAcc", "Acuracidade"),
+    spd: t("lkBonusSpd", "Velocidade"),
+    int: t("lkBonusInt", "Inteligência"),
+    dex: t("lkBonusDex", "Destreza"),
   }[k]
 }
 

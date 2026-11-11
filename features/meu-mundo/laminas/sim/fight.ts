@@ -596,16 +596,26 @@ export interface FightSetup {
   boss?: BossId
 }
 
+/**
+ * Trilha E4 (A12): equipamento PROPORCIONAL — cada chave multiplica a ficha (1 + chave), então vale
+ * o mesmo do nível 1 ao 500. Chaves novas: hp, acc (acuracidade), spd, int, dex. Chave ausente = 0
+ * (ticket antigo re-simula igual).
+ */
 export interface GearBonus {
   dmg: number
   def: number
   stam: number
   warn: number
   power: number
+  hp: number
+  acc: number
+  spd: number
+  int: number
+  dex: number
 }
-const NO_GEAR: GearBonus = { dmg: 0, def: 0, stam: 0, warn: 0, power: 0 }
-/** Teto de segurança do lado da regra (o servidor já corta antes). */
-const GEAR_MAX: GearBonus = { dmg: 0.35, def: 0.25, stam: 0.12, warn: 0.12, power: 0.18 }
+const NO_GEAR: GearBonus = { dmg: 0, def: 0, stam: 0, warn: 0, power: 0, hp: 0, acc: 0, spd: 0, int: 0, dex: 0 }
+/** Teto de segurança do lado da regra (o servidor já corta antes). §6.3 do plano da trilha E. */
+export const GEAR_MAX: GearBonus = { dmg: 0.35, def: 0.25, stam: 0.12, warn: 0.12, power: 0.18, hp: 0.25, acc: 0.2, spd: 0.15, int: 0.15, dex: 0.15 }
 function clampGear(g?: Partial<GearBonus>): GearBonus {
   const out = { ...NO_GEAR }
   if (!g) return out
@@ -715,21 +725,28 @@ export function mobBase(level: number): { hp: number; rate: number } {
 }
 /** O que o nível soma em ataque, defesa e, nos monstros, acuracidade e velocidade (0 no 1, 900 no 60, e segue). */
 const levelRate = (level: number) => (900 * (Math.max(1, Math.round(Number(level) || 1)) - 1)) / 59
-/** Equipamento no teto soma isto em ataque e em defesa. */
-const GEAR_RATE = 150
-/** Status de luta de quem joga: (100 + nível + treino + equipamento) × peso do personagem. */
+/**
+ * Status de luta de quem joga: (100 + nível + treino) × (1 + equipamento) × peso do personagem.
+ * Trilha E4 (A12): até a E3 o equipamento SOMAVA até 150 em ataque e defesa (valia muito no nível 1
+ * e quase nada no 500); agora multiplica — no teto de tudo a troca de golpes vale ×2,11 em qualquer nível.
+ */
 export function heroSheet(body: string | null | undefined, level: number, stats: Omit<Stats, "dexterity"> & { dexterity?: number }, gear?: Partial<GearBonus>) {
   const [hp, atk, def, acc, spd] = BODY_SHEETS[body ?? ""] ?? BASE_SHEET
   const h = heroLevelScale(level)
   const f = heroStats({ ...stats, dexterity: stats.dexterity ?? 0 }, level)
   const g = clampGear(gear)
   return {
-    hp: Math.round((h.hp * hp) / 100),
-    atk: ((100 + levelRate(level) + (g.dmg / GEAR_MAX.dmg) * GEAR_RATE) * atk) / 100,
-    def: ((100 + levelRate(level) + (g.def / GEAR_MAX.def) * GEAR_RATE) * def) / 100,
-    acc: ((100 + f.strength) * acc) / 100,
-    spd: ((100 + f.speed) * spd) / 100,
+    hp: Math.round((h.hp * (1 + g.hp) * hp) / 100),
+    atk: ((100 + levelRate(level)) * (1 + g.dmg) * atk) / 100,
+    def: ((100 + levelRate(level)) * (1 + g.def) * def) / 100,
+    acc: ((100 + f.strength) * (1 + g.acc) * acc) / 100,
+    spd: ((100 + f.speed) * (1 + g.spd) * spd) / 100,
   }
+}
+/** E4: inteligência e destreza de LUTA com o equipamento (antes do rankOdds e do statEffects; só na luta por status). */
+function gearMind(s: Stats, g: GearBonus, rated: boolean): Stats {
+  if (!rated || (!g.int && !g.dex)) return s
+  return { ...s, intelligence: s.intelligence * (1 + g.int), dexterity: (s.dexterity ?? 300) * (1 + g.dex) }
 }
 
 // ═══ ACERTO, ESQUIVA E DANO (regra do Alex, 2026-11-06) ═══ — vale para os dois
@@ -871,7 +888,7 @@ export class Fight {
     this.def = clamp(this.gear.def + this.hero.def, 0, DEF_MAX)
     const peer = clamp(Number(setup.peer) || 0, 0, 2)
     this.rated = peer > 0 || !!setup.tier
-    this.fx = this.withGear(statEffects(heroStats(stats, this.heroLevel)))
+    this.fx = this.withGear(statEffects(gearMind(heroStats(stats, this.heroLevel), this.gear, this.rated)))
     const sheet = heroSheet(setup.body, this.heroLevel, stats, this.gear)
     this.rate = { acc: Math.max(1, sheet.acc), spd: Math.max(1, sheet.spd), atk: sheet.atk, def: sheet.def }
     const hpMax = this.rated ? sheet.hp : this.hero.hp
@@ -1028,7 +1045,7 @@ export class Fight {
   }
 
   setStats(stats: Partial<Stats>) {
-    this.fx = this.withGear(statEffects(heroStats({ ...BASE_STATS, ...stats }, this.heroLevel)))
+    this.fx = this.withGear(statEffects(gearMind(heroStats({ ...BASE_STATS, ...stats }, this.heroLevel), this.gear, this.rated)))
     this.me.rate = this.fx.rate
   }
 

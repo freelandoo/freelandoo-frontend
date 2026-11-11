@@ -12273,7 +12273,17 @@
     "storyAria": "Escena de la historia",
     "storySkip": "Saltar",
     "storyGolemMem1": "Una aldea de Zorros que no quiso elegir bando.",
-    "storyGolemMem2": "La última noche, los adultos le pidieron a Kragor convertirse en muralla."
+    "storyGolemMem2": "La última noche, los adultos le pidieron a Kragor convertirse en muralla.",
+    "gearBonusHp": "+{v} vida",
+    "gearBonusAcc": "+{v} precisión",
+    "gearBonusSpd": "+{v} velocidad",
+    "gearBonusInt": "+{v} inteligencia",
+    "gearBonusDex": "+{v} destreza",
+    "lkBonusHp": "Vida",
+    "lkBonusAcc": "Precisión",
+    "lkBonusSpd": "Velocidad",
+    "lkBonusInt": "Inteligencia",
+    "lkBonusDex": "Destreza"
   },
   "Sports": {
     "eyebrow": "Deportes",

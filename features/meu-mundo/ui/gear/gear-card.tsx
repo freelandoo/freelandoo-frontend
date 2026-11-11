@@ -20,6 +20,12 @@ export function bonusLines(bonus: GearItem["bonus"], t: GearTr): string[] {
     bonus.stam ? t("gearBonusStam", "−{v} fôlego gasto").replace("{v}", percentage(bonus.stam)) : null,
     bonus.warn ? t("gearBonusWarn", "+{v} tempo de aviso").replace("{v}", percentage(bonus.warn)) : null,
     bonus.power ? t("gearBonusPower", "+{v} carga do poder").replace("{v}", percentage(bonus.power)) : null,
+    // trilha E4: chaves proporcionais novas
+    bonus.hp ? t("gearBonusHp", "+{v} vida").replace("{v}", percentage(bonus.hp)) : null,
+    bonus.acc ? t("gearBonusAcc", "+{v} acuracidade").replace("{v}", percentage(bonus.acc)) : null,
+    bonus.spd ? t("gearBonusSpd", "+{v} velocidade").replace("{v}", percentage(bonus.spd)) : null,
+    bonus.int ? t("gearBonusInt", "+{v} inteligência").replace("{v}", percentage(bonus.int)) : null,
+    bonus.dex ? t("gearBonusDex", "+{v} destreza").replace("{v}", percentage(bonus.dex)) : null,
   ].filter((line): line is string => !!line)
 }
 

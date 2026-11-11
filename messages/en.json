@@ -12293,7 +12293,17 @@
     "storyAria": "Story scene",
     "storySkip": "Skip",
     "storyGolemMem1": "A village of Foxes that refused to pick a side.",
-    "storyGolemMem2": "On the last night, the grown-ups asked Kragor to turn them into a wall."
+    "storyGolemMem2": "On the last night, the grown-ups asked Kragor to turn them into a wall.",
+    "gearBonusHp": "+{v} health",
+    "gearBonusAcc": "+{v} accuracy",
+    "gearBonusSpd": "+{v} speed",
+    "gearBonusInt": "+{v} intelligence",
+    "gearBonusDex": "+{v} dexterity",
+    "lkBonusHp": "Health",
+    "lkBonusAcc": "Accuracy",
+    "lkBonusSpd": "Speed",
+    "lkBonusInt": "Intelligence",
+    "lkBonusDex": "Dexterity"
   },
   "Sports": {
     "eyebrow": "Sports",

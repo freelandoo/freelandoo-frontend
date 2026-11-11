@@ -11707,7 +11707,17 @@
     "storyAria": "Cena da história",
     "storySkip": "Pular",
     "storyGolemMem1": "Uma vila de Raposas que não quis escolher lado.",
-    "storyGolemMem2": "Na última noite, os adultos pediram a Kragor para virar muralha."
+    "storyGolemMem2": "Na última noite, os adultos pediram a Kragor para virar muralha.",
+    "gearBonusHp": "+{v} vida",
+    "gearBonusAcc": "+{v} acuracidade",
+    "gearBonusSpd": "+{v} velocidade",
+    "gearBonusInt": "+{v} inteligência",
+    "gearBonusDex": "+{v} destreza",
+    "lkBonusHp": "Vida",
+    "lkBonusAcc": "Acuracidade",
+    "lkBonusSpd": "Velocidade",
+    "lkBonusInt": "Inteligência",
+    "lkBonusDex": "Destreza"
   },
   "Sports": {
     "eyebrow": "Esportes",

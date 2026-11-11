@@ -15,6 +15,17 @@ const MEU_MUNDO = {
   forgeRunes: ["Runas", "Runes", "Runas"],
   forgeConsumables: ["Consumíveis", "Consumables", "Consumibles"],
   forgeCurrency: ["Fichas", "Tokens", "Fichas"],
+  // E4: chaves novas do equipamento
+  gearBonusHp: ["+{v} vida", "+{v} health", "+{v} vida"],
+  gearBonusAcc: ["+{v} acuracidade", "+{v} accuracy", "+{v} precisión"],
+  gearBonusSpd: ["+{v} velocidade", "+{v} speed", "+{v} velocidad"],
+  gearBonusInt: ["+{v} inteligência", "+{v} intelligence", "+{v} inteligencia"],
+  gearBonusDex: ["+{v} destreza", "+{v} dexterity", "+{v} destreza"],
+  lkBonusHp: ["Vida", "Health", "Vida"],
+  lkBonusAcc: ["Acuracidade", "Accuracy", "Precisión"],
+  lkBonusSpd: ["Velocidade", "Speed", "Velocidad"],
+  lkBonusInt: ["Inteligência", "Intelligence", "Inteligencia"],
+  lkBonusDex: ["Destreza", "Dexterity", "Destreza"],
 }
 const OVERRIDE = {}
 
