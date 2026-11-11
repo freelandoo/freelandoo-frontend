@@ -153,7 +153,7 @@
   "qs_cap8_campeao_what": ["Vença o Brutamontes", "Defeat the Brute", "Vence al Bruto"],
   "qs_cap8_campeao_where": ["Boxe ou Lâminas", "Boxing or Blades", "Boxeo o Espadas"],
   "qs_cap8_pipa_what": ["Ouça Pipa", "Listen to Pipa", "Escucha a Pipa"],
-  "qs_cap8_pipa_where": ["Arquibancada do Boxe", "Boxing stands", "Gradas del Boxeo"],
+  "qs_cap8_pipa_where": ["Na frente do Boxe", "Outside the Boxing gym", "Frente al Boxeo"],
   "qs_cap8_muralha_what": ["Vença o Golem de Pedra", "Defeat the Stone Golem", "Vence al Gólem de Piedra"],
   "qs_cap8_muralha_where": ["Lâminas", "Blades", "Espadas"],
   "qs_cap8_peito_what": ["Chegue ao Golem sem arma", "Reach the Golem unarmed", "Llega al Gólem sin arma"],
@@ -246,5 +246,8 @@
   "qs_cap7_telhados_done_raposa": ["Memória: o telhado. A manhã. O arame na sua mão. Você segurou enquanto os outros costuravam. A Dama reconhece você pelo cheiro.", "Memory: the rooftop. The morning. The wire in your hand. You held on while the others sewed. The Lady recognizes you by your scent.", "Recuerdo: el tejado. La mañana. El alambre en tu mano. Sostuviste mientras los otros cosían. La Dama te reconoce por el olor."],
   "qs_cap7_telhados_done_vampiro": ["A Dama era Vampira, do seu povo. Foram as Raposas que fizeram isso com ela. Pela primeira vez, você sente ódio de verdade.", "The Lady was a Vampire, one of your people. It was the Foxes who did this to her. For the first time, you feel real hatred.", "La Dama era Vampira, de tu pueblo. Fueron los Zorros quienes le hicieron eso. Por primera vez, sientes odio de verdad."],
   "qs_cap7_mistura_done": ["Duas vidas viram uma. O tubo esquenta na sua mão como se reconhecesse você.", "Two lives become one. The tube warms in your hand as if it recognized you.", "Dos vidas se vuelven una. El tubo se calienta en tu mano como si te reconociera."],
-  "qc_cap7_hook": ["Ninguém congelou você para salvar você.", "Nobody froze you to save you.", "Nadie te congeló para salvarte."]
+  "qc_cap7_hook": ["Ninguém congelou você para salvar você.", "Nobody froze you to save you.", "Nadie te congeló para salvarte."],
+  "qs_cap8_peito_done": ["O peito do Golem abre um pouco. Na luz verde, 34 crianças dormindo, do mesmo tamanho de vinte anos atrás. As 180 vozes gritam juntas, e o peito fecha.", "The Golem's chest opens a little. In the green light, 34 children asleep, the same size as twenty years ago. The 180 voices scream together, and the chest closes.", "El pecho del Gólem se abre un poco. En la luz verde, 34 niños dormidos, del mismo tamaño que hace veinte años. Las 180 voces gritan juntas y el pecho se cierra."],
+  "qs_cap8_campeao_done": ["O Brutamontes, vencido, olha para a arquibancada: \"Eu acho que já fui alguém que se chamava assim.\"", "The Brute, beaten, looks up at the stands: \"I think I used to be someone with that name.\"", "El Bruto, vencido, mira a las gradas: \"Creo que una vez fui alguien que se llamaba así.\""],
+  "qc_cap8_hook": ["Toda criatura dessa cidade foi feita por alguém que achou que estava certo.", "Every creature in this city was made by someone who thought they were right.", "Toda criatura de esta ciudad fue hecha por alguien que creyó tener razón."]
 }

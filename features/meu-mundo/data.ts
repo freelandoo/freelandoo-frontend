@@ -671,7 +671,7 @@ export interface DomainInfo {
   best: number
   crossed: boolean
   /** D2: lugares da cena (Pedraverde, ao lado de um setor). */
-  places?: { id: string; sector: number }[]
+  places?: { id: string; sector: number; spots?: string[] }[]
   /** O trecho de passagem para o próximo (depois do setor 10). */
   passage: { to: DomainId; open: boolean } | null
   sectors: DomainSector[]
@@ -696,6 +696,9 @@ export interface DomainAdvance {
 export const getDomains = (token: string) => call<DomainsState>(token, "GET", "/domains")
 export const enterDomain = (token: string, domain: DomainId) =>
   call<{ trainer: number; bypass: boolean; power: number; domain: DomainInfo }>(token, "POST", "/domains/enter", { domain })
+/** Lore v2 C5: chegou a um lugar da cena (Pedraverde) ou a um ponto dele (o Golem). O servidor confere e grava a visita. */
+export const reachDomainPlace = (token: string, domain: DomainId, place: string, spot?: string | null) =>
+  call<{ domain: DomainId; place: string; spot: string | null; recorded: boolean; armed: boolean }>(token, "POST", "/domains/place", { domain, place, spot: spot ?? null })
 /** Entrega a missão de prédio (o servidor confere o objetivo). */
 export const deliverBuildingMission = (token: string, id: string) =>
   call<BuildingsState & { receipt?: Receipt; replay?: boolean }>(token, "POST", "/buildings/mission", { id })

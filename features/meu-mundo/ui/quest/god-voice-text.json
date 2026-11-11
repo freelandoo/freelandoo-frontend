@@ -30,5 +30,16 @@
   "qw_garras_1": ["EU ERA A VOZ DO MEU POVO. TIRARAM.", "I WAS THE VOICE OF MY PEOPLE. THEY TOOK IT.", "YO ERA LA VOZ DE MI PUEBLO. ME LA QUITARON."],
   "qw_garras_2": ["TIRA O CAPUZ.", "TAKE OFF THE HOOD.", "QUÍTATE LA CAPUCHA."],
   "qw_garras_3_raposa": ["VOCÊ.", "YOU.", "TÚ."],
-  "qw_garras_3_vampiro": ["FORAM ELES.", "IT WAS THEM.", "FUERON ELLOS."]
+  "qw_garras_3_vampiro": ["FORAM ELES.", "IT WAS THEM.", "FUERON ELLOS."],
+  "qv_kragor_cap8_1": ["Pedraverde? Minha melhor obra. Uma muralha que pensa. Eles pediram, eu fiz. Cobrei barato.", "Greenstone? My finest work. A wall that thinks. They asked, I made it. I charged cheap.", "¿Piedraverde? Mi mejor obra. Una muralla que piensa. Ellos pidieron, yo la hice. Cobré barato."],
+  "qv_kragor_cap8_2": ["Se doeu? Pedra não reclama.", "Did it hurt? Stone doesn't complain.", "¿Si dolió? La piedra no se queja."],
+  "qn_brutamontes_name": ["Brutamontes", "The Brute", "El Bruto"],
+  "qn_brutamontes_1": ["Alguém grita um nome toda noite.", "Someone shouts a name every night.", "Alguien grita un nombre todas las noches."],
+  "qn_golem_name": ["Golem de Pedra", "Stone Golem", "Gólem de Piedra"],
+  "qn_golem_1": ["Somos cento e oitenta.", "We are one hundred and eighty.", "Somos ciento ochenta."],
+  "qn_golem_2": ["Mariana, dorme.", "Mariana, sleep.", "Mariana, duerme."],
+  "qn_golem_3": ["Ninguém entra.", "No one comes in.", "Nadie entra."],
+  "qn_golem_4": ["Quem é? Quem é? Ele tá sem arma.", "Who is it? Who is it? They're unarmed.", "¿Quién es? ¿Quién es? Viene sin arma."],
+  "qn_golem_5": ["FECHA.", "CLOSE.", "CIERRA."],
+  "qn_golem_armado": ["Larga o ferro ou volta.", "Drop the iron or turn back.", "Suelta el hierro o vuélvete."]
 }

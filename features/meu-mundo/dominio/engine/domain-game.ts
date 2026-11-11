@@ -64,6 +64,8 @@ const PASS_END = END + DOMAIN_SCENE.passage
 const REACH = 3.4
 /** O Golem de Pedra sentado: tronco a `dx` do centro da clareira; `y` baixa a pose de cadeira até ele. */
 const GOLEM_SEAT = { dx: 4.6, y: 0 }
+/** C5: "a ~4 m do Golem" (07-falas §1.2) — do centro dele, que senta no tronco. */
+const GOLEM_NEAR = 4.5
 
 /** Onde a pessoa pode agir agora. */
 export type DomainNear = { kind: "guard"; sector: number } | { kind: "exit" } | { kind: "passage" } | null
@@ -89,6 +91,8 @@ export interface DomainGameOptions {
   onSector?: (s: number) => void
   /** D2: entrou/saiu de um lugar (clareira de Pedraverde) — null = no caminho. */
   onPlace?: (id: string | null) => void
+  /** C5: chegou perto de um ponto do lugar (o Golem sentado) — null = longe. */
+  onSpot?: (spot: string | null) => void
   onInteract?: (n: Exclude<DomainNear, null>) => void
   onError?: (reason: "context-lost") => void
 }
@@ -338,13 +342,14 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       const g = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, "golem", null, false)
       // de frente para o caminho (−x); a pose de sentar desce até o tronco
       g.place(p.x + GOLEM_SEAT.dx + 0.35, p.z, -Math.PI / 2, GOLEM_SEAT.y)
-      return { char: g, sector: p.sector }
+      return { char: g, sector: p.sector, x: p.x + GOLEM_SEAT.dx + 0.35, z: p.z }
     })
 
   // ── guardiões: o do setor aberto e os já vencidos (para lutar de novo) ──
   const guards = new Map<number, MonsterModel>()
   let time = 0
   let place: string | null = null
+  let spot: string | null = null
   const guardAt = (s: number) => ({ x: 0, z: (s - 0.5) * L })
   const wantGuard = (s: number) => s >= 1 && s <= 10 && s <= best + 1 && !!domain.sectors[s - 1]
 
@@ -425,6 +430,11 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       place = pl
       opts.onPlace?.(place)
     }
+    const sp = place && golems.some((gm) => Math.hypot(gm.x - body.x, gm.z - body.z) <= GOLEM_NEAR) ? "golem" : null
+    if (sp !== spot) {
+      spot = sp
+      opts.onSpot?.(spot)
+    }
     for (const [k, g] of guards) {
       const p = guardAt(k)
       // o guardião olha para quem chega
@@ -461,7 +471,7 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
   // conferência (harness): onde está e quantos guardiões há
   if (process.env.NODE_ENV !== "production")
     (window as unknown as Record<string, unknown>).__mmDomain = {
-      where: () => ({ x: body.x, z: body.z, sector: sectorAt(body.z), best, guards: [...guards.keys()], near: nearby, place }),
+      where: () => ({ x: body.x, z: body.z, sector: sectorAt(body.z), best, guards: [...guards.keys()], near: nearby, place, spot }),
       teleport: (z: number, x = 0) => {
         body.z = z
         body.x = x

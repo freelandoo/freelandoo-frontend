@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { getQuest } from "../../data"
-import { BASTOR_NAME_KEY, ECO_NAME_KEY, VOICE_MS, bastorLines, clawAfterWin, clawWritings, ecoLine, voiceKey, voiceNameKey, voiceOpen, type FightQuest, type VoiceGod } from "../../god-voice"
+import { BASTOR_NAME_KEY, BRUTE_NAME_KEY, ECO_NAME_KEY, GOLEM_ARMED, GOLEM_CLOSE, GOLEM_LINES, GOLEM_NAME_KEY, VOICE_MS, bastorLines, bruteLine, clawAfterWin, clawWritings, ecoLine, voiceKeyFor, voiceNameKey, voiceOpen, type FightQuest, type VoiceGod } from "../../god-voice"
 import { AE, chamfer } from "../kit/aether-tokens"
 import { archivo } from "../status/evo-skin"
 import TEXT from "./god-voice-text.json"
@@ -23,15 +23,16 @@ const tx = (t: T, key: string) => t(key, PT[key]?.[0] ?? key)
 
 /** O capítulo muda devagar: uma consulta vale por CACHE_MS. */
 const CACHE_MS = 5 * 60 * 1000
-let cache: { at: number; open: boolean } | null = null
-async function heard(): Promise<boolean> {
-  if (cache && Date.now() - cache.at < CACHE_MS) return cache.open
+type Heard = { open: boolean; q: { chapter: number; locked: unknown } | null }
+let cache: { at: number; got: Heard } | null = null
+async function heard(): Promise<Heard> {
+  if (cache && Date.now() - cache.at < CACHE_MS) return cache.got
   const tk = getToken()
-  if (!tk) return false
+  if (!tk) return { open: false, q: null }
   const r = await getQuest(tk)
-  const open = r.ok ? voiceOpen(r.data.quest) : false
-  if (r.ok) cache = { at: Date.now(), open }
-  return open
+  const got: Heard = r.ok ? { open: voiceOpen(r.data.quest), q: r.data.quest } : { open: false, q: null }
+  if (r.ok) cache = { at: Date.now(), got }
+  return got
 }
 
 /** O balão (mesma moldura da voz dos deuses). `top` = distância do topo da tela (px). */
@@ -115,8 +116,9 @@ export function GodVoice({ god, show }: { god: VoiceGod; show: boolean }) {
     }
     if (spoke.current) return
     spoke.current = true
-    void heard().then((open) => {
-      if (open && showing.current) setLine(voiceKey(god))
+    void heard().then(({ open, q }) => {
+      // C5: no cap. 8 Kragor fala de Pedraverde (voiceKeyFor)
+      if (open && showing.current) setLine(voiceKeyFor(god, q))
     })
   }, [show, god])
 
@@ -161,6 +163,117 @@ export function EcoVoice({ show }: { show: boolean }) {
 
   if (!line || !show) return null
   return <VoiceBubble name={tx(t, ECO_NAME_KEY)} line={tx(t, line)} top={96} />
+}
+
+/**
+ * C5 (cap. 8): o Brutamontes, no passo "campeao", diz uma frase quando a luta contra
+ * ele começa (`show`), uma vez por luta. Mesma moldura da voz dos deuses.
+ */
+export function BruteVoice({ show }: { show: boolean }) {
+  const t = useTranslations("MeuMundo") as T
+  const [line, setLine] = useState<string | null>(null)
+  const spoke = useRef(false)
+
+  useEffect(() => {
+    if (!show || spoke.current) return
+    spoke.current = true
+    void fightQuest().then(({ q }) => setLine(bruteLine(q)))
+  }, [show])
+
+  useEffect(() => {
+    if (!line) return
+    const id = setTimeout(() => setLine(null), VOICE_MS)
+    return () => clearTimeout(id)
+  }, [line])
+
+  if (!line || !show) return null
+  return <VoiceBubble name={tx(t, BRUTE_NAME_KEY)} line={tx(t, line)} top={96} />
+}
+
+/** Intervalo entre uma voz e a próxima, e quanto tempo o "FECHA." fica (ms). */
+const GOLEM_STEP_MS = 900
+const GOLEM_CLOSE_MS = 2_600
+/** Onde cada balão cai (em % da largura útil e px do topo): sobrepostos, fora de ordem. */
+const GOLEM_SPOTS = [
+  { x: 4, y: 0, r: -2 },
+  { x: 38, y: 46, r: 1.5 },
+  { x: 10, y: 96, r: 1 },
+  { x: 30, y: 140, r: -1.5 },
+] as const
+
+/**
+ * C5 (cap. 8): as 180 vozes do Golem de Pedra, quando o SERVIDOR aceitou a chegada
+ * (sem arma): balões sobrepostos em vozes diferentes (letra com leve tremor), um a
+ * cada GOLEM_STEP_MS, e no fim todos ao mesmo tempo: "FECHA." em letra maior.
+ * `armed` = chegou com arma: uma voz só, firme ("Larga o ferro ou volta.").
+ * `run` muda a cada chegada (toca de novo). Sem botão; não bloqueia o toque.
+ */
+export function GolemVoices({ run, armed }: { run: number; armed: boolean }) {
+  const t = useTranslations("MeuMundo") as T
+  const [n, setN] = useState(0)
+
+  useEffect(() => {
+    if (!run) return
+    setN(0)
+    if (armed) {
+      const id = setTimeout(() => setN(99), VOICE_MS)
+      return () => clearTimeout(id)
+    }
+    const ids = [...GOLEM_LINES.map((_, k) => setTimeout(() => setN(k + 1), GOLEM_STEP_MS * k)), setTimeout(() => setN(GOLEM_LINES.length + 1), GOLEM_STEP_MS * (GOLEM_LINES.length + 1)), setTimeout(() => setN(99), GOLEM_STEP_MS * (GOLEM_LINES.length + 1) + GOLEM_CLOSE_MS)]
+    return () => ids.forEach(clearTimeout)
+  }, [run, armed])
+
+  if (!run || n >= 99) return null
+  const name = tx(t, GOLEM_NAME_KEY)
+  const card = { background: "rgba(13,15,19,0.66)", clipPath: chamfer(AE.cut.card), boxShadow: `inset 0 0 0 1px ${AE.brassLine}`, backdropFilter: "blur(6px)" }
+  const top = "calc(max(12px, env(safe-area-inset-top)) + 96px)"
+  const shake = `@keyframes mm-golem-shake { 0%,100% { transform: translate(0,0) } 25% { transform: translate(0.6px,-0.4px) } 50% { transform: translate(-0.5px,0.5px) } 75% { transform: translate(0.4px,0.3px) } }
+@keyframes mm-golem-in { 0% { opacity: 0; transform: scale(0.96) } 100% { opacity: 1; transform: none } }`
+  if (armed)
+    return (
+      <div className={`${archivo.className} pointer-events-none fixed inset-x-0 z-[95] flex justify-center px-4`} style={{ top }} role="status" aria-live="polite">
+        <div className="w-full max-w-[460px] px-4 py-3" style={{ ...card, animation: `mm-god-voice ${VOICE_MS}ms ${AE.ease} both` }}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: AE.goldSoft }}>
+            {name}
+          </p>
+          <p className="mt-1 text-[18px] font-bold leading-snug" style={{ color: AE.text }}>
+            {tx(t, GOLEM_ARMED)}
+          </p>
+        </div>
+        <style>{`@keyframes mm-god-voice { 0% { opacity: 0; transform: translateY(-8px) } 10% { opacity: 1; transform: none } 85% { opacity: 1 } 100% { opacity: 0 } }`}</style>
+      </div>
+    )
+  const closing = n > GOLEM_LINES.length
+  return (
+    <div className={`${archivo.className} pointer-events-none fixed inset-x-0 z-[95] flex justify-center px-4`} style={{ top }} role="status" aria-live="polite">
+      <div className="relative w-full max-w-[460px]" style={{ height: 210 }}>
+        {closing ? (
+          <div className="absolute inset-x-0 top-[40px] flex justify-center">
+            <p className="px-6 py-3 text-[44px] font-black uppercase leading-none tracking-[0.12em]" style={{ ...card, color: AE.text, animation: `mm-golem-in 160ms ease-out both, mm-golem-shake 90ms linear infinite` }}>
+              {tx(t, GOLEM_CLOSE)}
+            </p>
+          </div>
+        ) : (
+          GOLEM_LINES.slice(0, n).map((key, k) => {
+            const s = GOLEM_SPOTS[k]
+            return (
+              <div key={key} className="absolute max-w-[70%] px-3 py-2" style={{ ...card, left: `${s.x}%`, top: s.y, rotate: `${s.r}deg`, animation: `mm-golem-in 220ms ease-out both` }}>
+                {k === 0 && (
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: AE.goldSoft }}>
+                    {name}
+                  </p>
+                )}
+                <p className="text-[15px] italic leading-snug" style={{ color: AE.text, animation: `mm-golem-shake ${110 + k * 23}ms linear infinite` }}>
+                  {tx(t, key)}
+                </p>
+              </div>
+            )
+          })
+        )}
+      </div>
+      <style>{shake}</style>
+    </div>
+  )
 }
 
 /** Quanto tempo cada frase riscada fica na parede (ms). */

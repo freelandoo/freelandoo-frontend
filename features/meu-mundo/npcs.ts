@@ -10,7 +10,7 @@
 
 import type { BodyId } from "./types"
 
-export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto" | "forjador" | "armeiro" | "bibliotecaria" | "ciborgue" | "fulvo"
+export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto" | "forjador" | "armeiro" | "bibliotecaria" | "ciborgue" | "fulvo" | "pipa"
 
 /** Onde a pessoa está na história quando abre a conversa. */
 export interface TalkMoment {
@@ -204,6 +204,18 @@ export const NPCS: Record<NpcId, NpcDef> = {
     look: "",
     conversations: [
       { id: "fulvo", when: at("cap6", "fulvo"), lines: [{ key: "fulvo_1", byClan: true }, { key: "fulvo_2" }, { key: "fulvo_3" }, { key: "fulvo_4" }, { key: "fulvo_5" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
+  // C5 (cap. 8, 07-falas §9): Pipa grita "Fubá!" para o ringue, na frente do Boxe
+  // (meuMundoCenter.js). Raposa adulta; o lenço amarelo é arte do Alex (o corpo de
+  // classe não tem máscara de cor). No passo "pipa" a conversa inteira; a
+  // personalidade comenta no fim.
+  pipa: {
+    body: "raposa_adulta",
+    look: "",
+    conversations: [
+      { id: "pipa", when: at("cap8", "pipa"), lines: [{ key: "pipa_1" }, { key: "pipa_2" }, { key: "pipa_3" }, { key: "pipa_4" }, { key: "pipa_5" }] },
       { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
     ],
   },

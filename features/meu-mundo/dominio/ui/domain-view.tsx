@@ -12,10 +12,10 @@
 
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { DoorOpen, Footprints, Swords } from "lucide-react"
+import { DoorOpen, Footprints, Shield, Swords } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { enterDomain, getDomains, startFight, type DomainAdvance, type DomainId, type DomainInfo, type FightTicket, type Receipt } from "../../data"
+import { enterDomain, equipGear, getDomains, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainInfo, type FightTicket, type Receipt } from "../../data"
 import { createDomainGame, passageKitOf, sceneKitOf, type DomainGameHandle, type DomainNear } from "../engine/domain-game"
 import { Joystick, SAFE, SceneCurtain } from "../../ui/meu-mundo-view"
 import { EvoButton, EvoToast } from "../../ui/hud/hud-kit"
@@ -23,6 +23,7 @@ import { useMobName } from "../../laminas/ui/laminas-view"
 import type { DomainStageSpec } from "../../laminas/engine/domain-stage"
 import type { BodyId } from "../../types"
 import { domainName, foeName, lockText } from "./domain-portal"
+import { GolemVoices } from "../../ui/quest/god-voice"
 
 const LaminasView = dynamic(() => import("../../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
@@ -39,6 +40,10 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const [near, setNear] = useState<DomainNear>(null)
   const [sector, setSector] = useState(0)
   const [place, setPlace] = useState<string | null>(null)
+  // C5: perto do Golem (o servidor diz se valeu ou se a pessoa está armada)
+  const [spot, setSpot] = useState<string | null>(null)
+  const [golem, setGolem] = useState<{ run: number; armed: boolean }>({ run: 0, armed: false })
+  const [stowing, setStowing] = useState(false)
   const [spawn, setSpawn] = useState(0)
   const [fight, setFight] = useState<{ ticket: FightTicket; sector: number; foe: string; foeBody: BodyId | null; foeRig: boolean } | null>(null)
   const [opening, setOpening] = useState(false)
@@ -102,6 +107,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         onNearbyChange: (n) => alive && setNear(n),
         onSector: (s) => alive && setSector(s),
         onPlace: (p) => alive && setPlace(p),
+        onSpot: (s) => alive && setSpot(s),
         onInteract: (n) => {
           if (!alive) return
           if (n.kind === "exit") onExit()
@@ -120,6 +126,8 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
       handle?.dispose()
       gameRef.current = null
       setNear(null)
+      setPlace(null)
+      setSpot(null)
     }
     // a cena remonta ao trocar de Domínio, ao voltar da luta e no "tentar de novo"
   }, [ready, body, look, spawn, attempt, onExit])
@@ -128,6 +136,35 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   useEffect(() => {
     if (info) gameRef.current?.setProgress(info.best)
   }, [info])
+
+  // ── C5: Pedraverde e o Golem — a cena é do aparelho, então a CHEGADA vira pedido e
+  // o servidor confere (Domínio aberto, setor ao alcance, sem arma) e grava a visita ──
+  const domainId = info?.id ?? null
+  useEffect(() => {
+    const token = getToken()
+    if (!token || !domainId || !place) return
+    void reachDomainPlace(token, domainId, place)
+  }, [domainId, place])
+  const reachSpot = useCallback(async () => {
+    const token = getToken()
+    if (!token || !domainId || !place || !spot) return
+    const r = await reachDomainPlace(token, domainId, place, spot)
+    if (r.ok && (r.data.recorded || r.data.armed)) setGolem((g) => ({ run: g.run + 1, armed: r.data.armed }))
+  }, [domainId, place, spot])
+  useEffect(() => {
+    void reachSpot()
+  }, [reachSpot])
+  // "Larga o ferro": guarda a arma na mochila (POST /gear/equip vazio) e chega de novo
+  const stow = useCallback(async () => {
+    const token = getToken()
+    if (!token || stowing) return
+    setStowing(true)
+    const r = await equipGear(token, "weapon", null)
+    setStowing(false)
+    if (!r.ok) return setNews({ text: r.error, id: Date.now() })
+    setNews({ text: t("domWeaponStowed", "Arma guardada na mochila."), id: Date.now() })
+    await reachSpot()
+  }, [stowing, reachSpot, t])
 
   const openingRef = useRef(false)
   useEffect(() => {
@@ -263,6 +300,16 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
       )}
 
       {status === "ready" && isTouch && <Joystick gameRef={gameRef} />}
+
+      {/* C5: as vozes do Golem (ou "Larga o ferro") e o botão de guardar a arma */}
+      {status === "ready" && <GolemVoices run={golem.run} armed={golem.armed} />}
+      {status === "ready" && spot === "golem" && golem.armed && (
+        <div className="absolute flex flex-col items-start gap-2" style={{ bottom: bottom(isTouch ? 180 : 16), left: SAFE.left }}>
+          <EvoButton variant="primary" icon={<Shield className="h-5 w-5" />} loading={stowing} onClick={() => void stow()}>
+            {t("domStowWeapon", "Guardar a arma")}
+          </EvoButton>
+        </div>
+      )}
 
       {(status !== "ready" || !info) && (
         <SceneCurtain

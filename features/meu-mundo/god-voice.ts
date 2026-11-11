@@ -6,7 +6,7 @@
 // partida, e só a partir do cap. 3 (antes disso ninguém ouve deus nenhum).
 // Só apresentação: nada aqui decide prêmio, néctar ou passo de missão.
 // Texto: ui/quest/god-voice-text.json ([pt, en, es]; scripts/i18n-meu-mundo-vozes-merge.js).
-// Os caps. 8 (Kragor) e 10 (Noctis) trocam o sorteio por falas próprias: fatias C5/C6.
+// Os caps. 8 (Kragor, C5: voiceKeyFor) e 10 (Noctis, C6) trocam o sorteio por falas próprias.
 
 /** O deus de cada jogável (Lâminas e Hall não têm deus dono). */
 export const VOICE_GODS = {
@@ -84,3 +84,26 @@ export function clawWritings(q: FightQuest | null | undefined): string[] {
 export function clawAfterWin(q: FightQuest | null | undefined, clan: "raposa" | "vampiro" | null): string | null {
   return atStep(q, "cap7", "telhados") ? `qw_garras_3_${clan === "vampiro" ? "vampiro" : "raposa"}` : null
 }
+
+// ── C5 (cap. 8, "Pedraverde"): Kragor no Boxe, o Brutamontes e o Golem ─────
+// 07-falas §9. Só apresentação: os passos são a vitória conferida e a visita que o
+// SERVIDOR grava (visit:golem só sem arma equipada, POST /domains/place).
+
+/** No cap. 8 (aberto), Kragor troca o sorteio de sempre pelas falas do capítulo. */
+export function voiceKeyFor(god: VoiceGod, q: { chapter: number; locked: unknown } | null | undefined, rnd: () => number = Math.random): string {
+  if (god === "kragor" && q && q.chapter === 8 && !q.locked) return rnd() < 0.5 ? "qv_kragor_cap8_1" : "qv_kragor_cap8_2"
+  return voiceKey(god, rnd)
+}
+
+/** O Brutamontes, no passo "campeao": um balão quando a luta contra ele começa. */
+export const BRUTE_NAME_KEY = "qn_brutamontes_name"
+export function bruteLine(q: FightQuest | null | undefined): string | null {
+  return atStep(q, "cap8", "campeao") ? "qn_brutamontes_1" : null
+}
+
+/** O Golem de Pedra: 180 vozes, balões sobrepostos, e no fim todas juntas ("FECHA."). */
+export const GOLEM_NAME_KEY = "qn_golem_name"
+export const GOLEM_LINES = ["qn_golem_1", "qn_golem_2", "qn_golem_3", "qn_golem_4"] as const
+export const GOLEM_CLOSE = "qn_golem_5"
+/** Chegou armado: uma voz só, firme (o passo não conta). */
+export const GOLEM_ARMED = "qn_golem_armado"

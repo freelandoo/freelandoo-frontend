@@ -43,7 +43,7 @@ import { abilityKit } from "../abilities/registry"
 import { probeClose, probeNote, probeOpen } from "../../crash-probe"
 import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
-import { ClawWriting, EcoVoice, GodVoice } from "../../ui/quest/god-voice"
+import { BruteVoice, ClawWriting, EcoVoice, GodVoice } from "../../ui/quest/god-voice"
 import type { DomainStageSpec } from "../engine/domain-stage"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
@@ -664,6 +664,8 @@ function LaminasScreen({
       {stage === "arena" && !tutorial && !portal && !opened && <EcoVoice show={started && result === null} />}
       {/* C4: a Dama das Garras escreve na parede (cap. 7, passo "telhados"; Arena ou rua) */}
       {choice.kind === "garras" && stage !== "ring" && !tutorial && !opened && <ClawWriting fighting={started && result === null} won={result === true} />}
+      {/* C5 (cap. 8): o Brutamontes ouve um nome toda noite (só no passo "campeao") */}
+      {choice.kind === "brute" && stage !== "ring" && !tutorial && !opened && <BruteVoice show={started && result === null} />}
       {/* fim — apresentação 11: o resultado em coluna (mesmos textos, mesmas ações; toque continua) */}
       {result !== null && (
         <FightResult
