@@ -139,6 +139,7 @@ export class CenterMobs {
       if (level && (!v.tag || v.tag.level !== level)) {
         v.tag?.dispose()
         v.tag = levelTag(this.scene, id, level)
+        v.tag.mesh.setEnabled(this.tagsOn)
       }
       v.tx = x
       v.tz = z
@@ -184,12 +185,19 @@ export class CenterMobs {
     return out
   }
 
+  /** Painel aberto por cima (STATUS, loja…): a placa "Nv. N" atravessava o vidro do painel. */
+  private tagsOn = true
+  setTagsVisible(on: boolean) {
+    this.tagsOn = on
+    for (const v of this.views.values()) v.tag?.mesh.setEnabled(on)
+  }
+
   /** Pausa o desenho (um minijogo cobre a tela). */
   setEnabled(on: boolean) {
     for (const v of this.views.values()) {
       v.model.setVisible(on)
       v.glow.setEnabled(on)
-      v.tag?.mesh.setEnabled(on)
+      v.tag?.mesh.setEnabled(on && this.tagsOn)
     }
   }
 

@@ -51,10 +51,10 @@ import { TALL_NAMES, isTall, type TallBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
 import { HERO_LEVEL, heroLevelScale, heroSheet } from "../../laminas/sim/fight"
 import { useLocale } from "@/components/i18n/I18nProvider"
-import { HpPlate, LevelBadge, PowerPlate, StatBars, StatGuide, statTop } from "./stat-bars"
+import { HpPlate, LevelBadge, PowerPlate, StatBars, StatCard, StatGuide, statTop, useStatRows, type StatRow } from "./stat-bars"
 import { SoulPanel } from "./soul-panel"
 import { temperLabel } from "../../soul"
-import { LoadoutPage, type LoadoutData } from "./loadout-page"
+import { Active, Equipped, LoadoutPage, type LoadoutData } from "./loadout-page"
 import { CertificateDoc } from "./certificate-doc"
 import { ArchivePage } from "../archive/archive-page"
 
@@ -63,7 +63,12 @@ type Tr = (key: string, fallback: string) => string
 /** B6: "loadout" = Equipado e efeitos (equipamento, efeitos ativos, origem dos atributos, Poder, personagem). */
 /** 09/11: "certificate" = a certidão de nascimento do personagem ativo (a bolinha da certidão). */
 /** Lore v2 F5: "archive" = o Arquivo (textos destravados pela história e os vídeos). */
-export const PAGES = ["overview", "body", "attributes", "loadout", "routine", "market", "history", "certificate", "archive"] as const
+/**
+ * Apresentação 03 (D7, 2026-11-11): 4 páginas — Ficha · Alma · Rotina · Registro.
+ * As páginas antigas (overview, body, attributes, loadout, market, history, certificate,
+ * archive) saem da navegação; o código delas sai numa limpeza à parte.
+ */
+export const PAGES = ["sheet", "soul", "routine", "record"] as const
 export type PageId = (typeof PAGES)[number]
 
 export interface PageActions {
@@ -380,8 +385,29 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
         .replace("{n}", String(data.price ?? ""))
     case "death":
       return t("evDeath", "Morreu: {cause}.").replace("{cause}", causeLabel(String(data.cause ?? ""), t))
+    // apresentação 03: a linha do tempo mostrava a chave crua ("fight", "wish"…)
+    case "fight":
+      return data.abandoned ? t("evFightLeft", "Saiu de uma luta no meio.") : data.win ? t("evFightWin", "Venceu uma luta.") : t("evFightLose", "Perdeu uma luta.")
+    case "wish":
+      return t("evWish", "Pediu uma coisa a você.")
+    case "wish_ok":
+      return t("evWishOk", "Ganhou o que pediu.")
+    case "wish_fail":
+      return t("evWishFail", "Ficou sem o que pediu.")
+    case "quest":
+      return t("evQuest", "Avançou na história.")
+    case "minigame":
+      return t("evMinigame", "Jogou um minijogo.")
+    case "gift":
+      return t("evGift", "Recebeu um presente.")
+    case "house_bought":
+      return t("evHouse", "Mudou de casa.")
+    case "fused":
+      return t("evFused", "Entrou numa mistura da Criogenia.")
+    case "capsule_in":
+      return t("evCapsule", "Foi para a cápsula.")
     default:
-      return kind
+      return ""
   }
 }
 function eventIcon(kind: string) {
@@ -396,6 +422,14 @@ function eventIcon(kind: string) {
   if (kind === "boxe") return <Swords className="h-5 w-5" />
   return <Clock className="h-5 w-5" />
 }
+/** "Dormiu 7h · 3 refeições" — só as partes que existem; nada = "". */
+function diaryLine(d: LifeFull["days"][number], t: Tr) {
+  const out: string[] = []
+  if ((d.hours.sleeping ?? 0) > 0) out.push(t("stDiarySlept", "Dormiu {s}").replace("{s}", hoursText(d.hours.sleeping ?? 0)))
+  if (d.mealsEaten > 0) out.push(t("stDiaryMeals", "{m} refeições").replace("{m}", String(d.mealsEaten)))
+  if (d.mealsMissed > 0) out.push(t("stDiaryMissed", "perdeu {x}").replace("{x}", String(d.mealsMissed)))
+  return out.join(" · ")
+}
 function timeOf(iso: string, offsetMin: number) {
   const d = new Date(new Date(iso).getTime() + offsetMin * 60000)
   return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")} ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`
@@ -403,15 +437,10 @@ function timeOf(iso: string, offsetMin: number) {
 
 // ─── peças comuns ─────────────────────────────────────────────────────────────
 const SUBTITLE: Record<PageId, [string, string]> = {
-  overview: ["stPageOverview", "Visão geral"],
-  body: ["stPageBody", "Corpo e saúde"],
-  attributes: ["stPageAttributes", "Atributos e personalidade"],
-  loadout: ["stPageLoadout", "Equipado e efeitos"],
-  routine: ["stPageRoutine", "Rotina de hoje"],
-  market: ["stPageMarket", "Mercado e farmácia"],
-  history: ["stPageHistory", "Diário e linha do tempo"],
-  certificate: ["stPageCertificate", "Certidão de nascimento"],
-  archive: ["arqTitle", "Arquivo"],
+  sheet: ["stPageSheet", "Ficha"],
+  soul: ["stPageSoul", "Alma"],
+  routine: ["stPageRoutine2", "Rotina"],
+  record: ["stPageRecord", "Registro"],
 }
 export const pageTitle = (p: PageId, t: Tr) => t(SUBTITLE[p][0], SUBTITLE[p][1])
 
@@ -1315,10 +1344,7 @@ function History({ life, compact, t }: PageProps) {
               {d.day.slice(8, 10)}/{d.day.slice(5, 7)}
             </span>
             <div className={`${archivo.className} min-w-0 flex-1 text-[14px]`} style={{ color: EVO.mudo }}>
-              {t("stDiaryLine", "Dormiu {s} · {m} refeições · perdeu {x}")
-                .replace("{s}", hoursText(d.hours.sleeping ?? 0))
-                .replace("{m}", String(d.mealsEaten))
-                .replace("{x}", String(d.mealsMissed))}
+              {diaryLine(d, t)}
             </div>
             <Tag tone={d.condition.score >= 60 ? "bom" : d.condition.score >= 40 ? "ouro" : "perigo"}>{conditionLabel(d.condition.label, t)}</Tag>
           </div>
@@ -2110,10 +2136,7 @@ function HistoryC({ life, t }: PageProps) {
               {d.day.slice(8, 10)}/{d.day.slice(5, 7)}
             </span>
             <div className={`${archivo.className} min-w-0 flex-1 truncate text-[10px]`} style={{ color: EVO.mudo }}>
-              {t("stDiaryLine", "Dormiu {s} · {m} refeições · perdeu {x}")
-                .replace("{s}", hoursText(d.hours.sleeping ?? 0))
-                .replace("{m}", String(d.mealsEaten))
-                .replace("{x}", String(d.mealsMissed))}
+              {diaryLine(d, t)}
             </div>
             <MiniTag tone={d.condition.score >= 60 ? "bom" : d.condition.score >= 40 ? "ouro" : "perigo"}>{conditionLabel(d.condition.label, t)}</MiniTag>
           </div>
@@ -2167,45 +2190,370 @@ function CertificatePage(p: PageProps) {
   )
 }
 
-export function StatusPage(props: PageProps) {
-  // Celular: cada página é desenhada para caber na tela, sem rolagem.
-  if (props.compact) {
-    const P = { overview: OverviewC, body: BodyC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC, certificate: CertificatePage, archive: ArchiveStatusPage }[props.page]
-    return (
-      <div className={`${archivo.className} flex h-full flex-col gap-2`}>
-        <Header {...props} />
-        {/* a Visão Geral rola até a explicação dos status; as outras cabem na tela */}
-        <div className={`min-h-0 flex-1 ${props.page === "overview" || props.page === "loadout" || props.page === "certificate" || props.page === "archive" ? "overflow-y-auto" : ""}`}>
-          <P {...props} />
+// ═══ apresentação 03: Ficha · Alma · Rotina · Registro ═══════════════════════
+/** O porte numa palavra (os números de peso, IMC e gordura saem da tela — D8). */
+function porteName(hint: string, t: Tr) {
+  const m: Record<string, string> = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...TALL_NAMES, ...clanBodyNames(t), brutamontes: t("laminasMobBrute", "Brutamontes") }
+  return m[hint] ?? hint
+}
+
+/** Retrato + Personagens + "agora" + a fala (o topo da Ficha). */
+function NowBlock({ life, portrait, t, act }: PageProps) {
+  const c = life.character
+  const v = c.vitals
+  const a = c.activity
+  const total = a.until ? (new Date(a.until).getTime() - new Date(a.startedAt).getTime()) / 3600000 : null
+  const progress = total && a.remainingH != null ? Math.max(0, Math.min(1, 1 - a.remainingH / total)) : null
+  return (
+    <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-2.5">
+      <div className="flex flex-col items-center gap-1">
+        <Portrait src={portrait} size={112} />
+        <MiniButton onClick={act.openSkins} active h={28} className="w-full">
+          <Users className="h-3.5 w-3.5" /> {t("stCharacters", "Personagens")}
+        </MiniButton>
+      </div>
+      <div className="flex min-w-0 flex-col gap-2">
+        <Chamfer cut={9}>
+          <div className="flex items-center gap-2 px-2 py-1.5">
+            <Ring color={EVO.ambar} size={28}>
+              <span className={SM_ICON}>{ACT_ICON[a.kind]}</span>
+            </Ring>
+            <div className="min-w-0 flex-1">
+              <div className={`${archivo.className} text-[11px] font-semibold uppercase tracking-[0.14em]`} style={{ color: EVO.mudo }}>
+                {t("stNow", "Agora")}
+              </div>
+              <div className={`${teko.className} truncate text-[24px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+                {activityLabel(a.kind, t)}
+              </div>
+              {a.remainingH != null && (
+                <div className={`${archivo.className} truncate text-[11px]`} style={{ color: EVO.ambar }}>
+                  {t("stRemaining", "faltam {h}").replace("{h}", hoursText(a.remainingH))}
+                </div>
+              )}
+              {progress != null && (
+                <div className="mt-0.5">
+                  <Bar value={progress * 100} height={4} color={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} />
+                </div>
+              )}
+            </div>
+          </div>
+        </Chamfer>
+        <div className={`${archivo.className} line-clamp-3 text-[13px] font-semibold leading-snug`} style={{ color: EVO.branco }}>
+          “{quote(c, t)}”
+        </div>
+        <div className={`${archivo.className} text-[11px] uppercase leading-snug`} style={{ color: EVO.mudo }}>
+          {t("stMoodIs", "Humor: {m}").replace("{m}", moodTag(v.mood, t))}
         </div>
       </div>
-    )
-  }
-  const body =
-    props.page === "overview" ? (
-      <Overview {...props} />
-    ) : props.page === "body" ? (
-      <BodyPage {...props} />
-    ) : props.page === "attributes" ? (
-      <Attributes {...props} />
-    ) : props.page === "loadout" ? (
-      <LoadoutD {...props} />
-    ) : props.page === "routine" ? (
-      <Routine {...props} />
-    ) : props.page === "market" ? (
-      <Market {...props} />
-    ) : props.page === "certificate" ? (
-      <CertificatePage {...props} />
-    ) : props.page === "archive" ? (
-      <ArchiveStatusPage {...props} />
-    ) : (
-      <History {...props} />
-    )
-  // Celular: a altura é a do conteúdo (o card rola); computador: a do modal.
-  return (
-    <div className={`${archivo.className} flex flex-col gap-4 ${props.compact ? "" : "h-full"}`}>
-      <Header {...props} />
-      <div className={props.compact ? "" : "min-h-0 flex-1 overflow-hidden"}>{body}</div>
     </div>
   )
+}
+
+/** Os 5 vitais (4 + Vitalidade), o Porte e, só quando passam de 30%, Desgaste e Corrosão (D8, D10). */
+function VitalsBlock({ life, t }: PageProps) {
+  const c = life.character
+  const v = c.vitals
+  const h = c.health
+  const wear = Math.max(0, Math.min(100, h.cardiac))
+  const rust = Math.max(0, Math.min(100, (h.toxicity / 120) * 100))
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="grid grid-cols-2 gap-1.5">
+        <MiniMeter icon={<Heart />} color={EVO.perigo} label={t("stHealth", "Saúde")} value={v.health} max={Math.max(1, v.vitality)} barColor={toneFor(v.health)} tag={healthTag(v.health, t)} />
+        <MiniMeter icon={<Zap />} color={EVO.ambar} label={t("stEnergy", "Energia")} value={v.energy} barColor={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} tag={energyTag(v.energy, t)} />
+        <MiniMeter icon={<Activity />} color={EVO.roxo} label={t("stStress", "Estresse")} value={v.stress} barColor={toneFor(v.stress, "low")} tag={stressTag(v.stress, t)} />
+        <MiniMeter icon={<Utensils />} color={EVO.bom} label={t("stSatiety", "Saciedade")} value={v.satiety} barColor={toneFor(v.satiety)} tag={satietyTag(v.satiety, t)} />
+      </div>
+      <MiniPlate
+        title={t("stVitality", "Vitalidade")}
+        aside={
+          <span className={`${archivo.className} truncate text-[11px] font-semibold uppercase`} style={{ color: EVO.douradoClaro }}>
+            {t("stPorte", "Porte: {p}").replace("{p}", porteName(c.body.bodyHint, t))}
+          </span>
+        }
+      >
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <Bar value={v.vitality} color={toneFor(v.vitality)} height={6} />
+          </div>
+          <span className={`${teko.className} text-[24px] font-bold leading-none tabular-nums`} style={{ color: EVO.branco }}>
+            {r0(v.vitality)}
+          </span>
+        </div>
+        {(wear > 30 || rust > 30) && (
+          <div className="mt-1.5 grid grid-cols-2 gap-3">
+            {wear > 30 && (
+              <div className="min-w-0">
+                <div className={`${archivo.className} flex justify-between text-[11px] uppercase`} style={{ color: EVO.branco }}>
+                  <span>{t("stWear", "Desgaste")}</span>
+                  <span style={{ color: EVO.douradoClaro }}>{r0(wear)}%</span>
+                </div>
+                <Bar value={wear} color={toneFor(wear, "low")} height={5} />
+              </div>
+            )}
+            {rust > 30 && (
+              <div className="min-w-0">
+                <div className={`${archivo.className} flex justify-between text-[11px] uppercase`} style={{ color: EVO.branco }}>
+                  <span>{t("stCorrosion", "Corrosão")}</span>
+                  <span style={{ color: EVO.douradoClaro }}>{r0(rust)}%</span>
+                </div>
+                <Bar value={rust} color={toneFor(rust, "low")} height={5} />
+              </div>
+            )}
+          </div>
+        )}
+      </MiniPlate>
+    </div>
+  )
+}
+
+/** As parcelas de um atributo para o cartão (treino, piso, nível, equipamento). */
+function statOrigin(key: StatRow["key"], life: LifeFull, adv: AdvXp | null | undefined, loadout: LoadoutData | undefined, t: Tr): [string, string][] {
+  const at = life.character.attributes as unknown as Record<string, number> & { floors?: Record<string, number> }
+  const level = adv?.level ?? 1
+  const stats = { strength: at.strength, speed: at.speed, intelligence: at.intelligence, dexterity: at.dexterity ?? 0 }
+  const gear = loadout?.gear?.bag.bonus
+  const base = heroSheet(life.avatar, 1, stats)
+  const lv = heroSheet(life.avatar, level, stats)
+  const full = heroSheet(life.avatar, level, stats, gear || undefined)
+  const sign = (n: number) => (Math.round(n) > 0 ? `+${Math.round(n)}` : Math.round(n) < 0 ? String(Math.round(n)) : "—")
+  if (key === "def" || key === "atk") {
+    return [
+      [t("lkBase", "Personagem"), String(Math.round(base[key]))],
+      [t("lkLevelFight2", "Nível"), sign(lv[key] - base[key])],
+      [t("lkGear", "Equipamento"), sign(full[key] - lv[key])],
+    ]
+  }
+  const k = ({ str: "strength", int: "intelligence", dex: "dexterity", spd: "speed" } as const)[key]
+  const trainedV = Math.round(Number(at[k]) || 0)
+  const floorV = String(Math.round(Number(at.floors?.[k]) || 0))
+  const lvAttr = heroLevelScale(level).attr
+  // acuracidade e velocidade = valor do personagem × (100% + treino + nível)
+  if (key === "str" || key === "spd") {
+    const zero = heroSheet(life.avatar, 1, { strength: 0, speed: 0, intelligence: 0, dexterity: 0 })
+    return [
+      [t("lkBase", "Personagem"), String(Math.round(key === "str" ? zero.acc : zero.spd))],
+      [t("lkTrained", "Treino"), `${sign(trainedV)}%`],
+      [t("lkLevelFight2", "Nível"), lvAttr ? `${sign(lvAttr)}%` : "—"],
+      [t("lkFloor", "Piso"), floorV],
+    ]
+  }
+  return [
+    [t("lkTrained", "Treino"), String(trainedV)],
+    [t("lkLevelFight2", "Nível"), sign(lvAttr)],
+    [t("lkFloor", "Piso"), floorV],
+  ]
+}
+
+function SheetPage(props: PageProps) {
+  const { life, t, adv, loadout, compact } = props
+  const rows = useStatRows(life, adv?.level, t)
+  const [pick, setPick] = useState<StatRow["key"] | null>(null)
+  const c = life.character
+  if (c.status === "dead") return compact ? <OverviewC {...props} /> : <Overview {...props} />
+  const row = pick ? rows.find((r) => r.key === pick) : undefined
+  const data = loadout ?? NO_LOADOUT
+  const left = (
+    <>
+      <NowBlock {...props} />
+      <VitalsBlock {...props} />
+    </>
+  )
+  const right = (
+    <>
+      <StatBars life={life} level={adv?.level} t={t} small onPick={setPick} />
+      <MiniPlate title={t("lkEquipped", "Equipado")}>
+        <Equipped data={data} t={t} />
+      </MiniPlate>
+      {c.effects.length > 0 && (
+        <MiniPlate title={t("lkActive", "Efeitos ativos")}>
+          <Active life={life} t={t} />
+        </MiniPlate>
+      )}
+    </>
+  )
+  return (
+    <>
+      {compact ? (
+        <div className="flex flex-col gap-2 pb-3">
+          {left}
+          {right}
+        </div>
+      ) : (
+        <div className="grid h-full grid-cols-2 gap-4 overflow-y-auto pr-1">
+          <div className="flex flex-col gap-2">{left}</div>
+          <div className="flex flex-col gap-2">{right}</div>
+        </div>
+      )}
+      {row && <StatCard row={row} origin={statOrigin(row.key, life, adv, loadout, t)} t={t} onClose={() => setPick(null)} />}
+    </>
+  )
+}
+
+/** Alma: personalidade, quanto gosta de você, fertilidade (a metade "alma" da antiga pág. 3). */
+function SoulPage({ life, t, compact }: PageProps) {
+  const c = life.character
+  const fert = c.attributes.fertility
+  return (
+    <div className={`flex flex-col gap-2 pb-3 ${compact ? "" : "mx-auto h-full w-full max-w-[640px] overflow-y-auto pr-1"}`}>
+      <MiniPlate
+        title={t("stPersonality", "Personalidade")}
+        aside={
+          <span className={`${archivo.className} truncate text-[11px] font-semibold uppercase`} style={{ color: EVO.douradoClaro }}>
+            {characterTemper(c, t)}
+          </span>
+        }
+      >
+        {c.soul ? (
+          <SoulPanel soul={c.soul} t={t} compact />
+        ) : (
+          <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
+            {TRAITS.map((k) => (
+              <div key={k} className="min-w-0">
+                <div className={`${archivo.className} flex justify-between gap-1 text-[11px] uppercase`} style={{ color: EVO.branco }}>
+                  <span className="truncate">{traitName(k, t)}</span>
+                  <span className="font-semibold" style={{ color: EVO.douradoClaro }}>
+                    {r0(c.personality[k] * 100)}
+                  </span>
+                </div>
+                <Bar value={c.personality[k] * 100} color={`linear-gradient(90deg, ${EVO.ritual}, ${EVO.magenta})`} height={4} />
+              </div>
+            ))}
+          </div>
+        )}
+      </MiniPlate>
+      <MiniPlate title={t("atFertility", "Fertilidade")}>
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <Bar value={fert} color={EVO.rosa} height={6} />
+          </div>
+          <span className={`${teko.className} text-[24px] font-bold leading-none tabular-nums`} style={{ color: EVO.branco }}>
+            {r0(fert)}%
+          </span>
+        </div>
+      </MiniPlate>
+    </div>
+  )
+}
+
+/** Diário (3 dias) + linha do tempo (8 últimos; "ver tudo" abre o resto). */
+function DiaryBlock({ life, t }: PageProps) {
+  const [all, setAll] = useState(false)
+  const items = new Map(life.catalog.items.map((i) => [i.id, i]))
+  const off = life.catalog.clock.offsetMin
+  const events = life.events.map((e) => ({ e, text: eventText(e.kind, e.data, t, items) })).filter((x) => x.text)
+  return (
+    <>
+      <MiniPlate title={t("stDiary", "Diário")}>
+        {life.days.length === 0 && (
+          <p className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
+            {t("stNoEvents", "Nada aconteceu ainda.")}
+          </p>
+        )}
+        {life.days.slice(0, DIARY_MAX_C).map((d) => (
+          <div key={d.day} className="flex min-h-7 items-center gap-2 border-b" style={{ borderColor: EVO.linha }}>
+            <span className={`${teko.className} w-11 shrink-0 text-[16px] font-semibold leading-none`} style={{ color: EVO.branco }}>
+              {d.day.slice(8, 10)}/{d.day.slice(5, 7)}
+            </span>
+            <div className={`${archivo.className} min-w-0 flex-1 truncate text-[11px]`} style={{ color: EVO.mudo }}>
+              {diaryLine(d, t)}
+            </div>
+            <MiniTag tone={d.condition.score >= 60 ? "bom" : d.condition.score >= 40 ? "ouro" : "perigo"}>{conditionLabel(d.condition.label, t)}</MiniTag>
+          </div>
+        ))}
+      </MiniPlate>
+      <MiniPlate
+        title={t("stTimeline", "Linha do tempo")}
+        aside={
+          events.length > EVENTS_MAX_C ? (
+            <button type="button" onClick={() => setAll((v) => !v)} className={`${archivo.className} min-h-7 px-1 text-[11px] font-bold uppercase`} style={{ color: EVO.douradoClaro }}>
+              {all ? t("stSeeLess", "ver menos") : t("stSeeAll", "ver tudo")}
+            </button>
+          ) : undefined
+        }
+      >
+        {events.length === 0 && (
+          <p className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
+            {t("stNoEvents", "Nada aconteceu ainda.")}
+          </p>
+        )}
+        {(all ? events : events.slice(0, EVENTS_MAX_C)).map(({ e, text }, i) => (
+          <div key={`${e.at}-${i}`} className="flex items-center gap-2 border-b py-1" style={{ borderColor: EVO.linha }}>
+            <span className="inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center [&>svg]:h-3 [&>svg]:w-3" style={{ border: `1.5px solid ${EVO.perigo}`, color: EVO.perigo }}>
+              {eventIcon(e.kind)}
+            </span>
+            <div className={`${archivo.className} line-clamp-2 min-w-0 flex-1 text-[11px] leading-[14px]`} style={{ color: EVO.branco }}>
+              <span className="mr-1.5 font-semibold tabular-nums" style={{ color: EVO.douradoClaro }}>
+                {timeOf(e.at, off)}
+              </span>
+              {text}
+            </div>
+          </div>
+        ))}
+      </MiniPlate>
+    </>
+  )
+}
+
+function RoutinePage(props: PageProps) {
+  if (props.compact)
+    return (
+      <div className="flex flex-col gap-2 pb-3">
+        <RoutineC {...props} />
+        <DiaryBlock {...props} />
+      </div>
+    )
+  return (
+    <div className="grid h-full grid-cols-2 gap-4 overflow-y-auto pr-1">
+      <div className="flex flex-col gap-2">
+        <RoutineC {...props} />
+      </div>
+      <div className="flex flex-col gap-2">
+        <DiaryBlock {...props} />
+      </div>
+    </div>
+  )
+}
+
+/** Registro: a certidão e o Arquivo (lore). */
+function RecordPage(props: PageProps) {
+  if (props.compact)
+    return (
+      <div className="flex flex-col gap-3 pb-3">
+        <CertificatePage {...props} />
+        <ArchiveStatusPage {...props} />
+      </div>
+    )
+  return (
+    <div className="grid h-full grid-cols-2 gap-4 overflow-hidden">
+      <CertificatePage {...props} />
+      <div className="min-h-0 overflow-y-auto pr-1">
+        <ArchiveStatusPage {...props} />
+      </div>
+    </div>
+  )
+}
+
+export function StatusPage(props: PageProps) {
+  const P = { sheet: SheetPage, soul: SoulPage, routine: RoutinePage, record: RecordPage }[props.page]
+  // Celular: a página rola dentro do card; computador: cada página cuida da altura.
+  return (
+    <div className={`${archivo.className} flex h-full flex-col gap-2`}>
+      <Header {...props} />
+      <div className={`min-h-0 flex-1 ${props.compact ? "overflow-y-auto" : "overflow-hidden"}`}>
+        <P {...props} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * As páginas antigas, fora da navegação desde a apresentação 03 (o código sai na
+ * limpeza 03-b, conferido por Grep que nada mais aponta para elas).
+ */
+export function LegacyStatusPage(props: PageProps & { legacy: string }) {
+  const C: Record<string, (p: PageProps) => ReactNode> = { overview: OverviewC, body: BodyC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC, certificate: CertificatePage, archive: ArchiveStatusPage }
+  const D: Record<string, (p: PageProps) => ReactNode> = { overview: Overview, body: BodyPage, attributes: Attributes, loadout: LoadoutD, routine: Routine, market: Market, history: History, certificate: CertificatePage, archive: ArchiveStatusPage }
+  const P = (props.compact ? C : D)[props.legacy] ?? OverviewC
+  return <P {...props} />
 }

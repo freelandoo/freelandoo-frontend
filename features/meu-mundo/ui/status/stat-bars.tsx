@@ -16,6 +16,7 @@
 // rankOdds, HERO_LEVEL) e o speedFactor do Jetpack.
 
 import { useEffect, useState, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 import { Brain, Crosshair, Feather, Heart, Shield, Swords, Target, Zap } from "lucide-react"
 import type { LifeFull } from "../../types"
 import { useLocale } from "@/components/i18n/I18nProvider"
@@ -172,14 +173,105 @@ function StatLine({ row, small }: { row: StatRow; small: boolean }) {
 }
 
 /** As 6 barras, uma embaixo da outra. */
-export function StatBars({ life, level, t, small = false }: { life: LifeFull; level?: number; t: Tr; small?: boolean }) {
+export function StatBars({ life, level, t, small = false, onPick }: { life: LifeFull; level?: number; t: Tr; small?: boolean; onPick?: (key: StatRow["key"]) => void }) {
   const rows = useStatRows(life, level, t)
   return (
     <div className="grid" style={{ rowGap: small ? 6 : 8 }}>
-      {rows.map((r) => (
-        <StatLine key={r.key} row={r} small={small} />
-      ))}
+      {rows.map((r) =>
+        onPick ? (
+          <button key={r.key} type="button" onClick={() => onPick(r.key)} className="block w-full text-left transition-transform duration-100 active:scale-[0.985]" aria-haspopup="dialog">
+            <StatLine row={r} small={small} />
+          </button>
+        ) : (
+          <StatLine key={r.key} row={r} small={small} />
+        ),
+      )}
     </div>
+  )
+}
+
+/** Onde vale e como sobe, por atributo (o texto que antes ficava todo no fim da Visão geral). */
+export function statGuideText(k: StatRow["key"], t: Tr): { where: string; how: string } {
+  switch (k) {
+    case "def":
+      return { where: t("sgDefWhere", "Amortece o dano: disputa com o ataque de quem bate. Ataque 100 contra defesa 1000 passa só 10%."), how: t("sgDefHow2", "Começa no valor do personagem e sobe a cada nível de aventura. O equipamento do Armeiro e da Forja soma por cima.") }
+    case "atk":
+      return { where: t("sgAtkWhere", "A força do golpe: multiplica o dano e fura a defesa de quem apanha."), how: t("sgAtkHow2", "Começa no valor do personagem e sobe a cada nível de aventura. A arma e o refino na Forja somam por cima.") }
+    case "str":
+      return { where: t("sgStrWhere", "Chance de acertar: disputa com a velocidade de quem apanha. 100 contra 1000 acerta 10%. Conta para virar adulto."), how: t("sgStrHow2", "Treinando na academia (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor.") }
+    case "int":
+      return { where: t("sgIntWhere", "Mostra o aviso do golpe do inimigo mais cedo (até +35%) e é o que mais pesa na chance de golpe forte."), how: t("sgIntHow2", "Estudando na escola ou na universidade (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor.") }
+    case "dex":
+      return { where: t("sgDexWhere", "Gasta menos fôlego no ataque e na esquiva (até −15%), recupera a arma mais rápido e ajuda no golpe forte."), how: t("sgDexHow2", "Jogando os minijogos e lutando. Depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor.") }
+    default:
+      return { where: t("sgSpdWhere", "Esquiva, até sem apertar: disputa com a acuracidade de quem bate. Também dá ritmo aos golpes e ao passo; no Jetpack, a velocidade do voo."), how: t("sgSpdHow2", "Treinando na academia. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido.") }
+  }
+}
+
+/**
+ * Cartão do atributo (apresentação 03): sobe de baixo ao tocar numa barra da Ficha.
+ * "Onde vale / Como sobe / De onde vem". Entra em 220 ms (transform), sai no toque fora,
+ * no X ou no ESC. `origin` = as parcelas (treino, piso, nível, equipamento) quando houver.
+ */
+export function StatCard({ row, origin, t, onClose }: { row: StatRow; origin: [string, string][]; t: Tr; onClose: () => void }) {
+  const [on, setOn] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setOn(true))
+    const key = (e: KeyboardEvent) => e.key === "Escape" && onClose()
+    window.addEventListener("keydown", key)
+    return () => {
+      cancelAnimationFrame(id)
+      window.removeEventListener("keydown", key)
+    }
+  }, [onClose])
+  const g = statGuideText(row.key, t)
+  const color = COLORS[row.key]
+  // portal: o STATUS tem transform (o fixed dele ficaria preso à moldura, atrás da navegação)
+  return createPortal(
+    <div className="fixed inset-0 z-[90] flex items-end justify-center" role="dialog" aria-modal aria-label={row.label} onPointerDown={(e) => e.target === e.currentTarget && onClose()} style={{ background: on ? "rgba(6,8,12,.55)" : "rgba(6,8,12,0)", transition: "background 220ms" }}>
+      <div
+        className={`${archivo.className} w-full max-w-[520px] px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3`}
+        style={{ background: CARD, boxShadow: `inset 0 0 0 1px ${MOLDURA}, 0 -4px 0 #000`, transform: on ? "translateY(0)" : "translateY(100%)", transition: "transform 220ms cubic-bezier(0.22,1,0.36,1)" }}
+      >
+        <div className="flex items-center gap-3">
+          <Glyph color={color} size={28}>
+            {row.icon}
+          </Glyph>
+          <span className={`${teko.className} min-w-0 flex-1 truncate text-[24px] font-semibold uppercase leading-none`} style={{ color: EVO.branco, paddingTop: "0.12em" }}>
+            {row.label}
+          </span>
+          <span className={`${anton.className} text-[40px] leading-none tabular-nums`} style={{ color, fontFamily: anton.style.fontFamily }}>
+            {Math.round(row.value)}
+          </span>
+          <button type="button" onClick={onClose} aria-label={t("stCardClose", "Fechar")} className="grid h-11 w-11 place-items-center text-[16px]" style={{ color: EVO.mudo }}>
+            ✕
+          </button>
+        </div>
+        <dl className="mt-3 grid gap-2 text-[13px] leading-[1.4]">
+          <div>
+            <dt className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color }}>{t("sgWhere", "Onde vale:")}</dt>
+            <dd style={{ color: EVO.branco }}>{g.where}</dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: EVO.douradoClaro }}>{t("sgHow", "Como sobe:")}</dt>
+            <dd style={{ color: EVO.mudo }}>{g.how}</dd>
+          </div>
+          {origin.length > 0 && (
+            <div>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: EVO.douradoClaro }}>{t("sgFrom", "De onde vem:")}</dt>
+              <dd className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                {origin.map(([k, v]) => (
+                  <span key={k} className="whitespace-nowrap" style={{ color: EVO.mudo }}>
+                    {k} <b className="tabular-nums" style={{ color: EVO.branco }}>{v}</b>
+                  </span>
+                ))}
+              </dd>
+            </div>
+          )}
+        </dl>
+      </div>
+    </div>,
+    document.body,
   )
 }
 

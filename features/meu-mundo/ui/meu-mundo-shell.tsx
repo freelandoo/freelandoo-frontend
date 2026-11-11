@@ -520,7 +520,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // lore v2 F5: "Abrir o Arquivo" (missão) abre o STATUS direto na página do Arquivo
   useEffect(() => {
     const open = () => {
-      setStatusPage("archive")
+      setStatusPage("record")
       setStatusBody(scene.me.body)
     }
     window.addEventListener(OPEN_ARCHIVE, open)

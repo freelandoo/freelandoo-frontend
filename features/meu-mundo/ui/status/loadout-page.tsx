@@ -125,7 +125,7 @@ function Small({ children, tone }: { children: ReactNode; tone?: string }) {
 }
 
 // ─── Equipado ────────────────────────────────────────────────────────────────
-function Equipped({ data, t }: { data: LoadoutData; t: Tr }) {
+export function Equipped({ data, t }: { data: LoadoutData; t: Tr }) {
   if (!data.gear) return <Small>{t("lkGearLoading", "Carregando o equipamento…")}</Small>
   const { catalog, bag } = data.gear
   const byId = new Map(catalog.items.map((i) => [i.id, i]))
@@ -194,7 +194,7 @@ function Equipped({ data, t }: { data: LoadoutData; t: Tr }) {
 }
 
 // ─── Ativos ──────────────────────────────────────────────────────────────────
-function Active({ life, t }: { life: LifeFull; t: Tr }) {
+export function Active({ life, t }: { life: LifeFull; t: Tr }) {
   const fx = life.character.effects
   if (!fx.length) return <Small>{t("lkNoEffects", "Nenhum suplemento, remédio, estimulante ou lesão agindo agora.")}</Small>
   const total = new Map<string, number>()

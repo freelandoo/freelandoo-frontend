@@ -957,6 +957,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     setBlocked(blocked) {
       input.blocked = blocked
       clearInput(input)
+      mobs.setTagsVisible(!blocked)
     },
     interact() {
       if (nearby && !input.blocked) interactWith(nearby)
