@@ -16,6 +16,8 @@ export interface CenaMeta {
   /** Cena de Domínio: pontos que o jogo lê (`entrada`, `saida`, `chefe`…) e setores com zona de monstro. */
   pontos?: readonly string[]
   setores?: readonly number[]
+  /** Luz da cena no jogo (padrão = a do bairro: céu 0,78 + sol 0,55). Noite = céu baixo e azulado. */
+  luz?: { hemi?: number; sol?: number; ceu?: RGB; chao?: RGB; solCor?: RGB }
 }
 
 export interface CenaModulo {

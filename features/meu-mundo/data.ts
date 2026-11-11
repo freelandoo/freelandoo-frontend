@@ -767,6 +767,8 @@ export interface DomainFoe {
 }
 export interface DomainSector {
   n: number
+  /** Domínios v2: a cena (1–3) onde o setor fica. */
+  scene?: number
   kind: MobKind
   /** D2: a criatura da lore (null = Domínio ainda sem fatia própria). */
   foe?: DomainFoe | null
@@ -816,6 +818,20 @@ export interface DomainInfo {
   /** O trecho de passagem para o próximo (depois do setor 10). */
   passage: { to: DomainId; open: boolean } | null
   sectors: DomainSector[]
+  /** Domínios v2 (DV1): as 3 cenas de mundo aberto (servidor antigo: ausente). */
+  scenes?: DomainScene[]
+}
+/** Domínios v2: uma cena do mundo aberto — faixa de setores, chefe (cena 3: guardião + deus) e a passagem para a próxima. */
+export interface DomainScene {
+  n: number
+  /** Arquivo da cena no aparelho (`engine/cena-codigo/cenas`): `<domínio>-<n>`. */
+  name: string
+  sectors: number[]
+  boss: number
+  god: number | null
+  open: boolean
+  cleared: boolean
+  passage: { to: number; open: boolean } | null
 }
 export interface DomainsState {
   trainer: number
@@ -851,8 +867,8 @@ export interface DomainAdvance {
   crossedNow: boolean
 }
 export const getDomains = (token: string) => call<DomainsState>(token, "GET", "/domains")
-export const enterDomain = (token: string, domain: DomainId) =>
-  call<{ trainer: number; bypass: boolean; power: number; domain: DomainInfo }>(token, "POST", "/domains/enter", { domain })
+export const enterDomain = (token: string, domain: DomainId, scene?: number) =>
+  call<{ trainer: number; bypass: boolean; power: number; domain: DomainInfo; scene?: DomainScene }>(token, "POST", "/domains/enter", scene ? { domain, scene } : { domain })
 /** Lore v2 C5: chegou a um lugar da cena (Pedraverde) ou a um ponto dele (o Golem). O servidor confere e grava a visita. */
 export const reachDomainPlace = (token: string, domain: DomainId, place: string, spot?: string | null) =>
   call<{ domain: DomainId; place: string; spot: string | null; recorded: boolean; armed: boolean }>(token, "POST", "/domains/place", { domain, place, spot: spot ?? null })

@@ -9,6 +9,12 @@
 // palco do Domínio (entrada, fundo ou palácio) — um ambiente 3D por vez. O recibo
 // da luta conferida traz o setor vencido; a cena volta na frente do guardião, com
 // o portão aberto se ele caiu. No fim do setor 10, a passagem leva ao próximo.
+//
+// Domínios v2 (DV2/DV3): quando a cena de mundo aberto do Domínio existe no aparelho
+// (`engine/cena-codigo`, nome `<domínio>-<n>` que o servidor manda em `scenes`), monta
+// ela no lugar do corredor (engine/open-domain-game.ts): 3 cenas por Domínio, passagem
+// entre elas (o servidor confere o chefe), monstros soltos que abrem a luta ao encostar
+// e o chefe parado no ponto dele. Domínio sem cena feita continua no corredor.
 
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -18,8 +24,9 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { onRealtime } from "@/lib/realtime"
 import { GOD_HUNT, GOD_NAME } from "../../engine/god-view"
 import { godIdOf, type GodId } from "../../laminas/sim/fight"
-import { enterDomain, equipGear, getDomains, getGods, type GodWire, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainPact, type DomainInfo, type FightTicket, type Receipt } from "../../data"
+import { enterDomain, equipGear, getDomains, getGods, type GodWire, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainPact, type DomainInfo, type DomainScene, type FightTicket, type Receipt } from "../../data"
 import { createDomainGame, passageKitOf, sceneKitOf, type DomainGameHandle, type DomainNear } from "../engine/domain-game"
+import { createOpenDomainGame, hasOpenScene, type OpenDomainHandle, type OpenNear } from "../engine/open-domain-game"
 import { Joystick, SAFE, SceneCurtain } from "../../ui/meu-mundo-view"
 import { EvoButton, EvoToast } from "../../ui/hud/hud-kit"
 import { useMobName } from "../../laminas/ui/laminas-view"
@@ -42,7 +49,14 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const [failed, setFailed] = useState<string | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [attempt, setAttempt] = useState(0)
-  const [near, setNear] = useState<DomainNear>(null)
+  const [near, setNear] = useState<DomainNear | OpenNear>(null)
+  // DV2: a cena do mundo aberto (1–3), de onde se chega nela e o que o servidor mandou dela
+  const [sceneN, setSceneN] = useState(1)
+  const [arrive, setArrive] = useState<"entrada" | "saida">("entrada")
+  const [sceneInfo, setSceneInfo] = useState<DomainScene | null>(null)
+  // DV3: monstros soltos vencidos (id → hora) — somem até reaparecer; quem encostou agora
+  const defeatedRef = useRef<Record<string, number>>({})
+  const engagedRef = useRef<string | null>(null)
   const [sector, setSector] = useState(0)
   const [place, setPlace] = useState<string | null>(null)
   // C5: perto do Golem (o servidor diz se valeu ou se a pessoa está armada)
@@ -62,7 +76,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const sectorRef = useRef(0)
   const [isTouch, setIsTouch] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const gameRef = useRef<DomainGameHandle | null>(null)
+  const gameRef = useRef<DomainGameHandle | OpenDomainHandle | null>(null)
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches)
@@ -74,18 +88,20 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   }, [news])
 
   // o servidor confere as travas e manda o Domínio pronto (setores, nível, Poder)
-  const load = useCallback(async (which: DomainId) => {
+  const load = useCallback(async (which: DomainId, n: number) => {
     const token = getToken()
     if (!token) return
     setFailed(null)
-    const r = await enterDomain(token, which)
-    if (r.ok) setInfo(r.data.domain)
-    else setFailed(r.error)
+    const r = await enterDomain(token, which, n > 1 ? n : undefined)
+    if (r.ok) {
+      setSceneInfo(r.data.scene ?? null)
+      setInfo(r.data.domain)
+    } else setFailed(r.error)
   }, [])
   useEffect(() => {
     setInfo(null)
-    void load(id)
-  }, [id, load])
+    void load(id, sceneN)
+  }, [id, sceneN, load])
 
   // ── a cena (só sem luta aberta: um ambiente 3D por vez) ──
   const labels = useRef({ t, info, near })
@@ -100,6 +116,11 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const askFight = useRef<(s: number) => void>(() => {})
   const askGod = useRef<(g: GodId) => void>(() => {})
   const cross = useRef<() => void>(() => {})
+  const go = useRef<(n: number, at: "entrada" | "saida") => void>(() => {})
+  const sceneRef = useRef(sceneInfo)
+  useEffect(() => {
+    sceneRef.current = sceneInfo
+  }, [sceneInfo])
   useEffect(() => {
     const canvas = canvasRef.current
     const d = infoRef.current
@@ -107,7 +128,53 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
     let alive = true
     setStatus("loading")
     let handle: DomainGameHandle | null = null
+    const sc = sceneRef.current
     try {
+      if (sc && hasOpenScene(sc.name)) {
+        const open = createOpenDomainGame({
+          canvas,
+          body,
+          look,
+          domain: d,
+          scene: sc,
+          spawn: spawn ? { sector: spawn } : { at: arrive },
+          defeated: defeatedRef.current,
+          onReady: () => alive && setStatus("ready"),
+          onNearbyChange: (n) => alive && setNear(n),
+          onSector: (s) => alive && setSector(s),
+          onPlace: (p) => alive && setPlace(p),
+          onSpot: (s) => alive && setSpot(s),
+          onGodCatch: (g) => alive && askGod.current(g),
+          onEngage: (s, mid) => {
+            if (!alive) return
+            engagedRef.current = mid
+            askFight.current(s)
+          },
+          onInteract: (n) => {
+            if (!alive) return
+            if (n.kind === "exit") onExit()
+            else if (n.kind === "guard") askFight.current(n.sector)
+            else if (n.kind === "passage") cross.current()
+            else if (n.kind === "back") go.current(sc.n - 1, "saida")
+            else if (n.kind === "next") go.current(sc.n + 1, "entrada")
+            else if (n.kind === "sealed")
+              setNews({
+                text: n.boss ? labels.current.t("domSealedBoss", "Vença o chefe desta parte para seguir.") : labels.current.t("domSealed", "Setor {n} selado: vença o setor anterior primeiro.").replace("{n}", String(n.sector)),
+                id: Date.now(),
+              })
+          },
+          onError: () => alive && setStatus("error"),
+        })
+        gameRef.current = open
+        return () => {
+          alive = false
+          open.dispose()
+          gameRef.current = null
+          setNear(null)
+          setPlace(null)
+          setSpot(null)
+        }
+      }
       handle = createDomainGame({
         canvas,
         body,
@@ -144,7 +211,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
       setSpot(null)
     }
     // a cena remonta ao trocar de Domínio, ao voltar da luta e no "tentar de novo"
-  }, [ready, body, look, spawn, attempt, onExit])
+  }, [ready, body, look, spawn, arrive, attempt, onExit])
 
   // ── N4: quem está solto e caça o meu povo (a queda chega pelo socket mm:god) ──
   const loadGods = useCallback(async () => {
@@ -218,6 +285,8 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
       openingRef.current = false
       setOpening(false)
       if (!r.ok) {
+        engagedRef.current = null
+        gameRef.current?.setBlocked(false)
         setNews({ text: t("domFightFail", "A luta não abriu: {e}").replace("{e}", r.error), id: Date.now() })
         return
       }
@@ -246,6 +315,13 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
       setSpawn(s >= 1 && s <= 10 ? s : 0)
       setFight({ ticket: r.data.fight, sector: s, foe: GOD_NAME[g], foeBody: g, foeRig: true })
     }
+    // DV2: passagem entre as cenas do mesmo Domínio (o servidor confere o chefe no /domains/enter)
+    go.current = (n: number, at: "entrada" | "saida") => {
+      if (n < 1 || n > 3) return
+      setSpawn(0)
+      setArrive(at)
+      setSceneN(n)
+    }
     cross.current = () => {
       const d = labels.current.info
       if (!d?.passage) return
@@ -257,6 +333,8 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
           const next = r && r.ok ? r.data.domains.find((x) => x.id === d.passage!.to) : null
           if (next?.open) {
             setSpawn(0)
+            setArrive("entrada")
+            setSceneN(1)
             setId(next.id)
           } else if (next?.lock?.code === "trainer") {
             setNews({ text: t("domCrossLocked", "{name} abre no nível {n} do treinador").replace("{name}", domainName(t, next.id)).replace("{n}", String(next.lock.level)), id: Date.now() })
@@ -265,6 +343,8 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         return
       }
       setSpawn(0)
+      setArrive("entrada")
+      setSceneN(1)
       setId(d.passage.to)
     }
   }, [t, mobName])
@@ -285,6 +365,10 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         }
         return
       }
+      // DV3: o monstro solto vencido some até reaparecer
+      const mid = engagedRef.current
+      engagedRef.current = null
+      if (mid && r.result?.win) defeatedRef.current[mid] = Date.now()
       const adv = (r as Receipt & { domain?: DomainAdvance }).domain
       if (!adv) return
       setInfo((cur) => (cur && cur.id === adv.domain ? { ...cur, best: Math.max(cur.best, adv.best), crossed: adv.crossed } : cur))
@@ -307,10 +391,11 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
       godFightRef.current = null
       godDelay.current = GOD_HUNT.CALM_MS
     }
+    engagedRef.current = null
     setFight(null)
     // recarrega pelo servidor (setores, passagem e travas do próximo)
-    void load(id)
-  }, [id, load])
+    void load(id, sceneN)
+  }, [id, sceneN, load])
 
   const stageSpec: DomainStageSpec = useMemo(() => ({ kit: sceneKitOf(id), spot: fight ? (info?.sectors[fight.sector - 1]?.stage ?? "entrada") : "entrada" }), [id, fight, info])
 
@@ -320,14 +405,23 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
     ? { label: t("domFight", "Lutar · {mob}").replace("{mob}", guard.foe ? foeName(t, guard.foe.id) : mobName(guard.kind)), icon: <Swords className="h-5 w-5" /> }
     : near?.kind === "exit"
       ? { label: t("domExit", "Voltar à praça"), icon: <DoorOpen className="h-5 w-5" /> }
+      : near?.kind === "back"
+        ? { label: t("domBackScene", "Voltar à parte anterior"), icon: <Footprints className="h-5 w-5" /> }
+        : near?.kind === "next"
+          ? { label: t("domNextScene", "Seguir para a parte {n}").replace("{n}", String(sceneN + 1)), icon: <Footprints className="h-5 w-5" /> }
+          : near?.kind === "sealed"
+            ? { label: near.boss ? t("domSealedBossShort", "Passagem fechada") : t("domSealedShort", "Selado"), icon: <Shield className="h-5 w-5" /> }
       : near?.kind === "passage" && info?.passage
         ? { label: t("domCross", "Atravessar para {name}").replace("{name}", domainName(t, info.passage.to)), icon: <Footprints className="h-5 w-5" /> }
         : null
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
+  const openScene = !!sceneInfo && hasOpenScene(sceneInfo.name)
   const here =
     place === "pedraverde"
       ? t("domPlace_pedraverde", "Pedraverde")
-      : sector === 0
+      : openScene && sector === 0
+        ? t("domScenePart", "Parte {n}").replace("{n}", String(sceneN))
+        : sector === 0
         ? t("domEntrance", "Entrada")
         : sector === 11
           ? t("domPassage", "Passagem")
@@ -415,7 +509,11 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
           errorTitle={t("domErrorTitle", "O Domínio não abriu")}
           errorText={failed ?? t("errorDesc", "O navegador não conseguiu iniciar o 3D. Tente de novo; se continuar, volte ao perfil.")}
           onRetry={() => {
-            if (failed) void load(id)
+            // DV2: cena recusada (o chefe anterior ainda de pé) volta para a primeira
+            if (failed) {
+              if (sceneN > 1) setSceneN(1)
+              else void load(id, 1)
+            }
             setAttempt((n) => n + 1)
           }}
           onLeave={onExit}

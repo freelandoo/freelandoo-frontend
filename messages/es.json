@@ -12514,7 +12514,14 @@
     "domLootSure": "Por victoria",
     "domLootChance": "Probabilidad",
     "domLootFirst": "Primera victoria",
-    "domLootFirstDone": "ya recibida"
+    "domLootFirstDone": "ya recibida",
+    "domScenePart": "Parte {n}",
+    "domBackScene": "Volver a la parte anterior",
+    "domNextScene": "Seguir a la parte {n}",
+    "domSealedShort": "Sellado",
+    "domSealedBossShort": "Paso cerrado",
+    "domSealed": "Sector {n} sellado: vence primero el sector anterior.",
+    "domSealedBoss": "Vence al jefe de esta parte para seguir."
   },
   "Sports": {
     "eyebrow": "Deportes",
@@ -12754,7 +12761,8 @@
     "Peça travada: destrave antes de desmontar": "Pieza bloqueada: desbloquéala antes de desmontar",
     "Tire a peça de quem a veste antes de desmontar": "Quítale la pieza a quien la lleva antes de desmontar",
     "Confirme a desmontagem de uma peça rara ou acima": "Confirma el desmontaje de una pieza rara o superior",
-    "Esses materiais não se transmutam um no outro": "Estos materiales no se transmutan entre sí"
+    "Esses materiais não se transmutam um no outro": "Estos materiales no se transmutan entre sí",
+    "Essa parte do Domínio ainda está fechada": "Esta parte del Dominio todavía está cerrada"
   },
   "Moedas": {
     "walletTitle": "Cartera",

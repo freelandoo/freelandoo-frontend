@@ -218,6 +218,8 @@ const ROWS = [
   ["Domínio desconhecido", "Unknown Domain", "Dominio desconocido"],
   ["Esse Domínio ainda está fechado", "This Domain is still closed", "Este Dominio todavía está cerrado"],
   ["Esse setor ainda está fechado", "This sector is still closed", "Este sector todavía está cerrado"],
+  // Domínios v2 DV1: cena do mundo aberto com o chefe anterior de pé (POST /domains/enter)
+  ["Essa parte do Domínio ainda está fechada", "This part of the Domain is still closed", "Esta parte del Dominio todavía está cerrada"],
   // lore v2 C5: Pedraverde e o Golem (POST /domains/place)
   ["Lugar desconhecido", "Unknown place", "Lugar desconocido"],
   ["Chegue à clareira primeiro", "Reach the clearing first", "Llega primero al claro"],

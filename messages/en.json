@@ -12534,7 +12534,14 @@
     "domLootSure": "Per win",
     "domLootChance": "Chance",
     "domLootFirst": "First win",
-    "domLootFirstDone": "already claimed"
+    "domLootFirstDone": "already claimed",
+    "domScenePart": "Part {n}",
+    "domBackScene": "Back to the previous part",
+    "domNextScene": "Go on to part {n}",
+    "domSealedShort": "Sealed",
+    "domSealedBossShort": "Passage closed",
+    "domSealed": "Sector {n} is sealed: beat the previous sector first.",
+    "domSealedBoss": "Beat this part's boss to go on."
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -12774,7 +12781,8 @@
     "Peça travada: destrave antes de desmontar": "Locked item: unlock it before salvaging",
     "Tire a peça de quem a veste antes de desmontar": "Take the item off whoever wears it before salvaging",
     "Confirme a desmontagem de uma peça rara ou acima": "Confirm salvaging a rare or better item",
-    "Esses materiais não se transmutam um no outro": "These materials can't be transmuted into each other"
+    "Esses materiais não se transmutam um no outro": "These materials can't be transmuted into each other",
+    "Essa parte do Domínio ainda está fechada": "This part of the Domain is still closed"
   },
   "Moedas": {
     "walletTitle": "Wallet",
