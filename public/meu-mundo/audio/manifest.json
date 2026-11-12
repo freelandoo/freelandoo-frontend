@@ -104,19 +104,19 @@
     },
     "dominio-canion-ambiente": {
       "arquivo": "sfx/fenomeno_atmosferico/dominio-canion-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 15.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "dominio-fabrica-ambiente": {
       "arquivo": "sfx/fenomeno_atmosferico/dominio-fabrica-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "dominio-floresta-ambiente": {
       "arquivo": "sfx/amb_floresta/dominio-floresta-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 13.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
@@ -164,19 +164,19 @@
     },
     "dominio-gelo-ambiente": {
       "arquivo": "sfx/fenomeno_atmosferico/dominio-gelo-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 14.5,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "dominio-orbital-ambiente": {
       "arquivo": "sfx/fenomeno_atmosferico/dominio-orbital-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "dominio-vulcao-ambiente": {
       "arquivo": "sfx/fenomeno_atmosferico/dominio-vulcao-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.5,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
@@ -254,31 +254,31 @@
     },
     "jogo-corrida-pista-abismo-vermelho": {
       "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-abismo-vermelho.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 7.75,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-corrida-pista-floresta-espectral": {
       "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-floresta-espectral.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-corrida-pista-forja-infinita": {
       "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-forja-infinita.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 8.5,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-corrida-pista-neon-overdrive": {
       "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-neon-overdrive.v3.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 7.25,
       "versao": 3,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-corrida-pista-tempestade-oceanica": {
       "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-tempestade-oceanica.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 6.75,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
@@ -362,43 +362,43 @@
     },
     "jogo-jetpack-fase-artico": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-artico.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 7.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-jetpack-fase-canion": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-canion.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-jetpack-fase-floresta": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-floresta.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 8.5,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-jetpack-fase-forja": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-forja.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-jetpack-fase-industrial": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-industrial.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-jetpack-fase-orbital": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-orbital.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 7.75,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-jetpack-fase-vacuo": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-vacuo.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 8.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
@@ -422,31 +422,31 @@
     },
     "jogo-noturno-bioma-canion": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-canion.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.5,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-noturno-bioma-fabrica": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-fabrica.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-noturno-bioma-floresta": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-floresta.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-noturno-bioma-forja": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-forja.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.5,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-noturno-bioma-orbital": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-orbital.v1.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 8.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
@@ -536,37 +536,37 @@
     },
     "jogo-paint-mapa-cidade": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-cidade.v3.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 8.75,
       "versao": 3,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-paint-mapa-fabrica": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-fabrica.v3.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 7.5,
       "versao": 3,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-paint-mapa-floresta": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-floresta.v2.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 8.5,
       "versao": 2,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-paint-mapa-forja": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-forja.v2.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.25,
       "versao": 2,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-paint-mapa-jardim": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-jardim.v2.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 9.0,
       "versao": 2,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-paint-mapa-templo": {
       "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-templo.v3.mp3",
-      "duracao_s": 12.0,
+      "duracao_s": 8.25,
       "versao": 3,
       "modelo": "Stable Audio 3 Small-SFX"
     },
@@ -578,19 +578,19 @@
     },
     "lugar-academia-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-academia-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 15.75,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-arsenal-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-arsenal-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 18.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-biblioteca-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-biblioteca-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 17.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
@@ -602,67 +602,67 @@
     },
     "lugar-centro-praca-noite": {
       "arquivo": "sfx/amb_floresta/lugar-centro-praca-noite.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 13.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-centro-rua-noite-perigo": {
       "arquivo": "sfx/amb_floresta/lugar-centro-rua-noite-perigo.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 12.5,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-criolab-ambiente": {
       "arquivo": "sfx/construcao_futurista/lugar-criolab-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-delegacia-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-delegacia-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.75,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-escola-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-escola-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-forja-ambiente": {
       "arquivo": "sfx/maquina_steampunk/lugar-forja-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.75,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-hamburgueria-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-hamburgueria-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.75,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-igreja-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-igreja-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 11.5,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-pizzaria-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-pizzaria-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.25,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-supermercado-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-supermercado-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 16.75,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-universidade-ambiente": {
       "arquivo": "sfx/amb_caverna/lugar-universidade-ambiente.v1.mp3",
-      "duracao_s": 20.0,
+      "duracao_s": 15.5,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
@@ -2095,5 +2095,5 @@
       "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-12T10:06:47-03:00"
+  "importado_em": "2026-11-12T10:29:58-03:00"
 }
