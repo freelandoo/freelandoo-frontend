@@ -60,8 +60,6 @@ const SND = {
   meow: ["jogo-paint-gato-miar-1", "jogo-paint-gato-miar-2"],
   catsLost: "jogo-paint-gatos-soltos",
   capsule: "jogo-paint-capsula",
-  portalOpen: "jogo-paint-portal-abre",
-  portalShut: "jogo-paint-portal-fecha",
   bossAct: "jogo-paint-guardiao-ataque",
   morkhan: "jogo-paint-morkhan",
   out: "jogo-paint-fora",
@@ -433,12 +431,11 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         break
       case "portal":
         world.setPortalOpen(e.team, true)
-        playSample(SND.portalOpen, { gain: far(e.team === me.team, 0.7, 0.4), minGap: 300 })
+        // portal sem som (Alex, 2026-11-12: "não quero som do portal, fica horrível")
         notice({ kind: "portal", team: e.team, mine: e.team === me.team })
         break
       case "portalShut":
         world.setPortalOpen(e.team, false)
-        playSample(SND.portalShut, { gain: far(e.team === me.team, 0.6, 0.3), minGap: 300 })
         notice({ kind: "portalShut", mine: e.team === me.team })
         break
       case "morkhan":

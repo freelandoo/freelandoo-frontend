@@ -594,16 +594,10 @@
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
-    "lugar-centro-portal-dominios": {
-      "arquivo": "sfx/portal/lugar-centro-portal-dominios.v1.mp3",
-      "duracao_s": 20.0,
-      "versao": 1,
-      "modelo": "Stable Audio 3 Small-SFX"
-    },
     "lugar-centro-praca-dia": {
-      "arquivo": "sfx/amb_floresta/lugar-centro-praca-dia.v1.mp3",
-      "duracao_s": 20.0,
-      "versao": 1,
+      "arquivo": "sfx/amb_floresta/lugar-centro-praca-dia.v4.mp3",
+      "duracao_s": 16.5,
+      "versao": 4,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-centro-praca-noite": {
@@ -2052,18 +2046,6 @@
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
     },
-    "jogo-paint-portal-abre": {
-      "arquivo": "sfx/portal/jogo-paint-portal-abre.v1.mp3",
-      "duracao_s": 1.6,
-      "versao": 1,
-      "modelo": "Stable Audio 3 Small-SFX"
-    },
-    "jogo-paint-portal-fecha": {
-      "arquivo": "sfx/portal/jogo-paint-portal-fecha.v1.mp3",
-      "duracao_s": 1.0,
-      "versao": 1,
-      "modelo": "Stable Audio 3 Small-SFX"
-    },
     "ui-equip-baixa": {
       "arquivo": "sfx/magia/ui-equip-baixa.v1.mp3",
       "duracao_s": 0.6,
@@ -2113,5 +2095,5 @@
       "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-12T02:16:53-03:00"
+  "importado_em": "2026-11-12T10:06:47-03:00"
 }
