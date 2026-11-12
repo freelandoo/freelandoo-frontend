@@ -1,31 +1,20 @@
-import crypto from "crypto"
 import { getBackendApiUrl } from "@/lib/backend"
 
 /**
  * Link de share rastreado da comunidade: /cs/{community}/{member}/{item}
- * Registra o "retorno" (1 ponto pro membro que compartilhou — só se ele for
- * membro; dedupe por visitante no backend) e redireciona pra comunidade.
- * O visitor_hash é derivado de IP+UA (dedupe best-effort anti-spam).
+ *
+ * O "retorno" (1 ponto pro membro que compartilhou; a temporada "shares" paga
+ * Esmeraldas) é contado pelo BACKEND, com o navegador do visitante chegando lá:
+ * a marca do visitante sai do IP real + navegador com chave do servidor e o
+ * backend redireciona para a comunidade. Antes esta rota calculava a marca e a
+ * mandava no corpo de um POST público — qualquer membro inventava marcas e
+ * ganhava a temporada (A1-12).
  */
 export async function GET(
-  request: Request,
+  _request: Request,
   ctx: { params: Promise<{ id: string; member: string; item: string }> }
 ) {
   const { id, member, item } = await ctx.params
-  const fwd = request.headers.get("x-forwarded-for") || ""
-  const ip = (fwd.split(",")[0] || "").trim() || "0.0.0.0"
-  const ua = request.headers.get("user-agent") || ""
-  const visitor_hash = crypto.createHash("sha256").update(`${ip}|${ua}`).digest("hex").slice(0, 40)
-
-  try {
-    await fetch(`${getBackendApiUrl()}/communities/${encodeURIComponent(id)}/share-return`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id_member_user: member, id_portfolio_item: item, visitor_hash }),
-    })
-  } catch {
-    /* nunca quebra o redirect */
-  }
-
-  return Response.redirect(new URL(`/comunidades/${encodeURIComponent(id)}`, request.url), 302)
+  const path = [id, "s", member, item].map((p, i) => (i === 1 ? p : encodeURIComponent(p))).join("/")
+  return Response.redirect(`${getBackendApiUrl()}/communities/${path}`, 302)
 }
