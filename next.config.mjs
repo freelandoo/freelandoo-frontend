@@ -33,7 +33,7 @@ const cspReportOnly = [
   "font-src 'self' data:",
   `connect-src 'self' ${BACKEND_PUBLIC} wss://freelandoo-backend-production.up.railway.app https://*.r2.cloudflarestorage.com ${R2_PUBLIC} https://*.r2.dev https://cdn.jsdelivr.net https://storage.googleapis.com https://accounts.google.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.adtrafficquality.google wss:`,
   "worker-src 'self' blob:",
-  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://vercel.live`,
+  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://vercel.live https://gsrefrigeracao.tec.br https://hidrovap.com.br`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -82,13 +82,9 @@ const nextConfig = {
       // entradas casando o mesmo caminho deixam a ordem decidir qual vale — e
       // essa ordem não está escrita em lugar nenhum. Aqui cada caminho casa
       // com exatamente uma regra.
-      { source: "/:path((?!site-preview|(?:gs|hidrovap|excelencia|russamaisrussa)(?:/|$)).*)", headers: securityHeaders },
+      { source: "/:path((?!site-preview|(?:excelencia|russamaisrussa)(?:/|$)).*)", headers: securityHeaders },
       { source: "/site-preview/:path*", headers: previewHeaders },
       // Sites externos aparecem em iframe na tela Site da comunidade (lib/external-sites.ts).
-      { source: "/gs", headers: previewHeaders },
-      { source: "/gs/:path*", headers: previewHeaders },
-      { source: "/hidrovap", headers: previewHeaders },
-      { source: "/hidrovap/:path*", headers: previewHeaders },
       { source: "/russamaisrussa", headers: previewHeaders },
       { source: "/russamaisrussa/:path*", headers: previewHeaders },
       { source: "/excelencia", headers: previewHeaders },
@@ -138,6 +134,12 @@ const nextConfig = {
     return [
       { source: "/fitness", destination: "/esportes", permanent: true },
       { source: "/fitness/:path*", destination: "/esportes/:path*", permanent: true },
+      // GS e Hidrovap ganharam domínio próprio (2026-11-12): os projetos da Vercel
+      // deixaram de ter basePath, então o caminho antigo só redireciona.
+      { source: "/gs", destination: "https://gsrefrigeracao.tec.br", permanent: true },
+      { source: "/gs/:path*", destination: "https://gsrefrigeracao.tec.br/:path*", permanent: true },
+      { source: "/hidrovap", destination: "https://hidrovap.com.br", permanent: true },
+      { source: "/hidrovap/:path*", destination: "https://hidrovap.com.br/:path*", permanent: true },
     ]
   },
   async rewrites() {
@@ -150,12 +152,6 @@ const nextConfig = {
         // Deck de investidores: HTML estatico em public/, servido em URL limpa.
         // Fica fora do chrome da plataforma de proposito (e um documento, nao uma tela).
         { source: "/investidores", destination: "/investidores.html" },
-        // Sites de clientes que têm projeto próprio na Vercel (3D em tela cheia não
-        // cabe no contrato de tema). Cada um roda com basePath igual a este caminho.
-        { source: "/gs", destination: "https://gs-refrigeracao.vercel.app/gs" },
-        { source: "/gs/:path*", destination: "https://gs-refrigeracao.vercel.app/gs/:path*" },
-        { source: "/hidrovap", destination: "https://hidrovap.vercel.app/hidrovap" },
-        { source: "/hidrovap/:path*", destination: "https://hidrovap.vercel.app/hidrovap/:path*" },
         // A Russa Mais Russa: plataforma com banco próprio (livros, contas), roda no Railway
         // (serviço russamaisrussa, basePath /russamaisrussa) porque o token da Vercel não cria projeto.
         { source: "/russamaisrussa", destination: "https://russamaisrussa-production.up.railway.app/russamaisrussa" },
