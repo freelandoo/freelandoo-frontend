@@ -33,7 +33,7 @@ export const VERDE_LIMAO: Foliage = { dark: [0.3, 0.52, 0.12], mid: [0.56, 0.78,
 export const TERRA: RGB = [0.36, 0.42, 0.16]
 
 /** Quadro local da peça: ponto (u, v, y) → mundo, e a normal local → mundo. */
-function quadro(x: number, z: number, ang: number) {
+export function quadro(x: number, z: number, ang: number) {
   // Babylon é mão ESQUERDA: a direita de quem OLHA a frente (de fora, virado para −f) é (−cos, +sin)
   const fx = Math.sin(ang), fz = Math.cos(ang), sx = -Math.cos(ang), sz = Math.sin(ang)
   return {
@@ -45,19 +45,19 @@ function quadro(x: number, z: number, ang: number) {
 }
 
 /** Retângulo de pé na fachada (plano v = cte), de (u0, y0) a (u1, y1), virado para a frente. */
-function painel(g: ReturnType<Cena["geo"]>, Q: ReturnType<typeof quadro>, u0: number, u1: number, y0: number, y1: number, v: number, cor: RGB | RGB[]) {
+export function painel(g: ReturnType<Cena["geo"]>, Q: ReturnType<typeof quadro>, u0: number, u1: number, y0: number, y1: number, v: number, cor: RGB | RGB[]) {
   face(g, [Q.P(u0, v, y0), Q.P(u1, v, y0), Q.P(u1, v, y1), Q.P(u0, v, y1)], cor, Q.N(0, 1))
 }
 
 /** Caixa no quadro local (centro u, v; de y0 a y1). */
-function bloco(g: ReturnType<Cena["geo"]>, Q: ReturnType<typeof quadro>, u: number, v: number, w: number, d: number, y0: number, y1: number, side: RGB, top?: RGB) {
+export function bloco(g: ReturnType<Cena["geo"]>, Q: ReturnType<typeof quadro>, u: number, v: number, w: number, d: number, y0: number, y1: number, side: RGB, top?: RGB) {
   const p = Q.P(u, v, 0)
   caixa(g, { x: p[0], z: p[2], y0, y1, w, d, rot: Q.rot, side, top: top ?? mul(side, 1.08) })
 }
 
 /** Contorno de arco GÓTICO equilátero (lados retos + dois arcos de raio = vão que se cruzam na ponta),
  *  aumentado de `e` para fora. Pontos (u, y) em volta, começando no pé esquerdo. */
-function ogiva(u: number, y0: number, hw: number, h: number, e: number, seg: number): [number, number][] {
+export function ogiva(u: number, y0: number, hw: number, h: number, e: number, seg: number): [number, number][] {
   const W = 2 * (hw + e), a = u - hw - e, b = u + hw + e, yb = y0 + h
   const pts: [number, number][] = [[a, y0 - e], [b, y0 - e]]
   for (let k = 0; k <= seg; k++) { const t = (k / seg) * (Math.PI / 3); pts.push([a + W * Math.cos(t), yb + W * Math.sin(t)]) }
