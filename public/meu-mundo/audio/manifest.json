@@ -2009,7 +2009,109 @@
       "duracao_s": 0.35,
       "versao": 3,
       "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-capsula": {
+      "arquivo": "sfx/magia/jogo-paint-capsula.v2.mp3",
+      "duracao_s": 0.5,
+      "versao": 2,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-fora": {
+      "arquivo": "sfx/magia/jogo-paint-fora.v1.mp3",
+      "duracao_s": 0.9,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-gato-miar-1": {
+      "arquivo": "sfx/magia/jogo-paint-gato-miar-1.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-gato-miar-2": {
+      "arquivo": "sfx/magia/jogo-paint-gato-miar-2.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-gatos-soltos": {
+      "arquivo": "sfx/magia/jogo-paint-gatos-soltos.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-guardiao-ataque": {
+      "arquivo": "sfx/impacto_pedra/jogo-paint-guardiao-ataque.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-morkhan": {
+      "arquivo": "sfx/magia/jogo-paint-morkhan.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-portal-abre": {
+      "arquivo": "sfx/portal/jogo-paint-portal-abre.v1.mp3",
+      "duracao_s": 1.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-portal-fecha": {
+      "arquivo": "sfx/portal/jogo-paint-portal-fecha.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-equip-baixa": {
+      "arquivo": "sfx/magia/ui-equip-baixa.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-equip-brilho": {
+      "arquivo": "sfx/energia_carga/ui-equip-brilho.v1.mp3",
+      "duracao_s": 1.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-equip-numero": {
+      "arquivo": "sfx/magia/ui-equip-numero.v1.mp3",
+      "duracao_s": 0.9,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-equipar": {
+      "arquivo": "sfx/magia/ui-equipar.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-mochila-abrir": {
+      "arquivo": "sfx/magia/ui-mochila-abrir.v1.mp3",
+      "duracao_s": 0.9,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-mochila-escolher": {
+      "arquivo": "sfx/magia/ui-mochila-escolher.v1.mp3",
+      "duracao_s": 0.4,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-tirar": {
+      "arquivo": "sfx/magia/ui-tirar.v1.mp3",
+      "duracao_s": 0.7,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-usar-item": {
+      "arquivo": "sfx/magia/ui-usar-item.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-12T00:46:13-03:00"
+  "importado_em": "2026-11-12T02:16:53-03:00"
 }

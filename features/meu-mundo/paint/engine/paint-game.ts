@@ -50,7 +50,22 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { createVfx, VFX_COLORS, type VfxColor } from "../../engine/vfx"
-import { GAME_MUSIC, sceneSound, paintMapAmb, playSample, preloadSamples, unlockAudio } from "../../engine/audio"
+import { GAME_MUSIC, sceneSound, paintMapAmb, playAny, playSample, preloadSamples, unlockAudio } from "../../engine/audio"
+
+/**
+ * S14 (2026-11-12, pedido do Alex): pegar gatinho e cápsula não tinha som. Arquivos do gerador
+ * local (pedidos-s14.json); sem arquivo o `playSample` devolve null e o jogo segue mudo ali.
+ */
+const SND = {
+  meow: ["jogo-paint-gato-miar-1", "jogo-paint-gato-miar-2"],
+  catsLost: "jogo-paint-gatos-soltos",
+  capsule: "jogo-paint-capsula",
+  portalOpen: "jogo-paint-portal-abre",
+  portalShut: "jogo-paint-portal-fecha",
+  bossAct: "jogo-paint-guardiao-ataque",
+  morkhan: "jogo-paint-morkhan",
+  out: "jogo-paint-fora",
+}
 
 /** O que a interface mostra (atualizado ~10×/s e a cada acontecimento). */
 export interface PaintHud {
@@ -175,7 +190,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const map = state.map
   // áudio S2: a música do paint e o fundo da fase
   const musicSnd = sceneSound()
-  preloadSamples(["jogo-paint-tiro", "jogo-paint-pulo", "jogo-paint-trocar"])
+  preloadSamples(["jogo-paint-tiro", "jogo-paint-pulo", "jogo-paint-trocar", ...Object.values(SND).flat()])
   musicSnd.set(GAME_MUSIC.paint, paintMapAmb(map.id))
   // Câmera colide com a PEDRA DESENHADA (mais funda que a colisão do corpo),
   // senão ela entra embaixo das ilhas; a tinta entra por cima.
@@ -279,6 +294,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
 
   // ── acontecimentos ─────────────────────────────────────────────────────────
   const notice = (n: PaintNotice) => opts.onNotice?.(n)
+  /** Som de quem NÃO sou eu: mais baixo (sem posição no espaço; o placar é do time). */
+  const far = (mine: boolean, near = 0.8, away = 0.25) => (mine ? near : away)
   const handle = (e: MatchEvent) => {
     switch (e.type) {
       case "blob":
@@ -342,7 +359,10 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         {
           const tp = e.slot === port.me ? body : state.players.get(e.slot)?.pose
           if (tp && e.why === "boss") vfx.burst(new Vector3(tp.x, tp.y + 1.2, tp.z), HURT_FX)
-          if (e.slot === port.me) notice({ kind: "out", why: e.why })
+          if (e.slot === port.me) {
+            playSample(SND.out, { gain: 0.8 })
+            notice({ kind: "out", why: e.why })
+          }
         }
         break
       case "ko":
@@ -384,33 +404,45 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       case "drop":
         if (e.slot === port.me) {
           droppedAt = clock
+          playSample(SND.catsLost, { gain: 0.8, minGap: 400 })
           notice({ kind: "drop", n: e.n })
         }
         break
       case "bossAct":
-        if (me.inBoss) notice({ kind: "bossAct", act: e.act, me: e.slot === port.me })
+        if (me.inBoss) {
+          playSample(SND.bossAct, { gain: 0.7, minGap: 250, vary: 0.05 })
+          notice({ kind: "bossAct", act: e.act, me: e.slot === port.me })
+        }
         break
       case "cat":
         herd.take(e.id)
+        // S14 (pedido do Alex): o gatinho mia quando é pego — o meu alto, o dos outros baixinho
+        playAny(SND.meow, { gain: far(e.slot === port.me, 0.85, 0.22), minGap: 120, vary: 0.08 })
         notice({ kind: "cat", mine: e.slot === port.me, team: e.team })
         break
       case "capsule":
         pickups.setCapsule(e.id, false)
         pickups.collect(e.id, e.slot === port.me)
-        if (e.slot === port.me) notice({ kind: "capsule", c: e.c })
+        if (e.slot === port.me) {
+          playSample(SND.capsule, { gain: 0.7, minGap: 80, vary: 0.05 })
+          notice({ kind: "capsule", c: e.c })
+        }
         break
       case "capsuleBack":
         pickups.setCapsule(e.id, true)
         break
       case "portal":
         world.setPortalOpen(e.team, true)
+        playSample(SND.portalOpen, { gain: far(e.team === me.team, 0.7, 0.4), minGap: 300 })
         notice({ kind: "portal", team: e.team, mine: e.team === me.team })
         break
       case "portalShut":
         world.setPortalOpen(e.team, false)
+        playSample(SND.portalShut, { gain: far(e.team === me.team, 0.6, 0.3), minGap: 300 })
         notice({ kind: "portalShut", mine: e.team === me.team })
         break
       case "morkhan":
+        if (e.on) playSample(SND.morkhan, { gain: far(e.slot === port.me, 0.8, 0.45), minGap: 500 })
         notice({ kind: "morkhan", on: e.on, mine: e.slot === port.me, ally: e.team === me.team, why: e.why })
         break
       case "boss":
