@@ -14,6 +14,7 @@ import { QUEST_CHANGED, getArchive, readArchive, type ArchiveEntry, type Archive
 import { PORTRAIT, WOLF_PORTRAIT } from "../portraits"
 import { AE, chamfer } from "../kit/aether-tokens"
 import { LoreVideo } from "./lore-video"
+import { CollectionPanel } from "./collection-panel"
 import TEXT from "./archive-text.json"
 import CHAPTERS from "../quest/chapters-text.json"
 
@@ -48,7 +49,7 @@ export const VIDEO_CHARACTERS: { ref: string; image: string | null }[] = [
 
 export function ArchivePage({ t, compact }: { t: T; compact: boolean }) {
   const [state, setState] = useState<ArchiveState | null>(null)
-  const [tab, setTab] = useState<"texts" | "videos">("texts")
+  const [tab, setTab] = useState<"texts" | "videos" | "collection">("texts")
   const [open, setOpen] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
   // C3: texto que mora num lugar, aberto longe dele (o servidor respondeu "far")
@@ -121,7 +122,7 @@ export function ArchivePage({ t, compact }: { t: T; compact: boolean }) {
   }
 
   const reached = Math.max(1, ...state.entries.filter((e) => e.unlocked).map((e) => e.chapter))
-  const tabBtn = (id: "texts" | "videos", label: string) => (
+  const tabBtn = (id: "texts" | "videos" | "collection", label: string) => (
     <button
       type="button"
       onClick={() => setTab(id)}
@@ -138,8 +139,11 @@ export function ArchivePage({ t, compact }: { t: T; compact: boolean }) {
       <div className="mb-3 flex gap-2">
         {tabBtn("texts", arqTx(t, "arqTexts"))}
         {tabBtn("videos", arqTx(t, "arqVideos"))}
+        {tabBtn("collection", t("colTab", "Coleção"))}
       </div>
-      {tab === "texts" ? (
+      {tab === "collection" ? (
+        <CollectionPanel t={t} />
+      ) : tab === "texts" ? (
         <ul className="grid gap-2">
           {!state.entries.some((e) => e.unlocked) && (
             <li className="text-[13px]" style={{ color: AE.muted }}>

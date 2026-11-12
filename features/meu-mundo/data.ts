@@ -717,6 +717,16 @@ export const unsocketRune = (token: string, instance: string, index: number, key
   call<GearOut>(token, "POST", "/gear/unsocket", { instance, index, key, ...(version != null ? { version } : {}) })
 /** E13: fundir `qty` vezes 3 runas de grau N numa de grau N+1. */
 export const fuseRunes = (token: string, rune: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/rune/fuse", { rune, qty, key })
+/** E18: coleção — todo item (o oculto não descoberto vem sem id) e os baús. */
+export interface Collection {
+  total: number
+  found: number
+  items: { id: string | null; category: GearCategory; rarity: GearRarity; found: boolean; at?: string | null; hidden?: boolean; name?: string }[]
+  chests: { id: string; where: "bairro" | "centro"; places: string[]; opened: boolean; openedAt: string | null }[]
+}
+export const getCollection = (token: string) => call<Collection>(token, "GET", "/gear/collection")
+/** E18: abrir um baú (no lugar dele; uma vez por conta). */
+export const openChest = (token: string, chest: string, key: string) => call<GearOut>(token, "POST", "/gear/chest/open", { chest, key })
 /** E17: loja de troca — `qty` vezes a oferta (fichas → itens). */
 export const exchangeGear = (token: string, offer: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/exchange", { offer, qty, key })
 /** E8: fragmento que sobra vira Pó de Refino (o servidor diz quanto). */

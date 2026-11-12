@@ -254,6 +254,10 @@ const ROWS = [
   ["A Ascensão pede a peça no +10", "Ascension needs the item at +10", "La Ascensión pide la pieza en +10"],
   ["Essa peça já despertou", "That item has already awakened", "Esa pieza ya despertó"],
   ["O Despertar pede a peça ascendida", "Awakening needs the item ascended", "El Despertar pide la pieza ascendida"],
+  // trilha E18: baús
+  ["Baú desconhecido", "Unknown chest", "Cofre desconocido"],
+  ["Chegue perto do baú para abrir", "Get close to the chest to open it", "Acércate al cofre para abrirlo"],
+  ["Você já abriu esse baú", "You already opened this chest", "Ya abriste este cofre"],
   // trilha E17: loja de troca
   ["Essa troca não existe", "That exchange doesn't exist", "Ese intercambio no existe"],
   ["Fichas insuficientes", "Not enough tokens", "Fichas insuficientes"],
