@@ -1,70 +1,130 @@
-// CIDADE ORBITAL · cena 2 (setores 4–7, chefe no 7) — "escadas sem chão, ilhas flutuantes".
-// Ref: ref/dominios/orbital-2.png. Marcos: as ILHAS FLUTUANTES no alto com prédios e cachoeiras
-// acesas caindo, as escadas de mármore que sobem para o nada, a praça branca com friso de ouro e os
-// canteiros de cristal. O chão de andar continua plano (o motor não tem ladeira): as ilhas e as
-// escadas são cenário. 11/11: a rua virou a AVENIDA da ref 1 (`avenida()` com as peças copiadas) em
-// trechos retos; as escadas sobem das praças e as ilhas pairam sobre as quadras.
+// CIDADE ORBITAL · cena 2 (setores 4–7, chefe no 7) — a PRAÇA NO CÉU da ref `orbital-2.png` (refeita em
+// 11/11): calçadas largas de mármore com parapeito de ouro suspensas num MAR DE NUVENS, praças redondas
+// nas clareiras, pedestais de luz com cristal amarelo, floreiras de cristal penduradas para fora, escada
+// de mármore que sobe para o nada, ilhas flutuantes (com prédio, cachoeira e gazebo de cúpula), castelos
+// e aquedutos flutuando na névoa e, no fim, a PONTE DE CRISTAL acesa que leva ao PALÁCIO FLUTUANTE.
+// O chão de andar é plano (y = 0) só na plataforma; fora dela despenca (visual) e o parapeito segura.
 
 import { type RGB } from "../kit"
-import { Cena, blocked, ground, scatter, type XZ } from "../kit-cena"
-import { mix } from "../kit-natureza"
+import { Cena, blocked, ground, type XZ } from "../kit-cena"
+import { mix, mul, rnd, tube } from "../kit-natureza"
 import { AREA, H, planta } from "../dominio"
 import * as O from "./tema-orbital"
 import * as C from "../pecas/orbital"
-import { avenida, chaoAvenida, horizonte, quadras } from "./avenida-orbital"
+import { LAJE, LAJE_B } from "./avenida-orbital"
+import { NUVEM_FUNDO, PEDRA, PEDRA_ESC, PROFUNDO, alturaCeu, beirada, ceuDeFundo, floreiraBalanco, ilhaCeu, marDeNuvens, palacioFlutuante, pedestalLuz, plataforma, ponteCristal } from "./ceu-orbital"
 
 export const meta = {
-  ceu: [0.5, 0.74, 1] as RGB,
-  nevoa: [0.86, 0.92, 1] as RGB,
+  ceu: [0.42, 0.68, 1] as RGB,
+  nevoa: [0.88, 0.93, 1] as RGB,
   area: AREA,
   luz: O.LUZ,
-  astro: { dir: [0.5, 0.75, 0.9] as RGB, r: 0.05, cor: [1, 1, 0.92] as RGB },
+  astro: { dir: [0.5, 0.75, 0.9] as RGB, r: 0.06, cor: [1, 1, 0.9] as RGB },
   pontos: ["entrada", "saida", "chefe"],
   setores: [4, 5, 6, 7],
 }
 
-// trechos RETOS (a avenida precisa)
-const CAMINHO: XZ[] = [[0, -73], [0, -32], [50, -32], [50, 16], [-44, 16], [-44, 56], [10, 56], [10, 73]]
+// a calçada serpenteia entre praças; o ÚLTIMO trecho é a ponte de cristal (sai pelo alto, rumo ao palácio)
+const CAMINHO: XZ[] = [[0, -73], [0, -44], [38, -30], [44, 4], [8, 14], [-34, 6], [-46, 36], [-16, 48], [10, 50], [10, 73]] // a saída fica a 7 m da borda (a caixa da borda ocupa os últimos 3 m)
+const PONTE = CAMINHO.length - 2
 
 export function montar(lod = 0): Cena {
   const c = new Cena("orbital-2", lod, 32, -16)
-  const P = planta(c, { path: CAMINHO, setores: [4, 5, 6, 7], boss: 7, tZonas: [0.15, 0.36, 0.57], tArena: 0.84 })
-  C.portalArco(c, 0, -70, 0, 12, lod)
-  C.portalArco(c, 10, 70, Math.PI, 12, lod)
-  horizonte(c, 10, 100, 0, 8)
-  avenida(c, P, lod, 51, { faixas: [0.1, 0.4, 0.7] })
-  // ilhas flutuantes no alto, espalhadas (não colidem)
-  scatter(-H + 10, -H + 10, H - 10, H - 10, 22, 7, (x, z, r) => {
-    if (r(1) > 0.55) return
-    O.ilha(c, x, 14 + r(2) * 14, z, 3.5 + r(3) * 4, r(4) * 99, lod)
-  })
-  // escadas sem chão viradas para o caminho
-  for (const [t, s] of [[0.1, 1], [0.3, -1], [0.48, 1], [0.66, -1], [0.92, 1]] as const) {
-    const p = P.at(t)
-    const x = p.x + p.dz * 8 * s, z = p.z - p.dx * 8 * s
-    const ang = Math.atan2(x - p.x, z - p.z)
-    const ex = x + Math.sin(ang) * 11, ez = z + Math.cos(ang) * 11, mx = (x + ex) / 2, mz = (z + ez) / 2
-    if (P.livre(x, z, 2) && P.livre(ex, ez, 2) && P.livre(mx, mz, 2) && !blocked(c, mx, mz, 6)) O.escadaSemChao(c, x, z, ang, 12, lod)
-  }
-  for (const [dx, dz] of [[P.arena.r + 6, 4], [-(P.arena.r + 6), 4], [0, -(P.arena.r + 6)], [0, P.arena.r + 6]] as const) {
-    const x = P.arena.x + dx, z = P.arena.z + dz
-    if (P.livre(x, z, 4.5) && !blocked(c, x, z, 4.5)) {
-      C.torreCristalAneis(c, x, z, 30, 9, lod)
+  const P = planta(c, { path: CAMINHO, setores: [4, 5, 6, 7], boss: 7, tZonas: [0.15, 0.36, 0.57], tArena: 0.8 })
+  const L = plataforma(P, 5.5, [{ x: 10, z: 50, r: 8 }], { k: PONTE, w: 2.4 })
+  const naPonte = (x: number, z: number) => Math.abs(x - 10) < 3.5 && z > 56
+  const g0 = (x: number, z: number) => L.dentro(x, z) > 0.5
+
+  // ── a ponte, os pedestais na boca dela e o palácio flutuante do outro lado (pano de fundo) ──
+  ponteCristal(c, [10, 56], [10, 79.5], 4.8, lod)
+  for (const s of [-1, 1]) pedestalLuz(c, 10 + s * 4.2, 54, lod)
+  palacioFlutuante(c, 10, 122, 18, 9)
+  ceuDeFundo(c, 8)
+
+  // ── casas de mármore coladas nas praças (a ref: o prédio de arcos com lanterna à esquerda), sobre um
+  // dente de rocha no vazio; o parapeito some na frente delas (a caixa da casa segura) ──
+  let casas = 0
+  for (const pr of L.pracas) {
+    if (casas >= 4 || pr.r < 10) continue
+    for (const da of [0, 0.7, -0.7]) {
+      const a = Math.atan2(pr.z, pr.x) + da
+      const ux = Math.cos(a), uz = Math.sin(a)
+      const off = pr.r + 3.9
+      const x = pr.x + ux * off, z = pr.z + uz * off
+      const fundoOk = [0, 2.5, 5].every((e) => L.dentro(pr.x + ux * (pr.r + 0.6 + e), pr.z + uz * (pr.r + 0.6 + e)) < -0.3)
+      if (!fundoOk || P.beira(x, z) < 9 || blocked(c, x, z, 4.5)) continue
+      C.lojaToldo(c, x, z, Math.atan2(-ux, -uz), { w: 9, d: 7, h: 11 + (casas % 2) * 2, toldo: casas % 2 ? C.ROSA_TOLDO : C.AZUL_TOLDO, listraClara: casas % 2 ? [1, 0.72, 0.86] : undefined, portaEsq: casas % 2 === 0, seed: casas * 5 }, lod)
+      tube(c.geo(x, z), [x, 0, z], [x, -9, z], 6, 0.6, 7, (j) => (j % 2 ? PEDRA : PEDRA_ESC), false)
+      casas++
       break
     }
   }
-  quadras(c, P, lod, 88)
-  O.fundoOrbital(c, 8)
 
-  const color = (x: number, z: number): RGB => mix(chaoAvenida(P, x, z), O.MARMORE, P.aberto(x, z) * 0.35)
-  ground(c, { x0: -H, z0: -H, x1: H, z1: H, step: lod ? 4 : 2, color })
-  ground(c, { x0: -200, z0: -200, x1: 200, z1: 200, step: 40, color: () => [0.9, 0.94, 1], fundo: true, y: -0.05, hole: [-H, -H, H, H] })
+  // ── parapeito em toda a beirada (com caixa); na ponte o guarda-corpo é dela ──
+  beirada(c, P, L, lod, naPonte) // pula também onde há caixa logo fora (as casas)
+  for (const s of [-1, 1]) c.block(10 + s * 2.95, 68, 0.3, 12, 1.2)
 
-  const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !blocked(c, x, z, pad + 0.6)
-  scatter(-H + 4, -H + 4, H - 4, H - 4, 7, 32, (x, z, r) => {
-    if (!ok(x, z, 1) || r(1) > 0.12) return
-    if (r(2) < 0.6) C.arvoreRedonda(c, x, z, 5 + r(3) * 1.5, r(4) * 99, lod)
-    else O.obelisco(c, x, z, 4 + r(3) * 2.5, r(4) * 99, lod)
-  })
+  // ── beira da calçada: pedestal de luz, canteiro de cristal e árvore em vaso, alternando os lados a cada
+  // ~9 m (a ref é cheia nas bordas); floreiras penduradas para FORA do parapeito ──
+  for (let t = 0.03, k = 0; t < 0.9; t += 0.03, k++) {
+    const p = P.at(t), s = k % 2 ? 1 : -1
+    const nx = p.dz * s, nz = -p.dx * s
+    const x = p.x + nx * 4.3, z = p.z + nz * 4.3
+    if (g0(x, z) && P.aberto(x, z) < 0.2 && !blocked(c, x, z, 0.9)) {
+      const tipo = k % 6
+      if (tipo === 0 || tipo === 3) pedestalLuz(c, x, z, lod)
+      else if (tipo === 1 || tipo === 4) C.canteiroCristal(c, x, z, Math.atan2(nx, nz) + Math.PI / 2, { seed: k * 3, cristal: tipo === 4 ? [1, 0.84, 0.3] : undefined }, lod)
+      else C.arvoreRedonda(c, x, z, 5, k * 11, lod)
+    }
+    const fx = p.x - nx * 7.4, fz = p.z - nz * 7.4
+    if (L.dentro(fx, fz) < -1 && P.beira(fx, fz) > 4) floreiraBalanco(c, fx, fz, Math.atan2(nx, nz), k * 7, lod)
+  }
+
+  // ── praças: árvores em vaso e canteiros de cristal na roda, uma escada que sobe para o nada ──
+  for (const pr of L.pracas) {
+    for (let k = 0; k < 4; k++) {
+      const a = (k / 4) * Math.PI * 2 + rnd(3, pr.x, k) * 0.6, r = pr.r - 2.2
+      const x = pr.x + Math.cos(a) * r, z = pr.z + Math.sin(a) * r
+      if (!P.livre(x, z, 0.8) || blocked(c, x, z, 1.2) || !g0(x, z)) continue
+      if (k % 2) C.arvoreRedonda(c, x, z, 5.2, pr.x + k, lod)
+      else C.canteiroCristal(c, x, z, a + Math.PI / 2, { seed: k + pr.z }, lod)
+    }
+  }
+  for (const pr of L.pracas) {
+    const a = Math.atan2(pr.z, pr.x) // para fora do centro da cena (a escada aponta para o céu aberto)
+    const x = pr.x + Math.cos(a) * (pr.r - 3), z = pr.z + Math.sin(a) * (pr.r - 3)
+    const ang = Math.atan2(Math.cos(a), Math.sin(a))
+    if (P.livre(x, z, 2) && !blocked(c, x, z, 2.5) && P.beira(x, z) > 18) {
+      O.escadaSemChao(c, x, z, ang, 12, lod)
+      break
+    }
+  }
+
+  // ── ilhas flutuantes por cima do vazio (algumas com gazebo) e o mar de nuvens embaixo ──
+  let gz = 0
+  for (let x = -H + 14; x < H; x += 26)
+    for (let z = -H + 14; z < H; z += 26) {
+      const r = (q: number) => rnd(17, x * 3 + z, q)
+      const px = x + (r(1) - 0.5) * 10, pz = z + (r(2) - 0.5) * 10
+      if (r(3) > 0.6 || L.dentro(px, pz) > -6 || Math.abs(px) > H - 8 || Math.abs(pz) > H - 8) continue
+      const y = 9 + r(4) * 14, R = 4 + r(5) * 3.5
+      const casa = gz < 3 && r(6) < 0.45
+      ilhaCeu(c, px, y, pz, R, r(7) * 99, lod, casa)
+      if (casa) gz++
+    }
+  marDeNuvens(c, L, H, lod, 21)
+
+  // ── chão: lajes grandes na plataforma, penhasco de pedra na beira, nuvem lá embaixo ──
+  const color = (x: number, z: number): RGB => {
+    const d = L.dentro(x, z)
+    if (d > -0.2) {
+      // lajes de 3 m com contraste (a ref tem a junta e o tom de cada laje à vista)
+      const laje = (Math.floor(x / 3) + Math.floor(z / 3)) % 2 ? mul(LAJE, 0.92) : mul(LAJE_B, 0.86) // mais escuras que na avenida: a praça no céu estoura de claro
+      return mix(laje, O.MARMORE, P.aberto(x, z) * 0.3)
+    }
+    return d > -2.5 ? PEDRA : NUVEM_FUNDO
+  }
+  ground(c, { x0: -H, z0: -H, x1: H, z1: H, step: lod ? 4 : 2, color, height: (x, z) => alturaCeu(L, x, z) })
+  ground(c, { x0: -220, z0: -220, x1: 220, z1: 220, step: 40, color: () => mul(NUVEM_FUNDO, 1.02), fundo: true, y: PROFUNDO + 0.5, hole: [-H, -H, H, H] })
   return c
 }
