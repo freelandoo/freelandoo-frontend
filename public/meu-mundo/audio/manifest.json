@@ -2,7 +2,8 @@
   "_sobre": "Gerado por C:\\Users\\Alex\\ComfyUI-Audio\\gerador\\importar.py (só sons aprovados de ouvido). Não editar à mão. O jogo pede pelo asset (features/meu-mundo/engine/audio/cues.ts). Metadados completos no catalogo.json do gerador.",
   "licencas": {
     "Stable Audio 3 Small-SFX": "Stability AI Community License (grátis abaixo de US$ 1 mi/ano de receita) + Gemma Terms of Use (text encoder)",
-    "ACE-Step 1.5 turbo": "ACE-Step 1.5: MIT (original); repack Comfy-Org: Apache-2.0; text encoders derivados do Qwen3 (Apache-2.0)"
+    "ACE-Step 1.5 turbo": "ACE-Step 1.5: MIT (original); repack Comfy-Org: Apache-2.0; text encoders derivados do Qwen3 (Apache-2.0)",
+    "Mureka (assinatura do site)": "Mureka: músicas geradas pela assinatura do Alex no site, importadas à mão"
   },
   "assets": {
     "deus-aeryn-grito": {
@@ -1608,10 +1609,10 @@
       "modelo": "ACE-Step 1.5 turbo"
     },
     "musica-bairro-raposas": {
-      "arquivo": "musica/musica-bairro-raposas.v1.mp3",
-      "duracao_s": 120.0,
-      "versao": 1,
-      "modelo": "ACE-Step 1.5 turbo"
+      "arquivo": "musica/musica-bairro-raposas.v2.mp3",
+      "duracao_s": 171.27,
+      "versao": 2,
+      "modelo": "Mureka (assinatura do site)"
     },
     "musica-bairro-vampiros": {
       "arquivo": "musica/musica-bairro-vampiros.v1.mp3",
@@ -1998,5 +1999,5 @@
       "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-11T23:09:48-03:00"
+  "importado_em": "2026-11-11T23:15:51-03:00"
 }
