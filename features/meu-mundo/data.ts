@@ -228,6 +228,8 @@ export interface FightTicket {
     boss?: BossId | null
     /** Lore v2 N4: o deus solto (a regra dá a ele 2× a ficha de quem enfrenta). */
     god?: GodId | null
+    /** Trilha E16: consumível de preparo gasto nesta luta (soma depois do teto do equipamento). */
+    prep?: { key: keyof GearBonus; v: number; item?: string } | null
     body?: string | null
     appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null; awakened?: string | null }
     /** mm3d-72: personalidade e afeto (probabilidades da luta). */
@@ -292,6 +294,8 @@ export const startFight = (
   body: { origin: FightOrigin; kind?: MobKind; level?: number; mobId?: number; domain?: DomainId; sector?: number; god?: GodId; where?: "street" | "domain" },
 ) =>
   call<{ fight: FightTicket; abandoned: Receipt[] }>(token, "POST", "/fight/start", body)
+/** Trilha E16: gasta 1 consumível de preparo e grava no ticket aberto (devolve o ticket novo). */
+export const fightPrep = (token: string, ticket: string, item: string) => call<{ fight: FightTicket }>(token, "POST", "/fight/prep", { ticket, item })
 export const finishFight = (token: string, ticket: string, frames: FightFrames) =>
   call<{ receipt: Receipt; replay: boolean }>(token, "POST", "/fight/finish", { ticket, frames })
 /** Sonda de queda (crash-probe.ts): o que sobrou no aparelho da luta que não terminou. */
@@ -378,6 +382,8 @@ export interface GearItem {
   origin?: { region: string; boss: string | null; table: string; kind: "boss" | "activity" | "sector" }
   /** E11: entra numa transmutação (3 → 1 do mesmo tier). */
   transmutable?: boolean
+  /** E16: consumível de preparo — a chave e quanto soma na luta. */
+  prep?: { key: keyof GearBonus; v: number }
   /** E13: runa — a chave da régua que ela soma e o grau (1…5). */
   rune?: { kind: string; key: keyof GearBonus; grade: number }
   /** E13: engastes da peça +0 (pela raridade; a Ascensão soma 1). */
@@ -390,7 +396,7 @@ export interface GearRecipe {
   coins: number
   recipe: string | null
   level: number
-  kind?: "part" | "assembly" | "conversion" | "equipment" | "fragment"
+  kind?: "part" | "assembly" | "conversion" | "equipment" | "fragment" | "prep"
   qty?: number
 }
 /** Trilha E9 (forge-v2): o próximo passo garantido de uma cópia, como o servidor calcula. */

@@ -710,6 +710,11 @@ export interface FightSetup {
   boss?: BossId
   /** Lore v2 N4: o deus solto (ficha = a de quem enfrenta × GOD_PEER). O servidor grava no ticket. */
   god?: GodId
+  /**
+   * Trilha E16: consumível de PREPARO gasto ao abrir a luta (o servidor grava no ticket): soma até
+   * PREP_MAX numa chave DEPOIS do teto do equipamento. Não entra no Poder. Ticket sem isto = igual a antes.
+   */
+  prep?: { key: keyof GearBonus; v: number }
 }
 
 /**
@@ -737,6 +742,13 @@ function clampGear(g?: Partial<GearBonus>): GearBonus {
   if (!g) return out
   for (const k of Object.keys(NO_GEAR) as (keyof GearBonus)[]) out[k] = clamp(Number(g[k]) || 0, 0, GEAR_MAX[k])
   return out
+}
+/** E16: o preparo soma no máximo isto numa chave, por cima do teto do equipamento. */
+export const PREP_MAX = 0.05
+/** E16: equipamento (já com teto) + o preparo da luta. Chave desconhecida ou valor inválido = nada. */
+function withPrep(g: GearBonus, prep?: FightSetup["prep"]): GearBonus {
+  if (!prep || !(prep.key in NO_GEAR)) return g
+  return { ...g, [prep.key]: g[prep.key] + clamp(Number(prep.v) || 0, 0, PREP_MAX) }
 }
 
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v)
@@ -846,11 +858,11 @@ const levelRate = (level: number) => (900 * (Math.max(1, Math.round(Number(level
  * Trilha E4 (A12): até a E3 o equipamento SOMAVA até 150 em ataque e defesa (valia muito no nível 1
  * e quase nada no 500); agora multiplica — no teto de tudo a troca de golpes vale ×2,11 em qualquer nível.
  */
-export function heroSheet(body: string | null | undefined, level: number, stats: Omit<Stats, "dexterity"> & { dexterity?: number }, gear?: Partial<GearBonus>) {
+export function heroSheet(body: string | null | undefined, level: number, stats: Omit<Stats, "dexterity"> & { dexterity?: number }, gear?: Partial<GearBonus>, prep?: FightSetup["prep"]) {
   const [hp, atk, def, acc, spd] = BODY_SHEETS[body ?? ""] ?? BASE_SHEET
   const h = heroLevelScale(level)
   const f = heroStats({ ...stats, dexterity: stats.dexterity ?? 0 }, level)
-  const g = clampGear(gear)
+  const g = withPrep(clampGear(gear), prep)
   return {
     hp: Math.round((h.hp * (1 + g.hp) * hp) / 100),
     atk: ((100 + levelRate(level)) * (1 + g.dmg) * atk) / 100,
@@ -998,7 +1010,7 @@ export class Fight {
     // servidor (e o menu); na rua (2026-11-03) ele vem com o nível sorteado, até 60.
     this.level = Math.max(1, Math.round(setup.level ?? 1))
     const stats = { ...BASE_STATS, ...(setup.stats ?? {}) }
-    this.gear = clampGear(setup.gear)
+    this.gear = withPrep(clampGear(setup.gear), setup.prep)
     this.heroLevel = Math.max(1, Math.round(Number(setup.hero) || 1))
     this.hero = heroLevelScale(this.heroLevel)
     this.def = clamp(this.gear.def + this.hero.def, 0, DEF_MAX)
@@ -1006,7 +1018,7 @@ export class Fight {
     const peer = godIdOf(setup.god) ? GOD_PEER : clamp(Number(setup.peer) || 0, 0, 2)
     this.rated = peer > 0 || !!setup.tier
     this.fx = this.withGear(statEffects(gearMind(heroStats(stats, this.heroLevel), this.gear, this.rated)))
-    const sheet = heroSheet(setup.body, this.heroLevel, stats, this.gear)
+    const sheet = heroSheet(setup.body, this.heroLevel, stats, setup.gear, setup.prep)
     this.rate = { acc: Math.max(1, sheet.acc), spd: Math.max(1, sheet.spd), atk: sheet.atk, def: sheet.def }
     const hpMax = this.rated ? sheet.hp : this.hero.hp
     this.me = {

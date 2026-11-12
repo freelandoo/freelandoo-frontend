@@ -254,6 +254,11 @@ const ROWS = [
   ["A Ascensão pede a peça no +10", "Ascension needs the item at +10", "La Ascensión pide la pieza en +10"],
   ["Essa peça já despertou", "That item has already awakened", "Esa pieza ya despertó"],
   ["O Despertar pede a peça ascendida", "Awakening needs the item ascended", "El Despertar pide la pieza ascendida"],
+  // trilha E16: preparo
+  ["Isso não é um consumível de preparo", "That isn't a prep consumable", "Eso no es un consumible de preparación"],
+  ["Essa luta não aceita preparo", "This fight doesn't accept prep", "Este combate no acepta preparación"],
+  ["Esta luta já tem um preparo", "This fight already has a prep", "Este combate ya tiene una preparación"],
+  ["Você não tem esse consumível", "You don't have that consumable", "No tienes ese consumible"],
   // trilha E15: encantamento
   ["Essa peça não tem outra chave para encantar", "That item has no other key to enchant", "Esa pieza no tiene otra clave para encantar"],
   ["Há um encanto sorteado esperando a sua escolha", "An enchantment roll is waiting for your choice", "Hay un encantamiento sorteado esperando tu elección"],

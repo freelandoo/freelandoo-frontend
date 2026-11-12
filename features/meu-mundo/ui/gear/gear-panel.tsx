@@ -17,7 +17,7 @@ import { RuneFusePanel, RuneSocketCard } from "./rune-card"
 
 /** B5: comprar (Armeiro e Loja de Armas) saiu daqui para a Loja única (ui/shop/shop-panel.tsx). */
 export type GearTab = "bag" | "forge" | "refine" | "guide" | "fragments" | "salvage" | "runes"
-type ForgeKind = "assembly" | "part" | "equipment" | "conversion" | "fragment"
+type ForgeKind = "assembly" | "part" | "equipment" | "conversion" | "fragment" | "prep"
 type Category = "all" | GearCategory
 
 export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: {
@@ -127,6 +127,8 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
         { id: "assembly", label: t("forgeWeapons", "Armas") }, { id: "part", label: t("forgeParts", "Peças") },
         { id: "equipment", label: t("forgeArmor", "Proteções") }, { id: "conversion", label: t("forgeConversions", "Conversões") },
         { id: "fragment", label: t("forgeByFragment", "Por fragmento") },
+        // E16: consumíveis de preparo
+        { id: "prep", label: t("forgePrep", "Preparos") },
       ]} />}
       {tab === "salvage" && <AetherTabs<"salvage" | "transmute"> label={t("salvageTab", "Desmontar")} value={salvageMode} onChange={setSalvageMode} tabs={[
         { id: "salvage", label: t("salvageTab", "Desmontar") }, { id: "transmute", label: t("transmuteTab", "Transmutar") },

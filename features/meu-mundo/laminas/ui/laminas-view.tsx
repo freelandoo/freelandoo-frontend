@@ -36,6 +36,7 @@ import { celebrate, hold } from "../../ui/rewards/reward-bus"
 import { createLaminasGame, type FightSheet, type FightSummary, type LaminasGameHandle, type LaminasHud } from "../engine/laminas-game"
 import { HEAVY_WARN } from "../engine/impact-fx"
 import { VersusScreen } from "./versus-screen"
+import { PrepPicker } from "./prep-picker"
 import { MOB_KINDS, peerOf, type MobKind, type SkillId } from "../sim/fight"
 import { SkillHud, skillZoneTop, useSkillScale } from "./skill-hud"
 import { HallOfFame } from "./hall-of-fame"
@@ -388,6 +389,8 @@ function LaminasScreen({
   }, [ticket])
 
   const armed = ticket !== null
+  // E16: o preparo muda o ticket depois de a luta montar — remonta com o ticket novo (o servidor re-simula o mesmo)
+  const [rearm, setRearm] = useState(0)
   const foeBodyOpened = opened?.foeBody ?? null
   const foeRigOpened = !!opened?.foeRig
   useEffect(() => {
@@ -407,7 +410,7 @@ function LaminasScreen({
         hold: true,
         labels: { ...labelsRef.current, foeSkills: labelsRef.current.foes[fromServer ? fromServer.setup.kind : choice.kind] },
         setup: fromServer
-          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined, temper: fromServer.setup.temper ?? undefined, affection: fromServer.setup.affection ?? undefined, boss: fromServer.setup.boss ?? undefined, god: fromServer.setup.god ?? undefined }
+          ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined, temper: fromServer.setup.temper ?? undefined, affection: fromServer.setup.affection ?? undefined, boss: fromServer.setup.boss ?? undefined, god: fromServer.setup.god ?? undefined, prep: fromServer.setup.prep ? { key: fromServer.setup.prep.key, v: fromServer.setup.prep.v } : undefined }
           : { kind: choice.kind, level: choice.level, body, peer: stage === "ring" ? peerOf(choice.kind) : undefined, tier: tutorial || stage === "ring" ? undefined : portal ? "street" : "arena" },
         kit: fromServer ? (fromServer.setup.kit === "hammer" ? "hammer" : fromServer.setup.kit === "bow" ? "bow" : fromServer.setup.kit === "gun" ? "gun" : fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,
@@ -483,7 +486,7 @@ function LaminasScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [body, look, choice, stage, domain, armed, tutorial, portal, foeBodyOpened, foeRigOpened])
+  }, [body, look, choice, stage, domain, armed, tutorial, portal, foeBodyOpened, foeRigOpened, rearm])
 
   // a passagem violeta do portal some quando a cena está pronta
   useEffect(() => {
@@ -531,6 +534,9 @@ function LaminasScreen({
           sheet={sheet}
           onStart={begin}
         />
+      )}
+      {status === "ready" && !veil && !started && ticket && ticket !== "offline" && (
+        <PrepPicker ticket={ticket} onApplied={(next) => { setTicket(next); setRearm((n) => n + 1) }} />
       )}
 
       {/* inimigos: a placa do Cat demon, espelhada (o retrato fica do lado de fora) */}
