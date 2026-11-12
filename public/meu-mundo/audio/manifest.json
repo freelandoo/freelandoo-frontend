@@ -571,9 +571,9 @@
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "jogo-paint-tiro": {
-      "arquivo": "sfx/magia/jogo-paint-tiro.v1.mp3",
-      "duracao_s": 0.4,
-      "versao": 1,
+      "arquivo": "sfx/magia/jogo-paint-tiro.v3.mp3",
+      "duracao_s": 0.35,
+      "versao": 3,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "lugar-academia-ambiente": {
@@ -1765,9 +1765,9 @@
       "modelo": "ACE-Step 1.5 turbo"
     },
     "musica-jogo-paint": {
-      "arquivo": "musica/musica-jogo-paint.v2.mp3",
-      "duracao_s": 120.0,
-      "versao": 2,
+      "arquivo": "musica/musica-jogo-paint.v4.mp3",
+      "duracao_s": 118.0,
+      "versao": 4,
       "modelo": "ACE-Step 1.5 turbo"
     },
     "musica-lojas": {
@@ -1997,7 +1997,19 @@
       "duracao_s": 0.35,
       "versao": 5,
       "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-pulo": {
+      "arquivo": "sfx/magia/jogo-paint-pulo.v3.mp3",
+      "duracao_s": 0.6,
+      "versao": 3,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-trocar": {
+      "arquivo": "sfx/magia/jogo-paint-trocar.v3.mp3",
+      "duracao_s": 0.35,
+      "versao": 3,
+      "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-12T00:18:18-03:00"
+  "importado_em": "2026-11-12T00:46:13-03:00"
 }

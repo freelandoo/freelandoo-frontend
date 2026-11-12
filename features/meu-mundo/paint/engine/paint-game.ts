@@ -50,7 +50,7 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { createVfx, VFX_COLORS, type VfxColor } from "../../engine/vfx"
-import { GAME_MUSIC, sceneSound, paintMapAmb } from "../../engine/audio"
+import { GAME_MUSIC, sceneSound, paintMapAmb, playSample, preloadSamples, unlockAudio } from "../../engine/audio"
 
 /** O que a interface mostra (atualizado ~10×/s e a cada acontecimento). */
 export interface PaintHud {
@@ -175,6 +175,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   const map = state.map
   // áudio S2: a música do paint e o fundo da fase
   const musicSnd = sceneSound()
+  preloadSamples(["jogo-paint-tiro", "jogo-paint-pulo", "jogo-paint-trocar"])
   musicSnd.set(GAME_MUSIC.paint, paintMapAmb(map.id))
   // Câmera colide com a PEDRA DESENHADA (mais funda que a colisão do corpo),
   // senão ela entra embaixo das ilhas; a tinta entra por cima.
@@ -255,6 +256,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   let launchV: number = TUNING.jumpV
   let wasGround = true
   let reticleColor = -1
+  let ammoColor: number = -1
   let shotAt = -10
   /** Nocaute visto (o renascimento depois dele não é "caiu"). */
   let knocked = false
@@ -295,6 +297,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
         if (e.slot !== port.me) {
           paint.bolt(e.o, e.to, e.c)
           const r = remotes.get(e.slot)
+          playSample("jogo-paint-tiro", { gain: 0.16, minGap: 45, vary: 0.06 })
           if (r) {
             r.shotAt = clock
             r.gun.setColor(e.c)
@@ -473,6 +476,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     body.facing = aimYaw
     aimHold = AIM_HOLD
     shotAt = clock
+    // áudio S13: o disparo da slime (o clique é o gesto que destrava o som)
+    unlockAudio()
+    playSample("jogo-paint-tiro", { gain: 0.55, minGap: 45, vary: 0.06 })
     port.pose(posePacket())
     const o = muzzleOf(body, body.facing)
     if (c === PAINT.WALL) {
@@ -730,6 +736,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       } else if (body.bounce !== null) {
         // cama elástica: a bolha afunda e o corpo sai no pulo
         paint.squash(body.bounce)
+        playSample("jogo-paint-pulo", { gain: 0.75, minGap: 150, vary: 0.05 })
         char.jump(0)
         launchV = body.vy
       } else if (body.jumps > jumpsBefore) {
@@ -777,6 +784,11 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
 
     // tiro (segurando o mouse / o dedo parado, ou um toque rápido) e soco
     if (gun.current !== input.color) gun.setColor(input.color)
+    // áudio S13: trocou a munição (a cor)
+    if (ammoColor !== input.color) {
+      if (ammoColor !== -1) playSample("jogo-paint-trocar", { gain: 0.6, minGap: 80 })
+      ammoColor = input.color
+    }
     if (canMove && (input.firing || input.tapQueued)) tryFire(input.color)
     input.tapQueued = false
     if (input.punchQueued) {
