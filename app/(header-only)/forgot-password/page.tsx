@@ -20,7 +20,9 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/forgot-password", {
+      // A rota do back é /auth/forgot-password (antes: /forgot-password → 404,
+      // e a tela dizia "Email não encontrado" para qualquer e-mail).
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -28,7 +30,7 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => ({}))
 
       if (!response.ok) {
         if (response.status === 500) {

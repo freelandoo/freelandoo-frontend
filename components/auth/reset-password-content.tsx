@@ -30,9 +30,11 @@ export default function ResetPasswordContent() {
       return
     }
 
-    if (password.length < 6) {
+    // Mesma régua do cadastro; o back confere o resto (maiúscula, número,
+    // caractere especial) e a mensagem dele aparece abaixo.
+    if (password.length < 8) {
       setStatus("error")
-      setMessage("A senha deve ter pelo menos 6 caracteres")
+      setMessage("A senha deve ter pelo menos 8 caracteres")
       return
     }
 
@@ -46,22 +48,24 @@ export default function ResetPasswordContent() {
     setStatus("idle")
 
     try {
-      const response = await fetch("/api/reset-password", {
+      // A rota do back é /auth/reset-password e o campo é `novaSenha` — antes
+      // isto ia para /reset-password (404) e a troca nunca funcionou.
+      const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           token,
-          password: password,
+          novaSenha: password,
         }),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => ({}))
 
       if (!response.ok) {
         setStatus("error")
-        setMessage(data.message || "Erro ao redefinir senha. Verifique se o link não expirou.")
+        setMessage(data.error || data.message || "Erro ao redefinir senha. Verifique se o link não expirou.")
         setIsLoading(false)
         return
       }
@@ -166,7 +170,7 @@ export default function ResetPasswordContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
               />
               <button
                 type="button"
@@ -191,7 +195,7 @@ export default function ResetPasswordContent() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
               />
               <button
                 type="button"
