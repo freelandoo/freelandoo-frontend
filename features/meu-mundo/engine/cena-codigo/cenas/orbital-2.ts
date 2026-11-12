@@ -12,7 +12,7 @@ import { AREA, H, planta } from "../dominio"
 import * as O from "./tema-orbital"
 import * as C from "../pecas/orbital"
 import { LAJE, LAJE_B } from "./avenida-orbital"
-import { NUVEM_FUNDO, PEDRA, PEDRA_ESC, PROFUNDO, alturaCeu, beirada, ceuDeFundo, floreiraBalanco, ilhaCeu, marDeNuvens, palacioFlutuante, pedestalLuz, plataforma, ponteCristal } from "./ceu-orbital"
+import { NUVEM_FUNDO, PEDRA, PEDRA_ESC, PROFUNDO, alturaCeu, aqueduto, beirada, cachoeira, ceuDeFundo, escadaCurva, floreiraBalanco, ilhaCeu, marDeNuvens, palacioFlutuante, pedestalLuz, pingente, plataforma, ponteArco, ponteCristal, trepadeira } from "./ceu-orbital"
 
 export const meta = {
   ceu: [0.42, 0.68, 1] as RGB,
@@ -102,6 +102,7 @@ export function montar(lod = 0): Cena {
 
   // ── ilhas flutuantes por cima do vazio (algumas com gazebo) e o mar de nuvens embaixo ──
   let gz = 0
+  const ilhas: { x: number; y: number; z: number; r: number }[] = []
   for (let x = -H + 14; x < H; x += 26)
     for (let z = -H + 14; z < H; z += 26) {
       const r = (q: number) => rnd(17, x * 3 + z, q)
@@ -110,7 +111,51 @@ export function montar(lod = 0): Cena {
       const y = 9 + r(4) * 14, R = 4 + r(5) * 3.5
       const casa = gz < 3 && r(6) < 0.45
       ilhaCeu(c, px, y, pz, R, r(7) * 99, lod, casa)
+      ilhas.push({ x: px, y, z: pz, r: R })
       if (casa) gz++
+    }
+  // ── o que liga e enfeita as ilhas (a ref 2 inteira): pontes em arco entre vizinhas, cachoeiras caindo nas
+  // nuvens, escada em caracol pendurada, pingentes de cristal e trepadeiras na beira ──
+  const ligadas = new Set<string>()
+  ilhas.forEach((A, i) => {
+    // a vizinha mais perto (18–42 m) ganha ponte; cada par uma vez só
+    let best = -1, bd = Infinity
+    ilhas.forEach((B, j) => {
+      const d = Math.hypot(A.x - B.x, A.z - B.z)
+      if (j !== i && d > 18 && d < 42 && d < bd && !ligadas.has(Math.min(i, j) + "-" + Math.max(i, j))) {
+        bd = d
+        best = j
+      }
+    })
+    if (best >= 0) {
+      const B = ilhas[best]
+      ligadas.add(Math.min(i, best) + "-" + Math.max(i, best))
+      const ux = (B.x - A.x) / bd, uz = (B.z - A.z) / bd
+      ponteArco(c, [A.x + ux * A.r * 0.9, A.y + 0.35, A.z + uz * A.r * 0.9], [B.x - ux * B.r * 0.9, B.y + 0.35, B.z - uz * B.r * 0.9], 2.2, 2.5, lod)
+    }
+    const rr = (q: number) => rnd(23, i, q)
+    if (rr(1) < 0.55) {
+      const a = rr(2) * Math.PI * 2
+      cachoeira(c, A.x + Math.cos(a) * A.r * 0.95, A.y + 0.2, A.z + Math.sin(a) * A.r * 0.95, Math.atan2(Math.cos(a), Math.sin(a)), 1.6 + rr(3), -3)
+    }
+    if (!lod) {
+      for (let k = 0; k < 2; k++) pingente(c, A.x + (rr(k + 4) - 0.5) * A.r * 0.6, A.y - A.r * 0.75, A.z + (rr(k + 6) - 0.5) * A.r * 0.6, 1.4 + rr(k + 8))
+      for (let k = 0; k < 3; k++) {
+        const a = rr(k + 10) * Math.PI * 2
+        trepadeira(c, A.x + Math.cos(a) * A.r, A.y + 0.3, A.z + Math.sin(a) * A.r, 2.2, i * 7 + k)
+      }
+    }
+    if (i % 3 === 1) escadaCurva(c, A.x, A.y + 0.2, A.z, A.r + 1, rr(12) * 6, 0.75, Math.min(A.y - 1, 9), lod)
+  })
+  // aqueduto quebrado no alto, atravessando o céu da cena (visto de quase toda a calçada)
+  aqueduto(c, 52, 26, -60, -0.5, 5, lod)
+  aqueduto(c, -66, 30, 20, 0.4, 4, lod)
+  // trepadeiras descendo do parapeito para o vazio, de vez em quando
+  if (!lod)
+    for (let t = 0.05, k = 0; t < 0.9; t += 0.06, k++) {
+      const p = P.at(t), s = k % 2 ? 1 : -1
+      const x = p.x + p.dz * s * 6.3, z = p.z - p.dx * s * 6.3
+      if (L.dentro(x, z) < 0 && L.dentro(x - p.dz * s * 0.9, z + p.dx * s * 0.9) > 0) trepadeira(c, x, 0.4, z, 2.6, k * 5)
     }
   marDeNuvens(c, L, H, lod, 21)
 

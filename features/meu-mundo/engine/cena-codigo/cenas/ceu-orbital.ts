@@ -247,3 +247,92 @@ export function floreiraBalanco(c: Cena, x: number, z: number, ang: number, seed
   O.canteiroCristal(c, x, z, ang, { seed, cristal: rnd(seed, 2) < 0.5 ? O.CRISTAL_ROSA : AMARELO }, lod)
   tube(c.geo(x, z), [x, 0, z], [x, -2.6, z], 1.3, 0.2, 5, (k) => (k % 2 ? PEDRA : PEDRA_ESC), false)
 }
+
+// ── elementos de ligação da ref 2: pontes em arco, cachoeiras, escada curva, pingentes, trepadeiras, aqueduto ──
+
+/**
+ * PONTE EM ARCO entre dois pontos no ar (a ref: a ponte de vidro que liga a ilha do castelo à do palácio):
+ * tabuleiro de cristal aceso em facetas, sobe numa curva (`arco` m acima da reta), laje de mármore embaixo e
+ * guarda-corpo de ouro. Não colide (é cenário no alto). Vai para o bloco do MEIO da ponte.
+ */
+export function ponteArco(c: Cena, a: V3, b: V3, w: number, arco: number, lod: number) {
+  const dx = b[0] - a[0], dz = b[2] - a[2], len = Math.hypot(dx, dz) || 1
+  const nx = dz / len, nz = -dx / len
+  const mx = (a[0] + b[0]) / 2, mz = (a[2] + b[2]) / 2
+  const g = c.geo(mx, mz), G = c.glow(mx, mz)
+  const n = lod ? 6 : Math.max(8, Math.round(len / 2.5))
+  const P = (t: number, u: number, dy = 0): V3 => [a[0] + dx * t + nx * u, a[1] + (b[1] - a[1]) * t + arco * 4 * t * (1 - t) + dy, a[2] + dz * t + nz * u]
+  for (let k = 0; k < n; k++) {
+    const t0 = k / n, t1 = (k + 1) / n
+    const c1 = k % 2 ? mix(T.CIANO, T.BRANCO, 0.4) : T.CIANO, c2 = mix(T.CIANO, O.CRISTAL_LILAS, 0.35)
+    face(G, [P(t0, -w / 2, 0.05), P(t1, -w / 2, 0.05), P(t1, w / 2, 0.05), P(t0, w / 2, 0.05)], [c1, c2, mix(c2, T.BRANCO, 0.3), c1], [0, 1, 0])
+    face(g, [P(t0, -w / 2 - 0.2, -0.5), P(t1, -w / 2 - 0.2, -0.5), P(t1, w / 2 + 0.2, -0.5), P(t0, w / 2 + 0.2, -0.5)], T.MARMORE_S, [0, -1, 0])
+    for (const s of [-1, 1]) {
+      face(g, [P(t0, s * (w / 2 + 0.2), -0.5), P(t1, s * (w / 2 + 0.2), -0.5), P(t1, s * (w / 2 + 0.2), 0.04), P(t0, s * (w / 2 + 0.2), 0.04)], T.MARMORE, [nx * s, 0, nz * s])
+      if (!lod) tube(g, P(t0, s * (w / 2 + 0.1), 0.9), P(t1, s * (w / 2 + 0.1), 0.9), 0.06, 0.06, 4, () => T.OURO, false)
+      if (!lod && k % 2 === 0) tube(g, P(t0, s * (w / 2 + 0.1), 0), P(t0, s * (w / 2 + 0.1), 0.9), 0.05, 0.05, 4, () => T.OURO, false)
+    }
+  }
+}
+
+/** Cachoeira acesa caindo da beira de uma ilha até as nuvens (fita dupla face, clara em cima). */
+export function cachoeira(c: Cena, x: number, y: number, z: number, ang: number, w: number, yFim = -3) {
+  const G = c.glow(x, z)
+  const nx = Math.sin(ang), nz = Math.cos(ang), tx = nz, tz = -nx
+  const topo = mix(T.CIANO, T.BRANCO, 0.65), pe = mix(T.CIANO, T.BRANCO, 0.2)
+  const p = (u: number, yy: number, out: number): V3 => [x + tx * u + nx * out, yy, z + tz * u + nz * out]
+  for (const s of [1, -1]) face(G, [p(-w / 2, y, 0), p(w / 2, y, 0), p(w * 0.65, yFim, 0.8), p(-w * 0.65, yFim, 0.8)], [topo, topo, pe, pe], [nx * s, 0, nz * s])
+  blob(c.geo(x, z), [x + nx * 0.8, yFim, z + nz * 0.8], [w, w * 0.4, w], NUVEM, x + z)
+}
+
+/** ESCADA CURVA pendurada (a ref: a escada em caracol que desce da ilha do gazebo): degraus num arco. */
+export function escadaCurva(c: Cena, cx: number, y0: number, cz: number, r: number, a0: number, voltas: number, desce: number, lod: number) {
+  const g = c.geo(cx, cz)
+  const n = lod ? 10 : Math.round(24 * voltas)
+  for (let k = 0; k < n; k++) {
+    const t = k / n, a = a0 + t * voltas * Math.PI * 2, y = y0 - t * desce
+    const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r
+    caixa(g, { x, z, y0: y - 0.18, y1: y, w: 1.6, d: 0.7, rot: a, side: k % 2 ? T.MARMORE : T.MARMORE_S, top: T.MARMORE })
+    if (!lod && k % 3 === 0) tube(g, [x + Math.cos(a) * 0.8, y, z + Math.sin(a) * 0.8], [x + Math.cos(a) * 0.8, y + 0.9, z + Math.sin(a) * 0.8], 0.04, 0.04, 3, () => T.OURO, false)
+  }
+}
+
+/** Pingente de cristal rosa pendurado por uma corrente de ouro (embaixo de ilha, escada e ponte). */
+export function pingente(c: Cena, x: number, y: number, z: number, h: number) {
+  const g = c.geo(x, z), G = c.glow(x, z)
+  tube(g, [x, y, z], [x, y - h * 0.4, z], 0.03, 0.03, 3, () => T.OURO, false)
+  tube(G, [x, y - h * 0.4, z], [x, y - h * 0.6, z], 0.05, 0.3, 6, () => mix(O.CRISTAL_ROSA, T.BRANCO, 0.3), false)
+  tube(G, [x, y - h * 0.6, z], [x, y - h, z], 0.3, 0.02, 6, (k) => (k % 2 ? O.CRISTAL_ROSA : O.CRISTAL_LILAS), false)
+}
+
+/** Trepadeira: cortina de folhas descendo de uma beira (3–5 bolhas verdes em fila, cada vez menores). */
+export function trepadeira(c: Cena, x: number, y: number, z: number, h: number, seed: number) {
+  const g = c.geo(x, z)
+  const V: Foliage = { dark: [0.26, 0.5, 0.12], mid: [0.48, 0.74, 0.18], hi: [0.78, 0.92, 0.34] }
+  const n = 3 + Math.floor(rnd(seed, 1) * 3)
+  for (let k = 0; k < n; k++) {
+    const f = 1 - k / (n + 1)
+    blob(g, [x + (rnd(seed, k) - 0.5) * 0.4, y - (k / n) * h, z + (rnd(seed, k, 2) - 0.5) * 0.4], [0.6 * f, 0.7, 0.6 * f], V, seed + k)
+  }
+}
+
+/** Aqueduto quebrado no ar (a ref, no alto à direita): pedaços de viga com arcos embaixo, em fila torta. */
+export function aqueduto(c: Cena, x: number, y: number, z: number, ang: number, pedacos: number, lod: number) {
+  const fx = Math.sin(ang), fz = Math.cos(ang), sx = Math.cos(ang), sz = -Math.sin(ang)
+  for (let k = 0; k < pedacos; k++) {
+    const px = x + fx * k * 11, pz = z + fz * k * 11, py = y + Math.sin(k * 1.3) * 1.5
+    if (Math.abs(px) > 76 || Math.abs(pz) > 76) continue
+    const g = c.geo(px, pz)
+    caixa(g, { x: px, z: pz, y0: py, y1: py + 1, w: 1.8, d: 8, rot: -ang, side: T.MARMORE, top: T.BRANCO })
+    for (const s of [-1, 1]) caixa(g, { x: px + fx * s * 3.2, z: pz + fz * s * 3.2, y0: py - 3.5, y1: py, w: 1.6, d: 1, rot: -ang, side: T.MARMORE_S, top: T.MARMORE })
+    if (!lod) {
+      const m = 6
+      for (let j = 0; j < m; j++) {
+        const a0 = Math.PI * (j / m), a1 = Math.PI * ((j + 1) / m)
+        const q = (a: number, o: number): V3 => [px + fx * Math.cos(a) * 2.7 + sx * (o ? 0.8 : -0.8), py - 2.7 + Math.sin(a) * 2.2, pz + fz * Math.cos(a) * 2.7 + sz * (o ? 0.8 : -0.8)]
+        face(g, [q(a0, 0), q(a1, 0), q(a1, 1), q(a0, 1)], T.MARMORE_S, [0, -1, 0])
+      }
+      pingente(c, px, py - 0.1, pz, 1.6)
+    }
+  }
+}
