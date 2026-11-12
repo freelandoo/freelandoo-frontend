@@ -18,6 +18,7 @@ import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
 import { caixa } from "../kit-cidade"
 import { block, bush, face, mesa, mix, mul, rnd, strata, tree, tube, tuft, type Foliage, type MesaOut } from "../kit-natureza"
+import * as P from "../pecas/canion"
 
 export const CEU_DIA: RGB = [0.5, 0.7, 0.95]
 export const NEVOA_DIA: RGB = [0.72, 0.8, 0.92]
@@ -57,74 +58,47 @@ export function mesaCanion(c: Cena, o: { x: number; z: number; rx: number; rz: n
   return m
 }
 
-/** Maciço = mesa grande + segunda menor cruzando + andar de cima (nunca uma oval sozinha). */
+/** Maciço = PENHASCO copiado (colunas de faces planas, faixas creme, tampa de capim) + um menor cruzando. */
 export function macico(c: Cena, x: number, z: number, s: number, seed: number, lod: number): MesaOut[] {
-  const a = mesaCanion(c, { x, z, rx: 8 * s, rz: 6.5 * s, h: 9 * s, seed, lod })
-  const b = mesaCanion(c, { x: x + 5 * s, z: z + 4 * s, rx: 4.5 * s, rz: 4 * s, h: 6 * s, seed: seed + 1, lod })
-  mesaCanion(c, { x: x - 1.5 * s, z: z - 0.5 * s, rx: 4.6 * s, rz: 3.6 * s, h: 5 * s, y0: a.topY, seed: seed + 2, lod, solid: false, flare: 0.05 })
+  const a = P.penhasco(c, x, z, 8 * s, 6.5 * s, 9 * s, seed, lod, true)
+  const b = P.penhasco(c, x + 5 * s, z + 4 * s, 4.5 * s, 4 * s, 6 * s, seed + 1, lod, false)
+  // blocos caídos no pé (a ref sempre tem rocha solta junto do paredão)
+  if (!lod) for (let k = 0; k < 3; k++) {
+    const an = rnd(seed, k, 40) * Math.PI * 2
+    P.rochaVermelha(c, x + Math.cos(an) * 8.6 * s, z + Math.sin(an) * 7 * s, 1.2 + rnd(seed, k, 41) * 1.2, an, seed * 7 + k, lod, false)
+  }
   return [a, b]
 }
 
-/** Torre fina de arenito (as agulhas do fundo e da tempestade). */
+/** Agulha de arenito copiada (3 blocos de colunas que afinam). */
 export function agulha(c: Cena, x: number, z: number, h: number, seed: number, lod: number) {
-  const g = c.geo(x, z)
-  let y = 0
-  let w = h * 0.22
-  for (let k = 0; k < 3; k++) {
-    const hh = h * [0.45, 0.33, 0.22][k]
-    block(g, x + (rnd(seed, k) - 0.5) * w * 0.2, z + (rnd(seed, k, 2) - 0.5) * w * 0.2, y - 0.05, y + hh, w, w * 0.85, { strata: ARENITO, seed: seed + k, rot: rnd(seed, k, 3) * 3, taper: 0.82, tilt: 0.04, top: CAPIM_SECO })
-    y += hh
-    w *= 0.72
-  }
-  c.block(x, z, h * 0.11, h * 0.1, h)
-  void lod
+  P.agulhaBlocos(c, x, z, h, seed, lod, c.name !== "canion-1" && rnd(seed, 3) < 0.5)
 }
 
-/** Bloco vermelho solto (o "perto" das vistas). */
+/** Rocha vermelha copiada (laje de faces planas com o chanfro claro). */
 export function blocoVerm(c: Cena, x: number, z: number, s: number, seed: number, solid = true) {
-  const h = s * (0.7 + rnd(seed, 1) * 0.5)
-  block(c.geo(x, z), x, z, -0.05, h, s * (1.4 + rnd(seed, 2) * 0.6), s * (1.1 + rnd(seed, 3) * 0.5), { strata: ARENITO, seed, rot: rnd(seed, 4) * 3, taper: 0.86, tilt: 0.06, bevel: 0.1, top: mix(VERM, CREME, 0.25) })
-  if (solid && s > 0.6) c.block(x, z, s * 0.8, s * 0.65, h, rnd(seed, 4) * 3)
+  P.rochaVermelha(c, x, z, s, rnd(seed, 4) * 3, seed, c.lod, solid)
 }
 
-/** Árvore de outono (amarela ~60% / laranja). */
+/** Árvore de outono copiada: redonda (a maioria), bétula de tronco branco (1 em 8), torta de vento (cenas 2–3). */
 export function arvoreOutono(c: Cena, x: number, z: number, h: number, seed: number, lod: number) {
-  tree(c.geo(x, z), [x, 0, z], { h, r: h * (0.3 + 0.08 * rnd(seed, 3)), leaf: rnd(seed, 1) < 0.6 ? FOLHA_AM : FOLHA_LA, bark: [0.5, 0.36, 0.24], seed, lod })
-  c.block(x, z, 0.3, 0.3, 3)
+  const r = rnd(seed, 6)
+  const tipo = c.name !== "canion-1" && r < 0.45 ? "vento" : r > 0.88 ? "betula" : "redonda"
+  P.arvore(c, x, z, tipo === "betula" ? h * 1.5 : h, seed, lod, tipo)
 }
 
 export function arbusto(c: Cena, x: number, z: number, r: number, seed: number, lod: number) {
-  bush(c.geo(x, z), [x, 0, z], r, rnd(seed, 2) < 0.65 ? ARBUSTO_AM : ARBUSTO_V, seed, lod)
+  P.arbustoAmarelo(c, x, z, r * 1.3, seed, lod, rnd(seed, 2) < 0.7 ? P.AMARELO : P.OCRE)
 }
 
-/** Capim-dos-pampas: tufo alto claro (só perto). */
+/** Capim-dos-pampas copiado (lâminas + plumas creme). */
 export function pampa(c: Cena, x: number, z: number, h: number, seed: number) {
-  tuft(c.geo(x, z), [x, 0, z], 6, h, seed, CAPIM_ESC, [0.98, 0.92, 0.72])
+  P.pampa(c, x, z, h * 1.6, seed, c.lod)
 }
 
-/** Cristal ciano aceso: 3–5 prismas inclinados saindo de um pé de pedra (vai no `glow`). */
+/** Cristal ciano aceso (peça copiada). */
 export function cristal(c: Cena, x: number, z: number, s: number, seed: number, lod: number) {
-  const G = c.glow(x, z)
-  const n = lod ? 2 : 3 + Math.floor(rnd(seed, 1) * 3)
-  for (let k = 0; k < n; k++) {
-    const a = rnd(seed, k, 2) * Math.PI * 2
-    const tilt = k ? 0.35 + rnd(seed, k, 3) * 0.35 : 0.08
-    const h = s * (k ? 0.55 + rnd(seed, k, 4) * 0.4 : 1)
-    const r = s * 0.16 * (k ? 0.7 : 1)
-    const bx = x + Math.cos(a) * r * (k ? 1.3 : 0), bz = z + Math.sin(a) * r * (k ? 1.3 : 0)
-    const tip: V3 = [bx + Math.cos(a) * h * tilt, h, bz + Math.sin(a) * h * tilt]
-    const sh: V3 = [bx + Math.cos(a) * h * tilt * 0.8, h * 0.78, bz + Math.sin(a) * h * tilt * 0.8]
-    const m = 5
-    for (let j = 0; j < m; j++) {
-      const t0 = (j / m) * Math.PI * 2, t1 = ((j + 1) / m) * Math.PI * 2
-      const p0: V3 = [bx + Math.cos(t0) * r, -0.05, bz + Math.sin(t0) * r], p1: V3 = [bx + Math.cos(t1) * r, -0.05, bz + Math.sin(t1) * r]
-      const q0: V3 = [sh[0] + Math.cos(t0) * r, sh[1], sh[2] + Math.sin(t0) * r], q1: V3 = [sh[0] + Math.cos(t1) * r, sh[1], sh[2] + Math.sin(t1) * r]
-      const N: V3 = [Math.cos((t0 + t1) / 2), 0.2, Math.sin((t0 + t1) / 2)]
-      face(G, [p0, p1, q1, q0], [mul(CIANO, 0.55), mul(CIANO, 0.55), CIANO, CIANO], N)
-      face(G, [q0, q1, tip], [CIANO, CIANO, CIANO_CL], [N[0], 0.7, N[2]])
-    }
-  }
-  if (s > 0.9) c.block(x, z, s * 0.3, s * 0.3, s)
+  P.cristalCiano(c, x, z, s, seed, lod)
 }
 
 /** Raio ciano no céu (zigue-zague em fita, aceso): de `y0` para baixo até `y1`. */
@@ -178,71 +152,23 @@ export function trilhoCeu(c: Cena, pts: V3[], lod: number, pilar: (x: number, z:
   }
 }
 
-/** Torre-moinho em ruína (cena 3): torre de pedra clara + pás de pano. */
+/** Moinho em ruína copiado. */
 export function moinho(c: Cena, x: number, z: number, h: number, ang: number, seed: number, lod: number) {
-  const g = c.geo(x, z)
-  const pedra: RGB = [0.86, 0.82, 0.74], pedraE: RGB = [0.64, 0.6, 0.54]
-  tube(g, [x, -0.1, z], [x, h, z], h * 0.2, h * 0.15, lod ? 5 : 7, (k) => (k % 2 ? pedra : pedraE), false)
-  // topo quebrado (ameias tortas)
-  if (!lod) for (let k = 0; k < 5; k++) {
-    const a = (k / 5) * Math.PI * 2 + seed
-    caixa(g, { x: x + Math.cos(a) * h * 0.14, z: z + Math.sin(a) * h * 0.14, y0: h, y1: h + 0.6 + rnd(seed, k) * 0.8, w: 0.7, d: 0.5, rot: -a, side: pedra, top: pedraE })
-  }
-  // pás: cruz de 4 braços de madeira com pano, na frente (ang)
-  const fx = Math.sin(ang), fz = Math.cos(ang)
-  const hub: V3 = [x + fx * h * 0.2, h * 0.78, z + fz * h * 0.2]
-  const sx = Math.cos(ang), sz = -Math.sin(ang)
-  const madeira: RGB = [0.46, 0.32, 0.2], pano: RGB = [0.92, 0.86, 0.74]
-  for (let k = 0; k < 4; k++) {
-    const t = (k / 4) * Math.PI * 2 + 0.3
-    const ux = sx * Math.cos(t), uy = Math.sin(t), uz = sz * Math.cos(t)
-    const L = h * 0.55
-    const end: V3 = [hub[0] + ux * L, hub[1] + uy * L, hub[2] + uz * L]
-    tube(g, hub, end, 0.09, 0.07, 4, () => madeira, false)
-    if (!lod) {
-      const vx = sx * Math.cos(t + Math.PI / 2) * 0.9, vy = Math.sin(t + Math.PI / 2) * 0.9, vz = sz * Math.cos(t + Math.PI / 2) * 0.9
-      const a: V3 = [hub[0] + ux * L * 0.25, hub[1] + uy * L * 0.25, hub[2] + uz * L * 0.25]
-      for (const s of [1, -1]) face(g, [a, end, [end[0] + vx, end[1] + vy, end[2] + vz], [a[0] + vx, a[1] + vy, a[2] + vz]], pano, [fx * s, 0, fz * s])
-    }
-  }
-  c.block(x, z, h * 0.18, h * 0.18, h)
+  P.moinhoRuina(c, x, z, h, ang, seed, lod)
 }
 
-/** Pedestal de pedra clara com cristal aceso em cima (marca a estrada da cena 3). */
+/** Pedestal de cristal copiado (a fila da estrada da cena 3). */
 export function pedestal(c: Cena, x: number, z: number, seed: number, lod: number) {
-  const g = c.geo(x, z)
-  caixa(g, { x, z, y0: 0, y1: 0.35, w: 1.5, d: 1.5, side: LAJE_ESC, top: LAJE })
-  caixa(g, { x, z, y0: 0.35, y1: 1.35, w: 1, d: 1, side: LAJE, top: CREME })
-  c.block(x, z, 0.75, 0.75, 1.4)
-  const G = c.glow(x, z)
-  const s = 0.9
-  const n = lod ? 4 : 6
-  const top: V3 = [x, 1.35 + s * 1.4, z], bot: V3 = [x, 1.4, z]
-  for (let k = 0; k < n; k++) {
-    const a = (k / n) * Math.PI * 2 + seed, b = ((k + 1) / n) * Math.PI * 2 + seed
-    const pa: V3 = [x + Math.cos(a) * s * 0.35, 1.35 + s * 0.45, z + Math.sin(a) * s * 0.35], pb: V3 = [x + Math.cos(b) * s * 0.35, 1.35 + s * 0.45, z + Math.sin(b) * s * 0.35]
-    face(G, [pa, pb, top], [CIANO, CIANO, CIANO_CL], [Math.cos((a + b) / 2), 0.4, Math.sin((a + b) / 2)])
-    face(G, [pb, pa, bot], [CIANO, CIANO, mul(CIANO, 0.6)], [Math.cos((a + b) / 2), -0.4, Math.sin((a + b) / 2)])
-  }
+  P.pedestalCristal(c, x, z, rnd(seed, 1) * 0.3, lod)
 }
 
-/** Arco natural de arenito por cima do caminho: dois pilares (com caixa) e a ponte de pedra em cima. */
+/** Arco natural copiado, por cima do caminho. */
 export function arcoNatural(c: Cena, x: number, z: number, ang: number, vao: number, h: number, lod: number) {
-  const sx = Math.cos(ang), sz = -Math.sin(ang)
-  for (const s of [-1, 1]) {
-    const px = x + sx * (vao / 2 + 2.6) * s, pz = z + sz * (vao / 2 + 2.6) * s
-    mesaCanion(c, { x: px, z: pz, rx: 3.2, rz: 3.6, h, seed: 70 + s, lod })
-  }
-  // a ponte: blocos em arco, sem colisão (é alta)
-  const n = lod ? 5 : 9
-  for (let k = 0; k <= n; k++) {
-    const t = k / n
-    const u = (t - 0.5) * (vao + 5.2)
-    const y = h - 1.2 + Math.sin(t * Math.PI) * 2.2
-    const bx = x + sx * u, bz = z + sz * u
-    block(c.geo(x, z), bx, bz, y - 2.2, y + 0.6, (vao + 5) / n + 1.2, 4.2, { strata: ARENITO, seed: 300 + k, rot: -ang + Math.PI / 2, taper: 1, tilt: 0.02, top: CAPIM_SECO })
-  }
+  P.arcoNatural(c, x, z, ang, vao, h, lod)
 }
+
+/** Teto de triângulos das cenas do Cânion: fidelidade acima do orçamento de celular (o Alex, 11/11). */
+export const TRI_BLOCO = { perto: 16000, longe: 6000, fundo: 6000 }
 
 /** Pano de fundo do cânion: mesas e agulhas grandes na névoa, fora da área. */
 export function fundoCanion(c: Cena, seed: number) {

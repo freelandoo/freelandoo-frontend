@@ -11,8 +11,11 @@ import { face, mix, mul, smooth, tube } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import { castelo, type CasteloEstilo } from "../castelo"
 import * as T from "./tema-canion"
+import * as F from "./tema-fabrica"
+import * as P2 from "../pecas/canion"
 
 export const meta = {
+  triBloco: T.TRI_BLOCO,
   ceu: [0.17, 0.2, 0.36] as RGB,
   nevoa: [0.32, 0.34, 0.5] as RGB,
   area: AREA,
@@ -60,6 +63,7 @@ export function montar(lod = 0): Cena {
     if (P.livre(x, z, 3)) T.moinho(c, x, z, h, Math.atan2(p.x - x, p.z - z), t * 100, lod)
   }
   T.fundoCanion(c, 15)
+  P2.horizonteCanion(c, 15, meta.nevoa, true)
 
   const inMesa = (x: number, z: number, k = 1.12) => mesas.some((m) => m.inside(x, z, k))
   const color = (x: number, z: number): RGB => {
@@ -78,14 +82,39 @@ export function montar(lod = 0): Cena {
   ground(c, { x0: -200, z0: -200, x1: 200, z1: 200, step: 40, color: (x, z) => mul(mix(T.CAPIM, T.TERRA_VERM, noise(x * 0.03, 1, z * 0.03) * 0.6), 0.85), fundo: true, y: -0.05, hole: [-H, -H, H, H] })
 
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !inMesa(x, z)
-  // pedestais com cristal a cada ~14 m dos dois lados da estrada
-  for (let t = 0.05; t < 0.97; t += 0.05) {
-    const p = P.at(t)
+  // a ESTRADA de lajes creme (ref 3) por cima do chão pintado
+  P2.estradaLajes(c, CAMINHO, 5.6, 21, (x, z) => P.dWalk(x, z) < 2.9 && P.aberto(x, z) < 0.5, lod)
+  // o CORREDOR: pedestais aos pares a cada 12 m (a 3,9 m), bloquetes de pedra na beira (3,4 m), e logo atrás
+  // as rochas vermelhas com cristal e arbustos; um arco em ruína de vez em quando
+  let nArco = 0
+  F.aoLongoDoCaminho(CAMINHO, 1, (x, z, dx, dz, dist) => {
+    const nx = dz, nz = -dx
+    const d = Math.round(dist)
     for (const s of [-1, 1]) {
-      const x = p.x + p.dz * 4.4 * s, z = p.z - p.dx * 4.4 * s
-      if (ok(x, z, -1.6)) T.pedestal(c, x, z, t * 10 + s, lod)
+      if (d % 12 === 0) {
+        const px = x + nx * 3.9 * s, pz = z + nz * 3.9 * s
+        if (ok(px, pz, -1.6)) T.pedestal(c, px, pz, dist + s, lod)
+      } else if (d % 2 === 0) {
+        const bx = x + nx * 3.6 * s, bz = z + nz * 3.6 * s
+        if (ok(bx, bz, -1.8)) P2.bloquete(c, bx, bz, 1.2 + ((d * 7 + s) % 5) * 0.12, Math.atan2(dx, dz), d * 3 + s, lod)
+      }
+      if (d % 9 === 4) {
+        const rx = x + nx * 6.2 * s, rz = z + nz * 6.2 * s
+        if (ok(rx, rz, 0.6)) {
+          T.blocoVerm(c, rx, rz, 1.4 + ((d + s) % 3) * 0.4, d * 5 + s)
+          T.cristal(c, rx - dx * 1.6, rz - dz * 1.6, 1.1 + ((d * 3) % 4) * 0.2, d + s, lod)
+        }
+      }
+      if (d % 7 === 2) {
+        const ax2 = x + nx * 5.2 * s, az2 = z + nz * 5.2 * s
+        if (ok(ax2, az2, 0.2)) T.arbusto(c, ax2, az2, 0.6, d * 9 + s, lod)
+      }
+      if (d % 37 === 18 && nArco++ < 3) {
+        const ax3 = x + nx * 9 * s, az3 = z + nz * 9 * s
+        if (ok(ax3, az3, 2.6)) P2.arcoRuina(c, ax3, az3, Math.atan2(-nx * s, -nz * s), lod)
+      }
     }
-  }
+  })
   scatter(-H + 4, -H + 4, H - 4, H - 4, 6, 35, (x, z, r) => {
     if (!ok(x, z, 0.4) || r(1) > (P.dWalk(x, z) < 8 ? 0.32 : 0.1)) return
     T.blocoVerm(c, x, z, 0.6 + r(2) * 1.5, r(3) * 99)

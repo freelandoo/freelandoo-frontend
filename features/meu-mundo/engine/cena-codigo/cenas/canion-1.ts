@@ -11,12 +11,15 @@
 //   S . M M . . . . M ~
 
 import { noise, type RGB } from "../kit"
-import { Cena, distPath, ground, river, scatter, type XZ } from "../kit-cena"
+import { Cena, blocked, distPath, ground, river, scatter, type XZ } from "../kit-cena"
 import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as T from "./tema-canion"
+import * as F from "./tema-fabrica"
+import * as P2 from "../pecas/canion"
 
 export const meta = {
+  triBloco: T.TRI_BLOCO,
   ceu: T.CEU_DIA,
   nevoa: T.NEVOA_DIA,
   area: AREA,
@@ -61,6 +64,7 @@ export function montar(lod = 0): Cena {
   for (const [x, z, s] of [[-20, -16, 1.1], [16, -24, 0.8], [-8, 28, 1], [24, 30, 0.7], [-60, -12, 1]] as const)
     if (P.livre(x, z, 9 * s)) add(T.macico(c, x, z, s, Math.round(x + z) + 99, lod))
   T.fundoCanion(c, 4)
+  P2.horizonteCanion(c, 4, meta.nevoa, false)
 
   const inMesa = (x: number, z: number, k = 1.12) => mesas.some((m) => m.inside(x, z, k))
   const height = (x: number, z: number) => -0.75 * smooth(RIO_W / 2 + 2.5, RIO_W / 2 - 0.5, dRio(x, z))
@@ -101,5 +105,25 @@ export function montar(lod = 0): Cena {
       if (r(1) > (P.dWalk(x, z) < 5 ? 0.5 : 0.12)) return
       T.pampa(c, x, z, 0.5 + r(2) * 0.5, r(3) * 99)
     })
+  // a BEIRA das refs: rocha vermelha, arbusto amarelo e pampa colados no caminho (2,6–5 m), em grupos
+  F.aoLongoDoCaminho(CAMINHO, 1, (x, z, dx, dz, dist) => {
+    const nx = dz, nz = -dx, d = Math.round(dist)
+    for (const s of [-1, 1]) {
+      const q = (d * 7 + (s > 0 ? 3 : 0)) % 17
+      if (q === 0) {
+        const rx = x + nx * 4.6 * s, rz = z + nz * 4.6 * s
+        if (P.livre(rx, rz, 0.9) && !blocked(c, rx, rz, 1)) T.blocoVerm(c, rx, rz, 1.3 + (d % 3) * 0.35, d * 3 + s)
+      } else if (q === 5 || q === 11) {
+        const bx = x + nx * 3.4 * s, bz = z + nz * 3.4 * s
+        if (P.livre(bx, bz, -0.6) && !blocked(c, bx, bz, 0.3)) T.arbusto(c, bx, bz, 0.55, d * 5 + s, lod)
+      } else if (q === 8 && !lod) {
+        const px = x + nx * 3 * s, pz = z + nz * 3 * s
+        if (P.livre(px, pz, -0.9) && !blocked(c, px, pz, 0.2)) T.pampa(c, px, pz, 0.8, d + s)
+      } else if (q === 14) {
+        const sx2 = x + nx * 3.1 * s, sz2 = z + nz * 3.1 * s
+        if (P.livre(sx2, sz2, -0.8) && !blocked(c, sx2, sz2, 0.3)) T.blocoVerm(c, sx2, sz2, 0.45, d * 11 + s, false)
+      }
+    }
+  })
   return c
 }
