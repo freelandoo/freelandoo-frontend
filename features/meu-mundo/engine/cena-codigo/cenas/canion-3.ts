@@ -9,7 +9,7 @@ import { noise, type RGB, type V3 } from "../kit"
 import { Cena, ground, scatter, type XZ } from "../kit-cena"
 import { face, mix, mul, smooth, tube } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
-import { castelo, type CasteloEstilo } from "../castelo"
+import { casteloZephyra } from "../pecas/castelo-zephyra"
 import * as T from "./tema-canion"
 import * as F from "./tema-fabrica"
 import * as P2 from "../pecas/canion"
@@ -26,27 +26,13 @@ export const meta = {
 
 const CAMINHO: XZ[] = [[-54, -73], [-52, -48], [-26, -40], [2, -46], [30, -38], [44, -18], [24, -4], [0, 4], [0, 24], [0, 44], [0, 56]]
 
-export const ZEPHYRA: CasteloEstilo = {
-  pedra: [0.7, 0.2, 0.18],
-  pedraEsc: [0.48, 0.13, 0.12],
-  quina: [0.94, 0.88, 0.8],
-  telhado: [0.62, 0.14, 0.14],
-  telhadoHi: [0.86, 0.26, 0.22],
-  luz: [0.5, 0.98, 1],
-  metal: [0.9, 0.84, 0.72],
-  bandeira: [0.62, 0.12, 0.14],
-  cobertura: "cone",
-  lados: 6,
-  alto: 1.1,
-}
 
 export function montar(lod = 0): Cena {
   const c = new Cena("canion-3", lod, 32, -16)
-  const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 52, d: 40, patio: 18 } })
+  // pegada da CIDADELA copiada (pecas/castelo-zephyra.ts): 62 m com os faróis; pátio 18 (o salão da deusa)
+  const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 62, d: 40, patio: 18 } })
   const K = P.castelo!
-  const A = castelo(c, K, ZEPHYRA, lod)
-  asas(c, [A.menagem[0], A.menagem[1] - 1, A.arco[2] - 1.2], 10, lod)
-  for (const t of A.torres) pontaCristal(c, t, lod)
+  casteloZephyra(c, K, lod)
   T.raio(c, K.x - 18, K.z, 60, 24, 3)
   T.raio(c, K.x + 22, K.z - 4, 56, 20, 4)
 
@@ -140,30 +126,3 @@ export function montar(lod = 0): Cena {
 }
 
 /** As asas da menagem: duas asas de penas em degraus (branco por cima, vermelho por baixo). */
-function asas(c: Cena, m: V3, L: number, lod: number) {
-  const [x, y, z] = m
-  const g = c.geo(x, z)
-  const n = lod ? 4 : 7
-  for (const s of [-1, 1]) {
-    for (let k = 0; k < n; k++) {
-      const t = k / (n - 1)
-      const ax = x + s * (2.5 + t * L * 0.25), ay = y - 3 + t * 2.4
-      const tipX = x + s * (3 + L * (0.45 + t * 0.55)), tipY = y + 4 + t * 5 - (1 - t) * 3
-      const col = k % 2 ? ZEPHYRA.quina : mix(ZEPHYRA.quina, ZEPHYRA.pedra, 0.65)
-      for (const f of [-1, 1]) face(g, [[ax, ay, z + f * 0.1], [tipX, tipY, z + f * 0.1], [tipX - s * 3.4, tipY - 5.5, z + f * 0.1], [ax, ay - 3.2, z + f * 0.1]], col, [0, 0, f])
-    }
-    tube(g, [x + s * 2, y - 2.6, z], [x + s * (3 + L), y + 9, z], 0.4, 0.15, 4, () => ZEPHYRA.metal, true)
-  }
-}
-
-/** Ponta de cristal ciano no alto do cone de cada torre. */
-function pontaCristal(c: Cena, t: V3, lod: number) {
-  const G = c.glow(t[0], t[2])
-  const base = t[1] + 6.4, top = base + 3.2
-  const n = lod ? 4 : 6
-  for (let k = 0; k < n; k++) {
-    const a = (k / n) * Math.PI * 2, b = ((k + 1) / n) * Math.PI * 2
-    const pa: V3 = [t[0] + Math.cos(a) * 0.45, base, t[2] + Math.sin(a) * 0.45], pb: V3 = [t[0] + Math.cos(b) * 0.45, base, t[2] + Math.sin(b) * 0.45]
-    face(G, [pa, pb, [t[0], top, t[2]]], [T.CIANO, T.CIANO, T.CIANO_CL], [Math.cos((a + b) / 2), 0.3, Math.sin((a + b) / 2)])
-  }
-}
