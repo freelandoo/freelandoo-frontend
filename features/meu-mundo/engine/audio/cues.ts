@@ -5,7 +5,9 @@
 
 /** Interface (menu em 5 portões, mochila, viagens, portas). */
 export const UI = {
-  drawerOpen: "ui-gaveta-abrir",
+  /** Plins metálicos recortados do fundo da praça (pedido do Alex, 2026-11-11). */
+  drawerOpen: "ui-menu-abrir",
+  menuHover: "ui-menu-passar",
   drawerClose: "ui-gaveta-fechar",
   gate: "ui-portao-trocar",
   card: "ui-card-trocar",

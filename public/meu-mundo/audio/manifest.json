@@ -1984,7 +1984,19 @@
       "duracao_s": 5.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-menu-abrir": {
+      "arquivo": "sfx/magia/ui-menu-abrir.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-menu-passar": {
+      "arquivo": "sfx/magia/ui-menu-passar.v1.mp3",
+      "duracao_s": 0.26,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-11T22:52:36-03:00"
+  "importado_em": "2026-11-11T23:09:48-03:00"
 }

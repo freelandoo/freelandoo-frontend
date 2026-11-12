@@ -402,12 +402,23 @@ function Presence({ count, scope, state }: DrawerPresence) {
   )
 }
 
+let hoverAt = 0
+function menuHoverSound() {
+  const now = performance.now()
+  if (now - hoverAt < 70) return
+  hoverAt = now
+  uiSound("menuHover", 0.45)
+}
+
 export function MenuItem({ label, icon, onSelect, hint, disabled, active, badge, kind = "action", loading }: Omit<DrawerItem, "id" | "keepOpen" | "children">) {
   return (
     <button
       type="button"
       className={d.item}
       onClick={onSelect}
+      // passar pelos botões: mouse em cima ou setas do teclado (toque já toca no clique)
+      onPointerEnter={(e) => e.pointerType === "mouse" && !disabled && menuHoverSound()}
+      onFocus={(e) => e.currentTarget.matches(":focus-visible") && menuHoverSound()}
       disabled={disabled || loading}
       data-active={active ? "" : undefined}
       data-hint={hint ? "" : undefined}

@@ -330,7 +330,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     soundAt = now
     const night = isNightHour(brasiliaHour())
     if (centerP) sceneSnd.set(night ? MUSIC.centerNight : MUSIC.centerDay, night ? null : AMB.squareDay)
-    else sceneSnd.set(hoodMusic(nb?.clan), night ? null : AMB.squareDay)
+    // bairro: só a música (o fundo da praça tinha os plins que viraram o som do menu)
+    else sceneSnd.set(hoodMusic(nb?.clan), null)
   }
   applySceneSound(performance.now())
   // Lore v2 F4: os NPCs da praça — corpo de classe, parados (a colisão vem na
