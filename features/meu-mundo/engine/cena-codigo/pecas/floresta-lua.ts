@@ -87,67 +87,78 @@ export function arvoreLua(c: Cena, x: number, z: number, h = 12, seed = 1, lod =
 export const PEDRA_CL: RGB = [1, 0.92, 0.95] // face do rochedo que pega o luar
 export const PEDRA: RGB = [0.82, 0.74, 0.82]
 export const PEDRA_S: RGB = [0.62, 0.55, 0.68]
-export const MUSGO: RGB = [0.66, 0.78, 0.26]
+export const MUSGO: RGB = [0.74, 0.84, 0.3]
 export const MUSGO_S: RGB = [0.56, 0.7, 0.2]
 export const LUZ_FLOR: RGB = [0.16, 0.82, 0.98]
 export const LUZ_FLOR_CL: RGB = [0.62, 0.96, 1]
 
 /**
- * ROCHEDO COM MUSGO (inventário `rochedo-musgo`, ~4 × 2,4 m): prisma anguloso de 6 lados irregulares, um
- * pouco mais estreito em cima e com o topo inclinado; facetas grandes em 3 tons (a que pega o luar, a do
- * meio e a sombra) e quina de cima clara; TAMPA de musgo grossa (0,22 m) que transborda 6% e escorre em
- * dentes pela beira. Põe a própria caixa.
+ * ROCHEDO COM MUSGO (inventário `rochedo-musgo`, ~4 × 2,4 m) — o matacão da ref: corpo de 6 faces planas
+ * quase verticais (uma pega o luar, as outras em 2 tons de sombra), TOPO grande e chato quase do tamanho
+ * da pedra, inclinado para a frente, com as quinas de cima chanfradas; o MUSGO cobre o topo inteiro e
+ * escorre pelas faces numa SAIA de borda serrilhada (~20% da altura, mais longa na frente). Põe a caixa.
  */
 export function rochedoMusgo(c: Cena, x: number, z: number, w = 4, h = 2.4, seed = 1, lod = 0) {
   const g = c.geo(x, z)
   const r = (q: number) => rnd(seed, q)
   const n = 6
-  const base: [number, number][] = [], ombro: [number, number][] = [], topo: [number, number][] = []
-  const hO = h * 0.66 // altura do ombro (dali para cima é chanfro coberto de musgo)
-  const tiltX = (r(1) - 0.5) * 0.25, tiltZ = (r(2) - 0.5) * 0.25
+  const base: [number, number][] = [], quina: [number, number][] = [], topo: [number, number][] = []
+  const sx = (r(11) - 0.5) * w * 0.18, sz = (r(12) - 0.5) * w * 0.12 // o topo sai do eixo do pé
+  const dh: number[] = []
   for (let k = 0; k < n; k++) {
-    const a = (k / n) * Math.PI * 2 + r(3) * 1.2
-    const R = (w / 2) * (0.92 + r(4 + k) * 0.3) // pé largo: o rochedo da ref é atarracado
-    base.push([Math.cos(a) * R, Math.sin(a) * R * 0.8])
-    ombro.push([Math.cos(a) * R * 0.78, Math.sin(a) * R * 0.8 * 0.78])
-    topo.push([Math.cos(a) * R * 0.56, Math.sin(a) * R * 0.8 * 0.56])
+    const a = ((k + (r(13 + k) - 0.5) * 0.55) / n) * Math.PI * 2 + r(3) * 1.2
+    const R = (w / 2) * (0.8 + r(4 + k) * 0.32)
+    const ca = Math.cos(a), sa = Math.sin(a) * 0.78
+    const enc = 0.82 + r(20 + k) * 0.18 // cada face afina diferente (inclinações desiguais)
+    base.push([ca * R, sa * R])
+    quina.push([ca * R * enc + sx, sa * R * enc + sz])
+    topo.push([ca * R * (enc - 0.07) + sx, sa * R * (enc - 0.07) + sz])
+    dh.push((r(30 + k) - 0.5) * h * 0.16)
   }
-  const yT = (u: number, v: number) => h + u * tiltX + v * tiltZ
+  // topo inclinado: a frente (−z, de onde se olha) mais baixa; um pouco de torção lateral
+  const tiltZ = 0.1 + r(1) * 0.08, tiltX = (r(2) - 0.5) * 0.12
+  const yQk = (k: number) => h - 0.16 + quina[k][1] * tiltZ + quina[k][0] * tiltX + dh[k]
+  const yTk = (k: number) => h + topo[k][1] * tiltZ + topo[k][0] * tiltX + dh[k] * 0.6
   const P = (p: [number, number], y: number): V3 => [x + p[0], y, z + p[1]]
   const tons: RGB[] = [PEDRA_CL, PEDRA, PEDRA_S]
+  // a saia de musgo desce mais na frente (−z) e menos atrás
+  const saia = (p: [number, number]) => h * (0.12 + 0.12 * Math.max(0, -p[1] / (w / 2)))
   for (let k = 0; k < n; k++) {
     const j = (k + 1) % n
     const mx = (base[k][0] + base[j][0]) / 2, mz = (base[k][1] + base[j][1]) / 2
-    // tom pela direção: a face virada para o luar (−x, +z) é a clara
     const luz = -mx * 0.6 + mz * 0.4
-    const cor = luz > 0.5 ? tons[0] : luz > -0.5 ? tons[1] : tons[2]
-    face(g, [P(base[k], 0), P(base[j], 0), P(ombro[j], hO), P(ombro[k], hO)], [mul(cor, 0.78), mul(cor, 0.78), cor, cor], [mx, 0.15, mz])
-    // chanfro do ombro ao topo: MUSGO (a ref tem o musgo descendo pela beira arredondada)
-    face(g, [P(ombro[k], hO), P(ombro[j], hO), P(topo[j], yT(...topo[j])), P(topo[k], yT(...topo[k]))], [MUSGO_S, MUSGO_S, MUSGO, MUSGO], [mx, 0.8, mz])
-  }
-  // tampa de musgo: placa grossa que transborda, com dentes escorrendo
-  const borda = topo.map(([u, v]): [number, number] => [u * 1.02, v * 1.02])
-  const e = 0.12
-  face(g, borda.map((p) => P(p, yT(...p) + e)), MUSGO, [0, 1, 0])
-  for (let k = 0; k < n; k++) {
-    const j = (k + 1) % n
-    const a = borda[k], b = borda[j]
-    const nx = (a[0] + b[0]) / 2, nz = (a[1] + b[1]) / 2
-    face(g, [P(a, yT(...a) - 0.05), P(b, yT(...b) - 0.05), P(b, yT(...b) + e), P(a, yT(...a) + e)], MUSGO_S, [nx, 0, nz])
-    if (!lod) {
-      // 1–2 dentes de musgo escorrendo pela face
-      const oa = ombro[k], ob = ombro[j]
-      for (let d = 0; d < 2 + Math.floor(r(30 + k) * 2); d++) {
-        const t = 0.15 + r(40 + k * 3 + d) * 0.7, L = 0.2 + r(50 + k * 3 + d) * 0.5
-        const pu = (oa[0] + (ob[0] - oa[0]) * t) * 1.01, pv = (oa[1] + (ob[1] - oa[1]) * t) * 1.01
-        const len = Math.hypot(ob[0] - oa[0], ob[1] - oa[1]) || 1
-        const q = 0.16 + r(60 + k + d) * 0.12
-        const du = ((ob[0] - oa[0]) * q) / len, dv = ((ob[1] - oa[1]) * q) / len
-        face(g, [P([pu - du, pv - dv], hO + 0.02), P([pu + du, pv + dv], hO + 0.02), P([pu, pv], hO - L)], MUSGO_S, [nx, 0, nz])
-      }
+    const cor = luz > 0.5 ? tons[0] : luz > -0.6 ? tons[1] : tons[2]
+    const Qk = P(quina[k], yQk(k)), Qj = P(quina[j], yQk(j))
+    // face do corpo (até a quina) e chanfro (quina → topo), o chanfro já de musgo
+    face(g, [P(base[k], 0), P(base[j], 0), Qj, Qk], [mul(cor, 0.74), mul(cor, 0.74), cor, cor], [mx, 0.05, mz])
+    face(g, [Qk, Qj, P(topo[j], yTk(j)), P(topo[k], yTk(k))], [mix(MUSGO, MUSGO_S, 0.3), mix(MUSGO, MUSGO_S, 0.3), MUSGO, MUSGO], [mx, 0.9, mz])
+    // MUSGO escorrendo: faixa clara contínua logo abaixo da quina (0,1–0,2 m) e 2–3 pingos compridos e desiguais
+    const out = 1.015
+    const at = (t: number, dy: number): V3 => {
+      const u = quina[k][0] + (quina[j][0] - quina[k][0]) * t, v = quina[k][1] + (quina[j][1] - quina[k][1]) * t
+      const y = yQk(k) + (yQk(j) - yQk(k)) * t
+      return [x + u * out, y + dy, z + v * out]
+    }
+    const frente = Math.max(0, -mz / (w / 2)) // a frente escorre mais
+    const fx = 0.12 + frente * 0.1
+    face(g, [at(0, 0.01), at(1, 0.01), at(1, -fx * 0.8), at(0, -fx)], mix(MUSGO, MUSGO_S, 0.4), [mx, 0, mz])
+    const np = lod ? 1 : 2 + Math.floor(r(40 + k) * 2)
+    for (let d = 0; d < np; d++) {
+      const t = 0.12 + r(50 + k * 5 + d) * 0.76, wd = 0.07 + r(60 + k * 5 + d) * 0.1
+      const L = h * (0.1 + frente * 0.15 + r(70 + k * 5 + d) * 0.15)
+      const a0 = at(t - wd, -fx * 0.85), a1 = at(t + wd, -fx * 0.85), tip = at(t + (r(80 + k + d) - 0.5) * 0.04, -fx - L)
+      face(g, [a0, a1, tip], mix(MUSGO, MUSGO_S, 0.5), [mx, 0, mz])
     }
   }
-  c.block(x, z, w * 0.42, w * 0.34, h + e)
+  // o TOPO: placa chata de musgo (mais clara), com uma mancha mais escura
+  // topo em leque a partir do centro (as quinas estão em alturas diferentes: o topo é facetado, não plano)
+  const ct: [number, number] = [topo.reduce((a, p) => a + p[0], 0) / n, topo.reduce((a, p) => a + p[1], 0) / n]
+  const yC = topo.reduce((a, _, k) => a + yTk(k), 0) / n + 0.04
+  for (let k = 0; k < n; k++) {
+    const j = (k + 1) % n
+    face(g, [P(ct, yC), P(topo[k], yTk(k) + 0.02), P(topo[j], yTk(j) + 0.02)], k % 2 ? MUSGO : mix(MUSGO, MUSGO_S, 0.2), [0, 1, 0])
+  }
+  c.block(x, z, w * 0.44, w * 0.36, h)
 }
 
 /**
