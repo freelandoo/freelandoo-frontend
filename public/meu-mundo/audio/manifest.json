@@ -1776,9 +1776,9 @@
       "modelo": "ACE-Step 1.5 turbo"
     },
     "musica-luta": {
-      "arquivo": "musica/musica-luta.v1.mp3",
+      "arquivo": "musica/musica-luta.v4.mp3",
       "duracao_s": 120.0,
-      "versao": 1,
+      "versao": 4,
       "modelo": "ACE-Step 1.5 turbo"
     },
     "musica-luta-chefe": {
@@ -1806,5 +1806,5 @@
       "modelo": "ACE-Step 1.5 turbo"
     }
   },
-  "importado_em": "2026-11-11T22:05:29-03:00"
+  "importado_em": "2026-11-11T22:34:08-03:00"
 }
