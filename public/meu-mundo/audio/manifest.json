@@ -1987,17 +1987,17 @@
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "ui-menu-abrir": {
-      "arquivo": "sfx/magia/ui-menu-abrir.v3.mp3",
-      "duracao_s": 0.8,
-      "versao": 3,
+      "arquivo": "sfx/magia/ui-menu-abrir.v11.mp3",
+      "duracao_s": 0.42,
+      "versao": 11,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "ui-menu-passar": {
-      "arquivo": "sfx/magia/ui-menu-passar.v2.mp3",
-      "duracao_s": 0.4,
-      "versao": 2,
+      "arquivo": "sfx/magia/ui-menu-passar.v5.mp3",
+      "duracao_s": 0.35,
+      "versao": 5,
       "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-12T00:04:01-03:00"
+  "importado_em": "2026-11-12T00:18:18-03:00"
 }

@@ -16,7 +16,8 @@ export interface Footsteps {
   dispose(): void
 }
 
-export function createFootsteps(gain = 0.5): Footsteps {
+// 0.5 → 0.22 (2026-11-12): o Alex achou os passos altos demais
+export function createFootsteps(gain = 0.22): Footsteps {
   let voice: Voice | null = null
   let key = ""
   return {
