@@ -17,6 +17,7 @@ import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as F from "./tema-floresta"
 import { portal } from "./floresta-1"
+import * as LP from "../pecas/floresta-lua"
 
 export const meta = {
   ceu: F.CEU,
@@ -25,6 +26,7 @@ export const meta = {
   luz: F.LUZ,
   astro: { ...F.LUA, dir: [-0.35, 0.4, 1] as RGB },
   pontos: ["entrada", "saida", "chefe", "pedraverde", "golem"],
+  triBloco: F.TRI_BLOCO,
   setores: [4, 5, 6, 7],
 }
 
@@ -67,7 +69,7 @@ export function montar(lod = 0): Cena {
     const dp = Math.hypot(x - PEDRA.x, z - PEDRA.z)
     col = mix(col, mix(F.MUSGO, F.LAJE, smooth(0.4, 0.6, noise(x * 0.6, 3, z * 0.6))), smooth(PEDRA.r + 1, PEDRA.r - 1.5, dp) * 0.75)
     if (cliffIn(x, z)) col = mix(col, F.TERRA_ESC, 0.5)
-    col = trilha(col, x, z, P, F.TERRA, 2.1, F.TERRA_ESC)
+    col = trilha(col, x, z, P, mix(F.LAJE_ESC, F.GRAMA_ESC, 0.35), 2.5, F.GRAMA_ESC) // junta escura sob as lajes soltas (como na cena 3)
     col = mix(col, F.TERRA_ESC, smooth(RIACHO_W / 2 + 3, RIACHO_W / 2 + 0.6, dRio(x, z)) * 0.8)
     return mul(col, 0.94 + 0.12 * noise(x * 0.8, 2.2, z * 0.8))
   }
@@ -132,6 +134,11 @@ export function montar(lod = 0): Cena {
       if (r(1) > (P.dWalk(x, z) < 5 ? 0.55 : 0.18)) return
       F.capim(c, x, z, 0.35 + r(2) * 0.35, r(3) * 99)
     })
+  // o caminho de LAJES soltas da cena 3 (geometria 3 cm acima: a junta é o chão aparecendo), no desvio também;
+  // fora das clareiras e do anel de Pedraverde (que tem o chão de lajes dele)
+  const pula = (x: number, z: number) => P.aberto(x, z) > 0.4 || Math.hypot(x - PEDRA.x, z - PEDRA.z) < PEDRA.r + 1
+  LP.lajesCaminho(c, CAMINHO, 2.2, 21, lod, pula)
+  LP.lajesCaminho(c, DESVIO, 2.2, 22, lod, pula)
   return c
 }
 

@@ -16,6 +16,7 @@ import { Cena, blocked, ground, scatter, type XZ } from "../kit-cena"
 import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as F from "./tema-floresta"
+import * as LP from "../pecas/floresta-lua"
 
 export const meta = {
   ceu: F.CEU,
@@ -24,6 +25,7 @@ export const meta = {
   luz: F.LUZ,
   astro: F.LUA,
   pontos: ["entrada", "saida", "chefe"],
+  triBloco: F.TRI_BLOCO,
   setores: [1, 2, 3],
 }
 
@@ -82,7 +84,7 @@ export function montar(lod = 0): Cena {
     col = mix(col, F.GRAMA_ESC, smooth(0.5, 0.75, grove(x, z)) * 0.75)
     col = mix(col, F.GRAMA_CL, P.aberto(x, z) * 0.45)
     if (cliffs.some((m) => m.inside(x, z, 1.25))) col = mix(col, F.TERRA_ESC, 0.55)
-    col = trilha(col, x, z, P, F.TERRA, 2.1, F.TERRA_ESC)
+    col = trilha(col, x, z, P, mix(F.LAJE_ESC, F.GRAMA_ESC, 0.35), 2.5, F.GRAMA_ESC) // junta escura sob as lajes soltas (como na cena 3)
     const dl = Math.hypot(x - lagoa.x, z - lagoa.z)
     col = mix(col, F.FLOR, smooth(lagoa.r + 1.2, lagoa.r + 0.3, dl) * 0.25)
     return mul(col, 0.94 + 0.12 * noise(x * 0.8, 2.2, z * 0.8))
@@ -150,6 +152,9 @@ export function montar(lod = 0): Cena {
   }
   // a árvore colossal da lagoa (o fim do desvio)
   F.arvoreLua(c, lagoa.x + 8, lagoa.z + 9, 24, 777, lod)
+  // o caminho de LAJES soltas da cena 3 (geometria 3 cm acima: a junta é o chão aparecendo), no desvio também
+  LP.lajesCaminho(c, CAMINHO, 2.2, 11, lod, (x, z) => P.aberto(x, z) > 0.4)
+  LP.lajesCaminho(c, DESVIO, 2.2, 12, lod, (x, z) => P.aberto(x, z) > 0.4)
   return c
 }
 

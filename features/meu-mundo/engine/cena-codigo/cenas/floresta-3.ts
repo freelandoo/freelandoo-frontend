@@ -28,6 +28,7 @@ export const meta = {
   luz: F.LUZ,
   astro: { ...F.LUA, dir: [0.05, 0.55, 1] as RGB, r: 0.13 },
   pontos: ["entrada", "saida", "guardiao", "deus"],
+  triBloco: F.TRI_BLOCO,
   setores: [8, 9, 10],
 }
 

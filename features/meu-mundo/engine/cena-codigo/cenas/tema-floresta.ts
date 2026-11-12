@@ -144,3 +144,7 @@ export function trioPlato(c: Cena, x: number, z: number, rot: number, seed: numb
 export function arcoPedras(c: Cena, x: number, z: number, ang: number, seed: number, lod: number) {
   P.arcoPedras(c, x, z, ang, seed, lod)
 }
+
+/** Teto de triângulos das cenas da Floresta da Lua: o caminho de lajes soltas nas três cenas (o Alex, 12/11) passa um
+ *  pouco do orçamento padrão (4500/2000); FIDELIDADE acima do celular, como nos outros Domínios. */
+export const TRI_BLOCO = { perto: 6000, longe: 3000, fundo: 3500 }
