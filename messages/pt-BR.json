@@ -12188,7 +12188,20 @@
     "gear_graxa_botas": "Graxa de Botas",
     "gear_cha_engrenagem": "Chá de Engrenagem",
     "gear_po_garra": "Pó de Garra",
-    "gear_vapor_folego": "Vapor de Fôlego"
+    "gear_vapor_folego": "Vapor de Fôlego",
+    "shopTabExchange": "Troca",
+    "exchangeTitle": "Loja de troca",
+    "exchangeBalance": "Você tem {n} fichas",
+    "exchangeHint": "Ficha por partida: minutos ativos ÷ 2, mais 1 se venceu.",
+    "exchangeDone": "Troca feita.",
+    "exchangeGo": "Trocar · {n} fichas",
+    "exchangeShort": "Faltam fichas ({n})",
+    "gear_ficha_paint": "Ficha do Paint",
+    "gear_ficha_jetpack": "Ficha do Jetpack",
+    "gear_ficha_noturno": "Ficha do Rolê Noturno",
+    "gear_ficha_corrida": "Ficha da Antigravidade",
+    "gear_ficha_gincana": "Ficha da Gincana",
+    "gear_ficha_hall": "Ficha do Hall dos Campeões"
   },
   "Sports": {
     "eyebrow": "Esportes",
@@ -12446,7 +12459,9 @@
     "Isso não é um consumível de preparo": "Isso não é um consumível de preparo",
     "Essa luta não aceita preparo": "Essa luta não aceita preparo",
     "Esta luta já tem um preparo": "Esta luta já tem um preparo",
-    "Você não tem esse consumível": "Você não tem esse consumível"
+    "Você não tem esse consumível": "Você não tem esse consumível",
+    "Essa troca não existe": "Essa troca não existe",
+    "Fichas insuficientes": "Fichas insuficientes"
   },
   "Moedas": {
     "walletTitle": "Carteira",

@@ -12754,7 +12754,20 @@
     "gear_graxa_botas": "Grasa de Botas",
     "gear_cha_engrenagem": "Té de Engranaje",
     "gear_po_garra": "Polvo de Garra",
-    "gear_vapor_folego": "Vapor de Aliento"
+    "gear_vapor_folego": "Vapor de Aliento",
+    "shopTabExchange": "Intercambio",
+    "exchangeTitle": "Tienda de intercambio",
+    "exchangeBalance": "Tienes {n} fichas",
+    "exchangeHint": "Fichas por partida: minutos activos ÷ 2, más 1 si ganaste.",
+    "exchangeDone": "Intercambio hecho.",
+    "exchangeGo": "Intercambiar · {n} fichas",
+    "exchangeShort": "Faltan fichas ({n})",
+    "gear_ficha_paint": "Ficha del Paint",
+    "gear_ficha_jetpack": "Ficha del Jetpack",
+    "gear_ficha_noturno": "Ficha del Paseo Nocturno",
+    "gear_ficha_corrida": "Ficha de la Antigravedad",
+    "gear_ficha_gincana": "Ficha de la Gincana",
+    "gear_ficha_hall": "Ficha del Salón de los Campeones"
   },
   "Sports": {
     "eyebrow": "Deportes",
@@ -13012,7 +13025,9 @@
     "Isso não é um consumível de preparo": "Eso no es un consumible de preparación",
     "Essa luta não aceita preparo": "Este combate no acepta preparación",
     "Esta luta já tem um preparo": "Este combate ya tiene una preparación",
-    "Você não tem esse consumível": "No tienes ese consumible"
+    "Você não tem esse consumível": "No tienes ese consumible",
+    "Essa troca não existe": "Ese intercambio no existe",
+    "Fichas insuficientes": "Fichas insuficientes"
   },
   "Moedas": {
     "walletTitle": "Cartera",

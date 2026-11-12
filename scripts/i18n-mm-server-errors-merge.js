@@ -254,6 +254,9 @@ const ROWS = [
   ["A Ascensão pede a peça no +10", "Ascension needs the item at +10", "La Ascensión pide la pieza en +10"],
   ["Essa peça já despertou", "That item has already awakened", "Esa pieza ya despertó"],
   ["O Despertar pede a peça ascendida", "Awakening needs the item ascended", "El Despertar pide la pieza ascendida"],
+  // trilha E17: loja de troca
+  ["Essa troca não existe", "That exchange doesn't exist", "Ese intercambio no existe"],
+  ["Fichas insuficientes", "Not enough tokens", "Fichas insuficientes"],
   // trilha E16: preparo
   ["Isso não é um consumível de preparo", "That isn't a prep consumable", "Eso no es un consumible de preparación"],
   ["Essa luta não aceita preparo", "This fight doesn't accept prep", "Este combate no acepta preparación"],

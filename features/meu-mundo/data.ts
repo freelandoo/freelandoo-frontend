@@ -445,6 +445,8 @@ export interface GearCatalog {
   upgrade: { max: number; ascendFrom: number; stone: string; rulesVersion: string }
   /** E11: desmontar devolve `share` da receita; raro ou acima (`confirmTier`) pede confirmação; transmutar `transmuteIn` → 1. */
   salvage?: { share: number; confirmTier: number; transmuteIn: number; transmuteCoins: number }
+  /** E17: loja de troca (fichas → itens); `event` = oferta da loja de evento (E19). */
+  exchange?: { offers: ExchangeOffer[]; tokensPerMatch: number }
   /** E13: engastes por raridade, fusão `fuseIn` → 1 e o valor de cada grau por chave. */
   runes?: { sockets: Record<GearRarity, number>; maxSockets: number; fuseIn: number; grades: number; kinds: Record<string, keyof GearBonus>; value: Partial<Record<keyof GearBonus, number[]>> }
   items: GearItem[]
@@ -452,6 +454,8 @@ export interface GearCatalog {
   /** E7: conjuntos de 4 peças; `steps` = { nº de peças: fração da fatia do conjunto }. */
   sets?: GearSet[]
 }
+/** E17: uma oferta da loja de troca. */
+export interface ExchangeOffer { id: string; token: string; cost: number; gives: Record<string, number>; event?: string }
 export interface GearSet {
   id: string
   name: string
@@ -713,6 +717,8 @@ export const unsocketRune = (token: string, instance: string, index: number, key
   call<GearOut>(token, "POST", "/gear/unsocket", { instance, index, key, ...(version != null ? { version } : {}) })
 /** E13: fundir `qty` vezes 3 runas de grau N numa de grau N+1. */
 export const fuseRunes = (token: string, rune: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/rune/fuse", { rune, qty, key })
+/** E17: loja de troca — `qty` vezes a oferta (fichas → itens). */
+export const exchangeGear = (token: string, offer: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/exchange", { offer, qty, key })
 /** E8: fragmento que sobra vira Pó de Refino (o servidor diz quanto). */
 export const convertFragments = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/fragment/convert", { item, qty, key })
 export const applyGearItem = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/use", { item, key })

@@ -33,8 +33,9 @@ import { PORTRAIT, WOLF_PORTRAIT } from "../portraits"
 import { SPECIES, type SpeciesDef } from "../../characters/rules"
 import { speciesName } from "../../characters/names"
 import { ShopCard, type ShopLine } from "./shop-card"
+import { ExchangePanel } from "./exchange-panel"
 
-export type ShopTab = "gear" | "monsters" | "characters" | "food"
+export type ShopTab = "gear" | "monsters" | "characters" | "food" | "exchange"
 export type GearShelf = "armory" | "weapons" | "hammers" | "bows" | "guns" | "shields"
 type FoodGroup = "healthy" | "junk" | "supplement" | "medicine" | "stimulant" | "anabolic"
 
@@ -123,7 +124,7 @@ export default function ShopPanel({
     }
   }, [])
   useEffect(() => {
-    if (tab !== "gear") void loadTab(tab)
+    if (tab !== "gear" && tab !== "exchange") void loadTab(tab)
   }, [tab, loadTab])
   // a carteira do cabeçalho: a da vida (Esmeraldas)
   useEffect(() => {
@@ -319,6 +320,8 @@ export default function ShopPanel({
     { id: "monsters" as const, label: t("shopTabMonsters", "Monstros") },
     { id: "characters" as const, label: t("shopTabCharacters", "Personagens") },
     { id: "food" as const, label: t("shopTabFood", "Comidas e itens") },
+    // E17: loja de troca (fichas dos minijogos e do Hall)
+    { id: "exchange" as const, label: t("shopTabExchange", "Troca") },
     ...(onOpenWorkshop
       ? [
           { id: "forge" as const, label: t("gearTabForge", "Forja") },
@@ -326,7 +329,7 @@ export default function ShopPanel({
         ]
       : []),
   ]
-  const loading = tab === "gear" ? !catalog || !bag : tab === "monsters" ? !monsters : tab === "characters" ? !chars : !life
+  const loading = tab === "gear" || tab === "exchange" ? !catalog || !bag : tab === "monsters" ? !monsters : tab === "characters" ? !chars : !life
   const coins = life?.wallet.coins ?? bag?.coins
   const empty =
     tab === "monsters" ? t("shopMobEmpty", "Nenhum monstro por aqui.") : tab === "gear" ? t("gearNothing", "Nada por aqui ainda.") : t("gearNothing", "Nada por aqui ainda.")
@@ -382,12 +385,14 @@ export default function ShopPanel({
       )}
       {loading ? (
         <div className="grid min-h-48 place-items-center" style={{ color: AE.muted }}>
-          {(tab === "gear" ? error : failed) ? (
-            <AetherButton onClick={() => void (tab === "gear" ? loadGear() : loadTab(tab))}>{t("forgeReload", "Tentar abrir novamente")}</AetherButton>
+          {(tab === "gear" || tab === "exchange" ? error : failed) ? (
+            <AetherButton onClick={() => void (tab === "gear" || tab === "exchange" ? loadGear() : loadTab(tab))}>{t("forgeReload", "Tentar abrir novamente")}</AetherButton>
           ) : (
             <Loader2 className="h-6 w-6 animate-spin" aria-label={t("gearLoading", "Carregando…")} />
           )}
         </div>
+      ) : tab === "exchange" && catalog && bag ? (
+        <ExchangePanel catalog={catalog} bag={bag} t={t} act={act} busy={!!busy} />
       ) : (
         <AetherCarousel key={tab + "-" + shelf + "-" + food} title={tabs.find((x) => x.id === tab)?.label} items={items} cardWidth={340} cardHeight={500} empty={empty} />
       )}

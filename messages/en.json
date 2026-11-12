@@ -12774,7 +12774,20 @@
     "gear_graxa_botas": "Boot Grease",
     "gear_cha_engrenagem": "Gear Tea",
     "gear_po_garra": "Claw Powder",
-    "gear_vapor_folego": "Breath Steam"
+    "gear_vapor_folego": "Breath Steam",
+    "shopTabExchange": "Exchange",
+    "exchangeTitle": "Exchange shop",
+    "exchangeBalance": "You have {n} tokens",
+    "exchangeHint": "Tokens per match: active minutes ÷ 2, plus 1 for a win.",
+    "exchangeDone": "Exchange done.",
+    "exchangeGo": "Exchange · {n} tokens",
+    "exchangeShort": "Not enough tokens ({n})",
+    "gear_ficha_paint": "Paint token",
+    "gear_ficha_jetpack": "Jetpack token",
+    "gear_ficha_noturno": "Night Ride token",
+    "gear_ficha_corrida": "Antigravity token",
+    "gear_ficha_gincana": "Scavenger Hunt token",
+    "gear_ficha_hall": "Hall of Champions token"
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -13032,7 +13045,9 @@
     "Isso não é um consumível de preparo": "That isn't a prep consumable",
     "Essa luta não aceita preparo": "This fight doesn't accept prep",
     "Esta luta já tem um preparo": "This fight already has a prep",
-    "Você não tem esse consumível": "You don't have that consumable"
+    "Você não tem esse consumível": "You don't have that consumable",
+    "Essa troca não existe": "That exchange doesn't exist",
+    "Fichas insuficientes": "Not enough tokens"
   },
   "Moedas": {
     "walletTitle": "Wallet",
