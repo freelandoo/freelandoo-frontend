@@ -46,13 +46,15 @@ export const CREME: RGB = [1.28, 1.22, 1.14]
 export const VIT: RGB = [0.2, 0.92, 0.97]
 export const VIT_CL: RGB = [0.75, 1, 1]
 export const VIT_ESC: RGB = [0.04, 0.5, 0.7]
-export const ROCHA_L: RGB = [1.02, 0.98, 1.16]
-export const ROCHA_M: RGB = [0.88, 0.88, 1.1]
-export const ROCHA_E: RGB = [0.74, 0.76, 1.0]
+export const ROCHA_L: RGB = [1.14, 1.08, 1.3]
+export const ROCHA_M: RGB = [1.04, 1.0, 1.28]
+export const ROCHA_E: RGB = [0.9, 0.9, 1.22]
 export const AGUA: RGB = [0.3, 0.94, 1]
 export const AGUA_ESC: RGB = [0.04, 0.58, 0.84]
 const GEMA: RGB[] = [[0.3, 0.95, 1], [0.72, 1, 1], [0.08, 0.66, 0.92], [0.46, 0.98, 1]]
-const IRIS: RGB[] = [[1.26, 1.24, 1.3], [1.26, 1.02, 1.18], [1.08, 1.04, 1.3], [0.98, 1.22, 1.3], [1.28, 1.12, 1.2], [1.12, 1.1, 1.3]]
+const IRIS: RGB[] = [[1.24, 1.2, 1.3], [1.26, 0.86, 1.12], [0.98, 0.9, 1.34], [0.8, 1.14, 1.32], [1.28, 1.0, 1.04], [1.06, 0.94, 1.32]]
+/** Ouro-rosé dos remates (a ref tem agulha e colar dourados nas cúpulas). */
+const OURO_R: RGB = [1.2, 0.92, 0.6]
 
 type G = ReturnType<Cena["geo"]>
 type Q = ReturnType<typeof quadro>
@@ -153,8 +155,13 @@ export function cupulaGomos(g: G, GL: G, c: V3, r: number, h: number, n: number,
   // por baixo da aba (sombra funda)
   face(g, V[0].slice().reverse(), PER_SOMBRA, [0, -1, 0])
   // agulha e gema
-  tube(g, topo, [topo[0], topo[1] + h * 0.35, topo[2]], r * 0.14, r * 0.05, lod ? 4 : 6, (k) => (k % 2 ? CREME : PER_MEIO), false)
-  if (!lod) tube(g, [topo[0], topo[1] + h * 0.18, topo[2]], [topo[0], topo[1] + h * 0.24, topo[2]], r * 0.22, r * 0.18, 8, () => CREME, false)
+  tube(g, topo, [topo[0], topo[1] + h * 0.35, topo[2]], r * 0.14, r * 0.05, lod ? 4 : 6, (k) => (k % 2 ? OURO_R : mul(OURO_R, 0.85)), false)
+  if (!lod) tube(g, [topo[0], topo[1] + h * 0.18, topo[2]], [topo[0], topo[1] + h * 0.24, topo[2]], r * 0.22, r * 0.18, 8, () => OURO_R, false)
+  // aba de baixo com o friso dourado (a ref)
+  if (!lod) for (let k = 0; k < N; k += 2) {
+    const a = V[0][k], b = V[0][(k + 2) % N]
+    tube(g, a, b, r * 0.035, r * 0.035, 4, () => OURO_R, false)
+  }
   gema(GL, [topo[0], topo[1] + h * 0.35 + gemaS * 0.55, topo[2]], gemaS, lod)
 }
 
@@ -235,7 +242,8 @@ export function torreMaru(c: Cena, Q: Q, u: number, v: number, o: { r: number; y
   // arcos abertos embaixo (na ref: 2 arcos azuis na base das torres pequenas) — cego, aceso fraco
   if (!lod && hc > 6) {
     const arc = lanceta(u, y0 + 1, y0 + hc * 0.25, r * 0.4, r * 0.35, 4)
-    poli(g, Q, arc, v + r + 0.06, mix(VIT_ESC, PER_SOMBRA, 0.4))
+    poli(g, Q, lanceta(u, y0 + 0.8, y0 + hc * 0.25, r * 0.52, r * 0.45, 4), v + r + 0.04, CREME)
+    poli(GL, Q, arc, v + r + 0.08, arc.map(([, y]): RGB => (y > y0 + hc * 0.25 ? VIT_CL : VIT)))
   }
   // varanda
   const yv = y0 + hc
@@ -372,32 +380,42 @@ function portalMaru(c: Cena, Q: Q, lod: number) {
   // arco ogival: moldura de fora (lanceta 4,6 × até 12) e a de dentro (3,6), recesso, porta e leque
   const out1 = lanceta(0, 0, 6.6, 4.5, 5.2, seg), in1 = lanceta(0, 0, 6.6, 3.7, 4.4, seg)
   // a moldura é desenhada como faixa: só os arcos (do índice 2 em diante)
-  moldura(GL, Q, out1.slice(2), in1.slice(2), 0.7, [0.98, 0.98, 1], [0.8, 0.84, 0.96])
-  for (const s of [-1, 1]) cx(g, Q, s * 4.1, 0.45, 0.8, 0.5, 0, 6.6, PER_CL, CREME)
+  moldura(GL, Q, out1.slice(2), in1.slice(2), 0.9, [0.98, 0.94, 1], [0.84, 0.8, 1])
+  for (const s of [-1, 1]) cx(g, Q, s * 4.1, 0.65, 0.8, 0.5, 0, 6.6, PER_CL, CREME)
   const in2 = lanceta(0, 0, 6.6, 3.1, 3.9, seg)
-  moldura(GL, Q, in1.slice(2), in2.slice(2), 0.55, [0.82, 0.9, 0.98], [0.6, 0.76, 0.9])
-  for (const s of [-1, 1]) cx(g, Q, s * 3.4, 0.3, 0.6, 0.5, 0, 6.6, mix(PER, VIT, 0.1))
+  moldura(GL, Q, in1.slice(2), in2.slice(2), 0.8, [0.92, 0.78, 0.96], [0.72, 0.7, 0.98])
+  for (const s of [-1, 1]) cx(g, Q, s * 3.4, 0.55, 0.6, 0.5, 0, 6.6, mix(PER, VIT, 0.1))
   // fundo do recesso: vitral ciano em leque (o vidro em cima da porta)
-  poli(GL, Q, in2, 0.05, [VIT, VIT, ...in2.slice(2).map((): RGB => mix(VIT, VIT_CL, 0.35))])
-  const nL = lod ? 5 : 9
-  const cl: V3 = Q.P(0, 0.14, 7.2)
+  poli(GL, Q, in2, 0.63, [VIT, VIT, ...in2.slice(2).map((): RGB => mix(VIT, VIT_CL, 0.35))])
+  // o leque de PÉTALAS da ref: 7 pétalas de ponta redonda que se abrem do alto da porta, cada uma em 2 tons
+  // (claro no meio, ciano na borda), com o contorno de pérola
+  const nL = lod ? 5 : 7
+  const cl: V3 = Q.P(0, 0.68, 5.6)
   for (let k = 0; k < nL; k++) {
-    const a0 = Math.PI * (k / nL), a1 = Math.PI * ((k + 1) / nL)
-    const r1 = 3.05
-    const A = Q.P(Math.cos(a0) * r1, 0.14, 7.2 + Math.sin(a0) * r1 * 1.35), B = Q.P(Math.cos(a1) * r1, 0.14, 7.2 + Math.sin(a1) * r1 * 1.35)
-    face(GL, [cl, A, B], k % 2 ? [VIT_CL, VIT, VIT] : [VIT_CL, mix(VIT, VIT_ESC, 0.4), mix(VIT, VIT_ESC, 0.4)], Q.N(0, 1))
+    const a0 = Math.PI * (0.04 + 0.92 * (k / nL)), a1 = Math.PI * (0.04 + 0.92 * ((k + 1) / nL)), am = (a0 + a1) / 2
+    const R = 3.0, RY = 1.45
+    const A = Q.P(Math.cos(a0) * R * 0.92, 0.68, 5.6 + Math.sin(a0) * R * RY * 0.92), B = Q.P(Math.cos(a1) * R * 0.92, 0.68, 5.6 + Math.sin(a1) * R * RY * 0.92)
+    const T = Q.P(Math.cos(am) * R * 1.05, 0.68, 5.6 + Math.sin(am) * R * RY * 1.05)
+    const M = Q.P(Math.cos(am) * R * 0.55, 0.7, 5.6 + Math.sin(am) * R * RY * 0.55)
+    face(GL, [cl, A, M], [VIT_CL, VIT, mix(VIT, VIT_CL, 0.6)], Q.N(0, 1))
+    face(GL, [cl, M, B], [VIT_CL, mix(VIT, VIT_CL, 0.6), VIT], Q.N(0, 1))
+    face(GL, [M, A, T, B], [mix(VIT, VIT_CL, 0.5), mix(VIT, VIT_ESC, 0.3), VIT, mix(VIT, VIT_ESC, 0.3)], Q.N(0, 1))
+    if (!lod) {
+      fio(g, Q, [[Math.cos(a0) * R * 0.92, 5.6 + Math.sin(a0) * R * RY * 0.92], [Math.cos(am) * R * 1.05, 5.6 + Math.sin(am) * R * RY * 1.05], [Math.cos(a1) * R * 0.92, 5.6 + Math.sin(a1) * R * RY * 0.92]], 0.74, 0.07, PER_CL)
+      fio(g, Q, [[0, 5.6], [Math.cos(a1) * R * 0.92, 5.6 + Math.sin(a1) * R * RY * 0.92]], 0.74, 0.05, PER_CL)
+    }
   }
   // a PORTA: lanceta de vitral (cortina acesa, sem colisão) com moldura de pérola e rendilhado
   const door = lanceta(0, 0, 4.6, 2.0, 2.6, seg)
   const doorF = lanceta(0, -0.05, 4.6, 2.35, 2.95, seg)
-  moldura(g, Q, doorF.slice(2), door.slice(2), 0.2, PER_CL, PER_MEIO)
-  for (const s of [-1, 1]) cx(g, Q, s * 2.17, 0.12, 0.36, 0.3, 0, 4.6, PER_CL)
-  vitral(GL, Q, door, [0, 2.6], 0.12, (y) => mix(VIT, VIT_CL, Math.min(1, y / 7) * 0.8), lod, 5)
+  moldura(g, Q, doorF.slice(2), door.slice(2), 0.82, PER_CL, PER_MEIO)
+  for (const s of [-1, 1]) cx(g, Q, s * 2.17, 0.72, 0.36, 0.3, 0, 4.6, PER_CL)
+  vitral(GL, Q, door, [0, 2.6], 0.76, (y) => mix(mix(VIT, VIT_CL, 0.35), VIT_CL, Math.min(1, y / 7) * 0.7), lod, 5)
   if (!lod) {
-    fio(g, Q, [[0, 0], [0, 7.2]], 0.2, 0.07, CREME)
-    fio(g, Q, [[0, 4.4], [-1.4, 6.2]], 0.2, 0.06, CREME)
-    fio(g, Q, [[0, 4.4], [1.4, 6.2]], 0.2, 0.06, CREME)
-    fio(g, Q, [[-2, 2.6], [2, 2.6]], 0.2, 0.05, CREME)
+    fio(g, Q, [[0, 0], [0, 7.2]], 0.86, 0.07, CREME)
+    fio(g, Q, [[0, 4.4], [-1.4, 6.2]], 0.86, 0.06, CREME)
+    fio(g, Q, [[0, 4.4], [1.4, 6.2]], 0.86, 0.06, CREME)
+    fio(g, Q, [[-2, 2.6], [2, 2.6]], 0.86, 0.05, CREME)
   }
   // a gema do arco (no topo da moldura de fora)
   gema(GL, Q.P(0, 1.1, 11.6), 0.7, lod)
@@ -424,7 +442,7 @@ export function casteloMaru(c: Cena, K: CasteloPlanta, lod = 0) {
     const g = c.geo(p[0], p[2]), GL = c.glow(p[0], p[2])
     cx(g, Q, um, -2.2, 6.6, 4.4, 0, 9, PER_MEIO, PER, PER)
     bloq(c, Q, um, -2.2, 6.6, 4.4, 9)
-    if (!lod) for (const du of [-1.6, 1.6]) janelaGotica(g, GL, Q, um + du, 0.02, 3.4, 0.6, 3.6, lod, 20 + du)
+    if (!lod) for (const du of [-1.7, 1.7]) janelaGotica(g, GL, Q, um + du, 0.02, 2.8, 0.85, 4.6, lod, 20 + du)
     balaustrada(g, Q, um - 3.2, -0.2, um + 3.2, -0.2, 9, lod)
     // ala recuada mais alta (arcos de luz), atrás do muro
     cx(g, Q, s * 10.5, -6, 5, 4, 9, 13.5, PER, PER_CL, PER)
@@ -475,17 +493,21 @@ export function casteloMaru(c: Cena, K: CasteloPlanta, lod = 0) {
       const a = (k / nc) * Math.PI * 2 + Math.PI / nc
       tube(g, Q.P(Math.cos(a) * rT, vT + Math.sin(a) * rT, 16), Q.P(Math.cos(a) * rT, vT + Math.sin(a) * rT, 21), 0.3, 0.26, 6, (j) => (j % 2 ? PER : PER_CL), false)
     }
-    for (const du of [-1.9, 0, 1.9]) janelaGotica(g, GL, Q, du, vT + Math.sqrt(rT * rT - du * du) * 0.92 + 0.1, 16.5, 0.62, 4, lod, 50 + du)
+    for (const du of [-2.2, 0, 2.2]) janelaGotica(g, GL, Q, du, vT + Math.sqrt(rT * rT - du * du) * 0.94 + 0.15, 16.2, 0.85, 4.6, lod, 50 + du)
+    // e as duas janelas grandes do corpo do tambor, viradas para fora (a ref: o tambor brilha inteiro)
+    for (const du of [-2.4, 2.4]) janelaGotica(g, GL, Q, du, vT + Math.sqrt(rT * rT - du * du) * 1.05 + 0.15, 9.6, 0.9, 5, lod, 60 + du)
     cilindro(g, Q, 0, vT, 21, 21.7, rT * 1.2, rT * 1.25, lod ? 10 : 14, CREME)
     // a concha: leque em pé virado para a frente (costelas acesas por dentro: o miolo ciano da ref)
     const o = Q.P(0, vT + 0.6, 21.2)
-    leque(g, o, Q.N(1, 0), [0, 1, 0], Q.N(0, 1), 7.8, 13, lod, 1.08, IRIS, 0.9)
-    leque(g, Q.P(0, vT - 0.4, 21.2), Q.N(1, 0), [0, 1, 0], Q.N(0, -1), 7.4, 15, lod, 1.04, IRIS.map((q) => mul(q, 0.9)), 0.3)
+    // a vieira da ref é GORDA: duas camadas de lóbulos (a de fora maior e abaulada) quase em meia-cúpula
+    leque(g, Q.P(0, vT - 1.2, 21.2), Q.N(1, 0), [0, 1, 0], Q.N(0, -1), 9.2, 15, lod, 1.2, IRIS.map((q) => mul(q, 0.9)), 0.5)
+    leque(g, o, Q.N(1, 0), [0, 1, 0], Q.N(0, 1), 9.6, 11, lod, 1.2, IRIS, 1.5)
+    leque(g, Q.P(0, vT + 1.4, 21.4), Q.N(1, 0), [0, 1, 0], Q.N(0, 1), 6.2, 9, lod, 1.1, IRIS.slice(1).concat(IRIS.slice(0, 1)), 1.3)
     // o brilho ciano no pé da concha (o miolo aceso)
     const nL = lod ? 4 : 7
     for (let k = 0; k < nL; k++) {
       const a0 = Math.PI * (0.15 + 0.7 * (k / nL)), a1 = Math.PI * (0.15 + 0.7 * ((k + 1) / nL))
-      face(GL, [Q.P(0, vT + 3.6, 21.6), Q.P(Math.cos(a0) * 4.6, vT + 3.4, 21.6 + Math.sin(a0) * 4.6), Q.P(Math.cos(a1) * 4.6, vT + 3.4, 21.6 + Math.sin(a1) * 4.6)], [VIT_CL, mix(VIT, IRIS[1], 0.5), mix(VIT, IRIS[1], 0.5)], Q.N(0, 1))
+      face(GL, [Q.P(0, vT + 2.6, 21.6), Q.P(Math.cos(a0) * 6.4, vT + 2.4, 21.6 + Math.sin(a0) * 6.6), Q.P(Math.cos(a1) * 6.4, vT + 2.4, 21.6 + Math.sin(a1) * 6.6)], [VIT_CL, k % 2 ? VIT : mix(VIT, IRIS[2], 0.4), k % 2 ? VIT : mix(VIT, IRIS[2], 0.4)], Q.N(0, 1))
     }
     losango(g, GL, Q, 0, 19, 0.8, vT + rT * 0.86 + 0.15)
     // gema do topo
@@ -526,7 +548,7 @@ export function casteloMaru(c: Cena, K: CasteloPlanta, lod = 0) {
   for (const s of [-1, 1]) lago(c, Q, [[s * 11, 2.6], [s * 16, 2.2], [s * 21, 3.4], [s * 23.5, 5.2], [s * 20, 6.4], [s * 13, 6], [s * 10.6, 4.6]].map(([u, v]) => [u, v] as UV), lod)
   // conchas de pé dos lados do portal, corais brancos na frente delas
   for (const s of [-1, 1]) {
-    conchaPe(c, Q, s * 10.2, 0.8, 0.5, 4.8, lod)
+    conchaPe(c, Q, s * 10.4, 0.6, 0.5, 6.2, lod)
     const pc = Q.P(s * 13.6, 1.4, 0)
     coral(c, pc[0], pc[2], 4.6, CORAL_B, CORAL_B_ESC, 90 + s, lod, "y")
     const pc2 = Q.P(s * 6.6, 1.2, 0)
