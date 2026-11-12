@@ -17,13 +17,15 @@ export type MusicLayer = "scene" | "danger" | "fight" | "boss"
 const PRIORITY: Record<MusicLayer, number> = { scene: 0, danger: 1, fight: 2, boss: 3 }
 const FADE_OUT = 1.6
 const FADE_IN = 2.2
-const LEVEL = 1
+/** Volume de cada camada (Alex, 2026-11-11: "pode ficar um pouco mais alta na luta"). O limitador do master segura o pico. */
+const LEVEL_OF: Record<MusicLayer, number> = { scene: 1, danger: 1.1, fight: 1.6, boss: 1.7 }
 
 interface Track {
   theme: string
   el: HTMLAudioElement
   gain: GainNode
   src: MediaElementAudioSourceNode
+  level: number
 }
 
 const wants = new Map<MusicLayer, string>()
@@ -32,13 +34,13 @@ let target: string | null = null
 let wired = false
 let duckUntil = 0
 
-function top(): string | null {
-  let best: string | null = null
+function top(): { theme: string; layer: MusicLayer } | null {
+  let best: { theme: string; layer: MusicLayer } | null = null
   let p = -1
   for (const [layer, theme] of wants) {
     if (PRIORITY[layer] > p) {
       p = PRIORITY[layer]
-      best = theme
+      best = { theme, layer }
     }
   }
   return best
@@ -81,9 +83,18 @@ function wire() {
 }
 
 async function apply() {
-  const theme = top()
+  const pick = top()
+  const theme = pick?.theme ?? null
+  const level = pick ? LEVEL_OF[pick.layer] : 1
   target = theme
-  if ((current?.theme ?? null) === theme) return
+  if ((current?.theme ?? null) === theme) {
+    // mesma faixa, camada com outro volume (ex.: a luta pediu a faixa que já tocava)
+    if (current && current.level !== level) {
+      current.level = level
+      current.gain.gain.setTargetAtTime(level, audioContext()?.currentTime ?? 0, 0.4)
+    }
+    return
+  }
   const old = current
   current = null
   if (old) retire(old)
@@ -105,8 +116,8 @@ async function apply() {
   src.connect(gain).connect(out)
   const n = ctx.currentTime
   gain.gain.setValueAtTime(0, n)
-  gain.gain.linearRampToValueAtTime(performance.now() < duckUntil ? LEVEL * 0.25 : LEVEL, n + FADE_IN)
-  current = { theme, el, gain, src }
+  gain.gain.linearRampToValueAtTime(performance.now() < duckUntil ? level * 0.25 : level, n + FADE_IN)
+  current = { theme, el, gain, src, level }
   if (!document.hidden) void el.play().catch(() => {})
 }
 
@@ -144,9 +155,9 @@ export async function playSting(theme: string) {
   if (current) {
     current.gain.gain.cancelScheduledValues(n)
     current.gain.gain.setValueAtTime(current.gain.gain.value, n)
-    current.gain.gain.linearRampToValueAtTime(LEVEL * 0.25, n + 0.3)
-    current.gain.gain.setValueAtTime(LEVEL * 0.25, n + dur)
-    current.gain.gain.linearRampToValueAtTime(LEVEL, n + dur + 1.5)
+    current.gain.gain.linearRampToValueAtTime(current.level * 0.25, n + 0.3)
+    current.gain.gain.setValueAtTime(current.level * 0.25, n + dur)
+    current.gain.gain.linearRampToValueAtTime(current.level, n + dur + 1.5)
   }
   el.onended = () => {
     try {

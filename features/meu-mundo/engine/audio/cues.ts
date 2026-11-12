@@ -52,6 +52,8 @@ export const FIGHT = {
   /** Camadas gerais do estrondo do Poder MAX (pedido do Alex: explosão, estrondo, terremoto). */
   max: ["luta-max-terremoto", "luta-max-estrondo-trovao", "luta-max-explosao-gigante", "luta-max-chao-rachando",
     "luta-max-onda-de-choque", "luta-max-desabamento", "luta-max-impacto-meteoro", "luta-max-rugido-da-terra"],
+  /** As ondas de pressão que vêm depois do estrondo, em sequência (pedido do Alex: "várias pressões"). */
+  pressure: ["luta-max-pressao-1", "luta-max-pressao-2", "luta-max-pressao-3", "luta-max-pressao-4"],
 } as const
 
 /** Poder Máximo de cada assinatura (abilities/signatures.ts: o id da assinatura). */
@@ -86,7 +88,7 @@ export function fightPreload(sig: string, family: string, kinds: string[], god?:
   const u = ult(sig)
   return [
     ...FIGHT.swing, FIGHT.hitLight, FIGHT.hitHeavy, FIGHT.crit, FIGHT.miss, FIGHT.dodge, FIGHT.ko, FIGHT.win, FIGHT.lose,
-    FIGHT.ready, FIGHT.denied, FIGHT.fireballOut, FIGHT.fireballBoom, ...FIGHT.max,
+    FIGHT.ready, FIGHT.denied, FIGHT.fireballOut, FIGHT.fireballBoom, ...FIGHT.max, ...FIGHT.pressure,
     u.charge, u.impact, u.quake, s.slashCast, s.slashImpact, s.dash, s.shieldUp, s.shieldHit, s.shieldDown,
     ...kinds.flatMap((k) => Object.values(mob(k))),
     ...(god ? [godRoar(god)] : []),

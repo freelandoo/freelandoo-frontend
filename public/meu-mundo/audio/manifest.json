@@ -1804,7 +1804,187 @@
       "duracao_s": 4.341,
       "versao": 4,
       "modelo": "ACE-Step 1.5 turbo"
+    },
+    "luta-aeryn-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-aeryn-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-aurion-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-aurion-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-aventura-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-aventura-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-brutamontes-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-brutamontes-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-cavaleiro-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-cavaleiro-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ciborgue-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-ciborgue-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ekaterina-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-ekaterina-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-garras-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-garras-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-golem-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-golem-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-iris-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-iris-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-kragor-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-kragor-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-maru-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-maru-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-chao-rachando": {
+      "arquivo": "sfx/explosao/luta-max-chao-rachando.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-desabamento": {
+      "arquivo": "sfx/explosao/luta-max-desabamento.v1.mp3",
+      "duracao_s": 6.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-estrondo-trovao": {
+      "arquivo": "sfx/explosao/luta-max-estrondo-trovao.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-explosao-gigante": {
+      "arquivo": "sfx/explosao/luta-max-explosao-gigante.v1.mp3",
+      "duracao_s": 6.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-impacto-meteoro": {
+      "arquivo": "sfx/explosao/luta-max-impacto-meteoro.v1.mp3",
+      "duracao_s": 6.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-onda-de-choque": {
+      "arquivo": "sfx/explosao/luta-max-onda-de-choque.v1.mp3",
+      "duracao_s": 4.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-pressao-1": {
+      "arquivo": "sfx/explosao/luta-max-pressao-1.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-pressao-2": {
+      "arquivo": "sfx/explosao/luta-max-pressao-2.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-pressao-3": {
+      "arquivo": "sfx/explosao/luta-max-pressao-3.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-pressao-4": {
+      "arquivo": "sfx/explosao/luta-max-pressao-4.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-rugido-da-terra": {
+      "arquivo": "sfx/explosao/luta-max-rugido-da-terra.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-max-terremoto": {
+      "arquivo": "sfx/explosao/luta-max-terremoto.v1.mp3",
+      "duracao_s": 6.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-morkhan-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-morkhan-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-noctis-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-noctis-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-raposa-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-raposa-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-sergio-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-sergio-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-vampiro-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-vampiro-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-zephyra-ult-estrondo": {
+      "arquivo": "sfx/explosao/luta-zephyra-ult-estrondo.v1.mp3",
+      "duracao_s": 5.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-11T22:43:30-03:00"
+  "importado_em": "2026-11-11T22:52:36-03:00"
 }
