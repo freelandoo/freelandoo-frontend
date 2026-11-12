@@ -53,6 +53,9 @@ export const AMB = {
   streetDanger: "lugar-centro-rua-noite-perigo",
 } as const
 
+/** Domínio → a música dele (S11, 2026-11-11): musica-dominio-floresta/canion/gelo/fabrica/vulcao/orbital. */
+export const domainMusic = (id: string) => `musica-dominio-${id}`
+
 /** Minijogo → música; fase → fundo (ids das fases de cada jogo). */
 export const GAME_MUSIC = {
   jetpack: "musica-jogo-jetpack",

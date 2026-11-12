@@ -42,6 +42,7 @@ import { stepInterior, type InteriorBody } from "../../engine/interior-motion"
 import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type InputState } from "../../engine/input"
 import type { Box2 } from "../../engine/collision"
 import { liveGamesBump } from "../../engine/game"
+import { domainMusic, sceneSound } from "../../engine/audio"
 import { ResolutionGovernor, resolveQuality } from "../../engine/quality"
 import { markSceneStart } from "../../engine/scene-meter"
 import { shotPose, type StoryShot, type StorySubject } from "../../engine/story-camera"
@@ -133,6 +134,9 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
   const { canvas, domain } = opts
   const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: "default" }, false)
   const unlive = liveGamesBump()
+  // áudio S11: a música do Domínio (solta no dispose)
+  const musicSnd = sceneSound()
+  musicSnd.set(domainMusic(domain.id))
   let disposed = false
   const quality = resolveQuality()
   const low = quality.tier === "low"
@@ -719,6 +723,7 @@ export function createDomainGame(opts: DomainGameOptions): DomainGameHandle {
       sky.dispose()
       scene.dispose()
       engine.dispose()
+      musicSnd.dispose()
       unlive()
       if (process.env.NODE_ENV !== "production") delete (window as unknown as Record<string, unknown>).__mmDomain
     },
