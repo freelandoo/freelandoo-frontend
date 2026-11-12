@@ -416,6 +416,8 @@ export interface GradeView {
   bonusBefore: Partial<GearBonus>
   bonusAfter: Partial<GearBonus>
 }
+/** E15: encanto — custo do sorteio (ou o motivo), a chave secundária de agora e o sorteio esperando escolha. */
+export interface EnchantView extends StepView { current: keyof GearBonus | null; offer: { key: keyof GearBonus; bonus: Partial<GearBonus> }[] | null }
 /** E14/E15: custo de um passo da cópia (`needs`) ou o motivo de ainda não dar (`error` = código do servidor). */
 export interface StepView { needs?: Record<string, number>; coins?: number; error?: string }
 export interface RefinementProposal {
@@ -475,7 +477,7 @@ export interface GearBag {
   stacks?: Record<string, number>
   /** E9: a bancada de cada cópia (próximo passo garantido). */
   /** E9/E10/E11: próximo passo garantido, próximo grau e o que a desmontagem devolve. */
-  forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null; salvage?: Record<string, number> | null; ascend?: StepView; awaken?: StepView & { bonus?: Partial<GearBonus> } }>
+  forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null; salvage?: Record<string, number> | null; ascend?: StepView; awaken?: StepView & { bonus?: Partial<GearBonus> }; enchant?: EnchantView }>
   bonus: GearBonus
   /** E7: bônus de cada slot vestido pela régua (plus e grau da cópia). */
   pieces?: Partial<Record<GearSlot, Partial<GearBonus>>>
@@ -493,6 +495,8 @@ export interface GearInstance {
   ascended?: boolean
   /** E14: desperta (passiva ligada; a arma acende na luta). */
   awakened?: boolean
+  /** E15: chave secundária encantada (null = a do catálogo). */
+  enchant?: keyof GearBonus | null
   locked: boolean
   /** Personagem que segura a cópia (vivo ou na cápsula); null = solta na mochila. */
   equippedBy: string | null
@@ -689,6 +693,12 @@ export const ascendGear = (token: string, instance: string, key: string, version
 /** E14: Despertar da cópia ascendida (Essências + Selos). */
 export const awakenGear = (token: string, instance: string, key: string, version?: number) =>
   call<GearOut>(token, "POST", "/gear/awaken", { instance, key, ...(version != null ? { version } : {}) })
+/** E15: sortear o encanto da cópia (paga Pó de Refino e Cristal Bruto). */
+export const enchantGear = (token: string, instance: string, key: string, version?: number) =>
+  call<GearOut>(token, "POST", "/gear/enchant", { instance, key, ...(version != null ? { version } : {}) })
+/** E15: escolher uma opção do sorteio (`choice`) ou manter a atual (`null`); não cobra de novo. */
+export const resolveEnchant = (token: string, instance: string, choice: string | null, key: string) =>
+  call<GearOut>(token, "POST", "/gear/enchant/resolve", { instance, choice, key })
 /** E13: engastar a runa `rune` na cópia (`version` = a que a tela viu). */
 export const socketRune = (token: string, instance: string, rune: string, key: string, version?: number) =>
   call<GearOut>(token, "POST", "/gear/socket", { instance, rune, key, ...(version != null ? { version } : {}) })

@@ -12709,7 +12709,26 @@
     "awakenGo": "Awaken",
     "awakenOk": "The item awakened!",
     "upgradeAwakened": "awakened",
-    "runeNoPiece": "No item with sockets. Rare or better items have sockets."
+    "runeNoPiece": "No item with sockets. Rare or better items have sockets.",
+    "enchantTitle": "Enchantment",
+    "enchantCurrent": "Secondary key: {k}",
+    "enchantPick": "Pick an option or keep the current one (no extra cost).",
+    "enchantDone": "Enchanted!",
+    "enchantKept": "Kept as it was.",
+    "enchantKeep": "Keep the current one",
+    "enchantNone": "This item has no other key in its slot to enchant.",
+    "enchantRolled": "Rolled: pick an option.",
+    "enchantGo": "Roll 3 options",
+    "gearKey_dmg": "damage",
+    "gearKey_def": "defense",
+    "gearKey_hp": "health",
+    "gearKey_acc": "accuracy",
+    "gearKey_spd": "speed",
+    "gearKey_int": "intelligence",
+    "gearKey_dex": "dexterity",
+    "gearKey_stam": "stamina",
+    "gearKey_warn": "warning time",
+    "gearKey_power": "power charge"
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -12959,7 +12978,11 @@
     "Essa peça já ascendeu": "That item has already ascended",
     "A Ascensão pede a peça no +10": "Ascension needs the item at +10",
     "Essa peça já despertou": "That item has already awakened",
-    "O Despertar pede a peça ascendida": "Awakening needs the item ascended"
+    "O Despertar pede a peça ascendida": "Awakening needs the item ascended",
+    "Essa peça não tem outra chave para encantar": "That item has no other key to enchant",
+    "Há um encanto sorteado esperando a sua escolha": "An enchantment roll is waiting for your choice",
+    "Nenhum encanto esperando escolha": "No enchantment waiting for a choice",
+    "Essa opção não saiu no sorteio": "That option wasn't rolled"
   },
   "Moedas": {
     "walletTitle": "Wallet",

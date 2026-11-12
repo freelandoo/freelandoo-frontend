@@ -254,6 +254,11 @@ const ROWS = [
   ["A Ascensão pede a peça no +10", "Ascension needs the item at +10", "La Ascensión pide la pieza en +10"],
   ["Essa peça já despertou", "That item has already awakened", "Esa pieza ya despertó"],
   ["O Despertar pede a peça ascendida", "Awakening needs the item ascended", "El Despertar pide la pieza ascendida"],
+  // trilha E15: encantamento
+  ["Essa peça não tem outra chave para encantar", "That item has no other key to enchant", "Esa pieza no tiene otra clave para encantar"],
+  ["Há um encanto sorteado esperando a sua escolha", "An enchantment roll is waiting for your choice", "Hay un encantamiento sorteado esperando tu elección"],
+  ["Nenhum encanto esperando escolha", "No enchantment waiting for a choice", "Ningún encantamiento esperando elección"],
+  ["Essa opção não saiu no sorteio", "That option wasn't rolled", "Esa opción no salió en el sorteo"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

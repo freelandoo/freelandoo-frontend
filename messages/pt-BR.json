@@ -12123,7 +12123,26 @@
     "awakenGo": "Despertar",
     "awakenOk": "A peça despertou!",
     "upgradeAwakened": "desperta",
-    "runeNoPiece": "Nenhuma peça com engaste. Raras ou acima têm engaste."
+    "runeNoPiece": "Nenhuma peça com engaste. Raras ou acima têm engaste.",
+    "enchantTitle": "Encantamento",
+    "enchantCurrent": "Chave secundária: {k}",
+    "enchantPick": "Escolha uma opção ou mantenha a atual (não cobra de novo).",
+    "enchantDone": "Encantada!",
+    "enchantKept": "Mantida como estava.",
+    "enchantKeep": "Manter a atual",
+    "enchantNone": "Esta peça não tem outra chave no slot para encantar.",
+    "enchantRolled": "Sorteio feito: escolha a opção.",
+    "enchantGo": "Sortear 3 opções",
+    "gearKey_dmg": "dano",
+    "gearKey_def": "defesa",
+    "gearKey_hp": "vida",
+    "gearKey_acc": "acuracidade",
+    "gearKey_spd": "velocidade",
+    "gearKey_int": "inteligência",
+    "gearKey_dex": "destreza",
+    "gearKey_stam": "fôlego",
+    "gearKey_warn": "tempo de aviso",
+    "gearKey_power": "carga do poder"
   },
   "Sports": {
     "eyebrow": "Esportes",
@@ -12373,7 +12392,11 @@
     "Essa peça já ascendeu": "Essa peça já ascendeu",
     "A Ascensão pede a peça no +10": "A Ascensão pede a peça no +10",
     "Essa peça já despertou": "Essa peça já despertou",
-    "O Despertar pede a peça ascendida": "O Despertar pede a peça ascendida"
+    "O Despertar pede a peça ascendida": "O Despertar pede a peça ascendida",
+    "Essa peça não tem outra chave para encantar": "Essa peça não tem outra chave para encantar",
+    "Há um encanto sorteado esperando a sua escolha": "Há um encanto sorteado esperando a sua escolha",
+    "Nenhum encanto esperando escolha": "Nenhum encanto esperando escolha",
+    "Essa opção não saiu no sorteio": "Essa opção não saiu no sorteio"
   },
   "Moedas": {
     "walletTitle": "Carteira",

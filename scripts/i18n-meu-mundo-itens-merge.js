@@ -198,6 +198,27 @@ const MEU_MUNDO = {
   awakenGo: ["Despertar", "Awaken", "Despertar"],
   awakenOk: ["A peça despertou!", "The item awakened!", "¡La pieza despertó!"],
   upgradeAwakened: ["desperta", "awakened", "despierta"],
+  // E15: encantamento
+  enchantTitle: ["Encantamento", "Enchantment", "Encantamiento"],
+  enchantCurrent: ["Chave secundária: {k}", "Secondary key: {k}", "Clave secundaria: {k}"],
+  enchantPick: ["Escolha uma opção ou mantenha a atual (não cobra de novo).", "Pick an option or keep the current one (no extra cost).", "Elige una opción o mantén la actual (no cobra de nuevo)."],
+  enchantDone: ["Encantada!", "Enchanted!", "¡Encantada!"],
+  enchantKept: ["Mantida como estava.", "Kept as it was.", "Se mantuvo como estaba."],
+  enchantKeep: ["Manter a atual", "Keep the current one", "Mantener la actual"],
+  enchantNone: ["Esta peça não tem outra chave no slot para encantar.", "This item has no other key in its slot to enchant.", "Esta pieza no tiene otra clave en su ranura para encantar."],
+  enchantRolled: ["Sorteio feito: escolha a opção.", "Rolled: pick an option.", "Sorteo hecho: elige la opción."],
+  enchantGo: ["Sortear 3 opções", "Roll 3 options", "Sortear 3 opciones"],
+  // nome curto de cada chave da régua (encanto, runas)
+  gearKey_dmg: ["dano","damage","daño"],
+  gearKey_def: ["defesa","defense","defensa"],
+  gearKey_hp: ["vida","health","vida"],
+  gearKey_acc: ["acuracidade","accuracy","precisión"],
+  gearKey_spd: ["velocidade","speed","velocidad"],
+  gearKey_int: ["inteligência","intelligence","inteligencia"],
+  gearKey_dex: ["destreza","dexterity","destreza"],
+  gearKey_stam: ["fôlego","stamina","aliento"],
+  gearKey_warn: ["tempo de aviso","warning time","tiempo de aviso"],
+  gearKey_power: ["carga do poder","power charge","carga del poder"],
   runeNoPiece: ["Nenhuma peça com engaste. Raras ou acima têm engaste.", "No item with sockets. Rare or better items have sockets.", "Ninguna pieza con engaste. Las raras o superiores tienen engaste."],
 }
 const OVERRIDE = {}

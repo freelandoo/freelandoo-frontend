@@ -3,7 +3,7 @@
 // do próximo passo, bônus antes e depois e um botão; sempre sobe. Trilha E10: refinamento I–V (grau
 // de qualidade, separado do +N), mesmo desenho. O servidor diz o custo e confere tudo.
 import { useState, type ReactNode } from "react"
-import { ascendGear, awakenGear, gradeGear, upgradeGear, type GearBag, type GearInstance, type GearItem, type UpgradeView } from "../../data"
+import { ascendGear, awakenGear, enchantGear, gradeGear, resolveEnchant, upgradeGear, type GearBag, type GearInstance, type GearItem, type UpgradeView } from "../../data"
 import { AetherButton } from "../kit/aether-modal"
 import { AE } from "../kit/aether-tokens"
 import { GearItemCard, bonusLines, nameOf, type GearAction, type GearTr } from "./gear-card"
@@ -95,6 +95,36 @@ function AscendSection({ inst, bag, byId, t, act, busy }: {
   )
 }
 
+/** E15: encanto — sortear até 3 chaves do slot e escolher uma (ou manter a atual, sem custo novo). */
+function EnchantSection({ inst, bag, byId, t, act, busy }: {
+  inst: GearInstance; bag: GearBag; byId: Map<string, GearItem>; t: GearTr; act: GearAction; busy: boolean
+}) {
+  const view = bag.forge?.[inst.id]?.enchant
+  if (!view || view.error === "item") return null
+  const keyName = (k: string) => t("gearKey_" + k, k)
+  return (
+    <div className="grid gap-2 pt-2" style={{ borderTop: "1px solid " + AE.brassLine }}>
+      <p className="text-[13px] font-bold" style={{ color: AE.goldSoft }}>{t("enchantTitle", "Encantamento")}</p>
+      {view.current && <p className="text-[12px]" style={{ color: AE.text }}>{t("enchantCurrent", "Chave secundária: {k}").replace("{k}", keyName(view.current))}</p>}
+      {view.offer ? <>
+        <p className="text-[12px]" style={{ color: AE.goldSoft }}>{t("enchantPick", "Escolha uma opção ou mantenha a atual (não cobra de novo).")}</p>
+        {view.offer.map(opt => (
+          <AetherButton key={opt.key} disabled={busy} onClick={() => void act("enchant-pick-" + inst.id + "-" + opt.key, (tk, key) => resolveEnchant(tk, inst.id, opt.key, key), t("enchantDone", "Encantada!"))}>
+            {keyName(opt.key)} · {bonusLines(opt.bonus, t).join(" · ")}
+          </AetherButton>
+        ))}
+        <AetherButton tone="secondary" disabled={busy} onClick={() => void act("enchant-keep-" + inst.id, (tk, key) => resolveEnchant(tk, inst.id, null, key), t("enchantKept", "Mantida como estava."))}>{t("enchantKeep", "Manter a atual")}</AetherButton>
+      </> : view.error === "noenchant" ? <p className="text-[12px]" style={{ color: AE.muted }}>{t("enchantNone", "Esta peça não tem outra chave no slot para encantar.")}</p>
+        : view.needs ? <>
+          <Costs coins={view.coins || 0} needs={view.needs} bag={bag} byId={byId} t={t} />
+          <AetherButton tone="secondary" disabled={busy || !affordable(bag, view.coins || 0, view.needs)} onClick={() => void act("enchant-" + inst.id, (tk, key) => enchantGear(tk, inst.id, key, inst.version), t("enchantRolled", "Sorteio feito: escolha a opção."))}>
+            {affordable(bag, view.coins || 0, view.needs) ? t("enchantGo", "Sortear 3 opções") : t("refineMissing", "Faltam moedas ou materiais")}
+          </AetherButton>
+        </> : null}
+    </div>
+  )
+}
+
 export function RefinementCard({ item, inst, bag, byId, t, act, busy }: {
   item: GearItem; inst: GearInstance; bag: GearBag; byId: Map<string, GearItem>; t: GearTr; act: GearAction; busy: boolean
 }) {
@@ -120,6 +150,7 @@ export function RefinementCard({ item, inst, bag, byId, t, act, busy }: {
       </>}
       <GradeSection item={item} inst={inst} bag={bag} byId={byId} t={t} act={act} busy={busy} />
       <AscendSection inst={inst} bag={bag} byId={byId} t={t} act={act} busy={busy} />
+      <EnchantSection inst={inst} bag={bag} byId={byId} t={t} act={act} busy={busy} />
     </GearItemCard>
   )
 }
