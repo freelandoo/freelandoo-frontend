@@ -9,13 +9,13 @@ import { caixa } from "../kit-cidade"
 import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as V from "./tema-vulcao"
-import { caixote, lampiao } from "./tema-fabrica"
 
 export const meta = {
   ceu: V.CEU,
   nevoa: V.NEVOA,
   area: AREA,
   luz: V.LUZ,
+  triBloco: V.TRI_BLOCO,
   astro: { dir: [-0.6, 0.12, 1] as RGB, r: 0.06, cor: [1, 0.7, 0.4] as RGB },
   pontos: ["entrada", "saida", "chefe"],
   setores: [1, 2, 3],
@@ -31,7 +31,7 @@ export function montar(lod = 0): Cena {
   for (const [t, s] of [[0.1, 1], [0.34, -1], [0.6, 1], [0.7, -1], [0.92, 1]] as const) {
     const p = P.at(t)
     const x = p.x + p.dz * 9 * s, z = p.z - p.dx * 9 * s
-    if (P.livre(x, z, 4)) {
+    if (P.livre(x, z, 1.5)) {
       V.bocaMina(c, x, z, Math.atan2(p.x - x, p.z - z), lod)
       P.reserva(x, z, 6)
     }
@@ -54,7 +54,10 @@ export function montar(lod = 0): Cena {
     const j = Math.min(gx, 1.8 - gx, gz, 1.8 - gz)
     const laje = mix(V.PEDRA_ESC, mix(V.PEDRA_CL, [0.58, 0.54, 0.54], noise(Math.floor(x / 1.8), 2, Math.floor(z / 1.8))), smooth(0.03, 0.1, j))
     col = trilha(col, x, z, P, laje, 2.2, V.PEDRA_ESC)
-    return mul(col, 0.95 + 0.1 * noise(x * 0.9, 2.2, z * 0.9))
+    // junta das lajes (o chão do caminho aparece entre elas): pedra escura
+    col = mix(col, [0.16, 0.13, 0.16] as RGB, smooth(4.6, 4.2, P.dWalk(x, z)) * (1 - P.aberto(x, z) * 0.6))
+    if (P.dWalk(x, z) < 4.4) return col
+    return mul(col, 0.7 + 0.08 * noise(x * 0.9, 2.2, z * 0.9)) // o chão da ref é escuro: a luz vermelha forte o clareava demais
   }
   const LAVA: XZ[] = [[74, -76], [70, -40], [74, -6], [69, 30], [74, 70]]
   const height = (x: number, z: number) => -0.5 * smooth(5, 2.5, distPath(x, z, LAVA))
@@ -64,25 +67,42 @@ export function montar(lod = 0): Cena {
   V.rioLava(c, LAVA, 6)
 
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !inParede(x, z) && !blocked(c, x, z, pad + 0.6) && x < 64
-  // cerca de madeira e lanternas na beira do caminho
+  // beira do caminho: trechos de CERCA de mourões (a ref, à direita) e POSTES-LANTERNA a cada ~14 m
   for (let t = 0.03; t < 0.97; t += 0.035) {
     const p = P.at(t)
     const s = Math.round(t * 57) % 2 ? 1 : -1
-    const x = p.x + p.dz * 3.6 * s, z = p.z - p.dx * 3.6 * s
+    const x = p.x + p.dz * 3.8 * s, z = p.z - p.dx * 3.8 * s
     if (!ok(x, z, -2)) continue
-    if (Math.round(t * 100) % 3 === 0) lampiao(c, x, z, 2.6, lod)
+    if (Math.round(t * 100) % 3 === 0) V.posteLanterna(c, x, z, 4.2, Math.atan2(-p.dz * s, p.dx * s), lod)
     else {
-      const g = c.geo(x, z)
-      caixa(g, { x, z, y0: 0, y1: 1.2, w: 0.25, d: 0.25, side: V.MADEIRA, top: V.MADEIRA_ESC })
-      caixa(g, { x, z, y0: 0.8, y1: 1, w: 2.4, d: 0.14, rot: -Math.atan2(p.dx, p.dz) + Math.PI / 2, side: V.MADEIRA, top: V.MADEIRA })
-      c.block(x, z, 0.2, 0.2, 1.2)
+      const a: [number, number] = [x - p.dx * 2.6, z - p.dz * 2.6], b: [number, number] = [x + p.dx * 2.6, z + p.dz * 2.6]
+      if (ok(a[0], a[1], -2.2) && ok(b[0], b[1], -2.2)) V.cerca(c, a, b, lod)
     }
   }
+  // um GUINDASTE ao lado de cada boca de mina que couber (a ref: o pórtico com roldana sobre a mina)
+  for (const [t, s] of [[0.1, 1], [0.6, 1], [0.92, 1]] as const) {
+    const p = P.at(t)
+    const x = p.x + p.dz * 9 * s + p.dx * 7, z = p.z - p.dx * 9 * s + p.dz * 7
+    if (ok(x, z, 1.6)) V.guindaste(c, x, z, Math.atan2(p.x - x, p.z - z), lod)
+  }
+  // o CORREDOR da ref: paredão de rocha dos dois lados do caminho e a beira cheia (caixote, barril,
+  // vagonete no trilho, cristais no pé da rocha); abre onde há boca de mina
+  const minas: { x: number; z: number }[] = []
+  for (const [t, s] of [[0.1, 1], [0.34, -1], [0.6, 1], [0.7, -1], [0.92, 1]] as const) { const p = P.at(t); minas.push({ x: p.x + p.dz * 9 * s, z: p.z - p.dx * 9 * s }) }
+  V.corredor(c, CAMINHO, ok, lod, 11, (x, z, ang, k) => {
+    const q = k % 7
+    if (q === 0 || q === 3) V.caixote(c, x, z, 1.1 + (k % 3) * 0.15, ang + k, lod)
+    else if (q === 1) V.barril(c, x, z, 1.1, k, lod)
+    else if (q === 2 || q === 5) V.cristalFogo(c, x, z, 1 + (k % 4) * 0.25, k, lod)
+    else if (q === 4) V.vagonete(c, x, z, ang + Math.PI / 2, lod)
+    else V.caixote(c, x, z, 0.9, ang, lod)
+  }, (x, z) => minas.some((m) => Math.hypot(x - m.x, z - m.z) < 7))
   // vagonetes, caixotes e cristais
   scatter(-H + 4, -H + 4, H - 4, H - 4, 6, 31, (x, z, r) => {
     if (!ok(x, z, 0.4) || r(1) > (P.dWalk(x, z) < 8 ? 0.5 : 0.1)) return
     if (r(2) < 0.35) V.vagonete(c, x, z, r(3) * 3, lod)
-    else if (r(2) < 0.6) caixote(c, x, z, 1.2, r(3) * 3)
+    else if (r(2) < 0.5) V.caixote(c, x, z, 1.2, r(3) * 3, lod)
+    else if (r(2) < 0.6) V.barril(c, x, z, 1.1, r(6) * 99, lod)
     else V.pedraEsc(c, x, z, 0.8 + r(4) * 1.6, r(5) * 99)
   })
   scatter(-H + 3, -H + 3, H - 3, H - 3, 4.6, 32, (x, z, r) => {
@@ -93,5 +113,7 @@ export function montar(lod = 0): Cena {
     if (!ok(x, z, 4) || r(1) > 0.4) return
     V.colunas(c, x, z, 2.2, 5 + r(2) * 3, r(3) * 99, lod)
   })
+  // piso de LAJES poligonais da ref no caminho (largura 9 m) e nas praças
+  V.lajesPoligonais(c, -H, -H, H, H, 1.9, 41, (x, z) => P.dWalk(x, z) < 4.2 || P.aberto(x, z) > 0.6, lod)
   return c
 }

@@ -8,13 +8,14 @@ import { Cena, blocked, distPath, ground, scatter, type XZ } from "../kit-cena"
 import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as V from "./tema-vulcao"
-import { bandeira, cabe, forno } from "./tema-fabrica"
+import { cabe } from "./tema-fabrica"
 
 export const meta = {
   ceu: [0.56, 0.22, 0.18] as RGB,
   nevoa: [0.5, 0.24, 0.2] as RGB,
   area: AREA,
   luz: V.LUZ,
+  triBloco: V.TRI_BLOCO,
   pontos: ["entrada", "saida", "chefe"],
   setores: [4, 5, 6, 7],
 }
@@ -46,7 +47,10 @@ export function montar(lod = 0): Cena {
     const j = Math.min(gx, 2.2 - gx, gz, 2.2 - gz)
     const laje = mix(V.PEDRA_ESC, mix(V.PEDRA_CL, [0.5, 0.46, 0.48], noise(Math.floor(x / 2.2), 6, Math.floor(z / 2.2))), smooth(0.03, 0.1, j))
     col = trilha(col, x, z, P, laje, 2.2, V.PEDRA_ESC)
-    return mul(col, 0.95 + 0.1 * noise(x * 0.9, 2.2, z * 0.9))
+    // junta das lajes (o chão do caminho aparece entre elas): lava acesa
+    col = mix(col, [1, 0.42, 0.08] as RGB, smooth(4.6, 4.2, P.dWalk(x, z)) * (1 - P.aberto(x, z) * 0.6))
+    if (P.dWalk(x, z) < 4.4) return col
+    return mul(col, 0.7 + 0.08 * noise(x * 0.9, 2.2, z * 0.9)) // o chão da ref é escuro: a luz vermelha forte o clareava demais
   }
   ground(c, { x0: -H, z0: -H, x1: H, z1: H, step: lod ? 4 : 2, color, height })
   ground(c, { x0: -200, z0: -200, x1: 200, z1: 200, step: 40, color: () => V.PEDRA_ESC, fundo: true, y: -0.05, hole: [-H, -H, H, H] })
@@ -61,10 +65,28 @@ export function montar(lod = 0): Cena {
     const s = Math.round(t * 40) % 2 ? 1 : -1
     const x = p.x + p.dz * 7 * s, z = p.z - p.dx * 7 * s
     const ang = Math.atan2(p.x - x, p.z - z)
-    if (!cabe((a, b, pad) => ok(a, b, pad ?? 0), x, z, 4.4, 3.6, ang)) continue
-    forno(c, x, z, 2.1, ang, lod)
-    bandeira(c, x + Math.sin(ang) * 1.75, 4.6, z + Math.cos(ang) * 1.75, ang, 0.8)
-    if (ok(x + Math.sin(ang) * 3.4 + Math.cos(ang) * 2, z + Math.cos(ang) * 3.4 - Math.sin(ang) * 2, 0)) V.bigorna(c, x + Math.sin(ang) * 3.4 + Math.cos(ang) * 2, z + Math.cos(ang) * 3.4 - Math.sin(ang) * 2, ang)
+    if (!cabe((a, b, pad) => ok(a, b, pad ?? 0), x - Math.sin(ang) * 2, z - Math.cos(ang) * 2, 7.6, 6, ang)) continue
+    V.forjaArco(c, x - Math.sin(ang) * 1.5, z - Math.cos(ang) * 1.5, ang, lod)
+    // barril e caixote encostados na forja
+    const sx = -Math.cos(ang), sz = Math.sin(ang)
+    if (ok(x + sx * 4.6, z + sz * 4.6, -1)) V.barril(c, x + sx * 4.6, z + sz * 4.6, 1.1, t * 99, lod)
+    if (ok(x - sx * 4.6, z - sz * 4.6, -1)) V.caixote(c, x - sx * 4.6, z - sz * 4.6, 1.1, ang, lod)
+    if (ok(x + Math.sin(ang) * 3.4 + Math.cos(ang) * 2, z + Math.cos(ang) * 3.4 - Math.sin(ang) * 2, 0)) V.bigorna(c, x + Math.sin(ang) * 3.4 + Math.cos(ang) * 2, z + Math.cos(ang) * 3.4 - Math.sin(ang) * 2, ang, lod)
+  }
+  // corredor de rocha e beira cheia (barris, caixotes com minério, cristais), abrindo nas forjas
+  V.corredor(c, P.path, ok, lod, 22, (x, z, ang, k) => {
+    const q = k % 5
+    if (q === 0) V.barril(c, x, z, 1.1, k, lod)
+    else if (q === 1 || q === 3) V.cristalFogo(c, x, z, 1 + (k % 3) * 0.3, k, lod)
+    else V.caixote(c, x, z, 1.1, ang + k, lod)
+  }, (x, z) => blocked(c, x, z, 3), true)
+  // LANTERNAS-PEDESTAL dos dois lados do caminho a cada ~11 m (a ref: a fila de pedestais acesos)
+  for (let t = 0.04; t < 0.97; t += 0.04) {
+    const p = P.at(t)
+    for (const s of [-1, 1]) {
+      const x = p.x + p.dz * 3.3 * s, z = p.z - p.dx * 3.3 * s
+      if (ok(x, z, -2.1)) V.lanternaPedestal(c, x, z, Math.atan2(p.x - x, p.z - z), lod)
+    }
   }
   scatter(-H + 8, -H + 8, H - 8, H - 8, 9, 34, (x, z, r) => {
     if (!ok(x, z, 4) || r(1) > 0.5) return
@@ -74,5 +96,7 @@ export function montar(lod = 0): Cena {
     if (!ok(x, z, 0.4) || r(1) > (P.dWalk(x, z) < 8 ? 0.5 : 0.12)) return
     V.pedraEsc(c, x, z, 0.8 + r(2) * 1.6, r(3) * 99)
   })
+  // piso de LAJES poligonais da ref no caminho (largura 9 m) e nas praças
+  V.lajesPoligonais(c, -H, -H, H, H, 1.9, 42, (x, z) => P.dWalk(x, z) < 4.2 || P.aberto(x, z) > 0.6, lod)
   return c
 }

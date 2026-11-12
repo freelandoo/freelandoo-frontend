@@ -17,6 +17,7 @@ export const meta = {
   nevoa: [0.46, 0.2, 0.18] as RGB,
   area: AREA,
   luz: V.LUZ,
+  triBloco: V.TRI_BLOCO,
   pontos: ["entrada", "saida", "guardiao", "deus"],
   setores: [8, 9, 10],
 }
@@ -64,7 +65,10 @@ export function montar(lod = 0): Cena {
     const j = Math.min(gx, 2.4 - gx, gz, 2.4 - gz)
     const laje = mix(V.PEDRA_ESC, mix(V.PEDRA_CL, [0.52, 0.46, 0.46], noise(Math.floor(x / 2.4), 8, Math.floor(z / 2.4))), smooth(0.03, 0.1, j))
     col = trilha(col, x, z, P, laje, 2.4, V.PEDRA_ESC)
-    return mul(col, 0.95 + 0.1 * noise(x * 0.9, 2.2, z * 0.9))
+    // junta das lajes (o chão do caminho aparece entre elas): lava acesa
+    col = mix(col, [1, 0.42, 0.08] as RGB, smooth(4.6, 4.2, P.dWalk(x, z)) * (1 - P.aberto(x, z) * 0.6))
+    if (P.dWalk(x, z) < 4.4) return col
+    return mul(col, 0.7 + 0.08 * noise(x * 0.9, 2.2, z * 0.9)) // o chão da ref é escuro: a luz vermelha forte o clareava demais
   }
   const LAVA: XZ[] = [[-76, 10], [-56, 16], [-40, 30], [-46, 52], [-30, 76]]
   const height = (x: number, z: number) => -0.5 * smooth(5, 2.5, distPath(x, z, LAVA))
@@ -89,10 +93,17 @@ export function montar(lod = 0): Cena {
       if (ok(x, z, -1.9)) V.braseiro(c, x, z, 1, lod)
     }
   }
+  // corredor de rocha até o castelo, com suportes de lanças, caixotes e cristais na beira
+  V.corredor(c, P.path, ok, lod, 33, (x, z, ang, k) => {
+    const q = k % 6
+    if (q === 0) V.rackLancas(c, x, z, ang, lod)
+    else if (q === 2 || q === 4) V.cristalFogo(c, x, z, 1 + (k % 3) * 0.3, k, lod)
+    else V.caixote(c, x, z, 1.1, ang + k, lod)
+  }, (x, z) => (P.castelo ? Math.abs(x - P.castelo.x) < P.castelo.w / 2 + 6 && Math.abs(z - P.castelo.z) < P.castelo.d / 2 + 6 : false), true)
   // porta-armas e bandeiras na praça da porta
   for (const s of [-1, 1]) {
     const x = P.arena.x + s * (P.arena.r + 2.5), z = P.arena.z
-    if (ok(x, z, 0.5)) portaArmas(c, x, z, Math.PI / 2 * s, lod)
+    if (ok(x, z, 0.5)) V.rackLancas(c, x, z, Math.PI / 2 * s, lod) // o suporte de lanças copiado
     bandeira(c, K.porta.x + s * 5.6, 6.4, K.porta.z - 1.7, Math.PI, 1.1)
   }
   scatter(-H + 4, -H + 4, H - 4, H - 4, 6, 36, (x, z, r) => {
@@ -103,6 +114,8 @@ export function montar(lod = 0): Cena {
     if (!ok(x, z, 0.2) || r(1) > 0.06) return
     V.cristalFogo(c, x, z, 0.8 + r(2) * 1.2, r(3) * 99, lod)
   })
+  // piso de LAJES poligonais da ref no caminho (largura 9 m) e nas praças
+  V.lajesPoligonais(c, -H, -H, H, H, 1.9, 43, (x, z) => P.dWalk(x, z) < 4.2 || P.aberto(x, z) > 0.6, lod)
   return c
 }
 
@@ -122,18 +135,3 @@ function chifres(c: Cena, m: V3, lod: number) {
   }
 }
 
-/** Porta-armas de madeira com lanças de ponta de ferro. */
-function portaArmas(c: Cena, x: number, z: number, ang: number, lod: number) {
-  const g = c.geo(x, z)
-  const rot = -ang
-  caixa(g, { x, z, y0: 0.3, y1: 0.5, w: 2.6, d: 0.4, rot, side: V.MADEIRA, top: V.MADEIRA })
-  caixa(g, { x, z, y0: 1.5, y1: 1.7, w: 2.6, d: 0.4, rot, side: V.MADEIRA, top: V.MADEIRA })
-  c.block(x, z, 1.3, 0.3, 2.6, rot)
-  if (lod) return
-  const sx = Math.cos(ang), sz = -Math.sin(ang)
-  for (let k = -2; k <= 2; k++) {
-    const px = x + sx * k * 0.5, pz = z + sz * k * 0.5
-    tube(g, [px, 0, pz], [px, 2.4, pz], 0.05, 0.05, 4, () => V.MADEIRA_ESC, false)
-    tube(g, [px, 2.4, pz], [px, 2.85, pz], 0.1, 0.01, 4, () => [0.7, 0.7, 0.75], true)
-  }
-}
