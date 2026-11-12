@@ -12,8 +12,8 @@
 //   R S T T R T T R T T
 
 import { noise, type RGB } from "../kit"
-import { Cena, ground, scatter, type XZ } from "../kit-cena"
-import { mesa, mix, mul, smooth } from "../kit-natureza"
+import { Cena, blocked, ground, scatter, type XZ } from "../kit-cena"
+import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as F from "./tema-floresta"
 
@@ -33,6 +33,7 @@ const DESVIO: XZ[] = [[34, 8], [50, 22], [56, 36]]
 export function montar(lod = 0): Cena {
   const c = new Cena("floresta-1", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, desvios: [DESVIO], setores: [1, 2, 3], boss: 3, tZonas: [0.2, 0.47], tArena: 0.8 })
+  F.minucia((x, z) => P.dWalk(x, z) < 13) // a minúcia completa só onde o jogador passa perto
   const lagoa = { x: 58, z: 44, r: 6 }
   P.reserva(lagoa.x, lagoa.z, lagoa.r + 2)
 
@@ -45,11 +46,34 @@ export function montar(lod = 0): Cena {
   aoLongoDaBorda(14, 6, (x, z, _a, k) => {
     if (P.dWalk(x, z) < 9) return
     if (k % 3 === 0) {
-      const m = mesa(c.geo(x, z), { x, z, rx: 7 + noise(x, 1, z) * 4, rz: 6 + noise(z, 2, x) * 4, h: 8 + noise(x * 0.3, 3, z * 0.3) * 8, strata: F.ROCHA, seed: k, lod, grass: F.MUSGO })
+      const m = F.paredao(c, x, z, 7 + noise(x, 1, z) * 4, 6 + noise(z, 2, x) * 4, 8 + noise(x * 0.3, 3, z * 0.3) * 8, k, lod)
       cliffs.push(m)
     } else F.arvoreLua(c, x, z, 18 + noise(x * 0.2, 4, z * 0.2) * 8, k * 7.3, lod)
   })
   F.fundoFloresta(c, 3)
+
+  // ── marcos da ref 1: o PLATÔ com as três árvores (visto da trilha, no fim de uma reta) e o ARCO DE
+  // PEDRAS no fundo; procura um lugar livre perto do caminho (14–30 m) para cada um ──
+  const marco = (w: number, d: number, dMin: number, dMax: number, seed: number) => {
+    for (let k = 0; k < 400; k++) {
+      const t = 0.1 + (k % 40) / 50, p = P.at(t)
+      const s = k % 2 ? 1 : -1, off = dMin + ((k * 7) % 11) / 10 * (dMax - dMin)
+      const x = p.x + p.dz * off * s, z = p.z - p.dx * off * s
+      const ang = Math.atan2(p.x - x, p.z - z)
+      let ok = P.beira(x, z) > Math.max(w, d) / 2 + 4
+      for (const [u, v] of [[0, 0], [-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
+        if (!ok) break
+        const px = x + Math.cos(ang) * u * (w / 2) + Math.sin(ang) * v * (d / 2), pz = z - Math.sin(ang) * u * (w / 2) + Math.cos(ang) * v * (d / 2)
+        if (!P.livre(px, pz, 1.5) || blocked(c, px, pz, 1)) ok = false
+      }
+      if (ok) return { x, z, ang, seed }
+    }
+    return null
+  }
+  const mt = marco(18, 12, 16, 26, 7)
+  if (mt) F.trioPlato(c, mt.x, mt.z, -mt.ang + Math.PI, 7, lod)
+  const ma = marco(11, 7, 18, 30, 3)
+  if (ma) F.arcoPedras(c, ma.x, ma.z, ma.ang, 3, lod)
 
   // ── chão ──
   const grove = (x: number, z: number) => noise(x * 0.045 + 2, 1.7, z * 0.045)
@@ -73,11 +97,11 @@ export function montar(lod = 0): Cena {
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !cliffIn(x, z)
 
   // ── árvores colossais em bosques; médias na borda dos bosques ──
-  scatter(-H + 8, -H + 8, H - 8, H - 8, 9, 11, (x, z, r) => {
+  scatter(-H + 8, -H + 8, H - 8, H - 8, 13.5, 11, (x, z, r) => {
     if (!ok(x, z, 2.5) || grove(x, z) < 0.46) return
     F.arvoreLua(c, x, z, 14 + r(1) * 8, r(2) * 99, lod, r(3) < 0.75 ? F.COPA : F.COPA2)
   })
-  scatter(-H + 6, -H + 6, H - 6, H - 6, 6, 21, (x, z, r) => {
+  scatter(-H + 6, -H + 6, H - 6, H - 6, 9, 21, (x, z, r) => {
     const gv = grove(x, z)
     if (!ok(x, z, 1) || gv < 0.32 || gv > 0.5 || r(1) < 0.35) return
     F.arvoreMedia(c, x, z, 5.5 + r(2) * 2.5, r(3) * 99, lod, r(4) < 0.6 ? F.COPA2 : F.COPA)
@@ -108,7 +132,7 @@ export function montar(lod = 0): Cena {
     if (P.dWalk(x, z) < 2.7 || cliffIn(x, z) || P.beira(x, z) < 2) return
     const dl = Math.hypot(x - lagoa.x, z - lagoa.z)
     if (dl < lagoa.r + 0.6) return
-    const want = P.dWalk(x, z) < 5 ? 0.1 : dl < lagoa.r + 6 ? 0.3 : P.aberto(x, z) > 0.2 ? 0.05 : 0.015
+    const want = P.dWalk(x, z) < 5 ? 0.2 : dl < lagoa.r + 6 ? 0.3 : P.aberto(x, z) > 0.2 ? 0.05 : 0.015
     if (r(1) > want) return
     F.buque(c, x, z, 0.42 + r(2) * 0.3, r(3) * 99)
   })

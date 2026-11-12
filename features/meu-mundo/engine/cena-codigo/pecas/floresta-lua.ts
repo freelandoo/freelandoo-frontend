@@ -12,8 +12,9 @@ import { blob, face, mix, mul, rnd, tube, type Foliage } from "../kit-natureza"
 // ── paleta (recortes do inventário, ajustada ao luar do jogo) ──
 export const LAVANDA: RGB = [0.96, 0.96, 1] // tronco ao luar (lado claro)
 export const LAVANDA_S: RGB = [0.7, 0.7, 0.9] // tronco à sombra
-export const COPA: Foliage = { dark: [0.06, 0.26, 0.46], mid: [0.1, 0.5, 0.64], hi: [0.5, 0.86, 0.92] }
-export const COPA_FUNDO: Foliage = { dark: [0.06, 0.16, 0.4], mid: [0.12, 0.3, 0.6], hi: [0.26, 0.46, 0.78] }
+// o lado de baixo recebe só o "chão" do luar (violeta escuro): dark bem claro para sair verde-azulado
+export const COPA: Foliage = { dark: [0.16, 0.58, 0.66], mid: [0.16, 0.64, 0.7], hi: [0.56, 0.94, 0.94] }
+export const COPA_FUNDO: Foliage = { dark: [0.14, 0.42, 0.62], mid: [0.14, 0.5, 0.7], hi: [0.34, 0.7, 0.86] }
 
 /** Cor do tronco por faceta: alterna claro e sombra (o facetado da ref) e escurece no pé (contato). */
 const casca = (k: number, y: number, h: number): RGB => mul(k % 2 ? LAVANDA : mix(LAVANDA, LAVANDA_S, 0.55), 0.78 + 0.22 * Math.min(1, y / (h * 0.3)))
@@ -24,7 +25,8 @@ const casca = (k: number, y: number, h: number): RGB => mul(k % 2 ? LAVANDA : mi
  * (cada um com 2 galhinhos) e a COPA EM GUARDA-CHUVA: largura ≈ altura, 5,5 m de espessura, blocos
  * facetados (miolo grande + anel de 7 + chapéu de 3), claros em cima e azul-petróleo embaixo.
  */
-export function arvoreLua(c: Cena, x: number, z: number, h = 12, seed = 1, lod = 0, folhas: Foliage = COPA) {
+export function arvoreLua(c: Cena, x: number, z: number, h = 12, seed = 1, lod = 0, folhas: Foliage = COPA, perto = true) {
+  const eco = lod > 0 || !perto // longe do caminho: mesma silhueta, ~1/3 das peças
   const g = c.geo(x, z)
   const k = h / 12
   const r = (q: number) => rnd(seed, q)
@@ -32,22 +34,22 @@ export function arvoreLua(c: Cena, x: number, z: number, h = 12, seed = 1, lod =
   const dx = (r(1) - 0.5) * 0.8 * k, dz = (r(2) - 0.5) * 0.8 * k
   const meio: V3 = [x + dx, h * 0.27, z + dz]
   const fork: V3 = [x - dx * 0.4, h * 0.5, z - dz * 0.4]
-  const lados = lod ? 5 : 7
+  const lados = lod ? 4 : eco ? 5 : 7
   // pé em CONE (a ref abre muito embaixo) e tronco grosso (~2,2 m)
   tube(g, [x, 0, z], [x + dx * 0.3, h * 0.1, z + dz * 0.3], 1.9 * k, 1.2 * k, lados, (j) => casca(j, 0, h), false)
   tube(g, [x + dx * 0.3, h * 0.1, z + dz * 0.3], meio, 1.2 * k, 1.05 * k, lados, (j) => casca(j, h * 0.15, h), false)
   tube(g, meio, fork, 1.05 * k, 0.78 * k, lados, (j) => casca(j, h, h), false)
   // raízes-contraforte: do tronco (1–1,6 m) até o chão a ~2 m, achatando
-  const nr = lod ? 3 : 4
+  const nr = eco ? 3 : 4
   for (let i = 0; i < nr; i++) {
     const a = (i / nr) * Math.PI * 2 + r(3) * 2
     const ca = Math.cos(a), sa = Math.sin(a)
     // contraforte LARGO: sai alto do tronco (2,4 m) e desce abrindo até 2,5 m do centro
     tube(g, [x + ca * 0.45 * k, 2.4 * k, z + sa * 0.45 * k], [x + ca * 1.5 * k, 0.5 * k, z + sa * 1.5 * k], 0.62 * k, 0.4 * k, 4, (j) => casca(j + i, 1, h), false)
-    tube(g, [x + ca * 1.5 * k, 0.5 * k, z + sa * 1.5 * k], [x + ca * 2.5 * k, 0, z + sa * 2.5 * k], 0.4 * k, 0.15 * k, 4, (j) => casca(j + i, 0.2, h), false)
+    if (!eco) tube(g, [x + ca * 1.5 * k, 0.5 * k, z + sa * 1.5 * k], [x + ca * 2.5 * k, 0, z + sa * 2.5 * k], 0.4 * k, 0.15 * k, 4, (j) => casca(j + i, 0.2, h), false)
   }
   // galhos em leque da forquilha até o fundo da copa, com 2 galhinhos cada
-  const ng = lod ? 3 : 4
+  const ng = eco ? 3 : 4
   const pontas: V3[] = []
   for (let i = 0; i < ng; i++) {
     const a = (i / ng) * Math.PI * 2 + r(4) * 2
@@ -55,9 +57,9 @@ export function arvoreLua(c: Cena, x: number, z: number, h = 12, seed = 1, lod =
     const tip: V3 = [fork[0] + Math.cos(a) * L, h * 0.68, fork[2] + Math.sin(a) * L]
     tube(g, fork, tip, 0.4 * k, 0.18 * k, 5, (j) => casca(j, h, h), false)
     pontas.push(tip)
-    if (!lod)
-      for (const s of [-1, 0, 1]) {
-        const b = a + s * 0.55
+    if (!eco)
+      for (const s of [-1, 1]) {
+        const b = a + s * 0.5
         tube(g, tip, [tip[0] + Math.cos(b) * 1.3 * k, h * 0.74, tip[2] + Math.sin(b) * 1.3 * k], 0.14 * k, 0.05 * k, 3, () => LAVANDA, false)
       }
   }
@@ -73,10 +75,10 @@ export function arvoreLua(c: Cena, x: number, z: number, h = 12, seed = 1, lod =
       blob(g, [fork[0] + Math.cos(a) * R, yC + dy * h + (r(sd + 40 + i) - 0.5) * h * 0.04, fork[2] + Math.sin(a) * R], [s, s * 0.7, s], folhas, seed + sd + i)
     }
   }
-  anel(lod ? 5 : 10, 0.34, 0.06, 0.12, -0.04, 50)
-  if (!lod) anel(8, 0.3, 0.06, 0.1, -0.11, 300) // lombos baixos pendendo na beira (o fundo bojudo da ref)
-  if (!lod) anel(5, 0.18, 0.05, 0.13, 0.06, 120)
-  if (!lod) anel(3, 0.07, 0.03, 0.13, 0.13, 200)
+  anel(lod ? 4 : eco ? 6 : 8, 0.34, 0.06, lod ? 0.16 : eco ? 0.15 : 0.12, -0.04, 50)
+  if (!eco) anel(5, 0.3, 0.06, 0.11, -0.11, 300) // lombos baixos pendendo na beira (o fundo bojudo da ref)
+  if (!eco) anel(3, 0.18, 0.05, 0.14, 0.06, 120)
+  anel(lod ? 0 : eco ? 2 : 3, 0.07, 0.03, 0.13, 0.13, 200)
   c.block(x, z, 1.1 * k, 1.1 * k, h)
   return pontas
 }
@@ -98,7 +100,7 @@ export const LUZ_FLOR_CL: RGB = [0.62, 0.96, 1]
  * da pedra, inclinado para a frente, com as quinas de cima chanfradas; o MUSGO cobre o topo inteiro e
  * escorre pelas faces numa SAIA de borda serrilhada (~20% da altura, mais longa na frente). Põe a caixa.
  */
-export function rochedoMusgo(c: Cena, x: number, z: number, w = 4, h = 2.4, seed = 1, lod = 0) {
+export function rochedoMusgo(c: Cena, x: number, z: number, w = 4, h = 2.4, seed = 1, lod = 0, caixa = true) {
   const g = c.geo(x, z)
   const r = (q: number) => rnd(seed, q)
   const n = 6
@@ -158,7 +160,7 @@ export function rochedoMusgo(c: Cena, x: number, z: number, w = 4, h = 2.4, seed
     const j = (k + 1) % n
     face(g, [P(ct, yC), P(topo[k], yTk(k) + 0.02), P(topo[j], yTk(j) + 0.02)], k % 2 ? MUSGO : mix(MUSGO, MUSGO_S, 0.2), [0, 1, 0])
   }
-  c.block(x, z, w * 0.44, w * 0.36, h)
+  if (caixa) c.block(x, z, w * 0.44, w * 0.36, h)
 }
 
 /**
@@ -554,8 +556,8 @@ export function troncoCaidoLua(c: Cena, x: number, z: number, L = 5, ang = 0, se
 export function lanternaCasulo(c: Cena, x: number, z: number, y: number, s = 1, fio = 2, seed = 1) {
   const g = c.geo(x, z), G = c.glow(x, z)
   const yTop = y + s * 0.8, yBot = y - s * 0.8
-  const n = 10, R = s * 0.5
-  const prof = [0.35, 0.72, 0.95, 1, 0.9, 0.66, 0.34] // ovo: mais gordo um pouco abaixo do meio
+  const n = 8, R = s * 0.5
+  const prof = [0.42, 0.88, 1, 0.84, 0.42] // ovo: mais gordo um pouco abaixo do meio
   const anel = (k: number, rr = 1) => {
     const t = (k + 1) / (prof.length + 1)
     const yy = yBot + (yTop - yBot) * t
@@ -568,7 +570,7 @@ export function lanternaCasulo(c: Cena, x: number, z: number, y: number, s = 1, 
   const C1: RGB = [0.86, 0.8, 1], C2: RGB = [0.66, 0.54, 0.96], BR: RGB = [1, 1, 1]
   // tom: claro no meio (o miolo transparece), lilás nas pontas, losangos alternados
   const tom = (k: number, j: number): RGB => {
-    const meio = 1 - Math.abs(k - 3) / 3.5
+    const meio = 1 - Math.abs(k - 2) / 2.5
     const base = (k + j) % 2 ? C1 : C2
     return mix(base, BR, meio * 0.7)
   }
@@ -585,11 +587,11 @@ export function lanternaCasulo(c: Cena, x: number, z: number, y: number, s = 1, 
   }
   // 4 faixas de cipó em diagonal (hélice), um pouco por fora do casulo
   const CIPO: RGB = [0.92, 0.88, 1]
-  for (let f = 0; f < 4; f++) {
+  for (let f = 0; f < 3; f++) {
     let prev: V3 | null = null
     for (let k = 0; k <= prof.length - 1; k++) {
       const t = (k + 1) / (prof.length + 1)
-      const a = rnd(seed, 1) + (f / 4) * Math.PI * 2 + k * 0.45
+      const a = rnd(seed, 1) + (f / 3) * Math.PI * 2 + k * 0.6
       const P: V3 = [x + Math.cos(a) * R * prof[k] * 1.06, yBot + (yTop - yBot) * t, z + Math.sin(a) * R * prof[k] * 1.06]
       if (prev) tube(g, prev, P, s * 0.035, s * 0.035, 3, () => CIPO, false)
       prev = P
@@ -619,3 +621,83 @@ function tracoAceso(G: G, A: V3, B: V3, lado: V3, e: number, frente: V3, nucleo:
   face(G, [o(A, -e, 0.012), o(B, -e, 0.012), o(B, e, 0.012), o(A, e, 0.012)], nucleo, frente)
 }
 type G = ReturnType<Cena["geo"]>
+
+/**
+ * PAREDÃO DA BORDA (inventário `rochedo-paredao`): 4–6 matacões grandes encostados e EMPILHADOS em
+ * prateleiras (o de cima pousado sobre os de baixo), cada um com tampa de musgo — a ref fecha a borda
+ * assim, nunca com uma mesa em listras. Devolve `inside` (pegada) como a `mesa` do kit.
+ */
+export function paredao(c: Cena, x: number, z: number, rx: number, rz: number, h: number, seed = 1, lod = 0, lim = 78) {
+  // o pé de cada matacão fica dentro da área (± lim): fora dela o bloco de 32 m a mais reprova a cena
+  const prende = (v: number, w: number) => Math.max(-lim + w / 2, Math.min(lim - w / 2, v))
+  const r = (q: number) => rnd(seed, q)
+  const pecas: { x: number; z: number; w: number; h: number }[] = []
+  const n = lod ? 2 : 5
+  for (let k = 0; k < n; k++) {
+    const a = (k / n) * Math.PI * 2 + r(k) * 0.8
+    const d = k === 0 ? 0 : 0.55 + r(k + 10) * 0.25
+    const px = x + Math.cos(a) * rx * d, pz = z + Math.sin(a) * rz * d
+    const w = (rx + rz) * (k === 0 ? 0.75 : 0.45 + r(k + 20) * 0.2)
+    const hh = h * (k === 0 ? 0.62 : 0.35 + r(k + 30) * 0.3)
+    const qx = prende(px, w), qz = prende(pz, w)
+    rochedoMusgo(c, qx, qz, w, hh, seed * 10 + k, lod)
+    pecas.push({ x: qx, z: qz, w, h: hh })
+  }
+  // prateleira de cima: um matacão menor pousado sobre o maior (fica fora do eixo)
+  const top = pecas[0]
+  const tx = top.x + (r(40) - 0.5) * top.w * 0.25, tz = top.z + (r(41) - 0.5) * top.w * 0.2
+  elevar(c, tx, tz, top.h - 0.15, () => rochedoMusgo(c, tx, tz, top.w * 0.62, h * 0.4, seed * 10 + 9, lod, false))
+  c.block(x, z, rx * 0.8, rz * 0.8, h)
+  return {
+    inside: (qx: number, qz: number, k = 1) => pecas.some((p0) => Math.hypot(qx - p0.x, qz - p0.z) < (p0.w / 2) * k),
+  }
+}
+
+/**
+ * CAMINHO DE LAJES (ref floresta-3): lajes de pedra lavanda SOLTAS, 3 cm acima do chão (a junta é o chão
+ * escuro aparecendo entre elas), em fiadas de 0,9–1,2 m com 3–4 lajes de larguras diferentes, cantos
+ * cortados e tom sorteado; as da beira menores e tortas, algumas faltando. Só geometria de topo (2–3 tri
+ * por laje). Segue a polilinha `path` com meia largura `w`; `pula(x, z)` = onde não pôr (clareira, pátio).
+ */
+export function lajesCaminho(c: Cena, path: readonly (readonly [number, number])[], w: number, seed: number, lod: number, pula: (x: number, z: number) => boolean = () => false) {
+  const LAJE_A: RGB = [0.66, 0.62, 0.86], LAJE_B: RGB = [0.56, 0.52, 0.78], LAJE_C: RGB = [0.74, 0.7, 0.92]
+  let fiada = 0
+  for (let k = 0; k < path.length - 1; k++) {
+    const [ax, az] = path[k], [bx, bz] = path[k + 1]
+    const L = Math.hypot(bx - ax, bz - az)
+    if (L < 0.5) continue
+    const dx = (bx - ax) / L, dz = (bz - az) / L, nx = dz, nz = -dx
+    let t = 0
+    while (t < L) {
+      const prof = 0.9 + rnd(seed, fiada, 1) * 0.35
+      const n = lod ? 2 : 3 + (rnd(seed, fiada, 2) < 0.45 ? 1 : 0)
+      // larguras da fiada (somam 2w), desencontradas das da fiada anterior
+      const pes: number[] = []
+      for (let i = 0; i < n; i++) pes.push(0.7 + rnd(seed, fiada, i + 3))
+      const soma = pes.reduce((a, b) => a + b, 0)
+      let u = -w
+      for (let i = 0; i < n; i++) {
+        const lw = (pes[i] / soma) * 2 * w
+        const borda = i === 0 || i === n - 1
+        if (borda && rnd(seed, fiada, i + 9) < 0.18) { u += lw; continue } // laje faltando na beira
+        const g0 = 0.07, gu = 0.06 // junta
+        const u0 = u + gu, u1 = u + lw - gu, t0 = t + g0, t1 = t + prof - g0
+        const torto = borda ? (rnd(seed, fiada, i + 12) - 0.5) * 0.25 : 0
+        const P = (uu: number, tt: number): V3 => {
+          const tm = Math.min(L, tt)
+          return [ax + dx * tm + nx * (uu + torto), 0.03, az + dz * tm + nz * (uu + torto)]
+        }
+        const mx = ax + dx * (t + prof / 2) + nx * (u + lw / 2), mz = az + dz * (t + prof / 2) + nz * (u + lw / 2)
+        if (!pula(mx, mz) && t1 <= L + 0.2) {
+          const cor = [LAJE_A, LAJE_B, LAJE_C][Math.floor(rnd(seed, fiada, i + 20) * 3)]
+          const cc = 0.12 // canto cortado
+          const pts = [P(u0 + cc, t0), P(u1, t0), P(u1, t1 - cc), P(u1 - cc, t1), P(u0, t1), P(u0, t0 + cc)]
+          face(c.geo(mx, mz), pts, [cor, cor, mix(cor, [1, 1, 1], 0.1), cor, mul(cor, 0.92), cor], [0, 1, 0])
+        }
+        u += lw
+      }
+      t += prof
+      fiada++
+    }
+  }
+}

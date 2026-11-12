@@ -13,7 +13,7 @@
 
 import { noise, type RGB } from "../kit"
 import { Cena, distPath, ground, river, scatter, type XZ } from "../kit-cena"
-import { mesa, mix, mul, smooth } from "../kit-natureza"
+import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as F from "./tema-floresta"
 import { portal } from "./floresta-1"
@@ -37,6 +37,7 @@ const PEDRA = { x: 40, z: 29, r: 8 }
 export function montar(lod = 0): Cena {
   const c = new Cena("floresta-2", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, desvios: [DESVIO], setores: [4, 5, 6, 7], boss: 7, tZonas: [0.13, 0.33, 0.55], tArena: 0.84 })
+  F.minucia((x, z) => P.dWalk(x, z) < 13) // a minúcia completa só onde o jogador passa perto
   P.reserva(PEDRA.x, PEDRA.z, PEDRA.r + 1)
   // Pedraverde: o lugar do setor 6 (o servidor confere o setor) e o trono do Golem, de frente para quem chega
   c.ponto("pedraverde", PEDRA.x - 1.5, PEDRA.z - 2.5, 0)
@@ -50,7 +51,7 @@ export function montar(lod = 0): Cena {
   const cliffs: { inside: (x: number, z: number, k?: number) => boolean }[] = []
   aoLongoDaBorda(14, 6, (x, z, _a, k) => {
     if (P.dWalk(x, z) < 9 || dRio(x, z) < RIACHO_W / 2 + 4) return
-    if (k % 3 === 1) cliffs.push(mesa(c.geo(x, z), { x, z, rx: 7 + noise(x, 1, z) * 4, rz: 6 + noise(z, 2, x) * 4, h: 7 + noise(x * 0.3, 3, z * 0.3) * 9, strata: F.ROCHA, seed: k + 40, lod, grass: F.MUSGO }))
+    if (k % 3 === 1) cliffs.push(F.paredao(c, x, z, 7 + noise(x, 1, z) * 4, 6 + noise(z, 2, x) * 4, 7 + noise(x * 0.3, 3, z * 0.3) * 9, k + 40, lod))
     else F.arvoreLua(c, x, z, 18 + noise(x * 0.2, 4, z * 0.2) * 8, k * 5.1 + 3, lod)
   })
   F.fundoFloresta(c, 8)
@@ -85,11 +86,11 @@ export function montar(lod = 0): Cena {
   trono(c, golem.x, golem.z, Math.atan2(DESVIO[1][0] - golem.x, DESVIO[1][1] - golem.z), lod)
 
   // ── vegetação (igual à cena 1, outra semente; cogumelos acesos nas clareiras) ──
-  scatter(-H + 8, -H + 8, H - 8, H - 8, 9, 12, (x, z, r) => {
+  scatter(-H + 8, -H + 8, H - 8, H - 8, 12.5, 12, (x, z, r) => {
     if (!ok(x, z, 2.5) || grove(x, z) < 0.45) return
     F.arvoreLua(c, x, z, 14 + r(1) * 8, r(2) * 99, lod, r(3) < 0.7 ? F.COPA : F.COPA2)
   })
-  scatter(-H + 6, -H + 6, H - 6, H - 6, 6, 22, (x, z, r) => {
+  scatter(-H + 6, -H + 6, H - 6, H - 6, 9, 22, (x, z, r) => {
     const gv = grove(x, z)
     if (!ok(x, z, 1) || gv < 0.3 || gv > 0.5 || r(1) < 0.35) return
     F.arvoreMedia(c, x, z, 5.5 + r(2) * 2.5, r(3) * 99, lod)

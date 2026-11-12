@@ -18,6 +18,7 @@ import { blob, face, mesa, mix, mul, smooth, tube } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import { castelo, type CasteloEstilo } from "../castelo"
 import * as F from "./tema-floresta"
+import * as LP from "../pecas/floresta-lua"
 import { portal } from "./floresta-1"
 
 export const meta = {
@@ -49,6 +50,7 @@ export const NOCTIS: CasteloEstilo = {
 export function montar(lod = 0): Cena {
   const c = new Cena("floresta-3", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.26], castelo: { w: 50, d: 40, patio: 18 } })
+  F.minucia((x, z) => P.dWalk(x, z) < 13) // a minúcia completa só onde o jogador passa perto
   const K = P.castelo!
   portal(c, CAMINHO[0], CAMINHO[1], lod, true)
 
@@ -60,7 +62,7 @@ export function montar(lod = 0): Cena {
   const cliffs: { inside: (x: number, z: number, k?: number) => boolean }[] = []
   aoLongoDaBorda(14, 6, (x, z, _a, k) => {
     if (P.dWalk(x, z) < 9 || (Math.abs(x - K.x) < K.w / 2 + 4 && Math.abs(z - K.z) < K.d / 2 + 4)) return
-    if (k % 3 === 2) cliffs.push(mesa(c.geo(x, z), { x, z, rx: 7 + noise(x, 1, z) * 4, rz: 6 + noise(z, 2, x) * 4, h: 8 + noise(x * 0.3, 3, z * 0.3) * 9, strata: F.ROCHA, seed: k + 80, lod, grass: F.MUSGO }))
+    if (k % 3 === 2) cliffs.push(F.paredao(c, x, z, 7 + noise(x, 1, z) * 4, 6 + noise(z, 2, x) * 4, 8 + noise(x * 0.3, 3, z * 0.3) * 9, k + 80, lod))
     else F.arvoreLua(c, x, z, 18 + noise(x * 0.2, 4, z * 0.2) * 8, k * 3.3 + 9, lod, F.COPA2)
   })
   F.fundoFloresta(c, 13)
@@ -75,7 +77,8 @@ export function montar(lod = 0): Cena {
     // caminho de LAJES violeta: lajes de 1,6 m com junta escura
     const j = Math.min(Math.abs(((x * 0.62 + z * 0.1) % 1.6 + 1.6) % 1.6 - 0.8), Math.abs(((z * 0.62 - x * 0.1) % 1.6 + 1.6) % 1.6 - 0.8))
     const laje = mix(F.LAJE_ESC, mix(F.LAJE, [0.62, 0.58, 0.8], noise(Math.floor(x / 1.6), 1, Math.floor(z / 1.6)) * 0.5), smooth(0.02, 0.1, j))
-    col = trilha(col, x, z, P, laje, 2.3, F.GRAMA_ESC)
+    col = trilha(col, x, z, P, mix(F.LAJE_ESC, F.GRAMA_ESC, 0.35), 2.5, F.GRAMA_ESC) // junta escura sob as lajes soltas
+    void laje
     return mul(col, 0.94 + 0.12 * noise(x * 0.8, 2.2, z * 0.8))
   }
   ground(c, { x0: -H, z0: -H, x1: H, z1: H, step: lod ? 4 : 2, color })
@@ -83,13 +86,13 @@ export function montar(lod = 0): Cena {
 
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !cliffIn(x, z)
   // árvores colossais com lanternas de cristal nos galhos (as perto do caminho)
-  scatter(-H + 8, -H + 8, H - 8, H - 8, 9, 13, (x, z, r) => {
+  scatter(-H + 8, -H + 8, H - 8, H - 8, 11, 13, (x, z, r) => {
     if (!ok(x, z, 2.5) || grove(x, z) < 0.44) return
     const h = 14 + r(1) * 8
     F.arvoreLua(c, x, z, h, r(2) * 99, lod, r(3) < 0.5 ? F.COPA : F.COPA2)
     if (!lod && P.dWalk(x, z) < 14) for (let k = 0; k < 2; k++) F.lanterna(c, x + (k ? 2.6 : -2.2), z + (k ? -1.4 : 1.8), h * 0.42 - k * 0.8, 0.5, r(4) * 99 + k)
   })
-  scatter(-H + 6, -H + 6, H - 6, H - 6, 6, 23, (x, z, r) => {
+  scatter(-H + 6, -H + 6, H - 6, H - 6, 8, 23, (x, z, r) => {
     const gv = grove(x, z)
     if (!ok(x, z, 1) || gv < 0.3 || gv > 0.5 || r(1) < 0.4) return
     F.arvoreMedia(c, x, z, 5.5 + r(2) * 2.5, r(3) * 99, lod)
@@ -128,6 +131,8 @@ export function montar(lod = 0): Cena {
       if (P.dWalk(x, z) < 2.8 || !ok(x, z, -2) || r(1) > (P.dWalk(x, z) < 5 ? 0.5 : 0.16)) return
       F.capim(c, x, z, 0.35 + r(2) * 0.35, r(3) * 99)
     })
+  // o caminho de LAJES soltas da ref 3 (geometria 3 cm acima: a junta é o chão aparecendo)
+  LP.lajesCaminho(c, CAMINHO, 2.2, 31, lod, (x, z) => P.aberto(x, z) > 0.4)
   return c
 }
 
