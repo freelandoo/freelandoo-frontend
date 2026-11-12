@@ -1,5 +1,11 @@
 // features/meu-mundo/engine/audio — o som do Meu Mundo (áudio S1, 2026-11-11). Ver mixer.ts, bank.ts, cues.ts.
-export { audioBus, audioContext, audioPrefs, audioState, onAudioPrefs, setAudioPrefs, unlockAudio, BUSES } from "./mixer"
+export { audioBus, audioContext, audioPrefs, audioState, onAudioPrefs, onAudioUnlock, setAudioPrefs, unlockAudio, BUSES } from "./mixer"
+export { musicState, playSting, releaseMusic, setMusic } from "./music"
+export type { MusicLayer } from "./music"
+export { ambienceState, releaseAmbience, setAmbience } from "./ambience"
+export { sceneSound } from "./scene-sound"
+export type { SceneSound } from "./scene-sound"
+export * from "./themes"
 export type { AudioPrefs, Bus } from "./mixer"
 export { bankState, hasSample, loadSample, playAny, playSample, preloadSamples } from "./bank"
 export type { PlayOpts, Voice } from "./bank"

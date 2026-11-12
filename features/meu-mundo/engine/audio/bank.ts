@@ -45,6 +45,12 @@ function loadManifest(): Promise<Record<string, Entry>> {
   return manifest
 }
 
+/** Endereço do arquivo de um asset (para tocar em fluxo, como a música). null = não aprovado. */
+export async function assetUrl(asset: string): Promise<string | null> {
+  const e = (await loadManifest())[asset]
+  return e ? BASE + e.arquivo : null
+}
+
 /** Baixa e decodifica (uma vez). null = não existe ou falhou. */
 export function loadSample(asset: string): Promise<AudioBuffer | null> {
   const ok = buffers.get(asset)
@@ -98,7 +104,12 @@ export interface PlayOpts {
   at?: number
   /** Subida de volume no começo (s), para laço não estalar. */
   fadeIn?: number
+  /** Intervalo mínimo (ms) entre dois disparos do mesmo arquivo: dentro dele conta como tocado (sem sintetizador por cima). */
+  minGap?: number
 }
+
+const lastStart = new Map<string, number>()
+const QUIET: Voice = { asset: "", ended: true, stop() {}, setGain() {}, setRate() {} }
 
 /**
  * Toca já se o arquivo estiver pronto; senão começa a baixar e devolve null (quem chamou toca o
@@ -113,6 +124,11 @@ export function playSample(asset: string, o: PlayOpts = {}): Voice | null {
   }
   const out = audioBus(o.bus ?? "sfx")
   if (!out) return null
+  if (o.minGap) {
+    const now = performance.now()
+    if (now - (lastStart.get(asset) ?? -Infinity) < o.minGap) return QUIET
+    lastStart.set(asset, now)
+  }
   for (let i = voices.length - 1; i >= 0; i--) if (voices[i].ended) voices.splice(i, 1)
   const same = voices.filter((v) => v.asset === asset)
   if (same.length >= MAX_PER_ASSET) same[0].stop(0.03)
@@ -176,6 +192,11 @@ export function playAny(assets: string[], o: PlayOpts = {}): Voice | null {
   for (const a of order) if (buffers.has(a)) return playSample(a, o)
   for (const a of assets) void loadSample(a)
   return null
+}
+
+// medir/depurar no jogo: window.__mmAudio()
+if (typeof window !== "undefined") {
+  ;(window as unknown as { __mmAudio?: () => unknown }).__mmAudio = () => ({ bank: bankState() })
 }
 
 export function bankState() {

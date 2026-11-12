@@ -61,6 +61,7 @@ import { buildProps } from "./props-view"
 import { buildPower } from "./power-view"
 import { RunAudio } from "./audio"
 import { FLAG, type NoturnoNet, type NoturnoSeat, type NoturnoStart, type RiderSample } from "./net"
+import { GAME_MUSIC, sceneSound, noturnoBiomeAmb } from "../../engine/audio"
 
 export interface RunHud {
   phase: "countdown" | "run" | "end"
@@ -276,6 +277,9 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
 
   const run = mp ? new Run(opts.ride, seed, isRide(mp.start.street) ? mp.start.street : "bike", phaseId) : new Run(opts.ride, seed, opts.ride, phaseId)
   const audio = new RunAudio()
+  // áudio S2: a música do noturno e o fundo da fase
+  const musicSnd = sceneSound()
+  musicSnd.set(GAME_MUSIC.noturno, phaseId === "classica" ? null : noturnoBiomeAmb(phaseId))
   audio.resume()
 
   const cam = new FreeCamera("noturno-cam", new Vector3(0, 3.4, -6.5), scene)
@@ -898,6 +902,7 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
     dispose() {
       if (disposed) return
       disposed = true
+      musicSnd.dispose()
       window.removeEventListener("keydown", onKey)
       canvas.removeEventListener("pointerdown", pdTouch)
       window.removeEventListener("pointermove", pm)

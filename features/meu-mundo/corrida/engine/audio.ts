@@ -7,7 +7,7 @@
 // largada = bipes. O contexto nasce no toque que abre a corrida (regra dos
 // navegadores) e morre no dispose.
 
-import { audioBus, audioContext } from "../../engine/audio"
+import { audioBus, audioContext, playSample } from "../../engine/audio"
 
 export class RaceAudio {
   private ctx: AudioContext | null = null
@@ -126,15 +126,21 @@ export class RaceAudio {
   }
 
   boost() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-corrida-boost", { gain: 0.9, minGap: 90 })) return
     this.burst(0.9, 500, 0.8, 0.5, 4)
   }
 
   pickup() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-corrida-pickup", { gain: 0.75, minGap: 90 })) return
     this.beep(880, 0.08, 0.12)
     setTimeout(() => this.beep(1320, 0.1, 0.12), 70)
   }
 
   hit() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-corrida-hit", { gain: 0.9, minGap: 90 })) return
     const now = performance.now()
     if (now - this.lastHit < 160) return
     this.lastHit = now
@@ -142,14 +148,20 @@ export class RaceAudio {
   }
 
   land(hard: boolean) {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-corrida-land", { gain: 0.9, minGap: 90 })) return
     this.burst(hard ? 0.35 : 0.2, 160, 1, hard ? 0.6 : 0.3)
   }
 
   fall() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-corrida-fall", { gain: 0.9, minGap: 90 })) return
     this.burst(1.1, 1200, 2, 0.35, 0.15)
   }
 
   beep(freq: number, dur = 0.14, gain = 0.18) {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-corrida-beep", { gain: 0.7, minGap: 90 })) return
     const ctx = this.ctx
     if (!ctx || !this.master) return
     const t = ctx.currentTime

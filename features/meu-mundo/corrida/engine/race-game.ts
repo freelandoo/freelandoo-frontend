@@ -34,6 +34,7 @@ import { buildTrackView } from "./track-view"
 import { CarFleet, HOVER } from "./car-view"
 import { RaceAudio } from "./audio"
 import type { CorridaNet, CorridaNetStatus, CorridaStart } from "./net"
+import { GAME_MUSIC, sceneSound, corridaTrackAmb } from "../../engine/audio"
 
 export type RaceMode = "race" | "time" | "multi"
 
@@ -212,6 +213,9 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     mobile,
   )
   const audio = new RaceAudio()
+  // áudio S2: a música do corrida e o fundo da fase
+  const musicSnd = sceneSound()
+  musicSnd.set(GAME_MUSIC.corrida, corridaTrackAmb(track.id))
   audio.resume()
 
   const cam = new FreeCamera("corrida-cam", new Vector3(0, 40, -20), scene)
@@ -663,6 +667,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     dispose() {
       if (disposed) return
       disposed = true
+      musicSnd.dispose()
       window.removeEventListener("keydown", kd)
       window.removeEventListener("keyup", ku)
       window.removeEventListener("blur", blur)

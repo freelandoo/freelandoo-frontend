@@ -13,7 +13,7 @@ import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
-import { audioBus, audioContext, unlockAudio } from "../../engine/audio"
+import { audioBus, audioContext, playSample, unlockAudio } from "../../engine/audio"
 
 const RING_S = 0.38
 const POOL = 4
@@ -46,6 +46,8 @@ export function createHitFeedback(scene: Scene, camera: Camera, host: HTMLElemen
     try {
       // contexto do jogo (engine/audio): um só, canal de efeitos
       unlockAudio()
+      // áudio S2: o arquivo aprovado do acerto/nocaute; sem ele, o tic sintetizado abaixo
+      if (playSample(ko ? "jogo-paint-ko" : "jogo-paint-acerto", { gain: 0.8, minGap: 60 })) return
       const audio = audioContext()
       const out = audioBus("sfx")
       if (!audio || !out) return

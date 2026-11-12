@@ -1,7 +1,8 @@
 {
   "_sobre": "Gerado por C:\\Users\\Alex\\ComfyUI-Audio\\gerador\\importar.py (só sons aprovados de ouvido). Não editar à mão. O jogo pede pelo asset (features/meu-mundo/engine/audio/cues.ts). Metadados completos no catalogo.json do gerador.",
   "licencas": {
-    "Stable Audio 3 Small-SFX": "Stability AI Community License (grátis abaixo de US$ 1 mi/ano de receita) + Gemma Terms of Use (text encoder)"
+    "Stable Audio 3 Small-SFX": "Stability AI Community License (grátis abaixo de US$ 1 mi/ano de receita) + Gemma Terms of Use (text encoder)",
+    "ACE-Step 1.5 turbo": "ACE-Step 1.5: MIT (original); repack Comfy-Org: Apache-2.0; text encoders derivados do Qwen3 (Apache-2.0)"
   },
   "assets": {
     "deus-aeryn-grito": {
@@ -1599,7 +1600,211 @@
       "duracao_s": 1.486,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "musica-academia": {
+      "arquivo": "musica/musica-academia.v1.mp3",
+      "duracao_s": 90.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-bairro-raposas": {
+      "arquivo": "musica/musica-bairro-raposas.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-bairro-vampiros": {
+      "arquivo": "musica/musica-bairro-vampiros.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-biblioteca-escola": {
+      "arquivo": "musica/musica-biblioteca-escola.v1.mp3",
+      "duracao_s": 90.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-boxe": {
+      "arquivo": "musica/musica-boxe.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-capitulo": {
+      "arquivo": "musica/musica-capitulo.v2.mp3",
+      "duracao_s": 90.0,
+      "versao": 2,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-casa": {
+      "arquivo": "musica/musica-casa.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-centro-dia": {
+      "arquivo": "musica/musica-centro-dia.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-centro-noite": {
+      "arquivo": "musica/musica-centro-noite.v2.mp3",
+      "duracao_s": 120.0,
+      "versao": 2,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-criolab": {
+      "arquivo": "musica/musica-criolab.v1.mp3",
+      "duracao_s": 90.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-delegacia": {
+      "arquivo": "musica/musica-delegacia.v2.mp3",
+      "duracao_s": 90.0,
+      "versao": 2,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-derrota": {
+      "arquivo": "musica/musica-derrota.v3.mp3",
+      "duracao_s": 5.588,
+      "versao": 3,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-deus-solto": {
+      "arquivo": "musica/musica-deus-solto.v1.mp3",
+      "duracao_s": 90.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-dominio-canion": {
+      "arquivo": "musica/musica-dominio-canion.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-dominio-fabrica": {
+      "arquivo": "musica/musica-dominio-fabrica.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-dominio-floresta": {
+      "arquivo": "musica/musica-dominio-floresta.v2.mp3",
+      "duracao_s": 120.0,
+      "versao": 2,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-dominio-gelo": {
+      "arquivo": "musica/musica-dominio-gelo.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-dominio-orbital": {
+      "arquivo": "musica/musica-dominio-orbital.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-dominio-vulcao": {
+      "arquivo": "musica/musica-dominio-vulcao.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-fim-temporada": {
+      "arquivo": "musica/musica-fim-temporada.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-forja": {
+      "arquivo": "musica/musica-forja.v1.mp3",
+      "duracao_s": 90.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-hall": {
+      "arquivo": "musica/musica-hall.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-igreja": {
+      "arquivo": "musica/musica-igreja.v2.mp3",
+      "duracao_s": 90.0,
+      "versao": 2,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-corrida": {
+      "arquivo": "musica/musica-jogo-corrida.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-gincana": {
+      "arquivo": "musica/musica-jogo-gincana.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-jetpack": {
+      "arquivo": "musica/musica-jogo-jetpack.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-noturno": {
+      "arquivo": "musica/musica-jogo-noturno.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-paint": {
+      "arquivo": "musica/musica-jogo-paint.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-lojas": {
+      "arquivo": "musica/musica-lojas.v1.mp3",
+      "duracao_s": 90.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-luta": {
+      "arquivo": "musica/musica-luta.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-luta-chefe": {
+      "arquivo": "musica/musica-luta-chefe.v1.mp3",
+      "duracao_s": 150.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-rua-perigo": {
+      "arquivo": "musica/musica-rua-perigo.v1.mp3",
+      "duracao_s": 90.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-tema-principal": {
+      "arquivo": "musica/musica-tema-principal.v1.mp3",
+      "duracao_s": 120.0,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-vitoria": {
+      "arquivo": "musica/musica-vitoria.v4.mp3",
+      "duracao_s": 4.341,
+      "versao": 4,
+      "modelo": "ACE-Step 1.5 turbo"
     }
   },
-  "importado_em": "2026-11-11T21:45:47-03:00"
+  "importado_em": "2026-11-11T22:05:29-03:00"
 }

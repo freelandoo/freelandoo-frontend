@@ -76,6 +76,7 @@ import { glitchFrame, grayVeil, introScript, OUTRO_LEAD_S, OUTRO_LOSE_S, OUTRO_W
 import { abilityKit } from "../abilities/registry"
 import { signatureOf } from "../abilities/signatures"
 import { fightSamples } from "./fight-samples"
+import { MUSIC, fightMusic, playSting, sceneSound } from "../../engine/audio"
 import { createHitCounter } from "./hit-counter"
 import { flatFrame, groundArcs, HEAVY_WARN, stateWord } from "./impact-fx"
 import { anton } from "../../ui/hud/fight-plate"
@@ -546,6 +547,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const strike = strikeStyle({ ring, claws, bow, gun, brute, mage, body: opts.body })
   // áudio S1: os arquivos aprovados por cima do sintetizador (sem arquivo = toca o de antes)
   const smp = fightSamples({ sig: sig?.id ?? null, family: sig?.family ?? null, kinds: [opts.setup.kind], boss: fight.boss, ring: !!ring })
+  // áudio S2: a faixa da luta (Boxe, chefe, deus solto ou a luta de sempre), acima da música da cena
+  const musicSnd = sceneSound(fight.boss ? "boss" : "fight")
+  musicSnd.set(fightMusic({ stage: opts.stage, boss: fight.boss, god: opts.setup.god ?? null }))
   const skillColors: SkillPalette = sig
     ? (() => {
         const [, mid, hot, edge, top] = sig.pal.map((c) => Color3.FromHexString(c))
@@ -1465,6 +1469,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           // apresentação 11: a saída espera o poder que encerrou a luta fechar (o clímax não é cortado)
           outro = { win: e.win, wait: OUTRO_LEAD_S, started: false, left: 0 }
           if (!smp.end(e.win)) audio.bell(e.win ? 3 : 1)
+          void playSting(e.win ? MUSIC.win : MUSIC.lose)
           if (e.win) {
             arena.cheer(1)
             vfx.burst(new Vector3(fight.me.x, 1.3, fight.me.z), fxColor)
@@ -2064,6 +2069,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     dispose() {
       if (disposed) return
       disposed = true
+      musicSnd.dispose()
       clearTimeout(readyTimer)
       engine.onContextLostObservable.remove(lost)
       ro.disconnect()

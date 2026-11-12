@@ -42,7 +42,7 @@ import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type Inp
 import type { Box2 } from "./collision"
 import { liveGamesBump } from "./game"
 import { ResolutionGovernor, resolveQuality } from "./quality"
-import { createFootsteps, interiorFloor } from "./audio"
+import { createFootsteps, interiorFloor, interiorSound, sceneSound } from "./audio"
 import type { BodyId, InteriorBed, InteriorDef, InteriorNpc, InteriorSeat, InteriorSpot, Interactable, PlaceUse } from "../types"
 
 export type PlaceMode = "visit" | "patient" | "prisoner"
@@ -137,6 +137,10 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   const { canvas, interior: def } = opts
   // áudio S1: passos de quem joga, pelo piso do cômodo
   const steps = createFootsteps()
+  // áudio S2: a música e o fundo do prédio (prédios do mesmo tipo dividem a faixa)
+  const musicSnd = sceneSound()
+  const zone = interiorSound(def.theme)
+  musicSnd.set(zone?.music ?? null, zone?.amb ?? null)
   const speeds = { walk: MOTION.WALK_SPEED, run: MOTION.RUN_SPEED }
   const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: "default" }, false)
   const unlive = liveGamesBump()
@@ -389,6 +393,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
     },
     dispose() {
       steps.dispose()
+      musicSnd.dispose()
       if (disposed) return
       disposed = true
       engine.stopRenderLoop()

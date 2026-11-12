@@ -63,7 +63,7 @@ import { bodyStride, myHeight, setMyHeight } from "../heights"
 import { setScreenAnchor } from "./screen-anchor"
 import { GainPillar, setGainFx } from "./gain-pillar"
 import { emitBanter } from "../banter"
-import { createFootsteps, interiorFloor } from "./audio"
+import { MUSIC, createFootsteps, interiorFloor, sceneSound } from "./audio"
 
 export interface HouseGameOptions {
   canvas: HTMLCanvasElement
@@ -201,6 +201,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   const def = payload.interior
   // áudio S1: passos de quem joga, pelo piso do cômodo
   const steps = createFootsteps()
+  // áudio S2: a música da casa
+  const musicSnd = sceneSound()
+  musicSnd.set(MUSIC.house)
   const speeds = {
     walk: payload.motion?.walkSpeed ?? MOTION.WALK_SPEED,
     run: payload.motion?.runSpeed ?? MOTION.RUN_SPEED,
@@ -839,6 +842,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       if (disposed) return
       disposed = true
       steps.dispose()
+      musicSnd.dispose()
       const w = window as unknown as { __mmHouse?: typeof probe }
       if (w.__mmHouse === probe) delete w.__mmHouse
       const wb = window as unknown as { __mmBubbles?: typeof bubbles }

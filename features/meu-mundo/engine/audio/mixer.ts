@@ -109,6 +109,14 @@ export function unlockAudio() {
   if (!c) return
   unlocked = true
   if (c.state === "suspended" && !document.hidden) void c.resume().catch(() => {})
+  for (const f of unlockers) f()
+}
+
+const unlockers = new Set<() => void>()
+/** Avisa a cada gesto (a música tenta tocar de novo quando o navegador deixa). */
+export function onAudioUnlock(f: () => void): () => void {
+  unlockers.add(f)
+  return () => unlockers.delete(f)
 }
 
 export function audioPrefs(): AudioPrefs {

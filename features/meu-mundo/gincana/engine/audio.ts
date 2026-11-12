@@ -5,7 +5,7 @@
 // posto = dois sininhos; chegada = fanfarra; contagem = bipes. O contexto nasce
 // no toque que abre o jogo e morre no dispose.
 
-import { audioBus, audioContext } from "../../engine/audio"
+import { audioBus, audioContext, playSample } from "../../engine/audio"
 
 export class GincanaAudio {
   private ctx: AudioContext | null = null
@@ -75,39 +75,55 @@ export class GincanaAudio {
   }
 
   jump() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-gincana-jump", { gain: 0.9, minGap: 90 })) return
     this.tone("sine", 260, 620, 0.18, 0.28)
   }
 
   dive() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-gincana-dive", { gain: 0.9, minGap: 90 })) return
     this.hiss(2400, 500, 0.3, 0.3, "bandpass")
     this.tone("triangle", 420, 180, 0.22, 0.12)
   }
 
   hit() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-gincana-hit", { gain: 0.9, minGap: 90 })) return
     this.tone("sine", 180, 60, 0.25, 0.5)
     this.tone("square", 520, 140, 0.2, 0.08, 0.02)
   }
 
   splash() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-gincana-splash", { gain: 0.9, minGap: 90 })) return
     this.hiss(3200, 200, 0.7, 0.45)
   }
 
   checkpoint() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-gincana-checkpoint", { gain: 0.9, minGap: 90 })) return
     this.tone("sine", 880, 880, 0.18, 0.2)
     this.tone("sine", 1320, 1320, 0.28, 0.2, 0.12)
   }
 
   beep(go: boolean) {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-gincana-beep", { gain: 0.7, minGap: 90 })) return
     this.tone("square", go ? 880 : 440, go ? 880 : 440, go ? 0.45 : 0.18, 0.14)
   }
 
   /** Logo da Freelandoo: brilho subindo (turbo). */
   logo() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-gincana-logo", { gain: 0.9, minGap: 90 })) return
     ;[660, 990, 1320].forEach((f, i) => this.tone("sine", f, f * 1.5, 0.16, 0.18, i * 0.05))
     this.hiss(800, 6000, 0.35, 0.12, "highpass")
   }
 
   finish() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-gincana-finish", { gain: 0.9, minGap: 90 })) return
     ;[523, 659, 784, 1046].forEach((f, i) => this.tone("triangle", f, f, 0.3, 0.22, i * 0.11))
   }
 

@@ -5,7 +5,7 @@
 // filtro mudam, com rampa curta). Por cima: galão, aviso de combustível,
 // pancada da prensa por perto, batida e a contagem. Vem do jetpack antigo.
 
-import { audioBus, audioContext, unlockAudio } from "../../engine/audio"
+import { audioBus, audioContext, playSample, unlockAudio } from "../../engine/audio"
 
 const KEY = "mm:jetpack:sound"
 
@@ -122,6 +122,8 @@ export class JetAudio {
   play(s: Sound) {
     const ctx = this.ctx
     if (!ctx || !this.master || !this.enabled) return
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (playSample(`jogo-jetpack-${s}`, { gain: 0.9, minGap: s === "low" ? 1200 : 90 })) return
     const t = ctx.currentTime
     switch (s) {
       case "can":

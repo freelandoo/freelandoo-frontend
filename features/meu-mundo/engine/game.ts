@@ -60,7 +60,7 @@ import { bodyStride, myHeight, setMyHeight } from "../heights"
 import { setScreenAnchor } from "./screen-anchor"
 import { GainPillar, setGainFx } from "./gain-pillar"
 import { bairroMapModel, centerMapModel, setCityMap } from "./city-map"
-import { createFootsteps } from "./audio"
+import { AMB, MUSIC, createFootsteps, hoodMusic, isNightHour, sceneSound } from "./audio"
 
 let live = 0
 export const liveGames = () => live
@@ -321,6 +321,17 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, opts.parked?.look ?? payload.me.look ?? ""), home.x, home.z, home.rotationY)
   // áudio S1: passos de quem joga (rua e praça)
   const steps = createFootsteps()
+  // áudio S2: a música do lugar (centro de dia/noite; bairro pela classe) e o fundo da praça
+  const sceneSnd = sceneSound()
+  let soundAt = -Infinity
+  const applySceneSound = (now: number) => {
+    if (now - soundAt < 20_000) return
+    soundAt = now
+    const night = isNightHour(brasiliaHour())
+    if (centerP) sceneSnd.set(night ? MUSIC.centerNight : MUSIC.centerDay, night ? AMB.squareNight : AMB.squareDay)
+    else sceneSnd.set(hoodMusic(nb?.clan), night ? AMB.squareNight : AMB.squareDay)
+  }
+  applySceneSound(performance.now())
   // Lore v2 F4: os NPCs da praça — corpo de classe, parados (a colisão vem na
   // lista de obstáculos do servidor); "Falar" abre a conversa (talk:<id>).
   // Lore v2 C1: no bairro, o vizinho da praça e a placa do pedestal vazio (o servidor
@@ -798,6 +809,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     if (driving && veh && drivingKind !== "car") placeRider(fleet, local.char, String(driving), drivingKind, pose.x, pose.z, pose.facing, pose.sp, dt)
     for (const c of streetNpcs) c.animate(dt, 0, 0)
     applyNpcHours(now)
+    applySceneSound(now)
     for (const r of remotes.values()) {
       const rk = r.car ? kindOfId(r.car) : null
       const vp = rk ? fleet.poseOf(String(r.car)) : null
@@ -1103,6 +1115,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       for (const c of streetNpcs) c.dispose()
       local.dispose()
       steps.dispose()
+      sceneSnd.dispose()
       fleet.dispose()
       lib.dispose()
       world.dispose()

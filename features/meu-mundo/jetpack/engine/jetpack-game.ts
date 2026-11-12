@@ -46,6 +46,7 @@ import { createJetVfx } from "./jet-vfx"
 import { buildBoundary } from "./boundary-view"
 import { CANYON_DIR, loadCanyonAssets, loadFactoryAssets, loadPieceGroups, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
+import { GAME_MUSIC, sceneSound, jetpackPhaseAmb } from "../../engine/audio"
 
 export interface JetHud {
   phase: "countdown" | "run" | "end"
@@ -371,6 +372,9 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const myK = mp ? (mp.start.seats.find((q) => q.slot === mp.start.me)?.k ?? 1) : 1
   const flight = new Flight(seed, myK, level)
   const audio = new JetAudio()
+  // áudio S2: a música do jetpack e o fundo da fase
+  const musicSnd = sceneSound()
+  musicSnd.set(GAME_MUSIC.jetpack, jetpackPhaseAmb(level))
 
   const cam = new FreeCamera("jt-cam", new Vector3(0, 5, -6), scene)
   cam.inputs.clear()
@@ -857,6 +861,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
     dispose() {
       if (disposed) return
       disposed = true
+      musicSnd.dispose()
       window.removeEventListener("keydown", onDown)
       window.removeEventListener("keyup", onUp)
       canvas.removeEventListener("pointerdown", onPd)

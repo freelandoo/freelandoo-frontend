@@ -50,6 +50,7 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { createVfx, VFX_COLORS, type VfxColor } from "../../engine/vfx"
+import { GAME_MUSIC, sceneSound, paintMapAmb } from "../../engine/audio"
 
 /** O que a interface mostra (atualizado ~10×/s e a cada acontecimento). */
 export interface PaintHud {
@@ -172,6 +173,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
 
   const state = port.state
   const map = state.map
+  // áudio S2: a música do paint e o fundo da fase
+  const musicSnd = sceneSound()
+  musicSnd.set(GAME_MUSIC.paint, paintMapAmb(map.id))
   // Câmera colide com a PEDRA DESENHADA (mais funda que a colisão do corpo),
   // senão ela entra embaixo das ilhas; a tinta entra por cima.
   // mm3d-76: ilha de forma (mapas novos) = o prisma dela, mais fundo
@@ -936,6 +940,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     dispose() {
       if (disposed) return
       disposed = true
+      musicSnd.dispose()
       engine.stopRenderLoop()
       detachInput()
       reticle?.dispose()

@@ -36,6 +36,7 @@ import { GincanaRace } from "../sim/race"
 import { CourseView } from "./course-view"
 import { GincanaAudio } from "./audio"
 import type { GincanaNet, GincanaSeat, GincanaStart, RunnerSample } from "./net"
+import { GAME_MUSIC, sceneSound } from "../../engine/audio"
 
 /** Uma linha do placar ao vivo. */
 export interface BoardRow {
@@ -215,6 +216,9 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   }
 
   const audio = new GincanaAudio()
+  // áudio S2: a música do gincana e o fundo da fase
+  const musicSnd = sceneSound()
+  musicSnd.set(GAME_MUSIC.gincana, null)
 
   // logos da Freelandoo (mm3d-47b): turbo com brilho; aura dourada em quem pegou
   const logos = buildLogos(scene, LOGOS.map((L, id) => ({ id, at: new Vector3(L.x, L.y, L.z) })), low, 0.55)
@@ -636,6 +640,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     dispose() {
       if (disposed) return
       disposed = true
+      musicSnd.dispose()
       engine.stopRenderLoop()
       window.removeEventListener("keydown", kd)
       window.removeEventListener("keyup", ku)

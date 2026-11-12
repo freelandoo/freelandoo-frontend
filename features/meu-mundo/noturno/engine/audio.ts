@@ -5,7 +5,7 @@
 // pulo/rampa = sopro; pouso = baque; tropeço e batida = estalo. O contexto
 // nasce no toque que abre o jogo e morre no dispose.
 
-import { audioBus, audioContext } from "../../engine/audio"
+import { audioBus, audioContext, playSample } from "../../engine/audio"
 
 export class RunAudio {
   private ctx: AudioContext | null = null
@@ -105,6 +105,8 @@ export class RunAudio {
 
   /** Moeda: em sequência rápida o tom sobe (até uma oitava). */
   coin() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-coin", { gain: 0.7, minGap: 90 })) return
     const now = performance.now()
     this.streak = now - this.lastCoin < 450 ? Math.min(12, this.streak + 1) : 0
     this.lastCoin = now
@@ -115,24 +117,34 @@ export class RunAudio {
 
   /** Bipe da contagem. */
   beep(freq: number) {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-beep", { gain: 0.7, minGap: 90 })) return
     this.tone(freq, 0.15, 0.12, "square")
   }
 
   jump() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-jump", { gain: 0.9, minGap: 90 })) return
     this.burst(0.25, 700, 0.9, 0.22, 2.2)
   }
 
   launch() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-launch", { gain: 0.9, minGap: 90 })) return
     this.burst(0.6, 400, 0.8, 0.35, 4)
     this.tone(330, 0.35, 0.05, "triangle", 660)
   }
 
   land(hard: boolean) {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-land", { gain: 0.9, minGap: 90 })) return
     this.burst(hard ? 0.32 : 0.18, 150, 1, hard ? 0.55 : 0.3)
   }
 
   /** Manobra fechada no ar (o mortal sobe um tom). */
   trick(flip: boolean) {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-trick", { gain: 0.9, minGap: 90 })) return
     const k = flip ? 1.26 : 1
     this.tone(660 * k, 0.1, 0.07, "square")
     setTimeout(() => this.tone(880 * k, 0.1, 0.07, "square"), 90)
@@ -140,32 +152,44 @@ export class RunAudio {
   }
 
   lane() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-lane", { gain: 0.6, minGap: 90 })) return
     this.burst(0.09, 1800, 2, 0.05)
   }
 
   stumble() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-stumble", { gain: 0.9, minGap: 90 })) return
     this.burst(0.22, 700, 1.4, 0.45)
     this.tone(160, 0.2, 0.12, "sawtooth", 90)
   }
 
   /** Logo da Freelandoo (mm3d-42): acorde de potência subindo + chiado (o "vulcan" do jetpack). */
   power() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-power", { gain: 0.9, minGap: 90 })) return
     ;[392, 523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.tone(f, 0.16, 0.06, "sawtooth"), i * 55))
     this.burst(0.5, 600, 0.8, 0.3, 6)
   }
 
   /** O poder acabou. */
   powerEnd() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-powerEnd", { gain: 0.9, minGap: 90 })) return
     this.tone(660, 0.14, 0.08, "triangle", 440)
   }
 
   /** Obstáculo explodido: estouro de ruído descendo + pancada grave (o "smash" do jetpack). */
   smash() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-smash", { gain: 0.9, minGap: 90 })) return
     this.burst(0.35, 5000, 0.7, 0.55, 0.08)
     this.tone(140, 0.25, 0.16, "square", 90)
   }
 
   crash() {
+    // áudio S2: o arquivo aprovado (C:\Users\Alex\ComfyUI-Audio); sem ele, o sintetizador abaixo
+    if (!this.muted && playSample("jogo-noturno-crash", { gain: 0.9, minGap: 90 })) return
     this.burst(0.9, 900, 0.7, 0.7, 0.2)
     this.tone(120, 0.6, 0.2, "sawtooth", 40)
   }
