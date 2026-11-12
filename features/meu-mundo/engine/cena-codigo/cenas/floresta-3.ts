@@ -2,8 +2,8 @@
 // sono + castelo de Noctis". Refs: ref/dominios/floresta-3.png e castelo-noctis.png.
 // Marcos: o CASTELO DA LUA SOMBRIA no fim (visível desde a entrada, com a lua crescente no topo),
 // o caminho de lajes violeta, as lanternas de cristal penduradas nas árvores e a névoa baixa.
-// Castelo: muralha azul-noite com ameias, torres de telhado cônico azul, janelas violeta acesas,
-// bandeiras com a lua, menagem com o crescente de prata e a travessia acesa no fundo do pátio.
+// Castelo: a cópia minuciosa de ref/dominios/castelo-noctis.png (pecas/castelo-noctis.ts), com a travessia
+// acesa no fundo do pátio.
 // Mapa (1 letra = 16 m): S entrada, 8 clareira, G guardião, K castelo (pátio = salão do deus)
 //   R T K K K K K T T R
 //   T . K K K K K . . T
@@ -12,11 +12,11 @@
 //   R . 8 . | . . . . R
 //   T S . . . . . . . T
 
-import { noise, type RGB, type V3 } from "../kit"
+import { noise, type RGB } from "../kit"
 import { Cena, ground, scatter, type XZ } from "../kit-cena"
-import { blob, face, mesa, mix, mul, smooth, tube } from "../kit-natureza"
+import { blob, mesa, mix, mul, smooth, tube } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
-import { castelo, type CasteloEstilo } from "../castelo"
+import { casteloNoctis } from "../pecas/castelo-noctis"
 import * as F from "./tema-floresta"
 import * as LP from "../pecas/floresta-lua"
 import { portal } from "./floresta-1"
@@ -33,31 +33,16 @@ export const meta = {
 
 const CAMINHO: XZ[] = [[-50, -73], [-48, -50], [-22, -42], [8, -48], [36, -36], [42, -14], [20, -2], [0, 6], [0, 24], [0, 44], [0, 56]]
 
-export const NOCTIS: CasteloEstilo = {
-  pedra: [0.24, 0.26, 0.5],
-  pedraEsc: [0.14, 0.15, 0.32],
-  quina: [0.72, 0.74, 0.9],
-  telhado: [0.14, 0.17, 0.44],
-  telhadoHi: [0.26, 0.31, 0.62],
-  luz: [0.82, 0.72, 1],
-  metal: [0.78, 0.8, 0.92],
-  bandeira: [0.12, 0.13, 0.36],
-  cobertura: "cone",
-  lados: 6,
-  alto: 1.1,
-}
-
 export function montar(lod = 0): Cena {
   const c = new Cena("floresta-3", lod, 32, -16)
-  const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.26], castelo: { w: 50, d: 40, patio: 18 } })
+  const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.26], castelo: { w: 64, d: 40, patio: 18 } })
   F.minucia((x, z) => P.dWalk(x, z) < 13) // a minúcia completa só onde o jogador passa perto
   const K = P.castelo!
   portal(c, CAMINHO[0], CAMINHO[1], lod, true)
 
-  // ── o castelo de Noctis + a lua crescente no topo da menagem ──
-  const A = castelo(c, K, NOCTIS, lod)
-  crescente(c, A.menagem, 5.5, lod)
-  for (const t of A.torres) if (!lod) lancaPrata(c, t)
+  // ── o CASTELO DA LUA copiado (pecas/castelo-noctis.ts: torre da lua com o halo e o crescente de prata, torres-
+  // lanterna, ponte em arco, morro de rocha); pegada de 64 m com o morro ──
+  casteloNoctis(c, K, lod)
 
   const cliffs: { inside: (x: number, z: number, k?: number) => boolean }[] = []
   aoLongoDaBorda(14, 6, (x, z, _a, k) => {
@@ -134,29 +119,4 @@ export function montar(lod = 0): Cena {
   // o caminho de LAJES soltas da ref 3 (geometria 3 cm acima: a junta é o chão aparecendo)
   LP.lajesCaminho(c, CAMINHO, 2.2, 31, lod, (x, z) => P.aberto(x, z) > 0.4)
   return c
-}
-
-/** A lua crescente de prata no topo da menagem (aro claro + miolo aceso). */
-function crescente(c: Cena, base: V3, r: number, lod: number) {
-  const [x, y0, z] = base
-  const g = c.geo(x, z)
-  const G = c.glow(x, z)
-  tube(g, [x, y0, z], [x, y0 + 4, z], 0.35, 0.2, 5, () => NOCTIS.metal, false)
-  const cy = y0 + 4 + r
-  const n = lod ? 8 : 14
-  for (let k = 0; k < n; k++) {
-    const a0 = -Math.PI * 0.7 + (k / n) * Math.PI * 1.4, a1 = -Math.PI * 0.7 + ((k + 1) / n) * Math.PI * 1.4
-    const out = (a: number, rr: number): V3 => [x + Math.sin(a) * rr, cy + Math.cos(a) * rr, z]
-    const inn = (a: number) => { const w = 0.55 * Math.cos(a * 0.7); return out(a, r * (0.62 + 0.38 * (1 - w))) }
-    for (const s of [-0.12, 0.12]) {
-      const sh = (p: V3): V3 => [p[0], p[1], p[2] + s]
-      face(g, [sh(out(a0, r * 1.06)), sh(out(a1, r * 1.06)), sh(out(a1, r)), sh(out(a0, r))], NOCTIS.metal, [0, 0, Math.sign(s)])
-    }
-    face(G, [out(a0, r), out(a1, r), inn(a1), inn(a0)], [0.9, 0.86, 1], [0, 0, -1])
-  }
-}
-
-/** Ponta de prata no alto de cada torre (só perto). */
-function lancaPrata(c: Cena, t: V3) {
-  tube(c.geo(t[0], t[2]), [t[0], t[1] + 6, t[2]], [t[0], t[1] + 9.5, t[2]], 0.14, 0.02, 4, () => NOCTIS.metal, true)
 }
