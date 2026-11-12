@@ -9,8 +9,10 @@ import { caixa } from "../kit-cidade"
 import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta } from "../dominio"
 import * as F from "./tema-fabrica"
+import * as P2 from "../pecas/fabrica"
 
 export const meta = {
+  triBloco: F.TRI_BLOCO,
   ceu: F.CEU_TARDE,
   nevoa: F.NEVOA_TARDE,
   area: AREA,
@@ -31,7 +33,7 @@ export function montar(lod = 0): Cena {
     if (P.dWalk(x, z) < 14) return
     F.galpao(c, x, z, 16, 12, 10 + (k % 3) * 3, a, 900 + k, lod, k % 2 === 0)
   })
-  F.ruaDeGalpoes(c, P.at, P.livre, lod, 11)
+  F.ruaDeGalpoes(c, P.at, P.livre, lod, 11, 0.05, 3.2) // afastada: a esteira e as garras ficam entre a parede e o caminho
   F.fundoFabrica(c, 3)
 
   const color = (x: number, z: number): RGB => {
@@ -51,16 +53,65 @@ export function montar(lod = 0): Cena {
 
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !blocked(c, x, z, pad + 0.6)
   F.faixasCaminho(c, CAMINHO)
-  // esteiras com caixotes paralelas ao caminho
-  for (let t = 0.08; t < 0.95; t += 0.11) {
-    const p = P.at(t)
-    const s = Math.round(t * 20) % 2 ? 1 : -1
-    const x = p.x + p.dz * 4.6 * s, z = p.z - p.dx * 4.6 * s
-    if (F.cabe(P.livre, x, z, 1.8, 8, Math.atan2(p.dx, p.dz)) && !blocked(c, x, z, 4.5)) F.esteira(c, x, z, 8, Math.atan2(p.dx, p.dz), t * 50, lod)
-  }
-  // barris e pilhas de caixotes perto do caminho; engrenagens caídas
+  // o CORREDOR da ref 1: no lado da esteira (troca a cada trecho), esteiras de 11 m a 5 m do eixo com a garra
+  // presa numa coluna atrás; do outro lado, postes-lanterna a 3,8 m, grupos de barris acesos e caixotes,
+  // e o tanque-caldeira de vez em quando
+  let ultEst = -99, ultTanque = -99, nEst = 0
+  F.aoLongoDoCaminho(CAMINHO, 1, (x, z, dx, dz, dist, trecho) => {
+    const sE = trecho % 2 ? 1 : -1
+    const nx = dz, nz = -dx // normal (lado +1)
+    const ang = Math.atan2(dx, dz)
+    // esteira (centro 6 m à frente, para caber inteira no trecho)
+    if (dist - ultEst > 14) {
+      const L = 11
+      const ex = x + dx * 6 + nx * 5.2 * sE, ez = z + dz * 6 + nz * 5.2 * sE
+      // a borda inteira tem que ficar fora do caminho (nas curvas o trecho seguinte passa perto da ponta)
+      let bordaOk = true
+      for (let t = -L / 2 - 0.4; t <= L / 2 + 0.4 && bordaOk; t += 1)
+        for (const w of [-1.2, 1.2]) if (!P.livre(ex + dx * t + nx * w, ez + dz * t + nz * w, 0.5)) bordaOk = false
+      if (bordaOk && F.cabe(P.livre, ex, ez, 2.2, L + 0.6, ang) && !blocked(c, ex, ez, 1.4) && !blocked(c, ex + dx * 5, ez + dz * 5, 1) && !blocked(c, ex - dx * 5, ez - dz * 5, 1)) {
+        F.esteira(c, ex, ez, L, ang, dist, lod)
+        ultEst = dist
+        nEst++
+        // a garra: coluna a 7,8 m, viga para o caminho até em cima da esteira
+        const gx = ex + dx * 1.5 + nx * 2.2 * sE, gz = ez + dz * 1.5 + nz * 2.2 * sE
+        if (nEst % 2 === 1 && ok(gx, gz, 0.3)) P2.garra(c, gx, gz, Math.atan2(-nx * sE, -nz * sE), 2.3, 5.4, 2.3, lod)
+      }
+    }
+    const sO = -sE
+    if (Math.round(dist) % 6 === 0) {
+      const px = x + nx * 3.8 * sO, pz = z + nz * 3.8 * sO
+      if (ok(px, pz, -0.2)) P2.posteLanterna(c, px, pz, 2.3, lod)
+    }
+    if (Math.round(dist) % 11 === 3) {
+      const bx = x + nx * 5.4 * sO, bz = z + nz * 5.4 * sO
+      for (let q = 0; q < 3; q++) {
+        const qx = bx + dx * (q - 1) * 1.15 + nx * sO * (q % 2) * 0.9, qz = bz + dz * (q - 1) * 1.15 + nz * sO * (q % 2) * 0.9
+        if (ok(qx, qz, 0)) F.barril(c, qx, qz, 0.9 + (q % 2) * 0.12, lod)
+      }
+    }
+    if (Math.round(dist) % 13 === 8) {
+      const kx = x + nx * 5.6 * sO, kz = z + nz * 5.6 * sO
+      if (ok(kx, kz, 0.4)) {
+        F.caixote(c, kx, kz, 1.25, ang)
+        F.caixote(c, kx, kz, 1, ang + 0.35, 1.25, false)
+      }
+    }
+    if (dist - ultTanque > 34) {
+      const tx = x + nx * 8.6 * sO, tz = z + nz * 8.6 * sO
+      if (ok(tx, tz, 2.2)) {
+        P2.tanqueCaldeira(c, tx, tz, 2, lod)
+        ultTanque = dist
+      }
+    }
+  })
+  // engrenagens de bronze caídas e mais barris/caixotes soltos (pouco: o corredor já tem a carga)
   scatter(-H + 4, -H + 4, H - 4, H - 4, 4, 31, (x, z, r) => {
-    if (!ok(x, z, 0.3) || r(1) > (P.dWalk(x, z) < 7 ? 0.45 : 0.1)) return
+    if (!ok(x, z, 0.3) || r(1) > (P.dWalk(x, z) < 7 ? 0.12 : 0.06)) return
+    if (r(6) < 0.25) {
+      P2.engrenagemDeitada(c, x, z, 0.5 + r(7) * 0.3, r(8) * 6, lod, 0.2 + r(9))
+      return
+    }
     if (r(2) < 0.5) F.barril(c, x, z, 0.9 + r(3) * 0.3, lod)
     else {
       F.caixote(c, x, z, 1.2, r(4) * 3)

@@ -8,8 +8,10 @@ import { caixa } from "../kit-cidade"
 import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta } from "../dominio"
 import * as F from "./tema-fabrica"
+import * as P2 from "../pecas/fabrica"
 
 export const meta = {
+  triBloco: F.TRI_BLOCO,
   ceu: [0.5, 0.7, 0.94] as RGB,
   nevoa: [0.74, 0.78, 0.86] as RGB,
   area: AREA,
@@ -30,7 +32,7 @@ export function montar(lod = 0): Cena {
     // engrenagem gigante na fachada de um galpão sim, outro não
     if (k % 2 === 0) F.engrenagem(c, x + Math.sin(a) * 6.4, 7.5 + (k % 3), z + Math.cos(a) * 6.4, 4.5 + (k % 3), a, lod)
   })
-  F.ruaDeGalpoes(c, P.at, P.livre, lod, 21, 0.055)
+  F.ruaDeGalpoes(c, P.at, P.livre, lod, 21, 0.055, 4.2) // afastada: as fornalhas e as engrenagens ficam entre a parede e o caminho
   F.fundoFabrica(c, 7)
 
   const color = (x: number, z: number): RGB => {
@@ -48,30 +50,54 @@ export function montar(lod = 0): Cena {
 
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !blocked(c, x, z, pad + 0.6)
   F.faixasCaminho(c, CAMINHO)
-  // passarelas de ferro no alto atravessando o caminho (pilares fora dele)
+  // passarelas copiadas (guarda-corpo dourado, lampiões, treliça) atravessando o caminho no alto
   for (let t = 0.1; t < 0.95; t += 0.14) {
     const p = P.at(t)
     const sx = p.dz, sz = -p.dx
-    const g = c.geo(p.x, p.z)
-    caixa(g, { x: p.x, z: p.z, y0: 7, y1: 7.6, w: 18, d: 2.4, rot: -Math.atan2(sx, sz) + Math.PI / 2, side: F.FERRO, top: F.CHAPA_ESC })
-    caixa(g, { x: p.x, z: p.z, y0: 7.6, y1: 8.6, w: 18, d: 0.15, rot: -Math.atan2(sx, sz) + Math.PI / 2, side: F.BRONZE, top: F.BRONZE })
-    for (const s of [-1, 1]) {
-      const x = p.x + sx * 8.5 * s, z = p.z + sz * 8.5 * s
-      if (blocked(c, x, z, 0.1)) continue
-      caixa(c.geo(x, z), { x, z, y0: 0, y1: 7, w: 0.7, d: 0.7, side: F.FERRO, top: F.FERRO })
-      c.block(x, z, 0.4, 0.4, 7)
+    const a: [number, number] = [p.x + sx * 9, p.z + sz * 9], b: [number, number] = [p.x - sx * 9, p.z - sz * 9]
+    const pil = !blocked(c, a[0], a[1], 0.4) && !blocked(c, b[0], b[1], 0.4) && P.livre(a[0], a[1], 0.2) && P.livre(b[0], b[1], 0.2)
+    P2.passarela(c, a, b, 8, lod, pil)
+  }
+  // lampiões em caixote dos dois lados do caminho (a fila da ref 2) e barris de madeira
+  F.aoLongoDoCaminho(CAMINHO, 1, (x, z, dx, dz, dist) => {
+    const nx = dz, nz = -dx
+    if (Math.round(dist) % 7 === 0)
+      for (const s of [-1, 1]) {
+        const lx = x + nx * 3.9 * s, lz = z + nz * 3.9 * s
+        if (ok(lx, lz, -0.1)) P2.lampiaoCaixote(c, lx, lz, lod)
+      }
+    if (Math.round(dist) % 12 === 5) {
+      const s = Math.round(dist / 12) % 2 ? 1 : -1
+      const bx = x + nx * 5.6 * s, bz = z + nz * 5.6 * s
+      if (ok(bx, bz, 0.2)) P2.barrilMadeira(c, bx, bz, 1.1, lod)
+      if (ok(bx + dx * 1.1, bz + dz * 1.1, 0.2)) F.caixote(c, bx + dx * 1.1, bz + dz * 1.1, 1.1, Math.atan2(dx, dz))
     }
-  }
-  // fornos acesos na beira do caminho
-  for (let t = 0.06; t < 0.96; t += 0.09) {
-    const p = P.at(t)
-    const s = Math.round(t * 30) % 2 ? 1 : -1
-    const x = p.x + p.dz * 6 * s, z = p.z - p.dx * 6 * s
-    const ang = Math.atan2(p.x - x, p.z - z)
-    if (F.cabe(P.livre, x, z, 3.4, 3, ang) && !blocked(c, x, z, 2.2)) F.forno(c, x, z, 1.6, ang, lod)
-  }
+  })
+  // FORNALHAS copiadas na beira (frente para o caminho, a 6,6 m) e, atrás de uma a cada duas, a ENGRENAGEM
+  // gigante em pé encostada na parede (a ref 2: o salão das engrenagens)
+  let ultF = -99, nF = 0
+  F.aoLongoDoCaminho(CAMINHO, 1, (x, z, dx, dz, dist, trecho) => {
+    if (dist - ultF < 11) return
+    const s = trecho % 2 ? 1 : -1
+    const nx = dz, nz = -dx
+    const fx = x + nx * 6.6 * s, fz = z + nz * 6.6 * s
+    const ang = Math.atan2(-nx * s, -nz * s)
+    // a pegada (4,6 × 5,2 m, com a torre de trás) inteira fora do caminho e livre
+    let livre = true
+    for (const du of [-2.4, 0, 2.4]) for (const dv of [-0.6, 2, 4.6]) if (!P.livre(fx + dx * du + nx * s * dv, fz + dz * du + nz * s * dv, 0.4)) livre = false
+    if (!livre || blocked(c, fx, fz, 2.4) || blocked(c, fx + nx * s * 3.4, fz + nz * s * 3.4, 1.4)) return
+    F.forno(c, fx, fz, 1.6, ang, lod)
+    ultF = dist
+    if (nF++ % 2 === 0) {
+      const gx = fx + nx * s * 6.2 + dx * 1.2, gz = fz + nz * s * 6.2 + dz * 1.2
+      if (P.livre(gx, gz, 0.5)) {
+        F.engrenagem(c, gx, 4.8, gz, 4.4, ang, lod, 0.8)
+        c.block(gx, gz, 0.6, 0.6, 9.4)
+      }
+    }
+  })
   scatter(-H + 4, -H + 4, H - 4, H - 4, 4, 32, (x, z, r) => {
-    if (!ok(x, z, 0.3) || r(1) > (P.dWalk(x, z) < 7 ? 0.45 : 0.1)) return
+    if (!ok(x, z, 0.3) || r(1) > (P.dWalk(x, z) < 7 ? 0.15 : 0.08)) return
     if (r(2) < 0.55) F.barril(c, x, z, 0.9 + r(3) * 0.3, lod)
     else F.caixote(c, x, z, 1.2, r(4) * 3)
   })

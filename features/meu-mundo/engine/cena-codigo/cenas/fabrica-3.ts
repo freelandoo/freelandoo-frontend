@@ -10,8 +10,10 @@ import { face, mix, mul, smooth, tube } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta } from "../dominio"
 import { castelo, type CasteloEstilo } from "../castelo"
 import * as F from "./tema-fabrica"
+import * as P2 from "../pecas/fabrica"
 
 export const meta = {
+  triBloco: F.TRI_BLOCO,
   ceu: F.CEU_TARDE,
   nevoa: F.NEVOA_TARDE,
   area: AREA,
@@ -70,14 +72,31 @@ export function montar(lod = 0): Cena {
 
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !blocked(c, x, z, pad + 0.6)
   F.faixasCaminho(c, CAMINHO)
-  // postes-lampião dos dois lados do caminho, ligados por cabo
-  for (let t = 0.04; t < 0.97; t += 0.05) {
-    const p = P.at(t)
+  // pilares-lanterna dos dois lados do caminho (a ref 3), ligados por DOIS cabos caídos, com o estandarte da
+  // águia pendurado no meio de cada vão e a mureta acesa embaixo
+  const ganchos: Record<number, V3 | null> = { [-1]: null, [1]: null }
+  let nV = 0
+  F.aoLongoDoCaminho(CAMINHO, 8, (x, z, dx, dz) => {
+    const nx = dz, nz = -dx
     for (const s of [-1, 1]) {
-      const x = p.x + p.dz * 3.8 * s, z = p.z - p.dx * 3.8 * s
-      if (ok(x, z, -1.9)) F.lampiao(c, x, z, 4.2, lod)
+      const px = x + nx * 4.6 * s, pz = z + nz * 4.6 * s
+      if (!ok(px, pz, -0.4)) {
+        ganchos[s] = null
+        continue
+      }
+      const g = F.lampiao(c, px, pz, 5, lod)
+      const a = ganchos[s]
+      if (a && Math.hypot(a[0] - g[0], a[2] - g[2]) < 10) {
+        P2.cabo(c, a, g, 1.2, 0.08, lod)
+        P2.cabo(c, [a[0], a[1] - 0.4, a[2]], [g[0], g[1] - 0.4, g[2]], 1.4, 0.08, lod)
+        const mx = (a[0] + g[0]) / 2, mz = (a[2] + g[2]) / 2
+        const angM = Math.atan2(-nx * s, -nz * s)
+        if (nV++ % 2 === 0) F.bandeira(c, mx - nx * s * 0.1, g[1] - 1.5, mz - nz * s * 0.1, angM, 0.75)
+        if (ok(mx + nx * s * 0.6, mz + nz * s * 0.6, -0.3)) P2.muretaAcesa(c, mx + nx * s * 0.6, mz + nz * s * 0.6, angM, 4.2, lod)
+      }
+      ganchos[s] = g
     }
-  }
+  })
   scatter(-H + 4, -H + 4, H - 4, H - 4, 4, 33, (x, z, r) => {
     if (!ok(x, z, 0.3) || r(1) > (P.dWalk(x, z) < 7 ? 0.3 : 0.06)) return
     if (r(2) < 0.5) F.barril(c, x, z, 0.9 + r(3) * 0.3, lod)
