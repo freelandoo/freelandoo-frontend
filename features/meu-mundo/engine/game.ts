@@ -321,15 +321,16 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, opts.parked?.look ?? payload.me.look ?? ""), home.x, home.z, home.rotationY)
   // áudio S1: passos de quem joga (rua e praça)
   const steps = createFootsteps()
-  // áudio S2: a música do lugar (centro de dia/noite; bairro pela classe) e o fundo da praça
+  // áudio S2: a música do lugar (centro de dia/noite; bairro pela classe) e o fundo da praça.
+  // S3: de noite sem fundo (o da praça noturna incomodava atrás da música; virou o som do ganho de status)
   const sceneSnd = sceneSound()
   let soundAt = -Infinity
   const applySceneSound = (now: number) => {
     if (now - soundAt < 20_000) return
     soundAt = now
     const night = isNightHour(brasiliaHour())
-    if (centerP) sceneSnd.set(night ? MUSIC.centerNight : MUSIC.centerDay, night ? AMB.squareNight : AMB.squareDay)
-    else sceneSnd.set(hoodMusic(nb?.clan), night ? AMB.squareNight : AMB.squareDay)
+    if (centerP) sceneSnd.set(night ? MUSIC.centerNight : MUSIC.centerDay, night ? null : AMB.squareDay)
+    else sceneSnd.set(hoodMusic(nb?.clan), night ? null : AMB.squareDay)
   }
   applySceneSound(performance.now())
   // Lore v2 F4: os NPCs da praça — corpo de classe, parados (a colisão vem na

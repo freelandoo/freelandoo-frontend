@@ -48,6 +48,7 @@ export const interiorSound = (id: string | null | undefined) => (id ? (INTERIOR[
 /** Fundo da praça (centro) e da rua. */
 export const AMB = {
   squareDay: "lugar-centro-praca-dia",
+  /** S3: não toca mais como fundo (só no ganho de status, gain-pillar.ts). */
   squareNight: "lugar-centro-praca-noite",
   streetDanger: "lugar-centro-rua-noite-perigo",
 } as const

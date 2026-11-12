@@ -29,6 +29,7 @@ import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTextur
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
 import "@babylonjs/core/Particles/particleSystemComponent"
 import { Constants } from "@babylonjs/core/Engines/constants"
+import { playSample, preloadSamples } from "./audio"
 
 // ── registro (a cena aberta) ───────────────────────────────────────────────
 export interface GainFxTarget {
@@ -37,6 +38,7 @@ export interface GainFxTarget {
 }
 const targets: GainFxTarget[] = []
 export function setGainFx(fx: GainFxTarget): () => void {
+  preloadSamples([GAIN_SOUND])
   targets.push(fx)
   return () => {
     const i = targets.indexOf(fx)
@@ -46,14 +48,27 @@ export function setGainFx(fx: GainFxTarget): () => void {
 /** Acende o tubo no meu personagem (sem cena aberta, não faz nada). */
 export function playGainFx(hex: string, kind?: string) {
   try {
+    gainSound()
     targets[targets.length - 1]?.play(hex, kind)
   } catch {
     /* efeito decorativo: nunca derruba a interface */
   }
 }
+/**
+ * Áudio S3 (pedido do Alex, 2026-11-11): o "metal vibrando com eco" (o arquivo do fundo da praça
+ * de noite) incomodava atrás da música; agora ele só toca no GANHO de status — um trecho curto
+ * que some, no máximo um a cada 1,5 s.
+ */
+const GAIN_SOUND = "lugar-centro-praca-noite"
+function gainSound() {
+  const v = playSample(GAIN_SOUND, { bus: "sfx", gain: 0.7, fadeIn: 0.05, minGap: 1500 })
+  if (v && v.asset) window.setTimeout(() => v.stop(0.9), 1600)
+}
+
 /** Subiu de nível: o feixe de tubos coloridos no meu personagem. */
 export function playLevelFx(colors: string[]) {
   try {
+    gainSound()
     targets[targets.length - 1]?.level(colors)
   } catch {
     /* efeito decorativo */
