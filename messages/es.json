@@ -1595,7 +1595,8 @@
     "youReceiveApprox": "Recibes (antes de la tarifa de MP)",
     "onSiteFullPrice": "En el local recibes el precio completo: el cliente te paga directamente.",
     "classTitle": "Clasificación",
-    "classSubtitle": "Prueba de economía, finanzas y cultura general con nota de 0 a 100, y un perfil de personalidad solo tuyo."
+    "classSubtitle": "Prueba de economía, finanzas y cultura general con nota de 0 a 100, y un perfil de personalidad solo tuyo.",
+    "birthDateLocked": "Para corregir la fecha, contacta al soporte."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

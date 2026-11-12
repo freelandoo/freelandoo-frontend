@@ -157,7 +157,6 @@ export default function PerfilPage() {
   const [editForm, setEditForm] = useState({
     nome: "",
     username: "",
-    idade: "",
     sexo: "",
     telefone: "",
     estado: "",
@@ -1071,7 +1070,6 @@ export default function PerfilPage() {
     setEditForm({
       nome: perfil.nome || "",
       username: perfil.username || "",
-      idade: perfil.idade?.toString() || "",
       sexo: perfil.sexo || "",
       telefone: perfil.telefone || "",
       estado: perfil.estado || "",
@@ -1128,7 +1126,6 @@ export default function PerfilPage() {
     const payload: Record<string, unknown> = {
       nome: editForm.nome || null,
       username: editForm.username || null,
-      idade: editForm.idade ? parseInt(editForm.idade) : null,
       sexo: editForm.sexo || null,
       telefone: editForm.telefone,
       estado: editForm.estado,
@@ -2429,13 +2426,21 @@ export default function PerfilPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="data_nascimento" className="fl-label">{t("birthDateLabel", "Data de nascimento")}</label>
+                {/* Segurança A1-02: a data só entra pelo onboarding (é ela que
+                    decide a menoridade e o gate de idade das profissões), então
+                    aqui ela só é mostrada. O servidor recusa a troca. */}
                 <input
                   id="data_nascimento"
                   type="date"
                   className="fl-input"
-                  value={editForm.idade}
-                  onChange={(e) => setEditForm({ ...editForm, idade: e.target.value })}
+                  value={perfil.data_nascimento ? String(perfil.data_nascimento).slice(0, 10) : ""}
+                  readOnly
+                  disabled
+                  aria-describedby="data_nascimento_hint"
                 />
+                <p id="data_nascimento_hint" className="mt-1 text-xs text-muted-foreground">
+                  {t("birthDateLocked", "Para corrigir a data, fale com o suporte.")}
+                </p>
               </div>
 
               <div>

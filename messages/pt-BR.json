@@ -1595,7 +1595,8 @@
     "youReceiveApprox": "Você recebe (antes da tarifa do MP)",
     "onSiteFullPrice": "No balcão você recebe o preço cheio: o pagamento é direto com você.",
     "classTitle": "Classificação",
-    "classSubtitle": "Prova de economia, finanças e conhecimentos gerais com nota de 0 a 100, e um perfil de personalidade só seu."
+    "classSubtitle": "Prova de economia, finanças e conhecimentos gerais com nota de 0 a 100, e um perfil de personalidade só seu.",
+    "birthDateLocked": "Para corrigir a data, fale com o suporte."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

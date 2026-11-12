@@ -1595,7 +1595,8 @@
     "youReceiveApprox": "You receive (before the MP fee)",
     "onSiteFullPrice": "On site you receive the full price: the client pays you directly.",
     "classTitle": "Ranking test",
-    "classSubtitle": "A test on economics, finance and general knowledge scored 0 to 100, plus a personality profile just for you."
+    "classSubtitle": "A test on economics, finance and general knowledge scored 0 to 100, plus a personality profile just for you.",
+    "birthDateLocked": "To correct the date, contact support."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
