@@ -1,6 +1,6 @@
 "use client"
 // Trilha E18 — COLEÇÃO, no Arquivo: todo item do jogo, descoberto ou não (o oculto aparece como "???"
-// até alguém da conta achá-lo), e os BAÚS — cada um mora num ponto do bairro ou do centro e abre uma
+// até alguém da conta achá-lo; o comum não descoberto aparece apagado, como meta), e os BAÚS — cada um mora num ponto do bairro ou do centro e abre uma
 // vez por conta. O servidor confere o lugar (a última visita) e grava o recibo; aqui só se mostra.
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Loader2 } from "lucide-react"
@@ -72,7 +72,7 @@ export function CollectionPanel({ t }: { t: T }) {
             {list.map((it, i) => (
               <li key={(it.id || "x") + i} className="px-2 py-1 text-[12px]" title={it.found && it.at ? new Date(it.at).toLocaleDateString() : undefined}
                 style={{ background: it.found ? AE.steel : AE.iron, color: it.found ? RARITY[it.rarity].color : AE.dim, boxShadow: `inset 0 0 0 1px ${AE.brassLine}` }}>
-                {it.found ? nameOf(it) : "???"}
+                {it.found || it.id ? nameOf(it) : "???"}
               </li>
             ))}
           </ul>
