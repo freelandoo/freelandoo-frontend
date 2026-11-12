@@ -1609,16 +1609,16 @@
       "modelo": "ACE-Step 1.5 turbo"
     },
     "musica-bairro-raposas": {
-      "arquivo": "musica/musica-bairro-raposas.v2.mp3",
-      "duracao_s": 171.27,
-      "versao": 2,
-      "modelo": "Mureka (assinatura do site)"
-    },
-    "musica-bairro-vampiros": {
-      "arquivo": "musica/musica-bairro-vampiros.v1.mp3",
+      "arquivo": "musica/musica-bairro-raposas.v1.mp3",
       "duracao_s": 120.0,
       "versao": 1,
       "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-bairro-vampiros": {
+      "arquivo": "musica/musica-bairro-vampiros.v2.mp3",
+      "duracao_s": 171.27,
+      "versao": 2,
+      "modelo": "Mureka (assinatura do site)"
     },
     "musica-biblioteca-escola": {
       "arquivo": "musica/musica-biblioteca-escola.v1.mp3",
@@ -1999,5 +1999,5 @@
       "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-11T23:15:51-03:00"
+  "importado_em": "2026-11-11T23:17:53-03:00"
 }
