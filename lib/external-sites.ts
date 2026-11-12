@@ -7,6 +7,7 @@ const EXTERNAL_SITES: Record<string, string> = {
   "6c4a2ede-9fd6-41be-9276-37938730d04b": "https://hidrovap.com.br",
   "48949086-dc3b-4b71-a316-c3fc0698252b": "/excelencia",
   "605037cc-007b-40e6-9cb9-5f04faa194bf": "/rh",
+  "408de853-8a1f-49af-841b-e3bc78fc5d89": "/vivaar",
   "f9be317e-0882-4f06-9685-7e3e325c31a6": "/russamaisrussa",
 }
 
