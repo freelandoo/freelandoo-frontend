@@ -1777,9 +1777,9 @@
       "modelo": "ACE-Step 1.5 turbo"
     },
     "musica-luta": {
-      "arquivo": "musica/musica-luta.v7.mp3",
-      "duracao_s": 120.0,
-      "versao": 7,
+      "arquivo": "musica/musica-luta.v8.mp3",
+      "duracao_s": 113.0,
+      "versao": 8,
       "modelo": "ACE-Step 1.5 turbo"
     },
     "musica-luta-chefe": {
@@ -1999,5 +1999,5 @@
       "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-11T23:38:13-03:00"
+  "importado_em": "2026-11-11T23:44:09-03:00"
 }
