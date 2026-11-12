@@ -8,7 +8,7 @@ import { noise, type RGB, type V3 } from "../kit"
 import { Cena, blocked, ground, scatter, type XZ } from "../kit-cena"
 import { face, mix, mul, smooth, tube } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta } from "../dominio"
-import { castelo, type CasteloEstilo } from "../castelo"
+import { casteloAeryn } from "../pecas/castelo-aeryn"
 import * as F from "./tema-fabrica"
 import * as P2 from "../pecas/fabrica"
 
@@ -25,27 +25,13 @@ export const meta = {
 
 const CAMINHO: XZ[] = [[56, -73], [52, -48], [26, -40], [-4, -46], [-34, -34], [-44, -12], [-22, -2], [0, 6], [0, 24], [0, 44], [0, 56]]
 
-export const AERYN: CasteloEstilo = {
-  pedra: [0.42, 0.3, 0.26],
-  pedraEsc: [0.26, 0.2, 0.2],
-  quina: [0.86, 0.6, 0.3],
-  telhado: [0.66, 0.44, 0.2],
-  telhadoHi: [0.9, 0.66, 0.3],
-  luz: [1, 0.72, 0.28],
-  metal: [0.85, 0.6, 0.28],
-  bandeira: F.BANDEIRA,
-  cobertura: "cone",
-  lados: 6,
-  alto: 1.1,
-}
 
 export function montar(lod = 0): Cena {
   const c = new Cena("fabrica-3", lod, 32, -16)
-  const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 52, d: 40, patio: 18 } })
+  // pegada da FORTALEZA DE BRONZE copiada (pecas/castelo-aeryn.ts): 56 m com as alas no morro; pátio 18
+  const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 56, d: 40, patio: 18 } })
   const K = P.castelo!
-  const A = castelo(c, K, AERYN, lod)
-  aguia(c, [A.menagem[0], A.menagem[1] - 2, A.arco[2] - 1.4], lod)
-  for (const t of A.torres.slice(2, 4)) F.chamineFumaca(c, t[0] + 1.5, t[2] + 1.5, t[1], t[1] + 8, Math.round(t[0]), lod)
+  casteloAeryn(c, K, lod)
 
   aoLongoDaBorda(18, 8, (x, z, a, k) => {
     if (P.dWalk(x, z) < 14 || (Math.abs(x - K.x) < K.w / 2 + 6 && Math.abs(z - K.z) < K.d / 2 + 6)) return
@@ -108,21 +94,3 @@ export function montar(lod = 0): Cena {
   return c
 }
 
-/** A águia de bronze de asas abertas no alto da menagem (corpo, cabeça, bico e as duas asas em penas). */
-function aguia(c: Cena, m: V3, lod: number) {
-  const [x, y, z] = m
-  const g = c.geo(x, z)
-  const B = AERYN.metal, Bd = mix(AERYN.metal, F.BRONZE_ESC, 0.5)
-  tube(g, [x, y, z], [x, y + 4, z], 1.4, 1.1, 6, (k) => (k % 2 ? B : Bd), false)
-  tube(g, [x, y + 4, z], [x, y + 5.6, z - 0.6], 1.1, 0.7, 6, () => B, true)
-  tube(g, [x, y + 5.1, z - 0.9], [x, y + 4.7, z - 2.1], 0.35, 0.05, 4, () => F.AMARELO, true)
-  const n = lod ? 4 : 7
-  for (const s of [-1, 1]) {
-    for (let k = 0; k < n; k++) {
-      const t = k / (n - 1)
-      const ax = x + s * (1.2 + t * 2), ay = y + 2.6 + t * 1.5
-      const tx = x + s * (3 + 8 * (0.5 + t * 0.5)), ty = y + 3 + t * 7
-      for (const f of [-1, 1]) face(g, [[ax, ay, z + f * 0.12], [tx, ty, z + f * 0.12], [tx - s * 2.2, ty - 4.4, z + f * 0.12], [ax, ay - 2.4, z + f * 0.12]], k % 2 ? B : Bd, [0, 0, f])
-    }
-  }
-}
