@@ -1801,9 +1801,9 @@
       "modelo": "ACE-Step 1.5 turbo"
     },
     "musica-vitoria": {
-      "arquivo": "musica/musica-vitoria.v4.mp3",
-      "duracao_s": 4.341,
-      "versao": 4,
+      "arquivo": "musica/musica-vitoria.v7.mp3",
+      "duracao_s": 6.555,
+      "versao": 7,
       "modelo": "ACE-Step 1.5 turbo"
     },
     "luta-aeryn-ult-estrondo": {
@@ -1987,17 +1987,17 @@
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "ui-menu-abrir": {
-      "arquivo": "sfx/magia/ui-menu-abrir.v1.mp3",
+      "arquivo": "sfx/magia/ui-menu-abrir.v3.mp3",
       "duracao_s": 0.8,
-      "versao": 1,
+      "versao": 3,
       "modelo": "Stable Audio 3 Small-SFX"
     },
     "ui-menu-passar": {
-      "arquivo": "sfx/magia/ui-menu-passar.v1.mp3",
-      "duracao_s": 0.26,
-      "versao": 1,
+      "arquivo": "sfx/magia/ui-menu-passar.v2.mp3",
+      "duracao_s": 0.4,
+      "versao": 2,
       "modelo": "Stable Audio 3 Small-SFX"
     }
   },
-  "importado_em": "2026-11-11T23:44:09-03:00"
+  "importado_em": "2026-11-11T23:52:00-03:00"
 }
