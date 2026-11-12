@@ -33,7 +33,7 @@ const cspReportOnly = [
   "font-src 'self' data:",
   `connect-src 'self' ${BACKEND_PUBLIC} wss://freelandoo-backend-production.up.railway.app https://*.r2.cloudflarestorage.com ${R2_PUBLIC} https://*.r2.dev https://cdn.jsdelivr.net https://storage.googleapis.com https://accounts.google.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.adtrafficquality.google wss:`,
   "worker-src 'self' blob:",
-  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://vercel.live https://gsrefrigeracao.tec.br https://hidrovap.com.br`,
+  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://vercel.live https://gsrefrigeracao.tec.br https://hidrovap.com.br https://excelencia.tec.br`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -82,13 +82,11 @@ const nextConfig = {
       // entradas casando o mesmo caminho deixam a ordem decidir qual vale — e
       // essa ordem não está escrita em lugar nenhum. Aqui cada caminho casa
       // com exatamente uma regra.
-      { source: "/:path((?!site-preview|(?:excelencia|russamaisrussa|rh|vivaar)(?:/|$)).*)", headers: securityHeaders },
+      { source: "/:path((?!site-preview|(?:russamaisrussa|rh|vivaar)(?:/|$)).*)", headers: securityHeaders },
       { source: "/site-preview/:path*", headers: previewHeaders },
       // Sites externos aparecem em iframe na tela Site da comunidade (lib/external-sites.ts).
       { source: "/russamaisrussa", headers: previewHeaders },
       { source: "/russamaisrussa/:path*", headers: previewHeaders },
-      { source: "/excelencia", headers: previewHeaders },
-      { source: "/excelencia/:path*", headers: previewHeaders },
       // RH Climatização: projeto próprio na Vercel, em /rh por rewrite, também aparece em iframe.
       { source: "/rh", headers: previewHeaders },
       { source: "/rh/:path*", headers: previewHeaders },
@@ -140,12 +138,14 @@ const nextConfig = {
     return [
       { source: "/fitness", destination: "/esportes", permanent: true },
       { source: "/fitness/:path*", destination: "/esportes/:path*", permanent: true },
-      // GS e Hidrovap ganharam domínio próprio (2026-11-12): os projetos da Vercel
+      // GS, Hidrovap e Excelência ganharam domínio próprio (2026-11-12): os projetos da Vercel
       // deixaram de ter basePath, então o caminho antigo só redireciona.
       { source: "/gs", destination: "https://gsrefrigeracao.tec.br", permanent: true },
       { source: "/gs/:path*", destination: "https://gsrefrigeracao.tec.br/:path*", permanent: true },
       { source: "/hidrovap", destination: "https://hidrovap.com.br", permanent: true },
       { source: "/hidrovap/:path*", destination: "https://hidrovap.com.br/:path*", permanent: true },
+      { source: "/excelencia", destination: "https://excelencia.tec.br", permanent: true },
+      { source: "/excelencia/:path*", destination: "https://excelencia.tec.br/:path*", permanent: true },
     ]
   },
   async rewrites() {
@@ -162,9 +162,6 @@ const nextConfig = {
         // (serviço russamaisrussa, basePath /russamaisrussa) porque o token da Vercel não cria projeto.
         { source: "/russamaisrussa", destination: "https://russamaisrussa-production.up.railway.app/russamaisrussa" },
         { source: "/russamaisrussa/:path*", destination: "https://russamaisrussa-production.up.railway.app/russamaisrussa/:path*" },
-        // Excelência: exportação estática em public/excelencia (SITES/excelencia-refrigeracao, STATIC_EXPORT=1).
-        { source: "/excelencia", destination: "/excelencia/index.html" },
-        { source: "/excelencia/servicos/:slug", destination: "/excelencia/servicos/:slug.html" },
         // RH Climatização (SITES/rh-climatizacao): projeto rh-climatizacao na Vercel com basePath /rh.
         { source: "/rh", destination: "https://rh-climatizacao.vercel.app/rh" },
         { source: "/rh/:path*", destination: "https://rh-climatizacao.vercel.app/rh/:path*" },
