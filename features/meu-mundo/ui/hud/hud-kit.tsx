@@ -31,6 +31,7 @@ import d from "./drawer.module.css"
 import { DrawerMachine } from "./drawer-machine"
 import { Shape } from "./shape"
 import { drawerGates, type DrawerGates } from "./drawer-gates"
+import { uiSound } from "../../engine/audio"
 
 export type ChipTone = "bom" | "ambar" | "perigo" | "ouro" | "escuro"
 const CHIP: Record<ChipTone, [string, string]> = {
@@ -194,6 +195,14 @@ export function Drawer({
     return () => window.removeEventListener("keydown", onKey)
   }, [hotkeys, open, onOpenChange, close, sub])
 
+  // áudio S1: a gaveta abrindo e fechando (não toca na primeira montagem)
+  const wasOpen = useRef(open)
+  useEffect(() => {
+    if (wasOpen.current === open) return
+    wasOpen.current = open
+    uiSound(open ? "drawerOpen" : "drawerClose")
+  }, [open])
+
   // Gaveta aberta: o balão de avisos (que mora na casca, acima da cena) se
   // esconde para não cobrir o topo do menu (os cards de notificação ouvem este evento).
   useEffect(() => {
@@ -331,7 +340,16 @@ export function Drawer({
                   <span aria-hidden className={d.rivets} />
                   <div ref={listRef} className={d.list}>
                     {subItem && (
-                      <MenuItem key="__back" label={t("menuBack", "Voltar")} hint={heading} icon={<ChevronLeft className="h-5 w-5" />} onSelect={() => setSub(null)} />
+                      <MenuItem
+                        key="__back"
+                        label={t("menuBack", "Voltar")}
+                        hint={heading}
+                        icon={<ChevronLeft className="h-5 w-5" />}
+                        onSelect={() => {
+                          uiSound("card")
+                          setSub(null)
+                        }}
+                      />
                     )}
                     {list.map(({ children: inner, keepOpen, id, ...it }) => (
                       <MenuItem
@@ -339,6 +357,8 @@ export function Drawer({
                         {...it}
                         kind={inner?.length ? "nav" : it.kind}
                         onSelect={() => {
+                          // áudio S1: mochila tem o som dela; portão com lista troca de página; card age
+                          uiSound(id === "bag" ? "bagOpen" : inner?.length ? "gate" : "card")
                           if (inner?.length) return setSub(id)
                           if (!keepOpen) close()
                           it.onSelect()

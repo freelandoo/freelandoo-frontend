@@ -104,6 +104,7 @@ import {
 import { setCurrentSoul, type LifeSoul } from "../soul"
 import { setBanterBody } from "../banter"
 import { useChatter } from "./inbox/use-chatter"
+import { uiSound, type UiCue } from "../engine/audio"
 
 const isHouse = (p: ScenePayload): p is HousePayload => (p as HousePayload).scene === "house"
 const isCenter = (p: ScenePayload): p is CenterPayload => (p as CenterPayload).scene === "center"
@@ -216,12 +217,14 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     if (p.visits) setVisits(p.visits)
   }, [])
 
-  /** Transição: tela por cima, pedido ao servidor, troca só no sucesso. */
+  /** Transição: tela por cima, pedido ao servidor, troca só no sucesso. `[rótulo, som]` = toca o som da viagem/porta (áudio S1). */
   const run = useCallback(
-    async (label: string, job: (token: string) => Promise<ScenePayload | null | { error: string }>) => {
+    async (what: string | [string, UiCue], job: (token: string) => Promise<ScenePayload | null | { error: string }>) => {
       if (busyRef.current) return
       const token = getToken()
       if (!token) return
+      const label = typeof what === "string" ? what : what[0]
+      if (typeof what !== "string") uiSound(what[1])
       busyRef.current = true
       setBusy(label)
       try {
@@ -254,7 +257,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
 
   const enterHouse = useCallback(
     (lot: number) =>
-      void run(t("transEnter", "Entrando na casa…"), async (token) => {
+      void run([t("transEnter", "Entrando na casa…"), "doorIn"], async (token) => {
         const r = await postHouseEnter(token, lot)
         return r.ok ? r.data : { error: errText(r) }
       }),
@@ -262,7 +265,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   )
   const exitHouse = useCallback(
     () =>
-      void run(t("transExit", "Saindo para a rua…"), async (token) => {
+      void run([t("transExit", "Saindo para a rua…"), "doorOut"], async (token) => {
         const r = await postHouseExit(token)
         return r.ok ? r.data : { error: errText(r) }
       }),
@@ -273,7 +276,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   // reserva a sala do centro ANTES de soltar o bairro; falha = fica onde está.
   const goCenter = useCallback(
     () =>
-      void run(t("transCenter", "Indo ao centro…"), async (token) => {
+      void run([t("transCenter", "Indo ao centro…"), "travelCenter"], async (token) => {
         const r = await postCenterEnter(token)
         return r.ok
           ? r.data
@@ -290,7 +293,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   )
   const goHome = useCallback(
     () =>
-      void run(t("transCenterHome", "Voltando para casa…"), async (token) => {
+      void run([t("transCenterHome", "Voltando para casa…"), "travelHome"], async (token) => {
         const r = await postCenterLeave(token)
         return r.ok ? r.data : { error: r.code === "moving" ? t("vehicleMoving", "Pare primeiro.") : errText(r) }
       }),
@@ -462,7 +465,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
     (id: string) => {
       const token = getToken()
       if (!token || busyRef.current) return
-      void run(t("transVisit", "Indo para a casa do anfitrião…"), async () => {
+      void run([t("transVisit", "Indo para a casa do anfitrião…"), "travelHome"], async () => {
         const r = await postAccept(token, id)
         if (!r.ok) return { error: errText(r) }
         if (r.data.visits) setVisits(r.data.visits)
@@ -504,7 +507,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
         })
         return
       }
-      void run(t("transHome", "Voltando para casa…"), async () => {
+      void run([t("transHome", "Voltando para casa…"), "travelHome"], async () => {
         const r = await postEndVisit(token, id)
         if (!r.ok) return { error: errText(r) }
         if (r.data.visits) setVisits(r.data.visits)

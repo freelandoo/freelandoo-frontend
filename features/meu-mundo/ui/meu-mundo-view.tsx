@@ -47,6 +47,7 @@ import { CharacterCard } from "./opening/character-card"
 import { MM } from "./hud/tokens"
 import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
+import { useSoundItem } from "./hud/sound-item"
 import type { DrawerGates } from "./hud/drawer-gates"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { fetchSession, postHouseLevel } from "../data"
@@ -124,6 +125,7 @@ export default function MeuMundoView({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<GameHandle | null>(null)
   const qualityItem = useQualityItem((c) => gameRef.current?.setQuality(c))
+  const soundItem = useSoundItem()
   const statsOpenRef = useRef(false)
   const exitLabelRef = useRef("")
   const mapLabelsRef = useRef<{ home: string; plaza: string } | undefined>(undefined)
@@ -441,6 +443,7 @@ export default function MeuMundoView({
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: recenter },
     { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, kind: "nav", active: helpOpen, onSelect: () => setHelpOpen(true) },
     qualityItem,
+    soundItem,
     { id: "tech", label: t("menuTech", "Técnico"), hint: t("techPanel", "Painel técnico"), icon: <Activity className="h-5 w-5" />, kind: "nav", active: statsOpen, onSelect: () => setStatsOpen((v) => !v) },
     ...(net === "offline" || net === "replaced"
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]

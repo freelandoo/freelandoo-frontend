@@ -42,6 +42,7 @@ import { attachInput, clearInput, createInputState, moveAxis, wantsRun, type Inp
 import type { Box2 } from "./collision"
 import { liveGamesBump } from "./game"
 import { ResolutionGovernor, resolveQuality } from "./quality"
+import { createFootsteps, interiorFloor } from "./audio"
 import type { BodyId, InteriorBed, InteriorDef, InteriorNpc, InteriorSeat, InteriorSpot, Interactable, PlaceUse } from "../types"
 
 export type PlaceMode = "visit" | "patient" | "prisoner"
@@ -134,6 +135,8 @@ const NPC_LOOK: Record<string, { body: BodyId; look: string }> = {
 
 export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   const { canvas, interior: def } = opts
+  // áudio S1: passos de quem joga, pelo piso do cômodo
+  const steps = createFootsteps()
   const speeds = { walk: MOTION.WALK_SPEED, run: MOTION.RUN_SPEED }
   const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: "default" }, false)
   const unlive = liveGamesBump()
@@ -322,6 +325,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
     visualFacing = lerpAngle(visualFacing, body.facing, 1 - Math.exp(-12 * dt))
     char.place(body.x, body.z, visualFacing, body.y)
     char.animate(dt, move, Math.hypot(body.vx, body.vz))
+    steps.update(move, Math.hypot(body.vx, body.vz), interiorFloor(def, body.floor, body.x, body.z))
     if (barbells.count) barbells.update(dt, char, pose === "GymSquat", body.x, body.z, body.floor, visualFacing)
     if (kettles.count) kettles.update(dt, char, pose === "GymKettle", body.x, body.z, body.floor)
     for (const n of npcs) n.char.animate(dt, n.npc.pose === "sit" ? 3 : 0, 0)
@@ -384,6 +388,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       follow.snapBehind(body.x, body.z, body.facing)
     },
     dispose() {
+      steps.dispose()
       if (disposed) return
       disposed = true
       engine.stopRenderLoop()

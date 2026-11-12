@@ -75,6 +75,7 @@ import { createClimaxPass } from "./climax-pass"
 import { glitchFrame, grayVeil, introScript, OUTRO_LEAD_S, OUTRO_LOSE_S, OUTRO_WIN_S, outroScript, victorySign, whipStreaks } from "./fight-frame"
 import { abilityKit } from "../abilities/registry"
 import { signatureOf } from "../abilities/signatures"
+import { fightSamples } from "./fight-samples"
 import { createHitCounter } from "./hit-counter"
 import { flatFrame, groundArcs, HEAVY_WARN, stateWord } from "./impact-fx"
 import { anton } from "../../ui/hud/fight-plate"
@@ -543,6 +544,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const sig = abilityKit(opts.body, opts.stage).sig
   // lv2-B1: a família do golpe sai da skin (os mesmos sinais que escolhem os golpes do corpo)
   const strike = strikeStyle({ ring, claws, bow, gun, brute, mage, body: opts.body })
+  // áudio S1: os arquivos aprovados por cima do sintetizador (sem arquivo = toca o de antes)
+  const smp = fightSamples({ sig: sig?.id ?? null, family: sig?.family ?? null, kinds: [opts.setup.kind], boss: fight.boss, ring: !!ring })
   const skillColors: SkillPalette = sig
     ? (() => {
         const [, mid, hot, edge, top] = sig.pal.map((c) => Color3.FromHexString(c))
@@ -1149,7 +1152,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           }
           const c = !moves ? SWING_CLIPS[e.combo] : e.rank === 3 ? pick(moves.special) : pick(moves.swings[e.combo])
           hero.boxeAct(c.clip, dur, c.from, c.to)
-          audio.whoosh()
+          if (!smp.swing(e.combo)) audio.whoosh()
           // apresentação 08: a fita no chão nasce quando a lâmina passa (≈ 35% do gesto)
           if (arcs) {
             arcAt = dur * 0.35
@@ -1171,7 +1174,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             }
             else vfx.shot(e.id, from, e.heavy, e.rank === 3 ? 1.6 : 1)
           }
-          audio.whoosh()
+          if (!(mage ? smp.fireballOut() : smp.swing(1))) audio.whoosh()
           break
         }
         case "boom": {
@@ -1181,6 +1184,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           shotOff.delete(e.id)
           vfx.impact(at, SHOT, e.heavy, (1 + e.rank * 0.4) * adultK)
           if (e.rank >= 2) vfx.burst(at, SHOT)
+          if (mage) smp.fireballBoom()
           break
         }
         case "power": {
@@ -1195,7 +1199,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           // fases do PODER MÁXIMO: anéis que se fecham, núcleo branco, energia convergindo
           vfx.ground(new Vector3(e.x, 0, e.z), SKILL_COLORS.ult, 2.2, POWER.fireAt + 0.2, false, false)
           skillFx.ultCharge(new Vector3(e.x, 0, e.z), POWER.fireAt)
-          audio.charge(POWER.fireAt)
+          if (!smp.charge()) audio.charge(POWER.fireAt)
           if (claws) hero.boxeAct("GaRoar", POWER.dur, 0, 1)
           else if (clan === "raposa") hero.boxeAct(bow ? "ArOver" : gun ? "FgFire" : "RCast", POWER.dur, 0, bow ? 0.5 : 1)
           else if (clan) hero.boxeAct("VPower", POWER.dur, 0, 1)
@@ -1242,8 +1246,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           }
           skillFx.ultFire(feet, clan === "raposa" ? POWER.mageR : POWER.bladeRange)
           vfx.impact(at.add(new Vector3(0, 0.4, 0)), SKILL_COLORS.ult, true, 1.4)
-          audio.boom()
-          if (sig) sfx.power(sig.family, !!e.heal)
+          if (!smp.ultFire()) {
+            audio.boom()
+            if (sig) sfx.power(sig.family, !!e.heal)
+          }
           shake = Math.max(shake, 0.45)
           hitStop = Math.max(hitStop, 0.1)
           arena.cheer(0.8)
@@ -1255,14 +1261,18 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             vfx.ground(feet, skillColors.slash, 1.3, SKILLS.slash.dur + 0.2)
             const c = moves ? pick(moves.special) : SWING_CLIPS[2]
             hero.boxeAct(c.clip, SKILLS.slash.dur, c.from, c.to)
-            audio.slash()
-            sfx.family(strike, "slash")
+            if (!smp.slash()) {
+              audio.slash()
+              sfx.family(strike, "slash")
+            }
           } else if (e.id === "dash") {
             if (moves) hero.boxeAct(moves.dodge.clip, SKILLS.dash.dur, moves.dodge.from, moves.dodge.to)
             else hero.boxeAct("BDodge", SKILLS.dash.dur, 0, 0.49)
             vfx.impact(new Vector3(e.x, 1, e.z), skillColors.dash, false, 1)
-            audio.dash()
-            sfx.family(strike, "dash")
+            if (!smp.dash()) {
+              audio.dash()
+              sfx.family(strike, "dash")
+            }
           } else {
             skillFx.shieldOn(feet)
             // apresentação 08: estado aceso = o mundo muda de cor enquanto dura, e a palavra em cima
@@ -1273,8 +1283,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
               if (clan === "raposa") hero.boxeAct(bow ? "ArDraw" : gun ? "FgFire1" : "RCast", 0.5, 0, bow ? 0.9 : 0.35)
               else if (clan) hero.boxeAct("VPower", 0.5, 0, 0.35)
             }
-            audio.shieldUp()
-            sfx.family(strike, "shield")
+            if (!smp.shieldUp()) {
+              audio.shieldUp()
+              sfx.family(strike, "shield")
+            }
           }
           break
         }
@@ -1288,22 +1300,23 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           if (waveFx) {
             waveFx.end(e.id)
             hits?.hit(new Vector3(e.x, 1.2, e.z), 1, 0)
+            smp.slashHit()
           } else skillFx.endWave(e.id, new Vector3(e.x, 1.05, e.z))
           break
         case "shieldEnd":
           tintGoal = 0
           skillFx.shieldOff()
-          audio.shieldDown()
+          if (!smp.shieldDown()) audio.shieldDown()
           break
         case "denied":
-          audio.denied()
+          if (!smp.denied()) audio.denied()
           deniedFn?.(e.id)
           break
         case "dodge":
           vfx.dust(new Vector3(fight.me.x, 0.15, fight.me.z), 8)
           if (moves) hero.boxeAct(moves.dodge.clip, 0.46, moves.dodge.from, moves.dodge.to)
           else hero.boxeAct("BDodge", 0.46, 0, 0.49)
-          audio.whoosh()
+          if (!smp.dodge()) audio.whoosh()
           break
         case "miss":
           if (e.on === "me") {
@@ -1313,7 +1326,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
               else hero.boxeAct("BDodge", 0.36, 0, 0.49)
             }
           } else pop(new Vector3(e.x, e.y + 2, e.z), opts.labels?.miss ?? "ERROU!", "#E8E2D5", 24)
-          audio.whoosh()
+          if (!(e.on === "me" ? smp.dodge() : smp.miss())) audio.whoosh()
           break
         case "hit":
           if (e.on === "mob") {
@@ -1342,7 +1355,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
               if (!hits) vfx.burst(at, SKILL_COLORS.ult)
               shake = Math.max(shake, 0.22)
             }
-            if (e.rank >= 2 && !e.src) audio.crit()
+            const crit = e.rank >= 2 && !e.src
             if (e.rank === 3) {
               if (!hits) vfx.burst(at, fxColor)
               shake = Math.max(shake, 0.3)
@@ -1355,10 +1368,15 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
               else if (e.rank === 3 || (chain === 2 && !e.src)) flat([pal[1]], 0.38)
             }
             if (e.dead && !hits) vfx.burst(new Vector3(e.x, e.y + 1.2, e.z), fxColor)
-            audio.punch(e.heavy ? 1 : 0.6, e.heavy)
+            const hitKind = fight.mobs.find((x) => x.id === e.id)?.kind
+            if (!smp.hit(e.heavy, crit)) {
+              if (crit) audio.crit()
+              audio.punch(e.heavy ? 1 : 0.6, e.heavy)
+            }
+            if (hitKind && !e.dead) smp.hurt(hitKind)
             shake = Math.max(shake, e.heavy ? 0.18 : 0.08)
             if (e.dead) {
-              audio.fall()
+              if (!(hitKind ? smp.death(hitKind) : smp.fall())) audio.fall()
               arena.cheer(1)
               audio.excite(0.9)
             } else arena.cheer(0.35)
@@ -1369,7 +1387,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             const hr = Math.max(1.35, 0.95 + 0.3 * hero.height)
             skillFx.shieldHit(new Vector3(e.x + dir.x * hr, hero.height * 0.55, e.z + dir.z * hr))
             pop(new Vector3(e.x, 2.1, e.z), String(e.dmg), BLOCK_NUM, 16)
-            audio.shieldHit()
+            if (!smp.took(e.heavy, true)) audio.shieldHit()
             shake = Math.max(shake, 0.06)
           } else {
             const at = new Vector3(e.x, 1.4, e.z)
@@ -1379,7 +1397,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
             pop(at.add(new Vector3(0, 0.6, 0)), String(e.dmg), "#FF3B3B", 24)
             vfx.impact(at, VFX_COLORS.dano, e.heavy)
             if (e.heavy) hitStop = Math.max(hitStop, 0.06)
-            audio.punch(e.heavy ? 1 : 0.5, false)
+            if (!smp.took(e.heavy, false)) audio.punch(e.heavy ? 1 : 0.5, false)
             shake = Math.max(shake, e.heavy ? 0.32 : 0.16)
             if (moves) {
               if (e.dead) hero.boxeAct(pick(moves.fall), 1.6, 0, 1, true)
@@ -1439,14 +1457,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           arena.phase?.(e.phase)
           shake = Math.max(shake, 0.55)
           hitStop = Math.max(hitStop, 0.12)
-          audio.boom()
+          if (!smp.roar(boss)) audio.boom()
           audio.excite(1)
           break
         }
         case "end":
           // apresentação 11: a saída espera o poder que encerrou a luta fechar (o clímax não é cortado)
           outro = { win: e.win, wait: OUTRO_LEAD_S, started: false, left: 0 }
-          audio.bell(e.win ? 3 : 1)
+          if (!smp.end(e.win)) audio.bell(e.win ? 3 : 1)
           if (e.win) {
             arena.cheer(1)
             vfx.burst(new Vector3(fight.me.x, 1.3, fight.me.z), fxColor)
@@ -1651,7 +1669,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     skillFx.update(realDt, new Vector3(p.x, 0, p.z))
     // poder pronto: um sinal curto quando a barra enche e a recarga acabou
     const ready = p.power >= POWER.max && p.cd.ult <= 0
-    if (ready && !wasReady) audio.ready()
+    if (ready && !wasReady && !smp.ready()) audio.ready()
     wasReady = ready
     vfx.update(realDt)
     spirits.update(realDt)
@@ -1697,6 +1715,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       const entered = m.state === "strike" && v.prev !== "strike"
       if (m.state === "windup" && v.prev !== "windup") {
         v.landed = false
+        smp.mobWarn(m.kind)
         if (cur?.max) audio.charge(m.windup)
         // mm3d-72: poder de personagem — o nome do poder (o do corpo dele) e o aviso no chão
         if (cur?.skill && cur.skill !== "shield") {
@@ -1709,6 +1728,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
           } else vfx.ground(new Vector3(m.x, 0, m.z), c, 1.6, m.windup, false)
         }
       }
+      if (entered && !quiet) smp.mobStrike(m.kind)
       if (entered && cur?.skill && !quiet) {
         const c = foeColor(m.kind)
         const sx = Math.sin(m.facing)

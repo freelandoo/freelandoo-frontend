@@ -16,6 +16,7 @@ import { Ambulance } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getHospital } from "../data"
+import { audioBus, audioContext } from "../engine/audio"
 import type { HospitalInfo, LifeSummary } from "../types"
 import { EVO, archivo } from "./status/evo-skin"
 
@@ -79,9 +80,10 @@ export function useHospitalStay(initial: LifeSummary | null | undefined) {
 /** Sirene de dois tons, baixa, que para sozinha (WebAudio; sem arquivo). */
 function playSiren(ms: number) {
   try {
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!Ctx) return () => {}
-    const ctx = new Ctx()
+    // contexto do jogo (engine/audio): um só; a sirene sai no canal de efeitos
+    const ctx = audioContext()
+    const out = audioBus("sfx")
+    if (!ctx || !out) return () => {}
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.type = "triangle"
@@ -93,10 +95,17 @@ function playSiren(ms: number) {
     }
     gain.gain.setValueAtTime(0.06, ctx.currentTime + ms / 1000 - 0.5)
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + ms / 1000)
-    osc.connect(gain).connect(ctx.destination)
+    osc.connect(gain).connect(out)
     osc.start()
     osc.stop(ctx.currentTime + ms / 1000)
-    return () => void ctx.close().catch(() => {})
+    return () => {
+      try {
+        osc.stop()
+        gain.disconnect()
+      } catch {
+        /* já parou */
+      }
+    }
   } catch {
     return () => {}
   }

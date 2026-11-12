@@ -7,6 +7,8 @@
 // parciais de metal; contagem = um tique seco. O contexto nasce no toque que
 // abre a luta e morre no dispose.
 
+import { audioBus, audioContext } from "../../engine/audio"
+
 import type { FxBus } from "./strike-audio"
 
 export class BoxeAudio {
@@ -22,13 +24,12 @@ export class BoxeAudio {
 
   constructor() {
     try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!Ctx) return
-      const ctx = new Ctx()
+      const ctx = audioContext()
+      if (!ctx) return
       this.ctx = ctx
       this.master = ctx.createGain()
       this.master.gain.value = 0.55
-      this.master.connect(ctx.destination)
+      this.master.connect(audioBus("sfx") ?? ctx.destination)
       this.fx = ctx.createGain()
       this.fx.gain.value = 1
       this.fx.connect(this.master)
@@ -253,7 +254,12 @@ export class BoxeAudio {
     } catch {
       /* já parou */
     }
-    void this.ctx?.close().catch(() => {})
+    try {
+      // contexto do jogo (engine/audio): não fecha; solta o canal
+      this.master?.disconnect()
+    } catch {
+      /* já solto */
+    }
     this.ctx = null
   }
 }

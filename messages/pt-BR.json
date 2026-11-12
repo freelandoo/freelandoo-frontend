@@ -11991,7 +11991,11 @@
     "laminasKragorPhase2": "MARTELO DE BASALTO",
     "laminasKragorPhase3": "CHIFRES DE LAVA",
     "laminasIrisPhase2": "PRISMA",
-    "laminasIrisPhase3": "MIL CORES"
+    "laminasIrisPhase3": "MIL CORES",
+    "menuSound": "Som",
+    "soundOn": "Ligado",
+    "soundLow": "Baixo",
+    "soundOff": "Desligado"
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -7,6 +7,8 @@
 // largada = bipes. O contexto nasce no toque que abre a corrida (regra dos
 // navegadores) e morre no dispose.
 
+import { audioBus, audioContext } from "../../engine/audio"
+
 export class RaceAudio {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
@@ -18,17 +20,17 @@ export class RaceAudio {
   private jet: GainNode | null = null
   private jetFilter: BiquadFilterNode | null = null
   private lastHit = 0
+  private jetSrc: AudioBufferSourceNode | null = null
   muted = false
 
   constructor() {
     try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!Ctx) return
-      const ctx = new Ctx()
+      const ctx = audioContext()
+      if (!ctx) return
       this.ctx = ctx
       this.master = ctx.createGain()
       this.master.gain.value = 0.55
-      this.master.connect(ctx.destination)
+      this.master.connect(audioBus("sfx") ?? ctx.destination)
       this.filter = ctx.createBiquadFilter()
       this.filter.type = "lowpass"
       this.filter.frequency.value = 400
@@ -70,6 +72,7 @@ export class RaceAudio {
       this.jetFilter.connect(this.jet)
       this.jet.connect(this.master)
       jetSrc.start()
+      this.jetSrc = jetSrc
     } catch {
       this.ctx = null
     }
@@ -166,10 +169,16 @@ export class RaceAudio {
     try {
       this.oscA?.stop()
       this.oscB?.stop()
+      this.jetSrc?.stop()
     } catch {
       /* já parado */
     }
-    void this.ctx?.close().catch(() => {})
+    try {
+      // contexto do jogo (engine/audio): não fecha; solta o canal
+      this.master?.disconnect()
+    } catch {
+      /* já solto */
+    }
     this.ctx = null
   }
 }

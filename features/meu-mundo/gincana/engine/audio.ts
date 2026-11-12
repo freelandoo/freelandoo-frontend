@@ -5,6 +5,8 @@
 // posto = dois sininhos; chegada = fanfarra; contagem = bipes. O contexto nasce
 // no toque que abre o jogo e morre no dispose.
 
+import { audioBus, audioContext } from "../../engine/audio"
+
 export class GincanaAudio {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
@@ -13,13 +15,12 @@ export class GincanaAudio {
 
   constructor() {
     try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!Ctx) return
-      const ctx = new Ctx()
+      const ctx = audioContext()
+      if (!ctx) return
       this.ctx = ctx
       this.master = ctx.createGain()
       this.master.gain.value = 0.45
-      this.master.connect(ctx.destination)
+      this.master.connect(audioBus("sfx") ?? ctx.destination)
       const len = ctx.sampleRate
       this.noise = ctx.createBuffer(1, len, ctx.sampleRate)
       const d = this.noise.getChannelData(0)
@@ -111,7 +112,12 @@ export class GincanaAudio {
   }
 
   dispose() {
-    void this.ctx?.close().catch(() => {})
+    try {
+      // contexto do jogo (engine/audio): não fecha; solta o canal
+      this.master?.disconnect()
+    } catch {
+      /* já solto */
+    }
     this.ctx = null
   }
 }

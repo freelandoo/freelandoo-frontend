@@ -13,6 +13,7 @@ import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
+import { audioBus, audioContext, unlockAudio } from "../../engine/audio"
 
 const RING_S = 0.38
 const POOL = 4
@@ -41,11 +42,13 @@ export function createHitFeedback(scene: Scene, camera: Camera, host: HTMLElemen
   host.appendChild(layer)
 
   // ── som curto (o tiro já é um gesto: o contexto pode abrir) ──
-  let audio: AudioContext | null = null
   const tick = (ko: boolean) => {
     try {
-      audio = audio || new AudioContext()
-      if (audio.state === "suspended") void audio.resume()
+      // contexto do jogo (engine/audio): um só, canal de efeitos
+      unlockAudio()
+      const audio = audioContext()
+      const out = audioBus("sfx")
+      if (!audio || !out) return
       const o = audio.createOscillator()
       const g = audio.createGain()
       o.type = "square"
@@ -53,7 +56,7 @@ export function createHitFeedback(scene: Scene, camera: Camera, host: HTMLElemen
       o.frequency.exponentialRampToValueAtTime(ko ? 180 : 700, audio.currentTime + 0.08)
       g.gain.setValueAtTime(0.06, audio.currentTime)
       g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + (ko ? 0.22 : 0.09))
-      o.connect(g).connect(audio.destination)
+      o.connect(g).connect(out)
       o.start()
       o.stop(audio.currentTime + 0.25)
     } catch {
@@ -130,8 +133,7 @@ export function createHitFeedback(scene: Scene, camera: Camera, host: HTMLElemen
         r.mat.dispose()
       }
       layer.remove()
-      void audio?.close().catch(() => {})
-      audio = null
+      // o contexto é o do jogo (engine/audio): não fecha
     },
   }
 }

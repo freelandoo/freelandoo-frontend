@@ -25,6 +25,7 @@ import { CityDock, dockShortcuts } from "./hud/city-dock"
 import { MM } from "./hud/tokens"
 import s from "./hud/hud.module.css"
 import { useQualityItem } from "./hud/quality-item"
+import { useSoundItem } from "./hud/sound-item"
 import type { DrawerGates } from "./hud/drawer-gates"
 import { Chamfer, EVO, archivo } from "./status/evo-skin"
 import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu-mundo-view"
@@ -173,6 +174,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<GameHandle | null>(null)
   const qualityItem = useQualityItem((c) => gameRef.current?.setQuality(c))
+  const soundItem = useSoundItem()
   const statsOpenRef = useRef(false)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [attempt, setAttempt] = useState(0)
@@ -484,6 +486,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     { id: "recenter", label: t("menuRecenter", "Câmera"), hint: t("recenter", "Centralizar a câmera"), icon: <LocateFixed className="h-5 w-5" />, onSelect: () => gameRef.current?.recenter() },
     { id: "help", label: t("menuControls", "Controles"), icon: <Gamepad2 className="h-5 w-5" />, kind: "nav", active: helpOpen, onSelect: () => setHelpOpen(true) },
     qualityItem,
+    soundItem,
     { id: "tech", label: t("menuTech", "Técnico"), hint: t("techPanel", "Painel técnico"), icon: <Activity className="h-5 w-5" />, kind: "nav", active: statsOpen, onSelect: () => setStatsOpen((v) => !v) },
     ...(net === "offline" || net === "replaced"
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]

@@ -1,0 +1,1605 @@
+{
+  "_sobre": "Gerado por C:\\Users\\Alex\\ComfyUI-Audio\\gerador\\importar.py (só sons aprovados de ouvido). Não editar à mão. O jogo pede pelo asset (features/meu-mundo/engine/audio/cues.ts). Metadados completos no catalogo.json do gerador.",
+  "licencas": {
+    "Stable Audio 3 Small-SFX": "Stability AI Community License (grátis abaixo de US$ 1 mi/ano de receita) + Gemma Terms of Use (text encoder)"
+  },
+  "assets": {
+    "deus-aeryn-grito": {
+      "arquivo": "sfx/explosao/deus-aeryn-grito.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-aeryn-presenca": {
+      "arquivo": "sfx/fenomeno_atmosferico/deus-aeryn-presenca.v1.mp3",
+      "duracao_s": 7.988,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-aurion-grito": {
+      "arquivo": "sfx/explosao/deus-aurion-grito.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-aurion-presenca": {
+      "arquivo": "sfx/fenomeno_atmosferico/deus-aurion-presenca.v1.mp3",
+      "duracao_s": 7.988,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-iris-grito": {
+      "arquivo": "sfx/explosao/deus-iris-grito.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-iris-presenca": {
+      "arquivo": "sfx/fenomeno_atmosferico/deus-iris-presenca.v1.mp3",
+      "duracao_s": 7.988,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-kragor-grito": {
+      "arquivo": "sfx/explosao/deus-kragor-grito.v2.mp3",
+      "duracao_s": 2.0,
+      "versao": 2,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-kragor-presenca": {
+      "arquivo": "sfx/fenomeno_atmosferico/deus-kragor-presenca.v1.mp3",
+      "duracao_s": 7.988,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-maru-grito": {
+      "arquivo": "sfx/explosao/deus-maru-grito.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-maru-presenca": {
+      "arquivo": "sfx/fenomeno_atmosferico/deus-maru-presenca.v1.mp3",
+      "duracao_s": 7.988,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-morkhan-grito": {
+      "arquivo": "sfx/explosao/deus-morkhan-grito.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-morkhan-presenca": {
+      "arquivo": "sfx/fenomeno_atmosferico/deus-morkhan-presenca.v1.mp3",
+      "duracao_s": 7.988,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-noctis-grito": {
+      "arquivo": "sfx/explosao/deus-noctis-grito.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-noctis-presenca": {
+      "arquivo": "sfx/fenomeno_atmosferico/deus-noctis-presenca.v1.mp3",
+      "duracao_s": 7.988,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-zephyra-grito": {
+      "arquivo": "sfx/explosao/deus-zephyra-grito.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "deus-zephyra-presenca": {
+      "arquivo": "sfx/fenomeno_atmosferico/deus-zephyra-presenca.v3.mp3",
+      "duracao_s": 7.988,
+      "versao": 3,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-canion-ambiente": {
+      "arquivo": "sfx/fenomeno_atmosferico/dominio-canion-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-fabrica-ambiente": {
+      "arquivo": "sfx/fenomeno_atmosferico/dominio-fabrica-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-floresta-ambiente": {
+      "arquivo": "sfx/amb_floresta/dominio-floresta-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-floresta-cervo-ataque": {
+      "arquivo": "sfx/golpe_fantasia/dominio-floresta-cervo-ataque.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-floresta-coruja-ataque": {
+      "arquivo": "sfx/golpe_fantasia/dominio-floresta-coruja-ataque.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-floresta-lobo-ataque": {
+      "arquivo": "sfx/golpe_fantasia/dominio-floresta-lobo-ataque.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-floresta-mariposa-ataque": {
+      "arquivo": "sfx/golpe_fantasia/dominio-floresta-mariposa-ataque.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-floresta-noctis-ataque": {
+      "arquivo": "sfx/golpe_fantasia/dominio-floresta-noctis-ataque.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-floresta-selene-ataque": {
+      "arquivo": "sfx/golpe_fantasia/dominio-floresta-selene-ataque.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-floresta-sonambulo-ataque": {
+      "arquivo": "sfx/golpe_fantasia/dominio-floresta-sonambulo-ataque.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-gelo-ambiente": {
+      "arquivo": "sfx/fenomeno_atmosferico/dominio-gelo-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-orbital-ambiente": {
+      "arquivo": "sfx/fenomeno_atmosferico/dominio-orbital-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "dominio-vulcao-ambiente": {
+      "arquivo": "sfx/fenomeno_atmosferico/dominio-vulcao-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-boxe-bloqueio": {
+      "arquivo": "sfx/magia/jogo-boxe-bloqueio.v1.mp3",
+      "duracao_s": 0.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-boxe-contagem": {
+      "arquivo": "sfx/magia/jogo-boxe-contagem.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-boxe-queda": {
+      "arquivo": "sfx/magia/jogo-boxe-queda.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-boxe-sino": {
+      "arquivo": "sfx/magia/jogo-boxe-sino.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-boxe-soco": {
+      "arquivo": "sfx/magia/jogo-boxe-soco.v1.mp3",
+      "duracao_s": 0.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-beep": {
+      "arquivo": "sfx/magia/jogo-corrida-beep.v1.mp3",
+      "duracao_s": 0.4,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-boost": {
+      "arquivo": "sfx/deslocamento_ar/jogo-corrida-boost.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-engine": {
+      "arquivo": "sfx/magia/jogo-corrida-engine.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-fall": {
+      "arquivo": "sfx/deslocamento_ar/jogo-corrida-fall.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-hit": {
+      "arquivo": "sfx/magia/jogo-corrida-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-land": {
+      "arquivo": "sfx/magia/jogo-corrida-land.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-pickup": {
+      "arquivo": "sfx/magia/jogo-corrida-pickup.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-pista-abismo-vermelho": {
+      "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-abismo-vermelho.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-pista-floresta-espectral": {
+      "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-floresta-espectral.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-pista-forja-infinita": {
+      "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-forja-infinita.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-pista-neon-overdrive": {
+      "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-neon-overdrive.v3.mp3",
+      "duracao_s": 12.0,
+      "versao": 3,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-corrida-pista-tempestade-oceanica": {
+      "arquivo": "sfx/construcao_futurista/jogo-corrida-pista-tempestade-oceanica.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-gincana-beep": {
+      "arquivo": "sfx/magia/jogo-gincana-beep.v1.mp3",
+      "duracao_s": 0.4,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-gincana-checkpoint": {
+      "arquivo": "sfx/magia/jogo-gincana-checkpoint.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-gincana-dive": {
+      "arquivo": "sfx/deslocamento_ar/jogo-gincana-dive.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-gincana-finish": {
+      "arquivo": "sfx/magia/jogo-gincana-finish.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-gincana-hit": {
+      "arquivo": "sfx/magia/jogo-gincana-hit.v1.mp3",
+      "duracao_s": 0.7,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-gincana-jump": {
+      "arquivo": "sfx/magia/jogo-gincana-jump.v1.mp3",
+      "duracao_s": 0.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-gincana-logo": {
+      "arquivo": "sfx/magia/jogo-gincana-logo.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-gincana-splash": {
+      "arquivo": "sfx/magia/jogo-gincana-splash.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-beep": {
+      "arquivo": "sfx/magia/jogo-jetpack-beep.v1.mp3",
+      "duracao_s": 0.4,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-can": {
+      "arquivo": "sfx/magia/jogo-jetpack-can.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-crash": {
+      "arquivo": "sfx/magia/jogo-jetpack-crash.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-empty": {
+      "arquivo": "sfx/magia/jogo-jetpack-empty.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-engine": {
+      "arquivo": "sfx/magia/jogo-jetpack-engine.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-fase-artico": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-artico.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-fase-canion": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-canion.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-fase-floresta": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-floresta.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-fase-forja": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-forja.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-fase-industrial": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-industrial.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-fase-orbital": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-orbital.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-fase-vacuo": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-jetpack-fase-vacuo.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-go": {
+      "arquivo": "sfx/magia/jogo-jetpack-go.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-low": {
+      "arquivo": "sfx/magia/jogo-jetpack-low.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-jetpack-slam": {
+      "arquivo": "sfx/magia/jogo-jetpack-slam.v3.mp3",
+      "duracao_s": 1.0,
+      "versao": 3,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-bioma-canion": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-canion.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-bioma-fabrica": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-fabrica.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-bioma-floresta": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-floresta.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-bioma-forja": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-forja.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-bioma-orbital": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-noturno-bioma-orbital.v1.mp3",
+      "duracao_s": 12.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-coin": {
+      "arquivo": "sfx/magia/jogo-noturno-coin.v1.mp3",
+      "duracao_s": 0.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-crash": {
+      "arquivo": "sfx/magia/jogo-noturno-crash.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-jump": {
+      "arquivo": "sfx/magia/jogo-noturno-jump.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-land": {
+      "arquivo": "sfx/magia/jogo-noturno-land.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-lane": {
+      "arquivo": "sfx/deslocamento_ar/jogo-noturno-lane.v1.mp3",
+      "duracao_s": 0.4,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-launch": {
+      "arquivo": "sfx/deslocamento_ar/jogo-noturno-launch.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-power": {
+      "arquivo": "sfx/magia/jogo-noturno-power.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-powerend": {
+      "arquivo": "sfx/magia/jogo-noturno-powerend.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-roll": {
+      "arquivo": "sfx/magia/jogo-noturno-roll.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-smash": {
+      "arquivo": "sfx/magia/jogo-noturno-smash.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-stumble": {
+      "arquivo": "sfx/magia/jogo-noturno-stumble.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-noturno-trick": {
+      "arquivo": "sfx/deslocamento_ar/jogo-noturno-trick.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-acerto": {
+      "arquivo": "sfx/magia/jogo-paint-acerto.v1.mp3",
+      "duracao_s": 0.4,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-ko": {
+      "arquivo": "sfx/magia/jogo-paint-ko.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-mapa-cidade": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-cidade.v3.mp3",
+      "duracao_s": 12.0,
+      "versao": 3,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-mapa-fabrica": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-fabrica.v3.mp3",
+      "duracao_s": 12.0,
+      "versao": 3,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-mapa-floresta": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-floresta.v2.mp3",
+      "duracao_s": 12.0,
+      "versao": 2,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-mapa-forja": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-forja.v2.mp3",
+      "duracao_s": 12.0,
+      "versao": 2,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-mapa-jardim": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-jardim.v2.mp3",
+      "duracao_s": 12.0,
+      "versao": 2,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-mapa-templo": {
+      "arquivo": "sfx/fenomeno_atmosferico/jogo-paint-mapa-templo.v3.mp3",
+      "duracao_s": 12.0,
+      "versao": 3,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "jogo-paint-tiro": {
+      "arquivo": "sfx/magia/jogo-paint-tiro.v1.mp3",
+      "duracao_s": 0.4,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-academia-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-academia-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-arsenal-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-arsenal-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-biblioteca-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-biblioteca-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-centro-portal-dominios": {
+      "arquivo": "sfx/portal/lugar-centro-portal-dominios.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-centro-praca-dia": {
+      "arquivo": "sfx/amb_floresta/lugar-centro-praca-dia.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-centro-praca-noite": {
+      "arquivo": "sfx/amb_floresta/lugar-centro-praca-noite.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-centro-rua-noite-perigo": {
+      "arquivo": "sfx/amb_floresta/lugar-centro-rua-noite-perigo.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-criolab-ambiente": {
+      "arquivo": "sfx/construcao_futurista/lugar-criolab-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-delegacia-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-delegacia-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-escola-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-escola-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-forja-ambiente": {
+      "arquivo": "sfx/maquina_steampunk/lugar-forja-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-hamburgueria-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-hamburgueria-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-igreja-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-igreja-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-pizzaria-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-pizzaria-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-supermercado-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-supermercado-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "lugar-universidade-ambiente": {
+      "arquivo": "sfx/amb_caverna/lugar-universidade-ambiente.v1.mp3",
+      "duracao_s": 20.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-aeryn-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-aeryn-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-aeryn-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-aeryn-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-aurion-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-aurion-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-aurion-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-aurion-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-aventura-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-aventura-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-aventura-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-aventura-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-blood-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-blood-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-blood-shield-down": {
+      "arquivo": "sfx/escudo/luta-blood-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-blood-shield-hit": {
+      "arquivo": "sfx/escudo/luta-blood-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-blood-shield-up": {
+      "arquivo": "sfx/escudo/luta-blood-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-blood-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-blood-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-blood-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-blood-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-brutamontes-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-brutamontes-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-brutamontes-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-brutamontes-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-cavaleiro-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-cavaleiro-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-cavaleiro-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-cavaleiro-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ciborgue-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-ciborgue-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ciborgue-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-ciborgue-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-bola-fogo-explode": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-bola-fogo-explode.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-bola-fogo-sai": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-bola-fogo-sai.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-critico": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-critico.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-erro": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-erro.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-esquiva": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-esquiva.v1.mp3",
+      "duracao_s": 0.7,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-hit-leve": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-hit-leve.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-hit-pesado": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-hit-pesado.v1.mp3",
+      "duracao_s": 0.9,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-negado": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-negado.v1.mp3",
+      "duracao_s": 0.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-poder-carga": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-poder-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-poder-dispara": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-poder-dispara.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-pronto": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-pronto.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-queda-ko": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-queda-ko.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-sino-derrota": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-sino-derrota.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-sino-vitoria": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-sino-vitoria.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-swing-1": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-swing-1.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-swing-2": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-swing-2.v4.mp3",
+      "duracao_s": 1.0,
+      "versao": 4,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-comum-swing-3": {
+      "arquivo": "sfx/golpe_fantasia/luta-comum-swing-3.v2.mp3",
+      "duracao_s": 0.8,
+      "versao": 2,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ekaterina-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-ekaterina-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ekaterina-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-ekaterina-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ember-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-ember-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ember-shield-down": {
+      "arquivo": "sfx/escudo/luta-ember-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ember-shield-hit": {
+      "arquivo": "sfx/escudo/luta-ember-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ember-shield-up": {
+      "arquivo": "sfx/escudo/luta-ember-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ember-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-ember-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-ember-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-ember-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-garras-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-garras-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-garras-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-garras-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-gear-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-gear-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-gear-shield-down": {
+      "arquivo": "sfx/escudo/luta-gear-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-gear-shield-hit": {
+      "arquivo": "sfx/escudo/luta-gear-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-gear-shield-up": {
+      "arquivo": "sfx/escudo/luta-gear-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-gear-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-gear-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-gear-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-gear-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-golem-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-golem-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-golem-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-golem-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-iris-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-iris-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-iris-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-iris-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-kragor-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-kragor-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-kragor-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-kragor-ult-impacto.v2.mp3",
+      "duracao_s": 2.972,
+      "versao": 2,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-maru-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-maru-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-maru-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-maru-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-morkhan-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-morkhan-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-morkhan-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-morkhan-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-noctis-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-noctis-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-noctis-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-noctis-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-prism-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-prism-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-prism-shield-down": {
+      "arquivo": "sfx/escudo/luta-prism-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-prism-shield-hit": {
+      "arquivo": "sfx/escudo/luta-prism-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-prism-shield-up": {
+      "arquivo": "sfx/escudo/luta-prism-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-prism-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-prism-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-prism-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-prism-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-raposa-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-raposa-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-raposa-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-raposa-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-sergio-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-sergio-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-sergio-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-sergio-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-shadow-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-shadow-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-shadow-shield-down": {
+      "arquivo": "sfx/escudo/luta-shadow-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-shadow-shield-hit": {
+      "arquivo": "sfx/escudo/luta-shadow-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-shadow-shield-up": {
+      "arquivo": "sfx/escudo/luta-shadow-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-shadow-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-shadow-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-shadow-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-shadow-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-solar-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-solar-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-solar-shield-down": {
+      "arquivo": "sfx/escudo/luta-solar-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-solar-shield-hit": {
+      "arquivo": "sfx/escudo/luta-solar-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-solar-shield-up": {
+      "arquivo": "sfx/escudo/luta-solar-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-solar-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-solar-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-solar-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-solar-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-steel-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-steel-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-steel-shield-down": {
+      "arquivo": "sfx/escudo/luta-steel-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-steel-shield-hit": {
+      "arquivo": "sfx/escudo/luta-steel-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-steel-shield-up": {
+      "arquivo": "sfx/escudo/luta-steel-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-steel-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-steel-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-steel-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-steel-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-stone-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-stone-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-stone-shield-down": {
+      "arquivo": "sfx/escudo/luta-stone-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-stone-shield-hit": {
+      "arquivo": "sfx/escudo/luta-stone-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-stone-shield-up": {
+      "arquivo": "sfx/escudo/luta-stone-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-stone-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-stone-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-stone-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-stone-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-storm-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-storm-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-storm-shield-down": {
+      "arquivo": "sfx/escudo/luta-storm-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-storm-shield-hit": {
+      "arquivo": "sfx/escudo/luta-storm-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-storm-shield-up": {
+      "arquivo": "sfx/escudo/luta-storm-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-storm-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-storm-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-storm-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-storm-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-tide-dash-cast": {
+      "arquivo": "sfx/deslocamento_ar/luta-tide-dash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-tide-shield-down": {
+      "arquivo": "sfx/escudo/luta-tide-shield-down.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-tide-shield-hit": {
+      "arquivo": "sfx/escudo/luta-tide-shield-hit.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-tide-shield-up": {
+      "arquivo": "sfx/escudo/luta-tide-shield-up.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-tide-slash-cast": {
+      "arquivo": "sfx/golpe_fantasia/luta-tide-slash-cast.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-tide-slash-impact": {
+      "arquivo": "sfx/golpe_fantasia/luta-tide-slash-impact.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-vampiro-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-vampiro-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-vampiro-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-vampiro-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-zephyra-ult-carga": {
+      "arquivo": "sfx/energia_carga/luta-zephyra-ult-carga.v1.mp3",
+      "duracao_s": 2.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "luta-zephyra-ult-impacto": {
+      "arquivo": "sfx/explosao/luta-zephyra-ult-impacto.v1.mp3",
+      "duracao_s": 2.972,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-brute-ataque": {
+      "arquivo": "sfx/golpe_fantasia/monstro-brute-ataque.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-brute-aviso": {
+      "arquivo": "sfx/golpe_fantasia/monstro-brute-aviso.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-brute-dor": {
+      "arquivo": "sfx/golpe_fantasia/monstro-brute-dor.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-brute-morte": {
+      "arquivo": "sfx/golpe_fantasia/monstro-brute-morte.v1.mp3",
+      "duracao_s": 1.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-cavaleiro-ataque": {
+      "arquivo": "sfx/golpe_fantasia/monstro-cavaleiro-ataque.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-cavaleiro-aviso": {
+      "arquivo": "sfx/golpe_fantasia/monstro-cavaleiro-aviso.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-cavaleiro-dor": {
+      "arquivo": "sfx/golpe_fantasia/monstro-cavaleiro-dor.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-cavaleiro-morte": {
+      "arquivo": "sfx/golpe_fantasia/monstro-cavaleiro-morte.v1.mp3",
+      "duracao_s": 1.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-ciborgue-ataque": {
+      "arquivo": "sfx/golpe_fantasia/monstro-ciborgue-ataque.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-ciborgue-aviso": {
+      "arquivo": "sfx/golpe_fantasia/monstro-ciborgue-aviso.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-ciborgue-dor": {
+      "arquivo": "sfx/golpe_fantasia/monstro-ciborgue-dor.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-ciborgue-morte": {
+      "arquivo": "sfx/golpe_fantasia/monstro-ciborgue-morte.v1.mp3",
+      "duracao_s": 1.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-garras-ataque": {
+      "arquivo": "sfx/golpe_fantasia/monstro-garras-ataque.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-garras-aviso": {
+      "arquivo": "sfx/golpe_fantasia/monstro-garras-aviso.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-garras-dor": {
+      "arquivo": "sfx/golpe_fantasia/monstro-garras-dor.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-garras-morte": {
+      "arquivo": "sfx/golpe_fantasia/monstro-garras-morte.v1.mp3",
+      "duracao_s": 1.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-stone-ataque": {
+      "arquivo": "sfx/golpe_fantasia/monstro-stone-ataque.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-stone-aviso": {
+      "arquivo": "sfx/golpe_fantasia/monstro-stone-aviso.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-stone-dor": {
+      "arquivo": "sfx/golpe_fantasia/monstro-stone-dor.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-stone-morte": {
+      "arquivo": "sfx/golpe_fantasia/monstro-stone-morte.v1.mp3",
+      "duracao_s": 1.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-wolf-ataque": {
+      "arquivo": "sfx/golpe_fantasia/monstro-wolf-ataque.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-wolf-aviso": {
+      "arquivo": "sfx/golpe_fantasia/monstro-wolf-aviso.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-wolf-dor": {
+      "arquivo": "sfx/golpe_fantasia/monstro-wolf-dor.v1.mp3",
+      "duracao_s": 0.6,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "monstro-wolf-morte": {
+      "arquivo": "sfx/golpe_fantasia/monstro-wolf-morte.v1.mp3",
+      "duracao_s": 1.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "passos-carpet": {
+      "arquivo": "sfx/deslocamento_ar/passos-carpet.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "passos-rua": {
+      "arquivo": "sfx/deslocamento_ar/passos-rua.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "passos-rubber": {
+      "arquivo": "sfx/deslocamento_ar/passos-rubber.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "passos-stone": {
+      "arquivo": "sfx/deslocamento_ar/passos-stone.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "passos-tile": {
+      "arquivo": "sfx/deslocamento_ar/passos-tile.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "passos-wood": {
+      "arquivo": "sfx/deslocamento_ar/passos-wood.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-abrir-menu": {
+      "arquivo": "sfx/magia/ui-abrir-menu.v1.mp3",
+      "duracao_s": 0.5,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-arquivo": {
+      "arquivo": "sfx/magia/ui-arquivo.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-chat": {
+      "arquivo": "sfx/magia/ui-chat.v1.mp3",
+      "duracao_s": 0.3,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-clique": {
+      "arquivo": "sfx/magia/ui-clique.v1.mp3",
+      "duracao_s": 0.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-compra": {
+      "arquivo": "sfx/magia/ui-compra.v1.mp3",
+      "duracao_s": 1.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-erro": {
+      "arquivo": "sfx/magia/ui-erro.v1.mp3",
+      "duracao_s": 0.4,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-fechar-menu": {
+      "arquivo": "sfx/magia/ui-fechar-menu.v1.mp3",
+      "duracao_s": 0.4,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-missao-passo": {
+      "arquivo": "sfx/magia/ui-missao-passo.v1.mp3",
+      "duracao_s": 1.2,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-nectar-entrega": {
+      "arquivo": "sfx/magia/ui-nectar-entrega.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-nivel": {
+      "arquivo": "sfx/magia/ui-nivel.v1.mp3",
+      "duracao_s": 2.0,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-notificacao": {
+      "arquivo": "sfx/magia/ui-notificacao.v1.mp3",
+      "duracao_s": 0.8,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "ui-recompensa": {
+      "arquivo": "sfx/magia/ui-recompensa.v1.mp3",
+      "duracao_s": 1.486,
+      "versao": 1,
+      "modelo": "Stable Audio 3 Small-SFX"
+    }
+  },
+  "importado_em": "2026-11-11T21:45:47-03:00"
+}

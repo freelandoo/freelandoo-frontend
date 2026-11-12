@@ -5,6 +5,8 @@
 // filtro mudam, com rampa curta). Por cima: galão, aviso de combustível,
 // pancada da prensa por perto, batida e a contagem. Vem do jetpack antigo.
 
+import { audioBus, audioContext, unlockAudio } from "../../engine/audio"
+
 const KEY = "mm:jetpack:sound"
 
 export type Sound = "can" | "low" | "empty" | "crash" | "beep" | "go" | "slam"
@@ -17,6 +19,8 @@ export class JetAudio {
   private hum: GainNode | null = null
   private noise: AudioBuffer | null = null
   private lastLow = 0
+  /** Fontes em laço: o contexto do jogo não fecha, então param aqui no dispose. */
+  private loops: AudioBufferSourceNode[] = []
   private on = true
   enabled: boolean
 
@@ -47,13 +51,13 @@ export class JetAudio {
       return
     }
     try {
-      const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!AC) return
-      const ctx = new AC()
+      unlockAudio()
+      const ctx = audioContext()
+      if (!ctx) return
       this.ctx = ctx
       const comp = ctx.createDynamicsCompressor()
       comp.threshold.value = -14
-      comp.connect(ctx.destination)
+      comp.connect(audioBus("sfx") ?? ctx.destination)
       this.master = ctx.createGain()
       this.master.gain.value = this.enabled ? 0.8 : 0
       this.master.connect(comp)
@@ -76,6 +80,7 @@ export class JetAudio {
       this.jet.gain.value = 0
       src.connect(this.jetFilter).connect(this.jet).connect(this.master)
       src.start()
+      this.loops.push(src)
       // zumbido grave do túnel (o vento da velocidade)
       const src2 = ctx.createBufferSource()
       src2.buffer = this.noise
@@ -88,6 +93,7 @@ export class JetAudio {
       this.hum.gain.value = 0
       src2.connect(f2).connect(this.hum).connect(this.master)
       src2.start(0, 0.7)
+      this.loops.push(src2)
     } catch {
       this.ctx = null
     }
@@ -109,8 +115,8 @@ export class JetAudio {
 
   suspend(paused: boolean) {
     if (!this.ctx) return
-    if (paused) void this.ctx.suspend()
-    else void this.ctx.resume()
+    // contexto do jogo (engine/audio): pausar = calar este canal, não o contexto inteiro
+    if (this.master) this.master.gain.setTargetAtTime(paused || !this.enabled ? 0 : 0.8, this.ctx.currentTime, 0.02)
   }
 
   play(s: Sound) {
@@ -191,7 +197,14 @@ export class JetAudio {
   }
 
   dispose() {
-    void this.ctx?.close().catch(() => {})
+    try {
+      for (const s of this.loops) s.stop()
+      this.master?.disconnect()
+      this.hum?.disconnect()
+      this.jet?.disconnect()
+    } catch {
+      /* já solto */
+    }
     this.ctx = null
     this.master = this.jet = this.jetFilter = this.hum = null
   }

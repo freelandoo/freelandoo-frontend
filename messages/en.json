@@ -12577,7 +12577,11 @@
     "laminasKragorPhase2": "BASALT HAMMER",
     "laminasKragorPhase3": "LAVA HORNS",
     "laminasIrisPhase2": "PRISM",
-    "laminasIrisPhase3": "A THOUSAND COLORS"
+    "laminasIrisPhase3": "A THOUSAND COLORS",
+    "menuSound": "Sound",
+    "soundOn": "On",
+    "soundLow": "Low",
+    "soundOff": "Off"
   },
   "Sports": {
     "eyebrow": "Sports",

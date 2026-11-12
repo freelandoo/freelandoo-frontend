@@ -5,6 +5,8 @@
 // pulo/rampa = sopro; pouso = baque; tropeço e batida = estalo. O contexto
 // nasce no toque que abre o jogo e morre no dispose.
 
+import { audioBus, audioContext } from "../../engine/audio"
+
 export class RunAudio {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
@@ -18,13 +20,12 @@ export class RunAudio {
 
   constructor() {
     try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!Ctx) return
-      const ctx = new Ctx()
+      const ctx = audioContext()
+      if (!ctx) return
       this.ctx = ctx
       this.master = ctx.createGain()
       this.master.gain.value = 0.5
-      this.master.connect(ctx.destination)
+      this.master.connect(audioBus("sfx") ?? ctx.destination)
       const len = ctx.sampleRate * 2
       this.noise = ctx.createBuffer(1, len, ctx.sampleRate)
       const d = this.noise.getChannelData(0)
@@ -175,7 +176,12 @@ export class RunAudio {
     } catch {
       /* já parado */
     }
-    void this.ctx?.close().catch(() => {})
+    try {
+      // contexto do jogo (engine/audio): não fecha; solta o canal
+      this.master?.disconnect()
+    } catch {
+      /* já solto */
+    }
     this.ctx = null
   }
 }

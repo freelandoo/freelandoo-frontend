@@ -60,6 +60,7 @@ import { bodyStride, myHeight, setMyHeight } from "../heights"
 import { setScreenAnchor } from "./screen-anchor"
 import { GainPillar, setGainFx } from "./gain-pillar"
 import { bairroMapModel, centerMapModel, setCityMap } from "./city-map"
+import { createFootsteps } from "./audio"
 
 let live = 0
 export const liveGames = () => live
@@ -318,6 +319,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     : (payload as NeighborhoodPayload).me.home
   let myBody: BodyId = opts.parked?.body ?? (isBody(payload.me.body) ? payload.me.body : "normal")
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, opts.parked?.look ?? payload.me.look ?? ""), home.x, home.z, home.rotationY)
+  // áudio S1: passos de quem joga (rua e praça)
+  const steps = createFootsteps()
   // Lore v2 F4: os NPCs da praça — corpo de classe, parados (a colisão vem na
   // lista de obstáculos do servidor); "Falar" abre a conversa (talk:<id>).
   // Lore v2 C1: no bairro, o vizinho da praça e a placa do pedestal vazio (o servidor
@@ -780,10 +783,13 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     // O carro usa o tempo REAL do quadro (o teto de passos de vehicle.ts
     // segura abas que voltam): cortar em 0,1 s deixava a previsão para trás
     // do servidor em aparelhos lentos.
-    if (driving && veh) driveFrame(Math.min(engine.getDeltaTime() / 1000, 0.25), boxes, now)
-    else {
+    if (driving && veh) {
+      driveFrame(Math.min(engine.getDeltaTime() / 1000, 0.25), boxes, now)
+      steps.update(0, 0, "rua")
+    } else {
       local.char.tired = myPace < 1 || winded
       local.update(dt, winded && intent.run ? { ...intent, run: false } : intent, boxes, limit, paceSpeeds(myPace, speeds, bodyStride(myBody, myHeight())))
+      steps.update(local.move, Math.hypot(local.body.vx, local.body.vz), "rua")
     }
     // Dirigindo, a intenção a pé é zero (o controle a pé não age).
     local.char.tickBubble()
@@ -1096,6 +1102,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       remotes.clear()
       for (const c of streetNpcs) c.dispose()
       local.dispose()
+      steps.dispose()
       fleet.dispose()
       lib.dispose()
       world.dispose()

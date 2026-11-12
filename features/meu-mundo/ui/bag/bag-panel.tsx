@@ -28,6 +28,7 @@ import { GearItemCard, bonusLines, gearLock, gearThumb, nameOf, type GearTr } fr
 import { useWorkshop } from "../gear/use-workshop"
 import { SlotDetail, SlotThumb } from "../items/items-panel"
 import { buildSlots, slotName, type Slot } from "../items/item-catalog"
+import { uiSound } from "../../engine/audio"
 
 type Tab = "weapons" | "armor" | "materials" | "food" | "things"
 const TABS: [Tab, string, string][] = [
@@ -234,7 +235,14 @@ export default function BagPanel({
                       )
                     return (
                       <li key={c.key}>
-                        <CellButton cell={c} active={pick === c.key} onClick={() => setPick(pick === c.key ? null : c.key)} />
+                        <CellButton
+                          cell={c}
+                          active={pick === c.key}
+                          onClick={() => {
+                            uiSound("bagPick")
+                            setPick(pick === c.key ? null : c.key)
+                          }}
+                        />
                       </li>
                     )
                   })}
@@ -260,9 +268,10 @@ export default function BagPanel({
                 onRefine={onOpenRefine}
                 equip={(item, slot) => {
                   const target = slot || slotsFor(item).find((s) => !bag?.equipped[s]) || slotsFor(item)[0]
+                  uiSound(slot ? "unequip" : "equip")
                   void act("equip-" + item.id, (tk) => equipGear(tk, target, slot ? null : item.id, slot ? null : bag?.owned[item.id]?.instance), t("gearEquippedOk", "Equipamento atualizado.")).then(() => onChanged?.())
                 }}
-                use={(item) => void act("use-" + item.id, (tk, key) => applyGearItem(tk, item.id, key), t("forgeUsed", "Uso registrado."))}
+                use={(item) => void (uiSound("useItem"), act("use-" + item.id, (tk, key) => applyGearItem(tk, item.id, key), t("forgeUsed", "Uso registrado.")))}
                 recycle={(item) => {
                   void act("recycle-" + item.id, (tk, key) => recycleGear(tk, item.id, 1, key))
                   setConfirm(null)

@@ -18,6 +18,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { archivo, teko } from "../status/evo-skin"
 import { AE, chamfer } from "./aether-tokens"
 import { Arc } from "./shelf-arc"
+import { uiSound } from "../../engine/audio"
 
 export interface CarouselItem {
   key: string
@@ -53,10 +54,12 @@ export function AetherCarousel({
   const setIdx = useCallback(
     (i: number) => {
       const c = Math.max(0, Math.min(n - 1, i))
+      // áudio S1: trocar de card
+      if (c !== idx) uiSound("card")
       setOwn(c)
       onIndex?.(c)
     },
-    [n, onIndex],
+    [n, onIndex, idx],
   )
   const wrap = useRef<HTMLDivElement | null>(null)
   const [vw, setVw] = useState(cardWidth * 2)

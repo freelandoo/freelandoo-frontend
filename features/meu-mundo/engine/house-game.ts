@@ -63,6 +63,7 @@ import { bodyStride, myHeight, setMyHeight } from "../heights"
 import { setScreenAnchor } from "./screen-anchor"
 import { GainPillar, setGainFx } from "./gain-pillar"
 import { emitBanter } from "../banter"
+import { createFootsteps, interiorFloor } from "./audio"
 
 export interface HouseGameOptions {
   canvas: HTMLCanvasElement
@@ -198,6 +199,8 @@ const isBody = (b: string): b is BodyId => (BODY_IDS as string[]).includes(b)
 export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   const { canvas, payload } = opts
   const def = payload.interior
+  // áudio S1: passos de quem joga, pelo piso do cômodo
+  const steps = createFootsteps()
   const speeds = {
     walk: payload.motion?.walkSpeed ?? MOTION.WALK_SPEED,
     run: payload.motion?.runSpeed ?? MOTION.RUN_SPEED,
@@ -649,6 +652,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       char.place(body.x, body.z, visualFacing, body.y)
       char.animate(dt, move, speed)
     }
+    steps.update(myKind ? 0 : move, speed, interiorFloor(def, body.floor, body.x, body.z))
     char.tickBubble()
     syncNetwork(performance.now(), intent)
     if (myKind && myKind !== "car") Object.assign(myPose, { x: body.x, z: body.z, y: body.y, facing: visualFacing, sp: speed })
@@ -834,6 +838,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
     dispose() {
       if (disposed) return
       disposed = true
+      steps.dispose()
       const w = window as unknown as { __mmHouse?: typeof probe }
       if (w.__mmHouse === probe) delete w.__mmHouse
       const wb = window as unknown as { __mmBubbles?: typeof bubbles }

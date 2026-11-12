@@ -26,6 +26,7 @@ import { CLIENT_RELEASE, Joystick, SAFE, SceneCurtain, VehicleIcon } from "./meu
 import { Drawer, EvoButton, EvoDialog, EvoToast, InfoRow, WindedToast, presenceState, type DrawerItem } from "./hud/hud-kit"
 import { CityDock, dockShortcuts } from "./hud/city-dock"
 import { useQualityItem } from "./hud/quality-item"
+import { useSoundItem } from "./hud/sound-item"
 import type { DrawerGates } from "./hud/drawer-gates"
 import { EVO } from "./status/evo-skin"
 import { itemName } from "./status/status-pages"
@@ -60,6 +61,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<HouseGameHandle | null>(null)
   const qualityItem = useQualityItem((c) => gameRef.current?.setQuality(c))
+  const soundItem = useSoundItem()
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [attempt, setAttempt] = useState(0)
   const [net, setNet] = useState<NetStatus>("connecting")
@@ -406,6 +408,7 @@ export default function HouseView({ payload, visits, onExit, onOpenInvite, onMov
     ],
     system: [
     qualityItem,
+    soundItem,
     ...(net === "offline" || net === "replaced"
       ? [{ id: "reconnect", label: t("reconnect", "Reconectar"), icon: <RefreshCw className="h-5 w-5" />, onSelect: () => gameRef.current?.reconnect() }]
       : []),
