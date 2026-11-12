@@ -12816,7 +12816,8 @@
     "chest_bau_praca": "Square chest",
     "chest_bau_estatua_morkhan": "Morkhan pedestal chest",
     "chest_bau_portal": "Portal chest",
-    "chest_bau_biblioteca": "Library chest"
+    "chest_bau_biblioteca": "Library chest",
+    "gear_ficha_evento": "Event token"
   },
   "Sports": {
     "eyebrow": "Sports",
@@ -13079,7 +13080,10 @@
     "Fichas insuficientes": "Not enough tokens",
     "Baú desconhecido": "Unknown chest",
     "Chegue perto do baú para abrir": "Get close to the chest to open it",
-    "Você já abriu esse baú": "You already opened this chest"
+    "Você já abriu esse baú": "You already opened this chest",
+    "Evento desconhecido": "Unknown event",
+    "Informe ligar ou desligar": "Say turn on or off",
+    "Duração inválida": "Invalid duration"
   },
   "Moedas": {
     "walletTitle": "Wallet",

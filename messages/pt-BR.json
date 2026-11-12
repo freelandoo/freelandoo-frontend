@@ -12230,7 +12230,8 @@
     "chest_bau_praca": "Baú da praça",
     "chest_bau_estatua_morkhan": "Baú do pedestal de Morkhan",
     "chest_bau_portal": "Baú do portal",
-    "chest_bau_biblioteca": "Baú da biblioteca"
+    "chest_bau_biblioteca": "Baú da biblioteca",
+    "gear_ficha_evento": "Ficha do Evento"
   },
   "Sports": {
     "eyebrow": "Esportes",
@@ -12493,7 +12494,10 @@
     "Fichas insuficientes": "Fichas insuficientes",
     "Baú desconhecido": "Baú desconhecido",
     "Chegue perto do baú para abrir": "Chegue perto do baú para abrir",
-    "Você já abriu esse baú": "Você já abriu esse baú"
+    "Você já abriu esse baú": "Você já abriu esse baú",
+    "Evento desconhecido": "Evento desconhecido",
+    "Informe ligar ou desligar": "Informe ligar ou desligar",
+    "Duração inválida": "Duração inválida"
   },
   "Moedas": {
     "walletTitle": "Carteira",

@@ -12796,7 +12796,8 @@
     "chest_bau_praca": "Cofre de la plaza",
     "chest_bau_estatua_morkhan": "Cofre del pedestal de Morkhan",
     "chest_bau_portal": "Cofre del portal",
-    "chest_bau_biblioteca": "Cofre de la biblioteca"
+    "chest_bau_biblioteca": "Cofre de la biblioteca",
+    "gear_ficha_evento": "Ficha del Evento"
   },
   "Sports": {
     "eyebrow": "Deportes",
@@ -13059,7 +13060,10 @@
     "Fichas insuficientes": "Fichas insuficientes",
     "Baú desconhecido": "Cofre desconocido",
     "Chegue perto do baú para abrir": "Acércate al cofre para abrirlo",
-    "Você já abriu esse baú": "Ya abriste este cofre"
+    "Você já abriu esse baú": "Ya abriste este cofre",
+    "Evento desconhecido": "Evento desconocido",
+    "Informe ligar ou desligar": "Indica encender o apagar",
+    "Duração inválida": "Duración no válida"
   },
   "Moedas": {
     "walletTitle": "Cartera",

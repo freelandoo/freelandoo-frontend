@@ -254,6 +254,10 @@ const ROWS = [
   ["A Ascensão pede a peça no +10", "Ascension needs the item at +10", "La Ascensión pide la pieza en +10"],
   ["Essa peça já despertou", "That item has already awakened", "Esa pieza ya despertó"],
   ["O Despertar pede a peça ascendida", "Awakening needs the item ascended", "El Despertar pide la pieza ascendida"],
+  // trilha E19: eventos (admin)
+  ["Evento desconhecido", "Unknown event", "Evento desconocido"],
+  ["Informe ligar ou desligar", "Say turn on or off", "Indica encender o apagar"],
+  ["Duração inválida", "Invalid duration", "Duración no válida"],
   // trilha E18: baús
   ["Baú desconhecido", "Unknown chest", "Cofre desconocido"],
   ["Chegue perto do baú para abrir", "Get close to the chest to open it", "Acércate al cofre para abrirlo"],

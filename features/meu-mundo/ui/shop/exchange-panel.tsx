@@ -12,7 +12,8 @@ import { nameOf, type GearAction, type GearTr } from "../gear/gear-card"
 
 export function ExchangePanel({ catalog, bag, t, act, busy }: { catalog: GearCatalog; bag: GearBag; t: GearTr; act: GearAction; busy: boolean }) {
   const byId = useMemo(() => new Map(catalog.items.map((it) => [it.id, it])), [catalog])
-  const offers = useMemo(() => catalog.exchange?.offers || [], [catalog])
+  // E19: oferta de evento só com o evento ligado (o servidor recusa fora dele)
+  const offers = useMemo(() => (catalog.exchange?.offers || []).filter((o) => !o.event || (bag.events || []).includes(o.event)), [catalog, bag.events])
   const tokens = useMemo(() => [...new Set(offers.map((o) => o.token))], [offers])
   const [token, setToken] = useState<string>("")
   const current = tokens.includes(token) ? token : tokens[0] || ""

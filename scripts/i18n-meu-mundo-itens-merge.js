@@ -243,6 +243,8 @@ const MEU_MUNDO = {
   gear_cha_engrenagem: ["Chá de Engrenagem","Gear Tea","Té de Engranaje"],
   gear_po_garra: ["Pó de Garra","Claw Powder","Polvo de Garra"],
   gear_vapor_folego: ["Vapor de Fôlego","Breath Steam","Vapor de Aliento"],
+  // E19: ficha de evento
+  gear_ficha_evento: ["Ficha do Evento", "Event token", "Ficha del Evento"],
   // E18: coleção e baús
   colTab: ["Coleção", "Collection", "Colección"],
   colFound: ["{n} de {total} descobertos", "{n} of {total} discovered", "{n} de {total} descubiertos"],

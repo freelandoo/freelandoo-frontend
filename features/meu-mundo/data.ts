@@ -485,6 +485,8 @@ export interface GearBag {
   equippedInstances?: Partial<Record<GearSlot, string>>
   /** O que empilha (materiais, missão, projetos): quantidade. */
   stacks?: Record<string, number>
+  /** E19: eventos ligados agora (a loja de troca só mostra as ofertas deles). */
+  events?: string[]
   /** E9: a bancada de cada cópia (próximo passo garantido). */
   /** E9/E10/E11: próximo passo garantido, próximo grau e o que a desmontagem devolve. */
   forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null; salvage?: Record<string, number> | null; ascend?: StepView; awaken?: StepView & { bonus?: Partial<GearBonus> }; enchant?: EnchantView }>
@@ -717,6 +719,11 @@ export const unsocketRune = (token: string, instance: string, index: number, key
   call<GearOut>(token, "POST", "/gear/unsocket", { instance, index, key, ...(version != null ? { version } : {}) })
 /** E13: fundir `qty` vezes 3 runas de grau N numa de grau N+1. */
 export const fuseRunes = (token: string, rune: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/rune/fuse", { rune, qty, key })
+/** E19: eventos (o admin liga e desliga). */
+export interface EventConfig { events: { id: string; name: string; active: boolean; open: boolean; endsAt: string | null; updatedAt: string | null }[] }
+export const getEventConfig = (token: string) => call<EventConfig>(token, "GET", "/evento/config")
+export const saveEventConfig = (token: string, event: string, active: boolean, hours: number | null) =>
+  call<EventConfig>(token, "POST", "/evento/config", { event, active, ...(hours != null ? { hours } : {}) })
 /** E18: coleção — todo item (o oculto não descoberto vem sem id) e os baús. */
 export interface Collection {
   total: number
