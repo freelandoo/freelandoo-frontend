@@ -101,13 +101,48 @@ export function montar(lod = 0): Cena {
   }
 
   // ── ilhas flutuantes por cima do vazio (algumas com gazebo) e o mar de nuvens embaixo ──
+  // ── ilhas PERTO (12–20 m da praça, baixas: 5–8 m) com ponte saindo da beira da praça — a ref tem a ilha
+  // do castelo bem ao lado da calçada; longe, a névoa branqueia tudo e na vista do jogador elas somem ──
+  const perto: { x: number; y: number; z: number; r: number }[] = []
+  for (const pr of L.pracas) {
+    if (perto.length >= 3 || pr.r < 10) continue
+    const base = Math.atan2(pr.z, pr.x)
+    for (const da of [0.5, -0.5, 1.1, -1.1, 0]) {
+      const a = base + da, ux = Math.cos(a), uz = Math.sin(a)
+      const R = 7 + perto.length * 1.5, d = pr.r + 6 + R
+      const x = pr.x + ux * d, z = pr.z + uz * d
+      const longe = [0, 0.5, 1].every((f) => L.dentro(x + ux * R * f, z + uz * R * f) < -R * 0.6) && L.dentro(pr.x + ux * (pr.r + 3), pr.z + uz * (pr.r + 3)) < -1
+      if (!longe || P.beira(x, z) < R + 4 || perto.some((q) => Math.hypot(q.x - x, q.z - z) < q.r + R + 6)) continue
+      const y = 5 + perto.length * 1.5
+      ilhaCeu(c, x, y, z, R, 40 + perto.length, lod, true)
+      // agulhas de cristal na ilha (o castelo de cristal da ref) e cachoeira para o lado de fora
+      for (let k = 0; k < 4; k++) {
+        const b = a + Math.PI + (k - 1.5) * 0.55, rr = R * 0.7
+        const px = x + Math.cos(b) * rr, pz = z + Math.sin(b) * rr, h = 3 + rnd(41, k, perto.length) * 4
+        tube(c.glow(px, pz), [px, y + 0.3, pz], [px, y + 0.3 + h, pz], 0.6, 0.05, 6, (j) => (j % 2 ? C.CRISTAL_ROSA : C.CRISTAL_CIANO), false)
+      }
+      cachoeira(c, x + ux * R * 0.95, y + 0.2, z + uz * R * 0.95, Math.atan2(ux, uz), 2.4, -3)
+      // a ponte: da beira da praça (logo atrás do parapeito) subindo até a ilha
+      const a0: [number, number, number] = [pr.x + ux * (pr.r + 1.2), 0.1, pr.z + uz * (pr.r + 1.2)]
+      const a1: [number, number, number] = [x - ux * R * 0.92, y + 0.35, z - uz * R * 0.92]
+      ponteArco(c, a0, a1, 2.6, 1.5, lod)
+      // pedestais de luz dos dois lados da boca da ponte, dentro da praça
+      for (const sd of [-1, 1]) {
+        const qx = pr.x + ux * (pr.r - 1.3) - uz * sd * 2.2, qz = pr.z + uz * (pr.r - 1.3) + ux * sd * 2.2
+        if (P.livre(qx, qz, 0.7) && !blocked(c, qx, qz, 0.8)) pedestalLuz(c, qx, qz, lod)
+      }
+      perto.push({ x, y, z, r: R })
+      break
+    }
+  }
+
   let gz = 0
   const ilhas: { x: number; y: number; z: number; r: number }[] = []
   for (let x = -H + 14; x < H; x += 26)
     for (let z = -H + 14; z < H; z += 26) {
       const r = (q: number) => rnd(17, x * 3 + z, q)
       const px = x + (r(1) - 0.5) * 10, pz = z + (r(2) - 0.5) * 10
-      if (r(3) > 0.6 || L.dentro(px, pz) > -6 || Math.abs(px) > H - 8 || Math.abs(pz) > H - 8) continue
+      if (r(3) > 0.6 || L.dentro(px, pz) > -6 || Math.abs(px) > H - 8 || Math.abs(pz) > H - 8 || perto.some((q) => Math.hypot(q.x - px, q.z - pz) < q.r + 12)) continue
       const y = 9 + r(4) * 14, R = 4 + r(5) * 3.5
       const casa = gz < 3 && r(6) < 0.45
       ilhaCeu(c, px, y, pz, R, r(7) * 99, lod, casa)
