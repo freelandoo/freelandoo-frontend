@@ -2,13 +2,16 @@
 // Ref: ref/dominios/orbital-2.png. Marcos: as ILHAS FLUTUANTES no alto com prédios e cachoeiras
 // acesas caindo, as escadas de mármore que sobem para o nada, a praça branca com friso de ouro e os
 // canteiros de cristal. O chão de andar continua plano (o motor não tem ladeira): as ilhas e as
-// escadas são cenário.
+// escadas são cenário. 11/11: a rua virou a AVENIDA da ref 1 (`avenida()` com as peças copiadas) em
+// trechos retos; as escadas sobem das praças e as ilhas pairam sobre as quadras.
 
-import { noise, type RGB } from "../kit"
+import { type RGB } from "../kit"
 import { Cena, blocked, ground, scatter, type XZ } from "../kit-cena"
-import { mix, mul, smooth } from "../kit-natureza"
-import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
+import { mix } from "../kit-natureza"
+import { AREA, H, planta } from "../dominio"
 import * as O from "./tema-orbital"
+import * as C from "../pecas/orbital"
+import { avenida, chaoAvenida, horizonte, quadras } from "./avenida-orbital"
 
 export const meta = {
   ceu: [0.5, 0.74, 1] as RGB,
@@ -20,16 +23,16 @@ export const meta = {
   setores: [4, 5, 6, 7],
 }
 
-const CAMINHO: XZ[] = [[0, -73], [4, -48], [30, -38], [52, -16], [44, 8], [16, 12], [-12, 4], [-42, 14], [-50, 38], [-28, 54], [0, 48], [18, 62], [-2, 68], [-12, 73]]
+// trechos RETOS (a avenida precisa)
+const CAMINHO: XZ[] = [[0, -73], [0, -32], [50, -32], [50, 16], [-44, 16], [-44, 56], [10, 56], [10, 73]]
 
 export function montar(lod = 0): Cena {
   const c = new Cena("orbital-2", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [4, 5, 6, 7], boss: 7, tZonas: [0.15, 0.36, 0.57], tArena: 0.84 })
-  aoLongoDaBorda(18, 8, (x, z, a, k) => {
-    if (P.dWalk(x, z) < 14) return
-    O.predio(c, x, z, 13, 10, 8 + (k % 3) * 3, a, 200 + k, lod)
-  })
-  O.ruaDePredios(c, P.at, P.livre, lod, 51, 0.07, 6)
+  C.portalArco(c, 0, -70, 0, 12, lod)
+  C.portalArco(c, 10, 70, Math.PI, 12, lod)
+  horizonte(c, 10, 100, 0, 8)
+  avenida(c, P, lod, 51, { faixas: [0.1, 0.4, 0.7] })
   // ilhas flutuantes no alto, espalhadas (não colidem)
   scatter(-H + 10, -H + 10, H - 10, H - 10, 22, 7, (x, z, r) => {
     if (r(1) > 0.55) return
@@ -46,33 +49,21 @@ export function montar(lod = 0): Cena {
   for (const [dx, dz] of [[P.arena.r + 6, 4], [-(P.arena.r + 6), 4], [0, -(P.arena.r + 6)], [0, P.arena.r + 6]] as const) {
     const x = P.arena.x + dx, z = P.arena.z + dz
     if (P.livre(x, z, 4.5) && !blocked(c, x, z, 4.5)) {
-      O.torreCristal(c, x, z, 30, 9, lod)
+      C.torreCristalAneis(c, x, z, 30, 9, lod)
       break
     }
   }
+  quadras(c, P, lod, 88)
   O.fundoOrbital(c, 8)
 
-  const color = (x: number, z: number): RGB => {
-    let col = mix(O.MARMORE, O.MARMORE_S, noise(Math.floor(x / 3), 4, Math.floor(z / 3)) * 0.5)
-    col = mix(col, O.MARMORE, P.aberto(x, z) * 0.3)
-    col = trilha(col, x, z, P, mix(O.MARMORE, O.CIANO, 0.18), 2.2, O.OURO)
-    return mul(col, 0.96 + 0.06 * noise(x * 0.9, 2.2, z * 0.9))
-  }
+  const color = (x: number, z: number): RGB => mix(chaoAvenida(P, x, z), O.MARMORE, P.aberto(x, z) * 0.35)
   ground(c, { x0: -H, z0: -H, x1: H, z1: H, step: lod ? 4 : 2, color })
   ground(c, { x0: -200, z0: -200, x1: 200, z1: 200, step: 40, color: () => [0.9, 0.94, 1], fundo: true, y: -0.05, hole: [-H, -H, H, H] })
 
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !blocked(c, x, z, pad + 0.6)
-  for (let t = 0.04; t < 0.97; t += 0.05) {
-    const p = P.at(t)
-    for (const s of [-1, 1]) {
-      const x = p.x + p.dz * 4.3 * s, z = p.z - p.dx * 4.3 * s
-      if (!ok(x, z, 0) || Math.round(t * 100 + s) % 3 === 0) continue
-      O.canteiro(c, x, z, 2.2, 1.4, -Math.atan2(p.dx, p.dz), t * 70 + s, lod)
-    }
-  }
-  scatter(-H + 4, -H + 4, H - 4, H - 4, 6, 32, (x, z, r) => {
-    if (!ok(x, z, 0.5) || r(1) > 0.12) return
-    if (r(2) < 0.5) O.arvore(c, x, z, 4 + r(3) * 2, r(4) * 99, lod)
+  scatter(-H + 4, -H + 4, H - 4, H - 4, 7, 32, (x, z, r) => {
+    if (!ok(x, z, 1) || r(1) > 0.12) return
+    if (r(2) < 0.6) C.arvoreRedonda(c, x, z, 5 + r(3) * 1.5, r(4) * 99, lod)
     else O.obelisco(c, x, z, 4 + r(3) * 2.5, r(4) * 99, lod)
   })
   return c

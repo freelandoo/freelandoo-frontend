@@ -7,9 +7,11 @@
 import { noise, type RGB } from "../kit"
 import { Cena, blocked, ground, scatter, type XZ } from "../kit-cena"
 import { face, mix, mul, smooth } from "../kit-natureza"
-import { AREA, H, aoLongoDaBorda, planta } from "../dominio"
+import { AREA, H, planta } from "../dominio"
 import { castelo, type CasteloEstilo } from "../castelo"
 import * as O from "./tema-orbital"
+import * as C from "../pecas/orbital"
+import { avenida, chaoAvenida, quadras } from "./avenida-orbital"
 
 export const meta = {
   ceu: [0.5, 0.72, 1] as RGB,
@@ -21,7 +23,8 @@ export const meta = {
   setores: [8, 9, 10],
 }
 
-const CAMINHO: XZ[] = [[56, -73], [52, -48], [26, -40], [-4, -46], [-34, -34], [-44, -12], [-22, -2], [0, 6], [0, 24], [0, 44], [0, 56]]
+// trechos RETOS (a avenida precisa); o último sobe reto em x = 0 até o palácio
+const CAMINHO: XZ[] = [[56, -73], [56, -42], [-40, -42], [-40, -2], [0, -2], [0, 24], [0, 44], [0, 56]]
 
 export const IRIS: CasteloEstilo = {
   pedra: [0.94, 0.93, 0.96],
@@ -53,22 +56,20 @@ export function montar(lod = 0): Cena {
     const G = c.glow(x, z)
     face(G, [[x - 1.2, 8, z - 1.6], [x + 1.2, 8, z - 1.6], [x + 1.7, 0.05, z - 1.9], [x - 1.7, 0.05, z - 1.9]], [mix(O.CIANO, O.BRANCO, 0.6), mix(O.CIANO, O.BRANCO, 0.6), O.CIANO, O.CIANO], [0, 0.2, -1])
   }
-  aoLongoDaBorda(16, 8, (x, z, a, k) => {
-    if (P.dWalk(x, z) < 14 || (Math.abs(x - K.x) < K.w / 2 + 6 && Math.abs(z - K.z) < K.d / 2 + 6)) return
-    O.predio(c, x, z, 14, 11, 9 + (k % 3) * 3, a, 100 + k, lod)
-  })
-  O.ruaDePredios(c, (t) => P.at(t * 0.7), P.livre, lod, 61, 0.07, 7)
-  // arcos brancos em fila sobre a avenida e obeliscos dos lados
-  for (const t of [0.1, 0.24, 0.4, 0.56, 0.74]) {
+  // arcos brancos em fila sobre a avenida (os copiados, vão = a rua): antes das lojas, que desviam deles
+  C.portalArco(c, 56, -70, 0, 12, lod)
+  for (const t of [0.06, 0.3, 0.58]) { // longe das esquinas: o pilar de um arco logo após a curva cai no trecho anterior
     const p = P.at(t)
+    if (P.aberto(p.x, p.z) > 0.2) continue
     P.reserva(p.x, p.z, 3)
-    O.arco(c, p.x, p.z, p.ang, 6, 5.5, lod)
+    C.portalArco(c, p.x, p.z, p.ang, 12, lod)
   }
+  avenida(c, P, lod, 61, { faixas: [0.2, 0.42, 0.6] })
+  quadras(c, P, lod, 99)
   O.fundoOrbital(c, 14)
 
   const color = (x: number, z: number): RGB => {
-    let col = mix(O.MARMORE, O.MARMORE_S, noise(Math.floor(x / 2.4), 7, Math.floor(z / 2.4)) * 0.5)
-    col = mix(col, O.MARMORE, P.aberto(x, z) * 0.3)
+    let col = mix(chaoAvenida(P, x, z), O.MARMORE, P.aberto(x, z) * 0.35)
     // avenida do arco-íris: faixas de cor pelo deslocamento lateral ao caminho
     const d = P.dWalk(x, z)
     if (d < 2.6) {
@@ -81,18 +82,11 @@ export function montar(lod = 0): Cena {
   ground(c, { x0: -200, z0: -200, x1: 200, z1: 200, step: 40, color: () => O.MARMORE_S, fundo: true, y: -0.05, hole: [-H, -H, H, H] })
 
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !blocked(c, x, z, pad + 0.6)
-  for (let t = 0.05; t < 0.97; t += 0.06) {
-    const p = P.at(t)
-    for (const s of [-1, 1]) {
-      const x = p.x + p.dz * 4.6 * s, z = p.z - p.dx * 4.6 * s
-      if (!ok(x, z, 0)) continue
-      if (Math.round(t * 100) % 2) O.obelisco(c, x, z, 5 + (t * 10) % 2, t * 50 + s, lod)
-      else O.canteiro(c, x, z, 2.2, 1.4, -Math.atan2(p.dx, p.dz), t * 60 + s, lod)
-    }
-  }
-  scatter(-H + 4, -H + 4, H - 4, H - 4, 6, 33, (x, z, r) => {
-    if (!ok(x, z, 0.5) || r(1) > 0.1) return
-    O.arvore(c, x, z, 4 + r(3) * 2, r(4) * 99, lod)
+  // obeliscos de cristal nas praças e árvores no que sobrou
+  for (const cl of P.clareiras) if (ok(cl.x + cl.r + 2.5, cl.z, 0.5)) O.obelisco(c, cl.x + cl.r + 2.5, cl.z, 5.5, cl.setor, lod)
+  scatter(-H + 4, -H + 4, H - 4, H - 4, 7, 33, (x, z, r) => {
+    if (!ok(x, z, 1) || r(1) > 0.1) return
+    C.arvoreRedonda(c, x, z, 5 + r(3) * 1.5, r(4) * 99, lod)
   })
   return c
 }
