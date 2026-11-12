@@ -2,8 +2,8 @@
 // Bancada da Forja, por CÓPIA (trilha E2). Trilha E9: aprimoramento garantido (forge-v2) — custo fixo
 // do próximo passo, bônus antes e depois e um botão; sempre sobe. Trilha E10: refinamento I–V (grau
 // de qualidade, separado do +N), mesmo desenho. O servidor diz o custo e confere tudo.
-import { useState } from "react"
-import { gradeGear, upgradeGear, type GearBag, type GearInstance, type GearItem, type UpgradeView } from "../../data"
+import { useState, type ReactNode } from "react"
+import { ascendGear, awakenGear, gradeGear, upgradeGear, type GearBag, type GearInstance, type GearItem, type UpgradeView } from "../../data"
 import { AetherButton } from "../kit/aether-modal"
 import { AE } from "../kit/aether-tokens"
 import { GearItemCard, bonusLines, nameOf, type GearAction, type GearTr } from "./gear-card"
@@ -62,6 +62,39 @@ function GradeSection({ item, inst, bag, byId, t, act, busy }: {
   )
 }
 
+/** E14: Ascensão (no +10) e Despertar (depois dela). O servidor diz o custo ou o motivo. */
+function AscendSection({ inst, bag, byId, t, act, busy }: {
+  inst: GearInstance; bag: GearBag; byId: Map<string, GearItem>; t: GearTr; act: GearAction; busy: boolean
+}) {
+  const forge = bag.forge?.[inst.id]
+  const asc = forge?.ascend
+  const awk = forge?.awaken
+  if (!asc && !awk) return null
+  const row = (title: string, view: typeof asc, done: boolean, doneText: string, why: Record<string, string>, go: string, run: () => void, extra?: ReactNode) => (
+    <div className="grid gap-2">
+      <p className="text-[13px] font-bold" style={{ color: AE.goldSoft }}>{title}</p>
+      {done ? <p className="text-[12px]" style={{ color: AE.good }}>{doneText}</p>
+        : view?.error ? <p className="text-[12px]" style={{ color: AE.muted }}>{why[view.error] ?? why.default}</p>
+        : view?.needs ? <>
+          {extra}
+          <Costs coins={view.coins || 0} needs={view.needs} bag={bag} byId={byId} t={t} />
+          <AetherButton disabled={busy || !affordable(bag, view.coins || 0, view.needs)} onClick={run}>{affordable(bag, view.coins || 0, view.needs) ? go : t("refineMissing", "Faltam moedas ou materiais")}</AetherButton>
+        </> : null}
+    </div>
+  )
+  return (
+    <div className="grid gap-3 pt-2" style={{ borderTop: "1px solid " + AE.brassLine }}>
+      {row(t("ascendTitle", "Ascensão"), asc, !!inst.ascended, t("ascendDone", "Ascendida: aprimora até o +15 e tem um engaste a mais."),
+        { plus: t("ascendNeedPlus", "Leve a peça ao +10 para ascender."), default: t("gearNothing", "Nada por aqui ainda.") },
+        t("ascendGo", "Ascender"), () => void act("ascend-" + inst.id, (tk, key) => ascendGear(tk, inst.id, key, inst.version), t("ascendOk", "A peça ascendeu!")))}
+      {row(t("awakenTitle", "Despertar"), awk, !!inst.awakened, t("awakenDone", "Desperta: a passiva está ligada e a arma acende na luta."),
+        { notascended: t("awakenNeedAscend", "O Despertar vem depois da Ascensão."), default: t("gearNothing", "Nada por aqui ainda.") },
+        t("awakenGo", "Despertar"), () => void act("awaken-" + inst.id, (tk, key) => awakenGear(tk, inst.id, key, inst.version), t("awakenOk", "A peça despertou!")),
+        awk?.bonus ? <p className="text-[12px]" style={{ color: AE.good }}>{bonusLines(awk.bonus, t).join(" · ")}</p> : null)}
+    </div>
+  )
+}
+
 export function RefinementCard({ item, inst, bag, byId, t, act, busy }: {
   item: GearItem; inst: GearInstance; bag: GearBag; byId: Map<string, GearItem>; t: GearTr; act: GearAction; busy: boolean
 }) {
@@ -69,7 +102,7 @@ export function RefinementCard({ item, inst, bag, byId, t, act, busy }: {
   const view = bag.forge?.[inst.id]?.upgrade ?? null
   const can = !!view && !view.blocked && affordable(bag, view.coins, view.needs)
   const subtitle = t("upgradeState", "+{plus} · grau {grade}").replace("{plus}", String(inst.plus)).replace("{grade}", gradeName(inst.grade))
-    + (inst.equippedHere ? " · " + t("upgradeWorn", "equipada") : "") + (inst.ascended ? " · " + t("upgradeAscended", "ascendida") : "")
+    + (inst.equippedHere ? " · " + t("upgradeWorn", "equipada") : "") + (inst.ascended ? " · " + t("upgradeAscended", "ascendida") : "") + (inst.awakened ? " · " + t("upgradeAwakened", "desperta") : "")
   return (
     <GearItemCard item={item} t={t} subtitle={subtitle}>
       <p className="text-[13px] font-bold" style={{ color: AE.goldSoft }}>{t("upgradeTitle", "Aprimoramento garantido")}</p>
@@ -86,6 +119,7 @@ export function RefinementCard({ item, inst, bag, byId, t, act, busy }: {
         </> : <AetherButton disabled={!can || busy} onClick={() => setConfirm(true)}>{can ? t("upgradeGo", "Aprimorar para +{to}").replace("{to}", String(view.to)) : view.blocked ? t("upgradeBlocked", "Precisa da Ascensão") : t("refineMissing", "Faltam moedas ou materiais")}</AetherButton>}
       </>}
       <GradeSection item={item} inst={inst} bag={bag} byId={byId} t={t} act={act} busy={busy} />
+      <AscendSection inst={inst} bag={bag} byId={byId} t={t} act={act} busy={busy} />
     </GearItemCard>
   )
 }

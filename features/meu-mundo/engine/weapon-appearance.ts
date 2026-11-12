@@ -21,6 +21,35 @@ export interface WeaponAppearance {
   shieldId?: string | null
   level: number
   cosmetic: string | null
+  /** Trilha E14: arma desperta — o deus/Domínio da arma (cor do brilho); ausente = não desperta. */
+  awakened?: string | null
+}
+
+/** E14: cor do Despertar por deus da arma (arma sem deus = éter). */
+const AWAKEN_COLOR: Record<string, string> = {
+  aurion: "#FFC23A", morkhan: "#E0263C", maru: "#3FC8FF", kragor: "#FF6A1F", zephyra: "#8CF5C8",
+  iris: "#FF7BE5", noctis: "#9B6BFF", aeryn: "#E8B25A", bastor: "#C98A4B", aether: "#47E2DA",
+}
+
+/**
+ * E14: arma DESPERTA acende na cor do deus dela. Orçamento do `low`: só o emissivo nos materiais
+ * clonados desta arma (nenhuma malha, luz ou partícula nova); fora do low, as malhas entram na
+ * GlowLayer que a luta já tem. Devolve o descarte dos materiais clonados.
+ */
+export function awakenWeapon(weapon: TransformNode, domain: string, low: boolean, addGlow: (mesh: Mesh) => void) {
+  const color = Color3.FromHexString(AWAKEN_COLOR[domain] ?? AWAKEN_COLOR.aether)
+  const made: Material[] = []
+  for (const mesh of weapon.getChildMeshes(false)) {
+    const source = mesh.material
+    if (!source) continue
+    const mat = source.clone(`${source.name}-awake`)
+    if (!mat) continue
+    if (mat instanceof PBRMaterial || mat instanceof StandardMaterial) mat.emissiveColor = color.scale(low ? 0.32 : 0.45)
+    mesh.material = mat
+    made.push(mat)
+    if (!low && mesh.getTotalVertices() > 0) addGlow(mesh as Mesh)
+  }
+  return () => { for (const mat of made) mat.dispose(false, false) }
 }
 
 type Tier = "apprentice" | "brass" | "ether" | "solar"

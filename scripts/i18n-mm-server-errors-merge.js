@@ -243,6 +243,17 @@ const ROWS = [
   ["Tire a peça de quem a veste antes de desmontar", "Take the item off whoever wears it before salvaging", "Quítale la pieza a quien la lleva antes de desmontar"],
   ["Confirme a desmontagem de uma peça rara ou acima", "Confirm salvaging a rare or better item", "Confirma el desmontaje de una pieza rara o superior"],
   ["Esses materiais não se transmutam um no outro", "These materials can't be transmuted into each other", "Estos materiales no se transmutan entre sí"],
+  // trilha E13: runas
+  ["Isso não é uma runa", "That isn't a rune", "Eso no es una runa"],
+  ["Essa peça não tem engaste livre", "That item has no free socket", "Esa pieza no tiene engaste libre"],
+  ["Esse engaste está vazio", "That socket is empty", "Ese engaste está vacío"],
+  ["O equipamento mudou; confira e tente de novo", "The item changed; check it and try again", "El equipo cambió; revísalo e inténtalo de nuevo"],
+  ["Tire as runas antes de reciclar", "Remove the runes before recycling", "Quita las runas antes de reciclar"],
+  // trilha E14: Ascensão e Despertar
+  ["Essa peça já ascendeu", "That item has already ascended", "Esa pieza ya ascendió"],
+  ["A Ascensão pede a peça no +10", "Ascension needs the item at +10", "La Ascensión pide la pieza en +10"],
+  ["Essa peça já despertou", "That item has already awakened", "Esa pieza ya despertó"],
+  ["O Despertar pede a peça ascendida", "Awakening needs the item ascended", "El Despertar pide la pieza ascendida"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

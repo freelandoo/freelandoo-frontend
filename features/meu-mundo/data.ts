@@ -229,7 +229,7 @@ export interface FightTicket {
     /** Lore v2 N4: o deus solto (a regra dá a ele 2× a ficha de quem enfrenta). */
     god?: GodId | null
     body?: string | null
-    appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null }
+    appearance?: { weaponId: string | null; level: number; shieldId?: string | null; cosmetic: string | null; awakened?: string | null }
     /** mm3d-72: personalidade e afeto (probabilidades da luta). */
     temper?: FightTemper | null
     affection?: number | null
@@ -378,6 +378,10 @@ export interface GearItem {
   origin?: { region: string; boss: string | null; table: string; kind: "boss" | "activity" | "sector" }
   /** E11: entra numa transmutação (3 → 1 do mesmo tier). */
   transmutable?: boolean
+  /** E13: runa — a chave da régua que ela soma e o grau (1…5). */
+  rune?: { kind: string; key: keyof GearBonus; grade: number }
+  /** E13: engastes da peça +0 (pela raridade; a Ascensão soma 1). */
+  sockets?: number
 }
 export interface GearRecipe {
   id: string
@@ -412,6 +416,8 @@ export interface GradeView {
   bonusBefore: Partial<GearBonus>
   bonusAfter: Partial<GearBonus>
 }
+/** E14/E15: custo de um passo da cópia (`needs`) ou o motivo de ainda não dar (`error` = código do servidor). */
+export interface StepView { needs?: Record<string, number>; coins?: number; error?: string }
 export interface RefinementProposal {
   id: string
   item: string
@@ -431,6 +437,8 @@ export interface GearCatalog {
   upgrade: { max: number; ascendFrom: number; stone: string; rulesVersion: string }
   /** E11: desmontar devolve `share` da receita; raro ou acima (`confirmTier`) pede confirmação; transmutar `transmuteIn` → 1. */
   salvage?: { share: number; confirmTier: number; transmuteIn: number; transmuteCoins: number }
+  /** E13: engastes por raridade, fusão `fuseIn` → 1 e o valor de cada grau por chave. */
+  runes?: { sockets: Record<GearRarity, number>; maxSockets: number; fuseIn: number; grades: number; kinds: Record<string, keyof GearBonus>; value: Partial<Record<keyof GearBonus, number[]>> }
   items: GearItem[]
   recipes: GearRecipe[]
   /** E7: conjuntos de 4 peças; `steps` = { nº de peças: fração da fatia do conjunto }. */
@@ -467,7 +475,7 @@ export interface GearBag {
   stacks?: Record<string, number>
   /** E9: a bancada de cada cópia (próximo passo garantido). */
   /** E9/E10/E11: próximo passo garantido, próximo grau e o que a desmontagem devolve. */
-  forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null; salvage?: Record<string, number> | null }>
+  forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null; salvage?: Record<string, number> | null; ascend?: StepView; awaken?: StepView & { bonus?: Partial<GearBonus> } }>
   bonus: GearBonus
   /** E7: bônus de cada slot vestido pela régua (plus e grau da cópia). */
   pieces?: Partial<Record<GearSlot, Partial<GearBonus>>>
@@ -483,12 +491,19 @@ export interface GearInstance {
   grade: number
   /** E9: ascendida (libera +11…+15). */
   ascended?: boolean
+  /** E14: desperta (passiva ligada; a arma acende na luta). */
+  awakened?: boolean
   locked: boolean
   /** Personagem que segura a cópia (vivo ou na cápsula); null = solta na mochila. */
   equippedBy: string | null
   equippedSlot: GearSlot | null
   /** Equipada pelo personagem vivo. */
   equippedHere: boolean
+  /** E13: runas engastadas (ids, na ordem) e quantos engastes a cópia tem. */
+  sockets?: string[]
+  socketsMax?: number
+  /** E13: versão da cópia (o servidor recusa engaste pedido sobre uma versão velha). */
+  version?: number
 }
 export type GearOut = { receipt?: Receipt; replay?: boolean; bag: GearBag; proposal?: RefinementProposal }
 export const getGear = (token: string) => call<{ gear: GearCatalog; bag: GearBag }>(token, "GET", "/gear")
@@ -668,6 +683,20 @@ export const lockGear = (token: string, instance: string, locked: boolean) => ca
 /** E10: refinamento I–V da cópia. */
 export const gradeGear = (token: string, item: string, key: string, instance?: string | null) =>
   call<GearOut>(token, "POST", "/gear/grade", instance ? { item, instance, key } : { item, key })
+/** E14: Ascensão da cópia no +10 (Selos de Domínio). */
+export const ascendGear = (token: string, instance: string, key: string, version?: number) =>
+  call<GearOut>(token, "POST", "/gear/ascend", { instance, key, ...(version != null ? { version } : {}) })
+/** E14: Despertar da cópia ascendida (Essências + Selos). */
+export const awakenGear = (token: string, instance: string, key: string, version?: number) =>
+  call<GearOut>(token, "POST", "/gear/awaken", { instance, key, ...(version != null ? { version } : {}) })
+/** E13: engastar a runa `rune` na cópia (`version` = a que a tela viu). */
+export const socketRune = (token: string, instance: string, rune: string, key: string, version?: number) =>
+  call<GearOut>(token, "POST", "/gear/socket", { instance, rune, key, ...(version != null ? { version } : {}) })
+/** E13: tirar a runa do engaste `index` (volta inteira para a mochila). */
+export const unsocketRune = (token: string, instance: string, index: number, key: string, version?: number) =>
+  call<GearOut>(token, "POST", "/gear/unsocket", { instance, index, key, ...(version != null ? { version } : {}) })
+/** E13: fundir `qty` vezes 3 runas de grau N numa de grau N+1. */
+export const fuseRunes = (token: string, rune: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/rune/fuse", { rune, qty, key })
 /** E8: fragmento que sobra vira Pó de Refino (o servidor diz quanto). */
 export const convertFragments = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/fragment/convert", { item, qty, key })
 export const applyGearItem = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/use", { item, key })

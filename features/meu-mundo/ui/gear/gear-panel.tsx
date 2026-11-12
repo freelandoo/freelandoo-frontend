@@ -13,9 +13,10 @@ import { RefinementCard } from "./refinement-card"
 import { useWorkshop } from "./use-workshop"
 import { FragmentIndex } from "./fragment-index"
 import { SalvageCard, TransmutePanel } from "./salvage-card"
+import { RuneFusePanel, RuneSocketCard } from "./rune-card"
 
 /** B5: comprar (Armeiro e Loja de Armas) saiu daqui para a Loja única (ui/shop/shop-panel.tsx). */
-export type GearTab = "bag" | "forge" | "refine" | "guide" | "fragments" | "salvage"
+export type GearTab = "bag" | "forge" | "refine" | "guide" | "fragments" | "salvage" | "runes"
 type ForgeKind = "assembly" | "part" | "equipment" | "conversion" | "fragment"
 type Category = "all" | GearCategory
 
@@ -28,6 +29,7 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
   const [category, setCategory] = useState<Category>("all")
   const [kind, setKind] = useState<ForgeKind>("assembly")
   const [salvageMode, setSalvageMode] = useState<"salvage" | "transmute">("salvage")
+  const [runeMode, setRuneMode] = useState<"socket" | "fuse">("socket")
   const [confirm, setConfirm] = useState<string | null>(null)
   const byId = useMemo(() => new Map((catalog?.items || []).map(item => [item.id, item])), [catalog])
   const pending = (item: string) => bag?.pendingProposals?.some(proposal => proposal.item === item && proposal.status === "pending")
@@ -41,6 +43,8 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
     { id: "fragments" as const, label: t("fragIndexTab", "Fragmentos") },
     // E11: desmontar e transmutar
     { id: "salvage" as const, label: t("salvageTab", "Desmontar") },
+    // E13: runas (engastar e fundir)
+    { id: "runes" as const, label: t("runeTab", "Runas") },
   ]
   const categoryNames: Record<Category, string> = {
     all: t("forgeAll", "Todos"), weapon: t("forgeWeapons", "Armas"), shield: t("forgeShields", "Escudos"), armor: t("forgeArmor", "Proteções"),
@@ -108,6 +112,13 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
         key: inst.id, label: nameOf(byId.get(inst.item)!, t),
         render: () => <SalvageCard item={byId.get(inst.item)!} inst={inst} bag={bag} byId={byId} t={t} busy={!!busy} act={act} confirmTier={catalog.salvage?.confirmTier ?? 3} />,
       }))
+    // E13: só as cópias com engaste (as vestidas primeiro)
+    if (tab === "runes" && runeMode === "socket") items = (bag.instances || []).filter(inst => (inst.socketsMax || 0) > 0 && byId.has(inst.item))
+      .sort((a, b) => Number(b.equippedHere) - Number(a.equippedHere) || (b.socketsMax || 0) - (a.socketsMax || 0))
+      .map(inst => ({
+        key: inst.id, label: nameOf(byId.get(inst.item)!, t),
+        render: () => <RuneSocketCard item={byId.get(inst.item)!} inst={inst} bag={bag} byId={byId} values={catalog.runes} t={t} busy={!!busy} act={act} />,
+      }))
   }
   return (
     <AetherModal title={title} eyebrow={bag ? t("gearHeader", "Nível {lv} · {c} moedas").replace("{lv}", String(bag.level)).replace("{c}", String(bag.coins)) : undefined} onClose={onClose} width={680}>
@@ -120,6 +131,9 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
       {tab === "salvage" && <AetherTabs<"salvage" | "transmute"> label={t("salvageTab", "Desmontar")} value={salvageMode} onChange={setSalvageMode} tabs={[
         { id: "salvage", label: t("salvageTab", "Desmontar") }, { id: "transmute", label: t("transmuteTab", "Transmutar") },
       ]} />}
+      {tab === "runes" && <AetherTabs<"socket" | "fuse"> label={t("runeTab", "Runas")} value={runeMode} onChange={setRuneMode} tabs={[
+        { id: "socket", label: t("runeSocketTab", "Engastar") }, { id: "fuse", label: t("runeFuseTab", "Fundir") },
+      ]} />}
       {(tab === "bag" || tab === "guide") && <label className="mb-3 flex min-h-11 items-center gap-3 text-[13px]" style={{ color: AE.text }}>
         {t("forgeCategory", "Categoria")}
         <select value={category} onChange={event => setCategory(event.target.value as Category)} className="min-h-11 min-w-0 flex-1 px-2" style={{ color: AE.text, background: AE.well, border: "1px solid " + AE.brassLine }}>
@@ -128,8 +142,9 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
       </label>}
       {tab === "fragments" && catalog && bag ? <FragmentIndex items={catalog.items} byId={byId} bag={bag} t={t} busy={!!busy} act={act} />
         : tab === "salvage" && salvageMode === "transmute" && catalog && bag ? <TransmutePanel catalog={catalog} bag={bag} t={t} busy={!!busy} act={act} />
+        : tab === "runes" && runeMode === "fuse" && catalog && bag ? <RuneFusePanel catalog={catalog} bag={bag} byId={byId} t={t} busy={!!busy} act={act} />
         : !catalog || !bag ? <div className="grid min-h-48 place-items-center" style={{ color: AE.muted }}>{error ? <AetherButton onClick={() => void load()}>{t("forgeReload", "Tentar abrir novamente")}</AetherButton> : <Loader2 className="h-6 w-6 animate-spin" aria-label={t("gearLoading", "Carregando…")} />}</div> : (
-        <AetherCarousel key={tab + "-" + category + "-" + kind + "-" + salvageMode} title={title} items={items} cardWidth={360} cardHeight={510} empty={tab === "bag" ? t("gearBagEmpty", "Mochila vazia. Lute e jogue para ganhar materiais.") : t("gearNothing", "Nada por aqui ainda.")} />
+        <AetherCarousel key={tab + "-" + category + "-" + kind + "-" + salvageMode + "-" + runeMode} title={title} items={items} cardWidth={360} cardHeight={510} empty={tab === "bag" ? t("gearBagEmpty", "Mochila vazia. Lute e jogue para ganhar materiais.") : tab === "runes" ? t("runeNoPiece", "Nenhuma peça com engaste. Raras ou acima têm engaste.") : t("gearNothing", "Nada por aqui ainda.")} />
       )}
       {message && <p role="status" className="mt-3 text-center text-[13px]" style={{ color: AE.goldSoft }}>{message}</p>}
     </AetherModal>

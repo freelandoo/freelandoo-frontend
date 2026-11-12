@@ -58,7 +58,7 @@ import { shineWeapon } from "../../engine/weapon-shine"
 import { LightArrows } from "./light-arrows"
 import { ShieldGrip, SHIELD_BONES } from "../../engine/shield-grip"
 import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
-import { decorateWeapon, weaponAppearanceProfile, type WeaponAppearance } from "../../engine/weapon-appearance"
+import { awakenWeapon, decorateWeapon, weaponAppearanceProfile, type WeaponAppearance } from "../../engine/weapon-appearance"
 import { BULKY_GUARD, PoseFix } from "../../engine/arm-ik"
 import { createVfx, FIRE, VFX_COLORS, type Trail } from "../../engine/vfx"
 import { Spirits } from "../../engine/spirits"
@@ -572,6 +572,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   let weaponRoot: TransformNode | null = null
   let grip: WeaponGrip | null = null
   let decoration: ReturnType<typeof decorateWeapon> | null = null
+  let awakening: (() => void) | null = null
   configureCodecs()
   if ((clan || brute) && !claws && !stoneHero) {
     LoadAssetContainerAsync(heavy?.file ?? (clan ? (weaponProfile?.model?.file ?? CLAN_WEAPON[clan]) : AXE_URL), scene)
@@ -586,6 +587,8 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
         }
         if (clan && !ranged && opts.appearance) decoration = decorateWeapon(scene, weaponRoot, clan, opts.appearance, low, (m) => vfx.addGlow(m))
         shineWeapon(weaponRoot, (m) => vfx.addGlow(m))
+        // E14: arma desperta acende na cor do deus (vale para espada, pesada, arco e arma de fogo)
+        if (opts.appearance?.awakened) awakening = awakenWeapon(weaponRoot, opts.appearance.awakened, low, (m) => vfx.addGlow(m))
         weaponRoot.setEnabled(false)
       })
       .catch(() => {})
@@ -2113,6 +2116,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       sword.dispose()
       for (const m of Object.values(swordMats)) m.dispose()
       decoration?.dispose()
+      awakening?.()
       grip?.dispose()
       shieldGrip?.dispose()
       arrows?.dispose()
