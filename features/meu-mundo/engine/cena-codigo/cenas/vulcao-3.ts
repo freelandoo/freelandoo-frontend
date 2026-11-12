@@ -8,9 +8,8 @@ import { Cena, blocked, distPath, ground, scatter, type XZ } from "../kit-cena"
 import { caixa } from "../kit-cidade"
 import { face, mix, mul, smooth, tube } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
-import { castelo, type CasteloEstilo } from "../castelo"
+import { casteloKragor } from "../pecas/castelo-kragor"
 import * as V from "./tema-vulcao"
-import { bandeira } from "./tema-fabrica"
 
 export const meta = {
   ceu: [0.5, 0.18, 0.16] as RGB,
@@ -24,38 +23,19 @@ export const meta = {
 
 const CAMINHO: XZ[] = [[-54, -73], [-52, -48], [-24, -40], [6, -46], [34, -34], [44, -12], [22, -2], [0, 6], [0, 24], [0, 44], [0, 56]]
 
-export const KRAGOR: CasteloEstilo = {
-  pedra: [0.22, 0.2, 0.24],
-  pedraEsc: [0.14, 0.12, 0.16],
-  quina: [0.5, 0.3, 0.26],
-  telhado: [0.3, 0.1, 0.1],
-  telhadoHi: [0.55, 0.14, 0.12],
-  luz: [1, 0.48, 0.12],
-  metal: [0.85, 0.55, 0.2],
-  bandeira: V.BANDEIRA,
-  cobertura: "cone",
-  lados: 6,
-  alto: 1.15,
-}
 
 export function montar(lod = 0): Cena {
   const c = new Cena("vulcao-3", lod, 32, -16)
-  const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 52, d: 40, patio: 18 } })
+  // pegada da FORTALEZA copiada (pecas/castelo-kragor.ts): 60 m com as alas no morro; pátio 18 (o salão do deus)
+  const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 60, d: 40, patio: 18 } })
   const K = P.castelo!
-  const A = castelo(c, K, KRAGOR, lod)
-  chifres(c, [A.menagem[0], A.menagem[1], A.arco[2] + 1.5], lod)
-  // quedas de lava dos dois lados da fortaleza (no glow, encostadas nas muralhas da ala)
-  for (const s of [-1, 1]) {
-    const x = K.porta.x + s * (K.w / 2 - 1), z = K.porta.z + 2.6
-    const G = c.glow(x, z)
-    face(G, [[x - 1.2, 9, z - 1.6], [x + 1.2, 9, z - 1.6], [x + 1.6, 0.05, z - 1.8], [x - 1.6, 0.05, z - 1.8]], [V.LAVA_CL, V.LAVA_CL, V.LAVA, V.LAVA], [0, 0.2, -1])
-  }
+  casteloKragor(c, K, lod)
   aoLongoDaBorda(17, 7, (x, z, _a, k) => {
     if (P.dWalk(x, z) < 15 || (Math.abs(x - K.x) < K.w / 2 + 5 && Math.abs(z - K.z) < K.d / 2 + 5)) return
     if (k % 3) V.paredao(c, { x, z, rx: 7 + noise(x, 1, z) * 4, rz: 6 + noise(z, 2, x) * 3, h: 10 + noise(x * 0.3, 3, z * 0.3) * 10, seed: k + 60, lod })
     else V.colunas(c, x, z, 3, 10, k + 60, lod)
   })
-  V.fundoVulcao(c, 13, [-70, 160])
+  V.fundoVulcao(c, 13, [-90, 220], meta.nevoa)
 
   const color = (x: number, z: number): RGB => {
     let col = mix(V.PEDRA, V.PEDRA_ESC, smooth(0.4, 0.75, noise(x * 0.08, 7.2, z * 0.08)))
@@ -100,11 +80,10 @@ export function montar(lod = 0): Cena {
     else if (q === 2 || q === 4) V.cristalFogo(c, x, z, 1 + (k % 3) * 0.3, k, lod)
     else V.caixote(c, x, z, 1.1, ang + k, lod)
   }, (x, z) => (P.castelo ? Math.abs(x - P.castelo.x) < P.castelo.w / 2 + 6 && Math.abs(z - P.castelo.z) < P.castelo.d / 2 + 6 : false), true)
-  // porta-armas e bandeiras na praça da porta
+  // porta-armas na praça da porta (os estandartes agora são do castelo)
   for (const s of [-1, 1]) {
     const x = P.arena.x + s * (P.arena.r + 2.5), z = P.arena.z
     if (ok(x, z, 0.5)) V.rackLancas(c, x, z, Math.PI / 2 * s, lod) // o suporte de lanças copiado
-    bandeira(c, K.porta.x + s * 5.6, 6.4, K.porta.z - 1.7, Math.PI, 1.1)
   }
   scatter(-H + 4, -H + 4, H - 4, H - 4, 6, 36, (x, z, r) => {
     if (!ok(x, z, 0.4) || r(1) > (P.dWalk(x, z) < 8 ? 0.5 : 0.12)) return
@@ -117,21 +96,5 @@ export function montar(lod = 0): Cena {
   // piso de LAJES poligonais da ref no caminho (largura 9 m) e nas praças
   V.lajesPoligonais(c, -H, -H, H, H, 1.9, 43, (x, z) => P.dWalk(x, z) < 4.2 || P.aberto(x, z) > 0.6, lod)
   return c
-}
-
-/** Os dois chifres curvos no alto da menagem (gomos que sobem e se abrem). */
-function chifres(c: Cena, m: V3, lod: number) {
-  const [x, y, z] = m
-  const g = c.geo(x, z)
-  const n = lod ? 4 : 7
-  for (const s of [-1, 1]) {
-    let prev: V3 = [x + s * 3, y - 1, z]
-    for (let k = 1; k <= n; k++) {
-      const t = k / n
-      const p: V3 = [x + s * (3 + Math.sin(t * 1.4) * 7), y - 1 + t * 12, z + Math.sin(t * 2) * 1.5]
-      tube(g, prev, p, 1.3 * (1 - (t - 1 / n) * 0.85), 1.3 * (1 - t * 0.85), 6, (j) => (j % 2 ? mix(KRAGOR.pedra, KRAGOR.telhadoHi, t) : mix(KRAGOR.pedraEsc, KRAGOR.telhado, t)), k === n)
-      prev = p
-    }
-  }
 }
 

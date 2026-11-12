@@ -33,6 +33,12 @@ export class Cena {
   readonly glows = new Map<string, Geo>()
   /** Pano de fundo (fora da área jogável): 1 malha, nunca colide. */
   readonly fundo = new Geo()
+  /**
+   * HORIZONTE (o que fica além da névoa: o vulcão das refs): malha SEM névoa — a névoa do jogo acaba em
+   * 115–150 m e apagaria tudo; quem desenha aqui pinta a bruma na própria cor. `horizonteLuz` = a parte acesa.
+   */
+  readonly horizonte = new Geo()
+  readonly horizonteLuz = new Geo()
   readonly blockers: Box2[] = []
   /** Caminhos de andar (polilinhas): o harness confere que estão livres e planos. */
   readonly walk: XZ[][] = []
@@ -85,7 +91,7 @@ export class Cena {
     this.block(x, z, r * 0.78, r * 0.78, h, Math.PI / 4)
   }
   get tris() {
-    let n = this.fundo.i.length / 3
+    let n = (this.fundo.i.length + this.horizonte.i.length + this.horizonteLuz.i.length) / 3
     for (const g of this.cells.values()) n += g.i.length / 3
     for (const g of this.glows.values()) n += g.i.length / 3
     return n
@@ -290,6 +296,20 @@ export function finishCena(scene: Scene, c: Cena, o: { grime?: number; spec?: RG
   }
   for (const [k, g] of c.cells) add(g, `cena-${c.name}-${k}`, c.glows.get(k))
   add(c.fundo, `cena-${c.name}-fundo`)
+  if (c.horizonte.count || c.horizonteLuz.count) {
+    // sem névoa na malha (a bruma já vem pintada) e sem a sujeira por ruído (a escala é de montanha)
+    let m = c.horizonte.count ? c.horizonte.build(`cena-${c.name}-horizonte`, scene, mat) : null
+    if (c.horizonteLuz.count) {
+      const l = c.horizonteLuz.build(`cena-${c.name}-horizonte-luz`, scene, glowMat)
+      m = m ? fuseGlow(m, l) : l
+    }
+    if (m) {
+      m.name = `cena-${c.name}-horizonte`
+      m.applyFog = false
+      m.isPickable = false
+      meshes.push(m)
+    }
+  }
   return { meshes, material: mat, glowMaterial: glowMat }
 }
 

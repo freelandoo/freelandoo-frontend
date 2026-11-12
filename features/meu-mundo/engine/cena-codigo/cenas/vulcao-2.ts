@@ -34,7 +34,7 @@ export function montar(lod = 0): Cena {
     if (k % 2) paredes.push(V.paredao(c, { x, z, rx: 7 + noise(x, 1, z) * 4, rz: 6 + noise(z, 2, x) * 3, h: 10 + noise(x * 0.3, 3, z * 0.3) * 10, seed: k + 30, lod }))
     else V.colunas(c, x, z, 3.2, 9, k + 30, lod)
   })
-  V.fundoVulcao(c, 8, [-40, 175])
+  V.fundoVulcao(c, 8, [-60, 235], meta.nevoa)
 
   const inParede = (x: number, z: number, k = 1.12) => paredes.some((m) => m.inside(x, z, k))
   const height = (x: number, z: number) => -0.5 * smooth(5, 2.5, dLava(x, z))

@@ -181,13 +181,13 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     const keyOf = (m: Mesh) => m.name.slice(`cena-${cena.name}-`.length)
     for (const m of near0.meshes as Mesh[]) {
       const k = keyOf(m)
-      if (k === "fundo") continue
+      if (k === "fundo" || k === "horizonte") continue
       const [a, b] = k.split(",").map(Number)
       byKey.set(k, { cx: (a + 0.5) * S + cena.off, cz: (b + 0.5) * S + cena.off, m0: m, m1: null })
     }
     for (const m of far1.meshes as Mesh[]) {
       const k = keyOf(m)
-      if (k === "fundo") {
+      if (k === "fundo" || k === "horizonte") {
         m.setEnabled(false)
         continue
       }

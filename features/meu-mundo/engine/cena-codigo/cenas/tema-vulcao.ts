@@ -159,19 +159,18 @@ export function marteloGigante(c: Cena, x: number, z: number, ang: number, lod: 
   P.marteloGigante(c, x, z, ang, lod)
 }
 
-/** Pano de fundo: o vulcão em erupção (cone com a boca clara) e montanhas escuras. */
-export function fundoVulcao(c: Cena, seed: number, vulcao: XZ = [30, 170]) {
+/**
+ * Pano de fundo: o VULCÃO copiado das refs (`P.vulcaoGrande`, no horizonte SEM névoa — a névoa do jogo acaba em
+ * 115–150 m e o apagava) e as montanhas escuras em volta (na névoa), nunca na frente do vulcão.
+ */
+export function fundoVulcao(c: Cena, seed: number, vulcao: XZ = [30, 170], nevoa: RGB = NEVOA) {
   const [vx, vz] = vulcao
-  tube(c.fundo, [vx, -2, vz], [vx, 60, vz], 70, 14, 9, (k) => (k % 2 ? [0.3, 0.2, 0.22] : [0.24, 0.16, 0.18]), false)
-  tube(c.fundo, [vx, 59, vz], [vx, 61, vz], 14, 10, 9, () => [1, 0.55, 0.2], true)
-  // filetes de lava descendo (claros: a névoa vermelha os mistura)
-  for (let k = 0; k < 4; k++) {
-    const a = -Math.PI / 2 + (k - 1.5) * 0.35
-    const top: V3 = [vx + Math.cos(a) * 13, 58, vz + Math.sin(a) * 13], bot: V3 = [vx + Math.cos(a) * 52, 10, vz + Math.sin(a) * 52]
-    face(c.fundo, [[top[0] - 2, top[1], top[2]], [top[0] + 2, top[1], top[2]], [bot[0] + 4, bot[1], bot[2]], [bot[0] - 4, bot[1], bot[2]]], [1, 0.5, 0.15], [0, 0.3, -1])
-  }
+  P.vulcaoGrande(c, vx, vz, Math.atan2(-vx, -vz), { nevoa, bruma: 0.4, seed, R: 85, H: 82 }, c.lod)
+  const aV = Math.atan2(vz, vx)
   for (let k = 0; k < 5; k++) {
-    const a = (k / 5) * Math.PI * 2 + rnd(seed, k)
+    let a = (k / 5) * Math.PI * 2 + rnd(seed, k)
+    const da = Math.atan2(Math.sin(a - aV), Math.cos(a - aV))
+    if (Math.abs(da) < 0.6) a = aV + (da < 0 ? -0.6 : 0.6) // a mesa não tapa o vulcão
     const d = 120 + rnd(seed, k, 2) * 30
     mesa(c.fundo, { x: Math.cos(a) * d, z: Math.sin(a) * d, rx: 26, rz: 18, h: 18 + rnd(seed, k, 3) * 16, strata: ROCHA, seed: seed + k, lod: 1, grass: PEDRA_ESC, seg: 6 })
   }

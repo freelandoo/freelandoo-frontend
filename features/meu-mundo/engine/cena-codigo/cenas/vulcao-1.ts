@@ -41,7 +41,7 @@ export function montar(lod = 0): Cena {
     if (k % 3) paredes.push(V.paredao(c, { x, z, rx: 7 + noise(x, 1, z) * 4, rz: 6 + noise(z, 2, x) * 3, h: 9 + noise(x * 0.3, 3, z * 0.3) * 10, seed: k, lod }))
     else V.colunas(c, x, z, 3, 8, k, lod)
   })
-  V.fundoVulcao(c, 4)
+  V.fundoVulcao(c, 4, [40, 240])
 
   const inParede = (x: number, z: number, k = 1.12) => paredes.some((m) => m.inside(x, z, k))
   const color = (x: number, z: number): RGB => {

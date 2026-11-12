@@ -10,7 +10,7 @@
 import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
 import { caixa } from "../kit-cidade"
-import { face, mix, mul, rnd, tube } from "../kit-natureza"
+import { blob, face, mix, mul, rnd, tube } from "../kit-natureza"
 import { quadro } from "./orbital"
 import { prisma } from "./castelo-iris"
 
@@ -761,6 +761,170 @@ export function lajesPoligonais(c: Cena, x0: number, z0: number, x1: number, z1:
       const cor = tons[Math.floor(r(40) * 4)]
       const g = c.geo(cx, cz)
       face(g, pts, pts.map((_, k) => (k === 0 || k === 1 ? mix(cor, PEDRA_CL, 0.35) : cor)), [0, 1, 0])
+    }
+  }
+}
+
+// ═══════════════ O VULCÃO (pano de fundo) ═══════════════
+
+/**
+ * O VULCÃO DAS REFS (inventário `vulcao-grande`; a ref vulcao-1 é a mais clara): cone de LAJES grandes e planas
+ * (anéis de 16 setores com ravinas e arestas alternadas, perfil côncavo — íngreme no alto), BOCA achatada
+ * com a borda dentada e o fundo aceso, RIOS DE LAVA que descem pelas ravinas do lado que olha o jogador e se
+ * dividem em Y, dois OMBROS mais baixos dos lados e a COLUNA DE FUMAÇA: bolhas laranja acesas embaixo, escuras e
+ * largas em cima. Vai no `horizonte` da cena (sem névoa): a bruma é pintada aqui (`bruma` 0–1 para a cor
+ * `nevoa`). (x, z) = centro; `ang` = para onde olha o lado dos rios (o jogador); R = raio do pé; H = altura.
+ */
+export function vulcaoGrande(c: Cena, x: number, z: number, ang: number, o: { R?: number; H?: number; seed?: number; nevoa: RGB; bruma?: number; ombros?: boolean }, lod = 0) {
+  const g = c.horizonte, GL = c.horizonteLuz
+  const R = o.R ?? 80, H = o.H ?? 72, seed = o.seed ?? 3, br = o.bruma ?? 0.3
+  const nev = o.nevoa
+  const hz = (col: RGB, k = 1): RGB => mix(col, nev, br * k)
+  // basalto lilás das refs (a luz vermelha do jogo come o azul: albedo puxado para o azul)
+  const LUZ: RGB = [0.6, 0.53, 0.92], MEIO: RGB = [0.38, 0.31, 0.6], SOMBRA: RGB = [0.19, 0.14, 0.32]
+  const fx = Math.sin(ang), fz = Math.cos(ang)
+  const N = lod ? 10 : 16
+  const anelT = lod ? [0, 0.45, 0.8, 1] : [0, 0.22, 0.45, 0.66, 0.84, 1]
+  const cr = R * 0.2 // raio da boca
+  const raio = (t: number) => cr + (R - cr) * (1 - t) ** 1.45
+  // grade de vértices (anel j, setor k) com tremor; setor par = aresta (sai), ímpar = ravina (entra)
+  const V: V3[][] = anelT.map((t, j) =>
+    Array.from({ length: N }, (_, k): V3 => {
+      const a = ((k + (rnd(seed, k, j + 1) - 0.5) * (j === anelT.length - 1 ? 0.2 : 0.45)) / N) * Math.PI * 2
+      const ridge = j > 0 && j < anelT.length - 1 ? (k % 2 ? 0.93 : 1.07) : 1
+      const rr = raio(t) * ridge * (0.92 + rnd(seed, k, j + 20) * 0.16)
+      const yy = j === anelT.length - 1 ? H * (0.97 + rnd(seed, k, 40) * 0.06) : H * t + (j ? (rnd(seed, k, j + 30) - 0.5) * H * 0.04 : -2)
+      return [x + Math.cos(a) * rr, yy, z + Math.sin(a) * rr]
+    }),
+  )
+  const corFace = (A: V3, B: V3, C: V3, k: number, j: number): RGB => {
+    const ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = C[0] - A[0], vy = C[1] - A[1], vz = C[2] - A[2]
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx
+    const mx = (A[0] + B[0] + C[0]) / 3 - x, mz = (A[2] + B[2] + C[2]) / 3 - z
+    if (nx * mx + nz * mz < 0) {
+      nx = -nx
+      ny = -ny
+      nz = -nz
+    }
+    const L = Math.hypot(nx, ny, nz) || 1
+    // luz das refs: de cima e da direita de quem olha (as facetas viradas para lá ficam claras)
+    const luz = (nx * (-fz * 0.7 + fx * 0.2) + ny * 0.55 + nz * (fx * 0.7 + fz * 0.2)) / L
+    const base = luz > 0.45 ? LUZ : luz > 0.1 ? MEIO : SOMBRA
+    // perto do pé, mais escuro (sombra de contato e a bruma subindo do vale)
+    return hz(mul(base, 0.8 + 0.2 * (j / (anelT.length - 1)) + (rnd(seed, k, j + 60) - 0.5) * 0.1))
+  }
+  for (let j = 0; j < anelT.length - 1; j++)
+    for (let k = 0; k < N; k++) {
+      const i = (k + 1) % N
+      const A = V[j][k], B = V[j][i], C = V[j + 1][i], D = V[j + 1][k]
+      const m: V3 = [(A[0] + C[0]) / 2 - x, 0.4, (A[2] + C[2]) / 2 - z]
+      // cada quadrado em 2 triângulos de tom próprio (a laje facetada)
+      face(g, [A, B, C], corFace(A, B, C, k, j), m)
+      face(g, [A, C, D], corFace(A, C, D, k + 50, j), m)
+    }
+  // a boca: borda de dentro (desce até 93% da altura) e o fundo aceso
+  const top = V[anelT.length - 1]
+  const fundo = top.map((p): V3 => [x + (p[0] - x) * 0.78, H * 0.93, z + (p[2] - z) * 0.78])
+  for (let k = 0; k < N; k++) {
+    const i = (k + 1) % N
+    face(g, [top[k], top[i], fundo[i], fundo[k]], hz(mul(SOMBRA, 0.8)), [x - top[k][0], 0.5, z - top[k][2]])
+  }
+  face(GL, [[x, H * 0.95, z], ...fundo], hz([1, 0.62, 0.18], 0.4), [0, 1, 0])
+  // ── RIOS DE LAVA: do lado que olha o jogador, pelas ravinas (setores ímpares), dividindo em Y
+  const lava = (pts0: V3[], w0: number, w1: number, sd = 0) => {
+    // serpenteia: 2 pontos no meio de cada trecho, com desvio para os lados (a lava da ref procura as dobras)
+    const pts: V3[] = [pts0[0]]
+    for (let q = 0; q < pts0.length - 1; q++) {
+      const a = pts0[q], b = pts0[q + 1]
+      const dx = b[0] - a[0], dz = b[2] - a[2], dl = Math.hypot(dx, dz) || 1
+      for (const t of lod ? [] : [0.33, 0.66]) {
+        const d = (rnd(seed, sd * 7 + q, t * 9) - 0.5) * dl * 0.35
+        pts.push([a[0] + dx * t - (dz / dl) * d, a[1] + (b[1] - a[1]) * t, a[2] + dz * t + (dx / dl) * d])
+      }
+      pts.push(b)
+    }
+    for (let q = 0; q < pts.length - 1; q++) {
+      const a = pts[q], b = pts[q + 1]
+      const t0 = q / (pts.length - 1), t1 = (q + 1) / (pts.length - 1)
+      const wa = w0 + (w1 - w0) * t0, wb = w0 + (w1 - w0) * t1
+      // lado (perpendicular à descida, no chão) e um pouco para fora da encosta
+      const dx = b[0] - a[0], dz = b[2] - a[2], dl = Math.hypot(dx, dz) || 1
+      const sx = -dz / dl, sz = dx / dl
+      const ol = Math.hypot(a[0] - x, a[2] - z) || 1
+      const ox = (a[0] - x) / ol, oz = (a[2] - z) / ol
+      const off = 2.4
+      const P = (p: V3, w: number, s: number): V3 => [p[0] + sx * w * s + ox * off, p[1] + 0.3, p[2] + sz * w * s + oz * off]
+      const faixas: [number, number, RGB][] = lod ? [[-1, 1, [1, 0.5, 0.12]]] : [[-1, -0.35, [0.95, 0.24, 0.06]], [-0.35, 0.35, [1, 0.78, 0.26]], [0.35, 1, [1, 0.42, 0.08]]]
+      for (const [s0, s1, col] of faixas) face(GL, [P(a, wa, s0), P(a, wa, s1), P(b, wb, s1), P(b, wb, s0)], hz(col, 0.35), [ox, 0.5, oz])
+    }
+  }
+  const frente = Math.atan2(fz, fx) // ângulo (no plano x-z) do lado que olha o jogador
+  const setorDe = (a: number) => ((Math.round((a / (Math.PI * 2)) * N) % N) + N) % N
+  const rios = lod ? [-0.25, 0.35] : [-0.75, -0.3, 0.12, 0.5, 0.95]
+  rios.forEach((da, q) => {
+    let k = setorDe(frente + da)
+    if (k % 2 === 0) k = (k + 1) % N // ravina
+    const desce = Math.min(anelT.length - 1, 2 + (q % 3)) // até que anel o rio vai (de cima para baixo)
+    const caminho: V3[] = []
+    for (let j = anelT.length - 1; j >= anelT.length - 1 - desce; j--) caminho.push(V[j][k])
+    lava(caminho, 2.2, 3.4, q)
+    // braço do Y: sai no meio e vai para a ravina vizinha, dois anéis abaixo
+    if (!lod && caminho.length > 2) {
+      const m = Math.floor(caminho.length / 2)
+      const jm = anelT.length - 1 - m
+      const k2 = (k + (q % 2 ? 2 : N - 2)) % N
+      const ramo: V3[] = [caminho[m]]
+      for (let j = jm - 1; j >= Math.max(0, jm - 2); j--) ramo.push(V[j][k2])
+      if (ramo.length > 1) lava(ramo, 1.6, 2.4, q + 20)
+      // filetes finos (as veias acesas que riscam as lajes na ref)
+      for (let f = 0; f < 2; f++) {
+        const jf = Math.min(anelT.length - 2, 1 + Math.floor(rnd(seed, q, f + 40) * (anelT.length - 2)))
+        const kf = (k + (f ? 1 : N - 1)) % N
+        lava([V[jf + 1][k], V[jf][kf]], 0.7, 1, q * 5 + f + 40)
+      }
+    }
+  })
+  // ── OMBROS (dois picos mais baixos dos lados; recuados)
+  if (o.ombros !== false)
+    for (const [s, kR, kH, kB] of [[-1, 0.55, 0.62, 0.15], [1, 0.48, 0.5, 0.35]] as const) {
+      const ox = x + -fz * s * R * 0.72 - fx * R * kB, oz = z + fx * s * R * 0.72 - fz * R * kB
+      const n = lod ? 6 : 9, rr = R * kR, hh = H * kH
+      const ring0 = Array.from({ length: n }, (_, k): V3 => {
+        const a = (k / n) * Math.PI * 2 + rnd(seed, k, 70 + s)
+        const r = rr * (0.85 + rnd(seed, k, 71 + s) * 0.3)
+        return [ox + Math.cos(a) * r, -2, oz + Math.sin(a) * r]
+      })
+      const ring1 = ring0.map((p, k): V3 => [ox + (p[0] - ox) * 0.42, hh * (0.62 + rnd(seed, k, 72 + s) * 0.12), oz + (p[2] - oz) * 0.42])
+      const tip: V3 = [ox + (rnd(seed, 73 + s) - 0.5) * rr * 0.2, hh, oz]
+      for (let k = 0; k < n; k++) {
+        const i = (k + 1) % n
+        const m: V3 = [ring0[k][0] - ox, 0.3, ring0[k][2] - oz]
+        face(g, [ring0[k], ring0[i], ring1[i]], corFace(ring0[k], ring0[i], ring1[i], k + 80, 1), m)
+        face(g, [ring0[k], ring1[i], ring1[k]], corFace(ring0[k], ring1[i], ring1[k], k + 90, 1), m)
+        face(g, [ring1[k], ring1[i], tip], corFace(ring1[k], ring1[i], tip, k + 100, 3), [m[0], 1, m[2]])
+      }
+    }
+  // ── COLUNA DE FUMAÇA (a nuvem da ref): cachos de bolhas. Embaixo, saindo da boca, ACESA (amarelo no miolo →
+  // laranja → vermelho); no meio a barriga laranja; em cima cinza-roxo largo (nunca preto), abrindo para o lado.
+  const nB = lod ? 8 : 40
+  for (let k = 0; k < nB; k++) {
+    const t = k / (nB - 1)
+    const lado = (rnd(seed, k, 90) - 0.5) * 2, fundo2 = (rnd(seed, k, 92) - 0.5) * 2
+    const larg = R * (0.08 + t * 0.62)
+    const r = R * (0.06 + t * 0.12) * (0.75 + rnd(seed, k, 91) * 0.5)
+    const cxp = x - fz * lado * larg, cyp = H * (1.0 + t * 0.95) + (rnd(seed, k, 93) - 0.5) * R * 0.08
+    const czp = z + fx * lado * larg + fz * fundo2 * larg * 0.6
+    if (t < 0.3) {
+      // o fogo da boca: acende de baixo (dark = o tom de BAIXO na bolha)
+      const q = t / 0.3
+      blob(GL, [cxp, cyp, czp], [r, r * 0.8, r], { dark: hz(mix([1, 0.92, 0.5], [1, 0.6, 0.15], q), 0.2), mid: hz(mix([1, 0.7, 0.2], [1, 0.42, 0.1], q), 0.2), hi: hz(mix([1, 0.5, 0.12], [0.85, 0.22, 0.08], q), 0.2) }, seed * 31 + k)
+    } else {
+      const q = (t - 0.3) / 0.7
+      // fumaça SEM luz da cena (vista de baixo ficaria preta): o sombreado já vai na cor
+      const esc = mix([0.36, 0.24, 0.28], [0.27, 0.22, 0.28], q), cl = mix([0.66, 0.44, 0.42], [0.5, 0.44, 0.52], q)
+      blob(GL, [cxp, cyp, czp], [r, r * 0.75, r], { dark: hz(esc, 0.45), mid: hz(mix(esc, cl, 0.5), 0.45), hi: hz(cl, 0.45) }, seed * 31 + k)
+      // barriga alaranjada (a luz da boca) nos cachos de baixo
+      if (q < 0.45 && !lod) blob(GL, [cxp, cyp - r * 0.5, czp], [r * 0.75, r * 0.35, r * 0.75], { dark: hz([1, 0.5, 0.14], 0.3), mid: hz([0.95, 0.34, 0.1], 0.3), hi: hz([0.7, 0.2, 0.1], 0.3) }, seed * 17 + k)
     }
   }
 }
