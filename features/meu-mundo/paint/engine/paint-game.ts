@@ -320,6 +320,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
           // empurrão do muro: sem sangue, clarão turquesa e a gelatina balança
           const tp = e.slot === port.me ? body : state.players.get(e.slot)?.pose
           if (tp) vfx.impact(new Vector3(tp.x, tp.y + 1.1, tp.z), WALL_FX, true)
+          if (tp) playSample("jogo-paint-pulo", { gain: e.slot === port.me || e.by === port.me ? 0.75 : 0.3, minGap: 150, vary: 0.05 })
         } else if (e.how === "boss") {
           // o guardião bate: luz, não sangue
           const tp = e.slot === port.me ? body : state.players.get(e.slot)?.pose
@@ -730,6 +731,7 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       if (body.shove !== null) {
         // bateu no muro turquesa: ele balança e o corpo sai voando para trás
         paint.squash(body.shove)
+        playSample("jogo-paint-pulo", { gain: 0.75, minGap: 150, vary: 0.05 }) // o mesmo boing da cama vermelha (Alex)
         vfx.impact(new Vector3(body.x, body.y + 1.1, body.z), WALL_FX, false)
         char.jump(0)
         launchV = body.vy
