@@ -41,6 +41,8 @@ const FOV = (24 * Math.PI) / 180
 const HOLO_LIFT = 0.07
 /** Velocidade da linha que solidifica (altura por segundo). */
 const SOLID_SPEED = 0.42
+/** Duração do brilho de "equipou" (s). */
+const FLASH_TIME = 1.3
 /** Do topo do esqueleto (HeadTop_End) ao topo do cabelo. */
 const HAIR = 1.06
 
@@ -246,6 +248,11 @@ export class SkinStage {
   private solidDone: (() => void) | null = null
   private glitch = 0
   private glitchTimer = 2
+  // brilho de "equipou" (tela de equipamentos): sobe pelo corpo e some
+  private flashT = 0
+  private flashColor = Color3.White()
+  /** Emissivo de cada material antes do brilho (os avatares já nascem com emissivo próprio). */
+  private matGlow: Color3[] = []
   // arrasto
   private dragging = false
   private lastX = 0
@@ -384,6 +391,7 @@ export class SkinStage {
         p.accent = accent
         this.plugins.push(p)
         this.mats.push(mat)
+        this.matGlow.push(mat.emissiveColor.clone())
         byMat.set(src, mat)
       }
       m.material = mat
@@ -397,6 +405,17 @@ export class SkinStage {
       this.spin.rotation.y = this.frameBox.face ?? 0
       this.velocity = 0
     }
+  }
+
+  /**
+   * Brilho no personagem (tela de equipamentos, 2026-11-12): o anel acende nos pés, o feixe
+   * sobe pelo corpo e o corpo inteiro clareia na cor; tudo some em ~1,3 s. Sem malha nem
+   * material novo: reaproveita a base e o feixe do holograma.
+   */
+  flash(hex: string) {
+    if (this.disposed || this.holo) return
+    this.flashColor = Color3.FromHexString(hex)
+    this.flashT = this.reduced ? 0.5 : FLASH_TIME
   }
 
   /** "Comprou": a linha sobe e o holograma vira o personagem. */
@@ -427,6 +446,8 @@ export class SkinStage {
     this.rig = null
     for (const m of this.mats) m.dispose(false, false)
     this.mats = []
+    this.matGlow = []
+    this.flashT = 0
     this.plugins = []
     this.solidDone?.()
     this.solidDone = null
@@ -537,6 +558,27 @@ export class SkinStage {
       // sem luz, a cor do material tinge a textura branca
       this.baseMat.diffuseColor = this.plugins[0]?.color ?? Color3.White()
       this.beamMat.diffuseColor = this.baseMat.diffuseColor
+      if (this.flashT > 0 && !this.holo) {
+        this.flashT = Math.max(0, this.flashT - dt)
+        const k = 1 - this.flashT / FLASH_TIME // 0 → 1
+        const env = Math.sin(Math.PI * Math.min(1, k)) // sobe e desce
+        this.baseMat.diffuseColor = this.flashColor
+        this.beamMat.diffuseColor = this.flashColor
+        this.base.visibility = env
+        this.base.scaling.setAll(0.6 + 0.9 * easeOutCubic(k))
+        this.beam.visibility = env * 0.9
+        // o feixe cresce dos pés à cabeça
+        const rise = 0.15 + 0.85 * easeOutCubic(Math.min(1, k * 1.6))
+        this.beam.scaling.y = rise
+        this.beam.position.y = 0.65 * rise
+        this.shadow.visibility = 1 - env * 0.6
+        this.mats.forEach((m, i) => m.emissiveColor.copyFrom(this.flashColor).scaleInPlace(env * 0.55).addInPlace(this.matGlow[i]))
+        if (this.flashT === 0) {
+          this.mats.forEach((m, i) => m.emissiveColor.copyFrom(this.matGlow[i]))
+          this.beam.scaling.y = 1
+          this.beam.position.y = 0.65
+        }
+      }
     } else {
       this.base.visibility = 0
       this.beam.visibility = 0

@@ -41,7 +41,8 @@ import {
   Loader2,
 } from "lucide-react"
 import type { BodyId, LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
-import type { GearSlot } from "../../data"
+import type { GearBag, GearSlot } from "../../data"
+import { EquipPage } from "./equip-page"
 import { SheetStage } from "./sheet-stage"
 import { Bar, Chamfer, CountUp, EVO, Gauge, Plate, Ring, Tag, archivo, cinzel, teko, toneFor } from "./evo-skin"
 import { MM } from "../hud/tokens"
@@ -69,7 +70,8 @@ type Tr = (key: string, fallback: string) => string
  * As páginas antigas (overview, body, attributes, loadout, market, history, certificate,
  * archive) saem da navegação; o código delas sai numa limpeza à parte.
  */
-export const PAGES = ["sheet", "soul", "routine", "record"] as const
+/** 2026-11-12: + "equip" = Equipamentos (o personagem no palco com as 8 casas; equipar com brilho, número e som). */
+export const PAGES = ["sheet", "equip", "soul", "routine", "record"] as const
 export type PageId = (typeof PAGES)[number]
 
 export interface PageActions {
@@ -86,6 +88,8 @@ export interface PageActions {
   openPolens?: () => void
   /** E6: abre a mochila filtrada por um slot (tocar o slot no Equipado). */
   openBag?: (slot: GearSlot) => void
+  /** Página Equipamentos: equipa (item) ou tira (null) e devolve a mochila nova; null = o servidor recusou. */
+  equip?: (slot: GearSlot, item: string | null, instance?: string | null) => Promise<GearBag | null>
 }
 
 /** Nível de aventura e o XP dentro dele (mm3d-60g). */
@@ -437,6 +441,7 @@ function timeOf(iso: string, offsetMin: number) {
 // ─── peças comuns ─────────────────────────────────────────────────────────────
 const SUBTITLE: Record<PageId, [string, string]> = {
   sheet: ["stPageSheet", "Ficha"],
+  equip: ["stPageEquip", "Equipamentos"],
   soul: ["stPageSoul", "Alma"],
   routine: ["stPageRoutine2", "Rotina"],
   record: ["stPageRecord", "Registro"],
@@ -2190,6 +2195,15 @@ function SheetPage(props: PageProps) {
   )
 }
 
+/** Equipamentos: o palco com as 8 casas (ui/status/equip-page.tsx). Morto não equipa: cai na Ficha. */
+function EquipStatusPage(props: PageProps) {
+  const c = props.life.character
+  if (c.status === "dead") return <SheetPage {...props} />
+  return (
+    <EquipPage body={props.body} portrait={props.portrait} name={props.name} temper={characterTemper(c, props.t)} power={c.power ?? null} data={props.loadout ?? NO_LOADOUT} compact={props.compact} busy={props.act.busy} onEquip={props.act.equip} t={props.t} />
+  )
+}
+
 /** Alma: personalidade, quanto gosta de você, fertilidade (a metade "alma" da antiga pág. 3). */
 function SoulPage({ life, t, compact }: PageProps) {
   const c = life.character
@@ -2335,7 +2349,7 @@ function RecordPage(props: PageProps) {
 }
 
 export function StatusPage(props: PageProps) {
-  const P = { sheet: SheetPage, soul: SoulPage, routine: RoutinePage, record: RecordPage }[props.page]
+  const P = { sheet: SheetPage, equip: EquipStatusPage, soul: SoulPage, routine: RoutinePage, record: RecordPage }[props.page]
   // Celular: a página rola dentro do card; computador: cada página cuida da altura.
   return (
     <div className={`${archivo.className} flex h-full flex-col gap-2`}>

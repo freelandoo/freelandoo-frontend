@@ -12581,7 +12581,15 @@
     "menuSound": "Sound",
     "soundOn": "On",
     "soundLow": "Low",
-    "soundOff": "Off"
+    "soundOff": "Off",
+    "stPageEquip": "Equipment",
+    "eqHint": "Tap a slot around the character to choose a piece.",
+    "eqTakeOff": "Remove",
+    "eqClose": "Close the list",
+    "eqNone": "You don't have a piece for this slot yet.",
+    "eqElsewhere": "on another character",
+    "eqWorn": "Equipped",
+    "eqEquip": "Equip"
   },
   "Sports": {
     "eyebrow": "Sports",

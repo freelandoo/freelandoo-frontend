@@ -11995,7 +11995,15 @@
     "menuSound": "Som",
     "soundOn": "Ligado",
     "soundLow": "Baixo",
-    "soundOff": "Desligado"
+    "soundOff": "Desligado",
+    "stPageEquip": "Equipamentos",
+    "eqHint": "Toque numa casa em volta do personagem para escolher a peça.",
+    "eqTakeOff": "Tirar",
+    "eqClose": "Fechar a lista",
+    "eqNone": "Você ainda não tem peça para esta casa.",
+    "eqElsewhere": "com outro personagem",
+    "eqWorn": "Vestindo",
+    "eqEquip": "Equipar"
   },
   "Sports": {
     "eyebrow": "Esportes",

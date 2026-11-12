@@ -12561,7 +12561,15 @@
     "menuSound": "Sonido",
     "soundOn": "Activado",
     "soundLow": "Bajo",
-    "soundOff": "Desactivado"
+    "soundOff": "Desactivado",
+    "stPageEquip": "Equipamiento",
+    "eqHint": "Toca una casilla alrededor del personaje para elegir la pieza.",
+    "eqTakeOff": "Quitar",
+    "eqClose": "Cerrar la lista",
+    "eqNone": "Aún no tienes una pieza para esta casilla.",
+    "eqElsewhere": "con otro personaje",
+    "eqWorn": "Equipado",
+    "eqEquip": "Equipar"
   },
   "Sports": {
     "eyebrow": "Deportes",
