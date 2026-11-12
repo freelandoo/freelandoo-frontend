@@ -34,6 +34,7 @@ export function montar(lod = 0): Cena {
   })
   F.ruaDeGalpoes(c, P.at, P.livre, lod, 21, 0.055, 4.2) // afastada: as fornalhas e as engrenagens ficam entre a parede e o caminho
   F.fundoFabrica(c, 7)
+  F.horizonteFabrica(c, 7, meta.nevoa)
 
   const color = (x: number, z: number): RGB => {
     const gx = ((x % 2) + 2) % 2, gz = ((z % 2) + 2) % 2

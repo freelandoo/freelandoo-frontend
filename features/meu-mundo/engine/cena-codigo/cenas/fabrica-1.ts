@@ -35,6 +35,7 @@ export function montar(lod = 0): Cena {
   })
   F.ruaDeGalpoes(c, P.at, P.livre, lod, 11, 0.05, 3.2) // afastada: a esteira e as garras ficam entre a parede e o caminho
   F.fundoFabrica(c, 3)
+  F.horizonteFabrica(c, 3, meta.nevoa)
 
   const color = (x: number, z: number): RGB => {
     // chapas de 2 m com junta escura e rebites (mancha mais clara/escura por chapa)

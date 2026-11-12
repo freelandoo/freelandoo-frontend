@@ -116,6 +116,77 @@ export function fundoFabrica(c: Cena, seed: number) {
   }
 }
 
+/**
+ * HORIZONTE da Fábrica (malha SEM névoa — a névoa do jogo acaba em 115–150 m e apagava tudo): o que as três
+ * refs mostram atrás dos galpões — CHAMINÉS-FAROL gigantes com fumaça (ref 1), as AGULHAS de rocha vermelha
+ * em faixas (refs 1 e 3) e o AQUEDUTO de arcos (ref 3). A bruma é pintada na cor (mais longe, mais névoa).
+ */
+export function horizonteFabrica(c: Cena, seed: number, nevoa: RGB, bruma = 0.45) {
+  const g = c.horizonte, GL = c.horizonteLuz
+  const i0 = g.count, j0 = GL.count
+  const lod = c.lod
+  // agulhas de rocha vermelha (anel de 230–265 m), em grupos de 2–3, faixas de arenito
+  const PEDRA_V: RGB = [0.86, 0.5, 0.4], PEDRA_VE: RGB = [0.58, 0.3, 0.3], PEDRA_VC: RGB = [0.98, 0.7, 0.52]
+  for (let k = 0; k < 11; k++) {
+    const a = (k / 11) * Math.PI * 2 + rnd(seed, k) * 0.3
+    for (let q = 0; q < 2 + (k % 2); q++) {
+      const d = 232 + rnd(seed, k, q + 2) * 30
+      const aa = a + (q - 0.5) * 0.07
+      const x = Math.cos(aa) * d, z = Math.sin(aa) * d
+      const R = 7 + rnd(seed, k, q + 5) * 7, H0 = 38 + rnd(seed, k, q + 8) * 40
+      const n = lod ? 5 : 7
+      const aneis = [0, 0.3, 0.55, 0.8, 1]
+      for (let r = 0; r < aneis.length - 1; r++) {
+        const y0 = H0 * aneis[r] - 2, y1 = H0 * aneis[r + 1]
+        const r0 = R * (1 - aneis[r] * 0.45), r1 = R * (1 - aneis[r + 1] * 0.45)
+        tube(g, [x, y0, z], [x, y1, z], r0, r1 * (r === aneis.length - 2 ? 0.9 : 1.04), n, (j) => (r % 2 ? (j % 3 === 0 ? PEDRA_VC : PEDRA_V) : j % 3 === 0 ? PEDRA_V : PEDRA_VE), r === aneis.length - 2)
+      }
+    }
+  }
+  // chaminés-farol gigantes em grupos (150–185 m), com fumaça
+  for (let k = 0; k < 7; k++) {
+    const a = (k / 7) * Math.PI * 2 + 0.4 + rnd(seed, k, 20) * 0.4
+    for (let q = 0; q < 2; q++) {
+      const d = 150 + rnd(seed, k, q + 21) * 35
+      const x = Math.cos(a + q * 0.05) * d, z = Math.sin(a + q * 0.05) * d
+      P.chamineFarol(c, x, z, 30 + rnd(seed, k, q + 23) * 18, 2.4 + rnd(seed, k, q + 24), lod, true, g, GL)
+    }
+  }
+  // aqueduto de arcos (um trecho de ~120 m a 195 m, tangente ao círculo)
+  {
+    const a0 = rnd(seed, 40) * Math.PI * 2, d = 195
+    const cx0 = Math.cos(a0) * d, cz0 = Math.sin(a0) * d
+    const tx = -Math.sin(a0), tz = Math.cos(a0)
+    const PED: RGB = [0.66, 0.5, 0.46], PED_E: RGB = [0.46, 0.33, 0.33]
+    const nA = lod ? 5 : 10, span = 12, Hh = 26
+    for (let k = 0; k <= nA; k++) {
+      const u = (k - nA / 2) * span
+      const x = cx0 + tx * u, z = cz0 + tz * u
+      caixa(g, { x, z, y0: -2, y1: Hh, w: 3, d: 4, rot: -Math.atan2(tx, tz), side: PED_E, top: PED })
+      if (k < nA) {
+        // o arco: 5 gomos de meia-volta entre os pilares, e o tabuleiro em cima
+        for (let q = 0; q < 5; q++) {
+          const t0 = (q / 5) * Math.PI, t1 = ((q + 1) / 5) * Math.PI
+          const R0 = (span - 3) / 2, yb = Hh - R0 - 3
+          const P0 = (t: number, r: number): V3 => [x + tx * (span / 2 - Math.cos(t) * r), yb + Math.sin(t) * r, z + tz * (span / 2 - Math.cos(t) * r)]
+          const nn: V3 = [Math.cos(a0), 0, Math.sin(a0)]
+          face(g, [P0(t0, R0), P0(t1, R0), P0(t1, R0 + 1.6), P0(t0, R0 + 1.6)], PED, [-nn[0], 0, -nn[2]])
+        }
+      }
+    }
+    const L = nA * span
+    caixa(g, { x: cx0, z: cz0, y0: Hh, y1: Hh + 2.4, w: L + 3, d: 4.4, rot: -Math.atan2(tx, tz), side: PED, top: PED_E })
+  }
+  // a bruma: mistura cada vértice novo com a névoa pela distância (100 m → 0; 300 m → `bruma`)
+  for (const [geo, ini] of [[g, i0], [GL, j0]] as const) {
+    for (let v = ini; v < geo.count; v++) {
+      const x = geo.p[v * 3], z = geo.p[v * 3 + 2]
+      const t = Math.min(1, Math.max(0, (Math.hypot(x, z) - 100) / 200)) * bruma
+      for (let q = 0; q < 3; q++) geo.c[v * 4 + q] = geo.c[v * 4 + q] * (1 - t) + nevoa[q] * t
+    }
+  }
+}
+
 /** A caixa (w × d, virada para `ang`) cabe sem encostar no caminho, clareira, arena ou castelo? */
 export function cabe(livre: (x: number, z: number, pad?: number) => boolean, x: number, z: number, w: number, d: number, ang: number) {
   const fx = Math.sin(ang), fz = Math.cos(ang), sx = Math.cos(ang), sz = -Math.sin(ang)

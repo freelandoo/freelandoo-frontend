@@ -39,6 +39,7 @@ export function montar(lod = 0): Cena {
   })
   F.ruaDeGalpoes(c, (t) => P.at(t * 0.72), P.livre, lod, 31, 0.07)
   F.fundoFabrica(c, 12)
+  F.horizonteFabrica(c, 12, meta.nevoa)
 
   const color = (x: number, z: number): RGB => {
     const gx = ((x % 2.5) + 2.5) % 2.5, gz = ((z % 2.5) + 2.5) % 2.5
