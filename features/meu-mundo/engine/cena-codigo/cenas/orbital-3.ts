@@ -8,7 +8,7 @@ import { noise, type RGB } from "../kit"
 import { Cena, blocked, ground, scatter, type XZ } from "../kit-cena"
 import { face, mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, planta } from "../dominio"
-import { castelo, type CasteloEstilo } from "../castelo"
+import { casteloIris } from "../pecas/castelo-iris"
 import * as O from "./tema-orbital"
 import * as C from "../pecas/orbital"
 import { avenida, chaoAvenida, quadras } from "./avenida-orbital"
@@ -26,36 +26,15 @@ export const meta = {
 // trechos RETOS (a avenida precisa); o último sobe reto em x = 0 até o palácio
 const CAMINHO: XZ[] = [[56, -73], [56, -42], [-40, -42], [-40, -2], [0, -2], [0, 24], [0, 44], [0, 56]]
 
-export const IRIS: CasteloEstilo = {
-  pedra: [0.94, 0.93, 0.96],
-  pedraEsc: [0.78, 0.78, 0.88],
-  quina: O.OURO,
-  telhado: [0.86, 0.8, 1],
-  telhadoHi: [1, 0.92, 1],
-  luz: [0.9, 0.7, 1],
-  metal: O.OURO,
-  bandeira: [0.7, 0.5, 1],
-  cobertura: "cone",
-  lados: 7,
-  alto: 1.1,
-}
 
 const ARCO_IRIS: RGB[] = [[1, 0.42, 0.5], [1, 0.7, 0.36], [1, 0.95, 0.5], [0.5, 0.95, 0.6], [0.5, 0.82, 1], [0.7, 0.55, 1]]
 
 export function montar(lod = 0): Cena {
   const c = new Cena("orbital-3", lod, 32, -16)
+  // pegada do PALÁCIO PRISMA copiado (pecas/castelo-iris.ts): 50 m com as fontes e os cantos; pátio 18
   const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 52, d: 40, patio: 18 } })
   const K = P.castelo!
-  const A = castelo(c, K, IRIS, lod)
-  // o grande cristal no alto da menagem e pontas de cristal nas torres
-  O.cristal(c, A.menagem[0], A.menagem[2], 14, 5, lod, A.menagem[1])
-  for (const t of A.torres) O.cristal(c, t[0], t[2], 4.5, t[0] + t[2], lod, t[1] + 6.3)
-  // cachoeiras ciano descendo das alas
-  for (const s of [-1, 1]) {
-    const x = K.porta.x + s * (K.w / 2 - 1), z = K.porta.z + 2.6
-    const G = c.glow(x, z)
-    face(G, [[x - 1.2, 8, z - 1.6], [x + 1.2, 8, z - 1.6], [x + 1.7, 0.05, z - 1.9], [x - 1.7, 0.05, z - 1.9]], [mix(O.CIANO, O.BRANCO, 0.6), mix(O.CIANO, O.BRANCO, 0.6), O.CIANO, O.CIANO], [0, 0.2, -1])
-  }
+  casteloIris(c, K, lod)
   // arcos brancos em fila sobre a avenida (os copiados, vão = a rua): antes das lojas, que desviam deles
   C.portalArco(c, 56, -70, 0, 12, lod)
   for (const t of [0.06, 0.3, 0.58]) { // longe das esquinas: o pilar de um arco logo após a curva cai no trecho anterior
