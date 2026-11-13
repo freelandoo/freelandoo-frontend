@@ -52,7 +52,7 @@ export const godName = (t: Tr, god: string) => t(`domGod_${god}`, GOD_PT[god] ??
 const FOE_PT: Record<string, string> = {
   mariposa: "Mariposas Cinzentas",
   cervo: "Cervo Oco",
-  coruja: "Coruja de Mil Olhos",
+  coruja: "Corujão",
   sonambulo: "Sonâmbulo",
   lobo: "Lobos de Ferrugem",
   selene: "Selene de Sombra",

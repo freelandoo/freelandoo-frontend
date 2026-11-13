@@ -20,7 +20,10 @@ const KEYS = {
 }
 
 // valores que mudaram depois de publicados (vazio por enquanto)
-const OVERRIDE = {}
+const OVERRIDE = {
+  // 2026-11-12 (Alex): os mil olhos saíram (tripofobia) — vira o Corujão, homem-coruja grandão
+  domFoe_coruja: ["Corujão", "Great Owl", "Gran Búho"],
+}
 
 const LOCALES = ["pt-BR", "en", "es"]
 LOCALES.forEach((loc, i) => {
