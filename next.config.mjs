@@ -33,7 +33,7 @@ const cspReportOnly = [
   "font-src 'self' data:",
   `connect-src 'self' ${BACKEND_PUBLIC} wss://freelandoo-backend-production.up.railway.app https://*.r2.cloudflarestorage.com ${R2_PUBLIC} https://*.r2.dev https://cdn.jsdelivr.net https://storage.googleapis.com https://accounts.google.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.adtrafficquality.google wss:`,
   "worker-src 'self' blob:",
-  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://vercel.live https://gsrefrigeracao.tec.br https://hidrovap.com.br https://excelencia.tec.br`,
+  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://vercel.live https://gsrefrigeracao.tec.br https://hidrovap.com.br https://excelencia.tec.br https://xn--vivaarclimatizao-snb5e.com.br`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -82,7 +82,7 @@ const nextConfig = {
       // entradas casando o mesmo caminho deixam a ordem decidir qual vale — e
       // essa ordem não está escrita em lugar nenhum. Aqui cada caminho casa
       // com exatamente uma regra.
-      { source: "/:path((?!site-preview|(?:russamaisrussa|rh|vivaar)(?:/|$)).*)", headers: securityHeaders },
+      { source: "/:path((?!site-preview|(?:russamaisrussa|rh)(?:/|$)).*)", headers: securityHeaders },
       { source: "/site-preview/:path*", headers: previewHeaders },
       // Sites externos aparecem em iframe na tela Site da comunidade (lib/external-sites.ts).
       { source: "/russamaisrussa", headers: previewHeaders },
@@ -90,9 +90,6 @@ const nextConfig = {
       // RH Climatização: projeto próprio na Vercel, em /rh por rewrite, também aparece em iframe.
       { source: "/rh", headers: previewHeaders },
       { source: "/rh/:path*", headers: previewHeaders },
-      // VivaAr Climatização: projeto próprio na Vercel, em /vivaar por rewrite, também aparece em iframe.
-      { source: "/vivaar", headers: previewHeaders },
-      { source: "/vivaar/:path*", headers: previewHeaders },
     ]
   },
   // Tree-shaking de barris grandes: framer-motion (29 arquivos) e date-fns não
@@ -146,6 +143,9 @@ const nextConfig = {
       { source: "/hidrovap/:path*", destination: "https://hidrovap.com.br/:path*", permanent: true },
       { source: "/excelencia", destination: "https://excelencia.tec.br", permanent: true },
       { source: "/excelencia/:path*", destination: "https://excelencia.tec.br/:path*", permanent: true },
+      // VivaAr no domínio próprio vivaarclimatização.com.br (2026-11-12): o projeto deixou de ter basePath.
+      { source: "/vivaar", destination: "https://xn--vivaarclimatizao-snb5e.com.br", permanent: true },
+      { source: "/vivaar/:path*", destination: "https://xn--vivaarclimatizao-snb5e.com.br/:path*", permanent: true },
     ]
   },
   async rewrites() {
@@ -165,9 +165,6 @@ const nextConfig = {
         // RH Climatização (SITES/rh-climatizacao): projeto rh-climatizacao na Vercel com basePath /rh.
         { source: "/rh", destination: "https://rh-climatizacao.vercel.app/rh" },
         { source: "/rh/:path*", destination: "https://rh-climatizacao.vercel.app/rh/:path*" },
-        // VivaAr Climatização (SITES/vivaar-climatizacao): projeto vivaar-climatizacao na Vercel com basePath /vivaar.
-        { source: "/vivaar", destination: "https://vivaar-climatizacao.vercel.app/vivaar" },
-        { source: "/vivaar/:path*", destination: "https://vivaar-climatizacao.vercel.app/vivaar/:path*" },
       ],
     }
   },
