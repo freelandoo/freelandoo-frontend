@@ -11,9 +11,9 @@
 //     pelo mesmo método do bairro (E2, `steampunk/atmosphere.ts` `applyGrade`): imageProcessing com
 //     ColorCurves no shader do material e a cúpula do céu imitando (`SkyDome.setGrade`) — `aplicarCor`.
 //
-// Floresta, Cânion, Gelo, Fábrica e Vulcão seguem a cópia das referências do Alex (luz polida em 14/11):
-// ali o acabamento só põe contato e luz rebatida — nada de luz, névoa ou cor por cima. Quem polir uma cena
-// pelas refs e quiser cor/névoa próprias põe a entrada dela em `VISUAL_CENA` (a Orbital é a única por ora).
+// Os 6 Domínios seguem a cópia das referências do Alex (luz polida em 14/11): o acabamento só põe contato
+// e luz rebatida — nada de luz, névoa ou cor por cima. Quem quiser cor/névoa/luz próprias para uma cena
+// põe a entrada dela em `VISUAL_CENA` (o caminho já está ligado na cena aberta e na cúpula do céu).
 //
 // Fonte única: o jogo (`open-domain-game.ts`) e a vitrine (`pipeline/pecas-codigo`) montam pelo `montarCena`.
 
@@ -48,22 +48,12 @@ export interface VisualCena {
   contato?: { forca: number; raio: number }
 }
 
-const ORBITAL: VisualCena = {
-  // a cena mais lavada: menos exposição, mais contraste e cor (azul/violeta/ciano), chão mais escuro
-  luz: { hemi: 0.74, sol: 0.88, ceu: [0.88, 0.9, 1], chao: [0.46, 0.46, 0.62], solCor: [1, 0.96, 0.9] },
-  cor: { exposure: 0.86, contrast: 1.22, saturation: 16, coolShadows: 12, warmLights: 6 },
-  nevoa: { inicio: 0.8, fim: 1 },
-}
-
 /** Por cena (nome do arquivo). Fora da lista = só contato e luz rebatida (padrão). */
 export const VISUAL_CENA: Readonly<Record<string, VisualCena>> = {
   // Fábrica de dia: os lampiões só aquecem perto (a força padrão suja o chão em volta)
   "fabrica-1": { rebatida: { forca: 0.2, raio: 3.2 } },
   "fabrica-2": { rebatida: { forca: 0.2, raio: 3.2 } },
   "fabrica-3": { rebatida: { forca: 0.2, raio: 3.2 } },
-  "orbital-1": ORBITAL,
-  "orbital-2": ORBITAL,
-  "orbital-3": ORBITAL,
 }
 
 export const visualDaCena = (nome: string): VisualCena | null => VISUAL_CENA[nome] ?? null
