@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react"
 import { Gauge } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { detectTier, loadQualityChoice, saveQualityChoice, type QualityChoice } from "../../engine/quality"
+import { QUALITY_EVENT, autoTier, loadQualityChoice, saveQualityChoice, type QualityChoice } from "../../engine/quality"
 import type { DrawerItem } from "./hud-kit"
 import { applyUiFx } from "../kit/steam/fx-tier"
 
@@ -25,9 +25,16 @@ export function useQualityItem(apply: (c: QualityChoice) => void): DrawerItem {
   const [choice, setChoice] = useState<QualityChoice>("auto")
   const [tier, setTier] = useState<QualityChoice | null>(null)
   // localStorage e a GPU só existem no navegador: lê depois de montar.
+  // No "Automática" mostra o perfil em uso: o medido pelo jogo (E7) ou o palpite do aparelho.
   useEffect(() => {
     setChoice(loadQualityChoice())
-    setTier(detectTier())
+    setTier(autoTier())
+    const onTier = (e: Event) => {
+      setTier((e as CustomEvent<QualityChoice>).detail)
+      applyUiFx()
+    }
+    window.addEventListener(QUALITY_EVENT, onTier)
+    return () => window.removeEventListener(QUALITY_EVENT, onTier)
   }, [])
 
   const name = (c: QualityChoice) => t(LABEL[c][0], LABEL[c][1])

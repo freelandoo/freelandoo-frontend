@@ -10,7 +10,7 @@
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Observer } from "@babylonjs/core/Misc/observable"
-import type { QualityTier } from "../quality"
+import { QUALITY, type QualityTier } from "../quality"
 
 /** O que cada qualidade permite. HIGH nunca é o padrão: quem escolhe é `resolveQuality`. */
 export interface FxBudget {
@@ -22,11 +22,9 @@ export interface FxBudget {
   layers: boolean
 }
 
-export const FX_BUDGET: Record<QualityTier, FxBudget> = {
-  low: { particles: 0.3, maxLive: 6, layers: false },
-  mid: { particles: 0.6, maxLive: 12, layers: true },
-  high: { particles: 1, maxLive: 20, layers: true },
-}
+/** Sai da tabela de perfis (`engine/quality.ts`, visual premium E7): valor novo entra lá. */
+const budgetOf = (t: QualityTier): FxBudget => ({ particles: QUALITY[t].particles, maxLive: QUALITY[t].fxLive, layers: QUALITY[t].fxLayers })
+export const FX_BUDGET: Record<QualityTier, FxBudget> = { low: budgetOf("low"), mid: budgetOf("mid"), high: budgetOf("high") }
 
 export interface FxEffect<A> {
   play: (args: A) => void

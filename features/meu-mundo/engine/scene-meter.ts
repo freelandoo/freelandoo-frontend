@@ -14,13 +14,19 @@
 // as listas da cena só quando alguém chama.
 //
 // Instalação: o `ResolutionGovernor` (quality.ts), que toda cena do jogo cria,
-// chama `markSceneStart(engine)`; o harness pode chamar direto.
+// chama `markSceneStart(engine)` e registra a sonda do perfil (`quality` na ficha:
+// perfil, FPS médio, p95, CPU por quadro — visual premium E7); o harness pode chamar direto.
+// Com `?mmscene=1`, `window.__mmLag = ms` atrasa cada quadro (prova do automático).
 
 import type { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine"
 import { EngineStore } from "@babylonjs/core/Engines/engineStore"
 import type { Scene } from "@babylonjs/core/scene"
 import type { Material } from "@babylonjs/core/Materials/material"
 import type { InternalTexture } from "@babylonjs/core/Materials/Textures/internalTexture"
+import type { QualityStats } from "./quality"
+
+/** O governador de qualidade (quality.ts) da cena: perfil, FPS médio, p95 e CPU por quadro. */
+export type QualityProbe = () => QualityStats
 
 export interface SceneSheet {
   /** Onde foi medido: "celular" (tela de toque) ou "pc", a GPU e a tela. */
@@ -49,9 +55,17 @@ export interface SceneSheet {
   downloadMB: number
   /** Do início da cena até o último desses arquivos terminar de chegar. */
   loadMs: number | null
+  /** Perfil e medidas da janela de 5 s do governador (E7); null na cena sem governador. */
+  quality: QualityStats | null
 }
 
 const born = new WeakMap<AbstractEngine, number>()
+const probes = new WeakMap<AbstractEngine, QualityProbe>()
+
+/** O governador registra a sua leitura (uma por motor). */
+export function setQualityProbe(engine: AbstractEngine, probe: QualityProbe) {
+  probes.set(engine, probe)
+}
 
 /** Marca o início da cena (para tempo de carga e MB baixados) e instala `window.__mmScene`. */
 export function markSceneStart(engine: AbstractEngine) {
@@ -170,6 +184,7 @@ export function measureScene(scene: Scene, engine: AbstractEngine): SceneSheet {
     downloads: dl.n,
     downloadMB: dl.mb,
     loadMs: dl.loadMs,
+    quality: probes.get(engine)?.() ?? null,
   }
 }
 
@@ -187,11 +202,32 @@ export function installSceneMeter() {
   if (!/[?&]mmscene=1/.test(window.location.search)) return
   const box = document.createElement("div")
   box.style.cssText = "position:fixed;right:8px;bottom:8px;z-index:99999;pointer-events:none;font:11px/1.35 monospace;color:#9ff;background:rgba(0,0,0,.65);padding:4px 6px;white-space:pre"
+  box.dataset.mmScene = "1"
   document.body.appendChild(box)
+  const NAME: Record<string, string> = { low: "LOW", mid: "MEDIUM", high: "HIGH" }
   setInterval(() => {
     const s = w.__mmScene?.()
-    box.textContent = s
-      ? `${s.fps} fps ${s.frameMs} ms  esc ${s.renderScale}\n${Math.round(s.triangles / 1000)}k tri  ${s.drawCalls} draw  ${s.materials} mat\ntex ${s.textures} (${s.compressedTextures} ktx) ~${s.textureMB} MB\n${s.downloadMB} MB em ${s.downloads} arq${s.loadMs !== null ? `  ${(s.loadMs / 1000).toFixed(1)} s` : ""}`
-      : "sem cena"
+    if (!s) {
+      box.textContent = "sem cena"
+      return
+    }
+    const q = s.quality
+    const head = q
+      ? `${NAME[q.tier]}${q.choice === "auto" ? " (auto)" : " (manual)"} ${q.state}${q.upLocked ? " ⊘↑" : ""}  esc ${q.ratio}
+` +
+        `${q.fpsAvg} fps méd  p95 ${q.p95Ms} ms  meta ${q.targetFps}
+` +
+        `cpu ${q.cpuMs} ms (p95 ${q.cpuP95Ms})  ruim ${q.bad} folga ${q.good}${q.last ? `
+troca ${q.changes}: ${q.last}` : ""}
+`
+      : `${s.fps} fps ${s.frameMs} ms  esc ${s.renderScale}
+`
+    box.textContent =
+      head +
+      `${Math.round(s.triangles / 1000)}k tri  ${s.drawCalls} draw  ${s.materials} mat  ${s.activeMeshes} malhas
+` +
+      `tex ${s.textures} (${s.compressedTextures} ktx) ~${s.textureMB} MB  part ${s.particles}
+` +
+      `${s.downloadMB} MB em ${s.downloads} arq${s.loadMs !== null ? `  ${(s.loadMs / 1000).toFixed(1)} s` : ""}`
   }, 500)
 }

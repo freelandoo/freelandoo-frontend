@@ -12,7 +12,7 @@
 // Dia × noite: bairro e centro seguem o relógio de Brasília (as duas artes se misturam no crepúsculo);
 // cada cena de Domínio usa a arte que combina com a luz dela (`variantOfCena`).
 
-import type { QualityTier } from "../quality"
+import { QUALITY, type QualityTier } from "../quality"
 import { SKY_MEDIDAS } from "./sky-medidas.gen"
 
 export type SkyArtId = keyof typeof SKY_MEDIDAS
@@ -113,9 +113,9 @@ export function variantOfCena(nome: string, ceu: C3): SkyVariant {
   return 0.299 * ceu[0] + 0.587 * ceu[1] + 0.114 * ceu[2] < 0.32 ? "noite" : "dia"
 }
 
-/** Lado da textura por nível: baixo 1024 (≈2,8 MB de vídeo por arte), médio e alto 2048 (≈8 MB). */
+/** Lado da textura por nível (`QUALITY[tier].sky.tex`): baixo 1024 (≈2,8 MB de vídeo por arte), médio e alto 2048 (≈8 MB). */
 export function skyTexSize(tier: QualityTier): 1024 | 2048 {
-  return tier === "low" ? 1024 : 2048
+  return QUALITY[tier].sky.tex
 }
 
 /** Arquivos versionados por pasta (`v2`): arte nova = `v3`, nunca sobrescrever (cache do navegador/CDN). */

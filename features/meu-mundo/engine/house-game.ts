@@ -211,8 +211,9 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: "default" }, false)
   const unlive = liveGamesBump()
   let disposed = false
-  // Resolução pelo FPS medido (mm3d-19); a casa é pequena, o resto não muda.
-  const governor = new ResolutionGovernor(engine, resolveQuality(), Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
+  // Resolução pelo FPS medido (mm3d-19); a casa é pequena, o resto não muda ao vivo —
+  // no "Automático" o perfil medido vale a partir da próxima cena (E7).
+  const governor = new ResolutionGovernor(engine, resolveQuality(), Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5), { learn: true })
 
   const scene = new Scene(engine)
   scene.clearColor = new Color4(0.16, 0.15, 0.17, 1)

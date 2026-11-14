@@ -188,7 +188,9 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   let disposed = false
   const quality = resolveQuality()
   const low = quality.tier === "low"
-  const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
+  // A cena aberta monta pelo perfil e não troca ao vivo: no "Automático" o governador mede e
+  // grava o perfil, que vale na próxima cena (cada parte, luta e volta remonta). Visual premium E7.
+  const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5), { learn: true })
 
   const scene = new Scene(engine)
   scene.skipPointerMovePicking = true
@@ -255,7 +257,8 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     blocks.push(...byKey.values())
     for (const m of [...near0.meshes, ...far1.meshes]) m.freezeWorldMatrix()
   }
-  const NEAR_D = low ? 40 : 52
+  // distância do detalhe pelo LOD do perfil (`lodScale`): baixo 40, médio 52, alto 65 m
+  const NEAR_D = Math.floor(52 * quality.lodScale)
   let lodT = 0
   const refreshLod = (px: number, pz: number) => {
     for (const b of blocks) {
@@ -421,7 +424,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       }
     }
   }
-  const SHOW_D = low ? 38 : 50
+  const SHOW_D = Math.floor(50 * quality.lodScale)
   const modelFor = (m: Mob) => {
     const sec = domain.sectors[m.sector - 1]
     const fb = sec?.foe?.body ?? null
@@ -740,6 +743,8 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     }
     if (story) storyFrame(dt)
     else follow.update(dt, body.x, body.z, boxes, 0)
+    // cena de história (câmera e foco de cinema): não é desempenho de jogo, não conta
+    if (story) governor.hold(1500)
     governor.tick(engine.getDeltaTime())
     const next = findNearby()
     if (!sameNear(next, nearby)) {

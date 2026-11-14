@@ -217,7 +217,12 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // Qualidade (mm3d-19): resolução que se ajusta ao FPS medido; neblina,
   // horizonte e detalhe dos outros jogadores pelo perfil do aparelho.
   let quality: QualityProfile = resolveQuality()
-  const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5))
+  // Visual premium E7: no "Automático" o governador também troca o PERFIL pelo desempenho
+  // medido (histerese em quality.ts); a troca entra pelo mesmo caminho da gaveta.
+  let applyProfile: (q: QualityProfile) => void = () => {}
+  const governor = new ResolutionGovernor(engine, quality, Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio ?? 1.5), {
+    onTier: (q) => applyProfile(q),
+  })
 
   const scene = new Scene(engine)
   scene.clearColor = new Color4(SKY.r, SKY.g, SKY.b, 1)
@@ -426,6 +431,16 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const whereOnMap = () => ({ x: local.x, z: local.z, facing: local.heading })
   let dropMap = setCityMap(mapOf({ exit: opts.exitLabel, center: opts.centerLabels, map: opts.mapLabels }), whereOnMap)
   follow.camera.maxZ = quality.maxZ
+  // Troca de perfil ao vivo (gaveta ou automático): só o que é barato de trocar.
+  applyProfile = (q) => {
+    if (disposed) return
+    quality = q
+    scene.fogStart = q.fogStart
+    scene.fogEnd = q.fogEnd
+    follow.camera.maxZ = q.maxZ
+    world.setQuality?.(q)
+    lib.lodDistance = q.avatarLod
+  }
   scene.activeCamera = follow.camera
   follow.snapBehind(home.x, home.z, home.rotationY)
   follow.update(1, local.x, local.z, world.viewBoxes)
@@ -1056,13 +1071,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       if (!disposed) net.send("gfight", busy ? { g: god, r: 0, b: 1 } : { g: god, r: 0 })
     },
     setQuality(c) {
-      quality = resolveQuality(c)
-      governor.setProfile(quality)
-      scene.fogStart = quality.fogStart
-      scene.fogEnd = quality.fogEnd
-      follow.camera.maxZ = quality.maxZ
-      world.setQuality?.(quality)
-      lib.lodDistance = quality.avatarLod
+      governor.setProfile(resolveQuality(c))
+      applyProfile(resolveQuality(c))
     },
     setStatsEnabled(on) {
       if (on && !instr) {

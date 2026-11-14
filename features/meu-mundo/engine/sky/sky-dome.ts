@@ -25,7 +25,7 @@ import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial"
 import { Effect } from "@babylonjs/core/Materials/effect"
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
-import type { QualityTier } from "../quality"
+import { QUALITY, type QualityTier } from "../quality"
 import { SKY_REGIONS, skyArt, skyUrl, type SkyArtId, type SkyFx, type SkyMode, type SkyRegion, type SkyRegionId } from "./sky-registry"
 
 type C3 = readonly [number, number, number]
@@ -220,9 +220,9 @@ export class SkyDome {
   constructor(scene: Scene, opts: SkyDomeOptions) {
     this.scene = scene
     this.tier = opts.tier
-    this.fxOn = opts.tier !== "low"
+    this.fxOn = QUALITY[opts.tier].sky.fx
     this.flashLight = opts.flashLight ?? null
-    this.mesh = domeMesh(scene, opts.tier === "low" ? 32 : 48)
+    this.mesh = domeMesh(scene, QUALITY[opts.tier].sky.segments)
     this.mesh.isPickable = false
     this.mesh.infiniteDistance = true
     this.mesh.alwaysSelectAsActiveMesh = true
@@ -396,7 +396,7 @@ export class SkyDome {
   setQuality(tier: QualityTier) {
     if (tier === this.tier) return
     this.tier = tier
-    const fx = tier !== "low"
+    const fx = QUALITY[tier].sky.fx
     if (fx !== this.fxOn) {
       this.fxOn = fx
       const old = this.mat
