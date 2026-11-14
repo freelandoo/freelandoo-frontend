@@ -10,21 +10,25 @@
 // de luz das lanternas e as estrelas. Mudar o número só troca cores e
 // intensidades: nenhum material é recompilado, nada é recriado.
 //
-// Céu: cúpula com degradê na cor do vértice (horizonte = cor da neblina, o chão
-// some no céu sem costura); por cima, as estrelas e a lua numa
-// malha que aparece com a noite. Sem luz, sem neblina, presas à câmera.
+// Céu: a cúpula panorâmica (engine/sky — arte do bairro/centro; sem arte, o degradê
+// de sempre com horizonte = cor da neblina). De dia a arte aparece como é; no
+// crepúsculo e à noite ela escurece (`ART`) e o céu puxa o degradê da hora. Por
+// cima, as estrelas e a lua numa malha que aparece com a noite. Sem luz, sem
+// neblina, presas à câmera.
 
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { CreateSphereVertexData } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
-import { VertexBuffer } from "@babylonjs/core/Buffers/buffer"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import type { Scene } from "@babylonjs/core/scene"
 import { rng } from "./palette"
+import { SkyDome } from "../sky/sky-dome"
+import type { SkyRegionId } from "../sky/sky-registry"
+import type { QualityTier } from "../quality"
 
 type C3 = readonly [number, number, number]
 
@@ -83,6 +87,17 @@ function lookAt(n: number): Look {
   }
 }
 
+/** A arte panorâmica (pintada de dia) na hora: cor que multiplica a arte e quanto o céu puxa o degradê. */
+const ART = {
+  day: { light: [1, 1, 1] as C3, mix: 0 },
+  dusk: { light: [0.95, 0.68, 0.6] as C3, mix: 0.35 },
+  night: { light: [0.17, 0.18, 0.3] as C3, mix: 0.55 },
+}
+function artAt(n: number): { light: C3; mix: number } {
+  const [a, b, t] = n < 0.5 ? [ART.day, ART.dusk, n * 2] : [ART.dusk, ART.night, n * 2 - 1]
+  return { light: lerp3(a.light, b.light, t), mix: lerp(a.mix, b.mix, t) }
+}
+
 /** Hora de Brasília com fração (0–24). */
 export function brasiliaHour(now = new Date()): number {
   try {
@@ -126,34 +141,14 @@ export function applyLights(scene: Scene, n: number) {
   }
 }
 
-/** Cúpula do céu (degradê) e a malha das estrelas e da lua. */
+/** Cúpula do céu (arte panorâmica ou degradê) e a malha das estrelas e da lua. */
 export class Sky {
-  readonly dome: Mesh
+  readonly dome: SkyDome
   readonly stars: Mesh
-  private readonly k: number[] = []
-  private readonly colors: Float32Array
-  private readonly domeVerts: number
   private readonly starMat: StandardMaterial
 
-  constructor(scene: Scene, r: number) {
-    const vd = CreateSphereVertexData({ diameter: 2, segments: 12, sideOrientation: Mesh.BACKSIDE })
-    const p = vd.positions as number[]
-    for (let i = 0; i < p.length; i += 3) {
-      const t = Math.max(0, Math.min(1, (p[i + 1] + 0.02) / 0.55))
-      this.k.push(Math.pow(t, 0.7))
-    }
-    this.domeVerts = p.length / 3
-    const pos = [...p]
-    const idx = [...(vd.indices as number[])]
-    this.colors = new Float32Array((pos.length / 3) * 4)
-    const merged = new VertexData()
-    merged.positions = pos
-    merged.indices = idx
-    merged.colors = this.colors
-    this.dome = new Mesh("sp-sky", scene)
-    merged.applyToMesh(this.dome, true)
-    this.dome.material = unlit("sp-sky", scene)
-    finishSky(this.dome, r)
+  constructor(scene: Scene, r: number, opts: { region?: SkyRegionId | null; tier?: QualityTier } = {}) {
+    this.dome = new SkyDome(scene, { radius: r, tier: opts.tier ?? "mid", region: opts.region ?? null, haze: DAY.haze, zenith: DAY.zenith })
 
     // Estrelas (triângulos minúsculos acima de 8° do horizonte) e a lua.
     const sp: number[] = []
@@ -196,27 +191,25 @@ export class Sky {
   /** Cores do momento `n` (0 dia, 1 noite). */
   set(n: number) {
     const L = lookAt(n)
-    const c = this.colors
-    for (let i = 0; i < this.domeVerts; i++) {
-      const k = this.k[i]
-      c[i * 4] = lerp(L.haze[0], L.zenith[0], k)
-      c[i * 4 + 1] = lerp(L.haze[1], L.zenith[1], k)
-      c[i * 4 + 2] = lerp(L.haze[2], L.zenith[2], k)
-      c[i * 4 + 3] = 1
-    }
-    this.dome.updateVerticesData(VertexBuffer.ColorKind, c)
+    this.dome.setGradient(L.haze, L.zenith)
+    const A = artAt(n)
+    this.dome.setLight(A.light, A.mix)
     const s = Math.max(0, (n - 0.45) / 0.55)
     this.starMat.alpha = s
     this.stars.setEnabled(s > 0.02)
   }
 
   setRadius(r: number) {
-    this.dome.scaling.setAll(r)
+    this.dome.setRadius(r)
     this.stars.scaling.setAll(r)
   }
 
+  /** Nível de qualidade: tamanho da arte e efeitos do céu. */
+  setQuality(tier: QualityTier) {
+    this.dome.setQuality(tier)
+  }
+
   dispose() {
-    this.dome.material?.dispose()
     this.dome.dispose()
     this.starMat.dispose()
     this.stars.dispose()

@@ -44,6 +44,8 @@ import type { BodyId, InteriorDef } from "../../types"
 import type { DomainInfo, DomainScene } from "../../data"
 import { GodFigure, GOD_HUNT } from "../../engine/god-view"
 import type { GodId } from "../../laminas/sim/fight"
+import { SkyDome } from "../../engine/sky/sky-dome"
+import { SKY_REGIONS, skyFog, skyOfCena } from "../../engine/sky/sky-registry"
 import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
 
 /** Alcance do "Lutar", das passagens e do aviso de selado (m). */
@@ -155,8 +157,11 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const far1: CenaMontada = montarCena(scene, sc.name, 1)
   const cena = near0.cena
   const meta = near0.meta
-  const ceu = meta.ceu
-  const nev = meta.nevoa
+  // céu panorâmico do Domínio (engine/sky): a névoa puxa para a cor do chão pintado no horizonte
+  const skyId = skyOfCena(sc.name)
+  const skyReg = skyId ? SKY_REGIONS[skyId] : null
+  const ceu = skyReg ? skyReg.bottom : meta.ceu
+  const nev = skyReg ? skyFog(skyReg, meta.nevoa) : meta.nevoa
   scene.clearColor = new Color4(ceu[0], ceu[1], ceu[2], 1)
   scene.fogMode = Scene.FOGMODE_LINEAR
   scene.fogColor = new Color3(nev[0], nev[1], nev[2])
@@ -170,8 +175,12 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const sun = new DirectionalLight("mm-dom-sun", new Vector3(-0.55, -1, -0.35), scene)
   sun.intensity = luz?.sol ?? 0.55
   if (luz?.solCor) sun.diffuse = new Color3(luz.solCor[0], luz.solCor[1], luz.solCor[2])
-  const dropAstro = astroDaCena(scene, meta)
-  const dropAurora = auroraDaCena(scene, meta)
+  // a arte já tem a lua/o sol e a aurora: o disco e as cortinas em malha só ficam sem arte
+  const dropAstro = skyReg?.dropAstro ? () => {} : astroDaCena(scene, meta)
+  const dropAurora = skyReg?.dropAstro ? () => {} : auroraDaCena(scene, meta)
+  const sky = skyReg
+    ? new SkyDome(scene, { radius: 295, tier: quality.tier, region: skyReg.id, haze: [nev[0], nev[1], nev[2]], zenith: skyReg.top, flashLight: hemi })
+    : null
 
   /** Blocos: centro + as duas malhas (o pano de fundo de longe sai: o de perto basta). */
   const S = cena.cell
@@ -681,6 +690,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       far1.dispose()
       dropAstro()
       dropAurora()
+      sky?.dispose()
       fallbackMat.dispose()
       shadowMat.dispose()
       scene.dispose()

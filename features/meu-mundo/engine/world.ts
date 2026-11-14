@@ -425,7 +425,8 @@ export function buildWorld(
   signMat.freeze()
 
   // Céu e o que mexe (engrenagens, vapor).
-  const sky = new Sky(scene, QUALITY[tier].maxZ * 0.9)
+  // céu panorâmico (engine/sky, região "bairro"): dia/noite escurece a arte em `sky.set`
+  const sky = new Sky(scene, QUALITY[tier].maxZ * 0.9, { region: "bairro", tier })
   const fx = new SteamFx(scene, mats, tier)
   fx.setStatic(ctx.gears, ctx.vents)
 
@@ -601,6 +602,7 @@ export function buildWorld(
     setQuality(q) {
       fx.setTier(q.tier)
       sky.setRadius(q.maxZ * 0.9)
+      sky.setQuality(q.tier)
     },
     dispose: () => {
       disposed = true
