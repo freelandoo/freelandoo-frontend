@@ -39,14 +39,12 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
-import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
-import { ensureLoaders } from "../../engine/avatars"
-import { Quaternion } from "@babylonjs/core/Maths/math.vector"
 import { place, type RGB } from "../../engine/geometry"
 import type { QualityTier } from "../../engine/quality"
 import type { Island, PaintMap, PaintProp, Solid } from "../sim/map"
 import { ArenaGeo, Clearance, arch, banner, brazier, camCyl, crystalPedestal, deadEdge, edgeFrame, edgesOf, krnd, lamp, railing, runeCircle } from "./arena-kit"
 import { TUNING } from "../sim/tuning"
+import { paintTexture, type PaintTexKind } from "./paint-tex"
 import type { PaintTheme } from "./paint-map-art"
 import type { PaintWorldView } from "./world-view"
 
@@ -270,14 +268,9 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   }
 
   // ── materiais ──
-  // mm3d-77: texturas pintadas que repetem sem emenda (pipeline/paint/build_paint_textures.py)
-  const TEX = "/meu-mundo/paint/v1/tex/"
-  const fileTex = (name: string) => {
-    const t = own(new Texture(TEX + name + ".webp", scene))
-    t.wrapU = Texture.WRAP_ADDRESSMODE
-    t.wrapV = Texture.WRAP_ADDRESSMODE
-    return t
-  }
+  // mm3d-77: texturas pintadas que repetem sem emenda. Projeto B 3g: saem
+  // do código (paint-tex.ts), não mais dos .webp assados no Blender.
+  const fileTex = (name: PaintTexKind) => own(paintTexture(scene, name))
   const forest = th.tile === "moss"
   const topTex = forest ? fileTex("lajes-musgo") : th.tile === "garden" || th.tile === "rune" ? fileTex("lajes") : own(tileTexture(scene, th.tile, th))
   const metalTex = fileTex("chapa")
@@ -468,7 +461,9 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
         }
         rock.p.push(isl.x + ox + (x - isl.x) * R.f * j, isl.y - R.dy - dyj, isl.z + oz + (z - isl.z) * R.f * j)
         const s = 0.9 + rnd(isl.id * 53 + ri * 11 + k) * 0.14
-        rock.c.push(R.c[0] * s, R.c[1] * s, R.c[2] * s, 1)
+        // 3g: a Floresta perdeu a rocha do GLB — pedra mais escura, com musgo no alto
+        const rc: RGB = forest ? mix(mul(R.c, 0.62), [0.24, 0.36, 0.2], ri < 2 ? 0.55 : ri < 4 ? 0.18 : 0.04) : R.c
+        rock.c.push(rc[0] * s, rc[1] * s, rc[2] * s, 1)
       }
     })
     for (let ri = 0; ri < rings.length - 1; ri++) {
@@ -481,7 +476,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     const last = rings[rings.length - 1]
     const tip = rock.p.length / 3
     rock.p.push(isl.x + Math.sin(da) * drift * 1.15, isl.y - last.dy - (LEAF.has(tag) ? 0.6 : Math.max(1, D * 0.18)), isl.z + Math.cos(da) * drift * 1.15)
-    rock.c.push(...mul(strata[5], 0.85), 1)
+    rock.c.push(...mul(strata[5], forest ? 0.53 : 0.85), 1)
     const lb = base + (rings.length - 1) * seg
     for (let k = 0; k < seg; k++) rock.i.push(lb + k, lb + ((k + 1) % seg), tip)
     // C: pontas penduradas (estalactites) em volta da principal, de tamanhos
@@ -502,15 +497,15 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
           const t = (k / 7) * Math.PI * 2
           const ww = w * (0.85 + rnd(isl.id * 47 + q * 7 + k) * 0.3)
           rock.p.push(ox + Math.sin(t) * ww, top, oz + Math.cos(t) * ww)
-          rock.c.push(...strata[3], 1)
+          rock.c.push(...mul(strata[3], forest ? 0.62 : 1), 1)
         }
         for (let k = 0; k < 7; k++) {
           const t = (k / 7) * Math.PI * 2 + 0.4
           rock.p.push(ox + Math.sin(a) * lean * 0.4 + Math.sin(t) * w * 0.5, top - len * 0.55, oz + Math.cos(a) * lean * 0.4 + Math.cos(t) * w * 0.5)
-          rock.c.push(...strata[4], 1)
+          rock.c.push(...mul(strata[4], forest ? 0.62 : 1), 1)
         }
         rock.p.push(ox + Math.sin(a) * lean, top - len, oz + Math.cos(a) * lean)
-        rock.c.push(...mul(strata[5], 0.8), 1)
+        rock.c.push(...mul(strata[5], forest ? 0.5 : 0.8), 1)
         for (let k = 0; k < 7; k++) {
           const a0 = b2 + k
           const a1 = b2 + ((k + 1) % 7)
@@ -521,9 +516,27 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     }
   }
 
+  const edgePoint = (isl: Island, a: number, inset: number) => {
+    // ponto na borda na direção a (raio pela própria forma: anda até sair)
+    const O = outlineOf(isl, 1.2)
+    let best = O[0]
+    let bd = -Infinity
+    const ux = Math.sin(a)
+    const uz = Math.cos(a)
+    for (const p of O) {
+      const d = (p[0] - isl.x) * ux + (p[1] - isl.z) * uz
+      if (d > bd) {
+        bd = d
+        best = p
+      }
+    }
+    const dx = best[0] - isl.x
+    const dz = best[1] - isl.z
+    const L = Math.hypot(dx, dz) || 1
+    return { x: isl.x + (dx / L) * Math.max(0, L - inset), z: isl.z + (dz / L) * Math.max(0, L - inset) }
+  }
   // ── ilhas ──
-  /** mm3d-77: ilhas que ganham a rocha esculpida (Blender/Tripo) em vez dos anéis. */
-  const rockSlots: Island[] = []
+  /** Projeto B 3g: na Floresta, as ilhas de pedra levam cristais na encosta (a rocha esculpida do GLB saiu: é a do `underOf`). */
   const rockIsland = (isl: Island) => {
     const tag = isl.tag ?? ""
     return !LEAF.has(tag) && tag !== "stair" && !METAL.has(tag)
@@ -554,8 +567,22 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       if (LEAF.has(tag)) floorOf(isl, leaves, [v, v, v], [0.78, 0.92, 0.84], false)
       else if (tag === "root" || tag === "roots") floorOf(isl, barks, [v, v, v], [0.7, 0.62, 0.55], false)
       else floorOf(isl, tops, [v, v, v], [0.72, 0.8, 0.66], false)
-      if (rockIsland(isl)) rockSlots.push(isl)
-      else underOf(isl)
+      underOf(isl)
+      if (rockIsland(isl) && isl.r > 2.2) {
+        // cacho de cristal pendurado na encosta (a ref tem cristal ciano nas paredes)
+        const nC = isl.kind === "base" || isl.kind === "boss" ? 3 : krnd(isl.id * 19) < 0.6 ? 1 : 0
+        for (let k = 0; k < nC; k++) {
+          const a = krnd(isl.id * 23 + k * 5) * Math.PI * 2
+          const p = edgePoint(isl, a, 0.4)
+          const y = isl.y - 1.2 - krnd(isl.id + k) * Math.min(3, isl.depth * 0.3)
+          const s = 0.7 + krnd(isl.id * 7 + k) * 0.6
+          for (let q = 0; q < 3; q++) {
+            const tilt = (q - 1) * 0.45
+            const mtx = Matrix.RotationZ(Math.PI + tilt).multiply(Matrix.RotationY(a)).multiply(Matrix.Translation(p.x + Math.sin(a) * 0.3, y, p.z + Math.cos(a) * 0.3))
+            glow.cone(0, 0.55 * s, (1.6 - Math.abs(q - 1) * 0.5) * s, mtx, q === 1 ? th.glow : th.glow2, 5)
+          }
+        }
+      }
       continue
     }
     floorOf(isl, metalTop ? metal : tops, topC, rimC, metalTop && tag !== "conveyor")
@@ -563,25 +590,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   }
 
   // ── detalhes por tipo de ilha ──
-  const edgePoint = (isl: Island, a: number, inset: number) => {
-    // ponto na borda na direção a (raio pela própria forma: anda até sair)
-    const O = outlineOf(isl, 1.2)
-    let best = O[0]
-    let bd = -Infinity
-    const ux = Math.sin(a)
-    const uz = Math.cos(a)
-    for (const p of O) {
-      const d = (p[0] - isl.x) * ux + (p[1] - isl.z) * uz
-      if (d > bd) {
-        bd = d
-        best = p
-      }
-    }
-    const dx = best[0] - isl.x
-    const dz = best[1] - isl.z
-    const L = Math.hypot(dx, dz) || 1
-    return { x: isl.x + (dx / L) * Math.max(0, L - inset), z: isl.z + (dz / L) * Math.max(0, L - inset) }
-  }
+
   const dens = lowEnd ? 0.5 : 1
   const fallList: { x: number; z: number; y: number; len: number; w: number; a: number }[] = []
 
@@ -951,6 +960,11 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     own(cg.build("paint-arena-clouds", scene, cloudMat))
   }
 
+  // Projeto B 3e/3g: malhas do longe SEM neblina, com a cor já misturada no ar
+  const far = new ArenaGeo()
+  const farGlow = new ArenaGeo()
+  const air = (c: RGB, k = 0.38): RGB => mix(c, th.fog, k)
+
   // ── paisagem ao longe (escala) ──
   for (let i = 0; i < (lowEnd ? 8 : 16); i++) {
     const a = (i / (lowEnd ? 8 : 16)) * Math.PI * 2 + rnd(i) * 0.3
@@ -965,23 +979,47 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       for (let k = 0; k < 3; k++) deco.cylinder(1, 5 + rnd(i * 9 + k) * 4, place(x + (k - 1) * 4, y + 3, z + rnd(k) * 3), mix(th.top, [1, 1, 1], 0.2), 8)
       if (th.tile === "rune") deco.cone(0.2, 3, 22, place(x * 0.9, y + 22, z * 0.9), th.strata[4], 4)
     } else if (th.tile === "plate") {
-      // engrenagens gigantes e chaminés
-      deco.cylinder(26 + rnd(i) * 10, 2, Matrix.RotationX(Math.PI / 2).multiply(Matrix.RotationY(a)).multiply(Matrix.Translation(x, y + 10, z)), mul(th.top, 0.55), 16)
-      deco.cylinder(4, 40, place(x * 1.1, y - 5, z * 1.1), mul(th.strata[1], 1.1), 10)
+      // 3g: plataforma industrial pendurada — chapa, engrenagem DENTADA em pé,
+      // chaminé com faixa acesa (antes: disco + poste cinza na neblina)
+      const k = 0.3 + (d - 120) / 60 * 0.2
+      const mt = air([0.2, 0.2, 0.23], k)
+      const S = 0.7 + rnd(i * 7) * 0.5
+      far.cone(22 * S, 3, 18 * S, place(x, y - 9 * S, z), air(th.strata[2], k), 7)
+      far.cylinder(24 * S, 1.6, place(x, y, z), mt, 10)
+      far.cylinder(24.6 * S, 0.5, place(x, y + 0.9, z), air(th.trim, k * 0.8), 10)
+      const gr = 8 * S
+      const gm = Matrix.RotationX(Math.PI / 2).multiply(Matrix.RotationY(a)).multiply(Matrix.Translation(x, y + 1 + gr, z))
+      far.cylinder(gr * 2, 1.4, gm, air([0.28, 0.27, 0.27], k), 14)
+      for (let t = 0; t < 12; t++) {
+        const ta = (t / 12) * Math.PI * 2
+        const tm = Matrix.RotationZ(ta).multiply(Matrix.Translation(Math.sin(ta) * -gr, Math.cos(ta) * gr, 0)).multiply(Matrix.RotationY(a)).multiply(Matrix.Translation(x, y + 1 + gr, z))
+        far.box(1.6 * S, 2 * S, 1.4, tm, air([0.28, 0.27, 0.27], k))
+      }
+      farGlow.cylinder(gr * 0.6, 1.6, gm, air(th.glow, k * 0.6), 10)
+      const cx = x + Math.cos(a) * 7 * S
+      const cz = z - Math.sin(a) * 7 * S
+      far.cylinder(3.2 * S, 22 * S, place(cx, y + 11 * S, cz), mt, 8)
+      farGlow.cylinder(3.5 * S, 0.9, place(cx, y + 16 * S, cz), air(th.trim, k * 0.6), 8)
+      far.blob(9 * S, 1, 0.7, 1, cx, y + 25 * S, cz, air([0.82, 0.82, 0.86], 0.25), 5)
     } else if (th.tile === "moss") {
-      // árvores ao longe
-      deco.cone(4, 7, 50, place(x, y - 6, z), [0.32, 0.24, 0.2], 8)
-      deco.blob(30, 1, 0.6, 1, x, y + 22, z, mix(th.top, th.accent, rnd(i) * 0.4), 8)
+      // 3g: ilha flutuante com árvore e cascata (antes: tronco + copa cinza = "cogumelo")
+      const k = 0.26 + (d - 120) / 60 * 0.2
+      const S = 0.7 + rnd(i * 7) * 0.6
+      far.cone(18 * S, 2, 20 * S, place(x, y - 10 * S, z), air([0.42, 0.4, 0.38], k), 7)
+      far.cylinder(19 * S, 1.6, place(x, y, z), air([0.3, 0.52, 0.26], k), 9)
+      far.cone(1.4 * S, 2.6 * S, 9 * S, place(x, y + 4.5 * S, z), air([0.4, 0.28, 0.2], k), 6)
+      const pink = rnd(i * 13) < 0.35
+      const cc: RGB = pink ? [0.86, 0.46, 0.78] : [0.24, 0.52, 0.24]
+      far.blob(12 * S, 1, 0.6, 1, x, y + 10 * S, z, air(cc, k), 6)
+      far.blob(8 * S, 1, 0.6, 1, x + 3 * S, y + 8.5 * S, z + 2 * S, air(mul(cc, 0.85), k), 5)
+      farGlow.box(1.6 * S, 26 * S, 0.3, place(x + Math.cos(a) * 9 * S, y - 13 * S, z - Math.sin(a) * 9 * S, a + Math.PI / 2), air([0.86, 0.95, 1], 0.2))
     }
   }
 
   // ── Projeto B 3e: o MARCO da referência, atrás de cada base (quem olha para
   // o meio vê o do outro lado). Malha própria SEM neblina com a cor já
   // misturada no ar (a 170 m a neblina linear apagava tudo).
-  const far = new ArenaGeo()
-  const farGlow = new ArenaGeo()
-  if (th.tile !== "moss") {
-    const air = (c: RGB, k = 0.38): RGB => mix(c, th.fog, k)
+  {
     const sides = [...new Set(map.bases.map((b) => Math.sign(map.islands[b.island].x) || 1))]
     for (const s of sides.length ? sides : [1, -1]) {
       const X = s * 175
@@ -1018,6 +1056,33 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
         far.box(14, 22, 30, place(X + s * 4, Y + 11, Z), st)
         farGlow.cone(0, 7, 46, place(X + s * 4, Y + 45, Z), air([0.8, 0.55, 1], 0.12), 6)
         farGlow.annulus(X + s * 4, Y + 40, Z, 13, 14.5, air(th.trim, 0.15), 32)
+      } else if (th.tile === "moss") {
+        // 3g: a ÁRVORE GIGANTE da ref — tronco largo com raízes que abraçam a
+        // pedra, galhos abertos, copa verde com manchas rosa e runas ciano
+        const bark = air([0.4, 0.27, 0.18], 0.3)
+        const leafC = air([0.22, 0.5, 0.22], 0.3)
+        const pinkC = air([0.9, 0.5, 0.82], 0.28)
+        far.cone(18, 30, 64, place(X + s * 4, Y + 32, Z), bark, 12)
+        for (let k = 0; k < 7; k++) {
+          const ra = (k / 7) * Math.PI * 2 + 0.3
+          const L = 26 + krnd(k * 3) * 10
+          const m = Matrix.RotationZ(Math.PI / 2 - 0.42).multiply(Matrix.RotationY(-ra)).multiply(Matrix.Translation(X + s * 4 + Math.cos(ra) * L * 0.42, Y + 4, Z + Math.sin(ra) * L * 0.42))
+          far.cone(3, 8, L, m, mul(bark, 0.92), 6)
+        }
+        for (let k = 0; k < 6; k++) {
+          const ba = (k / 6) * Math.PI * 2 + 0.6
+          const L = 34 + krnd(k * 5) * 10
+          const m = Matrix.RotationZ(-(0.9 + krnd(k) * 0.3)).multiply(Matrix.RotationY(-ba)).multiply(Matrix.Translation(X + s * 4 + Math.cos(ba) * L * 0.38, Y + 58, Z + Math.sin(ba) * L * 0.38))
+          far.cone(2.4, 6, L, m, bark, 6)
+          const tx = X + s * 4 + Math.cos(ba) * L * 0.8
+          const tz = Z + Math.sin(ba) * L * 0.8
+          far.blob(30 + krnd(k * 7) * 10, 1, 0.55, 1, tx, Y + 72 + krnd(k * 9) * 8, tz, k % 3 === 1 ? pinkC : leafC, 7)
+        }
+        far.blob(52, 1, 0.5, 1, X + s * 4, Y + 86, Z, leafC, 8)
+        far.blob(26, 1, 0.5, 1, X + s * 4 - 12, Y + 96, Z + 10, pinkC, 6)
+        // runas acesas no tronco (do lado de quem olha o meio)
+        for (const [dy, dz] of [[14, -3], [26, 4], [40, -1]] as const) farGlow.raw(diamond(X + s * 4 - s * ((15 - (6 * dy) / 64) * 0.97 + 0.4), Y + dy, Z + dz, 2.4, -s), air(th.glow, 0.1))
+        for (let k = 0; k < 4; k++) farGlow.cone(0, 3.4, 9, place(X - s * 14, Y + 4, Z - 18 + k * 12, 0.3 * (k - 1.5)), air(th.glow, 0.12), 5)
       } else if (th.tile === "plate") {
         // núcleo industrial: torre em anéis com faixas acesas e braços de guindaste
         const mt = air([0.2, 0.2, 0.23])
@@ -1343,14 +1408,6 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       glow.box(0.7, 0.7, 0.1, place(x + 1.4, y + 6.5, z - 1.62), warm)
       fallList.push({ x: x + 6, z, y: y - 0.3, len: 22, w: 2.2, a: Math.PI / 2 })
     }
-    for (let k = 0; k < (lowEnd ? 6 : 12); k++) {
-      const a = (k / 12) * Math.PI * 2 + 0.5
-      const d = 150 + krnd(k * 17) * 25
-      const x = Math.sin(a) * d
-      const z = Math.cos(a) * d * 0.85
-      deco.cone(6, 11, 90, place(x, 10, z), [0.28, 0.22, 0.24], 7)
-      deco.blob(55, 1, 0.55, 1, x, 58, z, mix(th.fog, th.top, 0.35), 7)
-    }
   }
   function k2(a: number) {
     return a > 0
@@ -1441,100 +1498,6 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     built.push(falls.build("paint-arena-falls", scene, fm))
   }
   for (const m of built) disposers.push(() => m.dispose())
-
-  // ── rochas esculpidas (GLB): uma instância fina por ilha, encaixada no contorno ──
-  let rockCancelled = false
-  disposers.push(() => {
-    rockCancelled = true
-  })
-  if (rockSlots.length) void loadRocks()
-  async function loadRocks() {
-    const rockMat = own(new StandardMaterial("paint-arena-rockglb", scene))
-    rockMat.diffuseColor = new Color3(1, 1, 1)
-    rockMat.specularColor = new Color3(0.03, 0.03, 0.03)
-    rockMat.emissiveColor = c3(mul(th.hemi, 0.16))
-    let got
-    try {
-      ensureLoaders()
-      got = await LoadAssetContainerAsync("/meu-mundo/paint/v1/kit/rocks-floresta.glb", scene)
-    } catch {
-      // sem o arquivo (rede caiu): as ilhas ficam só com o chão e a moldura
-      return
-    }
-    if (rockCancelled) {
-      got.dispose()
-      return
-    }
-    got.addAllToScene()
-    const bodies: Mesh[] = []
-    const glows = new Map<string, Mesh>()
-    for (const m of got.meshes) {
-      if (!(m instanceof Mesh) || !m.getTotalVertices()) continue
-      // a raiz do glTF espelha z (mão direita → esquerda): assada a transformação,
-      // as faces ficam do avesso e somem — vira de volta
-      const mirrored = m.getWorldMatrix().determinant() < 0
-      m.setParent(null)
-      m.bakeCurrentTransformIntoVertices()
-      if (mirrored) m.flipFaces(true)
-      m.isPickable = false
-      if (m.name.endsWith("_glow")) {
-        m.material = glowMat
-        glows.set(m.name.replace(/_glow$/, ""), m)
-      } else {
-        m.material = rockMat
-        bodies.push(m)
-      }
-      disposers.push(() => m.dispose())
-    }
-    for (const n of got.transformNodes) n.dispose()
-    for (const n of got.meshes) if (!(n instanceof Mesh) || !n.getTotalVertices()) n.dispose()
-    bodies.sort((a, b) => a.name.localeCompare(b.name))
-    if (!bodies.length) return
-    const per = new Map<Mesh, Float32Array[]>()
-    for (const isl of rockSlots) {
-      const pts = outlineOf(isl, 10)
-      // eixo principal do contorno (covariância) → giro e meias-larguras
-      let sxx = 0
-      let szz = 0
-      let sxz = 0
-      for (const [x, z] of pts) {
-        sxx += (x - isl.x) ** 2
-        szz += (z - isl.z) ** 2
-        sxz += (x - isl.x) * (z - isl.z)
-      }
-      const th0 = 0.5 * Math.atan2(2 * sxz, sxx - szz)
-      const ux = Math.cos(th0)
-      const uz = Math.sin(th0)
-      let ea = 0
-      let eb = 0
-      for (const [x, z] of pts) {
-        ea = Math.max(ea, Math.abs((x - isl.x) * ux + (z - isl.z) * uz))
-        eb = Math.max(eb, Math.abs(-(x - isl.x) * uz + (z - isl.z) * ux))
-      }
-      const body = bodies[Math.floor(krnd(isl.id * 13 + 1) * bodies.length) % bodies.length]
-      const depth = Math.max(2.2, isl.depth * 0.95)
-      const mtx = Matrix.Compose(new Vector3(ea * 0.97, depth, eb * 0.97), Quaternion.RotationAxis(Vector3.Up(), Math.atan2(-uz, ux)), new Vector3(isl.x, isl.y - 0.3, isl.z))
-      const list = per.get(body) ?? []
-      list.push(Float32Array.from(mtx.toArray()))
-      per.set(body, list)
-    }
-    for (const body of bodies) {
-      const list = per.get(body)
-      const glowM = glows.get(body.name)
-      if (!list) {
-        body.setEnabled(false)
-        glowM?.setEnabled(false)
-        continue
-      }
-      for (const target of glowM ? [body, glowM] : [body]) {
-        const buf = new Float32Array(list.length * 16)
-        list.forEach((a, i) => buf.set(a, i * 16))
-        target.thinInstanceSetBuffer("matrix", buf, 16, true)
-        target.thinInstanceRefreshBoundingInfo(false)
-        target.alwaysSelectAsActiveMesh = true
-      }
-    }
-  }
 
   // ── portais (um por time, no alto do meio) ──
   const portalNodes: { ring: StandardMaterial; swirl: Mesh; open: boolean }[] = []
