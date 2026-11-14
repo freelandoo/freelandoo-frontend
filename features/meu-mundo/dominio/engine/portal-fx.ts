@@ -1,11 +1,11 @@
 // features/meu-mundo/dominio/engine/portal-fx.ts — o portal de cada passagem dos Domínios.
 //
 // Toda passagem (entrada = volta, saída = próxima parte / próximo Domínio) ganha um portal em pé no
-// ponto do arquivo da cena, virado para o caminho: anel aceso na cor do Domínio + véu no vão.
-//   ABERTO  → anel forte, véu claro e o REDEMOINHO de partículas girando para o centro;
-//   FECHADO → anel apagado, véu escuro, sem redemoinho (o chefe da parte explica o que falta).
-// O redemoinho é UMA malha de quadradinhos animada no shader (posição em espiral pelo tempo, sempre
-// de frente para a câmera): 1 chamada, nada por partícula no processador. Sem colisão, sem clique.
+// ponto do arquivo da cena, virado para o caminho: ANEL DE PARTÍCULAS girando na borda + véu no vão.
+//   ABERTO  → anel aceso na cor do Domínio, véu claro e o REDEMOINHO de partículas girando para o centro;
+//   FECHADO → anel cinza e lento, véu escuro, sem redemoinho (o chefe da parte explica o que falta).
+// Anel e redemoinho são malhas de quadradinhos animadas no shader (posição pelo tempo, sempre de frente
+// para a câmera): 1 chamada cada, nada por partícula no processador. Sem colisão, sem clique.
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Observer } from "@babylonjs/core/Misc/observable"
@@ -13,7 +13,6 @@ import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
-import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial"
@@ -42,10 +41,24 @@ uniform mat4 projection;
 uniform float uTime;
 uniform float uR;
 uniform float uSize;
+uniform float uSpin;
 varying vec2 vC;
 varying float vA;
 void main(void) {
   // position.xy = canto do quadradinho (−1..1); seed = (fase, velocidade, tamanho)
+#ifdef RING
+  // anel: partículas correndo pela borda (duas voltas em sentidos opostos), cintilando
+  float dir = seed.y < 0.5 ? 1.0 : -1.0;
+  float a = seed.x * 6.2832 + uTime * dir * (0.35 + 0.25 * seed.z) * uSpin;
+  float r = uR * (1.0 + (seed.y - 0.5) * 0.09);
+  vec3 local = vec3(cos(a) * r, sin(a) * r, (seed.z - 0.5) * 0.12);
+  vec4 vp = view * world * vec4(local, 1.0);
+  float s = uSize * (0.7 + 0.7 * seed.z);
+  vp.xy += position.xy * s;
+  gl_Position = projection * vp;
+  vC = position.xy;
+  vA = 0.6 + 0.4 * sin(uTime * (2.0 + 3.0 * seed.z) + seed.x * 40.0);
+#else
   // 3 braços de espiral girando: cada partícula nasce na borda de um braço e corre para o centro
   float t = fract(uTime * (0.16 + 0.1 * seed.y) + seed.x * 7.0);
   float r = uR * (1.0 - 0.9 * t);
@@ -58,6 +71,7 @@ void main(void) {
   gl_Position = projection * vp;
   vC = position.xy;
   vA = sin(t * 3.14159) * (0.55 + 0.45 * seed.z);
+#endif
 }
 `
 
@@ -118,7 +132,7 @@ export class DomainPortal {
   private readonly ring: Mesh
   private readonly veil: Mesh
   private readonly swirl: Mesh
-  private readonly ringMat: StandardMaterial
+  private readonly ringMat: ShaderMaterial
   private readonly veilMat: StandardMaterial
   private readonly swirlMat: ShaderMaterial
   private readonly color: Color3
@@ -134,13 +148,27 @@ export class DomainPortal {
     this.root = new TransformNode("dom-portal", scene)
     this.root.position.set(spec.x, R + 0.35, spec.z)
     this.root.rotation.y = spec.ang
-    // anel: toro em pé (o builder deita no plano xz → gira 90° em x)
-    this.ring = CreateTorus("dom-portal-ring", { diameter: R * 2, thickness: 0.22, tessellation: spec.low ? 28 : 44 }, scene)
-    this.ring.rotation.x = Math.PI / 2
+    Effect.ShadersStore.mmPortalVertexShader = VERTEX
+    Effect.ShadersStore.mmPortalFragmentShader = FRAGMENT
+    const mat = (name: string, ring: boolean) => {
+      const m = new ShaderMaterial(
+        name,
+        scene,
+        { vertex: "mmPortal", fragment: "mmPortal" },
+        { attributes: ["position", "seed"], uniforms: ["world", "view", "projection", "uTime", "uR", "uSize", "uSpin", "uColor", "uOn"], needAlphaBlending: true, defines: ring ? ["#define RING"] : [] },
+      )
+      m.backFaceCulling = false
+      m.disableDepthWrite = true
+      m.alphaMode = Constants.ALPHA_ADD
+      m.setFloat("uR", ring ? R : R * 0.94)
+      m.setFloat("uSpin", 1)
+      return m
+    }
+    // anel de partículas na borda (no lugar do aro sólido)
+    this.ring = swirlMesh(scene, spec.low ? 110 : 240)
     this.ring.parent = this.root
-    this.ringMat = new StandardMaterial("dom-portal-ring", scene)
-    this.ringMat.disableLighting = true
-    this.ringMat.specularColor = Color3.Black()
+    this.ringMat = mat("dom-portal-ring", true)
+    this.ringMat.setFloat("uSize", 0.1)
     this.ring.material = this.ringMat
     // véu no vão (as duas faces)
     this.veil = CreateDisc("dom-portal-veil", { radius: R - 0.08, tessellation: spec.low ? 24 : 36, sideOrientation: Mesh.DOUBLESIDE }, scene)
@@ -152,27 +180,13 @@ export class DomainPortal {
     this.veilMat.disableDepthWrite = true
     this.veil.material = this.veilMat
     // redemoinho
-    Effect.ShadersStore.mmPortalVertexShader = VERTEX
-    Effect.ShadersStore.mmPortalFragmentShader = FRAGMENT
     this.swirl = swirlMesh(scene, spec.low ? 140 : 320)
     this.swirl.parent = this.root
-    this.swirlMat = new ShaderMaterial(
-      "dom-portal-swirl",
-      scene,
-      { vertex: "mmPortal", fragment: "mmPortal" },
-      { attributes: ["position", "seed"], uniforms: ["world", "view", "projection", "uTime", "uR", "uSize", "uColor", "uOn"], needAlphaBlending: true },
-    )
-    this.swirlMat.backFaceCulling = false
-    this.swirlMat.disableDepthWrite = true
-    this.swirlMat.alphaMode = Constants.ALPHA_ADD
-    this.swirlMat.setFloat("uR", R * 0.98)
+    this.swirlMat = mat("dom-portal-swirl", false)
     this.swirlMat.setFloat("uSize", 0.12)
     this.swirlMat.setColor3("uColor", this.color)
     this.swirl.material = this.swirlMat
-    for (const m of [this.ring, this.veil, this.swirl]) {
-      m.isPickable = false
-      m.applyFog = m !== this.ring
-    }
+    for (const m of [this.ring, this.veil, this.swirl]) m.isPickable = false
     this.on = spec.open ? 1 : 0
     this.paint()
     this.obs = scene.onBeforeRenderObservable.add(() => this.update(scene.getEngine().getDeltaTime() / 1000))
@@ -186,10 +200,12 @@ export class DomainPortal {
   private paint() {
     const k = this.on
     const c = this.color
-    // fechado: anel cinza-azulado apagado; aberto: a cor do Domínio acesa
-    this.ringMat.emissiveColor.set(0.22 + (c.r * 1.15 - 0.22) * k, 0.22 + (c.g * 1.15 - 0.22) * k, 0.26 + (c.b * 1.15 - 0.26) * k)
-    this.veilMat.emissiveColor.set(0.05 + (c.r - 0.05) * k * 0.8, 0.04 + (c.g - 0.04) * k * 0.8, 0.08 + (c.b - 0.08) * k * 0.8)
-    this.veilMat.alpha = 0.55 - 0.3 * k
+    // fechado: anel de partículas cinza e lento; aberto: a cor do Domínio, girando rápido
+    this.ringMat.setColor3("uColor", new Color3(0.55 + (c.r - 0.55) * k, 0.55 + (c.g - 0.55) * k, 0.62 + (c.b - 0.62) * k))
+    this.ringMat.setFloat("uOn", 0.8 + 0.2 * k)
+    this.ringMat.setFloat("uSpin", 0.35 + 0.65 * k)
+    this.veilMat.emissiveColor.set(0.16 + (c.r * 0.8 - 0.16) * k, 0.12 + (c.g * 0.8 - 0.12) * k, 0.24 + (c.b * 0.8 - 0.24) * k)
+    this.veilMat.alpha = 0.2 - 0.06 * k
     this.swirlMat.setFloat("uOn", k)
     this.swirl.setEnabled(k > 0.01)
   }
@@ -201,11 +217,12 @@ export class DomainPortal {
       this.on = want > this.on ? Math.min(1, this.on + d / 0.6) : Math.max(0, this.on - d / 0.6)
       this.paint()
     }
+    this.time += d
+    this.ringMat.setFloat("uTime", this.time % 1000)
     if (this.on > 0.01) {
-      this.time += d
       this.swirlMat.setFloat("uTime", this.time % 1000)
       // o véu respira de leve
-      this.veilMat.alpha = (0.55 - 0.3 * this.on) * (0.85 + 0.15 * Math.sin(this.time * 2.1))
+      this.veilMat.alpha = (0.2 - 0.06 * this.on) * (0.85 + 0.15 * Math.sin(this.time * 2.1))
     }
   }
 
