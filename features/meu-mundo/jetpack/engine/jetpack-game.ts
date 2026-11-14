@@ -45,7 +45,9 @@ import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
 import { buildBoundary } from "./boundary-view"
 import { aroDaFase } from "./pecas/portais"
-import { loadCanyonAssets, loadFactoryAssets, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { codeObstacles } from "./pecas/obstaculos"
+import { kitGelo } from "./pecas/kit-gelo"
+import { ICE_DIR, loadPieceGroups, loadCanyonAssets, loadFactoryAssets, loadForestAssets, loadForgeAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 import { GAME_MUSIC, sceneSound, jetpackPhaseAmb } from "../../engine/audio"
 
@@ -237,22 +239,11 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   // Cânion: as peças esculpidas (GLB do Tripo) chegam depois e entram no cenário e nos obstáculos
   let canyonAssets: PieceAssets<string> | null = null
   if (level === "artico") {
-    void loadIceAssets(scene, () => !disposed).then((a) => {
+    // Jetpack em código (14/11): só os bichos (mamutes) ainda vêm do Tripo; o resto é pecas/kit-gelo
+    void loadPieceGroups(scene, ICE_DIR, { mamute: ["mamute"], "gelo-congelados": ["mamute-gelo"] } as const, { mamute: 60, "mamute-gelo": 70 }, () => !disposed).then((a) => {
       if (disposed) return a.dispose()
       canyonAssets = a
       tunnel.provide?.(a)
-      // V3 (2026-11-09): rocha, cristal, galão e moldura do Tripo (gelo2.json: medidas com 1 m de altura).
-      // rocha: cobre o disco da colisão (raio 1,05 no x–y); estreitada em x e na profundidade
-      const rock = a.meshes.get("rocha")
-      if (rock) obstacles.useModel("rock", rock, { bake: Matrix.Scaling(2.25 / 2.9, 1, 2.2 / 4.2), upright: true })
-      // cristal: 1 m de altura com a base em 0 → centrado e cobrindo o disco (2,1 de altura e de largura)
-      const gem = a.meshes.get("cristal")
-      if (gem) obstacles.useModel("gem", gem, { bake: Matrix.Translation(0, -0.5, 0).multiply(Matrix.Scaling(2.1 / 1.01, 2.1, 1.8 / 1.53)) })
-      const can = a.meshes.get("galao")
-      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
-      const tile = a.meshes.get("borda")
-      const corner = a.meshes.get("canto")
-      if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 3.329, arm: 0.475, armLen: 0.821 })
     })
   }
   if (level === "floresta") {
@@ -338,6 +329,9 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const mats = tunnel.mats
   const obstacles = buildObstacles(scene, mats, level)
   const kit = buildPackKit(scene, mats)
+  // Jetpack em código (14/11): rocha, cristal, galão e moldura da fase feitos por nós (pecas/kit-*)
+  const codeKit = level === "artico" ? kitGelo(low) : null
+  if (codeKit) codeObstacles(scene, obstacles, codeKit, { beam: false })
   // Jetpack em código (14/11): o aro dos anéis é o portal feito por nós (pecas/portais.ts), em toda fase
   const codeRim = aroDaFase(scene, level)
   if (codeRim) {

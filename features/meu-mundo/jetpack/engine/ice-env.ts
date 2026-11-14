@@ -6,7 +6,8 @@
 // cobertos de gelo sobre o caminho, o teto da caverna cheio de estalactites e
 // a abertura para o céu com aurora e montanhas.
 //
-// Peças do Tripo (build_gelo_v2.py, em grupos): estalactites, base, anel, pórtico,
+// Jetpack em código (14/11): as peças são feitas em código (pecas/kit-gelo.ts) com as MESMAS medidas
+// do tema antigo; só os dois mamutes (bicho) ainda vêm do Tripo. Antes: peças do Tripo (build_gelo_v2.py, em grupos): estalactites, base, anel, pórtico,
 // bloco2, cristal e, desde 2026-11-09, iglu, pinheiro, farol, mamute no gelo, navio
 // quebra-gelo e mamute — chegam depois (provide). Tudo que é cenário fica com a beira
 // de dentro em |x| ≥ 6 (a caixa do voo vai até 5). O PÓRTICO tem o vão ≥ ±0,17 da
@@ -27,6 +28,7 @@ import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot, fusedLayers } from "./env-pool"
 import type { IceAsset, PieceAssets } from "./canyon-assets"
+import { kitGelo } from "./pecas/kit-gelo"
 import { skyTexture } from "./canyon-env"
 
 const { W, H } = TUNNEL
@@ -34,6 +36,8 @@ const { W, H } = TUNNEL
 /** As peças que são CENÁRIO (rocha, borda, canto e galão vão para os obstáculos). */
 export const ICE_PIECES = ["estalactites", "base", "cristal", "bloco2", "portico", "iglu", "pinheiro", "farol", "mamute-gelo", "navio", "mamute"] as const
 export type IcePiece = (typeof ICE_PIECES)[number]
+/** Os bichos: ficam no Tripo (regra da skill `meu-mundo-cenario-codigo`); o resto é código (pecas/kit-gelo). */
+export const ICE_ANIMALS = ["mamute-gelo", "mamute"] as const
 /** Medidas das peças com 1 m de altura (gelo2.json; o tema v2 do B6 mede igual): largura em x. */
 const WID = { bloco2: 1.86, iglu: 1.61, pinheiro: 0.87, farol: 0.67, "mamute-gelo": 1.15, navio: 1.25, mamute: 1.39 } as const
 
@@ -255,6 +259,8 @@ export function buildIceEnv(scene: Scene, low: boolean, slots: number, seed: num
     return m * VARIANTS + (hash32(s, seed ^ 13) % VARIANTS)
   }
   const pool = new SegmentPool(scene, "jt-ic", mods, new Map(), slots, pick)
+  // Jetpack em código (14/11): as peças do cenário (era o tema gelo/v2 do Tripo) entram no módulo
+  pool.bakeCode(kitGelo(low))
 
   const skyTex = auroraSky(scene, low)
   const skyMat = new StandardMaterial("jt-ic-sky", scene)
@@ -290,7 +296,8 @@ export function buildIceEnv(scene: Scene, low: boolean, slots: number, seed: num
       mountains.position.set(0, -10, z + 360)
     },
     provide(a) {
-      for (const kind of ICE_PIECES) {
+      // só os bichos (mamute e o mamute no gelo) continuam no Tripo
+      for (const kind of ICE_ANIMALS) {
         const m = a.meshes.get(kind)
         if (m) pool.provide(kind, m)
       }

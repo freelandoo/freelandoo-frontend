@@ -31,6 +31,8 @@ export interface Acabamento {
   spec?: RGB
   power?: number
   self?: RGB
+  /** Cor do desenho do trecho (estrada, paredes) quando entra na malha de código: a textura de acabamento escurecia. */
+  trimK?: number
 }
 
 /** Caixa de encaixe (min/max por eixo), nas medidas do modelo antigo. */

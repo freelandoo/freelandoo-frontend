@@ -21,7 +21,7 @@ import type { StandardMaterial } from "@babylonjs/core/Materials/standardMateria
 import { fuseGlow } from "../../engine/steampunk/glow-fuse"
 import type { JetGeo } from "./jet-geo"
 import { finish } from "../../engine/cena-codigo/kit"
-import { novaPeca, stamp, type KitCodigo } from "./pecas/peca"
+import { novaPeca, stamp, type KitCodigo, type Peca } from "./pecas/peca"
 
 /** Comprimento de um trecho (m) — o mesmo do túnel original. */
 export const SEG = 24
@@ -160,6 +160,14 @@ export class SegmentPool {
     this.modules.forEach((mod, m) => {
       const keep: PropSpot[] = []
       const merged = novaPeca()
+      // o desenho do próprio trecho (estrada, paredes: `fusedLayers`) entra junto: o módulo inteiro vira
+      // UMA malha de cor por vértice (a textura de acabamento sai; o desgaste por ruído entra no lugar)
+      mod.meshes = mod.meshes.filter((src) => {
+        if (!/-(body|glow)$/.test(src.name)) return true
+        absorbMesh(merged, src, src.name.endsWith("-glow"), kit.acabamento.trimK ?? 0.82)
+        src.dispose()
+        return false
+      })
       for (const p of mod.props ?? []) {
         const src = kit.has(p.kind) ? kit.get(p.kind) : null
         if (src) stamp(merged, src, p)
@@ -228,6 +236,37 @@ export class SegmentPool {
     for (const mod of this.modules) for (const m of mod.meshes) m.dispose()
     for (const m of this.spinners.values()) m.dispose()
     this.hold.dispose()
+  }
+}
+
+/**
+ * Copia a malha de um trecho (corpo de acabamento com ou sem o brilho fundido pelo `fuseGlow`) para a peça:
+ * vértice com a marca `glowFlag` (ou a malha toda, se `allGlow`) vai para a luz; o resto para o corpo, com a
+ * cor × `k` (a textura de acabamento escurecia ~18%).
+ */
+function absorbMesh(dst: Peca, src: Mesh, allGlow: boolean, k: number) {
+  const p = src.getVerticesData("position")
+  const n = src.getVerticesData("normal")
+  const c = src.getVerticesData("color")
+  const idx = src.getIndices()
+  if (!p || !n || !idx) return
+  const flag = src.getVerticesData("glowFlag")
+  const isGlow = (v: number) => allGlow || (!!flag && flag[v] > 0.5)
+  const map = [new Map<number, number>(), new Map<number, number>()]
+  const geos = [dst.body, dst.glow]
+  const at = (v: number, gl: number) => {
+    let i = map[gl].get(v)
+    if (i !== undefined) return i
+    const g = geos[gl]
+    const f = gl ? 1 : k
+    const col: [number, number, number] = c ? [c[v * 4] * f, c[v * 4 + 1] * f, c[v * 4 + 2] * f] : [f, f, f]
+    i = g.v([p[v * 3], p[v * 3 + 1], p[v * 3 + 2]], [n[v * 3], n[v * 3 + 1], n[v * 3 + 2]], col, 0)
+    map[gl].set(v, i)
+    return i
+  }
+  for (let t = 0; t < idx.length; t += 3) {
+    const gl = isGlow(idx[t]) ? 1 : 0
+    geos[gl].i.push(at(idx[t], gl), at(idx[t + 1], gl), at(idx[t + 2], gl))
   }
 }
 

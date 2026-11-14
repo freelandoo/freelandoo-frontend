@@ -785,7 +785,8 @@ export function buildObstacles(scene: Scene, mats: { trim: StandardMaterial; glo
         body.bakeTransformIntoVertices(opts.bake)
         body.refreshBoundingInfo()
       } else body = mesh.clone(`jt-${key}-model`, null, true)!
-      if (key === "can") {
+      // galão em código (14/11): já traz a faixa acesa na cor do vértice; o material dele fica
+      if (key === "can" && (body.material as StandardMaterial | null)?.diffuseTexture) {
         // o galão é coleta: acende a própria textura (o modelo do Tripo some na névoa sem brilho)
         const src = body.material as StandardMaterial | null
         const lit = new StandardMaterial(`jt-can-lit-${++seq}`, scene)
