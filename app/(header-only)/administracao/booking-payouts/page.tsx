@@ -13,7 +13,7 @@ interface PayoutItem {
   professional_cents: number
   platform_fee_cents: number
   deposit_cents: number
-  status: "aguardando" | "aprovado" | "pago" | "revertido"
+  status: "aguardando" | "aprovado" | "pago" | "revertido" | "devido"
   available_at: string
   approved_at: string | null
   paid_out_at: string | null
@@ -43,6 +43,7 @@ const STATUS_TABS: { key: PayoutItem["status"]; label: string }[] = [
   { key: "aguardando", label: "Aguardando" },
   { key: "pago",       label: "Pagos" },
   { key: "revertido",  label: "Revertidos" },
+  { key: "devido",     label: "Devidos (estorno após PIX)" },
 ]
 
 function formatBRL(cents: number) {
@@ -239,6 +240,10 @@ export default function BookingPayoutsAdminPage() {
                       ) : b.status === "pago" ? (
                         <span className="inline-flex items-center gap-1 text-[11px] text-primary">
                           <CheckCircle2 className="h-3 w-3" aria-hidden /> Pago
+                        </span>
+                      ) : b.status === "devido" ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-rose-400" title="Estorno depois do PIX: quem recebeu deve o valor">
+                          <RotateCcw className="h-3 w-3" aria-hidden /> Devido (estorno após o PIX)
                         </span>
                       ) : b.status === "revertido" ? (
                         <span className="inline-flex items-center gap-1 text-[11px] text-rose-300">

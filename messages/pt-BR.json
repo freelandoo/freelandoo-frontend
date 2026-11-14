@@ -1596,7 +1596,8 @@
     "onSiteFullPrice": "No balcão você recebe o preço cheio: o pagamento é direto com você.",
     "classTitle": "Classificação",
     "classSubtitle": "Prova de economia, finanças e conhecimentos gerais com nota de 0 a 100, e um perfil de personalidade só seu.",
-    "birthDateLocked": "Para corrigir a data, fale com o suporte."
+    "birthDateLocked": "Para corrigir a data, fale com o suporte.",
+    "payoutStatusOwed": "Estornado após o repasse (devido)"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -3984,7 +3985,8 @@
     "pickupChat": "Combinar retirada",
     "pickupMarkError": "Não foi possível marcar a retirada agora.",
     "buyerWhatsapp": "WhatsApp da compradora",
-    "orderNote": "Recado do pedido:"
+    "orderNote": "Recado do pedido:",
+    "balanceOwed": "Estornado após o repasse (devido)"
   },
   "Wallet": {
     "kindStore": "Loja",

@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-type Status = "aguardando" | "aprovado" | "pago" | "revertido"
+type Status = "aguardando" | "aprovado" | "pago" | "revertido" | "devido"
 type Origin = "loja" | "agendamento" | "afiliado"
 
 // ── Shapes dos 3 endpoints de leitura existentes ──────────────────────────────
@@ -89,6 +89,7 @@ const STATUS_TABS: { key: Status; label: string }[] = [
   { key: "aguardando", label: "Aguardando" },
   { key: "pago", label: "Pagos" },
   { key: "revertido", label: "Revertidos" },
+  { key: "devido", label: "Devidos (estorno após PIX)" },
 ]
 
 const ORIGIN_META: Record<Origin, { label: string; icon: typeof Store; badge: string }> = {
@@ -460,6 +461,10 @@ export default function RepassesPage() {
                         ) : r.status === "pago" ? (
                           <span className="inline-flex items-center gap-1 text-[11px] text-primary">
                             <CheckCircle2 className="h-3 w-3" aria-hidden /> Pago
+                          </span>
+                        ) : r.status === "devido" ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-rose-400" title="Estorno depois do PIX: quem recebeu deve o valor">
+                            <RotateCcw className="h-3 w-3" aria-hidden /> Devido (estorno após o PIX)
                           </span>
                         ) : r.status === "revertido" ? (
                           <span className="inline-flex items-center gap-1 text-[11px] text-rose-300">

@@ -14,7 +14,7 @@ interface BalanceItem {
   net_cents: number
   gross_cents: number
   shipping_cents: number
-  status: "aguardando" | "aprovado" | "pago" | "revertido"
+  status: "aguardando" | "aprovado" | "pago" | "revertido" | "devido"
   available_at: string
   approved_at: string | null
   paid_out_at: string | null
@@ -60,6 +60,7 @@ const STATUS = {
   aprovado:   { label: "Liberado",        labelKey: "balanceReleased", icon: CheckCircle2,  color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800" },
   pago:       { label: "Pago ao vendedor", labelKey: "balancePaidSeller", icon: CheckCircle2, color: "text-[#F2B705]",     bg: "bg-[#F2B705]/10",                       border: "border-[#F2B705]/30" },
   revertido:  { label: "Revertido",       labelKey: "balanceReverted", icon: RotateCcw,     color: "text-rose-600",    bg: "bg-rose-50 dark:bg-rose-950/30",     border: "border-rose-200 dark:border-rose-800" },
+  devido:     { label: "Estornado após o repasse (devido)", labelKey: "balanceOwed", icon: RotateCcw,     color: "text-rose-600",    bg: "bg-rose-50 dark:bg-rose-950/30",     border: "border-rose-200 dark:border-rose-800" },
 } as const
 
 function formatBRL(cents: number, locale = "pt-BR") {

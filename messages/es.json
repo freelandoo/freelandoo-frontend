@@ -1596,7 +1596,8 @@
     "onSiteFullPrice": "En el local recibes el precio completo: el cliente te paga directamente.",
     "classTitle": "Clasificación",
     "classSubtitle": "Prueba de economía, finanzas y cultura general con nota de 0 a 100, y un perfil de personalidad solo tuyo.",
-    "birthDateLocked": "Para corregir la fecha, contacta al soporte."
+    "birthDateLocked": "Para corregir la fecha, contacta al soporte.",
+    "payoutStatusOwed": "Reembolsado tras la transferencia (adeudado)"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -4550,7 +4551,8 @@
     "pickupChat": "Acordar retiro",
     "pickupMarkError": "No se pudo marcar el retiro ahora.",
     "buyerWhatsapp": "WhatsApp de la compradora",
-    "orderNote": "Nota del pedido:"
+    "orderNote": "Nota del pedido:",
+    "balanceOwed": "Reembolsado tras la transferencia (adeudado)"
   },
   "Wallet": {
     "kindStore": "Tienda",

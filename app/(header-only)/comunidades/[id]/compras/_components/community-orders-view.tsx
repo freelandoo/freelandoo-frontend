@@ -67,7 +67,7 @@ type Payout = {
   id_order: number
   listing_title: string
   net_cents: number
-  status: "aguardando" | "aprovado" | "pago" | "revertido"
+  status: "aguardando" | "aprovado" | "pago" | "revertido" | "devido"
   available_at: string
   community_name: string
 }

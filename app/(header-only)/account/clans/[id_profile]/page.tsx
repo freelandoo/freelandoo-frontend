@@ -108,7 +108,7 @@ type ClanPayout = {
   source: string
   source_type: "clan_service" | "clan_course"
   amount_cents: number
-  status: "aguardando" | "aprovado" | "pago" | "revertido"
+  status: "aguardando" | "aprovado" | "pago" | "revertido" | "devido"
   available_at: string
   created_at: string
   service_name: string | null
@@ -549,6 +549,7 @@ export default function ManageClanPage({
     if (status === "aguardando") return t("payoutStatusWaiting", "Aguardando")
     if (status === "aprovado") return t("payoutStatusReleased", "Liberado")
     if (status === "pago") return t("payoutStatusPaid", "Pago")
+    if (status === "devido") return t("payoutStatusOwed", "Estornado após o repasse (devido)")
     return t("payoutStatusReversed", "Revertido")
   }
 
