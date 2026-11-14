@@ -7,10 +7,9 @@
 // pendurados, a turbina gigante girando no alto, janelas em arco acesas nas
 // paredes do fundo e névoa azulada.
 //
-// As peças esculpidas (viga, cano, engrenagem, pistão, guindaste, turbina e, desde
-// 2026-11-09, caldeira, tanque, empilhadeira, relógio, esteira, painel e cabeça de
-// prensa) são do Tripo (build_industrial_v2.py) e chegam depois (provide); o resto é
-// desenhado aqui. A caixa do voo é a mesma (x ∈ [−5, 5], y ∈ [0, 8]): o chão é
+// Jetpack em código (14/11): as peças (viga, cano, engrenagem, pistão, guindaste, turbina, caldeira, tanque,
+// empilhadeira, relógio, esteira, painel e cabeça de prensa) são feitas em código (pecas/kit-fabrica.ts)
+// com as MESMAS medidas do tema antigo do Tripo (fabrica/v2) e entram no módulo; o resto é desenhado aqui. A caixa do voo é a mesma (x ∈ [−5, 5], y ∈ [0, 8]): o chão é
 // a passarela, os lados têm o corrimão e os pilares, e o teto as vigas. A
 // regra e os obstáculos (prensas, pilões, pistões, engrenagens) não mudam.
 
@@ -23,6 +22,7 @@ import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot, fusedLayers } from "./env-pool"
 import type { FactoryAsset, PieceAssets } from "./canyon-assets"
+import { kitFabrica } from "./pecas/kit-fabrica"
 
 type FactoryPiece = "viga" | "cano" | "pistao" | "guindaste" | "engrenagem" | "turbina" | "prensa-cabeca" | "relogio" | "empilhadeira" | "caldeira" | "tanque" | "esteira" | "painel"
 const NEW_PIECES = ["prensa-cabeca", "relogio", "empilhadeira", "caldeira", "tanque", "esteira", "painel"] as const
@@ -257,6 +257,8 @@ export function buildFactoryEnv(scene: Scene, low: boolean, slots: number, seed:
     return m * VARIANTS + (hash32(s, seed ^ 13) % VARIANTS)
   }
   const pool = new SegmentPool(scene, "jt-fb", mods, new Map(), slots, pick)
+  // Jetpack em código (14/11): as peças do cenário (era o tema fabrica/v2 do Tripo) entram no módulo; engrenagem e turbina giram
+  pool.bakeCode(kitFabrica(low), ["engrenagem", "turbina"])
   mats.glow.emissiveColor.set(1.1, 1.1, 1.1)
   mats.freeze()
   return {
@@ -264,16 +266,8 @@ export function buildFactoryEnv(scene: Scene, low: boolean, slots: number, seed:
     update(z, now) {
       pool.update(z, now)
     },
-    provide(a) {
-      for (const kind of ["viga", "cano", "pistao", "guindaste", ...NEW_PIECES] as const) {
-        const m = a.meshes.get(kind)
-        if (m) pool.provide(kind, m)
-      }
-      for (const kind of ["engrenagem", "turbina"] as const) {
-        const m = a.meshes.get(kind)
-        if (m) pool.provide(kind, m, true)
-      }
-    },
+    // Jetpack em código (14/11): nada mais chega do Tripo (o cenário já nasce com as peças)
+    provide() {},
     dispose() {
       pool.dispose()
       for (const m of all) if (!m.isDisposed()) m.dispose()

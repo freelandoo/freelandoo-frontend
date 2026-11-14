@@ -51,7 +51,8 @@ import { kitCanion } from "./pecas/kit-canion"
 import { kitFloresta } from "./pecas/kit-floresta"
 import { kitOrbital } from "./pecas/kit-orbital"
 import { kitForja } from "./pecas/kit-forja"
-import { ICE_DIR, FORGE_DIR, loadPieceGroups, loadFactoryAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { kitFabrica } from "./pecas/kit-fabrica"
+import { ICE_DIR, FORGE_DIR, loadPieceGroups, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 import { GAME_MUSIC, sceneSound, jetpackPhaseAmb } from "../../engine/audio"
 
@@ -258,24 +259,11 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       tunnel.provide?.(a)
     })
   }
-  if (level === "industrial") {
-    void loadFactoryAssets(scene, () => !disposed).then((a) => {
-      if (disposed) return a.dispose()
-      canyonAssets = a
-      tunnel.provide?.(a)
-      // V3: a engrenagem NOVA do Tripo vira o obstáculo (1 m de altura, já de frente: raio 1 com 2×);
-      // a antiga segue girando nas paredes. Galão do Tripo.
-      const gear = a.meshes.get("engrenagem2")
-      if (gear) obstacles.useModel("gear", gear, { bake: Matrix.Scaling(2, 2, 2) })
-      const can = a.meshes.get("galao")
-      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
-    })
-  }
   const mats = tunnel.mats
   const obstacles = buildObstacles(scene, mats, level)
   const kit = buildPackKit(scene, mats)
   // Jetpack em código (14/11): rocha, cristal, galão e moldura da fase feitos por nós (pecas/kit-*)
-  const codeKit = level === "artico" ? kitGelo(low) : level === "canion" ? kitCanion(low) : level === "floresta" ? kitFloresta(low) : level === "orbital" ? kitOrbital(low) : level === "forja" ? kitForja(low) : null
+  const codeKit = level === "artico" ? kitGelo(low) : level === "canion" ? kitCanion(low) : level === "floresta" ? kitFloresta(low) : level === "orbital" ? kitOrbital(low) : level === "forja" ? kitForja(low) : level === "industrial" ? kitFabrica(low) : null
   if (codeKit) codeObstacles(scene, obstacles, codeKit, { beam: level !== "artico" })
   // Jetpack em código (14/11): o aro dos anéis é o portal feito por nós (pecas/portais.ts), em toda fase
   const codeRim = aroDaFase(scene, level)
