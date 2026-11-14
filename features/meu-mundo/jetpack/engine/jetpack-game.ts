@@ -44,7 +44,8 @@ import { JetAudio } from "./audio"
 import { createPerfProbe } from "./jet-perf"
 import { createJetVfx } from "./jet-vfx"
 import { buildBoundary } from "./boundary-view"
-import { CANYON_DIR, loadCanyonAssets, loadFactoryAssets, loadPieceGroups, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { aroDaFase } from "./pecas/portais"
+import { loadCanyonAssets, loadFactoryAssets, loadForestAssets, loadForgeAssets, loadIceAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 import { GAME_MUSIC, sceneSound, jetpackPhaseAmb } from "../../engine/audio"
 
@@ -235,14 +236,11 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const vfx = createJetVfx(scene, quality.tier, level)
   // Cânion: as peças esculpidas (GLB do Tripo) chegam depois e entram no cenário e nos obstáculos
   let canyonAssets: PieceAssets<string> | null = null
-  let extraAssets: PieceAssets<string> | null = null
   if (level === "artico") {
     void loadIceAssets(scene, () => !disposed).then((a) => {
       if (disposed) return a.dispose()
       canyonAssets = a
       tunnel.provide?.(a)
-      const ring = a.meshes.get("anel")
-      if (ring) obstacles.useModel("rim", ring, { zScale: 0.35 })
       // V3 (2026-11-09): rocha, cristal, galão e moldura do Tripo (gelo2.json: medidas com 1 m de altura).
       // rocha: cobre o disco da colisão (raio 1,05 no x–y); estreitada em x e na profundidade
       const rock = a.meshes.get("rocha")
@@ -278,13 +276,6 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       const tile = a.meshes.get("borda")
       const corner = a.meshes.get("canto")
       if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 2.578, arm: 0.437, armLen: 0.785, beam: true })
-    })
-    // o anel dourado do Cânion também é o da Floresta (furo de raio 1, como a regra)
-    void loadPieceGroups(scene, CANYON_DIR, { anel: ["anel"] as const }, {}, () => !disposed).then((g) => {
-      if (disposed) return g.dispose()
-      extraAssets = g
-      const ring = g.meshes.get("anel")
-      if (ring) obstacles.useModel("rim", ring, { zScale: 0.55 })
     })
   }
   if (level === "forja") {
@@ -334,8 +325,6 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (disposed) return a.dispose()
       canyonAssets = a
       tunnel.provide?.(a)
-      const ring = a.meshes.get("anel")
-      if (ring) obstacles.useModel("rim", ring, { zScale: 0.55 })
       // V3: a rocha NOVA (rachaduras acesas) cobre o disco (x estreitado: 2,42 → 2,2); só balança
       const rock = a.meshes.get("rocha2") ?? a.meshes.get("rocha")
       if (rock) obstacles.useModel("rock", rock, { bake: Matrix.Scaling(2.2 / 2.42, 1, 1), upright: true })
@@ -349,6 +338,12 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const mats = tunnel.mats
   const obstacles = buildObstacles(scene, mats, level)
   const kit = buildPackKit(scene, mats)
+  // Jetpack em código (14/11): o aro dos anéis é o portal feito por nós (pecas/portais.ts), em toda fase
+  const codeRim = aroDaFase(scene, level)
+  if (codeRim) {
+    obstacles.useModel("rim", codeRim, { zScale: 1 })
+    codeRim.dispose()
+  }
 
   // ── o jogador ──────────────────────────────────────────────────────────────
   const lib = new AvatarLibrary(scene, false, false, 24)
@@ -879,7 +874,6 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       audio.dispose()
       vfx.dispose()
       canyonAssets?.dispose()
-      extraAssets?.dispose()
       pack.dispose()
       char.dispose()
       for (const r of remotes) {

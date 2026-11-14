@@ -20,6 +20,8 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { fuseGlow } from "../../engine/steampunk/glow-fuse"
 import type { JetGeo } from "./jet-geo"
+import { finish } from "../../engine/cena-codigo/kit"
+import { novaPeca, stamp, type KitCodigo } from "./pecas/peca"
 
 /** Comprimento de um trecho (m) — o mesmo do túnel original. */
 export const SEG = 24
@@ -146,6 +148,40 @@ export class SegmentPool {
     else this.propSrc.set(kind, mesh)
     for (const l of this.live.values()) this.fillProps(l)
     for (const list of this.free) for (const l of list) this.fillProps(l)
+  }
+
+  /**
+   * Jetpack em código (14/11): as peças de modelo deste kit entram DENTRO do módulo — carimbadas numa
+   * malha só por módulo (corpo + luz, 1 chamada), instanciada com o resto do trecho. Os giradores do kit
+   * viram malha própria. Chamar logo depois de montar o pool (antes do primeiro `update`).
+   */
+  bakeCode(kit: KitCodigo, spinKinds: readonly string[] = []) {
+    if (this.live.size || this.seq) throw new Error("bakeCode: chamar antes do primeiro update")
+    this.modules.forEach((mod, m) => {
+      const keep: PropSpot[] = []
+      const merged = novaPeca()
+      for (const p of mod.props ?? []) {
+        const src = kit.has(p.kind) ? kit.get(p.kind) : null
+        if (src) stamp(merged, src, p)
+        else keep.push(p)
+      }
+      mod.props = keep
+      if (!merged.body.count && !merged.glow.count) return
+      merged.body.weather(kit.acabamento.weather)
+      const ac = kit.acabamento
+      const mesh = finish(this.scene, `${this.name}-code${m}`, merged.body, merged.glow, { weather: false, spec: ac.spec ?? [0.06, 0.06, 0.07], power: ac.power ?? 12, self: ac.self ?? [0.03, 0.03, 0.04] })
+      mesh.isPickable = false
+      mesh.material?.freeze()
+      mesh.parent = this.hold
+      mod.meshes.push(mesh)
+    })
+    for (const kind of spinKinds) {
+      const mesh = kit.has(kind) ? kit.mesh(this.scene, kind) : null
+      if (!mesh) continue
+      mesh.material?.freeze()
+      mesh.parent = this.hold
+      this.spinners.set(kind, mesh)
+    }
   }
 
   /** Põe os trechos em volta de z; anima os giradores. */
