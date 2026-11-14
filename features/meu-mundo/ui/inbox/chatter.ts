@@ -105,6 +105,23 @@ const LINES: Partial<Record<Temper, Record<ChatterMoment, Line[]>>> = {
       ["chNarcIdle2", "Tira uma foto minha aqui. E aqui. E aqui.", "loving"],
     ],
   },
+  preguicoso: {
+    enter: [
+      ["chLazyEnter1", "Cheguei. Já posso ir embora?", "tired"],
+      ["chLazyEnter2", "Hoje o plano é não ter plano.", "happy"],
+    ],
+    night: [
+      ["chLazyNight1", "Noite. Finalmente uma hora oficial pra dormir.", "happy"],
+      ["chLazyNight2", "Escureceu. Ótima desculpa pra não sair.", "happy"],
+    ],
+    morning: [
+      ["chLazyMorning1", "Bom dia? Pra quem acordou cedo, talvez.", "tired"],
+    ],
+    idle: [
+      ["chLazyIdle1", "Ficar parado é bom. Ficar deitado é melhor.", "tired"],
+      ["chLazyIdle2", "Se ninguém pedir nada, hoje vai ser um dia perfeito.", "happy"],
+    ],
+  },
 }
 
 const LOVE: Line[] = [

@@ -5,5 +5,12 @@
   "chNarcNight2": ["Escureceu. Ainda bem que eu ilumino a rua.", "It's dark. Good thing I light up the street.", "Oscureció. Menos mal que yo ilumino la calle."],
   "chNarcMorning1": ["Bom dia. Acordei lindo, de novo. Rotina.", "Good morning. Woke up gorgeous, again. Routine.", "Buenos días. Desperté guapo, otra vez. Rutina."],
   "chNarcIdle1": ["Ninguém me olhando há cinco minutos. Isso é um recorde triste.", "Nobody's looked at me for five minutes. A sad record.", "Nadie me mira hace cinco minutos. Un récord triste."],
-  "chNarcIdle2": ["Tira uma foto minha aqui. E aqui. E aqui.", "Take a photo of me here. And here. And here.", "Sácame una foto aquí. Y aquí. Y aquí."]
+  "chNarcIdle2": ["Tira uma foto minha aqui. E aqui. E aqui.", "Take a photo of me here. And here. And here.", "Sácame una foto aquí. Y aquí. Y aquí."],
+  "chLazyEnter1": ["Cheguei. Já posso ir embora?", "I'm here. Can I leave now?", "Llegué. ¿Ya me puedo ir?"],
+  "chLazyEnter2": ["Hoje o plano é não ter plano.", "Today's plan is to have no plan.", "El plan de hoy es no tener plan."],
+  "chLazyNight1": ["Noite. Finalmente uma hora oficial pra dormir.", "Night. Finally an official time to sleep.", "Noche. Por fin una hora oficial para dormir."],
+  "chLazyNight2": ["Escureceu. Ótima desculpa pra não sair.", "It's dark. Great excuse to stay in.", "Oscureció. Buena excusa para no salir."],
+  "chLazyMorning1": ["Bom dia? Pra quem acordou cedo, talvez.", "Good morning? For early risers, maybe.", "¿Buenos días? Para quien madruga, quizá."],
+  "chLazyIdle1": ["Ficar parado é bom. Ficar deitado é melhor.", "Standing still is good. Lying down is better.", "Estar quieto está bien. Tumbado, mejor."],
+  "chLazyIdle2": ["Se ninguém pedir nada, hoje vai ser um dia perfeito.", "If nobody asks anything, today will be perfect.", "Si nadie pide nada, hoy será un día perfecto."]
 }
