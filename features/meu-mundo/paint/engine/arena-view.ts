@@ -975,6 +975,79 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     }
   }
 
+  // ── Projeto B 3e: o MARCO da referência, atrás de cada base (quem olha para
+  // o meio vê o do outro lado). Malha própria SEM neblina com a cor já
+  // misturada no ar (a 170 m a neblina linear apagava tudo).
+  const far = new ArenaGeo()
+  const farGlow = new ArenaGeo()
+  if (th.tile !== "moss") {
+    const air = (c: RGB, k = 0.38): RGB => mix(c, th.fog, k)
+    const sides = [...new Set(map.bases.map((b) => Math.sign(map.islands[b.island].x) || 1))]
+    for (const s of sides.length ? sides : [1, -1]) {
+      const X = s * 175
+      const Y = 18
+      const Z = 0
+      // ilha-base do marco (pedra pendurada) — a Forja fica no chão (lava)
+      if (th.tile !== "basalt") {
+        far.cone(70, 4, 46, place(X, Y - 25, Z), air(th.strata[3]), 9)
+        far.cylinder(72, 3, place(X, Y - 0.5, Z), air(th.tile === "plate" ? th.top : th.rim, 0.32), 14)
+        // cascatas caindo da borda
+        for (let k = 0; k < 4; k++) {
+          const a = -0.6 + k * 0.4
+          farGlow.box(2.6, 34, 0.4, place(X - s * Math.cos(a) * 34, Y - 18, Z + Math.sin(a) * 34, Math.PI / 2 - a), air([0.85, 0.94, 1], 0.2))
+        }
+      }
+      if (th.tile === "garden") {
+        // castelo celeste: torres brancas de telhado de ouro, portão aceso e auréola
+        const white = air([0.96, 0.95, 0.9], 0.3)
+        const gold = air(th.trim, 0.25)
+        for (const [dx, dz, h] of [[0, -14, 30], [0, 14, 30], [8, -24, 22], [8, 24, 22], [6, 0, 40]] as const) {
+          far.cylinder(7, h, place(X + s * dx, Y + h / 2, Z + dz), white, 10)
+          far.cone(0, 8.4, 9, place(X + s * dx, Y + h + 4.5, Z + dz), gold, 10)
+        }
+        far.box(10, 24, 22, place(X - s * 2, Y + 12, Z), white)
+        farGlow.cylinder(12, 0.6, Matrix.RotationZ(Math.PI / 2).multiply(Matrix.Translation(X - s * 7.4, Y + 10, Z)), air([0.5, 0.85, 1], 0.15), 20)
+        farGlow.annulus(X + s * 6, Y + 58, Z, 15, 17, air(th.trim, 0.2), 32)
+      } else if (th.tile === "rune") {
+        // cidadela roxa: arcos, torres e o cristal-agulha aceso com auréola de ouro
+        const st = air(mul(th.strata[0], 1.1))
+        for (const [dx, dz, h] of [[0, -18, 24], [0, 18, 24], [-6, -8, 16], [-6, 8, 16]] as const) {
+          far.box(7, h, 7, place(X + s * dx, Y + h / 2, Z + dz), st)
+          far.cone(0, 6, 6, place(X + s * dx, Y + h + 3, Z + dz), air(th.trim, 0.25), 4)
+        }
+        far.box(14, 22, 30, place(X + s * 4, Y + 11, Z), st)
+        farGlow.cone(0, 7, 46, place(X + s * 4, Y + 45, Z), air([0.8, 0.55, 1], 0.12), 6)
+        farGlow.annulus(X + s * 4, Y + 40, Z, 13, 14.5, air(th.trim, 0.15), 32)
+      } else if (th.tile === "plate") {
+        // núcleo industrial: torre em anéis com faixas acesas e braços de guindaste
+        const mt = air([0.2, 0.2, 0.23])
+        for (let k = 0; k < 5; k++) {
+          const r = 22 - k * 3
+          far.cylinder(r, 9, place(X, Y + 4.5 + k * 10, Z), mt, 14)
+          farGlow.cylinder(r + 0.6, 1.1, place(X, Y + 9.5 + k * 10, Z), air(k % 2 ? th.glow : th.trim, 0.15), 14)
+        }
+        far.cylinder(3, 22, place(X, Y + 60, Z), mt, 8)
+        for (const dz of [-1, 1]) far.box(4, 3, 36, place(X, Y + 46, Z + dz * 18), air(th.trim, 0.3))
+      } else {
+        // Forja: vulcão com cratera acesa e a fortaleza na frente
+        far.cone(14, 120, 70, place(X + s * 30, -5, Z + 40), air([0.22, 0.1, 0.09], 0.3), 12)
+        farGlow.cone(10, 15, 3, place(X + s * 30, 31, Z + 40), air([1, 0.5, 0.12], 0.1), 12)
+        for (let k = 0; k < 5; k++) {
+          const a = k * 1.2
+          farGlow.box(1.6, 40, 1.6, place(X + s * 30 + Math.sin(a) * 22, 12, Z + 40 + Math.cos(a) * 22, a), air([1, 0.42, 0.1], 0.1))
+        }
+        const fz = air([0.16, 0.14, 0.15], 0.3)
+        far.box(30, 34, 40, place(X - s * 10, 14, Z - 20), fz)
+        for (const dz of [-20, 0, 20]) {
+          far.cylinder(8, 46, place(X - s * 22, 20, Z - 20 + dz), fz, 8)
+          far.cone(0, 10, 10, place(X - s * 22, 48, Z - 20 + dz), air([0.5, 0.12, 0.1], 0.25), 8)
+          farGlow.box(0.6, 8, 3, place(X - s * 26.1, 22, Z - 20 + dz, 0), air([1, 0.62, 0.2], 0.1))
+        }
+        farGlow.box(0.6, 18, 8, place(X - s * 25.1, 10, Z - 20), air([1, 0.55, 0.15], 0.1))
+      }
+    }
+  }
+
   // ── mm3d-77: kit modular — moldura de borda em toda ilha ──
   const seed = map.id.length * 131 + map.islands.length
   const clear = new Clearance(map)
@@ -1291,6 +1364,24 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   if (metal.vertexCount) built.push(metal.build("paint-arena-metal", scene, metalMat))
   if (deco.vertexCount) built.push(deco.build("paint-arena-deco", scene, solidMat))
   if (glow.vertexCount) built.push(glow.build("paint-arena-glow", scene, glowMat))
+  if (far.vertexCount) {
+    // 3e: o marco ao longe sem neblina (a cor já vem misturada com o ar)
+    const fm = own(new StandardMaterial("paint-arena-far", scene))
+    fm.diffuseColor = new Color3(1, 1, 1)
+    fm.specularColor = new Color3(0, 0, 0)
+    fm.emissiveColor = c3(mul(th.fog, 0.22))
+    fm.fogEnabled = false
+    built.push(far.build("paint-arena-far", scene, fm))
+  }
+  if (farGlow.vertexCount) {
+    const fg = own(new StandardMaterial("paint-arena-farglow", scene))
+    fg.disableLighting = true
+    fg.emissiveColor = new Color3(1, 1, 1)
+    fg.diffuseColor = new Color3(0, 0, 0)
+    fg.specularColor = new Color3(0, 0, 0)
+    fg.fogEnabled = false
+    built.push(farGlow.build("paint-arena-farglow", scene, fg))
+  }
   {
     const rm = new Mesh("paint-arena-rock", scene)
     // 3b: cada triângulo num tom só (claro do lado do sol, sombra do outro,
