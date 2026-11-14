@@ -7,10 +7,10 @@
 // o caminho, cipós e gotas de luz pendurados lá no alto e uma árvore gigante
 // de copa rosa ao fundo, tudo numa névoa ciano.
 //
-// Peças do Tripo (build_floresta_v2.py, em grupos): cristais, cogumelo, ilha (pedra
-// com plantas), árvore, planta, arco de raízes e, desde 2026-11-09, cogumelo-casa,
-// árvore 2, flor gigante, lanterna de vaga-lume, tronco caído, ninho e tronco —
-// chegam depois (provide). Cenário com a beira de dentro em |x| ≥ 6.
+// Jetpack em código (14/11): as peças (cristais, cogumelo, ilha = pedra com plantas, árvore, planta,
+// arco de raízes, cogumelo-casa, árvore 2, flor gigante, lanterna de vaga-lume, tronco caído, ninho e
+// tronco) são feitas em código (pecas/kit-floresta.ts) com as MESMAS medidas do tema antigo do Tripo
+// (floresta/v2) e entram no módulo. Cenário com a beira de dentro em |x| ≥ 6.
 // O ARCO tem o vão medido fatia a fatia: com 50 m de largura e o pé 5 m
 // abaixo do caminho, sobram ≥ 6,4 m de cada lado da caixa do voo até 9 m de
 // altura. A regra não muda.
@@ -32,6 +32,7 @@ import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot, fusedLayers } from "./env-pool"
 import type { ForestAsset, PieceAssets } from "./canyon-assets"
 import { cloudTexture, skyTexture } from "./canyon-env"
+import { kitFloresta } from "./pecas/kit-floresta"
 
 const { W, H } = TUNNEL
 
@@ -265,6 +266,9 @@ export function buildForestEnv(scene: Scene, low: boolean, slots: number, seed: 
     return m * VARIANTS + (hash32(s, seed ^ 17) % VARIANTS)
   }
   const pool = new SegmentPool(scene, "jt-fl", mods, new Map(), slots, pick)
+  // Jetpack em código (14/11): as peças do cenário (era o tema floresta/v2 do Tripo) entram no módulo
+  const kit = kitFloresta(low)
+  pool.bakeCode(kit)
 
   const skyTex = skyTexture(scene, low, SKY_FOREST)
   const skyMat = new StandardMaterial("jt-fl-sky", scene)
@@ -297,6 +301,17 @@ export function buildForestEnv(scene: Scene, low: boolean, slots: number, seed: 
   veil.setEnabled(!low)
   // a árvore gigante de copa rosa lá no fundo (aparece na névoa, anda com o jogador)
   const far: InstancedMesh[] = []
+  const farSrc = kit.mesh(scene, "arvore", 80)!
+  farSrc.material?.freeze()
+  farSrc.position.y = -5000
+  for (let i = 0; i < 2; i++) {
+    const t = farSrc.createInstance(`jt-fl-far${i}`)
+    t.scaling.setAll(i ? 70 : 95)
+    t.rotation.y = i * 2.1
+    t.isPickable = false
+    t.alwaysSelectAsActiveMesh = true
+    far.push(t)
+  }
 
   mats.glow.emissiveColor.set(1.15, 1.15, 1.15)
   mats.freeze()
@@ -307,25 +322,12 @@ export function buildForestEnv(scene: Scene, low: boolean, slots: number, seed: 
       veil.position.set(0, 0.02, z + 120)
       far.forEach((t, i) => t.position.set(i ? 70 : -40, -8, z + 190 + i * 25))
     },
-    provide(a) {
-      for (const kind of FOREST_PIECES) {
-        const m = a.meshes.get(kind)
-        if (m) pool.provide(kind, m)
-      }
-      const tree = a.meshes.get("arvore")
-      if (tree && !far.length) {
-        for (let i = 0; i < 2; i++) {
-          const t = tree.createInstance(`jt-fl-far${i}`)
-          t.scaling.setAll(i ? 70 : 95)
-          t.rotation.y = i * 2.1
-          t.isPickable = false
-          t.alwaysSelectAsActiveMesh = true
-          far.push(t)
-        }
-      }
-    },
+    // Jetpack em código (14/11): nada mais chega do Tripo (o cenário já nasce com as peças)
+    provide() {},
     dispose() {
       for (const t of far) t.dispose()
+      farSrc.material?.dispose()
+      farSrc.dispose()
       pool.dispose()
       for (const m of all) if (!m.isDisposed()) m.dispose()
       veil.dispose()

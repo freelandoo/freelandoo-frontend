@@ -48,7 +48,8 @@ import { aroDaFase } from "./pecas/portais"
 import { codeObstacles } from "./pecas/obstaculos"
 import { kitGelo } from "./pecas/kit-gelo"
 import { kitCanion } from "./pecas/kit-canion"
-import { ICE_DIR, loadPieceGroups, loadFactoryAssets, loadForestAssets, loadForgeAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { kitFloresta } from "./pecas/kit-floresta"
+import { ICE_DIR, loadPieceGroups, loadFactoryAssets, loadForgeAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 import { GAME_MUSIC, sceneSound, jetpackPhaseAmb } from "../../engine/audio"
 
@@ -247,29 +248,6 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       tunnel.provide?.(a)
     })
   }
-  if (level === "floresta") {
-    void loadForestAssets(scene, () => !disposed).then((a) => {
-      if (disposed) return a.dispose()
-      canyonAssets = a
-      // bioluminescência: a própria textura acende (cristais, chapéus e veios claros brilham na névoa)
-      for (const [name, m] of a.meshes) {
-        const mat = m.material as StandardMaterial | null
-        // a moldura/viga de raízes não acende (acesa, a trança vira ruído colorido); o galão tem luz própria
-        if (!mat || name === "borda" || name === "canto" || name === "galao") continue
-        // fica descongelado: congelado de novo antes de a peça aparecer, o shader guardaria a cor antiga
-        mat.unfreeze()
-        mat.emissiveTexture = mat.diffuseTexture
-        mat.emissiveColor = new Color3(0.42, 0.4, 0.5)
-      }
-      tunnel.provide?.(a)
-      // V3 (2026-11-09): galão e moldura de raízes do Tripo (floresta-tema2.json); a viga é a mesma borda repetida
-      const can = a.meshes.get("galao")
-      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
-      const tile = a.meshes.get("borda")
-      const corner = a.meshes.get("canto")
-      if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 2.578, arm: 0.437, armLen: 0.785, beam: true })
-    })
-  }
   if (level === "forja") {
     void loadForgeAssets(scene, () => !disposed).then((a) => {
       if (disposed) return a.dispose()
@@ -316,7 +294,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const obstacles = buildObstacles(scene, mats, level)
   const kit = buildPackKit(scene, mats)
   // Jetpack em código (14/11): rocha, cristal, galão e moldura da fase feitos por nós (pecas/kit-*)
-  const codeKit = level === "artico" ? kitGelo(low) : level === "canion" ? kitCanion(low) : null
+  const codeKit = level === "artico" ? kitGelo(low) : level === "canion" ? kitCanion(low) : level === "floresta" ? kitFloresta(low) : null
   if (codeKit) codeObstacles(scene, obstacles, codeKit, { beam: level !== "artico" })
   // Jetpack em código (14/11): o aro dos anéis é o portal feito por nós (pecas/portais.ts), em toda fase
   const codeRim = aroDaFase(scene, level)
