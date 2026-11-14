@@ -18,7 +18,8 @@ import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { QualityTier } from "../../../engine/quality"
-import { loadCanyonAssets } from "../../../jetpack/engine/canyon-assets"
+import { kitCanion } from "../../../jetpack/engine/pecas/kit-canion"
+import { codeAssets } from "./code-assets"
 import type { TrackSeg } from "../../sim/track"
 import type { AlongDef, DressDef, StripDef, TrackLook } from "../track-mesh"
 import { buildFall, buildSea, buildSky, canvasTexture, glow, lit, paintClouds, rng, rnKit } from "./common"
@@ -224,7 +225,8 @@ export function buildCanyon(scene: Scene, tier: QualityTier, isAlive: () => bool
   const disposers: (() => void)[] = []
   const ready = (async (): Promise<TrackLook> => {
     const [assets, rib, portal, post, truss, bracket, sign] = await Promise.all([
-      loadCanyonAssets(scene, isAlive),
+      // em código (14/11): as peças do Cânion do Jetpack (era o tema canion/v2 do Tripo); longe, o kit leve
+      Promise.resolve(codeAssets(scene, kitCanion(low), { ilha: 35, moinho: 15, paredao: 120, arco: 220 }, low ? undefined : kitCanion(true))),
       kit.load(`${dir}rn2-canion-rib.glb`, "rn2-canion-rib"),
       kit.load(`${dir}rn2-canion-portal.glb`, "rn2-canion-portal"),
       kit.load(`${dir}rn2-canion-post.glb`, "rn2-canion-post"),
@@ -273,8 +275,10 @@ export function buildCanyon(scene: Scene, tier: QualityTier, isAlive: () => bool
     }
     // médio: pilares de rocha que sobem das nuvens, ilhas flutuantes com moinho; as cachoeiras caem DELAS
     const fallFromIsland = { mesh: falls.mesh, at: [0.33, -0.08, 0] as const, scale: 1, size: [0.13, 3.2] as const, yaw: -Math.PI / 2, p: 0.6 }
-    const fallFromRock = { mesh: falls.mesh, at: [0.98, 2.35, 0] as const, scale: 1, size: [0.28, 3.4] as const, yaw: -Math.PI / 2, p: 0.3 }
-    add(dress, A.get("rocha"), { per: low ? 1.2 : 2.2, lateral: [24, 90], base: "ground", y: [0, 0], scale: [22, 34], clear: 1.4, stretch: [1, 1.15], loopClear: 40, riders: [fallFromRock] })
+    // em código o pilar é o paredão em colunas (0,56 × 1 × 0,45, pé na origem; a `rocha` do kit é pedra solta):
+    // do chão do mundo até acima da pista, e a cachoeira sai da face de lado, perto da tampa
+    const fallFromRock = { mesh: falls.mesh, at: [0.29, 0.86, 0] as const, scale: 1, size: [0.09, 1.05] as const, yaw: -Math.PI / 2, p: 0.3 }
+    add(dress, A.get("paredao"), { per: low ? 1.2 : 2.2, lateral: [46, 120], base: "ground", y: [0, 0], scale: [75, 110], clear: 0.42, stretch: [1, 1.1], loopClear: 50, riders: [fallFromRock] })
     add(dress, A.get("ilha"), {
       per: low ? 0.5 : 0.9,
       lateral: [40, 130],
@@ -283,7 +287,7 @@ export function buildCanyon(scene: Scene, tier: QualityTier, isAlive: () => bool
       scale: [26, 44],
       clear: 0.55,
       loopClear: 60,
-      riders: [...(A.get("moinho") ? [{ mesh: A.get("moinho")!, at: [0, 0.42, 0] as const, scale: 0.42, p: 0.55 }] : []), fallFromIsland],
+      riders: [...(A.get("moinho") ? [{ mesh: A.get("moinho")!, at: [0.12, 0.19, 0.1] as const, scale: 0.36, p: 0.55 }] : []), fallFromIsland],
     })
     // longe: paredões em camadas, arcos monumentais, ilhas grandes
     add(far, L.get("paredao") ?? A.get("paredao"), { per: low ? 3 : 5, lateral: [170, 520], base: "ground", y: [-8, 0], scale: [130, 230], clear: 0.5, face: true })
