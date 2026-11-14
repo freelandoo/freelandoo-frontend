@@ -8,7 +8,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint . --max-warnings 0 && node scripts/check-raw-html.js",
     "start": "next start",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",

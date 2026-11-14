@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { getBackendApiUrl } from "@/lib/backend"
 import { slugify, stripHandlePrefix, buildProfileUrl } from "@/lib/slug"
 import FreelancerProfileView from "../../../../freelancer/[id]/_components/freelancer-profile-view"
+import { safeJsonLd } from "@/lib/json-ld"
 
 type RouteParams = {
   profession: string
@@ -217,11 +218,11 @@ export default async function PublicProfilePage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdProfile) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLdProfile) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLdBreadcrumb) }}
       />
       {/* Paridade user≡perfil: o perfil-conta renderiza a MESMA página do
           perfil (decisão Alex 2026-07-20 — "as duas têm que ser idênticas"). */}

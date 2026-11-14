@@ -9,6 +9,7 @@ import {
   FinalCTA,
 } from "@/components/home/landing"
 import { RevealMount } from "@/components/home/landing/RevealMount"
+import { safeJsonLd } from "@/lib/json-ld"
 
 const TITLE = "Freelandoo — Venda serviços, cursos e produtos, e ganhe como afiliado"
 const DESCRIPTION =
@@ -58,8 +59,8 @@ export default function HomePage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSite) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLdOrg) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLdSite) }} />
 
       <LandingHeader />
       <main className="flex-1 overflow-x-clip">

@@ -22,6 +22,7 @@
 import { AREAS } from "./content/areas";
 import { ADDRESS_LINE, BUSINESS } from "./content/business";
 import { SERVICES, type Service } from "./content/services";
+import { safeJsonLd } from "@/lib/json-ld"
 
 /**
  * Remove chave vazia, recursivamente.
@@ -52,7 +53,7 @@ function Ld({ data }: { data: unknown }) {
       type="application/ld+json"
       // O JSON é montado por nós a partir de constantes do próprio módulo —
       // nada aqui vem de entrada de usuário.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
     />
   );
 }

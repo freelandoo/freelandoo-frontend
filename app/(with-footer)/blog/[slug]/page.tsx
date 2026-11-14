@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { BlogPostView } from "@/components/blog/blog-post-view"
 import { fetchBlogPost } from "@/lib/blog"
+import { safeJsonLd } from "@/lib/json-ld"
 
 // ISR: post renderizado sob demanda e cacheado por 5 min (F3.S5). Publicação/
 // edição aparece em até 5 min — mesmo prazo do índice /blog.
@@ -79,7 +80,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   return (
     <>
       {jsonLd && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}
       <BlogPostView initial={post} related={related} />
     </>

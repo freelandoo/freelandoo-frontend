@@ -11,6 +11,7 @@ import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
 import { FeatureFlagsProvider } from "@/components/feature-flags/FeatureFlagsProvider"
 import { UserFeaturesProvider } from "@/components/feature-flags/UserFeaturesProvider"
+import { safeJsonLd } from "@/lib/json-ld"
 import "./globals.css"
 
 // TOUR DESLIGADO (2026-06-14) e TourProvider REMOVIDO do shell (2026-06-15,
@@ -112,8 +113,8 @@ export default function RootLayout({
     inLanguage: "pt-BR",
   }
 
-  const orgLd = JSON.stringify(orgJsonLd)
-  const websiteLd = JSON.stringify(websiteJsonLd)
+  const orgLd = safeJsonLd(orgJsonLd)
+  const websiteLd = safeJsonLd(websiteJsonLd)
 
   return (
     <html

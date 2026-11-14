@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { safeJsonLd } from "@/lib/json-ld"
 
 export const metadata: Metadata = {
   title: "Busca de Profissionais | Freelandoo",
@@ -36,7 +37,7 @@ export default function SearchLayout({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLdBreadcrumb) }}
       />
       {children}
     </>

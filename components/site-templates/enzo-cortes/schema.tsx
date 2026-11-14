@@ -38,6 +38,7 @@
 import { BUSINESS, OPENING_HOURS } from "./content/business";
 import { AREA_NAMES } from "./content/areas";
 import { SERVICES, type Faq, type Service } from "./content/services";
+import { safeJsonLd } from "@/lib/json-ld"
 
 type Json = Record<string, unknown>;
 
@@ -67,7 +68,7 @@ function Ld({ data }: { data: unknown }) {
     <script
       type="application/ld+json"
       // O conteúdo é montado aqui, nunca vem de entrada de usuário.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(pruned) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(pruned) }}
     />
   );
 }
