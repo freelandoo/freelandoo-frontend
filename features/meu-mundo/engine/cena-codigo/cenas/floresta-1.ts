@@ -84,7 +84,8 @@ export function montar(lod = 0): Cena {
     col = mix(col, F.GRAMA_ESC, smooth(0.5, 0.75, grove(x, z)) * 0.75)
     col = mix(col, F.GRAMA_CL, P.aberto(x, z) * 0.45)
     if (cliffs.some((m) => m.inside(x, z, 1.25))) col = mix(col, F.TERRA_ESC, 0.55)
-    col = trilha(col, x, z, P, mix(F.LAJE_ESC, F.GRAMA_ESC, 0.35), 2.5, F.GRAMA_ESC) // junta escura sob as lajes soltas (como na cena 3)
+    // trilha de TERRA (refs 1 e 2): rosada, com manchas e a beira mais escura; lajes só na cena 3
+    col = trilha(col, x, z, P, mix(F.TRILHA, F.TRILHA_ESC, smooth(0.45, 0.8, noise(x * 0.16, 7.1, z * 0.16)) * 0.55), 2.6, F.TRILHA_ESC)
     const dl = Math.hypot(x - lagoa.x, z - lagoa.z)
     col = mix(col, F.FLOR, smooth(lagoa.r + 1.2, lagoa.r + 0.3, dl) * 0.25)
     return mul(col, 0.94 + 0.12 * noise(x * 0.8, 2.2, z * 0.8))
@@ -153,8 +154,7 @@ export function montar(lod = 0): Cena {
   // a árvore colossal da lagoa (o fim do desvio)
   F.arvoreLua(c, lagoa.x + 8, lagoa.z + 9, 24, 777, lod)
   // o caminho de LAJES soltas da cena 3 (geometria 3 cm acima: a junta é o chão aparecendo), no desvio também
-  LP.lajesCaminho(c, CAMINHO, 2.2, 11, lod, (x, z) => P.aberto(x, z) > 0.4)
-  LP.lajesCaminho(c, DESVIO, 2.2, 12, lod, (x, z) => P.aberto(x, z) > 0.4)
+  // (polimento 14/11: sem lajes nas cenas 1 e 2 — a ref é trilha de terra)
   return c
 }
 

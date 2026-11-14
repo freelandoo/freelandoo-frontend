@@ -69,7 +69,8 @@ export function montar(lod = 0): Cena {
     const dp = Math.hypot(x - PEDRA.x, z - PEDRA.z)
     col = mix(col, mix(F.MUSGO, F.LAJE, smooth(0.4, 0.6, noise(x * 0.6, 3, z * 0.6))), smooth(PEDRA.r + 1, PEDRA.r - 1.5, dp) * 0.75)
     if (cliffIn(x, z)) col = mix(col, F.TERRA_ESC, 0.5)
-    col = trilha(col, x, z, P, mix(F.LAJE_ESC, F.GRAMA_ESC, 0.35), 2.5, F.GRAMA_ESC) // junta escura sob as lajes soltas (como na cena 3)
+    // trilha de TERRA (refs 1 e 2): rosada, com manchas e a beira mais escura; lajes só na cena 3
+    col = trilha(col, x, z, P, mix(F.TRILHA, F.TRILHA_ESC, smooth(0.45, 0.8, noise(x * 0.16, 7.1, z * 0.16)) * 0.55), 2.6, F.TRILHA_ESC)
     col = mix(col, F.TERRA_ESC, smooth(RIACHO_W / 2 + 3, RIACHO_W / 2 + 0.6, dRio(x, z)) * 0.8)
     return mul(col, 0.94 + 0.12 * noise(x * 0.8, 2.2, z * 0.8))
   }
@@ -137,8 +138,7 @@ export function montar(lod = 0): Cena {
   // o caminho de LAJES soltas da cena 3 (geometria 3 cm acima: a junta é o chão aparecendo), no desvio também;
   // fora das clareiras e do anel de Pedraverde (que tem o chão de lajes dele)
   const pula = (x: number, z: number) => P.aberto(x, z) > 0.4 || Math.hypot(x - PEDRA.x, z - PEDRA.z) < PEDRA.r + 1
-  LP.lajesCaminho(c, CAMINHO, 2.2, 21, lod, pula)
-  LP.lajesCaminho(c, DESVIO, 2.2, 22, lod, pula)
+  // (polimento 14/11: sem lajes nas cenas 1 e 2 — a ref é trilha de terra)
   return c
 }
 

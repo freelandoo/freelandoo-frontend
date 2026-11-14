@@ -24,12 +24,17 @@ import * as P from "../pecas/floresta-lua"
 export const CEU: RGB = [0.1, 0.12, 0.33]
 export const NEVOA: RGB = [0.17, 0.18, 0.42]
 /** Luar: céu azulado forte, sol fraco e frio (o jogo lê `meta.luz`). */
-export const LUZ = { hemi: 1.15, sol: 0.6, ceu: [0.62, 0.7, 1] as RGB, chao: [0.26, 0.22, 0.42] as RGB, solCor: [0.78, 0.82, 1] as RGB }
+// polimento 14/11: `chao` claro e azul-esverdeado (é ele que pinta o LADO DE BAIXO das copas e as faces
+// viradas para baixo: violeta escuro deixava tudo azul-marinho) e lua mais forte (facetas com contraste)
+export const LUZ = { hemi: 1.2, sol: 0.85, ceu: [0.66, 0.74, 1] as RGB, chao: [0.42, 0.52, 0.68] as RGB, solCor: [0.86, 0.9, 1] as RGB }
+/** Trilha de terra das cenas 1 e 2 (refs 1 e 2: terra rosada com sombra violeta). */
+export const TRILHA: RGB = [0.74, 0.52, 0.5]
+export const TRILHA_ESC: RGB = [0.5, 0.36, 0.42]
 export const LUA = { dir: [0.25, 0.42, 1] as RGB, r: 0.09, cor: [0.93, 0.95, 1] as RGB }
 
-export const GRAMA: RGB = [0.2, 0.44, 0.44]
-export const GRAMA_CL: RGB = [0.28, 0.56, 0.5]
-export const GRAMA_ESC: RGB = [0.13, 0.3, 0.36]
+export const GRAMA: RGB = [0.16, 0.5, 0.48]
+export const GRAMA_CL: RGB = [0.24, 0.64, 0.56]
+export const GRAMA_ESC: RGB = [0.1, 0.34, 0.4]
 export const TERRA: RGB = [0.6, 0.48, 0.4]
 export const TERRA_ESC: RGB = [0.42, 0.34, 0.32]
 export const LAJE: RGB = [0.5, 0.46, 0.66]
