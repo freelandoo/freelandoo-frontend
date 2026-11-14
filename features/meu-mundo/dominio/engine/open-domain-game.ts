@@ -47,6 +47,8 @@ import type { GodId } from "../../laminas/sim/fight"
 import { SkyDome } from "../../engine/sky/sky-dome"
 import type { StageSky } from "./domain-kit"
 import { DomainPortal, PORTAL_COLOR } from "./portal-fx"
+import { createAmbientFx } from "../../engine/ambiente-fx/ambient-fx"
+import { DOMAIN_REGION } from "../../engine/ambiente-fx/presets"
 import { SpeechBubble } from "../../engine/speech-bubble"
 import { SKY_REGIONS, skyArt, skyFog, skyOfCena, variantOfCena } from "../../engine/sky/sky-registry"
 import { dominioMapModel, setCityMap, type DominioMapLabels } from "../../engine/city-map"
@@ -225,6 +227,8 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const sky = skyReg
     ? new SkyDome(scene, { radius: 295, tier: quality.tier, region: skyReg.id, mode: skyVar, haze: [nev[0], nev[1], nev[2]], zenith: skyArt(skyReg.id, skyVar).top, flashLight: hemi })
     : null
+  // partículas de ambiente da região (E5): 1 chamada; noite fixa pela arte da cena
+  const ambient = createAmbientFx(scene, skyId ?? DOMAIN_REGION[domain.id], quality.tier, { night: skyVar === "noite" ? 1 : 0 })
 
   /** Blocos: centro + as duas malhas (o pano de fundo de longe sai: o de perto basta). */
   const S = cena.cell
@@ -774,6 +778,8 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       },
       turn: (yaw: number) => follow.snapBehind(body.x, body.z, yaw),
       pontos: () => cena.pontos,
+      ambient: () => ambient?.stats() ?? null,
+      ambientOn: (on: boolean) => ambient?.setEnabled(on),
       zonas: () => cena.zonas,
     }
 
@@ -818,6 +824,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
         m.model?.dispose()
       }
       for (const pt of portals) pt.dispose()
+      ambient?.dispose()
       hunter?.fig?.dispose()
       hunter = null
       for (const gm of golems) gm.char.dispose()
