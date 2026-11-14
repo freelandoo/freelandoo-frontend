@@ -28,13 +28,18 @@
 import type { Scene } from "@babylonjs/core/scene"
 import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
-import { Color3 } from "@babylonjs/core/Maths/math.color"
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { ARENA_R } from "../sim/fight"
 import { KitPlacer, LOOKS, applyDomainLook, type StageSky, loadDomainKit, paintedGround, seeded, type DomainKitId, type DomainSpot, type KitPiece } from "../../dominio/engine/domain-kit"
 import { CHAO_DETALHE, aplicarChaoDetalhe } from "../../engine/cena-codigo/chao-detalhe"
-import { DOMAIN_SKY } from "../../engine/sky/sky-registry"
+import { DOMAIN_SKY, skyFog } from "../../engine/sky/sky-registry"
+import { CENAS } from "../../engine/cena-codigo/cenas"
+import { finishCena } from "../../engine/cena-codigo/kit-cena"
+import { montarPalco, temPalco } from "../../engine/cena-codigo/palcos"
+import { PORTAL_COLOR } from "../../dominio/engine/portal-fx"
 import type { ArenaView } from "./arena-view"
 
 export interface DomainStageSpec {
@@ -42,6 +47,8 @@ export interface DomainStageSpec {
   spot: DomainSpot
   /** Céu do Domínio/cena da luta (o mesmo da cena de onde ela saiu). Sem = a cúpula da cidade de noite. */
   sky?: StageSky | null
+  /** Cena aberta de onde a luta saiu (`gelo-2`): a luz e a névoa do palco são as dela. */
+  cena?: string | null
 }
 
 /** Anel em volta do círculo: [peça, raio, altura, quantas, deslocamento do ângulo, fica fora do low?]. */
@@ -108,6 +115,31 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   const hemi = scene.getLightByName("mm-hemi") as HemisphericLight | null
   const moon = scene.getLightByName("mm-sun") as DirectionalLight | null
   const sky = applyDomainLook(scene, look, hemi, moon, spec.sky, low)
+  // Domínio da luta (pela área do céu da cena; sem céu = o kit)
+  const dom = spec.sky ? (Object.entries(DOMAIN_SKY).find(([, r]) => r === spec.sky!.region)?.[0] ?? spec.kit) : spec.kit
+  // Gelo/Fábrica/Vulcão/Orbital: palco com as peças em código do Domínio (palcos.ts) e a luz da cena de origem
+  const codigo = temPalco(dom) ? dom : null
+  const meta = spec.cena ? CENAS[spec.cena]?.meta : undefined
+  if (codigo && meta) {
+    const luz = meta.luz
+    if (hemi) {
+      hemi.intensity = luz?.hemi ?? 0.78
+      hemi.direction = new Vector3(0.25, 1, 0.15)
+      hemi.diffuse = luz?.ceu ? new Color3(luz.ceu[0], luz.ceu[1], luz.ceu[2]) : new Color3(1, 1, 1)
+      hemi.groundColor = luz?.chao ? new Color3(luz.chao[0], luz.chao[1], luz.chao[2]) : new Color3(0.5, 0.48, 0.55)
+    }
+    if (moon) {
+      moon.direction = new Vector3(-0.55, -1, -0.35)
+      moon.intensity = luz?.sol ?? 0.55
+      moon.diffuse = luz?.solCor ? new Color3(luz.solCor[0], luz.solCor[1], luz.solCor[2]) : new Color3(1, 1, 1)
+    }
+    const nev = spec.sky ? skyFog(spec.sky.region, spec.sky.mode, meta.nevoa) : meta.nevoa
+    scene.fogColor = new Color3(nev[0], nev[1], nev[2])
+    scene.clearColor = new Color4(nev[0], nev[1], nev[2], 1)
+    scene.fogStart = 40
+    scene.fogEnd = 150
+    scene.ambientColor = new Color3(0.2, 0.2, 0.22)
+  }
   // D4: a luz de partida (fase 1) e para onde cada fase leva
   const base = { hemi: hemi?.intensity ?? 0, moon: moon?.intensity ?? 0, clear: scene.clearColor.clone(), fog: scene.fogColor.clone(), fogEnd: scene.fogEnd }
   const DARK: Record<number, { light: number; sky: number; fog: number }> = { 1: { light: 1, sky: 1, fog: 1 }, 2: { light: 0.72, sky: 0.55, fog: 0.82 }, 3: { light: 0.48, sky: 0.25, fog: 0.62 } }
@@ -131,10 +163,12 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
     // a arte do céu escurece junto com as fases do chefão (e clareia no relâmpago)
     sky.dome.setLight([sk, sk, sk])
   }
-  const ground = paintedGround(scene, `dom-stage-${spec.spot}`, look, 170, 170, 0, 0, 0, 6, spec.spot === "palacio" ? 23 : spec.spot === "fundo" ? 17 : 11)
+  // palco em código: uma Cena (1 malha por bloco); sem ela, o chão pintado + o kit do Tripo de sempre
+  const palco = codigo ? finishCena(scene, montarPalco(codigo, spec.spot, 0), { chaoUma: low }) : null
+  for (const m of palco?.meshes ?? []) m.freezeWorldMatrix()
+  const ground = palco ? null : paintedGround(scene, `dom-stage-${spec.spot}`, look, 170, 170, 0, 0, 0, 6, spec.spot === "palacio" ? 23 : spec.spot === "fundo" ? 17 : 11)
   // o detalhe do chão do Domínio da luta (o mesmo das cenas abertas; chao-detalhe.ts)
-  {
-    const dom = spec.sky ? (Object.entries(DOMAIN_SKY).find(([, r]) => r === spec.sky!.region)?.[0] ?? spec.kit) : spec.kit
+  if (ground) {
     const gm = ground.mesh.material as StandardMaterial | null
     // o chão pintado vem congelado: congelado, o material não recompila com o plugin nem rebinda a textura
     if (gm && CHAO_DETALHE[dom]) {
@@ -144,7 +178,8 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   }
   // a borda do círculo: filete aceso na cor do tema (a regra prende a luta nele)
   const ringMat = new StandardMaterial("dom-stage-ring", scene)
-  ringMat.emissiveColor = Color3.FromHexString(look.ground.glow).scale(0.85)
+  const pc = codigo ? PORTAL_COLOR[codigo] : null
+  ringMat.emissiveColor = pc ? new Color3(pc[0], pc[1], pc[2]).scale(0.85) : Color3.FromHexString(look.ground.glow).scale(0.85)
   ringMat.diffuseColor = new Color3(0, 0, 0)
   ringMat.disableLighting = true
   const ring = CreateTorus("dom-stage-ring", { diameter: 2 * (ARENA_R + 0.35), thickness: 0.09, tessellation: 64 }, scene)
@@ -167,7 +202,7 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   const pieces: KitPiece[] = [...used.map((x) => x[0]), ...(arch ? (["arco"] as KitPiece[]) : []), ...(spec.spot === "palacio" && !low ? (["ilha"] as KitPiece[]) : []), ...(storm && spec.spot === "palacio" ? (["anel"] as KitPiece[]) : [])]
   // a câmera da luta fica a 20–35 m das árvores. B6 (tema v2): a versão de longe delas deixou de ser
   // serrilhada (2.000 tri, mais bonita que a de perto da v1, 3.000) e a de perto subiu para 3.600: troca a 30 m
-  void loadDomainKit(scene, spec.kit, () => !disposed, pieces, storm ? (low ? { paredao: 24, arco: 22, "torre-vigia": 24, moinho: 24 } : { paredao: 34 }) : { arvore: 30, arvore2: 30 }).then((kit) => {
+  if (!codigo) void loadDomainKit(scene, spec.kit, () => !disposed, pieces, storm ? (low ? { paredao: 24, arco: 22, "torre-vigia": 24, moinho: 24 } : { paredao: 34 }) : { arvore: 30, arvore2: 30 }).then((kit) => {
     if (disposed) return kit.dispose()
     dropKit = kit.dispose
     const p = new KitPlacer(kit, `dom-stage-${spec.spot}`)
@@ -229,7 +264,15 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
       dropKit?.()
       ring.dispose()
       ringMat.dispose()
-      ground.dispose()
+      ground?.dispose()
+      if (palco) {
+        const mats = new Set([palco.material, palco.glowMaterial])
+        for (const m of palco.meshes) {
+          if (m.material) mats.add(m.material as typeof palco.material)
+          m.dispose(false, false)
+        }
+        for (const mt of mats) mt.dispose()
+      }
       sky.dispose()
     },
   }

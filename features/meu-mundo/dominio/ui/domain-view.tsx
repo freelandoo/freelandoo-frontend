@@ -462,7 +462,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   // o palco usa o céu da cena de onde a luta saiu (engine/sky: área do Domínio, dia ou noite da cena)
   const skyScene = sceneInfo?.name ?? `${id}-${sceneN}`
   const stageSpec: DomainStageSpec = useMemo(
-    () => ({ kit: sceneKitOf(id), spot: fight ? (info?.sectors[fight.sector - 1]?.stage ?? "entrada") : "entrada", sky: sceneSky(skyScene) }),
+    () => ({ kit: sceneKitOf(id), spot: fight ? (info?.sectors[fight.sector - 1]?.stage ?? "entrada") : "entrada", sky: sceneSky(skyScene), cena: skyScene }),
     [id, fight, info, skyScene],
   )
 
