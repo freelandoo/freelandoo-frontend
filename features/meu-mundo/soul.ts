@@ -1,11 +1,25 @@
 // features/meu-mundo/soul.ts — a "alma" do hóspede na tela (mm3d-72).
 //
 // A regra é do servidor (freelandoo-backend/src/utils/meuMundoSoul.js): aqui só
-// os nomes e as frases. Pedido do Alex (2026-11-07): personalidade (psicopata,
-// covarde, comilão, bondoso, competitivo), quanto ele gosta do dono, o que mais
-// gosta e mais odeia, e o apelido com que ele chama o dono.
+// os nomes e as frases. Pedido do Alex (2026-11-07): personalidade, quanto ele
+// gosta do dono, o que mais gosta e mais odeia, e o apelido com que ele chama o
+// dono. Desde 2026-11-15 a personalidade é SÓ VOZ (não mexe em luta, monstro,
+// fome nem desejo) e são treze; as falas de cada uma estão em banter.ts.
 
-export type Temper = "psicopata" | "covarde" | "comilao" | "bondoso" | "competitivo"
+export type Temper =
+  | "psicopata"
+  | "covarde"
+  | "comilao"
+  | "bondoso"
+  | "competitivo"
+  | "preguicoso"
+  | "vaidoso"
+  | "rabugento"
+  | "palhaco"
+  | "carente"
+  | "paoduro"
+  | "fofoqueiro"
+  | "narcisista"
 export type SoulAct = "training" | "studying" | "working" | "praying" | "sleeping" | "fight" | "minigame"
 export type WishId = "fight" | "home_night" | "eat_more" | "fav_food" | "pray" | "rest" | "minigame"
 
@@ -37,6 +51,14 @@ export const TEMPER_COLOR: Record<Temper, string> = {
   comilao: "#FFB13B",
   bondoso: "#7CFFB2",
   competitivo: "#FFE45C",
+  preguicoso: "#B8A98F",
+  vaidoso: "#FF8AD8",
+  rabugento: "#9C8C7A",
+  palhaco: "#FF7A3D",
+  carente: "#FF9EB5",
+  paoduro: "#7FD36B",
+  fofoqueiro: "#C08BFF",
+  narcisista: "#FFD700",
 }
 
 export function temperLabel(x: Temper, t: Tr) {
@@ -46,16 +68,32 @@ export function temperLabel(x: Temper, t: Tr) {
     comilao: t("soulGlutton", "Comilão"),
     bondoso: t("soulKind", "Bondoso"),
     competitivo: t("soulCompetitive", "Competitivo"),
+    preguicoso: t("soulLazy", "Preguiçoso"),
+    vaidoso: t("soulVain", "Vaidoso"),
+    rabugento: t("soulGrumpy", "Rabugento"),
+    palhaco: t("soulClown", "Palhaço"),
+    carente: t("soulNeedy", "Carente"),
+    paoduro: t("soulCheap", "Pão-duro"),
+    fofoqueiro: t("soulGossip", "Fofoqueiro"),
+    narcisista: t("soulNarcissist", "Narcisista"),
   }[x]
 }
 
 export function temperLine(x: Temper, t: Tr) {
   return {
-    psicopata: t("soulPsychoLine", "Ataca às vezes sem querer e entra em luta só de passar perto. Contra inimigo bem mais forte, solta o Poder Máximo três vezes."),
-    covarde: t("soulCowardLine", "Às vezes recusa lutas e às vezes desiste no meio. De noite prefere ficar em casa."),
-    comilao: t("soulGluttonLine", "Quer comer mais do que o normal e fica feliz com qualquer lanche."),
-    bondoso: t("soulKindLine", "Gosta de cuidar, rezar e descansar. Fica magoado fácil."),
-    competitivo: t("soulCompetitiveLine", "Quer ficar indo nos minijogos e lutar para ganhar."),
+    psicopata: t("soulPsychoLine", "Xinga, ameaça e acha graça quando dá errado para os outros. Humor ácido, sem filtro."),
+    covarde: t("soulCowardLine", "Tem medo de tudo e narra o próprio pânico em tempo real."),
+    comilao: t("soulGluttonLine", "Tudo no mundo vira comida na cabeça dele."),
+    bondoso: t("soulKindLine", "Formal e gentil até com monstro. A ironia é a educação dele."),
+    competitivo: t("soulCompetitiveLine", "Transforma tudo em placar, recorde e revanche."),
+    preguicoso: t("soulLazyLine", "Reclama de tudo que dá trabalho e só pensa em sentar."),
+    vaidoso: t("soulVainLine", "Só pensa no cabelo, na roupa e no próprio reflexo."),
+    rabugento: t("soulGrumpyLine", "Reclama de tudo e de todos. No tempo dele era melhor."),
+    palhaco: t("soulClownLine", "Faz piada de tudo, principalmente da própria desgraça."),
+    carente: t("soulNeedyLine", "Quer a atenção e o carinho do treinador o tempo todo."),
+    paoduro: t("soulCheapLine", "Sofre com cada moeda gasta e acha tudo caro."),
+    fofoqueiro: t("soulGossipLine", "Sabe da vida de todo mundo e conta tudo."),
+    narcisista: t("soulNarcissistLine", "Só fala de si mesmo e passa cantada em todo adulto que vê."),
   }[x]
 }
 
@@ -127,12 +165,3 @@ export function currentSoul() {
   return current
 }
 
-/**
- * mm3d-72 (regra do Alex): o COVARDE às vezes recusa a luta na rua. Quanto mais
- * ele gosta do dono, menor a chance (afeto 0: 40%; 100: 20%; 300: 10%).
- */
-export const COWARD_REFUSE = { p: 0.4, affHalf: 100 }
-export function cowardRefuses(s: LifeSoul | null, roll = Math.random()) {
-  if (!s || s.temper !== "covarde") return false
-  return roll < COWARD_REFUSE.p / (1 + Math.max(0, s.affection) / COWARD_REFUSE.affHalf)
-}

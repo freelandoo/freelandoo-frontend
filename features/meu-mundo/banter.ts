@@ -51,7 +51,21 @@ export interface BanterEvent {
   target?: string
 }
 
-const SHORT: Record<Temper, string> = { psicopata: "psy", covarde: "cow", comilao: "glu", bondoso: "kind", competitivo: "comp" }
+const SHORT: Record<Temper, string> = {
+  psicopata: "psy",
+  covarde: "cow",
+  comilao: "glu",
+  bondoso: "kind",
+  competitivo: "comp",
+  preguicoso: "lazy",
+  vaidoso: "vain",
+  rabugento: "grump",
+  palhaco: "clown",
+  carente: "needy",
+  paoduro: "cheap",
+  fofoqueiro: "gossip",
+  narcisista: "narc",
+}
 export const TEMPERS = Object.keys(SHORT) as Temper[]
 
 /** Prédio do centro → assunto da fala. */
@@ -107,6 +121,22 @@ export function banterEmotion(topic: BanterTopic, temper: Temper): Emotion {
       return "happy"
     case "competitivo":
       return bad || is("see_rival", "mg_bad", "mg_idle", "mg_careful") ? "angry" : "happy"
+    case "preguicoso":
+      return bad || is("place_gym", "mg_start", "mg_boost", "mg_careful") ? "tired" : "happy"
+    case "vaidoso":
+      return bad || mob ? "sad" : is("see_crowd", "mg_win", "fight_win") ? "loving" : "happy"
+    case "rabugento":
+      return is("mg_win", "fight_win") ? "happy" : "angry"
+    case "palhaco":
+      return is("fight_lose", "mg_lose") ? "sad" : "happy"
+    case "carente":
+      return bad || is("mg_idle") ? "sad" : "loving"
+    case "paoduro":
+      return is("place_market", "place_food", "place_forge", "mg_fuel") || bad ? "sad" : "happy"
+    case "fofoqueiro":
+      return bad ? "sad" : "happy"
+    case "narcisista":
+      return bad ? "angry" : is("see_crowd", "see_kin", "see_rival", "see_npc", "fight_win", "mg_win") ? "loving" : "happy"
   }
 }
 

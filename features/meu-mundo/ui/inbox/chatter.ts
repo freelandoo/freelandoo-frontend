@@ -20,7 +20,8 @@ const HURT_AT = 10
 
 type Line = [key: string, pt: string, emotion: Emotion]
 
-const LINES: Record<Temper, Record<ChatterMoment, Line[]>> = {
+// as personalidades sem frase da casa ainda ficam quietas (cada fatia de falas traz as dela)
+const LINES: Partial<Record<Temper, Record<ChatterMoment, Line[]>>> = {
   psicopata: {
     enter: [
       ["chPsyEnter1", "Hoje eu quero meter uma surra em todo mundo!", "angry"],
@@ -107,7 +108,7 @@ export const isNight = (h: number) => h >= 18 || h < 6
 /** Uma fala para o momento (sorteio por `roll` 0–1, para dar para testar). */
 export function chatterLine(soul: LifeSoul, moment: ChatterMoment, t: Tr, roll = Math.random()): { title: string; emotion: Emotion } {
   const nick = callName(soul, t)
-  let list = LINES[soul.temper]?.[moment] ?? LINES.bondoso.idle
+  let list = LINES[soul.temper]?.[moment] ?? LINES.bondoso!.idle
   // afeto muda o tom das falas soltas (e às vezes da entrada)
   if ((moment === "idle" || moment === "enter") && nick) {
     if (soul.affection <= HURT_AT && roll < 0.6) list = HURT

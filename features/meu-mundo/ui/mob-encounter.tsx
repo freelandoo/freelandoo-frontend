@@ -16,7 +16,6 @@ import type { GameHandle } from "../engine/game"
 import type { LaminasEncounter } from "../laminas/ui/laminas-view"
 import type { BodyId, Interactable } from "../types"
 import { EvoToast } from "./hud/hud-kit"
-import { cowardRefuses, currentSoul } from "../soul"
 import { emitBanter } from "../banter"
 import { getToken } from "@/lib/auth"
 import { onRealtime } from "@/lib/realtime"
@@ -58,18 +57,15 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
   const alertText = t("mobAlertNight", "Monstros à solta! Se um deles te encarar, ele vem atrás.")
   const winTpl = t("mobWin", "{name} derrotou: {mob}!")
   const caughtTpl = t("mobCaught", "{mob} te alcançou!")
-  // mm3d-72: o psicopata puxa briga sozinho; o covarde às vezes recusa
-  const psychoText = t("mobPsycho", "Ah, vamos dar uma porrada naquele trouxa!")
-  const refuseText = t("mobCowardRefuse", "Não vou lutar! Tô com medo! Vamos embora daqui!")
   // N4: o deus solto (nomes próprios não traduzem; o resto sim)
   const godHere = { aurion: t("godHereAurion", "Aurion está solto e caça Vampiros! Ele corre mais que você."), morkhan: t("godHereMorkhan", "Morkhan está solto e caça Raposas! Ele corre mais que você.") }
   const godCaughtTpl = t("godCaught", "{god} te alcançou! Ele tem o dobro da sua força.")
   const godDownTpl = t("godDown", "{name} derrotou {god}! O deus voltou para a estátua.")
   const godFailTpl = t("godFightFail", "A luta com o deus não abriu: {e}")
-  const labels = useRef({ mobName, alertText, winTpl, caughtTpl, psychoText, refuseText, godHere, godCaughtTpl, godDownTpl, godFailTpl })
+  const labels = useRef({ mobName, alertText, winTpl, caughtTpl, godHere, godCaughtTpl, godDownTpl, godFailTpl })
   useEffect(() => {
     live.current = { busy, encounter, god: !!godFight }
-    labels.current = { mobName, alertText, winTpl, caughtTpl, psychoText, refuseText, godHere, godCaughtTpl, godDownTpl, godFailTpl }
+    labels.current = { mobName, alertText, winTpl, caughtTpl, godHere, godCaughtTpl, godDownTpl, godFailTpl }
   })
 
   // N4: a queda do deus chega a todo mundo (socket mm:god)
@@ -151,18 +147,12 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
         const w = p as { kind?: string; name?: string }
         setNews({ text: L.winTpl.replace("{name}", w.name || "Alguém").replace("{mob}", L.mobName(w.kind || "")), id: Date.now() })
       } else if (type === "mcatch") {
-        const c = p as { id?: number; kind?: string; psycho?: boolean }
+        const c = p as { id?: number; kind?: string }
         if (!Number.isFinite(c?.id) || !KINDS.has(c?.kind ?? "")) return
         if (live.current.busy || live.current.encounter || live.current.god) return gameRef.current?.reportMob(c.id!, false, true)
-        if (!c.psycho && cowardRefuses(currentSoul())) {
-          // o covarde foge: a sala deixa ele em paz um tempo (como "ocupado")
-          setNews({ text: L.refuseText, id: Date.now() })
-          return gameRef.current?.reportMob(c.id!, false, true)
-        }
-        setNews({ text: c.psycho ? L.psychoText : L.caughtTpl.replace("{mob}", L.mobName(c.kind!)), id: Date.now() })
-        // a frase do psicopata aparece antes da luta abrir (o aviso some com a luta na tela)
-        if (c.psycho) setTimeout(() => !live.current.encounter && start(c.id!, c.kind as MobKind), 1800)
-        else start(c.id!, c.kind as MobKind)
+        // (mm3d-72: o psicopata puxava briga e o covarde recusava; desde 2026-11-15 a personalidade é só voz)
+        setNews({ text: L.caughtTpl.replace("{mob}", L.mobName(c.kind!)), id: Date.now() })
+        start(c.id!, c.kind as MobKind)
       }
     },
     [gameRef, start, openGod],
@@ -172,10 +162,6 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
   const fight = useCallback(
     (it: Interactable) => {
       if (it.kind !== "monster" || live.current.encounter) return
-      if (cowardRefuses(currentSoul())) {
-        setNews({ text: labels.current.refuseText, id: Date.now() })
-        return
-      }
       gameRef.current?.engageMob(it.mobId)
       start(it.mobId, it.mobKind)
     },
