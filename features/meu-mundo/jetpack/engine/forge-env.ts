@@ -6,8 +6,10 @@
 // pendurados em correntes, pórticos de metal acesos sobre o caminho, o vulcão
 // fumegando ao fundo e o céu vermelho-escuro.
 //
-// Peças do Tripo (build_forja_tripo.py): fornalha, prensa, rocha, ponte,
-// pórtico e caldeirão — chegam depois (provide). O PÓRTICO tem o vão ≥ ±0,20
+// Jetpack em código (14/11): fornalha, prensa, rocha, ponte, pórtico, caldeirão, cadinho, chaminé, rocha de
+// lava, bigorna e carrinho são feitos em código (pecas/kit-forja.ts) com as MESMAS medidas do tema antigo do
+// Tripo (forja/v2) e entram no módulo; só a estátua do ferreiro (escultura) ainda chega do Tripo (provide).
+// O PÓRTICO tem o vão ≥ ±0,20
 // da largura de baixo até 55% da altura: com 28 m e o pé 0,5 m abaixo da
 // passarela, a caixa do voo inteira fica dentro. A regra não muda.
 
@@ -28,11 +30,14 @@ import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, fusedLayers, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot } from "./env-pool"
 import type { ForgeAsset, PieceAssets } from "./canyon-assets"
 import { skyTexture } from "./canyon-env"
+import { kitForja } from "./pecas/kit-forja"
 
 const { W, H } = TUNNEL
 
 export const FORGE_PIECES = ["fornalha", "prensa", "rocha", "ponte", "portico", "caldeirao", "estatua", "cadinho", "chamine", "rocha-lava", "bigorna", "carrinho"] as const
 export type ForgePiece = (typeof FORGE_PIECES)[number]
+/** A escultura fica no Tripo (regra da skill `meu-mundo-cenario-codigo`); o resto é código (pecas/kit-forja). */
+export const FORGE_TRIPO = ["estatua"] as const
 /** Largura em x e fundura (z) das peças novas com 1 m de altura (forja-tema2.json; iguais às do forja2). */
 const DIM = { estatua: [0.71, 0.67], cadinho: [1.04, 0.68], chamine: [0.59, 1.23], "rocha-lava": [0.77, 1.82], bigorna: [0.88, 1.55], carrinho: [0.78, 1.16] } as const
 
@@ -250,6 +255,8 @@ export function buildForgeEnv(scene: Scene, low: boolean, slots: number, seed: n
     return m * VARIANTS + (hash32(s, seed ^ 13) % VARIANTS)
   }
   const pool = new SegmentPool(scene, "jt-fg", mods, new Map(), slots, pick)
+  // Jetpack em código (14/11): as peças do cenário (era o tema forja/v2 do Tripo) entram no módulo
+  pool.bakeCode(kitForja(low))
 
   // o rio de lava (emissivo, correndo) embaixo de tudo
   const lavaTex = lavaTexture(scene, low)
@@ -305,7 +312,7 @@ export function buildForgeEnv(scene: Scene, low: boolean, slots: number, seed: n
       crater.position.set(70, 100, z + 420)
     },
     provide(a) {
-      for (const kind of FORGE_PIECES) {
+      for (const kind of FORGE_TRIPO) {
         const m = a.meshes.get(kind)
         if (m) pool.provide(kind, m)
       }
