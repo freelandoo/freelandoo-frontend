@@ -35,7 +35,7 @@ export interface ChaoDetalhe {
 /** Por Domínio (prefixo da cena). Domínio fora da lista = chão como era. */
 export const CHAO_DETALHE: Readonly<Record<string, ChaoDetalhe>> = {
   // Floresta da Lua: musgo e pedra (Poly Haven `aerial_grass_rock`)
-  floresta: { tex: "/meu-mundo/chao/v1/floresta.webp", perto: 6, largo: 41, forca: 0.34 },
+  floresta: { tex: "/meu-mundo/chao/v1/floresta.webp", perto: 6, largo: 41, forca: 0.52 },
 }
 
 const NAME = "ChaoDetalhe"
