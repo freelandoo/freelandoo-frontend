@@ -38,15 +38,13 @@ export function montar(lod = 0): Cena {
   F.horizonteFabrica(c, 3, meta.nevoa)
 
   const color = (x: number, z: number): RGB => {
-    // chapas de 2 m com junta escura e rebites (mancha mais clara/escura por chapa)
-    const gx = ((x % 2) + 2) % 2, gz = ((z % 2) + 2) % 2
-    const j = Math.min(gx, 2 - gx, gz, 2 - gz)
-    let col = mix(F.CHAPA_ESC, mix(F.CHAPA, F.CHAPA_CL, noise(Math.floor(x / 2), 1, Math.floor(z / 2))), smooth(0.04, 0.12, j))
+    // a chapa (junta, rebites) vem da textura de detalhe (CHAO_DETALHE.fabrica); aqui só o tom em manchas largas
+    let col = mix(F.CHAPA, F.CHAPA_CL, noise(x * 0.09, 1, z * 0.09) * 0.85)
     col = mix(col, mul(col, 0.75), smooth(0.55, 0.8, noise(x * 0.06, 3, z * 0.06)) * 0.5)
     col = mix(col, F.CHAPA_CL, P.aberto(x, z) * 0.25)
     // faixa amarela na beira do caminho (o caminho é chapa mais clara)
     const d = P.dWalk(x, z)
-    col = mix(col, mix(F.CHAPA_CL, [0.72, 0.66, 0.66], 0.4), smooth(2.4, 2.0, d))
+    col = mix(col, mix(F.CHAPA_CL, [0.6, 0.48, 0.46], 0.4), smooth(2.4, 2.0, d))
     return col
   }
   ground(c, { x0: -H, z0: -H, x1: H, z1: H, step: lod ? 4 : 2, color })

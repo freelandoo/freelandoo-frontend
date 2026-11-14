@@ -40,6 +40,8 @@ export const PANO_ESC: RGB = [0.36, 0.09, 0.09]
 type G = ReturnType<Cena["geo"]>
 
 /** Área jogável (±80 m): a chave do bloco nunca sai dela — a geometria fica onde está, só a malha é a do bloco de dentro. */
+/** Vetor unitário de `a` para `b` (já sabendo o comprimento). */
+const sub3 = (b: V3, a: V3, L: number): V3 => [(b[0] - a[0]) / L, 0, (b[2] - a[2]) / L]
 const LIM = 79.5
 const dentro = (v: number) => Math.max(-LIM, Math.min(LIM, v))
 const geoEm = (c: Cena, x: number, z: number) => c.geo(dentro(x), dentro(z))
@@ -817,6 +819,30 @@ export function galpaoTijolo(c: Cena, x: number, z: number, w: number, d: number
   if (!lod)
     for (const su of [-1, 1])
       for (let k = 0; k <= Math.floor(d / 4); k++) cx(g, Q, su * (w / 2 + 0.15), d / 2 - 0.4 - k * 4, 0.3, 0.6, 0, h, FERRO, FERRO_CL)
+  // lados e fundo sem "caixa lisa": embasamento de pedra, fiadas em faixa (2 tons) e janelinhas acesas no alto
+  if (!lod) {
+    const GLs = luzEm(c, x, z)
+    const lados: [V3, V3, V3, number][] = [] // [origem, eixo ao longo, normal, comprimento]
+    for (const su of [-1, 1]) lados.push([Q.P(su * (w / 2 + 0.012), d / 2, 0), sub3(Q.P(su * (w / 2), -d / 2, 0), Q.P(su * (w / 2), d / 2, 0), d), Q.N(su, 0), d])
+    lados.push([Q.P(w / 2, -d / 2 - 0.012, 0), sub3(Q.P(-w / 2, -d / 2, 0), Q.P(w / 2, -d / 2, 0), w), Q.N(0, -1), w])
+    for (const [o, e, nn, L] of lados) {
+      const at = (t: number, y: number): V3 => [o[0] + e[0] * t, y, o[2] + e[2] * t]
+      const quad = (t0: number, t1: number, y0: number, y1: number, cor: RGB | RGB[], dn = 0, gg = g) => {
+        const off = (p: V3): V3 => [p[0] + nn[0] * dn, p[1], p[2] + nn[2] * dn]
+        face(gg, [off(at(t0, y0)), off(at(t1, y0)), off(at(t1, y1)), off(at(t0, y1))], cor, nn)
+      }
+      quad(0, L, 0, 1, FERRO, 0.12)
+      quad(0, L, 0.9, 1.05, FERRO_CL, 0.16)
+      for (let y = 1.3, r = 0; y < h - 0.3; y += 0.62, r++) if (r % 2) quad(0.05, L - 0.05, y, Math.min(h - 0.2, y + 0.31), [TIJ, TIJ, TIJ_CL, TIJ_CL])
+      quad(0, L, h - 0.45, h + 0.05, FERRO_CL, 0.1)
+      // janelinhas em fita, uma a cada 3 m, a 70% da altura
+      if (h > 6) for (let t = 1.5; t < L - 1; t += 3) {
+        const yj = h * 0.62
+        quad(t - 0.5, t + 0.5, yj - 0.12, yj + 1.12, TIJ_ESC, 0.02)
+        quad(t - 0.36, t + 0.36, yj, yj + 1, [AMB, AMB, AMB_CL, AMB_CL], 0.04, GLs)
+      }
+    }
+  }
   fachadaTijolo(c, Q.P(0, d / 2, 0)[0], Q.P(0, d / 2, 0)[2], ang, w, h, seed, lod, { detalhe })
   // telhado de duas águas em chapa (ao longo de u), baixo
   const yr = h + 0.1, yc = h + Math.min(2.2, d * 0.18)

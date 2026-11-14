@@ -42,23 +42,22 @@ export function montar(lod = 0): Cena {
   F.horizonteFabrica(c, 12, meta.nevoa)
 
   const color = (x: number, z: number): RGB => {
-    const gx = ((x % 2.5) + 2.5) % 2.5, gz = ((z % 2.5) + 2.5) % 2.5
-    const j = Math.min(gx, 2.5 - gx, gz, 2.5 - gz)
-    let col = mix(F.CHAPA_ESC, mix(F.CHAPA, F.CHAPA_CL, noise(Math.floor(x / 2.5), 9, Math.floor(z / 2.5))), smooth(0.04, 0.12, j))
+    // a chapa (junta, rebites) vem da textura de detalhe (CHAO_DETALHE.fabrica); aqui só o tom em manchas largas
+    let col = mix(F.CHAPA, F.CHAPA_CL, noise(x * 0.09, 9, z * 0.09) * 0.85)
     col = mix(col, mul(col, 0.78), smooth(0.55, 0.8, noise(x * 0.06, 8, z * 0.06)) * 0.5)
     // a praça diante do castelo: círculo e raios amarelos
     const dp = Math.hypot(x - P.arena.x, z - P.arena.z)
     const ring = smooth(0.25, 0, Math.abs(dp - P.arena.r * 0.85)) + smooth(0.2, 0, Math.abs(dp - P.arena.r * 0.45))
     col = mix(col, F.AMARELO, Math.min(1, ring) * (dp < P.arena.r + 1 ? 1 : 0))
     const d = P.dWalk(x, z)
-    col = mix(col, mix(F.CHAPA_CL, [0.72, 0.66, 0.66], 0.4), smooth(2.6, 2.2, d))
+    col = mix(col, mix(F.CHAPA_CL, [0.6, 0.48, 0.46], 0.4), smooth(2.6, 2.2, d))
     return col
   }
   ground(c, { x0: -H, z0: -H, x1: H, z1: H, step: lod ? 4 : 2, color })
   ground(c, { x0: -200, z0: -200, x1: 200, z1: 200, step: 40, color: () => F.CHAPA_ESC, fundo: true, y: -0.05, hole: [-H, -H, H, H] })
 
   const ok = (x: number, z: number, pad: number) => P.livre(x, z, pad) && !blocked(c, x, z, pad + 0.6)
-  F.faixasCaminho(c, CAMINHO)
+  F.faixasCaminho(c, CAMINHO, 2.3, 0.34, P2.OURO, false) // fita de bronze contínua (refs 2 e 3)
   // pilares-lanterna dos dois lados do caminho (a ref 3), ligados por DOIS cabos caídos, com o estandarte da
   // águia pendurado no meio de cada vão e a mureta acesa embaixo
   const ganchos: Record<number, V3 | null> = { [-1]: null, [1]: null }

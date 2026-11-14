@@ -24,11 +24,12 @@ import { quadro } from "../pecas/orbital"
 
 export const CEU_TARDE: RGB = [0.92, 0.62, 0.52]
 export const NEVOA_TARDE: RGB = [0.88, 0.62, 0.56]
-export const LUZ_TARDE = { hemi: 0.9, sol: 0.65, ceu: [1, 0.86, 0.74] as RGB, chao: [0.5, 0.4, 0.42] as RGB, solCor: [1, 0.78, 0.55] as RGB }
+// pôr do sol das refs 1 e 3: o chão rebate laranja-rosado (não cinza) e o sol é âmbar forte
+export const LUZ_TARDE = { hemi: 0.95, sol: 0.8, ceu: [1, 0.84, 0.74] as RGB, chao: [0.7, 0.46, 0.4] as RGB, solCor: [1, 0.72, 0.46] as RGB }
 // chapas do chão das refs: lilás-acinzentado (não cinza), junta escura
-export const CHAPA: RGB = [0.46, 0.37, 0.43]
-export const CHAPA_ESC: RGB = [0.27, 0.21, 0.26]
-export const CHAPA_CL: RGB = [0.56, 0.46, 0.5]
+export const CHAPA: RGB = [0.37, 0.27, 0.29]
+export const CHAPA_ESC: RGB = [0.22, 0.15, 0.18]
+export const CHAPA_CL: RGB = [0.47, 0.35, 0.36]
 export const AMARELO: RGB = [0.95, 0.7, 0.12]
 export const TIJOLO: RGB = [0.6, 0.3, 0.22]
 export const TIJOLO_ESC: RGB = [0.42, 0.2, 0.16]
@@ -110,7 +111,7 @@ export function fundoFabrica(c: Cena, seed: number) {
     const a = (k / 16) * Math.PI * 2 + rnd(seed, k) * 0.2
     const d = 105 + rnd(seed, k, 2) * 40
     const x = Math.cos(a) * d, z = Math.sin(a) * d
-    const h = 14 + rnd(seed, k, 3) * 18
+    const h = 9 + rnd(seed, k, 3) * 9 // baixo: as chaminés do horizonte aparecem por cima
     caixa(c.fundo, { x, z, y0: 0, y1: h, w: 18 + rnd(seed, k, 4) * 14, d: 14, rot: -a + Math.PI / 2, side: mix(TIJOLO_ESC, FERRO, 0.5), top: FERRO })
     if (k % 2 === 0) tube(c.fundo, [x, h, z], [x, h + 14 + rnd(seed, k, 5) * 10, z], 1.4, 1.2, 5, () => TIJOLO_ESC, false)
   }
@@ -238,7 +239,7 @@ export function aoLongoDoCaminho(path: readonly (readonly [number, number])[], p
 }
 
 /** Faixas amarelas pintadas dos dois lados do caminho (geometria fina, 3 cm acima do chão). */
-export function faixasCaminho(c: Cena, path: readonly (readonly [number, number])[], off = 2.35, w = 0.22, cor: RGB = AMARELO) {
+export function faixasCaminho(c: Cena, path: readonly (readonly [number, number])[], off = 2.35, w = 0.22, cor: RGB = AMARELO, tracejado = true) {
   for (let k = 0; k < path.length - 1; k++) {
     const [ax, az] = path[k], [bx, bz] = path[k + 1]
     const L = Math.hypot(bx - ax, bz - az) || 1
@@ -246,7 +247,7 @@ export function faixasCaminho(c: Cena, path: readonly (readonly [number, number]
     const sx = -(bz - az) / L, sz = (bx - ax) / L
     for (let i = 0; i < n; i++) {
       // tracejado: 3 de cada 4 pedaços
-      const t0 = i / n, t1 = (i + 0.78) / n
+      const t0 = i / n, t1 = (i + (tracejado ? 0.78 : 1)) / n
       const p0x = ax + (bx - ax) * t0, p0z = az + (bz - az) * t0, p1x = ax + (bx - ax) * t1, p1z = az + (bz - az) * t1
       const g = c.geo((p0x + p1x) / 2, (p0z + p1z) / 2)
       for (const s of [-1, 1]) {

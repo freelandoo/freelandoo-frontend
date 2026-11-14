@@ -32,6 +32,8 @@ export interface ChaoDetalhe {
   forca: number
   /** Superfície clara fica quase limpa (lajes do caminho). Desligar onde o chão é claro (neve, mármore). */
   limpaClaro?: boolean
+  /** Só a escala de perto (textura com desenho regular — chapas, lajes —, onde a mancha larga repetiria a junta). */
+  soPerto?: boolean
   /**
    * RELEVO (fora do chão, só médio/alto): grão de rocha/casca em tudo que não é chão (pedras, troncos,
    * paredões) e, com `folha`, uma segunda textura nas superfícies de cor VIVA (copas, musgo).
@@ -66,8 +68,17 @@ export const CHAO_DETALHE: Readonly<Record<string, ChaoDetalhe>> = {
     limpaClaro: false,
     relevo: { tex: "/meu-mundo/chao/v1/gelo-relevo.webp", m: 5, forca: 0.24, limpaClaro: true },
   },
-  // Fábrica: concreto rachado (`cracked_concrete`)
-  fabrica: { tex: "/meu-mundo/chao/v1/fabrica.webp", perto: 7, largo: 39, forca: 0.45 },
+  // Fábrica: CHAPAS REBITADAS de 2 m em fiadas desencontradas (gerada: `MEU MUNDO 3D/pipeline/chao/chapas.py`)
+  // relevo: desgaste de metal (`green_metal_rust`) em ferro, tijolo e madeira; bronze e janelas claras ficam limpos
+  fabrica: {
+    tex: "/meu-mundo/chao/v1/fabrica-chapa.webp",
+    perto: 4,
+    largo: 4,
+    forca: 0.3,
+    limpaClaro: false,
+    soPerto: true,
+    relevo: { tex: "/meu-mundo/chao/v1/fabrica-relevo.webp", m: 4, forca: 0.2, limpaClaro: true },
+  },
   // Vulcão: cinza queimada (`burned_ground_01`)
   vulcao: { tex: "/meu-mundo/chao/v1/vulcao.webp", perto: 6, largo: 37, forca: 0.5 },
   // Orbital: placas de mármore (`marble_01`) — chão claro, placas de ~2 m
@@ -103,7 +114,7 @@ class ChaoDetalhePlugin extends MaterialPluginBase {
 
   override prepareDefines(defines: ChaoDefines) {
     defines.CHAODETALHE = true
-    defines.CHAOUMA = this.uma
+    defines.CHAOUMA = this.uma || !!this.cfg.soPerto
     defines.CHAOLIMPA = this.cfg.limpaClaro !== false
     defines.CHAORELEVO = !!this.relevo
     defines.CHAORELLIMPA = !!this.relevo && !!this.cfg.relevo?.limpaClaro
