@@ -12817,7 +12817,8 @@
     "talkGuard1": "Nadie entra al castillo de {god} sin pasar por mí.",
     "talkGuard2": "Vénceme y la puerta se abre.",
     "talkGod1": "Así que llegaste hasta mí.",
-    "talkGod2": "Vénceme y se abre el camino al próximo Dominio."
+    "talkGod2": "Vénceme y se abre el camino al próximo Dominio.",
+    "talkMobSealed": "Todavía no es tu turno. Vence primero el sector {n}."
   },
   "Sports": {
     "eyebrow": "Deportes",

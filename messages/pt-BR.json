@@ -12251,7 +12251,8 @@
     "talkGuard1": "Ninguém entra no castelo de {god} sem passar por mim.",
     "talkGuard2": "Vença-me e a porta se abre.",
     "talkGod1": "Então você chegou até mim.",
-    "talkGod2": "Vença-me e o caminho para o próximo Domínio se abre."
+    "talkGod2": "Vença-me e o caminho para o próximo Domínio se abre.",
+    "talkMobSealed": "Ainda não é a sua vez. Vença o setor {n} primeiro."
   },
   "Sports": {
     "eyebrow": "Esportes",

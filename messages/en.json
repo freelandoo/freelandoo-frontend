@@ -12837,7 +12837,8 @@
     "talkGuard1": "No one enters {god}'s castle without getting past me.",
     "talkGuard2": "Defeat me and the door opens.",
     "talkGod1": "So you have made it to me.",
-    "talkGod2": "Defeat me and the way to the next Domain opens."
+    "talkGod2": "Defeat me and the way to the next Domain opens.",
+    "talkMobSealed": "It's not your turn yet. Defeat sector {n} first."
   },
   "Sports": {
     "eyebrow": "Sports",

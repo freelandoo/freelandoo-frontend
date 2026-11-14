@@ -38,6 +38,7 @@ import { CityMapHud } from "../../ui/map/city-map-ui"
 import { GOD_NAMES, type GodBody } from "../../gods"
 import { StoryScene } from "../../ui/story/story-scene"
 import { GOLEM_STORY, markGolemScene, seenGolemScene } from "../../ui/story/golem-scene"
+import { NpcTalk, speakerArt, type NpcSay } from "./npc-talk"
 
 const LaminasView = dynamic(() => import("../../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
@@ -71,6 +72,9 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const [fight, setFight] = useState<{ ticket: FightTicket; sector: number; foe: string; foeBody: BodyId | null; foeRig: boolean } | null>(null)
   const [opening, setOpening] = useState(false)
   const [news, setNews] = useState<{ text: string; id: number } | null>(null)
+  // o chefe/monstro fala no card das notificações (retrato + texto), uma fala por vez
+  const [npc, setNpc] = useState<NpcSay | null>(null)
+  const endTalk = useCallback(() => setNpc(null), [])
   // Lore v2 N4: o deus solto que caça o povo desta conta (caça também aqui dentro)
   const [god, setGod] = useState<GodId | null>(null)
   const godDelay = useRef<number>(GOD_HUNT.DOMAIN_DELAY_MS)
@@ -119,6 +123,26 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const askGod = useRef<(g: GodId) => void>(() => {})
   const cross = useRef<() => void>(() => {})
   const go = useRef<(n: number, at: "entrada" | "saida") => void>(() => {})
+  /** Quem guarda o setor `n` diz `lines` (nome da lore ou do tipo de monstro + retrato). */
+  const say = useRef<(n: number, lines: string[]) => void>(() => {})
+  useEffect(() => {
+    say.current = (n, lines) => {
+      const d = labels.current.info
+      const sec = d?.sectors[n - 1]
+      if (!sec || !lines.length) return
+      setNpc({ id: Date.now(), name: sec.foe ? foeName(t, sec.foe.id) : mobName(sec.kind), art: speakerArt(d, n), lines })
+    }
+  }, [t, mobName])
+  /** O que o selado diz (portal fechado, chefe ainda sem os setores antes, bando selado). */
+  const sealedLines = useRef<(n: Extract<OpenNear, { kind: "sealed" }>) => string[]>(() => [])
+  useEffect(() => {
+    sealedLines.current = (n) =>
+      n.portal
+        ? [t("talkBossOpen2", "O portal só se abre se você me vencer.")]
+        : n.boss
+          ? [t("talkBossSealed1", "Ainda não, viajante. Você não está pronto."), t("talkBossSealed3", "Depois volte e lute comigo para abrir o portal.")]
+          : [t("talkMobSealed", "Ainda não é a sua vez. Vença o setor {n} primeiro.").replace("{n}", String(Math.max(1, n.sector - 1)))]
+  }, [t])
   const sceneRef = useRef(sceneInfo)
   useEffect(() => {
     sceneRef.current = sceneInfo
@@ -197,12 +221,10 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
             else if (n.kind === "passage") cross.current()
             else if (n.kind === "back") go.current(sc.n - 1, "saida")
             else if (n.kind === "next") go.current(sc.n + 1, "entrada")
-            else if (n.kind === "sealed")
-              setNews({
-                text: n.boss ? labels.current.t("domSealedBoss", "Vença o chefe desta parte para seguir.") : labels.current.t("domSealed", "Setor {n} selado: vença o setor anterior primeiro.").replace("{n}", String(n.sector)),
-                id: Date.now(),
-              })
+            else if (n.kind === "sealed") say.current(n.sector, sealedLines.current(n))
           },
+          // o chefe explica a passagem ao chegar perto: no card com o retrato dele, não em balão 3D
+          onTalk: (s, lines) => alive && say.current(s, lines),
           onError: () => alive && setStatus("error"),
         })
         gameRef.current = open
@@ -454,19 +476,19 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         ? { label: t("domBackScene", "Voltar à parte anterior"), icon: <Footprints className="h-5 w-5" /> }
         : near?.kind === "next"
           ? { label: t("domNextScene", "Seguir para a parte {n}").replace("{n}", String(sceneN + 1)), icon: <Footprints className="h-5 w-5" /> }
-          : near?.kind === "sealed"
-            ? {
-                label:
-                  "portal" in near && near.portal
-                    ? t("domPassNeedBoss", "Vença o chefe do setor {n}").replace("{n}", String(near.sector))
-                    : near.boss
-                      ? t("domSealedNeedPrev", "Vença os setores antes deste")
-                      : t("domSealedShort", "Selado"),
-                icon: <Shield className="h-5 w-5" />,
-              }
+      // selado não tem botão: quem guarda fala no card (ver o efeito do `near` selado)
       : near?.kind === "passage" && info?.passage
         ? { label: t("domCross", "Atravessar para {name}").replace("{name}", domainName(t, info.passage.to)), icon: <Footprints className="h-5 w-5" /> }
         : null
+  // chegou num selado (portal fechado ou bando selado): quem guarda fala uma vez por aproximação.
+  // O chefe selado já fala sozinho ao chegar perto (onTalk), então fica de fora.
+  const sealedKey = near?.kind === "sealed" && ("portal" in near && near.portal ? true : !near.boss) ? `${near.sector}:${"portal" in near && near.portal ? "p" : "m"}` : null
+  useEffect(() => {
+    if (!sealedKey || near?.kind !== "sealed") return
+    say.current(near.sector, sealedLines.current(near))
+    // só a chave muda a fala (o objeto `near` é novo a cada aviso do motor)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sealedKey])
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
   const openScene = !!sceneInfo && hasOpenScene(sceneInfo.name)
   const here =
@@ -518,6 +540,8 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
           <EvoToast icon={<Swords className="h-4 w-4" />}>{news.text}</EvoToast>
         </div>
       )}
+
+      {status === "ready" && !story && <NpcTalk say={npc} closeLabel={t("close", "Fechar")} onDone={endTalk} />}
 
       {status === "ready" && !story && (
         <div className="absolute flex flex-col items-end gap-2" style={{ bottom: bottom(isTouch ? 24 : 16), right: SAFE.right }}>

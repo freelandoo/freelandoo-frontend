@@ -122,6 +122,11 @@ export interface OpenDomainOptions {
   onError?: (reason: "context-lost") => void
   /** Falas do chefe quando a pessoa chega perto (uma por balão, em sequência). */
   talk?: (c: BossTalk) => string[]
+  /**
+   * Pedido do Alex (14/11): a fala do chefe vai para a TELA, no card das notificações
+   * dos personagens (retrato + texto). Com ele, nada de balão 3D sobre a cabeça.
+   */
+  onTalk?: (sector: number, lines: string[]) => void
 }
 
 export interface OpenDomainHandle {
@@ -439,9 +444,15 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       m.talked = true
       const castle = sc.n === 3 && m.sector === sc.boss
       const god = sc.god === m.sector
-      m.talkQ = opts.talk({ sector: m.sector, open, part: sc.n, nextPart: sc.passage ? sc.passage.to : null, castle, god, needFrom: best + 1, needTo: m.sector - 1 })
+      const lines = opts.talk({ sector: m.sector, open, part: sc.n, nextPart: sc.passage ? sc.passage.to : null, castle, god, needFrom: best + 1, needTo: m.sector - 1 })
+      if (opts.onTalk) {
+        opts.onTalk(m.sector, lines)
+        return
+      }
+      m.talkQ = lines
       m.talkAt = 0
     }
+    if (opts.onTalk) return
     const q = m.talkQ
     if (q && q.length && now >= (m.talkAt ?? 0)) {
       if (!m.bubble) {
