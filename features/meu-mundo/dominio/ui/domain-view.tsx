@@ -34,6 +34,8 @@ import type { DomainStageSpec } from "../../laminas/engine/domain-stage"
 import type { BodyId } from "../../types"
 import { domainName, foeName, lockText } from "./domain-portal"
 import { GolemVoices } from "../../ui/quest/god-voice"
+import { CityMapHud } from "../../ui/map/city-map-ui"
+import { GOD_NAMES, type GodBody } from "../../gods"
 import { StoryScene } from "../../ui/story/story-scene"
 import { GOLEM_STORY, markGolemScene, seenGolemScene } from "../../ui/story/golem-scene"
 
@@ -139,6 +141,22 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
           scene: sc,
           spawn: spawn ? { sector: spawn } : { at: arrive },
           defeated: defeatedRef.current,
+          mapLabels: (() => {
+            const tt = labels.current.t
+            const godName = GOD_NAMES[d.god as GodBody] ?? d.god
+            return {
+              title: domainName(tt, d.id),
+              exit: tt("domExit", "Voltar à praça"),
+              passage: d.passage ? tt("mapCross", "Travessia: {name}").replace("{name}", domainName(tt, d.passage.to)) : tt("domPassage", "Passagem"),
+              part: (n: number) => tt("domScenePart", "Parte {n}").replace("{n}", String(n)),
+              sector: (n: number) => tt("domSectorTag", "Setor {n}").replace("{n}", String(n)),
+              boss: (n: number) => tt("mapBoss", "Chefe · Setor {n}").replace("{n}", String(n)),
+              guard: (n: number) => tt("mapGuard", "Guardião · Setor {n}").replace("{n}", String(n)),
+              god: tt("mapGodCastle", "Castelo de {god}").replace("{god}", godName),
+              place: (pid: string) => tt(`domPlace_${pid}`, pid),
+              hunt: (g: GodId) => tt("mapHunt", "{god} te caçando").replace("{god}", GOD_NAMES[g as GodBody] ?? g),
+            }
+          })(),
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (n) => alive && setNear(n),
           onSector: (s) => alive && setSector(s),
@@ -478,6 +496,9 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
           </EvoButton>
         </div>
       )}
+
+      {/* mapa da cena (radar + pergaminho): a tela do Domínio cobre o jogo, então mostra o próprio */}
+      <CityMapHud ignoreCover hidden={status !== "ready" || story || !openScene} />
 
       {status === "ready" && isTouch && !story && <Joystick gameRef={gameRef} />}
       {status === "ready" && story && (

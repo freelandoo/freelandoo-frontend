@@ -135,6 +135,73 @@
 .pinBadge[data-home] {
   background: radial-gradient(circle at 40% 32%, #d24a3c, #6e1810);
 }
+/* Domínios: selo pelo estado (chefe, deus, selado, vencido, saída, deus solto) */
+.pinBadge[data-tone="boss"] {
+  background: radial-gradient(circle at 40% 32%, #d24a3c, #6e1810);
+}
+.pinBadge[data-tone="god"] {
+  color: #2e1b09;
+  background: radial-gradient(circle at 40% 32%, #ffe08a, #b07a12);
+}
+.pinBadge[data-tone="sealed"] {
+  color: #e6e0d4;
+  background: radial-gradient(circle at 40% 32%, #8a857e, #3e3a35);
+}
+.pinBadge[data-tone="done"] {
+  background: radial-gradient(circle at 40% 32%, #5aa04f, #1f4a1b);
+}
+.pinBadge[data-tone="exit"] {
+  background: radial-gradient(circle at 40% 32%, #3a9cbf, #0f3f52);
+}
+.pinBadge[data-tone="hunt"] {
+  background: radial-gradient(circle at 40% 32%, #ff4a3a, #8a0d06);
+  box-shadow:
+    0 0 0 2px #fff3cf,
+    0 0 10px rgba(255, 60, 40, 0.8);
+}
+/* Domínios: as 3 partes (a atual acesa); no celular em pé descem para a linha de baixo */
+.parts {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.part {
+  padding: 3px 8px;
+  color: #c9b48a;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  background: rgba(13, 15, 19, 0.6);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(229, 190, 112, 0.35);
+}
+.part[data-on] {
+  color: #1a1004;
+  background: #ffb347;
+  box-shadow: 0 0 0 1px #000;
+}
+@media (max-width: 560px) {
+  .parts {
+    order: 3;
+    width: 100%;
+  }
+  /* a linha das partes desce: a moldura cresce junto e o papel não perde a borda */
+  .dialog[data-parts] {
+    height: min(920px, 100%, calc(min(860px, 100vw - 24px) + 84px));
+  }
+}
+/* Domínios: nomes mais compridos (Travessia: Fábrica de Bronze), pinos mais espaçados */
+.pinLabel[data-wide] {
+  max-width: 15ch;
+  -webkit-line-clamp: 3;
+}
+.meLabel[data-up] {
+  top: -38px;
+}
 .pinLabel {
   /* até 2 linhas, estreito: vizinhos (Forja × Arsenal) não se atropelam */
   display: -webkit-box;

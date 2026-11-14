@@ -12817,7 +12817,13 @@
     "chest_bau_estatua_morkhan": "Morkhan pedestal chest",
     "chest_bau_portal": "Portal chest",
     "chest_bau_biblioteca": "Library chest",
-    "gear_ficha_evento": "Event token"
+    "gear_ficha_evento": "Event token",
+    "mapParts": "Domain parts",
+    "mapBoss": "Boss · Sector {n}",
+    "mapGuard": "Guardian · Sector {n}",
+    "mapGodCastle": "{god}'s Castle",
+    "mapCross": "Crossing: {name}",
+    "mapHunt": "{god} hunting you"
   },
   "Sports": {
     "eyebrow": "Sports",

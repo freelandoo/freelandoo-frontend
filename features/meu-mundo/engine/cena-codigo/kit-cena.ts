@@ -46,6 +46,10 @@ export class Cena {
   readonly pontos: Record<string, { x: number; z: number; ang: number }> = {}
   /** Zonas de monstro: polígono no chão, uma por setor do Domínio (os monstros soltos daquele setor andam dentro). */
   readonly zonas: { setor: number; poly: XZ[] }[] = []
+  /** Água desenhada em fita (rio, lago, lava): só o MAPA lê (mapa dos Domínios). */
+  readonly aguas: { pts: readonly XZ[]; width: number }[] = []
+  /** Domínio, cena 3: pegada do castelo e o pátio-salão (`dominio.ts` grava): só o MAPA lê. */
+  castelo: { x: number; z: number; w: number; d: number; patio: { x0: number; z0: number; x1: number; z1: number } } | null = null
   /** Altura do chão desenhado (a `ground` registra); o caminho tem que dar 0. */
   height: (x: number, z: number) => number = () => 0
   constructor(
@@ -157,6 +161,7 @@ export function ground(c: Cena, o: { x0: number; z0: number; x1: number; z1: num
  */
 export function river(c: Cena, pts: readonly XZ[], width: number, o: { y?: number; deep: RGB; shallow: RGB; foam: RGB; block?: boolean }) {
   const { y = -0.3, block = true } = o
+  c.aguas.push({ pts, width })
   const across: [number, RGB][] = [[-0.5, o.foam], [-0.42, o.shallow], [0, o.deep], [0.42, o.shallow], [0.5, o.foam]]
   for (let k = 0; k < pts.length - 1; k++) {
     const [ax, az] = pts[k], [bx, bz] = pts[k + 1]

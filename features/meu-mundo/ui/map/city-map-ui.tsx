@@ -15,6 +15,8 @@ import {
   BookOpen,
   Car,
   Church,
+  Crown,
+  Footprints,
   DoorOpen,
   Dumbbell,
   Flag,
@@ -33,13 +35,14 @@ import {
   Shield,
   ShoppingCart,
   Siren,
+  Skull,
   Swords,
   Trophy,
   X,
   type LucideProps,
 } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { mapPos, onCityMap, type CityMapModel, type MapPos } from "../../engine/city-map"
+import { mapPos, onCityMap, type CityMapModel, type MapPin as MapPinT, type MapPos } from "../../engine/city-map"
 import { useDrawerOpen } from "../hud/hud-kit"
 import { useGameCovered } from "../hud/game-cover"
 import { SteamFrame } from "../kit/steam/steam-frame"
@@ -73,7 +76,16 @@ const ICONS: Record<string, ComponentType<LucideProps>> = {
   statue: Landmark,
   portal: DoorOpen,
   pin: MapPin,
+  skull: Skull,
+  crown: Crown,
+  steps: Footprints,
 }
+
+/** Cor do ponto no radar pelo selo do pino (Domínios: chefe, deus, selado, vencido, saída). */
+const DOT: Record<NonNullable<MapPinT["tone"]>, string> = { boss: "#b8352a", god: "#c9921c", sealed: "#6d6a66", done: "#3f7d3a", exit: "#1f6f8b" }
+
+const sameMarks = (a: MapPos["marks"], b: MapPos["marks"]) =>
+  (a?.length ?? 0) === (b?.length ?? 0) && (a ?? []).every((m, i) => b && Math.abs(m.x - b[i].x) < 0.05 && Math.abs(m.z - b[i].z) < 0.05)
 
 /** Metros do centro até a borda do radar. */
 const RADAR_M = 40
@@ -93,7 +105,7 @@ function usePos(on: boolean) {
     const read = () => {
       if (document.hidden) return
       const q = mapPos()
-      setP((o) => (q && o && Math.abs(o.x - q.x) < 0.05 && Math.abs(o.z - q.z) < 0.05 && Math.abs(o.facing - q.facing) < 0.02 ? o : q))
+      setP((o) => (q && o && Math.abs(o.x - q.x) < 0.05 && Math.abs(o.z - q.z) < 0.05 && Math.abs(o.facing - q.facing) < 0.02 && sameMarks(o.marks, q.marks) ? o : q))
     }
     read()
     const id = setInterval(read, TICK_MS)
@@ -107,14 +119,15 @@ function radarSize() {
   return Math.round(Math.max(88, Math.min(136, window.innerWidth * 0.1, window.innerHeight * 0.17)))
 }
 
-export function CityMapHud({ hidden = false }: { hidden?: boolean }) {
+/** `ignoreCover`: a tela que cobre o jogo (o Domínio) mostra o próprio radar por cima. */
+export function CityMapHud({ hidden = false, ignoreCover = false }: { hidden?: boolean; ignoreCover?: boolean }) {
   const t = useTranslations("MeuMundo")
   const model = useModel()
   const drawerOpen = useDrawerOpen()
   const covered = useGameCovered()
   const [open, setOpen] = useState(false)
   const [size, setSize] = useState(120)
-  const show = !!model && !hidden && !drawerOpen && !covered
+  const show = !!model && !hidden && !drawerOpen && (ignoreCover || !covered)
   const pos = usePos(show || open)
   const ref = useRef<HTMLCanvasElement | null>(null)
 
@@ -159,12 +172,28 @@ export function CityMapHud({ hidden = false }: { hidden?: boolean }) {
     for (const pin of model.pins) {
       const [x, y] = toScreen(v, pin.x, pin.z)
       if (Math.hypot(x - W / 2, y - W / 2) > W / 2 - 4 * dpr) continue
-      g.fillStyle = pin.id === "home" ? "#b8352a" : "#3b230e"
+      g.fillStyle = pin.id === "home" ? "#b8352a" : pin.tone ? DOT[pin.tone] : "#3b230e"
       g.beginPath()
       g.arc(x, y, 3.2 * dpr, 0, Math.PI * 2)
       g.fill()
       g.strokeStyle = "#f6e6bd"
       g.lineWidth = 1.2 * dpr
+      g.stroke()
+    }
+    // marcas que andam (o deus solto): ponto vermelho com aro; fora do radar, preso na borda
+    for (const mk of pos?.marks ?? []) {
+      let [x, y] = toScreen(v, mk.x, mk.z)
+      const dx = x - W / 2, dy = y - W / 2, d = Math.hypot(dx, dy), lim = W / 2 - 7 * dpr
+      if (d > lim) {
+        x = W / 2 + (dx / d) * lim
+        y = W / 2 + (dy / d) * lim
+      }
+      g.fillStyle = "#e0261b"
+      g.beginPath()
+      g.arc(x, y, 4.4 * dpr, 0, Math.PI * 2)
+      g.fill()
+      g.strokeStyle = "#fff3cf"
+      g.lineWidth = 1.6 * dpr
       g.stroke()
     }
     // vinheta interna (vidro do instrumento)
@@ -267,7 +296,13 @@ function CityMapModal({ model, pos, onClose }: { model: CityMapModel; pos: MapPo
   const v = px ? view(px) : null
   const at = (x: number, z: number) => (v ? toScreen(v, x, z) : [0, 0])
   const [mx, my] = pos ? at(pos.x, pos.z) : [0, 0]
-  const title = model.kind === "centro" ? t("mapTitleCenter", "Mapa do Centro") : t("mapTitleBairro", "Mapa do Bairro")
+  // em cima de um pino (a entrada, ao chegar): o "você está aqui" sobe para não tapar o nome dele
+  const meUp = !!pos && model.pins.some((p) => {
+    const [x, y] = at(p.x, p.z)
+    return Math.abs(x - mx) < 60 && y - my > -6 && y - my < 44
+  })
+  const title = model.title ?? (model.kind === "centro" ? t("mapTitleCenter", "Mapa do Centro") : t("mapTitleBairro", "Mapa do Bairro"))
+  const part = model.part
 
   return (
     <div
@@ -277,13 +312,22 @@ function CityMapModal({ model, pos, onClose }: { model: CityMapModel; pos: MapPo
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div role="dialog" aria-modal="true" aria-label={title} className={st.dialog}>
+      <div role="dialog" aria-modal="true" aria-label={title} className={st.dialog} data-parts={part ? "" : undefined}>
         <SteamFrame className="h-full min-h-0" cornerSize={44}>
           <div className="relative flex h-full min-h-0 flex-col">
-            <header className="flex items-center gap-3 px-4 pb-2 pt-3">
+            <header className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pb-2 pt-3">
               <h2 className={`${cinzel.className} flex-1 text-[20px] font-bold uppercase tracking-[0.08em]`} style={{ color: "#FFD68A", textShadow: "0 2px 0 #000" }}>
                 {title}
               </h2>
+              {part && (
+                <ol className={`${archivo.className} ${st.parts}`} aria-label={t("mapParts", "Partes do Domínio")}>
+                  {Array.from({ length: part.total }, (_, i) => (
+                    <li key={i} className={st.part} data-on={i + 1 === part.n ? "" : undefined} aria-current={i + 1 === part.n ? "location" : undefined}>
+                      {part.label(i + 1)}
+                    </li>
+                  ))}
+                </ol>
+              )}
               <button type="button" onClick={onClose} className={st.close} aria-label={t("close", "Fechar")}>
                 <X className="h-5 w-5" />
               </button>
@@ -297,10 +341,25 @@ function CityMapModal({ model, pos, onClose }: { model: CityMapModel; pos: MapPo
                     const Icon = ICONS[p.icon] ?? MapPin
                     return (
                       <div key={p.id} className={st.pin} style={{ left: x, top: y }}>
-                        <span className={st.pinBadge} data-home={p.id === "home" ? "" : undefined}>
+                        <span className={st.pinBadge} data-home={p.id === "home" ? "" : undefined} data-tone={p.tone}>
                           <Icon className="h-[60%] w-[60%]" strokeWidth={2.2} />
                         </span>
-                        <span className={`${archivo.className} ${st.pinLabel}`}>{p.label}</span>
+                        <span className={`${archivo.className} ${st.pinLabel}`} data-wide={model.kind === "dominio" ? "" : undefined}>
+                          {p.label}
+                        </span>
+                      </div>
+                    )
+                  })}
+                {v &&
+                  pos?.marks?.map((mk) => {
+                    const [x, y] = at(mk.x, mk.z)
+                    const Icon = ICONS[mk.icon] ?? MapPin
+                    return (
+                      <div key={mk.id} className={st.pin} style={{ left: x, top: y }}>
+                        <span className={st.pinBadge} data-tone="hunt">
+                          <Icon className="h-[60%] w-[60%]" strokeWidth={2.2} />
+                        </span>
+                        <span className={`${archivo.className} ${st.pinLabel}`}>{mk.label}</span>
                       </div>
                     )
                   })}
@@ -308,7 +367,7 @@ function CityMapModal({ model, pos, onClose }: { model: CityMapModel; pos: MapPo
                   <div className={st.me} style={{ left: mx, top: my }}>
                     <span className={st.mePulse} aria-hidden />
                     <span className={st.meArrow} style={{ transform: `translate(-50%, -50%) rotate(${pos.facing}rad)` }} aria-hidden />
-                    <span className={`${archivo.className} ${st.meLabel}`}>{t("mapYouAreHere", "Você está aqui")}</span>
+                    <span className={`${archivo.className} ${st.meLabel}`} data-up={meUp ? "" : undefined}>{t("mapYouAreHere", "Você está aqui")}</span>
                   </div>
                 )}
               </div>

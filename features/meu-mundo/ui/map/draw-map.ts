@@ -5,7 +5,7 @@
 // que o Alex mandou de referência: prédios em marrom com contorno de tinta,
 // ruas largas claras com borda escura, caminhos tracejados.
 
-import type { CityMapModel, MapShape } from "../../engine/city-map"
+import type { CityMapModel, MapPalette, MapShape } from "../../engine/city-map"
 
 export interface MapView {
   /** Centro da vista no mundo (m). */
@@ -40,7 +40,7 @@ function toScreen(v: MapView, x: number, z: number): [number, number] {
 }
 
 /** Retângulo girado no mundo (rot = rotationY do Babylon) → polígono na tela. */
-function rectPath(g: CanvasRenderingContext2D, v: MapView, sh: Extract<MapShape, { x: number }>) {
+function rectPath(g: CanvasRenderingContext2D, v: MapView, sh: { x: number; z: number; w: number; d: number; rot: number }) {
   const c = Math.cos(sh.rot)
   const s = Math.sin(sh.rot)
   const hw = sh.w / 2
@@ -70,14 +70,15 @@ function roundRectPath(g: CanvasRenderingContext2D, x: number, y: number, w: num
   g.closePath()
 }
 
-/** Papel envelhecido (manchas e fibras) — desenhado uma vez e reaproveitado. */
-let paperTex: HTMLCanvasElement | null = null
-function paper(): HTMLCanvasElement {
-  if (paperTex) return paperTex
+/** Papel envelhecido (manchas e fibras) — desenhado uma vez por cor e reaproveitado. */
+const paperTex = new Map<string, HTMLCanvasElement>()
+function paper(color: string = C.paper): HTMLCanvasElement {
+  const done = paperTex.get(color)
+  if (done) return done
   const t = document.createElement("canvas")
   t.width = t.height = 256
   const g = t.getContext("2d")!
-  g.fillStyle = C.paper
+  g.fillStyle = color
   g.fillRect(0, 0, 256, 256)
   let seed = 7
   const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
@@ -95,8 +96,144 @@ function paper(): HTMLCanvasElement {
     g.fillStyle = gr
     g.fillRect(0, 0, 256, 256)
   }
-  paperTex = t
+  paperTex.set(color, t)
   return t
+}
+
+/** Polilinha do mundo → caminho na tela. */
+function linePath(g: CanvasRenderingContext2D, v: MapView, pts: readonly (readonly [number, number])[], close = false) {
+  g.beginPath()
+  pts.forEach(([x, z], i) => {
+    const [px, py] = toScreen(v, x, z)
+    if (i) g.lineTo(px, py)
+    else g.moveTo(px, py)
+  })
+  if (close) g.closePath()
+}
+
+const DOMAIN_BASE: MapPalette = {
+  paper: C.paper,
+  ground: C.ground,
+  relief: "#8b6a3c",
+  reliefEdge: "#3b230e",
+  trail: "#ecdcae",
+  trailEdge: C.roadEdge,
+  water: "#7fa3ad",
+  zone: C.plaza,
+  build: C.build,
+  buildEdge: C.buildEdge,
+  ink: C.ink,
+}
+
+/** Domínios: pergaminho tingido pela paleta do Domínio (clareiras, mata/pedra, água, trilhas, castelo). */
+function drawDominio(g: CanvasRenderingContext2D, m: CityMapModel, v: MapView) {
+  const pal: MapPalette = { ...DOMAIN_BASE, ...(m.palette ?? {}) }
+  g.save()
+  g.fillStyle = g.createPattern(paper(pal.paper), "repeat")!
+  g.fillRect(0, 0, v.w, v.h)
+  const lw = Math.max(1, v.s * 0.22)
+  const order: MapShape["kind"][] = ["ground", "zone", "relief", "water", "trail", "castle", "patio"]
+  g.lineJoin = "round"
+  g.lineCap = "round"
+  for (const kind of order) {
+    if (kind === "relief") {
+      // mata/pedra: um caminho só (centenas de caixas). Caixa pequena = copa redonda. Contorno
+      // primeiro e o preenchimento por cima: só a borda de fora fica (sem a grade de caixa em caixa).
+      g.beginPath()
+      for (const sh of m.shapes) {
+        if (sh.kind !== "relief") continue
+        if (Math.max(sh.w, sh.d) < 6) {
+          const [px, py] = toScreen(v, sh.x, sh.z)
+          const r = ((sh.w + sh.d) / 4) * 1.15 * v.s
+          g.moveTo(px + r, py)
+          g.arc(px, py, r, 0, Math.PI * 2)
+        } else rectSub(g, v, sh)
+      }
+      g.strokeStyle = pal.reliefEdge
+      g.lineWidth = Math.max(1.2, lw * 1.4)
+      g.stroke()
+      g.fillStyle = pal.relief
+      g.fill()
+      continue
+    }
+    for (const sh of m.shapes) {
+      if (sh.kind !== kind) continue
+      if (sh.kind === "zone") {
+        linePath(g, v, sh.pts, true)
+        g.fillStyle = pal.zone
+        g.fill()
+        g.setLineDash([v.s * 1.6, v.s * 1.2])
+        g.strokeStyle = sh.boss ? "#9a2a1e" : pal.ink
+        g.globalAlpha = sh.boss ? 0.85 : 0.5
+        g.lineWidth = Math.max(1, lw * (sh.boss ? 1.2 : 0.8))
+        g.stroke()
+        g.setLineDash([])
+        g.globalAlpha = 1
+      } else if (sh.kind === "water") {
+        linePath(g, v, sh.pts)
+        g.strokeStyle = pal.water
+        g.lineWidth = sh.width * v.s
+        g.stroke()
+      } else if (sh.kind === "trail") {
+        linePath(g, v, sh.pts)
+        g.strokeStyle = pal.trailEdge
+        g.lineWidth = sh.width * v.s + lw * 2
+        g.stroke()
+        g.strokeStyle = pal.trail
+        g.lineWidth = sh.width * v.s
+        g.stroke()
+        // passos tracejados (mapa do tesouro)
+        g.setLineDash([v.s * 1.4, v.s * 1.8])
+        g.strokeStyle = pal.trailEdge
+        g.globalAlpha = 0.55
+        g.lineWidth = Math.max(0.8, v.s * 0.22)
+        g.stroke()
+        g.setLineDash([])
+        g.globalAlpha = 1
+      } else if (sh.kind === "ground") {
+        rectPath(g, v, sh)
+        g.fillStyle = pal.ground
+        g.fill()
+        g.strokeStyle = pal.ink
+        g.lineWidth = lw * 1.4
+        g.stroke()
+      } else if (sh.kind === "castle") {
+        rectPath(g, v, sh)
+        g.fillStyle = pal.build
+        g.fill()
+        g.strokeStyle = pal.buildEdge
+        g.lineWidth = lw * 1.6
+        g.stroke()
+      } else if (sh.kind === "patio") {
+        rectPath(g, v, sh)
+        g.fillStyle = pal.zone
+        g.fill()
+        g.strokeStyle = pal.buildEdge
+        g.lineWidth = lw
+        g.stroke()
+      }
+    }
+  }
+  g.restore()
+}
+
+/** Retângulo girado como subcaminho (sem beginPath: vários num caminho só). */
+function rectSub(g: CanvasRenderingContext2D, v: MapView, sh: { x: number; z: number; w: number; d: number; rot: number }) {
+  const c = Math.cos(sh.rot)
+  const s = Math.sin(sh.rot)
+  const hw = sh.w / 2
+  const hd = sh.d / 2
+  ;[
+    [-hw, -hd],
+    [hw, -hd],
+    [hw, hd],
+    [-hw, hd],
+  ].forEach(([lx, lz], i) => {
+    const [px, py] = toScreen(v, sh.x + lx * c + lz * s, sh.z - lx * s + lz * c)
+    if (i) g.lineTo(px, py)
+    else g.moveTo(px, py)
+  })
+  g.closePath()
 }
 
 const FILL: Partial<Record<MapShape["kind"], string>> = {
@@ -114,6 +251,7 @@ const FILL: Partial<Record<MapShape["kind"], string>> = {
 
 /** Desenha o mapa inteiro na vista. */
 export function drawMap(g: CanvasRenderingContext2D, m: CityMapModel, v: MapView) {
+  if (m.kind === "dominio") return drawDominio(g, m, v)
   g.save()
   g.fillStyle = g.createPattern(paper(), "repeat")!
   g.fillRect(0, 0, v.w, v.h)
@@ -142,6 +280,7 @@ export function drawMap(g: CanvasRenderingContext2D, m: CityMapModel, v: MapView
         g.setLineDash([])
         continue
       }
+      if (!("x" in sh)) continue
       rectPath(g, v, sh)
       g.fillStyle = FILL[sh.kind] ?? C.ground
       g.fill()

@@ -12797,7 +12797,13 @@
     "chest_bau_estatua_morkhan": "Cofre del pedestal de Morkhan",
     "chest_bau_portal": "Cofre del portal",
     "chest_bau_biblioteca": "Cofre de la biblioteca",
-    "gear_ficha_evento": "Ficha del Evento"
+    "gear_ficha_evento": "Ficha del Evento",
+    "mapParts": "Partes del Dominio",
+    "mapBoss": "Jefe · Sector {n}",
+    "mapGuard": "Guardián · Sector {n}",
+    "mapGodCastle": "Castillo de {god}",
+    "mapCross": "Travesía: {name}",
+    "mapHunt": "{god} te está cazando"
   },
   "Sports": {
     "eyebrow": "Deportes",

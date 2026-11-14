@@ -143,6 +143,7 @@ export function planta(
     const zBack = z1 + Math.max(10, d - patio - 5)
     const zFront = wallZ - 4
     castelo = { x: sx, z: (zFront + zBack) / 2, w, d: zBack - zFront, porta: { x: sx, z: wallZ }, patio: { x0: sx - patio / 2, z0, x1: sx + patio / 2, z1 } }
+    c.castelo = { x: castelo.x, z: castelo.z, w: castelo.w, d: castelo.d, patio: castelo.patio }
     const rA = o.rArena ?? 9.5
     arena = { x: sx, z: zFront - rA - 1, r: rA }
     c.ponto("guardiao", arena.x, arena.z + rA * 0.35, Math.PI)

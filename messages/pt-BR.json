@@ -12231,7 +12231,13 @@
     "chest_bau_estatua_morkhan": "Baú do pedestal de Morkhan",
     "chest_bau_portal": "Baú do portal",
     "chest_bau_biblioteca": "Baú da biblioteca",
-    "gear_ficha_evento": "Ficha do Evento"
+    "gear_ficha_evento": "Ficha do Evento",
+    "mapParts": "Partes do Domínio",
+    "mapBoss": "Chefe · Setor {n}",
+    "mapGuard": "Guardião · Setor {n}",
+    "mapGodCastle": "Castelo de {god}",
+    "mapCross": "Travessia: {name}",
+    "mapHunt": "{god} te caçando"
   },
   "Sports": {
     "eyebrow": "Esportes",

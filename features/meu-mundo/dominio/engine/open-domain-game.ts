@@ -46,6 +46,7 @@ import { GodFigure, GOD_HUNT } from "../../engine/god-view"
 import type { GodId } from "../../laminas/sim/fight"
 import { SkyDome } from "../../engine/sky/sky-dome"
 import { SKY_REGIONS, skyArt, skyFog, skyOfCena, variantOfCena } from "../../engine/sky/sky-registry"
+import { dominioMapModel, setCityMap, type DominioMapLabels } from "../../engine/city-map"
 import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
 
 /** Alcance do "Lutar", das passagens e do aviso de selado (m). */
@@ -97,6 +98,8 @@ export interface OpenDomainOptions {
   /** DV3: um monstro solto do setor encostou (id = o do bando, para sumir depois de vencido). */
   onEngage?: (sector: number, id: string) => void
   onGodCatch?: (god: GodId) => void
+  /** Mapa da cena (radar + pergaminho, mm3d-60r): nomes já traduzidos pela tela. Sem ele, em pt. */
+  mapLabels?: DominioMapLabels & { hunt: (god: GodId) => string }
   onError?: (reason: "context-lost") => void
 }
 
@@ -555,6 +558,44 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     }
   }
 
+  // ── o mapa da cena (radar + pergaminho): montado uma vez, a posição é lida pela interface ~8×/s ──
+  const ML = opts.mapLabels ?? {
+    title: domain.id,
+    exit: "Voltar à praça",
+    passage: "Passagem",
+    part: (n: number) => `Parte ${n}`,
+    sector: (n: number) => `Setor ${n}`,
+    boss: (n: number) => `Chefe · Setor ${n}`,
+    guard: (n: number) => `Guardião · Setor ${n}`,
+    god: domain.god,
+    place: (id: string) => id,
+    hunt: (g: GodId) => g,
+  }
+  const dropMap = setCityMap(
+    dominioMapModel(
+      {
+        domain: domain.id,
+        bounds: { x0: minX, x1: maxX, z0: minZ, z1: maxZ },
+        walk: cena.walk,
+        blockers: cena.blockers,
+        aguas: cena.aguas,
+        zonas: cena.zonas,
+        castelo: cena.castelo,
+        pontos: P,
+        scene: { n: sc.n, total: domain.scenes?.length ?? 3, boss: sc.boss, god: sc.god, passage: sc.passage },
+        sectorState: (s) => (s <= best ? "done" : sectorOpen(s) ? "open" : "sealed"),
+        places,
+      },
+      ML,
+    ),
+    () => ({
+      x: body.x,
+      z: body.z,
+      facing: visualFacing,
+      marks: hunter?.fig && !hunter.caught ? [{ id: "hunt", icon: "crown", label: ML.hunt(hunter.god), x: hunter.x, z: hunter.z }] : undefined,
+    }),
+  )
+
   let place: string | null = null
   let spot: string | null = null
   let sector = -1
@@ -677,6 +718,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     dispose() {
       if (disposed) return
       disposed = true
+      dropMap()
       engine.stopRenderLoop()
       dof?.dispose()
       detachInput()
