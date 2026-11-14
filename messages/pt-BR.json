@@ -12237,7 +12237,21 @@
     "mapGuard": "Guardião · Setor {n}",
     "mapGodCastle": "Castelo de {god}",
     "mapCross": "Travessia: {name}",
-    "mapHunt": "{god} te caçando"
+    "mapHunt": "{god} te caçando",
+    "domPassNeedBoss": "Vença o chefe do setor {n}",
+    "domSealedNeedPrev": "Vença os setores antes deste",
+    "talkBossOpen1": "Alto! Esta passagem leva à parte {n} do Domínio.",
+    "talkBossOpen1b": "Alto! Ninguém passa daqui.",
+    "talkBossOpen2": "O portal só se abre se você me vencer.",
+    "talkBossOpen3": "Chegue perto e lute, se tiver coragem.",
+    "talkBossSealed1": "Ainda não, viajante. Você não está pronto.",
+    "talkBossNeedOne": "Vença primeiro o setor {a}.",
+    "talkBossNeedMany": "Vença primeiro os setores {a} a {b}.",
+    "talkBossSealed3": "Depois volte e lute comigo para abrir o portal.",
+    "talkGuard1": "Ninguém entra no castelo de {god} sem passar por mim.",
+    "talkGuard2": "Vença-me e a porta se abre.",
+    "talkGod1": "Então você chegou até mim.",
+    "talkGod2": "Vença-me e o caminho para o próximo Domínio se abre."
   },
   "Sports": {
     "eyebrow": "Esportes",

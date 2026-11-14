@@ -46,6 +46,8 @@ import { GodFigure, GOD_HUNT } from "../../engine/god-view"
 import type { GodId } from "../../laminas/sim/fight"
 import { SkyDome } from "../../engine/sky/sky-dome"
 import type { StageSky } from "./domain-kit"
+import { DomainPortal, PORTAL_COLOR } from "./portal-fx"
+import { SpeechBubble } from "../../engine/speech-bubble"
 import { SKY_REGIONS, skyArt, skyFog, skyOfCena, variantOfCena } from "../../engine/sky/sky-registry"
 import { dominioMapModel, setCityMap, type DominioMapLabels } from "../../engine/city-map"
 import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
@@ -75,8 +77,24 @@ export type OpenNear =
   | { kind: "back" }
   | { kind: "next" }
   | { kind: "passage" }
-  | { kind: "sealed"; sector: number; boss: boolean }
+  | { kind: "sealed"; sector: number; boss: boolean; portal?: boolean }
   | null
+
+/** O que o chefe/guardião/deus sabe para explicar a passagem (o texto vem da tela, traduzido). */
+export interface BossTalk {
+  sector: number
+  /** Já dá para lutar com ele (os setores antes dele foram vencidos). */
+  open: boolean
+  /** Parte (cena) atual e a próxima que o portal abre (null = cena 3). */
+  part: number
+  nextPart: number | null
+  /** Guardião na porta do castelo (cena 3, setor 9) / o deus (setor 10). */
+  castle: boolean
+  god: boolean
+  /** Setores que faltam vencer antes dele (quando fechado). */
+  needFrom: number
+  needTo: number
+}
 
 export interface OpenDomainOptions {
   canvas: HTMLCanvasElement
@@ -102,6 +120,8 @@ export interface OpenDomainOptions {
   /** Mapa da cena (radar + pergaminho, mm3d-60r): nomes já traduzidos pela tela. Sem ele, em pt. */
   mapLabels?: DominioMapLabels & { hunt: (god: GodId) => string }
   onError?: (reason: "context-lost") => void
+  /** Falas do chefe quando a pessoa chega perto (uma por balão, em sequência). */
+  talk?: (c: BossTalk) => string[]
 }
 
 export interface OpenDomainHandle {
@@ -144,6 +164,11 @@ type Mob = {
   model: MonsterModel | null
   /** Quantas malhas já receberam o "selado" (o corpo carrega aos poucos: reaplica quando muda). */
   sealedLook: number
+  /** Chefe: balão de fala e a fila de falas desta aproximação. */
+  bubble?: SpeechBubble | null
+  talkQ?: string[]
+  talkAt?: number
+  talked?: boolean
 }
 
 export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle {
@@ -272,6 +297,15 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const sectorOpen = (s: number) => s <= best + 1 && !!domain.sectors[s - 1]?.open
   let passageOpen = !!sc.passage?.open
 
+  // ── portais: toda passagem tem um; aberto = redemoinho de partículas ─────
+  const portalColor = PORTAL_COLOR[domain.id] ?? PORTAL_COLOR.floresta
+  /** A saída abre? (null = não há para onde ir: sem portal) */
+  const exitOpen = (): boolean | null => (sc.passage ? passageOpen : domain.passage ? best >= 10 && !!domain.passage.open : null)
+  const portals: DomainPortal[] = []
+  portals.push(new DomainPortal(scene, { x: entrada.x, z: entrada.z, ang: entrada.ang, color: portalColor, open: true, low }))
+  const exitPortal = saida && exitOpen() !== null ? new DomainPortal(scene, { x: saida.x, z: saida.z, ang: saida.ang, color: portalColor, open: !!exitOpen(), low }) : null
+  if (exitPortal) portals.push(exitPortal)
+
   // ── nascer ──────────────────────────────────────────────────────────────
   const spawnPos = (): { x: number; z: number; facing: number } => {
     const want = opts.spawn
@@ -387,11 +421,42 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   }
   const setSealedLook = (m: Mob, on: boolean) => {
     if (!m.model) return
-    const meshes = m.model.root.getChildMeshes(false)
+    // o balão de fala fica de fora (o "selado" é só o corpo)
+    const meshes = m.model.root.getChildMeshes(false).filter((x) => x !== m.bubble?.mesh)
     const want = on ? meshes.length : 0
     if (m.sealedLook === want) return
     for (const x of meshes) x.visibility = on ? 0.32 : 1
     m.sealedLook = want
+  }
+  // o chefe explica a passagem: chegou perto (TALK_D) → falas em sequência; afastou → pode repetir
+  const TALK_D = 8.5
+  const TALK_EACH = 4200
+  const bossTalk = (m: Mob, d: number, open: boolean) => {
+    if (!m.model || !opts.talk) return
+    const now = performance.now()
+    if (d > TALK_D * 1.8) m.talked = false
+    if (!m.talked && d < TALK_D && !engaged && !input.blocked) {
+      m.talked = true
+      const castle = sc.n === 3 && m.sector === sc.boss
+      const god = sc.god === m.sector
+      m.talkQ = opts.talk({ sector: m.sector, open, part: sc.n, nextPart: sc.passage ? sc.passage.to : null, castle, god, needFrom: best + 1, needTo: m.sector - 1 })
+      m.talkAt = 0
+    }
+    const q = m.talkQ
+    if (q && q.length && now >= (m.talkAt ?? 0)) {
+      if (!m.bubble) {
+        m.bubble = new SpeechBubble(scene, m.model.root, 2.6)
+        // balão do chefe maior: lê de longe, antes de encostar
+        m.bubble.mesh.scaling.setAll(1.7)
+      }
+      const bb = m.model.root.getHierarchyBoundingVectors(true)
+      m.bubble.setY(Math.max(2.4, bb.max.y - m.model.root.position.y + 0.5))
+      m.bubble.say(q.shift()!, now)
+      m.talkAt = now + TALK_EACH
+      if (!q.length) m.talkAt = now + TALK_EACH
+    }
+    // a última fala fica o tempo dela e some (o balão sozinho duraria 10 s)
+    if (m.bubble) m.bubble.tick(d < 30 && now < (m.talkAt ?? 0), now)
   }
   let engaged = false
   let time = 0
@@ -402,6 +467,8 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       const want = !down && d < SHOW_D
       if (want && !m.model) m.model = modelFor(m)
       else if (!want && m.model) {
+        m.bubble?.dispose()
+        m.bubble = null
         m.model.dispose()
         m.model = null
         m.sealedLook = 0
@@ -413,6 +480,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       if (m.boss || !open) {
         // o chefe e o bando selado ficam parados olhando quem chega (o chefe, perto)
         if (d < SEE * 1.6) m.facing = lerpAngle(m.facing, Math.atan2(body.x - m.x, body.z - m.z), 1 - Math.exp(-4 * dt))
+        if (m.boss) bossTalk(m, d, open)
       } else {
         const home = Math.hypot(m.x - m.hx, m.z - m.hz)
         m.chasing = !engaged && !input.blocked && d < (m.chasing ? SEE * 1.5 : SEE) && home < LEASH
@@ -528,7 +596,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     }
     if (Math.hypot(entrada.x - body.x, entrada.z - body.z) < REACH + 1) return sc.n > 1 ? { kind: "back" } : { kind: "exit" }
     if (saida && Math.hypot(saida.x - body.x, saida.z - body.z) < REACH + 1.4) {
-      if (sc.passage) return passageOpen ? { kind: "next" } : { kind: "sealed", sector: sc.boss, boss: true }
+      if (sc.passage) return passageOpen ? { kind: "next" } : { kind: "sealed", sector: sc.boss, boss: true, portal: true }
       if (domain.passage && best >= 10) return { kind: "passage" }
       return null
     }
@@ -723,6 +791,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     setProgress(b) {
       best = Math.max(best, Math.max(0, Math.min(10, b)))
       if (best >= sc.boss) passageOpen = !!sc.passage
+      exitPortal?.setOpen(!!exitOpen())
     },
     dispose() {
       if (disposed) return
@@ -733,7 +802,11 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       detachInput()
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
-      for (const m of mobs) m.model?.dispose()
+      for (const m of mobs) {
+        m.bubble?.dispose()
+        m.model?.dispose()
+      }
+      for (const pt of portals) pt.dispose()
       hunter?.fig?.dispose()
       hunter = null
       for (const gm of golems) gm.char.dispose()

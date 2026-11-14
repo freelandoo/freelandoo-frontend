@@ -12823,7 +12823,21 @@
     "mapGuard": "Guardian · Sector {n}",
     "mapGodCastle": "{god}'s Castle",
     "mapCross": "Crossing: {name}",
-    "mapHunt": "{god} hunting you"
+    "mapHunt": "{god} hunting you",
+    "domPassNeedBoss": "Defeat the sector {n} boss",
+    "domSealedNeedPrev": "Defeat the sectors before this one",
+    "talkBossOpen1": "Halt! This passage leads to part {n} of the Domain.",
+    "talkBossOpen1b": "Halt! No one gets past here.",
+    "talkBossOpen2": "The portal only opens if you defeat me.",
+    "talkBossOpen3": "Come closer and fight, if you dare.",
+    "talkBossSealed1": "Not yet, traveler. You are not ready.",
+    "talkBossNeedOne": "First defeat sector {a}.",
+    "talkBossNeedMany": "First defeat sectors {a} to {b}.",
+    "talkBossSealed3": "Then come back and fight me to open the portal.",
+    "talkGuard1": "No one enters {god}'s castle without getting past me.",
+    "talkGuard2": "Defeat me and the door opens.",
+    "talkGod1": "So you have made it to me.",
+    "talkGod2": "Defeat me and the way to the next Domain opens."
   },
   "Sports": {
     "eyebrow": "Sports",

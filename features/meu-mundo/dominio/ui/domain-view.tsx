@@ -157,6 +157,28 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
               hunt: (g: GodId) => tt("mapHunt", "{god} te caçando").replace("{god}", GOD_NAMES[g as GodBody] ?? g),
             }
           })(),
+          // o chefe explica a passagem (balões em sequência)
+          talk: (c) => {
+            const tt = labels.current.t
+            const godName = GOD_NAMES[d.god as GodBody] ?? d.god
+            if (!c.open) {
+              const need =
+                c.needFrom >= c.needTo
+                  ? tt("talkBossNeedOne", "Vença primeiro o setor {a}.").replace("{a}", String(c.needTo))
+                  : tt("talkBossNeedMany", "Vença primeiro os setores {a} a {b}.").replace("{a}", String(c.needFrom)).replace("{b}", String(c.needTo))
+              return [tt("talkBossSealed1", "Ainda não, viajante. Você não está pronto."), need, tt("talkBossSealed3", "Depois volte e lute comigo para abrir o portal.")]
+            }
+            if (c.god) return [tt("talkGod1", "Então você chegou até mim."), tt("talkGod2", "Vença-me e o caminho para o próximo Domínio se abre.")]
+            if (c.castle)
+              return [tt("talkGuard1", "Ninguém entra no castelo de {god} sem passar por mim.").replace("{god}", godName), tt("talkGuard2", "Vença-me e a porta se abre.")]
+            return [
+              c.nextPart
+                ? tt("talkBossOpen1", "Alto! Esta passagem leva à parte {n} do Domínio.").replace("{n}", String(c.nextPart))
+                : tt("talkBossOpen1b", "Alto! Ninguém passa daqui."),
+              tt("talkBossOpen2", "O portal só se abre se você me vencer."),
+              tt("talkBossOpen3", "Chegue perto e lute, se tiver coragem."),
+            ]
+          },
           onReady: () => alive && setStatus("ready"),
           onNearbyChange: (n) => alive && setNear(n),
           onSector: (s) => alive && setSector(s),
@@ -433,7 +455,15 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         : near?.kind === "next"
           ? { label: t("domNextScene", "Seguir para a parte {n}").replace("{n}", String(sceneN + 1)), icon: <Footprints className="h-5 w-5" /> }
           : near?.kind === "sealed"
-            ? { label: near.boss ? t("domSealedBossShort", "Passagem fechada") : t("domSealedShort", "Selado"), icon: <Shield className="h-5 w-5" /> }
+            ? {
+                label:
+                  "portal" in near && near.portal
+                    ? t("domPassNeedBoss", "Vença o chefe do setor {n}").replace("{n}", String(near.sector))
+                    : near.boss
+                      ? t("domSealedNeedPrev", "Vença os setores antes deste")
+                      : t("domSealedShort", "Selado"),
+                icon: <Shield className="h-5 w-5" />,
+              }
       : near?.kind === "passage" && info?.passage
         ? { label: t("domCross", "Atravessar para {name}").replace("{name}", domainName(t, info.passage.to)), icon: <Footprints className="h-5 w-5" /> }
         : null

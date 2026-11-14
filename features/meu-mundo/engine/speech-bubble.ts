@@ -30,7 +30,7 @@ export class SpeechBubble {
     this.mesh.position.y = y
   }
 
-  private readonly mesh: Mesh
+  readonly mesh: Mesh
   private readonly mat: StandardMaterial
   private readonly tex: DynamicTexture
   private until = 0
