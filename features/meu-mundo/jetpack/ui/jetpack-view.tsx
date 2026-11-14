@@ -374,16 +374,16 @@ function JetScreen({ body, look, name, phase, mp, onAgain, onMenu }: { body: Bod
           </div>
 
           {/* distância e velocidade no alto */}
-          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2" style={{ top: SAFE.top }}>
-            <div className="rounded-full px-3.5 py-1 text-center leading-tight" style={{ background: glass, border: `1px solid ${ST.goldDeep}` }}>
+          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 max-[429px]:left-auto max-[429px]:right-[60px] max-[429px]:translate-x-0" style={{ top: SAFE.top }}>
+            <div className="rounded-full px-3.5 py-1 text-center leading-tight max-[429px]:ml-auto max-[429px]:w-fit max-[429px]:rounded-2xl max-[429px]:px-3" style={{ background: glass, border: `1px solid ${ST.goldDeep}` }}>
               <span className="text-[18px] font-black italic tabular-nums" style={{ color: ST.goldHi }}>
                 {hud.dist.toLocaleString()} m
               </span>
-              <span className="ml-1.5 text-[11px] tabular-nums" style={{ color: ST.muted }}>
+              <span className="ml-1.5 text-[11px] tabular-nums max-[429px]:ml-0 max-[429px]:block" style={{ color: ST.muted }}>
                 {hud.speed} km/h
               </span>
             </div>
-            <div className="mt-1 text-center text-[10.5px] font-black uppercase italic tracking-[0.1em]" style={{ color: phaseArt(mp?.start.phase ?? phase).accent, textShadow: "0 1px 0 #000" }}>
+            <div className="mt-1 text-center text-[10.5px] font-black uppercase italic tracking-[0.1em] max-[429px]:ml-auto max-[429px]:max-w-[150px] max-[429px]:truncate max-[429px]:text-right" style={{ color: phaseArt(mp?.start.phase ?? phase).accent, textShadow: "0 1px 0 #000" }}>
               {phaseArt(mp?.start.phase ?? phase).num} · {t(phaseArt(mp?.start.phase ?? phase).nameKey, phaseArt(mp?.start.phase ?? phase).name)}
             </div>
             {hud.phase === "run" && !result && hud.gap < 0.6 && (

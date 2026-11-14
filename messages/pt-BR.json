@@ -12252,7 +12252,15 @@
     "talkGuard2": "Vença-me e a porta se abre.",
     "talkGod1": "Então você chegou até mim.",
     "talkGod2": "Vença-me e o caminho para o próximo Domínio se abre.",
-    "talkMobSealed": "Ainda não é a sua vez. Vença o setor {n} primeiro."
+    "talkMobSealed": "Ainda não é a sua vez. Vença o setor {n} primeiro.",
+    "paintGoalAhead": "em frente",
+    "paintGoalBehind": "atrás de você",
+    "paintGoalRight": "à direita",
+    "paintGoalLeft": "à esquerda",
+    "paintGoalUp": "suba {n} m",
+    "paintGoalDown": "desça {n} m",
+    "paintGoalDist": "{n} m",
+    "paintGoalAria": "Portal {side}, a {n} m"
   },
   "Sports": {
     "eyebrow": "Esportes",

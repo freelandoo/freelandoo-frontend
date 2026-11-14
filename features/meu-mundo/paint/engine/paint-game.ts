@@ -92,6 +92,12 @@ export interface PaintHud {
   /** B11: o Morkhan está atrás de mim (e a quantos metros). */
   chased: boolean
   chaseDist: number
+  /**
+   * Para onde fica o portal aberto do meu time (null = fechado, ou já estou com o Guardião):
+   * `rel` = ângulo em relação à câmera (0 = em frente, + = à direita), `dist` em m no chão,
+   * `up` = quantos metros acima (+) ou abaixo (−) de mim. Só desenho: a regra não sabe disso.
+   */
+  goal: { rel: number; dist: number; up: number } | null
   result: MatchResult | null
 }
 
@@ -715,7 +721,18 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     alive: [...state.players.values()].filter((p) => p.online && !p.out).length,
     result: state.result,
     ...chaseHud(),
+    goal: goalHud(),
   })
+  /** A direção do portal aberto, vista da câmera (a seta da HUD). */
+  const goalHud = (): PaintHud["goal"] => {
+    const pt = map.portals[me.team]
+    if (!pt || !state.portalOpen[me.team] || me.inBoss || me.out) return null
+    const dx = pt.x - body.x
+    const dz = pt.z - body.z
+    let rel = Math.atan2(dx, dz) - cam.yaw
+    rel = Math.atan2(Math.sin(rel), Math.cos(rel))
+    return { rel: Math.round(rel * 20) / 20, dist: Math.round(Math.hypot(dx, dz)), up: Math.round(pt.y - body.y) }
+  }
   /** B11: o Morkhan do meu time está atrás de mim? */
   const chaseHud = () => {
     const mk = state.morkhans[me.team]

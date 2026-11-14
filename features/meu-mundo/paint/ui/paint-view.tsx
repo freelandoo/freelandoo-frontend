@@ -594,7 +594,8 @@ function Hud({ hud, touch, hurt, body, onLeave }: { hud: PaintHud; touch: boolea
       {/* tempo / contagem / chefão */}
       <div className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 flex-col items-center gap-1.5" style={{ top: SAFE.top }}>
         {hud.phase === "play" && (
-          <span className="rounded-full px-3 py-1 text-[14px] font-bold tabular-nums" style={{ background: "rgba(255,255,255,0.78)", color: "#3b3127" }}>
+          // tela estreita: o relógio sai de baixo do card dos gatinhos
+          <span className="rounded-full px-3 py-1 text-[14px] font-bold tabular-nums max-[429px]:relative max-[429px]:right-[62px]" style={{ background: "rgba(255,255,255,0.78)", color: "#3b3127" }}>
             {fmtTime(hud.timeLeft)}
           </span>
         )}
@@ -630,6 +631,9 @@ function Hud({ hud, touch, hurt, body, onLeave }: { hud: PaintHud; touch: boolea
             <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-bold" style={{ background: "rgba(70, 52, 12, 0.85)", color: "#FFE3A0" }}>
               <Sparkles className="h-3.5 w-3.5" /> {t("paintPortalOpen", "Portal aberto no topo")}
             </span>
+          )}
+          {hud.goal && (
+            <PortalArrow goal={hud.goal} />
           )}
         </div>
         <button
@@ -689,6 +693,38 @@ function Hud({ hud, touch, hurt, body, onLeave }: { hud: PaintHud; touch: boolea
         </div>
       )}
     </>
+  )
+}
+
+/**
+ * Para onde fica o portal aberto: a seta gira com a câmera (para cima = em frente),
+ * ao lado a distância no chão e quantos metros falta subir ou descer.
+ */
+function PortalArrow({ goal }: { goal: NonNullable<PaintHud["goal"]> }) {
+  const t = useTranslations("MeuMundo")
+  const deg = Math.round((goal.rel * 180) / Math.PI)
+  const side =
+    Math.abs(deg) <= 25
+      ? t("paintGoalAhead", "em frente")
+      : Math.abs(deg) >= 155
+        ? t("paintGoalBehind", "atrás de você")
+        : deg > 0
+          ? t("paintGoalRight", "à direita")
+          : t("paintGoalLeft", "à esquerda")
+  const climb = goal.up >= 2 ? t("paintGoalUp", "suba {n} m").replace("{n}", String(goal.up)) : goal.up <= -2 ? t("paintGoalDown", "desça {n} m").replace("{n}", String(-goal.up)) : null
+  return (
+    <span
+      role="status"
+      aria-label={t("paintGoalAria", "Portal {side}, a {n} m").replace("{side}", side).replace("{n}", String(goal.dist))}
+      className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[12px] font-bold tabular-nums"
+      style={{ background: "rgba(70, 52, 12, 0.85)", color: "#FFE3A0" }}
+    >
+      <span className="grid h-6 w-6 place-items-center rounded-full" style={{ background: "rgba(255, 227, 160, 0.16)" }}>
+        <ArrowBigUp className="h-4 w-4" fill="currentColor" style={{ transform: `rotate(${deg}deg)`, transition: "transform 120ms linear" }} />
+      </span>
+      <span>{t("paintGoalDist", "{n} m").replace("{n}", String(goal.dist))}</span>
+      {climb && <span className="text-[11px] font-semibold opacity-80">· {climb}</span>}
+    </span>
   )
 }
 

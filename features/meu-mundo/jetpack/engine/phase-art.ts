@@ -32,7 +32,7 @@ export interface PhaseArt {
   difficulty: 1 | 2 | 3 | 4 | 5
   tags: PhaseTag[]
   /** Miniatura (public/meu-mundo/jetpack/fases/). */
-  thumb: string
+  thumb: string | null
   accent: string
   /** Degradê do cartão quando a miniatura não carrega. */
   bg: [string, string]
@@ -189,7 +189,8 @@ export const PHASE_ART: readonly PhaseArt[] = [
     feature: "Em breve",
     difficulty: 5,
     tags: [{ key: "jetTagSoon", label: "Em breve" }],
-    thumb: THUMBS + "vacuo.webp",
+    // sem miniatura até a arte existir (o arquivo não existe: era um 404 a cada abertura)
+    thumb: null,
     accent: "#B07CFF",
     bg: ["#2a1a5a", "#05040e"],
     stars: [300, 1000, 2000],

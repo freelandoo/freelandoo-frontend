@@ -56,7 +56,7 @@ function Thumb({ art, className }: { art: PhaseArt; className?: string }) {
   return (
     // `relative` só sem className: com "absolute inset-0" o relative vencia e o quadro ficava com altura 0
     <div className={`overflow-hidden ${className ?? "relative"}`} style={{ background: `linear-gradient(140deg, ${art.bg[0]}, ${art.bg[1]})` }}>
-      {ok && (
+      {ok && art.thumb && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={art.thumb} alt="" loading="lazy" onError={() => setOk(false)} className="absolute inset-0 h-full w-full object-cover" />
       )}

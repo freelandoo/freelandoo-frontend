@@ -12838,7 +12838,15 @@
     "talkGuard2": "Defeat me and the door opens.",
     "talkGod1": "So you have made it to me.",
     "talkGod2": "Defeat me and the way to the next Domain opens.",
-    "talkMobSealed": "It's not your turn yet. Defeat sector {n} first."
+    "talkMobSealed": "It's not your turn yet. Defeat sector {n} first.",
+    "paintGoalAhead": "ahead",
+    "paintGoalBehind": "behind you",
+    "paintGoalRight": "to the right",
+    "paintGoalLeft": "to the left",
+    "paintGoalUp": "climb {n} m",
+    "paintGoalDown": "go down {n} m",
+    "paintGoalDist": "{n} m",
+    "paintGoalAria": "Portal {side}, {n} m away"
   },
   "Sports": {
     "eyebrow": "Sports",
