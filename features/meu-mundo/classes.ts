@@ -33,8 +33,8 @@ export const clanOfBody = (b: string | null | undefined): Clan | null => (!b || 
  * (malha quantizada; ~26% menor, as texturas JPEG ficam como estão).
  */
 export const CLAN_WEAPON: Record<Clan, string> = {
-  raposa: "/meu-mundo/armas/v1/arma-cajado-m64.glb",
-  vampiro: "/meu-mundo/armas/v1/arma-espada-m64.glb",
+  raposa: "/meu-mundo/armas/v1/arma-cajado-m64k.glb",
+  vampiro: "/meu-mundo/armas/v1/arma-espada-m64k.glb",
 }
 
 /** Animações próprias da classe (golpes, guarda, morte), no esqueleto do Sergio. */

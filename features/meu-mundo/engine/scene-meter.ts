@@ -118,6 +118,22 @@ function textureMemory(scene: Scene) {
   return { count: seen.size, mb: Math.round((bytes / 1048576) * 10) / 10, compressed }
 }
 
+/** As maiores texturas da cena (auditoria: de onde vem a memória). */
+function textureList(scene: Scene, top: number) {
+  const seen = new Set<InternalTexture>()
+  const rows: { name: string; size: string; mb: number; ktx: boolean }[] = []
+  for (const tex of scene.textures) {
+    const it = tex.getInternalTexture()
+    if (!it || seen.has(it) || !it.width || !it.height) continue
+    seen.add(it)
+    const comp = isCompressed(it)
+    const bpp = comp ? 1 : (BYTES_BY_TYPE[it.type] ?? 4)
+    const mb = (it.width * it.height * bpp * (it.isCube ? 6 : 1) * Math.max(1, it.depth || 1) * (it.generateMipMaps ? 1.33 : 1)) / 1048576
+    rows.push({ name: (tex.name || it.url || tex.getClassName()).slice(-80), size: `${it.width}x${it.height}`, mb: Math.round(mb * 100) / 100, ktx: comp })
+  }
+  return rows.sort((a, b) => b.mb - a.mb).slice(0, top)
+}
+
 const ART = /\.(glb|gltf|ktx2|webp|png|jpe?g|wasm|bin)(\?|$)|\/meu-mundo\//i
 
 function downloads(since: number) {
@@ -194,7 +210,11 @@ let installed = false
 export function installSceneMeter() {
   if (installed || typeof window === "undefined") return
   installed = true
-  const w = window as unknown as { __mmScene?: () => SceneSheet | null }
+  const w = window as unknown as { __mmScene?: () => SceneSheet | null; __mmTextures?: (top?: number) => unknown }
+  w.__mmTextures = (top = 20) => {
+    const a = activeScene()
+    return a ? textureList(a.scene, top) : null
+  }
   w.__mmScene = () => {
     const a = activeScene()
     return a ? measureScene(a.scene, a.engine) : null

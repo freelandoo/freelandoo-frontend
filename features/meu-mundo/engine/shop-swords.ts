@@ -79,7 +79,7 @@ const GOD_BOWS: Record<string, [string, string]> = {
   aeryn: ["#FFC23D", "#FFF2C0"],
 }
 const bowOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
-  c ? { file: `${DIR}/arco-${k}-m69.glb`, thumb: `${DIR}/thumb/arco-${k}.webp`, main: c[0], edge: c[1] } : null
+  c ? { file: `${DIR}/arco-${k}-m69k.glb`, thumb: `${DIR}/thumb/arco-${k}.webp`, main: c[0], edge: c[1] } : null
 
 /**
  * Trilha E8: as 9 armas de linha (fabricadas por fragmento) usam o modelo mais próximo da família
@@ -133,7 +133,7 @@ const GOD_GUNS: Record<string, [string, string]> = {
   noctis: ["#2FC2FF", "#CFEFFF"],
 }
 const gunOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
-  c ? { file: `${DIR}/fogo-${k}-m70.glb`, thumb: `${DIR}/thumb/fogo-${k}.webp`, main: c[0], edge: c[1] } : null
+  c ? { file: `${DIR}/fogo-${k}-m70k.glb`, thumb: `${DIR}/thumb/fogo-${k}.webp`, main: c[0], edge: c[1] } : null
 
 /** A arma de fogo da loja por id do item; null = não é da aba Guns. */
 export function shopGun(id: string | null | undefined): ShopSword | null {
@@ -152,7 +152,7 @@ const SHIELDS = new Set(["ferro", "rebites", "azul", "cravos", "sol", "prata", "
 /** O escudo da loja por id do item; null = sem escudo. */
 export function shopShield(id: string | null | undefined): { file: string; thumb: string } | null {
   const k = id?.startsWith("escudo_") ? id.slice(7) : ""
-  return SHIELDS.has(k) ? { file: `${DIR}/escudo-${k}-m68.glb`, thumb: `${DIR}/thumb/escudo-${k}.webp` } : null
+  return SHIELDS.has(k) ? { file: `${DIR}/escudo-${k}-m68k.glb`, thumb: `${DIR}/thumb/escudo-${k}.webp` } : null
 }
 
 export interface ShopSword {
@@ -168,7 +168,7 @@ export function shopHeavy(id: string | null | undefined): ShopSword | null {
   if (line) { const god = godHeavy(line[0]); return god && { ...god, thumb: `${DIR}/thumb/${line[1]}.webp` } }
   const k = id?.startsWith("pesada_") ? id.slice(7) : ""
   const c = HEAVY_COLORS[k]
-  return c ? { file: `${DIR}/pesada-${k}-m67.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
+  return c ? { file: `${DIR}/pesada-${k}-m67k.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
 }
 
 /** Arma própria do deus (não está à venda): a skin luta com ela sem arma de loja equipada. */
@@ -179,7 +179,7 @@ const GOD_HEAVY: Record<string, [string, string]> = {
 
 export function godHeavy(body: string | null | undefined): ShopSword | null {
   const c = body ? GOD_HEAVY[body] : undefined
-  return c ? { file: `${DIR}/pesada-${body}-m67.glb`, thumb: "", main: c[0], edge: c[1] } : null
+  return c ? { file: `${DIR}/pesada-${body}-m67k.glb`, thumb: "", main: c[0], edge: c[1] } : null
 }
 
 const key = (id: string | null | undefined) => (id?.startsWith("espada_") ? id.slice(7) : "")
@@ -188,5 +188,5 @@ const key = (id: string | null | undefined) => (id?.startsWith("espada_") ? id.s
 export function shopSword(id: string | null | undefined): ShopSword | null {
   const k = key((id && LINE_SWORD[id]) || id)
   const c = COLORS[k]
-  return c ? { file: `${DIR}/espada-${k}-m66.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
+  return c ? { file: `${DIR}/espada-${k}-m66k.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
 }

@@ -14,7 +14,7 @@ import { ensureLoaders } from "../../engine/avatars"
 import type { Character } from "../../engine/player"
 import { shineWeapon } from "../../engine/weapon-shine"
 
-const URL = "/meu-mundo/armas/v2/pedra-golem-m71.glb"
+const URL = "/meu-mundo/armas/v2/pedra-golem-m71k.glb"
 const B = "mixamorig:"
 
 const loads = new WeakMap<Scene, Promise<AssetContainer>>()
