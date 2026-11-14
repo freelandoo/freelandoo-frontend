@@ -49,7 +49,8 @@ import { codeObstacles } from "./pecas/obstaculos"
 import { kitGelo } from "./pecas/kit-gelo"
 import { kitCanion } from "./pecas/kit-canion"
 import { kitFloresta } from "./pecas/kit-floresta"
-import { ICE_DIR, loadPieceGroups, loadFactoryAssets, loadForgeAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { kitOrbital } from "./pecas/kit-orbital"
+import { ICE_DIR, loadPieceGroups, loadFactoryAssets, loadForgeAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 import { GAME_MUSIC, sceneSound, jetpackPhaseAmb } from "../../engine/audio"
 
@@ -264,19 +265,6 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 2.252, arm: 0.38, armLen: 0.741, beam: true })
     })
   }
-  if (level === "orbital") {
-    void loadOrbitalAssets(scene, () => !disposed).then((a) => {
-      if (disposed) return a.dispose()
-      canyonAssets = a
-      tunnel.provide?.(a)
-      // V3: galão e moldura do Tripo (orbital-tema2.json); a viga dos obstáculos é a mesma borda repetida
-      const can = a.meshes.get("galao")
-      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
-      const tile = a.meshes.get("borda")
-      const corner = a.meshes.get("canto")
-      if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 3.554, arm: 0.407, armLen: 0.711, beam: true })
-    })
-  }
   if (level === "industrial") {
     void loadFactoryAssets(scene, () => !disposed).then((a) => {
       if (disposed) return a.dispose()
@@ -294,7 +282,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   const obstacles = buildObstacles(scene, mats, level)
   const kit = buildPackKit(scene, mats)
   // Jetpack em código (14/11): rocha, cristal, galão e moldura da fase feitos por nós (pecas/kit-*)
-  const codeKit = level === "artico" ? kitGelo(low) : level === "canion" ? kitCanion(low) : level === "floresta" ? kitFloresta(low) : null
+  const codeKit = level === "artico" ? kitGelo(low) : level === "canion" ? kitCanion(low) : level === "floresta" ? kitFloresta(low) : level === "orbital" ? kitOrbital(low) : null
   if (codeKit) codeObstacles(scene, obstacles, codeKit, { beam: level !== "artico" })
   // Jetpack em código (14/11): o aro dos anéis é o portal feito por nós (pecas/portais.ts), em toda fase
   const codeRim = aroDaFase(scene, level)

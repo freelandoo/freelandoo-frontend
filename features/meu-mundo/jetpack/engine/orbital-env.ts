@@ -6,8 +6,10 @@
 // árvores rosa, elevadores de vidro, painéis holográficos, drones, torres por
 // todo lado descendo até as nuvens e o céu claro azul-lilás.
 //
-// Peças do Tripo (build_orbital_tripo.py): torre, pórtico, drone, painel,
-// jardineira, elevador — chegam depois (provide). O PÓRTICO é hexagonal: o vão
+// Jetpack em código (14/11): torre, pórtico, drone, painel, jardineira, elevador, antena, holo, torre de
+// cristal, cápsula, trilho, satélite e jardim são feitos em código (pecas/kit-orbital.ts) com as MESMAS
+// medidas do tema antigo do Tripo (orbital/v2) e entram no módulo (antes só as 6 primeiras chegavam: as
+// da estação e do transporte nunca apareciam). O PÓRTICO é hexagonal: o vão
 // é largo entre 25% e 55% da altura dele; com 30 m de largura e o pé enterrado
 // 7,8 m abaixo da passarela, a caixa do voo inteira (±5,35 × 0–8,3 m) fica na
 // parte larga. A regra não muda.
@@ -28,6 +30,7 @@ import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot, fusedLayers } from "./env-pool"
 import type { OrbitalAsset, PieceAssets } from "./canyon-assets"
 import { cloudTexture, skyTexture } from "./canyon-env"
+import { kitOrbital } from "./pecas/kit-orbital"
 
 const { W, H } = TUNNEL
 
@@ -189,6 +192,7 @@ export function buildOrbitalEnv(scene: Scene, low: boolean, slots: number, seed:
   glassMat.disableDepthWrite = true
   const all: Mesh[] = []
   const mods: PoolModule[] = []
+  let glassShared: Mesh | null = null
   for (const mod of MODULES) {
     for (let v = 0; v < VARIANTS; v++) {
       const g: Ctx = { body: new JetGeo(), glow: new JetGeo(), glass: new JetGeo(), spins: [], props: [] }
@@ -197,14 +201,14 @@ export function buildOrbitalEnv(scene: Scene, low: boolean, slots: number, seed:
       mod.build(g, v)
       const meshes: Mesh[] = fusedLayers(g, mats, `jt-or-${mod.id}${v}`, scene)
       all.push(...meshes)
-      for (const [geo, mat, layer] of [
-        [g.glass, glassMat, "glass"],
-      ] as const) {
-        if (!geo.vertexCount) continue
-        const m = geo.build(`jt-or-${mod.id}${v}-${layer}`, scene, mat, false)
-        m.isPickable = false
-        meshes.push(m)
-        all.push(m)
+      // o vidro é só a passarela (igual em todo trecho): UMA malha para todos os módulos (1 chamada, não 10)
+      if (g.glass.vertexCount) {
+        if (!glassShared) {
+          glassShared = g.glass.build("jt-or-glass", scene, glassMat, false)
+          glassShared.isPickable = false
+          all.push(glassShared)
+        }
+        meshes.push(glassShared)
       }
       mods.push({ meshes, spins: g.spins, props: g.props })
     }
@@ -218,6 +222,8 @@ export function buildOrbitalEnv(scene: Scene, low: boolean, slots: number, seed:
     return m * VARIANTS + (hash32(s, seed ^ 13) % VARIANTS)
   }
   const pool = new SegmentPool(scene, "jt-or", mods, new Map(), slots, pick)
+  // Jetpack em código (14/11): as peças do cenário (era o tema orbital/v2 do Tripo) entram no módulo; o drone gira
+  pool.bakeCode(kitOrbital(low), ["drone"])
 
   // céu, nuvens lá embaixo e o sol
   const skyTex = skyTexture(scene, low, SKY_ORBITAL)
@@ -254,14 +260,8 @@ export function buildOrbitalEnv(scene: Scene, low: boolean, slots: number, seed:
       sea.position.set(0, -55, z + SEA * 0.3)
       cloudTex.vOffset = (z + SEA * 0.3) / 60 + now * 0.01
     },
-    provide(a) {
-      for (const kind of ["torre", "portico", "painel", "jardineira", "elevador"] as const) {
-        const m = a.meshes.get(kind)
-        if (m) pool.provide(kind, m)
-      }
-      const d = a.meshes.get("drone")
-      if (d) pool.provide("drone", d, true)
-    },
+    // Jetpack em código (14/11): nada mais chega do Tripo (o cenário já nasce com as peças)
+    provide() {},
     dispose() {
       pool.dispose()
       for (const m of all) if (!m.isDisposed()) m.dispose()
