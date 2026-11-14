@@ -868,6 +868,16 @@ export class MonsterModel {
     }
   }
 
+  /** Nó com as malhas do corpo (o boneco com esqueleto anda solto do `root`). Sombra real. */
+  get shadowRoot(): TransformNode {
+    return this.char?.holder ?? this.root
+  }
+
+  /** Disco de contato do corpo (a sombra real do perfil alto toma o lugar dele). */
+  setContact(on: boolean) {
+    this.char?.setContact(on)
+  }
+
   setVisible(v: boolean) {
     this.root.setEnabled(v)
     this.char?.setVisible(v)

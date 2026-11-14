@@ -24,6 +24,10 @@ import type { Scene } from "@babylonjs/core/scene"
 import type { Material } from "@babylonjs/core/Materials/material"
 import type { InternalTexture } from "@babylonjs/core/Materials/Textures/internalTexture"
 import type { QualityStats } from "./quality"
+import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
+
+/** O pedaço da luz que o medidor lê (sem puxar o código de sombra para o pacote). */
+type ShadowLight = { getShadowGenerator?: () => { getShadowMap(): { renderList: AbstractMesh[] | null } | null } | null }
 
 /** O governador de qualidade (quality.ts) da cena: perfil, FPS médio, p95 e CPU por quadro. */
 export type QualityProbe = () => QualityStats
@@ -92,6 +96,11 @@ export function countDrawCalls(scene: Scene) {
     n += Math.max(1, m.subMeshes?.length ?? 1)
   }
   for (const ps of scene.particleSystems) if (ps.isStarted() && ps.getActiveCount() > 0) n++
+  // passe de sombra (char-shadows.ts, só no high): uma chamada por pedaço de quem lança
+  for (const l of scene.lights) {
+    const list = (l as unknown as ShadowLight).getShadowGenerator?.()?.getShadowMap()?.renderList
+    if (list) for (const m of list) if (m.isEnabled()) n += Math.max(1, m.subMeshes?.length ?? 1)
+  }
   return n
 }
 

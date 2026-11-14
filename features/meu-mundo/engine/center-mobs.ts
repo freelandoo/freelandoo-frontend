@@ -16,6 +16,7 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { MonsterModel } from "../laminas/engine/monster-view"
+import type { ShadowCaster } from "./char-shadows"
 import { MOB_KINDS, type MobKind } from "../laminas/sim/fight"
 import type { Interactable } from "../types"
 import { GodFigure } from "./god-view"
@@ -231,6 +232,11 @@ export class CenterMobs {
   /** Onde cada monstro está agora (para o personagem comentar quem vê: banter.ts). */
   seen(x: number, z: number) {
     return [...this.views.values()].map((v) => ({ id: v.id, kind: v.kind as string, d: Math.hypot(v.track.x - x, v.track.z - z) }))
+  }
+
+  /** Quem pode lançar sombra real (char-shadows.ts escolhe os perto do jogador). */
+  shadowCasters(): ShadowCaster[] {
+    return [...this.views.values()].map((v) => ({ root: v.model.shadowRoot, x: v.track.x, z: v.track.z, setContact: (on: boolean) => v.model.setContact(on) }))
   }
 
   /** "Lutar": um por monstro. */

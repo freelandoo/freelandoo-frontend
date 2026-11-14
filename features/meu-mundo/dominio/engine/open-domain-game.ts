@@ -48,6 +48,8 @@ import { SkyDome } from "../../engine/sky/sky-dome"
 import type { StageSky } from "./domain-kit"
 import { DomainPortal, PORTAL_COLOR } from "./portal-fx"
 import { createAmbientFx } from "../../engine/ambiente-fx/ambient-fx"
+import { CharShadows } from "../../engine/char-shadows"
+import { SceneBloom } from "../../engine/bloom-cena"
 import { DOMAIN_REGION } from "../../engine/ambiente-fx/presets"
 import { SpeechBubble } from "../../engine/speech-bubble"
 import { SKY_REGIONS, skyArt, skyFog, skyOfCena, variantOfCena } from "../../engine/sky/sky-registry"
@@ -264,6 +266,10 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     blocks.push(...byKey.values())
     for (const m of [...near0.meshes, ...far1.meshes]) m.freezeWorldMatrix()
   }
+  // bloom seletivo (visual premium §15): só no "margin" do high e só o que brilha na malha
+  // (lava, cristais, painéis, janelas); o pano de fundo desligado não entra
+  const bloom = new SceneBloom(scene, quality)
+  bloom.add([...near0.meshes, ...far1.meshes].filter((m) => m.isEnabled(false)) as Mesh[])
   // distância do detalhe pelo LOD do perfil (`lodScale`): baixo 40, médio 52, alto 65 m
   const NEAR_D = Math.floor(52 * quality.lodScale)
   let lodT = 0
@@ -484,6 +490,20 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     // a última fala fica o tempo dela e some (o balão sozinho duraria 10 s)
     if (m.bubble) m.bubble.tick(d < 30 && now < (m.talkAt ?? 0), now)
   }
+  // sombra real (visual premium §14): só no high; lançam o jogador, o Golem e os monstros perto;
+  // só os blocos da cena recebem (o pano de fundo e o horizonte ficam como estão)
+  const sceneMeshes = new Set(blocks.flatMap((b) => [b.m0, b.m1]).filter((m): m is Mesh => !!m))
+  const shadows = new CharShadows(scene, sun, quality, { receives: (m) => sceneMeshes.has(m as Mesh) })
+  const shadowWho = () => ({
+    me: { root: char.holder, x: body.x, z: body.z, setContact: (on: boolean) => char.setContact(on) },
+    others: [
+      ...golems.map((gm) => ({ root: gm.char.holder, x: gm.x, z: gm.z, setContact: (on: boolean) => gm.char.setContact(on) })),
+      ...mobs.flatMap((m) => {
+        const mm = m.model
+        return mm ? [{ root: mm.shadowRoot, x: m.x, z: m.z, setContact: (on: boolean) => mm.setContact(on) }] : []
+      }),
+    ],
+  })
   let engaged = false
   let time = 0
   const stepMobs = (dt: number) => {
@@ -728,6 +748,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     char.animate(dt, move, Math.hypot(body.vx, body.vz))
     for (const gm of golems) gm.char.animate(dt, 3, 0)
     stepMobs(dt)
+    shadows.update(shadowWho)
     lodT -= dt
     if (lodT <= 0) {
       lodT = 0.3
@@ -838,6 +859,8 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       }
       for (const pt of portals) pt.dispose()
       ambient?.dispose()
+      shadows.dispose()
+      bloom.dispose()
       hunter?.fig?.dispose()
       hunter = null
       for (const gm of golems) gm.char.dispose()

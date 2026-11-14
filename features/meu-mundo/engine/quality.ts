@@ -83,14 +83,16 @@ export interface QualityProfile {
   fxLayers: boolean
   /**
    * Bloom (§15): "off" nunca; "optional" só o que já é brilho localizado (GlowLayer de
-   * efeito, sem pós-processo de tela inteira); "margin" pode ligar o de tela se o
-   * governador medir folga. Ninguém liga bloom de tela sem ler isto.
+   * efeito, sem pós-processo de tela inteira); "margin" (high) liga também o bloom SELETIVO do
+   * cenário (`bloom-cena.ts`: só lava, cristais, painéis e janelas; a rua só de noite) — a folga é
+   * o próprio perfil: o automático desce para o mid quando falta. Bloom de tela inteira, nunca.
    */
   bloom: "off" | "optional" | "margin"
   /**
-   * Sombras (§14): o jogo não usa ShadowGenerator na rua; "contact" = sombra falsa de
-   * contato nos personagens; `map` = lado do mapa de sombra se alguém usar uma dinâmica
-   * (0 = nenhuma). Mínimas / limitadas / controladas.
+   * Sombras (§14): "contact" = sombra falsa de contato nos personagens; `map` = lado do mapa da
+   * sombra REAL dos personagens (`char-shadows.ts`: jogador + monstros perto lançam, o cenário só
+   * recebe), que liga SÓ no high — o 512 do mid fica reservado (medido: +0,26 ms no bairro já no
+   * computador, e o mid é o perfil do celular).
    */
   shadows: { contact: "few" | "players" | "all"; map: 0 | 512 | 1024 }
   /** LOD (§13): multiplica as distâncias de troca de detalhe (agressivo < 1 < qualidade). */

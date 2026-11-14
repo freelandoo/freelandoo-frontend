@@ -28,6 +28,8 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildWorld } from "./world"
 import { buildCenterWorld, type CenterLabels } from "./center-world"
 import { CenterMobs } from "./center-mobs"
+import { CharShadows, isSceneryMesh } from "./char-shadows"
+import { SceneBloom, wantsSceneBloom } from "./bloom-cena"
 import { setMonsterSkinMax } from "../laminas/engine/monster-view"
 import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { emitBanter, placeTopic, sightEvents } from "../banter"
@@ -349,6 +351,30 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     : (payload as NeighborhoodPayload).me.home
   let myBody: BodyId = opts.parked?.body ?? (isBody(payload.me.body) ? payload.me.body : "normal")
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, opts.parked?.look ?? payload.me.look ?? ""), home.x, home.z, home.rotationY)
+  // Sombra real (visual premium §14): só no high; lançam o jogador e os monstros perto, o cenário
+  // só recebe; os outros jogadores e os robôs seguem com o disco de contato da E2.
+  const shadows = new CharShadows(scene, sun, quality)
+  const shadowWho = () => ({
+    me: { root: local.char.holder, x: local.x, z: local.z, setContact: (on: boolean) => local.char.setContact(on) },
+    others: mobs.shadowCasters(),
+  })
+  // Bloom seletivo (visual premium §15): só no "margin" do high e só as janelas e lanternas
+  // (`sp-glow`); o resto do cenário entra preto para tampar o brilho atrás das casas.
+  const makeBloom = (q: QualityProfile) => {
+    const b = new SceneBloom(scene, q)
+    // só de noite: o brilho das janelas vai de 0,58 (dia) a 1 (noite); acima de 0,79 = noite > 0,5
+    let glowMat: StandardMaterial | null = null
+    b.track(
+      (m) => (m.material?.name ?? "").startsWith("sp-glow"),
+      isSceneryMesh,
+      () => {
+        glowMat ??= scene.getMaterialByName("sp-glow") as StandardMaterial | null
+        return (glowMat?.emissiveColor.r ?? 0) > 0.79
+      },
+    )
+    return b
+  }
+  let bloom = makeBloom(quality)
   // áudio S1: passos de quem joga (rua e praça)
   const steps = createFootsteps()
   // áudio S2: a música do lugar (centro de dia/noite; bairro pela classe) e o fundo da praça.
@@ -465,6 +491,11 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     follow.camera.maxZ = q.maxZ
     world.setQuality?.(q)
     lib.lodDistance = q.avatarLod
+    shadows.setProfile(q)
+    if (bloom.on !== wantsSceneBloom(q)) {
+      bloom.dispose()
+      bloom = makeBloom(q)
+    }
   }
   scene.activeCamera = follow.camera
   follow.snapBehind(home.x, home.z, home.rotationY)
@@ -867,6 +898,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       r.char.applyDistance(Math.hypot(r.x - cam.x, r.z - cam.z), scene.frustumPlanes, quality)
     }
     mobs.update(dt)
+    shadows.update(shadowWho)
     // Toque curto no mundo (mm3d-31): outro jogador abre o card; o vazio fecha.
     const tap = select.takeTap(input.taps, remotes)
     if (tap !== undefined && !input.blocked) opts.onPlayerTap?.(tap)
@@ -1135,6 +1167,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       if (wb.__mmBubbles === bubbles) delete wb.__mmBubbles
       document.removeEventListener("visibilitychange", onVisibility)
       mobs.dispose()
+      shadows.dispose()
+      bloom.dispose()
       engine.stopRenderLoop()
       detachInput()
       ro.disconnect()

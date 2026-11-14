@@ -77,6 +77,8 @@ export class Character {
   /** Selecionado por quem joga (mm3d-31): a cápsula do destaque toma o lugar do nome. */
   private tagHidden = false
   private tagNear = true
+  /** Disco de contato ligado (some quando o personagem lança sombra real, `char-shadows.ts`). */
+  private contact = true
 
   constructor(
     private readonly scene: Scene,
@@ -277,7 +279,14 @@ export class Character {
   private syncEnabled() {
     const on = this.shown && !this.culled
     this.holder.setEnabled(on)
-    this.shadow.setEnabled(on)
+    this.shadow.setEnabled(on && this.contact)
+  }
+
+  /** Liga/desliga só o disco de contato (a sombra real do perfil alto toma o lugar dele). */
+  setContact(on: boolean) {
+    if (this.contact === on) return
+    this.contact = on
+    this.syncEnabled()
   }
 
   /**
