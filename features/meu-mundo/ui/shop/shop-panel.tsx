@@ -34,6 +34,13 @@ import { SPECIES, type SpeciesDef } from "../../characters/rules"
 import { speciesName } from "../../characters/names"
 import { ShopCard, type ShopLine } from "./shop-card"
 import { ExchangePanel } from "./exchange-panel"
+import { uiSound } from "../../engine/audio"
+
+/** Som da compra (áudio P1: `ui-compra` estava no manifesto sem chamada) ou do erro; devolve o resultado. */
+function buySound<R extends { ok: boolean }>(r: R): R {
+  uiSound(r.ok ? "buy" : "error", r.ok ? 1 : 0.7)
+  return r
+}
 
 export type ShopTab = "gear" | "monsters" | "characters" | "food" | "exchange"
 export type GearShelf = "armory" | "weapons" | "hammers" | "bows" | "guns" | "shields"
@@ -142,7 +149,7 @@ export default function ShopPanel({
     const token = getToken()
     if (!token || foodBusy) return
     setFoodBusy(true)
-    const r = await postLifeBuy(token, it.id)
+    const r = buySound(await postLifeBuy(token, it.id))
     setMessage(r.ok ? t("mkStored", "Guardado na geladeira") : r.error || t("stActionFail", "Não deu certo agora"))
     setConfirm(null)
     await loadTab("food")
@@ -185,7 +192,7 @@ export default function ShopPanel({
                     <p className="text-[12px]" style={{ color: AE.goldSoft }}>
                       {t("forgeBuyConfirm", "Confirmar compra por {n} moedas?").replace("{n}", String(price))}
                     </p>
-                    <AetherButton disabled={poor} busy={!!busy} onClick={() => void act("buy-" + item.id, (tk, key) => buyGear(tk, item.id, key), t("gearBought", "Comprado! Está na mochila."))}>
+                    <AetherButton disabled={poor} busy={!!busy} onClick={() => void act("buy-" + item.id, (tk, key) => buyGear(tk, item.id, key).then(buySound), t("gearBought", "Comprado! Está na mochila."))}>
                       {t("gearConfirm", "Confirmar")}
                     </AetherButton>
                     <AetherButton tone="secondary" disabled={!!busy} onClick={() => setConfirm(null)}>

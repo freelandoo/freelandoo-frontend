@@ -31,6 +31,7 @@ import TEXT from "./chapters-text.json"
 import q from "./quest-hud.module.css"
 import { currentSoul } from "../../soul"
 import { temperSuffix } from "../../banter"
+import { uiSound } from "../../engine/audio"
 
 type T = (k: string, f: string) => string
 
@@ -139,7 +140,10 @@ export function QuestTracker({
     const before = state?.quest ?? null
     const r = await advanceQuest(tk, "ack")
     setBusy(false)
-    if (!r.ok) return setMsg(r.code === "pending" ? t("questPending", "Ainda falta cumprir o objetivo.") : r.error)
+    if (!r.ok) {
+      uiSound("error", 0.7)
+      return setMsg(r.code === "pending" ? t("questPending", "Ainda falta cumprir o objetivo.") : r.error)
+    }
     setState(r.data)
     if (r.data.receipt) celebrate(r.data.receipt)
     // o fecho só aparece quando o servidor de fato avançou (recibo novo ou passo mudou)
@@ -147,6 +151,8 @@ export function QuestTracker({
     if (before?.current) {
       const moved = !after || after.id !== before.id || after.step !== before.step || after.done
       const chapterDone = !after || after.id !== before.id || !!after.done
+      // som do passo cumprido (áudio P1: `ui-missao-passo` estava no manifesto sem ninguém chamar)
+      if (moved) uiSound("questStep")
       const b = moved ? storyBeat(before.id, before.current.key, r.data.clan, chapterDone) : null
       setBeat(b ? { ...b, n: before.chapter } : null)
     }

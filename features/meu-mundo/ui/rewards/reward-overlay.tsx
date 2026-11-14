@@ -26,6 +26,7 @@ import { ATTR_META, VITAL_META, fmtDelta, toneOf } from "./reward-grammar"
 import { onCelebrate } from "./reward-bus"
 import { GainLayer, MAX_NUMS, MAX_PLATES, type DropItem, type FloatNum } from "./gain-layer"
 import { playGainFx } from "../../engine/gain-pillar"
+import { uiCue } from "../../engine/audio"
 import { LevelUp } from "./level-up"
 
 const GROUP_MS = 600
@@ -149,6 +150,8 @@ function GainBurst({ b, t, onDone }: { b: Bundle; t: T; onDone: () => void }) {
   useEffect(() => {
     const color = nums.length ? (nums[0].color ?? FLOAT_COLOR[nums[0].kind]) : drops.length ? (RARITY[drops[0].rarity] || RARITY.common).color : b.care ? FLOAT_TONE.good : null
     if (color) playGainFx(color, nums[0]?.kind)
+    // caiu item: o som da recompensa por cima do ganho (áudio P1: `ui-recompensa` estava sem chamada)
+    if (drops.length) uiCue("reward", 0.8)
   }, [nums, drops, b.care])
   if (!nums.length && !drops.length && !more) return null
   return <GainLayer nums={nums} drops={drops} more={more} onDone={onDone} />

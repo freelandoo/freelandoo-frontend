@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 import { playLevelFx } from "../../engine/gain-pillar"
+import { uiCue } from "../../engine/audio"
 import { screenAnchor } from "../../engine/screen-anchor"
 import { SteamFrame } from "../kit/steam/steam-frame"
 import { FLOAT_COLOR } from "../kit/steam/steam-tokens"
@@ -71,6 +72,8 @@ export function LevelUp({ from, to, unlocks, reduce, t, onClose }: { from: numbe
   // o feixe no personagem (uma vez)
   useEffect(() => {
     playLevelFx(ALL_COLORS)
+    // a fanfarra do nível por cima do som do ganho (áudio P1: `ui-nivel` estava sem chamada)
+    uiCue("levelUp")
   }, [])
 
   useEffect(() => {

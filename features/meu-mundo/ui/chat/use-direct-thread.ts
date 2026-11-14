@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react"
 import { emitRealtime, onRealtime } from "@/lib/realtime"
 import { getDirectMessages, mapDm, postDirectMessage, postDirectRead, type DmMessage } from "../../data"
 import { cleanDraft, confirmLine, dropPending, DIRECT_MAX, mergeLines, newClientId, pendingLine } from "./chat-logic"
+import { uiCue } from "../../engine/audio"
 
 const READ_DEBOUNCE_MS = 1000
 
@@ -51,7 +52,11 @@ export function useDirectThread(token: string | null, conversationId: string | n
       if (!alive || p?.id_conversation !== conversationId || !p.message?.id_message) return
       const m = mapDm(p.message, actorId)
       setItems((cur) => mergeLines(cur, [m]) as DmMessage[])
-      if (!m.mine) markRead()
+      if (!m.mine) {
+        markRead()
+        // chegou mensagem do outro com a conversa aberta (áudio P1: `ui-chat` estava sem chamada)
+        uiCue("chat", 0.8)
+      }
     })
     return () => {
       alive = false

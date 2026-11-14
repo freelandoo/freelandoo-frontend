@@ -24,6 +24,7 @@ import { DRAWER_EVENT } from "../hud/hud-kit"
 import { emotionArt } from "../portraits"
 import { screenAnchor } from "../../engine/screen-anchor"
 import { EmotionFrame } from "./emotion-frame"
+import { uiCue } from "../../engine/audio"
 import { currentSoul } from "../../soul"
 import { needVoice } from "../../banter"
 import { freshNeedsMemory, pickNeed, type NeedLine } from "../needs/needs-logic"
@@ -134,6 +135,16 @@ export default function NoticeStack({ needs, needsTick, pushed, body, below = 0,
   }, [queue.waiting.length, queue.visible.length, maxVisible, paused])
 
   const close = useCallback((key: string) => setQueue((q) => dismiss(q, key)), [])
+
+  // card novo na tela → o som da notificação, uma vez por entrada (áudio P1: `ui-notificacao` estava sem chamada)
+  const onScreen = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    const now = new Set(queue.visible.map((c) => c.key))
+    let fresh = false
+    for (const k of now) if (!onScreen.current.has(k)) fresh = true
+    onScreen.current = now
+    if (fresh && !paused) uiCue("notify", 0.7)
+  }, [queue.visible, paused])
 
   // 2026-11-03 (Alex): a notificação fica logo ABAIXO DOS PÉS do personagem, entre
   // os pés e o joystick (PC e celular). A posição é lida 4× por segundo só enquanto
