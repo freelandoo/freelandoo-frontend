@@ -22,7 +22,8 @@ import * as P from "../pecas/vulcao"
 
 export const CEU: RGB = [0.62, 0.27, 0.22]
 export const NEVOA: RGB = [0.56, 0.3, 0.26]
-export const LUZ = { hemi: 0.9, sol: 0.6, ceu: [1, 0.74, 0.62] as RGB, chao: [0.42, 0.24, 0.22] as RGB, solCor: [1, 0.62, 0.42] as RGB }
+// basalto das refs é lilás-ardósia (frio) com a quina acesa pela lava: céu lilás, rebote quente e sol laranja forte
+export const LUZ = { hemi: 0.95, sol: 0.75, ceu: [0.86, 0.74, 0.86] as RGB, chao: [0.72, 0.4, 0.3] as RGB, solCor: [1, 0.6, 0.38] as RGB }
 export const PEDRA: RGB = [0.36, 0.33, 0.36]
 export const PEDRA_CL: RGB = [0.62, 0.57, 0.56]
 export const PEDRA_ESC: RGB = [0.22, 0.2, 0.24]
@@ -213,7 +214,8 @@ export function corredor(c: Cena, path: readonly XZ[], ok: (x: number, z: number
           const x = ax + dx * (t + r(5)) + nx * off, z = az + dz * (t + r(5)) + nz * off
           if (pula(x, z) || !ok(x, z, sz * 0.85)) continue // a caixa da rocha tem meia largura 0,8 s
           // refs 2 e 3: o paredão é de COLUNAS hexagonais de basalto; ref 1: rocha angulosa
-          if (colunas) P.colunasHex(c, x, z, sz * 0.7, sz * 2.4, seed * 1000 + k * 3 + Math.round(off), lod)
+          // grupos largos e em degraus (sz × 1,7): com 2,4 viravam torres finas e altas, como prédios
+          if (colunas) P.colunasHex(c, x, z, sz * 0.8, sz * 1.7, seed * 1000 + k * 3 + Math.round(off), lod)
           else P.rocha(c, x, z, sz, seed * 1000 + k * 3 + Math.round(off), lod, true)
         }
         // beira: 1 objeto a cada 2 passos, a 4,5–6,5 m

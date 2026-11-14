@@ -113,33 +113,53 @@ export function lanterna(c: Cena, x: number, z: number, y: number, s = 1, lod = 
  * que pega a luz da lava mais clara e quente. `s` ≈ meia largura.
  */
 export function rocha(c: Cena, x: number, z: number, s: number, seed = 1, lod = 0, caixaOn = true) {
+  // basalto FACETADO das refs: 3 anéis tortos (pé largo, BARRIGA que salta, OMBRO recuado), topo INCLINADO e
+  // fora do eixo, cada triângulo num tom (lado da lava claro-lilás, o oposto quase preto) e quina clara no ombro
   const g = c.geo(x, z)
   const r = (q: number) => rnd(seed, q)
   const n = lod ? 5 : 6 + Math.floor(r(1) * 2)
   const h = s * (0.9 + r(2) * 0.7)
   const sx = (r(3) - 0.5) * s * 0.4, sz = (r(4) - 0.5) * s * 0.4
-  const base: [number, number][] = [], top: [number, number][] = [], yt: number[] = []
+  const ta = r(5) * 6.28, tilt = 0.14 + r(6) * 0.22
+  const a0 = r(7) * 6.28
+  const base: V3[] = [], bar: V3[] = [], omb: V3[] = []
   for (let k = 0; k < n; k++) {
-    const a = ((k + (r(10 + k) - 0.5) * 0.6) / n) * Math.PI * 2
+    const a = a0 + ((k + (r(10 + k) - 0.5) * 0.6) / n) * Math.PI * 2
+    const ca = Math.cos(a), sa = Math.sin(a)
     const R = s * (0.85 + r(20 + k) * 0.35)
-    base.push([Math.cos(a) * R, Math.sin(a) * R])
-    const enc = 0.45 + r(30 + k) * 0.25
-    top.push([Math.cos(a) * R * enc + sx, Math.sin(a) * R * enc + sz])
-    yt.push(h * (0.82 + r(40 + k) * 0.25))
+    const rb = R * (1.0 + r(50 + k) * 0.16)
+    const ro = R * (0.42 + r(30 + k) * 0.26)
+    const yb = h * (0.28 + r(60 + k) * 0.24)
+    const yo = h * (1 - tilt * (0.5 + 0.5 * Math.cos(a - ta))) * (0.9 + r(40 + k) * 0.1)
+    base.push([x + ca * R, 0, z + sa * R])
+    bar.push([x + ca * rb + sx * 0.3, yb, z + sa * rb + sz * 0.3])
+    omb.push([x + ca * ro + sx, yo, z + sa * ro + sz])
   }
-  const ct: V3 = [x + sx, h * 1.02, z + sz]
+  // tom pelo lado de onde vem a luz da lava (+z/−x) e pela inclinação; ±5% de sorteio por triângulo
+  const tom = (mx: number, mz: number, up: number, q: number): RGB => {
+    const luz = (-(mx - x) * 0.5 + (mz - z) * 0.6) / s + up
+    const b = luz > 0.45 ? mix(mix(PEDRA, PEDRA_CL, 0.55), BRASA, 0.06) : luz > 0.05 ? mul(PEDRA, 0.92) : luz > -0.4 ? mix(PEDRA, PEDRA_ESC, 0.65) : mul(PEDRA_ESC, 0.78)
+    return mul(b, 0.95 + r(q) * 0.1)
+  }
   for (let k = 0; k < n; k++) {
     const j = (k + 1) % n
-    const mx = (base[k][0] + base[j][0]) / 2, mz = (base[k][1] + base[j][1]) / 2
-    // luz quente vem de +z/−x (a lava); a face oposta fica quase preta
-    const luz = (-mx * 0.5 + mz * 0.6) / s
-    // basalto ESCURO (a luz vermelha do jogo clareia muito: o lado que pega a lava fica só médio)
-    const cor = luz > 0.35 ? mix(PEDRA, BRASA, 0.06) : luz > -0.3 ? mix(PEDRA, PEDRA_ESC, 0.55) : mul(PEDRA_ESC, 0.8)
-    const A: V3 = [x + base[k][0], 0, z + base[k][1]], B: V3 = [x + base[j][0], 0, z + base[j][1]]
-    const Ct: V3 = [x + top[j][0], yt[j], z + top[j][1]], D: V3 = [x + top[k][0], yt[k], z + top[k][1]]
-    face(g, [A, B, Ct, D], [mul(cor, 0.7), mul(cor, 0.7), cor, cor], [mx, 0.1, mz])
-    // topo em leque (planos), com a quina clara
-    face(g, [D, Ct, ct], [mix(cor, PEDRA_CL, 0.35), mix(cor, PEDRA_CL, 0.35), mix(PEDRA, PEDRA_CL, 0.25)], [mx * 0.4, 1, mz * 0.4])
+    const mx = (base[k][0] + base[j][0]) / 2, mz = (base[k][2] + base[j][2]) / 2
+    const out: V3 = [mx - x, 0.1, mz - z]
+    // pé → barriga (olha um pouco para baixo: sombra) com o contato escuro no chão
+    const c1 = tom(mx, mz, -0.35, 70 + k), c1b = tom(mx, mz, -0.5, 80 + k)
+    face(g, [base[k], base[j], bar[j]], [mul(c1, 0.72), mul(c1, 0.72), c1], out)
+    face(g, [base[k], bar[j], bar[k]], [mul(c1b, 0.72), c1b, c1b], out)
+    // barriga → ombro: a face grande inclinada que pega a luz
+    const c2 = tom(mx, mz, 0.3, 90 + k), c2b = tom(mx, mz, 0.12, 100 + k)
+    face(g, [bar[k], bar[j], omb[j]], c2, [out[0], 0.5, out[2]])
+    face(g, [bar[k], omb[j], omb[k]], c2b, [out[0], 0.5, out[2]])
+  }
+  // topo inclinado em leque, centro fora do eixo; a quina do ombro clara
+  const cx = omb.reduce((a, p) => a + p[0], 0) / n, cy = omb.reduce((a, p) => a + p[1], 0) / n + h * 0.04, cz = omb.reduce((a, p) => a + p[2], 0) / n
+  for (let k = 0; k < n; k++) {
+    const j = (k + 1) % n
+    const t = mul(mix(PEDRA, PEDRA_CL, 0.3 + r(110 + k) * 0.3), 0.95 + r(120 + k) * 0.1)
+    face(g, [omb[k], omb[j], [cx, cy, cz]], [mix(t, PEDRA_CL, 0.35), mix(t, PEDRA_CL, 0.35), t], [0, 1, 0])
   }
   if (caixaOn && s > 0.5) c.block(x, z, s * 0.8, s * 0.8, h)
   return h
@@ -153,11 +173,12 @@ export function rocha(c: Cena, x: number, z: number, s: number, seed = 1, lod = 
 export function colunasHex(c: Cena, x: number, z: number, r: number, hMax: number, seed = 1, lod = 0) {
   const g = c.geo(x, z), GL = c.glow(x, z)
   const n = lod ? 3 : 5 + Math.floor(rnd(seed, 1) * 4)
-  const tons: RGB[] = [PEDRA_CL, PEDRA, PEDRA_ESC, PEDRA, mul(PEDRA, 0.85), mix(PEDRA, PEDRA_CL, 0.5)]
+  const tons: RGB[] = [mix(PEDRA, PEDRA_CL, 0.35), mul(PEDRA, 0.86), PEDRA_ESC, PEDRA, mul(PEDRA, 0.72), mix(PEDRA, PEDRA_ESC, 0.5)] // basalto escuro (refs): só a quina do topo clara
   for (let k = 0; k < n; k++) {
     const a = rnd(seed, k, 2) * Math.PI * 2, d = k === 0 ? 0 : r * (0.45 + rnd(seed, k, 3) * 0.55)
     const px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d
-    const h = hMax * (k === 0 ? 1 : 0.3 + rnd(seed, k, 4) * 0.6)
+    // degraus: quem está mais longe do centro é mais baixo (a ref sobe em terraços até a coluna do meio)
+    const h = hMax * (k === 0 ? 1 : (0.3 + rnd(seed, k, 4) * 0.6) * (1 - (d / Math.max(r, 0.01)) * 0.3))
     const R = 0.75 + rnd(seed, k, 5) * 0.3
     const rot = rnd(seed, k, 6)
     const ring = (y: number, rr: number) => Array.from({ length: 6 }, (_, j): V3 => [px + Math.cos(rot + (j / 6) * Math.PI * 2) * rr, y, pz + Math.sin(rot + (j / 6) * Math.PI * 2) * rr])
@@ -742,7 +763,7 @@ export function guindaste(c: Cena, x: number, z: number, ang = 0, lod = 0) {
  * cima clara. Só onde `dentro(x, z)`. Só topo + 1 aresta clara: ~5 triângulos por laje.
  */
 export function lajesPoligonais(c: Cena, x0: number, z0: number, x1: number, z1: number, passo: number, seed: number, dentro: (x: number, z: number) => boolean, lod = 0) {
-  const tons: RGB[] = [[0.42, 0.36, 0.42], [0.36, 0.31, 0.37], [0.48, 0.41, 0.46], [0.32, 0.27, 0.32]]
+  const tons: RGB[] = [[0.42, 0.37, 0.46], [0.37, 0.32, 0.41], [0.47, 0.41, 0.5], [0.33, 0.28, 0.36]] // lilás-ardósia (refs)
   const dy = passo * Math.sqrt(3) / 2
   let lin = 0
   for (let z = z0; z < z1; z += dy, lin++) {
@@ -760,7 +781,7 @@ export function lajesPoligonais(c: Cena, x0: number, z0: number, x1: number, z1:
       }
       const cor = tons[Math.floor(r(40) * 4)]
       const g = c.geo(cx, cz)
-      lajeEspessa(g, pts, pts.map((_, k) => (k === 0 || k === 1 ? mix(cor, PEDRA_CL, 0.35) : cor)), mul(cor, 0.6), !!lod)
+      lajeEspessa(g, pts, pts.map((_, k) => (k === 0 || k === 1 ? mix(cor, PEDRA_CL, 0.15) : cor)), mul(cor, 0.6), !!lod)
     }
   }
 }

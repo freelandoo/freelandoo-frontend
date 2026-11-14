@@ -79,8 +79,9 @@ export const CHAO_DETALHE: Readonly<Record<string, ChaoDetalhe>> = {
     soPerto: true,
     relevo: { tex: "/meu-mundo/chao/v1/fabrica-relevo.webp", m: 4, forca: 0.2, limpaClaro: true },
   },
-  // Vulcão: cinza queimada (`burned_ground_01`)
-  vulcao: { tex: "/meu-mundo/chao/v1/vulcao.webp", perto: 6, largo: 37, forca: 0.5 },
+  // Vulcão: cinza queimada (`burned_ground_01`) — fraca: as lajes já desenham o chão
+  // relevo: grão de rocha (`rock_face_03`) no basalto, nas colunas e na madeira; lava e cristal (claros) limpos
+  vulcao: { tex: "/meu-mundo/chao/v1/vulcao.webp", perto: 6, largo: 37, forca: 0.3, relevo: { tex: "/meu-mundo/chao/v1/vulcao-relevo.webp", m: 5, forca: 0.22, limpaClaro: true } },
   // Orbital: placas de mármore (`marble_01`) — chão claro, placas de ~2 m
   orbital: { tex: "/meu-mundo/chao/v1/orbital.webp", perto: 8, largo: 53, forca: 0.28, limpaClaro: false },
 }
