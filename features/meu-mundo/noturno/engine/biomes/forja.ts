@@ -8,7 +8,8 @@
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { QualityTier } from "../../../engine/quality"
-import { loadForgeAssets } from "../../../jetpack/engine/canyon-assets"
+import { kitForja } from "../../../jetpack/engine/pecas/kit-forja"
+import { codeAssets } from "./code-assets"
 import { rng, type Paint } from "./common"
 import { LANES, deckU, makeBiome, paintChevrons, paintSideOf, paintWallGlowOf, paintWallOf } from "./make"
 import type { Biome } from "./types"
@@ -132,7 +133,8 @@ export function buildForge(scene: Scene, tier: QualityTier, isAlive: () => boole
     },
     groundY: -30,
     towerEvery: 36,
-    pieces: (sc, alive) => loadForgeAssets(sc, alive),
+    // em código (14/11): as peças do Jetpack da fase (era o tema forja/v2 do Tripo); longe, o kit leve
+    pieces: async (sc) => codeAssets(sc, kitForja(tier === "low"), { rocha: 30, fornalha: 30, caldeirao: 30, prensa: 30 }, tier === "low" ? undefined : kitForja(true)),
     dress: (A, L, fall, low) => {
       const lavaFall = fall ? [{ mesh: fall, at: [0.5, 0.95, 0] as const, scale: 1, size: [0.22, 1.2] as const, yaw: -Math.PI / 2, p: 0.5 }] : []
       return {

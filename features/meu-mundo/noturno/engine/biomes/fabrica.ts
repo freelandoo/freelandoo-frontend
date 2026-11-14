@@ -9,7 +9,8 @@
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { QualityTier } from "../../../engine/quality"
-import { loadFactoryAssets } from "../../../jetpack/engine/canyon-assets"
+import { kitFabrica } from "../../../jetpack/engine/pecas/kit-fabrica"
+import { codeAssets } from "./code-assets"
 import { rng, type Paint } from "./common"
 import { LANES, deckU, makeBiome, paintChevrons, paintSideOf, paintWallGlowOf, paintWallOf } from "./make"
 import type { Biome } from "./types"
@@ -144,7 +145,8 @@ export function buildFactory(scene: Scene, tier: QualityTier, isAlive: () => boo
     },
     groundY: -28,
     towerEvery: 30,
-    pieces: (sc, alive) => loadFactoryAssets(sc, alive),
+    // em código (14/11): as peças do Jetpack da fase (era o tema fabrica/v2 do Tripo); longe, o kit leve
+    pieces: async (sc) => codeAssets(sc, kitFabrica(tier === "low"), { turbina: 30, guindaste: 50, pistao: 22, engrenagem: 22, cano: 16, viga: 70 }, tier === "low" ? undefined : kitFabrica(true)),
     dress: (A, _L, _fall, low) => {
       const g = (k: string) => A.get(k)
       return {

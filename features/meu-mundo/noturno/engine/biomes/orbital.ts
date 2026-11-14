@@ -9,7 +9,8 @@
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { QualityTier } from "../../../engine/quality"
-import { loadOrbitalAssets } from "../../../jetpack/engine/canyon-assets"
+import { kitOrbital } from "../../../jetpack/engine/pecas/kit-orbital"
+import { codeAssets } from "./code-assets"
 import { paintClouds, rng, type Paint } from "./common"
 import { deckU, makeBiome, paintChevrons, paintSideOf, paintWallGlowOf, paintWallOf } from "./make"
 import type { Biome } from "./types"
@@ -95,7 +96,8 @@ export function buildOrbital(scene: Scene, tier: QualityTier, isAlive: () => boo
     },
     groundY: -80,
     towerEvery: 48,
-    pieces: (sc, alive) => loadOrbitalAssets(sc, alive),
+    // em código (14/11): as peças do Jetpack da fase (era o tema orbital/v2 do Tripo); longe, o kit leve
+    pieces: async (sc) => codeAssets(sc, kitOrbital(tier === "low"), { torre: 30, jardineira: 30, painel: 30, drone: 30, elevador: 30 }, tier === "low" ? undefined : kitOrbital(true)),
     dress: (A, L, fall, low) => {
       const torre = A.get("torre")
       const torreFar = L.get("torre") ?? torre

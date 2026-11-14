@@ -9,7 +9,8 @@
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { QualityTier } from "../../../engine/quality"
-import { loadForestAssets } from "../../../jetpack/engine/canyon-assets"
+import { kitFloresta } from "../../../jetpack/engine/pecas/kit-floresta"
+import { codeAssets } from "./code-assets"
 import { rng, type Paint } from "./common"
 import { LANES, deckU, makeBiome, paintSideOf, paintWallGlowOf, paintWallOf } from "./make"
 import type { Biome } from "./types"
@@ -140,7 +141,8 @@ export function buildForest(scene: Scene, tier: QualityTier, isAlive: () => bool
     },
     groundY: -55,
     towerEvery: 36,
-    pieces: (sc, alive) => loadForestAssets(sc, alive),
+    // em código (14/11): as peças do Jetpack da fase (era o tema floresta/v2 do Tripo); longe, o kit leve
+    pieces: async (sc) => codeAssets(sc, kitFloresta(tier === "low"), { arvore: 90, cogumelo: 10, cristais: 7, planta: 5, ilha: 85, arco: 190 }, tier === "low" ? undefined : kitFloresta(true)),
     dress: (A, L, fall, low) => {
       const fromIsland = fall ? [{ mesh: fall, at: [0.4, -0.1, 0] as const, scale: 1, size: [0.13, 3.0] as const, yaw: -Math.PI / 2, p: 0.6 }] : []
       return {
