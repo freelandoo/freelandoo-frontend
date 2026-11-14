@@ -39,6 +39,8 @@ import { GOD_NAMES, type GodBody } from "../../gods"
 import { StoryScene } from "../../ui/story/story-scene"
 import { GOLEM_STORY, markGolemScene, seenGolemScene } from "../../ui/story/golem-scene"
 import { NpcTalk, speakerArt, type NpcSay } from "./npc-talk"
+import { emitDomain } from "../../banter"
+import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 
 const LaminasView = dynamic(() => import("../../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 
@@ -196,6 +198,8 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
                   : tt("talkBossNeedMany", "Vença primeiro os setores {a} a {b}.").replace("{a}", String(c.needFrom)).replace("{b}", String(c.needTo))
               return [tt("talkBossSealed1", "Ainda não, viajante. Você não está pronto."), need, tt("talkBossSealed3", "Depois volte e lute comigo para abrir o portal.")]
             }
+            // P2: chegou no deus ou no castelo / perto do guardião
+            emitDomain(c.god || c.castle ? "mg_dom_castle" : "mg_dom_guardian")
             if (c.god) return [tt("talkGod1", "Então você chegou até mim."), tt("talkGod2", "Vença-me e o caminho para o próximo Domínio se abre.")]
             if (c.castle)
               return [tt("talkGuard1", "Ninguém entra no castelo de {god} sem passar por mim.").replace("{god}", godName), tt("talkGuard2", "Vença-me e a porta se abre.")]
@@ -207,7 +211,12 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
               tt("talkBossOpen3", "Chegue perto e lute, se tiver coragem."),
             ]
           },
-          onReady: () => alive && setStatus("ready"),
+          onReady: () => {
+          if (!alive) return
+          setStatus("ready")
+          // P2: o personagem comenta o Domínio (balão por cima da cena)
+          setTimeout(() => alive && emitDomain("mg_dom_enter"), 1500)
+        },
           onNearbyChange: (n) => alive && setNear(n),
           onSector: (s) => alive && setSector(s),
           onPlace: (p) => alive && setPlace(p),
@@ -249,7 +258,12 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
         kit: sceneKitOf(d.id),
         nextKit: passageKitOf(d.id),
         spawnSector: spawn,
-        onReady: () => alive && setStatus("ready"),
+        onReady: () => {
+          if (!alive) return
+          setStatus("ready")
+          // P2: o personagem comenta o Domínio (balão por cima da cena)
+          setTimeout(() => alive && emitDomain("mg_dom_enter"), 1500)
+        },
         onNearbyChange: (n) => alive && setNear(n),
         onSector: (s) => alive && setSector(s),
         onPlace: (p) => alive && setPlace(p),
@@ -436,7 +450,9 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
       engagedRef.current = null
       if (mid && r.result?.win) defeatedRef.current[mid] = Date.now()
       const adv = (r as Receipt & { domain?: DomainAdvance }).domain
+      if (r.result && !r.result.win) emitDomain("mg_dom_lose")
       if (!adv) return
+      if (r.result?.win) emitDomain("mg_dom_win")
       setInfo((cur) => (cur && cur.id === adv.domain ? { ...cur, best: Math.max(cur.best, adv.best), crossed: adv.crossed } : cur))
       const name = domainName(t, adv.domain)
       // D4: vencer o deus chefão sela o pacto do povo (7 dias de néctar extra no jogo dele)
@@ -523,6 +539,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   return (
     <div className="fixed inset-0 z-[70] touch-none select-none overflow-hidden" style={{ background: "#0a171f" }}>
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: "none" }} aria-label={name} />
+      {status === "ready" && <MinigameBanter running={false} body={body} />}
 
       {status === "ready" && info && (
         <div className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-center" style={{ top: SAFE.top }}>

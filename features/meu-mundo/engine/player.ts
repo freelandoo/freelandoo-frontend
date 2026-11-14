@@ -112,6 +112,11 @@ export class Character {
     void this.setBody(body, true)
   }
 
+  /** Altura que a sala mandou (m); 0 = ainda não veio (a fala de cantada só confia nesta). */
+  get knownHeight() {
+    return this.heightNow
+  }
+
   /** Altura de agora (m); quem cresce (jovem/adulto das classes) chega aqui pela sala. */
   get height() {
     return this.heightNow > 0 ? this.heightNow : bodyHeight(this.body)

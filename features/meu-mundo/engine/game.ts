@@ -923,8 +923,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     sightAt += dt
     if (sightAt >= 1.5 && !input.blocked) {
       sightAt = 0
-      const seenPlayers = [...remotes].filter(([, r]) => r.char.holder.isEnabled()).map(([sid, r]) => ({ sid, body: r.char.body as string, d: Math.hypot(r.x - local.x, r.z - local.z) }))
-      emitBanter(...sightEvents(myBody, seenPlayers, mobs.seen(local.x, local.z), GOD_BODIES, MONSTER_BODIES, TALL_NAMES))
+      const seenPlayers = [...remotes].filter(([, r]) => r.char.holder.isEnabled()).map(([sid, r]) => ({ sid, body: r.char.body as string, d: Math.hypot(r.x - local.x, r.z - local.z), h: r.char.knownHeight }))
+      emitBanter(...sightEvents(myBody, seenPlayers, mobs.seen(local.x, local.z), GOD_BODIES, MONSTER_BODIES, TALL_NAMES, myHeight()))
     }
     if (input.interactQueued) {
       input.interactQueued = false

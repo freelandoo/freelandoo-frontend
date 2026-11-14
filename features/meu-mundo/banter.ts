@@ -13,6 +13,7 @@
 import type { Temper } from "./soul"
 import type { CenterPlaceId } from "./types"
 import TEXT from "./ui/inbox/banter-text.json"
+import { speciesById } from "./characters/rules"
 
 const PT: Record<string, string[]> = TEXT
 type Tr = (key: string, fallback: string) => string
@@ -40,7 +41,20 @@ export const LIFE_TOPICS = ["see_npc", "house_mine", "house_other", "fridge", "r
  * comenta o JEITO de quem joga: bateu, caiu, tá parado, tá ruim de controle.
  */
 export const MINIGAME_TOPICS = ["mg_start", "mg_crash", "mg_fall", "mg_careful", "mg_good", "mg_boost", "mg_fuel", "mg_hurt", "mg_cat", "mg_bad", "mg_idle", "mg_win", "mg_lose"] as const
-export const BANTER_TOPICS = ["see_god", "see_monster_skin", "see_rival", "see_kin", "see_crowd", ...MOB_TOPICS, "fight_win", "fight_lose", ...PLACE_TOPICS, ...LIFE_TOPICS, ...MINIGAME_TOPICS] as const
+/** P2 (2026-11-15): a largada própria de cada minijogo (metade das vezes no lugar de `mg_start`). */
+export const GO_TOPICS = ["mg_go_corrida", "mg_go_noturno", "mg_go_jetpack", "mg_go_gincana", "mg_go_paint", "mg_go_luta"] as const
+/**
+ * P2: os Domínios (a fala sai no balão dos minijogos, por cima da cena): entrou,
+ * chegou no castelo/deus, a luta com o guardião abriu, venceu, perdeu.
+ */
+export const DOMAIN_TOPICS = ["mg_dom_enter", "mg_dom_castle", "mg_dom_guardian", "mg_dom_win", "mg_dom_lose"] as const
+/**
+ * P2: a cantada — um ADULTO do outro sexo por perto (`_f` = viu uma mulher; `_m`
+ * = viu um homem). Só dispara com quem fala E quem é olhado adultos (sightEvents);
+ * por isso as outras falas, que podem mirar um jovem, nunca são de cantada.
+ */
+export const FLIRT_TOPICS = ["see_flirt_f", "see_flirt_m"] as const
+export const BANTER_TOPICS = ["see_god", "see_monster_skin", "see_rival", "see_kin", "see_crowd", ...FLIRT_TOPICS, ...MOB_TOPICS, "fight_win", "fight_lose", ...PLACE_TOPICS, ...LIFE_TOPICS, ...MINIGAME_TOPICS, ...GO_TOPICS, ...DOMAIN_TOPICS] as const
 export type BanterTopic = (typeof BANTER_TOPICS)[number]
 
 export interface BanterEvent {
@@ -179,7 +193,12 @@ export interface BanterPace {
 }
 export const WORLD_PACE: BanterPace = { gap: BANTER_GAP_MS, topic: BANTER_TOPIC_MS, target: BANTER_TARGET_MS }
 /** Minijogo é rápido: ele fala mais, mas a bronca ("ruim de controle", "olha pra tela") demora a voltar. */
-export const MINIGAME_PACE: BanterPace = { gap: 7_000, topic: 30_000, target: 30_000, slow: { mg_bad: 75_000, mg_idle: 60_000, mg_start: 0 } }
+export const MINIGAME_PACE: BanterPace = {
+  gap: 7_000,
+  topic: 30_000,
+  target: 30_000,
+  slow: { mg_bad: 75_000, mg_idle: 60_000, mg_start: 0, ...Object.fromEntries(GO_TOPICS.map((k) => [k, 0])), mg_dom_win: 0, mg_dom_lose: 0, mg_dom_guardian: 0 },
+}
 export const isMinigameTopic = (topic: BanterTopic) => topic.startsWith("mg_")
 
 export interface BanterMemory {
@@ -288,7 +307,12 @@ export const emptyPlayWatch = (): PlayWatch => ({ mistakes: [] })
 export function minigameEvents(watch: PlayWatch, game: MinigameId, n: MinigameNotice, now: number): BanterEvent[] {
   const topic = minigameTopic(game, n)
   if (!topic) return []
-  if (topic === "mg_start") watch.mistakes = []
+  if (topic === "mg_start") {
+    watch.mistakes = []
+    // P2: metade das largadas fala do jogo em si (a outra metade, da largada comum)
+    const go = `mg_go_${game}` as BanterTopic
+    return Math.floor(now / 1000) % 2 ? [{ topic: go }, { topic }] : [{ topic }, { topic: go }]
+  }
   if (!MISTAKES.has(topic)) return [{ topic }]
   watch.mistakes = [...watch.mistakes.filter((at) => now - at < BAD.ms), now]
   return watch.mistakes.length >= BAD.n ? [{ topic: "mg_bad" }, { topic }] : [{ topic }]
@@ -298,6 +322,11 @@ const playWatch = emptyPlayWatch()
 /** As telas dos minijogos chamam no `onNotice` (uma linha por jogo). */
 export function emitMinigame(game: MinigameId, n: MinigameNotice, now = Date.now()) {
   emitBanter(...minigameEvents(playWatch, game, n, now))
+}
+
+/** P2: o que acontece num Domínio (domain-view.tsx chama). */
+export function emitDomain(topic: (typeof DOMAIN_TOPICS)[number]) {
+  emitBanter({ topic })
 }
 
 /** Parado há IDLE_MS com a partida rodando = "olha pra tela, para de conversar aí". */
@@ -316,6 +345,8 @@ export interface SeenPlayer {
   body: string
   /** distância em metros */
   d: number
+  /** altura que a SALA mandou (m); 0/ausente = desconhecida (não conta como adulto) */
+  h?: number
 }
 export interface SeenMob {
   id: number
@@ -326,12 +357,48 @@ export const SIGHT = { player: 9, mob: 16, crowd: 5 } as const
 
 const clanOf = (body: string): "raposa" | "vampiro" | null => (body.startsWith("raposa") ? "raposa" : body.startsWith("vampir") ? "vampiro" : null)
 
+// ── P2: idade e sexo pelo corpo (a cantada só entre ADULTOS) ──
+const CLAN_FASE: Record<string, { sex: "m" | "f"; adult: boolean }> = {
+  raposa: { sex: "m", adult: false },
+  raposa_f: { sex: "f", adult: false },
+  vampiro: { sex: "m", adult: false },
+  vampira: { sex: "f", adult: false },
+  raposa_adulto: { sex: "m", adult: true },
+  raposa_adulta: { sex: "f", adult: true },
+  vampiro_adulto: { sex: "m", adult: true },
+  vampira_adulta: { sex: "f", adult: true },
+}
+/** A fase adulta começa em 75% da altura final (o jovem chega a ~71%: characters/rules.ts). */
+const ADULT_FROM = 0.75
+/**
+ * Puro: sexo e se é adulto. Classe: pelo id do corpo. Espécie de corpo único
+ * (deus, especial): sexo fixo da espécie e adulto só com a altura conhecida ≥ 75%
+ * da final. Corpo sem idade conhecida (os antigos) = não adulto.
+ */
+export function bodyFase(body: string, h: number | undefined): { sex: "m" | "f" | null; adult: boolean } {
+  const c = CLAN_FASE[body]
+  if (c) return c
+  const sp = speciesById(body)
+  if (!sp || sp.kind === "clan") return { sex: null, adult: false }
+  return { sex: sp.sex, adult: !!h && h > 0 && h >= sp.adult * ADULT_FROM }
+}
+/** Monstros da rua: todos adultos; sexo de cada um (lobo fica de fora). */
+const MOB_SEX: Record<string, "m" | "f"> = { brute: "m", stone: "m", ciborgue: "m", cavaleiro: "m", garras: "f" }
+
 /**
  * O que vale um comentário agora, do mais chamativo ao menos: monstro, deus,
  * jogador com corpo de monstro, multidão, povo rival, o próprio povo.
  * `names` traduz o id do corpo no nome que entra na fala.
  */
-export function sightEvents(myBody: string, players: SeenPlayer[], mobs: SeenMob[], gods: readonly string[], monsters: readonly string[], names: Record<string, string>): BanterEvent[] {
+export function sightEvents(
+  myBody: string,
+  players: SeenPlayer[],
+  mobs: SeenMob[],
+  gods: readonly string[],
+  monsters: readonly string[],
+  names: Record<string, string>,
+  myH = 0,
+): BanterEvent[] {
   const out: BanterEvent[] = []
   const mob = mobs.filter((m) => m.d <= SIGHT.mob).sort((a, b) => a.d - b.d)[0]
   if (mob && (MOB_TOPICS as readonly string[]).includes(`mob_${mob.kind}`)) out.push({ topic: `mob_${mob.kind}` as BanterTopic, target: `mob:${mob.id}` })
@@ -341,6 +408,18 @@ export function sightEvents(myBody: string, players: SeenPlayer[], mobs: SeenMob
   const monster = near.find((p) => monsters.includes(p.body))
   if (monster) out.push({ topic: "see_monster_skin", god: names[monster.body] ?? monster.body, target: `p:${monster.sid}` })
   if (near.length >= SIGHT.crowd) out.push({ topic: "see_crowd" })
+  // P2: cantada — eu adulto e um adulto do outro sexo por perto (jogador ou monstro da rua)
+  const me = bodyFase(myBody, myH)
+  if (me.adult && me.sex) {
+    const want = me.sex === "m" ? "f" : "m"
+    const p = near.find((x) => {
+      const f = bodyFase(x.body, x.h)
+      return f.adult && f.sex === want
+    })
+    const m = p ? null : mobs.filter((x) => x.d <= SIGHT.player && MOB_SEX[x.kind] === want).sort((a, b) => a.d - b.d)[0]
+    if (p) out.push({ topic: want === "f" ? "see_flirt_f" : "see_flirt_m", target: `p:${p.sid}` })
+    else if (m) out.push({ topic: want === "f" ? "see_flirt_f" : "see_flirt_m", target: `mob:${m.id}` })
+  }
   const mine = clanOf(myBody)
   if (mine) {
     const rival = near.find((p) => clanOf(p.body) && clanOf(p.body) !== mine)
