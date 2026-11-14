@@ -15,7 +15,6 @@
 // texturas desenhadas no canvas. Céu = esfera com degradê por vértice.
 
 import type { Scene } from "@babylonjs/core/scene"
-import "@babylonjs/core/Meshes/thinInstanceMesh"
 import "@babylonjs/core/Particles/particleSystemComponent"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
@@ -24,22 +23,22 @@ import { Material } from "@babylonjs/core/Materials/material"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { Constants } from "@babylonjs/core/Engines/constants"
 import { CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
-import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder"
-import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder"
 import { CreateTube } from "@babylonjs/core/Meshes/Builders/tubeBuilder"
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { STEP, type Track } from "../sim/track"
-import { GridPlugin, WindowsPlugin } from "./night"
+import { GridPlugin } from "./night"
 import { AirshipFleet, fleetRing } from "../../engine/steampunk/scenery"
 import { createTrimMaterials } from "../../engine/steampunk/materials"
 import type { ThemeId } from "./circuit-art"
+import { CENARIO, type Lugar } from "./cena-pistas"
+import type { V3 } from "../../engine/cena-codigo/kit"
 
 type RGB = [number, number, number]
 type D = { dispose(): void }
@@ -159,29 +158,6 @@ interface Ctx {
   hemi: HemisphericLight
 }
 
-/** Malha-base + instâncias finas acumuladas (uma chamada de desenho). */
-class Thin {
-  private m: number[] = []
-  private c: number[] = []
-  constructor(
-    readonly mesh: Mesh,
-    private readonly colored: boolean,
-  ) {}
-  add(pos: Vector3, scale: Vector3, yaw = 0, rgb?: RGB, pitch = 0, roll = 0) {
-    this.m.push(...Matrix.Compose(scale, Quaternion.RotationYawPitchRoll(yaw, pitch, roll), pos).asArray())
-    if (this.colored) this.c.push(rgb?.[0] ?? 1, rgb?.[1] ?? 1, rgb?.[2] ?? 1, 1)
-  }
-  done() {
-    if (!this.m.length) {
-      this.mesh.setEnabled(false)
-      return
-    }
-    this.mesh.thinInstanceSetBuffer("matrix", new Float32Array(this.m), 16, true)
-    if (this.colored) this.mesh.thinInstanceSetBuffer("color", new Float32Array(this.c), 4, true)
-    this.mesh.isPickable = false
-  }
-}
-
 function litMat(ctx: Ctx, name: string, rgb: RGB = [1, 1, 1], spec = 0.05, emissive: RGB = [0, 0, 0]): StandardMaterial {
   const m = new StandardMaterial(name, ctx.scene)
   m.diffuseColor = new Color3(...rgb)
@@ -203,21 +179,6 @@ function glowMat(ctx: Ctx, name: string, rgb: RGB = [1, 1, 1], add = false): Sta
     m.backFaceCulling = false
   }
   ctx.d.push(m)
-  return m
-}
-function base(ctx: Ctx, mesh: Mesh, mat: StandardMaterial, colored = false): Thin {
-  mesh.material = mat
-  ctx.d.push(mesh)
-  return new Thin(mesh, colored)
-}
-const box = (ctx: Ctx, name: string, up = true) => {
-  const m = CreateBox(name, { size: 1 }, ctx.scene)
-  if (up) m.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
-  return m
-}
-const cyl = (ctx: Ctx, name: string, top: number, tess: number, up = true) => {
-  const m = CreateCylinder(name, { diameterTop: top, diameterBottom: 1, height: 1, tessellation: tess }, ctx.scene)
-  if (up) m.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
   return m
 }
 
@@ -246,6 +207,24 @@ function beside(ctx: Ctx, d0: number, d1: number): { x: number; z: number; y: nu
     if (n.d >= t.width / 2 + d0 - 0.5) return { x, z, y: t.y[i] }
   }
   return null
+}
+
+/** O que o cenário em código (cena-pistas.ts) precisa saber da pista. */
+function lugar(ctx: Ctx): Lugar {
+  return {
+    scene: ctx.scene,
+    low: ctx.low,
+    rand: ctx.rand,
+    cx: ctx.cx,
+    cz: ctx.cz,
+    span: ctx.span,
+    gy: ctx.gy,
+    t: ctx.t,
+    near: ctx.near,
+    clear: ctx.clear,
+    scatter: (r0, r1, clear, tries) => scatter(ctx, r0, r1, clear, tries),
+    beside: (d0, d1) => beside(ctx, d0, d1),
+  }
 }
 
 function sky(ctx: Ctx, a: Atmos) {
@@ -365,16 +344,6 @@ function baia(ctx: Ctx) {
   water.freezeWorldMatrix()
   disposables.push(water, waterMat)
 
-  const tower = CreateBox("corrida-tower", { size: 1 }, scene)
-  tower.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
-  const towerMat = new StandardMaterial("corrida-tower", scene)
-  towerMat.diffuseColor = new Color3(1, 1, 1)
-  towerMat.specularColor = new Color3(0.08, 0.08, 0.12)
-  // janelas acesas e coroas de neon (night.ts)
-  new WindowsPlugin(towerMat)
-  tower.material = towerMat
-  tower.isPickable = false
-  disposables.push(tower, towerMat)
   const rand = (() => {
     let s = 91731
     return () => ((s = (s * 16807) % 2147483647) / 2147483647)
@@ -383,70 +352,8 @@ function baia(ctx: Ctx) {
     for (let i = 0; i < t.n; i += 3) if (Math.hypot(t.x[i] - x, t.z[i] - z) < r) return true
     return false
   }
-  const tm: number[] = []
-  const tc: number[] = []
-  // Tijolo e cantaria escuros de noite.
-  const PALETTE: RGB[] = [
-    [0.17, 0.1, 0.08],
-    [0.2, 0.13, 0.1],
-    [0.12, 0.1, 0.09],
-    [0.22, 0.17, 0.13],
-    [0.15, 0.12, 0.11],
-  ]
-  // Chaminés de tijolo em cima de um em cada três prédios (uma malha só).
-  const chim: number[] = []
-  const want = low ? 140 : 320
-  for (let k = 0, tries = 0; k < want && tries < want * 6; tries++) {
-    const x = cx + (rand() - 0.5) * span * 2.2
-    const z = cz + (rand() - 0.5) * span * 2.2
-    const w = 10 + rand() * 18
-    if (tooClose(x, z, w + 16)) continue
-    const inside = Math.abs(x - cx) < span * 0.6 && Math.abs(z - cz) < span * 0.6
-    const h = (inside ? 30 : 50) + rand() * (inside ? 70 : 150)
-    const m = Matrix.Compose(new Vector3(w, h, w * (0.7 + rand() * 0.6)), Quaternion.RotationYawPitchRoll(rand() * Math.PI, 0, 0), new Vector3(x, GROUND_Y, z))
-    tm.push(...m.asArray())
-    if (rand() < 0.34) {
-      const cr = 1.2 + rand() * 1.6
-      const ch = 8 + rand() * 16
-      for (const off of rand() < 0.4 ? [-w * 0.22, w * 0.22] : [0]) chim.push(...Matrix.Compose(new Vector3(cr, ch, cr), Quaternion.Identity(), new Vector3(x + off, GROUND_Y + h, z)).asArray())
-    }
-    const c = PALETTE[Math.floor(rand() * PALETTE.length)]
-    tc.push(c[0], c[1], c[2], 1)
-    k++
-  }
-  // montanhas ao longe (pirâmides baixas)
-  const mtn = CreateCylinder("corrida-mtn", { diameterTop: 0, diameterBottom: 1, height: 1, tessellation: 4 }, scene)
-  mtn.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
-  const mtnMat = new StandardMaterial("corrida-mtn", scene)
-  mtnMat.diffuseColor = new Color3(0.08, 0.05, 0.04)
-  mtnMat.specularColor = new Color3(0, 0, 0)
-  mtn.material = mtnMat
-  mtn.isPickable = false
-  disposables.push(mtn, mtnMat)
-  const mm: number[] = []
-  for (let k = 0; k < 14; k++) {
-    const ang = (k / 14) * Math.PI * 2 + rand() * 0.3
-    const r = span * (1.5 + rand() * 0.6)
-    const size = 160 + rand() * 260
-    const m = Matrix.Compose(new Vector3(size, size * (0.45 + rand() * 0.35), size), Quaternion.RotationYawPitchRoll(rand(), 0, 0), new Vector3(cx + Math.sin(ang) * r, GROUND_Y, cz + Math.cos(ang) * r))
-    mm.push(...m.asArray())
-  }
-  mtn.thinInstanceSetBuffer("matrix", new Float32Array(mm), 16, true)
-  tower.thinInstanceSetBuffer("matrix", new Float32Array(tm), 16, true)
-  tower.thinInstanceSetBuffer("color", new Float32Array(tc), 4, true)
-  if (chim.length) {
-    const stack = CreateCylinder("corrida-chimney", { diameterTop: 0.8, diameterBottom: 1, height: 1, tessellation: 8 }, scene)
-    stack.bakeTransformIntoVertices(Matrix.Translation(0, 0.5, 0))
-    const stackMat = new StandardMaterial("corrida-chimney", scene)
-    stackMat.diffuseColor = new Color3(0.26, 0.14, 0.1)
-    stackMat.specularColor = new Color3(0, 0, 0)
-    // a boca da chaminé brilha de leve (brasas lá dentro)
-    stackMat.emissiveColor = new Color3(0.05, 0.02, 0.01)
-    stack.material = stackMat
-    stack.isPickable = false
-    stack.thinInstanceSetBuffer("matrix", new Float32Array(chim), 16, true)
-    disposables.push(stack, stackMat)
-  }
+  // prédios de tijolo, chaminés e morros: em código (cena-pistas.ts)
+  disposables.push(CENARIO.baia(lugar(ctx), tooClose))
   // Dirigíveis com lanternas dando a volta lá no alto.
   const steam = createTrimMaterials(scene, low ? "low" : "mid")
   disposables.push(steam)
@@ -519,150 +426,16 @@ function baia(ctx: Ctx) {
 
 // ═══ ABISMO VERMELHO — cânion de dia ═════════════════════════════════════════
 function abismo(ctx: Ctx) {
-  const { low, gy, rand } = ctx
-  const sand = canvasTex(ctx, "corrida-sand", 256, 256, (g) => {
-    g.fillStyle = "#9a4a2a"
-    g.fillRect(0, 0, 256, 256)
-    noiseFill(g, 256, 256, rand, ["#a85a34", "#8a3f22", "#b8693c", "#7a3520"], 380, 3, 22)
-  })
-  ground(ctx, [1, 1, 1], sand, [0.12, 0.07, 0.05], 60)
-  // pedra em estratos (camadas horizontais)
-  const strata = canvasTex(ctx, "corrida-strata", 64, 256, (g) => {
-    for (let y = 0; y < 256; ) {
-      const k = rand()
-      const hh = 3 + rand() * 9
-      g.fillStyle = `rgb(${(150 + k * 70) | 0},${(68 + k * 42) | 0},${(40 + k * 26) | 0})`
-      g.fillRect(0, y, 64, hh)
-      y += hh
-    }
-  })
-  const rockMat = litMat(ctx, "corrida-rock", [1, 1, 1], 0.03, [0.16, 0.09, 0.06])
-  rockMat.diffuseTexture = strata
-  const mesa = base(ctx, cyl(ctx, "corrida-mesa", 0.84, 7), rockMat, true)
-  const spire = base(ctx, cyl(ctx, "corrida-spire", 0.18, 6), rockMat, true)
-  const cliff = base(ctx, box(ctx, "corrida-cliff"), rockMat, true)
-  const arch = base(ctx, CreateTorus("corrida-arch", { diameter: 1, thickness: 0.2, tessellation: 20 }, ctx.scene), rockMat, true)
-  const tones: RGB[] = [
-    [1, 0.92, 0.86],
-    [0.88, 0.76, 0.7],
-    [1, 0.84, 0.72],
-    [0.82, 0.68, 0.6],
-  ]
-  for (let k = 0; k < (low ? 40 : 85); k++) {
-    const r = 18 + rand() * 70
-    const p = scatter(ctx, 0.08, 1.3, r + 18)
-    if (!p) continue
-    const top = p.n.y + (rand() < 0.45 ? -12 - rand() * 50 : 8 + rand() * 60)
-    mesa.add(new Vector3(p.x, gy, p.z), new Vector3(r * 2, top - gy, r * 2 * (0.7 + rand() * 0.6)), rand() * 6, tones[k % 4])
-  }
-  for (let k = 0; k < (low ? 22 : 50); k++) {
-    const r = 4 + rand() * 9
-    const p = scatter(ctx, 0.05, 1.1, r + 14)
-    if (!p) continue
-    spire.add(new Vector3(p.x, gy, p.z), new Vector3(r * 2, p.n.y + 20 + rand() * 70 - gy, r * 2), rand() * 6, tones[(k + 1) % 4])
-  }
-  // paredões do cânion no horizonte
-  const hTop = ctx.t.bounds.y1 - gy
-  for (let k = 0; k < 30; k++) {
-    const a = (k / 30) * Math.PI * 2 + rand() * 0.15
-    const R = ctx.span * (1.3 + rand() * 0.35)
-    cliff.add(new Vector3(ctx.cx + Math.sin(a) * R, gy, ctx.cz + Math.cos(a) * R), new Vector3(220 + rand() * 260, hTop + 30 + rand() * 140, 140), a + Math.PI / 2, tones[k % 4])
-  }
-  // arcos de pedra (como na referência), meio enterrados
-  for (let k = 0; k < 5; k++) {
-    const sz = 130 + rand() * 120
-    const p = scatter(ctx, 0.55, 1.2, sz * 0.6)
-    if (!p) continue
-    arch.add(new Vector3(p.x, gy + sz * 0.12, p.z), new Vector3(sz, sz, sz), rand() * 6, tones[k % 4], Math.PI / 2)
-  }
-  for (const th of [mesa, spire, cliff, arch]) th.done()
+  // chão, penhascos, agulhas, paredões e arcos do Cânion: em código (cena-pistas.ts)
+  ctx.d.push(CENARIO.abismo(lugar(ctx)))
 }
 
 // ═══ FLORESTA ESPECTRAL — crepúsculo bioluminescente ══════════════════════════
 function floresta(ctx: Ctx) {
   const { low, gy, rand, scene } = ctx
-  const moss = canvasTex(ctx, "corrida-moss", 256, 256, (g) => {
-    g.fillStyle = "#0c2418"
-    g.fillRect(0, 0, 256, 256)
-    noiseFill(g, 256, 256, rand, ["#123a24", "#08180f", "#1a4a2c", "#0a2a2a"], 420, 3, 18)
-  })
-  ground(ctx, [1, 1, 1], moss, [0.02, 0.05, 0.04], 50)
-  const bark = canvasTex(ctx, "corrida-bark", 64, 256, (g) => {
-    g.fillStyle = "#2a1d14"
-    g.fillRect(0, 0, 64, 256)
-    for (let x = 0; x < 64; x += 2 + rand() * 4) {
-      g.fillStyle = rand() < 0.5 ? "#3a2a1c" : "#1a120c"
-      g.fillRect(x, 0, 1 + rand() * 2.5, 256)
-    }
-  })
-  const trunkMat = litMat(ctx, "corrida-trunk", [1, 1, 1], 0.02, [0.04, 0.05, 0.04])
-  trunkMat.diffuseTexture = bark
-  const canopyMat = litMat(ctx, "corrida-canopy", [1, 1, 1], 0.03, [0.02, 0.07, 0.06])
-  const trunk = base(ctx, cyl(ctx, "corrida-trunk", 0.62, 9), trunkMat)
-  const canopy = base(ctx, CreateSphere("corrida-canopy", { diameter: 1, segments: 6 }, scene), canopyMat, true)
-  const capMat = glowMat(ctx, "corrida-cap")
-  const cap = base(ctx, CreateSphere("corrida-cap", { diameter: 1, segments: 8, slice: 0.5 }, scene), capMat, true)
-  const stem = base(ctx, cyl(ctx, "corrida-stem", 0.7, 8), litMat(ctx, "corrida-stem", [0.75, 0.82, 0.78], 0.02, [0.12, 0.16, 0.16]))
-  const plant = base(ctx, cyl(ctx, "corrida-plant", 0, 5), glowMat(ctx, "corrida-plant"), true)
-  const greens: RGB[] = [
-    [0.07, 0.24, 0.14],
-    [0.05, 0.2, 0.17],
-    [0.1, 0.28, 0.12],
-    [0.06, 0.16, 0.2],
-  ]
-  const CYAN: RGB = [0.25, 0.95, 1]
-  const MAGENTA: RGB = [0.95, 0.25, 0.9]
-  const VIOLET: RGB = [0.6, 0.3, 1]
-  const tree = (x: number, z: number, y: number, r: number, nearTrack: boolean) => {
-    // a copa nunca encosta em trecho nenhum da pista (a espiral passa por baixo de
-    // outros trechos: perto no plano não basta). Sem lugar = árvore mais baixa ou sem copa.
-    let top = y + 30 + rand() * 60
-    let R = 16 + rand() * 22
-    for (let k = 0; k < 3 && !ctx.clear(x, z, R + 6, top - R * 0.75 - 8, top + R * 0.45); k++) {
-      R *= 0.7
-      top += 14
-    }
-    if (!ctx.clear(x, z, R + 6, top - R * 0.75 - 8, top + R * 0.45)) return
-    trunk.add(new Vector3(x, gy, z), new Vector3(r * 2, top - gy, r * 2), rand() * 6)
-    canopy.add(new Vector3(x, top, z), new Vector3(R * 2, R * 0.8, R * 2), rand() * 6, greens[Math.floor(rand() * 4)])
-    canopy.add(new Vector3(x + (rand() - 0.5) * R * 0.5, top - R * 0.3, z + (rand() - 0.5) * R * 0.5), new Vector3(R * 1.3, R * 0.55, R * 1.3), rand() * 6, greens[Math.floor(rand() * 4)])
-    if (!nearTrack) return
-    // cogumelos de prateleira e plantas acesas no tronco, na altura da pista
-    for (let k = 0; k < 3; k++) {
-      const a = rand() * Math.PI * 2
-      const hy = y - 5 + rand() * 16
-      const cs = 2.5 + rand() * 3.5
-      cap.add(new Vector3(x + Math.sin(a) * r * 0.95, hy, z + Math.cos(a) * r * 0.95), new Vector3(cs * 2, cs * 0.9, cs * 2), a, k % 2 ? CYAN : VIOLET)
-    }
-    for (let k = 0; k < 4; k++) {
-      const a = rand() * Math.PI * 2
-      const ps = 1 + rand() * 2
-      plant.add(new Vector3(x + Math.sin(a) * (r + 1.5), y - 6 + rand() * 4, z + Math.cos(a) * (r + 1.5)), new Vector3(ps, ps * 3.2, ps), 0, MAGENTA, (rand() - 0.5) * 0.6, (rand() - 0.5) * 0.6)
-    }
-  }
-  for (let k = 0; k < (low ? 36 : 70); k++) {
-    const r = 3 + rand() * 5
-    const p = beside(ctx, r + 6, r + 80)
-    if (p) tree(p.x, p.z, p.y, r, true)
-  }
-  for (let k = 0; k < (low ? 30 : 60); k++) {
-    const r = 4 + rand() * 6
-    const p = scatter(ctx, 0.2, 1.4, r + 30)
-    if (p) tree(p.x, p.z, p.n.y, r, false)
-  }
-  // cogumelos gigantes no chão (a pista passa por cima deles nas partes baixas)
-  for (let k = 0; k < (low ? 18 : 40); k++) {
-    const p = scatter(ctx, 0.02, 0.9, 16)
-    if (!p) continue
-    const h = Math.max(8, Math.min(p.n.y - gy - 4, 10 + rand() * 30))
-    const cs = 6 + rand() * 9
-    if (!ctx.clear(p.x, p.z, cs + 4, gy, gy + h + cs + 4)) continue
-    stem.add(new Vector3(p.x, gy, p.z), new Vector3(cs * 0.45, h, cs * 0.45))
-    cap.add(new Vector3(p.x, gy + h, p.z), new Vector3(cs * 2, cs * 1.1, cs * 2), rand() * 6, rand() < 0.6 ? CYAN : MAGENTA)
-  }
-  for (const th of [trunk, canopy, cap, stem, plant]) th.done()
-
-  // cachoeiras: paredão de pedra + queda d'água (textura que corre, soma) + névoa
+  // chão, árvores, cogumelos, flores, rochedos e paredões: em código (cena-pistas.ts); aqui ficam os efeitos
+  const verde = CENARIO.floresta(lugar(ctx))
+  ctx.d.push(verde.saida)
   const fall = canvasTex(ctx, "corrida-fall", 64, 256, (g) => {
     g.fillStyle = "#000"
     g.fillRect(0, 0, 64, 256)
@@ -676,22 +449,15 @@ function floresta(ctx: Ctx) {
   const fallMat = glowMat(ctx, "corrida-fall", [0.75, 0.95, 1], true)
   fallMat.emissiveColor = new Color3(0, 0, 0)
   fallMat.emissiveTexture = fall
-  const rock = base(ctx, box(ctx, "corrida-wfrock"), litMat(ctx, "corrida-wfrock", [0.16, 0.2, 0.18], 0.02, [0.02, 0.03, 0.03]))
-  for (let k = 0; k < 5; k++) {
-    const p = scatter(ctx, 0.25, 0.85, 50)
-    if (!p) continue
-    const top = p.n.y + 28 + rand() * 30
-    const yaw = Math.atan2(ctx.cx - p.x, ctx.cz - p.z)
-    rock.add(new Vector3(p.x, gy, p.z), new Vector3(46, top - gy, 22), yaw)
-    const w = CreatePlane(`corrida-fall-${k}`, { width: 16, height: top - gy }, scene)
-    w.position.set(p.x + Math.sin(yaw) * 11.5, gy + (top - gy) / 2, p.z + Math.cos(yaw) * 11.5)
-    w.rotation.y = yaw + Math.PI
+  for (const [k, q] of verde.quedas.entries()) {
+    const w = CreatePlane(`corrida-fall-${k}`, { width: 16, height: q.top - gy }, scene)
+    w.position.set(q.x + Math.sin(q.yaw) * 11.5, gy + (q.top - gy) / 2, q.z + Math.cos(q.yaw) * 11.5)
+    w.rotation.y = q.yaw + Math.PI
     w.material = fallMat
     w.isPickable = false
     w.freezeWorldMatrix()
     ctx.d.push(w)
   }
-  rock.done()
   // vaga-lumes: uma malha de pontos em volta da pista
   const pos: number[] = []
   const col: number[] = []
@@ -729,94 +495,8 @@ function floresta(ctx: Ctx) {
 
 // ═══ NEON OVERDRIVE — megacidade de dia ═══════════════════════════════════════
 function neon(ctx: Ctx) {
-  const { low, gy, rand, scene } = ctx
-  const floor = canvasTex(ctx, "corrida-cityfloor", 256, 256, (g) => {
-    g.fillStyle = "#3a4250"
-    g.fillRect(0, 0, 256, 256)
-    g.strokeStyle = "#5a6474"
-    g.lineWidth = 3
-    for (let x = 0; x <= 256; x += 64) {
-      g.beginPath()
-      g.moveTo(x, 0)
-      g.lineTo(x, 256)
-      g.moveTo(0, x)
-      g.lineTo(256, x)
-      g.stroke()
-    }
-  })
-  ground(ctx, [1, 1, 1], floor, [0.05, 0.05, 0.06], 50)
-  const towerMat = litMat(ctx, "corrida-ctower", [1, 1, 1], 0.25, [0.04, 0.05, 0.07])
-  new WindowsPlugin(towerMat)
-  const tower = base(ctx, box(ctx, "corrida-ctower"), towerMat, true)
-  const ring = base(ctx, CreateTorus("corrida-cring", { diameter: 1, thickness: 0.06, tessellation: 28 }, scene), glowMat(ctx, "corrida-cring", [0.2, 0.9, 1]))
-  const disc = base(ctx, cyl(ctx, "corrida-cdisc", 1, 20), litMat(ctx, "corrida-cdisc", [0.6, 0.64, 0.7], 0.3, [0.05, 0.06, 0.07]))
-  const screenTex = canvasTex(ctx, "corrida-screen", 64, 128, (g) => {
-    const grad = g.createLinearGradient(0, 0, 0, 128)
-    grad.addColorStop(0, "#ffffff")
-    grad.addColorStop(0.5, "#b8b8b8")
-    grad.addColorStop(1, "#ffffff")
-    g.fillStyle = grad
-    g.fillRect(0, 0, 64, 128)
-    g.fillStyle = "rgba(0,0,0,0.35)"
-    for (let y = 0; y < 128; y += 4) g.fillRect(0, y, 64, 1.5)
-    g.fillStyle = "rgba(255,255,255,0.9)"
-    g.fillRect(6, 30, 52, 6)
-    g.fillRect(6, 44, 34, 4)
-  }, false)
-  const scrMat = glowMat(ctx, "corrida-screen")
-  scrMat.emissiveColor = new Color3(0, 0, 0)
-  scrMat.emissiveTexture = screenTex
-  const screen = base(ctx, CreatePlane("corrida-screen", { size: 1, sideOrientation: Mesh.DOUBLESIDE }, scene), scrMat, true)
-  const bridge = base(ctx, box(ctx, "corrida-cbridge", false), litMat(ctx, "corrida-cbridge", [0.5, 0.54, 0.6], 0.2, [0.04, 0.05, 0.06]))
-  const under = base(ctx, box(ctx, "corrida-cunder", false), glowMat(ctx, "corrida-cunder", [0.2, 0.9, 1]))
-  const steel: RGB[] = [
-    [0.62, 0.66, 0.74],
-    [0.48, 0.54, 0.64],
-    [0.74, 0.76, 0.82],
-    [0.38, 0.46, 0.58],
-  ]
-  const HOLO: RGB[] = [
-    [1, 0.3, 0.85],
-    [0.3, 0.85, 1],
-    [0.65, 0.4, 1],
-    [1, 0.55, 0.3],
-  ]
-  const towers: { x: number; z: number; w: number; top: number }[] = []
-  for (let k = 0; k < (low ? 120 : 240); k++) {
-    const w = 18 + rand() * 32
-    const p = scatter(ctx, 0.04, 1.5, w * 0.75 + 20)
-    if (!p) continue
-    const top = Math.max(p.n.y + 30, gy + 80) + rand() * 260
-    const yaw = rand() * Math.PI
-    tower.add(new Vector3(p.x, gy, p.z), new Vector3(w, top - gy, w * (0.7 + rand() * 0.5)), yaw, steel[k % 4])
-    towers.push({ x: p.x, z: p.z, w, top })
-    if (rand() < 0.35) ring.add(new Vector3(p.x, gy + (top - gy) * (0.5 + rand() * 0.45), p.z), new Vector3(w * 1.9, w * 1.9, w * 1.9))
-    if (rand() < 0.25) disc.add(new Vector3(p.x, top, p.z), new Vector3(w * 1.6, 3, w * 1.6))
-    if (rand() < 0.4 && p.n.d < 260) {
-      const sh = 18 + rand() * 30
-      const face = yaw + (Math.floor(rand() * 4) * Math.PI) / 2
-      const hy = Math.min(top - sh / 2 - 4, p.n.y + (rand() - 0.3) * 40)
-      screen.add(new Vector3(p.x + Math.sin(face) * (w / 2 + 0.6), hy, p.z + Math.cos(face) * (w / 2 + 0.6)), new Vector3(w * 0.7, sh, 1), face, HOLO[k % 4])
-    }
-  }
-  // passarelas no alto entre prédios vizinhos (longe da pista)
-  let made = 0
-  for (let a = 0; a < towers.length && made < (low ? 14 : 30); a++) {
-    const A = towers[a]
-    const B = towers.find((b) => b !== A && Math.hypot(b.x - A.x, b.z - A.z) < 140 && Math.hypot(b.x - A.x, b.z - A.z) > 50)
-    if (!B) continue
-    const mx = (A.x + B.x) / 2
-    const mz = (A.z + B.z) / 2
-    const n = ctx.near(mx, mz)
-    if (n.d < 28) continue
-    const y = Math.min(A.top, B.top) - 20 - rand() * 60
-    const len = Math.hypot(B.x - A.x, B.z - A.z)
-    const yaw = Math.atan2(B.x - A.x, B.z - A.z)
-    bridge.add(new Vector3(mx, y, mz), new Vector3(6, 2.4, len), yaw)
-    under.add(new Vector3(mx, y - 1.3, mz), new Vector3(1.2, 0.25, len), yaw)
-    made++
-  }
-  for (const th of [tower, ring, disc, screen, bridge, under]) th.done()
+  // chão de placas, torres de vidro com telão, torres de cristal da Orbital e passarelas: em código (cena-pistas.ts)
+  ctx.d.push(CENARIO.neon(lugar(ctx)))
 }
 
 // ═══ TEMPESTADE OCEÂNICA — mar revolto ════════════════════════════════════════
@@ -869,45 +549,9 @@ function tempestade(ctx: Ctx) {
     fp.freezeWorldMatrix()
     ctx.d.push(fp)
   }
-  const rockMat = litMat(ctx, "corrida-srock", [0.2, 0.23, 0.24], 0.06, [0.02, 0.03, 0.03])
-  const rock = base(ctx, cyl(ctx, "corrida-srock", 0.22, 6), rockMat, true)
-  for (let k = 0; k < (low ? 16 : 32); k++) {
-    const r = 10 + rand() * 30
-    const p = scatter(ctx, 0.1, 1.3, r + 20)
-    if (!p) continue
-    rock.add(new Vector3(p.x, gy - 4, p.z), new Vector3(r * 2, 25 + rand() * 80, r * 2 * (0.6 + rand() * 0.6)), rand() * 6, [0.85 + rand() * 0.3, 0.9 + rand() * 0.2, 0.9 + rand() * 0.2])
-  }
-  rock.done()
-  // plataformas (as do mar e as que flutuam)
-  const steel = litMat(ctx, "corrida-rig", [0.42, 0.45, 0.48], 0.25, [0.04, 0.045, 0.05])
-  const leg = base(ctx, cyl(ctx, "corrida-rigleg", 1, 8), steel)
-  const deck = base(ctx, cyl(ctx, "corrida-rigdeck", 1, 18), steel)
-  const tow = base(ctx, box(ctx, "corrida-rigtower"), steel)
-  const rim = base(ctx, CreateTorus("corrida-rigrim", { diameter: 1, thickness: 0.04, tessellation: 32 }, scene), glowMat(ctx, "corrida-rigrim", [0.2, 0.9, 1]))
-  const hazard = base(ctx, cyl(ctx, "corrida-righaz", 1, 18), litMat(ctx, "corrida-righaz", [0.85, 0.65, 0.12], 0.1, [0.15, 0.1, 0.02]))
-  for (let k = 0; k < 7; k++) {
-    const sz = 40 + rand() * 30
-    const p = scatter(ctx, 0.15, 1.0, sz * 0.7 + 25)
-    if (!p) continue
-    const dy = gy + 14 + rand() * 16
-    for (const [ox, oz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) leg.add(new Vector3(p.x + ox * sz * 0.3, gy - 2, p.z + oz * sz * 0.3), new Vector3(3, dy - gy + 2, 3))
-    deck.add(new Vector3(p.x, dy, p.z), new Vector3(sz, 3, sz))
-    hazard.add(new Vector3(p.x, dy + 3, p.z), new Vector3(sz * 1.02, 0.6, sz * 1.02))
-    rim.add(new Vector3(p.x, dy + 3.4, p.z), new Vector3(sz * 1.05, sz * 1.05, sz * 1.05))
-    tow.add(new Vector3(p.x + sz * 0.15, dy + 3, p.z), new Vector3(6, 22 + rand() * 20, 6))
-  }
-  for (let k = 0; k < 5; k++) {
-    const sz = 30 + rand() * 25
-    const p = scatter(ctx, 0.3, 1.1, sz + 30)
-    if (!p) continue
-    const fy = p.n.y + 30 + rand() * 50
-    deck.add(new Vector3(p.x, fy, p.z), new Vector3(sz, 5, sz))
-    hazard.add(new Vector3(p.x, fy + 5, p.z), new Vector3(sz * 1.02, 0.6, sz * 1.02))
-    rim.add(new Vector3(p.x, fy - 0.5, p.z), new Vector3(sz * 0.9, sz * 0.9, sz * 0.9))
-    tow.add(new Vector3(p.x, fy + 5, p.z), new Vector3(5, 14 + rand() * 12, 5))
-  }
-  for (const th of [leg, deck, tow, rim, hazard]) th.done()
-  // raio: uma fita em zigue-zague que pisca de vez em quando, com clarão na luz
+  // rochas do mar, plataformas e o navio encalhado: em código (cena-pistas.ts); aqui ficam mar, raio e chuva
+  ctx.d.push(CENARIO.tempestade(lugar(ctx)))
+  // raio: uma fita em zigue-zague que pisca de vez em quando, junto com um clarão na luz
   const bolt = new Mesh("corrida-bolt", scene)
   {
     const pos: number[] = []
@@ -1031,52 +675,9 @@ function forja(ctx: Ctx) {
     noiseFill(g, 256, 256, rand, ["rgba(255,140,40,0.5)", "rgba(255,80,10,0.4)"], 60, 2, 9)
   })
   ground(ctx, [0.5, 0.35, 0.3], lava, [1, 0.6, 0.35], 30)
-  const plate = canvasTex(ctx, "corrida-fplate", 128, 256, (g) => {
-    g.fillStyle = "#3a3c42"
-    g.fillRect(0, 0, 128, 256)
-    for (let y = 0; y < 256; y += 32) {
-      g.fillStyle = "#24262b"
-      g.fillRect(0, y, 128, 3)
-    }
-    for (let x = 0; x < 128; x += 64) {
-      g.fillStyle = "#2a2c31"
-      g.fillRect(x, 0, 3, 256)
-    }
-    noiseFill(g, 128, 256, rand, ["rgba(0,0,0,0.2)", "rgba(255,255,255,0.05)"], 80, 2, 10)
-  })
-  const colMat = litMat(ctx, "corrida-fcol", [1, 1, 1], 0.2, [0.06, 0.05, 0.05])
-  colMat.diffuseTexture = plate
-  const col = base(ctx, box(ctx, "corrida-fcol"), colMat, true)
-  const slit = base(ctx, box(ctx, "corrida-fslit"), glowMat(ctx, "corrida-fslit", [1, 0.55, 0.16]))
-  const beam = base(ctx, box(ctx, "corrida-fbeam", false), colMat, true)
-  const lamp = base(ctx, box(ctx, "corrida-flamp", false), glowMat(ctx, "corrida-flamp", [1, 0.7, 0.3]))
-  const hTop = t.bounds.y1
-  for (let k = 0; k < (low ? 26 : 55); k++) {
-    const w = 16 + rand() * 26
-    const p = scatter(ctx, 0.03, 1.25, w * 0.75 + 16)
-    if (!p) continue
-    const top = hTop + 40 + rand() * 140
-    const yaw = rand() * Math.PI
-    col.add(new Vector3(p.x, gy, p.z), new Vector3(w, top - gy, w), yaw, [0.9 + rand() * 0.2, 0.9 + rand() * 0.15, 0.95])
-    // fendas acesas (lava por dentro) em duas faces
-    for (const f of [0, Math.PI]) {
-      const fx = Math.sin(yaw + f) * (w / 2 + 0.2)
-      const fz = Math.cos(yaw + f) * (w / 2 + 0.2)
-      slit.add(new Vector3(p.x + fx, gy + (top - gy) * 0.1, p.z + fz), new Vector3(2.2, (top - gy) * 0.75, 0.6), yaw + f)
-    }
-  }
-  // vigas por cima da pista, com as lâmpadas embaixo
-  const every = Math.max(1, Math.floor(t.n / (low ? 14 : 28)))
-  for (let i = 0; i < t.n; i += every) {
-    if (t.flag[i] === 3 || t.flag[(i + 10) % t.n] === 3) continue
-    const y = t.y[i] + 24 + rand() * 18
-    beam.add(new Vector3(t.x[i], y, t.z[i]), new Vector3(140, 4, 5), t.yaw[i] + Math.PI / 2, [0.85, 0.85, 0.9])
-    lamp.add(new Vector3(t.x[i], y - 2.2, t.z[i]), new Vector3(30, 0.4, 1.4), t.yaw[i] + Math.PI / 2)
-  }
-  for (const th of [col, slit, beam, lamp]) th.done()
   // o tubo de vidro ciano correndo ao lado da pista (2 trechos sem loop)
   const glass = glowMat(ctx, "corrida-ftube", [0.05, 0.38, 0.45], true)
-  const frame = base(ctx, CreateTorus("corrida-fframe", { diameter: 1, thickness: 0.08, tessellation: 18 }, scene), colMat, true)
+  const tubos: { path: V3[] }[] = []
   for (const [from, side] of [[0.12, 1], [0.55, -1]] as const) {
     const i0 = Math.floor(t.n * from)
     const len = Math.floor(320 / STEP)
@@ -1094,13 +695,10 @@ function forja(ctx: Ctx) {
     tube.isPickable = false
     tube.freezeWorldMatrix()
     ctx.d.push(tube)
-    for (let k = 0; k < path.length - 1; k += 3) {
-      const dir = path[k + 1].subtract(path[k])
-      const yaw = Math.atan2(dir.x, dir.z)
-      frame.add(path[k], new Vector3(7.4, 7.4, 7.4), yaw, [0.95, 0.95, 1], Math.PI / 2)
-    }
+    tubos.push({ path: path.map((v) => [v.x, v.y, v.z] as V3) })
   }
-  frame.done()
+  // colunas com fendas, engrenagens, caldeiras, vigas por cima da pista e os aros do tubo: em código (cena-pistas.ts)
+  ctx.d.push(CENARIO.forja(lugar(ctx), tubos))
   return (dt: number) => {
     lava.uOffset = (lava.uOffset + dt * 0.004) % 1
   }
