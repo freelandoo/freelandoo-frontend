@@ -39,6 +39,10 @@ const KEYS = {
   ],
 }
 
+// frases da casa das personalidades novas ({ chave: [pt, en, es] }); o pt também está em chatter.ts
+const CHATTER = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "features", "meu-mundo", "ui", "inbox", "chatter-extra.json"), "utf8"))
+Object.assign(KEYS, CHATTER)
+
 let changed = 0
 for (const [i, loc] of ["pt-BR", "en", "es"].entries()) {
   const file = path.join(DIR, `${loc}.json`)

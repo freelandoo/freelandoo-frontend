@@ -88,6 +88,23 @@ const LINES: Partial<Record<Temper, Record<ChatterMoment, Line[]>>> = {
       ["chCompIdle2", "Aposto que eu ganho de todo mundo no Paint.", "happy"],
     ],
   },
+  narcisista: {
+    enter: [
+      ["chNarcEnter1", "Cheguei. O dia já ficou mais bonito.", "loving"],
+      ["chNarcEnter2", "Bom dia pra mim, que mereço.", "happy"],
+    ],
+    night: [
+      ["chNarcNight1", "Noite. A lua tá tentando brilhar igual eu. Fofa.", "happy"],
+      ["chNarcNight2", "Escureceu. Ainda bem que eu ilumino a rua.", "happy"],
+    ],
+    morning: [
+      ["chNarcMorning1", "Bom dia. Acordei lindo, de novo. Rotina.", "happy"],
+    ],
+    idle: [
+      ["chNarcIdle1", "Ninguém me olhando há cinco minutos. Isso é um recorde triste.", "sad"],
+      ["chNarcIdle2", "Tira uma foto minha aqui. E aqui. E aqui.", "loving"],
+    ],
+  },
 }
 
 const LOVE: Line[] = [
