@@ -38,6 +38,7 @@ import { TUNNEL } from "../sim/flight"
 import { JetGeo } from "./jet-geo"
 import { SEG, SegmentPool, hash32, weighted, type PoolModule, type PropSpot, type SpinSpot, fusedLayers } from "./env-pool"
 import { PIECE, type CanyonAssets } from "./canyon-assets"
+import { kitCanion } from "./pecas/kit-canion"
 
 const { W, H } = TUNNEL
 
@@ -73,7 +74,7 @@ function boulder(g: Ctx, seed: number, x: number, y: number, z: number, sx: numb
 
 /**
  * Um paredão de um lado (sx = −1 esquerda, 1 direita) de z0 a z1, em V como na
- * referência, com o bloco de PEDRA ESCULPIDA (paredao.glb, do Tripo) em três
+ * referência, com o bloco de PEDRA EM COLUNAS (`paredao`, em código: pecas/kit-canion) em três
  * camadas: a encosta de dentro (face em |x| ≥ inner) só um pouco acima da
  * caixa, o terraço recuado e mais alto e, longe, o paredão de fundo. Todas
  * descem para dentro das nuvens. `top` = altura da encosta de dentro.
@@ -462,35 +463,10 @@ export function skyTexture(scene: Scene, low: boolean, stops: [number, string][]
   return tex
 }
 
-/** Ilha flutuante (de longe): rocha em cone para baixo, grama, ruínas e uma cachoeira. */
-function island(g: Ctx, kind: number) {
-  const r = rng(300 + kind)
-  g.body.cone(7.5, 1.2, 9, place(0, -4.5, 0), C.rockDark, 7)
-  g.body.cone(8.6, 7.6, 1.6, place(0, 0.2, 0), C.rock, 7)
-  g.body.cylinder(8.4, 0.5, place(0, 1.1, 0), C.grass, 7)
-  if (kind === 0) {
-    // ruína de templo: colunas e frontão
-    for (const [x, z] of [
-      [-1.6, -1],
-      [1.6, -1],
-      [-1.6, 1.2],
-      [1.6, 1.2],
-    ]) g.body.cylinder(0.5, 3, place(x, 2.8, z), C.ruin, 6)
-    g.body.box(4.2, 0.5, 3, place(0, 4.5, 0.1), C.ruin)
-    g.body.prism(4.4, 3.2, 1, place(0, 4.75, 0.1), C.ruin)
-  } else {
-    // árvore e caixotes
-    g.body.cylinder(0.5, 2.4, place(1, 2.4, 0), C.woodDark, 5)
-    g.body.sphere(3, [1, 0.8, 1], place(1, 4.2, 0), C.grassDark, 5)
-    g.body.box(0.9, 0.8, 0.9, place(-1.6, 1.8, 1), C.wood)
-  }
-  g.water.box(1.2, 9, 0.15, place(3.2 + r(), -3, 0), C.white)
-}
-
 export interface CanyonEnv {
   mats: { trim: StandardMaterial; glow: StandardMaterial }
   update: (z: number, now: number) => void
-  /** Chegaram as peças esculpidas (GLB): entram nos trechos e as ilhas trocam pela do modelo. */
+  /** Sem uso desde o Jetpack em código (as peças nascem com o cenário); fica pela forma comum das fases. */
   provide: (a: CanyonAssets) => void
   dispose: () => void
 }
@@ -559,6 +535,9 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
     return m * VARIANTS + (hash32(s, seed ^ 13) % VARIANTS)
   }
   const pool = new SegmentPool(scene, "jt-cn", mods, spinners, slots, pick)
+  // Jetpack em código (14/11): as peças do cenário (era o tema canion/v2 do Tripo) entram no módulo
+  const kit = kitCanion(low)
+  pool.bakeCode(kit)
 
   // o mar de nuvens (o chão) acompanha o jogador; a textura fica presa ao mundo e corre devagar
   const cloudTex = cloudTexture(scene, low)
@@ -609,7 +588,10 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
   cloudTex.vScale = SEA / TILE
 
   // ilhas flutuantes ao longe, em faixa que acompanha o jogador
-  const isl = [0, 1].map((k) => buildGeo(`jt-cn-island${k}`, (g) => island(g, k)).meshes)
+  // a ilha em código (pecas/kit-canion; era a ilha do Tripo): 1 m de altura, 13 a 30 m no céu
+  const ilhaSrc = kit.mesh(scene, "ilha", 20)!
+  ilhaSrc.material?.freeze()
+  all.push(ilhaSrc)
   const BAND = 520
   const islands: { insts: InstancedMesh[]; x: number; y: number; oz: number; s: number; ph: number }[] = []
   const ir = rng(seed ^ 0x51)
@@ -618,41 +600,23 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
     const kind = i % 2
     const side = i % 4 < 2 ? -1 : 1
     const s = 1.4 + ir() * 1.8
-    const insts = isl[kind].map((src) => {
-      const inst = src.createInstance(`jt-cn-isl${i}-${src.name}`)
-      inst.isPickable = false
-      inst.scaling.setAll(s)
-      inst.rotation.y = ir() * Math.PI * 2
-      return inst
-    })
+    const inst = ilhaSrc.createInstance(`jt-cn-ilha${i}`)
+    inst.isPickable = false
+    inst.scaling.setAll(s * 9)
+    inst.rotation.y = ir() * Math.PI * 2 + kind
+    const insts = [inst]
     islands.push({ insts, x: side * (22 + ir() * 40), y: 14 + ir() * 32, oz: (i / ISLANDS) * BAND + ir() * 30, s, ph: ir() * 6 })
   }
-  // os moldes das ilhas longe da vista
-  for (const list of isl) for (const m of list) m.position.y = -5000
+  // o molde da ilha longe da vista
+  ilhaSrc.position.y = -5000
 
   mats.glow.emissiveColor.set(1.05, 1.05, 1.05)
   mats.freeze()
 
   return {
     mats,
-    provide(a) {
-      for (const kind of ["paredao", "moinho", "arco", "rocha", "pedra-raizes", "cacto", "ponte", "torre-vigia"] as const) {
-        const m = a.meshes.get(kind)
-        if (m) pool.provide(kind, m)
-      }
-      const ilha = a.meshes.get("ilha")
-      if (ilha) {
-        for (const it of islands) {
-          for (const i of it.insts) i.dispose()
-          const inst = ilha.createInstance(`jt-cn-ilha-${it.oz | 0}`)
-          inst.isPickable = false
-          // a ilha do modelo tem 1 m de altura: 14 a 30 m no céu
-          inst.scaling.setAll(it.s * 9)
-          inst.rotation.y = it.ph
-          it.insts = [inst]
-        }
-      }
-    },
+    // Jetpack em código (14/11): nada mais chega do Tripo (o cenário já nasce com as peças)
+    provide() {},
     update(z, now) {
       pool.update(z, now)
       sea.position.set(0, -48, z + SEA * 0.3)
@@ -670,6 +634,7 @@ export function buildCanyonEnv(scene: Scene, low: boolean, slots: number, seed: 
     },
     dispose() {
       for (const it of islands) for (const i of it.insts) i.dispose()
+      ilhaSrc.material?.dispose()
       pool.dispose()
       for (const m of all) if (!m.isDisposed()) m.dispose()
       sea.dispose()

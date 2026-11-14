@@ -47,7 +47,8 @@ import { buildBoundary } from "./boundary-view"
 import { aroDaFase } from "./pecas/portais"
 import { codeObstacles } from "./pecas/obstaculos"
 import { kitGelo } from "./pecas/kit-gelo"
-import { ICE_DIR, loadPieceGroups, loadCanyonAssets, loadFactoryAssets, loadForestAssets, loadForgeAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
+import { kitCanion } from "./pecas/kit-canion"
+import { ICE_DIR, loadPieceGroups, loadFactoryAssets, loadForestAssets, loadForgeAssets, loadOrbitalAssets, loadPieces, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 import { GAME_MUSIC, sceneSound, jetpackPhaseAmb } from "../../engine/audio"
 
@@ -311,27 +312,12 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
     })
   }
-  if (level === "canion") {
-    void loadCanyonAssets(scene, () => !disposed).then((a) => {
-      if (disposed) return a.dispose()
-      canyonAssets = a
-      tunnel.provide?.(a)
-      // V3: a rocha NOVA (rachaduras acesas) cobre o disco (x estreitado: 2,42 → 2,2); só balança
-      const rock = a.meshes.get("rocha2") ?? a.meshes.get("rocha")
-      if (rock) obstacles.useModel("rock", rock, { bake: Matrix.Scaling(2.2 / 2.42, 1, 1), upright: true })
-      const can = a.meshes.get("galao")
-      if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
-      const tile = a.meshes.get("borda")
-      const corner = a.meshes.get("canto")
-      if (tile && corner) obstacles.useFrameKit(tile, corner, { len: 2.571, arm: 0.37, armLen: 0.703, beam: true })
-    })
-  }
   const mats = tunnel.mats
   const obstacles = buildObstacles(scene, mats, level)
   const kit = buildPackKit(scene, mats)
   // Jetpack em código (14/11): rocha, cristal, galão e moldura da fase feitos por nós (pecas/kit-*)
-  const codeKit = level === "artico" ? kitGelo(low) : null
-  if (codeKit) codeObstacles(scene, obstacles, codeKit, { beam: false })
+  const codeKit = level === "artico" ? kitGelo(low) : level === "canion" ? kitCanion(low) : null
+  if (codeKit) codeObstacles(scene, obstacles, codeKit, { beam: level !== "artico" })
   // Jetpack em código (14/11): o aro dos anéis é o portal feito por nós (pecas/portais.ts), em toda fase
   const codeRim = aroDaFase(scene, level)
   if (codeRim) {
