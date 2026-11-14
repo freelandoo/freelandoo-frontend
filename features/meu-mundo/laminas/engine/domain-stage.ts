@@ -33,6 +33,8 @@ import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { ARENA_R } from "../sim/fight"
 import { KitPlacer, LOOKS, applyDomainLook, type StageSky, loadDomainKit, paintedGround, seeded, type DomainKitId, type DomainSpot, type KitPiece } from "../../dominio/engine/domain-kit"
+import { CHAO_DETALHE, aplicarChaoDetalhe } from "../../engine/cena-codigo/chao-detalhe"
+import { DOMAIN_SKY } from "../../engine/sky/sky-registry"
 import type { ArenaView } from "./arena-view"
 
 export interface DomainStageSpec {
@@ -130,6 +132,16 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
     sky.dome.setLight([sk, sk, sk])
   }
   const ground = paintedGround(scene, `dom-stage-${spec.spot}`, look, 170, 170, 0, 0, 0, 6, spec.spot === "palacio" ? 23 : spec.spot === "fundo" ? 17 : 11)
+  // o detalhe do chão do Domínio da luta (o mesmo das cenas abertas; chao-detalhe.ts)
+  {
+    const dom = spec.sky ? (Object.entries(DOMAIN_SKY).find(([, r]) => r === spec.sky!.region)?.[0] ?? spec.kit) : spec.kit
+    const gm = ground.mesh.material as StandardMaterial | null
+    // o chão pintado vem congelado: congelado, o material não recompila com o plugin nem rebinda a textura
+    if (gm && CHAO_DETALHE[dom]) {
+      gm.unfreeze()
+      aplicarChaoDetalhe(scene, gm, dom, low)
+    }
+  }
   // a borda do círculo: filete aceso na cor do tema (a regra prende a luta nele)
   const ringMat = new StandardMaterial("dom-stage-ring", scene)
   ringMat.emissiveColor = Color3.FromHexString(look.ground.glow).scale(0.85)

@@ -30,12 +30,24 @@ export interface ChaoDetalhe {
   largo: number
   /** Força (0–1): 0,3 = o chão varia ±30% em volta da cor da cena. */
   forca: number
+  /** Superfície clara fica quase limpa (lajes do caminho). Desligar onde o chão é claro (neve, mármore). */
+  limpaClaro?: boolean
 }
 
 /** Por Domínio (prefixo da cena). Domínio fora da lista = chão como era. */
 export const CHAO_DETALHE: Readonly<Record<string, ChaoDetalhe>> = {
   // Floresta da Lua: musgo e pedra (Poly Haven `aerial_grass_rock`)
   floresta: { tex: "/meu-mundo/chao/v1/floresta.webp", perto: 6, largo: 41, forca: 0.52 },
+  // Cânion: terra rachada (`cracked_red_ground`)
+  canion: { tex: "/meu-mundo/chao/v1/canion.webp", perto: 6, largo: 43, forca: 0.5 },
+  // Gelo: neve com marcas (`snow_01`) — chão claro: sem a limpeza do claro, força menor
+  gelo: { tex: "/meu-mundo/chao/v1/gelo.webp", perto: 7, largo: 47, forca: 0.22, limpaClaro: false },
+  // Fábrica: concreto rachado (`cracked_concrete`)
+  fabrica: { tex: "/meu-mundo/chao/v1/fabrica.webp", perto: 7, largo: 39, forca: 0.45 },
+  // Vulcão: cinza queimada (`burned_ground_01`)
+  vulcao: { tex: "/meu-mundo/chao/v1/vulcao.webp", perto: 6, largo: 37, forca: 0.5 },
+  // Orbital: placas de mármore (`marble_01`) — chão claro, placas de ~2 m
+  orbital: { tex: "/meu-mundo/chao/v1/orbital.webp", perto: 8, largo: 53, forca: 0.28, limpaClaro: false },
 }
 
 const NAME = "ChaoDetalhe"
@@ -44,6 +56,7 @@ let ligado = true
 
 class ChaoDefines extends MaterialDefines {
   CHAODETALHE = false
+  CHAOLIMPA = false
   /** Nível baixo: só a escala de perto (1 leitura por pixel em vez de 2). */
   CHAOUMA = false
 }
@@ -62,6 +75,7 @@ class ChaoDetalhePlugin extends MaterialPluginBase {
   override prepareDefines(defines: ChaoDefines) {
     defines.CHAODETALHE = true
     defines.CHAOUMA = this.uma
+    defines.CHAOLIMPA = this.cfg.limpaClaro !== false
   }
 
   override getClassName() {
@@ -94,8 +108,9 @@ class ChaoDetalhePlugin extends MaterialPluginBase {
     return t === this.tex
   }
 
-  override dispose(forceDisposeTextures?: boolean) {
-    if (forceDisposeTextures) this.tex.dispose()
+  override dispose() {
+    // a textura é do plugin (a mesma URL é dividida por baixo pelo cache do motor)
+    this.tex.dispose()
   }
 
   override getCustomCode(shaderType: string): Nullable<Record<string, string>> {
@@ -107,7 +122,7 @@ class ChaoDetalhePlugin extends MaterialPluginBase {
 {
   // só o chão: virado para cima e na altura do piso (lajes 3 cm acima entram; água funda e paredes não)
   float chaoM = smoothstep(0.86, 0.97, normalize(vNormalW).y) * (1.0 - smoothstep(0.12, 0.3, vPositionW.y)) * step(-0.3, vPositionW.y);
-#ifdef VERTEXCOLOR
+#if defined(VERTEXCOLOR) && defined(CHAOLIMPA)
   // lajes e pedras claras do caminho quase limpas (o detalhe é da terra/musgo)
   chaoM *= 1.0 - 0.75 * smoothstep(0.5, 0.7, dot(vColor.rgb, vec3(0.299, 0.587, 0.114)));
 #endif
@@ -125,9 +140,9 @@ class ChaoDetalhePlugin extends MaterialPluginBase {
   }
 }
 
-/** Liga o detalhe no material da cena (idempotente). `uma` = nível baixo (1 leitura por pixel). */
-export function aplicarChaoDetalhe(scene: Scene, material: StandardMaterial, nomeCena: string, uma = false): void {
-  const cfg = CHAO_DETALHE[nomeCena.split("-")[0]]
+/** Liga o detalhe no material (idempotente). `nome` = cena (`gelo-2`) ou id do Domínio. `uma` = nível baixo. */
+export function aplicarChaoDetalhe(scene: Scene, material: StandardMaterial, nome: string, uma = false): void {
+  const cfg = CHAO_DETALHE[nome.split("-")[0]]
   if (!cfg || material.pluginManager?.getPlugin(NAME)) return
   const tex = new Texture(cfg.tex, scene, { noMipmap: false, samplingMode: Texture.TRILINEAR_SAMPLINGMODE })
   tex.wrapU = Texture.WRAP_ADDRESSMODE
