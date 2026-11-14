@@ -57,6 +57,8 @@ export interface QualityProfile {
    * A peça some com poucos pixels e já dentro da neblina.
    */
   propCell: number
+  /** O bloco com a tela deitada (largura > 1,3 × altura): menos blocos no quadro largo. */
+  propCellWide: number
   propCut: readonly (readonly [number, number])[]
   /**
    * Lado da pele dos personagens na rua e no centro. A multidão (26 robôs, monstros,
@@ -102,17 +104,17 @@ export interface QualityProfile {
 // Baked lighting, AO pré-calculado e neblina simples valem nos TRÊS (estão na malha).
 export const QUALITY: Record<QualityTier, QualityProfile> = {
   low: {
-    tier: "low", maxRatio: 1, minRatio: 0.5, fogStart: 45, fogEnd: 115, maxZ: 125, avatarLod: 10, avatarCut: 70, tagCut: 22, propCell: 32, propCut: [[0.12, 25], [0.3, 45], [0.6, 70]], avatarSkin: 512,
+    tier: "low", maxRatio: 1, minRatio: 0.5, fogStart: 45, fogEnd: 115, maxZ: 125, avatarLod: 10, avatarCut: 70, tagCut: 22, propCell: 32, propCellWide: 48, propCut: [[0.12, 25], [0.3, 45], [0.6, 70]], avatarSkin: 512,
     sky: { tex: 1024, segments: 32, fx: false }, vegetation: 0.6, particles: 0.3, maxParticles: 250, fxLive: 6, fxLayers: false,
     bloom: "off", shadows: { contact: "few", map: 0 }, lodScale: 0.77, resolution: "adaptive",
   },
   mid: {
-    tier: "mid", maxRatio: 1.25, minRatio: 0.6, fogStart: 60, fogEnd: 150, maxZ: 165, avatarLod: 16, avatarCut: 110, tagCut: 30, propCell: 32, propCut: [[0.08, 40], [0.2, 65], [0.45, 105]], avatarSkin: 512,
+    tier: "mid", maxRatio: 1.25, minRatio: 0.6, fogStart: 60, fogEnd: 150, maxZ: 165, avatarLod: 16, avatarCut: 110, tagCut: 30, propCell: 32, propCellWide: 32, propCut: [[0.08, 40], [0.2, 65], [0.45, 105]], avatarSkin: 512,
     sky: { tex: 2048, segments: 48, fx: true }, vegetation: 0.8, particles: 0.6, maxParticles: 700, fxLive: 12, fxLayers: true,
     bloom: "optional", shadows: { contact: "players", map: 512 }, lodScale: 1, resolution: "balanced",
   },
   high: {
-    tier: "high", maxRatio: 1.5, minRatio: 0.75, fogStart: 70, fogEnd: 165, maxZ: 260, avatarLod: 24, avatarCut: 165, tagCut: 40, propCell: 32, propCut: [[0.08, 55], [0.2, 90]], avatarSkin: 1024,
+    tier: "high", maxRatio: 1.5, minRatio: 0.75, fogStart: 70, fogEnd: 165, maxZ: 260, avatarLod: 24, avatarCut: 165, tagCut: 40, propCell: 32, propCellWide: 32, propCut: [[0.08, 55], [0.2, 90]], avatarSkin: 1024,
     sky: { tex: 2048, segments: 48, fx: true }, vegetation: 1, particles: 1, maxParticles: 1500, fxLive: 20, fxLayers: true,
     bloom: "margin", shadows: { contact: "all", map: 1024 }, lodScale: 1.25, resolution: "high",
   },

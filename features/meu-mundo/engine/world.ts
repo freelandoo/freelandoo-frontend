@@ -43,7 +43,6 @@ import {
   steamOutskirts,
   steamPlaza,
   steamNinho,
-  steamSkyline,
   steamStreets,
   type NbCtx,
 } from "./steampunk/neighborhood"
@@ -329,8 +328,14 @@ export function buildWorld(
   // na tela), para a câmera recortar o que está atrás, e a peça fina some de
   // longe (`propCut` do perfil de qualidade).
   const q = QUALITY[tier]
+  // Tela deitada (Projeto A, item 2): no quadro largo cabem muitos blocos de
+  // 32 m e as chamadas passavam de 40 no celular; aí o bloco é `propCellWide`
+  // (48 m no `low`: 55–59 → 39–42 chamadas, +10–25% de triângulos, que deitado
+  // ficam bem abaixo do em pé). Vale a tela na entrada; o corte por tamanho é o mesmo.
+  const eng = scene.getEngine()
+  const cell = eng.getRenderWidth() > eng.getRenderHeight() * 1.3 ? q.propCellWide : q.propCell
   const chunked = (uv: SteamGeo["uv"]) => {
-    const g = new ChunkedGeo(q.propCell, q.propCut)
+    const g = new ChunkedGeo(cell, q.propCut)
     g.uv = uv
     g.vertexShade = footShade
     return g
@@ -366,7 +371,9 @@ export function buildWorld(
   if (ninho) steamNinho(ctx, ninho.x, ninho.z)
   steamBoundary(ctx)
   steamOutskirts(ctx)
-  steamSkyline(ctx, d.hedge)
+  // Sem `steamSkyline` aqui (céu §8, Projeto A): a arte do céu do bairro já é o
+  // horizonte, e as fábricas/torre em malha ficavam na frente dela como blocos cinza
+  // de névoa. O centro segue com a silhueta.
 
   // ── Lotes ─────────────────────────────────────────────────────────────────
   const catalog = nb.houseCatalog ?? legacyCatalog()
