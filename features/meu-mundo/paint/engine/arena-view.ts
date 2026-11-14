@@ -396,37 +396,77 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
         { f: 1, dy: 2.6, c: strata[1], jit: 0 },
         { f: 0.55, dy: 3.8, c: strata[3], jit: 0.1 },
       ]
-    } else if (krnd(isl.id * 17 + 5) < 0.34 && isl.kind !== "boss") {
-      // B: mesa — paredão reto e depois afina (ilha "de pedra cortada")
-      rings = [
-        { f: 1, dy: 0, c: th.rim, jit: 0 },
-        { f: 1.02, dy: 0.28, c: th.rim, jit: 0 },
-        { f: 1, dy: 0.55, c: strata[0], jit: 0 },
-        { f: 0.98, dy: D * 0.32, c: strata[1], jit: 0.12 },
-        { f: 0.95, dy: D * 0.46, c: strata[2], jit: 0.14 },
-        { f: 0.62, dy: D * 0.62, c: strata[3], jit: 0.3 },
-        { f: 0.34, dy: D * 0.82, c: strata[5], jit: 0.25 },
-      ]
     } else {
-      rings = [
+      // Projeto B 3b (pela ref, §10 da skill de cenário em código): a capa de
+      // cima (musgo/pedra da borda) passa da borda e pinga; logo abaixo a rocha
+      // faz BARRIGA e depois recua em anéis tortos até uma ponta fora do eixo.
+      // Três formas sorteadas por ilha, para nenhuma ilha repetir a outra.
+      const cap = Math.min(0.62, Math.max(0.34, D * 0.09))
+      const pick = isl.kind === "boss" ? 0.9 : krnd(isl.id * 17 + 5)
+      const head = [
         { f: 1, dy: 0, c: th.rim, jit: 0 },
-        { f: 1.02, dy: 0.28, c: th.rim, jit: 0 },
-        { f: 0.99, dy: 0.55, c: strata[0], jit: 0 },
-        { f: 0.92, dy: D * 0.18, c: strata[1], jit: 0.25 },
-        { f: 0.82, dy: D * 0.33, c: strata[2], jit: 0.3 },
-        { f: 0.66, dy: D * 0.5, c: strata[3], jit: 0.3 },
-        { f: 0.46, dy: D * 0.68, c: strata[4], jit: 0.3 },
-        { f: 0.24, dy: D * 0.86, c: strata[5], jit: 0.25 },
+        { f: 1.04, dy: cap, c: mul(th.rim, 0.82), jit: 0 },
+        { f: 1.0, dy: cap + 0.55, c: strata[0], jit: 0.04 },
       ]
+      if (pick < 0.3) {
+        // B: mesa — paredão quase reto e depois afina (pedra cortada)
+        rings = [
+          ...head,
+          { f: 1.03, dy: D * 0.3, c: strata[1], jit: 0.06 },
+          { f: 0.97, dy: D * 0.46, c: strata[2], jit: 0.08 },
+          { f: 0.64, dy: D * 0.62, c: strata[3], jit: 0.12 },
+          { f: 0.34, dy: D * 0.82, c: strata[5], jit: 0.12 },
+        ]
+      } else if (pick < 0.6) {
+        // D: degraus — estratos com ressalto (a pedra das refs do Jardim e do Templo)
+        rings = [
+          ...head,
+          { f: 1.05, dy: D * 0.16, c: strata[0], jit: 0.05 },
+          { f: 0.95, dy: D * 0.19, c: strata[1], jit: 0.05 },
+          { f: 0.93, dy: D * 0.34, c: strata[2], jit: 0.07 },
+          { f: 0.8, dy: D * 0.37, c: strata[3], jit: 0.07 },
+          { f: 0.72, dy: D * 0.52, c: strata[2], jit: 0.1 },
+          { f: 0.52, dy: D * 0.56, c: strata[4], jit: 0.1 },
+          { f: 0.42, dy: D * 0.72, c: strata[3], jit: 0.12 },
+          { f: 0.2, dy: D * 0.88, c: strata[5], jit: 0.12 },
+        ]
+      } else {
+        // A: torta — barriga larga, ombro recuado, afina girando
+        rings = [
+          ...head,
+          { f: 1.09, dy: D * 0.2, c: strata[0], jit: 0.07 },
+          { f: 0.94, dy: D * 0.36, c: strata[1], jit: 0.09 },
+          { f: 0.76, dy: D * 0.52, c: strata[2], jit: 0.1 },
+          { f: 0.52, dy: D * 0.7, c: strata[3], jit: 0.12 },
+          { f: 0.26, dy: D * 0.88, c: strata[5], jit: 0.12 },
+        ]
+      }
     }
+    // 3b: anel torto = contorno ondulado de baixa frequência (não serrilhado),
+    // fase que gira com a profundidade e centro que deriva para um lado.
+    const sculpt = !METAL.has(tag) && !LEAF.has(tag) && tag !== "stair"
+    const ph = [krnd(isl.id * 7 + 1), krnd(isl.id * 7 + 2), krnd(isl.id * 7 + 3)].map((v) => v * Math.PI * 2)
+    const da = krnd(isl.id * 7 + 4) * Math.PI * 2
+    const drift = sculpt ? isl.r * (0.12 + krnd(isl.id * 7 + 5) * 0.14) : 0
+    const mossy = sculpt && (th.tile === "garden" || th.tile === "moss")
     const seg = O.length
     const base = rock.p.length / 3
     rings.forEach((R, ri) => {
+      const deep = Math.min(1, R.dy / Math.max(1, D))
+      const ox = Math.sin(da) * drift * deep
+      const oz = Math.cos(da) * drift * deep
       for (let k = 0; k < seg; k++) {
         const [x, z] = O[k]
-        const j = R.jit ? 1 + (rnd(isl.id * 131 + ri * 17 + k) - 0.5) * R.jit : 1
-        const dyj = R.jit ? (rnd(isl.id * 71 + ri * 5 + k) - 0.5) * D * 0.06 : 0
-        rock.p.push(isl.x + (x - isl.x) * R.f * j, isl.y - R.dy + dyj, isl.z + (z - isl.z) * R.f * j)
+        const t = Math.atan2(x - isl.x, z - isl.z) + ri * 0.35
+        const wav = sculpt ? 1 + R.jit * 1.6 * (Math.sin(2 * t + ph[0]) * 0.5 + Math.sin(3 * t + ph[1]) * 0.33 + Math.sin(5 * t + ph[2]) * 0.17) : 1
+        const j = R.jit ? wav * (1 + (rnd(isl.id * 131 + ri * 17 + k) - 0.5) * R.jit * 0.5) : 1
+        let dyj = R.jit ? (rnd(isl.id * 71 + ri * 5 + k) - 0.5) * D * 0.04 : 0
+        // pingos desiguais da capa de musgo (só no anel da capa)
+        if (mossy && ri === 1) {
+          const r = rnd(isl.id * 97 + k)
+          dyj = r > 0.55 ? 0.12 + rnd(isl.id * 89 + k) * 0.4 : r * 0.1
+        }
+        rock.p.push(isl.x + ox + (x - isl.x) * R.f * j, isl.y - R.dy - dyj, isl.z + oz + (z - isl.z) * R.f * j)
         const s = 0.9 + rnd(isl.id * 53 + ri * 11 + k) * 0.14
         rock.c.push(R.c[0] * s, R.c[1] * s, R.c[2] * s, 1)
       }
@@ -440,25 +480,44 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     }
     const last = rings[rings.length - 1]
     const tip = rock.p.length / 3
-    rock.p.push(isl.x, isl.y - last.dy - (LEAF.has(tag) ? 0.6 : Math.max(1, D * 0.18)), isl.z)
+    rock.p.push(isl.x + Math.sin(da) * drift * 1.15, isl.y - last.dy - (LEAF.has(tag) ? 0.6 : Math.max(1, D * 0.18)), isl.z + Math.cos(da) * drift * 1.15)
     rock.c.push(...mul(strata[5], 0.85), 1)
     const lb = base + (rings.length - 1) * seg
     for (let k = 0; k < seg; k++) rock.i.push(lb + k, lb + ((k + 1) % seg), tip)
-    // C: segunda ponta pendurada (estalactite grande) nas ilhas de pedra médias
-    if (!METAL.has(tag) && !LEAF.has(tag) && tag !== "stair" && isl.r > 2.6 && krnd(isl.id * 23 + 9) > 0.62) {
-      const a = krnd(isl.id * 29) * Math.PI * 2
-      const ox = isl.x + Math.sin(a) * isl.r * 0.45
-      const oz = isl.z + Math.cos(a) * isl.r * 0.45
-      const w = isl.r * 0.32
-      const b2 = rock.p.length / 3
-      for (let k = 0; k < 6; k++) {
-        const t = (k / 6) * Math.PI * 2
-        rock.p.push(ox + Math.sin(t) * w, isl.y - D * 0.3, oz + Math.cos(t) * w)
-        rock.c.push(...strata[3], 1)
+    // C: pontas penduradas (estalactites) em volta da principal, de tamanhos
+    // desiguais e tortas (3b: antes era uma só, reta, em 38% das ilhas)
+    if (sculpt && isl.r > 2) {
+      const nTip = Math.min(3, 1 + Math.floor(krnd(isl.id * 23 + 9) * (isl.r / 2)))
+      for (let q = 0; q < nTip; q++) {
+        const a = krnd(isl.id * 29 + q * 3) * Math.PI * 2
+        const rr = isl.r * (0.32 + krnd(isl.id * 31 + q) * 0.22)
+        const ox = isl.x + Math.sin(a) * rr
+        const oz = isl.z + Math.cos(a) * rr
+        const w = isl.r * (0.16 + krnd(isl.id * 37 + q) * 0.14)
+        const top = isl.y - D * (0.24 + krnd(isl.id * 41 + q) * 0.12)
+        const len = D * (0.35 + krnd(isl.id * 43 + q) * 0.45)
+        const lean = w * 0.9
+        const b2 = rock.p.length / 3
+        for (let k = 0; k < 7; k++) {
+          const t = (k / 7) * Math.PI * 2
+          const ww = w * (0.85 + rnd(isl.id * 47 + q * 7 + k) * 0.3)
+          rock.p.push(ox + Math.sin(t) * ww, top, oz + Math.cos(t) * ww)
+          rock.c.push(...strata[3], 1)
+        }
+        for (let k = 0; k < 7; k++) {
+          const t = (k / 7) * Math.PI * 2 + 0.4
+          rock.p.push(ox + Math.sin(a) * lean * 0.4 + Math.sin(t) * w * 0.5, top - len * 0.55, oz + Math.cos(a) * lean * 0.4 + Math.cos(t) * w * 0.5)
+          rock.c.push(...strata[4], 1)
+        }
+        rock.p.push(ox + Math.sin(a) * lean, top - len, oz + Math.cos(a) * lean)
+        rock.c.push(...mul(strata[5], 0.8), 1)
+        for (let k = 0; k < 7; k++) {
+          const a0 = b2 + k
+          const a1 = b2 + ((k + 1) % 7)
+          rock.i.push(a0, a1, a0 + 7, a1, a1 + 7, a0 + 7)
+          rock.i.push(a0 + 7, a1 + 7, b2 + 14)
+        }
       }
-      rock.p.push(ox, isl.y - D * 1.05, oz)
-      rock.c.push(...mul(strata[5], 0.8), 1)
-      for (let k = 0; k < 6; k++) rock.i.push(b2 + k, b2 + ((k + 1) % 6), b2 + 6)
     }
   }
 
@@ -1111,15 +1170,41 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   if (glow.vertexCount) built.push(glow.build("paint-arena-glow", scene, glowMat))
   {
     const rm = new Mesh("paint-arena-rock", scene)
+    // 3b: cada triângulo num tom só (claro do lado do sol, sombra do outro,
+    // ±5% de sorteio) — facetas de pedra esculpida, não um degradê liso
+    const P: number[] = []
+    const C: number[] = []
+    const I: number[] = []
+    const sd = sun ? sun.direction.normalizeToNew() : new Vector3(-0.55, -0.8, 0.3).normalize()
+    for (let t = 0; t < rock.i.length; t += 3) {
+      const ids = [rock.i[t], rock.i[t + 1], rock.i[t + 2]]
+      const v = ids.map((q) => new Vector3(rock.p[q * 3], rock.p[q * 3 + 1], rock.p[q * 3 + 2]))
+      const nrm = Vector3.Cross(v[1].subtract(v[0]), v[2].subtract(v[0]))
+      const L = nrm.length() || 1
+      const lit = -Vector3.Dot(nrm, sd) / L
+      const tone = (lit > 0.35 ? 1.08 : lit > -0.1 ? 1 : 0.86) * (0.95 + rnd(t * 0.37 + 11) * 0.1)
+      let r = 0
+      let g = 0
+      let b = 0
+      for (const q of ids) {
+        r += rock.c[q * 4]
+        g += rock.c[q * 4 + 1]
+        b += rock.c[q * 4 + 2]
+      }
+      for (const p of v) {
+        I.push(P.length / 3)
+        P.push(p.x, p.y, p.z)
+        C.push((r / 3) * tone, (g / 3) * tone, (b / 3) * tone, 1)
+      }
+    }
     const vd = new VertexData()
-    vd.positions = rock.p
-    vd.colors = rock.c
-    vd.indices = rock.i
+    vd.positions = P
+    vd.colors = C
+    vd.indices = I
     const rn: number[] = []
-    VertexData.ComputeNormals(rock.p, rock.i, rn)
+    VertexData.ComputeNormals(P, I, rn)
     vd.normals = rn
-    vd.applyToMesh(rm, true)
-    rm.convertToFlatShadedMesh()
+    vd.applyToMesh(rm, false)
     const rmat = own(new StandardMaterial("paint-arena-rock", scene))
     rmat.diffuseColor = new Color3(1, 1, 1)
     rmat.specularColor = new Color3(0.03, 0.03, 0.03)
