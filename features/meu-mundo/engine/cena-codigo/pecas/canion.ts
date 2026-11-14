@@ -24,8 +24,8 @@ export const PEDRA_ESC: RGB = [0.7, 0.62, 0.56]
 export const MADEIRA: RGB = [0.5, 0.32, 0.2]
 export const MADEIRA_ESC: RGB = [0.34, 0.2, 0.13]
 export const BETULA: RGB = [0.94, 0.92, 0.88]
-export const CAPIM: RGB = [0.6, 0.72, 0.2]
-export const CAPIM_ESC: RGB = [0.36, 0.5, 0.14]
+export const CAPIM: RGB = [0.7, 0.82, 0.22]
+export const CAPIM_ESC: RGB = [0.44, 0.6, 0.16]
 export const PLUMA: RGB = [1, 0.97, 0.88]
 export const CIANO: RGB = [0.4, 0.95, 1]
 export const CIANO_CL: RGB = [0.86, 1, 1]
@@ -82,38 +82,52 @@ function copa(g: G, ctr: V3, r: V3, f: Foliage, seed: number, lod: number, dens 
 // ═══════════════ ROCHA ═══════════════
 
 /**
- * ROCHA VERMELHA (inventário `rocha-vermelha`): laje de arenito larga e baixa, de faces PLANAS, com a borda de cima
- * CHANFRADA (a faixa clara inclinada que a ref mostra em toda rocha) e a tampa plana; o lado à sombra vinho.
- * `s` = meia largura; `rot` = giro.
+ * ROCHA VERMELHA (inventário `rocha-vermelha`; refeita no polimento 14/11 — a antiga saía um "disco" baixo).
+ * O bloco de arenito das refs: ANGULOSO, em 3 anéis tortos — pé largo, barriga que salta e ombro recuado —
+ * com o TOPO inclinado e claro (a face que pega o sol, quase creme) e as laterais em 3 tons (clara, vermelha,
+ * vinho à sombra); cada triângulo num tom. `s` = meia largura; `rot` = giro. Devolve a altura.
  */
 export function rochaVermelha(c: Cena, x: number, z: number, s: number, rot: number, seed: number, lod = 0, caixaOn = true) {
   const g = geoEm(c, x, z)
-  const n = lod ? 5 : 6 + Math.floor(rnd(seed, 1) * 3)
-  const h = s * (0.55 + rnd(seed, 2) * 0.35)
-  const ax = 1 + rnd(seed, 3) * 0.4 // alongada
-  const ring = (r: number, y: number, j: number) => Array.from({ length: n }, (_, k): V3 => {
-    const a = rot + ((k + (rnd(seed, k, 4) - 0.5) * 0.35) / n) * Math.PI * 2
-    const rr = r * (0.9 + rnd(seed, k, 5 + j) * 0.18)
-    return [x + Math.cos(a) * rr * ax, y + (j === 2 ? (rnd(seed, k, 9) - 0.5) * s * 0.08 : 0), z + Math.sin(a) * rr]
-  })
-  const r0 = ring(s, -0.05, 0), r1 = ring(s * 0.97, h * 0.66, 1), r2 = ring(s * 0.74, h, 2)
+  const r = (q: number) => rnd(seed, q)
+  const n = lod ? 5 : 6
+  const h = s * (0.75 + r(2) * 0.5)
+  const ax = 1 + r(3) * 0.35 // alongada
+  const ca0 = Math.cos(rot), sa0 = Math.sin(rot)
+  const ta = r(14) * 6.28, tilt = 0.16 + r(15) * 0.24
+  const sx = (r(11) - 0.5) * s * 0.3, sz = (r(12) - 0.5) * s * 0.3
+  const base: V3[] = [], bar: V3[] = [], omb: V3[] = []
+  for (let k = 0; k < n; k++) {
+    const a = ((k + (r(20 + k) - 0.5) * 0.6) / n) * Math.PI * 2
+    const u = Math.cos(a) * ax, v = Math.sin(a)
+    const R = s * (0.82 + r(30 + k) * 0.3)
+    const rb = R * (1.0 + r(40 + k) * 0.12), ro = R * (0.56 + r(50 + k) * 0.24)
+    const P = (rr: number, y: number, ox = 0, oz = 0): V3 => [x + (u * ca0 - v * sa0) * rr + ox, y, z + (u * sa0 + v * ca0) * rr + oz]
+    base.push(P(R, -0.05))
+    bar.push(P(rb, h * (0.32 + r(60 + k) * 0.24)))
+    omb.push(P(ro, h * (1 - tilt * (0.5 + 0.5 * Math.cos(a - ta))) * (0.94 + r(70 + k) * 0.08), sx, sz))
+  }
+  const tom = (mx: number, mz: number, up: number, q: number): RGB => {
+    const luz = (-(mx - x) * 0.5 - (mz - z) * 0.7) / s + up
+    const b = luz > 0.4 ? VERM_CL : luz > -0.3 ? VERM : VERM_ESC
+    // vermelho mais fundo que o do paredão (a luz quente lavava a pedra para o salmão)
+    return mul([b[0] * 0.96, b[1] * 0.8, b[2] * 0.78], 0.94 + r(q) * 0.1)
+  }
   for (let k = 0; k < n; k++) {
     const j = (k + 1) % n
-    const mx = (r0[k][0] + r0[j][0]) / 2 - x, mz = (r0[k][2] + r0[j][2]) / 2 - z
-    const luz = (-mx * 0.5 - mz * 0.7) / s
-    const cor = luz > 0.3 ? VERM_CL : luz > -0.35 ? VERM : VERM_ESC
-    face(g, [r0[k], r0[j], r1[j], r1[k]], [mul(cor, 0.85), mul(cor, 0.85), cor, cor], [mx, 0, mz])
-    face(g, [r1[k], r1[j], r2[j], r2[k]], mix(cor, VERM_CL, 0.45), [mx, s * 0.8, mz])
+    const mx = (base[k][0] + base[j][0]) / 2, mz = (base[k][2] + base[j][2]) / 2
+    const out: V3 = [mx - x, 0.1, mz - z]
+    const c1 = tom(mx, mz, -0.3, 80 + k), c1b = tom(mx, mz, -0.45, 90 + k)
+    face(g, [base[k], base[j], bar[j]], [mul(c1, 0.74), mul(c1, 0.74), c1], out)
+    face(g, [base[k], bar[j], bar[k]], [mul(c1b, 0.74), c1b, c1b], out)
+    const c2 = tom(mx, mz, 0.32, 100 + k), c2b = tom(mx, mz, 0.12, 110 + k)
+    face(g, [bar[k], bar[j], omb[j]], c2, [out[0], 0.5, out[2]])
+    face(g, [bar[k], omb[j], omb[k]], c2b, [out[0], 0.5, out[2]])
   }
-  face(g, [...r2].reverse(), mix(VERM_CL, CREME, 0.12), [0, 1, 0])
-  if (!lod && rnd(seed, 30) < 0.6) {
-    // uma rachadura escura na face da frente (o risco que a ref desenha)
-    const k = Math.floor(rnd(seed, 31) * n), j = (k + 1) % n
-    const a = r1[k], b = r1[j], m: V3 = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]
-    const mx = m[0] - x, mz = m[2] - z, L = Math.hypot(mx, mz) || 1
-    const o: V3 = [(mx / L) * 0.03, 0, (mz / L) * 0.03]
-    face(g, [[m[0] + o[0], m[1] - 0.05, m[2] + o[2]], [m[0] + o[0] + (b[0] - a[0]) * 0.08, m[1] - h * 0.4, m[2] + o[2] + (b[2] - a[2]) * 0.08], [m[0] + o[0] + (b[0] - a[0]) * 0.05, m[1] - h * 0.4, m[2] + o[2] + (b[2] - a[2]) * 0.05]], VERM_ESC, [mx, 0, mz])
-  }
+  // topo: leque claro (o sol bate de cima), cada gomo num tom
+  const cx = omb.reduce((a, p) => a + p[0], 0) / n, cy = omb.reduce((a, p) => a + p[1], 0) / n + h * 0.05, cz = omb.reduce((a, p) => a + p[2], 0) / n
+  const TOPO = mix(VERM_CL, CREME, 0.12)
+  for (let k = 0; k < n; k++) face(g, [[cx, cy, cz], omb[k], omb[(k + 1) % n]], k % 2 ? TOPO : mix(TOPO, VERM_CL, 0.5), [0, 1, 0])
   if (caixaOn && s > 0.6) c.block(x, z, s * 0.85 * ax, s * 0.85, h, -rot)
   return h
 }
@@ -181,7 +195,7 @@ export function arvore(c: Cena, x: number, z: number, h: number, seed: number, l
     const curva = vento ? Math.sin(t * Math.PI * 0.8) * h * 0.25 : (rnd(seed, k, 4) - 0.5) * h * 0.05
     pts.push([x + vx * curva, h * 0.55 * t, z + vz * curva])
   }
-  const r0 = h * (tipo === "betula" ? 0.055 : 0.045)
+  const r0 = h * (tipo === "betula" ? 0.07 : 0.06) // polimento 14/11: tronco mais grosso
   for (let k = 0; k < 3; k++) {
     tube(g, pts[k], pts[k + 1], r0 * (1 - k * 0.22), r0 * (1 - (k + 1) * 0.22), lod ? 4 : 6, (j) => (j % 3 === 0 ? mul(casca, 0.82) : casca), false)
     if (!lod && casca === BETULA) {
@@ -198,7 +212,7 @@ export function arvore(c: Cena, x: number, z: number, h: number, seed: number, l
     tube(g, pts[2], [topo[0] + Math.cos(a) * h * 0.18, topo[1] + h * 0.12, topo[2] + Math.sin(a) * h * 0.18], r0 * 0.4, r0 * 0.15, 4, () => casca, false)
   }
   // copa: cachos de folhas
-  const R = h * (tipo === "betula" ? 0.34 : 0.32)
+  const R = h * (tipo === "betula" ? 0.4 : 0.38) // copa maior (a ref é quase só copa)
   const cachos: [number, number, number, number][] = vento
     ? [[0.15, 0.15, 0.1, 1], [0.7, 0.05, -0.2, 0.85], [1.25, -0.05, 0.25, 0.7], [1.75, -0.12, 0, 0.5]]
     : [[0, 0.28, 0, 1], [0.55, 0, 0.3, 0.8], [-0.5, 0.05, -0.35, 0.78], [0.1, -0.05, -0.55, 0.7]]

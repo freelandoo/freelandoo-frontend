@@ -24,12 +24,15 @@ export const CEU_DIA: RGB = [0.5, 0.7, 0.95]
 export const NEVOA_DIA: RGB = [0.72, 0.8, 0.92]
 export const CEU_TEMP: RGB = [0.2, 0.25, 0.4]
 export const NEVOA_TEMP: RGB = [0.36, 0.4, 0.52]
-export const LUZ_TEMP = { hemi: 0.95, sol: 0.42, ceu: [0.72, 0.8, 1] as RGB, chao: [0.42, 0.34, 0.36] as RGB, solCor: [0.9, 0.92, 1] as RGB }
+// polimento 14/11: `chao` da luz QUENTE (é ele que pinta o lado de baixo das copas e as faces viradas para
+// baixo: cinza-violeta deixava as árvores de outono cor de oliva) e mais luz na tempestade (a ref é viva)
+export const LUZ_DIA = { hemi: 0.95, sol: 0.8, ceu: [1, 0.98, 0.94] as RGB, chao: [0.8, 0.62, 0.42] as RGB, solCor: [1, 0.95, 0.84] as RGB }
+export const LUZ_TEMP = { hemi: 1.05, sol: 0.62, ceu: [0.84, 0.88, 1] as RGB, chao: [0.66, 0.5, 0.42] as RGB, solCor: [0.95, 0.95, 1] as RGB }
 
-export const CAPIM: RGB = [0.5, 0.62, 0.22]
-export const CAPIM_SECO: RGB = [0.72, 0.68, 0.28]
-export const CAPIM_ESC: RGB = [0.32, 0.46, 0.16]
-export const TERRA: RGB = [0.82, 0.68, 0.5]
+export const CAPIM: RGB = [0.62, 0.76, 0.22]
+export const CAPIM_SECO: RGB = [0.86, 0.8, 0.3]
+export const CAPIM_ESC: RGB = [0.4, 0.58, 0.16]
+export const TERRA: RGB = [0.92, 0.72, 0.56]
 export const TERRA_VERM: RGB = [0.64, 0.32, 0.2]
 export const AREIA: RGB = [0.84, 0.74, 0.54]
 export const LAJE: RGB = [0.86, 0.8, 0.7]

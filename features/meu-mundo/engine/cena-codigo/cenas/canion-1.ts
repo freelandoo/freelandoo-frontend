@@ -23,6 +23,7 @@ export const meta = {
   ceu: T.CEU_DIA,
   nevoa: T.NEVOA_DIA,
   area: AREA,
+  luz: T.LUZ_DIA,
   astro: { dir: [-0.5, 0.75, -0.6] as RGB, r: 0.05, cor: [1, 0.97, 0.86] as RGB },
   pontos: ["entrada", "saida", "chefe"],
   setores: [1, 2, 3],

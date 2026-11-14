@@ -54,7 +54,8 @@ export const CHAO_DETALHE: Readonly<Record<string, ChaoDetalhe>> = {
     folha: { tex: "/meu-mundo/chao/v1/floresta-folha.webp", m: 4.5, forca: 0.25 },
   },
   // Cânion: terra rachada (`cracked_red_ground`)
-  canion: { tex: "/meu-mundo/chao/v1/canion.webp", perto: 6, largo: 43, forca: 0.5 },
+  // relevo: arenito em camadas (`cliff_side`) nas mesas, rochas e troncos
+  canion: { tex: "/meu-mundo/chao/v1/canion.webp", perto: 6, largo: 43, forca: 0.5, relevo: { tex: "/meu-mundo/chao/v1/canion-relevo.webp", m: 6, forca: 0.2 } },
   // Gelo: neve com marcas (`snow_01`) — chão claro: sem a limpeza do claro, força menor
   gelo: { tex: "/meu-mundo/chao/v1/gelo.webp", perto: 7, largo: 47, forca: 0.22, limpaClaro: false },
   // Fábrica: concreto rachado (`cracked_concrete`)
