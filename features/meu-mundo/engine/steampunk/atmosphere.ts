@@ -10,11 +10,11 @@
 // de luz das lanternas e as estrelas. Mudar o número só troca cores e
 // intensidades: nenhum material é recompilado, nada é recriado.
 //
-// Céu: a cúpula panorâmica (engine/sky — arte do bairro/centro; sem arte, o degradê
-// de sempre com horizonte = cor da neblina). De dia a arte aparece como é; no
-// crepúsculo e à noite ela escurece (`ART`) e o céu puxa o degradê da hora. Por
-// cima, as estrelas e a lua numa malha que aparece com a noite. Sem luz, sem
-// neblina, presas à câmera.
+// Céu: a cúpula panorâmica (engine/sky, modo "ciclo": arte de DIA e de NOITE do
+// bairro/centro misturadas pela hora; sem arte, o degradê de sempre com horizonte =
+// cor da neblina). No crepúsculo a arte de dia ganha o tom alaranjado (`ART`) e a
+// de noite vai entrando. Com arte, o casco de estrelas/lua em malha fica desligado
+// (a arte da noite já tem). Sem luz, sem neblina, presas à câmera.
 
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector"
@@ -87,15 +87,15 @@ function lookAt(n: number): Look {
   }
 }
 
-/** A arte panorâmica (pintada de dia) na hora: cor que multiplica a arte e quanto o céu puxa o degradê. */
+/** Ciclo da arte: tom que multiplica a arte de DIA e quanto a arte de NOITE já entrou. */
 const ART = {
-  day: { light: [1, 1, 1] as C3, mix: 0 },
-  dusk: { light: [0.95, 0.68, 0.6] as C3, mix: 0.35 },
-  night: { light: [0.17, 0.18, 0.3] as C3, mix: 0.55 },
+  day: { light: [1, 1, 1] as C3, night: 0 },
+  dusk: { light: [1, 0.74, 0.62] as C3, night: 0.3 },
+  night: { light: [1, 0.74, 0.62] as C3, night: 1 },
 }
-function artAt(n: number): { light: C3; mix: number } {
+function artAt(n: number): { light: C3; night: number } {
   const [a, b, t] = n < 0.5 ? [ART.day, ART.dusk, n * 2] : [ART.dusk, ART.night, n * 2 - 1]
-  return { light: lerp3(a.light, b.light, t), mix: lerp(a.mix, b.mix, t) }
+  return { light: lerp3(a.light, b.light, t), night: lerp(a.night, b.night, t) }
 }
 
 /** Hora de Brasília com fração (0–24). */
@@ -146,9 +146,12 @@ export class Sky {
   readonly dome: SkyDome
   readonly stars: Mesh
   private readonly starMat: StandardMaterial
+  /** Com arte panorâmica: estrelas e lua vêm da arte da noite (o casco em malha fica desligado). */
+  private readonly art: boolean
 
   constructor(scene: Scene, r: number, opts: { region?: SkyRegionId | null; tier?: QualityTier } = {}) {
-    this.dome = new SkyDome(scene, { radius: r, tier: opts.tier ?? "mid", region: opts.region ?? null, haze: DAY.haze, zenith: DAY.zenith })
+    this.dome = new SkyDome(scene, { radius: r, tier: opts.tier ?? "mid", region: opts.region ?? null, mode: "ciclo", haze: DAY.haze, zenith: DAY.zenith })
+    this.art = !!opts.region
 
     // Estrelas (triângulos minúsculos acima de 8° do horizonte) e a lua.
     const sp: number[] = []
@@ -193,10 +196,11 @@ export class Sky {
     const L = lookAt(n)
     this.dome.setGradient(L.haze, L.zenith)
     const A = artAt(n)
-    this.dome.setLight(A.light, A.mix)
+    this.dome.setLight(A.light)
+    this.dome.setNightMix(A.night)
     const s = Math.max(0, (n - 0.45) / 0.55)
     this.starMat.alpha = s
-    this.stars.setEnabled(s > 0.02)
+    this.stars.setEnabled(!this.art && s > 0.02)
   }
 
   setRadius(r: number) {

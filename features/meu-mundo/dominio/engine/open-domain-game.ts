@@ -45,7 +45,7 @@ import type { DomainInfo, DomainScene } from "../../data"
 import { GodFigure, GOD_HUNT } from "../../engine/god-view"
 import type { GodId } from "../../laminas/sim/fight"
 import { SkyDome } from "../../engine/sky/sky-dome"
-import { SKY_REGIONS, skyFog, skyOfCena } from "../../engine/sky/sky-registry"
+import { SKY_REGIONS, skyArt, skyFog, skyOfCena, variantOfCena } from "../../engine/sky/sky-registry"
 import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
 
 /** Alcance do "Lutar", das passagens e do aviso de selado (m). */
@@ -158,10 +158,12 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const cena = near0.cena
   const meta = near0.meta
   // céu panorâmico do Domínio (engine/sky): a névoa puxa para a cor do chão pintado no horizonte
+  // (dia ou noite pela luz da cena: céu escuro = arte da noite)
   const skyId = skyOfCena(sc.name)
   const skyReg = skyId ? SKY_REGIONS[skyId] : null
-  const ceu = skyReg ? skyReg.bottom : meta.ceu
-  const nev = skyReg ? skyFog(skyReg, meta.nevoa) : meta.nevoa
+  const skyVar = variantOfCena(sc.name, meta.ceu)
+  const nev = skyId ? skyFog(skyId, skyVar, meta.nevoa) : meta.nevoa
+  const ceu = skyId ? nev : meta.ceu
   scene.clearColor = new Color4(ceu[0], ceu[1], ceu[2], 1)
   scene.fogMode = Scene.FOGMODE_LINEAR
   scene.fogColor = new Color3(nev[0], nev[1], nev[2])
@@ -179,7 +181,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const dropAstro = skyReg?.dropAstro ? () => {} : astroDaCena(scene, meta)
   const dropAurora = skyReg?.dropAstro ? () => {} : auroraDaCena(scene, meta)
   const sky = skyReg
-    ? new SkyDome(scene, { radius: 295, tier: quality.tier, region: skyReg.id, haze: [nev[0], nev[1], nev[2]], zenith: skyReg.top, flashLight: hemi })
+    ? new SkyDome(scene, { radius: 295, tier: quality.tier, region: skyReg.id, mode: skyVar, haze: [nev[0], nev[1], nev[2]], zenith: skyArt(skyReg.id, skyVar).top, flashLight: hemi })
     : null
 
   /** Blocos: centro + as duas malhas (o pano de fundo de longe sai: o de perto basta). */

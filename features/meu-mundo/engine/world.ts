@@ -425,7 +425,7 @@ export function buildWorld(
   signMat.freeze()
 
   // Céu e o que mexe (engrenagens, vapor).
-  // céu panorâmico (engine/sky, região "bairro"): dia/noite escurece a arte em `sky.set`
+  // céu panorâmico (engine/sky, região "bairro"): arte de dia e de noite misturadas pela hora em `sky.set`
   const sky = new Sky(scene, QUALITY[tier].maxZ * 0.9, { region: "bairro", tier })
   const fx = new SteamFx(scene, mats, tier)
   fx.setStatic(ctx.gears, ctx.vents)

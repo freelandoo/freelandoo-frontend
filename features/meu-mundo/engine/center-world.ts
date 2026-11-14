@@ -214,8 +214,8 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
   signMat.freeze()
 
   // ── Céu, dia e noite, o que mexe ───────────────────────────────────────────
-  // céu panorâmico (engine/sky, região "centro_cidade"): dia/noite escurece a arte em `sky.set`
-  const sky = new Sky(scene, QUALITY[tier].maxZ * 0.9, { region: "centro_cidade", tier })
+  // céu panorâmico (engine/sky, região "centro"): arte de dia e de noite misturadas pela hora em `sky.set`
+  const sky = new Sky(scene, QUALITY[tier].maxZ * 0.9, { region: "centro", tier })
   const fx = new SteamFx(scene, mats, tier)
   const staticGears = ctx.gears
   const staticVents = ctx.vents
