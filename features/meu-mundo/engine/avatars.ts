@@ -546,7 +546,7 @@ export class AvatarLibrary {
   private body(id: BodyId) {
     let p = this.bodies.get(id)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + ASSETS.bodies[id], this.scene)
+      p = loadSource(BASE + ASSETS.bodies[id], this.scene)
       p.catch(() => this.bodies.delete(id))
       this.bodies.set(id, p)
     }
@@ -558,7 +558,7 @@ export class AvatarLibrary {
     if (!file) return Promise.resolve(null)
     let p = this.lods.get(id)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + file, this.scene)
+      p = loadSource(BASE + file, this.scene)
       p.catch(() => this.lods.delete(id))
       this.lods.set(id, p)
     }
@@ -569,7 +569,7 @@ export class AvatarLibrary {
     const key = ANIM_SET[id]
     let p = this.anims.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + ASSETS.anims[key], this.scene)
+      p = loadSource(BASE + ASSETS.anims[key], this.scene)
       p.catch(() => this.anims.delete(key))
       this.anims.set(key, p)
     }
@@ -580,7 +580,7 @@ export class AvatarLibrary {
     const key = ANIM_SET[id]
     let p = this.sits.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + ASSETS.sit[key], this.scene)
+      p = loadSource(BASE + ASSETS.sit[key], this.scene)
       p.catch(() => this.sits.delete(key))
       this.sits.set(key, p)
     }
@@ -591,7 +591,7 @@ export class AvatarLibrary {
     const key = ANIM_SET[id]
     let p = this.rests.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + ASSETS.rest[key], this.scene)
+      p = loadSource(BASE + ASSETS.rest[key], this.scene)
       p.catch(() => this.rests.delete(key))
       this.rests.set(key, p)
     }
@@ -602,7 +602,7 @@ export class AvatarLibrary {
     const key = ANIM_SET[id]
     let p = this.paints.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + ASSETS.paint[key], this.scene)
+      p = loadSource(BASE + ASSETS.paint[key], this.scene)
       p.catch(() => this.paints.delete(key))
       this.paints.set(key, p)
     }
@@ -613,7 +613,7 @@ export class AvatarLibrary {
     const key = ANIM_SET[id]
     let p = this.boxes.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + ASSETS.boxe[key], this.scene)
+      p = loadSource(BASE + ASSETS.boxe[key], this.scene)
       p.catch(() => this.boxes.delete(key))
       this.boxes.set(key, p)
     }
@@ -626,7 +626,7 @@ export class AvatarLibrary {
     if (!clan) return Promise.resolve(null)
     let p = this.clans.get(clan)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + CLAN_ANIMS[clan], this.scene)
+      p = loadSource(BASE + CLAN_ANIMS[clan], this.scene)
       p.catch(() => this.clans.delete(clan))
       this.clans.set(clan, p)
     }
@@ -637,7 +637,7 @@ export class AvatarLibrary {
     const key = ANIM_SET[id]
     let p = this.locos.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + LOCO[key].file, this.scene)
+      p = loadSource(BASE + LOCO[key].file, this.scene)
       p.catch(() => this.locos.delete(key))
       this.locos.set(key, p)
     }
@@ -646,7 +646,7 @@ export class AvatarLibrary {
 
   private clawSet() {
     if (!this.claws) {
-      this.claws = LoadAssetContainerAsync(BASE + GARRAS_FILE, this.scene)
+      this.claws = loadSource(BASE + GARRAS_FILE, this.scene)
       this.claws.catch(() => (this.claws = null))
     }
     return this.claws
@@ -654,7 +654,7 @@ export class AvatarLibrary {
 
   private gunSet() {
     if (!this.gun) {
-      this.gun = LoadAssetContainerAsync(BASE + GUN_FILE, this.scene)
+      this.gun = loadSource(BASE + GUN_FILE, this.scene)
       this.gun.catch(() => (this.gun = null))
     }
     return this.gun
@@ -662,7 +662,7 @@ export class AvatarLibrary {
 
   private archerSet() {
     if (!this.archer) {
-      this.archer = LoadAssetContainerAsync(BASE + ARCHER_FILE, this.scene)
+      this.archer = loadSource(BASE + ARCHER_FILE, this.scene)
       this.archer.catch(() => (this.archer = null))
     }
     return this.archer
@@ -670,7 +670,7 @@ export class AvatarLibrary {
 
   private bruteSet() {
     if (!this.brute) {
-      this.brute = LoadAssetContainerAsync(BASE + BRUTE_FILE, this.scene)
+      this.brute = loadSource(BASE + BRUTE_FILE, this.scene)
       this.brute.catch(() => (this.brute = null))
     }
     return this.brute
@@ -680,7 +680,7 @@ export class AvatarLibrary {
     const key = ANIM_SET[id]
     let p = this.gincanas.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + ASSETS.gincana[key], this.scene)
+      p = loadSource(BASE + ASSETS.gincana[key], this.scene)
       p.catch(() => this.gincanas.delete(key))
       this.gincanas.set(key, p)
     }
@@ -691,7 +691,7 @@ export class AvatarLibrary {
     const key = ANIM_SET[id]
     let p = this.places.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + ASSETS.place[key], this.scene)
+      p = loadSource(BASE + ASSETS.place[key], this.scene)
       p.catch(() => this.places.delete(key))
       this.places.set(key, p)
     }
@@ -702,7 +702,7 @@ export class AvatarLibrary {
     const key = ANIM_SET[id]
     let p = this.rides.get(key)
     if (!p) {
-      p = LoadAssetContainerAsync(BASE + ASSETS.ride[key], this.scene)
+      p = loadSource(BASE + ASSETS.ride[key], this.scene)
       p.catch(() => this.rides.delete(key))
       this.rides.set(key, p)
     }
@@ -891,6 +891,19 @@ export class AvatarLibrary {
     }
     this.materials.clear()
   }
+}
+
+/**
+ * Arquivo-fonte (corpo, clipes): o carregador do glTF toca sozinho o 1º clipe de
+ * cada arquivo (modo FIRST) nos nós do PRÓPRIO contêiner, que nunca entram na
+ * cena. Eram 22 clipes × 35 ossos avaliados todo quadro sem nada na tela
+ * (peso das cenas, 14/11). Os clipes são clonados para cada corpo; a fonte fica parada.
+ */
+function loadSource(url: string, scene: Scene) {
+  return LoadAssetContainerAsync(url, scene).then((c) => {
+    for (const g of c.animationGroups) g.stop()
+    return c
+  })
 }
 
 let cloneSeq = 0
