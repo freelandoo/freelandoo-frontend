@@ -21,10 +21,12 @@ import type { Cena } from "../kit-cena"
 import { caixa } from "../kit-cidade"
 import { blob, face, mix, mul, rnd, strata, tree, tube, type Foliage } from "../kit-natureza"
 import { cabe } from "./tema-fabrica"
+import * as C from "../pecas/orbital"
 
 export const CEU: RGB = [0.46, 0.7, 1]
 export const NEVOA: RGB = [0.82, 0.9, 1]
-export const LUZ = { hemi: 0.95, sol: 0.7, ceu: [1, 0.98, 1] as RGB, chao: [0.7, 0.72, 0.85] as RGB, solCor: [1, 0.97, 0.9] as RGB }
+// a sombra das refs é LILÁS-CLARO e o mármore é branco-creme: chão da luz claro (o cinza-azulado deixava tudo sujo)
+export const LUZ = { hemi: 1, sol: 0.8, ceu: [1, 0.98, 0.95] as RGB, chao: [0.9, 0.86, 0.94] as RGB, solCor: [1, 0.96, 0.86] as RGB }
 export const MARMORE: RGB = [0.93, 0.92, 0.94]
 export const MARMORE_S: RGB = [0.78, 0.78, 0.86]
 export const OURO: RGB = [0.92, 0.72, 0.32]
@@ -49,6 +51,7 @@ export function predio(c: Cena, x: number, z: number, w: number, d: number, h: n
   caixa(g, { x, z, y0: h - 0.35, y1: h + 0.25, w: w + 0.5, d: d + 0.5, rot, side: OURO, top: OURO })
   caixa(g, { x, z, y0: 3.6, y1: 3.85, w: w + 0.2, d: d + 0.2, rot, side: OURO, top: OURO })
   c.block(x, z, w / 2, d / 2, h, rot)
+  C.janelasLados(c, C.quadro(x, z, ang), w, d, h > 11 ? [4.8, 8.4] : h > 7 ? [4.8] : [], lod)
   const fx = Math.sin(ang), fz = Math.cos(ang), sx = Math.cos(ang), sz = -Math.sin(ang)
   // cobertura: cúpula de ouro ou cristal prismático
   if (rnd(seed, 1) < 0.5) {

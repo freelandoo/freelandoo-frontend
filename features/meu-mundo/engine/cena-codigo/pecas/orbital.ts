@@ -44,6 +44,31 @@ export function quadro(x: number, z: number, ang: number) {
   }
 }
 
+/**
+ * Lados e fundo SEM "caixa lisa" (as refs não têm parede cega à vista): janelas ogivais acesas com caixilho
+ * de mármore em sombra, uma a cada ~3 m, em `andares` alturas. Corpo w × d centrado no quadro `Q`.
+ */
+export function janelasLados(c: Cena, Q: ReturnType<typeof quadro>, w: number, d: number, andares: number[], lod: number, fundo = true) {
+  if (lod) return
+  const p0 = Q.P(0, 0, 0)
+  const g = c.geo(p0[0], p0[2]), G = c.glow(p0[0], p0[2])
+  const jan = (P: (t: number, y: number, e: number) => V3, t: number, y0: number, n: V3) => {
+    const hw = 0.5, h = 1.5
+    face(g, [P(t - hw - 0.16, y0 - 0.16, 0.02), P(t + hw + 0.16, y0 - 0.16, 0.02), P(t + hw + 0.16, y0 + h, 0.02), P(t, y0 + h + 0.75, 0.02), P(t - hw - 0.16, y0 + h, 0.02)], MARMORE_SOMBRA, n)
+    face(G, [P(t - hw, y0, 0.04), P(t + hw, y0, 0.04), P(t + hw, y0 + h, 0.04), P(t, y0 + h + 0.55, 0.04), P(t - hw, y0 + h, 0.04)], [VITRINE_FUNDO, VITRINE_FUNDO, VITRINE, mix(VITRINE, BRANCO, 0.4), VITRINE], n)
+  }
+  const lados: [(t: number, y: number, e: number) => V3, number, V3][] = []
+  for (const su of [-1, 1]) lados.push([(t, y, e) => Q.P(su * (w / 2 + e), t, y), d, Q.N(su, 0)])
+  if (fundo) lados.push([(t, y, e) => Q.P(t, -(d / 2 + e), y), w, Q.N(0, -1)])
+  for (const [P, L, n] of lados) {
+    const k = Math.max(1, Math.floor(L / 3))
+    for (let i = 0; i < k; i++) {
+      const t = -L / 2 + (i + 0.5) * (L / k)
+      for (const y of andares) jan(P, t, y, n)
+    }
+  }
+}
+
 /** Retângulo de pé na fachada (plano v = cte), de (u0, y0) a (u1, y1), virado para a frente. */
 export function painel(g: ReturnType<Cena["geo"]>, Q: ReturnType<typeof quadro>, u0: number, u1: number, y0: number, y1: number, v: number, cor: RGB | RGB[]) {
   face(g, [Q.P(u0, v, y0), Q.P(u1, v, y0), Q.P(u1, v, y1), Q.P(u0, v, y1)], cor, Q.N(0, 1))
@@ -155,6 +180,7 @@ export function lojaToldo(c: Cena, x: number, z: number, ang: number, o: { w?: n
   bloco(g, Q, 0, 0.05, w + 0.4, d + 0.5, yB, yB + 0.25, OURO, OURO)
   bloco(g, Q, 0, 0, w + 0.1, d + 0.1, h - 0.15, h + 0.1, MARMORE_SOMBRA, MARMORE)
   c.block(x, z, w / 2, d / 2, h, Q.rot)
+  janelasLados(c, Q, w, d, [yA + 0.8], lod)
   // pilastras com capitel (nas quinas e entre vitrine e porta)
   const pil = lod ? [-w / 2 + 0.3, w / 2 - 0.3] : [-w / 2 + 0.3, w * 0.12 * sg, w / 2 - 0.3]
   for (const u of pil) {
@@ -355,24 +381,27 @@ export function arvoreRedonda(c: Cena, x: number, z: number, h: number, seed: nu
   caixa(g, { x, z, y0: 0, y1: 0.35, w: 1.5, d: 1.5, side: MARMORE, top: TERRA })
   caixa(g, { x, z, y0: 0.3, y1: 0.38, w: 1.58, d: 1.58, side: OURO, top: OURO })
   const forkY = h * 0.42
-  tube(g, [x, 0.3, z], [x, forkY, z], h * 0.06, h * 0.045, lod ? 4 : 6, (k) => (k % 2 ? MADEIRA : mul(MADEIRA, 0.8)), false)
+  // tronco grosso e um pouco torto; 3 galhos GROSSOS em leque até as pontas (a ref: galhos à vista sob a copa)
+  const lean: V3 = [x + (rnd(seed, 4) - 0.5) * h * 0.08, forkY, z + (rnd(seed, 5) - 0.5) * h * 0.08]
+  tube(g, [x, 0.3, z], lean, h * 0.075, h * 0.055, lod ? 4 : 6, (k) => (k % 2 ? MADEIRA : mul(MADEIRA, 0.8)), false)
   const tips: V3[] = []
   for (let k = 0; k < (lod ? 1 : 3); k++) {
     const a = (k / 3) * Math.PI * 2 + rnd(seed, 1) * 2
-    const tp: V3 = [x + Math.cos(a) * h * 0.18, h * 0.66, z + Math.sin(a) * h * 0.18]
-    tube(g, [x, forkY, z], tp, h * 0.035, h * 0.02, 4, () => MADEIRA, false)
+    const tp: V3 = [x + Math.cos(a) * h * 0.26, h * 0.64, z + Math.sin(a) * h * 0.26]
+    // começa antes da emenda e mais gordo (sem fenda escura)
+    tube(g, [lean[0], forkY - 0.25, lean[2]], tp, h * 0.05, h * 0.025, 4, () => MADEIRA, false)
     tips.push(tp)
   }
-  const R = h * 0.36
+  const R = h * 0.42
   if (lod) {
     blob(g, [x, h * 0.72, z], [R * 1.1, R * 0.8, R * 1.1], VERDE_LIMAO, seed)
     c.block(x, z, 0.8, 0.8, h)
     return
   }
-  // camada de baixo (3 bolhas largas), meio (2), topo (1, mais clara)
-  for (let k = 0; k < 3; k++) {
-    const a = (k / 3) * Math.PI * 2 + rnd(seed, 2)
-    blob(g, [x + Math.cos(a) * R * 0.62, h * 0.6, z + Math.sin(a) * R * 0.62], [R * 0.62, R * 0.45, R * 0.62], VERDE_LIMAO, seed + k)
+  // camada de baixo: um tufo achatado em cima de cada ponta de galho; meio (2), topo (1, mais clara)
+  for (let k = 0; k < tips.length; k++) {
+    const tp = tips[k]
+    blob(g, [tp[0], tp[1] + R * 0.12, tp[2]], [R * 0.6, R * 0.42, R * 0.6], VERDE_LIMAO, seed + k)
   }
   for (let k = 0; k < 2; k++) {
     const a = k * Math.PI + rnd(seed, 3)

@@ -18,7 +18,7 @@ import * as T from "./tema-orbital"
 
 export const RUA = 6 // meia largura da avenida
 export const CAL = 11 // distância do eixo à fachada das lojas (calçada de 5 m)
-export const ASFALTO: RGB = [0.8, 0.8, 0.87]
+export const ASFALTO: RGB = [0.74, 0.74, 0.84] // lilás-acinzentado: a rua se separa da calçada (ref 1)
 export const LAJE: RGB = [0.94, 0.93, 0.95]
 export const LAJE_B: RGB = [0.86, 0.86, 0.91]
 const VERDE_TOLDO: RGB = [0.36, 0.76, 0.62]
@@ -29,7 +29,8 @@ const TOLDOS: { toldo: RGB; listraClara?: RGB }[] = [{ toldo: O.AZUL_TOLDO }, { 
 /** Cor do chão: asfalto na avenida, lajes de 2 tons no resto (a cena mistura praça/arena por cima). */
 export function chaoAvenida(P: Planta, x: number, z: number): RGB {
   const d = P.dWalk(x, z)
-  const laje = (Math.floor(x / 2) + Math.floor(z / 2)) % 2 ? LAJE : LAJE_B
+  // a junta das lajes vem da textura (CHAO_DETALHE.orbital); o xadrez por vértice (passo 2 m) virava borrão
+  const laje = mix(LAJE, LAJE_B, noise(x * 0.12, 4.3, z * 0.12) * 0.8)
   const asf = mix(ASFALTO, mul(ASFALTO, 0.95), noise(x * 0.15, 3.1, z * 0.15))
   const t = d < RUA - 0.3 ? 1 : d < RUA + 0.3 ? (RUA + 0.3 - d) / 0.6 : 0
   return mul(mix(laje, asf, t * (1 - P.aberto(x, z))), 0.97 + 0.05 * noise(x * 0.7, 1.7, z * 0.7))

@@ -82,8 +82,9 @@ export const CHAO_DETALHE: Readonly<Record<string, ChaoDetalhe>> = {
   // Vulcão: cinza queimada (`burned_ground_01`) — fraca: as lajes já desenham o chão
   // relevo: grão de rocha (`rock_face_03`) no basalto, nas colunas e na madeira; lava e cristal (claros) limpos
   vulcao: { tex: "/meu-mundo/chao/v1/vulcao.webp", perto: 6, largo: 37, forca: 0.3, relevo: { tex: "/meu-mundo/chao/v1/vulcao-relevo.webp", m: 5, forca: 0.22, limpaClaro: true } },
-  // Orbital: placas de mármore (`marble_01`) — chão claro, placas de ~2 m
-  orbital: { tex: "/meu-mundo/chao/v1/orbital.webp", perto: 8, largo: 53, forca: 0.28, limpaClaro: false },
+  // Orbital: LAJES de mármore de 2 m com junta fina (gerada: `chapas.py --rebites 0 --desloc 0`) — o `marble_01`
+  // sujava o chão claro; a ref é limpa
+  orbital: { tex: "/meu-mundo/chao/v1/orbital-laje.webp", perto: 4, largo: 4, forca: 0.14, limpaClaro: false, soPerto: true },
 }
 
 const NAME = "ChaoDetalhe"
