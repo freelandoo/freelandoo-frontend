@@ -36,6 +36,17 @@ export class GeoBuilder {
   private colors: number[] = []
   private uvs: number[] = []
   private indices: number[] = []
+  /**
+   * Visual premium E2: 2ª UV = projeção no MUNDO (x, z) num quadrado de lado
+   * `size` com canto em (x0, z0). É por ela que a textura de sombra do chão
+   * (AO + variação, `steampunk/ground-shade.ts`) cobre o bairro inteiro.
+   */
+  uv2World: { x0: number; z0: number; size: number } | null = null
+  /**
+   * Visual premium E2: oclusão por vértice (multiplica a cor). Recebe a posição
+   * no mundo e a componente vertical da normal; null = sem nada (o de sempre).
+   */
+  vertexShade: ((x: number, y: number, z: number, ny: number) => number) | null = null
 
   // protected: o construtor do bairro steampunk (steampunk/geo.ts) reescreve as UVs antes.
   protected append(vd: VertexData, color: RGB) {
@@ -47,8 +58,10 @@ export class GeoBuilder {
     for (let k = 0; k < p.length; k++) this.positions.push(p[k])
     for (let k = 0; k < n.length; k++) this.normals.push(n[k])
     const count = p.length / 3
+    const vs = this.vertexShade
     for (let k = 0; k < count; k++) {
-      this.colors.push(color[0], color[1], color[2], 1)
+      const f = vs ? vs(p[k * 3], p[k * 3 + 1], p[k * 3 + 2], n[k * 3 + 1] ?? 0) : 1
+      this.colors.push(color[0] * f, color[1] * f, color[2] * f, 1)
       if (uv && uv.length >= (k + 1) * 2) this.uvs.push(uv[k * 2], uv[k * 2 + 1])
       else this.uvs.push(0, 0)
     }
@@ -146,6 +159,15 @@ export class GeoBuilder {
     vd.normals = this.normals
     vd.colors = this.colors
     vd.uvs = this.uvs
+    const w2 = this.uv2World
+    if (w2) {
+      const u2 = new Array((this.positions.length / 3) * 2)
+      for (let i = 0, j = 0; i < this.positions.length; i += 3, j += 2) {
+        u2[j] = (this.positions[i] - w2.x0) / w2.size
+        u2[j + 1] = (this.positions[i + 2] - w2.z0) / w2.size
+      }
+      vd.uvs2 = u2
+    }
     vd.indices = this.indices
     vd.applyToMesh(mesh, false)
     mesh.material = material

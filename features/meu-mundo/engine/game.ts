@@ -17,6 +17,7 @@
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
+import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
@@ -193,6 +194,25 @@ export interface GameHandle {
 }
 
 const SKY = new Color3(0.66, 0.83, 0.95)
+
+/** Degradê radial (alfa): 1 no meio, 0 na borda do disco. 64 px, uma por cena. */
+function contactShadowTexture(scene: Scene) {
+  const S = 64
+  const tex = new DynamicTexture("mm-shadow-soft", { width: S, height: S }, scene, false)
+  const c = tex.getContext() as unknown as CanvasRenderingContext2D
+  const g = c.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2)
+  g.addColorStop(0, "rgba(255,255,255,1)")
+  g.addColorStop(0.45, "rgba(255,255,255,0.75)")
+  g.addColorStop(1, "rgba(255,255,255,0)")
+  c.clearRect(0, 0, S, S)
+  c.fillStyle = g
+  c.fillRect(0, 0, S, S)
+  tex.hasAlpha = true
+  tex.getAlphaFromRGB = false
+  tex.update(false)
+  tex.wrapU = tex.wrapV = DynamicTexture.CLAMP_ADDRESSMODE
+  return tex
+}
 const isBody = (b: string): b is BodyId => (BODY_IDS as string[]).includes(b)
 
 export function createMeuMundoGame(opts: GameOptions): GameHandle {
@@ -242,6 +262,20 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const sun = new DirectionalLight("mm-sun", new Vector3(-0.55, -1, -0.35), scene)
   sun.intensity = 0.55
 
+  // Materiais do personagem antes do mundo: a sombra de contato já nasce com a hora (atmosphere.applyGrade).
+  const fallbackMat = new StandardMaterial("mm-character", scene)
+  fallbackMat.diffuseColor = new Color3(1, 1, 1)
+  fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
+  const shadowMat = new StandardMaterial("mm-shadow", scene)
+  shadowMat.diffuseColor = new Color3(0, 0, 0)
+  shadowMat.specularColor = new Color3(0, 0, 0)
+  shadowMat.disableLighting = true
+  shadowMat.alpha = 0.22
+  // Visual premium E2: sombra de contato com borda suave (degradê radial no alfa),
+  // escura no meio = o pé encosta no chão. A opacidade sai da hora (atmosphere.applyGrade).
+  shadowMat.opacityTexture = contactShadowTexture(scene)
+  shadowMat.disableDepthWrite = true
+  const mats = { fallback: fallbackMat, shadow: shadowMat }
   const world = centerP
     ? buildCenterWorld(scene, centerP.center, opts.centerLabels ?? { place: (p) => p.id, portal: opts.exitLabel }, quality.tier)
     : buildWorld(
@@ -309,15 +343,6 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // Monstros da rua (mm3d-48b; nos bairros desde a mm3d-57b, só de noite — quem decide é a sala).
   const mobs = new CenterMobs(scene)
 
-  const fallbackMat = new StandardMaterial("mm-character", scene)
-  fallbackMat.diffuseColor = new Color3(1, 1, 1)
-  fallbackMat.specularColor = new Color3(0.08, 0.08, 0.08)
-  const shadowMat = new StandardMaterial("mm-shadow", scene)
-  shadowMat.diffuseColor = new Color3(0, 0, 0)
-  shadowMat.specularColor = new Color3(0, 0, 0)
-  shadowMat.disableLighting = true
-  shadowMat.alpha = 0.22
-  const mats = { fallback: fallbackMat, shadow: shadowMat }
 
   const home = centerP
     ? { x: centerP.center.arrival.x, z: centerP.center.arrival.z, rotationY: centerP.center.arrival.facing }
@@ -1132,7 +1157,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       lib.dispose()
       world.dispose()
       fallbackMat.dispose()
-      shadowMat.dispose()
+      shadowMat.dispose(false, true)
       scene.dispose()
       engine.dispose()
       unlive()

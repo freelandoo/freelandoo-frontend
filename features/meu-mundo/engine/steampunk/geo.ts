@@ -311,6 +311,11 @@ export class ChunkedGeo extends SteamGeo {
     if (!part) {
       part = new ChunkedGeo(0, this.cut) // a tabela vai junto: é o bloco que classifica a peça
       if (this.cut.length) part.levels = this.cut.map(() => new ChunkedGeo(0)).concat(new ChunkedGeo(0))
+      // o sombreamento por vértice e a 2ª UV vão junto (são os blocos que gravam)
+      for (const g of [part, ...(part.levels ?? [])]) {
+        g.vertexShade = this.vertexShade
+        g.uv2World = this.uv2World
+      }
       this.parts.set(key, part)
     }
     part.uv = this.uv

@@ -31,7 +31,9 @@ import { QUALITY, type QualityProfile, type QualityTier } from "./quality"
 import { ChunkedGeo, SteamGeo } from "./steampunk/geo"
 import { TILE, createSteamMaterials } from "./steampunk/materials"
 import { SteamFx } from "./steampunk/fx"
-import { Sky, applyLights, brasiliaHour, nightFactor } from "./steampunk/atmosphere"
+import { Sky, applyGrade, applyLights, brasiliaHour, nightFactor } from "./steampunk/atmosphere"
+import { GroundShade } from "./steampunk/ground-shade"
+import { createAmbientFx } from "./ambiente-fx/ambient-fx"
 import { house01 } from "./steampunk/house01"
 import {
   steamBoundary,
@@ -311,10 +313,21 @@ export function buildWorld(
 
   const d = nb.dims ?? LEGACY_DIMS
   const plan = nb.lotPlan ?? LEGACY_PLAN
+  // Visual premium E2: a sombra do chão (variação + oclusão de contato) numa textura
+  // só, pela 2ª UV de mundo, nos 4 materiais de chão. Desenhada quando a colisão existe.
+  const shade = new GroundShade(scene, (nb.limit ?? 70) + 10, tier)
+  shade.attach([mats.soil, mats.pavers, mats.road, mats.cobble])
+  /** Pé das peças: face vertical escurece perto do chão (oclusão por vértice, sem custo por quadro). */
+  const footShade = (_x: number, y: number, _z: number, ny: number) => {
+    if (Math.abs(ny) > 0.7 || y >= 1.4) return 1
+    const t = Math.max(0, y) / 1.4
+    return 0.7 + 0.3 * t * t * (3 - 2 * t)
+  }
   type Layers = Pick<NbCtx, "props" | "glow" | "pavers" | "road" | "soil" | "cobble" | "pools">
-  const geo = (uv: SteamGeo["uv"]) => {
+  const geo = (uv: SteamGeo["uv"], ground = false) => {
     const g = new SteamGeo()
     g.uv = uv
+    if (ground) g.uv2World = shade.area
     return g
   }
   // Um acumulador por material: o que cai em cada um vira uma malha só — as
@@ -325,16 +338,17 @@ export function buildWorld(
   const chunked = (uv: SteamGeo["uv"]) => {
     const g = new ChunkedGeo(q.propCell, q.propCut)
     g.uv = uv
+    g.vertexShade = footShade
     return g
   }
   const layers = (): Layers => ({
     props: chunked("face"),
     glow: geo("flat"),
     pools: geo("face"),
-    pavers: geo(TILE.pavers),
-    road: geo(TILE.road),
-    soil: geo(TILE.soil),
-    cobble: geo(TILE.cobble),
+    pavers: geo(TILE.pavers, true),
+    road: geo(TILE.road, true),
+    soil: geo(TILE.soil, true),
+    cobble: geo(TILE.cobble, true),
   })
   const ctx: NbCtx = {
     ...layers(),
@@ -429,20 +443,29 @@ export function buildWorld(
   const sky = new Sky(scene, QUALITY[tier].maxZ * 0.9, { region: "bairro", tier })
   const fx = new SteamFx(scene, mats, tier)
   fx.setStatic(ctx.gears, ctx.vents)
+  // E5 (ambiente-fx): folhas de dia, vaga-lumes à noite — 1 chamada; a hora vem do mundo (abaixo)
+  const ambient = createAmbientFx(scene, "bairro", tier)
 
   // Dia e noite pelo relógio de Brasília: noite das 18h às 6h (meia hora de
   // virada). Conferido a cada 20 s; só cores e intensidades mudam.
   let night = -1
   let forcedHour: number | null = null
+  let fogFrom = q.fogStart
   const applyTime = () => {
     const n = nightFactor(forcedHour ?? brasiliaHour())
     if (Math.abs(n - night) < 0.005) return
+    ambient?.setNight(n, night < 0)
     night = n
-    applyLights(scene, n)
-    sky.set(n)
+    applyLights(scene, n, "bairro")
+    sky.set(n, "bairro")
     fx.setNight(n)
-    mats.glow.emissiveColor.set(0.72 + 0.28 * n, 0.72 + 0.28 * n, 0.72 + 0.28 * n)
-    mats.pool.emissiveColor.set(n, n, n)
+    // janelas e lanternas: apagadas de dia (vidro âmbar), acesas à noite
+    const k = 0.58 + 0.42 * n
+    mats.glow.emissiveColor.set(k, k, k)
+    models.setNight(n)
+    sky.setGrade(applyGrade(scene, n, "bairro", fogFrom))
+    // poça de luz: um pouco mais forte, porque a noite do bairro ficou mais escura e azul (E2)
+    mats.pool.emissiveColor.set(1.45 * n, 1.32 * n, 1.12 * n)
     for (const m of [...meshes, ...housesMeshes]) if (m.material === mats.pool) m.setEnabled(n > 0.02)
   }
   const clock = setInterval(applyTime, 20000)
@@ -554,6 +577,16 @@ export function buildWorld(
     if (onlyDrawn.length || onlyServer.length) console.warn("[meu-mundo] desenho × colisão divergem", { onlyDrawn, onlyServer })
   }
   const viewBoxes = [...boxes, ...ctx.viewOnly]
+  shade.redraw(boxes)
+  // casa que mudou de nível: a sombra de contato acompanha (uma vez por lote de mudanças)
+  let shadeTimer: ReturnType<typeof setTimeout> | null = null
+  const reshade = () => {
+    if (shadeTimer || disposed) return
+    shadeTimer = setTimeout(() => {
+      shadeTimer = null
+      if (!disposed) shade.redraw(boxes)
+    }, 50)
+  }
   const replaceLotBoxes = (list: Box2[], lot: number, next: Box2[]) => {
     for (let i = list.length - 1; i >= 0; i--) if (list[i].lot === lot) list.splice(i, 1)
     list.push(...next)
@@ -586,6 +619,7 @@ export function buildWorld(
       const next = houseBoxesFor(sl.lot, def)
       replaceLotBoxes(boxes, lot, next)
       replaceLotBoxes(viewBoxes, lot, next)
+      reshade()
       placeDoor(sl)
       requestVisual(sl)
       return true
@@ -603,6 +637,11 @@ export function buildWorld(
       fx.setTier(q.tier)
       sky.setRadius(q.maxZ * 0.9)
       sky.setQuality(q.tier)
+      // a neblina do perfil novo, já com o tratamento da hora
+      fogFrom = q.fogStart
+      ambient?.setTier(q.tier)
+      night = -1
+      applyTime()
     },
     dispose: () => {
       disposed = true
@@ -612,6 +651,9 @@ export function buildWorld(
       for (const m of housesMeshes) m.dispose()
       for (const m of meshes) m.dispose()
       clearInterval(clock)
+      if (shadeTimer) clearTimeout(shadeTimer)
+      shade.dispose()
+      ambient?.dispose()
       const w = window as unknown as { __mmSetHour?: typeof devHour }
       if (w.__mmSetHour === devHour) delete w.__mmSetHour
       sky.dispose()

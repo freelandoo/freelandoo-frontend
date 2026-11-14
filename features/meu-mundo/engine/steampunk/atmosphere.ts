@@ -3,6 +3,13 @@
 // Céu, luz e o ciclo de DIA E NOITE do bairro steampunk (mm3d-51). Só o
 // bairro: o centro segue com a luz de sempre.
 //
+// Visual premium E2 (2026-11-14): cada região tem a SUA paleta (`LOOKS`) e o
+// bairro ganhou o tratamento de cor contínuo (`applyGrade`: exposição, contraste,
+// saturação e tom frio nas sombras/quente nas luzes pela ColorCurves, no shader
+// do material — sem passe de tela), a neblina pela hora e a sombra de contato
+// dos personagens pela hora. O centro segue com a luz de sempre (sem grade) até
+// a etapa 3 generalizar.
+//
 // O relógio é o de Brasília (o mesmo da vida do hóspede): às 18h já é noite
 // (escurece de 17h30 a 18h) e às 6h já é dia (clareia de 5h30 a 6h). Tudo sai
 // de UM número, `night` (0 = dia, 1 = noite), que mistura três paletas (dia,
@@ -17,6 +24,7 @@
 // (a arte da noite já tem). Sem luz, sem neblina, presas à câmera.
 
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
+import { ColorCurves } from "@babylonjs/core/Materials/colorCurves"
 import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { CreateSphereVertexData } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
@@ -42,6 +50,7 @@ interface Look {
   sunColor: C3
 }
 
+/** Paleta de sempre (centro; e o bairro até a E2). */
 const DAY: Look = {
   haze: [0.78, 0.8, 0.79],
   zenith: [0.42, 0.62, 0.82],
@@ -70,12 +79,59 @@ const NIGHT: Look = {
   sunColor: [0.58, 0.68, 1],
 }
 
+/**
+ * Bairro (E2): dia claro e quente; noite AZULADA e mais escura, para as janelas e
+ * os postes (âmbar) virarem os pontos de luz. Céu e luz do céu mais frios à noite.
+ */
+const BAIRRO_DAY: Look = { ...DAY, hemi: 0.64, hemiColor: [0.9, 0.93, 1], ground: [0.4, 0.31, 0.22], sun: 0.82 }
+const BAIRRO_DUSK: Look = { ...DUSK, hemi: 0.5, sun: 0.52 }
+const BAIRRO_NIGHT: Look = {
+  haze: [0.075, 0.095, 0.17],
+  zenith: [0.012, 0.022, 0.07],
+  hemi: 0.44,
+  hemiColor: [0.48, 0.6, 0.98],
+  ground: [0.14, 0.12, 0.13],
+  sun: 0.3,
+  sunColor: [0.52, 0.64, 1],
+}
+
+/**
+ * Tratamento de cor (aplicado no shader do StandardMaterial). Os matizes são
+ * fixos (sombras azuis, luzes âmbar); o que a hora mistura é a densidade.
+ */
+export interface Grade {
+  exposure: number
+  contrast: number
+  /** ColorCurves.globalSaturation (−100…100). */
+  saturation: number
+  /** Densidade do azul nas sombras e do âmbar nas luzes (0–100). */
+  coolShadows: number
+  warmLights: number
+  /** Multiplica o início da neblina do perfil (o fim não muda: é o que esconde o horizonte). */
+  fogNear: number
+  /** Opacidade da sombra de contato dos personagens. */
+  contact: number
+}
+const NO_GRADE: Grade = { exposure: 1, contrast: 1, saturation: 0, coolShadows: 0, warmLights: 0, fogNear: 1, contact: 0.22 }
+const BAIRRO_GRADE = {
+  day: { exposure: 1.03, contrast: 1.14, saturation: 14, coolShadows: 10, warmLights: 8, fogNear: 1, contact: 0.5 },
+  dusk: { exposure: 1.0, contrast: 1.12, saturation: 10, coolShadows: 18, warmLights: 22, fogNear: 0.85, contact: 0.42 },
+  night: { exposure: 0.98, contrast: 1.1, saturation: 6, coolShadows: 28, warmLights: 26, fogNear: 0.72, contact: 0.36 },
+} satisfies Record<string, Grade>
+
+export type LookRegion = "bairro" | "centro"
+const LOOKS: Record<LookRegion, { day: Look; dusk: Look; night: Look; grade: { day: Grade; dusk: Grade; night: Grade } | null }> = {
+  bairro: { day: BAIRRO_DAY, dusk: BAIRRO_DUSK, night: BAIRRO_NIGHT, grade: BAIRRO_GRADE },
+  centro: { day: DAY, dusk: DUSK, night: NIGHT, grade: null },
+}
+
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 const lerp3 = (a: C3, b: C3, t: number): C3 => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]
 
 /** Paleta do momento: dia → crepúsculo (n = 0,5) → noite. */
-function lookAt(n: number): Look {
-  const [a, b, t] = n < 0.5 ? [DAY, DUSK, n * 2] : [DUSK, NIGHT, n * 2 - 1]
+function lookAt(n: number, region: LookRegion = "centro"): Look {
+  const L = LOOKS[region]
+  const [a, b, t] = n < 0.5 ? [L.day, L.dusk, n * 2] : [L.dusk, L.night, n * 2 - 1]
   return {
     haze: lerp3(a.haze, b.haze, t),
     zenith: lerp3(a.zenith, b.zenith, t),
@@ -122,8 +178,8 @@ export function nightFactor(h: number): number {
 }
 
 /** Luzes da cena no momento `n` (as do game.ts, pelo nome). */
-export function applyLights(scene: Scene, n: number) {
-  const L = lookAt(n)
+export function applyLights(scene: Scene, n: number, region: LookRegion = "centro") {
+  const L = lookAt(n, region)
   scene.clearColor = new Color4(L.haze[0], L.haze[1], L.haze[2], 1)
   scene.fogColor = new Color3(...L.haze)
   const hemi = scene.getLightByName("mm-hemi") as HemisphericLight | null
@@ -139,6 +195,57 @@ export function applyLights(scene: Scene, n: number) {
     sun.intensity = L.sun
     sun.diffuse = new Color3(...L.sunColor)
   }
+}
+
+/** Tratamento do momento `n` (null = região sem grade). */
+export function gradeAt(n: number, region: LookRegion): Grade | null {
+  const G = LOOKS[region].grade
+  if (!G) return null
+  const [a, b, t] = n < 0.5 ? [G.day, G.dusk, n * 2] : [G.dusk, G.night, n * 2 - 1]
+  const out = {} as Grade
+  for (const k of Object.keys(a) as (keyof Grade)[]) out[k] = lerp(a[k], b[k], t)
+  return out
+}
+
+/** Nunca exatamente 1: o define CONTRAST/EXPOSURE trocaria e todo material recompilaria. */
+const off1 = (v: number) => (Math.abs(v - 1) < 0.002 ? 1.002 : v)
+
+/**
+ * Aplica o tratamento de cor do momento na cena (materiais), a neblina e a sombra
+ * de contato, e devolve o que o céu precisa imitar (a cúpula é um shader próprio,
+ * fora do image processing). Material congelado só religa os uniformes quando
+ * muda de efeito: por isso é descongelado/congelado (sem recompilar) a cada
+ * troca — as trocas são raras (o relógio confere a cada 20 s).
+ */
+export function applyGrade(scene: Scene, n: number, region: LookRegion, fogStart: number): Grade {
+  const g = gradeAt(n, region) ?? NO_GRADE
+  if (LOOKS[region].grade) {
+    const ip = scene.imageProcessingConfiguration
+    ip.exposure = off1(g.exposure)
+    ip.contrast = off1(g.contrast)
+    let cc = ip.colorCurves
+    if (!cc) {
+      cc = new ColorCurves()
+      ip.colorCurves = cc
+    }
+    cc.globalSaturation = g.saturation
+    cc.shadowsHue = 222
+    cc.shadowsDensity = g.coolShadows
+    cc.midtonesHue = 220
+    cc.midtonesDensity = g.coolShadows * 0.35
+    cc.highlightsHue = 36
+    cc.highlightsDensity = g.warmLights
+    ip.colorCurvesEnabled = true
+    for (const m of scene.materials) {
+      if (!m.isFrozen) continue
+      m.unfreeze()
+      m.freeze()
+    }
+  }
+  scene.fogStart = fogStart * g.fogNear
+  const shadow = scene.getMaterialByName("mm-shadow")
+  if (shadow) shadow.alpha = g.contact
+  return g
 }
 
 /** Cúpula do céu (arte panorâmica ou degradê) e a malha das estrelas e da lua. */
@@ -195,8 +302,8 @@ export class Sky {
   }
 
   /** Cores do momento `n` (0 dia, 1 noite). */
-  set(n: number) {
-    const L = lookAt(n)
+  set(n: number, region: LookRegion = "centro") {
+    const L = lookAt(n, region)
     this.dome.setGradient(L.haze, L.zenith)
     const A = artAt(n)
     if (this.mode === "ciclo") {
@@ -206,6 +313,11 @@ export class Sky {
     const s = Math.max(0, (n - 0.45) / 0.55)
     this.starMat.alpha = s
     this.stars.setEnabled(!this.art && s > 0.02)
+  }
+
+  /** O tratamento de cor da cena, imitado na cúpula (o horizonte casa com a neblina tratada). */
+  setGrade(g: Pick<Grade, "exposure" | "contrast" | "saturation"> | null) {
+    this.dome.setGrade(g ? Math.pow(g.exposure, 1 / 2.2) : 1, g ? g.contrast : 1, g ? 1 + g.saturation / 100 : 1)
   }
 
   setRadius(r: number) {

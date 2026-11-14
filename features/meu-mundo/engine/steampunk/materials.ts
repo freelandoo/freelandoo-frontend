@@ -23,6 +23,7 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
+import { ImageProcessingConfiguration } from "@babylonjs/core/Materials/imageProcessingConfiguration"
 import type { Scene } from "@babylonjs/core/scene"
 import type { QualityTier } from "../quality"
 import { rng } from "./palette"
@@ -435,6 +436,11 @@ export function createSteamMaterials(scene: Scene, tier: QualityTier, opts: { wa
   pool.disableDepthWrite = true
   pool.backFaceCulling = false
   pool.zOffset = -2
+  // Visual premium E2: a poça é luz SOMADA à imagem já tratada — fora do tratamento
+  // de cor da cena (o contraste apagava o aditivo fraco nas bordas).
+  const flat = new ImageProcessingConfiguration()
+  flat.isEnabled = false
+  pool.imageProcessingConfiguration = flat
   const glow = new StandardMaterial("sp-glow", scene)
   glow.disableLighting = true
   glow.emissiveColor = new Color3(1, 1, 1)

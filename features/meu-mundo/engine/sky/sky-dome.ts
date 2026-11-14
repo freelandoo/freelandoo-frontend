@@ -20,6 +20,7 @@ import type { Scene } from "@babylonjs/core/scene"
 import type { Observer } from "@babylonjs/core/Misc/observable"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial"
@@ -71,6 +72,7 @@ uniform float uFlash;
 uniform float uTw;
 uniform float uAur;
 uniform float uPulse;
+uniform vec3 uGrade;
 const float PI = 3.14159265;
 float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 vec3 art(vec2 p) {
@@ -119,11 +121,16 @@ void main(void) {
   c = mix(c, uHaze, uAir * (1.0 - smoothstep(uHorizon - 0.01, uHorizon - 0.22, t)));
   // abaixo do horizonte: névoa
   c = mix(c, uHaze, uHazeBelow * smoothstep(uHorizon - 0.004, uHorizon + 0.02, t));
-  gl_FragColor = vec4(mix(grad, c, uFade), 1.0);
+  // tratamento de cor da cena (visual premium E2): exposição, contraste e saturação
+  vec3 o = clamp(mix(grad, c, uFade) * uGrade.x, 0.0, 1.0);
+  vec3 hc = o * o * (3.0 - 2.0 * o);
+  o = uGrade.y < 1.0 ? mix(vec3(0.5), o, uGrade.y) : mix(o, hc, uGrade.y - 1.0);
+  o = mix(vec3(lum(o)), o, uGrade.z);
+  gl_FragColor = vec4(o, 1.0);
 }
 `
 
-const UNIFORMS = ["world", "viewProjection", "uTexel", "uHaze", "uZenith", "uTop", "uTopN", "uTint", "uLight", "uMixN", "uHorizon", "uAspect", "uFade", "uHazeBelow", "uAir", "uExposure", "uSat", "uTime", "uFlash", "uTw", "uAur", "uPulse"]
+const UNIFORMS = ["world", "viewProjection", "uTexel", "uHaze", "uZenith", "uTop", "uTopN", "uTint", "uLight", "uMixN", "uHorizon", "uAspect", "uFade", "uHazeBelow", "uAir", "uExposure", "uSat", "uTime", "uFlash", "uTw", "uAur", "uPulse", "uGrade"]
 
 /** Malha da cúpula: esfera com a coluna da arte na UV (u = 0 → 1 girando de +z para +x, sentido de quem vira à direita). */
 function domeMesh(scene: Scene, cols: number): Mesh {
@@ -217,6 +224,9 @@ export class SkyDome {
   /** Duração do último carregamento (ms), para o painel. */
   lastLoadMs = 0
 
+  /** Tratamento de cor da cena imitado (exposição, contraste, saturação). */
+  private readonly grade = new Vector3(1, 1, 1)
+
   constructor(scene: Scene, opts: SkyDomeOptions) {
     this.scene = scene
     this.tier = opts.tier
@@ -234,6 +244,7 @@ export class SkyDome {
     this.mesh.material = this.mat
     this.setGradient(opts.haze ?? [0.66, 0.83, 0.95], opts.zenith ?? [0.42, 0.62, 0.82])
     this.setLight([1, 1, 1])
+    this.setGrade(1, 1, 1)
     this.setRegion(opts.region ?? null, opts.mode ?? "dia")
     this.obs = scene.onBeforeRenderObservable.add(() => this.update(scene.getEngine().getDeltaTime() / 1000))
     live.add(this)
@@ -274,6 +285,12 @@ export class SkyDome {
   setGradient(haze: C3, zenith: C3) {
     this.mat.setColor3("uHaze", new Color3(haze[0], haze[1], haze[2]))
     this.mat.setColor3("uZenith", new Color3(zenith[0], zenith[1], zenith[2]))
+  }
+
+  /** Tratamento de cor da cena (1, 1, 1 = nenhum): exposição (gama), contraste, saturação. */
+  setGrade(exposure: number, contrast: number, saturation: number) {
+    this.grade.set(exposure, contrast, saturation)
+    this.mat.setVector3("uGrade", this.grade)
   }
 
   /** Cor que multiplica a arte de DIA (crepúsculo alaranjado no ciclo). */
@@ -406,6 +423,7 @@ export class SkyDome {
       if (this.region) this.applyRegion(this.region)
       this.mat.setFloat("uFade", this.fade)
       this.mat.setFloat("uMixN", this.mixN)
+      this.mat.setVector3("uGrade", this.grade)
     }
     if (this.region) this.setRegion(this.region.id, this.mode)
   }

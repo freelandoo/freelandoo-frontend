@@ -77,6 +77,17 @@ export class HouseModels {
   }
 
   /** Níveis com modelo na GPU agora (painel técnico). */
+  /** Visual premium E2: 0 = dia, 1 = noite (a casa texturizada se acende menos à noite). */
+  private night = 0
+  private selfLight() {
+    return 0.3 - 0.13 * this.night
+  }
+  setNight(n: number) {
+    this.night = n
+    const k = this.selfLight()
+    for (const e of this.entries.values()) if (e.material?.emissiveTexture) e.material.emissiveColor.set(k, k, k)
+  }
+
   get loadedLevels() {
     return [...this.entries.values()].filter((e) => e.mesh).map((e) => e.level)
   }
@@ -178,7 +189,8 @@ export class HouseModels {
     if (texture) {
       mat.diffuseTexture = texture
       mat.emissiveTexture = texture
-      mat.emissiveColor = new Color3(0.3, 0.3, 0.3)
+      const k = this.selfLight()
+      mat.emissiveColor = new Color3(k, k, k)
       mat.diffuseColor = new Color3(0.82, 0.82, 0.82)
     } else {
       // Igual às peças do bairro (steampunk/materials.ts "sp-trim"): a cor vem
