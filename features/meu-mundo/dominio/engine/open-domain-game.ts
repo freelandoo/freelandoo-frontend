@@ -104,6 +104,8 @@ export interface OpenDomainOptions {
   look?: string
   domain: DomainInfo
   scene: DomainScene
+  /** Administrador (o servidor manda `bypass`): todo setor, portal e passagem abertos, para conferir as cenas. */
+  bypass?: boolean
   /** Onde nascer: setor N = de volta da luta (perto do chefe ou na zona); "saida" = voltando da cena seguinte. */
   spawn?: { sector?: number; at?: "entrada" | "saida" }
   /** Monstros vencidos: id → hora (ms) da vitória; somem até `RESPAWN_MS` depois. */
@@ -311,13 +313,14 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     } else if (P.chefe) bossSpots.push({ sector: sc.boss, ...P.chefe })
   }
   let best = Math.max(0, Math.min(10, domain.best))
-  const sectorOpen = (s: number) => s <= best + 1 && !!domain.sectors[s - 1]?.open
+  const bypass = !!opts.bypass
+  const sectorOpen = (s: number) => (bypass || s <= best + 1) && !!domain.sectors[s - 1]?.open
   let passageOpen = !!sc.passage?.open
 
   // ── portais: toda passagem tem um; aberto = redemoinho de partículas ─────
   const portalColor = PORTAL_COLOR[domain.id] ?? PORTAL_COLOR.floresta
   /** A saída abre? (null = não há para onde ir: sem portal) */
-  const exitOpen = (): boolean | null => (sc.passage ? passageOpen : domain.passage ? best >= 10 && !!domain.passage.open : null)
+  const exitOpen = (): boolean | null => (sc.passage ? passageOpen : domain.passage ? (bypass || best >= 10) && !!domain.passage.open : null)
   const portals: DomainPortal[] = []
   portals.push(new DomainPortal(scene, { x: entrada.x, z: entrada.z, ang: entrada.ang, color: portalColor, open: true, low }))
   const exitPortal = saida && exitOpen() !== null ? new DomainPortal(scene, { x: saida.x, z: saida.z, ang: saida.ang, color: portalColor, open: !!exitOpen(), low }) : null
@@ -620,7 +623,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     if (Math.hypot(entrada.x - body.x, entrada.z - body.z) < REACH + 1) return sc.n > 1 ? { kind: "back" } : { kind: "exit" }
     if (saida && Math.hypot(saida.x - body.x, saida.z - body.z) < REACH + 1.4) {
       if (sc.passage) return passageOpen ? { kind: "next" } : { kind: "sealed", sector: sc.boss, boss: true, portal: true }
-      if (domain.passage && best >= 10) return { kind: "passage" }
+      if (domain.passage && (bypass || best >= 10)) return { kind: "passage" }
       return null
     }
     for (const m of mobs) if (!m.boss && m.model && !sectorOpen(m.sector) && Math.hypot(m.x - body.x, m.z - body.z) < REACH) return { kind: "sealed", sector: m.sector, boss: false }

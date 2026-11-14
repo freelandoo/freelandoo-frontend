@@ -49,6 +49,8 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const mobName = useMobName(false)
   const [id, setId] = useState<DomainId>(first)
   const [info, setInfo] = useState<DomainInfo | null>(null)
+  /** Administrador: o servidor abre tudo e a cena também (para conferir os Domínios). */
+  const bypassRef = useRef(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [attempt, setAttempt] = useState(0)
@@ -100,6 +102,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
     setFailed(null)
     const r = await enterDomain(token, which, n > 1 ? n : undefined)
     if (r.ok) {
+      bypassRef.current = !!r.data.bypass
       setSceneInfo(r.data.scene ?? null)
       setInfo(r.data.domain)
     } else setFailed(r.error)
@@ -163,6 +166,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
           look,
           domain: d,
           scene: sc,
+          bypass: bypassRef.current,
           spawn: spawn ? { sector: spawn } : { at: arrive },
           defeated: defeatedRef.current,
           mapLabels: (() => {
