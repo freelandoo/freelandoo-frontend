@@ -10,6 +10,7 @@
 import type { Scene } from "@babylonjs/core/scene"
 import type { Observer } from "@babylonjs/core/Misc/observable"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
+import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
@@ -138,8 +139,12 @@ export class DomainPortal {
   private readonly color: Color3
   private readonly obs: Observer<Scene>
   private time = Math.random() * 10
+  /** Some quando a câmera encosta ou passa para trás (quem nasce na boca do portal vê o caminho, não o véu). */
+  private camK = 1
+  private readonly center = new Vector3()
   private on = 0
   private open: boolean
+  private R = 2.3
 
   constructor(private readonly scene: Scene, spec: PortalSpec) {
     const R = spec.r ?? 2.3
@@ -148,6 +153,8 @@ export class DomainPortal {
     this.root = new TransformNode("dom-portal", scene)
     this.root.position.set(spec.x, R + 0.35, spec.z)
     this.root.rotation.y = spec.ang
+    this.center.copyFrom(this.root.position)
+    this.R = R
     Effect.ShadersStore.mmPortalVertexShader = VERTEX
     Effect.ShadersStore.mmPortalFragmentShader = FRAGMENT
     const mat = (name: string, ring: boolean) => {
@@ -199,22 +206,26 @@ export class DomainPortal {
 
   private paint() {
     const k = this.on
+    const v = this.camK
     const c = this.color
     // fechado: anel de partículas cinza e lento; aberto: a cor do Domínio, girando rápido
     this.ringMat.setColor3("uColor", new Color3(0.55 + (c.r - 0.55) * k, 0.55 + (c.g - 0.55) * k, 0.62 + (c.b - 0.62) * k))
-    this.ringMat.setFloat("uOn", 0.8 + 0.2 * k)
+    this.ringMat.setFloat("uOn", (0.8 + 0.2 * k) * v)
     this.ringMat.setFloat("uSpin", 0.35 + 0.65 * k)
     this.veilMat.emissiveColor.set(0.16 + (c.r * 0.8 - 0.16) * k, 0.12 + (c.g * 0.8 - 0.12) * k, 0.24 + (c.b * 0.8 - 0.24) * k)
-    this.veilMat.alpha = 0.2 - 0.06 * k
-    this.swirlMat.setFloat("uOn", k)
-    this.swirl.setEnabled(k > 0.01)
+    this.veilMat.alpha = (0.2 - 0.06 * k) * v
+    this.swirlMat.setFloat("uOn", k * v)
+    this.swirl.setEnabled(k * v > 0.01)
   }
 
   private update(dt: number) {
     const d = Math.min(0.1, Math.max(0, dt))
     const want = this.open ? 1 : 0
-    if (this.on !== want) {
-      this.on = want > this.on ? Math.min(1, this.on + d / 0.6) : Math.max(0, this.on - d / 0.6)
+    const cam = this.scene.activeCamera
+    const camK = cam ? Math.min(1, Math.max(0.12, (Vector3.Distance(cam.globalPosition, this.center) - this.R - 0.8) / 4)) : 1
+    if (this.on !== want || Math.abs(camK - this.camK) > 0.01) {
+      this.on = want > this.on ? Math.min(1, this.on + d / 0.6) : want < this.on ? Math.max(0, this.on - d / 0.6) : this.on
+      this.camK = camK
       this.paint()
     }
     this.time += d
@@ -222,7 +233,7 @@ export class DomainPortal {
     if (this.on > 0.01) {
       this.swirlMat.setFloat("uTime", this.time % 1000)
       // o véu respira de leve
-      this.veilMat.alpha = (0.2 - 0.06 * this.on) * (0.85 + 0.15 * Math.sin(this.time * 2.1))
+      this.veilMat.alpha = (0.2 - 0.06 * this.on) * this.camK * (0.85 + 0.15 * Math.sin(this.time * 2.1))
     }
   }
 

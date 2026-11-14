@@ -190,8 +190,8 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   markSceneStart(engine)
 
   // ── a cena pelo arquivo: perto (lod 0) e longe (lod 1) ─────────────────
-  const near0: CenaMontada = montarCena(scene, sc.name, 0)
-  const far1: CenaMontada = montarCena(scene, sc.name, 1)
+  const near0: CenaMontada = montarCena(scene, sc.name, 0, { low })
+  const far1: CenaMontada = montarCena(scene, sc.name, 1, { low })
   const cena = near0.cena
   const meta = near0.meta
   // céu panorâmico do Domínio (engine/sky): a névoa puxa para a cor do chão pintado no horizonte

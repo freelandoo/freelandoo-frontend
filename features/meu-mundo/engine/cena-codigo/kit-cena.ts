@@ -10,6 +10,7 @@
 
 import type { Scene } from "@babylonjs/core/scene"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
+import { aplicarChaoDetalhe } from "./chao-detalhe"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Geo, type RGB, type V3 } from "./kit"
@@ -279,7 +280,7 @@ export function checkMarcas(c: Cena, exige: { pontos?: readonly string[]; setore
  * Vira malhas: uma por bloco + o pano de fundo, todas com o MESMO material (cor por vértice,
  * quase sem reflexo). `grime` = variação de tom em mancha larga (0 desliga).
  */
-export function finishCena(scene: Scene, c: Cena, o: { grime?: number; spec?: RGB; bare?: RGB } = {}) {
+export function finishCena(scene: Scene, c: Cena, o: { grime?: number; spec?: RGB; bare?: RGB; chaoUma?: boolean } = {}) {
   const mat = new StandardMaterial(`cena-${c.name}`, scene)
   mat.diffuseColor = new Color3(1, 1, 1)
   const sp = o.spec ?? [0.04, 0.04, 0.04]
@@ -315,6 +316,9 @@ export function finishCena(scene: Scene, c: Cena, o: { grime?: number; spec?: RG
       meshes.push(m)
     }
   }
+  // detalhe no chão do Domínio (chao-detalhe.ts): no material da cena e nas cópias que o fuseGlow fez
+  aplicarChaoDetalhe(scene, mat, c.name, o.chaoUma)
+  for (const m of meshes) if (m.material && m.material !== glowMat && m.material.getClassName() === "StandardMaterial") aplicarChaoDetalhe(scene, m.material as StandardMaterial, c.name, o.chaoUma)
   return { meshes, material: mat, glowMaterial: glowMat }
 }
 

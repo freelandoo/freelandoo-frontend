@@ -23,11 +23,11 @@ export interface CenaMontada {
 }
 
 /** Monta a cena registrada `nome` na `scene` (`lod` 0 = perto, 1 = longe). Devolve as malhas e as caixas (`cena.blockers`). */
-export function montarCena(scene: Scene, nome: string, lod = 0): CenaMontada {
+export function montarCena(scene: Scene, nome: string, lod = 0, o: { low?: boolean } = {}): CenaMontada {
   const mod = CENAS[nome]
   if (!mod) throw new Error(`cena-codigo: cena não registrada: ${nome}`)
   const cena = mod.montar(lod)
-  const { meshes, material, glowMaterial } = finishCena(scene, cena)
+  const { meshes, material, glowMaterial } = finishCena(scene, cena, { chaoUma: !!o.low })
   return {
     cena,
     meta: mod.meta,
