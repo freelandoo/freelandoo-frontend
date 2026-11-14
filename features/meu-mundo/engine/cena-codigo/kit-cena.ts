@@ -280,6 +280,17 @@ export function checkMarcas(c: Cena, exige: { pontos?: readonly string[]; setore
  * Vira malhas: uma por bloco + o pano de fundo, todas com o MESMO material (cor por vértice,
  * quase sem reflexo). `grime` = variação de tom em mancha larga (0 desliga).
  */
+/**
+ * Chão embaixo do HORIZONTE em malha (sem névoa): as cenas têm saia de chão até 200 m, e o horizonte fica a
+ * 175–300 m; esta saia de 200 a 300 m (na névoa, sai na cor dela) tira o céu que aparecia por baixo das
+ * mesas/montanhas. O pé das malhas NÃO vai para a névoa: na câmera do jogo (baixa) o chão verde/branco chega
+ * até o horizonte e um pé esbranquiçado vira fantasma (testado em 14/11, visual premium C8).
+ */
+export function chaoDoHorizonte(c: Cena, nevoa: RGB) {
+  if (!c.horizonte.count && !c.horizonteLuz.count) return
+  ground(c, { x0: -300, z0: -300, x1: 300, z1: 300, step: 100, color: () => nevoa, fundo: true, y: -0.08, hole: [-200, -200, 200, 200] })
+}
+
 export function finishCena(scene: Scene, c: Cena, o: { grime?: number; spec?: RGB; bare?: RGB; chaoUma?: boolean } = {}) {
   const mat = new StandardMaterial(`cena-${c.name}`, scene)
   mat.diffuseColor = new Color3(1, 1, 1)

@@ -17,7 +17,12 @@ import { SKY_MEDIDAS } from "./sky-medidas.gen"
 
 export type SkyArtId = keyof typeof SKY_MEDIDAS
 export type SkyRegionId = "bairro" | "centro" | "noctis" | "zephyra" | "maru" | "aeryn" | "kragor" | "iris"
-export type SkyVariant = "dia" | "noite"
+/**
+ * `limpo` = dia de céu azul com nuvens brancas (a arte de dia do bairro), para a cena de Domínio cuja
+ * referência é um dia claro mas a arte de dia da área é outra (tempestade, pôr do sol): troca-se o CÉU,
+ * nunca a luz da cena (a luz segue a referência do Alex). Usa os ajustes e efeitos da área da cena.
+ */
+export type SkyVariant = "dia" | "noite" | "limpo"
 /** Modo da cúpula: uma arte fixa ou o ciclo (dia ↔ noite misturados por `setNightMix`). */
 export type SkyMode = SkyVariant | "ciclo"
 type C3 = readonly [number, number, number]
@@ -51,7 +56,7 @@ export interface SkyRegion {
   fogMix: number
   /** Some com o disco de lua/sol e a aurora em malha da cena (a arte já tem). */
   dropAstro: boolean
-  fx: Record<SkyVariant, SkyFx>
+  fx: Record<"dia" | "noite", SkyFx> & { limpo?: SkyFx }
 }
 
 const R = (id: SkyRegionId, label: string, o: Partial<SkyRegion> & Pick<SkyRegion, "fx">): SkyRegion => ({
@@ -84,7 +89,7 @@ export const SKY_REGION_IDS = Object.keys(SKY_REGIONS) as SkyRegionId[]
 
 /** A arte de uma área numa variante, com o que o pipeline mediu. */
 export function skyArt(id: SkyRegionId, v: SkyVariant) {
-  const art = `${id}_${v}` as SkyArtId
+  const art = (v === "limpo" ? "bairro_dia" : `${id}_${v}`) as SkyArtId
   return { art, ...SKY_MEDIDAS[art] }
 }
 
@@ -104,7 +109,11 @@ export function skyOfCena(nome: string): SkyRegionId | null {
 }
 
 /** Exceções da escolha automática dia/noite por cena (nome da cena → variante). */
-export const CENA_VARIANT: Readonly<Record<string, SkyVariant>> = {}
+export const CENA_VARIANT: Readonly<Record<string, SkyVariant>> = {
+  // refs de dia claro (céu azul, nuvens brancas): a arte de dia da área é tempestade (Zéphyra) / pôr do sol (Aeryn)
+  "canion-1": "limpo",
+  "fabrica-2": "limpo",
+}
 
 /** Dia ou noite para a cena: pela luz dela (céu escuro = noite), salvo exceção em `CENA_VARIANT`. */
 export function variantOfCena(nome: string, ceu: C3): SkyVariant {

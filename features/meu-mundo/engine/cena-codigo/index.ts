@@ -9,7 +9,8 @@ import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
-import { finishCena, type Cena } from "./kit-cena"
+import { chaoDoHorizonte, finishCena, type Cena } from "./kit-cena"
+import { skyFog, skyOfCena, variantOfCena } from "../sky/sky-registry"
 import { CENAS, type CenaMeta } from "./cenas"
 import { acabarCena, visualDaCena } from "./acabamento"
 
@@ -31,6 +32,9 @@ export function montarCena(scene: Scene, nome: string, lod = 0, o: { low?: boole
   const cena = mod.montar(lod)
   // contato/AO e tom do Domínio na cor do vértice (acabamento.ts): sem custo por quadro
   acabarCena(cena, visualDaCena(nome))
+  // horizonte em malha com céu pintado: chão na cor da névoa final (a mesma conta do jogo) embaixo dele
+  const ceu = skyOfCena(nome)
+  if (ceu) chaoDoHorizonte(cena, skyFog(ceu, variantOfCena(nome, mod.meta.ceu), mod.meta.nevoa))
   const { meshes, material, glowMaterial } = finishCena(scene, cena, { chaoUma: !!o.low })
   return {
     cena,

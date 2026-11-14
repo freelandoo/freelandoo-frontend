@@ -358,7 +358,7 @@ export class SkyDome {
 
   private applyRegion(reg: SkyRegion) {
     this.region = reg
-    const day = skyArt(reg.id, this.mode === "noite" ? "noite" : "dia")
+    const day = skyArt(reg.id, this.mode === "noite" ? "noite" : this.mode === "limpo" ? "limpo" : "dia")
     const night = skyArt(reg.id, this.mode === "dia" ? "dia" : "noite")
     this.mesh.rotation.y = reg.yaw
     this.mat.setFloat("uHorizon", day.horizon)
@@ -386,7 +386,7 @@ export class SkyDome {
         const a = r.fx.dia, b = r.fx.noite, m = this.mixN
         const mix = (k: keyof SkyFx) => (a[k] ?? 0) * (1 - m) + (b[k] ?? 0) * m
         fx = { twinkle: mix("twinkle"), aurora: mix("aurora"), pulse: mix("pulse"), lightning: mix("lightning") }
-      } else fx = r.fx[this.mode]
+      } else fx = r.fx[this.mode] ?? {}
     }
     this.fx = fx
     this.mat.setFloat("uTw", fx.twinkle ?? 0)
