@@ -117,7 +117,7 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   const sky = applyDomainLook(scene, look, hemi, moon, spec.sky, low)
   // Domínio da luta (pela área do céu da cena; sem céu = o kit)
   const dom = spec.sky ? (Object.entries(DOMAIN_SKY).find(([, r]) => r === spec.sky!.region)?.[0] ?? spec.kit) : spec.kit
-  // Gelo/Fábrica/Vulcão/Orbital: palco com as peças em código do Domínio (palcos.ts) e a luz da cena de origem
+  // os 6 Domínios: palco com as peças em código (palcos.ts; Floresta e Cânion desde 14/11) e a luz da cena de origem
   const codigo = temPalco(dom) ? dom : null
   const meta = spec.cena ? CENAS[spec.cena]?.meta : undefined
   if (codigo && meta) {
@@ -163,7 +163,7 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
     // a arte do céu escurece junto com as fases do chefão (e clareia no relâmpago)
     sky.dome.setLight([sk, sk, sk])
   }
-  // palco em código: uma Cena (1 malha por bloco); sem ela, o chão pintado + o kit do Tripo de sempre
+  // palco em código: uma Cena (1 malha por bloco); sem ela (Domínio sem palco, nenhum hoje), o chão pintado + o kit do Tripo
   const palco = codigo ? finishCena(scene, montarPalco(codigo, spec.spot, 0), { chaoUma: low }) : null
   for (const m of palco?.meshes ?? []) m.freezeWorldMatrix()
   const ground = palco ? null : paintedGround(scene, `dom-stage-${spec.spot}`, look, 170, 170, 0, 0, 0, 6, spec.spot === "palacio" ? 23 : spec.spot === "fundo" ? 17 : 11)
