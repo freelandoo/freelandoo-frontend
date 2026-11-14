@@ -1762,7 +1762,8 @@
     "cpfTaken": "Ya existe una cuenta con este CPF. Entra en ella — dentro de ella puedes crear todos los perfiles que quieras.",
     "cpfTakenLogin": "Entrar",
     "blockCpfChecking": "Verificando el CPF...",
-    "blockCpfTaken": "Ya existe una cuenta con este CPF."
+    "blockCpfTaken": "Ya existe una cuenta con este CPF.",
+    "profileDescriptionAccount": "Este es el perfil de tu cuenta y publica gratis. Después puedes crear otros perfiles."
   },
   "ForgotPassword": {
     "title": "¿Olvidaste tu contraseña?",

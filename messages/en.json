@@ -1762,7 +1762,8 @@
     "cpfTaken": "There is already an account with this CPF. Sign in to it — inside it you can create as many profiles as you want.",
     "cpfTakenLogin": "Sign in",
     "blockCpfChecking": "Checking the CPF...",
-    "blockCpfTaken": "There is already an account with this CPF."
+    "blockCpfTaken": "There is already an account with this CPF.",
+    "profileDescriptionAccount": "This is your account's profile and it publishes for free. You can create other profiles later."
   },
   "ForgotPassword": {
     "title": "Forgot your password?",

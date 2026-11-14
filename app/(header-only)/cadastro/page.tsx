@@ -808,7 +808,7 @@ export default function CadastroPage() {
             </button>
             <h2 className="fl-display text-2xl text-[var(--fl-ink)]">{t("profileTitle", "Perfil profissional")}</h2>
             <p className="mt-1 text-sm text-[#5b554b]">
-              {t("profileDescription", "Seu perfil nasce aguardando ativação. Ele só aparece publicamente após você ativar o perfil.")}
+              {t("profileDescriptionAccount", "Este é o perfil da sua conta e publica de graça. Depois você pode criar outros perfis.")}
             </p>
 
             <form
