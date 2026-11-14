@@ -20,66 +20,70 @@ export const COPA_FUNDO: Foliage = { dark: [0.07, 0.38, 0.5], mid: [0.1, 0.56, 0
 const casca = (k: number, y: number, h: number): RGB => mul(k % 2 ? LAVANDA : mix(LAVANDA, LAVANDA_S, 0.55), 0.78 + 0.22 * Math.min(1, y / (h * 0.3)))
 
 /**
- * ÁRVORE DA LUA (inventário `arvore-media`, 12 m): tronco branco-lavanda facetado em 2 trechos tortos,
- * 4 raízes-contraforte que abrem no pé (base ~3,9 m), forquilha logo abaixo da copa com 3–4 galhos em leque
- * (cada um com 2 galhinhos) e a COPA EM GUARDA-CHUVA: largura ≈ altura, 5,5 m de espessura, blocos
- * facetados (miolo grande + anel de 7 + chapéu de 3), claros em cima e azul-petróleo embaixo.
+ * ÁRVORE DA LUA (inventário `arvore-media`; silhueta refeita no polimento 14/11 pelas refs 1–3):
+ * tronco CURTO, grosso e TORTO (pende para um lado e volta), pé em cone com RAÍZES que se espalham em dois
+ * trechos; a ~40% da altura abre em 3 GALHOS GROSSOS em leque, cada um em dois trechos (sobe e abre); cada
+ * galho segura um TUFO de copa ACHATADO (largo e baixo, como nuvem) com lombos menores na beira e por cima,
+ * mais um tufo no alto do meio. A copa inteira é mais LARGA que alta e deixa os galhos claros à vista por
+ * baixo. Devolve as pontas dos galhos (as lanternas penduram ali).
  */
 export function arvoreLua(c: Cena, x: number, z: number, h = 12, seed = 1, lod = 0, folhas: Foliage = COPA, perto = true) {
   const eco = lod > 0 || !perto // longe do caminho: mesma silhueta, ~1/3 das peças
   const g = c.geo(x, z)
   const k = h / 12
   const r = (q: number) => rnd(seed, q)
-  // tronco em 2 trechos com desvio (torto), raio 0,95 → 0,7
-  const dx = (r(1) - 0.5) * 0.8 * k, dz = (r(2) - 0.5) * 0.8 * k
-  const meio: V3 = [x + dx, h * 0.27, z + dz]
-  const fork: V3 = [x - dx * 0.4, h * 0.5, z - dz * 0.4]
   const lados = lod ? 4 : eco ? 5 : 7
-  // pé em CONE (a ref abre muito embaixo) e tronco grosso (~2,2 m)
-  tube(g, [x, 0, z], [x + dx * 0.3, h * 0.1, z + dz * 0.3], 1.9 * k, 1.2 * k, lados, (j) => casca(j, 0, h), false)
-  // cada trecho começa um pouco ANTES da emenda e mais gordo: o tubo torto não abre fenda (a "boca" escura)
-  tube(g, [x + dx * 0.24, h * 0.1 - 0.35 * k, z + dz * 0.24], meio, 1.3 * k, 1.05 * k, lados, (j) => casca(j, h * 0.15, h), false)
-  tube(g, [meio[0], meio[1] - 0.45 * k, meio[2]], fork, 1.16 * k, 0.78 * k, lados, (j) => casca(j, h, h), false)
-  // raízes-contraforte: do tronco (1–1,6 m) até o chão a ~2 m, achatando
-  const nr = eco ? 3 : 4
+  // tronco torto: pende para `la` e volta um pouco antes da forquilha
+  const la = r(1) * 6.28, lean = (0.5 + r(2) * 0.8) * k
+  const dx = Math.cos(la) * lean, dz = Math.sin(la) * lean
+  const p1: V3 = [x + dx * 0.25, h * 0.1, z + dz * 0.25]
+  const p2: V3 = [x + dx, h * 0.25, z + dz]
+  const fork: V3 = [x + dx * 0.65, h * 0.4, z + dz * 0.65]
+  // cada trecho começa um pouco ANTES da emenda e mais gordo: o tubo torto não abre fenda
+  tube(g, [x, 0, z], p1, 2.0 * k, 1.3 * k, lados, (j) => casca(j, 0, h), false)
+  tube(g, [p1[0], p1[1] - 0.4 * k, p1[2]], p2, 1.4 * k, 1.1 * k, lados, (j) => casca(j, h * 0.15, h), false)
+  tube(g, [p2[0], p2[1] - 0.45 * k, p2[2]], fork, 1.2 * k, 0.95 * k, lados, (j) => casca(j, h, h), false)
+  // raízes que se espalham: saem altas do tronco, descem abrindo e rastejam até ~3,4 m
+  const nr = lod ? 3 : eco ? 4 : 5
   for (let i = 0; i < nr; i++) {
-    const a = (i / nr) * Math.PI * 2 + r(3) * 2
+    const a = (i / nr) * Math.PI * 2 + r(3) * 2 + (r(60 + i) - 0.5) * 0.5
     const ca = Math.cos(a), sa = Math.sin(a)
-    // contraforte LARGO: sai alto do tronco (2,4 m) e desce abrindo até 2,5 m do centro
-    tube(g, [x + ca * 0.45 * k, 2.4 * k, z + sa * 0.45 * k], [x + ca * 1.5 * k, 0.5 * k, z + sa * 1.5 * k], 0.62 * k, 0.4 * k, 4, (j) => casca(j + i, 1, h), false)
-    if (!eco) tube(g, [x + ca * 1.5 * k, 0.5 * k, z + sa * 1.5 * k], [x + ca * 2.5 * k, 0, z + sa * 2.5 * k], 0.4 * k, 0.15 * k, 4, (j) => casca(j + i, 0.2, h), false)
+    const L = (2.6 + r(64 + i) * 1.2) * k
+    tube(g, [x + ca * 0.5 * k, 2.6 * k, z + sa * 0.5 * k], [x + ca * 1.6 * k, 0.55 * k, z + sa * 1.6 * k], 0.66 * k, 0.42 * k, 4, (j) => casca(j + i, 1, h), false)
+    if (!lod) tube(g, [x + ca * 1.5 * k, 0.6 * k, z + sa * 1.5 * k], [x + ca * L, 0, z + sa * L], 0.42 * k, 0.12 * k, 4, (j) => casca(j + i, 0.2, h), false)
   }
-  // galhos em leque da forquilha até o fundo da copa, com 2 galhinhos cada
-  const ng = eco ? 3 : 4
+  // galhos grossos em leque, cada um com o seu tufo de copa
+  const nb = lod ? 2 : 3
+  const a0 = r(4) * 6.28
   const pontas: V3[] = []
-  for (let i = 0; i < ng; i++) {
-    const a = (i / ng) * Math.PI * 2 + r(4) * 2
-    const L = (2.6 + r(5 + i) * 1.2) * k
-    const tip: V3 = [fork[0] + Math.cos(a) * L, h * 0.68, fork[2] + Math.sin(a) * L]
-    tube(g, fork, tip, 0.4 * k, 0.18 * k, 5, (j) => casca(j, h, h), false)
-    pontas.push(tip)
-    if (!eco)
-      for (const s of [-1, 1]) {
-        const b = a + s * 0.5
-        tube(g, tip, [tip[0] + Math.cos(b) * 1.3 * k, h * 0.74, tip[2] + Math.sin(b) * 1.3 * k], 0.14 * k, 0.05 * k, 3, () => LAVANDA, false)
-      }
-  }
-  // COPA em guarda-chuva ALTA (o fundo dela em 0,64 h: os galhos em leque aparecem embaixo): miolo achatado,
-  // anel externo de 10 lombos menores, anel do meio de 5 e chapéu de 3 — a ref é feita de muitos lombos
-  const yC = h * 0.8
-  blob(g, [fork[0], yC, fork[2]], [h * 0.3, h * 0.2, h * 0.3], folhas, seed)
-  const anel = (n: number, R0: number, dR: number, s0: number, dy: number, sd: number) => {
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + r(sd) * 2
-      const R = h * (R0 + r(sd + 1 + i) * dR)
-      const s = h * (s0 + r(sd + 20 + i) * 0.04)
-      blob(g, [fork[0] + Math.cos(a) * R, yC + dy * h + (r(sd + 40 + i) - 0.5) * h * 0.04, fork[2] + Math.sin(a) * R], [s, s * 0.86, s], folhas, seed + sd + i)
+  for (let i = 0; i < nb; i++) {
+    const a = a0 + (i / nb) * Math.PI * 2 + (r(5 + i) - 0.5) * 0.7
+    const ca = Math.cos(a), sa = Math.sin(a)
+    const R = h * (0.26 + r(10 + i) * 0.08)
+    const mid: V3 = [fork[0] + ca * R * 0.42, h * 0.56, fork[2] + sa * R * 0.42]
+    const tip: V3 = [fork[0] + ca * R, h * (0.68 + r(14 + i) * 0.04), fork[2] + sa * R]
+    if (eco) tube(g, fork, tip, 0.56 * k, 0.2 * k, 4, (j) => casca(j, h, h), false)
+    else {
+      tube(g, fork, mid, 0.64 * k, 0.44 * k, 5, (j) => casca(j + i, h, h), false)
+      tube(g, [mid[0] - ca * 0.2 * k, mid[1] - 0.3 * k, mid[2] - sa * 0.2 * k], tip, 0.46 * k, 0.2 * k, 5, (j) => casca(j + i, h, h), false)
     }
+    pontas.push(tip)
+    // tufo achatado em cima da ponta do galho
+    const cy = tip[1] + h * 0.07
+    blob(g, [tip[0], cy, tip[2]], [h * 0.22, h * 0.135, h * 0.22], folhas, seed + i * 7)
+    if (lod) continue
+    // lombos na beira (dois, um de cada lado) e um por cima, puxado para o meio
+    for (const s of eco ? [1] : [-1, 1]) {
+      const b = a + s * (0.85 + r(20 + i) * 0.3)
+      const bx = tip[0] + Math.cos(b) * h * 0.17, bz = tip[2] + Math.sin(b) * h * 0.17
+      blob(g, [bx, cy - h * 0.025, bz], [h * 0.135, h * 0.095, h * 0.135], folhas, seed + 30 + i * 3 + s)
+      if (!eco) tube(g, tip, [bx, cy - h * 0.06, bz], 0.16 * k, 0.05 * k, 3, () => LAVANDA, false)
+    }
+    if (!eco) blob(g, [tip[0] - ca * h * 0.07, cy + h * 0.085, tip[2] - sa * h * 0.07], [h * 0.15, h * 0.08, h * 0.15], folhas, seed + 50 + i)
   }
-  anel(lod ? 4 : eco ? 6 : 8, 0.34, 0.06, lod ? 0.16 : eco ? 0.15 : 0.12, -0.04, 50)
-  if (!eco) anel(5, 0.3, 0.06, 0.11, -0.11, 300) // lombos baixos pendendo na beira (o fundo bojudo da ref)
-  if (!eco) anel(3, 0.18, 0.05, 0.14, 0.06, 120)
-  anel(lod ? 0 : eco ? 2 : 3, 0.07, 0.03, 0.13, 0.13, 200)
+  // tufo do alto, no meio (fecha a copa por cima)
+  blob(g, [fork[0], h * 0.86, fork[2]], [h * 0.22, h * 0.135, h * 0.22], folhas, seed + 90)
+  if (!eco) tube(g, fork, [fork[0], h * 0.78, fork[2]], 0.4 * k, 0.14 * k, 4, (j) => casca(j, h, h), false)
   c.block(x, z, 1.1 * k, 1.1 * k, h)
   return pontas
 }
@@ -177,7 +181,7 @@ export function florLua(c: Cena, x: number, z: number, s = 1, seed = 1, lod = 0,
   for (let f = 0; f < (lod ? 1 : grupo); f++) {
     const k = f === 0 ? s : s * (0.6 + r(f) * 0.2)
     const fx = x + (f === 0 ? 0 : Math.cos(r(f + 5) * 6.3) * 0.55 * s), fz = z + (f === 0 ? 0 : Math.sin(r(f + 5) * 6.3) * 0.55 * s)
-    const yF = 0.36 * k
+    const yF = 0.46 * k
     tube(g, [fx, 0, fz], [fx, yF, fz], 0.03 * k, 0.025 * k, 3, () => [0.3, 0.75, 0.8], false)
     const C: V3 = [fx, yF, fz]
     const petala = (a: number, L: number, ang: number, lw: number) => {
@@ -191,39 +195,51 @@ export function florLua(c: Cena, x: number, z: number, s = 1, seed = 1, lod = 0,
       }
     }
     const a0 = r(f + 9) * 6.3
-    for (let p = 0; p < (lod ? 4 : 6); p++) petala(a0 + (p / 6) * Math.PI * 2, 0.38 * k, 0.42, 0.17 * k)
-    if (!lod) for (let p = 0; p < 3; p++) petala(a0 + 0.5 + (p / 3) * Math.PI * 2, 0.32 * k, 1.15, 0.15 * k)
+    // polimento 14/11: lótus mais cheio — 8 pétalas de fora (alternando mais abertas e mais em pé) e 4 de dentro
+    const nf = lod ? 5 : 8
+    for (let p = 0; p < nf; p++) petala(a0 + (p / nf) * Math.PI * 2, (p % 2 ? 0.5 : 0.44) * k, p % 2 ? 0.3 : 0.62, 0.2 * k)
+    if (!lod) for (let p = 0; p < 4; p++) petala(a0 + 0.4 + (p / 4) * Math.PI * 2, 0.4 * k, 1.12, 0.16 * k)
     tube(G, [fx, yF, fz], [fx, yF + 0.16 * k, fz], 0.09 * k, 0.01, 5, () => [1, 1, 1], false)
     if (!lod)
       for (let p = 0; p < 3; p++) {
-        const a = a0 + 1 + (p / 3) * Math.PI * 2, L = 0.5 * k
-        const tip: V3 = [fx + Math.cos(a) * L, 0.3 * k, fz + Math.sin(a) * L]
-        for (const sd of [1, -1]) face(g, [[fx - Math.sin(a) * 0.07, 0.02, fz + Math.cos(a) * 0.07], [fx + Math.sin(a) * 0.07, 0.02, fz - Math.cos(a) * 0.07], tip], [mul(folha, 0.7), mul(folha, 0.7), mix(folha, LUZ_FLOR, 0.4)], [0, sd, 0])
+        const a = a0 + 1 + (p / 3) * Math.PI * 2, L = 0.66 * k
+        const tip: V3 = [fx + Math.cos(a) * L, 0.34 * k, fz + Math.sin(a) * L]
+        for (const sd of [1, -1]) face(g, [[fx - Math.sin(a) * 0.13 * k, 0.02, fz + Math.cos(a) * 0.13 * k], [fx + Math.sin(a) * 0.13 * k, 0.02, fz - Math.cos(a) * 0.13 * k], tip], [mul(folha, 0.7), mul(folha, 0.7), mix(folha, LUZ_FLOR, 0.4)], [0, sd, 0])
       }
   }
 }
 
-/** TUFO PRATEADO (inventário `tufo-prata`): 8 lâminas largas e pontudas em leque, branco-lavanda, base azul. */
+/**
+ * TUFO PRATEADO (inventário `tufo-prata`; encorpado no polimento 14/11): MOITA em duas coroas — 7 lâminas
+ * de fora, largas, que abrem e curvam para baixo na ponta (como agave), e 5 de dentro em pé e mais altas.
+ * Cada lâmina tem nervura (duas metades em tons diferentes), base azul-violeta e ponta branca.
+ */
 export function tufoPrata(c: Cena, x: number, z: number, h = 0.9, seed = 1, lod = 0) {
   const g = c.geo(x, z)
   const r = (q: number) => rnd(seed, q)
-  const n = lod ? 4 : 8
-  const base: RGB = [0.82, 0.76, 0.92], ponta: RGB = [1, 0.98, 1] // quente: o luar azula
-  for (let k = 0; k < n; k++) {
-    const a = (k / n) * Math.PI * 2 + r(k) * 0.8
-    const L = h * (0.65 + r(k + 10) * 0.45)
-    const inc = 0.45 + r(k + 20) * 0.6 // quanto abre para fora (a ponta curva como agave)
+  const base: RGB = [0.62, 0.6, 0.9], meio: RGB = [0.86, 0.82, 0.98], ponta: RGB = [1, 0.98, 1] // quente: o luar azula
+  const lamina = (a: number, L: number, abre: number, w: number, q: number) => {
     const ca = Math.cos(a), sa = Math.sin(a)
-    const w = h * 0.16, b = h * 0.18 // folha larga; a base do tufo abre
+    const b = h * 0.1
     const b0: V3 = [x + ca * b - sa * w, 0, z + sa * b + ca * w], b1: V3 = [x + ca * b + sa * w, 0, z + sa * b - ca * w]
-    const mid: V3 = [x + ca * (b + L * inc * 0.25), L * 0.6, z + sa * (b + L * inc * 0.25)]
-    const tip: V3 = [x + ca * L * inc, L, z + sa * L * inc]
+    // nervura: sobe, abre e a ponta cai um pouco
+    const m: V3 = [x + ca * (b + L * abre * 0.4), L * 0.62, z + sa * (b + L * abre * 0.4)]
+    const tip: V3 = [x + ca * (b + L * abre), L * (0.96 - abre * 0.22), z + sa * (b + L * abre)]
+    const l: V3 = [m[0] - sa * w * 0.8, m[1] - 0.04 * h, m[2] + ca * w * 0.8], rr: V3 = [m[0] + sa * w * 0.8, m[1] - 0.04 * h, m[2] - ca * w * 0.8]
+    const cl = mul(meio, 0.92 + r(q) * 0.12), es = mul(meio, 0.78)
     for (const sd of [1, -1]) {
-      face(g, [b0, b1, mid], [base, base, mix(base, ponta, 0.55)], [ca * sd, 0.3, sa * sd])
-      face(g, [mid, b1, tip], [mix(base, ponta, 0.55), base, ponta], [ca * sd, 0.3, sa * sd])
-      face(g, [b0, mid, tip], [base, mix(base, ponta, 0.55), ponta], [ca * sd, 0.3, sa * sd])
+      const nrm: V3 = [ca * sd, 0.4, sa * sd]
+      face(g, [b0, m, l], [base, cl, cl], nrm)
+      face(g, [b0, b1, m], [base, base, cl], nrm)
+      face(g, [b1, rr, m], [mul(base, 0.85), es, es], nrm)
+      face(g, [l, m, tip], [cl, cl, ponta], nrm)
+      face(g, [m, rr, tip], [es, es, ponta], nrm)
     }
   }
+  const nf = lod ? 4 : 7
+  for (let k = 0; k < nf; k++) lamina((k / nf) * Math.PI * 2 + r(k) * 0.6, h * (0.7 + r(k + 10) * 0.35), 0.75 + r(k + 20) * 0.4, h * 0.15, k + 30)
+  if (lod) return
+  for (let k = 0; k < 5; k++) lamina((k / 5) * Math.PI * 2 + 0.6 + r(k + 40) * 0.6, h * (1.05 + r(k + 50) * 0.3), 0.22 + r(k + 60) * 0.2, h * 0.11, k + 70)
 }
 
 // ── peças 5–10: platô com trio de árvores, arco de pedras, cogumelo, menir com runa, tronco caído,
@@ -354,15 +370,15 @@ export function arcoPedras(c: Cena, x: number, z: number, ang = 0, seed = 3, lod
 export function cogumeloLua(c: Cena, x: number, z: number, h = 1.6, seed = 1, lod = 0) {
   const g = c.geo(x, z), G = c.glow(x, z)
   const um = (cx: number, cz: number, hh: number, sd: number) => {
-    tube(g, [cx, 0, cz], [cx, hh * 0.78, cz], hh * 0.13, hh * 0.1, lod ? 4 : 6, (k) => (k % 2 ? LAVANDA : mix(LAVANDA, LAVANDA_S, 0.4)), false)
-    const R = hh * 0.55, n = lod ? 6 : 9
+    tube(g, [cx, 0, cz], [cx, hh * 0.78, cz], hh * 0.17, hh * 0.09, lod ? 4 : 6, (k) => (k % 2 ? LAVANDA : mix(LAVANDA, LAVANDA_S, 0.4)), false)
+    const R = hh * 0.66, n = lod ? 6 : 9
     const aba: V3[] = [], meio: V3[] = []
     for (let k = 0; k < n; k++) {
       const a = (k / n) * Math.PI * 2 + rnd(sd, 1)
-      aba.push([cx + Math.cos(a) * R, hh * 0.72, cz + Math.sin(a) * R])
-      meio.push([cx + Math.cos(a) * R * 0.6, hh * 0.95, cz + Math.sin(a) * R * 0.6])
+      aba.push([cx + Math.cos(a) * R, hh * 0.68, cz + Math.sin(a) * R])
+      meio.push([cx + Math.cos(a) * R * 0.66, hh * 0.96, cz + Math.sin(a) * R * 0.66])
     }
-    const topo: V3 = [cx, hh * 1.04, cz]
+    const topo: V3 = [cx, hh * 1.1, cz]
     const CI: RGB = [0.28, 0.86, 1], CL: RGB = [0.7, 0.98, 1]
     for (let k = 0; k < n; k++) {
       const j = (k + 1) % n

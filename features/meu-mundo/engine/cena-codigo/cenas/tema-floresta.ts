@@ -81,18 +81,18 @@ export function rochedo(c: Cena, x: number, z: number, s: number, seed: number, 
 
 /** Lírio aceso: a flor da lua copiada, sozinha. */
 export function lirio(c: Cena, x: number, z: number, s: number, seed: number, cor: RGB = FLOR) {
-  P.florLua(c, x, z, s * 1.7, Math.floor(seed * 11) + 1, 0, 1)
+  P.florLua(c, x, z, s * 1.9, Math.floor(seed * 11) + 1, 0, 2)
   void cor
 }
 
 /** Buquê: a flor da lua copiada em grupo de 3 (como a ref agrupa). */
 export function buque(c: Cena, x: number, z: number, s: number, seed: number) {
-  P.florLua(c, x, z, s * 1.9, Math.floor(seed * 11) + 1, pertoDe(x, z) ? 0 : 1, 3)
+  P.florLua(c, x, z, s * 2.1, Math.floor(seed * 11) + 1, pertoDe(x, z) ? 0 : 1, 3)
 }
 
 /** Tufo prateado copiado (só perto). */
 export function capim(c: Cena, x: number, z: number, h: number, seed: number) {
-  P.tufoPrata(c, x, z, h * 1.4, Math.floor(seed * 5) + 1, pertoDe(x, z) ? 0 : 1)
+  P.tufoPrata(c, x, z, h * 1.6, Math.floor(seed * 5) + 1, pertoDe(x, z) ? 0 : 1)
 }
 
 /** Arbusto da floresta (verde-azulado). */
