@@ -14,6 +14,8 @@ import * as G from "./cenas/tema-gelo"
 import * as V from "./cenas/tema-vulcao"
 import * as F from "./cenas/tema-fabrica"
 import * as O from "./cenas/tema-orbital"
+import * as PV from "./pecas/vulcao"
+import * as PO from "./pecas/orbital"
 
 export type PalcoDominio = "gelo" | "fabrica" | "vulcao" | "orbital"
 export type PalcoLugar = "entrada" | "fundo" | "palacio"
@@ -79,8 +81,11 @@ function vulcao(c: Cena, lugar: PalcoLugar, lod: number) {
     const d = Math.hypot(x, z)
     let col = mix(V.PEDRA, V.PEDRA_ESC, smooth(0.4, 0.75, noise(x * 0.08, 5.2, z * 0.08)))
     col = mix(col, V.BASALTO, smooth(R0 + 4, R0 + 16, d) * 0.6)
-    return col
+    // debaixo das lajes: LAVA (só aparece na junta — as trincas acesas da ref 3)
+    return mix(col, [1, 0.42, 0.08], smooth(R0 + 13, R0 + 10, d))
   })
+  // o piso de lajes poligonais lilás-ardósia da ref, do centro até depois do círculo
+  PV.lajesPoligonais(c, -R0 - 12, -R0 - 12, R0 + 12, R0 + 12, 1.9, 7, (x, z) => Math.hypot(x, z) < R0 + 10.5, lod)
   if (lugar === "entrada") {
     // a mina: boca na rocha, vagonetes, barris, postes de lanterna, rochas
     anel(3, R0 + 12, 0.15, 41, (x, z, a) => V.bocaMina(c, x, z, a, lod))
@@ -159,10 +164,13 @@ function orbital(c: Cena, lugar: PalcoLugar, lod: number) {
     anel(10, R0 + 5, 0.55, 133, (x, z, _a, k) => O.cristal(c, x, z, 2.5 + (k % 3), k, lod))
     anel(5, R0 + 9, 0.05, 135, (x, z, _a, k) => O.obelisco(c, x, z, 7 + (k % 2) * 3, k, lod))
   } else {
-    // o Palácio Prisma: arcos dourados em volta, torres de cristal, obeliscos
-    anel(6, R0 + 7, 0.5, 141, (x, z, a) => O.arco(c, x, z, a + Math.PI / 2, 6, 8, lod))
-    anel(5, R0 + 20, 0.1, 143, (x, z, _a, k) => O.torreCristal(c, x, z, 24 + (k % 3) * 8, k, lod))
-    anel(8, R0 + 3, 0.25, 145, (x, z, _a, k) => O.cristal(c, x, z, 3 + (k % 2), k, lod))
+    // o Palácio Prisma: os portais em arco copiados em volta (passagem para o centro), torres de cristal com
+    // anéis ao fundo, obeliscos, canteiros de cristal e árvores (as peças polidas das cenas)
+    anel(4, R0 + 12, 0.125, 141, (x, z, a) => PO.portalArco(c, x, z, a, 8, lod), 0)
+    anel(3, R0 + 34, 0.4, 143, (x, z, _a, k) => PO.torreCristalAneis(c, x, z, 34 + (k % 2) * 10, k + 3, lod))
+    anel(8, R0 + 3, 0.25, 145, (x, z, _a, k) => O.obelisco(c, x, z, 4.5 + (k % 2) * 1.5, k, lod), 0)
+    anel(8, R0 + 7, 0.62, 147, (x, z, a, k) => PO.canteiroCristal(c, x, z, a + Math.PI / 2, { seed: k }, lod), 0)
+    anel(8, R0 + 18, 0.6, 149, (x, z, _a, k) => PO.arvoreRedonda(c, x, z, 4.5 + (k % 2), k, lod))
   }
   O.fundoOrbital(c, 7)
 }

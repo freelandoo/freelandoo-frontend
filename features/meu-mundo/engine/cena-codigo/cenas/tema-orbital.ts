@@ -217,7 +217,14 @@ export function fundoOrbital(c: Cena, seed: number) {
     const d = 100 + rnd(seed, k, 2) * 50
     const x = Math.cos(a) * d, z = Math.sin(a) * d
     if (k % 3 === 0) torreCristal(c, x, z, 40 + rnd(seed, k, 3) * 30, seed + k, 1, true)
-    else caixa(c.fundo, { x, z, y0: 0, y1: 12 + rnd(seed, k, 4) * 16, w: 16, d: 12, rot: -a, side: MARMORE_S, top: OURO })
+    else {
+      // silhueta de palácio (não caixa): corpo, andar recuado com friso de ouro e agulha de cristal
+      const h = 12 + rnd(seed, k, 4) * 16
+      caixa(c.fundo, { x, z, y0: 0, y1: h, w: 16, d: 12, rot: -a, side: MARMORE_S, top: OURO })
+      caixa(c.fundo, { x, z, y0: h, y1: h + 0.8, w: 16.8, d: 12.8, rot: -a, side: OURO, top: OURO })
+      caixa(c.fundo, { x, z, y0: h + 0.8, y1: h + 7, w: 9, d: 7, rot: -a, side: MARMORE, top: OURO })
+      tube(c.fundo, [x, h + 7, z], [x, h + 15 + rnd(seed, k, 6) * 8, z], 2.4, 0.1, 6, (j) => (j % 2 ? CIANO : ROSA), true)
+    }
   }
 }
 
