@@ -38,6 +38,10 @@ const cspReportOnly = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
+  // A4 (2026-11-14): o navegador manda as violações para o back, que guarda AGREGADO (diretiva,
+  // origem bloqueada, caminho da página — sem query nem IP). Leitura em /administracao/csp. Com
+  // ~1 semana de relatórios: fechar as fontes e trocar Report-Only por Content-Security-Policy.
+  `report-uri ${BACKEND_PUBLIC}/csp-report`,
 ].join("; ")
 
 const securityHeaders = [

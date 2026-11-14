@@ -62,6 +62,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
 
   // Moderação
   { section: "Moderação", hint: "admin-chat-mod", href: "/administracao/moderacao", icon: ShieldAlert, title: "Moderação", body: "Chat (fila/mute/ban), termos bloqueados e posts denunciados — tudo em abas." },
+  { section: "Moderação", href: "/administracao/csp", icon: ShieldAlert, title: "Relatórios da CSP", body: "O que a política de segurança do site bloquearia se fosse ligada (diretiva, origem e páginas). Base para fechar as fontes e ligar o enforce.", badge: "novo" },
   { section: "Moderação", href: "/administracao/fraude", icon: Fingerprint, title: "Fraude", body: "Fila de cadastros suspeitos (IP em rajada, e-mail descartável, região do CPF), bloqueio de conta e destinos de repasse divergentes.", badge: "novo" },
   { section: "Moderação", href: "/administracao/boletos", icon: Receipt, title: "Feed de boletos", body: "Boletos esperando revisão do beneficiário, denúncias abertas e a régua do feed (teto, quantidade, reserva, Esmeralda de quem ajuda).", badge: "novo" },
   { section: "Moderação", href: "/administracao/comercio-vizinho", icon: ShoppingBag, title: "Comércio entre vizinhos", body: "Preços do delivery, régua da venda na vitrine e a FILA DE DISPUTAS — enquanto uma disputa está aberta o repasse do vendedor fica congelado, e é aqui que ele se solta.", badge: "novo" },
