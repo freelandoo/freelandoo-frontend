@@ -12,51 +12,37 @@ import {
   Activity,
   BedDouble,
   BookOpen,
-  Brain,
   Briefcase,
   Clock,
-  Coffee,
   Dumbbell,
-  Flame,
-  FlaskConical,
   Heart,
   HeartPulse,
   Hospital,
   Lock,
-  Pill,
   Shirt,
   Skull,
-  Smile,
   Sparkles,
-  Sprout,
   Square,
   Swords,
-  Syringe,
   Utensils,
-  Wind,
-  Crosshair,
-  LocateFixed,
   Zap,
   Users,
   Loader2,
 } from "lucide-react"
-import type { BodyId, LifeActivity, LifeCharacter, LifeFull, LifeItem, LifeItemKind } from "../../types"
+import type { BodyId, LifeActivity, LifeCharacter, LifeFull, LifeItem } from "../../types"
 import type { GearBag, GearSlot } from "../../data"
 import { EquipPage } from "./equip-page"
 import { SheetStage } from "./sheet-stage"
-import { Bar, Chamfer, CountUp, EVO, Gauge, Plate, Ring, Tag, archivo, cinzel, teko, toneFor } from "./evo-skin"
+import { Bar, Chamfer, CountUp, EVO, Plate, Ring, archivo, cinzel, teko, toneFor } from "./evo-skin"
 import { MM } from "../hud/tokens"
-import { Arc, Card, effectText, toneColor } from "../fridge/shelf"
-import { effectsOf, thumbOf } from "../fridge/fridge-logic"
 import { faceForPortrait } from "../portraits"
 import { TALL_NAMES, isTall, type TallBody } from "../../gods"
 import { clanBodyNames } from "../../classes"
-import { HERO_LEVEL, heroLevelScale, heroSheet } from "../../laminas/sim/fight"
-import { useLocale } from "@/components/i18n/I18nProvider"
-import { LevelBadge, PowerPlate, StatBars, StatCard, StatGuide, statTop, useStatRows, type StatRow } from "./stat-bars"
+import { heroLevelScale, heroSheet } from "../../laminas/sim/fight"
+import { LevelBadge, PowerPlate, StatBars, StatCard, useStatRows, type StatRow } from "./stat-bars"
 import { SoulPanel } from "./soul-panel"
 import { temperLabel } from "../../soul"
-import { Active, Equipped, LoadoutPage, shownEffects, type LoadoutData } from "./loadout-page"
+import { Active, Equipped, shownEffects, type LoadoutData } from "./loadout-page"
 import { CertificateDoc } from "./certificate-doc"
 import { ArchivePage } from "../archive/archive-page"
 
@@ -294,23 +280,6 @@ export function walletText(life: LifeFull, t: Tr) {
 export function itemName(it: LifeItem, t: Tr) {
   return t(`item_${it.id}`, it.name)
 }
-function effectName(id: string, t: Tr) {
-  return (
-    {
-      albumin: t("effAlbumin", "Albumina"),
-      whey: t("effWhey", "Whey protein"),
-      preworkout: t("effPreworkout", "Pré-treino"),
-      creatine: t("effCreatine", "Creatina"),
-      multivit: t("effMultivit", "Multivitamínico"),
-      calm: t("effCalm", "Calmante"),
-      coffee: t("effCoffee", "Café"),
-      energy_drink: t("effEnergyDrink", "Energético"),
-      stim: t("effStim", "Estimulante"),
-      anabolic: t("effAnabolic", "Anabolizante"),
-      injury: t("effInjury", "Lesão do boxe"),
-    } as Record<string, string>
-  )[id] ?? id
-}
 function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Map<string, LifeItem>) {
   const item = typeof data.item === "string" ? items.get(data.item) : null
   switch (kind) {
@@ -503,17 +472,6 @@ function TrainerLine({ tr, t, small = false }: { tr: NonNullable<AdvXp["trainer"
   )
 }
 
-/** Cor da vida de luta (HP) — vermelho, para não confundir com a saúde da vida. */
-const HP_COLOR = "#FF3B4E"
-const DEF_COLOR = "#8FB8FF"
-const ATK_COLOR = "#FF9F45"
-
-/** Percentual com 1 casa no idioma de quem joga (0,045 → "4,5"). */
-function usePct() {
-  const locale = useLocale()
-  return (v: number) => (Math.round(v * 1000) / 10).toLocaleString(locale, { maximumFractionDigits: 1 })
-}
-
 function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps, "act">) {
   const c = life.character
   const days = Math.max(1, Math.floor((new Date(life.now).getTime() - new Date(c.bornAt).getTime()) / 86400000) + 1)
@@ -601,72 +559,6 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
   )
 }
 
-/** Uma linha de indicador: anel + rótulo + número + barra (+ etiqueta e texto). */
-function Meter({
-  icon,
-  color,
-  label,
-  value,
-  max = 100,
-  barColor,
-  tag,
-  note,
-  compact,
-}: {
-  icon: ReactNode
-  color: string
-  label: string
-  value: number
-  max?: number
-  barColor?: string
-  tag?: string
-  note?: string
-  compact: boolean
-}) {
-  return (
-    <Chamfer cut={16}>
-      <div className="flex items-center gap-4 px-4 py-3">
-        <Ring color={color} size={compact ? 40 : 48}>
-          {icon}
-        </Ring>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className={`${teko.className} text-[20px] font-medium uppercase tracking-[0.18em]`} style={{ color: EVO.branco }}>
-              {label}
-            </span>
-            {tag && <Tag>{tag}</Tag>}
-          </div>
-          <div className={`${teko.className} font-bold leading-none`} style={{ fontSize: compact ? 30 : 38, color: EVO.branco }}>
-            <CountUp value={r0(value)} /> <span style={{ color: EVO.mudo }}>/ {r0(max)}</span>
-          </div>
-          <div className="mt-1.5">
-            <Bar value={value} max={max} color={barColor ?? color} />
-          </div>
-          {note && (
-            <div className={`${archivo.className} mt-1.5 text-[15px]`} style={{ color: EVO.mudo }}>
-              {note}
-            </div>
-          )}
-        </div>
-      </div>
-    </Chamfer>
-  )
-}
-
-/** Linha "nome ……… valor" (as TAXAS E MODIFICADORES do anexo). */
-function Row({ label, value, tone }: { label: string; value: ReactNode; tone?: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 border-b py-2" style={{ borderColor: EVO.linha }}>
-      <span className={`${archivo.className} text-[17px]`} style={{ color: EVO.branco }}>
-        {label}
-      </span>
-      <span className={`${teko.className} text-[24px] font-semibold`} style={{ color: tone ?? EVO.douradoClaro }}>
-        {value}
-      </span>
-    </div>
-  )
-}
-
 function GoldButton({ children, onClick, disabled, active }: { children: ReactNode; onClick: () => void; disabled?: boolean; active?: boolean }) {
   return (
     <button
@@ -686,573 +578,53 @@ function GoldButton({ children, onClick, disabled, active }: { children: ReactNo
   )
 }
 
-// ─── as páginas ───────────────────────────────────────────────────────────────
-/** Vital compacto da Visão Geral (2026-11-03): cabe 4 numa linha ao lado das barras de status. */
-function VitalCard({ icon, color, label, value, max = 100, barColor, tag }: { icon: ReactNode; color: string; label: string; value: number; max?: number; barColor?: string; tag?: string }) {
-  return (
-    <Chamfer cut={10}>
-      <div className="px-2.5 py-2">
-        <div className="flex items-center gap-1.5">
-          <span className="shrink-0" style={{ color }}>
-            {icon}
-          </span>
-          <span className={`${teko.className} min-w-0 truncate text-[16px] font-medium uppercase leading-none tracking-[0.12em]`} style={{ color: EVO.branco }}>
-            {label}
-          </span>
-        </div>
-        <div className="mt-1 flex items-baseline justify-between gap-1">
-          <span className={`${teko.className} font-bold leading-none`} style={{ fontSize: 26, color: EVO.branco }}>
-            <CountUp value={r0(value)} />
-            {r0(max) !== 100 && <span style={{ color: EVO.mudo, fontSize: 16 }}> / {r0(max)}</span>}
-          </span>
-          {tag && (
-            <span className={`${archivo.className} truncate text-[10px] font-bold uppercase`} style={{ color: EVO.mudo }}>
-              {tag}
-            </span>
-          )}
-        </div>
-        <div className="mt-1">
-          <Bar value={value} max={max} color={barColor ?? color} height={5} />
-        </div>
-      </div>
-    </Chamfer>
-  )
-}
-
-function Overview({ life, portrait, compact, t, act, adv }: PageProps) {
+/** A tela de morte (o que sobrou da Visão geral antiga; limpeza 03-b). */
+function DeadPage({ life, portrait, compact, t, act }: PageProps) {
   const c = life.character
-  const v = c.vitals
-  const a = c.activity
-  const total = a.until ? (new Date(a.until).getTime() - new Date(a.startedAt).getTime()) / 3600000 : null
-  const progress = total && a.remainingH != null ? Math.max(0, Math.min(1, 1 - a.remainingH / total)) : null
-  if (c.status === "dead") {
-    const lines = afterlifeLines(c, life.wallet.coins, t)
-    const after = lines && { ...lines, free: !!c.afterlife?.natural }
-    return (
-      <div className={`grid gap-5 ${compact ? "" : "grid-cols-[minmax(0,560px)_1fr]"}`}>
-        <div className="flex justify-center">
-          <div style={{ filter: "grayscale(1) brightness(0.55)" }}>
-            <Portrait src={portrait} size={compact ? 220 : 380} />
+  const lines = afterlifeLines(c, life.wallet.coins, t)
+  const after = lines && { ...lines, free: !!c.afterlife?.natural }
+  return (
+    <div className={`grid gap-5 ${compact ? "" : "grid-cols-[minmax(0,560px)_1fr]"}`}>
+      <div className="flex justify-center">
+        <div style={{ filter: "grayscale(1) brightness(0.55)" }}>
+          <Portrait src={portrait} size={compact ? 220 : 380} />
+        </div>
+      </div>
+      <Plate title={t("stDeadTitle", "Seu hóspede morreu")}>
+        <div className="flex items-start gap-4">
+          <Ring color={EVO.perigo} size={56}>
+            <Skull className="h-7 w-7" />
+          </Ring>
+          <div>
+            <div className={`${teko.className} text-[40px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+              {causeLabel(c.deathCause, t)}
+            </div>
+            <p className={`${archivo.className} mt-2 text-[17px]`} style={{ color: EVO.mudo }}>
+              {t("stDeadText", "A casa e as moedas continuam suas. Um novo hóspede pode chegar agora.")}
+            </p>
+            {after && (
+              <>
+                <p className={`${archivo.className} mt-3 text-[17px] font-semibold`} style={{ color: after.free ? EVO.bom : EVO.douradoClaro }}>
+                  {after.funeral}
+                </p>
+                <p className={`${archivo.className} mt-1 text-[16px]`} style={{ color: EVO.mudo }}>
+                  {after.heir}
+                </p>
+              </>
+            )}
           </div>
         </div>
-        <Plate title={t("stDeadTitle", "Seu hóspede morreu")}>
-          <div className="flex items-start gap-4">
-            <Ring color={EVO.perigo} size={56}>
-              <Skull className="h-7 w-7" />
-            </Ring>
-            <div>
-              <div className={`${teko.className} text-[40px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-                {causeLabel(c.deathCause, t)}
-              </div>
-              <p className={`${archivo.className} mt-2 text-[17px]`} style={{ color: EVO.mudo }}>
-                {t("stDeadText", "A casa e as moedas continuam suas. Um novo hóspede pode chegar agora.")}
-              </p>
-              {after && (
-                <>
-                  <p className={`${archivo.className} mt-3 text-[17px] font-semibold`} style={{ color: after.free ? EVO.bom : EVO.douradoClaro }}>
-                    {after.funeral}
-                  </p>
-                  <p className={`${archivo.className} mt-1 text-[16px]`} style={{ color: EVO.mudo }}>
-                    {after.heir}
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="mt-6">
-            <GoldButton onClick={act.newcomer} disabled={act.busy} active>
-              {after?.button ?? t("stNewcomer", "Receber novo hóspede")}
-            </GoldButton>
-          </div>
-        </Plate>
-      </div>
-    )
-  }
-  return (
-    <div className={`grid h-full gap-5 ${compact ? "" : "grid-cols-[minmax(0,480px)_1fr] grid-rows-[minmax(0,1fr)]"}`}>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          <Portrait src={portrait} size={compact ? 200 : 330} />
-          <GoldButton onClick={act.openSkins} active>
-            <Users className="h-5 w-5" /> {t("stCharacters", "Personagens")}
+        <div className="mt-6">
+          <GoldButton onClick={act.newcomer} disabled={act.busy} active>
+            {after?.button ?? t("stNewcomer", "Receber novo hóspede")}
           </GoldButton>
         </div>
-        <Chamfer cut={16}>
-          <div className="flex items-center gap-4 px-4 py-3">
-            <Ring color={EVO.ambar} size={56}>
-              {ACT_ICON[a.kind]}
-            </Ring>
-            <div className="min-w-0 flex-1">
-              <div className={`${teko.className} text-[18px] uppercase tracking-[0.2em]`} style={{ color: EVO.mudo }}>
-                {t("stNow", "Agora")}
-              </div>
-              <div className={`${teko.className} text-[30px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-                {activityLabel(a.kind, t)}
-                {a.remainingH != null && (
-                  <span style={{ color: EVO.ambar }}>
-                    {" "}
-                    · {t("stRemaining", "faltam {h}").replace("{h}", hoursText(a.remainingH))}
-                  </span>
-                )}
-              </div>
-              {progress != null && (
-                <div className="mt-2">
-                  <Bar value={progress * 100} color={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} />
-                </div>
-              )}
-            </div>
-          </div>
-        </Chamfer>
-      </div>
-      {/* 2026-11-03 (desenho do Alex): as 6 barras, personalidade e refeições; rolando, os vitais e a explicação */}
-      <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "#8A6430 transparent" }}>
-        <StatBars life={life} level={adv?.level} t={t} />
-        <Chamfer cut={16}>
-          <div className="flex items-center gap-4 px-4 py-3">
-            <Ring color={EVO.douradoClaro} size={48}>
-              <Smile className="h-6 w-6" />
-            </Ring>
-            <div className={`${archivo.className} text-[16px]`} style={{ color: EVO.branco }}>
-              <span className={`${teko.className} text-[24px] font-semibold uppercase tracking-wider`} style={{ color: EVO.ambar }}>
-                {t("stPersonality", "Personalidade")}:{" "}
-              </span>
-              <span className={`${teko.className} text-[24px] font-semibold uppercase tracking-wider`}>{characterTemper(c, t)}</span>
-              <div style={{ color: EVO.mudo }}>
-                {t("stTodayLine", "Condição de hoje: {c} ({n}/100). Ritmo: {p}.")
-                  .replace("{c}", conditionLabel(c.today.label, t))
-                  .replace("{n}", String(c.today.score))
-                  .replace("{p}", c.pace >= 1 ? t("paceNormal", "normal") : c.pace >= 0.6 ? t("paceTired", "cansado") : t("paceExhausted", "exausto"))}
-              </div>
-            </div>
-          </div>
-        </Chamfer>
-        <Plate title={t("stMeals", "Refeições de hoje")}>
-          <div className="grid grid-cols-4 gap-3">
-            {c.meals.map((m) => {
-              const [color, word] = mealLook(m.state, t)
-              return (
-                <div key={m.at} className="flex items-center gap-3 px-3 py-2" style={{ boxShadow: `inset 0 0 0 1px ${color}88`, background: "rgba(0,0,0,0.35)" }}>
-                  <Utensils className="h-5 w-5 shrink-0" style={{ color }} />
-                  <div>
-                    <div className={`${teko.className} text-[26px] font-bold leading-none`} style={{ color: EVO.branco }}>
-                      {t("mealAt", "{h} h").replace("{h}", String(m.at))}
-                    </div>
-                    <div className={`${teko.className} text-[16px] uppercase tracking-wider`} style={{ color }}>
-                      {word}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Plate>
-        <div className="grid shrink-0 grid-cols-4 gap-2.5">
-          <VitalCard icon={<Heart className="h-4 w-4" />} color={EVO.perigo} label={t("stHealth", "Saúde")} value={v.health} max={Math.max(1, v.vitality)} barColor={toneFor(v.health)} tag={healthTag(v.health, t)} />
-          <VitalCard icon={<Zap className="h-4 w-4" />} color={EVO.ambar} label={t("stEnergy", "Energia")} value={v.energy} barColor={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} tag={energyTag(v.energy, t)} />
-          <VitalCard icon={<Activity className="h-4 w-4" />} color={EVO.roxo} label={t("stStress", "Estresse")} value={v.stress} barColor={toneFor(v.stress, "low")} tag={stressTag(v.stress, t)} />
-          <VitalCard icon={<Utensils className="h-4 w-4" />} color={EVO.bom} label={t("stSatiety", "Saciedade")} value={v.satiety} barColor={toneFor(v.satiety)} tag={satietyTag(v.satiety, t)} />
-        </div>
-        <div className="shrink-0">
-          <StatGuide t={t} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/** "+N do nível" ao lado do valor de um atributo (o bônus vale na luta). */
-function LevelBonus({ n, t, small = false }: { n: number; t: Tr; small?: boolean }) {
-  if (n <= 0) return null
-  return (
-    <span className={`${archivo.className} shrink-0 font-semibold tabular-nums`} style={{ fontSize: small ? 9 : 13, color: "#FFD23F" }} title={t("atLevelBonusHint", "Bônus do nível de aventura (vale na luta)")}>
-      {t("atLevelBonus", "+{n} nv.").replace("{n}", String(n))}
-    </span>
-  )
-}
-
-/** Quanto cada nível soma (texto da placa de combate). */
-function perLevelText(t: Tr, pct: (v: number) => string) {
-  return t("stCombatPerLevel", "Cada nível: +{hp} HP · +{def}% defesa · +{atk}% ataque · +{attr} em cada atributo.")
-    .replace("{hp}", String(HERO_LEVEL.hp))
-    .replace("{def}", pct(HERO_LEVEL.def))
-    .replace("{atk}", pct(HERO_LEVEL.dmg))
-    .replace("{attr}", String(HERO_LEVEL.attr))
-}
-
-function Attributes({ life, compact, t, adv }: PageProps) {
-  const accLabel = t("attrAccuracy", "Acurácia")
-  const c = life.character
-  const at = c.attributes
-  const max = life.catalog.attributes?.max ?? 1000
-  const useful = at.usefulToday
-  const hero = adv ? heroLevelScale(adv.level) : null
-  const sheet = adv ? heroSheet(life.avatar, adv.level, life.character.attributes) : null
-  const pct = usePct()
-  // [ícone, cor, nome, valor, máximo da barra, piso (traço dourado), texto, sufixo]
-  const rows = [
-    [<Brain key="i" className="h-6 w-6" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceText3", "Sobe estudando (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor."), ""],
-    [<Dumbbell key="f" className="h-6 w-6" />, EVO.perigo, t("atStrength", "Força"), at.strength, max, at.floors?.strength, t("atStrengthText3", "Sobe treinando (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor."), ""],
-    [<Wind key="v" className="h-6 w-6" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedText3", "Sobe treinando. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido."), ""],
-    // mm3d-59: destreza (precisão, fôlego, golpes) — sobe nos minijogos e nas lutas
-    [<Crosshair key="d" className="h-6 w-6" />, "#3FE6D2", t("attrDexterity", "Destreza"), at.dexterity ?? 0, max, at.floors?.dexterity, t("atDexterityText2", "Sobe nos minijogos e nas lutas; depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor. Economiza fôlego, recupera a arma mais rápido e melhora a chance de golpe forte."), ""],
-    // B7: acurácia (atributo novo, nasce em 0; o saco de pancada vai treiná-la) — conta no Poder
-    [<LocateFixed key="a" className="h-6 w-6" />, "#FFAD24", accLabel, at.accuracy ?? 0, max, at.floors?.accuracy, t("atAccuracyText", "Atributo novo: começa em 0 e conta no Poder. O saco de pancada da academia vai treiná-la; depois de 1 dia sem praticar cai 5 pontos por dia, até 60% do maior valor."), ""],
-    [<Sprout key="r" className="h-6 w-6" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, 100, undefined, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade."), "%"],
-  ] as const
-  return (
-    <div className={`grid gap-4 ${compact ? "" : "grid-cols-[1.3fr_1fr]"}`}>
-      <Plate title={t("stAttributes", "Atributos")} aside={<span className={`${archivo.className} text-[14px]`} style={{ color: EVO.mudo }}>{t("stAttrScale2", "Sem limite · traço = piso").replace("{max}", String(max))}</span>}>
-        <div className="grid">
-          {rows.map(([icon, color, label, value, top, floor, text, unit]) => (
-            <div key={label} className="flex items-center gap-4 border-b py-3" style={{ borderColor: EVO.linha }}>
-              <Ring color={color}>{icon}</Ring>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-3">
-                  <span className={`${teko.className} w-40 shrink-0 text-[24px] font-semibold uppercase tracking-[0.12em]`} style={{ color: EVO.branco }}>
-                    {label}
-                  </span>
-                  <span className={`${teko.className} w-20 text-[36px] font-bold leading-none`} style={{ color: EVO.branco }}>
-                    {r0(value)}
-                    {unit}
-                  </span>
-                  {!unit && hero && label !== accLabel && <LevelBonus n={hero.attr} t={t} />}
-                  <div className="flex-1">
-                    <Bar value={value} max={statTop(value, top)} mark={floor} color={color} />
-                  </div>
-                </div>
-                <div className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
-                  {text}
-                </div>
-              </div>
-            </div>
-          ))}
-          {useful && (
-            <div className="flex flex-wrap gap-2 pt-3">
-              {(["studying", "training"] as const).map((k) => (
-                <Tag key={k} tone={useful[k].done >= useful[k].cap ? "mudo" : "ouro"}>
-                  {t("atUsefulToday", "{act} hoje: {done}/{cap} h úteis")
-                    .replace("{act}", activityLabel(k, t))
-                    .replace("{done}", String(Math.round(useful[k].done * 10) / 10))
-                    .replace("{cap}", String(useful[k].cap))}
-                </Tag>
-              ))}
-            </div>
-          )}
-          {/* mm3d-59: o orçamento de prática do dia (todas as fontes juntas) */}
-          {at.budgetToday && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              {(["strength", "intelligence", "dexterity", "speed"] as const).map((k) => {
-                const b = at.budgetToday![k]
-                if (!b) return null
-                return (
-                  <Tag key={k} tone={b.used >= b.cap ? "mudo" : "bom"}>
-                    {t("atBudgetToday", "{attr}: {used}/{cap} de prática hoje")
-                      .replace("{attr}", k === "strength" ? t("atStrength", "Força") : k === "intelligence" ? t("atIntelligence", "Inteligência") : k === "dexterity" ? t("attrDexterity", "Destreza") : t("atSpeed", "Velocidade"))
-                      .replace("{used}", String(Math.round(b.used * 10) / 10))
-                      .replace("{cap}", String(b.cap))}
-                  </Tag>
-                )
-              })}
-            </div>
-          )}
-        </div>
       </Plate>
-      <div className="flex flex-col gap-4">
-        {hero && adv && (
-          <Plate title={t("stCombat", "Combate")} aside={<span className={`${archivo.className} text-[14px]`} style={{ color: "#FFD23F" }}>{t("hudLevel", "Nv. {n}").replace("{n}", String(adv.level))}</span>}>
-            <div className="py-1">
-              <div className={`${teko.className} flex justify-between text-[20px] uppercase tracking-[0.14em]`} style={{ color: EVO.branco }}>
-                <span>{t("stHpLong", "Vida (HP)")}</span>
-                <span style={{ color: HP_COLOR }}>{sheet!.hp}</span>
-              </div>
-              <Bar value={sheet!.hp} max={sheet!.hp} color={HP_COLOR} height={8} />
-            </div>
-            <div className={`${teko.className} flex pt-1 text-[20px] uppercase tracking-[0.12em]`} style={{ color: EVO.branco, gap: 24 }}>
-              <span>
-                {t("stDefense", "Defesa")} <span style={{ color: DEF_COLOR }}>{Math.round(sheet!.def)}</span>
-              </span>
-              <span>
-                {t("stAttack", "Ataque")} <span style={{ color: ATK_COLOR }}>{Math.round(sheet!.atk)}</span>
-              </span>
-            </div>
-            <p className={`${archivo.className} text-[13px] leading-snug`} style={{ color: EVO.mudo }}>
-              {perLevelText(t, pct)} {t("stCombatGear", "O equipamento soma defesa e ataque por cima.")}
-            </p>
-          </Plate>
-        )}
-        <Plate title={t("stPersonality", "Personalidade")}>
-          {c.soul ? (
-            <SoulPanel soul={c.soul} t={t} />
-          ) : (
-          <div className={hero ? "grid grid-cols-2 gap-x-4" : ""}>
-            {TRAITS.map((k) => (
-              <div key={k} className="py-1.5">
-                <div className={`${teko.className} flex justify-between text-[20px] uppercase tracking-[0.14em]`} style={{ color: EVO.branco }}>
-                  <span>{traitName(k, t)}</span>
-                  <span style={{ color: EVO.douradoClaro }}>{r0(c.personality[k] * 100)}</span>
-                </div>
-                <Bar value={c.personality[k] * 100} color={`linear-gradient(90deg, ${EVO.ritual}, ${EVO.magenta})`} height={8} />
-              </div>
-            ))}
-          </div>
-          )}
-        </Plate>
-        <Plate title={t("stEffects", "Efeitos no corpo")}>
-          {c.effects.length === 0 ? (
-            <p className={`${archivo.className} text-[16px]`} style={{ color: EVO.mudo }}>
-              {t("stNoEffects", "Nenhum suplemento, remédio ou estimulante agindo agora.")}
-            </p>
-          ) : (
-            c.effects.map((e) => <Row key={e.id} label={effectName(e.id, t)} value={t("stEffectLeft", "mais {h}").replace("{h}", hoursText(e.remainingH))} />)
-          )}
-        </Plate>
-      </div>
     </div>
   )
 }
 
 const HOUR_CHOICES = [1, 2, 4, 8, 12, 24, 48, 72]
-
-function Routine({ life, compact, t, act }: PageProps) {
-  const c = life.character
-  const a = c.activity
-  const busy = act.busy || c.status !== "alive"
-  const mealTag = (s: string) =>
-    s === "eaten" ? <Tag tone="bom">{t("mealEaten", "Comeu")}</Tag> : s === "missed" ? <Tag tone="perigo">{t("mealMissed", "Perdeu")}</Tag> : s === "open" ? <Tag>{t("mealOpen", "Agora")}</Tag> : <Tag tone="mudo">{t("mealLater", "Depois")}</Tag>
-  // Treino e estudo só no prédio do centro (mm3d-37b): aqui só se marca trabalho.
-  const kinds = [["working", <Briefcase key="w" className="h-5 w-5" />]] as const
-  return (
-    <div className={`grid gap-4 ${compact ? "" : "grid-cols-[1fr_1.15fr]"}`}>
-      <div className="flex flex-col gap-4">
-        <Plate title={t("stMeals", "Refeições de hoje")}>
-          {c.meals.map((m) => (
-            <div key={m.at} className="flex items-center gap-4 border-b py-2.5" style={{ borderColor: EVO.linha }}>
-              <Ring color={m.state === "missed" ? EVO.perigo : m.state === "eaten" ? EVO.bom : EVO.ambar} size={42}>
-                <Utensils className="h-5 w-5" />
-              </Ring>
-              <span className={`${teko.className} flex-1 text-[28px] font-semibold uppercase tracking-wider`} style={{ color: EVO.branco }}>
-                {t("mealAt", "{h} h").replace("{h}", String(m.at))}
-              </span>
-              {mealTag(m.state)}
-            </div>
-          ))}
-          <p className={`${archivo.className} mt-2 text-[15px]`} style={{ color: EVO.mudo }}>
-            {t("stMealsRuleFridge", "Coma de 2 h antes até 2 h depois de cada horário, pela geladeira da sua casa. Depois disso, ele vai perdendo saciedade, energia e saúde por 2 h.")}
-          </p>
-        </Plate>
-        <Plate title={t("stHoursToday", "Horas de hoje")}>
-          <div className="flex items-center gap-5">
-            <Gauge value={c.today.score} label={conditionLabel(c.today.label, t)} size={150} color={c.today.score >= 60 ? EVO.bom : c.today.score >= 40 ? EVO.ambar : EVO.perigo} />
-            <div className="min-w-0 flex-1">
-              {(["sleeping", "studying", "training", "working", "lying", "hospital"] as const)
-                .filter((k) => (c.today.hours[k] ?? 0) > 0.01)
-                .map((k) => (
-                  <Row key={k} label={activityLabel(k, t)} value={hoursText(c.today.hours[k])} />
-                ))}
-            </div>
-          </div>
-        </Plate>
-      </div>
-      <Plate title={t("stDoNow", "O que ele faz agora")}>
-        <Chamfer cut={14} border={MM.rubyBorder}>
-          <div className="flex items-center gap-4 px-4 py-3">
-            <Ring color={EVO.magenta} size={50}>
-              {ACT_ICON[a.kind]}
-            </Ring>
-            <div className="min-w-0 flex-1">
-              <div className={`${teko.className} text-[32px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-                {activityLabel(a.kind, t)}
-              </div>
-              <div className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
-                {a.resume && a.remainingH != null
-                  ? t("stRoutinePause", "Pausa da rotina: em {h} volta a {act}.")
-                      .replace("{h}", hoursText(a.remainingH))
-                      .replace("{act}", activityLabel(a.resume.kind, t).toLowerCase())
-                  : a.remainingH != null
-                  ? t("stUntil", "Faltam {h}. Ele continua mesmo com o jogo fechado.").replace("{h}", hoursText(a.remainingH))
-                  : a.kind === "hospital"
-                    ? t("stHospitalText", "Internado até se recuperar (saúde 60).")
-                    : t("stIdleText", "Sem nada marcado.")}
-              </div>
-            </div>
-            {(a.kind === "studying" || a.kind === "training" || a.kind === "working" || a.resume) && (
-              <GoldButton onClick={() => act.activity("idle")} disabled={busy}>
-                {t("stStop", "Parar")}
-              </GoldButton>
-            )}
-          </div>
-        </Chamfer>
-        <div className="mt-4 grid gap-3">
-          {kinds.map(([kind, icon]) => (
-            <div key={kind} className="flex flex-wrap items-center gap-2 border-b pb-3" style={{ borderColor: EVO.linha }}>
-              <span
-                className={`${teko.className} flex w-44 items-center gap-2 text-[24px] font-semibold uppercase tracking-wider`}
-                style={{ color: a.kind === kind ? EVO.rosaClaro : EVO.douradoClaro }}
-              >
-                {icon}
-                {activityLabel(kind, t)}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {HOUR_CHOICES.map((h) => (
-                  <GoldButton key={h} onClick={() => act.activity(kind, h)} disabled={busy}>
-                    {h}h
-                  </GoldButton>
-                ))}
-              </div>
-            </div>
-          ))}
-          <p className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
-            {t("stWhere", "Treinar é na academia do centro; estudar, na biblioteca, na escola ou na universidade (rende mais, mas cobra a hora de aula). Entre no prédio e use um aparelho ou uma carteira.")}
-          </p>
-          <p className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
-            {t("stRoutineText2", "É uma rotina: ele rende as primeiras horas do dia (estudo 5 h, treino 4 h), descansa, dorme às 23 h e volta às 7 h. Na hora da refeição compra comida com as moedas. Constância de dias rende mais que maratona.")}
-          </p>
-        </div>
-      </Plate>
-    </div>
-  )
-}
-
-const MARKET_GROUPS: [string, string, LifeItemKind[], ReactNode][] = [
-  ["mkHealthy", "Comida saudável", ["food", "drink"], <Utensils key="u" className="h-5 w-5" />],
-  ["mkJunk", "Lanches e porcarias", ["food", "drink"], <Flame key="f" className="h-5 w-5" />],
-  ["mkSupplements", "Suplementos", ["supplement"], <FlaskConical key="s" className="h-5 w-5" />],
-  ["mkMedicine", "Remédios", ["medicine"], <Pill key="m" className="h-5 w-5" />],
-  ["mkStimulants", "Estimulantes", ["stimulant"], <Coffee key="c" className="h-5 w-5" />],
-  ["mkAnabolic", "Anabolizantes", ["anabolic"], <Syringe key="a" className="h-5 w-5" />],
-]
-
-function Market({ life, compact, t, act }: PageProps) {
-  const items = life.catalog.items
-  const c = life.character
-  const [tab, setTab] = useState<string>("mkHealthy")
-  const groupOf = (it: LifeItem) =>
-    it.kind === "food" || it.kind === "drink"
-      ? it.nutri >= 4
-        ? "mkHealthy"
-        : "mkJunk"
-      : MARKET_GROUPS.find((g) => g[0] !== "mkHealthy" && g[0] !== "mkJunk" && g[2].includes(it.kind))?.[0]
-  const busy = act.busy || c.status !== "alive"
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className={`${teko.className} text-[30px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-          {t("mkWallet", "Carteira")}: <span style={{ color: EVO.douradoClaro }}>{walletText(life, t)}</span>
-          {act.openPolens && (
-            <button type="button" onClick={act.openPolens} className={`${archivo.className} ml-3 align-middle text-[15px] font-semibold normal-case underline decoration-1 underline-offset-4`} style={{ color: MM.gold }}>
-              {t("plBuyShort", "+ Poléns")}
-            </button>
-          )}
-        </div>
-        <span className={`${archivo.className} text-[15px]`} style={{ color: EVO.mudo }}>
-          {act.canBuy
-            ? t("mkHintFridge", "Tudo vai para a geladeira da sua casa — é lá que ele come. Saudável é caro, porcaria é barata.")
-            : t("mkHintGoMarket", "Para comprar, vá ao supermercado do centro e passe no caixa. Tudo vai para a geladeira da sua casa.")}
-        </span>
-      </div>
-      {/* abas de categoria (os chips do EVO) */}
-      <div className="flex flex-wrap gap-2">
-        {MARKET_GROUPS.map(([key, fallback, , icon]) => (
-          <GoldButton key={key} onClick={() => setTab(key)} active={tab === key}>
-            {icon}
-            {t(key, fallback)}
-          </GoldButton>
-        ))}
-      </div>
-      <div>
-        {MARKET_GROUPS.filter(([key]) => key === tab).map(([key, fallback, , icon]) => {
-          const list = items.filter((it) => groupOf(it) === key)
-          return (
-            <Plate key={key} pad="p-3" title={t(key, fallback)} aside={<span style={{ color: EVO.ambar }}>{icon}</span>}>
-              {/* os itens em cards: a MESMA peça da geladeira (fridge/shelf.tsx), Comprar embaixo */}
-              <div className={`grid gap-x-4 gap-y-3 ${compact ? "grid-cols-3" : "grid-cols-5"}`}>
-                {list.map((it) => {
-                  const n = life.fridge?.[it.id] ?? 0
-                  const main = effectsOf(it)[0]
-                  const poor = life.wallet.coins < it.price
-                  const extra = [
-                    it.effect ? t("mkLasts", "dura {h}").replace("{h}", hoursText(it.effect.hours)) : null,
-                    it.tox ? t("mkTox", "tóxico") : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")
-                  return (
-                    <div key={it.id} className="flex min-w-0 flex-col gap-2">
-                      <div style={{ height: 196 }}>
-                        <Card active={false} empty={false} img={thumbOf(it.id)} badge={n ? `×${n}` : undefined} w={250} h={196} compact={false}>
-                          <div className={`${teko.className} line-clamp-1 text-[20px] font-semibold uppercase leading-none`} style={{ color: EVO.branco }}>
-                            {itemName(it, t)}
-                          </div>
-                          {main && (
-                            <div className={`${teko.className} mt-0.5 text-[17px] leading-none`} style={{ color: toneColor(main.tone) }}>
-                              {effectText(main, t)}
-                            </div>
-                          )}
-                          {extra && (
-                            <div className={`${archivo.className} mt-0.5 truncate text-[12px] leading-tight`} style={{ color: EVO.mudo }}>
-                              {extra}
-                            </div>
-                          )}
-                        </Card>
-                      </div>
-                      <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor || !act.canBuy} primary={!poor && act.canBuy} h={38} className="w-full">
-                        {!act.canBuy ? t("mkAtMarket", "No supermercado · {n}").replace("{n}", String(it.price)) : poor ? t("mkNoCoins", "Moedas insuficientes") : t("mkBuyPrice", "Comprar · {n} moedas").replace("{n}", String(it.price))}
-                      </MiniButton>
-                    </div>
-                  )
-                })}
-              </div>
-            </Plate>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function History({ life, compact, t }: PageProps) {
-  const items = new Map(life.catalog.items.map((i) => [i.id, i]))
-  const off = life.catalog.clock.offsetMin
-  return (
-    <div className={`grid gap-4 ${compact ? "" : "grid-cols-[1fr_1.2fr]"}`}>
-      <Plate title={t("stDiary", "Diário")}>
-        {life.days.map((d) => (
-          <div key={d.day} className="flex items-center gap-3 border-b py-2" style={{ borderColor: EVO.linha }}>
-            <span className={`${teko.className} w-24 text-[24px] font-semibold`} style={{ color: EVO.branco }}>
-              {d.day.slice(8, 10)}/{d.day.slice(5, 7)}
-            </span>
-            <div className={`${archivo.className} min-w-0 flex-1 text-[14px]`} style={{ color: EVO.mudo }}>
-              {diaryLine(d, t)}
-            </div>
-            <Tag tone={d.condition.score >= 60 ? "bom" : d.condition.score >= 40 ? "ouro" : "perigo"}>{conditionLabel(d.condition.label, t)}</Tag>
-          </div>
-        ))}
-      </Plate>
-      <Plate title={t("stTimeline", "Linha do tempo")}>
-        {life.events.length === 0 && (
-          <p className={`${archivo.className} text-[16px]`} style={{ color: EVO.mudo }}>
-            {t("stNoEvents", "Nada aconteceu ainda.")}
-          </p>
-        )}
-        {life.events.slice(0, compact ? 30 : 9).map((e, i) => (
-          <div key={`${e.at}-${i}`} className="flex items-center gap-3 border-b py-2" style={{ borderColor: EVO.linha }}>
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center" style={{ border: `2px solid ${EVO.perigo}`, color: EVO.perigo }}>
-              {eventIcon(e.kind)}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className={`${teko.className} text-[18px] font-semibold uppercase tracking-wider`} style={{ color: EVO.douradoClaro }}>
-                {timeOf(e.at, off)}
-              </div>
-              <div className={`${archivo.className} truncate text-[15px]`} style={{ color: EVO.branco }}>
-                {eventText(e.kind, e.data, t, items)}
-              </div>
-            </div>
-          </div>
-        ))}
-      </Plate>
-    </div>
-  )
-}
 
 // ─── celular (compacto) ───────────────────────────────────────────────────────
 // No celular cada página cabe na tela (~600 px de altura úteis), sem rolagem,
@@ -1436,263 +808,38 @@ function MealChips({ meals, t }: { meals: LifeCharacter["meals"]; t: Tr }) {
   )
 }
 
-function OverviewC({ life, portrait, t, act, adv }: PageProps) {
+/** A tela de morte (o que sobrou da Visão geral antiga; limpeza 03-b). */
+function DeadPageC({ life, portrait, t, act }: PageProps) {
   const c = life.character
-  const v = c.vitals
-  const a = c.activity
-  const total = a.until ? (new Date(a.until).getTime() - new Date(a.startedAt).getTime()) / 3600000 : null
-  const progress = total && a.remainingH != null ? Math.max(0, Math.min(1, 1 - a.remainingH / total)) : null
-  if (c.status === "dead") {
-    const lines = afterlifeLines(c, life.wallet.coins, t)
-    const after = lines && { ...lines, free: !!c.afterlife?.natural }
-    return (
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-center" style={{ filter: "grayscale(1) brightness(0.55)" }}>
-          <Portrait src={portrait} size={150} />
-        </div>
-        <MiniPlate title={t("stDeadTitle", "Seu hóspede morreu")}>
-          <div className="flex items-start gap-2">
-            <Ring color={EVO.perigo} size={30}>
-              <Skull className="h-4 w-4" />
-            </Ring>
-            <div className="min-w-0">
-              <div className={`${teko.className} text-[20px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-                {causeLabel(c.deathCause, t)}
-              </div>
-              <p className={`${archivo.className} mt-1 text-[11px] leading-snug`} style={{ color: EVO.mudo }}>
-                {t("stDeadText", "A casa e as moedas continuam suas. Um novo hóspede pode chegar agora.")}
-              </p>
-              {after && (
-                <p className={`${archivo.className} mt-1 text-[11px] font-semibold leading-snug`} style={{ color: after.free ? EVO.bom : EVO.douradoClaro }}>
-                  {after.funeral} {after.heir}
-                </p>
-              )}
-            </div>
-          </div>
-          <MiniButton onClick={act.newcomer} disabled={act.busy} active className="mt-2 w-full">
-            {after?.button ?? t("stNewcomer", "Receber novo hóspede")}
-          </MiniButton>
-        </MiniPlate>
-      </div>
-    )
-  }
-  const pace = c.pace >= 1 ? t("paceNormal", "normal") : c.pace >= 0.6 ? t("paceTired", "cansado") : t("paceExhausted", "exausto")
+  const lines = afterlifeLines(c, life.wallet.coins, t)
+  const after = lines && { ...lines, free: !!c.afterlife?.natural }
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-2.5">
-        <div className="flex flex-col items-center gap-1">
-          <Portrait src={portrait} size={112} />
-          <MiniButton onClick={act.openSkins} active h={26} className="w-full">
-            <Users className="h-3.5 w-3.5" /> {t("stCharacters", "Personagens")}
-          </MiniButton>
-        </div>
-        <div className="flex min-w-0 flex-col gap-2">
-          <Chamfer cut={9}>
-            <div className="flex items-center gap-2 px-2 py-1.5">
-              <Ring color={EVO.ambar} size={28}>
-                <span className={SM_ICON}>{ACT_ICON[a.kind]}</span>
-              </Ring>
-              <div className="min-w-0 flex-1">
-                <div className={`${archivo.className} text-[9.5px] font-semibold uppercase tracking-[0.16em]`} style={{ color: EVO.mudo }}>
-                  {t("stNow", "Agora")}
-                </div>
-                <div className={`${teko.className} truncate text-[18px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-                  {activityLabel(a.kind, t)}
-                </div>
-                {a.remainingH != null && (
-                  <div className={`${archivo.className} truncate text-[10px]`} style={{ color: EVO.ambar }}>
-                    {t("stRemaining", "faltam {h}").replace("{h}", hoursText(a.remainingH))}
-                  </div>
-                )}
-                {progress != null && (
-                  <div className="mt-0.5">
-                    <Bar value={progress * 100} height={4} color={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} />
-                  </div>
-                )}
-              </div>
+      <div className="flex justify-center" style={{ filter: "grayscale(1) brightness(0.55)" }}>
+        <Portrait src={portrait} size={150} />
+      </div>
+      <MiniPlate title={t("stDeadTitle", "Seu hóspede morreu")}>
+        <div className="flex items-start gap-2">
+          <Ring color={EVO.perigo} size={30}>
+            <Skull className="h-4 w-4" />
+          </Ring>
+          <div className="min-w-0">
+            <div className={`${teko.className} text-[20px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
+              {causeLabel(c.deathCause, t)}
             </div>
-          </Chamfer>
-          <div className="flex items-start gap-1.5">
-            <span className={`${teko.className} text-[30px] font-bold leading-[0.7]`} style={{ color: EVO.magenta }}>
-              “
-            </span>
-            <div className="min-w-0">
-              <div className={`${archivo.className} line-clamp-3 text-[12px] font-semibold leading-snug`} style={{ color: EVO.branco }}>
-                {quote(c, t)}
-              </div>
-              <div className={`${archivo.className} mt-0.5 text-[10px] uppercase leading-snug`} style={{ color: EVO.mudo }}>
-                {t("stMoodIs", "Humor: {m}").replace("{m}", moodTag(v.mood, t))}
-                <br />
-                {t("stHungerIs", "Fome: {m}").replace("{m}", satietyTag(v.satiety, t))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-1.5">
-        <MiniMeter icon={<Heart />} color={EVO.perigo} label={t("stHealth", "Saúde")} value={v.health} max={Math.max(1, v.vitality)} barColor={toneFor(v.health)} tag={healthTag(v.health, t)} />
-        <MiniMeter icon={<Zap />} color={EVO.ambar} label={t("stEnergy", "Energia")} value={v.energy} barColor={`linear-gradient(90deg, ${EVO.ambarFundo}, ${EVO.ambar})`} tag={energyTag(v.energy, t)} />
-        <MiniMeter icon={<Activity />} color={EVO.roxo} label={t("stStress", "Estresse")} value={v.stress} barColor={toneFor(v.stress, "low")} tag={stressTag(v.stress, t)} />
-        <MiniMeter icon={<Utensils />} color={EVO.bom} label={t("stSatiety", "Saciedade")} value={v.satiety} barColor={toneFor(v.satiety)} tag={satietyTag(v.satiety, t)} />
-      </div>
-      {/* 2026-11-03 (desenho do Alex): as 6 barras, uma embaixo da outra */}
-      <StatBars life={life} level={adv?.level} t={t} small />
-      <div className={`${archivo.className} px-1 text-[10.5px]`} style={{ color: EVO.mudo }}>
-        <span className="font-semibold uppercase" style={{ color: EVO.ambar }}>
-          {t("stPersonality", "Personalidade")}:
-        </span>{" "}
-        <span className="font-semibold uppercase" style={{ color: EVO.branco }}>{characterTemper(c, t)}</span> · {pace}
-      </div>
-      <MiniPlate title={t("stMeals", "Refeições de hoje")}>
-        <MealChips meals={c.meals} t={t} />
-      </MiniPlate>
-      <StatGuide t={t} small />
-    </div>
-  )
-}
-
-/** Quantos efeitos cabem na placa do celular (o resto vira "+n"). */
-const EFFECTS_MAX_C = 6
-
-function AttributesC({ life, t, adv }: PageProps) {
-  const accLabel = t("attrAccuracy", "Acurácia")
-  const c = life.character
-  const at = c.attributes
-  const max = life.catalog.attributes?.max ?? 1000
-  const useful = at.usefulToday
-  const hero = adv ? heroLevelScale(adv.level) : null
-  const sheet = adv ? heroSheet(life.avatar, adv.level, life.character.attributes) : null
-  const pct = usePct()
-  // [ícone, cor, nome, valor, máximo da barra, piso, resumo, sufixo]
-  const rows = [
-    [<Brain key="i" />, EVO.azul, t("atIntelligence", "Inteligência"), at.intelligence, max, at.floors?.intelligence, t("atIntelligenceShort", "Sobe estudando (até 5 h/dia). Nunca cai abaixo de 90% do pico."), ""],
-    [<Dumbbell key="f" />, EVO.perigo, t("atStrength", "Força"), at.strength, max, at.floors?.strength, t("atStrengthShort", "Sobe treinando (até 4 h/dia); suplementos aceleram. Sem treino cai até 60% do pico."), ""],
-    [<Wind key="v" />, EVO.bom, t("atSpeed", "Velocidade"), at.speed, max, at.floors?.speed, t("atSpeedShort", "Sobe treinando. Sem treino cai até 60% do pico; voltar é mais rápido."), ""],
-    [<Crosshair key="d" />, "#3FE6D2", t("attrDexterity", "Destreza"), at.dexterity ?? 0, max, at.floors?.dexterity, t("atDexterityShort", "Sobe nos minijogos e lutas; poupa fôlego e melhora golpes."), ""],
-    [<LocateFixed key="a" />, "#FFAD24", accLabel, at.accuracy ?? 0, max, at.floors?.accuracy, t("atAccuracyShort", "Nova: começa em 0 e conta no Poder; o saco de pancada vai treiná-la."), ""],
-    [<Sprout key="r" />, EVO.rosa, t("atFertility", "Fertilidade"), at.fertility, 100, undefined, t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade."), "%"],
-  ] as const
-  const effects = c.effects.slice(0, EFFECTS_MAX_C)
-  return (
-    <div className="flex flex-col gap-2">
-      <MiniPlate
-        title={t("stAttributes", "Atributos")}
-        aside={
-          <span className={`${archivo.className} truncate text-[10px]`} style={{ color: EVO.mudo }}>
-            {t("stAttrScale2", "Sem limite · traço = piso").replace("{max}", String(max))}
-          </span>
-        }
-      >
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-          {rows.map(([icon, color, label, value, top, floor, text, unit]) => (
-            <div key={label} className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className={SM_ICON} style={{ color }}>
-                  {icon}
-                </span>
-                <span className={`${archivo.className} truncate text-[10px] font-semibold uppercase`} style={{ color: EVO.branco }}>
-                  {label}
-                </span>
-                <span className={`${teko.className} ml-auto text-[18px] font-bold leading-none`} style={{ color: EVO.branco }}>
-                  {r0(value)}
-                  {unit}
-                </span>
-                {!unit && hero && label !== accLabel && <LevelBonus n={hero.attr} t={t} small />}
-              </div>
-              <div className="my-1">
-                <Bar value={value} max={statTop(value, top)} mark={floor} color={color} height={6} />
-              </div>
-              <p className={`${archivo.className} text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
-                {text}
+            <p className={`${archivo.className} mt-1 text-[11px] leading-snug`} style={{ color: EVO.mudo }}>
+              {t("stDeadText", "A casa e as moedas continuam suas. Um novo hóspede pode chegar agora.")}
+            </p>
+            {after && (
+              <p className={`${archivo.className} mt-1 text-[11px] font-semibold leading-snug`} style={{ color: after.free ? EVO.bom : EVO.douradoClaro }}>
+                {after.funeral} {after.heir}
               </p>
-            </div>
-          ))}
-          {/* a 6ª casa da grade: combate pelo nível (HP, defesa, ataque) */}
-          {hero && (
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className={SM_ICON} style={{ color: HP_COLOR }}>
-                  <Heart />
-                </span>
-                <span className={`${archivo.className} truncate text-[10px] font-semibold uppercase`} style={{ color: EVO.branco }}>
-                  {t("stHpLong", "Vida (HP)")}
-                </span>
-                <span className={`${teko.className} ml-auto text-[18px] font-bold leading-none`} style={{ color: EVO.branco }}>
-                  {sheet!.hp}
-                </span>
-              </div>
-              <div className="my-1">
-                <Bar value={sheet!.hp} max={sheet!.hp} color={HP_COLOR} height={6} />
-              </div>
-              <p className={`${archivo.className} text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
-                <span style={{ color: DEF_COLOR }}>
-                  {t("stDefense", "Defesa")} {Math.round(sheet!.def)}
-                </span>{" "}
-                ·{" "}
-                <span style={{ color: ATK_COLOR }}>
-                  {t("stAttack", "Ataque")} {Math.round(sheet!.atk)}
-                </span>
-                . {t("stCombatPerLevelShort", "Sobem a cada nível.")}
-              </p>
-            </div>
-          )}
-        </div>
-        {useful && (
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {(["studying", "training"] as const).map((k) => (
-              <MiniTag key={k} tone={useful[k].done >= useful[k].cap ? "mudo" : "ouro"}>
-                {t("atUsefulToday", "{act} hoje: {done}/{cap} h úteis")
-                  .replace("{act}", activityLabel(k, t))
-                  .replace("{done}", String(Math.round(useful[k].done * 10) / 10))
-                  .replace("{cap}", String(useful[k].cap))}
-              </MiniTag>
-            ))}
-          </div>
-        )}
-      </MiniPlate>
-      <MiniPlate
-        title={t("stPersonality", "Personalidade")}
-        aside={
-          <span className={`${archivo.className} truncate text-[10px] font-semibold uppercase`} style={{ color: EVO.douradoClaro }}>
-            {characterTemper(c, t)}
-          </span>
-        }
-      >
-        {c.soul ? (
-          <SoulPanel soul={c.soul} t={t} compact />
-        ) : (
-        <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
-          {TRAITS.map((k) => (
-            <div key={k} className="min-w-0">
-              <div className={`${archivo.className} flex justify-between gap-1 text-[10px] uppercase`} style={{ color: EVO.branco }}>
-                <span className="truncate">{traitName(k, t)}</span>
-                <span className="font-semibold" style={{ color: EVO.douradoClaro }}>
-                  {r0(c.personality[k] * 100)}
-                </span>
-              </div>
-              <Bar value={c.personality[k] * 100} color={`linear-gradient(90deg, ${EVO.ritual}, ${EVO.magenta})`} height={4} />
-            </div>
-          ))}
-        </div>
-        )}
-      </MiniPlate>
-      <MiniPlate title={t("stEffects", "Efeitos no corpo")}>
-        {effects.length === 0 ? (
-          <p className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
-            {t("stNoEffects", "Nenhum suplemento, remédio ou estimulante agindo agora.")}
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 gap-x-3">
-            {effects.map((e) => (
-              <MiniRow key={e.id} label={effectName(e.id, t)} value={t("stEffectLeft", "mais {h}").replace("{h}", hoursText(e.remainingH))} />
-            ))}
-            {c.effects.length > EFFECTS_MAX_C && (
-              <span className={`${archivo.className} col-span-2 pt-0.5 text-[10px]`} style={{ color: EVO.mudo }}>
-                {t("stMoreEffects", "+{n} efeitos").replace("{n}", String(c.effects.length - EFFECTS_MAX_C))}
-              </span>
             )}
           </div>
-        )}
+        </div>
+        <MiniButton onClick={act.newcomer} disabled={act.busy} active className="mt-2 w-full">
+          {after?.button ?? t("stNewcomer", "Receber novo hóspede")}
+        </MiniButton>
       </MiniPlate>
     </div>
   )
@@ -1790,180 +937,11 @@ function RoutineC({ life, t, act }: PageProps) {
   )
 }
 
-function MarketC({ life, t, act }: PageProps) {
-  const items = life.catalog.items
-  const c = life.character
-  const [tab, setTab] = useState<string>("mkHealthy")
-  const [sel, setSel] = useState(0)
-  const groupOf = (it: LifeItem) =>
-    it.kind === "food" || it.kind === "drink"
-      ? it.nutri >= 4
-        ? "mkHealthy"
-        : "mkJunk"
-      : MARKET_GROUPS.find((g) => g[0] !== "mkHealthy" && g[0] !== "mkJunk" && g[2].includes(it.kind))?.[0]
-  const busy = act.busy || c.status !== "alive"
-  const group = MARKET_GROUPS.find(([key]) => key === tab) ?? MARKET_GROUPS[0]
-  const list = items.filter((it) => groupOf(it) === group[0])
-  const at = Math.min(sel, Math.max(0, list.length - 1))
-  const it = list[at]
-  const inFridge = it ? (life.fridge?.[it.id] ?? 0) : 0
-  const poor = !!it && life.wallet.coins < it.price
-  const fx = it ? effectsOf(it) : []
-  return (
-    <div className="flex flex-col gap-2">
-      <div>
-        <div className={`${teko.className} text-[18px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-          {t("mkWallet", "Carteira")}: <span style={{ color: EVO.douradoClaro }}>{walletText(life, t)}</span>
-          {act.openPolens && (
-            <button type="button" onClick={act.openPolens} className={`${archivo.className} ml-2 align-middle text-[12px] font-semibold normal-case underline decoration-1 underline-offset-2`} style={{ color: MM.gold }}>
-              {t("plBuyShort", "+ Poléns")}
-            </button>
-          )}
-        </div>
-        <p className={`${archivo.className} mt-0.5 text-[10px] leading-snug`} style={{ color: EVO.mudo }}>
-          {t("mkHintFridge", "Tudo vai para a geladeira da sua casa — é lá que ele come. Saudável é caro, porcaria é barata.")}
-        </p>
-      </div>
-      {/* abas só com ícone; o nome da aba aberta vira o título */}
-      <div className="grid grid-cols-6 gap-1">
-        {MARKET_GROUPS.map(([key, fallback, , icon]) => (
-          <MiniButton
-            key={key}
-            onClick={() => {
-              setTab(key)
-              setSel(0)
-            }}
-            active={tab === key}
-            h={32}
-            label={t(key, fallback)}
-            tight
-          >
-            <span className="flex [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-          </MiniButton>
-        ))}
-      </div>
-      <div className={`${teko.className} flex items-center justify-between text-[16px] font-semibold uppercase leading-none tracking-wide`} style={{ color: EVO.ambar }}>
-        {t(group[0], group[1])}
-        <span className={SM_ICON}>{group[3]}</span>
-      </div>
-      {/* as comidas em cards: a MESMA prateleira da geladeira (fridge/shelf.tsx) */}
-      <Arc
-        count={list.length}
-        sel={at}
-        onSel={setSel}
-        onPick={setSel}
-        cardW={132}
-        cardH={196}
-        spacing={112}
-        compact
-        t={t}
-        render={(i, active) => {
-          const x = list[i]
-          const n = life.fridge?.[x.id] ?? 0
-          const main = effectsOf(x)[0]
-          return (
-            <Card active={active} empty={false} img={thumbOf(x.id)} badge={n ? `×${n}` : undefined} w={132} h={196} compact>
-              <div className={`${teko.className} line-clamp-2 text-[15px] font-semibold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
-                {itemName(x, t)}
-              </div>
-              {main && (
-                <div className={`${teko.className} mt-0.5 text-[14px] leading-none`} style={{ color: toneColor(main.tone) }}>
-                  {effectText(main, t)}
-                </div>
-              )}
-              <div className={`${teko.className} mt-0.5 text-[15px] font-semibold leading-none`} style={{ color: EVO.douradoClaro }}>
-                {t("stCoins", "{n} moedas").replace("{n}", String(x.price))}
-              </div>
-            </Card>
-          )
-        }}
-      />
-      {/* o escolhido: efeitos, o que já tem na geladeira e o Comprar */}
-      {it && (
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className={`${archivo.className} min-w-0 truncate text-[12px] font-semibold`} style={{ color: EVO.branco }}>
-              {itemName(it, t)}
-            </span>
-            <span className={`${archivo.className} shrink-0 text-[10px]`} style={{ color: inFridge ? EVO.douradoClaro : EVO.mudo }}>
-              {t("mkInFridge", "{n} na geladeira").replace("{n}", String(inFridge))}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {fx.map((e) => (
-              <span key={e.key} className={`${archivo.className} rounded-full px-2 py-[3px] text-[11px] font-semibold leading-none`} style={{ color: toneColor(e.tone), boxShadow: `inset 0 0 0 1px ${toneColor(e.tone)}55` }}>
-                {effectText(e, t)}
-              </span>
-            ))}
-          </div>
-          <MiniButton onClick={() => act.buy(it.id)} disabled={busy || poor || !act.canBuy} primary={!poor && act.canBuy} h={40} className="w-full">
-            {!act.canBuy ? t("mkAtMarket", "No supermercado · {n}").replace("{n}", String(it.price)) : poor ? t("mkNoCoins", "Moedas insuficientes") : t("mkBuyPrice", "Comprar · {n} moedas").replace("{n}", String(it.price))}
-          </MiniButton>
-        </div>
-      )}
-    </div>
-  )
-}
-
 /** Quantos dias e eventos cabem no celular (o histórico real é longo). */
 const DIARY_MAX_C = 3
 const EVENTS_MAX_C = 8
 
-function HistoryC({ life, t }: PageProps) {
-  const items = new Map(life.catalog.items.map((i) => [i.id, i]))
-  const off = life.catalog.clock.offsetMin
-  return (
-    <div className="flex flex-col gap-2">
-      <MiniPlate title={t("stDiary", "Diário")}>
-        {life.days.length === 0 && (
-          <p className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
-            {t("stNoEvents", "Nada aconteceu ainda.")}
-          </p>
-        )}
-        {life.days.slice(0, DIARY_MAX_C).map((d) => (
-          <div key={d.day} className="flex h-6 items-center gap-2 border-b" style={{ borderColor: EVO.linha }}>
-            <span className={`${teko.className} w-11 shrink-0 text-[15px] font-semibold leading-none`} style={{ color: EVO.branco }}>
-              {d.day.slice(8, 10)}/{d.day.slice(5, 7)}
-            </span>
-            <div className={`${archivo.className} min-w-0 flex-1 truncate text-[10px]`} style={{ color: EVO.mudo }}>
-              {diaryLine(d, t)}
-            </div>
-            <MiniTag tone={d.condition.score >= 60 ? "bom" : d.condition.score >= 40 ? "ouro" : "perigo"}>{conditionLabel(d.condition.label, t)}</MiniTag>
-          </div>
-        ))}
-      </MiniPlate>
-      <MiniPlate title={t("stTimeline", "Linha do tempo")}>
-        {life.events.length === 0 && (
-          <p className={`${archivo.className} text-[11px]`} style={{ color: EVO.mudo }}>
-            {t("stNoEvents", "Nada aconteceu ainda.")}
-          </p>
-        )}
-        {life.events.slice(0, EVENTS_MAX_C).map((e, i) => (
-          <div key={`${e.at}-${i}`} className="flex items-center gap-2 border-b py-[3px]" style={{ borderColor: EVO.linha }}>
-            <span className="inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center [&>svg]:h-3 [&>svg]:w-3" style={{ border: `1.5px solid ${EVO.perigo}`, color: EVO.perigo }}>
-              {eventIcon(e.kind)}
-            </span>
-            <div className={`${archivo.className} line-clamp-2 min-w-0 flex-1 text-[11px] leading-[14px]`} style={{ color: EVO.branco }}>
-              <span className="mr-1.5 text-[10px] font-semibold tabular-nums" style={{ color: EVO.douradoClaro }}>
-                {timeOf(e.at, off)}
-              </span>
-              {eventText(e.kind, e.data, t, items)}
-            </div>
-          </div>
-        ))}
-      </MiniPlate>
-    </div>
-  )
-}
-
 const NO_LOADOUT: LoadoutData = { gear: null, chars: null }
-function LoadoutD(p: PageProps) {
-  return <LoadoutPage life={p.life} adv={p.adv} data={p.loadout ?? NO_LOADOUT} compact={false} t={p.t} />
-}
-function LoadoutC(p: PageProps) {
-  return <LoadoutPage life={p.life} adv={p.adv} data={p.loadout ?? NO_LOADOUT} compact t={p.t} />
-}
-
 /** A certidão do personagem ativo (o código vem da lista de personagens do B6). */
 function ArchiveStatusPage(p: PageProps) {
   return <ArchivePage t={p.t} compact={p.compact} />
@@ -2148,7 +1126,7 @@ function SheetPage(props: PageProps) {
   const rows = useStatRows(life, adv?.level, t)
   const [pick, setPick] = useState<StatRow["key"] | null>(null)
   const c = life.character
-  if (c.status === "dead") return compact ? <OverviewC {...props} /> : <Overview {...props} />
+  if (c.status === "dead") return compact ? <DeadPageC {...props} /> : <DeadPage {...props} />
   const row = pick ? rows.find((r) => r.key === pick) : undefined
   const data = loadout ?? NO_LOADOUT
   const left = (
@@ -2359,15 +1337,4 @@ export function StatusPage(props: PageProps) {
       </div>
     </div>
   )
-}
-
-/**
- * As páginas antigas, fora da navegação desde a apresentação 03 (o código sai na
- * limpeza 03-b, conferido por Grep que nada mais aponta para elas).
- */
-export function LegacyStatusPage(props: PageProps & { legacy: string }) {
-  const C: Record<string, (p: PageProps) => ReactNode> = { overview: OverviewC, attributes: AttributesC, loadout: LoadoutC, routine: RoutineC, market: MarketC, history: HistoryC, certificate: CertificatePage, archive: ArchiveStatusPage }
-  const D: Record<string, (p: PageProps) => ReactNode> = { overview: Overview, attributes: Attributes, loadout: LoadoutD, routine: Routine, market: Market, history: History, certificate: CertificatePage, archive: ArchiveStatusPage }
-  const P = (props.compact ? C : D)[props.legacy] ?? OverviewC
-  return <P {...props} />
 }

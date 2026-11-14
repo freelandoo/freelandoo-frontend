@@ -20,9 +20,9 @@ import { createPortal } from "react-dom"
 import { Brain, Crosshair, Feather, Heart, Shield, Swords, Target, Zap } from "lucide-react"
 import type { LifeFull } from "../../types"
 import { useLocale } from "@/components/i18n/I18nProvider"
-import { HERO_LEVEL, heroSheet } from "../../laminas/sim/fight"
+import { heroSheet } from "../../laminas/sim/fight"
 import { anton } from "../hud/fight-plate"
-import { archivo, cinzel, EVO, teko } from "./evo-skin"
+import { archivo, EVO, teko } from "./evo-skin"
 import { currentUiFx } from "../kit/steam/fx-tier"
 
 type Tr = (key: string, fallback: string) => string
@@ -331,94 +331,6 @@ export function PowerPlate({ power, t, small = false }: { power: number; t: Tr; 
       <span className={`${anton.className} inline-block tabular-nums leading-none`} style={{ fontFamily: anton.style.fontFamily, fontSize: small ? 20 : 30, color: "#FFD23F", transform: "skewX(-9deg)", textShadow: "0 2px 0 #000" }}>
         {Math.round(power).toLocaleString(locale)}
       </span>
-    </div>
-  )
-}
-
-/** O fim da página: onde cada status influencia e como sobe. */
-export function StatGuide({ t, small = false }: { t: Tr; small?: boolean }) {
-  const items: [keyof typeof COLORS, ReactNode, string, string, string][] = [
-    [
-      "hp",
-      <Heart key="i" />,
-      t("stHp", "HP"),
-      t("sgHpWhere", "É a vida na luta: cada golpe que passa pela defesa tira daqui. Zerou, a luta acaba."),
-      t("sgHpHow", "Começa no valor do personagem e sobe a cada nível de aventura."),
-    ],
-    [
-      "def",
-      <Shield key="i" />,
-      t("stDefense", "Defesa"),
-      t("sgDefWhere", "Amortece o dano: disputa com o ataque de quem bate. Ataque 100 contra defesa 1000 passa só 10%."),
-      t("sgDefHow2", "Começa no valor do personagem e sobe a cada nível de aventura. O equipamento do Armeiro e da Forja soma por cima."),
-    ],
-    [
-      "atk",
-      <Swords key="i" />,
-      t("stAttack", "Ataque"),
-      t("sgAtkWhere", "A força do golpe: multiplica o dano e fura a defesa de quem apanha."),
-      t("sgAtkHow2", "Começa no valor do personagem e sobe a cada nível de aventura. A arma e o refino na Forja somam por cima."),
-    ],
-    [
-      "str",
-      <Target key="i" />,
-      t("atStrength", "Acuracidade"),
-      t("sgStrWhere", "Chance de acertar: disputa com a velocidade de quem apanha. 100 contra 1000 acerta 10%. Conta para virar adulto."),
-      t("sgStrHow2", "Treinando na academia (rende até 4 h por dia); whey, creatina, pré-treino e anabolizante aceleram. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor."),
-    ],
-    [
-      "int",
-      <Brain key="i" />,
-      t("atIntelligence", "Inteligência"),
-      t("sgIntWhere", "Mostra o aviso do golpe do inimigo mais cedo (até +35%) e é o que mais pesa na chance de golpe forte."),
-      t("sgIntHow2", "Estudando na escola ou na universidade (rende até 5 h por dia). Depois de 1 dia sem estudar cai 1 ponto por dia, nunca abaixo de 90% do maior valor."),
-    ],
-    [
-      "dex",
-      <Crosshair key="i" />,
-      t("attrDexterity", "Destreza"),
-      t("sgDexWhere", "Gasta menos fôlego no ataque e na esquiva (até −15%), recupera a arma mais rápido e ajuda no golpe forte."),
-      t("sgDexHow2", "Jogando os minijogos e lutando. Depois de 1 dia sem jogar cai 5 pontos por dia, até 60% do maior valor."),
-    ],
-    [
-      "spd",
-      <Feather key="i" />,
-      t("atSpeed", "Velocidade"),
-      t("sgSpdWhere", "Esquiva, até sem apertar: disputa com a acuracidade de quem bate. Também dá ritmo aos golpes e ao passo; no Jetpack, a velocidade do voo."),
-      t("sgSpdHow2", "Treinando na academia. Depois de 1 dia sem treino cai 5 pontos por dia, até 60% do maior valor; voltar ao topo é mais rápido."),
-    ],
-  ]
-  return (
-    <div style={{ padding: small ? 10 : "14px 18px", borderRadius: small ? 8 : 10, background: CARD, boxShadow: `inset 0 0 0 1px ${MOLDURA}` }}>
-      <h3 className={`${cinzel.className} font-bold uppercase leading-tight`} style={{ fontSize: small ? 12.5 : 15, letterSpacing: "0.08em", color: "#FFD68A", textShadow: "0 1px 0 #000" }}>
-        {t("sgTitle", "Como funcionam os status")}
-      </h3>
-      <div className={`mt-2 grid ${small ? "gap-2.5" : "grid-cols-2 gap-x-6 gap-y-3"}`}>
-        {items.map(([k, icon, label, where, how]) => (
-          <div key={k} className="flex items-start" style={{ gap: small ? 8 : 10 }}>
-            <Glyph color={COLORS[k]} size={small ? 18 : 22}>
-              {icon}
-            </Glyph>
-            <div className={`${archivo.className} min-w-0 leading-snug`} style={{ fontSize: small ? 11 : 13 }}>
-              <div className={`${teko.className} font-semibold uppercase leading-none`} style={{ fontSize: small ? 16 : 20, color: COLORS[k] }}>
-                {label}
-              </div>
-              <div style={{ color: EVO.branco }}>
-                <b>{t("sgWhere", "Onde vale:")}</b> {where}
-              </div>
-              <div style={{ color: EVO.mudo }}>
-                <b style={{ color: EVO.douradoClaro }}>{t("sgHow", "Como sobe:")}</b> {how}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className={`${archivo.className} mt-3 leading-snug`} style={{ fontSize: small ? 10.5 : 12.5, color: EVO.mudo }}>
-        {t(
-          "sgFoot",
-          "Cada nível de aventura também soma +{n} em acuracidade, inteligência, destreza e velocidade (vale na luta). A prática de cada dia tem limite; vencer rende mais que perder, e com energia alta e estresse baixo rende mais.",
-        ).replace("{n}", String(HERO_LEVEL.attr))}
-      </p>
     </div>
   )
 }
