@@ -55,7 +55,14 @@ const ICE_LOD: Partial<Record<IceAsset, number>> = { estalactites: 30, portico: 
 export function loadIceAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<IceAsset>> {
   return loadPieceGroups<IceAsset>(scene, ICE_DIR, ICE_GROUPS, ICE_LOD, isAlive)
 }
-/** Floresta Bioluminescente v2 (build_floresta_v2.py): grupos, como o Gelo. Toda peça que se repete tem versão de longe. */
+/**
+ * Floresta Bioluminescente v2 (build_floresta_v2.py): grupos, como o Gelo. Toda peça que se repete tem versão de longe.
+ * B6 (2026-11-11): o Jetpack e o Rolê Noturno (bioma Floresta) leem o TEMA v2, o mesmo kit do Domínio
+ * (`pipeline/temas/build_floresta_tema_v2.py`): faces do Tripo para fora, UV refeita, cor e mapa de normal
+ * assados, KTX2 1024 em árvores, casa, arco e moldura. Mesmas peças e medidas do floresta2 (que saiu); as
+ * árvores têm mais triângulos (3.600, eram 2.600/2.400), por isso trocam de versão mais cedo (FOREST_LOD).
+ */
+export const FOREST_DIR = "/meu-mundo/temas/floresta/v2/"
 export const FOREST_GROUPS = {
   cristais: ["cristais"],
   cogumelo: ["cogumelo"],
@@ -71,9 +78,15 @@ export const FOREST_GROUPS = {
 export type ForestAsset = (typeof FOREST_GROUPS)[keyof typeof FOREST_GROUPS][number]
 const FOREST_LOD: Partial<Record<ForestAsset, number>> = { cristais: 55, cogumelo: 70, ilha: 50, arvore: 90, planta: 35, arco: 50, "cogumelo-casa": 70, arvore2: 80, flor: 45, lanterna: 40, "tronco-caido": 45, ninho: 45 }
 export function loadForestAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<ForestAsset>> {
-  return loadPieceGroups<ForestAsset>(scene, "/meu-mundo/jetpack/floresta2/", FOREST_GROUPS, FOREST_LOD, isAlive)
+  return loadPieceGroups<ForestAsset>(scene, FOREST_DIR, FOREST_GROUPS, FOREST_LOD, isAlive)
 }
-/** Forja Vulcânica v2 (build_forja_v2.py): grupos, como o Gelo; toda peça com versão de longe. */
+/**
+ * Forja Vulcânica v2 (build_forja_v2.py): grupos, como o Gelo; toda peça com versão de longe.
+ * B6 (2026-11-14): o Jetpack e o Rolê Noturno (bioma Forja) leem o TEMA v2
+ * (`pipeline/temas/build_forja_tema_v2.py`): faces do Tripo para fora, UV refeita, cor e mapa de normal
+ * assados, KTX2 1024 em fornalha, pórtico, engrenagem e moldura. Mesmas peças, medidas e triângulos do forja2.
+ */
+export const FORGE_DIR = "/meu-mundo/temas/forja/v2/"
 export const FORGE_GROUPS = {
   fornalha: ["fornalha"],
   prensa: ["prensa"],
@@ -89,9 +102,15 @@ export const FORGE_GROUPS = {
 export type ForgeAsset = (typeof FORGE_GROUPS)[keyof typeof FORGE_GROUPS][number]
 const FORGE_LOD: Partial<Record<ForgeAsset, number>> = { fornalha: 70, prensa: 50, rocha: 60, ponte: 60, portico: 50, caldeirao: 50, estatua: 60, cadinho: 55, chamine: 55, "rocha-lava": 45, bigorna: 40, carrinho: 40 }
 export function loadForgeAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<ForgeAsset>> {
-  return loadPieceGroups<ForgeAsset>(scene, "/meu-mundo/jetpack/forja2/", FORGE_GROUPS, FORGE_LOD, isAlive)
+  return loadPieceGroups<ForgeAsset>(scene, FORGE_DIR, FORGE_GROUPS, FORGE_LOD, isAlive)
 }
-/** Cidade Orbital v2 (build_orbital_v2.py): grupos, como o Gelo; toda peça com versão de longe. */
+/**
+ * Cidade Orbital v2 (build_orbital_v2.py): grupos, como o Gelo; toda peça com versão de longe.
+ * B6 (2026-11-14): o Jetpack e o Rolê Noturno (bioma Orbital) leem o TEMA v2
+ * (`pipeline/temas/build_orbital_tema_v2.py`): faces do Tripo para fora, UV refeita, cor e mapa de normal
+ * assados, KTX2 1024 em pórtico e moldura. Mesmas peças, medidas e triângulos do orbital2.
+ */
+export const ORBITAL_DIR = "/meu-mundo/temas/orbital/v2/"
 export const ORBITAL_GROUPS = {
   torre: ["torre"],
   portico: ["portico"],
@@ -107,7 +126,7 @@ export const ORBITAL_GROUPS = {
 export type OrbitalAsset = (typeof ORBITAL_GROUPS)[keyof typeof ORBITAL_GROUPS][number]
 const ORBITAL_LOD: Partial<Record<OrbitalAsset, number>> = { torre: 90, portico: 50, drone: 40, painel: 40, jardineira: 45, elevador: 50, antena: 45, holo: 40, torre2: 70, capsula: 50, satelite: 60, jardim: 60 }
 export function loadOrbitalAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<OrbitalAsset>> {
-  return loadPieceGroups<OrbitalAsset>(scene, "/meu-mundo/jetpack/orbital2/", ORBITAL_GROUPS, ORBITAL_LOD, isAlive)
+  return loadPieceGroups<OrbitalAsset>(scene, ORBITAL_DIR, ORBITAL_GROUPS, ORBITAL_LOD, isAlive)
 }
 /**
  * Fábrica (Túnel Industrial) v2 (build_industrial_v2.py): grupos, como o Gelo. As peças novas do Tripo

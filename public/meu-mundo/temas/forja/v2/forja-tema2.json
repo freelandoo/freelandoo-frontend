@@ -1,0 +1,320 @@
+{
+ "groups": {
+  "fornalha": {
+   "file": "fornalha.glb",
+   "pieces": [
+    "fornalha"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1785,
+   "srcTris": 41776
+  },
+  "prensa": {
+   "file": "prensa.glb",
+   "pieces": [
+    "prensa"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1779,
+   "srcTris": 38192
+  },
+  "rocha": {
+   "file": "rocha.glb",
+   "pieces": [
+    "rocha"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1619,
+   "srcTris": 41826
+  },
+  "ponte": {
+   "file": "ponte.glb",
+   "pieces": [
+    "ponte"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1954,
+   "srcTris": 39972
+  },
+  "portico": {
+   "file": "portico.glb",
+   "pieces": [
+    "portico"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1949,
+   "srcTris": 39343
+  },
+  "caldeirao": {
+   "file": "caldeirao.glb",
+   "pieces": [
+    "caldeirao"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1809,
+   "srcTris": 41943
+  },
+  "for-ferreiro": {
+   "file": "for-ferreiro.glb",
+   "pieces": [
+    "estatua",
+    "cadinho"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1755,
+   "srcTris": 42526
+  },
+  "for-engrenagem": {
+   "file": "for-engrenagem.glb",
+   "pieces": [
+    "engrenagem3",
+    "viga3"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1705,
+   "srcTris": 40475
+  },
+  "for-moldura": {
+   "file": "for-moldura.glb",
+   "pieces": [
+    "borda",
+    "canto",
+    "galao"
+   ],
+   "tex": 1024,
+   "normal": 0,
+   "kb": 1135,
+   "srcTris": 42312
+  },
+  "for-oficina": {
+   "file": "for-oficina.glb",
+   "pieces": [
+    "chamine",
+    "rocha-lava",
+    "bigorna",
+    "carrinho"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1850,
+   "srcTris": 42537
+  }
+ },
+ "pieces": {
+  "fornalha": {
+   "group": "fornalha",
+   "size": [
+    1.2083,
+    0.9975,
+    1.2718
+   ],
+   "tris": 3000,
+   "srcTris": 41776,
+   "lodTris": 800
+  },
+  "prensa": {
+   "group": "prensa",
+   "size": [
+    0.8416,
+    1.0002,
+    1.0235
+   ],
+   "tris": 2596,
+   "srcTris": 38192,
+   "lodTris": 699
+  },
+  "rocha": {
+   "group": "rocha",
+   "size": [
+    1.1751,
+    1.0036,
+    1.2183
+   ],
+   "tris": 1500,
+   "srcTris": 41826,
+   "lodTris": 400
+  },
+  "ponte": {
+   "group": "ponte",
+   "size": [
+    0.3538,
+    0.3963,
+    1.0024
+   ],
+   "tris": 1796,
+   "srcTris": 39972,
+   "lodTris": 498
+  },
+  "portico": {
+   "group": "portico",
+   "underMid": 0.6097,
+   "feetInner": 0.1983,
+   "vao": {
+    "0.0": 0.198,
+    "0.05": 0.204,
+    "0.1": 0.225,
+    "0.15": 0.243,
+    "0.2": 0.247,
+    "0.25": 0.272,
+    "0.3": 0.272,
+    "0.35": 0.253,
+    "0.4": 0.272,
+    "0.45": 0.272,
+    "0.5": 0.254,
+    "0.55": 0.25,
+    "0.6": 0.007,
+    "0.65": 0.0,
+    "0.7": 0.0,
+    "0.75": 0.0,
+    "0.8": 0.002
+   },
+   "size": [
+    0.9973,
+    0.8847,
+    0.3045
+   ],
+   "tris": 5996,
+   "srcTris": 39343,
+   "lodTris": 1500
+  },
+  "caldeirao": {
+   "group": "caldeirao",
+   "size": [
+    0.8595,
+    0.9993,
+    0.8722
+   ],
+   "tris": 2198,
+   "srcTris": 41943,
+   "lodTris": 600
+  },
+  "estatua": {
+   "group": "for-ferreiro",
+   "size": [
+    0.7062,
+    0.999,
+    0.6696
+   ],
+   "tris": 2000,
+   "srcTris": 22078,
+   "lodTris": 500
+  },
+  "cadinho": {
+   "group": "for-ferreiro",
+   "size": [
+    1.0446,
+    1.0001,
+    0.6838
+   ],
+   "tris": 1800,
+   "srcTris": 20448,
+   "lodTris": 450
+  },
+  "engrenagem3": {
+   "group": "for-engrenagem",
+   "size": [
+    0.6848,
+    0.9999,
+    0.9285
+   ],
+   "tris": 1496,
+   "srcTris": 22713
+  },
+  "viga3": {
+   "group": "for-engrenagem",
+   "len": 4.3427,
+   "depth": 1.2686,
+   "size": [
+    4.3451,
+    1.0007,
+    1.2792
+   ],
+   "tris": 800,
+   "srcTris": 17762
+  },
+  "borda": {
+   "group": "for-moldura",
+   "len": 2.2516,
+   "size": [
+    2.2516,
+    1.0,
+    1.5415
+   ],
+   "tris": 400,
+   "srcTris": 13400
+  },
+  "canto": {
+   "group": "for-moldura",
+   "arm": 0.741,
+   "size": [
+    0.741,
+    1.0,
+    0.668
+   ],
+   "tris": 400,
+   "srcTris": 8582
+  },
+  "galao": {
+   "group": "for-moldura",
+   "size": [
+    0.967,
+    0.9842,
+    1.0115
+   ],
+   "tris": 700,
+   "srcTris": 20330
+  },
+  "chamine": {
+   "group": "for-oficina",
+   "size": [
+    0.5881,
+    0.999,
+    1.2274
+   ],
+   "tris": 1192,
+   "srcTris": 13099,
+   "lodTris": 300
+  },
+  "rocha-lava": {
+   "group": "for-oficina",
+   "size": [
+    0.7711,
+    0.998,
+    1.8177
+   ],
+   "tris": 992,
+   "srcTris": 8363,
+   "lodTris": 259
+  },
+  "bigorna": {
+   "group": "for-oficina",
+   "size": [
+    0.8702,
+    0.9966,
+    1.5416
+   ],
+   "tris": 1181,
+   "srcTris": 11400,
+   "lodTris": 297
+  },
+  "carrinho": {
+   "group": "for-oficina",
+   "size": [
+    0.778,
+    1.0023,
+    1.1639
+   ],
+   "tris": 1199,
+   "srcTris": 11267,
+   "lodTris": 298
+  }
+ }
+}

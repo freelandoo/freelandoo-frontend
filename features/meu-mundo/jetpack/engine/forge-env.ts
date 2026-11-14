@@ -33,7 +33,7 @@ const { W, H } = TUNNEL
 
 export const FORGE_PIECES = ["fornalha", "prensa", "rocha", "ponte", "portico", "caldeirao", "estatua", "cadinho", "chamine", "rocha-lava", "bigorna", "carrinho"] as const
 export type ForgePiece = (typeof FORGE_PIECES)[number]
-/** Largura em x e fundura (z) das peças novas com 1 m de altura (forja2.json). */
+/** Largura em x e fundura (z) das peças novas com 1 m de altura (forja-tema2.json; iguais às do forja2). */
 const DIM = { estatua: [0.71, 0.67], cadinho: [1.04, 0.68], chamine: [0.59, 1.23], "rocha-lava": [0.77, 1.82], bigorna: [0.88, 1.55], carrinho: [0.78, 1.16] } as const
 
 const C = {

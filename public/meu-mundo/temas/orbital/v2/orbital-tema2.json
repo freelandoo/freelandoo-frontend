@@ -1,0 +1,309 @@
+{
+ "groups": {
+  "torre": {
+   "file": "torre.glb",
+   "pieces": [
+    "torre"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1972,
+   "srcTris": 38330
+  },
+  "portico": {
+   "file": "portico.glb",
+   "pieces": [
+    "portico"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1898,
+   "srcTris": 38948
+  },
+  "drone": {
+   "file": "drone.glb",
+   "pieces": [
+    "drone"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1759,
+   "srcTris": 41387
+  },
+  "painel": {
+   "file": "painel.glb",
+   "pieces": [
+    "painel"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1761,
+   "srcTris": 38496
+  },
+  "jardineira": {
+   "file": "jardineira.glb",
+   "pieces": [
+    "jardineira"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1844,
+   "srcTris": 39450
+  },
+  "elevador": {
+   "file": "elevador.glb",
+   "pieces": [
+    "elevador"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1964,
+   "srcTris": 38593
+  },
+  "orb-antenas": {
+   "file": "orb-antenas.glb",
+   "pieces": [
+    "antena",
+    "holo",
+    "torre2"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1818,
+   "srcTris": 40099
+  },
+  "orb-capsula": {
+   "file": "orb-capsula.glb",
+   "pieces": [
+    "capsula",
+    "viga2"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1780,
+   "srcTris": 41257
+  },
+  "orb-moldura": {
+   "file": "orb-moldura.glb",
+   "pieces": [
+    "borda",
+    "canto",
+    "galao"
+   ],
+   "tex": 1024,
+   "normal": 0,
+   "kb": 1158,
+   "srcTris": 40171
+  },
+  "orb-ceu": {
+   "file": "orb-ceu.glb",
+   "pieces": [
+    "satelite",
+    "jardim"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1854,
+   "srcTris": 41155
+  }
+ },
+ "pieces": {
+  "torre": {
+   "group": "torre",
+   "size": [
+    0.4036,
+    0.9997,
+    0.4211
+   ],
+   "tris": 2562,
+   "srcTris": 38330,
+   "lodTris": 692
+  },
+  "portico": {
+   "group": "portico",
+   "underMid": 0.05,
+   "feetInner": 0.0583,
+   "vao": {
+    "0.0": 0.058,
+    "0.05": 0.065,
+    "0.1": 0.103,
+    "0.15": 0.125,
+    "0.2": 0.157,
+    "0.25": 0.221,
+    "0.3": 0.251,
+    "0.35": 0.282,
+    "0.4": 0.28,
+    "0.45": 0.263,
+    "0.5": 0.232,
+    "0.55": 0.204,
+    "0.6": 0.0,
+    "0.65": 0.0,
+    "0.7": 0.001,
+    "0.75": 0.0,
+    "0.8": 0.0
+   },
+   "size": [
+    0.9995,
+    0.7905,
+    0.5497
+   ],
+   "tris": 5996,
+   "srcTris": 38948,
+   "lodTris": 1500
+  },
+  "drone": {
+   "group": "drone",
+   "size": [
+    1.4825,
+    0.999,
+    2.0049
+   ],
+   "tris": 1296,
+   "srcTris": 41387,
+   "lodTris": 418
+  },
+  "painel": {
+   "group": "painel",
+   "size": [
+    0.5949,
+    0.9973,
+    1.5976
+   ],
+   "tris": 1298,
+   "srcTris": 38496,
+   "lodTris": 400
+  },
+  "jardineira": {
+   "group": "jardineira",
+   "size": [
+    0.8721,
+    1.0,
+    0.9155
+   ],
+   "tris": 2192,
+   "srcTris": 39450,
+   "lodTris": 1146
+  },
+  "elevador": {
+   "group": "elevador",
+   "size": [
+    0.4296,
+    0.9992,
+    0.4669
+   ],
+   "tris": 1995,
+   "srcTris": 38593,
+   "lodTris": 499
+  },
+  "antena": {
+   "group": "orb-antenas",
+   "size": [
+    0.6664,
+    1.0041,
+    0.7409
+   ],
+   "tris": 1195,
+   "srcTris": 10747,
+   "lodTris": 300
+  },
+  "holo": {
+   "group": "orb-antenas",
+   "size": [
+    0.6219,
+    0.9957,
+    0.6818
+   ],
+   "tris": 1198,
+   "srcTris": 15036,
+   "lodTris": 376
+  },
+  "torre2": {
+   "group": "orb-antenas",
+   "size": [
+    0.5429,
+    1.0043,
+    0.5268
+   ],
+   "tris": 1167,
+   "srcTris": 7093,
+   "lodTris": 299
+  },
+  "capsula": {
+   "group": "orb-capsula",
+   "size": [
+    0.8413,
+    1.0079,
+    1.3333
+   ],
+   "tris": 3866,
+   "srcTris": 33833,
+   "lodTris": 1756
+  },
+  "viga2": {
+   "group": "orb-capsula",
+   "len": 4.5376,
+   "depth": 1.1338,
+   "size": [
+    4.5147,
+    0.9941,
+    1.123
+   ],
+   "tris": 800,
+   "srcTris": 7780
+  },
+  "borda": {
+   "group": "orb-moldura",
+   "len": 3.554,
+   "size": [
+    3.554,
+    1.0,
+    2.2767
+   ],
+   "tris": 400,
+   "srcTris": 12281
+  },
+  "canto": {
+   "group": "orb-moldura",
+   "arm": 0.7105,
+   "size": [
+    0.7105,
+    1.0,
+    0.7104
+   ],
+   "tris": 400,
+   "srcTris": 6497
+  },
+  "galao": {
+   "group": "orb-moldura",
+   "size": [
+    0.9296,
+    0.9924,
+    0.9369
+   ],
+   "tris": 696,
+   "srcTris": 22020
+  },
+  "satelite": {
+   "group": "orb-ceu",
+   "size": [
+    1.7296,
+    1.0023,
+    0.6061
+   ],
+   "tris": 1198,
+   "srcTris": 11007,
+   "lodTris": 300
+  },
+  "jardim": {
+   "group": "orb-ceu",
+   "size": [
+    1.0845,
+    0.9912,
+    1.0563
+   ],
+   "tris": 1500,
+   "srcTris": 30148,
+   "lodTris": 512
+  }
+ }
+}

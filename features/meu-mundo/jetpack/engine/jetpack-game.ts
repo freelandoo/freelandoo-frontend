@@ -270,7 +270,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
         mat.emissiveColor = new Color3(0.42, 0.4, 0.5)
       }
       tunnel.provide?.(a)
-      // V3 (2026-11-09): galão e moldura de raízes do Tripo (floresta2.json); a viga é a mesma borda repetida
+      // V3 (2026-11-09): galão e moldura de raízes do Tripo (floresta-tema2.json); a viga é a mesma borda repetida
       const can = a.meshes.get("galao")
       if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
       const tile = a.meshes.get("borda")
@@ -299,7 +299,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
       if (disposed) return a.dispose()
       canyonAssets = a
       tunnel.provide?.(a)
-      // V3: galão e moldura do Tripo (orbital2.json); a viga dos obstáculos é a mesma borda repetida
+      // V3: galão e moldura do Tripo (orbital-tema2.json); a viga dos obstáculos é a mesma borda repetida
       const can = a.meshes.get("galao")
       if (can) obstacles.useModel("can", can, { bake: Matrix.Scaling(1.15, 1.15, 1.15) })
       const tile = a.meshes.get("borda")

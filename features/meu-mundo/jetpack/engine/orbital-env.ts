@@ -33,7 +33,7 @@ const { W, H } = TUNNEL
 
 export const ORBITAL_PIECES = ["torre", "portico", "drone", "painel", "jardineira", "elevador", "antena", "holo", "torre2", "capsula", "viga2", "satelite", "jardim"] as const
 export type OrbitalPiece = (typeof ORBITAL_PIECES)[number]
-/** Largura em x das peças novas com 1 m de altura (orbital2.json; viga2 = comprimento). */
+/** Largura em x das peças novas com 1 m de altura (orbital-tema2.json, iguais às do orbital2; viga2 = comprimento). */
 const WID = { antena: 0.67, holo: 0.62, torre2: 0.54, capsula: 0.83, satelite: 1.73, jardim: 1.09 } as const
 
 const C = {

@@ -38,7 +38,7 @@ const { W, H } = TUNNEL
 /** As peças que são CENÁRIO (borda, canto e galão vão para os obstáculos). */
 export const FOREST_PIECES = ["cristais", "cogumelo", "ilha", "arvore", "planta", "arco", "cogumelo-casa", "arvore2", "flor", "lanterna", "tronco-caido", "ninho", "tronco-viga"] as const
 export type ForestPiece = (typeof FOREST_PIECES)[number]
-/** Largura em x das peças novas com 1 m de altura (floresta2.json). */
+/** Largura em x das peças novas com 1 m de altura (floresta-tema2.json; iguais às do floresta2). */
 const WID = { "cogumelo-casa": 0.834, arvore2: 0.773, flor: 0.874, lanterna: 0.728, "tronco-caido": 1.04, ninho: 0.988, "tronco-viga": 1.64 } as const
 
 const C = {

@@ -1,0 +1,309 @@
+{
+ "groups": {
+  "cristais": {
+   "file": "cristais.glb",
+   "pieces": [
+    "cristais"
+   ],
+   "tex": 512,
+   "normal": 0,
+   "kb": 564,
+   "srcTris": 41808
+  },
+  "cogumelo": {
+   "file": "cogumelo.glb",
+   "pieces": [
+    "cogumelo"
+   ],
+   "tex": 512,
+   "normal": 0,
+   "kb": 567,
+   "srcTris": 41284
+  },
+  "ilha": {
+   "file": "ilha.glb",
+   "pieces": [
+    "ilha"
+   ],
+   "tex": 512,
+   "normal": 0,
+   "kb": 611,
+   "srcTris": 41796
+  },
+  "arvore": {
+   "file": "arvore.glb",
+   "pieces": [
+    "arvore"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 1996,
+   "srcTris": 41937
+  },
+  "planta": {
+   "file": "planta.glb",
+   "pieces": [
+    "planta"
+   ],
+   "tex": 512,
+   "normal": 0,
+   "kb": 486,
+   "srcTris": 41536
+  },
+  "arco": {
+   "file": "arco.glb",
+   "pieces": [
+    "arco"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 2152,
+   "srcTris": 42952
+  },
+  "flo-casa": {
+   "file": "flo-casa.glb",
+   "pieces": [
+    "cogumelo-casa",
+    "arvore2"
+   ],
+   "tex": 1024,
+   "normal": 512,
+   "kb": 2069,
+   "srcTris": 41241
+  },
+  "flo-flores": {
+   "file": "flo-flores.glb",
+   "pieces": [
+    "flor",
+    "lanterna"
+   ],
+   "tex": 512,
+   "normal": 0,
+   "kb": 652,
+   "srcTris": 40938
+  },
+  "flo-troncos": {
+   "file": "flo-troncos.glb",
+   "pieces": [
+    "tronco-caido",
+    "ninho",
+    "tronco-viga"
+   ],
+   "tex": 512,
+   "normal": 512,
+   "kb": 1161,
+   "srcTris": 40590
+  },
+  "flo-moldura": {
+   "file": "flo-moldura.glb",
+   "pieces": [
+    "borda",
+    "canto",
+    "galao"
+   ],
+   "tex": 1024,
+   "normal": 0,
+   "kb": 1345,
+   "srcTris": 41967
+  }
+ },
+ "pieces": {
+  "cristais": {
+   "group": "cristais",
+   "size": [
+    1.1348,
+    1.0006,
+    1.2374
+   ],
+   "tris": 1400,
+   "srcTris": 41808,
+   "lodTris": 400
+  },
+  "cogumelo": {
+   "group": "cogumelo",
+   "size": [
+    0.9352,
+    1.0043,
+    1.0069
+   ],
+   "tris": 1400,
+   "srcTris": 41284,
+   "lodTris": 400
+  },
+  "ilha": {
+   "group": "ilha",
+   "size": [
+    1.0175,
+    0.9922,
+    1.2433
+   ],
+   "tris": 2200,
+   "srcTris": 41796,
+   "lodTris": 500
+  },
+  "arvore": {
+   "group": "arvore",
+   "size": [
+    1.2815,
+    0.9961,
+    1.6666
+   ],
+   "tris": 3599,
+   "srcTris": 41937,
+   "lodTris": 1999
+  },
+  "planta": {
+   "group": "planta",
+   "size": [
+    0.8122,
+    0.9933,
+    1.0732
+   ],
+   "tris": 1298,
+   "srcTris": 41536,
+   "lodTris": 250
+  },
+  "arco": {
+   "group": "arco",
+   "underMid": 0.0501,
+   "feetInner": 0.0785,
+   "vao": {
+    "0.0": 0.079,
+    "0.05": 0.091,
+    "0.1": 0.128,
+    "0.15": 0.162,
+    "0.2": 0.126,
+    "0.25": 0.121,
+    "0.3": 0.089,
+    "0.35": 0.039,
+    "0.4": 0.007,
+    "0.45": 0.0,
+    "0.5": 0.0,
+    "0.55": 0.001,
+    "0.6": 0.004,
+    "0.65": null,
+    "0.7": null,
+    "0.75": null,
+    "0.8": null
+   },
+   "size": [
+    0.9928,
+    0.5984,
+    0.5479
+   ],
+   "tris": 6000,
+   "srcTris": 42952,
+   "lodTris": 1500
+  },
+  "cogumelo-casa": {
+   "group": "flo-casa",
+   "size": [
+    0.8291,
+    0.9935,
+    0.7601
+   ],
+   "tris": 2399,
+   "srcTris": 24908,
+   "lodTris": 800
+  },
+  "arvore2": {
+   "group": "flo-casa",
+   "size": [
+    0.7754,
+    0.9984,
+    0.5902
+   ],
+   "tris": 3600,
+   "srcTris": 16611,
+   "lodTris": 1099
+  },
+  "flor": {
+   "group": "flo-flores",
+   "size": [
+    0.8705,
+    0.996,
+    0.6594
+   ],
+   "tris": 1500,
+   "srcTris": 22886,
+   "lodTris": 400
+  },
+  "lanterna": {
+   "group": "flo-flores",
+   "size": [
+    0.7134,
+    0.9806,
+    0.501
+   ],
+   "tris": 1000,
+   "srcTris": 18052,
+   "lodTris": 358
+  },
+  "tronco-caido": {
+   "group": "flo-troncos",
+   "size": [
+    1.0479,
+    1.0043,
+    1.8194
+   ],
+   "tris": 999,
+   "srcTris": 25003,
+   "lodTris": 311
+  },
+  "ninho": {
+   "group": "flo-troncos",
+   "size": [
+    0.9873,
+    0.9992,
+    0.8221
+   ],
+   "tris": 1200,
+   "srcTris": 11946,
+   "lodTris": 340
+  },
+  "tronco-viga": {
+   "group": "flo-troncos",
+   "len": 1.6334,
+   "depth": 0.7308,
+   "size": [
+    1.6257,
+    0.9873,
+    0.7118
+   ],
+   "tris": 699,
+   "srcTris": 3747
+  },
+  "borda": {
+   "group": "flo-moldura",
+   "len": 2.5894,
+   "size": [
+    2.5894,
+    1.0,
+    1.0559
+   ],
+   "tris": 398,
+   "srcTris": 8208
+  },
+  "canto": {
+   "group": "flo-moldura",
+   "arm": 0.7585,
+   "size": [
+    0.7585,
+    1.0,
+    0.8581
+   ],
+   "tris": 400,
+   "srcTris": 18446
+  },
+  "galao": {
+   "group": "flo-moldura",
+   "size": [
+    0.9202,
+    0.9961,
+    0.9712
+   ],
+   "tris": 698,
+   "srcTris": 15313
+  }
+ }
+}
