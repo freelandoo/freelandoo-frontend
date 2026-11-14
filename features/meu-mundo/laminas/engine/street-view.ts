@@ -248,7 +248,8 @@ export function buildStreet(scene: Scene, low: boolean, kind: StreetKind): Arena
   applyLights(scene, n)
   scene.fogStart = 45
   scene.fogEnd = 170
-  const sky = new Sky(scene, 200)
+  // céu do lugar (engine/sky): bairro ou centro, com o mesmo dia/noite da rua
+  const sky = new Sky(scene, 200, { region: kind, tier: low ? "low" : "mid" })
   sky.set(n)
   const fleet = low ? null : new AirshipFleet(scene, stage.mats, fleetRing(3, 60, 80, 30, 42, 16, 61))
   return {

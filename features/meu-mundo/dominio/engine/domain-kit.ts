@@ -32,6 +32,7 @@ import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTextur
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
+import type { SkyRegionId, SkyVariant } from "../../engine/sky/sky-registry"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { Scene as SceneClass } from "@babylonjs/core/scene"
@@ -171,7 +172,13 @@ export const LOOKS: Record<DomainKitId, DomainLook> = {
 }
 
 /** Luz, névoa e céu do tema (as luzes vêm do chamador, achadas pelo nome). */
-export function applyDomainLook(scene: Scene, look: DomainLook, hemi: HemisphericLight | null, moon: DirectionalLight | null): Sky {
+/** Céu panorâmico do palco: a área (engine/sky) e a arte fixa de dia ou de noite. */
+export interface StageSky {
+  region: SkyRegionId
+  mode: SkyVariant
+}
+
+export function applyDomainLook(scene: Scene, look: DomainLook, hemi: HemisphericLight | null, moon: DirectionalLight | null, art?: StageSky | null, low = false): Sky {
   scene.clearColor = new Color4(look.clear[0], look.clear[1], look.clear[2], 1)
   scene.fogMode = SceneClass.FOGMODE_LINEAR
   scene.fogColor = new Color3(...look.fog)
@@ -189,8 +196,8 @@ export function applyDomainLook(scene: Scene, look: DomainLook, hemi: Hemispheri
     moon.intensity = look.moon.k
     moon.diffuse = new Color3(...look.moon.color)
   }
-  // a cúpula da cidade, presa na noite (a lua da Floresta nunca se põe)
-  const sky = new Sky(scene, 180)
+  // o céu do Domínio da luta (engine/sky; dia ou noite da cena) — sem arte, a cúpula da cidade presa na noite
+  const sky = new Sky(scene, 180, art ? { region: art.region, mode: art.mode, tier: low ? "low" : "mid" } : {})
   sky.set(1)
   return sky
 }

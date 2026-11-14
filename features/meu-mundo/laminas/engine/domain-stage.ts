@@ -32,12 +32,14 @@ import { Color3 } from "@babylonjs/core/Maths/math.color"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { ARENA_R } from "../sim/fight"
-import { KitPlacer, LOOKS, applyDomainLook, loadDomainKit, paintedGround, seeded, type DomainKitId, type DomainSpot, type KitPiece } from "../../dominio/engine/domain-kit"
+import { KitPlacer, LOOKS, applyDomainLook, type StageSky, loadDomainKit, paintedGround, seeded, type DomainKitId, type DomainSpot, type KitPiece } from "../../dominio/engine/domain-kit"
 import type { ArenaView } from "./arena-view"
 
 export interface DomainStageSpec {
   kit: DomainKitId
   spot: DomainSpot
+  /** Céu do Domínio/cena da luta (o mesmo da cena de onde ela saiu). Sem = a cúpula da cidade de noite. */
+  sky?: StageSky | null
 }
 
 /** Anel em volta do círculo: [peça, raio, altura, quantas, deslocamento do ângulo, fica fora do low?]. */
@@ -103,7 +105,7 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   const look = LOOKS[spec.kit] ?? LOOKS.floresta
   const hemi = scene.getLightByName("mm-hemi") as HemisphericLight | null
   const moon = scene.getLightByName("mm-sun") as DirectionalLight | null
-  const sky = applyDomainLook(scene, look, hemi, moon)
+  const sky = applyDomainLook(scene, look, hemi, moon, spec.sky, low)
   // D4: a luz de partida (fase 1) e para onde cada fase leva
   const base = { hemi: hemi?.intensity ?? 0, moon: moon?.intensity ?? 0, clear: scene.clearColor.clone(), fog: scene.fogColor.clone(), fogEnd: scene.fogEnd }
   const DARK: Record<number, { light: number; sky: number; fog: number }> = { 1: { light: 1, sky: 1, fog: 1 }, 2: { light: 0.72, sky: 0.55, fog: 0.82 }, 3: { light: 0.48, sky: 0.25, fog: 0.62 } }
@@ -124,6 +126,8 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
     scene.clearColor.set(base.clear.r * sk, base.clear.g * sk, base.clear.b * sk, base.clear.a)
     scene.fogColor.set(base.fog.r * sk, base.fog.g * sk, base.fog.b * sk)
     scene.fogEnd = base.fogEnd * at("fog")
+    // a arte do céu escurece junto com as fases do chefão (e clareia no relâmpago)
+    sky.dome.setLight([sk, sk, sk])
   }
   const ground = paintedGround(scene, `dom-stage-${spec.spot}`, look, 170, 170, 0, 0, 0, 6, spec.spot === "palacio" ? 23 : spec.spot === "fundo" ? 17 : 11)
   // a borda do círculo: filete aceso na cor do tema (a regra prende a luta nele)

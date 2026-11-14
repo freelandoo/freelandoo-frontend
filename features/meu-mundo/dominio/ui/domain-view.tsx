@@ -26,7 +26,7 @@ import { GOD_HUNT, GOD_NAME } from "../../engine/god-view"
 import { godIdOf, type GodId } from "../../laminas/sim/fight"
 import { enterDomain, equipGear, getDomains, getGods, type GodWire, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainPact, type DomainInfo, type DomainScene, type FightTicket, type Receipt } from "../../data"
 import { createDomainGame, passageKitOf, sceneKitOf, type DomainGameHandle, type DomainNear } from "../engine/domain-game"
-import { createOpenDomainGame, hasOpenScene, type OpenDomainHandle, type OpenNear } from "../engine/open-domain-game"
+import { createOpenDomainGame, hasOpenScene, sceneSky, type OpenDomainHandle, type OpenNear } from "../engine/open-domain-game"
 import { Joystick, SAFE, SceneCurtain } from "../../ui/meu-mundo-view"
 import { EvoButton, EvoToast } from "../../ui/hud/hud-kit"
 import { useMobName } from "../../laminas/ui/laminas-view"
@@ -415,7 +415,12 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
     void load(id, sceneN)
   }, [id, sceneN, load])
 
-  const stageSpec: DomainStageSpec = useMemo(() => ({ kit: sceneKitOf(id), spot: fight ? (info?.sectors[fight.sector - 1]?.stage ?? "entrada") : "entrada" }), [id, fight, info])
+  // o palco usa o céu da cena de onde a luta saiu (engine/sky: área do Domínio, dia ou noite da cena)
+  const skyScene = sceneInfo?.name ?? `${id}-${sceneN}`
+  const stageSpec: DomainStageSpec = useMemo(
+    () => ({ kit: sceneKitOf(id), spot: fight ? (info?.sectors[fight.sector - 1]?.stage ?? "entrada") : "entrada", sky: sceneSky(skyScene) }),
+    [id, fight, info, skyScene],
+  )
 
   const name = domainName(t, id)
   const guard = near?.kind === "guard" && info ? info.sectors[near.sector - 1] : null

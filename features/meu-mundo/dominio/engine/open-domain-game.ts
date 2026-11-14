@@ -45,6 +45,7 @@ import type { DomainInfo, DomainScene } from "../../data"
 import { GodFigure, GOD_HUNT } from "../../engine/god-view"
 import type { GodId } from "../../laminas/sim/fight"
 import { SkyDome } from "../../engine/sky/sky-dome"
+import type { StageSky } from "./domain-kit"
 import { SKY_REGIONS, skyArt, skyFog, skyOfCena, variantOfCena } from "../../engine/sky/sky-registry"
 import { dominioMapModel, setCityMap, type DominioMapLabels } from "../../engine/city-map"
 import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
@@ -114,6 +115,14 @@ export interface OpenDomainHandle {
   story: (shot: StoryShot | null) => void
   setGod: (god: GodId | null, delayMs?: number) => void
   dispose: () => void
+}
+
+/** Céu da cena (área + dia/noite pela luz dela): o mesmo na cena aberta e no palco das lutas que saem dela. */
+export function sceneSky(name: string): StageSky | null {
+  const region = skyOfCena(name)
+  if (!region) return null
+  const mod = CENAS[name]
+  return { region, mode: mod ? variantOfCena(name, mod.meta.ceu) : "noite" }
 }
 
 /** A cena `name` está feita (registrada no front)? Senão a tela cai no corredor antigo. */

@@ -27,7 +27,7 @@ import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import type { Scene } from "@babylonjs/core/scene"
 import { rng } from "./palette"
 import { SkyDome } from "../sky/sky-dome"
-import type { SkyRegionId } from "../sky/sky-registry"
+import type { SkyMode, SkyRegionId } from "../sky/sky-registry"
 import type { QualityTier } from "../quality"
 
 type C3 = readonly [number, number, number]
@@ -148,9 +148,12 @@ export class Sky {
   private readonly starMat: StandardMaterial
   /** Com arte panorâmica: estrelas e lua vêm da arte da noite (o casco em malha fica desligado). */
   private readonly art: boolean
+  /** "ciclo" = arte de dia e de noite pela hora; "dia"/"noite" = arte fixa (palco de luta do Domínio). */
+  private readonly mode: SkyMode
 
-  constructor(scene: Scene, r: number, opts: { region?: SkyRegionId | null; tier?: QualityTier } = {}) {
-    this.dome = new SkyDome(scene, { radius: r, tier: opts.tier ?? "mid", region: opts.region ?? null, mode: "ciclo", haze: DAY.haze, zenith: DAY.zenith })
+  constructor(scene: Scene, r: number, opts: { region?: SkyRegionId | null; tier?: QualityTier; mode?: SkyMode } = {}) {
+    this.mode = opts.mode ?? "ciclo"
+    this.dome = new SkyDome(scene, { radius: r, tier: opts.tier ?? "mid", region: opts.region ?? null, mode: this.mode, haze: DAY.haze, zenith: DAY.zenith })
     this.art = !!opts.region
 
     // Estrelas (triângulos minúsculos acima de 8° do horizonte) e a lua.
@@ -196,8 +199,10 @@ export class Sky {
     const L = lookAt(n)
     this.dome.setGradient(L.haze, L.zenith)
     const A = artAt(n)
-    this.dome.setLight(A.light)
-    this.dome.setNightMix(A.night)
+    if (this.mode === "ciclo") {
+      this.dome.setLight(A.light)
+      this.dome.setNightMix(A.night)
+    }
     const s = Math.max(0, (n - 0.45) / 0.55)
     this.starMat.alpha = s
     this.stars.setEnabled(!this.art && s > 0.02)
