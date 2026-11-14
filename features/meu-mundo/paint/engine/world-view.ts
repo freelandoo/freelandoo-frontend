@@ -392,6 +392,86 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
       ctx.props.box(sz * 1.38, 0.08, 0.1, place(p.x, p.y + p.h / 2, p.z, p.rot + Math.PI / 4), SP.iron)
     }
   }
+  // ── Projeto B 3f: o que a ref da Cidade tem e faltava — corrimão de latão
+  // com lampião no lado de fora das ilhas grandes, estandartes azuis com a
+  // engrenagem, a engrenagem dourada no chão do nascer e a TORRE DO RELÓGIO
+  // ao longe atrás de cada base (mostrador aceso). Só desenho, sem colisão.
+  {
+    let mx = 0
+    let mz = 0
+    for (const isl of map.islands) {
+      mx += isl.x
+      mz += isl.z
+    }
+    mx /= Math.max(1, map.islands.length)
+    mz /= Math.max(1, map.islands.length)
+    const navy: RGB = [0.14, 0.2, 0.46]
+    const warm: RGB = [1, 0.78, 0.42]
+    const baseIds = new Set(map.bases.map((b) => b.island))
+    for (const isl of map.islands) {
+      const big = baseIds.has(isl.id) || isl.r >= 6
+      if (!big) continue
+      // arco de corrimão virado para fora do mapa (±70°), postes de latão a cada ~1,8 m
+      const out = Math.atan2(isl.x - mx, isl.z - mz)
+      const rr = isl.r - 0.3
+      const span = 1.22
+      const n = Math.max(3, Math.round((rr * span * 2) / 1.8))
+      for (let k = 0; k <= n; k++) {
+        const a = out - span + (k / n) * span * 2
+        const x = isl.x + Math.sin(a) * rr
+        const z = isl.z + Math.cos(a) * rr
+        ctx.props.cylinder(0.12, 1.0, place(x, isl.y + 0.5, z), SP.brassDark, 6)
+        ctx.props.cylinder(0.2, 0.1, place(x, isl.y + 1.02, z), SP.brass, 6)
+        if (k % 3 === 0) ctx.glow.box(0.16, 0.2, 0.16, place(x, isl.y + 1.18, z), warm)
+        if (k < n) {
+          const a2 = out - span + ((k + 0.5) / n) * span * 2
+          const seg = (rr * span * 2) / n + 0.06
+          for (const [h, t] of [[0.98, 0.07], [0.55, 0.05]] as const) ctx.props.box(t, t, seg, place(isl.x + Math.sin(a2) * rr, isl.y + h, isl.z + Math.cos(a2) * rr, a2 + Math.PI / 2), SP.brass)
+        }
+      }
+      if (!baseIds.has(isl.id)) continue
+      // engrenagem de latão no chão do nascer (aro + 12 dentes), rente ao piso
+      rivetRing(ctx.props, isl.x, isl.y + 0.035, isl.z, 2.3, 0.14, 0, SP.brass)
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2
+        ctx.props.box(0.36, 0.05, 0.42, place(isl.x + Math.sin(a) * 2.55, isl.y + 0.03, isl.z + Math.cos(a) * 2.55, a), SP.brassDark)
+      }
+      // dois estandartes azuis com a engrenagem acesa, atrás do nascer
+      for (const s of [-1, 1]) {
+        const a = out + s * 0.55
+        const x = isl.x + Math.sin(a) * (isl.r - 1.2)
+        const z = isl.z + Math.cos(a) * (isl.r - 1.2)
+        const face = a + Math.PI
+        ctx.props.cylinder(0.12, 3.6, place(x, isl.y + 1.8, z), SP.iron, 6)
+        ctx.props.box(1.2, 0.08, 0.08, place(x, isl.y + 3.5, z, face + Math.PI / 2), SP.brass)
+        ctx.props.box(1.0, 1.8, 0.05, place(x, isl.y + 2.5, z, face + Math.PI / 2), navy)
+        ctx.props.box(1.0, 0.12, 0.06, place(x, isl.y + 1.55, z, face + Math.PI / 2), SP.brass)
+        ctx.glow.box(0.36, 0.36, 0.04, place(x + Math.sin(face) * 0.04, isl.y + 2.6, z + Math.cos(face) * 0.04, face + Math.PI / 2 + Math.PI / 4), [1, 0.76, 0.3])
+      }
+      // torre do relógio ao longe, do outro lado (quem nasce aqui vê a do outro time)
+      const tx = isl.x + Math.sin(out) * 150
+      const tz = isl.z + Math.cos(out) * 150
+      const ty = isl.y - 30
+      ctx.props.cylinder(40, 14, place(tx, ty, tz), SP.masonryDark, 12)
+      ctx.props.box(16, 62, 16, place(tx, ty + 38, tz), SP.masonry)
+      ctx.props.box(19, 3, 19, place(tx, ty + 70, tz), SP.brassDark)
+      ctx.props.cylinder(14, 12, place(tx, ty + 78, tz), SP.brick, 8)
+      ctx.props.cone(0, 17, 16, place(tx, ty + 92, tz), SP.copper, 8)
+      const back = out + Math.PI
+      for (const side of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+        const fa = back + side
+        const fx = tx + Math.sin(fa) * 8.1
+        const fz = tz + Math.cos(fa) * 8.1
+        ctx.glow.cylinder(11, 0.3, xf(fx, ty + 56, fz, fa, undefined, Math.PI / 2), [1, 0.9, 0.64])
+        ctx.props.box(0.4, 4.4, 0.5, place(fx + Math.sin(fa) * 0.3, ty + 57.6, fz + Math.cos(fa) * 0.3, fa), SP.iron)
+      }
+      for (const s of [-1, 1]) {
+        const gx = tx + Math.sin(back + s * Math.PI / 2) * 13
+        const gz = tz + Math.cos(back + s * Math.PI / 2) * 13
+        ctx.gears.push({ m: xf(gx, ty + 46, gz, back, undefined, Math.PI / 2), r: 6, thick: 0.8, speed: s * 0.15 })
+      }
+    }
+  }
   stage.build("paint-steam")
   let cx = 0
   let cz = 0
