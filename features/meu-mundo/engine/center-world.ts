@@ -36,7 +36,9 @@ import { QUALITY, type QualityTier } from "./quality"
 import { ChunkedGeo, SteamGeo } from "./steampunk/geo"
 import { TILE, createSteamMaterials } from "./steampunk/materials"
 import { SteamFx } from "./steampunk/fx"
-import { Sky, applyLights, brasiliaHour, nightFactor } from "./steampunk/atmosphere"
+import { Sky, applyGrade, applyLights, brasiliaHour, nightFactor } from "./steampunk/atmosphere"
+import { GroundShade, footShade } from "./steampunk/ground-shade"
+import { createAmbientFx } from "./ambiente-fx/ambient-fx"
 import { steamSkyline } from "./steampunk/neighborhood"
 import { SP } from "./steampunk/palette"
 import type { GearSpec } from "./steampunk/kit"
@@ -160,24 +162,31 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
   signMat.emissiveColor = new Color3(0.42, 0.42, 0.42)
   signMat.backFaceCulling = false
 
-  const geo = (uv: SteamGeo["uv"]) => {
+  // Visual premium E3 (o mesmo do bairro, E2): variação do chão + oclusão de contato numa textura só,
+  // pela 2ª UV de mundo, nos 4 materiais de chão; desenhada quando a colisão do servidor existe.
+  const shade = new GroundShade(scene, c.dims.bound + 10, tier)
+  shade.attach([mats.soil, mats.pavers, mats.road, mats.cobble])
+  const geo = (uv: SteamGeo["uv"], ground = false) => {
     const g = new SteamGeo()
     g.uv = uv
+    if (ground) g.uv2World = shade.area
     return g
   }
-  const chunked = (uv: SteamGeo["uv"]) => {
+  const chunked = (uv: SteamGeo["uv"], ground = false) => {
     const g = new ChunkedGeo(110)
     g.uv = uv
+    if (ground) g.uv2World = shade.area
+    else g.vertexShade = footShade
     return g
   }
   const ctx: CenterCtx = {
     props: chunked("face"),
     glow: geo("flat"),
     pools: geo("face"),
-    pavers: chunked(TILE.pavers),
-    road: chunked(TILE.road),
-    soil: geo(TILE.soil),
-    cobble: geo(TILE.cobble),
+    pavers: chunked(TILE.pavers, true),
+    road: chunked(TILE.road, true),
+    soil: geo(TILE.soil, true),
+    cobble: geo(TILE.cobble, true),
     signs: new GeoBuilder(),
     boxes: [],
     viewOnly: [],
@@ -217,6 +226,8 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
   // céu panorâmico (engine/sky, região "centro"): arte de dia e de noite misturadas pela hora em `sky.set`
   const sky = new Sky(scene, QUALITY[tier].maxZ * 0.9, { region: "centro", tier })
   const fx = new SteamFx(scene, mats, tier)
+  // E5 (ambiente-fx): folhas de dia, vaga-lumes à noite — 1 chamada; a hora vem do mundo (abaixo)
+  const ambient = createAmbientFx(scene, "centro", tier)
   const staticGears = ctx.gears
   const staticVents = ctx.vents
   const buildingGears: GearSpec[] = []
@@ -226,16 +237,22 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
 
   let night = -1
   let forcedHour: number | null = null
+  let fogFrom = QUALITY[tier].fogStart
   const pools = meshes.filter((m) => m.material === mats.pool)
   const applyTime = () => {
     const n = nightFactor(forcedHour ?? brasiliaHour())
     if (Math.abs(n - night) < 0.005) return
+    ambient?.setNight(n, night < 0)
     night = n
-    applyLights(scene, n)
-    sky.set(n)
+    applyLights(scene, n, "centro")
+    sky.set(n, "centro")
     fx.setNight(n)
-    mats.glow.emissiveColor.set(0.72 + 0.28 * n, 0.72 + 0.28 * n, 0.72 + 0.28 * n)
-    mats.pool.emissiveColor.set(n, n, n)
+    // janelas e letreiros: mais apagados de dia, acesos à noite (como no bairro)
+    const k = 0.58 + 0.42 * n
+    mats.glow.emissiveColor.set(k, k, k)
+    sky.setGrade(applyGrade(scene, n, "centro", fogFrom))
+    // poça de luz um pouco mais forte: a noite do centro ficou mais escura e azul (E3)
+    mats.pool.emissiveColor.set(1.45 * n, 1.32 * n, 1.12 * n)
     for (const m of pools) m.setEnabled(n > 0.02)
   }
   const clock = setInterval(applyTime, 20000)
@@ -307,6 +324,7 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
   // Colisão: a lista do SERVIDOR (a mesma que a sala usa). Câmera: + copas.
   const boxes: Box2[] = c.obstacles.map((b) => ({ ...b }))
   const viewBoxes = [...boxes, ...ctx.viewOnly]
+  shade.redraw(boxes)
 
   const interactables: Interactable[] = c.places.map((p) => ({
     kind: "place" as const,
@@ -344,6 +362,11 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
       fx.setTier(q.tier)
       sky.setRadius(q.maxZ * 0.9)
       sky.setQuality(q.tier)
+      // a neblina do perfil novo, já com o tratamento da hora
+      fogFrom = q.fogStart
+      ambient?.setTier(q.tier)
+      night = -1
+      applyTime()
     },
     dispose: () => {
       disposed = true
@@ -357,6 +380,8 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
       blocks.clear()
       for (const m of meshes) m.dispose()
       sky.dispose()
+      shade.dispose()
+      ambient?.dispose()
       mats.dispose()
       signMat.dispose()
       atlas.dispose()

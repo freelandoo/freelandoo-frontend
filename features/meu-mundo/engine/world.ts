@@ -32,7 +32,7 @@ import { ChunkedGeo, SteamGeo } from "./steampunk/geo"
 import { TILE, createSteamMaterials } from "./steampunk/materials"
 import { SteamFx } from "./steampunk/fx"
 import { Sky, applyGrade, applyLights, brasiliaHour, nightFactor } from "./steampunk/atmosphere"
-import { GroundShade } from "./steampunk/ground-shade"
+import { GroundShade, footShade } from "./steampunk/ground-shade"
 import { createAmbientFx } from "./ambiente-fx/ambient-fx"
 import { house01 } from "./steampunk/house01"
 import {
@@ -317,12 +317,6 @@ export function buildWorld(
   // só, pela 2ª UV de mundo, nos 4 materiais de chão. Desenhada quando a colisão existe.
   const shade = new GroundShade(scene, (nb.limit ?? 70) + 10, tier)
   shade.attach([mats.soil, mats.pavers, mats.road, mats.cobble])
-  /** Pé das peças: face vertical escurece perto do chão (oclusão por vértice, sem custo por quadro). */
-  const footShade = (_x: number, y: number, _z: number, ny: number) => {
-    if (Math.abs(ny) > 0.7 || y >= 1.4) return 1
-    const t = Math.max(0, y) / 1.4
-    return 0.7 + 0.3 * t * t * (3 - 2 * t)
-  }
   type Layers = Pick<NbCtx, "props" | "glow" | "pavers" | "road" | "soil" | "cobble" | "pools">
   const geo = (uv: SteamGeo["uv"], ground = false) => {
     const g = new SteamGeo()

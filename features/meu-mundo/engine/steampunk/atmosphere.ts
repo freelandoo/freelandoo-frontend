@@ -119,10 +119,20 @@ const BAIRRO_GRADE = {
   night: { exposure: 0.98, contrast: 1.1, saturation: 6, coolShadows: 28, warmLights: 26, fogNear: 0.72, contact: 0.36 },
 } satisfies Record<string, Grade>
 
+// Visual premium E3: o centro — paleta equilibrada, acolhedora e viva (prompt §6); a noite ganha o
+// azul mais escuro do bairro (a NIGHT antiga era cinza-clara) com luz quente das fachadas no tratamento.
+const CENTRO_DAY: Look = { ...DAY, hemi: 0.64, hemiColor: [0.92, 0.94, 1], ground: [0.42, 0.33, 0.25], sun: 0.8 }
+const CENTRO_DUSK: Look = { ...DUSK, hemi: 0.5, sun: 0.52 }
+const CENTRO_GRADE = {
+  day: { exposure: 1.02, contrast: 1.12, saturation: 12, coolShadows: 8, warmLights: 10, fogNear: 1, contact: 0.5 },
+  dusk: { exposure: 1.0, contrast: 1.1, saturation: 10, coolShadows: 14, warmLights: 22, fogNear: 0.88, contact: 0.42 },
+  night: { exposure: 0.99, contrast: 1.1, saturation: 8, coolShadows: 22, warmLights: 30, fogNear: 0.78, contact: 0.36 },
+} satisfies Record<string, Grade>
+
 export type LookRegion = "bairro" | "centro"
 const LOOKS: Record<LookRegion, { day: Look; dusk: Look; night: Look; grade: { day: Grade; dusk: Grade; night: Grade } | null }> = {
   bairro: { day: BAIRRO_DAY, dusk: BAIRRO_DUSK, night: BAIRRO_NIGHT, grade: BAIRRO_GRADE },
-  centro: { day: DAY, dusk: DUSK, night: NIGHT, grade: null },
+  centro: { day: CENTRO_DAY, dusk: CENTRO_DUSK, night: BAIRRO_NIGHT, grade: CENTRO_GRADE },
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t

@@ -154,3 +154,13 @@ export class GroundShade {
     this.tex.dispose()
   }
 }
+
+/**
+ * Pé das peças: face vertical escurece perto do chão (oclusão por vértice, sem custo por quadro).
+ * `ChunkedGeo.vertexShade` / `SteamGeo.vertexShade` — bairro (E2) e centro (E3).
+ */
+export function footShade(_x: number, y: number, _z: number, ny: number) {
+  if (Math.abs(ny) > 0.7 || y >= 1.4) return 1
+  const t = Math.max(0, y) / 1.4
+  return 0.7 + 0.3 * t * t * (3 - 2 * t)
+}
