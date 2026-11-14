@@ -28,11 +28,11 @@ export const NEVE_SOMBRA: RGB = [0.72, 0.78, 0.94]
 export const GELO: RGB = [0.5, 0.82, 0.92]
 export const GELO_ESC: RGB = [0.26, 0.56, 0.74]
 export const GELO_CL: RGB = [0.78, 0.95, 1]
-export const MAR: RGB = [0.24, 0.8, 0.98]
-export const MAR_CL: RGB = [0.62, 0.92, 1]
-export const MAR_ESC: RGB = [0.08, 0.56, 0.86]
+export const MAR: RGB = [0.16, 0.82, 1]
+export const MAR_CL: RGB = [0.6, 0.94, 1]
+export const MAR_ESC: RGB = [0.04, 0.56, 0.9]
 /** Luz da caverna (cena 2): clara e quase branca, para os corais não virarem cinza. */
-export const LUZ_CAVERNA = { hemi: 1.1, sol: 0.45, ceu: [0.9, 0.96, 1] as RGB, chao: [0.42, 0.58, 0.7] as RGB, solCor: [0.88, 0.97, 1] as RGB }
+export const LUZ_CAVERNA = { hemi: 1.25, sol: 0.6, ceu: [0.94, 0.98, 1] as RGB, chao: [0.5, 0.74, 0.86] as RGB, solCor: [0.9, 0.98, 1] as RGB }
 /** Teto de triângulos das cenas do Mar de Gelo: FIDELIDADE acima do orçamento de celular (o Alex, 11/11). */
 export const TRI_BLOCO = { perto: 20000, longe: 8000, fundo: 8000 }
 

@@ -16,7 +16,7 @@ export const meta = {
   ceu: [0.06, 0.1, 0.24] as RGB,
   nevoa: [0.14, 0.22, 0.4] as RGB,
   area: AREA,
-  luz: { hemi: 1.1, sol: 0.45, ceu: [0.72, 0.84, 1] as RGB, chao: [0.34, 0.4, 0.6] as RGB, solCor: [0.78, 1, 0.9] as RGB },
+  luz: { hemi: 1.2, sol: 0.6, ceu: [0.8, 0.9, 1] as RGB, chao: [0.44, 0.62, 0.84] as RGB, solCor: [0.8, 1, 0.94] as RGB },
   triBloco: G.TRI_BLOCO,
   aurora: true,
   pontos: ["entrada", "saida", "guardiao", "deus"],

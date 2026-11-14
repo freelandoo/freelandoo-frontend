@@ -19,9 +19,10 @@ import { prisma } from "./castelo-iris"
 export const NEVE: RGB = [0.92, 0.96, 1]
 export const NEVE_SOMBRA: RGB = [0.66, 0.76, 0.95]
 export const NEVE_FUNDO: RGB = [0.52, 0.62, 0.86]
-export const ROCHA_SOL: RGB = [0.44, 0.53, 0.8]
-export const ROCHA: RGB = [0.34, 0.39, 0.6]
-export const ROCHA_ESC: RGB = [0.22, 0.27, 0.46]
+// polimento 14/11: rocha AZUL-MARINHO (a ref contrasta pedra escura com a capa branca; estava cinza-claro)
+export const ROCHA_SOL: RGB = [0.36, 0.45, 0.74]
+export const ROCHA: RGB = [0.23, 0.28, 0.5]
+export const ROCHA_ESC: RGB = [0.13, 0.17, 0.36]
 export const GELO_CL: RGB = [0.72, 0.92, 1]
 export const GELO: RGB = [0.36, 0.82, 0.98]
 export const GELO_ESC: RGB = [0.1, 0.56, 0.88]
@@ -40,8 +41,8 @@ export const PANO_ESC: RGB = [0.66, 0.6, 0.5]
 export const CORDA: RGB = [0.8, 0.6, 0.38]
 export const CORAL_B: RGB = [1, 0.99, 1]
 export const CORAL_B_ESC: RGB = [0.82, 0.8, 0.97]
-export const CORAL_R: RGB = [1, 0.5, 0.64]
-export const CORAL_R_ESC: RGB = [0.88, 0.34, 0.54]
+export const CORAL_R: RGB = [1, 0.55, 0.6]
+export const CORAL_R_ESC: RGB = [0.94, 0.38, 0.5]
 export const PEROLA: RGB[] = [[0.98, 0.96, 1], [0.96, 0.82, 0.92], [0.84, 0.82, 1], [0.78, 0.96, 1], [0.98, 0.9, 0.94]]
 export const CREME: RGB = [0.96, 0.9, 0.82]
 export const PEDRA_RU: RGB = [0.76, 0.77, 0.94]
@@ -978,7 +979,8 @@ export function penhasco(c: Cena, o: { x: number; z: number; rx: number; rz: num
  */
 export function montanhaGelo(c: Cena, x: number, z: number, R: number, H: number, seed: number, nevoa: RGB, bruma = 0.35, noite = false) {
   const g = c.horizonte
-  const hz = (col: RGB, k = 1): RGB => mix(noite ? mul(col, 0.62) : col, nevoa, bruma * k)
+  // de noite a montanha fica AZUL (não cinza): escurece mais o vermelho que o azul
+  const hz = (col: RGB, k = 1): RGB => mix(noite ? [col[0] * 0.46, col[1] * 0.6, col[2] * 0.9] : col, nevoa, bruma * k)
   const N = 10
   const anelT = [0, 0.35, 0.68, 1]
   const V = anelT.map((t, j) => Array.from({ length: N }, (_, k): V3 => {

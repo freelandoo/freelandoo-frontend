@@ -37,7 +37,7 @@ export interface ChaoDetalhe {
    * paredões) e, com `folha`, uma segunda textura nas superfícies de cor VIVA (copas, musgo).
    * `m` = metros por repetição; `forca` como a do chão.
    */
-  relevo?: { tex: string; m: number; forca: number }
+  relevo?: { tex: string; m: number; forca: number; limpaClaro?: boolean }
   folha?: { tex: string; m: number; forca: number }
 }
 
@@ -57,7 +57,15 @@ export const CHAO_DETALHE: Readonly<Record<string, ChaoDetalhe>> = {
   // relevo: arenito em camadas (`cliff_side`) nas mesas, rochas e troncos
   canion: { tex: "/meu-mundo/chao/v1/canion.webp", perto: 6, largo: 43, forca: 0.5, relevo: { tex: "/meu-mundo/chao/v1/canion-relevo.webp", m: 6, forca: 0.2 } },
   // Gelo: neve com marcas (`snow_01`) — chão claro: sem a limpeza do claro, força menor
-  gelo: { tex: "/meu-mundo/chao/v1/gelo.webp", perto: 7, largo: 47, forca: 0.22, limpaClaro: false },
+  // relevo: grão de rocha (`rock_face_03`) só no escuro — neve, gelo claro e pérola ficam limpos
+  gelo: {
+    tex: "/meu-mundo/chao/v1/gelo.webp",
+    perto: 7,
+    largo: 47,
+    forca: 0.13,
+    limpaClaro: false,
+    relevo: { tex: "/meu-mundo/chao/v1/gelo-relevo.webp", m: 5, forca: 0.24, limpaClaro: true },
+  },
   // Fábrica: concreto rachado (`cracked_concrete`)
   fabrica: { tex: "/meu-mundo/chao/v1/fabrica.webp", perto: 7, largo: 39, forca: 0.45 },
   // Vulcão: cinza queimada (`burned_ground_01`)
@@ -76,6 +84,7 @@ class ChaoDefines extends MaterialDefines {
   /** Nível baixo: só a escala de perto (1 leitura por pixel em vez de 2). */
   CHAOUMA = false
   CHAORELEVO = false
+  CHAORELLIMPA = false
   CHAOFOLHA = false
 }
 
@@ -97,6 +106,7 @@ class ChaoDetalhePlugin extends MaterialPluginBase {
     defines.CHAOUMA = this.uma
     defines.CHAOLIMPA = this.cfg.limpaClaro !== false
     defines.CHAORELEVO = !!this.relevo
+    defines.CHAORELLIMPA = !!this.relevo && !!this.cfg.relevo?.limpaClaro
     defines.CHAOFOLHA = !!this.relevo && !!this.folha
   }
 
@@ -167,6 +177,9 @@ class ChaoDetalhePlugin extends MaterialPluginBase {
   {
     // RELEVO: tudo que NÃO é chão. Sem UV: face deitada lê por xz; face em pé lê por (x+z, y)
     float relM = (1.0 - chaoM) * chaoK.w;
+#if defined(CHAORELLIMPA) && defined(VERTEXCOLOR)
+    relM *= 1.0 - smoothstep(0.45, 0.68, dot(vColor.rgb, vec3(0.299, 0.587, 0.114)));
+#endif
     vec2 relP = abs(chaoN.y) > 0.72 ? vPositionW.xz : vec2(vPositionW.x + vPositionW.z, vPositionW.y * 1.2);
     float relD = texture2D(chaoRel, relP * chaoR.x).r;
     float relF = chaoR.y;
