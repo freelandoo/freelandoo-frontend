@@ -52,7 +52,7 @@ import { DOMAIN_REGION } from "../../engine/ambiente-fx/presets"
 import { SpeechBubble } from "../../engine/speech-bubble"
 import { SKY_REGIONS, skyArt, skyFog, skyOfCena, variantOfCena } from "../../engine/sky/sky-registry"
 import { dominioMapModel, setCityMap, type DominioMapLabels } from "../../engine/city-map"
-import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, type CenaMontada, type XZ } from "../../engine/cena-codigo"
+import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, visualDaCena, aplicarCor, type CenaMontada, type XZ } from "../../engine/cena-codigo"
 
 /** Alcance do "Lutar", das passagens e do aviso de selado (m). */
 const REACH = 3.4
@@ -213,9 +213,11 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   scene.clearColor = new Color4(ceu[0], ceu[1], ceu[2], 1)
   scene.fogMode = Scene.FOGMODE_LINEAR
   scene.fogColor = new Color3(nev[0], nev[1], nev[2])
-  scene.fogStart = quality.fogStart
-  scene.fogEnd = quality.fogEnd
-  const luz = meta.luz
+  // acabamento por cena (engine/cena-codigo/acabamento.ts): névoa como fração do perfil e luz própria
+  const vis = visualDaCena(sc.name)
+  scene.fogStart = quality.fogStart * (vis?.nevoa?.inicio ?? 1)
+  scene.fogEnd = quality.fogEnd * (vis?.nevoa?.fim ?? 1)
+  const luz = vis?.luz ? { ...meta.luz, ...vis.luz } : meta.luz
   const hemi = new HemisphericLight("mm-dom-hemi", new Vector3(0.25, 1, 0.15), scene)
   hemi.intensity = luz?.hemi ?? 0.78
   hemi.groundColor = luz?.chao ? new Color3(luz.chao[0], luz.chao[1], luz.chao[2]) : new Color3(0.5, 0.48, 0.55)
@@ -229,6 +231,9 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const sky = skyReg
     ? new SkyDome(scene, { radius: 295, tier: quality.tier, region: skyReg.id, mode: skyVar, haze: [nev[0], nev[1], nev[2]], zenith: skyArt(skyReg.id, skyVar).top, flashLight: hemi })
     : null
+  // tratamento de cor da cena (o mesmo método do bairro) e a cúpula imitando, para o horizonte casar
+  const skyGrade = aplicarCor(scene, vis?.cor)
+  if (sky && skyGrade) sky.setGrade(skyGrade[0], skyGrade[1], skyGrade[2])
   // partículas de ambiente da região (E5): 1 chamada; noite fixa pela arte da cena
   const ambient = createAmbientFx(scene, skyId ?? DOMAIN_REGION[domain.id], quality.tier, { night: skyVar === "noite" ? 1 : 0 })
 

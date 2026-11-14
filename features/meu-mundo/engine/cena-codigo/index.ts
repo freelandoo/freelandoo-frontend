@@ -11,8 +11,10 @@ import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { finishCena, type Cena } from "./kit-cena"
 import { CENAS, type CenaMeta } from "./cenas"
+import { acabarCena, visualDaCena } from "./acabamento"
 
 export { CENAS, type CenaMeta, type CenaModulo } from "./cenas"
+export { visualDaCena, aplicarCor, VISUAL_CENA, type VisualCena, type CorCena } from "./acabamento"
 export { checkMarcas, checkWalk, blocked, inPoly, type Box2, type XZ, Cena } from "./kit-cena"
 
 export interface CenaMontada {
@@ -27,6 +29,8 @@ export function montarCena(scene: Scene, nome: string, lod = 0, o: { low?: boole
   const mod = CENAS[nome]
   if (!mod) throw new Error(`cena-codigo: cena não registrada: ${nome}`)
   const cena = mod.montar(lod)
+  // contato/AO e tom do Domínio na cor do vértice (acabamento.ts): sem custo por quadro
+  acabarCena(cena, visualDaCena(nome))
   const { meshes, material, glowMaterial } = finishCena(scene, cena, { chaoUma: !!o.low })
   return {
     cena,
