@@ -45,7 +45,7 @@ import { Quaternion } from "@babylonjs/core/Maths/math.vector"
 import { place, type RGB } from "../../engine/geometry"
 import type { QualityTier } from "../../engine/quality"
 import type { Island, PaintMap, PaintProp, Solid } from "../sim/map"
-import { ArenaGeo, Clearance, arch, banner, camCyl, crystalPedestal, deadEdge, edgeFrame, edgesOf, krnd, lamp, railing, runeCircle } from "./arena-kit"
+import { ArenaGeo, Clearance, arch, banner, brazier, camCyl, crystalPedestal, deadEdge, edgeFrame, edgesOf, krnd, lamp, railing, runeCircle } from "./arena-kit"
 import { TUNING } from "../sim/tuning"
 import type { PaintTheme } from "./paint-map-art"
 import type { PaintWorldView } from "./world-view"
@@ -1031,6 +1031,95 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
 
   // ── mm3d-77: a FLORESTA DE CRISTAL (vertical slice) ──
   if (th.tile === "moss") dressForest()
+  else dressTheme()
+  /**
+   * Projeto B 3c: o kit da referência nos outros 4 mapas (antes só a Floresta
+   * tinha): corrimão nas bordas mortas, lampião/braseiro, cristal em pedestal,
+   * estandarte e o nascer "cartão-postal" (círculo aceso + arco ou estandartes).
+   * Só desenho, sempre em ponto livre (`clear`), nada colide.
+   */
+  function dressTheme() {
+    const t = th.tile
+    const n = lowEnd ? 0.5 : high ? 1.3 : 1
+    const ironish = t === "plate" || t === "basalt"
+    const stone: RGB = t === "garden" ? mix(th.top, [1, 1, 1], 0.15) : t === "rune" ? mul(th.strata[0], 1.3) : [0.2, 0.2, 0.22]
+    const metal: RGB = ironish ? [0.17, 0.17, 0.19] : mul(th.trim, 0.85)
+    const light: RGB = t === "garden" ? [0.55, 0.9, 1] : t === "rune" ? [0.82, 0.58, 1] : [1, 0.66, 0.22]
+    const cloth: RGB = t === "garden" ? [0.16, 0.24, 0.58] : t === "rune" ? [0.4, 0.16, 0.6] : t === "plate" ? [0.14, 0.13, 0.16] : [0.56, 0.1, 0.1]
+    const emblem: RGB = t === "garden" || t === "rune" ? [1, 0.84, 0.36] : [1, 0.58, 0.14]
+    const crystal: RGB = t === "garden" ? [0.42, 0.86, 1] : t === "rune" ? [0.74, 0.44, 1] : [1, 0.62, 0.22]
+    const fire: RGB = t === "rune" ? [0.8, 0.5, 1] : [1, 0.6, 0.16]
+    const rail = ironish ? "iron" : "stone"
+    const spot = (isl: Island, a: number, inset: number, r: number) => {
+      for (let k = 0; k < 4; k++) {
+        const p = edgePoint(isl, a + k * 0.35, inset + k * 0.25)
+        if (clear.free(p.x, isl.y, p.z, r)) return p
+      }
+      return null
+    }
+    /** A peça "da casa" de cada mapa num ponto (lampião, braseiro ou cristal). */
+    const piece = (isl: Island, x: number, z: number, k: number, s = 1) => {
+      if (t === "garden") crystalPedestal(deco, glow, x, isl.y, z, stone, th.trim, crystal, s)
+      else if (t === "rune") k % 2 ? brazier(deco, glow, x, isl.y, z, th.trim, fire) : crystalPedestal(deco, glow, x, isl.y, z, stone, th.trim, crystal, s)
+      else if (t === "plate") lamp(deco, glow, x, isl.y, z, metal, th.trim, light, 1.6 * s)
+      else k % 2 ? lamp(deco, glow, x, isl.y, z, metal, th.trim, light, 1.8 * s) : brazier(deco, glow, x, isl.y, z, metal, fire)
+    }
+    const flag = (isl: Island, x: number, z: number, ang: number) => {
+      if (!clear.free(x, isl.y, z, 0.5)) return
+      banner(deco, glow, x, isl.y, z, ang, cloth, th.trim, emblem)
+      camBlockers.push(camCyl(x, z, isl.y, isl.y + 3.6, 0.3))
+    }
+    for (const isl of map.islands) {
+      const tag = isl.tag ?? ""
+      if (tag === "stair" || tag === "conveyor") continue
+      const sx = Math.sign(isl.x) || 1
+      const big = isl.kind === "base" || isl.kind === "summit" || isl.kind === "boss"
+      // corrimão nas bordas sem ilha à frente (as grandes sempre; as médias às vezes)
+      if (big || (isl.r > 3 && krnd(isl.id * 61 + 3) < 0.5 * n)) {
+        for (const e of edgesOf(isl)) {
+          const mx = (e.ax + e.bx) / 2
+          const mz = (e.az + e.bz) / 2
+          if (e.len < 3 || !deadEdge(map, isl, mx, mz, e.nx, e.nz) || !clear.free(mx - e.nx * 0.4, isl.y, mz - e.nz * 0.4, 0.6)) continue
+          railing(deco, glow, isl.y, e.ax, e.az, e.bx, e.bz, e.nx, e.nz, rail, ironish ? metal : stone, th.trim, ironish ? 2 : 0, light)
+        }
+      }
+      if (isl.kind === "base") {
+        runeCircle(glow, isl.x, isl.y, isl.z, 3.4, light, mix(light, th.trim, 0.5))
+        const ba = sx > 0 ? Math.PI / 2 : -Math.PI / 2
+        const back = edgePoint(isl, ba, 1.6)
+        if (!ironish && clear.free(back.x, isl.y, back.z, 1.6)) {
+          arch(deco, glow, back.x, isl.y, back.z, Math.PI / 2, 3.2, 3.4, stone, th.trim, crystal)
+          for (const s2 of [-1, 1]) camBlockers.push(camCyl(back.x, back.z + s2 * 1.6, isl.y, isl.y + 4.2, 0.4))
+          for (const s2 of [-1, 1]) flag(isl, back.x, back.z + s2 * 2.7, ba + Math.PI)
+        } else {
+          for (const s2 of [-1, 1]) flag(isl, back.x, back.z + s2 * 1.8, ba + Math.PI)
+        }
+        for (let k = 0; k < Math.round(4 * n) + 1; k++) {
+          const p = spot(isl, (k / 5) * Math.PI * 2 + 0.4, 1.1, 0.6)
+          if (p) piece(isl, p.x, p.z, k)
+        }
+      } else if (isl.kind === "boss") {
+        runeCircle(glow, isl.x, isl.y, isl.z, 10, light, th.trim)
+        for (let k = 0; k < 8; k++) {
+          const p = spot(isl, (k / 8) * Math.PI * 2, 1.4, 0.7)
+          if (p) piece(isl, p.x, p.z, k, 1.3)
+        }
+        for (let k = 0; k < 4; k++) {
+          const p = spot(isl, (k / 4) * Math.PI * 2 + 0.4, 2.6, 0.6)
+          if (p) flag(isl, p.x, p.z, (k / 4) * Math.PI * 2 + 0.4)
+        }
+      } else if (isl.kind === "summit") {
+        runeCircle(glow, isl.x, isl.y, isl.z, 4.8, light, th.trim)
+      } else if (isl.r > 2.2 && krnd(isl.id * 67 + 1) < 0.6 * n) {
+        const p = spot(isl, krnd(isl.id * 41) * Math.PI * 2, 0.8, 0.6)
+        if (p) piece(isl, p.x, p.z, isl.id, 0.85)
+        if (isl.r > 3.5 && krnd(isl.id * 71) < 0.35 * n) {
+          const q = spot(isl, krnd(isl.id * 73) * Math.PI * 2, 0.6, 0.5)
+          if (q) flag(isl, q.x, q.z, Math.atan2(q.x - isl.x, q.z - isl.z))
+        }
+      }
+    }
+  }
   function dressForest() {
     const wood: RGB = [0.42, 0.3, 0.2]
     const rope: RGB = [0.66, 0.54, 0.36]
