@@ -707,24 +707,28 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
         deco.cylinder(isl.r * 0.8, 2.2, place(isl.x, isl.y - 2.2, isl.z), mul(th.top, 0.4), 14)
       }
       if (tag === "ring") {
-        // o anel tecnológico em pé atrás dos portais
-        const ringNode = new TransformNode("paint-arena-techring", scene)
-        disposers.push(() => ringNode.dispose(false, true))
-        ringNode.position.set(isl.x, isl.y + 7.5, isl.z - isl.r + 0.5)
-        const tor = CreateTorus("paint-arena-techring-t", { diameter: 13, thickness: 1.1, tessellation: 40 }, scene)
-        tor.rotation.x = Math.PI / 2
-        tor.parent = ringNode
-        tor.material = solidMat
-        tor.isPickable = false
-        const tg = CreateTorus("paint-arena-techring-g", { diameter: 13, thickness: 0.35, tessellation: 40 }, scene)
-        tg.rotation.x = Math.PI / 2
-        tg.position.z = -0.45
-        tg.parent = ringNode
-        const gm = own(new StandardMaterial("paint-arena-techring-g", scene))
-        gm.disableLighting = true
-        gm.emissiveColor = c3(th.glow)
-        tg.material = gm
-        tg.isPickable = false
+        // o anel tecnológico em pé atrás dos portais. Projeto B 3d: era um toro
+        // branco solto (sem cor por vértice); agora placas de metal escuro com
+        // faixas acesas entre elas, aro de ouro por fora e dois braços até a ilha
+        const cx = isl.x
+        const cy = isl.y + 7.5
+        const cz = isl.z - isl.r + 0.5
+        const RR = 6.5
+        const N = 24
+        for (let k = 0; k < N; k++) {
+          const a = (k / N) * Math.PI * 2
+          const at = (r: number, aa: number) => Matrix.RotationZ(-aa).multiply(Matrix.Translation(cx + Math.sin(aa) * r, cy + Math.cos(aa) * r, cz))
+          deco.box(1, 1, 1, Matrix.Scaling(1.45, 1.1, 1.2).multiply(at(RR, a)), k % 6 === 0 ? th.trim : [0.16, 0.16, 0.18])
+          deco.box(1, 1, 1, Matrix.Scaling(1.6, 0.14, 1.26).multiply(at(RR + 0.6, a)), mul(th.trim, 0.9))
+          const a2 = a + Math.PI / N
+          glow.box(1, 1, 1, Matrix.Scaling(0.28, 0.5, 1.3).multiply(at(RR - 0.1, a2)), k % 2 ? th.glow : th.glow2)
+        }
+        for (const s of [-1, 1]) {
+          const bx = cx + s * (RR + 0.3)
+          deco.box(0.9, 7.5, 0.9, place(bx, isl.y + 3.75, cz), [0.2, 0.2, 0.22])
+          for (const f of [0.25, 0.6]) glow.box(0.96, 0.18, 0.96, place(bx, isl.y + 7.5 * f, cz), th.glow)
+          camBlockers.push(camCyl(bx, cz, isl.y, isl.y + 7.5, 0.6))
+        }
       }
       if (tag === "anvil") {
         deco.box(2.6, 1.1, 1.2, place(isl.x, isl.y + 0.55, isl.z - 0.6), [0.2, 0.2, 0.22])
@@ -1008,6 +1012,36 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       deco.box(0.76, 0.14, R * 2 + 2.4, place(pt.x, pt.y + H + 0.72, pt.z), th.trim)
       glow.cone(0, 0.5, 0.9, place(pt.x + sx * 0.36, pt.y + H + 0.38, pt.z, Math.PI / 4), th.glow, 4)
       deco.box(1.6, 0.16, R * 2 + 1.2, place(pt.x, pt.y + 0.08, pt.z), mul(gateStone, 0.75))
+      // Projeto B 3d: moldura do aro (o aro era um tubo liso). Pedra/ouro:
+      // aduelas com a chave no alto; metal: anel de tecnologia com faixas
+      // acesas entre as placas (a ref da Fábrica). Joias nos 4 pontos.
+      {
+        const tech = th.tile === "plate" || th.tile === "basalt"
+        const cy = pt.y + R + 0.15
+        const N = 14
+        const rr = R + 0.42
+        const frameC: RGB = tech ? [0.16, 0.16, 0.18] : mix(gateStone, th.trim, 0.25)
+        for (let k = 0; k < N; k++) {
+          const a = (k / N) * Math.PI * 2
+          const key = k === 0
+          const m = Matrix.RotationX(a).multiply(Matrix.Translation(pt.x, cy + Math.cos(a) * rr, pt.z + Math.sin(a) * rr))
+          const ms = Matrix.Scaling(0.62, key ? 0.7 : 0.48, tech ? 0.62 : 0.74).multiply(m)
+          deco.box(1, 1, 1, ms, key ? th.trim : frameC)
+          if (tech) {
+            const a2 = a + Math.PI / N
+            const m2 = Matrix.Scaling(0.66, 0.16, 0.36).multiply(Matrix.RotationX(a2)).multiply(Matrix.Translation(pt.x, cy + Math.cos(a2) * rr, pt.z + Math.sin(a2) * rr))
+            glow.box(1, 1, 1, m2, k % 2 ? th.glow : th.glow2)
+          } else {
+            // filete de ouro do lado de fora das aduelas
+            const mo = Matrix.Scaling(0.66, 0.08, 0.76).multiply(Matrix.RotationX(a)).multiply(Matrix.Translation(pt.x, cy + Math.cos(a) * (rr + 0.27), pt.z + Math.sin(a) * (rr + 0.27)))
+            deco.box(1, 1, 1, mo, th.trim)
+          }
+        }
+        for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+          const gx = pt.x + (Math.sign(pt.x) || 1) * 0.34
+          glow.blob(0.36, 1, 1, 1, gx, cy + Math.cos(a) * rr, pt.z + Math.sin(a) * rr, th.glow, 5)
+        }
+      }
     }
     if (map.portals.length === 2 && Math.abs(map.portals[0].x - map.portals[1].x) < 8) {
       const [a, b] = map.portals
