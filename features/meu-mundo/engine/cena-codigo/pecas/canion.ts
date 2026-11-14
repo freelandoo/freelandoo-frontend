@@ -9,7 +9,7 @@
 
 import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
-import { blob, face, mix, mul, rnd, tube, type Foliage, type MesaOut } from "../kit-natureza"
+import { blob, face, LAJE_ESP, lajeEspessa, mix, mul, rnd, tube, type Foliage, type MesaOut } from "../kit-natureza"
 import { quadro } from "./orbital"
 import { arco, bloq, cx, poli, tronco } from "./fabrica"
 
@@ -508,8 +508,8 @@ export function horizonteCanion(c: Cena, seed: number, nevoa: RGB, tempestade = 
 
 /**
  * ESTRADA DE LAJES (ref 3): lajes retangulares de pedra creme em fiadas atravessadas (2–3 por fiada, larguras
- * desencontradas), junta escura (o chão aparece entre elas), uma ou outra mais escura/rachada. Geometria 2–4 cm
- * acima do chão, só onde `dentro(x, z)`. Ao longo da polilinha `path`, largura `w`.
+ * desencontradas), junta escura (o chão aparece entre elas), uma ou outra mais escura/rachada. 2 cm de
+ * espessura (lateral escura), só onde `dentro(x, z)`. Ao longo da polilinha `path`, largura `w`.
  */
 export function estradaLajes(c: Cena, path: readonly (readonly [number, number])[], w: number, seed: number, dentroOk: (x: number, z: number) => boolean, lod = 0) {
   if (lod) return
@@ -536,10 +536,10 @@ export function estradaLajes(c: Cena, path: readonly (readonly [number, number])
         if (!dentroOk(cxp, czp)) continue
         const r = rnd(seed, fi, q + 10)
         const cor = r < 0.15 ? PEDRA_ESC : r < 0.6 ? PEDRA : mix(PEDRA, CREME, 0.6)
-        const y = 0.025 + rnd(seed, fi, q + 20) * 0.015
+        const y = LAJE_ESP
         const Pt = (tt: number, uu: number): V3 => [ax + dx * tt + nx * uu, y, az + dz * tt + nz * uu]
         const g = geoEm(c, cxp, czp)
-        face(g, [Pt(t0, u0), Pt(t1, u0), Pt(t1, u1), Pt(t0, u1)], [cor, mix(cor, CREME, 0.25), cor, mul(cor, 0.94)], [0, 1, 0])
+        lajeEspessa(g, [Pt(t0, u0), Pt(t1, u0), Pt(t1, u1), Pt(t0, u1)], [cor, mix(cor, CREME, 0.25), cor, mul(cor, 0.94)], mul(cor, 0.6))
       }
     }
   }

@@ -10,7 +10,7 @@
 import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
 import { caixa } from "../kit-cidade"
-import { blob, face, mix, mul, rnd, tube } from "../kit-natureza"
+import { blob, face, LAJE_ESP, lajeEspessa, mix, mul, rnd, tube } from "../kit-natureza"
 import { quadro } from "./orbital"
 import { prisma } from "./castelo-iris"
 
@@ -737,7 +737,7 @@ export function guindaste(c: Cena, x: number, z: number, ang = 0, lod = 0) {
 
 /**
  * PISO DE LAJES POLIGONAIS (refs vulcao-1..3): lajes de 5–7 lados irregulares numa grade hexagonal de
- * `passo` m, 3 cm acima do chão; a JUNTA é o chão aparecendo — a cena pinta o chão do caminho de lava
+ * `passo` m, com 2 cm de espessura (lateral escura); a JUNTA é o chão aparecendo — a cena pinta o chão do caminho de lava
  * (refs 2 e 3: a lava acesa nas rachaduras) ou de pedra escura (ref 1). Tom por laje sorteado, quina de
  * cima clara. Só onde `dentro(x, z)`. Só topo + 1 aresta clara: ~5 triângulos por laje.
  */
@@ -756,11 +756,11 @@ export function lajesPoligonais(c: Cena, x0: number, z0: number, x1: number, z1:
       for (let k = 0; k < n; k++) {
         const a = ((k + (r(4 + k) - 0.5) * 0.25) / n) * Math.PI * 2 + (n === 6 ? Math.PI / 6 : r(12) * 6)
         const rr = R * (0.9 + r(20 + k) * 0.08)
-        pts.push([cx + Math.cos(a) * rr, 0.03 + r(30) * 0.02, cz + Math.sin(a) * rr])
+        pts.push([cx + Math.cos(a) * rr, LAJE_ESP, cz + Math.sin(a) * rr])
       }
       const cor = tons[Math.floor(r(40) * 4)]
       const g = c.geo(cx, cz)
-      face(g, pts, pts.map((_, k) => (k === 0 || k === 1 ? mix(cor, PEDRA_CL, 0.35) : cor)), [0, 1, 0])
+      lajeEspessa(g, pts, pts.map((_, k) => (k === 0 || k === 1 ? mix(cor, PEDRA_CL, 0.35) : cor)), mul(cor, 0.6), !!lod)
     }
   }
 }

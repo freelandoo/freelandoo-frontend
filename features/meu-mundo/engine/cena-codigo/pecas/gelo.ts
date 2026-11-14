@@ -11,7 +11,7 @@
 import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
 import { caixa } from "../kit-cidade"
-import { face, mix, mul, rnd, tube } from "../kit-natureza"
+import { face, LAJE_ESP, lajeEspessa, mix, mul, rnd, tube } from "../kit-natureza"
 import { quadro } from "./orbital"
 import { prisma } from "./castelo-iris"
 
@@ -901,7 +901,7 @@ export function pedestal(c: Cena, x: number, z: number, s = 1, ang = 0, lod = 0)
 
 /**
  * PLACAS DO CAMINHO (inventário `placas-caminho`): grade de PLACAS de gelo grandes (topo plano azul-claro com
- * rachaduras finas) a 3 cm do chão, separadas por FENDAS: a cena pinta o chão do caminho de ciano aceso e ele
+ * rachaduras finas) com 2 cm de espessura, separadas por FENDAS: a cena pinta o chão do caminho de ciano aceso e ele
  * aparece entre as placas. Só onde `dentro(x, z)`. Tom por placa sorteado; 1 rachadura fina por placa.
  */
 export function placasCaminho(c: Cena, x0: number, z0: number, x1: number, z1: number, passo: number, seed: number, dentro: (x: number, z: number) => boolean, lod = 0, tons: RGB[] = [[0.72, 0.84, 0.98], [0.64, 0.78, 0.97], [0.78, 0.88, 1], [0.6, 0.74, 0.95]]) {
@@ -918,17 +918,18 @@ export function placasCaminho(c: Cena, x0: number, z0: number, x1: number, z1: n
       for (let k = 0; k < n; k++) {
         const a = ((k + (r(4 + k) - 0.5) * 0.3) / n) * Math.PI * 2 + r(12) * 6
         const rr = R * (0.88 + r(20 + k) * 0.1)
-        pts.push([cx0 + Math.cos(a) * rr, 0.03 + r(30) * 0.015, cz0 + Math.sin(a) * rr])
+        pts.push([cx0 + Math.cos(a) * rr, LAJE_ESP, cz0 + Math.sin(a) * rr])
       }
       const cor = tons[Math.floor(r(40) * tons.length)]
       const g = c.geo(cx0, cz0)
-      face(g, pts, pts.map((_, k) => (k === 0 || k === 1 ? mix(cor, [1, 1, 1], 0.4) : cor)), [0, 1, 0])
+      lajeEspessa(g, pts, pts.map((_, k) => (k === 0 || k === 1 ? mix(cor, [1, 1, 1], 0.4) : cor)), mul(cor, 0.62), !!lod)
       if (!lod && r(41) > 0.35) {
         // rachadura fina: um fio claro atravessando
         const a = r(42) * Math.PI, L = R * 0.7
-        const p0: V3 = [cx0 - Math.cos(a) * L, 0.055, cz0 - Math.sin(a) * L], p1: V3 = [cx0 + Math.cos(a) * L * 0.4, 0.055, cz0 + Math.sin(a) * L * 0.4]
+        const yr = LAJE_ESP + 0.006 // rachadura logo acima do topo
+        const p0: V3 = [cx0 - Math.cos(a) * L, yr, cz0 - Math.sin(a) * L], p1: V3 = [cx0 + Math.cos(a) * L * 0.4, yr, cz0 + Math.sin(a) * L * 0.4]
         const nx = -Math.sin(a) * 0.035, nz = Math.cos(a) * 0.035
-        face(g, [[p0[0] - nx, 0.055, p0[2] - nz], [p1[0] - nx, 0.055, p1[2] - nz], [p1[0] + nx, 0.055, p1[2] + nz], [p0[0] + nx, 0.055, p0[2] + nz]], mix(cor, [1, 1, 1], 0.7), [0, 1, 0])
+        face(g, [[p0[0] - nx, yr, p0[2] - nz], [p1[0] - nx, yr, p1[2] - nz], [p1[0] + nx, yr, p1[2] + nz], [p0[0] + nx, yr, p0[2] + nz]], mix(cor, [1, 1, 1], 0.7), [0, 1, 0])
       }
     }
   }

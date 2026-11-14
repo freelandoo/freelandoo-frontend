@@ -7,7 +7,7 @@
 
 import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
-import { blob, face, mix, mul, rnd, tube, type Foliage } from "../kit-natureza"
+import { blob, face, LAJE_ESP, lajeEspessa, mix, mul, rnd, tube, type Foliage } from "../kit-natureza"
 
 // ── paleta (recortes do inventário, ajustada ao luar do jogo) ──
 export const LAVANDA: RGB = [0.96, 0.96, 1] // tronco ao luar (lado claro)
@@ -654,10 +654,10 @@ export function paredao(c: Cena, x: number, z: number, rx: number, rz: number, h
 }
 
 /**
- * CAMINHO DE LAJES (ref floresta-3): lajes de pedra lavanda SOLTAS, 3 cm acima do chão (a junta é o chão
+ * CAMINHO DE LAJES (ref floresta-3): lajes de pedra lavanda SOLTAS, 2 cm de espessura (a junta é o chão
  * escuro aparecendo entre elas), em fiadas de 0,9–1,2 m com 3–4 lajes de larguras diferentes, cantos
- * cortados e tom sorteado; as da beira menores e tortas, algumas faltando. Só geometria de topo (2–3 tri
- * por laje). Segue a polilinha `path` com meia largura `w`; `pula(x, z)` = onde não pôr (clareira, pátio).
+ * cortados e tom sorteado; as da beira menores e tortas, algumas faltando. Topo + lateral escura (só o
+ * topo na qualidade baixa). Segue a polilinha `path` com meia largura `w`; `pula(x, z)` = onde não pôr (clareira, pátio).
  */
 export function lajesCaminho(c: Cena, path: readonly (readonly [number, number])[], w: number, seed: number, lod: number, pula: (x: number, z: number) => boolean = () => false) {
   const LAJE_A: RGB = [0.66, 0.62, 0.86], LAJE_B: RGB = [0.56, 0.52, 0.78], LAJE_C: RGB = [0.74, 0.7, 0.92]
@@ -685,14 +685,14 @@ export function lajesCaminho(c: Cena, path: readonly (readonly [number, number])
         const torto = borda ? (rnd(seed, fiada, i + 12) - 0.5) * 0.25 : 0
         const P = (uu: number, tt: number): V3 => {
           const tm = Math.min(L, tt)
-          return [ax + dx * tm + nx * (uu + torto), 0.03, az + dz * tm + nz * (uu + torto)]
+          return [ax + dx * tm + nx * (uu + torto), LAJE_ESP, az + dz * tm + nz * (uu + torto)]
         }
         const mx = ax + dx * (t + prof / 2) + nx * (u + lw / 2), mz = az + dz * (t + prof / 2) + nz * (u + lw / 2)
         if (!pula(mx, mz) && t1 <= L + 0.2) {
           const cor = [LAJE_A, LAJE_B, LAJE_C][Math.floor(rnd(seed, fiada, i + 20) * 3)]
           const cc = 0.12 // canto cortado
           const pts = [P(u0 + cc, t0), P(u1, t0), P(u1, t1 - cc), P(u1 - cc, t1), P(u0, t1), P(u0, t0 + cc)]
-          face(c.geo(mx, mz), pts, [cor, cor, mix(cor, [1, 1, 1], 0.1), cor, mul(cor, 0.92), cor], [0, 1, 0])
+          lajeEspessa(c.geo(mx, mz), pts, [cor, cor, mix(cor, [1, 1, 1], 0.1), cor, mul(cor, 0.92), cor], mul(cor, 0.6), !!lod)
         }
         u += lw
       }

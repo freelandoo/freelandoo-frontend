@@ -60,6 +60,28 @@ export function face(g: Geo, pts: V3[], cols: RGB | RGB[], want: V3, wear = 0) {
   for (let k = 1; k < ids.length - 1; k++) tri(g, ids[0], ids[k], ids[k + 1], n)
 }
 
+/** Espessura das lajes de piso dos Domínios (pedido do Alex, 14/11: "uma altura pequena, 20 mm"). */
+export const LAJE_ESP = 0.02
+/**
+ * LAJE COM ESPESSURA: o topo `top` (os y já na altura, ~LAJE_ESP) + a LATERAL descendo até `fundo`
+ * (um pouco abaixo do chão: sem fresta onde o chão ondula) na cor `lado`. A lateral é o que faz a
+ * pedra ler como pedra e não como adesivo. `semLado` (qualidade baixa) = só o topo, como antes.
+ */
+export function lajeEspessa(g: Geo, top: V3[], cols: RGB | RGB[], lado: RGB, semLado = false, fundo = -0.01) {
+  face(g, top, cols, [0, 1, 0])
+  if (semLado) return
+  let cx = 0, cz = 0
+  for (const p of top) {
+    cx += p[0] / top.length
+    cz += p[2] / top.length
+  }
+  for (let k = 0; k < top.length; k++) {
+    const a = top[k], b = top[(k + 1) % top.length]
+    const out: V3 = [(a[0] + b[0]) / 2 - cx, 0, (a[2] + b[2]) / 2 - cz]
+    face(g, [a, b, [b[0], fundo, b[2]], [a[0], fundo, a[2]]], lado, out)
+  }
+}
+
 // ── faixas de rocha (estratos) ──
 export interface Strata {
   cuts: number[]
