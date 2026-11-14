@@ -192,7 +192,7 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
     viewOnly: [],
     gears: [],
     vents: [],
-    detail: tier === "low" ? 0.6 : 1,
+    detail: QUALITY[tier].vegetation, // E4: densidade de mato/flor/pedrinha pelo perfil (0,6 · 0,8 · 1)
     c,
   }
   centerGround(ctx)
