@@ -129,8 +129,8 @@ const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "local").slice(0
 
 /** Nome em português (fallback do dicionário). */
 const PLACE_PT: Record<CenterPlace["id"], string> = {
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
+  pizzaria: "Banco de Sangue",
+  hamburgueria: "Açougue",
   supermercado: "Supermercado",
   universidade: "Universidade",
   biblioteca: "Biblioteca",

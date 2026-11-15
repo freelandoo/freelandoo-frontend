@@ -5,6 +5,8 @@
 // covarde, comilão, bondoso, competitivo), quanto ele gosta do dono, o que mais
 // gosta e mais odeia, e o apelido com que ele chama o dono.
 
+import { myClan, type Clan } from "./classes"
+
 export type Temper = "psicopata" | "covarde" | "comilao" | "bondoso" | "competitivo"
 export type SoulAct = "training" | "studying" | "working" | "praying" | "sleeping" | "fight" | "minigame"
 export type WishId = "fight" | "home_night" | "eat_more" | "fav_food" | "pray" | "rest" | "minigame"
@@ -59,24 +61,47 @@ export function temperLine(x: Temper, t: Tr) {
   }[x]
 }
 
-/** Nome curto da comida (é também o apelido que ele usa: "Ei, Pizza!"). */
-export function foodShort(id: string, t: Tr) {
+/** VS5: o par de sangue de cada comida (o Vampiro gosta e chama pelo nome do par). */
+const BLOOD_SHORT: Record<string, [string, string]> = {
+  salmao_legumes: ["soulFoodSalmon_vampiro", "Bolsa de sangue"],
+  frango_salada: ["soulFoodChicken_vampiro", "Sangue de cervo"],
+  prato_integral: ["soulFoodWholegrain_vampiro", "Caldo de sangue"],
+  bowl_frutas: ["soulFoodFruit_vampiro", "Ameixinha"],
+  omelete_legumes: ["soulFoodOmelette_vampiro", "Chouriço"],
+  iogurte_aveia: ["soulFoodYogurt_vampiro", "Pudim"],
+  sopa_legumes: ["soulFoodSoup_vampiro", "Sopa escura"],
+  prato_feito: ["soulFoodPF_vampiro", "Prato da madrugada"],
+  hamburguer: ["soulFoodBurger_vampiro", "Torta de sangue"],
+  pizza: ["soulFoodPizza_vampiro", "Pão de sangue"],
+  cachorro_quente: ["soulFoodHotdog_vampiro", "Morcela"],
+  coxinha: ["soulFoodCoxinha_vampiro", "Bolinho de sangue"],
+  chocolate: ["soulFoodChocolate_vampiro", "Bala de sangue"],
+  miojo: ["soulFoodNoodles_vampiro", "Caldo ralo"],
+  salgadinho: ["soulFoodChips_vampiro", "Lascas"],
+  biscoito_recheado: ["soulFoodCookie_vampiro", "Biscoito de sangue"],
+  refrigerante: ["soulFoodSoda_vampiro", "Soda de sangue"],
+}
+
+/** Nome curto da comida (é também o apelido que ele usa: "Ei, Bolinho!"); o Vampiro diz o par de sangue. */
+export function foodShort(id: string, t: Tr, clan: Clan | null = myClan()) {
+  const blood = clan === "vampiro" ? BLOOD_SHORT[id] : null
+  if (blood) return t(blood[0], blood[1])
   const m: Record<string, [string, string]> = {
-    salmao_legumes: ["soulFoodSalmon", "Peixe defumado"],
-    frango_salada: ["soulFoodChicken", "Frango"],
-    prato_integral: ["soulFoodWholegrain", "Prato do ferreiro"],
+    salmao_legumes: ["soulFoodSalmon", "Peixe do rio"],
+    frango_salada: ["soulFoodChicken", "Coelho"],
+    prato_integral: ["soulFoodWholegrain", "Prato do caçador"],
     bowl_frutas: ["soulFoodFruit", "Frutinha"],
     omelete_legumes: ["soulFoodOmelette", "Omelete"],
     iogurte_aveia: ["soulFoodYogurt", "Mingau"],
     sopa_legumes: ["soulFoodSoup", "Sopinha"],
-    prato_feito: ["soulFoodPF", "Prato da taverna"],
-    hamburguer: ["soulFoodBurger", "Hambúrguer"],
-    pizza: ["soulFoodPizza", "Pizza"],
+    prato_feito: ["soulFoodPF", "Prato do açougue"],
+    hamburguer: ["soulFoodBurger", "Torta de carne"],
+    pizza: ["soulFoodPizza", "Costela"],
     cachorro_quente: ["soulFoodHotdog", "Espeto"],
     coxinha: ["soulFoodCoxinha", "Bolinho"],
-    chocolate: ["soulFoodChocolate", "Cacau"],
-    miojo: ["soulFoodNoodles", "Miojo"],
-    salgadinho: ["soulFoodChips", "Cascas fritas"],
+    chocolate: ["soulFoodChocolate", "Mel"],
+    miojo: ["soulFoodNoodles", "Caldo de osso"],
+    salgadinho: ["soulFoodChips", "Torresmo"],
     biscoito_recheado: ["soulFoodCookie", "Biscoito"],
     refrigerante: ["soulFoodSoda", "Sidra"],
     agua_coco: ["soulFoodCoconut", "Água da fonte"],
@@ -98,9 +123,9 @@ export function actLabel(a: SoulAct, t: Tr) {
 }
 
 /** Como ele chama o dono agora: o apelido escolhido, ou o que mais gosta/odeia. */
-export function callName(s: LifeSoul | null | undefined, t: Tr) {
+export function callName(s: LifeSoul | null | undefined, t: Tr, clan: Clan | null = myClan()) {
   if (!s) return ""
-  if (s.call.kind === "like" || s.call.kind === "hate") return foodShort(s.call.food, t)
+  if (s.call.kind === "like" || s.call.kind === "hate") return foodShort(s.call.food, t, clan)
   return s.nickname || ""
 }
 

@@ -11,6 +11,8 @@
 
 import { useCallback, useEffect, useRef, useState, type ComponentType } from "react"
 import {
+  Beef,
+  Droplet,
   Snowflake,
   BookOpen,
   Car,
@@ -28,9 +30,7 @@ import {
   MapPin,
   Moon,
   Paintbrush,
-  Pizza,
   Rocket,
-  Sandwich,
   School,
   Shield,
   ShoppingCart,
@@ -51,8 +51,8 @@ import { burnEdges, compass, drawMap, toScreen, type MapView } from "./draw-map"
 import st from "./city-map.module.css"
 
 const ICONS: Record<string, ComponentType<LucideProps>> = {
-  pizza: Pizza,
-  burger: Sandwich,
+  blood: Droplet,
+  meat: Beef,
   cart: ShoppingCart,
   grad: GraduationCap,
   book: BookOpen,

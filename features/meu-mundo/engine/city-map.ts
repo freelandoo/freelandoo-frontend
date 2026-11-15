@@ -224,8 +224,8 @@ export function dominioMapModel(c: DominioMapInput, L: DominioMapLabels): CityMa
 
 // ── ícone de cada prédio do centro ──────────────────────────────────────────
 const PLACE_ICON: Record<string, string> = {
-  pizzaria: "pizza",
-  hamburgueria: "burger",
+  pizzaria: "blood",
+  hamburgueria: "meat",
   supermercado: "cart",
   universidade: "grad",
   biblioteca: "book",

@@ -8,6 +8,8 @@ const fs = require("fs")
 const path = require("path")
 const DIR = process.argv[2] || path.join(__dirname, "..", "messages")
 const ROWS = [
+  // VS5 (2026-11-15): cada classe come o seu
+  ["Isso não alimenta a sua classe", "That doesn't feed your class", "Eso no alimenta a tu clase"],
   // Lutas
   ["Inimigo desconhecido", "Unknown enemy", "Enemigo desconocido"],
   ["Origem da luta inválida", "Invalid fight origin", "Origen de la pelea no válido"],

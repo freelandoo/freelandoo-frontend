@@ -112,8 +112,9 @@ const WARM = { clear: [0.17, 0.13, 0.1] as [number, number, number], ground: [0.
 const NPC_LOOK: Record<string, { body: BodyId; look: string }> = {
   vendedor: { body: "sergio", look: "" },
   caixa: { body: "ekaterina", look: "" },
-  pizzaiolo: { body: "sergio", look: "" },
-  atendente: { body: "sergio", look: "" },
+  // VS5: no Banco de Sangue atende um Vampiro; no Açougue, uma Raposa
+  pizzaiolo: { body: "vampiro_adulto", look: "" },
+  atendente: { body: "raposa_adulto", look: "" },
   secretaria: { body: "ekaterina", look: "" },
   professor: { body: "sergio", look: "" },
   professora: { body: "ekaterina", look: "" },

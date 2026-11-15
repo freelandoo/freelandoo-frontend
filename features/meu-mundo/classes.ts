@@ -31,6 +31,10 @@ export function setMyClan(c: Clan | null) {
   mine = c
 }
 
+/** VS5: o que a classe come (Raposa: carne; Vampiro: sangue; sem classe = tudo). O servidor confere. */
+export const dietOfClan = (c: Clan | null | undefined): "carne" | "sangue" | null => (c === "vampiro" ? "sangue" : c === "raposa" ? "carne" : null)
+export const canEatItem = (it: { diet?: string | null }, diet: string | null) => !it.diet || !diet || it.diet === diet
+
 /** Classe de um corpo de classe (null = deuses, padrão, skins). */
 export const clanOfBody = (b: string | null | undefined): Clan | null => (!b || !isClanBody(b) ? null : b.startsWith("raposa") ? "raposa" : "vampiro")
 

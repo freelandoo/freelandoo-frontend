@@ -29,6 +29,7 @@ import { useWorkshop } from "../gear/use-workshop"
 import { effectText } from "../fridge/shelf"
 import { effectsOf, thumbOf } from "../fridge/fridge-logic"
 import { itemName } from "../status/status-pages"
+import { canEatItem, clanOfBody, dietOfClan, myClan } from "../../classes"
 import { PORTRAIT, WOLF_PORTRAIT } from "../portraits"
 import { SPECIES, type SpeciesDef } from "../../characters/rules"
 import { speciesName } from "../../characters/names"
@@ -280,8 +281,10 @@ export default function ShopPanel({
     }
     if (!life) return []
     const fridge = life.fridge ?? {}
+    // VS5: o Empório mostra só o que a sua classe come (e o que é de todos); o servidor confere
+    const diet = dietOfClan(clanOfBody(life.avatar) ?? myClan())
     return life.catalog.items
-      .filter((it) => foodGroup(it) === food)
+      .filter((it) => foodGroup(it) === food && canEatItem(it, diet))
       .map((it) => {
         const poor = life.wallet.coins < it.price
         const n = fridge[it.id] ?? 0

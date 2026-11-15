@@ -23,7 +23,31 @@ export function categoryOf(it: LifeItem): FridgeCategory {
   return "anabolic"
 }
 
-export const thumbOf = (id: string) => `/meu-mundo/geladeira/v1/${id}.webp`
+/**
+ * VS5: até a arte do Vampiro chegar (lista de prompts em MEU MUNDO 3D/planos/
+ * 2026-11-15-mercado-sangue-e-acougue.md §5), cada prato de sangue mostra a foto do par da
+ * Raposa. Chegou o arquivo `<id>.webp`: tirar a linha daqui.
+ */
+const THUMB_STANDIN: Record<string, string> = {
+  bolsa_sangue: "salmao_legumes",
+  sangue_cervo: "frango_salada",
+  caldo_sangue_graos: "prato_integral",
+  ameixas_sangue: "bowl_frutas",
+  chourico: "omelete_legumes",
+  pudim_sangue: "iogurte_aveia",
+  sopa_sangue: "sopa_legumes",
+  prato_madrugada: "prato_feito",
+  torta_sangue: "hamburguer",
+  pao_sangue: "pizza",
+  espeto_morcela: "cachorro_quente",
+  bolinho_sangue: "coxinha",
+  bala_sangue: "chocolate",
+  caldo_ralo: "miojo",
+  lascas_sangue: "salgadinho",
+  biscoito_sangue: "biscoito_recheado",
+  soda_sangue: "refrigerante",
+}
+export const thumbOf = (id: string) => `/meu-mundo/geladeira/v1/${THUMB_STANDIN[id] ?? id}.webp`
 
 export interface CategoryCard {
   id: FridgeCategory

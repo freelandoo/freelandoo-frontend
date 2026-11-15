@@ -104,8 +104,9 @@ interface Theme {
 }
 // mm3d-55: papel de parede vitoriano (a parte de cima; embaixo é lambri), a cor da casa e o metal.
 const THEMES: Record<string, Theme> = {
-  pizzaria: { wall: [0.62, 0.3, 0.22], accent: C.red, second: [0.3, 0.42, 0.26] },
-  hamburgueria: { wall: [0.7, 0.52, 0.3], accent: C.red, second: C.brass },
+  // VS5: `pizzaria` = Banco de Sangue (vinho e prata), `hamburgueria` = Açougue (tijolo e cobre)
+  pizzaria: { wall: [0.36, 0.1, 0.12], accent: [0.55, 0.08, 0.1], second: [0.72, 0.74, 0.78] },
+  hamburgueria: { wall: [0.66, 0.42, 0.26], accent: [0.62, 0.2, 0.14], second: C.brass },
   supermercado: { wall: [0.6, 0.62, 0.48], accent: [0.28, 0.42, 0.3], second: C.brass },
   universidade: { wall: [0.26, 0.36, 0.38], accent: C.navy, second: C.brass },
   biblioteca: { wall: [0.38, 0.22, 0.18], accent: [0.42, 0.18, 0.16], second: C.brass },

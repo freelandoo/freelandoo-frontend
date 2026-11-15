@@ -21,6 +21,7 @@ import { POSE_OF_ANIM, type PlacePose } from "../../engine/avatars"
 import type { PlaceState } from "../../engine/place-game"
 import type { BodyId, InteriorDef, LifeItem, PlaceUse } from "../../types"
 import { effectsOf } from "../fridge/fridge-logic"
+import { canEatItem, clanOfBody, dietOfClan, myClan } from "../../classes"
 import { effectText, toneColor } from "../fridge/shelf"
 import { itemName } from "../status/status-pages"
 import { EvoButton, EvoDialog, EvoToast } from "../hud/hud-kit"
@@ -86,7 +87,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   const [toast, setToast] = useState<{ text: string; tone: "ouro" | "magenta" } | null>(null)
   const doingRef = useRef<Doing | null>(null)
   // Cardápio do balcão (mm3d-37c): itens do lugar e as moedas (null = buscando).
-  const [menu, setMenu] = useState<{ items: LifeItem[]; coins: number } | null>(null)
+  const [menu, setMenu] = useState<{ items: LifeItem[]; coins: number; hidden: number; diet: "carne" | "sangue" | null } | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [sellerOpen, setSellerOpen] = useState(false)
   const [gearTab, setGearTab] = useState<GearTab | null>(null)
@@ -155,8 +156,11 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
       return
     }
     const ids = r.data.catalog.menus?.[placeId] ?? []
-    const items = ids.map((id) => r.data.catalog.items.find((it) => it.id === id)).filter((it): it is LifeItem => !!it)
-    setMenu({ items, coins: r.data.wallet.coins })
+    const all = ids.map((id) => r.data.catalog.items.find((it) => it.id === id)).filter((it): it is LifeItem => !!it)
+    // VS5: Banco de Sangue serve o Vampiro, Açougue a Raposa; o resto só vê o que é de todos
+    const diet = dietOfClan(clanOfBody(r.data.avatar) ?? myClan())
+    const items = all.filter((it) => canEatItem(it, diet))
+    setMenu({ items, coins: r.data.wallet.coins, hidden: all.length - items.length, diet })
   }
 
   const order = async (it: LifeItem) => {
@@ -285,6 +289,13 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-[13px] opacity-80">{t("pvMenuCoins", "Suas moedas: {n}. Ele come aqui mesmo — vale a refeição.").replace("{n}", String(Math.floor(menu.coins)))}</p>
+                {menu.hidden > 0 && (
+                  <p className="text-[12px] opacity-80">
+                    {menu.diet === "carne"
+                      ? t("pvDietNote_raposa", "Aqui é o Banco de Sangue: Raposa só toma a água da fonte. A carne fica no Açougue.")
+                      : t("pvDietNote_vampiro", "Aqui é o Açougue: Vampiro só toma a água da fonte. O sangue fica no Banco de Sangue.")}
+                  </p>
+                )}
                 {menu.items.map((it) => {
                   const poor = menu.coins < it.price
                   return (

@@ -9,6 +9,7 @@
 
 import { useState } from "react"
 import { Bar, EVO, archivo, teko } from "./evo-skin"
+import { myClan, type Clan } from "../../classes"
 import { AFFECTION_NAME_AT, TEMPER_COLOR, actLabel, callName, foodShort, temperLabel, temperLine, wishLine, type LifeSoul } from "../../soul"
 
 type Tr = (key: string, fallback: string) => string
@@ -16,9 +17,9 @@ type Tr = (key: string, fallback: string) => string
 /** Escala da barra: 0 até a próxima centena (no mínimo até os 200, onde fica a marca). */
 const barMax = (v: number) => Math.max(AFFECTION_NAME_AT + 50, Math.ceil((v + 1) / 100) * 100)
 
-export function SoulPanel({ soul, t, compact = false }: { soul: LifeSoul; t: Tr; compact?: boolean }) {
+export function SoulPanel({ soul, t, compact = false, clan = myClan() }: { soul: LifeSoul; t: Tr; compact?: boolean; clan?: Clan | null }) {
   const color = TEMPER_COLOR[soul.temper]
-  const call = callName(soul, t)
+  const call = callName(soul, t, clan)
   const max = barMax(soul.affection)
   const label = compact ? `${archivo.className} text-[10px] uppercase` : `${teko.className} text-[19px] uppercase tracking-[0.12em]`
   const body = compact ? `${archivo.className} text-[11px] leading-snug` : `${archivo.className} text-[14px] leading-snug`
@@ -49,7 +50,7 @@ export function SoulPanel({ soul, t, compact = false }: { soul: LifeSoul; t: Tr;
             {t("soulLikes", "Mais gosta")}
           </div>
           <div className={`${body} truncate`} style={{ color: EVO.branco }}>
-            {foodShort(soul.likes.food, t)} · {actLabel(soul.likes.act, t)}
+            {foodShort(soul.likes.food, t, clan)} · {actLabel(soul.likes.act, t)}
           </div>
         </div>
         <div className="min-w-0">
@@ -57,7 +58,7 @@ export function SoulPanel({ soul, t, compact = false }: { soul: LifeSoul; t: Tr;
             {t("soulHates", "Mais odeia")}
           </div>
           <div className={`${body} truncate`} style={{ color: EVO.branco }}>
-            {foodShort(soul.hates.food, t)} · {actLabel(soul.hates.act, t)}
+            {foodShort(soul.hates.food, t, clan)} · {actLabel(soul.hates.act, t)}
           </div>
         </div>
       </div>

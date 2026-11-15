@@ -470,6 +470,8 @@ export interface LifeItem {
   heal?: number
   /** Crédito de refeição (1 quita; fração = lanche; 0 não conta). */
   meal?: number
+  /** VS5 (2026-11-15): de quem é — "carne" (Raposa), "sangue" (Vampiro), null = de todos. Servidor antigo não manda. */
+  diet?: "carne" | "sangue" | null
 }
 
 export interface LifeDay {

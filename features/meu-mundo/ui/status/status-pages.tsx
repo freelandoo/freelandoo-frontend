@@ -1211,7 +1211,7 @@ function SoulPage({ life, t, compact }: PageProps) {
         }
       >
         {c.soul ? (
-          <SoulPanel soul={c.soul} t={t} compact />
+          <SoulPanel soul={c.soul} t={t} compact clan={clanOfBody(life.avatar)} />
         ) : (
           <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
             {TRAITS.map((k) => (
