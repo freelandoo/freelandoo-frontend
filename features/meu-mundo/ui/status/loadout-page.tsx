@@ -94,7 +94,7 @@ function effectLine(id: string, t: Tr) {
       energy_drink: t("lkFxEnergyDrink", "A energia cai mais devagar."),
       stim: t("lkFxStim", "Estudo rende 15% mais; não deixa dormir. Pesa no Desgaste."),
       anabolic: t("lkFxAnabolic", "Força no treino em dobro e cresce mais rápido. A fertilidade cai e pesa no Desgaste."),
-      injury: t("lkFxInjury", "Fora do hospital, a saúde volta pela metade."),
+      injury: t("lkFxInjury", "Fora da Enfermaria, a saúde volta pela metade."),
     } as Record<string, string>
   )[id] ?? ""
 }
@@ -256,7 +256,7 @@ export function effectLabel(id: string, t: Tr) {
       energy_drink: t("effEnergyDrink", "Energético"),
       stim: t("effStim", "Estimulante"),
       anabolic: t("effAnabolic", "Anabolizante"),
-      injury: t("effInjury", "Lesão do boxe"),
+      injury: t("effInjury", "Junta rachada"),
     } as Record<string, string>
   )[id] ?? id
 }

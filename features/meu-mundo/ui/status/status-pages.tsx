@@ -29,7 +29,7 @@ import {
   Users,
   Loader2,
 } from "lucide-react"
-import type { BodyId, LifeActivity, LifeCharacter, LifeFull, LifeItem } from "../../types"
+import type { BodyId, LifeActivity, LifeAilment, LifeAilmentId, LifeCharacter, LifeFull, LifeItem } from "../../types"
 import type { GearBag, GearSlot } from "../../data"
 import { EquipPage } from "./equip-page"
 import { SheetStage } from "./sheet-stage"
@@ -166,7 +166,7 @@ export function activityLabel(k: LifeActivity | string, t: Tr) {
       studying: t("actStudying", "Estudando"),
       training: t("actTraining", "Treinando"),
       working: t("actWorking", "Trabalhando"),
-      hospital: t("actHospital", "Internado"),
+      hospital: t("actHospital", "Na Enfermaria"),
       praying: t("actPraying", "Rezando"),
       jail: t("actJail", "Preso"),
     } as Record<string, string>
@@ -189,7 +189,7 @@ function causeLabel(c: string | null, t: Tr) {
     {
       infarto: t("causeInfarct", "Coração vencido pelo Desgaste"),
       overdose: t("causeOverdose", "Corrosão por tônico demais"),
-      exaustao: t("causeExhaustion", "Exaustão"),
+      exaustao: t("causeExhaustion", "Engrenagens travadas"),
       fome: t("causeHunger", "Fome"),
       sono: t("causeSleep", "Dias sem dormir"),
       // D9: diabetes e pressão alta saíram da regra; mortes antigas por elas viram "mal antigo"
@@ -256,9 +256,9 @@ export function personalityLabel(p: LifeCharacter["personality"], t: Tr) {
 function quote(c: LifeCharacter, t: Tr) {
   const v = c.vitals
   if (c.status === "dead") return t("qDead", "Ele se foi.")
-  if (c.status === "hospital") return t("qHospital", "Ele está internado.")
+  if (c.status === "hospital") return t("qHospital", "Ele está na Enfermaria.")
   if (v.satiety <= 10) return t("qHungry", "Ele está com fome.")
-  if (v.energy < 15) return t("qExhausted", "Ele está exausto.")
+  if (v.energy < 15) return t("qExhausted", "As engrenagens dele estão travando.")
   if (v.energy < 30) return t("qTired", "Ele está cansado.")
   if (v.stress >= 80) return t("qStressed", "Ele está muito estressado.")
   if (v.health < 40) return t("qUnwell", "Ele não está bem.")
@@ -307,7 +307,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
     case "activity_end":
       return t("evActivityEnd", "Terminou: {act}.").replace("{act}", activityLabel(String(data.kind), t))
     case "collapse":
-      return t("evCollapse", "Desmaiou de exaustão e dormiu no chão.")
+      return t("evCollapse", "As engrenagens travaram: apagou e dormiu no chão.")
     case "routine_meal":
       if (data.from === "fridge") return t("evRoutineFridge", "Rotina: comeu {item} da geladeira.").replace("{item}", item ? itemName(item, t) : String(data.item ?? ""))
       return t("evRoutineMeal", "Rotina: comprou e comeu {item} ({n} moedas).")
@@ -897,7 +897,7 @@ function RoutineC({ life, t, act }: PageProps) {
                   : a.remainingH != null
                     ? t("stUntil", "Faltam {h}. Ele continua mesmo com o jogo fechado.").replace("{h}", hoursText(a.remainingH))
                     : a.kind === "hospital"
-                      ? t("stHospitalText", "Internado até se recuperar (saúde 60).")
+                      ? t("stHospitalText", "Na câmara de vapor da Enfermaria até se recuperar (saúde 60).")
                       : t("stIdleText", "Sem nada marcado.")}
               </div>
             </div>
@@ -1013,13 +1013,19 @@ function NowBlock({ life, portrait, t, act, body }: PageProps) {
   )
 }
 
-/** Os 5 vitais (4 + Vitalidade), o Porte e, só quando passam de 30%, Desgaste e Corrosão (D8, D10). */
+/** Os 5 vitais (4 + Vitalidade), o Porte e, só quando passam de 30%, Desgaste e Corrosão (D8, D10); a Cinza (VS2) a partir de 25. */
 function VitalsBlock({ life, t }: PageProps) {
   const c = life.character
   const v = c.vitals
   const h = c.health
   const wear = Math.max(0, Math.min(100, h.cardiac))
   const rust = Math.max(0, Math.min(100, (h.toxicity / 120) * 100))
+  const ash = Math.max(0, Math.min(100, h.cinza ?? 0))
+  const gauges = [
+    wear > 30 ? ([t("stWear", "Desgaste"), wear] as const) : null,
+    rust > 30 ? ([t("stCorrosion", "Corrosão"), rust] as const) : null,
+    ash >= 25 ? ([t("stCinza", "Cinza"), ash] as const) : null,
+  ].filter((g): g is readonly [string, number] => !!g)
   return (
     <div className="flex flex-col gap-1.5">
       <div className="grid grid-cols-2 gap-1.5">
@@ -1039,30 +1045,56 @@ function VitalsBlock({ life, t }: PageProps) {
             {r0(v.vitality)}
           </span>
         </div>
-        {(wear > 30 || rust > 30) && (
-          <div className="mt-1.5 grid grid-cols-2 gap-3">
-            {wear > 30 && (
-              <div className="min-w-0">
-                <div className={`${archivo.className} flex justify-between text-[11px] uppercase`} style={{ color: EVO.branco }}>
-                  <span>{t("stWear", "Desgaste")}</span>
-                  <span style={{ color: EVO.douradoClaro }}>{r0(wear)}%</span>
+        {gauges.length > 0 && (
+          <div className={`mt-1.5 grid gap-3 ${gauges.length > 2 ? "grid-cols-3" : "grid-cols-2"}`}>
+            {gauges.map(([label, val]) => (
+              <div key={label} className="min-w-0">
+                <div className={`${archivo.className} flex justify-between gap-1 text-[11px] uppercase`} style={{ color: EVO.branco }}>
+                  <span className="truncate">{label}</span>
+                  <span style={{ color: EVO.douradoClaro }}>{r0(val)}%</span>
                 </div>
-                <Bar value={wear} color={toneFor(wear, "low")} height={5} />
+                <Bar value={val} color={toneFor(val, "low")} height={5} />
               </div>
-            )}
-            {rust > 30 && (
-              <div className="min-w-0">
-                <div className={`${archivo.className} flex justify-between text-[11px] uppercase`} style={{ color: EVO.branco }}>
-                  <span>{t("stCorrosion", "Corrosão")}</span>
-                  <span style={{ color: EVO.douradoClaro }}>{r0(rust)}%</span>
-                </div>
-                <Bar value={rust} color={toneFor(rust, "low")} height={5} />
-              </div>
-            )}
+            ))}
           </div>
         )}
       </MiniPlate>
+      <AilmentsPlate ailments={c.ailments} t={t} />
     </div>
+  )
+}
+
+/** VS2: os males (nome do mundo + o que fazem), o grave primeiro; some quando não há nenhum. */
+function AilmentsPlate({ ailments, t }: { ailments?: LifeAilment[]; t: Tr }) {
+  if (!ailments?.length) return null
+  const name: Record<LifeAilmentId, [string, string]> = {
+    cinza: [t("ail_cinza", "Cinza acordada"), t("ail_cinzaText", "A Cinza da guerra dorme no sangue de quem saiu da cápsula. Fome, noites sem sono e estresse por muito tempo a acordam: menos apetite e fôlego, treino e estudo rendem menos e a vida gasta mais rápido. Cuidar dele a faz dormir de novo.")],
+    corrosao: [t("ail_corrosao", "Corrosão no sangue"), t("ail_corrosaoText", "Tônico e elixir demais. Enquanto não baixa, a saúde não volta; alta demais, ela corrói a saúde. A Enfermaria limpa três vezes mais rápido.")],
+    desgaste: [t("ail_desgaste", "Coração em Desgaste"), t("ail_desgasteText", "Pó de Faísca, Elixir de Ferro, estresse alto e noites em claro forçam o coração. Em 100 ele cede: Enfermaria e −20 de vitalidade. Dormir alivia.")],
+    engrenagens: [t("ail_engrenagens", "Engrenagens travadas"), t("ail_engrenagensText", "Sem energia. Se continuar assim por horas, ele apaga no chão e dorme ali mesmo.")],
+    febre: [t("ail_febre", "Febre de vapor"), t("ail_febreText", "Saúde baixa: a energia não enche e o estresse não desce. Com saúde 15 ou menos, o socorro leva para a Enfermaria.")],
+    junta: [t("ail_junta", "Junta rachada"), t("ail_juntaText", "Fora da Enfermaria, a saúde volta pela metade até a junta sarar.")],
+  }
+  return (
+    <MiniPlate title={t("stAilments", "Males")}>
+      <div className="flex flex-col gap-1.5">
+        {ailments.map((a) => {
+          const [label, text] = name[a.id] ?? [a.id, ""]
+          const tone = a.level >= 2 ? EVO.perigo : EVO.ambar
+          return (
+            <div key={a.id} className="min-w-0">
+              <div className={`${teko.className} flex items-baseline gap-2 text-[17px] font-bold uppercase leading-none`} style={{ color: tone }}>
+                <span className="truncate">{label}</span>
+                {a.level >= 2 && <span className={`${archivo.className} text-[10px] font-semibold`}>{t("ail_grave", "grave")}</span>}
+              </div>
+              <p className={`${archivo.className} mt-0.5 text-[11px] leading-snug`} style={{ color: EVO.mudo }}>
+                {text}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+    </MiniPlate>
   )
 }
 

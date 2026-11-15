@@ -171,9 +171,9 @@ export function needTitle(id: LifeNeedId, t: Tr, hours?: number, temper?: Temper
     case "hospital":
       return t("needHospital", "Estou internado. Preciso me recuperar.")
     case "unwell":
-      return t("needUnwell", "Não estou me sentindo bem. Preciso de atendimento.")
+      return t("needUnwell", "Estou com febre de vapor. Preciso da Enfermaria.")
     case "exhausted":
-      return t("needExhausted", "Estou exausto. Preciso descansar.")
+      return t("needExhausted", "Minhas engrenagens estão travando. Preciso descansar.")
     case "starving":
       return t("needStarving2", "Estou morrendo de fome! Você vai me deixar passar fome assim?")
     case "hungry":
@@ -183,7 +183,7 @@ export function needTitle(id: LifeNeedId, t: Tr, hours?: number, temper?: Temper
     case "tired":
       return t("needTired", "Estou cansado.")
     case "stressed":
-      return t("needStressed", "Estou muito estressado. Preciso de uma pausa.")
+      return t("needStressed", "Minha cabeça está chiando feito caldeira. Preciso de uma pausa.")
     case "aging":
       return t("needAging", "Sinto o peso da idade.")
     case "fridge_empty":

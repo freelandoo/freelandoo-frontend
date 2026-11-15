@@ -336,6 +336,8 @@ export interface LifeCharacter {
    * toxicity = Corrosão e cardiac = Desgaste na tela.
    */
   health: {
+    /** VS1 (2026-11-14): a Cinza no sangue (0–100) = a exposição acumulada. Servidor antigo não manda. */
+    cinza?: number
     toxicity: number
     cardiac: number
     diet: number
@@ -377,6 +379,8 @@ export interface LifeCharacter {
   stamina?: { maxS: number; refillS: number }
   /** Necessidades de agora, da mais urgente para a mais leve. */
   needs?: LifeNeed[]
+  /** VS1 (2026-11-14): males com nome do mundo, o grave primeiro (o servidor decide). Servidor antigo não manda. */
+  ailments?: LifeAilment[]
   today: { day: string; score: number; label: "otima" | "boa" | "regular" | "ruim" | "critica"; hours: Record<LifeActivity, number> }
   /** Ritmo de caminhada: 1 normal, 0,7 cansado, 0,42 exausto. */
   pace: number
@@ -394,6 +398,9 @@ export interface LifeMeal {
   state: LifeMealState
 }
 
+/** VS1: Cinza acordada · Corrosão no sangue · Coração em Desgaste · Engrenagens travadas · Febre de vapor · Junta rachada. */
+export type LifeAilmentId = "cinza" | "corrosao" | "desgaste" | "engrenagens" | "febre" | "junta"
+export type LifeAilment = { id: LifeAilmentId; level: 1 | 2 }
 export type LifeNeedId = "hospital" | "unwell" | "exhausted" | "starving" | "hungry" | "sleep" | "tired" | "stressed" | "aging" | "fridge_empty"
 
 /** level: 1 emergência, 2 saúde/exaustão, 3 fome intensa, 4 sono, 5 leves. */
