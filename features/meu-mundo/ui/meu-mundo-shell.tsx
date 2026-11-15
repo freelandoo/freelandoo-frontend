@@ -103,6 +103,7 @@ import {
 } from "../types"
 import { setCurrentSoul, type LifeSoul } from "../soul"
 import { setBanterBody } from "../banter"
+import { clanOfBody, setMyClan } from "../classes"
 import { useChatter } from "./inbox/use-chatter"
 import { uiSound, type UiCue } from "../engine/audio"
 
@@ -152,6 +153,8 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
   useEffect(() => setCurrentSoul(soul), [soul])
   // o rosto de quem fala dentro dos minijogos (minigame-banter.tsx)
   useEffect(() => setBanterBody(avatar), [avatar])
+  // VS4: a classe de quem joga (as falas da vida mudam com ela)
+  useEffect(() => setMyClan(clanOfBody(avatar)), [avatar])
   useChatter(soul, t, pushLocal)
   const [inbox, setInbox] = useState<InboxView | null>(null)
   const [itemsOpen, setItemsOpen] = useState(false)

@@ -398,8 +398,8 @@ export interface LifeMeal {
   state: LifeMealState
 }
 
-/** VS1: Cinza acordada · Corrosão no sangue · Coração em Desgaste · Engrenagens travadas · Febre de vapor · Junta rachada. */
-export type LifeAilmentId = "cinza" | "corrosao" | "desgaste" | "engrenagens" | "febre" | "junta"
+/** VS1/VS3: ids neutros; o nome sai da classe (ui/status/life-voice.ts: Raposa = chama, Vampiro = sangue). */
+export type LifeAilmentId = "cinza" | "corrosao" | "desgaste" | "exausto" | "doente" | "lesao"
 export type LifeAilment = { id: LifeAilmentId; level: 1 | 2 }
 export type LifeNeedId = "hospital" | "unwell" | "exhausted" | "starving" | "hungry" | "sleep" | "tired" | "stressed" | "aging" | "fridge_empty"
 

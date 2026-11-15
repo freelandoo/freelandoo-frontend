@@ -13,6 +13,8 @@
 import type { LifeNeedId, MMNotice } from "../../types"
 import { wishLine, type Temper, type WishId } from "../../soul"
 import { needVoice } from "../../banter"
+import { myClan } from "../../classes"
+import { needWords } from "../status/life-voice"
 import { EMOTIONS, EMOTION_OF, type Emotion, type Expression } from "../portraits"
 
 export const CARD_MS = 15_000
@@ -167,13 +169,16 @@ export function needTitle(id: LifeNeedId, t: Tr, hours?: number, temper?: Temper
   // cada personalidade reclama do seu jeito (banter-text.json); sem personalidade, a frase padrão
   const voice = needVoice(id, temper, t)
   if (voice) return voice
+  // VS4: cansaço, estresse, doença e Enfermaria pela classe (Raposa = chama; Vampiro = sangue)
+  const clanLine = needWords(id, myClan(), t)
+  if (clanLine) return clanLine
   switch (id) {
     case "hospital":
       return t("needHospital", "Estou internado. Preciso me recuperar.")
     case "unwell":
-      return t("needUnwell", "Estou com febre de vapor. Preciso da Enfermaria.")
+      return t("needUnwell", "Não estou bem. Preciso da Enfermaria.")
     case "exhausted":
-      return t("needExhausted", "Minhas engrenagens estão travando. Preciso descansar.")
+      return t("needExhausted", "Estou exausto. Preciso descansar.")
     case "starving":
       return t("needStarving2", "Estou morrendo de fome! Você vai me deixar passar fome assim?")
     case "hungry":
@@ -183,7 +188,7 @@ export function needTitle(id: LifeNeedId, t: Tr, hours?: number, temper?: Temper
     case "tired":
       return t("needTired", "Estou cansado.")
     case "stressed":
-      return t("needStressed", "Minha cabeça está chiando feito caldeira. Preciso de uma pausa.")
+      return t("needStressed", "Estou muito estressado. Preciso de uma pausa.")
     case "aging":
       return t("needAging", "Sinto o peso da idade.")
     case "fridge_empty":

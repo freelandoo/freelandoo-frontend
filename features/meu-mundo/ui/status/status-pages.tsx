@@ -29,7 +29,7 @@ import {
   Users,
   Loader2,
 } from "lucide-react"
-import type { BodyId, LifeActivity, LifeAilment, LifeAilmentId, LifeCharacter, LifeFull, LifeItem } from "../../types"
+import type { BodyId, LifeActivity, LifeAilment, LifeCharacter, LifeFull, LifeItem } from "../../types"
 import type { GearBag, GearSlot } from "../../data"
 import { EquipPage } from "./equip-page"
 import { SheetStage } from "./sheet-stage"
@@ -37,7 +37,8 @@ import { Bar, Chamfer, CountUp, EVO, Plate, Ring, archivo, cinzel, teko, toneFor
 import { MM } from "../hud/tokens"
 import { faceForPortrait } from "../portraits"
 import { TALL_NAMES, isTall, type TallBody } from "../../gods"
-import { clanBodyNames } from "../../classes"
+import { clanBodyNames, clanOfBody, type Clan } from "../../classes"
+import { ailmentWords, collapseWords, exhaustCauseWords, exhaustedQuoteWords, hospitalStayWords } from "./life-voice"
 import { heroLevelScale, heroSheet } from "../../laminas/sim/fight"
 import { LevelBadge, PowerPlate, StatBars, StatCard, useStatRows, type StatRow } from "./stat-bars"
 import { SoulPanel } from "./soul-panel"
@@ -183,13 +184,13 @@ const ACT_ICON: Record<string, ReactNode> = {
   praying: <Sparkles className="h-5 w-5" />,
   jail: <Lock className="h-5 w-5" />,
 }
-function causeLabel(c: string | null, t: Tr) {
+function causeLabel(c: string | null, t: Tr, clan: Clan | null = null) {
   if (!c) return ""
   return (
     {
       infarto: t("causeInfarct", "Coração vencido pelo Desgaste"),
       overdose: t("causeOverdose", "Corrosão por tônico demais"),
-      exaustao: t("causeExhaustion", "Engrenagens travadas"),
+      exaustao: exhaustCauseWords(clan, t),
       fome: t("causeHunger", "Fome"),
       sono: t("causeSleep", "Dias sem dormir"),
       // D9: diabetes e pressão alta saíram da regra; mortes antigas por elas viram "mal antigo"
@@ -253,12 +254,12 @@ export function personalityLabel(p: LifeCharacter["personality"], t: Tr) {
   if (Math.abs(p[best] - 0.5) < 0.12) return t("ptBalanced", "Equilibrado")
   return words[best][p[best] >= 0.5 ? 1 : 0]
 }
-function quote(c: LifeCharacter, t: Tr) {
+function quote(c: LifeCharacter, t: Tr, clan: Clan | null = null) {
   const v = c.vitals
   if (c.status === "dead") return t("qDead", "Ele se foi.")
   if (c.status === "hospital") return t("qHospital", "Ele está na Enfermaria.")
   if (v.satiety <= 10) return t("qHungry", "Ele está com fome.")
-  if (v.energy < 15) return t("qExhausted", "As engrenagens dele estão travando.")
+  if (v.energy < 15) return exhaustedQuoteWords(clan, t)
   if (v.energy < 30) return t("qTired", "Ele está cansado.")
   if (v.stress >= 80) return t("qStressed", "Ele está muito estressado.")
   if (v.health < 40) return t("qUnwell", "Ele não está bem.")
@@ -280,7 +281,7 @@ export function walletText(life: LifeFull, t: Tr) {
 export function itemName(it: LifeItem, t: Tr) {
   return t(`item_${it.id}`, it.name)
 }
-function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Map<string, LifeItem>) {
+function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Map<string, LifeItem>, clan: Clan | null = null) {
   const item = typeof data.item === "string" ? items.get(data.item) : null
   switch (kind) {
     case "born":
@@ -307,7 +308,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
     case "activity_end":
       return t("evActivityEnd", "Terminou: {act}.").replace("{act}", activityLabel(String(data.kind), t))
     case "collapse":
-      return t("evCollapse", "As engrenagens travaram: apagou e dormiu no chão.")
+      return collapseWords(clan, t)
     case "routine_meal":
       if (data.from === "fridge") return t("evRoutineFridge", "Rotina: comeu {item} da geladeira.").replace("{item}", item ? itemName(item, t) : String(data.item ?? ""))
       return t("evRoutineMeal", "Rotina: comprou e comeu {item} ({n} moedas).")
@@ -357,7 +358,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
         .replace("{skin}", data.skin === "sergio" ? "Sergio" : data.skin === "ekaterina" ? "Ekaterina" : isTall(String(data.skin)) ? TALL_NAMES[data.skin as TallBody] : String(data.skin ?? ""))
         .replace("{n}", String(data.price ?? ""))
     case "death":
-      return t("evDeath", "Morreu: {cause}.").replace("{cause}", causeLabel(String(data.cause ?? ""), t))
+      return t("evDeath", "Morreu: {cause}.").replace("{cause}", causeLabel(String(data.cause ?? ""), t, clan))
     // apresentação 03: a linha do tempo mostrava a chave crua ("fight", "wish"…)
     case "fight":
       return data.abandoned ? t("evFightLeft", "Saiu de uma luta no meio.") : data.win ? t("evFightWin", "Venceu uma luta.") : t("evFightLose", "Perdeu uma luta.")
@@ -597,7 +598,7 @@ function DeadPage({ life, portrait, compact, t, act }: PageProps) {
           </Ring>
           <div>
             <div className={`${teko.className} text-[40px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-              {causeLabel(c.deathCause, t)}
+              {causeLabel(c.deathCause, t, clanOfBody(life.avatar))}
             </div>
             <p className={`${archivo.className} mt-2 text-[17px]`} style={{ color: EVO.mudo }}>
               {t("stDeadText", "A casa e as moedas continuam suas. Um novo hóspede pode chegar agora.")}
@@ -825,7 +826,7 @@ function DeadPageC({ life, portrait, t, act }: PageProps) {
           </Ring>
           <div className="min-w-0">
             <div className={`${teko.className} text-[20px] font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
-              {causeLabel(c.deathCause, t)}
+              {causeLabel(c.deathCause, t, clanOfBody(life.avatar))}
             </div>
             <p className={`${archivo.className} mt-1 text-[11px] leading-snug`} style={{ color: EVO.mudo }}>
               {t("stDeadText", "A casa e as moedas continuam suas. Um novo hóspede pode chegar agora.")}
@@ -897,7 +898,7 @@ function RoutineC({ life, t, act }: PageProps) {
                   : a.remainingH != null
                     ? t("stUntil", "Faltam {h}. Ele continua mesmo com o jogo fechado.").replace("{h}", hoursText(a.remainingH))
                     : a.kind === "hospital"
-                      ? t("stHospitalText", "Na câmara de vapor da Enfermaria até se recuperar (saúde 60).")
+                      ? hospitalStayWords(clanOfBody(life.avatar), t)
                       : t("stIdleText", "Sem nada marcado.")}
               </div>
             </div>
@@ -1003,7 +1004,7 @@ function NowBlock({ life, portrait, t, act, body }: PageProps) {
           </div>
         </Chamfer>
         <div className={`${archivo.className} line-clamp-3 text-[13px] font-semibold leading-snug`} style={{ color: EVO.branco }}>
-          “{quote(c, t)}”
+          “{quote(c, t, clanOfBody(life.avatar))}”
         </div>
         <div className={`${archivo.className} text-[11px] uppercase leading-snug`} style={{ color: EVO.mudo }}>
           {t("stMoodIs", "Humor: {m}").replace("{m}", moodTag(v.mood, t))}
@@ -1059,27 +1060,19 @@ function VitalsBlock({ life, t }: PageProps) {
           </div>
         )}
       </MiniPlate>
-      <AilmentsPlate ailments={c.ailments} t={t} />
+      <AilmentsPlate ailments={c.ailments} clan={clanOfBody(life.avatar)} t={t} />
     </div>
   )
 }
 
-/** VS2: os males (nome do mundo + o que fazem), o grave primeiro; some quando não há nenhum. */
-function AilmentsPlate({ ailments, t }: { ailments?: LifeAilment[]; t: Tr }) {
+/** VS2/VS4: os males (nome pela classe + o que fazem), o grave primeiro; some quando não há nenhum. */
+function AilmentsPlate({ ailments, clan, t }: { ailments?: LifeAilment[]; clan: Clan | null; t: Tr }) {
   if (!ailments?.length) return null
-  const name: Record<LifeAilmentId, [string, string]> = {
-    cinza: [t("ail_cinza", "Cinza acordada"), t("ail_cinzaText", "A Cinza da guerra dorme no sangue de quem saiu da cápsula. Fome, noites sem sono e estresse por muito tempo a acordam: menos apetite e fôlego, treino e estudo rendem menos e a vida gasta mais rápido. Cuidar dele a faz dormir de novo.")],
-    corrosao: [t("ail_corrosao", "Corrosão no sangue"), t("ail_corrosaoText", "Tônico e elixir demais. Enquanto não baixa, a saúde não volta; alta demais, ela corrói a saúde. A Enfermaria limpa três vezes mais rápido.")],
-    desgaste: [t("ail_desgaste", "Coração em Desgaste"), t("ail_desgasteText", "Pó de Faísca, Elixir de Ferro, estresse alto e noites em claro forçam o coração. Em 100 ele cede: Enfermaria e −20 de vitalidade. Dormir alivia.")],
-    engrenagens: [t("ail_engrenagens", "Engrenagens travadas"), t("ail_engrenagensText", "Sem energia. Se continuar assim por horas, ele apaga no chão e dorme ali mesmo.")],
-    febre: [t("ail_febre", "Febre de vapor"), t("ail_febreText", "Saúde baixa: a energia não enche e o estresse não desce. Com saúde 15 ou menos, o socorro leva para a Enfermaria.")],
-    junta: [t("ail_junta", "Junta rachada"), t("ail_juntaText", "Fora da Enfermaria, a saúde volta pela metade até a junta sarar.")],
-  }
   return (
     <MiniPlate title={t("stAilments", "Males")}>
       <div className="flex flex-col gap-1.5">
         {ailments.map((a) => {
-          const [label, text] = name[a.id] ?? [a.id, ""]
+          const [label, text] = ailmentWords(a.id, clan, t)
           const tone = a.level >= 2 ? EVO.perigo : EVO.ambar
           return (
             <div key={a.id} className="min-w-0">
@@ -1254,7 +1247,7 @@ function DiaryBlock({ life, t }: PageProps) {
   const [all, setAll] = useState(false)
   const items = new Map(life.catalog.items.map((i) => [i.id, i]))
   const off = life.catalog.clock.offsetMin
-  const events = life.events.map((e) => ({ e, text: eventText(e.kind, e.data, t, items) })).filter((x) => x.text)
+  const events = life.events.map((e) => ({ e, text: eventText(e.kind, e.data, t, items, clanOfBody(life.avatar)) })).filter((x) => x.text)
   return (
     <>
       <MiniPlate title={t("stDiary", "Diário")}>

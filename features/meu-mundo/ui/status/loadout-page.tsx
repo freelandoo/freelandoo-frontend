@@ -256,7 +256,7 @@ export function effectLabel(id: string, t: Tr) {
       energy_drink: t("effEnergyDrink", "Energético"),
       stim: t("effStim", "Estimulante"),
       anabolic: t("effAnabolic", "Anabolizante"),
-      injury: t("effInjury", "Junta rachada"),
+      injury: t("effInjury", "Lesão"),
     } as Record<string, string>
   )[id] ?? id
 }

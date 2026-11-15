@@ -23,6 +23,14 @@ export const YOUNG_BODY: Record<Clan, Record<Sex, ClanBody>> = {
   vampiro: { m: "vampiro", f: "vampira" },
 }
 
+// A MINHA classe de agora (VS4): a casca grava pelo corpo; o correio e as falas da vida leem
+// (cada classe sente cansaço, estresse e os males do seu jeito — ui/status/life-voice.ts).
+let mine: Clan | null = null
+export const myClan = () => mine
+export function setMyClan(c: Clan | null) {
+  mine = c
+}
+
 /** Classe de um corpo de classe (null = deuses, padrão, skins). */
 export const clanOfBody = (b: string | null | undefined): Clan | null => (!b || !isClanBody(b) ? null : b.startsWith("raposa") ? "raposa" : "vampiro")
 
