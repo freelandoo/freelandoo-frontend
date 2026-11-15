@@ -24,23 +24,15 @@ const v3Portraits = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}.webp
 const v3Faces = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}-rosto.webp`])) as Record<(typeof V3_BODIES)[number], string>
 /** O Lobo (monstro da luta, sem corpo de jogador). */
 export const WOLF_PORTRAIT = `${V3}/lobo.webp`
-const STANDARD = `${V2}/padrao.webp`
-const STANDARD_FACE = `${V2}/padrao-rosto.webp`
-// A personagem feminina (mm3d-30): retrato e expressões próprios, mesmo fundo.
-const FEMALE = `${V2}/feminina.webp`
-const FEMALE_FACE = `${V2}/feminina-rosto.webp`
+// 2026-11-14: o personagem padrão e a feminina saíram (e os retratos deles); o de reserva é o Sergio.
+const SERGIO_FACE = `${V2}/sergio-rosto.webp`
 // Ekaterina (mm3d-30): retrato no Coliseu neon e expressões próprias.
 const EKATERINA = `${V2}/ekaterina.webp`
 const EKATERINA_FACE = `${V2}/ekaterina-rosto.webp`
 
 /** Retrato 4:5 (cards retangulares, STATUS). */
 export const PORTRAIT: Record<BodyId, string> = {
-  normal: STANDARD,
-  slim: STANDARD,
-  fat: STANDARD,
-  strong: STANDARD,
   sergio: `${V2}/sergio.webp`,
-  female: FEMALE,
   ekaterina: EKATERINA,
   // mm3d-50: deuses — retrato PROVISÓRIO renderizado do modelo (pipeline/build_portraits_deuses.py).
   ...byTall((g) => `${V2}/deus-${g}.webp`),
@@ -53,22 +45,17 @@ export const PORTRAIT: Record<BodyId, string> = {
 
 /** Recorte do rosto para círculos (avatar, notificação). */
 const FACE: Record<BodyId, string> = {
-  normal: STANDARD_FACE,
-  slim: STANDARD_FACE,
-  fat: STANDARD_FACE,
-  strong: STANDARD_FACE,
-  sergio: `${V2}/sergio-rosto.webp`,
-  female: FEMALE_FACE,
+  sergio: SERGIO_FACE,
   ekaterina: EKATERINA_FACE,
   ...byTall((g) => `${V2}/deus-${g}-rosto.webp`),
   ...byClanBody((b) => `${V2}/classe-${b}_m58e-rosto.webp`),
   ...v3Faces,
 }
 
-export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "normal"] ?? STANDARD_FACE
+export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "sergio"] ?? SERGIO_FACE
 
 /** Para quem só tem a URL do retrato 4:5 (Portrait redondo do STATUS). */
-export const faceForPortrait = (src: string) => (src === STANDARD ? STANDARD_FACE : src === FEMALE ? FEMALE_FACE : src === EKATERINA ? EKATERINA_FACE : src === PORTRAIT.sergio ? FACE.sergio : src.startsWith(`${V3}/`) ? src.replace(/\.webp$/, "-rosto.webp") : src.replace(/\/(deus|classe)-([a-z0-9_]+)\.webp$/, "/$1-$2-rosto.webp"))
+export const faceForPortrait = (src: string) => (src === EKATERINA ? EKATERINA_FACE : src === PORTRAIT.sergio ? FACE.sergio : src.startsWith(`${V3}/`) ? src.replace(/\.webp$/, "-rosto.webp") : src.replace(/\/(deus|classe)-([a-z0-9_]+)\.webp$/, "/$1-$2-rosto.webp"))
 
 export type Expression =
   | "worried"
@@ -84,15 +71,13 @@ export type Expression =
   | "crying"
   | "determined"
 
-/** Prefixo da folha de expressões de cada corpo (o padrão vale para as quatro condições). */
+/** Prefixo da folha de expressões de cada corpo (só Sergio e Ekaterina têm folha; o resto, o rosto). */
 export function expressionSrc(body: BodyId | null | undefined, e: Expression | null): string {
   if (!e) return faceOf(body)
   if (body === "sergio") return `${V2}/expr-sergio-${e}.webp`
-  if (body === "female") return `${V2}/expr-feminina-${e}.webp`
   if (body === "ekaterina") return `${V2}/expr-ekaterina-${e}.webp`
-  // Deuses ainda sem folha de expressões: o rosto.
-  if (isTall(body) || isClanBody(body)) return faceOf(body)
-  return `${V2}/expr-${e}.webp`
+  // Deuses, classes e monstros ainda sem folha de expressões: o rosto.
+  return faceOf(body)
 }
 
 // ═══ EMOÇÕES (2026-11-03, pedido do Alex: "agora serão apenas 6") ═══════════
@@ -154,8 +139,8 @@ export const EMOTION_OF: Record<Expression, Emotion> = {
  * senão é um retrato quadrado (fica dentro da moldura).
  */
 export function emotionArt(body: BodyId | null | undefined, e: Emotion | null): { src: string; cutout: boolean } {
-  const b = body ?? "normal"
+  const b = body ?? "sergio"
   if (e && EMOTION_ART[b]?.includes(e)) return { src: `${V3}/emo/${b}-${e}.webp`, cutout: true }
-  if (e && (b === "sergio" || b === "female" || b === "ekaterina" || b === "normal" || b === "slim" || b === "fat" || b === "strong")) return { src: expressionSrc(b, LEGACY[e]), cutout: false }
+  if (e && (b === "sergio" || b === "ekaterina")) return { src: expressionSrc(b, LEGACY[e]), cutout: false }
   return { src: faceOf(b), cutout: false }
 }

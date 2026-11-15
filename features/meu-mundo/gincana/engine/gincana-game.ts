@@ -27,11 +27,9 @@ import { AvatarLibrary } from "../../engine/avatars"
 import { lerpAngle } from "../../engine/motion"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
-import { PALETTE, PARTS, lookCode } from "../../avatar-colors"
 import { BODY_IDS, type BodyId } from "../../types"
 import { CHECKPOINTS, FINISH_Z, GINCANA, LOGOS, sectionAt } from "../sim/course"
 import { ANIM, MODE, groundUnder, runnerAnim, type RunEvent, type RunIntent } from "../sim/body"
-import { botRand } from "../sim/bots"
 import { GincanaRace } from "../sim/race"
 import { CourseView } from "./course-view"
 import { GincanaAudio } from "./audio"
@@ -110,7 +108,7 @@ export interface GincanaGameHandle {
 
 const SEATS = 8
 /** Corpos dos computadores do treino (variam; as cores vêm da semente). */
-const BOT_BODIES: BodyId[] = ["normal", "female", "slim", "strong", "fat", "female", "normal", "slim"]
+const BOT_BODIES: BodyId[] = ["sergio", "ekaterina", "sergio", "ekaterina", "sergio", "ekaterina", "sergio", "ekaterina"]
 const POSE_EVERY = 0.05
 /** Os outros são desenhados este tanto no passado (entre duas amostras). */
 const REMOTE_DELAY = 0.12
@@ -164,7 +162,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     ? mp.start.seats
     : Array.from({ length: SEATS }, (_, slot) => {
         if (slot === me) return { slot, name: opts.name ?? "", body: opts.body, look: opts.look ?? "", bot: false }
-        const look = lookCode(PARTS.map((part, i) => Math.floor(botRand(seed, slot, 40 + i) * PALETTE[part].length)))
+        const look = ""
         const body = BOT_BODIES[slot % BOT_BODIES.length]
         return { slot, name: opts.botNames?.[(slot - 1 + seed) % (opts.botNames.length || 1)] ?? `CPU ${slot}`, body, look, bot: true }
       })
@@ -187,7 +185,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   const mats = { fallback: fallbackMat, shadow: shadowMat }
   const seats = new Map<number, Seat>()
   for (const s of seatDefs) {
-    const body = (BODY_IDS as string[]).includes(s.body) ? (s.body as BodyId) : "normal"
+    const body = (BODY_IDS as string[]).includes(s.body) ? (s.body as BodyId) : "sergio"
     const char = new Character(scene, lib, mats, body, s.slot === me ? null : s.name, s.slot === me, s.look)
     const r = race.runner(s.slot)!
     seats.set(s.slot, { ...s, char, vx: r.x, vy: r.y, vz: r.z, vf: r.facing, lastY: r.y, vyEst: 0 })

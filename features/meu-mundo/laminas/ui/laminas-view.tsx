@@ -83,7 +83,7 @@ type Choice = { kind: MobKind; level: number }
 const MOB_BODY: Partial<Record<MobKind, BodyId>> = { cavaleiro: "cavaleiro", stone: "golem", ciborgue: "ciborgue", garras: "garras", brute: "brutamontes" }
 /** Cor da energia do card do inimigo na tela de versus. */
 const FOE_ACCENT: Record<MobKind, string> = { cavaleiro: "#FFB030", stone: "#86FF22", wolf: "#FF7A2F", ciborgue: "#FF315A", garras: "#C05CFF", brute: "#B84DFF" }
-const RING_BODY: Record<MobKind, BodyId> = { cavaleiro: "normal", stone: "strong", wolf: "slim", ciborgue: "fat", garras: "female", brute: "strong" }
+const RING_BODY: Record<MobKind, BodyId> = { cavaleiro: "sergio", stone: "sergio", wolf: "sergio", ciborgue: "sergio", garras: "ekaterina", brute: "sergio" }
 
 /** F1 (lore v2): o Soldado de Pedra é o Cavaleiro Dourado; o Golem de Pedra tem tipo próprio (`stone`). */
 export function useMobName(ring = false) {

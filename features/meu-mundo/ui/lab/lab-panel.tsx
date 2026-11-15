@@ -115,7 +115,7 @@ export default function LabPanel({ t, mode, onMode, onClose }: LabPanelProps) {
 
   const portraitOf = (species: string, sx: "m" | "f" | null) => {
     const body = speciesBody(species, sx ?? sex, "young") as BodyId | null
-    return (body && PORTRAIT[body]) || PORTRAIT.normal
+    return (body && PORTRAIT[body]) || PORTRAIT.sergio
   }
 
   const title = mode === "embryo" ? t("labEmbryoTitle", "Tanque de embriões") : mode === "accelerate" ? t("labAccelTitle", "Acelerador") : t("labTitle", "Laboratório de Criogenia")
@@ -237,7 +237,7 @@ export default function LabPanel({ t, mode, onMode, onClose }: LabPanelProps) {
                   <Chamfer key={c.id} cut={12}>
                     <div className="flex items-center gap-3 p-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={PORTRAIT[c.body] ?? PORTRAIT.normal} alt="" className="h-16 w-11 shrink-0 object-cover" style={{ borderRadius: MM.radius.card }} />
+                      <img src={PORTRAIT[c.body] ?? PORTRAIT.sergio} alt="" className="h-16 w-11 shrink-0 object-cover" style={{ borderRadius: MM.radius.card }} />
                       <div className="min-w-0 flex-1">
                         <div className={`${teko.className} text-[20px] uppercase leading-none`} style={{ color: ICE.frost }}>
                           {c.petName || speciesName(c.species, t)}

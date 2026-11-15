@@ -202,7 +202,7 @@ export interface StreetSign {
   radius: number
 }
 
-// mm3d-30: "female" = skin "feminina"; "ekaterina" = skin "ekaterina".
+// 2026-11-14: o personagem padrão (normal/slim/fat/strong, pintável) e a feminina saíram; "ekaterina" = skin "ekaterina".
 // mm3d-50: os deuses (gods.ts) — corpo e skin com o mesmo id.
 // mm3d-58: os corpos das classes (classes.ts) — a sala manda; nunca se escolhem direto.
 /**
@@ -210,8 +210,8 @@ export interface StreetSign {
  * machado). Também é skin de teste de administrador, então está em BODY_IDS.
  */
 export type MobBody = "brutamontes"
-export type BodyId = "normal" | "slim" | "fat" | "strong" | "sergio" | "female" | "ekaterina" | TallBody | ClanBody | MobBody
-export const BODY_IDS: BodyId[] = ["normal", "slim", "fat", "strong", "sergio", "female", "ekaterina", ...TALL_BODIES, ...CLAN_BODIES, "brutamontes"]
+export type BodyId = "sergio" | "ekaterina" | TallBody | ClanBody | MobBody
+export const BODY_IDS: BodyId[] = ["sergio", "ekaterina", ...TALL_BODIES, ...CLAN_BODIES, "brutamontes"]
 
 export interface SeatReservation {
   name: string
@@ -314,7 +314,8 @@ export interface LifeCharacter {
   /** T3/B7 (migs 334/335): poder gravado pelo servidor (regra única power/power.ts, soma do permanente). Servidor antigo não manda. */
   power?: number | null
   vitals: Record<"energy" | "satiety" | "mood" | "stress" | "health" | "vitality", number>
-  body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bodyHint: BodyId }
+  /** `bodyHint` = leitura do físico (slim/normal/fat/strong); não é mais corpo de avatar (2026-11-14). */
+  body: { heightM: number; weightKg: number; fatPct: number; leanKg: number; bodyHint: string }
   /** Inteligência, força e velocidade 0–1000; fertilidade 0–100. */
   attributes: Record<"intelligence" | "strength" | "speed" | "fertility", number> & {
     /** mm3d-59: destreza (0–1000). Servidor antigo não manda. */

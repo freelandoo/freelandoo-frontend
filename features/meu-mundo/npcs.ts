@@ -97,8 +97,8 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ],
   },
   delegado: {
-    body: "strong",
-    look: "4210",
+    body: "sergio",
+    look: "",
     conversations: [
       { id: "tregua", when: at("cap2", "tregua"), lines: [{ key: "tregua_1" }, { key: "tregua_2" }, { key: "tregua_3" }, { key: "tregua_4" }] },
       { id: "idle", idle: true, lines: [{ key: "idle_1" }] },
@@ -184,8 +184,8 @@ export const NPCS: Record<NpcId, NpcDef> = {
   // Matas, o Vampiro). No passo "ninho" ela o entrega; o servidor só grava a leitura
   // com a visita à Biblioteca (ou à ruína) — o aparelho não decide nada.
   bibliotecaria: {
-    body: "female",
-    look: "3546",
+    body: "ekaterina",
+    look: "",
     ambient: true,
     conversations: [
       { id: "ninho", when: at("cap5", "ninho"), lines: [{ key: "ninho_1" }, { key: "ninho_2" }], archive: "registro_ninho" },

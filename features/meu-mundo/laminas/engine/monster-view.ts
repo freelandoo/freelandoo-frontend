@@ -182,18 +182,17 @@ const SWORD_EDGE: [number, number] = [0.2, 1.05]
 const BRUTE_RUN = 3.2
 
 /**
- * Lutadores do ringue (mm3d-57): corpo, escala e roupa (look = camiseta,
- * calça, pele, cabelo na paleta de avatar-colors.ts). O trio de lobos varia a
- * roupa pelo número do monstro.
+ * Lutadores do ringue (mm3d-57): corpo e escala. Desde 2026-11-14 (o personagem padrão
+ * pintável saiu) os homens são o Sergio e a Garras é a Ekaterina; ninguém é pintado.
  */
 const HUMAN: Record<MobKind, { body: BodyId; scale: number; looks: string[] }> = {
-  cavaleiro: { body: "normal", scale: 1, looks: ["1240"] },
+  cavaleiro: { body: "sergio", scale: 1, looks: [""] },
   // o Golem não luta no ringue (o menu do Boxe não o mostra); fica aqui só para o tipo fechar
-  stone: { body: "strong", scale: 1.15, looks: ["2760"] },
-  wolf: { body: "slim", scale: 1, looks: ["4115", "6260", "b350"] },
-  ciborgue: { body: "fat", scale: 1.12, looks: ["3527"] },
-  garras: { body: "female", scale: 1, looks: ["8913"] },
-  brute: { body: "strong", scale: 1.15, looks: ["2760"] },
+  stone: { body: "sergio", scale: 1.15, looks: [""] },
+  wolf: { body: "sergio", scale: 1, looks: [""] },
+  ciborgue: { body: "sergio", scale: 1.12, looks: [""] },
+  garras: { body: "ekaterina", scale: 1, looks: [""] },
+  brute: { body: "sergio", scale: 1.15, looks: [""] },
 }
 /** O lobo (pipeline/laminas/build_lobo_anim.py): o focinho chega no +X do Babylon → −90° leva ao +Z (frente). */
 const WOLF_URL = "/meu-mundo/laminas/lobo-m65.glb"

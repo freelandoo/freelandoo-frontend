@@ -366,7 +366,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
     animateTo(Math.round(cursor.current + Math.sign(moved) * 0.18))
   }
 
-  const portrait = PORTRAIT[avatar] ?? PORTRAIT.normal
+  const portrait = PORTRAIT[avatar] ?? PORTRAIT.sergio
   // Irmão (não filho) das telas: arrastar no palco não troca o card do STATUS.
   // B3 (mig 340): o botão embaixo da foto abre os PERSONAGENS (o vestuário de skins saiu).
   // "Ganhar de teste" aparece para todos porque hoje só administrador joga (o servidor confere).

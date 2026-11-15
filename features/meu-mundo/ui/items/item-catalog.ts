@@ -63,7 +63,7 @@ export function buildSlots(inv: InventoryResult["inventory"], items: LifeItem[],
   // Servidor antigo ainda manda `wardrobe`; enquanto mandar, mostra o que a pessoa tem.
   for (const sk of (inv.wardrobe?.skins ?? []).filter((x) => x.owned)) {
     const art = skinArt(sk.id)
-    out.push({ key: `skin:${sk.id}`, group: "wardrobe", qty: null, thumb: faceOf(art?.body ?? "normal"), fresh: fresh.has(`skin:${sk.id}`), skin: sk })
+    out.push({ key: `skin:${sk.id}`, group: "wardrobe", qty: null, thumb: faceOf(art?.body ?? "sergio"), fresh: fresh.has(`skin:${sk.id}`), skin: sk })
   }
   for (const v of inv.vehicles) out.push({ key: `vehicle:${v.kind}`, group: "vehicles", qty: null, thumb: null, fresh: false, vehicle: v })
   if (inv.house) out.push({ key: "house", group: "home", qty: null, thumb: null, fresh: false, house: inv.house })
@@ -99,7 +99,7 @@ export function giftLabel(g: MailGift, t: Tr): string {
 
 export function giftThumb(g: MailGift): string | null {
   if (g.type === "item") return thumbOf(g.id)
-  if (g.type === "skin") return faceOf(skinArt(g.id)?.body ?? "normal")
-  if (g.type === "character") return faceOf((speciesBody(g.id, null, "young") ?? "normal") as BodyId)
+  if (g.type === "skin") return faceOf(skinArt(g.id)?.body ?? "sergio")
+  if (g.type === "character") return faceOf((speciesBody(g.id, null, "young") ?? "sergio") as BodyId)
   return null
 }

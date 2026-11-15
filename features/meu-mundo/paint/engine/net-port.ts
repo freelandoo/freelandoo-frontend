@@ -252,7 +252,7 @@ export class NetPort implements PaintPort {
 
   private onState(s: SState) {
     const players = [...s.players.values()]
-    for (const p of players) this.names.set(p.slot, { name: p.name, body: (p.body || "normal") as BodyId, look: p.look || "" })
+    for (const p of players) this.names.set(p.slot, { name: p.name, body: (p.body || "sergio") as BodyId, look: p.look || "" })
     if (!this.state) {
       if (s.phase === "lobby" || this.me < 0) {
         const votes: PaintVotes = {}

@@ -354,7 +354,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
       return t("evAdult", "Virou adulto: +20% em inteligência, força e velocidade; saúde 100.")
     case "skin_bought":
       return (Number(data.price) > 0 ? t("evSkinAcquired", "Adquiriu a skin {skin} ({n} moedas).") : t("evSkinAcquiredFree", "Adquiriu a skin {skin}."))
-        .replace("{skin}", data.skin === "sergio" ? "Sergio" : data.skin === "feminina" ? t("skinFeminina", "Personagem feminina") : data.skin === "ekaterina" ? "Ekaterina" : isTall(String(data.skin)) ? TALL_NAMES[data.skin as TallBody] : String(data.skin ?? ""))
+        .replace("{skin}", data.skin === "sergio" ? "Sergio" : data.skin === "ekaterina" ? "Ekaterina" : isTall(String(data.skin)) ? TALL_NAMES[data.skin as TallBody] : String(data.skin ?? ""))
         .replace("{n}", String(data.price ?? ""))
     case "death":
       return t("evDeath", "Morreu: {cause}.").replace("{cause}", causeLabel(String(data.cause ?? ""), t))
@@ -959,12 +959,6 @@ function CertificatePage(p: PageProps) {
 }
 
 // ═══ apresentação 03: Ficha · Alma · Rotina · Registro ═══════════════════════
-/** O porte numa palavra (os números de peso, IMC e gordura saem da tela — D8). */
-function porteName(hint: string, t: Tr) {
-  const m: Record<string, string> = { normal: t("bodyNormal", "Normal"), slim: t("bodySlim", "Magro"), fat: t("bodyFat", "Gordo"), strong: t("bodyStrong", "Forte"), sergio: "Sergio", female: t("bodyFemale", "Feminina"), ekaterina: "Ekaterina", ...TALL_NAMES, ...clanBodyNames(t), brutamontes: t("laminasMobBrute", "Brutamontes") }
-  return m[hint] ?? hint
-}
-
 /** Retrato + Personagens + "agora" + a fala (o topo da Ficha). */
 function NowBlock({ life, portrait, t, act, body }: PageProps) {
   const c = life.character
@@ -1036,11 +1030,6 @@ function VitalsBlock({ life, t }: PageProps) {
       </div>
       <MiniPlate
         title={t("stVitality", "Vitalidade")}
-        aside={
-          <span className={`${archivo.className} truncate text-[11px] font-semibold uppercase`} style={{ color: EVO.douradoClaro }}>
-            {t("stPorte", "Porte: {p}").replace("{p}", porteName(c.body.bodyHint, t))}
-          </span>
-        }
       >
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">

@@ -329,7 +329,7 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       if (seat.slot === mp.start.me) continue
       const ride: RideKind = isRide(seat.ride) ? seat.ride : "skate"
       const key = `r${seat.slot}`
-      const ch = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, isBody(seat.body) ? seat.body : "normal", seat.name || null, false, seat.look ?? "")
+      const ch = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, isBody(seat.body) ? seat.body : "sergio", seat.name || null, false, seat.look ?? "")
       const node = curved ? new TransformNode(`rn2-rider-${seat.slot}`, scene) : null
       ch.attach(node)
       const st: CarState = { lot: 0, kind: ride, x: LANE_X0, z: 0, facing: 0, driver: key, y: 0 }

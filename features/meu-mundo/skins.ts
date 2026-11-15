@@ -10,7 +10,7 @@ import type { BodyId } from "./types"
 import { TALL_BODIES, TALL_NAMES, type TallBody } from "./gods"
 import { CLAN_SKINS, type ClanSkinId } from "./classes"
 
-export type SkinId = "standard" | "sergio" | "feminina" | "ekaterina" | TallBody | ClanSkinId | "brutamontes"
+export type SkinId = "sergio" | "ekaterina" | TallBody | ClanSkinId | "brutamontes"
 
 /** Palco 1672×941 com o pedestal no meio (os dois têm a mesma geometria). */
 export interface SkinStage {
@@ -71,16 +71,6 @@ const TALL_HOLO: Record<TallBody, SkinArt["holo"]> = {
 
 export const SKINS: SkinArt[] = [
   {
-    id: "standard",
-    labelKey: "skinStandard",
-    fallback: "Personagem padrão",
-    taglineKey: "skinStandardLine",
-    taglineFallback: "Muda com a vida: magro, normal, gordo ou forte.",
-    body: null,
-    stage: { src: `${BASE}/palco-meu-mundo.webp`, small: `${BASE}/palco-meu-mundo-1024.webp` },
-    holo: { color: "#ff2b3a", accent: "#ffd1d6" },
-  },
-  {
     id: "sergio",
     labelKey: "skinSergio",
     fallback: "Sergio",
@@ -89,17 +79,6 @@ export const SKINS: SkinArt[] = [
     body: "sergio",
     stage: { src: `${BASE}/coliseu.webp`, small: `${BASE}/coliseu-1024.webp` },
     holo: { color: "#ff2b91", accent: "#ffd1e8" },
-  },
-  {
-    // mm3d-30: a versão feminina da personagem padrão, no mesmo palco dela.
-    id: "feminina",
-    labelKey: "skinFeminina",
-    fallback: "Personagem feminina",
-    taglineKey: "skinFemininaLine",
-    taglineFallback: "A versão feminina da personagem do Meu Mundo.",
-    body: "female",
-    stage: { src: `${BASE}/palco-meu-mundo.webp`, small: `${BASE}/palco-meu-mundo-1024.webp` },
-    holo: { color: "#ff2b3a", accent: "#ffd1d6" },
   },
   {
     // mm3d-30: no palco do Sergio (o Coliseu neon).

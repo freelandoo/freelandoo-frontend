@@ -211,7 +211,7 @@ export function SlotDetail({ slot, t, busy, onEquip }: { slot: Slot; t: Tr; busy
       t("itEatHint", "Para comer ou tomar, abra a geladeira dentro de casa."),
     ]
   } else if (slot.skin) {
-    lines = [slot.skin.kind === "standard" ? t("skinStandardLine", "Muda com a vida: magro, normal, gordo ou forte.") : t("itSkinOwned", "Skin sua, para sempre.")]
+    lines = [t("itSkinOwned", "Skin sua, para sempre.")]
     action = slot.skin.equipped ? (
       <span className="text-[13px] font-semibold" style={{ color: MM.gold }}>
         {t("itWearingNow", "Você está usando")}

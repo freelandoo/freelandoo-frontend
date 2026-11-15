@@ -1,15 +1,13 @@
 // features/meu-mundo/engine/avatars.ts
 //
-// Avatares do bairro: os quatro corpos (normal, magro, gordo, forte) e as três
-// animações de locomoção (Idle, Walk, SlowRun), produzidos no Blender a partir
-// do personagem rigado no Mixamo (pipeline em MEU MUNDO 3D/pipeline).
+// Avatares: Sergio, Ekaterina, classes, deuses e monstros, e as animações de
+// locomoção (Idle, Walk, SlowRun), produzidos no Blender (pipeline em MEU MUNDO 3D/pipeline).
+// 2026-11-14: o personagem padrão (normal/magro/gordo/forte, pintável) e a feminina saíram.
 //
 // ═══ O QUE É COMPARTILHADO E O QUE NÃO É ═══
 // Compartilhado (seguro): o arquivo de cada corpo é baixado UMA vez (a malha
 // de cada jogador reaproveita a geometria do contêiner) e cada TEXTURA tem um
-// material só, criado na primeira vez que alguém usa aquele corpo. Normal e
-// magro dividem o atlas do personagem; desde o mm3d-07 o gordo e o forte são
-// modelos próprios do Tripo, com textura própria (ver ASSETS.textures).
+// material só, criado na primeira vez que alguém usa aquele corpo (ver ASSETS.textures).
 // NÃO compartilhado: cada jogador tem o próprio esqueleto (nós transformados)
 // e os próprios AnimationGroups — clonados do arquivo de animação e ligados
 // aos ossos DELE pelo nome. Estado mutável de animação nunca é dividido.
@@ -40,7 +38,6 @@ import type { Node } from "@babylonjs/core/node"
 import type { Scene } from "@babylonjs/core/scene"
 import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
-import { TINT_MASK, isTinted, tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
 import { byTall, isTall } from "../gods"
 import { ARCHER_SKINS, byClanBody, clanOfBody, GUN_SKINS, isClanBody, CLAN_ANIMS, HAMMER_SKINS, type Clan } from "../classes"
@@ -48,19 +45,10 @@ import { ARCHER_SKINS, byClanBody, clanOfBody, GUN_SKINS, isClanBody, CLAN_ANIMS
 export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
 const ASSETS = {
-  // Textura por corpo (mm3d-07): gordo e forte são modelos próprios.
   textures: {
-    normal: "avatar-basecolor-512.jpg",
-    slim: "avatar-basecolor-512.jpg",
-    fat: "avatar-fat-basecolor-512.jpg",
-    strong: "avatar-strong-basecolor-512.jpg",
     // Sergio, o lutador da RA da Casa Views (pipeline/build_sergio.py): o
     // esqueleto e os pesos são os dele; as animações são as mesmas do bairro.
     sergio: "avatar-sergio-basecolor-512.jpg",
-    // A personagem feminina (mm3d-30, pipeline/build_female.py): no esqueleto
-    // do normal SEM encaixe — usa todas as animações do conjunto "base".
-    // mm3d-36: a menina nova (cartoon girl), mesmo caminho do build_female.py.
-    female: "avatar-female-m36-basecolor-512.jpg",
     // Ekaterina (mm3d-30, pipeline/build_ekaterina.py): esqueleto encaixado
     // nas proporções dela, então um conjunto de animações próprio (como o
     // Sergio); 5 mil tris, textura 512, sem malha leve (como o Sergio).
@@ -78,14 +66,9 @@ const ASSETS = {
     ...byClanBody((b) => `avatar-${b}-m58e-basecolor-1024.jpg`),
   } satisfies Record<BodyId, string>,
   bodies: {
-    normal: "avatar-normal.glb",
-    slim: "avatar-slim.glb",
-    fat: "avatar-fat.glb",
-    strong: "avatar-strong.glb",
     // mm3d-22: pesos do ombro suavizados (pipeline/fix_sergio_shoulder.py) —
     // no skate e na bike o ombro abria um vinco na cava da regata.
     sergio: "avatar-sergio-m22.glb",
-    female: "avatar-female-m36e.glb",
     // 2026-10-25: o rosto com a malha original (a redução colapsava as
     // costuras do atlas e deformava o lado direito do rosto); pescoço refeito
     // (build_ekaterina.py 4b): rosto 100% na cabeça — o maxilar esticava na corrida.
@@ -130,34 +113,20 @@ const ASSETS = {
   // avatar, então não anima nada a mais. Corpo sem entrada (Sergio: costuras
   // demais para simplificar) ou arquivo que falhar = só a malha cheia.
   lod: {
-    normal: "avatar-normal-lod.glb",
-    slim: "avatar-slim-lod.glb",
-    fat: "avatar-fat-lod.glb",
-    strong: "avatar-strong-lod.glb",
-    female: "avatar-female-m36e-lod.glb",
     ...byClanBody((b) => (b === "raposa_adulto" || b === "raposa_f" ? `avatar-${b}-m58l-lod.glb` : b === "raposa_adulta" ? `avatar-${b}-m58k-lod.glb` : b === "vampiro" || b === "vampira_adulta" ? `avatar-${b}-m58j-lod.glb` : b === "vampira" || b === "raposa" ? `avatar-${b}-m58i-lod.glb` : `avatar-${b}-m58h-lod.glb`)),
   } as Partial<Record<BodyId, string>>,
-  // Mesmas três animações (mesmos nomes, mesmos ossos, mesmos estados). Gordo
-  // e forte têm um ajuste próprio do braço (abertura, rotação e cotovelo,
-  // calibrado no Blender) para a mão não atravessar a barriga nem o peito.
   // 2026-10-29 (pipeline/build_idle_a45.py): o Idle de TODOS virou a pose de
   // descanso pedida pelo Alex — braços quase caídos, abertos 22° do CORPO (m52; o m50/m51 mediam da horizontal).
   // 2026-11-01 (m59, pipeline/build_run_arms.py): na CORRIDA o cotovelo fica
   // com ângulo interno de 90° em todo quadro (o clipe ia de ~68° a ~90° e o
   // braço caía no balanço) — pedido do Alex.
   anims: {
-    base: "anim-locomotion-base-m59.glb",
-    fat: "anim-locomotion-fat-m59.glb",
-    strong: "anim-locomotion-strong-m59.glb",
     sergio: "anim-locomotion-sergio-m59.glb",
     ekaterina: "anim-locomotion-ekaterina-m59.glb",
   },
   // Pose "Sit" (mm3d-09, pipeline/build_sit.py): só dentro das casas — a rua
   // não baixa estes arquivos.
   sit: {
-    base: "anim-sit-base.glb",
-    fat: "anim-sit-fat.glb",
-    strong: "anim-sit-strong.glb",
     sergio: "anim-sit-sergio.glb",
     ekaterina: "anim-sit-ekaterina.glb",
   },
@@ -167,9 +136,6 @@ const ASSETS = {
   // InjuredWalk (mocap "Injured Idle/Walk" do Mixamo) para o indisposto.
   // ~144 KB por conjunto; se falhar, o avatar continua com as poses de sempre.
   rest: {
-    base: "anim-rest-base-m28.glb",
-    fat: "anim-rest-fat-m28.glb",
-    strong: "anim-rest-strong-m28.glb",
     sergio: "anim-rest-sergio-m28.glb",
     ekaterina: "anim-rest-ekaterina-m28.glb",
   },
@@ -180,9 +146,6 @@ const ASSETS = {
   // continua o do mm3d-14 (build_ride.py). mm3d-23: SkatesStride (passada dos
   // patins em ciclo, 1,2 s, pipeline/build_skates_stride.py).
   ride: {
-    base: "anim-ride-base-m23.glb",
-    fat: "anim-ride-fat-m23.glb",
-    strong: "anim-ride-strong-m23.glb",
     sergio: "anim-ride-sergio-m23.glb",
     ekaterina: "anim-ride-ekaterina-m23.glb",
   },
@@ -192,9 +155,6 @@ const ASSETS = {
   // (Punch, Lead Jab). Só o Paint baixa estes arquivos.
   paint: {
     // 35c: pulos novos (Rifle Jump In Place, Run Strafing Jump, Pistol Jump).
-    base: "anim-paint-base-m35c.glb",
-    fat: "anim-paint-fat-m35c.glb",
-    strong: "anim-paint-strong-m35c.glb",
     sergio: "anim-paint-sergio-m35c.glb",
     ekaterina: "anim-paint-ekaterina-m35c.glb",
   },
@@ -202,9 +162,6 @@ const ASSETS = {
   // animações do Alex): academia (agachamento, saco de pancada, caixa de
   // salto, abdominal, kettlebell) e a reza da igreja. Só os interiores baixam.
   place: {
-    base: "anim-place-base-m37.glb",
-    fat: "anim-place-fat-m37.glb",
-    strong: "anim-place-strong-m37.glb",
     sergio: "anim-place-sergio-m37.glb",
     ekaterina: "anim-place-ekaterina-m37.glb",
   },
@@ -213,18 +170,12 @@ const ASSETS = {
   // levantar e vitória; mm3d-45 (build_boxe_steps.py): passadas na guarda.
   // Só a arena baixa.
   boxe: {
-    base: "anim-boxe-base-m45.glb",
-    fat: "anim-boxe-fat-m45.glb",
-    strong: "anim-boxe-strong-m45.glb",
     sergio: "anim-boxe-sergio-m45.glb",
     ekaterina: "anim-boxe-ekaterina-m45.glb",
   },
   // Gincana (mm3d-47, pipeline/build_gincana_mocap.py): corrida rápida, pulo
   // sem arma, tombo, levantar, chegada e o mergulho de barriga. Só a Gincana baixa.
   gincana: {
-    base: "anim-gincana-base-m47.glb",
-    fat: "anim-gincana-fat-m47.glb",
-    strong: "anim-gincana-strong-m47.glb",
     sergio: "anim-gincana-sergio-m47.glb",
     ekaterina: "anim-gincana-ekaterina-m47.glb",
   },
@@ -240,9 +191,6 @@ const ASSETS = {
  * até 41°; `straight_hands` no build).
  */
 const LOCO = {
-  base: { file: "anim-loco-base-m61.glb", walk: 1.126, run: 3.827 },
-  fat: { file: "anim-loco-fat-m61.glb", walk: 1.126, run: 3.827 },
-  strong: { file: "anim-loco-strong-m61.glb", walk: 1.126, run: 3.827 },
   // Sergio, deuses e classes (mesmo esqueleto)
   sergio: { file: "anim-loco-classe-m-m61.glb", walk: 1.03, run: 3.394 },
   ekaterina: { file: "anim-loco-ekaterina-m61.glb", walk: 1.32, run: 4.454 },
@@ -253,7 +201,7 @@ const LOCO = {
  * (esquerdo: andar 0,50–0,52, correr 0,37; direito 0,96–1,00 × 0,87–0,93). `fallback` =
  * o Walk/SlowRun do arquivo de animações base (m59), quando a locomoção não carregou.
  */
-const GAIT_OFFSET = { loco: { base: -0.12, fat: -0.12, strong: -0.12, sergio: -0.11, ekaterina: -0.11 }, fallback: -0.03 } as const
+const GAIT_OFFSET = { loco: { sergio: -0.11, ekaterina: -0.11 }, fallback: -0.03 } as const
 /**
  * Corpos VOLUMOSOS andando/correndo (2026-11-02, "os braços do ciborgue ficam
  * indo pra cima e cruzando"): o clipe do Sergio dobra o cotovelo e leva o
@@ -311,11 +259,11 @@ function openArms(hips: TransformNode, segs: TransformNode[], hands: readonly (T
   }
 }
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
-export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { base: 0.148, fat: 0.15, strong: 0.147, sergio: 0.203, ekaterina: 0.207 }
+export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { sergio: 0.203, ekaterina: 0.207 }
 type AnimSet = keyof typeof ASSETS.anims
 // mm3d-50: os deuses usam TODAS as animações do Sergio (build_deuses.py: mesmo
 // repouso de rotação, quadril na mesma altura; os 2 m vêm da escala do nó raiz).
-const ANIM_SET: Record<BodyId, AnimSet> = { normal: "base", slim: "base", fat: "fat", strong: "strong", sergio: "sergio", female: "base", ekaterina: "ekaterina", ...byTall((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio"), brutamontes: "sergio" }
+const ANIM_SET: Record<BodyId, AnimSet> = { sergio: "sergio", ekaterina: "ekaterina", ...byTall((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio"), brutamontes: "sergio" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 
 /** Arquivos de um corpo, para quem desenha o avatar fora do Babylon (o jetpack, mm3d-20). */
@@ -323,10 +271,6 @@ export function avatarFiles(id: BodyId) {
   return { body: BASE + ASSETS.bodies[id], texture: BASE + ASSETS.textures[id], anims: BASE + ASSETS.anims[ANIM_SET[id]] }
 }
 
-/** Textura do corpo pintada com as cores (mm3d-36) para quem não usa a biblioteca (Jetpack); null = a original. */
-export function tintedAvatarTexture(id: BodyId, look: string) {
-  return tintedTexture(BASE, ASSETS.textures[id], id, look)
-}
 const REST_CLIPS = ["Lie", "Sleep", "TiredIdle", "TiredWalk", "InjuredIdle", "InjuredWalk"] as const
 const RIDE_CLIPS = ["BikeA", "BikeB", "BikePedal", "SkateRide", "SkatePush", "SkatesGlide", "SkatesStride"] as const
 const PAINT_CLIPS = ["PIdle", "PFire", "PWalk", "PRun", "PStrafe", "Air", "AirSide", "Air2", "Punch"] as const
@@ -502,19 +446,14 @@ export class AvatarLibrary {
   /**
    * Material do corpo. Sem mapas PBR: o próprio basecolor já traz o sombreado
    * do modelo, então o material é simples (difuso + um pouco de emissivo para
-   * não escurecer o sombreado que já vem pintado).
-   *
-   * Com cores (mm3d-36): um material por (textura, look). Nasce com a textura
-   * original e troca pela pintada (avatar-tint.ts) quando ela fica pronta.
+   * não escurecer o sombreado que já vem pintado). Um material por textura (as cores
+   * do personagem padrão saíram em 2026-11-14: ninguém é pintado).
    */
-  private materialFor(id: BodyId, look = "") {
+  private materialFor(id: BodyId) {
     const file = this.skinFile(ASSETS.textures[id])
-    // a chave sem pintar nada: material já feito não pede o canvas de novo (o cache dele tem teto)
-    const painted = !!TINT_MASK[id] && isTinted(look)
-    const key = painted ? `${file}|${look}` : file
+    const key = file
     let m = this.materials.get(key)
     if (!m) {
-      const tint = painted ? tintedTexture(BASE, file, id, look) : null
       const tex = new Texture(BASE + file, this.scene, false, false)
       const mat = new StandardMaterial(`mm-avatar-${key}`, this.scene)
       mat.diffuseTexture = tex
@@ -529,18 +468,6 @@ export class AvatarLibrary {
       }
       this.materials.set(key, mat)
       m = mat
-      tint
-        ?.then((canvas) => {
-          if (this.disposed || this.materials.get(key) !== mat) return
-          const dt = new DynamicTexture(`mm-avatar-${key}-tint`, canvas, this.scene, true)
-          dt.update(false)
-          dt.wrapU = tex.wrapU
-          dt.wrapV = tex.wrapV
-          mat.diffuseTexture = dt
-          mat.emissiveTexture = dt
-          tex.dispose()
-        })
-        .catch((err) => console.warn("[meu-mundo] cores não aplicadas", look, err))
     }
     return m
   }
@@ -712,7 +639,10 @@ export class AvatarLibrary {
   }
 
   /** Cria um avatar com esqueleto e animações próprios. */
-  async create(id: BodyId, look = ""): Promise<AvatarRig> {
+  async create(body: BodyId, look = ""): Promise<AvatarRig> {
+    // corpo que não existe mais (o personagem padrão saiu em 2026-11-14; um "normal" guardado no
+    // aparelho ou vindo de uma sala antiga) = Sergio, nunca um arquivo "undefined"
+    const id: BodyId = body in ASSETS.bodies ? body : "sergio"
     // A pose de sentar e as de descanso/cansaço são opcionais: se o arquivo
     // falhar, o avatar existe (sentado/deitado fica parado em pé, sem quebrar
     // a casa; cansado anda normal).
@@ -814,7 +744,7 @@ export class AvatarLibrary {
     const feet = [byName.get("mixamorig:LeftFoot"), byName.get("mixamorig:RightFoot")] as (TransformNode | undefined)[]
     const meshes = root.getChildMeshes(false) as AbstractMesh[]
     for (const mesh of meshes) {
-      mesh.material = this.materialFor(id, look)
+      mesh.material = this.materialFor(id)
       mesh.isPickable = false
       // Caixa COM o esqueleto (pose de ligação, uma vez): a malha é quantizada
       // e a desquantização mora nas matrizes de ligação — sem o esqueleto, a
@@ -857,7 +787,7 @@ export class AvatarLibrary {
     }
     mesh.parent = main
     mesh.skeleton = main.skeleton
-    mesh.material = this.materialFor(id, look)
+    mesh.material = this.materialFor(id)
     mesh.isPickable = false
     e.rootNodes.forEach((n) => n.dispose())
     e.skeletons.forEach((s) => s.dispose())

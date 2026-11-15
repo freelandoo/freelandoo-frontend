@@ -349,7 +349,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   const home = centerP
     ? { x: centerP.center.arrival.x, z: centerP.center.arrival.z, rotationY: centerP.center.arrival.facing }
     : (payload as NeighborhoodPayload).me.home
-  let myBody: BodyId = opts.parked?.body ?? (isBody(payload.me.body) ? payload.me.body : "normal")
+  let myBody: BodyId = opts.parked?.body ?? (isBody(payload.me.body) ? payload.me.body : "sergio")
   const local = new LocalPlayer(new Character(scene, lib, mats, myBody, null, true, opts.parked?.look ?? payload.me.look ?? ""), home.x, home.z, home.rotationY)
   // Sombra real (visual premium §14): só no high; lançam o jogador e os monstros perto, o cenário
   // só recebe; os outros jogadores e os robôs seguem com o disco de contato da E2.
@@ -634,7 +634,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       }
       seen.add(sid)
       let r = remotes.get(sid)
-      const body = isBody(p.body) ? p.body : "normal"
+      const body = isBody(p.body) ? p.body : "sergio"
       if (!r) {
         r = new RemotePlayer(new Character(scene, lib, mats, body, p.name, false, p.look ?? ""), p.x, p.z, p.facing)
         r.name = p.name

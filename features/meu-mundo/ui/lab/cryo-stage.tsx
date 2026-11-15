@@ -347,7 +347,7 @@ function IcePanel({ title, icon, onClose, children, t }: { title: string; icon: 
 
 const portraitOfSpecies = (species: string, sex: "m" | "f") => {
   const body = speciesBody(species, sex, "adult") as BodyId | null
-  return (body && PORTRAIT[body]) || PORTRAIT.normal
+  return (body && PORTRAIT[body]) || PORTRAIT.sergio
 }
 
 function Pick({ img, title, sub, on, disabled, onClick, frozen }: { img: string; title: string; sub: string; on: boolean; disabled?: boolean; onClick: () => void; frozen?: boolean }) {
@@ -451,7 +451,7 @@ function MixPanel({
       </h3>
       <div className="mt-1 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
         {chars.map((c) => (
-          <Pick key={c.id} img={PORTRAIT[c.body] ?? PORTRAIT.normal} title={c.petName || speciesName(c.species, t)} sub={charSub(c)} on={a === c.id} disabled={!c.adult || b === c.id} frozen={c.status === "capsule"} onClick={() => setA(c.id)} />
+          <Pick key={c.id} img={PORTRAIT[c.body] ?? PORTRAIT.sergio} title={c.petName || speciesName(c.species, t)} sub={charSub(c)} on={a === c.id} disabled={!c.adult || b === c.id} frozen={c.status === "capsule"} onClick={() => setA(c.id)} />
         ))}
       </div>
 
@@ -460,7 +460,7 @@ function MixPanel({
       </h3>
       <div className="mt-1 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
         {chars.map((c) => (
-          <Pick key={c.id} img={PORTRAIT[c.body] ?? PORTRAIT.normal} title={c.petName || speciesName(c.species, t)} sub={charSub(c)} on={b === c.id} disabled={!c.adult || a === c.id} frozen={c.status === "capsule"} onClick={() => setB(c.id)} />
+          <Pick key={c.id} img={PORTRAIT[c.body] ?? PORTRAIT.sergio} title={c.petName || speciesName(c.species, t)} sub={charSub(c)} on={b === c.id} disabled={!c.adult || a === c.id} frozen={c.status === "capsule"} onClick={() => setB(c.id)} />
         ))}
         {genes.map((g) => (
           <Pick

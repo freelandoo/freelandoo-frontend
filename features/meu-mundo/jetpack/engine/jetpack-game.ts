@@ -333,7 +333,7 @@ export function createJetpackGame(opts: JetGameOptions): JetGameHandle {
   if (mp) {
     for (const seat of mp.start.seats) {
       if (seat.slot === mp.start.me) continue
-      const ch = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, isBody(seat.body) ? seat.body : "normal", seat.name || null, false, seat.look ?? "")
+      const ch = new Character(scene, lib, { fallback: fallbackMat, shadow: shadowMat }, isBody(seat.body) ? seat.body : "sergio", seat.name || null, false, seat.look ?? "")
       ch.setHeight(PILOT_H)
       remotes.push({ seat, char: ch, pack: new PackRig(kit, ch.holder, `jt-r${seat.slot}`), fall: 0, vy: 0, y: TUNING.startY, lastX: 0, roll: 0, legs: { char: ch, tread: 1, t: Math.random() * 3 } })
       legs.push(remotes[remotes.length - 1].legs)

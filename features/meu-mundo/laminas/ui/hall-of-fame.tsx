@@ -95,7 +95,7 @@ export function HallOfFame({ onExit, onFight }: { onExit: () => void; onFight: (
 
   const podium = board ? board.top.slice(0, 3) : []
   const cur: HallRank | undefined = podium[idx]
-  const curBody = cur?.person?.body ?? "normal"
+  const curBody = cur?.person?.body ?? "sergio"
   const curEmpty = !!cur && !cur.person
   useEffect(() => {
     if (!cur) return

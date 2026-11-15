@@ -243,7 +243,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
   shadowMat.alpha = 0.22
   const mats = { fallback: fallbackMat, shadow: shadowMat }
 
-  let myBody: BodyId = isBody(payload.me.body) ? payload.me.body : "normal"
+  let myBody: BodyId = isBody(payload.me.body) ? payload.me.body : "sergio"
   const char = new Character(scene, lib, mats, myBody, null, true, payload.me.look ?? "")
   const e = def.entry
   const body: InteriorBody = { x: e.x, z: e.z, vx: 0, vz: 0, facing: e.facing, floor: e.floor, y: def.floors[e.floor].y }
@@ -469,7 +469,7 @@ export function createHouseGame(opts: HouseGameOptions): HouseGameHandle {
       }
       seen.add(sid)
       let r = remotes.get(sid)
-      const b = isBody(p.body) ? p.body : "normal"
+      const b = isBody(p.body) ? p.body : "sergio"
       if (!r) {
         r = new RemotePlayer(new Character(scene, lib, mats, b, p.name, false, p.look ?? ""), p.x, p.z, p.facing)
         r.name = p.name

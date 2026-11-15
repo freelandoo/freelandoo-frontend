@@ -90,7 +90,7 @@ export default function CharacterCapsule({ t, admin = false, onClose, onChanged,
         <div className="flex gap-3 p-3" style={ice ? { boxShadow: `inset 0 0 0 1px ${ICE.line}, inset 0 0 22px rgba(115,224,255,.16)` } : undefined}>
           <div className="relative h-24 w-16 shrink-0 overflow-hidden" style={{ borderRadius: MM.radius.card }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={PORTRAIT[c.body] ?? PORTRAIT.normal} alt="" className="h-full w-full object-cover" style={ice ? { filter: "saturate(.35) hue-rotate(165deg) brightness(1.15) contrast(.95)" } : undefined} />
+            <img src={PORTRAIT[c.body] ?? PORTRAIT.sergio} alt="" className="h-full w-full object-cover" style={ice ? { filter: "saturate(.35) hue-rotate(165deg) brightness(1.15) contrast(.95)" } : undefined} />
             {ice && (
               <span
                 aria-hidden

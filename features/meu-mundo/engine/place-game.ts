@@ -108,21 +108,21 @@ const LIGHT: Record<string, { clear: [number, number, number]; ground: [number, 
 }
 const WARM = { clear: [0.17, 0.13, 0.1] as [number, number, number], ground: [0.68, 0.6, 0.5] as [number, number, number], hemi: 1.05 }
 
-/** Corpo e cores de cada NPC (código `look` de avatar-colors: camiseta/calça/pele/cabelo). */
+/** Corpo de cada NPC: homens Sergio, mulheres Ekaterina (o personagem padrão pintável saiu em 2026-11-14). */
 const NPC_LOOK: Record<string, { body: BodyId; look: string }> = {
-  vendedor: { body: "normal", look: "4220" },
-  caixa: { body: "female", look: "6151" },
-  pizzaiolo: { body: "fat", look: "1132" },
-  atendente: { body: "normal", look: "0453" },
-  secretaria: { body: "female", look: "4062" },
-  professor: { body: "normal", look: "4316" },
-  professora: { body: "female", look: "7230" },
-  bibliotecaria: { body: "female", look: "3546" },
-  recepcionista: { body: "female", look: "9013" },
-  personal: { body: "strong", look: "2224" },
-  padre: { body: "normal", look: "2207" },
-  delegado: { body: "strong", look: "4210" },
-  policial: { body: "normal", look: "4251" },
+  vendedor: { body: "sergio", look: "" },
+  caixa: { body: "ekaterina", look: "" },
+  pizzaiolo: { body: "sergio", look: "" },
+  atendente: { body: "sergio", look: "" },
+  secretaria: { body: "ekaterina", look: "" },
+  professor: { body: "sergio", look: "" },
+  professora: { body: "ekaterina", look: "" },
+  bibliotecaria: { body: "ekaterina", look: "" },
+  recepcionista: { body: "ekaterina", look: "" },
+  personal: { body: "sergio", look: "" },
+  padre: { body: "sergio", look: "" },
+  delegado: { body: "sergio", look: "" },
+  policial: { body: "sergio", look: "" },
   // Corpos de raposa existentes; não inventar o asset do Mestre de Armas javali.
   forjador: { body: "raposa", look: "" },
   armeira: { body: "raposa_f", look: "" },
@@ -183,7 +183,7 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
 
   // NPCs (mm3d-37): parados no lugar, sentados ou em pé.
   const npcs: { char: Character; npc: InteriorNpc }[] = (def.npcs ?? []).map((n) => {
-    const who = NPC_LOOK[n.role] ?? { body: "normal" as BodyId, look: "0032" }
+    const who = NPC_LOOK[n.role] ?? { body: "sergio" as BodyId, look: "" }
     const c = new Character(scene, lib, mats, who.body, null, false, who.look)
     c.place(n.x, n.z, n.facing, def.floors[n.floor]?.y ?? 0)
     return { char: c, npc: n }

@@ -128,7 +128,7 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
       <FightPlate
         pw={pw}
         barK={BAR_K}
-        portrait={PORTRAIT[body] ?? PORTRAIT.normal}
+        portrait={PORTRAIT[body] ?? PORTRAIT.sergio}
         name={name}
         hp={pow}
         hpMax={statTop(pow)}

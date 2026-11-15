@@ -32,7 +32,7 @@ import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { Constants } from "@babylonjs/core/Engines/constants"
-import { AvatarLibrary, tintedAvatarTexture, type AvatarRig } from "./avatars"
+import { AvatarLibrary, type AvatarRig } from "./avatars"
 import { STAGE } from "../skins"
 import type { BodyId } from "../types"
 
@@ -343,8 +343,6 @@ export class SkinStage {
    */
   async show(look: StageLook, quiet = false) {
     const my = ++this.seq
-    // A textura pintada antes do clone do material (o clone leva a textura da hora).
-    await tintedAvatarTexture(look.body, look.look ?? "")?.catch(() => null)
     const rig = await this.lib.create(look.body, look.look ?? "")
     await Promise.resolve()
     if (this.disposed || my !== this.seq) {
