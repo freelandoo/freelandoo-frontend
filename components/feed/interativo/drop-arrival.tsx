@@ -22,6 +22,8 @@ interface Props {
   dropId: string
   kind: DropKind
   sender: FxUser
+  /** Baú de doação: etiqueta própria (e "anônima" sem @). */
+  donation?: boolean
   onArrived?: (dropId: string) => void
   children: ReactNode
 }
@@ -32,7 +34,7 @@ const ENTER = {
   capsule: { y: -90, scaleY: 1, scaleX: 0.97, spring: { type: "spring" as const, stiffness: 140, damping: 22, mass: 1 } },
 }
 
-function DropArrivalImpl({ dropId, kind, sender, onArrived, children }: Props) {
+function DropArrivalImpl({ dropId, kind, sender, donation, onArrived, children }: Props) {
   const t = useTranslations("FeedFx")
   const done = useRef(false)
   const reduced = prefersReducedMotion()
@@ -50,8 +52,11 @@ function DropArrivalImpl({ dropId, kind, sender, onArrived, children }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const label =
-    kind === "gift"
+  const label = donation
+    ? sender.username
+      ? t("donationFrom", "Doação de @{u}")
+      : t("donationAnon", "Doação anônima")
+    : kind === "gift"
       ? t("giftFrom", "Presente de @{u}")
       : kind === "capsule"
         ? t("capsuleFrom", "Mensagem programada de @{u}")

@@ -73,6 +73,7 @@ const KIND_FILTERS = [
   { key: "service", label: "Serviço", labelKey: "kindService" },
   { key: "course", label: "Curso", labelKey: "kindCourse" },
   { key: "affiliate", label: "Afiliado", labelKey: "kindAffiliate" },
+  { key: "bau", label: "Baú de doação", labelKey: "kindBau" },
 ]
 
 /* ═══════════════════════════════════════════════════════════════════════════ */

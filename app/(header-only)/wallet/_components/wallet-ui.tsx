@@ -18,7 +18,7 @@
 // Tela nova da Carteira importa DAQUI.
 
 import type { ReactNode } from "react"
-import { ShoppingBag, Briefcase, GraduationCap, Percent, Ticket, Wallet } from "lucide-react"
+import { ShoppingBag, Briefcase, GraduationCap, Percent, Ticket, Wallet, Gift } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
@@ -60,6 +60,8 @@ export const KIND_META: Record<string, { label: string; labelKey: string; Icon: 
   service: { label: "Serviço", labelKey: "kindService", Icon: Briefcase },
   course: { label: "Curso", labelKey: "kindCourse", Icon: GraduationCap },
   affiliate: { label: "Afiliado", labelKey: "kindAffiliate", Icon: Percent },
+  // Baú de doação do feed (mig 460).
+  bau: { label: "Baú de doação", labelKey: "kindBau", Icon: Gift },
 }
 export const STATUS_META: Record<string, { label: string; labelKey: string; cls: string }> = {
   paid: { label: "Recebido", labelKey: "statusReceived", cls: "bg-[#00876B] text-white" },

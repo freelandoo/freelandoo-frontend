@@ -12,11 +12,27 @@ import {
   Store,
   Calendar,
   ExternalLink,
+  Gift,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 type Status = "aguardando" | "aprovado" | "pago" | "revertido" | "devido"
-type Origin = "loja" | "agendamento" | "afiliado"
+type Origin = "loja" | "agendamento" | "afiliado" | "bau"
+
+/** Baú de doação do feed (mig 460): repasse de quem abriu o baú. */
+type BauItem = {
+  id_payout: number
+  status: Status
+  net_cents: number
+  gross_cents: number
+  receiver_display_name: string | null
+  receiver_username: string | null
+  receiver_email: string | null
+  uf: string | null
+  created_at: string
+  available_at: string
+  paid_out_at: string | null
+}
 
 // ── Shapes dos 3 endpoints de leitura existentes ──────────────────────────────
 interface SellerItem {
@@ -96,6 +112,7 @@ const ORIGIN_META: Record<Origin, { label: string; icon: typeof Store; badge: st
   loja: { label: "Loja", icon: Store, badge: "bg-emerald-500/15 text-emerald-300 border-emerald-700" },
   agendamento: { label: "Agenda", icon: Calendar, badge: "bg-blue-500/15 text-blue-300 border-blue-700" },
   afiliado: { label: "Afiliado", icon: HandCoins, badge: "bg-amber-500/15 text-amber-300 border-amber-700" },
+  bau: { label: "Baú de doação", icon: Gift, badge: "bg-yellow-500/15 text-yellow-300 border-yellow-700" },
 }
 
 function formatBRL(cents: number) {
@@ -128,6 +145,8 @@ export default function RepassesPage() {
   const [booking, setBooking] = useState<BookingItem[]>([])
   const [bookingSummary, setBookingSummary] = useState<HoldbackSummary | null>(null)
   const [affiliates, setAffiliates] = useState<AffiliateSummaryRow[]>([])
+  const [baus, setBaus] = useState<BauItem[]>([])
+  const [bauSummary, setBauSummary] = useState<HoldbackSummary | null>(null)
 
   const [noteFor, setNoteFor] = useState<Row | null>(null)
   const [noteValue, setNoteValue] = useState("")
@@ -142,12 +161,13 @@ export default function RepassesPage() {
     setError(null)
     const headers = { Authorization: `Bearer ${token}` }
     try {
-      const [sRes, bRes, aRes] = await Promise.all([
+      const [sRes, bRes, aRes, xRes] = await Promise.all([
         fetch(`/api/admin/seller-payouts?status=${statusFilter}`, { headers, cache: "no-store" }),
         fetch(`/api/admin/booking-payouts?status=${statusFilter}`, { headers, cache: "no-store" }),
         fetch(`/api/admin/affiliate/payouts/summary`, { headers, cache: "no-store" }),
+        fetch(`/api/admin/feed-bau/payouts?status=${statusFilter}`, { headers, cache: "no-store" }),
       ])
-      const [sData, bData, aData] = await Promise.all([sRes.json(), bRes.json(), aRes.json()])
+      const [sData, bData, aData, xData] = await Promise.all([sRes.json(), bRes.json(), aRes.json(), xRes.json().catch(() => null)])
       if (!sRes.ok && !bRes.ok && !aRes.ok) {
         setError(sData?.error || "Erro ao carregar repasses")
         setState("error")
@@ -158,6 +178,8 @@ export default function RepassesPage() {
       setBooking(bRes.ok ? (bData.items || []) : [])
       setBookingSummary(bRes.ok ? bData.summary || null : null)
       setAffiliates(aRes.ok ? (aData.items || []) : [])
+      setBaus(xRes.ok ? (xData?.items || []) : [])
+      setBauSummary(xRes.ok ? xData?.summary || null : null)
       setState("loaded")
     } catch {
       setError("Erro de conexão")
@@ -238,8 +260,24 @@ export default function RepassesPage() {
       })
     }
 
+    for (const b of baus) {
+      out.push({
+        key: `bau-${b.id_payout}`,
+        origin: "bau",
+        status: b.status,
+        payee: b.receiver_display_name || "—",
+        payeeSub: `@${b.receiver_username || "—"} · ${b.receiver_email || "—"}`,
+        context: `baú de ${formatBRL(Number(b.gross_cents))} · ${b.uf || "—"} · #${b.id_payout}`,
+        amount_cents: Number(b.net_cents),
+        dateMain: { label: "Aberto", value: b.created_at },
+        dateRelease: b.available_at,
+        paidAt: b.paid_out_at,
+        payAction: b.status === "aprovado" ? { url: `/api/admin/feed-bau/payouts/${b.id_payout}/mark-paid` } : undefined,
+      })
+    }
+
     return out
-  }, [seller, booking, affiliates, statusFilter])
+  }, [seller, booking, affiliates, baus, statusFilter])
 
   // Filtro origem + busca textual no client
   const visible = useMemo(() => {
@@ -265,11 +303,11 @@ export default function RepassesPage() {
     const affPago = affiliates.reduce((s, a) => s + n(a.paid_cents), 0)
     return {
       aguardando:
-        n(sellerSummary?.aguardando_cents) + n(bookingSummary?.aguardando_cents) + affAguardando,
-      aprovado: n(sellerSummary?.aprovado_cents) + n(bookingSummary?.aprovado_cents) + affAprovado,
-      pago: n(sellerSummary?.pago_cents) + n(bookingSummary?.pago_cents) + affPago,
+        n(sellerSummary?.aguardando_cents) + n(bookingSummary?.aguardando_cents) + affAguardando + n(bauSummary?.aguardando_cents),
+      aprovado: n(sellerSummary?.aprovado_cents) + n(bookingSummary?.aprovado_cents) + affAprovado + n(bauSummary?.aprovado_cents),
+      pago: n(sellerSummary?.pago_cents) + n(bookingSummary?.pago_cents) + affPago + n(bauSummary?.pago_cents),
     }
-  }, [sellerSummary, bookingSummary, affiliates])
+  }, [sellerSummary, bookingSummary, affiliates, bauSummary])
 
   async function markPaid(row: Row, note: string) {
     if (!row.payAction) return
@@ -352,7 +390,7 @@ export default function RepassesPage() {
 
         {/* Origin filter + search */}
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          {(["todas", "loja", "agendamento", "afiliado"] as const).map((o) => (
+          {(["todas", "loja", "agendamento", "afiliado", "bau"] as const).map((o) => (
             <button
               key={o}
               type="button"

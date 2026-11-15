@@ -34,6 +34,9 @@ export interface FxDrop {
   payload: {
     chest?: string
     opened?: boolean
+    /** Baú de DOAÇÃO (mig 460): dinheiro de alguém da região, sorteado. */
+    donation?: boolean
+    anonymous?: boolean
     message?: string | null
     scheduled_for?: string | null
     written_at?: string | null

@@ -17,6 +17,7 @@ import { fx, installFeedFx } from "@/lib/feed-fx"
 import { fxApi, type FxUser } from "@/lib/feed-fx/api"
 import { CHESTS, REACTIONS, STICKERS, STICKER_BY_ID, type Chest, type Reaction } from "@/lib/feed-fx/gifts"
 import { ChestArt, ReactionOverlay, StickerBadge } from "@/components/feed/interativo/fx-art"
+import { DonationForm } from "@/components/feed/interativo/donation-form"
 
 interface Owned {
   sticker_id: string
@@ -37,6 +38,8 @@ export default function FeedBauPage() {
   const [flying, setFlying] = useState(false)
   const [preview, setPreview] = useState(0)
   const [owned, setOwned] = useState<Owned[]>([])
+  // Baú de DOAÇÃO (mig 460) é o padrão; o baú para amigo é a outra aba.
+  const [mode, setMode] = useState<"doacao" | "amigo">("doacao")
 
   const load = useCallback(async () => {
     try {
@@ -113,11 +116,25 @@ export default function FeedBauPage() {
           </div>
           <h1 className="fl-display text-4xl leading-[0.95] text-[#F5F1E8] sm:text-5xl">{t("chestTitle", "Mandar um baú")}</h1>
           <p className="mt-4 text-base leading-relaxed text-[#C9C2B6]">
-            {t("chestLead", "O baú cai no feed de quem aceitou seus lançamentos. Só a pessoa vê o que tem dentro quando abrir.")}
+            {mode === "doacao"
+              ? t("bauLead", "Coloque o valor que quiser no baú e escolha a região: ele cai no feed de uma pessoa sorteada de lá. Ela não paga nada e não sabe que vai ganhar.")
+              : t("chestLead", "O baú cai no feed de quem aceitou seus lançamentos. Só a pessoa vê o que tem dentro quando abrir.")}
           </p>
 
+          {logged && (
+            <div className="mt-6 flex gap-2">
+              <button onClick={() => { setMode("doacao"); fx("mirar", "mirar") }} className={chip(mode === "doacao")}>
+                {t("bauTabDonation", "Baú de doação")}
+              </button>
+              <button onClick={() => { setMode("amigo"); fx("mirar", "mirar") }} className={chip(mode === "amigo")}>
+                {t("bauTabFriend", "Baú para amigo")}
+              </button>
+            </div>
+          )}
           {!logged ? (
             <p className="mt-10 font-bold text-[#F2B705]">{t("needLogin", "Entre na sua conta para usar.")}</p>
+          ) : mode === "doacao" ? (
+            <DonationForm />
           ) : loading ? (
             <Loader2 className="mt-10 h-6 w-6 animate-spin text-[#9A938A]" />
           ) : targets.length === 0 ? (
@@ -245,7 +262,7 @@ export default function FeedBauPage() {
           )}
 
           {/* coleção */}
-          {logged && !loading && (
+          {logged && !loading && mode === "amigo" && (
             <>
               <h2 className="mt-14 text-xs font-black uppercase tracking-[0.25em] text-[#9A938A]">
                 {t("collection", "Sua coleção")} · {ownedMap.size}/{STICKERS.length}

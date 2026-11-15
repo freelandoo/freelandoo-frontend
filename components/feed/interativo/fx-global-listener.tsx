@@ -24,7 +24,16 @@ export function FxGlobalListener() {
     installFeedFx()
     const offNotice = onRealtime("fi:notice", (raw) => {
       const p = (raw || {}) as { type?: string; by?: Who }
-      if (p.type === "gift-opened") {
+      if (p.type === "bau-paid") {
+        fx("carimbo", "chegar")
+        toast.success(t("toastBauPaid", "Pagamento confirmado: seu baú está no sorteio da região."))
+      } else if (p.type === "bau-dropped") {
+        fx("bau-cai", "bau")
+        toast(t("toastBauDropped", "Seu baú de doação caiu no feed de alguém!"))
+      } else if (p.type === "bau-opened") {
+        fx("bau-premio", "premio")
+        toast.success(t("toastBauOpened", "Abriram o seu baú de doação. Obrigado!"))
+      } else if (p.type === "gift-opened") {
         fx("bau-premio", "premio", { gain: 0.7 })
         toast.success(t("toastGiftOpened", "@{u} abriu o seu baú!").replace("{u}", p.by?.username || "—"))
       }

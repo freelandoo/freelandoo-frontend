@@ -259,6 +259,67 @@ const FEEDFX = {
   syncWith: ["Feed sincronizado com @{u}", "Feed synced with @{u}", "Feed sincronizado con @{u}"],
   syncYouLead: ["você conduz", "you lead", "tú conduces"],
   toastSyncInvite: ["@{u} quer ver o feed junto com você", "@{u} wants to watch the feed with you", "@{u} quiere ver el feed contigo"],
+
+  // ── baú de doação (mig 460) ──
+  bauAmount: ["Quanto vai no baú", "How much goes in the chest", "Cuánto va en el cofre"],
+  bauAnonOff: ["Mostrar meu nome", "Show my name", "Mostrar mi nombre"],
+  bauAnonOn: ["Doação anônima", "Anonymous donation", "Donación anónima"],
+  bauFeeDonation: ["Freelandoo (doação)", "Freelandoo (donation)", "Freelandoo (donación)"],
+  bauFeeProcessor: ["Tarifa do pagamento", "Payment fee", "Tarifa del pago"],
+  bauFeeProcessorValue: ["a do Mercado Pago", "Mercado Pago's", "la de Mercado Pago"],
+  bauFeeWithdraw: ["Freelandoo (saque)", "Freelandoo (withdrawal)", "Freelandoo (retiro)"],
+  bauFeedTeaser: ["Um baú de doação caiu para você!", "A donation chest dropped for you!", "¡Un cofre de donación cayó para ti!"],
+  bauLead: [
+    "Coloque o valor que quiser no baú e escolha a região: ele cai no feed de uma pessoa sorteada de lá. Ela não paga nada e não sabe que vai ganhar.",
+    "Put any amount in the chest and pick the region: it lands in the feed of a randomly drawn person there. They pay nothing and don't know they'll win.",
+    "Pon el valor que quieras en el cofre y elige la región: cae en el feed de una persona sorteada de allí. No paga nada y no sabe que va a ganar.",
+  ],
+  bauMax: ["Máximo de {v}", "Maximum {v}", "Máximo de {v}"],
+  bauMin: ["Mínimo de {v}", "Minimum {v}", "Mínimo de {v}"],
+  bauMine: ["Seus baús de doação", "Your donation chests", "Tus cofres de donación"],
+  bauNet: ["Quem receber fica com cerca de", "The receiver keeps about", "Quien reciba se queda con cerca de"],
+  bauNotLootbox: [
+    "É uma doação: quem recebe não paga nada e não sabe que vai ganhar.",
+    "It's a donation: the receiver pays nothing and doesn't know they'll win.",
+    "Es una donación: quien recibe no paga nada y no sabe que va a ganar.",
+  ],
+  bauPaidText: [
+    "Assim que o pagamento confirmar, ele entra no sorteio da região e cai no feed de alguém.",
+    "As soon as the payment confirms, it enters the region's draw and lands in someone's feed.",
+    "Apenas se confirme el pago, entra en el sorteo de la región y cae en el feed de alguien.",
+  ],
+  bauPaidTitle: ["Baú solto!", "Chest released!", "¡Cofre suelto!"],
+  bauPay: ["Pagar {v} e soltar o baú", "Pay {v} and release the chest", "Pagar {v} y soltar el cofre"],
+  bauPayEmpty: ["Pagar e soltar o baú", "Pay and release the chest", "Pagar y soltar el cofre"],
+  bauPickState: ["Escolha o estado", "Pick the state", "Elige el estado"],
+  bauRegion: ["Região", "Region", "Región"],
+  bauReleased: ["Vai para seus Recebimentos e libera em {d}", "Goes to your Earnings and is released on {d}", "Va a tus Cobros y se libera el {d}"],
+  bauSeeEarnings: ["Ver Recebimentos", "See Earnings", "Ver Cobros"],
+  bauStAssigned: ["caiu para alguém", "dropped for someone", "cayó para alguien"],
+  bauStOpened: ["aberto", "opened", "abierto"],
+  bauStPaid: ["no sorteio da região", "in the region's draw", "en el sorteo de la región"],
+  bauStPending: ["esperando pagamento", "awaiting payment", "esperando el pago"],
+  bauStRefunded: ["estornado", "refunded", "reembolsado"],
+  bauState: ["Estado", "State", "Estado"],
+  bauTabDonation: ["Baú de doação", "Donation chest", "Cofre de donación"],
+  bauTabFriend: ["Baú para amigo", "Chest for a friend", "Cofre para un amigo"],
+  bauWhere: ["Onde o baú vai cair", "Where the chest will land", "Dónde caerá el cofre"],
+  bauWhereHint: [
+    "Ele cai para uma pessoa sorteada que abrir o feed ali. Se ninguém da região aparecer em uma semana, vale o estado todo.",
+    "It goes to a randomly drawn person who opens the feed there. If no one from the region shows up within a week, the whole state counts.",
+    "Cae para una persona sorteada que abra el feed allí. Si nadie de la región aparece en una semana, vale todo el estado.",
+  ],
+  bauWholeState: ["O estado inteiro", "The whole state", "Todo el estado"],
+  bauYouGet: ["Para você", "For you", "Para ti"],
+  donationAnon: ["Doação anônima", "Anonymous donation", "Donación anónima"],
+  donationFrom: ["Doação de @{u}", "Donation from @{u}", "Donación de @{u}"],
+  toastBauDropped: ["Seu baú de doação caiu no feed de alguém!", "Your donation chest dropped into someone's feed!", "¡Tu cofre de donación cayó en el feed de alguien!"],
+  toastBauOpened: ["Abriram o seu baú de doação. Obrigado!", "Your donation chest was opened. Thank you!", "Abrieron tu cofre de donación. ¡Gracias!"],
+  toastBauPaid: [
+    "Pagamento confirmado: seu baú está no sorteio da região.",
+    "Payment confirmed: your chest is in the region's draw.",
+    "Pago confirmado: tu cofre está en el sorteo de la región.",
+  ],
 }
 
 const FEED = {
@@ -277,7 +338,11 @@ const FEED = {
 
 const OVERRIDE = {}
 
-const GROUPS = { FeedFx: FEEDFX, Feed: FEED }
+const WALLET = {
+  kindBau: ["Baú de doação", "Donation chest", "Cofre de donación"],
+}
+
+const GROUPS = { FeedFx: FEEDFX, Feed: FEED, Wallet: WALLET }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

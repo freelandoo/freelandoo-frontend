@@ -437,7 +437,7 @@ function FeedPageInner() {
               .filter((x) => x.afterKey === null)
               .map((x) => (
                 <div key={x._k} data-entry-key={x._k}>
-                  <DropArrival dropId={x.drop.id_drop} kind={x.drop.kind} sender={x.drop.sender} onArrived={markSeen}>
+                  <DropArrival dropId={x.drop.id_drop} kind={x.drop.kind} sender={x.drop.sender} donation={!!x.drop.payload.donation} onArrived={markSeen}>
                     {x.drop.kind === "gift" ? <GiftCard drop={x.drop} /> : <CapsuleCard drop={x.drop} />}
                   </DropArrival>
                 </div>
@@ -482,7 +482,7 @@ function FeedPageInner() {
                   </div>
                   {after.map((x) => (
                     <div key={x._k} data-entry-key={x._k}>
-                      <DropArrival dropId={x.drop.id_drop} kind={x.drop.kind} sender={x.drop.sender} onArrived={markSeen}>
+                      <DropArrival dropId={x.drop.id_drop} kind={x.drop.kind} sender={x.drop.sender} donation={!!x.drop.payload.donation} onArrived={markSeen}>
                         {x.drop.kind === "gift" ? <GiftCard drop={x.drop} /> : <CapsuleCard drop={x.drop} />}
                       </DropArrival>
                     </div>

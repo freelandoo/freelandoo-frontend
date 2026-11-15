@@ -9,16 +9,38 @@
 //   5. a mensagem aparece em "recorte" levemente torto
 // O conteúdo só existe depois do POST /open (a inbox não revela nada).
 
-import { memo, useState } from "react"
-import { AnimatePresence, motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
+import { memo, useEffect, useState } from "react"
+import Link from "next/link"
+import { AnimatePresence, animate, motion } from "framer-motion"
+import { Loader2, Wallet } from "lucide-react"
 import { fx } from "@/lib/feed-fx"
 import { fxApi, type FxDrop } from "@/lib/feed-fx/api"
 import { CHEST_BY_ID, RARITY_COLOR, STICKER_BY_ID, type Rarity, type Reaction } from "@/lib/feed-fx/gifts"
-import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { Burst, ChestArt, ReactionOverlay, StickerBadge } from "./fx-art"
 
+interface Receipt {
+  gross_cents: number
+  platform_fee_cents: number
+  processor_fee_cents: number
+  received_cents: number
+  withdraw_fee_cents: number
+  net_cents: number
+  available_at: string
+}
+
+/** O valor do baú "corre" até o número (placar), só o texto muda. */
+function CountUp({ cents, format }: { cents: number; format: (c: number) => string }) {
+  const [v, setV] = useState(0)
+  useEffect(() => {
+    const ctl = animate(0, cents, { duration: 1.3, ease: [0.25, 1, 0.5, 1], onUpdate: (x) => setV(Math.round(x)) })
+    return () => ctl.stop()
+  }, [cents])
+  return <>{format(v)}</>
+}
+
 interface Opened {
+  donation?: Receipt | null
   chest: string
   sticker: string | null
   rarity: Rarity | null
@@ -29,6 +51,9 @@ interface Opened {
 
 function GiftCardImpl({ drop }: { drop: FxDrop }) {
   const t = useTranslations("FeedFx")
+  const locale = useLocale()
+  const brl = (c: number) => new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format(c / 100)
+  const isDonation = !!drop.payload.donation
   const [phase, setPhase] = useState<"closed" | "shaking" | "open" | "error">("closed")
   const [gift, setGift] = useState<Opened | null>(null)
   const chest = drop.payload.chest || "madeira"
@@ -46,6 +71,8 @@ function GiftCardImpl({ drop }: { drop: FxDrop }) {
       setGift(r.gift)
       setPhase("open")
       window.setTimeout(() => fx("bau-premio", "premio"), 380)
+      // Doação: o valor corre e tilinta mais uma vez quando assenta.
+      if (r.gift.donation) window.setTimeout(() => fx("brilho", "premio"), 1500)
     } catch {
       fx("erro", "erro")
       setPhase("error")
@@ -76,7 +103,13 @@ function GiftCardImpl({ drop }: { drop: FxDrop }) {
           >
             <ChestArt chest={chest} open={phase === "open"} shake={phase === "closed"} />
           </motion.div>
-          {phase === "open" && <Burst seed={drop.id_drop} colors={[glow, "#F2B705", "#F5F1E8", "#FF3D6E"]} count={30} />}
+          {phase === "open" && (
+            <Burst
+              seed={drop.id_drop}
+              colors={isDonation ? ["#F2B705", "#FFE15A", "#C8A13A", "#F5F1E8"] : [glow, "#F2B705", "#F5F1E8", "#FF3D6E"]}
+              count={isDonation ? 44 : 30}
+            />
+          )}
           {phase === "open" && s && (
             <motion.div
               className="absolute left-1/2 top-2 -ml-[39px]"
@@ -92,6 +125,11 @@ function GiftCardImpl({ drop }: { drop: FxDrop }) {
         <AnimatePresence mode="wait">
           {phase === "closed" || phase === "shaking" ? (
             <motion.div key="closed" exit={{ opacity: 0, y: -8 }} className="mt-2 flex flex-col items-center gap-1">
+              {isDonation && (
+                <span className="mb-1 text-center text-sm font-black text-[#F5F1E8]">
+                  {t("bauFeedTeaser", "Um baú de doação caiu para você!")}
+                </span>
+              )}
               <span className="border-2 border-black bg-[#F2B705] px-3 py-1 text-sm font-black uppercase tracking-wider text-black shadow-[3px_3px_0_#000]">
                 {phase === "shaking" ? <Loader2 className="h-4 w-4 animate-spin" /> : t("giftTapToOpen", "Toque para abrir")}
               </span>
@@ -108,6 +146,56 @@ function GiftCardImpl({ drop }: { drop: FxDrop }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45, type: "spring", stiffness: 300, damping: 24 }}
             >
+              {gift?.donation && (
+                <div className="flex w-full flex-col items-center gap-2">
+                  <motion.div
+                    className="border-[3px] border-black bg-[#F2B705] px-5 py-2 text-4xl font-black text-black shadow-[6px_6px_0_#000]"
+                    initial={{ scale: 0.4, rotate: -10 }}
+                    animate={{ scale: 1, rotate: -3 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 13, delay: 0.3 }}
+                  >
+                    <CountUp cents={gift.donation.gross_cents} format={brl} />
+                  </motion.div>
+                  <motion.div
+                    className="w-full max-w-[300px] border-2 border-[#F5F1E8]/15 bg-black/40 p-3 text-xs text-[#C9C2B6]"
+                    initial="hide"
+                    animate="show"
+                    variants={{ show: { transition: { staggerChildren: 0.12, delayChildren: 1.3 } } }}
+                  >
+                    {[
+                      [t("bauFeeDonation", "Freelandoo (doação)"), -gift.donation.platform_fee_cents],
+                      [t("bauFeeProcessor", "Tarifa do pagamento"), -gift.donation.processor_fee_cents],
+                      [t("bauFeeWithdraw", "Freelandoo (saque)"), -gift.donation.withdraw_fee_cents],
+                    ].map(([label, v]) => (
+                      <motion.div key={String(label)} className="flex justify-between" variants={{ hide: { opacity: 0, x: -10 }, show: { opacity: 1, x: 0 } }}>
+                        <span>{label}</span>
+                        <span>{brl(Number(v))}</span>
+                      </motion.div>
+                    ))}
+                    <motion.div
+                      className="mt-1 flex justify-between border-t border-[#F5F1E8]/10 pt-1 text-sm font-black text-[#F2B705]"
+                      variants={{ hide: { opacity: 0, scale: 0.9 }, show: { opacity: 1, scale: 1 } }}
+                    >
+                      <span>{t("bauYouGet", "Para você")}</span>
+                      <span>{brl(gift.donation.net_cents)}</span>
+                    </motion.div>
+                  </motion.div>
+                  <span className="text-[11px] text-[#9A938A]">
+                    {t("bauReleased", "Vai para seus Recebimentos e libera em {d}").replace(
+                      "{d}",
+                      new Date(gift.donation.available_at).toLocaleDateString(locale, { day: "2-digit", month: "short" })
+                    )}
+                  </span>
+                  <Link
+                    href="/wallet/carteira"
+                    data-no-gesture
+                    className="inline-flex items-center gap-1.5 border-2 border-black bg-[#F5F1E8] px-3 py-1.5 text-xs font-black uppercase text-black shadow-[3px_3px_0_#000]"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    {t("bauSeeEarnings", "Ver Recebimentos")}
+                  </Link>
+                </div>
+              )}
               {s && gift?.rarity && (
                 <span
                   className="border-2 border-black px-2 py-0.5 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-[2px_2px_0_#000]"
