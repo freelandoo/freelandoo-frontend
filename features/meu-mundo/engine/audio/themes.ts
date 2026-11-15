@@ -64,6 +64,15 @@ export const GAME_MUSIC = {
   paint: "musica-jogo-paint",
   gincana: "musica-jogo-gincana",
 } as const
+/**
+ * Faixas que se revezam (15/11, pedido do Alex: Jetpack e Antigravidade mais heavy metal, rock,
+ * eletrônica e solo de guitarra). A cena pede o tema de sempre (GAME_MUSIC); o tocador começa numa
+ * faixa sorteada da lista e passa para a próxima quando ela acaba. Sem arquivo de nenhuma, toca o tema.
+ */
+export const PLAYLISTS: Readonly<Record<string, readonly string[]>> = {
+  [GAME_MUSIC.jetpack]: ["musica-jogo-jetpack-metal", "musica-jogo-jetpack-rock", "musica-jogo-jetpack-solo", "musica-jogo-jetpack-eletro"],
+  [GAME_MUSIC.corrida]: ["musica-jogo-corrida-eletro", "musica-jogo-corrida-synthwave", "musica-jogo-corrida-industrial", "musica-jogo-corrida-rock"],
+}
 export const jetpackPhaseAmb = (theme: string) => `jogo-jetpack-fase-${theme}`
 export const noturnoBiomeAmb = (biome: string) => `jogo-noturno-bioma-${biome}`
 export const paintMapAmb = (map: string) => `jogo-paint-mapa-${map}`

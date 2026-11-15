@@ -12,6 +12,25 @@
 
 import { assetUrl } from "./bank"
 import { audioBus, audioContext, onAudioUnlock } from "./mixer"
+import { PLAYLISTS } from "./themes"
+
+/** Ordem de uma lista: começa numa faixa sorteada e segue em roda. */
+function rotation(theme: string): string[] {
+  const list = PLAYLISTS[theme]
+  if (!list?.length) return [theme]
+  const k = Math.floor(Math.random() * list.length)
+  return [...list.slice(k), ...list.slice(0, k)]
+}
+
+/** Primeira faixa da roda (a partir de `from`) que tem arquivo. */
+async function firstUrl(order: string[], from: number): Promise<{ url: string; at: number } | null> {
+  for (let i = 0; i < order.length; i++) {
+    const at = (from + i) % order.length
+    const url = await assetUrl(order[at])
+    if (url) return { url, at }
+  }
+  return null
+}
 
 export type MusicLayer = "scene" | "danger" | "fight" | "boss"
 const PRIORITY: Record<MusicLayer, number> = { scene: 0, danger: 1, fight: 2, boss: 3 }
@@ -99,7 +118,14 @@ async function apply() {
   current = null
   if (old) retire(old)
   if (!theme) return
-  const url = await assetUrl(theme)
+  // lista (Jetpack, Antigravidade): faixa sorteada; sem arquivo de nenhuma, o próprio tema
+  let order = rotation(theme)
+  let hit = await firstUrl(order, 0)
+  if (!hit && order.length > 1) {
+    order = [theme]
+    hit = await firstUrl(order, 0)
+  }
+  const url = hit?.url ?? null
   // pediram outra coisa enquanto o manifesto chegava
   if (target !== theme || !url) return
   const ctx = audioContext()
@@ -108,8 +134,22 @@ async function apply() {
   wire()
   const el = new Audio()
   el.preload = "auto"
-  el.loop = true
+  el.loop = order.length <= 1
   el.src = url
+  if (order.length > 1) {
+    // acabou a faixa: a próxima da roda no mesmo <audio> (mesmo canal e volume, sem cruzar)
+    let at = hit?.at ?? 0
+    el.addEventListener("ended", () => {
+      void firstUrl(order, at + 1).then((next) => {
+        if (current?.el !== el) return
+        if (next) {
+          at = next.at
+          el.src = next.url
+        } else el.currentTime = 0
+        if (!document.hidden) void el.play().catch(() => {})
+      })
+    })
+  }
   const src = ctx.createMediaElementSource(el)
   const gain = ctx.createGain()
   gain.gain.value = 0

@@ -2093,7 +2093,55 @@
       "duracao_s": 1.0,
       "versao": 1,
       "modelo": "Stable Audio 3 Small-SFX"
+    },
+    "musica-jogo-corrida-eletro": {
+      "arquivo": "musica/musica-jogo-corrida-eletro.v1.mp3",
+      "duracao_s": 118.27,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-corrida-industrial": {
+      "arquivo": "musica/musica-jogo-corrida-industrial.v1.mp3",
+      "duracao_s": 105.48,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-corrida-rock": {
+      "arquivo": "musica/musica-jogo-corrida-rock.v1.mp3",
+      "duracao_s": 116.15,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-corrida-synthwave": {
+      "arquivo": "musica/musica-jogo-corrida-synthwave.v1.mp3",
+      "duracao_s": 114.46,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-jetpack-eletro": {
+      "arquivo": "musica/musica-jogo-jetpack-eletro.v1.mp3",
+      "duracao_s": 112.44,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-jetpack-metal": {
+      "arquivo": "musica/musica-jogo-jetpack-metal.v1.mp3",
+      "duracao_s": 112.18,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-jetpack-rock": {
+      "arquivo": "musica/musica-jogo-jetpack-rock.v1.mp3",
+      "duracao_s": 114.38,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-jogo-jetpack-solo": {
+      "arquivo": "musica/musica-jogo-jetpack-solo.v1.mp3",
+      "duracao_s": 115.66,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
     }
   },
-  "importado_em": "2026-11-12T10:29:58-03:00"
+  "importado_em": "2026-11-15T16:24:13-03:00"
 }
