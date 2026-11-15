@@ -39,7 +39,7 @@ import type { Scene } from "@babylonjs/core/scene"
 import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import type { BodyId } from "../types"
-import { byTall, isTall } from "../gods"
+import { byTall, isGod, isTall } from "../gods"
 import { ARCHER_SKINS, byClanBody, clanOfBody, GUN_SKINS, isClanBody, CLAN_ANIMS, HAMMER_SKINS, type Clan } from "../classes"
 
 export const AVATAR_ASSET_VERSION = "v3"
@@ -551,7 +551,8 @@ export class AvatarLibrary {
 
   private clanSet(id: BodyId) {
     // F1: o Cavaleiro Dourado como monstro luta de espada (os cortes dos Vampiros)
-    const clan = this.combatClan ?? clanOfBody(id) ?? (id === "cavaleiro" ? "vampiro" : null)
+    // o deus como monstro de espada usa os mesmos cortes (Marú, Íris, Zéphyra pela regra do Cavaleiro)
+    const clan = this.combatClan ?? clanOfBody(id) ?? (id === "cavaleiro" || (this.foeRig && isGod(id)) ? "vampiro" : null)
     if (!clan) return Promise.resolve(null)
     let p = this.clans.get(clan)
     if (!p) {
@@ -654,12 +655,16 @@ export class AvatarLibrary {
     const placeP = this.withPlace ? this.placeSet(id).catch(() => null) : Promise.resolve(null)
     const boxeP = this.withBoxe ? this.boxeSet(id).catch(() => null) : Promise.resolve(null)
     const gincanaP = this.withGincana ? this.gincanaSet(id).catch(() => null) : Promise.resolve(null)
-    const clanP = this.withClan || (this.withBoxe && id === "cavaleiro") || (this.foeRig && isClanBody(id)) ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
+    // Deus como MONSTRO (chefe do Domínio, luta, deus caçado na cidade): a regra dele é a de um tipo
+    // (espada do Cavaleiro, machado do Brutamontes, tiro do Ciborgue) — carrega os três pacotes; sem isso
+    // o corpo caía no "Idle" de 2 quadros e ficava parado (Kragor no Vulcão, 15/11).
+    const foeGod = this.foeRig && isGod(id)
+    const clanP = this.withClan || (this.withBoxe && id === "cavaleiro") || (this.foeRig && isClanBody(id)) || foeGod ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
     // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
     const locoP = this.locoSet(id).catch(() => null)
     // quem aparece como monstro (2026-11-06) tem os clipes da skin mesmo sem kit: Golem e Brutamontes de machado, Ciborgue também atira
-    const bruteP = this.withClan && ARCHER_SKINS.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || id === "golem" || (this.withClan && HAMMER_SKINS.includes(id)) || (this.foeRig && GUN_SKINS.includes(id)) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
-    const gunP = id === "ciborgue" || ((this.withClan || this.foeRig) && GUN_SKINS.includes(id)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
+    const bruteP = this.withClan && ARCHER_SKINS.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || id === "golem" || foeGod || (this.withClan && HAMMER_SKINS.includes(id)) || (this.foeRig && (GUN_SKINS.includes(id) || HAMMER_SKINS.includes(id))) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
+    const gunP = id === "ciborgue" || foeGod || ((this.withClan || this.foeRig) && GUN_SKINS.includes(id)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
     const clawP = id === "garras" && this.withBoxe ? this.clawSet().catch(() => null) : Promise.resolve(null)
     const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC, gunC, clawC] = await Promise.all([
       this.body(id),
