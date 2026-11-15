@@ -31,6 +31,7 @@ import { GeoBuilder, frameOf, place, type RGB } from "./geometry"
 import type { Box2 } from "./collision"
 import type { BuiltWorld } from "./world"
 import { CenterModels } from "./center-models"
+import { buildCodePlace, isCodePlace } from "./center-code-places"
 import { loadStatues } from "./statues"
 import { QUALITY, type QualityTier } from "./quality"
 import { ChunkedGeo, SteamGeo } from "./steampunk/geo"
@@ -287,11 +288,23 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
       if (!disposed && process.env.NODE_ENV !== "production") console.warn("[meu-mundo] modelo do centro falhou", o.id, err)
     })
   }
+  // Prédios em código (Banco de Sangue, Açougue): nascem já, sem baixar nada; o bloco de reserva sai.
+  const codeMeshes: Mesh[] = []
+  for (const p of c.places) {
+    const placement = frameOf(p.origin.x, p.origin.z, p.rotationY)
+    const built = buildCodePlace(scene, p.id, placement)
+    if (!built) continue
+    codeMeshes.push(built.mesh)
+    for (const m of blocks.get(p.id) ?? []) m.dispose()
+    blocks.delete(p.id)
+    buildingVents.push(...built.vents.map((v) => ventOf(v, placement)))
+  }
+  if (codeMeshes.length) refreshFx()
   const pending: Promise<unknown>[] = []
   if (assets) {
     for (const p of c.places) {
       const file = assets.places[p.id]
-      if (!file) continue
+      if (!file || isCodePlace(p.id)) continue
       const placement = frameOf(p.origin.x, p.origin.z, p.rotationY)
       const job = models
         .load(p.id, assets.basePath + file, placement)
@@ -376,6 +389,7 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
       if (w.__mmSetHour === devHour) delete w.__mmSetHour
       fx.dispose()
       models.dispose()
+      for (const m of codeMeshes) m.dispose(false, true)
       for (const list of blocks.values()) for (const m of list) m.dispose()
       blocks.clear()
       for (const m of meshes) m.dispose()
