@@ -152,6 +152,9 @@ export function BirthdateGate() {
     pathname.startsWith("/p/") ||
     pathname.startsWith("/freelancer/") ||
     pathname.startsWith("/cursos/") ||
+    // Ponte de site parceiro: pede só nascimento + CPF na própria tela, sem a
+    // atuação deste modal (components/auth/partner-connect-bridge.tsx).
+    pathname.startsWith("/conectar/") ||
     pathname === "/"
 
   // Carrega /me e decide se abre o modal.

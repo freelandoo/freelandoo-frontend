@@ -14943,5 +14943,28 @@
     "toPay": "A pagar",
     "untitledPost": "Post sin título",
     "whereLead": "A partir del lugar de tu post. Cuanto más lejos, más caro por mil visualizaciones."
+  },
+  "Connect": {
+    "eyebrow": "Entrar con Freelandoo",
+    "asideHighlight": "+ Freelandoo",
+    "asideSubtitle": "Una sola cuenta: entras con Google por Freelandoo y vuelves directo al sitio.",
+    "bullet1": "Inicio con Google, sin contraseña nueva",
+    "bullet2": "CPF y fecha de nacimiento una sola vez",
+    "bullet3": "Tus libros y compras vinculados a tu cuenta",
+    "title": "Continúa a {site}",
+    "subtitle": "Entra con tu cuenta de Freelandoo. Si aún no tienes, se crea ahora.",
+    "identityTitle": "Solo falta tu CPF",
+    "identitySubtitle": "Freelandoo pide CPF y fecha de nacimiento una sola vez, para proteger compras y accesos.",
+    "checking": "Verificando tu cuenta…",
+    "leaving": "Volviendo a {site}…",
+    "emailOption": "¿Ya tienes cuenta en Freelandoo con correo y contraseña?",
+    "emailLogin": "Entrar con correo",
+    "signedAs": "Estás en Freelandoo como",
+    "continueAs": "Continuar a {site}",
+    "switchAccount": "Usar otra cuenta",
+    "saving": "Guardando…",
+    "saveAndContinue": "Guardar y continuar",
+    "retry": "Intentar de nuevo",
+    "loadFail": "No fue posible comunicarse con Freelandoo. Inténtalo de nuevo."
   }
 }

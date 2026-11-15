@@ -14963,5 +14963,28 @@
     "toPay": "To pay",
     "untitledPost": "Untitled post",
     "whereLead": "Starting from your post's location. The further it goes, the more it costs per thousand views."
+  },
+  "Connect": {
+    "eyebrow": "Sign in with Freelandoo",
+    "asideHighlight": "+ Freelandoo",
+    "asideSubtitle": "One account: sign in with Google through Freelandoo and go straight back to the site.",
+    "bullet1": "Google sign-in, no new password",
+    "bullet2": "CPF and date of birth only once",
+    "bullet3": "Your books and purchases tied to your account",
+    "title": "Continue to {site}",
+    "subtitle": "Sign in with your Freelandoo account. If you don't have one yet, it's created now.",
+    "identityTitle": "Just your CPF left",
+    "identitySubtitle": "Freelandoo asks for your CPF and date of birth only once, to protect purchases and access.",
+    "checking": "Checking your account…",
+    "leaving": "Going back to {site}…",
+    "emailOption": "Already have a Freelandoo account with email and password?",
+    "emailLogin": "Sign in with email",
+    "signedAs": "You're signed in to Freelandoo as",
+    "continueAs": "Continue to {site}",
+    "switchAccount": "Use another account",
+    "saving": "Saving…",
+    "saveAndContinue": "Save and continue",
+    "retry": "Try again",
+    "loadFail": "Couldn't reach Freelandoo. Please try again."
   }
 }

@@ -47,11 +47,14 @@ export function safeInternalPath(raw: string | null | undefined): string | null 
 /**
  * Caminhos que NÃO são páginas deste app Next (servidos por rewrite para outra
  * aplicação). Navegação do roteador do Next não chega lá: precisa de navegação
- * de documento inteiro. Hoje não há nenhum — o único, o jogo em /arena, saiu da
- * produção em 2026-10-18 —, mas os quatro retornos do login já perguntam aqui:
- * destino novo desse tipo entra só nesta lista.
+ * de documento inteiro. Os quatro retornos do login perguntam aqui; destino
+ * novo desse tipo entra só nesta lista.
  */
-const OUTSIDE_PREFIXES: string[] = []
+const OUTSIDE_PREFIXES: string[] = [
+  // A Russa Mais Russa (Railway, rewrite no next.config.mjs): a ponte
+  // /conectar/russamaisrussa devolve a pessoa para lá depois do login.
+  "/russamaisrussa",
+]
 
 export function isOutsideNextApp(path: string): boolean {
   return OUTSIDE_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`) || path.startsWith(`${p}?`))
