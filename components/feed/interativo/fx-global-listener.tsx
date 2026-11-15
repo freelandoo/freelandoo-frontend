@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { onRealtime } from "@/lib/realtime"
 import { getToken } from "@/lib/auth"
 import { fx, installFeedFx } from "@/lib/feed-fx"
+import { fxApi } from "@/lib/feed-fx/api"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 type Who = { username?: string | null } | undefined
@@ -28,6 +29,28 @@ export function FxGlobalListener() {
         toast.success(t("toastGiftOpened", "@{u} abriu o seu baú!").replace("{u}", p.by?.username || "—"))
       }
     })
+    // Feed sincronizado (F6): convite com Entrar / Recusar, vale 2 min.
+    const offSync = onRealtime("fi:sync", (raw) => {
+      const p = (raw || {}) as { type?: string; id_session?: string; from?: Who; expires_in?: number }
+      if (p.type !== "invite" || !p.id_session) return
+      const sid = p.id_session
+      fx("sync-convite", "sync")
+      toast(t("toastSyncInvite", "@{u} quer ver o feed junto com você").replace("{u}", p.from?.username || "—"), {
+        duration: Math.max(10, p.expires_in || 120) * 1000,
+        action: {
+          label: t("syncAccept", "Entrar junto"),
+          onClick: () => {
+            fxApi(`/sync/${sid}/accept`, { method: "POST" })
+              .then(() => router.push(`/feed/junto/${sid}`))
+              .catch((e) => toast.error(e instanceof Error ? e.message : t("genericError", "Não deu certo")))
+          },
+        },
+        cancel: {
+          label: t("decline", "Recusar"),
+          onClick: () => void fxApi(`/sync/${sid}/decline`, { method: "POST" }).catch(() => {}),
+        },
+      })
+    })
     const offLinks = onRealtime("fi:links", (raw) => {
       const p = (raw || {}) as { type?: string; from?: Who; by?: Who }
       if (p.type === "invite") {
@@ -42,6 +65,7 @@ export function FxGlobalListener() {
     })
     return () => {
       offNotice()
+      offSync()
       offLinks()
     }
   }, [router, t])

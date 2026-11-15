@@ -1841,7 +1841,8 @@
     "fxInvite": "Invitar",
     "fxChest": "Enviar un cofre",
     "fxCapsule": "Cápsula del tiempo",
-    "fxPaths": "Historia con caminos"
+    "fxPaths": "Historia con caminos",
+    "fxSync": "Ver el feed juntos"
   },
   "Post": {
     "timeNow": "ahora",
@@ -14669,6 +14670,29 @@
     "pathUntitled": "Sin título",
     "pathsEmpty": "Todavía no armaste ninguna.",
     "pathsLead": "Arma una historia en la que quien mira elige lo que pasa: \"Abrir la puerta\" lleva a un lado, \"Huir\" a otro. Sirve para aventuras, quizzes y tutoriales.",
-    "pathsTitle": "Historias con caminos"
+    "pathsTitle": "Historias con caminos",
+    "syncAccept": "Entrar juntos",
+    "syncBackToFeed": "Volver al feed",
+    "syncCall": "Llamar",
+    "syncConnecting": "conectando",
+    "syncEnded": "terminado",
+    "syncEndedTitle": "Sesión terminada",
+    "syncExpires": "La invitación vence en {n} s",
+    "syncFollowing": "Siguiendo a @{u}",
+    "syncInvitedYou": "@{u} te invitó a ver el feed juntos",
+    "syncLead": "Los dos ven el mismo feed al mismo tiempo: cuando pasas de post, la otra persona también; el video se reproduce y pausa juntos.",
+    "syncLeave": "Salir",
+    "syncNobody": "Solo puedes sincronizar con quien ya intercambia lanzamientos contigo.",
+    "syncReconnecting": "reconectando",
+    "syncShared": "control compartido",
+    "syncSynced": "sincronizado",
+    "syncTheyLead": "@{u} conduce",
+    "syncTitle": "Ver el feed juntos",
+    "syncToggleControl": "Cambiar el control",
+    "syncWaiting": "esperando que acepte",
+    "syncWaitingFor": "Esperando que @{u} acepte",
+    "syncWith": "Feed sincronizado con @{u}",
+    "syncYouLead": "tú conduces",
+    "toastSyncInvite": "@{u} quiere ver el feed contigo"
   }
 }

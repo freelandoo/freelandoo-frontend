@@ -381,6 +381,7 @@ function FeedPageInner() {
           else if (kind === "bau") router.push("/feed/bau")
           else if (kind === "capsula") router.push("/feed/capsula")
           else if (kind === "caminhos") router.push("/feed/caminhos")
+          else if (kind === "junto") router.push("/feed/junto")
           else router.push("/account")
         }}
       />

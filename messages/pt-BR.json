@@ -1841,7 +1841,8 @@
     "fxInvite": "Convidar",
     "fxChest": "Mandar um baú",
     "fxCapsule": "Cápsula do tempo",
-    "fxPaths": "História com caminhos"
+    "fxPaths": "História com caminhos",
+    "fxSync": "Ver o feed junto"
   },
   "Post": {
     "timeNow": "agora",
@@ -14103,6 +14104,29 @@
     "pathUntitled": "Sem título",
     "pathsEmpty": "Você ainda não montou nenhuma.",
     "pathsLead": "Monte uma história em que quem assiste escolhe o que acontece: \"Abrir a porta\" leva para um lado, \"Fugir\" para outro. Serve para aventura, quiz e tutorial.",
-    "pathsTitle": "Histórias com caminhos"
+    "pathsTitle": "Histórias com caminhos",
+    "syncAccept": "Entrar junto",
+    "syncBackToFeed": "Voltar ao feed",
+    "syncCall": "Chamar",
+    "syncConnecting": "conectando",
+    "syncEnded": "encerrado",
+    "syncEndedTitle": "Sessão encerrada",
+    "syncExpires": "O convite vence em {n} s",
+    "syncFollowing": "Acompanhando @{u}",
+    "syncInvitedYou": "@{u} te chamou para ver o feed junto",
+    "syncLead": "Os dois veem o mesmo feed ao mesmo tempo: quando você passa de post, a outra pessoa passa também; vídeo toca e pausa junto.",
+    "syncLeave": "Sair",
+    "syncNobody": "Só dá para sincronizar com quem já troca lançamentos com você.",
+    "syncReconnecting": "reconectando",
+    "syncShared": "controle dividido",
+    "syncSynced": "sincronizado",
+    "syncTheyLead": "@{u} conduz",
+    "syncTitle": "Ver o feed junto",
+    "syncToggleControl": "Trocar o controle",
+    "syncWaiting": "esperando aceitar",
+    "syncWaitingFor": "Esperando @{u} aceitar",
+    "syncWith": "Feed sincronizado com @{u}",
+    "syncYouLead": "você conduz",
+    "toastSyncInvite": "@{u} quer ver o feed junto com você"
   }
 }

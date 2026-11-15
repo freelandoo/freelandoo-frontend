@@ -1841,7 +1841,8 @@
     "fxInvite": "Invite",
     "fxChest": "Send a chest",
     "fxCapsule": "Time capsule",
-    "fxPaths": "Story with paths"
+    "fxPaths": "Story with paths",
+    "fxSync": "Watch the feed together"
   },
   "Post": {
     "timeNow": "now",
@@ -14689,6 +14690,29 @@
     "pathUntitled": "Untitled",
     "pathsEmpty": "You haven't built one yet.",
     "pathsLead": "Build a story where the viewer chooses what happens: \"Open the door\" leads one way, \"Run\" another. Great for adventures, quizzes and tutorials.",
-    "pathsTitle": "Stories with paths"
+    "pathsTitle": "Stories with paths",
+    "syncAccept": "Join",
+    "syncBackToFeed": "Back to feed",
+    "syncCall": "Call",
+    "syncConnecting": "connecting",
+    "syncEnded": "ended",
+    "syncEndedTitle": "Session ended",
+    "syncExpires": "The invite expires in {n} s",
+    "syncFollowing": "Following @{u}",
+    "syncInvitedYou": "@{u} invited you to watch the feed together",
+    "syncLead": "You both see the same feed at the same time: when you move to the next post, so do they; videos play and pause together.",
+    "syncLeave": "Leave",
+    "syncNobody": "You can only sync with people who already exchange throws with you.",
+    "syncReconnecting": "reconnecting",
+    "syncShared": "shared control",
+    "syncSynced": "synced",
+    "syncTheyLead": "@{u} leads",
+    "syncTitle": "Watch the feed together",
+    "syncToggleControl": "Switch control",
+    "syncWaiting": "waiting to accept",
+    "syncWaitingFor": "Waiting for @{u} to accept",
+    "syncWith": "Feed synced with @{u}",
+    "syncYouLead": "you lead",
+    "toastSyncInvite": "@{u} wants to watch the feed with you"
   }
 }

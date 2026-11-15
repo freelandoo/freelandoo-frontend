@@ -49,11 +49,14 @@ const SUBSCRIBE_EVENTS = new Set([
   "conversation:subscribe",
   "chat:subscribe",
   "cluster:subscribe",
+  // Feed sincronizado (mig 459): reentra na sala depois de reconectar.
+  "sync:join",
 ])
 const UNSUBSCRIBE_OF: Record<string, string> = {
   "conversation:unsubscribe": "conversation:subscribe",
   "chat:unsubscribe": "chat:subscribe",
   "cluster:unsubscribe": "cluster:subscribe",
+  "sync:leave": "sync:join",
 }
 
 function dispatch(event: string, payload: unknown) {
@@ -172,6 +175,11 @@ async function ensureSocket(): Promise<Socket | null> {
     "fi:links",
     // Mig 457: "abriu o seu baú" (aviso para quem mandou).
     "fi:notice",
+    // Mig 459: feed sincronizado — ciclo da sessão, estado do outro lado e
+    // presença na sala.
+    "fi:sync",
+    "fi:sync:state",
+    "fi:sync:peer",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronDown, MapPin, X, Plus, Image as ImageIcon, MessageSquare, Sparkles, UserRound, Users, Crown, Send, Gift, Hourglass, GitBranch } from "lucide-react"
+import { ChevronDown, MapPin, X, Plus, Image as ImageIcon, MessageSquare, Sparkles, UserRound, Users, Crown, Send, Gift, Hourglass, GitBranch, Link2 } from "lucide-react"
 import type { CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { MachineFilterSheet } from "./machine-filter-sheet"
 import { RegionFilterSheet } from "./region-filter-sheet"
@@ -16,7 +16,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 // Feed Interativo (2026-11-15): "lancar" abre /feed/lancar.
-export type FeedCreateKind = "post" | "recado" | "bees" | "perfil" | "clan" | "curso" | "lancar" | "bau" | "capsula" | "caminhos"
+export type FeedCreateKind = "post" | "recado" | "bees" | "perfil" | "clan" | "curso" | "lancar" | "bau" | "capsula" | "caminhos" | "junto"
 
 interface FeedRetractableHeaderProps {
   machines: CatalogMachine[]
@@ -136,6 +136,10 @@ export function FeedRetractableHeader({
               <DropdownMenuItem onSelect={() => onCreate("caminhos")}>
                 <GitBranch className="h-4 w-4" />
                 {t("fxPaths", "História com caminhos")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onCreate("junto")}>
+                <Link2 className="h-4 w-4" />
+                {t("fxSync", "Ver o feed junto")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

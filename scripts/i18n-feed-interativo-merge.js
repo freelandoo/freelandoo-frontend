@@ -226,6 +226,39 @@ const FEEDFX = {
     "Arma una historia en la que quien mira elige lo que pasa: \"Abrir la puerta\" lleva a un lado, \"Huir\" a otro. Sirve para aventuras, quizzes y tutoriales.",
   ],
   pathsTitle: ["Histórias com caminhos", "Stories with paths", "Historias con caminos"],
+
+  // ── feed sincronizado (F6) ──
+  syncAccept: ["Entrar junto", "Join", "Entrar juntos"],
+  syncBackToFeed: ["Voltar ao feed", "Back to feed", "Volver al feed"],
+  syncCall: ["Chamar", "Call", "Llamar"],
+  syncConnecting: ["conectando", "connecting", "conectando"],
+  syncEnded: ["encerrado", "ended", "terminado"],
+  syncEndedTitle: ["Sessão encerrada", "Session ended", "Sesión terminada"],
+  syncExpires: ["O convite vence em {n} s", "The invite expires in {n} s", "La invitación vence en {n} s"],
+  syncFollowing: ["Acompanhando @{u}", "Following @{u}", "Siguiendo a @{u}"],
+  syncInvitedYou: ["@{u} te chamou para ver o feed junto", "@{u} invited you to watch the feed together", "@{u} te invitó a ver el feed juntos"],
+  syncLead: [
+    "Os dois veem o mesmo feed ao mesmo tempo: quando você passa de post, a outra pessoa passa também; vídeo toca e pausa junto.",
+    "You both see the same feed at the same time: when you move to the next post, so do they; videos play and pause together.",
+    "Los dos ven el mismo feed al mismo tiempo: cuando pasas de post, la otra persona también; el video se reproduce y pausa juntos.",
+  ],
+  syncLeave: ["Sair", "Leave", "Salir"],
+  syncNobody: [
+    "Só dá para sincronizar com quem já troca lançamentos com você.",
+    "You can only sync with people who already exchange throws with you.",
+    "Solo puedes sincronizar con quien ya intercambia lanzamientos contigo.",
+  ],
+  syncReconnecting: ["reconectando", "reconnecting", "reconectando"],
+  syncShared: ["controle dividido", "shared control", "control compartido"],
+  syncSynced: ["sincronizado", "synced", "sincronizado"],
+  syncTheyLead: ["@{u} conduz", "@{u} leads", "@{u} conduce"],
+  syncTitle: ["Ver o feed junto", "Watch the feed together", "Ver el feed juntos"],
+  syncToggleControl: ["Trocar o controle", "Switch control", "Cambiar el control"],
+  syncWaiting: ["esperando aceitar", "waiting to accept", "esperando que acepte"],
+  syncWaitingFor: ["Esperando @{u} aceitar", "Waiting for @{u} to accept", "Esperando que @{u} acepte"],
+  syncWith: ["Feed sincronizado com @{u}", "Feed synced with @{u}", "Feed sincronizado con @{u}"],
+  syncYouLead: ["você conduz", "you lead", "tú conduces"],
+  toastSyncInvite: ["@{u} quer ver o feed junto com você", "@{u} wants to watch the feed with you", "@{u} quiere ver el feed contigo"],
 }
 
 const FEED = {
@@ -239,6 +272,7 @@ const FEED = {
   fxChest: ["Mandar um baú", "Send a chest", "Enviar un cofre"],
   fxCapsule: ["Cápsula do tempo", "Time capsule", "Cápsula del tiempo"],
   fxPaths: ["História com caminhos", "Story with paths", "Historia con caminos"],
+  fxSync: ["Ver o feed junto", "Watch the feed together", "Ver el feed juntos"],
 }
 
 const OVERRIDE = {}
