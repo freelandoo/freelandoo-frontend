@@ -86,10 +86,36 @@ export function expressionSrc(body: BodyId | null | undefined, e: Expression | n
 // retratos/v3/emo/<corpo>-<emoção>.webp) — a notificação mostra o personagem
 // saindo da moldura. Quem ainda não tem a lâmina usa a expressão antiga mais
 // perto (padrão, feminina, Sergio, Ekaterina) ou o rosto.
-export type Emotion = "happy" | "sad" | "loving" | "angry" | "tired" | "sick"
-export const EMOTIONS: Emotion[] = ["happy", "sad", "loving", "angry", "tired", "sick"]
+/** As 6 primeiras (lâminas de 2026-11-03). */
+export type BaseEmotion = "happy" | "sad" | "loving" | "angry" | "tired" | "sick"
+/**
+ * 2026-11-15 (Alex: "precisamos criar mais expressões"): 6 novas, uma imagem por expressão, pelas falas que
+ * não cabiam nas 6 — medo, susto, deboche, gargalhada, fome (a arte muda por classe) e determinado.
+ * Plano: MEU MUNDO 3D/planos/2026-11-15-expressoes-novas.md. Até a arte de um corpo chegar, cada nova
+ * mostra a antiga mais perto (`BASE_OF`).
+ */
+export type NewEmotion = "scared" | "surprised" | "smug" | "laughing" | "hungry" | "determined"
+export type Emotion = BaseEmotion | NewEmotion
+export const BASE_EMOTIONS: BaseEmotion[] = ["happy", "sad", "loving", "angry", "tired", "sick"]
+export const NEW_EMOTIONS: NewEmotion[] = ["scared", "surprised", "smug", "laughing", "hungry", "determined"]
+export const EMOTIONS: Emotion[] = [...BASE_EMOTIONS, ...NEW_EMOTIONS]
+/** A antiga mais perto de cada nova (enquanto a arte não chega). */
+export const BASE_OF: Record<Emotion, BaseEmotion> = {
+  happy: "happy",
+  sad: "sad",
+  loving: "loving",
+  angry: "angry",
+  tired: "tired",
+  sick: "sick",
+  scared: "sad",
+  surprised: "sad",
+  smug: "angry",
+  laughing: "happy",
+  hungry: "happy",
+  determined: "happy",
+}
 
-const ALL6: Emotion[] = EMOTIONS
+const ALL6: Emotion[] = BASE_EMOTIONS
 /** Quais lâminas existem (o mesmo que retratos/v3/emo/manifest.json). */
 const EMOTION_ART: Partial<Record<BodyId, Emotion[]>> = {
   aeryn: ALL6,
@@ -116,7 +142,7 @@ const EMOTION_ART: Partial<Record<BodyId, Emotion[]>> = {
 }
 
 /** A expressão antiga (folha de 12) mais perto de cada emoção. */
-const LEGACY: Record<Emotion, Expression> = { happy: "happy", sad: "crying", loving: "grateful", angry: "stressed", tired: "exhausted", sick: "fever" }
+const LEGACY: Record<BaseEmotion, Expression> = { happy: "happy", sad: "crying", loving: "grateful", angry: "stressed", tired: "exhausted", sick: "fever" }
 
 /** As 12 expressões antigas caem nas 6 emoções (avisos que ainda falam em Expression). */
 export const EMOTION_OF: Record<Expression, Emotion> = {
@@ -141,6 +167,9 @@ export const EMOTION_OF: Record<Expression, Emotion> = {
 export function emotionArt(body: BodyId | null | undefined, e: Emotion | null): { src: string; cutout: boolean } {
   const b = body ?? "sergio"
   if (e && EMOTION_ART[b]?.includes(e)) return { src: `${V3}/emo/${b}-${e}.webp`, cutout: true }
-  if (e && (b === "sergio" || b === "ekaterina")) return { src: expressionSrc(b, LEGACY[e]), cutout: false }
+  // expressão nova sem arte neste corpo: a antiga mais perto
+  const base = e ? BASE_OF[e] : null
+  if (base && base !== e && EMOTION_ART[b]?.includes(base)) return { src: `${V3}/emo/${b}-${base}.webp`, cutout: true }
+  if (base && (b === "sergio" || b === "ekaterina")) return { src: expressionSrc(b, LEGACY[base]), cutout: false }
   return { src: faceOf(b), cutout: false }
 }

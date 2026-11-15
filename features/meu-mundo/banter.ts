@@ -13,10 +13,11 @@
 import type { Temper } from "./soul"
 import type { CenterPlaceId } from "./types"
 import TEXT from "./ui/inbox/banter-text.json"
+import type { Emotion } from "./ui/portraits"
+import { myClan, type Clan } from "./classes"
 
 const PT: Record<string, string[]> = TEXT
 type Tr = (key: string, fallback: string) => string
-type Emotion = "happy" | "sad" | "loving" | "angry" | "tired" | "sick"
 
 export const MOB_TOPICS = ["mob_brute", "mob_wolf", "mob_stone", "mob_ciborgue", "mob_garras", "mob_cavaleiro"] as const
 export const PLACE_TOPICS = [
@@ -79,34 +80,66 @@ export const PLACE_TOPIC: Record<CenterPlaceId, (typeof PLACE_TOPICS)[number]> =
 }
 export const placeTopic = (id: string): BanterTopic | null => (Object.prototype.hasOwnProperty.call(PLACE_TOPIC, id) ? PLACE_TOPIC[id as CenterPlaceId] : null)
 
-/** As chaves de fala de um assunto para uma personalidade (`bt_<assunto>_<p>_<n>`). */
-export function banterKeys(topic: BanterTopic, temper: Temper): string[] {
+/**
+ * Assuntos de comida: a fala muda pela CLASSE (2026-11-15, plano das expressões novas §5) — o Vampiro vive de
+ * sangue (Banco de Sangue, presas), a Raposa caça (Açougue, carne). Chave `bt_<assunto>_<p>_<classe>_<n>`;
+ * sem classe (deus, skin) = as falas de sempre.
+ */
+const CLAN_TOPICS = new Set<BanterTopic>(["place_food", "fridge"])
+
+/** As chaves de fala de um assunto para uma personalidade (`bt_<assunto>_<p>_<n>`, ou a da classe). */
+export function banterKeys(topic: BanterTopic, temper: Temper, clan: Clan | null = myClan()): string[] {
   const prefix = `bt_${topic}_${SHORT[temper]}_`
-  return Object.keys(PT).filter((k) => k.startsWith(prefix))
+  if (clan && CLAN_TOPICS.has(topic)) {
+    const own = Object.keys(PT).filter((k) => k.startsWith(`${prefix}${clan}_`))
+    if (own.length) return own
+  }
+  return Object.keys(PT).filter((k) => k.startsWith(prefix) && /^d+$/.test(k.slice(prefix.length)))
 }
 
-/** O rosto que acompanha a fala (só as 6 emoções do jogo). */
+/**
+ * O rosto que acompanha a fala. 2026-11-15: 12 emoções — as 6 antigas + medo, susto, deboche, gargalhada,
+ * fome e determinado (plano MEU MUNDO 3D/planos/2026-11-15-expressoes-novas.md §5). Sem a arte nova num
+ * corpo, `emotionArt` mostra a antiga mais perto.
+ */
 export function banterEmotion(topic: BanterTopic, temper: Temper): Emotion {
   const mob = topic.startsWith("mob_")
   const is = (...list: BanterTopic[]) => list.includes(topic)
+  const win = is("fight_win", "mg_win")
+  /** Bateu, caiu, levou pancada: o susto vem antes de qualquer outra cara. */
+  const shock = is("mg_crash", "mg_fall", "mg_hurt", "ride_crash")
   /** Deu ruim: bateu, caiu, apanhou, perdeu, acabou o combustível. */
-  const bad = is("fight_lose", "mg_lose", "mg_crash", "mg_fall", "mg_hurt", "mg_fuel", "ride_crash")
+  const bad = shock || is("fight_lose", "mg_lose", "mg_fuel")
+  const food = is("place_food", "fridge")
   switch (temper) {
     case "psicopata":
-      // regra do Alex: o psicopata tem cara de raiva quase sempre; só ri quando ganha
-      return is("fight_win", "mg_win") ? "happy" : "angry"
+      // regra do Alex: cara de raiva quase sempre, só ri quando ganha — o deboche é a raiva de quem zoa
+      if (win) return "laughing"
+      if (food) return "hungry"
+      if (is("see_god", "see_monster_skin", "see_rival", "see_crowd", "place_police", "place_church", "place_study", "ride_crash", "mg_idle", "mg_bad", "mg_careful")) return "smug"
+      return "angry"
     case "covarde":
-      if (is("fight_win", "see_kin", "place_church", "place_study", "place_food", "mg_win", "mg_good", "house_mine", "fridge", "see_npc", "mg_cat")) return "happy"
+      if (shock) return "surprised"
+      if (mob || is("see_god", "see_monster_skin", "see_crowd", "place_hospital", "place_police", "place_arena", "mg_start")) return "scared"
+      if (win || is("see_kin", "place_church", "place_study", "place_food", "mg_good", "house_mine", "fridge", "see_npc", "mg_cat")) return "happy"
       return "sad"
     case "comilao":
+      if (shock) return "surprised"
+      if (food || is("place_market")) return "hungry"
+      if (win) return "laughing"
       if (bad || is("place_hospital", "mob_stone", "mob_wolf", "mg_bad")) return "sad"
       return "happy"
     case "bondoso":
-      if (bad || mob) return "sad"
+      if (shock) return "surprised"
+      if (mob) return "scared"
+      if (bad) return "sad"
       if (is("see_kin", "see_god", "place_church", "place_lab", "house_mine", "see_npc", "mg_cat")) return "loving"
       return "happy"
     case "competitivo":
-      return bad || is("see_rival", "mg_bad", "mg_idle", "mg_careful") ? "angry" : "happy"
+      if (win) return "laughing"
+      if (bad || is("mg_bad", "mg_idle")) return "angry"
+      if (is("see_rival", "mg_start", "mg_boost", "mg_careful", "place_gym", "place_arena", "mob_brute", "mob_wolf", "mob_stone")) return "determined"
+      return "happy"
   }
 }
 
@@ -120,8 +153,11 @@ export function banterLine(temper: Temper, e: BanterEvent, t: Tr, roll = Math.ra
 }
 
 /** A frase de uma necessidade na voz da personalidade (null = a frase padrão). */
-export function needVoice(need: string, temper: Temper | null | undefined, t: Tr): string | null {
+export function needVoice(need: string, temper: Temper | null | undefined, t: Tr, clan: Clan | null = myClan()): string | null {
   if (!temper) return null
+  // fome e despensa vazia falam pela classe (sangue × caça), quando a chave existe
+  const own = clan ? `need_${need}_${SHORT[temper]}_${clan}` : null
+  if (own && PT[own]) return t(own, PT[own][0])
   const key = `need_${need}_${SHORT[temper]}`
   return PT[key] ? t(key, PT[key][0]) : null
 }
