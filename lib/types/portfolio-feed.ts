@@ -110,6 +110,8 @@ export interface FeedPost {
   /** Vaquinha de onde o post saiu (mig 272). Alimenta o botão "Ver vaquinha"
    *  no header do card. Null se o post não nasceu numa vaquinha. */
   vaquinha?: { slug: string; title: string | null } | null
+  /** Paths (mig 458): este post abre uma história com caminhos alternativos. */
+  path_story_id?: string | null
   /** Recado: nota só-texto exclusiva do feed de uma comunidade (mig 162). */
   is_recado?: boolean
   recado_id?: number

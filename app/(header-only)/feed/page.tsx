@@ -16,6 +16,7 @@ import { GesturePost } from "@/components/feed/interativo/gesture-post"
 import { DropArrival } from "@/components/feed/interativo/drop-arrival"
 import { GiftCard } from "@/components/feed/interativo/gift-card"
 import { CapsuleCard } from "@/components/feed/interativo/capsule-card"
+import { PathStrip } from "@/components/feed/interativo/path-player"
 import { useFeedInterativo } from "@/components/feed/interativo/use-feed-interativo"
 import { installFeedFx } from "@/lib/feed-fx"
 import type { DropKind, FxDrop, FxUser } from "@/lib/feed-fx/api"
@@ -379,6 +380,7 @@ function FeedPageInner() {
           else if (kind === "lancar") router.push("/feed/lancar")
           else if (kind === "bau") router.push("/feed/bau")
           else if (kind === "capsula") router.push("/feed/capsula")
+          else if (kind === "caminhos") router.push("/feed/caminhos")
           else router.push("/account")
         }}
       />
@@ -475,6 +477,7 @@ function FeedPageInner() {
                     ) : (
                       card
                     )}
+                    {post.path_story_id && <PathStrip postId={post.post_id} />}
                   </div>
                   {after.map((x) => (
                     <div key={x._k} data-entry-key={x._k}>
