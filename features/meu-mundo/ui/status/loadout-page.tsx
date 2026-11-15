@@ -87,7 +87,7 @@ function effectLine(id: string, t: Tr) {
       albumin: t("lkFxAlbumin", "Treino rende 15% mais força."),
       whey: t("lkFxWhey", "Treino rende 25% mais força."),
       preworkout: t("lkFxPreworkout", "Treino rende 15% mais força e velocidade; a energia cai mais devagar."),
-      creatine: t("lkFxCreatine", "Treino rende 10% mais força. Com multivitamínico, a saúde volta mais rápido."),
+      creatine: t("lkFxCreatine", "Treino rende 10% mais força. Com o Elixir das sete ervas, a saúde volta mais rápido."),
       multivit: t("lkFxMultivit", "A saúde volta 30% mais rápido (70% com creatina)."),
       calm: t("lkFxCalm", "O estresse sobe pela metade."),
       coffee: t("lkFxCoffee", "A energia cai mais devagar."),

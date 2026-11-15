@@ -9,35 +9,10 @@ const path = require("path")
 const DIR = process.argv[2] || path.join(__dirname, "..", "messages")
 
 // [chave, pt, en, es]
+// (os nomes da Raposa e dos tônicos passaram para i18n-mm-cozinha-raposa-merge.js, VS7)
 const RAPOSA = [
-  ["item_salmao_legumes", "Peixe do rio na brasa com raízes", "River fish grilled with roots", "Pescado de río a la brasa con raíces"],
-  ["item_frango_salada", "Coelho na brasa com folhas", "Ember-roasted rabbit with greens", "Conejo a la brasa con hojas"],
-  ["item_prato_integral", "Prato do caçador (grãos, carne seca e folhas)", "Hunter's plate (grains, jerky and greens)", "Plato del cazador (granos, cecina y hojas)"],
-  ["item_bowl_frutas", "Cesto de frutas silvestres", "Basket of wild fruit", "Cesta de frutas silvestres"],
-  ["item_omelete_legumes", "Omelete de ovos da granja", "Farm-egg omelette", "Tortilla de huevos de granja"],
-  ["item_iogurte_aveia", "Mingau de aveia com mel", "Oat porridge with honey", "Gachas de avena con miel"],
-  ["item_sopa_legumes", "Sopa de raízes com osso", "Root and bone soup", "Sopa de raíces con hueso"],
-  ["item_prato_feito", "Prato do açougue (carne, feijão e batata)", "Butcher's plate (meat, beans and potatoes)", "Plato de la carnicería (carne, frijoles y papas)"],
-  ["item_hamburguer", "Torta de carne com batata", "Meat pie with potatoes", "Pastel de carne con papas"],
-  ["item_pizza", "Costela gorda na brasa", "Fatty ember-roasted ribs", "Costilla grasa a la brasa"],
-  ["item_cachorro_quente", "Espeto de linguiça", "Sausage skewer", "Brocheta de longaniza"],
-  ["item_coxinha", "Bolinho de carne", "Meat fritter", "Buñuelo de carne"],
-  ["item_chocolate", "Favo de mel", "Honeycomb", "Panal de miel"],
-  ["item_miojo", "Caldo de osso", "Bone broth", "Caldo de hueso"],
-  ["item_salgadinho", "Torresmo", "Pork cracklings", "Chicharrón"],
-  ["item_biscoito_recheado", "Biscoito de mel", "Honey biscuit", "Galleta de miel"],
-  ["item_refrigerante", "Sidra borbulhante", "Bubbly cider", "Sidra espumosa"],
   ["centerPlace_pizzaria", "Banco de Sangue", "Blood Bank", "Banco de Sangre"],
   ["centerPlace_hamburgueria", "Açougue", "Butcher Shop", "Carnicería"],
-  ["soulFoodSalmon", "Peixe do rio", "River fish", "Pescado de río"],
-  ["soulFoodChicken", "Coelho", "Rabbit", "Conejo"],
-  ["soulFoodWholegrain", "Prato do caçador", "Hunter's plate", "Plato del cazador"],
-  ["soulFoodPF", "Prato do açougue", "Butcher's plate", "Plato de la carnicería"],
-  ["soulFoodBurger", "Torta de carne", "Meat pie", "Pastel de carne"],
-  ["soulFoodPizza", "Costela", "Ribs", "Costilla"],
-  ["soulFoodChocolate", "Mel", "Honey", "Miel"],
-  ["soulFoodNoodles", "Caldo de osso", "Bone broth", "Caldo de hueso"],
-  ["soulFoodChips", "Torresmo", "Cracklings", "Chicharrón"],
   // abas da comida no Empório (horta e taverna não servem ao Vampiro)
   ["mkHealthy", "Comida que faz bem", "Good food", "Comida que hace bien"],
   ["mkJunk", "Comida gordurosa", "Greasy food", "Comida grasosa"],
