@@ -444,10 +444,9 @@ export function DomainView({ body, look, domain: first, start, onExit }: { body:
 
   // o palco usa o céu da cena de onde a luta saiu (engine/sky: área do Domínio, dia ou noite da cena)
   const skyScene = sceneInfo?.name ?? `${id}-${sceneN}`
-  const stageSpec: DomainStageSpec = useMemo(
-    () => ({ kit: sceneKitOf(id), spot: fight ? (info?.sectors[fight.sector - 1]?.stage ?? "entrada") : "entrada", sky: sceneSky(skyScene), cena: skyScene }),
-    [id, fight, info, skyScene],
-  )
+  // o palco depende só do lugar da luta (não do `info` inteiro: o recibo troca o `info` no fim e remontava a luta)
+  const fightSpot = fight ? (info?.sectors[fight.sector - 1]?.stage ?? "entrada") : "entrada"
+  const stageSpec: DomainStageSpec = useMemo(() => ({ kit: sceneKitOf(id), spot: fightSpot, sky: sceneSky(skyScene), cena: skyScene }), [id, fightSpot, skyScene])
 
   const name = domainName(t, id)
   const guard = near?.kind === "guard" && info ? info.sectors[near.sector - 1] : null

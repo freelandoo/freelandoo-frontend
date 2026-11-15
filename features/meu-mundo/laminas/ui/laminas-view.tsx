@@ -18,7 +18,7 @@
 // mm3d-57: no ringue não tem espada (luvas) e os adversários são gente — os
 // mesmos tipos da regra com nomes de boxeador; a harpia (voa) fica de fora.
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Crown, Flag, Swords, Volume2, VolumeX, X } from "lucide-react"
 import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -393,6 +393,11 @@ function LaminasScreen({
   const [rearm, setRearm] = useState(0)
   const foeBodyOpened = opened?.foeBody ?? null
   const foeRigOpened = !!opened?.foeRig
+  // O palco do Domínio entra pelo VALOR: o recibo atualiza a tela do Domínio (setores) e ela
+  // recria o objeto; remontar a luta nessa hora apagava o palco e a tela de prêmio ("A arena não abriu").
+  const domainKey = domain ? JSON.stringify(domain) : ""
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const domainSpec = useMemo(() => domain, [domainKey])
   useEffect(() => {
     const canvas = canvasRef.current
     const tk = ticketRef.current
@@ -415,7 +420,7 @@ function LaminasScreen({
         kit: fromServer ? (fromServer.setup.kit === "hammer" ? "hammer" : fromServer.setup.kit === "bow" ? "bow" : fromServer.setup.kit === "gun" ? "gun" : fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,
         stage,
-        domain,
+        domain: domainSpec,
         victoryText: labelsRef.current.sign,
         // apresentação 11: o resultado entra quando a saída (sem cor, letreiro) termina
         onCurtain: (win) => {
@@ -486,7 +491,7 @@ function LaminasScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [body, look, choice, stage, domain, armed, tutorial, portal, foeBodyOpened, foeRigOpened, rearm])
+  }, [body, look, choice, stage, domainSpec, armed, tutorial, portal, foeBodyOpened, foeRigOpened, rearm])
 
   // a passagem violeta do portal some quando a cena está pronta
   useEffect(() => {
