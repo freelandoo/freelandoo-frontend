@@ -120,10 +120,13 @@ export default function FeedLancarPage() {
     }
   }
 
-  const savePolicy = async (p: Policy) => {
+  const savePolicy = async (p: Policy | null, accept_gifts?: boolean) => {
     setBusy("policy")
     try {
-      const r = await fxApi<{ invite_policy: Policy; accept_gifts: boolean }>("/prefs", { method: "PUT", body: { invite_policy: p } })
+      const r = await fxApi<{ invite_policy: Policy; accept_gifts: boolean }>("/prefs", {
+        method: "PUT",
+        body: p ? { invite_policy: p } : { accept_gifts },
+      })
       setData((d) => (d ? { ...d, prefs: r } : d))
       fx("carimbo")
     } catch {
@@ -351,6 +354,15 @@ export default function FeedLancarPage() {
                     {label}
                   </button>
                 ))}
+              </div>
+              <div className="mt-3">
+                <button
+                  disabled={busy === "policy"}
+                  onClick={() => savePolicy(null, !data?.prefs.accept_gifts)}
+                  className={`${btn} ${data?.prefs.accept_gifts ? "bg-[#F2B705] text-black" : "bg-[#15120E] text-[#F5F1E8]"}`}
+                >
+                  {data?.prefs.accept_gifts ? t("giftsOn", "Recebo baús") : t("giftsOff", "Não recebo baús")}
+                </button>
               </div>
             </>
           )}

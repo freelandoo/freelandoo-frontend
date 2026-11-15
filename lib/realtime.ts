@@ -170,6 +170,8 @@ async function ensureSocket(): Promise<Socket | null> {
     // quem pode lançar mudou. Fora desta lista o post só cairia no F5.
     "fi:drop",
     "fi:links",
+    // Mig 457: "abriu o seu baú" (aviso para quem mandou).
+    "fi:notice",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))

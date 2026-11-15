@@ -21,7 +21,14 @@ export function FxGlobalListener() {
   useEffect(() => {
     if (!getToken()) return
     installFeedFx()
-    return onRealtime("fi:links", (raw) => {
+    const offNotice = onRealtime("fi:notice", (raw) => {
+      const p = (raw || {}) as { type?: string; by?: Who }
+      if (p.type === "gift-opened") {
+        fx("bau-premio", "premio", { gain: 0.7 })
+        toast.success(t("toastGiftOpened", "@{u} abriu o seu baú!").replace("{u}", p.by?.username || "—"))
+      }
+    })
+    const offLinks = onRealtime("fi:links", (raw) => {
       const p = (raw || {}) as { type?: string; from?: Who; by?: Who }
       if (p.type === "invite") {
         fx("convite", "sync")
@@ -33,6 +40,10 @@ export function FxGlobalListener() {
         toast.success(t("toastAccepted", "@{u} aceitou: agora você lança no feed dele(a)").replace("{u}", p.by?.username || "—"))
       }
     })
+    return () => {
+      offNotice()
+      offLinks()
+    }
   }, [router, t])
 
   return null

@@ -14,6 +14,8 @@ import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
 import { toast } from "sonner"
 import { GesturePost } from "@/components/feed/interativo/gesture-post"
 import { DropArrival } from "@/components/feed/interativo/drop-arrival"
+import { GiftCard } from "@/components/feed/interativo/gift-card"
+import { CapsuleCard } from "@/components/feed/interativo/capsule-card"
 import { useFeedInterativo } from "@/components/feed/interativo/use-feed-interativo"
 import { installFeedFx } from "@/lib/feed-fx"
 import type { DropKind, FxDrop, FxUser } from "@/lib/feed-fx/api"
@@ -47,8 +49,11 @@ const DEFAULT_ACCENT = "#F2B705"
  *  remontar os cards de baixo) + de onde veio, se foi lançado. */
 type FeedItem = FeedPost & {
   _k: string
-  _drop?: { id_drop: string; kind: DropKind; sender: FxUser }
+  _drop?: { id_drop: string; kind: DropKind; sender: FxUser; full: FxDrop }
 }
+
+/** Drop SEM post (baú; cápsula só com mensagem): card próprio depois de `afterKey`. */
+type FeedExtra = { _k: string; afterKey: string | null; drop: FxDrop }
 const PAGE_LIMIT = 12
 const PREFETCH_REMAINING_RATIO = 0.6
 
@@ -79,6 +84,7 @@ function FeedPageInner() {
 
   const [items, setItems] = useState<FeedItem[]>([])
   const keySeq = useRef(0)
+  const [extras, setExtras] = useState<FeedExtra[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [loadingInitial, setLoadingInitial] = useState(true)
@@ -166,6 +172,7 @@ function FeedPageInner() {
     setLoadingInitial(true)
     setError(null)
     setItems([])
+    setExtras([])
     setCursor(null)
     setHasMore(true)
     fetchPage(null, true)
@@ -277,9 +284,14 @@ function FeedPageInner() {
     }
   }, [])
 
+  const extrasRef = useRef(extras)
+  useEffect(() => {
+    extrasRef.current = extras
+  }, [extras])
   // Feed Interativo: o que outros lançaram cai logo DEPOIS do post na tela.
   const injectDrop = useCallback((drop: FxDrop): boolean => {
-    if (!drop.post) return false
+    const standalone = !drop.post && (drop.kind === "gift" || (drop.kind === "capsule" && !!drop.payload.message))
+    if (!drop.post && !standalone) return false
     const el = scrollRef.current
     if (!el) return false
     const top = el.getBoundingClientRect().top + el.clientHeight * 0.35
@@ -290,22 +302,31 @@ function FeedPageInner() {
         break
       }
     }
-    const entry: FeedItem = {
-      ...drop.post,
-      _k: `drop:${drop.id_drop}`,
-      _drop: { id_drop: drop.id_drop, kind: drop.kind, sender: drop.sender },
+    const key = `drop:${drop.id_drop}`
+    // O nó achado pode ser um extra: o extra novo vai depois do mesmo post.
+    const extraAt = afterKey?.startsWith("drop:") ? extrasRef.current.find((x) => x._k === afterKey) : null
+    if (drop.post) {
+      const entry: FeedItem = {
+        ...drop.post,
+        _k: key,
+        _drop: { id_drop: drop.id_drop, kind: drop.kind, sender: drop.sender, full: drop },
+      }
+      const anchor = extraAt ? extraAt.afterKey : afterKey
+      setItems((prev) => {
+        if (prev.some((p) => p._k === entry._k)) return prev
+        const at = anchor ? prev.findIndex((p) => p._k === anchor) : -1
+        const next = [...prev]
+        next.splice(at + 1, 0, entry)
+        return next
+      })
+    } else {
+      const anchor = extraAt ? extraAt.afterKey : afterKey
+      setExtras((prev) => (prev.some((x) => x._k === key) ? prev : [...prev, { _k: key, afterKey: anchor, drop }]))
     }
-    setItems((prev) => {
-      if (prev.some((p) => p._k === entry._k)) return prev
-      const at = afterKey ? prev.findIndex((p) => p._k === afterKey) : -1
-      const next = [...prev]
-      next.splice(at + 1, 0, entry)
-      return next
-    })
     // Rola até ele enquanto ele cai: "como se a pessoa tivesse acabado de chegar nele".
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
-        const node = el.querySelector<HTMLElement>(`[data-entry-key="${entry._k}"]`)
+        const node = el.querySelector<HTMLElement>(`[data-entry-key="${key}"]`)
         if (node) el.scrollTo({ top: Math.max(0, node.offsetTop - 64), behavior: "smooth" })
       })
     )
@@ -356,6 +377,8 @@ function FeedPageInner() {
           else if (kind === "bees") { setComposerMode("bee"); setCreatorOpen(true) }
           else if (kind === "clan") router.push("/account/clans")
           else if (kind === "lancar") router.push("/feed/lancar")
+          else if (kind === "bau") router.push("/feed/bau")
+          else if (kind === "capsula") router.push("/feed/capsula")
           else router.push("/account")
         }}
       />
@@ -407,6 +430,15 @@ function FeedPageInner() {
         ) : (
           <div className="mx-auto flex w-full max-w-[470px] flex-col pb-10">
             {/* feed infinito: o mesmo post volta numa volta seguinte — a chave leva a posição (a lista só cresce no fim) */}
+            {extras
+              .filter((x) => x.afterKey === null)
+              .map((x) => (
+                <div key={x._k} data-entry-key={x._k}>
+                  <DropArrival dropId={x.drop.id_drop} kind={x.drop.kind} sender={x.drop.sender} onArrived={markSeen}>
+                    {x.drop.kind === "gift" ? <GiftCard drop={x.drop} /> : <CapsuleCard drop={x.drop} />}
+                  </DropArrival>
+                </div>
+              ))}
             {items.map((post) => {
               const card = (
                 <GesturePost
@@ -426,20 +458,31 @@ function FeedPageInner() {
                   />
                 </GesturePost>
               )
+              const after = extras.filter((x) => x.afterKey === post._k)
               return (
-                <div key={post._k} data-entry-key={post._k}>
-                  {post._drop ? (
-                    <DropArrival
-                      dropId={post._drop.id_drop}
-                      kind={post._drop.kind}
-                      sender={post._drop.sender}
-                      onArrived={markSeen}
-                    >
-                      {card}
-                    </DropArrival>
-                  ) : (
-                    card
-                  )}
+                <div key={post._k}>
+                  <div data-entry-key={post._k}>
+                    {post._drop ? (
+                      <DropArrival
+                        dropId={post._drop.id_drop}
+                        kind={post._drop.kind}
+                        sender={post._drop.sender}
+                        onArrived={markSeen}
+                      >
+                        {post._drop.kind === "capsule" && <CapsuleCard drop={post._drop.full} compact />}
+                        {card}
+                      </DropArrival>
+                    ) : (
+                      card
+                    )}
+                  </div>
+                  {after.map((x) => (
+                    <div key={x._k} data-entry-key={x._k}>
+                      <DropArrival dropId={x.drop.id_drop} kind={x.drop.kind} sender={x.drop.sender} onArrived={markSeen}>
+                        {x.drop.kind === "gift" ? <GiftCard drop={x.drop} /> : <CapsuleCard drop={x.drop} />}
+                      </DropArrival>
+                    </div>
+                  ))}
                 </div>
               )
             })}
