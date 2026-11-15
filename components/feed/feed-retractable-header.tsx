@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronDown, MapPin, X, Plus, Image as ImageIcon, MessageSquare, Sparkles, UserRound, Users, Crown } from "lucide-react"
+import { ChevronDown, MapPin, X, Plus, Image as ImageIcon, MessageSquare, Sparkles, UserRound, Users, Crown, Send } from "lucide-react"
 import type { CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { MachineFilterSheet } from "./machine-filter-sheet"
 import { RegionFilterSheet } from "./region-filter-sheet"
@@ -9,12 +9,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
-export type FeedCreateKind = "post" | "recado" | "bees" | "perfil" | "clan" | "curso"
+// Feed Interativo (2026-11-15): "lancar" abre /feed/lancar.
+export type FeedCreateKind = "post" | "recado" | "bees" | "perfil" | "clan" | "curso" | "lancar"
 
 interface FeedRetractableHeaderProps {
   machines: CatalogMachine[]
@@ -117,6 +119,11 @@ export function FeedRetractableHeader({
               <DropdownMenuItem onSelect={() => onCreate("curso")}>
                 <Crown className="h-4 w-4" />
                 {t("createCourse", "Curso")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => onCreate("lancar")}>
+                <Send className="h-4 w-4" />
+                {t("fxThrowers", "Quem pode lançar")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

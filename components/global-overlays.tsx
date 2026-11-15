@@ -37,6 +37,11 @@ const NewBookingModal = dynamic(
   () => import("@/components/agenda/new-booking-modal").then((m) => m.NewBookingModal),
   { ssr: false }
 )
+// Feed Interativo (mig 456): toast de convite/aceite para lançar no feed.
+const FxGlobalListener = dynamic(
+  () => import("@/components/feed/interativo/fx-global-listener").then((m) => m.FxGlobalListener),
+  { ssr: false }
+)
 const InstallPrompt = dynamic(
   () => import("@/components/pwa/install-prompt").then((m) => m.InstallPrompt),
   { ssr: false }
@@ -55,6 +60,7 @@ export function GlobalOverlays() {
       <CondoPollModal />
       <DeliveryBroadcastModal />
       <NewBookingModal />
+      <FxGlobalListener />
       <InstallPrompt />
       <PullToRefresh />
     </>

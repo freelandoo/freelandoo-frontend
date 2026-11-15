@@ -11,8 +11,12 @@ import { PortfolioPostCard } from "@/components/feed/portfolio-post-card"
 import { EmptyFeedState } from "@/components/feed/empty-feed-state"
 import { FeedSkeleton } from "@/components/feed/feed-skeleton"
 import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
+import { toast } from "sonner"
 import { GesturePost } from "@/components/feed/interativo/gesture-post"
+import { DropArrival } from "@/components/feed/interativo/drop-arrival"
+import { useFeedInterativo } from "@/components/feed/interativo/use-feed-interativo"
 import { installFeedFx } from "@/lib/feed-fx"
+import type { DropKind, FxDrop, FxUser } from "@/lib/feed-fx/api"
 
 // Overlays/composer pesados carregados sob demanda — saem do First Load JS do
 // /feed (rota mais pesada). O composer puxa câmera/crop/filtros; o player de
@@ -38,6 +42,13 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 
 const DEFAULT_ACCENT = "#F2B705"
+
+/** Item da lista: o post + chave estável (o drop entra no MEIO da lista sem
+ *  remontar os cards de baixo) + de onde veio, se foi lançado. */
+type FeedItem = FeedPost & {
+  _k: string
+  _drop?: { id_drop: string; kind: DropKind; sender: FxUser }
+}
 const PAGE_LIMIT = 12
 const PREFETCH_REMAINING_RATIO = 0.6
 
@@ -66,7 +77,8 @@ function FeedPageInner() {
   const [regionId, setRegionId] = useState<number | null>(null)
   const [regionName, setRegionName] = useState<string | null>(null)
 
-  const [items, setItems] = useState<FeedPost[]>([])
+  const [items, setItems] = useState<FeedItem[]>([])
+  const keySeq = useRef(0)
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [loadingInitial, setLoadingInitial] = useState(true)
@@ -141,7 +153,8 @@ function FeedPageInner() {
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = (await res.json()) as FeedResponse
-      setItems((prev) => (replace ? data.items : [...prev, ...data.items]))
+      const page: FeedItem[] = data.items.map((p) => ({ ...p, _k: `${p.post_id}:${keySeq.current++}` }))
+      setItems((prev) => (replace ? page : [...prev, ...page]))
       setCursor(data.next_cursor)
       setHasMore(!!data.has_more)
     },
@@ -263,7 +276,54 @@ function FeedPageInner() {
       return "error"
     }
   }, [])
-  const noTargets: never[] = useMemo(() => [], [])
+
+  // Feed Interativo: o que outros lançaram cai logo DEPOIS do post na tela.
+  const injectDrop = useCallback((drop: FxDrop): boolean => {
+    if (!drop.post) return false
+    const el = scrollRef.current
+    if (!el) return false
+    const top = el.getBoundingClientRect().top + el.clientHeight * 0.35
+    let afterKey: string | null = null
+    for (const node of el.querySelectorAll<HTMLElement>("[data-entry-key]")) {
+      if (node.getBoundingClientRect().bottom > top) {
+        afterKey = node.dataset.entryKey || null
+        break
+      }
+    }
+    const entry: FeedItem = {
+      ...drop.post,
+      _k: `drop:${drop.id_drop}`,
+      _drop: { id_drop: drop.id_drop, kind: drop.kind, sender: drop.sender },
+    }
+    setItems((prev) => {
+      if (prev.some((p) => p._k === entry._k)) return prev
+      const at = afterKey ? prev.findIndex((p) => p._k === afterKey) : -1
+      const next = [...prev]
+      next.splice(at + 1, 0, entry)
+      return next
+    })
+    // Rola até ele enquanto ele cai: "como se a pessoa tivesse acabado de chegar nele".
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const node = el.querySelector<HTMLElement>(`[data-entry-key="${entry._k}"]`)
+        if (node) el.scrollTo({ top: Math.max(0, node.offsetTop - 64), behavior: "smooth" })
+      })
+    )
+    return true
+  }, [])
+
+  const fxBlocked = !!openCommentsFor || !!storyOpen || creatorOpen || recadoOpen
+  const { targets, throwPost, markSeen } = useFeedInterativo({
+    enabled: logged,
+    scrollRef,
+    blocked: fxBlocked,
+    inject: injectDrop,
+  })
+  const onNoTargets = useCallback(() => {
+    toast(t("fxNoTargets", "Ninguém aceitou receber seus lançamentos ainda."), {
+      action: { label: t("fxInvite", "Convidar"), onClick: () => router.push("/feed/lancar") },
+    })
+  }, [router, t])
 
   const handleLikeChange = useCallback((postId: string, liked: boolean, likes_count: number | null) => {
     setItems((prev) =>
@@ -295,6 +355,7 @@ function FeedPageInner() {
           else if (kind === "recado") { setRecadoOpen(true) }
           else if (kind === "bees") { setComposerMode("bee"); setCreatorOpen(true) }
           else if (kind === "clan") router.push("/account/clans")
+          else if (kind === "lancar") router.push("/feed/lancar")
           else router.push("/account")
         }}
       />
@@ -346,23 +407,42 @@ function FeedPageInner() {
         ) : (
           <div className="mx-auto flex w-full max-w-[470px] flex-col pb-10">
             {/* feed infinito: o mesmo post volta numa volta seguinte — a chave leva a posição (a lista só cresce no fim) */}
-            {items.map((post, i) => (
-              <GesturePost
-                key={`${post.post_id}:${i}`}
-                postId={post.post_id}
-                enabled={logged}
-                targets={noTargets}
-                onSave={savePost}
-              >
-                <PortfolioPostCard
-                  post={post}
-                  filters={filtersForEvents}
-                  commentsCount={post.comments_count ?? 0}
-                  onOpenComments={openPostComments}
-                  onLikeChange={handleLikeChange}
-                />
-              </GesturePost>
-            ))}
+            {items.map((post) => {
+              const card = (
+                <GesturePost
+                  postId={post.post_id}
+                  enabled={logged}
+                  targets={targets}
+                  onThrow={throwPost}
+                  onSave={savePost}
+                  onNoTargets={onNoTargets}
+                >
+                  <PortfolioPostCard
+                    post={post}
+                    filters={filtersForEvents}
+                    commentsCount={post.comments_count ?? 0}
+                    onOpenComments={openPostComments}
+                    onLikeChange={handleLikeChange}
+                  />
+                </GesturePost>
+              )
+              return (
+                <div key={post._k} data-entry-key={post._k}>
+                  {post._drop ? (
+                    <DropArrival
+                      dropId={post._drop.id_drop}
+                      kind={post._drop.kind}
+                      sender={post._drop.sender}
+                      onArrived={markSeen}
+                    >
+                      {card}
+                    </DropArrival>
+                  ) : (
+                    card
+                  )}
+                </div>
+              )
+            })}
             {loadingMore && hasMore && (
               <div className="px-3">
                 <FeedSkeleton />

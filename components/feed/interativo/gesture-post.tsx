@@ -99,6 +99,9 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
   const setPhaseBoth = (p: Phase) => {
     st.current.phase = p
     setPhase(p)
+    // A fila de chegadas espera o gesto terminar (use-feed-interativo).
+    if (p === "idle") delete document.body.dataset.fxGesture
+    else document.body.dataset.fxGesture = "1"
   }
 
   const clearTimers = () => {

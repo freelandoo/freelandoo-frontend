@@ -76,7 +76,10 @@ export function PullToRefresh() {
       const dx = t.clientX - s.startX
       // Subindo, ou gesto mais horizontal que vertical, ou container saiu do
       // topo → não é pull-to-refresh: solta o gesto pro scroll/swipe normal.
-      if (dy <= 0 || Math.abs(dx) > Math.abs(dy) || scrollTopOf(s.container) > 0) {
+      // Post solto pelo gesto do Feed Interativo (puxar para baixo = salvar):
+      // o arrasto é dele, não do refresh.
+      const fxGesture = document.body.dataset.fxGesture === "1"
+      if (fxGesture || dy <= 0 || Math.abs(dx) > Math.abs(dy) || scrollTopOf(s.container) > 0) {
         if (s.pull !== 0) {
           s.pull = 0
           setPull(0)

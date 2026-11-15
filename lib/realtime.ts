@@ -166,6 +166,10 @@ async function ensureSocket(): Promise<Socket | null> {
     "mm:statue",
     // Meu Mundo, lore v2 N4: o deus solto (soltou / caiu) — aviso para todos.
     "mm:god",
+    // Feed Interativo (mig 456): chegou algo lançado para mim / minha lista de
+    // quem pode lançar mudou. Fora desta lista o post só cairia no F5.
+    "fi:drop",
+    "fi:links",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))
