@@ -116,10 +116,12 @@ export const BASE_OF: Record<Emotion, BaseEmotion> = {
 }
 
 const ALL6: Emotion[] = BASE_EMOTIONS
+/** As 12 (2026-11-15: as 6 novas chegaram; pipeline/build_emotions_single.py). */
+const ALL12: Emotion[] = EMOTIONS
 /** Quais lâminas existem (o mesmo que retratos/v3/emo/manifest.json). */
 const EMOTION_ART: Partial<Record<BodyId, Emotion[]>> = {
-  aeryn: ALL6,
-  aurion: ALL6,
+  aeryn: ALL12,
+  aurion: ALL12,
   cavaleiro: ALL6,
   ciborgue: ALL6,
   garras: ALL6,
@@ -129,16 +131,16 @@ const EMOTION_ART: Partial<Record<BodyId, Emotion[]>> = {
   maru: ALL6,
   morkhan: ALL6,
   noctis: ALL6,
-  raposa: ALL6,
-  vampira: ALL6,
-  vampira_adulta: ALL6,
-  vampiro: ALL6,
+  raposa: ALL12,
+  vampira: ALL12,
+  vampira_adulta: ALL12,
+  vampiro: ALL12,
   zephyra: ALL6,
   // 2026-11-03 (2ª leva): vampiro adulto e as três raposas
-  vampiro_adulto: ALL6,
-  raposa_f: ALL6,
-  raposa_adulto: ALL6,
-  raposa_adulta: ALL6,
+  vampiro_adulto: ALL12,
+  raposa_f: ALL12,
+  raposa_adulto: ALL12,
+  raposa_adulta: ALL12,
 }
 
 /** A expressão antiga (folha de 12) mais perto de cada emoção. */
