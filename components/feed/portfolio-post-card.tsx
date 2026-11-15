@@ -118,6 +118,12 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
 
   const [liked, setLiked] = useState(post.viewer_has_liked)
   const [bookmarked, setBookmarked] = useState(!!post.viewer_has_bookmarked)
+  // Salvo por fora (gesto de puxar para baixo no feed): acompanha o post.
+  const [bookmarkedProp, setBookmarkedProp] = useState(!!post.viewer_has_bookmarked)
+  if (bookmarkedProp !== !!post.viewer_has_bookmarked) {
+    setBookmarkedProp(!!post.viewer_has_bookmarked)
+    setBookmarked(!!post.viewer_has_bookmarked)
+  }
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [likePending, setLikePending] = useState(false)
   const [bookmarkPending, setBookmarkPending] = useState(false)

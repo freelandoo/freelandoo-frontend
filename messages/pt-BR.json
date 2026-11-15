@@ -13923,5 +13923,16 @@
     "ipip48": "Sou exigente no meu trabalho.",
     "ipip49": "Muitas vezes me sinto para baixo.",
     "ipip50": "Sou cheio(a) de ideias."
+  },
+  "FeedFx": {
+    "throwFailed": "NÃO FOI",
+    "thrownStamp": "LANÇADO · {n}",
+    "saveFailed": "NÃO SALVOU",
+    "alreadySaved": "JÁ ESTAVA SALVO",
+    "savedStamp": "SALVO",
+    "throwAllHint": "Solte para lançar a {n}",
+    "throwNobody": "Ninguém para lançar ainda",
+    "trayHint": "Solte em cima de alguém para mandar só para essa pessoa",
+    "saveZone": "Salvar"
   }
 }

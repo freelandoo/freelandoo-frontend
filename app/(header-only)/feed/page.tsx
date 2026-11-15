@@ -11,6 +11,8 @@ import { PortfolioPostCard } from "@/components/feed/portfolio-post-card"
 import { EmptyFeedState } from "@/components/feed/empty-feed-state"
 import { FeedSkeleton } from "@/components/feed/feed-skeleton"
 import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
+import { GesturePost } from "@/components/feed/interativo/gesture-post"
+import { installFeedFx } from "@/lib/feed-fx"
 
 // Overlays/composer pesados carregados sob demanda — saem do First Load JS do
 // /feed (rota mais pesada). O composer puxa câmera/crop/filtros; o player de
@@ -222,6 +224,47 @@ function FeedPageInner() {
 
   const openPostComments = useCallback((postId: string) => setOpenCommentsFor(postId), [])
 
+  // Feed Interativo: o gesto de salvar (segurar + puxar para baixo).
+  const itemsRef = useRef(items)
+  useEffect(() => {
+    itemsRef.current = items
+  }, [items])
+  const [logged, setLogged] = useState(false)
+  useEffect(() => {
+    installFeedFx()
+    setLogged(!!getToken())
+  }, [])
+  const savePost = useCallback(async (postId: string): Promise<"saved" | "already" | "error"> => {
+    const token = getToken()
+    if (!token) return "error"
+    const cur = itemsRef.current.find((p) => p.post_id === postId)
+    if (cur?.viewer_has_bookmarked) return "already"
+    const toggle = async () => {
+      const res = await fetch("/api/me/bookmarks/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ post_id: postId }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return !!((await res.json()) as { bookmarked?: boolean }).bookmarked
+    }
+    try {
+      let on = await toggle()
+      let already = false
+      // Já estava salvo no servidor (lista velha): o toggle tirou — põe de volta.
+      if (!on) {
+        on = await toggle()
+        already = true
+      }
+      if (!on) return "error"
+      setItems((prev) => prev.map((p) => (p.post_id === postId ? { ...p, viewer_has_bookmarked: true } : p)))
+      return already ? "already" : "saved"
+    } catch {
+      return "error"
+    }
+  }, [])
+  const noTargets: never[] = useMemo(() => [], [])
+
   const handleLikeChange = useCallback((postId: string, liked: boolean, likes_count: number | null) => {
     setItems((prev) =>
       prev.map((p) =>
@@ -304,14 +347,21 @@ function FeedPageInner() {
           <div className="mx-auto flex w-full max-w-[470px] flex-col pb-10">
             {/* feed infinito: o mesmo post volta numa volta seguinte — a chave leva a posição (a lista só cresce no fim) */}
             {items.map((post, i) => (
-              <PortfolioPostCard
+              <GesturePost
                 key={`${post.post_id}:${i}`}
-                post={post}
-                filters={filtersForEvents}
-                commentsCount={post.comments_count ?? 0}
-                onOpenComments={openPostComments}
-                onLikeChange={handleLikeChange}
-              />
+                postId={post.post_id}
+                enabled={logged}
+                targets={noTargets}
+                onSave={savePost}
+              >
+                <PortfolioPostCard
+                  post={post}
+                  filters={filtersForEvents}
+                  commentsCount={post.comments_count ?? 0}
+                  onOpenComments={openPostComments}
+                  onLikeChange={handleLikeChange}
+                />
+              </GesturePost>
             ))}
             {loadingMore && hasMore && (
               <div className="px-3">

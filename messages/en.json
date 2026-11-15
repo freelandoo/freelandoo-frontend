@@ -14509,5 +14509,16 @@
     "ipip48": "Am exacting in my work.",
     "ipip49": "Often feel blue.",
     "ipip50": "Am full of ideas."
+  },
+  "FeedFx": {
+    "throwFailed": "DIDN'T GO",
+    "thrownStamp": "THROWN · {n}",
+    "saveFailed": "NOT SAVED",
+    "alreadySaved": "ALREADY SAVED",
+    "savedStamp": "SAVED",
+    "throwAllHint": "Release to throw to {n}",
+    "throwNobody": "No one to throw to yet",
+    "trayHint": "Drop on someone to send it only to them",
+    "saveZone": "Save"
   }
 }
