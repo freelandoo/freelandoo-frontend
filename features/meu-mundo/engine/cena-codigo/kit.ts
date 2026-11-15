@@ -58,6 +58,11 @@ export class Geo {
   c: number[] = []
   w: number[] = []
   i: number[] = []
+  /**
+   * Pronta e guardada (`fixarGeo`, cena dos Domínios na memória): desgaste já aplicado e os dados
+   * em arrays compactos (Float32/Uint32, metade da memória). Não recebe mais vértice nem desgaste.
+   */
+  fixa = false
   get count() {
     return this.p.length / 3
   }
@@ -99,6 +104,20 @@ export class Geo {
       this.c[k * 4] = r; this.c[k * 4 + 1] = g; this.c[k * 4 + 2] = b
     }
   }
+  /**
+   * Guarda pronta (o desgaste já foi aplicado por quem chama): troca os arrays por compactos.
+   * A GPU recebe Float32 de qualquer jeito: o desenho é idêntico; a RAM cai à metade (ou menos).
+   */
+  fixar() {
+    if (this.fixa) return
+    const n = this.count
+    this.p = Float32Array.from(this.p) as unknown as number[]
+    this.n = Float32Array.from(this.n) as unknown as number[]
+    this.c = Float32Array.from(this.c) as unknown as number[]
+    this.i = (n <= 65535 ? Uint16Array.from(this.i) : Uint32Array.from(this.i)) as unknown as number[]
+    this.w = []
+    this.fixa = true
+  }
   build(name: string, scene: Scene, mat: StandardMaterial) {
     const m = new Mesh(name, scene)
     const vd = new VertexData()
@@ -106,7 +125,7 @@ export class Geo {
     vd.normals = this.n
     vd.colors = this.c
     vd.indices = this.i
-    vd.uvs = new Array(this.count * 2).fill(0.5)
+    vd.uvs = new Float32Array(this.count * 2).fill(0.5)
     vd.applyToMesh(m)
     m.material = mat
     return m

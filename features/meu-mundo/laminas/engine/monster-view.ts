@@ -282,6 +282,32 @@ function rigKit(scene: Scene) {
   }
   return k
 }
+/**
+ * Arma dos monstros: o arquivo baixa e decodifica UMA vez por cena; cada monstro ganha uma cópia
+ * (malha própria, material e textura do arquivo divididos). Antes cada monstro que aparecia
+ * carregava o GLB de novo — o engasgo de quem anda pelo Domínio (2026-11-15).
+ */
+const weapons = new WeakMap<Scene, Map<string, Promise<AssetContainer>>>()
+function weaponContainer(scene: Scene, url: string) {
+  let m = weapons.get(scene)
+  if (!m) {
+    const made = new Map<string, Promise<AssetContainer>>()
+    weapons.set(scene, made)
+    scene.onDisposeObservable.addOnce(() => {
+      for (const p of made.values()) void p.then((c) => c.dispose()).catch(() => {})
+    })
+    m = made
+  }
+  let p = m.get(url)
+  if (!p) {
+    ensureLoaders()
+    p = LoadAssetContainerAsync(url, scene)
+    // falhou: a próxima tentativa baixa de novo
+    p.catch(() => m!.delete(url))
+    m.set(url, p)
+  }
+  return p
+}
 const wolves = new WeakMap<Scene, Promise<AssetContainer>>()
 function wolfContainer(scene: Scene) {
   let p = wolves.get(scene)
@@ -372,6 +398,8 @@ export class MonsterModel {
   private wolfClip = ""
   /** Lore v2 B5: passo do lobo agora (0 parado, 1 andar, 2 trote, 3 corrida), com folga na troca. */
   private wolfGait = 0
+  /** Arma ou lobo ainda baixando (o `loaded` espera). */
+  private pending = 0
   /** B5: andar ou correr do corpo rigado na rua (1/2), com folga na troca. */
   private rigGait: 1 | 2 = 1
   private dodgeLeft = 0
@@ -439,12 +467,15 @@ export class MonsterModel {
       this.char.setBoxe(LOOK[kind]?.idle ?? "BGuard")
       if (kind === "stone") this.stones = new FloatStones(scene, this.char, addGlow)
       if (weapon) {
-        ensureLoaders()
-        LoadAssetContainerAsync(weapon, scene)
+        this.pending++
+        weaponContainer(scene, weapon)
+          .finally(() => this.pending--)
           .then((c) => {
-            if (this.gone) return c.dispose()
-            c.addAllToScene()
-            this.axe = c.rootNodes[0] as TransformNode
+            if (this.gone) return
+            // cópia da arma (o material é o do arquivo: brilho e metal são iguais em toda cópia)
+            const e = c.instantiateModelsToScene((n) => `${n}-mob${id}`, false, { doNotInstantiate: true })
+            for (const g of e.animationGroups) g.dispose()
+            this.axe = e.rootNodes[0] as TransformNode
             shineWeapon(this.axe)
             for (const m of this.axe.getChildMeshes(false)) {
               m.isPickable = false
@@ -461,7 +492,9 @@ export class MonsterModel {
         this.fix = new PoseFix(scene, (n) => ch.bone(n), guard ?? null)
       }
     } else if (kind === "wolf") {
+      this.pending++
       wolfContainer(scene)
+        .finally(() => this.pending--)
         .then((c) => {
           if (this.gone) return
           const e = c.instantiateModelsToScene((n) => `${n}-${id}`, false, { doNotInstantiate: true })
@@ -885,6 +918,43 @@ export class MonsterModel {
     if (this.axeGrip) this.axeGrip.root.setEnabled(v)
   }
 
+  /**
+   * Guardado para reusar (Domínio, 2026-11-15): escondido, sem tocar animação e com o corpo
+   * opaco de novo (o "selado" é reaplicado por quem pega). Quem pega chama `park(false)` e o
+   * próximo `update` põe no lugar e retoma o clipe.
+   */
+  park(on: boolean) {
+    this.setVisible(!on)
+    this.char?.setParked(on)
+    if (this.wolf && on) {
+      for (const g of this.wolf.anims.values()) g.stop()
+      this.wolfClip = ""
+    }
+    if (on) for (const m of this.root.getChildMeshes(false)) m.visibility = 1
+  }
+
+  /** Tudo o que este monstro baixa já chegou (corpo, arma, lobo)? */
+  get loaded() {
+    return this.gone || (this.pending === 0 && (!this.char || this.char.loaded))
+  }
+
+  /** Compila os shaders das malhas já carregadas (guardado: o primeiro aparecer não engasga). */
+  warm() {
+    if (this.gone) return
+    const nodes = [this.root, ...(this.axe ? [this.axe] : []), ...(this.char ? [this.char.holder] : [])]
+    const seen = new Set<AbstractMesh>()
+    for (const n of nodes)
+      for (const m of n.getChildMeshes(false)) {
+        if (seen.has(m) || !m.material || !m.getTotalVertices()) continue
+        seen.add(m)
+        try {
+          m.material.forceCompilation(m)
+        } catch {
+          // material sem suporte a compilar fora do quadro: compila quando aparecer
+        }
+      }
+  }
+
   dispose() {
     this.gone = true
     if (this.wolf) {
@@ -896,8 +966,9 @@ export class MonsterModel {
     this.stones?.dispose()
     this.fix?.dispose()
     // o machado: a pegada solta a arma junto; sem pegada ainda, a arma sozinha
+    // (material e textura são do arquivo guardado na cena: saem com ela, não com o monstro)
     if (this.axeGrip) this.axeGrip.dispose()
-    else this.axe?.dispose(false, true)
+    else this.axe?.dispose(false, false)
     this.axeGrip = null
     this.axe = null
     this.char?.dispose()

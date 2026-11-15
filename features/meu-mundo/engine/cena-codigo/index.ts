@@ -9,7 +9,7 @@ import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
-import { chaoDoHorizonte, finishCena, type Cena } from "./kit-cena"
+import { chaoDoHorizonte, finishCena, fixarCena, type Cena } from "./kit-cena"
 import { skyFog, skyOfCena, variantOfCena } from "../sky/sky-registry"
 import { CENAS, type CenaMeta } from "./cenas"
 import { acabarCena, visualDaCena } from "./acabamento"
@@ -26,7 +26,26 @@ export interface CenaMontada {
 }
 
 /** Monta a cena registrada `nome` na `scene` (`lod` 0 = perto, 1 = longe). Devolve as malhas e as caixas (`cena.blockers`). */
-export function montarCena(scene: Scene, nome: string, lod = 0, o: { low?: boolean } = {}): CenaMontada {
+/**
+ * Cenas PRONTAS na memória (2026-11-15): gerar uma cena é o mais caro de abrir um Domínio (0,4–1,3 s
+ * num PC, ~6 s num celular, com a tela parada). A tela solta o 3D para cada luta e monta de novo na
+ * volta: com a cena pronta guardada, a volta só sobe as malhas para a GPU. Guarda as últimas
+ * (perto e longe de cada cena; a atual e a vizinha), em arrays compactos; `soltarCenasProntas`
+ * esvazia ao sair do Domínio.
+ */
+const PRONTAS = new Map<string, Cena>()
+const PRONTAS_MAX = 4
+const PRONTAS_MAX_LOW = 2
+
+/** A cena `nome` gerada, acabada e fixa (da memória, se já foi feita). */
+export function cenaPronta(nome: string, lod = 0, o: { low?: boolean } = {}): Cena {
+  const k = `${nome}|${lod}`
+  const got = PRONTAS.get(k)
+  if (got) {
+    PRONTAS.delete(k)
+    PRONTAS.set(k, got)
+    return got
+  }
   const mod = CENAS[nome]
   if (!mod) throw new Error(`cena-codigo: cena não registrada: ${nome}`)
   const cena = mod.montar(lod)
@@ -35,6 +54,23 @@ export function montarCena(scene: Scene, nome: string, lod = 0, o: { low?: boole
   // horizonte em malha com céu pintado: chão na cor da névoa final (a mesma conta do jogo) embaixo dele
   const ceu = skyOfCena(nome)
   if (ceu) chaoDoHorizonte(cena, skyFog(ceu, variantOfCena(nome, mod.meta.ceu), mod.meta.nevoa))
+  // o desgaste do finishCena (mesmas opções do montarCena) e os arrays compactos
+  fixarCena(cena)
+  PRONTAS.set(k, cena)
+  const max = o.low ? PRONTAS_MAX_LOW : PRONTAS_MAX
+  while (PRONTAS.size > max) PRONTAS.delete(PRONTAS.keys().next().value!)
+  return cena
+}
+
+/** Esvazia as cenas prontas (saiu do Domínio: a memória volta para o resto do jogo). */
+export function soltarCenasProntas() {
+  PRONTAS.clear()
+}
+
+export function montarCena(scene: Scene, nome: string, lod = 0, o: { low?: boolean } = {}): CenaMontada {
+  const mod = CENAS[nome]
+  if (!mod) throw new Error(`cena-codigo: cena não registrada: ${nome}`)
+  const cena = cenaPronta(nome, lod, o)
   const { meshes, material, glowMaterial } = finishCena(scene, cena, { chaoUma: !!o.low })
   return {
     cena,

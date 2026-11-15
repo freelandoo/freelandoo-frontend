@@ -54,7 +54,7 @@ import { DOMAIN_REGION } from "../../engine/ambiente-fx/presets"
 import { SpeechBubble } from "../../engine/speech-bubble"
 import { SKY_REGIONS, skyArt, skyFog, skyOfCena, variantOfCena } from "../../engine/sky/sky-registry"
 import { dominioMapModel, setCityMap, type DominioMapLabels } from "../../engine/city-map"
-import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, visualDaCena, aplicarCor, type CenaMontada, type XZ } from "../../engine/cena-codigo"
+import { CENAS, astroDaCena, auroraDaCena, blocked, inPoly, montarCena, soltarCenasProntas, visualDaCena, aplicarCor, type CenaMontada, type XZ } from "../../engine/cena-codigo"
 
 /** Alcance do "Lutar", das passagens e do aviso de selado (m). */
 const REACH = 3.4
@@ -155,6 +155,9 @@ export function sceneSky(name: string): StageSky | null {
   const mod = CENAS[name]
   return { region, mode: mod ? variantOfCena(name, mod.meta.ceu) : "noite" }
 }
+
+/** Saiu do Domínio: solta as cenas prontas guardadas (a volta da luta não precisa mais delas). */
+export const releaseOpenScenes = () => soltarCenasProntas()
 
 /** A cena `name` está feita (registrada no front)? Senão a tela cai no corredor antigo. */
 export const hasOpenScene = (name: string | null | undefined) => !!name && !!CENAS[name]
@@ -438,12 +441,58 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       }
     }
   }
+  // Monstro na memória só perto (2026-11-15): aparece a SHOW_D e só sai a HIDE_D (a folga evita
+  // criar e soltar sem parar na beira). Quem sai é GUARDADO (escondido, sem animar) e reaproveitado
+  // pelo próximo do mesmo tipo; o excesso é solto. Um de cada tipo da cena é preparado logo depois
+  // da cena abrir (arquivo, cópia e shader prontos antes de aparecer).
   const SHOW_D = Math.floor(50 * quality.lodScale)
-  const modelFor = (m: Mob) => {
-    const sec = domain.sectors[m.sector - 1]
+  const HIDE_D = SHOW_D + 14
+  /**
+   * Guardados por tipo: tantos quantos a cena tem daquele tipo (até 6). A cena tem 160 m: perto ou
+   * longe, todos acabam aparecendo; soltar um corpo com esqueleto e clonar de novo custa ~100 ms
+   * cada no celular. Na GPU a cópia divide malha e textura (só o esqueleto é dela).
+   */
+  const POOL_CAP = 6
+  const sigOf = (sector: number) => {
+    const sec = domain.sectors[sector - 1]
+    return `${sec?.kind ?? "cavaleiro"}|${sec?.foe?.body ?? ""}|${sec?.foe?.rig ? 1 : 0}`
+  }
+  const newModel = (sector: number) => {
+    const sec = domain.sectors[sector - 1]
     const fb = sec?.foe?.body ?? null
     const rig = !!sec?.foe?.rig
     return new MonsterModel(scene, sec?.kind ?? "cavaleiro", 1, fb && !rig ? { n: 0, body: fb, bare: true } : null, undefined, fb && rig ? fb : undefined)
+  }
+  const parked = new Map<string, MonsterModel[]>()
+  /** Contas do pool (harness: `__mmDomain.pool()`). */
+  const poolStats = { created: 0, reused: 0, parked: 0, freed: 0, createMs: 0, lateAt: [] as number[] }
+  const timedModel = (sector: number) => {
+    const t0 = performance.now()
+    const mm = newModel(sector)
+    poolStats.created++
+    // criado com a cena já aberta (deveria ter vindo pronto): o harness conta
+    if (readySent && poolStats.lateAt.length < 20) poolStats.lateAt.push(Math.round(t0))
+    poolStats.createMs += performance.now() - t0
+    return mm
+  }
+  const modelFor = (m: Mob) => {
+    const got = parked.get(sigOf(m.sector))?.pop()
+    if (!got) return timedModel(m.sector)
+    poolStats.reused++
+    got.park(false)
+    return got
+  }
+  const parkModel = (sector: number, mm: MonsterModel) => {
+    const k = sigOf(sector)
+    const list = parked.get(k) ?? []
+    if (list.length >= POOL_CAP) {
+      poolStats.freed++
+      return mm.dispose()
+    }
+    poolStats.parked++
+    mm.park(true)
+    list.push(mm)
+    parked.set(k, list)
   }
   const setSealedLook = (m: Mob, on: boolean) => {
     if (!m.model) return
@@ -510,12 +559,12 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     for (const m of mobs) {
       const down = isDown(m.id)
       const d = Math.hypot(m.x - body.x, m.z - body.z)
-      const want = !down && d < SHOW_D
+      const want = !down && d < (m.model ? HIDE_D : SHOW_D)
       if (want && !m.model) m.model = modelFor(m)
       else if (!want && m.model) {
         m.bubble?.dispose()
         m.bubble = null
-        m.model.dispose()
+        parkModel(m.sector, m.model)
         m.model = null
         m.sealedLook = 0
       }
@@ -529,7 +578,8 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
         if (m.boss) bossTalk(m, d, open)
       } else {
         const home = Math.hypot(m.x - m.hx, m.z - m.hz)
-        m.chasing = !engaged && !input.blocked && d < (m.chasing ? SEE * 1.5 : SEE) && home < LEASH
+        // atrás da cortina (monstros ainda sendo preparados) ninguém persegue
+        m.chasing = readySent && !engaged && !input.blocked && d < (m.chasing ? SEE * 1.5 : SEE) && home < LEASH
         let gx = m.tx, gz = m.tz, v = WANDER_V
         if (m.chasing) {
           gx = body.x
@@ -786,8 +836,51 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     }
   })
 
+  // Os monstros da cena são preparados ATRÁS DA CORTINA (2026-11-15): todos (até POOL_CAP por tipo),
+  // um por quadro, guardados. Clonar um corpo com esqueleto custa ~100–150 ms num celular (o
+  // Babylon passa os vértices pelo esqueleto na CPU a cada cópia): no jogo isso era o engasgo de
+  // quem anda. A tela só fica pronta quando tudo chegou e compilou (ou no teto WARM_MAX_MS).
+  const WARM_MAX_MS = low ? 7000 : 5000
+  const warmQueue: number[] = []
+  /** Quantos de cada tipo ficam prontos (guardados + à vista). */
+  const warmWant = new Map<string, number>()
+  for (const m of mobs) {
+    if (isDown(m.id)) continue
+    const k = sigOf(m.sector)
+    const n = warmWant.get(k) ?? 0
+    if (n >= POOL_CAP) continue
+    warmWant.set(k, n + 1)
+    warmQueue.push(m.sector)
+  }
+  const warming: MonsterModel[] = []
+  const warmStart = performance.now()
+  let sceneReady = false
+  let readySent = false
+  const warmStep = () => {
+    if (readySent || disposed) return
+    const sector = warmQueue.shift()
+    if (sector != null) {
+      const k = sigOf(sector)
+      const have = (parked.get(k)?.length ?? 0) + mobs.filter((m) => m.model && sigOf(m.sector) === k).length
+      if (have < (warmWant.get(k) ?? 0)) {
+        const mm = timedModel(sector)
+        parkModel(sector, mm)
+        warming.push(mm)
+      }
+      return
+    }
+    const late = performance.now() - warmStart > WARM_MAX_MS
+    const inUse = mobs.flatMap((m) => (m.model ? [m.model] : []))
+    if (!sceneReady || (!late && ![...warming, ...inUse].every((mm) => mm.loaded))) return
+    // tudo chegou: compila os shaders de quem está guardado e de quem já está à vista
+    for (const mm of [...warming, ...inUse]) mm.warm()
+    readySent = true
+    scene.onBeforeRenderObservable.remove(warmObs)
+    opts.onReady?.()
+  }
+  const warmObs = scene.onBeforeRenderObservable.add(warmStep)
   scene.executeWhenReady(() => {
-    if (!disposed) opts.onReady?.()
+    sceneReady = true
   })
   engine.runRenderLoop(() => {
     if (!disposed) scene.render()
@@ -815,6 +908,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       ambient: () => ambient?.stats() ?? null,
       ambientOn: (on: boolean) => ambient?.setEnabled(on),
       zonas: () => cena.zonas,
+      pool: () => ({ ...poolStats, createMs: Math.round(poolStats.createMs), kept: [...parked.values()].reduce((n, l) => n + l.length, 0) }),
     }
 
   return {
@@ -857,6 +951,8 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
         m.bubble?.dispose()
         m.model?.dispose()
       }
+      for (const list of parked.values()) for (const mm of list) mm.dispose()
+      parked.clear()
       for (const pt of portals) pt.dispose()
       ambient?.dispose()
       shadows.dispose()

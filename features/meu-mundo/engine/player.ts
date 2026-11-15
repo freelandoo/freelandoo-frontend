@@ -155,6 +155,7 @@ export class Character {
     next.boxe = this.boxeBase
     next.gincana = this.gincanaPose
     next.update(0, this.move, this.speed, this.tired, this.unwell)
+    if (this.parked) next.setFrozen(true)
     const prev = this.rig
     this.rig = next
     prev?.dispose()
@@ -268,6 +269,19 @@ export class Character {
   /** Nó do esqueleto pelo nome (ex.: "mixamorig:RightHand"); null sem avatar. */
   bone(name: string) {
     return this.rig?.node(name) ?? null
+  }
+
+  /** O corpo de verdade (com esqueleto) já chegou? */
+  get loaded() {
+    return !!this.rig
+  }
+
+  /** Guardado para reusar (monstro fora de vista no Domínio): escondido e com a animação parada. */
+  private parked = false
+  setParked(on: boolean) {
+    this.parked = on
+    this.setVisible(!on)
+    this.rig?.setFrozen(on)
   }
 
   /** Esconde (outro andar) sem descartar. */

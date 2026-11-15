@@ -25,6 +25,7 @@ import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { BoundingInfo } from "@babylonjs/core/Culling/boundingInfo"
 import type { Observer } from "@babylonjs/core/Misc/observable"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder"
@@ -386,6 +387,12 @@ export class AvatarLibrary {
   private readonly materials = new Map<string, StandardMaterial>()
   private readonly bodies = new Map<BodyId, Promise<AssetContainer>>()
   private readonly lods = new Map<BodyId, Promise<AssetContainer>>()
+  /**
+   * Caixa de cada malha do corpo na pose de ligação, feita UMA vez por corpo (2026-11-15): passar
+   * todo vértice pelo esqueleto na CPU custava ~20 ms por cópia num PC e travava ~100 ms no
+   * celular a cada monstro que aparecia no Domínio. Toda cópia nasce na mesma pose: mesma caixa.
+   */
+  private readonly bindBoxes = new Map<BodyId, { min: Vector3; max: Vector3 }[]>()
   private readonly anims = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly sits = new Map<AnimSet, Promise<AssetContainer>>()
   private readonly rests = new Map<AnimSet, Promise<AssetContainer>>()
@@ -748,9 +755,17 @@ export class AvatarLibrary {
     }
     const feet = [byName.get("mixamorig:LeftFoot"), byName.get("mixamorig:RightFoot")] as (TransformNode | undefined)[]
     const meshes = root.getChildMeshes(false) as AbstractMesh[]
-    for (const mesh of meshes) {
+    const known = this.bindBoxes.get(id)
+    const reuse = known && known.length === meshes.length ? known : null
+    const made: { min: Vector3; max: Vector3 }[] = []
+    for (const [i, mesh] of meshes.entries()) {
       mesh.material = this.materialFor(id)
       mesh.isPickable = false
+      if (reuse) {
+        mesh.setBoundingInfo(new BoundingInfo(reuse[i].min.clone(), reuse[i].max.clone()))
+        mesh.getBoundingInfo().scale(1.25)
+        continue
+      }
       // Caixa COM o esqueleto (pose de ligação, uma vez): a malha é quantizada
       // e a desquantização mora nas matrizes de ligação — sem o esqueleto, a
       // caixa saía em unidades cruas (esfera de 14 km), nada era recortado
@@ -758,8 +773,11 @@ export class AvatarLibrary {
       // escolhia a malha leve (mm3d-19). Folga: a animação sai da pose T.
       mesh.skeleton?.prepare(true)
       mesh.refreshBoundingInfo({ applySkeleton: true })
+      const bb = mesh.getBoundingInfo().boundingBox
+      made.push({ min: bb.minimum.clone(), max: bb.maximum.clone() })
       mesh.getBoundingInfo().scale(1.25)
     }
+    if (!reuse) this.bindBoxes.set(id, made)
     const lod = lodC ? this.attachLod(lodC, meshes[0] as Mesh, id, look) : null
     this.live++
     const rig = new AvatarRig(this, id, entries, root, groups, meshes, feet, ANKLE_REST[ANIM_SET[id]], lod)

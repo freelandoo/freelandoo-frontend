@@ -25,7 +25,7 @@ import { onRealtime } from "@/lib/realtime"
 import { GOD_HUNT, GOD_NAME } from "../../engine/god-view"
 import { godIdOf, type GodId } from "../../laminas/sim/fight"
 import { enterDomain, equipGear, getDomains, getGods, type GodWire, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainPact, type DomainInfo, type DomainScene, type FightTicket, type Receipt } from "../../data"
-import { createOpenDomainGame, hasOpenScene, sceneSky, type OpenDomainHandle, type OpenNear } from "../engine/open-domain-game"
+import { createOpenDomainGame, hasOpenScene, releaseOpenScenes, sceneSky, type OpenDomainHandle, type OpenNear } from "../engine/open-domain-game"
 import { Joystick, SAFE, SceneCurtain } from "../../ui/meu-mundo-view"
 import { EvoButton, EvoToast } from "../../ui/hud/hud-kit"
 import { useMobName } from "../../laminas/ui/laminas-view"
@@ -89,6 +89,8 @@ export function DomainView({ body, look, domain: first, start, onExit }: { body:
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches)
+    // as cenas prontas ficam guardadas enquanto se está no Domínio (volta da luta); saiu, solta
+    return () => releaseOpenScenes()
   }, [])
   useEffect(() => {
     if (!news) return

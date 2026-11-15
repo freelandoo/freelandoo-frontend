@@ -4,7 +4,7 @@
 // (`__mmPerf` no bairro, `__jetPerf` no Jetpack, a do interior…), cada uma com
 // números diferentes. Esta devolve a FICHA DO PLANO (`MEU MUNDO 3D/planos/
 // 2026-11-09-auditoria-visual-e-desempenho.md`) para qualquer cena:
-// triângulos à vista · chamadas de desenho · materiais · memória de textura ·
+// triângulos à vista · chamadas de desenho · materiais · memória de textura e de malha ·
 // FPS · tempo de carga · MB baixados — e diz ONDE mediu (GPU, tela, toque),
 // porque número de PC não vale como número de celular.
 //
@@ -50,6 +50,12 @@ export interface SceneSheet {
   /** Estimativa: largura × altura × bytes por pixel (1 se comprimida, 4 se RGBA), +33% com mipmaps. */
   textureMB: number
   compressedTextures: number
+  /** Malha na GPU (buffers de vértice e índice, cada um uma vez; a cena inteira, ligada ou não). */
+  geometryMB: number
+  /** A parte dela que está ligada agora (o resto está guardado na GPU sem desenhar). */
+  geometryOnMB: number
+  /** A cópia da malha que o Babylon guarda na RAM (lida pela CPU: colisão, caixa, troca de malha). */
+  geometryCpuMB: number
   fps: number
   frameMs: number
   particles: number
@@ -143,6 +149,50 @@ function textureList(scene: Scene, top: number) {
   return rows.sort((a, b) => b.mb - a.mb).slice(0, top)
 }
 
+type GeoBuf = { capacity?: number }
+type GeoLike = {
+  getVertexBuffers(): Record<string, { getBuffer(): GeoBuf | null; getData(): ArrayLike<number> | null }> | null
+  getIndexBuffer(): GeoBuf | null
+  getIndices(copyWhenShared?: boolean, forceCopy?: boolean): ArrayLike<number> | null
+  getTotalIndices(): number
+}
+const bytesOf = (a: ArrayLike<number> | null) => (!a ? 0 : Array.isArray(a) ? a.length * 8 : ((a as unknown as ArrayBufferView).byteLength ?? 0))
+
+/** Malha da cena: GPU (cada buffer uma vez), a parte ligada e a cópia na RAM. */
+function geometryMemory(scene: Scene) {
+  const geos = new Set<unknown>()
+  const bufs = new Set<unknown>()
+  let gpu = 0
+  let on = 0
+  let cpu = 0
+  for (const m of scene.meshes) {
+    const g = (m as unknown as { geometry?: GeoLike | null }).geometry
+    if (!g || geos.has(g)) continue
+    geos.add(g)
+    let mine = 0
+    const vbs = g.getVertexBuffers() ?? {}
+    for (const k of Object.keys(vbs)) {
+      const data = vbs[k].getData()
+      cpu += bytesOf(data)
+      const db = vbs[k].getBuffer()
+      if (db && !bufs.has(db)) {
+        bufs.add(db)
+        mine += db.capacity || (data ? data.length * 4 : 0)
+      }
+    }
+    cpu += bytesOf(g.getIndices(false, true))
+    const ib = g.getIndexBuffer()
+    if (ib && !bufs.has(ib)) {
+      bufs.add(ib)
+      mine += ib.capacity || g.getTotalIndices() * 4
+    }
+    gpu += mine
+    if (m.isEnabled()) on += mine
+  }
+  const mb = (b: number) => Math.round((b / 1048576) * 10) / 10
+  return { gpu: mb(gpu), on: mb(on), cpu: mb(cpu) }
+}
+
 const ART = /\.(glb|gltf|ktx2|webp|png|jpe?g|wasm|bin)(\?|$)|\/meu-mundo\//i
 
 function downloads(since: number) {
@@ -182,6 +232,7 @@ export function measureScene(scene: Scene, engine: AbstractEngine): SceneSheet {
     else mats.add(mat)
   }
   const tex = textureMemory(scene)
+  const geo = geometryMemory(scene)
   let particles = 0
   for (const ps of scene.particleSystems) particles += ps.getActiveCount()
   const mem = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory
@@ -202,6 +253,9 @@ export function measureScene(scene: Scene, engine: AbstractEngine): SceneSheet {
     textures: tex.count,
     textureMB: tex.mb,
     compressedTextures: tex.compressed,
+    geometryMB: geo.gpu,
+    geometryOnMB: geo.on,
+    geometryCpuMB: geo.cpu,
     fps: Math.round(engine.getFps()),
     frameMs: Math.round(dt * 10) / 10,
     particles,
@@ -256,6 +310,8 @@ troca ${q.changes}: ${q.last}` : ""}
       `${Math.round(s.triangles / 1000)}k tri  ${s.drawCalls} draw  ${s.materials} mat  ${s.activeMeshes} malhas
 ` +
       `tex ${s.textures} (${s.compressedTextures} ktx) ~${s.textureMB} MB  part ${s.particles}
+` +
+      `malha ${s.geometryMB} MB (lig ${s.geometryOnMB})  ram ${s.geometryCpuMB} MB${s.heapMB !== null ? `  heap ${s.heapMB}` : ""}
 ` +
       `${s.downloadMB} MB em ${s.downloads} arq${s.loadMs !== null ? `  ${(s.loadMs / 1000).toFixed(1)} s` : ""}`
   }, 500)

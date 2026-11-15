@@ -291,6 +291,30 @@ export function chaoDoHorizonte(c: Cena, nevoa: RGB) {
   ground(c, { x0: -300, z0: -300, x1: 300, z1: 300, step: 100, color: () => nevoa, fundo: true, y: -0.08, hole: [-200, -200, 200, 200] })
 }
 
+/** O desgaste dos blocos no `finishCena` (uma vez só: a geometria fixa já tem). */
+function desgastar(g: Geo, o: { grime?: number; bare?: RGB }) {
+  if (g.fixa || (o.grime ?? 0.25) <= 0) return
+  g.weather({ grime: o.grime ?? 0.25, rustAmt: 0, bare: o.bare ?? [0.95, 0.82, 0.62] })
+}
+
+/**
+ * Deixa a cena PRONTA para guardar na memória e montar de novo sem refazer nada (Domínios,
+ * 2026-11-15): o mesmo desgaste do `finishCena` (com as mesmas opções) e os arrays compactos.
+ * Só os blocos, o fundo e o horizonte (o que o `finishCena` desenha); o brilho não leva desgaste.
+ */
+export function fixarCena(c: Cena, o: { grime?: number; bare?: RGB } = {}) {
+  for (const g of c.cells.values()) {
+    if (!g.count) continue
+    desgastar(g, o)
+    g.fixar()
+  }
+  if (c.fundo.count) {
+    desgastar(c.fundo, o)
+    c.fundo.fixar()
+  }
+  for (const g of [...c.glows.values(), c.horizonte, c.horizonteLuz]) if (g.count) g.fixar()
+}
+
 export function finishCena(scene: Scene, c: Cena, o: { grime?: number; spec?: RGB; bare?: RGB; chaoUma?: boolean } = {}) {
   const mat = new StandardMaterial(`cena-${c.name}`, scene)
   mat.diffuseColor = new Color3(1, 1, 1)
@@ -305,7 +329,7 @@ export function finishCena(scene: Scene, c: Cena, o: { grime?: number; spec?: RG
   glowMat.specularColor = new Color3(0, 0, 0)
   const add = (g: Geo, name: string, glow?: Geo) => {
     if (!g.count) return
-    if ((o.grime ?? 0.25) > 0) g.weather({ grime: o.grime ?? 0.25, rustAmt: 0, bare: o.bare ?? [0.95, 0.82, 0.62] })
+    desgastar(g, o)
     let m = g.build(name, scene, mat)
     if (glow && glow.count) m = fuseGlow(m, glow.build(name + "-luz", scene, glowMat))
     m.isPickable = false
