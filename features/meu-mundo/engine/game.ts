@@ -897,6 +897,14 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       const cam = follow.camera.globalPosition
       r.char.applyDistance(Math.hypot(r.x - cam.x, r.z - cam.z), scene.frustumPlanes, quality)
     }
+    // Redemoinho dos portais: acende com qualquer um perto (eu ou outro jogador)
+    if (world.portals) {
+      for (const p of world.portals) {
+        let near = p.hits(local.x, local.z)
+        if (!near) for (const r of remotes.values()) if (p.hits(r.x, r.z)) { near = true; break }
+        p.update(dt, near)
+      }
+    }
     mobs.update(dt)
     shadows.update(shadowWho)
     // Toque curto no mundo (mm3d-31): outro jogador abre o card; o vazio fecha.

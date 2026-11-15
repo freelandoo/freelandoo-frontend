@@ -34,6 +34,7 @@ import { SteamFx } from "./steampunk/fx"
 import { Sky, applyGrade, applyLights, brasiliaHour, nightFactor } from "./steampunk/atmosphere"
 import { GroundShade, footShade } from "./steampunk/ground-shade"
 import { createAmbientFx } from "./ambiente-fx/ambient-fx"
+import { PortalVortex } from "../dominio/engine/portal-fx"
 import { house01 } from "./steampunk/house01"
 import {
   steamBoundary,
@@ -281,6 +282,8 @@ export interface BuiltWorld {
   loadedLevels: () => number[]
   /** Perfil de qualidade trocado em jogo (efeitos e céu; o bairro não é refeito). */
   setQuality?: (q: QualityProfile) => void
+  /** Redemoinho dentro de cada portal: o jogo acende quando alguém chega perto (15/11). */
+  portals?: PortalVortex[]
   dispose: () => void
 }
 
@@ -602,12 +605,18 @@ export function buildWorld(
   const statueModels = d.statues?.length && nb.statueAssets ? new CenterModels(scene) : null
   if (statueModels) loadStatues(statueModels, d.statues!, nb.statueAssets, () => !disposed)
 
+  // Redemoinho no vão do portão do Centro (entre as torres, debaixo da viga; o letreiro fica na frente)
+  const gzA = d.ring - d.roadHalf - 1.5
+  const gzB = d.ring + d.roadHalf + 1.5
+  const portals = [new PortalVortex(scene, { x: d.gateX, y: 2.2, z: (gzA + gzB) / 2, ang: Math.PI / 2, rx: (gzB - gzA - 0.9) / 2 - 0.15, ry: 2.05, color: [1, 0.74, 0.34], low: tier === "low" })]
+
   return {
     meshes,
     boxes,
     viewBoxes,
     interactables,
     catalog,
+    portals,
     relabel: ([exit]) => drawAtlas(atlas, exit),
     applyLevel(lot, level, rev) {
       const sl = slots.get(lot)
@@ -646,6 +655,7 @@ export function buildWorld(
     },
     dispose: () => {
       disposed = true
+      for (const p of portals) p.dispose()
       fx.dispose()
       models.dispose()
       statueModels?.dispose()

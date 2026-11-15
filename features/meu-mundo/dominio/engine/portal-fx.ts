@@ -248,3 +248,138 @@ export class DomainPortal {
     this.root.dispose()
   }
 }
+
+/**
+ * Redemoinho dos portais da cidade (portão do Centro no bairro, portal dos Bairros e dos Domínios
+ * no centro): o mesmo anel + redemoinho de partículas dos Domínios, dentro do vão, que ACENDE
+ * quando alguém (o jogador ou outro) chega perto e apaga quando todos saem (pedido do Alex,
+ * 15/11). Desligado não custa nada (malhas fora); ligado são 3 chamadas. O vão pode ser oval:
+ * `rx`/`ry` escalam o nó (as partículas são de frente para a câmera, não esticam).
+ */
+export interface VortexSpec {
+  x: number
+  y: number
+  z: number
+  /** Para onde o vão olha (rad, como `rotation.y`): o plano do redemoinho é o XY local. */
+  ang: number
+  rx: number
+  ry: number
+  color: C3
+  low: boolean
+  /** Distância (m, no chão) que acende; padrão 7. */
+  reach?: number
+}
+
+export class PortalVortex {
+  readonly x: number
+  readonly z: number
+  readonly reach: number
+  private readonly root: TransformNode
+  private readonly ring: Mesh
+  private readonly veil: Mesh
+  private readonly swirl: Mesh
+  private readonly ringMat: ShaderMaterial
+  private readonly swirlMat: ShaderMaterial
+  private readonly veilMat: StandardMaterial
+  private readonly color: Color3
+  private time = Math.random() * 10
+  private on = 0
+  private want = false
+
+  constructor(private readonly scene: Scene, spec: VortexSpec) {
+    this.x = spec.x
+    this.z = spec.z
+    this.reach = spec.reach ?? 7
+    this.color = new Color3(spec.color[0], spec.color[1], spec.color[2])
+    this.root = new TransformNode("mm-portal-vortex", scene)
+    this.root.position.set(spec.x, spec.y, spec.z)
+    this.root.rotation.y = spec.ang
+    this.root.scaling.set(spec.rx, spec.ry, 1)
+    Effect.ShadersStore.mmPortalVertexShader = VERTEX
+    Effect.ShadersStore.mmPortalFragmentShader = FRAGMENT
+    const mat = (name: string, ring: boolean) => {
+      const m = new ShaderMaterial(
+        name,
+        scene,
+        { vertex: "mmPortal", fragment: "mmPortal" },
+        { attributes: ["position", "seed"], uniforms: ["world", "view", "projection", "uTime", "uR", "uSize", "uSpin", "uColor", "uOn"], needAlphaBlending: true, defines: ring ? ["#define RING"] : [] },
+      )
+      m.backFaceCulling = false
+      m.disableDepthWrite = true
+      m.alphaMode = Constants.ALPHA_ADD
+      // raio 1: o tamanho do vão vem da escala do nó
+      m.setFloat("uR", ring ? 1 : 0.94)
+      m.setFloat("uSpin", 1)
+      m.setColor3("uColor", this.color)
+      return m
+    }
+    // vão grande (portal dos Bairros, 9 m): mais partículas e maiores, senão o redemoinho fica ralo
+    const big = Math.min(2.2, Math.max(1, Math.max(spec.rx, spec.ry) / 2.2))
+    this.ring = swirlMesh(scene, Math.round((spec.low ? 90 : 200) * big))
+    this.ring.name = "mm-portal-vortex-ring"
+    this.ring.parent = this.root
+    this.ringMat = mat("mm-portal-vortex-ring", true)
+    this.ringMat.setFloat("uSize", 0.1 * Math.sqrt(big))
+    this.ring.material = this.ringMat
+    this.veil = CreateDisc("mm-portal-vortex-veil", { radius: 0.97, tessellation: spec.low ? 24 : 36, sideOrientation: Mesh.DOUBLESIDE }, scene)
+    this.veil.parent = this.root
+    this.veilMat = new StandardMaterial("mm-portal-vortex-veil", scene)
+    this.veilMat.disableLighting = true
+    this.veilMat.specularColor = Color3.Black()
+    this.veilMat.backFaceCulling = false
+    this.veilMat.disableDepthWrite = true
+    this.veilMat.emissiveColor = this.color.scale(0.8)
+    // aditivo: o véu só clareia o vão (nunca tampa o que está atrás)
+    this.veilMat.alphaMode = Constants.ALPHA_ADD
+    this.veil.material = this.veilMat
+    this.swirl = swirlMesh(scene, Math.round((spec.low ? 140 : 320) * big))
+    this.swirl.name = "mm-portal-vortex-swirl"
+    this.swirl.parent = this.root
+    this.swirlMat = mat("mm-portal-vortex-swirl", false)
+    this.swirlMat.setFloat("uSize", 0.12 * Math.sqrt(big))
+    this.swirl.material = this.swirlMat
+    for (const m of [this.ring, this.veil, this.swirl]) {
+      m.isPickable = false
+      m.setEnabled(false)
+    }
+  }
+
+  /** Alguém dentro do alcance? */
+  hits(px: number, pz: number): boolean {
+    const dx = px - this.x
+    const dz = pz - this.z
+    return dx * dx + dz * dz < this.reach * this.reach
+  }
+
+  /** Um passo: `near` = alguém perto agora. Acende em ~0,5 s e apaga em ~0,8 s. */
+  update(dt: number, near: boolean) {
+    const d = Math.min(0.1, Math.max(0, dt))
+    if (near !== this.want) this.want = near
+    const target = this.want ? 1 : 0
+    if (this.on === 0 && target === 0) return
+    this.on = target > this.on ? Math.min(1, this.on + d / 0.5) : target < this.on ? Math.max(0, this.on - d / 0.8) : this.on
+    const k = this.on
+    const live = k > 0.001
+    for (const m of [this.ring, this.veil, this.swirl]) if (m.isEnabled() !== live) m.setEnabled(live)
+    if (!live) return
+    this.time += d
+    const tt = this.time % 1000
+    // o redemoinho "abre" do centro para a borda enquanto acende
+    this.swirl.scaling.setAll(0.35 + 0.65 * k)
+    this.ringMat.setFloat("uTime", tt)
+    this.ringMat.setFloat("uOn", k)
+    this.swirlMat.setFloat("uTime", tt)
+    this.swirlMat.setFloat("uOn", k)
+    this.veilMat.alpha = 0.16 * k * (0.85 + 0.15 * Math.sin(this.time * 2.1))
+  }
+
+  dispose() {
+    this.ring.dispose()
+    this.veil.dispose()
+    this.swirl.dispose()
+    this.ringMat.dispose()
+    this.veilMat.dispose()
+    this.swirlMat.dispose()
+    this.root.dispose()
+  }
+}

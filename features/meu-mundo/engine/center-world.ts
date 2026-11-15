@@ -40,6 +40,7 @@ import { SteamFx } from "./steampunk/fx"
 import { Sky, applyGrade, applyLights, brasiliaHour, nightFactor } from "./steampunk/atmosphere"
 import { GroundShade, footShade } from "./steampunk/ground-shade"
 import { createAmbientFx } from "./ambiente-fx/ambient-fx"
+import { PortalVortex } from "../dominio/engine/portal-fx"
 import { steamSkyline } from "./steampunk/neighborhood"
 import { SP } from "./steampunk/palette"
 import type { GearSpec } from "./steampunk/kit"
@@ -351,6 +352,13 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
   // Lore v2 D1: o Portal dos Domínios (debaixo do anel)
   if (c.domainPortal) interactables.push({ kind: "domains", id: c.domainPortal.id, x: c.domainPortal.x, z: c.domainPortal.z, radius: c.domainPortal.radius })
 
+  // Redemoinho dentro dos portais (acende quando alguém chega perto): Bairros (vão entre as torres,
+  // debaixo da viga) e Domínios (dentro do anel de pedra) — medidas de steampunk/center.ts
+  const low = tier === "low"
+  const portals: PortalVortex[] = [new PortalVortex(scene, { x: c.dims.portalX - 1, y: 2.95, z: 0, ang: Math.PI / 2, rx: 4.75, ry: 2.8, color: [1, 0.74, 0.34], low })]
+  const dp = c.domainPortal
+  if (dp) portals.push(new PortalVortex(scene, { x: dp.x, y: 2.55, z: dp.z, ang: Math.PI / 2, rx: dp.span - 0.27, ry: dp.span - 0.27, color: [0.72, 0.62, 1], low }))
+
   const noCatalog: HouseCatalog = { assetVersion: "centro", basePath: "", levels: [] }
   ;(window as unknown as { __mmCenter?: () => unknown }).__mmCenter = () => ({
     models: models.count,
@@ -366,6 +374,7 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
     viewBoxes,
     interactables,
     catalog: noCatalog,
+    portals,
     relabel: (next) => drawLabels(atlas, next),
     applyLevel: () => false,
     retryVisual: () => {},
@@ -383,6 +392,7 @@ export function buildCenterWorld(scene: Scene, c: CenterLayout, labels: CenterLa
     },
     dispose: () => {
       disposed = true
+      for (const p of portals) p.dispose()
       clearInterval(clock)
       const w = window as unknown as { __mmCenter?: unknown; __mmSetHour?: typeof devHour }
       delete w.__mmCenter
