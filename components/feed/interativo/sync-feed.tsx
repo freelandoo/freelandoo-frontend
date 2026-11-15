@@ -23,6 +23,7 @@ import { fx, installFeedFx } from "@/lib/feed-fx"
 import { fxApi, type FxUser } from "@/lib/feed-fx/api"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
+import { SYNC_LIST_KEY } from "./sync-picker"
 
 interface Session {
   id_session: string
@@ -115,12 +116,29 @@ export function SyncFeed({ id }: { id: string }) {
   // ── feed do anfitrião ──
   useEffect(() => {
     if (!active || !isHost || posts.length) return
+    // Começou jogando um post para o lado: o feed é o MEU, a partir dele.
+    let list: string[] = []
+    try {
+      list = JSON.parse(sessionStorage.getItem(SYNC_LIST_KEY(id)) || "[]")
+    } catch {
+      list = []
+    }
+    if (Array.isArray(list) && list.length) {
+      fxApi<{ items: FeedPost[] }>(`/posts?ids=${list.slice(0, 30).join(",")}`)
+        .then((r) => {
+          const by = new Map(r.items.map((p) => [p.post_id, p]))
+          const ordered = list.map((pid) => by.get(pid)).filter(Boolean) as FeedPost[]
+          if (ordered.length) setPosts(ordered)
+        })
+        .catch(() => {})
+      return
+    }
     const token = getToken()
     fetch(`/api/feed/portfolio?limit=12`, { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: "no-store" })
       .then((r) => (r.ok ? (r.json() as Promise<FeedResponse>) : null))
       .then((d) => d && setPosts(d.items.filter((p) => p.feed_kind !== "bees").slice(0, 30)))
       .catch(() => {})
-  }, [active, isHost, posts.length])
+  }, [active, isHost, posts.length, id])
 
   const videoOf = (idx: number) =>
     scrollRef.current?.querySelector<HTMLVideoElement>(`[data-sync-index="${idx}"] video`) || null

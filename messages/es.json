@@ -14733,6 +14733,9 @@
     "donationFrom": "Donación de @{u}",
     "toastBauDropped": "¡Tu cofre de donación cayó en el feed de alguien!",
     "toastBauOpened": "Abrieron tu cofre de donación. ¡Gracias!",
-    "toastBauPaid": "Pago confirmado: tu cofre está en el sorteo de la región."
+    "toastBauPaid": "Pago confirmado: tu cofre está en el sorteo de la región.",
+    "syncSide": "Ver juntos",
+    "syncPickTitle": "¿Ver juntos con quién?",
+    "syncPickHint": "La persona recibe la invitación. Si acepta, ven tu feed juntos a partir de este post."
   }
 }

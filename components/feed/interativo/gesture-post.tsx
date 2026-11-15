@@ -4,9 +4,13 @@
 //
 //   segurar ~420 ms parado ........ o post SOLTA do feed (escala + inclinação + sombra dura)
 //   continuar parado ~480 ms ...... abre a VITRINE de quem pode receber (avatares no topo)
-//   arrastar ↑ e soltar ........... LANÇA para todos (ou para o avatar sob o dedo)
-//   arrastar ↓ e soltar ........... SALVA (o post encolhe e entra na gaveta)
+//   ↑ (arrastar ou jogar rápido) .. LANÇA para todos (ou para o avatar sob o dedo)
+//   ↓ (arrastar ou jogar rápido) .. SALVA (desce até a gaveta)
+//   ← → (arrastar ou jogar) ....... VER JUNTO: escolhe com quem sincronizar o feed
 //   soltar no meio ................ volta para o lugar
+// A direção é a do EIXO DOMINANTE (um "para cima meio torto" ainda é para
+// cima). O post NUNCA muda de tamanho depois de soltar (pedido do Alex): ele
+// voa do tamanho em que está e some no fim.
 //
 // Não briga com a rolagem: se o dedo andar mais de 10 px antes dos 420 ms, é
 // rolagem e nada acontece. Depois que soltou, um `touchmove` NÃO passivo segura
@@ -19,7 +23,7 @@
 import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { animate, motion, useMotionValue, useTransform } from "framer-motion"
-import { Archive, ArrowUp, Send } from "lucide-react"
+import { Archive, ArrowUp, Link2, Send } from "lucide-react"
 import { fx, prefersReducedMotion } from "@/lib/feed-fx"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -42,20 +46,25 @@ interface GesturePostProps {
   onSave?: (postId: string) => Promise<"saved" | "already" | "error">
   /** Sem ninguém para receber: o que fazer ao tentar lançar (abrir o convite). */
   onNoTargets?: () => void
+  /** Jogou para o lado: chamar alguém para ver o feed junto a partir deste post. */
+  onSync?: (postId: string) => void
 }
 
 const PRESS_MS = 420
 const TRAY_MS = 480
 const SLOP_PX = 10
 const ZONE_PX = 72
-const FLICK_VY = -0.85 // px/ms para cima
+const ZONE_X_PX = 90
+const FLICK_V = 0.75 // px/ms: jogada rápida vale mesmo sem chegar na zona
+const FLICK_MIN_PX = 26
+const LIFT_SCALE = 1.035
 
 type Phase = "idle" | "press" | "lift" | "flying"
-type Zone = "none" | "up" | "down"
+type Zone = "none" | "up" | "down" | "side"
 
 const INTERACTIVE = "button, a, input, textarea, select, label, video[controls], [role=button], [data-no-gesture]"
 
-function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, onNoTargets }: GesturePostProps) {
+function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, onNoTargets, onSync }: GesturePostProps) {
   const t = useTranslations("FeedFx")
   const ref = useRef<HTMLDivElement | null>(null)
   const x = useMotionValue(0)
@@ -78,8 +87,10 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
     pid: -1,
     x0: 0,
     y0: 0,
+    lastX: 0,
     lastY: 0,
     lastT: 0,
+    vx: 0,
     vy: 0,
     zone: "none" as Zone,
     hover: null as string | null,
@@ -91,9 +102,9 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
   })
   const trayRef = useRef<HTMLDivElement | null>(null)
   const binRef = useRef<HTMLDivElement | null>(null)
-  const propsRef = useRef({ targets, onThrow, onSave, onNoTargets })
+  const propsRef = useRef({ targets, onThrow, onSave, onNoTargets, onSync })
   useEffect(() => {
-    propsRef.current = { targets, onThrow, onSave, onNoTargets }
+    propsRef.current = { targets, onThrow, onSave, onNoTargets, onSync }
   })
 
   const setPhaseBoth = (p: Phase) => {
@@ -142,12 +153,9 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
     x.set(0)
     y.set(0)
     rotate.set(0)
-    scale.set(0.96)
+    scale.set(1)
     opacity.set(0)
-    await Promise.all([
-      animate(opacity, 1, { duration: 0.22 }),
-      animate(scale, 1, { type: "spring", stiffness: 420, damping: 26 }),
-    ])
+    await animate(opacity, 1, { duration: 0.24 })
   }, [x, y, rotate, scale, opacity])
 
   const doThrow = useCallback(
@@ -186,7 +194,6 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
           animate(y, ty, { duration: 0.34, ease: [0.4, 0, 1, 1] }),
           animate(x, tx, { duration: 0.34, ease: [0.4, 0, 1, 1] }),
           animate(rotate, to === "all" ? -7 : 4, { duration: 0.34 }),
-          animate(scale, to === "all" ? 0.82 : 0.18, { duration: 0.34, ease: [0.4, 0, 1, 1] }),
           animate(opacity, 0, { duration: 0.34, ease: [0.7, 0, 1, 1] }),
         ])
       }
@@ -202,7 +209,7 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
         showStamp(t("thrownStamp", "LANÇADO · {n}").replace("{n}", String(res.sent)))
       }
     },
-    [postId, x, y, rotate, scale, opacity, lift, trail, settle, resetGesture, comeBack, showStamp, t]
+    [postId, x, y, rotate, opacity, lift, trail, settle, resetGesture, comeBack, showStamp, t]
   )
 
   const doSave = useCallback(async () => {
@@ -223,7 +230,6 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       await Promise.all([
         animate(x, tx, { duration: 0.32, ease: [0.55, 0, 0.1, 1] }),
         animate(y, ty, { duration: 0.32, ease: [0.55, 0, 0.1, 1] }),
-        animate(scale, 0.08, { duration: 0.32, ease: [0.55, 0, 0.1, 1] }),
         animate(rotate, 0, { duration: 0.2 }),
         animate(opacity, 0, { duration: 0.32, ease: [0.8, 0, 1, 1] }),
       ])
@@ -245,7 +251,37 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
     } else {
       showStamp(res === "already" ? t("alreadySaved", "JÁ ESTAVA SALVO") : t("savedStamp", "SALVO"))
     }
-  }, [postId, x, y, scale, rotate, opacity, lift, settle, resetGesture, comeBack, showStamp, t])
+  }, [postId, x, y, rotate, opacity, lift, settle, resetGesture, comeBack, showStamp, t])
+
+  /** Jogou para o lado: o post desliza para fora e volta; a página abre o "com quem". */
+  const doSync = useCallback(
+    async (dir: number) => {
+      const sync = propsRef.current.onSync
+      if (!sync) {
+        settle()
+        setPhaseBoth("idle")
+        return
+      }
+      setPhaseBoth("flying")
+      fx("sync-convite", "sync")
+      animate(lift, 0, { duration: 0.15 })
+      const w = ref.current?.getBoundingClientRect().width || 400
+      if (prefersReducedMotion()) {
+        await animate(opacity, 0, { duration: 0.15 })
+      } else {
+        await Promise.all([
+          animate(x, dir * (w + 60), { duration: 0.3, ease: [0.4, 0, 1, 1] }),
+          animate(rotate, dir * 6, { duration: 0.3 }),
+          animate(opacity, 0, { duration: 0.3, ease: [0.7, 0, 1, 1] }),
+        ])
+      }
+      resetGesture()
+      sync(postId)
+      await comeBack()
+      setPhaseBoth("idle")
+    },
+    [postId, x, rotate, opacity, lift, settle, resetGesture, comeBack]
+  )
 
   // ── Ponteiro ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -266,8 +302,10 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       s.pid = e.pointerId
       s.x0 = e.clientX
       s.y0 = e.clientY
+      s.lastX = e.clientX
       s.lastY = e.clientY
       s.lastT = performance.now()
+      s.vx = 0
       s.vy = 0
       s.phase = "press"
       s.pressTimer = setTimeout(() => {
@@ -277,7 +315,7 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
         el.addEventListener("touchmove", onTouchMove, { passive: false })
         setPhaseBoth("lift")
         fx("pegar", "pegar")
-        animate(scale, 1.035, { type: "spring", stiffness: 600, damping: 22 })
+        animate(scale, LIFT_SCALE, { type: "spring", stiffness: 600, damping: 22 })
         animate(rotate, -1.6, { type: "spring", stiffness: 400, damping: 20 })
         animate(lift, 1, { duration: 0.16 })
         try {
@@ -311,7 +349,9 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       if (s.phase !== "lift") return
       const now = performance.now()
       const dt = Math.max(1, now - s.lastT)
+      s.vx = s.vx * 0.6 + ((e.clientX - s.lastX) / dt) * 0.4
       s.vy = s.vy * 0.6 + ((e.clientY - s.lastY) / dt) * 0.4
+      s.lastX = e.clientX
       s.lastY = e.clientY
       s.lastT = now
       // Arrastou antes da vitrine: é lançamento rápido, a vitrine não abre.
@@ -319,14 +359,25 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
         clearTimeout(s.trayTimer)
         s.trayTimer = 0
       }
-      x.set(dx * 0.45)
-      y.set(dy)
+      const sideways = Math.abs(dx) > Math.abs(dy)
+      // Para o lado o post segue o dedo inteiro; na vertical, de leve.
+      x.set(sideways && propsRef.current.onSync ? dx * 0.9 : dx * 0.45)
+      y.set(sideways && propsRef.current.onSync ? dy * 0.35 : dy)
       rotate.set(Math.max(-8, Math.min(8, dx * 0.05)) - 1.6)
-      const z: Zone = dy < -ZONE_PX ? "up" : dy > ZONE_PX && propsRef.current.onSave ? "down" : "none"
+      const z: Zone = sideways
+        ? Math.abs(dx) > ZONE_X_PX && propsRef.current.onSync
+          ? "side"
+          : "none"
+        : dy < -ZONE_PX
+          ? "up"
+          : dy > ZONE_PX && propsRef.current.onSave
+            ? "down"
+            : "none"
       if (z !== s.zone) {
         s.zone = z
         setZone(z)
         if (z === "down") fx("salvar-zona", "cancelar")
+        if (z === "side") fx("mirar", "mirar")
       }
       if (s.tray) {
         let h: string | null = null
@@ -363,13 +414,20 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       window.setTimeout(() => {
         st.current.suppressClick = false
       }, 80)
+      const dx = e.clientX - s.x0
       const dy = e.clientY - s.y0
+      const sideways = Math.abs(dx) > Math.abs(dy)
+      const flickUp = !sideways && s.vy < -FLICK_V && dy < -FLICK_MIN_PX
+      const flickDown = !sideways && s.vy > FLICK_V && dy > FLICK_MIN_PX
+      const flickSide = sideways && Math.abs(s.vx) > FLICK_V && Math.abs(dx) > FLICK_MIN_PX
       if (s.tray && s.hover) {
         void doThrow(s.hover)
-      } else if (s.zone === "up" || (s.vy < FLICK_VY && dy < -30)) {
+      } else if (s.zone === "up" || flickUp) {
         void doThrow("all")
-      } else if (s.zone === "down") {
+      } else if ((s.zone === "down" || flickDown) && propsRef.current.onSave) {
         void doSave()
+      } else if ((s.zone === "side" || flickSide) && propsRef.current.onSync) {
+        void doSync(dx < 0 ? -1 : 1)
       } else {
         fx("cancelar", "cancelar")
         resetGesture()
@@ -418,7 +476,7 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       el.removeEventListener("contextmenu", onContext)
       el.removeEventListener("click", onClickCapture, true)
     }
-  }, [enabled, doThrow, doSave, resetGesture, settle, x, y, rotate, scale, lift])
+  }, [enabled, doThrow, doSave, doSync, resetGesture, settle, x, y, rotate, scale, lift])
 
   // Mede os avatares quando a vitrine abre (o acerto do dedo usa estes retângulos).
   useEffect(() => {
@@ -538,6 +596,28 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
                 )}
               </motion.div>
             )}
+
+            {/* laterais: jogar para o lado = ver o feed junto */}
+            {onSync &&
+              ([-1, 1] as const).map((side) => (
+                <motion.div
+                  key={side}
+                  className={"absolute top-1/2 -mt-16 " + (side < 0 ? "left-0" : "right-0")}
+                  initial={{ x: side * 50, opacity: 0 }}
+                  animate={{ x: zone === "side" ? side * -6 : 0, opacity: 1, scale: zone === "side" ? 1.08 : 1 }}
+                  transition={{ type: "spring", stiffness: 520, damping: 28 }}
+                >
+                  <div
+                    className={
+                      "flex h-32 w-11 flex-col items-center justify-center gap-2 border-[3px] shadow-[4px_4px_0_#000] " +
+                      (zone === "side" ? "border-black bg-[#F2B705] text-black" : "border-[#F2B705] bg-black/85 text-[#F2B705]")
+                    }
+                  >
+                    <Link2 className="h-5 w-5" />
+                    <span className="text-[10px] font-black uppercase tracking-wider [writing-mode:vertical-rl]">{t("syncSide", "Ver junto")}</span>
+                  </div>
+                </motion.div>
+              ))}
 
             {/* gaveta de salvar embaixo */}
             {onSave && (

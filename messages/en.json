@@ -14753,6 +14753,9 @@
     "donationFrom": "Donation from @{u}",
     "toastBauDropped": "Your donation chest dropped into someone's feed!",
     "toastBauOpened": "Your donation chest was opened. Thank you!",
-    "toastBauPaid": "Payment confirmed: your chest is in the region's draw."
+    "toastBauPaid": "Payment confirmed: your chest is in the region's draw.",
+    "syncSide": "Watch together",
+    "syncPickTitle": "Watch together with whom?",
+    "syncPickHint": "They get the invite. If they accept, you both watch your feed together from this post on."
   }
 }

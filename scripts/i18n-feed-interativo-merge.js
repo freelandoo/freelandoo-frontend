@@ -320,6 +320,14 @@ const FEEDFX = {
     "Payment confirmed: your chest is in the region's draw.",
     "Pago confirmado: tu cofre está en el sorteo de la región.",
   ],
+  // ── gesto para o lado = ver junto ──
+  syncSide: ["Ver junto", "Watch together", "Ver juntos"],
+  syncPickTitle: ["Ver junto com quem?", "Watch together with whom?", "¿Ver juntos con quién?"],
+  syncPickHint: [
+    "A pessoa recebe o convite. Se aceitar, vocês veem o seu feed juntos a partir deste post.",
+    "They get the invite. If they accept, you both watch your feed together from this post on.",
+    "La persona recibe la invitación. Si acepta, ven tu feed juntos a partir de este post.",
+  ],
 }
 
 const FEED = {

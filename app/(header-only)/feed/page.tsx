@@ -17,6 +17,7 @@ import { DropArrival } from "@/components/feed/interativo/drop-arrival"
 import { GiftCard } from "@/components/feed/interativo/gift-card"
 import { CapsuleCard } from "@/components/feed/interativo/capsule-card"
 import { PathStrip } from "@/components/feed/interativo/path-player"
+import { SyncPicker } from "@/components/feed/interativo/sync-picker"
 import { useFeedInterativo } from "@/components/feed/interativo/use-feed-interativo"
 import { installFeedFx } from "@/lib/feed-fx"
 import type { DropKind, FxDrop, FxUser } from "@/lib/feed-fx/api"
@@ -334,7 +335,21 @@ function FeedPageInner() {
     return true
   }, [])
 
-  const fxBlocked = !!openCommentsFor || !!storyOpen || creatorOpen || recadoOpen
+  // Jogou o post para o lado: "ver junto com quem?" — a sessão começa neste post.
+  const [syncFrom, setSyncFrom] = useState<string | null>(null)
+  const onSync = useCallback((postId: string) => setSyncFrom(postId), [])
+  const syncIds = useMemo(() => {
+    if (!syncFrom) return []
+    const at = items.findIndex((p) => p.post_id === syncFrom)
+    const out: string[] = []
+    for (const p of items.slice(Math.max(0, at))) {
+      if (!out.includes(p.post_id)) out.push(p.post_id)
+      if (out.length >= 30) break
+    }
+    return out
+  }, [syncFrom, items])
+
+  const fxBlocked = !!openCommentsFor || !!storyOpen || creatorOpen || recadoOpen || !!syncFrom
   const { targets, throwPost, markSeen } = useFeedInterativo({
     enabled: logged,
     scrollRef,
@@ -451,6 +466,7 @@ function FeedPageInner() {
                   onThrow={throwPost}
                   onSave={savePost}
                   onNoTargets={onNoTargets}
+                  onSync={onSync}
                 >
                   <PortfolioPostCard
                     post={post}
@@ -505,6 +521,8 @@ function FeedPageInner() {
           </div>
         )}
       </div>
+
+      <SyncPicker open={!!syncFrom} targets={targets} postIds={syncIds} onClose={() => setSyncFrom(null)} />
 
       <CommentsPanel
         postId={openCommentsFor}

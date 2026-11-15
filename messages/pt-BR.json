@@ -14167,6 +14167,9 @@
     "donationFrom": "Doação de @{u}",
     "toastBauDropped": "Seu baú de doação caiu no feed de alguém!",
     "toastBauOpened": "Abriram o seu baú de doação. Obrigado!",
-    "toastBauPaid": "Pagamento confirmado: seu baú está no sorteio da região."
+    "toastBauPaid": "Pagamento confirmado: seu baú está no sorteio da região.",
+    "syncSide": "Ver junto",
+    "syncPickTitle": "Ver junto com quem?",
+    "syncPickHint": "A pessoa recebe o convite. Se aceitar, vocês veem o seu feed juntos a partir deste post."
   }
 }
