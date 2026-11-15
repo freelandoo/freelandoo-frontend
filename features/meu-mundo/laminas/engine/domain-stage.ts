@@ -33,7 +33,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { ARENA_R } from "../sim/fight"
-import { KitPlacer, LOOKS, applyDomainLook, type StageSky, loadDomainKit, paintedGround, seeded, type DomainKitId, type DomainSpot, type KitPiece } from "../../dominio/engine/domain-kit"
+import { LOOKS, applyDomainLook, type StageSky, paintedGround, type DomainKitId, type DomainSpot } from "../../dominio/engine/domain-kit"
 import { CHAO_DETALHE, aplicarChaoDetalhe } from "../../engine/cena-codigo/chao-detalhe"
 import { DOMAIN_SKY, skyFog } from "../../engine/sky/sky-registry"
 import { CENAS } from "../../engine/cena-codigo/cenas"
@@ -50,63 +50,6 @@ export interface DomainStageSpec {
   /** Cena aberta de onde a luta saiu (`gelo-2`): a luz e a névoa do palco são as dela. */
   cena?: string | null
 }
-
-/** Anel em volta do círculo: [peça, raio, altura, quantas, deslocamento do ângulo, fica fora do low?]. */
-type Ring = [KitPiece, number, number, number, number, boolean?]
-
-const RINGS: Record<DomainSpot, Ring[]> = {
-  entrada: [
-    ["cogumelo", ARENA_R + 3.2, 3.2, 7, 0.2],
-    ["flor", ARENA_R + 2.2, 1.6, 9, 0.55],
-    ["lanterna", ARENA_R + 1.6, 1.5, 6, 0],
-    ["planta", ARENA_R + 4.6, 2.6, 8, 0.35],
-    ["arvore", ARENA_R + 17, 24, 9, 0.1],
-    ["arvore2", ARENA_R + 25, 28, 7, 0.45],
-  ],
-  fundo: [
-    ["tronco-caido", ARENA_R + 3, 1.6, 5, 0.3],
-    ["ninho", ARENA_R + 2.4, 1.4, 4, 0.8],
-    ["cristais", ARENA_R + 2.8, 2.4, 6, 0.05],
-    ["planta", ARENA_R + 4, 3, 7, 0.5],
-    ["cogumelo-casa", ARENA_R + 7.5, 6, 4, 0.15],
-    ["arvore", ARENA_R + 16, 22, 11, 0.6],
-    ["arvore2", ARENA_R + 24, 26, 9, 0.25],
-  ],
-  palacio: [
-    ["cristais", ARENA_R + 1.8, 2.8, 10, 0],
-    ["lanterna", ARENA_R + 2.6, 1.8, 10, 0.5],
-    ["cogumelo", ARENA_R + 9, 5, 6, 0.35],
-    ["arvore", ARENA_R + 21, 28, 10, 0.2],
-  ],
-}
-
-/** D5: os palcos do Cânion (as medidas das pedras e do anel são as da regra do Jetpack × a escala). */
-// No Cânion o paredão É o lugar: no low sai o anel de fora marcado (`true`), nunca o paredão de dentro.
-const CANYON_RINGS: Record<DomainSpot, Ring[]> = {
-  entrada: [
-    ["rocha2", ARENA_R + 2, 1.1, 7, 0],
-    ["cacto", ARENA_R + 2.6, 2.4, 6, 0.2],
-    ["pedra-raizes", ARENA_R + 3.6, 2.8, 6, 0.55, true],
-    ["torre-vigia", ARENA_R + 12, 7, 3, 0.35],
-    ["paredao", ARENA_R + 17, 18, 12, 0.1],
-    ["paredao", ARENA_R + 27, 26, 8, 0.45, true],
-  ],
-  fundo: [
-    ["rocha", ARENA_R + 2.6, 1.4, 6, 0.3],
-    ["pedra-raizes", ARENA_R + 3, 3.2, 6, 0.8],
-    ["cacto", ARENA_R + 4.4, 3, 5, 0.05, true],
-    ["moinho", ARENA_R + 11, 9, 2, 0.15],
-    ["paredao", ARENA_R + 14, 20, 14, 0.6],
-    ["paredao", ARENA_R + 23, 28, 10, 0.25, true],
-  ],
-  palacio: [
-    ["rocha2", ARENA_R + 1.8, 1.2, 10, 0],
-    ["cacto", ARENA_R + 3.2, 2.2, 6, 0.5, true],
-    ["torre-vigia", ARENA_R + 12, 8, 4, 0.35, true],
-    ["paredao", ARENA_R + 18, 24, 14, 0.2],
-  ],
-}
-const RINGS_BY_KIT: Record<DomainKitId, Record<DomainSpot, Ring[]>> = { floresta: RINGS, canion: CANYON_RINGS }
 
 /** Monta o palco do Domínio na cena da luta. Luzes: "mm-hemi"/"mm-sun" (achadas pelo nome). */
 export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSpec): ArenaView {
@@ -163,7 +106,7 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
     // a arte do céu escurece junto com as fases do chefão (e clareia no relâmpago)
     sky.dome.setLight([sk, sk, sk])
   }
-  // palco em código: uma Cena (1 malha por bloco); sem ela (Domínio sem palco, nenhum hoje), o chão pintado + o kit do Tripo
+  // palco em código: uma Cena (1 malha por bloco); sem ela (Domínio sem palco, nenhum hoje), só o chão pintado
   const palco = codigo ? finishCena(scene, montarPalco(codigo, spec.spot, 0), { chaoUma: low }) : null
   for (const m of palco?.meshes ?? []) m.freezeWorldMatrix()
   const ground = palco ? null : paintedGround(scene, `dom-stage-${spec.spot}`, look, 170, 170, 0, 0, 0, 6, spec.spot === "palacio" ? 23 : spec.spot === "fundo" ? 17 : 11)
@@ -189,60 +132,6 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   ring.freezeWorldMatrix()
   ringMat.freeze()
 
-  let placer: KitPlacer | null = null
-  let dropKit: (() => void) | null = null
-  // no low: menos peças por anel e sem o anel de árvores de fora (a névoa já fecha)
-  const rings = (RINGS_BY_KIT[spec.kit] ?? RINGS)[spec.spot]
-  const far = Math.max(...rings.map((x) => x[1]))
-  const marked = rings.some((x) => x[5])
-  const used = rings.filter((x) => !(low && (marked ? x[5] : rings.length > 3 && x[1] === far)))
-  // só os arquivos das peças deste palco (cada arquivo é uma textura a mais na luta)
-  // o arco tem textura de 1024: no low só o palácio (a colunata é a cara dele) o carrega
-  const arch = spec.spot === "palacio" || (spec.spot === "entrada" && !low)
-  const pieces: KitPiece[] = [...used.map((x) => x[0]), ...(arch ? (["arco"] as KitPiece[]) : []), ...(spec.spot === "palacio" && !low ? (["ilha"] as KitPiece[]) : []), ...(storm && spec.spot === "palacio" ? (["anel"] as KitPiece[]) : [])]
-  // a câmera da luta fica a 20–35 m das árvores. B6 (tema v2): a versão de longe delas deixou de ser
-  // serrilhada (2.000 tri, mais bonita que a de perto da v1, 3.000) e a de perto subiu para 3.600: troca a 30 m
-  if (!codigo) void loadDomainKit(scene, spec.kit, () => !disposed, pieces, storm ? (low ? { paredao: 24, arco: 22, "torre-vigia": 24, moinho: 24 } : { paredao: 34 }) : { arvore: 30, arvore2: 30 }).then((kit) => {
-    if (disposed) return kit.dispose()
-    dropKit = kit.dispose
-    const p = new KitPlacer(kit, `dom-stage-${spec.spot}`)
-    placer = p
-    const r = seeded(spec.spot.length * 97 + 13)
-    const thin = low ? 0.5 : 1
-    for (const [piece, rad, h, n0, off] of used) {
-      // D5: o paredão do Cânion não rareia no low (com buraco o cânion vira deserto); troca de longe mais cedo
-      const n = Math.max(3, Math.round(n0 * (storm && piece === "paredao" ? 1 : thin)))
-      for (let i = 0; i < n; i++) {
-        const a = ((i + off) / n) * Math.PI * 2 + (r() - 0.5) * 0.18
-        const rr = rad + (r() - 0.5) * 1.2
-        p.put(piece, Math.cos(a) * rr, Math.sin(a) * rr, h * (0.85 + r() * 0.3), r() * Math.PI * 2)
-      }
-    }
-    // entrada: o arco (de raízes / de pedra) atrás de quem chega (−z), virado para o círculo
-    if (spec.spot === "entrada" && arch) p.put("arco", 0, -(ARENA_R + 7), 9, 0)
-    // D5: os anéis da Pista do Céu no alto do palácio de Zéphyra (o trilho por onde ela corre)
-    if (storm && spec.spot === "palacio") {
-      const n = low ? 2 : 4
-      for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2 + 0.3
-        p.put("anel", Math.cos(a) * (ARENA_R + 14), Math.sin(a) * (ARENA_R + 14), 3.2, -a, 9 + (i % 2) * 3)
-      }
-    }
-    // palácio: colunata de arcos em volta, todos olhando para o meio, e as ilhas no alto
-    if (spec.spot === "palacio") {
-      const arches = low ? (storm ? 2 : 4) : 7
-      for (let i = 0; i < arches; i++) {
-        const a = (i / arches) * Math.PI * 2 + Math.PI / arches
-        const R = ARENA_R + 6
-        p.put("arco", Math.cos(a) * R, Math.sin(a) * R, 8, Math.PI / 2 - a)
-      }
-      for (let i = 0; i < (low ? 0 : 4); i++) {
-        const a = (i / 4) * Math.PI * 2 + 0.6
-        p.put("ilha", Math.cos(a) * 55, Math.sin(a) * 55, 16 + r() * 8, r() * 6, 18 + r() * 14)
-      }
-    }
-  })
-
   return {
     cheer() {
       /* mata não tem plateia */
@@ -260,8 +149,6 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
     },
     dispose() {
       disposed = true
-      placer?.dispose()
-      dropKit?.()
       ring.dispose()
       ringMat.dispose()
       ground?.dispose()

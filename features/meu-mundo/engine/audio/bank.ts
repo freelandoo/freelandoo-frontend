@@ -35,6 +35,40 @@ export interface Voice {
 
 const voices: (Voice & { started: number })[] = []
 
+// Limpeza 3 (2026-11-14): teto da memória dos efeitos DECODIFICADOS. Antes ficava tudo para sempre
+// (314 efeitos, ~1.040 s = ~400 MB de PCM numa sessão que passa por rua, luta, Domínios e minijogos).
+// A ordem do Map é a do último uso; passou do teto, sai o mais antigo que não está tocando. O que
+// sai volta do cache HTTP do navegador na próxima vez (enquanto isso, quem chamou toca o sintetizador).
+let budget = 0
+let held = 0
+const bytesOf = (b: AudioBuffer) => b.length * b.numberOfChannels * 4
+function bankBudget() {
+  if (!budget) {
+    const mem = typeof navigator !== "undefined" ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory : undefined
+    budget = (mem && mem <= 4 ? 32 : 64) * 1024 * 1024
+  }
+  return budget
+}
+/** Marca o asset como usado agora (vai para o fim da fila de despejo). */
+function touch(asset: string, buf: AudioBuffer) {
+  buffers.delete(asset)
+  buffers.set(asset, buf)
+}
+function keep(asset: string, buf: AudioBuffer) {
+  const old = buffers.get(asset)
+  if (old) held -= bytesOf(old)
+  touch(asset, buf)
+  held += bytesOf(buf)
+  if (held <= bankBudget()) return
+  const playing = new Set(voices.filter((v) => !v.ended).map((v) => v.asset))
+  for (const [a, b] of buffers) {
+    if (held <= bankBudget()) break
+    if (a === asset || playing.has(a)) continue
+    buffers.delete(a)
+    held -= bytesOf(b)
+  }
+}
+
 function loadManifest(): Promise<Record<string, Entry>> {
   if (!manifest) {
     manifest = fetch(BASE + "manifest.json", { cache: "no-cache" })
@@ -54,7 +88,10 @@ export async function assetUrl(asset: string): Promise<string | null> {
 /** Baixa e decodifica (uma vez). null = não existe ou falhou. */
 export function loadSample(asset: string): Promise<AudioBuffer | null> {
   const ok = buffers.get(asset)
-  if (ok) return Promise.resolve(ok)
+  if (ok) {
+    touch(asset, ok)
+    return Promise.resolve(ok)
+  }
   if (missing.has(asset)) return Promise.resolve(null)
   const busy = loading.get(asset)
   if (busy) return busy
@@ -71,7 +108,7 @@ export function loadSample(asset: string): Promise<AudioBuffer | null> {
       const r = await fetch(BASE + e.arquivo)
       if (!r.ok) throw new Error(String(r.status))
       const buf = await ctx.decodeAudioData(await r.arrayBuffer())
-      buffers.set(asset, buf)
+      keep(asset, buf)
       return buf
     } catch {
       missing.add(asset)
@@ -122,6 +159,7 @@ export function playSample(asset: string, o: PlayOpts = {}): Voice | null {
     if (ctx && !missing.has(asset)) void loadSample(asset)
     return null
   }
+  touch(asset, buf)
   const out = audioBus(o.bus ?? "sfx")
   if (!out) return null
   if (o.minGap) {
@@ -200,5 +238,5 @@ if (typeof window !== "undefined") {
 }
 
 export function bankState() {
-  return { loaded: buffers.size, loading: loading.size, missing: [...missing], voices: voices.filter((v) => !v.ended).length }
+  return { loaded: buffers.size, mb: Math.round(held / 1048576), budgetMb: Math.round(bankBudget() / 1048576), loading: loading.size, missing: [...missing], voices: voices.filter((v) => !v.ended).length }
 }

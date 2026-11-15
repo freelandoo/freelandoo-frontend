@@ -52,7 +52,7 @@ import { kitFloresta } from "./pecas/kit-floresta"
 import { kitOrbital } from "./pecas/kit-orbital"
 import { kitForja } from "./pecas/kit-forja"
 import { kitFabrica } from "./pecas/kit-fabrica"
-import { ICE_DIR, FORGE_DIR, loadPieceGroups, loadPieces, type PieceAssets } from "./canyon-assets"
+import { ICE_DIR, FORGE_DIR, loadPieceGroups, type PieceAssets } from "./canyon-assets"
 import { FLAG, type JetpackNet, type JetpackSeat, type JetpackStart, type PilotSample } from "./net"
 import { GAME_MUSIC, sceneSound, jetpackPhaseAmb } from "../../engine/audio"
 

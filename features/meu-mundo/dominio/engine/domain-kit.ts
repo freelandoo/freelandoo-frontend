@@ -1,5 +1,9 @@
 // features/meu-mundo/dominio/engine/domain-kit.ts — lore v2 D1: o KIT de um Domínio.
 //
+// Limpeza 3 (2026-11-14): o Domínio fechado (domain-game.ts) e o carregador do kit do Tripo
+// (loadDomainKit, KitPlacer) saíram — as 18 cenas e os 6 palcos são em código. Fica o look, o céu
+// e o chão pintado que o palco de luta e o mundo aberto dividem. Histórico abaixo.
+//
 // Um tema = um kit de peças feito uma vez e usado em todo jogo (skill
 // meu-mundo-cenario). A Floresta da Lua usa as MESMAS peças do Jetpack
 // (`public/meu-mundo/jetpack/floresta2/`, carregador de grupos do
@@ -24,8 +28,6 @@
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
-import "@babylonjs/core/Meshes/instancedMesh"
-import type { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh"
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture"
@@ -36,96 +38,14 @@ import type { SkyRegionId, SkyVariant } from "../../engine/sky/sky-registry"
 import type { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight"
 import { Scene as SceneClass } from "@babylonjs/core/scene"
-import type { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial"
-import { FOREST_GROUPS, CANYON_GROUPS, CANYON_DIR, loadPieceGroups, type ForestAsset, type CanyonAsset, type PieceAssets } from "../../jetpack/engine/canyon-assets"
 import { Sky } from "../../engine/steampunk/atmosphere"
 
 export type DomainKitId = "floresta" | "canion"
 export type DomainSpot = "entrada" | "fundo" | "palacio"
 
-/** Distância (m) da versão de longe: a câmera está a ~9 m do personagem, no chão. */
-// B6: árvores trocam mais cedo (22/24 m, eram 26/28): a versão de longe do tema v2 já é boa e a de perto subiu
-const FOREST_LOD_NEAR: Partial<Record<ForestAsset, number>> = { cristais: 28, cogumelo: 30, ilha: 60, arvore: 22, planta: 22, arco: 24, "cogumelo-casa": 30, arvore2: 24, flor: 20, lanterna: 22, "tronco-caido": 26, ninho: 24 }
-const CANYON_LOD_NEAR: Partial<Record<CanyonAsset, number>> = { paredao: 45, moinho: 40, arco: 45, ilha: 70, "pedra-raizes": 30, cacto: 28, ponte: 50, "torre-vigia": 40, rocha2: 24, rocha: 30, anel: 45 }
-
-export type KitPiece = ForestAsset | CanyonAsset
-
-/** O kit da Floresta no tema (sem a moldura do Jetpack, que o Domínio não usa). */
-const FOREST_THEME_DIR = "/meu-mundo/temas/floresta/v2/"
-const FOREST_THEME_GROUPS = Object.fromEntries(Object.entries(FOREST_GROUPS).filter(([file]) => file !== "flo-moldura")) as Record<string, readonly ForestAsset[]>
-
-/** Só os arquivos (grupos) que têm alguma das peças pedidas: cada grupo é uma textura a menos. */
-function only<P extends string>(groups: Record<string, readonly P[]>, pieces?: readonly KitPiece[]): Record<string, readonly P[]> {
-  if (!pieces) return groups
-  const want = new Set<string>(pieces)
-  return Object.fromEntries(Object.entries(groups).filter(([, names]) => names.some((n) => want.has(n))))
-}
-
-/**
- * O PBR do Tripo vira StandardMaterial com a cor dele (canyon-assets.ts), mas o material
- * original segue na cena segurando o relevo e o metálico (~1,3 MB cada, sem uso): solta.
- */
-function dropUnusedMaps(scene: Scene, kit: PieceAssets<KitPiece>) {
-  const used = new Set<unknown>()
-  for (const m of kit.meshes.values()) {
-    const mat = m.material as StandardMaterial | null
-    if (mat?.diffuseTexture) used.add(mat.diffuseTexture)
-    if (mat?.bumpTexture) used.add(mat.bumpTexture)
-  }
-  for (const mat of scene.materials) {
-    const pbr = mat as PBRMaterial
-    if (!pbr.albedoTexture || !used.has(pbr.albedoTexture)) continue
-    for (const t of [pbr.bumpTexture, pbr.metallicTexture, pbr.ambientTexture, pbr.emissiveTexture]) if (t && !used.has(t)) t.dispose()
-    pbr.bumpTexture = null
-    pbr.metallicTexture = null
-    pbr.ambientTexture = null
-    pbr.emissiveTexture = null
-  }
-}
-
-/**
- * Carrega o kit do tema; `pieces` = só os arquivos que têm essas peças (o resto nem baixa);
- * `lod` troca a distância da versão de longe (o palco da luta olha as árvores de mais perto).
- */
-export async function loadDomainKit(scene: Scene, kit: DomainKitId, isAlive: () => boolean, pieces?: readonly KitPiece[], lod?: Partial<Record<KitPiece, number>>): Promise<PieceAssets<KitPiece>> {
-  const out =
-    kit === "canion"
-      ? ((await loadPieceGroups<CanyonAsset>(scene, CANYON_DIR, only(CANYON_GROUPS, pieces), { ...CANYON_LOD_NEAR, ...lod }, isAlive)) as PieceAssets<KitPiece>)
-      : ((await loadPieceGroups<ForestAsset>(scene, FOREST_THEME_DIR, only(FOREST_THEME_GROUPS, pieces), { ...FOREST_LOD_NEAR, ...lod }, isAlive)) as PieceAssets<KitPiece>)
-  if (isAlive()) dropUnusedMaps(scene, out)
-  return out
-}
-
-/**
- * Pôr peças do kit: instância em pé no chão, escala UNIFORME. Quase toda peça mede 1 m
- * de altura (a escala = a altura em metros); rocha, rocha2 e anel vêm pela medida da regra
- * do Jetpack (a escala multiplica a medida deles).
- */
-export class KitPlacer {
-  readonly made: InstancedMesh[] = []
-  private seq = 0
-  constructor(private readonly kit: PieceAssets<KitPiece>, private readonly tag: string) {}
-  has(name: KitPiece) {
-    return this.kit.meshes.has(name)
-  }
-  put(name: KitPiece, x: number, z: number, height: number, yaw = 0, y = 0): InstancedMesh | null {
-    const src = this.kit.meshes.get(name) as Mesh | undefined
-    if (!src) return null
-    const inst = src.createInstance(`${this.tag}-${name}-${this.seq++}`)
-    inst.parent = null
-    inst.rotationQuaternion = null
-    inst.position.set(x, y, z)
-    inst.rotation.y = yaw
-    inst.scaling.setAll(height)
-    inst.isPickable = false
-    inst.freezeWorldMatrix()
-    this.made.push(inst)
-    return inst
-  }
-  dispose() {
-    for (const m of this.made) m.dispose()
-    this.made.length = 0
-  }
+/** O kit (luz, chão, céu) do palco de luta de cada Domínio: o Cânion tem o seu; os outros usam o da Floresta. */
+export function sceneKitOf(id: string | null | undefined): DomainKitId {
+  return id === "canion" ? "canion" : "floresta"
 }
 
 /** Gerador pseudoaleatório pequeno (a cena sai igual para todo mundo). */

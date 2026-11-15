@@ -50,11 +50,6 @@ export const ICE_GROUPS = {
   "gelo-congelados": ["mamute-gelo", "navio"],
 } as const
 export type IceAsset = (typeof ICE_GROUPS)[keyof typeof ICE_GROUPS][number]
-/** Distância (m) da troca para a versão de longe. */
-const ICE_LOD: Partial<Record<IceAsset, number>> = { estalactites: 30, portico: 45, base: 60, bloco2: 40, cristal: 55, iglu: 70, pinheiro: 50, farol: 60, "mamute-gelo": 70, navio: 70, mamute: 60 }
-export function loadIceAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<IceAsset>> {
-  return loadPieceGroups<IceAsset>(scene, ICE_DIR, ICE_GROUPS, ICE_LOD, isAlive)
-}
 /**
  * Floresta Bioluminescente v2 (build_floresta_v2.py): grupos, como o Gelo. Toda peça que se repete tem versão de longe.
  * B6 (2026-11-11): o Jetpack e o Rolê Noturno (bioma Floresta) leem o TEMA v2, o mesmo kit do Domínio
@@ -62,7 +57,6 @@ export function loadIceAssets(scene: Scene, isAlive: () => boolean): Promise<Pie
  * assados, KTX2 1024 em árvores, casa, arco e moldura. Mesmas peças e medidas do floresta2 (que saiu); as
  * árvores têm mais triângulos (3.600, eram 2.600/2.400), por isso trocam de versão mais cedo (FOREST_LOD).
  */
-export const FOREST_DIR = "/meu-mundo/temas/floresta/v2/"
 export const FOREST_GROUPS = {
   cristais: ["cristais"],
   cogumelo: ["cogumelo"],
@@ -76,10 +70,6 @@ export const FOREST_GROUPS = {
   "flo-moldura": ["borda", "canto", "galao"],
 } as const
 export type ForestAsset = (typeof FOREST_GROUPS)[keyof typeof FOREST_GROUPS][number]
-const FOREST_LOD: Partial<Record<ForestAsset, number>> = { cristais: 55, cogumelo: 70, ilha: 50, arvore: 90, planta: 35, arco: 50, "cogumelo-casa": 70, arvore2: 80, flor: 45, lanterna: 40, "tronco-caido": 45, ninho: 45 }
-export function loadForestAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<ForestAsset>> {
-  return loadPieceGroups<ForestAsset>(scene, FOREST_DIR, FOREST_GROUPS, FOREST_LOD, isAlive)
-}
 /**
  * Forja Vulcânica v2 (build_forja_v2.py): grupos, como o Gelo; toda peça com versão de longe.
  * B6 (2026-11-14): o Jetpack e o Rolê Noturno (bioma Forja) leem o TEMA v2
@@ -100,17 +90,12 @@ export const FORGE_GROUPS = {
   "for-oficina": ["chamine", "rocha-lava", "bigorna", "carrinho"],
 } as const
 export type ForgeAsset = (typeof FORGE_GROUPS)[keyof typeof FORGE_GROUPS][number]
-const FORGE_LOD: Partial<Record<ForgeAsset, number>> = { fornalha: 70, prensa: 50, rocha: 60, ponte: 60, portico: 50, caldeirao: 50, estatua: 60, cadinho: 55, chamine: 55, "rocha-lava": 45, bigorna: 40, carrinho: 40 }
-export function loadForgeAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<ForgeAsset>> {
-  return loadPieceGroups<ForgeAsset>(scene, FORGE_DIR, FORGE_GROUPS, FORGE_LOD, isAlive)
-}
 /**
  * Cidade Orbital v2 (build_orbital_v2.py): grupos, como o Gelo; toda peça com versão de longe.
  * B6 (2026-11-14): o Jetpack e o Rolê Noturno (bioma Orbital) leem o TEMA v2
  * (`pipeline/temas/build_orbital_tema_v2.py`): faces do Tripo para fora, UV refeita, cor e mapa de normal
  * assados, KTX2 1024 em pórtico e moldura. Mesmas peças, medidas e triângulos do orbital2.
  */
-export const ORBITAL_DIR = "/meu-mundo/temas/orbital/v2/"
 export const ORBITAL_GROUPS = {
   torre: ["torre"],
   portico: ["portico"],
@@ -124,10 +109,6 @@ export const ORBITAL_GROUPS = {
   "orb-ceu": ["satelite", "jardim"],
 } as const
 export type OrbitalAsset = (typeof ORBITAL_GROUPS)[keyof typeof ORBITAL_GROUPS][number]
-const ORBITAL_LOD: Partial<Record<OrbitalAsset, number>> = { torre: 90, portico: 50, drone: 40, painel: 40, jardineira: 45, elevador: 50, antena: 45, holo: 40, torre2: 70, capsula: 50, satelite: 60, jardim: 60 }
-export function loadOrbitalAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<OrbitalAsset>> {
-  return loadPieceGroups<OrbitalAsset>(scene, ORBITAL_DIR, ORBITAL_GROUPS, ORBITAL_LOD, isAlive)
-}
 /**
  * Fábrica (Túnel Industrial) v2 (build_industrial_v2.py): grupos, como o Gelo. As peças novas do Tripo
  * (kit_lib, giro −90°) chegam ao Babylon de COSTAS (frente para +z): quem posiciona soma meia-volta.
@@ -135,7 +116,6 @@ export function loadOrbitalAssets(scene: Scene, isAlive: () => boolean): Promise
  * fora, UV refeita, cor e mapa de normal assados, KTX2 1024 em cano, pistão, máquinas e pátio.
  * Mesmas peças, medidas e triângulos do fabrica2. O Rolê Noturno (bioma Fábrica) lê daqui também.
  */
-export const FACTORY_DIR = "/meu-mundo/temas/fabrica/v2/"
 export const FACTORY_GROUPS = {
   viga: ["viga"],
   cano: ["cano"],
@@ -149,14 +129,6 @@ export const FACTORY_GROUPS = {
   "fab-moldura": ["galao"],
 } as const
 export type FactoryAsset = (typeof FACTORY_GROUPS)[keyof typeof FACTORY_GROUPS][number]
-const FACTORY_LOD: Partial<Record<FactoryAsset, number>> = { viga: 50, cano: 45, engrenagem: 60, pistao: 45, guindaste: 50, turbina: 80, "prensa-cabeca": 45, relogio: 50, empilhadeira: 40, caldeira: 45, tanque: 45, esteira: 40, painel: 40 }
-export function loadFactoryAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<FactoryAsset>> {
-  return loadPieceGroups<FactoryAsset>(scene, FACTORY_DIR, FACTORY_GROUPS, FACTORY_LOD, isAlive)
-}
-/** Só a engrenagem nova da fábrica (a Forja usa como obstáculo). */
-export function loadFactoryGear(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<"engrenagem2">> {
-  return loadPieceGroups(scene, FACTORY_DIR, { "fab-maquinas": ["engrenagem2"] as const }, {}, isAlive)
-}
 
 export interface PieceAssets<P extends string = string> {
   meshes: Map<P, Mesh>
@@ -170,7 +142,6 @@ export type CanyonAssets = PieceAssets<CanyonAsset>
  * normal assados, KTX2 1024 nas peças grandes. Mesmas peças, medidas e triângulos do canion2 (Jetpack e
  * Domínio leem daqui).
  */
-export const CANYON_DIR = "/meu-mundo/temas/canion/v2/"
 export const CANYON_GROUPS = {
   paredao: ["paredao"],
   rocha: ["rocha"],
@@ -183,11 +154,6 @@ export const CANYON_GROUPS = {
   "can-moldura": ["borda", "canto", "galao"],
 } as const
 export type CanyonAsset = (typeof CANYON_GROUPS)[keyof typeof CANYON_GROUPS][number]
-const CANYON_LOD: Partial<Record<CanyonAsset, number>> = { paredao: 60, moinho: 55, arco: 60, ilha: 120, "pedra-raizes": 50, cacto: 45, ponte: 70, "torre-vigia": 55 }
-/** Carrega as peças do Cânion (as que falharem ficam de fora: o cenário procedural segue). */
-export function loadCanyonAssets(scene: Scene, isAlive: () => boolean): Promise<PieceAssets<CanyonAsset>> {
-  return loadPieceGroups<CanyonAsset>(scene, CANYON_DIR, CANYON_GROUPS, CANYON_LOD, isAlive)
-}
 
 /**
  * O material das peças do Tripo: StandardMaterial com a textura difusa (o PBR sem mapa de ambiente sai escuro).
@@ -285,82 +251,6 @@ export async function loadPieceGroups<P extends string>(scene: Scene, dir: strin
   }
 }
 
-/** Carrega peças de uma pasta (uma malha por arquivo), com a versão de longe quando houver. */
-export async function loadPieces<P extends string>(scene: Scene, dir: string, names: readonly P[], lodAt: Partial<Record<P, number>>, isAlive: () => boolean): Promise<PieceAssets<P>> {
-  ensureLoaders()
-  const containers: AssetContainer[] = []
-  const meshes = new Map<P, Mesh>()
-  const mats: StandardMaterial[] = []
-  await Promise.all(
-    names.map(async (name) => {
-      try {
-        const c = await LoadAssetContainerAsync(dir + name + ".glb", scene)
-        if (!isAlive()) {
-          c.dispose()
-          return
-        }
-        containers.push(c)
-        c.addAllToScene()
-        const src = c.meshes.find((m) => m.getTotalVertices() > 0) as Mesh | undefined
-        if (!src) return
-        // solta do nó raiz do glTF e grava a transformação nos vértices (fica pronta para instanciar)
-        src.setParent(null)
-        src.bakeCurrentTransformIntoVertices()
-        src.refreshBoundingInfo()
-        const pbr = src.material as PBRMaterial | null
-        const tex: BaseTexture | null = pbr?.albedoTexture ?? null
-        const mat = new StandardMaterial(`jt-piece-${name}`, scene)
-        mat.diffuseTexture = tex
-        mat.specularColor = new Color3(0.06, 0.05, 0.04)
-        // a textura do Tripo já vem pintada com luz: difusa puxada para o frio (tira o vermelho vivo) e
-        // um pouco de luz própria pêssego para clarear as sombras (o tom da referência)
-        mat.emissiveColor = new Color3(0.13, 0.1, 0.09)
-        mat.diffuseColor = new Color3(0.8, 0.84, 0.92)
-        mats.push(mat)
-        src.material = mat
-        src.isPickable = false
-        src.position.set(0, -5000, 0)
-        src.name = `jt-glb-${name}`
-        for (const m of c.meshes) if (m !== src) m.setEnabled(false)
-        meshes.set(name, src)
-        mat.freeze()
-        const far = lodAt[name]
-        if (far) {
-          try {
-            const lc = await LoadAssetContainerAsync(dir + name + "-lod.glb", scene)
-            if (!isAlive()) return lc.dispose()
-            containers.push(lc)
-            lc.addAllToScene()
-            const low = lc.meshes.find((m) => m.getTotalVertices() > 0) as Mesh | undefined
-            if (low) {
-              low.setParent(null)
-              low.bakeCurrentTransformIntoVertices()
-              low.refreshBoundingInfo()
-              // a mesma textura da versão de perto (o UV é o mesmo): um material só
-              low.material?.dispose()
-              low.material = mat
-              low.isPickable = false
-              for (const m of lc.meshes) if (m !== low) m.setEnabled(false)
-              src.addLODLevel(far, low)
-            }
-          } catch (err) {
-            if (isAlive()) console.warn("[jetpack] versão de longe não carregou", name, err)
-          }
-        }
-      } catch (err) {
-        if (isAlive()) console.warn("[jetpack] peça não carregou", name, err)
-      }
-    }),
-  )
-  return {
-    meshes,
-    dispose() {
-      for (const m of meshes.values()) m.dispose()
-      for (const m of mats) m.dispose()
-      for (const c of containers) c.dispose()
-    },
-  }
-}
 
 /** Medidas das peças normalizadas (iguais a canion.json do pipeline). */
 export const PIECE = {

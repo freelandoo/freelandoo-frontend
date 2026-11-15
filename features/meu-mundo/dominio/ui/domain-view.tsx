@@ -25,12 +25,12 @@ import { onRealtime } from "@/lib/realtime"
 import { GOD_HUNT, GOD_NAME } from "../../engine/god-view"
 import { godIdOf, type GodId } from "../../laminas/sim/fight"
 import { enterDomain, equipGear, getDomains, getGods, type GodWire, reachDomainPlace, startFight, type DomainAdvance, type DomainId, type DomainPact, type DomainInfo, type DomainScene, type FightTicket, type Receipt } from "../../data"
-import { createDomainGame, passageKitOf, sceneKitOf, type DomainGameHandle, type DomainNear } from "../engine/domain-game"
 import { createOpenDomainGame, hasOpenScene, sceneSky, type OpenDomainHandle, type OpenNear } from "../engine/open-domain-game"
 import { Joystick, SAFE, SceneCurtain } from "../../ui/meu-mundo-view"
 import { EvoButton, EvoToast } from "../../ui/hud/hud-kit"
 import { useMobName } from "../../laminas/ui/laminas-view"
 import type { DomainStageSpec } from "../../laminas/engine/domain-stage"
+import { sceneKitOf } from "../engine/domain-kit"
 import type { BodyId } from "../../types"
 import { domainName, foeName, lockText } from "./domain-portal"
 import { GolemVoices } from "../../ui/quest/god-voice"
@@ -54,7 +54,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const [failed, setFailed] = useState<string | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [attempt, setAttempt] = useState(0)
-  const [near, setNear] = useState<DomainNear | OpenNear>(null)
+  const [near, setNear] = useState<OpenNear>(null)
   // DV2: a cena do mundo aberto (1–3), de onde se chega nela e o que o servidor mandou dela
   const [sceneN, setSceneN] = useState(1)
   const [arrive, setArrive] = useState<"entrada" | "saida">("entrada")
@@ -84,7 +84,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const sectorRef = useRef(0)
   const [isTouch, setIsTouch] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const gameRef = useRef<DomainGameHandle | OpenDomainHandle | null>(null)
+  const gameRef = useRef<OpenDomainHandle | null>(null)
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches)
@@ -156,7 +156,6 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
     if (!canvas || !ready || !d) return
     let alive = true
     setStatus("loading")
-    let handle: DomainGameHandle | null = null
     const sc = sceneRef.current
     try {
       if (sc && hasOpenScene(sc.name)) {
@@ -241,36 +240,15 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
           setSpot(null)
         }
       }
-      handle = createDomainGame({
-        canvas,
-        body,
-        look,
-        domain: d,
-        kit: sceneKitOf(d.id),
-        nextKit: passageKitOf(d.id),
-        spawnSector: spawn,
-        onReady: () => alive && setStatus("ready"),
-        onNearbyChange: (n) => alive && setNear(n),
-        onSector: (s) => alive && setSector(s),
-        onPlace: (p) => alive && setPlace(p),
-        onSpot: (s) => alive && setSpot(s),
-        onGodCatch: (g) => alive && askGod.current(g),
-        onInteract: (n) => {
-          if (!alive) return
-          if (n.kind === "exit") onExit()
-          else if (n.kind === "guard") askFight.current(n.sector)
-          else if (n.kind === "passage") cross.current()
-        },
-        onError: () => alive && setStatus("error"),
-      })
-      gameRef.current = handle
+      // cena fora das 18 em código (o servidor sempre manda uma delas): o Domínio fechado antigo saiu (limpeza 3)
+      console.error("[meu-mundo] cena do Domínio sem código", sc?.name)
+      setStatus("error")
     } catch (err) {
       console.error("[meu-mundo] o Domínio não abriu", err)
       setStatus("error")
     }
     return () => {
       alive = false
-      handle?.dispose()
       gameRef.current = null
       setNear(null)
       setPlace(null)

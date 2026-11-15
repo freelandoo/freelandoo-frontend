@@ -13,10 +13,31 @@ export const TINT_MASK: Partial<Record<BodyId, string>> = { normal: "normal", sl
 
 const loads = new Map<string, Promise<ImageData>>()
 const tinted = new Map<string, Promise<HTMLCanvasElement>>()
+// Limpeza 3 (2026-11-14): os dois caches tinham vida eterna (cada pessoa de cor diferente que passava
+// deixava 1–4 MB de canvas para a sessão inteira). Agora a ordem do Map é a do último uso e o mais
+// antigo sai acima do teto; quem já pegou o canvas (a textura da cena) continua com ele.
+const MAX_TINTED = 24
+const MAX_PIXELS = 12
+function hit<T>(map: Map<string, T>, key: string): T | undefined {
+  const v = map.get(key)
+  if (v !== undefined) {
+    map.delete(key)
+    map.set(key, v)
+  }
+  return v
+}
+function put<T>(map: Map<string, T>, key: string, v: T, max: number) {
+  map.set(key, v)
+  while (map.size > max) {
+    const first = map.keys().next().value
+    if (first === undefined) break
+    map.delete(first)
+  }
+}
 let refsP: Promise<Record<string, Record<ColorPart, number[]>>> | null = null
 
 function pixels(url: string): Promise<ImageData> {
-  let p = loads.get(url)
+  let p = hit(loads, url)
   if (!p) {
     p = new Promise<ImageData>((ok, fail) => {
       const img = new Image()
@@ -34,7 +55,7 @@ function pixels(url: string): Promise<ImageData> {
       img.src = url
     })
     p.catch(() => loads.delete(url))
-    loads.set(url, p)
+    put(loads, url, p, MAX_PIXELS)
   }
   return p
 }
@@ -50,7 +71,7 @@ export function tintedTexture(base: string, texture: string, body: BodyId, look:
   const mask = TINT_MASK[body]
   if (!mask || !look || !isTinted(look)) return null
   const key = `${texture}|${look}`
-  let p = tinted.get(key)
+  let p = hit(tinted, key)
   if (!p) {
     if (!refsP) {
       refsP = fetch(`${base}avatar-color-refs.json`).then((r) => {
@@ -72,7 +93,7 @@ export function tintedTexture(base: string, texture: string, body: BodyId, look:
       return c
     })
     p.catch(() => tinted.delete(key))
-    tinted.set(key, p)
+    put(tinted, key, p, MAX_TINTED)
   }
   return p
 }

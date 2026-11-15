@@ -40,7 +40,7 @@ import type { Node } from "@babylonjs/core/node"
 import type { Scene } from "@babylonjs/core/scene"
 import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
-import { tintedTexture } from "./avatar-tint"
+import { TINT_MASK, isTinted, tintedTexture } from "./avatar-tint"
 import type { BodyId } from "../types"
 import { byTall, isTall } from "../gods"
 import { ARCHER_SKINS, byClanBody, clanOfBody, GUN_SKINS, isClanBody, CLAN_ANIMS, HAMMER_SKINS, type Clan } from "../classes"
@@ -509,10 +509,12 @@ export class AvatarLibrary {
    */
   private materialFor(id: BodyId, look = "") {
     const file = this.skinFile(ASSETS.textures[id])
-    const tint = tintedTexture(BASE, file, id, look)
-    const key = tint ? `${file}|${look}` : file
+    // a chave sem pintar nada: material já feito não pede o canvas de novo (o cache dele tem teto)
+    const painted = !!TINT_MASK[id] && isTinted(look)
+    const key = painted ? `${file}|${look}` : file
     let m = this.materials.get(key)
     if (!m) {
+      const tint = painted ? tintedTexture(BASE, file, id, look) : null
       const tex = new Texture(BASE + file, this.scene, false, false)
       const mat = new StandardMaterial(`mm-avatar-${key}`, this.scene)
       mat.diffuseTexture = tex
