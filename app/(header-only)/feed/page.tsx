@@ -18,6 +18,7 @@ import { GiftCard } from "@/components/feed/interativo/gift-card"
 import { CapsuleCard } from "@/components/feed/interativo/capsule-card"
 import { PathStrip } from "@/components/feed/interativo/path-player"
 import { SyncPicker } from "@/components/feed/interativo/sync-picker"
+import { SponsoredFrame } from "@/components/ads/sponsored-frame"
 import { useFeedInterativo } from "@/components/feed/interativo/use-feed-interativo"
 import { installFeedFx } from "@/lib/feed-fx"
 import type { DropKind, FxDrop, FxUser } from "@/lib/feed-fx/api"
@@ -397,6 +398,7 @@ function FeedPageInner() {
           else if (kind === "capsula") router.push("/feed/capsula")
           else if (kind === "caminhos") router.push("/feed/caminhos")
           else if (kind === "junto") router.push("/feed/junto")
+          else if (kind === "impulsionar") router.push("/impulsionar")
           else router.push("/account")
         }}
       />
@@ -491,6 +493,8 @@ function FeedPageInner() {
                         {post._drop.kind === "capsule" && <CapsuleCard drop={post._drop.full} compact />}
                         {card}
                       </DropArrival>
+                    ) : post.sponsored ? (
+                      <SponsoredFrame post={post}>{card}</SponsoredFrame>
                     ) : (
                       card
                     )}

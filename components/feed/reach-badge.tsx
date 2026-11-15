@@ -8,14 +8,24 @@
 //    a curtida). O número nunca aparece — só pesa no alcance.
 
 import { useCallback, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Radar } from "lucide-react"
+import { Megaphone, Radar } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 import type { FeedReach } from "@/lib/types/portfolio-feed"
 
-export function ReachBadge({ reach, variant = "dark" }: { reach?: FeedReach | null; variant?: "dark" | "overlay" }) {
+export function ReachBadge({
+  reach,
+  variant = "dark",
+  boostHref,
+}: {
+  reach?: FeedReach | null
+  variant?: "dark" | "overlay"
+  /** Freelandoo Ads: atalho para impulsionar este post (só o dono vê o selo). */
+  boostHref?: string
+}) {
   const t = useTranslations("Post")
   if (!reach) return null
   const place = reach.place || ""
@@ -50,6 +60,17 @@ export function ReachBadge({ reach, variant = "dark" }: { reach?: FeedReach | nu
     >
       <Radar className="h-3.5 w-3.5 shrink-0" aria-hidden />
       <span className="truncate">{text}</span>
+      {boostHref && reach.key !== "country" && (
+        <Link
+          href={boostHref}
+          data-no-gesture
+          onClick={(e) => e.stopPropagation()}
+          className="pointer-events-auto ml-1 inline-flex shrink-0 items-center gap-1 border border-black bg-[#F2B705] px-1.5 py-0.5 text-[10px] font-black uppercase text-black"
+        >
+          <Megaphone className="h-3 w-3" />
+          {t("reachBoost", "Impulsionar")}
+        </Link>
+      )}
     </div>
   )
 }

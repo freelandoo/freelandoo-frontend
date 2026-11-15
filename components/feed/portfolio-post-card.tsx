@@ -841,7 +841,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
 
             {post.my_reach && (
               <div className="pointer-events-none mt-2">
-                <ReachBadge reach={post.my_reach} variant="overlay" />
+                <ReachBadge reach={post.my_reach} variant="overlay" boostHref={`/impulsionar/novo?post=${post.post_id}`} />
               </div>
             )}
 
@@ -1084,7 +1084,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
             {/* Alcance regional — só o dono vê (my_reach vem null para os outros). */}
             {post.my_reach && (
               <div className="px-3 pt-1.5">
-                <ReachBadge reach={post.my_reach} />
+                <ReachBadge reach={post.my_reach} boostHref={`/impulsionar/novo?post=${post.post_id}`} />
               </div>
             )}
 
