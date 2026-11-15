@@ -252,6 +252,11 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
     const el = ref.current
     if (!el || !enabled) return
 
+    // Segura a tela parada só enquanto o post está solto.
+    const onTouchMove = (e: TouchEvent) => {
+      if (st.current.phase === "lift") e.preventDefault()
+    }
+
     const onDown = (e: PointerEvent) => {
       const s = st.current
       if (s.phase !== "idle") return
@@ -267,7 +272,9 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       s.phase = "press"
       s.pressTimer = setTimeout(() => {
         if (st.current.phase !== "press") return
-        // SOLTOU do feed.
+        // SOLTOU do feed. Só agora a tela é segurada: touchmove NÃO passivo
+        // em todo card faria o navegador esperar o handler antes de rolar.
+        el.addEventListener("touchmove", onTouchMove, { passive: false })
         setPhaseBoth("lift")
         fx("pegar", "pegar")
         animate(scale, 1.035, { type: "spring", stiffness: 600, damping: 22 })
@@ -346,6 +353,7 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       const s = st.current
       if (e.pointerId !== s.pid) return
       clearTimers()
+      el.removeEventListener("touchmove", onTouchMove)
       if (s.phase === "press") {
         s.phase = "idle"
         return
@@ -374,6 +382,7 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       const s = st.current
       if (e.pointerId !== s.pid) return
       clearTimers()
+      el.removeEventListener("touchmove", onTouchMove)
       if (s.phase === "lift") {
         resetGesture()
         settle()
@@ -383,10 +392,6 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       }
     }
 
-    // Segura a tela parada só enquanto o post está solto.
-    const onTouchMove = (e: TouchEvent) => {
-      if (st.current.phase === "lift") e.preventDefault()
-    }
     const onContext = (e: Event) => {
       if (st.current.phase !== "idle") e.preventDefault()
     }
@@ -401,7 +406,6 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
     el.addEventListener("pointermove", onMove)
     el.addEventListener("pointerup", onUp)
     el.addEventListener("pointercancel", onCancel)
-    el.addEventListener("touchmove", onTouchMove, { passive: false })
     el.addEventListener("contextmenu", onContext)
     el.addEventListener("click", onClickCapture, true)
     return () => {
