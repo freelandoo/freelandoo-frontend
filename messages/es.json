@@ -14115,7 +14115,9 @@
     "need_fridge_empty_kind_raposa": "No queda carne. Conviene pasar por la carnicería.",
     "need_hungry_comp_raposa": "Tengo hambre. Recárgame.",
     "need_starving_comp_raposa": "¡Me muero de hambre! ¡Nadie gana con la llama apagada!",
-    "need_fridge_empty_comp_raposa": "¿Sin carne en la despensa? ¡Así no puedo rendir!"
+    "need_fridge_empty_comp_raposa": "¿Sin carne en la despensa? ¡Así no puedo rendir!",
+    "domContinue": "Continuar en el sector {n}",
+    "domResumeNote": "Vuelves a donde te quedaste: parte {p}, cerca del sector {n}."
   },
   "Sports": {
     "eyebrow": "Deportes",

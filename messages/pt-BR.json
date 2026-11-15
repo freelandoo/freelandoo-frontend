@@ -13549,7 +13549,9 @@
     "need_fridge_empty_kind_raposa": "Não há mais carne. Convém passarmos no Açougue.",
     "need_hungry_comp_raposa": "Tô com fome. Abastece aí.",
     "need_starving_comp_raposa": "Tô morrendo de fome! Ninguém ganha nada de chama apagada!",
-    "need_fridge_empty_comp_raposa": "Sem carne na despensa? Assim não tem como eu render!"
+    "need_fridge_empty_comp_raposa": "Sem carne na despensa? Assim não tem como eu render!",
+    "domContinue": "Continuar no setor {n}",
+    "domResumeNote": "Você volta para onde parou: parte {p}, perto do setor {n}."
   },
   "Sports": {
     "eyebrow": "Esportes",

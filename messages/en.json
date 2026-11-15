@@ -14135,7 +14135,9 @@
     "need_fridge_empty_kind_raposa": "There is no meat left. We should stop by the butcher shop.",
     "need_hungry_comp_raposa": "I'm hungry. Fuel me up.",
     "need_starving_comp_raposa": "I'm starving! Nobody wins with a dead flame!",
-    "need_fridge_empty_comp_raposa": "No meat in the pantry? No way I can perform like this!"
+    "need_fridge_empty_comp_raposa": "No meat in the pantry? No way I can perform like this!",
+    "domContinue": "Continue at sector {n}",
+    "domResumeNote": "You go back to where you stopped: part {p}, near sector {n}."
   },
   "Sports": {
     "eyebrow": "Sports",

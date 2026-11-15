@@ -32,7 +32,7 @@ import { useMobName } from "../../laminas/ui/laminas-view"
 import type { DomainStageSpec } from "../../laminas/engine/domain-stage"
 import { sceneKitOf } from "../engine/domain-kit"
 import type { BodyId } from "../../types"
-import { domainName, foeName, lockText } from "./domain-portal"
+import { domainName, foeName, lockText, type DomainStart } from "./domain-portal"
 import { GolemVoices } from "../../ui/quest/god-voice"
 import { CityMapHud } from "../../ui/map/city-map-ui"
 import { GOD_NAMES, type GodBody } from "../../gods"
@@ -44,7 +44,7 @@ const LaminasView = dynamic(() => import("../../laminas/ui/laminas-view").then((
 
 type Tr = (key: string, fallback: string) => string
 
-export function DomainView({ body, look, domain: first, onExit }: { body: BodyId; look?: string; domain: DomainId; onExit: () => void }) {
+export function DomainView({ body, look, domain: first, start, onExit }: { body: BodyId; look?: string; domain: DomainId; start?: DomainStart; onExit: () => void }) {
   const t = useTranslations("MeuMundo") as Tr
   const mobName = useMobName(false)
   const [id, setId] = useState<DomainId>(first)
@@ -56,7 +56,8 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const [attempt, setAttempt] = useState(0)
   const [near, setNear] = useState<OpenNear>(null)
   // DV2: a cena do mundo aberto (1–3), de onde se chega nela e o que o servidor mandou dela
-  const [sceneN, setSceneN] = useState(1)
+  // 15/11: o portal manda continuar de onde parou (cena e setor); sem isso, a entrada da parte 1
+  const [sceneN, setSceneN] = useState(start?.scene ?? 1)
   const [arrive, setArrive] = useState<"entrada" | "saida">("entrada")
   const [sceneInfo, setSceneInfo] = useState<DomainScene | null>(null)
   // DV3: monstros soltos vencidos (id → hora) — somem até reaparecer; quem encostou agora
@@ -70,7 +71,7 @@ export function DomainView({ body, look, domain: first, onExit }: { body: BodyId
   const [stowing, setStowing] = useState(false)
   // apresentação 16: a primeira chegada ao Golem vira cena de história (depois, as vozes)
   const [story, setStory] = useState(false)
-  const [spawn, setSpawn] = useState(0)
+  const [spawn, setSpawn] = useState(start?.sector ?? 0)
   const [fight, setFight] = useState<{ ticket: FightTicket; sector: number; foe: string; foeBody: BodyId | null; foeRig: boolean } | null>(null)
   const [opening, setOpening] = useState(false)
   const [news, setNews] = useState<{ text: string; id: number } | null>(null)

@@ -120,12 +120,37 @@ function defaultPick(d: DomainInfo): Pick {
   return { kind: "sector", n: next?.n ?? (d.crossed ? d.sectors.length : 1) }
 }
 
+/** Onde a travessia continua: a cena (parte 1–3) e o setor em que se nasce (0 = na entrada). */
+export interface DomainStart {
+  scene: number
+  sector: number
+}
+
+/**
+ * Pedido do Alex (15/11): quem já venceu setores volta para ONDE PAROU, não para o começo.
+ * Vale a placa escolhida na trilha se já der para lutar nela (aberta ou vencida); senão, o
+ * próximo setor a vencer. Nasce na cena desse setor, na frente do chefe ou no meio da zona
+ * (open-domain-game `spawn.sector`). Sem nada vencido, ou cena ainda fechada, a entrada.
+ */
+export function resumePoint(d: DomainInfo, pick: Pick | null): DomainStart {
+  const scenes = d.scenes ?? []
+  if (!scenes.length || d.best <= 0) return { scene: 1, sector: 0 }
+  const placeSector = pick?.kind === "place" ? (d.places ?? []).find((p) => p.id === pick.id)?.sector : undefined
+  const picked = pick?.kind === "sector" ? d.sectors[pick.n - 1] : placeSector ? d.sectors[placeSector - 1] : undefined
+  const next = d.sectors.find((s) => s.open && !s.cleared)
+  const target = picked && (picked.open || picked.cleared) ? picked.n : (next?.n ?? d.sectors.length)
+  const sc = scenes.find((s) => s.sectors.includes(target))
+  if (sc?.open) return { scene: sc.n, sector: target }
+  const lastOpen = [...scenes].reverse().find((s) => s.open)
+  return { scene: lastOpen?.n ?? 1, sector: 0 }
+}
+
 function calmMotion() {
   if (typeof window === "undefined") return true
   return document.documentElement.getAttribute("data-mm-fx") === "low" || window.matchMedia("(prefers-reduced-motion: reduce)").matches
 }
 
-export function DomainPortal({ onClose, onEnter }: { onClose: () => void; onEnter: (id: DomainId) => void }) {
+export function DomainPortal({ onClose, onEnter }: { onClose: () => void; onEnter: (id: DomainId, start: DomainStart) => void }) {
   const t = useTranslations("MeuMundo") as Tr
   const [state, setState] = useState<DomainsState | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -194,7 +219,7 @@ export function DomainPortal({ onClose, onEnter }: { onClose: () => void; onEnte
           <ChapterRail domains={state.domains} cur={dom.id} t={t} onPick={choose} />
           <DomainTitle d={dom} t={t} />
           <Track key={dom.id} d={dom} t={t} pick={pick} onPick={setPick} next={state.domains[state.domains.indexOf(dom) + 1] ?? null} />
-          {pick && <PhasePanel d={dom} pick={pick} power={state.power} next={state.domains[state.domains.indexOf(dom) + 1] ?? null} t={t} onEnter={() => onEnter(dom.id)} />}
+          {pick && <PhasePanel d={dom} pick={pick} power={state.power} next={state.domains[state.domains.indexOf(dom) + 1] ?? null} t={t} start={resumePoint(dom, pick)} onEnter={() => onEnter(dom.id, resumePoint(dom, pick))} />}
         </>
       )}
     </div>
@@ -473,7 +498,7 @@ function LootRows({ loot, tint, t }: { loot: DomainSectorLoot; tint: string; t: 
 }
 
 /** O painel da fase (Anexo A §7.3): objetivos · recomendado · ambiente · prêmios · entrar. */
-function PhasePanel({ d, pick, power, next, t, onEnter }: { d: DomainInfo; pick: Pick; power: number; next: DomainInfo | null; t: Tr; onEnter: () => void }) {
+function PhasePanel({ d, pick, power, next, t, start, onEnter }: { d: DomainInfo; pick: Pick; power: number; next: DomainInfo | null; t: Tr; start: DomainStart; onEnter: () => void }) {
   const lock = lockText(t, d)
   const dn = domainName(t, d.id)
   let eyebrow: string
@@ -564,10 +589,16 @@ function PhasePanel({ d, pick, power, next, t, onEnter }: { d: DomainInfo; pick:
               style={{ height: 52, background: SP.goldPlate, color: SP.ink, fontFamily: anton.style.fontFamily, fontSize: TYPE.title }}
             >
               <Swords className="h-5 w-5" aria-hidden />
-              {d.best > 0 ? t("domEnterAgain", "Voltar ao começo") : t("domEnter", "Entrar")}
+              {start.sector > 0
+                ? t("domContinue", "Continuar no setor {n}").replace("{n}", String(start.sector))
+                : d.best > 0
+                  ? t("domEnterAgain", "Voltar ao começo")
+                  : t("domEnter", "Entrar")}
             </button>
             <p className={`${TX.label} mt-1.5 text-center`} style={{ color: SP.muted }}>
-              {t("domStartNote", "A travessia começa na entrada; os setores ficam em ordem no caminho.")}
+              {start.sector > 0
+                ? t("domResumeNote", "Você volta para onde parou: parte {p}, perto do setor {n}.").replace("{p}", String(start.scene)).replace("{n}", String(start.sector))
+                : t("domStartNote", "A travessia começa na entrada; os setores ficam em ordem no caminho.")}
             </p>
           </>
         )}

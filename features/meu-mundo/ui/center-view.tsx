@@ -55,6 +55,7 @@ const GincanaView = dynamic(() => import("../gincana/ui/gincana-view").then((m) 
 const LaminasView = dynamic(() => import("../laminas/ui/laminas-view").then((m) => m.LaminasView), { ssr: false })
 // Lore v2 D1: o Portal dos Domínios (tela da travessia) e a cena do Domínio
 const DomainPortal = dynamic(() => import("../dominio/ui/domain-portal").then((m) => m.DomainPortal), { ssr: false })
+import type { DomainStart } from "../dominio/ui/domain-portal"
 const DomainView = dynamic(() => import("../dominio/ui/domain-view").then((m) => m.DomainView), { ssr: false })
 
 /** Paint (mm3d-35): reserva numa sala do modo pedido (null = sem acesso). */
@@ -188,6 +189,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   // Lore v2 D1: a tela do portal aberta e o Domínio em que se entrou
   const [portalOpen, setPortalOpen] = useState(false)
   const [domainId, setDomainId] = useState<DomainId | null>(null)
+  const [domainStart, setDomainStart] = useState<DomainStart | undefined>(undefined)
   const leaveDomain = useCallback(() => {
     setDomainId(null)
     setMinigame(null)
@@ -682,7 +684,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
         />
       )}
       {/* Lore v2 D1: o Domínio cobre a tela (o centro sai da memória); ao sair, volta à praça */}
-      {minigame === "dominio" && domainId && <DomainView body={body} look={look} domain={domainId} onExit={leaveDomain} />}
+      {minigame === "dominio" && domainId && <DomainView body={body} look={look} domain={domainId} start={domainStart} onExit={leaveDomain} />}
       {/* Gincana (mm3d-47): corrida de obstáculos sobre o mar; ao sair, volta à porta */}
       {minigame === "gincana" && <GincanaView body={body} look={look} name={payload.me.name} onExit={() => setMinigame(null)} join={gincanaJoin} />}
       {/* Hospital (mm3d-26): o interior cobre a tela; a porta devolve à frente dele */}
@@ -745,8 +747,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
       {portalOpen && (
         <DomainPortal
           onClose={() => setPortalOpen(false)}
-          onEnter={(id) => {
+          onEnter={(id, start) => {
             setPortalOpen(false)
+            setDomainStart(start)
             setDomainId(id)
             setMinigame("dominio")
           }}
