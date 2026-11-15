@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Script from "next/script"
-import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useI18n, useTranslations } from "@/components/i18n/I18nProvider"
 import { completeAuthRedirect, extractAuthSession, setSession } from "@/lib/auth"
 import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
 import { getVisitorToken } from "@/lib/visitor-token"
@@ -61,6 +61,8 @@ export function GoogleSignInButton({
 }: Props) {
   const router = useRouter()
   const tErr = useTranslations("Errors")
+  // O botão do Google fala o idioma escolhido na tela (re-renderiza ao trocar).
+  const { locale } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const [scriptReady, setScriptReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -187,9 +189,9 @@ export function GoogleSignInButton({
       shape,
       logo_alignment: "center",
       width: 320,
-      locale: "pt-BR",
+      locale,
     })
-  }, [scriptReady, clientId, redirectTo, theme, text, shape, router, onComplete, tErr])
+  }, [scriptReady, clientId, redirectTo, theme, text, shape, router, onComplete, tErr, locale])
 
   return (
     <div className={className}>

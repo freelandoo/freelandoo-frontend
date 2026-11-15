@@ -1,5 +1,7 @@
 "use client"
 
+import { chosenLocaleFromCookie, syncAccountLocale } from "@/lib/i18n/account-sync"
+
 const TOKEN_KEY = "token"
 const USER_KEY = "user"
 
@@ -80,6 +82,10 @@ export function setSession(token: string, user: AuthUser) {
   if (typeof window === "undefined") return
   localStorage.setItem(TOKEN_KEY, token)
   localStorage.setItem(USER_KEY, JSON.stringify(user))
+  // Idioma escolhido na tela de entrada vale para a conta (e-mails, outro
+  // aparelho). Só quando a pessoa escolheu: sem cookie não sobrescreve nada.
+  const chosen = chosenLocaleFromCookie()
+  if (chosen) syncAccountLocale(chosen, token)
   dispatchAuthChanged()
 }
 

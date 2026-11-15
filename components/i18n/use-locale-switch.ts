@@ -3,6 +3,7 @@
 import { useCallback, useTransition } from "react"
 import { useI18n } from "@/components/i18n/I18nProvider"
 import { SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/config"
+import { syncAccountLocale } from "@/lib/i18n/account-sync"
 
 /** Troca o idioma: cookie + provider na hora, conta em segundo plano. */
 export function useLocaleSwitch() {
@@ -19,16 +20,7 @@ export function useLocaleSwitch() {
 
         // 2. Sync backend se autenticado (best-effort, não bloqueia UX)
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-        if (token) {
-          fetch("/api/users/me/locale", {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ locale: next }),
-          }).catch(() => {})
-        }
+        syncAccountLocale(next, token)
       })
     },
     [locale, pending, setLocale],

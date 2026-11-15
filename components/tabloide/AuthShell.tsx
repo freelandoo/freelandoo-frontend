@@ -6,7 +6,7 @@
  * de papel fica sempre no centro do viewport (nunca empurrado para baixo), com
  * logo + headline compacta acima e doodles ambientes ao fundo.
  *
- * Presentacional e sem hooks (server-safe). As páginas passam as strings já
+ * Presentacional e sem hooks (server-safe); o seletor de idioma é uma ilha client. As páginas passam as strings já
  * traduzidas (i18n) por props.
  */
 import type { ReactNode } from "react"
@@ -19,6 +19,7 @@ import {
   Halftone,
   HoneycombField,
 } from "@/components/home/landing/primitives"
+import { AuthLanguagePicker } from "@/components/auth/auth-language-picker"
 
 export function AuthShell({
   eyebrow,
@@ -47,6 +48,9 @@ export function AuthShell({
         <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-8 w-auto" priority />
         <span className="text-xl font-black text-[#F5F1E8]">freelandoo</span>
       </Link>
+
+      {/* Idioma à vista antes do formulário: quem chega de fora acha o seu. */}
+      <AuthLanguagePicker className="mb-6" />
 
       {(eyebrow || asideTitle) && (
         <div className="relative mb-6 max-w-md text-center">
