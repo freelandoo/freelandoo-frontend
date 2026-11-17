@@ -23,21 +23,29 @@ import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTextur
 import { Texture } from "@babylonjs/core/Materials/Textures/texture"
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildLogos, type LogoView } from "../../corrida/engine/logos"
 import { DECK, ballsAt, gloveAt, padRot, padShift, pendulumAt, pusherAt, sweeperAngle, type Course, type Pad } from "../sim/course"
 import type { RunWorld } from "../sim/body"
-import { SoftGeo, at, mix, stripesY, type RGB } from "./shapes"
+import { SoftGeo, at, hex, mix, stripesY, type RGB } from "./shapes"
 import { AirshipFleet, SP, SteamStage, fleetRing, gearArch, place, tierOf } from "../../engine/steampunk/scenery"
 import { postLantern, steamLamp } from "../../engine/steampunk/kit"
 import { Sky, applyLights, brasiliaHour, nightFactor } from "../../engine/steampunk/atmosphere"
 import { CITY } from "../../paint/engine/world-view"
 import { buildCity, type GincanaCity } from "./city-view"
-import { buildAurora, buildBackdrop } from "./backdrops"
+import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
 import type { GincanaTheme } from "./phase-themes"
+import type { SkyRegionId } from "../../engine/sky/sky-registry"
 
 const IRON: RGB = [0.2, 0.2, 0.22]
 const darker = (c: RGB, k = 0.72): RGB => [c[0] * k, c[1] * k, c[2] * k]
+/** A arte de céu (céu v2) de cada fase: a do Domínio. */
+const SKY_OF: Record<GincanaTheme["deco"], SkyRegionId> = { city: "centro", forest: "noctis", canyon: "zephyra", orbital: "iris", forge: "kragor", factory: "aeryn", ice: "maru" }
+/** Seta do chão (sem luz: lê de dia e de noite). */
+const ARROW: RGB = [1, 0.84, 0.12]
+/** Listra de perigo (amarelo e quase preto) do que machuca. */
+const HAZ_Y: RGB = [0.98, 0.78, 0.08]
+const HAZ_K: RGB = [0.07, 0.07, 0.08]
 
 export class CourseView {
   private readonly toy: StandardMaterial
@@ -84,6 +92,8 @@ export class CourseView {
   private readonly dir = new Vector3()
   private readonly C: readonly RGB[]
   private readonly lava: boolean
+  /** Neon das bordas (a cor de destaque da fase). */
+  private readonly neon: RGB
 
   constructor(
     private readonly scene: Scene,
@@ -94,6 +104,7 @@ export class CourseView {
   ) {
     const C = theme.palette
     this.C = C
+    this.neon = mix(hex(theme.accent), [1, 1, 1], 0.15)
     const WHITE = C[7]
     const YELLOW = C[1]
     const ORANGE = C[0]
@@ -109,7 +120,8 @@ export class CourseView {
     this.stage = new SteamStage(scene, tierOf(low), { wall: city })
 
     // ── céu e nuvens (não há nuvens no espaço nem na floresta à noite) ──
-    this.sky = new Sky(scene, 900)
+    // v2: o céu de cada fase é a arte do Domínio dela (a cidade usa a do centro)
+    this.sky = new Sky(scene, 900, { region: SKY_OF[theme.deco], tier: low ? "low" : "mid" })
     this.cloudMat = this.unlit("gincana-cloud-mat", 0.94)
     if (theme.deco === "city" || theme.deco === "canyon" || theme.deco === "factory" || theme.deco === "ice") {
       const cloudG = new SoftGeo()
@@ -166,6 +178,7 @@ export class CourseView {
       } else if (q.y0 < DECK - 0.1) {
         // poste da luva: sai da água, com anéis
         st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), stripesY(col, darker(col, 0.8), 0.8, 0), 20)
+        if (!city) st.cylinder(q.r * 2 + 0.12, 0.9, at(q.x, DECK + 0.45, q.z), stripesY(HAZ_Y, HAZ_K, 0.5, 0.5), 20)
         st.sphere(q.r * 2.1, at(q.x, q.y1, q.z), col, 12, 1, 0.6, 1)
       } else if (q.r > 0.7) {
         // pilar do carrossel: bala listrada com topo redondo
@@ -220,9 +233,15 @@ export class CourseView {
       const h = ds[0].h
       for (const x of xs) st.roundBox(0.5, h + 0.6, 0.8, 0.12, at(x, DECK + (h + 0.6) / 2, ds[0].z), C[4], 4)
       st.roundBox(xs[xs.length - 1] - xs[0] + 0.6, 0.6, 0.9, 0.15, at((xs[0] + xs[xs.length - 1]) / 2, DECK + h + 0.6, ds[0].z), C[1], 4)
+      if (!city) {
+        // v2: moldura acesa — faixa na verga (frente e trás) e um filete em cada pilar
+        for (const fz of [-0.47, 0.47]) glow.roundBox(xs[xs.length - 1] - xs[0], 0.16, 0.06, 0.03, at((xs[0] + xs[xs.length - 1]) / 2, DECK + h + 0.6, ds[0].z + fz), this.neon, 2)
+        for (const x of xs) for (const fz of [-0.42, 0.42]) glow.roundBox(0.12, h - 0.2, 0.05, 0.03, at(x, DECK + h / 2 + 0.1, ds[0].z + fz), this.neon, 2)
+      }
     }
     if (city) this.cityExtras(st)
     else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low)
+    buildTargets(st, glow, theme.deco, this.neon, low)
     const stat = st.build("gincana-course", scene, toy, true)
     this.meshes.push(stat)
     if (glow.vertexCount) {
@@ -256,8 +275,17 @@ export class CourseView {
       const bg = new SoftGeo()
       const len = s.both ? s.len * 2 : s.len
       const off = s.both ? 0 : s.len / 2
-      bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), stripesY(ORANGE, WHITE, 0.55, 0), 12)
+      bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), city ? stripesY(ORANGE, WHITE, 0.55, 0) : stripesY(HAZ_Y, HAZ_K, 0.55, 0.5), 12)
       bg.sphere(1.2, at(0, 0, 0), YELLOW, 12)
+      if (!city) {
+        // v2: o eixo é uma máquina (tambor com faixa de perigo e tampa) e cada ponta da barra tem um batente
+        bg.cylinder(2.3, 0.9, at(0, -0.75, 0), stripesY(darker(C[4], 0.8), C[4], 0.3, 0), 20)
+        bg.cylinder(2.5, 0.28, at(0, -0.3, 0), stripesY(HAZ_Y, HAZ_K, 0.5, 0.6), 20)
+        bg.cylinder(1.5, 0.5, at(0, 0.55, 0), C[4], 16, 1.1)
+        const cap = (z: number) => bg.sphere((s.r + 0.05) * 3.2, at(0, 0, z), PINK, 12, 1, 1, 0.7)
+        cap(s.both ? s.len : s.len)
+        if (s.both) cap(-s.len)
+      }
       const m = bg.build("gincana-bar", scene, theme.deco === "orbital" ? this.glowMat : toy, false)
       m.parent = node
       this.sweepNodes.push(node)
@@ -267,7 +295,12 @@ export class CourseView {
     // ── pêndulos: haste e a bola/martelo/estalactite do tema ──
     for (const p of course.pendulums) {
       const pg = new SoftGeo()
-      pg.cylinder(0.16, p.len, at(0, -p.len / 2, 0), IRON, 8)
+      if (city) pg.cylinder(0.16, p.len, at(0, -p.len / 2, 0), IRON, 8)
+      else {
+        // v2: corrente de elos (alternando o giro) no lugar da haste lisa
+        const n = Math.max(4, Math.round((p.len - p.R) / 0.42))
+        for (let k = 0; k < n; k++) pg.torus(0.42, 0.11, at(0, -0.21 - k * 0.42, 0, k % 2 ? Math.PI / 2 : 0, 0, Math.PI / 2), k % 2 ? IRON : darker(IRON, 0.8), 6)
+      }
       pg.cylinder(0.5, 0.3, at(0, -p.len + p.R * 1.02, 0), YELLOW, 12)
       if (theme.deco === "forge") {
         // martelo: cabeça de ferro com faixa de brasa
@@ -371,7 +404,8 @@ export class CourseView {
     // ── blocos que empurram ──
     for (const q of course.pushers) {
       const pg = new SoftGeo()
-      pg.roundBox(q.hx * 2, q.h, q.hz * 2, 0.25, at(0, q.h / 2, 0), (x) => (Math.floor((x + q.hx) / 0.7) % 2 ? C[1] : darker(C[6], 0.7)), 6)
+      // o que empurra é perigo: listra diagonal amarela e preta (na cidade, as faixas de antes)
+      pg.roundBox(q.hx * 2, q.h, q.hz * 2, 0.25, at(0, q.h / 2, 0), city ? (x) => (Math.floor((x + q.hx) / 0.7) % 2 ? C[1] : darker(C[6], 0.7)) : (x, y, z) => (Math.floor((x + z + y) / 0.6 + 100) % 2 ? HAZ_Y : HAZ_K), 6)
       pg.roundBox(q.hx * 2 + 0.2, 0.3, q.hz * 2 + 0.2, 0.1, at(0, q.h, 0), C[0], 4)
       const m = pg.build("gincana-pusher", scene, theme.deco === "orbital" ? this.glowMat : toy, false)
       m.position.set(q.x, q.y, q.z)
@@ -443,6 +477,7 @@ export class CourseView {
     // ── dia e noite: relógio de Brasília (ou a noite fixa do tema) ──
     this.timer = setInterval(() => this.applyTime(), 20000)
     if (process.env.NODE_ENV !== "production") (window as unknown as { __mmSetHour?: (h: number | null) => void }).__mmSetHour = this.devHour
+    if (process.env.NODE_ENV !== "production") (window as unknown as { __gincanaScene?: Scene }).__gincanaScene = scene
     this.applyTime()
   }
 
@@ -576,7 +611,8 @@ export class CourseView {
     const n = forced ?? nightFactor(this.forcedHour ?? brasiliaHour())
     if (Math.abs(n - this.night) < 0.005) return
     this.night = n
-    applyLights(this.scene, n)
+    // a prova é um programa de TV: de noite a luz baixa só até a metade (o céu escurece inteiro; o neon acende)
+    applyLights(this.scene, n * 0.55)
     this.sky.set(n)
     this.stage.setNight(n)
     this.city?.setNight(n)
@@ -613,7 +649,13 @@ export class CourseView {
    */
   private pad(g: SoftGeo, glow: SoftGeo, p: Pad, dyn: boolean) {
     const C = this.C
-    const top = C[p.c]
+    const city0 = this.theme.deco === "city"
+    // largada e chegada: o palco do programa, na cor de destaque da fase (fora da cidade)
+    const stage = !city0 && (p.s === 0 || p.s === 6) && p.c === 6
+    const d0 = this.theme.deco
+    // piso escuro onde o rejunte acende (Orbital = ardósia roxa, Forja = ferro), gelo puxado para o ciano
+    const tint = (c: RGB): RGB => (d0 === "orbital" ? mix(c, [0.13, 0.11, 0.24], 0.6) : d0 === "forge" ? mix(c, [0.15, 0.13, 0.13], 0.62) : d0 === "ice" ? mix(c, [0.55, 0.82, 0.96], 0.35) : c)
+    const top = stage ? mix(this.neon, C[6], 0.62) : tint(C[p.c])
     const rim = C[p.rim]
     const body = darker(top, 0.62)
     const city = this.theme.deco === "city"
@@ -634,24 +676,31 @@ export class CourseView {
       } else {
         // anel e raios no tampo (mostram o giro)
         g.torus((p.r - 0.6) * 2, 0.12, at(p.x, p.y + 0.02, p.z), mix(top, C[7], 0.5), 40)
+        // v2: alvo aceso no miolo do disco (dois anéis de neon), como os discos das referências
+        glow.torus(p.r * 1.1, 0.14, at(p.x, p.y + 0.04, p.z), this.neon, 18)
+        glow.torus(p.r * 0.45, 0.14, at(p.x, p.y + 0.04, p.z), this.neon, 12)
         if (p.spin !== 0) for (let k = 0; k < 6; k++) g.roundBox(0.3, 0.05, p.r * 1.7, 0.02, at(p.x, p.y + 0.02, p.z, (k / 6) * Math.PI), mix(top, C[7], 0.35), 2)
         if (this.theme.deco === "factory" && p.spin !== 0) {
           // engrenagem: dentes na borda
           for (let k = 0; k < 24; k++) {
             const a = (k / 24) * Math.PI * 2
-            g.roundBox(0.8, 0.6, 0.9, 0.1, at(p.x + Math.sin(a) * (p.r + 0.2), p.y - 0.3, p.z + Math.cos(a) * (p.r + 0.2), a), SP.iron, 2)
+            g.roundBox(0.8, 0.6, 0.9, 0.1, at(p.x + Math.sin(a) * (p.r + 0.2), p.y - 0.3, p.z + Math.cos(a) * (p.r + 0.2), a), SP.brass, 2)
           }
+          glow.torus(Math.min(2.4, p.r * 0.7), 0.22, at(p.x, p.y + 0.03, p.z), this.neon, 14)
         }
       }
-      g.torus(p.r * 2 + 0.1, 0.62, at(p.x, p.y - 0.12, p.z), rim, 48)
-      g.cylinder(p.r * 1.84, p.d - 0.4, at(p.x, p.y - 0.4 - (p.d - 0.4) / 2, p.z), body, 32, p.r * 1.9)
+      // boia de borda: gomos de duas cores (inflável de programa de TV) e a faixa de neon logo abaixo
+      const segs = Math.max(12, Math.round(p.r * 3) * 2)
+      g.torus(p.r * 2 + 0.1, 0.62, at(p.x, p.y - 0.12, p.z), (x, _y, z) => (Math.floor(((Math.atan2(z, x) / (Math.PI * 2)) + 1) * segs) % 2 ? rim : mix(rim, C[7], 0.55)), 48)
+      glow.torus(p.r * 2 + 0.66, 0.18, at(p.x, p.y - 0.16, p.z), this.neon, 24)
+      g.cylinder(p.r * 1.84, p.d - 0.4, at(p.x, p.y - 0.4 - (p.d - 0.4) / 2, p.z), this.skirt(body), 32, p.r * 1.9)
       if (!dyn) {
         for (let k = 0; k < 3; k++) {
           const a = (k / 3) * Math.PI * 2 + p.x
           const rr = p.r * 0.55
           this.leg(g, p.x + Math.sin(a) * rr, p.z + Math.cos(a) * rr, p.y - p.d)
         }
-      } else if (this.theme.deco === "orbital") glow.torus(p.r * 2 + 0.3, 0.18, at(p.x, p.y - 0.5, p.z), [0.3, 0.9, 1], 40)
+      }
       return
     }
     const rise = p.y2 - p.y
@@ -670,9 +719,11 @@ export class CourseView {
     } else if (!dyn) {
       // tampo do tema: faixas largas de duas cores
       g.roundBox(p.hx * 2 - 0.3, 0.03, L - 0.3, 0.02, m(0.002), (x, _y, z) => (Math.floor((x + z * 0.3) / 1.6) % 2 ? mix(top, C[7], 0.12) : top), 2)
+      this.grout(g, glow, p, top, L, pitch, yc)
     }
+    if (!dyn && (p.s === 0 || p.s === 6) && rise === 0 && p.hx >= 3) this.bollards(g, glow, p)
     // postes/enfeites nas bordas dos pisos largos
-    if (!dyn && p.hx >= 5 && Math.abs(p.rot) < 0.01 && rise === 0) {
+    if (!dyn && p.s > 0 && p.s < 6 && p.hx >= 5 && Math.abs(p.rot) < 0.01 && rise === 0) {
       for (const sx of [-1, 1]) {
         for (const sz of [-1, 1]) {
           const x = p.x + sx * (p.hx + 0.05)
@@ -681,12 +732,35 @@ export class CourseView {
         }
       }
     }
-    g.roundBox(p.hx * 2 + 0.34, 0.5, L + 0.34, r + 0.12, m(-0.33), rim, 10)
-    g.roundBox(Math.max(0.6, p.hx * 2 - 0.3), p.d - 0.3, Math.max(0.6, L - 0.3), Math.min(0.3, p.hx * 0.4), m(-0.4 - (p.d - 0.3) / 2), body, 8)
+    // borda acolchoada em gomos (de 1,2 m, alternando com o claro) e o neon embaixo dela
+    const light = mix(rim, C[7], 0.55)
+    g.roundBox(p.hx * 2 + 0.34, 0.5, L + 0.34, r + 0.12, m(-0.33), (x, _y, z) => (Math.floor((Math.abs(x) > p.hx ? z : x) / 1.2 + 100) % 2 ? rim : light), 10)
+    glow.roundBox(p.hx * 2 + 0.5, 0.16, L + 0.5, 0.08, m(-0.42), this.neon, 2)
+    g.roundBox(Math.max(0.6, p.hx * 2 - 0.3), p.d - 0.3, Math.max(0.6, L - 0.3), Math.min(0.3, p.hx * 0.4), m(-0.4 - (p.d - 0.3) / 2), this.skirt(body), 8)
     if (dyn) {
       if (this.theme.deco === "canyon") g.cylinder(Math.min(p.hx, p.hz) * 1.6, 2.2, at(p.x, p.y - p.d - 1, p.z), darker(body, 0.8), 7, 0.6)
-      if (this.theme.deco === "orbital") glow.roundBox(p.hx * 2 + 0.4, 0.16, L + 0.4, 0.05, m(-0.6), [0.3, 0.9, 1], 2)
       return
+    }
+    // setas amarelas no chão apontando o caminho (pisos compridos e largos o bastante)
+    if (p.hx >= 1.4 && len >= 6 && p.bx === 0 && p.bz === 0) {
+      const frame = at(p.x, yc, p.z, p.rot, -pitch)
+      const w = Math.min(1.6, p.hx * 0.7)
+      for (let lz = -p.hz + 2.5; lz <= p.hz - 2; lz += 6) {
+        for (const sx of [-1, 1]) {
+          const arm = Matrix.RotationY(-sx * Math.PI * 0.25).multiply(Matrix.Translation(sx * w * 0.36, 0.13, lz)).multiply(frame)
+          glow.roundBox(0.34, 0.04, w, 0.02, arm, ARROW, 2)
+        }
+      }
+    }
+    if (this.theme.deco === "ice") {
+      // pingentes de gelo pendurados na borda de baixo do piso (referência do Mar de Gelo)
+      const frame = at(p.x, yc, p.z, p.rot, -pitch)
+      for (const sx of [-1, 1]) {
+        for (let lz = -p.hz + 0.6, k = 0; lz <= p.hz - 0.4; lz += 1.1, k++) {
+          const h = 0.7 + ((k * 7 + (sx > 0 ? 3 : 0)) % 5) * 0.28
+          g.cylinder(0.02, h, Matrix.Translation(sx * (p.hx + 0.05), -0.62 - h / 2, lz).multiply(frame), [0.78, 0.92, 1], 5, 0.42)
+        }
+      }
     }
     const n = Math.max(1, Math.round(len / 8))
     const c = Math.cos(p.rot)
@@ -698,6 +772,81 @@ export class CourseView {
       const yTop = p.y + (rise * (lz + p.hz)) / len - p.d
       this.leg(g, wx, wz, yTop)
     }
+  }
+
+  /** Rejunte: linhas escuras a cada 2 m no tampo (ladrilhos grandes lidos de longe). */
+  /**
+   * v2 (17/11): o piso em LADRILHOS de verdade — tronco de pirâmide (chanfro que pega luz), três tons por
+   * sorteio fixo e as frestas mostrando o fundo. Quadrados de 2 m (pedra, ferro, latão); hexágonos na Orbital
+   * e no Gelo. Orbital, Forja e Gelo: o fundo é uma chapa ACESA (neon, brasa, gelo) que vaza pelas frestas.
+   */
+  private grout(g: SoftGeo, glow: SoftGeo, p: Pad, top: RGB, L: number, pitch: number, yc: number) {
+    const d = this.theme.deco
+    const lit = d === "orbital" ? this.neon : d === "forge" ? ([1, 0.42, 0.06] as RGB) : d === "ice" ? ([0.55, 0.92, 1] as RGB) : null
+    const frame = at(p.x, yc, p.z, p.rot, -pitch)
+    const W = p.hx * 2
+    // o fundo das frestas
+    if (lit) glow.roundBox(W - 0.3, 0.02, L - 0.3, 0.01, Matrix.Translation(0, 0.02, 0).multiply(frame), lit, 1)
+    else g.roundBox(W - 0.3, 0.02, L - 0.3, 0.01, Matrix.Translation(0, 0.02, 0).multiply(frame), darker(top, 0.55), 1)
+    const tone = (i: number, j: number): RGB => {
+      const h = Math.abs(Math.sin(i * 12.9898 + j * 78.233 + p.z) * 43758.5453) % 1
+      return h < 0.33 ? mix(top, this.C[7], 0.1) : h < 0.66 ? top : darker(top, 0.86)
+    }
+    const hgt = (i: number, j: number) => 0.06 + (Math.abs(Math.sin(i * 3.1 + j * 5.7 + p.x)) % 1) * 0.025
+    if (d === "orbital" || d === "ice") {
+      const R = 1.05
+      const cw = 1.5 * R
+      const rh = Math.sqrt(3) * R
+      for (let i = 0, lx = -p.hx + R; lx <= p.hx - R * 0.85; lx += cw, i++) {
+        for (let j = 0, lz = -L / 2 + rh / 2 + (i % 2 ? rh / 2 : 0); lz <= L / 2 - R * 0.8; lz += rh, j++) {
+          const h = hgt(i, j)
+          g.cylinder(R * 1.86, h, Matrix.Translation(lx, 0.03 + h / 2, lz).multiply(frame), tone(i, j), 6, R * 1.7)
+        }
+      }
+      return
+    }
+    const T = 2
+    for (let i = 0, lx = -p.hx + 0.15 + T / 2; lx <= p.hx - 0.15 - T / 2 + 0.01; lx += T, i++) {
+      for (let j = 0, lz = -L / 2 + 0.15 + T / 2; lz <= L / 2 - 0.15 - T / 2 + 0.01; lz += T, j++) {
+        const h = hgt(i, j)
+        // quadrado = cilindro de 4 lados girado 45°: base (T-0,1)·√2, topo menor (chanfro)
+        g.cylinder((T - 0.1) * Math.SQRT2, h, Matrix.RotationY(Math.PI / 4).multiply(Matrix.Translation(lx, 0.03 + h / 2, lz)).multiply(frame), tone(i, j), 4, (T - 0.26) * Math.SQRT2)
+      }
+    }
+  }
+
+  /** Frades acolchoados nas bordas da largada e da chegada: poste da cor da borda, gomo claro, chapéu amarelo aceso. */
+  private bollards(g: SoftGeo, glow: SoftGeo, p: Pad) {
+    const C = this.C
+    const post = C[p.rim]
+    const band = mix(post, C[7], 0.6)
+    const c = Math.cos(p.rot)
+    const s = Math.sin(p.rot)
+    const put = (lx: number, lz: number) => {
+      const x = p.x + lx * c + lz * s
+      const z = p.z - lx * s + lz * c
+      g.cylinder(0.7, 0.95, at(x, p.y + 0.47, z), (_x, y) => (Math.abs(y) < 0.12 ? band : post), 14)
+      g.torus(0.78, 0.16, at(x, p.y + 0.06, z), darker(post, 0.7), 10)
+      glow.sphere(0.78, at(x, p.y + 1.02, z), this.C[1], 10, 1, 0.75, 1)
+    }
+    for (const sx of [-1, 1]) {
+      const zs: number[] = []
+      for (let lz = -p.hz + 0.6; lz <= p.hz - 0.5; lz += 3.2) {
+        put(sx * (p.hx - 0.45), lz)
+        zs.push(lz)
+      }
+      // corrimão de tubo aceso de frade a frade
+      const lx = sx * (p.hx - 0.45)
+      const z0 = zs[0]
+      const z1 = zs[zs.length - 1]
+      if (z1 > z0) glow.roundBox(0.2, 0.2, z1 - z0, 0.09, Matrix.Translation(lx, p.y + 0.72, (z0 + z1) / 2).multiply(at(p.x, 0, p.z, p.rot)), this.neon, 2)
+    }
+  }
+
+  /** Lateral do piso: listras diagonais largas de perigo, em dois tons do corpo. */
+  private skirt(body: RGB) {
+    const dark = darker(body, 0.7)
+    return (x: number, y: number, z: number): RGB => (Math.floor((x + z + y * 1.4) / 0.9 + 1000) % 2 ? body : dark)
   }
 
   /** Enfeite do canto dos pisos largos, pelo tema. */
